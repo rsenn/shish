@@ -1,0 +1,396 @@
+		 IEEE P1003.2 Draft 11.2 - September 1991
+
+
+			Copyright (c) 1991 by the
+	 Institute of Electrical and Electronics Engineers, Inc.
+			   345 East 47th Street
+			 New York, NY 10017, USA
+	       All rights reserved as an unpublished work.
+
+       This is an unapproved and unpublished IEEE Standards Draft,
+       subject to change.  The publication, distribution, or
+       copying of this draft, as well as all derivative	works based
+       on this draft, is expressly prohibited except as	set forth
+       below.
+
+       Permission is hereby granted for	IEEE Standards Committee
+       participants to reproduce this document for purposes of IEEE
+       standardization activities only,	and subject to the
+       restrictions contained herein.
+
+       Permission is hereby also granted for member bodies and
+       technical committees of ISO and IEC to reproduce	this
+       document	for purposes of	developing a national position,
+       subject to the restrictions contained herein.
+
+       Permission is hereby also granted to the	preceding entities
+       to make limited copies of this document in an electronic
+       form only for the stated	activities.
+
+       The following restrictions apply	to reproducing or
+       transmitting the	document in any	form:  1) all copies or
+       portions	thereof	must identify the document's IEEE project
+       number and draft	number,	and must be accompanied	by this
+       entire notice in	a prominent location; 2) no portion of this
+       document	may be redistributed in	any modified or	abridged
+       form without the	prior approval of the IEEE Standards
+       Department.
+
+       Other entities seeking permission to reproduce this
+       document, or any	portion	thereof, for standardization or
+       other activities, must contact the IEEE Standards Department
+       for the appropriate license.
+
+       Use of information contained in this unapproved draft is	at
+       your own	risk.
+
+	    IEEE Standards Department
+	    Copyright and Permissions
+	    445	Hoes Lane, P.O.	Box 1331
+	    Piscataway,	NJ 08855-1331, USA
+	    +1 (908) 562-3800
+	    +1 (908) 562-1571 [FAX]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ P1003.2/D11.2                               INFORMATION TECHNOLOGY--POSIX
+
+ 4.5  cd - Change working directory
+
+
+ 4.5.1  Synopsis
+
+
+ cd  [_d_i_r_e_c_t_o_r_y]
+
+
+ 4.5.2  Description
+
+ The cd utility shall change the working directory of the current shell
+ execution environment; see 3.12.
+
+ When invoked with no operands, and the HOME environment variable is set
+ to a nonempty value, the directory named in the HOME environment variable
+ shall become the new working directory.  If HOME is empty or is
+ undefined, the default behavior is implementation defined.
+
+
+ 4.5.3  Options
+
+ None.
+
+
+ 4.5.4  Operands
+
+ The following operands shall be supported by the implementation:
+
+    _d_i_r_e_c_t_o_r_y   An absolute or relative pathname of the directory that
+                becomes the new working directory.  The interpretation of
+                a relative pathname by cd depends on the CDPATH
+                environment variable.  If _d_i_r_e_c_t_o_r_y is -, the results are
+                implementation defined.
+
+
+ 4.5.5  External Influences
+
+ 4.5.5.1  Standard Input
+
+ None.
+
+
+ 4.5.5.2  Input Files
+
+ None.
+
+
+
+
+
+               Copyright c 1991 IEEE.  All rights reserved.
+      This is an unapproved IEEE Standards Draft, subject to change.
+
+
+
+
+
+ 388                                     4 Execution Environment Utilities
+
+
+
+
+
+ Part 2: SHELL AND UTILITIES                                 P1003.2/D11.2
+
+ 4.5.5.3  Environment Variables
+
+ The following environment variables shall affect the execution of cd:
+
+    CDPATH             A colon-separated list of pathnames that refer to
+                       directories.  If the _d_i_r_e_c_t_o_r_y operand does not
+                       begin with a slash (/) character, and the first
+                       component is not dot or dot-dot, cd shall search
+                       for _d_i_r_e_c_t_o_r_y relative to each directory named in
+                       the CDPATH variable, in the order listed.  The new
+                       working directory shall be set to the first
+                       matching directory found.  An empty string in place
+                       of a directory pathname represents the current
+                       directory.  If CDPATH is not set, it shall be
+                       treated as if it were an empty string.
+
+    HOME               The name of the home directory, used when no
+                       _d_i_r_e_c_t_o_r_y operand is specified.
+
+    LANG               This variable shall determine the locale to use for
+                       the locale categories when both LC_ALL and the
+                       corresponding environment variable (beginning with
+                       LC_) do not specify a locale.  See 2.6.
+
+    LC_ALL             This variable shall determine the locale to be used
+                       to override any values for locale categories
+                       specified by the settings of LANG or any
+                       environment variables beginning with LC_.
+
+    LC_CTYPE           This variable shall determine the locale for the
+                       interpretation of sequences of bytes of text data
+                       as characters (e.g., single- versus multibyte
+                       characters in arguments).
+
+    LC_MESSAGES        This variable shall determine the language in which
+                       messages should be written.
+
+
+ 4.5.5.4  Asynchronous Events
+
+ Default.
+
+
+ 4.5.6  External Effects
+
+
+
+
+
+
+
+               Copyright c 1991 IEEE.  All rights reserved.
+      This is an unapproved IEEE Standards Draft, subject to change.
+
+
+
+
+
+ 4.5 cd - Change working directory                                     389
+
+
+
+
+
+ P1003.2/D11.2                               INFORMATION TECHNOLOGY--POSIX
+
+ 4.5.6.1  Standard Output
+
+ If a nonempty directory name from CDPATH is used, an absolute pathname of
+ the new working directory shall be written to the standard output as
+ follows:
+
+       "%s\n", <_n_e_w _d_i_r_e_c_t_o_r_y>
+
+ Otherwise, there shall be no output.
+
+
+ 4.5.6.2  Standard Error
+
+ Used only for diagnostic messages.
+
+ 4.5.6.3  Output Files
+
+ None.
+
+
+ 4.5.7  Extended Description
+
+ None.
+
+
+ 4.5.8  Exit Status
+
+ The cd utility shall exit with one of the following values:
+
+     0    The directory was successfully changed.
+
+    >0    An error occurred.
+
+
+ 4.5.9  Consequences of Errors
+
+ The working directory remains unchanged.
+
+ BEGIN_RATIONALE
+
+
+ 4.5.10  Rationale. (_T_h_i_s _s_u_b_c_l_a_u_s_e _i_s _n_o_t _a _p_a_r_t _o_f _P_1_0_0_3._2)
+
+ _E_x_a_m_p_l_e_s_,__U_s_a_g_e
+
+ _E_d_i_t_o_r'_s _N_o_t_e:  _A _b_a_l_l_o_t_e_r _r_e_q_u_e_s_t_e_d _t_h_a_t _t_h_e _f_o_l_l_o_w_i_n_g _r_a_t_i_o_n_a_l_e _b_e       2
+ _h_i_g_h_l_i_g_h_t_e_d _i_n _t_h_e _D_1_1._2 _r_e_c_i_r_c_u_l_a_t_i_o_n.                                    2
+
+
+
+
+               Copyright c 1991 IEEE.  All rights reserved.
+      This is an unapproved IEEE Standards Draft, subject to change.
+
+
+
+
+
+ 390                                     4 Execution Environment Utilities
+
+
+
+
+
+ Part 2: SHELL AND UTILITIES                                 P1003.2/D11.2
+
+ Since cd affects the current shell execution environment, it is generally
+ provided as a shell regular built-in.  If it is called in a subshell or    1
+ separate utility execution environment, such as one of the following:      1
+
+       (cd /tmp)                                                            1
+       nohup cd                                                             1
+       find . -exec cd {} \;                                                1
+
+ it will not affect the working directory of the caller's environment.      1
+
+ The use of the CDPATH was introduced in the System V shell.  Its use is
+ analogous to the use of the PATH variable in the shell.  Earlier systems
+ such as the BSD C-shell used a shell parameter cdpath for this purpose.
+
+ _H_i_s_t_o_r_y__o_f__D_e_c_i_s_i_o_n_s__M_a_d_e
+
+ A common extension when HOME is undefined is to get the login directory
+ from the user database for the invoking user.  This does not occur on
+ System V implementations.
+
+ Not included in this description are the features from the KornShell such
+ as setting OLDPWD, toggling current and previous directory (cd -), and
+ the two-operand form of cd (cd _o_l_d _n_e_w). This standard does not specify
+ the results of cd - or of calls with more than one operand.  Since these
+ extensions are mostly used in interactive situations, they may be
+ considered for inclusion in POSIX.2a.  The result of cd - and of using no
+ arguments with HOME unset or null have been made implementation defined
+ at the request of the POSIX.6 security working group.
+
+ The setting of the PWD variable was removed from earlier drafts, as it
+ can be replaced by $(pwd).
+
+ END_RATIONALE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+               Copyright c 1991 IEEE.  All rights reserved.
+      This is an unapproved IEEE Standards Draft, subject to change.
+
+
+
+
+
+ 4.5 cd - Change working directory                                     391
+
+
+
+
+
+ P1003.2/D11.2                               INFORMATION TECHNOLOGY--POSIX
+
+ 4.6  chgrp - Change file group ownership
+
+
+ 4.6.1  Synopsis
+
+
+ chgrp  [-R] _g_r_o_u_p _f_i_l_e ...
+
+
+ 4.6.2  Description
+
+ The chgrp utility shall set the group ID of the file named by each _f_i_l_e
+ operand to the group ID specified by the _g_r_o_u_p operand.
+
+ For each _f_i_l_e operand, it shall perform actions equivalent to the
+ POSIX.1 {8} _c_h_o_w_n() function, called with the following arguments:
+
+     (1)  The _f_i_l_e operand shall be used as the _p_a_t_h argument.
+
+     (2)  The user ID of the file shall be used as the _o_w_n_e_r argument.
+
+     (3)  The specified _g_r_o_u_p _I_D shall be used as the _g_r_o_u_p argument.
+
+
+ 4.6.3  Options
+
+ The chgrp utility shall conform to the utility argument syntax guidelines
+ described in 2.10.2.
+
+ The following option shall be supported by the implementation:
+
+    -R          Recursively change file group IDs.  For each _f_i_l_e operand
+                that names a directory, chgrp shall change the group of
+                the directory and all files in the file hierarchy below
+                it.
+
+
+ 4.6.4  Operands
+
+ The following operands shall be supported by the implementation:
+
+    _g_r_o_u_p       A group name from the group database or a numeric group
+                ID.  Either specifies a group ID to be given to each file
+                named by one of the _f_i_l_e operands.  If a numeric _g_r_o_u_p
+                operand exists in the group database as a group name, the
+                group ID number associated with that group name is used as
+                the group ID.
+
+
+
+
+               Copyright c 1991 IEEE.  All rights reserved.
+      This is an unapproved IEEE Standards Draft, subject to change.
+
+
+
+
+
+ 392                                     4 Execution Environment Utilities
+
+

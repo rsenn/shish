@@ -1,0 +1,54 @@
+# $Id: Makefile.in,v 1.5 2005/04/23 10:19:32 smoli Exp $
+# ===========================================================================
+#
+# Makefile for src/debug subdirectory
+#
+# relative directories
+# ---------------------------------------------------------------------------
+srcdir       = @srcdir@
+top_srcdir   = @top_srcdir@
+top_builddir = @top_builddir@
+thisdir      = @thisdir@
+
+VPATH        = $(srcdir)
+
+# include global make configuration
+# ---------------------------------------------------------------------------
+include $(top_builddir)config.mk
+          
+# configuration for this directory
+# ---------------------------------------------------------------------------
+ARCHIVE = exec.a
+MODULES = exec_check \
+          exec_command \
+          exec_create \
+          exec_error \
+          exec_hash \
+          exec_path \
+          exec_program \
+          exec_search
+          
+SOURCES = $(MODULES:%=%.c)
+OBJECTS = $(MODULES:%=%.o)
+DEPS    = $(MODULES:%=%.d)
+
+# targets for this directory
+# ---------------------------------------------------------------------------
+all: Makefile $(ARCHIVE)
+install: 
+
+# dependencies
+# ---------------------------------------------------------------------------
+-include $(DEPS)
+
+# local build configuration
+# ---------------------------------------------------------------------------
+INCLUDES += -isystem $(top_srcdir)/lib
+INCLUDES += -isystem $(top_builddir)/lib
+INCLUDES += -I$(top_srcdir)/src
+INCLUDES += -I$(top_builddir)
+          
+# include build.mk (makefile helper)
+# ---------------------------------------------------------------------------
+include $(top_builddir)/build.mk
+

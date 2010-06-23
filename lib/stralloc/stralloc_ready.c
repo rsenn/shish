@@ -1,0 +1,29 @@
+#include "stralloc.h"
+#include <shell.h>
+
+/* stralloc_ready makes sure that sa has enough space allocated to hold
+ * len bytes: If sa is not allocated, stralloc_ready allocates at least
+ * len bytes of space, and returns 1. If sa is already allocated, but
+ * not enough to hold len bytes, stralloc_ready allocates at least len
+ * bytes of space, copies the old string into the new space, frees the
+ * old space, and returns 1. Note that this changes sa.s. */
+#ifdef DEBUG
+int stralloc_readydebug(const char *file, unsigned int line, stralloc *sa,unsigned long int len)
+#else
+int stralloc_ready(stralloc *sa,unsigned long int len)
+#endif /* DEBUG */
+{
+  register int wanted=len+(len>>3)+30; /* heuristic from djb */
+  if (!sa->s || sa->a<len) {
+    register char* tmp;
+#ifdef DEBUG
+    if (!(tmp=shell_reallocdebug(file, line, sa->s,wanted)))
+#else
+    if (!(tmp=shell_realloc(sa->s,wanted)))
+#endif
+      return 0;
+    sa->a=wanted;
+    sa->s=tmp;
+  }
+  return 1;
+}

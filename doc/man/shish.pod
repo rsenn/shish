@@ -1,0 +1,20 @@
+=head1 NAME
+
+shish - A small POSIX-ish shell
+
+=head1 SYNOPSYS
+
+B<shish> [-] [options] [file]
+
+=head1 COPYRIGHT
+
+shish is Copyright (C) 2005 by Roman Senn
+
+=head1 DESCRIPTION
+
+B<shish> is an sh-compatible command language interpreter that executes 
+commands read from a terminal or from a file.
+
+B<shish> is intended to be a conformant implementation of the IEEE POSIX
+Shell and Tools specification (IEEE Working Group 1003.2).
+

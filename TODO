@@ -1,0 +1,34 @@
+What is implemented and needs to be tested:
+
+- except for shell functions, the whole parser grammar
+  is established
+- command and variable expansion
+- variables
+- evaluation of conditionals and loops
+- evaluation of PS1 for custom prompts
+- some (non-standard) builtins
+
+What is implemented and is buggy:
+
+- redirections seem to work most of the time, but the fdtable
+  resolving code (which "lazy-resolves" redirections) can end
+  up in an infinite recursion
+- simple line editing (to be rewritten with a finer terminal abstraction
+  and key-bindings)  
+- a basic command history, which is not properly saved currently
+
+What needs to be implemented:
+
+- implement background processes and more sophisticated job control
+- fix iofd_exec() ???
+- glob check on subargs other than argstr
+- tilde expansion
+- shell functions
+- stripped here documents (<<-)
+- key bindings
+- terminal abstraction (for special capabilities etc.)
+- closing of file descriptors on >&-
+- conform to 3.9.1.1 "Command Search and Execution"
+- push variable stack only when needed?
+- exporting of unset variables
+- leaving interactive mode i.E. in a forked subshell should free the prompt tree

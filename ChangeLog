@@ -1,0 +1,57 @@
+ 2005-04-30  Roman Senn  <smoli (at) paranoya.ch>
+
+   * there have been no ChangeLog entries for a long time
+     while development was in progress. I don't think detailed
+     ChangeLog entries are already required at this time, because 
+     shish is under heavy development by just one person. However
+     I will write ChangeLog entries about major achievments and
+     design changes/improvements.
+
+   * the development is currently suspended due to the need of
+     a libsgui release (http://www.blah.ch/libsgui/)
+     shish development will be resumed in a month or so.
+     
+
+ 2005-02-27  Roman Senn  <smoli (at) paranoya.ch>
+
+   * argument splitting
+   * substitutions
+
+ 2005-02-20  Roman Senn  <smoli (at) paranoya.ch>
+
+   * worked somewhat on var expansion
+   * cleaned up parser code and fixed bugs
+
+ 2005-02-18  Roman Senn  <smoli (at) paranoya.ch>
+
+   * rewriting word parsing to build trees
+   * started implementing word expansion
+   * implemented for-loop parser
+   * trivial splitting
+   * variable stack
+   * var expansion and setting
+   
+ 2005-02-11  Roman Senn  <smoli (at) paranoya.ch>
+
+   * basic redirection support
+   * wrote tree debugging functions
+   * added mktable tool for word table
+   
+ 2005-02-10  Roman Senn  <smoli (at) paranoya.ch>
+
+   * moved prompt stuff from parser to terminal code
+   * fixed elif bug
+   * implemented tcsetpgrp() stuff for job-control
+   * added redirection parser
+   * elif speedup in eval_if()
+   * handle variable assignments in word parser
+   
+ 2005-02-09  Roman Senn  <smoli (at) paranoya.ch>
+
+   * implemented eval_pipeline()
+   * escaping of newlines and printing of PS2
+   * implemented basic quotation in word.c
+   * escaping of characters in a word
+   * implemented parsing and evaluation of if/elif/fi conditionals
+   * released 0.2 preversion
+   

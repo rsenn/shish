@@ -1,0 +1,64 @@
+# $Id: Makefile.in,v 1.6 2005/04/23 10:19:32 smoli Exp $
+# ===========================================================================
+#
+# Makefile for src/fdtable subdirectory
+#
+# relative directories
+# ---------------------------------------------------------------------------
+srcdir       = @srcdir@
+top_srcdir   = @top_srcdir@
+top_builddir = @top_builddir@
+thisdir      = @thisdir@
+
+VPATH        = $(srcdir)
+
+# include global make configuration
+# ---------------------------------------------------------------------------
+include $(top_builddir)config.mk
+          
+# configuration for this directory
+# ---------------------------------------------------------------------------
+ARCHIVE = fdtable.a
+MODULES = fdtable_check \
+          fdtable_close \
+          fdtable_dump \
+          fdtable_dup \
+          fdtable_exec \
+          fdtable_gap \
+          fdtable_here \
+          fdtable_lazy \
+          fdtable_link \
+          fdtable_newfd \
+          fdtable_open \
+          fdtable_resolve \
+          fdtable_table \
+          fdtable_track \
+          fdtable_unexpected \
+          fdtable_unlink \
+          fdtable_up \
+          fdtable_wish
+          
+SOURCES = $(MODULES:%=%.c)
+OBJECTS = $(MODULES:%=%.o)
+DEPS    = $(MODULES:%=%.d)
+
+# targets for this directory
+# ---------------------------------------------------------------------------
+all: Makefile $(ARCHIVE)
+install: 
+
+# dependencies
+# ---------------------------------------------------------------------------
+-include $(DEPS)
+
+# local build configuration
+# ---------------------------------------------------------------------------
+INCLUDES += -isystem $(top_srcdir)/lib
+INCLUDES += -isystem $(top_builddir)/lib
+INCLUDES += -I$(top_srcdir)/src
+INCLUDES += -I$(top_builddir)/src
+INCLUDES += -I$(top_builddir)
+          
+# include build.mk (makefile helper)
+# ---------------------------------------------------------------------------
+include $(top_builddir)/build.mk

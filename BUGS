@@ -1,0 +1,6 @@
+- it may be that the fdtable ends up in an   
+  infinite recursion when doing redirections
+- bug while: exec 5<>lala
+- the history should include the contents of the current
+  history file when saving so it does not overwrite command
+  history entries from other shell processes

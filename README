@@ -1,0 +1,53 @@
+-----------------------------------------------------------------------------
+ shish 
+-----------------------------------------------------------------------------
+
+ shish aims to be a small and fast as possible shell.
+ 
+ it also aims at more or less conforming to the IEEE P1003 draft for POSIX
+ compatible shells by version 1.0, after that it will stay a minimal POSIX
+ shell in the default  configuration but it will be extendable by compile-
+ time switches and possibly loadable modules.
+
+ this implementation avoids stdio and format string bloat by using libowfat
+ by felix von leitner (see lib/README) and using as few libc as possible, 
+ except for the (mostly POSIX) syscall wrappers.
+
+ the name `shish` has three origins:
+ 
+   - `sh-ish` which is derived from `sh`, the original System V and bourne 
+      shells, this shell is sh-ish because we support their syntax.
+   
+   - the libowfat-based library this package ships is called `libshish.a`,
+     derived from `shisha` which is the name for an oriental water pipe.
+     this is because shells and pipes are very related topics 
+     
+   - `shish-kebap` which is a nice turkish meal :)
+
+-----------------------------------------------------------------------------
+ how to compile and install shish
+-----------------------------------------------------------------------------
+
+ ./configure    
+    (...or ./autogen.sh if you are operating on a CVS checkout or a snapshot)
+ make
+ make install
+
+ the configure script will check for dietlibc and eventually compile using it,
+ look at the output of the script.
+
+-----------------------------------------------------------------------------
+ what shish is so far
+-----------------------------------------------------------------------------
+
+ at this point shish is NOT a replacement for your current shell!
+ it will not properly execute your startup- (e.g. sysvinit) or 
+ build-scripts (make)
+ 
+ the current codebase is made by a single developer and only a
+ kind of 'proof-of-concept' targeted at developers which are 
+ interested in making a fast and small shell for their embedded
+ systems and/or workstations
+ 
+ IT IS NOT READY FOR PRODUCTION USE YET, so i do not want to 
+ receive complaints on this!
