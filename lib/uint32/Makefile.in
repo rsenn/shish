@@ -8,13 +8,13 @@
 srcdir       = @srcdir@
 top_srcdir   = @top_srcdir@
 top_builddir = @top_builddir@
-thisdir      = @thisdir@
+thisdir      = .
 
 VPATH        = $(srcdir)
 
 # include global make configuration
 # ---------------------------------------------------------------------------
-include $(top_builddir)config.mk
+include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------

@@ -13,7 +13,7 @@ thisdir      =
 
 # include global make configuration
 # ---------------------------------------------------------------------------
-include $(top_builddir)config.mk
+include $(top_builddir)/config.mk
 
 #############################################################################
 #                                    ########################################
@@ -33,7 +33,7 @@ dep:              makefiles dep-recursive
 RM    = rm -f
 CHMOD = chmod
 
-bootfiles: Makefile config.mk build.mk $(top_builddir)config.h
+bootfiles: Makefile config.mk build.mk $(top_builddir)/config.h
 
 # local directory configuration
 # ---------------------------------------------------------------------------
@@ -79,4 +79,4 @@ MAINTAINERCLEANFILES = aclocal.m4 configure *.bz2 *.gz autom4te.cache \
 
 # include global make targets
 # ---------------------------------------------------------------------------
-include $(top_builddir)build.mk
+include $(top_builddir)/build.mk
