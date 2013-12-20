@@ -1,5 +1,5 @@
 #include "stralloc.h"
-#include <stdlib.h>
+#include "shell.h"
 
 /* stralloc_ready makes sure that sa has enough space allocated to hold
  * len bytes: If sa is not allocated, stralloc_ready allocates at least
@@ -11,7 +11,7 @@ int stralloc_ready(stralloc *sa,size_t len) {
   register size_t wanted=len+(len>>3)+30; /* heuristic from djb */
   if (!sa->s || sa->a<len) {
     register char* tmp;
-    if (!(tmp=realloc(sa->s,wanted)))
+    if (!(tmp=shell_realloc(sa->s,wanted)))
       return 0;
     sa->a=wanted;
     sa->s=tmp;
