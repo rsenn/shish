@@ -163,19 +163,24 @@ int buffer_get_new_token_sa_pred(buffer* b,stralloc* sa,sa_predicate p);
 void buffer_fromsa(buffer* b,stralloc* sa);
 #endif
 
-int stralloc_write(stralloc* sa,const unsigned char *in, unsigned long int len);
+int stralloc_write(stralloc* sa,const char *in,unsigned long int len);
 
-int stralloc_catc(stralloc *sa, const unsigned char c);
+int stralloc_catc(stralloc *sa,const char c);
 
-int stralloc_insertb(stralloc *sa, const unsigned char *s, unsigned long pos, unsigned long n);
+int stralloc_insertb(stralloc *sa,const char *s,unsigned long pos,unsigned long n);
 
-void stralloc_move(stralloc *to, stralloc *from);
+void stralloc_move(stralloc *to,stralloc *from);
 
 int stralloc_nul(stralloc *sa);
 
-int stralloc_remove(stralloc *sa, unsigned long pos, unsigned long n);
+int stralloc_remove(stralloc *sa,unsigned long pos,unsigned long n);
 
-int stralloc_trunc(stralloc *sa, unsigned long int n);
+#ifdef DEBUG
+int stralloc_truncdebug(const char *file,unsigned int line,stralloc *sa,unsigned long int n);
+#define stralloc_trunc(sa,n) stralloc_truncdebug(__FILE__,__LINE__,(sa),(n))
+#else
+int stralloc_trunc(stralloc *sa,unsigned long int n);  
+#endif /* DEBUG */
 
 #ifdef __cplusplus
 }

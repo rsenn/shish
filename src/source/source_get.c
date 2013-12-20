@@ -5,7 +5,7 @@
 int source_get(unsigned char *c)
 {
   int ret;
-  ret = buffer_getc(source->b, c);
+  ret = buffer_getc(source->b, (char *)c);
 
   if(ret >= 0)
   {

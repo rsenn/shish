@@ -9,7 +9,7 @@ int builtin_exit(int argc, char **argv)
   int status = 0;
 
   if(argc > 1)
-    scan_uint(argv[1], &status);
+    scan_uint(argv[1], (unsigned int*)&status);
   else
     status = sh->exitcode;
 

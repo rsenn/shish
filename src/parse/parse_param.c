@@ -99,7 +99,7 @@ int parse_param(struct parser *p)
   if(p->node->nargparam.flag & S_ARG)
   {
     p->node->nargparam.numb = 0;
-    scan_uint(varname.s, &p->node->nargparam.numb);
+    scan_uint(varname.s, (unsigned int*)&p->node->nargparam.numb);
   }
   
   p->node->nargparam.name = varname.s;

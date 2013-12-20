@@ -25,6 +25,7 @@ char* mmap_shared(const char *filename,size_t* filesize);
 int mmap_unmap(char* mapped,size_t maplen);
 
 
+char *mmap_read_fd(int fd, unsigned long *filesize);
 
 #ifdef __cplusplus
 }

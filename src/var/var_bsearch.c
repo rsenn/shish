@@ -18,8 +18,8 @@ unsigned long var_bsearch(struct search *context)
   for(; (var = *context->pos); 
                 context->pos = (context->global ? &var->gnext : &var->bnext))
   {
-    const unsigned char *w = context->name;
-    const unsigned char *m = var->sa.s;
+    const char *w = context->name;
+    const char *m = var->sa.s;
     unsigned long lw = context->len;
     unsigned long lm = var->len;
     long ret = 0;

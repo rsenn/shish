@@ -6,7 +6,7 @@
 
 void term_ansi(void)
 {
-  unsigned char c;
+  char c;
   unsigned long num;
   char buf[16];
   unsigned long i;

@@ -6,7 +6,7 @@
 void history_free(unsigned int index)
 {
   /* get the pointer from the specified entry */
-  unsigned char *s = history_array[index];
+  char *s = history_array[index];
   
   /* ..and then clear the entry */
   history_array[index] = NULL;

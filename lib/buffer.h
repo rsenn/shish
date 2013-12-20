@@ -145,23 +145,27 @@ void buffer_fromsa(buffer* b,stralloc* sa);	/* read from sa */
 int buffer_tosa(buffer*b,stralloc* sa);		/* write to sa, auto-growing it */
 #endif
 
-void buffer_default(buffer *b, ssize_t (*op)(void));
+void buffer_default(buffer *b,ssize_t (*op)(void));
 
 void buffer_free(buffer *b);
 
-void buffer_fromstr(buffer *b, char *s, unsigned long len);
+void buffer_fromstr(buffer *b,char *s,unsigned long len);
 
-int buffer_get_until(buffer *b, unsigned char *x, unsigned long int len, const unsigned char *charset, unsigned long int setlen);
+int buffer_get_until(buffer *b,char *x,unsigned long int len,const char *charset,unsigned long int setlen);
 
-int buffer_mmapread_fd(buffer *b, int fd);
+int buffer_mmapread_fd(buffer *b,int fd);
 
-int buffer_prefetch(buffer *b, unsigned long n);
+int buffer_prefetch(buffer *b,unsigned long n);
 
-int buffer_putnspace(buffer *b, int n);
+int buffer_putnspace(buffer *b,int n);
 
-int buffer_skip_until(buffer *b, const unsigned char *charset, unsigned long int setlen);
+int buffer_skip_until(buffer *b,const char *charset,unsigned long int setlen);
 
-int buffer_truncfile(buffer *b, const char *fn, unsigned char *y, unsigned long ylen);
+int buffer_truncfile(buffer *b,const char *fn,char *y,unsigned long ylen);
+
+void buffer_dump(buffer *out,buffer *b);
+
+int buffer_putc(buffer *b,unsigned char c);
 
 #ifdef __cplusplus
 }

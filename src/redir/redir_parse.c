@@ -36,7 +36,7 @@ int redir_parse(struct parser *p, int rf, int fd)
       /* << is here-doc (3.7.4) */
       case '<':
         rf |= R_HERE;
-        stralloc_catb(&p->sa, &c, 1);
+        stralloc_catb(&p->sa, (const char*)&c, 1);
 
         if(source_next(&c) <= 0)
           return T_EOF;

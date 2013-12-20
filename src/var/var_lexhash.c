@@ -35,7 +35,7 @@ unsigned long var_lexhash(const char *v, VAR_HASH *h)
   VAR_HASH hash;
   register int shift;
   register VAR_HASH value;
-  register const unsigned char *p = v; 
+  register const char *p = v; 
 
   /* begin with the 6 most significant 
      bits, independent of word size */
