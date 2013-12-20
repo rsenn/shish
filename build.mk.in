@@ -47,7 +47,7 @@ makefiles: $(SUBMAKE:%=%/Makefile)
 $(SUBMAKE:%=%/Makefile):
 	@if test ! -f "$@" ; then \
 	  $(ECHO_CONFIG) ; \
-  	(cd "$(top_builddir)" && ./config.status "$(thisdir)$@") > /dev/null ; \
+  	(cd "$(top_builddir)" && ./config.status "$(thisdir)/$@") > /dev/null ; \
   fi
   
 # common recursive targets
@@ -171,20 +171,20 @@ $(ARCHIVE): $(OBJECTS)
 # ---------------------------------------------------------------------------
 Makefile: $(top_builddir)/config.status $(srcdir)/Makefile.in $(top_builddir)/config.mk $(top_builddir)/build.mk
 	@$(ECHO_CONFIG)
-#	echo '@QUIET@cd "$(top_builddir)" && ./config.status "$(thisdir)Makefile" >/dev/null'
-	@QUIET@cd "$(top_builddir)" && ./config.status $(thisdir)Makefile >/dev/null
+#	echo '@QUIET@cd "$(top_builddir)" && ./config.status "$(thisdir)/Makefile" >/dev/null'
+	@QUIET@cd "$(top_builddir)" && ./config.status Makefile >/dev/null
 
 # rule for build.mk
 # ---------------------------------------------------------------------------
 $(top_builddir)/build.mk: $(top_builddir)/config.status $(top_srcdir)/build.mk.in
 	@$(ECHO_CONFIG)
-	@QUIET@cd "$(top_builddir)" && ./config.status "build.mk" >/dev/null
+	@QUIET@cd "$(top_builddir)" && ./config.status build.mk >/dev/null
                                 
 # rule for config.mk
 # ---------------------------------------------------------------------------
 $(top_builddir)/config.mk: $(top_builddir)/config.status $(top_srcdir)/config.mk.in
 	@$(ECHO_CONFIG)
-	@QUIET@cd "$(top_builddir)" && ./config.status "config.mk" >/dev/null
+	@QUIET@cd "$(top_builddir)" && ./config.status config.mk >/dev/null
 
 # rule for config.status
 # ---------------------------------------------------------------------------
@@ -197,7 +197,7 @@ $(top_builddir)/config.status: $(top_srcdir)/configure
 $(CONFIG_H): $(top_builddir)/config.status $(CONFIG_H_IN)
 	@$(ECHO_CONFIG)
 	cd "$(top_builddir)" && \
-  CONFIG_H=$(thisdir)$(CONFIG_H) && \
+  CONFIG_H=$(CONFIG_H) && \
   rm -f $$CONFIG_H && \
   ./config.status $$CONFIG_H >/dev/null
 
