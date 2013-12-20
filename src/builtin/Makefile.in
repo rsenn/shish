@@ -60,8 +60,8 @@ install:
 
 # local build configuration
 # ---------------------------------------------------------------------------
-INCLUDES += -isystem $(top_srcdir)/lib
-INCLUDES += -isystem $(top_builddir)/lib
+INCLUDES += -I$(top_srcdir)/lib
+INCLUDES += -I$(top_builddir)/lib
 INCLUDES += -I$(top_srcdir)/src
 INCLUDES += -I$(top_builddir)/src
 INCLUDES += -I$(top_builddir)
