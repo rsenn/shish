@@ -33,7 +33,7 @@ dep:              makefiles dep-recursive
 RM    = rm -f
 CHMOD = chmod
 
-bootfiles: Makefile config.mk build.mk $(top_builddir)/config.h
+bootfiles: Makefile config.mk build.mk config.h
 
 # local directory configuration
 # ---------------------------------------------------------------------------

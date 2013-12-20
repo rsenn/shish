@@ -197,7 +197,7 @@ $(top_builddir)/config.status: $(top_srcdir)/configure
 $(CONFIG_H): $(top_builddir)/config.status $(CONFIG_H_IN)
 	@$(ECHO_CONFIG)
 	cd "$(top_builddir)" && \
-  CONFIG_H=$(thisdir)/$(CONFIG_H) && \
+  CONFIG_H=$(CONFIG_H) && \
   rm -f $$CONFIG_H && \
   ./config.status $$CONFIG_H >/dev/null
 
