@@ -2814,7 +2814,7 @@ if test "$ac_cv_debug" = "yes"; then
   CFLAGS="`echo $CFLAGS -g -ggdb -O0 -Wall`"
 #  CPPFLAGS="`echo $CPPFLAGS -DDEBUG -Werror -include assert.h`"
 #  CPPFLAGS="`echo $CPPFLAGS -DDEBUG -include assert.h`"
-  CPPFLAGS="`echo $CPPFLAGS -DDEBUG`"
+  CPPFLAGS="`echo $CPPFLAGS -DDEBUG=1`"
   DEBUG="yes"
   $as_echo "$as_me:$LINENO: result: yes" >&5 ; echo -e ${COLOR_YES}yes${NC} >&6
 else

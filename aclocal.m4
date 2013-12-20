@@ -2258,9 +2258,9 @@ CFLAGS=`echo $CFLAGS | sed 's/-O[0-9s]//'`
 # set DEBUG variable
 if test "$ac_cv_debug" = "yes"; then
   CFLAGS="`echo $CFLAGS -g -ggdb -O0 -Wall`"
-#  CPPFLAGS="`echo $CPPFLAGS -DDEBUG -Werror -include assert.h`"
-#  CPPFLAGS="`echo $CPPFLAGS -DDEBUG -include assert.h`"
-  CPPFLAGS="`echo $CPPFLAGS -DDEBUG`"
+#  CPPFLAGS="`echo $CPPFLAGS -DDEBUG=1 -Werror -include assert.h`"
+#  CPPFLAGS="`echo $CPPFLAGS -DDEBUG=1 -include assert.h`"
+  CPPFLAGS="`echo $CPPFLAGS -DDEBUG=1`"
   DEBUG="yes"
   AC_MSG_RESULT([yes])
 else
