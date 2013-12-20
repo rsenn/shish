@@ -1,6 +1,8 @@
 #include "str.h"
 #include "buffer.h"
 
+ssize_t buffer_dummyread();
+
 void buffer_fromstr(buffer *b, char *s, unsigned long len)
 {
   b->x=s;
