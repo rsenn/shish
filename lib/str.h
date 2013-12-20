@@ -51,6 +51,8 @@ int str_start(const char *a,const char *b) __pure__;
 /* convenience shortcut to test for string equality */
 #define str_equal(s,t) (!str_diff((s),(t)))
 
+unsigned long str_copyn(char *out, const char *in, unsigned long n);
+
 #ifdef __cplusplus
 }
 #endif

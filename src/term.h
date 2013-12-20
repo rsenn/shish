@@ -1,8 +1,8 @@
 #ifndef TERM_H
 #define TERM_H
 
-#include <buffer.h>
-#include <stralloc.h>
+#include "buffer.h"
+#include "stralloc.h"
 
 #include "fd.h"
 

@@ -1,4 +1,4 @@
-#include <str.h>
+#include "str.h"
 #include "exec.h"
 
 /* searches hashtable entry for <name>

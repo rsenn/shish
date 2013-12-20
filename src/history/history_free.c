@@ -1,4 +1,4 @@
-#include <shell.h>
+#include "shell.h"
 #include "history.h"
 
 /* clear a history entry

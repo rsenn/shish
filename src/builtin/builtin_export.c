@@ -1,5 +1,5 @@
-#include <shell.h>
-#include <str.h>
+#include "shell.h"
+#include "str.h"
 #include "var.h"
 #include "vartab.h"
 #include "builtin.h"

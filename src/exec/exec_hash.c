@@ -1,5 +1,5 @@
 #include <unistd.h>
-#include <str.h>
+#include "str.h"
 #include "builtin.h"
 #include "exec.h"
 #include "vartab.h"

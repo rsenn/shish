@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <setjmp.h>
-#include <stralloc.h>
+#include "stralloc.h"
 
 #define sh_main main
 

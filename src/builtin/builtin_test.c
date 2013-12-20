@@ -1,11 +1,11 @@
 #include <unistd.h>
 #include <sys/stat.h>
-#include <shell.h>
-#include <str.h>
+#include "shell.h"
+#include "str.h"
 #include "fd.h"
 #include "builtin.h"
 
-#include <fmt.h>
+#include "fmt.h"
 /* test for expression
  * ----------------------------------------------------------------------- */
 int builtin_test(int argc, char **argv)

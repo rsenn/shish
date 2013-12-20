@@ -1,5 +1,5 @@
-#include <shell.h>
-#include <byte.h>
+#include "shell.h"
+#include "byte.h"
 #include "tree.h"
 
 /* allocate a tree node

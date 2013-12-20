@@ -165,6 +165,18 @@ void buffer_fromsa(buffer* b,stralloc* sa);
 
 int stralloc_write(stralloc* sa,const unsigned char *in, unsigned long int len);
 
+int stralloc_catc(stralloc *sa, const unsigned char c);
+
+int stralloc_insertb(stralloc *sa, const unsigned char *s, unsigned long pos, unsigned long n);
+
+void stralloc_move(stralloc *to, stralloc *from);
+
+int stralloc_nul(stralloc *sa);
+
+int stralloc_remove(stralloc *sa, unsigned long pos, unsigned long n);
+
+int stralloc_trunc(stralloc *sa, unsigned long int n);
+
 #ifdef __cplusplus
 }
 #endif

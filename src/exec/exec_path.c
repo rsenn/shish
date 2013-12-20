@@ -1,7 +1,7 @@
 #include <unistd.h>
 #include <limits.h>
-#include <shell.h>
-#include <str.h>
+#include "shell.h"
+#include "str.h"
 #include "exec.h"
 #include "var.h"
 

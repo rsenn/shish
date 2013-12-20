@@ -1,4 +1,4 @@
-#include <shell.h>
+#include "shell.h"
 #include "job.h"
 
 struct job *job_list = NULL;

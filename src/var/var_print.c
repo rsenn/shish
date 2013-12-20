@@ -1,5 +1,5 @@
 #include <assert.h>
-#include <str.h>
+#include "str.h"
 #include "parse.h"
 #include "fd.h"
 #include "var.h"

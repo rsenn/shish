@@ -1,4 +1,4 @@
-#include <byte.h>
+#include "byte.h"
 #include <assert.h>
 #include "vartab.h"
 

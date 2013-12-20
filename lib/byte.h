@@ -43,6 +43,8 @@ void byte_zero(void* out, size_t len);
 
 int byte_equal_notimingattack(const void* a, size_t len,const void* b) __pure__;
 
+void byte_fill(void *out, unsigned long len, int c);
+
 #ifdef __cplusplus
 }
 #endif

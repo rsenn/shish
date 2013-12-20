@@ -1,5 +1,5 @@
 #include <termios.h>
-#include <byte.h>
+#include "byte.h"
 #include "term.h"
 #include "prompt.h"
 

@@ -1,7 +1,7 @@
 #ifndef PROMPT_H
 #define PROMPT_H
 
-#include <stralloc.h>
+#include "stralloc.h"
 
 extern int         prompt_number;
 extern union node *prompt_node;

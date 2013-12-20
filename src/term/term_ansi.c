@@ -1,4 +1,4 @@
-#include <scan.h>
+#include "scan.h"
 #include "term.h"
 #include "tree.h"
 #include "parse.h"

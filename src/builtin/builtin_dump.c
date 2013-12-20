@@ -1,7 +1,7 @@
 #include "debug.h"
 
 #ifdef DEBUG
-#include <shell.h>
+#include "shell.h"
 #include "builtin.h"
 #include "vartab.h"
 #include "fdtable.h"

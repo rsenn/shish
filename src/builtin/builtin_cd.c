@@ -2,9 +2,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-#include <shell.h>
-#include <byte.h>
-#include <str.h>
+#include "shell.h"
+#include "byte.h"
+#include "str.h"
 #include "sh.h"
 #include "fd.h"
 #include "var.h"

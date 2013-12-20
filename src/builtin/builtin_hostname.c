@@ -1,7 +1,7 @@
-#include <shell.h>
+#include "shell.h"
 #include <unistd.h>
-#include <byte.h>
-#include <str.h>
+#include "byte.h"
+#include "str.h"
 #include "builtin.h"
 #include "fd.h"
 #include "sh.h"

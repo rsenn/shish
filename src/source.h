@@ -1,7 +1,7 @@
 #ifndef SOURCE_H
 #define SOURCE_H
 
-#include <buffer.h>
+#include "buffer.h"
 
 struct fd;
 

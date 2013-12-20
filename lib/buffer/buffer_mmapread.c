@@ -1,5 +1,5 @@
-#include <buffer.h>
-#include <mmap.h>
+#include "buffer.h"
+#include "mmap.h"
 
 ssize_t buffer_dummyread() {
   return 0;

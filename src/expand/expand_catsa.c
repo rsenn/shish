@@ -1,4 +1,4 @@
-#include <byte.h>
+#include "byte.h"
 #include "tree.h"
 #include "expand.h"
 
