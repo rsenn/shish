@@ -13,7 +13,7 @@ thisdir      = @thisdir@
 
 # include global make configuration
 # ---------------------------------------------------------------------------
-include $(top_builddir)config.mk
+include $(top_builddir)/config.mk
 
 # redirect to recursive targets
 # ---------------------------------------------------------------------------

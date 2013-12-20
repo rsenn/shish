@@ -1,6 +1,7 @@
 #include "history.h"
 #include "source.h"
 #include "term.h"
+#include <assert.h>
   
 /* cleanup source stuff
  * ----------------------------------------------------------------------- */

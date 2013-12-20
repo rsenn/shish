@@ -2,6 +2,7 @@
 #include "vartab.h"
 #include "var.h"
 #include "debug.h"
+#include <assert.h>
 
 void vartab_add(struct vartab *vartab, struct var *var, struct search *context)
 {  

@@ -1,4 +1,5 @@
 #include "fdstack.h"
+#include <assert.h>
 
 /* discards current io context and gets the parent
  * ----------------------------------------------------------------------- */

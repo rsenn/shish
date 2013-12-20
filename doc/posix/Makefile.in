@@ -12,7 +12,7 @@ top_builddir = @top_builddir@
 
 # include global make configuration
 # ---------------------------------------------------------------------------
-include $(top_builddir)config.mk
+include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------

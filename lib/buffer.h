@@ -1,13 +1,18 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
+#include <sys/types.h>
+
+/*typedef ssize_t (buffer_method_t)();
+typedef buffer_method_t *buffer_method_ptr_t;
+*/
 typedef struct buffer {
   unsigned char *x;	/* actual buffer space */
   unsigned long int p;	/* current position */
   unsigned long int n;	/* current size of string in buffer */
   unsigned long int a;	/* allocated buffer size */
   int fd;		/* passed as first argument to op */
-  int (*op)();		/* use read(2) or write(2) */
+  ssize_t (*op)();		/* use read(2) or write(2) */
   enum { NOTHING, FREE, MUNMAP } todo;
 } buffer;
 
@@ -17,13 +22,16 @@ typedef struct buffer {
 #define BUFFER_INSIZE 8192
 #define BUFFER_OUTSIZE 8192
 
-void buffer_init(buffer* b,int (*op)(),int fd,unsigned char* y,unsigned long int ylen);
-void buffer_init_free(buffer* b,int (*op)(),int fd,unsigned char* y,unsigned long int ylen);
+void buffer_init(buffer* b,ssize_t (*op)(),int fd,unsigned char* y,unsigned long int ylen);
+void buffer_init_free(buffer* b,ssize_t (*op)(),int fd,unsigned char* y,unsigned long int ylen);
 
-void buffer_default(buffer *b, int (*op)());
+void buffer_default(buffer *b, ssize_t (*op)());
 
-/* lala */ int buffer_dummyreadmmap();
-int buffer_dummyread(int fd,char* buf,unsigned long int len);
+/* lala */ ssize_t buffer_dummyreadmmap();
+/* make a buffer from a stralloc.
+ * Do not change the stralloc after this! */
+ssize_t buffer_dummyread(int fd,char* buf,unsigned long int len);
+  
   
   
 int buffer_mmapread(buffer* b,const char* filename);
@@ -153,10 +161,6 @@ int buffer_get_token_sa_pred(buffer* b,stralloc* sa,sa_predicate p);
 /* same, but clear sa first */
 int buffer_get_new_token_sa_pred(buffer* b,stralloc* sa,sa_predicate p);
 
-/* make a buffer from a stralloc.
- * Do not change the stralloc after this! */
-int buffer_dummyread(int fd,char* buf,unsigned long int len);
-  
 void buffer_fromsa(buffer* b,stralloc* sa);
 #endif
 

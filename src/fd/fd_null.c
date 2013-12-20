@@ -1,12 +1,12 @@
 #include <unistd.h>
 #include "fd.h"
 
-static int fd_nullread(int fd, char *b, unsigned long n)
+static ssize_t fd_nullread(int fd, char *b, unsigned long n)
 {
   return 0;
 }
 
-static int fd_nullwrite(int fd, char *b, unsigned long n)
+static ssize_t fd_nullwrite(int fd, char *b, unsigned long n)
 {
   return n;
 }

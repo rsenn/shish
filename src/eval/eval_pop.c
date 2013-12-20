@@ -2,6 +2,7 @@
 #include "sh.h"
 #include "fdstack.h"
 #include "vartab.h"
+#include <assert.h>
 
 int eval_pop(struct eval *e)
 {

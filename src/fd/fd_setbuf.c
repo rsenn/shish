@@ -1,4 +1,5 @@
 #include "fd.h"
+#include <assert.h>
 
 /* set buffer space for the (fd). the supplied buffer is treated as if 
  * it was from alloca(), means that it will get invalid when leaving

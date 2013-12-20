@@ -1,7 +1,7 @@
 #ifndef FD_H
 #define FD_H
 
-#define __USE_LARGEFILE64
+//#define __USE_LARGEFILE64
 #include <fcntl.h>
 
 #include <shell.h>
@@ -29,6 +29,10 @@
 #endif
 #ifndef STDERR_FILENO 
 #define STDERR_FILENO  2
+#endif
+
+#ifndef O_LARGEFILE
+#define O_LARGEFILE 0
 #endif
 
 struct fdtable;

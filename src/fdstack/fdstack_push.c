@@ -1,4 +1,5 @@
 #include "fdstack.h"
+#include <assert.h>
 
 /* pushes a copy of the current io context to the fdtable
  * ----------------------------------------------------------------------- */

@@ -1,7 +1,7 @@
 #include "byte.h"
 #include "buffer.h"
 
-extern int buffer_stubborn(int (*op)(),int fd,const unsigned char* buf, unsigned long int len);
+extern int buffer_stubborn(ssize_t (*op)(),int fd,const unsigned char* buf, unsigned long int len);
 
 int buffer_put(buffer* b,const unsigned char* buf,unsigned long int len) {
   if (len>b->a-b->p) {	/* doesn't fit */

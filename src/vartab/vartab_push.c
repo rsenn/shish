@@ -1,4 +1,5 @@
 #include <byte.h>
+#include <assert.h>
 #include "vartab.h"
 
 /* push variable table to the stack

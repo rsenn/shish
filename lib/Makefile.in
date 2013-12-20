@@ -86,4 +86,4 @@ MAINTAINERCLEANFILES = shish shish-$(VERSION)
 
 # include global make targets
 # ---------------------------------------------------------------------------
-include $(top_builddir)build.mk
+include $(top_builddir)/build.mk

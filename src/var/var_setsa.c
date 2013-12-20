@@ -1,4 +1,5 @@
 #include "var.h"
+#include <assert.h>
 
 /* set a variable from a stralloc in the format: name=word
  * 
