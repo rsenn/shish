@@ -47,7 +47,8 @@ makefiles: $(SUBMAKE:%=%/Makefile)
 $(SUBMAKE:%=%/Makefile):
 	@if test ! -f "$@" ; then \
 	  $(ECHO_CONFIG) ; \
-  	(cd "$(top_builddir)" && ./config.status "$(thisdir)/$@") > /dev/null ; \
+		F="$(thisdir)/$@"; \
+  	(cd "$(top_builddir)" && ./config.status $${F#./}) > /dev/null ; \
   fi
   
 # common recursive targets
