@@ -92,7 +92,7 @@ POSTADD =
 
 # arguments for the programs
 # ---------------------------------------------------------------------------
-DEFS            = @DEFS@
+DEFS            = @DEFS@ -DHAVE_CONFIG_H=1
 LIBS            = @LIBS@
 CFLAGS          = @CFLAGS@
 LDFLAGS         = @LDFLAGS@

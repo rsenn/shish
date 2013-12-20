@@ -591,7 +591,6 @@ INSTALL
 RANLIB
 AR
 AR_NOARG
-DIETLIBC
 OBJEXT
 EXEEXT
 ac_ct_CC
@@ -599,6 +598,7 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+DIETLIBC
 DIET
 CONFIGURE_ARGS
 ac_configure_args
@@ -2019,246 +2019,89 @@ ac_config_headers="$ac_config_headers config.h"
 
 # check for programs needed to build shish
 # ---------------------------------------------------------------------------
+DIETLIBC="no"
+DIETDIRS="/opt/diet /usr/diet"
+DIETDIRS="$DIETDIRS `echo $PATH | sed 's,:,\n,g' | sed -e 's,/s*bin,,g' | uniq`"
+
+
+# Check whether --with-dietlibc was given.
+if test "${with_dietlibc+set}" = set; then :
+  withval=$with_dietlibc; case $withval in
+  yes)
+    DIETLIBC="yes"
+    ;;
+  no)
+    DIETLIBC="no"
+    ;;
+  *)
+    DIETLIBC="yes"
+    DIETDIRS="$withval $DIETDIRS"
+    ;;
+  esac
+fi
+
+ DIETLIBS="$DIETDIRS /"
+ if test "$DIETLIBC" = "yes"
+ then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dietlibc" >&5
+$as_echo_n "checking for dietlibc... " >&6; }
+   if test ! -x "$DIET"
+   then
+     for dir in $DIETDIRS
+     do
+       if test -x "$dir/bin/diet"
+       then
+         DIETVERSION="`$dir/bin/diet 2>&1 | sed 's,[a-z ]*-,,;;s,^.*[:-].*$,,'`"
+
+         if test -n "$DIETVERSION"
+         then
+           DIET="$dir/bin/diet -Os"
+           DIETDIR="$dir"
+           break
+         fi
+       fi
+     done
+   else
+     DIETVERSION="`$dir/bin/diet 2>&1 | sed 's,[a-z ]*-,,;;s,^.*[:-].*$,,'`"
+   fi
+
+   if test -z "$DIETVERSION"
+   then
+     DIET=""
+     $as_echo "$as_me:$LINENO: result: no" >&5 ; echo -e ${COLOR_NO}no${NC} >&6
+   else
+     DIET=""
+
+     LIBDIR="$DIETDIR/lib"
+
+     for x in $DIETLIBS
+     do
+       DIETLIB="`ls -d $x/lib-* $x/lib* 2>/dev/null | head -n1`"
+
+       if test -f "$DIETLIB/start.o"
+       then
+         LIBDIR="$DIETLIB"
+       fi
+     done
+
+     CPPFLAGS="$CPPFLAGS -nostdinc -D__dietlibc__ -idirafter $DIETDIR/include"
+     CFLAGS="$CFLAGS"
+     LDFLAGS="$LDFLAGS -nostdlib -static -L$LIBDIR $LIBDIR/start.o"
+     LIBS="$LIBS -lc -lgcc"
+     $as_echo "$as_me:$LINENO: result: $DIETVERSION" >&5 ; echo -e ${COLOR_FILE}$DIETVERSION${NC} >&6
+   fi
+ fi
+
+
+
+
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}gcc", so it can be a program name with args.
-set dummy ${ac_tool_prefix}gcc; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_CC+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_CC="${ac_tool_prefix}gcc"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  $as_echo "$as_me:$LINENO: result: $CC" >&5 ; echo -e ${COLOR_PROG}$CC${NC} >&6
-else
-  $as_echo "$as_me:$LINENO: result: no" >&5 ; echo -e ${COLOR_NO}no${NC} >&6
-fi
-
-
-fi
-if test -z "$ac_cv_prog_CC"; then
-  ac_ct_CC=$CC
-  # Extract the first word of "gcc", so it can be a program name with args.
-set dummy gcc; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_ac_ct_CC+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_CC"; then
-  ac_cv_prog_ac_ct_CC="$ac_ct_CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_CC="gcc"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_CC=$ac_cv_prog_ac_ct_CC
-if test -n "$ac_ct_CC"; then
-  $as_echo "$as_me:$LINENO: result: $ac_ct_CC" >&5 ; echo -e ${COLOR_PROG}$ac_ct_CC${NC} >&6
-else
-  $as_echo "$as_me:$LINENO: result: no" >&5 ; echo -e ${COLOR_NO}no${NC} >&6
-fi
-
-  if test "x$ac_ct_CC" = x; then
-    CC=""
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    CC=$ac_ct_CC
-  fi
-else
-  CC="$ac_cv_prog_CC"
-fi
-
-if test -z "$CC"; then
-  if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}cc", so it can be a program name with args.
-set dummy ${ac_tool_prefix}cc; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_CC+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_CC="${ac_tool_prefix}cc"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  $as_echo "$as_me:$LINENO: result: $CC" >&5 ; echo -e ${COLOR_PROG}$CC${NC} >&6
-else
-  $as_echo "$as_me:$LINENO: result: no" >&5 ; echo -e ${COLOR_NO}no${NC} >&6
-fi
-
-
-fi
-if test -z "$ac_cv_prog_CC"; then
-  ac_ct_CC=$CC
-  # Extract the first word of "cc", so it can be a program name with args.
-set dummy cc; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_ac_ct_CC+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_CC"; then
-  ac_cv_prog_ac_ct_CC="$ac_ct_CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_CC="cc"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_CC=$ac_cv_prog_ac_ct_CC
-if test -n "$ac_ct_CC"; then
-  $as_echo "$as_me:$LINENO: result: $ac_ct_CC" >&5 ; echo -e ${COLOR_PROG}$ac_ct_CC${NC} >&6
-else
-  $as_echo "$as_me:$LINENO: result: no" >&5 ; echo -e ${COLOR_NO}no${NC} >&6
-fi
-
-  if test "x$ac_ct_CC" = x; then
-    CC=""
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    CC=$ac_ct_CC
-  fi
-else
-  CC="$ac_cv_prog_CC"
-fi
-
-fi
-if test -z "$CC"; then
-  # Extract the first word of "cc", so it can be a program name with args.
-set dummy cc; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_CC+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-  ac_prog_rejected=no
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    if test "$as_dir/$ac_word$ac_exec_ext" = "/usr/ucb/cc"; then
-       ac_prog_rejected=yes
-       continue
-     fi
-    ac_cv_prog_CC="cc"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-if test $ac_prog_rejected = yes; then
-  # We found a bogon in the path, so make sure we never use it.
-  set dummy $ac_cv_prog_CC
-  shift
-  if test $# != 0; then
-    # We chose a different compiler from the bogus one.
-    # However, it has the same basename, so the bogon will be chosen
-    # first if we set CC to just the basename; use the full file name.
-    shift
-    ac_cv_prog_CC="$as_dir/$ac_word${1+' '}$@"
-  fi
-fi
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  $as_echo "$as_me:$LINENO: result: $CC" >&5 ; echo -e ${COLOR_PROG}$CC${NC} >&6
-else
-  $as_echo "$as_me:$LINENO: result: no" >&5 ; echo -e ${COLOR_NO}no${NC} >&6
-fi
-
-
-fi
-if test -z "$CC"; then
-  if test -n "$ac_tool_prefix"; then
-  for ac_prog in cl
+  for ac_prog in cc gcc
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
 set dummy $ac_tool_prefix$ac_prog; ac_word=$2
@@ -2300,7 +2143,7 @@ fi
 fi
 if test -z "$CC"; then
   ac_ct_CC=$CC
-  for ac_prog in cl
+  for ac_prog in cc gcc
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -2351,8 +2194,6 @@ ac_tool_warned=yes ;;
 esac
     CC=$ac_ct_CC
   fi
-fi
-
 fi
 
 test -z "$CC" && { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
@@ -2566,213 +2407,6 @@ fi
 $as_echo "$as_me:$LINENO: result: $ac_cv_objext" >&5 ; echo -e ${COLOR_FILE}$ac_cv_objext${NC} >&6
 OBJEXT=$ac_cv_objext
 ac_objext=$OBJEXT
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-
-DIETLIBC="no"
-DIETDIRS="/opt/diet /usr/diet"
-DIETDIRS="$DIETDIRS `echo $PATH | sed 's,:,\n,g' | sed -e 's,/s*bin,,g' | uniq`"
-
-
-# Check whether --with-dietlibc was given.
-if test "${with_dietlibc+set}" = set; then :
-  withval=$with_dietlibc; case $withval in
-  yes)
-    DIETLIBC="yes"
-    ;;
-  no)
-    DIETLIBC="no"
-    ;;
-  *)
-    DIETLIBC="yes"
-    DIETDIRS="$withval $DIETDIRS"
-    ;;
-  esac
-fi
-
- DIETLIBS="$DIETDIRS /"
- if test "$DIETLIBC" = "yes"
- then
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dietlibc" >&5
-$as_echo_n "checking for dietlibc... " >&6; }
-   if test ! -x "$DIET"
-   then
-     for dir in $DIETDIRS
-     do
-       if test -x "$dir/bin/diet"
-       then
-         DIETVERSION="`$dir/bin/diet 2>&1 | sed 's,[a-z ]*-,,;;s,^.*[:-].*$,,'`"
-
-         if test -n "$DIETVERSION"
-         then
-           DIET="$dir/bin/diet -Os"
-           DIETDIR="$dir"
-           break
-         fi
-       fi
-     done
-   else
-     DIETVERSION="`$dir/bin/diet 2>&1 | sed 's,[a-z ]*-,,;;s,^.*[:-].*$,,'`"
-   fi
-
-   if test -z "$DIETVERSION"
-   then
-     DIET=""
-     $as_echo "$as_me:$LINENO: result: no" >&5 ; echo -e ${COLOR_NO}no${NC} >&6
-   else
-     DIET=""
-
-     LIBDIR="$DIETDIR/lib"
-
-     for x in $DIETLIBS
-     do
-       DIETLIB="`ls -d $x/lib-* $x/lib* 2>/dev/null | head -n1`"
-
-       if test -f "$DIETLIB/start.o"
-       then
-         LIBDIR="$DIETLIB"
-       fi
-     done
-
-     CPPFLAGS="$CPPFLAGS -nostdinc -D__dietlibc__ -idirafter $DIETDIR/include"
-     CFLAGS="$CFLAGS"
-     LDFLAGS="$LDFLAGS -nostdlib -static -L$LIBDIR $LIBDIR/start.o"
-     LIBS="$LIBS -lc -lgcc"
-     $as_echo "$as_me:$LINENO: result: $DIETVERSION" >&5 ; echo -e ${COLOR_FILE}$DIETVERSION${NC} >&6
-   fi
- fi
-
-
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-if test -n "$ac_tool_prefix"; then
-  for ac_prog in cc gcc
-  do
-    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
-set dummy $ac_tool_prefix$ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_CC+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_CC="$ac_tool_prefix$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  $as_echo "$as_me:$LINENO: result: $CC" >&5 ; echo -e ${COLOR_PROG}$CC${NC} >&6
-else
-  $as_echo "$as_me:$LINENO: result: no" >&5 ; echo -e ${COLOR_NO}no${NC} >&6
-fi
-
-
-    test -n "$CC" && break
-  done
-fi
-if test -z "$CC"; then
-  ac_ct_CC=$CC
-  for ac_prog in cc gcc
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_ac_ct_CC+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_CC"; then
-  ac_cv_prog_ac_ct_CC="$ac_ct_CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_CC="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_CC=$ac_cv_prog_ac_ct_CC
-if test -n "$ac_ct_CC"; then
-  $as_echo "$as_me:$LINENO: result: $ac_ct_CC" >&5 ; echo -e ${COLOR_PROG}$ac_ct_CC${NC} >&6
-else
-  $as_echo "$as_me:$LINENO: result: no" >&5 ; echo -e ${COLOR_NO}no${NC} >&6
-fi
-
-
-  test -n "$ac_ct_CC" && break
-done
-
-  if test "x$ac_ct_CC" = x; then
-    CC=""
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    CC=$ac_ct_CC
-  fi
-fi
-
-test -z "$CC" && { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "no acceptable C compiler found in \$PATH
-See \`config.log' for more details" "$LINENO" 5; }
-CC="$DIET $CC"
-# Provide some information about the compiler.
-echo "$as_me:$LINENO:" \
-     "checking for C compiler version" >&5
-ac_compiler=`set X $ac_compile; echo $2`
-{ { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compiler --version </dev/null >&5\""; } >&5
-  (eval $ac_compiler --version </dev/null >&5) 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }
-{ { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compiler -v </dev/null >&5\""; } >&5
-  (eval $ac_compiler -v </dev/null >&5) 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }
-{ { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compiler -V </dev/null >&5\""; } >&5
-  (eval $ac_compiler -V </dev/null >&5) 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }
-
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -3052,6 +2686,7 @@ fi
 
 # check for operating system features
 # ---------------------------------------------------------------------------
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inline" >&5
 $as_echo_n "checking for inline... " >&6; }
 if ${ac_cv_c_inline+:} false; then :
