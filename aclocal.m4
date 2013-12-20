@@ -1019,13 +1019,13 @@ AC_ARG_WITH([dietlibc],
    fi
  fi
  
- AC_MSG_CHECKING([wheter compiler supports -falign])
- saved_CFLAGS="$CFLAGS"
- CFLAGS="$CFLAGS -mpreferred-stack-boundary=4 -falign-functions=4 -falign-jumps=1 -falign-loops=1"
- AC_TRY_COMPILE([], [], [
- AC_MSG_RESULT([yes])], [
- AC_MSG_RESULT([no])
- CFLAGS="$saved_CFLAGS"])
+dnl  AC_MSG_CHECKING([wheter compiler supports -falign])
+dnl  saved_CFLAGS="$CFLAGS"
+dnl  CFLAGS="$CFLAGS -mpreferred-stack-boundary=4 -falign-functions=4 -falign-jumps=1 -falign-loops=1"
+dnl  AC_TRY_COMPILE([], [], [
+dnl  AC_MSG_RESULT([yes])], [
+dnl  AC_MSG_RESULT([no])
+dnl  CFLAGS="$saved_CFLAGS"])
  
 AC_SUBST(DIETLIBC)
 AC_SUBST(DIET)])
@@ -1229,7 +1229,7 @@ then
   if test -d "$srcdir/libsgui"
   then
     AC_CONFIG_SUBDIRS([libsgui])
-    SGUI_CFLAGS="-isystem \$(top_srcdir)/libsgui/include -isystem \$(top_builddir)/libsgui/include"
+    SGUI_CFLAGS="-I\$(top_srcdir)/libsgui/include -I\$(top_builddir)/libsgui/include"
     SGUI_LIBS="\$(top_builddir)/libsgui/src/libsgui.a"
     SGUI="libsgui"
   else
@@ -1283,7 +1283,7 @@ then
   then
     AC_CONFIG_SUBDIRS(libchaos)
     SUBDIRS="libchaos $SUBDIRS"
-    CHAOS_CFLAGS="-isystem \$(top_srcdir)/libchaos/include -isystem \$(top_builddir)/libchaos/include"
+    CHAOS_CFLAGS="-I\$(top_srcdir)/libchaos/include -I\$(top_builddir)/libchaos/include"
     CHAOS_LIBS="../libchaos/src/libchaos.a -ldl -lm"
   else
     AC_MSG_ERROR([No shipped and no installed libchaos!])
