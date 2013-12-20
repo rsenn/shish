@@ -2,6 +2,7 @@
 
 #ifdef DEBUG
 #include <errno.h>
+#include <assert.h>
 #include "sh.h"
 
 void *debug_realloc(const char *file, unsigned int line, void *ptr, unsigned long n)
