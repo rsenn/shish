@@ -4,6 +4,10 @@
 #include <sys/types.h>
 #include <signal.h>
 
+#if !defined(HAVE_SIGSET_T) && defined(__MINGW32__) && !defined(__CYGWIN__)
+typedef unsigned long sigset_t;
+#endif
+
 union node;
 
 struct proc

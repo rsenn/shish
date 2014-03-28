@@ -1,5 +1,7 @@
 #include <shell.h>
+#ifdef HAVE_SYS_MMAN_H
 #include <sys/mman.h>
+#endif
 #include "buffer.h"
 
 void buffer_free(buffer *b)

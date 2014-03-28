@@ -32,6 +32,12 @@ int shell_canonicalize(const char *path, stralloc *sa, int symbolic)
   struct stat st;
   int ret = 1;
   char buf[PATH_MAX + 1];
+  int (*stat_fn)() = stat;
+  
+#if defined(HAVE_LSTAT ) && !defined(__MINGW32__)
+  if(symbolic)
+   stat_fn = lstat;
+#endif
 
 start:
   /* loop once for every /path/component/
@@ -74,7 +80,7 @@ start:
     path += n;
 
     /* now stat() the thing to verify it */
-    if((symbolic ? stat : lstat)(sa->s, &st) == -1)
+    if(stat_fn(sa->s, &st) == -1)
       return 0;
 
     /* is it a symbolic link? */

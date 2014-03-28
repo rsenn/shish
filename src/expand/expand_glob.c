@@ -1,5 +1,7 @@
 #include <stdlib.h>
+#if !defined(__MINGW32__)
 #include <glob.h>
+#endif
 #include "var.h"
 #include "tree.h"
 #include "expand.h"

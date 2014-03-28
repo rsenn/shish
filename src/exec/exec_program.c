@@ -1,6 +1,8 @@
 #include <unistd.h>
 #include <signal.h>
+#if defined(HAVE_SYS_WAIT_H) && !defined(__MINGW32__)
 #include <sys/wait.h>
+#endif
 #include "tree.h"
 #include "parse.h"
 #include "fdstack.h"
@@ -9,7 +11,12 @@
 #include "exec.h"
 #include "job.h"
 #include "var.h"
+#include "sig.h"
 #include "sh.h"
+
+#ifndef WEXITSTATUS
+#define WEXITSTATUS(ret) ((ret)&0x7f)
+#endif
 
 /* execute another program, possibly searching for it first
  * 
@@ -40,12 +47,18 @@ int exec_program(char *path, char **argv, int exec, union node *redir)
 
     /* block child and interrupt signal, so we won't terminate ourselves
        when the child does */
+    /*
     sigemptyset(&nset);
     sigaddset(&nset, SIGINT);
+
+#ifdef SIGCHLD
     sigaddset(&nset, SIGCHLD);
+#endif
 //    sigemptyset(&oset);
     sigprocmask(SIG_BLOCK, &nset, &oset);
-    
+*/
+    sig_block();
+
     /* in the parent wait for the child to finish and then return 
        or exit, according to the 'exec' argument */
     if((pid = fork()))
@@ -62,7 +75,9 @@ int exec_program(char *path, char **argv, int exec, union node *redir)
 
       ret = WEXITSTATUS(status);
 
+#ifndef __MINGW32__
       sigprocmask(SIG_SETMASK, &oset, NULL);
+#endif
       
       /* exit if 'exec' is set, otherwise return */
       if(exec) sh_exit(ret);

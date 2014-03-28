@@ -5,6 +5,10 @@
 #include "config.h"
 #endif
 
+#if !defined(HAVE_UID_T) && defined(__MINGW32__)  && !defined(__CYGWIN__)
+typedef int uid_t;
+#endif
+
 #include <sys/types.h>
 #include <stdlib.h>
 #include <setjmp.h>

@@ -1,7 +1,9 @@
 #include <buffer.h>
 #include <shell.h>
 #include <unistd.h>
+#ifdef HAVE_SYS_MMAN_H
 #include <sys/mman.h>
+#endif
 
 void buffer_close(buffer* b) {
   if (b->fd != -1) close(b->fd);
