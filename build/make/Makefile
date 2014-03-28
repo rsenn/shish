@@ -18,10 +18,6 @@ PROGRAM = shish$(EXEEXT)
 
 OBJDIR = .
 
-VPATH = $(OBJDIR)
-
-vpath $(OBJDIR)
-
 all: $(PROGRAM)
 
 $(PROGRAM): $(OBJECTS)
@@ -31,4 +27,5 @@ $(PROGRAM): $(OBJECTS)
 %.o: %.c
 	$(CC) $(CFLAGS) $(DEFS) $(CPPFLAGS) -c -o $@ $<
 
-
+clean:
+	$(RM) $(OBJECTS)

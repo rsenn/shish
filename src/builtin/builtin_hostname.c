@@ -37,12 +37,14 @@ int builtin_hostname(int argc, char **argv)
       return 0;
     
     /* set the supplied hostname */
+#if !defined(__CYGWIN__) && !defined(__MINGW32__)
     if(sethostname(argv[shell_optind], n))
     {
       /* report any error */
       builtin_error(argv, "sethostname");
       return 1;
     }
+#endif
     
     /* on success update internal hostname */
     stralloc_copyb(&sh_hostname, argv[shell_optind], n);
