@@ -102,3 +102,4 @@ src/term/Makefile
 src/tree/Makefile
 src/var/Makefile
 src/vartab/Makefile])
+AC_OUTPUT
