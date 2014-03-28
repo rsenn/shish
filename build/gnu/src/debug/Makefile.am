@@ -2,3 +2,5 @@ INCLUDES = -I$(top_builddir) -I$(top_srcdir)/../.. -I$(top_srcdir)/../../lib -I$
 
 noinst_LIBRARIES = libdebug.a
 libdebug_a_SOURCES = $(top_srcdir)/../../src/debug/debug_alloc.c $(top_srcdir)/../../src/debug/debug_begin.c $(top_srcdir)/../../src/debug/debug_char.c $(top_srcdir)/../../src/debug/debug_end.c $(top_srcdir)/../../src/debug/debug_error.c $(top_srcdir)/../../src/debug/debug_free.c $(top_srcdir)/../../src/debug/debug_list.c $(top_srcdir)/../../src/debug/debug_memory.c $(top_srcdir)/../../src/debug/debug_node.c $(top_srcdir)/../../src/debug/debug_ptr.c $(top_srcdir)/../../src/debug/debug_realloc.c $(top_srcdir)/../../src/debug/debug_redir.c $(top_srcdir)/../../src/debug/debug_space.c $(top_srcdir)/../../src/debug/debug_str.c $(top_srcdir)/../../src/debug/debug_stralloc.c $(top_srcdir)/../../src/debug/debug_sublist.c $(top_srcdir)/../../src/debug/debug_subnode.c $(top_srcdir)/../../src/debug/debug_subst.c $(top_srcdir)/../../src/debug/debug_ulong.c $(top_srcdir)/../../src/debug/debug_unquoted.c
+
+MAINTAINERCLEANFILES = Makefile.in
