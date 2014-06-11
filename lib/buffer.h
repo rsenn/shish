@@ -27,7 +27,6 @@ void buffer_init_free(buffer* b,ssize_t (*op)(),int fd,unsigned char* y,unsigned
 
 void buffer_default(buffer *b, ssize_t (*op)());
 
-/* lala */ ssize_t buffer_dummyreadmmap();
 /* make a buffer from a stralloc.
  * Do not change the stralloc after this! */
 ssize_t buffer_dummyread(int fd,char* buf,unsigned long int len);
