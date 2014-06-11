@@ -1,12 +1,11 @@
 #ifndef UINT32_H
 #define UINT32_H
 
-typedef unsigned int uint32;
-typedef   signed int  int32;
+#include <inttypes.h>
 
 
-/* mask rotation count */
-#define uint32rc(c) ((uint32)(c) & 31)
+typedef uint32_t uint32;
+typedef int32_t int32;
 
 
 /* bit rotating macros */

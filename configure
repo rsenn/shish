@@ -3289,6 +3289,29 @@ _ACEOF
 
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for alloca" >&5
+$as_echo_n "checking for alloca... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <alloca.h>
+main() {
+  char* c=alloca(23);
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  $as_echo "$as_me:$LINENO: result: yes" >&5 ; echo ${COLOR_YES}yes${NC} >&6
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_ALLOCA 1
+_ACEOF
+
+else
+  $as_echo "$as_me:$LINENO: result: no" >&5 ; echo ${COLOR_NO}no${NC} >&6
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 # set debugging stuff after compiler test (-Werror could fuck it up)
 # ---------------------------------------------------------------------------

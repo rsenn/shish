@@ -26,6 +26,7 @@ int sh_main(int argc, char **argv, char **envp)
   struct fd *fd;
   struct source src;
   char *cmds = NULL;
+  struct var *envvars;
 
   fd_exp = STDERR_FILENO + 1;
   
@@ -55,10 +56,20 @@ int sh_main(int argc, char **argv, char **envp)
   shell_init(fd_err->w, sh_name);
   
   /* import environment variables to the root vartab */
+  for(c = 0; envp[c]; c++) 
+    ;
+  
+#ifdef HAVE_ALLOCA
+  envvars = alloca(sizeof(struct var)*c);
+#else
+#warning no alloca
+  envvars = malloc(sizeof(struct var)*c);
+#endif
+  
   for(c = 0; envp[c]; c++)
   {
     struct var *var;
-    var = var_import(envp[c], V_EXPORT, alloca(sizeof(struct var)));
+    var = var_import(envp[c], V_EXPORT, &envvars[c]);
     
     /* use imported vars to seed the prng */
     uint32_seed(var->sa.s, var->sa.len);
