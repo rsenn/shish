@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <byte.h>
 #include <str.h>
+#include <errno.h>
 #include "builtin.h"
 #include "fd.h"
 #include "sh.h"
@@ -35,9 +36,13 @@ int builtin_hostname(int argc, char **argv)
     if(!force && n == sh_hostname.len && 
        !byte_diff(sh_hostname.s, n, argv[shell_optind]))
       return 0;
-    
+      
+#ifdef HAVE_SETHOSTNAME    
     /* set the supplied hostname */
     if(sethostname(argv[shell_optind], n))
+#else
+    errno = ENOSYS;
+#endif
     {
       /* report any error */
       builtin_error(argv, "sethostname");

@@ -3155,17 +3155,26 @@ main() {
 
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-  $as_echo "$as_me:$LINENO: result: yes" >&5 ; echo -e ${COLOR_YES}yes${NC} >&6
+  $as_echo "$as_me:$LINENO: result: yes" >&5 ; echo ${COLOR_YES}yes${NC} >&6
 
 cat >>confdefs.h <<_ACEOF
 #define HAVE_ALLOCA 1
 _ACEOF
 
 else
-  $as_echo "$as_me:$LINENO: result: no" >&5 ; echo -e ${COLOR_NO}no${NC} >&6
+  $as_echo "$as_me:$LINENO: result: no" >&5 ; echo ${COLOR_NO}no${NC} >&6
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
+
+ac_fn_c_check_func "$LINENO" "sethostname" "ac_cv_func_sethostname"
+if test "x$ac_cv_func_sethostname" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_SETHOSTNAME 1
+_ACEOF
+
+fi
 
 
 # set debugging stuff after compiler test (-Werror could fuck it up)
