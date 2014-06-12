@@ -3,6 +3,10 @@
 #include "shell.h"
 #include "str.h"
 
+#ifdef __MINGW32__
+#include <winsock2.h>
+#endif
+
 char *shell_gethostname(stralloc *sa)
 {
   unsigned long n = 0;

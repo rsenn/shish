@@ -27,6 +27,10 @@ int builtin_exec(int argc, char **argv)
     }
   }
   
+  // TODO
+  (void)dash;
+  (void)nullenv;
+  
   /* no arguments? return now! */
   if(argv[shell_optind] == NULL)
     return 0;

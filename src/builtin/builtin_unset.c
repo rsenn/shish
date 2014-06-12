@@ -23,6 +23,10 @@ int builtin_unset(int argc, char **argv)
     }
   }
   
+  // TODO:
+  (void)fun;
+  (void)var;
+  
   argp = &argv[shell_optind];
 
   /* unset each argument */

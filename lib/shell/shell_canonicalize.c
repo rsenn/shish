@@ -38,9 +38,11 @@ int shell_canonicalize(const char *path, stralloc *sa, int symbolic)
   unsigned long n;
   struct stat st;
   int ret = 1;
+#ifdef HAVE_LSTAT
   char buf[PATH_MAX + 1];
 
 start:
+#endif
   /* loop once for every /path/component/
      we canonicalize absolute paths, so we must always have a '/' here */
   while(*path)

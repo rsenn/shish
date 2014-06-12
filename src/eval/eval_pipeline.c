@@ -87,6 +87,6 @@ int eval_pipeline(struct eval *e, struct npipe *npipe)
 
 /*  if(job)
     shell_free(job);*/
-  
-  return WEXITSTATUS(status);
+ 
+	return WEXITSTATUS(status);
 }

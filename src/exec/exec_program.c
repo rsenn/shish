@@ -1,6 +1,5 @@
 #include <unistd.h>
 #include <signal.h>
-#include <sys/wait.h>
 #include "tree.h"
 #include "parse.h"
 #include "fdstack.h"
