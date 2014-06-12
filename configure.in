@@ -55,6 +55,8 @@ dnl AC_SCOPE_ID
 dnl AC_CHECK_N2I
 AC_CHECK_FUNC([sethostname], 
 	AC_DEFINE_UNQUOTED([HAVE_SETHOSTNAME],[1],[Define this if you have the sethostname[()] function]))
+AC_CHECK_FUNC([sys_siglist], 
+	AC_DEFINE_UNQUOTED([HAVE_SYS_SIGLIST],[1],[Define this if you have the sys_siglist[[]] table]))
 AC_FUNC_ALLOCA
 
 # set debugging stuff after compiler test (-Werror could fuck it up)

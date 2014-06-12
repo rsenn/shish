@@ -46,7 +46,7 @@ int stralloc_readyplus(stralloc* sa,size_t len);
 /* stralloc_copyb copies the string buf[0], buf[1], ..., buf[len-1] into
  * sa, allocating space if necessary, and returns 1. If it runs out of
  * memory, stralloc_copyb leaves sa alone and returns 0. */
-int stralloc_copyb(stralloc* sa,const char* buf,size_t len);
+int stralloc_copyb(stralloc* sa,const char* buf,unsigned long int len);
 
 /* stralloc_copys copies a \0-terminated string from buf into sa,
  * without the \0. It is the same as
@@ -62,7 +62,10 @@ int stralloc_copy(stralloc* sa,const stralloc* sa2);
  * returns 1. If sa is unallocated, stralloc_catb is the same as
  * stralloc_copyb. If it runs out of memory, stralloc_catb leaves sa
  * alone and returns 0. */
-int stralloc_catb(stralloc* sa,const char* in,size_t len);
+int stralloc_catb(stralloc* sa,const char* in,unsigned long int len);
+
+int stralloc_write(stralloc* sa,const char *in, unsigned long int len);
+int stralloc_catc(stralloc* sa,unsigned char c);
 
 /* stralloc_cats is analogous to stralloc_copys */
 int stralloc_cats(stralloc* sa,const char* in);
@@ -123,6 +126,18 @@ int stralloc_chop(stralloc* sa);
 /* remove trailing "\r\n", "\n" or "\r".  Return number of removed chars (0,1 or 2) */
 int stralloc_chomp(stralloc* sa);
 
+void stralloc_move(stralloc* to, stralloc* from);
+  
+int stralloc_remove(stralloc* sa, unsigned long pos, unsigned long n);
+int stralloc_insertb(stralloc* sa, const char *s, unsigned long pos, unsigned long n);
+
+#ifdef DEBUG
+int stralloc_truncdebug(const char *file, unsigned int line, stralloc *sa,unsigned long int n);
+#define stralloc_trunc(sa, n) stralloc_truncdebug(__FILE__, __LINE__, (sa), (n))
+#else
+int stralloc_trunc(stralloc *sa,unsigned long int n);  
+#endif /* DEBUG */
+  
 #ifdef BUFFER_H
 /* write stralloc to buffer */
 int buffer_putsa(buffer* b,stralloc* sa);

@@ -1,8 +1,7 @@
 #include "byte.h"
 #include "buffer.h"
 
-ssize_t buffer_get(buffer* b,char* x,size_t len) {
-  unsigned long done;
+int buffer_get(buffer* b,char* x,unsigned long int len) {
   int blen;
   done=0;
   while (len) {

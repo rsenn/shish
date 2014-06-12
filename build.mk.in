@@ -45,8 +45,7 @@ COMPLINK        = $(LINK) $(CFLAGS) $(CPPFLAGS) $(DEFS) $(INCLUDES)
 #  generated the first time the Makefiles in the subdir take control of
 #  keeping themselves up to date)
 #
-@NODEP@makefiles: $(SUBMAKE:%=%/Makefile)
-@DEP@makefiles:
+makefiles: $(SUBMAKE:%=%/Makefile)
 $(SUBMAKE:%=%/Makefile):
 	@if test ! -f "$@" ; then \
 	  $(ECHO_CONFIG) ; \

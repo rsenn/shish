@@ -7,7 +7,7 @@
  * ----------------------------------------------------------------------- */
 int parse_bquoted(struct parser *p)
 {
-  unsigned char c;
+  char c;
   union node *cmds;
   struct parser subp;
 

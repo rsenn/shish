@@ -15,7 +15,7 @@ int redir_dup(struct nredir *nredir, stralloc *sa)
   {
     int fd;
     
-    scan_uint(sa->s, (unsigned int*)&fd);
+    scan_uint(sa->s, (unsigned int *)&fd);
     
     /* dup only if the filedescriptors are different */
     if(nredir->fdes == fd)

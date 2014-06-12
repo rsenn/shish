@@ -8,7 +8,7 @@
 int parse_unquoted(struct parser *p)
 {
   int flags = 0;
-  unsigned char c;
+  char c;
   
   /* set the quotation mode */
   p->quot = Q_UNQUOTED;
@@ -22,7 +22,7 @@ int parse_unquoted(struct parser *p)
     /* everything can be escaped */
     if(c == '\\')
     {
-      unsigned char nextc;
+      char nextc;
       
       p->tok = T_WORD;
       
@@ -89,7 +89,7 @@ int parse_unquoted(struct parser *p)
     {
       int fd = (c == '<' ? 0 : 1);
       
-      if(p->sa.len == 0 || scan_uint(p->sa.s, (unsigned int*)&fd) == p->sa.len)
+      if(p->sa.len == 0 || scan_uint(p->sa.s, (unsigned int *)&fd) == p->sa.len)
         return redir_parse(p, (c == '<' ? R_IN : R_OUT), fd);
     }    
     /* on a substition word in ${name:word} we parse until a right brace occurs */

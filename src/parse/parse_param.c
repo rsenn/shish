@@ -8,7 +8,7 @@
  * ----------------------------------------------------------------------- */
 int parse_param(struct parser *p)
 {
-  unsigned char c;
+  char c;
   int braces = 0;
   struct parser newp;
   stralloc varname = { NULL, 0, 0 };
@@ -40,7 +40,7 @@ int parse_param(struct parser *p)
      it's a string length subst */
   if(c == '#' && braces)
   {
-    unsigned char nextc;
+    char nextc;
       
     if(source_peek(&nextc) > 0 && parse_isparam(nextc))
     {
@@ -99,7 +99,7 @@ int parse_param(struct parser *p)
   if(p->node->nargparam.flag & S_ARG)
   {
     p->node->nargparam.numb = 0;
-    scan_uint(varname.s, (unsigned int*)&p->node->nargparam.numb);
+    scan_uint(varname.s, (unsigned int *)&p->node->nargparam.numb);
   }
   
   p->node->nargparam.name = varname.s;
@@ -121,7 +121,7 @@ int parse_param(struct parser *p)
   /* check for remove prefix/suffix pattern */
   if(c == '%' || c == '#')
   {
-    unsigned char nextc;
+    char nextc;
     p->node->nargparam.flag |= (c == '%') ? S_RSSFX : S_RSPFX;
     if(source_next(&nextc) > 0 && nextc == c)
     {
