@@ -1,16 +1,11 @@
-/* this header file comes from libowfat, http://www.fefe.de/libowfat/ */
 #ifndef BUFFER_H
 #define BUFFER_H
 
-/* for size_t: */
-#include <stddef.h>
-/* for ssize_t: */
 #include <sys/types.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+/*typedef ssize_t (buffer_method_t)();
+typedef buffer_method_t *buffer_method_ptr_t;
+*/
 typedef struct buffer {
   char *x;	/* actual buffer space */
   unsigned long int p;	/* current position */
@@ -19,10 +14,9 @@ typedef struct buffer {
   int fd;		/* passed as first argument to op */
   ssize_t (*op)();		/* use read(2) or write(2) */
   enum { NOTHING, FREE, MUNMAP } todo;
-  void* cookie;
 } buffer;
 
-#define BUFFER_INIT(op,fd,buf,len) { (buf), 0, 0, (len), (fd), (op), NOTHING, NULL }
+#define BUFFER_INIT(op,fd,buf,len) { (buf), 0, 0, (len), (fd), (op), NOTHING }
 #define BUFFER_INIT_FREE(op,fd,buf,len) { (buf), 0, 0, (len), (fd), (op), FREE }
 #define BUFFER_INIT_READ(op,fd,buf,len) BUFFER_INIT(op,fd,buf,len) /*obsolete*/
 #define BUFFER_INSIZE 8192
@@ -52,19 +46,19 @@ int buffer_putsflush(buffer* b,const char* x);
 
 int buffer_putm_internal(buffer*b,...);
 int buffer_putm_internal_flush(buffer*b,...);
-#define buffer_putm(b,...) buffer_putm_internal(b,__VA_ARGS__,(char*)0)
-#define buffer_putmflush(b,...) buffer_putm_internal_flush(b,__VA_ARGS__,(char*)0)
+#define buffer_putm(b,...) buffer_putm_internal(b,__VA_ARGS__,0)
+#define buffer_putmflush(b,...) buffer_putm_internal_flush(b,__VA_ARGS__,0)
 
 int buffer_putspace(buffer* b);
 int buffer_putnlflush(buffer* b); /* put \n and flush */
 
 #define buffer_PUTC(s,c) \
-  do { \
-    char ch = (c); \
   ( ((s)->a != (s)->p) \
-    ? ( (s)->x[(s)->p++] = (ch), 0 ) \
-    : buffer_put((s),&(ch),1) \
-  ); } while(0);
+    ? ( (s)->x[(s)->p++] = (c), 0 ) \
+    : buffer_putc((s),(c)) \
+  )
+
+#define buffer_bytes(b) ((b)->n - (b)->p)
 
 int buffer_get(buffer* b,char* x,unsigned long int len);
 int buffer_feed(buffer* b);
@@ -91,16 +85,21 @@ typedef int (*string_predicate)(const char* x,unsigned long int len);
 int buffer_get_token_pred(buffer* b,char* x,unsigned long int len,string_predicate p);
 
 char *buffer_peek(buffer* b);
-void buffer_seek(buffer* b,size_t len);
+void buffer_seek(buffer* b,unsigned long int len);
 
 #define buffer_PEEK(s) ( (s)->x + (s)->p )
 #define buffer_SEEK(s,len) ( (s)->p += (len) )
+
+#define buffer_POS(s) ((s)->p)
+#define buffer_START(s) ((s)->x)
 
 #define buffer_GETC(s,c) \
   ( ((s)->p < (s)->n) \
     ? ( *(c) = *buffer_PEEK(s), buffer_SEEK((s),1), 1 ) \
     : buffer_get((s),(c),1) \
   )
+
+int buffer_copy(buffer* out,buffer* in);
 
 int buffer_putulong(buffer *b,unsigned long int l);
 int buffer_put8long(buffer *b,unsigned long int l);
@@ -113,11 +112,13 @@ int buffer_putulonglong(buffer* b,unsigned long long int l);
 int buffer_puterror(buffer* b);
 int buffer_puterror2(buffer* b, int errnum);
 
-extern buffer *buffer_0;
-extern buffer *buffer_0small;
-extern buffer *buffer_1;
-extern buffer *buffer_1small;
-extern buffer *buffer_2;
+int buffer_putnspace(buffer* b, int n);
+int buffer_prefetch(buffer *b, unsigned long n);
+
+void buffer_fromstr(buffer* b, char *s, unsigned long len);
+void buffer_dump(buffer *out, buffer *b);
+int buffer_movefdto(buffer *b, int newfd);
+int buffer_movefd(buffer *b);
 
 #ifdef STRALLOC_H
 /* write stralloc to buffer */
@@ -153,36 +154,7 @@ int buffer_get_token_sa_pred(buffer* b,stralloc* sa,sa_predicate p);
 /* same, but clear sa first */
 int buffer_get_new_token_sa_pred(buffer* b,stralloc* sa,sa_predicate p);
 
-/* make a buffer from a stralloc.
- * Do not change the stralloc after this! */
-void buffer_fromsa(buffer* b,stralloc* sa);	/* read from sa */
-int buffer_tosa(buffer*b,stralloc* sa);		/* write to sa, auto-growing it */
-#endif
-
-void buffer_default(buffer *b,ssize_t (*op)(void));
-
-void buffer_free(buffer *b);
-
-void buffer_fromstr(buffer *b,char *s,unsigned long len);
-
-int buffer_get_until(buffer *b,char *x,unsigned long int len,const char *charset,unsigned long int setlen);
-
-int buffer_mmapread_fd(buffer *b,int fd);
-
-int buffer_prefetch(buffer *b,unsigned long n);
-
-int buffer_putnspace(buffer *b,int n);
-
-int buffer_skip_until(buffer *b,const char *charset,unsigned long int setlen);
-
-int buffer_truncfile(buffer *b,const char *fn,char *y,unsigned long ylen);
-
-void buffer_dump(buffer *out,buffer *b);
-
-int buffer_putc(buffer *b,unsigned char c);
-
-#ifdef __cplusplus
-}
+void buffer_fromsa(buffer* b,stralloc* sa);
 #endif
 
 #endif

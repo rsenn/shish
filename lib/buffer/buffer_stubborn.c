@@ -4,7 +4,7 @@
 int buffer_stubborn(ssize_t (*op)(),int fd,const char* buf, unsigned long int len) {
   int w;
   while (len) {
-    if ((w=op(fd,buf,len,cookie))<0) {
+    if ((w=op(fd,buf,len))<0) {
       if (errno == EINTR) continue;
       return -1;
     };
