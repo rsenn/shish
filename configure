@@ -2990,7 +2990,7 @@ if test "$ac_cv_debug" = "yes"; then
   DEBUG="yes"
   $as_echo "$as_me:$LINENO: result: yes" >&5 ; echo ${COLOR_YES}yes${NC} >&6
 else
-  CFLAGS="`echo $CFLAGS -Os -fexpensive-optimizations -fomit-frame-pointer -Wall`"
+  CFLAGS="`echo $CFLAGS -Os -fomit-frame-pointer -Wall`"
 #  CPPFLAGS="`echo $CPPFLAGS -DNDEBUG -include assert.h`"
   CPPFLAGS="`echo $CPPFLAGS -DNDEBUG`"
   DEBUG="no"
