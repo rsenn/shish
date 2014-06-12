@@ -1,8 +1,6 @@
 #include "buffer.h"
 #include "mmap.h"
 
-ssize_t buffer_dummyreadmmap();
-
 int buffer_dummyreadmmap();
 
 int buffer_mmapprivate(buffer* b,const char* filename) {

@@ -28,17 +28,11 @@ typedef struct buffer {
 #define BUFFER_INSIZE 8192
 #define BUFFER_OUTSIZE 8192
 
-void buffer_init(buffer* b,ssize_t (*op)(),int fd,unsigned char* y,unsigned long int ylen);
-void buffer_init_free(buffer* b,ssize_t (*op)(),int fd,unsigned char* y,unsigned long int ylen);
+void buffer_init(buffer* b,ssize_t (*op)(),int fd,char* y,size_t ylen);
+void buffer_init_free(buffer* b,ssize_t (*op)(),int fd,char* y,size_t ylen);
 
 void buffer_default(buffer *b, ssize_t (*op)());
 
-/* make a buffer from a stralloc.
- * Do not change the stralloc after this! */
-ssize_t buffer_dummyread(int fd,char* buf,unsigned long int len);
-  
-  
-  
 int buffer_mmapread(buffer* b,const char* filename);
 void buffer_close(buffer *b);
 
