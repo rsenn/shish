@@ -6,6 +6,9 @@
 /* Define this if your compiler supports alloca() */
 #cmakedefine HAVE_ALLOCA
 
+/* Define this if your libc has sys_siglist[] */
+#cmakedefine HAVE_SYS_SIGLIST
+
 /* Define to the full name of this package. */
 #cmakedefine PACKAGE_NAME "@PACKAGE_NAME@"
 
