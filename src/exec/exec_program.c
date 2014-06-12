@@ -1,3 +1,4 @@
+#include <alloca.h>
 #include <unistd.h>
 #include <signal.h>
 #include "tree.h"

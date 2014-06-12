@@ -1,3 +1,4 @@
+#include <alloca.h>
 #include "tree.h"
 #include "parse.h"
 #include "redir.h"
