@@ -49,7 +49,7 @@ makefiles: $(SUBMAKE:%=%/Makefile)
 $(SUBMAKE:%=%/Makefile):
 	@if test ! -f "$@" ; then \
 	  $(ECHO_CONFIG) ; \
-		F="$(thisdir)/$@"; \
+		F="$(thisdir)$@"; \
   	(cd "$(top_builddir)" && ./config.status $${F#./}) > /dev/null ; \
     touch $@ ; \
   fi

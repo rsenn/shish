@@ -1,3 +1,4 @@
+#include <alloca.h>
 #include "shell.h"
 #include <stdlib.h>
 #include "str.h"

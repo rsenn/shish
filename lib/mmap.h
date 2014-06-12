@@ -4,10 +4,6 @@
 
 #include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* open file for reading, mmap whole file, close file, write length of
  * map in filesize and return pointer to map. */
 char* mmap_read(const char *filename,size_t* filesize);
@@ -30,5 +26,11 @@ char *mmap_read_fd(int fd, unsigned long *filesize);
 #ifdef __cplusplus
 }
 #endif
+
+/* unmap a mapped region */
+int mmap_unmap(char* mapped,unsigned long maplen);
+
+/* map an already opened file. */
+char* mmap_read_fd(int fd, unsigned long *filesize);
 
 #endif

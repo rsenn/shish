@@ -4,8 +4,15 @@
 #include "str.h"
 #include "fd.h"
 #include "builtin.h"
-
 #include "fmt.h"
+
+#ifdef HAVE_CONFIG_H
+# include "../../config.h"
+# ifndef HAVE_LSTAT
+#  define lstat stat
+# endif
+#endif
+
 /* test for expression
  * ----------------------------------------------------------------------- */
 int builtin_test(int argc, char **argv)
@@ -26,6 +33,9 @@ int builtin_test(int argc, char **argv)
       return 2;
     }
   }
+  
+  // TODO:
+  (void)brackets;
   
   /* every condition can be negated by a leading ! */
   while(shell_optind < argc &&
@@ -59,9 +69,13 @@ int builtin_test(int argc, char **argv)
       case 'p': return neg ^ !(stat(shell_optarg, &st) == 0 && S_ISFIFO(st.st_mode));
       /* return true if argument is a symbolic link */
       case 'h':
+#ifdef S_ISLNK
       case 'L': return neg ^ !(lstat(shell_optarg, &st) == 0 && S_ISLNK(st.st_mode));
+#endif
+#ifdef S_ISSOCK
       /* return true if argument is a socket */
       case 'S': return neg ^ !(stat(shell_optarg, &st) == 0 && S_ISSOCK(st.st_mode));
+#endif
       /* return true if argument exists */
       case 'e': return neg ^ !(stat(shell_optarg, &st) == 0);
       /* return true if argument exists and is not empty */
