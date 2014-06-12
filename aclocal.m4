@@ -2264,7 +2264,7 @@ if test "$ac_cv_debug" = "yes"; then
   DEBUG="yes"
   AC_MSG_RESULT([yes])
 else
-  CFLAGS="`echo $CFLAGS -Os -fexpensive-optimizations -fomit-frame-pointer -Wall`"
+  CFLAGS="`echo $CFLAGS -Os -fomit-frame-pointer -Wall`"
 #  CPPFLAGS="`echo $CPPFLAGS -DNDEBUG -include assert.h`"
   CPPFLAGS="`echo $CPPFLAGS -DNDEBUG`"
   DEBUG="no"
