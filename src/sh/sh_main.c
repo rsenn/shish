@@ -70,7 +70,7 @@ int sh_main(int argc, char **argv, char **envp)
   {
     struct var *var;
     var = var_import(envp[c], V_EXPORT, &envvars[c]);
-    
+
     /* use imported vars to seed the prng */
     uint32_seed(var->sa.s, var->sa.len);
   }
