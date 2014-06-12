@@ -9,6 +9,10 @@
 
 #include <uint32.h>
 
+#ifdef HAVE_CONFIG_H
+#include "../../config.h"
+#endif
+
 int         sh_argc;
 char      **sh_argv;
 char       *sh_name;
@@ -59,12 +63,12 @@ int sh_main(int argc, char **argv, char **envp)
   for(c = 0; envp[c]; c++) 
     ;
   
-#ifdef HAVE_ALLOCA
-  envvars = alloca(sizeof(struct var)*c);
-#else
+#ifndef HAVE_ALLOCA
 #warning no alloca
-  envvars = malloc(sizeof(struct var)*c);
+#else
+  if(!(envvars = alloca(sizeof(struct var)*c)))
 #endif
+    envvars = malloc(sizeof(struct var)*c);
   
   for(c = 0; envp[c]; c++)
   {
