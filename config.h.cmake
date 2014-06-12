@@ -1,7 +1,10 @@
 /* config.h.cmake  Substituted by CMake  */
 
+/* Define this if you have alloca.h */
+#cmakedefine HAVE_ALLOCA_H
+
 /* Define this if your compiler supports alloca() */
-#cmakedefine01 HAVE_ALLOCA
+#cmakedefine HAVE_ALLOCA
 
 /* Define to the full name of this package. */
 #cmakedefine PACKAGE_NAME "@PACKAGE_NAME@"
