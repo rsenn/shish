@@ -1,5 +1,5 @@
 #ifdef DEBUG
-#include <buffer.h>
+#include "buffer.h"
 #include "fd.h"
 
 void fd_dumplist(void)

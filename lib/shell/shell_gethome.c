@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <limits.h>
-#include <scan.h>
+#include "scan.h"
 #include "buffer.h"
 #include "scan.h"
 #include "stralloc.h"

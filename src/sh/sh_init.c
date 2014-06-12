@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include <string.h>
-#include <shell.h>
+#include "shell.h"
 #include "sh.h"
 #include "var.h"
 #include "job.h"

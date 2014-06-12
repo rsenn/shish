@@ -1,5 +1,5 @@
-#include <str.h>
-#include <stralloc.h>
+#include "str.h"
+#include "stralloc.h"
 
 /* escape characters subject to glob() expansion
  * ----------------------------------------------------------------------- */

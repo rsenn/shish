@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <setjmp.h>
-#include <stralloc.h>
+#include "stralloc.h"
 
 #ifdef __MINGW32__
 typedef int uid_t;

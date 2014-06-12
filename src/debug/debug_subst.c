@@ -1,7 +1,7 @@
 #include "debug.h"
 
 #ifdef DEBUG
-#include <str.h>
+#include "str.h"
 #include <string.h>
 #include "fd.h"
 #include "tree.h"

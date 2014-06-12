@@ -1,10 +1,10 @@
 #include <unistd.h>
 #include <sys/stat.h>
-#include <shell.h>
-#include <str.h>
+#include "shell.h"
+#include "str.h"
 #include "fd.h"
 #include "builtin.h"
-#include <fmt.h>
+#include "fmt.h"
 
 #ifdef HAVE_CONFIG_H
 # include "../../config.h"

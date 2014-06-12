@@ -1,13 +1,13 @@
-#include <shell.h>
+#include "shell.h"
 #include <stdlib.h>
-#include <str.h>
+#include "str.h"
 #include "sh.h"
 #include "var.h"
 #include "fd.h"
 #include "fdtable.h"
 #include "source.h"
 
-#include <uint32.h>
+#include "uint32.h"
 
 #ifdef HAVE_CONFIG_H
 #include "../../config.h"

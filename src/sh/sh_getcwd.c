@@ -1,8 +1,8 @@
 #include "sh.h"
 #include <unistd.h>
 #include <limits.h>
-#include <shell.h>
-#include <str.h>
+#include "shell.h"
+#include "str.h"
 
 void sh_getcwd(struct env *sh)
 {

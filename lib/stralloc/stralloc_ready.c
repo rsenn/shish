@@ -1,5 +1,5 @@
 #include "stralloc.h"
-#include <shell.h>
+#include "shell.h"
 
 /* stralloc_ready makes sure that sa has enough space allocated to hold
  * len bytes: If sa is not allocated, stralloc_ready allocates at least

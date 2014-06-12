@@ -1,4 +1,4 @@
-#include <byte.h>
+#include "byte.h"
 #include "history.h"
 
 unsigned int history_offset;

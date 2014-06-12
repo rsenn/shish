@@ -2,7 +2,7 @@
 #define PARSE_H
 
 #include <stdlib.h>
-#include <stralloc.h>
+#include "stralloc.h"
 
 #include "tree.h"
 

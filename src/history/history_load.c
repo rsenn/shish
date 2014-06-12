@@ -1,5 +1,5 @@
-#include <str.h>
-#include <buffer.h>
+#include "str.h"
+#include "buffer.h"
 #include <limits.h>
 #include "sh.h"
 #include "parse.h"

@@ -1,6 +1,6 @@
 #include <string.h>
 #include <errno.h>
-#include <shell.h>
+#include "shell.h"
 #include "fd.h"
 #include "sh.h"
 

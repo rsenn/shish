@@ -1,7 +1,7 @@
 #include "debug.h"
 
 #ifdef DEBUG
-#include <shell.h>
+#include "shell.h"
 #include "fd.h"
 
 void debug_error(const char *file, unsigned int line, const char *s)

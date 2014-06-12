@@ -2,7 +2,7 @@
 #define TREE_H
 
 #include <stdlib.h>
-#include <stralloc.h>
+#include "stralloc.h"
 
 /* the section numbers refer to the IEEE P1003.2 Draft D11.2 */
 

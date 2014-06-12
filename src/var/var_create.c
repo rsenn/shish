@@ -1,4 +1,4 @@
-#include <shell.h>
+#include "shell.h"
 #include "sh.h"
 #include "vartab.h"
 

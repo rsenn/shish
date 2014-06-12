@@ -2,7 +2,7 @@
 #define EXEC_H
 
 #include <stdlib.h>
-#include <uint32.h>
+#include "uint32.h"
 
 enum hash_id
 {
