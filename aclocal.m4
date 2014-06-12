@@ -2218,9 +2218,9 @@ AC_ARG_ENABLE([dep],
   [DEP="no"
   AC_MSG_RESULT([no])])
 if test "$DEP" = "yes"; then
-  NODEP=""
+  NODEP="" DEP="#"
 else
-  NODEP="# "
+  NODEP="#" DEP=""
 fi
 AC_SUBST(NODEP)
 AC_SUBST(DEP)])
