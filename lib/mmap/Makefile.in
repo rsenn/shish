@@ -21,7 +21,8 @@ include $(top_builddir)/config.mk
 LIB = ../libshish.a
 MODULES = mmap_read \
           mmap_read_fd \
-          mmap_private
+          mmap_private \
+          mmap_unmap
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

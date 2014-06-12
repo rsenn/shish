@@ -1,5 +1,7 @@
 #include <unistd.h>
-#include <sys/wait.h>
+#ifndef __MINGW32__
+# include <sys/wait.h>
+#endif
 #include "fdstack.h"
 #include "fdtable.h"
 #include "tree.h"

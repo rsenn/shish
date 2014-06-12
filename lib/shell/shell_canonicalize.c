@@ -7,6 +7,13 @@
 #include <unistd.h>
 #include <errno.h>
 
+#ifdef HAVE_CONFIG_H
+# include "../../config.h"
+# ifndef HAVE_LSTAT
+#  define lstat stat
+# endif
+#endif
+
 /* canonicalizes a <path> and puts it into <sa>
  * 
  * <path>, without trailing '\0', should not be longer than PATH_MAX or it
@@ -77,6 +84,7 @@ start:
     if((symbolic ? stat : lstat)(sa->s, &st) == -1)
       return 0;
 
+#ifdef HAVE_LSTAT
     /* is it a symbolic link? */
     if(S_ISLNK(st.st_mode))
     {
@@ -107,6 +115,7 @@ start:
           return 0;
       }
     }
+ #endif
     
     /* it isn't a directory :( */
     if(!S_ISDIR(st.st_mode))
