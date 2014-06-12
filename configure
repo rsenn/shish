@@ -2897,6 +2897,15 @@ _ACEOF
 
 fi
 
+ac_fn_c_check_func "$LINENO" "sys_siglist" "ac_cv_func_sys_siglist"
+if test "x$ac_cv_func_sys_siglist" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_SYS_SIGLIST 1
+_ACEOF
+
+fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for alloca" >&5
 $as_echo_n "checking for alloca... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
