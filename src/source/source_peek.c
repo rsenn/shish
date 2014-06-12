@@ -3,7 +3,7 @@
 /* gets more data from buffer (at least 1 char) and reads first char, but
  * doesn't advance buffer pointer, use source_skip() for that
  * ----------------------------------------------------------------------- */
-int source_peek(unsigned char *c)
+int source_peek(char *c)
 {
   register buffer *b = source->b;
   int ret = b->n - b->p;

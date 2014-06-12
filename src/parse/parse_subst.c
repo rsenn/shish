@@ -4,7 +4,7 @@
 
 int parse_subst(struct parser *p)
 {
-  unsigned char c;
+  char c;
   
   if(source_next(&c) <= 0)
     return -1;

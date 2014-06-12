@@ -7,7 +7,7 @@
  * ----------------------------------------------------------------------- */
 int parse_word(struct parser *p)
 {
-  unsigned char c;
+  char c;
 
   /* if there is still a tree from the last call then remove it */
   if(p->tree)

@@ -23,8 +23,8 @@ int term_read(int fd, char *buf, unsigned int len);
   
 void term_winsize(void);
 
-void term_insertc(unsigned char c);
-void term_overwritec(unsigned char c);
+void term_insertc(char c);
+void term_overwritec(char c);
 void term_backspace(void);
 void term_delete(void);
 void term_home(void);

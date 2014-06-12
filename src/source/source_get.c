@@ -2,7 +2,7 @@
 #include "fd.h"
 
 /* ----------------------------------------------------------------------- */
-int source_get(unsigned char *c)
+int source_get(char *c)
 {
   int ret;
   ret = buffer_getc(source->b, c);

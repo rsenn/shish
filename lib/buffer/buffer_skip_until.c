@@ -2,7 +2,7 @@
 #include "buffer.h"
 
 /* skips bytes in buffer until a char in charset occurs, the char itself will be skipped also */
-int buffer_skip_until(buffer* b,const unsigned char* charset,unsigned long int setlen) {
+int buffer_skip_until(buffer* b,const char* charset,unsigned long int setlen) {
   int r;
   int n = 0;
   for (;;) {

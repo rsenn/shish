@@ -2,6 +2,7 @@
 #include "buffer.h"
 
 extern ssize_t buffer_stubborn_read(ssize_t (*op)(),int fd,const char* buf, unsigned int len);
+extern ssize_t buffer_dummyread();
 
 int buffer_prefetch(buffer* b, unsigned long n) {
   if(b->p && b->p+n>=b->a)
