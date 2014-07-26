@@ -1,6 +1,6 @@
 #include "buffer.h"
 
-extern int buffer_stubborn_read(ssize_t (*op)(),int fd,const char* buf, unsigned int len);
+extern ssize_t buffer_stubborn_read(ssize_t (*op)(),int fd,const char* buf, unsigned int len);
 
 int buffer_feed(buffer* b) {
   if (b->p==b->n) {

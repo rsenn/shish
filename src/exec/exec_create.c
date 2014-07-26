@@ -1,6 +1,6 @@
 #include <string.h>
-#include <shell.h>
-#include <byte.h>
+#include "shell.h"
+#include "byte.h"
 #include "exec.h"
 #include "sh.h"
 

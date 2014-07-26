@@ -1,5 +1,5 @@
 #include <unistd.h>
-#include <scan.h>
+#include "scan.h"
 #include "fd.h"
 #include "fdtable.h"
 #include "tree.h"

@@ -1,4 +1,4 @@
-#include <str.h>
+#include "str.h"
 #include <assert.h>
 #include "sh.h"
 #include "fd.h"

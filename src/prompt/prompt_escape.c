@@ -1,5 +1,5 @@
-#include <shell.h>
-#include <scan.h>
+#include "shell.h"
+#include "scan.h"
 #include "tree.h"
 #include "prompt.h"
 #include "parse.h"

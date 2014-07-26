@@ -1,6 +1,6 @@
 #include <unistd.h>
-#include <byte.h>
-#include <shell.h>
+#include "byte.h"
+#include "shell.h"
 #include "sh.h"
 
 /* after forking, returns pid

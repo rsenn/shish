@@ -1,7 +1,7 @@
 #ifndef MMAP_H
 #define MMAP_H
 
-char* mmap_read_fd(int fd, unsigned long *filesize);
+#include <stddef.h>
 
 /* open file for reading, mmap whole file, close file, write length of
  * map in filesize and return pointer to map. */
@@ -15,5 +15,11 @@ char* mmap_private(const char *filename,unsigned long* filesize);
 /* open file for writing, mmap whole file shared, close file, write
  * length of map in filesize and return pointer to map. */
 char* mmap_shared(const char *filename,unsigned long* filesize);
+
+/* unmap a mapped region */
+int mmap_unmap(char* mapped,unsigned long maplen);
+
+/* map an already opened file. */
+char* mmap_read_fd(int fd, unsigned long *filesize);
 
 #endif

@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <unistd.h>
-#include <shell.h>
-#include <open.h>
-#include <str.h>
+#include "shell.h"
+#include "open.h"
+#include "str.h"
 #include "config.h"
 #include "redir.h"
 #include "fd.h"

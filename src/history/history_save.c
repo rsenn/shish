@@ -1,8 +1,8 @@
 #include <unistd.h>
 #include <limits.h>
-#include <str.h>
-#include <buffer.h>
-#include <stralloc.h>
+#include "str.h"
+#include "buffer.h"
+#include "stralloc.h"
 #include "history.h"
 #include "sh.h"
 

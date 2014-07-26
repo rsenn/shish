@@ -1,5 +1,5 @@
-#include <str.h>
-#include <byte.h>
+#include "str.h"
+#include "byte.h"
 #include "var.h"
 
 /* set a variable

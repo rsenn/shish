@@ -21,45 +21,45 @@
 # color names
 # ---------------------------------------------------------------------------
 m4_define([AC_COLOR_NAMES], [DARK_GRAY, LIGHT_BLUE, LIGHT_GREEN, LIGHT_CYAN,
-                             LIGHT_RED, LIGHT_PURPLE, YELLOW, WHITE, BLACK, 
+                             LIGHT_RED, LIGHT_PURPLE, YELLOW, WHITE, BLACK,
                              BLUE, GREEN, CYAN, RED, PURPLE, BROWN, GRAY])
-                             
+
 # types color can be bound to
 # ---------------------------------------------------------------------------
-m4_define([AC_COLOR_TYPES], [YES, NO, NONE, FILE, DIR, VAR, EXT, LIB, PROG, 
+m4_define([AC_COLOR_TYPES], [YES, NO, NONE, FILE, DIR, VAR, EXT, LIB, PROG,
                              INFO, ARGS, MK, DEFAULT])
-  
+
 # AC_MSG_RESULT
 # ---------------------------------------------------------------------------
 # if result color is chooseable at macro-expansion time then output result,
 # else generate a runtime evaluator
 #
-AC_DEFUN([AC_MSG_RESULT], 
+AC_DEFUN([AC_MSG_RESULT],
 [m4_bmatch([$1],
   [^$],                  [AC_MSG_NONE],
   [^none],               [AC_MSG_NONE([$1])],
   [yes],                 [AC_MSG_YES],
   [no],                  [AC_MSG_NO],
-  
+
   [ac_file],             [AC_MSG_FILE([$1])],
   [objext],              [AC_MSG_FILE([$1])],
   [exeext],              [AC_MSG_FILE([$1])],
   [lex_root],            [AC_MSG_FILE([$1])],
   [VERSION],             [AC_MSG_FILE([$1])],
-  
+
   [^.prefix$],           [AC_MSG_DIR([$1])],
   [[a-z]+dir$],          [AC_MSG_DIR([$1])],
-  
+
   [.ac_cv_[a-z]*ext],    [AC_MSG_EXT([$1])],
-  
+
   [LIBS],                [AC_MSG_ARGS([$1])],
-  [FLAGS],               [AC_MSG_ARGS([$1])],  
-  
+  [FLAGS],               [AC_MSG_ARGS([$1])],
+
   [build],               [AC_MSG_INFO([$1])],
   [host],                [AC_MSG_INFO([$1])],
   [^.host$],             [AC_MSG_INFO([$1])],
   [.ac_cv_target],       [AC_MSG_INFO([$1])],
-  
+
   [cross_compiling$],    [AC_MSG_YESNO([$1])],
   [compiler_gnu],        [AC_MSG_YESNO([$1])],
   [gcc_traditional],     [AC_MSG_YESNO([$1])],
@@ -80,7 +80,7 @@ AC_DEFUN([AC_MSG_RESULT],
   [COLOR],               [AC_MSG_YESNO([$1])],
   [DEP],                 [AC_MSG_YESNO([$1])],
   [DEBUG],               [AC_MSG_YESNO([$1])],
-  
+
   [.ac_ct],              [AC_MSG_PROG([$1])],
   [.ac_cv_prog],         [AC_MSG_PROG([$1])],
   [.CC],                 [AC_MSG_PROG([$1])],
@@ -88,7 +88,7 @@ AC_DEFUN([AC_MSG_RESULT],
   [.AWK],                [AC_MSG_PROG([$1])],
   [.LEX],                [AC_MSG_PROG([$1])],
   [.YACC],               [AC_MSG_PROG([$1])],
-  
+
   [AC_MSG_DEFAULT([$1])]
   )])
 
@@ -97,7 +97,7 @@ AC_DEFUN([AC_MSG_RESULT_UNQUOTED], [AC_MSG_RESULT([$1], [$2])])
 # echo stuff using a color
 # ---------------------------------------------------------------------------
 AC_DEFUN([AC_ECHO_COLOR],
-[echo -e ${COLOR_$2}$1${NC} >&AS_MESSAGE_FD])
+[echo ${COLOR_$2}$1${NC} >&AS_MESSAGE_FD])
 
 # echo result using a color
 # ---------------------------------------------------------------------------
@@ -122,7 +122,7 @@ AC_DEFUN([AC_MSG_DEFAULT], [AC_MSG_COLOR([$1],  [DEFAULT])])
 
 # choose color at runtime
 # ---------------------------------------------------------------------------
-AC_DEFUN([AC_MSG_YESNO], 
+AC_DEFUN([AC_MSG_YESNO],
 [if test "$1" = "yes"; then
     AC_MSG_YES
   else
@@ -152,7 +152,7 @@ AC_DEFUN([AC_SET_THEME],
       # configure colors for theme "matrix"
       THEME_SPLASH="${LIGHT_GREEN}m${CYAN}a${GREEN}t${CLA}r${LIGHT_GREEN}i${CYAN}x${NC}"
       THEME_NAME="matrix"
-      
+
       NAME_YES="LIGHT_GREEN"
       NAME_NO="CYAN"
       NAME_NONE="DARK_GRAY"
@@ -171,7 +171,7 @@ AC_DEFUN([AC_SET_THEME],
       # configure colors for theme "oceanic"
       THEME_SPLASH="${BLUE}o${LIGHT_BLUE}c${CYAN}e${LIGHT_CYAN}a${LIGHT_GREEN}n${GREEN}i${BLUE}c${NC}"
       THEME_NAME="oceanic"
-      
+
       NAME_YES="LIGHT_GREEN"
       NAME_NO="BLUE"
       NAME_NONE="BLUE"
@@ -190,7 +190,7 @@ AC_DEFUN([AC_SET_THEME],
       # configure colors for theme "hellfire"
       THEME_SPLASH="${RED}h${LIGHT_RED}e${BROWN}l${YELLOW}l${RED}f${LIGHT_RED}i${BROWN}r${YELLOW}e${NC}"
       THEME_NAME="hellfire"
-      
+
       NAME_YES="YELLOW"
       NAME_NO="LIGHT_RED"
       NAME_NONE="RED"
@@ -209,7 +209,7 @@ AC_DEFUN([AC_SET_THEME],
       # configure colors for theme "chaos"
       THEME_SPLASH="${RED}c${LIGHT_RED}h${YELLOW}a${GREEN}o${LIGHT_BLUE}s${NC}"
       THEME_NAME="chaos"
-      
+
       NAME_YES="GREEN"
       NAME_NO="RED"
       NAME_NONE="DARK_GRAY"
@@ -225,10 +225,10 @@ AC_DEFUN([AC_SET_THEME],
       NAME_DEFAULT="LIGHT_BLUE"
       ;;
   esac
-  
+
   # evaluate escape codes
   m4_define([AC_COLOR_EVAL], [])dnl
-  m4_foreach([AC_COLOR_TYPE], [AC_COLOR_TYPES], 
+  m4_foreach([AC_COLOR_TYPE], [AC_COLOR_TYPES],
   [m4_append([AC_COLOR_EVAL], [  eval COLOR_])dnl
    m4_append([AC_COLOR_EVAL], AC_COLOR_TYPE)dnl
    m4_append([AC_COLOR_EVAL], [="\$$NAME_])dnl
@@ -246,14 +246,14 @@ AC_DEFUN([AC_SET_THEME],
 
 # check for --{enable,disable}-color
 # ---------------------------------------------------------------------------
-AC_DEFUN([AC_CHECK_COLOR], 
+AC_DEFUN([AC_CHECK_COLOR],
 [# set color variables
 AC_MSG_CHECKING(whether to enable colored compiling)
 
 ac_cv_quiet="yes"
 AC_ARG_ENABLE(quiet,
 [  --disable-quiet         echo commands while compiling (automake style)
-  --enable-quiet          do not echo commands while compiling, print 
+  --enable-quiet          do not echo commands while compiling, print
                           variable-like name of program used (linux style)],
 [case "$enableval" in
   no)
@@ -295,7 +295,7 @@ COLOR="no"
 AC_ARG_ENABLE(color,
 [  --disable-color         black and white compiling
   --enable-color[[=THEME]]  colored compiling [(default)]
-  
+
   Available Themes: chaos [(default)], matrix, oceanic, hell
 ],
 [THEME="$enableval"
@@ -318,7 +318,7 @@ then
   LIGHT_PURPLE="###ESCAPE###1;35m"    # light purple
   YELLOW="###ESCAPE###1;33m"          # yellow
   WHITE="###ESCAPE###1;37m"           # white
-  
+
   BLACK="###ESCAPE###0;30m"           # black
   BLUE="###ESCAPE###0;34m"            # blue
   GREEN="###ESCAPE###0;32m"           # green
@@ -327,7 +327,7 @@ then
   PURPLE="###ESCAPE###0;35m"          # purple
   BROWN="###ESCAPE###0;33m"           # brown
   GRAY="###ESCAPE###0;37m"            # gray
-  
+
   NC="###ESCAPE###0m"
 
   AC_SET_THEME($THEME)
@@ -336,7 +336,7 @@ then
   AC_MSG_RESULT($THEME_SPLASH)
 else
   AC_MSG_RESULT([yes])
-fi    
+fi
 m4_foreach([AC_COLOR_NAME], [AC_COLOR_NAMES], [AC_SUBST(AC_COLOR_NAME)])
 AC_SUBST(NC)
 AC_SUBST(COLOR)])
@@ -380,7 +380,7 @@ dnl AC_DEFUN([AC_CONFIG_AUX_DIRS], [])
 dnl m4_define([AC_EGREP_CPP])
 
 
-AC_DEFUN([AC_SET_ARGS], 
+AC_DEFUN([AC_SET_ARGS],
 [CONFIGURE_ARGS="$ac_configure_args"
 AC_SUBST(ac_configure_args)
 AC_SUBST(CONFIGURE_ARGS)])
@@ -501,7 +501,7 @@ s/^[^=]*=[	 ]*$//;
 }']
 fi
 
-m4_ifset([AC_LIST_HEADERS], [DEFS=-DHAVE_CONFIG_H], [AC_OUTPUT_MAKE_DEFS()])
+DEFS="-DHAVE_CONFIG_H=1"
 
 dnl Commands to run before creating config.status.
 AC_OUTPUT_COMMANDS_PRE()dnl
@@ -543,7 +543,7 @@ AC_PROVIDE_IFELSE([AC_CONFIG_SUBDIRS], [_AC_OUTPUT_SUBDIRS()])dnl
 
 # _AC_SRCPATHS(BUILD-DIR-NAME)
 # ----------------------------
-# Has been taken from autoconf and hacked to also 
+# Has been taken from autoconf and hacked to also
 # set $ac_thisname and $ac_thisdir
 #
 m4_define([_AC_SRCPATHS],
@@ -801,7 +801,7 @@ m4_define([_AC_OUTPUT_SUBDIRS],
 # CONFIG_SUBDIRS section.
 #
 if test "$no_recursion" != yes; then
-  
+
   # Remove --cache-file and --srcdir arguments so they do not pile up.
   ac_sub_configure_args=
   ac_prev=
@@ -835,20 +835,20 @@ if test "$no_recursion" != yes; then
   # Always prepend --prefix to ensure using the same prefix
   # in subdir configurations.
   ac_sub_configure_args="--prefix=$prefix $ac_sub_configure_args"
-  
+
   ac_popdir=`pwd`
   for ac_dir in : $subdirs; do test "x$ac_dir" = x: && continue
-      
+
     # Do not complain, so a configure script can configure whichever
     # parts of a large source tree are present.
     test -d $srcdir/$ac_dir || continue
-    
+
     AC_MSG_NOTICE([configuring in $ac_dir])
     AS_MKDIR_P(["$ac_dir"])
     _AC_SRCPATHS(["$ac_dir"])
-    
+
     cd $ac_dir
-      
+
     # Check for guested configure; otherwise get Cygnus style configure.
     if test -f $ac_srcdir/configure.gnu; then
       ac_sub_configure="$SHELL '$ac_srcdir/configure.gnu'"
@@ -893,7 +893,7 @@ AN_PROGRAM([doxygen], [AC_PROG_DOXYGEN])
 AC_DEFUN([AC_PROG_DOXYGEN],
 [AC_CHECK_TOOL(DOXYGEN_NOARG, [doxygen], [:])
  DOXYGEN="$DOXYGEN_NOARG"
- 
+
  if test "$DOXYGEN" = ":"; then
    BUILD_DOC="#"
  else
@@ -979,7 +979,7 @@ AC_ARG_WITH([dietlibc],
        if test -x "$dir/bin/diet"
        then
          DIETVERSION="`$dir/bin/diet 2>&1 | sed 's,[[a-z ]]*-,,;;s,^.*[[:-]].*$,,'`"
-         
+
          if test -n "$DIETVERSION"
          then
            DIET="$dir/bin/diet -Os"
@@ -991,26 +991,26 @@ AC_ARG_WITH([dietlibc],
    else
      DIETVERSION="`$dir/bin/diet 2>&1 | sed 's,[[a-z ]]*-,,;;s,^.*[[:-]].*$,,'`"
    fi
-   
+
    if test -z "$DIETVERSION"
    then
      DIET=""
      AC_MSG_RESULT([no])
    else
      DIET=""
-     
+
      LIBDIR="$DIETDIR/lib"
-     
+
      for x in $DIETLIBS
-     do     
+     do
        DIETLIB="`ls -d $x/lib-* $x/lib* 2>/dev/null | head -n1`"
-       
+
        if test -f "$DIETLIB/start.o"
-       then 
+       then
          LIBDIR="$DIETLIB"
        fi
      done
-     
+
      CPPFLAGS="$CPPFLAGS -nostdinc -D__dietlibc__ -idirafter $DIETDIR/include"
      CFLAGS="$CFLAGS"
      LDFLAGS="$LDFLAGS -nostdlib -static -L$LIBDIR $LIBDIR/start.o"
@@ -1018,15 +1018,15 @@ AC_ARG_WITH([dietlibc],
      AC_MSG_RESULT([$DIETVERSION])
    fi
  fi
- 
- AC_MSG_CHECKING([wheter compiler supports -falign])
- saved_CFLAGS="$CFLAGS"
- CFLAGS="$CFLAGS -mpreferred-stack-boundary=4 -falign-functions=4 -falign-jumps=1 -falign-loops=1"
- AC_TRY_COMPILE([], [], [
- AC_MSG_RESULT([yes])], [
- AC_MSG_RESULT([no])
- CFLAGS="$saved_CFLAGS"])
- 
+
+dnl  AC_MSG_CHECKING([wheter compiler supports -falign])
+dnl  saved_CFLAGS="$CFLAGS"
+dnl  CFLAGS="$CFLAGS -mpreferred-stack-boundary=4 -falign-functions=4 -falign-jumps=1 -falign-loops=1"
+dnl  AC_TRY_COMPILE([], [], [
+dnl  AC_MSG_RESULT([yes])], [
+dnl  AC_MSG_RESULT([no])
+dnl  CFLAGS="$saved_CFLAGS"])
+dnl
 AC_SUBST(DIETLIBC)
 AC_SUBST(DIET)])
 
@@ -1428,7 +1428,7 @@ fi
 
 AC_SUBST(SSL_LIBS)
 AC_SUBST(SSL_CFLAGS)
-])                        
+])
 
 # check for libowfat
 # ------------------------------------------------------------------
@@ -1441,7 +1441,7 @@ AC_DEFUN([AC_LOWFAT],
 AC_DEFUN([AC_CHECK_TERMIOS],
 [AC_SYS_POSIX_TERMIOS
 if test "$ac_cv_sys_posix_termios" = "yes"; then
-  AC_DEFINE_UNQUOTED([HAVE_TERMIOS], 1, 
+  AC_DEFINE_UNQUOTED([HAVE_TERMIOS], 1,
   [Define this if you have the POSIX termios library])
 fi
 ])
@@ -1684,7 +1684,7 @@ int main() {
 AC_DEFINE_UNQUOTED([HAVE_SIGIO], 1,
 [Define this if your OS supports I/O signales])], [AC_MSG_RESULT([no])])])
 
-# check for /dev/poll i/o multiplexing 
+# check for /dev/poll i/o multiplexing
 # ------------------------------------------------------------------
 AC_DEFUN([AC_FUNC_DEVPOLL],
 [AC_MSG_CHECKING([for /dev/poll])
@@ -1718,12 +1718,12 @@ main() {
     printf("event %d on fd #%d\n",p[i].revents,p[i].fd);
 }
 ], [AC_MSG_RESULT([yes])
-AC_DEFINE_UNQUOTED([HAVE_DEVPOLL], 1, 
+AC_DEFINE_UNQUOTED([HAVE_DEVPOLL], 1,
 [Define this if your OS supports /dev/poll])], [AC_MSG_RESULT([no])])])
 
 # check for sendfile() system call
 # ------------------------------------------------------------------
-AC_DEFUN([AC_FUNC_SENDFILE], 
+AC_DEFUN([AC_FUNC_SENDFILE],
 [m4_define([AC_HAVE_SENDFILE], [dnl
 AC_DEFINE_UNQUOTED([HAVE_SENDFILE], 1, [Define this if you have the sendfile() system call])])
 AC_MSG_CHECKING([for BSD sendfile])
@@ -1850,7 +1850,7 @@ dnl AM_PATH_SGUI([MINIMUM-VERSION, [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]]])
 dnl Test for libsgui, and define SGUI_CFLAGS and SGUI_LIBS
 dnl
 AC_DEFUN([AM_PATH_SGUI],
-[dnl 
+[dnl
 dnl Get the cflags and libraries from the sdl-config script
 dnl
 AC_ARG_WITH(sgui-prefix,[  --with-sgui-prefix=PFX   Prefix where libsgui is installed (optional)],
@@ -1911,7 +1911,7 @@ char*
 my_strdup (char *str)
 {
   char *new_str;
-  
+
   if (str)
     {
       new_str = (char *)malloc ((strlen (str) + 1) * sizeof(char));
@@ -1919,7 +1919,7 @@ my_strdup (char *str)
     }
   else
     new_str = NULL;
-  
+
   return new_str;
 }
 
@@ -1965,7 +1965,7 @@ int main (int argc, char *argv[])
   fi
   if test "x$no_sgui" = x ; then
      AC_MSG_RESULT(yes)
-     ifelse([$2], , :, [$2])     
+     ifelse([$2], , :, [$2])
   else
      AC_MSG_RESULT(no)
      if test "$SGUI_CONFIG" = "no" ; then
@@ -2025,7 +2025,7 @@ dnl AM_PATH_CHAOS([MINIMUM-VERSION, [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]]])
 dnl Test for libchaos, and define CHAOS_CFLAGS and CHAOS_LIBS
 dnl
 AC_DEFUN([AM_PATH_CHAOS],
-[dnl 
+[dnl
 dnl Get the cflags and libraries from the sdl-config script
 dnl
 AC_ARG_WITH(chaos-prefix,[  --with-chaos-prefix=PFX   Prefix where libchaos is installed (optional)],
@@ -2086,7 +2086,7 @@ char*
 my_strdup (char *str)
 {
   char *new_str;
-  
+
   if (str)
     {
       new_str = (char *)malloc ((strlen (str) + 1) * sizeof(char));
@@ -2094,7 +2094,7 @@ my_strdup (char *str)
     }
   else
     new_str = NULL;
-  
+
   return new_str;
 }
 
@@ -2140,7 +2140,7 @@ int main (int argc, char *argv[])
   fi
   if test "x$no_chaos" = x ; then
      AC_MSG_RESULT(yes)
-     ifelse([$2], , :, [$2])     
+     ifelse([$2], , :, [$2])
   else
      AC_MSG_RESULT(no)
      if test "$chaos_CONFIG" = "no" ; then
@@ -2199,7 +2199,7 @@ int main(int argc, char *argv[])
 
 # check for dependencies
 # ---------------------------------------------------------------------------
-AC_DEFUN([AC_CHECK_DEP], 
+AC_DEFUN([AC_CHECK_DEP],
 [AC_MSG_CHECKING([whether to enable dependencies])
 
 AC_ARG_ENABLE([dep],
@@ -2214,13 +2214,13 @@ AC_ARG_ENABLE([dep],
     DEP="no"
     AC_MSG_RESULT([no])
     ;;
-  esac], 
+  esac],
   [DEP="no"
   AC_MSG_RESULT([no])])
 if test "$DEP" = "yes"; then
-  NODEP=""
+  NODEP="" DEP="#"
 else
-  NODEP="# "
+  NODEP="#" DEP=""
 fi
 AC_SUBST(NODEP)
 AC_SUBST(DEP)])
@@ -2234,7 +2234,7 @@ AC_SUBST(DEP)])
 
 # check for debug mode
 # ---------------------------------------------------------------------------
-AC_DEFUN([AC_CHECK_DEBUG], 
+AC_DEFUN([AC_CHECK_DEBUG],
 [ac_cv_debug="no"
 
 AC_MSG_CHECKING([whether to enable debugging mode])
@@ -2264,13 +2264,13 @@ if test "$ac_cv_debug" = "yes"; then
   DEBUG="yes"
   AC_MSG_RESULT([yes])
 else
-  CFLAGS="`echo $CFLAGS -Os -fexpensive-optimizations -fomit-frame-pointer -Wall`"
+  CFLAGS="`echo $CFLAGS -Os -fomit-frame-pointer -Wall`"
 #  CPPFLAGS="`echo $CPPFLAGS -DNDEBUG -include assert.h`"
   CPPFLAGS="`echo $CPPFLAGS -DNDEBUG`"
   DEBUG="no"
   AC_MSG_RESULT([no])
 fi
-  
+
 AC_SUBST(DEBUG)])
 
 # $Id: maintainer.m4,v 1.4 2005/05/04 22:20:32 smoli Exp $
@@ -2308,7 +2308,7 @@ else
   NO_MAINTAINER=""
   AC_MSG_RESULT([no])
 fi
-  
+
 AC_SUBST(MAINTAINER)
 AC_SUBST(NO_MAINTAINER)
 ])
@@ -2379,7 +2379,7 @@ AC_ADD_VAR([DEBUG],    [Debug build])])
 #
 # Syntax:
 #
-#   AC_SUMMARIZE([directories], [variables], [format]) 
+#   AC_SUMMARIZE([directories], [variables], [format])
 #
 #   [directories]     set the directories you want in the summary
 #   [variables]       set the variables you want in the summary
@@ -2443,7 +2443,7 @@ done])
 #
 #   AC_SUMMARIZE_VARS([CC CFLAGS CXX CXXFLAGS])
 #
-AC_DEFUN([AC_SUMMARIZE_VARS], 
+AC_DEFUN([AC_SUMMARIZE_VARS],
 [m4_ifvaln([$2], m4_define([AC_SUMMARY_FORMAT], $2))AC_INIT_VARS
 # if no args given, display all substituted vars
 m4_ifvaln([$1], [ac_summarize_vars="$1"], [ac_summarize_vars="AC_DEFAULT_VARS"])
@@ -2492,7 +2492,7 @@ m4_defun([AC_ADD_VAR],
       if test "$$1"; then
         printf AC_SUMMARY_FORMAT "$2" ""
         AC_MSG_RESULT([$$1])
-      fi 
+      fi
       ;;
 ])])
 

@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <str.h>
+#include "str.h"
 #include "var.h"
 #include "tree.h"
 #include "expand.h"

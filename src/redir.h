@@ -1,8 +1,8 @@
 #ifndef REDIR_H
 #define REDIR_H
 
-#include <buffer.h>
-#include <stralloc.h>
+#include "buffer.h"
+#include "stralloc.h"
 
 #include "fd.h"
 

@@ -1,4 +1,4 @@
-#include <shell.h>
+#include "shell.h"
 #include "fd.h"
 #include "builtin.h"
 
@@ -20,6 +20,9 @@ int builtin_echo(int argc, char **argv)
       default: builtin_invopt(argv); return 1;
     }
   }
+  
+  // TODO
+  (void)eval;
   
   for(argv += shell_optind; *argv;)
   {

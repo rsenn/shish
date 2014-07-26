@@ -20,6 +20,7 @@ bindir          = @bindir@
 sbindir         = @sbindir@
 libexecdir      = @libexecdir@
 datadir         = @datadir@
+datarootdir     = @datarootdir@
 sysconfdir      = @sysconfdir@
 sharedstatedir  = @sharedstatedir@
 localstatedir   = @localstatedir@
@@ -92,7 +93,7 @@ POSTADD =
 
 # arguments for the programs
 # ---------------------------------------------------------------------------
-DEFS            = @DEFS@
+DEFS            = @DEFS@ #-DPACKAGE_NAME=\"$(PACKAGE)\" -DPACKAGE_VERSION=\"$(VERSION)\"
 LIBS            = @LIBS@
 CFLAGS          = @CFLAGS@
 LDFLAGS         = @LDFLAGS@
@@ -196,7 +197,7 @@ RCLEAN_TARGETS = clean-recursive \
 
 # common configuration
 # ---------------------------------------------------------------------------
-#INCLUDES             = -isystem $(top_srcdir)/include
+#INCLUDES             = -I$(top_srcdir)/include
 
 # files to be cleaned
 # ---------------------------------------------------------------------------

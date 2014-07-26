@@ -1,5 +1,5 @@
-#include <shell.h>
-#include <str.h>
+#include "shell.h"
+#include "str.h"
 #include "sh.h"
 
 /* output error message

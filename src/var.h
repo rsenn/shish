@@ -2,8 +2,8 @@
 #define VAR_H
 
 #include <stdlib.h>
-#include <uint64.h>
-#include <stralloc.h>
+#include "uint64.h"
+#include "stralloc.h"
 
 #define VAR_HASH     uint64
 #define VAR_BITS     (sizeof(VAR_HASH) * 8)

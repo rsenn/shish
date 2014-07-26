@@ -1,5 +1,5 @@
 #include "stralloc.h"
-#include <shell.h>
+#include "shell.h"
 
 /* truncates to n+1 and nul-terminates (but '\0' is not included in len)  */
 #ifdef DEBUG

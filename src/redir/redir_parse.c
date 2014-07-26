@@ -17,7 +17,7 @@
 int redir_parse(struct parser *p, int rf, int fd)
 {
   /* initialize fd to 0 for input, 1 for output */
-  unsigned char c;
+  char c;
 
   if(fd == -1)
     fd = rf;

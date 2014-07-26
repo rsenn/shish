@@ -8,7 +8,7 @@
 srcdir       = @srcdir@
 top_srcdir   = @top_srcdir@
 top_builddir = @top_builddir@
-thisdir      = src/term
+thisdir      = src/term/
 
 VPATH        = $(srcdir)
 
@@ -53,10 +53,10 @@ install:
 
 # local build configuration
 # ---------------------------------------------------------------------------
-INCLUDES += -isystem $(top_srcdir)/lib
-INCLUDES += -isystem $(top_builddir)/lib
+INCLUDES += -I$(top_srcdir)/lib
+#INCLUDES += -I$(top_builddir)/lib
 INCLUDES += -I$(top_srcdir)/src
-INCLUDES += -I$(top_builddir)/src
+#INCLUDES += -I$(top_builddir)/src
           
 # include build.mk (makefile helper)
 # ---------------------------------------------------------------------------

@@ -1,13 +1,13 @@
-#include <shell.h>
-#include <sys/mman.h>
+#include "shell.h"
 #include "buffer.h"
+#include "mmap.h"
 
 void buffer_free(buffer *b)
 {
   switch (b->todo)
   {
     case FREE: shell_free(b->x); break;
-    case MUNMAP: munmap(b->x,b->a); break;
+    case MUNMAP: mmap_unmap(b->x,b->a); break;
     default: ;
   }
   

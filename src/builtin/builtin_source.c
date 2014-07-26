@@ -1,4 +1,4 @@
-#include <shell.h>
+#include "shell.h"
 #include "builtin.h"
 #include "source.h"
 #include "fd.h"

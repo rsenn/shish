@@ -1,4 +1,4 @@
-#include <fmt.h>
+#include "fmt.h"
 #include "fd.h"
 #include "var.h"
 
@@ -35,7 +35,7 @@ unsigned long var_lexhash(const char *v, VAR_HASH *h)
   VAR_HASH hash;
   register int shift;
   register VAR_HASH value;
-  register const unsigned char *p = v; 
+  register const unsigned char *p = (const unsigned char *)v; 
 
   /* begin with the 6 most significant 
      bits, independent of word size */

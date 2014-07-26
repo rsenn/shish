@@ -1,7 +1,7 @@
 
 #include "shell.h"
 
-/*#include <buffer.h>*/
+/*#include "buffer.h"*/
 
 /* Based on dietlibc fnmatch (C) by Felix Leitner
  * 

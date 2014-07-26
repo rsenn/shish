@@ -1,4 +1,4 @@
-#include <scan.h>
+#include "scan.h"
 #include "term.h"
 #include "tree.h"
 #include "parse.h"
@@ -6,7 +6,7 @@
 
 void term_ansi(void)
 {
-  unsigned char c;
+  char c;
   unsigned long num;
   char buf[16];
   unsigned long i;
