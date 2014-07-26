@@ -5,7 +5,7 @@
 #ifdef DEBUG
 
 extern int term_read(int fd, char *buf, unsigned int len);
-extern int buffer_dummyreadmmap();
+extern ssize_t buffer_dummyreadmmap();
 extern int stralloc_write();
 
 void buffer_dump(buffer *out, buffer *b) 
