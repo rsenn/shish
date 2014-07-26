@@ -1,10 +1,27 @@
+cmake_minimum_required(VERSION 2.6)
+set(CMAKE_LEGACY_CYGWIN_WIN32 0)
+ 
 set(PACKAGE_NAME shish)
 set(PACKAGE_VERSION 0.8)
 set(PACKAGE_TARNAME "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 
 project(${PACKAGE_NAME} C)
 
+include(CheckIncludeFile)
+include(CheckSymbolExists)
+include(CheckFunctionExists)
+
+check_include_file(alloca.h HAVE_ALLOCA_H)
+
+if(HAVE_ALLOCA_H)
+  check_symbol_exists(alloca alloca.h HAVE_ALLOCA)
+endif()
+
+check_function_exists(sys_siglist HAVE_SYS_SIGLIST)
+
 configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.h")
+
+add_definitions(-DHAVE_CONFIG_H=1)
 
 set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0")
 

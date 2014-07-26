@@ -4,7 +4,7 @@
 
 int parse_squoted(struct parser *p)
 {
-  unsigned char c;
+  char c;
   
   if(p->tok == T_NAME)
     p->tok = T_WORD;

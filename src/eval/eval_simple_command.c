@@ -1,5 +1,8 @@
+#include <alloca.h>
 #include <unistd.h>
+#ifndef __MINGW32__
 #include <sys/wait.h>
+#endif
 #include "fdstack.h"
 #include "sh.h"
 #include "job.h"

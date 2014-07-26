@@ -4,9 +4,9 @@
 
 #ifdef DEBUG
 
-ssize_t term_read(int fd, char *buf, unsigned int len);
-ssize_t buffer_dummyreadmmap();
-ssize_t stralloc_write();
+extern ssize_t term_read(int fd, char *buf, unsigned int len);
+extern ssize_t buffer_dummyreadmmap();
+extern ssize_t stralloc_write();
 
 void buffer_dump(buffer *out, buffer *b) 
 {

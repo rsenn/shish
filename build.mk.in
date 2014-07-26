@@ -10,14 +10,16 @@ CLEANFILES += $(OBJECTS) $(LIBRARY) $(ARCHIVE) $(PROGRAM) $(PROGRAMS) .libdep
 
 # command lines
 # ---------------------------------------------------------------------------
-COMPILE         = $(CC) $(CPPFLAGS) $(DEFS) $(INCLUDES) $(CFLAGS)
+COMPILE         = $(CC) $(CFLAGS) $(CPPFLAGS) $(DEFS) $(INCLUDES)
 LINK            = $(CC) $(LDFLAGS)
-COMPLINK        = $(LINK) $(CPPFLAGS) $(DEFS) $(INCLUDES) $(CFLAGS)
+COMPLINK        = $(LINK) $(CFLAGS) $(CPPFLAGS) $(DEFS) $(INCLUDES)
 
 # file suffixes we may encounter
 # ---------------------------------------------------------------------------
 .SUFFIXES:
 .SUFFIXES: .c .h .o .s .in .d .@DLLEXT@
+
+.PHONY: all all-local bootfiles clean clean-local cvscheck cvsdir dep dep-local devdist devdist-all devdist-bzip devdist-bzip2 devdist-bzip2-all devdist-bzip-all devdistdir devdist-gz devdist-gzip devdist-gzip-all dist dist-all dist-bzip dist-bzip2 dist-bzip2-all dist-bzip-all distcheck distclean distclean-local distdir dist-gz dist-gzip dist-gzip-all install install-binEXEC install-data install-exec install-includeDATA install-libEXEC install-libexecEXEC install-local install-manDATA install-recursive install-sbinEXEC install-sharedDATA install-sharedstateDATA install-sharedstate-preserveDATA install-sysconfDATA install-sysconf-preserveDATA maintainer-clean maintainer-clean-local makefiles module-recursive
 
 # compilation rules by file extension
 # ---------------------------------------------------------------------------
@@ -47,8 +49,9 @@ makefiles: $(SUBMAKE:%=%/Makefile)
 $(SUBMAKE:%=%/Makefile):
 	@if test ! -f "$@" ; then \
 	  $(ECHO_CONFIG) ; \
-		F="$(thisdir)/$@"; \
+		F="$(thisdir)$@"; \
   	(cd "$(top_builddir)" && ./config.status $${F#./}) > /dev/null ; \
+    touch $@ ; \
   fi
   
 # common recursive targets
@@ -172,8 +175,8 @@ $(ARCHIVE): $(OBJECTS)
 # ---------------------------------------------------------------------------
 Makefile: $(top_builddir)/config.status $(srcdir)/Makefile.in $(top_builddir)/config.mk $(top_builddir)/build.mk
 	@$(ECHO_CONFIG)
-#	echo '@QUIET@cd "$(top_builddir)" && ./config.status "$(thisdir)/Makefile" >/dev/null'
-	@QUIET@cd "$(top_builddir)" && ./config.status Makefile >/dev/null
+#	echo '@QUIET@cd "$(top_builddir)" && ./config.status "$(thisdir)Makefile" >/dev/null'
+	@QUIET@cd "$(top_builddir)" && ./config.status $(thisdir)Makefile >/dev/null
 
 # rule for build.mk
 # ---------------------------------------------------------------------------

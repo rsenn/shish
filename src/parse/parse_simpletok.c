@@ -9,7 +9,7 @@ unsigned int       parse_lineno;
  * ----------------------------------------------------------------------- */
 int parse_simpletok(struct parser *p)
 {
-  unsigned char c;
+  char c;
   enum tok_flag tok;
   int advance;
     
@@ -101,7 +101,7 @@ again:
     /* check if the next char is the same */
     checkdouble:
     {
-      unsigned char c2;
+      char c2;
 
       /* advance buffer position now, but not later */
       advance = 0;

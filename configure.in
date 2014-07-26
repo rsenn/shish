@@ -53,6 +53,57 @@ dnl AC_TYPE_SOCKLEN
 dnl AC_IPV6
 dnl AC_SCOPE_ID
 dnl AC_CHECK_N2I
+AC_CHECK_HEADERS([unistd.h io.h pwd.h signal.h sys/types.h sys/signal.h],,,[])
+AC_CHECK_FUNC([gethostname],[],[dnl
+
+	AC_MSG_CHECKING(for gethostname in -lws2_32)
+	old_LIBS="$LIBS"
+	LIBS="$LIBS -lws2_32"
+
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+		/*int __stdcall gethostname(char *, int);*/
+		#include <winsock2.h>
+		]], [[
+		gethostname(0,0);
+		]])],[
+		AC_DEFINE_UNQUOTED([HAVE_GETHOSTNAME],[1],[Define this if you have the 'gethostname' function])
+		AC_MSG_RESULT([yes])
+		],[
+			AC_MSG_RESULT([no])
+			LIBS="$old_LIBS"
+		])
+		
+])
+AC_CHECK_FUNCS([sethostname sys_siglist lstat readlink]) 
+AC_CHECK_TYPE([ssize_t],AC_DEFINE_UNQUOTED([HAVE_SSIZE_T],[1],[Define this if you have the 'ssize_t' type]),[],[
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+])
+
+AC_CHECK_TYPE([uid_t],AC_DEFINE_UNQUOTED([HAVE_UID_T],[1],[Define this if you have the 'uid_t' type]),[],[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_PWD_H
+#include <pwd.h>
+#endif
+])
+
+AC_CHECK_TYPE([sigset_t],AC_DEFINE_UNQUOTED([HAVE_SIGSET_T],[1],[Define this if you have the 'sigset_t' type]),[],[
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+#ifdef HAVE_SYS_SIGNAL_H
+#include <sys/signal.h>
+#endif
+])
 
 # set debugging stuff after compiler test (-Werror could fuck it up)
 # ---------------------------------------------------------------------------

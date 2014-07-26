@@ -5,7 +5,7 @@
 int parse_dquoted(struct parser *p)
 {
   int flags = 0;
-  unsigned char c;
+  char c;
   
   if(p->tok == T_NAME)
     p->tok = T_WORD;
@@ -22,7 +22,7 @@ int parse_dquoted(struct parser *p)
     /* only ", $ and ` must be escaped */
     if(c == '\\')
     {
-      unsigned char nextc;
+      char nextc;
       
       if(source_next(&nextc) <= 0)
         return -1;

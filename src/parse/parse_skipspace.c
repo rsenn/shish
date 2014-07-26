@@ -6,7 +6,7 @@
  * ----------------------------------------------------------------------- */
 int parse_skipspace(struct parser *p)
 {
-  unsigned char c;
+  char c;
 
   /* skip whitespace */
   for(;;)

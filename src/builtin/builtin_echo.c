@@ -21,6 +21,9 @@ int builtin_echo(int argc, char **argv)
     }
   }
   
+  // TODO
+  (void)eval;
+  
   for(argv += shell_optind; *argv;)
   {
     buffer_puts(fd_out->w, *argv);

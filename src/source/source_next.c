@@ -3,7 +3,7 @@
 
 /* skip current char and get peek next one
  * ----------------------------------------------------------------------- */
-int source_next(unsigned char *c)
+int source_next(char *c)
 {
   register buffer *b = source->b;
   int ret;

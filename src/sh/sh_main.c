@@ -1,3 +1,4 @@
+#include <alloca.h>
 #include "shell.h"
 #include <stdlib.h>
 #include "str.h"
@@ -8,6 +9,10 @@
 #include "source.h"
 
 #include "uint32.h"
+
+#ifdef HAVE_CONFIG_H
+#include "../../config.h"
+#endif
 
 int         sh_argc;
 char      **sh_argv;
@@ -26,6 +31,7 @@ int sh_main(int argc, char **argv, char **envp)
   struct fd *fd;
   struct source src;
   char *cmds = NULL;
+  struct var *envvars;
 
   fd_exp = STDERR_FILENO + 1;
   
@@ -55,11 +61,21 @@ int sh_main(int argc, char **argv, char **envp)
   shell_init(fd_err->w, sh_name);
   
   /* import environment variables to the root vartab */
+  for(c = 0; envp[c]; c++) 
+    ;
+  
+#ifndef HAVE_ALLOCA
+#warning no alloca
+#else
+  if(!(envvars = alloca(sizeof(struct var)*c)))
+#endif
+    envvars = malloc(sizeof(struct var)*c);
+  
   for(c = 0; envp[c]; c++)
   {
     struct var *var;
-    var = var_import(envp[c], V_EXPORT, alloca(sizeof(struct var)));
-    
+    var = var_import(envp[c], V_EXPORT, &envvars[c]);
+
     /* use imported vars to seed the prng */
     uint32_seed(var->sa.s, var->sa.len);
   }

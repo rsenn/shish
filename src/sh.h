@@ -10,6 +10,10 @@
 #include <setjmp.h>
 #include "stralloc.h"
 
+#ifdef __MINGW32__
+typedef int uid_t;
+#endif
+
 #define sh_main main
 
 struct eval;

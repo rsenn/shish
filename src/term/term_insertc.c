@@ -1,7 +1,7 @@
 #include "term.h"
 
 /* ----------------------------------------------------------------------- */
-void term_insertc(unsigned char c)
+void term_insertc(char c)
 {
   buffer_put(term_output, (const char *)&c, 1);
 
