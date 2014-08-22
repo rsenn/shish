@@ -1,5 +1,5 @@
-#include <stralloc.h>
-#include <shell.h>
+#include "stralloc.h"
+#include "shell.h"
 #include "fd.h"
 #include "fdstack.h"
 #include "tree.h"

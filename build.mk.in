@@ -1,0 +1,794 @@
+# $Id: build.mk.in,v 1.3 2006/09/28 06:56:39 roman Exp $
+# ===========================================================================
+#
+# GNU makefile helper
+#
+# Copyleft GPL (c) 2005 by Roman Senn <smoli@paranoya.ch>
+
+
+CLEANFILES += $(OBJECTS) $(LIBRARY) $(A_LIBRARY) $(PIE_LIBRARY) $(PIE_LINKS) $(ARCHIVE) $(PROGRAM) $(PROGRAMS) .libdep
+
+# command lines
+# ---------------------------------------------------------------------------
+COMPILE         = $(CC) $(CPPFLAGS) $(DEFS) $(INCLUDES) $(CFLAGS)
+LINK            = $(CC) $(LDFLAGS)
+COMPLINK        = $(LINK) $(CPPFLAGS) $(INCLUDES) $(CFLAGS)
+
+# file suffixes we may encounter
+# ---------------------------------------------------------------------------
+.SUFFIXES:
+.SUFFIXES: .c .h .o .s .in .d .@PIE_LIBEXT@ .@PIC_OBJEXT@ .@PIC_DEPEXT@
+
+# compilation rules by file extension
+# ---------------------------------------------------------------------------
+.c.@OBJEXT@:
+	@$(ECHO_CC)
+@DEPS_TRUE@	@QUIET@$(COMPILE) -MD -c -o $@ $<
+@DEPS_FALSE@	@QUIET@$(COMPILE) -c -o $@ $<
+
+.c.i:
+	@$(ECHO_CC)
+@DEPS_TRUE@	@QUIET@$(COMPILE) -MD -E -o $@ $<
+@DEPS_FALSE@	@QUIET@$(COMPILE) -E -o $@ $<
+
+@PIC@.c.@PIC_OBJEXT@:
+@PIC@	@$(ECHO_PIC_CC)
+@DEPS_TRUE@@PIC@	@QUIET@$(COMPILE) $(PIC_CFLAGS) -MD -MF $(<:%.c=%.@PIC_DEPEXT@) -c -o $@ $<
+@DEPS_FALSE@@PIC@	@QUIET@$(COMPILE) $(PIC_CFLAGS) -c -o $@ $<
+
+#.c.@PIE_LIBEXT@:
+#	@$(ECHO_CCLD)
+#	@QUIET@$(COMPLINK) $(PIC_CFLAGS) $(PIE_LDFLAGS) -MD -o $@ $< $(LIBS)
+
+%.@PIE_LIBEXT@: %.c %.def
+	@$(ECHO_CCLD)
+@DEPS_TRUE@	@QUIET@$(COMPLINK) $(PIC_CFLAGS) $(MOD_LDFLAGS) -MD -o $@ $< $(LIBS)
+@DEPS_FALSE@	@QUIET@$(COMPLINK) $(PIC_CFLAGS) $(MOD_LDFLAGS) -o $@ $< $(LIBS)
+
+%.def: %.c
+	@$(ECHO_MKDEF)
+@DLM_TRUE@@WIN32_TRUE@	@QUIET@{ echo "EXPORTS"; echo "  $(subst .def,_load,$@)"; echo "  $(subst .def,_unload,$@)"; } >$@
+
+.c.s:
+	@$(ECHO_CC)
+@DEPS_TRUE@	@QUIET@$(COMPILE) -MD -S $<
+@DEPS_FALSE@	@QUIET@$(COMPILE) -S $<
+
+.asm.o:
+	@$(ECHO_NASM)
+	@QUIET@$(NASM) $(NASMFLAGS) $(srcpfx)$<
+
+# targets for makefiles in subdirs
+# ---------------------------------------------------------------------------
+# (they must be generated before we can enter the subdir, after they got 
+#  generated the first time the Makefiles in the subdir take control of
+#  keeping themselves up to date)
+#
+makefiles: $(SUBMAKE:%=%/Makefile)
+$(SUBMAKE:%=%/Makefile):
+	@if test ! -f "$@" ; then \
+	  $(ECHO_CONFIG) ; \
+  	(cd $(top_builddir) && ./config.status $(thisdir)$@) > /dev/null ; \
+  fi
+  
+# common recursive targets
+# ---------------------------------------------------------------------------
+$(RECURSIVE_TARGETS):
+	@set fnord $$MAKEFLAGS; amf=$$2; \
+        dot_seen=no; \
+        target=`echo $@ | sed s/-recursive//`; \
+        list='$(SUBDIRS)'; for subdir in $$list; do \
+          if test "$$subdir" = "."; then \
+            dot_seen=yes; \
+            local_target="$$target-local"; \
+          else \
+            local_target="$$target"; \
+          fi; \
+          $(ECHO_CD) ; \
+          (cd $$subdir && $(MAKE) reldir="$(reldir)$$subdir/" $$local_target) \
+           || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+        done ; \
+        if test "$$dot_seen" = "no"; then \
+          $(MAKE) "$$target-local" || exit 1; \
+        fi; test -z "$$fail"
+install-recursive:
+	@set fnord $$MAKEFLAGS; amf=$$2; \
+        dot_seen=no; \
+        target=`echo $@ | sed s/-recursive//`; \
+        list='$(SUBDIRS)'; for subdir in $$list; do \
+          if test "$$subdir" = "."; then \
+            dot_seen=yes; \
+            local_target="$$target-local"; \
+          else \
+            local_target="$$target"; \
+          fi; \
+          $(ECHO_CD) ; \
+          (cd $$subdir && $(MAKE) reldir="$(reldir)$$subdir/" $$local_target) \
+           || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+        done ; \
+        if test "$$dot_seen" = "no"; then \
+          $(MAKE) "$$target-local" || exit 1; \
+        fi; test -z "$$fail"
+module-recursive:
+	@set fnord $$MAKEFLAGS; amf=$$2; \
+        dot_seen=no; \
+        target=`echo $@ | sed s/-recursive//`; \
+        list='$(MODULES)'; for subdir in $$list; do \
+          if test "$$subdir" = "."; then \
+            dot_seen=yes; \
+            local_target="$$target-local"; \
+          else \
+            local_target="$$target"; \
+          fi; \
+          $(ECHO_CD) ; \
+          (cd $$subdir && $(MAKE) reldir="$(reldir)$$subdir/" $$local_target) \
+           || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+        done ; \
+        if test "$$dot_seen" = "no"; then \
+          $(MAKE) "$$target-local" || exit 1; \
+        fi; test -z "$$fail"
+
+# recursive targets for cleaning the tree
+# ---------------------------------------------------------------------------
+$(RCLEAN_TARGETS):
+	@set fnord $$MAKEFLAGS; amf=$$2; \
+		dot_seen=no; \
+		target=`echo $@ | sed s/-recursive//`; \
+		list='$(SUBDIRS)'; for subdir in $$list; do \
+			if test "$$subdir" = "."; then \
+				dot_seen=yes; \
+				local_target="$$target-local"; \
+			else \
+				local_target="$$target"; \
+			fi; \
+			$(ECHO_CD) ; \
+			(cd $$subdir && $(MAKE) reldir="$(reldir)$$subdir/" $$local_target) \
+			|| case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+		done ; \
+		if test "$$dot_seen" = "no"; then \
+			$(MAKE) "$$target-local" || exit 1; \
+		fi; test -z "$$fail"
+
+# clean: remove all files built with target 'all'
+# ---------------------------------------------------------------------------
+clean: clean-recursive clean-local
+clean-local:
+@SILENT@	@for x in `ls -d $(CLEANFILES) 2>/dev/null | sort -u` ; \
+@SILENT@	do \
+@SILENT@		$(ECHO_RM) ; \
+@SILENT@		$(RM) "$$x" ; \
+@SILENT@	done
+@NOSILENT@	$(RM) $(CLEANFILES)
+
+# distclean: remove all files built with target 'all' and some generated by
+#            autotools. tree should be like a distribution tarball after.
+# ---------------------------------------------------------------------------
+distclean: distclean-recursive distclean-local
+distclean-local:
+@SILENT@	@for x in `ls -d $(DISTCLEANFILES) $(CLEANFILES) 2>/dev/null | sort -u` ; \
+@SILENT@	do \
+@SILENT@		$(ECHO_RM) ; \
+@SILENT@		$(RM) "$$x" ; \
+@SILENT@	done
+@NOSILENT@	$(RM) $(DISTCLEANFILES) $(CLEANFILES)
+        
+# maintainer-clean: remove all built files. tree should be like a fresh cvs
+#                   checkout after.
+# ---------------------------------------------------------------------------
+maintainer-clean: maintainer-clean-recursive maintainer-clean-local
+maintainer-clean-local: maintainer-clean-recursive
+@SILENT@	@for x in `ls -d $(MAINTAINERCLEANFILES) $(DISTCLEANFILES) $(CLEANFILES) 2>/dev/null | sort -u`; \
+@SILENT@	do \
+@SILENT@		$(ECHO_RM) ; \
+@SILENT@		rm -r "$$x" ; \
+@SILENT@	done
+@NOSILENT@	$(RM) -r $(MAINTAINERCLEANFILES) $(DISTCLEANFILES) $(CLEANFILES)
+
+# build an archive (just an archive of objects, no real library 
+# ---------------------------------------------------------------------------
+$(ARCHIVE): $(OBJECTS)
+	@$(ECHO_AR)
+	@$(AR) $(ARCHIVE) $(OBJECTS)
+
+# global rule for all makefiles
+# ---------------------------------------------------------------------------
+Makefile: $(top_builddir)/config.status $(srcdir)/Makefile.in $(top_builddir)/config.mk $(top_builddir)/build.mk
+	@$(ECHO_CONFIG)
+#	echo '@QUIET@cd $(top_builddir) && ./config.status $(thisdir)Makefile $(REDIR)'
+	@QUIET@cd $(top_builddir) && ./config.status $(thisdir)Makefile $(REDIR)
+
+Doxyfile: $(top_builddir)/config.status $(srcdir)/Doxyfile.in $(top_builddir)/config.mk $(top_builddir)/build.mk
+	@$(ECHO_CONFIG)
+	@QUIET@cd $(top_builddir) && ./config.status $(thisdir)Doxyfile $(REDIR)
+
+# rule for build.mk
+# ---------------------------------------------------------------------------
+$(top_builddir)/build.mk: $(top_builddir)/config.status $(top_srcdir)/build.mk.in
+	@$(ECHO_CONFIG)
+	@QUIET@cd $(top_builddir) && ./config.status build.mk $(REDIR)
+                                
+# rule for config.mk
+# ---------------------------------------------------------------------------
+$(top_builddir)/config.mk: $(top_builddir)/config.status $(top_srcdir)/config.mk.in
+	@$(ECHO_CONFIG)
+	@QUIET@cd $(top_builddir) && ./config.status config.mk $(REDIR)
+
+# rule for config.status
+# ---------------------------------------------------------------------------
+$(top_builddir)/config.status: $(top_srcdir)/configure
+	@$(ECHO_CONFIG)
+	@QUIET@cd $(top_builddir) && ./configure $(ac_configure_args)
+
+# rule for config.h
+# ---------------------------------------------------------------------------
+$(CONFIG_H): $(top_builddir)/config.status $(CONFIG_H_IN)
+	@$(ECHO_CONFIG)
+	@QUIET@test -z $(CONFIG_H_TOP) || { cd $(top_builddir) && \
+	rm -f $(CONFIG_H_TOP) && \
+	./config.status $(CONFIG_H_TOP) $(REDIR); }
+
+# targets for maintainer generated files
+# ---------------------------------------------------------------------------
+@MAINTAINER@$(top_srcdir)/configure: $(top_srcdir)/configure.in $(top_srcdir)/aclocal.m4
+@MAINTAINER@	@$(ECHO_AUTOCONF)
+@MAINTAINER@	@QUIET@rm -f $(top_srcdir)/configure
+@MAINTAINER@	@QUIET@cd $(top_srcdir) && (autoconf && \
+@MAINTAINER@	mv configure configure.tmp && \
+@MAINTAINER@	sed 's,###ESCAPE###,[,' < configure.tmp > configure && \
+@MAINTAINER@	chmod 755 configure)
+
+@MAINTAINER@$(top_srcdir)/aclocal.m4: $(top_srcdir)/m4/*.m4 $(top_srcdir)/configure.in
+@MAINTAINER@	@$(ECHO_ACLOCAL)
+@MAINTAINER@	@QUIET@rm -f $(top_srcdir)/aclocal.m4
+@MAINTAINER@	@QUIET@cd $(top_srcdir) && aclocal -I m4
+
+#$(top_srcdir)/aclocal.m4 
+@MAINTAINER@$(CONFIG_H_IN): $(top_srcdir)/configure.in
+@MAINTAINER@	@$(ECHO_AUTOHEADER)
+@MAINTAINER@	@QUIET@cd $(top_srcdir) && autoheader
+
+# makes a subdir party of a library
+# ---------------------------------------------------------------------------
+.libdep: $(OBJECTS)
+	@$(ECHO_AR)
+	@QUIET@$(AR) $(LIB) $(OBJECTS)
+	@touch $@
+
+# rule for libraries
+# ---------------------------------------------------------------------------
+$(A_LIBRARY): #$(OBJECTS)
+	@$(ECHO_AR)
+	@QUIET@$(AR) $(A_LIBRARY) $^
+	@$(ECHO_RANLIB)
+	@QUIET@$(RANLIB) $(A_LIBRARY)
+
+$(PIE_LIBRARY): $(PIC_OBJECTS)
+	@$(ECHO_PIE_LD)
+	@QUIET@$(PIE_LINK) $(PIE_LDFLAGS) -o $(PIE_LIBRARY) $(PIC_OBJECTS) $(LDADD) $(LIBS)
+#	prev='$@' ; for link in $(PIE_LINKS) ; \
+#   do \
+#     $(ECHO_LN)$$link ; \
+#     $(RM) -f $$link ; \
+#     $(LN) -s $$prev $$link ; \
+#     prev=$$link ; \
+#   done
+
+# rule for programs
+# ---------------------------------------------------------------------------
+#$(PROGRAM): $(OBJECTS) $(LDADD)
+#	@$(ECHO_LD)
+#	@QUIET@$(LINK) -o $(PROGRAM) $^ $(LIB) $(LIBS)
+
+#$(PROGRAMS): $(LDADD)
+#	@$(ECHO_LD)
+#	@make $@.o
+#	@QUIET@$(LINK) -o $@ $@.o $(LDADD) $(LIB) $(LIBS)
+# library rules
+# ---------------------------------------------------------------------------
+@A_LIB@a-library: $(A_LIBRARY)
+@NO_A_LIB@a-library:
+
+@PIE_LIB@pie-library: $(PIE_LIBRARY)
+@NO_PIE_LIB@pie-library:
+
+# installation rules.... clean this stuff up someday!!!!!!!!!
+# ---------------------------------------------------------------------------
+install-exec: install-binEXEC \
+              install-sbinEXEC \
+              install-libexecEXEC \
+              install-libEXEC \
+              install-slibEXEC \
+              install-pluginEXEC
+              
+install-data: install-includeDATA \
+              install-libDATA \
+              install-sysconfDATA \
+              install-sysconf-preserveDATA \
+              install-sharedstateDATA \
+              install-ini-preserveDATA \
+              install-sharedDATA \
+              install-manDATA
+
+# install executables into bindir
+# ---------------------------------------------------------------------------
+install-binEXEC: $(bin_EXEC)
+	@-if test ! -d $(DESTDIR)$(bindir)$(bin_PREFIX) && test "$(bin_EXEC)"; then \
+		$(ECHO_MKDIR)$(DESTDIR)$(bindir)$(bin_PREFIX) ; \
+		$(INSTALL_DIR) $(DESTDIR)$(bindir)$(bin_PREFIX) 2>/dev/null ; \
+	fi
+	@list='$(bin_EXEC)'; for p in $$list; do \
+		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+		f="`echo $$p | sed -e 's|^.*/||'`"; \
+		$(ECHO_INSTALL)$(bindir)$(bin_PREFIX)/$$f; \
+		$(INSTALL_EXEC) $$d$$p $(DESTDIR)$(bindir)$(bin_PREFIX)/$$f $(REDIR); \
+	done
+        
+# install superuser executables into sbindir
+# ---------------------------------------------------------------------------
+install-sbinEXEC: $(sbin_EXEC)
+	@-if test ! -d $(DESTDIR)$(sbindir)$(sbin_PREFIX) && test "$(sbin_EXEC)"; then \
+		$(ECHO_MKDIR)$(DESTDIR)$(sbindir)$(sbin_PREFIX) ; \
+		$(INSTALL_DIR) $(DESTDIR)$(sbindir)$(sbin_PREFIX) 2>/dev/null ; \
+	fi
+	@list='$(sbin_EXEC)'; for p in $$list; do \
+		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+		f="`echo $$p | sed -e 's|^.*/||'`"; \
+		$(ECHO_INSTALL)$(sbindir)$(sbin_PREFIX)/$$f; \
+		$(INSTALL_EXEC) $$d$$p $(DESTDIR)$(sbindir)$(sbin_PREFIX)/$$f $(REDIR); \
+	done
+        
+# install executable library stuff into libexecdir
+# ---------------------------------------------------------------------------
+install-libexecEXEC: $(libexec_EXEC)
+	@-if test ! -d $(DESTDIR)$(libexecdir)$(libexec_PREFIX) && test "$(libexec_EXEC)"; then \
+		$(ECHO_MKDIR)$(DESTDIR)$(libexecdir)$(libexec_PREFIX) ; \
+		$(INSTALL_DIR) $(DESTDIR)$(libexecdir)$(libexec_PREFIX) 2>/dev/null ; \
+	fi
+	@list='$(libexec_EXEC)'; for p in $$list; do \
+		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+		f="`echo $$p | sed -e 's|^.*/||'`"; \
+		$(ECHO_INSTALL)$(libexecdir)$(libexec_PREFIX)/$$f; \
+		$(INSTALL_EXEC) $$d$$p $(DESTDIR)$(libexecdir)$(libexec_PREFIX)/$$f $(REDIR); \
+	done
+        
+# install libraries into libdir
+# ---------------------------------------------------------------------------
+install-libEXEC: $(lib_EXEC)
+	@-if test ! -d $(DESTDIR)$(libdir)$(lib_PREFIX) && test "$(lib_EXEC)"; then \
+		$(ECHO_MKDIR)$(DESTDIR)$(libdir)$(lib_PREFIX) ; \
+		$(INSTALL_DIR) $(DESTDIR)$(libdir)$(lib_PREFIX) >/dev/null ; \
+	fi
+	@-if test ! -d $(DESTDIR)$(libdir)$(lib_PREFIX); then \
+		$(ECHO_MKDIR)$(DESTDIR)$(libdir)$(lib_PREFIX) ; \
+		$(INSTALL_DIR) $(DESTDIR)$(libdir)$(lib_PREFIX) 2>/dev/null ; \
+	fi
+	@list='$(lib_EXEC)'; for p in $$list; do \
+		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+		f="`echo $$p | sed -e 's|^.*/||'`"; \
+		$(ECHO_INSTALL)$(libdir)$(lib_PREFIX)/$$f; \
+		$(INSTALL_EXEC) $$d$$p $(DESTDIR)$(libdir)$(lib_PREFIX)/$$f >/dev/null; \
+	done
+        
+# install shared libraries into libdir
+# ---------------------------------------------------------------------------
+install-slibEXEC: $(slib_EXEC)
+	@-if test ! -d $(DESTDIR)$(slibdir)$(slib_PREFIX) && test "$(slib_EXEC)"; then \
+		$(ECHO_MKDIR)$(DESTDIR)$(slibdir)$(slib_PREFIX) ; \
+		$(INSTALL_DIR) $(DESTDIR)$(slibdir)$(slib_PREFIX) >/dev/null ; \
+	fi
+	@-if test ! -d $(DESTDIR)$(slibdir)$(slib_PREFIX); then \
+		$(ECHO_MKDIR)$(DESTDIR)$(slibdir)$(slib_PREFIX) ; \
+		$(INSTALL_DIR) $(DESTDIR)$(slibdir)$(slib_PREFIX) 2>/dev/null ; \
+	fi
+	@list='$(slib_EXEC)'; for p in $$list; do \
+		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+		f="`echo $$p | sed -e 's|^.*/||'`"; \
+		$(ECHO_INSTALL)$(slibdir)$(slib_PREFIX)/$$f; \
+		$(INSTALL_EXEC) $$d$$p $(DESTDIR)$(slibdir)$(slib_PREFIX)/$$f >/dev/null; \
+	done
+        
+# install plugins into plugindir
+# ---------------------------------------------------------------------------
+install-pluginEXEC: $(plugin_EXEC)
+	@-if test ! -d $(DESTDIR)$(plugindir)$(plugin_PREFIX) && test "$(plugin_EXEC)"; then \
+		$(ECHO_MKDIR)$(DESTDIR)$(plugindir)$(plugin_PREFIX) ; \
+		$(INSTALL_DIR) $(DESTDIR)$(plugindir)$(plugin_PREFIX) >/dev/null ; \
+	fi
+	@-if test ! -d $(DESTDIR)$(plugindir)$(plugin_PREFIX); then \
+		$(ECHO_MKDIR)$(DESTDIR)$(plugindir)$(plugin_PREFIX) ; \
+		$(INSTALL_DIR) $(DESTDIR)$(plugindir)$(plugin_PREFIX) 2>/dev/null ; \
+	fi
+	@list='$(plugin_EXEC)'; for p in $$list; do \
+		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+		f="`echo $$p | sed -e 's|^.*/||'`"; \
+		$(ECHO_INSTALL)$(plugindir)$(plugin_PREFIX)/$$f; \
+		$(INSTALL_EXEC) $$d$$p $(DESTDIR)$(plugindir)$(plugin_PREFIX)/$$f >/dev/null; \
+	done
+        
+# install libraries into libdir
+# ---------------------------------------------------------------------------
+install-libDATA: $(lib_DATA)
+	@-if test ! -d $(DESTDIR)$(libdir)$(lib_PREFIX) && test "$(lib_DATA)"; then \
+		$(ECHO_MKDIR)$(DESTDIR)$(libdir)$(lib_PREFIX) ; \
+		$(INSTALL_DIR) $(DESTDIR)$(libdir)$(lib_PREFIX) >/dev/null ; \
+	fi
+	@-if test ! -d $(DESTDIR)$(libdir)$(lib_PREFIX); then \
+		$(ECHO_MKDIR)$(DESTDIR)$(libdir)$(lib_PREFIX) ; \
+		$(INSTALL_DIR) $(DESTDIR)$(libdir)$(lib_PREFIX) 2>/dev/null ; \
+	fi
+	@list='$(lib_DATA)'; for p in $$list; do \
+		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+		f="`echo $$p | sed -e 's|^.*/||'`"; \
+		$(ECHO_INSTALL)$(libdir)$(lib_PREFIX)/$$f; \
+		$(INSTALL_DATA) $$d$$p $(DESTDIR)$(libdir)$(lib_PREFIX)/$$f >/dev/null; \
+	done
+@PIE_LIB@	@prev='$(PIE_LIBRARY)'; for link in $(PIE_LINKS); do \
+@PIE_LIB@	  if test -f "$$prev" ; then \
+@PIE_LIB@	    $(ECHO_INSTALL)$(libdir)$(lib_PREFIX)/$$link ; \
+@PIE_LIB@	    $(RM) -f $(DESTDIR)$(libdir)$(lib_PREFIX)/$$link ; \
+@PIE_LIB@	    $(LN) -s $$prev $(DESTDIR)$(libdir)$(lib_PREFIX)/$$link ; \
+@PIE_LIB@	    prev=$$link ; \
+@PIE_LIB@	  fi ; \
+@PIE_LIB@	done
+
+# install headers into includedir
+# ---------------------------------------------------------------------------
+install-includeDATA: $(include_DATA)
+	@-if test ! -d $(DESTDIR)$(includedir)$(include_PREFIX) && test "$(include_DATA)"; then \
+		$(ECHO_MKDIR)$(DESTDIR)$(includedir)$(include_PREFIX) ; \
+		$(INSTALL_DIR) $(DESTDIR)$(includedir)$(include_PREFIX) 2>/dev/null ; \
+	fi
+	@list='$(include_DATA)'; for p in $$list; do \
+		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+		f="`echo $$p | sed -e 's|^.*/||'`"; \
+		$(ECHO_INSTALL)$(includedir)$(include_PREFIX)/$$f; \
+		$(INSTALL_DATA) $$d$$p $(DESTDIR)$(includedir)$(include_PREFIX)/$$f $(REDIR); \
+	done
+
+# install shared data into datadir
+# ---------------------------------------------------------------------------
+install-sharedDATA: $(shared_DATA)
+@SILENT@	@-if test ! -d $(DESTDIR)$(datadir)$(shared_PREFIX) && test "$(shared_DATA)"; then \
+@SILENT@		$(ECHO_MKDIR)$(DESTDIR)$(datadir)$(shared_PREFIX) ; \
+@SILENT@		$(INSTALL_DIR) $(DESTDIR)$(datadir)$(shared_PREFIX) ; \
+@SILENT@	fi
+@SILENT@	@list='$(shared_DATA)'; for p in $$list; do \
+@SILENT@		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+@SILENT@		f="`echo $$p | sed -e 's|^.*/||'`"; \
+@SILENT@		$(ECHO_INSTALL)$(datadir)$(shared_PREFIX)/$$f; \
+@SILENT@		$(INSTALL_DATA) $$d$$p $(DESTDIR)$(datadir)$(shared_PREFIX)/$$f $(REDIR); \
+@SILENT@	done
+@NOSILENT@	@-if test ! -d $(DESTDIR)$(datadir)$(shared_PREFIX) && test "$(shared_DATA)"; then \
+@NOSILENT@		echo "$(INSTALL_DIR) $(DESTDIR)$(datadir)$(shared_PREFIX)" ; \
+@NOSILENT@		$(INSTALL_DIR) $(DESTDIR)$(datadir)$(shared_PREFIX) ; \
+@NOSILENT@	fi
+@NOSILENT@	@list='$(shared_DATA)'; for p in $$list; do \
+@NOSILENT@		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+@NOSILENT@		f="`echo $$p | sed -e 's|^.*/||'`"; \
+@NOSILENT@		echo "$(INSTALL_DATA) $$d$$p $(DESTDIR)$(datadir)$(shared_PREFIX)/$$f $(REDIR)"; \
+@NOSILENT@		$(INSTALL_DATA) $$d$$p $(DESTDIR)$(datadir)$(shared_PREFIX)/$$f $(REDIR); \
+@NOSILENT@	done
+
+# install configuration files into sysconfdir
+# ---------------------------------------------------------------------------
+install-sysconfDATA: $(sysconf_DATA)
+	@-if test ! -d $(DESTDIR)$(sysconfdir)$(sysconf_PREFIX) && test "$(sysconf_DATA)"; then \
+		$(ECHO_MKDIR)$(DESTDIR)$(sysconfdir)$(sysconf_PREFIX) ; \
+		$(INSTALL_DIR) $(DESTDIR)$(sysconfdir)$(sysconf_PREFIX) ; \
+	fi
+	@list='$(sysconf_DATA)'; for p in $$list; do \
+		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+		f="`echo $$p | sed -e 's|^.*/||'`"; \
+		$(ECHO_INSTALL)$(sysconfdir)$(sysconf_PREFIX)/$$f; \
+		$(INSTALL_DATA) $$d$$p $(DESTDIR)$(sysconfdir)$(sysconf_PREFIX)/$$f $(REDIR); \
+	done
+
+# install manuals into mandir
+# ---------------------------------------------------------------------------
+@SILENT@install-manDATA: $(man_DATA)
+@SILENT@	@-if test ! -d $(DESTDIR)$(mandir)$(man_PREFIX) && test "$(man_DATA)"; then \
+@SILENT@		$(ECHO_MKDIR)$(DESTDIR)$(mandir)$(man_PREFIX) ; \
+@SILENT@		$(INSTALL_DIR) $(DESTDIR)$(mandir)$(man_PREFIX) ; \
+@SILENT@	fi
+@SILENT@	@list='$(man_DATA)'; for p in $$list; do \
+@SILENT@		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+@SILENT@		f="`echo $$p | sed -e 's|^.*/||'`"; \
+@SILENT@		$(ECHO_INSTALL)$(mandir)$(man_PREFIX)/$$f; \
+@SILENT@		$(INSTALL_DATA) $$d$$p $(DESTDIR)$(mandir)$(man_PREFIX)/$$f $(REDIR); \
+@SILENT@	done
+@NOSILENT@install-manDATA: $(man_DATA)
+@NOSILENT@	@-if test ! -d $(DESTDIR)$(mandir)$(man_PREFIX) && test "$(man_DATA)"; then \
+@NOSILENT@		echo "$(INSTALL_DIR) $(DESTDIR)$(mandir)$(man_PREFIX)" ; \
+@NOSILENT@		$(INSTALL_DIR) $(DESTDIR)$(mandir)$(man_PREFIX) ; \
+@NOSILENT@	fi
+@NOSILENT@	@list='$(man_DATA)'; for p in $$list; do \
+@NOSILENT@		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+@NOSILENT@		f="`echo $$p | sed -e 's|^.*/||'`"; \
+@NOSILENT@		echo "$(INSTALL_DATA) $$d$$p $(DESTDIR)$(mandir)$(man_PREFIX)/$$f $(REDIR)" ; \
+@NOSILENT@		$(INSTALL_DATA) $$d$$p $(DESTDIR)$(mandir)$(man_PREFIX)/$$f $(REDIR); \
+@NOSILENT@	done
+
+# install configuration into sysconfdir, but not overwrite them
+# ---------------------------------------------------------------------------
+install-sysconf-preserveDATA: $(sysconf_preserve_DATA)
+	@-if test ! -d $(DESTDIR)$(sysconfdir)$(sysconf_PREFIX) && \
+		test "$(sysconf_preserve_DATA)"; then \
+		$(ECHO_MKDIR)$(DESTDIR)$(sysconfdir)$(sysconf_PREFIX) ; \
+		$(INSTALL_DIR) $(DESTDIR)$(sysconfdir)$(sysconf_PREFIX) ; \
+	fi
+	@list='$(sysconf_preserve_DATA)'; for p in $$list; do \
+		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+		f="`echo $$p | sed -e 's|^.*/||'`"; \
+		$(ECHO_INSTALL)$(sysconfdir)$(sysconf_PREFIX)/$$f; \
+		if test ! -f  $(DESTDIR)$(sysconfdir)$(sysconf_PREFIX)/$$f; then \
+			$(INSTALL_DATA) $$d$$p $(DESTDIR)$(sysconfdir)$(sysconf_PREFIX)/$$f $(REDIR); \
+		fi ; \
+	done
+
+# install data into sharedstatedir
+# ---------------------------------------------------------------------------
+install-sharedstateDATA: $(sharedstate_DATA)
+	@-if test ! -d $(DESTDIR)$(sharedstatedir)$(sharedstate_PREFIX) && \
+		test "$(sharedstate_DATA)"; then \
+		$(ECHO_MKDIR)$(DESTDIR)$(sharedstatedir)$(sharedstate_PREFIX) ; \
+		$(INSTALL_DIR) $(DESTDIR)$(sharedstatedir)$(sharedstate_PREFIX) ; \
+	fi
+	@list='$(sharedstate_DATA)'; for p in $$list; do \
+	if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+		f="`echo $$p | sed -e 's|^.*/||'`"; \
+		$(ECHO_INSTALL)$(sharedstatedir)$(sharedstate_PREFIX)/$$f; \
+		$(INSTALL_DATA) $$d$$p $(DESTDIR)$(sharedstatedir)$(sharedstate_PREFIX)/$$f $(REDIR); \
+	done
+
+# install data into inidir, but not overwrite them
+# ---------------------------------------------------------------------------
+install-ini-preserveDATA: $(ini_preserve_DATA)
+	@-if test ! -d $(DESTDIR)$(inidir)$(ini_PREFIX) && \
+		test "$(ini_preserve_DATA)"; then \
+		$(ECHO_MKDIR)$(DESTDIR)$(inidir)$(ini_PREFIX) ; \
+		$(INSTALL_DIR) $(DESTDIR)$(inidir)$(ini_PREFIX) ; \
+	fi
+	@list='$(ini_preserve_DATA)'; for p in $$list; do \
+		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+		f="`echo $$p | sed -e 's|^.*/||'`"; \
+		$(ECHO_INSTALL)$(inidir)$(ini_PREFIX)/$$f; \
+		if test ! -f  $(DESTDIR)$(inidir)$(ini_PREFIX)/$$f ; then \
+			$(INSTALL_DATA) $$d$$p $(DESTDIR)$(inidir)$(ini_PREFIX)/$$f $(REDIR); \
+		fi ; \
+	done
+#endif 
+
+# make a fresh cvs checkout
+# ---------------------------------------------------------------------------
+cvsdir:
+	@$(remove_cvsdir)
+	CVS_RSH=ssh cvs -z9 co $(cvsdir)
+
+# make a distribution tree in a subdir
+# ---------------------------------------------------------------------------
+distdir:
+	@$(remove_distdir)
+	@mkdir -p $(distdir)
+	@list=`echo $(DISTFILES) | sed -e 's,.*/,,'`; \
+	for file in $$list ; \
+	do \
+		$(ECHO_DIST) ; \
+		if test -f $$file || test -d $$file; \
+		then \
+			d=.; \
+                else \
+			d=$(srcdir); \
+		fi; \
+		dir=`echo "$$file" | sed -e 's,/+.*$$,,'`; \
+		if test "$$dir" != "$$file" && test "$$dir" != "."; \
+		then \
+			dir="/$$dir"; \
+			$(mkinstalldirs) "$(distdir)$$dir"; \
+		else \
+			dir=''; \
+		fi; \
+		if test -d $$d/$$file; \
+		then \
+			if test -d $(srcdir)/$$file && test $$d != $(srcdir); \
+			then \
+				cp -pR $(srcdir)/$$file $(distdir)$$dir || exit 1; \
+			fi; \
+			cp -pR $$d/$$file $(distdir)$$dir || exit 1; \
+		else \
+			test -f $(distdir)/$$file \
+			|| cp -p $$d/$$file $(distdir)/$$file \
+			|| exit 1; \
+		fi; \
+	done
+	@list='$(SUBDIRS)'; \
+	for subdir in $$list; do \
+		if test "$$subdir" = .; \
+		then \
+			:; \
+                else \
+			test -d $(distdir)/$$subdir \
+			|| mkdir -p $(distdir)/$$subdir \
+			|| exit 1; \
+                        $(ECHO_CD) ; \
+			(cd $$subdir && \
+			$(MAKE) \
+                        reldir="$(reldir)$$subdir/" \
+			top_distdir="$(top_distdir)" \
+			distdir=../$(distdir)/$$subdir \
+			distdir) \
+			|| exit 1; \
+		fi; \
+	done
+	@-find $(distdir) -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
+	! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \
+	! -type d ! -perm -400 -exec chmod a+r {} \; -o \
+	! -type d ! -perm -444 -exec $(SHELL) $(install_sh) -c -m a+r {} {} \; \
+	|| chmod -R a+r $(distdir)       
+
+# make a development tree in a subdir
+# ---------------------------------------------------------------------------
+devdistdir: makefiles
+	@$(remove_devdistdir)
+	@mkdir -p $(devdistdir)
+	@list='$(DEVFILES)'; \
+	for file in $$list ; \
+	do \
+		$(ECHO_DIST) ; \
+		if test -f $$file || test -d $$file; \
+		then \
+			d=.; \
+                else \
+			d=$(srcdir); \
+		fi; \
+		dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
+		if test "$$dir" != "$$file" && test "$$dir" != "."; \
+		then \
+			dir="/$$dir"; \
+			$(mkinstalldirs) "$(devdistdir)$$dir"; \
+		else \
+			dir=''; \
+		fi; \
+		if test -d $$d/$$file; \
+		then \
+			if test -d $(srcdir)/$$file && test $$d != $(srcdir); \
+			then \
+				cp -pR $(srcdir)/$$file $(devdistdir)$$dir || exit 1; \
+			fi; \
+			cp -pR $$d/$$file $(devdistdir)$$dir || exit 1; \
+		else \
+			test -f $(devdistdir)/$$file \
+			|| cp -p $$d/$$file $(devdistdir)/$$file \
+			|| exit 1; \
+		fi; \
+	done
+	@list='$(SUBDIRS)'; \
+	for subdir in $$list; do \
+		if test "$$subdir" = .; \
+		then \
+			:; \
+                else \
+			test -d $(devdistdir)/$$subdir \
+			|| mkdir -p $(devdistdir)/$$subdir \
+			|| exit 1; \
+                        $(ECHO_CD) ; \
+			(cd $$subdir && \
+			$(MAKE) \
+                        reldir="$(reldir)$$subdir/" \
+			top_devdistdir="$(top_devdistdir)" \
+			devdistdir=../$(devdistdir)/$$subdir \
+			devdistdir) \
+			|| exit 1; \
+		fi; \
+	done
+	@-find $(devdistdir) -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
+	! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \
+	! -type d ! -perm -400 -exec chmod a+r {} \; -o \
+	! -type d ! -perm -444 -exec $(SHELL) $(install_sh) -c -m a+r {} {} \; \
+	|| chmod -R a+r $(devdistdir)
+
+cvsdir = $(PACKAGE_NAME)
+distdir = $(PACKAGE_NAME)-$(PACKAGE_VERSION)
+distpkg = $(PACKAGE_NAME)-$(PACKAGE_VERSION)
+devdistdir = $(PACKAGE_NAME)
+devdistpkg = $(devdistdir)-`date +%Y%m%d | sed s/-// | sed s/-//`
+
+remove_distdir = \
+  { test ! -d $(distdir) \
+    || { find $(distdir) -type d ! -perm -200 -exec chmod u+w {} ';' \
+    && rm -fr $(distdir); }; }
+
+remove_devdistdir = \
+  { test ! -d $(devdistdir) \
+    || { find $(devdistdir) -type d ! -perm -200 -exec chmod u+w {} ';' \
+    && rm -fr $(devdistdir); }; }
+
+# make a bzipped distribution tarball
+# ---------------------------------------------------------------------------
+dist dist-bzip dist-bzip2 dist-bzip-all dist-bzip2-all: distdir
+	@rm -f $(distpkg).tar
+	@rm -f $(distpkg).tar.bz2
+	@$(ECHO_TAR)$(distpkg).tar
+	@tar -chf $(distpkg).tar $(distdir)
+	@$(ECHO_BZIP2)$(distpkg).tar.bz2
+	@bzip2 --best $(distpkg).tar
+	@$(remove_distdir)
+                
+# make a gzipped distribution tarball
+# ---------------------------------------------------------------------------
+dist-gz dist-gzip dist-all dist-gzip-all: distdir
+	@rm -f $(distpkg).tar
+	@rm -f $(distpkg).tar.gz
+	@$(ECHO_TAR)$(distpkg).tar
+	@tar -chf $(distpkg).tar $(distdir)
+	@$(ECHO_GZIP)$(distpkg).tar.gz
+	@gzip --best $(distpkg).tar
+	@$(remove_distdir)
+        
+# make a bzipped development tarball
+# ---------------------------------------------------------------------------
+devdist devdist-bzip devdist-bzip2 devdist-bzip-all devdist-bzip2-all: devdistdir
+	@rm -f $(devdistpkg).tar
+	@rm -f $(devdistpkg).tar.bz2
+	@$(ECHO_TAR)$(devdistpkg).tar
+	@tar -chf $(devdistpkg).tar $(devdistdir)
+	@$(ECHO_BZIP2)$(devdistpkg).tar.bz2
+	@bzip2 --best $(devdistpkg).tar
+	@$(remove_devdistdir)
+
+# make a gzipped development tarball
+# ---------------------------------------------------------------------------
+devdist-gz devdist-gzip devdist-all devdist-gzip-all: devdistdir
+	@rm -f $(devdistpkg).tar
+	@rm -f $(devdistpkg).tar.gz
+	@$(ECHO_TAR)$(devdistpkg).tar
+	@tar -chf $(devdistpkg).tar $(devdistdir)
+	@$(ECHO_GZIP)$(devdistpkg).tar.gz
+	@gzip --best $(devdistpkg).tar
+	@$(remove_devdistdir)
+
+# make a distribution tarball and check if it compiles and installs
+# ---------------------------------------------------------------------------
+distcheck: distdir
+	@rm -f $(distpkg).tar
+	@rm -f $(distpkg).tar.gz
+	@rm -f $(distpkg).tar.bz2
+	@$(ECHO_TAR)$(distpkg).tar
+	@tar -chf $(distpkg).tar $(distdir)
+	@$(ECHO_GZIP)$(distpkg).tar.gz
+	@gzip --best $(distpkg).tar
+	@$(remove_distdir)
+	@(export THISDIR=`pwd` && \
+    mkdir -p _source _build _install && \
+    echo unpacking the distribution tarball... && \
+    tar -C _source -xvzf $(distpkg).tar.gz && \
+    (cd _build && \
+     CFLAGS="-Os -Wall" ../_source/$(distpkg)/configure $(ARGS) && \
+     make && \
+     make DESTDIR=$$THISDIR/_install install && \
+     make dist-gz && \
+     if test -f "$(distpkg).tar.gz"; then \
+       echo "$(distpkg).tar.gz is ready for distribution!" ; \
+     fi) ; \
+    rm -rf _source _build _install)
+
+# make a cvs checkout, then a development tarball and then
+# check if it compiles and installs
+# ---------------------------------------------------------------------------
+cvscheck: cvsdir
+	@(export THISDIR=`pwd` && \
+    mkdir -p _build _install && \
+    rm -rf _source && \
+    mv $(cvsdir) _source && \
+    (cd _source && ./autogen.sh) && \
+    (cd _build && \
+     CFLAGS="-Os -Wall -Werror" \
+     ../_source/configure && \
+     make && \
+     make DESTDIR=$$THISDIR/_install install && \
+     make devdist-gz && \
+     if mv -f "$(devdistpkg).tar.gz" ../..; then \
+       echo "$(devdistpkg).tar.gz was built from a fresh cvs checkout" ; \
+     fi) ; \
+    rm -rf _source _build _install)
+
+

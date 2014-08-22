@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <limits.h>
-#include <scan.h>
+#include "scan.h"
 #include "buffer.h"
 #include "scan.h"
 #include "stralloc.h"
@@ -44,7 +44,7 @@ char *shell_gethome(int uid)
     }
 
     /* parse the uid */
-    if(!scan_ulong(home, &id))
+    if(!scan_ulong(home, (unsigned long*)&id))
       id = -1;
 
     /* on a mismatch -> get the next line */

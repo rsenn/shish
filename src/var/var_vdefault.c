@@ -1,4 +1,4 @@
-#include <str.h>
+#include "str.h"
 #include "var.h"
 
 /* return the variable value if it is set, otherwise return def

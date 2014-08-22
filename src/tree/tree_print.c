@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <fmt.h>
+#include "fmt.h"
 #include "tree.h"
 #include "redir.h"
 #include "parse.h"

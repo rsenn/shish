@@ -1,4 +1,4 @@
-#include <shell.h>
+#include "shell.h"
 
 #ifdef DEBUG
 extern void *debug_realloc(const char *file, unsigned int line, void *ptr, unsigned long size);

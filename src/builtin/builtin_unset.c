@@ -1,4 +1,4 @@
-#include <shell.h>
+#include "shell.h"
 #include "var.h"
 #include "builtin.h"
 
@@ -22,6 +22,10 @@ int builtin_unset(int argc, char **argv)
       default: builtin_invopt(argv); return 1;
     }
   }
+  
+  // TODO:
+  (void)fun;
+  (void)var;
   
   argp = &argv[shell_optind];
 

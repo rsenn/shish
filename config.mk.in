@@ -1,0 +1,251 @@
+# $Id: config.mk.in,v 1.2 2006/09/28 06:56:39 roman Exp $
+# ===========================================================================
+#
+# GNU makefile helper
+#
+# Copyleft GPL (c) 2005 by Roman Senn <smoli@paranoya.ch>
+
+# some flags
+# ---------------------------------------------------------------------------
+SILENT          = @SILENT@
+COLOR           = @COLOR@
+DEBUG           = @DEBUG@
+DEP             = @DEP@
+
+# installation directories
+# ---------------------------------------------------------------------------
+prefix          = @prefix@
+exec_prefix     = @exec_prefix@
+sysconfdir      = @sysconfdir@
+relsysconfdir   = @relsysconfdir@
+bindir          = @bindir@
+sbindir         = @sbindir@
+libexecdir      = @libexecdir@
+rellibexecdir   = @rellibexecdir@
+datadir         = @datadir@
+datarootdir     = @datarootdir@
+sysconfdir      = @sysconfdir@
+sharedstatedir  = @sharedstatedir@
+localstatedir   = @localstatedir@
+libdir          = @libdir@
+slibdir         = @slibdir@
+includedir      = @includedir@
+oldincludedir   = @oldincludedir@
+infodir         = @infodir@
+mandir          = @mandir@
+plugindir       = @plugindir@
+relplugindir    = @relplugindir@
+inidir          = @inidir@
+relinidir       = @relinidir@
+logdir          = @logdir@
+rellogdir       = @rellogdir@
+rundir          = @rundir@
+relrundir       = @relrundir@
+
+# autoconf related stuff
+# ---------------------------------------------------------------------------
+ac_configure_args    = @ac_configure_args@
+
+CONFIG_H_TOP = config.h
+CONFIG_H = $(top_builddir)/config.h
+CONFIG_H_IN = $(top_srcdir)/config.h.in
+
+# DESTDIR will be prepended to the installation path and thus you can control
+# install location e.g. for making packages etc.
+# ---------------------------------------------------------------------------
+DESTDIR         =
+
+#SUBDIRS         = @SUBDIRS@
+SUBMAKE         = $(SUBDIRS)
+PREFIX          = @PREFIX@
+
+# file extensions
+# ---------------------------------------------------------------------------
+EXEEXT          = @EXEEXT@
+OBJEXT          = @OBJEXT@
+A_EXEEXT        = @A_EXEEXT@
+PIC_OBJEXT      = @PIC_OBJEXT@
+PIE_LIBEXT      = @PIE_LIBEXT@
+
+# package info
+# ---------------------------------------------------------------------------
+PACKAGE_NAME    = @PACKAGE_NAME@
+PACKAGE_VERSION = @PACKAGE_VERSION@
+
+# be backward compatible with older autoconf
+# ---------------------------------------------------------------------------
+PACKAGE         = $(PACKAGE_NAME)
+VERSION         = $(PACKAGE_VERSION)
+
+# detailed version info
+# ---------------------------------------------------------------------------
+VERSION_MAJOR   = @VERSION_MAJOR@
+VERSION_MINOR   = @VERSION_MINOR@
+VERSION_PATCH   = @VERSION_PATCH@
+
+# default unix programs
+# ---------------------------------------------------------------------------
+RM              = rm -f
+MV              = mv
+CP              = cp
+CHMOD           = chmod
+
+# programs
+# ---------------------------------------------------------------------------
+CC              = @CC@
+AR              = @AR@
+LN              = @LN@
+NASM            = @NASM@
+RANLIB          = @RANLIB@
+DLLWRAP         = @DLLWRAP@
+LEX             = @LEX@
+YACC            = @YACC@
+INSTALL         = @INSTALL@
+INSTALL_DATA    = $(INSTALL) -c -m644
+INSTALL_EXEC    = $(INSTALL) -c -m755
+INSTALL_DIR     = $(INSTALL) -d -m755
+DOXYGEN         = @DOXYGEN@
+
+# arguments for the programs
+# ---------------------------------------------------------------------------
+DEFS            = #@DEFS@
+LIBS            = @LIBS@
+CFLAGS          = @CFLAGS@
+LDFLAGS         = @LDFLAGS@
+SHLDFLAGS       = @SHLDFLAGS@
+CPPFLAGS        = @CPPFLAGS@
+MAKEFLAGS       = @MAKEFLAGS@
+
+SSL_CFLAGS      = @SSL_CFLAGS@
+SSL_LIBS        = @SSL_LIBS@
+FT2_CFLAGS      = @FT2_CFLAGS@
+FT2_LIBS        = @FT2_LIBS@
+PSQL_CFLAGS     = @PSQL_CFLAGS@
+PSQL_LIBS       = @PSQL_LIBS@
+MYSQL_CFLAGS    = @MYSQL_CFLAGS@
+MYSQL_LIBS      = @MYSQL_LIBS@
+CHAOS_CFLAGS    = @CHAOS_CFLAGS@
+CHAOS_LIBS      = @CHAOS_LIBS@
+SDL_CFLAGS      = @SDL_CFLAGS@
+SDL_LIBS        = @SDL_LIBS@
+SGUI_CFLAGS     = @SGUI_CFLAGS@
+SGUI_LIBS       = @SGUI_LIBS@
+LIBPNG_CFLAGS   = @LIBPNG_CFLAGS@
+LIBPNG_LIBS     = @LIBPNG_LIBS@
+
+# pic compiling and dynamic linking
+PIC_CFLAGS      = @PIC_CFLAGS@
+PIC_OBJEXT      = @PIC_OBJEXT@
+PIC_DEPEXT      = @PIC_DEPEXT@
+PIE_LINK        = @PIE_LINK@
+PIE_LINKS       = @PIE_LINKS@
+@WIN32_TRUE@MOD_LDFLAGS     = $(patsubst %.dll,%.def,$@)
+MOD_LDFLAGS     += -shared
+PIE_LDFLAGS     = @PIE_LDFLAGS@
+PIE_LIBEXT      = @PIE_LIBEXT@
+PIE_NAME        = @PIE_NAME@
+PIE_LOADER      = @PIE_LOADER@
+
+PIE_VERSION_PREFIX = @PIE_VERSION_PREFIX@
+PIE_VERSION_SUFFIX = @PIE_VERSION_SUFFIX@
+
+# color codes
+# ---------------------------------------------------------------------------
+DARK_GRAY       = @DARK_GRAY@
+LIGHT_BLUE      = @LIGHT_BLUE@
+LIGHT_GREEN     = @LIGHT_GREEN@
+LIGHT_CYAN      = @LIGHT_CYAN@
+LIGHT_RED       = @LIGHT_RED@
+LIGHT_PURPLE    = @LIGHT_PURPLE@
+YELLOW          = @YELLOW@
+WHITE           = @WHITE@
+BLACK           = @BLACK@
+BLUE            = @BLUE@
+GREEN           = @GREEN@
+CYAN            = @CYAN@
+RED             = @RED@
+PURPLE          = @PURPLE@
+BROWN           = @BROWN@
+GRAY            = @GRAY@
+NC              = @NC@
+
+# color theme
+# ---------------------------------------------------------------------------
+COLOR_YES       = $(@NAME_YES@)
+COLOR_NO        = $(@NAME_NO@)
+COLOR_NONE      = $(@NAME_NONE@)
+COLOR_FILE      = $(@NAME_FILE@)
+COLOR_DIR       = $(@NAME_DIR@)
+COLOR_EXT       = $(@NAME_EXT@)
+COLOR_LIB       = $(@NAME_LIB@)
+COLOR_PROG      = $(@NAME_PROG@)
+COLOR_INFO      = $(@NAME_INFO@)
+COLOR_ARGS      = $(@NAME_ARGS@)
+COLOR_MK        = $(@NAME_MK@)
+COLOR_DEFAULT   = $(@NAME_DEFAULT@)
+
+# do not echo anything when not in silent mode
+# ---------------------------------------------------------------------------
+ECHO            = @ECHO@
+MAKEFLAGS       = @MAKEFLAGS@
+QUIET           = @QUIET@
+REDIR           = @REDIR@
+REDIR2          = @REDIR2@
+
+# colorful echoes =)
+# ---------------------------------------------------------------------------
+ECHO_AUTOHEADER = $(ECHO) "  $(COLOR_PROG)AUTOHDR$(NC) $(reldir)`basename $@`"
+ECHO_AUTOCONF   = $(ECHO) "  $(COLOR_PROG)AUTOCONF$(NC)$(reldir)$@"
+ECHO_ACLOCAL    = $(ECHO) "  $(COLOR_PROG)ACLOCAL$(NC) $(reldir)$@"
+ECHO_SH         = $(ECHO) "  $(COLOR_PROG)SH$(NC)      $(reldir)"
+ECHO_CONFIG     = $(ECHO) "  $(COLOR_MK)CONFIG$(NC)  $(reldir)$@"
+ECHO_TAR        = $(ECHO) "  $(COLOR_PROG)TAR$(NC)     $(reldir)"
+ECHO_BZIP2      = $(ECHO) "  $(COLOR_YES)BZIP2$(NC)   $(reldir)"
+ECHO_GZIP       = $(ECHO) "  $(COLOR_YES)GZIP$(NC)    $(reldir)"
+ECHO_CD         = $(ECHO) "  $(COLOR_DIR)CD$(NC)      $(reldir)$$subdir"
+ECHO_COPY       = $(ECHO) "  $(COLOR_PROG)COPY$(NC)    $(reldir)$$subdir"
+ECHO_INSTALL    = $(ECHO) "  $(COLOR_ARGS)INSTALL$(NC) "
+ECHO_LN         = $(ECHO) "  $(COLOR_ARGS)LN$(NC)      $(reldir)"
+ECHO_CC         = $(ECHO) "  $(COLOR_INFO)CC$(NC)      $(reldir)$(@:%.d=%.$(OBJEXT))"
+ECHO_PIC_CC     = $(ECHO) "  $(COLOR_INFO)CC$(NC) pic  $(reldir)$(@:%.d=%.$(PIC_OBJEXT))"
+ECHO_NASM       = $(ECHO) "  $(COLOR_ARGS)NASM$(NC)    $(reldir)$@"
+ECHO_YACC       = $(ECHO) "  $(COLOR_NO)YACC$(NC)    $(reldir)$(@:%.h=%.c)"
+ECHO_LEX        = $(ECHO) "  $(COLOR_YES)LEX$(NC)     $(reldir)$@"
+ECHO_LD         = $(ECHO) "  $(COLOR_YES)LD$(NC)      $(reldir)$@"
+ECHO_PIE_LD     = $(ECHO) "  $(COLOR_YES)LD$(NC) pie  $(reldir)$@"
+ECHO_CCLD       = $(ECHO) "  $(COLOR_INFO)CC$(NC)$(COLOR_YES)LD$(NC)    $(reldir)$(@:%.d=%)"
+ECHO_RM         = $(ECHO) "  $(COLOR_INFO)RM$(NC)      $(reldir)$$x"
+ECHO_AR         = $(ECHO) "  $(COLOR_YES)AR$(NC)      $(reldir)$(LIB)$(ARCHIVE)$(LIBRARY)$(A_LIBRARY)"
+ECHO_RANLIB     = $(ECHO) "  $(COLOR_NO)RANLIB$(NC)  $(reldir)$(LIBRARY)$(A_LIBRARY)"
+ECHO_MKDIR      = $(ECHO) "  $(COLOR_DIR)MKDIR$(NC)   "
+ECHO_MKDEP      = $(ECHO) "  $(COLOR_YES)MKDEP$(NC)   $(reldir)$@"
+ECHO_DIST       = $(ECHO) "  $(COLOR_ARGS)DIST$(NC)    $(reldir)$$file"
+ECHO_DOXYGEN    = $(ECHO) "  $(COLOR_ARGS)DOXYGEN$(NC) $(reldir)$@"
+
+# common recursive targets
+# ---------------------------------------------------------------------------
+RECURSIVE_TARGETS = all-recursive \
+                    dep-recursive
+
+# recursive targets for cleaning the tree
+# ---------------------------------------------------------------------------
+RCLEAN_TARGETS = clean-recursive \
+                 distclean-recursive \
+                 maintainer-clean-recursive
+
+# common configuration
+# ---------------------------------------------------------------------------
+#INCLUDES             = -isystem $(top_srcdir)/include
+
+# files to be cleaned
+# ---------------------------------------------------------------------------
+CLEANFILES           = $(OBJECTS) $(PIC_OBJECTS) $(PIE_LIBRARY) $(LIBRARY) $(ARCHIVE) $(PROGRAM) $(PROGRAMS) .libdep
+DISTCLEANFILES       = Makefile $(DEPS)
+MAINTAINERCLEANFILES =
+
+# files that go into distribution tarballs
+# ---------------------------------------------------------------------------
+FILES                = Makefile.in $(SOURCES) $(HEADERS) $(DATA)
+DISTFILES            = $(FILES)
+DEVFILES             = CVS $(FILES)
+

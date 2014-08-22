@@ -2,7 +2,7 @@
 #include "byte.h"
 #include "str.h"
 
-extern int stralloc_diffs(const stralloc* a,const unsigned char* b) {
+extern int stralloc_diffs(const stralloc* a,const char* b) {
   register unsigned long int i;
   register int j;
   for (i=0;;++i) {

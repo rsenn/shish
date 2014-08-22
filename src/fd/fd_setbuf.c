@@ -1,3 +1,4 @@
+#include <alloca.h>
 #include "fd.h"
 #include <assert.h>
 

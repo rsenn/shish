@@ -1,4 +1,4 @@
-#include <shell.h>
+#include "shell.h"
 #include "sh.h"
 #include "exec.h"
 #include "builtin.h"
@@ -26,6 +26,10 @@ int builtin_exec(int argc, char **argv)
       default: builtin_invopt(argv); return 1;
     }
   }
+  
+  // TODO
+  (void)dash;
+  (void)nullenv;
   
   /* no arguments? return now! */
   if(argv[shell_optind] == NULL)

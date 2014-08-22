@@ -1,6 +1,6 @@
 #ifdef DEBUG
-#include <fmt.h>
-#include <str.h>
+#include "fmt.h"
+#include "str.h"
 #include "fd.h"
 #include "fdstack.h"
 

@@ -1,0 +1,116 @@
+# $Id: Makefile.in,v 1.18 2005/04/15 18:15:12 smoli Exp $
+# ===========================================================================
+#
+# GNU Makefile for shish/src
+#
+# relative directories
+# ---------------------------------------------------------------------------
+srcdir       = @srcdir@
+top_srcdir   = @top_srcdir@
+builddir     = @builddir@
+top_builddir = @top_builddir@
+thisdir      = src/
+
+# include global make configuration
+# ---------------------------------------------------------------------------
+include $(top_builddir)/config.mk
+
+# redirect to recursive targets
+# ---------------------------------------------------------------------------
+all:              makefiles all-recursive 
+clean:            makefiles clean-recursive
+distclean:        makefiles distclean-recursive
+maintainer-clean: makefiles maintainer-clean-recursive
+install:          makefiles install-recursive
+dep:              makefiles dep-recursive
+
+# local directory configuration
+# ---------------------------------------------------------------------------
+RECURSIVE = 1
+SUBDIRS   = builtin \
+            debug \
+            eval \
+            exec \
+            expand \
+            fd \
+            fdstack \
+            fdtable \
+            history \
+            job \
+            parse \
+            prompt \
+            redir \
+            sh \
+            sig \
+            source \
+            term \
+            tree \
+            var \
+            vartab
+
+PROGRAM = shish
+LIB     = $(top_builddir)/lib/libshish.a   
+LDADD   = builtin/builtin.a \
+          debug/debug.a \
+          eval/eval.a \
+          exec/exec.a \
+          expand/expand.a \
+          fd/fd.a \
+          fdstack/fdstack.a \
+          fdtable/fdtable.a \
+          history/history.a \
+          job/job.a \
+          parse/parse.a \
+          prompt/prompt.a \
+          redir/redir.a \
+          sh/sh.a \
+          sig/sig.a \
+          source/source.a \
+          term/term.a \
+          tree/tree.a \
+          var/var.a \
+          vartab/vartab.a 
+          
+HEADERS = builtin.h \
+          debug.h \
+          eval.h \
+          exec.h \
+          expand.h \
+          fd.h \
+          fdstack.h \
+          fdtable.h \
+          history.h \
+          job.h \
+          parse.h \
+          prompt.h \
+          redir.h \
+          sh.h \
+          sig.h \
+          source.h \
+          term.h \
+          tree.h \
+          var.h \
+          vartab.h
+
+# local targets     
+# ---------------------------------------------------------------------------
+all-local: $(PROGRAM) 
+install-local: install-exec
+dep-local:
+
+# installation config
+# ---------------------------------------------------------------------------
+bin_EXEC += $(PROGRAM)
+
+# distribution config
+# ---------------------------------------------------------------------------
+FILES += $(HEADERS) 
+
+# local build configuration
+# ---------------------------------------------------------------------------
+PREADD  = -Wl,--whole-archive
+POSTADD = -Wl,--no-whole-archive
+
+# include build.mk (makefile helper) 
+# ---------------------------------------------------------------------------
+include $(top_builddir)/build.mk

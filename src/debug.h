@@ -8,8 +8,8 @@
 #ifdef DEBUG
 
 #include <stdlib.h>
-#include <buffer.h>
-#include <stralloc.h>
+#include "buffer.h"
+#include "stralloc.h"
 
 struct chunk
 {

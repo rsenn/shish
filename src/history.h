@@ -1,9 +1,9 @@
 #ifndef HISTORY_H
 #define HISTORY_H
 
-#include <buffer.h>
+#include "buffer.h"
 #include <stdlib.h>
-#include <stralloc.h>
+#include "stralloc.h"
 
 #define DEFAULT_HISTSIZE 128
 

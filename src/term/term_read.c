@@ -1,5 +1,5 @@
 #include <termios.h>
-#include <byte.h>
+#include "byte.h"
 #include "term.h"
 #include "prompt.h"
 
@@ -9,7 +9,7 @@ buffer      term_input = BUFFER_INIT(0, 0, term_inbuf, sizeof(term_inbuf));
 /* ----------------------------------------------------------------------- */
 int term_read(int fd, char *buf, unsigned int len)
 {
-  unsigned char c;
+  char c;
   int ret;
   static unsigned long remain;
           

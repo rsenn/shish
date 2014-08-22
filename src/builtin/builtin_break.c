@@ -1,4 +1,4 @@
-#include <scan.h>
+#include "scan.h"
 #include "eval.h"
 #include "sh.h"
 #include "fd.h"

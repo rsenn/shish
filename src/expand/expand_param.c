@@ -1,7 +1,7 @@
 #include <stdlib.h>
-#include <shell.h>
-#include <str.h>
-#include <fmt.h>
+#include "shell.h"
+#include "str.h"
+#include "fmt.h"
 #include "sh.h"
 #include "var.h"
 #include "tree.h"

@@ -1,5 +1,10 @@
+#include <alloca.h>
 #include <unistd.h>
+<<<<<<< HEAD
 #if defined(HAVE_SYS_WAIT_H) && !defined(__MINGW32__)
+=======
+#ifndef __MINGW32__
+>>>>>>> 1b3740a7bdef6c31ba1529670c639e3ff7923f56
 #include <sys/wait.h>
 #endif
 #include "fdstack.h"

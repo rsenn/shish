@@ -1,6 +1,11 @@
 #include <unistd.h>
+<<<<<<< HEAD
 #if defined(HAVE_SYS_WAIT_H) && !defined(__MINGW32__)
 #include <sys/wait.h>
+=======
+#ifndef __MINGW32__
+# include <sys/wait.h>
+>>>>>>> 1b3740a7bdef6c31ba1529670c639e3ff7923f56
 #endif
 #include "fdstack.h"
 #include "fdtable.h"
@@ -87,6 +92,6 @@ int eval_pipeline(struct eval *e, struct npipe *npipe)
 
 /*  if(job)
     shell_free(job);*/
-  
-  return WEXITSTATUS(status);
+ 
+	return WEXITSTATUS(status);
 }

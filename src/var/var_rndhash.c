@@ -1,5 +1,5 @@
-#include <uint32.h>
-#include <uint64.h>
+#include "uint32.h"
+#include "uint64.h"
 #include "var.h"
 
 static uint32 seeds[] =
@@ -26,7 +26,7 @@ unsigned long var_rndhash(const char *v, VAR_HASH *h)
   register int rotate;
   register uint32 a = 0;
   register uint32 b = 0;
-  register const unsigned char *p = v;
+  register const unsigned char *p = (const unsigned char *)v;
   
   hash = 0;
   

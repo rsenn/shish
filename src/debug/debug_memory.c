@@ -1,8 +1,8 @@
 #include "debug.h"
 
 #ifdef DEBUG
-#include <fmt.h>
-#include <str.h>
+#include "fmt.h"
+#include "str.h"
 #include "fd.h"
 
 static unsigned long debug_memory_total;

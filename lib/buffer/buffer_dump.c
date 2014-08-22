@@ -1,12 +1,12 @@
 #include <unistd.h>
-#include <buffer.h>
-#include <fmt.h>
+#include "buffer.h"
+#include "fmt.h"
 
 #ifdef DEBUG
 
-extern int term_read(int fd, char *buf, unsigned int len);
-extern int buffer_dummyreadmmap();
-extern int stralloc_write();
+extern ssize_t term_read(int fd, char *buf, unsigned int len);
+extern ssize_t buffer_dummyreadmmap();
+extern ssize_t stralloc_write();
 
 void buffer_dump(buffer *out, buffer *b) 
 {

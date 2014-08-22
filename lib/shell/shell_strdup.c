@@ -1,6 +1,6 @@
-#include <shell.h>
-#include <byte.h>
-#include <str.h>
+#include "shell.h"
+#include "byte.h"
+#include "str.h"
 
 #ifdef DEBUG
 extern void *shell_allocdebug(const char *file, unsigned int line, unsigned long n);

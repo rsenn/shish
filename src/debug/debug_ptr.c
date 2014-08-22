@@ -1,7 +1,7 @@
 #include "debug.h"
 
 #ifdef DEBUG
-#include <fmt.h>
+#include "fmt.h"
 #include "fd.h"
 
 /* output a pointer

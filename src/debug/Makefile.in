@@ -1,0 +1,68 @@
+# $Id: Makefile.in,v 1.7 2005/04/30 18:16:48 smoli Exp $
+# ===========================================================================
+#
+# Makefile for src/debug subdirectory
+#
+# relative directories
+# ---------------------------------------------------------------------------
+srcdir       = @srcdir@
+top_srcdir   = @top_srcdir@
+top_builddir = @top_builddir@
+thisdir      = src/debug/
+
+VPATH        = $(srcdir)
+
+# include global make configuration
+# ---------------------------------------------------------------------------
+include $(top_builddir)/config.mk
+          
+# configuration for this directory
+# ---------------------------------------------------------------------------
+ARCHIVE = debug.a
+MODULES = debug_alloc \
+          debug_begin \
+          debug_char \
+          debug_end \
+          debug_error \
+          debug_free \
+          debug_list \
+          debug_memory \
+          debug_node \
+          debug_ptr \
+          debug_realloc \
+          debug_redir \
+          debug_space \
+          debug_str \
+          debug_stralloc \
+          debug_sublist \
+          debug_subnode \
+          debug_subst \
+          debug_ulong \
+          debug_unquoted
+          
+SOURCES = $(MODULES:%=%.c)
+OBJECTS = $(MODULES:%=%.o)
+DEPS    = $(MODULES:%=%.d)
+
+# targets for this directory
+# ---------------------------------------------------------------------------
+all: Makefile $(ARCHIVE)
+install: 
+
+# dependencies
+# ---------------------------------------------------------------------------
+-include $(DEPS)
+
+# local build configuration
+# ---------------------------------------------------------------------------
+INCLUDES += -I$(top_srcdir)/lib
+#INCLUDES += -I$(top_builddir)/lib
+INCLUDES += -I$(top_srcdir)/src
+#INCLUDES += -I$(top_builddir)/src
+INCLUDES += -I$(top_builddir)
+INCLUDES += -include assert.h
+          
+# include build.mk (makefile helper)
+# ---------------------------------------------------------------------------
+include $(top_builddir)/build.mk
+

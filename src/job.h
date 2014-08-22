@@ -4,8 +4,20 @@
 #include <sys/types.h>
 #include <signal.h>
 
+<<<<<<< HEAD
 #if !defined(HAVE_SIGSET_T) && defined(__MINGW32__) && !defined(__CYGWIN__)
 typedef unsigned long sigset_t;
+=======
+#ifdef HAVE_CONFIG_H
+# include "../config.h"
+# ifndef HAVE_SIGSET_T
+typedef int sigset_t;
+# endif
+#endif
+
+#ifndef WEXITSTATUS
+# define WEXITSTATUS(st) ((char)((unsigned char)st & 0xff))
+>>>>>>> 1b3740a7bdef6c31ba1529670c639e3ff7923f56
 #endif
 
 union node;

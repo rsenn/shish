@@ -1,9 +1,14 @@
+<<<<<<< HEAD
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
 #include <shell.h>
 #include <scan.h>
+=======
+#include "shell.h"
+#include "scan.h"
+>>>>>>> 1b3740a7bdef6c31ba1529670c639e3ff7923f56
 #include "tree.h"
 #include "prompt.h"
 #include "parse.h"
