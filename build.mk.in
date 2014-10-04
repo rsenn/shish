@@ -189,6 +189,7 @@ maintainer-clean-local: maintainer-clean-recursive
 $(ARCHIVE): $(OBJECTS)
 	@$(ECHO_AR)
 	@$(AR) $(ARCHIVE) $(OBJECTS)
+	@$(RANLIB) $(ARCHIVE) 
 
 # global rule for all makefiles
 # ---------------------------------------------------------------------------
@@ -275,9 +276,9 @@ $(PIE_LIBRARY): $(PIC_OBJECTS)
 
 # rule for programs
 # ---------------------------------------------------------------------------
-#$(PROGRAM): $(OBJECTS) $(LDADD)
-#	@$(ECHO_LD)
-#	@QUIET@$(LINK) -o $(PROGRAM) $^ $(LIB) $(LIBS)
+$(PROGRAM): $(OBJECTS) $(LDADD)
+	@$(ECHO_LD)
+	@QUIET@$(LINK) -o $(PROGRAM) $^ $(LIB) $(LIBS)
 
 #$(PROGRAMS): $(LDADD)
 #	@$(ECHO_LD)
