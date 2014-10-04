@@ -10,7 +10,7 @@
 SILENT          = @SILENT@
 COLOR           = @COLOR@
 DEBUG           = @DEBUG@
-DEP             = @DEP@
+DEPS_TRUE             = @DEPS_TRUE@
 
 # installation directories
 # ---------------------------------------------------------------------------
