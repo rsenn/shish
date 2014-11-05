@@ -1,4 +1,9 @@
+#include "../../config.h"
+
+#ifdef HAVE_ALLOCA
 #include <alloca.h>
+#endif
+
 #include "shell.h"
 #include <stdlib.h>
 #include "str.h"

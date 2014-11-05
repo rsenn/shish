@@ -1,4 +1,9 @@
+#include "../../config.h"
+
+#ifdef HAVE_ALLOCA
 #include <alloca.h>
+#endif
+
 #include <unistd.h>
 #ifndef __MINGW32__
 #include <sys/wait.h>

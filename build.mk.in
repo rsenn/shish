@@ -193,7 +193,7 @@ $(ARCHIVE): $(OBJECTS)
 
 # global rule for all makefiles
 # ---------------------------------------------------------------------------
-Makefile: $(top_builddir)/config.status $(srcdir)/Makefile.in $(top_builddir)/config.mk $(top_builddir)/build.mk
+Makefile: $(top_builddir)/config.status $(srcdir)Makefile.in $(top_builddir)/config.mk $(top_builddir)/build.mk
 	@$(ECHO_CONFIG)
 #	echo '@QUIET@cd $(top_builddir) && ./config.status $(thisdir)Makefile $(REDIR)'
 	@QUIET@cd $(top_builddir) && ./config.status $(thisdir)Makefile $(REDIR)
