@@ -1,11 +1,21 @@
 cmake_minimum_required(VERSION 2.6)
 set(CMAKE_LEGACY_CYGWIN_WIN32 0)
- 
+
+
+
 set(PACKAGE_NAME shish)
 set(PACKAGE_VERSION 0.8)
 set(PACKAGE_TARNAME "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 
 project(${PACKAGE_NAME} C)
+# Set a default build type if none was specified
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+	message(STATUS "Setting build type to 'MinSizeRel' as none was specified.")
+	set(CMAKE_BUILD_TYPE MinSizeRel CACHE STRING "Choose the type of build." FORCE)
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
+    "MinSizeRel" "RelWithDebInfo")
+endif()
 
 include(CheckIncludeFile)
 include(CheckSymbolExists)
@@ -31,7 +41,7 @@ check_function_exists(sys_siglist HAVE_SYS_SIGLIST)
 
 configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.h")
 
-add_definitions(-DHAVE_CONFIG_H=1)
+add_definitions(-Wall -DHAVE_CONFIG_H=1)
 
 set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0")
 
@@ -42,7 +52,9 @@ endif(${CMAKE_BUILD_TYPE} MATCHES "Debug")
 
 include_directories(${CMAKE_BINARY_DIR} lib src)
 
-add_definitions(-DHAVE_CONFIG_H=1)
+#add_definitions(-DHAVE_CONFIG_H=1)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY src)
 
 set(LIBSOURCES
 	lib/open/open_read.c
