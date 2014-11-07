@@ -5,6 +5,8 @@
 #include "parse.h"
 #include "sh.h"
 
+#include "../../config.h"
+
 /* handles prompt escape sequences 
  * ----------------------------------------------------------------------- */
 void prompt_escape(const char *s, stralloc *sa)

@@ -78,7 +78,7 @@ AC_DEFUN([AC_MSG_RESULT],
   [as_ac_var],           [AC_MSG_YESNO([$1])],
   [ENABLE],              [AC_MSG_YESNO([$1])],
   [COLOR],               [AC_MSG_YESNO([$1])],
-  [DEP],                 [AC_MSG_YESNO([$1])],
+  [DEPS_TRUE],                 [AC_MSG_YESNO([$1])],
   [DEBUG],               [AC_MSG_YESNO([$1])],
 
   [.ac_ct],              [AC_MSG_PROG([$1])],
@@ -2207,23 +2207,23 @@ AC_ARG_ENABLE([dep],
   --disable-dep            no dependency tracking (default)],
 [case $enableval in
   yes)
-    DEP="yes"
+    DEPS_TRUE="yes"
     AC_MSG_RESULT([yes])
     ;;
   *)
-    DEP="no"
+    DEPS_TRUE="no"
     AC_MSG_RESULT([no])
     ;;
   esac],
-  [DEP="no"
+  [DEPS_TRUE="no"
   AC_MSG_RESULT([no])])
-if test "$DEP" = "yes"; then
-  NODEP="" DEP="#"
+if test "$DEPS_TRUE" = "yes"; then
+  DEPS_FALSE="" DEPS_TRUE="#"
 else
-  NODEP="#" DEP=""
+  DEPS_FALSE="#" DEPS_TRUE=""
 fi
-AC_SUBST(NODEP)
-AC_SUBST(DEP)])
+AC_SUBST(DEPS_FALSE)
+AC_SUBST(DEPS_TRUE)])
 
 # $Id: debug.m4,v 1.10 2005/05/04 22:20:32 smoli Exp $
 # ===========================================================================
@@ -2369,7 +2369,7 @@ AC_ADD_VAR([SDL_CFLAGS],   [SDL includes])dnl
 AC_ADD_VAR([SDL_LIBS],     [SDL libs])dnl
 AC_ADD_VAR([LIBPNG_CFLAGS],   [libpng includes])dnl
 AC_ADD_VAR([LIBPNG_LIBS],     [libpng libs])dnl
-AC_ADD_VAR([DEP],      [Dependency tracking])dnl
+AC_ADD_VAR([DEPS_TRUE],      [Dependency tracking])dnl
 AC_ADD_VAR([COLOR],    [Colorful makefile])dnl
 AC_ADD_VAR([DEBUG],    [Debug build])])
 #

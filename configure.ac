@@ -111,6 +111,15 @@ AC_CHECK_DEP
 AC_CHECK_DEBUG
 AC_CHECK_MAINTAINER
 
+AC_SUBST([PIC],[#])
+AC_SUBST([DLM_TRUE],[#])
+AC_SUBST([A_LIB],[#])
+AC_SUBST([DLM_TRUE],[#])
+AC_SUBST([NO_A_LIB],[#])
+AC_SUBST([NO_PIE_LIB],[#])
+AC_SUBST([PIE_LIB],[#])
+AC_SUBST([WIN32_TRUE],[#])
+
 # check for needed types
 # ---------------------------------------------------------------------------
 
@@ -165,5 +174,5 @@ AC_CONFIG_STATUS
 # be verbose :)
 # ---------------------------------------------------------------------------
 AC_SUMMARIZE([prefix bindir sysconfdir],
-             [COLOR DEP DEBUG | CC CFLAGS LDFLAGS LIBS],
+             [COLOR DEPS_TRUE DEBUG | CC CFLAGS LDFLAGS LIBS],
              "%20s: %s")
