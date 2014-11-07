@@ -58,7 +58,7 @@ dep-local:
 
 # files that go into distribution tarballs
 # ---------------------------------------------------------------------------
-FILES                = Makefile.in config.mk.in build.mk.in configure.in \
+FILES                = Makefile.in config.mk.in build.mk.in configure.ac \
                        $(SOURCES) $(HEADERS) \
                        README ChangeLog TODO mkentropy.c BUGS AUTHORS COPYING
                        

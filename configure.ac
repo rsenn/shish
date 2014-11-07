@@ -1,4 +1,4 @@
-# $Id: configure.in,v 1.21 2005/04/23 10:19:31 smoli Exp $
+# $Id: configure.ac,v 1.21 2005/04/23 10:19:31 smoli Exp $
 # ===========================================================================
 #
 # GNU autoconf template for shish
@@ -7,6 +7,8 @@
 # ---------------------------------------------------------------------------
 AC_PREREQ([2.50])
 AC_INIT([shish], [0.7-pre3])
+AC_CONFIG_SRCDIR([src/sh/sh_main.c])
+dnl AC_LANG_SOURCE([C])
 
 # check for compiling modes
 # ---------------------------------------------------------------------------
@@ -31,6 +33,7 @@ AC_CONFIG_SRCDIR([src/sh/sh_main.c])
 # ---------------------------------------------------------------------------
 AC_DIETLIBC([/opt/diet /usr/diet])
 AC_PROG_CC([cc gcc])
+AC_PROG_CC_C99
 AC_PROG_AR
 AC_PROG_RANLIB
 AC_PROG_INSTALL

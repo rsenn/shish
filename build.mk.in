@@ -207,7 +207,7 @@ $(CONFIG_H): $(top_builddir)/config.status $(CONFIG_H_IN)
 
 # targets for maintainer generated files
 # ---------------------------------------------------------------------------
-@MAINTAINER@$(top_srcdir)/configure: $(top_srcdir)/configure.in $(top_srcdir)/aclocal.m4
+@MAINTAINER@$(top_srcdir)/configure: $(top_srcdir)/configure.ac $(top_srcdir)/aclocal.m4
 @MAINTAINER@	@$(ECHO_AUTOCONF)
 @MAINTAINER@	@SILENT_RULES@rm -f $(top_srcdir)/configure
 @MAINTAINER@	@SILENT_RULES@cd "$(top_srcdir)" && (autoconf && \
@@ -215,12 +215,12 @@ $(CONFIG_H): $(top_builddir)/config.status $(CONFIG_H_IN)
 @MAINTAINER@	sed 's,###ESCAPE###,[,' < configure.tmp > configure && \
 @MAINTAINER@	chmod 755 configure)
 
-@MAINTAINER@$(top_srcdir)/aclocal.m4: $(top_srcdir)/m4/*.m4 $(top_srcdir)/configure.in
+@MAINTAINER@$(top_srcdir)/aclocal.m4: $(top_srcdir)/m4/*.m4 $(top_srcdir)/configure.ac
 @MAINTAINER@	@$(ECHO_ACLOCAL)
 @MAINTAINER@	@SILENT_RULES@rm -f $(top_srcdir)/aclocal.m4
 @MAINTAINER@	@SILENT_RULES@cd "$(top_srcdir)" && aclocal -I m4
 
-@MAINTAINER@$(CONFIG_H_IN): $(top_srcdir)/aclocal.m4 $(top_srcdir)/configure.in
+@MAINTAINER@$(CONFIG_H_IN): $(top_srcdir)/aclocal.m4 $(top_srcdir)/configure.ac
 @MAINTAINER@	@$(ECHO_AUTOHEADER)
 @MAINTAINER@	@SILENT_RULES@rm -f $(CONFIG_H_IN)
 @MAINTAINER@	@SILENT_RULES@cd "$(top_srcdir)" && autoheader
