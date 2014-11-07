@@ -71,7 +71,7 @@ dep-local:
 
 -$(LIBRARY): $(SUBDIRS:%=%/.libdep)
 	@$(ECHO_RANLIB)
-	@QUIET@$(RANLIB) $(LIBRARY)
+	@SILENT_RULES@$(RANLIB) $(LIBRARY)
 
 # files that go into distribution tarballs
 # ---------------------------------------------------------------------------

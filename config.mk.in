@@ -155,7 +155,7 @@ COLOR_DEFAULT   = $(@NAME_DEFAULT@)
 # ---------------------------------------------------------------------------
 ECHO            = @ECHO@
 MAKEFLAGS       = @MAKEFLAGS@
-QUIET           = @QUIET@
+SILENT_RULES           = @SILENT_RULES@
 
 # colorful echoes =)
 # ---------------------------------------------------------------------------

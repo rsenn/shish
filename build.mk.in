@@ -25,19 +25,19 @@ COMPLINK        = $(LINK) $(CFLAGS) $(CPPFLAGS) $(DEFS) $(INCLUDES)
 # ---------------------------------------------------------------------------
 .c.o:
 	@$(ECHO_CC)
-	@QUIET@$(COMPILE) -MD -c $<
+	@SILENT_RULES@$(COMPILE) -MD -c $<
 
 .c.@DLLEXT@:
 	@$(ECHO_CCLD)
-	@QUIET@$(COMPLINK) $(SHLDFLAGS) -MD -o $@ $<
+	@SILENT_RULES@$(COMPLINK) $(SHLDFLAGS) -MD -o $@ $<
 
 .c.s:
 	@$(ECHO_CC)
-	@QUIET@$(COMPILE) -MD -S $<
+	@SILENT_RULES@$(COMPILE) -MD -S $<
 
 .asm.o:
 	@$(ECHO_NASM)
-	@QUIET@$(NASM) $(NASMFLAGS) $(srcpfx)$<
+	@SILENT_RULES@$(NASM) $(NASMFLAGS) $(srcpfx)$<
 
 # targets for makefiles in subdirs
 # ---------------------------------------------------------------------------
@@ -175,26 +175,26 @@ $(ARCHIVE): $(OBJECTS)
 # ---------------------------------------------------------------------------
 Makefile: $(top_builddir)/config.status $(srcdir)/Makefile.in $(top_builddir)/config.mk $(top_builddir)/build.mk
 	@$(ECHO_CONFIG)
-#	echo '@QUIET@cd "$(top_builddir)" && ./config.status "$(thisdir)Makefile" >/dev/null'
-	@QUIET@cd "$(top_builddir)" && ./config.status $(thisdir)Makefile >/dev/null
+#	echo '@SILENT_RULES@cd "$(top_builddir)" && ./config.status "$(thisdir)Makefile" >/dev/null'
+	@SILENT_RULES@cd "$(top_builddir)" && ./config.status $(thisdir)Makefile >/dev/null
 
 # rule for build.mk
 # ---------------------------------------------------------------------------
 $(top_builddir)/build.mk: $(top_builddir)/config.status $(top_srcdir)/build.mk.in
 	@$(ECHO_CONFIG)
-	@QUIET@cd "$(top_builddir)" && ./config.status build.mk >/dev/null
+	@SILENT_RULES@cd "$(top_builddir)" && ./config.status build.mk >/dev/null
                                 
 # rule for config.mk
 # ---------------------------------------------------------------------------
 $(top_builddir)/config.mk: $(top_builddir)/config.status $(top_srcdir)/config.mk.in
 	@$(ECHO_CONFIG)
-	@QUIET@cd "$(top_builddir)" && ./config.status config.mk >/dev/null
+	@SILENT_RULES@cd "$(top_builddir)" && ./config.status config.mk >/dev/null
 
 # rule for config.status
 # ---------------------------------------------------------------------------
 $(top_builddir)/config.status: $(top_srcdir)/configure
 	@$(ECHO_CONFIG)
-	@QUIET@cd "$(top_builddir)" && ./configure $(ac_configure_args)
+	@SILENT_RULES@cd "$(top_builddir)" && ./configure $(ac_configure_args)
 
 # rule for config.h
 # ---------------------------------------------------------------------------
@@ -209,47 +209,47 @@ $(CONFIG_H): $(top_builddir)/config.status $(CONFIG_H_IN)
 # ---------------------------------------------------------------------------
 @MAINTAINER@$(top_srcdir)/configure: $(top_srcdir)/configure.in $(top_srcdir)/aclocal.m4
 @MAINTAINER@	@$(ECHO_AUTOCONF)
-@MAINTAINER@	@QUIET@rm -f $(top_srcdir)/configure
-@MAINTAINER@	@QUIET@cd "$(top_srcdir)" && (autoconf && \
+@MAINTAINER@	@SILENT_RULES@rm -f $(top_srcdir)/configure
+@MAINTAINER@	@SILENT_RULES@cd "$(top_srcdir)" && (autoconf && \
 @MAINTAINER@	mv configure configure.tmp && \
 @MAINTAINER@	sed 's,###ESCAPE###,[,' < configure.tmp > configure && \
 @MAINTAINER@	chmod 755 configure)
 
 @MAINTAINER@$(top_srcdir)/aclocal.m4: $(top_srcdir)/m4/*.m4 $(top_srcdir)/configure.in
 @MAINTAINER@	@$(ECHO_ACLOCAL)
-@MAINTAINER@	@QUIET@rm -f $(top_srcdir)/aclocal.m4
-@MAINTAINER@	@QUIET@cd "$(top_srcdir)" && aclocal -I m4
+@MAINTAINER@	@SILENT_RULES@rm -f $(top_srcdir)/aclocal.m4
+@MAINTAINER@	@SILENT_RULES@cd "$(top_srcdir)" && aclocal -I m4
 
 @MAINTAINER@$(CONFIG_H_IN): $(top_srcdir)/aclocal.m4 $(top_srcdir)/configure.in
 @MAINTAINER@	@$(ECHO_AUTOHEADER)
-@MAINTAINER@	@QUIET@rm -f $(CONFIG_H_IN)
-@MAINTAINER@	@QUIET@cd "$(top_srcdir)" && autoheader
+@MAINTAINER@	@SILENT_RULES@rm -f $(CONFIG_H_IN)
+@MAINTAINER@	@SILENT_RULES@cd "$(top_srcdir)" && autoheader
 
 # makes a subdir party of a library
 # ---------------------------------------------------------------------------
 .libdep: $(OBJECTS)
 	@$(ECHO_AR)
-	@QUIET@$(AR) $(LIB) $(OBJECTS)
+	@SILENT_RULES@$(AR) $(LIB) $(OBJECTS)
 	@touch $@
 
 # rule for libraries
 # ---------------------------------------------------------------------------
 $(LIBRARY): $(OBJECTS)
 	@$(ECHO_AR)
-	@QUIET@$(AR) $(LIBRARY) $(OBJECTS)
+	@SILENT_RULES@$(AR) $(LIBRARY) $(OBJECTS)
 	@$(ECHO_RANLIB)
-	@QUIET@$(RANLIB) $(LIBRARY)
+	@SILENT_RULES@$(RANLIB) $(LIBRARY)
 
 # rule for programs
 # ---------------------------------------------------------------------------
 $(PROGRAM): $(OBJECTS) $(LDADD) 
 	@$(ECHO_LD)
-	@QUIET@$(LINK) -o $(PROGRAM) $(OBJECTS) $(PREADD) $(LDADD) $(POSTADD) $(LIB) $(LIBS)
+	@SILENT_RULES@$(LINK) -o $(PROGRAM) $(OBJECTS) $(PREADD) $(LDADD) $(POSTADD) $(LIB) $(LIBS)
 
 #$(PROGRAMS): $(LDADD)
 #	@$(ECHO_LD)
 #	@make $@.o
-#	@QUIET@$(LINK) -o $@ $@.o $(LDADD) $(LIB) $(LIBS)
+#	@SILENT_RULES@$(LINK) -o $@ $@.o $(LDADD) $(LIB) $(LIBS)
 
 # installation rules.... clean this stuff up someday!!!!!!!!!
 # ---------------------------------------------------------------------------
