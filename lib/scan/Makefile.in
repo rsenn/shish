@@ -22,8 +22,10 @@ LIB = ../libshish.a
 MODULES = scan_8long \
 scan_int \
 scan_long \
+scan_longlong \
 scan_uint \
-scan_ulong
+scan_ulong \
+scan_ulonglong
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

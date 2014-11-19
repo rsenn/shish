@@ -234,6 +234,12 @@ union node *parse_loop(struct parser *p);
 union node *parse_pipeline(struct parser *p);
 union node *parse_simple_command(struct parser *p);
 
+union node *parse_arith_binary(struct parser *p);
+union node *parse_arith_expr(struct parser *p);
+union node *parse_arith_paren(struct parser *p);
+union node *parse_arith_unary(struct parser *p);
+union node *parse_arith_value(struct parser *p);
+
 void *parse_error(struct parser *p, enum tok_flag toks);
 void parse_init(struct parser *p, int flags);
 void parse_string(struct parser *p, int flags);
