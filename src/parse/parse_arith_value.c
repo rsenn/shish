@@ -11,13 +11,16 @@ union node *parse_arith_value(struct parser *p)
 	union node* node = 0;
 	char x[FMT_LONG+1];
 	long long num;
+	unsigned int n;
 
 	if(source_peekn(x,FMT_LONG) <= 0)
 		return 0;
 
-	if(scan_longlong(x, &num) > 0) {
+	if((n = scan_longlong(x, &num)) > 0) {
 		node = tree_newnode(N_ARITH_NUM);
 		node->narithnum.num = num;
+		while(n--)
+			source_skip();
 	} else {
 		char c;
 		stralloc w;
@@ -30,7 +33,7 @@ union node *parse_arith_value(struct parser *p)
 		stralloc_catc(&w, '\0');
 
 		node = tree_newnode(N_ARITH_VAR);
-		node->narithvar.var = w.s;
+		node->narithvar.var = w.s	;
 	}
 
   return node;
