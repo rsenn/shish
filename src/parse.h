@@ -192,6 +192,7 @@ struct parser {
 #define P_BQUOTE   0x0800 /* bquoted mode, delimit words on unesc'd bquotes */
 #define P_NOSUBST  0x1000 /* do not create substitution nodes */
 #define P_HERE     0x2000 /* parse here-doc */
+#define P_ARITH    0x4000 /* parse arithmetic expression */
 
 extern unsigned int parse_lineno;
 extern struct token parse_tokens[];

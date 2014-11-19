@@ -79,8 +79,45 @@ void tree_free(union node *node)
         if(node->nargcmd.list) tree_free(node->nargcmd.list);
         break;
       case N_ARGARITH:
-        if(node->nargarith.list) tree_free(node->nargarith.list);
+        if(node->nargarith.tree) tree_free(node->nargarith.tree);
         break;
+
+      case N_ARITH_NUM:
+				break;
+      case N_ARITH_VAR:
+				shell_free(node->narithvar.var);
+				break;
+
+      case N_ARITH_OR:
+      case N_ARITH_AND:
+      case N_ARITH_BOR:
+      case N_ARITH_BXOR:
+      case N_ARITH_BAND:
+      case N_ARITH_EQ:
+      case N_ARITH_NE:
+      case N_ARITH_LT:
+      case N_ARITH_GT:
+      case N_ARITH_GE:
+      case N_ARITH_LE:
+      case N_ARITH_LSHIFT:
+      case N_ARITH_RSHIFT:
+      case N_ARITH_ADD:
+      case N_ARITH_SUB:
+      case N_ARITH_MUL:
+      case N_ARITH_DIV:
+      case N_ARITH_REM:
+      case N_ARITH_EXP:
+        if(node->narithbinary.left) tree_free(node->narithbinary.left);
+        if(node->narithbinary.right) tree_free(node->narithbinary.right);
+				break;
+
+      case N_ARITH_PAREN:
+      case N_ARITH_UNARYMINUS:
+      case N_ARITH_UNARYPLUS:
+      case N_ARITH_NOT:
+      case N_ARITH_BNOT:
+        if(node->narithunary.node) tree_free(node->narithunary.node);
+				break;
 
       case N_FUNCTION:
         if(node->nfunc.name) shell_free(node->nfunc.name);
