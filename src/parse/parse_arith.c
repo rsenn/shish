@@ -12,12 +12,8 @@ int parse_arith(struct parser *p)
   source_skip();
   
   parse_init(&subp, P_ARITH);
-
  
-
-
-  if((tree = parse_compound_list(&subp)) == NULL)
-    return -1;
+  tree = parse_arith_expr(p);
 
   /* MUST be terminated with right parenthesis or backquote */
   if(!parse_expect(&subp, P_DEFAULT, T_RP, tree) ||
