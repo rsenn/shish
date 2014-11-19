@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include "stralloc.h"
+#include "uint64.h"
 
 /* the section numbers refer to the IEEE P1003.2 Draft D11.2 */
 
@@ -33,7 +34,34 @@ enum nod_id
                N_ARGSTR,
                N_ARGCMD,
                N_ARGPARAM,
-               N_ARGARITH
+               N_ARGARITH,
+
+               N_ARITH_NUM,
+               N_ARITH_VAR,
+               N_ARITH_PAREN,
+               N_ARITH_OR,
+               N_ARITH_AND,
+               N_ARITH_BOR,
+               N_ARITH_BXOR,
+               N_ARITH_BAND,
+               N_ARITH_EQ,
+               N_ARITH_NE,
+               N_ARITH_LT,
+               N_ARITH_GT,
+               N_ARITH_GE,
+               N_ARITH_LE,
+               N_ARITH_LSHIFT,
+               N_ARITH_RSHIFT,
+               N_ARITH_ADD,
+               N_ARITH_SUB,
+               N_ARITH_MUL,
+               N_ARITH_DIV,
+               N_ARITH_REM,
+               N_ARITH_EXP,
+               N_ARITH_UNARYMINUS,
+               N_ARITH_UNARYPLUS,
+               N_ARITH_NOT,
+               N_ARITH_BNOT,
 };
 
 /* 3.9.1 - simple command
@@ -243,8 +271,32 @@ struct nargarith
 {
   int         id;
   union node *next;
-  int         flag;
-  union node *list;
+  union node *tree;
+};
+
+struct narithnum
+{
+  int         id;
+  int64       num;
+};
+
+struct narithvar
+{
+  int         id;
+  const char *var;
+};
+
+struct narithunary
+{
+  int         id;
+  union node *node;
+};
+
+struct narithbinary
+{
+  int         id;
+  union node *left;
+  union node *right;
 };
 
 /* ----------------------------------------------------------------------- */
@@ -270,6 +322,10 @@ union node
   struct nargcmd   nargcmd;
   struct nargarith nargarith;
   struct nargparam nargparam;
+  struct narithnum narithnum;
+  struct narithvar narithvar;
+  struct narithunary narithunary;
+  struct narithbinary narithbinary;
 };
 
 /* link node to the branch nptr points to */
