@@ -17,7 +17,7 @@ COMPLINK        = $(LINK) $(CPPFLAGS) $(INCLUDES) $(CFLAGS)
 # file suffixes we may encounter
 # ---------------------------------------------------------------------------
 .SUFFIXES:
-.SUFFIXES: .c .h .o .s .in .d .@PIE_LIBEXT@ .@PIC_OBJEXT@ .@PIC_DEPEXT@
+.SUFFIXES: .c .h .o .s .in .d 
 
 # compilation rules by file extension
 # ---------------------------------------------------------------------------
@@ -33,11 +33,9 @@ COMPLINK        = $(LINK) $(CPPFLAGS) $(INCLUDES) $(CFLAGS)
 @DEPS_FALSE@	@QUIET@$(COMPILE) -E -o $@ $<
 
 
-#.c.@PIE_LIBEXT@:
 #	@$(ECHO_CCLD)
 #	@QUIET@$(COMPLINK) $(PIC_CFLAGS) $(PIE_LDFLAGS) -MD -o $@ $< $(LIBS)
 
-%.@PIE_LIBEXT@: %.c %.def
 	@$(ECHO_CCLD)
 @DEPS_TRUE@	@QUIET@$(COMPLINK) $(PIC_CFLAGS) $(MOD_LDFLAGS) -MD -o $@ $< $(LIBS)
 @DEPS_FALSE@	@QUIET@$(COMPLINK) $(PIC_CFLAGS) $(MOD_LDFLAGS) -o $@ $< $(LIBS)
@@ -282,10 +280,7 @@ $(PIE_LIBRARY): $(PIC_OBJECTS)
 #	@QUIET@$(LINK) -o $@ $@.o $(LDADD) $(LIB) $(LIBS)
 # library rules
 # ---------------------------------------------------------------------------
-@A_LIB@a-library: $(A_LIBRARY)
-@NO_A_LIB@a-library:
 
-@NO_PIE_LIB@pie-library:
 
 # installation rules.... clean this stuff up someday!!!!!!!!!
 # ---------------------------------------------------------------------------

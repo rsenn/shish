@@ -55,9 +55,6 @@ PREFIX          = @PREFIX@
 # ---------------------------------------------------------------------------
 EXEEXT          = @EXEEXT@
 OBJEXT          = @OBJEXT@
-A_EXEEXT        = @A_EXEEXT@
-PIC_OBJEXT      = @PIC_OBJEXT@
-PIE_LIBEXT      = @PIE_LIBEXT@
 
 # package info
 # ---------------------------------------------------------------------------
@@ -71,9 +68,6 @@ VERSION         = $(PACKAGE_VERSION)
 
 # detailed version info
 # ---------------------------------------------------------------------------
-VERSION_MAJOR   = @VERSION_MAJOR@
-VERSION_MINOR   = @VERSION_MINOR@
-VERSION_PATCH   = @VERSION_PATCH@
 
 # default unix programs
 # ---------------------------------------------------------------------------
@@ -108,45 +102,12 @@ SHLDFLAGS       = @SHLDFLAGS@
 CPPFLAGS        = @CPPFLAGS@
 MAKEFLAGS       = @MAKEFLAGS@
 
-DLFCN_CFLAGS    = @DLFCN_CFLAGS@
-DLFCN_LIBS      = @DLFCN_LIBS@
-SSL_CFLAGS      = @SSL_CFLAGS@
-SSL_LIBS        = @SSL_LIBS@
 FT2_CFLAGS      = @FT2_CFLAGS@
 FT2_LIBS        = @FT2_LIBS@
-SQLITE_CFLAGS   = @SQLITE_CFLAGS@
-SQLITE_LIBS     = @SQLITE_LIBS@
-PSQL_CFLAGS     = @PSQL_CFLAGS@
-PSQL_LIBS       = @PSQL_LIBS@
-MYSQL_CFLAGS    = @MYSQL_CFLAGS@
-MYSQL_LIBS      = @MYSQL_LIBS@
-CHAOS_CFLAGS    = @CHAOS_CFLAGS@
-CHAOS_LIBS      = @CHAOS_LIBS@
-SDL_CFLAGS      = @SDL_CFLAGS@
-SDL_LIBS        = @SDL_LIBS@
-SGUI_CFLAGS     = @SGUI_CFLAGS@
-SGUI_LIBS       = @SGUI_LIBS@
-LIBPNG_CFLAGS   = @LIBPNG_CFLAGS@
-LIBPNG_LIBS     = @LIBPNG_LIBS@
-LIBOWFAT_CFLAGS = @LIBOWFAT_CFLAGS@
-LIBOWFAT_LIBS   = @LIBOWFAT_LIBS@
-EFENCE_CFLAGS = @EFENCE_CFLAGS@
-EFENCE_LIBS   = @EFENCE_LIBS@
 
 # pic compiling and dynamic linking
-PIC_CFLAGS      = @PIC_CFLAGS@
-PIC_OBJEXT      = @PIC_OBJEXT@
-PIC_DEPEXT      = @PIC_DEPEXT@
-PIE_LINK        = @PIE_LINK@
-PIE_LINKS       = @PIE_LINKS@
 MOD_LDFLAGS     = $(patsubst %.dll,%.def,$@)
-PIE_LDFLAGS     = @PIE_LDFLAGS@
-PIE_LIBEXT      = @PIE_LIBEXT@
-PIE_NAME        = @PIE_NAME@
-PIE_LOADER      = @PIE_LOADER@
 
-PIE_VERSION_PREFIX = @PIE_VERSION_PREFIX@
-PIE_VERSION_SUFFIX = @PIE_VERSION_SUFFIX@
 
 # color codes
 # ---------------------------------------------------------------------------
