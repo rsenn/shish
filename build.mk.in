@@ -17,7 +17,7 @@ COMPLINK        = $(LINK) $(CPPFLAGS) $(INCLUDES) $(CFLAGS)
 # file suffixes we may encounter
 # ---------------------------------------------------------------------------
 .SUFFIXES:
-.SUFFIXES: .c .h .o .s .in .d 
+.SUFFIXES: .c .h .o .e .s .in .d 
 
 # compilation rules by file extension
 # ---------------------------------------------------------------------------
@@ -26,6 +26,11 @@ COMPLINK        = $(LINK) $(CPPFLAGS) $(INCLUDES) $(CFLAGS)
 	@$(ECHO_CC)
 @DEPS_TRUE@	@QUIET@$(COMPILE) -MD -c -o $@ $<
 @DEPS_FALSE@	@QUIET@$(COMPILE) -c -o $@ $<
+
+.c.e:
+	@$(ECHO_CC)
+@DEPS_TRUE@	@QUIET@$(COMPILE) -MD -E -o $@ $<
+@DEPS_FALSE@	@QUIET@$(COMPILE) -E -o $@ $<
 
 .c.i:
 	@$(ECHO_CC)
@@ -270,14 +275,15 @@ $(PIE_LIBRARY): $(PIC_OBJECTS)
 
 # rule for programs
 # ---------------------------------------------------------------------------
-#$(PROGRAM): $(OBJECTS) $(LDADD)
-#	@$(ECHO_LD)
-#	@QUIET@$(LINK) -o $(PROGRAM) $^ $(LIB) $(LIBS)
+$(PROGRAM): $(OBJECTS) $(LDADD)
+	@$(ECHO_LD)
+	@QUIET@$(LINK) -o $(PROGRAM) $^ $(LIB) $(LIBS)
 
 #$(PROGRAMS): $(LDADD)
 #	@$(ECHO_LD)
 #	@make $@.o
 #	@QUIET@$(LINK) -o $@ $@.o $(LDADD) $(LIB) $(LIBS)
+
 # library rules
 # ---------------------------------------------------------------------------
 
