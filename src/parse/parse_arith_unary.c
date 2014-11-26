@@ -11,7 +11,9 @@ union node *parse_arith_unary(struct parser *p)
 		return 0;
 
 	if(!(c == '!' || c == '~'))
-		return 0;
+		return NULL;
+
+	source_skip();
 
 	union node *node = tree_newnode(c == '!' ? N_ARITH_NOT : N_ARITH_BNOT);
 

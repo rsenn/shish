@@ -86,7 +86,7 @@ INSTALL_DIR     = $(INSTALL) -d -m755
 
 # arguments for the programs
 # ---------------------------------------------------------------------------
-DEFS            = #@DEFS@
+DEFS            = @DEFS@ -DHAVE_CONFIG_H=1 #-DPACKAGE_NAME=\"$(PACKAGE)\" -DPACKAGE_VERSION=\"$(VERSION)\"
 LIBS            = @LIBS@
 CFLAGS          = @CFLAGS@
 LDFLAGS         = @LDFLAGS@

@@ -257,24 +257,28 @@ struct nargarith {
 struct narithnum
 {
   int         id;
+  union node *next;
   int64       num;
 };
 
 struct narithvar
 {
   int         id;
+  union node *next;
   const char *var;
 };
 
 struct narithunary
 {
   int         id;
+  union node *next;
   union node *node;
 };
 
 struct narithbinary
 {
   int         id;
+  union node *next;
   union node *left;
   union node *right;
 };
