@@ -53,6 +53,24 @@ dnl AC_FUNC_SELECT([cp $srcdir/select.h2 select.h], [cp $srcdir/select.h1 select
 dnl AC_FUNC_SENDFILE
 dnl AC_FUNC_DEVPOLL
 dnl AC_TYPE_SOCKLEN
+dnl AC_TYPE_UINT8_T
+dnl AC_TYPE_UINT16_T
+dnl AC_TYPE_UINT32_T
+dnl AC_TYPE_UINT64_T
+AC_DEFUN([STDINT_INCLUDES],[
+#include <inttypes.h>
+#include <stdint.h>
+])
+AC_CHECK_SIZEOF([uint8_t], [], [STDINT_INCLUDES])
+AC_CHECK_SIZEOF([uint16_t], [], [STDINT_INCLUDES])
+AC_CHECK_SIZEOF([uint32_t], [], [STDINT_INCLUDES])
+AC_CHECK_SIZEOF([uint64_t], [], [STDINT_INCLUDES])
+
+dnl AC_CHECK_TYPE([uint8_t], [], [AC_TYPE_UINT8_T], [STDINT_INCLUDES])
+dnl AC_CHECK_TYPE([uint16_t], [], [AC_TYPE_UINT16_T], [STDINT_INCLUDES])
+dnl AC_CHECK_TYPE([uint32_t], [], [AC_TYPE_UINT32_T], [STDINT_INCLUDES])
+dnl AC_CHECK_TYPE([uint64_t], [], [AC_TYPE_UINT64_T], [STDINT_INCLUDES])
+
 dnl AC_IPV6
 dnl AC_SCOPE_ID
 dnl AC_CHECK_N2I

@@ -48,7 +48,7 @@ SUBDIRS   = builtin \
             var \
             vartab
 
-PROGRAM = shish
+PROGRAM = shish$(EXEEXT)
 LIB     = $(top_builddir)/lib/libshish.a   
 LDADD   = builtin/builtin.a \
           debug/debug.a \
