@@ -10,7 +10,6 @@
 SILENT          = @SILENT@
 COLOR           = @COLOR@
 DEBUG           = @DEBUG@
-DEP             = @DEP@
 
 # installation directories
 # ---------------------------------------------------------------------------
@@ -47,7 +46,6 @@ CONFIG_H_IN = $(top_srcdir)/config.h
 # ---------------------------------------------------------------------------
 DESTDIR         =
 
-#SUBDIRS         = @SUBDIRS@
 SUBMAKE         = $(SUBDIRS)
 PREFIX          = @PREFIX@
 
@@ -80,17 +78,11 @@ CHMOD           = chmod
 # ---------------------------------------------------------------------------
 CC              = @CC@
 AR              = @AR@
-LN              = @LN@
-NASM            = @NASM@
 RANLIB          = @RANLIB@
-DLLWRAP         = @DLLWRAP@
-LEX             = @LEX@
-YACC            = @YACC@
 INSTALL         = @INSTALL@
 INSTALL_DATA    = $(INSTALL) -c -m644
 INSTALL_EXEC    = $(INSTALL) -c -m755
 INSTALL_DIR     = $(INSTALL) -d -m755
-DOXYGEN         = @DOXYGEN@
 
 # arguments for the programs
 # ---------------------------------------------------------------------------
@@ -98,7 +90,6 @@ DEFS            = #@DEFS@
 LIBS            = @LIBS@
 CFLAGS          = @CFLAGS@
 LDFLAGS         = @LDFLAGS@
-SHLDFLAGS       = @SHLDFLAGS@
 CPPFLAGS        = @CPPFLAGS@
 MAKEFLAGS       = @MAKEFLAGS@
 
