@@ -1,4 +1,4 @@
-# $Id: config.mk.in,v 1.2 2005/04/23 07:42:04 smoli Exp $
+# $Id: config.mk.in,v 1.2 2006/09/28 06:56:39 roman Exp $
 # ===========================================================================
 #
 # GNU makefile helper
@@ -15,6 +15,7 @@ DEP             = @DEP@
 # installation directories
 # ---------------------------------------------------------------------------
 prefix          = @prefix@
+exec_prefix     = @exec_prefix@
 sysconfdir      = @sysconfdir@
 bindir          = @bindir@
 sbindir         = @sbindir@
@@ -25,15 +26,21 @@ sysconfdir      = @sysconfdir@
 sharedstatedir  = @sharedstatedir@
 localstatedir   = @localstatedir@
 libdir          = @libdir@
+slibdir         = @slibdir@
 includedir      = @includedir@
 oldincludedir   = @oldincludedir@
 infodir         = @infodir@
 mandir          = @mandir@
 plugindir       = @plugindir@
+inidir          = @inidir@
 
 # autoconf related stuff
 # ---------------------------------------------------------------------------
 ac_configure_args    = @ac_configure_args@
+
+CONFIG_H_TOP = config.h
+CONFIG_H = $(top_builddir)/config.h
+CONFIG_H_IN = $(top_srcdir)/config.h
 
 # DESTDIR will be prepended to the installation path and thus you can control
 # install location e.g. for making packages etc.
@@ -48,7 +55,9 @@ PREFIX          = @PREFIX@
 # ---------------------------------------------------------------------------
 EXEEXT          = @EXEEXT@
 OBJEXT          = @OBJEXT@
-DLLEXT          = @DLLEXT@
+A_EXEEXT        = @A_EXEEXT@
+PIC_OBJEXT      = @PIC_OBJEXT@
+PIE_LIBEXT      = @PIE_LIBEXT@
 
 # package info
 # ---------------------------------------------------------------------------
@@ -77,23 +86,21 @@ CHMOD           = chmod
 # ---------------------------------------------------------------------------
 CC              = @CC@
 AR              = @AR@
+LN              = @LN@
 NASM            = @NASM@
 RANLIB          = @RANLIB@
+DLLWRAP         = @DLLWRAP@
 LEX             = @LEX@
 YACC            = @YACC@
 INSTALL         = @INSTALL@
 INSTALL_DATA    = $(INSTALL) -c -m644
 INSTALL_EXEC    = $(INSTALL) -c -m755
 INSTALL_DIR     = $(INSTALL) -d -m755
-
-# add before/after LDADD
-# ---------------------------------------------------------------------------
-PREADD  =
-POSTADD =
+DOXYGEN         = @DOXYGEN@
 
 # arguments for the programs
 # ---------------------------------------------------------------------------
-DEFS            = @DEFS@ #-DPACKAGE_NAME=\"$(PACKAGE)\" -DPACKAGE_VERSION=\"$(VERSION)\"
+DEFS            = #@DEFS@
 LIBS            = @LIBS@
 CFLAGS          = @CFLAGS@
 LDFLAGS         = @LDFLAGS@
@@ -101,10 +108,14 @@ SHLDFLAGS       = @SHLDFLAGS@
 CPPFLAGS        = @CPPFLAGS@
 MAKEFLAGS       = @MAKEFLAGS@
 
+DLFCN_CFLAGS    = @DLFCN_CFLAGS@
+DLFCN_LIBS      = @DLFCN_LIBS@
 SSL_CFLAGS      = @SSL_CFLAGS@
 SSL_LIBS        = @SSL_LIBS@
 FT2_CFLAGS      = @FT2_CFLAGS@
 FT2_LIBS        = @FT2_LIBS@
+SQLITE_CFLAGS   = @SQLITE_CFLAGS@
+SQLITE_LIBS     = @SQLITE_LIBS@
 PSQL_CFLAGS     = @PSQL_CFLAGS@
 PSQL_LIBS       = @PSQL_LIBS@
 MYSQL_CFLAGS    = @MYSQL_CFLAGS@
@@ -115,6 +126,27 @@ SDL_CFLAGS      = @SDL_CFLAGS@
 SDL_LIBS        = @SDL_LIBS@
 SGUI_CFLAGS     = @SGUI_CFLAGS@
 SGUI_LIBS       = @SGUI_LIBS@
+LIBPNG_CFLAGS   = @LIBPNG_CFLAGS@
+LIBPNG_LIBS     = @LIBPNG_LIBS@
+LIBOWFAT_CFLAGS = @LIBOWFAT_CFLAGS@
+LIBOWFAT_LIBS   = @LIBOWFAT_LIBS@
+EFENCE_CFLAGS = @EFENCE_CFLAGS@
+EFENCE_LIBS   = @EFENCE_LIBS@
+
+# pic compiling and dynamic linking
+PIC_CFLAGS      = @PIC_CFLAGS@
+PIC_OBJEXT      = @PIC_OBJEXT@
+PIC_DEPEXT      = @PIC_DEPEXT@
+PIE_LINK        = @PIE_LINK@
+PIE_LINKS       = @PIE_LINKS@
+MOD_LDFLAGS     = $(patsubst %.dll,%.def,$@)
+PIE_LDFLAGS     = @PIE_LDFLAGS@
+PIE_LIBEXT      = @PIE_LIBEXT@
+PIE_NAME        = @PIE_NAME@
+PIE_LOADER      = @PIE_LOADER@
+
+PIE_VERSION_PREFIX = @PIE_VERSION_PREFIX@
+PIE_VERSION_SUFFIX = @PIE_VERSION_SUFFIX@
 
 # color codes
 # ---------------------------------------------------------------------------
@@ -155,7 +187,9 @@ COLOR_DEFAULT   = $(@NAME_DEFAULT@)
 # ---------------------------------------------------------------------------
 ECHO            = @ECHO@
 MAKEFLAGS       = @MAKEFLAGS@
-SILENT_RULES           = @SILENT_RULES@
+QUIET           = @QUIET@
+REDIR           = @REDIR@
+REDIR2          = @REDIR2@
 
 # colorful echoes =)
 # ---------------------------------------------------------------------------
@@ -164,25 +198,28 @@ ECHO_AUTOCONF   = $(ECHO) "  $(COLOR_PROG)AUTOCONF$(NC)$(reldir)$@"
 ECHO_ACLOCAL    = $(ECHO) "  $(COLOR_PROG)ACLOCAL$(NC) $(reldir)$@"
 ECHO_SH         = $(ECHO) "  $(COLOR_PROG)SH$(NC)      $(reldir)"
 ECHO_CONFIG     = $(ECHO) "  $(COLOR_MK)CONFIG$(NC)  $(reldir)$@"
-ECHO_POD2MAN    = $(ECHO) "  $(COLOR_MK)POD2MAN$(NC) $(reldir)$@"
 ECHO_TAR        = $(ECHO) "  $(COLOR_PROG)TAR$(NC)     $(reldir)"
 ECHO_BZIP2      = $(ECHO) "  $(COLOR_YES)BZIP2$(NC)   $(reldir)"
 ECHO_GZIP       = $(ECHO) "  $(COLOR_YES)GZIP$(NC)    $(reldir)"
 ECHO_CD         = $(ECHO) "  $(COLOR_DIR)CD$(NC)      $(reldir)$$subdir"
 ECHO_COPY       = $(ECHO) "  $(COLOR_PROG)COPY$(NC)    $(reldir)$$subdir"
 ECHO_INSTALL    = $(ECHO) "  $(COLOR_ARGS)INSTALL$(NC) "
+ECHO_LN         = $(ECHO) "  $(COLOR_ARGS)LN$(NC)      $(reldir)"
 ECHO_CC         = $(ECHO) "  $(COLOR_INFO)CC$(NC)      $(reldir)$(@:%.d=%.$(OBJEXT))"
+ECHO_PIC_CC     = $(ECHO) "  $(COLOR_INFO)CC$(NC) pic  $(reldir)$(@:%.d=%.$(PIC_OBJEXT))"
 ECHO_NASM       = $(ECHO) "  $(COLOR_ARGS)NASM$(NC)    $(reldir)$@"
 ECHO_YACC       = $(ECHO) "  $(COLOR_NO)YACC$(NC)    $(reldir)$(@:%.h=%.c)"
 ECHO_LEX        = $(ECHO) "  $(COLOR_YES)LEX$(NC)     $(reldir)$@"
-ECHO_LD         = $(ECHO) "  $(COLOR_NO)LD$(NC)      $(reldir)$@"
+ECHO_LD         = $(ECHO) "  $(COLOR_YES)LD$(NC)      $(reldir)$@"
+ECHO_PIE_LD     = $(ECHO) "  $(COLOR_YES)LD$(NC) pie  $(reldir)$@"
 ECHO_CCLD       = $(ECHO) "  $(COLOR_INFO)CC$(NC)$(COLOR_YES)LD$(NC)    $(reldir)$(@:%.d=%)"
 ECHO_RM         = $(ECHO) "  $(COLOR_INFO)RM$(NC)      $(reldir)$$x"
-ECHO_AR         = $(ECHO) "  $(COLOR_YES)AR$(NC)      $(reldir)$(LIB)$(ARCHIVE)"
-ECHO_RANLIB     = $(ECHO) "  $(COLOR_NO)RANLIB$(NC)  $(reldir)$(LIBRARY)"
+ECHO_AR         = $(ECHO) "  $(COLOR_YES)AR$(NC)      $(reldir)$(LIB)$(ARCHIVE)$(LIBRARY)$(A_LIBRARY)"
+ECHO_RANLIB     = $(ECHO) "  $(COLOR_NO)RANLIB$(NC)  $(reldir)$(LIBRARY)$(A_LIBRARY)"
 ECHO_MKDIR      = $(ECHO) "  $(COLOR_DIR)MKDIR$(NC)   "
 ECHO_MKDEP      = $(ECHO) "  $(COLOR_YES)MKDEP$(NC)   $(reldir)$@"
-ECHO_DIST       = $(ECHO) "  $(COLOR_INFO)DIST$(NC)    $(reldir)$$file"
+ECHO_DIST       = $(ECHO) "  $(COLOR_ARGS)DIST$(NC)    $(reldir)$$file"
+ECHO_DOXYGEN    = $(ECHO) "  $(COLOR_ARGS)DOXYGEN$(NC) $(reldir)$@"
 
 # common recursive targets
 # ---------------------------------------------------------------------------
@@ -197,11 +234,11 @@ RCLEAN_TARGETS = clean-recursive \
 
 # common configuration
 # ---------------------------------------------------------------------------
-#INCLUDES             = -I$(top_srcdir)/include
+#INCLUDES             = -isystem $(top_srcdir)/include
 
 # files to be cleaned
 # ---------------------------------------------------------------------------
-CLEANFILES           = $(OBJECTS) $(LIBRARY) $(ARCHIVE) $(PROGRAM) $(PROGRAMS) .libdep
+CLEANFILES           = $(OBJECTS) $(PIC_OBJECTS) $(PIE_LIBRARY) $(LIBRARY) $(ARCHIVE) $(PROGRAM) $(PROGRAMS) .libdep
 DISTCLEANFILES       = Makefile $(DEPS)
 MAINTAINERCLEANFILES =
 
@@ -209,5 +246,5 @@ MAINTAINERCLEANFILES =
 # ---------------------------------------------------------------------------
 FILES                = Makefile.in $(SOURCES) $(HEADERS) $(DATA)
 DISTFILES            = $(FILES)
-DEVFILES             = CVS $(FILES)
+DEVFILES             = $(FILES)
 

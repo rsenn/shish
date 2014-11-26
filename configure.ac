@@ -114,13 +114,17 @@ AC_CHECK_DEP
 AC_CHECK_DEBUG
 AC_CHECK_MAINTAINER
 
-AC_SUBST([PIC],[#])
-AC_SUBST([DLM_TRUE],[#])
-AC_SUBST([A_LIB],[#])
-AC_SUBST([DLM_TRUE],[#])
-AC_SUBST([NO_A_LIB],[#])
-AC_SUBST([NO_PIE_LIB],[#])
-AC_SUBST([PIE_LIB],[#])
+CPPFLAGS="$CPPFLAGS -DHAVE_CONFIG_H=1"
+
+AC_SUBST([CPPFLAGS])
+dnl 
+dnl AC_SUBST([PIC],[#])
+dnl AC_SUBST([DLM_TRUE],[#])
+dnl AC_SUBST([A_LIB],[#])
+dnl AC_SUBST([DLM_TRUE],[#])
+dnl AC_SUBST([NO_A_LIB],[#])
+dnl AC_SUBST([NO_PIE_LIB],[#])
+dnl AC_SUBST([PIE_LIB],[#])
 AC_SUBST([WIN32_TRUE],[#])
 
 # check for needed types

@@ -157,7 +157,8 @@ s/^[^=]*=[	 ]*$//;
 }']
 fi
 
-m4_ifset([AC_LIST_HEADERS], [DEFS=-DHAVE_CONFIG_H], [AC_OUTPUT_MAKE_DEFS()])
+m4_ifset([AC_LIST_HEADERS], [DEFS="$DEFS -DHAVE_CONFIG_H"], [AC_OUTPUT_MAKE_DEFS()])
+AC_SUBST([DEFS])
 
 dnl Commands to run before creating config.status.
 AC_OUTPUT_COMMANDS_PRE()dnl
