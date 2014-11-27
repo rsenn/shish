@@ -19,29 +19,31 @@ COMPLINK        = $(LINK) $(CPPFLAGS) $(INCLUDES) $(CFLAGS)
 .SUFFIXES:
 .SUFFIXES: .c .h .o .e .s .in .d 
 
-.PHONY: all all-local bootfiles clean clean-local cvscheck cvsdir dep dep-local devdist devdist-all devdist-bzip devdist-bzip2 devdist-bzip2-all devdist-bzip-all devdistdir devdist-gz devdist-gzip devdist-gzip-all dist dist-all dist-bzip dist-bzip2 dist-bzip2-all dist-bzip-all distcheck distclean distclean-local distdir dist-gz dist-gzip dist-gzip-all install install-binEXEC install-data install-exec install-includeDATA install-libEXEC install-libexecEXEC install-local install-manDATA install-recursive install-sbinEXEC install-sharedDATA install-sharedstateDATA install-sharedstate-preserveDATA install-sysconfDATA install-sysconf-preserveDATA maintainer-clean maintainer-clean-local makefiles module-recursive
-
 # compilation rules by file extension
 # ---------------------------------------------------------------------------
 
 .c.@OBJEXT@:
 	@$(ECHO_CC)
-@DEPS_TRUE@	@QUIET@$(COMPILE) -MD -c -o $@ $<
+@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -c -o $@ $<
 @DEPS_FALSE@	@QUIET@$(COMPILE) -c -o $@ $<
 
 .c.e:
 	@$(ECHO_CC)
-@DEPS_TRUE@	@QUIET@$(COMPILE) -MD -E -o $@ $<
+@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -E -o $@ $<
 @DEPS_FALSE@	@QUIET@$(COMPILE) -E -o $@ $<
 
 .c.i:
 	@$(ECHO_CC)
-@DEPS_TRUE@	@QUIET@$(COMPILE) -MD -E -o $@ $<
+@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -E -o $@ $<
 @DEPS_FALSE@	@QUIET@$(COMPILE) -E -o $@ $<
 
 
 #	@$(ECHO_CCLD)
-#	@QUIET@$(COMPLINK) $(PIC_CFLAGS) $(PIE_LDFLAGS) -MD -o $@ $< $(LIBS)
+#	@QUIET@$(COMPLINK) $(PIC_CFLAGS) $(PIE_LDFLAGS) -MMD -o $@ $< $(LIBS)
+
+	@$(ECHO_CCLD)
+@DEPS_TRUE@	@QUIET@$(COMPLINK) $(PIC_CFLAGS) $(MOD_LDFLAGS) -MMD -o $@ $< $(LIBS)
+@DEPS_FALSE@	@QUIET@$(COMPLINK) $(PIC_CFLAGS) $(MOD_LDFLAGS) -o $@ $< $(LIBS)
 
 %.def: %.c
 	@$(ECHO_MKDEF)
@@ -49,7 +51,7 @@ COMPLINK        = $(LINK) $(CPPFLAGS) $(INCLUDES) $(CFLAGS)
 
 .c.s:
 	@$(ECHO_CC)
-@DEPS_TRUE@	@QUIET@$(COMPILE) -MD -S $<
+@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -S $<
 @DEPS_FALSE@	@QUIET@$(COMPILE) -S $<
 
 .asm.o:

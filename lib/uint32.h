@@ -1,13 +1,8 @@
 #ifndef UINT32_H
 #define UINT32_H
 
-//#include <inttypes.h>
-#include <stdint.h>
+#include <inttypes.h>
 
-#ifdef __MSYS__
-#define uint32_t unsigned int
-#define int32_t int
-#endif
 
 typedef uint32_t uint32;
 typedef int32_t int32;
