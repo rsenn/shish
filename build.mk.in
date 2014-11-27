@@ -231,7 +231,7 @@ $(CONFIG_H): $(top_builddir)/config.status $(CONFIG_H_IN)
 
 # targets for maintainer generated files
 # ---------------------------------------------------------------------------
-@MAINTAINER@$(top_srcdir)/configure: $(top_srcdir)/configure.in $(top_srcdir)/aclocal.m4
+@MAINTAINER@$(top_srcdir)/configure: $(top_srcdir)/configure.ac $(top_srcdir)/aclocal.m4
 @MAINTAINER@	@$(ECHO_AUTOCONF)
 @MAINTAINER@	@QUIET@rm -f $(top_srcdir)/configure
 @MAINTAINER@	@QUIET@cd $(top_srcdir) && (autoconf && \
@@ -239,13 +239,13 @@ $(CONFIG_H): $(top_builddir)/config.status $(CONFIG_H_IN)
 @MAINTAINER@	sed 's,###ESCAPE###,[,' < configure.tmp > configure && \
 @MAINTAINER@	chmod 755 configure)
 
-@MAINTAINER@$(top_srcdir)/aclocal.m4: $(top_srcdir)/m4/*.m4 $(top_srcdir)/configure.in
+@MAINTAINER@$(top_srcdir)/aclocal.m4: $(top_srcdir)/m4/*.m4 $(top_srcdir)/configure.ac
 @MAINTAINER@	@$(ECHO_ACLOCAL)
 @MAINTAINER@	@QUIET@rm -f $(top_srcdir)/aclocal.m4
 @MAINTAINER@	@QUIET@cd $(top_srcdir) && aclocal -I m4
 
 #$(top_srcdir)/aclocal.m4 
-@MAINTAINER@$(CONFIG_H_IN): $(top_srcdir)/configure.in
+@MAINTAINER@$(CONFIG_H_IN): $(top_srcdir)/configure.ac
 @MAINTAINER@	@$(ECHO_AUTOHEADER)
 @MAINTAINER@	@QUIET@cd $(top_srcdir) && autoheader
 
@@ -279,7 +279,7 @@ $(PIE_LIBRARY): $(PIC_OBJECTS)
 # ---------------------------------------------------------------------------
 $(PROGRAM): $(OBJECTS) $(LDADD)
 	@$(ECHO_LD)
-	@QUIET@$(LINK) -o $(PROGRAM) $^ $(LIB) $(LIBS)
+	@QUIET@$(LINK) -o $(PROGRAM) $(PREADD) $^ $(LIB) $(POSTADD) $(LIBS)
 
 #$(PROGRAMS): $(LDADD)
 #	@$(ECHO_LD)
