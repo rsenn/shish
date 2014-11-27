@@ -43,6 +43,11 @@ AC_PROG_INSTALL
 AC_C_INLINE
 AC_FUNC_ALLOCA
 
+dnl AX_CHECK_COMPILE_FLAG([-Wl,--no-whole-archive],[AC_SUBST([PREADD],[-Wl,--whole-archive])
+dnl AC_SUBST([POSTADD],[-Wl,--no-whole-archive])
+dnl ])
+
+
 dnl AC_CHECK_LIB([owfat], [array_allocate])
 dnl AC_CHECK_TERMIOS
 
