@@ -3,8 +3,20 @@
 /* Define this if your compiler supports alloca() */
 #undef HAVE_ALLOCA
 
+/* Define this if you have the `fcntl' function */
+#undef HAVE_FCNTL
+
+/* Define this if you have the `fcntl.h' header file */
+#undef HAVE_FCNTL_H
+
 /* Define this if you have the 'gethostname' function */
 #undef HAVE_GETHOSTNAME
+
+/* Define this if you have the `glob' function */
+#undef HAVE_GLOB
+
+/* Define this if you have the `glob.h' header file */
+#undef HAVE_GLOB_H
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -62,6 +74,9 @@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
+
+/* Define this if you have the `termios.h' header file */
+#undef HAVE_TERMIOS_H
 
 /* Define this if you have the 'uid_t' type */
 #undef HAVE_UID_T

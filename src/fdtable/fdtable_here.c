@@ -44,7 +44,9 @@ int fdtable_here(struct fd *fd, int flags)
   buffer_flush(&fd->wb);
 
   /* make the fd read-only and seek to the current position */
+#ifdef F_SETFL
   fcntl(e, F_SETFL, O_RDONLY);
+#endif
   lseek(e, fd->rb.p, SEEK_SET);
 
   /* initialize the read buffer so we can read from 
