@@ -43,10 +43,6 @@ COMPLINK        = $(LINK) $(CPPFLAGS) $(INCLUDES) $(CFLAGS)
 #	@$(ECHO_CCLD)
 #	@QUIET@$(COMPLINK) $(PIC_CFLAGS) $(PIE_LDFLAGS) -MD -o $@ $< $(LIBS)
 
-.c.e:
-	@$(ECHO_CC)
-	@SILENT_RULES@$(COMPILE) -MD -E -o $@ $<
-
 %.def: %.c
 	@$(ECHO_MKDEF)
 	@QUIET@{ echo "EXPORTS"; echo "  $(subst .def,_load,$@)"; echo "  $(subst .def,_unload,$@)"; } >$@
