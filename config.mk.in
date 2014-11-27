@@ -39,7 +39,7 @@ ac_configure_args    = @ac_configure_args@
 
 CONFIG_H_TOP = config.h
 CONFIG_H = $(top_builddir)/config.h
-CONFIG_H_IN = $(top_srcdir)/config.h
+CONFIG_H_IN = $(top_srcdir)/config.h.in
 
 # DESTDIR will be prepended to the installation path and thus you can control
 # install location e.g. for making packages etc.
