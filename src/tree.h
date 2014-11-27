@@ -271,6 +271,7 @@ struct nargarith
 {
   int         id;
   union node *next;
+  int         flag;
   union node *tree;
 };
 

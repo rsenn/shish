@@ -8,6 +8,36 @@
  * ----------------------------------------------------------------------- */
 union node *parse_arith_value(struct parser *p)
 {
+	char c;
+	union node* node = NULL;
+
+	if(source_peek(&c) <= 0)
+		return NULL;
+
+  if(parse_isdigit(c)) {
+  	char x[FMT_LONG+1];
+  	unsigned int n = 0;
+  	long long num;
+
+  	do {
+  		x[n++] = c;
+
+  		if(source_next(&c) <= 0)
+  			break;
+
+  	} while(parse_isdigit(c) && n < FMT_LONG);
+
+  	x[n] = '\0';
+
+  	scan_longlong(x, &num);
+
+    node = tree_newnode(N_ARITH_NUM);
+    node->narithnum.num = num;
+
+    return node;
+  }
+
+	/*
 	union node* node = 0;
 	char x[FMT_LONG+1];
 	long long num;
@@ -36,6 +66,6 @@ union node *parse_arith_value(struct parser *p)
 		node->narithvar.var = w.s	;
 	}
 
-  return node;
+  return node;*/
 }
 
