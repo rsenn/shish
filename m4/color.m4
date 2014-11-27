@@ -258,8 +258,8 @@ if test "$ac_cv_silent_rules" = "yes"; then
   REDIR=">/dev/null"
   REDIR2="2>/dev/null"
   QUIET="@"
-  SILENT_RULES=""
-  NO_SILENT_RULES="#"
+  SILENT=""
+  NOSILENT="#"
 else
   MAKEFLAGS=""
   QUIET=""
@@ -267,8 +267,8 @@ else
   REDIR=""
   REDIR2=""
   QUIET=""
-  SILENT_RULES="#"
-  NO_SILENT_RULES=""
+  SILENT="#"
+  NOSILENT=""
 fi
 AC_SUBST(ECHO)
 AC_SUBST(QUIET)
@@ -276,8 +276,8 @@ AC_SUBST(MAKEFLAGS)
 AC_SUBST(REDIR)
 AC_SUBST(REDIR2)
 AC_SUBST(QUIET)
-AC_SUBST(SILENT_RULES)
-AC_SUBST(NO_SILENT_RULES)
+AC_SUBST(SILENT)
+AC_SUBST(NOSILENT)
 COLOR="no"
 AC_ARG_ENABLE(color,
 [  --disable-color         black and white compiling
