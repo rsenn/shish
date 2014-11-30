@@ -132,7 +132,7 @@ AC_CHECK_TYPE([sigset_t],AC_DEFINE_UNQUOTED([HAVE_SIGSET_T],[1],[Define this if 
 dnl AC_CHECK_TERMIOS
 
 
-AC_CHECK_HEADER([sys/wait.h],[AC_DEFINE_UNQUOTED([HAVE_sys/wait_H],[1],[Define this if you have the `sys/wait.h' header file])])
+AC_CHECK_HEADER([sys/wait.h],[AC_DEFINE_UNQUOTED([HAVE_SYS_WAIT_H],[1],[Define this if you have the `sys/wait.h' header file])])
 AC_CHECK_HEADER([termios.h],[AC_DEFINE_UNQUOTED([HAVE_TERMIOS_H],[1],[Define this if you have the `termios.h' header file])])
 
 AC_CHECK_HEADER([glob.h],[AC_DEFINE_UNQUOTED([HAVE_GLOB_H],[1],[Define this if you have the `glob.h' header file])])
