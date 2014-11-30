@@ -4,7 +4,9 @@
 
 #include <sys/stat.h>
 #include <limits.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <errno.h>
 
 #ifdef HAVE_CONFIG_H

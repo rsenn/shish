@@ -1,5 +1,7 @@
 #include <stdlib.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include "shell.h"
 #include "open.h"
 #include "str.h"

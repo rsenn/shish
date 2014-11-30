@@ -2,7 +2,7 @@
 #include "buffer.h"
 #include "scan.h"
 
-int buffer_get_until(buffer* b,char* x,unsigned long int len,const char* charset,unsigned long int setlen) {
+int buffer_get_until(buffer* b,char* x,unsigned long len,const char* charset,unsigned long setlen) {
   int blen;
 
   for (blen=0;blen<len;) {

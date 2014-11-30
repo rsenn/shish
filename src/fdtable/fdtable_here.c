@@ -1,3 +1,9 @@
+#ifdef WIN32
+#include <windows.h>
+#include <io.h>
+#endif
+
+#include <fcntl.h>
 #include "fd.h"
 #include "fdtable.h"
 
@@ -44,8 +50,14 @@ int fdtable_here(struct fd *fd, int flags)
   buffer_flush(&fd->wb);
 
   /* make the fd read-only and seek to the current position */
+#ifdef F_SETFL
   fcntl(e, F_SETFL, O_RDONLY);
+#endif
+#ifdef WIN32
+  SetFilePointer(e, fd->rb.p, 0, FILE_BEGIN);
+#else
   lseek(e, fd->rb.p, SEEK_SET);
+#endif
 
   /* initialize the read buffer so we can read from 
      the tempfile and destroy the write buffer */

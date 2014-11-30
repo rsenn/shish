@@ -1,6 +1,6 @@
 #include "fmt.h"
 
-static inline char tohex(char c) {
+static __inline char tohex(char c) {
   return c>=10?c-10+'a':c+'0';
 }
 

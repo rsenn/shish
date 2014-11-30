@@ -1,10 +1,18 @@
+#ifdef WIN32
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 #include <limits.h>
 #include "str.h"
 #include "buffer.h"
 #include "stralloc.h"
 #include "history.h"
 #include "sh.h"
+
+#ifndef PATH_MAX
+#define PATH_MAX MAX_PATH
+#endif
 
 /* save the history
  * ----------------------------------------------------------------------- */
@@ -43,7 +51,7 @@ void history_save(void)
       {
         unsigned long len = history_cmdlen(history_array[i]);
         buffer_put(&b, history_array[i], len);
-#ifdef __MINGW32__
+#ifdef WIN32
         buffer_puts(&b, "\r\n");
 #else
         buffer_puts(&b, "\n");

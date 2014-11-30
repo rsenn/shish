@@ -19,5 +19,5 @@
 #cmakedefine PACKAGE_VERSION "@PACKAGE_VERSION@"
 
 /* Define this if you have the 'sigset_t' type */
-#cmakedefine01 HAVE_SIGSET_T 
+#cmakedefine HAVE_SIGSET_T 
 

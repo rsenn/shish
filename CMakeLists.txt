@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
-set(CMAKE_LEGACY_CYGWIN_WIN32 0)
+set(CMAKE_LEGACY_CYGWIN_WIN32 1)
 
 
 
@@ -39,22 +39,29 @@ endif()
 
 check_function_exists(sys_siglist HAVE_SYS_SIGLIST)
 
-configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.h")
-
 add_definitions(-Wall -DHAVE_CONFIG_H=1)
 
-set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0")
+if(NOT MSVC)
+	set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0")
+else()
+  set(CMAKE_C_FLAGS "/W0")
+endif()
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
   add_definitions(-DDEBUG=1)
 endif(${CMAKE_BUILD_TYPE} MATCHES "Debug")
-
 
 include_directories(${CMAKE_BINARY_DIR} lib src)
 
 #add_definitions(-DHAVE_CONFIG_H=1)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY src)
+
+if(WIN32)
+  add_definitions("/DWIN32=1")
+endif(WIN32)
+
+configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.h")
 
 set(LIBSOURCES
 	lib/open/open_read.c

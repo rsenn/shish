@@ -1,4 +1,6 @@
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <string.h>
 #include "shell.h"
 #include "sh.h"

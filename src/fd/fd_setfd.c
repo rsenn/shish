@@ -1,4 +1,6 @@
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <assert.h>
 #include "fd.h"
 #include "fdstack.h"

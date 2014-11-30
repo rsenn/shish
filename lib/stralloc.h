@@ -16,8 +16,8 @@
 
 typedef struct stralloc {
   char* s;
-  unsigned long int len;
-  unsigned long int a;
+  unsigned long len;
+  unsigned long a;
 } stralloc;
 
 /* stralloc_init will initialize a stralloc.
@@ -33,26 +33,26 @@ void stralloc_init(stralloc* sa);
  * old space, and returns 1. Note that this changes sa.s.  If the
  * allocation fails, stralloc_ready leaves sa alone and returns 0. */
 #ifdef DEBUG
-int stralloc_readydebug(const char *file, unsigned int line, stralloc* sa,unsigned long int len);
+int stralloc_readydebug(const char *file, unsigned int line, stralloc* sa,unsigned long len);
 #define stralloc_ready(sa, len) stralloc_readydebug(__FILE__, __LINE__, (sa), (len))
 #else
-int stralloc_ready(stralloc* sa,unsigned long int len);
+int stralloc_ready(stralloc* sa,unsigned long len);
 #endif /* DEBUG */
 
 /* stralloc_readyplus is like stralloc_ready except that, if sa is
  * already allocated, stralloc_readyplus adds the current length of sa
  * to len. */
 #ifdef DEBUG
-int stralloc_readyplusdebug(const char *file, unsigned int line, stralloc* sa,unsigned long int len);
+int stralloc_readyplusdebug(const char *file, unsigned int line, stralloc* sa,unsigned long len);
 #define stralloc_readyplus(sa, len) stralloc_readyplusdebug(__FILE__, __LINE__, (sa), (len))
 #else
-int stralloc_readyplus(stralloc* sa,unsigned long int len);
+int stralloc_readyplus(stralloc* sa,unsigned long len);
 #endif /* DEBUG */
 
 /* stralloc_copyb copies the string buf[0], buf[1], ..., buf[len-1] into
  * sa, allocating space if necessary, and returns 1. If it runs out of
  * memory, stralloc_copyb leaves sa alone and returns 0. */
-int stralloc_copyb(stralloc* sa,const char* buf,unsigned long int len);
+int stralloc_copyb(stralloc* sa,const char* buf,unsigned long len);
 
 /* stralloc_copys copies a \0-terminated string from buf into sa,
  * without the \0. It is the same as
@@ -68,9 +68,9 @@ int stralloc_copy(stralloc* sa,const stralloc* sa2);
  * returns 1. If sa is unallocated, stralloc_catb is the same as
  * stralloc_copyb. If it runs out of memory, stralloc_catb leaves sa
  * alone and returns 0. */
-int stralloc_catb(stralloc* sa,const char* in,unsigned long int len);
+int stralloc_catb(stralloc* sa,const char* in,unsigned long len);
 
-int stralloc_write(stralloc* sa,const char *in, unsigned long int len);
+int stralloc_write(stralloc* sa,const char *in, unsigned long len);
 int stralloc_catc(stralloc* sa,char c);
 
 /* stralloc_cats is analogous to stralloc_copys */
@@ -116,10 +116,10 @@ int stralloc_diffs(const stralloc* a,const char* b) __pure__;
 int stralloc_nul(stralloc *sa);
 
 /* stralloc_catulong0 appends a '0' padded ASCII representation of in */
-int stralloc_catulong0(stralloc* sa,unsigned long int in,unsigned long int n);
+int stralloc_catulong0(stralloc* sa,unsigned long in,unsigned long n);
 
 /* stralloc_catlong0 appends a '0' padded ASCII representation of in */
-int stralloc_catlong0(stralloc* sa,signed long int in,unsigned long int n);
+int stralloc_catlong0(stralloc* sa,signed long int in,unsigned long n);
 
 /* stralloc_free frees the storage associated with sa */
 #ifdef DEBUG
@@ -152,10 +152,10 @@ int stralloc_remove(stralloc* sa, unsigned long pos, unsigned long n);
 int stralloc_insertb(stralloc* sa, const char *s, unsigned long pos, unsigned long n);
 
 #ifdef DEBUG
-int stralloc_truncdebug(const char *file, unsigned int line, stralloc *sa,unsigned long int n);
+int stralloc_truncdebug(const char *file, unsigned int line, stralloc *sa,unsigned long n);
 #define stralloc_trunc(sa, n) stralloc_truncdebug(__FILE__, __LINE__, (sa), (n))
 #else
-int stralloc_trunc(stralloc *sa,unsigned long int n);  
+int stralloc_trunc(stralloc *sa,unsigned long n);  
 #endif /* DEBUG */
   
 #ifdef BUFFER_H
@@ -181,7 +181,7 @@ int buffer_get_token_sa(buffer* b,stralloc* sa,const char* charset);
 int buffer_getline_sa(buffer* b,stralloc* sa);
 
 /* same as buffer_get_token_sa but empty sa first */
-int buffer_get_new_token_sa(buffer* b,stralloc* sa,const char* charset,unsigned long int setlen);
+int buffer_get_new_token_sa(buffer* b,stralloc* sa,const char* charset,unsigned long setlen);
 /* same as buffer_getline_sa but empty sa first */
 int buffer_getnewline_sa(buffer* b,stralloc* sa);
 

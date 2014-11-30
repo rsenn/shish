@@ -1,4 +1,6 @@
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include "fdtable.h"
 #include "fd.h"
 #include "sh.h"

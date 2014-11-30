@@ -11,8 +11,10 @@ int fdtable_check(int e)
   int iflags = 0;
   
   /* try to get file descriptor flags */
+#ifdef F_GETFL
   if((pflags = fcntl(e, F_GETFL)) == -1)
     return 0;
+#endif
   
   /* map posix file access modes to (fd) flags */
   if(pflags & (O_RDWR|O_WRONLY)) iflags |= FD_WRITE;

@@ -1,11 +1,11 @@
 #include "scan.h"
 
-unsigned int scan_ulong(const char* src,unsigned long int* dest) {
+unsigned int scan_ulong(const char* src,unsigned long* dest) {
   register const char *tmp=src;
-  register unsigned long int l=0;
+  register unsigned long l=0;
   register unsigned char c;
   while ((c=*tmp-'0')<10) {
-    unsigned long int n;
+    unsigned long n;
     /* division is very slow on most architectures */
     n=l<<3; if ((n>>3)!=l) break;
     if (n+(l<<1) < n) break;

@@ -1,4 +1,6 @@
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include "fd.h"
 
 /* make an (fd) ready for an execve()

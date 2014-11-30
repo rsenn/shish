@@ -1,7 +1,7 @@
 #include "str.h"
 #include "buffer.h"
 
-extern ssize_t buffer_dummyread();
+extern long buffer_dummyread();
 
 void buffer_fromstr(buffer *b, char *s, unsigned long len)
 {

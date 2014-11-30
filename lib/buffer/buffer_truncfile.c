@@ -1,4 +1,8 @@
+#ifdef WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 #include "open.h"
 #include "buffer.h"

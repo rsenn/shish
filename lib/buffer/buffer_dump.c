@@ -1,12 +1,17 @@
+#ifdef WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
+#include <stddef.h>
 #include "buffer.h"
 #include "fmt.h"
 
 #ifdef DEBUG
 
-extern ssize_t term_read(int fd, char *buf, unsigned int len);
-extern ssize_t buffer_dummyreadmmap();
-extern ssize_t stralloc_write();
+extern long term_read(int fd, char *buf, unsigned int len);
+extern long buffer_dummyreadmmap();
+extern long stralloc_write();
 
 void buffer_dump(buffer *out, buffer *b) 
 {

@@ -1,4 +1,6 @@
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include "job.h"
 #include "sig.h"
 #include "sh.h"

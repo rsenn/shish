@@ -1,5 +1,7 @@
+#ifndef WIN32
 #include <unistd.h>
-#ifndef __MINGW32__
+#endif
+#ifndef WIN32
 # include <sys/wait.h>
 #endif
 #include "fdstack.h"

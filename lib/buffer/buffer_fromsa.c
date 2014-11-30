@@ -1,7 +1,7 @@
 #include "stralloc.h"
 #include "buffer.h"
 
-ssize_t buffer_dummyread(int fd,char* buf,unsigned long int len) 
+long buffer_dummyread(int fd,char* buf,unsigned long len) 
 {
   return 0;
 }

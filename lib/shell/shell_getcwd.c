@@ -1,8 +1,16 @@
 #include "stralloc.h"
 #include "str.h"
 
+#ifdef WIN32
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 #include <limits.h>
+
+#ifndef PATH_MAX
+#define PATH_MAX MAX_PATH
+#endif
 
 /* get current working directory into a stralloc
  * ----------------------------------------------------------------------- */

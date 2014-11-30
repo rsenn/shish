@@ -1,7 +1,7 @@
 #include "buffer.h"
 #include "mmap.h"
 
-ssize_t buffer_dummyreadmmap() {
+long buffer_dummyreadmmap() {
   return 0;
 }
 

@@ -8,9 +8,9 @@
  * bytes of space, copies the old string into the new space, frees the
  * old space, and returns 1. Note that this changes sa.s. */
 #ifdef DEBUG
-int stralloc_readydebug(const char *file, unsigned int line, stralloc *sa,unsigned long int len)
+int stralloc_readydebug(const char *file, unsigned int line, stralloc *sa,unsigned long len)
 #else
-int stralloc_ready(stralloc *sa,unsigned long int len)
+int stralloc_ready(stralloc *sa,unsigned long len)
 #endif /* DEBUG */
 {
   register int wanted=len+(len>>3)+30; /* heuristic from djb */

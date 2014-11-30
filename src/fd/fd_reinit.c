@@ -1,5 +1,7 @@
 #include "shell.h"
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include "fd.h"
 
 /* reinitialize an (fd) struct

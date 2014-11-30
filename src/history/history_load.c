@@ -5,6 +5,14 @@
 #include "parse.h"
 #include "history.h"
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+
+#ifndef PATH_MAX
+#define PATH_MAX MAX_PATH
+#endif
+
 buffer       history_buffer;
 unsigned int history_mapped;
 const char   history_name[] = "bash_history";

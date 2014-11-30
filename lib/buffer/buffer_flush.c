@@ -1,6 +1,6 @@
 #include "buffer.h"
 
-extern ssize_t buffer_stubborn(ssize_t (*op)(),int fd,const char* buf, unsigned int len);
+extern long buffer_stubborn(long (*op)(),int fd,const char* buf, unsigned int len);
 
 int buffer_flush(buffer* b) {
   register int p;

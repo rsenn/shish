@@ -1,7 +1,7 @@
 #include <errno.h>
 #include "buffer.h"
 
-int buffer_stubborn(ssize_t (*op)(),int fd,const char* buf, unsigned long int len) {
+int buffer_stubborn(long (*op)(),int fd,const char* buf, unsigned long len) {
   int w;
   while (len) {
     if ((w=op(fd,buf,len))<0) {

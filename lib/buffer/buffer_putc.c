@@ -1,6 +1,6 @@
 #include "buffer.h"
 
-extern ssize_t buffer_stubborn(ssize_t (*op)(),int fd,const char* buf, unsigned long int len);
+extern long buffer_stubborn(long (*op)(),int fd,const char* buf, unsigned long len);
 
 int buffer_putc(buffer* b, char c) {
   if (b->a==b->p) {	/* doesn't fit */

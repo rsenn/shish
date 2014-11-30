@@ -3,12 +3,13 @@
 
 #include <sys/types.h>
 #include <signal.h>
+#include "sh.h"
 
 #ifdef HAVE_CONFIG_H
 # include "../config.h"
-# ifndef HAVE_SIGSET_T
+#endif
+#ifndef HAVE_SIGSET_T
 typedef int sigset_t;
-# endif
 #endif
 
 #ifndef WEXITSTATUS

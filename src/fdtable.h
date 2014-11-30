@@ -1,7 +1,9 @@
 #ifndef FDTABLE_H
 #define FDTABLE_H
 
+#ifndef WIN32
 #include <unistd.h>
+#endif
 
 #ifdef FD_SETSIZE
 #define FDTABLE_SIZE FD_SETSIZE

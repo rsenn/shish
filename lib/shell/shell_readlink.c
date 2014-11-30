@@ -2,7 +2,9 @@
 #include "shell.h"
 #include "str.h"
 
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <limits.h>
 
 #ifdef HAVE_CONFIG_H

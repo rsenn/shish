@@ -1,12 +1,14 @@
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include "fd.h"
 
-static ssize_t fd_nullread(int fd, char *b, unsigned long n)
+static long fd_nullread(int fd, char *b, unsigned long n)
 {
   return 0;
 }
 
-static ssize_t fd_nullwrite(int fd, char *b, unsigned long n)
+static long fd_nullwrite(int fd, char *b, unsigned long n)
 {
   return n;
 }

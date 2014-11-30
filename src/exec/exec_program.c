@@ -4,7 +4,9 @@
 #include <alloca.h>
 #endif
 
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <signal.h>
 #include "tree.h"
 #include "parse.h"

@@ -1,4 +1,6 @@
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include "sh.h"
 #include "eval.h"
 #include "fdstack.h"

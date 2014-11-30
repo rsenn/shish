@@ -5,6 +5,14 @@
 #include "scan.h"
 #include "stralloc.h"
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+
+#ifndef PATH_MAX
+#define PATH_MAX MAX_PATH
+#endif
+
 /* get home directory into a char buf not smaller than PATH_MAX + 1 chars
  * ----------------------------------------------------------------------- */
 char *shell_gethome(int uid)
