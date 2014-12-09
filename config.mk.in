@@ -99,6 +99,8 @@ FT2_LIBS        = @FT2_LIBS@
 # pic compiling and dynamic linking
 MOD_LDFLAGS     = $(patsubst %.dll,%.def,$@)
 
+PREADD  = @PREADD@
+POSTADD = @POSTADD@
 
 # color codes
 # ---------------------------------------------------------------------------
@@ -199,4 +201,3 @@ MAINTAINERCLEANFILES =
 FILES                = Makefile.in $(SOURCES) $(HEADERS) $(DATA)
 DISTFILES            = $(FILES)
 DEVFILES             = $(FILES)
-

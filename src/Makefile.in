@@ -106,11 +106,6 @@ bin_EXEC += $(PROGRAM)
 # ---------------------------------------------------------------------------
 FILES += $(HEADERS) 
 
-# local build configuration
-# ---------------------------------------------------------------------------
-PREADD  = -Wl,--whole-archive
-POSTADD = -Wl,--no-whole-archive
-
 # include build.mk (makefile helper) 
 # ---------------------------------------------------------------------------
 include $(top_builddir)/build.mk
