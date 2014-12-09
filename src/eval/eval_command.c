@@ -1,4 +1,8 @@
+#include "../../config.h"
+
+#ifdef HAVE_ALLOCA
 #include <alloca.h>
+#endif
 #include "tree.h"
 #include "parse.h"
 #include "redir.h"

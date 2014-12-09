@@ -7,8 +7,9 @@ MYDIR=`dirname "$0"`
 cd "$MYDIR"
 
 set -e
+set -x
 
-aclocal
+aclocal --force -I m4 
 autoheader --force
 autoconf --force
 
