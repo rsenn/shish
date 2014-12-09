@@ -17,41 +17,41 @@ COMPLINK        = $(LINK) $(CPPFLAGS) $(INCLUDES) $(CFLAGS)
 # file suffixes we may encounter
 # ---------------------------------------------------------------------------
 .SUFFIXES:
-.SUFFIXES: .c .h .o .s .in .d .@PIE_LIBEXT@ .@PIC_OBJEXT@ .@PIC_DEPEXT@
+.SUFFIXES: .c .h .o .e .s .in .d 
 
 # compilation rules by file extension
 # ---------------------------------------------------------------------------
+
 .c.@OBJEXT@:
 	@$(ECHO_CC)
-@DEPS_TRUE@	@QUIET@$(COMPILE) -MD -c -o $@ $<
+@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -c -o $@ $<
 @DEPS_FALSE@	@QUIET@$(COMPILE) -c -o $@ $<
+
+.c.e:
+	@$(ECHO_CC)
+@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -E -o $@ $<
+@DEPS_FALSE@	@QUIET@$(COMPILE) -E -o $@ $<
 
 .c.i:
 	@$(ECHO_CC)
-@DEPS_TRUE@	@QUIET@$(COMPILE) -MD -E -o $@ $<
+@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -E -o $@ $<
 @DEPS_FALSE@	@QUIET@$(COMPILE) -E -o $@ $<
 
-@PIC@.c.@PIC_OBJEXT@:
-@PIC@	@$(ECHO_PIC_CC)
-@DEPS_TRUE@@PIC@	@QUIET@$(COMPILE) $(PIC_CFLAGS) -MD -MF $(<:%.c=%.@PIC_DEPEXT@) -c -o $@ $<
-@DEPS_FALSE@@PIC@	@QUIET@$(COMPILE) $(PIC_CFLAGS) -c -o $@ $<
 
-#.c.@PIE_LIBEXT@:
 #	@$(ECHO_CCLD)
-#	@QUIET@$(COMPLINK) $(PIC_CFLAGS) $(PIE_LDFLAGS) -MD -o $@ $< $(LIBS)
+#	@QUIET@$(COMPLINK) $(PIC_CFLAGS) $(PIE_LDFLAGS) -MMD -o $@ $< $(LIBS)
 
-%.@PIE_LIBEXT@: %.c %.def
 	@$(ECHO_CCLD)
-@DEPS_TRUE@	@QUIET@$(COMPLINK) $(PIC_CFLAGS) $(MOD_LDFLAGS) -MD -o $@ $< $(LIBS)
+@DEPS_TRUE@	@QUIET@$(COMPLINK) $(PIC_CFLAGS) $(MOD_LDFLAGS) -MMD -o $@ $< $(LIBS)
 @DEPS_FALSE@	@QUIET@$(COMPLINK) $(PIC_CFLAGS) $(MOD_LDFLAGS) -o $@ $< $(LIBS)
 
 %.def: %.c
 	@$(ECHO_MKDEF)
-@DLM_TRUE@@WIN32_TRUE@	@QUIET@{ echo "EXPORTS"; echo "  $(subst .def,_load,$@)"; echo "  $(subst .def,_unload,$@)"; } >$@
+	@QUIET@{ echo "EXPORTS"; echo "  $(subst .def,_load,$@)"; echo "  $(subst .def,_unload,$@)"; } >$@
 
 .c.s:
 	@$(ECHO_CC)
-@DEPS_TRUE@	@QUIET@$(COMPILE) -MD -S $<
+@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -S $<
 @DEPS_FALSE@	@QUIET@$(COMPILE) -S $<
 
 .asm.o:
@@ -189,7 +189,6 @@ maintainer-clean-local: maintainer-clean-recursive
 $(ARCHIVE): $(OBJECTS)
 	@$(ECHO_AR)
 	@$(AR) $(ARCHIVE) $(OBJECTS)
-	@$(RANLIB) $(ARCHIVE) 
 
 # global rule for all makefiles
 # ---------------------------------------------------------------------------
@@ -230,7 +229,7 @@ $(CONFIG_H): $(top_builddir)/config.status $(CONFIG_H_IN)
 
 # targets for maintainer generated files
 # ---------------------------------------------------------------------------
-@MAINTAINER@$(top_srcdir)/configure: $(top_srcdir)/configure.in $(top_srcdir)/aclocal.m4
+@MAINTAINER@$(top_srcdir)/configure: $(top_srcdir)/configure.ac $(top_srcdir)/aclocal.m4
 @MAINTAINER@	@$(ECHO_AUTOCONF)
 @MAINTAINER@	@QUIET@rm -f $(top_srcdir)/configure
 @MAINTAINER@	@QUIET@cd $(top_srcdir) && (autoconf && \
@@ -238,13 +237,13 @@ $(CONFIG_H): $(top_builddir)/config.status $(CONFIG_H_IN)
 @MAINTAINER@	sed 's,###ESCAPE###,[,' < configure.tmp > configure && \
 @MAINTAINER@	chmod 755 configure)
 
-@MAINTAINER@$(top_srcdir)/aclocal.m4: $(top_srcdir)/m4/*.m4 $(top_srcdir)/configure.in
+@MAINTAINER@$(top_srcdir)/aclocal.m4: $(top_srcdir)/m4/*.m4 $(top_srcdir)/configure.ac
 @MAINTAINER@	@$(ECHO_ACLOCAL)
 @MAINTAINER@	@QUIET@rm -f $(top_srcdir)/aclocal.m4
 @MAINTAINER@	@QUIET@cd $(top_srcdir) && aclocal -I m4
 
 #$(top_srcdir)/aclocal.m4 
-@MAINTAINER@$(CONFIG_H_IN): $(top_srcdir)/configure.in
+@MAINTAINER@$(CONFIG_H_IN): $(top_srcdir)/configure.ac
 @MAINTAINER@	@$(ECHO_AUTOHEADER)
 @MAINTAINER@	@QUIET@cd $(top_srcdir) && autoheader
 
@@ -278,19 +277,16 @@ $(PIE_LIBRARY): $(PIC_OBJECTS)
 # ---------------------------------------------------------------------------
 $(PROGRAM): $(OBJECTS) $(LDADD)
 	@$(ECHO_LD)
-	@QUIET@$(LINK) -o $(PROGRAM) $^ $(LIB) $(LIBS)
+	@QUIET@$(LINK) -o $(PROGRAM) $(PREADD) $^ $(LIB) $(POSTADD) $(LIBS)
 
 #$(PROGRAMS): $(LDADD)
 #	@$(ECHO_LD)
 #	@make $@.o
 #	@QUIET@$(LINK) -o $@ $@.o $(LDADD) $(LIB) $(LIBS)
+
 # library rules
 # ---------------------------------------------------------------------------
-@A_LIB@a-library: $(A_LIBRARY)
-@NO_A_LIB@a-library:
 
-@PIE_LIB@pie-library: $(PIE_LIBRARY)
-@NO_PIE_LIB@pie-library:
 
 # installation rules.... clean this stuff up someday!!!!!!!!!
 # ---------------------------------------------------------------------------
@@ -391,20 +387,20 @@ install-slibEXEC: $(slib_EXEC)
 # install plugins into plugindir
 # ---------------------------------------------------------------------------
 install-pluginEXEC: $(plugin_EXEC)
-	@-if test ! -d $(DESTDIR)$(plugindir)$(plugin_PREFIX) && test "$(plugin_EXEC)"; then \
-		$(ECHO_MKDIR)$(DESTDIR)$(plugindir)$(plugin_PREFIX) ; \
-		$(INSTALL_DIR) $(DESTDIR)$(plugindir)$(plugin_PREFIX) >/dev/null ; \
-	fi
-	@-if test ! -d $(DESTDIR)$(plugindir)$(plugin_PREFIX); then \
-		$(ECHO_MKDIR)$(DESTDIR)$(plugindir)$(plugin_PREFIX) ; \
-		$(INSTALL_DIR) $(DESTDIR)$(plugindir)$(plugin_PREFIX) 2>/dev/null ; \
-	fi
-	@list='$(plugin_EXEC)'; for p in $$list; do \
-		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-		f="`echo $$p | sed -e 's|^.*/||'`"; \
-		$(ECHO_INSTALL)$(plugindir)$(plugin_PREFIX)/$$f; \
-		$(INSTALL_EXEC) $$d$$p $(DESTDIR)$(plugindir)$(plugin_PREFIX)/$$f >/dev/null; \
-	done
+#	@-if test ! -d $(DESTDIR)$(plugindir)$(plugin_PREFIX) && test "$(plugin_EXEC)"; then \
+#		$(ECHO_MKDIR)$(DESTDIR)$(plugindir)$(plugin_PREFIX) ; \
+#		$(INSTALL_DIR) $(DESTDIR)$(plugindir)$(plugin_PREFIX) >/dev/null ; \
+#	fi
+#	@-if test ! -d $(DESTDIR)$(plugindir)$(plugin_PREFIX); then \
+#		$(ECHO_MKDIR)$(DESTDIR)$(plugindir)$(plugin_PREFIX) ; \
+#		$(INSTALL_DIR) $(DESTDIR)$(plugindir)$(plugin_PREFIX) 2>/dev/null ; \
+#	fi
+#	@list='$(plugin_EXEC)'; for p in $$list; do \
+#		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+#		f="`echo $$p | sed -e 's|^.*/||'`"; \
+#		$(ECHO_INSTALL)$(plugindir)$(plugin_PREFIX)/$$f; \
+#		$(INSTALL_EXEC) $$d$$p $(DESTDIR)$(plugindir)$(plugin_PREFIX)/$$f >/dev/null; \
+#	done
         
 # install libraries into libdir
 # ---------------------------------------------------------------------------
@@ -423,14 +419,6 @@ install-libDATA: $(lib_DATA)
 		$(ECHO_INSTALL)$(libdir)$(lib_PREFIX)/$$f; \
 		$(INSTALL_DATA) $$d$$p $(DESTDIR)$(libdir)$(lib_PREFIX)/$$f >/dev/null; \
 	done
-@PIE_LIB@	@prev='$(PIE_LIBRARY)'; for link in $(PIE_LINKS); do \
-@PIE_LIB@	  if test -f "$$prev" ; then \
-@PIE_LIB@	    $(ECHO_INSTALL)$(libdir)$(lib_PREFIX)/$$link ; \
-@PIE_LIB@	    $(RM) -f $(DESTDIR)$(libdir)$(lib_PREFIX)/$$link ; \
-@PIE_LIB@	    $(LN) -s $$prev $(DESTDIR)$(libdir)$(lib_PREFIX)/$$link ; \
-@PIE_LIB@	    prev=$$link ; \
-@PIE_LIB@	  fi ; \
-@PIE_LIB@	done
 
 # install headers into includedir
 # ---------------------------------------------------------------------------

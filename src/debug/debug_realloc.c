@@ -1,6 +1,7 @@
 #include "debug.h"
 
 #ifdef DEBUG
+#include <assert.h>
 #include <errno.h>
 #include "sh.h"
 

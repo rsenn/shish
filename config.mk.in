@@ -10,18 +10,15 @@
 SILENT          = @SILENT@
 COLOR           = @COLOR@
 DEBUG           = @DEBUG@
-DEPS_TRUE             = @DEPS_TRUE@
 
 # installation directories
 # ---------------------------------------------------------------------------
 prefix          = @prefix@
 exec_prefix     = @exec_prefix@
 sysconfdir      = @sysconfdir@
-relsysconfdir   = @relsysconfdir@
 bindir          = @bindir@
 sbindir         = @sbindir@
 libexecdir      = @libexecdir@
-rellibexecdir   = @rellibexecdir@
 datadir         = @datadir@
 datarootdir     = @datarootdir@
 sysconfdir      = @sysconfdir@
@@ -34,13 +31,7 @@ oldincludedir   = @oldincludedir@
 infodir         = @infodir@
 mandir          = @mandir@
 plugindir       = @plugindir@
-relplugindir    = @relplugindir@
 inidir          = @inidir@
-relinidir       = @relinidir@
-logdir          = @logdir@
-rellogdir       = @rellogdir@
-rundir          = @rundir@
-relrundir       = @relrundir@
 
 # autoconf related stuff
 # ---------------------------------------------------------------------------
@@ -55,7 +46,6 @@ CONFIG_H_IN = $(top_srcdir)/config.h.in
 # ---------------------------------------------------------------------------
 DESTDIR         =
 
-#SUBDIRS         = @SUBDIRS@
 SUBMAKE         = $(SUBDIRS)
 PREFIX          = @PREFIX@
 
@@ -63,9 +53,6 @@ PREFIX          = @PREFIX@
 # ---------------------------------------------------------------------------
 EXEEXT          = @EXEEXT@
 OBJEXT          = @OBJEXT@
-A_EXEEXT        = @A_EXEEXT@
-PIC_OBJEXT      = @PIC_OBJEXT@
-PIE_LIBEXT      = @PIE_LIBEXT@
 
 # package info
 # ---------------------------------------------------------------------------
@@ -79,9 +66,6 @@ VERSION         = $(PACKAGE_VERSION)
 
 # detailed version info
 # ---------------------------------------------------------------------------
-VERSION_MAJOR   = @VERSION_MAJOR@
-VERSION_MINOR   = @VERSION_MINOR@
-VERSION_PATCH   = @VERSION_PATCH@
 
 # default unix programs
 # ---------------------------------------------------------------------------
@@ -94,17 +78,11 @@ CHMOD           = chmod
 # ---------------------------------------------------------------------------
 CC              = @CC@
 AR              = @AR@
-LN              = @LN@
-NASM            = @NASM@
 RANLIB          = @RANLIB@
-DLLWRAP         = @DLLWRAP@
-LEX             = @LEX@
-YACC            = @YACC@
 INSTALL         = @INSTALL@
 INSTALL_DATA    = $(INSTALL) -c -m644
 INSTALL_EXEC    = $(INSTALL) -c -m755
 INSTALL_DIR     = $(INSTALL) -d -m755
-DOXYGEN         = @DOXYGEN@
 
 # arguments for the programs
 # ---------------------------------------------------------------------------
@@ -112,42 +90,15 @@ DEFS            = #@DEFS@
 LIBS            = @LIBS@
 CFLAGS          = @CFLAGS@
 LDFLAGS         = @LDFLAGS@
-SHLDFLAGS       = @SHLDFLAGS@
 CPPFLAGS        = @CPPFLAGS@
 MAKEFLAGS       = @MAKEFLAGS@
 
-SSL_CFLAGS      = @SSL_CFLAGS@
-SSL_LIBS        = @SSL_LIBS@
 FT2_CFLAGS      = @FT2_CFLAGS@
 FT2_LIBS        = @FT2_LIBS@
-PSQL_CFLAGS     = @PSQL_CFLAGS@
-PSQL_LIBS       = @PSQL_LIBS@
-MYSQL_CFLAGS    = @MYSQL_CFLAGS@
-MYSQL_LIBS      = @MYSQL_LIBS@
-CHAOS_CFLAGS    = @CHAOS_CFLAGS@
-CHAOS_LIBS      = @CHAOS_LIBS@
-SDL_CFLAGS      = @SDL_CFLAGS@
-SDL_LIBS        = @SDL_LIBS@
-SGUI_CFLAGS     = @SGUI_CFLAGS@
-SGUI_LIBS       = @SGUI_LIBS@
-LIBPNG_CFLAGS   = @LIBPNG_CFLAGS@
-LIBPNG_LIBS     = @LIBPNG_LIBS@
 
 # pic compiling and dynamic linking
-PIC_CFLAGS      = @PIC_CFLAGS@
-PIC_OBJEXT      = @PIC_OBJEXT@
-PIC_DEPEXT      = @PIC_DEPEXT@
-@PIE@PIE_LINK        = @PIE_LINK@
-@PIE@PIE_LINKS       = @PIE_LINKS@
-@WIN32_TRUE@MOD_LDFLAGS     = $(patsubst %.dll,%.def,$@)
-MOD_LDFLAGS     += -shared
-PIE_LDFLAGS     = @PIE_LDFLAGS@
-PIE_LIBEXT      = @PIE_LIBEXT@
-PIE_NAME        = @PIE_NAME@
-PIE_LOADER      = @PIE_LOADER@
+MOD_LDFLAGS     = $(patsubst %.dll,%.def,$@)
 
-PIE_VERSION_PREFIX = @PIE_VERSION_PREFIX@
-PIE_VERSION_SUFFIX = @PIE_VERSION_SUFFIX@
 
 # color codes
 # ---------------------------------------------------------------------------
@@ -247,5 +198,5 @@ MAINTAINERCLEANFILES =
 # ---------------------------------------------------------------------------
 FILES                = Makefile.in $(SOURCES) $(HEADERS) $(DATA)
 DISTFILES            = $(FILES)
-DEVFILES             = CVS $(FILES)
+DEVFILES             = $(FILES)
 

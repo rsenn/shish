@@ -4,12 +4,12 @@
 #include <sys/types.h>
 #include <signal.h>
 
-//#ifdef HAVE_CONFIG_H
-//# include "../config.h"
-//# ifndef HAVE_SIGSET_T
-//typedef int sigset_t;
-//# endif
-//#endif
+#ifdef HAVE_CONFIG_H
+# include "../../config.h"
+# ifndef HAVE_SIGSET_T
+typedef int sigset_t;
+# endif
+#endif
 
 #ifndef WEXITSTATUS
 # define WEXITSTATUS(st) ((char)((unsigned char)st & 0xff))

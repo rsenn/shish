@@ -43,8 +43,10 @@ AC_PROG_INSTALL
 AC_C_INLINE
 AC_FUNC_ALLOCA
 
-AX_CHECK_LINK_FLAG([-Wl,--whole-archive],[AC_SUBST([WHOLE_ARCHIVE],[-Wl,--whole-archive])],[])
-AX_CHECK_LINK_FLAG([--whole-archive],[AC_SUBST([WHOLE_ARCHIVE],[--whole-archive])],[])
+dnl AX_CHECK_COMPILE_FLAG([-Wl,--no-whole-archive],[AC_SUBST([PREADD],[-Wl,--whole-archive])
+dnl AC_SUBST([POSTADD],[-Wl,--no-whole-archive])
+dnl ])
+
 
 dnl AC_CHECK_LIB([owfat], [array_allocate])
 dnl AC_CHECK_TERMIOS
@@ -56,6 +58,24 @@ dnl AC_FUNC_SELECT([cp $srcdir/select.h2 select.h], [cp $srcdir/select.h1 select
 dnl AC_FUNC_SENDFILE
 dnl AC_FUNC_DEVPOLL
 dnl AC_TYPE_SOCKLEN
+dnl AC_TYPE_UINT8_T
+dnl AC_TYPE_UINT16_T
+dnl AC_TYPE_UINT32_T
+dnl AC_TYPE_UINT64_T
+AC_DEFUN([STDINT_INCLUDES],[
+#include <inttypes.h>
+#include <stdint.h>
+])
+AC_CHECK_SIZEOF([uint8_t], [], [STDINT_INCLUDES])
+AC_CHECK_SIZEOF([uint16_t], [], [STDINT_INCLUDES])
+AC_CHECK_SIZEOF([uint32_t], [], [STDINT_INCLUDES])
+AC_CHECK_SIZEOF([uint64_t], [], [STDINT_INCLUDES])
+
+dnl AC_CHECK_TYPE([uint8_t], [], [AC_TYPE_UINT8_T], [STDINT_INCLUDES])
+dnl AC_CHECK_TYPE([uint16_t], [], [AC_TYPE_UINT16_T], [STDINT_INCLUDES])
+dnl AC_CHECK_TYPE([uint32_t], [], [AC_TYPE_UINT32_T], [STDINT_INCLUDES])
+dnl AC_CHECK_TYPE([uint64_t], [], [AC_TYPE_UINT64_T], [STDINT_INCLUDES])
+
 dnl AC_IPV6
 dnl AC_SCOPE_ID
 dnl AC_CHECK_N2I
@@ -117,13 +137,17 @@ AC_CHECK_DEP
 AC_CHECK_DEBUG
 AC_CHECK_MAINTAINER
 
-AC_SUBST([PIC],[#])
-AC_SUBST([DLM_TRUE],[#])
-AC_SUBST([A_LIB],[#])
-AC_SUBST([DLM_TRUE],[#])
-AC_SUBST([NO_A_LIB],[#])
-AC_SUBST([NO_PIE_LIB],[#])
-AC_SUBST([PIE_LIB],[#])
+CPPFLAGS="$CPPFLAGS -DHAVE_CONFIG_H=1"
+
+AC_SUBST([CPPFLAGS])
+dnl 
+dnl AC_SUBST([PIC],[#])
+dnl AC_SUBST([DLM_TRUE],[#])
+dnl AC_SUBST([A_LIB],[#])
+dnl AC_SUBST([DLM_TRUE],[#])
+dnl AC_SUBST([NO_A_LIB],[#])
+dnl AC_SUBST([NO_PIE_LIB],[#])
+dnl AC_SUBST([PIE_LIB],[#])
 AC_SUBST([WIN32_TRUE],[#])
 
 # check for needed types
