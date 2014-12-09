@@ -43,9 +43,11 @@ AC_PROG_INSTALL
 AC_C_INLINE
 AC_FUNC_ALLOCA
 
- AX_CHECK_LINK_FLAG([--no-whole-archive],[AC_SUBST([PREADD],[--whole-archive])
- AX_CHECK_LINK_FLAG([-Wl,--no-whole-archive],[AC_SUBST([PREADD],[-Wl,--whole-archive])
- AX_CHECK_COMPILE_FLAG([-Wl,--no-whole-archive],[AC_SUBST([PREADD],[-Wl,--whole-archive])
+ AX_CHECK_LINK_FLAG([--no-whole-archive],[AC_SUBST([PREADD],[--whole-archive])],[
+ AX_CHECK_LINK_FLAG([-Wl,--no-whole-archive],[AC_SUBST([PREADD],[-Wl,--whole-archive])],[
+ AX_CHECK_COMPILE_FLAG([-Wl,--no-whole-archive],[AC_SUBST([PREADD],[-Wl,--whole-archive])])
+ ])
+])
 dnl AC_SUBST([POSTADD],[-Wl,--no-whole-archive])
 dnl ])
 
