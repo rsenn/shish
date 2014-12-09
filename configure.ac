@@ -43,15 +43,15 @@ AC_PROG_INSTALL
 AC_C_INLINE
 AC_FUNC_ALLOCA
 
-AX_CHECK_LINK_FLAG([--no-whole-archive],[AC_SUBST([PREADD],[--whole-archive])
-AC_SUBST([POSTADD],[--no-whole-archive])],[dnl
-  AX_CHECK_LINK_FLAG([-Wl,--no-whole-archive],[AC_SUBST([PREADD],[-Wl,--whole-archive])
-AC_SUBST([POSTADD],[-Wl,--no-whole-archive])],[dnl
-    AX_CHECK_COMPILE_FLAG([-Wl,--no-whole-archive],[AC_SUBST([PREADD],[-Wl,--whole-archive])
-AC_SUBST([POSTADD],[-Wl,--no-whole-archive])])
-  ])
+PREADD= POSTADD=
+AX_CHECK_LINK_FLAG([--no-whole-archive],[PREADD="--whole-archive" POSTADD="--no-whole-archive"],[
+  AX_CHECK_LINK_FLAG([-Wl,--no-whole-archive],[PREADD="-Wl,--whole-archive" POSTADD="-Wl,--no-whole-archive"],[
+    : test
+    dnl  AX_CHECK_COMPILE_FLAG([-Wl,--no-whole-archive],[PREADD="-Wl,--whole-archive" POSTADD="-Wl,--no-whole-archive"])
 ])
-
+])
+AC_SUBST([PREADD])
+AC_SUBST([POSTADD])
 
 dnl AC_CHECK_LIB([owfat], [array_allocate])
 dnl AC_CHECK_TERMIOS
@@ -146,7 +146,7 @@ CPPFLAGS="$CPPFLAGS -DHAVE_CONFIG_H=1"
 
 AC_SUBST([CPPFLAGS])
 dnl 
-dnl AC_SUBST([PIC],[#])
+dnl PIC=#
 dnl AC_SUBST([DLM_TRUE],[#])
 dnl AC_SUBST([A_LIB],[#])
 dnl AC_SUBST([DLM_TRUE],[#])

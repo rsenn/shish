@@ -189,6 +189,8 @@ maintainer-clean-local: maintainer-clean-recursive
 $(ARCHIVE): $(OBJECTS)
 	@$(ECHO_AR)
 	@$(AR) $(ARCHIVE) $(OBJECTS)
+	@$(ECHO_RANLIB)
+	@$(RANLIB) $(ARCHIVE) 
 
 # global rule for all makefiles
 # ---------------------------------------------------------------------------
@@ -256,6 +258,14 @@ $(CONFIG_H): $(top_builddir)/config.status $(CONFIG_H_IN)
 
 # rule for libraries
 # ---------------------------------------------------------------------------
+$(LIBRARY): #$(OBJECTS)
+ifneq ($(OBJECTS),)
+	@$(ECHO_AR)
+	@QUIET@$(AR) $@ $^
+endif
+	@$(ECHO_RANLIB)
+	@QUIET@$(RANLIB) $@
+
 $(A_LIBRARY): #$(OBJECTS)
 	@$(ECHO_AR)
 	@QUIET@$(AR) $(A_LIBRARY) $^
