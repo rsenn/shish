@@ -119,7 +119,7 @@ int stralloc_nul(stralloc *sa);
 int stralloc_catulong0(stralloc* sa,unsigned long int in,unsigned long int n);
 
 /* stralloc_catlong0 appends a '0' padded ASCII representation of in */
-int stralloc_catlong0(stralloc* sa,signed long int in,unsigned long int n);
+int stralloc_catlong0(stralloc* sa,signed long in,unsigned long int n);
 
 /* stralloc_free frees the storage associated with sa */
 #ifdef DEBUG

@@ -21,16 +21,10 @@ char* mmap_shared(const char *filename,size_t* filesize);
 int mmap_unmap(char* mapped,size_t maplen);
 
 
-char *mmap_read_fd(int fd, unsigned long *filesize);
+char *mmap_read_fd(int fd, size_t *filesize);
 
 #ifdef __cplusplus
 }
 #endif
-
-/* unmap a mapped region */
-int mmap_unmap(char* mapped,unsigned long maplen);
-
-/* map an already opened file. */
-char* mmap_read_fd(int fd, unsigned long *filesize);
 
 #endif
