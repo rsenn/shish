@@ -85,6 +85,8 @@ dnl AC_IPV6
 dnl AC_SCOPE_ID
 dnl AC_CHECK_N2I
 AC_CHECK_HEADERS([unistd.h io.h pwd.h signal.h sys/types.h sys/signal.h],,,[])
+AC_CHECK_FUNC([glob],[NO_GLOB="#"],[NO_GLOB=""])
+AC_SUBST([NO_GLOB])
 AC_CHECK_FUNC([gethostname],[],[dnl
 
 	AC_MSG_CHECKING(for gethostname in -lws2_32)
