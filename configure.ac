@@ -80,6 +80,19 @@ dnl AC_IPV6
 dnl AC_SCOPE_ID
 dnl AC_CHECK_N2I
 AC_CHECK_HEADERS([unistd.h io.h pwd.h signal.h sys/types.h sys/signal.h],,,[])
+AC_CHECK_FUNC([glob],AC_DEFINE_UNQUOTED([HAVE_GLOB],[1],[Define to 1 if you have the 'glob' function]))
+AC_CHECK_FUNC([globfree],AC_DEFINE_UNQUOTED([HAVE_GLOBFREE],[1],[Define to 1 if you have the 'globfree' function]))
+
+dnl AM_CONDITIONAL([HAVE_GLOB],[test x$ac_cv_func_glob = xyes])
+dnl AM_CONDITIONAL([HAVE_GLOBFREE],[test x$ac_cv_func_globfree = xyes])
+
+if test x$ac_cv_func_globfree = xyes; then
+	NO_GLOB="#"
+else
+	NO_GLOB=""
+fi
+AC_SUBST([NO_GLOB])
+
 AC_CHECK_FUNC([gethostname],[],[dnl
 
 	AC_MSG_CHECKING(for gethostname in -lws2_32)
