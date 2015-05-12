@@ -11,7 +11,7 @@ CLEANFILES += $(OBJECTS) $(LIBRARY) $(A_LIBRARY) $(PIE_LIBRARY) $(PIE_LINKS) $(A
 # command lines
 # ---------------------------------------------------------------------------
 COMPILE         = $(CC) $(CPPFLAGS) $(DEFS) $(INCLUDES) $(CFLAGS)
-LINK            = $(CC) $(LDFLAGS)
+LINK            = $(CC) $(CFLAGS) $(LDFLAGS)
 COMPLINK        = $(LINK) $(CPPFLAGS) $(INCLUDES) $(CFLAGS)
 
 # file suffixes we may encounter
@@ -288,6 +288,7 @@ $(PIE_LIBRARY): $(PIC_OBJECTS)
 $(PROGRAM): $(OBJECTS) $(LDADD)
 	@$(ECHO_LD)
 	@QUIET@$(LINK) -o $(PROGRAM) $(PREADD) $^ $(LIB) $(POSTADD) $(LIBS)
+	@QUIET@$(STRIP) $(STRIPFLAGS) $(PROGRAM)
 
 #$(PROGRAMS): $(LDADD)
 #	@$(ECHO_LD)

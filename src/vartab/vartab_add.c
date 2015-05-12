@@ -48,7 +48,7 @@ void vartab_add(struct vartab *vartab, struct var *var, struct search *context)
     /* then we search forward again until the next entry is bigger */
     if(var_hsearch(context) == 0LL)
     {
-#ifndef NDEBUG
+#ifdef DEBUG
       unsigned long dist =
 #endif
         var_bsearch(context);

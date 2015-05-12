@@ -79,6 +79,7 @@ CHMOD           = chmod
 CC              = @CC@
 AR              = @AR@
 RANLIB          = @RANLIB@
+STRIP           = @STRIP@
 INSTALL         = @INSTALL@
 INSTALL_DATA    = $(INSTALL) -c -m644
 INSTALL_EXEC    = $(INSTALL) -c -m755

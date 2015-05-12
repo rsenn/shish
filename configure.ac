@@ -36,6 +36,7 @@ AC_PROG_CC([cc gcc])
 AC_PROG_CC_C99
 AC_PROG_AR
 AC_PROG_RANLIB
+AC_CHECK_TOOL([STRIP],[strip],[:])
 AC_PROG_INSTALL
 
 # check for operating system features
