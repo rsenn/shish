@@ -5,7 +5,7 @@
 #include <signal.h>
 
 #ifdef HAVE_CONFIG_H
-# include "../../config.h"
+# include "config.h"
 # ifndef HAVE_SIGSET_T
 typedef int sigset_t;
 # endif

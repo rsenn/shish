@@ -6,7 +6,7 @@
 # initialize autoconf (require version 2.5x)
 # ---------------------------------------------------------------------------
 AC_PREREQ([2.50])
-AC_INIT([shish], [0.7-pre3])
+AC_INIT([shish], [0.8])
 AC_CONFIG_SRCDIR([src/sh/sh_main.c])
 dnl AC_LANG_SOURCE([C])
 
@@ -31,6 +31,8 @@ AC_CONFIG_SRCDIR([src/sh/sh_main.c])
 
 # check for programs needed to build shish
 # ---------------------------------------------------------------------------
+AX_COMPILER_VERSION
+
 AC_DIETLIBC([/opt/diet /usr/diet])
 AC_PROG_CC([cc gcc])
 AC_PROG_CC_C99
@@ -45,6 +47,8 @@ AC_C_INLINE
 AC_FUNC_ALLOCA
 
 PREADD= POSTADD=
+
+
 AX_CHECK_LINK_FLAG([--no-whole-archive],[PREADD="--whole-archive" POSTADD="--no-whole-archive"],[
   AX_CHECK_LINK_FLAG([-Wl,--no-whole-archive],[PREADD="-Wl,--whole-archive" POSTADD="-Wl,--no-whole-archive"],[
     : test

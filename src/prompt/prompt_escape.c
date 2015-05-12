@@ -5,7 +5,7 @@
 #include "parse.h"
 #include "sh.h"
 
-#include "../../config.h"
+#include "config.h"
 
 /* handles prompt escape sequences 
  * ----------------------------------------------------------------------- */

@@ -52,7 +52,7 @@ install:
 # local build configuration
 # ---------------------------------------------------------------------------
 INCLUDES += -I$(top_srcdir)/lib -I.
-#INCLUDES += -I$(top_builddir)/lib
+INCLUDES += -I$(top_builddir)
 
 # include build.mk (makefile helper)
 # ---------------------------------------------------------------------------

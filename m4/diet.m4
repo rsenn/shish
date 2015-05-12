@@ -70,25 +70,33 @@ if test "$DIETLIBC" = "yes"; then
   fi
 fi
 
+ac_cv_size_opt=yes
+
 AC_ARG_ENABLE([size-opt],
 [  --enable-size-opt        optimize by size (default)
   --disable-size-opt       disable optimization by size
 ],
 [case "$enableval" in
-  yes) ac_cv_size_opt=yes ;;
-	*) ac_cv_size_opt=no ;;
+  yes|no) ac_cv_size_opt="$enableval" ;;
+	*) ac_cv_size_opt=yes ;;
 esac])
 
 if test "$ac_cv_size_opt" = yes; then
-	AX_CHECK_COMPILE_FLAG([-O5], [CFLAGS="$CFLAGS -O5"],
-          [AX_CHECK_COMPILE_FLAG([-Os], [CFLAGS="$CFLAGS -Os"])])
+	
+        if test "$ax_cv_c_compiler_vendor" = clang; then
+          AX_CHECK_COMPILE_FLAG([-O5], [CFLAGS="$CFLAGS -O5"],
+            [AX_CHECK_COMPILE_FLAG([-Os], [CFLAGS="$CFLAGS -Os"])])
+	  AX_CHECK_COMPILE_FLAG([-mstack-alignment=4], [CFLAGS="$CFLAGS -mstack-alignment=4"])
+        else
+          :
+       dnl   AX_CHECK_COMPILE_FLAG([-Os], [CFLAGS="$CFLAGS -Os"])
+        fi
 	AX_CHECK_COMPILE_FLAG([-flto], [CFLAGS="$CFLAGS -flto"])
 	AX_CHECK_COMPILE_FLAG([-fno-inline], [CFLAGS="$CFLAGS -fno-inline"])
 	AX_CHECK_COMPILE_FLAG([-fno-inline-functions], [CFLAGS="$CFLAGS -fno-inline-functions"])
 	AX_CHECK_COMPILE_FLAG([-fno-inline-small-functions], [CFLAGS="$CFLAGS -fno-inline-small-functions"])
 	AX_CHECK_COMPILE_FLAG([-ffunction-sections], [CFLAGS="$CFLAGS -ffunction-sections"])
 	AX_CHECK_COMPILE_FLAG([-fdata-sections], [CFLAGS="$CFLAGS -fdata-sections"])
-	AX_CHECK_COMPILE_FLAG([-mstack-alignment=4], [CFLAGS="$CFLAGS -mstack-alignment=4"])
 	AX_CHECK_COMPILE_FLAG([-mpreferred-stack-boundary=4], [CFLAGS="$CFLAGS -mpreferred-stack-boundary=4"])
 	AX_CHECK_COMPILE_FLAG([-falign-functions=4], [CFLAGS="$CFLAGS -falign-functions=4"])
 	AX_CHECK_COMPILE_FLAG([-falign-jumps=1], [CFLAGS="$CFLAGS -falign-jumps=1"])
@@ -96,6 +104,8 @@ if test "$ac_cv_size_opt" = yes; then
 dnl	AX_CHECK_LINK_FLAG([-Wl,-s], [LDFLAGS="$LDFLAGS -Wl,-s"],
 dnl	  [AX_CHECK_LINK_FLAG([-s], [LDFLAGS="$LDFLAGS -s"])])
 fi
+
+AM_CONDITIONAL([SIZE_OPT],[test "$ac_cv_size_opt" = yes])
 
 dnl  AC_MSG_CHECKING([wheter compiler supports -falign])
 dnl  saved_CFLAGS="$CFLAGS"
