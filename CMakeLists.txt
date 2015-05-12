@@ -21,7 +21,13 @@ include(CheckSymbolExists)
 include(CheckTypeSize)
 include(CheckFunctionExists)
 
-find_program(STRIP NAMES strip gstrip)
+if(CMAKE_BUILD_TYPE MATCHES ".*Deb.*")
+  set(STRIP "")
+  set(DEBUG TRUE)
+else()
+  set(DEBUG FALSE)
+  find_program(STRIP NAMES strip gstrip)
+endif()
 
 check_c_compiler_flag(-flto F_LTO)
 
