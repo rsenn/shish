@@ -10,7 +10,7 @@ void *shell_realloc(void *ptr, unsigned long size)
 {
   void *newptr;
 
-  if(ptr == NULL)
+  if(ptr == 0)
 #ifdef DEBUG
     return shell_allocdebug(file, line, size);
 #else
@@ -24,7 +24,7 @@ void *shell_realloc(void *ptr, unsigned long size)
 #endif /* DEBUG */
   
   /* exit if failed */
-  if(newptr == NULL)
+  if(newptr == 0)
   {
     shell_error("realloc");
     exit(1);

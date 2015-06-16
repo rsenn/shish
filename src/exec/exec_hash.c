@@ -1,4 +1,8 @@
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include "str.h"
 #include "builtin.h"
 #include "exec.h"

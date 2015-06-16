@@ -1,4 +1,11 @@
+#ifdef _WIN32
+#include <io.h>
+#define R_OK 04
+#define W_OK 02
+#define X_OK 00
+#else
 #include <unistd.h>
+#endif
 #include <sys/stat.h>
 #include "shell.h"
 #include "str.h"
@@ -7,7 +14,7 @@
 #include "fmt.h"
 
 #ifdef HAVE_CONFIG_H
-# include "../../config.h"
+# include "config.h"
 # ifndef HAVE_LSTAT
 #  define lstat stat
 # endif

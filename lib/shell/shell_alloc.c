@@ -13,7 +13,7 @@ void *shell_alloc(unsigned long size)
 #endif /* DEBUG */
   
   /* exit if failed */
-  if(ptr == NULL)
+  if(ptr == 0)
   {
     shell_error("malloc");
     exit(1);

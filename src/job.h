@@ -5,10 +5,14 @@
 #include <signal.h>
 
 #ifdef HAVE_CONFIG_H
-# include "../../config.h"
+# include "config.h"
 # ifndef HAVE_SIGSET_T
 typedef int sigset_t;
 # endif
+#endif
+
+#ifdef _WIN32
+typedef int pid_t;
 #endif
 
 #ifndef WEXITSTATUS

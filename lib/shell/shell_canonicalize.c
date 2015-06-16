@@ -4,11 +4,15 @@
 
 #include <sys/stat.h>
 #include <limits.h>
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include <errno.h>
 
 #ifdef HAVE_CONFIG_H
-# include "../../config.h"
+# include "config.h"
 # ifndef HAVE_LSTAT
 #  define lstat stat
 # endif
@@ -83,7 +87,13 @@ start:
     path += n;
 
     /* now stat() the thing to verify it */
-    if((symbolic ? stat : lstat)(sa->s, &st) == -1)
+    if(
+#ifdef HAVE_LSTAT
+    (symbolic ? stat : lstat)
+#else
+    stat
+#endif
+    (sa->s, &st) == -1)
       return 0;
 
 #ifdef HAVE_LSTAT

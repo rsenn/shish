@@ -1,4 +1,8 @@
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include "uint32.h"
 #include "open.h"
 
@@ -12,7 +16,7 @@ uint32 uint32_random(void)
   
   /* seed if not seeded */
   if(uint32_seeds == 0)
-    uint32_seed(NULL, 0);
+    uint32_seed(0, 0);
 
   for(i = 0; i < sizeof(uint32_pool) / sizeof(uint32); i++)
   {

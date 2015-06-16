@@ -1,6 +1,10 @@
 /* ported from dietlibcs mkstemp() */
 
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include <fcntl.h>
 #include <errno.h>
 #include "str.h"

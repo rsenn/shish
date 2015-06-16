@@ -1,4 +1,8 @@
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include <limits.h>
 #include "str.h"
 #include "buffer.h"
@@ -43,7 +47,7 @@ void history_save(void)
       {
         unsigned long len = history_cmdlen(history_array[i]);
         buffer_put(&b, history_array[i], len);
-#ifdef __MINGW32__
+#ifdef _WIN32
         buffer_puts(&b, "\r\n");
 #else
         buffer_puts(&b, "\n");

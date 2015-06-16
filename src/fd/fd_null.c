@@ -1,4 +1,8 @@
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include "fd.h"
 
 static ssize_t fd_nullread(int fd, char *b, unsigned long n)

@@ -1,6 +1,10 @@
 #include "buffer.h"
 #include <stdlib.h>
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include "mmap.h"
 
 void buffer_close(buffer* b) {

@@ -1,4 +1,8 @@
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #ifndef __MINGW32__
 # include <sys/wait.h>
 #endif

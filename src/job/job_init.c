@@ -1,6 +1,10 @@
 #include <string.h>
 #include <fcntl.h>
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include <termios.h>
 #include "job.h"
 #include "fd.h"

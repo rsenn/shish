@@ -3,6 +3,10 @@
 
 #include <sys/types.h>
 
+#ifdef _WIN32
+typedef long ssize_t;
+#endif
+
 /*typedef ssize_t (buffer_method_t)();
 typedef buffer_method_t *buffer_method_ptr_t;
 */

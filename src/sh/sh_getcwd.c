@@ -1,5 +1,9 @@
 #include "sh.h"
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include <limits.h>
 #include "shell.h"
 #include "str.h"

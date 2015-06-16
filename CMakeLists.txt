@@ -43,6 +43,11 @@ configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.
 
 add_definitions(-Wall -DHAVE_CONFIG_H=1)
 
+if(MSVC)
+  add_definitions(-Dinline=__inline)
+  add_definitions(-D_POSIX_=1)
+endif(MSVC)
+
 set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0")
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")

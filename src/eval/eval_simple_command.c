@@ -1,10 +1,14 @@
-#include "../../config.h"
+#include "config.h"
 
 #ifdef HAVE_ALLOCA
 #include <alloca.h>
 #endif
 
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #ifndef __MINGW32__
 #include <sys/wait.h>
 #endif

@@ -1,4 +1,8 @@
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include "fdstack.h"
 
 /* sends down here-doc data to pipes and reads command expansions from pipes

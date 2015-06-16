@@ -1,4 +1,8 @@
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include <termios.h>
 #include <sys/wait.h>
 #include "job.h"

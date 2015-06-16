@@ -10,8 +10,9 @@
 #include <setjmp.h>
 #include "stralloc.h"
 
-#ifdef __MINGW32__
+#ifdef _WIN32
 typedef int uid_t;
+typedef int pid_t;
 #endif
 
 #define sh_main main

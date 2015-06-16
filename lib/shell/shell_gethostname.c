@@ -1,9 +1,13 @@
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include "stralloc.h"
 #include "shell.h"
 #include "str.h"
 
-#ifdef __MINGW32__
+#ifdef _WIN32
 #include <winsock2.h>
 #endif
 

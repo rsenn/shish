@@ -10,7 +10,7 @@
         "/"            "/"            "/"
         "."            "."            "."
         ".."           "."            ".."
-        NULL           "."            "."
+        0           "."            "."
         ""             "."            "."
 */
 
@@ -20,7 +20,7 @@ static char *dot=".";
 char *shell_dirname(char *path)
 {
   unsigned long i;
-  if(path == NULL) return dot;
+  if(path == 0) return dot;
   for(;;) 
   {
     i = str_rchr(path, SLASH);
