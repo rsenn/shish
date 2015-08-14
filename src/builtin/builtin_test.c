@@ -7,7 +7,7 @@
 #include "fmt.h"
 
 #ifdef HAVE_CONFIG_H
-# include "../../config.h"
+# include "config.h"
 # ifndef HAVE_LSTAT
 #  define lstat stat
 # endif
