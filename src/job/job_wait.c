@@ -2,8 +2,8 @@
 #include <io.h>
 #else
 #include <unistd.h>
-#endif
 #include <termios.h>
+#endif
 #include <sys/wait.h>
 #include "job.h"
 #include "fd.h"

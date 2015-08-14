@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
+
 set(CMAKE_LEGACY_CYGWIN_WIN32 0)
-
-
 
 set(PACKAGE_NAME shish)
 set(PACKAGE_VERSION 0.8)
@@ -43,13 +42,6 @@ configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.
 
 add_definitions(-Wall -DHAVE_CONFIG_H=1)
 
-if(MSVC)
-  add_definitions(-Dinline=__inline)
-  add_definitions(-D_POSIX_=1)
-endif(MSVC)
-
-set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0")
-
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
   add_definitions(-DDEBUG=1)
 endif(${CMAKE_BUILD_TYPE} MATCHES "Debug")
@@ -60,6 +52,21 @@ include_directories(${CMAKE_BINARY_DIR} lib src)
 #add_definitions(-DHAVE_CONFIG_H=1)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY src)
+
+if(MSVC)
+  add_definitions(-Dinline=__inline)
+  add_definitions(-D_POSIX_=1)
+  add_definitions(-D__STDC__=0)
+
+  set(WARN_FLAGS "-w -wd4706 -wd4255 -wd4668 -wd4820")
+  
+  string(REPLACE "/W3" "${WARN_FLAGS}" NEW_C_FLAGS "${CMAKE_C_FLAGS}")
+  set(CMAKE_C_FLAGS "${NEW_C_FLAGS}" CACHE STRING "Flags used by the compiler during all build types." FORCE)
+
+  message(STATUS "Detected Visual Studio: ${CMAKE_C_FLAGS}")
+else(MSVC)
+  set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0")
+endif(MSVC)
 
 set(LIBSOURCES
 	lib/open/open_read.c
@@ -495,3 +502,5 @@ set(SOURCES src/sig.h
 
 add_executable(shish ${SOURCES})
 target_link_libraries(shish libshish)
+
+  message(STATUS "CFLAGS: ${CMAKE_C_FLAGS}")
