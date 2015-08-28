@@ -54,7 +54,7 @@ if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
 endif(${CMAKE_BUILD_TYPE} MATCHES "Debug")
 
 
-include_directories(${CMAKE_BINARY_DIR} lib src)
+include_directories("${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}/lib" "${CMAKE_SOURCE_DIR}/src")
 
 #add_definitions(-DHAVE_CONFIG_H=1)
 
