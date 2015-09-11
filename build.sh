@@ -11,8 +11,9 @@ type=Debug
 cd "$mydir"
 
 builddir=build/$distrib-$arch
+instdir=inst/$distrib-$arch
 
-mkdir -p $builddir
+mkdir -p $builddir $instdir
 
 exec_in_builddir() {
  (IFS=" "
@@ -37,4 +38,5 @@ set \
 
 exec_in_builddir "rm -rf *"
 exec_in_builddir cmake $(addprefix -D <<<"$*") ../..
-exec_in_builddir make
+exec_in_builddir "make"
+exec_in_builddir "make DESTDIR=\"$instdir\" install"

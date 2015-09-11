@@ -494,3 +494,5 @@ set(SOURCES src/sig.h
 
 add_executable(shish ${SOURCES})
 target_link_libraries(shish libshish)
+
+install(TARGETS shish DESTINATION bin)
