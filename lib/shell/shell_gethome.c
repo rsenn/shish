@@ -1,3 +1,4 @@
+#include "../msvc-compat.h"
 #include <stdlib.h>
 #include <limits.h>
 #include "scan.h"

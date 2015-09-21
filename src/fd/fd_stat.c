@@ -1,3 +1,8 @@
+#ifdef WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 #include "fd.h"
 
 /* stat the (fd) and set appropriate flags
@@ -19,9 +24,15 @@ int fd_stat(struct fd *fd)
     case S_IFREG: fd->mode |= FD_FILE; break;
     case S_IFDIR: fd->mode |= FD_DIR; break;
     case S_IFCHR: fd->mode |= FD_CHAR; break;
-    case S_IFBLK: fd->mode |= FD_BLOCK; break;
-    case S_IFIFO: fd->mode |= FD_PIPE; break;
-    case S_IFLNK: fd->mode |= FD_LINK; break;
+#ifdef S_IFBLK
+	case S_IFBLK: fd->mode |= FD_BLOCK; break;
+#endif
+#ifdef S_IFIFO
+	case S_IFIFO: fd->mode |= FD_PIPE; break;
+#endif
+#ifdef S_IFLNK
+	case S_IFLNK: fd->mode |= FD_LINK; break;
+#endif
     case S_IFSOCK: fd->mode |= FD_SOCKET; break;
   }
   

@@ -1,3 +1,4 @@
+#include "../msvc-compat.h"
 #include "sh.h"
 #ifndef WIN32
 #include <unistd.h>

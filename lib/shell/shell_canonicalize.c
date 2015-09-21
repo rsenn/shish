@@ -1,3 +1,4 @@
+#include "../msvc-compat.h"
 #include "stralloc.h"
 #include "byte.h"
 #include "str.h"

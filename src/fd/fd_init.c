@@ -1,3 +1,8 @@
+#ifdef WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 #include "sh.h"
 #include "fdtable.h"
 #include "fd.h"

@@ -1,3 +1,4 @@
+#include "../msvc-compat.h"
 #ifndef WIN32
 #include <unistd.h>
 #endif
@@ -6,7 +7,7 @@
 #include "exec.h"
 #include "vartab.h"
 
-static inline unsigned long exec_hashstr(const char *s)
+static __inline unsigned long exec_hashstr(const char *s)
 {  
   unsigned int hash = 0x7fedcb95; /* some prime number */
   while(*s) hash = (hash * 0x0123456b) ^ *s++;

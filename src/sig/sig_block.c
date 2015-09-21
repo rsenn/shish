@@ -4,12 +4,14 @@
  * ----------------------------------------------------------------------- */
 void sig_block(void)
 {
-  static sigset_t oldset;
+#ifndef WIN32
+	static sigset_t oldset;
   sigset_t newset;
-  
+
   sigemptyset(&newset);
   sigemptyset(&oldset);
   sigaddset(&newset, SIGINT);
   sigaddset(&newset, SIGCHLD);
   sigprocmask(SIG_BLOCK, &newset, &oldset);
+#endif
 }

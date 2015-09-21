@@ -1,3 +1,4 @@
+#include "../msvc-compat.h"
 #include "str.h"
 #include "buffer.h"
 #include <limits.h>

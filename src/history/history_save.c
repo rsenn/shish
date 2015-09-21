@@ -1,3 +1,4 @@
+#include "../msvc-compat.h"
 #ifdef WIN32
 #include <windows.h>
 #else
