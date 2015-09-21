@@ -4,8 +4,8 @@
 #include <alloca.h>
 #endif
 
+#if !defined(__MINGW32__)
 #include <unistd.h>
-#ifndef __MINGW32__
 #include <sys/wait.h>
 #endif
 #include "fdstack.h"

@@ -1,4 +1,6 @@
+#if defined(HAVE_SYS_WAIT_H) && !defined(__MINGW32__)
 #include <sys/wait.h>
+#endif
 #include "fd.h"
 #include "job.h"
 
