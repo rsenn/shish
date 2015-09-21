@@ -3,6 +3,10 @@
 
 #include <sys/types.h>
 
+#ifdef _MSC_VER
+typedef intptr_t ssize_t;
+#endif
+
 /*typedef ssize_t (buffer_method_t)();
 typedef buffer_method_t *buffer_method_ptr_t;
 */
