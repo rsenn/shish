@@ -48,7 +48,13 @@ CLEANFILES = $(LIBRARY)
 #  LOCAL DIRECTORY CONFIGURATION     ########################################
 #                                    ########################################
 #############################################################################
-HEADERS = \
+MODULES = mingw-glob
+OBJECTS = $(MODULES:%=%.o)
+SOURCES = $(MODULES:%=%.c)
+HEADERS = $(MODULES:%=%.h)
+DEPS = $(MODULES:%=%.d)
+
+HEADERS += \
 	buffer.h \
 	byte.h \
 	fmt.h \
@@ -62,14 +68,20 @@ HEADERS = \
 	uint16.h \
 	uint32.h \
 	uint64.h
-   
+ 
+
+-include $(DEPS)
+
 # targets           build.mk config.h $(srcdir)/configure 
 # ---------------------------------------------------------------------------
-all-local: $(LIBRARY)
+all-local:  $(OBJETS) $(LIBRARY) 
 install-local: install-data install-exec
 dep-local:
 
--$(LIBRARY): $(SUBDIRS:%=%/.libdep)
+$(LIBRARY): $(SUBDIRS:%=%/.libdep) 
+-$(LIBRARY): $(OBJECTS)
+	@$(ECHO_AR)
+	@SILENT_RULES@$(AR) $(ARFLAGS) $(LIBRARY) $(OBJECTS)
 	@$(ECHO_RANLIB)
 	@SILENT_RULES@$(RANLIB) $(LIBRARY)
 

@@ -21,8 +21,12 @@ int fd_stat(struct fd *fd)
     case S_IFCHR: fd->mode |= FD_CHAR; break;
     case S_IFBLK: fd->mode |= FD_BLOCK; break;
     case S_IFIFO: fd->mode |= FD_PIPE; break;
+#ifdef S_IFLNK
     case S_IFLNK: fd->mode |= FD_LINK; break;
+#endif
+#ifdef S_IFSOCK
     case S_IFSOCK: fd->mode |= FD_SOCKET; break;
+#endif
   }
   
   return 0;

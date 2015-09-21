@@ -1,5 +1,16 @@
-#include <stdlib.h>
+#ifdef HAVE_CONFIG_H
+#include "../../config.h"
+#endif
+
+#ifdef HAVE_GLOB_H
 #include <glob.h>
+#endif
+
+#if defined(__MINGW32__) || defined(__MINGW64__)
+#include "mingw-glob.h"
+#endif
+
+#include <stdlib.h>
 #include "var.h"
 #include "tree.h"
 #include "expand.h"
@@ -19,6 +30,7 @@ union node *expand_glob(union node **nptr, int flags)
   stralloc_nul(&n->narg.stra);
 
   /* glob for the pattern */
+#ifdef HAVE_GLOB
   if(!(ret = glob(n->narg.stra.s, 0, NULL, &glb)))
   {
     unsigned int i;
@@ -54,6 +66,7 @@ union node *expand_glob(union node **nptr, int flags)
     globfree(&glb);
   }
   else
+#endif
   {
     expand_unescape(&n->narg.stra);
   }
