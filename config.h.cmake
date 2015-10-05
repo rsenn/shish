@@ -12,6 +12,15 @@
 /* Define this if you have signal.h */
 #cmakedefine HAVE_SIGNAL_H 1
 
+/* Define this if you have sys/stat.h */
+#cmakedefine HAVE_SYS_STAT_H 1
+
+/* Define this if you have sys/types.h */
+#cmakedefine HAVE_SYS_TYPES_H 1
+
+/* Define this if you have unistd.h */
+#cmakedefine HAVE_UNISTD_H 1
+
 /* Define this if you have the lstat() function */
 #cmakedefine HAVE_LSTAT 1
 
@@ -44,4 +53,8 @@
 
 /* Define this if you have the 'sigset_t' type */
 #cmakedefine HAVE_SIGSET_T 1
+
+/* Define this if you have fcntl.h */
+#cmakedefine HAVE_FCNTL_H 1
+
 
