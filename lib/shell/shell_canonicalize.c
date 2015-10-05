@@ -38,9 +38,9 @@ int shell_canonicalize(const char *path, stralloc *sa, int symbolic)
   unsigned long n;
   struct stat st;
   int ret = 1;
+  int (*stat_fn)() = stat;
 #ifdef HAVE_LSTAT
   char buf[PATH_MAX + 1];
-  int (*stat_fn)() = stat;
   
 #if defined(HAVE_LSTAT ) && !defined(__MINGW32__)
   if(symbolic)

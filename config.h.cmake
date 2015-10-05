@@ -1,13 +1,25 @@
 /* config.h.cmake  Substituted by CMake  */
 
 /* Define this if you have alloca.h */
-#cmakedefine HAVE_ALLOCA_H
+#cmakedefine HAVE_ALLOCA_H 1
+
+/* Define this if you have glob.h */
+#cmakedefine HAVE_GLOB_H 1
+
+/* Define this if you have sys/wait.h */
+#cmakedefine HAVE_SYS_WAIT_H 1
+
+/* Define this if you have signal.h */
+#cmakedefine HAVE_SIGNAL_H 1
+
+/* Define this if you have the lstat() function */
+#cmakedefine HAVE_LSTAT 1
 
 /* Define this if your compiler supports alloca() */
-#cmakedefine HAVE_ALLOCA
+#cmakedefine HAVE_ALLOCA 1
 
 /* Define this if your libc has sys_siglist[] */
-#cmakedefine HAVE_SYS_SIGLIST
+#cmakedefine HAVE_SYS_SIGLIST 1
 
 /* Define to the full name of this package. */
 #cmakedefine PACKAGE_NAME "@PACKAGE_NAME@"
@@ -19,5 +31,5 @@
 #cmakedefine PACKAGE_VERSION "@PACKAGE_VERSION@"
 
 /* Define this if you have the 'sigset_t' type */
-#cmakedefine01 HAVE_SIGSET_T 
+#cmakedefine HAVE_SIGSET_T 1
 

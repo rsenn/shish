@@ -28,7 +28,17 @@ if(HAVE_ALLOCA_H)
   check_symbol_exists(alloca alloca.h HAVE_ALLOCA)
 endif()
 
+check_include_file(sys/wait.h HAVE_SYS_WAIT_H)
+check_include_file(glob.h HAVE_GLOB_H)
 check_include_file(signal.h HAVE_SIGNAL_H)
+
+if(HAVE_SIGNAL_H)
+  set(CMAKE_EXTRA_INCLUDE_FILES signal.h)
+   
+endif(HAVE_SIGNAL_H)
+ 
+ check_type_size(sigset_t SIGSET_T)
+
 #if(HAVE_SIGNAL_H)
 #  check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T)
 #check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T)
@@ -41,6 +51,7 @@ check_include_file(signal.h HAVE_SIGNAL_H)
 #  endif()
 #endif()
 
+check_function_exists(lstat HAVE_LSTAT)
 check_function_exists(sys_siglist HAVE_SYS_SIGLIST)
 
 configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.h")
