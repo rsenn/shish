@@ -29,15 +29,49 @@ if(HAVE_ALLOCA_H)
 endif()
 
 check_include_file(sys/wait.h HAVE_SYS_WAIT_H)
-check_include_file(glob.h HAVE_GLOB_H)
-check_include_file(signal.h HAVE_SIGNAL_H)
 
+check_include_file(unistd.h HAVE_UNISTD_H)
+if(HAVE_UNISTD_H)
+  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} unistd.h)
+endif(HAVE_UNISTD_H)
+
+check_function_exists(sethostname HAVE_SETHOSTNAME)
+check_function_exists(readlink HAVE_READLINK)
+
+
+check_include_file(fcntl.h HAVE_FCNTL_H)
+if(HAVE_FCNTL_H)
+  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} fcntl.h)
+endif(HAVE_FCNTL_H)
+
+check_function_exists(fcntl HAVE_FCNTL)
+
+check_include_file(sys/types.h HAVE_SYS_TYPES_H)
+if(HAVE_SYS_TYPES_H)
+  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} sys/types.h)
+endif(HAVE_SYS_TYPES_H)
+
+check_include_file(sys/stat.h HAVE_SYS_STAT_H)
+if(HAVE_SYS_STAT_H)
+  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} sys/stat.h)
+endif(HAVE_SYS_STAT_H)
+
+check_function_exists(lstat HAVE_LSTAT)
+
+check_include_file(signal.h HAVE_SIGNAL_H)
 if(HAVE_SIGNAL_H)
-  set(CMAKE_EXTRA_INCLUDE_FILES signal.h)
-   
+  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} signal.h)
 endif(HAVE_SIGNAL_H)
- 
- check_type_size(sigset_t SIGSET_T)
+
+check_type_size(sigset_t SIGSET_T)
+
+check_include_file(glob.h HAVE_GLOB_H)
+if(HAVE_GLOB_H)
+  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} glob.h)
+endif(HAVE_GLOB_H)
+
+ check_function_exists(glob HAVE_GLOB)
+
 
 #if(HAVE_SIGNAL_H)
 #  check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T)
@@ -51,7 +85,6 @@ endif(HAVE_SIGNAL_H)
 #  endif()
 #endif()
 
-check_function_exists(lstat HAVE_LSTAT)
 check_function_exists(sys_siglist HAVE_SYS_SIGLIST)
 
 configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.h")

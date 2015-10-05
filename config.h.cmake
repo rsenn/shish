@@ -15,6 +15,18 @@
 /* Define this if you have the lstat() function */
 #cmakedefine HAVE_LSTAT 1
 
+/* Define this if you have the fcntl() function */
+#cmakedefine HAVE_FCNTL 1
+
+/* Define this if you have the readlink() function */
+#cmakedefine HAVE_READLINK 1
+
+/* Define this if you have the sethostname() function */
+#cmakedefine HAVE_SETHOSTNAME 1
+
+/* Define this if you have the glob() function */
+#cmakedefine HAVE_GLOB 1
+
 /* Define this if your compiler supports alloca() */
 #cmakedefine HAVE_ALLOCA 1
 
