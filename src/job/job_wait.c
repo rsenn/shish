@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include <unistd.h>
 #include <termios.h>
 #if defined(HAVE_SYS_WAIT_H) && !defined(__MINGW32__)

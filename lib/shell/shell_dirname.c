@@ -14,7 +14,7 @@
         ""             "."            "."
 */
 
-static char *dot=".";
+static char *dot = ".";
 #define SLASH '/'
 #define EOL (char)0
 char *shell_dirname(char *path) {
@@ -23,13 +23,13 @@ char *shell_dirname(char *path) {
   for(;;) {
     i = str_rchr(path, SLASH);
     if(path[i] == '\0') return dot; /* no slashes */
-    
+
     if(path[i + 1] == EOL && i) {
       /* remove trailing slashes */
       while(path[i] == SLASH && i) path[i--] = EOL;
       continue;
     }
-    
+
     if(i)
       while(path[i] == SLASH) path[i--] = EOL; /* slashes in the middle */
     else

@@ -1,5 +1,6 @@
 #include "buffer.h"
 #include "mmap.h"
+#include <sys/mman.h>
 
 ssize_t buffer_dummyreadmmap();
 
@@ -8,6 +9,6 @@ int buffer_mmapprivate(buffer* b, const char* filename) {
   b->p = 0; b->a = b->n;
   b->fd = -1;
   b->op = buffer_dummyreadmmap;
-  b->todo = (b->n ? MUNMAP : 0);
+  b->deinit = (b->n ? &buffer_munmap : 0);
   return 0;
 }

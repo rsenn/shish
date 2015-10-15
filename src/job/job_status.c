@@ -23,7 +23,7 @@ void job_status(int pid, int status) {
       buffer_put(fd_err->w, " signaled: ", 11);
     }
              
-    buffer_PUTC(fd_err->w, signame[0] + 0x20);
+    buffer_putc(fd_err->w, signame[0] + 0x20);
     buffer_puts(fd_err->w, &signame[1]);
     
 #ifdef WCOREDUMP

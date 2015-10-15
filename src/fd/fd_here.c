@@ -10,7 +10,7 @@ void fd_here(struct fd *fd, stralloc *sa) {
   fd->mode = FD_HERE;
   
   buffer_fromsa(&fd->rb, sa);
-  fd->rb.todo = FREE;
+  fd->rb.deinit = buffer_free;
   fd->e = -1;
 }
 

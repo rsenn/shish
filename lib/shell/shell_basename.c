@@ -18,13 +18,13 @@ char *shell_basename(char *path) {
 again:
   n = str_rchr(path, '/');
   if (path[n] == '\0') return path;
-  if (path[n+1]==0) {
+  if (path[n + 1] == 0) {
     if (n == 0)
       return path;
     else {
-      path[n]=0;
+      path[n] = 0;
       goto again;
     }
   }
-  return &path[n+1];
+  return &path[n + 1];
 }

@@ -44,7 +44,7 @@ if test "$ac_cv_with_libowfat" != no; then
 			continue
 		fi
 
-			LIBOWFAT_LIBS="-lowfat"
+			LIBOWFAT_LIBS="-l${LIBOWFAT_LIBNAME:-owfat}"
 			if test -n "$LIBOWFAT_LIBDIR"; then
 				LIBOWFAT_LIBS="-L${LIBOWFAT_LIBDIR%/} $LIBOWFAT_LIBS"
 			fi

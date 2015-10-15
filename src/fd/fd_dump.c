@@ -3,6 +3,7 @@
 #include "str.h"
 #include "fd.h"
 #include "fdstack.h"
+#include "buffer.h"
 
 static const char *fd_flags[] = {
   "READ",   "WRITE",  "APPEND", "EXCL",
