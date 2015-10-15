@@ -1,13 +1,6 @@
 #include "stralloc.h"
 #include "buffer.h"
 
-extern ssize_t buffer_dummyread(int fd, char* buf, unsigned long int len);
-
-void buffer_fromsa(buffer* b, stralloc* sa) {
-  b->x = sa->s;
-  b->p = 0;
-  b->n = sa->len;
-  b->a = sa->a;
-  b->fd = -1;
-  b->op = buffer_dummyread;
+void buffer_fromsa(buffer* b,const stralloc* sa) {
+  buffer_frombuf(b,sa->s,sa->len);
 }

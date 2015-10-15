@@ -38,8 +38,10 @@ if test "$ac_cv_debug" = "yes"; then
   AC_MSG_RESULT([yes])
   AC_CHECK_LIB([duma], [DUMA_Exit])
 else
-  CFLAGS="`echo $CFLAGS -Os -fomit-frame-pointer`"
-#  CPPFLAGS="`echo $CPPFLAGS -DNDEBUG -include assert.h`"
+	case "$CFLAGS" in
+		  *-O*) ;;
+		  *) CFLAGS="`echo $CFLAGS -Os -fomit-frame-pointer`" ;;
+  esac
   CPPFLAGS="`echo $CPPFLAGS -DNDEBUG`"
   DEBUG="no"
   AC_MSG_RESULT([no])

@@ -30,6 +30,7 @@ MODULES += buffer_dummyreadmmap
 @LIBOWFAT_FALSE@MODULES += buffer_free
 @LIBOWFAT_FALSE@MODULES += buffer_munmap
 @LIBOWFAT_FALSE@MODULES += buffer_fromsa
+@LIBOWFAT_FALSE@MODULES += buffer_frombuf
 MODULES += buffer_fromstr
 @LIBOWFAT_FALSE@MODULES += buffer_get
 MODULES += buffer_get_until
