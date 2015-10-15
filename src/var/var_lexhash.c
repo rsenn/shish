@@ -30,8 +30,7 @@
                   ((c) <  'a' ? (c) - '_' + 36 : \
                    (c) -  'a' + 37)))
 
-unsigned long var_lexhash(const char *v, VAR_HASH *h)
-{
+unsigned long var_lexhash(const char *v, VAR_HASH *h) {
   VAR_HASH hash;
   register int shift;
   register VAR_HASH value;
@@ -45,8 +44,7 @@ unsigned long var_lexhash(const char *v, VAR_HASH *h)
      there are no digits allowed */
   hash = -10LL << shift;
   
-  do
-  {
+  do {
     /* map the character to a 1-63 range */
     value = 1LL + (uint64)reduce(*p);
     

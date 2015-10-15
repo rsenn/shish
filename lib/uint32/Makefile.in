@@ -19,9 +19,10 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 LIB = ../libshish.a
-MODULES = uint32_prng \
-          uint32_random \
-          uint32_seed
+MODULES += uint32_prng
+MODULES += uint32_random
+MODULES += uint32_seed
+
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

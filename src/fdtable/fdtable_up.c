@@ -6,8 +6,7 @@
  * 
  * (assumed to be higher than the current one)
  * ----------------------------------------------------------------------- */
-void fdtable_up(void)
-{
+void fdtable_up(void) {
   struct fd *fd;
   struct fdstack *st;
   
@@ -18,10 +17,8 @@ void fdtable_up(void)
 again:
   fd_exp++;
   
-  for(st = fdstack; st; st = st->parent)
-  {
-    for(fd = st->list; fd; fd = fd->next)
-    {
+  for(st = fdstack; st; st = st->parent) {
+    for(fd = st->list; fd; fd = fd->next) {
       if(fd->e == fd_exp)
         goto again;
     }

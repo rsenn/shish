@@ -11,8 +11,7 @@
  * is not added
  * 
  * ----------------------------------------------------------------------- */
-void fdtable_unexpected(int e, int u, int flags)
-{
+void fdtable_unexpected(int e, int u, int flags) {
   int mode;
   struct fd *fd;
   

@@ -19,19 +19,20 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = expand.a
-MODULES = expand_arg \
-          expand_args \
-          expand_argv \
-          expand_arith \
-          expand_cat \
-          expand_catsa \
-          expand_command \
-          expand_copysa \
-          expand_escape \
-          expand_glob \
-          expand_param \
-          expand_unescape \
-          expand_vars
+MODULES += expand_arg
+MODULES += expand_args
+MODULES += expand_argv
+MODULES += expand_arith
+MODULES += expand_cat
+MODULES += expand_catsa
+MODULES += expand_command
+MODULES += expand_copysa
+MODULES += expand_escape
+MODULES += expand_glob
+MODULES += expand_param
+MODULES += expand_unescape
+MODULES += expand_vars
+
           
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

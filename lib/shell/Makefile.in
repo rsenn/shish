@@ -19,22 +19,26 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 LIB = ../libshish.a
-MODULES = shell_alloc \
-	shell_basename \
-	shell_canonicalize \
-	shell_dirname \
-	shell_error \
-	shell_errorn \
-	shell_fnmatch \
-	shell_getcwd \
-	shell_gethome \
-	shell_gethostname \
-	shell_getopt \
-	shell_init \
-	shell_readlink \
-	shell_realloc \
-	shell_realpath \
-	shell_strdup
+@DEBUG_FALSE@MODULES += shell_alloc
+@DEBUG_TRUE@MODULES += shell_allocdebug
+MODULES += shell_basename
+MODULES += shell_canonicalize
+MODULES += shell_dirname
+MODULES += shell_error
+MODULES += shell_errorn
+MODULES += shell_fnmatch
+MODULES += shell_getcwd
+MODULES += shell_gethome
+MODULES += shell_gethostname
+MODULES += shell_getopt
+MODULES += shell_init
+MODULES += shell_readlink
+@DEBUG_FALSE@MODULES += shell_realloc
+@DEBUG_TRUE@MODULES += shell_reallocdebug
+MODULES += shell_realpath
+@DEBUG_FALSE@MODULES += shell_strdup
+@DEBUG_TRUE@MODULES += shell_strdupdebug
+
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
@@ -52,7 +56,7 @@ install:
 # local build configuration
 # ---------------------------------------------------------------------------
 INCLUDES += -I$(top_srcdir)/lib -I.
-#INCLUDES += -I$(top_builddir)/lib
+INCLUDES += -I$(top_builddir)
 
 # include build.mk (makefile helper)
 # ---------------------------------------------------------------------------

@@ -5,14 +5,12 @@
 
 /* after forking, returns pid
  * ----------------------------------------------------------------------- */
-int sh_forked(void)
-{
+int sh_forked(void) {
   struct env *e = sh;
   struct env *next;
   
   /* if we're not in the root environment we clean up any shell env */
-  for(sh = sh->parent; sh; sh = next)
-  {
+  for(sh = sh->parent; sh; sh = next) {
     next = sh->parent;
       
     sh_setargs(NULL, 0);

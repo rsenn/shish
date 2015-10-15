@@ -9,8 +9,7 @@
 
 typedef int (builtin_func)(int argc, char **argv);
 
-struct builtin_cmd
-{
+struct builtin_cmd {
   const char   *name;
   builtin_func *fn;
   int           flags;

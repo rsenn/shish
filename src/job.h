@@ -17,8 +17,7 @@ typedef int sigset_t;
 
 union node;
 
-struct proc
-{
+struct proc {
   pid_t    pid;
   int      status;
   char    *cmd;
@@ -26,8 +25,7 @@ struct proc
   sigset_t signew;
 };
 
-struct job
-{
+struct job {
   struct job  *next;
   struct proc *procs;
   unsigned int nproc;

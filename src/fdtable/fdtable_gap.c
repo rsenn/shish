@@ -10,8 +10,7 @@
  * 
  * return 1 if we made a gap
  * ----------------------------------------------------------------------- */
-int fdtable_gap(int e, int flags)
-{
+int fdtable_gap(int e, int flags) {
   struct fd *gap;
 
   /* there is already a gap? */
@@ -19,12 +18,10 @@ int fdtable_gap(int e, int flags)
     return FDTABLE_DONE;
   
   /* if we can close the gap fd then delete it */
-  if((gap->mode & FD_CLOSE) || ((flags & FDTABLE_FORCE) && gap != fdtable[gap->n]))
-  {
+  if((gap->mode & FD_CLOSE) || ((flags & FDTABLE_FORCE) && gap != fdtable[gap->n])) {
     /* set fd to -1 so it isn't closed in fd_close()
        because we'll maybe handle this later by dup2() */
-    if(flags & FDTABLE_NOCLOSE)
-    {
+    if(flags & FDTABLE_NOCLOSE) {
       fd_setfd(gap, -1);
       fd_pop(gap);
       return e;
@@ -34,8 +31,7 @@ int fdtable_gap(int e, int flags)
     return FDTABLE_DONE;
   }
   
-  if(flags & FDTABLE_FORCE)
-  {
+  if(flags & FDTABLE_FORCE) {
     /* resolve the gap fd, but do not force
        position to prevent from infinite recursion */
     flags &= ~FDTABLE_FORCE;

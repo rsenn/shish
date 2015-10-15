@@ -4,8 +4,7 @@
 #include "debug.h"
 #include <assert.h>
 
-void vartab_add(struct vartab *vartab, struct var *var, struct search *context)
-{  
+void vartab_add(struct vartab *vartab, struct var *var, struct search *context) {
   var->table = vartab;
   
   /* its already in this table? wtf? */
@@ -22,8 +21,7 @@ void vartab_add(struct vartab *vartab, struct var *var, struct search *context)
  *var->blink = var;
   
   /* if the variable has a parent we already know the position in the global list :D */
-  if(var->parent)
-  {
+  if(var->parent) {
     assert(var->parent->table != var->table);
   
     /* link ourselves instead of our parent into the global list */
@@ -32,9 +30,7 @@ void vartab_add(struct vartab *vartab, struct var *var, struct search *context)
     
     var->glink = var->parent->glink;
    *var->glink = var;
-  }
-  else
-  {
+  } else {
     /* start searching insert position in global list */
 /*    if(context->closest && context->closest != &vartab->table[context->bucket])
       context->pos = context->closest;
@@ -46,8 +42,7 @@ void vartab_add(struct vartab *vartab, struct var *var, struct search *context)
     //  context->pos = &varlist;
     // 
     /* then we search forward again until the next entry is bigger */
-    if(var_hsearch(context) == 0LL)
-    {
+    if(var_hsearch(context) == 0LL) {
 #ifndef NDEBUG
       unsigned long dist =
 #endif

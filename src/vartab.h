@@ -9,8 +9,7 @@ struct vartab;
 
 #include "var.h"
 
-struct search
-{
+struct search {
   struct var   **pos;
   struct var   **closest;
   const char    *name;
@@ -24,8 +23,7 @@ struct search
   int            exact;  /* want an exact match only */
 };
 
-struct vartab
-{
+struct vartab {
   struct var    *table[VARTAB_BUCKETS];
   struct var   **pos;
   struct vartab *parent;

@@ -11,8 +11,7 @@
 
 /* main loop, parse lines into trees and execute them
  * ----------------------------------------------------------------------- */
-void sh_loop(void)
-{
+void sh_loop(void) {
   struct parser p;
   union node *list;
   stralloc cmd;
@@ -26,8 +25,7 @@ void sh_loop(void)
 
   parse_init(&p, P_DEFAULT);
   
-  while(!(parse_gettok(&p, P_DEFAULT) & T_EOF))
-  {
+  while(!(parse_gettok(&p, P_DEFAULT) & T_EOF)) {
     p.pushback++;
     parse_lineno = source->line;
 
@@ -59,9 +57,7 @@ void sh_loop(void)
       stralloc_zero(&cmd);
 
       tree_free(list);
-    }
-    else if(!(p.tok & (T_NL|T_SEMI|T_BGND)))
-    {
+    } else if(!(p.tok & (T_NL | T_SEMI | T_BGND))) {
       /* we have a parse error */
       if(p.tok != T_EOF)
         parse_error(&p, 0);

@@ -3,8 +3,7 @@
 #include "var.h"
 
 /* ----------------------------------------------------------------------- */
-void vartab_dump(struct vartab *vartab)
-{
+void vartab_dump(struct vartab *vartab) {
   unsigned int i;
   struct var *var;
 
@@ -18,26 +17,20 @@ void vartab_dump(struct vartab *vartab)
   buffer_puts(fd_out->w, "address  name                     value                   nlen offs vlen lev buck lexhash          rndhash\n");
   buffer_puts(fd_out->w, "-------------------------------------------------------------------------------------------------------------------\n");
   
-  if(vartab)
-  {
-    for(; vartab; vartab = vartab->parent)
-    {
+  if(vartab) {
+    for(; vartab; vartab = vartab->parent) {
       buffer_puts(fd_out->w, "level: ");
       buffer_putulong(fd_out->w, vartab->level);
       buffer_puts(fd_out->w, "\n===================================================================================================================");
       buffer_putnlflush(fd_out->w);
         
-      for(i = 0; i < (unsigned int)VARTAB_BUCKETS; i++)
-      {
-        for(var = vartab->table[i]; var; var = var->bnext)
-        {
+      for(i = 0; i < (unsigned int)VARTAB_BUCKETS; i++) {
+        for(var = vartab->table[i]; var; var = var->bnext) {
           var_dump(var);
         }
       }
     }
-  }
-  else
-  {
+  } else {
     for(var = var_list; var; var = var->gnext)
       var_dump(var);
   }

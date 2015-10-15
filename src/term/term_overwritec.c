@@ -1,8 +1,7 @@
 #include "term.h"
 
 /* ----------------------------------------------------------------------- */
-void term_overwritec(char c)
-{
+void term_overwritec(char c) {
   if(term_pos == term_cmdline.len)
     stralloc_catb(&term_cmdline, &c, 1);
   else

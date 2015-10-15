@@ -10,14 +10,12 @@
  * when the last checked variable was bigger than the wanted one
  * we return the hash distance from the wanted to bigger entry.
  * ----------------------------------------------------------------------- */
-VAR_HASH var_hsearch(struct search *context)
-{
+VAR_HASH var_hsearch(struct search *context) {
   struct var *var;
  
   /* continue looping through the current list */
   for(; (var = *context->pos); 
-                context->pos = (context->global ? &var->gnext : &var->bnext))
-  {
+      context->pos = (context->global ? &var->gnext : &var->bnext)) {
     /* because the list is sorted ascending we can skip all
        the vars while their literal hash is smaller than the
        one of the wanted var */
@@ -27,8 +25,7 @@ VAR_HASH var_hsearch(struct search *context)
     /* if we are heading for an exact match (i.e. not creating
        any variable after not found) we do  not require the exact
        distance and we can also continue on a rhash or len mismatch */
-    if(context->exact)
-    { 
+    if(context->exact) {
       /* in this case those two conditionals, especially the
          rndhash match will prevent from unneccessary lexical
          weighing */

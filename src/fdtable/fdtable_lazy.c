@@ -4,13 +4,11 @@
 
 /* try to lazy-resolve fds until the supplied fd is the bottom
  * ----------------------------------------------------------------------- */
-int fdtable_lazy(int e, int flags)
-{
+int fdtable_lazy(int e, int flags) {
   struct fd *fd;
   int r;
 
-  while((e != fd_exp) && (fd = fdtable[fd_exp]))
-  {
+  while((e != fd_exp) && (fd = fdtable[fd_exp])) {
     /* try to resolve the current expected efd */
     r = fdtable_resolve(fd, flags);
     

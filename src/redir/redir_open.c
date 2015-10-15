@@ -6,13 +6,11 @@
 
 /* open a file for redirection 
  * ----------------------------------------------------------------------- */
-int redir_open(struct nredir *nredir, stralloc *sa)
-{
+int redir_open(struct nredir *nredir, stralloc *sa) {
   int mode = FD_FREENAME;
   
   /* prepare flags */
-  if(nredir->flag & R_OUT)
-  {
+  if(nredir->flag & R_OUT) {
     /* check for appending mode */
     if(nredir->flag & R_APPEND)
       mode |= FD_APPEND;

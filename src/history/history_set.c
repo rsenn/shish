@@ -3,8 +3,7 @@
 
 /* add a command to the history
  * ----------------------------------------------------------------------- */
-void history_set(char *s)
-{
+void history_set(char *s) {
   history_resize();
 
   if(history_array[0])

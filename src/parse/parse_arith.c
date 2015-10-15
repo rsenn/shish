@@ -3,8 +3,7 @@
 
 /* parse arithmetic expressions
  * ----------------------------------------------------------------------- */
-int parse_arith(struct parser *p)
-{
+int parse_arith(struct parser *p) {
   /* TODO: implement */
   return 0;
 }

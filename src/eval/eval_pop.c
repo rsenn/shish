@@ -4,8 +4,7 @@
 #include "vartab.h"
 #include <assert.h>
 
-int eval_pop(struct eval *e)
-{
+int eval_pop(struct eval *e) {
   int ret;
   
   assert(e == sh->eval);

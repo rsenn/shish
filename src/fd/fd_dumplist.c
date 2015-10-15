@@ -2,8 +2,7 @@
 #include "buffer.h"
 #include "fd.h"
 
-void fd_dumplist(void)
-{
+void fd_dumplist(void) {
   int i;
 
   buffer_puts(fdtable[1]->w, "  fd  name        level read-buffer                          write-buffer                        flags\n");

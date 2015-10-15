@@ -42,8 +42,7 @@ struct fdtable;
 
 #define FD_SIZE (sizeof(struct fd))
 
-struct fd
-{
+struct fd {
   int             n;      /* virtual fd */
   int             e;      /* effective fd */
   int             mode;   /* FD_ modes */

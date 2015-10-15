@@ -9,8 +9,7 @@
 
 /* evaluates backquoted command list, while writing stdout to a stralloc 
  * ----------------------------------------------------------------------- */
-union node *expand_command(struct nargcmd *cmd, union node **nptr, int flags)
-{
+union node *expand_command(struct nargcmd *cmd, union node **nptr, int flags) {
   union node *n = *nptr;
   struct vartab vars;
   struct fd fd;

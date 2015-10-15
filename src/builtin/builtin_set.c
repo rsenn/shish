@@ -6,15 +6,12 @@
 
 /* set arguments of flags
  * ----------------------------------------------------------------------- */
-int builtin_set(int argc, char **argv)
-{
+int builtin_set(int argc, char **argv) {
   int c;
   
   /* check options */
-  while((c = shell_getopt(argc, argv, "LP")) > 0)
-  {
-    switch(c)
-    {
+  while((c = shell_getopt(argc, argv, "LP")) > 0) {
+    switch(c) {
       default: builtin_invopt(argv); return 1;
     }
   }

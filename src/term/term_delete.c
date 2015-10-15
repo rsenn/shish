@@ -1,7 +1,6 @@
 #include "term.h"
 
-void term_delete(void)
-{
+void term_delete(void) {
   unsigned long len;
 
   if(term_pos == term_cmdline.len)

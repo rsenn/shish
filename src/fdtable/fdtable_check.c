@@ -9,8 +9,7 @@
  * 
  * returns FD_* flags or 0 if the check failed
  * ----------------------------------------------------------------------- */
-int fdtable_check(int e)
-{
+int fdtable_check(int e) {
   int pflags;
   int iflags = 0;
   

@@ -20,8 +20,7 @@ int builtin_shift(int argc, char **argv)
     }
   }
   
-  while(sh->arg.c && n--)
-  {
+  while(sh->arg.c && n--) {
     sh->arg.s++;
     sh->arg.a++;
     sh->arg.c--;

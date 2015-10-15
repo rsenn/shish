@@ -7,8 +7,7 @@ int          prompt_number = 0;
 
 /* shows the commandline prompt after expanding if necessary
  * ----------------------------------------------------------------------- */
-void prompt_show(void)
-{ 
+void prompt_show(void) {
   const char *prompt;
   unsigned long plen;
   
@@ -24,19 +23,15 @@ void prompt_show(void)
   prompt_expand();
 
   /* use expansion of PS1? */
-  if(prompt_number == 1)
-  {
+  if(prompt_number == 1) {
     prompt = prompt_expansion.s;
     plen = prompt_expansion.len;
-  }
-  else
-  {
+  } else {
     prompt = var_vdefault(prompt_var, ">", &plen);
   }
   
   /* put the prompt to the terminal */
-  if(prompt)
-  {
+  if(prompt) {
     buffer_put(term_output, prompt, plen);
     buffer_flush(term_output);
   }

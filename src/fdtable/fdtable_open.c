@@ -18,8 +18,7 @@
  * returns fd or -2 if not yet done, -1 if failed, 
  * otherwise the new effective file descriptor
  * ----------------------------------------------------------------------- */
-int fdtable_open(struct fd *fd, int flags)
-{
+int fdtable_open(struct fd *fd, int flags) {
   int e;
   int state;
 
@@ -45,8 +44,7 @@ int fdtable_open(struct fd *fd, int flags)
   /* now open the file, and return -1 if we failed */
   e = open(fd->name, fd->fl, (0666 & ~sh->umask));
   
-  if(!fd_ok(e))
-  {
+  if(!fd_ok(e)) {
     sh_error(fd->name);
     return FDTABLE_ERROR;
   }
@@ -57,8 +55,7 @@ int fdtable_open(struct fd *fd, int flags)
   
   fd->mode &= ~FD_OPEN;
   
-  if(fd->n != e)
-  {
+  if(fd->n != e) {
     /* we should have been done, but doesn't look like,
        let fdtable_dup in fdtable_resolve do the work */
     if(state >= FDTABLE_DONE)

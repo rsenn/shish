@@ -5,8 +5,7 @@
 
 /* print fd number + error message
  * ----------------------------------------------------------------------- */
-int fd_error(int n, const char *msg)
-{
+int fd_error(int n, const char *msg) {
   char buf[FMT_ULONG + 2];
   unsigned long sz;
   sz = fmt_ulong(buf, n);

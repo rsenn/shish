@@ -19,10 +19,11 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 LIB = ../libshish.a
-MODULES = mmap_read \
-          mmap_read_fd \
-          mmap_private \
-          mmap_unmap
+@LIBOWFAT_FALSE@MODULES += mmap_read
+MODULES += mmap_read_fd
+@LIBOWFAT_FALSE@MODULES += mmap_private
+@LIBOWFAT_FALSE@MODULES += mmap_unmap
+
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

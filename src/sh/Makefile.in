@@ -19,24 +19,25 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = sh.a
-MODULES = sh_error \
-          sh_errorn \
-          sh_exit \
-          sh_forked \
-          sh_getcwd \
-          sh_gethome \
-          sh_init \
-          sh_loop \
-          sh_main \
-          sh_msg \
-          sh_pop \
-          sh_popargs \
-          sh_push \
-          sh_pushargs \
-          sh_root \
-          sh_setargs \
-          sh_subshell \
-          sh_usage
+MODULES += sh_error
+MODULES += sh_errorn
+MODULES += sh_exit
+MODULES += sh_forked
+MODULES += sh_getcwd
+MODULES += sh_gethome
+MODULES += sh_init
+MODULES += sh_loop
+MODULES += sh_main
+MODULES += sh_msg
+MODULES += sh_pop
+MODULES += sh_popargs
+MODULES += sh_push
+MODULES += sh_pushargs
+MODULES += sh_root
+MODULES += sh_setargs
+MODULES += sh_subshell
+MODULES += sh_usage
+
           
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

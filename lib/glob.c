@@ -164,8 +164,7 @@ static void	 qprintf(const char *, Char *);
 #endif
 
 int
-glob(const char *pattern, int flags, int (*errfunc)(const char *, int), glob_t *pglob)
-{
+glob(const char *pattern, int flags, int (*errfunc)(const char *, int), glob_t *pglob) {
 	const char *patnext;
 	size_t limit;
 	Char *bufnext, *bufend, patbuf[MAXPATHLEN], prot;
@@ -238,8 +237,7 @@ glob(const char *pattern, int flags, int (*errfunc)(const char *, int), glob_t *
  * characters
  */
 static int
-globexp1(const Char *pattern, glob_t *pglob, size_t *limit)
-{
+globexp1(const Char *pattern, glob_t *pglob, size_t *limit) {
 	const Char* ptr = pattern;
 	int rv;
 
@@ -261,8 +259,7 @@ globexp1(const Char *pattern, glob_t *pglob, size_t *limit)
  * If it fails then it tries to glob the rest of the pattern and returns.
  */
 static int
-globexp2(const Char *ptr, const Char *pattern, glob_t *pglob, int *rv, size_t *limit)
-{
+globexp2(const Char *ptr, const Char *pattern, glob_t *pglob, int *rv, size_t *limit) {
 	int     i;
 	Char   *lm, *ls;
 	const Char *pe, *pm, *pm1, *pl;
@@ -287,8 +284,7 @@ globexp2(const Char *ptr, const Char *pattern, glob_t *pglob, int *rv, size_t *l
 				 */
 				pe = pm;
 			}
-		}
-		else if (*pe == LBRACE)
+    } else if(*pe == LBRACE)
 			i++;
 		else if (*pe == RBRACE) {
 			if (i == 0)
@@ -365,8 +361,7 @@ globexp2(const Char *ptr, const Char *pattern, glob_t *pglob, int *rv, size_t *l
  * expand tilde from the passwd file.
  */
 static const Char *
-globtilde(const Char *pattern, Char *patbuf, size_t patbuf_len, glob_t *pglob)
-{
+globtilde(const Char *pattern, Char *patbuf, size_t patbuf_len, glob_t *pglob) {
 	struct passwd *pwd;
 	char *h;
 	const Char *p;
@@ -400,8 +395,7 @@ globtilde(const Char *pattern, Char *patbuf, size_t patbuf_len, glob_t *pglob)
 			else
 				return pattern;
 		}
-	}
-	else {
+  } else {
 		/*
 		 * Expand a ~user
 		 */
@@ -431,8 +425,7 @@ globtilde(const Char *pattern, Char *patbuf, size_t patbuf_len, glob_t *pglob)
  * if things went well, nonzero if errors occurred.
  */
 static int
-glob0(const Char *pattern, glob_t *pglob, size_t *limit)
-{
+glob0(const Char *pattern, glob_t *pglob, size_t *limit) {
 	const Char *qpatnext;
 	int err;
 	size_t oldpathc;
@@ -518,14 +511,12 @@ glob0(const Char *pattern, glob_t *pglob, size_t *limit)
 }
 
 static int
-compare(const void *p, const void *q)
-{
+compare(const void *p, const void *q) {
 	return(strcmp(*(char **)p, *(char **)q));
 }
 
 static int
-glob1(Char *pattern, glob_t *pglob, size_t *limit)
-{
+glob1(Char *pattern, glob_t *pglob, size_t *limit) {
 	Char pathbuf[MAXPATHLEN];
 
 	/* A null pathname is invalid -- POSIX 1003.1 sect. 2.4. */
@@ -542,8 +533,7 @@ glob1(Char *pattern, glob_t *pglob, size_t *limit)
  */
 static int
 glob2(Char *pathbuf, Char *pathend, Char *pathend_last, Char *pattern,
-      glob_t *pglob, size_t *limit)
-{
+      glob_t *pglob, size_t *limit) {
 	struct stat sb;
 	Char *p, *q;
 	int anymeta;
@@ -601,8 +591,7 @@ glob2(Char *pathbuf, Char *pathend, Char *pathend_last, Char *pattern,
 static int
 glob3(Char *pathbuf, Char *pathend, Char *pathend_last,
       Char *pattern, Char *restpattern,
-      glob_t *pglob, size_t *limit)
-{
+      glob_t *pglob, size_t *limit) {
 	struct dirent *dp;
 	DIR *dirp;
 	int err;
@@ -697,8 +686,7 @@ glob3(Char *pathbuf, Char *pathend, Char *pathend_last,
  *	gl_pathv points to (gl_offs + gl_pathc + 1) items.
  */
 static int
-globextend(const Char *path, glob_t *pglob, size_t *limit)
-{
+globextend(const Char *path, glob_t *pglob, size_t *limit) {
 	char **pathv;
 	size_t i, newsize, len;
 	char *copy;
@@ -748,8 +736,7 @@ globextend(const Char *path, glob_t *pglob, size_t *limit)
  * pattern causes a recursion level.
  */
 static int
-match(Char *name, Char *pat, Char *patend)
-{
+match(Char *name, Char *pat, Char *patend) {
 	int ok, negate_range;
 	Char c, k;
 
@@ -794,8 +781,7 @@ match(Char *name, Char *pat, Char *patend)
 
 /* Free allocated data belonging to a glob_t structure. */
 void
-globfree(glob_t *pglob)
-{
+globfree(glob_t *pglob) {
 	size_t i;
 	char **pp;
 
@@ -810,8 +796,7 @@ globfree(glob_t *pglob)
 }
 
 static DIR *
-g_opendir(Char *str, glob_t *pglob)
-{
+g_opendir(Char *str, glob_t *pglob) {
 	char buf[MAXPATHLEN];
 
 	if (!*str)
@@ -828,8 +813,7 @@ g_opendir(Char *str, glob_t *pglob)
 }
 
 static int
-g_lstat(Char *fn, struct stat *sb, glob_t *pglob)
-{
+g_lstat(Char *fn, struct stat *sb, glob_t *pglob) {
 	char buf[MAXPATHLEN];
 
 	if (g_Ctoc(fn, buf, sizeof(buf))) {
@@ -842,8 +826,7 @@ g_lstat(Char *fn, struct stat *sb, glob_t *pglob)
 }
 
 static int
-g_stat(Char *fn, struct stat *sb, glob_t *pglob)
-{
+g_stat(Char *fn, struct stat *sb, glob_t *pglob) {
 	char buf[MAXPATHLEN];
 
 	if (g_Ctoc(fn, buf, sizeof(buf))) {
@@ -856,8 +839,7 @@ g_stat(Char *fn, struct stat *sb, glob_t *pglob)
 }
 
 static const Char *
-g_strchr(const Char *str, wchar_t ch)
-{
+g_strchr(const Char *str, wchar_t ch) {
 
 	do {
 		if (*str == ch)
@@ -867,8 +849,7 @@ g_strchr(const Char *str, wchar_t ch)
 }
 
 static int
-g_Ctoc(const Char *str, char *buf, size_t len)
-{
+g_Ctoc(const Char *str, char *buf, size_t len) {
 	mbstate_t mbs;
 	size_t clen;
 
@@ -888,8 +869,7 @@ g_Ctoc(const Char *str, char *buf, size_t len)
 
 #ifdef DEBUG
 static void
-qprintf(const char *str, Char *s)
-{
+qprintf(const char *str, Char *s) {
 	Char *p;
 
 	(void)printf("%s:\n", str);

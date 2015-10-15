@@ -3,8 +3,7 @@
 
 /* 3.9.1 - parse a simple command
  * ----------------------------------------------------------------------- */
-union node *parse_simple_command(struct parser *p)
-{
+union node *parse_simple_command(struct parser *p) {
   union node **aptr, *args;
   union node **vptr, *vars;
   union node **rptr, *rdir;
@@ -43,8 +42,7 @@ union node *parse_simple_command(struct parser *p)
         break;
 
       /* end of command */
-      default:
-      {
+    default: {
         p->pushback++;
         goto addcmd;
       }

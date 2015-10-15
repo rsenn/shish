@@ -8,23 +8,20 @@ int job_pgrp;
 
 /* forks off a job
  * ----------------------------------------------------------------------- */
-int job_fork(struct job *job, union node *node, int bgnd)
-{
+int job_fork(struct job *job, union node *node, int bgnd) {
   pid_t pid;
   pid_t pgrp;
 
   sig_block();
   
   /* fork the process */
-  if((pid = fork()) == -1)
-  {
+  if((pid = fork()) == -1) {
     sh_error("fork failed");
     return -1;
   }
 
   /* in the child, set the process group and return */
-  if(pid == 0)
-  {
+  if(pid == 0) {
     sh_forked();
 
     if(job && job->nproc)
@@ -45,8 +42,7 @@ int job_fork(struct job *job, union node *node, int bgnd)
   pgrp = pid;
   
   /* in the parent update the process list of the job */
-  if(job)
-  {
+  if(job) {
     struct proc *proc = &job->procs[job->nproc];
     proc->pid = pid;
     proc->status = -1;
@@ -59,8 +55,7 @@ int job_fork(struct job *job, union node *node, int bgnd)
     job->nproc++;
   }
     
-  if(pgrp != job_pgrp && !bgnd)
-  {
+  if(pgrp != job_pgrp && !bgnd) {
     if(fd_ok(job_terminal))
       tcsetpgrp(job_terminal, pid);
 

@@ -3,8 +3,7 @@
 
 /* character class table 
  * ----------------------------------------------------------------------- */
-const unsigned short parse_chartable[CHAR_RANGE] =
-{       
+const unsigned short parse_chartable[CHAR_RANGE] = {
   /* 0x00 */
   C_UNDEF, C_UNDEF, C_UNDEF, C_UNDEF, C_UNDEF, C_UNDEF, C_UNDEF, C_UNDEF,
   C_UNDEF, C_SPACE, C_SPACE, C_UNDEF, C_UNDEF, C_SPACE, C_UNDEF, C_UNDEF,

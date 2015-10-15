@@ -25,8 +25,7 @@
 
 struct search;
 
-struct var
-{
+struct var {
   struct var    *bnext; /* for the hash bucket list in a vartab struct */
   struct var   **blink;
   struct var    *gnext; /* for the sorted list in the global vartab */

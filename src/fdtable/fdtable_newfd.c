@@ -3,13 +3,11 @@
 
 /* create an fd entry on the specified stack level
  * ----------------------------------------------------------------------- */
-struct fd *fdtable_newfd(int n, struct fdstack *st, int mode)
-{
+struct fd *fdtable_newfd(int n, struct fdstack *st, int mode) {
   struct fd *fd;
   
   /* search for a present fd on the fdstack */
-  if((fd = fdstack_search(st, n)))
-  {
+  if((fd = fdstack_search(st, n))) {
     /* if found, take it over */
     return fd_reinit(fd, mode);
   }

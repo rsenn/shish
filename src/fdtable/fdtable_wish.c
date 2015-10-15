@@ -3,8 +3,7 @@
 
 /* wish 'e' become the new expected fd before calling open()/dup()
  * ----------------------------------------------------------------------- */
-int fdtable_wish(int e, int flags)
-{
+int fdtable_wish(int e, int flags) {
   /* if the wished position is above the bottom we can maybe get it
      by lazy resolving. */
   if(e > fd_exp)
@@ -12,8 +11,7 @@ int fdtable_wish(int e, int flags)
 
   /* if the wished position is below the bottom it is occupied by
      another (fd). try to make a gap there */
-  if(e < fd_exp)
-  {
+  if(e < fd_exp) {
     if(flags & FDTABLE_CLOSE)
       return e;
     

@@ -17,8 +17,7 @@ char fd_tempname[FD_TEMPLEN] = FD_TEMPPFX;
 
 /* opens a temporary file and adds it as the specified virtual fd
  * ----------------------------------------------------------------------- */
-int fd_tempfile(struct fd *fd)
-{
+int fd_tempfile(struct fd *fd) {
   int e;
   
   /* reset the template to what mkstemp expects */

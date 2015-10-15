@@ -3,10 +3,8 @@
 #include "fd.h"
 
 /* ----------------------------------------------------------------------- */
-int builtin_dirname(int argc, char **argv)
-{
-  if(!argv[shell_optind])
-  {
+int builtin_dirname(int argc, char **argv) {
+  if(!argv[shell_optind]) {
     builtin_errmsg(argv, "too few arguments", NULL);
     return 1;
   }

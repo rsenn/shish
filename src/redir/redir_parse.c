@@ -14,8 +14,7 @@
  * and 'word' in word_rfile
  * 
  * ----------------------------------------------------------------------- */
-int redir_parse(struct parser *p, int rf, int fd)
-{
+int redir_parse(struct parser *p, int rf, int fd) {
   /* initialize fd to 0 for input, 1 for output */
   char c;
 
@@ -29,10 +28,8 @@ int redir_parse(struct parser *p, int rf, int fd)
     return T_EOF;
 
   /* parse input redirection operator (3.7.1) */
-  if(rf & R_IN)
-  {
-    switch(c)
-    {
+  if(rf & R_IN) {
+    switch(c) {
       /* << is here-doc (3.7.4) */
       case '<':
         rf |= R_HERE;
@@ -42,8 +39,7 @@ int redir_parse(struct parser *p, int rf, int fd)
           return T_EOF;
 
         /* <<- means strip leading tabs and trailing whitespace */
-        if(c == '-')
-        {
+      if(c == '-') {
           rf |= R_STRIP;
           stralloc_catc(&p->sa, c);
           source_skip();
@@ -74,10 +70,8 @@ int redir_parse(struct parser *p, int rf, int fd)
     }
   }
   /* parse output redirection operator (3.7.2) */
-  if(rf & R_OUT)
-  {
-    switch(c)
-    {
+  if(rf & R_OUT) {
+    switch(c) {
       /* >& is dup2() (3.7.6) */
       case '&':
         rf |= R_DUP;
@@ -105,8 +99,7 @@ int redir_parse(struct parser *p, int rf, int fd)
     }
   }
   
-  if(parse_gettok(p, P_DEFAULT) & (T_NAME|T_WORD))
-  {
+  if(parse_gettok(p, P_DEFAULT) & (T_NAME | T_WORD)) {
     union node *node;
 
     node = tree_newnode(N_REDIR);

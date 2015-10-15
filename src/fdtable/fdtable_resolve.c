@@ -9,8 +9,7 @@
  * FDTABLE_FORCE  forces the fd->e to be (re-)mapped to fd->n
  * FDTABLE_CLOSE  means that the current fd->e can already be closed
  * ----------------------------------------------------------------------- */
-int fdtable_resolve(struct fd *fd, int flags)
-{
+int fdtable_resolve(struct fd *fd, int flags) {
   int state = FDTABLE_PENDING;
   
   /* already resolved */
@@ -18,14 +17,12 @@ int fdtable_resolve(struct fd *fd, int flags)
     return FDTABLE_DONE;
   
   /* do not open/close if we don't need an effective fd */
-  if((flags & FDTABLE_FD) == FDTABLE_LAZY)
-  {
+  if((flags & FDTABLE_FD) == FDTABLE_LAZY) {
     if(fd->mode & (FD_OPEN|FD_CLOSE|FD_STRALLOC))
       return state;
   }
 
-  if((flags & FDTABLE_FD) && fd != fdtable[fd->n])
-  {
+  if((flags & FDTABLE_FD) && fd != fdtable[fd->n]) {
     fd->mode = FD_CLOSE;
   }
 //    state = fdtable_close(fd->n, flags);
@@ -41,15 +38,13 @@ int fdtable_resolve(struct fd *fd, int flags)
     }
     
     /* if the fd is still to be opened then try that */
-    case FD_OPEN:
-    {
+  case FD_OPEN: {
       state = fdtable_open(fd, flags);
       break;
     }
     
     /* drop here-docs to temp files */
-    case FD_STRALLOC:
-    {
+  case FD_STRALLOC: {
       if(FD_ISRD(fd))
         state = fdtable_here(fd, flags);
       break;
@@ -57,8 +52,7 @@ int fdtable_resolve(struct fd *fd, int flags)
   }
 
   /* if we're not done yet we have to force the effective fd number */
-  if(state != FDTABLE_DONE)
-  {
+  if(state != FDTABLE_DONE) {
     if(fd_ok(state))
       flags |= FDTABLE_CLOSE;
     
@@ -67,12 +61,10 @@ int fdtable_resolve(struct fd *fd, int flags)
        close */
     state = fdtable_dup(fd, flags);
     
-    if(fd_ok(state))
-    {
+    if(fd_ok(state)) {
       /* if this is gonna change the expected fd we do a lazy
          check before */
-      if(fd_exp < state)
-      {
+      if(fd_exp < state) {
         if(fdtable_lazy(-1, flags) == FDTABLE_ERROR)
           return FDTABLE_ERROR;
       }

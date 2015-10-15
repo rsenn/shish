@@ -19,24 +19,25 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = term.a
-MODULES = term_ansi \
-          term_attr \
-          term_backspace \
-          term_delete \
-          term_end \
-          term_escape \
-          term_getline \
-          term_home \
-          term_init \
-          term_insertc \
-          term_left \
-          term_newline \
-          term_overwritec \
-          term_read \
-          term_restore \
-          term_right \
-          term_setline \
-          term_winsize
+MODULES += term_ansi
+MODULES += term_attr
+MODULES += term_backspace
+MODULES += term_delete
+MODULES += term_end
+MODULES += term_escape
+MODULES += term_getline
+MODULES += term_home
+MODULES += term_init
+MODULES += term_insertc
+MODULES += term_left
+MODULES += term_newline
+MODULES += term_overwritec
+MODULES += term_read
+MODULES += term_restore
+MODULES += term_right
+MODULES += term_setline
+MODULES += term_winsize
+
           
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

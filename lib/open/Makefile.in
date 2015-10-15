@@ -19,9 +19,10 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 LIB = ../libshish.a
-MODULES = open_read \
-          open_temp \
-          open_trunc
+@LIBOWFAT_FALSE@MODULES += open_read
+MODULES += open_temp
+@LIBOWFAT_FALSE@MODULES += open_trunc
+
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

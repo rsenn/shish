@@ -76,15 +76,13 @@ const unsigned short parse_chartable[CHAR_RANGE];
  * 1 - token ends a list
  * 2 - token ends a list and may also start one
  */
-struct token
-{
+struct token {
   int         eol;    /* eof of list flag */
   const char *name;   /* token name */
  };
 
 /* tokens */
-enum tok_id
-{
+enum tok_id {
   TI_EOF    = 0,  /* end of file */
     
 /* control operator tokens */
@@ -127,8 +125,7 @@ enum tok_id
   TI_END,         /* right brace } */
 };
 
-enum tok_flag
-{
+enum tok_flag {
   T_EOF    = (1 << TI_EOF),
   T_NL     = (1 << TI_NL),
   T_SEMI   = (1 << TI_SEMI),
@@ -164,8 +161,7 @@ enum tok_flag
 
 /* quoting
  * ----------------------------------------------------------------------- */
-enum quoting
-{
+enum quoting {
   Q_UNQUOTED = 0,
   Q_DQUOTED = 1,
   Q_SQUOTED = 2,
@@ -174,8 +170,7 @@ enum quoting
 
 /* parser context
  * ----------------------------------------------------------------------- */
-struct parser
-{
+struct parser {
   int           flags;
   int           pushback;
   enum quoting  quot;

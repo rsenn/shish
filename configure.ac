@@ -143,14 +143,16 @@ AC_CHECK_TYPE([sigset_t],AC_DEFINE_UNQUOTED([HAVE_SIGSET_T],[1],[Define this if 
 dnl AC_CHECK_TERMIOS
 
 
-AC_CHECK_HEADER([sys/wait.h],[AC_DEFINE_UNQUOTED([HAVE_sys/wait_H],[1],[Define this if you have the `sys/wait.h' header file])])
+AC_CHECK_HEADER([sys/wait.h],[AC_DEFINE_UNQUOTED([HAVE_SYS_WAIT_H],[1],[Define this if you have the `sys/wait.h' header file])])
 AC_CHECK_HEADER([termios.h],[AC_DEFINE_UNQUOTED([HAVE_TERMIOS_H],[1],[Define this if you have the `termios.h' header file])])
-
-AC_CHECK_HEADER([glob.h],[AC_DEFINE_UNQUOTED([HAVE_GLOB_H],[1],[Define this if you have the `glob.h' header file])])
-AC_CHECK_FUNC([glob],[AC_DEFINE_UNQUOTED([HAVE_GLOB],[1],[Define this if you have the `glob' function])])
+AC_CHECK_HEADER([glob.h],[AC_DEFINE_UNQUOTED([HAVE_GLOB_H],[1],[Define this if you have the `glob.h' header file])]) AC_CHECK_FUNC([glob],[AC_DEFINE_UNQUOTED([HAVE_GLOB],[1],[Define this if you have the `glob' function])])
 
 AC_CHECK_HEADER([fcntl.h],[AC_DEFINE_UNQUOTED([HAVE_FCNTL_H],[1],[Define this if you have the `fcntl.h' header file])])
 AC_CHECK_FUNC([fcntl],[AC_DEFINE_UNQUOTED([HAVE_FCNTL],[1],[Define this if you have the `fcntl' function])])
+
+AC_CHECK_LIBOWFAT([/opt/diet64 /opt/diet /usr/local /usr/diet /usr],
+[LIBS="$LIBS $LIBOWFAT_LIBS" CFLAGS="$CFLAGS $LIBOWFAT_CFLAGS"],
+[])
 
 # set debugging stuff after compiler test (-Werror could fuck it up)
 # ---------------------------------------------------------------------------

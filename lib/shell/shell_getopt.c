@@ -11,8 +11,7 @@ char *shell_optarg;
 int   shell_optidx = 0;
 int   shell_optofs = 0;
 
-int shell_getopt(int argc, char *const argv[], const char *optstring)
-{
+int shell_getopt(int argc, char *const argv[], const char *optstring) {
   unsigned int offset;
   
   /* no-one will get shot for setting optind to 0 in libshish.a :) */
@@ -29,15 +28,13 @@ again:
     return -1;
   
   /* ignore a trailing - */
-  if(argv[shell_optind][1] == '-' && argv[shell_optind][2] == '\0')
-  {
+  if(argv[shell_optind][1] == '-' && argv[shell_optind][2] == '\0') {
     shell_optind++;
     return -1;
   }
   
   /* if we're just starting then initialize local static vars */
-  if(shell_optidx != shell_optind)
-  {
+  if(shell_optidx != shell_optind) {
     shell_optidx = shell_optind;
     shell_optofs = 0;
   }
@@ -47,25 +44,21 @@ again:
   offset = str_chr(optstring, shell_optopt);
   
   /* end of argument, continue on next one */
-  if(shell_optopt == '\0')
-  {
+  if(shell_optopt == '\0') {
     shell_optind++;
     goto again;
   }
   
   /* if the option char isn't in optstring we return '?' */
-  if(optstring[offset] == '\0')
-  {
+  if(optstring[offset] == '\0') {
     shell_optind++;
     return '?';
   }
   
   /* argument expected? */
-  if(optstring[offset + 1] == ':')
-  {
+  if(optstring[offset + 1] == ':') {
     /* "-foo", return "oo" as optarg */
-    if(optstring[offset + 2] == ':' || argv[shell_optind][shell_optofs + 2])
-    {
+    if(optstring[offset + 2] == ':' || argv[shell_optind][shell_optofs + 2]) {
       if(!*(shell_optarg = &argv[shell_optind][shell_optofs + 2]))
         shell_optarg = 0;
       
@@ -75,8 +68,7 @@ again:
     shell_optarg = argv[shell_optind + 1];
     
     /* missing argument? */
-    if(shell_optarg == 0) 
-    { 
+    if(shell_optarg == 0) {
       shell_optind++;
       return ':';
     }
@@ -84,8 +76,7 @@ again:
     shell_optind++;
   }
   /* no argument */
-  else
-  {
+  else {
     shell_optofs++;
     return shell_optopt;
   }

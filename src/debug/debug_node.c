@@ -5,8 +5,7 @@
 
 /* debugs a tree node!
  * ----------------------------------------------------------------------- */
-const char *debug_nodes[] =
-{
+const char *debug_nodes[] = {
   "N_SIMPLECMD",
   "N_PIPELINE",
   "N_AND",
@@ -30,13 +29,11 @@ const char *debug_nodes[] =
   "N_ARGARITH",
 };
 
-void debug_node(union node *node, int depth)
-{
+void debug_node(union node *node, int depth) {
   debug_unquoted("type", debug_nodes[node->id], depth);
   debug_space(depth);
 
-  switch(node->id)
-  {
+  switch(node->id) {
     case N_SIMPLECMD:
       debug_ulong("bngd", node->ncmd.bgnd, depth);
       debug_space(depth);

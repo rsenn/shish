@@ -4,24 +4,20 @@
 
 /* clean all vars on a variable table
  * ----------------------------------------------------------------------- */
-void vartab_cleanup(struct vartab *vartab)
-{
+void vartab_cleanup(struct vartab *vartab) {
   unsigned int i;
   
   /* loop through topmost vartab */
-  for(i = 0; i < VARTAB_BUCKETS; i++)
-  {
+  for(i = 0; i < VARTAB_BUCKETS; i++) {
     struct var *var;
     struct var *next;
     
-    for(var = vartab->table[i]; var; var = next)
-    {
+    for(var = vartab->table[i]; var; var = next) {
       next = var->bnext;
 
       assert(var->child == NULL);
       
-      if(var->parent)
-      {
+      if(var->parent) {
         var->parent->child = NULL;
         
         if((var->parent->gnext = var->gnext))
@@ -29,9 +25,7 @@ void vartab_cleanup(struct vartab *vartab)
         
         var->parent->glink = var->glink;
        *var->glink = var->parent;
-      }
-      else
-      {
+      } else {
         if((*var->glink = var->gnext))
           var->gnext->glink = var->glink;
       }

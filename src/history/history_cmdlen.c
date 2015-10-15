@@ -1,8 +1,7 @@
 #include "parse.h"
 #include "history.h"
 
-unsigned long history_cmdlen(const char *v)
-{
+unsigned long history_cmdlen(const char *v) {
   const char *b = v;
   int quoted = 0;
   int mapping = 0;
@@ -11,8 +10,7 @@ unsigned long history_cmdlen(const char *v)
     
   mapend = history_buffer.x + history_buffer.n;
   
-  if(b >= mapstart && b <= mapend)
-  {
+  if(b >= mapstart && b <= mapend) {
     mapping = 1;
 
     /* skip leading newlines */
@@ -22,9 +20,7 @@ unsigned long history_cmdlen(const char *v)
     /* do not go beyond the map */
     if(b == mapend)
       return 0;
-  }
-  else
-  {
+  } else {
     while(parse_isspace(*b)) 
       b++;
   }
@@ -44,8 +40,7 @@ unsigned long history_cmdlen(const char *v)
       b++;
     
     /* double quotation */
-    else if(quoted)
-    {
+    else if(quoted) {
       if(*b == '\"') 
         quoted = 0;
     }

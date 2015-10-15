@@ -6,8 +6,7 @@
 
 /* get current working directory into a stralloc
  * ----------------------------------------------------------------------- */
-void shell_getcwd(stralloc *sa, unsigned long start)
-{
+void shell_getcwd(stralloc *sa, unsigned long start) {
   /* do not allocate PATH_MAX from the beginning, 
      most paths will be smaller */
   size_t n = (start ? start : PATH_MAX / 16);

@@ -5,8 +5,7 @@
  * 
  * (return value has to be free'd)
  * ----------------------------------------------------------------------- */
-char *term_getline(void)
-{
+char *term_getline(void) {
   char *ret;
 
   stralloc_nul(&term_cmdline);

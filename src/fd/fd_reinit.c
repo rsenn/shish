@@ -6,11 +6,9 @@
  * 
  * (except for the links which are initialized on fdtable_link()) 
  * ----------------------------------------------------------------------- */
-struct fd *fd_reinit(struct fd *fd, int flags)
-{
+struct fd *fd_reinit(struct fd *fd, int flags) {
   /* unset the name, and if it was allocated: free it */
-  if(fd->name)
-  {
+  if(fd->name) {
     if(fd->mode & FD_FREENAME)
       shell_free((char *)fd->name);
 

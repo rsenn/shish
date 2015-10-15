@@ -2,8 +2,7 @@
 #include "uint64.h"
 #include "var.h"
 
-static uint32 seeds[] =
-{
+static uint32 seeds[] = {
   0x2e8b1c8a, 0xa8fa6d8c, 0x20c91d6c, 0x9625e261, 
   0xbbe5d3ae, 0x0b67aab9, 0xaeabca3b, 0xb0a3595a,   
   0x8898bba8, 0xe164242e, 0xf85afdd0, 0x49d7d461,
@@ -20,8 +19,7 @@ static uint32 seeds[] =
  * a table with random values, and to shifting counts. 
  * the goal is to re-use entropy as much as possible per iteration
  */
-unsigned long var_rndhash(const char *v, VAR_HASH *h)
-{
+unsigned long var_rndhash(const char *v, VAR_HASH *h) {
   uint64 hash;
   register int rotate;
   register uint32 a = 0;
@@ -30,8 +28,7 @@ unsigned long var_rndhash(const char *v, VAR_HASH *h)
   
   hash = 0;
   
-  do
-  {
+  do {
     a ^= *v & 0x0f;
     b ^= *v >> 4;
     
@@ -66,8 +63,7 @@ unsigned long var_rndhash(const char *v, VAR_HASH *h)
     ROR(hash, VAR_HALF);
     hash ^= (VAR_HASH)b;
     ROL(hash, rotate);
-  }
-  while(*++v && *v != '=');
+  } while(*++v && *v != '=');
 
   *h = hash;
 

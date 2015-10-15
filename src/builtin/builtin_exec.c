@@ -6,8 +6,7 @@
 /* exec built-in 
  * 
  * ----------------------------------------------------------------------- */
-int builtin_exec(int argc, char **argv)
-{
+int builtin_exec(int argc, char **argv) {
   int c;
   int nullenv = 0;
   int dash = 0;
@@ -16,10 +15,8 @@ int builtin_exec(int argc, char **argv)
   union command cmd;
 
   /* check options, -l for login dash, -c for null env, -a to set argv[0] */
-  while((c = shell_getopt(argc, argv, "cla:")) > 0)
-  {
-    switch(c)
-    {
+  while((c = shell_getopt(argc, argv, "cla:")) > 0) {
+    switch(c) {
       case 'c': nullenv = 1; break;
       case 'l': dash = 1; break;
       case 'a': argv0 = shell_optarg; break;
@@ -38,8 +35,7 @@ int builtin_exec(int argc, char **argv)
   /* look up the command and exec if found */
   cmd = exec_hash(argv[shell_optind], &id);
 
-  if(cmd.ptr)
-  {
+  if(cmd.ptr) {
     /* command name was set, replace argv[shell_optind] */
     if(argv0)
       argv[shell_optind] = argv0;

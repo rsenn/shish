@@ -3,8 +3,7 @@
 
 /* evaluate while/until-loop (3.9.4.5 - 3.9.4.6)
  * ----------------------------------------------------------------------- */
-int eval_loop(struct eval *e, struct nloop *nloop)
-{
+int eval_loop(struct eval *e, struct nloop *nloop) {
   struct eval en;
   int retcode = (nloop->id == N_WHILE) ? 0 : 1;
   int ret = 0;

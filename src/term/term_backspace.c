@@ -1,22 +1,18 @@
 #include "term.h"
 
 /* ----------------------------------------------------------------------- */
-void term_backspace(void)
-{
+void term_backspace(void) {
   char out[3];
 
   if(!term_pos)
     return;
 
-  if(term_pos == term_cmdline.len)
-  {
+  if(term_pos == term_cmdline.len) {
     out[0] = out[2] = '\b';
     out[1] = ' ';
 
     buffer_put(term_output, out, 3);
-  }
-  else
-  {
+  } else {
     unsigned long len;
     len = term_cmdline.len - term_pos;
     out[0] = '\b';

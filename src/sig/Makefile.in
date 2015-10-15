@@ -19,8 +19,9 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = sig.a
-MODULES = sig_block \
-          sig_unblock
+MODULES += sig_block
+MODULES += sig_unblock
+
           
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

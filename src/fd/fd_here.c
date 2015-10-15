@@ -5,8 +5,7 @@
  * control of the allocated sa->s member is passed to the buffer
  * (means it will be free'd wenn the (fd) is closed)
  * ----------------------------------------------------------------------- */
-void fd_here(struct fd *fd, stralloc *sa)
-{
+void fd_here(struct fd *fd, stralloc *sa) {
   fd->name = "<here>";
   fd->mode = FD_HERE;
   

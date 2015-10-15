@@ -5,8 +5,7 @@
 
 /* evaluate for-loop (3.9.4.2)
  * ----------------------------------------------------------------------- */
-int eval_for(struct eval *e, struct nfor *nfor)
-{
+int eval_for(struct eval *e, struct nfor *nfor) {
   struct eval en;
   union node *node;
   union node *args = NULL;
@@ -20,8 +19,7 @@ int eval_for(struct eval *e, struct nfor *nfor)
   
   en.jump = 1;
   
-  for(; node; node = node->list.next)
-  {
+  for(; node; node = node->list.next) {
     int jmpret;
     
     if((jmpret = setjmp(en.jmpbuf)) == 2)

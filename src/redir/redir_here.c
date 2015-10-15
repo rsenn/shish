@@ -3,8 +3,7 @@
 
 /* set up an fd for a here-document
  * ----------------------------------------------------------------------- */
-int redir_here(struct nredir *nredir, stralloc *sa)
-{
+int redir_here(struct nredir *nredir, stralloc *sa) {
   /* make the input buffer read from the stralloc */
   fd_here(nredir->fd, sa);
   

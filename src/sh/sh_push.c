@@ -5,8 +5,7 @@
 
 /* pushes current shell environment and creates new one
  * ----------------------------------------------------------------------- */
-void sh_push(struct env *env)
-{
+void sh_push(struct env *env) {
   byte_zero(env, sizeof(struct env));
   
   env->parent = sh;

@@ -19,20 +19,21 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = fdstack.a
-MODULES = fdstack_data \
-          fdstack_dump \
-          fdstack_flatten \
-          fdstack_fork \
-          fdstack_link \
-          fdstack_npipes \
-          fdstack_pipe \
-          fdstack_push \
-          fdstack_pop \
-          fdstack_root \
-          fdstack_search \
-          fdstack_unlink \
-          fdstack_unref \
-          fdstack_update
+MODULES += fdstack_data
+MODULES += fdstack_dump
+MODULES += fdstack_flatten
+MODULES += fdstack_fork
+MODULES += fdstack_link
+MODULES += fdstack_npipes
+MODULES += fdstack_pipe
+MODULES += fdstack_push
+MODULES += fdstack_pop
+MODULES += fdstack_root
+MODULES += fdstack_search
+MODULES += fdstack_unlink
+MODULES += fdstack_unref
+MODULES += fdstack_update
+
           
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

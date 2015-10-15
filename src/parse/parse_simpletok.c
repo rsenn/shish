@@ -7,8 +7,7 @@ unsigned int       parse_lineno;
 
 /* parse simple tokens consisting of 1 or 2 chars
  * ----------------------------------------------------------------------- */
-int parse_simpletok(struct parser *p)
-{
+int parse_simpletok(struct parser *p) {
   char c;
   enum tok_flag tok;
   int advance;
@@ -19,8 +18,7 @@ again:
     return T_EOF;
       
   /* skip all whitespace */
-  while(parse_isspace(c))
-  {
+  while(parse_isspace(c)) {
     /* break on a newline if we aren't skipping them */
     if(!(p->flags & P_SKIPNL) && c == '\n')
       break;
@@ -50,8 +48,7 @@ again:
         return T_EOF;
 
       /* CRAP CODE to support win, mac, unix line termination */
-      if(c == '\r')
-      {
+    if(c == '\r') {
         source_skip();
         if(source_peekn(&c, 1) <= 0)
           return T_EOF;
@@ -61,8 +58,7 @@ again:
         prompt_show();
         goto again;
       }
-      if(c == '\n')
-      {
+    if(c == '\n') {
         source_skip();
         source_skip();
         
@@ -99,16 +95,14 @@ again:
       tok = T_SEMI;
 
     /* check if the next char is the same */
-    checkdouble:
-    {
+checkdouble: {
       char c2;
 
       /* advance buffer position now, but not later */
       advance = 0;
 
       /* peek a char and look it it's the same */
-      if(source_next(&c2) > 0 && c == c2)
-      {
+      if(source_next(&c2) > 0 && c == c2) {
         /* advance buffer position later, because the char
            we peeked was valid */
         advance = 1;
@@ -130,8 +124,7 @@ again:
     /* handle backquote as (ending) token only when
        we're in a backquoted cmd list */
     case '`':
-      if(p->flags & P_BQUOTE)
-      {
+    if(p->flags & P_BQUOTE) {
         tok = T_BQ;
         break;
       }

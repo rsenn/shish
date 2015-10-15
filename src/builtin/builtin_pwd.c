@@ -5,16 +5,13 @@
 
 /* print working directory
  * ----------------------------------------------------------------------- */
-int builtin_pwd(int argc, char **argv)
-{
+int builtin_pwd(int argc, char **argv) {
   int c;
   int physical = 0;
 
   /* check options, -L for symlink, -P for physical path */
-  while((c = shell_getopt(argc, argv, "LP")) > 0)
-  {
-    switch(c)
-    {
+  while((c = shell_getopt(argc, argv, "LP")) > 0) {
+    switch(c) {
       case 'P': physical++; break;
       case 'L': physical = 0; break;
       default: builtin_invopt(argv); return 1;
@@ -22,8 +19,7 @@ int builtin_pwd(int argc, char **argv)
   }
   
   /* if the cwd is physical and a physical path was requested then getcwd() */
-  if(sh->cwdsym && physical)
-  {
+  if(sh->cwdsym && physical) {
     stralloc sa;
     stralloc_init(&sa);
     shell_getcwd(&sa, 0);

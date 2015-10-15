@@ -7,8 +7,7 @@
 #include "tree.h"
 #include "expand.h"
 
-union node *expand_param(struct nargparam *param, union node **nptr, int flags)
-{
+union node *expand_param(struct nargparam *param, union node **nptr, int flags) {
   union node *n = *nptr;
   stralloc value;
   const char *v = NULL;
@@ -63,8 +62,7 @@ union node *expand_param(struct nargparam *param, union node **nptr, int flags)
       }
 
       /* $? substitution */
-      case S_EXITCODE:
-      {
+    case S_EXITCODE: {
         stralloc_catulong0(&value, sh->exitcode, 0);
         break;
       }
@@ -78,8 +76,7 @@ union node *expand_param(struct nargparam *param, union node **nptr, int flags)
         break;
       
       /* $[0-9] arg subst */
-      case S_ARG:
-      {
+    case S_ARG: {
         if(param->numb == 0)
           stralloc_cats(&value, sh_argv0);          
         else if(param->numb - 1 < sh->arg.c)
@@ -89,16 +86,14 @@ union node *expand_param(struct nargparam *param, union node **nptr, int flags)
       }
       
       /* $$ arg subst */
-      case S_PID:
-      {
+    case S_PID: {
         stralloc_catulong0(&value, sh_pid, 0);
         break;
       }
     }
     
     /* special parameters are always set */
-    if(value.len)
-    {
+    if(value.len) {
       stralloc_nul(&value);
       v = value.s;
     }
@@ -106,22 +101,17 @@ union node *expand_param(struct nargparam *param, union node **nptr, int flags)
     vlen = value.len;
   }
   /* ..and variable substitutions */
-  else  
-  {
+  else {
     unsigned long offset;
 
     /* look for the variable.
        if the S_NULL flag is set and we have a var which is null
        set v to NULL */
-    if((v = var_get(param->name, &offset)))
-    {
-      if(v[offset] == '\0' && (param->flag & S_NULL))
-      {
+    if((v = var_get(param->name, &offset))) {
+      if(v[offset] == '\0' && (param->flag & S_NULL)) {
         v = NULL;
         vlen = 0;
-      }
-      else
-      {
+      } else {
         v = &v[offset];
         vlen = str_len(v);
       }
@@ -129,8 +119,7 @@ union node *expand_param(struct nargparam *param, union node **nptr, int flags)
   }
   
   /* check for S_STRLEN substitution */
-  if(param->flag & S_STRLEN)
-  {
+  if(param->flag & S_STRLEN) {
     char lstr[FMT_ULONG];
     
     n = expand_cat(lstr, fmt_ulong(lstr, vlen), nptr, flags);
@@ -185,20 +174,17 @@ union node *expand_param(struct nargparam *param, union node **nptr, int flags)
     
     /* if parameter unset (or null) then substitute null,
        otherwise substitute word */
-    case S_ALTERNAT:
-    {
+  case S_ALTERNAT: {
       if(v)
         n = expand_arg(&param->word->narg, nptr, flags);
       break;
       
       /* remove smallest matching suffix */
-      case S_RSSFX:
-      {
+    case S_RSSFX: {
         int i;
         stralloc sa;
 
-        if(v && vlen)
-        {
+      if(v && vlen) {
           expand_copysa(param->word, &sa, 0);
 
           for(i = vlen - 1; i >= 0; i--)
@@ -212,13 +198,11 @@ union node *expand_param(struct nargparam *param, union node **nptr, int flags)
     }
 
     /* remove largest matching suffix */
-    case S_RLSFX:
-    {
+  case S_RLSFX: {
       unsigned int i;
       stralloc sa;
       
-      if(v && vlen)
-      {
+    if(v && vlen) {
         expand_copysa(param->word, &sa, 0);
         
         for(i = 0; i <= vlen; i++)
@@ -232,13 +216,11 @@ union node *expand_param(struct nargparam *param, union node **nptr, int flags)
     }
 
     /* remove smallest matching prefix */
-    case S_RSPFX:
-    {
+  case S_RSPFX: {
       unsigned int i;
       stralloc sa;
 
-      if(v && vlen)
-      {
+    if(v && vlen) {
         expand_copysa(param->word, &sa, 0);
 
         for(i = 1; i <= vlen; i++)
@@ -254,13 +236,11 @@ union node *expand_param(struct nargparam *param, union node **nptr, int flags)
     }
 
     /* remove largest matching prefix */
-    case S_RLPFX:
-    {
+  case S_RLPFX: {
       unsigned int i;
       stralloc sa;
 
-      if(v && vlen)
-      {
+    if(v && vlen) {
         expand_copysa(param->word, &sa, 0);
         
         for(i = vlen; i > 0; i--)

@@ -4,21 +4,18 @@
 
 /* evaluate a tree node(-list maybe)
  * ----------------------------------------------------------------------- */
-int eval_tree(struct eval *e, union node *node, int tempflags)
-{
+int eval_tree(struct eval *e, union node *node, int tempflags) {
   int ret = 0;
   int list = 0, ex = 0;
   int oldflags;
 
-  if((e->flags|tempflags) & E_LIST)
-  {
+  if((e->flags | tempflags) & E_LIST) {
     list = 1;
     e->flags &= ~E_LIST;
     tempflags &= ~E_LIST;
   }
   
-  if((e->flags|tempflags) & E_EXIT)
-  {
+  if((e->flags | tempflags) & E_EXIT) {
     ex = 1;
     e->flags &= ~E_EXIT;
     tempflags &= ~E_EXIT;
@@ -27,14 +24,12 @@ int eval_tree(struct eval *e, union node *node, int tempflags)
   oldflags = e->flags;
   e->flags |= tempflags;
 
-  while(node)
-  {
+  while(node) {
     /* not the last node, disable E_EXIT for now */
     if(ex && (!list || node->list.next == NULL))
       e->flags |= E_EXIT;
 
-    switch(node->id)
-    {
+    switch(node->id) {
       case N_SIMPLECMD:
         ret = eval_simple_command(e, &node->ncmd);
         break;

@@ -9,8 +9,7 @@
 
 /* output substitution flag string
  * ----------------------------------------------------------------------- */
-const char *debug_subst_special[] =
-{
+const char *debug_subst_special[] = {
   NULL,
   "S_ARGC",
   "S_ARGV",
@@ -22,8 +21,7 @@ const char *debug_subst_special[] =
   "S_PID",
 };
 
-const char *debug_subst_var[] =
-{
+const char *debug_subst_var[] = {
   "S_DEFAULT",
   "S_ASGNDEF",
   "S_ERRNULL",
@@ -34,23 +32,20 @@ const char *debug_subst_var[] =
   "S_RLPFX"
 };
 
-const char *debug_subst_tables[] =
-{
+const char *debug_subst_tables[] = {
   "S_UNQUOTED",
   "S_DQUOTED",
   "S_SQUOTED",
   "S_ARITH"
 };
 
-void debug_subst(const char *msg, int flags, int depth)
-{
+void debug_subst(const char *msg, int flags, int depth) {
   static char flagstr[128];
   unsigned long n = 0;
 
   flagstr[n] = '\0';
   
-  if(flags & S_SPECIAL)
-  {
+  if(flags & S_SPECIAL) {
     n += str_copy(&flagstr[n], debug_subst_special[(flags >> 3) & 0x1f]);
     flagstr[n++] = '|';
   }

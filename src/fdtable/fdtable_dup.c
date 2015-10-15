@@ -16,8 +16,7 @@
  * 
  * returns -2 if still pending, -1 if failed, fd otherwise
  * ----------------------------------------------------------------------- */
-int fdtable_dup(struct fd *fd, int flags)
-{
+int fdtable_dup(struct fd *fd, int flags) {
   int state;
   int o;
   int e = -1;
@@ -57,8 +56,7 @@ retry:
   /* if theres an fd in effective fd list at this position we
      have to remove it carefully by using fd_setfd first so
      it will not close the fd 'e' */
-  if(fd_list[e])
-  {
+  if(fd_list[e]) {
     fd_setfd(fd_list[e], -1);
     fd_pop(fd_list[e]);
   }
@@ -68,8 +66,7 @@ retry:
     fd_setfd(fd, e);
  
   /* we didn't get the expected file descriptor and we're forcing, retry! */
-  if(fd->e != fd->n && (flags & FDTABLE_FORCE))
-  {
+  if(fd->e != fd->n && (flags & FDTABLE_FORCE)) {
     state = o;
     o = fd->e;
     fd->mode &= ~FD_DUP;

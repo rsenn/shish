@@ -5,16 +5,13 @@
  * 
  * returns the effective file descriptor
  * ----------------------------------------------------------------------- */
-int fd_exec(struct fd *fd)
-{
+int fd_exec(struct fd *fd) {
   int tmp = -1;
   
   /* dump here-doc redirections that are still a stralloc to a 
      temporary file */
-  if((fd->mode & FD_HERE) == FD_HERE)
-  {
-    if((tmp = fd_tempfile(fd)) >= 0)
-    {
+  if((fd->mode & FD_HERE) == FD_HERE) {
+    if((tmp = fd_tempfile(fd)) >= 0) {
       unsigned long p;
       
       /* read from the read buf (stralloc) 

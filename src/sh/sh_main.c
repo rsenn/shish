@@ -28,8 +28,7 @@ int         sh_child = 0;
 
 /* main routine
  * ----------------------------------------------------------------------- */
-int sh_main(int argc, char **argv, char **envp)
-{
+int sh_main(int argc, char **argv, char **envp) {
   int c;
   int e, v;
   int flags;
@@ -41,24 +40,19 @@ int sh_main(int argc, char **argv, char **envp)
   fd_exp = STDERR_FILENO + 1;
   
   /* create new fds for every valid file descriptor until stderr */
-  for(e = STDIN_FILENO; e <= STDERR_FILENO; e++)
-  {
-    if((flags = fdtable_check(e)))
-    {
+  for(e = STDIN_FILENO; e <= STDERR_FILENO; e++) {
+    if((flags = fdtable_check(e))) {
       fd_allocab(fd);
       fd_push(fd, e, flags);
       fd_setfd(fd, e);
-    }
-    else
-    {
+    } else {
       if(e < fd_exp)
         fd_exp = e;
     }
   }
   
   /* stat the file descriptors and then set the buffers */
-  fdtable_foreach(v)
-  {
+  fdtable_foreach(v) {
     fd_stat(fdtable[v]);
     fd_setbuf(fdtable[v], &fdtable[v][1], FD_BUFSIZE);
   }
@@ -76,8 +70,7 @@ int sh_main(int argc, char **argv, char **envp)
 #endif
     envvars = malloc(sizeof(struct var)*c);
   
-  for(c = 0; envp[c]; c++)
-  {
+  for(c = 0; envp[c]; c++) {
     struct var *var;
     var = var_import(envp[c], V_EXPORT, &envvars[c]);
 
@@ -91,8 +84,7 @@ int sh_main(int argc, char **argv, char **envp)
   
   /* parse command line arguments */
   while((c = shell_getopt(argc, argv, "c:")) > 0)
-    switch(c)
-  {
+    switch(c) {
     case 'c':
       cmds = shell_optarg;
       break;
@@ -111,8 +103,7 @@ int sh_main(int argc, char **argv, char **envp)
     fd_string(fd_src, cmds, str_len(cmds));
   
   /* if there is an argument we open it as input file */
-  else if(argv[shell_optind])
-  {
+  else if(argv[shell_optind]) {
     fd_mmap(fd_src, argv[shell_optind]);
     
     sh_argv0 = argv[shell_optind++];
@@ -128,8 +119,7 @@ int sh_main(int argc, char **argv, char **envp)
   /* set our basename for the \v prompt escape seq and maybe other stuff*/
   sh_name = shell_basename(sh_argv0);
   
-  if(*sh_name == '-')
-  {
+  if(*sh_name == '-') {
     sh_name++;
     sh_login++;
   }

@@ -11,19 +11,15 @@
 
 /* handles prompt escape sequences 
  * ----------------------------------------------------------------------- */
-void prompt_escape(const char *s, stralloc *sa)
-{
-  for(; *s; s++)
-  {
-    if(*s != '\\')
-    {
+void prompt_escape(const char *s, stralloc *sa) {
+  for(; *s; s++) {
+    if(*s != '\\') {
       stralloc_catc(sa, *s);
       continue;
     }
   
     /* parse octal escape seq */
-    if(parse_isdigit(s[1]))
-    {
+    if(parse_isdigit(s[1])) {
       unsigned long v;
 
       s += scan_8long(s + 1, &v);
@@ -31,8 +27,7 @@ void prompt_escape(const char *s, stralloc *sa)
       continue;
     }
 
-    switch(s[1])
-    {
+    switch(s[1]) {
       /* escape seq */
       case 'e':
         stralloc_catc(sa, 0x1b);

@@ -6,8 +6,7 @@
 
 /* output a pointer
  * ----------------------------------------------------------------------- */
-void debug_ptr(const char *msg, void *ptr, int depth)
-{
+void debug_ptr(const char *msg, void *ptr, int depth) {
   char buf[FMT_XLONG];
   unsigned long n;
   debug_space(depth);

@@ -4,8 +4,7 @@
 
 /* expand one N_ARG node to a stralloc (stralloc is overwritten!!!)
  * ----------------------------------------------------------------------- */
-void expand_copysa(union node *node, stralloc *sa, int flags)
-{
+void expand_copysa(union node *node, stralloc *sa, int flags) {
   union node tmpnode;
   union node *n = &tmpnode;
 

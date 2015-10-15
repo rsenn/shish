@@ -12,8 +12,7 @@
  * 
  * WARNING: you should have fork()ed before using this function!!
  * ----------------------------------------------------------------------- */
-int fdtable_exec(void)
-{
+int fdtable_exec(void) {
   int i;
 
   /* the sources can be closed if an execve() follows */

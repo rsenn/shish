@@ -16,8 +16,7 @@
 struct fdtable;
 struct vartab;
 
-struct eval
-{
+struct eval {
   struct eval     *parent;
   int              flags;
   int              exitcode; /* exit code of last evaluated node */

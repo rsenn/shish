@@ -19,11 +19,12 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = job.a
-MODULES = job_fork \
-          job_init \
-          job_new \
-          job_status \
-          job_wait
+MODULES += job_fork
+MODULES += job_init
+MODULES += job_new
+MODULES += job_status
+MODULES += job_wait
+
           
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

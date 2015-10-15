@@ -4,8 +4,7 @@
 
 /* dump a variable entry
  * ----------------------------------------------------------------------- */
-void var_dump(struct var *var)
-{
+void var_dump(struct var *var) {
   char numbuf[FMT_XLONG*2];
   unsigned long n;
 
@@ -16,13 +15,10 @@ void var_dump(struct var *var)
   buffer_putspace(fd_out->w);
   
   /* variable name */
-  if(var->len > 24)
-  {
+  if(var->len > 24) {
     buffer_put(fd_out->w, var->sa.s, 21);
     buffer_puts(fd_out->w, "...");
-  }
-  else
-  {
+  } else {
     buffer_put(fd_out->w, var->sa.s, var->len);
     buffer_putnspace(fd_out->w, 24 - var->len);
   }
@@ -30,15 +26,13 @@ void var_dump(struct var *var)
   /* variable value */
   n = var_vlen(var->sa.s);
   
-  if(n)
-  {
+  if(n) {
     unsigned int i, l, rl, rn;
     rn = var->sa.len - var->offset;
     rl = (rn > 24 ? 21 : rn);
     l = (n > 24 ? 21 : n);
     
-    for(i = 0; i < rl; i++)
-    {
+    for(i = 0; i < rl; i++) {
       if(var->sa.s[var->offset + i] != '\n' && 
          var->sa.s[var->offset + i] != '\t')
         buffer_put(fd_out->w, &var->sa.s[var->offset + i], 1);
@@ -46,16 +40,14 @@ void var_dump(struct var *var)
         buffer_putspace(fd_out->w);
     }
     
-    if(rl < rn)
-    {
+    if(rl < rn) {
       buffer_puts(fd_out->w, "...");
       rl += 3;
       l += 3;
     }
     
     n = 24 - rl;
-  }
-  else
+  } else
     n = 24;
   
   buffer_putnspace(fd_out->w, n);

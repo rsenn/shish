@@ -26,16 +26,14 @@ struct vartab;
 
 //#define SH_INTERACTIVE 0x0001
 
-struct arg
-{
+struct arg {
   unsigned int   c;
   char         **v;
   int            a;     /* arguments alloced? */
   unsigned int   s;     /* shift count */
 };
 
-struct env
-{
+struct env {
   struct env     *parent;
   stralloc        cwd;
   int             cwdsym;   /* is cwd symbolic or phyiscal? */

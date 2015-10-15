@@ -3,8 +3,7 @@
 
 /* 3.9.4.2 - parse for loop
  * ----------------------------------------------------------------------- */
-union node *parse_for(struct parser *p)
-{
+union node *parse_for(struct parser *p) {
   union node *node = NULL;
   union node **nptr;
 
@@ -22,11 +21,9 @@ union node *parse_for(struct parser *p)
   tree_init(node->nfor.args, nptr);
 
   /* next token can be 'in' */
-  if(parse_gettok(p, P_DEFAULT) & T_IN)
-  {
+  if(parse_gettok(p, P_DEFAULT) & T_IN) {
     /* now parse the arguments and build a list of them */
-    while(parse_gettok(p, P_DEFAULT) & (T_WORD|T_NAME|T_ASSIGN))
-    {
+    while(parse_gettok(p, P_DEFAULT) & (T_WORD | T_NAME | T_ASSIGN)) {
       *nptr = parse_getarg(p);
       nptr = &(*nptr)->list.next;
     }

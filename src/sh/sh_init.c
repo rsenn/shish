@@ -16,8 +16,7 @@ static struct var sh_ifs;
 
 /* initialize the shell 
  * ----------------------------------------------------------------------- */
-void sh_init(void)
-{
+void sh_init(void) {
   job_init();
 
   /* get current uid and pid */

@@ -19,13 +19,14 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = redir.a
-MODULES = redir_addhere \
-          redir_dup \
-          redir_eval \
-          redir_here \
-          redir_open \
-          redir_parse \
-          redir_source
+MODULES += redir_addhere
+MODULES += redir_dup
+MODULES += redir_eval
+MODULES += redir_here
+MODULES += redir_open
+MODULES += redir_parse
+MODULES += redir_source
+
           
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

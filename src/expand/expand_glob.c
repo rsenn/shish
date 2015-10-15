@@ -17,8 +17,7 @@
 
 /* perform glob() expansion on the current argument
  * ----------------------------------------------------------------------- */
-union node *expand_glob(union node **nptr, int flags)
-{
+union node *expand_glob(union node **nptr, int flags) {
   union node *n;
   glob_t glb;
   int ret;
@@ -31,29 +30,24 @@ union node *expand_glob(union node **nptr, int flags)
 
   /* glob for the pattern */
 #ifdef HAVE_GLOB
-  if(!(ret = glob(n->narg.stra.s, 0, NULL, &glb)))
-  {
+  if(!(ret = glob(n->narg.stra.s, 0, NULL, &glb))) {
     unsigned int i;
 
     /* got some result, clear current argument string */
     stralloc_zero(&n->narg.stra);
 
     /* loop through expanded paths */
-    for(i = 0; i < glb.gl_pathc;)
-    {
+    for(i = 0; i < glb.gl_pathc;) {
       stralloc_cats(&n->narg.stra, glb.gl_pathv[i]);
 
       /* if there is another path then delimit the current one */
-      if(++i < glb.gl_pathc)
-      {
+      if(++i < glb.gl_pathc) {
         /* if we should not split then just concat ifs[0] */
-        if(flags & X_NOSPLIT)
-        {
+        if(flags & X_NOSPLIT) {
           stralloc_catc(&n->narg.stra, ifs[0]);
         }
         /* otherwise create a new node */
-        else
-        {
+        else {
           n->list.next = tree_newnode(N_ARG);
           n = n->list.next;
           stralloc_init(&n->narg.stra);
@@ -64,8 +58,7 @@ union node *expand_glob(union node **nptr, int flags)
     }
     
     globfree(&glb);
-  }
-  else
+  } else
 #endif
   {
     expand_unescape(&n->narg.stra);

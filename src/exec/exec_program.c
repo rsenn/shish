@@ -34,16 +34,14 @@
  * 
  * if the 'exec' argument is set it will never return
  * ----------------------------------------------------------------------- */
-int exec_program(char *path, char **argv, int exec, union node *redir)
-{
+int exec_program(char *path, char **argv, int exec, union node *redir) {
   int ret = 0;
   sigset_t nset, oset;
   
   /* if we're gonna execve() a program and 'exec' isn't 
      set or we aren't in the root shell environment we
      have to fork() so we can return */
-  if(!exec || sh->parent)
-  {
+  if(!exec || sh->parent) {
     pid_t pid;
     struct fdstack io;
     unsigned int n;
@@ -73,8 +71,7 @@ int exec_program(char *path, char **argv, int exec, union node *redir)
 
     /* in the parent wait for the child to finish and then return 
        or exit, according to the 'exec' argument */
-    if((pid = fork()))
-    {
+    if((pid = fork())) {
       int status = 1;
 
       /* this will close child ends of the pipes and read data from the parent end :) */
@@ -105,8 +102,7 @@ int exec_program(char *path, char **argv, int exec, union node *redir)
 
   /* when there is a path then we gotta execute a command,
      otherwise we exit/return immediately */
-  if(path)
-  {
+  if(path) {
     /* export environment */
     char **envp;
     unsigned long envn = var_count(V_EXPORT) + 1;

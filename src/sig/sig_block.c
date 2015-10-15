@@ -2,8 +2,7 @@
 
 /* block SIGINT and SIGCHILD before forking a child 
  * ----------------------------------------------------------------------- */
-void sig_block(void)
-{
+void sig_block(void) {
   static sigset_t oldset;
   sigset_t newset;
   

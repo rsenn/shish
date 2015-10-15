@@ -6,16 +6,14 @@
  * 
  * returns number of dupes we had
  * ----------------------------------------------------------------------- */
-unsigned int fdstack_unref(struct fd *olddup)
-{
+unsigned int fdstack_unref(struct fd *olddup) {
   struct fdstack *st;
   struct fd *fd;
   struct fd *newdup = NULL;
   unsigned int n = 0;
 
   for(st = fdstack; st; st = st->parent)
-    for(fd = st->list; fd; fd = fd->next)
-  {
+    for(fd = st->list; fd; fd = fd->next) {
     /* consider only fds which are a duplicate of olddup */
     if(fd->dup != olddup || fd == olddup)
       continue;
@@ -23,8 +21,7 @@ unsigned int fdstack_unref(struct fd *olddup)
     n++;
     
     /* move buffer stuff to the first found duplicate */
-    if(newdup == NULL)
-    {
+      if(newdup == NULL) {
       byte_copy(&fd->rb, FD_SIZE, olddup->r);
       byte_copy(&fd->wb, FD_SIZE, olddup->w);
       
@@ -35,8 +32,7 @@ unsigned int fdstack_unref(struct fd *olddup)
       fd->w = &fd->wb;
       
       /* give up temporary buffers */
-      if(olddup->mode & FD_TMPBUF)
-      {
+        if(olddup->mode & FD_TMPBUF) {
         buffer_free(&fd->rb);
         buffer_free(&fd->wb);
       }

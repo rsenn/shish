@@ -19,12 +19,13 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 LIB = ../libshish.a
-MODULES = str_chr \
-str_copy \
-str_copyn \
-str_diff \
-str_len \
-str_rchr 
+@LIBOWFAT_FALSE@MODULES += str_chr
+@LIBOWFAT_FALSE@MODULES += str_copy
+MODULES += str_copyn
+@LIBOWFAT_FALSE@MODULES += str_diff
+@LIBOWFAT_FALSE@MODULES += str_len
+@LIBOWFAT_FALSE@MODULES += str_rchr
+
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

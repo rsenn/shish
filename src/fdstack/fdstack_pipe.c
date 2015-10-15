@@ -3,8 +3,7 @@
 
 /* establishs pipes across parent/child for stralloc fds
  * ----------------------------------------------------------------------- */
-int fdstack_pipe(unsigned int n, struct fd *fda)
-{
+int fdstack_pipe(unsigned int n, struct fd *fda) {
   int e;
   struct fd *fd;
   struct fdstack *st;

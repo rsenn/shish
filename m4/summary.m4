@@ -26,38 +26,41 @@ AC_ADD_DIR([mandir],         [Manual pages])])
 #
 # variables
 # ---------------------------------------------------------------------------
-m4_defun([AC_INIT_VARS], [m4_define([AC_SWITCH_VARS])
-AC_ADD_VAR([host],     [Host system])dnl
-AC_ADD_VAR([build],    [Build system])dnl
-AC_ADD_VAR([target],   [Target system])dnl
-AC_ADD_VAR([CC],       [Compiler])dnl
-AC_ADD_VAR([CXX],      [C++ compiler])dnl
-AC_ADD_VAR([CFLAGS],   [Compiler flags])dnl
-AC_ADD_VAR([PIC_CFLAGS], [PIC compiler flags])dnl
-AC_ADD_VAR([CXXFLAGS], [C++ compiler flags])dnl
-AC_ADD_VAR([DEFS],     [Preprocessor defines])dnl
-AC_ADD_VAR([CPPFLAGS], [Preprocessor flags])dnl
-AC_ADD_VAR([LDFLAGS],  [Linker flags])dnl
-AC_ADD_VAR([PIE_LDFLAGS],  [PIE linker flags])dnl
-AC_ADD_VAR([LIBS],     [Libraries])dnl
-AC_ADD_VAR([A_ENABLE],     [Build static library])dnl
-AC_ADD_VAR([PIE_ENABLE],   [Build shared library])dnl
-AC_ADD_VAR([DLM_ENABLE],   [Build loadable modules])dnl
-AC_ADD_VAR([SSL_CFLAGS],   [SSL includes])dnl
-AC_ADD_VAR([SSL_LIBS],     [SSL libs])dnl
-AC_ADD_VAR([FT2_CFLAGS],   [Freetype 2 includes])dnl
-AC_ADD_VAR([FT2_LIBS],     [Freetype 2 libs])dnl
-AC_ADD_VAR([PSQL_CFLAGS], [PostgreSQL includes])dnl
-AC_ADD_VAR([PSQL_LIBS],   [PostgreSQL libs])dnl
-AC_ADD_VAR([MYSQL_CFLAGS], [MySQL includes])dnl
-AC_ADD_VAR([MYSQL_LIBS],   [MySQL libs])dnl
-AC_ADD_VAR([SDL_CFLAGS],   [SDL includes])dnl
-AC_ADD_VAR([SDL_LIBS],     [SDL libs])dnl
-AC_ADD_VAR([LIBPNG_CFLAGS],   [libpng includes])dnl
-AC_ADD_VAR([LIBPNG_LIBS],     [libpng libs])dnl
-AC_ADD_VAR([DEP],      [Dependency tracking])dnl
-AC_ADD_VAR([COLOR],    [Colorful makefile])dnl
-AC_ADD_VAR([DEBUG],    [Debug build])])
+m4_defun([AC_INIT_VARS],[m4_define([AC_SWITCH_VARS])
+AC_ADD_VAR([host],[Host system])dnl
+AC_ADD_VAR([build],[Build system])dnl
+AC_ADD_VAR([target],[Target system])dnl
+AC_ADD_VAR([CC],[Compiler])dnl
+AC_ADD_VAR([CXX],[C++ compiler])dnl
+AC_ADD_VAR([CFLAGS],[Compiler flags])dnl
+AC_ADD_VAR([PIC_CFLAGS],[PIC compiler flags])dnl
+AC_ADD_VAR([CXXFLAGS],[C++ compiler flags])dnl
+AC_ADD_VAR([DEFS],[Preprocessor defines])dnl
+AC_ADD_VAR([CPPFLAGS],[Preprocessor flags])dnl
+AC_ADD_VAR([LDFLAGS],[Linker flags])dnl
+AC_ADD_VAR([PIE_LDFLAGS],[PIE linker flags])dnl
+AC_ADD_VAR([LIBS],[Libraries])dnl
+AC_ADD_VAR([A_ENABLE],[Build static library])dnl
+AC_ADD_VAR([PIE_ENABLE],[Build shared library])dnl
+AC_ADD_VAR([DLM_ENABLE],[Build loadable modules])dnl
+AC_ADD_VAR([SSL_CFLAGS],[SSL includes])dnl
+AC_ADD_VAR([SSL_LIBS],[SSL libs])dnl
+AC_ADD_VAR([FT2_CFLAGS],[Freetype 2 includes])dnl
+AC_ADD_VAR([FT2_LIBS],[Freetype 2 libs])dnl
+AC_ADD_VAR([PSQL_CFLAGS],[PostgreSQL includes])dnl
+AC_ADD_VAR([PSQL_LIBS],[PostgreSQL libs])dnl
+AC_ADD_VAR([MYSQL_CFLAGS],[MySQL includes])dnl
+AC_ADD_VAR([MYSQL_LIBS],[MySQL libs])dnl
+AC_ADD_VAR([SDL_CFLAGS],[SDL includes])dnl
+AC_ADD_VAR([SDL_LIBS],[SDL libs])dnl
+AC_ADD_VAR([LIBPNG_CFLAGS],[libpng includes])dnl
+AC_ADD_VAR([LIBPNG_LIBS],[libpng libs])dnl
+AC_ADD_VAR([DEP],[Dependency tracking])dnl
+AC_ADD_VAR([COLOR],[Colorful makefile])dnl
+AC_ADD_VAR([DEBUG],[Debug build])])
+AC_ADD_VAR([LIBOWFAT_TRUE],[Use libowfat])dnl
+AC_ADD_VAR([LIBOWFAT_LIBS],[libowfat libs])dnl
+AC_ADD_VAR([LIBOWFAT_CFLAGS],[libowfat includes])dnl
 #
 # AC_SUMMARIZE
 # ---------------------------------------------------------------------------

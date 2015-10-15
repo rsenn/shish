@@ -12,19 +12,16 @@ extern int shell_canonicalize(const char *path, stralloc *sa, int symbolic);
  * relative paths will be resolved to absolute ones.
  * ----------------------------------------------------------------------- */
 int shell_realpath(const char *path, stralloc *sa, 
-                   int symbolic, stralloc *cwd)
-{
+                   int symbolic, stralloc *cwd) {
   /* if its not absolute on the first recursion level then make it so */
-  if(*path != '/' && sa->len == 0)
-  {
+  if(*path != '/' && sa->len == 0) {
     char buf[PATH_MAX + 1];
 
     /* check whether the name fits */
     unsigned long n;
     n = str_len(path);
     
-    if(cwd->len + n + 1 > PATH_MAX)
-    {
+    if(cwd->len + n + 1 > PATH_MAX) {
       errno = ENAMETOOLONG;
       return 0;
     }

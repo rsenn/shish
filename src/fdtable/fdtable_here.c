@@ -3,8 +3,7 @@
 
 /* drop a here-document to a temporary file
  * ----------------------------------------------------------------------- */
-int fdtable_here(struct fd *fd, int flags)
-{
+int fdtable_here(struct fd *fd, int flags) {
   int e;
   int state;
   char *x;
@@ -33,8 +32,7 @@ int fdtable_here(struct fd *fd, int flags)
   n = fd->rb.n;
   x = fd->rb.x;
 
-  while(n)
-  {
+  while(n) {
     unsigned long sz = (n > FD_BUFSIZE2 ? FD_BUFSIZE2 : n);
     buffer_put(&fd->wb, x, sz);
     n -= sz;

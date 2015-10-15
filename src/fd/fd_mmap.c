@@ -5,15 +5,13 @@
 
 /* start memory mapping a file on an (fd)
  * ----------------------------------------------------------------------- */
-int fd_mmap(struct fd *fd, const char *fname)
-{
+int fd_mmap(struct fd *fd, const char *fname) {
   int e;
   int r;
   
   fd->mode |= FD_FILE;
   
-  if((e = open(fname, O_RDONLY|O_LARGEFILE)) == -1)
-  {
+  if((e = open(fname, O_RDONLY | O_LARGEFILE)) == -1) {
     sh_error(fname);
     return -1;
   }
@@ -25,8 +23,7 @@ int fd_mmap(struct fd *fd, const char *fname)
   close(e);
   fd->r->fd = -1;
   
-  if(r)
-  {
+  if(r) {
     sh_error(fname);
     return -1;
   }

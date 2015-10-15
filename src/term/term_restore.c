@@ -4,8 +4,7 @@
 
 /* restore old terminal attrs 
  * ----------------------------------------------------------------------- */
-void term_restore(buffer *input)
-{
+void term_restore(buffer *input) {
   tcsetattr(input->fd, TCSANOW, &term_tcattr);
   signal(SIGWINCH, SIG_DFL);
 }

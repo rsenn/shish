@@ -3,8 +3,7 @@
 
 /* prepare fd for command substitution stuff
  * ----------------------------------------------------------------------- */
-void fd_subst(struct fd *fd, stralloc *sa)
-{
+void fd_subst(struct fd *fd, stralloc *sa) {
   fd->name = "<subst>";
   fd->mode = FD_SUBST;
   

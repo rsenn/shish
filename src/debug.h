@@ -11,8 +11,7 @@
 #include "buffer.h"
 #include "stralloc.h"
 
-struct chunk
-{
+struct chunk {
   struct chunk  *next;
   struct chunk **pos;
   unsigned long  size;

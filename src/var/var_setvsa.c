@@ -10,16 +10,14 @@
  * IMPORTANT: the name must be a valid posix shell variable name, or it will 
  *            fuck up the whole var table!
  * ----------------------------------------------------------------------- */
-const char *var_setvsa(const char *name, stralloc *sa, int flags)
-{
+const char *var_setvsa(const char *name, stralloc *sa, int flags) {
   struct var *var;
   
   /* find/create new variable on top vartab */
   var = var_create(name, flags);
 
   /* variable has a stralloc of which we have control */
-  if(var->flags & V_FREESTR)
-  {
+  if(var->flags & V_FREESTR) {
     var->sa.len = var->offset;
     stralloc_catc(&var->sa, '=');
     stralloc_cat(&var->sa, sa);
@@ -31,19 +29,15 @@ const char *var_setvsa(const char *name, stralloc *sa, int flags)
       stralloc_zero(sa);
   }
   /* variable currently has no controlable stralloc.. . */
-  else
-  {
+  else {
     /* look if we can take the one from the value */
-    if(flags & (V_FREESTR|V_ZEROSA))
-    {
+    if(flags & (V_FREESTR | V_ZEROSA)) {
       var->sa = *sa;
       stralloc_trunc(&var->sa, var->offset + sa->len);
       /* move the value past the = character */
       byte_copyr(var->sa.s + var->offset, sa->len, var->sa.s);
       stralloc_init(sa);
-    }
-    else
-    {
+    } else {
       stralloc_init(&var->sa);
       stralloc_trunc(&var->sa, var->offset + sa->len);
       byte_copy(var->sa.s + var->offset, sa->len, sa->s);

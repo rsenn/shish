@@ -2,8 +2,7 @@
 
 /* links an fd to the specfied stack level
  * ----------------------------------------------------------------------- */
-void fdstack_link(struct fdstack *st, struct fd *fd)
-{
+void fdstack_link(struct fdstack *st, struct fd *fd) {
   fd->link = &st->list;
   fd->next = *fd->link;
   

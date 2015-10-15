@@ -19,12 +19,13 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 LIB     = ../libshish.a
-MODULES = fmt_long \
-          fmt_minus \
-          fmt_ulong \
-          fmt_ulong0 \
-          fmt_xlong \
-          fmt_xlonglong
+@LIBOWFAT_FALSE@MODULES += fmt_long
+@LIBOWFAT_FALSE@MODULES += fmt_minus
+@LIBOWFAT_FALSE@MODULES += fmt_ulong
+@LIBOWFAT_FALSE@MODULES += fmt_ulong0
+@LIBOWFAT_FALSE@MODULES += fmt_xlong
+@LIBOWFAT_FALSE@MODULES += fmt_xlonglong
+
           
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

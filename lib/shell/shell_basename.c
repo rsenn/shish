@@ -13,8 +13,7 @@
        ".."           "."            ".."
 */
 
-char *shell_basename(char *path) 
-{
+char *shell_basename(char *path) {
   unsigned int n;
 again:
   n = str_rchr(path, '/');

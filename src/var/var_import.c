@@ -8,8 +8,7 @@
 /* add a new variable using the supplied var struct rather
  * than a malloced
  * ----------------------------------------------------------------------- */
-struct var *var_import(const char *v, int flags, struct var *var)
-{
+struct var *var_import(const char *v, int flags, struct var *var) {
   struct search ctx;
   struct var *newvar;
   
@@ -23,8 +22,7 @@ struct var *var_import(const char *v, int flags, struct var *var)
   /* search if the var already exists */
   vartab_hash(sh->varstack, v, &ctx);
   
-  if(!(newvar = var_search(v, &ctx)))
-  {
+  if(!(newvar = var_search(v, &ctx))) {
     /* if not we take the supplied var struct,  */
     newvar = var;
     var = NULL;
@@ -32,8 +30,7 @@ struct var *var_import(const char *v, int flags, struct var *var)
     
     /* ...and then add it to the table */
     vartab_add(sh->varstack, newvar, &ctx);
-  }
-  else if(flags & V_INIT)
+  } else if(flags & V_INIT)
     return var;
 
   newvar->flags = flags;

@@ -11,8 +11,7 @@
 #define NOTFIRST 0x80
 
 int shell_fnmatch(const char *pattern, unsigned int plen, 
-                  const char *string, unsigned int slen, int flags)
-{
+                  const char *string, unsigned int slen, int flags) {
 /*  buffer_puts(buffer_2, "fnmatch: ");
   buffer_put(buffer_2, pattern, plen);
   buffer_putspace(buffer_2);
@@ -23,11 +22,9 @@ int shell_fnmatch(const char *pattern, unsigned int plen,
 start:
 
   /* when string is empty, only a pattern consisting of asteriks matches */
-  if(slen == 0)
-  {
+  if(slen == 0) {
     /* skip all asterikses */
-    while(plen && *pattern == '*')
-    {
+    while(plen && *pattern == '*') {
       pattern++;
       plen--;
     }
@@ -45,8 +42,7 @@ start:
    * to be leading if it is the first character in string, or if both
    * SH_FNM_PATHNAME  is set and the period immediately follows a slash.
    */
-  if(*string == '.' && *pattern != '.' && (flags & SH_FNM_PERIOD))
-  {
+  if(*string == '.' && *pattern != '.' && (flags & SH_FNM_PERIOD)) {
     /* don't match if SH_FNM_PERIOD and this is the first char */
     if(!(flags & NOTFIRST))
       return SH_FNM_NOMATCH;
@@ -58,10 +54,8 @@ start:
   
   flags |= NOTFIRST;
   
-  switch(*pattern)
-  {
-    case '[':
-    {
+  switch(*pattern) {
+  case '[': {
       const char *start;
       int neg = 0;
 
@@ -79,8 +73,7 @@ start:
       /* now start scanning the pattern */
       start = pattern;
       
-      while(plen)
-      {
+    while(plen) {
         int res = 0;
         
         /* if there is a closing bracket and it's not
@@ -103,18 +96,15 @@ start:
             pattern += 3; plen -= 3;
           }
           /* MEMBER - literal character match */
-          else 
-          {
+        else {
             res = (*pattern == *string);
             pattern++; plen--;
           }
         }
         
         /* character class seems terminated and matched */
-        if((res && !neg) || ((!res && neg) && *pattern == ']'))
-        {
-          while(plen && *pattern != ']')
-          {
+      if((res && !neg) || ((!res && neg) && *pattern == ']')) {
+        while(plen && *pattern != ']') {
             pattern++; plen--;
           }
           
@@ -162,8 +152,7 @@ start:
       return 0;
     }
     
-    case '?':
-    {
+  case '?': {
       /* it can't match a / when we're matching a pathname */
       if(*string == '/' && (flags & SH_FNM_PATHNAME))
         break;
@@ -173,11 +162,9 @@ start:
     }
     goto start;
     
-    default: match:
-    {
+default: match: {
       /* perform literal match */
-      if(*pattern == *string)
-      {
+      if(*pattern == *string) {
         pattern++; plen--;
         string++; slen--;
         goto start;

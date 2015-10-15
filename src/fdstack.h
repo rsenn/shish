@@ -5,8 +5,7 @@
 
 struct fd;
 
-struct fdstack
-{
+struct fdstack {
   struct fd    *list;   /* is sorted by efd */
   struct fdstack *parent;
   unsigned int    level;  /* stack level -> root is 0 */

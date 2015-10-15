@@ -3,8 +3,7 @@
 
 /* sends down here-doc data to pipes and reads command expansions from pipes
  * ----------------------------------------------------------------------- */
-int fdstack_data(void)
-{
+int fdstack_data(void) {
   struct fd *fd;
   struct fdstack *st;
   long n;

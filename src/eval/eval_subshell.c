@@ -6,8 +6,7 @@
 
 /* evaluate subshell or grouping (3.9.4.1)
  * ----------------------------------------------------------------------- */
-int eval_subshell(struct eval *e, struct ngrp *ngrp)
-{
+int eval_subshell(struct eval *e, struct ngrp *ngrp) {
   int ret;
   struct env sh;
   struct fdstack io;

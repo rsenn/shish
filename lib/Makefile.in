@@ -48,26 +48,14 @@ CLEANFILES = $(LIBRARY)
 #  LOCAL DIRECTORY CONFIGURATION     ########################################
 #                                    ########################################
 #############################################################################
-MODULES = mingw-glob
+MODULES += mingw-glob
+
 OBJECTS = $(MODULES:%=%.o)
 SOURCES = $(MODULES:%=%.c)
 HEADERS = $(MODULES:%=%.h)
 DEPS = $(MODULES:%=%.d)
 
-HEADERS += \
-	buffer.h \
-	byte.h \
-	fmt.h \
-	mmap.h \
-	open.h \
-	safemult.h \
-	scan.h \
-	shell.h \
-	str.h \
-	stralloc.h \
-	uint16.h \
-	uint32.h \
-	uint64.h
+HEADERS += buffer.h byte.h fmt.h mmap.h open.h safemult.h scan.h shell.h str.h stralloc.h uint16.h uint32.h uint64.h
  
 
 -include $(DEPS)
@@ -91,8 +79,7 @@ FILES                = Makefile.in $(HEADERS)
                        
 # files to be cleaned
 # ---------------------------------------------------------------------------
-CLEANFILES           = *~ \
-                       core core.* 
+CLEANFILES           = *~ core core.* 
 DISTCLEANFILES       = Makefile $(DEPS)
 MAINTAINERCLEANFILES = shish shish-$(VERSION)
 

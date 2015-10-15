@@ -13,14 +13,11 @@ extern const char *const sys_siglist[];
 
 /* outputs job status stuff
  * ----------------------------------------------------------------------- */
-void job_status(int pid, int status)
-{
-  if(WIFSIGNALED(status))
-  {
+void job_status(int pid, int status) {
+  if(WIFSIGNALED(status)) {
     const char *signame = sys_siglist[WTERMSIG(status)];
 
-    if(pid)
-    {
+    if(pid) {
       buffer_put(fd_err->w, "process ", 8);
       buffer_putulong(fd_err->w, pid);
       buffer_put(fd_err->w, " signaled: ", 11);
@@ -30,8 +27,7 @@ void job_status(int pid, int status)
     buffer_puts(fd_err->w, &signame[1]);
     
 #ifdef WCOREDUMP
-    if(WCOREDUMP(status))
-    {
+    if(WCOREDUMP(status)) {
       buffer_putspace(fd_err->w);
       buffer_put(fd_err->w, "(core dumped)", 13);
     }

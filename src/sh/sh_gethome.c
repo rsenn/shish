@@ -4,8 +4,7 @@
 
 /* read home directory from /etc/passwd without the whole getpw*() bloat :)
  * ----------------------------------------------------------------------- */
-const char *sh_gethome(void)
-{
+const char *sh_gethome(void) {
   const char *v;
   unsigned long offset;
 

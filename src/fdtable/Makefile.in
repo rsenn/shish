@@ -19,24 +19,25 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = fdtable.a
-MODULES = fdtable_check \
-          fdtable_close \
-          fdtable_dump \
-          fdtable_dup \
-          fdtable_exec \
-          fdtable_gap \
-          fdtable_here \
-          fdtable_lazy \
-          fdtable_link \
-          fdtable_newfd \
-          fdtable_open \
-          fdtable_resolve \
-          fdtable_table \
-          fdtable_track \
-          fdtable_unexpected \
-          fdtable_unlink \
-          fdtable_up \
-          fdtable_wish
+MODULES += fdtable_check
+MODULES += fdtable_close
+MODULES += fdtable_dump
+MODULES += fdtable_dup
+MODULES += fdtable_exec
+MODULES += fdtable_gap
+MODULES += fdtable_here
+MODULES += fdtable_lazy
+MODULES += fdtable_link
+MODULES += fdtable_newfd
+MODULES += fdtable_open
+MODULES += fdtable_resolve
+MODULES += fdtable_table
+MODULES += fdtable_track
+MODULES += fdtable_unexpected
+MODULES += fdtable_unlink
+MODULES += fdtable_up
+MODULES += fdtable_wish
+
           
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

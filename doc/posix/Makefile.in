@@ -17,8 +17,7 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
-TEXT = ieee-p1003.2-d11.2-s3.txt \
-       ieee-p1003.2-d11.2-s4.5.txt
+TEXT = ieee-p1003.2-d11.2-s3.txt ieee-p1003.2-d11.2-s4.5.txt
 
 # targets for this directory
 # ---------------------------------------------------------------------------

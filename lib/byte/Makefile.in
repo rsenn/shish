@@ -20,13 +20,14 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 LIB = ../libshish.a
 
-MODULES = byte_chr \
-byte_copy \
-byte_copyr \
-byte_diff \
-byte_fill \
-byte_rchr \
-byte_zero
+@LIBOWFAT_FALSE@MODULES += byte_chr
+@LIBOWFAT_FALSE@MODULES += byte_copy
+@LIBOWFAT_FALSE@MODULES += byte_copyr
+@LIBOWFAT_FALSE@MODULES += byte_diff
+MODULES += byte_fill
+@LIBOWFAT_FALSE@MODULES += byte_rchr
+@LIBOWFAT_FALSE@MODULES += byte_zero
+
           
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

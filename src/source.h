@@ -5,8 +5,7 @@
 
 struct fd;
 
-struct source
-{
+struct source {
   buffer       *b;
   int           mode;
   unsigned int  line;

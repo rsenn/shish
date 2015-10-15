@@ -19,31 +19,32 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = builtin.a
-MODULES = builtin_basename \
-          builtin_break \
-          builtin_cd \
-          builtin_dirname \
-          builtin_dump \
-          builtin_echo \
-          builtin_error \
-          builtin_eval \
-          builtin_exec \
-          builtin_exit \
-          builtin_export \
-          builtin_false \
-          builtin_fdtable \
-          builtin_hash \
-          builtin_history \
-          builtin_hostname \
-          builtin_pwd \
-          builtin_search \
-          builtin_set \
-          builtin_shift \
-          builtin_source \
-          builtin_table \
-          builtin_test \
-          builtin_true \
-          builtin_unset
+MODULES += builtin_basename
+MODULES += builtin_break
+MODULES += builtin_cd
+MODULES += builtin_dirname
+MODULES += builtin_dump
+MODULES += builtin_echo
+MODULES += builtin_error
+MODULES += builtin_eval
+MODULES += builtin_exec
+MODULES += builtin_exit
+MODULES += builtin_export
+MODULES += builtin_false
+MODULES += builtin_fdtable
+MODULES += builtin_hash
+MODULES += builtin_history
+MODULES += builtin_hostname
+MODULES += builtin_pwd
+MODULES += builtin_search
+MODULES += builtin_set
+MODULES += builtin_shift
+MODULES += builtin_source
+MODULES += builtin_table
+MODULES += builtin_test
+MODULES += builtin_true
+MODULES += builtin_unset
+
           
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

@@ -3,8 +3,7 @@
 
 /* clear a history entry
  * ----------------------------------------------------------------------- */
-void history_free(unsigned int index)
-{
+void history_free(unsigned int index) {
   /* get the pointer from the specified entry */
   char *s = history_array[index];
   
@@ -16,15 +15,13 @@ void history_free(unsigned int index)
    * after that, if said count is zero, we'll unmap the file.
    */
   if(history_mapped && s >= history_buffer.x && 
-     s < history_buffer.x + history_buffer.n)
-  {
+      s < history_buffer.x + history_buffer.n) {
     /* if there no mapped entries left we can unmap the file */
     if(--history_mapped == 0)
       buffer_close(&history_buffer);
   }
   /* it was malloced rather than mapped */
-  else
-  {
+  else {
     shell_free(s);
   }
 }

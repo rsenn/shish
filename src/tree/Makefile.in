@@ -19,12 +19,14 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = tree.a
-MODULES = tree_count \
-          tree_free \
-          tree_newlink \
-          tree_newnode \
-          tree_print \
-          tree_printlist
+MODULES += tree_count
+MODULES += tree_free
+MODULES += tree_newlink
+@DEBUG_FALSE@MODULES += tree_newnode
+@DEBUG_TRUE@MODULES += tree_newnodedebug
+MODULES += tree_print
+MODULES += tree_printlist
+
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

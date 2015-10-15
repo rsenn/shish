@@ -4,8 +4,7 @@
 
 /* push variable table to the stack
  * ----------------------------------------------------------------------- */
-void vartab_push(struct vartab *vartab)
-{
+void vartab_push(struct vartab *vartab) {
   /* zero it */
   byte_zero(vartab, sizeof(struct vartab));
 

@@ -11,8 +11,7 @@
 
 char mmap_empty[] = { 0 };
 
-char* mmap_read_fd(int fd, unsigned long *filesize)
-{
+char* mmap_read_fd(int fd, unsigned long *filesize) {
 #ifdef __MINGW32__
   HANDLE m;
   char* map;
@@ -25,8 +24,7 @@ char* mmap_read_fd(int fd, unsigned long *filesize)
 #else
   struct stat st;
   char *map = mmap_empty;
-  if(fstat(fd, &st) == 0 && (*filesize = st.st_size))
-  {
+  if(fstat(fd, &st) == 0 && (*filesize = st.st_size)) {
     map=mmap(0,*filesize,PROT_READ,MAP_SHARED,fd,0);
     if (map==(char*)-1)
       map=0;

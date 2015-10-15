@@ -7,21 +7,18 @@ static char term_inbuf[BUFFER_INSIZE];
 buffer      term_input = BUFFER_INIT(0, 0, term_inbuf, sizeof(term_inbuf));
 
 /* ----------------------------------------------------------------------- */
-int term_read(int fd, char *buf, unsigned int len)
-{
+int term_read(int fd, char *buf, unsigned int len) {
   char c;
   int ret;
   static unsigned long remain;
           
-  if(remain)
-  {
+  if(remain) {
   check_remain:
     if(len > remain)
       len = remain;
     byte_copy(buf, len, &term_cmdline.s[term_cmdline.len - remain]);
     remain -= len;
-    if(!remain)
-    {
+    if(!remain) {
       tcsetattr(fd, TCSANOW, &term_tcattr);
       stralloc_zero(&term_cmdline);
     }
@@ -33,10 +30,8 @@ int term_read(int fd, char *buf, unsigned int len)
   
   prompt_show();
     
-  while((ret = buffer_getc(&term_input, &c)) > 0)
-  {
-    switch(c)
-    {
+  while((ret = buffer_getc(&term_input, &c)) > 0) {
+    switch(c) {
       /* control-c discards the current line */
       case 3:
         stralloc_zero(&term_cmdline);
@@ -55,8 +50,7 @@ int term_read(int fd, char *buf, unsigned int len)
         break;
       /* control-d is EOF */
       case 4:
-        if(!term_cmdline.len)
-        {
+      if(!term_cmdline.len) {
           buffer_puts(term_output, "EOF");
           buffer_putnlflush(term_output);
           ret = 0;

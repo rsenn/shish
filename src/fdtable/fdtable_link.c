@@ -3,8 +3,7 @@
 
 /* link fd to the table at the current position
  * ----------------------------------------------------------------------- */
-void fdtable_link(struct fd *fd)
-{
+void fdtable_link(struct fd *fd) {
   fd->pos = fdtable_pos;
   fd->parent = *fd->pos;
  *fd->pos = fd;

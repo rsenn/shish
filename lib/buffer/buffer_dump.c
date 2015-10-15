@@ -8,35 +8,31 @@ extern ssize_t term_read(int fd, char *buf, unsigned int len);
 extern ssize_t buffer_dummyreadmmap();
 extern ssize_t stralloc_write();
 
-void buffer_dump(buffer *out, buffer *b) 
-{
-  char xlong[FMT_LONG+FMT_LONG+FMT_LONG];
+void buffer_dump(buffer *out, buffer *b) {
+  char xlong[FMT_LONG + FMT_LONG + FMT_LONG];
   unsigned long n;
 
   n = fmt_xlong(xlong, (long)out->x);
   buffer_putc(out, '[');
-  
-  if(b->op == stralloc_write)
-  {
+
+  if(b->op == stralloc_write) {
     buffer_puts(out, "*sa");
-  }
-  else
-  {
+  } else {
     n = fmt_long(xlong, b->fd);
     buffer_putnspace(out, 3 - n);
     buffer_put(out, xlong, n);
   }
-  
+
   buffer_putspace(out);
-  
+
   n = fmt_ulong(xlong, b->p);
   xlong[n++] = '/';
   n += fmt_ulong(&xlong[n], b->n);
   xlong[n++] = '/';
   n += fmt_ulong(&xlong[n], b->a);
   buffer_putnspace(out, 20 - n);
-  buffer_put(out, xlong, n);  
-  
+  buffer_put(out, xlong, n);
+
   buffer_putspace(out);
   if(b->op == read)
     buffer_puts(out, "<read>  ");
@@ -50,8 +46,7 @@ void buffer_dump(buffer *out, buffer *b)
     buffer_puts(out, "<sa-wr> ");
   else if(b->op == NULL)
     buffer_puts(out, "NULL    ");
-  else
-  {
+  else {
     n = fmt_xlong(xlong, (long)b->op);
     buffer_put(out, xlong, n);
   }

@@ -4,8 +4,7 @@
 
 /* parses a here-doc body, ending at <delim>
  * ----------------------------------------------------------------------- */
-int parse_here(struct parser *p, stralloc *delim, int nosubst)
-{
+int parse_here(struct parser *p, stralloc *delim, int nosubst) {
   int r = 0;
 
   /* if there is still a tree from the last call then remove it */
@@ -19,26 +18,22 @@ int parse_here(struct parser *p, stralloc *delim, int nosubst)
      parsing any other here docs before finishing this one */
   source->mode |= SOURCE_HERE;
   
-  for(;;)
-  {
+  for(;;) {
     /* if nosubst is set we treat it like single-quoted otherwise
        like double-quoted, allowing parameter and command expansions */
-    if((nosubst ? parse_squoted : parse_dquoted)(p))
-    {
+    if((nosubst ? parse_squoted : parse_dquoted)(p)) {
       r = -1;
       break;
     }
     
-    if(p->quot == Q_UNQUOTED)
-    {
+    if(p->quot == Q_UNQUOTED) {
       stralloc_catc(&p->sa, (nosubst ? '\'' : '"'));
       continue;
     }
     
     /* when the parser yields an argstr node 
        we have to check for the delimiter */
-    if(p->node->id == N_ARGSTR)
-    {
+    if(p->node->id == N_ARGSTR) {
       unsigned int si, di;
       stralloc *sa;
     

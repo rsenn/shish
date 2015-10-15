@@ -20,38 +20,41 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 LIB = ../libshish.a
 
-MODULES = buffer_close \
-buffer_default \
-buffer_dump \
-buffer_feed \
-buffer_flush \
-buffer_free \
-buffer_fromsa \
-buffer_fromstr \
-buffer_get \
-buffer_get_until \
-buffer_getc \
-buffer_init \
-buffer_mmapprivate \
-buffer_mmapread \
-buffer_mmapread_fd \
-buffer_prefetch \
-buffer_put \
-buffer_putc \
-buffer_putflush \
-buffer_putm_internal \
-buffer_putnlflush \
-buffer_putnspace \
-buffer_puts \
-buffer_putsa \
-buffer_putsflush \
-buffer_putspace \
-buffer_putulong \
-buffer_skip_until \
-buffer_stubborn \
-buffer_stubborn2 \
-buffer_tosa \
-buffer_truncfile 
+@LIBOWFAT_FALSE@MODULES += buffer_close
+MODULES += buffer_default
+MODULES += buffer_dump
+MODULES += buffer_dummyread
+MODULES += buffer_dummyreadmmap
+@LIBOWFAT_FALSE@MODULES += buffer_feed
+@LIBOWFAT_FALSE@MODULES += buffer_flush
+@LIBOWFAT_FALSE@MODULES += buffer_free
+@LIBOWFAT_FALSE@MODULES += buffer_fromsa
+MODULES += buffer_fromstr
+@LIBOWFAT_FALSE@MODULES += buffer_get
+MODULES += buffer_get_until
+@LIBOWFAT_FALSE@MODULES += buffer_getc
+@LIBOWFAT_FALSE@MODULES += buffer_init
+MODULES += buffer_mmapprivate
+@LIBOWFAT_FALSE@MODULES += buffer_mmapread
+MODULES += buffer_mmapread_fd
+MODULES += buffer_prefetch
+@LIBOWFAT_FALSE@MODULES += buffer_put
+MODULES += buffer_putc
+@LIBOWFAT_FALSE@MODULES += buffer_putflush
+@LIBOWFAT_FALSE@MODULES += buffer_putm_internal
+@LIBOWFAT_FALSE@MODULES += buffer_putnlflush
+MODULES += buffer_putnspace
+@LIBOWFAT_FALSE@MODULES += buffer_puts
+@LIBOWFAT_FALSE@MODULES += buffer_putsa
+@LIBOWFAT_FALSE@MODULES += buffer_putsflush
+@LIBOWFAT_FALSE@MODULES += buffer_putspace
+@LIBOWFAT_FALSE@MODULES += buffer_putulong
+MODULES += buffer_skip_until
+@LIBOWFAT_FALSE@MODULES += buffer_stubborn
+@LIBOWFAT_FALSE@MODULES += buffer_stubborn2
+@LIBOWFAT_FALSE@MODULES += buffer_tosa
+MODULES += buffer_truncfile
+
           
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

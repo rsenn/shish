@@ -11,8 +11,7 @@
  * fd is assumed to be a freshly allocated structure or NULL, if its 
  * NULL a persistent redirection is assumed (whose fd will be malloced)
  * ----------------------------------------------------------------------- */
-int redir_eval(struct nredir *nredir, struct fd *fd, int rfl)
-{
+int redir_eval(struct nredir *nredir, struct fd *fd, int rfl) {
   int mode;
   int r;
   stralloc sa;
@@ -32,8 +31,7 @@ int redir_eval(struct nredir *nredir, struct fd *fd, int rfl)
                 fd_push(fd, nredir->fdes, mode);
       
   /* do the appropriate redirection */
-  switch(nredir->flag & R_ACT)
-  {
+  switch(nredir->flag & R_ACT) {
     case R_OPEN: r = redir_open(nredir, &sa); break;
     case R_HERE: r = redir_here(nredir, &sa); break;
     default: r = redir_dup(nredir, &sa); break;

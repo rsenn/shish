@@ -9,8 +9,7 @@
  * nredir->data is set to the next here-doc redirection by redir_addhere()
  * after processing it is set to the content of the here-doc (an narg node)
  * ----------------------------------------------------------------------- */
-void redir_source(void)
-{
+void redir_source(void) {
   struct parser p;
   stralloc delim;
   int r;
@@ -19,8 +18,7 @@ void redir_source(void)
       
   stralloc_init(&delim);
   
-  for(; redir_list; redir_list = &redir_list->data->nredir)
-  {
+  for(; redir_list; redir_list = &redir_list->data->nredir) {
     /* expand the delimiter */
     stralloc_init(&delim);
     expand_catsa((union node *)redir_list, &delim, 0);

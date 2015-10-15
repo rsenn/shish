@@ -6,8 +6,7 @@ unsigned int history_count;
 
 /* advance
  * ----------------------------------------------------------------------- */
-void history_advance(void)
-{
+void history_advance(void) {
   if(history_array[history_size - 1])
     history_free(history_size - 1);
 

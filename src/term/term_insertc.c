@@ -1,16 +1,12 @@
 #include "term.h"
 
 /* ----------------------------------------------------------------------- */
-void term_insertc(char c)
-{
+void term_insertc(char c) {
   buffer_put(term_output, &c, 1);
 
-  if(term_pos == term_cmdline.len)
-  {
+  if(term_pos == term_cmdline.len) {
     stralloc_catb(&term_cmdline, &c, 1);
-  }
-  else
-  {
+  } else {
     unsigned long len;
     len = term_cmdline.len - term_pos;
     buffer_put(term_output, &term_cmdline.s[term_pos], len);

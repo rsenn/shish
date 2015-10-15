@@ -1,7 +1,6 @@
 #include "var.h"
 
-struct var *var_copys(const char *s, int flags)
-{
+struct var *var_copys(const char *s, int flags) {
   struct var *var;
   
   /* find/create the variable */

@@ -9,12 +9,10 @@
 
 /* execute a command
  * ----------------------------------------------------------------------- */
-int exec_command(enum hash_id id, union command cmd, int argc, char **argv, int exec, union node *redir)
-{
+int exec_command(enum hash_id id, union command cmd, int argc, char **argv, int exec, union node *redir) {
   int ret = 1;
 
-  switch(id)
-  {
+  switch(id) {
     case H_SBUILTIN:
     case H_BUILTIN:
     case H_EXEC:
@@ -30,8 +28,7 @@ int exec_command(enum hash_id id, union command cmd, int argc, char **argv, int 
       ret = cmd.builtin->fn(argc, argv);
       break;
 
-    case H_FUNCTION:
-    {
+  case H_FUNCTION: {
       struct env sh;
       struct eval e;
       

@@ -2,8 +2,7 @@
 #include "var.h"
 
 /* count variables having the specified flag set */
-unsigned long var_count(int flags)
-{
+unsigned long var_count(int flags) {
   struct var *var;
   unsigned long n = 0;
 

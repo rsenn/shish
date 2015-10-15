@@ -13,8 +13,7 @@
  * 
  * this should only be called when the (fd) really lacks buffer space!
  * ----------------------------------------------------------------------- */
-void fd_setbuf(struct fd *fd, void *buf, unsigned long n)
-{
+void fd_setbuf(struct fd *fd, void *buf, unsigned long n) {
   char *p = buf;
   int r = FD_ISRD(fd) && !fd->r->x;
   int w = FD_ISWR(fd) && !fd->w->x;
@@ -22,15 +21,13 @@ void fd_setbuf(struct fd *fd, void *buf, unsigned long n)
   assert(r || w);
   
   /* assign buffer space to read buffer */
-  if(r)
-  {
+  if(r) {
     fd->r->x = p;
     buf += fd->r->a = n >> w;
   }
   
   /* assign buffer space to write buffer */
-  if(w)
-  {
+  if(w) {
     fd->w->x = p;
     fd->w->a = n >> r;
   }

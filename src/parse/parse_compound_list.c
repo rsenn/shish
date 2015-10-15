@@ -7,8 +7,7 @@
  * equivalent to a sequence of lists, separated by <newline>s, that 
  * can be preceded or followed by an arbitrary number of <newline>s.
  * ----------------------------------------------------------------------- */
-union node *parse_compound_list(struct parser *p)
-{
+union node *parse_compound_list(struct parser *p) {
   union node *list;
   union node **nptr;
 
@@ -18,8 +17,7 @@ union node *parse_compound_list(struct parser *p)
   while(parse_gettok(p, P_DEFAULT) & T_NL);
   p->pushback++;
 
-  for(;;)
-  {
+  for(;;) {
     /* try to parse a list */
     *nptr = parse_list(p);
 

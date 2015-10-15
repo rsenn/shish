@@ -9,17 +9,14 @@
 
 /* waits for a job to terminate
  * ----------------------------------------------------------------------- */
-int job_wait(struct job *job, int pid, int *status, int options)
-{
+int job_wait(struct job *job, int pid, int *status, int options) {
   int ret = 0;
   int st; /* status */
 
-  if(job)
-  {
+  if(job) {
     int n = job->nproc;
 
-    while(n > 0)
-    {
+    while(n > 0) {
       int i;
 
       ret = waitpid(-job->pgrp, &st, options);
@@ -27,8 +24,7 @@ int job_wait(struct job *job, int pid, int *status, int options)
       if(ret <= 0)
         break;
 
-      for(i = 0; i < job->nproc; i++)
-      {
+      for(i = 0; i < job->nproc; i++) {
         if(job->procs[i].pid == ret)
           n--;
       }
@@ -38,17 +34,13 @@ int job_wait(struct job *job, int pid, int *status, int options)
       
       job_status(ret, st);
     }
-  }
-  else
-  {
+  } else {
     /* wait for the last process in the group to terminate */
     ret = waitpid(pid, status, options);
   }
 
-  if(job_pgrp != sh_pid)
-  {
-    if(fd_ok(job_terminal))
-    {
+  if(job_pgrp != sh_pid) {
+    if(fd_ok(job_terminal)) {
       setpgid(sh_pid, sh_pid);
       tcsetpgrp(job_terminal, sh_pid);
     }

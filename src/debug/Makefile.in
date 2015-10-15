@@ -19,26 +19,27 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = debug.a
-MODULES = debug_alloc \
-          debug_begin \
-          debug_char \
-          debug_end \
-          debug_error \
-          debug_free \
-          debug_list \
-          debug_memory \
-          debug_node \
-          debug_ptr \
-          debug_realloc \
-          debug_redir \
-          debug_space \
-          debug_str \
-          debug_stralloc \
-          debug_sublist \
-          debug_subnode \
-          debug_subst \
-          debug_ulong \
-          debug_unquoted
+MODULES += debug_alloc
+MODULES += debug_begin
+MODULES += debug_char
+MODULES += debug_end
+MODULES += debug_error
+MODULES += debug_free
+MODULES += debug_list
+MODULES += debug_memory
+MODULES += debug_node
+MODULES += debug_ptr
+MODULES += debug_realloc
+MODULES += debug_redir
+MODULES += debug_space
+MODULES += debug_str
+MODULES += debug_stralloc
+MODULES += debug_sublist
+MODULES += debug_subnode
+MODULES += debug_subst
+MODULES += debug_ulong
+MODULES += debug_unquoted
+
           
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

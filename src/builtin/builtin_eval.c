@@ -9,8 +9,7 @@
 
 /* parse and evaluate arguments
  * ----------------------------------------------------------------------- */
-int builtin_eval(int argc, char **argv)
-{
+int builtin_eval(int argc, char **argv) {
   struct fd fd;
   struct source src;
   struct parser p;
@@ -23,8 +22,7 @@ int builtin_eval(int argc, char **argv)
   /* concatenate all arguments following the "exec", separated by a 
      whitespace and terminated by a newline */
   shell_optind = 1;
-  while(argv[shell_optind])
-  {
+  while(argv[shell_optind]) {
     stralloc_cats(&sa, argv[shell_optind]);
     stralloc_catc(&sa, (argv[++shell_optind] ? ' ' : '\n'));
   }
@@ -36,8 +34,7 @@ int builtin_eval(int argc, char **argv)
   parse_init(&p, P_DEFAULT);
   
   /* parse the string as a compound list */
-  if((cmds = parse_compound_list(&p)))
-  {
+  if((cmds = parse_compound_list(&p))) {
     eval_push(&e, 0);
     eval_tree(&e, cmds, E_ROOT|E_LIST);
     ret = eval_pop(&e);

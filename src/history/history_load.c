@@ -8,8 +8,7 @@
 buffer       history_buffer;
 unsigned int history_mapped;
 const char   history_name[] = "bash_history";
-const char  *history_files[] =
-{
+const char  *history_files[] = {
   &history_name[5], /* history */
   &history_name[2], /* sh_history */
   &history_name[0], /* bash_history :) */ 
@@ -18,8 +17,7 @@ const char  *history_files[] =
 
 /* load the history
  * ----------------------------------------------------------------------- */
-void history_load(void)
-{
+void history_load(void) {
   unsigned int i;
   unsigned int hlen;
   char fname[PATH_MAX + 1];
@@ -37,8 +35,7 @@ void history_load(void)
   /* mapped history entries */
   history_mapped = 0;
   
-  for(i = 0; history_files[i]; i++)
-  {
+  for(i = 0; history_files[i]; i++) {
     /* append history file name */
     str_copyn(&fname[hlen], history_files[i], PATH_MAX - hlen);
 
@@ -57,8 +54,7 @@ void history_load(void)
    * note that quote-balancing is applied because there 
    * may be quoted multiline words in the history 
    */
-  while(history_buffer.p < history_buffer.n)
-  {
+  while(history_buffer.p < history_buffer.n) {
     unsigned long len;
     
     /* next entry will begin after the termination */

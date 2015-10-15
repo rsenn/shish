@@ -2,8 +2,7 @@
 
 /* stat the (fd) and set appropriate flags
  * ----------------------------------------------------------------------- */
-int fd_stat(struct fd *fd)
-{
+int fd_stat(struct fd *fd) {
   struct stat st;
   
   if(fd->mode & FD_TYPE)
@@ -14,8 +13,7 @@ int fd_stat(struct fd *fd)
   
   fd->dev = st.st_rdev;
   
-  switch(st.st_mode & S_IFMT)
-  { 
+  switch(st.st_mode & S_IFMT) {
     case S_IFREG: fd->mode |= FD_FILE; break;
     case S_IFDIR: fd->mode |= FD_DIR; break;
     case S_IFCHR: fd->mode |= FD_CHAR; break;

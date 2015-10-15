@@ -9,24 +9,20 @@
 
 /* sets or displays current hostname
  * ----------------------------------------------------------------------- */
-int builtin_hostname(int argc, char **argv)
-{
+int builtin_hostname(int argc, char **argv) {
   int c;
   int force = 0;
   
   /* check options */
-  while((c = shell_getopt(argc, argv, "f")) > 0)
-  {
-    switch(c)
-    {
+  while((c = shell_getopt(argc, argv, "f")) > 0) {
+    switch(c) {
       case 'f': force = 1; break;
       default: builtin_invopt(argv); return 1;
     }
   }
   
   /* if there is an argument we set it as new hostname */
-  if(argv[shell_optind])
-  {
+  if(argv[shell_optind]) {
     unsigned long n;
     
     n = str_len(argv[shell_optind]);
@@ -55,8 +51,7 @@ int builtin_hostname(int argc, char **argv)
     stralloc_copyb(&sh_hostname, argv[shell_optind], n);
   }
   /* if there is no argument we display the current hostname */
-  else
-  {
+  else {
     /* force re-get of hostname by clearing it now */
     if(force)
       stralloc_zero(&sh_hostname);
@@ -66,8 +61,7 @@ int builtin_hostname(int argc, char **argv)
       shell_gethostname(&sh_hostname);
     
     /* report errors */
-    if(sh_hostname.len == 0)
-    {
+    if(sh_hostname.len == 0) {
       builtin_error(argv, "gethostname");
       return 1;
     }

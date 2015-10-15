@@ -4,8 +4,7 @@
 /* exit built-in 
  * 
  * ----------------------------------------------------------------------- */
-int builtin_exit(int argc, char **argv)
-{
+int builtin_exit(int argc, char **argv) {
   int status = 0;
 
   if(argc > 1)

@@ -2,8 +2,7 @@
 #include "fdstack.h"
 #include "vartab.h"
 
-struct env sh_root =
-{
+struct env sh_root = {
   .parent      = NULL,
 //  .flags       = 0,
   .cwd         = { NULL, 0, 0 },

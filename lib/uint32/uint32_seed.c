@@ -18,14 +18,11 @@ int uint32_seed(const void *p, unsigned long n)
       uint32_seeds += i;
     
     close(fd);
-  }
-  else
-  {
+  } else {
     const char *b = (const char *)p;
     char *x = (char *)uint32_pool;
     
-    while(n)
-    {
+    while(n) {
       x[n % sizeof(uint32_pool)] ^= *b;
       n--;
       b++;

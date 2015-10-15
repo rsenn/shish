@@ -11,8 +11,7 @@
 
 /* evaluate a pipeline (3.9.2)
  * ----------------------------------------------------------------------- */
-int eval_pipeline(struct eval *e, struct npipe *npipe)
-{
+int eval_pipeline(struct eval *e, struct npipe *npipe) {
   struct job *job;
   union node *node;
   struct fdstack st;
@@ -24,20 +23,17 @@ int eval_pipeline(struct eval *e, struct npipe *npipe)
 //  job = (e->flags & E_JCTL) ? job_new(npipe->ncmd) : NULL;
   job = job_new(npipe->ncmd);
   
-  if(job == NULL)
-  {
+  if(job == NULL) {
     buffer_puts(fd_err->w, "no job control");
     buffer_putnlflush(fd_err->w);
   }
   
   
-  for(node = npipe->cmds; node; node = node->list.next)
-  {
+  for(node = npipe->cmds; node; node = node->list.next) {
     fdstack_push(&st);
     
     /* if there was a previous command we read input from pipe */
-    if(prevfd >= 0)
-    {
+    if(prevfd >= 0) {
       struct fd *in;
       
       fd_alloca(in);
@@ -47,16 +43,14 @@ int eval_pipeline(struct eval *e, struct npipe *npipe)
     
     /* if it isn't the last command we have to create a pipe
        to pass output to the next command */
-    if(node->list.next)
-    {
+    if(node->list.next) {
       struct fd *out;
       
       fd_alloca(out);
       fd_push(out, STDOUT_FILENO, FD_WRITE|FD_PIPE);
       prevfd = fd_pipe(out);
       
-      if(prevfd == -1)
-      {
+      if(prevfd == -1) {
         close(prevfd);
         sh_error("pipe creation failed");
       }
@@ -67,8 +61,7 @@ int eval_pipeline(struct eval *e, struct npipe *npipe)
     
     pid = job_fork(job, node, npipe->bgnd);
     
-    if(!pid)
-    {
+    if(!pid) {
       /* no job control for commands inside pipe */
 //      e->mode &= E_JCTL;
       
@@ -80,8 +73,7 @@ int eval_pipeline(struct eval *e, struct npipe *npipe)
     fdstack_data();
   }
   
-  if(!npipe->bgnd)
-  {
+  if(!npipe->bgnd) {
     job_wait(job, 0, &status, 0);
   }
 

@@ -8,8 +8,7 @@ unsigned int history_size;
 
 /* resize the command history 
  * ----------------------------------------------------------------------- */
-void history_resize(void)
-{
+void history_resize(void) {
   unsigned int i;
 
   /* get history size and return if we already have the desired size */

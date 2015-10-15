@@ -6,8 +6,7 @@
 
 /* make an (fd) entry a duplicate of another
  * ----------------------------------------------------------------------- */
-int fd_dup(struct fd *fd, int n)
-{
+int fd_dup(struct fd *fd, int n) {
   struct fd *dupe;
 
   /* search the (fd) to be duplicated and 
@@ -21,14 +20,12 @@ int fd_dup(struct fd *fd, int n)
     return fd_error(n, "we cannot duplicate ourselves");
   
   /* redirect buffer pointers */
-  if(FD_ISRD(fd))
-  {
+  if(FD_ISRD(fd)) {
     if(!FD_ISRD(dupe))
       return fd_error(n, "not opened for reading");
   }
   
-  if(FD_ISWR(fd))
-  {
+  if(FD_ISWR(fd)) {
     if(!FD_ISWR(dupe))
       return fd_error(n, "not opened for writing");
   }  

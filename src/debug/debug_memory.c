@@ -7,8 +7,7 @@
 
 static unsigned long debug_memory_total;
 
-void debug_memory(void)
-{
+void debug_memory(void) {
   struct chunk *ch;
   char buf[FMT_XLONG+FMT_LONG];
   unsigned long n;
@@ -18,8 +17,7 @@ void debug_memory(void)
   
   debug_memory_total = 0;
   
-  for(ch = debug_heap; ch; ch = ch->next)
-  {
+  for(ch = debug_heap; ch; ch = ch->next) {
     /* ptr */
     n = fmt_xlong(buf, (long)&ch[1]);
     buffer_putnspace(fd_out->w, 8 - n);

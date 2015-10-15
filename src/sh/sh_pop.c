@@ -6,8 +6,7 @@
 
 /* destroys current shell environment and pops previous
  * ----------------------------------------------------------------------- */
-int sh_pop(struct env *env)
-{
+int sh_pop(struct env *env) {
   struct env *parent;
 
   if(env != NULL && env != sh)
@@ -17,8 +16,7 @@ int sh_pop(struct env *env)
     return 0;
 
   /* change back to prev working dir */
-  if(stralloc_diffs(&sh->cwd, parent->cwd.s))
-  {
+  if(stralloc_diffs(&sh->cwd, parent->cwd.s)) {
     if(chdir(parent->cwd.s) == -1)
       sh_errorn(parent->cwd.s, parent->cwd.len);
   }

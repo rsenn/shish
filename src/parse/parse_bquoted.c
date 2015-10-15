@@ -5,8 +5,7 @@
 
 /* parse backquoted commands
  * ----------------------------------------------------------------------- */
-int parse_bquoted(struct parser *p)
-{
+int parse_bquoted(struct parser *p) {
   char c;
   union node *cmds;
   struct parser subp;
@@ -17,8 +16,7 @@ int parse_bquoted(struct parser *p)
   if(source_peek(&c) <= 0)
     return -1;
   
-  if(c == '(')
-  {
+  if(c == '(') {
     if(source_next(&c) <= 0)
       return -1;
     
@@ -26,9 +24,7 @@ int parse_bquoted(struct parser *p)
       return parse_arith(p);
     
     parse_init(&subp, P_DEFAULT);
-  }
-  else
-  {
+  } else {
     source_skip();
     subp.flags = P_BQUOTE;
     

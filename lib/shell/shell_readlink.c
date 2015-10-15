@@ -13,8 +13,7 @@
 
 /* read the link into a stralloc
  * ----------------------------------------------------------------------- */
-int shell_readlink(const char *path, stralloc *sa)
-{
+int shell_readlink(const char *path, stralloc *sa) {
 #ifdef HAVE_READLINK
   /* do not allocate PATH_MAX from the beginning, 
      most paths will be smaller */
@@ -30,8 +29,7 @@ int shell_readlink(const char *path, stralloc *sa)
   } while(sz == n);
   
   /* now truncate to effective length */
-  if(sz >= 0)
-  {
+  if(sz >= 0) {
     stralloc_trunc(sa, sz);
     return 0;
   }

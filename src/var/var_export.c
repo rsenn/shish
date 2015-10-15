@@ -4,8 +4,7 @@
 
 /* export variables for execve() 
  * ----------------------------------------------------------------------- */
-char **var_export(char **dest)
-{
+char **var_export(char **dest) {
   struct var *var;
   unsigned long n = 0;
 

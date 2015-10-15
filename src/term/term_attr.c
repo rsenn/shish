@@ -5,14 +5,12 @@ struct termios term_tcattr;
 
 /* backup and set terminal attributes
  * ----------------------------------------------------------------------- */
-int term_attr(int fd, int set)
-{
+int term_attr(int fd, int set) {
   int ret;
 
   
   
-  if((ret = tcgetattr(fd, &term_tcattr)) == 0 && set)
-  {
+  if((ret = tcgetattr(fd, &term_tcattr)) == 0 && set) {
     struct termios newattr;
     /* backup tty settings */
     newattr = term_tcattr;

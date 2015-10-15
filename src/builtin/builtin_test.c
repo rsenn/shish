@@ -15,20 +15,17 @@
 
 /* test for expression
  * ----------------------------------------------------------------------- */
-int builtin_test(int argc, char **argv)
-{
+int builtin_test(int argc, char **argv) {
   int c;
   int neg = 0;
   int brackets = 0;
   struct stat st;
   
-  if(argv[0][0] == '[')
-  {
+  if(argv[0][0] == '[') {
     brackets = 1;
     argc--;
 
-    if(argv[argc][0] != ']')
-    {
+    if(argv[argc][0] != ']') {
       builtin_errmsg(argv, "missing ]'", NULL);
       return 2;
     }
@@ -40,17 +37,14 @@ int builtin_test(int argc, char **argv)
   /* every condition can be negated by a leading ! */
   while(shell_optind < argc &&
         argv[shell_optind][0] == '!' && 
-        argv[shell_optind][1] == '\0')
-  {
+        argv[shell_optind][1] == '\0') {
     neg = !neg;
     shell_optind++;
   }
   
   /* check options */
-  while((c = shell_getopt(argc, argv, "n:z:f:d:b:c:h:L:S:e:s:r:w:x:")) > 0)
-  {
-    switch(c)
-    {
+  while((c = shell_getopt(argc, argv, "n:z:f:d:b:c:h:L:S:e:s:r:w:x:")) > 0) {
+    switch(c) {
       /* return true if argument is non-zero */
       case 'n': return neg ^ (!*shell_optarg);
       
@@ -93,8 +87,7 @@ int builtin_test(int argc, char **argv)
   }
 
   /* we cannot have more than 3 arguments */
-  if(argc > 4)
-  {
+  if(argc > 4) {
     builtin_errmsg(argv, "too many arguments", NULL);
     return 2;
   }

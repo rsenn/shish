@@ -4,8 +4,7 @@
 #include <stdlib.h>
 #include "uint32.h"
 
-enum hash_id
-{
+enum hash_id {
   H_PROGRAM = 0,
   H_EXEC,
   H_SBUILTIN,
@@ -13,16 +12,14 @@ enum hash_id
   H_FUNCTION
 };
 
-union command
-{
+union command {
   char               *path;
   union node         *fn;
   struct builtin_cmd *builtin;
   void               *ptr;
 };
 
-struct exechash
-{
+struct exechash {
   struct exechash    *next;
   uint32              hash;
   unsigned int        hits;

@@ -1,8 +1,6 @@
-unsigned long var_len(const char *v) 
-{
+unsigned long var_len(const char *v) {
   register const char *s = v;
-  for(;;) 
-  {
+  for(;;) {
     if(!*s || *s == '=') break; ++s;
     if(!*s || *s == '=') break; ++s;
     if(!*s || *s == '=') break; ++s;

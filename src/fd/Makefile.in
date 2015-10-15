@@ -19,34 +19,35 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = fd.a
-MODULES = fd_allocbuf \
-          fd_close \
-          fd_dump \
-          fd_dumplist \
-          fd_dup \
-          fd_error \
-          fd_exec \
-          fd_free \
-          fd_getname \
-          fd_here \
-          fd_init \
-          fd_list \
-          fd_mmap \
-          fd_needbuf \
-          fd_new \
-          fd_null \
-          fd_open \
-          fd_pipe \
-          fd_pop \
-          fd_print \
-          fd_push \
-          fd_reinit \
-          fd_setfd \
-          fd_setbuf \
-          fd_stat \
-          fd_string \
-          fd_subst \
-          fd_tempfile
+MODULES += fd_allocbuf
+MODULES += fd_close
+MODULES += fd_dump
+MODULES += fd_dumplist
+MODULES += fd_dup
+MODULES += fd_error
+MODULES += fd_exec
+MODULES += fd_free
+MODULES += fd_getname
+MODULES += fd_here
+MODULES += fd_init
+MODULES += fd_list
+MODULES += fd_mmap
+MODULES += fd_needbuf
+MODULES += fd_new
+MODULES += fd_null
+MODULES += fd_open
+MODULES += fd_pipe
+MODULES += fd_pop
+MODULES += fd_print
+MODULES += fd_push
+MODULES += fd_reinit
+MODULES += fd_setfd
+MODULES += fd_setbuf
+MODULES += fd_stat
+MODULES += fd_string
+MODULES += fd_subst
+MODULES += fd_tempfile
+
           
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

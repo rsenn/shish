@@ -5,8 +5,7 @@
 
 /* print an fdtablele entry (mainly for the 'fdtable' builtin)
  * ----------------------------------------------------------------------- */
-void fd_print(struct fd *fd)
-{
+void fd_print(struct fd *fd) {
   char numstr[FMT_LONG];
   unsigned int n = 1;
 

@@ -15,8 +15,7 @@
  * those are all subject to redirections, therefore perform these before
  * launching the command
  * ----------------------------------------------------------------------- */
-int eval_command(struct eval *e, union node *node, int tempflags)
-{
+int eval_command(struct eval *e, union node *node, int tempflags) {
   int ret = 1;
   int oldflags;
   struct fdstack fdstack;
@@ -27,20 +26,17 @@ int eval_command(struct eval *e, union node *node, int tempflags)
   e->flags |= tempflags;
   
   /* do redirections if present */
-  if(redir)
-  {
+  if(redir) {
     union node *r;
     fdstack_push(&fdstack);
     stralloc_init(&heredoc);
     
-    for(r = redir; r; r = r->list.next)
-    {
+    for(r = redir; r; r = r->list.next) {
       struct fd *fd;
       fd_alloca(fd);
       
       /* return if a redirection failed */
-      if(redir_eval(&r->nredir, fd, R_NOW))
-      {
+      if(redir_eval(&r->nredir, fd, R_NOW)) {
         ret = 1;
         goto fail;
       }
@@ -50,8 +46,7 @@ int eval_command(struct eval *e, union node *node, int tempflags)
     }
   }
   
-  switch(node->id)
-  {
+  switch(node->id) {
     case N_IF:
       ret = eval_if(e, &node->nif);
       break;

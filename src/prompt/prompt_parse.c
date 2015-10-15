@@ -12,8 +12,7 @@ static unsigned int prompt_hash;          /* hash of unexpanded PS1 */
 
 /* hash a prompt value
  * ----------------------------------------------------------------------- */
-static inline unsigned int prompt_hashstr(const char *s, unsigned long n)
-{
+static inline unsigned int prompt_hashstr(const char *s, unsigned long n) {
   unsigned int hash = 0x7fedcb95; /* some prime number */
   while(n) hash = (hash * 0x0123456b) ^ *s++, n--;
   return hash;
@@ -21,8 +20,7 @@ static inline unsigned int prompt_hashstr(const char *s, unsigned long n)
 
 /* parses the prompt if necessary
  * ----------------------------------------------------------------------- */
-void prompt_parse(void)
-{
+void prompt_parse(void) {
   const char *value;
   unsigned int newhash;
   unsigned long n;

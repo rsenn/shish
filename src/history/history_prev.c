@@ -3,10 +3,8 @@
 
 /* put the previous entry of the history into the cmdline
  * ----------------------------------------------------------------------- */
-void history_prev(void)
-{
-  if(history_offset < history_count)
-  {
+void history_prev(void) {
+  if(history_offset < history_count) {
     char *p;
     unsigned long len = 0;
     

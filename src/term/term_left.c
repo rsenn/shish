@@ -1,20 +1,16 @@
 #include "term.h"
 
 /* ----------------------------------------------------------------------- */
-void term_left(unsigned long n)
-{
+void term_left(unsigned long n) {
   if(!term_pos || !n)
     return;
   
   if(n > term_pos)
     n = term_pos;
       
-  if(n > 4 && !term_dumb)
-  {
+  if(n > 4 && !term_dumb) {
     term_escape(n, 'D');
-  }
-  else
-  {
+  } else {
     int i;
     char c = '\b';
       

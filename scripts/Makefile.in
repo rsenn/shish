@@ -57,8 +57,7 @@ FILES                = Makefile.in fnproto.sh
 
 # files to be cleaned
 # ---------------------------------------------------------------------------
-CLEANFILES           = *~ \
-                       core core.* 
+CLEANFILES           = *~ core core.* 
 DISTCLEANFILES       = Makefile $(DEPS)
 MAINTAINERCLEANFILES = shish shish-$(VERSION)
 

@@ -9,8 +9,14 @@
 /* Define this if you have the `fcntl.h' header file */
 #undef HAVE_FCNTL_H
 
+/* Define to 1 if you have the `fork' function. */
+#undef HAVE_FORK
+
 /* Define this if you have the 'gethostname' function */
 #undef HAVE_GETHOSTNAME
+
+/* Define to 1 if you have the `getuid' function. */
+#undef HAVE_GETUID
 
 /* Define this if you have the `glob' function */
 #undef HAVE_GLOB
@@ -33,6 +39,9 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
+/* Define to 1 if you have the `pipe' function. */
+#undef HAVE_PIPE
+
 /* Define to 1 if you have the <pwd.h> header file. */
 #undef HAVE_PWD_H
 
@@ -41,6 +50,9 @@
 
 /* Define to 1 if you have the `sethostname' function. */
 #undef HAVE_SETHOSTNAME
+
+/* Define to 1 if you have the `setpgid' function. */
+#undef HAVE_SETPGID
 
 /* Define to 1 if you have the <signal.h> header file. */
 #undef HAVE_SIGNAL_H
@@ -74,6 +86,12 @@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
+
+/* Define this if you have the `sys/wait.h' header file */
+#undef HAVE_SYS_WAIT_H
+
+/* Define to 1 if you have the `tcsetpgrp' function. */
+#undef HAVE_TCSETPGRP
 
 /* Define this if you have the `termios.h' header file */
 #undef HAVE_TERMIOS_H

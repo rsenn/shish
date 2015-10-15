@@ -9,15 +9,13 @@ union node *prompt_node = NULL;
 
 /* expands the prompt if necessary
  * ----------------------------------------------------------------------- */
-void prompt_expand(void)
-{
+void prompt_expand(void) {
   /* expand PS1 only */
   if(prompt_number != 1)
     return;
 
   /* expand prompt tree if present */
-  if(prompt_node)
-  {
+  if(prompt_node) {
     stralloc sa;
 
     /* escape prompt */
