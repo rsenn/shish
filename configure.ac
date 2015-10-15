@@ -38,6 +38,9 @@ AC_PROG_AR
 AC_PROG_RANLIB
 AC_PROG_INSTALL
 
+CCLD="$CC"
+AC_SUBST([CCLD])
+
 # check for operating system features
 # ---------------------------------------------------------------------------
 AC_C_INLINE

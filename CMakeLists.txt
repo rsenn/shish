@@ -21,6 +21,24 @@ include(CheckIncludeFile)
 include(CheckSymbolExists)
 include(CheckTypeSize)
 include(CheckFunctionExists)
+include(CheckLibraryExists)
+
+
+check_library_exists(owfat_debug buffer_init /usr/lib64 HAVE_LIBOWFAT)
+
+if(HAVE_LIBOWFAT)
+  set(LIBOWFAT_LIBRARY owfat_debug)	
+endif(HAVE_LIBOWFAT)
+
+
+if(NOT HAVE_LIBOWFAT)
+  check_library_exists(owfat buffer_init /usr/lib64 HAVE_LIBOWFAT)
+	if(HAVE_LIBOWFAT)
+		set(LIBOWFAT_LIBRARY owfat)	
+	endif(HAVE_LIBOWFAT)
+endif(NOT HAVE_LIBOWFAT)
+
+
 
 check_include_file(alloca.h HAVE_ALLOCA_H)
 
@@ -105,8 +123,6 @@ include_directories("${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}/lib" "${CMAKE_SOU
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY src)
 
 set(LIBSOURCES
-	lib/open/open_read.c
-	lib/open/open_trunc.c
 	lib/open/open_temp.c
 	lib/mmap.h
 	lib/shell/shell_dirname.c
@@ -127,11 +143,6 @@ set(LIBSOURCES
 	lib/shell/shell_gethome.c
 	lib/uint32.h
 	lib/uint64.h
-	lib/scan/scan_uint.c
-	lib/scan/scan_8long.c
-	lib/scan/scan_long.c
-	lib/scan/scan_int.c
-	lib/scan/scan_ulong.c
 	lib/byte.h
 	lib/open.h
 	lib/uint16.h
@@ -141,86 +152,37 @@ set(LIBSOURCES
 	lib/uint32/uint32_prng.c
 	lib/uint32/uint32_seed.c
 	lib/buffer/buffer_default.c
-	lib/buffer/buffer_putsa.c
 	lib/buffer/buffer_putc.c
-	lib/buffer/buffer_mmapread.c
-	lib/buffer/buffer_putsflush.c
-	lib/buffer/buffer_putulong.c
-	lib/buffer/buffer_getc.c
-	lib/buffer/buffer_fromsa.c
 	lib/buffer/buffer_mmapread_fd.c
-	lib/buffer/buffer_flush.c
 	lib/buffer/buffer_putnspace.c
-	lib/buffer/buffer_free.c
-	lib/buffer/buffer_stubborn.c
 	lib/buffer/buffer_truncfile.c
 	lib/buffer/buffer_skip_until.c
-	lib/buffer/buffer_putnlflush.c
 	lib/buffer/buffer_prefetch.c
 	lib/buffer/buffer_mmapprivate.c
-	lib/buffer/buffer_stubborn2.c
-	lib/buffer/buffer_putm_internal.c
-	lib/buffer/buffer_get.c
 	lib/buffer/buffer_fromstr.c
 	lib/buffer/buffer_get_until.c
-	lib/buffer/buffer_put.c
-	lib/buffer/buffer_tosa.c
-	lib/buffer/buffer_puts.c
-	lib/buffer/buffer_close.c
-	lib/buffer/buffer_putflush.c
-	lib/buffer/buffer_putspace.c
 	lib/buffer/buffer_dump.c
-	lib/buffer/buffer_init.c
-	lib/buffer/buffer_feed.c
+	lib/buffer/buffer_dummyread.c
+	lib/buffer/buffer_dummyreadmmap.c
 	lib/scan.h
-	lib/fmt/fmt_xlonglong.c
-	lib/fmt/fmt_long.c
-	lib/fmt/fmt_xlong.c
-	lib/fmt/fmt_ulong0.c
-	lib/fmt/fmt_ulong.c
-	lib/fmt/fmt_minus.c
-	lib/byte/byte_zero.c
-	lib/byte/byte_diff.c
-	lib/byte/byte_copyr.c
-	lib/byte/byte_copy.c
 	lib/byte/byte_fill.c
-	lib/byte/byte_rchr.c
-	lib/byte/byte_chr.c
-	lib/mmap/mmap_private.c
 	lib/mmap/mmap_read_fd.c
-	lib/mmap/mmap_read.c
-	lib/mmap/mmap_unmap.c
 	lib/shell.h
 	lib/buffer.h
 	lib/safemult.h
-	lib/stralloc/stralloc_cats.c
-	lib/stralloc/stralloc_diffs.c
-	lib/stralloc/stralloc_zero.c
 	lib/stralloc/stralloc_write.c
 	lib/stralloc/stralloc_remove.c
-	lib/stralloc/stralloc_free.c
-	lib/stralloc/stralloc_catlong0.c
-	lib/stralloc/stralloc_copyb.c
 	lib/stralloc/stralloc_insertb.c
 	lib/stralloc/stralloc_catc.c
-	lib/stralloc/stralloc_copys.c
-	lib/stralloc/stralloc_copy.c
 	lib/stralloc/stralloc_move.c
-	lib/stralloc/stralloc_ready.c
-	lib/stralloc/stralloc_catulong0.c
 	lib/stralloc/stralloc_trunc.c
-	lib/stralloc/stralloc_cat.c
-	lib/stralloc/stralloc_catb.c
-	lib/stralloc/stralloc_init.c
 	lib/stralloc/stralloc_nul.c
-	lib/stralloc/stralloc_readyplus.c
 	lib/stralloc.h
-	lib/str/str_copyn.c
-	lib/str/str_diff.c
-	lib/str/str_len.c
-	lib/str/str_rchr.c
-	lib/str/str_chr.c
-	lib/str/str_copy.c)
+	lib/str/str_copyn.c)
+
+if(NOT HAVE_LIBOWFAT) 
+	set(LIBSOURCES ${LIBSOURCES} lib/open/open_read.c lib/open/open_trunc.c lib/scan/scan_uint.c lib/scan/scan_8long.c lib/scan/scan_long.c lib/scan/scan_int.c lib/scan/scan_ulong.c lib/buffer/buffer_putsa.c lib/buffer/buffer_mmapread.c lib/buffer/buffer_putsflush.c lib/buffer/buffer_putulong.c lib/buffer/buffer_getc.c lib/buffer/buffer_fromsa.c lib/buffer/buffer_flush.c lib/buffer/buffer_free.c lib/buffer/buffer_stubborn.c lib/buffer/buffer_putnlflush.c lib/buffer/buffer_stubborn2.c lib/buffer/buffer_putm_internal.c lib/buffer/buffer_get.c lib/buffer/buffer_put.c lib/buffer/buffer_tosa.c lib/buffer/buffer_puts.c lib/buffer/buffer_close.c lib/buffer/buffer_putflush.c lib/buffer/buffer_putspace.c lib/buffer/buffer_init.c lib/buffer/buffer_feed.c lib/fmt/fmt_xlonglong.c lib/fmt/fmt_long.c lib/fmt/fmt_xlong.c lib/fmt/fmt_ulong0.c lib/fmt/fmt_ulong.c lib/fmt/fmt_minus.c lib/byte/byte_zero.c lib/byte/byte_diff.c lib/byte/byte_copyr.c lib/byte/byte_copy.c lib/byte/byte_rchr.c lib/byte/byte_chr.c lib/mmap/mmap_private.c lib/mmap/mmap_read.c lib/mmap/mmap_unmap.c lib/stralloc/stralloc_cats.c lib/stralloc/stralloc_diffs.c lib/stralloc/stralloc_zero.c lib/stralloc/stralloc_free.c lib/stralloc/stralloc_catlong0.c lib/stralloc/stralloc_copyb.c lib/stralloc/stralloc_copys.c lib/stralloc/stralloc_copy.c lib/stralloc/stralloc_ready.c lib/stralloc/stralloc_catulong0.c lib/stralloc/stralloc_cat.c lib/stralloc/stralloc_catb.c lib/stralloc/stralloc_init.c lib/stralloc/stralloc_readyplus.c lib/str/str_diff.c lib/str/str_len.c lib/str/str_rchr.c lib/str/str_chr.c lib/str/str_copy.c)
+endif(NOT HAVE_LIBOWFAT) 
 
 add_library(libshish ${LIBSOURCES})
 
@@ -537,6 +499,6 @@ set(SOURCES src/sig.h
 	src/fdstack.h)
 
 add_executable(shish ${SOURCES})
-target_link_libraries(shish libshish)
+target_link_libraries(shish libshish ${LIBOWFAT_LIBRARY})
 
 install(TARGETS shish DESTINATION bin)

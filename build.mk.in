@@ -11,7 +11,7 @@ CLEANFILES += $(OBJECTS) $(LIBRARY) $(A_LIBRARY) $(PIE_LIBRARY) $(PIE_LINKS) $(A
 # command lines
 # ---------------------------------------------------------------------------
 COMPILE         = $(CC) $(CPPFLAGS) $(DEFS) $(INCLUDES) $(CFLAGS)
-LINK            = $(CC) $(LDFLAGS)
+LINK            = $(CCLD) $(LDFLAGS)
 COMPLINK        = $(LINK) $(CPPFLAGS) $(INCLUDES) $(CFLAGS)
 
 # file suffixes we may encounter
@@ -24,18 +24,18 @@ COMPLINK        = $(LINK) $(CPPFLAGS) $(INCLUDES) $(CFLAGS)
 
 .c.@OBJEXT@:
 	@$(ECHO_CC)
-@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -c -o $@ $<
-@DEPS_FALSE@	@QUIET@$(COMPILE) -c -o $@ $<
+@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -c $<
+@DEPS_FALSE@	@QUIET@$(COMPILE) -c $<
 
 .c.e:
 	@$(ECHO_CC)
-@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -E -o $@ $<
-@DEPS_FALSE@	@QUIET@$(COMPILE) -E -o $@ $<
+@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -E $<
+@DEPS_FALSE@	@QUIET@$(COMPILE) -E $<
 
 .c.i:
 	@$(ECHO_CC)
-@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -E -o $@ $<
-@DEPS_FALSE@	@QUIET@$(COMPILE) -E -o $@ $<
+@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -E $<
+@DEPS_FALSE@	@QUIET@$(COMPILE) -E $<
 
 
 #	@$(ECHO_CCLD)
