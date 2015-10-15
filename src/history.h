@@ -19,11 +19,11 @@ extern const char  *history_files[];
 extern buffer       history_buffer;
 
 unsigned long history_cmdlen(const char *b);
-  
+
 void history_resize(void);
 void history_clear(void);
 void history_print(void);
-void history_advance(void);  
+void history_advance(void);
 void history_set(char *s);
 void history_free(unsigned int index);
 
@@ -32,7 +32,7 @@ void history_prev(void);
 
 void history_load(void);
 void history_save(void);
-  
+
 
 #endif /* HISTORY_H */
 

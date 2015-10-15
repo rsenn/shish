@@ -22,16 +22,14 @@ struct vartab;
 
 //#define SH_INTERACTIVE 0x0001
 
-struct arg
-{
+struct arg {
   unsigned int   c;
   char         **v;
   int            a;     /* arguments alloced? */
   unsigned int   s;     /* shift count */
 };
 
-struct env
-{
+struct env {
   struct env     *parent;
   stralloc        cwd;
   int             cwdsym;   /* is cwd symbolic or phyiscal? */
@@ -62,7 +60,7 @@ extern pid_t       sh_pid;
 
 union node;
 
-  
+
 int sh_error(const char *s);
 int sh_errorn(const char *s, unsigned int len);
 void sh_exit(int retcode);

@@ -1,12 +1,11 @@
-/* $Id: fdstack.h,v 1.8 2005/04/08 09:34:09 smoli Exp $ 
+/* $Id: fdstack.h,v 1.8 2005/04/08 09:34:09 smoli Exp $
  * ----------------------------------------------------------------------- */
 #ifndef FDSTACK_H
 #define FDSTACK_H
 
 struct fd;
 
-struct fdstack
-{
+struct fdstack {
   struct fd    *list;   /* is sorted by efd */
   struct fdstack *parent;
   unsigned int    level;  /* stack level -> root is 0 */

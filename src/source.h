@@ -5,8 +5,7 @@
 
 struct fd;
 
-struct source
-{
+struct source {
   buffer       *b;
   int           mode;
   unsigned int  line;
@@ -20,7 +19,7 @@ extern struct source *source;
 extern int           source_psn;
 
 int source_string(const char *s, unsigned long len);
-void source_pop(void);  
+void source_pop(void);
 void source_prompt(void);
 int source_peek(char *c);
 int source_get(char *c);
@@ -33,5 +32,5 @@ int source_fork(buffer *child_source);
 void source_exec(void);
 void source_newline(void);
 void source_push(struct source *in);
-  
+
 #endif /* SOURCE_H */

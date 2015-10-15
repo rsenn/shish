@@ -6,34 +6,33 @@
 
 /* the section numbers refer to the IEEE P1003.2 Draft D11.2 */
 
-enum nod_id
-{  
-/* simple   */ N_SIMPLECMD = 0,
-/* pipeline */ N_PIPELINE,       /* execute cmd list, while passing 
-                                    stdout amongst them */
-/* list     */ N_AND,            /* execute cmd2 if cmd succeeded */
-               N_OR,             /* execute cmd2 if cmd failed */
+enum nod_id {
+  /* simple   */ N_SIMPLECMD = 0,
+  /* pipeline */ N_PIPELINE,       /* execute cmd list, while passing
+                                      stdout amongst them */
+  /* list     */ N_AND,            /* execute cmd2 if cmd succeeded */
+  N_OR,             /* execute cmd2 if cmd failed */
 //               N_SEMI,           /* execute both */
-               N_NOT,            /* execute cmd and negate return status */
-/* compound */ N_SUBSHELL,       /* execute the list in a subshell */
-               N_CMDLIST,        /* execute the list in the current env */
-/* for      */ N_FOR,            /* execute body for each arg,
-                                    while putting the arg into var */
-/* case */     N_CASE,           /* execute the case matching the expr */
-/* casenode */ N_CASENODE,
-/* if */       N_IF,             /* execute ontrue/onfalse, depending on
-                                    what test evaluates to */
-/* loop */     N_WHILE,          /* execute body while test evals to true */
-               N_UNTIL,          /* execute body until test evals to true */
-/* function */ N_FUNCTION,
-/* argument */ N_ARG,
-/* assign   */ N_ASSIGN,
-/* redir    */ N_REDIR,
-    
-               N_ARGSTR,
-               N_ARGCMD,
-               N_ARGPARAM,
-               N_ARGARITH
+  N_NOT,            /* execute cmd and negate return status */
+  /* compound */ N_SUBSHELL,       /* execute the list in a subshell */
+  N_CMDLIST,        /* execute the list in the current env */
+  /* for      */ N_FOR,            /* execute body for each arg,
+                                      while putting the arg into var */
+  /* case */     N_CASE,           /* execute the case matching the expr */
+  /* casenode */ N_CASENODE,
+  /* if */       N_IF,             /* execute ontrue/onfalse, depending on
+                                      what test evaluates to */
+  /* loop */     N_WHILE,          /* execute body while test evals to true */
+  N_UNTIL,          /* execute body until test evals to true */
+  /* function */ N_FUNCTION,
+  /* argument */ N_ARG,
+  /* assign   */ N_ASSIGN,
+  /* redir    */ N_REDIR,
+
+  N_ARGSTR,
+  N_ARGCMD,
+  N_ARGPARAM,
+  N_ARGARITH
 };
 
 /* 3.9.1 - simple command
@@ -42,8 +41,7 @@ enum nod_id
 /* the simple command and the compound commands in 3.9.4 have the bgnd and
    rdir members in common, because they all can be redirected and put in
    background */
-struct ncmd
-{
+struct ncmd {
   int          id;
   union node  *next;
   int          bgnd;     /* run in background */
@@ -54,8 +52,7 @@ struct ncmd
 
 /* 3.9.2 - pipeline
  * ----------------------------------------------------------------------- */
-struct npipe
-{
+struct npipe {
   int         id;
   union node *next;
   int         bgnd;
@@ -67,8 +64,7 @@ struct npipe
  * ----------------------------------------------------------------------- */
 
 /* AND-OR list */
-struct nandor
-{
+struct nandor {
   int         id;
   union node *next;
   int         bgnd;
@@ -77,8 +73,7 @@ struct nandor
 };
 
 /* list */
-struct nlist
-{
+struct nlist {
   int         id;
   union node *next;
   int         bgnd;
@@ -90,8 +85,7 @@ struct nlist
 
 /* 3.9.4.1 - grouping compound
  * ----------------------------------------------------------------------- */
-struct ngrp
-{
+struct ngrp {
   int         id;
   union node *next;
   int         bgnd;     /* run in background */
@@ -101,8 +95,7 @@ struct ngrp
 
 /* 3.9.4.2 - for loop
  * ----------------------------------------------------------------------- */
-struct nfor
-{
+struct nfor {
   int         id;
   union node *next;
   int         bgnd;     /* run in background */
@@ -112,10 +105,9 @@ struct nfor
   char       *varn;
 };
 
-/* 3.9.4.3 - case conditional 
+/* 3.9.4.3 - case conditional
  * ----------------------------------------------------------------------- */
-struct ncase
-{
+struct ncase {
   int         id;
   union node *next;
   int         bgnd;     /* run in background */
@@ -124,8 +116,7 @@ struct ncase
   union node *word;
 };
 
-struct ncasenode
-{
+struct ncasenode {
   int         id;
   union node *next;
   union node *pats;
@@ -134,8 +125,7 @@ struct ncasenode
 
 /* 3.9.4.4 - if conditional
  * ----------------------------------------------------------------------- */
-struct nif
-{
+struct nif {
   int         id;
   union node *next;
   int         bgnd;     /* run in background */
@@ -148,8 +138,7 @@ struct nif
 /* 3.9.4.5 while loop
  * 3.9.4.6 until loop
  * ----------------------------------------------------------------------- */
-struct nloop
-{
+struct nloop {
   int         id;
   union node *next;
   int         bgnd;     /* run in background */
@@ -158,32 +147,29 @@ struct nloop
   union node *test;
 };
 
-/* 3.9.5 function definition 
+/* 3.9.5 function definition
  * ----------------------------------------------------------------------- */
-struct nfunc
-{
+struct nfunc {
   int         id;
   union node *next;
   union node *cmds;
   char       *name;
 };
 
-/* internally used nodes 
+/* internally used nodes
  * ----------------------------------------------------------------------- */
-struct list
-{
+struct list {
   enum nod_id  id;
   union node  *next;
 };
 
 /* those are a subset of T_WORD
- * 
+ *
  * a word is either a redirection, an argument or an assignment.
  * the members nredir.file and nassign.args are themselves a narg.
- * 
+ *
  * ----------------------------------------------------------------------- */
-struct narg
-{
+struct narg {
   int          id;
   union node  *next;
   union node  *list;
@@ -192,8 +178,7 @@ struct narg
 };
 
 /* [fd]<operator><file> */
-struct nredir
-{
+struct nredir {
   int          id;
   union node  *next;
   union node  *list; /* can be file, fd, delim, here-doc-data */
@@ -203,8 +188,7 @@ struct nredir
   struct fd   *fd;
 };
 
-struct nassign
-{
+struct nassign {
   int         id;
   union node *next;
   union node *list;
@@ -213,16 +197,14 @@ struct nassign
 
 /* argument (word) subnodes
  * ----------------------------------------------------------------------- */
-struct nargstr
-{
+struct nargstr {
   int          id;
   union node  *next;
   int          flag;
   stralloc     stra;
 };
 
-struct nargparam
-{
+struct nargparam {
   int          id;
   union node  *next;
   int          flag;
@@ -231,16 +213,14 @@ struct nargparam
   int          numb;
 };
 
-struct nargcmd
-{
+struct nargcmd {
   int         id;
   union node *next;
   int         flag;
   union node *list;
 };
 
-struct nargarith
-{
+struct nargarith {
   int         id;
   union node *next;
   int         flag;
@@ -248,8 +228,7 @@ struct nargarith
 };
 
 /* ----------------------------------------------------------------------- */
-union node
-{
+union node {
   enum nod_id      id;
   struct list      list;
   struct ncmd      ncmd;
@@ -259,7 +238,7 @@ union node
   struct ngrp      ngrp;
   struct nfor      nfor;
   struct ncase     ncase;
-  struct ncasenode ncasenode; 
+  struct ncasenode ncasenode;
   struct nif       nif;
   struct nloop     nloop;
   struct nfunc     nfunc;
@@ -295,8 +274,8 @@ union node
  * initialize a branch in the tree.
  * node is where the branch starts and
  * nptr will be used as pointer to the
- * current node in conjunction with 
- * tree_link 
+ * current node in conjunction with
+ * tree_link
  */
 #define tree_init(node, nptr) \
   do { \

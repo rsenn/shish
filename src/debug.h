@@ -11,8 +11,7 @@
 #include "buffer.h"
 #include "stralloc.h"
 
-struct chunk
-{
+struct chunk {
   struct chunk  *next;
   struct chunk **pos;
   unsigned long  size;
@@ -69,9 +68,9 @@ void debug_list(union node *node, int depth);
 void debug_unquoted(const char *msg, const char *s, int depth);
 void debug_space(int count);
 void debug_node(union node *node, int depth);
-void debug_redir(const char *msg, int flags, int depth);  
+void debug_redir(const char *msg, int flags, int depth);
 void debug_subst(const char *msg, int flags, int depth);
-  
+
 #endif /* DEBUG */
 
 #endif /* DEBUG_H */

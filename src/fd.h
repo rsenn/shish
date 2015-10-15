@@ -18,16 +18,16 @@
 #define FD_BUFSIZE   1024
 #define FD_BUFSIZE2  (FD_BUFSIZE >> 1)
 
-#ifndef STDSRC_FILENO 
+#ifndef STDSRC_FILENO
 #define STDSRC_FILENO -1
 #endif
-#ifndef STDIN_FILENO 
+#ifndef STDIN_FILENO
 #define STDIN_FILENO   0
 #endif
-#ifndef STDOUT_FILENO 
+#ifndef STDOUT_FILENO
 #define STDOUT_FILENO  1
 #endif
-#ifndef STDERR_FILENO 
+#ifndef STDERR_FILENO
 #define STDERR_FILENO  2
 #endif
 
@@ -42,8 +42,7 @@ struct fdtable;
 
 #define FD_SIZE (sizeof(struct fd))
 
-struct fd
-{
+struct fd {
   int             n;      /* virtual fd */
   int             e;      /* effective fd */
   int             mode;   /* FD_ modes */
@@ -51,7 +50,7 @@ struct fd
 
   struct fd    *next;
   struct fd   **link;
-  struct fd    *parent; 
+  struct fd    *parent;
   struct fd   **pos;
   struct fd    *dup;    /* this fd is a duplicate of ->dup */
   struct fdstack *stack;  /* stack level */
@@ -78,9 +77,9 @@ struct fd
 #define FD_TYPE       0x0007ff00
 
 #define FD_FILE       0x00000100  /* a file that has been opened */
-#define FD_DIR        0x00000200 
-#define FD_LINK       0x00000400 
-#define FD_CHAR       0x00000800 
+#define FD_DIR        0x00000200
+#define FD_LINK       0x00000400
+#define FD_CHAR       0x00000800
 #define FD_BLOCK      0x00001000
 #define FD_SOCKET     0x00002000
 #define FD_PIPE       0x00004000  /* a pipe */

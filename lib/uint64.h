@@ -15,15 +15,15 @@ typedef int64_t int64;
 #define uint64_pack(out,in) (*(uint64*)(out)=(in))
 #define uint64_unpack(in,out) (*(out)=*(uint64*)(in))
 #define uint64_read(in) (*(uint64*)(in))
-void uint64_pack_big(char *out,uint64 in);
-void uint64_unpack_big(const char *in,uint64* out);
+void uint64_pack_big(char *out, uint64 in);
+void uint64_unpack_big(const char *in, uint64* out);
 uint64 uint64_read_big(const char *in);
 #else
 
-void uint64_pack(char *out,uint64 in);
-void uint64_pack_big(char *out,uint64 in);
-void uint64_unpack(const char *in,uint64* out);
-void uint64_unpack_big(const char *in,uint64* out);
+void uint64_pack(char *out, uint64 in);
+void uint64_pack_big(char *out, uint64 in);
+void uint64_unpack(const char *in, uint64* out);
+void uint64_unpack_big(const char *in, uint64* out);
 uint64 uint64_read(const char *in);
 uint64 uint64_read_big(const char *in);
 

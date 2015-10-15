@@ -6,7 +6,7 @@
 
 #include "tree.h"
 
-/* character classification table 
+/* character classification table
  *  * ----------------------------------------------------------------------- */
 #define CHAR_BITS  (sizeof(unsigned char) * 8)
 #define CHAR_RANGE (1 << CHAR_BITS)
@@ -27,7 +27,7 @@
 /* character class table */
 const unsigned short parse_chartable[CHAR_RANGE];
 
-/* character class macros 
+/* character class macros
  * ----------------------------------------------------------------------- */
 
 /* matches [ \t\n] */
@@ -69,26 +69,24 @@ const unsigned short parse_chartable[CHAR_RANGE];
 
 /* token structure:
  * ----------------------------------------------------------------------- *
- * the end of list flag, t_eol, can be set to 
+ * the end of list flag, t_eol, can be set to
  * the following values:
- * 
+ *
  * 0 - token doesn't end a list, but may start one
  * 1 - token ends a list
  * 2 - token ends a list and may also start one
  */
-struct token
-{
+struct token {
   int         eol;    /* eof of list flag */
   const char *name;   /* token name */
- };
+};
 
 /* tokens */
-enum tok_id
-{
+enum tok_id {
   TI_EOF    = 0,  /* end of file */
-    
-/* control operator tokens */
-    
+
+  /* control operator tokens */
+
   TI_NL,          /* newline */
   TI_SEMI,        /* semicolon */
   TI_ECASE,       /* end of case (double-semicolon) */
@@ -99,19 +97,19 @@ enum tok_id
   TI_LP,          /* left parenthesis ( */
   TI_RP,          /* right parenthesis ) */
   TI_BQ,          /* backquote ` */
-    
-/* word tokens */
+
+  /* word tokens */
   TI_NAME,        /* word token is a valid name */
   TI_WORD,        /* word (to be expanded) */
   TI_ASSIGN,      /* word +token is a valid assignment in the form
                      name=[word] */
   TI_REDIR,       /* redirection */
 
-/* keyword tokens, must be sorted alphanumerically 
-   for the keyword recognition to work */
+  /* keyword tokens, must be sorted alphanumerically
+     for the keyword recognition to work */
   TI_NOT,         /* BANG ! */
   TI_CASE,
-  TI_DO,  
+  TI_DO,
   TI_DONE,
   TI_ELIF,
   TI_ELSE,
@@ -127,8 +125,7 @@ enum tok_id
   TI_END,         /* right brace } */
 };
 
-enum tok_flag
-{
+enum tok_flag {
   T_EOF    = (1 << TI_EOF),
   T_NL     = (1 << TI_NL),
   T_SEMI   = (1 << TI_SEMI),
@@ -164,8 +161,7 @@ enum tok_flag
 
 /* quoting
  * ----------------------------------------------------------------------- */
-enum quoting
-{
+enum quoting {
   Q_UNQUOTED = 0,
   Q_DQUOTED = 1,
   Q_SQUOTED = 2,
@@ -174,8 +170,7 @@ enum quoting
 
 /* parser context
  * ----------------------------------------------------------------------- */
-struct parser
-{
+struct parser {
   int           flags;
   int           pushback;
   enum quoting  quot;
@@ -243,5 +238,5 @@ void parse_newnodedebug(const char *file, unsigned int line, struct parser *p, e
 #else
 void parse_newnode(struct parser *p, enum nod_id nod);
 #endif
-  
+
 #endif /* PARSE_H */
