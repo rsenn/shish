@@ -9,22 +9,20 @@ union node *prompt_node = NULL;
 
 /* expands the prompt if necessary
  * ----------------------------------------------------------------------- */
-void prompt_expand(void)
-{
+void prompt_expand(void) {
   /* expand PS1 only */
   if(prompt_number != 1)
     return;
 
   /* expand prompt tree if present */
-  if(prompt_node)
-  {
+  if(prompt_node) {
     stralloc sa;
 
     /* escape prompt */
     stralloc_init(&sa);
 #ifdef DEBUG
-//    debug_list(prompt_node, 0);      
-#endif    
+//    debug_list(prompt_node, 0);
+#endif
     expand_catsa(prompt_node, &sa, 0);
     stralloc_nul(&sa);
     stralloc_zero(&prompt_expansion);
@@ -33,8 +31,8 @@ void prompt_expand(void)
 
 #ifdef DEBUG
 //    debug_stralloc("prompt", &sa, 0);
-#endif      
-    
+#endif
+
   }
 }
 

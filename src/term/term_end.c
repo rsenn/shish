@@ -1,8 +1,7 @@
 #include "term.h"
 
 /* ----------------------------------------------------------------------- */
-void term_end(void)
-{
+void term_end(void) {
   if(term_pos == term_cmdline.len)
     return;
 

@@ -2,8 +2,7 @@
 #include "fdstack.h"
 #include "fd.h"
 
-void fdstack_dump(void)
-{
+void fdstack_dump(void) {
   struct fdstack *st;
   struct fd *fd;
 

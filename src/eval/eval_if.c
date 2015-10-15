@@ -4,8 +4,7 @@
 
 /* evaluate if-conditional (3.9.4.4)
  * ----------------------------------------------------------------------- */
-int eval_if(struct eval *e, struct nif *nif)
-{
+int eval_if(struct eval *e, struct nif *nif) {
   int ret;
   union node *branch;
 
@@ -13,15 +12,13 @@ elif:
   ret = eval_tree(e, nif->test, E_LIST);
 
   /* do not recurse for elifs */
-  if(ret && nif->cmd1)
-  {
-    if(nif->cmd1->list.id == N_IF)
-    {
+  if(ret && nif->cmd1) {
+    if(nif->cmd1->list.id == N_IF) {
       nif = &nif->cmd1->nif;
       goto elif;
     }
   }
-  
+
   /* take the branch */
   branch = ret ? nif->cmd1 : nif->cmd0;
 

@@ -2,16 +2,15 @@
 #include "parse.h"
 
 /* parse a boolean AND-OR list
- * 
+ *
  * An AND-OR-list is a sequence of one or more pipelines separated by the
  * operators
- * 
+ *
  *        &&    ||
- * 
+ *
  * !!! may return NULL when there are no commands
  * ----------------------------------------------------------------------- */
-union node *parse_and_or(struct parser *p)
-{
+union node *parse_and_or(struct parser *p) {
   union node *pipeline0;
   union node *pipeline1;
   union node *and_or;
@@ -20,25 +19,22 @@ union node *parse_and_or(struct parser *p)
   /* parse a command or a pipeline first */
   pipeline0 = parse_pipeline(p);
 
-  while(pipeline0)
-  {
+  while(pipeline0) {
     tok = parse_gettok(p, P_DEFAULT);
 
     /* whether && nor ||, it's not a list, return the pipeline */
-    if(!(tok & (T_AND|T_OR)))
-    {
+    if(!(tok & (T_AND | T_OR))) {
       p->pushback++;
       break;
     }
 
-    /* there can be a newline after the operator but this isn't 
+    /* there can be a newline after the operator but this isn't
        mentioned in the draft text, only in the parser grammar */
     while(parse_gettok(p, P_SKIPNL) & T_NL);
     p->pushback++;
 
     /* try to parse another pipeline */
-    if((pipeline1 = parse_pipeline(p)) == NULL)
-    {
+    if((pipeline1 = parse_pipeline(p)) == NULL) {
       p->pushback++;
       break;
     }

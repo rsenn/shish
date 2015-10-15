@@ -7,19 +7,17 @@
 
 /* get home directory into a char buf not smaller than PATH_MAX + 1 chars
  * ----------------------------------------------------------------------- */
-char *shell_gethome(int uid)
-{
+char *shell_gethome(int uid) {
   buffer b;
   long id;
   unsigned long n;
   static char home[PATH_MAX + 1];
-  
+
   /* try to read /etc/passwd */
   if(buffer_mmapread(&b, "/etc/passwd"))
     return NULL;
-    
-  for(;;)
-  {
+
+  for(;;) {
     /* skip the next two colon-separators to get the uid */
     if(buffer_skip_until(&b, ":", 1) <= 0)
       break;
@@ -29,16 +27,15 @@ char *shell_gethome(int uid)
     /* get the uid or the home */
     if((n = buffer_get_until(&b, home, PATH_MAX + 1, ":", 1)) <= 0)
       break;
- 
+
     /* remove the trailing delimiter */
     if(n && home[n - 1] == ':')
       n--;
-    
+
     home[n] = '\0';
-      
+
     /* if we have an uid match the token is the home */
-    if(id == uid)
-    {
+    if(id == uid) {
       buffer_close(&b);
       return home;
     }
@@ -48,8 +45,7 @@ char *shell_gethome(int uid)
       id = -1;
 
     /* on a mismatch -> get the next line */
-    if(id != uid)
-    {
+    if(id != uid) {
       if(buffer_skip_until(&b, "\n\r", 2) <= 0)
         break;
     }

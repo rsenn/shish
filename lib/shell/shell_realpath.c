@@ -5,26 +5,23 @@
 #include <errno.h>
 #include <limits.h>
 
-extern int shell_canonicalize(const char *path, stralloc *sa, int symbolic);  
+extern int shell_canonicalize(const char *path, stralloc *sa, int symbolic);
 
 /* if the <path> is relative and <cwd> is non-null then it is prepended
  * to the path, so it will work like shell_canonicalize, except that
  * relative paths will be resolved to absolute ones.
  * ----------------------------------------------------------------------- */
-int shell_realpath(const char *path, stralloc *sa, 
-                   int symbolic, stralloc *cwd)
-{
+int shell_realpath(const char *path, stralloc *sa,
+                   int symbolic, stralloc *cwd) {
   /* if its not absolute on the first recursion level then make it so */
-  if(*path != '/' && sa->len == 0)
-  {
+  if(*path != '/' && sa->len == 0) {
     char buf[PATH_MAX + 1];
 
     /* check whether the name fits */
     unsigned long n;
     n = str_len(path);
-    
-    if(cwd->len + n + 1 > PATH_MAX)
-    {
+
+    if(cwd->len + n + 1 > PATH_MAX) {
       errno = ENAMETOOLONG;
       return 0;
     }

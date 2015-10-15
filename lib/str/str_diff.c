@@ -6,15 +6,15 @@
  * When the strings are different, str_diff does not read bytes past the
  * first difference. */
 int str_diff(const char* a, const char* b) {
-  register const unsigned char* s=(const unsigned char*)a;
-  register const unsigned char* t=(const unsigned char*)b;
+  register const unsigned char* s = (const unsigned char*)a;
+  register const unsigned char* t = (const unsigned char*)b;
   register int j;
-  j=0;
+  j = 0;
   for (;;) {
-    if ((j=(*s-*t))) break; if (!*t) break; ++s; ++t;
-    if ((j=(*s-*t))) break; if (!*t) break; ++s; ++t;
-    if ((j=(*s-*t))) break; if (!*t) break; ++s; ++t;
-    if ((j=(*s-*t))) break; if (!*t) break; ++s; ++t;
+    if ((j = (*s - *t))) break; if (!*t) break; ++s; ++t;
+    if ((j = (*s - *t))) break; if (!*t) break; ++s; ++t;
+    if ((j = (*s - *t))) break; if (!*t) break; ++s; ++t;
+    if ((j = (*s - *t))) break; if (!*t) break; ++s; ++t;
   }
   return j;
 }

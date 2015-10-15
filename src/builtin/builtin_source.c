@@ -7,39 +7,34 @@
 
 /* source shell script
  * ----------------------------------------------------------------------- */
-int builtin_source(int argc, char **argv)
-{
+int builtin_source(int argc, char **argv) {
   const char *fname;
   struct fd src;
   struct source in;
   struct arg oldarg;
   int ret;
-  
-  if((fname = argv[shell_optind]) == NULL)
-  {
+
+  if((fname = argv[shell_optind]) == NULL) {
     builtin_errmsg(argv, "filename argument required", NULL);
     return 2;
   }
-    
+
   fd_push(&src, STDSRC_FILENO, FD_READ);
   source_push(&in);
-  
-  if(!fd_mmap(&src, argv[shell_optind]))
-  {
+
+  if(!fd_mmap(&src, argv[shell_optind])) {
     sh_pushargs(&oldarg);
     sh_setargs(&argv[++shell_optind], 0);
     sh_loop();
     sh_popargs(&oldarg);
     ret = sh->exitcode;
-  }
-  else
-  {
+  } else {
     ret = 1;
   }
- 
+
   source_pop();
   fd_pop(&src);
-  
+
   return ret;
 }
 

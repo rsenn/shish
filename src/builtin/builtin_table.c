@@ -3,8 +3,7 @@
 
 /* builtin lookup table
  * ----------------------------------------------------------------------- */
-struct builtin_cmd builtin_table[] =
-{
+struct builtin_cmd builtin_table[] = {
   { ".",        builtin_source,   B_SPECIAL, "file [arguments]" },
   { ":",        builtin_true,     B_SPECIAL, "" },
   { "basename", builtin_basename, B_DEFAULT, "path" },

@@ -8,5 +8,5 @@
 #endif
 
 int open_read(const char *filename) {
-  return open(filename,O_RDONLY|O_NDELAY);
+  return open(filename, O_RDONLY | O_NDELAY);
 }

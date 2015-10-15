@@ -5,8 +5,7 @@
 
 /* check if the path is valid
  * ----------------------------------------------------------------------- */
-char *exec_check(char *path)
-{
+char *exec_check(char *path) {
   char *ret = NULL;
 
   /* when there is no directory delimiter in the

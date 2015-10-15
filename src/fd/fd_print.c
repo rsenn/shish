@@ -5,23 +5,22 @@
 
 /* print an fdtablele entry (mainly for the 'fdtable' builtin)
  * ----------------------------------------------------------------------- */
-void fd_print(struct fd *fd)
-{
+void fd_print(struct fd *fd) {
   char numstr[FMT_LONG];
   unsigned int n = 1;
 
   /* get name if not present */
   if(fd->name == NULL)
     fd_getname(fd);
-  
+
   /* convert virtual fd to string */
   if(fd->n >= 0)
     n = fmt_long(numstr, fd->n);
   else
     numstr[0] = '-';
-  
+
   numstr[n] = '\0';
-    
+
   /* print virtual fd number */
   buffer_putnspace(fd_out->w, 4 - n);
   buffer_puts(fd_out->w, numstr);

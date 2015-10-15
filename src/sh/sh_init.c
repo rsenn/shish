@@ -14,10 +14,9 @@ static struct var sh_ps3;
 static struct var sh_path;
 static struct var sh_ifs;
 
-/* initialize the shell 
+/* initialize the shell
  * ----------------------------------------------------------------------- */
-void sh_init(void)
-{
+void sh_init(void) {
   job_init();
 
   /* get current uid and pid */
@@ -45,8 +44,8 @@ void sh_init(void)
   sh->arg.s = 0;
 
   /* set up signal handling */
-/*  signal(SIGTTOU, SIG_IGN);
-  signal(SIGTTIN, SIG_IGN);*/
+  /*  signal(SIGTTOU, SIG_IGN);
+    signal(SIGTTIN, SIG_IGN);*/
 }
 
 

@@ -6,12 +6,10 @@
 
 /* parse error message
  * ----------------------------------------------------------------------- */
-void *parse_error(struct parser *p, enum tok_flag toks)
-{
-  if(p->tok)
-  {
+void *parse_error(struct parser *p, enum tok_flag toks) {
+  if(p->tok) {
     sh_msg("unexpected token '");
-    
+
     buffer_putm(fd_err->w, parse_tokname(p->tok, 0), "'", NULL);
 
     if(toks)

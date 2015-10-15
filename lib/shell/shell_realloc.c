@@ -16,20 +16,19 @@ void *shell_realloc(void *ptr, unsigned long size)
 #else
     return shell_alloc(size);
 #endif /* DEBUG */
-  
+
 #ifdef DEBUG
   newptr = debug_realloc(file, line, ptr, size);
 #else
   newptr = realloc(ptr, size);
 #endif /* DEBUG */
-  
+
   /* exit if failed */
-  if(newptr == NULL)
-  {
+  if(newptr == NULL) {
     shell_error("realloc");
     exit(1);
-  }  
-  
+  }
+
   /* return pointer otherwise */
   return newptr;
 }

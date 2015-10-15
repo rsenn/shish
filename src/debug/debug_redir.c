@@ -8,17 +8,15 @@
 
 /* output redirection flag string
  * ----------------------------------------------------------------------- */
-void debug_redir(const char *msg, int flags, int depth)
-{
+void debug_redir(const char *msg, int flags, int depth) {
   static char flagstr[128];
 
-  switch(flags & (R_IN|R_OUT))
-  {
-    case R_IN|R_OUT: str_copy(flagstr, "R_IN|R_OUT"); break;
-    case R_IN: str_copy(flagstr, "R_IN"); break;
-    case R_OUT: str_copy(flagstr, "R_OUT"); break;
+  switch(flags & (R_IN | R_OUT)) {
+  case R_IN|R_OUT: str_copy(flagstr, "R_IN|R_OUT"); break;
+  case R_IN: str_copy(flagstr, "R_IN"); break;
+  case R_OUT: str_copy(flagstr, "R_OUT"); break;
   }
-  
+
   if(flags & R_OPEN) strcat(flagstr, "|R_OPEN");
   if(flags & R_DUP) strcat(flagstr, "|R_DUP");
   if(flags & R_HERE) strcat(flagstr, "|R_HERE");

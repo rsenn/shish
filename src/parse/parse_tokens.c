@@ -1,10 +1,9 @@
 #include "tree.h"
 #include "parse.h"
 
-/* all the tokens that the parser understands: 
+/* all the tokens that the parser understands:
  * ----------------------------------------------------------------------- */
-struct token parse_tokens[] =
-{
+struct token parse_tokens[] = {
   /* control operators */
   { 1, "EOF"    }, /* T_EOF     - end of file */
   { 0, "NL"     }, /* T_NL      - newline */
@@ -21,7 +20,7 @@ struct token parse_tokens[] =
      command lists:
    */
   { 1, "`"      }, /* T_BQ      - backquote ` */
-  
+
   /* special tokens */
   { 0, "name"   }, /* T_NAME    - name */
   { 0, "word"   }, /* T_WORD    - word */

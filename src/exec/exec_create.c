@@ -8,12 +8,10 @@ struct exechash *exec_hashtbl[EXEC_HASHSIZE];
 
 /* generates new hashtable entry for <name>
  * ----------------------------------------------------------------------- */
-struct exechash *exec_create(char *name, uint32 hash)
-{ 
+struct exechash *exec_create(char *name, uint32 hash) {
   struct exechash *entry;
-    
-  if((entry = shell_alloc(sizeof(struct exechash))))
-  {
+
+  if((entry = shell_alloc(sizeof(struct exechash)))) {
     byte_zero(entry, sizeof(struct exechash));
     entry->hash = hash;
     entry->name = shell_strdup(name);

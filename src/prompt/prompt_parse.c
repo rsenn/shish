@@ -12,8 +12,7 @@ static unsigned int prompt_hash;          /* hash of unexpanded PS1 */
 
 /* hash a prompt value
  * ----------------------------------------------------------------------- */
-static inline unsigned int prompt_hashstr(const char *s, unsigned long n)
-{
+static inline unsigned int prompt_hashstr(const char *s, unsigned long n) {
   unsigned int hash = 0x7fedcb95; /* some prime number */
   while(n) hash = (hash * 0x0123456b) ^ *s++, n--;
   return hash;
@@ -21,8 +20,7 @@ static inline unsigned int prompt_hashstr(const char *s, unsigned long n)
 
 /* parses the prompt if necessary
  * ----------------------------------------------------------------------- */
-void prompt_parse(void)
-{
+void prompt_parse(void) {
   const char *value;
   unsigned int newhash;
   unsigned long n;
@@ -48,18 +46,18 @@ void prompt_parse(void)
   parse_init(&p, P_DEFAULT);
   parse_dquoted(&p);
   parse_string(&p, 0);
-  
+
   /* if we have a word tree then free any previous word tree
      and set the new one */
   if(prompt_node)
     tree_free(prompt_node);
-  
+
   prompt_node = parse_getarg(&p);
-  
+
   /* now leave the context in which the prompt was parsed */
   source_pop();
   fd_pop(&fd);
-  
+
 #ifdef DEBUG
 //  debug_list(prompt_node, 0);
 #endif /* DEBUG */

@@ -12,5 +12,5 @@ void stralloc_free(stralloc *sa)
 #else
   if (sa->s) shell_free(sa->s);
 #endif /* DEBUG */
-  sa->s=0;
+  sa->s = 0;
 }

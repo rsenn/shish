@@ -4,11 +4,10 @@
 #include "fdtable.h"
 
 /* execute a tree in a subshell
- * 
- * you have to push stuff yourself! 
+ *
+ * you have to push stuff yourself!
  * ----------------------------------------------------------------------- */
-int sh_subshell(union node *list, int flags)
-{
+int sh_subshell(union node *list, int flags) {
   int ret = 0;
   int jmpret;
   struct eval e;
@@ -19,17 +18,14 @@ int sh_subshell(union node *list, int flags)
   sh->jump = 1;
   jmpret = setjmp(sh->jmpbuf);
 
-  if(jmpret)
-  {
+  if(jmpret) {
     ret = (jmpret >> 1);
-  }
-  else
-  {
+  } else {
     eval_tree(&e, list, E_LIST);
   }
 
   ret = eval_pop(&e);
-  
+
   sh->jump = 0;
   return ret;
 }

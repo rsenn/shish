@@ -8,15 +8,13 @@
 /* searches for relative path <name> within PATH and returns absolute
  * path if found
  * ----------------------------------------------------------------------- */
-char *exec_path(char *name)
-{
+char *exec_path(char *name) {
   const char *vpath;
   static char path[PATH_MAX];
   unsigned long si = 0, pi = 0;
   vpath = var_value("PATH", NULL);
 
-  do
-  {
+  do {
     /* splitting up path variable */
     unsigned long ni;
 
@@ -25,12 +23,11 @@ char *exec_path(char *name)
 
     ni = str_chr(&vpath[si], ':');
 
-    if(ni >= PATH_MAX)
-    {
+    if(ni >= PATH_MAX) {
       si += ni;
       continue;
     }
-    
+
     /* copying path to temp buffer */
     pi = str_copyn(path, &vpath[si], ni);
 
@@ -46,8 +43,7 @@ char *exec_path(char *name)
       return shell_strdup(path);
 
     si += ni;
-  }
-  while(vpath[si]);
+  } while(vpath[si]);
 
   path[0] = '\0';
   return NULL;
