@@ -1,11 +1,13 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "shell.h"
 #include "scan.h"
 #include "tree.h"
 #include "prompt.h"
 #include "parse.h"
 #include "sh.h"
-
-#include "config.h"
 
 /* handles prompt escape sequences 
  * ----------------------------------------------------------------------- */

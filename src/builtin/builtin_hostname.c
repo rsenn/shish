@@ -39,6 +39,7 @@ int builtin_hostname(int argc, char **argv)
       
 #ifdef HAVE_SETHOSTNAME    
     /* set the supplied hostname */
+#if !defined(__CYGWIN__) && !defined(__MINGW32__)
     if(sethostname(argv[shell_optind], n))
 #else
     errno = ENOSYS;
@@ -48,6 +49,7 @@ int builtin_hostname(int argc, char **argv)
       builtin_error(argv, "sethostname");
       return 1;
     }
+#endif
     
     /* on success update internal hostname */
     stralloc_copyb(&sh_hostname, argv[shell_optind], n);

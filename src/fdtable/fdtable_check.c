@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <fcntl.h>
 #include "fd.h"
 
@@ -11,7 +15,9 @@ int fdtable_check(int e)
   int iflags = 0;
   
   /* try to get file descriptor flags */
+#ifdef HAVE_FCNTL
   if((pflags = fcntl(e, F_GETFL)) == -1)
+#endif
     return 0;
   
   /* map posix file access modes to (fd) flags */

@@ -1,6 +1,8 @@
 #include <unistd.h>
 #include <termios.h>
+#if defined(HAVE_SYS_WAIT_H) && !defined(__MINGW32__)
 #include <sys/wait.h>
+#endif
 #include "job.h"
 #include "fd.h"
 #include "sh.h"

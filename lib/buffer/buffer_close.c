@@ -1,7 +1,7 @@
 #include "buffer.h"
+#include "mmap.h"
 #include <stdlib.h>
 #include <unistd.h>
-#include "mmap.h"
 
 void buffer_close(buffer* b) {
   if (b->fd != -1) close(b->fd);

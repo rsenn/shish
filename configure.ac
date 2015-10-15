@@ -54,7 +54,6 @@ AC_SUBST([PREADD])
 AC_SUBST([POSTADD])
 
 dnl AC_CHECK_LIB([owfat], [array_allocate])
-dnl AC_CHECK_TERMIOS
 
 dnl AC_FUNC_POLL([cp $srcdir/iopause.h2 iopause.h], [cp $srcdir/iopause.h1 iopause.h])
 dnl AC_FUNC_EPOLL
@@ -107,6 +106,9 @@ AC_CHECK_FUNC([gethostname],[],[dnl
 		])
 		
 ])
+
+AC_CHECK_FUNCS([fork pipe fork setpgid tcsetpgrp getuid])
+
 AC_CHECK_FUNCS([sethostname sys_siglist lstat readlink]) 
 AC_CHECK_TYPE([ssize_t],AC_DEFINE_UNQUOTED([HAVE_SSIZE_T],[1],[Define this if you have the 'ssize_t' type]),[],[
 #ifdef HAVE_UNISTD_H
@@ -137,6 +139,18 @@ AC_CHECK_TYPE([sigset_t],AC_DEFINE_UNQUOTED([HAVE_SIGSET_T],[1],[Define this if 
 #include <sys/signal.h>
 #endif
 ])
+
+dnl AC_CHECK_TERMIOS
+
+
+AC_CHECK_HEADER([sys/wait.h],[AC_DEFINE_UNQUOTED([HAVE_sys/wait_H],[1],[Define this if you have the `sys/wait.h' header file])])
+AC_CHECK_HEADER([termios.h],[AC_DEFINE_UNQUOTED([HAVE_TERMIOS_H],[1],[Define this if you have the `termios.h' header file])])
+
+AC_CHECK_HEADER([glob.h],[AC_DEFINE_UNQUOTED([HAVE_GLOB_H],[1],[Define this if you have the `glob.h' header file])])
+AC_CHECK_FUNC([glob],[AC_DEFINE_UNQUOTED([HAVE_GLOB],[1],[Define this if you have the `glob' function])])
+
+AC_CHECK_HEADER([fcntl.h],[AC_DEFINE_UNQUOTED([HAVE_FCNTL_H],[1],[Define this if you have the `fcntl.h' header file])])
+AC_CHECK_FUNC([fcntl],[AC_DEFINE_UNQUOTED([HAVE_FCNTL],[1],[Define this if you have the `fcntl' function])])
 
 # set debugging stuff after compiler test (-Werror could fuck it up)
 # ---------------------------------------------------------------------------
