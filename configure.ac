@@ -77,12 +77,17 @@ AC_CHECK_SIZEOF([uint8_t], [], [STDINT_INCLUDES])
 AC_CHECK_SIZEOF([uint16_t], [], [STDINT_INCLUDES])
 AC_CHECK_SIZEOF([uint32_t], [], [STDINT_INCLUDES])
 AC_CHECK_SIZEOF([uint64_t], [], [STDINT_INCLUDES])
+AC_CHECK_SIZEOF([__uint128_t], [], [STDINT_INCLUDES])
 
 dnl AC_CHECK_TYPE([uint8_t], [], [AC_TYPE_UINT8_T], [STDINT_INCLUDES])
 dnl AC_CHECK_TYPE([uint16_t], [], [AC_TYPE_UINT16_T], [STDINT_INCLUDES])
 dnl AC_CHECK_TYPE([uint32_t], [], [AC_TYPE_UINT32_T], [STDINT_INCLUDES])
 dnl AC_CHECK_TYPE([uint64_t], [], [AC_TYPE_UINT64_T], [STDINT_INCLUDES])
-
+AC_CHECK_TYPE([__uint128_t], [ac_cv_type_have_uint128_t=yes], [ac_cv_type_have_uint128_t=no], [STDINT_INCLUDES])
+							 
+if test "$ac_cv_type_have_uint128_t" = yes; then
+AC_DEFINE_UNQUOTED([HAVE_UINT128],[1],[Define this if you have the __uint128_t type])
+fi
 dnl AC_IPV6
 dnl AC_SCOPE_ID
 dnl AC_CHECK_N2I
@@ -183,6 +188,8 @@ AC_SUBST([WIN32_TRUE],[#])
 # ---------------------------------------------------------------------------
 dnl AC_CONFIG_LIBRARIES([lib/libshish])
 dnl AC_CONFIG_PROGRAMS([src/shish], [lib/libshish.a])
+
+dnl AC_CONFIG_HEADER([config.h])
 
 AC_CONFIG_FILES([
 Makefile

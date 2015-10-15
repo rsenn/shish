@@ -6,8 +6,8 @@ int buffer_putm_internal(buffer* b, ...) {
   va_list a;
   const char* s;
   va_start(a, b);
-  while ((s = va_arg(a, const char*)))
-    if (buffer_puts(b, s) == -1) {
+  while((s = va_arg(a, const char*)))
+    if(buffer_puts(b, s) == -1) {
       r = -1;
       break;
     }

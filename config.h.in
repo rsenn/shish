@@ -99,6 +99,9 @@
 /* Define this if you have the 'uid_t' type */
 #undef HAVE_UID_T
 
+/* Define this if you have the __uint128_t type */
+#undef HAVE_UINT128
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
@@ -131,6 +134,9 @@
 
 /* The size of `uint8_t', as computed by sizeof. */
 #undef SIZEOF_UINT8_T
+
+/* The size of `__uint128_t', as computed by sizeof. */
+#undef SIZEOF___UINT128_T
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

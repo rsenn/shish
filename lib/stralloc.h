@@ -86,7 +86,7 @@ int stralloc_catm_internal(stralloc* sa,...);
 #define stralloc_copym(sa,...) (stralloc_zero(sa) && stralloc_catm_internal(sa,__VA_ARGS__,0))
 
 /* stralloc_cat is analogous to stralloc_copy */
-int stralloc_cat(stralloc* sa,stralloc* in);
+int stralloc_cat(stralloc* sa,const stralloc* in);
 
 /* stralloc_append adds one byte in[0] to the end of the string stored
  * in sa. It is the same as stralloc_catb(&sa,in,1). */

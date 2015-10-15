@@ -24,6 +24,8 @@ LIB = ../libshish.a
 @LIBOWFAT_FALSE@MODULES += scan_long
 @LIBOWFAT_FALSE@MODULES += scan_uint
 @LIBOWFAT_FALSE@MODULES += scan_ulong
+@LIBOWFAT_FALSE@MODULES += scan_8longn scan_longn scan_ulongn
+
 
 
 SOURCES = $(MODULES:%=%.c)
@@ -42,7 +44,7 @@ install:
 # local build configuration
 # ---------------------------------------------------------------------------
 INCLUDES += -I$(top_srcdir)/lib -I.
-#INCLUDES += -I$(top_builddir)/lib
+INCLUDES += -I$(top_builddir)
 
 # include build.mk (makefile helper)
 # ---------------------------------------------------------------------------
