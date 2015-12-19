@@ -13,6 +13,7 @@ AC_ARG_WITH(libowfat,
     *) ac_cv_with_libowfat="$withval" ;;
   esac
 ])
+ac_cv_with_libowfat=$(echo $ac_cv_with_libowfat)
 AC_MSG_RESULT($ac_cv_with_libowfat)
 
 if test "$ac_cv_with_libowfat" != no; then
