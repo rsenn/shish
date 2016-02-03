@@ -11,6 +11,13 @@
 extern "C" {
 #endif
 
+#ifndef HAVE_SSIZE_T
+typedef intptr_t ssize_t;
+#endif
+
+/*typedef ssize_t (buffer_method_t)();
+typedef buffer_method_t *buffer_method_ptr_t;
+*/
 typedef struct buffer {
   char *x;		/* actual buffer space */
   size_t p;		/* current position */
