@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 2.6)
+<<<<<<< HEAD
 set(CMAKE_LEGACY_CYGWIN_WIN32 1)
 
+=======
+>>>>>>> 6c7455723b47a4989fb5bb621be8f200a306f361
 
+set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 
 set(PACKAGE_NAME shish)
 set(PACKAGE_VERSION 0.8)
@@ -41,12 +45,15 @@ check_function_exists(sys_siglist HAVE_SYS_SIGLIST)
 
 add_definitions(-Wall -DHAVE_CONFIG_H=1)
 
+<<<<<<< HEAD
 if(NOT MSVC)
 	set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0")
 else()
   set(CMAKE_C_FLAGS "/W0")
 endif()
 
+=======
+>>>>>>> 6c7455723b47a4989fb5bb621be8f200a306f361
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
   add_definitions(-DDEBUG=1)
 endif(${CMAKE_BUILD_TYPE} MATCHES "Debug")
@@ -57,11 +64,28 @@ include_directories(${CMAKE_BINARY_DIR} lib src)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY src)
 
+<<<<<<< HEAD
 if(WIN32)
   add_definitions("/DWIN32=1")
 endif(WIN32)
 
 configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.h")
+=======
+if(MSVC)
+  add_definitions(-Dinline=__inline)
+  add_definitions(-D_POSIX_=1)
+  add_definitions(-D__STDC__=0)
+
+  set(WARN_FLAGS "-w -wd4706 -wd4255 -wd4668 -wd4820")
+  
+  string(REPLACE "/W3" "${WARN_FLAGS}" NEW_C_FLAGS "${CMAKE_C_FLAGS}")
+  set(CMAKE_C_FLAGS "${NEW_C_FLAGS}" CACHE STRING "Flags used by the compiler during all build types." FORCE)
+
+  message(STATUS "Detected Visual Studio: ${CMAKE_C_FLAGS}")
+else(MSVC)
+  set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0")
+endif(MSVC)
+>>>>>>> 6c7455723b47a4989fb5bb621be8f200a306f361
 
 set(LIBSOURCES
 	lib/open/open_read.c
@@ -497,3 +521,5 @@ set(SOURCES src/sig.h
 
 add_executable(shish ${SOURCES})
 target_link_libraries(shish libshish)
+
+  message(STATUS "CFLAGS: ${CMAKE_C_FLAGS}")

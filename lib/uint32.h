@@ -1,11 +1,15 @@
 #ifndef UINT32_H
 #define UINT32_H
 
+#ifndef _WIN32
 #include <inttypes.h>
-
 
 typedef uint32_t uint32;
 typedef int32_t int32;
+#else
+typedef unsigned __int32 uint32;
+typedef signed __int32 int32;
+#endif
 
 
 /* bit rotating macros */

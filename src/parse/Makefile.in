@@ -21,6 +21,11 @@ include $(top_builddir)/config.mk
 ARCHIVE = parse.a
 MODULES = parse_and_or \
           parse_arith \
+          parse_arith_binary \
+          parse_arith_expr \
+          parse_arith_paren \
+          parse_arith_unary \
+          parse_arith_value \
           parse_bquoted \
           parse_case \
           parse_chartable \
@@ -70,7 +75,7 @@ install:
 
 # local build configuration
 # ---------------------------------------------------------------------------
-INCLUDES += -I$(top_srcdir)/lib
+INCLUDES += -I$(top_srcdir)/lib -I.
 #INCLUDES += -I$(top_builddir)/lib
 INCLUDES += -I$(top_srcdir)/src
 #INCLUDES += -I$(top_builddir)/src

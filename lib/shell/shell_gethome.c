@@ -25,7 +25,7 @@ char *shell_gethome(int uid)
   
   /* try to read /etc/passwd */
   if(buffer_mmapread(&b, "/etc/passwd"))
-    return NULL;
+    return 0;
     
   for(;;)
   {
@@ -65,6 +65,6 @@ char *shell_gethome(int uid)
   }
 
   buffer_close(&b);
-  return NULL;
+  return 0;
 }
 

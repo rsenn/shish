@@ -1,7 +1,14 @@
+<<<<<<< HEAD
 #ifndef WIN32
+=======
+#ifdef _WIN32
+#include <io.h>
+#else
+>>>>>>> 6c7455723b47a4989fb5bb621be8f200a306f361
 #include <unistd.h>
 #endif
 #include <termios.h>
+#endif
 #include <sys/wait.h>
 #include "job.h"
 #include "fd.h"

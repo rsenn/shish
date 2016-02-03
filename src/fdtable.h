@@ -1,7 +1,11 @@
 #ifndef FDTABLE_H
 #define FDTABLE_H
 
+<<<<<<< HEAD
 #ifndef WIN32
+=======
+#ifndef _WIN32
+>>>>>>> 6c7455723b47a4989fb5bb621be8f200a306f361
 #include <unistd.h>
 #endif
 

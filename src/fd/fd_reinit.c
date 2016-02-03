@@ -1,9 +1,17 @@
+<<<<<<< HEAD
 #ifdef WIN32
+=======
+#include "shell.h"
+#ifdef _WIN32
+>>>>>>> 6c7455723b47a4989fb5bb621be8f200a306f361
 #include <io.h>
 #else
 #include <unistd.h>
 #endif
+<<<<<<< HEAD
 #include "shell.h"
+=======
+>>>>>>> 6c7455723b47a4989fb5bb621be8f200a306f361
 #include "fd.h"
 
 /* reinitialize an (fd) struct

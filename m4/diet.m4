@@ -88,14 +88,31 @@ dnl     DIET=""
      AC_MSG_RESULT([$DIETVERSION])
    fi
  fi
+
+AC_ARG_ENABLE([size-opt],
+[  --enable-size-opt        optimize by size (default)
+  --disable-size-opt       disable optimization by size
+],
+[case "$enableval" in
+  yes) ac_cv_size_opt=yes ;;
+	*) ac_cv_size_opt=no ;;
+esac])
+
+if test "$ac_cv_size_opt" = yes; then
+	AX_CHECK_COMPILE_FLAG([-mpreferred-stack-boundary=4], [CFLAGS="$CFLAGS -mpreferred-stack-boundary=4"])
+	AX_CHECK_COMPILE_FLAG([-falign-functions=4], [CFLAGS="$CFLAGS -falign-functions=4"])
+	AX_CHECK_COMPILE_FLAG([-falign-jumps=1], [CFLAGS="$CFLAGS -falign-jumps=1"])
+	AX_CHECK_COMPILE_FLAG([-falign-loops=1], [CFLAGS="$CFLAGS -falign-loops=1"])
+fi
+
+dnl  AC_MSG_CHECKING([wheter compiler supports -falign])
+dnl  saved_CFLAGS="$CFLAGS"
+dnl  CFLAGS="$CFLAGS -mpreferred-stack-boundary=4 -falign-functions=4 -falign-jumps=1 -falign-loops=1"
+dnl  AC_TRY_COMPILE([], [], [
+dnl  AC_MSG_RESULT([yes])], [
+dnl  AC_MSG_RESULT([no])
+dnl  CFLAGS="$saved_CFLAGS"])
  
- AC_MSG_CHECKING([wheter compiler supports -falign])
- saved_CFLAGS="$CFLAGS"
- CFLAGS="$CFLAGS -mpreferred-stack-boundary=4 -falign-functions=4 -falign-jumps=1 -falign-loops=1"
- AC_TRY_COMPILE([], [], [
- AC_MSG_RESULT([yes])], [
- AC_MSG_RESULT([no])
- CFLAGS="$saved_CFLAGS"])
  
 AC_SUBST(DIETLIBC)
 AC_SUBST(DIET)

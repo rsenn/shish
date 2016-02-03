@@ -11,6 +11,14 @@ int parse_subst(struct parser *p)
   
   if(c == '(')
   {
+  	if(source_peek(&c) <= 0)
+  		return -1;
+
+  	if(c == '(') {
+  		source_skip();
+  		return parse_arith(p);
+  	}
+
     return parse_bquoted(p);
   }
   else if(parse_isparam(c) || c == '{')

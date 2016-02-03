@@ -9,10 +9,10 @@
  * ----------------------------------------------------------------------- */
 union node *parse_compound_list(struct parser *p)
 {
-  union node *list;
-  union node **nptr;
+	 union node *list;
+	  union node **nptr;
 
-  tree_init(list, nptr);
+	  tree_init(list, nptr);
 
   /* skip arbitrary newlines */
   while(parse_gettok(p, P_DEFAULT) & T_NL);

@@ -1,17 +1,26 @@
 #include <sys/types.h>
+<<<<<<< HEAD
 #ifndef WIN32
 #include <unistd.h>
 #endif
 #ifdef WIN32
+=======
+#ifdef _WIN32
+>>>>>>> 6c7455723b47a4989fb5bb621be8f200a306f361
 #include <windows.h>
 #else
+#include <unistd.h>
 #include <sys/mman.h>
 #endif
 #include "open.h"
 #include "mmap.h"
 
 char* mmap_private(const char* filename,unsigned long * filesize) {
+<<<<<<< HEAD
 #ifdef WIN32
+=======
+#ifdef _WIN32
+>>>>>>> 6c7455723b47a4989fb5bb621be8f200a306f361
   HANDLE fd,m;
   char* map;
   fd=CreateFile(filename,GENERIC_WRITE|GENERIC_READ,FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);

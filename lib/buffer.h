@@ -3,7 +3,15 @@
 
 #include <sys/types.h>
 
+<<<<<<< HEAD
 /*typedef long (buffer_method_t)();
+=======
+#ifdef _WIN32
+typedef long ssize_t;
+#endif
+
+/*typedef ssize_t (buffer_method_t)();
+>>>>>>> 6c7455723b47a4989fb5bb621be8f200a306f361
 typedef buffer_method_t *buffer_method_ptr_t;
 */
 typedef struct buffer {

@@ -6,10 +6,19 @@
 #include "sh.h"
 
 #ifdef HAVE_CONFIG_H
+<<<<<<< HEAD
 # include "../config.h"
 #endif
 #ifndef HAVE_SIGSET_T
+=======
+# include "config.h"
+# ifndef HAVE_SIGSET_T
+>>>>>>> 6c7455723b47a4989fb5bb621be8f200a306f361
 typedef int sigset_t;
+#endif
+
+#ifdef _WIN32
+typedef int pid_t;
 #endif
 
 #ifndef WEXITSTATUS

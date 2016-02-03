@@ -1,13 +1,22 @@
-#include "../../config.h"
+#include "config.h"
 
 #ifdef HAVE_ALLOCA
 #include <alloca.h>
 #endif
 
+<<<<<<< HEAD
 #ifndef WIN32
 #include <unistd.h>
 #endif
 #ifndef WIN32
+=======
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
+#ifndef __MINGW32__
+>>>>>>> 6c7455723b47a4989fb5bb621be8f200a306f361
 #include <sys/wait.h>
 #endif
 #include "fdstack.h"

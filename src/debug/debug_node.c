@@ -28,6 +28,32 @@ const char *debug_nodes[] =
   "N_ARGCMD",
   "N_ARGPARAM",
   "N_ARGARITH",
+  "N_ARITH_NUM",
+  "N_ARITH_VAR",
+  "N_ARITH_PAREN",
+  "N_ARITH_OR",
+  "N_ARITH_AND",
+  "N_ARITH_BOR",
+  "N_ARITH_BXOR",
+  "N_ARITH_BAND",
+  "N_ARITH_EQ",
+  "N_ARITH_NE",
+  "N_ARITH_LT",
+  "N_ARITH_GT",
+  "N_ARITH_GE",
+  "N_ARITH_LE",
+  "N_ARITH_LSHIFT",
+  "N_ARITH_RSHIFT",
+  "N_ARITH_ADD",
+  "N_ARITH_SUB",
+  "N_ARITH_MUL",
+  "N_ARITH_DIV",
+  "N_ARITH_REM",
+  "N_ARITH_EXP",
+  "N_ARITH_UNARYMINUS",
+  "N_ARITH_UNARYPLUS",
+  "N_ARITH_NOT",
+  "N_ARITH_BNOT",
 };
 
 void debug_node(union node *node, int depth)
@@ -164,8 +190,16 @@ void debug_node(union node *node, int depth)
     case N_ARGARITH:
       debug_subst("flag", node->nargcmd.flag, depth);
       debug_space(depth);
-      debug_sublist("list", node->nargcmd.list, depth);
+      debug_sublist("tree", node->nargarith.tree, depth);
       break;
+
+		case N_ARITH_NUM:
+			debug_ulong("num", node->narithnum.num, depth);
+			break;
+
+		case N_ARITH_VAR:
+			debug_str("var", node->narithvar.var, depth);
+			break;
 
     case N_NOT:
       debug_sublist("cmds", node->nandor.cmd0, depth);
@@ -173,3 +207,4 @@ void debug_node(union node *node, int depth)
   }
 }
 #endif /* DEBUG */
+

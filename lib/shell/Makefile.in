@@ -20,21 +20,21 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 LIB = ../libshish.a
 MODULES = shell_alloc \
-shell_basename \
-shell_canonicalize \
-shell_dirname \
-shell_error \
-shell_errorn \
-shell_fnmatch \
-shell_getcwd \
-shell_gethome \
-shell_gethostname \
-shell_getopt \
-shell_init \
-shell_readlink \
-shell_realloc \
-shell_realpath \
-shell_strdup
+	shell_basename \
+	shell_canonicalize \
+	shell_dirname \
+	shell_error \
+	shell_errorn \
+	shell_fnmatch \
+	shell_getcwd \
+	shell_gethome \
+	shell_gethostname \
+	shell_getopt \
+	shell_init \
+	shell_readlink \
+	shell_realloc \
+	shell_realpath \
+	shell_strdup
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
@@ -51,8 +51,8 @@ install:
 
 # local build configuration
 # ---------------------------------------------------------------------------
-INCLUDES += -I$(top_srcdir)/lib
-#INCLUDES += -I$(top_builddir)/lib
+INCLUDES += -I$(top_srcdir)/lib -I.
+INCLUDES += -I$(top_builddir)
 
 # include build.mk (makefile helper)
 # ---------------------------------------------------------------------------

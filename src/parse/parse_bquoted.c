@@ -21,9 +21,9 @@ int parse_bquoted(struct parser *p)
   {
     if(source_next(&c) <= 0)
       return -1;
-    
+/*
     if(c == '(')
-      return parse_arith(p);
+      return parse_arith(p);*/
     
     parse_init(&subp, P_DEFAULT);
   }

@@ -10,7 +10,11 @@
 #include <setjmp.h>
 #include "stralloc.h"
 
+<<<<<<< HEAD
 #ifdef WIN32
+=======
+#ifdef _WIN32
+>>>>>>> 6c7455723b47a4989fb5bb621be8f200a306f361
 typedef int uid_t;
 typedef int pid_t;
 #endif

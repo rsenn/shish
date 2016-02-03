@@ -1,6 +1,11 @@
+<<<<<<< HEAD
 #include "../msvc-compat.h"
 #ifdef WIN32
 #include <windows.h>
+=======
+#ifdef _WIN32
+#include <io.h>
+>>>>>>> 6c7455723b47a4989fb5bb621be8f200a306f361
 #else
 #include <unistd.h>
 #endif
@@ -52,7 +57,11 @@ void history_save(void)
       {
         unsigned long len = history_cmdlen(history_array[i]);
         buffer_put(&b, history_array[i], len);
+<<<<<<< HEAD
 #ifdef WIN32
+=======
+#ifdef _WIN32
+>>>>>>> 6c7455723b47a4989fb5bb621be8f200a306f361
         buffer_puts(&b, "\r\n");
 #else
         buffer_puts(&b, "\n");

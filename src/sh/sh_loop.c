@@ -49,8 +49,8 @@ void sh_loop(void)
       }
 
 #ifdef DEBUG
-/*      debug_list(list, 0);
-      buffer_putnlflush(fd_err->w);*/
+      debug_list(list, 0);
+      buffer_putnlflush(fd_err->w);
 #endif /* DEBUG */
       eval_push(&e, E_JCTL);
       eval_tree(&e, list, E_ROOT|E_LIST);
