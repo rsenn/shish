@@ -1,3 +1,5 @@
+AUTOMAKE_OPTIONS = subdir-objects
+
 SUBDIRS = builtin debug eval exec expand fd fdstack fdtable history job parse prompt redir sh sig source term tree var vartab
 
 INCLUDES = -I$(top_builddir) -I$(top_srcdir)/../.. -I$(top_srcdir)/../../lib -I$(top_srcdir)/../../src

@@ -46,6 +46,7 @@ dep-local:
 bin_EXEC += $(PROGRAM)
 
 @NO_GLOB@LDADD += $(top_builddir)/lib/glob.o
+@LIBOWFAT_TRUE@LIBS += @LIBOWFAT_LIBS@ -lowfat
 
 # distribution config
 # ---------------------------------------------------------------------------
