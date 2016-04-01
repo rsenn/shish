@@ -31,7 +31,7 @@ DEPS    = $(MODULES:%=%.d)
 
 # targets for this directory
 # ---------------------------------------------------------------------------
-all: Makefile .libdep
+all: Makefile @DEPS_TRUE@.libdep
 install: 
 
 # dependencies

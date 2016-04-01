@@ -4,6 +4,14 @@
 #include <unistd.h>
 #include <limits.h>
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_LINUX_LIMITS_H
+#include <linux/limits.h>
+#endif
+
 /* get current working directory into a stralloc
  * ----------------------------------------------------------------------- */
 void shell_getcwd(stralloc *sa, unsigned long start) {

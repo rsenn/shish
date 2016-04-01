@@ -251,10 +251,10 @@ $(CONFIG_H): $(top_builddir)/config.status $(CONFIG_H_IN)
 
 # makes a subdir party of a library
 # ---------------------------------------------------------------------------
-.libdep: $(OBJECTS)
-	@$(ECHO_AR)
-	@QUIET@$(AR) $(LIB) $(OBJECTS)
-	@touch $@
+@DEPS_TRUE@.libdep: $(OBJECTS)
+@DEPS_TRUE@	@$(ECHO_AR)
+@DEPS_TRUE@	@QUIET@$(AR) $(LIB) $(OBJECTS)
+@DEPS_TRUE@	@touch $@
 
 # rule for libraries
 # ---------------------------------------------------------------------------

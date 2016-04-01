@@ -45,6 +45,9 @@ AC_SUBST([CCLD])
 # ---------------------------------------------------------------------------
 AC_C_INLINE
 AC_FUNC_ALLOCA
+AC_SYS_LARGEFILE
+dnl AC_GNU_SOURCE
+AC_USE_SYSTEM_EXTENSIONS
 
 PREADD= POSTADD=
 AX_CHECK_LINK_FLAG([--no-whole-archive],[PREADD="--whole-archive" POSTADD="--no-whole-archive"],[
@@ -150,10 +153,21 @@ AC_CHECK_TYPE([sigset_t],AC_DEFINE_UNQUOTED([HAVE_SIGSET_T],[1],[Define this if 
 
 dnl AC_CHECK_TERMIOS
 
+old_CPPFLAGS="$CPPFLAGS"
+
+AC_CHECK_HEADER([linux/limits.h])
+
+if test "x$ac_cv_header_linux_limits_h" = xyes; then
+    CPPFLAGS="$CPPFLAGS -DHAVE_LINUX_LIMITS_H=1"
+fi
 
 # Some Unix systems, like Gnu Hurd, don't define PATH_MAX
 AC_MSG_CHECKING([for PATH_MAX])
-AC_COMPILE_IFELSE( [AC_LANG_PROGRAM([[#include <limits.h>]],
+AC_COMPILE_IFELSE( [AC_LANG_PROGRAM([[#include <limits.h>
+#ifdef HAVE_LINUX_LIMITS_H
+#include <linux/limits.h>
+#endif
+]],
                                     [[char dummy[PATH_MAX];]])],
                    [
                       AC_MSG_RESULT([yes])
@@ -165,8 +179,15 @@ AC_COMPILE_IFELSE( [AC_LANG_PROGRAM([[#include <limits.h>]],
                     ]
                  )
 
+CPPFLAGS="$old_CPPFLAGS"
+
 AC_CHECK_HEADER([sys/wait.h],[AC_DEFINE_UNQUOTED([HAVE_SYS_WAIT_H],[1],[Define this if you have the `sys/wait.h' header file])])
-AC_CHECK_HEADER([linux/limits.h],[AC_DEFINE_UNQUOTED([HAVE_LINUX_LIMITS_H],[1],[Define this if you have the `linux/limits.h' header file])])
+
+dnl AC_CHECK_HEADER([linux/limits.h],[AC_DEFINE_UNQUOTED([HAVE_LINUX_LIMITS_H],[1],[Define this if you have the `linux/limits.h' header file])])
+if test "x$ac_cv_header_linux_limits_h" = xyes; then
+    AC_DEFINE_UNQUOTED([HAVE_LINUX_LIMITS_H],[1],[Define this if you have the `linux/limits.h' header file])
+fi
+
 AC_CHECK_HEADER([termios.h],[AC_DEFINE_UNQUOTED([HAVE_TERMIOS_H],[1],[Define this if you have the `termios.h' header file])])
 AC_CHECK_HEADER([glob.h],[AC_DEFINE_UNQUOTED([HAVE_GLOB_H],[1],[Define this if you have the `glob.h' header file])]) AC_CHECK_FUNC([glob],[AC_DEFINE_UNQUOTED([HAVE_GLOB],[1],[Define this if you have the `glob' function])])
 

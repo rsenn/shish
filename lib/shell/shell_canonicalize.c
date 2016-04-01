@@ -1,3 +1,5 @@
+#define  _POSIX_SOURCE
+
 #include "stralloc.h"
 #include "byte.h"
 #include "str.h"
@@ -9,9 +11,17 @@
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
+//#if _FILE_OFFSET_BITS == 64
+//# define lstat lstat64
+//#else 
 # ifndef HAVE_LSTAT
 #  define lstat stat
 # endif
+//#endif
+#endif
+
+#ifdef HAVE_LINUX_LIMITS_H
+#include <linux/limits.h>
 #endif
 
 /* canonicalizes a <path> and puts it into <sa>
