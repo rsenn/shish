@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = subdir-objects
 
-INCLUDES = -I$(top_builddir) -I$(top_srcdir)/../.. -I$(top_srcdir)/../../lib -I$(top_srcdir)/../../src
+AM_CPPFLAGS = -I$(top_builddir) -I$(top_srcdir)/../.. -I$(top_srcdir)/../../lib -I$(top_srcdir)/../../src
 
 noinst_LIBRARIES = libfdstack.a
 libfdstack_a_SOURCES = $(top_srcdir)/../../src/fdstack/fdstack_data.c $(top_srcdir)/../../src/fdstack/fdstack_dump.c $(top_srcdir)/../../src/fdstack/fdstack_flatten.c $(top_srcdir)/../../src/fdstack/fdstack_fork.c $(top_srcdir)/../../src/fdstack/fdstack_link.c $(top_srcdir)/../../src/fdstack/fdstack_npipes.c $(top_srcdir)/../../src/fdstack/fdstack_pipe.c $(top_srcdir)/../../src/fdstack/fdstack_pop.c $(top_srcdir)/../../src/fdstack/fdstack_push.c $(top_srcdir)/../../src/fdstack/fdstack_root.c $(top_srcdir)/../../src/fdstack/fdstack_search.c $(top_srcdir)/../../src/fdstack/fdstack_unlink.c $(top_srcdir)/../../src/fdstack/fdstack_unref.c $(top_srcdir)/../../src/fdstack/fdstack_update.c
