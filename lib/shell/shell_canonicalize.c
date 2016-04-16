@@ -25,6 +25,12 @@
 #include "byte.h"
 #include "str.h"
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+# ifndef HAVE_LSTAT
+#  define lstat stat
+# endif
+#endif
 
 /* canonicalizes a <path> and puts it into <sa>
  *
