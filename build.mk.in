@@ -218,7 +218,7 @@ $(CONFIG_H): $(top_builddir)/config.status $(CONFIG_H_IN)
 @MAINTAINER@$(top_srcdir)/aclocal.m4: $(top_srcdir)/m4/*.m4 $(top_srcdir)/configure.in
 @MAINTAINER@	@$(ECHO_ACLOCAL)
 @MAINTAINER@	@QUIET@rm -f $(top_srcdir)/aclocal.m4
-@MAINTAINER@	@QUIET@cd "$(top_srcdir)" && aclocal -I m4
+@MAINTAINER@	@QUIET@cd "$(top_srcdir)" && aclocal
 
 @MAINTAINER@$(CONFIG_H_IN): $(top_srcdir)/aclocal.m4 $(top_srcdir)/configure.in
 @MAINTAINER@	@$(ECHO_AUTOHEADER)
