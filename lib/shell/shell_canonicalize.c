@@ -1,28 +1,30 @@
-#define  _POSIX_SOURCE
-
-#include "stralloc.h"
-#include "byte.h"
-#include "str.h"
+//#define  _POSIX_SOURCE
+//
+//#ifdef HAVE_CONFIG_H
+//# include "config.h"
+//#endif
 
 #include <sys/stat.h>
 #include <limits.h>
 #include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-//#if _FILE_OFFSET_BITS == 64
-//# define lstat lstat64
-//#else 
-# ifndef HAVE_LSTAT
-#  define lstat stat
-# endif
+
+//#ifdef __USE_FILE_OFFSET64
+//#undef lstat
+//#define lstat lstat64
+//#undef readlink
+//#define readlink readlink64
 //#endif
-#endif
-
-#ifdef HAVE_LINUX_LIMITS_H
+/*#ifdef HAVE_LINUX_LIMITS_H
 #include <linux/limits.h>
-#endif
+#endif*/
+
+#include "stralloc.h"
+#include "byte.h"
+#include "str.h"
+
 
 /* canonicalizes a <path> and puts it into <sa>
  *
@@ -51,9 +53,9 @@ int shell_canonicalize(const char *path, stralloc *sa, int symbolic) {
 #ifdef HAVE_LSTAT
   char buf[PATH_MAX + 1];
 
-#if defined(HAVE_LSTAT ) && !defined(__MINGW32__)
+#if !defined(__MINGW32__)
   if(symbolic)
-    stat_fn = lstat;
+    stat_fn = lstat64;
 #endif
 
 start:
@@ -79,7 +81,7 @@ start:
       }
     }
 
-    /* exit now if we're done */
+    /* exit now if we'jkre done */
     if(*path == '\0')
       break;
 
