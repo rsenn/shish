@@ -11,6 +11,8 @@ builddir     = @builddir@
 top_builddir = @top_builddir@
 thisdir      = src/
 
+VPATH = $(srcdir)
+
 # include global make configuration
 # ---------------------------------------------------------------------------
 include $(top_builddir)/config.mk
