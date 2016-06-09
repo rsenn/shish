@@ -11,7 +11,7 @@
 #include "uint32.h"
 
 #ifdef HAVE_CONFIG_H
-#include "../../config.h"
+#include "config.h"
 #endif
 
 int         sh_argc;

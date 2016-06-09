@@ -3,7 +3,7 @@
 #include "job.h"
 
 #ifdef HAVE_CONFIG_H
-#include "../../config.h"
+#include "config.h"
 #endif
 #ifndef HAVE_SYS_SIGLIST
 extern const char *const sys_siglist[];

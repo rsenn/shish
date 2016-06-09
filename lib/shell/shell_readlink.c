@@ -6,7 +6,7 @@
 #include <limits.h>
 
 #ifdef HAVE_CONFIG_H
-#include "../../config.h"
+#include "config.h"
 #endif
 
 #define START ((PATH_MAX + 1) >> 7)

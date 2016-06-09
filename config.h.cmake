@@ -9,6 +9,9 @@
 /* Define this if your libc has sys_siglist[] */
 #cmakedefine HAVE_SYS_SIGLIST
 
+/* Define this if you have the sigset_t type */
+#cmakedefine HAVE_SIGSET_T
+
 /* Define to the full name of this package. */
 #cmakedefine PACKAGE_NAME "@PACKAGE_NAME@"
 
