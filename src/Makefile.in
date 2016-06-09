@@ -107,7 +107,7 @@ bin_EXEC += $(PROGRAM)
 FILES += $(HEADERS) 
 
 
-@NO_GLOB@LDADD += $(top_builddir)/lib/glob.o
+#@NO_GLOB@LDADD += $(top_builddir)/lib/glob.o
 
 # local build configuration
 # ---------------------------------------------------------------------------
