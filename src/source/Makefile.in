@@ -19,17 +19,16 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = source.a
-MODULES += source_flush
-MODULES += source_get
-MODULES += source_msg
-MODULES += source_newline
-MODULES += source_next
-MODULES += source_peek
-MODULES += source_peekn
-MODULES += source_pop
-MODULES += source_push
-MODULES += source_skip
-
+MODULES = source_flush \
+          source_get \
+          source_msg \
+          source_newline \
+          source_next \
+          source_peek \
+          source_peekn \
+          source_pop \
+          source_push \
+          source_skip
           
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

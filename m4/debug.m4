@@ -31,21 +31,18 @@ CFLAGS=`echo $CFLAGS | sed 's/-O[0-9s]//'`
 # set DEBUG variable
 if test "$ac_cv_debug" = "yes"; then
   CFLAGS="`echo $CFLAGS -g -ggdb -O0`"
-#  CPPFLAGS="`echo $CPPFLAGS -DDEBUG=1 -Werror -include assert.h`"
-#  CPPFLAGS="`echo $CPPFLAGS -DDEBUG=1 -include assert.h`"
-  CPPFLAGS="`echo $CPPFLAGS -DDEBUG=1`"
+#  CPPFLAGS="`echo $CPPFLAGS -DDEBUG -Werror -include assert.h`"
+#  CPPFLAGS="`echo $CPPFLAGS -DDEBUG -include assert.h`"
+  CPPFLAGS="`echo $CPPFLAGS -DDEBUG`"
   DEBUG="yes"
   AC_MSG_RESULT([yes])
   AC_CHECK_LIB([duma], [DUMA_Exit])
 else
-	case "$CFLAGS" in
-		  *-O*) ;;
-		  *) CFLAGS="`echo $CFLAGS -Os -fomit-frame-pointer`" ;;
-  esac
+  CFLAGS="`echo $CFLAGS -Os -fomit-frame-pointer`"
+#  CPPFLAGS="`echo $CPPFLAGS -DNDEBUG -include assert.h`"
   CPPFLAGS="`echo $CPPFLAGS -DNDEBUG`"
   DEBUG="no"
   AC_MSG_RESULT([no])
 fi
   
-AM_CONDITIONAL([DEBUG],[test "$ac_cv_debug" = yes])
 AC_SUBST(DEBUG)])

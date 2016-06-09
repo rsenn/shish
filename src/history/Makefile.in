@@ -19,18 +19,17 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = history.a
-MODULES += history_advance
-MODULES += history_clear
-MODULES += history_cmdlen
-MODULES += history_free
-MODULES += history_load
-MODULES += history_next
-MODULES += history_prev
-MODULES += history_print
-MODULES += history_resize
-MODULES += history_save
-MODULES += history_set
-
+MODULES = history_advance \
+          history_clear \
+          history_cmdlen \
+          history_free \
+          history_load \
+          history_next \
+          history_prev \
+          history_print \
+          history_resize \
+          history_save \
+          history_set
           
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

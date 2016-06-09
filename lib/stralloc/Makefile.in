@@ -20,32 +20,27 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 LIB = ../libshish.a
 
-@LIBOWFAT_FALSE@MODULES += stralloc_cat
-@LIBOWFAT_FALSE@MODULES += stralloc_catb
-MODULES += stralloc_catc
-@LIBOWFAT_FALSE@MODULES += stralloc_catlong0
-@LIBOWFAT_FALSE@MODULES += stralloc_cats
-@LIBOWFAT_FALSE@MODULES += stralloc_catulong0
-@LIBOWFAT_FALSE@MODULES += stralloc_copy
-@LIBOWFAT_FALSE@MODULES += stralloc_copyb
-@LIBOWFAT_FALSE@MODULES += stralloc_copys
-@LIBOWFAT_FALSE@MODULES += stralloc_diffs
-@LIBOWFAT_FALSE@@DEBUG_FALSE@MODULES += stralloc_free
-@DEBUG_TRUE@MODULES += stralloc_freedebug
-@LIBOWFAT_FALSE@MODULES += stralloc_init
-MODULES += stralloc_insertb
-MODULES += stralloc_move
-MODULES += stralloc_nul
-@DEBUG_FALSE@MODULES += stralloc_ready
-@DEBUG_TRUE@MODULES += stralloc_readydebug
-@DEBUG_FALSE@MODULES += stralloc_readyplus
-@DEBUG_TRUE@MODULES += stralloc_readyplusdebug
-MODULES += stralloc_remove
-@DEBUG_FALSE@MODULES += stralloc_trunc
-@DEBUG_TRUE@MODULES += stralloc_truncdebug
-MODULES += stralloc_write
-@LIBOWFAT_FALSE@MODULES += stralloc_zero
-
+MODULES = stralloc_cat \
+stralloc_catb \
+stralloc_catc \
+stralloc_catlong0 \
+stralloc_cats \
+stralloc_catulong0 \
+stralloc_copy \
+stralloc_copyb \
+stralloc_copys \
+stralloc_diffs \
+stralloc_free \
+stralloc_init \
+stralloc_insertb \
+stralloc_move \
+stralloc_nul \
+stralloc_ready \
+stralloc_readyplus \
+stralloc_remove \
+stralloc_trunc \
+stralloc_write \
+stralloc_zero
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
@@ -53,8 +48,7 @@ DEPS    = $(MODULES:%=%.d)
 
 # targets for this directory
 # ---------------------------------------------------------------------------
-@DEPS_TRUE@all: Makefile .libdep
-@DEPS_FALSE@all: Makefile $(LIB)
+all: Makefile .libdep
 install: 
 
 # dependencies

@@ -23,7 +23,8 @@ MAN = shish.1
 
 $(MAN): Makefile $(POD)
 	@$(ECHO_POD2MAN)
-	@pod2man --release="$(PACKAGE_NAME)-$(PACKAGE_VERSION)" --center=" " $(srcdir)/$(POD) | grep -A65536 '^\.TH' > $(MAN)
+	@pod2man --release="$(PACKAGE_NAME)-$(PACKAGE_VERSION)" \
+                 --center=" " $(srcdir)/$(POD) | grep -A65536 '^\.TH' > $(MAN)
 
 # targets for this directory
 # ---------------------------------------------------------------------------

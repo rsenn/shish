@@ -11,7 +11,7 @@ CLEANFILES += $(OBJECTS) $(LIBRARY) $(A_LIBRARY) $(PIE_LIBRARY) $(PIE_LINKS) $(A
 # command lines
 # ---------------------------------------------------------------------------
 COMPILE         = $(CC) $(CPPFLAGS) $(DEFS) $(INCLUDES) $(CFLAGS)
-LINK            = $(CCLD) $(LDFLAGS)
+LINK            = $(CC) $(LDFLAGS)
 COMPLINK        = $(LINK) $(CPPFLAGS) $(INCLUDES) $(CFLAGS)
 
 # file suffixes we may encounter
@@ -24,18 +24,18 @@ COMPLINK        = $(LINK) $(CPPFLAGS) $(INCLUDES) $(CFLAGS)
 
 .c.@OBJEXT@:
 	@$(ECHO_CC)
-@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -c $<
-@DEPS_FALSE@	@QUIET@$(COMPILE) -c $<
+@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -c -o $@ $<
+@DEPS_FALSE@	@QUIET@$(COMPILE) -c -o $@ $<
 
 .c.e:
 	@$(ECHO_CC)
-@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -E $<
-@DEPS_FALSE@	@QUIET@$(COMPILE) -E $<
+@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -E -o $@ $<
+@DEPS_FALSE@	@QUIET@$(COMPILE) -E -o $@ $<
 
 .c.i:
 	@$(ECHO_CC)
-@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -E $<
-@DEPS_FALSE@	@QUIET@$(COMPILE) -E $<
+@DEPS_TRUE@	@QUIET@$(COMPILE) -MMD -E -o $@ $<
+@DEPS_FALSE@	@QUIET@$(COMPILE) -E -o $@ $<
 
 
 #	@$(ECHO_CCLD)
@@ -189,8 +189,6 @@ maintainer-clean-local: maintainer-clean-recursive
 $(ARCHIVE): $(OBJECTS)
 	@$(ECHO_AR)
 	@$(AR) $(ARCHIVE) $(OBJECTS)
-	@$(ECHO_RANLIB)
-	@$(RANLIB) $(ARCHIVE) 
 
 # global rule for all makefiles
 # ---------------------------------------------------------------------------
@@ -251,21 +249,13 @@ $(CONFIG_H): $(top_builddir)/config.status $(CONFIG_H_IN)
 
 # makes a subdir party of a library
 # ---------------------------------------------------------------------------
-@DEPS_TRUE@.libdep: $(OBJECTS)
-@DEPS_TRUE@	@$(ECHO_AR)
-@DEPS_TRUE@	@QUIET@$(AR) $(LIB) $(OBJECTS)
-@DEPS_TRUE@	@touch $@
+.libdep: $(OBJECTS)
+	@$(ECHO_AR)
+	@QUIET@$(AR) $(LIB) $(OBJECTS)
+	@touch $@
 
 # rule for libraries
 # ---------------------------------------------------------------------------
-$(LIBRARY): #$(OBJECTS)
-ifneq ($(OBJECTS),)
-	@$(ECHO_AR)
-	@QUIET@$(AR) $@ $^
-endif
-	@$(ECHO_RANLIB)
-	@QUIET@$(RANLIB) $@
-
 $(A_LIBRARY): #$(OBJECTS)
 	@$(ECHO_AR)
 	@QUIET@$(AR) $(A_LIBRARY) $^

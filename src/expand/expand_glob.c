@@ -2,9 +2,7 @@
 #include "config.h"
 #endif
 
-#ifdef HAVE_GLOB_H
 #include <glob.h>
-#endif
 
 #if defined(__MINGW32__) || defined(__MINGW64__)
 #include "mingw-glob.h"

@@ -58,7 +58,9 @@ dep-local:
 
 # files that go into distribution tarballs
 # ---------------------------------------------------------------------------
-FILES                = Makefile.in config.mk.in build.mk.in configure.ac $(SOURCES) $(HEADERS) README ChangeLog TODO mkentropy.c BUGS AUTHORS COPYING
+FILES                = Makefile.in config.mk.in build.mk.in configure.ac \
+                       $(SOURCES) $(HEADERS) \
+                       README ChangeLog TODO mkentropy.c BUGS AUTHORS COPYING
                        
 DISTFILES            = $(FILES) configure config.h.in aclocal.m4
 DEVFILES             = $(FILES) autogen.sh CVS m4
@@ -66,9 +68,14 @@ DEVFILES             = $(FILES) autogen.sh CVS m4
 # files to be cleaned
 # ---------------------------------------------------------------------------
 ac_configure_args    = @ac_configure_args@
-CLEANFILES           = *~ core core.* mktable mktable.o
-DISTCLEANFILES       = Makefile config.status config.log build.mk config.h $(DEPS)
-MAINTAINERCLEANFILES = aclocal.m4 configure *.bz2 *.gz autom4te.cache config.guess config.h.in config.sub install-sh ltmain.sh missing mkinstalldirs $(PACKAGE) $(PACKAGE)-$(VERSION)
+CLEANFILES           = *~ \
+                       core core.* mktable mktable.o
+DISTCLEANFILES       = Makefile config.status config.log build.mk \
+                       config.h $(DEPS)
+MAINTAINERCLEANFILES = aclocal.m4 configure *.bz2 *.gz autom4te.cache \
+                       config.guess config.h.in config.sub install-sh \
+                       ltmain.sh missing mkinstalldirs \
+                       $(PACKAGE) $(PACKAGE)-$(VERSION)
 
 # include global make targets
 # ---------------------------------------------------------------------------

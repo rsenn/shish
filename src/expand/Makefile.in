@@ -19,24 +19,26 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = expand.a
-MODULES += expand_arg
-MODULES += expand_args
-MODULES += expand_argv
-MODULES += expand_arith
-MODULES += expand_cat
-MODULES += expand_catsa
-MODULES += expand_command
-MODULES += expand_copysa
-MODULES += expand_escape
-MODULES += expand_glob
-MODULES += expand_param
-MODULES += expand_unescape
-MODULES += expand_vars
-
+MODULES = expand_arg \
+          expand_args \
+          expand_argv \
+          expand_arith \
+          expand_cat \
+          expand_catsa \
+          expand_command \
+          expand_copysa \
+          expand_escape \
+          expand_glob \
+          expand_param \
+          expand_unescape \
+          expand_vars
           
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
 DEPS    = $(MODULES:%=%.d)
+
+@NO_GLOB@SOURCES += $(top_srcdir)/lib/glob.c 
+@NO_GLOB@OBJECTS += $(top_builddir)/lib/glob.o
 
 # targets for this directory
 # ---------------------------------------------------------------------------

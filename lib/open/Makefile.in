@@ -19,10 +19,9 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 LIB = ../libshish.a
-@LIBOWFAT_FALSE@MODULES += open_read
-MODULES += open_temp
-@LIBOWFAT_FALSE@MODULES += open_trunc
-
+MODULES = open_read \
+          open_temp \
+          open_trunc
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
@@ -30,8 +29,7 @@ DEPS    = $(MODULES:%=%.d)
 
 # targets for this directory
 # ---------------------------------------------------------------------------
-@DEPS_TRUE@all: Makefile .libdep
-@DEPS_FALSE@all: Makefile $(LIB)
+all: Makefile .libdep
 install: 
 
 # dependencies

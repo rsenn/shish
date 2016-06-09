@@ -19,16 +19,15 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = vartab.a
-MODULES += vartab_add
-MODULES += vartab_cleanup
-MODULES += vartab_dump
-MODULES += vartab_hash
-MODULES += vartab_pop
-MODULES += vartab_print
-MODULES += vartab_push
-MODULES += vartab_root
-MODULES += vartab_search
-
+MODULES = vartab_add \
+          vartab_cleanup \
+          vartab_dump \
+          vartab_hash \
+          vartab_pop \
+          vartab_print \
+          vartab_push \
+          vartab_root \
+          vartab_search
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

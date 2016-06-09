@@ -38,28 +38,18 @@ AC_PROG_AR
 AC_PROG_RANLIB
 AC_PROG_INSTALL
 
-CCLD="$CC"
-AC_SUBST([CCLD])
-
 # check for operating system features
 # ---------------------------------------------------------------------------
 AC_C_INLINE
 AC_FUNC_ALLOCA
-AC_SYS_LARGEFILE
-dnl AC_GNU_SOURCE
-AC_USE_SYSTEM_EXTENSIONS
 
-PREADD= POSTADD=
-AX_CHECK_LINK_FLAG([--no-whole-archive],[PREADD="--whole-archive" POSTADD="--no-whole-archive"],[
-  AX_CHECK_LINK_FLAG([-Wl,--no-whole-archive],[PREADD="-Wl,--whole-archive" POSTADD="-Wl,--no-whole-archive"],[
-    : test
-    dnl  AX_CHECK_COMPILE_FLAG([-Wl,--no-whole-archive],[PREADD="-Wl,--whole-archive" POSTADD="-Wl,--no-whole-archive"])
-])
-])
-AC_SUBST([PREADD])
-AC_SUBST([POSTADD])
+dnl AX_CHECK_COMPILE_FLAG([-Wl,--no-whole-archive],[AC_SUBST([PREADD],[-Wl,--whole-archive])
+dnl AC_SUBST([POSTADD],[-Wl,--no-whole-archive])
+dnl ])
+
 
 dnl AC_CHECK_LIB([owfat], [array_allocate])
+dnl AC_CHECK_TERMIOS
 
 dnl AC_FUNC_POLL([cp $srcdir/iopause.h2 iopause.h], [cp $srcdir/iopause.h1 iopause.h])
 dnl AC_FUNC_EPOLL
@@ -80,23 +70,31 @@ AC_CHECK_SIZEOF([uint8_t], [], [STDINT_INCLUDES])
 AC_CHECK_SIZEOF([uint16_t], [], [STDINT_INCLUDES])
 AC_CHECK_SIZEOF([uint32_t], [], [STDINT_INCLUDES])
 AC_CHECK_SIZEOF([uint64_t], [], [STDINT_INCLUDES])
-AC_CHECK_SIZEOF([__uint128_t], [], [STDINT_INCLUDES])
 
 dnl AC_CHECK_TYPE([uint8_t], [], [AC_TYPE_UINT8_T], [STDINT_INCLUDES])
 dnl AC_CHECK_TYPE([uint16_t], [], [AC_TYPE_UINT16_T], [STDINT_INCLUDES])
 dnl AC_CHECK_TYPE([uint32_t], [], [AC_TYPE_UINT32_T], [STDINT_INCLUDES])
 dnl AC_CHECK_TYPE([uint64_t], [], [AC_TYPE_UINT64_T], [STDINT_INCLUDES])
-AC_CHECK_TYPE([__uint128_t], [ac_cv_type_have_uint128_t=yes], [ac_cv_type_have_uint128_t=no], [STDINT_INCLUDES])
-							 
-if test "$ac_cv_type_have_uint128_t" = yes; then
-AC_DEFINE_UNQUOTED([HAVE_UINT128],[1],[Define this if you have the __uint128_t type])
-fi
+
 dnl AC_IPV6
 dnl AC_SCOPE_ID
 dnl AC_CHECK_N2I
 AC_CHECK_HEADERS([unistd.h io.h pwd.h signal.h sys/types.h sys/signal.h],,,[])
-AC_CHECK_FUNC([glob],[NO_GLOB="#"],[NO_GLOB=""])
+AC_CHECK_FUNC([glob],AC_DEFINE_UNQUOTED([HAVE_GLOB],[1],[Define to 1 if you have the 'glob' function]))
+AC_CHECK_FUNC([globfree],AC_DEFINE_UNQUOTED([HAVE_GLOBFREE],[1],[Define to 1 if you have the 'globfree' function]))
+
+AC_CHECK_FUNC([issetugid],AC_DEFINE_UNQUOTED([HAVE_ISSETUGID],[1],[Define to 1 if you have the 'issetugid' function]))
+
+dnl AM_CONDITIONAL([HAVE_GLOB],[test x$ac_cv_func_glob = xyes])
+dnl AM_CONDITIONAL([HAVE_GLOBFREE],[test x$ac_cv_func_globfree = xyes])
+
+if test x$ac_cv_func_globfree = xyes; then
+	NO_GLOB="#"
+else
+	NO_GLOB=""
+fi
 AC_SUBST([NO_GLOB])
+
 AC_CHECK_FUNC([gethostname],[],[dnl
 
 	AC_MSG_CHECKING(for gethostname in -lws2_32)
@@ -117,9 +115,6 @@ AC_CHECK_FUNC([gethostname],[],[dnl
 		])
 		
 ])
-
-AC_CHECK_FUNCS([fork pipe fork setpgid tcsetpgrp getuid])
-
 AC_CHECK_FUNCS([sethostname sys_siglist lstat readlink]) 
 AC_CHECK_TYPE([ssize_t],AC_DEFINE_UNQUOTED([HAVE_SSIZE_T],[1],[Define this if you have the 'ssize_t' type]),[],[
 #ifdef HAVE_UNISTD_H
@@ -151,53 +146,6 @@ AC_CHECK_TYPE([sigset_t],AC_DEFINE_UNQUOTED([HAVE_SIGSET_T],[1],[Define this if 
 #endif
 ])
 
-dnl AC_CHECK_TERMIOS
-
-old_CPPFLAGS="$CPPFLAGS"
-
-AC_CHECK_HEADER([linux/limits.h])
-
-if test "x$ac_cv_header_linux_limits_h" = xyes; then
-    CPPFLAGS="$CPPFLAGS -DHAVE_LINUX_LIMITS_H=1"
-fi
-
-# Some Unix systems, like Gnu Hurd, don't define PATH_MAX
-AC_MSG_CHECKING([for PATH_MAX])
-AC_COMPILE_IFELSE( [AC_LANG_PROGRAM([[#include <limits.h>
-#ifdef HAVE_LINUX_LIMITS_H
-#include <linux/limits.h>
-#endif
-]],
-                                    [[char dummy[PATH_MAX];]])],
-                   [
-                      AC_MSG_RESULT([yes])
-                      AC_DEFINE_UNQUOTED([HAVE_PATH_MAX], 1, [Define to 1 if you have the PATH_MAX macro.])
-                    ],
-                    [
-                      AC_MSG_RESULT([no])
-                      AC_DEFINE_UNQUOTED([HAVE_PATH_MAX], 0, [Define to 1 if you have the PATH_MAX macro.])
-                    ]
-                 )
-
-CPPFLAGS="$old_CPPFLAGS"
-
-AC_CHECK_HEADER([sys/wait.h],[AC_DEFINE_UNQUOTED([HAVE_SYS_WAIT_H],[1],[Define this if you have the `sys/wait.h' header file])])
-
-dnl AC_CHECK_HEADER([linux/limits.h],[AC_DEFINE_UNQUOTED([HAVE_LINUX_LIMITS_H],[1],[Define this if you have the `linux/limits.h' header file])])
-if test "x$ac_cv_header_linux_limits_h" = xyes; then
-    AC_DEFINE_UNQUOTED([HAVE_LINUX_LIMITS_H],[1],[Define this if you have the `linux/limits.h' header file])
-fi
-
-AC_CHECK_HEADER([termios.h],[AC_DEFINE_UNQUOTED([HAVE_TERMIOS_H],[1],[Define this if you have the `termios.h' header file])])
-AC_CHECK_HEADER([glob.h],[AC_DEFINE_UNQUOTED([HAVE_GLOB_H],[1],[Define this if you have the `glob.h' header file])]) AC_CHECK_FUNC([glob],[AC_DEFINE_UNQUOTED([HAVE_GLOB],[1],[Define this if you have the `glob' function])])
-
-AC_CHECK_HEADER([fcntl.h],[AC_DEFINE_UNQUOTED([HAVE_FCNTL_H],[1],[Define this if you have the `fcntl.h' header file])])
-AC_CHECK_FUNC([fcntl],[AC_DEFINE_UNQUOTED([HAVE_FCNTL],[1],[Define this if you have the `fcntl' function])])
-
-AC_CHECK_LIBOWFAT([/opt/diet64 /opt/diet /usr/local /usr/diet /usr],
-[LIBS="$LIBS $LIBOWFAT_LIBS" CFLAGS="$CFLAGS $LIBOWFAT_CFLAGS"],
-[])
-
 # set debugging stuff after compiler test (-Werror could fuck it up)
 # ---------------------------------------------------------------------------
 AC_CHECK_DEP
@@ -208,7 +156,7 @@ CPPFLAGS="$CPPFLAGS -DHAVE_CONFIG_H=1"
 
 AC_SUBST([CPPFLAGS])
 dnl 
-dnl PIC=#
+dnl AC_SUBST([PIC],[#])
 dnl AC_SUBST([DLM_TRUE],[#])
 dnl AC_SUBST([A_LIB],[#])
 dnl AC_SUBST([DLM_TRUE],[#])
@@ -224,8 +172,6 @@ AC_SUBST([WIN32_TRUE],[#])
 # ---------------------------------------------------------------------------
 dnl AC_CONFIG_LIBRARIES([lib/libshish])
 dnl AC_CONFIG_PROGRAMS([src/shish], [lib/libshish.a])
-
-dnl AC_CONFIG_HEADER([config.h])
 
 AC_CONFIG_FILES([
 Makefile

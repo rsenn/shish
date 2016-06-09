@@ -48,29 +48,29 @@ CLEANFILES = $(LIBRARY)
 #  LOCAL DIRECTORY CONFIGURATION     ########################################
 #                                    ########################################
 #############################################################################
-#MODULES += mingw-glob
-MODULES += buffer/buffer_close buffer/buffer_default buffer/buffer_dummyread buffer/buffer_dummyreadmmap buffer/buffer_dump buffer/buffer_feed buffer/buffer_flush buffer/buffer_free buffer/buffer_fromsa buffer/buffer_fromstr buffer/buffer_get buffer/buffer_get_until buffer/buffer_getc buffer/buffer_init buffer/buffer_mmapprivate buffer/buffer_mmapread buffer/buffer_mmapread_fd buffer/buffer_prefetch buffer/buffer_put buffer/buffer_putc buffer/buffer_putflush buffer/buffer_putm_internal buffer/buffer_putnlflush buffer/buffer_putnspace buffer/buffer_puts buffer/buffer_putsa buffer/buffer_putsflush buffer/buffer_putspace buffer/buffer_putulong buffer/buffer_skip_until buffer/buffer_stubborn buffer/buffer_stubborn2 buffer/buffer_tosa buffer/buffer_truncfile byte/byte_chr byte/byte_copy byte/byte_copyr byte/byte_diff byte/byte_fill byte/byte_rchr byte/byte_zero fmt/fmt_long fmt/fmt_minus fmt/fmt_ulong fmt/fmt_ulong0 fmt/fmt_xlong fmt/fmt_xlonglong mmap/mmap_private mmap/mmap_read mmap/mmap_read_fd open/open_read open/open_temp open/open_trunc scan/scan_8long scan/scan_int scan/scan_long scan/scan_uint scan/scan_ulong shell/shell_alloc shell/shell_basename shell/shell_dirname shell/shell_error
-
-OBJECTS = $(MODULES:%=%.o)
-SOURCES = $(MODULES:%=%.c)
-HEADERS = $(MODULES:%=%.h)
-DEPS = $(MODULES:%=%.d)
-
-HEADERS += buffer.h byte.h fmt.h mmap.h open.h safemult.h scan.h shell.h str.h stralloc.h uint16.h uint32.h uint64.h
- 
-
--include $(DEPS)
-
+HEADERS = \
+	buffer.h \
+	byte.h \
+	fmt.h \
+	glob.h \
+	mmap.h \
+	open.h \
+	safemult.h \
+	scan.h \
+	shell.h \
+	str.h \
+	stralloc.h \
+	uint16.h \
+	uint32.h \
+	uint64.h
+   
 # targets           build.mk config.h $(srcdir)/configure 
 # ---------------------------------------------------------------------------
-all-local:  $(OBJECTS) $(LIBRARY) 
+all-local: $(LIBRARY)
 install-local: install-data install-exec
 dep-local:
 
-@DEPS_TRUE@$(LIBRARY): $(SUBDIRS:%=%/.libdep) 
--$(LIBRARY): $(OBJECTS)
-	@$(ECHO_AR)
-	@SILENT_RULES@$(AR) $(ARFLAGS) $(LIBRARY) $(OBJECTS)
+-$(LIBRARY): $(SUBDIRS:%=%/.libdep)
 	@$(ECHO_RANLIB)
 	@SILENT_RULES@$(RANLIB) $(LIBRARY)
 
@@ -80,7 +80,8 @@ FILES                = Makefile.in $(HEADERS)
                        
 # files to be cleaned
 # ---------------------------------------------------------------------------
-CLEANFILES           = *~ core core.* 
+CLEANFILES           = *~ \
+                       core core.* 
 DISTCLEANFILES       = Makefile $(DEPS)
 MAINTAINERCLEANFILES = shish shish-$(VERSION)
 

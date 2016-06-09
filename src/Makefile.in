@@ -27,13 +27,70 @@ dep:              makefiles dep-recursive
 # local directory configuration
 # ---------------------------------------------------------------------------
 RECURSIVE = 1
-SUBDIRS   = builtin debug eval exec expand fd fdstack fdtable history job parse prompt redir sh sig source term tree var vartab
+SUBDIRS   = builtin \
+            debug \
+            eval \
+            exec \
+            expand \
+            fd \
+            fdstack \
+            fdtable \
+            history \
+            job \
+            parse \
+            prompt \
+            redir \
+            sh \
+            sig \
+            source \
+            term \
+            tree \
+            var \
+            vartab
 
 PROGRAM = shish$(EXEEXT)
 LIB     = $(top_builddir)/lib/libshish.a   
-LDADD   = builtin/builtin.a debug/debug.a eval/eval.a exec/exec.a expand/expand.a fd/fd.a fdstack/fdstack.a fdtable/fdtable.a history/history.a job/job.a parse/parse.a prompt/prompt.a redir/redir.a sh/sh.a sig/sig.a source/source.a term/term.a tree/tree.a var/var.a vartab/vartab.a 
+LDADD   = builtin/builtin.a \
+          debug/debug.a \
+          eval/eval.a \
+          exec/exec.a \
+          expand/expand.a \
+          fd/fd.a \
+          fdstack/fdstack.a \
+          fdtable/fdtable.a \
+          history/history.a \
+          job/job.a \
+          parse/parse.a \
+          prompt/prompt.a \
+          redir/redir.a \
+          sh/sh.a \
+          sig/sig.a \
+          source/source.a \
+          term/term.a \
+          tree/tree.a \
+          var/var.a \
+          vartab/vartab.a 
           
-HEADERS = builtin.h debug.h eval.h exec.h expand.h fd.h fdstack.h fdtable.h history.h job.h parse.h prompt.h redir.h sh.h sig.h source.h term.h tree.h var.h vartab.h
+HEADERS = builtin.h \
+          debug.h \
+          eval.h \
+          exec.h \
+          expand.h \
+          fd.h \
+          fdstack.h \
+          fdtable.h \
+          history.h \
+          job.h \
+          parse.h \
+          prompt.h \
+          redir.h \
+          sh.h \
+          sig.h \
+          source.h \
+          term.h \
+          tree.h \
+          var.h \
+          vartab.h
 
 # local targets     
 # ---------------------------------------------------------------------------
@@ -45,12 +102,17 @@ dep-local:
 # ---------------------------------------------------------------------------
 bin_EXEC += $(PROGRAM)
 
-@NO_GLOB@LDADD += $(top_builddir)/lib/glob.o
-@LIBOWFAT_TRUE@LIBS += @LIBOWFAT_LIBS@ -lowfat
-
 # distribution config
 # ---------------------------------------------------------------------------
 FILES += $(HEADERS) 
+
+
+#@NO_GLOB@LDADD += $(top_builddir)/lib/glob.o
+
+# local build configuration
+# ---------------------------------------------------------------------------
+PREADD  = -Wl,--whole-archive
+POSTADD = -Wl,--no-whole-archive
 
 # include build.mk (makefile helper) 
 # ---------------------------------------------------------------------------

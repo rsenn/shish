@@ -19,33 +19,32 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = var.a
-MODULES += var_bsearch
-MODULES += var_chflg
-MODULES += var_cleanup
-MODULES += var_copys
-MODULES += var_count
-MODULES += var_create
-MODULES += var_dump
-MODULES += var_export
-MODULES += var_get
-MODULES += var_hsearch
-MODULES += var_import
-MODULES += var_init
-MODULES += var_len
-MODULES += var_lexhash
-MODULES += var_print
-MODULES += var_rndhash
-MODULES += var_search
-MODULES += var_set
-MODULES += var_setsa
-MODULES += var_setvint
-MODULES += var_setvsa
-MODULES += var_unset
-MODULES += var_valid
-MODULES += var_value
-MODULES += var_vdefault
-MODULES += var_vlen
-
+MODULES = var_bsearch \
+          var_chflg \
+          var_cleanup \
+          var_copys \
+          var_count \
+          var_create \
+          var_dump \
+          var_export \
+          var_get \
+          var_hsearch \
+          var_import \
+          var_init \
+          var_len \
+          var_lexhash \
+          var_print \
+          var_rndhash \
+          var_search \
+          var_set \
+          var_setsa \
+          var_setvint \
+          var_setvsa \
+          var_unset \
+          var_valid \
+          var_value \
+          var_vdefault \
+          var_vlen 
           
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
