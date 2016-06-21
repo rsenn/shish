@@ -2,6 +2,7 @@
 #include "byte.h"
 #include "str.h"
 
+#ifndef DEBUG
 void *shell_strdup(const char *s) {
   unsigned long n;
   void *ptr;
@@ -15,3 +16,4 @@ void *shell_strdup(const char *s) {
 
   return ptr;
 }
+#endif

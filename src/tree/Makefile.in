@@ -23,6 +23,7 @@ MODULES = tree_count \
           tree_free \
           tree_newlink \
           tree_newnode \
+          tree_newnodedebug \
           tree_print \
           tree_printlist
 

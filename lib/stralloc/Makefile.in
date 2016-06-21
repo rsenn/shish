@@ -21,26 +21,30 @@ include $(top_builddir)/config.mk
 LIB = ../libshish.a
 
 MODULES = stralloc_cat \
-stralloc_catb \
-stralloc_catc \
-stralloc_catlong0 \
-stralloc_cats \
-stralloc_catulong0 \
-stralloc_copy \
-stralloc_copyb \
-stralloc_copys \
-stralloc_diffs \
-stralloc_free \
-stralloc_init \
-stralloc_insertb \
-stralloc_move \
-stralloc_nul \
-stralloc_ready \
-stralloc_readyplus \
-stralloc_remove \
-stralloc_trunc \
-stralloc_write \
-stralloc_zero
+    stralloc_catb \
+    stralloc_catc \
+    stralloc_catlong0 \
+    stralloc_cats \
+    stralloc_catulong0 \
+    stralloc_copy \
+    stralloc_copyb \
+    stralloc_copys \
+    stralloc_diffs \
+    stralloc_free \
+    stralloc_init \
+    stralloc_insertb \
+    stralloc_move \
+    stralloc_nul \
+    stralloc_ready \
+    stralloc_readyplus \
+    stralloc_remove \
+    stralloc_trunc \
+    stralloc_write \
+    stralloc_zero \
+    stralloc_freedebug \
+    stralloc_readydebug \
+    stralloc_readyplusdebug \
+    stralloc_truncdebug
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

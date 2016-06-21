@@ -41,6 +41,7 @@ MODULES = parse_and_or \
           parse_list \
           parse_loop \
           parse_newnode \
+          parse_newnodedebug \
           parse_param \
           parse_pipeline \
           parse_simple_command \

@@ -1,6 +1,7 @@
 #include "tree.h"
 #include "parse.h"
 
+#ifndef DEBUG
 void parse_newnode(struct parser *p, enum nod_id nod) {
   if(p->tree) {
     p->node->list.next = tree_newnode(nod);
@@ -10,3 +11,4 @@ void parse_newnode(struct parser *p, enum nod_id nod) {
     p->tree = p->node;
   }
 }
+#endif

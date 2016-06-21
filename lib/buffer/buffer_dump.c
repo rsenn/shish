@@ -6,7 +6,7 @@
 
 extern ssize_t term_read(int fd, char *buf, unsigned int len);
 extern ssize_t buffer_dummyreadmmap();
-extern sunsigned long stralloc_write();
+extern unsigned long stralloc_write();
 
 void buffer_dump(buffer *out, buffer *b) {
   char xlong[FMT_LONG + FMT_LONG + FMT_LONG];
