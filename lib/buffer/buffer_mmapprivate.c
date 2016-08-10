@@ -1,6 +1,5 @@
 #include "buffer.h"
 #include "mmap.h"
-#include <sys/mman.h>
 
 ssize_t buffer_dummyreadmmap();
 
