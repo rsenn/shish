@@ -4,7 +4,7 @@
 
 #include <glob.h>
 
-#if defined(__MINGW32__) || defined(__MINGW64__)
+#if 0 //defined(__MINGW32__) || defined(__MINGW64__)
 #include "mingw-glob.h"
 #endif
 
