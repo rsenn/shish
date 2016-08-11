@@ -40,7 +40,7 @@ void prompt_parse(void) {
     return;
 
   /* now initialize input buffer from the prompt str and parse */
-  fd_push(&fd, STDSRC_FILENO, FD_READ);
+  fd_push(&fd, STDSRC_FILENO, FD_MODE_READ);
   fd_string(&fd, value, n);
   source_push(&src);
   parse_init(&p, P_DEFAULT);

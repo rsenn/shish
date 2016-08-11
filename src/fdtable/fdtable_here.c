@@ -53,7 +53,7 @@ int fdtable_here(struct fd *fd, int flags) {
   buffer_init(&fd->wb, write, -1, NULL, 0);
 
   /* its now not longer a stralloc :) */
-  fd->mode = FD_READ;
+  fd->mode = FD_MODE_READ;
 
   if(fd->e == fd->n || !(flags & FDTABLE_FORCE))
     return FDTABLE_DONE;

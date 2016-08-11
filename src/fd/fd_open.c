@@ -13,17 +13,17 @@ void fd_open(struct fd *fd, const char *fname, long mode) {
   /* set POSIX read/write mode */
   switch(fd->mode & FD_READWRITE) {
     case FD_READWRITE: fd->fl = O_RDWR; break;
-    case FD_WRITE:     fd->fl = O_WRONLY; break;
+    case FD_MODE_WRITE:     fd->fl = O_WRONLY; break;
     default:           fd->fl = O_RDONLY; break;
   }
 
   /* if we're opening a file for writing there are further options */
   if(FD_ISWR(fd)) {
     /* append or truncate, never overwrite! */
-    fd->fl |= ((mode & (FD_APPEND|FD_READ)) ? O_APPEND : O_TRUNC);
+    fd->fl |= ((mode & (FD_MODE_APPEND|FD_MODE_READ)) ? O_APPEND : O_TRUNC);
     
     /* exclude or create */
-    fd->fl |= ((mode & (FD_EXCL)) ? O_EXCL : O_CREAT);
+    fd->fl |= ((mode & (FD_MODE_EXCL)) ? O_EXCL : O_CREAT);
   }
   
 #ifdef O_LARGEFILE

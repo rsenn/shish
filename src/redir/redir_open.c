@@ -13,7 +13,7 @@ int redir_open(struct nredir *nredir, stralloc *sa) {
   if(nredir->flag & R_OUT) {
     /* check for appending mode */
     if(nredir->flag & R_APPEND)
-      mode |= FD_APPEND;
+      mode |= FD_MODE_APPEND;
   }
   
   /* MISSING: no-clobbering (with O_EXCL?) */

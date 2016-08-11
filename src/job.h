@@ -2,7 +2,9 @@
 #define JOB_H
 
 #include <sys/types.h>
+#if !defined(__MINGW32__) && !defined(__MINGW64__) && !defined(_MSC_VER)
 #include <sys/wait.h>
+#endif
 #include <signal.h>
 
 #ifdef HAVE_CONFIG_H

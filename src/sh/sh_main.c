@@ -95,7 +95,7 @@ int sh_main(int argc, char **argv, char **envp) {
 
   /* set up the source fd (where the shell reads from) */
   fd_alloca(fd);
-  fd_push(fd, STDSRC_FILENO, FD_READ);
+  fd_push(fd, STDSRC_FILENO, FD_MODE_READ);
   
   /* if there were cmds supplied with the option 
      -c then read input from this string. */

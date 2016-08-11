@@ -37,8 +37,8 @@
 
 struct fdtable;
 
-#define FD_ISRD(i) ((i)->mode & FD_READ)
-#define FD_ISWR(i) ((i)->mode & FD_WRITE)
+#define FD_ISRD(i) ((i)->mode & FD_MODE_READ)
+#define FD_ISWR(i) ((i)->mode & FD_MODE_WRITE)
 
 #define FD_SIZE (sizeof(struct fd))
 
@@ -67,11 +67,11 @@ struct fd {
 #define fd_ok(e)      ((e) >= 0 && (e) < FD_MAX)
 
 /* fd mode */
-#define FD_READ       0x00000001
-#define FD_WRITE      0x00000002
-#define FD_APPEND     0x00000004
-#define FD_EXCL       0x00000008
-#define FD_TRUNC      0x00000010
+#define FD_MODE_READ       0x00000001
+#define FD_MODE_WRITE      0x00000002
+#define FD_MODE_APPEND     0x00000004
+#define FD_MODE_EXCL       0x00000008
+#define FD_MODE_TRUNC      0x00000010
 
 /* types */
 #define FD_TYPE       0x0007ff00
@@ -89,13 +89,13 @@ struct fd {
 #define FD_TERM       0x00040000  /* is a terminal */
 #define FD_NULL       0x00080000
 
-#define FD_SUBST      (FD_STRALLOC|FD_WRITE)
-#define FD_HERE       (FD_STRALLOC|FD_READ)
+#define FD_SUBST      (FD_STRALLOC|FD_MODE_WRITE)
+#define FD_HERE       (FD_STRALLOC|FD_MODE_READ)
 
-#define FD_READWRITE  (FD_READ|FD_WRITE)
+#define FD_READWRITE  (FD_MODE_READ|FD_MODE_WRITE)
 #define FD_DEFFILE    (FD_FILE|FD_CLOSE)
-#define FD_READFILE   (FD_DEFFILE|FD_READ)
-#define FD_WRITEFLUSH (FD_FLUSH|FD_WRITE)
+#define FD_READFILE   (FD_DEFFILE|FD_MODE_READ)
+#define FD_WRITEFLUSH (FD_FLUSH|FD_MODE_WRITE)
 #define FD_WRITEFILE  (FD_DEFFILE|FD_WRITEFLUSH)
 #define FD_RWFILE     (FD_READFILE|FD_WRITEFILE)
 

@@ -2,7 +2,9 @@
 #include "config.h"
 #endif
 #include <unistd.h>
+#if !defined(_MSC_VER) && !defined(__MINGW32__)
 #include <termios.h>
+#endif
 #if defined(HAVE_SYS_WAIT_H) && !defined(__MINGW32__)
 #include <sys/wait.h>
 #endif

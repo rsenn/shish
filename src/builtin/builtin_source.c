@@ -19,7 +19,7 @@ int builtin_source(int argc, char **argv) {
     return 2;
   }
     
-  fd_push(&src, STDSRC_FILENO, FD_READ);
+  fd_push(&src, STDSRC_FILENO, FD_MODE_READ);
   source_push(&in);
   
   if(!fd_mmap(&src, argv[shell_optind])) {

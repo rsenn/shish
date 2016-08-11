@@ -37,7 +37,7 @@ int eval_pipeline(struct eval *e, struct npipe *npipe) {
       struct fd *in;
       
       fd_alloca(in);
-      fd_push(in, STDIN_FILENO, FD_READ|FD_PIPE);
+      fd_push(in, STDIN_FILENO, FD_MODE_READ|FD_PIPE);
       fd_setfd(in, prevfd);
     }
     
@@ -47,7 +47,7 @@ int eval_pipeline(struct eval *e, struct npipe *npipe) {
       struct fd *out;
       
       fd_alloca(out);
-      fd_push(out, STDOUT_FILENO, FD_WRITE|FD_PIPE);
+      fd_push(out, STDOUT_FILENO, FD_MODE_WRITE|FD_PIPE);
       prevfd = fd_pipe(out);
       
       if(prevfd == -1) {

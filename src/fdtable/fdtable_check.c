@@ -20,11 +20,11 @@ int fdtable_check(int e) {
     return 0;
   
   /* map posix file access modes to (fd) flags */
-  if(pflags & (O_RDWR|O_WRONLY)) iflags |= FD_WRITE;
-  if((pflags & O_WRONLY) == 0) iflags |= FD_READ;
-  if(pflags & O_APPEND) iflags |= FD_APPEND;
-  if(pflags & O_TRUNC) iflags |= FD_TRUNC;
-  if(pflags & O_EXCL) iflags |= FD_EXCL;
+  if(pflags & (O_RDWR|O_WRONLY)) iflags |= FD_MODE_WRITE;
+  if((pflags & O_WRONLY) == 0) iflags |= FD_MODE_READ;
+  if(pflags & O_APPEND) iflags |= FD_MODE_APPEND;
+  if(pflags & O_TRUNC) iflags |= FD_MODE_TRUNC;
+  if(pflags & O_EXCL) iflags |= FD_MODE_EXCL;
   
   return iflags;
 }

@@ -31,7 +31,7 @@ int fd_tempfile(struct fd *fd) {
   fdtable_track(e, FDTABLE_LAZY);
   
   /* tempfiles are initially in write mode only */
-  fd->mode = FD_WRITE;
+  fd->mode = FD_MODE_WRITE;
 
   fd_setfd(fd, e);
 
