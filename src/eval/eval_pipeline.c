@@ -20,7 +20,7 @@ int eval_pipeline(struct eval *e, struct npipe *npipe) {
   int prevfd = -1;
   int status = -1;
 
-//  job = (e->flags & E_JCTL) ? job_new(npipe->ncmd) : NULL;
+/*  job = (e->flags & E_JCTL) ? job_new(npipe->ncmd) : NULL;*/
   job = job_new(npipe->ncmd);
   
   if(job == NULL) {
@@ -63,7 +63,7 @@ int eval_pipeline(struct eval *e, struct npipe *npipe) {
     
     if(!pid) {
       /* no job control for commands inside pipe */
-//      e->mode &= E_JCTL;
+/*      e->mode &= E_JCTL;*/
       
       /* exit after evaluating this subtree */
       exit(eval_tree(e, node, E_EXIT));

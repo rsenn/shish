@@ -64,7 +64,7 @@ int exec_program(char *path, char **argv, int exec, union node *redir) {
 #ifdef SIGCHLD
     sigaddset(&nset, SIGCHLD);
 #endif
-//    sigemptyset(&oset);
+    sigemptyset(&oset);
     sigprocmask(SIG_BLOCK, &nset, &oset);
 */
     sig_block();

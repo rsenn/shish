@@ -4,7 +4,7 @@
 #include "fdstack.h"
 #include "vartab.h"
 
-//struct eval *eval = NULL;
+/*struct eval *eval = NULL;*/
 
 void eval_push(struct eval *e, int flags) {
   byte_zero(e, sizeof(struct eval));

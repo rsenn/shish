@@ -1,5 +1,7 @@
 #include "shell.h"
 
+#ifndef DEBUG
+
 void *shell_realloc(void *ptr, unsigned long size) {
   void *newptr;
 
@@ -17,3 +19,4 @@ void *shell_realloc(void *ptr, unsigned long size) {
   /* return pointer otherwise */
   return newptr;
 }
+#endif /* !defined(DEBUG) */

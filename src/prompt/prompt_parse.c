@@ -59,7 +59,7 @@ void prompt_parse(void) {
   fd_pop(&fd);
   
 #ifdef DEBUG
-//  debug_list(prompt_node, 0);
+/*  debug_list(prompt_node, 0);*/
 #endif /* DEBUG */
 }
 

@@ -1,7 +1,7 @@
 #ifndef FD_H
 #define FD_H
 
-//#define __USE_LARGEFILE64
+/*#define __USE_LARGEFILE64*/
 #include <fcntl.h>
 
 #include "shell.h"

@@ -1,6 +1,8 @@
 #include "stralloc.h"
 #include <stdlib.h>
 
+#ifndef DEBUG
+
 /* stralloc_ready makes sure that sa has enough space allocated to hold
  * len bytes: If sa is not allocated, stralloc_ready allocates at least
  * len bytes of space, and returns 1. If sa is already allocated, but
@@ -19,3 +21,4 @@ int stralloc_ready(stralloc *sa, unsigned long len) {
   }
   return 1;
 }
+#endif /* !defined(DEBUG) */

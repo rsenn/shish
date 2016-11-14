@@ -59,7 +59,7 @@ addcmd:
   /* add a command node */
   simple_command = tree_newnode(N_SIMPLECMD);
 
-//  node->ncmd.bgnd = 0; not done here in posix
+/*  node->ncmd.bgnd = 0; not done here in posix*/
   simple_command->ncmd.args = args;
   simple_command->ncmd.vars = vars;
   simple_command->ncmd.rdir = rdir;

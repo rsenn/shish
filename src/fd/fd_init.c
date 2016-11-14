@@ -14,7 +14,7 @@ void fd_init(struct fd *fd, int n, int flags) {
   fd->e = -1;
   fd->dup = NULL;
   fd->dev = 0;
-//  fdrefc = 0;
+/*  fdrefc = 0;*/
   
   fd->r = &fd->rb;
   fd->w = &fd->wb;

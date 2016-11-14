@@ -31,7 +31,7 @@ int builtin_test(int argc, char **argv) {
     }
   }
   
-  // TODO:
+  /* TODO:*/
   (void)brackets;
   
   /* every condition can be negated by a leading ! */

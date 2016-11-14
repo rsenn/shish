@@ -305,7 +305,7 @@ print_if:
     
     /* print redirections operators */
   case N_REDIR: {
-//      stralloc_catc(sa, ' ');
+/*      stralloc_catc(sa, ' ');*/
 
       if(((node->nredir.flag & R_IN) && node->nredir.fdes != 0) ||
          ((node->nredir.flag & R_OUT) && node->nredir.fdes != 1))

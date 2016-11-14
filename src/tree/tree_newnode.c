@@ -2,6 +2,8 @@
 #include "byte.h"
 #include "tree.h"
 
+#ifndef DEBUG
+
 /* allocate a tree node
  * ----------------------------------------------------------------------- */
 union node *tree_newnode(enum nod_id nod) {
@@ -13,3 +15,4 @@ union node *tree_newnode(enum nod_id nod) {
   }
   return ret;
 }
+#endif /* !defined(DEBUG) */

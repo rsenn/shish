@@ -1,5 +1,7 @@
 #include "shell.h"
 
+#ifndef DEBUG
+
 void *shell_alloc(unsigned long size) {
   void *ptr = malloc(size);
 
@@ -12,3 +14,4 @@ void *shell_alloc(unsigned long size) {
   /* return pointer otherwise */
   return ptr;
 }
+#endif /* !defined(DEBUG) */

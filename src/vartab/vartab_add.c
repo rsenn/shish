@@ -10,7 +10,7 @@ void vartab_add(struct vartab *vartab, struct var *var, struct search *context) 
   /* its already in this table? wtf? */
   assert(var != *vartab->pos);
     
-//  debug_str("linking", context->name, 0);
+/*  debug_str("linking", context->name, 0);*/
   
   /* link it to the list */
   var->blink = vartab->pos;
@@ -39,11 +39,11 @@ void vartab_add(struct vartab *vartab, struct var *var, struct search *context) 
     
     context->global = 1;
     
-    //  context->pos = &varlist;
-    // 
+    /*  context->pos = &varlist;*/
+    /* */
     /* then we search forward again until the next entry is bigger */
     if(var_hsearch(context) == 0LL) {
-#ifndef NDEBUG
+#ifdef DEBUG
       unsigned long dist =
 #endif
         var_bsearch(context);

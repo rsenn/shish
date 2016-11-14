@@ -79,7 +79,7 @@ again:
     /* encountered a new line */
     case '\n':
     newline:
-//      parse_lineno++;
+/*      parse_lineno++;*/
       tok = T_NL;
       break;
     /* check for a pipe char, and then check for || */
