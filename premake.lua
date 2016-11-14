@@ -23,10 +23,11 @@ package.target   = "shish"
   
 -- Defines
   package.defines = { 
-    "NDEBUG=1",
     "PACKAGE_NAME=\\\"shish\\\"",
     "PACKAGE_VERSION=\\\"0.8\\\""
   }
+  package.config["Release"].defines = { "NDEBUG=1" }
+  package.config["Debug"].defines = { "DEBUG=1" }
   
 -- Files
   package.files =
