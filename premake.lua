@@ -5,6 +5,19 @@ package.language = "c"
 package.kind     = "exe"
 package.target   = "shish"
 
+-- Build Flags
+  package.buildflags = {
+	"no-64bit-checks",
+	"static-runtime",
+	"extra-warnings"
+  }
+
+  package.config["Release"].buildflags = {
+	"no-symbols",
+	"optimize-size",
+	"no-frame-pointers"
+  }
+
 -- Include paths
   package.includepaths = { "lib", "src" }
   
