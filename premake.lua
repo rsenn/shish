@@ -5,6 +5,8 @@ package.language = "c"
 package.kind     = "exe"
 package.target   = "shish"
 
+package.config["Debug"].target = "shishD"
+
 -- Build Flags
   package.buildflags = {
 	"no-64bit-checks",
