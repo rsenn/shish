@@ -50,7 +50,9 @@ void vartab_add(struct vartab *vartab, struct var *var, struct search *context) 
       
       /* there must not be a full match, otherwise this means that
          the variable is already in the list which it should not! */
+#ifdef DEBUG
       assert(dist != 0L); 
+#endif
     }
     
     var->glink = context->pos;

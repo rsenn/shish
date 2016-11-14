@@ -10,6 +10,7 @@ package.target   = "shish"
   
 -- Defines
   package.defines = { 
+    "NDEBUG=1",
     "PACKAGE_NAME=\\\"shish\\\"",
     "PACKAGE_VERSION=\\\"0.8\\\""
   }
