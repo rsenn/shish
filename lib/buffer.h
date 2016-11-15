@@ -2,13 +2,10 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-<<<<<<< bdea23dc9b687d73133607900c13d5a073403743
 /* for size_t: */
 #include <stddef.h>
 /* for ssize_t: */
-=======
 #include <stdint.h>
->>>>>>> ...
 #include <sys/types.h>
 
 #ifdef __cplusplus
