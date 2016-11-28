@@ -27,7 +27,7 @@ int sh_forked(void) {
   sh->jump = 0;
   sh_child = 1;
   
-  return 0;//(sh_pid = getpid());
+  return 0;/*(sh_pid = getpid());*/
 }
 
 

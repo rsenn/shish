@@ -2,6 +2,7 @@
 #include "shell.h"
 
 #ifndef DEBUG
+
 /* truncates to n+1 and nul-terminates (but '\0' is not included in len)  */
 int stralloc_trunc(stralloc *sa, unsigned long int n) {
   if((sa->s = shell_realloc(sa->s, n + 1))) {
@@ -11,4 +12,5 @@ int stralloc_trunc(stralloc *sa, unsigned long int n) {
   }
   return 0;
 }
-#endif
+
+#endif /* !defined(DEBUG) */

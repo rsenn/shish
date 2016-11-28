@@ -6,8 +6,10 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#elif defined(__MSYS__) || defined(__CYGWIN__)
+#define HAVE_SYS_SIGLIST 1
 #endif
-#ifndef HAVE_SYS_SIGLIST
+#if !defined(HAVE_SYS_SIGLIST) 
 extern const char *const sys_siglist[];
 #endif
 

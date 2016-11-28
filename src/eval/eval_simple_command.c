@@ -1,5 +1,6 @@
+#ifdef HAVE_CONFIG_H
 #include "config.h"
-
+#endif
 #ifdef HAVE_ALLOCA
 #include <alloca.h>
 #endif
@@ -34,7 +35,7 @@ int eval_simple_command(struct eval *e, struct ncmd *ncmd) {
   union command cmd = { NULL };
   enum hash_id id = H_BUILTIN;
   struct vartab vars;
-//  struct fdstack io;
+/*  struct fdstack io;*/
   union node *r;
   union node *redir = ncmd->rdir;
 

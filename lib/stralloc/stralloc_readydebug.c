@@ -1,6 +1,8 @@
 #include "stralloc.h"
 #include "shell.h"
 
+#ifdef DEBUG
+
 /* stralloc_ready makes sure that sa has enough space allocated to hold
  * len bytes: If sa is not allocated, stralloc_ready allocates at least
  * len bytes of space, and returns 1. If sa is already allocated, but
@@ -18,3 +20,4 @@ int stralloc_readydebug(const char *file, unsigned int line, stralloc *sa, unsig
   }
   return 1;
 }
+#endif /* defined(DEBUG) */

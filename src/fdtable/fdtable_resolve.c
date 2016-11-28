@@ -25,7 +25,7 @@ int fdtable_resolve(struct fd *fd, int flags) {
   if((flags & FDTABLE_FD) && fd != fdtable[fd->n]) {
     fd->mode = FD_CLOSE;
   }
-//    state = fdtable_close(fd->n, flags);
+/*    state = fdtable_close(fd->n, flags);*/
   
   /* do some actions to resolve the effective file descriptor */
   switch(fd->mode & (FD_OPEN|FD_CLOSE|FD_STRALLOC))

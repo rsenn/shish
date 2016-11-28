@@ -24,7 +24,7 @@ int builtin_exec(int argc, char **argv) {
     }
   }
   
-  // TODO
+  /* TODO*/
   (void)dash;
   (void)nullenv;
   

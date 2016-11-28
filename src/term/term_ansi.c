@@ -11,7 +11,7 @@ void term_ansi(void) {
   unsigned long i;
 
   /* when an ANSI code is received, then disable dumb terminal mode */
-//  term_dumb = 0;
+/*  term_dumb = 0;*/
 
   if(buffer_getc(&term_input, &c) <= 0)
     return;

@@ -4,7 +4,7 @@
 
 struct env sh_root = {
   .parent      = NULL,
-//  .flags       = 0,
+/*  .flags       = 0,*/
   .cwd         = { NULL, 0, 0 },
   .umask       = 022,
   .arg.c       = 0,

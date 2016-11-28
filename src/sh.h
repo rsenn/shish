@@ -24,7 +24,7 @@ struct eval;
 struct fdtable;
 struct vartab;
 
-//#define SH_INTERACTIVE 0x0001
+/*#define SH_INTERACTIVE 0x0001*/
 
 struct arg {
   unsigned int   c;

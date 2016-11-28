@@ -1,6 +1,8 @@
 #include "stralloc.h"
 #include <stdlib.h>
 
+#ifdef DEBUG
+
 /* stralloc_readyplus is like stralloc_ready except that, if sa is
  * already allocated, stralloc_readyplus adds the current length of sa
  * to len. */
@@ -11,3 +13,4 @@ int stralloc_readyplusdebug(const char *file, unsigned int line, stralloc *sa, u
   } else
     return stralloc_readydebug(file, line, sa, len);
 }
+#endif /* defined(DEBUG) */

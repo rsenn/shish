@@ -11,7 +11,7 @@ void sh_push(struct env *env) {
   env->parent = sh;
   
   /* copy cwd */
-//  stralloc_copyb(&env->cwd, sh->cwd.s, sh->cwd.len);
+/*  stralloc_copyb(&env->cwd, sh->cwd.s, sh->cwd.len);*/
   env->cwd.a = 0;
   env->cwd.s = sh->cwd.s;
   env->cwd.len = sh->cwd.len;

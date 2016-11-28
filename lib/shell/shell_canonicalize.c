@@ -1,8 +1,8 @@
-//#define  _POSIX_SOURCE
-//
-//#ifdef HAVE_CONFIG_H
-//# include "config.h"
-//#endif
+/*#define  _POSIX_SOURCE*/
+/**/
+/*#ifdef HAVE_CONFIG_H*/
+/*# include "config.h"*/
+/*#endif*/
 
 #include <sys/stat.h>
 #include <limits.h>
@@ -11,12 +11,12 @@
 #include <fcntl.h>
 
 
-//#ifdef __USE_FILE_OFFSET64
-//#undef lstat
-//#define lstat lstat64
-//#undef readlink
-//#define readlink readlink64
-//#endif
+/*#ifdef __USE_FILE_OFFSET64*/
+/*#undef lstat*/
+/*#define lstat lstat64*/
+/*#undef readlink*/
+/*#define readlink readlink64*/
+/*#endif*/
 /*#ifdef HAVE_LINUX_LIMITS_H
 #include <linux/limits.h>
 #endif*/

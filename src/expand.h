@@ -42,16 +42,16 @@
 #define S_GLOB      0x10000
 
 /* expansion modes */
-//#define X_SPLIT       0x00
+/*#define X_SPLIT       0x00*/
 #define X_NOSPLIT     0x01
 
-//#define X_NOESCAPE    0x00
+/*#define X_NOESCAPE    0x00*/
 #define X_ESCAPE      0x02
 
-//#define X_NOGLOB      0x00
+/*#define X_NOGLOB      0x00*/
 #define X_GLOB        0x04
 
-//#define X_UNQUOTED    0x00
+/*#define X_UNQUOTED    0x00*/
 #define X_QUOTED      0x08
 
 extern char expand_ifs[4];

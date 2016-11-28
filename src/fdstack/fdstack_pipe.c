@@ -18,7 +18,7 @@ int fdstack_pipe(unsigned int n, struct fd *fda) {
     /* make pipes for command expansion outputs */
     if((fd->mode & FD_SUBST) == FD_SUBST)
     {
-//      fd->mode |= FD_READ;
+/*      fd->mode |= FD_READ;*/
 
       fd_push(fda, fd->n, FD_WRITE|FD_FLUSH);
       fd_setbuf(fda, b, FD_BUFSIZE / 2);

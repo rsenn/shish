@@ -18,7 +18,7 @@ int builtin_echo(int argc, char **argv) {
     }
   }
   
-  // TODO
+  /* TODO*/
   (void)eval;
   
   for(argv += shell_optind; *argv;) {

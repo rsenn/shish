@@ -12,4 +12,4 @@ void debug_char(const char *msg, char c, int depth) {
   buffer_put(fd_err->w, &c, 1);
   buffer_putnlflush(fd_err->w);
 }
-#endif
+#endif /* defined(DEBUG) */
