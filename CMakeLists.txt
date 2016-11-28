@@ -114,7 +114,12 @@ check_function_exists(sys_siglist HAVE_SYS_SIGLIST)
 
 configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.h")
 
-add_definitions(-Wall -DHAVE_CONFIG_H=1 -D__USE_XOPEN_EXTENDED=1 -D__USE_POSIX=1 -D__USE_LARGEFILE64=1)
+add_definitions(-Wall -DHAVE_CONFIG_H=1 -D__USE_XOPEN_EXTENDED=1 -D__USE_POSIX=1)
+
+add_definitions(-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64)
+add_definitions(-D_GNU_SOURCE)
+
+
 
 set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0")
 
