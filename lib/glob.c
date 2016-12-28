@@ -33,9 +33,9 @@
  * SUCH DAMAGE.
  */
 
- #include "../config.h"
-
-
+#ifdef HAVE_CONFIG_H
+#include "../config.h"
+#endif
 
 /*
  * glob(3) -- a superset of the one defined in POSIX 1003.2.
@@ -61,7 +61,6 @@
  * gl_matchc:
  *	Number of matches in the current invocation of glob.
  */
-
 /*
  * Some notes on multibyte character support:
  * 1. Patterns with illegal byte sequences match nothing - even if
@@ -72,13 +71,14 @@
  * 3. State-dependent encodings are not currently supported.
  */
 
+#include "glob.h"
+
 #include <sys/param.h>
 #include <sys/stat.h>
 
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
-#include "glob.h"
 #include <limits.h>
 #include <pwd.h>
 #include <stdint.h>
@@ -87,6 +87,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <wchar.h>
+
+#ifndef ARG_MAX
+#define ARG_MAX 4096
+#endif
 
 #define	DOLLAR		'$'
 #define	DOT		'.'
