@@ -19,7 +19,9 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 LIB = ../libshish.a
-MODULES = shell_alloc \
+MODULES = \
+	shell_alloc \
+	shell_allocdebug \
 	shell_basename \
 	shell_canonicalize \
 	shell_dirname \
@@ -33,8 +35,10 @@ MODULES = shell_alloc \
 	shell_init \
 	shell_readlink \
 	shell_realloc \
+	shell_reallocdebug \
 	shell_realpath \
-	shell_strdup
+	shell_strdup \
+	shell_strdupdebug
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
