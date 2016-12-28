@@ -6,7 +6,7 @@
 # initialize autoconf (require version 2.5x)
 # ---------------------------------------------------------------------------
 AC_PREREQ([2.50])
-AC_INIT([shish], [0.7-pre3])
+AC_INIT([shish], [0.8])
 AC_CONFIG_SRCDIR([src/sh/sh_main.c])
 dnl AC_LANG_SOURCE([C])
 
