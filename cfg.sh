@@ -5,13 +5,13 @@ cfg() {
   esac
 
   for builddir in build/cmake{-debug,,-release,-minsizerel}
-	do
+  do
     case "$builddir" in
-						*debug*) TYPE=Debug ;;
-						*reease*) TYPE=Release ;;
-						*minsiz*) TYPE=MinSizeRel ;;
-						*) TYPE=RelWithDebInfo ;;
-		esac
+            *debug*) TYPE=Debug ;;
+            *reease*) TYPE=Release ;;
+            *minsiz*) TYPE=MinSizeRel ;;
+            *) TYPE=RelWithDebInfo ;;
+    esac
  (mkdir -p $builddir
   cd $builddir
   set -x
@@ -21,5 +21,5 @@ cfg() {
     -DCMAKE_BUILD_TYPE="${TYPE:-RelWithDebInfo}" \
     "$@" \
   ../..)
-	done
+  done
 }
