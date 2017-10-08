@@ -36,6 +36,8 @@ union node *parse_arith_value(struct parser *p)
 
     return node;
   }
+  
+  return NULL;
 
 	/*
 	union node* node = 0;
