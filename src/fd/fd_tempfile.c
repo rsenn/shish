@@ -3,12 +3,18 @@
 #include <shell.h>
 #include <open.h>
 #include <str.h>
-#include "config.h"
 #include "redir.h"
 #include "fd.h"
 #include "fdtable.h"
-
 #include "debug.h"
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#ifndef PACKAGE_NAME
+#define PACKAGE_NAME "shish"
+#endif
 
 #define FD_TEMPPFX "/tmp/"PACKAGE_NAME"-"
 #define FD_TEMPLEN (sizeof(FD_TEMPPFX) + 6)

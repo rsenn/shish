@@ -21,7 +21,7 @@ package.config["Debug"].target = "shishD"
   }
 
 -- Include paths
-  package.includepaths = { "lib",
+  package.includepaths = { ".", "lib",
       "src" }
   
 -- Defines
