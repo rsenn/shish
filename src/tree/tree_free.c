@@ -78,8 +78,9 @@ void tree_free(union node *node)
       case N_ARGCMD:
         if(node->nargcmd.list) tree_free(node->nargcmd.list);
         break;
-      case N_ARGARITH:
-        if(node->nargarith.list) tree_free(node->nargarith.list);
+      case N_ARGEXPR:
+        if(node->nargexpr.left) tree_free(node->nargexpr.left);
+        if(node->nargexpr.right) tree_free(node->nargexpr.right);
         break;
 
       case N_FUNCTION:

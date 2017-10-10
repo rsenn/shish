@@ -36,7 +36,7 @@ const char *debug_subst_tables[] = {
   "S_UNQUOTED",
   "S_DQUOTED",
   "S_SQUOTED",
-  "S_ARITH"
+  "S_EXPR"
 };
 
 void debug_subst(const char *msg, int flags, int depth) {

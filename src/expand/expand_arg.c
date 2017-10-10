@@ -21,9 +21,9 @@ union node *expand_arg(struct narg *narg, union node **nptr, int flags) {
 
     /* expand argument parts */
     switch(subarg->id) {
-      /* arithmetic substitution */
-      case N_ARGARITH:
-        n = expand_arith(&subarg->nargarith, nptr, lflags);
+      /* exprmetic substitution */
+      case N_ARGEXPR:
+        n = expand_expr(&subarg->nargexpr, nptr, lflags);
         break;
 
       /* parameter substitution */

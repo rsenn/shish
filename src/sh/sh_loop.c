@@ -16,6 +16,11 @@ void sh_loop(void) {
   union node *list;
   stralloc cmd;
 
+  buffer_puts(fd_err->w, "nargexpr.next: ");
+  buffer_putulong(fd_err->w, &((struct nargexpr*)0)->next);
+  buffer_putnlflush(fd_err->w);
+
+
   /* if we're in interactive mode some 
      additional stuff is to be initialized */
   if(source->mode & SOURCE_IACTIVE)

@@ -6,7 +6,8 @@
 
 /* allocate a tree node
  * ----------------------------------------------------------------------- */
-union node *tree_newnode(enum nod_id nod) {
+union node *
+tree_newnode(enum nod_id nod) {
   union node *ret;
 
   if((ret = shell_alloc(sizeof(union node)))) {

@@ -26,7 +26,7 @@ const char *debug_nodes[] = {
   "N_ARGSTR",
   "N_ARGCMD",
   "N_ARGPARAM",
-  "N_ARGARITH",
+  "N_ARGEXPR",
 };
 
 void debug_node(union node *node, int depth) {
@@ -158,7 +158,7 @@ void debug_node(union node *node, int depth) {
       break;
 
     case N_ARGCMD:
-    case N_ARGARITH:
+    case N_ARGEXPR:
       debug_subst("flag", node->nargcmd.flag, depth);
       debug_space(depth);
       debug_sublist("list", node->nargcmd.list, depth);

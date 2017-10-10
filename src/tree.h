@@ -33,7 +33,7 @@ enum nod_id {
                N_ARGSTR,
                N_ARGCMD,
                N_ARGPARAM,
-               N_ARGARITH
+               N_ARGEXPR
 };
 
 /* 3.9.1 - simple command
@@ -221,11 +221,12 @@ struct nargcmd {
   union node *list;
 };
 
-struct nargarith {
+struct nargexpr {
   int         id;
   union node *next;
-  int         flag;
-  union node *list;
+  int         op;
+  union node *left;
+  union node *right;
 };
 
 /* ----------------------------------------------------------------------- */
@@ -248,7 +249,7 @@ union node {
   struct nassign   nassign;
   struct nargstr   nargstr;
   struct nargcmd   nargcmd;
-  struct nargarith nargarith;
+  struct nargexpr  nargexpr;
   struct nargparam nargparam;
 };
 

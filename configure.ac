@@ -209,6 +209,7 @@ src/builtin/Makefile
 src/debug/Makefile
 src/eval/Makefile
 src/exec/Makefile
+src/expr/Makefile
 src/expand/Makefile
 src/fd/Makefile
 src/fdstack/Makefile

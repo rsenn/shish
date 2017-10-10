@@ -12,6 +12,19 @@ DEFINES += _GNU_SOURCE
 DEFINES += _FILE_OFFSET_BITS=64 _LARGEFILE64_SOURCE _LARGEFILE_SOURCE
 DEFINES += PACKAGE_NAME="\\\"shish\\\"" PACKAGE_VERSION="\\\"0.8\\\""
 
+#CONFIG += debug_and_release
+
+CONFIG(debug, debug|release) {
+  mac: TARGET = $$join(TARGET,,,_debug)
+  win32: TARGET = $$join(TARGET,,d)
+  linux: TARGET = $$join(TARGET,,d)
+
+  DEFINES += DEBUG=1
+}
+
+#CONFIG(release, debug|release):message(Release build!) #will print
+CONFIG(debug, debug|release):message(Debug build!) #no print
+
 SOURCES *= \
     ./lib/buffer/buffer_close.c \
     ./lib/buffer/buffer_default.c \
@@ -200,6 +213,8 @@ SOURCES *= \
     ./src/exec/exec_path.c \
     ./src/exec/exec_program.c \
     ./src/exec/exec_search.c \
+    ./src/expr/expr_tokens.c \
+    ./src/expr/expr_newnode.c \
     ./src/expand/expand_arg.c \
     ./src/expand/expand_args.c \
     ./src/expand/expand_argv.c \
@@ -446,6 +461,7 @@ HEADERS *= \
     ./src/debug.h \
     ./src/eval.h \
     ./src/exec.h \
+    ./src/expr.h \
     ./src/expand.h \
     ./src/fd.h \
     ./src/fdstack.h \

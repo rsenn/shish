@@ -1,8 +1,8 @@
 #include "tree.h"
 
-/* expand an arithmetic expression
+/* expand an exprmetic expression
  * ----------------------------------------------------------------------- */
-union node *expand_arith(struct nargarith *arith, union node **nptr, int flags) {
+union node *expand_expr(struct nargexpr *expr, union node **nptr, int flags) {
   union node *n = *nptr;
               
   return n;
