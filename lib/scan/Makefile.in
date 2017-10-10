@@ -20,14 +20,16 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 LIB = ../libshish.a
 MODULES = \
-    scan_8long \
-    scan_8longn \
-    scan_int \
-    scan_long \
-    scan_longn \
-    scan_uint \
-    scan_ulong \
-    scan_ulongn
+	scan_8long \
+	scan_8longn \
+	scan_int \
+	scan_long \
+	scan_longlong \
+	scan_longn \
+	scan_uint \
+	scan_ulong \
+	scan_ulonglong \
+	scan_ulongn 
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

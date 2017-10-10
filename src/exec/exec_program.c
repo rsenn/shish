@@ -5,7 +5,6 @@
 #if defined(__MINGW32__) || defined(__MINGW64__)
 #include "mingw-compat.h"
 #endif
-
 #ifdef HAVE_ALLOCA
 #include <alloca.h>
 #endif

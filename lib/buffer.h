@@ -5,12 +5,20 @@
 /* for size_t: */
 #include <stddef.h>
 /* for ssize_t: */
+#include <stdint.h>
 #include <sys/types.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#ifndef HAVE_SSIZE_T
+typedef intptr_t ssize_t;
+#endif
+
+/*typedef ssize_t (buffer_method_t)();
+typedef buffer_method_t *buffer_method_ptr_t;
+*/
 typedef struct buffer {
   char *x;		/* actual buffer space */
   size_t p;		/* current position */

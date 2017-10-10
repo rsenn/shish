@@ -25,6 +25,12 @@
 #include "byte.h"
 #include "str.h"
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+# ifndef HAVE_LSTAT
+#  define lstat stat
+# endif
+#endif
 
 /* canonicalizes a <path> and puts it into <sa>
  *
@@ -53,9 +59,9 @@ int shell_canonicalize(const char *path, stralloc *sa, int symbolic) {
 #ifdef HAVE_LSTAT
   char buf[PATH_MAX + 1];
 
-#if !defined(__MINGW32__)
+#if !defined(__MINGW32__) //&& !defined(__MSYS__) && !defined(__CYGWIN__)
   if(symbolic)
-    stat_fn = lstat64;
+    stat_fn = lstat;
 #endif
 
 start:

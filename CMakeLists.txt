@@ -114,7 +114,12 @@ check_function_exists(sys_siglist HAVE_SYS_SIGLIST)
 
 configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.h")
 
-add_definitions(-Wall -DHAVE_CONFIG_H=1 -D__USE_XOPEN_EXTENDED=1 -D__USE_POSIX=1 -D__USE_LARGEFILE64=1)
+add_definitions(-Wall -DHAVE_CONFIG_H=1 -D__USE_XOPEN_EXTENDED=1 -D__USE_POSIX=1)
+
+add_definitions(-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64)
+add_definitions(-D_GNU_SOURCE)
+
+
 
 set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0")
 
@@ -188,7 +193,7 @@ set(LIBSOURCES
 	lib/str/str_copyn.c)
 
 if(NOT HAVE_LIBOWFAT) 
-	set(LIBSOURCES ${LIBSOURCES} lib/open/open_read.c lib/open/open_trunc.c lib/scan/scan_uint.c lib/scan/scan_8longn.c lib/scan/scan_ulongn.c lib/scan/scan_8long.c lib/scan/scan_ulong.c lib/scan/scan_long.c lib/scan/scan_int.c lib/buffer/buffer_munmap.c lib/buffer/buffer_frombuf.c lib/buffer/buffer_putsa.c lib/buffer/buffer_mmapread.c lib/buffer/buffer_putsflush.c lib/buffer/buffer_putulong.c lib/buffer/buffer_getc.c lib/buffer/buffer_fromsa.c lib/buffer/buffer_flush.c lib/buffer/buffer_free.c lib/buffer/buffer_stubborn.c lib/buffer/buffer_putnlflush.c lib/buffer/buffer_stubborn2.c lib/buffer/buffer_putm_internal.c lib/buffer/buffer_get.c lib/buffer/buffer_put.c lib/buffer/buffer_tosa.c lib/buffer/buffer_puts.c lib/buffer/buffer_close.c lib/buffer/buffer_putflush.c lib/buffer/buffer_putspace.c lib/buffer/buffer_init.c lib/buffer/buffer_feed.c lib/fmt/fmt_xlonglong.c lib/fmt/fmt_long.c lib/fmt/fmt_xlong.c lib/fmt/fmt_ulong0.c lib/fmt/fmt_ulong.c lib/fmt/fmt_minus.c lib/byte/byte_zero.c lib/byte/byte_diff.c lib/byte/byte_copyr.c lib/byte/byte_copy.c lib/byte/byte_rchr.c lib/byte/byte_chr.c lib/mmap/mmap_private.c lib/mmap/mmap_read.c lib/mmap/mmap_unmap.c lib/stralloc/stralloc_cats.c lib/stralloc/stralloc_diffs.c lib/stralloc/stralloc_zero.c lib/stralloc/stralloc_free${DEBUG}.c lib/stralloc/stralloc_catlong0.c lib/stralloc/stralloc_copyb.c lib/stralloc/stralloc_copys.c lib/stralloc/stralloc_copy.c lib/stralloc/stralloc_ready${DEBUG}.c lib/stralloc/stralloc_catulong0.c lib/stralloc/stralloc_cat.c lib/stralloc/stralloc_catb.c lib/stralloc/stralloc_init.c lib/stralloc/stralloc_readyplus${DEBUG}.c lib/str/str_diff.c lib/str/str_len.c lib/str/str_rchr.c lib/str/str_chr.c lib/str/str_copy.c)
+	set(LIBSOURCES ${LIBSOURCES} lib/open/open_read.c lib/open/open_trunc.c lib/scan/scan_uint.c lib/scan/scan_8longn.c lib/scan/scan_ulongn.c lib/scan/scan_8long.c lib/scan/scan_ulong.c lib/scan/scan_long.c lib/scan/scan_longlong.c lib/scan/scan_ulonglong.c lib/scan/scan_int.c lib/buffer/buffer_munmap.c lib/buffer/buffer_frombuf.c lib/buffer/buffer_putsa.c lib/buffer/buffer_mmapread.c lib/buffer/buffer_putsflush.c lib/buffer/buffer_putulong.c lib/buffer/buffer_getc.c lib/buffer/buffer_fromsa.c lib/buffer/buffer_flush.c lib/buffer/buffer_free.c lib/buffer/buffer_stubborn.c lib/buffer/buffer_putnlflush.c lib/buffer/buffer_stubborn2.c lib/buffer/buffer_putm_internal.c lib/buffer/buffer_get.c lib/buffer/buffer_put.c lib/buffer/buffer_tosa.c lib/buffer/buffer_puts.c lib/buffer/buffer_close.c lib/buffer/buffer_putflush.c lib/buffer/buffer_putspace.c lib/buffer/buffer_init.c lib/buffer/buffer_feed.c lib/fmt/fmt_xlonglong.c lib/fmt/fmt_long.c lib/fmt/fmt_xlong.c lib/fmt/fmt_ulong0.c lib/fmt/fmt_ulong.c lib/fmt/fmt_minus.c lib/byte/byte_zero.c lib/byte/byte_diff.c lib/byte/byte_copyr.c lib/byte/byte_copy.c lib/byte/byte_rchr.c lib/byte/byte_chr.c lib/mmap/mmap_private.c lib/mmap/mmap_read.c lib/mmap/mmap_unmap.c lib/stralloc/stralloc_cats.c lib/stralloc/stralloc_diffs.c lib/stralloc/stralloc_zero.c lib/stralloc/stralloc_free${DEBUG}.c lib/stralloc/stralloc_catlong0.c lib/stralloc/stralloc_copyb.c lib/stralloc/stralloc_copys.c lib/stralloc/stralloc_copy.c lib/stralloc/stralloc_ready${DEBUG}.c lib/stralloc/stralloc_catulong0.c lib/stralloc/stralloc_cat.c lib/stralloc/stralloc_catb.c lib/stralloc/stralloc_init.c lib/stralloc/stralloc_readyplus${DEBUG}.c lib/str/str_diff.c lib/str/str_len.c lib/str/str_rchr.c lib/str/str_chr.c lib/str/str_copy.c)
 endif(NOT HAVE_LIBOWFAT) 
 
 add_library(libshish ${LIBSOURCES})

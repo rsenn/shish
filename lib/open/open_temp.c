@@ -12,8 +12,7 @@
 #define O_NOFOLLOW 0
 #endif
 
-int open_temp(char *tmpl) 
-{  
+int open_temp(char *tmpl) {
   char *tmp=tmpl+str_len(tmpl)-6;
   int i,res;
   unsigned int random;

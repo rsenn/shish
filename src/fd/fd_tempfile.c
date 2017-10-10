@@ -1,16 +1,16 @@
-#include <stdlib.h>
-#include <unistd.h>
-#include <shell.h>
-#include <open.h>
-#include <str.h>
-#include "redir.h"
-#include "fd.h"
-#include "fdtable.h"
-#include "debug.h"
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+#include <stdlib.h>
+#include <unistd.h>
+#include "shell.h"
+#include "open.h"
+#include "str.h"
+#include "redir.h"
+#include "fd.h"
+#include "fdtable.h"
+
+#include "debug.h"
 
 #ifndef PACKAGE_NAME
 #define PACKAGE_NAME "shish"
@@ -23,8 +23,7 @@ char fd_tempname[FD_TEMPLEN] = FD_TEMPPFX;
 
 /* opens a temporary file and adds it as the specified virtual fd
  * ----------------------------------------------------------------------- */
-int fd_tempfile(struct fd *fd)
-{
+int fd_tempfile(struct fd *fd) {
   int e;
   
   /* reset the template to what mkstemp expects */
