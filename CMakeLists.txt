@@ -82,6 +82,7 @@ set(LIBSOURCES
 	lib/scan/scan_uint.c
 	lib/scan/scan_8long.c
 	lib/scan/scan_long.c
+	lib/scan/scan_longlong.c
 	lib/scan/scan_int.c
 	lib/scan/scan_ulong.c
 	lib/byte.h
@@ -459,7 +460,12 @@ set(SOURCES src/sig.h
 	src/parse/parse_tokname.c
 	src/parse/parse_param.c
 	src/parse/parse_for.c
-	src/parse/parse_arith.c
+  src/parse/parse_arith.c
+  src/parse/parse_arith_paren.c
+  src/parse/parse_arith_binary.c
+  src/parse/parse_arith_expr.c
+  src/parse/parse_arith_value.c
+  src/parse/parse_arith_unary.c
 	src/parse/parse_getarg.c
 	src/parse/parse_and_or.c
 	src/parse/parse_gettok.c
