@@ -83,8 +83,9 @@ set(LIBSOURCES
 	lib/scan/scan_8long.c
 	lib/scan/scan_long.c
 	lib/scan/scan_longlong.c
-	lib/scan/scan_int.c
 	lib/scan/scan_ulong.c
+	lib/scan/scan_ulonglong.c
+	lib/scan/scan_int.c
 	lib/byte.h
 	lib/open.h
 	lib/uint16.h
