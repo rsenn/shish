@@ -1,4 +1,4 @@
-#include "../../config.h"
+#include "config.h"
 
 #ifdef HAVE_ALLOCA
 #include <alloca.h>
@@ -16,7 +16,7 @@
 #include "uint32.h"
 
 #ifdef HAVE_CONFIG_H
-#include "../../config.h"
+#include "config.h"
 #endif
 
 int         sh_argc;
