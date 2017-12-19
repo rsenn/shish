@@ -6,7 +6,7 @@
  * FIXME: do we always need to strdup() them?
  * ----------------------------------------------------------------------- */
 void sh_setargs(char **argv, int dup) {
-  int i;
+  unsigned i;
   
   sh->arg.v -= sh->arg.s;
   sh->arg.c += sh->arg.s;

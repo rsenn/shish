@@ -13,8 +13,8 @@ cfg() {
             *) TYPE=RelWithDebInfo ;;
     esac
  (mkdir -p $builddir
-  cd $builddir
   set -x
+  cd $builddir
   cmake -Wno-dev -DCMAKE_INSTALL_PREFIX=$(get-prefix) \
     -G "${SYSTEM:-MSYS} Makefiles" \
     ${VERBOSE+-DCMAKE_VERBOSE_MAKEFILE=TRUE} \

@@ -5,7 +5,7 @@
  * ----------------------------------------------------------------------- */
 int source_peekn(char *c, unsigned long n) {
   register buffer *b = source->b;
-  int ret = b->n - b->p;
+  unsigned ret = b->n - b->p;
 
   /* no data available, try to get some */
   if(ret <= n)
