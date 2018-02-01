@@ -3,7 +3,9 @@
 #include "shell.h"
 #include "open.h"
 #include "str.h"
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
 #include "redir.h"
 #include "fd.h"
 #include "fdtable.h"
