@@ -511,4 +511,10 @@ DEPENDPATH *= $$PATHS
 INCLUDEPATH *= $$PATHS
 
 DISTFILES += \
-    src/parse/arith-grammar.txt
+  doc/man/shish.pod \
+  doc/posix/ieee-p1003.2-d11.2-s3.txt \
+  doc/posix/ieee-p1003.2-d11.2-s4.5.txt \
+  doc/posix/n1570.pdf \
+  doc/posix/n1570.txt \
+  src/parse/arith-grammar.txt \
+  src/parse/arith-grammar-shell.txt
