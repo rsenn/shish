@@ -1,0 +1,325 @@
+%
+%union
+%token INT CHAR IDENTIFIER SEMICOLON LEFT_PARENTHESE RIGHT_PARENTHESE IF ELSE
+  LEFT_BRACE RIGHT_BRACE ASSIGN CHAR_TYPE INT_TYPE WHILE RETURN LOGICAL_OR
+  LOGICAL_AND EQUAL NOT_EQUAL LESS GREATER LESS_EQUAL GREATER_EQUAL PLUS
+  MINUS ASTERISK SLASH PERCENT STRUCT COMMA LEFT_SQUARE_BRACKET
+  RIGHT_SQUARE_BRACKET STRING VOID UNION TYPEDEF EXCLAMATION DOT SHORT_TYPE
+  QUESTION_MARK COLON FOR DO INC DEC ARROW DEFAULT SWITCH CASE BAR HAT
+  AMPERSAND TILDE SHIFT_LEFT SHIFT_RIGHT SIZEOF CONST VOLATILE AUTO REGISTER
+  STATIC EXTERN ASSIGN_ADD ASSIGN_SUB ASSIGN_MUL ASSIGN_DIV ASSIGN_MOD
+  ASSIGN_AND ASSIGN_OR ASSIGN_XOR ASSIGN_SHIFT_LEFT ASSIGN_SHIFT_RIGHT ENUM
+  LONG_TYPE FLOAT_TYPE DOUBLE_TYPE
+%start program
+%%
+
+program 
+  : program_elements
+  ;
+
+program_elements
+  : function_declaration program_elements
+  | function_definition program_elements
+  | declaration_statement program_elements
+  |
+  ;
+
+function_declaration
+  : type IDENTIFIER LEFT_PARENTHESE
+      declaration_arguments RIGHT_PARENTHESE SEMICOLON
+  ;
+
+function_definition
+  : type IDENTIFIER LEFT_PARENTHESE
+      declaration_arguments RIGHT_PARENTHESE block_statement
+  ;
+
+declaration_arguments
+  : VOID
+  | type IDENTIFIER
+  | declaration_arguments COMMA type IDENTIFIER
+  ;
+
+statements
+  : statement
+  | statements statement
+  ;
+
+statement
+  : expression_statement
+  | block_statement
+  | condition_statement
+  | return_statement
+  | while_statement
+  | for_statement
+  | do_while_statement
+  | switch_statement
+  | declaration_statement
+  | label_statement
+  ;
+
+label_statement
+  : IDENTIFIER COLON block_statement
+  | CASE expression COLON block_statement
+  | DEFAULT COLON block_statement
+  ;
+
+declaration_statement
+  : type IDENTIFIER ASSIGN initialization_expression SEMICOLON
+  | STRUCT IDENTIFIER LEFT_BRACE declaration_statements
+      RIGHT_BRACE SEMICOLON
+  | UNION IDENTIFIER LEFT_BRACE declaration_statements
+      RIGHT_BRACE SEMICOLON
+  | TYPEDEF type IDENTIFIER SEMICOLON
+  | enum SEMICOLON
+  ;
+
+enum
+  : ENUM LEFT_BRACE enum_elements RIGHT_BRACE
+  | ENUM IDENTIFIER
+  | ENUM IDENTIFIER LEFT_BRACE enum_elements RIGHT_BRACE
+  ;
+
+enum_elements
+  : enum_element
+  | enum_elements COMMA enum_element
+  ;
+
+enum_element
+  : IDENTIFIER
+  | IDENTIFIER ASSIGN initialization_expression
+  ;
+
+declaration_statements
+  : declaration_statement
+  | declaration_statements declaration_statement
+  ;
+
+return_statement
+  : RETURN expression SEMICOLON
+  ;
+
+do_while_statement
+  : DO block_statement WHILE LEFT_PARENTHESE
+      expression RIGHT_PARENTHESE SEMICOLON
+  ;
+
+switch_statement
+  : SWITCH LEFT_PARENTHESE expression RIGHT_PARENTHESE block_statement
+  ;
+
+while_statement
+  : WHILE LEFT_PARENTHESE expression RIGHT_PARENTHESE block_statement
+  ;
+
+for_statement
+  : FOR LEFT_PARENTHESE optional_expression SEMICOLON
+      optional_expression SEMICOLON
+      optional_expression RIGHT_PARENTHESE block_statement
+  ;
+
+condition_statement
+  : IF LEFT_PARENTHESE expression RIGHT_PARENTHESE block_statement
+  | IF LEFT_PARENTHESE expression RIGHT_PARENTHESE block_statement
+      ELSE block_statement
+  ;
+
+optional_expression
+  : expression
+  |
+  ;
+
+expression_statement
+  : optional_expression SEMICOLON
+  ;
+
+type
+  : localized_type
+  | type_location type
+  ;
+
+type_location
+  : AUTO
+  | REGISTER
+  | STATIC
+  | EXTERN
+  ;
+
+localized_type
+  : modified_type
+  | type_qualifier localized_type
+  ;
+
+type_qualifier
+  : CONST
+  | VOLATILE
+  ;
+
+modified_type
+  : simple_type type_modifiers
+  ;
+
+type_modifiers
+  : type_modifiers LEFT_SQUARE_BRACKET RIGHT_SQUARE_BRACKET
+  | type_modifiers ASTERISK
+  |
+  ;
+
+simple_type
+  : INT_TYPE
+  | CHAR_TYPE
+  | SHORT_TYPE
+  | LONG_TYPE
+  | FLOAT_TYPE
+  | DOUBLE_TYPE
+  | VOID
+  | STRUCT IDENTIFIER
+  | UNION IDENTIFIER
+  ;
+
+block_statement
+  : LEFT_BRACE statements RIGHT_BRACE
+  ;
+
+assignment_operator
+  : ASSIGN
+  | ASSIGN_ADD
+  | ASSIGN_SUB
+  | ASSIGN_MUL
+  | ASSIGN_DIV
+  | ASSIGN_MOD
+  | ASSIGN_AND
+  | ASSIGN_OR
+  | ASSIGN_XOR
+  | ASSIGN_SHIFT_LEFT
+  | ASSIGN_SHIFT_RIGHT
+  ;
+
+initialization_expression
+  : assignment_expression
+  | LEFT_BRACE initializations RIGHT_BRACE
+  ;
+
+initializations
+  : initialization_expression
+  | initializations COMMA initialization_expression
+  ;
+
+expression
+  : list_expression
+  ;
+
+list_expression
+  : assignment_expression
+  | list_expression COMMA assignment_expression
+  ;
+
+assignment_expression
+  : constant_expression
+  | unary_expression assignment_operator assignment_expression
+  ;
+
+constant_expression
+  : conditional_expression
+  ;
+
+conditional_expression
+  : or_expression
+  | or_expression QUESTION_MARK expression COLON conditional_expression
+  ;
+
+or_expression
+  : and_expression
+  | or_expression LOGICAL_OR and_expression
+  ;
+
+and_expression
+  : bitwise_or_expression
+  | and_expression LOGICAL_AND bitwise_or_expression
+  ;
+
+bitwise_or_expression
+  : bitwise_xor_expression
+  | bitwise_or_expression BAR bitwise_xor_expression
+  ;
+
+bitwise_xor_expression
+  : bitwise_and_expression
+  | bitwise_xor_expression HAT bitwise_and_expression
+  ;
+
+bitwise_and_expression
+  : eq_expression
+  | bitwise_and_expression AMPERSAND eq_expression
+  ;
+
+eq_expression
+  : cmp_expression
+  | eq_expression EQUAL cmp_expression
+  | eq_expression NOT_EQUAL cmp_expression
+  ;
+
+cmp_expression
+  : shift_expression
+  | cmp_expression LESS shift_expression
+  | cmp_expression GREATER shift_expression
+  | cmp_expression LESS_EQUAL shift_expression
+  | cmp_expression GREATER_EQUAL shift_expression
+  ;
+
+shift_expression
+  : add_expression
+  | shift_expression SHIFT_LEFT add_expression
+  | shift_expression SHIFT_RIGHT add_expression
+  ;
+
+add_expression
+  : mul_expression
+  | add_expression PLUS mul_expression
+  | add_expression MINUS mul_expression
+  ;
+
+mul_expression
+  : unary_expression
+  | mul_expression ASTERISK unary_expression
+  | mul_expression SLASH unary_expression
+  | mul_expression PERCENT unary_expression
+  ;
+
+unary_expression
+  : postfix_expression
+  | PLUS unary_expression
+  | MINUS unary_expression
+  | EXCLAMATION unary_expression
+  | INC unary_expression
+  | DEC unary_expression
+  | ASTERISK unary_expression
+  | AMPERSAND unary_expression
+  | TILDE unary_expression
+  | SIZEOF unary_expression
+  | SIZEOF LEFT_PARENTHESE type RIGHT_PARENTHESE
+  ;
+
+postfix_expression
+  : base_expression
+  | postfix_expression LEFT_SQUARE_BRACKET expression RIGHT_SQUARE_BRACKET
+  | postfix_expression LEFT_SQUARE_BRACKET RIGHT_SQUARE_BRACKET
+  | postfix_expression LEFT_PARENTHESE arguments_list_expression RIGHT_PARENTHESE
+  | postfix_expression LEFT_PARENTHESE RIGHT_PARENTHESE
+  | postfix_expression DOT IDENTIFIER
+  | postfix_expression ARROW IDENTIFIER
+  | postfix_expression INC
+  | postfix_expression DEC
+  ;
+
+arguments_list_expression
+  : assignment_expression
+  | arguments_list_expression COMMA assignment_expression
+base_expression
+  : IDENTIFIER
+  | STRING
+  | INT
+  | LEFT_PARENTHESE expression RIGHT_PARENTHESE
+  ;
+
+%%
