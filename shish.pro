@@ -509,3 +509,6 @@ PATHS *= \
 DEPENDPATH *= $$PATHS
 
 INCLUDEPATH *= $$PATHS
+
+DISTFILES += \
+    src/parse/arith-grammar.txt
