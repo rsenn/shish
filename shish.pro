@@ -511,10 +511,13 @@ DEPENDPATH *= $$PATHS
 INCLUDEPATH *= $$PATHS
 
 DISTFILES += \
+  doc/ansi/ANSI-C-grammar-y.html \
+  doc/ansi/ANSI-C-grammar-y.txt \
+  doc/ansi/c99.l \
+  doc/ansi/c99.y \
   doc/man/shish.pod \
   doc/posix/ieee-p1003.2-d11.2-s3.txt \
   doc/posix/ieee-p1003.2-d11.2-s4.5.txt \
   doc/posix/n1570.pdf \
   doc/posix/n1570.txt \
-  src/parse/arith-grammar.txt \
-  src/parse/arith-grammar-shell.txt
+  doc/scc.ebnf
