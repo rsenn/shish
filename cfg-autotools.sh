@@ -13,9 +13,6 @@ cfg ()
           ${sysconfdir+--sysconfdir="$sysconfdir"} \
           ${localstatedir+--localstatedir="$localstatedir"} \
           --disable-{silent-rules,dependency-tracking} \
-          --disable-unittests \
-          --disable-asciidoc \
-          --disable-{systemd,zstd} \
           "$@"
     ) 2>&1 |tee cfg.log
 
