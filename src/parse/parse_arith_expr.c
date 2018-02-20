@@ -4,7 +4,8 @@
 
 /* parse arithmetic expression
  * ----------------------------------------------------------------------- */
-union node *parse_arith_expr(struct parser *p) {
+union node*
+parse_arith_expr(struct parser *p) {
   union node *node;
 
   parse_skipspace(p);

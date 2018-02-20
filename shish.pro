@@ -314,6 +314,7 @@ SOURCES *= \
   src/parse/parse_list.c \
   src/parse/parse_loop.c \
   src/parse/parse_newnode.c \
+  src/parse/parse_newnodedebug.c \
   src/parse/parse_param.c \
   src/parse/parse_pipeline.c \
   src/parse/parse_simpletok.c \
@@ -525,3 +526,6 @@ DISTFILES += \
 
 documentation.path = /usr/share/doc/shish
 documentation.files = doc/posix/*
+
+OTHER_FILES += \
+    doc/expr.y

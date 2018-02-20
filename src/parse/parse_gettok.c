@@ -4,8 +4,8 @@
 
 /* get a token, the argument indicates whether to search for keywords or not
  * ----------------------------------------------------------------------- */
-enum tok_flag parse_gettok(struct parser *p, int tempflags)
-{
+enum tok_flag
+parse_gettok(struct parser *p, int tempflags) {
   int oldflags = p->flags;
   p->flags |= tempflags;
   

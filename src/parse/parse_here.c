@@ -4,8 +4,8 @@
 
 /* parses a here-doc body, ending at <delim>
  * ----------------------------------------------------------------------- */
-int parse_here(struct parser *p, stralloc *delim, int nosubst)
-{
+int
+parse_here(struct parser *p, stralloc *delim, int nosubst) {
   int r = 0;
 
   /* if there is still a tree from the last call then remove it */

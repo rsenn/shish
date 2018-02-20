@@ -5,8 +5,8 @@
 #include "redir.h"
 #include "expand.h"
 
-int parse_unquoted(struct parser *p)
-{
+int
+parse_unquoted(struct parser *p) {
   int flags = 0;
   char c;
   

@@ -5,8 +5,8 @@
 
 /* parse backquoted commands
  * ----------------------------------------------------------------------- */
-int parse_bquoted(struct parser *p)
-{
+int
+parse_bquoted(struct parser *p) {
   char c;
   union node *cmds;
   struct parser subp;

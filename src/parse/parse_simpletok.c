@@ -7,8 +7,8 @@ unsigned int       parse_lineno;
 
 /* parse simple tokens consisting of 1 or 2 chars
  * ----------------------------------------------------------------------- */
-int parse_simpletok(struct parser *p)
-{
+int
+parse_simpletok(struct parser *p) {
   char c;
   enum tok_flag tok;
   int advance;

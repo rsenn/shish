@@ -10,8 +10,8 @@
  * 
  * 
  * ----------------------------------------------------------------------- */
-int parse_keyword(struct parser *p)
-{
+int
+parse_keyword(struct parser *p) {
   unsigned int ti; /* token index */
   unsigned int si = 0; /* str index */
   stralloc *sa = &p->sa;

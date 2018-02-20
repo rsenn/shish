@@ -6,8 +6,8 @@
 
 /* parse parameter substitutions 
  * ----------------------------------------------------------------------- */
-int parse_param(struct parser *p)
-{
+int
+parse_param(struct parser *p) {
   char c;
   int braces = 0;
   struct parser newp;

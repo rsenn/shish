@@ -4,8 +4,8 @@
 
 /* skip any unquoted whitespace preceeding a word
  * ----------------------------------------------------------------------- */
-int parse_skipspace(struct parser *p)
-{
+int
+parse_skipspace(struct parser *p) {
   char c;
 
   /* skip whitespace */

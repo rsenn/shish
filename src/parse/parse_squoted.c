@@ -2,8 +2,8 @@
 #include "parse.h"
 #include "source.h"
 
-int parse_squoted(struct parser *p)
-{
+int
+parse_squoted(struct parser *p) {
   char c;
   
   if(p->tok == T_NAME)

@@ -2,8 +2,8 @@
 #include "parse.h"
 #include "source.h"
 
-int parse_subst(struct parser *p)
-{
+int
+parse_subst(struct parser *p) {
   char c;
   
   if(source_next(&c) <= 0)

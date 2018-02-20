@@ -5,8 +5,8 @@
 
 /* parse a word token
  * ----------------------------------------------------------------------- */
-int parse_word(struct parser *p)
-{
+int
+parse_word(struct parser *p) {
   char c;
 
   /* if there is still a tree from the last call then remove it */

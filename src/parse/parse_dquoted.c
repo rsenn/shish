@@ -2,8 +2,8 @@
 #include "parse.h"
 #include "source.h"
 
-int parse_dquoted(struct parser *p)
-{
+int
+parse_dquoted(struct parser *p) {
   int flags = 0;
   char c;
   

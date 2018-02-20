@@ -4,7 +4,8 @@
 
 /* parse arithmetic unary expression
  * ----------------------------------------------------------------------- */
-union node *parse_arith_unary(struct parser *p) {
+union node*
+parse_arith_unary(struct parser *p) {
   char c;
   if(source_peek(&c) <= 0)
     return 0;

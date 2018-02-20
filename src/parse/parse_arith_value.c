@@ -6,7 +6,8 @@
 
 /* parse arithmetic value
  * ----------------------------------------------------------------------- */
-union node *parse_arith_value(struct parser *p) {
+union node*
+parse_arith_value(struct parser *p) {
   char c;
   union node* node = NULL;
 

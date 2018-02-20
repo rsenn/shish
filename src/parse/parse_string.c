@@ -4,8 +4,8 @@
 
 /* parse a string part of a word and add it to the tree in parse_node
  * ----------------------------------------------------------------------- */
-void parse_string(struct parser *p, int flags)
-{
+void
+parse_string(struct parser *p, int flags) {
   if(p->sa.len == 0 && !p->quot)
     return;    
   
