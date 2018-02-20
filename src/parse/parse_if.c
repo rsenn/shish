@@ -3,16 +3,15 @@
 
 /* 3.9.4.4 - parse if conditional
  * ----------------------------------------------------------------------- */
-union node *parse_if(struct parser *p)
-{
+union node*
+parse_if(struct parser *p) {
   union node *node;
   union node **nptr;
 
   tree_init(node, nptr);
 
   /* parse if and elif statements in a loop */
-  do
-  {
+  do {
     /* create new N_IF node and parse the test expression */
     *nptr = tree_newnode(N_IF);
     (*nptr)->nif.test = parse_compound_list(p);

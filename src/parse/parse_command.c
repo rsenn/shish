@@ -4,16 +4,15 @@
 /* parse a compound- or a simple-command
  * (pipeline and lists are done outside this)
  * ----------------------------------------------------------------------- */
-union node *parse_command(struct parser *p, int tempflags)
-{
+union node*
+parse_command(struct parser *p, int tempflags) {
   enum tok_flag tok;
   union node *command;
   union node **rptr;
  
   tok = parse_gettok(p, tempflags);
 
-  switch(tok)
-  {
+  switch(tok) {
     /* T_FOR begins an iteration statement */
     case T_FOR:
       command = parse_for(p);
@@ -57,8 +56,7 @@ union node *parse_command(struct parser *p, int tempflags)
       return NULL;
   }
       
-  if(command)
-  {
+  if(command) {
     /* they all can have redirections, so parse these now */
     rptr = &command->ncmd.rdir;
 

@@ -11,13 +11,11 @@ parse_squoted(struct parser *p) {
   
   p->quot = Q_SQUOTED;
   
-  for(;;) 
-  {
+  for(;;) {
     if(source_get(&c) <= 0)
       return -1;
   
-    if(c == '\'')
-    {
+    if(c == '\'') {
       parse_string(p, 0);
       p->quot = Q_UNQUOTED;
       break;

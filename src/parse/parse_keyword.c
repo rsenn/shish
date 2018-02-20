@@ -16,13 +16,11 @@ parse_keyword(struct parser *p) {
   unsigned int si = 0; /* str index */
   stralloc *sa = &p->sa;
 
-  if(p->tok != T_NAME)
-  {
+  if(p->tok != T_NAME) {
     if(sa->len != 1)
       return 0;
     
-    switch(*sa->s)
-    {
+    switch(*sa->s) {
       case '{': p->tok = T_BEGIN; return 1;
       case '}': p->tok = T_END; return 1;
       case '!': p->tok = T_NOT; return 1;
@@ -35,19 +33,15 @@ parse_keyword(struct parser *p) {
   if(sa->len > 5)
     return p->tok;
   
-  for(ti = TI_CASE; ti <= TI_WHILE; ti++)
-  {
+  for(ti = TI_CASE; ti <= TI_WHILE; ti++) {
     /* surely not found when char current is below token char */
     if(sa->s[si] < parse_tokens[ti].name[si])
       break;
 
-    for(si = 0; si <= sa->len; si++)
-    {
+    for(si = 0; si <= sa->len; si++) {
       /* keyword match */
-      if(si == sa->len)
-      {
-        if(parse_tokens[ti].name[si] == '\0')
-        {
+      if(si == sa->len) {
+        if(parse_tokens[ti].name[si] == '\0') {
           p->tok = (1 << ti);
           return 1;
         }

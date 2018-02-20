@@ -14,8 +14,8 @@
  *       ;    &    <newline>
  * 
  * ----------------------------------------------------------------------- */
-union node *parse_list(struct parser *p)
-{
+union node*
+parse_list(struct parser *p) {
   union node   *list;
   union node  **nptr;
   enum tok_flag tok;
@@ -23,8 +23,7 @@ union node *parse_list(struct parser *p)
   /* keep looking for and-or lists */
   tree_init(list, nptr);
 
-  while((*nptr = parse_and_or(p)))
-  {
+  while((*nptr = parse_and_or(p))) {
     tok = parse_gettok(p, P_DEFAULT);
 
     /* <newline> terminates the list and eats the token */
@@ -33,8 +32,7 @@ union node *parse_list(struct parser *p)
   
     /* there must be & or ; after the and-or list, 
        otherwise the list will be terminated */
-    if(!(tok & (T_SEMI|T_BGND)))
-    {
+    if(!(tok & (T_SEMI|T_BGND))) {
       p->pushback++;
       break;
     }

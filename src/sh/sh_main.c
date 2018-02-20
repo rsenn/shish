@@ -43,7 +43,7 @@ int sh_main(int argc, char **argv, char **envp)
   struct var *envvars;
 
   fd_exp = STDERR_FILENO + 1;
-  
+
   /* create new fds for every valid file descriptor until stderr */
   for(e = STDIN_FILENO; e <= STDERR_FILENO; e++)
   {

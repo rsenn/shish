@@ -36,8 +36,8 @@ enum nod_id
                N_ARGPARAM,
                N_ARGARITH,
 
-               N_ARITH_NUM,
-               N_ARITH_VAR,
+               N_ARITH_CONST,
+               N_ARITH_IDENTIFIER,
                N_ARITH_PAREN,
                N_ARITH_OR,
                N_ARITH_AND,
@@ -56,12 +56,15 @@ enum nod_id
                N_ARITH_SUB,
                N_ARITH_MUL,
                N_ARITH_DIV,
+               N_ARITH_MOD,
                N_ARITH_REM,
                N_ARITH_EXP,
                N_ARITH_UNARYMINUS,
                N_ARITH_UNARYPLUS,
                N_ARITH_NOT,
                N_ARITH_BNOT,
+               N_ARITH_POSTINC,
+               N_ARITH_POSTDEC,
 };
 
 /* 3.9.1 - simple command

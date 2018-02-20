@@ -3,8 +3,8 @@
 
 /* 3.9.1 - parse a simple command
  * ----------------------------------------------------------------------- */
-union node *parse_simple_command(struct parser *p)
-{
+union node*
+parse_simple_command(struct parser *p) {
   union node **aptr, *args;
   union node **vptr, *vars;
   union node **rptr, *rdir;
@@ -14,15 +14,12 @@ union node *parse_simple_command(struct parser *p)
   tree_init(vars, vptr);
   tree_init(rdir, rptr);
 
-  for(;;)
-  {
+  for(;;) {
     /* look for assignments only when we have no args yet */
-    switch(parse_gettok(p, P_DEFAULT))
-    {
+    switch(parse_gettok(p, P_DEFAULT)) {
       /* handle variable assignments */
       case T_ASSIGN:
-        if(!(p->flags & P_NOASSIGN))
-        {
+        if(!(p->flags & P_NOASSIGN)) {
           *vptr = parse_getarg(p);
           vptr = &(*vptr)->list.next;
           break;

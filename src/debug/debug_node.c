@@ -28,8 +28,8 @@ const char *debug_nodes[] =
   "N_ARGCMD",
   "N_ARGPARAM",
   "N_ARGARITH",
-  "N_ARITH_NUM",
-  "N_ARITH_VAR",
+  "N_ARITH_CONST",
+  "N_ARITH_IDENTIFIER",
   "N_ARITH_PAREN",
   "N_ARITH_OR",
   "N_ARITH_AND",
@@ -192,15 +192,12 @@ void debug_node(union node *node, int depth)
       debug_space(depth);
       debug_sublist("tree", node->nargarith.tree, depth);
       break;
-
-		case N_ARITH_NUM:
-			debug_ulong("num", node->narithnum.num, depth);
-			break;
-
-		case N_ARITH_VAR:
-			debug_str("var", node->narithvar.var, depth);
-			break;
-
+    case N_ARITH_CONST:
+      debug_ulong("const", node->narithnum.num, depth);
+      break;
+    case N_ARITH_IDENTIFIER:
+      debug_str("identifier", node->narithvar.var, depth);
+      break;
     case N_NOT:
       debug_sublist("cmds", node->nandor.cmd0, depth);
       break;

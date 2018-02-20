@@ -9,8 +9,7 @@ parse_gettok(struct parser *p, int tempflags) {
   int oldflags = p->flags;
   p->flags |= tempflags;
   
-  if(!p->pushback || ((p->flags & P_SKIPNL) && p->tok == T_NL))
-  {
+  if(!p->pushback || ((p->flags & P_SKIPNL) && p->tok == T_NL)) {
     p->tok = -1;
     
     /* skip whitespace */

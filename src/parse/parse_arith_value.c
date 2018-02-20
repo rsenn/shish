@@ -31,7 +31,7 @@ parse_arith_value(struct parser *p) {
 
     scan_longlong(x, &num);
 
-    node = tree_newnode(N_ARITH_NUM);
+    node = tree_newnode(N_ARITH_CONST);
     node->narithnum.num = num;
 
     return node;
@@ -47,7 +47,7 @@ parse_arith_value(struct parser *p) {
   	return 0;
 
   if((n = scan_longlong(x, &num)) > 0) {
-  	node = tree_newnode(N_ARITH_NUM);
+  	node = tree_newnode(N_ARITH_CONST);
   	node->narithnum.num = num;
   	while(n--)
   		source_skip();
@@ -62,7 +62,7 @@ parse_arith_value(struct parser *p) {
   	}
   	stralloc_catc(&w, '\0');
 
-  	node = tree_newnode(N_ARITH_VAR);
+  	node = tree_newnode(N_ARITH_IDENTIFIER);
   	node->narithvar.var = w.s	;
   }
 

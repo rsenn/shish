@@ -3,8 +3,8 @@
 /* gets more data from buffer (at least n + 1 chars)
  * doesn't advance buffer pointer, use input_skipcn() for that
  * ----------------------------------------------------------------------- */
-int source_peekn(char *c, unsigned long n)
-{
+int
+source_peekn(char *c, unsigned long n) {
   register buffer *b = source->b;
   int ret = b->n - b->p;
 
@@ -14,8 +14,9 @@ int source_peekn(char *c, unsigned long n)
       return ret;
 
   /* got data, peek the char */
-  if(c)
-    *c = b->x[b->p + n];
-
+  if(c) {
+    byte_copy(c, n, &b->x[b->p]);
+/*    *c = b->x[b->p + n];*/
+  }
   return ret;
 }

@@ -9,13 +9,11 @@ parse_skipspace(struct parser *p) {
   char c;
 
   /* skip whitespace */
-  for(;;)
-  {
+  for(;;) {
     if(source_peek(&c) <= 0)
       return T_EOF;
 
-    if(c == '\n')
-    {
+    if(c == '\n') {
       source_skip();
       
       /* in a here-doc skip the newline after the delimiter */

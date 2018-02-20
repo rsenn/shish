@@ -14,8 +14,8 @@
  *  The ;; is optional for the last compound-list.
  *
  * ----------------------------------------------------------------------- */
-union node *parse_case(struct parser *p)
-{
+union node*
+parse_case(struct parser *p) {
   union node *node;
   union node **cptr;
   union node **pptr;
@@ -39,8 +39,7 @@ union node *parse_case(struct parser *p)
   tree_init(node->ncase.list, cptr);
 
   /* parse the cases */
-  while(!(parse_gettok(p, P_SKIPNL) & T_ESAC))
-  {
+  while(!(parse_gettok(p, P_SKIPNL) & T_ESAC)) {
     /* patterns may be introduced with '(' */
     if(!(p->tok & T_LP))
       p->pushback++;
@@ -49,8 +48,7 @@ union node *parse_case(struct parser *p)
     tree_init((*cptr)->ncasenode.pats, pptr);
 
     /* parse the pattern list */
-    while(parse_gettok(p, P_SKIPNL) & (T_WORD|T_NAME|T_ASSIGN))
-    {
+    while(parse_gettok(p, P_SKIPNL) & (T_WORD|T_NAME|T_ASSIGN)) {
       *pptr = parse_getarg(p);
       pptr = &(*pptr)->list.next;
 

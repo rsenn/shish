@@ -427,7 +427,8 @@ SOURCES *= \
   src/var/var_valid.c \
   src/var/var_value.c \
   src/var/var_vdefault.c \
-  src/var/var_vlen.c
+  src/var/var_vlen.c \
+    src/parse/parse_arith_primary.c
 
 HEADERS *= \
   lib/buffer.h \

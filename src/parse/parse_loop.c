@@ -4,8 +4,8 @@
 /* 3.9.4.5
  * 3.9.4.6 - parse while/until loops
  * ----------------------------------------------------------------------- */
-union node *parse_loop(struct parser *p)
-{
+union node*
+parse_loop(struct parser *p) {
   union node *node;
 
   /* create list node and parse test expression */

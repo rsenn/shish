@@ -14,8 +14,8 @@
  *                        environment.
  * 
  * ----------------------------------------------------------------------- */
-union node *parse_grouping(struct parser *p)
-{
+union node*
+parse_grouping(struct parser *p) {
   enum tok_flag tok;
   union node  **rptr;
   union node   *grouping;
@@ -29,8 +29,7 @@ union node *parse_grouping(struct parser *p)
   
   /* parse compound content and create a 
      compound node if there are commands */
-  if((compound_list = parse_compound_list(p)))
-  {
+  if((compound_list = parse_compound_list(p))) {
     grouping = tree_newnode(tok == T_BEGIN ? N_CMDLIST : N_SUBSHELL);
     grouping->ngrp.cmds = compound_list;
   }
@@ -39,8 +38,7 @@ union node *parse_grouping(struct parser *p)
   if(!parse_expect(p, P_DEFAULT, tok << 1, grouping))
     return NULL;
 
-  if(grouping)
-  {
+  if(grouping) {
     tree_init(grouping->ngrp.rdir, rptr);
 
     /* now any redirections may follow */

@@ -10,8 +10,7 @@ parse_string(struct parser *p, int flags) {
     return;    
   
   /* add a node if there is none */
-  if(p->tree == NULL)
-  {
+  if(p->tree == NULL) {
     parse_newnode(p, N_ARGSTR);
     p->node->nargstr.flag = p->quot|flags;
   }
