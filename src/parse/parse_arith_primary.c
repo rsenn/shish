@@ -46,9 +46,10 @@ parse_arith_primary(struct parser *p) {
     sa.s = NULL;
   }
 
-
+#ifdef DEBUG
   debug_node(n, 2);
-    buffer_flush(fd_err->w);
+    buffer_putnlflush(fd_err->w);
+#endif
 
   return n;
 }

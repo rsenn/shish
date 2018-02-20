@@ -20,10 +20,11 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 ARCHIVE = parse.a
 MODULES = parse_and_or \
-          parse_arith \
           parse_arith_binary \
+          parse_arith \
           parse_arith_expr \
           parse_arith_paren \
+          parse_arith_primary \
           parse_arith_unary \
           parse_arith_value \
           parse_bquoted \
