@@ -461,12 +461,12 @@ set(SOURCES src/sig.h
 	src/parse/parse_tokname.c
 	src/parse/parse_param.c
 	src/parse/parse_for.c
-  src/parse/parse_arith.c
-  src/parse/parse_arith_paren.c
-  src/parse/parse_arith_binary.c
-  src/parse/parse_arith_expr.c
-  src/parse/parse_arith_value.c
-  src/parse/parse_arith_unary.c
+    src/parse/parse_arith.c
+    src/parse/parse_arith_paren.c
+    src/parse/parse_arith_binary.c
+    src/parse/parse_arith_expr.c
+    src/parse/parse_arith_value.c
+    src/parse/parse_arith_unary.c
 	src/parse/parse_getarg.c
 	src/parse/parse_and_or.c
 	src/parse/parse_gettok.c

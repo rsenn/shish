@@ -205,40 +205,54 @@ extern struct token parse_tokens[];
 const char *parse_tokname(enum tok_flag tok, int multi);
 enum tok_flag parse_gettok(struct parser *p, int tempflags);
 
-int parse_arith(struct parser *p);
-int parse_bquoted(struct parser *p);
-int parse_dquoted(struct parser *p);
+int parse_arith(struct parser*);
+int parse_bquoted(struct parser*);
+int parse_dquoted(struct parser*);
 int parse_expect(struct parser *p, int tempflags, enum tok_flag toks, union node *nfree);
 int parse_here(struct parser *p, stralloc *delim, int nosubst);
-int parse_keyword(struct parser *p);
-int parse_param(struct parser *p);
-int parse_simpletok(struct parser *p);
-int parse_skipspace(struct parser *p);
-int parse_squoted(struct parser *p);
-int parse_subst(struct parser *p);
-int parse_unquoted(struct parser *p);
+int parse_keyword(struct parser*);
+int parse_param(struct parser*);
+int parse_simpletok(struct parser*);
+int parse_skipspace(struct parser*);
+int parse_squoted(struct parser*);
+int parse_subst(struct parser*);
+int parse_unquoted(struct parser*);
 int parse_validname(stralloc *sa);
-int parse_word(struct parser *p);
+int parse_word(struct parser*);
 
-union node *parse_and_or(struct parser *p);
-union node *parse_case(struct parser *p);
+union node *parse_and_or(struct parser*);
+union node *parse_case(struct parser*);
 union node *parse_command(struct parser *p, int tempflags);
-union node *parse_compound_list(struct parser *p);
-union node *parse_for(struct parser *p);
-union node *parse_function(struct parser *p);
-union node *parse_getarg(struct parser *p);
-union node *parse_grouping(struct parser *p);
-union node *parse_if(struct parser *p);
-union node *parse_list(struct parser *p);
-union node *parse_loop(struct parser *p);
-union node *parse_pipeline(struct parser *p);
-union node *parse_simple_command(struct parser *p);
+union node *parse_compound_list(struct parser*);
+union node *parse_for(struct parser*);
+union node *parse_function(struct parser*);
+union node *parse_getarg(struct parser*);
+union node *parse_grouping(struct parser*);
+union node *parse_if(struct parser*);
+union node *parse_list(struct parser*);
+union node *parse_loop(struct parser*);
+union node *parse_pipeline(struct parser*);
+union node *parse_simple_command(struct parser*);
 
-union node *parse_arith_binary(struct parser *p);
-union node *parse_arith_expression(struct parser *p);
-union node *parse_arith_paren(struct parser *p);
-union node *parse_arith_unary(struct parser *p);
-union node *parse_arith_value(struct parser *p);
+union node *parse_arith_additive(struct parser*);
+union node *parse_arith_and(struct parser*);
+union node *parse_arith_assignment(struct parser*);
+union node *parse_arith_conditional(struct parser*);
+union node *parse_arith_constant_expression(struct parser*);
+union node *parse_arith_equality(struct parser*);
+union node *parse_arith_expression(struct parser*);
+union node *parse_arith_logical_and(struct parser*);
+union node *parse_arith_logical_or(struct parser*);
+union node *parse_arith_multiplicative(struct parser*);
+union node *parse_arith_or(struct parser*);
+union node *parse_arith_paren(struct parser*);
+union node *parse_arith_postfix(struct parser*);
+union node *parse_arith_primary(struct parser*);
+union node *parse_arith_relational(struct parser*);
+union node *parse_arith_shift(struct parser*);
+union node *parse_arith_unary(struct parser*);
+union node *parse_arith_value(struct parser*);
+union node *parse_arith_xor(struct parser*);
 
 void *parse_error(struct parser *p, enum tok_flag toks);
 void parse_init(struct parser *p, int flags);
@@ -250,5 +264,7 @@ void parse_newnodedebug(const char *file, unsigned int line, struct parser *p, e
 #else
 void parse_newnode(struct parser *p, enum nod_id nod);
 #endif
+
+
   
 #endif /* PARSE_H */

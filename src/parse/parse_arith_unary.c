@@ -3,7 +3,7 @@
 #include "source.h"
 
 union node*
-parse_arith_postix(struct parser *p) {
+parse_arith_postfix(struct parser *p) {
   char c[2];
   enum nod_id id = -1;
   union node *postfix, *n = parse_arith_primary(p);
