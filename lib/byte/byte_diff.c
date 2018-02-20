@@ -11,11 +11,11 @@ int byte_diff(const void* a, unsigned long len, const void* b) {
   register const unsigned char* u=t+len;
   register int j;
   j=0;
-  for (;;) {
-    if (t==u) break; if ((j=((unsigned int)*s-*t))) break; ++s; ++t;
-    if (t==u) break; if ((j=((unsigned int)*s-*t))) break; ++s; ++t;
-    if (t==u) break; if ((j=((unsigned int)*s-*t))) break; ++s; ++t;
-    if (t==u) break; if ((j=((unsigned int)*s-*t))) break; ++s; ++t;
+  for(;;) {
+    if(t==u) break; if((j=((unsigned int)*s-*t))) break; ++s; ++t;
+    if(t==u) break; if((j=((unsigned int)*s-*t))) break; ++s; ++t;
+    if(t==u) break; if((j=((unsigned int)*s-*t))) break; ++s; ++t;
+    if(t==u) break; if((j=((unsigned int)*s-*t))) break; ++s; ++t;
   }
   return j;
 }

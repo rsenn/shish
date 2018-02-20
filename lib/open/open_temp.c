@@ -18,14 +18,14 @@ int open_temp(char *tmpl)
   int i,res;
   unsigned int random;
   if(tmp<tmpl) goto error;
-  for(i=0; i<6; ++i) if (tmp[i]!='X')
+  for(i=0; i<6; ++i) if(tmp[i]!='X')
   {
     error: errno=EINVAL; return -1; 
   }
   for(;;)
   {
     random = uint32_random();
-    for (i=0; i<6; ++i)
+    for(i=0; i<6; ++i)
     {
       int hexdigit=(random>>(i*5))&0x1f;
       tmp[i]=hexdigit>9?hexdigit+'a'-10:hexdigit+'0';

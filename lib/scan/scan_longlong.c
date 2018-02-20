@@ -8,12 +8,12 @@ unsigned scan_longlong(const char* src,signed long long* dest) {
   char c=src[0];
   unsigned int neg=c=='-';
   o=c=='-' || c=='+';
-  if ((i=scan_ulonglong(src+o,&l))) {
-    if (i>0 && l>maxlong+neg) {
+  if((i=scan_ulonglong(src+o,&l))) {
+    if(i>0 && l>maxlong+neg) {
       l/=10;
       --i;
     }
-    if (i+o) *dest=(signed long long)(c=='-'?-l:l);
+    if(i+o) *dest=(signed long long)(c=='-'?-l:l);
     return i+o;
   } return 0;
 }

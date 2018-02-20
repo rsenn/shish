@@ -4,11 +4,11 @@ unsigned long str_rchr(const char *in, char needle) {
   register const char* t=in;
   register const char c=needle;
   register const char* found=0;
-  for (;;) {
-    if (!*t) break; if (*t==c) found=t; ++t;
-    if (!*t) break; if (*t==c) found=t; ++t;
-    if (!*t) break; if (*t==c) found=t; ++t;
-    if (!*t) break; if (*t==c) found=t; ++t;
+  for(;;) {
+    if(!*t) break; if(*t==c) found=t; ++t;
+    if(!*t) break; if(*t==c) found=t; ++t;
+    if(!*t) break; if(*t==c) found=t; ++t;
+    if(!*t) break; if(*t==c) found=t; ++t;
   }
-  return (found?found:t)-in;
+  return(found?found:t)-in;
 }

@@ -7,10 +7,10 @@ static inline char tohex(char c) {
 unsigned int fmt_xlong(char *dest,unsigned long i) {
   register unsigned long len,tmp;
   /* first count the number of bytes needed */
-//  for (len=1, tmp=i; tmp>15; ++len) tmp>>=4;
+//  for(len=1, tmp=i; tmp>15; ++len) tmp>>=4;
   len = 8;
-  if (dest)
-    for (tmp=i, dest+=len; len; len--) {
+  if(dest)
+    for(tmp=i, dest+=len; len; len--) {
       *--dest = tohex(tmp&15);
       tmp>>=4;
     }

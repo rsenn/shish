@@ -4,10 +4,10 @@
 void byte_zero(void* out, unsigned long len) {
   register char* s=out;
   register const char* t=s+len;
-  for (;;) {
-    if (s==t) break; *s=0; ++s;
-    if (s==t) break; *s=0; ++s;
-    if (s==t) break; *s=0; ++s;
-    if (s==t) break; *s=0; ++s;
+  for(;;) {
+    if(s==t) break; *s=0; ++s;
+    if(s==t) break; *s=0; ++s;
+    if(s==t) break; *s=0; ++s;
+    if(s==t) break; *s=0; ++s;
   }
 }

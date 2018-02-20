@@ -14,12 +14,12 @@ int stralloc_ready(stralloc *sa,unsigned long int len)
 #endif /* DEBUG */
 {
   register int wanted=len+(len>>3)+30; /* heuristic from djb */
-  if (!sa->s || sa->a<len) {
+  if(!sa->s || sa->a<len) {
     register char* tmp;
 #ifdef DEBUG
-    if (!(tmp=shell_reallocdebug(file, line, sa->s,wanted)))
+    if(!(tmp=shell_reallocdebug(file, line, sa->s,wanted)))
 #else
-    if (!(tmp=shell_realloc(sa->s,wanted)))
+    if(!(tmp=shell_realloc(sa->s,wanted)))
 #endif
       return 0;
     sa->a=wanted;

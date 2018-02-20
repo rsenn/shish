@@ -6,10 +6,10 @@ void byte_copyr(void* out, unsigned long len, const void* in) {
   register char* s=(char*)out+len;
   register const char* t=in;
   register const char* u=t+len;
-  for (;;) {
-    if (t>=u) break; --u; --s; *s=*u;
-    if (t>=u) break; --u; --s; *s=*u;
-    if (t>=u) break; --u; --s; *s=*u;
-    if (t>=u) break; --u; --s; *s=*u;
+  for(;;) {
+    if(t>=u) break; --u; --s; *s=*u;
+    if(t>=u) break; --u; --s; *s=*u;
+    if(t>=u) break; --u; --s; *s=*u;
+    if(t>=u) break; --u; --s; *s=*u;
   }
 }

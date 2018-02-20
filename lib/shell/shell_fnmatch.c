@@ -33,7 +33,7 @@ start:
     }
     
     /* if there are chars left we don't have a match (which returns 1) */
-    return (plen ? SH_FNM_NOMATCH : 0);
+    return(plen ? SH_FNM_NOMATCH : 0);
   }  
 
   /* there is still some string left but pattern ended */
