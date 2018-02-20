@@ -64,7 +64,8 @@ enum nod_id
                N_ARITH_NOT,
                N_ARITH_BNOT,
                N_ARITH_POSTINC,
-               N_ARITH_POSTDEC,
+                N_ARITH_POSTDEC,
+                N_ARITH_TERNARY,
 };
 
 /* 3.9.1 - simple command
@@ -307,6 +308,14 @@ struct narithbinary
   union node *right;
 };
 
+struct narithternary
+{
+  int         id;
+  union node *cond;
+  union node *true;
+  union node *false;
+};
+
 /* ----------------------------------------------------------------------- */
 union node
 {
@@ -334,6 +343,7 @@ union node
   struct narithvar narithvar;
   struct narithunary narithunary;
   struct narithbinary narithbinary;
+  struct narithternary narithternary;
 };
 
 /* link node to the branch nptr points to */
