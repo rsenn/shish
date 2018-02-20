@@ -521,3 +521,7 @@ DISTFILES += \
   doc/posix/n1570.pdf \
   doc/posix/n1570.txt \
   doc/scc.ebnf
+
+
+documentation.path = /usr/share/doc/shish
+documentation.files = doc/posix/*

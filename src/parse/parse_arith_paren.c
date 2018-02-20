@@ -4,8 +4,7 @@
 
 /* parse arithmetic parentheses expression
  * ----------------------------------------------------------------------- */
-union node* parse_arith_paren(struct parser *p)
-{
+union node* parse_arith_paren(struct parser *p) {
   return 0;
 }
 

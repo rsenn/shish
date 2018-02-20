@@ -4,8 +4,7 @@
 
 /* parse arithmetic binary expression
  * ----------------------------------------------------------------------- */
-union node *parse_arith_binary(struct parser *p)
-{
+union node *parse_arith_binary(struct parser *p) {
   return 0;
 }
 
