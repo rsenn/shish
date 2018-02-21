@@ -529,4 +529,9 @@ documentation.path = /usr/share/doc/shish
 documentation.files = doc/posix/*
 
 OTHER_FILES += \
-    doc/expr.y
+    doc/expr.y \
+    doc/posix/ieee-p1003.2-d11.2-s3.txt \
+    doc/posix/ieee-p1003.2-d11.2-s4.5.txt \
+    doc/posix/Makefile.in \
+    doc/posix/n1570.pdf \
+    doc/posix/n1570.txt

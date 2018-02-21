@@ -27,15 +27,18 @@
 /* character class table */
 const unsigned short parse_chartable[CHAR_RANGE];
 
-/* character class macros 
+/* character class macros
  * ----------------------------------------------------------------------- */
 
 /* matches [ \t\n] */
 #define parse_isspace(c) (parse_chartable[(int)(unsigned char)c] & \
                          (C_SPACE))
 /* matches [0-9] */
-#define parse_isdigit(c) (parse_chartable[(int)(unsigned char)c] & \
-                         (C_DIGIT))
+static inline int parse_isdigit(char c) {
+  return parse_chartable[(int)(unsigned char)c] & (C_DIGIT);
+}
+/*#define parse_isdigit(c) (parse_chartable[(int)(unsigned char)c] & \
+                         (C_DIGIT))*/
 /* matches [A-Z] */
 #define parse_isupper(c) (parse_chartable[(int)(unsigned char)c] & \
                          (C_UPPER))

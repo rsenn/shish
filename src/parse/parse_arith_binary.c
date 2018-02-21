@@ -33,6 +33,7 @@ parse_arith_multiplicative(struct parser *p) {
   return multiplicative;
 }
 
+/* ----------------------------------------------------------------------- */
 union node*
 parse_arith_additive(struct parser *p) {
   char c;
@@ -61,6 +62,7 @@ parse_arith_additive(struct parser *p) {
   return additive;
 }
 
+/* ----------------------------------------------------------------------- */
 union node*
 parse_arith_shift(struct parser *p) {
   char c[2];
@@ -90,7 +92,7 @@ parse_arith_shift(struct parser *p) {
   return shift;
 }
 
-
+/* ----------------------------------------------------------------------- */
 union node*
 parse_arith_relational(struct parser *p) {
   char c[2];
@@ -132,7 +134,7 @@ parse_arith_relational(struct parser *p) {
   return relational;
 }
 
-
+/* ----------------------------------------------------------------------- */
 union node*
 parse_arith_equality(struct parser *p) {
   char c[2];
@@ -162,7 +164,7 @@ parse_arith_equality(struct parser *p) {
   return equality;
 }
 
-
+/* ----------------------------------------------------------------------- */
 union node*
 parse_arith_and(struct parser *p) {
   char c[2];
@@ -190,6 +192,7 @@ parse_arith_and(struct parser *p) {
   return band;
 }
 
+/* ----------------------------------------------------------------------- */
 union node*
 parse_arith_xor(struct parser *p) {
   char c;
@@ -217,6 +220,7 @@ parse_arith_xor(struct parser *p) {
   return bxor;
 }
 
+/* ----------------------------------------------------------------------- */
 union node*
 parse_arith_or(struct parser *p) {
   char c;
@@ -244,6 +248,7 @@ parse_arith_or(struct parser *p) {
   return bor;
 }
 
+/* ----------------------------------------------------------------------- */
 union node*
 parse_arith_logical_and(struct parser *p) {
   char c[2];
@@ -272,6 +277,7 @@ parse_arith_logical_and(struct parser *p) {
   return land;
 }
 
+/* ----------------------------------------------------------------------- */
 union node*
 parse_arith_logical_or(struct parser *p) {
   char c[2];

@@ -37,6 +37,7 @@ parse_arith_conditional(struct parser *p) {
   return n;
 }
 
+/* ----------------------------------------------------------------------- */
 union node*
 parse_arith_assignment(struct parser *p) {
   union node* n;
@@ -45,6 +46,7 @@ parse_arith_assignment(struct parser *p) {
 
 }
 
+/* ----------------------------------------------------------------------- */
 union node*
 parse_arith_expression(struct parser *p) {
   union node *n;
@@ -58,6 +60,7 @@ parse_arith_expression(struct parser *p) {
   return n;
 }
 
+/* ----------------------------------------------------------------------- */
 union node*
 parse_arith_constant_expression(struct parser *p) {
   union node *n = parse_arith_conditional(p);
