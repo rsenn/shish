@@ -47,6 +47,9 @@ set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0")
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
   add_definitions(-DDEBUG=1)
+  set(DEBUGSRC "debug")
+else()
+  set(DEBUGSRC "")
 endif(${CMAKE_BUILD_TYPE} MATCHES "Debug")
 
 
@@ -461,12 +464,13 @@ set(SOURCES src/sig.h
 	src/parse/parse_tokname.c
 	src/parse/parse_param.c
 	src/parse/parse_for.c
-    src/parse/parse_arith.c
-    src/parse/parse_arith_paren.c
-    src/parse/parse_arith_binary.c
-    src/parse/parse_arith_expr.c
-    src/parse/parse_arith_value.c
-    src/parse/parse_arith_unary.c
+  src/parse/parse_arith_binary.c
+  src/parse/parse_arith.c
+  src/parse/parse_arith_expr.c
+  src/parse/parse_arith_paren.c
+  src/parse/parse_arith_primary.c
+  src/parse/parse_arith_unary.c
+  src/parse/parse_arith_value.c
 	src/parse/parse_getarg.c
 	src/parse/parse_and_or.c
 	src/parse/parse_gettok.c
@@ -480,7 +484,7 @@ set(SOURCES src/sig.h
 	src/parse/parse_pipeline.c
 	src/parse/parse_function.c
 	src/parse/parse_command.c
-	src/parse/parse_newnode.c
+    src/parse/parse_newnode${DEBUGSRC}.c
 	src/parse/parse_simpletok.c
 	src/sh.h
 	src/source/source_next.c
