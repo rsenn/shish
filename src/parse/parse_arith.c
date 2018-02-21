@@ -19,8 +19,14 @@ int parse_arith(struct parser *p) {
       !parse_expect(&subp, P_DEFAULT, T_RP, tree))
     return -1;
 
-  parse_newnode(p, N_ARGARITH);
-  p->node->nargarith.tree = tree;
+
+  if(p->node)
+    p->node->id = N_ARGARITH;
+else
+    parse_newnode(p, N_ARGARITH);
+  /*p->node->nargarith.tree = tree;
+*/
+   p->node->nargarith.tree = tree;
 
   return 0;
 }
