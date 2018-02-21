@@ -10,7 +10,7 @@
 enum nod_id
 {  
 /* simple   */ N_SIMPLECMD = 0,
-/* pipeline */ N_PIPELINE,       /* execute cmd list, while passing 
+/* pipeline */ N_PIPELINE,       /* execute cmd list, while passing
                                     stdout amongst them */
 /* list     */ N_AND,            /* execute cmd2 if cmd succeeded */
                N_OR,             /* execute cmd2 if cmd failed */
@@ -39,24 +39,24 @@ enum nod_id
                N_ARITH_CONST,
                N_ARITH_IDENTIFIER,
                N_ARITH_PAREN,
-               N_ARITH_OR,
-               N_ARITH_AND,
-               N_ARITH_BOR,
-               N_ARITH_BXOR,
-               N_ARITH_BAND,
-               N_ARITH_EQ,
-               N_ARITH_NE,
-               N_ARITH_LT,
-               N_ARITH_GT,
-               N_ARITH_GE,
-               N_ARITH_LE,
-               N_ARITH_LSHIFT,
-               N_ARITH_RSHIFT,
-               N_ARITH_ADD,
-               N_ARITH_SUB,
-               N_ARITH_MUL,
-               N_ARITH_DIV,
-               N_ARITH_MOD,
+               N_ARITH_OR,        /* "||" */
+               N_ARITH_AND,       /* "&&" */
+               N_ARITH_BOR,       /* "|" */
+               N_ARITH_BXOR,      /* "^" */
+               N_ARITH_BAND,      /* "&" */
+               N_ARITH_EQ,        /* "==" */
+               N_ARITH_NE,        /* "!=" */
+               N_ARITH_LT,        /* "<" */
+               N_ARITH_GT,        /* ">" */
+               N_ARITH_GE,        /* ">=" */
+               N_ARITH_LE,        /* "<=" */
+               N_ARITH_LSHIFT,    /* "<<" */
+               N_ARITH_RSHIFT,    /* ">>" */
+               N_ARITH_ADD,       /* "+" */
+               N_ARITH_SUB,       /* "-" */
+               N_ARITH_MUL,       /* "*" */
+               N_ARITH_DIV,       /* "/" */
+               N_ARITH_MOD,       /* "%" */
                N_ARITH_REM,
                N_ARITH_EXP,
                N_ARITH_UNARYMINUS,

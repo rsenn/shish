@@ -374,8 +374,39 @@ print_if:
     
     /* TODO:  IMPLEMENT  !!!*/
     case N_FUNCTION:
-    case N_ARGARITH:
       break;
+
+    case N_ARGARITH:
+      stralloc_cats(sa, "$((");
+      tree_printlist(node->nargarith.tree, sa, "");
+      stralloc_cats(sa, "))");
+      break;
+
+    /* binary expressions */
+    case N_ARITH_OR:
+    case N_ARITH_AND:
+    case N_ARITH_BOR:
+    case N_ARITH_BXOR:
+    case N_ARITH_BAND:
+    case N_ARITH_EQ:
+    case N_ARITH_NE:
+    case N_ARITH_LT:
+    case N_ARITH_GT:
+    case N_ARITH_GE:
+    case N_ARITH_LE:
+    case N_ARITH_LSHIFT:
+    case N_ARITH_RSHIFT:
+    case N_ARITH_ADD:
+    case N_ARITH_SUB:
+    case N_ARITH_MUL:
+    case N_ARITH_DIV:
+    case N_ARITH_MOD: {
+      const char *const binary_operators[] = { "||", "&&", "|", "^", "&", "==", "!=", "<", ">", ">=", "<=", "<<", ">>", "+", "-", "*", "/", "%" };
+      tree_printlist(node->narithbinary.left, sa, "");
+      stralloc_cats(sa, binary_operators[node->id - N_ARITH_OR]);
+      tree_printlist(node->narithbinary.right, sa, "");
+      break;
+    }
   }
 }
 
