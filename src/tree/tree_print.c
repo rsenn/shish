@@ -7,7 +7,8 @@
 
 /* print (sub)tree(list) to a stralloc
  * ----------------------------------------------------------------------- */
-void tree_print(union node *node, stralloc *sa) {
+void
+tree_print(union node *node, stralloc *sa) {
   switch(node->id) {
   case N_SIMPLECMD: {
       union node *n;
@@ -337,7 +338,7 @@ print_if:
     
     /* TODO:  IMPLEMENT  !!!*/
     case N_FUNCTION:
-    case N_ARGARITH:
+    case N_ARGEXPR:
       break;
   }
 }

@@ -2,8 +2,9 @@
 
 #ifndef DEBUG
 
-void *shell_alloc(unsigned long size) {
-  void *ptr = malloc(size);
+void*
+shell_alloc(unsigned long size) {
+  void* ptr = malloc(size);
 
   /* exit if failed */
   if(ptr == NULL) {

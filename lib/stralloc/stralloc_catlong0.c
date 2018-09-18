@@ -1,7 +1,8 @@
-#include "stralloc.h"
 #include "fmt.h"
+#include "stralloc.h"
 
-int stralloc_catlong0(stralloc *sa, signed long int in, unsigned long n) {
+int
+stralloc_catlong0(stralloc* sa, signed long int in, unsigned long n) {
   int neg = -(in < 0);
   if(neg) in = -in;
   if(stralloc_readyplus(sa, fmt_minus(0, neg) + fmt_ulong0(0, (unsigned long)in, n))) {

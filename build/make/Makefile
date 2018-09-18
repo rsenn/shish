@@ -1,5 +1,5 @@
 PACKAGE = shish
-VERSION = 0.7-pre3
+VERSION = 0.8
 
 TOP_SRCDIR = ../..
 LIB_SRCDIR = $(TOP_SRCDIR)/lib

@@ -33,8 +33,9 @@
  * SUCH DAMAGE.
  */
 
- #include "../config.h"
-
+#ifdef HAVE_CONFIG_H 
+#include "../config.h"
+#endif
 
 
 /*
@@ -78,7 +79,6 @@
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
-#include "glob.h"
 #include <limits.h>
 #include <pwd.h>
 #include <stdint.h>
@@ -87,6 +87,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <wchar.h>
+
+#define __POSIX_VISIBLE 199209
+#define __BSD_VISIBLE 1
+#define ARG_MAX _POSIX_ARG_MAX
+
+#include "glob.h"
 
 #define	DOLLAR		'$'
 #define	DOT		'.'

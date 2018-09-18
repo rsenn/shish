@@ -5,13 +5,14 @@
 
 #include "str.h"
 
-int   shell_optind = 1;
-char  shell_optopt;
-char *shell_optarg;
-int   shell_optidx = 0;
-int   shell_optofs = 0;
+int shell_optind = 1;
+char shell_optopt;
+char* shell_optarg;
+int shell_optidx = 0;
+int shell_optofs = 0;
 
-int shell_getopt(int argc, char *const argv[], const char *optstring) {
+int
+shell_getopt(int argc, char* const argv[], const char* optstring) {
   unsigned int offset;
 
   /* no-one will get shot for setting optind to 0 in libshish.a :) */
@@ -23,9 +24,7 @@ int shell_getopt(int argc, char *const argv[], const char *optstring) {
     }*/
 again:
   /* are we finished? */
-  if(shell_optind > argc || !argv[shell_optind] ||
-      *argv[shell_optind] != '-' || argv[shell_optind][1] == 0)
-    return -1;
+  if(shell_optind > argc || !argv[shell_optind] || *argv[shell_optind] != '-' || argv[shell_optind][1] == 0) return -1;
 
   /* ignore a trailing - */
   if(argv[shell_optind][1] == '-' && argv[shell_optind][2] == '\0') {
@@ -59,8 +58,7 @@ again:
   if(optstring[offset + 1] == ':') {
     /* "-foo", return "oo" as optarg */
     if(optstring[offset + 2] == ':' || argv[shell_optind][shell_optofs + 2]) {
-      if(!*(shell_optarg = &argv[shell_optind][shell_optofs + 2]))
-        shell_optarg = 0;
+      if(!*(shell_optarg = &argv[shell_optind][shell_optofs + 2])) shell_optarg = 0;
 
       goto found;
     }

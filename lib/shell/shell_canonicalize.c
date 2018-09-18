@@ -4,12 +4,11 @@
 /*# include "config.h"*/
 /*#endif*/
 
-#include <sys/stat.h>
-#include <limits.h>
-#include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
-
+#include <limits.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 /*#ifdef __USE_FILE_OFFSET64*/
 /*#undef lstat*/
@@ -21,15 +20,15 @@
 #include <linux/limits.h>
 #endif*/
 
-#include "stralloc.h"
 #include "byte.h"
 #include "str.h"
+#include "stralloc.h"
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
-# ifndef HAVE_LSTAT
-#  define lstat stat
-# endif
+#include "config.h"
+#ifndef HAVE_LSTAT
+#define lstat stat
+#endif
 #endif
 
 /* canonicalizes a <path> and puts it into <sa>
@@ -51,7 +50,8 @@
  * shell_realpath() function which provides similar behaviour and will
  * resolve relative paths to absolute ones.
  * ----------------------------------------------------------------------- */
-int shell_canonicalize(const char *path, stralloc *sa, int symbolic) {
+int
+shell_canonicalize(const char* path, stralloc* sa, int symbolic) {
   unsigned long n;
   struct stat st;
   int ret = 1;
@@ -60,8 +60,7 @@ int shell_canonicalize(const char *path, stralloc *sa, int symbolic) {
   char buf[PATH_MAX + 1];
 
 #if !defined(__MINGW32__) //&& !defined(__MSYS__) && !defined(__CYGWIN__)
-  if(symbolic)
-    stat_fn = lstat;
+  if(symbolic) stat_fn = lstat;
 #endif
 
 start:
@@ -88,8 +87,7 @@ start:
     }
 
     /* exit now if we'jkre done */
-    if(*path == '\0')
-      break;
+    if(*path == '\0') break;
 
     /* begin a new path component */
     stralloc_catc(sa, '/');
@@ -102,8 +100,7 @@ start:
     path += n;
 
     /* now stat() the thing to verify it */
-    if(stat_fn(sa->s, &st) == -1)
-      return 0;
+    if(stat_fn(sa->s, &st) == -1) return 0;
 
 #ifdef HAVE_LSTAT
     /* is it a symbolic link? */
@@ -111,8 +108,7 @@ start:
       ret++;
 
       /* read the link, return if failed and then nul-terminate the buffer */
-      if((n = readlink(sa->s, buf, PATH_MAX)) == -1)
-        return 0;
+      if((n = readlink(sa->s, buf, PATH_MAX)) == -1) return 0;
 
       buf[n] = '\0';
 
@@ -129,8 +125,7 @@ start:
       else {
         sa->len = byte_rchr(sa->s, sa->len, '/');
 
-        if(!shell_canonicalize(buf, sa, symbolic))
-          return 0;
+        if(!shell_canonicalize(buf, sa, symbolic)) return 0;
       }
     }
 #endif
@@ -142,9 +137,7 @@ start:
     }
   }
 
-  if(sa->len == 0)
-    stralloc_catc(sa, '/');
+  if(sa->len == 0) stralloc_catc(sa, '/');
 
   return ret;
 }
-

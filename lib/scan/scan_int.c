@@ -1,17 +1,23 @@
 #include "scan.h"
 
-static const unsigned int maxint = ((unsigned int) - 1) >> 1;
+static const unsigned int maxint = ((unsigned int)-1) >> 1;
 
-size_t scan_int(const char* src, int* dest) {
-  register const char *tmp;
+size_t
+scan_int(const char* src, int* dest) {
+  register const char* tmp;
   register int l;
   register unsigned char c;
   unsigned int neg;
   int ok;
-  tmp = src; l = 0; ok = 0; neg = 0;
-  switch (*tmp) {
-  case '-': neg = 1;
-  case '+': ++tmp;
+  tmp = src;
+  l = 0;
+  ok = 0;
+  neg = 0;
+  switch(*tmp) {
+    case '-':
+      neg = 1;
+    case '+':
+      ++tmp;
   }
   while((c = (unsigned char)(*tmp - '0')) < 10) {
     unsigned int n;
@@ -22,7 +28,8 @@ size_t scan_int(const char* src, int* dest) {
      * however, multiplication and division are expensive.
      * so instead of *10 we do (l<<3) (i.e. *8) + (l<<1) (i.e. *2)
      * and check for overflow on all the intermediate steps */
-    n = (unsigned int)l << 3; if((n >> 3) != (unsigned int)l) break;
+    n = (unsigned int)l << 3;
+    if((n >> 3) != (unsigned int)l) break;
     if(n + ((unsigned int)l << 1) < n) break;
     n += (unsigned int)l << 1;
     if(n + c < n) break;
