@@ -43,7 +43,7 @@ int shell_errorn(const char *s, unsigned int len);
 extern buffer     *shell_buff;
 extern const char *shell_name;
 
-#ifndef DEBUG
+#ifndef DEBUG_ALLOC
 void *shell_alloc(unsigned long size);
 void *shell_realloc(void *ptr, unsigned long size);
 void *shell_strdup(const char *s);
@@ -57,7 +57,7 @@ void *shell_strdupdebug(const char *file, unsigned int line, const char *s);
 #define shell_realloc(p, n) shell_reallocdebug(__FILE__, __LINE__, (p), (n))
 #define shell_strdup(s) shell_strdupdebug(__FILE__, __LINE__, (s))
 #define shell_free(p) debug_free(__FILE__, __LINE__, (p))
-#endif /* DEBUG */
+#endif /* DEBUG_ALLOC */
 
 
 #endif /* SHELL_H */

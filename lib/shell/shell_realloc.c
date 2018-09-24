@@ -1,12 +1,12 @@
 #include "shell.h"
 
-#ifndef DEBUG
+#ifndef DEBUG_ALLOC
 
-void*
-shell_realloc(void* ptr, unsigned long size) {
-  void* newptr;
+void *shell_realloc(void *ptr, unsigned long size) {
+  void *newptr;
 
-  if(ptr == NULL) return shell_alloc(size);
+  if(ptr == NULL)
+    return shell_alloc(size);
 
   newptr = realloc(ptr, size);
 
@@ -19,4 +19,4 @@ shell_realloc(void* ptr, unsigned long size) {
   /* return pointer otherwise */
   return newptr;
 }
-#endif /* !defined(DEBUG) */
+#endif /* !defined(DEBUG_ALLOC) */

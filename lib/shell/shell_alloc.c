@@ -1,10 +1,9 @@
 #include "shell.h"
 
-#ifndef DEBUG
+#ifndef DEBUG_ALLOC
 
-void*
-shell_alloc(unsigned long size) {
-  void* ptr = malloc(size);
+void *shell_alloc(unsigned long size) {
+  void *ptr = malloc(size);
 
   /* exit if failed */
   if(ptr == NULL) {
@@ -15,4 +14,4 @@ shell_alloc(unsigned long size) {
   /* return pointer otherwise */
   return ptr;
 }
-#endif /* !defined(DEBUG) */
+#endif /* !defined(DEBUG_ALLOC) */

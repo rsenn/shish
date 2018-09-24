@@ -10,8 +10,8 @@
 
 #define NOTFIRST 0x80
 
-int
-shell_fnmatch(const char* pattern, unsigned int plen, const char* string, unsigned int slen, int flags) {
+int shell_fnmatch(const char *pattern, unsigned int plen,
+                  const char *string, unsigned int slen, int flags) {
   /*  buffer_puts(buffer_2, "fnmatch: ");
     buffer_put(buffer_2, pattern, plen);
     buffer_putspace(buffer_2);
@@ -34,7 +34,8 @@ start:
   }
 
   /* there is still some string left but pattern ended */
-  if(plen == 0) return SH_FNM_NOMATCH;
+  if(plen == 0)
+    return SH_FNM_NOMATCH;
 
   /* if SH_FNM_PERIOD is set, a leading period in string has to be
    * matched  exactly by a period in pattern.  A period is considered
@@ -43,127 +44,125 @@ start:
    */
   if(*string == '.' && *pattern != '.' && (flags & SH_FNM_PERIOD)) {
     /* don't match if SH_FNM_PERIOD and this is the first char */
-    if(!(flags & NOTFIRST)) return SH_FNM_NOMATCH;
+    if(!(flags & NOTFIRST))
+      return SH_FNM_NOMATCH;
 
     /* don't match if SH_FNM_PERIOD and SH_FNM_PATHNAME and previous was '/' */
-    if((flags & SH_FNM_PATHNAME) && string[-1] == '/') return SH_FNM_NOMATCH;
+    if((flags & SH_FNM_PATHNAME) && string[-1] == '/')
+      return SH_FNM_NOMATCH;
   }
 
   flags |= NOTFIRST;
 
   switch(*pattern) {
-    case '[': {
-      const char* start;
-      int neg = 0;
+  case '[': {
+    const char *start;
+    int neg = 0;
 
-      pattern++;
-      plen--;
+    pattern++; plen--;
 
-      /* unterminated character class because in a pathname the '/' is a separator
-         and can't be matched. this means we have a mismatch */
-      if(*string == '/' && (flags & SH_FNM_PATHNAME)) return SH_FNM_NOMATCH;
+    /* unterminated character class because in a pathname the '/' is a separator
+       and can't be matched. this means we have a mismatch */
+    if(*string == '/' && (flags & SH_FNM_PATHNAME))
+      return SH_FNM_NOMATCH;
 
-      /* exclamation mark negates the class */
-      neg = (*pattern == '!');
-      pattern += neg;
-      plen -= neg;
+    /* exclamation mark negates the class */
+    neg = (*pattern == '!');
+    pattern += neg; plen -= neg;
 
-      /* now start scanning the pattern */
-      start = pattern;
+    /* now start scanning the pattern */
+    start = pattern;
 
-      while(plen) {
-        int res = 0;
+    while(plen) {
+      int res = 0;
 
-        /* if there is a closing bracket and it's not
-           the first char the class is terminated */
-        if(*pattern == ']' && pattern != start) break;
+      /* if there is a closing bracket and it's not
+         the first char the class is terminated */
+      if(*pattern == ']' && pattern != start)
+        break;
 
-        if(*pattern == '[' && pattern[1] == ':') {
-          /* MEMBER - stupid POSIX char classes */
-          /* TODO: implement them, but maybe not because POSIX sucks here! HARR HARR */
-        } else {
-          /* MEMBER - character range */
-          if(plen > 1 && pattern[1] == '-' && pattern[2] != ']') {
-            /* check wheter char is within the specified range */
-            res = (*string >= *pattern && *string <= pattern[2]);
-            pattern += 3;
-            plen -= 3;
-          }
-          /* MEMBER - literal character match */
-          else {
-            res = (*pattern == *string);
-            pattern++;
-            plen--;
-          }
+      if(*pattern == '[' && pattern[1] == ':') {
+        /* MEMBER - stupid POSIX char classes */
+        /* TODO: implement them, but maybe not because POSIX sucks here! HARR HARR */
+      } else {
+        /* MEMBER - character range */
+        if(plen > 1 && pattern[1] == '-' && pattern[2] != ']') {
+          /* check wheter char is within the specified range */
+          res = (*string >= *pattern && *string <= pattern[2]);
+          pattern += 3; plen -= 3;
+        }
+        /* MEMBER - literal character match */
+        else {
+          res = (*pattern == *string);
+          pattern++; plen--;
+        }
+      }
+
+      /* character class seems terminated and matched */
+      if((res && !neg) || ((!res && neg) && *pattern == ']')) {
+        while(plen && *pattern != ']') {
+          pattern++; plen--;
         }
 
-        /* character class seems terminated and matched */
-        if((res && !neg) || ((!res && neg) && *pattern == ']')) {
-          while(plen && *pattern != ']') {
-            pattern++;
-            plen--;
-          }
-
-          pattern += !!plen;
-          plen -= !!plen;
-          string++;
-          slen--;
-          goto start;
-        }
-        /* not terminated but unmatched */
-        else if(res && neg)
-          break;
-      }
-    } break;
-
-    case '\\': {
-      /* do we escape chars? */
-      if(!(flags & SH_FNM_NOESCAPE)) {
-        /* escape next character... */
-        pattern++;
-        plen--;
-
-        /* ...if there is one */
-        if(plen) goto match;
-      }
-      /* don't escape -> literal match */
-      else
-        goto match;
-    } break;
-
-    case '*': {
-      /* this is the only situation where we really need to recurse */
-      if((*string == '/' && (flags & SH_FNM_PATHNAME)) || shell_fnmatch(pattern, plen, string + 1, slen - 1, flags)) {
-        pattern++;
-        plen--;
+        pattern += !!plen;
+        plen -= !!plen;
+        string++; slen--;
         goto start;
       }
-
-      return 0;
+      /* not terminated but unmatched */
+      else if(res && neg)
+        break;
     }
+  }
+  break;
 
-    case '?': {
-      /* it can't match a / when we're matching a pathname */
-      if(*string == '/' && (flags & SH_FNM_PATHNAME)) break;
+  case '\\': {
+    /* do we escape chars? */
+    if(!(flags & SH_FNM_NOESCAPE)) {
+      /* escape next character... */
+      pattern++; plen--;
 
+      /* ...if there is one */
+      if(plen)
+        goto match;
+    }
+    /* don't escape -> literal match */
+    else
+      goto match;
+  }
+  break;
+
+  case '*': {
+    /* this is the only situation where we really need to recurse */
+    if((*string == '/' && (flags & SH_FNM_PATHNAME)) ||
+        shell_fnmatch(pattern, plen, string + 1, slen - 1, flags)) {
       pattern++;
       plen--;
-      string++;
-      slen--;
-    }
       goto start;
+    }
 
-    default:
-    match : {
+    return 0;
+  }
+
+  case '?': {
+    /* it can't match a / when we're matching a pathname */
+    if(*string == '/' && (flags & SH_FNM_PATHNAME))
+      break;
+
+    pattern++; plen--;
+    string++; slen--;
+  }
+  goto start;
+
+default: match: {
       /* perform literal match */
       if(*pattern == *string) {
-        pattern++;
-        plen--;
-        string++;
-        slen--;
+        pattern++; plen--;
+        string++; slen--;
         goto start;
       }
-    } break;
+    }
+    break;
   }
 
   return SH_FNM_NOMATCH;

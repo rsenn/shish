@@ -2,7 +2,7 @@
 #include "byte.h"
 #include "tree.h"
 
-#ifndef DEBUG
+#ifndef DEBUG_ALLOC
 
 /* allocate a tree node
  * ----------------------------------------------------------------------- */
@@ -16,4 +16,4 @@ tree_newnode(enum nod_id nod) {
   }
   return ret;
 }
-#endif /* !defined(DEBUG) */
+#endif /* !defined(DEBUG_ALLOC) */

@@ -1,13 +1,14 @@
 #include "shell.h"
 
-#ifdef DEBUG
-extern void* debug_realloc(const char* file, unsigned int line, void* ptr, unsigned long size);
+#ifdef DEBUG_ALLOC
+extern void *debug_realloc(const char *file, unsigned int line, void *ptr, unsigned long size);
 
-void*
-shell_reallocdebug(const char* file, unsigned int line, void* ptr, unsigned long size) {
-  void* newptr;
+void *shell_reallocdebug(const char *file, unsigned int line, void *ptr, unsigned long size)
+{
+  void *newptr;
 
-  if(ptr == NULL) return shell_allocdebug(file, line, size);
+  if(ptr == NULL)
+    return shell_allocdebug(file, line, size);
 
   newptr = debug_realloc(file, line, ptr, size);
 
@@ -20,4 +21,4 @@ shell_reallocdebug(const char* file, unsigned int line, void* ptr, unsigned long
   /* return pointer otherwise */
   return newptr;
 }
-#endif /* defined(DEBUG) */
+#endif /* defined(DEBUG_ALLOC) */
