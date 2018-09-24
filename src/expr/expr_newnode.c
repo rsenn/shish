@@ -1,10 +1,10 @@
 #include "expr.h"
 
-struct nargexpr*
+struct nargarith*
 expr_newnode(struct parser *p, enum op_id op) {
-  struct nargexpr* n;
-  parse_newnode(p, N_ARGEXPR);
-  n = &p->node->nargexpr;
+  struct nargarith* n;
+  parse_newnode(p, N_ARGARITH);
+  n = &p->node->nargarith;
   n->op = op;
   return n;
 }
