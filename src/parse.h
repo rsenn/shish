@@ -233,7 +233,7 @@ void *parse_error(struct parser *p, enum tok_flag toks);
 void parse_init(struct parser *p, int flags);
 void parse_string(struct parser *p, int flags);
 
-#ifdef DEBUG
+#ifdef DEBUG_ALLOC
 void parse_newnodedebug(const char *file, unsigned int line, struct parser *p, enum nod_id nod);
 #define parse_newnode(p, id) parse_newnodedebug(__FILE__, __LINE__, (p), (id))
 #else

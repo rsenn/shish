@@ -2,7 +2,7 @@
 #include "byte.h"
 #include "tree.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_ALLOC
 
 /* allocate a tree node
  * ----------------------------------------------------------------------- */
@@ -15,4 +15,4 @@ union node *tree_newnodedebug(const char *file, unsigned int line, enum nod_id n
   }
   return ret;
 }
-#endif /* defined(DEBUG) */
+#endif /* defined(DEBUG_ALLOC) */

@@ -2,7 +2,7 @@
 #include "byte.h"
 #include "str.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_ALLOC
 
 extern void *shell_allocdebug(const char *file, unsigned int line, unsigned long n);
 
@@ -19,4 +19,4 @@ void *shell_strdupdebug(const char *file, unsigned int line, const char *s) {
 
   return ptr;
 }
-#endif /* defined(DEBUG) */
+#endif /* defined(DEBUG_ALLOC) */

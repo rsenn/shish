@@ -2,7 +2,7 @@
 #include "byte.h"
 #include "str.h"
 
-#ifndef DEBUG
+#ifndef DEBUG_ALLOC
 
 void *shell_strdup(const char *s) {
   unsigned long n;
@@ -17,4 +17,4 @@ void *shell_strdup(const char *s) {
 
   return ptr;
 }
-#endif /* !defined(DEBUG) */
+#endif /* !defined(DEBUG_ALLOC) */

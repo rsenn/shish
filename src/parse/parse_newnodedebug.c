@@ -1,7 +1,7 @@
 #include "tree.h"
 #include "parse.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_ALLOC
 
 void parse_newnodedebug(const char *file, unsigned int line, struct parser *p, enum nod_id nod) {
   if(p->tree) {
@@ -12,4 +12,4 @@ void parse_newnodedebug(const char *file, unsigned int line, struct parser *p, e
     p->tree = p->node;
   }
 }
-#endif /* defined(DEBUG) */
+#endif /* defined(DEBUG_ALLOC) */

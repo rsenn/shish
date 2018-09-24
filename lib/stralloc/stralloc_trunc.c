@@ -1,7 +1,7 @@
 #include "stralloc.h"
 #include "shell.h"
 
-#ifndef DEBUG
+#ifndef DEBUG_ALLOC
 
 /* truncates to n+1 and nul-terminates (but '\0' is not included in len)  */
 int stralloc_trunc(stralloc *sa, unsigned long int n) {
@@ -13,4 +13,4 @@ int stralloc_trunc(stralloc *sa, unsigned long int n) {
   return 0;
 }
 
-#endif /* !defined(DEBUG) */
+#endif /* !defined(DEBUG_ALLOC) */
