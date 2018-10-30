@@ -335,17 +335,33 @@ tree_print(union node *node, stralloc *sa) {
 
       break;
 
-    case N_ARGARITH:{
+    case N_ARGARITH: {
       stralloc_cats(sa, "$((");
       tree_printlist(node->nargarith.tree, sa, NULL);
       stralloc_cats(sa, "))");
       break;
     }
 
+
     case N_ARITH_ADD:
     case N_ARITH_SUB:
     case N_ARITH_MUL:
-    case N_ARITH_DIV:  {
+    case N_ARITH_DIV:
+    case N_ARITH_OR:
+    case N_ARITH_AND:
+    case N_ARITH_BOR:
+    case N_ARITH_BXOR:
+    case N_ARITH_BAND:
+    case N_ARITH_EQ:
+    case N_ARITH_NE:
+    case N_ARITH_LT:
+    case N_ARITH_GT:
+    case N_ARITH_GE:
+    case N_ARITH_LE:
+    case N_ARITH_LSHIFT:
+    case N_ARITH_RSHIFT:
+    case N_ARITH_REM:
+    case N_ARITH_EXP: {
 
       tree_print(node->narithbinary.left, sa);
 
@@ -354,6 +370,21 @@ tree_print(union node *node, stralloc *sa) {
         case N_ARITH_SUB: stralloc_catc(sa, '-'); break;
         case N_ARITH_MUL: stralloc_catc(sa, '*'); break;
         case N_ARITH_DIV: stralloc_catc(sa, '/'); break;
+        case N_ARITH_OR: stralloc_cats(sa, "||"); break;
+        case N_ARITH_AND: stralloc_cats(sa, "&&"); break;
+        case N_ARITH_BOR: stralloc_catc(sa, '|'); break;
+        case N_ARITH_BXOR: stralloc_catc(sa, '^'); break;
+        case N_ARITH_BAND: stralloc_catc(sa, '&'); break;
+        case N_ARITH_EQ: stralloc_cats(sa, "=="); break;
+        case N_ARITH_NE: stralloc_cats(sa, "!="); break;
+        case N_ARITH_LT: stralloc_cats(sa, "<"); break;
+        case N_ARITH_GT: stralloc_cats(sa, ">"); break;
+        case N_ARITH_GE: stralloc_cats(sa, ">="); break;
+        case N_ARITH_LE: stralloc_cats(sa, "<="); break;
+        case N_ARITH_LSHIFT: stralloc_cats(sa, "<<"); break;
+        case N_ARITH_RSHIFT: stralloc_cats(sa, ">>"); break;
+        case N_ARITH_REM: stralloc_catc(sa, '%'); break;
+        case N_ARITH_EXP: stralloc_cats(sa, "**"); break;
       }
 
       tree_print(node->narithbinary.right, sa);
