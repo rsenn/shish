@@ -105,7 +105,7 @@ uint64 expr_gettok(struct parser *p, int tempflags);
 
 int expr_expect(struct parser *p, int tempflags, uint64 toks, union node *nfree);
 
-struct nargexpr* expr_newnode(struct parser *p, enum op_id op);
+struct nargarith* expr_newnode(struct parser *p, enum op_id op);
 
 
 #endif /* EXPR_H */

@@ -16,8 +16,8 @@ void sh_loop(void) {
   union node *list;
   stralloc cmd;
 
-  buffer_puts(fd_err->w, "nargexpr.next: ");
-  buffer_putulong(fd_err->w, &((struct nargexpr*)0)->next);
+  buffer_puts(fd_err->w, "nargarith.next: ");
+  buffer_putulong(fd_err->w, &((struct nargarith*)0)->next);
   buffer_putnlflush(fd_err->w);
 
 

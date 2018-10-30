@@ -338,7 +338,7 @@ print_if:
     
     /* TODO:  IMPLEMENT  !!!*/
     case N_FUNCTION:
-    case N_ARGEXPR:
+    case N_ARGARITH:
       break;
   }
 }
