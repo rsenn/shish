@@ -7,11 +7,11 @@
 
 buffer       history_buffer;
 unsigned int history_mapped;
-const char   history_name[] = "bash_history";
+const char   history_name[] = "sh_history";
 const char  *history_files[] = {
-  &history_name[5], /* history */
-  &history_name[2], /* sh_history */
-  &history_name[0], /* bash_history :) */ 
+  &history_name[3], /* history */
+  &history_name[0], /* sh_history */
+  //&history_name[0], /* bash_history :) */ 
   NULL
 };
 
