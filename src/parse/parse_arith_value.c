@@ -13,8 +13,6 @@ union node *parse_arith_value(struct parser *p) {
   if(source_peek(&c) <= 0)
     return NULL;
 
-  if(c == '(') return parse_arith_paren(p);
-
   if(parse_isdigit(c)) {
     char x[FMT_LONG + 1];
     unsigned int n = 0;
