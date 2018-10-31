@@ -31,7 +31,6 @@ SUBDIRS   = builtin \
             debug \
             eval \
             exec \
-            expr \
             expand \
             fd \
             fdstack \
