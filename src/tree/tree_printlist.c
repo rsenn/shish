@@ -7,7 +7,7 @@ tree_printlist(union node *node, stralloc *sa, const char *sep) {
   do {
     tree_print(node, sa);
 
-    if(node->list.next || node->ncmd.bgnd) {
+    if(node->list.next || (node->id == N_SIMPLECMD && node->ncmd.bgnd)) {
     
       stralloc_cats(sa, sep ? sep : (node->ncmd.bgnd ? " & " : "; "));
     }
