@@ -202,9 +202,35 @@ void debug_node(union node *node, int depth) {
   case N_ARITH_SUB:
   case N_ARITH_MUL:
   case N_ARITH_DIV:
+  case N_ARITH_OR:
+  case N_ARITH_AND:
+  case N_ARITH_BOR:
+  case N_ARITH_BXOR:
+  case N_ARITH_BAND:
+  case N_ARITH_EQ:
+  case N_ARITH_NE:
+  case N_ARITH_LT:
+  case N_ARITH_GT:
+  case N_ARITH_GE:
+  case N_ARITH_LE:
+  case N_ARITH_LSHIFT:
+  case N_ARITH_RSHIFT:
+  case N_ARITH_REM:
+  case N_ARITH_EXP:
     debug_sublist("left", node->narithbinary.left, depth);
     debug_space(depth);
     debug_sublist("right", node->narithbinary.right, depth);
+    break;
+  
+  case N_ARITH_PAREN:
+    debug_sublist("tree", node->nargarith.tree, depth);
+    break;
+
+  case N_ARITH_NOT:
+  case N_ARITH_BNOT:
+  case N_ARITH_UNARYMINUS:
+  case N_ARITH_UNARYPLUS:
+    debug_sublist("node", node->narithunary.node, depth);
     break;
 
   case N_NOT:
