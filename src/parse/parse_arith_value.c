@@ -28,6 +28,8 @@ union node *parse_arith_value(struct parser *p) {
 
     } while(parse_isdigit(c) && n < FMT_LONG);
 
+    source_skip();
+
     x[n] = '\0';
 
     scan_longlong(x, &num);
