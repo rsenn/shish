@@ -1,8 +1,0 @@
-AUTOMAKE_OPTIONS = subdir-objects
-
-AM_CPPFLAGS = -I$(top_builddir) -I$(top_srcdir)/../.. -I$(top_srcdir)/../../lib -I$(top_srcdir)/../../src
-
-noinst_LIBRARIES = libstralloc.a
-libstralloc_a_SOURCES = $(top_srcdir)/../../lib/stralloc/stralloc_cat.c $(top_srcdir)/../../lib/stralloc/stralloc_catb.c $(top_srcdir)/../../lib/stralloc/stralloc_catc.c $(top_srcdir)/../../lib/stralloc/stralloc_catlong0.c $(top_srcdir)/../../lib/stralloc/stralloc_cats.c $(top_srcdir)/../../lib/stralloc/stralloc_catulong0.c $(top_srcdir)/../../lib/stralloc/stralloc_copy.c $(top_srcdir)/../../lib/stralloc/stralloc_copyb.c $(top_srcdir)/../../lib/stralloc/stralloc_copys.c $(top_srcdir)/../../lib/stralloc/stralloc_diffs.c $(top_srcdir)/../../lib/stralloc/stralloc_free.c $(top_srcdir)/../../lib/stralloc/stralloc_init.c $(top_srcdir)/../../lib/stralloc/stralloc_insertb.c $(top_srcdir)/../../lib/stralloc/stralloc_move.c $(top_srcdir)/../../lib/stralloc/stralloc_nul.c $(top_srcdir)/../../lib/stralloc/stralloc_ready.c $(top_srcdir)/../../lib/stralloc/stralloc_readyplus.c $(top_srcdir)/../../lib/stralloc/stralloc_remove.c $(top_srcdir)/../../lib/stralloc/stralloc_trunc.c $(top_srcdir)/../../lib/stralloc/stralloc_write.c $(top_srcdir)/../../lib/stralloc/stralloc_zero.c
-
-MAINTAINERCLEANFILES = Makefile.in

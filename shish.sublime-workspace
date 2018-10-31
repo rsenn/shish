@@ -1,0 +1,453 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"USE_",
+				"USE_HD44780_LCD"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "src/parse/parse_arith_binary.c",
+			"settings":
+			{
+				"buffer_size": 970,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				]
+			],
+			[
+				"Packages/Makefile/Make.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				]
+			],
+			[
+				"Packages/Makefile/Make.sublime-build",
+				""
+			]
+		]
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 363.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"Package Control: ",
+				"Package Control: Discover Packages"
+			],
+			[
+				"ins",
+				"Package Control: Advanced Install Package"
+			],
+			[
+				"pac",
+				"Package Control: Discover Packages"
+			],
+			[
+				"adva",
+				"Package Control: Advanced Install Package"
+			],
+			[
+				"insta",
+				"Package Control: Advanced Install Package"
+			],
+			[
+				"in",
+				"Package Control: Advanced Install Package"
+			],
+			[
+				"Package Control: insta",
+				"Package Control: Advanced Install Package"
+			],
+			[
+				"install",
+				"Package Control: Advanced Install Package"
+			],
+			[
+				"package",
+				"Package Control: Discover Packages"
+			],
+			[
+				"Remove",
+				"Package Control: Remove Package"
+			],
+			[
+				"make",
+				"Makefile (dirlist): make all"
+			],
+			[
+				"build",
+				"Build: New Build System"
+			],
+			[
+				"packa",
+				"Package Control: Advanced Install Package"
+			],
+			[
+				"",
+				"About"
+			]
+		],
+		"width": 449.0
+	},
+	"console":
+	{
+		"height": 219.0,
+		"history":
+		[
+			"Theme - Spacefunk, C++ Starting Kit",
+			"schemr",
+			"schemr_favorite_current_scheme",
+			"import urllib.request,os,hashlib; h = 'df21e130d211cfc94d9b0905775a7c0f' + '1e3d39e33b79698005270310898eea76'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://packagecontrol.io/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/C/Users/roman/Desktop/shish",
+		"/C/Users/roman/Desktop/shish/src",
+		"/C/Users/roman/Desktop/shish/src/parse"
+	],
+	"file_history":
+	[
+		"/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/CTags/Default.sublime-keymap",
+		"/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/CTags/CTags.sublime-settings",
+		"/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/User/CTags.sublime-settings",
+		"/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/Cscope/CscopeSublime.sublime-settings",
+		"/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/User/CscopeSublime.sublime-settings",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_collapse.c",
+		"/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/Outline/outline.sublime-settings",
+		"/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/User/outline.sublime-settings",
+		"/C/Users/roman/Desktop/dirlist/genmakefile.c",
+		"/C/Users/roman/Desktop/dirlist/genmakefile/genmakefile.c",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_skip_separator.c",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_is_separator.c",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_skip.c",
+		"/C/Users/roman/Desktop/dirlist/tests/CMakeLists.txt",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_is_absolute.c",
+		"/C/Users/roman/Desktop/dirlist/lib/strlist/strlist_push_unique.c",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_basename.c",
+		"/C/Users/roman/Desktop/dirlist/CMakeLists.txt",
+		"/C/Users/roman/Desktop/dirlist/dirlist.sublime-project",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_absolute_sa.c",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_dirname.c",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_exists.c",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_fnmatch.c",
+		"/C/Users/roman/Desktop/dirlist/SetMSVCStaticRuntime.cmake",
+		"/C/Users/roman/Desktop/dirlist/lib/unit_test.h",
+		"/C/Users/roman/Desktop/dirlist/lib/path_internal.h",
+		"/C/Users/roman/Desktop/dirlist/lib/strlist/strlist_pop.c",
+		"/C/Users/roman/Desktop/dirlist/lib/popen.c",
+		"/C/Users/roman/Desktop/dirlist/lib/uint16.h",
+		"/C/Users/roman/Desktop/dirlist/lib/strlist/strlist_to_argv.c",
+		"/C/Users/roman/Desktop/dirlist/tests/test_strlist.c",
+		"/C/Users/roman/Desktop/dirlist/tests/all_tests.c",
+		"/C/Users/roman/Desktop/dirlist/tests/test_path.c",
+		"/C/Users/roman/Desktop/dirlist/access.c",
+		"/C/Users/roman/Desktop/dirlist/lib/uint64.h",
+		"/C/Users/roman/Desktop/dirlist/lib/binfmt.h",
+		"/C/Users/roman/Desktop/dirlist/lib/windoze.h",
+		"/C/Users/roman/Desktop/unix.h",
+		"/C/Users/roman/Desktop/dirlist/lib/typedefs.h",
+		"/C/Users/roman/Desktop/dirlist/lib/socket.h",
+		"/C/Users/roman/Desktop/dirlist/lib/socket_internal.h",
+		"/B/PortableApps/SublimeText3Portable/App/SublimeText64/Data/Packages/User/CPrettify/user.cfg",
+		"/B/PortableApps/SublimeText3Portable/App/SublimeText64/Data/Packages/User/CPrettify.sublime-settings",
+		"/B/PortableApps/SublimeText3Portable/App/SublimeText64/Data/Packages/User/Package Control.sublime-settings",
+		"/B/PortableApps/SublimeText3Portable/App/SublimeText64/Data/Packages/Package Control/Package Control.sublime-settings",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_num_sa.c",
+		"/B/PortableApps/SublimeText3Portable/App/SublimeText64/Data/Packages/CTags/CTags.sublime-settings",
+		"/B/PortableApps/SublimeText3Portable/App/SublimeText64/Data/Packages/User/CTags.sublime-settings",
+		"/B/PortableApps/SublimeText3Portable/App/SublimeText64/Data/Packages/CPrettify/CPrettify.sublime-settings",
+		"/D/Qt/qt-5.10.1-static-ltcg-msvc2017-x86_64/mkspecs/win32-msvc/qmake.conf",
+		"/B/PortableApps/SublimeText3Portable/App/SublimeText64/Data/Packages/User/Default (Windows).sublime-keymap",
+		"/B/PortableApps/SublimeText3Portable/App/SublimeText64/Data/Packages/Schemr/Default (Windows).sublime-keymap",
+		"/D/Sources/rsenn/dirlist/scripts/gen-a-deps.sh",
+		"/D/Sources/rsenn/dirlist/rdir-test.c",
+		"/D/Sources/rsenn/dirlist/lib/rdir.h",
+		"/D/Sources/rsenn/dirlist/lib/rdir/rdir_close.c",
+		"/D/Sources/rsenn/dirlist/lib/rdir/rdir_open.c",
+		"/D/Sources/rsenn/dirlist/lib/rdir/rdir_read.c",
+		"/D/Sources/rsenn/dirlist/lib/dir/dir_name.c",
+		"/D/Sources/rsenn/dirlist/lib/dir/dir_type.c",
+		"/D/Sources/rsenn/dirlist/dirlist.sublime-project",
+		"/D/Sources/rsenn/dirlist/lib/utf8.c",
+		"/D/Sources/rsenn/dirlist/lib/pe.h",
+		"/D/Sources/rsenn/dirlist/elflist.c",
+		"/D/Sources/rsenn/dirlist/elf64list.c",
+		"/D/Sources/rsenn/dirlist/pelist.c",
+		"/D/Sources/rsenn/dirlist/pathtool.c",
+		"/B/Programs/polipo/config",
+		"/D/Sources/rsenn/dirlist/mediathek-list.c",
+		"/D/Sources/rsenn/dirlist/count-depth.c",
+		"/D/Sources/rsenn/dirlist/decode-ls-lR.c",
+		"/home/roman/.config/sublime-text-3/Packages/Schemr/Default (Linux).sublime-keymap",
+		"/home/roman/.config/sublime-text-3/Packages/User/Default (Linux).sublime-keymap",
+		"/home/roman/.config/sublime-text-3/Packages/User/Package Control.sublime-settings",
+		"/home/roman/.config/sublime-text-3/Packages/Package Control/Package Control.sublime-settings",
+		"/home/roman/Sources/dirlist/lib/utf8.h",
+		"/home/roman/Sources/dirlist/lib/dir/dir_name.c",
+		"/home/roman/Sources/dirlist/lib/dir/dir_read.c",
+		"/home/roman/Sources/dirlist/lib/dir_internal.h",
+		"/home/roman/Sources/dirlist/lib/dir/dir_close.c",
+		"/home/roman/Sources/dirlist/lib/dir.h",
+		"/home/roman/Sources/dirlist/lib/dir/dir_open.c",
+		"/C/Users/roman/Documents/dirlist/list-r.c",
+		"/C/Users/roman/Documents/dirlist/lib/utf8.c",
+		"/C/Users/roman/Documents/dirlist/lib/utf8.h",
+		"/C/Users/roman/Documents/dirlist/lib/dir.h",
+		"/C/Users/roman/Documents/dirlist/lib/dir_internal.h",
+		"/C/Users/roman/Documents/dirlist/lib/dir/dir_read.c",
+		"/C/Users/roman/Documents/dirlist/lib/array/array_allocate.c",
+		"/C/Users/roman/Documents/dirlist/lib/array.h",
+		"/C/Users/roman/Documents/dirlist/lib/array/array_bytes.c",
+		"/C/Users/roman/Documents/dirlist/lib/array/array_length.c",
+		"/C/Users/roman/Documents/dirlist/lib/array/array_start.c",
+		"/C/Users/roman/Documents/dirlist/lib/fnmatch.c",
+		"/C/Users/roman/Documents/dirlist/lib/fnmatch.h",
+		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_pushm_internal.c",
+		"/C/Users/roman/Documents/dirlist/compiler-wrapper.c",
+		"/C/Users/roman/Documents/dirlist/lib/buffer/buffer_putc.c",
+		"/C/Users/roman/Documents/dirlist/lib/array/array_catb.c",
+		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_cat.c",
+		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_push_sa.c",
+		"/C/Users/roman/Documents/dirlist/mediathek-parser.c",
+		"/C/Users/roman/Documents/dirlist/dirlist.sublime-project",
+		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_push.c",
+		"/C/Users/roman/Documents/dirlist/lib/strlist_copy.c",
+		"/I/PortableApps/SublimeTextPortable/App/64-bit/Data/Packages/CodeFormatter/Default (Windows).sublime-keymap",
+		"/I/PortableApps/SublimeTextPortable/App/64-bit/Data/Packages/User/Default (Windows).sublime-keymap",
+		"/I/PortableApps/SublimeTextPortable/App/64-bit/Data/Packages/Clang Format/Default (Windows).sublime-keymap",
+		"/I/PortableApps/SublimeTextPortable/App/64-bit/Data/Packages/User/SchemrFavorites.sublime-settings",
+		"/C/Users/roman/Documents/dirlist/Makefile",
+		"/C/Users/roman/Documents/dirlist/lib/stralloc.h",
+		"/C/Users/roman/Documents/dirlist/lib/stralloc/stralloc_cats.c",
+		"/C/Users/roman/Documents/dirlist/lib/stralloc/stralloc_append_sa.c",
+		"/C/Users/roman/Documents/dirlist/mediathek-parser.cpp",
+		"/C/Users/roman/Documents/dirlist/lib/array/array_cat0.c",
+		"/C/Users/roman/Documents/dirlist/lib/array/array_cats.c",
+		"/C/Users/roman/Documents/dirlist/dirlist.sublime-build",
+		"/C/Users/roman/Documents/dirlist/lib/array/array_reset.c",
+		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_dump.c",
+		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_pushb.c",
+		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_at.c",
+		"/C/Users/roman/Documents/dirlist/lib/strlist.h",
+		"/C/Users/roman/Documents/dirlist/lib/stralloc/stralloc_init.c",
+		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_pushsa.c",
+		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_index_of.c",
+		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_count.c",
+		"/C/Users/roman/Documents/dirlist/lib/strlist_append.c",
+		"/C/Users/roman/Documents/dirlist/lib/buffer/buffer_dump.c"
+	],
+	"find":
+	{
+		"height": 23.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": true,
+		"find_history":
+		[
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": true,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "src/parse/parse_arith_binary.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 970,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								166,
+								166
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 22.0
+	},
+	"input":
+	{
+		"height": 35.968031968
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.CppBuilder":
+	{
+		"height": 209.0
+	},
+	"output.exec":
+	{
+		"height": 283.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"output.sftp":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "Make",
+	"project": "shish.sublime-project",
+	"replace":
+	{
+		"height": 42.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 380.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": false,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 249.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

@@ -1,0 +1,22 @@
+{
+	"folders":
+	[
+		{
+			"path": ".",
+			 "folder_exclude_patterns": [ ".*", "*.cache" ],
+			"file_exclude_patterns": [ 
+                ".*",
+                "*.stackdump",
+                 "*.o",
+                "*.d",
+                "*.m4",
+                "*~",
+                "*.pro.user*",
+                "*cfg*.sh",
+
+
+
+            ]
+		}
+	]
+}
