@@ -4,24 +4,25 @@
 
 /* parse arithmetic expression
  * ----------------------------------------------------------------------- */
-int parse_arith(struct parser *p) {
+int parse_arith(struct parser *p)
+{
   union node *tree;
   struct parser subp;
 
   source_skip();
-
+  
   parse_init(&subp, P_ARITH);
-
+ 
   tree = parse_arith_expr(&subp);
 
   /* MUST be terminated with right parenthesis or backquote */
   if(!parse_expect(&subp, P_DEFAULT, T_RP, tree) ||
-      !parse_expect(&subp, P_DEFAULT, T_RP, tree))
+     !parse_expect(&subp, P_DEFAULT, T_RP, tree))
     return -1;
 
   parse_newnode(p, N_ARGARITH);
   p->node->nargarith.tree = tree;
-
+  
   return 0;
 }
 
