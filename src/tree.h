@@ -33,7 +33,34 @@ enum nod_id {
                N_ARGSTR,
                N_ARGCMD,
                N_ARGPARAM,
-               N_ARGEXPR
+               N_ARGARITH,
+
+               N_ARITH_NUM,
+               N_ARITH_VAR,
+               N_ARITH_PAREN,
+               N_ARITH_OR,
+               N_ARITH_AND,
+               N_ARITH_BOR,
+               N_ARITH_BXOR,
+               N_ARITH_BAND,
+               N_ARITH_EQ,
+               N_ARITH_NE,
+               N_ARITH_LT,
+               N_ARITH_GT,
+               N_ARITH_GE,
+               N_ARITH_LE,
+               N_ARITH_LSHIFT,
+               N_ARITH_RSHIFT,
+               N_ARITH_ADD,
+               N_ARITH_SUB,
+               N_ARITH_MUL,
+               N_ARITH_DIV,
+               N_ARITH_REM,
+               N_ARITH_EXP,
+               N_ARITH_UNARYMINUS,
+               N_ARITH_UNARYPLUS,
+               N_ARITH_NOT,
+               N_ARITH_BNOT,
 };
 
 /* 3.9.1 - simple command
@@ -221,10 +248,38 @@ struct nargcmd {
   union node *list;
 };
 
-struct nargexpr {
+struct nargarith {
   int         id;
   union node *next;
-  int         op;
+  int         flag;
+  union node *tree;
+};
+
+struct narithnum
+{
+  int         id;
+  union node *next;
+  int64       num;
+};
+
+struct narithvar
+{
+  int         id;
+  union node *next;
+  const char *var;
+};
+
+struct narithunary
+{
+  int         id;
+  union node *next;
+  union node *node;
+};
+
+struct narithbinary
+{
+  int         id;
+  union node *next;
   union node *left;
   union node *right;
 };
@@ -249,8 +304,12 @@ union node {
   struct nassign   nassign;
   struct nargstr   nargstr;
   struct nargcmd   nargcmd;
-  struct nargexpr  nargexpr;
+  struct nargarith nargarith;
   struct nargparam nargparam;
+  struct narithnum narithnum;
+  struct narithvar narithvar;
+  struct narithunary narithunary;
+  struct narithbinary narithbinary;
 };
 
 /* link node to the branch nptr points to */
@@ -296,7 +355,7 @@ union node *tree_newnodedebug(const char *file, unsigned int line, enum nod_id n
 #define tree_newnode(id) tree_newnodedebug(__FILE__, __LINE__, (id))
 #else
 union node *tree_newnode(enum nod_id nod);
-#endif /* DEBUG */
+#endif /* DEBUG_ALLOC */
 
 void tree_delnode(union node *node);
 void tree_free(union node *list);
