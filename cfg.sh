@@ -43,7 +43,7 @@ cfg() {
     -DCMAKE_INSTALL_PREFIX="${prefix-/usr}" \
     -G "$generator" \
     ${VERBOSE+:-DCMAKE_VERBOSE_MAKEFILE=TRUE} \
-    -DCMAKE_BUILD_TYPE="${TYPE:-RelWithDebInfo}" \
+    -DCMAKE_BUILD_TYPE="${TYPE:-Debug}" \
     ${CC:+-DCMAKE_C_COMPILER="$CC"} \
     ${CXX:+-DCMAKE_CXX_COMPILER="$CXX"} \
     ${PKG_CONFIG:+-DPKG_CONFIG_EXECUTABLE="$PKG_CONFIG"} \
