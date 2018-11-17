@@ -232,5 +232,5 @@ AC_CONFIG_STATUS
 # be verbose :)
 # ---------------------------------------------------------------------------
 AC_SUMMARIZE([prefix bindir sysconfdir],
-             [COLOR DEPS_TRUE DEBUG | CC CFLAGS LDFLAGS LIBS],
+             [COLOR DEPS_TRUE DEBUG | CC CPPFLAGS CFLAGS LDFLAGS LIBS],
              "%20s: %s")

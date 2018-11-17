@@ -1,14 +1,13 @@
 cfg() {
   : ${build:=`gcc -dumpmachine`}
-  [ -n "$build" ] && build=${build//-pc-/-}
 
   if [ -z "$host" ]; then
     host=$build
     case "$host" in
-      x86_64-w64-mingw32) host="$host" builddir=build/mingw64 prefix=/mingw64 ;;
-      i686-w64-mingw32) host="$host" builddir=build/mingw32 prefix=/mingw32 ;;
-      x86_64-pc-*) host="$host" builddir=build/${host#*-pc-}64 prefix=/usr ;;
-      i686-pc-*) host="$host" builddir=build/${host#*-pc-}32 prefix=/usr ;;
+      x86_64-w64-mingw32) host="$host" builddir=build/$host prefix=/mingw64 ;;
+      i686-w64-mingw32) host="$host" builddir=build/$host prefix=/mingw32 ;;
+      x86_64-pc-*) host="$host" builddir=build/${host} prefix=/usr ;;
+      i686-pc-*) host="$host" builddir=build/${host} prefix=/usr ;;
     esac
   fi
   : ${prefix:=/usr}
@@ -21,7 +20,7 @@ cfg() {
     cmakebuild=cmake-${cmakebuild#toolchain-}
     : ${builddir=build/$cmakebuild}
   else
-   : ${builddir=build/cmake-$host}
+   : ${builddir=build/$host}
   fi
 
   case $(uname -o) in
@@ -51,8 +50,9 @@ cfg() {
     ${TOOLCHAIN:+-DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN"} \
     ${CC:+-DCMAKE_C_COMPILER="$CC"} \
     ${CXX:+-DCMAKE_CXX_COMPILER="$CXX"} \
-    -DCMAKE_{C,CXX}_FLAGS_DEBUG="-g -ggdb3 -O0 -DDEBUG=1" \
+    -DCMAKE_{C,CXX}_FLAGS_DEBUG="-g -ggdb3" \
     -DCMAKE_{C,CXX}_FLAGS_RELWITHDEBINFO="-O2 -g -ggdb3 -DNDEBUG" \
+    ${MAKE:+-DCMAKE_MAKE_PROGRAM="$MAKE"} \
     "$@" \
     $relsrcdir 2>&1 ) |tee "${builddir##*/}.log"
 }
@@ -95,7 +95,6 @@ cfg-diet() {
 cfg-musl() {
  (build=$(${CC:-gcc} -dumpmachine)
   host=${build/-gnu/-musl}
-  host=${host/-pc-/-}
   builddir=build/$host
   prefix=/usr
   includedir=/usr/include/$host

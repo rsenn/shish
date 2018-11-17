@@ -18,6 +18,15 @@
 				"buffer_size": 970,
 				"line_ending": "Unix"
 			}
+		},
+		{
+			"file": "shish.sublime-project",
+			"settings":
+			{
+				"buffer_size": 351,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
 		}
 	],
 	"build_system": "",
@@ -153,8 +162,7 @@
 	"expanded_folders":
 	[
 		"/C/Users/roman/Desktop/shish",
-		"/C/Users/roman/Desktop/shish/src",
-		"/C/Users/roman/Desktop/shish/src/parse"
+		"/C/Users/roman/Desktop/shish/src"
 	],
 	"file_history":
 	[
@@ -320,7 +328,7 @@
 	"groups":
 	[
 		{
-			"selected": 0,
+			"selected": 1,
 			"sheets":
 			[
 				{
@@ -345,6 +353,34 @@
 							"syntax": "Packages/C99/C99.tmLanguage",
 							"tab_size": 2,
 							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "shish.sublime-project",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 351,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								88,
+								88
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JSON.sublime-syntax"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
