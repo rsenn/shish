@@ -20,6 +20,25 @@
 			}
 		},
 		{
+			"file": "src/parse/parse_arith_value.c",
+			"settings":
+			{
+				"buffer_size": 1311,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "Package Control Messages\n========================\n\nOutline\n-------\n\n  Thank you for installing the Outline package.\n  \n  To start, bring up the Command Palette with `Ctrl + Shift + P`, and select `Browse Mode: Outline (Left)` or another preferred layout.\n  \n  Please visit https://github.com/warmdev/SublimeOutline for more details.\n",
+			"settings":
+			{
+				"buffer_size": 333,
+				"line_ending": "Unix",
+				"name": "Package Control Messages",
+				"read_only": true,
+				"scratch": true
+			}
+		},
+		{
 			"file": "shish.sublime-project",
 			"settings":
 			{
@@ -81,6 +100,14 @@
 		"selected_items":
 		[
 			[
+				"Package Control: adv",
+				"Package Control: Advanced Install Package"
+			],
+			[
+				"in",
+				"Package Control: Advanced Install Package"
+			],
+			[
 				"Package Control: ",
 				"Package Control: Discover Packages"
 			],
@@ -98,10 +125,6 @@
 			],
 			[
 				"insta",
-				"Package Control: Advanced Install Package"
-			],
-			[
-				"in",
 				"Package Control: Advanced Install Package"
 			],
 			[
@@ -161,8 +184,7 @@
 	},
 	"expanded_folders":
 	[
-		"/C/Users/roman/Desktop/shish",
-		"/C/Users/roman/Desktop/shish/src"
+		"/C/Users/roman/Desktop/shish"
 	],
 	"file_history":
 	[
@@ -344,13 +366,13 @@
 						"selection":
 						[
 							[
-								166,
-								166
+								411,
+								411
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/C99/C99.tmLanguage",
+							"syntax": "Packages/C++/C.sublime-syntax",
 							"tab_size": 2,
 							"translate_tabs_to_spaces": true
 						},
@@ -363,6 +385,66 @@
 				},
 				{
 					"buffer": 1,
+					"file": "src/parse/parse_arith_value.c",
+					"semi_transient": true,
+					"settings":
+					{
+						"buffer_size": 1311,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C11/C11.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 333,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								333,
+								333
+							]
+						],
+						"settings":
+						{
+							"auto_indent": false,
+							"syntax": "Packages/Text/Plain text.tmLanguage",
+							"tab_width": 2,
+							"word_wrap": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
 					"file": "shish.sublime-project",
 					"semi_transient": false,
 					"settings":
@@ -380,13 +462,15 @@
 						],
 						"settings":
 						{
-							"syntax": "Packages/JavaScript/JSON.sublime-syntax"
+							"syntax": "Packages/JavaScript/JSON.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 3,
 					"type": "text"
 				}
 			]
