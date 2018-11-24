@@ -1,3 +1,13 @@
+if ! type realpath 2>/dev/null >/dev/null; then
+realpath() {
+   (DIR=`dirname "$1"`
+    BASE=`basename "$1"`
+    test -d "$DIR/$BASE" && DIR="$DIR/$BASE" BASE=
+    cd -P "$DIR" && echo "$PWD${BASE:+/$BASE}")
+  }
+  relsrcdir=../..
+fi
+
 cfg () 
 { 
     : ${build=$(gcc -dumpmachine)}
@@ -12,7 +22,7 @@ cfg ()
   }
 
     mkdir -p $builddir;
-    relsrcdir=`realpath --relative-to "$builddir" .`
+    : ${relsrcdir=`realpath --relative-to "$builddir" .`}
 
     ( set -x; cd $builddir;
     "$relsrcdir"/configure \
@@ -22,6 +32,7 @@ cfg ()
           ${libdir:+--libdir="$libdir"} \
           ${sysconfdir:+--sysconfdir="$sysconfdir"} \
           ${localstatedir:+--localstatedir="$localstatedir"} \
+          --disable-{silent-rules,color,dependency-tracking} \
           "$@"
     )
 #         #grep -r '\-O[0-9]' $builddir -lI |xargs sed -i 's,-O[1-9],-ggdb -O0,'
