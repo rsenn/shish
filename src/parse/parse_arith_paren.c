@@ -35,7 +35,13 @@ again:
     }
     
      if(c != ')') {
+#ifdef __GNUC__
+        __builtin_trap();
+#elif defined(__i386__) || defined(__x86_64__)
        asm("int3");
+#else 
+#warning No brk/int3/trap for this compiler!
+#endif
     }
 
   source_skip();

@@ -11,15 +11,15 @@ fi
 cfg () 
 { 
     : ${build=$(gcc -dumpmachine)}
+
+    case "$build" in
+      *--*) build=${build%%--*}-${build#*--} ;;
+    esac
+
     : ${host:=$build}
     : ${builddir=build/$build}
 
     : ${prefix:=/usr}
-
-    [ -z "$libdir" ] && {
-    [ -d "$prefix/lib/$host" ] && libdir="$prefix/lib/$host"
-    [ -d "$prefix/lib/${host/-pc-/-}" ] && libdir="$prefix/lib/${host/-pc-/-}"
-  }
 
     mkdir -p $builddir;
     : ${relsrcdir=`realpath --relative-to "$builddir" .`}
@@ -29,10 +29,10 @@ cfg ()
       ${build:+--build="$build"} \
       ${host:+--host="$host"} \
           --prefix="$prefix" \
-          ${libdir:+--libdir="$libdir"} \
           ${sysconfdir:+--sysconfdir="$sysconfdir"} \
           ${localstatedir:+--localstatedir="$localstatedir"} \
-          --disable-{silent-rules,color,dependency-tracking} \
+          --enable-{silent-rules,color,dependency-tracking} \
+          --enable-debug \
           "$@"
     )
 #         #grep -r '\-O[0-9]' $builddir -lI |xargs sed -i 's,-O[1-9],-ggdb -O0,'

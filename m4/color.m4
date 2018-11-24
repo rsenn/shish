@@ -84,7 +84,7 @@ AC_DEFUN([AC_MSG_RESULT_UNQUOTED], [AC_MSG_RESULT([$1], [$2])])
 # echo stuff using a color
 # ---------------------------------------------------------------------------
 AC_DEFUN([AC_ECHO_COLOR],
-[echo -e ${COLOR_$2}$1${NC} >&AS_MESSAGE_FD])
+[echo ${COLOR_$2}$1${NC} >&AS_MESSAGE_FD])
 
 # echo result using a color
 # ---------------------------------------------------------------------------
