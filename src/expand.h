@@ -3,7 +3,7 @@
 
 #include "stralloc.h"
 
-#define IFS_DEFAULT " \t\n"
+#define IFS_DEFAULT " \t\n"
 
 #define S_TABLE      0x0003
 #define S_UNQUOTED (0 << 0)
