@@ -10,14 +10,17 @@ void debug_error(const char *file, unsigned int line, const char *s) {
   buffer_putulong(fd_err->w, line);
   buffer_puts(fd_err->w, ": ");
   shell_error(s);
-#ifdef __thumb__
+#ifdef __GNUC__
+  __builtin_trap();
+#elif defined(__thumb__)
   asm("bkpt");
-#elif defined __arm__
+#elif defined(__arm__)
   asm("und");
-#elif defined __x86_64__ || defined __i386__
+#elif defined(__x86_64__) || defined(__i386__)
   asm("int $3");
 #else
-  __builtin_trap()
+#warning No int3/brk/trap instruction
+  assert(0);
 #endif
 }
 #endif /* DEBUG */

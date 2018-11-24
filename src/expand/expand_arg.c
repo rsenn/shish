@@ -23,7 +23,7 @@ union node *expand_arg(struct narg *narg, union node **nptr, int flags) {
     switch(subarg->id) {
       /* exprmetic substitution */
       case N_ARGARITH:
-        //n = expand_expr(&subarg->nargexpr, nptr, lflags);
+        //n = expand_expr(&subarg->nargarith, nptr, lflags);
         break;
 
       /* parameter substitution */
