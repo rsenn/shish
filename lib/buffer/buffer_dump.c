@@ -4,11 +4,12 @@
 
 #ifdef DEBUG
 
-extern ssize_t term_read(int fd, char *buf, unsigned int len);
+extern ssize_t term_read(int fd, char* buf, unsigned int len);
 extern ssize_t buffer_dummyreadmmap();
 extern long stralloc_write();
 
-void buffer_dump(buffer *out, buffer *b) {
+void
+buffer_dump(buffer* out, buffer* b) {
   char xlong[FMT_LONG + FMT_LONG + FMT_LONG];
   unsigned long n;
 

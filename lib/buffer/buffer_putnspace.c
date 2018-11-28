@@ -6,8 +6,9 @@
 #include "byte.h"
 #include "buffer.h"
 
-int buffer_putnspace(buffer* b, int n) {
-  char *space;
+int
+buffer_putnspace(buffer* b, int n) {
+  char* space;
   if(n <= 0)
     return 0;
   space = alloca(n);

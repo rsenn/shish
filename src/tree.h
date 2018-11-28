@@ -251,7 +251,7 @@ struct nargcmd {
 struct nargarith {
   int         id;
   union node *next;
-  int         flag;
+  int         op;
   union node *tree;
 };
 

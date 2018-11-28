@@ -7,7 +7,8 @@
 #include <winsock2.h>
 #endif
 
-char *shell_gethostname(stralloc *sa) {
+char*
+shell_gethostname(stralloc* sa) {
   unsigned long n = 0;
 
   do {
@@ -22,5 +23,3 @@ char *shell_gethostname(stralloc *sa) {
 
   return sa->s;
 }
-
-

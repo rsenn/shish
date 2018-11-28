@@ -1,7 +1,8 @@
 #include "byte.h"
 #include "var.h"
 
-struct var *var_init(const char *v, struct var *var, struct search *context) {
+struct var*
+var_init(const char* v, struct var* var, struct search* context) {
   var->bnext = NULL;
   var->gnext = NULL;
   var->blink = NULL;
@@ -14,6 +15,6 @@ struct var *var_init(const char *v, struct var *var, struct search *context) {
   var->parent = NULL;
   var->child = NULL;
   var->table = NULL;
-  
+
   return var;
 }

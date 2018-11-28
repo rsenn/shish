@@ -5,7 +5,7 @@
 #include <limits.h>
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif
 
 #ifdef HAVE_LINUX_LIMITS_H
@@ -14,7 +14,8 @@
 
 /* get current working directory into a stralloc
  * ----------------------------------------------------------------------- */
-void shell_getcwd(stralloc *sa, unsigned long start) {
+void
+shell_getcwd(stralloc* sa, unsigned long start) {
   /* do not allocate PATH_MAX from the beginning,
      most paths will be smaller */
   size_t n = (start ? start : PATH_MAX / 16);
@@ -29,4 +30,3 @@ void shell_getcwd(stralloc *sa, unsigned long start) {
   /* now truncate to effective length */
   stralloc_trunc(sa, str_len(sa->s));
 }
-

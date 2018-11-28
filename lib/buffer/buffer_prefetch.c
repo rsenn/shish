@@ -4,7 +4,8 @@
 extern ssize_t buffer_stubborn_read(ssize_t (*op)(), int fd, const char* buf, unsigned int len);
 extern ssize_t buffer_dummyread();
 
-int buffer_prefetch(buffer* b, unsigned long n) {
+int
+buffer_prefetch(buffer* b, unsigned long n) {
   if(b->p && b->p + n >= b->a) {
     if(b->op == buffer_dummyread)
       return (b->n - b->p);
@@ -19,12 +20,13 @@ int buffer_prefetch(buffer* b, unsigned long n) {
   if(n == 0)
     return -1;
 
-  while (b->n < b->p + n) {
+  while(b->n < b->p + n) {
     int w;
-    if ((w = buffer_stubborn_read(b->op, b->fd, &b->x[b->n], b->a - b->n)) < 0)
+    if((w = buffer_stubborn_read(b->op, b->fd, &b->x[b->n], b->a - b->n)) < 0)
       return -1;
     b->n += w;
-    if(!w) break;
+    if(!w)
+      break;
   }
   return (b->n - b->p);
 }
