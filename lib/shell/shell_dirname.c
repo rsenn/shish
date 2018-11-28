@@ -14,11 +14,10 @@
         ""             "."            "."
 */
 
-static char* dot = ".";
+static char *dot = ".";
 #define SLASH '/'
 #define EOL (char)0
-char*
-shell_dirname(char* path) {
+char *shell_dirname(char *path) {
   unsigned long i;
   if(path == NULL) return dot;
   for(;;) {
@@ -34,7 +33,7 @@ shell_dirname(char* path) {
     if(i)
       while(path[i] == SLASH) path[i--] = EOL; /* slashes in the middle */
     else
-      path[1] = EOL; /* slash is first symbol */
+      path[1] = EOL;                  /* slash is first symbol */
 
     return path;
   }

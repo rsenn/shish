@@ -32,22 +32,22 @@ void stralloc_init(stralloc* sa);
  * bytes of space, copies the old string into the new space, frees the
  * old space, and returns 1. Note that this changes sa.s.  If the
  * allocation fails, stralloc_ready leaves sa alone and returns 0. */
-#ifdef DEBUG
+#ifdef DEBUG_ALLOC
 int stralloc_readydebug(const char *file, unsigned int line, stralloc* sa,unsigned long int len);
 #define stralloc_ready(sa, len) stralloc_readydebug(__FILE__, __LINE__, (sa), (len))
 #else
 int stralloc_ready(stralloc* sa,unsigned long int len);
-#endif /* DEBUG */
+#endif /* DEBUG_ALLOC */
 
 /* stralloc_readyplus is like stralloc_ready except that, if sa is
  * already allocated, stralloc_readyplus adds the current length of sa
  * to len. */
-#ifdef DEBUG
+#ifdef DEBUG_ALLOC
 int stralloc_readyplusdebug(const char *file, unsigned int line, stralloc* sa,unsigned long int len);
 #define stralloc_readyplus(sa, len) stralloc_readyplusdebug(__FILE__, __LINE__, (sa), (len))
 #else
 int stralloc_readyplus(stralloc* sa,unsigned long int len);
-#endif /* DEBUG */
+#endif /* DEBUG_ALLOC */
 
 /* stralloc_copyb copies the string buf[0], buf[1], ..., buf[len-1] into
  * sa, allocating space if necessary, and returns 1. If it runs out of
@@ -122,12 +122,12 @@ int stralloc_catulong0(stralloc* sa,unsigned long int in,unsigned long int n);
 int stralloc_catlong0(stralloc* sa,signed long int in,unsigned long int n);
 
 /* stralloc_free frees the storage associated with sa */
-#ifdef DEBUG
+#ifdef DEBUG_ALLOC
 void stralloc_freedebug(const char *file, unsigned int line, stralloc* sa);
 #define stralloc_free(sa) stralloc_freedebug(__FILE__, __LINE__, (sa))
 #else
 void stralloc_free(stralloc* sa);
-#endif /* DEBUG */
+#endif /* DEBUG_ALLOC */
 #define stralloc_FREE(sa) \
 do { \
   if((sa)->s) shell_free((sa)->s); \
@@ -151,12 +151,12 @@ void stralloc_move(stralloc* to, stralloc* from);
 int stralloc_remove(stralloc* sa, unsigned long pos, unsigned long n);
 int stralloc_insertb(stralloc* sa, const char *s, unsigned long pos, unsigned long n);
 
-#ifdef DEBUG
+#ifdef DEBUG_ALLOC
 int stralloc_truncdebug(const char *file, unsigned int line, stralloc *sa,unsigned long int n);
 #define stralloc_trunc(sa, n) stralloc_truncdebug(__FILE__, __LINE__, (sa), (n))
 #else
 int stralloc_trunc(stralloc *sa,unsigned long int n);  
-#endif /* DEBUG */
+#endif /* DEBUG_ALLOC */
   
 #ifdef BUFFER_H
 /* write stralloc to buffer */

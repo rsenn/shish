@@ -350,7 +350,7 @@ union node {
    (nptr) = &(node); \
   } while(0);
 
-#ifdef DEBUG
+#ifdef DEBUG_ALLOC
 union node *tree_newnodedebug(const char *file, unsigned int line, enum nod_id nod);
 #define tree_newnode(id) tree_newnodedebug(__FILE__, __LINE__, (id))
 #else

@@ -1,10 +1,9 @@
-#include "buffer.h"
 #include "str.h"
+#include "buffer.h"
 
 extern ssize_t buffer_dummyread();
 
-void
-buffer_fromstr(buffer* b, char* s, unsigned long len) {
+void buffer_fromstr(buffer *b, char *s, unsigned long len) {
   b->x = s;
   b->p = 0;
   b->n = len;

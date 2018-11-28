@@ -1,9 +1,9 @@
+#include "stralloc.h"
 #include "shell.h"
 #include "str.h"
-#include "stralloc.h"
 
-#include <limits.h>
 #include <unistd.h>
+#include <limits.h>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -13,8 +13,7 @@
 
 /* read the link into a stralloc
  * ----------------------------------------------------------------------- */
-int
-shell_readlink(const char* path, stralloc* sa) {
+int shell_readlink(const char *path, stralloc *sa) {
 #ifdef HAVE_READLINK
   /* do not allocate PATH_MAX from the beginning,
      most paths will be smaller */
@@ -37,7 +36,8 @@ shell_readlink(const char* path, stralloc* sa) {
 
   return -1;
 #else
-  stralloc_copys(sa, shell_basename((char*)path));
+  stralloc_copys(sa, shell_basename((char *)path));
   return 0;
 #endif
 }
+

@@ -1,8 +1,7 @@
-#include "buffer.h"
 #include <stdarg.h>
+#include "buffer.h"
 
-int
-buffer_putm_internal(buffer* b, ...) {
+int buffer_putm_internal(buffer* b, ...) {
   int r = 0;
   va_list a;
   const char* s;
