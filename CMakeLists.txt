@@ -141,6 +141,12 @@ if(NOT HAVE_LIBOWFAT)
 endif(NOT HAVE_LIBOWFAT) 
 
 add_library(libshish ${LIBSOURCES})
+set_target_properties(libshish PROPERTIES
+	LIBRARY_OUTPUT_NAME "shish"
+	OUTPUT_NAME "shish"
+	PREFIX "lib"
+)
+
 
 file(GLOB SOURCES src/*.h src/*/*.c)
 
