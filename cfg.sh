@@ -137,3 +137,8 @@ cfg-termux()
    "$@"
     )
 }
+cfg-android () 
+{ 
+    ( : ${builddir=build/android};
+    cfg -DCMAKE_INSTALL_PREFIX=/opt/aarch64-linux-gnu/sysroot/usr -DCMAKE_VERBOSE_MAKEFILE=TRUE -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN:-/opt/android-cmake/android.cmake} -DANDROID_NATIVE_API_LEVEL=21 -DPKG_CONFIG_EXECUTABLE=aarch64-linux-gnu-pkg-config -DCMAKE_PREFIX_PATH=/opt/aarch64-linux-gnu/sysroot/usr -DCMAKE_MAKE_PROGRAM=/usr/bin/make "$@" )
+}

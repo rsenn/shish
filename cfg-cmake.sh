@@ -137,3 +137,8 @@ cfg-termux()
    "$@"
     )
 }
+cfg-aarch64 () 
+{ 
+    ( : ${builddir=build/aarch64-linux-gnu};
+    cfg -DCMAKE_INSTALL_PREFIX=/opt/aarch64-linux-gnu/sysroot/usr -DCMAKE_VERBOSE_MAKEFILE=TRUE -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN:-/opt/cmake-toolchains/aarch64-linux-gnu.toolchain.cmake} -DPKG_CONFIG_EXECUTABLE=aarch64-linux-gnu-pkg-config -DCMAKE_PREFIX_PATH=/opt/aarch64-linux-gnu/sysroot/usr -DCMAKE_MAKE_PROGRAM=/usr/bin/make "$@" )
+}
