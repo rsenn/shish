@@ -5,7 +5,8 @@
 
 /* output a char
  * ----------------------------------------------------------------------- */
-void debug_char(const char *msg, char c, int depth) {
+void
+debug_char(const char* msg, char c, int depth) {
   debug_space(depth);
   buffer_puts(fd_err->w, msg);
   buffer_puts(fd_err->w, " = ");

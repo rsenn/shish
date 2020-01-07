@@ -1,13 +1,14 @@
-#include <unistd.h>
-#include "stralloc.h"
 #include "shell.h"
 #include "str.h"
+#include "stralloc.h"
+#include <unistd.h>
 
 #ifdef __MINGW32__
 #include <winsock2.h>
 #endif
 
-char *shell_gethostname(stralloc *sa) {
+char*
+shell_gethostname(stralloc* sa) {
   unsigned long n = 0;
 
   do {
@@ -22,5 +23,3 @@ char *shell_gethostname(stralloc *sa) {
 
   return sa->s;
 }
-
-

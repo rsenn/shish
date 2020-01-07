@@ -8,18 +8,19 @@
 #include "mingw-glob.h"
 #endif
 
-#include <stdlib.h>
-#include "var.h"
-#include "tree.h"
 #include "expand.h"
+#include "tree.h"
+#include "var.h"
+#include <stdlib.h>
 
 /* perform glob() expansion on the current argument
  * ----------------------------------------------------------------------- */
-union node *expand_glob(union node **nptr, int flags) {
-  union node *n;
+union node*
+expand_glob(union node** nptr, int flags) {
+  union node* n;
   glob_t glb;
   int ret;
-  const char *ifs = var_vdefault("IFS", IFS_DEFAULT, NULL);
+  const char* ifs = var_vdefault("IFS", IFS_DEFAULT, NULL);
 
   if(!(n = *nptr))
     return n;
@@ -54,7 +55,7 @@ union node *expand_glob(union node **nptr, int flags) {
         n->narg.flag |= flags;
       }
     }
-    
+
     globfree(&glb);
   } else
 #endif
@@ -64,4 +65,3 @@ union node *expand_glob(union node **nptr, int flags) {
 
   return n;
 }
-

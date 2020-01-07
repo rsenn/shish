@@ -2,12 +2,13 @@
 #ifdef HAVE_ALLOCA_H
 #include <alloca.h>
 #endif /* HAVE_ALLOCA_H */
-#include "str.h"
-#include "byte.h"
 #include "buffer.h"
+#include "byte.h"
+#include "str.h"
 
-int buffer_putnspace(buffer* b, int n) {
-  char *space;
+int
+buffer_putnspace(buffer* b, int n) {
+  char* space;
   if(n <= 0)
     return 0;
   space = alloca(n);

@@ -1,14 +1,15 @@
-#include "shell.h"
-#include "scan.h"
 #include "history.h"
+#include "scan.h"
+#include "shell.h"
 #include "var.h"
 
-char       **history_array;
+char** history_array;
 unsigned int history_size;
 
-/* resize the command history 
+/* resize the command history
  * ----------------------------------------------------------------------- */
-void history_resize(void) {
+void
+history_resize(void) {
   unsigned int i;
 
   /* get history size and return if we already have the desired size */
@@ -25,13 +26,11 @@ void history_resize(void) {
   for(i = newsize; i < history_size; i++)
     if(history_array[i])
       shell_free(history_array[i]);
- 
-  history_array = shell_realloc(history_array, newsize * sizeof(char *));
+
+  history_array = shell_realloc(history_array, newsize * sizeof(char*));
 
   /* initialize new entries when history has grown */
-  for(i = history_size; i < newsize; i++)
-    history_array[i] = NULL;
+  for(i = history_size; i < newsize; i++) history_array[i] = NULL;
 
   history_size = newsize;
 }
-

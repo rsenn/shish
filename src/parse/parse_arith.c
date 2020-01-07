@@ -1,11 +1,12 @@
-#include "tree.h"
 #include "parse.h"
 #include "source.h"
+#include "tree.h"
 
 /* parse arithmetic expression
  * ----------------------------------------------------------------------- */
-int parse_arith(struct parser *p) {
-  union node *tree;
+int
+parse_arith(struct parser* p) {
+  union node* tree;
   struct parser subp;
 
   source_skip();
@@ -15,8 +16,7 @@ int parse_arith(struct parser *p) {
   tree = parse_arith_expr(&subp);
 
   /* MUST be terminated with right parenthesis or backquote */
-  if(!parse_expect(&subp, P_DEFAULT, T_RP, tree) ||
-      !parse_expect(&subp, P_DEFAULT, T_RP, tree))
+  if(!parse_expect(&subp, P_DEFAULT, T_RP, tree) || !parse_expect(&subp, P_DEFAULT, T_RP, tree))
     return -1;
 
   parse_newnode(p, N_ARGARITH);
@@ -24,4 +24,3 @@ int parse_arith(struct parser *p) {
 
   return 0;
 }
-

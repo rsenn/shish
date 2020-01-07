@@ -1,13 +1,14 @@
-#include "tree.h"
 #include "eval.h"
-#include "sh.h"
 #include "fdtable.h"
+#include "sh.h"
+#include "tree.h"
 
 /* execute a tree in a subshell
- * 
- * you have to push stuff yourself! 
+ *
+ * you have to push stuff yourself!
  * ----------------------------------------------------------------------- */
-int sh_subshell(union node *list, int flags) {
+int
+sh_subshell(union node* list, int flags) {
   int ret = 0;
   int jmpret;
   struct eval e;
@@ -25,8 +26,7 @@ int sh_subshell(union node *list, int flags) {
   }
 
   ret = eval_pop(&e);
-  
+
   sh->jump = 0;
   return ret;
 }
-

@@ -1,9 +1,10 @@
-#include "shell.h"
 #include "history.h"
+#include "shell.h"
 
 /* add a command to the history
  * ----------------------------------------------------------------------- */
-void history_set(char *s) {
+void
+history_set(char* s) {
   history_resize();
 
   if(history_array[0])
@@ -11,8 +12,6 @@ void history_set(char *s) {
 
   if(s == NULL || *s)
     history_array[0] = s;
-  else if(s < history_buffer.x ||
-          s >= history_buffer.x + history_buffer.n)
+  else if(s < history_buffer.x || s >= history_buffer.x + history_buffer.n)
     shell_free(s);
 }
-

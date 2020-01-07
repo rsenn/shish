@@ -4,7 +4,8 @@
 
 /* print a node which is child to the current
  * ----------------------------------------------------------------------- */
-void debug_subnode(const char *s, union node *node, int depth) {
+void
+debug_subnode(const char* s, union node* node, int depth) {
   if(node) {
     debug_begin(s, depth);
     debug_node(node, depth + 1);

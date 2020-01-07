@@ -1,20 +1,21 @@
-#include "scan.h"
-#include "tree.h"
-#include "parse.h"
-#include "source.h"
 #include "expand.h"
+#include "parse.h"
+#include "scan.h"
+#include "source.h"
+#include "tree.h"
 
-/* parse parameter substitutions 
+/* parse parameter substitutions
  * ----------------------------------------------------------------------- */
-int parse_param(struct parser *p) {
+int
+parse_param(struct parser* p) {
   char c;
   int braces = 0;
   struct parser newp;
-  stralloc varname = { NULL, 0, 0 };
+  stralloc varname = {NULL, 0, 0};
 
   if(source_peek(&c) <= 0)
     return -1;
-  
+
   if(c == '{') {
     braces++;
     source_skip();
@@ -28,20 +29,18 @@ int parse_param(struct parser *p) {
     p->node->id = N_ARGPARAM;
   else
     parse_newnode(p, N_ARGPARAM);
-  
+
   p->node->nargparam.flag = p->quot;
   p->node->nargparam.name = NULL;
   p->node->nargparam.word = NULL;
-  
+
   /* if we have # as first char in substitution and we're inside a ${}
      then check if the next char is a valid parameter char. if so then
      it's a string length subst */
-  if(c == '#' && braces)
-  {
+  if(c == '#' && braces) {
     char nextc;
-      
-    if(source_peek(&nextc) > 0 && parse_isparam(nextc))
-    {
+
+    if(source_peek(&nextc) > 0 && parse_isparam(nextc)) {
       p->node->nargparam.flag |= S_STRLEN;
       source_get(&c);
     }
@@ -57,7 +56,7 @@ int parse_param(struct parser *p) {
     case '!': p->node->nargparam.flag |= S_BGEXCODE; break;
     case '$': p->node->nargparam.flag |= S_PID; break;
   }
-  
+
   /* add the first char to the varname */
   stralloc_catc(&varname, c);
   stralloc_nul(&varname);
@@ -66,7 +65,7 @@ int parse_param(struct parser *p) {
     /* check if it is numeric, if so assume S_ARG */
     if(parse_isdigit(c)) {
       p->node->nargparam.flag |= S_ARG;
-      
+
       /* now get the complete parameter number */
       if(braces) {
         while(source_peek(&c) > 0 && parse_isdigit(c)) {
@@ -82,30 +81,29 @@ int parse_param(struct parser *p) {
       }
     }
   }
-  
+
   stralloc_nul(&varname);
 
   /* scan parameter number on S_ARG */
   if(p->node->nargparam.flag & S_ARG) {
     p->node->nargparam.numb = 0;
-    scan_uint(varname.s, (unsigned int *)&p->node->nargparam.numb);
+    scan_uint(varname.s, (unsigned int*)&p->node->nargparam.numb);
   }
-  
+
   p->node->nargparam.name = varname.s;
 
   /* skip whitespace if inside braces (unusual), otherwise return */
   if(!braces)
     return 0;
-  
-  while(source_peek(&c) && parse_isspace(c))
-    source_skip();
+
+  while(source_peek(&c) && parse_isspace(c)) source_skip();
 
   /* done parsing? */
   if(c == '}') {
     source_skip();
     return 0;
   }
-  
+
   /* check for remove prefix/suffix pattern */
   if(c == '%' || c == '#') {
     char nextc;
@@ -122,30 +120,40 @@ int parse_param(struct parser *p) {
       p->node->nargparam.flag |= S_NULL;
       source_next(&c);
     }
-    
+
     switch(c) {
-      case '-': p->node->nargparam.flag |= S_DEFAULT; source_skip(); break;
-      case '=': p->node->nargparam.flag |= S_ASGNDEF; source_skip(); break;
-      case '?': p->node->nargparam.flag |= S_ERRNULL; source_skip(); break;
-      case '+': p->node->nargparam.flag |= S_ALTERNAT; source_skip(); break;
+      case '-':
+        p->node->nargparam.flag |= S_DEFAULT;
+        source_skip();
+        break;
+      case '=':
+        p->node->nargparam.flag |= S_ASGNDEF;
+        source_skip();
+        break;
+      case '?':
+        p->node->nargparam.flag |= S_ERRNULL;
+        source_skip();
+        break;
+      case '+':
+        p->node->nargparam.flag |= S_ALTERNAT;
+        source_skip();
+        break;
     }
   }
-  
-  /* return now if we don't have a variable */
-/*  if((p->node->nargparam.flag & S_SPECIAL))
-  {    
-    if(braces)
-      while(source_get(&c) > 0 && c != '}');
 
-    return 0;
-  }*/
+  /* return now if we don't have a variable */
+  /*  if((p->node->nargparam.flag & S_SPECIAL))
+    {
+      if(braces)
+        while(source_get(&c) > 0 && c != '}');
+
+      return 0;
+    }*/
 
   parse_init(&newp, P_SUBSTW);
   parse_word(&newp);
-  
+
   p->node->nargparam.word = parse_getarg(&newp);
 
   return 0;
 }
-
-

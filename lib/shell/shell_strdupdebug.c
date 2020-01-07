@@ -1,14 +1,15 @@
-#include "shell.h"
 #include "byte.h"
+#include "shell.h"
 #include "str.h"
 
 #ifdef DEBUG_ALLOC
 
-extern void *shell_allocdebug(const char *file, unsigned int line, unsigned long n);
+extern void* shell_allocdebug(const char* file, unsigned int line, unsigned long n);
 
-void *shell_strdupdebug(const char *file, unsigned int line, const char *s) {
+void*
+shell_strdupdebug(const char* file, unsigned int line, const char* s) {
   unsigned long n;
-  void *ptr;
+  void* ptr;
 
   n = str_len(s);
 

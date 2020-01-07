@@ -1,12 +1,13 @@
-#include "shell.h"
 #include "byte.h"
+#include "shell.h"
 #include "str.h"
 
 #ifndef DEBUG_ALLOC
 
-void *shell_strdup(const char *s) {
+void*
+shell_strdup(const char* s) {
   unsigned long n;
-  void *ptr;
+  void* ptr;
 
   n = str_len(s);
 

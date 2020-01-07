@@ -1,19 +1,20 @@
-#include <unistd.h>
-#include "job.h"
-#include "sig.h"
-#include "sh.h"
 #include "fd.h"
+#include "job.h"
+#include "sh.h"
+#include "sig.h"
+#include <unistd.h>
 
 int job_pgrp;
 
 /* forks off a job
  * ----------------------------------------------------------------------- */
-int job_fork(struct job *job, union node *node, int bgnd) {
+int
+job_fork(struct job* job, union node* node, int bgnd) {
   pid_t pid;
   pid_t pgrp;
 
   sig_block();
-  
+
   /* fork the process */
   if((pid = fork()) == -1) {
     sh_error("fork failed");
@@ -35,33 +36,32 @@ int job_fork(struct job *job, union node *node, int bgnd) {
       /* and then give the child terminal access */
       if(!bgnd)
         tcsetpgrp(job_terminal, pgrp);
-  
+
     return pid;
   }
-    
+
   pgrp = pid;
-  
+
   /* in the parent update the process list of the job */
   if(job) {
-    struct proc *proc = &job->procs[job->nproc];
+    struct proc* proc = &job->procs[job->nproc];
     proc->pid = pid;
     proc->status = -1;
-    
+
     if(job->nproc == 0)
       job->pgrp = pgrp;
     else
       pgrp = job->procs[0].pid;
-    
+
     job->nproc++;
   }
-    
+
   if(pgrp != job_pgrp && !bgnd) {
     if(fd_ok(job_terminal))
       tcsetpgrp(job_terminal, pid);
 
     job_pgrp = pid;
   }
-  
+
   return pid;
 }
-

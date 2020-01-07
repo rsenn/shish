@@ -1,11 +1,12 @@
-#include "fmt.h"
-#include "str.h"
-#include "sh.h"
 #include "fd.h"
+#include "fmt.h"
+#include "sh.h"
+#include "str.h"
 
 /* print fd number + error message
  * ----------------------------------------------------------------------- */
-int fd_error(int n, const char *msg) {
+int
+fd_error(int n, const char* msg) {
   char buf[FMT_ULONG + 2];
   unsigned long sz;
   sz = fmt_ulong(buf, n);
@@ -15,4 +16,3 @@ int fd_error(int n, const char *msg) {
   buffer_putnlflush(fd_err->w);
   return -1;
 }
-

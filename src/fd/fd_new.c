@@ -3,6 +3,7 @@
 
 /* create an (fd) entry on the current level
  * ----------------------------------------------------------------------- */
-struct fd *fd_new(int fd, int mode) {
+struct fd*
+fd_new(int fd, int mode) {
   return fdtable_newfd(fd, sh->fdstack, mode);
 }

@@ -1,11 +1,12 @@
-#include "tree.h"
 #include "parse.h"
+#include "tree.h"
 
 /* 3.9.4.2 - parse for loop
  * ----------------------------------------------------------------------- */
-union node *parse_for(struct parser *p) {
-  union node *node = NULL;
-  union node **nptr;
+union node*
+parse_for(struct parser* p) {
+  union node* node = NULL;
+  union node** nptr;
 
   /* next token must be the variable name */
   if(!parse_expect(p, P_DEFAULT, T_NAME, node))
@@ -17,7 +18,7 @@ union node *parse_for(struct parser *p) {
   stralloc_nul(&p->node->nargstr.stra);
   node->nfor.varn = p->node->nargstr.stra.s;
   stralloc_init(&p->node->nargstr.stra);
-  
+
   tree_init(node->nfor.args, nptr);
 
   /* next token can be 'in' */
@@ -47,4 +48,3 @@ union node *parse_for(struct parser *p) {
 
   return node;
 }
-

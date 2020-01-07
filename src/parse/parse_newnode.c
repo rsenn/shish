@@ -1,9 +1,10 @@
-#include "tree.h"
 #include "parse.h"
+#include "tree.h"
 
 #ifndef DEBUG_ALLOC
 
-void parse_newnode(struct parser *p, enum nod_id nod) {
+void
+parse_newnode(struct parser* p, enum nod_id nod) {
   if(p->tree) {
     p->node->list.next = tree_newnode(nod);
     p->node = p->node->list.next;

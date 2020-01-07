@@ -1,17 +1,18 @@
-#include <unistd.h>
-#include "sh.h"
 #include "eval.h"
 #include "fdstack.h"
+#include "sh.h"
 #include "vartab.h"
+#include <unistd.h>
 
 /* destroys current shell environment and pops previous
  * ----------------------------------------------------------------------- */
-int sh_pop(struct env *env) {
-  struct env *parent;
+int
+sh_pop(struct env* env) {
+  struct env* parent;
 
   if(env != NULL && env != sh)
     return 0;
-  
+
   if((parent = sh->parent) == NULL)
     return 0;
 
@@ -23,21 +24,17 @@ int sh_pop(struct env *env) {
 
   /* free arguments */
   sh_setargs(NULL, 0);
-  
+
   /* free current env and pop the parent */
   if(sh->cwd.a)
     stralloc_free(&sh->cwd);
 
-  while(sh->eval)
-    eval_pop(sh->eval);
-  
-  while(fdstack != sh->fdstack)
-    fdstack_pop(fdstack);
-  
-  while(varstack != sh->varstack)
-    vartab_pop(varstack);
-  
+  while(sh->eval) eval_pop(sh->eval);
+
+  while(fdstack != sh->fdstack) fdstack_pop(fdstack);
+
+  while(varstack != sh->varstack) vartab_pop(varstack);
+
   sh = parent;
   return 1;
 }
-

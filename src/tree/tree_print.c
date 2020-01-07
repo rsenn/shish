@@ -1,17 +1,17 @@
-#include <stdlib.h>
-#include "fmt.h"
-#include "tree.h"
-#include "redir.h"
-#include "parse.h"
 #include "expand.h"
+#include "fmt.h"
+#include "parse.h"
+#include "redir.h"
+#include "tree.h"
+#include <stdlib.h>
 
 /* print (sub)tree(list) to a stralloc
  * ----------------------------------------------------------------------- */
 void
-tree_print(union node *node, stralloc *sa) {
+tree_print(union node* node, stralloc* sa) {
   switch(node->id) {
     case N_SIMPLECMD: {
-      union node *n;
+      union node* n;
 
       /* concatenate vars */
       for(n = node->ncmd.vars; n; n = n->list.next) {
@@ -23,7 +23,8 @@ tree_print(union node *node, stralloc *sa) {
       /* concatenate arguments */
       for(n = node->ncmd.args; n; n = n->list.next) {
         tree_print(n, sa);
-        if(n->list.next) stralloc_catc(sa, ' ');
+        if(n->list.next)
+          stralloc_catc(sa, ' ');
       }
 
       /* concatenate redirections */
@@ -36,7 +37,7 @@ tree_print(union node *node, stralloc *sa) {
 
     /* concatenate pipelines */
     case N_PIPELINE: {
-      union node *command;
+      union node* command;
 
       for(command = node->npipe.cmds; command; command = command->list.next) {
         tree_print(command, sa);
@@ -50,7 +51,7 @@ tree_print(union node *node, stralloc *sa) {
     /* assemble an argument and quote it correctly */
     case N_ASSIGN:
     case N_ARG: {
-      union node *subarg;
+      union node* subarg;
       int prevtable = 0;
 
       for(subarg = node->narg.list; subarg;) {
@@ -75,7 +76,7 @@ tree_print(union node *node, stralloc *sa) {
     /* concatenate arguments */
     case N_ARGSTR: {
       int i;
-      stralloc *arg = &node->nargstr.stra;
+      stralloc* arg = &node->nargstr.stra;
 
       for(i = 0; i < arg->len; i++) {
         if(!parse_isesc(arg->s[i])) {
@@ -108,10 +109,9 @@ tree_print(union node *node, stralloc *sa) {
       /* use braces if the next char after the variable name
         is a valid name char */
       else if(node->list.next && node->list.next->id == N_ARGSTR) {
-        stralloc *sa = &node->list.next->nargstr.stra;
+        stralloc* sa = &node->list.next->nargstr.stra;
 
-        if((!(node->nargparam.flag & S_SPECIAL) &&
-            sa->len && parse_isname(sa->s[0])) || node->nargparam.numb > 9)
+        if((!(node->nargparam.flag & S_SPECIAL) && sa->len && parse_isname(sa->s[0])) || node->nargparam.numb > 9)
           braces = 1;
       }
 
@@ -128,9 +128,7 @@ tree_print(union node *node, stralloc *sa) {
         stralloc_cats(sa, node->nargparam.name);
 
       if(node->nargparam.word) {
-        static const char *vsubst_types[] = {
-          "-", "=", "?", "+", "%", "%%", "#", "##"
-        };
+        static const char* vsubst_types[] = {"-", "=", "?", "+", "%", "%%", "#", "##"};
 
         if(node->nargparam.flag & S_NULL)
           stralloc_catc(sa, ':');
@@ -160,8 +158,8 @@ tree_print(union node *node, stralloc *sa) {
 
     /* print if-then-elif-else-fi conditionals */
     case N_IF: {
-      union node *n;
-  print_if:
+      union node* n;
+    print_if:
       stralloc_cats(sa, "if ");
       tree_printlist(node->nif.test, sa, NULL);
 
@@ -171,8 +169,7 @@ tree_print(union node *node, stralloc *sa) {
       }
       if(node->nif.cmd1) {
         /* handle elif */
-        if(node->nif.cmd1->id == N_IF &&
-            node->nif.cmd1->list.next == NULL) {
+        if(node->nif.cmd1->id == N_IF && node->nif.cmd1->list.next == NULL) {
           stralloc_cats(sa, "; el");
           node = node->nif.cmd1;
           goto print_if;
@@ -194,7 +191,7 @@ tree_print(union node *node, stralloc *sa) {
 
     /* print for-loops */
     case N_FOR: {
-      union node *n;
+      union node* n;
       stralloc_cats(sa, "for ");
       stralloc_cats(sa, node->nfor.varn);
       if(node->nfor.args) {
@@ -216,7 +213,7 @@ tree_print(union node *node, stralloc *sa) {
     /* print while/until-loops */
     case N_WHILE:
     case N_UNTIL: {
-      union node *n;
+      union node* n;
       stralloc_cats(sa, (node->id == N_WHILE ? "while " : "until "));
       tree_printlist(node->nloop.test, sa, NULL);
       stralloc_cats(sa, "; do ");
@@ -232,7 +229,7 @@ tree_print(union node *node, stralloc *sa) {
     }
 
     case N_CASE: {
-      union node *n;
+      union node* n;
       stralloc_cats(sa, "case ");
       tree_print(node->ncase.word, sa);
       stralloc_cats(sa, " in; ");
@@ -256,8 +253,7 @@ tree_print(union node *node, stralloc *sa) {
     }
 
     /* print boolean lists */
-    case N_NOT:
-      stralloc_cats(sa, "! ");
+    case N_NOT: stralloc_cats(sa, "! ");
     case N_AND:
     case N_OR: {
       tree_printlist(node->nandor.cmd0, sa, NULL);
@@ -272,7 +268,7 @@ tree_print(union node *node, stralloc *sa) {
 
     /* print grouping compounds */
     case N_SUBSHELL: {
-      union node *n;
+      union node* n;
       stralloc_catc(sa, '(');
       tree_printlist(node->ngrp.cmds, sa, NULL);
       stralloc_catc(sa, ')');
@@ -285,7 +281,7 @@ tree_print(union node *node, stralloc *sa) {
       break;
     }
     case N_CMDLIST: {
-      union node *n;
+      union node* n;
       stralloc_cats(sa, "{ ");
       tree_printlist(node->ngrp.cmds, sa, NULL);
       stralloc_cats(sa, "; }");
@@ -303,7 +299,7 @@ tree_print(union node *node, stralloc *sa) {
       /*      stralloc_catc(sa, ' ');*/
 
       if(((node->nredir.flag & R_IN) && node->nredir.fdes != 0) ||
-          ((node->nredir.flag & R_OUT) && node->nredir.fdes != 1))
+         ((node->nredir.flag & R_OUT) && node->nredir.fdes != 1))
         stralloc_catulong0(sa, node->nredir.fdes, 0);
 
       if(node->nredir.flag & R_IN)
@@ -331,9 +327,7 @@ tree_print(union node *node, stralloc *sa) {
     }
 
     /* TODO:  IMPLEMENT  !!!*/
-    case N_FUNCTION:
-
-      break;
+    case N_FUNCTION: break;
 
     case N_ARGARITH: {
       stralloc_cats(sa, "$((");
@@ -342,16 +336,15 @@ tree_print(union node *node, stralloc *sa) {
       break;
     }
 
-  case N_ARITH_NUM: {
-                       stralloc_catlong( sa, node->narithnum.num);
-                      break;
- }
-                    
-  case N_ARITH_VAR: {
-                       stralloc_cats( sa, node->narithvar.var);
-                      break;
- }
-                    
+    case N_ARITH_NUM: {
+      stralloc_catlong(sa, node->narithnum.num);
+      break;
+    }
+
+    case N_ARITH_VAR: {
+      stralloc_cats(sa, node->narithvar.var);
+      break;
+    }
 
     case N_ARITH_ADD:
     case N_ARITH_SUB:
@@ -401,30 +394,26 @@ tree_print(union node *node, stralloc *sa) {
       break;
     }
 
-  case N_ARITH_PAREN:
+    case N_ARITH_PAREN:
 
-    stralloc_catc(sa, '(');
-    tree_printlist(node->nargarith.tree, sa, ", ");
-    stralloc_catc(sa, ')');
-    break;
+      stralloc_catc(sa, '(');
+      tree_printlist(node->nargarith.tree, sa, ", ");
+      stralloc_catc(sa, ')');
+      break;
 
+    case N_ARITH_NOT:
+    case N_ARITH_BNOT:
+    case N_ARITH_UNARYMINUS:
+    case N_ARITH_UNARYPLUS: {
 
-  case N_ARITH_NOT:
-  case N_ARITH_BNOT:
-  case N_ARITH_UNARYMINUS:
-  case N_ARITH_UNARYPLUS: {
-
-    switch(node->narithunary.id) {
-    case N_ARITH_NOT: stralloc_catc(sa, '!'); break;
-    case N_ARITH_BNOT: stralloc_catc(sa, '~'); break;
-    case N_ARITH_UNARYMINUS: stralloc_catc(sa, '-'); break;
-    case N_ARITH_UNARYPLUS: stralloc_catc(sa, '+'); break;
+      switch(node->narithunary.id) {
+        case N_ARITH_NOT: stralloc_catc(sa, '!'); break;
+        case N_ARITH_BNOT: stralloc_catc(sa, '~'); break;
+        case N_ARITH_UNARYMINUS: stralloc_catc(sa, '-'); break;
+        case N_ARITH_UNARYPLUS: stralloc_catc(sa, '+'); break;
+      }
+      tree_print(node->narithunary.node, sa);
+      break;
     }
-    tree_print(node->narithunary.node, sa);
-    break;
-  }
-
   }
 }
-
-

@@ -5,7 +5,8 @@
  * than, equal to, or greater than the string one[0], one[1], ...,
  * one[len-1]. When the strings are different, byte_diff does not read
  * bytes past the first difference. */
-int byte_diff(const void* a, size_t len, const void* b) {
+int
+byte_diff(const void* a, size_t len, const void* b) {
 #if 0
   /* this gets miscompiled by gcc 4.3.2 on x86_64 */
   register const unsigned char* s = a;
@@ -24,7 +25,8 @@ int byte_diff(const void* a, size_t len, const void* b) {
   size_t i;
   for(i = 0; i < len; ++i) {
     int r = ((unsigned char*)a)[i] - ((unsigned char*)b)[i];
-    if(r) return r;
+    if(r)
+      return r;
   }
   return 0;
 #endif

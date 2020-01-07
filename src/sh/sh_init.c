@@ -1,12 +1,12 @@
-#include <unistd.h>
-#include <string.h>
-#include "shell.h"
-#include "sh.h"
-#include "var.h"
-#include "job.h"
 #include "fd.h"
-#include "uint32.h"
 #include "history.h"
+#include "job.h"
+#include "sh.h"
+#include "shell.h"
+#include "uint32.h"
+#include "var.h"
+#include <string.h>
+#include <unistd.h>
 
 static struct var sh_ps1;
 static struct var sh_ps2;
@@ -14,9 +14,10 @@ static struct var sh_ps3;
 static struct var sh_path;
 static struct var sh_ifs;
 
-/* initialize the shell 
+/* initialize the shell
  * ----------------------------------------------------------------------- */
-void sh_init(void) {
+void
+sh_init(void) {
   job_init();
 
   /* get current uid and pid */
@@ -44,8 +45,6 @@ void sh_init(void) {
   sh->arg.s = 0;
 
   /* set up signal handling */
-/*  signal(SIGTTOU, SIG_IGN);
-  signal(SIGTTIN, SIG_IGN);*/
+  /*  signal(SIGTTOU, SIG_IGN);
+    signal(SIGTTIN, SIG_IGN);*/
 }
-
-

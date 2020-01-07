@@ -1,13 +1,14 @@
-#include "tree.h"
+#include "expand.h"
 #include "parse.h"
 #include "source.h"
-#include "expand.h"
+#include "tree.h"
 
 /* parse backquoted commands
  * ----------------------------------------------------------------------- */
-int parse_bquoted(struct parser *p) {
+int
+parse_bquoted(struct parser* p) {
   char c;
-  union node *cmds;
+  union node* cmds;
   struct parser subp;
 
   if(p->tok == T_NAME)
@@ -15,19 +16,19 @@ int parse_bquoted(struct parser *p) {
 
   if(source_peek(&c) <= 0)
     return -1;
-  
+
   if(c == '(') {
     if(source_next(&c) <= 0)
       return -1;
-/*
-    if(c == '(')
-      return parse_arith(p);*/
-    
+    /*
+        if(c == '(')
+          return parse_arith(p);*/
+
     parse_init(&subp, P_DEFAULT);
   } else {
     source_skip();
     subp.flags = P_BQUOTE;
-    
+
     parse_init(&subp, P_BQUOTE);
   }
 
@@ -41,7 +42,6 @@ int parse_bquoted(struct parser *p) {
   parse_newnode(p, N_ARGCMD);
   p->node->nargcmd.flag = ((subp.flags & P_BQUOTE) ? S_BQUOTE : 0) | p->quot;
   p->node->nargcmd.list = cmds;
-  
+
   return 0;
 }
-

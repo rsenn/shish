@@ -1,18 +1,18 @@
-#include "tree.h"
 #include "parse.h"
+#include "tree.h"
 
 /* 3.9.2 - parse a pipeline
  * ----------------------------------------------------------------------- */
-union node *parse_pipeline(struct parser *p) {
+union node*
+parse_pipeline(struct parser* p) {
   int negate = 0;
-  union node *node;
-  union node *pipeline;
-  union node **cmdptr;
+  union node* node;
+  union node* pipeline;
+  union node** cmdptr;
   enum tok_flag tok;
 
   /* on T_NOT toggle negate */
-  while((tok = parse_gettok(p, P_DEFAULT)) == T_NOT)
-    negate = !negate;
+  while((tok = parse_gettok(p, P_DEFAULT)) == T_NOT) negate = !negate;
 
   p->pushback++;
 
@@ -30,7 +30,7 @@ union node *parse_pipeline(struct parser *p) {
     pipeline->npipe.ncmd = 1;
     cmdptr = &node->ncmd.next;
 
-    /* parse commands and add them to the pipeline 
+    /* parse commands and add them to the pipeline
        as long as there are pipe tokens */
     do {
       node = parse_command(p, P_SKIPNL);
@@ -46,7 +46,7 @@ union node *parse_pipeline(struct parser *p) {
 
   /* link in a N_NOT node if requested */
   if(negate) {
-    union node *neg;
+    union node* neg;
     neg = tree_newnode(N_NOT);
     neg->nandor.cmd0 = node;
     neg->nandor.cmd1 = NULL;
@@ -55,4 +55,3 @@ union node *parse_pipeline(struct parser *p) {
 
   return node;
 }
-

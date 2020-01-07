@@ -17,10 +17,10 @@ cfg() {
   if [ -e "$TOOLCHAIN" ]; then
     cmakebuild=$(basename "$TOOLCHAIN" .cmake)
     cmakebuild=${cmakebuild%.toolchain}
-    cmakebuild=cmake-${cmakebuild#toolchain-}
-    : ${builddir=build/cmake-$cmakebuild}
+    cmakebuild=${cmakebuild#toolchain-}
+    : ${builddir=build/$cmakebuild}
   else
-   : ${builddir=build/cmake-$host}
+   : ${builddir=build/$host}
   fi
 
   case $(uname -o) in
@@ -40,10 +40,10 @@ cfg() {
   set -x
   cd $builddir
   ${CMAKE:-cmake} -Wno-dev \
-    -DCMAKE_INSTALL_PREFIX="${prefix-/usr}" \
     -G "$generator" \
     ${VERBOSE+:-DCMAKE_VERBOSE_MAKEFILE=TRUE} \
     -DCMAKE_BUILD_TYPE="${TYPE:-Debug}" \
+    -DBUILD_SHARED_LIBS=ON \
     ${CC:+-DCMAKE_C_COMPILER="$CC"} \
     ${CXX:+-DCMAKE_CXX_COMPILER="$CXX"} \
     ${PKG_CONFIG:+-DPKG_CONFIG_EXECUTABLE="$PKG_CONFIG"} \
@@ -77,15 +77,39 @@ cfg-android ()
 cfg-diet() {
  (build=$(${CC:-gcc} -dumpmachine)
   host=${build/-gnu/-dietlibc}
-  : ${builddir=build/$host}
+  : ${builddir=build/${host%-*}-diet}
   : ${prefix=/opt/diet}
   : ${libdir=/opt/diet/lib-${host%%-*}}
   : ${bindir=/opt/diet/bin-${host%%-*}}
   
-  CC="diet-gcc" \
-  PKG_CONFIG="$host-pkg-config" \
-  LIBS="${LIBS:+$LIBS }-liconv -lpthread" \
+  : ${CC="diet-gcc"}
+  export CC
+
+  PKG_CONFIG="PKG_CONFIG_PATH=$libdir/pkgconfig pkg-config" \
   cfg \
+    -DCMAKE_INSTALL_PREFIX="$prefix" \
+    -DENABLE_SHARED=OFF \
+    -DENABLE_STATIC=ON \
+    -DSHARED_LIBS=OFF \
+    -DBUILD_SHARED_LIBS=OFF \
+    -DCMAKE_VERBOSE_MAKEFILE=ON \
+    "$@")
+}
+
+cfg-emscripten() {
+ (build=$(${CC:-emcc} -dumpmachine)
+  host=${build/-gnu/-emscriptenlibc}
+  : ${builddir=build/${host%-*}-emscripten}
+  : ${prefix=/opt/emsdk/emscripten/incoming/system}
+  : ${libdir=/opt/emsdk/emscripten/incoming/system/lib}
+  : ${bindir=/opt/emsdk/emscripten/incoming/system/bin}
+  
+  CC="emcc" \
+  PKG_CONFIG="PKG_CONFIG_PATH=$libdir/pkgconfig pkg-config" \
+  cfg \
+    -DCMAKE_INSTALL_PREFIX="$prefix" \
+    -DENABLE_SHARED=OFF \
+    -DENABLE_STATIC=ON \
     -DSHARED_LIBS=OFF \
     -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_VERBOSE_MAKEFILE=ON \
@@ -104,6 +128,8 @@ cfg-musl() {
   CC=musl-gcc \
   PKG_CONFIG=musl-pkg-config \
   cfg \
+    -DENABLE_SHARED=OFF \
+    -DENABLE_STATIC=ON \
     -DSHARED_LIBS=OFF \
     -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_VERBOSE_MAKEFILE=ON \
@@ -136,9 +162,4 @@ cfg-termux()
    -DCMAKE_MODULE_PATH="/data/data/com.termux/files/usr/lib/cmake" \
    "$@"
     )
-}
-cfg-aarch64 () 
-{ 
-    ( : ${builddir=build/aarch64-linux-gnu};
-    cfg -DCMAKE_INSTALL_PREFIX=/opt/aarch64-linux-gnu/sysroot/usr -DCMAKE_VERBOSE_MAKEFILE=TRUE -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN:-/opt/cmake-toolchains/aarch64-linux-gnu.toolchain.cmake} -DPKG_CONFIG_EXECUTABLE=aarch64-linux-gnu-pkg-config -DCMAKE_PREFIX_PATH=/opt/aarch64-linux-gnu/sysroot/usr -DCMAKE_MAKE_PROGRAM=/usr/bin/make "$@" )
 }

@@ -1,12 +1,13 @@
-#include <unistd.h>
-#include "str.h"
 #include "exec.h"
 #include "sh.h"
+#include "str.h"
+#include <unistd.h>
 
 /* check if the path is valid
  * ----------------------------------------------------------------------- */
-char *exec_check(char *path) {
-  char *ret = NULL;
+char*
+exec_check(char* path) {
+  char* ret = NULL;
 
   /* when there is no directory delimiter in the
      supplied path then search for the file */
@@ -22,4 +23,3 @@ char *exec_check(char *path) {
 
   return ret;
 }
-

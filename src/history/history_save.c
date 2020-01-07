@@ -1,14 +1,15 @@
-#include <unistd.h>
-#include <limits.h>
-#include "str.h"
 #include "buffer.h"
-#include "stralloc.h"
 #include "history.h"
 #include "sh.h"
+#include "str.h"
+#include "stralloc.h"
+#include <limits.h>
+#include <unistd.h>
 
 /* save the history
  * ----------------------------------------------------------------------- */
-void history_save(void) {
+void
+history_save(void) {
   char data[256];
   buffer b;
   unsigned long hlen;
@@ -17,20 +18,20 @@ void history_save(void) {
   hlen = str_copyn(fname, sh_home, PATH_MAX);
   if(hlen >= PATH_MAX - 3)
     return;
-  
+
   /* append a trailing slash if not already there */
   if(hlen && fname[hlen - 1] != '/')
     fname[hlen++] = '/';
-  
+
   fname[hlen++] = '.';
-  
+
   /* append history file name */
   str_copyn(&fname[hlen], history_files[0], PATH_MAX - hlen);
 
-  /* unlink the file, so writing doesn't affect previous 
+  /* unlink the file, so writing doesn't affect previous
      mappings and lead to a bus error when truncating the file */
   unlink(fname);
-  
+
   /* try to write history */
   if(buffer_truncfile(&b, fname, data, sizeof(data)) == 0) {
     int i;
@@ -46,9 +47,8 @@ void history_save(void) {
 #endif
       }
     }
-    
+
     buffer_flush(&b);
     buffer_close(&b);
   }
 }
-

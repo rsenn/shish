@@ -1,15 +1,16 @@
-#include <unistd.h>
-#include <limits.h>
+#include "exec.h"
 #include "shell.h"
 #include "str.h"
-#include "exec.h"
 #include "var.h"
+#include <limits.h>
+#include <unistd.h>
 
 /* searches for relative path <name> within PATH and returns absolute
  * path if found
  * ----------------------------------------------------------------------- */
-char *exec_path(char *name) {
-  const char *vpath;
+char*
+exec_path(char* name) {
+  const char* vpath;
   static char path[PATH_MAX];
   unsigned long si = 0, pi = 0;
   vpath = var_value("PATH", NULL);
@@ -27,7 +28,7 @@ char *exec_path(char *name) {
       si += ni;
       continue;
     }
-    
+
     /* copying path to temp buffer */
     pi = str_copyn(path, &vpath[si], ni);
 
@@ -48,4 +49,3 @@ char *exec_path(char *name) {
   path[0] = '\0';
   return NULL;
 }
-

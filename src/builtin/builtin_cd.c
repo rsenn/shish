@@ -1,26 +1,27 @@
+#include "builtin.h"
+#include "byte.h"
+#include "fd.h"
+#include "sh.h"
+#include "shell.h"
+#include "str.h"
+#include "var.h"
+#include <errno.h>
 #include <limits.h>
 #include <string.h>
 #include <unistd.h>
-#include <errno.h>
-#include "shell.h"
-#include "byte.h"
-#include "str.h"
-#include "sh.h"
-#include "fd.h"
-#include "var.h"
-#include "builtin.h"
 
 /* change working directory
  * ----------------------------------------------------------------------- */
-int builtin_cd(int argc, char **argv) {
+int
+builtin_cd(int argc, char** argv) {
   int c;
   int ok = 0;
   int symbolic = 1;
-  const char *arg;
+  const char* arg;
   unsigned long len;
   unsigned long n;
   stralloc newcwd;
-  
+
   /* check options, -L for symlink, -P for physical path */
   while((c = shell_getopt(argc, argv, "LP")) > 0) {
     switch(c) {
@@ -29,7 +30,7 @@ int builtin_cd(int argc, char **argv) {
       default: builtin_invopt(argv); return 1;
     }
   }
-  
+
   arg = argv[shell_optind];
   stralloc_init(&newcwd);
 
@@ -44,11 +45,11 @@ int builtin_cd(int argc, char **argv) {
   }
 
   len = str_len(arg);
-  
+
   /* when it isn't an absolute path we have to check CDPATH */
   if(arg[0] != '/') {
     char path[PATH_MAX + 1];
-    const char *cdpath;
+    const char* cdpath;
 
     /* loop through colon-separated CDPATH variable */
     cdpath = var_value("CDPATH", NULL);
@@ -58,17 +59,16 @@ int builtin_cd(int argc, char **argv) {
       if((n = str_chr(cdpath, ':')) + len + 1 > PATH_MAX) {
         /* set error code and print the longer string in the error msg */
         errno = ENAMETOOLONG;
-        return builtin_errmsgn(argv, (n > len ? cdpath : arg),
-                               (n > len ? n : len), strerror(errno));
+        return builtin_errmsgn(argv, (n > len ? cdpath : arg), (n > len ? n : len), strerror(errno));
       }
-      
+
       /* copy path prefix from cdpath if present */
       if(n) {
         byte_copy(path, n, cdpath);
         cdpath += n;
         path[n++] = '/';
       }
-      
+
       /* copy the argument and canonicalize */
       str_copy(&path[n], arg);
 
@@ -86,7 +86,7 @@ int builtin_cd(int argc, char **argv) {
     n = 0;
     ok = shell_canonicalize(arg, &newcwd, symbolic);
   }
-  
+
   stralloc_nul(&newcwd);
 
   /* try to chdir() if everything's ok */
@@ -96,7 +96,7 @@ int builtin_cd(int argc, char **argv) {
       buffer_putsa(fd_out->w, &newcwd);
       buffer_putnlflush(fd_out->w);
     }
-    
+
     /* set the path */
     stralloc_move(&sh->cwd, &newcwd);
 
@@ -105,10 +105,9 @@ int builtin_cd(int argc, char **argv) {
 
     return 0;
   }
-  
+
   /* we failed */
   builtin_error(argv, newcwd.s);
   stralloc_free(&newcwd);
   return 1;
 }
-

@@ -1,10 +1,11 @@
-#include "sh.h"
 #include "fd.h"
+#include "sh.h"
 #include "source.h"
 
 /* source msg
  * ----------------------------------------------------------------------- */
-void source_msg(void) {
+void
+source_msg(void) {
   if(fdtable[STDSRC_FILENO]->name) {
     buffer_puts(fd_err->w, fdtable[STDSRC_FILENO]->name);
     buffer_puts(fd_err->w, ":");
@@ -12,4 +13,3 @@ void source_msg(void) {
     buffer_puts(fd_err->w, ": ");
   }
 }
-

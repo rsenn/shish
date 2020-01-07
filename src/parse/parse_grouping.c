@@ -1,32 +1,33 @@
-#include "tree.h"
 #include "parse.h"
+#include "tree.h"
 
 /* 3.9.4.1 parse a grouping compound
- * 
+ *
  * The format for grouping commands is a s follows:
- * 
+ *
  *  (compound-list)       Execute compound-list in a subshell environment;
  *                        Variable assignments and built-in commands that
  *                        affect the environment shall not remain in effect
  *                        after the list finishes.
- * 
+ *
  *  { compound-list;}     Execute compound-list in the current process
  *                        environment.
- * 
+ *
  * ----------------------------------------------------------------------- */
-union node *parse_grouping(struct parser *p) {
+union node*
+parse_grouping(struct parser* p) {
   enum tok_flag tok;
-  union node  **rptr;
-  union node   *grouping;
-  union node   *compound_list;
+  union node** rptr;
+  union node* grouping;
+  union node* compound_list;
 
   /* return NULL on empty compound */
   grouping = NULL;
-  
-  if(!(tok = parse_expect(p, P_DEFAULT, T_BEGIN|T_LP, NULL)))
+
+  if(!(tok = parse_expect(p, P_DEFAULT, T_BEGIN | T_LP, NULL)))
     return NULL;
-  
-  /* parse compound content and create a 
+
+  /* parse compound content and create a
      compound node if there are commands */
   if((compound_list = parse_compound_list(p))) {
     grouping = tree_newnode(tok == T_BEGIN ? N_CMDLIST : N_SUBSHELL);
@@ -41,13 +42,10 @@ union node *parse_grouping(struct parser *p) {
     tree_init(grouping->ngrp.rdir, rptr);
 
     /* now any redirections may follow */
-    while(parse_gettok(p, P_DEFAULT) & T_REDIR)
-      tree_move(p->tree, rptr);
+    while(parse_gettok(p, P_DEFAULT) & T_REDIR) tree_move(p->tree, rptr);
 
     p->pushback++;
   }
 
   return grouping;
 }
-
-

@@ -1,7 +1,8 @@
 #include "term.h"
 
 /* ----------------------------------------------------------------------- */
-void term_end(void) {
+void
+term_end(void) {
   if(term_pos == term_cmdline.len)
     return;
 
@@ -13,4 +14,3 @@ void term_end(void) {
   buffer_flush(term_output);
   term_pos = term_cmdline.len;
 }
-

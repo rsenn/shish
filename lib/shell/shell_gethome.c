@@ -1,13 +1,13 @@
-#include <stdlib.h>
-#include <limits.h>
-#include "scan.h"
 #include "buffer.h"
 #include "scan.h"
 #include "stralloc.h"
+#include <limits.h>
+#include <stdlib.h>
 
 /* get home directory into a char buf not smaller than PATH_MAX + 1 chars
  * ----------------------------------------------------------------------- */
-char *shell_gethome(int uid) {
+char*
+shell_gethome(int uid) {
   buffer b;
   long id;
   unsigned long n;
@@ -54,4 +54,3 @@ char *shell_gethome(int uid) {
   buffer_close(&b);
   return NULL;
 }
-

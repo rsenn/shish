@@ -1,18 +1,19 @@
-#include "shell.h"
-#include <unistd.h>
-#include "byte.h"
-#include "str.h"
-#include <errno.h>
 #include "builtin.h"
+#include "byte.h"
 #include "fd.h"
 #include "sh.h"
+#include "shell.h"
+#include "str.h"
+#include <errno.h>
+#include <unistd.h>
 
 /* sets or displays current hostname
  * ----------------------------------------------------------------------- */
-int builtin_hostname(int argc, char **argv) {
+int
+builtin_hostname(int argc, char** argv) {
   int c;
   int force = 0;
-  
+
   /* check options */
   while((c = shell_getopt(argc, argv, "f")) > 0) {
     switch(c) {
@@ -20,21 +21,20 @@ int builtin_hostname(int argc, char **argv) {
       default: builtin_invopt(argv); return 1;
     }
   }
-  
+
   /* if there is an argument we set it as new hostname */
   if(argv[shell_optind]) {
     unsigned long n;
-    
+
     n = str_len(argv[shell_optind]);
-    
-    /* unless force is set and if the new hostname is 
+
+    /* unless force is set and if the new hostname is
        the same as the current then do not update it */
-    if(!force && n == sh_hostname.len && 
-       !byte_diff(sh_hostname.s, n, argv[shell_optind]))
+    if(!force && n == sh_hostname.len && !byte_diff(sh_hostname.s, n, argv[shell_optind]))
       return 0;
-      
-#ifdef HAVE_SETHOSTNAME    
-    /* set the supplied hostname */
+
+#ifdef HAVE_SETHOSTNAME
+      /* set the supplied hostname */
 #if !defined(__CYGWIN__) && !defined(__MINGW32__)
     if(sethostname(argv[shell_optind], n))
 #else
@@ -46,7 +46,7 @@ int builtin_hostname(int argc, char **argv) {
       return 1;
     }
 #endif
-    
+
     /* on success update internal hostname */
     stralloc_copyb(&sh_hostname, argv[shell_optind], n);
   }
@@ -55,23 +55,21 @@ int builtin_hostname(int argc, char **argv) {
     /* force re-get of hostname by clearing it now */
     if(force)
       stralloc_zero(&sh_hostname);
-    
+
     /* get hostname if it isn't there */
     if(sh_hostname.len == 0)
       shell_gethostname(&sh_hostname);
-    
+
     /* report errors */
     if(sh_hostname.len == 0) {
       builtin_error(argv, "gethostname");
       return 1;
     }
-    
+
     /* finally output the hostname */
     buffer_putsa(fd_out->w, &sh_hostname);
     buffer_putnlflush(fd_out->w);
   }
-  
+
   return 0;
 }
-
-

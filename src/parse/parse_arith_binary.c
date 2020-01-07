@@ -1,17 +1,19 @@
-#include "tree.h"
 #include "parse.h"
 #include "source.h"
+#include "tree.h"
 
 /* parse arithmetic binary expression
  * ----------------------------------------------------------------------- */
-union node *parse_arith_binary(struct parser *p) {
+union node*
+parse_arith_binary(struct parser* p) {
   union node *lnode, *rnode, *newnode;
   char c;
   int ntype = -1;
 
   lnode = parse_arith_value(p);
 
-  if(lnode == NULL) return NULL;
+  if(lnode == NULL)
+    return NULL;
 
   parse_skipspace(p);
 
@@ -21,10 +23,10 @@ union node *parse_arith_binary(struct parser *p) {
   }
 
   switch(c) {
-  case '+': ntype = N_ARITH_ADD; break;
-  case '-': ntype = N_ARITH_SUB; break;
-  case '*': ntype = N_ARITH_MUL; break;
-  case '/': ntype = N_ARITH_DIV; break;
+    case '+': ntype = N_ARITH_ADD; break;
+    case '-': ntype = N_ARITH_SUB; break;
+    case '*': ntype = N_ARITH_MUL; break;
+    case '/': ntype = N_ARITH_DIV; break;
   }
 
   if(ntype == -1) {
@@ -48,4 +50,3 @@ union node *parse_arith_binary(struct parser *p) {
 
   return newnode;
 }
-

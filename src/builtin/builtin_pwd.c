@@ -1,11 +1,12 @@
-#include "shell.h"
-#include "sh.h"
-#include "fd.h"
 #include "builtin.h"
+#include "fd.h"
+#include "sh.h"
+#include "shell.h"
 
 /* print working directory
  * ----------------------------------------------------------------------- */
-int builtin_pwd(int argc, char **argv) {
+int
+builtin_pwd(int argc, char** argv) {
   int c;
   int physical = 0;
 
@@ -17,7 +18,7 @@ int builtin_pwd(int argc, char **argv) {
       default: builtin_invopt(argv); return 1;
     }
   }
-  
+
   /* if the cwd is physical and a physical path was requested then getcwd() */
   if(sh->cwdsym && physical) {
     stralloc sa;
@@ -28,10 +29,9 @@ int builtin_pwd(int argc, char **argv) {
     stralloc_free(&sa);
     return 0;
   }
-  
+
   /* ..otherwise directly print the path from the shell env */
   buffer_putsa(fd_out->w, &sh->cwd);
   buffer_putnlflush(fd_out->w);
   return 0;
 }
-

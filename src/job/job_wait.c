@@ -1,18 +1,19 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <unistd.h>
 #include <termios.h>
+#include <unistd.h>
 #if defined(HAVE_SYS_WAIT_H) && !defined(__MINGW32__)
 #include <sys/wait.h>
 #endif
-#include "job.h"
 #include "fd.h"
+#include "job.h"
 #include "sh.h"
 
 /* waits for a job to terminate
  * ----------------------------------------------------------------------- */
-int job_wait(struct job *job, int pid, int *status, int options) {
+int
+job_wait(struct job* job, int pid, int* status, int options) {
   int ret = 0;
   int st; /* status */
 
@@ -34,7 +35,7 @@ int job_wait(struct job *job, int pid, int *status, int options) {
 
       if(ret == job->pgrp)
         *status = st;
-      
+
       job_status(ret, st);
     }
   } else {
@@ -51,5 +52,3 @@ int job_wait(struct job *job, int pid, int *status, int options) {
 
   return ret;
 }
-
-

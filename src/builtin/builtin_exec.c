@@ -1,16 +1,17 @@
-#include "shell.h"
-#include "sh.h"
-#include "exec.h"
 #include "builtin.h"
+#include "exec.h"
+#include "sh.h"
+#include "shell.h"
 
-/* exec built-in 
- * 
+/* exec built-in
+ *
  * ----------------------------------------------------------------------- */
-int builtin_exec(int argc, char **argv) {
+int
+builtin_exec(int argc, char** argv) {
   int c;
   int nullenv = 0;
   int dash = 0;
-  char *argv0 = NULL;
+  char* argv0 = NULL;
   enum hash_id id;
   union command cmd;
 
@@ -23,11 +24,11 @@ int builtin_exec(int argc, char **argv) {
       default: builtin_invopt(argv); return 1;
     }
   }
-  
+
   /* TODO*/
   (void)dash;
   (void)nullenv;
-  
+
   /* no arguments? return now! */
   if(argv[shell_optind] == NULL)
     return 0;
@@ -43,9 +44,8 @@ int builtin_exec(int argc, char **argv) {
     /* try to exec */
     exec_command(id, cmd, argc - shell_optind, &argv[shell_optind], 1, NULL);
   }
-  
+
   /* at this point the exec stuff failed */
   sh_error(argv[shell_optind]);
   return exec_error();
 }
-

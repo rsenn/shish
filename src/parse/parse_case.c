@@ -1,31 +1,32 @@
-#include "tree.h"
 #include "parse.h"
+#include "tree.h"
 
 /* 3.9.4.3 - parse case statement
- * 
+ *
  *  The format for the case construct is as follows.
- * 
+ *
  *        case word in
  *             [(]pattern1)          compound-list;;
  *             [(]pattern2|pattern3) compound-list;;
  *             ...
  *        esac
- * 
+ *
  *  The ;; is optional for the last compound-list.
  *
  * ----------------------------------------------------------------------- */
-union node *parse_case(struct parser *p) {
-  union node *node;
-  union node **cptr;
-  union node **pptr;
-  union node *word;
+union node*
+parse_case(struct parser* p) {
+  union node* node;
+  union node** cptr;
+  union node** pptr;
+  union node* word;
 
   /* next tok must be a word */
-  if(!parse_expect(p, P_DEFAULT, T_WORD|T_NAME|T_ASSIGN, NULL))
+  if(!parse_expect(p, P_DEFAULT, T_WORD | T_NAME | T_ASSIGN, NULL))
     return NULL;
 
   word = parse_getarg(p);
-  
+
   /* then the keyword 'in' must follow */
   if(!parse_expect(p, P_SKIPNL, T_IN, word))
     return NULL;
@@ -54,16 +55,16 @@ union node *parse_case(struct parser *p) {
       if(!(parse_gettok(p, P_DEFAULT) & T_PIPE))
         break;
     }
-    
+
     p->pushback++;
-    if(!parse_expect(p, P_DEFAULT, T_RP|T_PIPE, node))
+    if(!parse_expect(p, P_DEFAULT, T_RP | T_PIPE, node))
       return NULL;
 
     /* parse the compound list */
     (*cptr)->ncasenode.cmds = parse_compound_list(p);
 
     /* expect esac or ;; */
-    if(!parse_expect(p, P_DEFAULT, T_ESAC|T_ECASE, node))
+    if(!parse_expect(p, P_DEFAULT, T_ESAC | T_ECASE, node))
       return NULL;
 
     if(p->tok & T_ESAC)
@@ -71,7 +72,6 @@ union node *parse_case(struct parser *p) {
 
     tree_next(cptr);
   }
-  
+
   return node;
 }
-

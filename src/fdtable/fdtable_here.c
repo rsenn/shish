@@ -3,27 +3,28 @@
 
 /* drop a here-document to a temporary file
  * ----------------------------------------------------------------------- */
-int fdtable_here(struct fd *fd, int flags) {
+int
+fdtable_here(struct fd* fd, int flags) {
   int e;
   int state;
-  char *x;
+  char* x;
   unsigned long n;
 
   /* wish fd->n become the next expected file descriptor */
   state = fdtable_wish(fd->n, flags);
-  
+
   /* the wish may have (recursively) resolved our fd already */
   if(fd->e == fd->n)
     return FDTABLE_DONE;
-  
+
   /* leave it for now if we're in lazy mode and still pending */
   if(state == FDTABLE_PENDING && (flags & FDTABLE_FD) == FDTABLE_LAZY)
     return state;
-  
+
   /* maybe we can close the destination fd */
   if(state == fd->n)
     close(fd->n);
-  
+
   /* try to create temporary file */
   if((e = fd_tempfile(fd)) < 0)
     return e;
@@ -47,7 +48,7 @@ int fdtable_here(struct fd *fd, int flags) {
 #endif
   lseek(e, fd->rb.p, SEEK_SET);
 
-  /* initialize the read buffer so we can read from 
+  /* initialize the read buffer so we can read from
      the tempfile and destroy the write buffer */
   buffer_init(&fd->rb, read, e, NULL, 0);
   buffer_init(&fd->wb, write, -1, NULL, 0);
@@ -57,6 +58,6 @@ int fdtable_here(struct fd *fd, int flags) {
 
   if(fd->e == fd->n || !(flags & FDTABLE_FORCE))
     return FDTABLE_DONE;
-  
+
   return fd->n;
 }

@@ -5,13 +5,14 @@
 
 #include "str.h"
 
-int   shell_optind = 1;
-char  shell_optopt;
-char *shell_optarg;
-int   shell_optidx = 0;
-int   shell_optofs = 0;
+int shell_optind = 1;
+char shell_optopt;
+char* shell_optarg;
+int shell_optidx = 0;
+int shell_optofs = 0;
 
-int shell_getopt(int argc, char *const argv[], const char *optstring) {
+int
+shell_getopt(int argc, char* const argv[], const char* optstring) {
   unsigned int offset;
 
   /* no-one will get shot for setting optind to 0 in libshish.a :) */
@@ -23,8 +24,7 @@ int shell_getopt(int argc, char *const argv[], const char *optstring) {
     }*/
 again:
   /* are we finished? */
-  if(shell_optind > argc || !argv[shell_optind] ||
-      *argv[shell_optind] != '-' || argv[shell_optind][1] == 0)
+  if(shell_optind > argc || !argv[shell_optind] || *argv[shell_optind] != '-' || argv[shell_optind][1] == 0)
     return -1;
 
   /* ignore a trailing - */

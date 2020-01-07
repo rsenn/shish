@@ -1,15 +1,16 @@
+#include "builtin.h"
 #include "shell.h"
 #include "var.h"
-#include "builtin.h"
 
-/* unset built-in 
- * 
+/* unset built-in
+ *
  * ----------------------------------------------------------------------- */
-int builtin_unset(int argc, char **argv) {
+int
+builtin_unset(int argc, char** argv) {
   int c;
   int fun = 0;
   int var = 0;
-  char **argp;
+  char** argp;
 
   /* check options, -n for unexport, -p for output */
   while((c = shell_getopt(argc, argv, "fv")) > 0) {
@@ -19,11 +20,11 @@ int builtin_unset(int argc, char **argv) {
       default: builtin_invopt(argv); return 1;
     }
   }
-  
+
   /* TODO:*/
   (void)fun;
   (void)var;
-  
+
   argp = &argv[shell_optind];
 
   /* unset each argument */
@@ -32,10 +33,9 @@ int builtin_unset(int argc, char **argv) {
       builtin_errmsg(argv, *argp, "not a valid identifier");
       continue;
     }
-    
+
     var_unset(*argp);
   }
 
   return 0;
 }
-

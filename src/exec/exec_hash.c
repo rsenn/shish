@@ -1,10 +1,11 @@
-#include <unistd.h>
-#include "str.h"
 #include "builtin.h"
 #include "exec.h"
+#include "str.h"
 #include "vartab.h"
+#include <unistd.h>
 
-static inline unsigned long exec_hashstr(const char *s) {
+static inline unsigned long
+exec_hashstr(const char* s) {
   unsigned int hash = 0x7fedcb95; /* some prime number */
   while(*s) hash = (hash * 0x0123456b) ^ *s++;
   return hash;
@@ -12,7 +13,8 @@ static inline unsigned long exec_hashstr(const char *s) {
 
 /* hashed command search routine
  * ----------------------------------------------------------------------- */
-union command exec_hash(char *name, enum hash_id *idptr) {
+union command
+exec_hash(char* name, enum hash_id* idptr) {
   enum hash_id id;
   union command cmd;
 
@@ -28,12 +30,12 @@ union command exec_hash(char *name, enum hash_id *idptr) {
   }
   /* otherwise try to find hashed entry */
   else {
-    struct exechash *entry;
+    struct exechash* entry;
     unsigned long hash;
 
     /* hash the name for possible re-use on exechash_create() */
     hash = exec_hashstr(name);
-  
+
     /* do we have a cache hit? */
     if((entry = exec_search(name, hash))) {
       entry->hits++;
@@ -50,25 +52,25 @@ union command exec_hash(char *name, enum hash_id *idptr) {
         id = H_SBUILTIN;
         cmd.builtin = builtin_search(name, B_SPECIAL);
       }
-      
+
       /* then search for functions */
       if(cmd.builtin == NULL) {
         id = H_FUNCTION;
         cmd.fn = /* FIXME */ NULL;
       }
-      
+
       /* then search for normal builtins */
       if(cmd.fn == NULL) {
         id = H_BUILTIN;
         cmd.builtin = builtin_search(name, B_DEFAULT);
       }
-      
+
       /* then search for external commands */
       if(cmd.builtin == NULL) {
         id = H_PROGRAM;
         cmd.path = exec_path(name);
       }
-      
+
       /* if we found something then create a new cache entry */
       if(cmd.ptr) {
         entry = exec_create(name, hash);
@@ -78,7 +80,7 @@ union command exec_hash(char *name, enum hash_id *idptr) {
       }
     }
   }
-  
+
   /* we have a command, set the id */
   if(cmd.ptr && idptr)
     *idptr = id;

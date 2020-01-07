@@ -1,16 +1,17 @@
-#include <stdlib.h>
 #include "sh.h"
 #include "vartab.h"
+#include <stdlib.h>
 
-/* set the flags if a variable is found on the current level 
+/* set the flags if a variable is found on the current level
  * otherwise create a new one
  * ----------------------------------------------------------------------- */
-int var_chflg(char *v, int flags, int set) {
-  struct var *var;
-  
+int
+var_chflg(char* v, int flags, int set) {
+  struct var* var;
+
   var = var_create(v, 0);
-  
-  /* if we found it on the current level 
+
+  /* if we found it on the current level
      then we just set the flags */
   if(var->table == sh->varstack) {
     if(set)
@@ -30,7 +31,6 @@ int var_chflg(char *v, int flags, int set) {
     var_set(var->sa.s, flags);
     return 1;
   }
-  
+
   return 0;
 }
-

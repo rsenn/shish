@@ -2,22 +2,23 @@
 #include "config.h"
 #endif
 
-#include "shell.h"
-#include "scan.h"
-#include "tree.h"
-#include "prompt.h"
 #include "parse.h"
+#include "prompt.h"
+#include "scan.h"
 #include "sh.h"
+#include "shell.h"
+#include "tree.h"
 
-/* handles prompt escape sequences 
+/* handles prompt escape sequences
  * ----------------------------------------------------------------------- */
-void prompt_escape(const char *s, stralloc *sa) {
+void
+prompt_escape(const char* s, stralloc* sa) {
   for(; *s; s++) {
     if(*s != '\\') {
       stralloc_catc(sa, *s);
       continue;
     }
-  
+
     /* parse octal escape seq */
     if(parse_isdigit(s[1])) {
       unsigned long v;
@@ -46,32 +47,32 @@ void prompt_escape(const char *s, stralloc *sa) {
       /* root (#) or user ($) */
       case '$':
         stralloc_catc(sa, (sh_uid ? '$' : '#'));
-        s++; break;
+        s++;
+        break;
 
       /* shell basename */
       case 's':
         stralloc_cats(sa, sh_name);
-        s++; break;
+        s++;
+        break;
 
       /* shell version */
       case 'v':
         stralloc_cats(sa, PACKAGE_VERSION);
-        s++; break;
+        s++;
+        break;
 
       /* working dir */
       case 'w':
         stralloc_cat(sa, &sh->cwd);
-        s++; break;
+        s++;
+        break;
 
       /* bash shit */
       case '[':
-      case ']':
-        s++; break;
+      case ']': s++; break;
 
-      default:
-        stralloc_catc(sa, *s);
-        break;
+      default: stralloc_catc(sa, *s); break;
     }
   }
 }
-

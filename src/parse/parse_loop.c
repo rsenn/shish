@@ -1,11 +1,12 @@
-#include "tree.h"
 #include "parse.h"
+#include "tree.h"
 
 /* 3.9.4.5
  * 3.9.4.6 - parse while/until loops
  * ----------------------------------------------------------------------- */
-union node *parse_loop(struct parser *p) {
-  union node *node;
+union node*
+parse_loop(struct parser* p) {
+  union node* node;
 
   /* create list node and parse test expression */
   node = tree_newnode((p->tok == T_WHILE) ? N_WHILE : N_UNTIL);
@@ -26,4 +27,3 @@ union node *parse_loop(struct parser *p) {
 
   return node;
 }
-

@@ -1,11 +1,12 @@
-#include "tree.h"
 #include "parse.h"
+#include "tree.h"
 
 /* 3.9.4.4 - parse if conditional
  * ----------------------------------------------------------------------- */
-union node *parse_if(struct parser *p) {
-  union node *node;
-  union node **nptr;
+union node*
+parse_if(struct parser* p) {
+  union node* node;
+  union node** nptr;
 
   tree_init(node, nptr);
 
@@ -38,4 +39,3 @@ union node *parse_if(struct parser *p) {
 
   return node;
 }
-

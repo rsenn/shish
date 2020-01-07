@@ -1,9 +1,10 @@
-#include "shell.h"
 #include "builtin.h"
 #include "fd.h"
+#include "shell.h"
 
 /* ----------------------------------------------------------------------- */
-int builtin_dirname(int argc, char **argv) {
+int
+builtin_dirname(int argc, char** argv) {
   if(!argv[shell_optind]) {
     builtin_errmsg(argv, "too few arguments", NULL);
     return 1;
@@ -13,5 +14,3 @@ int builtin_dirname(int argc, char **argv) {
   buffer_putnlflush(fd_out->w);
   return 0;
 }
-
-

@@ -20,10 +20,10 @@
 			}
 		},
 		{
-			"file": "src/parse/parse_arith_value.c",
+			"file": "src/parse/parse_arith.c",
 			"settings":
 			{
-				"buffer_size": 1311,
+				"buffer_size": 594,
 				"line_ending": "Unix"
 			}
 		},
@@ -42,7 +42,7 @@
 			"file": "shish.sublime-project",
 			"settings":
 			{
-				"buffer_size": 351,
+				"buffer_size": 797,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -184,7 +184,9 @@
 	},
 	"expanded_folders":
 	[
-		"/C/Users/roman/Desktop/shish"
+		"/home/roman/Dokumente/Sources/shish",
+		"/home/roman/Dokumente/Sources/shish/src",
+		"/home/roman/Dokumente/Sources/shish/src/parse"
 	],
 	"file_history":
 	[
@@ -319,7 +321,7 @@
 	],
 	"find":
 	{
-		"height": 23.0
+		"height": 32.0
 	},
 	"find_in_files":
 	{
@@ -350,7 +352,7 @@
 	"groups":
 	[
 		{
-			"selected": 1,
+			"selected": 3,
 			"sheets":
 			[
 				{
@@ -385,11 +387,11 @@
 				},
 				{
 					"buffer": 1,
-					"file": "src/parse/parse_arith_value.c",
+					"file": "src/parse/parse_arith.c",
 					"semi_transient": true,
 					"settings":
 					{
-						"buffer_size": 1311,
+						"buffer_size": 594,
 						"regions":
 						{
 						},
@@ -402,7 +404,7 @@
 						],
 						"settings":
 						{
-							"syntax": "Packages/C11/C11.tmLanguage",
+							"syntax": "Packages/C99/C99.tmLanguage",
 							"tab_size": 2,
 							"translate_tabs_to_spaces": true
 						},
@@ -410,7 +412,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
@@ -440,7 +442,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
@@ -449,28 +451,34 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 351,
+						"buffer_size": 797,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								88,
-								88
+								341,
+								341
 							]
 						],
 						"settings":
 						{
 							"syntax": "Packages/JavaScript/JSON.sublime-syntax",
 							"tab_size": 4,
-							"translate_tabs_to_spaces": true
+							"translate_tabs_to_spaces": true,
+							"typescript_plugin_format_options":
+							{
+								"convertTabsToSpaces": true,
+								"indentSize": 4,
+								"tabSize": 4
+							}
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 0,
 					"type": "text"
 				}
 			]
@@ -478,7 +486,7 @@
 	],
 	"incremental_find":
 	{
-		"height": 22.0
+		"height": 32.0
 	},
 	"input":
 	{
@@ -523,11 +531,11 @@
 	{
 		"height": 0.0
 	},
-	"pinned_build_system": "Make",
+	"pinned_build_system": "clang-format",
 	"project": "shish.sublime-project",
 	"replace":
 	{
-		"height": 42.0
+		"height": 60.0
 	},
 	"save_all_on_build": true,
 	"select_file":

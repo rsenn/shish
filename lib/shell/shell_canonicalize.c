@@ -4,12 +4,11 @@
 /*# include "config.h"*/
 /*#endif*/
 
-#include <sys/stat.h>
-#include <limits.h>
-#include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
-
+#include <limits.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 /*#ifdef __USE_FILE_OFFSET64*/
 /*#undef lstat*/
@@ -21,15 +20,15 @@
 #include <linux/limits.h>
 #endif*/
 
-#include "stralloc.h"
 #include "byte.h"
 #include "str.h"
+#include "stralloc.h"
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
-# ifndef HAVE_LSTAT
-#  define lstat stat
-# endif
+#include "config.h"
+#ifndef HAVE_LSTAT
+#define lstat stat
+#endif
 #endif
 
 /* canonicalizes a <path> and puts it into <sa>
@@ -51,7 +50,8 @@
  * shell_realpath() function which provides similar behaviour and will
  * resolve relative paths to absolute ones.
  * ----------------------------------------------------------------------- */
-int shell_canonicalize(const char *path, stralloc *sa, int symbolic) {
+int
+shell_canonicalize(const char* path, stralloc* sa, int symbolic) {
   unsigned long n;
   struct stat st;
   int ret = 1;
@@ -147,4 +147,3 @@ start:
 
   return ret;
 }
-

@@ -28,7 +28,7 @@ int open_write(const char* filename);
  * Return file handle or -1 on error. */
 int open_rw(const char* filename);
 
-/* create temporary file for reading and writing. 
+/* create temporary file for reading and writing.
  * Return file handle or -1 on error. */
 int open_temp(char* tmpl);
 

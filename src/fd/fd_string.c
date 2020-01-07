@@ -2,10 +2,10 @@
 
 /* prepare fd for reading from a string
  * ----------------------------------------------------------------------- */
-void fd_string(struct fd *fd, const char *s, unsigned long len) {
+void
+fd_string(struct fd* fd, const char* s, unsigned long len) {
   fd->mode = FD_STRING;
   fd->name = "<string>";
 
-  buffer_fromstr(fd->r, (char *)s, len);
+  buffer_fromstr(fd->r, (char*)s, len);
 }
-

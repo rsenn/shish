@@ -1,12 +1,13 @@
-#include "tree.h"
 #include "eval.h"
 #include "sh.h"
+#include "tree.h"
 
 /* evaluate if-conditional (3.9.4.4)
  * ----------------------------------------------------------------------- */
-int eval_if(struct eval *e, struct nif *nif) {
+int
+eval_if(struct eval* e, struct nif* nif) {
   int ret;
-  union node *branch;
+  union node* branch;
 
 elif:
   ret = eval_tree(e, nif->test, E_LIST);
@@ -18,7 +19,7 @@ elif:
       goto elif;
     }
   }
-  
+
   /* take the branch */
   branch = ret ? nif->cmd1 : nif->cmd0;
 
@@ -27,4 +28,3 @@ elif:
 
   return 0;
 }
-

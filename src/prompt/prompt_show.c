@@ -2,15 +2,16 @@
 #include "term.h"
 #include "var.h"
 
-char         prompt_var[4] = "PS0";
-int          prompt_number = 0;
+char prompt_var[4] = "PS0";
+int prompt_number = 0;
 
 /* shows the commandline prompt after expanding if necessary
  * ----------------------------------------------------------------------- */
-void prompt_show(void) {
-  const char *prompt;
+void
+prompt_show(void) {
+  const char* prompt;
   unsigned long plen;
-  
+
   /* increment prompt number if smaller than PS2 */
   if(prompt_number <= 1)
     prompt_number++;
@@ -29,11 +30,10 @@ void prompt_show(void) {
   } else {
     prompt = var_vdefault(prompt_var, ">", &plen);
   }
-  
+
   /* put the prompt to the terminal */
   if(prompt) {
     buffer_put(term_output, prompt, plen);
     buffer_flush(term_output);
   }
 }
-

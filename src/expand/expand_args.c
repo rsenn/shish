@@ -1,12 +1,13 @@
-#include "tree.h"
 #include "expand.h"
+#include "tree.h"
 
 /* expand all arguments of an argument list
  * returns count of argument nodes
  * ----------------------------------------------------------------------- */
-int expand_args(union node *args, union node **nptr, int flags) {
-  union node *arg;
-  union node *n;
+int
+expand_args(union node* args, union node** nptr, int flags) {
+  union node* arg;
+  union node* n;
   int ret = 0;
 
   *nptr = NULL;
@@ -16,10 +17,10 @@ int expand_args(union node *args, union node **nptr, int flags) {
       nptr = &n;
       ret++;
     }
-    
+
     if(n == NULL)
       continue;
-    
+
     if(n->narg.flag & X_GLOB) {
       if((n = expand_glob(nptr, n->narg.flag & ~X_GLOB))) {
         nptr = &n;
@@ -36,8 +37,7 @@ int expand_args(union node *args, union node **nptr, int flags) {
       stralloc_init(&n->narg.stra);
       ret++;
     }
-  }  
-  
+  }
+
   return ret;
 }
-

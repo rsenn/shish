@@ -1,48 +1,46 @@
-#include "sh.h"
-#include "fd.h"
-#include "var.h"
-#include "tree.h"
-#include "eval.h"
-#include "parse.h"
-#include "source.h"
-#include "prompt.h"
 #include "debug.h"
+#include "eval.h"
+#include "fd.h"
 #include "history.h"
+#include "parse.h"
+#include "prompt.h"
+#include "sh.h"
+#include "source.h"
+#include "tree.h"
+#include "var.h"
 
 /* main loop, parse lines into trees and execute them
  * ----------------------------------------------------------------------- */
-void sh_loop(void) {
+void
+sh_loop(void) {
   struct parser p;
-  union node *list;
+  union node* list;
   stralloc cmd;
 
   buffer_puts(fd_err->w, "nargarith.next: ");
   buffer_putulong(fd_err->w, &((struct nargarith*)0)->next);
   buffer_putnlflush(fd_err->w);
 
-
-  /* if we're in interactive mode some 
+  /* if we're in interactive mode some
      additional stuff is to be initialized */
   if(source->mode & SOURCE_IACTIVE)
     history_load();
-  
+
   stralloc_init(&cmd);
 
   parse_init(&p, P_DEFAULT);
-  
+
   while(!(parse_gettok(&p, P_DEFAULT) & T_EOF)) {
     p.pushback++;
     parse_lineno = source->line;
 
     var_setvint("LINENO", parse_lineno, V_DEFAULT);
-    
+
     /* launch the parser to get a complete command */
-    if((list = parse_list(&p)))
-    {
+    if((list = parse_list(&p))) {
       struct eval e;
-      
-      if(source->mode & SOURCE_IACTIVE)
-      {
+
+      if(source->mode & SOURCE_IACTIVE) {
         tree_printlist(list, &cmd, NULL);
         stralloc_catc(&cmd, '\n');
         stralloc_nul(&cmd);
@@ -56,9 +54,9 @@ void sh_loop(void) {
       buffer_putnlflush(fd_err->w);
 #endif /* DEBUG */
       eval_push(&e, E_JCTL);
-      eval_tree(&e, list, E_ROOT|E_LIST);
+      eval_tree(&e, list, E_ROOT | E_LIST);
       sh->exitcode = eval_pop(&e);
-      
+
       stralloc_zero(&cmd);
 
       tree_free(list);
@@ -75,12 +73,11 @@ void sh_loop(void) {
       source_flush();
       p.pushback = 0;
     }
-    
-    if(p.tok & (T_NL|T_SEMI|T_BGND))
+
+    if(p.tok & (T_NL | T_SEMI | T_BGND))
       p.pushback = 0;
 
     /* reset prompt */
     prompt_number = 0;
   }
 }
-

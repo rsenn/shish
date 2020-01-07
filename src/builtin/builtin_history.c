@@ -1,10 +1,11 @@
-#include "shell.h"
 #include "builtin.h"
 #include "history.h"
+#include "shell.h"
 
 /* manage command history
  * ----------------------------------------------------------------------- */
-int builtin_history(int argc, char **argv) {
+int
+builtin_history(int argc, char** argv) {
   int c;
   int clear = 0;
 
@@ -15,7 +16,7 @@ int builtin_history(int argc, char **argv) {
       default: builtin_invopt(argv); return 1;
     }
   }
-  
+
   if(clear)
     history_clear();
   else
@@ -23,4 +24,3 @@ int builtin_history(int argc, char **argv) {
 
   return 0;
 }
-

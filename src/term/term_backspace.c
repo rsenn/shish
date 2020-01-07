@@ -1,7 +1,8 @@
 #include "term.h"
 
 /* ----------------------------------------------------------------------- */
-void term_backspace(void) {
+void
+term_backspace(void) {
   char out[3];
 
   if(!term_pos)
@@ -27,4 +28,3 @@ void term_backspace(void) {
   stralloc_remove(&term_cmdline, term_pos, 1);
   buffer_flush(term_output);
 }
-
