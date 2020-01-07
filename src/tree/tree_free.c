@@ -108,8 +108,9 @@ tree_free(union node* node) {
           tree_free(node->nargarith.tree);
         break;
 
-      case N_ARITH_NUM: break;
-      case N_ARITH_VAR: shell_free(node->narithvar.var); break;
+      case N_ARITH_NUM:
+        break;
+        //    case N_ARITH_VAR: shell_free(node->narithvar.var); break;
 
       case N_ARITH_OR:
       case N_ARITH_AND:

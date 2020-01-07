@@ -36,7 +36,7 @@ enum nod_id {
   N_ARGARITH,
 
   N_ARITH_NUM,
-  N_ARITH_VAR,
+ // N_ARITH_VAR,
   N_ARITH_PAREN,
   // binary
   N_ARITH_OR,

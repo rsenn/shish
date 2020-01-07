@@ -340,11 +340,11 @@ tree_print(union node* node, stralloc* sa) {
       stralloc_catlong(sa, node->narithnum.num);
       break;
     }
-
-    case N_ARITH_VAR: {
-      stralloc_cats(sa, node->narithvar.var);
-      break;
-    }
+      /*
+          case N_ARITH_VAR: {
+            stralloc_cats(sa, node->narithvar.var);
+            break;
+          }*/
 
     case N_ARITH_ADD:
     case N_ARITH_SUB:

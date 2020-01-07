@@ -194,9 +194,11 @@ debug_node(union node* node, int depth) {
       debug_sublist("tree", node->nargarith.tree, depth);
       break;
 
-    case N_ARITH_NUM: debug_ulong(0, node->narithnum.num, depth); break;
+    case N_ARITH_NUM:
+      debug_ulong(0, node->narithnum.num, depth);
+      break;
 
-    case N_ARITH_VAR: debug_str("var", node->narithvar.var, depth); break;
+      //    case N_ARITH_VAR: debug_str("var", node->narithvar.var, depth); break;
 
     case N_ARITH_ADD:
     case N_ARITH_SUB:
