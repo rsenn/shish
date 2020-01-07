@@ -64,7 +64,7 @@ struct narg;
 union node* expand_arg(struct narg* narg, union node** nptr, int flags);
 int expand_args(union node* args, union node** nptr, int flags);
 void expand_argv(union node* args, char** argv);
-union node* expand_arith(struct nargarith* expr, union node** nptr, int flags);
+union node* expand_arith(union node* arith, union node** nptr, int flags);
 union node* expand_cat(const char* b, unsigned int len, union node** nptr, int flags);
 void expand_catsa(union node* node, stralloc* sa, int flags);
 union node* expand_command(struct nargcmd* cmd, union node** nptr, int flags);

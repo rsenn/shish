@@ -13,6 +13,7 @@ expand_args(union node* args, union node** nptr, int flags) {
   *nptr = NULL;
 
   for(arg = args; arg; arg = arg->list.next) {
+
     if((n = expand_arg(&arg->narg, nptr, flags))) {
       nptr = &n;
       ret++;
@@ -33,7 +34,8 @@ expand_args(union node* args, union node** nptr, int flags) {
 
     if(arg->list.next) {
       n->list.next = tree_newnode(N_ARG);
-      n = n->list.next;
+      nptr = &n->list.next;
+      n = *nptr;
       stralloc_init(&n->narg.stra);
       ret++;
     }

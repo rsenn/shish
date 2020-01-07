@@ -156,8 +156,9 @@ debug_node(union node* node, int depth) {
       debug_stralloc("stra", &node->narg.stra, depth);
       debug_space(depth, 1);
       debug_sublist("list", node->narg.list, depth);
-      debug_space(depth, 1);
-      debug_sublist("next", node->narg.next, depth);
+      /*      debug_space(depth, 1);
+            debug_sublist("next", node->narg.next, depth);
+      */
       break;
 
     case N_REDIR:

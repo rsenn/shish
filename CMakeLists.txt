@@ -150,7 +150,8 @@ set_target_properties(libshish PROPERTIES
 
 file(GLOB SOURCES src/*.h src/*/*.c)
 set(MATH_LIBRARY m)
+set(ELECTRICFENCE_LIBRARY efence)
 add_executable(shish ${SOURCES})
-target_link_libraries(shish libshish ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY})
+target_link_libraries(shish libshish ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 
 install(TARGETS shish DESTINATION bin)
