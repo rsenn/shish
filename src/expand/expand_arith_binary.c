@@ -1,11 +1,12 @@
-#include "int64.h"
 #include "tree.h"
+#include "uint64.h"
+#include <math.h>
 
 /* expand a binary expression
  * ----------------------------------------------------------------------- */
 int
 expand_arith_binary(struct narithbinary* expr, int64* r) {
-  int64 left, right;
+  int64 left = -1, right = -1;
   if(expand_arith_expr(expr->left, &left))
     return 1;
   if(expand_arith_expr(expr->right, &right))
@@ -26,12 +27,13 @@ expand_arith_binary(struct narithbinary* expr, int64* r) {
     case N_ARITH_LE: *r = left <= right; break;
     case N_ARITH_LSHIFT: *r = left << right; break;
     case N_ARITH_RSHIFT: *r = left >> right; break;
-    case N_ARITH_ADD: b* r = left + right; break;
+    case N_ARITH_ADD: *r = left + right; break;
     case N_ARITH_SUB: *r = left - right; break;
     case N_ARITH_MUL: *r = left * right; break;
     case N_ARITH_DIV: *r = left / right; break;
     case N_ARITH_REM: *r = left % right; break;
     case N_ARITH_EXP: *r = powl(left, right); break;
+    default: __asm__("int $3"); break;
   }
 
   return 0;

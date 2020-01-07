@@ -3,6 +3,7 @@
 #include "scan.h"
 #include "source.h"
 #include "tree.h"
+#include "uint64.h"
 
 /* parse arithmetic value
  * ----------------------------------------------------------------------- */
@@ -20,7 +21,7 @@ parse_arith_value(struct parser* p) {
   if(parse_isdigit(c)) {
     char x[FMT_LONG + 1];
     unsigned int n = 0;
-    long long num;
+    int64 num;
 
     do {
       x[n++] = c;

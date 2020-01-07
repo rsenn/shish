@@ -72,7 +72,7 @@ enum nod_id {
    rdir members in common, because they all can be redirected and put in
    background */
 struct ncmd {
-  int id;
+  enum nod_id id;
   union node* next;
   int bgnd;         /* run in background */
   union node* rdir; /* redirections */
@@ -83,7 +83,7 @@ struct ncmd {
 /* 3.9.2 - pipeline
  * ----------------------------------------------------------------------- */
 struct npipe {
-  int id;
+  enum nod_id id;
   union node* next;
   int bgnd;
   union node* cmds;
@@ -95,7 +95,7 @@ struct npipe {
 
 /* AND-OR list */
 struct nandor {
-  int id;
+  enum nod_id id;
   union node* next;
   int bgnd;
   union node* cmd0;
@@ -104,7 +104,7 @@ struct nandor {
 
 /* list */
 struct nlist {
-  int id;
+  enum nod_id id;
   union node* next;
   int bgnd;
   union node* cmds;
@@ -116,7 +116,7 @@ struct nlist {
 /* 3.9.4.1 - grouping compound
  * ----------------------------------------------------------------------- */
 struct ngrp {
-  int id;
+  enum nod_id id;
   union node* next;
   int bgnd;         /* run in background */
   union node* rdir; /* redirections */
@@ -126,7 +126,7 @@ struct ngrp {
 /* 3.9.4.2 - for loop
  * ----------------------------------------------------------------------- */
 struct nfor {
-  int id;
+  enum nod_id id;
   union node* next;
   int bgnd;         /* run in background */
   union node* rdir; /* redirections */
@@ -138,7 +138,7 @@ struct nfor {
 /* 3.9.4.3 - case conditional
  * ----------------------------------------------------------------------- */
 struct ncase {
-  int id;
+  enum nod_id id;
   union node* next;
   int bgnd;         /* run in background */
   union node* rdir; /* redirections */
@@ -147,7 +147,7 @@ struct ncase {
 };
 
 struct ncasenode {
-  int id;
+  enum nod_id id;
   union node* next;
   union node* pats;
   union node* cmds;
@@ -156,7 +156,7 @@ struct ncasenode {
 /* 3.9.4.4 - if conditional
  * ----------------------------------------------------------------------- */
 struct nif {
-  int id;
+  enum nod_id id;
   union node* next;
   int bgnd;         /* run in background */
   union node* rdir; /* redirections */
@@ -169,7 +169,7 @@ struct nif {
  * 3.9.4.6 until loop
  * ----------------------------------------------------------------------- */
 struct nloop {
-  int id;
+  enum nod_id id;
   union node* next;
   int bgnd;         /* run in background */
   union node* rdir; /* redirections */
@@ -180,7 +180,7 @@ struct nloop {
 /* 3.9.5 function definition
  * ----------------------------------------------------------------------- */
 struct nfunc {
-  int id;
+  enum nod_id id;
   union node* next;
   union node* cmds;
   char* name;
@@ -200,7 +200,7 @@ struct list {
  *
  * ----------------------------------------------------------------------- */
 struct narg {
-  int id;
+  enum nod_id id;
   union node* next;
   union node* list;
   int flag;
@@ -209,7 +209,7 @@ struct narg {
 
 /* [fd]<operator><file> */
 struct nredir {
-  int id;
+  enum nod_id id;
   union node* next;
   union node* list; /* can be file, fd, delim, here-doc-data */
   int flag;
@@ -219,7 +219,7 @@ struct nredir {
 };
 
 struct nassign {
-  int id;
+  enum nod_id id;
   union node* next;
   union node* list;
   stralloc stra;
@@ -228,14 +228,14 @@ struct nassign {
 /* argument (word) subnodes
  * ----------------------------------------------------------------------- */
 struct nargstr {
-  int id;
+  enum nod_id id;
   union node* next;
   int flag;
   stralloc stra;
 };
 
 struct nargparam {
-  int id;
+  enum nod_id id;
   union node* next;
   int flag;
   char* name;
@@ -244,39 +244,39 @@ struct nargparam {
 };
 
 struct nargcmd {
-  int id;
+  enum nod_id id;
   union node* next;
   int flag;
   union node* list;
 };
 
 struct nargarith {
-  int id;
+  enum nod_id id;
   union node* next;
   union node* tree;
   int flag;
 };
 
 struct narithnum {
-  int id;
+  enum nod_id id;
   union node* next;
   int64 num;
 };
 
 struct narithvar {
-  int id;
+  enum nod_id id;
   union node* next;
   const char* var;
 };
 
 struct narithunary {
-  int id;
+  enum nod_id id;
   union node* next;
   union node* node;
 };
 
 struct narithbinary {
-  int id;
+  enum nod_id id;
   union node* next;
   union node* left;
   union node* right;
