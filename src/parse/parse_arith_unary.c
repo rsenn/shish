@@ -18,7 +18,7 @@ parse_arith_unary(struct parser* p) {
     case '~': n = N_ARITH_BNOT; break;
     case '-': n = N_ARITH_UNARYMINUS; break;
     case '+': n = N_ARITH_UNARYPLUS; break;
-    default: return NULL;
+    default: return parse_arith_value(p);
   }
 
   source_skip();

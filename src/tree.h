@@ -38,6 +38,7 @@ enum nod_id {
   N_ARITH_NUM,
   N_ARITH_VAR,
   N_ARITH_PAREN,
+  // binary
   N_ARITH_OR,
   N_ARITH_AND,
   N_ARITH_BOR,
@@ -57,6 +58,7 @@ enum nod_id {
   N_ARITH_DIV,
   N_ARITH_REM,
   N_ARITH_EXP,
+  // unary
   N_ARITH_UNARYMINUS,
   N_ARITH_UNARYPLUS,
   N_ARITH_NOT,
@@ -251,8 +253,8 @@ struct nargcmd {
 struct nargarith {
   int id;
   union node* next;
-  int flag;
   union node* tree;
+  int flag;
 };
 
 struct narithnum {

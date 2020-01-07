@@ -33,6 +33,6 @@ debug_redir(const char* msg, int flags, int depth) {
 
   buffer_putm(fd_err->w, COLOR_YELLOW, msg, COLOR_CYAN, DEBUG_EQU, COLOR_GREEN, flagstr, COLOR_NONE, NULL);
 
-  debug_space(depth);
+  debug_space(depth, 1);
 }
 #endif /* DEBUG */

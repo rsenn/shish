@@ -15,12 +15,16 @@ parse_arith(struct parser* p) {
 
   tree = parse_arith_expr(&subp);
 
-  /* MUST be terminated with right parenthesis or backquote */
-  if(!parse_expect(&subp, P_DEFAULT, T_RP, tree) || !parse_expect(&subp, P_DEFAULT, T_RP, tree))
-    return -1;
+  if(tree) {
 
-  parse_newnode(p, N_ARGARITH);
-  p->node->nargarith.tree = tree;
+    /* MUST be terminated with right parenthesis or backquote */
+    if(!parse_expect(&subp, P_DEFAULT, T_RP, tree) || !parse_expect(&subp, P_DEFAULT, T_RP, tree))
+      return -1;
 
-  return 0;
+    parse_newnode(p, N_ARGARITH);
+    p->node->nargarith.tree = tree;
+
+    return 0;
+  }
+  return -1;
 }

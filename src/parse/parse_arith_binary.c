@@ -5,12 +5,12 @@
 /* parse arithmetic binary expression
  * ----------------------------------------------------------------------- */
 union node*
-parse_arith_binary(struct parser* p) {
+parse_arith_binary(struct parser* p, int mult) {
   union node *lnode, *rnode, *newnode;
   char c;
   int ntype = -1;
 
-  lnode = parse_arith_value(p);
+  lnode = mult ? parse_arith_unary(p) : parse_arith_binary(p, 1);
 
   if(lnode == NULL)
     return NULL;
@@ -22,22 +22,25 @@ parse_arith_binary(struct parser* p) {
     return NULL;
   }
 
-  switch(c) {
-    case '+': ntype = N_ARITH_ADD; break;
-    case '-': ntype = N_ARITH_SUB; break;
-    case '*': ntype = N_ARITH_MUL; break;
-    case '/': ntype = N_ARITH_DIV; break;
+  if(mult) {
+    switch(c) {
+      case '*': ntype = N_ARITH_MUL; break;
+      case '/': ntype = N_ARITH_DIV; break;
+    }
+  } else {
+    switch(c) {
+      case '+': ntype = N_ARITH_ADD; break;
+      case '-': ntype = N_ARITH_SUB; break;
+    }
   }
 
-  if(ntype == -1) {
-    tree_free(lnode);
-    return NULL;
-  }
+  if(ntype == -1)
+    return lnode;
 
   source_skip();
   parse_skipspace(p);
 
-  rnode = parse_arith_value(p);
+  rnode = mult ? parse_arith_unary(p) : parse_arith_binary(p, 1);
 
   if(rnode == NULL) {
     tree_free(lnode);

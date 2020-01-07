@@ -23,9 +23,7 @@ expand_arg(struct narg* narg, union node** nptr, int flags) {
     /* expand argument parts */
     switch(subarg->id) {
       /* exprmetic substitution */
-      case N_ARGARITH:
-        // n = expand_expr(&subarg->nargarith, nptr, lflags);
-        break;
+      case N_ARGARITH: n = expand_expr(&subarg->nargarith, nptr, lflags); break;
 
       /* parameter substitution */
       case N_ARGPARAM: n = expand_param(&subarg->nargparam, nptr, lflags); break;

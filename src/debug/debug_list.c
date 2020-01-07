@@ -17,7 +17,7 @@ debug_list(union node* n, int depth) {
     if(node->list.next) {
       buffer_puts(fd_err->w, COLOR_CYAN DEBUG_END);
       buffer_puts(fd_err->w, DEBUG_SEP);
-      debug_space(-depth);
+      debug_space(-depth, 1);
       buffer_puts(fd_err->w, DEBUG_BEGIN COLOR_NONE);
     }
   }
