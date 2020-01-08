@@ -17,8 +17,10 @@ parse_arith(struct parser* p) {
   tree = parse_arith_expr(&subp);
 
   if(tree) {
+#ifdef DEBUG
     debug_node(tree);
-
+#endif
+    
     buffer_flush(fd_err->w);
 
     /* MUST be terminated with right parenthesis or backquote */
