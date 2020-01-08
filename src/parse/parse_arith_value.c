@@ -39,17 +39,17 @@ parse_arith_value(struct parser* p) {
 
       digit = !!(parse_chartable[(int)(unsigned char)c] & cclass);
 
-      if(!digit && cclass == C_DIGIT && n == 1) {
+      if(!digit && cclass == C_DIGIT && n == 1 && x[0] == '0') {
 
         switch(c) {
           case 'x':
             scan_fn = &scan_xlonglong;
             cclass = C_HEX;
             break;
-          case 'b':
+        /*  case 'b':
             scan_fn = 0;
             cclass = C_BINARY;
-            break;
+            break;*/
           case 'o':
             scan_fn = &scan_octal;
             cclass = C_OCTAL;
@@ -57,7 +57,7 @@ parse_arith_value(struct parser* p) {
           default: buffer_putsflush(fd_err->w, "ERROR: expecting x|b|o\n"); return NULL;
         }
 
-        source_skip();
+        digit = source_next(&c) > 0;
         n = 0;
       }
 

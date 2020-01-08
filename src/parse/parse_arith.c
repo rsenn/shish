@@ -17,6 +17,7 @@ parse_arith(struct parser* p) {
   tree = parse_arith_expr(&subp);
 
   if(tree) {
+    debug_node(tree);
 
     buffer_flush(fd_err->w);
 

@@ -12,38 +12,26 @@
 	"buffers":
 	[
 		{
-			"file": "src/parse/parse_arith_binary.c",
+			"file": "lib/scan/scan_xlonglong.c",
 			"settings":
 			{
-				"buffer_size": 970,
+				"buffer_size": 272,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "src/parse/parse_arith.c",
+			"file": "src/parse/parse_arith_value.c",
 			"settings":
 			{
-				"buffer_size": 594,
+				"buffer_size": 1765,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"contents": "Package Control Messages\n========================\n\nOutline\n-------\n\n  Thank you for installing the Outline package.\n  \n  To start, bring up the Command Palette with `Ctrl + Shift + P`, and select `Browse Mode: Outline (Left)` or another preferred layout.\n  \n  Please visit https://github.com/warmdev/SublimeOutline for more details.\n",
+			"file": "src/parse/parse_error.c",
 			"settings":
 			{
-				"buffer_size": 333,
-				"line_ending": "Unix",
-				"name": "Package Control Messages",
-				"read_only": true,
-				"scratch": true
-			}
-		},
-		{
-			"file": "shish.sublime-project",
-			"settings":
-			{
-				"buffer_size": 797,
-				"encoding": "UTF-8",
+				"buffer_size": 516,
 				"line_ending": "Unix"
 			}
 		}
@@ -100,6 +88,14 @@
 		"selected_items":
 		[
 			[
+				"install p",
+				"Package Control: Install Package"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
 				"Package Control: adv",
 				"Package Control: Advanced Install Package"
 			],
@@ -129,10 +125,6 @@
 			],
 			[
 				"Package Control: insta",
-				"Package Control: Advanced Install Package"
-			],
-			[
-				"install",
 				"Package Control: Advanced Install Package"
 			],
 			[
@@ -186,10 +178,104 @@
 	[
 		"/home/roman/Dokumente/Sources/shish",
 		"/home/roman/Dokumente/Sources/shish/src",
-		"/home/roman/Dokumente/Sources/shish/src/parse"
+		"/home/roman/Dokumente/Sources/shish/src/debug",
+		"/home/roman/Dokumente/Sources/shish/src/expand",
+		"/home/roman/Dokumente/Sources/shish/src/parse",
+		"/home/roman/Dokumente/Sources/shish/src/tree"
 	],
 	"file_history":
 	[
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_appendsa.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_tosa.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_args.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_arg.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand.h",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_case.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_escape.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_arith_unary.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_arith_expr.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_value.c",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_cd.c",
+		"/home/roman/Dokumente/Sources/shish/lib/scan/scan_longlong.c",
+		"/home/roman/Dokumente/Sources/shish/x86_64-linux-diet.log",
+		"/home/roman/Dokumente/Sources/shish/lib/scan.h",
+		"/home/roman/Dokumente/Sources/shish/lib/scan/scan_8longn.c",
+		"/home/roman/Dokumente/Sources/shish/lib/scan/scan_ulonglong.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_arith.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_cat.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse.h",
+		"/home/roman/Dokumente/Sources/shish/src/tree.h",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_chartable.c",
+		"/home/roman/Dokumente/Sources/shish/lib/scan/scan_octal.c",
+		"/home/roman/Dokumente/Sources/shish/lib/scan/scan_8long.c",
+		"/home/roman/Dokumente/Sources/shish/lib/uint64.h",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_newnode.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_glob.c",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_simple_command.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_vars.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_command.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_catsa.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_param.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_copysa.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_compound_list.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_case.c",
+		"/home/roman/Dokumente/Sources/shish/src/prompt/prompt_expand.c",
+		"/home/roman/Dokumente/Sources/shish/src/redir/redir_source.c",
+		"/home/roman/Dokumente/Sources/shish/src/redir/redir_eval.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_argv.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_arith_binary.c",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_command.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/Makefile.in",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_for.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_unescape.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_word.c",
+		"/home/roman/Dokumente/Sources/shish/lib/fmt.h",
+		"/home/roman/Dokumente/Sources/shish/lib/uint32/uint32_random.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_newnode.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_and_or.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_unquoted.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_begin.c",
+		"/home/roman/Dokumente/Sources/shish/CMakeLists.txt",
+		"/home/roman/Dokumente/Sources/shish/src/sh/sh_loop.c",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_table.c",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_error.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_expr.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_node.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug.h",
+		"/home/roman/Dokumente/Sources/shish/src/tree/tree_free.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_binary.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_space.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_end.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_param.c",
+		"/home/roman/Dokumente/Sources/shish/src/tree/tree_print.c",
+		"/home/roman/Dokumente/Sources/shish/lib/open/open_temp.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_peekn.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_subst.c",
+		"/home/roman/Dokumente/Sources/shish/lib/shell/shell_gethome.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_subst.c",
+		"/home/roman/Dokumente/Sources/shish/src/redir/redir_parse.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_peek.c",
+		"/home/roman/Dokumente/Sources/shish/src/expr/expr_tokens.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_here.c",
+		"/home/roman/Dokumente/Sources/shish/src/tree/tree_newnode.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_string.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_paren.c",
+		"/home/roman/Dokumente/Sources/shish/lib/fmt/fmt_longlong.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_unary.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_getarg.c",
+		"/home/roman/Sources/shish/src/expand/expand_arith_binary.c",
+		"/home/roman/Dokumente/Sources/shish/Grammar.ebnf",
+		"/home/roman/Dokumente/Sources/shish/expressions.ebnf",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_char.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_ptr.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_redir.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_sublist.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_unquoted.c",
+		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_fromsa.c",
+		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_putsa.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_list.c",
+		"/home/roman/Dokumente/Sources/shish/shish.sublime-project",
 		"/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/CTags/Default.sublime-keymap",
 		"/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/CTags/CTags.sublime-settings",
 		"/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/User/CTags.sublime-settings",
@@ -226,115 +312,158 @@
 		"/C/Users/roman/Desktop/dirlist/access.c",
 		"/C/Users/roman/Desktop/dirlist/lib/uint64.h",
 		"/C/Users/roman/Desktop/dirlist/lib/binfmt.h",
-		"/C/Users/roman/Desktop/dirlist/lib/windoze.h",
-		"/C/Users/roman/Desktop/unix.h",
-		"/C/Users/roman/Desktop/dirlist/lib/typedefs.h",
-		"/C/Users/roman/Desktop/dirlist/lib/socket.h",
-		"/C/Users/roman/Desktop/dirlist/lib/socket_internal.h",
-		"/B/PortableApps/SublimeText3Portable/App/SublimeText64/Data/Packages/User/CPrettify/user.cfg",
-		"/B/PortableApps/SublimeText3Portable/App/SublimeText64/Data/Packages/User/CPrettify.sublime-settings",
-		"/B/PortableApps/SublimeText3Portable/App/SublimeText64/Data/Packages/User/Package Control.sublime-settings",
-		"/B/PortableApps/SublimeText3Portable/App/SublimeText64/Data/Packages/Package Control/Package Control.sublime-settings",
-		"/C/Users/roman/Desktop/dirlist/lib/path/path_num_sa.c",
-		"/B/PortableApps/SublimeText3Portable/App/SublimeText64/Data/Packages/CTags/CTags.sublime-settings",
-		"/B/PortableApps/SublimeText3Portable/App/SublimeText64/Data/Packages/User/CTags.sublime-settings",
-		"/B/PortableApps/SublimeText3Portable/App/SublimeText64/Data/Packages/CPrettify/CPrettify.sublime-settings",
-		"/D/Qt/qt-5.10.1-static-ltcg-msvc2017-x86_64/mkspecs/win32-msvc/qmake.conf",
-		"/B/PortableApps/SublimeText3Portable/App/SublimeText64/Data/Packages/User/Default (Windows).sublime-keymap",
-		"/B/PortableApps/SublimeText3Portable/App/SublimeText64/Data/Packages/Schemr/Default (Windows).sublime-keymap",
-		"/D/Sources/rsenn/dirlist/scripts/gen-a-deps.sh",
-		"/D/Sources/rsenn/dirlist/rdir-test.c",
-		"/D/Sources/rsenn/dirlist/lib/rdir.h",
-		"/D/Sources/rsenn/dirlist/lib/rdir/rdir_close.c",
-		"/D/Sources/rsenn/dirlist/lib/rdir/rdir_open.c",
-		"/D/Sources/rsenn/dirlist/lib/rdir/rdir_read.c",
-		"/D/Sources/rsenn/dirlist/lib/dir/dir_name.c",
-		"/D/Sources/rsenn/dirlist/lib/dir/dir_type.c",
-		"/D/Sources/rsenn/dirlist/dirlist.sublime-project",
-		"/D/Sources/rsenn/dirlist/lib/utf8.c",
-		"/D/Sources/rsenn/dirlist/lib/pe.h",
-		"/D/Sources/rsenn/dirlist/elflist.c",
-		"/D/Sources/rsenn/dirlist/elf64list.c",
-		"/D/Sources/rsenn/dirlist/pelist.c",
-		"/D/Sources/rsenn/dirlist/pathtool.c",
-		"/B/Programs/polipo/config",
-		"/D/Sources/rsenn/dirlist/mediathek-list.c",
-		"/D/Sources/rsenn/dirlist/count-depth.c",
-		"/D/Sources/rsenn/dirlist/decode-ls-lR.c",
-		"/home/roman/.config/sublime-text-3/Packages/Schemr/Default (Linux).sublime-keymap",
-		"/home/roman/.config/sublime-text-3/Packages/User/Default (Linux).sublime-keymap",
-		"/home/roman/.config/sublime-text-3/Packages/User/Package Control.sublime-settings",
-		"/home/roman/.config/sublime-text-3/Packages/Package Control/Package Control.sublime-settings",
-		"/home/roman/Sources/dirlist/lib/utf8.h",
-		"/home/roman/Sources/dirlist/lib/dir/dir_name.c",
-		"/home/roman/Sources/dirlist/lib/dir/dir_read.c",
-		"/home/roman/Sources/dirlist/lib/dir_internal.h",
-		"/home/roman/Sources/dirlist/lib/dir/dir_close.c",
-		"/home/roman/Sources/dirlist/lib/dir.h",
-		"/home/roman/Sources/dirlist/lib/dir/dir_open.c",
-		"/C/Users/roman/Documents/dirlist/list-r.c",
-		"/C/Users/roman/Documents/dirlist/lib/utf8.c",
-		"/C/Users/roman/Documents/dirlist/lib/utf8.h",
-		"/C/Users/roman/Documents/dirlist/lib/dir.h",
-		"/C/Users/roman/Documents/dirlist/lib/dir_internal.h",
-		"/C/Users/roman/Documents/dirlist/lib/dir/dir_read.c",
-		"/C/Users/roman/Documents/dirlist/lib/array/array_allocate.c",
-		"/C/Users/roman/Documents/dirlist/lib/array.h",
-		"/C/Users/roman/Documents/dirlist/lib/array/array_bytes.c",
-		"/C/Users/roman/Documents/dirlist/lib/array/array_length.c",
-		"/C/Users/roman/Documents/dirlist/lib/array/array_start.c",
-		"/C/Users/roman/Documents/dirlist/lib/fnmatch.c",
-		"/C/Users/roman/Documents/dirlist/lib/fnmatch.h",
-		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_pushm_internal.c",
-		"/C/Users/roman/Documents/dirlist/compiler-wrapper.c",
-		"/C/Users/roman/Documents/dirlist/lib/buffer/buffer_putc.c",
-		"/C/Users/roman/Documents/dirlist/lib/array/array_catb.c",
-		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_cat.c",
-		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_push_sa.c",
-		"/C/Users/roman/Documents/dirlist/mediathek-parser.c",
-		"/C/Users/roman/Documents/dirlist/dirlist.sublime-project",
-		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_push.c",
-		"/C/Users/roman/Documents/dirlist/lib/strlist_copy.c",
-		"/I/PortableApps/SublimeTextPortable/App/64-bit/Data/Packages/CodeFormatter/Default (Windows).sublime-keymap",
-		"/I/PortableApps/SublimeTextPortable/App/64-bit/Data/Packages/User/Default (Windows).sublime-keymap",
-		"/I/PortableApps/SublimeTextPortable/App/64-bit/Data/Packages/Clang Format/Default (Windows).sublime-keymap",
-		"/I/PortableApps/SublimeTextPortable/App/64-bit/Data/Packages/User/SchemrFavorites.sublime-settings",
-		"/C/Users/roman/Documents/dirlist/Makefile",
-		"/C/Users/roman/Documents/dirlist/lib/stralloc.h",
-		"/C/Users/roman/Documents/dirlist/lib/stralloc/stralloc_cats.c",
-		"/C/Users/roman/Documents/dirlist/lib/stralloc/stralloc_append_sa.c",
-		"/C/Users/roman/Documents/dirlist/mediathek-parser.cpp",
-		"/C/Users/roman/Documents/dirlist/lib/array/array_cat0.c",
-		"/C/Users/roman/Documents/dirlist/lib/array/array_cats.c",
-		"/C/Users/roman/Documents/dirlist/dirlist.sublime-build",
-		"/C/Users/roman/Documents/dirlist/lib/array/array_reset.c",
-		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_dump.c",
-		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_pushb.c",
-		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_at.c",
-		"/C/Users/roman/Documents/dirlist/lib/strlist.h",
-		"/C/Users/roman/Documents/dirlist/lib/stralloc/stralloc_init.c",
-		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_pushsa.c",
-		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_index_of.c",
-		"/C/Users/roman/Documents/dirlist/lib/strlist/strlist_count.c",
-		"/C/Users/roman/Documents/dirlist/lib/strlist_append.c",
-		"/C/Users/roman/Documents/dirlist/lib/buffer/buffer_dump.c"
+		"/C/Users/roman/Desktop/dirlist/lib/windoze.h"
 	],
 	"find":
 	{
-		"height": 32.0
+		"height": 42.0
 	},
 	"find_in_files":
 	{
-		"height": 0.0,
+		"height": 137.0,
 		"where_history":
 		[
+			"/home/roman/Dokumente/Sources/shish/src,/home/roman/Dokumente/Sources/shish/lib,*.c,*.h",
+			"/home/roman/Dokumente/Sources/shish/src,/home/roman/Dokumente/Sources/shish/lib,*.c",
+			"/home/roman/Dokumente/Sources/shish/src,/home/roman/Dokumente/Sources/shish/lib,*.c,*.h",
+			"*.c,*.h",
+			"*.c",
+			""
 		]
 	},
 	"find_state":
 	{
-		"case_sensitive": true,
+		"case_sensitive": false,
 		"find_history":
 		[
+			"errno",
+			"isdigit",
+			"parse_isdigit",
+			"expand_",
+			"tree_newnode",
+			"expand_newnode",
+			"expand.*node",
+			"newnode",
+			"tree_newnode.*ARG",
+			"tree_newnode",
+			"narg ",
+			"expand_glob",
+			"expand_args\\(",
+			"expand_args(",
+			"narg ",
+			"N_ARG",
+			"expand_tosa",
+			"subarg->",
+			"subarg.*->",
+			"x.ptr",
+			"nptr",
+			"tree_init",
+			"expand_param",
+			"nptr",
+			"x\\.flags",
+			"x\\.",
+			"expand_gl",
+			"flags",
+			"glob",
+			"tmpx",
+			"ex->",
+			" flags",
+			"catsa",
+			", nptr, flags)",
+			", union node** nptr, int flags",
+			"&ex",
+			", lflags)",
+			", nptr)",
+			"expand_cat",
+			"expand_args",
+			"expand_cat(",
+			"expand",
+			"write",
+			"flags",
+			"nptr",
+			"flags",
+			"expand_cat",
+			"expand_vars",
+			"expand_",
+			", union node** nptr, int flags",
+			"expand_param",
+			"n",
+			"expand_",
+			"printlist",
+			"add_de",
+			"BUILTINS_DISABLED",
+			"ERROR",
+			"toupp",
+			"DISA",
+			"replace",
+			"add_exe",
+			"tree_print\\(",
+			"tree_print",
+			"fmt_.*short",
+			"ushort",
+			"uint32_random",
+			"PARAM",
+			"S_ESCAPE",
+			"S_",
+			"DEBUG_BEG",
+			"DEBUG_END",
+			"parse_param",
+			"ARGARITH",
+			"pre",
+			"ARGARITH",
+			"\"\\|",
+			"\"|",
+			",n \\+= .*;",
+			", n \\+= .*;",
+			", n += .*;",
+			"stralloc_cats(&flags",
+			"stralloc_cats(&flags,",
+			"stralloc_cats(.flags,",
+			"\":\"",
+			"precedence",
+			"ARITH_AND",
+			"ARITH_AND\"",
+			"ARITH_AND",
+			"parse_arith",
+			"parse_arith\\(",
+			"'<'",
+			"redir_parse",
+			"N_REDIR",
+			"P_NO",
+			"P_NOREDIR",
+			"P_NO",
+			"P_NOREDIR",
+			"P_NOREDIR\n",
+			"P_NO",
+			"P_NORED",
+			"unexpe",
+			"ARITH_VAR",
+			"// ",
+			"ARITH_VAR",
+			"p->node =",
+			"p->node",
+			"arithvar",
+			"BNOT",
+			"narith",
+			"expand_args\\(",
+			"tree_newnode",
+			"narg ",
+			"expand_cat",
+			"tree_new.*ARG",
+			"expand_cat",
+			"N_ARGSTR",
+			"tree_new.*N_ARG",
+			"tree_new.*STR",
+			"tree_new",
+			"expand_cat",
+			"expand_cat\\(",
+			"expand_cat",
+			"expand_arith",
+			"_ADD",
+			"nargarith",
+			"unary",
+			"binary",
+			"expand_expr"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -342,6 +471,31 @@
 		"regex": true,
 		"replace_history":
 		[
+			"nptr",
+			"&n",
+			"x.ptr",
+			"ex->ptr",
+			"ex->flags",
+			"x.",
+			" ex->flags",
+			")",
+			"",
+			"&x",
+			")",
+			"expand_cat(ex, ",
+			"ex->flags",
+			"ex->ptr",
+			"",
+			"ENA",
+			"\" | ",
+			";",
+			"stralloc_cats(&sa",
+			"stralloc_cats(&sa,",
+			"prec",
+			"p",
+			"unary",
+			"expand_arith",
+			"debug_space(depth, 1)"
 		],
 		"reverse": false,
 		"show_context": true,
@@ -352,61 +506,30 @@
 	"groups":
 	[
 		{
-			"selected": 3,
+			"selected": 1,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "src/parse/parse_arith_binary.c",
+					"file": "lib/scan/scan_xlonglong.c",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 970,
+						"buffer_size": 272,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								411,
-								411
+								13,
+								13
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/C++/C.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "src/parse/parse_arith.c",
-					"semi_transient": true,
-					"settings":
-					{
-						"buffer_size": 594,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/C99/C99.tmLanguage",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
+							"color_scheme": "Packages/Rainglow/rainglow/Userscape Contrast (rainglow).tmTheme",
+							"syntax": "Packages/C99/C99.tmLanguage"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
@@ -416,69 +539,63 @@
 					"type": "text"
 				},
 				{
-					"buffer": 2,
+					"buffer": 1,
+					"file": "src/parse/parse_arith_value.c",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 333,
+						"buffer_size": 1765,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								333,
-								333
+								906,
+								906
 							]
 						],
 						"settings":
 						{
-							"auto_indent": false,
-							"syntax": "Packages/Text/Plain text.tmLanguage",
-							"tab_width": 2,
-							"word_wrap": true
+							"color_scheme": "Packages/Rainglow/rainglow/Userscape Contrast (rainglow).tmTheme",
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 3,
-					"type": "text"
-				},
-				{
-					"buffer": 3,
-					"file": "shish.sublime-project",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 797,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								341,
-								341
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/JavaScript/JSON.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true,
-							"typescript_plugin_format_options":
-							{
-								"convertTabsToSpaces": true,
-								"indentSize": 4,
-								"tabSize": 4
-							}
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 693.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "src/parse/parse_error.c",
+					"semi_transient": true,
+					"settings":
+					{
+						"buffer_size": 516,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								15,
+								15
+							]
+						],
+						"settings":
+						{
+							"color_scheme": "Packages/Rainglow/rainglow/Userscape Contrast (rainglow).tmTheme",
+							"syntax": "Packages/C99/C99.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
 					"type": "text"
 				}
 			]
@@ -486,11 +603,11 @@
 	],
 	"incremental_find":
 	{
-		"height": 32.0
+		"height": 30.0
 	},
 	"input":
 	{
-		"height": 35.968031968
+		"height": 51.0
 	},
 	"layout":
 	{
@@ -527,6 +644,10 @@
 	{
 		"height": 0.0
 	},
+	"output.loghighlight":
+	{
+		"height": 144.0
+	},
 	"output.sftp":
 	{
 		"height": 0.0
@@ -535,7 +656,7 @@
 	"project": "shish.sublime-project",
 	"replace":
 	{
-		"height": 60.0
+		"height": 76.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -544,6 +665,230 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"builtin_cd",
+				"src/builtin/builtin_cd.c"
+			],
+			[
+				"scan_",
+				"lib/scan/scan_8longn.c"
+			],
+			[
+				"xlonglong",
+				"lib/scan/scan_xlonglong.c"
+			],
+			[
+				"scan_longlon",
+				"lib/scan/scan_longlong.c"
+			],
+			[
+				"scan_8",
+				"lib/scan/scan_8longn.c"
+			],
+			[
+				"scan.h",
+				"lib/scan.h"
+			],
+			[
+				"scan_oc",
+				"lib/scan/scan_octal.c"
+			],
+			[
+				"octal",
+				"lib/scan/scan_octal.c"
+			],
+			[
+				"uint64.",
+				"lib/uint64.h"
+			],
+			[
+				"ulonglong",
+				"lib/scan/scan_ulonglong.c"
+			],
+			[
+				"eval_cas",
+				"src/eval/eval_case.c"
+			],
+			[
+				"expand.h",
+				"src/expand.h"
+			],
+			[
+				"tree.h",
+				"src/tree.h"
+			],
+			[
+				"arg.c",
+				"src/expand/expand_arg.c"
+			],
+			[
+				"eval_sim",
+				"src/eval/eval_simple_command.c"
+			],
+			[
+				"redir_eval",
+				"src/redir/redir_eval.c"
+			],
+			[
+				"redir_sour",
+				"src/redir/redir_source.c"
+			],
+			[
+				"expand.c",
+				"src/prompt/prompt_expand.c"
+			],
+			[
+				"parse_cas",
+				"src/parse/parse_case.c"
+			],
+			[
+				"expand_comm",
+				"src/expand/expand_command.c"
+			],
+			[
+				"eval_for",
+				"src/eval/eval_for.c"
+			],
+			[
+				"expand_",
+				"src/expand/expand_param.c"
+			],
+			[
+				"cmake",
+				"CMakeLists.txt"
+			],
+			[
+				"sh_loop",
+				"src/sh/sh_loop.c"
+			],
+			[
+				"cma",
+				"CMakeLists.txt"
+			],
+			[
+				"tree_print",
+				"src/tree/tree_print.c"
+			],
+			[
+				"cmak",
+				"CMakeLists.txt"
+			],
+			[
+				"tree_prin",
+				"src/tree/tree_print.c"
+			],
+			[
+				"fmt.h",
+				"lib/fmt.h"
+			],
+			[
+				"uint32_ra",
+				"lib/uint32/uint32_random.c"
+			],
+			[
+				"parse_ar",
+				"src/parse/parse_arith_expr.c"
+			],
+			[
+				"parse_para",
+				"src/parse/parse_param.c"
+			],
+			[
+				"word.",
+				"src/parse/parse_word.c"
+			],
+			[
+				"newnode",
+				"src/parse/parse_newnode.c"
+			],
+			[
+				"debug_sp",
+				"src/debug/debug_space.c"
+			],
+			[
+				"debug.",
+				"src/debug.h"
+			],
+			[
+				"debug_",
+				"src/debug/debug_node.c"
+			],
+			[
+				"tree_free.c",
+				"src/tree/tree_free.c"
+			],
+			[
+				"debug_no",
+				"src/debug/debug_node.c"
+			],
+			[
+				"parse.h",
+				"src/parse.h"
+			],
+			[
+				"parse",
+				"src/parse.h"
+			],
+			[
+				"debug_nod",
+				"src/debug/debug_node.c"
+			],
+			[
+				"tree_f",
+				"src/tree/tree_free.c"
+			],
+			[
+				"tree_fr",
+				"src/tree/tree_free.c"
+			],
+			[
+				"tree_free",
+				"src/tree/tree_free.c"
+			],
+			[
+				"debug_node",
+				"src/debug/debug_node.c"
+			],
+			[
+				"tree_fre",
+				"src/tree/tree_free.c"
+			],
+			[
+				"tree",
+				"src/tree.h"
+			],
+			[
+				"",
+				"src/debug/debug_node.c"
+			],
+			[
+				"_node",
+				"src/debug/debug_node.c"
+			],
+			[
+				"unquo",
+				"src/parse/parse_unquoted.c"
+			],
+			[
+				"debug_space",
+				"src/debug/debug_space.c"
+			],
+			[
+				"debug.h",
+				"src/debug.h"
+			],
+			[
+				"debug_list",
+				"src/debug/debug_list.c"
+			],
+			[
+				"putsa",
+				"lib/buffer/buffer_putsa.c"
+			],
+			[
+				"fromsa",
+				"lib/buffer/buffer_fromsa.c"
+			]
 		],
 		"width": 0.0
 	},
