@@ -131,7 +131,9 @@ union node* expand_param(struct expand* ex, struct nargparam* param);
 void        expand_tosa(union node* node, stralloc* sa);
 void        expand_unescape(stralloc* sa);
 int         expand_vars(union node* vars, union node** nptr);
-node_t** expand_break(node_t** out);
+
+
+node_t**    expand_break(node_t** out);
 
 
 #endif /* EXPAND_H */

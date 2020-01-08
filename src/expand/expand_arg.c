@@ -7,8 +7,13 @@
 int
 expand_arg(struct expand* ex, struct narg* narg) {
 
-  union node* n ; // =  expand_getorcreate(ex->ptr);
+  union node* n = *ex->ptr; // =  expand_getorcreate(ex->ptr);
   union node* subarg;
+
+if(!n) {
+n = (*ex->ptr) = tree_newnode(N_ARG);
+stralloc_init(&n->narg.stra);
+}
 
 
   /* loop through all parts of the word */
