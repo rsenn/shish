@@ -1,6 +1,6 @@
-#include "../uint64.h"
 #include "../buffer.h"
 #include "../fmt.h"
+#include "../uint64.h"
 #include <stdlib.h>
 
 int
