@@ -32,7 +32,7 @@ expand_arith_binary(struct expand* ex, struct narithbinary* expr, int64* r) {
     case N_ARITH_SUB: *r = left - right; break;
     case N_ARITH_MUL: *r = left * right; break;
     case N_ARITH_DIV: *r = left / right; break;
-    case N_ARITH_REM: *r = left % right; break;
+    case N_ARITH_MOD: *r = left % right; break;
     case N_ARITH_EXP: *r = powl(left, right); break;
     default: __asm__("int $3"); break;
   }

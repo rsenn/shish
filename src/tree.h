@@ -56,7 +56,7 @@ enum nod_id {
   N_ARITH_SUB,
   N_ARITH_MUL,
   N_ARITH_DIV,
-  N_ARITH_REM,
+  N_ARITH_MOD,
   N_ARITH_EXP,
   // unary
   N_ARITH_UNARYMINUS,

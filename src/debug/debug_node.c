@@ -46,7 +46,7 @@ const char* debug_nodes[] = {
     "N_ARITH_SUB",
     "N_ARITH_MUL",
     "N_ARITH_DIV",
-    "N_ARITH_REM",
+    "N_ARITH_MOD",
     "N_ARITH_EXP",
     "N_ARITH_UNARYMINUS",
     "N_ARITH_UNARYPLUS",
@@ -216,7 +216,7 @@ debug_node(union node* node, int depth) {
     case N_ARITH_LE:
     case N_ARITH_LSHIFT:
     case N_ARITH_RSHIFT:
-    case N_ARITH_REM:
+    case N_ARITH_MOD:
     case N_ARITH_EXP:
       debug_sublist("left", node->narithbinary.left, depth);
       debug_space(depth, 1);

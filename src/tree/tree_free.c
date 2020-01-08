@@ -129,7 +129,7 @@ tree_free(union node* node) {
       case N_ARITH_SUB:
       case N_ARITH_MUL:
       case N_ARITH_DIV:
-      case N_ARITH_REM:
+      case N_ARITH_MOD:
       case N_ARITH_EXP:
         if(node->narithbinary.left)
           tree_free(node->narithbinary.left);

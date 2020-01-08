@@ -364,7 +364,7 @@ tree_print(union node* node, stralloc* sa) {
     case N_ARITH_LE:
     case N_ARITH_LSHIFT:
     case N_ARITH_RSHIFT:
-    case N_ARITH_REM:
+    case N_ARITH_MOD:
     case N_ARITH_EXP: {
 
       tree_print(node->narithbinary.left, sa);
@@ -387,7 +387,7 @@ tree_print(union node* node, stralloc* sa) {
         case N_ARITH_LE: stralloc_cats(sa, "<="); break;
         case N_ARITH_LSHIFT: stralloc_cats(sa, "<<"); break;
         case N_ARITH_RSHIFT: stralloc_cats(sa, ">>"); break;
-        case N_ARITH_REM: stralloc_catc(sa, '%'); break;
+        case N_ARITH_MOD: stralloc_catc(sa, '%'); break;
         case N_ARITH_EXP: stralloc_cats(sa, "**"); break;
       }
 
