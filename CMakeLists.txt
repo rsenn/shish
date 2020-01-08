@@ -235,7 +235,12 @@ set_target_properties(libshish PROPERTIES
 
 file(GLOB SOURCES src/*.h src/*/*.c)
 set(MATH_LIBRARY m)
-set(ELECTRICFENCE_LIBRARY efence)
+
+
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+  set(ELECTRICFENCE_LIBRARY efence)
+endif(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
 
 string(REPLACE " " ";" SOURCES "${SOURCES}")
 

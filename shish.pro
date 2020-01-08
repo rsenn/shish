@@ -222,7 +222,7 @@ SOURCES *= \
     ./src/expand/expand_argv.c \
     ./src/expand/expand_arith.c \
     ./src/expand/expand_cat.c \
-    ./src/expand/expand_catsa.c \
+    ./src/expand/expand_appendsa.c \
     ./src/expand/expand_command.c \
     ./src/expand/expand_copysa.c \
     ./src/expand/expand_escape.c \

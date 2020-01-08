@@ -24,7 +24,7 @@ MODULES = expand_arg \
           expand_argv \
           expand_arith \
           expand_cat \
-          expand_catsa \
+          expand_appendsa \
           expand_command \
           expand_copysa \
           expand_escape \

@@ -5,10 +5,10 @@
 /* expand a unary expression
  * ----------------------------------------------------------------------- */
 int
-expand_arith_unary(struct narithunary* expr, int64* r) {
+expand_arith_unary(struct expand* ex, struct narithunary* expr, int64* r) {
   int64 value;
 
-  if(expand_arith_expr(expr->node, &value))
+  if(expand_arith_expr(ex, expr->node, &value))
     return 1;
 
   switch(expr->id) {

@@ -10,8 +10,8 @@
 /* evaluates backquoted command list, while writing stdout to a stralloc
  * ----------------------------------------------------------------------- */
 union node*
-expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
-  union node* n = *nptr;
+expand_command(struct expand* ex, struct nargcmd* cmd) {
+  union node* n = ex->ptr;
   struct vartab vars;
   struct fd fd;
   struct fdstack fdst;
@@ -47,7 +47,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
 
             so we won't have to alloc all the stuff twice!
    */
-  n = expand_cat(sa.s, sa.len, nptr, flags);
+  n = expand_cat(&ex, sa.s, sa.len);
   stralloc_free(&sa);
 
   return n;

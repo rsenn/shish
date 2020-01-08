@@ -9,13 +9,13 @@
 #include <stdlib.h>
 
 union node*
-expand_param(struct nargparam* param, union node** nptr, int flags) {
-  union node* n = *nptr;
+expand_param(struct expand* ex, struct nargparam* param) {
+  union node* n = ex->ptr;
   stralloc value;
   char tmpbuf[FMT_LONG];
 
   const char* v = NULL;
-  unsigned long vlen = 0;
+  size_t vlen = 0;
 
   stralloc_init(&value);
 
@@ -45,14 +45,15 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         unsigned int i = 0;
 
         while(i < sh->arg.c) {
+        //  struct expand tmpx = EXPAND_INIT(ex->root, ex->ptr, (param->flag & ~S_SPECIAL) | S_ARG);
           param->flag &= ~S_SPECIAL;
           param->flag |= S_ARG;
           param->numb = 1 + i;
 
-          n = expand_param(param, nptr, flags);
+          n = expand_param(ex,   param);
 
           if(++i < sh->arg.c)
-            nptr = &n->list.next;
+            ex->ptr = &n->list.next;
         }
 
         return n;
@@ -126,7 +127,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
   if(param->flag & S_STRLEN) {
     char lstr[FMT_ULONG];
 
-    n = expand_cat(lstr, fmt_ulong(lstr, vlen), nptr, flags);
+    n = expand_cat(ex, lstr, fmt_ulong(lstr, vlen));
 
     stralloc_free(&value);
 
@@ -138,19 +139,21 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
     /* return word if parameter unset (or null) */
     case S_DEFAULT: {
       if(v)
-        n = expand_cat(v, vlen, nptr, flags);
+        n = expand_cat(ex, v, vlen);
       /* unset, substitute */
       else
-        n = expand_arg(&param->word->narg, nptr, flags);
+        n = expand_arg(&ex, &param->word->narg);
       break;
     }
     /* if parameter unset (or null) then expand word to it
        and substitute paramter */
     case S_ASGNDEF: {
       if(v)
-        n = expand_cat(v, vlen, nptr, flags);
+        n = expand_cat(ex, v, vlen);
       else {
-        n = expand_arg(&param->word->narg, nptr, flags | X_NOSPLIT);
+        struct expand tmpx = EXPAND_INIT(0, 0, ex->flags | X_NOSPLIT);
+        tmpx.ptr = &tmpx.root;
+        n = expand_arg(&tmpx.root, &param->word->narg);
         var_setvsa(param->name, /* BUG */ &n->narg.stra, V_DEFAULT);
       }
       break;
@@ -159,11 +162,13 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
     /* indicate error if null or unset */
     case S_ERRNULL: {
       if(v)
-        n = expand_cat(v, vlen, nptr, flags);
+        n = expand_cat(ex, v, vlen);
       else {
         union node* tmpnode = NULL;
+                struct expand tmpx = EXPAND_INIT(0, &tmpnode, ex->flags);
 
-        n = expand_arg(&param->word->narg, &tmpnode, flags);
+
+        n = expand_arg(&tmpx, &param->word->narg);
         sh_error((n && n->narg.stra.s) ? n->narg.stra.s : "parameter null or not set");
         if(tmpnode)
           tree_free(tmpnode);
@@ -175,7 +180,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
          otherwise substitute word */
     case S_ALTERNAT: {
       if(v)
-        n = expand_arg(&param->word->narg, nptr, flags);
+        n = expand_arg(&ex, &param->word->narg);
       break;
 
         /* remove smallest matching suffix */
@@ -184,13 +189,13 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         stralloc sa;
 
         if(v && vlen) {
-          expand_copysa(param->word, &sa, 0);
+          expand_copysa(param->word, &sa);
 
           for(i = vlen - 1; i >= 0; i--)
             if(shell_fnmatch(sa.s, sa.len, v + i, vlen - i, SH_FNM_PERIOD) == 0)
               break;
 
-          n = expand_cat(v, (i < 0 ? vlen : i), nptr, flags);
+          n = expand_cat(ex, v, (i < 0 ? vlen : i));
         }
         break;
       }
@@ -202,13 +207,13 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       stralloc sa;
 
       if(v && vlen) {
-        expand_copysa(param->word, &sa, 0);
+        expand_copysa(param->word, &sa);
 
         for(i = 0; i <= vlen; i++)
           if(shell_fnmatch(sa.s, sa.len, v + i, vlen - i, SH_FNM_PERIOD) == 0)
             break;
 
-        n = expand_cat(v, (i > vlen ? vlen : i), nptr, flags);
+        n = expand_cat(ex, v, (i > vlen ? vlen : i));
       }
 
       break;
@@ -220,7 +225,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       stralloc sa;
 
       if(v && vlen) {
-        expand_copysa(param->word, &sa, 0);
+        expand_copysa(param->word, &sa);
 
         for(i = 1; i <= vlen; i++)
           if(shell_fnmatch(sa.s, sa.len, v, i, SH_FNM_PERIOD) == 0)
@@ -229,7 +234,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         if(i > vlen)
           i = 0;
 
-        n = expand_cat(v + i, vlen - i, nptr, flags);
+        n = expand_cat(ex, v + i, vlen - i);
       }
       break;
     }
@@ -240,7 +245,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       stralloc sa;
 
       if(v && vlen) {
-        expand_copysa(param->word, &sa, 0);
+        expand_copysa(param->word, &sa);
 
         for(i = vlen; i > 0; i--)
           if(shell_fnmatch(sa.s, sa.len, v, i, SH_FNM_PERIOD) == 0)
@@ -249,7 +254,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         if(i == 0)
           i = vlen;
 
-        n = expand_cat(v + i, vlen - i, nptr, flags);
+        n = expand_cat(ex, v + i, vlen - i);
       }
       break;
     }

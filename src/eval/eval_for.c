@@ -12,7 +12,7 @@ eval_for(struct eval* e, struct nfor* nfor) {
   union node* args = NULL;
 
   if(nfor->args)
-    expand_args(nfor->args, &args, 0);
+    expand_args(nfor->args, &args);
 
   node = args;
 

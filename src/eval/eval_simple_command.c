@@ -42,7 +42,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
   /* expand arguments,
      if there are arguments we start a hashed search for the command */
-  if(expand_args(ncmd->args, &args, 0)) {
+  if(expand_args(ncmd->args, &args)) {
     stralloc_nul(&args->narg.stra);
     cmd = exec_hash(args->narg.stra.s, &id);
   }

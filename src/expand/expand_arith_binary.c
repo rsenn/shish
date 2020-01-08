@@ -5,11 +5,11 @@
 /* expand a binary expression
  * ----------------------------------------------------------------------- */
 int
-expand_arith_binary(struct narithbinary* expr, int64* r) {
+expand_arith_binary(struct expand* ex, struct narithbinary* expr, int64* r) {
   int64 left = -1, right = -1;
-  if(expand_arith_expr(expr->left, &left))
+  if(expand_arith_expr(ex, expr->left, &left))
     return 1;
-  if(expand_arith_expr(expr->right, &right))
+  if(expand_arith_expr(ex, expr->right, &right))
     return 1;
 
   switch(expr->id) {

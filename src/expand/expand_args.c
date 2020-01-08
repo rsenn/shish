@@ -5,7 +5,7 @@
  * returns count of argument nodes
  * ----------------------------------------------------------------------- */
 int
-expand_args(union node* args, union node** nptr, int flags) {
+expand_args(union node* args, union node** nptr) {
   union node* arg;
   union node* n;
   int ret = 0;
@@ -14,7 +14,7 @@ expand_args(union node* args, union node** nptr, int flags) {
 
   for(arg = args; arg; arg = arg->list.next) {
 
-    if((n = expand_arg(&arg->narg, nptr, flags))) {
+    if((n = expand_arg(&arg->narg, nptr))) {
       nptr = &n;
       ret++;
     }

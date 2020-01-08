@@ -24,7 +24,7 @@ prompt_expand(void) {
 #ifdef DEBUG
 /*    debug_list(prompt_node, 0);      */
 #endif
-    expand_catsa(prompt_node, &sa, 0);
+    expand_appendsa(prompt_node, &sa);
     stralloc_nul(&sa);
     stralloc_zero(&prompt_expansion);
     prompt_escape(sa.s, &prompt_expansion);
