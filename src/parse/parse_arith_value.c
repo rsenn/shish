@@ -1,10 +1,10 @@
+#include "expand.h"
 #include "fmt.h"
 #include "parse.h"
 #include "scan.h"
 #include "source.h"
 #include "tree.h"
 #include "uint64.h"
-#include "expand.h"
 
 /* parse arithmetic value
  * ----------------------------------------------------------------------- */

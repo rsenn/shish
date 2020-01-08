@@ -4,8 +4,8 @@
 #include "shell.h"
 #include "str.h"
 #include "tree.h"
-#include "var.h"
 #include "uint16.h"
+#include "var.h"
 #include <stdlib.h>
 
 union node*
@@ -102,16 +102,16 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
     if(str_equal(param->name, "RANDOM")) {
 
-  uint16 random = uint32_random();
+      uint16 random = uint32_random();
 
-  vlen = fmt_uint(v = tmpbuf, random);
+      vlen = fmt_uint(v = tmpbuf, random);
 
     } else
 
-    /* look for the variable.
-       if the S_NULL flag is set and we have a var which is null
-       set v to NULL */
-    if((v = var_get(param->name, &offset))) {
+        /* look for the variable.
+           if the S_NULL flag is set and we have a var which is null
+           set v to NULL */
+        if((v = var_get(param->name, &offset))) {
       if(v[offset] == '\0' && (param->flag & S_NULL)) {
         v = NULL;
         vlen = 0;

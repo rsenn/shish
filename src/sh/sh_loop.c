@@ -41,7 +41,9 @@ sh_loop(void) {
       struct eval e;
 
       if(source->mode & SOURCE_IACTIVE) {
+#ifndef NO_TREE_PRINT
         tree_printlist(list, &cmd, NULL);
+#endif
         stralloc_catc(&cmd, '\n');
         stralloc_nul(&cmd);
         history_set(cmd.s);

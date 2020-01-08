@@ -22,6 +22,93 @@ include(CheckSymbolExists)
 include(CheckTypeSize)
 include(CheckFunctionExists)
 include(CheckLibraryExists)
+include(CheckCCompilerFlag)
+
+set(ENABLE_SHARED OFF)
+set(BUILD_SHARED_LIBS FALSE)
+
+if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" OR CMAKE_BUILD_TYPE STREQUAL "Release")
+  check_c_compiler_flag("-flto" F_LTO)
+  check_c_compiler_flag("-falign-functions" F_ALIGN_FUNCTIONS)
+  check_c_compiler_flag("-falign-jumps" F_ALIGN_JUMPS)
+  check_c_compiler_flag("-falign-labels" F_ALIGN_LABELS)
+  check_c_compiler_flag("-falign-loops" F_ALIGN_LOOPS)
+endif()
+
+if(F_ALIGN_COMMONS)
+  add_definitions("-falign-commons")
+endif(F_ALIGN_COMMONS)
+if(F_ALIGN_DOUBLE)
+  add_definitions("-falign-double")
+endif(F_ALIGN_DOUBLE)
+if(F_ALIGN_FUNCTIONS)
+  add_definitions("-falign-functions")
+endif(F_ALIGN_FUNCTIONS)
+if(F_ALIGN_JUMPS)
+  add_definitions("-falign-jumps")
+endif(F_ALIGN_JUMPS)
+if(F_ALIGN_LABELS)
+  add_definitions("-falign-labels")
+endif(F_ALIGN_LABELS)
+if(F_ALIGN_LOOPS)
+  add_definitions("-falign-loops")
+endif(F_ALIGN_LOOPS)
+if(F_ALIGN_STRINGOPS)
+  add_definitions("-falign-stringops")
+endif(F_ALIGN_STRINGOPS)
+
+list(APPEND ALL_BUILTINS basename break cd dirname dump echo eval exec exit export false fdtable hash history hostname pwd set shift source test true unset)
+list(APPEND DEFAULT_BUILTINS break cd eval exec exit export hash history pwd set shift source unset)
+
+function(isin)
+  set(ARGUMENTS "${ARGV}")
+  list(GET ARGUMENTS 0 RETVAR)
+  list(GET ARGUMENTS 1 ITEM)
+  list(REMOVE_AT ARGUMENTS 0 1)
+  #message("ARGUMENTS: ${ARGUMENTS}")
+  list(FIND ARGUMENTS "${ITEM}" FOUND)
+
+  if(${FOUND} EQUAL -1)
+    set(RET FALSE)
+  else()
+    set(RET TRUE)
+  endif()
+  SET("${RETVAR}" ${RET} PARENT_SCOPE)
+  #return(${RET})
+endfunction(isin)
+
+set(BUILTINS_ENABLED "") 
+set(BUILTINS_DISABLED "") 
+
+foreach(BUILTIN ${ALL_BUILTINS})
+  string(TOUPPER ${BUILTIN} NAME)
+
+  if(NOT DEFINED ${ENABLE_${NAME}})
+
+    isin("ENABLE_${NAME}" ${BUILTIN} ${DEFAULT_BUILTINS} )
+
+
+ 
+    option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" "${ENABLE_${NAME}}")
+  endif(NOT DEFINED ${ENABLE_${NAME}})
+
+  #message(STATUS "Builtin ${BUILTIN} - ${ENABLE_${NAME}}")
+endforeach(BUILTIN ${ALL_BUILTINS})
+
+option(NO_TREE_PRINT "Disable tree_print for history" OFF)
+
+foreach(BUILTIN ${ALL_BUILTINS})
+
+ string(TOUPPER ${BUILTIN} NAME)
+   if(${BUILTIN_${NAME}} STREQUAL ON)
+      list(APPEND BUILTINS_ENABLED ${BUILTIN})
+   else(${BUILTIN_${NAME}} STREQUAL ON)
+      list(APPEND BUILTINS_DISABLED ${BUILTIN})
+   endif(${BUILTIN_${NAME}} STREQUAL ON)
+endforeach(BUILTIN ${ALL_BUILTINS})
+
+
+
 
 if("${CMAKE_BUILD_TYPE}"  STREQUAL "Debug")
   set(DEBUG "debug")
@@ -40,9 +127,9 @@ endif(HAVE_LIBOWFAT)
 
 if(NOT HAVE_LIBOWFAT)
   check_library_exists(owfat buffer_init /usr/lib64 HAVE_LIBOWFAT)
-	if(HAVE_LIBOWFAT)
-		set(LIBOWFAT_LIBRARY owfat)	
-	endif(HAVE_LIBOWFAT)
+  if(HAVE_LIBOWFAT)
+    set(LIBOWFAT_LIBRARY owfat)	
+  endif(HAVE_LIBOWFAT)
 endif(NOT HAVE_LIBOWFAT)
 
 
@@ -95,7 +182,7 @@ if(HAVE_GLOB_H)
   set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} glob.h)
 endif(HAVE_GLOB_H)
 
- check_function_exists(glob HAVE_GLOB)
+check_function_exists(glob HAVE_GLOB)
 
 
 #if(HAVE_SIGNAL_H)
@@ -118,8 +205,6 @@ add_definitions(-Wall -DHAVE_CONFIG_H=1 -D__USE_XOPEN_EXTENDED=1 -D__USE_POSIX=1
 
 add_definitions(-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64)
 add_definitions(-D_GNU_SOURCE)
-
-
 
 set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0")
 
@@ -145,13 +230,53 @@ set_target_properties(libshish PROPERTIES
 	LIBRARY_OUTPUT_NAME "shish"
 	OUTPUT_NAME "shish"
 	PREFIX "lib"
-)
+  )
 
 
 file(GLOB SOURCES src/*.h src/*/*.c)
 set(MATH_LIBRARY m)
 set(ELECTRICFENCE_LIBRARY efence)
+
+string(REPLACE " " ";" SOURCES "${SOURCES}")
+
+
+foreach(DISABLED ${BUILTINS_DISABLED})
+  set(SRC "src/builtin/builtin_${DISABLED}.c")
+  list(LENGTH SOURCES N)
+  list(REMOVE_ITEM SOURCES "${SRC}")
+  list(FILTER SOURCES EXCLUDE REGEX  "${SRC}")
+  list(LENGTH SOURCES N2)
+  if(${N} EQUAL ${N2})
+    message("ERROR ${SRC}  -  ${N} == ${N2}")
+  endif(${N} EQUAL ${N2})
+endforeach(DISABLED ${BUILTINS_DISABLED})
+
+foreach(ENABLED ${BUILTINS_ENABLED})
+  string(TOUPPER "${ENABLED}" NAME)
+  #add_definitions("-DBUILTIN_${NAME}=1")
+  set(BUILTIN_FLAGS "${BUILTIN_FLAGS} -DBUILTIN_${NAME}=1")
+endforeach(ENABLED ${BUILTINS_ENABLED})
+
+
+if(NO_TREE_PRINT)
+  add_definitions(-DNO_TREE_PRINT=1)
+ list(FILTER SOURCES EXCLUDE REGEX  "src/tree/tree.*print.*\.c")
+endif(NO_TREE_PRINT)
+
 add_executable(shish ${SOURCES})
 target_link_libraries(shish libshish ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 
+message(STATUS "\nBuiltin flags:\n  ${BUILTIN_FLAGS}\n")
+
+SET_SOURCE_FILES_PROPERTIES( src/builtin/builtin_table.c PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}" )
+
+
 install(TARGETS shish DESTINATION bin)
+
+
+string(REPLACE ";" "\n  " BUILTINS_ENABLED "${BUILTINS_ENABLED}")
+string(REPLACE ";" "\n  " BUILTINS_DISABLED "${BUILTINS_DISABLED}")
+
+message(STATUS "\nEnabled builtins:\n  ${BUILTINS_ENABLED}\n")
+message(STATUS "\nDisabled builtins:\n  ${BUILTINS_DISABLED}\n")
+

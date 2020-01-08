@@ -18,7 +18,6 @@ parse_arith(struct parser* p) {
 
   if(tree) {
 
-    debug_node(tree, 0);
     buffer_flush(fd_err->w);
 
     /* MUST be terminated with right parenthesis or backquote */
