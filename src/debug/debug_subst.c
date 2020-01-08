@@ -4,6 +4,7 @@
 #include "expand.h"
 #include "fd.h"
 #include "str.h"
+#include "stralloc.h"
 #include "tree.h"
 #include <string.h>
 
@@ -28,34 +29,35 @@ const char* debug_subst_tables[] = {"S_UNQUOTED", "S_DQUOTED", "S_SQUOTED", "S_E
 
 void
 debug_subst(const char* msg, int flags, int depth) {
-  static char flagstr[128];
-  unsigned long n = 0;
-
-  flagstr[n] = '\0';
+  stralloc sa;
+  stralloc_init(&sa);
 
   if(flags & S_SPECIAL) {
-    n += str_copy(&flagstr[n], debug_subst_special[(flags >> 3) & 0x1f]);
-    flagstr[n++] = '|';
+    stralloc_cats(&sa,
+                  debug_subst_special[(flags >> 3) % (sizeof(debug_subst_special) / sizeof(debug_subst_special[0]))]);
+    stralloc_cats(&sa, " | ");
   }
 
-  n += str_copy(&flagstr[n], debug_subst_var[(flags >> 8) & 0x0f]);
+  stralloc_cats(&sa, debug_subst_var[(flags >> 8) % (sizeof(debug_subst_var) / sizeof(debug_subst_var[0]))]);
 
-  flagstr[n++] = '|';
-  n += str_copy(&flagstr[n], debug_subst_tables[flags & S_TABLE]);
+  stralloc_cats(&sa, " | ");
+  stralloc_cats(&sa, debug_subst_tables[flags & S_TABLE]);
 
   if(flags & S_BQUOTE)
-    n += str_copy(&flagstr[n], "|S_BQUOTE");
+    stralloc_cats(&sa, " | S_BQUOTE");
   if(flags & S_STRLEN)
-    n += str_copy(&flagstr[n], "|S_STRLEN");
+    stralloc_cats(&sa, " | S_STRLEN");
   if(flags & S_NULL)
-    n += str_copy(&flagstr[n], "|S_NULL");
+    stralloc_cats(&sa, " | S_NULL");
   if(flags & S_NOSPLIT)
-    n += str_copy(&flagstr[n], "|S_NOSPLIT");
+    stralloc_cats(&sa, " | S_NOSPLIT");
   if(flags & S_GLOB)
-    n += str_copy(&flagstr[n], "|S_GLOB");
+    stralloc_cats(&sa, " | S_GLOB");
   if(flags & S_ESCAPED)
-    n += str_copy(&flagstr[n], "|S_ESCAPED");
+    stralloc_cats(&sa, " | S_ESCAPED");
 
-  buffer_putm(fd_err->w, COLOR_YELLOW, msg, COLOR_CYAN, DEBUG_EQU, COLOR_GREEN, flagstr, COLOR_NONE, NULL);
+  stralloc_nul(&sa);
+  buffer_putm(fd_err->w, COLOR_YELLOW, msg, COLOR_CYAN, DEBUG_EQU, COLOR_GREEN, sa.s, COLOR_NONE, NULL);
+  stralloc_free(&sa);
 }
 #endif /* DEBUG */

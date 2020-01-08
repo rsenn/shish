@@ -4,6 +4,7 @@
 #include "source.h"
 #include "tree.h"
 #include "uint64.h"
+#include "expand.h"
 
 /* parse arithmetic value
  * ----------------------------------------------------------------------- */
@@ -48,6 +49,10 @@ parse_arith_value(struct parser* p) {
       return NULL;
 
     node = p->node;
+    p->node = p->tree = NULL;
+
+    if(node->id == N_ARGPARAM)
+      node->nargparam.flag |= S_ARITH;
 
     return node;
   }

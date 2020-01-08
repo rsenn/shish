@@ -41,6 +41,8 @@
 /* a char within here-doc delim is escaped */
 #define S_GLOB 0x10000
 
+#define S_ARITH 0x80000
+
 /* expansion modes */
 /*#define X_SPLIT       0x00*/
 #define X_NOSPLIT 0x01

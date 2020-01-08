@@ -99,7 +99,7 @@ tree_print(union node* node, stralloc* sa) {
     case N_ARGPARAM: {
       int braces = 0;
 
-      stralloc_catc(sa, '$');
+
 
       /* if we have a word substitution inside the var we MUST
         put it inside braces */
@@ -114,6 +114,9 @@ tree_print(union node* node, stralloc* sa) {
         if((!(node->nargparam.flag & S_SPECIAL) && sa->len && parse_isname(sa->s[0])) || node->nargparam.numb > 9)
           braces = 1;
       }
+
+    if(!(node->nargparam.flag & S_ARITH) || braces)
+      stralloc_catc(sa, '$');
 
       if(braces)
         stralloc_catc(sa, '{');

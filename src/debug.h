@@ -37,10 +37,10 @@ struct chunk {
 #define COLOR_NONE ""
 #endif /* COLOR_DEBUG */
 
-#define DEBUG_EQU ":"
+#define DEBUG_EQU " "
 #define DEBUG_SEP ","
-#define DEBUG_BEGIN " ( "
-#define DEBUG_END " ) "
+#define DEBUG_BEGIN " ("
+#define DEBUG_END ") "
 #define DEBUG_SPACE 2
 
 union node;

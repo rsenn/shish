@@ -188,8 +188,8 @@ debug_node(union node* node, int depth) {
 
     case N_ARGCMD:
     case N_ARGARITH:
-      debug_subst("flag", node->nargcmd.flag, depth);
-      debug_space(depth, 1);
+      /*   debug_subst("flag", node->nargcmd.flag, depth);
+         debug_space(depth, 1);*/
       debug_sublist("tree", node->nargarith.tree, depth);
       break;
 

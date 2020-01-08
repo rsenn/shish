@@ -141,6 +141,10 @@ parse_param(struct parser* p) {
     }
   }
 
+  if(p->node && p->node->id == N_ARGPARAM)
+    if(p->flags & P_ARITH)
+      p->node->nargparam.flag |= S_ARITH;
+
   /* return now if we don't have a variable */
   /*  if((p->node->nargparam.flag & S_SPECIAL))
     {
