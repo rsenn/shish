@@ -1,5 +1,5 @@
-#include "../uint64.h"
 #include "../scan.h"
+#include "../uint64.h"
 
 size_t
 scan_varint(const char* in, size_t len, uint64* n) {

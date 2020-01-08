@@ -1,5 +1,5 @@
-#include "../uint64.h"
 #include "../scan.h"
+#include "../uint64.h"
 
 size_t
 scan_pb_tag(const char* in, size_t len, size_t* fieldno, unsigned char* type) {

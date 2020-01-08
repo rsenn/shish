@@ -1,5 +1,5 @@
-#include "../uint32.h"
 #include "../scan.h"
+#include "../uint32.h"
 
 size_t
 scan_utf8_sem(const char* in, size_t len, uint32* num) {

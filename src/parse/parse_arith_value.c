@@ -37,13 +37,22 @@ parse_arith_value(struct parser* p) {
         break;
 
       digit = !!(parse_chartable[(int)(unsigned char)c] & cclass);
-   
+
       if(!digit && cclass == C_DIGIT && n == 1) {
 
         switch(c) {
-          case 'x': scan_fn = &scan_xlonglong; cclass = C_HEX; break;
-          case 'b': scan_fn = 0;cclass = C_BINARY; break;
-          case 'o': scan_fn = &scan_octal; cclass = C_OCTAL; break;
+          case 'x':
+            scan_fn = &scan_xlonglong;
+            cclass = C_HEX;
+            break;
+          case 'b':
+            scan_fn = 0;
+            cclass = C_BINARY;
+            break;
+          case 'o':
+            scan_fn = &scan_octal;
+            cclass = C_OCTAL;
+            break;
         }
 
         source_skip();

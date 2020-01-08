@@ -270,7 +270,11 @@ if(NO_TREE_PRINT)
 endif(NO_TREE_PRINT)
 
 add_executable(shish ${SOURCES})
-target_link_libraries(shish libshish ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
+target_link_libraries(shish libshish 
+  ${LIBOWFAT_LIBRARY}
+  ${MATH_LIBRARY}
+  # ${ELECTRICFENCE_LIBRARY}
+  )
 
 message(STATUS "\nBuiltin flags:\n  ${BUILTIN_FLAGS}\n")
 

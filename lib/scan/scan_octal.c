@@ -1,5 +1,5 @@
-#include "../uint64.h"
 #include "../scan.h"
+#include "../uint64.h"
 
 size_t
 scan_octal(const char* src, uint64* dest) {
