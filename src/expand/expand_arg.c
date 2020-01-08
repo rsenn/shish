@@ -4,9 +4,10 @@
 
 /* expand all parts of an N_ARG node
  * ----------------------------------------------------------------------- */
-union node*
+int
 expand_arg(struct expand* ex, struct narg* narg) {
-  union node* n = *ex->ptr;
+
+  union node* n = ex->ptr;
   union node* subarg;
 
   /* loop through all parts of the word */
@@ -35,8 +36,8 @@ expand_arg(struct expand* ex, struct narg* narg) {
       default: n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, ex->ptr, lflags); break;
     }
 
-    if(n)
-      ex->ptr = &n;
+    if(*ex->ptr)
+      ex->ptr = &(*ex->ptr)->narg.next;
   }
 
   return n;

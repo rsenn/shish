@@ -1,6 +1,6 @@
 #define NO_UINT64_MACROS
-#include "../uint64.h"
 #include "../fmt.h"
+#include "../uint64.h"
 
 size_t
 fmt_ulonglong(char* dest, uint64 i) {

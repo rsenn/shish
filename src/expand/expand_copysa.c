@@ -8,7 +8,7 @@ void
 expand_copysa(union node* node, stralloc* sa) {
   union node tmpnode;
 
-  struct expand x = EXPAND_INIT(&tmpnode, 0, X_NOSPLIT);
+  struct expand x = {&tmpnode, 0, X_NOSPLIT};
   x.ptr = &x.root;
 
   stralloc_init(&tmpnode.narg.stra);

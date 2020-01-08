@@ -310,6 +310,8 @@ union node {
   struct narithbinary narithbinary;
 };
 
+typedef union node node_t;
+
 /* link node to the branch nptr points to */
 #define tree_link(node, nptr)                                                                                          \
   do {                                                                                                                 \

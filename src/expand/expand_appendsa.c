@@ -7,7 +7,7 @@
 void
 expand_appendsa(union node* node, stralloc* sa) {
   struct narg tmpnode = {N_ARG, 0, 0, 0};
-  struct expand x = EXPAND_INIT((union node*)&tmpnode, &x.root, X_NOSPLIT);
+  struct expand x = {(union node*)&tmpnode, &x.root, X_NOSPLIT};
   x.ptr = &x.root;
 
   //  byte_copy(&tmpnode.stra, sizeof(stralloc), sa);

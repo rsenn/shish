@@ -1,6 +1,61 @@
 #include "builtin.h"
 #include "history.h"
 
+#ifndef BUILTIN_BREAK
+#define BUILTIN_BREAK 1
+#endif
+#ifndef BUILTIN_CD
+#define BUILTIN_CD 1
+#endif
+#ifndef BUILTIN_DUMP
+#define BUILTIN_DUMP 1
+#endif
+#ifndef BUILTIN_ECHO
+#define BUILTIN_ECHO 1
+#endif
+#ifndef BUILTIN_EVAL
+#define BUILTIN_EVAL 1
+#endif
+#ifndef BUILTIN_EXEC
+#define BUILTIN_EXEC 1
+#endif
+#ifndef BUILTIN_EXIT
+#define BUILTIN_EXIT 1
+#endif
+#ifndef BUILTIN_EXPORT
+#define BUILTIN_EXPORT 1
+#endif
+#ifndef BUILTIN_FALSE
+#define BUILTIN_FALSE 1
+#endif
+#ifndef BUILTIN_FDTABLE
+#define BUILTIN_FDTABLE 1
+#endif
+#ifndef BUILTIN_HASH
+#define BUILTIN_HASH 1
+#endif
+#ifndef BUILTIN_HISTORY
+#define BUILTIN_HISTORY 1
+#endif
+#ifndef BUILTIN_PWD
+#define BUILTIN_PWD 1
+#endif
+#ifndef BUILTIN_SET
+#define BUILTIN_SET 1
+#endif
+#ifndef BUILTIN_SHIFT
+#define BUILTIN_SHIFT 1
+#endif
+#ifndef BUILTIN_SOURCE
+#define BUILTIN_SOURCE 1
+#endif
+#ifndef BUILTIN_TRUE
+#define BUILTIN_TRUE 1
+#endif
+#ifndef BUILTIN_UNSET
+#define BUILTIN_UNSET 1
+#endif
+
 /* builtin lookup table
  * ----------------------------------------------------------------------- */
 struct builtin_cmd builtin_table[] = {

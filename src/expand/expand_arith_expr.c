@@ -39,17 +39,18 @@ expand_arith_expr(struct expand* ex, union node* expr, int64* r) {
     case A_NUM: *r = ((struct narithnum*)expr)->num; break;
     case N_ARGPARAM: {
       union node* n = expand_param(ex, (struct nargparam*)expr);
-              stralloc* value;
+      stralloc* value;
       size_t len = 0;
       assert(n);
-       value = &n->narg.stra;
-       assert(value);
-       if(n && value->s)
+      value = &n->narg.stra;
+      assert(value);
+      if(n && value->s)
         len = scan_longlong(value->s, r);
-      if(len == 0)
-        return -1;
+      ret = len == 0;
+      break;
     }
-    default: __asm__("int $3"); break;
+    default: return -1; break;
   }
+
   return ret;
 }

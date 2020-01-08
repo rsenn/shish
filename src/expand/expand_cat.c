@@ -12,18 +12,16 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
   const char* ifs = NULL;
   unsigned int i, x;
 
-  if(n == NULL) {
-
-    n = EXPAND_ADDNODE(nptr);
-    stralloc_init(&n->narg.stra);
-  }
-
+  /*  if(n == NULL) {
+      n = *nptr = tree_newnode(N_ARG);
+      stralloc_init(&n->narg.stra);
+    }
+  */
   /* if we're not splitting create a new node if there isn't any, even if
      the stralloc has zero length, and concatenate the stralloc as a whole */
   if(flags & (X_NOSPLIT | X_QUOTED)) {
     if(n == NULL) {
-
-      n = EXPAND_ADDNODE(nptr);
+      n = *nptr = tree_newnode(N_ARG);
       stralloc_zero(&n->narg.stra);
     }
 
@@ -48,7 +46,7 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
 
     /* if there isn't already a node create one now! */
     if(n == NULL) {
-      n = EXPAND_ADDNODE(nptr);
+      n = *nptr = tree_newnode(N_ARG);
       stralloc_init(&n->narg.stra);
     }
     /* if there were separators delimit the
@@ -64,8 +62,10 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
         n->narg.flag &= ~X_GLOB;
       }
 
-      n->list.next = tree_newnode(N_ARG);
-      n = n->list.next;
+      if(*nptr)
+        nptr = &(*nptr)->narg.next;
+
+      n = *nptr = tree_newnode(N_ARG);
       stralloc_init(&n->narg.stra);
     }
 

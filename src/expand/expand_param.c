@@ -153,7 +153,7 @@ expand_param(struct expand* ex, struct nargparam* param) {
       if(v)
         n = expand_cat(v, vlen, ex->ptr, ex->flags);
       else {
-        struct expand tmpx = EXPAND_INIT(0, 0, ex->flags | X_NOSPLIT);
+        struct expand tmpx = {0, 0, ex->flags | X_NOSPLIT};
         tmpx.ptr = &tmpx.root;
         n = expand_arg(&tmpx, &param->word->narg);
         var_setvsa(param->name, /* BUG */ &n->narg.stra, V_DEFAULT);
@@ -167,7 +167,7 @@ expand_param(struct expand* ex, struct nargparam* param) {
         n = expand_cat(v, vlen, ex->ptr, ex->flags);
       else {
         union node* tmpnode = NULL;
-        struct expand tmpx = EXPAND_INIT(0, &tmpnode, ex->flags);
+        struct expand tmpx = {0, &tmpnode, ex->flags};
 
         n = expand_arg(&tmpx, &param->word->narg);
         sh_error((n && n->narg.stra.s) ? n->narg.stra.s : "parameter null or not set");

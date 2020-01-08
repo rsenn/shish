@@ -12,18 +12,14 @@ expand_arith(struct expand* ex, struct nargarith* arith) {
   size_t len;
   char buf[FMT_LONG];
 
-  /* if there isn't already a node create one now! */
-  if(n == NULL) {
-     n =  *ex->ptr = tree_newnode(N_ARG);
-      stralloc_init(&n->narg.stra);
+  if(!expand_arith_expr(ex, expr, &ret)) {
+
+    len = fmt_longlong(buf, ret);
+
+    stralloc_zero(&n->narg.stra);
+
+    n = expand_cat(buf, len, ex->ptr, ex->flags);
   }
-
-  if(expand_arith_expr(ex, expr, &ret))
-    return NULL;
-
-  len = fmt_longlong(buf, ret);
-
-  n = expand_cat(buf, len, ex->ptr, ex->flags);
 
   return n;
 }
