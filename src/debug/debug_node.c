@@ -27,37 +27,37 @@ const char* debug_nodes[] = {
     "N_ARGCMD",
     "N_ARGPARAM",
     "N_ARGARITH",
-    "N_ARITH_NUM",
-    "N_ARITH_PAREN",
-    "N_ARITH_OR",
-    "N_ARITH_AND",
-    "N_ARITH_BOR",
-    "N_ARITH_BXOR",
-    "N_ARITH_BAND",
-    "N_ARITH_EQ",
-    "N_ARITH_NE",
-    "N_ARITH_LT",
-    "N_ARITH_GT",
-    "N_ARITH_GE",
-    "N_ARITH_LE",
-    "N_ARITH_LSHIFT",
-    "N_ARITH_RSHIFT",
-    "N_ARITH_ADD",
-    "N_ARITH_SUB",
-    "N_ARITH_MUL",
-    "N_ARITH_DIV",
-    "N_ARITH_MOD",
-    "N_ARITH_EXP",
-    "N_ARITH_UNARYMINUS",
-    "N_ARITH_UNARYPLUS",
-    "N_ARITH_NOT",
-    "N_ARITH_BNOT",
+    "A_NUM",
+    "A_PAREN",
+    "A_OR",
+    "A_AND",
+    "A_BOR",
+    "A_BXOR",
+    "A_BAND",
+    "A_EQ",
+    "A_NE",
+    "A_LT",
+    "A_GT",
+    "A_GE",
+    "A_LE",
+    "A_LSHIFT",
+    "A_RSHIFT",
+    "A_ADD",
+    "A_SUB",
+    "A_MUL",
+    "A_DIV",
+    "A_MOD",
+    "A_EXP",
+    "A_UNARYMINUS",
+    "A_UNARYPLUS",
+    "A_NOT",
+    "A_BNOT",
 };
 
 void
 debug_node(union node* node, int depth) {
   debug_unquoted(NULL, debug_nodes[node->id], depth);
-  debug_space(depth, node->id != N_ARITH_NUM ? 1 : 0);
+  debug_space(depth, node->id != A_NUM ? 1 : 0);
 
   switch(node->id) {
     case N_SIMPLECMD:
@@ -193,42 +193,42 @@ debug_node(union node* node, int depth) {
       debug_sublist("tree", node->nargarith.tree, depth);
       break;
 
-    case N_ARITH_NUM:
+    case A_NUM:
       debug_ulong(0, node->narithnum.num, depth);
       break;
 
-      //    case N_ARITH_VAR: debug_str("var", node->narithvar.var, depth); break;
+      //    case A_VAR: debug_str("var", node->narithvar.var, depth); break;
 
-    case N_ARITH_ADD:
-    case N_ARITH_SUB:
-    case N_ARITH_MUL:
-    case N_ARITH_DIV:
-    case N_ARITH_OR:
-    case N_ARITH_AND:
-    case N_ARITH_BOR:
-    case N_ARITH_BXOR:
-    case N_ARITH_BAND:
-    case N_ARITH_EQ:
-    case N_ARITH_NE:
-    case N_ARITH_LT:
-    case N_ARITH_GT:
-    case N_ARITH_GE:
-    case N_ARITH_LE:
-    case N_ARITH_LSHIFT:
-    case N_ARITH_RSHIFT:
-    case N_ARITH_MOD:
-    case N_ARITH_EXP:
+    case A_ADD:
+    case A_SUB:
+    case A_MUL:
+    case A_DIV:
+    case A_OR:
+    case A_AND:
+    case A_BOR:
+    case A_BXOR:
+    case A_BAND:
+    case A_EQ:
+    case A_NE:
+    case A_LT:
+    case A_GT:
+    case A_GE:
+    case A_LE:
+    case A_LSHIFT:
+    case A_RSHIFT:
+    case A_MOD:
+    case A_EXP:
       debug_sublist("left", node->narithbinary.left, depth);
       debug_space(depth, 1);
       debug_sublist("right", node->narithbinary.right, depth);
       break;
 
-    case N_ARITH_PAREN: debug_sublist("tree", node->nargarith.tree, depth); break;
+    case A_PAREN: debug_sublist("tree", node->nargarith.tree, depth); break;
 
-    case N_ARITH_NOT:
-    case N_ARITH_BNOT:
-    case N_ARITH_UNARYMINUS:
-    case N_ARITH_UNARYPLUS: debug_sublist("node", node->narithunary.node, depth); break;
+    case A_NOT:
+    case A_BNOT:
+    case A_UNARYMINUS:
+    case A_UNARYPLUS: debug_sublist("node", node->narithunary.node, depth); break;
 
     case N_NOT: debug_sublist("cmds", node->nandor.cmd0, depth); break;
   }

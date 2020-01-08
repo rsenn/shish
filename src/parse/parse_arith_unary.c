@@ -14,10 +14,10 @@ parse_arith_unary(struct parser* p) {
     return 0;
 
   switch(c) {
-    case '!': n = N_ARITH_NOT; break;
-    case '~': n = N_ARITH_BNOT; break;
-    case '-': n = N_ARITH_UNARYMINUS; break;
-    case '+': n = N_ARITH_UNARYPLUS; break;
+    case '!': n = A_NOT; break;
+    case '~': n = A_BNOT; break;
+    case '-': n = A_UNARYMINUS; break;
+    case '+': n = A_UNARYPLUS; break;
     default: return parse_arith_value(p);
   }
 

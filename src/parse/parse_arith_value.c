@@ -71,7 +71,7 @@ parse_arith_value(struct parser* p) {
 
     scan_fn(x, &num);
 
-    node = tree_newnode(N_ARITH_NUM);
+    node = tree_newnode(A_NUM);
     node->narithnum.num = num;
 
     return node;

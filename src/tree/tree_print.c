@@ -337,81 +337,81 @@ tree_print(union node* node, stralloc* sa) {
       break;
     }
 
-    case N_ARITH_NUM: {
+    case A_NUM: {
       stralloc_catlong(sa, node->narithnum.num);
       break;
     }
       /*
-          case N_ARITH_VAR: {
+          case A_VAR: {
             stralloc_cats(sa, node->narithvar.var);
             break;
           }*/
 
-    case N_ARITH_ADD:
-    case N_ARITH_SUB:
-    case N_ARITH_MUL:
-    case N_ARITH_DIV:
-    case N_ARITH_OR:
-    case N_ARITH_AND:
-    case N_ARITH_BOR:
-    case N_ARITH_BXOR:
-    case N_ARITH_BAND:
-    case N_ARITH_EQ:
-    case N_ARITH_NE:
-    case N_ARITH_LT:
-    case N_ARITH_GT:
-    case N_ARITH_GE:
-    case N_ARITH_LE:
-    case N_ARITH_LSHIFT:
-    case N_ARITH_RSHIFT:
-    case N_ARITH_MOD:
-    case N_ARITH_EXP: {
+    case A_ADD:
+    case A_SUB:
+    case A_MUL:
+    case A_DIV:
+    case A_OR:
+    case A_AND:
+    case A_BOR:
+    case A_BXOR:
+    case A_BAND:
+    case A_EQ:
+    case A_NE:
+    case A_LT:
+    case A_GT:
+    case A_GE:
+    case A_LE:
+    case A_LSHIFT:
+    case A_RSHIFT:
+    case A_MOD:
+    case A_EXP: {
 
       tree_print(node->narithbinary.left, sa);
 
       switch(node->narithbinary.id) {
-        case N_ARITH_ADD: stralloc_catc(sa, '+'); break;
-        case N_ARITH_SUB: stralloc_catc(sa, '-'); break;
-        case N_ARITH_MUL: stralloc_catc(sa, '*'); break;
-        case N_ARITH_DIV: stralloc_catc(sa, '/'); break;
-        case N_ARITH_OR: stralloc_cats(sa, "||"); break;
-        case N_ARITH_AND: stralloc_cats(sa, "&&"); break;
-        case N_ARITH_BOR: stralloc_catc(sa, '|'); break;
-        case N_ARITH_BXOR: stralloc_catc(sa, '^'); break;
-        case N_ARITH_BAND: stralloc_catc(sa, '&'); break;
-        case N_ARITH_EQ: stralloc_cats(sa, "=="); break;
-        case N_ARITH_NE: stralloc_cats(sa, "!="); break;
-        case N_ARITH_LT: stralloc_cats(sa, "<"); break;
-        case N_ARITH_GT: stralloc_cats(sa, ">"); break;
-        case N_ARITH_GE: stralloc_cats(sa, ">="); break;
-        case N_ARITH_LE: stralloc_cats(sa, "<="); break;
-        case N_ARITH_LSHIFT: stralloc_cats(sa, "<<"); break;
-        case N_ARITH_RSHIFT: stralloc_cats(sa, ">>"); break;
-        case N_ARITH_MOD: stralloc_catc(sa, '%'); break;
-        case N_ARITH_EXP: stralloc_cats(sa, "**"); break;
+        case A_ADD: stralloc_catc(sa, '+'); break;
+        case A_SUB: stralloc_catc(sa, '-'); break;
+        case A_MUL: stralloc_catc(sa, '*'); break;
+        case A_DIV: stralloc_catc(sa, '/'); break;
+        case A_OR: stralloc_cats(sa, "||"); break;
+        case A_AND: stralloc_cats(sa, "&&"); break;
+        case A_BOR: stralloc_catc(sa, '|'); break;
+        case A_BXOR: stralloc_catc(sa, '^'); break;
+        case A_BAND: stralloc_catc(sa, '&'); break;
+        case A_EQ: stralloc_cats(sa, "=="); break;
+        case A_NE: stralloc_cats(sa, "!="); break;
+        case A_LT: stralloc_cats(sa, "<"); break;
+        case A_GT: stralloc_cats(sa, ">"); break;
+        case A_GE: stralloc_cats(sa, ">="); break;
+        case A_LE: stralloc_cats(sa, "<="); break;
+        case A_LSHIFT: stralloc_cats(sa, "<<"); break;
+        case A_RSHIFT: stralloc_cats(sa, ">>"); break;
+        case A_MOD: stralloc_catc(sa, '%'); break;
+        case A_EXP: stralloc_cats(sa, "**"); break;
       }
 
       tree_print(node->narithbinary.right, sa);
       break;
     }
 
-    case N_ARITH_PAREN:
+    case A_PAREN:
 
       stralloc_catc(sa, '(');
       tree_printlist(node->nargarith.tree, sa, ", ");
       stralloc_catc(sa, ')');
       break;
 
-    case N_ARITH_NOT:
-    case N_ARITH_BNOT:
-    case N_ARITH_UNARYMINUS:
-    case N_ARITH_UNARYPLUS: {
+    case A_NOT:
+    case A_BNOT:
+    case A_UNARYMINUS:
+    case A_UNARYPLUS: {
 
       switch(node->narithunary.id) {
-        case N_ARITH_NOT: stralloc_catc(sa, '!'); break;
-        case N_ARITH_BNOT: stralloc_catc(sa, '~'); break;
-        case N_ARITH_UNARYMINUS: stralloc_catc(sa, '-'); break;
-        case N_ARITH_UNARYPLUS: stralloc_catc(sa, '+'); break;
+        case A_NOT: stralloc_catc(sa, '!'); break;
+        case A_BNOT: stralloc_catc(sa, '~'); break;
+        case A_UNARYMINUS: stralloc_catc(sa, '-'); break;
+        case A_UNARYPLUS: stralloc_catc(sa, '+'); break;
       }
       tree_print(node->narithunary.node, sa);
       break;

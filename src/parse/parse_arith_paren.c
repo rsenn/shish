@@ -18,7 +18,7 @@ parse_arith_paren(struct parser* p) {
   source_skip();
   parse_skipspace(p);
 
-  node = tree_newnode(N_ARITH_PAREN);
+  node = tree_newnode(A_PAREN);
 
   nptr = &node->nargarith.tree;
 

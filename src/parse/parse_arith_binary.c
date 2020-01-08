@@ -9,7 +9,7 @@ parse_arith_binary(struct parser* p, int precedence) {
   union node *lnode, *rnode, *newnode;
   char c;
   int ntype = -1;
-  char cbuf[2];
+  char a,b;
   int prec = precedence;
 
   lnode = precedence < 1 ? parse_arith_unary(p) : parse_arith_binary(p, precedence - 1);
@@ -19,12 +19,12 @@ parse_arith_binary(struct parser* p, int precedence) {
 
   parse_skipspace(p);
 
-  if(source_peek(&cbuf[0]) <= 0 || source_peekn(&cbuf[1], 1) <= 0) {
+  if(source_peek(&a) <= 0 || source_peekn(&b, 1) <= 0) {
     tree_free(lnode);
     return NULL;
   }
 
-  c = cbuf[0];
+  c = a;
 
   do {
 
@@ -33,49 +33,49 @@ parse_arith_binary(struct parser* p, int precedence) {
 
     if(prec <= 1) {
       switch(c) {
-        case '*': ntype = N_ARITH_MUL; break;
-        case '/': ntype = N_ARITH_DIV; break;
-        case '%': ntype = N_ARITH_MOD; break;
+        case '*': ntype = A_MUL; break;
+        case '/': ntype = A_DIV; break;
+        case '%': ntype = A_MOD; break;
       }
     } else if(prec <= 2) {
       switch(c) {
-        case '+': ntype = N_ARITH_ADD; break;
-        case '-': ntype = N_ARITH_SUB; break;
+        case '+': ntype = A_ADD; break;
+        case '-': ntype = A_SUB; break;
       }
     } else if(prec <= 3) {
 
-      if((cbuf[0] == '>' || cbuf[0] == '<') && cbuf[0] == cbuf[1]) {
-        ntype = cbuf[0] == '>' ? N_ARITH_RSHIFT : N_ARITH_LSHIFT;
+      if((a == '>' || a == '<') && a == b) {
+        ntype = a == '>' ? A_RSHIFT : A_LSHIFT;
         source_skip();
       }
 
     } else if(prec <= 4) {
 
-      if(cbuf[0] == '>') {
-        ntype = cbuf[1] == '=' ? N_ARITH_GE : N_ARITH_GT;
-        if(cbuf[1] == '=')
+      if(a == '>') {
+        ntype = b == '=' ? A_GE : A_GT;
+        if(b == '=') 
           source_skip();
-      } else if(cbuf[0] == '<') {
-        ntype = cbuf[1] == '=' ? N_ARITH_LE : N_ARITH_LT;
-        if(cbuf[1] == '=')
+      } else if(a == '<') {
+        ntype = b == '=' ? A_LE : A_LT;
+        if(b == '=')
           source_skip();
       }
 
     } else if(prec <= 5) {
 
-      if(cbuf[1] == '=' && (cbuf[0] == '=' || cbuf[0] == '!')) {
-        ntype = cbuf[0] == '!' ? N_ARITH_NE : N_ARITH_EQ;
+      if(b == '=' && (a == '=' || a == '!')) {
+        ntype = a == '!' ? A_NE : A_EQ;
         source_skip();
       }
     } else if(prec <= 6) {
       switch(c) {
-        case '&': ntype = N_ARITH_BAND; break;
-        case '|': ntype = N_ARITH_BOR; break;
-        case '^': ntype = N_ARITH_BXOR; break;
+        case '&': ntype = A_BAND; break;
+        case '|': ntype = A_BOR; break;
+        case '^': ntype = A_BXOR; break;
       }
     } else if(prec <= 7) {
-      if((cbuf[0] == '&' || cbuf[0] == '|') && cbuf[0] == cbuf[1]) {
-        ntype = cbuf[0] == '&' ? N_ARITH_AND : N_ARITH_OR;
+      if((a == '&' || a == '|') && a == b) {
+        ntype = a == '&' ? A_AND : A_OR;
         source_skip();
       }
     }
