@@ -9,13 +9,13 @@ expand_args(union node* args, union node** nptr) {
   union node* arg;
   union node* n;
   int ret = 0;
-
-  *nptr = NULL;
+  struct expand x = EXPAND_INIT(0, nptr, 0);
+  //  *nptr = NULL;
 
   for(arg = args; arg; arg = arg->list.next) {
 
-    if((n = expand_arg(&arg->narg, nptr))) {
-      nptr = &n;
+    if((n = expand_arg(&x, &arg->narg))) {
+      x.ptr = &n;
       ret++;
     }
 
@@ -23,8 +23,8 @@ expand_args(union node* args, union node** nptr) {
       continue;
 
     if(n->narg.flag & X_GLOB) {
-      if((n = expand_glob(nptr, n->narg.flag & ~X_GLOB))) {
-        nptr = &n;
+      if((n = expand_glob(x.ptr, n->narg.flag & ~X_GLOB))) {
+        x.ptr = &n;
         ret++;
       }
     } else {
@@ -34,12 +34,14 @@ expand_args(union node* args, union node** nptr) {
 
     if(arg->list.next) {
       n->list.next = tree_newnode(N_ARG);
-      nptr = &n->list.next;
-      n = *nptr;
+      x.ptr = &n->list.next;
+      n = *x.ptr;
       stralloc_init(&n->narg.stra);
       ret++;
     }
   }
+
+  nptr = *x.ptr;
 
   return ret;
 }

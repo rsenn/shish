@@ -23,5 +23,5 @@ expand_arith(struct expand* ex, union node* arith) {
       stralloc_init(&n->narg.stra);
     }*/
 
-  n = expand_cat(&ex, buf, len);
+  n = expand_cat(buf, len, ex->ptr, ex->flags);
 }

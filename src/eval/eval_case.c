@@ -11,7 +11,7 @@ eval_case(struct eval* e, struct ncase* ncase) {
   union node* node;
   union node* pat;
   int ret = 0;
-    struct expand x = EXPAND_INIT(0, 0, X_NOSPLIT);
+  struct expand x = EXPAND_INIT(0, 0, X_NOSPLIT);
 
   stralloc word;
   stralloc pattern;
@@ -19,7 +19,7 @@ eval_case(struct eval* e, struct ncase* ncase) {
   stralloc_init(&pattern);
 
   if(ncase->word)
-    expand_appendsa( ncase->word, &word);
+    expand_appendsa(ncase->word, &word);
 
   stralloc_nul(&word);
 

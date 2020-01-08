@@ -71,6 +71,7 @@ typedef struct expand {
 
 #define EXPAND_INIT(r,p,f) { r, p, f };
 
+
 void        expand_appendsa(union node* node, stralloc* sa);
 union node* expand_arg(struct expand* ex, struct narg* narg);
 int         expand_args(union node* args, union node** nptr);
@@ -79,7 +80,7 @@ int         expand_arith_binary(struct expand* ex, struct narithbinary* expr, in
 int         expand_arith_expr(struct expand* ex, union node* expr, int64* r);
 union node* expand_arith(struct expand* ex, union node* arith);
 int         expand_arith_unary(struct expand* ex, struct narithunary* expr, int64* r);
-union node* expand_cat(struct expand* ex, const char* b, unsigned int len);
+union node* expand_cat(const char* b, unsigned int len, union node** nptr, int flags);
 union node* expand_command(struct expand* ex, struct nargcmd* cmd);
 void        expand_escape(struct expand* ex, stralloc* sa, const char* b, unsigned int n);
 union node* expand_glob(union node** nptr, int flags);

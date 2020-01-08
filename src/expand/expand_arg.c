@@ -32,7 +32,7 @@ expand_arg(struct expand* ex, struct narg* narg) {
       case N_ARGCMD: n = expand_command(ex, &subarg->nargcmd); break;
 
       /* constant string */
-      default: n = expand_cat(ex, subarg->nargstr.stra.s, subarg->nargstr.stra.len); break;
+      default: n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, ex->ptr, lflags); break;
     }
 
     if(n)

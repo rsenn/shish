@@ -47,7 +47,7 @@ expand_command(struct expand* ex, struct nargcmd* cmd) {
 
             so we won't have to alloc all the stuff twice!
    */
-  n = expand_cat(&ex, sa.s, sa.len);
+  n = expand_cat(sa.s, sa.len, ex->ptr, ex->flags);
   stralloc_free(&sa);
 
   return n;

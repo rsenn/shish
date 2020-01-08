@@ -9,7 +9,7 @@ expand_vars(union node* vars, union node** nptr) {
   union node* var;
   union node* n;
   int ret = 0;
-  struct expand x = EXPAND_INIT(0, 0, X_NOSPLIT);
+  struct expand x = EXPAND_INIT(0, nptr, X_NOSPLIT);
 
   *x.ptr = NULL;
 
