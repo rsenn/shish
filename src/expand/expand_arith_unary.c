@@ -13,8 +13,8 @@ expand_arith_unary(struct expand* ex, struct narithunary* expr, int64* r) {
     return 1;
 
   switch(expr->id) {
-    case A_UNARYMINUS: *r = -value; break;
-    case A_UNARYPLUS: *r = +value; break;
+    case A_UNARYMINUS: *r = 0 - value; break;
+    case A_UNARYPLUS: *r = value; break;
     case A_NOT: *r = !value; break;
     case A_BNOT: *r = ~value; break;
 

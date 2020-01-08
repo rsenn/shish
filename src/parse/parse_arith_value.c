@@ -29,7 +29,7 @@ parse_arith_value(struct parser* p) {
   if(parse_isdigit(c)) {
     char x[FMT_LONG + 1];
 
-    unsigned int n = 0;
+    size_t n = 0;
     int64 num;
 
     do {

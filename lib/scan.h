@@ -125,6 +125,7 @@ int scan_fromhex(unsigned char c);
 #ifdef UINT64_H
 size_t scan_octal(const char* src, uint64* dest);
 size_t scan_xlonglong(const char* src, uint64* dest);
+size_t scan_varint(const char* in, size_t len, uint64* n);
 #endif
 
 #ifdef __cplusplus

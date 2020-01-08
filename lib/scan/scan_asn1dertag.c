@@ -1,5 +1,6 @@
-#include "../scan.h"
+#include "uint64.h"
 #include "../uint64.h"
+#include "../scan.h"
 
 /* ASN.1 DER tag encoding parser.
  * Write value as big endian series of bytes, each containing seven

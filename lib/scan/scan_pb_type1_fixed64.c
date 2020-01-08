@@ -1,5 +1,5 @@
-#include "../scan.h"
 #include "../uint64.h"
+#include "../scan.h"
 
 size_t
 scan_pb_type1_fixed64(const char* in, size_t len, uint64* d) {

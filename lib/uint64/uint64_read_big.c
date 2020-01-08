@@ -1,6 +1,7 @@
-#define NO_UINT64_MACROS
-#include "../uint32.h"
+#include "uint64.h"
 #include "../uint64.h"
+//#undef NO_UINT64_MACROS
+#include "../uint32.h"
 
 uint64
 uint64_read_big(const char* in) {

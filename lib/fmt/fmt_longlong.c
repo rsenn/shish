@@ -1,5 +1,6 @@
-#include "../fmt.h"
+#include "uint64.h"
 #include "../uint64.h"
+#include "../fmt.h"
 
 size_t
 fmt_longlong(char* dest, int64 i) {
