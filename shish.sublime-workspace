@@ -1,592 +1,1746 @@
 {
-  "auto_complete": {
-    "selected_items": [["USE_", "USE_HD44780_LCD"]]
-  },
-  "buffers": [
-    {
-      "file": "lib/scan/scan_xlonglong.c",
-      "settings": {
-        "buffer_size": 272,
-        "line_ending": "Unix"
-      }
-    },
-    {
-      "file": "src/parse/parse_arith_value.c",
-      "settings": {
-        "buffer_size": 1765,
-        "line_ending": "Unix"
-      }
-    },
-    {
-      "file": "src/parse/parse_error.c",
-      "settings": {
-        "buffer_size": 516,
-        "line_ending": "Unix"
-      }
-    }
-  ],
-  "build_system": "",
-  "build_system_choices": [
-    [
-      [
-        ["Packages/C++/C++ Single File.sublime-build", ""],
-        ["Packages/C++/C++ Single File.sublime-build", "Run"],
-        ["Packages/Makefile/Make.sublime-build", ""],
-        ["Packages/Makefile/Make.sublime-build", "Clean"]
-      ],
-      ["Packages/Makefile/Make.sublime-build", ""]
-    ],
-    [
-      [
-        ["Packages/Makefile/Make.sublime-build", ""],
-        ["Packages/Makefile/Make.sublime-build", "Clean"]
-      ],
-      ["Packages/Makefile/Make.sublime-build", ""]
-    ]
-  ],
-  "build_varint": "",
-  "command_palette": {
-    "height": 363.0,
-    "last_filter": "",
-    "selected_items": [
-      ["install p", "Package Control: Install Package"],
-      ["install", "Package Control: Install Package"],
-      ["Package Control: adv", "Package Control: Advanced Install Package"],
-      ["in", "Package Control: Advanced Install Package"],
-      ["Package Control: ", "Package Control: Discover Packages"],
-      ["ins", "Package Control: Advanced Install Package"],
-      ["pac", "Package Control: Discover Packages"],
-      ["adva", "Package Control: Advanced Install Package"],
-      ["insta", "Package Control: Advanced Install Package"],
-      ["Package Control: insta", "Package Control: Advanced Install Package"],
-      ["package", "Package Control: Discover Packages"],
-      ["Remove", "Package Control: Remove Package"],
-      ["make", "Makefile (dirlist): make all"],
-      ["build", "Build: New Build System"],
-      ["packa", "Package Control: Advanced Install Package"],
-      ["", "About"]
-    ],
-    "width": 449.0
-  },
-  "console": {
-    "height": 219.0,
-    "history": [
-      "Theme - Spacefunk, C++ Starting Kit",
-      "schemr",
-      "schemr_favorite_current_scheme",
-      "import urllib.request,os,hashlib; h = 'df21e130d211cfc94d9b0905775a7c0f' + '1e3d39e33b79698005270310898eea76'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://packagecontrol.io/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)"
-    ]
-  },
-  "distraction_free": {
-    "menu_visible": true,
-    "show_minimap": false,
-    "show_open_files": false,
-    "show_tabs": false,
-    "side_bar_visible": false,
-    "status_bar_visible": false
-  },
-  "expanded_folders": [
-    "/home/roman/Dokumente/Sources/shish",
-    "/home/roman/Dokumente/Sources/shish/src",
-    "/home/roman/Dokumente/Sources/shish/src/debug",
-    "/home/roman/Dokumente/Sources/shish/src/expand",
-    "/home/roman/Dokumente/Sources/shish/src/parse",
-    "/home/roman/Dokumente/Sources/shish/src/tree"
-  ],
-  "file_history": [
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_appendsa.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_tosa.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_args.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_arg.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand.h",
-    "/home/roman/Dokumente/Sources/shish/src/eval/eval_case.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_escape.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_arith_unary.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_arith_expr.c",
-    "/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_value.c",
-    "/home/roman/Dokumente/Sources/shish/src/builtin/builtin_cd.c",
-    "/home/roman/Dokumente/Sources/shish/lib/scan/scan_longlong.c",
-    "/home/roman/Dokumente/Sources/shish/x86_64-linux-diet.log",
-    "/home/roman/Dokumente/Sources/shish/lib/scan.h",
-    "/home/roman/Dokumente/Sources/shish/lib/scan/scan_8longn.c",
-    "/home/roman/Dokumente/Sources/shish/lib/scan/scan_ulonglong.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_arith.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_cat.c",
-    "/home/roman/Dokumente/Sources/shish/src/parse.h",
-    "/home/roman/Dokumente/Sources/shish/src/tree.h",
-    "/home/roman/Dokumente/Sources/shish/src/parse/parse_chartable.c",
-    "/home/roman/Dokumente/Sources/shish/lib/scan/scan_octal.c",
-    "/home/roman/Dokumente/Sources/shish/lib/scan/scan_8long.c",
-    "/home/roman/Dokumente/Sources/shish/lib/uint64.h",
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_newnode.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_glob.c",
-    "/home/roman/Dokumente/Sources/shish/src/eval/eval_simple_command.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_vars.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_command.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_catsa.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_param.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_copysa.c",
-    "/home/roman/Dokumente/Sources/shish/src/parse/parse_compound_list.c",
-    "/home/roman/Dokumente/Sources/shish/src/parse/parse_case.c",
-    "/home/roman/Dokumente/Sources/shish/src/prompt/prompt_expand.c",
-    "/home/roman/Dokumente/Sources/shish/src/redir/redir_source.c",
-    "/home/roman/Dokumente/Sources/shish/src/redir/redir_eval.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_argv.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_arith_binary.c",
-    "/home/roman/Dokumente/Sources/shish/src/eval/eval_command.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand/Makefile.in",
-    "/home/roman/Dokumente/Sources/shish/src/eval/eval_for.c",
-    "/home/roman/Dokumente/Sources/shish/src/expand/expand_unescape.c",
-    "/home/roman/Dokumente/Sources/shish/src/parse/parse_word.c",
-    "/home/roman/Dokumente/Sources/shish/lib/fmt.h",
-    "/home/roman/Dokumente/Sources/shish/lib/uint32/uint32_random.c",
-    "/home/roman/Dokumente/Sources/shish/src/parse/parse_newnode.c",
-    "/home/roman/Dokumente/Sources/shish/src/parse/parse_and_or.c",
-    "/home/roman/Dokumente/Sources/shish/src/parse/parse_unquoted.c",
-    "/home/roman/Dokumente/Sources/shish/src/debug/debug_begin.c",
-    "/home/roman/Dokumente/Sources/shish/CMakeLists.txt",
-    "/home/roman/Dokumente/Sources/shish/src/sh/sh_loop.c",
-    "/home/roman/Dokumente/Sources/shish/src/builtin/builtin_table.c",
-    "/home/roman/Dokumente/Sources/shish/src/builtin/builtin_error.c",
-    "/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_expr.c",
-    "/home/roman/Dokumente/Sources/shish/src/debug/debug_node.c",
-    "/home/roman/Dokumente/Sources/shish/src/debug.h",
-    "/home/roman/Dokumente/Sources/shish/src/tree/tree_free.c",
-    "/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_binary.c",
-    "/home/roman/Dokumente/Sources/shish/src/debug/debug_space.c",
-    "/home/roman/Dokumente/Sources/shish/src/debug/debug_end.c",
-    "/home/roman/Dokumente/Sources/shish/src/parse/parse_param.c",
-    "/home/roman/Dokumente/Sources/shish/src/tree/tree_print.c",
-    "/home/roman/Dokumente/Sources/shish/lib/open/open_temp.c",
-    "/home/roman/Dokumente/Sources/shish/src/source/source_peekn.c",
-    "/home/roman/Dokumente/Sources/shish/src/debug/debug_subst.c",
-    "/home/roman/Dokumente/Sources/shish/lib/shell/shell_gethome.c",
-    "/home/roman/Dokumente/Sources/shish/src/parse/parse_subst.c",
-    "/home/roman/Dokumente/Sources/shish/src/redir/redir_parse.c",
-    "/home/roman/Dokumente/Sources/shish/src/parse/parse_arith.c",
-    "/home/roman/Dokumente/Sources/shish/src/source/source_peek.c",
-    "/home/roman/Dokumente/Sources/shish/src/expr/expr_tokens.c",
-    "/home/roman/Dokumente/Sources/shish/src/parse/parse_here.c",
-    "/home/roman/Dokumente/Sources/shish/src/tree/tree_newnode.c",
-    "/home/roman/Dokumente/Sources/shish/src/parse/parse_string.c",
-    "/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_paren.c",
-    "/home/roman/Dokumente/Sources/shish/lib/fmt/fmt_longlong.c",
-    "/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_unary.c",
-    "/home/roman/Dokumente/Sources/shish/src/parse/parse_getarg.c",
-    "/home/roman/Sources/shish/src/expand/expand_arith_binary.c",
-    "/home/roman/Dokumente/Sources/shish/Grammar.ebnf",
-    "/home/roman/Dokumente/Sources/shish/expressions.ebnf",
-    "/home/roman/Dokumente/Sources/shish/src/debug/debug_char.c",
-    "/home/roman/Dokumente/Sources/shish/src/debug/debug_ptr.c",
-    "/home/roman/Dokumente/Sources/shish/src/debug/debug_redir.c",
-    "/home/roman/Dokumente/Sources/shish/src/debug/debug_sublist.c",
-    "/home/roman/Dokumente/Sources/shish/src/debug/debug_unquoted.c",
-    "/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_fromsa.c",
-    "/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_putsa.c",
-    "/home/roman/Dokumente/Sources/shish/src/debug/debug_list.c",
-    "/home/roman/Dokumente/Sources/shish/shish.sublime-project",
-    "/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/CTags/Default.sublime-keymap",
-    "/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/CTags/CTags.sublime-settings",
-    "/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/User/CTags.sublime-settings",
-    "/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/Cscope/CscopeSublime.sublime-settings",
-    "/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/User/CscopeSublime.sublime-settings",
-    "/C/Users/roman/Desktop/dirlist/lib/path/path_collapse.c",
-    "/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/Outline/outline.sublime-settings",
-    "/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/User/outline.sublime-settings",
-    "/C/Users/roman/Desktop/dirlist/genmakefile.c",
-    "/C/Users/roman/Desktop/dirlist/genmakefile/genmakefile.c",
-    "/C/Users/roman/Desktop/dirlist/lib/path/path_skip_separator.c",
-    "/C/Users/roman/Desktop/dirlist/lib/path/path_is_separator.c",
-    "/C/Users/roman/Desktop/dirlist/lib/path/path_skip.c",
-    "/C/Users/roman/Desktop/dirlist/tests/CMakeLists.txt",
-    "/C/Users/roman/Desktop/dirlist/lib/path/path_is_absolute.c",
-    "/C/Users/roman/Desktop/dirlist/lib/strlist/strlist_push_unique.c",
-    "/C/Users/roman/Desktop/dirlist/lib/path/path_basename.c",
-    "/C/Users/roman/Desktop/dirlist/CMakeLists.txt",
-    "/C/Users/roman/Desktop/dirlist/dirlist.sublime-project",
-    "/C/Users/roman/Desktop/dirlist/lib/path/path_absolute_sa.c",
-    "/C/Users/roman/Desktop/dirlist/lib/path/path_dirname.c",
-    "/C/Users/roman/Desktop/dirlist/lib/path/path_exists.c",
-    "/C/Users/roman/Desktop/dirlist/lib/path/path_fnmatch.c",
-    "/C/Users/roman/Desktop/dirlist/SetMSVCStaticRuntime.cmake",
-    "/C/Users/roman/Desktop/dirlist/lib/unit_test.h",
-    "/C/Users/roman/Desktop/dirlist/lib/path_internal.h",
-    "/C/Users/roman/Desktop/dirlist/lib/strlist/strlist_pop.c",
-    "/C/Users/roman/Desktop/dirlist/lib/popen.c",
-    "/C/Users/roman/Desktop/dirlist/lib/uint16.h",
-    "/C/Users/roman/Desktop/dirlist/lib/strlist/strlist_to_argv.c",
-    "/C/Users/roman/Desktop/dirlist/tests/test_strlist.c",
-    "/C/Users/roman/Desktop/dirlist/tests/all_tests.c",
-    "/C/Users/roman/Desktop/dirlist/tests/test_path.c",
-    "/C/Users/roman/Desktop/dirlist/access.c",
-    "/C/Users/roman/Desktop/dirlist/lib/uint64.h",
-    "/C/Users/roman/Desktop/dirlist/lib/binfmt.h",
-    "/C/Users/roman/Desktop/dirlist/lib/windoze.h"
-  ],
-  "find": {
-    "height": 42.0
-  },
-  "find_in_files": {
-    "height": 137.0,
-    "where_history": [
-      "/home/roman/Dokumente/Sources/shish/src,/home/roman/Dokumente/Sources/shish/lib,*.c,*.h",
-      "/home/roman/Dokumente/Sources/shish/src,/home/roman/Dokumente/Sources/shish/lib,*.c",
-      "/home/roman/Dokumente/Sources/shish/src,/home/roman/Dokumente/Sources/shish/lib,*.c,*.h",
-      "*.c,*.h",
-      "*.c",
-      ""
-    ]
-  },
-  "find_state": {
-    "case_sensitive": false,
-    "find_history": [
-      "errno",
-      "isdigit",
-      "parse_isdigit",
-      "expand_",
-      "tree_newnode",
-      "expand_newnode",
-      "expand.*node",
-      "newnode",
-      "tree_newnode.*ARG",
-      "tree_newnode",
-      "narg ",
-      "expand_glob",
-      "expand_args\\(",
-      "expand_args(",
-      "narg ",
-      "N_ARG",
-      "expand_tosa",
-      "subarg->",
-      "subarg.*->",
-      "x.ptr",
-      "nptr",
-      "tree_init",
-      "expand_param",
-      "nptr",
-      "x\\.flags",
-      "x\\.",
-      "expand_gl",
-      "flags",
-      "glob",
-      "tmpx",
-      "ex->",
-      " flags",
-      "catsa",
-      ", nptr, flags)",
-      ", union node** nptr, int flags",
-      "&ex",
-      ", lflags)",
-      ", nptr)",
-      "expand_cat",
-      "expand_args",
-      "expand_cat(",
-      "expand",
-      "write",
-      "flags",
-      "nptr",
-      "flags",
-      "expand_cat",
-      "expand_vars",
-      "expand_",
-      ", union node** nptr, int flags",
-      "expand_param",
-      "n",
-      "expand_",
-      "printlist",
-      "add_de",
-      "BUILTINS_DISABLED",
-      "ERROR",
-      "toupp",
-      "DISA",
-      "replace",
-      "add_exe",
-      "tree_print\\(",
-      "tree_print",
-      "fmt_.*short",
-      "ushort",
-      "uint32_random",
-      "PARAM",
-      "S_ESCAPE",
-      "S_",
-      "DEBUG_BEG",
-      "DEBUG_END",
-      "parse_param",
-      "ARGARITH",
-      "pre",
-      "ARGARITH",
-      "\"\\|",
-      "\"|",
-      ",n \\+= .*;",
-      ", n \\+= .*;",
-      ", n += .*;",
-      "stralloc_cats(&flags",
-      "stralloc_cats(&flags,",
-      "stralloc_cats(.flags,",
-      "\":\"",
-      "precedence",
-      "ARITH_AND",
-      "ARITH_AND\"",
-      "ARITH_AND",
-      "parse_arith",
-      "parse_arith\\(",
-      "'<'",
-      "redir_parse",
-      "N_REDIR",
-      "P_NO",
-      "P_NOREDIR",
-      "P_NO",
-      "P_NOREDIR",
-      "P_NOREDIR\n",
-      "P_NO",
-      "P_NORED",
-      "unexpe",
-      "ARITH_VAR",
-      "// ",
-      "ARITH_VAR",
-      "p->node =",
-      "p->node",
-      "arithvar",
-      "BNOT",
-      "narith",
-      "expand_args\\(",
-      "tree_newnode",
-      "narg ",
-      "expand_cat",
-      "tree_new.*ARG",
-      "expand_cat",
-      "N_ARGSTR",
-      "tree_new.*N_ARG",
-      "tree_new.*STR",
-      "tree_new",
-      "expand_cat",
-      "expand_cat\\(",
-      "expand_cat",
-      "expand_arith",
-      "_ADD",
-      "nargarith",
-      "unary",
-      "binary",
-      "expand_expr"
-    ],
-    "highlight": true,
-    "in_selection": false,
-    "preserve_case": false,
-    "regex": true,
-    "replace_history": [
-      "nptr",
-      "&n",
-      "x.ptr",
-      "ex->ptr",
-      "ex->flags",
-      "x.",
-      " ex->flags",
-      ")",
-      "",
-      "&x",
-      ")",
-      "expand_cat(ex, ",
-      "ex->flags",
-      "ex->ptr",
-      "",
-      "ENA",
-      "\" | ",
-      ";",
-      "stralloc_cats(&sa",
-      "stralloc_cats(&sa,",
-      "prec",
-      "p",
-      "unary",
-      "expand_arith",
-      "debug_space(depth, 1)"
-    ],
-    "reverse": false,
-    "show_context": true,
-    "use_buffer2": true,
-    "whole_word": false,
-    "wrap": true
-  },
-  "groups": [
-    {
-      "selected": 1,
-      "sheets": [
-        {
-          "buffer": 0,
-          "file": "lib/scan/scan_xlonglong.c",
-          "semi_transient": false,
-          "settings": {
-            "buffer_size": 272,
-            "regions": {},
-            "selection": [[13, 13]],
-            "settings": {
-              "color_scheme": "Packages/Rainglow/rainglow/Userscape Contrast (rainglow).tmTheme",
-              "syntax": "Packages/C99/C99.tmLanguage"
-            },
-            "translation.x": 0.0,
-            "translation.y": 0.0,
-            "zoom_level": 1.0
-          },
-          "stack_index": 2,
-          "type": "text"
-        },
-        {
-          "buffer": 1,
-          "file": "src/parse/parse_arith_value.c",
-          "semi_transient": false,
-          "settings": {
-            "buffer_size": 1765,
-            "regions": {},
-            "selection": [[906, 906]],
-            "settings": {
-              "color_scheme": "Packages/Rainglow/rainglow/Userscape Contrast (rainglow).tmTheme",
-              "syntax": "Packages/C99/C99.tmLanguage",
-              "tab_size": 2,
-              "translate_tabs_to_spaces": true
-            },
-            "translation.x": 0.0,
-            "translation.y": 693.0,
-            "zoom_level": 1.0
-          },
-          "stack_index": 0,
-          "type": "text"
-        },
-        {
-          "buffer": 2,
-          "file": "src/parse/parse_error.c",
-          "semi_transient": true,
-          "settings": {
-            "buffer_size": 516,
-            "regions": {},
-            "selection": [[15, 15]],
-            "settings": {
-              "color_scheme": "Packages/Rainglow/rainglow/Userscape Contrast (rainglow).tmTheme",
-              "syntax": "Packages/C99/C99.tmLanguage"
-            },
-            "translation.x": 0.0,
-            "translation.y": 0.0,
-            "zoom_level": 1.0
-          },
-          "stack_index": 1,
-          "type": "text"
-        }
-      ]
-    }
-  ],
-  "incremental_find": {
-    "height": 30.0
-  },
-  "input": {
-    "height": 51.0
-  },
-  "layout": {
-    "cells": [[0, 0, 1, 1]],
-    "cols": [0.0, 1.0],
-    "rows": [0.0, 1.0]
-  },
-  "menu_visible": true,
-  "output.CppBuilder": {
-    "height": 209.0
-  },
-  "output.exec": {
-    "height": 283.0
-  },
-  "output.find_results": {
-    "height": 0.0
-  },
-  "output.loghighlight": {
-    "height": 144.0
-  },
-  "output.sftp": {
-    "height": 0.0
-  },
-  "pinned_build_system": "clang-format",
-  "project": "shish.sublime-project",
-  "replace": {
-    "height": 76.0
-  },
-  "save_all_on_build": true,
-  "select_file": {
-    "height": 0.0,
-    "last_filter": "",
-    "selected_items": [
-      ["builtin_cd", "src/builtin/builtin_cd.c"],
-      ["scan_", "lib/scan/scan_8longn.c"],
-      ["xlonglong", "lib/scan/scan_xlonglong.c"],
-      ["scan_longlon", "lib/scan/scan_longlong.c"],
-      ["scan_8", "lib/scan/scan_8longn.c"],
-      ["scan.h", "lib/scan.h"],
-      ["scan_oc", "lib/scan/scan_octal.c"],
-      ["octal", "lib/scan/scan_octal.c"],
-      ["uint64.", "lib/uint64.h"],
-      ["ulonglong", "lib/scan/scan_ulonglong.c"],
-      ["eval_cas", "src/eval/eval_case.c"],
-      ["expand.h", "src/expand.h"],
-      ["tree.h", "src/tree.h"],
-      ["arg.c", "src/expand/expand_arg.c"],
-      ["eval_sim", "src/eval/eval_simple_command.c"],
-      ["redir_eval", "src/redir/redir_eval.c"],
-      ["redir_sour", "src/redir/redir_source.c"],
-      ["expand.c", "src/prompt/prompt_expand.c"],
-      ["parse_cas", "src/parse/parse_case.c"],
-      ["expand_comm", "src/expand/expand_command.c"],
-      ["eval_for", "src/eval/eval_for.c"],
-      ["expand_", "src/expand/expand_param.c"],
-      ["cmake", "CMakeLists.txt"],
-      ["sh_loop", "src/sh/sh_loop.c"],
-      ["cma", "CMakeLists.txt"],
-      ["tree_print", "src/tree/tree_print.c"],
-      ["cmak", "CMakeLists.txt"],
-      ["tree_prin", "src/tree/tree_print.c"],
-      ["fmt.h", "lib/fmt.h"],
-      ["uint32_ra", "lib/uint32/uint32_random.c"],
-      ["parse_ar", "src/parse/parse_arith_expr.c"],
-      ["parse_para", "src/parse/parse_param.c"],
-      ["word.", "src/parse/parse_word.c"],
-      ["newnode", "src/parse/parse_newnode.c"],
-      ["debug_sp", "src/debug/debug_space.c"],
-      ["debug.", "src/debug.h"],
-      ["debug_", "src/debug/debug_node.c"],
-      ["tree_free.c", "src/tree/tree_free.c"],
-      ["debug_no", "src/debug/debug_node.c"],
-      ["parse.h", "src/parse.h"],
-      ["parse", "src/parse.h"],
-      ["debug_nod", "src/debug/debug_node.c"],
-      ["tree_f", "src/tree/tree_free.c"],
-      ["tree_fr", "src/tree/tree_free.c"],
-      ["tree_free", "src/tree/tree_free.c"],
-      ["debug_node", "src/debug/debug_node.c"],
-      ["tree_fre", "src/tree/tree_free.c"],
-      ["tree", "src/tree.h"],
-      ["", "src/debug/debug_node.c"],
-      ["_node", "src/debug/debug_node.c"],
-      ["unquo", "src/parse/parse_unquoted.c"],
-      ["debug_space", "src/debug/debug_space.c"],
-      ["debug.h", "src/debug.h"],
-      ["debug_list", "src/debug/debug_list.c"],
-      ["putsa", "lib/buffer/buffer_putsa.c"],
-      ["fromsa", "lib/buffer/buffer_fromsa.c"]
-    ],
-    "width": 0.0
-  },
-  "select_project": {
-    "height": 500.0,
-    "last_filter": "",
-    "selected_items": [],
-    "width": 380.0
-  },
-  "select_symbol": {
-    "height": 0.0,
-    "last_filter": "",
-    "selected_items": [],
-    "width": 0.0
-  },
-  "selected_group": 0,
-  "settings": {},
-  "show_minimap": false,
-  "show_open_files": true,
-  "show_tabs": true,
-  "side_bar_visible": true,
-  "side_bar_width": 249.0,
-  "status_bar_visible": true,
-  "template_settings": {}
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"USE_",
+				"USE_HD44780_LCD"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "src/expand/expand_appendsa.c",
+			"settings":
+			{
+				"buffer_size": 617,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/expand/expand_to.c",
+			"settings":
+			{
+				"buffer_size": 238,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "Searching 512 files for \"list =\" (regex)\n\n/home/roman/Dokumente/Sources/shish/src/eval/eval_tree.c:\n    8  eval_tree(struct eval* e, union node* node, int tempflags) {\n    9    int ret = 0;\n   10:   int list = 0, ex = 0;\n   11    int oldflags;\n   12  \n   13    if((e->flags | tempflags) & E_LIST) {\n   14:     list = 1;\n   15      e->flags &= ~E_LIST;\n   16      tempflags &= ~E_LIST;\n\n/home/roman/Dokumente/Sources/shish/src/fdstack/fdstack_link.c:\n   11      fd->next->link = &fd->next;\n   12  \n   13:   st->list = fd;\n   14    fd->stack = st;\n   15  }\n\n/home/roman/Dokumente/Sources/shish/src/fdstack/fdstack_push.c:\n    9  \n   10    /* set up the new i/o table */\n   11:   st->list = NULL;\n   12    st->parent = fdstack;\n   13    st->level = fdstack->level + 1;\n\n/home/roman/Dokumente/Sources/shish/src/job/job_new.c:\n    2  #include \"shell.h\"\n    3  \n    4: struct job* job_list = NULL;\n    5  struct job** job_ptr = &job_list;\n    6  \n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_bquoted.c:\n   42    parse_newnode(p, N_ARGCMD);\n   43    p->node->nargcmd.flag = ((subp.flags & P_BQUOTE) ? S_BQUOTE : 0) | p->quot;\n   44:   p->node->nargcmd.list = cmds;\n   45  \n   46    return 0;\n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_getarg.c:\n   10    if(p->tree) {\n   11      n = tree_newnode(N_ARG);\n   12:     n->narg.list = p->tree;\n   13      p->tree = NULL;\n   14      return n;\n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_grouping.c:\n   30    /* parse compound content and create a\n   31       compound node if there are commands */\n   32:   if((compound_list = parse_compound_list(p))) {\n   33      grouping = tree_newnode(tok == T_BEGIN ? N_CMDLIST : N_SUBSHELL);\n   34      grouping->ngrp.cmds = compound_list;\n\n/home/roman/Dokumente/Sources/shish/src/redir/redir_addhere.c:\n    3  #include <stdlib.h>\n    4  \n    5: struct nredir* redir_list = NULL;\n    6  \n    7  /* add a here-doc\n    .\n   11    static struct nredir** rptr;\n   12  \n   13:   if(redir_list == NULL)\n   14      rptr = &redir_list;\n   15  \n\n/home/roman/Dokumente/Sources/shish/src/redir/redir_parse.c:\n  103      node->nredir.flag = rf;\n  104      node->nredir.fdes = fd;\n  105:     node->nredir.list = p->tree;\n  106      p->tree = node;\n  107  \n\n/home/roman/Dokumente/Sources/shish/src/redir/redir_source.c:\n   20    stralloc_init(&delim);\n   21  \n   22:   for(; redir_list; redir_list = &redir_list->data->nredir) {\n   23      /* expand the delimiter */\n   24      stralloc_init(&delim);\n   ..\n   30  \n   31      tree_free(redir_list->list);\n   32:     redir_list->list = parse_getarg(&p);\n   33  \n   34      /* free expanded delimiters */\n\n/home/roman/Dokumente/Sources/shish/src/sh/sh_loop.c:\n   34  \n   35      /* launch the parser to get a complete command */\n   36:     if((list = parse_list(&p))) {\n   37        struct eval e;\n   38  \n\n/home/roman/Dokumente/Sources/shish/src/vartab/vartab_root.c:\n    3  struct vartab vartab_root = {.pos = NULL, .parent = NULL, .level = 0};\n    4  struct vartab* varstack = &vartab_root;\n    5: struct var* var_list = NULL;\n    6  \n\n15 matches across 12 files\n\n\nSearching 513 files for \"expand_init\" (regex)\n\n/home/roman/Dokumente/Sources/shish/src/expand.h:\n   95  typedef expand_expr* expand_field;\n   96  typedef struct narg* expand_field_pointer;\n   97: //#define EXPAND_INIT(r, p, f) {(union node*)(r), (p), (f)};\n   98    /*\n   99    static inline union node**\n  ...\n  110  //#define EXPAND_ADDNODE(nptr) (nptr = expand_addnode(nptr), *nptr)\n  111  \n  112: void    expand_init(struct expand* ex, int flags);\n  113  void        expand_to(struct expand* ex, union node** out);\n  114  node_t*  expand_getorcreate(node_t**);\n  ...\n  127  void        expand_escape(stralloc* sa, const char* b, unsigned int n);\n  128  union node* expand_glob(union node** nptr, int flags);\n  129: void        expand_init(struct expand* ex, int flags);\n  130  union node* expand_param(struct expand* ex, struct nargparam* param);\n  131  void        expand_tosa(union node* node, stralloc* sa);\n\n/home/roman/Dokumente/Sources/shish/src/expand/expand_args.c:\n   12    struct expand x;\n   13  \n   14:   expand_init(&x, 0);\n   15    expand_to(&x, out);\n   16  \n\n/home/roman/Dokumente/Sources/shish/src/expand/expand_init.c:\n    2  \n    3  void\n    4: expand_init(struct expand* ex, int flags) {\n    5    ex->root = 0;\n    6    ex->ptr = &ex->root;\n\n/home/roman/Dokumente/Sources/shish/src/expand/expand_param.c:\n   48  \n   49          while(i < sh->arg.c) {\n   50:           //  struct expand tmpx = EXPAND_INIT(ex->root, ex->ptr, (param->flag & ~S_SPECIAL) | S_ARG);\n   51            param->flag &= ~S_SPECIAL;\n   52            param->flag |= S_ARG;\n\n6 matches across 4 files\n",
+			"settings":
+			{
+				"buffer_size": 4699,
+				"line_ending": "Unix",
+				"name": "Find Results",
+				"scratch": true
+			}
+		},
+		{
+			"file": "src/parse/parse_getarg.c",
+			"settings":
+			{
+				"buffer_size": 369,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/expand/expand_param.c",
+			"settings":
+			{
+				"buffer_size": 6032,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/expand.h",
+			"settings":
+			{
+				"buffer_size": 4031,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/expand/expand_new.c",
+			"settings":
+			{
+				"buffer_size": 263,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/expand/expand_arg.c",
+			"settings":
+			{
+				"buffer_size": 1440,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/expand/expand_dump.c",
+			"settings":
+			{
+				"buffer_size": 380,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/expand/expand_tosa.c",
+			"settings":
+			{
+				"buffer_size": 527,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/expand/expand_vars.c",
+			"settings":
+			{
+				"buffer_size": 558,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "lib/fmt.h",
+			"settings":
+			{
+				"buffer_size": 7962,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/tree.h",
+			"settings":
+			{
+				"buffer_size": 9966,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "lib/uint64.h",
+			"settings":
+			{
+				"buffer_size": 2568,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/builtin/builtin_table.c",
+			"settings":
+			{
+				"buffer_size": 3189,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/expand/expand_arith_expr.c",
+			"settings":
+			{
+				"buffer_size": 1330,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "lib/scan/scan_asn1derlength.c",
+			"settings":
+			{
+				"buffer_size": 1891,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/expand/expand_arith_binary.c",
+			"settings":
+			{
+				"buffer_size": 1315,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/roman/Sources/shish/src/parse/parse_arith_binary.c",
+			"settings":
+			{
+				"buffer_size": 2231,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/parse/parse_arith_binary.c",
+			"settings":
+			{
+				"buffer_size": 2231,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/expand/expand_arith_unary.c",
+			"settings":
+			{
+				"buffer_size": 583,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				]
+			],
+			[
+				"Packages/Makefile/Make.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				]
+			],
+			[
+				"Packages/Makefile/Make.sublime-build",
+				""
+			]
+		]
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 363.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"install p",
+				"Package Control: Install Package"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: adv",
+				"Package Control: Advanced Install Package"
+			],
+			[
+				"in",
+				"Package Control: Advanced Install Package"
+			],
+			[
+				"Package Control: ",
+				"Package Control: Discover Packages"
+			],
+			[
+				"ins",
+				"Package Control: Advanced Install Package"
+			],
+			[
+				"pac",
+				"Package Control: Discover Packages"
+			],
+			[
+				"adva",
+				"Package Control: Advanced Install Package"
+			],
+			[
+				"insta",
+				"Package Control: Advanced Install Package"
+			],
+			[
+				"Package Control: insta",
+				"Package Control: Advanced Install Package"
+			],
+			[
+				"package",
+				"Package Control: Discover Packages"
+			],
+			[
+				"Remove",
+				"Package Control: Remove Package"
+			],
+			[
+				"make",
+				"Makefile (dirlist): make all"
+			],
+			[
+				"build",
+				"Build: New Build System"
+			],
+			[
+				"packa",
+				"Package Control: Advanced Install Package"
+			],
+			[
+				"",
+				"About"
+			]
+		],
+		"width": 449.0
+	},
+	"console":
+	{
+		"height": 219.0,
+		"history":
+		[
+			"Theme - Spacefunk, C++ Starting Kit",
+			"schemr",
+			"schemr_favorite_current_scheme",
+			"import urllib.request,os,hashlib; h = 'df21e130d211cfc94d9b0905775a7c0f' + '1e3d39e33b79698005270310898eea76'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://packagecontrol.io/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/home/roman/Dokumente/Sources/shish",
+		"/home/roman/Dokumente/Sources/shish/src",
+		"/home/roman/Dokumente/Sources/shish/src/eval",
+		"/home/roman/Dokumente/Sources/shish/src/parse",
+		"/home/roman/Dokumente/Sources/shish/src/tree"
+	],
+	"file_history":
+	[
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_args.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_arith.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_to.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_cat.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_new.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_break.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_arg.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand.h",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_getorcreate.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_copysa.c",
+		"/home/roman/Dokumente/Sources/shish/lib/scan/scan_xlonglong.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_value.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand_getorcreate.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_argv.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_init.c",
+		"/home/roman/Dokumente/Sources/shish/lib/fmt/fmt_longlong.c",
+		"/home/roman/Dokumente/Sources/shish/aarch64-linux-gnu.log",
+		"/home/roman/Dokumente/Sources/shish/lib/fmt/fmt_ulong.c",
+		"/home/roman/Dokumente/Sources/shish/CMakeLists.txt",
+		"/home/roman/Dokumente/Sources/shish/lib/scan.h",
+		"/home/roman/Dokumente/Sources/shish/src/var/var_unset.c",
+		"/home/roman/Dokumente/Sources/shish/src/var.h",
+		"/home/roman/Dokumente/Sources/shish/src/eval.h",
+		"/home/roman/Dokumente/Sources/shish/lib/fmt/fmt_ulonglong.c",
+		"/home/roman/Dokumente/Sources/shish/lib/fmt/fmt_ulong0.c",
+		"/home/roman/Dokumente/Sources/shish/lib/uint64.h",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_node.c",
+		"/home/roman/Dokumente/Sources/shish/src/tree.h",
+		"/home/roman/Dokumente/Sources/shish/shish.sublime-project",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_appendsa.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_tosa.c",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_case.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_escape.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_arith_unary.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_arith_expr.c",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_cd.c",
+		"/home/roman/Dokumente/Sources/shish/lib/scan/scan_longlong.c",
+		"/home/roman/Dokumente/Sources/shish/x86_64-linux-diet.log",
+		"/home/roman/Dokumente/Sources/shish/lib/scan/scan_8longn.c",
+		"/home/roman/Dokumente/Sources/shish/lib/scan/scan_ulonglong.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse.h",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_chartable.c",
+		"/home/roman/Dokumente/Sources/shish/lib/scan/scan_octal.c",
+		"/home/roman/Dokumente/Sources/shish/lib/scan/scan_8long.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_newnode.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_glob.c",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_simple_command.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_vars.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_command.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_catsa.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_param.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_compound_list.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_case.c",
+		"/home/roman/Dokumente/Sources/shish/src/prompt/prompt_expand.c",
+		"/home/roman/Dokumente/Sources/shish/src/redir/redir_source.c",
+		"/home/roman/Dokumente/Sources/shish/src/redir/redir_eval.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_arith_binary.c",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_command.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/Makefile.in",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_for.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_unescape.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_word.c",
+		"/home/roman/Dokumente/Sources/shish/lib/fmt.h",
+		"/home/roman/Dokumente/Sources/shish/lib/uint32/uint32_random.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_newnode.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_and_or.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_unquoted.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_begin.c",
+		"/home/roman/Dokumente/Sources/shish/src/sh/sh_loop.c",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_table.c",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_error.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_expr.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug.h",
+		"/home/roman/Dokumente/Sources/shish/src/tree/tree_free.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_binary.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_space.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_end.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_param.c",
+		"/home/roman/Dokumente/Sources/shish/src/tree/tree_print.c",
+		"/home/roman/Dokumente/Sources/shish/lib/open/open_temp.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_peekn.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_subst.c",
+		"/home/roman/Dokumente/Sources/shish/lib/shell/shell_gethome.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_subst.c",
+		"/home/roman/Dokumente/Sources/shish/src/redir/redir_parse.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_peek.c",
+		"/home/roman/Dokumente/Sources/shish/src/expr/expr_tokens.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_here.c",
+		"/home/roman/Dokumente/Sources/shish/src/tree/tree_newnode.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_string.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_paren.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_unary.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_getarg.c",
+		"/home/roman/Sources/shish/src/expand/expand_arith_binary.c",
+		"/home/roman/Dokumente/Sources/shish/Grammar.ebnf",
+		"/home/roman/Dokumente/Sources/shish/expressions.ebnf",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_char.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_ptr.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_redir.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_sublist.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_unquoted.c",
+		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_fromsa.c",
+		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_putsa.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_list.c",
+		"/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/CTags/Default.sublime-keymap",
+		"/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/CTags/CTags.sublime-settings",
+		"/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/User/CTags.sublime-settings",
+		"/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/Cscope/CscopeSublime.sublime-settings",
+		"/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/User/CscopeSublime.sublime-settings",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_collapse.c",
+		"/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/Outline/outline.sublime-settings",
+		"/B/PortableApps/SublimeTextPortable/App/SublimeText64/Data/Packages/User/outline.sublime-settings",
+		"/C/Users/roman/Desktop/dirlist/genmakefile.c",
+		"/C/Users/roman/Desktop/dirlist/genmakefile/genmakefile.c",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_skip_separator.c",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_is_separator.c",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_skip.c",
+		"/C/Users/roman/Desktop/dirlist/tests/CMakeLists.txt",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_is_absolute.c",
+		"/C/Users/roman/Desktop/dirlist/lib/strlist/strlist_push_unique.c",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_basename.c",
+		"/C/Users/roman/Desktop/dirlist/CMakeLists.txt",
+		"/C/Users/roman/Desktop/dirlist/dirlist.sublime-project",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_absolute_sa.c",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_dirname.c",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_exists.c",
+		"/C/Users/roman/Desktop/dirlist/lib/path/path_fnmatch.c"
+	],
+	"find":
+	{
+		"height": 46.0
+	},
+	"find_in_files":
+	{
+		"height": 137.0,
+		"where_history":
+		[
+			"/home/roman/Dokumente/Sources/shish/src,/home/roman/Dokumente/Sources/shish/lib,*.c,*.h",
+			"/home/roman/Dokumente/Sources/shish/src,/home/roman/Dokumente/Sources/shish/lib,*.c",
+			"/home/roman/Dokumente/Sources/shish/src,/home/roman/Dokumente/Sources/shish/lib,*.c,*.h",
+			"*.c,*.h",
+			"*.c",
+			""
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"frachtbr",
+			"expand_init",
+			"list =",
+			"//  ",
+			"expand_args",
+			"->list\\.",
+			"ADDNODE",
+			"_INIT",
+			"expand_expr",
+			"nptr",
+			"union node",
+			"expand_input_iterator",
+			"narg",
+			"N_UNTIL",
+			"expand_arith\\(",
+			"expand_arith",
+			"F_LTO",
+			"flto",
+			"uint64",
+			"int64",
+			"asn1der",
+			"human",
+			"unint64",
+			"signed long long",
+			"longlong",
+			"define.*MACR",
+			"_MAX",
+			"fmt_longlong",
+			"A_SUB",
+			"A_",
+			"A_SUB",
+			"option\\(",
+			"echo ",
+			"errno",
+			"isdigit",
+			"parse_isdigit",
+			"expand_",
+			"tree_newnode",
+			"expand_newnode",
+			"expand.*node",
+			"newnode",
+			"tree_newnode.*ARG",
+			"tree_newnode",
+			"narg ",
+			"expand_glob",
+			"expand_args\\(",
+			"expand_args(",
+			"narg ",
+			"N_ARG",
+			"expand_tosa",
+			"subarg->",
+			"subarg.*->",
+			"x.ptr",
+			"nptr",
+			"tree_init",
+			"expand_param",
+			"nptr",
+			"x\\.flags",
+			"x\\.",
+			"expand_gl",
+			"flags",
+			"glob",
+			"tmpx",
+			"ex->",
+			" flags",
+			"catsa",
+			", nptr, flags)",
+			", union node** nptr, int flags",
+			"&ex",
+			", lflags)",
+			", nptr)",
+			"expand_cat",
+			"expand_args",
+			"expand_cat(",
+			"expand",
+			"write",
+			"flags",
+			"nptr",
+			"flags",
+			"expand_cat",
+			"expand_vars",
+			"expand_",
+			", union node** nptr, int flags",
+			"expand_param",
+			"n",
+			"expand_",
+			"printlist",
+			"add_de",
+			"BUILTINS_DISABLED",
+			"ERROR",
+			"toupp",
+			"DISA",
+			"replace",
+			"add_exe",
+			"tree_print\\(",
+			"tree_print",
+			"fmt_.*short",
+			"ushort",
+			"uint32_random",
+			"PARAM",
+			"S_ESCAPE",
+			"S_",
+			"DEBUG_BEG",
+			"DEBUG_END",
+			"parse_param",
+			"ARGARITH",
+			"pre",
+			"ARGARITH",
+			"\"\\|",
+			"\"|",
+			",n \\+= .*;",
+			", n \\+= .*;",
+			", n += .*;",
+			"stralloc_cats(&flags",
+			"stralloc_cats(&flags,",
+			"stralloc_cats(.flags,",
+			"\":\"",
+			"precedence",
+			"ARITH_AND",
+			"ARITH_AND\"",
+			"ARITH_AND",
+			"parse_arith",
+			"parse_arith\\(",
+			"'<'",
+			"redir_parse",
+			"N_REDIR",
+			"P_NO",
+			"P_NOREDIR"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": true,
+		"replace_history":
+		[
+			"expand_input",
+			"uint64",
+			"int64",
+			"nptr",
+			"&n",
+			"x.ptr",
+			"ex->ptr",
+			"ex->flags",
+			"x.",
+			" ex->flags",
+			")",
+			"",
+			"&x",
+			")",
+			"expand_cat(ex, ",
+			"ex->flags",
+			"ex->ptr",
+			"",
+			"ENA",
+			"\" | ",
+			";",
+			"stralloc_cats(&sa",
+			"stralloc_cats(&sa,",
+			"prec",
+			"p",
+			"unary",
+			"expand_arith",
+			"debug_space(depth, 1)"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 6,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "src/expand/expand_appendsa.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 617,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								523,
+								523
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 8,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "src/expand/expand_to.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 238,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								238,
+								238
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 4699,
+						"regions":
+						{
+							"match":
+							{
+								"flags": 112,
+								"regions":
+								[
+									[
+										203,
+										209
+									],
+									[
+										310,
+										316
+									],
+									[
+										510,
+										516
+									],
+									[
+										681,
+										687
+									],
+									[
+										879,
+										885
+									],
+									[
+										1153,
+										1159
+									],
+									[
+										1334,
+										1340
+									],
+									[
+										1584,
+										1590
+									],
+									[
+										1870,
+										1876
+									],
+									[
+										1986,
+										1992
+									],
+									[
+										2195,
+										2201
+									],
+									[
+										2382,
+										2388
+									],
+									[
+										2567,
+										2573
+									],
+									[
+										2781,
+										2787
+									],
+									[
+										3054,
+										3060
+									],
+									[
+										3311,
+										3322
+									],
+									[
+										3514,
+										3525
+									],
+									[
+										3836,
+										3847
+									],
+									[
+										4126,
+										4137
+									],
+									[
+										4273,
+										4284
+									],
+									[
+										4522,
+										4533
+									]
+								],
+								"scope": ""
+							}
+						},
+						"selection":
+						[
+							[
+								3518,
+								3518
+							]
+						],
+						"settings":
+						{
+							"detect_indentation": false,
+							"line_numbers": false,
+							"output_tag": 2,
+							"result_base_dir": "",
+							"result_file_regex": "^([^ \t].*):$",
+							"result_line_regex": "^ +([0-9]+):",
+							"scroll_past_end": true,
+							"syntax": "Packages/Default/Find Results.hidden-tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 2575.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "src/parse/parse_getarg.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 369,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								285,
+								285
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 9,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "src/expand/expand_param.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 6032,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								333,
+								333
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 75.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "src/expand.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 4031,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3995,
+								3995
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 2916.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "src/expand/expand_new.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 263,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								89,
+								89
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "src/expand/expand_arg.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1440,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								447,
+								447
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 475.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "src/expand/expand_dump.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 380,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								94,
+								94
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "src/expand/expand_tosa.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 527,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								348,
+								348
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 10,
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "src/expand/expand_vars.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 558,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								332,
+								332
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 11,
+					"type": "text"
+				},
+				{
+					"buffer": 11,
+					"file": "lib/fmt.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 7962,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2048,
+								2048
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1375.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 13,
+					"type": "text"
+				},
+				{
+					"buffer": 12,
+					"file": "src/tree.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 9966,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								6939,
+								6939
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 7490.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 12,
+					"type": "text"
+				},
+				{
+					"buffer": 13,
+					"file": "lib/uint64.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2568,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1206,
+								1206
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 975.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 14,
+					"type": "text"
+				},
+				{
+					"buffer": 14,
+					"file": "src/builtin/builtin_table.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3189,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								981,
+								981
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 310.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 18,
+					"type": "text"
+				},
+				{
+					"buffer": 15,
+					"file": "src/expand/expand_arith_expr.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1330,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1289,
+								1289
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 375.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 16,
+					"type": "text"
+				},
+				{
+					"buffer": 16,
+					"file": "lib/scan/scan_asn1derlength.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1891,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								24,
+								24
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 17,
+					"type": "text"
+				},
+				{
+					"buffer": 17,
+					"file": "src/expand/expand_arith_binary.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1315,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 18,
+					"file": "/home/roman/Sources/shish/src/parse/parse_arith_binary.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2231,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1550,
+								1550
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1450.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 20,
+					"type": "text"
+				},
+				{
+					"buffer": 19,
+					"file": "src/parse/parse_arith_binary.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2231,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								859,
+								859
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 725.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 19,
+					"type": "text"
+				},
+				{
+					"buffer": 20,
+					"file": "src/expand/expand_arith_unary.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 583,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								342,
+								342
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 75.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 15,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 34.0
+	},
+	"input":
+	{
+		"height": 51.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.CppBuilder":
+	{
+		"height": 209.0
+	},
+	"output.exec":
+	{
+		"height": 283.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"output.loghighlight":
+	{
+		"height": 144.0
+	},
+	"output.sftp":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "Run build/release/shish in Terminal",
+	"project": "shish.sublime-project",
+	"replace":
+	{
+		"height": 84.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"_new",
+				"src/expand/expand_new.c"
+			],
+			[
+				"expand.h",
+				"src/expand.h"
+			],
+			[
+				"tree.h",
+				"src/tree.h"
+			],
+			[
+				"cmake",
+				"CMakeLists.txt"
+			],
+			[
+				"builtin",
+				"src/builtin/builtin_table.c"
+			],
+			[
+				"uint",
+				"lib/uint64.h"
+			],
+			[
+				"eval.h",
+				"src/eval.h"
+			],
+			[
+				"var.h",
+				"src/var.h"
+			],
+			[
+				"_unset",
+				"src/var/var_unset.c"
+			],
+			[
+				"scan.h",
+				"lib/scan.h"
+			],
+			[
+				"fmt.h",
+				"lib/fmt.h"
+			],
+			[
+				"asn1",
+				"lib/scan/scan_asn1derlength.c"
+			],
+			[
+				"xlong",
+				"lib/scan/scan_xlonglong.c"
+			],
+			[
+				"fmt_ul",
+				"lib/fmt/fmt_ulonglong.c"
+			],
+			[
+				"int64",
+				"lib/uint64.h"
+			],
+			[
+				"debug_node",
+				"src/debug/debug_node.c"
+			],
+			[
+				"builtin_cd",
+				"src/builtin/builtin_cd.c"
+			],
+			[
+				"scan_",
+				"lib/scan/scan_8longn.c"
+			],
+			[
+				"xlonglong",
+				"lib/scan/scan_xlonglong.c"
+			],
+			[
+				"scan_longlon",
+				"lib/scan/scan_longlong.c"
+			],
+			[
+				"scan_8",
+				"lib/scan/scan_8longn.c"
+			],
+			[
+				"scan_oc",
+				"lib/scan/scan_octal.c"
+			],
+			[
+				"octal",
+				"lib/scan/scan_octal.c"
+			],
+			[
+				"uint64.",
+				"lib/uint64.h"
+			],
+			[
+				"ulonglong",
+				"lib/scan/scan_ulonglong.c"
+			],
+			[
+				"eval_cas",
+				"src/eval/eval_case.c"
+			],
+			[
+				"arg.c",
+				"src/expand/expand_arg.c"
+			],
+			[
+				"eval_sim",
+				"src/eval/eval_simple_command.c"
+			],
+			[
+				"redir_eval",
+				"src/redir/redir_eval.c"
+			],
+			[
+				"redir_sour",
+				"src/redir/redir_source.c"
+			],
+			[
+				"expand.c",
+				"src/prompt/prompt_expand.c"
+			],
+			[
+				"parse_cas",
+				"src/parse/parse_case.c"
+			],
+			[
+				"expand_comm",
+				"src/expand/expand_command.c"
+			],
+			[
+				"eval_for",
+				"src/eval/eval_for.c"
+			],
+			[
+				"expand_",
+				"src/expand/expand_param.c"
+			],
+			[
+				"sh_loop",
+				"src/sh/sh_loop.c"
+			],
+			[
+				"cma",
+				"CMakeLists.txt"
+			],
+			[
+				"tree_print",
+				"src/tree/tree_print.c"
+			],
+			[
+				"cmak",
+				"CMakeLists.txt"
+			],
+			[
+				"tree_prin",
+				"src/tree/tree_print.c"
+			],
+			[
+				"uint32_ra",
+				"lib/uint32/uint32_random.c"
+			],
+			[
+				"parse_ar",
+				"src/parse/parse_arith_expr.c"
+			],
+			[
+				"parse_para",
+				"src/parse/parse_param.c"
+			],
+			[
+				"word.",
+				"src/parse/parse_word.c"
+			],
+			[
+				"newnode",
+				"src/parse/parse_newnode.c"
+			],
+			[
+				"debug_sp",
+				"src/debug/debug_space.c"
+			],
+			[
+				"debug.",
+				"src/debug.h"
+			],
+			[
+				"debug_",
+				"src/debug/debug_node.c"
+			],
+			[
+				"tree_free.c",
+				"src/tree/tree_free.c"
+			],
+			[
+				"debug_no",
+				"src/debug/debug_node.c"
+			],
+			[
+				"parse.h",
+				"src/parse.h"
+			],
+			[
+				"parse",
+				"src/parse.h"
+			],
+			[
+				"debug_nod",
+				"src/debug/debug_node.c"
+			],
+			[
+				"tree_f",
+				"src/tree/tree_free.c"
+			],
+			[
+				"tree_fr",
+				"src/tree/tree_free.c"
+			],
+			[
+				"tree_free",
+				"src/tree/tree_free.c"
+			],
+			[
+				"tree_fre",
+				"src/tree/tree_free.c"
+			],
+			[
+				"tree",
+				"src/tree.h"
+			],
+			[
+				"",
+				"src/debug/debug_node.c"
+			],
+			[
+				"_node",
+				"src/debug/debug_node.c"
+			],
+			[
+				"unquo",
+				"src/parse/parse_unquoted.c"
+			],
+			[
+				"debug_space",
+				"src/debug/debug_space.c"
+			],
+			[
+				"debug.h",
+				"src/debug.h"
+			],
+			[
+				"debug_list",
+				"src/debug/debug_list.c"
+			],
+			[
+				"putsa",
+				"lib/buffer/buffer_putsa.c"
+			],
+			[
+				"fromsa",
+				"lib/buffer/buffer_fromsa.c"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 380.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": false,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 249.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
 }

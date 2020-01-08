@@ -110,7 +110,8 @@ typedef struct narg* expand_field_pointer;
 //#define EXPAND_ADDNODE(nptr) (nptr = expand_addnode(nptr), *nptr)
 
 void    expand_init(struct expand* ex, int flags);
-void        expand_to(struct expand* ex, union node** out);
+node_t*     *expand_to(struct expand* ex, union node** out);
+
 node_t*  expand_getorcreate(node_t**);
   
 void        expand_appendsa(union node* node, stralloc* sa);
@@ -127,13 +128,16 @@ void        expand_copysa(union node* node, stralloc* sa);
 void        expand_escape(stralloc* sa, const char* b, unsigned int n);
 union node* expand_glob(union node** nptr, int flags);
 void        expand_init(struct expand* ex, int flags);
-union node* expand_param(struct expand* ex, struct nargparam* param);
+int expand_param(struct expand* ex, struct nargparam* param);
 void        expand_tosa(union node* node, stralloc* sa);
 void        expand_unescape(stralloc* sa);
 int         expand_vars(union node* vars, union node** nptr);
 
+node_t* expand_new(struct expand* ex);
 
 node_t**    expand_break(node_t** out);
 
+void
+expand_dump(const struct expand* ex);
 
 #endif /* EXPAND_H */

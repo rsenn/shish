@@ -1,5 +1,6 @@
 #include "expand.h"
 #include "tree.h"
+#include <assert.h>
 #include <stdlib.h>
 
 /* expand all parts of an N_ARG node
@@ -10,14 +11,17 @@ expand_arg(struct expand* ex, struct narg* narg) {
   union node* n = *ex->ptr; // =  expand_getorcreate(ex->ptr);
   union node* subarg;
 
-if(!n) {
-n = (*ex->ptr) = tree_newnode(N_ARG);
-stralloc_init(&n->narg.stra);
-}
+  expand_dump(ex);
 
+  if(!n) {
+    n = (*ex->ptr) = tree_newnode(N_ARG);
+    stralloc_init(&n->narg.stra);
+  }
+
+  assert(narg->list);
 
   /* loop through all parts of the word */
-  for(subarg = narg ? narg->list : NULL; subarg; subarg = subarg->list.next) {
+  for(subarg = narg->list; subarg; subarg = subarg->list.next) {
     int lflags = ex->flags; /* local ex->flags */
 
     if(subarg->nargstr.flag & S_NOSPLIT)
@@ -42,6 +46,7 @@ stralloc_init(&n->narg.stra);
       default: n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, ex->ptr, lflags); break;
     }
 
+    expand_dump(ex);
     if(*ex->ptr)
       ex->ptr = &(*ex->ptr)->narg.next;
   }

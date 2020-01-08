@@ -9,12 +9,13 @@
 #include "var.h"
 #include <stdlib.h>
 
-union node*
+int
+
 expand_param(struct expand* ex, struct nargparam* param) {
   union node* n = *ex->ptr;
   stralloc value;
   char tmpbuf[FMT_LONG];
-
+  int ret = 0;
   const char* v = NULL;
   size_t vlen = 0;
 

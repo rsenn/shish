@@ -1,7 +1,15 @@
 #include "../expand.h"
+#include <assert.h>
 
-void
+node_t**
 expand_to(struct expand* ex, union node** out) {
-  ex->root = *out;
-  ex->ptr = out;
+  assert((*out) == NULL);
+  assert(ex->root);
+  *out = ex->root;
+
+  do {
+    out = &(*out)->narg.next;
+  } while(*out);
+
+  return out;
 }

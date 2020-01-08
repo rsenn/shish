@@ -7,24 +7,22 @@
 int
 expand_args(union node* args, node_t** out) {
   expand_input* arg;
-  expand_output* n;
+  node_t* n;
   int ret = 0;
   struct expand x;
 
-
   expand_init(&x, 0);
-  expand_to(&x, out);
 
-//  n = expand_getorcreate(out);
-
+  //  n = expand_getorcreate(out);
 
   //  *nptr = NULL;
 
   for(arg = args; arg; arg = arg->narg.next) {
 
-    if((n = expand_arg(&x, &arg->narg))) {
-      ret++;
-    }
+    if(!expand_arg(&x, &arg->narg))
+      return -1;
+
+    ret++;
 
     if(n == NULL)
       continue;
@@ -46,6 +44,8 @@ expand_args(union node* args, node_t** out) {
       stralloc_init(&n->narg.stra);
     }
   }
+
+  expand_to(&x, out);
 
   return ret;
 }

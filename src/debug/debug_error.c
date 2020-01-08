@@ -1,4 +1,5 @@
 #include "debug.h"
+#include <assert.h>
 
 #ifdef DEBUG
 #include "fd.h"

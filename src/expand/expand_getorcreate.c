@@ -1,5 +1,5 @@
-#include <assert.h>
 #include "../expand.h"
+#include <assert.h>
 
 node_t*
 expand_getorcreate(node_t** out) {
