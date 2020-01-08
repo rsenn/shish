@@ -122,6 +122,11 @@ size_t scan_netstring(const char* in, size_t len, char** dest, size_t* slen) __p
 /* convert from hex ASCII, return 0 to 15 for success or -1 for failure */
 int scan_fromhex(unsigned char c);
 
+#ifdef UINT64_H
+size_t scan_octal(const char* src, uint64* dest);
+size_t scan_xlonglong(const char* src, uint64* dest);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

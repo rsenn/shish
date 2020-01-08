@@ -1,16 +1,19 @@
 #include "expand.h"
 #include "fmt.h"
 #include "parse.h"
+#include "uint64.h"
 #include "scan.h"
 #include "source.h"
 #include "tree.h"
-#include "uint64.h"
 
 /* parse arithmetic value
  * ----------------------------------------------------------------------- */
 union node*
 parse_arith_value(struct parser* p) {
   char c;
+  int digit;
+  size_t (*scan_fn)(const char* src, int64* dest) = &scan_longlong;
+
   union node* node = NULL;
 
   if(source_peek(&c) <= 0)
@@ -21,8 +24,14 @@ parse_arith_value(struct parser* p) {
 
   if(parse_isdigit(c)) {
     char x[FMT_LONG + 1];
+
+    int radix = 10;
     unsigned int n = 0;
     int64 num;
+
+
+
+
 
     do {
       x[n++] = c;
@@ -30,7 +39,21 @@ parse_arith_value(struct parser* p) {
       if(source_next(&c) <= 0)
         break;
 
-    } while(parse_isdigit(c) && n < FMT_LONG);
+      digit = parse_isdigit(c);
+
+      if(!digit && radix == 10 && n == 1) {
+
+      switch(c) {
+        case 'x': scan_fn = &scan_xlonglong; break;
+        case 'b': scan_fn = 0; break;
+        case 'o': radix = &scan_octal; break;
+      }
+
+        source_skip();
+        n = 0;
+      }
+
+    } while(digit && n < FMT_LONG);
 
     x[n] = '\0';
 
