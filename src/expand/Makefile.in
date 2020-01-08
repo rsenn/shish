@@ -26,7 +26,7 @@ MODULES = expand_arg \
           expand_cat \
           expand_appendsa \
           expand_command \
-          expand_copysa \
+          expand_tosa \
           expand_escape \
           expand_glob \
           expand_param \

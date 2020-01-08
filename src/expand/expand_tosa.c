@@ -5,7 +5,7 @@
 /* expand one N_ARG node to a stralloc (stralloc is overwritten!!!)
  * ----------------------------------------------------------------------- */
 void
-expand_copysa( union node* node, stralloc* sa) {
+expand_tosa( union node* node, stralloc* sa) {
  union node tmpnode;
 
   struct expand x = EXPAND_INIT(&tmpnode, 0, X_NOSPLIT);

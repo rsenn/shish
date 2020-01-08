@@ -224,7 +224,7 @@ SOURCES *= \
     ./src/expand/expand_cat.c \
     ./src/expand/expand_appendsa.c \
     ./src/expand/expand_command.c \
-    ./src/expand/expand_copysa.c \
+    ./src/expand/expand_tosa.c \
     ./src/expand/expand_escape.c \
     ./src/expand/expand_glob.c \
     ./src/expand/expand_param.c \

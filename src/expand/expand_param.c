@@ -189,7 +189,7 @@ expand_param(struct expand* ex, struct nargparam* param) {
         stralloc sa;
 
         if(v && vlen) {
-          expand_copysa(param->word, &sa);
+          expand_tosa(param->word, &sa);
 
           for(i = vlen - 1; i >= 0; i--)
             if(shell_fnmatch(sa.s, sa.len, v + i, vlen - i, SH_FNM_PERIOD) == 0)
@@ -207,7 +207,7 @@ expand_param(struct expand* ex, struct nargparam* param) {
       stralloc sa;
 
       if(v && vlen) {
-        expand_copysa(param->word, &sa);
+        expand_tosa(param->word, &sa);
 
         for(i = 0; i <= vlen; i++)
           if(shell_fnmatch(sa.s, sa.len, v + i, vlen - i, SH_FNM_PERIOD) == 0)
@@ -225,7 +225,7 @@ expand_param(struct expand* ex, struct nargparam* param) {
       stralloc sa;
 
       if(v && vlen) {
-        expand_copysa(param->word, &sa);
+        expand_tosa(param->word, &sa);
 
         for(i = 1; i <= vlen; i++)
           if(shell_fnmatch(sa.s, sa.len, v, i, SH_FNM_PERIOD) == 0)
@@ -245,7 +245,7 @@ expand_param(struct expand* ex, struct nargparam* param) {
       stralloc sa;
 
       if(v && vlen) {
-        expand_copysa(param->word, &sa);
+        expand_tosa(param->word, &sa);
 
         for(i = vlen; i > 0; i--)
           if(shell_fnmatch(sa.s, sa.len, v, i, SH_FNM_PERIOD) == 0)
