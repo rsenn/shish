@@ -5,6 +5,7 @@
 #include "scan.h"
 #include "source.h"
 #include "tree.h"
+#include "uint16.h"
 #include "uint64.h"
 
 /* parse arithmetic value
@@ -12,7 +13,7 @@
 union node*
 parse_arith_value(struct parser* p) {
   char c;
-  int digit;
+  uint16 digit, classes;
   int cclass = C_DIGIT;
 
   size_t (*scan_fn)(const char* src, int64* dest) = &scan_longlong;
@@ -37,19 +38,20 @@ parse_arith_value(struct parser* p) {
       if(source_next(&c) <= 0)
         break;
 
-      digit = !!(parse_chartable[(int)(unsigned char)c] & cclass);
+      classes = parse_chartable[(int)(unsigned char)c];
+      digit = !!(classes & cclass);
 
-      if(!digit && cclass == C_DIGIT && n == 1 && x[0] == '0') {
+      if(n == 1 && (cclass == C_DIGIT && x[0] == '0')) {
+
+        if((classes & C_OCTAL))
+          c = 'o';
 
         switch(c) {
           case 'x':
             scan_fn = &scan_xlonglong;
             cclass = C_HEX;
             break;
-        /*  case 'b':
-            scan_fn = 0;
-            cclass = C_BINARY;
-            break;*/
+
           case 'o':
             scan_fn = &scan_octal;
             cclass = C_OCTAL;
@@ -57,8 +59,10 @@ parse_arith_value(struct parser* p) {
           default: buffer_putsflush(fd_err->w, "ERROR: expecting x|b|o\n"); return NULL;
         }
 
-        digit = source_next(&c) > 0;
-        n = 0;
+        if((classes & (C_UPPER | C_LOWER))) {
+          digit = source_next(&c) > 0;
+          n = 0;
+        }
       }
 
     } while(digit && n < FMT_LONG);
