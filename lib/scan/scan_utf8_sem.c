@@ -1,3 +1,4 @@
+#include "../uint32.h"
 #include "../scan.h"
 
 size_t
