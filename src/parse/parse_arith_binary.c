@@ -34,7 +34,7 @@ parse_arith_binary(struct parser* p, int precedence) {
     if(prec <= 1) {
       switch(c) {
         case '*': ntype = N_ARITH_MUL; break;
-        case '/': ntype = N_ARITH_DIV   ; break;
+        case '/': ntype = N_ARITH_DIV; break;
         case '%': ntype = N_ARITH_MOD; break;
       }
     } else if(prec <= 2) {
@@ -59,7 +59,7 @@ parse_arith_binary(struct parser* p, int precedence) {
         ntype = cbuf[1] == '=' ? N_ARITH_LE : N_ARITH_LT;
         if(cbuf[1] == '=')
           source_skip();
-      } 
+      }
 
     } else if(prec <= 5) {
 
