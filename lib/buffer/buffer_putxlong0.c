@@ -1,12 +1,11 @@
-#include "../uint64.h"
 #include "../buffer.h"
 #include "../fmt.h"
 #include <stdlib.h>
 
 int
-buffer_putxlonglong0(buffer* b, uint64 l, int pad) {
+buffer_putxlong0(buffer* b, unsigned long l, int pad) {
   char buf[FMT_XLONG];
-  size_t n = fmt_xlonglong(buf, l);
+  size_t n = fmt_xlong(buf, l);
 
   if(buffer_putnc(b, '0', pad - n) < 0)
     return -1;

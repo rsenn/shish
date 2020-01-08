@@ -96,8 +96,10 @@ int buffer_put8long(buffer* b, unsigned long int l);
 int buffer_putxlong(buffer* b, unsigned long int l);
 int buffer_putlong(buffer* b, signed long int l);
 
-int buffer_putlonglong(buffer* b, signed long long int l);
-int buffer_putulonglong(buffer* b, unsigned long long int l);
+#ifdef UINT64_H
+int buffer_putlonglong(buffer* b, int64 l);
+int buffer_putulonglong(buffer* b, uint64 l);
+#endif // UINT64_H
 
 int buffer_puterror(buffer* b);
 int buffer_puterror2(buffer* b, int errnum);
