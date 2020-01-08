@@ -1,9 +1,3 @@
-/*#define  _POSIX_SOURCE*/
-/**/
-/*#ifdef HAVE_CONFIG_H*/
-/*# include "config.h"*/
-/*#endif*/
-
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -16,9 +10,9 @@
 /*#undef readlink*/
 /*#define readlink readlink64*/
 /*#endif*/
-/*#ifdef HAVE_LINUX_LIMITS_H
+#ifdef HAVE_LINUX_LIMITS_H
 #include <linux/limits.h>
-#endif*/
+#endif
 
 #include "byte.h"
 #include "str.h"

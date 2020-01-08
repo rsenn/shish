@@ -1,4 +1,5 @@
 #include "expand.h"
+#include "fd.h"
 #include "fmt.h"
 #include "parse.h"
 #include "scan.h"
@@ -53,6 +54,7 @@ parse_arith_value(struct parser* p) {
             scan_fn = &scan_octal;
             cclass = C_OCTAL;
             break;
+          default: buffer_putsflush(fd_err->w, "ERROR: expecting x|b|o\n"); return NULL;
         }
 
         source_skip();

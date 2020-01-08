@@ -1,6 +1,7 @@
 #include "str.h"
 #include "stralloc.h"
 
+#define _POSIX_SOURCE 1
 #include <limits.h>
 #include <unistd.h>
 

@@ -89,7 +89,11 @@
 
 #define __POSIX_VISIBLE 199209
 #define __BSD_VISIBLE 1
+#ifdef _POSIX_ARG_MAX
 #define ARG_MAX _POSIX_ARG_MAX
+#else
+#define ARG_MAX 8192
+#endif
 
 #include "glob.h"
 
