@@ -35,7 +35,7 @@ expand_args(union node* args, union node** nptr) {
     if(arg->list.next) {
       n = EXPAND_ADDNODE(x.ptr);
 
-     stralloc_init(&n->narg.stra);
+      stralloc_init(&n->narg.stra);
     }
   }
 

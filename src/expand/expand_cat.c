@@ -14,7 +14,7 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
 
   if(n == NULL) {
 
-      n = EXPAND_ADDNODE(nptr);
+    n = EXPAND_ADDNODE(nptr);
     stralloc_init(&n->narg.stra);
   }
 
@@ -22,7 +22,7 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
      the stralloc has zero length, and concatenate the stralloc as a whole */
   if(flags & (X_NOSPLIT | X_QUOTED)) {
     if(n == NULL) {
-      
+
       n = EXPAND_ADDNODE(nptr);
       stralloc_zero(&n->narg.stra);
     }
