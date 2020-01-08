@@ -1,4 +1,4 @@
-#include "uint64.h"
+#define NO_UINT64_MACROS
 #include "../uint64.h"
 #include "../fmt.h"
 

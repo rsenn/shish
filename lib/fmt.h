@@ -59,14 +59,27 @@ size_t fmt_xlong(char* dest, unsigned long src);
  * If dest is not NULL, write result to dest */
 size_t fmt_8long(char* dest, unsigned long src);
 
+#ifdef UINT64_H
 /* like fmt_long but for long long */
-size_t fmt_longlong(char* dest, signed long long src);
+size_t fmt_longlong(char* dest, int64 src);
 
-/* like fmt_ulong but for unsigned long long */
-size_t fmt_ulonglong(char* dest, unsigned long long src);
+/* like fmt_ulong but for uint64 */
+size_t fmt_ulonglong(char* dest, uint64 src);
 
-/* like fmt_xlong but for unsigned long long */
-size_t fmt_xlonglong(char* dest, unsigned long long src);
+/* like fmt_xlong but for uint64 */
+size_t fmt_xlonglong(char* dest, uint64 src);
+
+
+/* 1 -> "1", 4900 -> "4.9k", 2300000 -> "2.3M" */
+size_t fmt_human(char* dest, uint64 l);
+
+/* 1 -> "1", 4900 -> "4.8k", 2300000 -> "2.2M" */
+size_t fmt_humank(char* dest, uint64 l);
+size_t fmt_asn1derlength(char* dest, uint64 l); /* 0-0x7f: 1 byte, above that 1+bytes_needed bytes */
+size_t fmt_asn1dertag(char* dest, uint64 l);    /* 1 byte for each 7 bits; upper bit = more bytes coming */
+
+
+#endif
 
 #define fmt_uint(dest, src) fmt_ulong(dest, src)
 #define fmt_int(dest, src) fmt_long(dest, src)
@@ -129,12 +142,6 @@ size_t fmt_pad(char* dest, const char* src, size_t srclen, size_t padlen, size_t
  * characters written. */
 size_t fmt_fill(char* dest, size_t srclen, size_t padlen, size_t maxlen);
 
-/* 1 -> "1", 4900 -> "4.9k", 2300000 -> "2.3M" */
-size_t fmt_human(char* dest, unsigned long long l);
-
-/* 1 -> "1", 4900 -> "4.8k", 2300000 -> "2.2M" */
-size_t fmt_humank(char* dest, unsigned long long l);
-
 /* "Sun, 06 Nov 1994 08:49:37 GMT" */
 size_t fmt_httpdate(char* dest, time_t t);
 
@@ -143,8 +150,7 @@ size_t fmt_httpdate(char* dest, time_t t);
 #define FMT_ASN1TAG 19    /* enough space to hold 2^128-1 */
 /* some variable length encodings for integers */
 size_t fmt_utf8(char* dest, uint32_t n);                    /* can store 0-0x7fffffff */
-size_t fmt_asn1derlength(char* dest, unsigned long long l); /* 0-0x7f: 1 byte, above that 1+bytes_needed bytes */
-size_t fmt_asn1dertag(char* dest, unsigned long long l);    /* 1 byte for each 7 bits; upper bit = more bytes coming */
+
 
 /* Marshaling helper functions.
  * Escape one character, no matter if it needs escaping or not.

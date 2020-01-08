@@ -1,6 +1,5 @@
-#include "uint64.h"
+#define NO_UINT64_MACROS
 #include "../uint64.h"
-#undef NO_UINT64_MACROS
 #include "../uint32.h"
 
 void

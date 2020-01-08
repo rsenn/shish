@@ -59,7 +59,7 @@ size_t scan_longn(const char* src, size_t n, signed long* dest);
 
 size_t scan_longlong(const char* src, signed long long* dest);
 size_t scan_ulonglong(const char* src, unsigned long long* dest);
-size_t scan_xlonglong(const char* src, unsigned long long* dest);
+//size_t scan_xlonglong(const char* src, unsigned long long* dest);
 size_t scan_8longlong(const char* src, unsigned long long* dest);
 
 size_t scan_uint(const char* src, unsigned int* dest);
@@ -105,8 +105,6 @@ size_t scan_httpdate(const char* in, time_t* t) __pure__;
 
 /* some variable length encodings for integers */
 size_t scan_utf8(const char* in, size_t len, uint32_t* n) __pure__;
-size_t scan_asn1derlength(const char* in, size_t len, unsigned long long* n) __pure__;
-size_t scan_asn1dertag(const char* in, size_t len, unsigned long long* n) __pure__;
 
 /* parse a netstring, input buffer is in (len bytes).
  * if parsing is successful:
@@ -126,6 +124,9 @@ int scan_fromhex(unsigned char c);
 size_t scan_octal(const char* src, uint64* dest);
 size_t scan_xlonglong(const char* src, uint64* dest);
 size_t scan_varint(const char* in, size_t len, uint64* n);
+size_t scan_asn1derlength(const char* in, size_t len, uint64* n) __pure__;
+size_t scan_asn1dertag(const char* in, size_t len, uint64* n) __pure__;
+
 #endif
 
 #ifdef __cplusplus
