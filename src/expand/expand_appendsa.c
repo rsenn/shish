@@ -8,6 +8,7 @@ void
 expand_appendsa(union node* node, stralloc* sa) {
   union node tmpnode = {N_ARG, 0, 0, 0};
   struct expand x = EXPAND_INIT(&tmpnode, &x.root, X_NOSPLIT);
+  x.ptr = &x.root;
 
   //  byte_copy(&tmpnode.narg.stra, sizeof(stralloc), sa);
   stralloc_init(&tmpnode.narg.stra);

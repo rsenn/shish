@@ -58,7 +58,8 @@ if(F_ALIGN_STRINGOPS)
 endif(F_ALIGN_STRINGOPS)
 
 list(APPEND ALL_BUILTINS basename break cd dirname dump echo eval exec exit export false fdtable hash history hostname pwd set shift source test true unset)
-list(APPEND DEFAULT_BUILTINS break cd eval exec exit export hash history pwd set shift source unset)
+list(APPEND MINIMAL_BUILTINS break cd eval exec exit export hash history pwd set shift source unset)
+list(APPEND DEFAULT_BUILTINS ${MINIMAL_BUILTINS} echo fdtable true false dump)
 
 function(isin)
   set(ARGUMENTS "${ARGV}")

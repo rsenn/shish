@@ -33,15 +33,11 @@ expand_args(union node* args, union node** nptr) {
     }
 
     if(arg->list.next) {
-      n->list.next = tree_newnode(N_ARG);
-      x.ptr = &n->list.next;
-      n = *x.ptr;
-      stralloc_init(&n->narg.stra);
-      ret++;
+      n = EXPAND_ADDNODE(x.ptr);
+
+     stralloc_init(&n->narg.stra);
     }
   }
-
-  nptr = *x.ptr;
 
   return ret;
 }

@@ -71,6 +71,11 @@ typedef struct expand {
 
 #define EXPAND_INIT(r,p,f) { r, p, f };
 
+static inline union node**
+expand_addnode(union node** nptr) {
+   if(*(nptr)) { nptr = &(*nptr)->narg.next;  }; *nptr = tree_newnode(N_ARG); return nptr; }
+
+#define EXPAND_ADDNODE(nptr) (nptr = expand_addnode(nptr), *nptr)
 
 void        expand_appendsa(union node* node, stralloc* sa);
 union node* expand_arg(struct expand* ex, struct narg* narg);
@@ -82,9 +87,12 @@ union node* expand_arith(struct expand* ex, union node* arith);
 int         expand_arith_unary(struct expand* ex, struct narithunary* expr, int64* r);
 union node* expand_cat(const char* b, unsigned int len, union node** nptr, int flags);
 union node* expand_command(struct expand* ex, struct nargcmd* cmd);
+void        expand_copysa(union node* node, stralloc* sa);
 void        expand_escape(struct expand* ex, stralloc* sa, const char* b, unsigned int n);
 union node* expand_glob(union node** nptr, int flags);
+union node* expand_newnode(struct expand* ex);
 union node* expand_param(struct expand* ex, struct nargparam* param);
+void        expand_tosa(union node* node, stralloc* sa);
 void        expand_tosa(union node* node, stralloc* sa);
 void        expand_unescape(stralloc* sa);
 int         expand_vars(union node* vars, union node** nptr);
