@@ -69,8 +69,7 @@ parse_arith_binary(struct parser* p, int precedence) {
       }
     } else if(prec <= 6) {
       switch(c) {
-            case '&' : ntype = A_BAND;
-        break;
+        case '&': ntype = A_BAND; break;
         case '|': ntype = A_BOR; break;
         case '^': ntype = A_BXOR; break;
       }
