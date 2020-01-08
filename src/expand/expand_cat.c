@@ -61,12 +61,12 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
         expand_unescape(&n->narg.stra);
         n->narg.flag &= ~X_GLOB;
       }
-
+/*
       if(*nptr)
         nptr = &(*nptr)->narg.next;
 
       n = *nptr = tree_newnode(N_ARG);
-      stralloc_init(&n->narg.stra);
+      stralloc_init(&n->narg.stra);*/
     }
 
     /* skip non-separators */
@@ -87,6 +87,8 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
     if(i == len)
       break;
   }
+
+  *nptr = n;
 
   return n;
 }

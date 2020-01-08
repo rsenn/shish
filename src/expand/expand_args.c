@@ -11,10 +11,12 @@ expand_args(union node* args, node_t** out) {
   int ret = 0;
   struct expand x;
 
-  n = expand_getorcreate(out);
 
   expand_init(&x, 0);
   expand_to(&x, out);
+
+//  n = expand_getorcreate(out);
+
 
   //  *nptr = NULL;
 

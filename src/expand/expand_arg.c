@@ -7,8 +7,9 @@
 int
 expand_arg(struct expand* ex, struct narg* narg) {
 
-  union node* n = ex->ptr;
+  union node* n ; // =  expand_getorcreate(ex->ptr);
   union node* subarg;
+
 
   /* loop through all parts of the word */
   for(subarg = narg ? narg->list : NULL; subarg; subarg = subarg->list.next) {

@@ -90,7 +90,8 @@ typedef union {
 
 typedef const union node expand_input;
 typedef union node expand_output;
-typedef union node* expand_ptr;
+typedef expand_output* expand_optr;
+typedef expand_input* expand_iptr;
 typedef expand_expr* expand_field;
 typedef struct narg* expand_field_pointer;
 //#define EXPAND_INIT(r, p, f) {(union node*)(r), (p), (f)};
@@ -110,7 +111,7 @@ typedef struct narg* expand_field_pointer;
 
 void    expand_init(struct expand* ex, int flags);
 void        expand_to(struct expand* ex, union node** out);
-node_t*  expand_getorcreate(struct expand* ex);
+node_t*  expand_getorcreate(node_t**);
   
 void        expand_appendsa(union node* node, stralloc* sa);
 int         expand_arg(struct expand* ex, struct narg* narg);
@@ -130,5 +131,7 @@ union node* expand_param(struct expand* ex, struct nargparam* param);
 void        expand_tosa(union node* node, stralloc* sa);
 void        expand_unescape(stralloc* sa);
 int         expand_vars(union node* vars, union node** nptr);
+node_t** expand_break(node_t** out);
+
 
 #endif /* EXPAND_H */
