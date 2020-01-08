@@ -5,12 +5,15 @@
 #include "str.h"
 #include "tree.h"
 #include "var.h"
+#include "uint16.h"
 #include <stdlib.h>
 
 union node*
 expand_param(struct nargparam* param, union node** nptr, int flags) {
   union node* n = *nptr;
   stralloc value;
+  char tmpbuf[FMT_LONG];
+
   const char* v = NULL;
   unsigned long vlen = 0;
 
@@ -96,6 +99,14 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
   /* ..and variable substitutions */
   else {
     unsigned long offset;
+
+    if(str_equal(param->name, "RANDOM")) {
+
+  uint16 random = uint32_random();
+
+  vlen = fmt_uint(v = tmpbuf, random);
+
+    } else
 
     /* look for the variable.
        if the S_NULL flag is set and we have a var which is null
