@@ -23,6 +23,9 @@
 #define C_ESC 0x80   /* characters to escape before expansion */
 #define C_DESC 0x100 /* escapable characters in double quotation mode */
 #define C_QUOT 0x200 /* quotes */
+#define C_HEX 0x400 /* hex digit */
+#define C_OCTAL 0x800 /* octal digit */
+#define C_BINARY 0x1000 /* binary digit */
 
 /* character class table */
 const unsigned short parse_chartable[CHAR_RANGE];
@@ -34,6 +37,10 @@ const unsigned short parse_chartable[CHAR_RANGE];
 #define parse_isspace(c) (parse_chartable[(int)(unsigned char)c] & (C_SPACE))
 /* matches [0-9] */
 #define parse_isdigit(c) (parse_chartable[(int)(unsigned char)c] & (C_DIGIT))
+/* matches [0-9A-Fa-f] */
+#define parse_isxdigit(c) (parse_chartable[(int)(unsigned char)c] & (C_HEX))
+/* matches [0-7] */
+#define parse_isodigit(c) (parse_chartable[(int)(unsigned char)c] & (C_OCTAL))
 /* matches [A-Z] */
 #define parse_isupper(c) (parse_chartable[(int)(unsigned char)c] & (C_UPPER))
 /* matches [a-z] */

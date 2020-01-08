@@ -1,10 +1,10 @@
 #include "expand.h"
 #include "fmt.h"
 #include "parse.h"
-#include "uint64.h"
 #include "scan.h"
 #include "source.h"
 #include "tree.h"
+#include "uint64.h"
 
 /* parse arithmetic value
  * ----------------------------------------------------------------------- */
@@ -12,6 +12,8 @@ union node*
 parse_arith_value(struct parser* p) {
   char c;
   int digit;
+  int cclass = C_DIGIT;
+
   size_t (*scan_fn)(const char* src, int64* dest) = &scan_longlong;
 
   union node* node = NULL;
@@ -25,13 +27,8 @@ parse_arith_value(struct parser* p) {
   if(parse_isdigit(c)) {
     char x[FMT_LONG + 1];
 
-    int radix = 10;
     unsigned int n = 0;
     int64 num;
-
-
-
-
 
     do {
       x[n++] = c;
@@ -39,15 +36,15 @@ parse_arith_value(struct parser* p) {
       if(source_next(&c) <= 0)
         break;
 
-      digit = parse_isdigit(c);
+      digit = !!(parse_chartable[(int)(unsigned char)c] & cclass);
+   
+      if(!digit && cclass == C_DIGIT && n == 1) {
 
-      if(!digit && radix == 10 && n == 1) {
-
-      switch(c) {
-        case 'x': scan_fn = &scan_xlonglong; break;
-        case 'b': scan_fn = 0; break;
-        case 'o': radix = &scan_octal; break;
-      }
+        switch(c) {
+          case 'x': scan_fn = &scan_xlonglong; cclass = C_HEX; break;
+          case 'b': scan_fn = 0;cclass = C_BINARY; break;
+          case 'o': scan_fn = &scan_octal; cclass = C_OCTAL; break;
+        }
 
         source_skip();
         n = 0;
@@ -57,7 +54,7 @@ parse_arith_value(struct parser* p) {
 
     x[n] = '\0';
 
-    scan_longlong(x, &num);
+    scan_fn(x, &num);
 
     node = tree_newnode(N_ARITH_NUM);
     node->narithnum.num = num;
