@@ -20,7 +20,7 @@ parse_arith(struct parser* p) {
 #ifdef DEBUG
     debug_node(tree);
 #endif
-    
+
     buffer_flush(fd_err->w);
 
     /* MUST be terminated with right parenthesis or backquote */

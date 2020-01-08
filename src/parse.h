@@ -12,19 +12,19 @@
 #define CHAR_RANGE (1 << CHAR_BITS)
 
 /* character class constants */
-#define C_UNDEF 0x00 /* undefined character class */
-#define C_SPACE 0x01 /* a whitespace character */
-#define C_DIGIT 0x02 /* a numerical digit */
-#define C_UPPER 0x04 /* an uppercase char */
-#define C_LOWER 0x08 /* a lowercase char */
-#define C_NAME 0x10  /* an alphanumeric or underscore */
-#define C_SPCL 0x20  /* special parameter char */
-#define C_CTRL 0x40  /* control operator char */
-#define C_ESC 0x80   /* characters to escape before expansion */
-#define C_DESC 0x100 /* escapable characters in double quotation mode */
-#define C_QUOT 0x200 /* quotes */
-#define C_HEX 0x400 /* hex digit */
-#define C_OCTAL 0x800 /* octal digit */
+#define C_UNDEF 0x00    /* undefined character class */
+#define C_SPACE 0x01    /* a whitespace character */
+#define C_DIGIT 0x02    /* a numerical digit */
+#define C_UPPER 0x04    /* an uppercase char */
+#define C_LOWER 0x08    /* a lowercase char */
+#define C_NAME 0x10     /* an alphanumeric or underscore */
+#define C_SPCL 0x20     /* special parameter char */
+#define C_CTRL 0x40     /* control operator char */
+#define C_ESC 0x80      /* characters to escape before expansion */
+#define C_DESC 0x100    /* escapable characters in double quotation mode */
+#define C_QUOT 0x200    /* quotes */
+#define C_HEX 0x400     /* hex digit */
+#define C_OCTAL 0x800   /* octal digit */
 #define C_BINARY 0x1000 /* binary digit */
 
 /* character class table */

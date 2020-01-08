@@ -9,7 +9,7 @@ parse_arith_binary(struct parser* p, int precedence) {
   union node *lnode, *rnode, *newnode;
   char c;
   int ntype = -1;
-  char a,b;
+  char a, b;
   int prec = precedence;
 
   lnode = precedence < 1 ? parse_arith_unary(p) : parse_arith_binary(p, precedence - 1);
@@ -53,7 +53,7 @@ parse_arith_binary(struct parser* p, int precedence) {
 
       if(a == '>') {
         ntype = b == '=' ? A_GE : A_GT;
-        if(b == '=') 
+        if(b == '=')
           source_skip();
       } else if(a == '<') {
         ntype = b == '=' ? A_LE : A_LT;
@@ -69,7 +69,8 @@ parse_arith_binary(struct parser* p, int precedence) {
       }
     } else if(prec <= 6) {
       switch(c) {
-        case '&': ntype = A_BAND; break;
+            case '&' : ntype = A_BAND;
+        break;
         case '|': ntype = A_BOR; break;
         case '^': ntype = A_BXOR; break;
       }

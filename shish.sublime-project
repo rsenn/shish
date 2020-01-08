@@ -1,42 +1,43 @@
 {
-    "build_systems": [
-  {
-    "name": "List",
-    "shell_cmd": "ls -l"
-  },
-  {
-    "name": "Build debug",
-    "shell_cmd": "make DEBUG=1 SELECT=1 CC=clang"
-  },
+  "build_systems": [
     {
-    "name": "Rebuild CTags",
-    "shell_cmd": "make .tags"
-  },
+      "name": "List",
+      "shell_cmd": "ls -l"
+    },
+    {
+      "name": "Build debug",
+      "shell_cmd": "make DEBUG=1 SELECT=1 CC=clang"
+    },
+    {
+      "name": "Rebuild CTags",
+      "shell_cmd": "make .tags"
+    },
     {
       "name": "clang-format",
       "shell_cmd": "clang-format -verbose -style=file -i `find lib src -name '*.c' -or -name '*.h'`",
       "working_dir": "${project_path:${folder:${file_path}}}"
     },
-
+    {
+      "name": "Run CMake release",
+      "shell_cmd": "mkdir -p build/release;  cd build/release; cmake -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_C_FLAGS='-Os -w -std=c11' ../..",
+      "working_dir": "${project_path}"
+    },
+    {
+      "name": "Run make -C release",
+      "shell_cmd": "make -C build/release",
+      "working_dir": "${project_path}"
+    },
+    {
+      "name": "Run build/release/shish in Terminal",
+      "shell_cmd": "set -x; setsid x-terminal-emulator -T 'Run shish.sublime-project' -e build/release/shish",
+      "working_dir": "${project_path}"
+    }
   ],
-	"folders":
-	[
-		{
-			"path": ".",
-			 "folder_exclude_patterns": [ ".*", "*.cache" ],
-			"file_exclude_patterns": [ 
-                ".*",
-                "*.stackdump",
-                 "*.o",
-                "*.d",
-                "*.m4",
-                "*~",
-                "*.pro.user*",
-                "*cfg*.sh",
-
-
-
-            ]
-		}
-	]
+  "folders": [
+    {
+      "path": ".",
+      "folder_exclude_patterns": [".*", "*.cache"],
+      "file_exclude_patterns": [".*", "*.stackdump", "*.o", "*.d", "*.m4", "*~", "*.pro.user*", "*cfg*.sh"]
+    }
+  ]
 }
