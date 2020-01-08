@@ -6,15 +6,15 @@
  * ----------------------------------------------------------------------- */
 void
 expand_appendsa(union node* node, stralloc* sa) {
-  union node tmpnode = {N_ARG, 0, 0, 0};
-  struct expand x = EXPAND_INIT(&tmpnode, &x.root, X_NOSPLIT);
+  struct narg tmpnode = {N_ARG, 0, 0, 0};
+  struct expand x = EXPAND_INIT((union node*)&tmpnode, &x.root, X_NOSPLIT);
   x.ptr = &x.root;
 
-  //  byte_copy(&tmpnode.narg.stra, sizeof(stralloc), sa);
-  stralloc_init(&tmpnode.narg.stra);
-  stralloc_copy(&tmpnode.narg.stra, sa);
+  //  byte_copy(&tmpnode.stra, sizeof(stralloc), sa);
+  stralloc_init(&tmpnode.stra);
+  stralloc_copy(&tmpnode.stra, sa);
   expand_arg(&x, &node->narg);
-  byte_copy(sa, sizeof(stralloc), &tmpnode.narg.stra);
+  byte_copy(sa, sizeof(stralloc), &tmpnode.stra);
   expand_unescape(sa);
   stralloc_nul(sa);
 }

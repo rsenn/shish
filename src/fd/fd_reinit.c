@@ -29,8 +29,8 @@ fd_reinit(struct fd* fd, int flags) {
   fd->r = &fd->rb;
   fd->w = &fd->wb;
 
-  buffer_default(&fd->rb, read);
-  buffer_default(&fd->wb, write);
+  buffer_default(&fd->rb, (void*)&read);
+  buffer_default(&fd->wb, (void*)&write);
 
   return fd;
 }

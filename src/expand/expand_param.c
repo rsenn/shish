@@ -1,3 +1,4 @@
+#include "uint32.h"
 #include "expand.h"
 #include "fmt.h"
 #include "sh.h"
@@ -10,7 +11,7 @@
 
 union node*
 expand_param(struct expand* ex, struct nargparam* param) {
-  union node* n = ex->ptr;
+  union node* n = *ex->ptr;
   stralloc value;
   char tmpbuf[FMT_LONG];
 
@@ -104,8 +105,9 @@ expand_param(struct expand* ex, struct nargparam* param) {
     if(str_equal(param->name, "RANDOM")) {
 
       uint16 random = uint32_random();
-
-      vlen = fmt_uint(v = tmpbuf, random);
+ 
+      v = tmpbuf;
+      vlen = fmt_uint(tmpbuf, random);
 
     } else
 
@@ -142,7 +144,7 @@ expand_param(struct expand* ex, struct nargparam* param) {
         n = expand_cat(v, vlen, ex->ptr, ex->flags);
       /* unset, substitute */
       else
-        n = expand_arg(&ex, &param->word->narg);
+        n = expand_arg(ex, &param->word->narg);
       break;
     }
     /* if parameter unset (or null) then expand word to it
@@ -153,7 +155,7 @@ expand_param(struct expand* ex, struct nargparam* param) {
       else {
         struct expand tmpx = EXPAND_INIT(0, 0, ex->flags | X_NOSPLIT);
         tmpx.ptr = &tmpx.root;
-        n = expand_arg(&tmpx.root, &param->word->narg);
+        n = expand_arg(&tmpx, &param->word->narg);
         var_setvsa(param->name, /* BUG */ &n->narg.stra, V_DEFAULT);
       }
       break;
@@ -179,7 +181,7 @@ expand_param(struct expand* ex, struct nargparam* param) {
          otherwise substitute word */
     case S_ALTERNAT: {
       if(v)
-        n = expand_arg(&ex, &param->word->narg);
+        n = expand_arg(ex, &param->word->narg);
       break;
 
         /* remove smallest matching suffix */

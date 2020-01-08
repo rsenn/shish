@@ -5,10 +5,10 @@
 /* expand an exprmetic expression
  * ----------------------------------------------------------------------- */
 union node*
-expand_arith(struct expand* ex, union node* arith) {
-  union node* expr = arith->nargarith.tree;
-  union node* n = ex->ptr;
-  int ret = -1;
+expand_arith(struct expand* ex, struct nargarith* arith) {
+  union node* expr = arith->tree;
+  union node* n = *ex->ptr;
+  int64 ret = -1;
   size_t len;
   char buf[FMT_LONG];
 
@@ -24,4 +24,6 @@ expand_arith(struct expand* ex, union node* arith) {
     }*/
 
   n = expand_cat(buf, len, ex->ptr, ex->flags);
+
+  return n;
 }

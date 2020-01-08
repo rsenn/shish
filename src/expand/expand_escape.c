@@ -4,7 +4,7 @@
 /* escape characters subject to glob() expansion
  * ----------------------------------------------------------------------- */
 void
-expand_escape(struct expand* ex, stralloc* sa, const char* b, unsigned int n) {
+expand_escape(stralloc* sa, const char* b, unsigned int n) {
   while(n--) {
     if(str_chr("\\*?[", *b) < 4)
       stralloc_catc(sa, '\\');

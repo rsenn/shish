@@ -13,12 +13,12 @@ fd_setfd(struct fd* fd, int e) {
 
   /* set the file descriptors on the buffers */
   if(FD_ISRD(fd)) {
-    buffer_default(&fd->rb, read);
+    buffer_default(&fd->rb, (void*)&read);
     fd->rb.fd = e;
   }
 
   if(FD_ISWR(fd)) {
-    buffer_default(&fd->wb, write);
+    buffer_default(&fd->wb, (void*)&write);
     fd->wb.fd = e;
   }
 

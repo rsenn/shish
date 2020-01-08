@@ -6,7 +6,7 @@
  * ----------------------------------------------------------------------- */
 union node*
 expand_arg(struct expand* ex, struct narg* narg) {
-  union node* n = ex->ptr;
+  union node* n = *ex->ptr;
   union node* subarg;
 
   /* loop through all parts of the word */

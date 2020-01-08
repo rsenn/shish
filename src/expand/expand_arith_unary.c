@@ -1,3 +1,4 @@
+#include "expand.h"
 #include "tree.h"
 #include "uint64.h"
 #include <math.h>

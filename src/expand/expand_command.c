@@ -11,7 +11,7 @@
  * ----------------------------------------------------------------------- */
 union node*
 expand_command(struct expand* ex, struct nargcmd* cmd) {
-  union node* n = ex->ptr;
+  union node* n = *ex->ptr;
   struct vartab vars;
   struct fd fd;
   struct fdstack fdst;
