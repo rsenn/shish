@@ -11,7 +11,7 @@ eval_case(struct eval* e, struct ncase* ncase) {
   union node* node;
   union node* pat;
   int ret = 0;
- 
+
   stralloc word;
   stralloc pattern;
   stralloc_init(&word);

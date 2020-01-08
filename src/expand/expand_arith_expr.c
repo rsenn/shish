@@ -1,5 +1,5 @@
-#include "scan.h"
 #include "expand.h"
+#include "scan.h"
 #include "tree.h"
 #include "uint64.h"
 
@@ -18,7 +18,7 @@ expand_arith_expr(struct expand* ex, union node* expr, int64* r) {
   } else if(expr->id == N_ARITH_NUM) {
     *r = ((struct narithnum*)expr)->num;
   } else if(expr->id == N_ARGPARAM) {
-    union node* n =  expand_param(ex, (struct nargparam*)expr);
+    union node* n = expand_param(ex, (struct nargparam*)expr);
     size_t len = 0;
     if(n) {
       stralloc* value = &n->narg.stra;

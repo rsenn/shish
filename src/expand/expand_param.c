@@ -1,4 +1,3 @@
-#include "uint32.h"
 #include "expand.h"
 #include "fmt.h"
 #include "sh.h"
@@ -6,6 +5,7 @@
 #include "str.h"
 #include "tree.h"
 #include "uint16.h"
+#include "uint32.h"
 #include "var.h"
 #include <stdlib.h>
 
@@ -105,7 +105,7 @@ expand_param(struct expand* ex, struct nargparam* param) {
     if(str_equal(param->name, "RANDOM")) {
 
       uint16 random = uint32_random();
- 
+
       v = tmpbuf;
       vlen = fmt_uint(tmpbuf, random);
 
