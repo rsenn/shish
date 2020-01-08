@@ -1,3 +1,4 @@
+#include "fd.h"
 #include "parse.h"
 #include "source.h"
 #include "tree.h"
@@ -11,11 +12,14 @@ parse_arith(struct parser* p) {
 
   source_skip();
 
-  parse_init(&subp, P_ARITH);
+  parse_init(&subp, P_ARITH | P_NOREDIR);
 
   tree = parse_arith_expr(&subp);
 
   if(tree) {
+
+    debug_node(tree, 0);
+    buffer_flush(fd_err->w);
 
     /* MUST be terminated with right parenthesis or backquote */
     if(!parse_expect(&subp, P_DEFAULT, T_RP, tree) || !parse_expect(&subp, P_DEFAULT, T_RP, tree))

@@ -79,7 +79,7 @@ parse_unquoted(struct parser* p) {
       continue;
     }
     /* check for redirections */
-    else if(c == '<' || c == '>') {
+    else if((p->flags & P_NOREDIR) == 0 && (c == '<' || c == '>')) {
       int fd = (c == '<' ? 0 : 1);
 
       if(p->sa.len == 0 || scan_uint(p->sa.s, (unsigned int*)&fd) == p->sa.len)

@@ -28,7 +28,6 @@ const char* debug_nodes[] = {
     "N_ARGPARAM",
     "N_ARGARITH",
     "N_ARITH_NUM",
-    "N_ARITH_VAR",
     "N_ARITH_PAREN",
     "N_ARITH_OR",
     "N_ARITH_AND",
