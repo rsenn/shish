@@ -34,6 +34,12 @@ if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" OR CMAKE_BUILD_TYPE STREQUAL "Release"
   check_c_compiler_flag("-falign-labels" F_ALIGN_LABELS)
   check_c_compiler_flag("-falign-loops" F_ALIGN_LOOPS)
 endif()
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+  set(DEBUG ON)
+else()
+  set(DEBUG OFF)
+
+endif()
 
 if(F_ALIGN_COMMONS)
   add_definitions("-falign-commons")
@@ -97,6 +103,15 @@ foreach(BUILTIN ${ALL_BUILTINS})
 endforeach(BUILTIN ${ALL_BUILTINS})
 
 option(NO_TREE_PRINT "Disable tree_print for history" OFF)
+option(DEBUG_COLOR "Color debug output" OFF)
+option(DEBUG_OUTPUT "Print debug output" OFF)
+
+if(DEBUG_OUTPUT)
+    add_definitions(-DDEBUG=1)
+endif()
+if(DEBUG_COLOR)
+  add_definitions(-DCOLOR_DEBUG=1)
+endif()
 
 foreach(BUILTIN ${ALL_BUILTINS})
 

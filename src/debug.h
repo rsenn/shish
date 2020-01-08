@@ -21,7 +21,9 @@ struct chunk {
 
 /* some ansi colors
  * ----------------------------------------------------------------------- */
+#ifndef COLOR_DEBUG
 #define COLOR_DEBUG 0
+#endif
 
 #if COLOR_DEBUG
 #define COLOR_CYAN "\033[36;1m"
