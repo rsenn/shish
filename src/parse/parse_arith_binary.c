@@ -32,24 +32,29 @@ parse_arith_binary(struct parser* p, int precedence) {
       break;
 
     if(prec <= 1) {
+      if(a == '*' && b == '*') {
+        source_skip();
+        ntype = A_EXP;
+      }
+    } else     if(prec <= 2) {
       switch(c) {
         case '*': ntype = A_MUL; break;
         case '/': ntype = A_DIV; break;
         case '%': ntype = A_MOD; break;
       }
-    } else if(prec <= 2) {
+    } else if(prec <= 3) {
       switch(c) {
         case '+': ntype = A_ADD; break;
         case '-': ntype = A_SUB; break;
       }
-    } else if(prec <= 3) {
+    } else if(prec <= 4) {
 
       if((a == '>' || a == '<') && a == b) {
         ntype = a == '>' ? A_RSHIFT : A_LSHIFT;
         source_skip();
       }
 
-    } else if(prec <= 4) {
+    } else if(prec <= 5) {
 
       if(a == '>') {
         ntype = b == '=' ? A_GE : A_GT;
@@ -61,19 +66,19 @@ parse_arith_binary(struct parser* p, int precedence) {
           source_skip();
       }
 
-    } else if(prec <= 5) {
+    } else if(prec <= 6) {
 
       if(b == '=' && (a == '=' || a == '!')) {
         ntype = a == '!' ? A_NE : A_EQ;
         source_skip();
       }
-    } else if(prec <= 6) {
+    } else if(prec <= 7) {
       switch(c) {
         case '&': ntype = A_BAND; break;
         case '|': ntype = A_BOR; break;
         case '^': ntype = A_BXOR; break;
       }
-    } else if(prec <= 7) {
+    } else if(prec <= 8) {
       if((a == '&' || a == '|') && a == b) {
         ntype = a == '&' ? A_AND : A_OR;
         source_skip();
