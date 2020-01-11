@@ -63,37 +63,6 @@ struct narg;
 
 #include "tree.h"
 
-/*
-typedef node_t* expand_input_iterator;
-typedef union node** expand_output_iterator;
-*/
-
-typedef struct expand {
-  node_t* root;
-  node_t** ptr;
-  int flags;
-} expand_ctx;
-
-
-typedef union {
-  union node node;
-  struct narg arg;
-  struct nargstr str;
-  struct nargparam param;
-  struct nargcmd cmd;
-  struct nargarith expr;
-  struct narithnum num;
-  struct narithunary unary;
-  struct narithbinary binary;
-} expand_expr;
-
-
-typedef const union node expand_input;
-typedef union node expand_output;
-typedef expand_output* expand_optr;
-typedef expand_input* expand_iptr;
-typedef expand_expr* expand_field;
-typedef struct narg* expand_field_pointer;
 //#define EXPAND_INIT(r, p, f) {(union node*)(r), (p), (f)};
   /*
   static inline union node**
@@ -109,35 +78,24 @@ typedef struct narg* expand_field_pointer;
 //
 //#define EXPAND_ADDNODE(nptr) (nptr = expand_addnode(nptr), *nptr)
 
-void    expand_init(struct expand* ex, int flags);
-node_t*     *expand_to(struct expand* ex, union node** out);
-
-node_t*  expand_getorcreate(node_t**);
-  
-void        expand_appendsa(union node* node, stralloc* sa);
-int         expand_arg(struct expand* ex, struct narg* narg);
-int         expand_args(union node* args, node_t** out);
+union node* expand_arg(struct narg* narg, union node** nptr, int flags);
+int         expand_args(union node* args, union node** nptr, int flags);
 void        expand_argv(union node* args, char** argv);
-int         expand_arith_binary(struct expand* ex, struct narithbinary* expr, int64* r);
-int         expand_arith_expr(struct expand* ex, union node* expr, int64* r);
-union node* expand_arith(struct expand* ex, struct nargarith* arith);
-int         expand_arith_unary(struct expand* ex, struct narithunary* expr, int64* r);
+int         expand_arith_binary(struct narithbinary* expr,  int64* r);
+int         expand_arith_expr(union node* expr, int64* r);
+int         expand_arith_unary(struct narithunary* expr, int64* r);
+union node* *expand_break(union node** out);
 union node* expand_cat(const char* b, unsigned int len, union node** nptr, int flags);
-union node* expand_command(struct expand* ex, struct nargcmd* cmd);
-void        expand_copysa(union node* node, stralloc* sa);
+void        expand_catsa(union node* node, stralloc* sa, int flags);
+union node* expand_command(struct nargcmd* cmd, union node** nptr, int flags);
+void        expand_copysa(union node* node, stralloc* sa, int flags);
 void        expand_escape(stralloc* sa, const char* b, unsigned int n);
+union node* expand_expr(struct nargarith* expr, union node** nptr, int flags);
+union node* expand_getorcreate(union node** out);
 union node* expand_glob(union node** nptr, int flags);
-void        expand_init(struct expand* ex, int flags);
-int expand_param(struct expand* ex, struct nargparam* param);
+union node* expand_param(struct nargparam* param, union node** nptr, int flags);
 void        expand_tosa(union node* node, stralloc* sa);
 void        expand_unescape(stralloc* sa);
 int         expand_vars(union node* vars, union node** nptr);
-
-node_t* expand_new(struct expand* ex);
-
-node_t**    expand_break(node_t** out);
-
-void
-expand_dump(const struct expand* ex);
 
 #endif /* EXPAND_H */

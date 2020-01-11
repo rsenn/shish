@@ -1,5 +1,5 @@
-#include "byte.h"
-#include "stralloc.h"
+#include "../byte.h"
+#include "../stralloc.h"
 
 int
 stralloc_remove(stralloc* sa, unsigned long pos, unsigned long n) {

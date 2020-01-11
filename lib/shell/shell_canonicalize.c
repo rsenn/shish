@@ -14,9 +14,9 @@
 #include <linux/limits.h>
 #endif
 
-#include "byte.h"
-#include "str.h"
-#include "stralloc.h"
+#include "../byte.h"
+#include "../str.h"
+#include "../stralloc.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"

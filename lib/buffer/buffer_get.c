@@ -1,11 +1,9 @@
-#include "buffer.h"
-#include "byte.h"
+#include "../buffer.h"
+#include "../byte.h"
 
 ssize_t
 buffer_get(buffer* b, char* x, size_t len) {
-  ssize_t done;
-  ssize_t blen;
-  done = 0;
+  ssize_t blen, r = 0;
   if((ssize_t)len < 0)
     len = (ssize_t)(((size_t)-1) >> 1);
   while(len) {
@@ -19,7 +17,7 @@ buffer_get(buffer* b, char* x, size_t len) {
     b->p += (size_t)blen;
     len -= (size_t)blen;
     x += blen;
-    done += blen;
+    r += blen;
   }
-  return done;
+  return r;
 }

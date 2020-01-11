@@ -1,4 +1,4 @@
-#include "scan.h"
+#include "../scan.h"
 
 size_t
 scan_longlong(const char* src, signed long long* dest) {

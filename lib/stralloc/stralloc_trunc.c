@@ -1,5 +1,5 @@
-#include "shell.h"
-#include "stralloc.h"
+#include "../shell.h"
+#include "../stralloc.h"
 
 #ifndef DEBUG_ALLOC
 

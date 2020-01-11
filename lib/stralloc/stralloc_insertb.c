@@ -1,5 +1,5 @@
-#include "byte.h"
-#include "stralloc.h"
+#include "../byte.h"
+#include "../stralloc.h"
 
 int
 stralloc_insertb(stralloc* sa, const char* s, unsigned long pos, unsigned long n) {

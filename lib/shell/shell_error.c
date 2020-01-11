@@ -1,6 +1,6 @@
-#include "buffer.h"
-#include "shell.h"
-#include "str.h"
+#include "../buffer.h"
+#include "../shell.h"
+#include "../str.h"
 
 /* output error message
  *

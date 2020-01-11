@@ -1,4 +1,4 @@
-#include "str.h"
+#include "../str.h"
 
 size_t
 str_copy(char* out, const char* in) {

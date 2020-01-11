@@ -4,20 +4,15 @@
 #include "shell.h"
 #include "str.h"
 #include "tree.h"
-#include "uint16.h"
-#include "uint32.h"
 #include "var.h"
 #include <stdlib.h>
 
-int
-
-expand_param(struct expand* ex, struct nargparam* param) {
-  union node* n = *ex->ptr;
+union node*
+expand_param(struct nargparam* param, union node** nptr, int flags) {
+  union node* n = *nptr;
   stralloc value;
-  char tmpbuf[FMT_LONG];
-  int ret = 0;
   const char* v = NULL;
-  size_t vlen = 0;
+  unsigned long vlen = 0;
 
   stralloc_init(&value);
 
@@ -47,15 +42,14 @@ expand_param(struct expand* ex, struct nargparam* param) {
         unsigned int i = 0;
 
         while(i < sh->arg.c) {
-          //  struct expand tmpx = EXPAND_INIT(ex->root, ex->ptr, (param->flag & ~S_SPECIAL) | S_ARG);
           param->flag &= ~S_SPECIAL;
           param->flag |= S_ARG;
           param->numb = 1 + i;
 
-          n = expand_param(ex, param);
+          n = expand_param(param, nptr, flags);
 
           if(++i < sh->arg.c)
-            ex->ptr = &n->list.next;
+            nptr = &n->list.next;
         }
 
         return n;
@@ -103,19 +97,10 @@ expand_param(struct expand* ex, struct nargparam* param) {
   else {
     unsigned long offset;
 
-    if(str_equal(param->name, "RANDOM")) {
-
-      uint16 random = uint32_random();
-
-      v = tmpbuf;
-      vlen = fmt_uint(tmpbuf, random);
-
-    } else
-
-        /* look for the variable.
-           if the S_NULL flag is set and we have a var which is null
-           set v to NULL */
-        if((v = var_get(param->name, &offset))) {
+    /* look for the variable.
+       if the S_NULL flag is set and we have a var which is null
+       set v to NULL */
+    if((v = var_get(param->name, &offset))) {
       if(v[offset] == '\0' && (param->flag & S_NULL)) {
         v = NULL;
         vlen = 0;
@@ -130,7 +115,7 @@ expand_param(struct expand* ex, struct nargparam* param) {
   if(param->flag & S_STRLEN) {
     char lstr[FMT_ULONG];
 
-    n = expand_cat(lstr, fmt_ulong(lstr, vlen), ex->ptr, ex->flags);
+    n = expand_cat(lstr, fmt_ulong(lstr, vlen), nptr, flags);
 
     stralloc_free(&value);
 
@@ -142,21 +127,19 @@ expand_param(struct expand* ex, struct nargparam* param) {
     /* return word if parameter unset (or null) */
     case S_DEFAULT: {
       if(v)
-        n = expand_cat(v, vlen, ex->ptr, ex->flags);
+        n = expand_cat(v, vlen, nptr, flags);
       /* unset, substitute */
       else
-        n = expand_arg(ex, &param->word->narg);
+        n = expand_arg(&param->word->narg, nptr, flags);
       break;
     }
     /* if parameter unset (or null) then expand word to it
        and substitute paramter */
     case S_ASGNDEF: {
       if(v)
-        n = expand_cat(v, vlen, ex->ptr, ex->flags);
+        n = expand_cat(v, vlen, nptr, flags);
       else {
-        struct expand tmpx = {0, 0, ex->flags | X_NOSPLIT};
-        tmpx.ptr = &tmpx.root;
-        n = expand_arg(&tmpx, &param->word->narg);
+        n = expand_arg(&param->word->narg, nptr, flags | X_NOSPLIT);
         var_setvsa(param->name, /* BUG */ &n->narg.stra, V_DEFAULT);
       }
       break;
@@ -165,12 +148,11 @@ expand_param(struct expand* ex, struct nargparam* param) {
     /* indicate error if null or unset */
     case S_ERRNULL: {
       if(v)
-        n = expand_cat(v, vlen, ex->ptr, ex->flags);
+        n = expand_cat(v, vlen, nptr, flags);
       else {
         union node* tmpnode = NULL;
-        struct expand tmpx = {0, &tmpnode, ex->flags};
 
-        n = expand_arg(&tmpx, &param->word->narg);
+        n = expand_arg(&param->word->narg, &tmpnode, flags);
         sh_error((n && n->narg.stra.s) ? n->narg.stra.s : "parameter null or not set");
         if(tmpnode)
           tree_free(tmpnode);
@@ -182,7 +164,7 @@ expand_param(struct expand* ex, struct nargparam* param) {
          otherwise substitute word */
     case S_ALTERNAT: {
       if(v)
-        n = expand_arg(ex, &param->word->narg);
+        n = expand_arg(&param->word->narg, nptr, flags);
       break;
 
         /* remove smallest matching suffix */
@@ -191,13 +173,13 @@ expand_param(struct expand* ex, struct nargparam* param) {
         stralloc sa;
 
         if(v && vlen) {
-          expand_tosa(param->word, &sa);
+          expand_copysa(param->word, &sa, 0);
 
           for(i = vlen - 1; i >= 0; i--)
             if(shell_fnmatch(sa.s, sa.len, v + i, vlen - i, SH_FNM_PERIOD) == 0)
               break;
 
-          n = expand_cat(v, (i < 0 ? vlen : i), ex->ptr, ex->flags);
+          n = expand_cat(v, (i < 0 ? vlen : i), nptr, flags);
         }
         break;
       }
@@ -209,13 +191,13 @@ expand_param(struct expand* ex, struct nargparam* param) {
       stralloc sa;
 
       if(v && vlen) {
-        expand_tosa(param->word, &sa);
+        expand_copysa(param->word, &sa, 0);
 
         for(i = 0; i <= vlen; i++)
           if(shell_fnmatch(sa.s, sa.len, v + i, vlen - i, SH_FNM_PERIOD) == 0)
             break;
 
-        n = expand_cat(v, (i > vlen ? vlen : i), ex->ptr, ex->flags);
+        n = expand_cat(v, (i > vlen ? vlen : i), nptr, flags);
       }
 
       break;
@@ -227,7 +209,7 @@ expand_param(struct expand* ex, struct nargparam* param) {
       stralloc sa;
 
       if(v && vlen) {
-        expand_tosa(param->word, &sa);
+        expand_copysa(param->word, &sa, 0);
 
         for(i = 1; i <= vlen; i++)
           if(shell_fnmatch(sa.s, sa.len, v, i, SH_FNM_PERIOD) == 0)
@@ -236,7 +218,7 @@ expand_param(struct expand* ex, struct nargparam* param) {
         if(i > vlen)
           i = 0;
 
-        n = expand_cat(v + i, vlen - i, ex->ptr, ex->flags);
+        n = expand_cat(v + i, vlen - i, nptr, flags);
       }
       break;
     }
@@ -247,7 +229,7 @@ expand_param(struct expand* ex, struct nargparam* param) {
       stralloc sa;
 
       if(v && vlen) {
-        expand_tosa(param->word, &sa);
+        expand_copysa(param->word, &sa, 0);
 
         for(i = vlen; i > 0; i--)
           if(shell_fnmatch(sa.s, sa.len, v, i, SH_FNM_PERIOD) == 0)
@@ -256,7 +238,7 @@ expand_param(struct expand* ex, struct nargparam* param) {
         if(i == 0)
           i = vlen;
 
-        n = expand_cat(v + i, vlen - i, ex->ptr, ex->flags);
+        n = expand_cat(v + i, vlen - i, nptr, flags);
       }
       break;
     }

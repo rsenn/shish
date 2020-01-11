@@ -1,8 +1,8 @@
 #include "../expand.h"
 #include <assert.h>
 
-node_t*
-expand_getorcreate(node_t** out) {
+union node*
+expand_getorcreate(union node** out) {
   assert(out);
   if(!*out)
     *out = tree_newnode(N_ARG);

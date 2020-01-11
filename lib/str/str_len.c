@@ -1,5 +1,5 @@
 #undef __dietlibc__
-#include "str.h"
+#include "../str.h"
 
 size_t
 str_len(const char* in) {

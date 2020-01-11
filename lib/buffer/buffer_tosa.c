@@ -1,5 +1,5 @@
-#include "buffer.h"
-#include "stralloc.h"
+#include "../buffer.h"
+#include "../stralloc.h"
 
 static ssize_t
 strallocwrite(int fd, char* buf, size_t len, void* myself) {

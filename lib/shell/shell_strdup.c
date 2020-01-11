@@ -1,6 +1,6 @@
-#include "byte.h"
-#include "shell.h"
-#include "str.h"
+#include "../byte.h"
+#include "../shell.h"
+#include "../str.h"
 
 #ifndef DEBUG_ALLOC
 

@@ -1,5 +1,5 @@
-#include "str.h"
-#include "stralloc.h"
+#include "../str.h"
+#include "../stralloc.h"
 
 extern int
 stralloc_cats(stralloc* sa, const char* buf) {

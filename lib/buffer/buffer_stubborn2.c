@@ -1,11 +1,20 @@
-#include "buffer.h"
+#include "../buffer.h"
+#include "../windoze.h"
 #include <errno.h>
 
+#if !WINDOWS_NATIVE
+#include <unistd.h>
+#endif
+
+#ifndef EINTR
+#define EINTR 4
+#endif
+
 ssize_t
-buffer_stubborn_read(ssize_t (*op)(), int fd, const char* buf, size_t len, void* cookie) {
+buffer_stubborn_read(buffer_op_proto* op, fd_t fd, const void* buf, size_t len, void* ptr) {
   ssize_t w;
   for(;;) {
-    if((w = op(fd, buf, len, cookie)) < 0)
+    if((w = (*op)(fd, (void*)buf, len, ptr)) < 0)
       if(errno == EINTR)
         continue;
     break;

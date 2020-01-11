@@ -1,6 +1,6 @@
-#include "shell.h"
-#include "str.h"
-#include "stralloc.h"
+#include "../shell.h"
+#include "../str.h"
+#include "../stralloc.h"
 
 #include <limits.h>
 #include <unistd.h>

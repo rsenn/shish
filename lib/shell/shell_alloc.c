@@ -1,4 +1,4 @@
-#include "shell.h"
+#include "../shell.h"
 
 #ifndef DEBUG_ALLOC
 

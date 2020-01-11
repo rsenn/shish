@@ -1,10 +1,10 @@
-#include "buffer.h"
-#include "byte.h"
+#include "../buffer.h"
+#include "../byte.h"
 
 ssize_t
 buffer_getc(buffer* b, char* x) {
   if(b->p == b->n) {
-    register ssize_t blen;
+    ssize_t blen;
     if((blen = buffer_feed(b)) <= 0)
       return blen;
   }

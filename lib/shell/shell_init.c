@@ -1,4 +1,4 @@
-#include "buffer.h"
+#include "../buffer.h"
 
 buffer* shell_buff;
 const char* shell_name;

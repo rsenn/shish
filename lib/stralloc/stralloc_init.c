@@ -1,4 +1,4 @@
-#include "stralloc.h"
+#include "../stralloc.h"
 
 void
 stralloc_init(stralloc* sa) {

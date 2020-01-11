@@ -1,4 +1,4 @@
-#include "fmt.h"
+#include "../fmt.h"
 
 size_t
 fmt_long(char* dest, long int i) {

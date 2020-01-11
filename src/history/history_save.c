@@ -33,7 +33,7 @@ history_save(void) {
   unlink(fname);
 
   /* try to write history */
-  if(buffer_truncfile(&b, fname, data, sizeof(data)) == 0) {
+  if(buffer_truncfile(&b, fname) == 0) {
     int i;
 
     for(i = history_size - 1; i >= 0; i--) {

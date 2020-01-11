@@ -1,7 +1,7 @@
 /* from dietlibc by felix leitner, adapted to libowfat */
 
-#include "shell.h"
-#include "str.h"
+#include "../shell.h"
+#include "../str.h"
 
 /*
        path           dirname        basename

@@ -30,7 +30,7 @@ int sh_child = 0;
 /* main routine
  * ----------------------------------------------------------------------- */
 int
-sh_main(int argc, char** argv, char** envp) {
+main(int argc, char** argv, char** envp) {
   int c;
   int e, v;
   int flags;
@@ -59,6 +59,10 @@ sh_main(int argc, char** argv, char** envp) {
     fd_setbuf(fdtable[v], &fdtable[v][1], FD_BUFSIZE);
   }
 
+  /* set initial $0 */
+  sh_argv0 = argv[0];
+  sh_name = shell_basename(sh_argv0);
+
   shell_init(fd_err->w, sh_name);
 
   /* import environment variables to the root vartab */
@@ -79,10 +83,6 @@ sh_main(int argc, char** argv, char** envp) {
     /* use imported vars to seed the prng */
     /*  uint32_seed(var->sa.s, var->sa.len);*/
   }
-
-  /* set initial $0 */
-  sh_argv0 = argv[0];
-  sh_name = shell_basename(sh_argv0);
 
   /* parse command line arguments */
   while((c = shell_getopt(argc, argv, "c:")) > 0) switch(c) {

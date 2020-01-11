@@ -1,4 +1,4 @@
-#include "byte.h"
+#include "../byte.h"
 
 /* byte_fill sets the bytes out[0], out[1], ..., out[len-1] to c */
 void

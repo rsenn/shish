@@ -2,15 +2,16 @@
 #include "expand.h"
 #include "tree.h"
 
-/* expand one N_ARG node to a stralloc (stralloc is overwritten!!!)
+/* expand one N_ARG nodes to a stralloc (appending)
  * ----------------------------------------------------------------------- */
 void
-expand_copysa(union node* node, stralloc* sa, int flags) {
+expand_catsa(union node* node, stralloc* sa, int flags) {
   union node tmpnode;
   union node* n = &tmpnode;
 
-  stralloc_init(&tmpnode.narg.stra);
+  byte_copy(&tmpnode.narg.stra, sizeof(stralloc), sa);
   expand_arg(&node->narg, &n, flags | X_NOSPLIT);
   byte_copy(sa, sizeof(stralloc), &tmpnode.narg.stra);
+  expand_unescape(sa);
   stralloc_nul(sa);
 }

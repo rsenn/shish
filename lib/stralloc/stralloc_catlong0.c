@@ -1,5 +1,5 @@
-#include "fmt.h"
-#include "stralloc.h"
+#include "../fmt.h"
+#include "../stralloc.h"
 
 int
 stralloc_catlong0(stralloc* sa, signed long int in, unsigned long n) {

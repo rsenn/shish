@@ -1,6 +1,6 @@
-#include "byte.h"
-#include "str.h"
-#include "stralloc.h"
+#include "../byte.h"
+#include "../str.h"
+#include "../stralloc.h"
 
 extern int
 stralloc_diffs(const stralloc* a, const char* b) {

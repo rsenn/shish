@@ -1,4 +1,4 @@
-#include "str.h"
+#include "../str.h"
 
 size_t
 str_rchr(const char* in, char needle) {

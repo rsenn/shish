@@ -1,6 +1,8 @@
-#include "open.h"
-#include "uint32.h"
+#include "../open.h"
+#include "../uint32.h"
 #include <unistd.h>
+
+extern uint32 uint32_pool[UINT32_POOLSIZE];
 
 /* feed data to the prng */
 int

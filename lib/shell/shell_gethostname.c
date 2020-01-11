@@ -1,6 +1,6 @@
-#include "shell.h"
-#include "str.h"
-#include "stralloc.h"
+#include "../shell.h"
+#include "../str.h"
+#include "../stralloc.h"
 #include <unistd.h>
 
 #ifdef __MINGW32__

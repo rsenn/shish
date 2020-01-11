@@ -5,31 +5,25 @@
  * returns count of argument nodes
  * ----------------------------------------------------------------------- */
 int
-expand_args(union node* args, node_t** out) {
-  expand_input* arg;
-  node_t* n;
+expand_args(union node* args, union node** nptr, int flags) {
+  union node* arg;
+  union node* n;
   int ret = 0;
-  struct expand x;
 
-  expand_init(&x, 0);
+  *nptr = NULL;
 
-  //  n = expand_getorcreate(out);
-
-  //  *nptr = NULL;
-
-  for(arg = args; arg; arg = arg->narg.next) {
-
-    if(!expand_arg(&x, &arg->narg))
-      return -1;
-
-    ret++;
+  for(arg = args; arg; arg = arg->list.next) {
+    if((n = expand_arg(&arg->narg, nptr, flags))) {
+      nptr = &n;
+      ret++;
+    }
 
     if(n == NULL)
       continue;
 
     if(n->narg.flag & X_GLOB) {
-      if((n = expand_glob(x.ptr, n->narg.flag & ~X_GLOB))) {
-        x.ptr = &n;
+      if((n = expand_glob(nptr, n->narg.flag & ~X_GLOB))) {
+        nptr = &n;
         ret++;
       }
     } else {
@@ -38,14 +32,12 @@ expand_args(union node* args, node_t** out) {
     }
 
     if(arg->list.next) {
-      x.ptr = expand_break(x.ptr);
-
-      n = *x.ptr = tree_newnode(N_ARG);
+      n->list.next = tree_newnode(N_ARG);
+      n = n->list.next;
       stralloc_init(&n->narg.stra);
+      ret++;
     }
   }
-
-  expand_to(&x, out);
 
   return ret;
 }

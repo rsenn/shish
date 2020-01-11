@@ -1,4 +1,4 @@
-#include "scan.h"
+#include "../scan.h"
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif

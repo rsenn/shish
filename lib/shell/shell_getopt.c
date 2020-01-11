@@ -3,7 +3,7 @@
  * rewritten to support multiple runs
  */
 
-#include "str.h"
+#include "../str.h"
 
 int shell_optind = 1;
 char shell_optopt;

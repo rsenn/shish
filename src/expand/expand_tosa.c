@@ -7,13 +7,12 @@
 void
 expand_tosa(union node* node, stralloc* sa) {
   struct narg tmpnode = {N_ARG, 0, 0, 0};
+  union node* n =  NULL;
 
-  struct expand x = {&tmpnode, &x.root, X_NOSPLIT};
-  x.ptr = &x.root;
   //  x.ptr = &x.root;
 
   stralloc_init(&tmpnode.stra);
-  expand_arg(&x, &node->narg);
+  expand_arg(&node->narg, &n, X_NOSPLIT);
   byte_copy(sa, sizeof(stralloc), &tmpnode.stra);
   stralloc_nul(sa);
 }

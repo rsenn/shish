@@ -5,8 +5,8 @@
 #else
 #include <sys/mman.h>
 #endif
-#include "mmap.h"
-#include "open.h"
+#include "../mmap.h"
+#include "../open.h"
 
 extern const char*
 mmap_read(const char* filename, size_t* filesize) {

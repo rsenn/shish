@@ -1,4 +1,4 @@
-#include "stralloc.h"
+#include "../stralloc.h"
 
 int
 stralloc_catc(stralloc* sa, const char c) {

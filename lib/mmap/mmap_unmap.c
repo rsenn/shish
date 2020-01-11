@@ -5,8 +5,8 @@
 #else
 #include <sys/mman.h>
 #endif
-#include "mmap.h"
-#include "open.h"
+#include "../mmap.h"
+#include "../open.h"
 
 int
 mmap_unmap(const char* mapped, size_t maplen) {

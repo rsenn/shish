@@ -56,11 +56,13 @@ prompt_escape(const char* s, stralloc* sa) {
         s++;
         break;
 
+#ifdef PACKAGE_VERSION
       /* shell version */
       case 'v':
         stralloc_cats(sa, PACKAGE_VERSION);
         s++;
         break;
+#endif
 
       /* working dir */
       case 'w':

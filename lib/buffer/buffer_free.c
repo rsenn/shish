@@ -1,7 +1,8 @@
-#include "buffer.h"
+#include "../buffer.h"
 #include <stdlib.h>
 
 void
 buffer_free(void* buf) {
-  free(buf);
+  buffer* b = buf;
+  free(b->x);
 }

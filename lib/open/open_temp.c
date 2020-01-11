@@ -1,8 +1,8 @@
 /* ported from dietlibcs mkstemp() */
 
-#include "open.h"
-#include "str.h"
-#include "uint32.h"
+#include "../open.h"
+#include "../str.h"
+#include "../uint32.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>

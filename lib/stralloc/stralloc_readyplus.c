@@ -1,4 +1,4 @@
-#include "stralloc.h"
+#include "../stralloc.h"
 #include <stdlib.h>
 
 #ifndef DEBUG_ALLOC

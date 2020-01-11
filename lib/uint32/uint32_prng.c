@@ -1,4 +1,4 @@
-#include "uint32.h"
+#include "../uint32.h"
 
 static uint32 seeds[8] = {
     0xe25e40f8,

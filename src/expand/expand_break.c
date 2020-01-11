@@ -1,7 +1,7 @@
 #include "../expand.h"
 
-node_t**
-expand_break(node_t** out) {
+union node**
+expand_break(union node** out) {
   struct narg* this = &(*out)->narg;
 
   if(this) {

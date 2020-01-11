@@ -1,4 +1,4 @@
-#include "fmt.h"
+#include "../fmt.h"
 
 static inline char
 tohex(char c) {
