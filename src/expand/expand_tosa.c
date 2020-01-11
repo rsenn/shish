@@ -7,7 +7,7 @@
 void
 expand_tosa(union node* node, stralloc* sa) {
   struct narg tmpnode = {N_ARG, 0, 0, 0};
-  union node* n =  NULL;
+  union node* n = NULL;
 
   //  x.ptr = &x.root;
 

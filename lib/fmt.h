@@ -69,7 +69,6 @@ size_t fmt_ulonglong(char* dest, uint64 src);
 /* like fmt_xlong but for uint64 */
 size_t fmt_xlonglong(char* dest, uint64 src);
 
-
 /* 1 -> "1", 4900 -> "4.9k", 2300000 -> "2.3M" */
 size_t fmt_human(char* dest, uint64 l);
 
@@ -77,7 +76,6 @@ size_t fmt_human(char* dest, uint64 l);
 size_t fmt_humank(char* dest, uint64 l);
 size_t fmt_asn1derlength(char* dest, uint64 l); /* 0-0x7f: 1 byte, above that 1+bytes_needed bytes */
 size_t fmt_asn1dertag(char* dest, uint64 l);    /* 1 byte for each 7 bits; upper bit = more bytes coming */
-
 
 #endif
 
@@ -149,8 +147,7 @@ size_t fmt_httpdate(char* dest, time_t t);
 #define FMT_ASN1LENGTH 17 /* enough space to hold 2^128-1 */
 #define FMT_ASN1TAG 19    /* enough space to hold 2^128-1 */
 /* some variable length encodings for integers */
-size_t fmt_utf8(char* dest, uint32_t n);                    /* can store 0-0x7fffffff */
-
+size_t fmt_utf8(char* dest, uint32_t n); /* can store 0-0x7fffffff */
 
 /* Marshaling helper functions.
  * Escape one character, no matter if it needs escaping or not.

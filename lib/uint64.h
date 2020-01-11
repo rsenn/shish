@@ -63,12 +63,12 @@ void uint64_unpack(const char* in, uint64* out);
 uint64 uint64_read(const char* in);
 #endif
 #endif
-void   uint64_pack_big(char* out, uint64 in);
-void   uint64_pack(char* out, uint64 in);
+void uint64_pack_big(char* out, uint64 in);
+void uint64_pack(char* out, uint64 in);
 uint64 uint64_read_big(const char* in);
 uint64 uint64_read(const char* in);
-void   uint64_unpack_big(const char* in, uint64* out);
-void   uint64_unpack(const char* in, uint64* out);
+void uint64_unpack_big(const char* in, uint64* out);
+void uint64_unpack(const char* in, uint64* out);
 
 #if defined(_WIN32) && defined(_MSC_VER)
 // for older MSVC

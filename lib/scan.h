@@ -59,7 +59,7 @@ size_t scan_longn(const char* src, size_t n, signed long* dest);
 
 size_t scan_longlong(const char* src, signed long long* dest);
 size_t scan_ulonglong(const char* src, unsigned long long* dest);
-//size_t scan_xlonglong(const char* src, unsigned long long* dest);
+// size_t scan_xlonglong(const char* src, unsigned long long* dest);
 size_t scan_8longlong(const char* src, unsigned long long* dest);
 
 size_t scan_uint(const char* src, unsigned int* dest);

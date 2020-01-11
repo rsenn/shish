@@ -6,7 +6,7 @@
 /* expand a binary expression
  * ----------------------------------------------------------------------- */
 int
-expand_arith_binary(struct narithbinary* expr,  int64* r) {
+expand_arith_binary(struct narithbinary* expr, int64* r) {
   int64 left = -1, right = -1;
   if(expand_arith_expr(expr->left, &left))
     return 1;
