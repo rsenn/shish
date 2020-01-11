@@ -11,12 +11,18 @@ expand_arith_expr(union node* expr, int64* r) {
   int ret = 0;
 
   switch(expr->id) {
-    case A_PAREN: ret = expand_arith_expr(((struct narithunary*)expr)->node, r); break;
+    case A_PAREN: {
+      ret = expand_arith_expr(((struct narithunary*)expr)->node, r);
+      break;
+    }
 
     case A_UNARYMINUS:
     case A_UNARYPLUS:
     case A_NOT:
-    case A_BNOT: ret = expand_arith_unary(&expr->narithunary, r); break;
+    case A_BNOT: {
+      ret = expand_arith_unary(&expr->narithunary, r);
+      break;
+    }
     case A_OR:
     case A_AND:
     case A_BOR:
@@ -35,8 +41,15 @@ expand_arith_expr(union node* expr, int64* r) {
     case A_MUL:
     case A_DIV:
     case A_MOD:
-    case A_EXP: ret = expand_arith_binary(&expr->narithbinary, r); break;
-    case A_NUM: *r = ((struct narithnum*)expr)->num; break;
+    case A_EXP: {
+      ret = expand_arith_binary(&expr->narithbinary, r);
+      break;
+    }
+    case A_NUM: {
+      *r = ((struct narithnum*)expr)->num;
+      ret = 0;
+      break;
+    }
     case N_ARGPARAM: {
       union node* node = tree_newnode(N_ARG);
       union node* n = expand_param((struct nargparam*)expr, &node, 0);
@@ -45,12 +58,19 @@ expand_arith_expr(union node* expr, int64* r) {
       assert(n);
       value = &n->narg.stra;
       assert(value);
-      if(n && value->s)
-        len = scan_longlong(value->s, r);
       ret = len == 0;
+      if(n && value->s) {
+        len = scan_longlong(value->s, r);
+      }
+      ret = len == 0;
+      if(ret)
+        *r = 0;
       break;
     }
-    default: return -1; break;
+    default: {
+      ret = -1;
+      break;
+    }
   }
 
   return ret;
