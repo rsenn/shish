@@ -2,7 +2,7 @@
 
 #ifdef DEBUG
 #include "expand.h"
-//#include "fd.h"
+#include "fd.h"
 #include "str.h"
 #include "tree.h"
 #include <string.h>

@@ -81,8 +81,9 @@ struct narg;
 union node* expand_arg(struct narg* narg, union node** nptr, int flags);
 int         expand_args(union node* args, union node** nptr, int flags);
 void        expand_argv(union node* args, char** argv);
-int         expand_arith_binary(struct narithbinary* expr,  int64* r);
+int         expand_arith_binary(struct narithbinary* expr, int64* r);
 int         expand_arith_expr(union node* expr, int64* r);
+union node* expand_arith(struct nargarith* arith, union node** nptr);
 int         expand_arith_unary(struct narithunary* expr, int64* r);
 union node* *expand_break(union node** out);
 union node* expand_cat(const char* b, unsigned int len, union node** nptr, int flags);
@@ -90,12 +91,12 @@ void        expand_catsa(union node* node, stralloc* sa, int flags);
 union node* expand_command(struct nargcmd* cmd, union node** nptr, int flags);
 void        expand_copysa(union node* node, stralloc* sa, int flags);
 void        expand_escape(stralloc* sa, const char* b, unsigned int n);
-union node* expand_expr(struct nargarith* expr, union node** nptr, int flags);
 union node* expand_getorcreate(union node** out);
 union node* expand_glob(union node** nptr, int flags);
 union node* expand_param(struct nargparam* param, union node** nptr, int flags);
 void        expand_tosa(union node* node, stralloc* sa);
 void        expand_unescape(stralloc* sa);
 int         expand_vars(union node* vars, union node** nptr);
+
 
 #endif /* EXPAND_H */
