@@ -38,7 +38,7 @@ expand_arith_expr(union node* expr, int64* r) {
     case A_EXP: ret = expand_arith_binary(&expr->narithbinary, r); break;
     case A_NUM: *r = ((struct narithnum*)expr)->num; break;
     case N_ARGPARAM: {
-      union node* node = NULL;
+      union node* node = tree_newnode(N_ARG);
       union node* n = expand_param((struct nargparam*)expr, &node, 0);
       stralloc* value;
       size_t len = 0;
