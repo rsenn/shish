@@ -27,9 +27,13 @@ parse_arith_binary(struct parser* p, int precedence) {
   c = a;
 
   do {
-
     if(prec <= 0)
       break;
+
+    if(prec <= 9) {
+      if((a == '-' || a == '+') && b == a)
+        return NULL;
+    }
 
     if(prec <= 1) {
       if(a == '*' && b == '*') {

@@ -192,7 +192,9 @@ debug_node(union node* node, int depth) {
     case A_UNARYMINUS:
     case A_UNARYPLUS:
     case A_PREINCREMENT:
-    case A_PREDECREMENT: debug_sublist("node", node->narithunary.node, depth); break;
+    case A_PREDECREMENT:
+    case A_POSTINCREMENT:
+    case A_POSTDECREMENT: debug_sublist("node", node->narithunary.node, depth); break;
 
     case N_NOT: debug_sublist("cmds", node->nandor.cmd0, depth); break;
   }

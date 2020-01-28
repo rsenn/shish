@@ -144,6 +144,8 @@ tree_free(union node* node) {
       case A_BNOT:
       case A_PREINCREMENT:
       case A_PREDECREMENT:
+      case A_POSTINCREMENT:
+      case A_POSTDECREMENT:
         if(node->narithunary.node)
           tree_free(node->narithunary.node);
         break;

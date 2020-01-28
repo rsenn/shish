@@ -64,7 +64,9 @@ enum nod_id {
   A_NOT,
   A_BNOT,
   A_PREDECREMENT,
-  A_PREINCREMENT
+  A_PREINCREMENT,
+  A_POSTDECREMENT,
+  A_POSTINCREMENT
 };
 
 /* 3.9.1 - simple command

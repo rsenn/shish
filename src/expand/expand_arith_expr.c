@@ -21,7 +21,9 @@ expand_arith_expr(union node* expr, int64* r) {
     case A_NOT:
     case A_BNOT:
     case A_PREINCREMENT:
-    case A_PREDECREMENT: {
+    case A_PREDECREMENT:
+    case A_POSTINCREMENT:
+    case A_POSTDECREMENT: {
       ret = expand_arith_unary(&expr->narithunary, r);
       break;
     }
