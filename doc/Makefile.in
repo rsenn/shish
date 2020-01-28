@@ -26,7 +26,7 @@ dep:              makefiles dep-recursive
 
 # directory configuration
 # ---------------------------------------------------------------------------
-SUBDIRS              = man posix 
+SUBDIRS              = posix 
 RECURSIVE            = 1
 
 # local targets     

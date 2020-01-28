@@ -24,6 +24,12 @@ cfg ()
     mkdir -p $builddir;
     : ${relsrcdir=`realpath --relative-to "$builddir" .`}
 
+    if [ "$DEBUG" -eq 1 ]; then
+      debug="--enable-debug"
+    else 
+      debug="--disable-debug"
+    fi
+
     ( set -x; cd $builddir;
     "$relsrcdir"/configure \
       ${build:+--build="$build"} \
@@ -32,7 +38,7 @@ cfg ()
           ${sysconfdir:+--sysconfdir="$sysconfdir"} \
           ${localstatedir:+--localstatedir="$localstatedir"} \
           --enable-{silent-rules,color,dependency-tracking} \
-          --enable-debug \
+          $debug \
           "$@"
     )
 #         #grep -r '\-O[0-9]' $builddir -lI |xargs sed -i 's,-O[1-9],-ggdb -O0,'

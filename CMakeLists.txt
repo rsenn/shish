@@ -27,7 +27,7 @@ include(CheckCCompilerFlag)
 set(ENABLE_SHARED OFF)
 set(BUILD_SHARED_LIBS FALSE)
 
-check_c_compiler_flag("-flto" F_LTO)
+#check_c_compiler_flag("-flto" F_LTO)
 
 
 if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" OR CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -263,16 +263,16 @@ set_target_properties(libshish PROPERTIES
   PREFIX "lib"
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 #[[  COMPILE_FLAGS "${F_LTO}"
-  LINK_FLAGS "${F_LTO}"
-  ]]
-  )
-if(F_LTO)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto")
-set(LINK_FLAGS "${LINK_FLAGS} -flto")
-endif(F_LTO)
-#[[
- ndif(F_LTO)
- ]]
+#  LINK_FLAGS "${F_LTO}"
+#  ]]
+)
+#if(F_LTO)
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto")
+#set(LINK_FLAGS "${LINK_FLAGS} -flto")
+#endif(F_LTO)
+##[[
+# ndif(F_LTO)
+# ]]
 
  file(GLOB SOURCES src/*.h src/*/*.c)
  set(MATH_LIBRARY m)
