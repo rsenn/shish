@@ -242,6 +242,10 @@ int buffer_putxlonglong0(buffer*, uint64 l, int pad);
 int buffer_puttai(buffer*, const struct tai*);
 #endif
 
+void buffer_default(buffer*, buffer_op_fn* op);
+ssize_t buffer_dummyread_fromstr(void);
+void buffer_fromstr(buffer*, char* s, size_t len);
+
 #ifdef __cplusplus
 }
 #endif

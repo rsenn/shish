@@ -1,4 +1,5 @@
 #include "fd.h"
+#include "buffer.h"
 #include "fdstack.h"
 #include <assert.h>
 #include <unistd.h>

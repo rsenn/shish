@@ -1,3 +1,4 @@
+#include "buffer.h"
 #include "fd.h"
 
 /* prepare fd for reading from a string

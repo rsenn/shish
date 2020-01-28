@@ -1,3 +1,4 @@
+#include "buffer.h"
 #include "fd.h"
 #include "shell.h"
 #include <unistd.h>

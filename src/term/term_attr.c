@@ -21,6 +21,6 @@ term_attr(int fd, int set) {
     return tcsetattr(fd, TCSANOW, &newattr);
   }
 #endif
-  
+
   return ret;
 }

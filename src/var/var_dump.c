@@ -1,5 +1,6 @@
 #include "fd.h"
 #include "fmt.h"
+#include "uint64.h"
 #include "var.h"
 
 /* dump a variable entry
