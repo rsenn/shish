@@ -8,17 +8,32 @@
 int
 expand_arith_unary(struct narithunary* expr, int64* r) {
   int64 value;
+  struct nargparam* param = 0;
+  struct var* v = 0;
 
   if(expand_arith_expr(expr->node, &value))
     return 1;
 
+  if(expr->id == A_PREINCREMENT || expr->id == A_PREDECREMENT) {
+    param = &expr->node->nargparam;
+
+    v = var_search(param->name, NULL);
+  }
+
   switch(expr->id) {
     case A_UNARYMINUS: *r = 0 - value; break;
     case A_UNARYPLUS: *r = value; break;
+    case A_PREINCREMENT: ++value; *r = value; break;
+    case A_PREDECREMENT: --value; *r = value; break;
     case A_NOT: *r = !value; break;
     case A_BNOT: *r = ~value; break;
 
     default: __asm__("int $3"); break;
+  }
+  
+  if(expr->id == A_PREINCREMENT || expr->id == A_PREDECREMENT) {
+    if(param && param->name)
+      var_setvint(param->name, value, 0);
   }
 
   return 0;

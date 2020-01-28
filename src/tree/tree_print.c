@@ -405,13 +405,17 @@ tree_print(union node* node, stralloc* sa) {
     case A_NOT:
     case A_BNOT:
     case A_UNARYMINUS:
-    case A_UNARYPLUS: {
+    case A_UNARYPLUS:
+    case A_PREINCREMENT:
+    case A_PREDECREMENT: {
 
       switch(node->narithunary.id) {
         case A_NOT: stralloc_catc(sa, '!'); break;
         case A_BNOT: stralloc_catc(sa, '~'); break;
         case A_UNARYMINUS: stralloc_catc(sa, '-'); break;
         case A_UNARYPLUS: stralloc_catc(sa, '+'); break;
+        case A_PREINCREMENT: stralloc_catc(sa, '++'); break;
+        case A_PREDECREMENT: stralloc_catc(sa, '--'); break;
       }
       tree_print(node->narithunary.node, sa);
       break;
