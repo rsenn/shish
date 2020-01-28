@@ -17,7 +17,7 @@ parse_arith_expr(struct parser* p) {
   if(!node) {
     node = parse_arith_value(p);
 
-    if(node) {
+/*    if(node) {
       if(node->id == N_ARGPARAM) {
         if(source_peek(&c) <= 0 || source_peekn(&c2, 1) <= 0) {
           return 0;
@@ -32,7 +32,7 @@ parse_arith_expr(struct parser* p) {
           }
         }
       }
-    }
+    }*/
   }
 
   return node;
