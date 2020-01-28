@@ -1,7 +1,9 @@
 #include "term.h"
+#if !defined(__MINGW32__) && !defined(__MINGW64__)
 #include <termios.h>
 
 struct termios term_tcattr;
+#endif
 
 /* backup and set terminal attributes
  * ----------------------------------------------------------------------- */
@@ -9,6 +11,7 @@ int
 term_attr(int fd, int set) {
   int ret;
 
+#if !defined(__MINGW32__) && !defined(__MINGW64__)
   if((ret = tcgetattr(fd, &term_tcattr)) == 0 && set) {
     struct termios newattr;
     /* backup tty settings */
@@ -17,5 +20,7 @@ term_attr(int fd, int set) {
     newattr.c_lflag &= ~(ICANON | ECHO | ISIG);
     return tcsetattr(fd, TCSANOW, &newattr);
   }
+#endif
+  
   return ret;
 }

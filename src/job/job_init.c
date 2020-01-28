@@ -2,8 +2,12 @@
 #include "job.h"
 #include <fcntl.h>
 #include <string.h>
+#if !defined(__MINGW32__) && !defined(__MINGW64__)
 #include <termios.h>
 #include <unistd.h>
+#else
+#include <io.h>
+#endif
 
 int job_terminal = -1;
 
@@ -15,9 +19,15 @@ job_init(void) {
 
   /* find a filedescriptor which is a terminal */
   if((fd = fdtable[STDERR_FILENO]) && (fd_err->mode & FD_TERM)) {
+#if !defined(__MINGW32__) && !defined(__MINGW64__)
     job_terminal = fcntl(fd->e, F_DUPFD, 0x80);
+#else
+    job_terminal = dup(fd->e);
+#endif
 
+#ifdef FD_CLOEXEC
     fcntl(job_terminal, F_SETFD, FD_CLOEXEC);
+#endif
     job_pgrp = tcgetpgrp(job_terminal);
   }
 }

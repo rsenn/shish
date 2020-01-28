@@ -4,6 +4,7 @@
  * ----------------------------------------------------------------------- */
 void
 sig_block(void) {
+#if defined(SIGINT) && defined(SIGCHLD) && defined(SIG_BLOCK)
   static sigset_t oldset;
   sigset_t newset;
 
@@ -12,4 +13,5 @@ sig_block(void) {
   sigaddset(&newset, SIGINT);
   sigaddset(&newset, SIGCHLD);
   sigprocmask(SIG_BLOCK, &newset, &oldset);
+#endif
 }

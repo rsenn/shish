@@ -3,7 +3,9 @@
 
 #include <signal.h>
 #include <sys/types.h>
+#ifndef _WIN32
 #include <sys/wait.h>
+#endif
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"

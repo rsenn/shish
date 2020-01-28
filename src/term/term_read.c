@@ -1,7 +1,9 @@
 #include "byte.h"
 #include "prompt.h"
 #include "term.h"
+#if !defined(__MINGW32__) && !defined(__MINGW64__)
 #include <termios.h>
+#endif
 
 static char term_inbuf[BUFFER_INSIZE];
 buffer term_input = BUFFER_INIT(0, 0, term_inbuf, sizeof(term_inbuf));
@@ -20,7 +22,9 @@ term_read(int fd, char* buf, unsigned int len) {
     byte_copy(buf, len, &term_cmdline.s[term_cmdline.len - remain]);
     remain -= len;
     if(!remain) {
+#ifdef TCSANOW
       tcsetattr(fd, TCSANOW, &term_tcattr);
+#endif
       stralloc_zero(&term_cmdline);
     }
     return len;

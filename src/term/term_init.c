@@ -1,7 +1,9 @@
 #include "fdtable.h"
 #include "term.h"
 #include <signal.h>
+#if !defined(__MINGW32__) && !defined(__MINGW64__)
 #include <termios.h>
+#endif
 
 /* other shells seem to read char by char in interactive/terminal-mode.
    we buffer at least 64 bytes, so we can read ANSI-codes at once. */
@@ -50,9 +52,15 @@ term_init(struct fd* input, struct fd* output) {
 
   /* get window size */
   term_winsize();
+#ifdef SIGTTIN
   signal(SIGTTIN, SIG_IGN);
+#endif
+#ifdef SIGTTOU
   signal(SIGTTOU, SIG_IGN);
+#endif
+#ifdef SIGWINCH
   signal(SIGWINCH, (void*)&term_winsize);
+#endif
 
   /*    signal(SIGINT, (void *)&term_controlc);*/
   return 1;
