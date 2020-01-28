@@ -36,7 +36,7 @@ parse_arith_binary(struct parser* p, int precedence) {
         source_skip();
         ntype = A_EXP;
       }
-    } else     if(prec <= 2) {
+    } else if(prec <= 2) {
       switch(c) {
         case '*': ntype = A_MUL; break;
         case '/': ntype = A_DIV; break;
