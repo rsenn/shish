@@ -1,5 +1,5 @@
-#define NO_UINT64_MACROS
 #include "../uint64.h"
+#define NO_UINT64_MACROS
 #define NO_UINT64_MACROS
 #include "../scan.h"
 #define NO_UINT64_MACROS

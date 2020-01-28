@@ -1,6 +1,6 @@
+#include "../uint64.h"
 #define NO_UINT64_MACROS
 #include "../scan.h"
-#include "../uint64.h"
 
 size_t
 scan_xlonglong(const char* src, uint64* dest) {

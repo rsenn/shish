@@ -1,6 +1,6 @@
+#include "../uint64.h"
 #define NO_UINT64_MACROS
 #include "../scan.h"
-#include "../uint64.h"
 
 /* ASN.1 DER encoded length:
  * if (value<=0x80):
