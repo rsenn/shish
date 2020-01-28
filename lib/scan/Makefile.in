@@ -19,17 +19,7 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 LIB = ../libshish.a
-MODULES = \
-	scan_8long \
-	scan_8longn \
-	scan_int \
-	scan_long \
-	scan_longlong \
-	scan_longn \
-	scan_uint \
-	scan_ulong \
-	scan_ulonglong \
-	scan_ulongn 
+MODULES = scan_8int scan_8long scan_8longn scan_8short scan_asn1derlength scan_asn1dertag scan_charsetnskip scan_double scan_eolskip scan_fromhex scan_httpdate scan_int scan_line scan_lineskip scan_long scan_longlong scan_longn scan_netstring scan_noncharsetnskip scan_nonwhitenskip scan_octal scan_pb_tag scan_pb_type0_sint scan_pb_type1_fixed64 scan_pb_type5_fixed32 scan_plusminus scan_short scan_uint scan_ulong scan_ulonglong scan_ulongn scan_ushort scan_utf8 scan_utf8_sem scan_varint scan_whitenskip scan_xchar scan_xint scan_xlong scan_xlonglong scan_xlongn scan_xmlescape scan_xshort
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

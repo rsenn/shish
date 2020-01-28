@@ -199,6 +199,7 @@ lib/fmt/Makefile
 lib/mmap/Makefile
 lib/open/Makefile
 lib/scan/Makefile
+lib/uint64/Makefile
 lib/shell/Makefile
 lib/str/Makefile
 lib/stralloc/Makefile

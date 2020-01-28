@@ -19,9 +19,8 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 LIB = ../libshish.a
-MODULES = uint32_prng \
-          uint32_random \
-          uint32_seed
+MODULES = uint32_pack_big uint32_pack uint32_prng uint32_random uint32_read_big uint32_read uint32_seed uint32_unpack_big uint32_unpack
+
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
@@ -30,7 +29,7 @@ DEPS    = $(MODULES:%=%.d)
 # targets for this directory
 # ---------------------------------------------------------------------------
 all: Makefile .libdep
-install:
+install: 
 
 # dependencies
 # ---------------------------------------------------------------------------
@@ -39,7 +38,7 @@ install:
 # local build configuration
 # ---------------------------------------------------------------------------
 INCLUDES += -I$(top_srcdir)/lib -I.
-#INCLUDES += -I$(top_builddir)/lib
+INCLUDES += -I$(top_builddir)
 
 # include build.mk (makefile helper)
 # ---------------------------------------------------------------------------
