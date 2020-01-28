@@ -9,12 +9,14 @@ parse_arith_unary(struct parser* p) {
   union node* node;
   enum nod_id n;
 
-  char c, c2;
+  char c, c2 = 0;
   if(source_peek(&c) <= 0)
     return 0;
 
-  if(source_peekn(&c2, 1) <= 0)
-    c2 = 0;
+  if((c == '+' || c == '-')) {
+    if(source_peekn(&c2, 1) <= 0)
+      return 0;
+  }
 
   switch(c) {
     case '!': n = A_NOT; break;

@@ -23,14 +23,20 @@ expand_arith_unary(struct narithunary* expr, int64* r) {
   switch(expr->id) {
     case A_UNARYMINUS: *r = 0 - value; break;
     case A_UNARYPLUS: *r = value; break;
-    case A_PREINCREMENT: ++value; *r = value; break;
-    case A_PREDECREMENT: --value; *r = value; break;
+    case A_PREINCREMENT:
+      ++value;
+      *r = value;
+      break;
+    case A_PREDECREMENT:
+      --value;
+      *r = value;
+      break;
     case A_NOT: *r = !value; break;
     case A_BNOT: *r = ~value; break;
 
     default: __asm__("int $3"); break;
   }
-  
+
   if(expr->id == A_PREINCREMENT || expr->id == A_PREDECREMENT) {
     if(param && param->name)
       var_setvint(param->name, value, 0);
