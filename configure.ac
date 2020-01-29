@@ -180,6 +180,42 @@ AC_SUBST([WIN32_TRUE],[#])
 # check for needed types
 # ---------------------------------------------------------------------------
 
+m4_define([ALL_BUILTINS],[[basename],[break],[cd],[dirname],[dump],[echo],[eval],[exec],[exit],[export],[false],[fdtable],[hash],[history],[hostname],[pwd],[set],[shift],[source],[test],[type],[true],[unset]])
+
+if test -z "${enabled_builtins}"; then
+  enabled_builtins="break cd eval exec exit export hash history pwd set shift source unset"
+fi
+AC_MSG_CHECKING([for builtins])
+AC_ARG_ENABLE([builtins],[AC_HELP_STRING([--enable-builtins=LIST], [enable specified builtins])],[case "${enabled_builtins}" in
+ *" $enableval" | "$enableval "* | *" $enableval "*) ;;
+ *) enabled_builtins="$enabled_builtins $enableval" ;;
+esac])
+if test -n "${enabled_builtins}"; then
+  enabled_builtins=`set -- ${enabled_builtins}; IFS=" "; echo "$*"`
+fi
+AC_MSG_RESULT([${enabled_builtins}])
+
+uc_builtins=`echo "$enabled_builtins" | tr  '[:lower:]' '[:upper:]'`
+
+m4_foreach([BUILTIN],[ALL_BUILTINS],[
+case "${enabled_builtins}" in
+ *" BUILTIN" | "BUILTIN "* | *" BUILTIN "*) 
+
+m4_define(UC_BUILTIN, m4_toupper(BUILTIN))
+AC_DEFINE_UNQUOTED([UC_BUILTIN],[1],[Build BUILTIN_NAME builtin])
+  ;;
+ *)
+  ;;
+esac
+dnl ])
+dnl 
+dnl for builtin in ${uc_builtins}; do
+dnl 	lc_builtin=`echo "$builtin" | tr '[:upper:]' '[:lower:]'`
+dnl 	AC_DEFINE_UNQUOTED([${builtin}_BUILTIN],[1],[Enable ${lc_builtin} builtin])
+dnl done
+
+AC_SUBST([BUILTINS],[$enabled_builtins])
+
 # library subdirectories
 # ---------------------------------------------------------------------------
 dnl AC_CONFIG_LIBRARIES([lib/libshish])
@@ -235,3 +271,6 @@ AC_CONFIG_STATUS
 AC_SUMMARIZE([prefix bindir sysconfdir],
              [COLOR DEPS_TRUE DEBUG | CC CPPFLAGS CFLAGS LDFLAGS LIBS],
              "%20s: %s")
+
+AC_MSG_NOTICE([Enabled builtins: ${enabled_builtins}])
+
