@@ -92,16 +92,10 @@ set(BUILTINS_DISABLED "")
 
 foreach(BUILTIN ${ALL_BUILTINS})
 string(TOUPPER ${BUILTIN} NAME)
-
 if(NOT DEFINED ${ENABLE_${NAME}})
-
 isin("ENABLE_${NAME}" ${BUILTIN} ${DEFAULT_BUILTINS} )
-
-
-
 option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" "${ENABLE_${NAME}}")
 endif(NOT DEFINED ${ENABLE_${NAME}})
-
 #message(STATUS "Builtin ${BUILTIN} - ${ENABLE_${NAME}}")
 endforeach(BUILTIN ${ALL_BUILTINS})
 
@@ -295,12 +289,15 @@ set_target_properties(libshish PROPERTIES
 	 if(${N} EQUAL ${N2})
 	 message("ERROR ${SRC}  -  ${N} == ${N2}")
 	 endif(${N} EQUAL ${N2})
+	 unset(BUILTIN_${NAME})
+     set(BUILD_BUILTIN_${NAME} "0" CACHE STRING "Build the ${ENABLED} builtin")
  endforeach(DISABLED ${BUILTINS_DISABLED})
 
  foreach(ENABLED ${BUILTINS_ENABLED})
 	 string(TOUPPER "${ENABLED}" NAME)
 	 #add_definitions("-DBUILTIN_${NAME}=1")
 	 set(BUILTIN_FLAGS "${BUILTIN_FLAGS} -DBUILTIN_${NAME}=1")
+     set(BUILD_BUILTIN_${NAME} 1 CACHE STRING "Build the ${ENABLED} builtin")
  endforeach(ENABLED ${BUILTINS_ENABLED})
 
 
@@ -310,7 +307,10 @@ set_target_properties(libshish PROPERTIES
  endif(NO_TREE_PRINT)
 
 
-configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake" "${CMAKE_BINARY_DIR}/src/builtin_config.h" ESCAPE_QUOTES NEWLINE_STYLE UNIX)
+configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake" "${CMAKE_BINARY_DIR}/src/builtin_config.h"
+	#@ONLY
+	#ESCAPE_QUOTES
+	NEWLINE_STYLE UNIX)
 
 list(APPEND SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
 
