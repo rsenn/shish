@@ -290,14 +290,14 @@ set_target_properties(libshish PROPERTIES
 	 message("ERROR ${SRC}  -  ${N} == ${N2}")
 	 endif(${N} EQUAL ${N2})
 	 unset(BUILTIN_${NAME})
-     set(BUILD_BUILTIN_${NAME} "0" CACHE STRING "Build the ${ENABLED} builtin")
+     set(BUILD_BUILTIN_${NAME} "0" CACHE INTERNAL "Build the ${ENABLED} builtin")
  endforeach(DISABLED ${BUILTINS_DISABLED})
 
  foreach(ENABLED ${BUILTINS_ENABLED})
 	 string(TOUPPER "${ENABLED}" NAME)
 	 #add_definitions("-DBUILTIN_${NAME}=1")
 	 set(BUILTIN_FLAGS "${BUILTIN_FLAGS} -DBUILTIN_${NAME}=1")
-     set(BUILD_BUILTIN_${NAME} 1 CACHE STRING "Build the ${ENABLED} builtin")
+     set(BUILD_BUILTIN_${NAME} 1 CACHE INTERNAL "Build the ${ENABLED} builtin")
  endforeach(ENABLED ${BUILTINS_ENABLED})
 
 
