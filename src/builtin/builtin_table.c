@@ -1,7 +1,6 @@
 #include "../builtin.h"
 #include "../history.h"
 
-
 #include "src/builtin_config.h"
 
 #ifndef BUILTIN_BREAK

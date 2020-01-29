@@ -4,12 +4,6 @@
 #include "vartab.h"
 #include <unistd.h>
 
-static inline unsigned long
-exec_hashstr(const char* s) {
-  unsigned int hash = 0x7fedcb95; /* some prime number */
-  while(*s) hash = (hash * 0x0123456b) ^ *s++;
-  return hash;
-}
 
 /* hashed command search routine
  * ----------------------------------------------------------------------- */
