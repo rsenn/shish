@@ -33,7 +33,7 @@ char* exec_path(char* name);
 int exec_command(enum hash_id id, union command cmd, int argc, char** argv, int exec, union node* redir);
 int exec_error(void);
 int exec_program(char* path, char** argv, int exec, union node* redir);
-unsigned long exec_hashstr(const char* s);
+uint32 exec_hashstr(const char* s);
 struct exechash* exec_create(char* name, uint32 hash);
 struct exechash* exec_search(char* name, uint32* hashptr);
 union command exec_hash(char* name, enum hash_id* idptr);

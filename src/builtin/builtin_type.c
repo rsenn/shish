@@ -3,12 +3,12 @@
 #include "fd.h"
 #include "fmt.h"
 
-/* hash built-in
+/* type built-in
  *
  * all your drugs are belong to us
  * ----------------------------------------------------------------------- */
 int
-builtin_hash(int argc, char** argv) {
+builtin_type(int argc, char** argv) {
   unsigned int i, n;
   struct exechash* h;
   char num[FMT_ULONG];
@@ -39,3 +39,4 @@ builtin_hash(int argc, char** argv) {
 
   return 0;
 }
+
