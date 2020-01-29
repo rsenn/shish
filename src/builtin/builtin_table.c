@@ -139,7 +139,10 @@ struct builtin_cmd builtin_table[] = {
     {"unset", builtin_unset, B_SPECIAL, "[name ...]"},
 #endif
 #if BUILTIN_TEST
-    {"[", builtin_test, B_DEFAULT, "[expr] ]"},
+    {"[", builtin_test, B_DEFAULT, "name ..."},
+#endif
+#if BUILTIN_TYPE
+    {"type", builtin_type, B_DEFAULT, "name ..."},
 #endif
     {NULL, NULL, 0, NULL},
 };
