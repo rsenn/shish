@@ -780,7 +780,9 @@
 						],
 						"settings":
 						{
-							"syntax": "Packages/C99/C99.tmLanguage"
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,

@@ -287,20 +287,20 @@ set_target_properties(libshish PROPERTIES
 
 
  foreach(DISABLED ${BUILTINS_DISABLED})
- set(SRC "src/builtin/builtin_${DISABLED}.c")
- list(LENGTH SOURCES N)
- list(REMOVE_ITEM SOURCES "${SRC}")
- list(FILTER SOURCES EXCLUDE REGEX  "${SRC}")
- list(LENGTH SOURCES N2)
- if(${N} EQUAL ${N2})
- message("ERROR ${SRC}  -  ${N} == ${N2}")
- endif(${N} EQUAL ${N2})
+	 set(SRC "src/builtin/builtin_${DISABLED}.c")
+	 list(LENGTH SOURCES N)
+	 list(REMOVE_ITEM SOURCES "${SRC}")
+	 list(FILTER SOURCES EXCLUDE REGEX  "${SRC}")
+	 list(LENGTH SOURCES N2)
+	 if(${N} EQUAL ${N2})
+	 message("ERROR ${SRC}  -  ${N} == ${N2}")
+	 endif(${N} EQUAL ${N2})
  endforeach(DISABLED ${BUILTINS_DISABLED})
 
  foreach(ENABLED ${BUILTINS_ENABLED})
- string(TOUPPER "${ENABLED}" NAME)
- #add_definitions("-DBUILTIN_${NAME}=1")
- set(BUILTIN_FLAGS "${BUILTIN_FLAGS} -DBUILTIN_${NAME}=1")
+	 string(TOUPPER "${ENABLED}" NAME)
+	 #add_definitions("-DBUILTIN_${NAME}=1")
+	 set(BUILTIN_FLAGS "${BUILTIN_FLAGS} -DBUILTIN_${NAME}=1")
  endforeach(ENABLED ${BUILTINS_ENABLED})
 
 
@@ -308,6 +308,12 @@ set_target_properties(libshish PROPERTIES
  add_definitions(-DNO_TREE_PRINT=1)
  list(FILTER SOURCES EXCLUDE REGEX  "src/tree/tree.*print.*\.c")
  endif(NO_TREE_PRINT)
+
+
+configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake" "${CMAKE_BINARY_DIR}/src/builtin_config.h" ESCAPE_QUOTES NEWLINE_STYLE UNIX)
+
+list(APPEND SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
+
 
  add_executable(shish ${SOURCES})
  target_link_libraries(shish libshish
