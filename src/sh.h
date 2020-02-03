@@ -6,7 +6,6 @@
 #endif
 
 #include "windoze.h"
-
 #if !defined(HAVE_UID_T) && WINDOWS_NATIVE
 typedef int uid_t;
 #endif

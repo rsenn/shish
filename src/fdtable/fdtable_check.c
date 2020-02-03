@@ -3,7 +3,11 @@
 #endif
 
 #include "fd.h"
+#include "windoze.h"
+
+#if !WINDOWS_NATIVE
 #include <fcntl.h>
+#endif
 
 /* check for the presence of an effective file descriptor
  *
@@ -15,10 +19,12 @@ fdtable_check(int e) {
   int iflags = 0;
 
   /* try to get file descriptor flags */
-#ifdef HAVE_FCNTL
+#if !WINDOWS_NATIVE
   if((pflags = fcntl(e, F_GETFL)) == -1)
-#endif
     return 0;
+#else
+  pflags = O_RDWR;
+#endif
 
   /* map posix file access modes to (fd) flags */
   if(pflags & (O_RDWR | O_WRONLY))
