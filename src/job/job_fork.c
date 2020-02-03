@@ -3,6 +3,7 @@
 #include "sh.h"
 #include "sig.h"
 #include "windoze.h"
+
 #if !WINDOWS_NATIVE
 #include <unistd.h>
 #endif
@@ -33,13 +34,14 @@ job_fork(struct job* job, union node* node, int bgnd) {
     else
       pgrp = sh_pid;
 
+#if !WINDOWS_NATIVE
     setpgid(sh_pid, pgrp);
 
     if(fd_ok(job_terminal))
       /* and then give the child terminal access */
       if(!bgnd)
         tcsetpgrp(job_terminal, pgrp);
-
+#endif
     return pid;
   }
 
@@ -60,9 +62,10 @@ job_fork(struct job* job, union node* node, int bgnd) {
   }
 
   if(pgrp != job_pgrp && !bgnd) {
+#if !WINDOWS_NATIVE
     if(fd_ok(job_terminal))
       tcsetpgrp(job_terminal, pid);
-
+#endif
     job_pgrp = pid;
   }
 

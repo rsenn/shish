@@ -1,9 +1,7 @@
 #include "windoze.h"
-#if !WINDOWS_NATIVE
-#include <sys/wait.h>
-#endif
 #include "fd.h"
 #include "job.h"
+#include "wait.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -18,8 +16,8 @@ extern const char* const sys_siglist[];
  * ----------------------------------------------------------------------- */
 void
 job_status(int pid, int status) {
-  if(WIFSIGNALED(status)) {
-    const char* signame = sys_siglist[WTERMSIG(status)];
+  if(WAIT_IF_SIGNALED(status)) {
+    const char* signame = sys_siglist[WAIT_TERMSIG(status)];
 
     if(pid) {
       buffer_put(fd_err->w, "process ", 8);

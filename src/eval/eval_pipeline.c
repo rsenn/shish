@@ -75,7 +75,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   }
 
   if(!npipe->bgnd) {
-    job_wait(job, 0, &status, 0);
+    job_wait(job, 0, &status);
   }
 
   /*  if(job)

@@ -79,7 +79,7 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
       fdstack_pop(&io);
       fdstack_data();
 
-      job_wait(NULL, pid, &status, 0);
+      job_wait(NULL, pid, &status);
       job_status(pid, status);
 
       ret = WEXITSTATUS(status);

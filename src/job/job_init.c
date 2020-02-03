@@ -30,6 +30,8 @@ job_init(void) {
 #ifdef FD_CLOEXEC
     fcntl(job_terminal, F_SETFD, FD_CLOEXEC);
 #endif
+#if !WINDOWS_NATIVE
     job_pgrp = tcgetpgrp(job_terminal);
+#endif
   }
 }

@@ -43,7 +43,7 @@ extern struct job** job_ptr;
 
 struct job* job_new(unsigned int n);
 int job_fork(struct job* job, union node* node, int bg);
-int job_wait(struct job* job, int pid, int* status, int options);
+int job_wait(struct job* job, int pid, int* status);
 void job_status(int pid, int status);
 void job_init(void);
 

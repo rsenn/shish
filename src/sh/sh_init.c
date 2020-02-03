@@ -5,8 +5,11 @@
 #include "shell.h"
 #include "uint32.h"
 #include "var.h"
-#include <string.h>
+#include "windoze.h"
+
+#if !WINDOWS_NATIVE
 #include <unistd.h>
+#endif
 
 static struct var sh_ps1;
 static struct var sh_ps2;
@@ -21,7 +24,11 @@ sh_init(void) {
   job_init();
 
   /* get current uid and pid */
+#if WINDOWS_NATIVE
+  sh_uid = 0;
+#else
   sh_uid = getuid();
+#endif
   sh_pid = getpid();
 
   uint32_seed(&sh_pid, sizeof(sh_pid));
