@@ -2,9 +2,6 @@
 #include "config.h"
 #endif
 
-/*#if defined(__MINGW32__) || defined(__MINGW64__)
-#include "mingw-compat.h"
-#endif*/
 #ifdef HAVE_ALLOCA
 #include <alloca.h>
 #endif
@@ -23,6 +20,9 @@
 #include "var.h"
 #include "wait.h"
 
+#if WINDOWS_NATIVE
+pid_t fork(void);
+#endif
 
 /* execute another program, possibly searching for it first
  *
