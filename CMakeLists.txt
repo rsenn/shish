@@ -8,6 +8,8 @@ set(PACKAGE_VERSION 0.8)
 set(PACKAGE_TARNAME "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 
 project(${PACKAGE_NAME} C)
+
+
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 message(STATUS "Setting build type to 'MinSizeRel' as none was specified.")
@@ -24,6 +26,23 @@ include(CheckFunctionExists)
 include(CheckLibraryExists)
 include(CheckCCompilerFlag)
 
+
+set(BUILD_DEBUG FALSE)
+
+if("${CMAKE_BUILD_TYPE}" MATCHES ".*Deb.*")
+   set(BUILD_DEBUG TRUE)
+endif("${CMAKE_BUILD_TYPE}"  MATCHES ".*Deb.*")
+
+
+if(BUILD_DEBUG)
+  add_definitions(-DDEBUG=1)
+else(BUILD_DEBUG)
+  add_definitions(-DNDEBUG=1)
+endif(BUILD_DEBUG)
+
+
+
+
 set(ENABLE_SHARED OFF)
 set(BUILD_SHARED_LIBS FALSE)
 
@@ -37,33 +56,27 @@ check_c_compiler_flag("-falign-labels" F_ALIGN_LABELS)
 check_c_compiler_flag("-falign-loops" F_ALIGN_LOOPS)
 endif()
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-set(DEBUG ON)
-else()
-set(DEBUG OFF)
-
-endif()
 
 if(F_ALIGN_COMMONS)
-add_definitions("-falign-commons")
+  add_definitions("-falign-commons")
 endif(F_ALIGN_COMMONS)
 if(F_ALIGN_DOUBLE)
-add_definitions("-falign-double")
+  add_definitions("-falign-double")
 endif(F_ALIGN_DOUBLE)
 if(F_ALIGN_FUNCTIONS)
-add_definitions("-falign-functions")
+  add_definitions("-falign-functions")
 endif(F_ALIGN_FUNCTIONS)
 if(F_ALIGN_JUMPS)
-add_definitions("-falign-jumps")
+  add_definitions("-falign-jumps")
 endif(F_ALIGN_JUMPS)
 if(F_ALIGN_LABELS)
-add_definitions("-falign-labels")
+  add_definitions("-falign-labels")
 endif(F_ALIGN_LABELS)
 if(F_ALIGN_LOOPS)
-add_definitions("-falign-loops")
+  add_definitions("-falign-loops")
 endif(F_ALIGN_LOOPS)
 if(F_ALIGN_STRINGOPS)
-add_definitions("-falign-stringops")
+  add_definitions("-falign-stringops")
 endif(F_ALIGN_STRINGOPS)
 
 list(APPEND ALL_BUILTINS basename break cd dirname dump echo eval exec exit export expr false fdtable hash help history hostname pwd set shift source test type true unset)
@@ -71,20 +84,20 @@ list(APPEND MINIMAL_BUILTINS break cd eval exec exit export hash history pwd set
 list(APPEND DEFAULT_BUILTINS ${MINIMAL_BUILTINS} type echo fdtable true false dump)
 
 function(isin)
-set(ARGUMENTS "${ARGV}")
-list(GET ARGUMENTS 0 RETVAR)
-list(GET ARGUMENTS 1 ITEM)
-list(REMOVE_AT ARGUMENTS 0 1)
-#message("ARGUMENTS: ${ARGUMENTS}")
-list(FIND ARGUMENTS "${ITEM}" FOUND)
+  set(ARGUMENTS "${ARGV}")
+  list(GET ARGUMENTS 0 RETVAR)
+  list(GET ARGUMENTS 1 ITEM)
+  list(REMOVE_AT ARGUMENTS 0 1)
+  #message("ARGUMENTS: ${ARGUMENTS}")
+  list(FIND ARGUMENTS "${ITEM}" FOUND)
 
-if(${FOUND} EQUAL -1)
-set(RET FALSE)
-else()
-set(RET TRUE)
-endif()
-SET("${RETVAR}" ${RET} PARENT_SCOPE)
-#return(${RET})
+  if(${FOUND} EQUAL -1)
+    set(RET FALSE)
+  else()
+   set(RET TRUE)
+  endif()
+  set("${RETVAR}" ${RET} PARENT_SCOPE)
+  #return(${RET})
 endfunction(isin)
 
 set(BUILTINS_ENABLED "")
@@ -102,14 +115,15 @@ foreach(BUILTIN ${ALL_BUILTINS})
 endforeach(BUILTIN ${ALL_BUILTINS})
 
 option(NO_TREE_PRINT "Disable tree_print for history" OFF)
+option(DEBUG_ALLOC "Debug memory allocations" OFF)
 option(DEBUG_COLOR "Color debug output" OFF)
 option(DEBUG_OUTPUT "Print debug output" OFF)
 
 if(DEBUG_OUTPUT)
-add_definitions(-DDEBUG=1)
+  add_definitions(-DDEBUG_OUTPUT=1)
 endif()
 if(DEBUG_COLOR)
-add_definitions(-DCOLOR_DEBUG=1)
+  add_definitions(-DCOLOR_DEBUG=1)
 endif()
 
 foreach(BUILTIN ${ALL_BUILTINS})
@@ -122,15 +136,11 @@ string(TOUPPER ${BUILTIN} NAME)
 	endif(${BUILTIN_${NAME}} STREQUAL ON)
 endforeach(BUILTIN ${ALL_BUILTINS})
 
-
-
-
-if("${CMAKE_BUILD_TYPE}"  STREQUAL "Debug")
-set(DEBUG "debug")
-add_definitions(-DDEBUG=1)
+if(DEBUG_ALLOC)
+  set(NAME_DEBUG "debug")
+  add_definitions(-DDEBUG_ALLOC=1)
 else()
-set(DEBUG "")
-add_definitions(-DNDEBUG=1)
+  set(NAME_DEBUG "")
 endif()
 
 check_library_exists(owfat_debug buffer_init /usr/lib64 HAVE_LIBOWFAT)
@@ -168,33 +178,33 @@ check_function_exists(readlink HAVE_READLINK)
 
 check_include_file(fcntl.h HAVE_FCNTL_H)
 if(HAVE_FCNTL_H)
-set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} fcntl.h)
+  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} fcntl.h)
 endif(HAVE_FCNTL_H)
 
 check_function_exists(fcntl HAVE_FCNTL)
 
 check_include_file(sys/types.h HAVE_SYS_TYPES_H)
 if(HAVE_SYS_TYPES_H)
-set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} sys/types.h)
+  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} sys/types.h)
 endif(HAVE_SYS_TYPES_H)
 
 check_include_file(sys/stat.h HAVE_SYS_STAT_H)
 if(HAVE_SYS_STAT_H)
-set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} sys/stat.h)
+  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} sys/stat.h)
 endif(HAVE_SYS_STAT_H)
 
 check_function_exists(lstat HAVE_LSTAT)
 
 check_include_file(signal.h HAVE_SIGNAL_H)
 if(HAVE_SIGNAL_H)
-set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} signal.h)
+  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} signal.h)
 endif(HAVE_SIGNAL_H)
 
 check_type_size(sigset_t SIGSET_T)
 
 check_include_file(glob.h HAVE_GLOB_H)
 if(HAVE_GLOB_H)
-set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} glob.h)
+  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} glob.h)
 endif(HAVE_GLOB_H)
 
 check_function_exists(glob HAVE_GLOB)
@@ -204,7 +214,7 @@ check_function_exists(glob HAVE_GLOB)
 #  check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T)
 #check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T)
 #  check_type_size(sigset_t SIZEOF_SIGSET_T)
-#
+# 
 #  if(SIZEOF_SIGSET_T)
 #          set(HAVE_SIGSET_T 1)
 #  else()
@@ -224,11 +234,11 @@ add_definitions(-DHAVE_CONFIG_H=1 -D__USE_XOPEN_EXTENDED=1 -D__USE_POSIX=1)
 add_definitions(-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64)
 add_definitions(-D_GNU_SOURCE)
 
-if("${CMAKE_BUILD_TYPE}" MATCHES "Deb")
+if(BUILD_DEBUG)
   set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0")
-else("${CMAKE_BUILD_TYPE}" MATCHES "Deb")
+else(BUILD_DEBUG)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w")
-endif("${CMAKE_BUILD_TYPE}" MATCHES "Deb")
+endif(BUILD_DEBUG)
 
 string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_MINSIZEREL "${CMAKE_C_FLAGS_MINSIZEREL}")
@@ -236,9 +246,9 @@ string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELE
 string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
 string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
 
-if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
-add_definitions(-DDEBUG=1)
-endif(${CMAKE_BUILD_TYPE} MATCHES "Debug")
+if(BUILD_DEBUG)
+  add_definitions(-DDEBUG=1)
+endif(BUILD_DEBUG)
 
 include_directories("${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}/lib" "${CMAKE_SOURCE_DIR}/src")
 
@@ -253,7 +263,7 @@ file(GLOB LIBSOURCES lib/*.h lib/*/*.c)
 
 if(NOT HAVE_LIBOWFAT)
   file(GLOB ADDSOURCES lib/open/*.c lib/scan/*.c lib/buffer/*.c lib/fmt/*.c lib/byte/*.c lib/mmap/*.c lib/str/*.c)
-  set(LIBSOURCES ${LIBSOURCES} ${ADDSOURCES} lib/stralloc/stralloc_cats.c lib/stralloc/stralloc_diffs.c lib/stralloc/stralloc_zero.c lib/stralloc/stralloc_free${DEBUG}.c lib/stralloc/stralloc_catlong0.c lib/stralloc/stralloc_copyb.c lib/stralloc/stralloc_copys.c lib/stralloc/stralloc_copy.c lib/stralloc/stralloc_ready${DEBUG}.c lib/stralloc/stralloc_catulong0.c lib/stralloc/stralloc_cat.c lib/stralloc/stralloc_catb.c lib/stralloc/stralloc_init.c lib/stralloc/stralloc_readyplus${DEBUG}.c lib/str/str_diff.c lib/str/str_len.c lib/str/str_rchr.c lib/str/str_chr.c lib/str/str_copy.c)
+  set(LIBSOURCES ${LIBSOURCES} ${ADDSOURCES} lib/stralloc/stralloc_cats.c lib/stralloc/stralloc_diffs.c lib/stralloc/stralloc_zero.c lib/stralloc/stralloc_free${NAME_DEBUG}.c lib/stralloc/stralloc_catlong0.c lib/stralloc/stralloc_copyb.c lib/stralloc/stralloc_copys.c lib/stralloc/stralloc_copy.c lib/stralloc/stralloc_ready${NAME_DEBUG}.c lib/stralloc/stralloc_catulong0.c lib/stralloc/stralloc_cat.c lib/stralloc/stralloc_catb.c lib/stralloc/stralloc_init.c lib/stralloc/stralloc_readyplus${NAME_DEBUG}.c lib/str/str_diff.c lib/str/str_len.c lib/str/str_rchr.c lib/str/str_chr.c lib/str/str_copy.c)
 endif(NOT HAVE_LIBOWFAT)
 
 add_library(libshish ${LIBSOURCES})
@@ -275,49 +285,69 @@ set_target_properties(libshish PROPERTIES
 # ]]
 
 file(GLOB SOURCES src/*.h src/debug/*.c src/eval/*.c src/exec/*.c src/expand/*.c src/expr/*.c src/fd/*.c src/fdstack/*.c src/fdtable/*.c src/history/*.c src/job/*.c src/parse/*.c src/prompt/*.c src/redir/*.c src/sh/*.c src/sig/*.c src/source/*.c src/term/*.c src/tree/*.c src/var/*.c src/vartab/*.c)
+
+
+if(BUILD_DEBUG)
+  file(GLOB ADDSOURCES src/debug/*.c)
+  set(SOURCES "${SOURCES};${ADDDSOURCES}")
+  set(DEBUG_SOURCES "${SOURCES}")
+  list(FILTER DEBUG_SOURCES INCLUDE REGEX ".*debug\.c")
+  foreach(SRC ${DEBUG_SOURCES})
+    string(REGEX REPLACE "debug\.c" ".c" OSRC "${SRC}")
+    message("Remove ${OSRC}")
+    list(REMOVE_ITEM SOURCES "${OSRC}")
+  endforeach(SRC ${DEBUG_SOURCES})
+else(BUILD_DEBUG)
+  list(FILTER SOURCES EXCLUDE REGEX ".*debug\.c")
+endif(BUILD_DEBUG)
+
+
+
 list(APPEND SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
+list(APPEND SOURCES src/parse/parse_newnode${NAME_DEBUG}.c src/tree/tree_newnode${NAME_DEBUG}.c)
+
  set(MATH_LIBRARY m)
 
 foreach(BUILTIN ${BUILTINS_ENABLED})
   list(APPEND SOURCES src/builtin/builtin_${BUILTIN}.c)
 endforeach(BUILTIN ${BUILTINS_ENABLED})
 
- if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+if(BUILD_DEBUG)
 
  check_library_exists(efence malloc /usr/lib HAVE_EFENCE)
    if(HAVE_EFENCE)
    set(ELECTRICFENCE_LIBRARY efence)
    endif(HAVE_EFENCE)
- endif(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+endif(BUILD_DEBUG)
 
- string(REPLACE " " ";" SOURCES "${SOURCES}")
-
-
- foreach(DISABLED ${BUILTINS_DISABLED})
-	 set(SRC "src/builtin/builtin_${DISABLED}.c")
-	 list(LENGTH SOURCES N)
-	 list(REMOVE_ITEM SOURCES "${SRC}")
-	 list(FILTER SOURCES EXCLUDE REGEX  "${SRC}")
-	 list(LENGTH SOURCES N2)
-	 if(${N} EQUAL ${N2})
-	 message("ERROR ${SRC}  -  ${N} == ${N2}")
-	 endif(${N} EQUAL ${N2})
-	 unset(BUILTIN_${NAME})
-     set(BUILD_BUILTIN_${NAME} "0" CACHE INTERNAL "Build the ${ENABLED} builtin")
- endforeach(DISABLED ${BUILTINS_DISABLED})
-
- foreach(ENABLED ${BUILTINS_ENABLED})
-	 string(TOUPPER "${ENABLED}" NAME)
-	 #add_definitions("-DBUILTIN_${NAME}=1")
-	 set(BUILTIN_FLAGS "${BUILTIN_FLAGS} -DBUILTIN_${NAME}=1")
-     set(BUILD_BUILTIN_${NAME} 1 CACHE INTERNAL "Build the ${ENABLED} builtin")
- endforeach(ENABLED ${BUILTINS_ENABLED})
+string(REPLACE " " ";" SOURCES "${SOURCES}")
 
 
- if(NO_TREE_PRINT)
- add_definitions(-DNO_TREE_PRINT=1)
- list(FILTER SOURCES EXCLUDE REGEX  "src/tree/tree.*print.*\.c")
- endif(NO_TREE_PRINT)
+foreach(DISABLED ${BUILTINS_DISABLED})
+  set(SRC "src/builtin/builtin_${DISABLED}.c")
+  list(LENGTH SOURCES N)
+  list(REMOVE_ITEM SOURCES "${SRC}")
+  list(FILTER SOURCES EXCLUDE REGEX  "${SRC}")
+  list(LENGTH SOURCES N2)
+  if(${N} EQUAL ${N2})
+   message("ERROR ${SRC}  -  ${N} == ${N2}")
+  endif(${N} EQUAL ${N2})
+  unset(BUILTIN_${NAME})
+  set(BUILD_BUILTIN_${NAME} "0" CACHE INTERNAL "Build the ${ENABLED} builtin")
+endforeach(DISABLED ${BUILTINS_DISABLED})
+
+foreach(ENABLED ${BUILTINS_ENABLED})
+  string(TOUPPER "${ENABLED}" NAME)
+  #add_definitions("-DBUILTIN_${NAME}=1")
+  set(BUILTIN_FLAGS "${BUILTIN_FLAGS} -DBUILTIN_${NAME}=1")
+  set(BUILD_BUILTIN_${NAME} 1 CACHE INTERNAL "Build the ${ENABLED} builtin")
+endforeach(ENABLED ${BUILTINS_ENABLED})
+
+
+if(NO_TREE_PRINT)
+  add_definitions(-DNO_TREE_PRINT=1)
+  list(FILTER SOURCES EXCLUDE REGEX  "src/tree/tree.*print.*\.c")
+endif(NO_TREE_PRINT)
 
 
 configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake" "${CMAKE_BINARY_DIR}/src/builtin_config.h"
@@ -328,24 +358,28 @@ configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake" "${CMAKE_BINARY_
 list(APPEND SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
 
 
- add_executable(shish ${SOURCES})
- target_link_libraries(shish libshish
+add_executable(shish ${SOURCES})
+target_link_libraries(shish libshish
   ${LIBOWFAT_LIBRARY}
   ${MATH_LIBRARY}
   ${ELECTRICFENCE_LIBRARY}
-  )
+)
 
- message(STATUS "\nBuiltin flags:\n  ${BUILTIN_FLAGS}\n")
+#message(STATUS "\nBuiltin flags:\n  ${BUILTIN_FLAGS}\n")
 
- SET_SOURCE_FILES_PROPERTIES( src/builtin/builtin_table.c PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}" )
+SET_SOURCE_FILES_PROPERTIES( src/builtin/builtin_table.c PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}" )
+
+install(TARGETS shish DESTINATION bin)
 
 
- install(TARGETS shish DESTINATION bin)
+list(SORT BUILTINS_ENABLED)
+list(SORT BUILTINS_DISABLED)
 
+string(REPLACE ";" " " BUILTINS_ENABLED "${BUILTINS_ENABLED}")
+string(REPLACE ";" " " BUILTINS_DISABLED "${BUILTINS_DISABLED}")
 
- string(REPLACE ";" "\n  " BUILTINS_ENABLED "${BUILTINS_ENABLED}")
- string(REPLACE ";" "\n  " BUILTINS_DISABLED "${BUILTINS_DISABLED}")
+message(STATUS "\nEnabled builtins:\n  ${BUILTINS_ENABLED}\n")
+message(STATUS "\nDisabled builtins:\n  ${BUILTINS_DISABLED}\n")
+message(STATUS "\nBuild type: ${CMAKE_BUILD_TYPE}")
 
- message(STATUS "\nEnabled builtins:\n  ${BUILTINS_ENABLED}\n")
- message(STATUS "\nDisabled builtins:\n  ${BUILTINS_DISABLED}\n")
-
+message("Debug: ${BUILD_DEBUG}")
