@@ -27,10 +27,9 @@ builtin_help(int argc, char** argv) {
 
   rows = (i + 1) >> 1;
 
-  vcols = var_get("COLUMNS", &offset);
-
-  if(scan_uint(&vcols[offset], &cols))
-    maxlen = (cols / 2) - 1;
+  if((vcols = var_get("COLUMNS", &offset)))
+    if(scan_uint(&vcols[offset], &cols))
+      maxlen = (cols / 2) - 1;
 
   for(i = 0; i < rows; i++) {
     struct builtin_cmd* b = &builtin_table[i];
