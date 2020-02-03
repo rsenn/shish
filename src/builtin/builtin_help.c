@@ -15,17 +15,17 @@ output_synopsis(struct builtin_cmd* b) {
  * ----------------------------------------------------------------------- */
 int
 builtin_help(int argc, char** argv) {
-  size_t n, i, maxlen = 0, rows, offset;
+  size_t i, maxlen = 0, rows, offset;
   unsigned int cols;
   const char* vcols;
 
-  for(n = 0; builtin_table[n].name; n++) {
-    size_t len = str_len(builtin_table[n].name) + 1 + str_len(builtin_table[n].args);
+  for(i = 0; builtin_table[i].name; i++) {
+    size_t len = str_len(builtin_table[i].name) + 1 + str_len(builtin_table[i].args);
     if(maxlen < len)
       maxlen = len;
   }
 
-  rows = (n + 1) >> 1;
+  rows = (i + 1) >> 1;
 
   vcols = var_get("COLUMNS", &offset);
 
