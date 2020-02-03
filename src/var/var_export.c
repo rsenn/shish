@@ -7,7 +7,7 @@
 char**
 var_export(char** dest) {
   struct var* var;
-  unsigned long n = 0;
+  size_t n = 0;
 
   for(var = var_list; var; var = var->gnext)
     if((var->flags & V_EXPORT))

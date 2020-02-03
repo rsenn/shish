@@ -4,8 +4,8 @@
 #include "../mmap.h"
 #include "../open.h"
 #if WINDOWS_NATIVE
-#include <windows.h>
 #include <io.h>
+#include <windows.h>
 #else
 #include <sys/mman.h>
 #include <sys/stat.h>

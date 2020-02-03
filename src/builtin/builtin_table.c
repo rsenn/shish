@@ -27,6 +27,9 @@
 #ifndef BUILTIN_EXPORT
 #define BUILTIN_EXPORT 1
 #endif
+#ifndef BUILTIN_EXPR
+#define BUILTIN_EXPR 0
+#endif
 #ifndef BUILTIN_FALSE
 #define BUILTIN_FALSE 1
 #endif
@@ -35,6 +38,9 @@
 #endif
 #ifndef BUILTIN_HASH
 #define BUILTIN_HASH 1
+#endif
+#ifndef BUILTIN_HELP
+#define BUILTIN_HELP 0
 #endif
 #ifndef BUILTIN_HISTORY
 #define BUILTIN_HISTORY 1
@@ -113,6 +119,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_HASH
     {"hash", builtin_hash, B_DEFAULT, ""},
+#endif
+#if BUILTIN_HELP
+    {"help", builtin_help, B_DEFAULT, "[command]"},
 #endif
 #if BUILTIN_HISTORY
     {HISTORY, builtin_history, B_DEFAULT, "[-c]"},

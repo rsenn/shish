@@ -31,7 +31,7 @@ static uint32 seeds[] = {
  * a table with random values, and to shifting counts.
  * the goal is to re-use entropy as much as possible per iteration
  */
-unsigned long
+size_t
 var_rndhash(const char* v, VAR_HASH* h) {
   uint64 hash;
   register int rotate;
@@ -80,5 +80,5 @@ var_rndhash(const char* v, VAR_HASH* h) {
 
   *h = hash;
 
-  return (unsigned long)v - (unsigned long)p;
+  return (size_t)v - (size_t)p;
 }

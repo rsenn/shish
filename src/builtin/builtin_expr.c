@@ -1,13 +1,13 @@
+#include "byte.h"
 #include "expand.h"
 #include "fd.h"
 #include "fdstack.h"
 #include "parse.h"
 #include "shell.h"
 #include "source.h"
+#include "str.h"
 #include "stralloc.h"
 #include "tree.h"
-#include "str.h"
-#include "byte.h"
 
 /* parse and expruate arguments
  * ----------------------------------------------------------------------- */

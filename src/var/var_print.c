@@ -16,7 +16,7 @@ var_print(struct var* var, int flags) {
 
   /* if the variable wasn't unset we display it */
   if(!(var->flags & V_UNSET)) {
-    unsigned long i;
+    size_t i;
 
     buffer_puts(fd_out->w, "=\"");
 

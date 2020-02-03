@@ -10,7 +10,7 @@
  * when the last checked variable was bigger than the wanted one
  * we return the hash distance from the wanted to bigger entry.
  * ----------------------------------------------------------------------- */
-unsigned long
+size_t
 var_bsearch(struct search* context) {
   struct var* var;
 
@@ -18,8 +18,8 @@ var_bsearch(struct search* context) {
   for(; (var = *context->pos); context->pos = (context->global ? &var->gnext : &var->bnext)) {
     const char* w = context->name;
     const char* m = var->sa.s;
-    unsigned long lw = context->len;
-    unsigned long lm = var->len;
+    size_t lw = context->len;
+    size_t lm = var->len;
     long ret = 0;
 
     /* compare char by char */
@@ -38,7 +38,7 @@ var_bsearch(struct search* context) {
     if(lm == 0) {
       if(lw == 0)
         return 0;
-      return (unsigned long)*w;
+      return (size_t)*w;
     }
   }
 

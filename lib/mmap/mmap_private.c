@@ -2,9 +2,9 @@
 #ifdef _WIN32
 #include <windows.h>
 #else
-#include <unistd.h>
-#include <sys/mman.h>
 #include "../open.h"
+#include <sys/mman.h>
+#include <unistd.h>
 #endif
 #include "../mmap.h"
 

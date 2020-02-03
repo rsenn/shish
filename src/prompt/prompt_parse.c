@@ -25,7 +25,7 @@ void
 prompt_parse(void) {
   const char* value;
   unsigned int newhash;
-  unsigned long n;
+  size_t n;
   struct parser p;
   struct fd fd;
   struct source src;

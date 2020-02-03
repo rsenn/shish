@@ -18,8 +18,7 @@ builtin_cd(int argc, char** argv) {
   int ok = 0;
   int symbolic = 1;
   const char* arg;
-  unsigned long len;
-  unsigned long n;
+  size_t len, n;
   stralloc newcwd;
 
   /* check options, -L for symlink, -P for physical path */

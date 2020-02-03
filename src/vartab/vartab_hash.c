@@ -2,7 +2,7 @@
 #include "vartab.h"
 
 /* ----------------------------------------------------------------------- */
-unsigned long
+size_t
 vartab_hash(struct vartab* vartab, const char* v, struct search* context) {
   context->global = 0;
   context->name = v;
@@ -12,7 +12,7 @@ vartab_hash(struct vartab* vartab, const char* v, struct search* context) {
   context->closest = NULL;
   var_lexhash(v, &context->lexhash);
   context->len = var_rndhash(v, &context->rndhash);
-  context->bucket = (unsigned long)((VAR_HASH)context->rndhash % (VAR_HASH)VARTAB_BUCKETS);
+  context->bucket = (size_t)((VAR_HASH)context->rndhash % (VAR_HASH)VARTAB_BUCKETS);
 
   /*  buffer_puts(&fd_out->b, "bucket: ");
     buffer_putulong(&fd_out->b, context->bucket);

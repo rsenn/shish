@@ -8,10 +8,10 @@
 void
 var_dump(struct var* var) {
   char numbuf[FMT_XLONG * 2];
-  unsigned long n;
+  size_t n;
 
   /* var struct address */
-  n = fmt_xlong(numbuf, (unsigned long)var);
+  n = fmt_xlong(numbuf, (size_t)var);
   buffer_putnspace(fd_out->w, 8 - n);
   buffer_put(fd_out->w, numbuf, n);
   buffer_putspace(fd_out->w);

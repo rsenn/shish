@@ -2,10 +2,10 @@
 #include "var.h"
 
 /* count variables having the specified flag set */
-unsigned long
+size_t
 var_count(int flags) {
   struct var* var;
-  unsigned long n = 0;
+  size_t n = 0;
 
   for(var = var_list; var; var = var->gnext)
     if((var->flags & flags) == flags)

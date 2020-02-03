@@ -17,8 +17,8 @@ struct search {
   VAR_HASH rndhash;
   VAR_HASH hdist;
   VAR_HASH bdist;
-  unsigned long bucket;
-  unsigned long len; /* length of wanted var */
+  size_t bucket;
+  size_t len; /* length of wanted var */
   int global;        /* go through global sorted list */
   int exact;         /* want an exact match only */
 };
@@ -33,7 +33,7 @@ struct vartab {
 extern struct vartab vartab_root;
 extern struct vartab* varstack;
 
-unsigned long vartab_hash(struct vartab* vartab, const char* v, struct search* context);
+size_t vartab_hash(struct vartab* vartab, const char* v, struct search* context);
 struct var* vartab_search(struct vartab* vartab, const char* v, struct search* context);
 
 void vartab_add(struct vartab* vartab, struct var* var, struct search* context);

@@ -10,7 +10,7 @@ int prompt_number = 0;
 void
 prompt_show(void) {
   const char* prompt;
-  unsigned long plen;
+  size_t plen;
 
   /* increment prompt number if smaller than PS2 */
   if(prompt_number <= 1)

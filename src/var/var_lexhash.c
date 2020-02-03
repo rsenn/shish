@@ -16,7 +16,7 @@
  * for string comparision, so if hash1 < hash2 then var1 is lexico-
  * graphically smaller than var2 (which means that a var_diff() would
  * return -1). given hash1 == hash2 doesn't need to be an exact match,
- * because the entropy is limited to the size of an unsigned long,
+ * because the entropy is limited to the size of an size_t,
  * which usually means 5 1/3 character (if its 32-bit), so this case
  * would need further comparision using var_diff().
  * ----------------------------------------------------------------------- */
@@ -28,7 +28,7 @@
 #define reduce(c)                                                                                                      \
   ((c) < 'A' ? (c) - '0' : ((c) <= 'Z' ? (c) - 'A' + 10 : ((c) < 'a' ? (c) - '_' + 36 : (c) - 'a' + 37)))
 
-unsigned long
+size_t
 var_lexhash(const char* v, VAR_HASH* h) {
   VAR_HASH hash;
   register int shift;
@@ -63,5 +63,5 @@ var_lexhash(const char* v, VAR_HASH* h) {
 
   *h = (uint64)hash;
 
-  return (unsigned long)p - (unsigned long)v;
+  return (size_t)p - (size_t)v;
 }

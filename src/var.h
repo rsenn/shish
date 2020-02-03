@@ -31,8 +31,8 @@ struct var {
   struct var* gnext;  /* for the sorted list in the global vartab */
   struct var** glink; /* position within the global sorted list */
   stralloc sa;
-  unsigned long len;    /* name length */
-  unsigned long offset; /* offset to value start */
+  size_t len;    /* name length */
+  size_t offset; /* offset to value start */
   int flags;
   VAR_HASH lexhash;
   VAR_HASH rndhash;
@@ -42,18 +42,18 @@ struct var {
 };
 
 extern struct var* var_list;
-extern unsigned long var_exported;
+extern size_t var_exported;
 
 #include "vartab.h"
 
 VAR_HASH var_hsearch(struct search* context);
 char** var_export(char** dest);
 
-const char* var_get(const char* v, unsigned long* offset);
+const char* var_get(const char* v, size_t* offset);
 const char* var_setvint(const char* v, int i, int flags);
 const char* var_setvsa(const char* name, stralloc* sa, int flags);
-const char* var_value(const char* v, unsigned long* plen);
-const char* var_vdefault(const char* v, const char* def, unsigned long* lenp);
+const char* var_value(const char* v, size_t* plen);
+const char* var_vdefault(const char* v, const char* def, size_t* lenp);
 
 int var_chflg(char* v, int flags, int set);
 int var_valid(const char* v);
@@ -66,11 +66,11 @@ struct var* var_search(const char* v, struct search* context);
 struct var* var_set(char* v, int flags);
 struct var* var_setsa(stralloc* sa, int flags);
 
-unsigned long var_bsearch(struct search* context);
-unsigned long var_count(int flags);
-unsigned long var_lexhash(const char* v, VAR_HASH* h);
-unsigned long var_rndhash(const char* v, VAR_HASH* h);
-unsigned long var_vlen(const char* v);
+size_t var_bsearch(struct search* context);
+size_t var_count(int flags);
+size_t var_lexhash(const char* v, VAR_HASH* h);
+size_t var_rndhash(const char* v, VAR_HASH* h);
+size_t var_vlen(const char* v);
 
 void var_cleanup(struct var* var);
 void var_dump(struct var* var);

@@ -7,7 +7,7 @@
 const char*
 sh_gethome(void) {
   const char* v;
-  unsigned long offset;
+  size_t offset;
 
   /* HOME variable is set, copy it from there */
   if((v = var_get("HOME", &offset)))

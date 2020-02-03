@@ -14,7 +14,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
   union node* n = *nptr;
   stralloc value;
   const char* v = NULL;
-  unsigned long vlen = 0;
+  size_t vlen = 0;
 
   stralloc_init(&value);
 
@@ -97,7 +97,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
   }
   /* ..and variable substitutions */
   else {
-    unsigned long offset;
+    size_t offset;
 
     if(str_equal(param->name, "RANDOM")) {
       char tmpbuf[FMT_ULONG];

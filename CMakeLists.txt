@@ -66,7 +66,7 @@ if(F_ALIGN_STRINGOPS)
 add_definitions("-falign-stringops")
 endif(F_ALIGN_STRINGOPS)
 
-list(APPEND ALL_BUILTINS basename break cd dirname dump echo eval exec exit export expr false fdtable hash history hostname pwd set shift source test type true unset)
+list(APPEND ALL_BUILTINS basename break cd dirname dump echo eval exec exit export expr false fdtable hash help history hostname pwd set shift source test type true unset)
 list(APPEND MINIMAL_BUILTINS break cd eval exec exit export hash history pwd set shift source unset)
 list(APPEND DEFAULT_BUILTINS ${MINIMAL_BUILTINS} type echo fdtable true false dump)
 
