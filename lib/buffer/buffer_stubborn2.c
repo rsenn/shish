@@ -1,5 +1,5 @@
-#include "../buffer.h"
 #include "../windoze.h"
+#include "../buffer.h"
 #include <errno.h>
 
 #if !WINDOWS_NATIVE

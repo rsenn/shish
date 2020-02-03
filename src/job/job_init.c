@@ -2,7 +2,8 @@
 #include "job.h"
 #include <fcntl.h>
 #include <string.h>
-#if !defined(__MINGW32__) && !defined(__MINGW64__)
+#include "windoze.h"
+#if !WINDOWS_NATIVE && !defined(__MINGW64__)
 #include <termios.h>
 #include <unistd.h>
 #else
@@ -19,7 +20,8 @@ job_init(void) {
 
   /* find a filedescriptor which is a terminal */
   if((fd = fdtable[STDERR_FILENO]) && (fd_err->mode & FD_TERM)) {
-#if !defined(__MINGW32__) && !defined(__MINGW64__)
+#include "windoze.h"
+#if !WINDOWS_NATIVE && !defined(__MINGW64__)
     job_terminal = fcntl(fd->e, F_DUPFD, 0x80);
 #else
     job_terminal = dup(fd->e);

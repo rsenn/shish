@@ -5,7 +5,8 @@
 #include "config.h"
 #endif
 
-#if !defined(HAVE_UID_T) && defined(__MINGW32__) && !defined(__CYGWIN__)
+#include "windoze.h"
+#if !defined(HAVE_UID_T) && defined(WINDOWS_NATIVE)
 typedef int uid_t;
 #endif
 
@@ -14,7 +15,7 @@ typedef int uid_t;
 #include <stdlib.h>
 #include <sys/types.h>
 
-#ifdef __MINGW32__
+#if WINDOWS_NATIVE
 typedef int uid_t;
 #endif
 

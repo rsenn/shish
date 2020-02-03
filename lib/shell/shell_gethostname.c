@@ -1,10 +1,12 @@
 #include "../shell.h"
 #include "../str.h"
 #include "../stralloc.h"
-#include <unistd.h>
+#include "../windoze.h"
 
-#ifdef __MINGW32__
+#if WINDOWS_NATIVE
 #include <winsock2.h>
+#else
+#include <unistd.h>
 #endif
 
 char*

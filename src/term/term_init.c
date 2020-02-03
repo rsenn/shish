@@ -1,7 +1,8 @@
 #include "fdtable.h"
 #include "term.h"
 #include <signal.h>
-#if !defined(__MINGW32__) && !defined(__MINGW64__)
+#include "windoze.h"
+#if !WINDOWS_NATIVE && !defined(__MINGW64__)
 #include <termios.h>
 #endif
 

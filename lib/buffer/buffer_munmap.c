@@ -1,7 +1,7 @@
 #include "../windoze.h"
 
 #include "../buffer.h"
-#if defined(__MINGW32__) || defined(__MINGW64__)
+#if WINDOWS_NATIVE
 #include <windows.h>
 #else
 #include <sys/mman.h>

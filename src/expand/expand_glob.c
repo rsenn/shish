@@ -4,10 +4,6 @@
 
 #include <glob.h>
 
-/*#if defined(__MINGW32__) || defined(__MINGW64__)
-#include "mingw-glob.h"
-#endif*/
-
 #include "expand.h"
 #include "tree.h"
 #include "var.h"

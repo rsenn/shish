@@ -10,7 +10,8 @@
 #endif
 
 #include <signal.h>
-#if !defined(__MINGW32__)
+#include "windoze.h"
+#if !WINDOWS_NATIVE
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
@@ -83,7 +84,7 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
 
       ret = WEXITSTATUS(status);
 
-#ifndef __MINGW32__
+#if !WINDOWS_NATIVE
       sigprocmask(SIG_SETMASK, &oset, NULL);
 #endif
 

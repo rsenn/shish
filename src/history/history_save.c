@@ -3,8 +3,11 @@
 #include "sh.h"
 #include "str.h"
 #include "stralloc.h"
+#include "windoze.h"
 #include <limits.h>
+#if !WINDOWS_NATIVE
 #include <unistd.h>
+#endif
 
 /* save the history
  * ----------------------------------------------------------------------- */
@@ -39,7 +42,7 @@ history_save(void) {
       if(history_array[i]) {
         unsigned long len = history_cmdlen(history_array[i]);
         buffer_put(&b, history_array[i], len);
-#ifdef __MINGW32__
+#if WINDOWS_NATIVE
         buffer_puts(&b, "\r\n");
 #else
         buffer_puts(&b, "\n");

@@ -4,8 +4,11 @@
 #include "sh.h"
 #include "shell.h"
 #include "str.h"
+#include "windoze.h"
 #include <errno.h>
+#if !WINDOWS_NATIVE
 #include <unistd.h>
+#endif
 
 /* sets or displays current hostname
  * ----------------------------------------------------------------------- */
@@ -33,9 +36,9 @@ builtin_hostname(int argc, char** argv) {
     if(!force && n == sh_hostname.len && !byte_diff(sh_hostname.s, n, argv[shell_optind]))
       return 0;
 
-#ifdef HAVE_SETHOSTNAME
+#if defined(HAVE_SETHOSTNAME) || !WINDOWS_NATIVE
       /* set the supplied hostname */
-#if !defined(__CYGWIN__) && !defined(__MINGW32__)
+#if !WINDOWS_NATIVE
     if(sethostname(argv[shell_optind], n))
 #else
     errno = ENOSYS;

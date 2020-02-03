@@ -1,11 +1,11 @@
-#include "../buffer.h"
 #include "../windoze.h"
+#include "../buffer.h"
 
 #if WINDOWS_NATIVE
 #include <io.h>
 #else
-#include <sys/uio.h>
 #include <unistd.h>
+#include <sys/uio.h>
 #endif
 
 #include <errno.h>

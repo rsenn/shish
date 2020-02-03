@@ -1,5 +1,6 @@
 #include "term.h"
-#if !defined(__MINGW32__) && !defined(__MINGW64__)
+#include "windoze.h"
+#if !WINDOWS_NATIVE && !defined(__MINGW64__)
 #include <termios.h>
 
 struct termios term_tcattr;
@@ -11,7 +12,8 @@ int
 term_attr(int fd, int set) {
   int ret;
 
-#if !defined(__MINGW32__) && !defined(__MINGW64__)
+#include "windoze.h"
+#if !WINDOWS_NATIVE && !defined(__MINGW64__)
   if((ret = tcgetattr(fd, &term_tcattr)) == 0 && set) {
     struct termios newattr;
     /* backup tty settings */

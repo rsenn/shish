@@ -2,7 +2,10 @@
 #include "job.h"
 #include "sh.h"
 #include "sig.h"
+#include "windoze.h"
+#if !WINDOWS_NATIVE
 #include <unistd.h>
+#endif
 
 int job_pgrp;
 

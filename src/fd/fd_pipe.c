@@ -1,7 +1,13 @@
 #include "fd.h"
 #include "fdtable.h"
 #include "sh.h"
+#include "windoze.h"
+
+#if WINDOWS_NATIVE
+#define pipe(f) _pipe(f,0,0)
+#else
 #include <unistd.h>
+#endif
 
 /* create a pipe
  * ----------------------------------------------------------------------- */

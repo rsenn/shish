@@ -1,3 +1,4 @@
+#include "../uint64.h"
 
 #include "../scan.h"
 //#include "../haveuint128.h"

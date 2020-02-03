@@ -7,7 +7,8 @@
 #include <sys/wait.h>
 #endif
 
-#ifdef WINDOWS_NATIVE
+#include "windoze.h"
+#if WINDOWS_NATIVE
 typedef int sigset_t;
 #endif
 

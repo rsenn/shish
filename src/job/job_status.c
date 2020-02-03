@@ -1,4 +1,5 @@
-#if defined(HAVE_SYS_WAIT_H) && !defined(__MINGW32__)
+#include "windoze.h"
+#if !WINDOWS_NATIVE
 #include <sys/wait.h>
 #endif
 #include "fd.h"

@@ -33,9 +33,9 @@ typedef int64_t int64;
 typedef UINT64 uint64;
 typedef INT64 int64;
 
-#elif defined(__MINGW32__) || defined(__MINGW64__)
-typedef uint64_t uint64;
-typedef int64_t int64;
+#elif WINDOWS_NATIVE
+typedef unsigned __int64 uint64;
+typedef __int64 int64;
 
 #else
 typedef uint64_t uint64;

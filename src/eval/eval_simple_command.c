@@ -5,7 +5,8 @@
 #include <alloca.h>
 #endif
 
-#if !defined(__MINGW32__)
+#include "windoze.h"
+#if !WINDOWS_NATIVE
 #include <sys/wait.h>
 #include <unistd.h>
 #endif

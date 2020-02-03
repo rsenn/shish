@@ -1,5 +1,6 @@
 #include "term.h"
-#if !defined(__MINGW32__) && !defined(__MINGW64__)
+#include "windoze.h"
+#if !WINDOWS_NATIVE && !defined(__MINGW64__)
 #include <sys/ioctl.h>
 #include <termios.h>
 

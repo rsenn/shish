@@ -149,6 +149,14 @@ else()
   set(NAME_DEBUG "")
 endif()
 
+if(WIN32 OR WIN64)
+  check_library_exists(ws2_32 gethostname /usr/lib HAVE_WS2_32)
+endif(WIN32 OR WIN64)
+
+if(HAVE_WS2_32)
+  set(WINSOCK2_LIBRARY ws2_32)
+endif(HAVE_WS2_32)
+
 check_library_exists(owfat_debug buffer_init /usr/lib64 HAVE_LIBOWFAT)
 
 if(HAVE_LIBOWFAT)
@@ -375,6 +383,7 @@ target_link_libraries(shish libshish
   ${LIBOWFAT_LIBRARY}
   ${MATH_LIBRARY}
   ${ELECTRICFENCE_LIBRARY}
+  ${WINSOCK2_LIBRARY}
 )
 
 
