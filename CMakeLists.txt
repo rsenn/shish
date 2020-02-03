@@ -206,7 +206,7 @@ if(HAVE_SIGNAL_H)
   set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} signal.h)
 endif(HAVE_SIGNAL_H)
 
-check_type_size(sigset_t SIGSET_T)
+#check_type_size(sigset_t SIGSET_T)
 
 check_include_file(glob.h HAVE_GLOB_H)
 if(HAVE_GLOB_H)

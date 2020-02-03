@@ -7,11 +7,8 @@
 #include <sys/wait.h>
 #endif
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#ifndef HAVE_SIGSET_T
+#ifdef WINDOWS_NATIVE
 typedef int sigset_t;
-#endif
 #endif
 
 #ifndef WEXITSTATUS

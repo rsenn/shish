@@ -148,6 +148,21 @@ cfg-mingw() {
   cfg \
     "$@")
 }
+
+cfg-msys() {
+ (build=$(gcc -dumpmachine)
+  host=${build%%-*}-pc-msys
+  prefix=/usr/$host/sys-root/msys
+  
+  builddir=build/$host \
+  bindir=$prefix/bin \
+  libdir=$prefix/lib \
+  CC="$host-gcc" \
+  cfg \
+    -DCMAKE_CROSSCOMPILING=TRUE \
+    "$@")
+}
+
 cfg-termux() 
 {
   (builddir=build/termux
