@@ -15,7 +15,8 @@ output_synopsis(struct builtin_cmd* b) {
  * ----------------------------------------------------------------------- */
 int
 builtin_help(int argc, char** argv) {
-  size_t n, i, maxlen = 0, rows, offset, cols;
+  size_t n, i, maxlen = 0, rows, offset;
+  unsigned int cols;
   const char* vcols;
 
   for(n = 0; builtin_table[n].name; n++) {
@@ -25,13 +26,11 @@ builtin_help(int argc, char** argv) {
   }
 
   rows = (n + 1) >> 1;
-  cols = (maxlen + 1) * 2;
 
   vcols = var_get("COLUMNS", &offset);
 
-  if(scan_uint(&vcols[offset], &cols)) {
+  if(scan_uint(&vcols[offset], &cols))
     maxlen = (cols / 2) - 1;
-  }
 
   for(i = 0; i < rows; i++) {
     struct builtin_cmd* b = &builtin_table[i];
