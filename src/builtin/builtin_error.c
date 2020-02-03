@@ -14,8 +14,8 @@ builtin_errmsgn(char** argv, const char* s, unsigned int n, char* msg) {
   buffer_puts(fd_err->w, ": ");
   buffer_put(fd_err->w, s, n);
   if(msg) {
-      buffer_puts(fd_err->w, ": ");
-      buffer_puts(fd_err->w,  msg);
+    buffer_puts(fd_err->w, ": ");
+    buffer_puts(fd_err->w, msg);
   }
   buffer_putnlflush(fd_err->w);
   return 1;

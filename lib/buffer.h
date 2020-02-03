@@ -83,8 +83,6 @@ typedef int (*string_predicate)(const char* x, size_t len, void* arg);
 
 /* like buffer_get_token but the token ends when your predicate says so */
 
-
-
 int buffer_prefetch(buffer*, size_t n);
 
 #define buffer_PEEK(s) ((s)->x + (s)->p)

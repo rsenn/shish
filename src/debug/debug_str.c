@@ -12,7 +12,7 @@ debug_str(const char* msg, const char* s, int depth) {
   buffer_puts(fd_err->w, COLOR_CYAN " =  \"");
 
   if(s)
-    buffer_puts(fd_err->w,  s);
+    buffer_puts(fd_err->w, s);
 
   buffer_puts(fd_err->w, "\"" COLOR_NONE);
 }

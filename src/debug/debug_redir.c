@@ -31,11 +31,11 @@ debug_redir(const char* msg, int flags, int depth) {
   if(flags & R_CLOBBER)
     strcat(flagstr, "|R_CLOBBER");
 
-buffer_puts(fd_err->w, COLOR_YELLOW);
-buffer_puts(fd_err->w, msg);
-buffer_puts(fd_err->w, COLOR_CYAN DEBUG_EQU COLOR_GREEN);
-buffer_puts(fd_err->w, flagstr);
-buffer_puts(fd_err->w, COLOR_NONE);
+  buffer_puts(fd_err->w, COLOR_YELLOW);
+  buffer_puts(fd_err->w, msg);
+  buffer_puts(fd_err->w, COLOR_CYAN DEBUG_EQU COLOR_GREEN);
+  buffer_puts(fd_err->w, flagstr);
+  buffer_puts(fd_err->w, COLOR_NONE);
 
   debug_space(depth, 1);
 }

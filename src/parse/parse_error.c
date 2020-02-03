@@ -17,7 +17,7 @@ parse_error(struct parser* p, enum tok_flag toks) {
     if(toks) {
       buffer_puts(fd_err->w, ", expecting '");
       buffer_puts(fd_err->w, parse_tokname(toks, 1));
-          buffer_putc(fd_err->w, '\'');
+      buffer_putc(fd_err->w, '\'');
     }
 
     buffer_putnlflush(fd_err->w);
