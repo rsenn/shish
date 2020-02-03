@@ -6,7 +6,8 @@
 #endif
 
 #include "windoze.h"
-#if !defined(HAVE_UID_T) && defined(WINDOWS_NATIVE)
+
+#if !defined(HAVE_UID_T) && WINDOWS_NATIVE
 typedef int uid_t;
 #endif
 
@@ -14,10 +15,6 @@ typedef int uid_t;
 #include <setjmp.h>
 #include <stdlib.h>
 #include <sys/types.h>
-
-#if WINDOWS_NATIVE
-typedef int uid_t;
-#endif
 
 struct eval;
 struct fdtable;
