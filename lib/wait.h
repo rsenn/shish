@@ -8,12 +8,15 @@
 extern "C" {
 #endif
 
+
 #if WINDOWS_NATIVE
 #define WAIT_IF_SIGNALED(status) ((status)&0)
 #define WAIT_TERMSIG(status) ((status)&0)
+#define WAIT_EXITSTATUS(status) ((status)&0x7f)
 #else
 #define WAIT_IF_SIGNALED(status) WIFSIGNALED(status)
 #define WAIT_TERMSIG(status) WTERMSIG(status)
+#define WAIT_EXITSTATUS(status) ((status)&0x7f)
 #endif
 
 int wait_pid(int pid, int* wstat);

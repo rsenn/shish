@@ -11,10 +11,6 @@
 
 #include <signal.h>
 #include "windoze.h"
-#if !WINDOWS_NATIVE
-#include <sys/wait.h>
-#include <unistd.h>
-#endif
 #include "exec.h"
 #include "fdstack.h"
 #include "fdtable.h"
@@ -25,10 +21,8 @@
 #include "sig.h"
 #include "tree.h"
 #include "var.h"
+#include "wait.h"
 
-#ifndef WEXITSTATUS
-#define WEXITSTATUS(ret) ((ret)&0x7f)
-#endif
 
 /* execute another program, possibly searching for it first
  *
@@ -82,7 +76,7 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
       job_wait(NULL, pid, &status);
       job_status(pid, status);
 
-      ret = WEXITSTATUS(status);
+      ret = WAIT_EXITSTATUS(status);
 
 #if !WINDOWS_NATIVE
       sigprocmask(SIG_SETMASK, &oset, NULL);
