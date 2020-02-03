@@ -15,6 +15,13 @@
 #include <stdint.h>
 #endif
 
+/* for ssize_t */
+#ifdef WINDOWS_NATIVE
+#include <stdio.h>
+#else
+#include <unistd.h>
+#endif
+
 //#include <time.h>
 
 /*

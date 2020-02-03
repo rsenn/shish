@@ -20,8 +20,8 @@ parse_arith_binary(struct parser* p, int precedence) {
   parse_skipspace(p);
 
   if(source_peek(&a) <= 0 || source_peekn(&b, 1) <= 0) {
-    tree_free(lnode);
-    return NULL;
+    //tree_free(lnode);
+    return lnode;
   }
 
   c = a;

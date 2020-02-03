@@ -36,7 +36,7 @@
 int
 exec_program(char* path, char** argv, int exec, union node* redir) {
   int ret = 0;
-  sigset_t nset, oset;
+  sigset_t /* nset, */ oset;
 
   /* if we're gonna execve() a program and 'exec' isn't
      set or we aren't in the root shell environment we

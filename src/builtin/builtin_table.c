@@ -102,6 +102,9 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_EXPORT
     {"export", builtin_export, B_SPECIAL, "[-np] [name=[value]]"},
 #endif
+#if BUILTIN_EXPR
+    {"expr", builtin_expr, B_DEFAULT, "[expression]"},
+#endif
 #if BUILTIN_FALSE
     {"false", builtin_false, B_DEFAULT, ""},
 #endif

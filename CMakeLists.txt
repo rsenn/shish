@@ -66,7 +66,7 @@ if(F_ALIGN_STRINGOPS)
 add_definitions("-falign-stringops")
 endif(F_ALIGN_STRINGOPS)
 
-list(APPEND ALL_BUILTINS basename break cd dirname dump echo eval exec exit export false fdtable hash history hostname pwd set shift source test type true unset)
+list(APPEND ALL_BUILTINS basename break cd dirname dump echo eval exec exit export expr false fdtable hash history hostname pwd set shift source test type true unset)
 list(APPEND MINIMAL_BUILTINS break cd eval exec exit export hash history pwd set shift source unset)
 list(APPEND DEFAULT_BUILTINS ${MINIMAL_BUILTINS} type echo fdtable true false dump)
 
@@ -91,12 +91,14 @@ set(BUILTINS_ENABLED "")
 set(BUILTINS_DISABLED "")
 
 foreach(BUILTIN ${ALL_BUILTINS})
-string(TOUPPER ${BUILTIN} NAME)
-if(NOT DEFINED ${ENABLE_${NAME}})
-isin("ENABLE_${NAME}" ${BUILTIN} ${DEFAULT_BUILTINS} )
-option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" "${ENABLE_${NAME}}")
-endif(NOT DEFINED ${ENABLE_${NAME}})
-#message(STATUS "Builtin ${BUILTIN} - ${ENABLE_${NAME}}")
+	string(TOUPPER ${BUILTIN} NAME)
+	if(NOT DEFINED ${ENABLE_${NAME}})
+		isin("ENABLE_${NAME}" ${BUILTIN} ${DEFAULT_BUILTINS} )
+		option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" "${ENABLE_${NAME}}")
+	else(NOT DEFINED ${ENABLE_${NAME}})
+		option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" OFF)
+	endif(NOT DEFINED ${ENABLE_${NAME}})
+	#message(STATUS "Builtin ${BUILTIN} - ${ENABLE_${NAME}}")
 endforeach(BUILTIN ${ALL_BUILTINS})
 
 option(NO_TREE_PRINT "Disable tree_print for history" OFF)
@@ -113,11 +115,11 @@ endif()
 foreach(BUILTIN ${ALL_BUILTINS})
 
 string(TOUPPER ${BUILTIN} NAME)
-if(${BUILTIN_${NAME}} STREQUAL ON)
-list(APPEND BUILTINS_ENABLED ${BUILTIN})
-else(${BUILTIN_${NAME}} STREQUAL ON)
-list(APPEND BUILTINS_DISABLED ${BUILTIN})
-endif(${BUILTIN_${NAME}} STREQUAL ON)
+	if(${BUILTIN_${NAME}} STREQUAL ON)
+		list(APPEND BUILTINS_ENABLED ${BUILTIN})
+	else(${BUILTIN_${NAME}} STREQUAL ON)
+		list(APPEND BUILTINS_DISABLED ${BUILTIN})
+	endif(${BUILTIN_${NAME}} STREQUAL ON)
 endforeach(BUILTIN ${ALL_BUILTINS})
 
 
@@ -222,8 +224,11 @@ add_definitions(-DHAVE_CONFIG_H=1 -D__USE_XOPEN_EXTENDED=1 -D__USE_POSIX=1)
 add_definitions(-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64)
 add_definitions(-D_GNU_SOURCE)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w")
-set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0")
+if("${CMAKE_BUILD_TYPE}" MATCHES "Deb")
+  set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0")
+else("${CMAKE_BUILD_TYPE}" MATCHES "Deb")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w")
+endif("${CMAKE_BUILD_TYPE}" MATCHES "Deb")
 
 string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_MINSIZEREL "${CMAKE_C_FLAGS_MINSIZEREL}")
@@ -268,13 +273,20 @@ set_target_properties(libshish PROPERTIES
 # ndif(F_LTO)
 # ]]
 
- file(GLOB SOURCES src/*.h src/*/*.c)
+file(GLOB SOURCES src/*.h src/debug/*.c src/eval/*.c src/exec/*.c src/expand/*.c src/expr/*.c src/fd/*.c src/fdstack/*.c src/fdtable/*.c src/history/*.c src/job/*.c src/parse/*.c src/prompt/*.c src/redir/*.c src/sh/*.c src/sig/*.c src/source/*.c src/term/*.c src/tree/*.c src/var/*.c src/vartab/*.c)
+list(APPEND SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
  set(MATH_LIBRARY m)
 
-
+foreach(BUILTIN ${BUILTINS_ENABLED})
+  list(APPEND SOURCES src/builtin/builtin_${BUILTIN}.c)
+endforeach(BUILTIN ${BUILTINS_ENABLED})
 
  if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
- set(ELECTRICFENCE_LIBRARY efence)
+
+ check_library_exists(efence malloc /usr/lib HAVE_EFENCE)
+   if(HAVE_EFENCE)
+   set(ELECTRICFENCE_LIBRARY efence)
+   endif(HAVE_EFENCE)
  endif(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
 
  string(REPLACE " " ";" SOURCES "${SOURCES}")
@@ -319,7 +331,7 @@ list(APPEND SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
  target_link_libraries(shish libshish
   ${LIBOWFAT_LIBRARY}
   ${MATH_LIBRARY}
-  # ${ELECTRICFENCE_LIBRARY}
+  ${ELECTRICFENCE_LIBRARY}
   )
 
  message(STATUS "\nBuiltin flags:\n  ${BUILTIN_FLAGS}\n")

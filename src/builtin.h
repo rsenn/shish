@@ -39,6 +39,7 @@ int builtin_eval(int argc, char** argv);
 int builtin_exec(int argc, char** argv);
 int builtin_exit(int argc, char** argv);
 int builtin_export(int argc, char** argv);
+int builtin_expr(int argc, char** argv);
 int builtin_false(int argc, char** argv);
 int builtin_fdtable(int argc, char** argv);
 int builtin_hash(int argc, char** argv);

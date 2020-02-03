@@ -1,12 +1,7 @@
 #ifndef STRALLOC_H
 #define STRALLOC_H
 
-#ifdef __dietlibc__
-#include <sys/cdefs.h>
-#endif
-#ifndef __pure__
-#define __pure__
-#endif
+#include "typedefs.h"
 
 /* stralloc is the internal data structure all functions are working on.
  * s is the string.
@@ -70,7 +65,7 @@ int stralloc_copy(stralloc* sa, const stralloc* sa2);
  * alone and returns 0. */
 int stralloc_catb(stralloc* sa, const char* in, unsigned long int len);
 
-int stralloc_write(stralloc* sa, const char* in, unsigned long int len);
+ssize_t stralloc_write(stralloc* sa, const char* in, size_t len);
 int stralloc_catc(stralloc* sa, char c);
 
 /* stralloc_cats is analogous to stralloc_copys */
@@ -95,17 +90,17 @@ int stralloc_append(stralloc* sa, const char* in); /* beware: this takes a point
 /* stralloc_starts returns 1 if the \0-terminated string in "in", without
  * the terminating \0, is a prefix of the string stored in sa. Otherwise
  * it returns 0. sa must already be allocated. */
-int stralloc_starts(stralloc* sa, const char* in) __pure__;
+int stralloc_starts(stralloc* sa, const char* in);
 
 /* stralloc_diff returns negative, 0, or positive, depending on whether
  * a is lexicographically smaller than, equal to, or greater than the
  * string b. */
-int stralloc_diff(const stralloc* a, const stralloc* b) __pure__;
+int stralloc_diff(const stralloc* a, const stralloc* b);
 
 /* stralloc_diffs returns negative, 0, or positive, depending on whether
  * a is lexicographically smaller than, equal to, or greater than the
  * string b[0], b[1], ..., b[n]=='\0'. */
-int stralloc_diffs(const stralloc* a, const char* b) __pure__;
+int stralloc_diffs(const stralloc* a, const char* b);
 
 #define stralloc_equal(a, b) (!stralloc_diff((a), (b)))
 #define stralloc_equals(a, b) (!stralloc_diffs((a), (b)))

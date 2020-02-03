@@ -39,4 +39,3 @@ builtin_type(int argc, char** argv) {
 
   return 0;
 }
-

@@ -25,13 +25,13 @@ exec_hash(char* name, enum hash_id* idptr) {
   /* otherwise try to find hashed entry */
   else {
     struct exechash* entry;
-    unsigned long hash;
+    uint32 hash;
 
     /* hash the name for possible re-use on exechash_create() */
     hash = exec_hashstr(name);
 
     /* do we have a cache hit? */
-    if((entry = exec_search(name, hash))) {
+    if((entry = exec_search(name, &hash))) {
       entry->hits++;
       id = entry->id;
       cmd = entry->cmd;
