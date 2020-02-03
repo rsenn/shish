@@ -1,20 +1,20 @@
 #include <sys/types.h>
-#include <unistd.h>
-#ifdef __MINGW32__
+#ifdef _WIN32
 #include <windows.h>
 #else
+#include <unistd.h>
 #include <sys/mman.h>
+#include "../open.h"
 #endif
 #include "../mmap.h"
-#include "../open.h"
 
 char*
 mmap_private(const char* filename, size_t* filesize) {
-#ifdef __MINGW32__
+#ifdef _WIN32
   HANDLE fd, m;
   char* map;
   fd = CreateFile(filename,
-                  GENERIC_WRITE | GENERIC_READ,
+                  GENERIC_READ,
                   FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                   0,
                   OPEN_EXISTING,
@@ -35,7 +35,7 @@ mmap_private(const char* filename, size_t* filesize) {
   char* map;
   if(fd >= 0) {
     register off_t o = lseek(fd, 0, SEEK_END);
-    if(sizeof(off_t) != sizeof(size_t) && o > (off_t)(size_t)-1) {
+    if(o == 0 || (sizeof(off_t) != sizeof(size_t) && o > (off_t)(size_t)-1)) {
       close(fd);
       return 0;
     }

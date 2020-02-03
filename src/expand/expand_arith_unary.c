@@ -10,8 +10,7 @@ int
 expand_arith_unary(struct narithunary* expr, int64* r) {
   int64 value;
   struct nargparam* param = 0;
-  struct var* v = 0;
-  int pre_post = expr->id == A_PREINCREMENT || expr->id == A_PREDECREMENT || expr->id == A_POSTINCREMENT ||
+    int pre_post = expr->id == A_PREINCREMENT || expr->id == A_PREDECREMENT || expr->id == A_POSTINCREMENT ||
                  expr->id == A_POSTDECREMENT;
 
   if(expand_arith_expr(expr->node, &value))
@@ -20,7 +19,7 @@ expand_arith_unary(struct narithunary* expr, int64* r) {
   if(pre_post) {
     param = &expr->node->nargparam;
 
-    v = var_search(param->name, NULL);
+    var_search(param->name, NULL);
   }
 
   switch(expr->id) {

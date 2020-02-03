@@ -20,7 +20,7 @@ fd_getname(struct fd* fd) {
       ret = fd_getname(fd->dup);
 
     fd->name = fd->dup->name;
-    return 0;
+    return ret;
   }
 
   /* assemble /proc/<pid>/fd/ path */

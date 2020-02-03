@@ -13,7 +13,6 @@ void
 redir_source(void) {
   struct parser p;
   stralloc delim;
-  int r;
 
   parse_init(&p, P_HERE);
 
@@ -26,7 +25,10 @@ redir_source(void) {
 
     /* when any character of the delimiter has been escaped
        then treat the whole here-doc as non-expanded word */
-    r = parse_here(&p, &delim, (redir_list->list->nargstr.flag & S_ESCAPED));
+    if(parse_here(&p, &delim, (redir_list->list->nargstr.flag & S_ESCAPED))) {
+      parse_error(&p, p.tok);
+      break;
+    }
 
     tree_free(redir_list->list);
     redir_list->list = parse_getarg(&p);

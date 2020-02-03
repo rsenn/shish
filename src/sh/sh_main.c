@@ -76,13 +76,8 @@ main(int argc, char** argv, char** envp) {
 #endif
   envvars = malloc(sizeof(struct var) * c);
 
-  for(c = 0; envp[c]; c++) {
-    struct var* var;
-    var = var_import(envp[c], V_EXPORT, &envvars[c]);
-
-    /* use imported vars to seed the prng */
-    /*  uint32_seed(var->sa.s, var->sa.len);*/
-  }
+  for(c = 0; envp[c]; c++)
+    var_import(envp[c], V_EXPORT, &envvars[c]);
 
   /* parse command line arguments */
   while((c = shell_getopt(argc, argv, "c:")) > 0) switch(c) {

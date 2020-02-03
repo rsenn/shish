@@ -1,25 +1,30 @@
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#ifdef __MINGW32__
-#include <windows.h>
-#else
-#include <sys/mman.h>
-#endif
+#include "../windoze.h"
+
+#include "../io_internal.h"
 #include "../mmap.h"
 #include "../open.h"
+#if WINDOWS_NATIVE
+#include <windows.h>
+#include <io.h>
+#else
+#include <sys/mman.h>
+#include <sys/stat.h>
+#endif
 
 char mmap_empty[] = {0};
 
 char*
-mmap_read_fd(int fd, unsigned long* filesize) {
-#ifdef __MINGW32__
+mmap_read_fd(fd_t fd, size_t* filesize) {
+#if WINDOWS_NATIVE
+  HANDLE h = (HANDLE)_get_osfhandle((int)fd);
   HANDLE m;
   char* map;
-  m = CreateFileMapping((HANDLE)fd, 0, PAGE_READONLY, 0, 0, NULL);
+  m = CreateFileMapping(h, 0, PAGE_READONLY, 0, 0, NULL);
   map = 0;
-  if(m)
-    map = MapViewOfFile(m, FILE_MAP_READ, 0, 0, 0);
+  if(m) {
+    if((map = MapViewOfFile(m, FILE_MAP_READ, 0, 0, 0)))
+      *filesize = GetFileSize((HANDLE)fd, NULL);
+  }
   CloseHandle(m);
   return map;
 #else
