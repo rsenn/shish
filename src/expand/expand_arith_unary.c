@@ -1,6 +1,7 @@
 #include "expand.h"
 #include "tree.h"
 #include "uint64.h"
+#include "var.h"
 #include <math.h>
 
 /* expand a unary expression

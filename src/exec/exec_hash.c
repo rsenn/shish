@@ -4,7 +4,6 @@
 #include "vartab.h"
 #include <unistd.h>
 
-
 /* hashed command search routine
  * ----------------------------------------------------------------------- */
 union command

@@ -20,6 +20,6 @@ fd_init(struct fd* fd, int n, int flags) {
   fd->r = &fd->rb;
   fd->w = &fd->wb;
 
-  buffer_init(fd->r, read, fd->e, NULL, 0);
-  buffer_init(fd->w, write, fd->e, NULL, 0);
+  buffer_init(fd->r, (buffer_op_proto*)&read, fd->e, NULL, 0);
+  buffer_init(fd->w, (buffer_op_proto*)&write, fd->e, NULL, 0);
 }

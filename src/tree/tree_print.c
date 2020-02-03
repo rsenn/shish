@@ -389,6 +389,7 @@ tree_print(union node* node, stralloc* sa) {
         case A_RSHIFT: stralloc_cats(sa, ">>"); break;
         case A_MOD: stralloc_catc(sa, '%'); break;
         case A_EXP: stralloc_cats(sa, "**"); break;
+        default: break;
       }
 
       tree_print(node->narithbinary.right, sa);
@@ -407,20 +408,24 @@ tree_print(union node* node, stralloc* sa) {
     case A_UNARYMINUS:
     case A_UNARYPLUS:
     case A_PREINCREMENT:
-    case A_PREDECREMENT: {
+    case A_PREDECREMENT:
+    case A_POSTINCREMENT:
+    case A_POSTDECREMENT: {
 
       switch(node->narithunary.id) {
         case A_NOT: stralloc_catc(sa, '!'); break;
         case A_BNOT: stralloc_catc(sa, '~'); break;
         case A_UNARYMINUS: stralloc_catc(sa, '-'); break;
         case A_UNARYPLUS: stralloc_catc(sa, '+'); break;
-        case A_PREINCREMENT: stralloc_catc(sa, '++'); break;
-        case A_PREDECREMENT: stralloc_catc(sa, '--'); break;
+        case A_PREINCREMENT: stralloc_cats(sa, "++"); break;
+        case A_PREDECREMENT: stralloc_cats(sa, "--"); break;
+        default: break;
       }
       tree_print(node->narithunary.node, sa);
       switch(node->narithunary.id) {
-        case A_POSTINCREMENT: stralloc_catc(sa, '++'); break;
-        case A_POSTDECREMENT: stralloc_catc(sa, '--'); break;
+        case A_POSTINCREMENT: stralloc_cats(sa, "++"); break;
+        case A_POSTDECREMENT: stralloc_cats(sa, "--"); break;
+        default: break;
       }
       break;
     }

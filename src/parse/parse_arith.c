@@ -1,3 +1,4 @@
+#include "debug.h"
 #include "fd.h"
 #include "parse.h"
 #include "source.h"
@@ -18,7 +19,7 @@ parse_arith(struct parser* p) {
 
   if(tree) {
 #ifdef DEBUG
-    debug_node(tree);
+    debug_node(tree, 0);
 #endif
 
     buffer_flush(fd_err->w);

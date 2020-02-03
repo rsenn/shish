@@ -1,5 +1,5 @@
-#include "../uint64.h"
 #include "../fmt.h"
+#include "../uint64.h"
 
 static inline char
 tohex(char c) {

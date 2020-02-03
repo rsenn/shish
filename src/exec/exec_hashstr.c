@@ -1,5 +1,5 @@
-#include "uint32.h"
 #include "exec.h"
+#include "uint32.h"
 
 uint32
 exec_hashstr(const char* s) {

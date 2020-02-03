@@ -8,6 +8,8 @@
 #include "uint16.h"
 #include "uint64.h"
 
+typedef size_t scan_function(const char*, int64*);
+
 /* parse arithmetic value
  * ----------------------------------------------------------------------- */
 union node*
@@ -16,7 +18,7 @@ parse_arith_value(struct parser* p) {
   uint16 digit, classes;
   int cclass = C_DIGIT;
 
-  size_t (*scan_fn)(const char* src, int64* dest) = &scan_longlong;
+  scan_function* scan_fn = &scan_longlong;
 
   union node* node = NULL;
 
@@ -48,12 +50,12 @@ parse_arith_value(struct parser* p) {
 
         switch(c) {
           case 'x':
-            scan_fn = &scan_xlonglong;
+            scan_fn = (scan_function*)&scan_xlonglong;
             cclass = C_HEX;
             break;
 
           case 'o':
-            scan_fn = &scan_octal;
+            scan_fn = (scan_function*)&scan_octal;
             cclass = C_OCTAL;
             break;
           default: buffer_putsflush(fd_err->w, "ERROR: expecting x|b|o\n"); return NULL;

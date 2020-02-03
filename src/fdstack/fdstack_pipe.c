@@ -23,7 +23,7 @@ fdstack_pipe(unsigned int n, struct fd* fda) {
         fd_setbuf(fda, b, FD_BUFSIZE / 2);
 
         e = fd_pipe(fda);
-        buffer_init(&fd->rb, read, e, NULL, 0);
+        buffer_init(&fd->rb, (buffer_op_proto*)&read, e, NULL, 0);
         b += FD_BUFSIZE / 2;
         fda++;
       }

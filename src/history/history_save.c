@@ -10,7 +10,6 @@
  * ----------------------------------------------------------------------- */
 void
 history_save(void) {
-  char data[256];
   buffer b;
   unsigned long hlen;
   char fname[PATH_MAX + 1];
