@@ -151,8 +151,8 @@ cfg-mingw() {
 
 cfg-msys() {
  (build=$(gcc -dumpmachine)
-  host=${build%%-*}-pc-msys
-  prefix=/usr/$host/sys-root/msys
+  : ${host=${build%%-*}-pc-msys}
+  : ${prefix=/usr/$host/sys-root/msys}
   
   builddir=build/$host \
   bindir=$prefix/bin \
@@ -161,6 +161,13 @@ cfg-msys() {
   cfg \
     -DCMAKE_CROSSCOMPILING=TRUE \
     "$@")
+}
+
+cfg-msys32() {
+ (build=$(gcc -dumpmachine)
+  host=${build%%-*}-pc-msys
+  host=i686-${host#*-}
+  cfg-msys "$@")
 }
 
 cfg-termux() 
