@@ -9,10 +9,10 @@ vartab_dump(struct vartab* vartab) {
   struct var* var;
 
   /*          buffer_puts(fd_out->w, "44: ");
-            buffer_putulong(fd_out->w, (long)(vartab->table[44]));
+            buffer_putulong(fd_out->w, (vartab->table[44]));
             buffer_putnlflush(fd_out->w);
             buffer_puts(fd_out->w, "46: ");
-            buffer_putulong(fd_out->w, (long)(vartab->table[46]));
+            buffer_putulong(fd_out->w, (vartab->table[46]));
             buffer_putnlflush(fd_out->w);*/
 
   buffer_puts(

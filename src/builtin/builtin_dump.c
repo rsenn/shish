@@ -1,6 +1,6 @@
 #include "debug.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 #include "builtin.h"
 #include "fdstack.h"
 #include "fdtable.h"
@@ -26,4 +26,4 @@ builtin_dump(int argc, char** argv) {
 
   return 0;
 }
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */

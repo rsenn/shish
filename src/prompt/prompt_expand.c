@@ -21,7 +21,7 @@ prompt_expand(void) {
 
     /* escape prompt */
     stralloc_init(&sa);
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 /*    debug_list(prompt_node, 0);      */
 #endif
     expand_catsa(prompt_node, &sa, 0);
@@ -30,7 +30,7 @@ prompt_expand(void) {
     prompt_escape(sa.s, &prompt_expansion);
     stralloc_nul(&prompt_expansion);
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 /*    debug_stralloc("prompt", &sa, 0);*/
 #endif
   }

@@ -8,5 +8,5 @@ fd_subst(struct fd* fd, stralloc* sa) {
   fd->name = "<subst>";
   fd->mode = FD_SUBST;
 
-  buffer_init(fd->w, (ssize_t(*)())stralloc_write, (long)sa, NULL, 0);
+  buffer_init(fd->w, (ssize_t(*)())stralloc_write, sa, NULL, 0);
 }

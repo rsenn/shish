@@ -88,7 +88,7 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_DIRNAME
     {"dirname", builtin_dirname, B_DEFAULT, "path"},
 #endif
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 #if BUILTIN_DUMP
     {"dump", builtin_dump, B_DEFAULT, "[-v]"},
 #endif

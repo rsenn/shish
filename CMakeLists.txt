@@ -87,7 +87,7 @@ endif(F_ALIGN_STRINGOPS)
 
 list(APPEND ALL_BUILTINS basename break cd dirname dump echo eval exec exit export expr false fdtable hash help history hostname pwd set shift source test type true unset)
 list(APPEND MINIMAL_BUILTINS break cd eval exec exit export hash history pwd set shift source unset)
-list(APPEND DEFAULT_BUILTINS ${MINIMAL_BUILTINS} type echo fdtable true false dump)
+list(APPEND DEFAULT_BUILTINS ${MINIMAL_BUILTINS} type echo fdtable true false)
 
 function(isin)
   set(ARGUMENTS "${ARGV}")
@@ -120,10 +120,19 @@ foreach(BUILTIN ${ALL_BUILTINS})
 	#message(STATUS "Builtin ${BUILTIN} - ${ENABLE_${NAME}}")
 endforeach(BUILTIN ${ALL_BUILTINS})
 
+isin(ENABLE_DUMP dump ${BUILTINS_ENABLED})
+
+set(DEBUG_OUTPUT_DEFAULT OFF)
+
+if(ENABLE_DUMP)
+  set(DEBUG_OUTPUT_DEFAULT ON)
+endif(ENABLE_DUMP)
+
+
 option(NO_TREE_PRINT "Disable tree_print for history" OFF)
 option(DEBUG_ALLOC "Debug memory allocations" OFF)
 option(DEBUG_COLOR "Color debug output" OFF)
-option(DEBUG_OUTPUT "Print debug output" OFF)
+option(DEBUG_OUTPUT "Print debug output" ${DEBUG_OUTPUT_DEFAULT})
 
 if(DEBUG_OUTPUT)
   add_definitions(-DDEBUG_OUTPUT=1)
@@ -305,12 +314,13 @@ set_target_properties(libshish PROPERTIES
 # ndif(F_LTO)
 # ]]
 
-file(GLOB SOURCES src/*.h src/debug/*.c src/eval/*.c src/exec/*.c src/expand/*.c src/expr/*.c src/fd/*.c src/fdstack/*.c src/fdtable/*.c src/history/*.c src/job/*.c src/parse/*.c src/prompt/*.c src/redir/*.c src/sh/*.c src/sig/*.c src/source/*.c src/term/*.c src/tree/*.c src/var/*.c src/vartab/*.c)
+file(GLOB SOURCES src/*.h  src/eval/*.c src/exec/*.c src/expand/*.c src/expr/*.c src/fd/*.c src/fdstack/*.c src/fdtable/*.c src/history/*.c src/job/*.c src/parse/*.c src/prompt/*.c src/redir/*.c src/sh/*.c src/sig/*.c src/source/*.c src/term/*.c src/tree/*.c src/var/*.c src/vartab/*.c)
+
 
 
 if(BUILD_DEBUG)
-  file(GLOB ADDSOURCES src/debug/*.c)
-  set(SOURCES "${SOURCES};${ADDDSOURCES}")
+  #file(GLOB ADDSOURCES src/debug/*.c)
+  #
   set(DEBUG_SOURCES "${SOURCES}")
   list(FILTER DEBUG_SOURCES INCLUDE REGEX ".*debug\.c")
   foreach(SRC ${DEBUG_SOURCES})
@@ -322,7 +332,12 @@ else(BUILD_DEBUG)
   list(FILTER SOURCES EXCLUDE REGEX ".*debug\.c")
 endif(BUILD_DEBUG)
 
-
+if(DEBUG_ALLOC)
+  list(APPEND SOURCES src/debug/debug_alloc.c src/debug/debug_free.c src/debug/debug_realloc.c)
+endif(DEBUG_ALLOC)
+if(DEBUG_OUTPUT)
+  list(APPEND SOURCES src/debug/debug_begin.c src/debug/debug_char.c src/debug/debug_end.c src/debug/debug_error.c src/debug/debug_list.c src/debug/debug_memory.c src/debug/debug_node.c src/debug/debug_ptr.c src/debug/debug_redir.c src/debug/debug_space.c src/debug/debug_stralloc.c src/debug/debug_str.c src/debug/debug_sublist.c src/debug/debug_subnode.c src/debug/debug_subst.c src/debug/debug_ulong.c src/debug/debug_unquoted.c)
+endif(DEBUG_OUTPUT)
 
 list(APPEND SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
 list(APPEND SOURCES src/parse/parse_newnode${NAME_DEBUG}.c src/tree/tree_newnode${NAME_DEBUG}.c)

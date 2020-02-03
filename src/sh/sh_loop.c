@@ -53,7 +53,7 @@ sh_loop(void) {
         history_advance();
       }
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
       debug_list(list, 0);
       buffer_putnlflush(fd_err->w);
 #endif /* DEBUG */
