@@ -58,7 +58,11 @@ parse_arith_value(struct parser* p) {
             scan_fn = (scan_function*)&scan_octal;
             cclass = C_OCTAL;
             break;
-          default: buffer_putsflush(fd_err->w, "ERROR: expecting x|b|o\n"); return NULL;
+          default: {
+            buffer_puts(fd_err->w, "ERROR: expecting x|b|o");
+            buffer_putnlflush(fd_err->w);
+            return NULL;
+          }
         }
 
         if((classes & (C_UPPER | C_LOWER))) {
