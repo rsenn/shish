@@ -17,7 +17,7 @@ term_backspace(void) {
     unsigned long len;
     len = term_cmdline.len - term_pos;
     out[0] = '\b';
-    buffer_PUTC(term_output, out[0]);
+    buffer_putc(term_output, out[0]);
     buffer_put(term_output, &term_cmdline.s[term_pos], len);
     buffer_putspace(term_output);
     term_pos += len + 1;

@@ -25,7 +25,7 @@ var_print(struct var* var, int flags) {
       if(parse_isdesc(var->sa.s[i]))
         buffer_puts(fd_out->w, "\\");
 
-      buffer_PUTC(fd_out->w, var->sa.s[i]);
+      buffer_putc(fd_out->w, var->sa.s[i]);
     }
 
     buffer_puts(fd_out->w, "\"");

@@ -7,8 +7,10 @@
  * ----------------------------------------------------------------------- */
 void
 debug_stralloc(const char* msg, stralloc* s, int depth) {
-  buffer_putm(fd_err->w, COLOR_YELLOW, msg, COLOR_CYAN, DEBUG_EQU, "\"", NULL);
+    buffer_puts(fd_err->w, COLOR_YELLOW);
+  buffer_puts(fd_err->w, msg);
+  buffer_puts(fd_err->w, COLOR_CYAN DEBUG_EQU "\"");
   buffer_putsa(fd_err->w, s);
-  buffer_putm(fd_err->w, "\"", COLOR_NONE, NULL);
+  buffer_puts(fd_err->w, "\""  COLOR_NONE);
 }
 #endif /* DEBUG */

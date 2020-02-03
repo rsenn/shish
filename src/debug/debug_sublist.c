@@ -8,8 +8,12 @@
  * ----------------------------------------------------------------------- */
 void
 debug_sublist(const char* s, union node* node, int depth) {
+
   if(node) {
-    buffer_putm(fd_err->w, COLOR_YELLOW, s, COLOR_CYAN, DEBUG_EQU, NULL);
+    buffer_puts(fd_err->w, COLOR_YELLOW);
+  buffer_puts(fd_err->w, s);
+  buffer_puts(fd_err->w, COLOR_CYAN DEBUG_EQU COLOR_NONE);
+
     debug_list(node, depth + 1);
   } else {
     debug_unquoted(s, COLOR_CYAN DEBUG_BEGIN DEBUG_END, depth);

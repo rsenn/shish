@@ -11,7 +11,9 @@ debug_ptr(const char* msg, void* ptr, int depth) {
   char buf[FMT_XLONG];
   unsigned long n;
   debug_space(depth, 1);
-  buffer_putm(fd_err->w, COLOR_YELLOW, msg, COLOR_CYAN " = ", NULL);
+  buffer_puts(fd_err->w, COLOR_YELLOW);
+  buffer_puts(fd_err->w, msg);
+  buffer_puts(fd_err->w, COLOR_CYAN " = ");
   n = fmt_xlong(buf, (long)ptr);
   buffer_puts(fd_err->w, "0x");
   buffer_putnspace(fd_err->w, 8 - n);

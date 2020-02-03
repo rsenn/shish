@@ -12,7 +12,7 @@ builtin_shift(int argc, char** argv) {
 
     if(n == 0) {
       sh_error(argv[0]);
-      buffer_putm(fd_err->w, ": ", argv[1], ": invalid argument");
+      buffer_putm_internal(fd_err->w, ": ", argv[1], ": invalid argument", NULL);
       buffer_putnlflush(fd_err->w);
       return 1;
     }

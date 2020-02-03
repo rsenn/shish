@@ -15,7 +15,7 @@ term_left(unsigned long n) {
     int i;
     char c = '\b';
 
-    for(i = 0; i < n; i++) buffer_PUTC(term_output, c);
+    for(i = 0; i < n; i++) buffer_putc(term_output, c);
   }
 
   buffer_flush(term_output);

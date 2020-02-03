@@ -7,9 +7,13 @@
  * ----------------------------------------------------------------------- */
 void
 debug_str(const char* msg, const char* s, int depth) {
+  buffer_puts(fd_err->w, COLOR_YELLOW);
+  buffer_puts(fd_err->w, msg);
+  buffer_puts(fd_err->w, COLOR_CYAN " =  \"");
+
   if(s)
-    buffer_putm(fd_err->w, COLOR_YELLOW, msg, COLOR_CYAN " = \"", s, "\"" COLOR_NONE, NULL);
-  else
-    buffer_putm(fd_err->w, COLOR_YELLOW, msg, COLOR_CYAN " = \"\"" COLOR_NONE, NULL);
+    buffer_puts(fd_err->w,  s);
+
+  buffer_puts(fd_err->w, "\"" COLOR_NONE);
 }
 #endif /* DEBUG */

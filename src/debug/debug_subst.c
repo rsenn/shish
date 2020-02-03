@@ -56,6 +56,10 @@ debug_subst(const char* msg, int flags, int depth) {
   if(flags & S_ESCAPED)
     n += str_copy(&flagstr[n], "|S_ESCAPED");
 
-  buffer_putm(fd_err->w, COLOR_YELLOW, msg, COLOR_CYAN, DEBUG_EQU, COLOR_GREEN, flagstr, COLOR_NONE, NULL);
+  buffer_puts(fd_err->w, COLOR_YELLOW);
+  buffer_puts(fd_err->w, msg);
+  buffer_puts(fd_err->w, COLOR_CYAN DEBUG_EQU COLOR_GREEN);
+  buffer_puts(fd_err->w, flagstr);
+  buffer_puts(fd_err->w, COLOR_NONE);
 }
 #endif /* DEBUG */

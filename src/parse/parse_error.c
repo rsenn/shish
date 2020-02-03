@@ -11,10 +11,14 @@ parse_error(struct parser* p, enum tok_flag toks) {
   if(p->tok) {
     sh_msg("unexpected token '");
 
-    buffer_putm(fd_err->w, parse_tokname(p->tok, 0), "'", NULL);
+    buffer_puts(fd_err->w, parse_tokname(p->tok, 0));
+    buffer_putc(fd_err->w, '\'');
 
-    if(toks)
-      buffer_putm(fd_err->w, ", expecting '", parse_tokname(toks, 1), "'", NULL);
+    if(toks) {
+      buffer_puts(fd_err->w, ", expecting '");
+      buffer_puts(fd_err->w, parse_tokname(toks, 1));
+          buffer_putc(fd_err->w, '\'');
+    }
 
     buffer_putnlflush(fd_err->w);
   }
