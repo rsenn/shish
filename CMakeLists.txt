@@ -151,6 +151,13 @@ endif()
 
 if(WIN32 OR WIN64)
   check_library_exists(ws2_32 gethostname /usr/lib HAVE_WS2_32)
+
+  check_function_exists(fork HAVE_FORK)
+
+  if(NOT HAVE_FORK)
+    set(FORK_SOURCE "src/fork.c")
+  endif(NOT HAVE_FORK)
+
 endif(WIN32 OR WIN64)
 
 if(HAVE_WS2_32)
@@ -319,6 +326,10 @@ endif(BUILD_DEBUG)
 
 list(APPEND SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
 list(APPEND SOURCES src/parse/parse_newnode${NAME_DEBUG}.c src/tree/tree_newnode${NAME_DEBUG}.c)
+
+if(FORK_SOURCE)
+  list(APPEND SOURCES ${FORK_SOURCE})
+endif(FORK_SOURCE)
 
 set(MATH_LIBRARY m)
 

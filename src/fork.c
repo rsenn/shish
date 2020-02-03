@@ -22,8 +22,9 @@
 #include <stdio.h>
 #include <errno.h>
 #include <process.h>
+#include "windoze.h"
 
-#ifdef __MINGW32__
+#if WINDOWS_NATIVE
 typedef struct _CLIENT_ID {
   PVOID UniqueProcess;
   PVOID UniqueThread;
@@ -57,8 +58,6 @@ typedef struct _RTL_USER_PROCESS_INFORMATION {
 
 #define RTL_CLONE_PARENT 0
 #define RTL_CLONE_CHILD 297
-
-#endif
 
 typedef NTSTATUS (*RtlCloneUserProcess_f)(ULONG ProcessFlags,
                                           PSECURITY_DESCRIPTOR ProcessSecurityDescriptor /* optional */,
@@ -109,3 +108,5 @@ fork(void) {
   /* NOTREACHED */
   return -1;
 }
+
+#endif
