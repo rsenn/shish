@@ -46,7 +46,13 @@ endif(BUILD_DEBUG)
 set(ENABLE_SHARED OFF)
 set(BUILD_SHARED_LIBS FALSE)
 
-#check_c_compiler_flag("-flto" F_LTO)
+check_c_compiler_flag("-flto" F_LTO)
+
+if(F_LTO)
+  option(ENABLE_LTO "Enable link-time optimization" OFF)
+
+endif(F_LTO)
+
 
 
 if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" OR CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -306,7 +312,7 @@ endif(BUILD_DEBUG)
 list(APPEND SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
 list(APPEND SOURCES src/parse/parse_newnode${NAME_DEBUG}.c src/tree/tree_newnode${NAME_DEBUG}.c)
 
- set(MATH_LIBRARY m)
+set(MATH_LIBRARY m)
 
 foreach(BUILTIN ${BUILTINS_ENABLED})
   list(APPEND SOURCES src/builtin/builtin_${BUILTIN}.c)
@@ -358,6 +364,12 @@ configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake" "${CMAKE_BINARY_
 list(APPEND SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
 
 
+if(ENABLE_LTO)
+  add_compile_options("-flto")
+  add_link_options("-flto")
+endif(ENABLE_LTO)
+
+
 add_executable(shish ${SOURCES})
 target_link_libraries(shish libshish
   ${LIBOWFAT_LIBRARY}
@@ -365,9 +377,10 @@ target_link_libraries(shish libshish
   ${ELECTRICFENCE_LIBRARY}
 )
 
+
 #message(STATUS "\nBuiltin flags:\n  ${BUILTIN_FLAGS}\n")
 
-SET_SOURCE_FILES_PROPERTIES( src/builtin/builtin_table.c PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}" )
+set_source_files_properties( src/builtin/builtin_table.c PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}" )
 
 install(TARGETS shish DESTINATION bin)
 
