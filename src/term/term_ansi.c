@@ -4,6 +4,9 @@
 #include "term.h"
 #include "tree.h"
 
+extern buffer term_input;
+extern int term_insert;
+
 void
 term_ansi(void) {
   char c;

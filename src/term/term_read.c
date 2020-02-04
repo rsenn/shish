@@ -6,6 +6,8 @@
 #include <termios.h>
 #endif
 
+extern stralloc term_cmdline;
+
 static char term_inbuf[BUFFER_INSIZE];
 buffer term_input = BUFFER_INIT(0, 0, term_inbuf, sizeof(term_inbuf));
 

@@ -1,5 +1,7 @@
 #include "term.h"
 
+extern stralloc term_cmdline;
+
 /* ----------------------------------------------------------------------- */
 void
 term_right(unsigned long n) {

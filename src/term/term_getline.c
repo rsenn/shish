@@ -1,6 +1,8 @@
 #include "term.h"
 #include <stdlib.h>
 
+extern stralloc term_cmdline;
+
 /* get command line
  *
  * (return value has to be free'd)

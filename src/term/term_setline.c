@@ -1,5 +1,7 @@
 #include "term.h"
 
+extern stralloc term_cmdline;
+
 /* set command line
  *
  * this assumes <s> has been malloced

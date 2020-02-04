@@ -5,6 +5,8 @@
 char prompt_var[4] = "PS0";
 int prompt_number = 0;
 
+extern buffer* term_output;
+
 /* shows the commandline prompt after expanding if necessary
  * ----------------------------------------------------------------------- */
 void

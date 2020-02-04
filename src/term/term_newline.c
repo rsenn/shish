@@ -1,5 +1,7 @@
 #include "term.h"
 
+extern stralloc term_cmdline;
+
 void
 term_newline(void) {
   char out = '\n';
