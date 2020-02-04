@@ -184,7 +184,7 @@ if(NOT "${INLINE_KEYWORD}" MATCHES "^inline$")
   if(NOT "${INLINE_KEYWORD}" MATCHES "^$")
     add_definitions("-Dinline=${INLINE_KEYWORD}")
   endif(NOT "${INLINE_KEYWORD}" MATCHES "^$")
-endif(NOT "${INLINE_KEYWORD}" STREQUAL "^inline$")
+endif(NOT "${INLINE_KEYWORD}" MATCHES "^inline$")
 
 if(WIN32 OR WIN64 OR MINGW OR WINDOWS)
   check_library_exists(ws2_32 gethostname /usr/lib HAVE_WS2_32)
