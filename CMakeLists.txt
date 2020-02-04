@@ -38,7 +38,7 @@ macro(check_inline)
 	foo_t foo(){return 0;}
 	int main(int argc, char *argv[]){return 0;}" HAVE_${KEYWORD})
 			if(HAVE_${KEYWORD})
-				set(INLINE_KEYWORD "${KEYWORD}"")
+				set(INLINE_KEYWORD "${KEYWORD}")
 			endif(HAVE_${KEYWORD})
 		endif(NOT INLINE_KEYWORD)
 	endforeach(KEYWORD)
