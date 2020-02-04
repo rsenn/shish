@@ -10,7 +10,7 @@
 #define SH_FNM_NOESCAPE (1 << 1) /* Backslashes don't quote special chars.  */
 #define SH_FNM_PERIOD (1 << 2)   /* Leading .' is matched only explicitly.  */
 
-void shell_getcwd(stralloc* sa, unsigned long start);
+void shell_getcwd(stralloc* sa);
 
 int shell_realpath(const char* path, stralloc* sa, int symbolic, stralloc* cwd);
 
