@@ -9,8 +9,6 @@
 #include <unistd.h>
 #endif
 
-struct fd* fd_list[D_MAX];
-
 /* initialize (fd) from file descriptor
  * ----------------------------------------------------------------------- */
 int
