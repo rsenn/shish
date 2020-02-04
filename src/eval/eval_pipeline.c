@@ -1,5 +1,5 @@
 #include "windoze.h"
-#ifndef WINDOWS_NATIVE
+#if !WINDOWS_NATIVE
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
