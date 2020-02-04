@@ -10,6 +10,9 @@
 #include "windoze.h"
 #if WINDOWS_NATIVE
 typedef int sigset_t;
+#ifndef HAVE_PID_T
+typedef int pid_t;
+#endif
 #endif
 
 #ifndef WEXITSTATUS
