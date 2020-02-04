@@ -1,12 +1,11 @@
 @echo off
 
-for %%t in (lcc32 lcc64 tcc32 tcc64 bcc55 bcc101) do (
-  for %%b in (Debug RelWithDebInfo MinSizeRel Release) do (
-  
-    call :gen %%t %%b
-  
-  )
-)
+
+if "%compilers"=="" set compilers=lcc32 lcc64 tcc32 tcc64 bcc55 bcc101
+if "%build_types"=="" set build_types=Debug RelWithDebInfo MinSizeRel Release
+
+for %%t in (%compilers%) do for %%b in (%build_types%) do call :gen %%t %%b
+
 goto :end
 
 :gen
