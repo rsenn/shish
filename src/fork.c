@@ -58,7 +58,7 @@ typedef struct _RTL_USER_PROCESS_INFORMATION {
 #define RTL_CLONE_PARENT 0
 #define RTL_CLONE_CHILD 297
 
-typedef NTSTATUS (*RtlCloneUserProcess_f)(ULONG ProcessFlags,
+typedef long (*RtlCloneUserProcess_f)(ULONG ProcessFlags,
                                           PSECURITY_DESCRIPTOR ProcessSecurityDescriptor /* optional */,
                                           PSECURITY_DESCRIPTOR ThreadSecurityDescriptor /* optional */,
                                           HANDLE DebugPort /* optional */,
