@@ -39,12 +39,12 @@ struct env {
   int cwdsym; /* is cwd symbolic or phyiscal? */
   long umask;
   int exitcode; /* exit code of last evaluated tree */
+  struct fdstack* fdstack;
+  struct vartab* varstack;
   jmp_buf jmpbuf;
   int jump;
   struct arg arg;
   struct eval* eval;
-  struct fdstack* fdstack;
-  struct vartab* varstack;
 };
 
 extern int sh_argc;    /* initial argument count */

@@ -2,17 +2,13 @@
 #include "sh.h"
 #include "vartab.h"
 
-struct env sh_root = {.parent = NULL,
-                      /*  .flags       = 0,*/
-                      .cwd = {NULL, 0, 0},
-                      .umask = 022,
-                      .arg.c = 0,
-                      .arg.v = NULL,
-                      .arg.a = 0,
-                      .arg.s = 0,
-                      .eval = NULL,
-                      .fdstack = &fdstack_root,
-                      .varstack = &vartab_root};
+struct env sh_root = {/* .parent = */ NULL,
+                      /* .cwd = */ {NULL, 0, 0},
+                      /* .cwdsym = */ 0,
+                      /* .umask = */ 022,
+                      /* .exitcode = */ 0,
+                      /* .fdstack = */ &fdstack_root,
+                      /* .varstack = */ &vartab_root};
 
 struct env* sh = &sh_root;
 
