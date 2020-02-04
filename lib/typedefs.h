@@ -2,6 +2,9 @@
 #define TYPEDEFS_H
 
 /* for ssize_t: */
+#ifdef __TINYC__
+#define NO_OLDNAMES
+#endif
 #define __POCC__OLDNAMES
 #include <sys/types.h>
 

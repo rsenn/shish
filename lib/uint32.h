@@ -11,6 +11,9 @@
 #include <stdint.h>
 #else
 #define __MS_types__
+#ifdef __TINYC__
+#define NO_OLDNAMES
+#endif
 #include <sys/types.h>
 #endif
 
