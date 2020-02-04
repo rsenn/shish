@@ -322,7 +322,7 @@ if(BUILD_DEBUG)
   #file(GLOB ADDSOURCES src/debug/*.c)
   #
   set(DEBUG_SOURCES "${SOURCES}")
-  list(FILTER DEBUG_SOURCES INCLUDE REGEX ".*debug\.c")
+  list(FILTER DEBUG_SOURCES INCLUDE REGEX ".*debug.c$")
   foreach(SRC ${DEBUG_SOURCES})
     string(REGEX REPLACE "debug\.c" ".c" OSRC "${SRC}")
     message("Remove ${OSRC}")
