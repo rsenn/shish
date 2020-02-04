@@ -39,8 +39,13 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
     if(prevfd >= 0) {
       struct fd* in;
 
+#ifdef HAVE_ALLOCA
       fd_alloca(in);
       fd_push(in, STDIN_FILENO, D_READ | D_PIPE);
+#else
+      fd_malloc(in);
+      fd_push(in, STDIN_FILENO, D_READ | D_PIPE | D_FREE);
+#endif
       fd_setfd(in, prevfd);
     }
 
@@ -49,8 +54,13 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
     if(node->list.next) {
       struct fd* out;
 
+#ifdef HAVE_ALLOCA
       fd_alloca(out);
       fd_push(out, STDOUT_FILENO, D_WRITE | D_PIPE);
+#else
+      fd_malloc(out);
+      fd_push(out, STDOUT_FILENO, D_WRITE | D_PIPE | D_FREE);
+#endif
       prevfd = fd_pipe(out);
 
       if(prevfd == -1) {
