@@ -35,8 +35,10 @@ eval_command(struct eval* e, union node* node, int tempflags) {
     stralloc_init(&heredoc);
 
     for(r = redir; r; r = r->list.next) {
-      struct fd* fd;
+      struct fd* fd = 0;
+ #ifdef HAVE_ALLOCA
       fd_alloca(fd);
+ #endif
 
       /* return if a redirection failed */
       if(redir_eval(&r->nredir, fd, R_NOW)) {
