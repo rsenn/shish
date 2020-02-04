@@ -1,29 +1,114 @@
+#include <sys/stat.h>
+
+#include "../windoze.h"
+#include "../shell.h"
+
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 1
+#endif
+#define _XOPEN_SOURCE_EXTENDED 1
+#define _MISC_SOURCE 1
+#define _GNU_SOURCE 1
+#define _POSIX_SOURCE 1
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 1
+#endif
+
+#define _FILE_OFFSET_BITS 64
+//#define _LARGEFILE64_SOURCE 1
+#define _LARGEFILE_SOURCE 1
+
+#include "../buffer.h"
+#include "../byte.h"
+#include "../str.h"
+
+#if WINDOWS_NATIVE
+#define PATHSEP_C '\\'
+#else
+#define PATHSEP_C '/'
+#include <unistd.h>
+#define HAVE_LSTAT 1
+#endif
+
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
-/*#ifdef __USE_FILE_OFFSET64*/
-/*#undef lstat*/
-/*#define lstat lstat64*/
-/*#undef readlink*/
-/*#define readlink readlink64*/
-/*#endif*/
-#ifdef HAVE_LINUX_LIMITS_H
-#include <linux/limits.h>
-#endif
-
-#include "../byte.h"
-#include "../str.h"
-#include "../stralloc.h"
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
 #ifndef HAVE_LSTAT
 #define lstat stat
 #endif
+
+#ifndef _stat
+#define _stat stat
 #endif
+#ifdef __LCC__
+extern int stat(const char*, struct stat*);
+#endif
+
+#if WINDOWS_NATIVE
+#define PATHSEP_S_MIXED "\\"
+#define path_issep(c) ((c) == '\\')
+#elif WINDOWS
+#define PATHSEP_S_MIXED "\\/"
+#define path_issep(c) ((c) == '/' || (c) == '\\')
+#else
+#define PATHSEP_S_MIXED "/"
+#define path_issep(c) ((c) == '/')
+#endif
+
+static size_t
+right(const char* s, size_t n) {
+  const char* p = s + n - 1;
+  while(p >= s && path_issep(*p)) --p;
+  while(p >= s && !path_issep(*p)) --p;
+  return p - s;
+}
+
+static size_t
+len_s(const char* s) {
+  const char* p = s;
+  while(*p && !path_issep(*p)) ++p;
+  return p - s;
+}
+
+#if WINDOWS_NATIVE
+int is_symlink(const char*);
+static int
+is_link(const char* path) {
+  if(is_symlink(path))
+    return 1;
+#ifdef HAVE_LSTAT
+  {
+    struct stat st;
+    if(lstat(path, &st) != -1)
+      return S_ISLNK(st.st_mode);
+  }
+#endif
+  return 0;
+}
+#elif defined(HAVE_LSTAT)
+static int
+is_link(const char* path) {
+  struct stat st;
+  if(lstat(path, &st) == -1)
+    return 0;
+  return S_ISLNK(st.st_mode);
+}
+#endif
+//#define lstat lstat64
+#define issep(c) ((c) == '/' || (c) == '\\')
+
+static int
+is_absolute(const char* p) {
+  size_t len = str_len(p);
+  if(len > 0 && p[0] == '/')
+    return 1;
+#if WINDOWS
+  if(len >= 3 && isalnum(p[0]) && p[1] == ':' && path_issep(p[2]))
+    return 1;
+#endif
+  return 0;
+}
 
 /* canonicalizes a <path> and puts it into <sa>
  *
@@ -41,103 +126,121 @@
  * will again return a relative path.
  * because of that the behaviour of this function differs from usual path
  * canonicalizing functions like realpath() in libc, but there is a
- * shell_realpath() function which provides similar behaviour and will
+ * path_realpath() function which provides similar behaviour and will
  * resolve relative paths to absolute ones.
- * ----------------------------------------------------------------------- */
+ */
 int
 shell_canonicalize(const char* path, stralloc* sa, int symbolic) {
-  unsigned long n;
-  struct stat st;
+  size_t l1, l2;
+  size_t n;
+  struct _stat st;
   int ret = 1;
-  int (*stat_fn)() = stat;
-#ifdef HAVE_LSTAT
   char buf[PATH_MAX + 1];
-
+  char sep;
+  int (*stat_fn)(const char*, struct _stat*) = stat;
+#ifdef HAVE_LSTAT
 #if !WINDOWS_NATIVE
   if(symbolic)
     stat_fn = lstat;
 #endif
 
-start:
 #endif
+  if(path_issep(*path)) {
+    stralloc_catc(sa, (sep = *path));
+    path++;
+  }
+#if WINDOWS
+  else if(*path && path[1] == ':') {
+    sep = path[1];
+  }
+#endif
+  else
+    sep = PATHSEP_C;
+
+start:
   /* loop once for every /path/component/
      we canonicalize absolute paths, so we must always have a '/' here */
   while(*path) {
-    while(*path == '/') path++;
+    while(path_issep(*path)) sep = *path++;
 
     /* check for various relative directory parts beginning with '.' */
     if(path[0] == '.') {
       /* strip any "./" inside the path or a trailing "." */
-      if(path[1] == '/' || path[1] == '\0') {
+      if(path_issep(path[1]) || path[1] == '\0') {
         path++;
         continue;
       }
-
       /* if we have ".." we have to truncate the resulting path */
-      if(path[1] == '.' && (path[2] == '/' || path[2] == '\0')) {
-        sa->len = byte_rchr(sa->s, sa->len, '/');
+      if(path[1] == '.' && (path_issep(path[2]) || path[2] == '\0')) {
+        sa->len = right(sa->s, sa->len);
         path += 2;
         continue;
       }
     }
-
-    /* exit now if we'jkre done */
+    /* exit now if we're done */
     if(*path == '\0')
       break;
-
     /* begin a new path component */
-    stralloc_catc(sa, '/');
-
+    if(sa->len && (sa->s[sa->len - 1] != '/' && sa->s[sa->len - 1] != '\\'))
+      stralloc_catc(sa, sep);
     /* look for the next path separator and then copy the component */
-    n = str_chr(path, '/');
+    n = len_s(path);
     stralloc_catb(sa, path, n);
+    if(n == 2 && path[1] == ':')
+      stralloc_catc(sa, sep);
     stralloc_nul(sa);
-
     path += n;
-
     /* now stat() the thing to verify it */
+    byte_zero(&st, sizeof(st));
     if(stat_fn(sa->s, &st) == -1)
       return 0;
-
-#ifdef HAVE_LSTAT
     /* is it a symbolic link? */
-    if(S_ISLNK(st.st_mode)) {
+    if(is_link(sa->s)) {
       ret++;
-
       /* read the link, return if failed and then nul-terminate the buffer */
-      if((n = readlink(sa->s, buf, PATH_MAX)) == -1)
+      if((ssize_t)(n = readlink(sa->s, buf, PATH_MAX)) == (ssize_t)-1)
         return 0;
-
-      buf[n] = '\0';
-
+      // buf[n] = '\0';
       /* if the symlink is absolute we clear the stralloc,
          set the path to buf and repeat the whole procedure */
-      if(buf[0] == '/') {
+      if(is_absolute(buf)) {
+        str_copyn(&buf[n], path, PATH_MAX - n);
         stralloc_zero(sa);
-
+        stralloc_catc(sa, sep);
         path = buf;
         goto start;
-      }
-      /* if the symlink is relative we remove the symlink path
+        /* if the symlink is relative we remove the symlink path
          component and recurse */
-      else {
-        sa->len = byte_rchr(sa->s, sa->len, '/');
+      } else {
+        int rret;
 
-        if(!shell_canonicalize(buf, sa, symbolic))
+        sa->len = right(sa->s, sa->len);
+        buf[n] = '\0';
+        /*
+                buffer_puts(buffer_2, "recursive shell_canonicalize(\"");
+                buffer_puts(buffer_2, buf);
+                buffer_puts(buffer_2, "\", \"");
+                buffer_putsa(buffer_2, sa);
+                buffer_puts(buffer_2, "\", ");
+                buffer_putlong(buffer_2, symbolic);
+                buffer_puts(buffer_2, ") = ");*/
+        rret = shell_canonicalize(buf, sa, symbolic);
+
+        /*buffer_putlong(buffer_2, rret);
+        buffer_putnlflush(buffer_2);*/
+        if(!rret)
           return 0;
       }
     }
-#endif
-
+#if 0 // def S_ISDIR
     /* it isn't a directory :( */
     if(!S_ISDIR(st.st_mode)) {
       errno = ENOTDIR;
       return 0;
     }
+#endif
   }
-
   if(sa->len == 0)
-    stralloc_catc(sa, '/');
-
+    stralloc_catc(sa, sep);
   return ret;
 }
