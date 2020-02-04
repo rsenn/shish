@@ -16,12 +16,22 @@ fd_nullwrite(int fd, char* b, unsigned long n) {
   return n;
 }
 
-struct fd fd_nullfd = {
-    .rb = BUFFER_INIT(fd_nullread, -1, NULL, 0),
-    .wb = BUFFER_INIT(fd_nullwrite, -1, NULL, 0),
-    .r = &fd_nullfd.rb,
-    .w = &fd_nullfd.wb,
-};
+struct fd fd_nullfd = {0,
+                       0,
+                       0,
+                       "/dev/null",
+                       NULL,
+                       NULL,
+                       NULL,
+                       NULL,
+                       NULL,
+                       NULL,
+                       0,
+                       0,
+                       BUFFER_INIT(fd_nullread, -1, NULL, 0),
+                       BUFFER_INIT(fd_nullwrite, -1, NULL, 0),
+                       NULL,
+                       NULL};
 
 /* ----------------------------------------------------------------------- */
 int
@@ -33,7 +43,7 @@ fd_null(struct fd* fd) {
   if(FD_ISWR(fd))
     fd->w = &fd_nullfd.wb;
 
-  fd->name = "/dev/null";
+  //  fd->name = "/dev/null";
 
   return 0;
 }

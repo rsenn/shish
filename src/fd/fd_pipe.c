@@ -4,7 +4,7 @@
 #include "windoze.h"
 
 #if WINDOWS_NATIVE
-#define pipe(f) _pipe(f,0,0)
+#define pipe(f) _pipe(f, 0, 0)
 #else
 #include <unistd.h>
 #endif
