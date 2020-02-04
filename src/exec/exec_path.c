@@ -5,14 +5,14 @@
 #include <limits.h>
 #include "windoze.h"
 #if WINDOWS_NATIVE
-#include <io.h>
-#ifndef X_OK
-#define X_OK 1
-#endif
-#define PATH_MAX MAX_PATH
+# include <io.h>
+# ifndef X_OK
+#  define X_OK 1
+# endif
+# define PATH_MAX MAX_PATH
 #else
-#include <unistd.h>
-#include <limits.h>
+# include <unistd.h>
+# include <limits.h>
 #endif
 
 /* searches for relative path <name> within PATH and returns absolute
