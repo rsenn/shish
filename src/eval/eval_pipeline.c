@@ -59,7 +59,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
     }
 
     if((n = fdstack_npipes(FD_HERE | FD_SUBST))) {
-      pipes = malloc(FDSTACK_ALLOC_SIZE(n));
+      pipes = shell_alloc(FDSTACK_ALLOC_SIZE(n));
       fdstack_pipe(n, pipes);
     }
 
