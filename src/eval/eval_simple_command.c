@@ -71,8 +71,11 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
       struct fd* fd = NULL;
 
       /* if its the exec special builtin the new fd needs to be persistent */
-      if(id != H_EXEC)
+      if(id != H_EXEC) {
+#ifdef HAVE_ALLOCA
         fd_alloca(fd);
+#endif
+      }
 
       /* return if a redirection failed */
       if(redir_eval(&r->nredir, fd, (id == H_EXEC ? R_NOW : 0))) {
