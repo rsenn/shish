@@ -1,3 +1,4 @@
+#include "../fd.h"
 #include "../eval.h"
 #include "../sh.h"
 #include "../tree.h"
