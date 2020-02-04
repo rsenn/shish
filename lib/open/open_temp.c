@@ -1,11 +1,14 @@
 /* ported from dietlibcs mkstemp() */
 
+#include "../uint32.h"
 #include "../open.h"
 #include "../str.h"
-#include "../uint32.h"
+#include "../windoze.h"
+#if !WINDOWS_NATIVE
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
+#endif
 
 #ifndef O_NOFOLLOW
 #define O_NOFOLLOW 0
