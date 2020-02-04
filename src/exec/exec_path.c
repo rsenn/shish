@@ -6,6 +6,10 @@
 #include "windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>
+#ifndef X_OK
+#define X_OK 1
+#endif
+#define PATH_MAX MAX_PATH
 #else
 #include <unistd.h>
 #endif

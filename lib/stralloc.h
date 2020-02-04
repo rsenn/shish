@@ -65,7 +65,7 @@ int stralloc_copy(stralloc* sa, const stralloc* sa2);
  * alone and returns 0. */
 int stralloc_catb(stralloc* sa, const char* in, unsigned long int len);
 
-ssize_t stralloc_write(stralloc* sa, const char* in, size_t len);
+ssize_t stralloc_write(stralloc* sa, const char* in, size_t len, void*);
 int stralloc_catc(stralloc* sa, char c);
 
 /* stralloc_cats is analogous to stralloc_copys */
