@@ -265,7 +265,13 @@ if(HAVE_SIGNAL_H)
   set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} signal.h)
 endif(HAVE_SIGNAL_H)
 
-#check_type_size(sigset_t SIGSET_T)
+check_type_size(sigset_t SIGSET_T)
+message("sigset_t size: ${SIGSET_T}")
+
+check_type_size(pid_t PID_T)
+if(SIGSET_T GREATER 0)
+  set(HAVE_SIGSET_T TRUE)
+endif(SIGSET_T GREATER 0)
 
 check_include_file(glob.h HAVE_GLOB_H)
 if(HAVE_GLOB_H)
@@ -273,6 +279,15 @@ if(HAVE_GLOB_H)
 endif(HAVE_GLOB_H)
 
 check_function_exists(glob HAVE_GLOB)
+
+check_type_size(pid_t PID_T)
+if(PID_T GREATER 0)
+  set(HAVE_PID_T TRUE)
+endif(PID_T GREATER 0)
+
+if(HAVE_PID_T)
+  add_definitions(-DHAVE_PID_T=1)
+endif(HAVE_PID_T)
 
 
 #if(HAVE_SIGNAL_H)
