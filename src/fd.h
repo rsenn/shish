@@ -102,7 +102,6 @@ struct fd {
 #define D_DUP      0x00020000      /* a clone of another file descriptor */
 #define D_TERM     0x00040000     /* is a terminal */
 #define D_NULL     0x00080000
-#define D_FREE     0x00100000
 
 #define D_SUBST (D_STRALLOC | D_WRITE)
 #define D_HERE (D_STRALLOC | D_READ)
