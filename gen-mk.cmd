@@ -16,6 +16,7 @@ del /f /q /s %output_dir%\*
 
 @echo on
 genmakefile --create-bins --no-create-libs -n shish -m ninja -t %1 --%2 lib src -o %output_dir%\build.ninja
+genmakefile --create-bins --no-create-libs -n shish -m batch -t %1 --%2 lib src -o %output_dir%\build.cmd
 genmakefile --create-bins --no-create-libs -n shish -m make -t %1 --%2 lib src -o %output_dir%\Makefile
 
 @echo off
