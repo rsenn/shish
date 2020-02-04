@@ -11,7 +11,7 @@ extern buffer term_input;*/
 extern int term_insert;
 extern int term_dumb;
 extern unsigned long term_pos;
-extern buffer* term_output;
+extern buffer* term_output;*/
 
 extern struct termios term_tcattr;
 extern struct winsize term_size;
