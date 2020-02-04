@@ -16,7 +16,9 @@
 #endif
 
 /* for ssize_t */
-#ifdef WINDOWS_NATIVE
+#include "windoze.h"
+
+#if WINDOWS_NATIVE
 #include <stdio.h>
 #else
 #include <unistd.h>
