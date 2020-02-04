@@ -82,7 +82,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   }
 
   if(pipes)
-    free(pipes);
+    shell_free(pipes);
 
   /*  if(job)
       shell_free(job);*/

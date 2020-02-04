@@ -31,6 +31,7 @@ pid_t fork(void);
 int
 exec_program(char* path, char** argv, int exec, union node* redir) {
   int ret = 0;
+  struct fd* pipes = 0;
   sigset_t /* nset, */ oset;
 
   /* if we're gonna execve() a program and 'exec' isn't
@@ -47,8 +48,10 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
        like here-docs which are read from strallocs and command
        expansions, which write to strallocs can't be shared across
        different process spaces, so we have to establish pipes */
-    if((n = fdstack_npipes(FD_HERE | FD_SUBST)))
-      fdstack_pipe(n, fdstack_alloc(n));
+    if((n = fdstack_npipes(FD_HERE | FD_SUBST))) {
+      pipes = shell_alloc(FDSTACK_ALLOC_SIZE(n));
+      fdstack_pipe(n, pipes);
+    }
 
     /* block child and interrupt signal, so we won't terminate ourselves
        when the child does */
@@ -73,6 +76,9 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
       fdstack_pop(&io);
       fdstack_data();
 
+    if(pipes)
+      shell_free(pipes);
+
       job_wait(NULL, pid, &status);
       job_status(pid, status);
 
@@ -85,6 +91,7 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
       /* exit if 'exec' is set, otherwise return */
       if(exec)
         sh_exit(ret);
+
       return ret;
     }
 
