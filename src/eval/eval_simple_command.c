@@ -123,7 +123,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   status = exec_command(id, cmd, argc, argv, (e->flags & E_EXIT), redir);
 
 #ifndef HAVE_ALLOCA
-  free(argv);
+  shell_free(argv);
 #endif
 end:
 
