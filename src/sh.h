@@ -6,8 +6,13 @@
 #endif
 
 #include "windoze.h"
-#if !defined(HAVE_UID_T) && WINDOWS_NATIVE
+#if WINDOWS_NATIVE
+#ifndef HAVE_UID_T
 typedef int uid_t;
+#endif
+#ifndef HAVE_PID_T
+typedef int pid_t;
+#endif
 #endif
 
 #include "stralloc.h"
