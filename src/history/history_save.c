@@ -4,9 +4,9 @@
 #include "str.h"
 #include "stralloc.h"
 #include "windoze.h"
-#include <limits.h>
-#if !WINDOWS_NATIVE
-#include <unistd.h>
+#if WINDOWS_NATIVE
+#include <windows.h>
+#define PATH_MAX MAX_PATH
 #endif
 
 /* save the history

@@ -1,5 +1,11 @@
 #include "fd.h"
 #include "fdtable.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 
 /* drop a here-document to a temporary file
  * ----------------------------------------------------------------------- */
