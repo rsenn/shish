@@ -1,15 +1,15 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#ifdef HAVE_ALLOCA
-#include <alloca.h>
-#endif
-#include "../eval.h"
 #include "../fd.h"
+#include "../eval.h"
 #include "../fdstack.h"
 #include "../parse.h"
 #include "../redir.h"
 #include "../tree.h"
+#ifdef HAVE_ALLOCA
+#include <alloca.h>
+#endif
 
 /* evaluate a compound or simple command
  *

@@ -1,6 +1,6 @@
 @echo off
 
-if "%*"!="" set compilers=%*
+if not "%*"=="" set compilers=%*
 
 if "%compilers%"=="" set compilers=lcc32 lcc64 tcc32 tcc64 bcc55 bcc101
 if "%build_types%"=="" set build_types=Debug RelWithDebInfo MinSizeRel Release

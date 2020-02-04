@@ -4,11 +4,9 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include "../lib/stralloc.h"
 #include "job.h"
 
 #include "../lib/stralloc.h"
-#include "job.h"
 #include "../lib/windoze.h"
 #if WINDOWS_NATIVE
 #ifndef HAVE_UID_T

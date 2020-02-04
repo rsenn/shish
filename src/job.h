@@ -13,7 +13,7 @@
 #include "../lib/windoze.h"
 #if WINDOWS_NATIVE
 typedef int sigset_t;
-#ifndef HAVE_PID_T
+#if !defined(HAVE_PID_T) && !defined(__MINGW32__) && !defined(__TINYC__)
 typedef int pid_t;
 #endif
 #endif

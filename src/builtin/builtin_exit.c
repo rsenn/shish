@@ -1,5 +1,6 @@
-#include "../../lib/scan.h"
+#include "../fd.h"
 #include "../sh.h"
+#include "../../lib/scan.h"
 
 /* exit built-in
  *

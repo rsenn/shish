@@ -9,7 +9,7 @@
 #include "../lib/shell.h"
 #include "../lib/stralloc.h"
 #include "../lib/windoze.h"
-#if WINDOWS_NATIVE && !defined(__BORLANDC__)
+#if WINDOWS_NATIVE && !defined(__BORLANDC__) && !defined(__MINGW32__) && !defined(__TINYC__)
 #ifndef HAVE_DEV_T
 typedef int dev_t;
 #endif

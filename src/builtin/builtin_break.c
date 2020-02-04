@@ -1,6 +1,6 @@
-#include "../eval.h"
 #include "../fd.h"
 #include "../../lib/scan.h"
+#include "../eval.h"
 #include "../sh.h"
 
 /* continue/break a loop

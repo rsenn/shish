@@ -1,14 +1,15 @@
+#include "../fd.h"
+#include "../sh.h"
+#include "../eval.h"
+#include "../fdstack.h"
+#include "../fdtable.h"
+#include "../job.h"
+#include "../tree.h"
 #include "../../lib/windoze.h"
 #if !WINDOWS_NATIVE
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
-#include "../eval.h"
-#include "../fdstack.h"
-#include "../fdtable.h"
-#include "../job.h"
-#include "../sh.h"
-#include "../tree.h"
 
 /* evaluate a pipeline (3.9.2)
  * ----------------------------------------------------------------------- */
