@@ -3,12 +3,13 @@
 
 /*#define __USE_LARGEFILE64*/
 #include <fcntl.h>
+#include <sys/types.h>
 
 #include "../lib/buffer.h"
 #include "../lib/shell.h"
 #include "../lib/stralloc.h"
 #include "../lib/windoze.h"
-#if WINDOWS_NATIVE
+#if WINDOWS_NATIVE && !defined(__BORLANDC__)
 #ifndef HAVE_DEV_T
 typedef int dev_t;
 #endif
