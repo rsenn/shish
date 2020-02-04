@@ -1,7 +1,7 @@
 rem @echo off
 
-for %%b in (Debug RelWithDebInfo MinSizeRel Release) do (
-  for %%t in (lcc32 lcc64 tcc32 tcc64 bcc55 bcc101) do (
+for %%t in (lcc32 lcc64 tcc32 tcc64 bcc55 bcc101) do (
+  for %%b in (Debug RelWithDebInfo MinSizeRel Release) do (
     if not exist build\%%t\%%b mkdir build\%%t\%%b
     del /f /q /s build\%%t\%%b\*
 
