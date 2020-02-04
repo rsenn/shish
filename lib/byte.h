@@ -5,9 +5,6 @@
 /* for size_t: */
 #include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #ifndef __pure__
 #define __pure__
@@ -47,9 +44,6 @@ int byte_equal_notimingattack(const void* a, size_t len, const void* b) __pure__
 #define UNALIGNED_ACCESS_OK
 #endif
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif
 void byte_fill(void* out, unsigned long len, int c);

@@ -38,9 +38,6 @@
 #include <stdint.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #if defined(__SSIZE_TYPE__) && !defined(_SSIZE_T_DEFINED) && !defined(_SSIZE_T_)
 #define _SSIZE_T_DEFINED 1
@@ -84,7 +81,4 @@ typedef int fd_t;
 #endif
 #endif
 
-#ifdef __cplusplus
-}
-#endif
 #endif /* TYPEDEFS_H */

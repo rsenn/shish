@@ -4,9 +4,6 @@
 
 #include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #ifndef __pure__
 #define __pure__
@@ -53,8 +50,5 @@ int str_start(const char* a, const char* b) __pure__;
 
 unsigned long str_copyn(char* out, const char* in, unsigned long n);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif

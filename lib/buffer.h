@@ -4,9 +4,6 @@
 
 #include "typedefs.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef ssize_t(buffer_op_sys)(fd_t fd, void* buf, size_t len);
 typedef ssize_t(buffer_op_proto)(fd_t fd, void* buf, size_t len, void* arg);
@@ -169,8 +166,5 @@ void buffer_default(buffer*, buffer_op_fn* op);
 ssize_t buffer_dummyread_fromstr(void);
 void buffer_fromstr(buffer*, char* s, size_t len);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif

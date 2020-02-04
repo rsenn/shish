@@ -10,9 +10,6 @@
 #include <unistd.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 extern const short __spm[13];
 
@@ -24,7 +21,4 @@ int pipe2(int fd[2], int flags);
 size_t getpagesize();
 #endif
 
-#ifdef __cplusplus
-}
-#endif
 #endif /* defined(UNIX_H) */

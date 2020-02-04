@@ -87,9 +87,6 @@ typedef struct {
  * API functions
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
 
 /** Generates pathnames matching a pattern
  *
@@ -113,9 +110,6 @@ int glob(char const* pattern, int flags, int (*errfunc)(char const*, int), glob_
  */
 void globfree(glob_t* pglob);
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
 
 /** @} end of group unixem_glob */
 
