@@ -18,6 +18,9 @@ typedef int uid_t;
 
 #include <setjmp.h>
 #include <stdlib.h>
+#ifdef __TINYC__
+#define NO_OLDNAMES
+#endif
 #include <sys/types.h>
 
 struct eval;
