@@ -1,5 +1,5 @@
-#ifndef JOB_H
-#define JOB_H
+#ifndef _JOB_H
+#define _JOB_H
 
 #include <signal.h>
 #include <sys/types.h>
@@ -50,6 +50,4 @@ int job_wait(struct job* job, int pid, int* status);
 void job_status(int pid, int status);
 void job_init(void);
 
-#else
-#warning "job.h included twice!"
-#endif /* JOB_H */
+#endif /* _JOB_H */

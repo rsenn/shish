@@ -7,6 +7,8 @@
 #include "stralloc.h"
 #include "job.h"
 
+#include "stralloc.h"
+#include "job.h"
 #include "windoze.h"
 #if WINDOWS_NATIVE
 #ifndef HAVE_UID_T
