@@ -272,9 +272,25 @@ add_definitions(-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 add_definitions(-D_GNU_SOURCE)
 
 if(BUILD_DEBUG)
-  set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -O0")
+  check_c_compiler_flag("-g" F_G)
+  check_c_compiler_flag("-ggdb" F_G_GDB)
+  check_c_compiler_flag("-O0" F_OPT_NONE)
+
+  if(F_G)
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g")
+  endif(F_G)
+  if(F_G_GDB)
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -ggdb")
+  endif(F_G_GDB)
+  if(F_OPT_NONE)
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0")
+  endif(F_OPT_NONE)
 else(BUILD_DEBUG)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w")
+  check_c_compiler_flag("-w" F_NOWARN)
+
+  if(F_NOWARN)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w")
+  endif(F_NOWARN)
 endif(BUILD_DEBUG)
 
 string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
