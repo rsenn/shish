@@ -36,7 +36,7 @@
 #ifndef _GLOB_H_
 #define _GLOB_H_
 
-#include <sys/types.h>
+#include "typedefs.h"
 
 struct stat;
 typedef struct {

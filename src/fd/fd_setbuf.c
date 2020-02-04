@@ -25,7 +25,7 @@ fd_setbuf(struct fd* fd, void* buf, unsigned long n) {
   /* assign buffer space to read buffer */
   if(r) {
     fd->r->x = p;
-    buf += fd->r->a = n >> w;
+    p += fd->r->a = n >> w;
   }
 
   /* assign buffer space to write buffer */
