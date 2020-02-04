@@ -7,6 +7,7 @@
 #ifdef __TINYC__
 #define NO_OLDNAMES
 #define pid_t _pid_t
+#define dev_t _dev_t
 #endif
 #include <sys/types.h>
 #undef NO_OLDNAMES
