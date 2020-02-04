@@ -64,6 +64,10 @@ typedef long (*RtlCloneUserProcess_f)(ULONG ProcessFlags,
                                       PRTL_USER_PROCESS_INFORMATION ProcessInformation);
 typedef pid_t get_process_id_function(HANDLE);
 
+#ifndef ENOSYS
+#define ENOSYS 88
+#endif
+
 pid_t
 fork(void) {
   HMODULE mod;
