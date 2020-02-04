@@ -4,6 +4,10 @@
 #include "sh.h"
 #include "str.h"
 #include <limits.h>
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#define PATH_MAX MAX_PATH
+#endif
 
 buffer history_buffer;
 unsigned int history_mapped;

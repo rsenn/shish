@@ -69,9 +69,7 @@ main(int argc, char** argv, char** envp) {
   for(c = 0; envp[c]; c++)
     ;
 
-#ifndef HAVE_ALLOCA
-#warning no alloca
-#else
+#ifdef HAVE_ALLOCA
   if(!(envvars = alloca(sizeof(struct var) * c)))
 #endif
   envvars = malloc(sizeof(struct var) * c);
