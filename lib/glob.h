@@ -1,97 +1,122 @@
-/*
- * Copyright (c) 1989, 1993
- *	The Regents of the University of California.  All rights reserved.
+/** @file glob.h
  *
- * This code is derived from software contributed to Berkeley by
- * Guido van Rossum.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
- *	@(#)glob.h	8.1 (Berkeley) 6/2/93
- * $FreeBSD$
+ * Contains the declarations for the glob() API.
  */
 
-#ifndef _GLOB_H_
-#define _GLOB_H_
+#ifndef GLOB_H
+#define GLOB_H
 
-#include "typedefs.h"
+/** @weakgroup unixem Synesis Software UNIX Emulation for Win32
+ * The UNIX emulation library
+ */
 
-struct stat;
+/** @weakgroup unixem_glob glob() API
+ * @ingroup UNIXem unixem
+ * This API provides facilities for enumerating the file-system contents
+ * @{
+ */
+
+/*
+ * Constants and definitions
+ */
+
+/* Error codes */
+#define GLOB_NOSPACE                                                                                                   \
+  (1) /**< (Error result code:) An attempt to allocate memory failed, or if errno was 0 GLOB_LIMIT was specified in    \
+         the flags and ARG_MAX patterns were matched. */
+#define GLOB_ABORTED                                                                                                   \
+  (2) /**< (Error result code:) The scan was stopped because an error was encountered and either GLOB_ERR was set or   \
+         (*errfunc)() returned non-zero. */
+#define GLOB_NOMATCH                                                                                                   \
+  (3) /**< (Error result code:) The pattern does not match any existing pathname, and GLOB_NOCHECK was not set int     \
+         flags. */
+#define GLOB_NOSYS (4)          /**< (Error result code:) . */
+#define GLOB_ABEND GLOB_ABORTED /**< (Error result code:) . */
+
+/* Flags */
+#define GLOB_ERR 0x00000001     /**< Return on read errors. */
+#define GLOB_MARK 0x00000002    /**< Append a slash to each name. */
+#define GLOB_NOSORT 0x00000004  /**< Don't sort the names. */
+#define GLOB_DOOFFS 0x00000008  /**< Insert PGLOB->gl_offs NULLs. Supported from version 1.6 of UNIXEm. */
+#define GLOB_NOCHECK 0x00000010 /**< If nothing matches, return the pattern. Supported from version 1.6 of UNIXEm. */
+#define GLOB_APPEND                                                                                                    \
+  0x00000020 /**< Append to results of a previous call. Not currently supported in this implementation. */
+#define GLOB_NOESCAPE                                                                                                  \
+  0x00000040 /**< Backslashes don't quote metacharacters. Has no effect in this implementation, since escaping is not  \
+                supported. */
+
+#define GLOB_PERIOD 0x00000080  /**< Leading `.' can be matched by metachars. Supported from version 1.6 of UNIXEm. */
+#define GLOB_MAGCHAR 0x00000100 /**< Set in gl_flags if any metachars seen. Supported from version 1.6 of UNIXEm. */
+/* #define GLOB_ALTDIRFUNC 0x00000200 */ /**< Use gl_opendir et al functions. Not currently supported in this
+                                                implementation. */
+#define GLOB_BRACE 0x00000400   /**< Expand "{a,b}" to "a" "b". Not currently supported in this implementation. */
+#define GLOB_NOMAGIC 0x00000800 /**< If no magic chars, return the pattern. Supported from version 1.6 of UNIXEm. */
+#define GLOB_TILDE                                                                                                     \
+  0x00001000 /**< Expand ~user and ~ to home directories. Partially supported from version 1.6 of UNIXEm: leading ~ is \
+                expanded to %HOMEDRIVE%%HOMEPATH%. */
+#define GLOB_ONLYDIR                                                                                                   \
+  0x00002000 /**< Match only directories. This implementation guarantees to only return directories when this flag is  \
+                specified. */
+#define GLOB_TILDE_CHECK                                                                                               \
+  0x00004000 /**< Like GLOB_TILDE but return an GLOB_NOMATCH even if GLOB_NOCHECK specified. Supported from version    \
+                1.6 of UNIXEm. */
+#define GLOB_ONLYFILE 0x00008000 /**< Match only files. Supported from version 1.6 of UNIXEm. */
+#define GLOB_NODOTSDIRS                                                                                                \
+  0x00010000 /**< Elide "." and ".." directories from wildcard searches. Supported from version 1.6 of UNIXEm. */
+#define GLOB_LIMIT                                                                                                     \
+  0x00020000 /**< Limits the search to the number specified by the caller in gl_matchc. Supported from version 1.6 of  \
+                UNIXEm. */
+
+/*
+ * Typedefs
+ */
+
+/** Result structure for glob()
+ *
+ * This structure is used by glob() to return the results of the search.
+ */
 typedef struct {
-  size_t gl_pathc;  /* Count of total paths so far. */
-  size_t gl_matchc; /* Count of paths matching pattern. */
-  size_t gl_offs;   /* Reserved at beginning of gl_pathv. */
-  int gl_flags;     /* Copy of flags parameter to glob. */
-  char** gl_pathv;  /* List of paths matching pattern. */
-                    /* Copy of errfunc parameter to glob. */
-  int (*gl_errfunc)(const char*, int);
-
-  /*
-   * Alternate filesystem access methods for glob; replacement
-   * versions of closedir(3), readdir(3), opendir(3), stat(2)
-   * and lstat(2).
-   */
-  void (*gl_closedir)(void*);
-  struct dirent* (*gl_readdir)(void*);
-  void* (*gl_opendir)(const char*);
-  int (*gl_lstat)(const char*, struct stat*);
-  int (*gl_stat)(const char*, struct stat*);
+  int gl_pathc;    /**< count of total paths so far */
+  int gl_matchc;   /**< count of paths matching pattern */
+  int gl_offs;     /**< reserved at beginning of gl_pathv */
+  int gl_flags;    /**< returned flags */
+  char** gl_pathv; /**< list of paths matching pattern */
 } glob_t;
 
-#if __POSIX_VISIBLE >= 199209
-/* Believed to have been introduced in 1003.2-1992 */
-#define GLOB_APPEND 0x0001   /* Append to output from previous call. */
-#define GLOB_DOOFFS 0x0002   /* Use gl_offs. */
-#define GLOB_ERR 0x0004      /* Return on error. */
-#define GLOB_MARK 0x0008     /* Append / to matching directories. */
-#define GLOB_NOCHECK 0x0010  /* Return pattern itself if nothing matches. */
-#define GLOB_NOSORT 0x0020   /* Don't sort. */
-#define GLOB_NOESCAPE 0x2000 /* Disable backslash escaping. */
+/*
+ * API functions
+ */
 
-/* Error values returned by glob(3) */
-#define GLOB_NOSPACE (-1) /* Malloc call failed. */
-#define GLOB_ABORTED (-2) /* Unignored error. */
-#define GLOB_NOMATCH (-3) /* No match and GLOB_NOCHECK was not set. */
-#define GLOB_NOSYS (-4)   /* Obsolete: source comptability only. */
-#endif                    /* __POSIX_VISIBLE >= 199209 */
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
-#if __BSD_VISIBLE
-#define GLOB_ALTDIRFUNC 0x0040 /* Use alternately specified directory funcs. */
-#define GLOB_BRACE 0x0080      /* Expand braces ala csh. */
-#define GLOB_MAGCHAR 0x0100    /* Pattern had globbing characters. */
-#define GLOB_NOMAGIC 0x0200    /* GLOB_NOCHECK without magic chars (csh). */
-#define GLOB_QUOTE 0x0400      /* Quote special chars with \. */
-#define GLOB_TILDE 0x0800      /* Expand tilde names from the passwd file. */
-#define GLOB_LIMIT 0x1000      /* limit number of returned paths */
+/** Generates pathnames matching a pattern
+ *
+ * This function is a pathname generator that implements the rules for
+ * file name pattern matching used by the UNIX shell.
+ *
+ * @param pattern The pattern controlling the search
+ * @param flags A combination of the <b>GLOB_*</b> flags
+ * @param errfunc A function that is called each time part of the search processing fails
+ * @param pglob Pointer to a glob_t structure to receive the search results
+ * @return 0 on success, otherwise one of the <b>GLOB_*</b> error codes
+ */
+int glob(char const* pattern, int flags, int (*errfunc)(char const*, int), glob_t* pglob);
 
-/* source compatibility, these are the old names */
-#define GLOB_MAXPATH GLOB_LIMIT
-#define GLOB_ABEND GLOB_ABORTED
-#endif /* __BSD_VISIBLE */
+/** Frees the results of a call to glob
+ *
+ * This function releases any memory allocated in a call to glob. It must
+ * always be called for a successful call to glob.
+ *
+ * @param pglob Pointer to a glob_t structure to receive the search results
+ */
+void globfree(glob_t* pglob);
 
-int glob(const char*, int, int (*)(const char*, int), glob_t*);
-void globfree(glob_t*);
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
-#endif /* !_GLOB_H_ */
+/** @} end of group unixem_glob */
+
+#endif /* GLOB_H */
