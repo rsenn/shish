@@ -181,9 +181,7 @@ endif()
 check_inline()
 
 if(NOT ${INLINE_KEYWORD} STREQUAL inline)
-  if(INLINE_KEYWORD)
     add_definitions("-Dinline=${INLINE_KEYWORD}")
-  endif(INLINE_KEYWORD)
 endif(NOT ${INLINE_KEYWORD} STREQUAL inline)
 
 if(WIN32 OR WIN64 OR MINGW OR WINDOWS)
