@@ -3,7 +3,7 @@
 
 #include "uint64.h"
 
-#define VARTAB_BUCKETS (61LL)
+#define VARTAB_BUCKETS 61
 
 struct vartab;
 
