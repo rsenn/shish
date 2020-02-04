@@ -28,6 +28,7 @@
 #define S_IFLNK 0xA000
 #endif /* defined(S_IFLNK) */
 #else
+#define _stat stat
 #include <unistd.h>
 #endif
 

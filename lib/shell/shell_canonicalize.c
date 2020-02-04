@@ -136,7 +136,6 @@ is_absolute(const char* p) {
  */
 int
 shell_canonicalize(const char* path, stralloc* sa, int symbolic) {
-  size_t l1, l2;
   size_t n;
   struct _stat st;
   int ret = 1;
