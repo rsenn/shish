@@ -8,7 +8,12 @@
 #include "shell.h"
 #include "str.h"
 #include <stdlib.h>
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 #include "debug.h"
 

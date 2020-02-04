@@ -1,5 +1,10 @@
 #include "fd.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /* make an (fd) ready for an execve()
  *

@@ -1,7 +1,12 @@
 #include "exec.h"
 #include "sh.h"
 #include "str.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /* check if the path is valid
  * ----------------------------------------------------------------------- */

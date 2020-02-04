@@ -3,7 +3,12 @@
 #include "str.h"
 #include "var.h"
 #include <limits.h>
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /* searches for relative path <name> within PATH and returns absolute
  * path if found

@@ -4,7 +4,12 @@
 #include "redir.h"
 #include "scan.h"
 #include "tree.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /* evaluate a redirection
  *

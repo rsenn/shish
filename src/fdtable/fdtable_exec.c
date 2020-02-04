@@ -1,7 +1,12 @@
 #include "fd.h"
 #include "fdtable.h"
 #include "sh.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /* prepare I/O stack for execve()
  *

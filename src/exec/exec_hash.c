@@ -2,7 +2,12 @@
 #include "exec.h"
 #include "str.h"
 #include "vartab.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /* hashed command search routine
  * ----------------------------------------------------------------------- */

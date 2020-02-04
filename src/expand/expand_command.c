@@ -5,7 +5,12 @@
 #include "sh.h"
 #include "tree.h"
 #include "var.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /* evaluates backquoted command list, while writing stdout to a stralloc
  * ----------------------------------------------------------------------- */

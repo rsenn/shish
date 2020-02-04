@@ -1,5 +1,10 @@
 #include "fdstack.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /* sends down here-doc data to pipes and reads command expansions from pipes
  * ----------------------------------------------------------------------- */

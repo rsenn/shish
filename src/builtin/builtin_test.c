@@ -4,7 +4,12 @@
 #include "shell.h"
 #include "str.h"
 #include <sys/stat.h>
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"

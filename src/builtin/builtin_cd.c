@@ -8,7 +8,12 @@
 #include <errno.h>
 #include <limits.h>
 #include <string.h>
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /* change working directory
  * ----------------------------------------------------------------------- */

@@ -2,7 +2,12 @@
 #include "buffer.h"
 #include "fdstack.h"
 #include <assert.h>
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 struct fd* fd_list[FD_MAX];
 

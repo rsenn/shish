@@ -1,7 +1,12 @@
 #include "fd.h"
 #include "fdstack.h"
 #include "fmt.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /* print an fdtablele entry (mainly for the 'fdtable' builtin)
  * ----------------------------------------------------------------------- */
