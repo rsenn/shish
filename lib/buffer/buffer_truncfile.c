@@ -1,18 +1,8 @@
-#include "../windoze.h"
 #include "../buffer.h"
 #include "../open.h"
-
+#include "../windoze.h"
 #if WINDOWS_NATIVE
-#ifdef _MSC_VER
-#define _CRT_INTERNAL_NONSTDC_NAMES 1
-#endif
 #include <io.h>
-#if !defined(__LCC__) && !WINDOWS_NATIVE
-#define read _read
-#define write _write
-#define open _open
-#define close _close
-#endif
 #else
 #include <unistd.h>
 #endif
@@ -26,7 +16,7 @@ buffer_truncfile(buffer* b, const char* fn) {
   b->n = 0;
   b->a = BUFFER_OUTSIZE;
   b->x = malloc(b->a);
-  b->op = (void*)write;
+  b->op = (buffer_op_proto*)write;
   b->deinit = buffer_free;
   return 0;
 }

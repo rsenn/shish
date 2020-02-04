@@ -1,8 +1,7 @@
 #include "../uint64.h"
-#include "../windoze.h"
 #include "../buffer.h"
 #include "../fmt.h"
-
+#include "../windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>
 #else

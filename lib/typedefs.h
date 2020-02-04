@@ -7,6 +7,7 @@
 #endif
 #define __POCC__OLDNAMES
 #include <sys/types.h>
+#undef NO_OLDNAMES
 
 /* for size_t & ptrdiff_t */
 #include <stddef.h>

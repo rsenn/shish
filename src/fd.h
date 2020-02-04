@@ -7,7 +7,13 @@
 #include "../lib/buffer.h"
 #include "../lib/shell.h"
 #include "../lib/stralloc.h"
-#include <sys/stat.h>
+#include "../lib/windoze.h"
+#if WINDOWS_NATIVE
+#ifndef HAVE_DEV_T
+typedef int dev_t;
+#endif
+#endif
+
 
 #ifdef D_SETSIZE
 #define D_MAX D_SETSIZE

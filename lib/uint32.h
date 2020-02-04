@@ -15,6 +15,7 @@
 #define NO_OLDNAMES
 #endif
 #include <sys/types.h>
+#undef NO_OLDNAMES
 #endif
 
 #include <stddef.h>
