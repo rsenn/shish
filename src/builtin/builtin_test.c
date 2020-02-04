@@ -7,6 +7,15 @@
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>
+#ifndef R_OK
+#define R_OK 4
+#endif /* defined(R_OK) */
+#ifndef W_OK
+#define W_OK 2
+#endif /* defined(W_OK) */
+#ifndef X_OK
+#define X_OK 1
+#endif /* defined(X_OK) */
 #else
 #include <unistd.h>
 #endif
