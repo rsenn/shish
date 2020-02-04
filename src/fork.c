@@ -16,12 +16,11 @@
 
 #define _WIN32_WINNT 0x0600
 #define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 #include <winnt.h>
 #include <stdio.h>
 #include <errno.h>
 #include <process.h>
-#include "windoze.h"
+#include <winbase.h>
 
 #if WINDOWS_NATIVE
 typedef struct _CLIENT_ID {
