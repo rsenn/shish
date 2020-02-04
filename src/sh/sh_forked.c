@@ -1,7 +1,7 @@
-#include "byte.h"
+#include "../../lib/byte.h"
 #include "sh.h"
-#include "shell.h"
-#include "windoze.h"
+#include "../../lib/shell.h"
+#include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>
 #else

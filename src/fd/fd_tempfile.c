@@ -3,12 +3,12 @@
 #endif
 #include "fd.h"
 #include "fdtable.h"
-#include "open.h"
+#include "../../lib/open.h"
 #include "redir.h"
-#include "shell.h"
-#include "str.h"
+#include "../../lib/shell.h"
+#include "../../lib/str.h"
 #include <stdlib.h>
-#include "windoze.h"
+#include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>
 #else

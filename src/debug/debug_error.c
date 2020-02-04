@@ -3,7 +3,7 @@
 
 #ifdef DEBUG
 #include "fd.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 
 void
 debug_error(const char* file, unsigned int line, const char* s) {

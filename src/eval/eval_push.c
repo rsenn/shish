@@ -1,4 +1,4 @@
-#include "byte.h"
+#include "../../lib/byte.h"
 #include "eval.h"
 #include "fdstack.h"
 #include "sh.h"

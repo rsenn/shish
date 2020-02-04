@@ -2,7 +2,7 @@
 #include "fdstack.h"
 #include "sh.h"
 #include "vartab.h"
-#include "windoze.h"
+#include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>
 #else

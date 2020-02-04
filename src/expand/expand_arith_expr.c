@@ -1,7 +1,7 @@
 #include "expand.h"
-#include "scan.h"
+#include "../../lib/scan.h"
 #include "tree.h"
-#include "uint64.h"
+#include "../../lib/uint64.h"
 #include <assert.h>
 
 /* expand a binary expression

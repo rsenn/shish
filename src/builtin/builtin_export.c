@@ -1,6 +1,6 @@
 #include "builtin.h"
-#include "shell.h"
-#include "str.h"
+#include "../../lib/shell.h"
+#include "../../lib/str.h"
 #include "var.h"
 #include "vartab.h"
 

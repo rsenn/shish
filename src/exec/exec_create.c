@@ -1,7 +1,7 @@
-#include "byte.h"
+#include "../../lib/byte.h"
 #include "exec.h"
 #include "sh.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 #include <string.h>
 
 struct exechash* exec_hashtbl[EXEC_HASHSIZE];

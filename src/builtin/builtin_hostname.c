@@ -1,10 +1,10 @@
 #include "builtin.h"
-#include "byte.h"
+#include "../../lib/byte.h"
 #include "fd.h"
 #include "sh.h"
-#include "shell.h"
-#include "str.h"
-#include "windoze.h"
+#include "../../lib/shell.h"
+#include "../../lib/str.h"
+#include "../../lib/windoze.h"
 #include <errno.h>
 #if !WINDOWS_NATIVE
 #include <unistd.h>

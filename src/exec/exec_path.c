@@ -1,8 +1,8 @@
 #include "exec.h"
-#include "shell.h"
-#include "str.h"
+#include "../../lib/shell.h"
+#include "../../lib/str.h"
 #include "var.h"
-#include "windoze.h"
+#include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 # include <windows.h>
 # include <io.h>

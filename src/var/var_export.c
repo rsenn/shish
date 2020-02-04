@@ -1,4 +1,4 @@
-#include "byte.h"
+#include "../../lib/byte.h"
 #include "var.h"
 #include <stdlib.h>
 

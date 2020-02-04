@@ -1,7 +1,7 @@
 #ifndef H_IOCTLCMD
 #define H_IOCTLCMD 1
 
-#include "windoze.h"
+#include "../windoze.h"
 
 #if !WINDOWS_NATIVE
 typedef unsigned char UCHAR;

@@ -1,7 +1,7 @@
 #include "exec.h"
 #include "sh.h"
-#include "str.h"
-#include "windoze.h"
+#include "../../lib/str.h"
+#include "../../lib/windoze.h"
 
 #if WINDOWS_NATIVE
 #include <io.h>

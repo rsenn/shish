@@ -3,7 +3,7 @@
 #ifdef DEBUG
 #include "fd.h"
 #include "redir.h"
-#include "str.h"
+#include "../../lib/str.h"
 #include <string.h>
 
 /* output redirection flag string

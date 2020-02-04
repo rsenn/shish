@@ -1,5 +1,5 @@
 #ifdef DEBUG
-#include "buffer.h"
+#include "../../lib/buffer.h"
 #include "fd.h"
 
 void

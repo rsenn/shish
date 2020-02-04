@@ -1,5 +1,5 @@
 #include "history.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 
 /* add a command to the history
  * ----------------------------------------------------------------------- */

@@ -1,6 +1,6 @@
 #include "builtin.h"
 #include "history.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 
 /* manage command history
  * ----------------------------------------------------------------------- */

@@ -2,9 +2,9 @@
 #include "fd.h"
 #include "fdstack.h"
 #include "parse.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 #include "source.h"
-#include "stralloc.h"
+#include "../../lib/stralloc.h"
 #include "tree.h"
 
 /* parse and evaluate arguments

@@ -1,10 +1,10 @@
 #include "builtin.h"
 #include "fd.h"
-#include "fmt.h"
-#include "shell.h"
-#include "str.h"
+#include "../../lib/fmt.h"
+#include "../../lib/shell.h"
+#include "../../lib/str.h"
 #include <sys/stat.h>
-#include "windoze.h"
+#include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>
 #else

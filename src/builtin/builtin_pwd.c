@@ -1,7 +1,7 @@
 #include "builtin.h"
 #include "fd.h"
 #include "sh.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 
 /* print working directory
  * ----------------------------------------------------------------------- */

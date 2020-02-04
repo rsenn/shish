@@ -1,5 +1,5 @@
 #include "fd.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 
 /* allocate buffer space for the (fd).
  * this should only be called when the (fd) really lacks buffer space!

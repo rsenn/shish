@@ -1,4 +1,4 @@
-#include "typedefs.h"
+#include "../../lib/typedefs.h"
 
 size_t
 var_len(const char* v) {

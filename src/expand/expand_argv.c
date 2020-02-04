@@ -1,4 +1,4 @@
-#include "byte.h"
+#include "../../lib/byte.h"
 #include "tree.h"
 #include <stdlib.h>
 

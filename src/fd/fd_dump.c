@@ -1,9 +1,9 @@
 #ifdef DEBUG
-#include "buffer.h"
+#include "../../lib/buffer.h"
 #include "fd.h"
 #include "fdstack.h"
-#include "fmt.h"
-#include "str.h"
+#include "../../lib/fmt.h"
+#include "../../lib/str.h"
 
 static const char* fd_flags[] = {"READ",
                                  "WRITE",

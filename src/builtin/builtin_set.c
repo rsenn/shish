@@ -1,7 +1,7 @@
 #include "builtin.h"
 #include "fd.h"
 #include "sh.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 #include "vartab.h"
 
 /* set arguments of flags

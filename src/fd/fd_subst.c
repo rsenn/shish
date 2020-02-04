@@ -1,5 +1,5 @@
 #include "fd.h"
-#include "stralloc.h"
+#include "../../lib/stralloc.h"
 
 /* prepare fd for command substitution stuff
  * ----------------------------------------------------------------------- */

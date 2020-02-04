@@ -1,8 +1,8 @@
 #include "builtin.h"
 #include "fd.h"
-#include "str.h"
+#include "../../lib/str.h"
 #include "var.h"
-#include "scan.h"
+#include "../../lib/scan.h"
 
 static void
 output_synopsis(struct builtin_cmd* b) {

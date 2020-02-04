@@ -1,7 +1,7 @@
-#include "windoze.h"
+#include "../../lib/windoze.h"
 #include "fd.h"
 #include "job.h"
-#include "wait.h"
+#include "../../lib/wait.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"

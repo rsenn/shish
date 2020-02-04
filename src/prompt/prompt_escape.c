@@ -4,9 +4,9 @@
 
 #include "parse.h"
 #include "prompt.h"
-#include "scan.h"
+#include "../../lib/scan.h"
 #include "sh.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 #include "tree.h"
 
 /* handles prompt escape sequences

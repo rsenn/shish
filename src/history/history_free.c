@@ -1,5 +1,5 @@
 #include "history.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 
 /* clear a history entry
  * ----------------------------------------------------------------------- */

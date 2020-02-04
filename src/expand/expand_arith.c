@@ -1,5 +1,5 @@
 #include "expand.h"
-#include "fmt.h"
+#include "../../lib/fmt.h"
 #include "tree.h"
 
 /* expand an exprmetic expression

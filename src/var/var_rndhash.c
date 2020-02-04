@@ -1,5 +1,5 @@
-#include "uint32.h"
-#include "uint64.h"
+#include "../../lib/uint32.h"
+#include "../../lib/uint64.h"
 #include "var.h"
 
 static uint32 seeds[] = {
