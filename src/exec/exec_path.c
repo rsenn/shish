@@ -12,6 +12,7 @@
 #define PATH_MAX MAX_PATH
 #else
 #include <unistd.h>
+#include <limits.h>
 #endif
 
 /* searches for relative path <name> within PATH and returns absolute
