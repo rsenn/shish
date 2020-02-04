@@ -36,7 +36,7 @@
  * ----------------------------------------------------------------------- */
 int
 fd_stat(struct fd* fd) {
-  struct _stat st;
+  struct stat st;
 
   if(fd->mode & D_TYPE)
     return 0;
