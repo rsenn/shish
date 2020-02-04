@@ -1,7 +1,7 @@
-#include "builtin.h"
-#include "fd.h"
+#include "../builtin.h"
+#include "../fd.h"
 #include "../../lib/str.h"
-#include "var.h"
+#include "../var.h"
 #include "../../lib/scan.h"
 
 static void

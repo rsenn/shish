@@ -1,6 +1,6 @@
 #include "../../lib/byte.h"
 #include "../../lib/shell.h"
-#include "tree.h"
+#include "../tree.h"
 
 #ifdef DEBUG_ALLOC
 

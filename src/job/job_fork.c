@@ -1,7 +1,7 @@
-#include "fd.h"
-#include "job.h"
-#include "sh.h"
-#include "sig.h"
+#include "../fd.h"
+#include "../job.h"
+#include "../sh.h"
+#include "../sig.h"
 #include "../../lib/windoze.h"
 
 #if !WINDOWS_NATIVE

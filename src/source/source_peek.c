@@ -1,4 +1,4 @@
-#include "source.h"
+#include "../source.h"
 
 /* gets more data from buffer (at least 1 char) and reads first char, but
  * doesn't advance buffer pointer, use source_skip() for that

@@ -1,6 +1,6 @@
-#include "parse.h"
-#include "source.h"
-#include "tree.h"
+#include "../parse.h"
+#include "../source.h"
+#include "../tree.h"
 
 /* skip any unquoted whitespace preceeding a word
  * ----------------------------------------------------------------------- */

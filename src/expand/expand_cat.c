@@ -1,7 +1,7 @@
-#include "expand.h"
+#include "../expand.h"
 #include "../../lib/str.h"
-#include "tree.h"
-#include "var.h"
+#include "../tree.h"
+#include "../var.h"
 #include <stdlib.h>
 
 /* concatenate <len> bytes from <b> to the argument list pointed to by <nptr>

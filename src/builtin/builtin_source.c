@@ -1,9 +1,9 @@
-#include "builtin.h"
-#include "fd.h"
-#include "fdstack.h"
-#include "sh.h"
+#include "../builtin.h"
+#include "../fd.h"
+#include "../fdstack.h"
+#include "../sh.h"
 #include "../../lib/shell.h"
-#include "source.h"
+#include "../source.h"
 
 /* source shell script
  * ----------------------------------------------------------------------- */

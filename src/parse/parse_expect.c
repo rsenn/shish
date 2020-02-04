@@ -1,6 +1,6 @@
-#include "debug.h"
-#include "parse.h"
-#include "tree.h"
+#include "../debug.h"
+#include "../parse.h"
+#include "../tree.h"
 
 /* expect a token, print error msg and return 0 if it wasn't that token
  * ----------------------------------------------------------------------- */

@@ -1,10 +1,10 @@
-#include "debug.h"
+#include "../debug.h"
 
 #ifdef DEBUG
-#include "expand.h"
-#include "fd.h"
+#include "../expand.h"
+#include "../fd.h"
 #include "../../lib/str.h"
-#include "tree.h"
+#include "../tree.h"
 #include <string.h>
 
 /* output substitution flag string

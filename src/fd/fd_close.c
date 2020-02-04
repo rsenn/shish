@@ -1,6 +1,6 @@
-#include "fd.h"
-#include "fdstack.h"
-#include "fdtable.h"
+#include "../fd.h"
+#include "../fdstack.h"
+#include "../fdtable.h"
 
 /* flush and close buffers and free the associated ressources
  * ----------------------------------------------------------------------- */

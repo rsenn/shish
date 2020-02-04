@@ -1,7 +1,7 @@
-#include "parse.h"
+#include "../parse.h"
 #include "../../lib/scan.h"
-#include "source.h"
-#include "tree.h"
+#include "../source.h"
+#include "../tree.h"
 
 /* parse a word token
  * ----------------------------------------------------------------------- */

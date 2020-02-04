@@ -1,5 +1,5 @@
-#include "fd.h"
-#include "vartab.h"
+#include "../fd.h"
+#include "../vartab.h"
 
 /* ----------------------------------------------------------------------- */
 size_t

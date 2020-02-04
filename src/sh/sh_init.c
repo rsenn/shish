@@ -1,10 +1,10 @@
-#include "fd.h"
-#include "history.h"
-#include "job.h"
-#include "sh.h"
+#include "../fd.h"
+#include "../history.h"
+#include "../job.h"
+#include "../sh.h"
 #include "../../lib/shell.h"
 #include "../../lib/uint32.h"
-#include "var.h"
+#include "../var.h"
 #include "../../lib/windoze.h"
 
 #if !WINDOWS_NATIVE

@@ -1,8 +1,8 @@
-#include "debug.h"
-#include "fd.h"
-#include "parse.h"
-#include "source.h"
-#include "tree.h"
+#include "../debug.h"
+#include "../fd.h"
+#include "../parse.h"
+#include "../source.h"
+#include "../tree.h"
 
 /* parse arithmetic expression
  * ----------------------------------------------------------------------- */

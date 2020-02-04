@@ -1,6 +1,6 @@
-#include "fd.h"
-#include "sh.h"
-#include "source.h"
+#include "../fd.h"
+#include "../sh.h"
+#include "../source.h"
 
 /* source msg
  * ----------------------------------------------------------------------- */

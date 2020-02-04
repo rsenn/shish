@@ -1,4 +1,4 @@
-#include "tree.h"
+#include "../tree.h"
 #include <stdlib.h>
 
 /* allocate a tree node and link

@@ -1,6 +1,6 @@
-#include "fd.h"
-#include "var.h"
-#include "vartab.h"
+#include "../fd.h"
+#include "../var.h"
+#include "../vartab.h"
 
 /* ----------------------------------------------------------------------- */
 void

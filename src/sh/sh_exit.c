@@ -1,8 +1,8 @@
-#include "fdtable.h"
-#include "history.h"
-#include "sh.h"
-#include "source.h"
-#include "vartab.h"
+#include "../fdtable.h"
+#include "../history.h"
+#include "../sh.h"
+#include "../source.h"
+#include "../vartab.h"
 
 /* exits current subshell, never returns!
  * ----------------------------------------------------------------------- */

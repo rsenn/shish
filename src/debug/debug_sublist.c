@@ -1,8 +1,8 @@
-#include "debug.h"
+#include "../debug.h"
 
 #ifdef DEBUG
-#include "fd.h"
-#include "tree.h"
+#include "../fd.h"
+#include "../tree.h"
 
 /* print a subnode list
  * ----------------------------------------------------------------------- */

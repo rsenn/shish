@@ -1,6 +1,6 @@
-#include "fd.h"
-#include "fdstack.h"
-#include "fdtable.h"
+#include "../fd.h"
+#include "../fdstack.h"
+#include "../fdtable.h"
 
 /* request a gap below fd_exp, a gap can be created if the fd
  * is owned by an fd not on top. a gap can also be forced through

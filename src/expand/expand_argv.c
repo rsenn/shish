@@ -1,5 +1,5 @@
 #include "../../lib/byte.h"
-#include "tree.h"
+#include "../tree.h"
 #include <stdlib.h>
 
 /* expand argument vector

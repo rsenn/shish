@@ -1,7 +1,7 @@
-#include "parse.h"
-#include "prompt.h"
-#include "source.h"
-#include "tree.h"
+#include "../parse.h"
+#include "../prompt.h"
+#include "../source.h"
+#include "../tree.h"
 
 unsigned int parse_lineno;
 

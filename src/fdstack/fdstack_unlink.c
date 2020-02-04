@@ -1,4 +1,4 @@
-#include "fdstack.h"
+#include "../fdstack.h"
 
 /* unlinks an fd from the stack
  * ----------------------------------------------------------------------- */

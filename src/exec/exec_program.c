@@ -8,16 +8,16 @@
 
 #include <signal.h>
 #include "../../lib/windoze.h"
-#include "exec.h"
-#include "fdstack.h"
-#include "fdtable.h"
-#include "job.h"
-#include "parse.h"
-#include "redir.h"
-#include "sh.h"
-#include "sig.h"
-#include "tree.h"
-#include "var.h"
+#include "../exec.h"
+#include "../fdstack.h"
+#include "../fdtable.h"
+#include "../job.h"
+#include "../parse.h"
+#include "../redir.h"
+#include "../sh.h"
+#include "../sig.h"
+#include "../tree.h"
+#include "../var.h"
 #include "../../lib/wait.h"
 
 #if WINDOWS_NATIVE

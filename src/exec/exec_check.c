@@ -1,5 +1,5 @@
-#include "exec.h"
-#include "sh.h"
+#include "../exec.h"
+#include "../sh.h"
 #include "../../lib/str.h"
 #include "../../lib/windoze.h"
 

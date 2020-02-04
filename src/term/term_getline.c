@@ -1,4 +1,4 @@
-#include "term.h"
+#include "../term.h"
 #include <stdlib.h>
 
 

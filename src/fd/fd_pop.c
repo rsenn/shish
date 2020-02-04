@@ -1,6 +1,6 @@
-#include "fd.h"
-#include "fdstack.h"
-#include "fdtable.h"
+#include "../fd.h"
+#include "../fdstack.h"
+#include "../fdtable.h"
 
 /* close fd, unlink from the stack and free its ressources
  * ----------------------------------------------------------------------- */

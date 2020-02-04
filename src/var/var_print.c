@@ -1,7 +1,7 @@
-#include "fd.h"
-#include "parse.h"
+#include "../fd.h"
+#include "../parse.h"
 #include "../../lib/str.h"
-#include "var.h"
+#include "../var.h"
 #include <assert.h>
 
 /* print a variable, suitable for re-input

@@ -1,7 +1,7 @@
-#include "expand.h"
-#include "parse.h"
-#include "source.h"
-#include "tree.h"
+#include "../expand.h"
+#include "../parse.h"
+#include "../source.h"
+#include "../tree.h"
 
 /* parse backquoted commands
  * ----------------------------------------------------------------------- */

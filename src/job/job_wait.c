@@ -6,9 +6,9 @@
 #include <termios.h>
 #include <unistd.h>
 #endif
-#include "fd.h"
-#include "job.h"
-#include "sh.h"
+#include "../fd.h"
+#include "../job.h"
+#include "../sh.h"
 #include "../../lib/wait.h"
 
 /* waits for a job to terminate

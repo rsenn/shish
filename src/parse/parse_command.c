@@ -1,5 +1,5 @@
-#include "parse.h"
-#include "tree.h"
+#include "../parse.h"
+#include "../tree.h"
 
 /* parse a compound- or a simple-command
  * (pipeline and lists are done outside this)

@@ -1,5 +1,5 @@
-#include "fdtable.h"
-#include "sh.h"
+#include "../fdtable.h"
+#include "../sh.h"
 
 /* create an (fd) entry on the current level
  * ----------------------------------------------------------------------- */

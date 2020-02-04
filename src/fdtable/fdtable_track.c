@@ -1,5 +1,5 @@
-#include "fd.h"
-#include "fdtable.h"
+#include "../fd.h"
+#include "../fdtable.h"
 
 /* should always be called just after the kernel gives you a new
  * file handle. it is to track the lowest available file descriptor

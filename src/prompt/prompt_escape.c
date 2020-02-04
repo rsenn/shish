@@ -2,12 +2,12 @@
 #include "config.h"
 #endif
 
-#include "parse.h"
-#include "prompt.h"
+#include "../parse.h"
+#include "../prompt.h"
 #include "../../lib/scan.h"
-#include "sh.h"
+#include "../sh.h"
 #include "../../lib/shell.h"
-#include "tree.h"
+#include "../tree.h"
 
 /* handles prompt escape sequences
  * ----------------------------------------------------------------------- */

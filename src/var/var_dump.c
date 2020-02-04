@@ -1,7 +1,7 @@
 #include "../../lib/uint64.h"
-#include "fd.h"
+#include "../fd.h"
 #include "../../lib/fmt.h"
-#include "var.h"
+#include "../var.h"
 
 /* dump a variable entry
  * ----------------------------------------------------------------------- */

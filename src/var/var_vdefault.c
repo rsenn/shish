@@ -1,5 +1,5 @@
 #include "../../lib/str.h"
-#include "var.h"
+#include "../var.h"
 
 /* return the variable value if it is set, otherwise return def
  * ----------------------------------------------------------------------- */

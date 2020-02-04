@@ -1,4 +1,4 @@
-#include "tree.h"
+#include "../tree.h"
 
 /* print (sub)tree(list) to a stralloc
  * ----------------------------------------------------------------------- */

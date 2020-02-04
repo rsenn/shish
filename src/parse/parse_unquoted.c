@@ -1,9 +1,9 @@
-#include "expand.h"
-#include "parse.h"
-#include "redir.h"
+#include "../expand.h"
+#include "../parse.h"
+#include "../redir.h"
 #include "../../lib/scan.h"
-#include "source.h"
-#include "tree.h"
+#include "../source.h"
+#include "../tree.h"
 
 int
 parse_unquoted(struct parser* p) {

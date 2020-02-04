@@ -1,5 +1,5 @@
-#include "history.h"
-#include "term.h"
+#include "../history.h"
+#include "../term.h"
 
 /* put the next entry of the history into the cmdline
  * ----------------------------------------------------------------------- */

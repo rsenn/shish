@@ -1,8 +1,8 @@
-#include "debug.h"
+#include "../debug.h"
 
 #ifdef DEBUG
-#include "fd.h"
-#include "redir.h"
+#include "../fd.h"
+#include "../redir.h"
 #include "../../lib/str.h"
 #include <string.h>
 

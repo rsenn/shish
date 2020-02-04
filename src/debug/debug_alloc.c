@@ -1,4 +1,4 @@
-#include "debug.h"
+#include "../debug.h"
 
 #ifdef DEBUG_OUTPUT
 struct chunk* debug_heap = NULL;

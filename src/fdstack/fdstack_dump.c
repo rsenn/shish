@@ -1,6 +1,6 @@
 #ifdef DEBUG
-#include "fd.h"
-#include "fdstack.h"
+#include "../fd.h"
+#include "../fdstack.h"
 
 void
 fdstack_dump(void) {

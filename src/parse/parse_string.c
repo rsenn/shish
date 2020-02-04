@@ -1,6 +1,6 @@
-#include "expand.h"
-#include "parse.h"
-#include "tree.h"
+#include "../expand.h"
+#include "../parse.h"
+#include "../tree.h"
 
 /* parse a string part of a word and add it to the tree in parse_node
  * ----------------------------------------------------------------------- */

@@ -1,6 +1,6 @@
-#include "expand.h"
+#include "../expand.h"
 #include "../../lib/fmt.h"
-#include "tree.h"
+#include "../tree.h"
 
 /* expand an exprmetic expression
  * ----------------------------------------------------------------------- */

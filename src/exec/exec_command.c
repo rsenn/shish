@@ -1,11 +1,11 @@
-#include "builtin.h"
-#include "eval.h"
-#include "exec.h"
-#include "fd.h"
-#include "fdtable.h"
-#include "sh.h"
+#include "../builtin.h"
+#include "../eval.h"
+#include "../exec.h"
+#include "../fd.h"
+#include "../fdtable.h"
+#include "../sh.h"
 #include "../../lib/shell.h"
-#include "tree.h"
+#include "../tree.h"
 
 /* execute a command
  * ----------------------------------------------------------------------- */

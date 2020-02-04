@@ -1,7 +1,7 @@
-#include "debug.h"
+#include "../debug.h"
 
 #ifdef DEBUG
-#include "fd.h"
+#include "../fd.h"
 
 void
 debug_space(int count, int newline) {

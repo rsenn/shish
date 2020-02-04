@@ -1,6 +1,6 @@
-#include "fd.h"
-#include "source.h"
-#include "term.h"
+#include "../fd.h"
+#include "../source.h"
+#include "../term.h"
 
 struct source* source = 0;
 

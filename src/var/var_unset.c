@@ -1,5 +1,5 @@
 #include "../../lib/shell.h"
-#include "var.h"
+#include "../var.h"
 
 /* unset a variable
  * ----------------------------------------------------------------------- */

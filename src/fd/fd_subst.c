@@ -1,4 +1,4 @@
-#include "fd.h"
+#include "../fd.h"
 #include "../../lib/stralloc.h"
 
 /* prepare fd for command substitution stuff

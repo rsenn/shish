@@ -1,5 +1,5 @@
-#include "parse.h"
-#include "tree.h"
+#include "../parse.h"
+#include "../tree.h"
 
 /* parse a compound list
  *

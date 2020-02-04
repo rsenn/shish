@@ -1,6 +1,6 @@
-#include "fd.h"
-#include "fdstack.h"
-#include "fdtable.h"
+#include "../fd.h"
+#include "../fdstack.h"
+#include "../fdtable.h"
 
 /* handle unexpected fds
  *

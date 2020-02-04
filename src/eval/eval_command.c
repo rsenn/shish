@@ -4,12 +4,12 @@
 #ifdef HAVE_ALLOCA
 #include <alloca.h>
 #endif
-#include "eval.h"
-#include "fd.h"
-#include "fdstack.h"
-#include "parse.h"
-#include "redir.h"
-#include "tree.h"
+#include "../eval.h"
+#include "../fd.h"
+#include "../fdstack.h"
+#include "../parse.h"
+#include "../redir.h"
+#include "../tree.h"
 
 /* evaluate a compound or simple command
  *

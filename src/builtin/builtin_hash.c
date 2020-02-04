@@ -1,6 +1,6 @@
 #include "../../lib/buffer.h"
-#include "exec.h"
-#include "fd.h"
+#include "../exec.h"
+#include "../fd.h"
 #include "../../lib/fmt.h"
 
 /* hash built-in

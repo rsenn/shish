@@ -1,6 +1,6 @@
-#include "builtin.h"
+#include "../builtin.h"
 #include "../../lib/shell.h"
-#include "var.h"
+#include "../var.h"
 
 /* unset built-in
  *

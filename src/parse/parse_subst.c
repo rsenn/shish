@@ -1,6 +1,6 @@
-#include "parse.h"
-#include "source.h"
-#include "tree.h"
+#include "../parse.h"
+#include "../source.h"
+#include "../tree.h"
 
 int
 parse_subst(struct parser* p) {

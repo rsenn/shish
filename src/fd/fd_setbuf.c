@@ -5,7 +5,7 @@
 #include <alloca.h>
 #endif
 
-#include "fd.h"
+#include "../fd.h"
 #include <assert.h>
 
 /* set buffer space for the (fd). the supplied buffer is treated as if

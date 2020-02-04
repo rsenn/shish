@@ -1,5 +1,5 @@
-#include "fd.h"
-#include "fdtable.h"
+#include "../fd.h"
+#include "../fdtable.h"
 
 /* handles closing of fd e maybe by resolving another fd
  * ----------------------------------------------------------------------- */

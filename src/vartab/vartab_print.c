@@ -1,5 +1,5 @@
-#include "var.h"
-#include "vartab.h"
+#include "../var.h"
+#include "../vartab.h"
 
 /* print all variables having the specified flags set
  * ----------------------------------------------------------------------- */

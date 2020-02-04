@@ -1,6 +1,6 @@
-#include "parse.h"
+#include "../parse.h"
 #include "../../lib/stralloc.h"
-#include "tree.h"
+#include "../tree.h"
 
 /* in-place unescape
  * ----------------------------------------------------------------------- */

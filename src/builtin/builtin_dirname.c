@@ -1,5 +1,5 @@
-#include "builtin.h"
-#include "fd.h"
+#include "../builtin.h"
+#include "../fd.h"
 
 /* ----------------------------------------------------------------------- */
 int

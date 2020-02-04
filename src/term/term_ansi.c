@@ -1,8 +1,8 @@
-#include "history.h"
-#include "parse.h"
+#include "../history.h"
+#include "../parse.h"
 #include "../../lib/scan.h"
-#include "term.h"
-#include "tree.h"
+#include "../term.h"
+#include "../tree.h"
 
 
 void

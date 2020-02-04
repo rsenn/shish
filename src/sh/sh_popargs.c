@@ -1,4 +1,4 @@
-#include "sh.h"
+#include "../sh.h"
 
 void
 sh_popargs(struct arg* arg) {

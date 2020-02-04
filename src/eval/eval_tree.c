@@ -1,6 +1,6 @@
-#include "eval.h"
-#include "sh.h"
-#include "tree.h"
+#include "../eval.h"
+#include "../sh.h"
+#include "../tree.h"
 
 /* evaluate a tree node(-list maybe)
  * ----------------------------------------------------------------------- */

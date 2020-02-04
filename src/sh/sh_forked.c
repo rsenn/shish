@@ -1,5 +1,5 @@
 #include "../../lib/byte.h"
-#include "sh.h"
+#include "../sh.h"
 #include "../../lib/shell.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE

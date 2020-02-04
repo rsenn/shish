@@ -1,6 +1,6 @@
-#include "fd.h"
-#include "sh.h"
-#include "vartab.h"
+#include "../fd.h"
+#include "../sh.h"
+#include "../vartab.h"
 
 /* find a variable on any table
  * ----------------------------------------------------------------------- */

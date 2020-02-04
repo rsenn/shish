@@ -1,5 +1,5 @@
-#include "fd.h"
-#include "fdstack.h"
+#include "../fd.h"
+#include "../fdstack.h"
 #include "../../lib/fmt.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE

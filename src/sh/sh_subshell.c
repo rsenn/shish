@@ -1,7 +1,7 @@
-#include "eval.h"
-#include "fdtable.h"
-#include "sh.h"
-#include "tree.h"
+#include "../eval.h"
+#include "../fdtable.h"
+#include "../sh.h"
+#include "../tree.h"
 
 /* execute a tree in a subshell
  *

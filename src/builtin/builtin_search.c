@@ -1,4 +1,4 @@
-#include "builtin.h"
+#include "../builtin.h"
 
 /* find a builtin which has flags set or any builtin if flag is 0
  * ----------------------------------------------------------------------- */

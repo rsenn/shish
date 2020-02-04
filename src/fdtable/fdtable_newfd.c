@@ -1,5 +1,5 @@
-#include "fdstack.h"
-#include "fdtable.h"
+#include "../fdstack.h"
+#include "../fdtable.h"
 
 /* create an fd entry on the specified stack level
  * ----------------------------------------------------------------------- */

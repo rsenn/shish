@@ -1,5 +1,5 @@
-#include "fd.h"
-#include "source.h"
+#include "../fd.h"
+#include "../source.h"
 
 /* skip current char and get peek next one
  * ----------------------------------------------------------------------- */

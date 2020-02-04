@@ -1,6 +1,6 @@
-#include "fd.h"
+#include "../fd.h"
 #include "../../lib/fmt.h"
-#include "var.h"
+#include "../var.h"
 
 /* lexicographically hash a variable name
  *

@@ -1,5 +1,5 @@
-#include "fd.h"
-#include "job.h"
+#include "../fd.h"
+#include "../job.h"
 #include <fcntl.h>
 #include <string.h>
 #include "../../lib/windoze.h"

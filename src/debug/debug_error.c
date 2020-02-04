@@ -1,8 +1,8 @@
-#include "debug.h"
+#include "../debug.h"
 #include <assert.h>
 
 #ifdef DEBUG
-#include "fd.h"
+#include "../fd.h"
 #include "../../lib/shell.h"
 
 void

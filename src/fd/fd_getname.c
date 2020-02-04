@@ -1,6 +1,6 @@
-#include "fd.h"
+#include "../fd.h"
 #include "../../lib/fmt.h"
-#include "sh.h"
+#include "../sh.h"
 #include "../../lib/str.h"
 
 /* try to get a name for the (fd)

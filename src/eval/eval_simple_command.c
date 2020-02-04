@@ -10,16 +10,16 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
-#include "eval.h"
-#include "exec.h"
-#include "expand.h"
-#include "fdstack.h"
-#include "job.h"
-#include "parse.h"
-#include "redir.h"
-#include "sh.h"
-#include "tree.h"
-#include "vartab.h"
+#include "../eval.h"
+#include "../exec.h"
+#include "../expand.h"
+#include "../fdstack.h"
+#include "../job.h"
+#include "../parse.h"
+#include "../redir.h"
+#include "../sh.h"
+#include "../tree.h"
+#include "../vartab.h"
 
 /* evaluate a simple command (3.9.1)
  *

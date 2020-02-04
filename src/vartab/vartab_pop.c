@@ -1,4 +1,4 @@
-#include "vartab.h"
+#include "../vartab.h"
 #include <assert.h>
 
 /* discards current var context and gets the parent

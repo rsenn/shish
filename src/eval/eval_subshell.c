@@ -1,8 +1,8 @@
-#include "eval.h"
-#include "fdstack.h"
-#include "sh.h"
-#include "tree.h"
-#include "vartab.h"
+#include "../eval.h"
+#include "../fdstack.h"
+#include "../sh.h"
+#include "../tree.h"
+#include "../vartab.h"
 
 /* evaluate subshell or grouping (3.9.4.1)
  * ----------------------------------------------------------------------- */

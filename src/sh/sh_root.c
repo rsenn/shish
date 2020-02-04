@@ -1,6 +1,6 @@
-#include "fdstack.h"
-#include "sh.h"
-#include "vartab.h"
+#include "../fdstack.h"
+#include "../sh.h"
+#include "../vartab.h"
 
 struct env sh_root = {/* .parent = */ NULL,
                       /* .cwd = */ {NULL, 0, 0},

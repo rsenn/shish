@@ -1,5 +1,5 @@
 #include "../../lib/byte.h"
-#include "var.h"
+#include "../var.h"
 
 /* set a variable value from a stralloc in the format: word
  *

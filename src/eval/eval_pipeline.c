@@ -3,12 +3,12 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
-#include "eval.h"
-#include "fdstack.h"
-#include "fdtable.h"
-#include "job.h"
-#include "sh.h"
-#include "tree.h"
+#include "../eval.h"
+#include "../fdstack.h"
+#include "../fdtable.h"
+#include "../job.h"
+#include "../sh.h"
+#include "../tree.h"
 
 /* evaluate a pipeline (3.9.2)
  * ----------------------------------------------------------------------- */

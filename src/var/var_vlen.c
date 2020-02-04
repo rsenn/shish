@@ -1,4 +1,4 @@
-#include "parse.h"
+#include "../parse.h"
 
 /* get length of a variable + value without ansi escape sequences */
 size_t

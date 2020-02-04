@@ -1,5 +1,5 @@
-#include "fd.h"
-#include "fdstack.h"
+#include "../fd.h"
+#include "../fdstack.h"
 
 /* update efd of all duplicates of fd
  * ----------------------------------------------------------------------- */

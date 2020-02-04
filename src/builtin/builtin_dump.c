@@ -1,11 +1,11 @@
-#include "debug.h"
+#include "../debug.h"
 
 #ifdef DEBUG_OUTPUT
-#include "builtin.h"
-#include "fdstack.h"
-#include "fdtable.h"
+#include "../builtin.h"
+#include "../fdstack.h"
+#include "../fdtable.h"
 #include "../../lib/shell.h"
-#include "vartab.h"
+#include "../vartab.h"
 
 /* ----------------------------------------------------------------------- */
 int

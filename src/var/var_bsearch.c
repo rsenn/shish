@@ -1,4 +1,4 @@
-#include "vartab.h"
+#include "../vartab.h"
 #include <stdlib.h>
 
 /* find the next variable that is bigger or equal to the wanted one and

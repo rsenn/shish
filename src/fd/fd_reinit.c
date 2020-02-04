@@ -1,5 +1,5 @@
 #include "../../lib/buffer.h"
-#include "fd.h"
+#include "../fd.h"
 #include "../../lib/shell.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE

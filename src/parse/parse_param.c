@@ -1,8 +1,8 @@
-#include "expand.h"
-#include "parse.h"
+#include "../expand.h"
+#include "../parse.h"
 #include "../../lib/scan.h"
-#include "source.h"
-#include "tree.h"
+#include "../source.h"
+#include "../tree.h"
 
 /* parse parameter substitutions
  * ----------------------------------------------------------------------- */

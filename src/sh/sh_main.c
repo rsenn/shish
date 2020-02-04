@@ -5,13 +5,13 @@
 #include <alloca.h>
 #endif
 
-#include "fd.h"
-#include "fdtable.h"
-#include "sh.h"
+#include "../fd.h"
+#include "../fdtable.h"
+#include "../sh.h"
 #include "../../lib/shell.h"
-#include "source.h"
+#include "../source.h"
 #include "../../lib/str.h"
-#include "var.h"
+#include "../var.h"
 #include <stdlib.h>
 
 #include "../../lib/uint32.h"

@@ -1,11 +1,11 @@
-#include "debug.h"
-#include "fd.h"
-#include "fdstack.h"
-#include "parse.h"
-#include "prompt.h"
-#include "source.h"
-#include "tree.h"
-#include "var.h"
+#include "../debug.h"
+#include "../fd.h"
+#include "../fdstack.h"
+#include "../parse.h"
+#include "../prompt.h"
+#include "../source.h"
+#include "../tree.h"
+#include "../var.h"
 #include <stdlib.h>
 
 static unsigned int prompt_hash; /* hash of unexpanded PS1 */

@@ -1,4 +1,4 @@
-#include "vartab.h"
+#include "../vartab.h"
 #include <stdlib.h>
 
 /* get a variable

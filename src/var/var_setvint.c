@@ -1,4 +1,4 @@
-#include "var.h"
+#include "../var.h"
 #include <stdlib.h>
 
 /* set a variable value

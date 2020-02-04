@@ -1,5 +1,5 @@
-#include "history.h"
-#include "parse.h"
+#include "../history.h"
+#include "../parse.h"
 
 unsigned long
 history_cmdlen(const char* v) {

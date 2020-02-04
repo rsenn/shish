@@ -1,4 +1,4 @@
-#include "sig.h"
+#include "../sig.h"
 
 /* block SIGINT and SIGCHILD before forking a child
  * ----------------------------------------------------------------------- */

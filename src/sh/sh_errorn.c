@@ -1,5 +1,5 @@
-#include "fd.h"
-#include "sh.h"
+#include "../fd.h"
+#include "../sh.h"
 #include "../../lib/shell.h"
 #include <errno.h>
 #include <string.h>

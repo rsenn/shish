@@ -1,8 +1,8 @@
-#include "eval.h"
-#include "expand.h"
+#include "../eval.h"
+#include "../expand.h"
 #include "../../lib/shell.h"
 #include "../../lib/stralloc.h"
-#include "tree.h"
+#include "../tree.h"
 
 /* evaluate case conditional construct (3.9.4.3)
  * ----------------------------------------------------------------------- */

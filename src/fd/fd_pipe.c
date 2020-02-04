@@ -1,6 +1,6 @@
-#include "fd.h"
-#include "fdtable.h"
-#include "sh.h"
+#include "../fd.h"
+#include "../fdtable.h"
+#include "../sh.h"
 #include "../../lib/windoze.h"
 
 #if WINDOWS_NATIVE
