@@ -2,8 +2,7 @@
 #include "../typedefs.h"
 
 #if WINDOWS_NATIVE
-#include "../ioctlcmd.h"
-#include "../utf8.h"
+#include "ioctlcmd.h"
 #include "../stralloc.h"
 #include <stdio.h>
 #include <windows.h>
