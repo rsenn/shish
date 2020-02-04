@@ -4,6 +4,7 @@
 #include "var.h"
 #include "windoze.h"
 #if WINDOWS_NATIVE
+# include <windows.h>
 # include <io.h>
 # ifndef X_OK
 #  define X_OK 1
