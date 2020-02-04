@@ -88,11 +88,14 @@ fork(void) {
 
   if(result == RTL_CLONE_PARENT) {
     HANDLE me = GetCurrentProcess();
-    HANDLE kern32 = GetModuleHandle("kernel32.dll");
+    HANDLE kern32;
     get_process_id_function* get_process_id;
     pid_t child_pid;
 
-    get_process_id = GetProcAddress(kern32, "GetProcessId");
+    if((kern32 = GetModuleHandle("kernel32.dll")) == NULL)
+      return -ENOSYS;
+    if((get_process_id = GetProcAddress(kern32, "GetProcessId")) == NULL)
+      return -ENOSYS;
 
     child_pid = get_process_id(process_info.Process);
 
