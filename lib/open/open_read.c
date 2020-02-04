@@ -8,6 +8,14 @@
 #include <unistd.h>
 #endif
 
+#ifndef O_RDONLY
+#ifdef _A_RDONLY 
+#define O_RDONLY _A_RDONLY
+#else
+#define O_RDONLY 1
+#endif
+#endif
+
 #ifndef O_NDELAY
 #define O_NDELAY 0
 #endif
