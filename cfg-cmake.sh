@@ -138,10 +138,10 @@ cfg-musl() {
 
 cfg-mingw() {
  (build=$(gcc -dumpmachine)
-  host=${build%%-*}-w64-mingw32
-  prefix=/usr/$host/sys-root/mingw
-  
-  test -d /usr/x86_64-w64-mingw32/sys-root -a -s /usr/x86_64-w64-mingw32/sys-root/toolchain-mingw64.cmake &&
+  : ${host=${build%%-*}-w64-mingw32}
+  : ${prefix=/usr/$host/sys-root/mingw}
+
+  test -s /usr/x86_64-w64-mingw32/sys-root/toolchain-mingw64.cmake &&
   TOOLCHAIN=/usr/x86_64-w64-mingw32/sys-root/toolchain-mingw64.cmake
   
   builddir=build/$host \
@@ -149,6 +149,13 @@ cfg-mingw() {
   libdir=$prefix/lib \
   cfg \
     "$@")
+}
+
+cfg-mingw32() {
+ (build=$(gcc -dumpmachine)
+  host=${build%%-*}-w64-mingw32
+  host=i686-${host#*-}
+  cfg-mingw "$@")
 }
 
 cfg-msys() {
