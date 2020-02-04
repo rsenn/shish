@@ -1,9 +1,13 @@
 #include "../shell.h"
 #include "../str.h"
 #include "../stralloc.h"
+#include "../windoze.h"
 
 #include <limits.h>
+
+#if !WINDOWS_NATIVE
 #include <unistd.h>
+#endif
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
