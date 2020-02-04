@@ -12,7 +12,7 @@
 
 void
 sh_getcwd(struct env* sh) {
-  static char rootcwd[PATH_MAX + 1];
+  //static char rootcwd[PATH_MAX + 1];
 
   stralloc_init(&sh->cwd);
 

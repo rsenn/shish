@@ -1,13 +1,15 @@
+#include "../../lib/uint64.h"
+#include "../../lib/byte.h"
+#include "../../lib/shell.h"
+#include "../../lib/str.h"
+#include "../../lib/stralloc.h"
+#include "../../lib/buffer.h"
 #include "../fd.h"
 #include "../expand.h"
 #include "../fdstack.h"
 #include "../parse.h"
 #include "../source.h"
 #include "../tree.h"
-#include "../../lib/byte.h"
-#include "../../lib/shell.h"
-#include "../../lib/str.h"
-#include "../../lib/stralloc.h"
 
 /* parse and expruate arguments
  * ----------------------------------------------------------------------- */
