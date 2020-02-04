@@ -14,7 +14,7 @@ sh_getcwd(struct env* sh) {
     sh->cwd.s = getcwd(rootcwd, sizeof(rootcwd));
 
   if(sh->cwd.s == NULL)
-    shell_getcwd(&sh->cwd, sizeof(rootcwd));
+    shell_getcwd(&sh->cwd);
   else
     sh->cwd.len = str_len(sh->cwd.s);
 }

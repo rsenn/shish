@@ -23,7 +23,7 @@ builtin_pwd(int argc, char** argv) {
   if(sh->cwdsym && physical) {
     stralloc sa;
     stralloc_init(&sa);
-    shell_getcwd(&sa, 0);
+    shell_getcwd(&sa);
     buffer_putsa(fd_out->w, &sa);
     buffer_putnlflush(fd_out->w);
     stralloc_free(&sa);
