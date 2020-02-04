@@ -4,9 +4,9 @@
 /*#define __USE_LARGEFILE64*/
 #include <fcntl.h>
 
-#include "buffer.h"
-#include "shell.h"
-#include "stralloc.h"
+#include "../lib/buffer.h"
+#include "../lib/shell.h"
+#include "../lib/stralloc.h"
 #include <sys/stat.h>
 
 #ifdef D_SETSIZE

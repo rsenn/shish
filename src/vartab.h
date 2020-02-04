@@ -1,7 +1,7 @@
 #ifndef VARTAB_H
 #define VARTAB_H
 
-#include "uint64.h"
+#include "../lib/uint64.h"
 
 #define VARTAB_BUCKETS 61
 
