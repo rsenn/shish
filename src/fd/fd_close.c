@@ -9,7 +9,7 @@ fd_close(struct fd* fd) {
   /* fd is only really closed if there are no duplicates */
   fdstack_unref(fd);
 
-  if(!(fd->mode & FD_DUP)) {
+  if(!(fd->mode & D_DUP)) {
     /* update lowest fd if we're below */
     if(fd->e >= 0 && fd->e < fd_exp)
       fd_exp = fd->e;
@@ -20,7 +20,7 @@ fd_close(struct fd* fd) {
 
   /* when the buffer is opened for writing
      we have to flush it to not loose any data */
-  if(FD_ISWR(fd))
+  if(D_ISWR(fd))
     buffer_flush(&fd->wb);
 
   /* set the filedescriptor (which is in fact a stralloc *) on
@@ -38,7 +38,7 @@ fd_close(struct fd* fd) {
 
   /* if the buffer space was temporary then set it to NULL
      so this space isn't used below the current stack level */
-  if(fd->mode & FD_TMPBUF) {
+  if(fd->mode & D_TMPBUF) {
     buffer_free(&fd->rb);
     buffer_free(&fd->wb);
   }

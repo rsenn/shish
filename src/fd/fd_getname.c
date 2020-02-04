@@ -40,7 +40,7 @@ fd_getname(struct fd* fd) {
     /* try to read the link */
     if(!shell_readlink(path, &name)) {
       fd->name = name.s;
-      fd->mode |= FD_FREENAME;
+      fd->mode |= D_FREENAME;
       return 0;
     }
 
@@ -48,19 +48,19 @@ fd_getname(struct fd* fd) {
   }
 
   /* we don't seem to have a /proc tree */
-  if(fd->mode & FD_FILE)
+  if(fd->mode & D_FILE)
     fd->name = "file";
-  if(fd->mode & FD_DIR)
+  if(fd->mode & D_DIR)
     fd->name = "directory";
-  if(fd->mode & FD_LINK)
+  if(fd->mode & D_LINK)
     fd->name = "link";
-  if(fd->mode & FD_CHAR)
+  if(fd->mode & D_CHAR)
     fd->name = "char device";
-  if(fd->mode & FD_BLOCK)
+  if(fd->mode & D_BLOCK)
     fd->name = "block device";
-  if(fd->mode & FD_SOCKET)
+  if(fd->mode & D_SOCKET)
     fd->name = "socket";
-  if(fd->mode & FD_PIPE)
+  if(fd->mode & D_PIPE)
     fd->name = "pipe";
 
   return 0;

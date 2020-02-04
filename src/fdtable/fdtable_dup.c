@@ -10,7 +10,7 @@
 
 /* handles pending duplicating of a dup-(fd) initialized using fd_dup()
  *
- * it resets the FD_OPEN flag of the (fd) if the operation
+ * it resets the D_OPEN flag of the (fd) if the operation
  * was successfully done
  *
  * values for flags:
@@ -75,14 +75,14 @@ retry:
   if(fd->e != fd->n && (flags & FDTABLE_FORCE)) {
     state = o;
     o = fd->e;
-    fd->mode &= ~FD_DUP;
+    fd->mode &= ~D_DUP;
     goto retry;
   }
 
-  if(!(fd->mode & FD_DUP))
+  if(!(fd->mode & D_DUP))
     return o;
 
-  fd->mode &= ~FD_DUP;
+  fd->mode &= ~D_DUP;
   fd->dup = NULL;
 
   return FDTABLE_DONE;

@@ -13,23 +13,23 @@
  * ----------------------------------------------------------------------- */
 void
 fd_open(struct fd* fd, const char* fname, long mode) {
-  fd->mode |= mode | FD_FILE | FD_OPEN;
+  fd->mode |= mode | D_FILE | D_OPEN;
   fd->name = fname;
 
   /* set POSIX read/write mode */
-  switch(fd->mode & FD_READWRITE) {
-    case FD_READWRITE: fd->fl = O_RDWR; break;
-    case FD_WRITE: fd->fl = O_WRONLY; break;
+  switch(fd->mode & D_READWRITE) {
+    case D_READWRITE: fd->fl = O_RDWR; break;
+    case D_WRITE: fd->fl = O_WRONLY; break;
     default: fd->fl = O_RDONLY; break;
   }
 
   /* if we're opening a file for writing there are further options */
-  if(FD_ISWR(fd)) {
+  if(D_ISWR(fd)) {
     /* append or truncate, never overwrite! */
-    fd->fl |= ((mode & (FD_APPEND | FD_READ)) ? O_APPEND : O_TRUNC);
+    fd->fl |= ((mode & (D_APPEND | D_READ)) ? O_APPEND : O_TRUNC);
 
     /* exclude or create */
-    fd->fl |= ((mode & (FD_EXCL)) ? O_EXCL : O_CREAT);
+    fd->fl |= ((mode & (D_EXCL)) ? O_EXCL : O_CREAT);
   }
 
 #ifdef O_LARGEFILE

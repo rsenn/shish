@@ -21,15 +21,15 @@ fdstack_pipe(unsigned int n, struct fd* fda) {
   for(st = fdstack; st; st = st->parent)
     for(fd = st->list; fd; fd = fd->next) {
       /* make pipes for command expansion outputs */
-      if((fd->mode & FD_SUBST) == FD_SUBST) {
-        /*      fd->mode |= FD_READ;*/
+      if((fd->mode & D_SUBST) == D_SUBST) {
+        /*      fd->mode |= D_READ;*/
 
-        fd_push(fda, fd->n, FD_WRITE | FD_FLUSH);
-        fd_setbuf(fda, b, FD_BUFSIZE / 2);
+        fd_push(fda, fd->n, D_WRITE | D_FLUSH);
+        fd_setbuf(fda, b, D_BUFSIZE / 2);
 
         e = fd_pipe(fda);
         buffer_init(&fd->rb, (buffer_op_proto*)&read, e, NULL, 0);
-        b += FD_BUFSIZE / 2;
+        b += D_BUFSIZE / 2;
         fda++;
       }
     }

@@ -17,8 +17,8 @@
 void
 fd_setbuf(struct fd* fd, void* buf, unsigned long n) {
   char* p = buf;
-  int r = FD_ISRD(fd) && !fd->r->x;
-  int w = FD_ISWR(fd) && !fd->w->x;
+  int r = D_ISRD(fd) && !fd->r->x;
+  int w = D_ISWR(fd) && !fd->w->x;
 
   assert(r || w);
 
@@ -36,5 +36,5 @@ fd_setbuf(struct fd* fd, void* buf, unsigned long n) {
 
   /* set the tmpbuf flag so the buffers are set to zero
      if we leave the current stack level! */
-  fd->mode |= FD_TMPBUF;
+  fd->mode |= D_TMPBUF;
 }

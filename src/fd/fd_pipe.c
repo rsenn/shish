@@ -24,13 +24,13 @@ fd_pipe(struct fd* fd) {
 
   /* create new (fd) for the pipe */
   fd->name = "<pipe>";
-  fd->mode |= FD_PIPE;
+  fd->mode |= D_PIPE;
 
   fdtable_track(p[0], FDTABLE_LAZY);
   fdtable_track(p[1], FDTABLE_LAZY);
 
   /* set up the file descriptors */
-  if(FD_ISWR(fd)) {
+  if(D_ISWR(fd)) {
     fd_setfd(fd, p[1]);
     e = p[0];
   } else {

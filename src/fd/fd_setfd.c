@@ -9,21 +9,21 @@
 #include <unistd.h>
 #endif
 
-struct fd* fd_list[FD_MAX];
+struct fd* fd_list[D_MAX];
 
 /* initialize (fd) from file descriptor
  * ----------------------------------------------------------------------- */
 int
 fd_setfd(struct fd* fd, int e) {
-  assert(fd->mode & FD_READWRITE);
+  assert(fd->mode & D_READWRITE);
 
   /* set the file descriptors on the buffers */
-  if(FD_ISRD(fd)) {
+  if(D_ISRD(fd)) {
     buffer_default(&fd->rb, (void*)&read);
     fd->rb.fd = e;
   }
 
-  if(FD_ISWR(fd)) {
+  if(D_ISWR(fd)) {
     buffer_default(&fd->wb, (void*)&write);
     fd->wb.fd = e;
   }

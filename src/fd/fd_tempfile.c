@@ -43,7 +43,7 @@ fd_tempfile(struct fd* fd) {
   fdtable_track(e, FDTABLE_LAZY);
 
   /* tempfiles are initially in write mode only */
-  fd->mode = FD_WRITE;
+  fd->mode = D_WRITE;
 
   fd_setfd(fd, e);
 
@@ -53,7 +53,7 @@ fd_tempfile(struct fd* fd) {
   /* make a copy of the name because the
      next call will change fd_tempname */
   fd->name = shell_strdup(fd_tempname);
-  fd->mode |= FD_FREENAME;
+  fd->mode |= D_FREENAME;
 
   return e;
 }

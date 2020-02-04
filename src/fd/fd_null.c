@@ -36,11 +36,11 @@ struct fd fd_nullfd = {0,
 /* ----------------------------------------------------------------------- */
 int
 fd_null(struct fd* fd) {
-  fd->mode |= FD_NULL;
+  fd->mode |= D_NULL;
 
-  if(FD_ISRD(fd))
+  if(D_ISRD(fd))
     fd->r = &fd_nullfd.rb;
-  if(FD_ISWR(fd))
+  if(D_ISWR(fd))
     fd->w = &fd_nullfd.wb;
 
   //  fd->name = "/dev/null";

@@ -14,7 +14,7 @@ source_push(struct source* src) {
 
   source = src;
 
-  if(fd_src->mode & FD_CHAR) {
+  if(fd_src->mode & D_CHAR) {
     if(term_init(fd_src, fd_err))
       source->mode |= SOURCE_IACTIVE;
   }

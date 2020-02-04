@@ -16,7 +16,7 @@ fd_exec(struct fd* fd) {
 
   /* dump here-doc redirections that are still a stralloc to a
      temporary file */
-  if((fd->mode & FD_HERE) == FD_HERE) {
+  if((fd->mode & D_HERE) == D_HERE) {
     if((tmp = fd_tempfile(fd)) >= 0) {
       unsigned long p;
 
@@ -37,7 +37,7 @@ fd_exec(struct fd* fd) {
       buffer_init(&fd->wb, NULL, -1, NULL, 0);
 
       /* now we got rid of the stralloc :) */
-      fd->mode &= ~FD_STRALLOC;
+      fd->mode &= ~D_STRALLOC;
     }
   }
 

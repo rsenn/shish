@@ -23,8 +23,8 @@ fdstack_unref(struct fd* olddup) {
 
       /* move buffer stuff to the first found duplicate */
       if(newdup == NULL) {
-        byte_copy(&fd->rb, FD_SIZE, olddup->r);
-        byte_copy(&fd->wb, FD_SIZE, olddup->w);
+        byte_copy(&fd->rb, D_SIZE, olddup->r);
+        byte_copy(&fd->wb, D_SIZE, olddup->w);
 
         olddup->rb.fd = -1;
         olddup->rb.x = NULL;
@@ -35,7 +35,7 @@ fdstack_unref(struct fd* olddup) {
         fd->w = &fd->wb;
 
         /* give up temporary buffers */
-        if(olddup->mode & FD_TMPBUF) {
+        if(olddup->mode & D_TMPBUF) {
           buffer_free(&fd->rb);
           buffer_free(&fd->wb);
         }

@@ -22,7 +22,7 @@ eval_command(struct eval* e, union node* node, int tempflags) {
   int oldflags;
   struct fdstack fdstack;
   stralloc heredoc;
-  char buf[FD_BUFSIZE];
+  char buf[D_BUFSIZE];
   union node* redir = node->ncmd.rdir;
 
   oldflags = e->flags;
@@ -45,7 +45,7 @@ eval_command(struct eval* e, union node* node, int tempflags) {
       }
 
       if(fd_needbuf(fd))
-        fd_setbuf(fd, buf, FD_BUFSIZE);
+        fd_setbuf(fd, buf, D_BUFSIZE);
     }
   }
 

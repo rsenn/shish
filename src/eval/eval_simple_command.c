@@ -40,7 +40,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   /*  struct fdstack io;*/
   union node* r;
   union node* redir = ncmd->rdir;
-  char buf[FD_BUFSIZE];
+  char buf[D_BUFSIZE];
 
   /* expand arguments,
      if there are arguments we start a hashed search for the command */
@@ -85,9 +85,9 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
         /* if its not exec then set up buffers for
            temporary redirections on the stack */
         if(id != H_EXEC)
-          fd_setbuf(r->nredir.fd, buf, FD_BUFSIZE);
+          fd_setbuf(r->nredir.fd, buf, D_BUFSIZE);
         else
-          fd_allocbuf(r->nredir.fd, FD_BUFSIZE);
+          fd_allocbuf(r->nredir.fd, D_BUFSIZE);
       }
     }
   }

@@ -8,13 +8,13 @@
  * ----------------------------------------------------------------------- */
 int
 redir_open(struct nredir* nredir, stralloc* sa) {
-  int mode = FD_FREENAME;
+  int mode = D_FREENAME;
 
   /* prepare flags */
   if(nredir->flag & R_OUT) {
     /* check for appending mode */
     if(nredir->flag & R_APPEND)
-      mode |= FD_APPEND;
+      mode |= D_APPEND;
   }
 
   /* MISSING: no-clobbering (with O_EXCL?) */

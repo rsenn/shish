@@ -48,7 +48,7 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
        like here-docs which are read from strallocs and command
        expansions, which write to strallocs can't be shared across
        different process spaces, so we have to establish pipes */
-    if((n = fdstack_npipes(FD_HERE | FD_SUBST))) {
+    if((n = fdstack_npipes(D_HERE | D_SUBST))) {
       pipes = shell_alloc(FDSTACK_ALLOC_SIZE(n));
       fdstack_pipe(n, pipes);
     }

@@ -29,7 +29,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
 
   /* make the output buffer write to the stralloc */
   fdstack_push(&fdst);
-  fd_push(&fd, STDOUT_FILENO, FD_WRITE);
+  fd_push(&fd, STDOUT_FILENO, D_WRITE);
   fd_subst(&fd, &sa);
 
   /* evaluate the command tree in a subshell */

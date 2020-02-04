@@ -27,7 +27,7 @@ term_init(struct fd* input, struct fd* output) {
   term_output = output->w;
 
   /* input and stderr must both be char devices */
-  if((input->mode & output->mode & FD_CHAR) == 0)
+  if((input->mode & output->mode & D_CHAR) == 0)
     return 0;
 
   if(term_attr(input->r->fd, 0) == 0) {
@@ -36,14 +36,14 @@ term_init(struct fd* input, struct fd* output) {
     /* set terminal flags on all fds that are char devices
        and have the same inode */
     fdtable_foreach(i) {
-      if((fdtable[i]->mode & FD_CHAR) && fdtable[i]->dev == input->dev) {
-        fdtable[i]->mode |= FD_TERM;
-        fdtable[i]->mode &= ~FD_CHAR;
+      if((fdtable[i]->mode & D_CHAR) && fdtable[i]->dev == input->dev) {
+        fdtable[i]->mode |= D_TERM;
+        fdtable[i]->mode &= ~D_CHAR;
       }
     }
   }
 
-  if((input->mode & output->mode & FD_TERM))
+  if((input->mode & output->mode & D_TERM))
     return 0;
 
   /* intercept input buffer */

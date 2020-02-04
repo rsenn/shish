@@ -1,8 +1,8 @@
 #ifndef FDTABLE_H
 #define FDTABLE_H
 
-#ifdef FD_SETSIZE
-#define FDTABLE_SIZE FD_SETSIZE
+#ifdef D_SETSIZE
+#define FDTABLE_SIZE D_SETSIZE
 #else
 #define FDTABLE_SIZE 1024
 #endif

@@ -15,7 +15,7 @@ fd_mmap(struct fd* fd, const char* fname) {
   int e;
   int r;
 
-  fd->mode |= FD_FILE;
+  fd->mode |= D_FILE;
 
   if((e = open(fname, O_RDONLY | O_LARGEFILE)) == -1) {
     sh_error(fname);

@@ -11,7 +11,7 @@
 void
 fd_here(struct fd* fd, stralloc* sa) {
   fd->name = "<here>";
-  fd->mode = FD_HERE;
+  fd->mode = D_HERE;
 
   buffer_fromsa(&fd->rb, sa);
   fd->rb.deinit = buffer_free;

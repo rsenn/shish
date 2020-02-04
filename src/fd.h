@@ -9,14 +9,14 @@
 #include "stralloc.h"
 #include <sys/stat.h>
 
-#ifdef FD_SETSIZE
-#define FD_MAX FD_SETSIZE
+#ifdef D_SETSIZE
+#define D_MAX D_SETSIZE
 #else
-#define FD_MAX 1024
+#define D_MAX 1024
 #endif
 
-#define FD_BUFSIZE 1024
-#define FD_BUFSIZE2 (FD_BUFSIZE >> 1)
+#define D_BUFSIZE 1024
+#define D_BUFSIZE2 (D_BUFSIZE >> 1)
 
 #ifndef STDSRC_FILENO
 #define STDSRC_FILENO -1
@@ -37,10 +37,10 @@
 
 struct fdtable;
 
-#define FD_ISRD(i) ((i)->mode & FD_READ)
-#define FD_ISWR(i) ((i)->mode & FD_WRITE)
+#define D_ISRD(i) ((i)->mode & D_READ)
+#define D_ISWR(i) ((i)->mode & D_WRITE)
 
-#define FD_SIZE (sizeof(struct fd))
+#define D_SIZE (sizeof(struct fd))
 
 struct fd {
   int n;            /* virtual fd */
@@ -64,49 +64,49 @@ struct fd {
   buffer* w; /* pointer to effective write buffer */
 };
 
-#define fd_ok(e) ((e) >= 0 && (e) < FD_MAX)
+#define fd_ok(e) ((e) >= 0 && (e) < D_MAX)
 
 /* fd mode */
-#define FD_READ 0x00000001
-#define FD_WRITE 0x00000002
-#define FD_APPEND 0x00000004
-#define FD_EXCL 0x00000008
-#define FD_TRUNC 0x00000010
+#define D_READ 0x00000001
+#define D_WRITE 0x00000002
+#define D_APPEND 0x00000004
+#define D_EXCL 0x00000008
+#define D_TRUNC 0x00000010
 
 /* types */
-#define FD_TYPE 0x0007ff00
+#define D_TYPE 0x0007ff00
 
-#define FD_FILE 0x00000100 /* a file that has been opened */
-#define FD_DIR 0x00000200
-#define FD_LINK 0x00000400
-#define FD_CHAR 0x00000800
-#define FD_BLOCK 0x00001000
-#define FD_SOCKET 0x00002000
-#define FD_PIPE 0x00004000     /* a pipe */
-#define FD_STRALLOC 0x00008000 /* a stralloc */
-#define FD_STRING 0x00010000   /* a nul-terminated string */
-#define FD_DUP 0x00020000      /* a clone of another file descriptor */
-#define FD_TERM 0x00040000     /* is a terminal */
-#define FD_NULL 0x00080000
+#define D_FILE 0x00000100 /* a file that has been opened */
+#define D_DIR 0x00000200
+#define D_LINK 0x00000400
+#define D_CHAR 0x00000800
+#define D_BLOCK 0x00001000
+#define D_SOCKET 0x00002000
+#define D_PIPE 0x00004000     /* a pipe */
+#define D_STRALLOC 0x00008000 /* a stralloc */
+#define D_STRING 0x00010000   /* a nul-terminated string */
+#define D_DUP 0x00020000      /* a clone of another file descriptor */
+#define D_TERM 0x00040000     /* is a terminal */
+#define D_NULL 0x00080000
 
-#define FD_SUBST (FD_STRALLOC | FD_WRITE)
-#define FD_HERE (FD_STRALLOC | FD_READ)
+#define D_SUBST (D_STRALLOC | D_WRITE)
+#define D_HERE (D_STRALLOC | D_READ)
 
-#define FD_READWRITE (FD_READ | FD_WRITE)
-#define FD_DEFFILE (FD_FILE | FD_CLOSE)
-#define FD_READFILE (FD_DEFFILE | FD_READ)
-#define FD_WRITEFLUSH (FD_FLUSH | FD_WRITE)
-#define FD_WRITEFILE (FD_DEFFILE | FD_WRITEFLUSH)
-#define FD_RWFILE (FD_READFILE | FD_WRITEFILE)
+#define D_READWRITE (D_READ | D_WRITE)
+#define D_DEFFILE (D_FILE | D_CLOSE)
+#define D_READFILE (D_DEFFILE | D_READ)
+#define D_WRITEFLUSH (D_FLUSH | D_WRITE)
+#define D_WRITEFILE (D_DEFFILE | D_WRITEFLUSH)
+#define D_RWFILE (D_READFILE | D_WRITEFILE)
 
 /* todo mode */
-#define FD_FLUSH 0x01000000    /* flush the buffer */
-#define FD_CLOSE 0x02000000    /* close the buffer */
-#define FD_FREENAME 0x04000000 /* free the name */
-#define FD_DUPNAME 0x08000000  /* copy the name */
-#define FD_FREE 0x10000000     /* free the fd struct */
-#define FD_TMPBUF 0x40000000   /* buf alloca */
-#define FD_OPEN 0x80000000
+#define D_FLUSH 0x01000000    /* flush the buffer */
+#define D_CLOSE 0x02000000    /* close the buffer */
+#define D_FREENAME 0x04000000 /* free the name */
+#define D_DUPNAME 0x08000000  /* copy the name */
+#define D_FREE 0x10000000     /* free the fd struct */
+#define D_TMPBUF 0x40000000   /* buf alloca */
+#define D_OPEN 0x80000000
 
 extern struct fd** const fdtable;
 
@@ -123,7 +123,7 @@ extern struct fd** const fdtable;
 #define fd_out fdtable[STDOUT_FILENO]
 #define fd_err fdtable[STDERR_FILENO]
 
-extern struct fd* fd_list[FD_MAX];
+extern struct fd* fd_list[D_MAX];
 extern unsigned int fd_exp;
 extern unsigned int fd_top;
 extern int fd_lo;
@@ -158,9 +158,9 @@ void fd_setbuf(struct fd* fd, void* buf, unsigned long n);
 void fd_string(struct fd* fd, const char* s, unsigned long len);
 void fd_subst(struct fd* fd, stralloc* sa);
 
-#define fd_malloc(io) io = shell_alloc(FD_SIZE);
-#define fd_mallocb(io) io = shell_alloc(FD_SIZE + FD_BUFSIZE);
-#define fd_alloca(io) io = alloca(FD_SIZE);
-#define fd_allocab(io) io = alloca(FD_SIZE + FD_BUFSIZE);
+#define fd_malloc(io) io = shell_alloc(D_SIZE);
+#define fd_mallocb(io) io = shell_alloc(D_SIZE + D_BUFSIZE);
+#define fd_alloca(io) io = alloca(D_SIZE);
+#define fd_allocab(io) io = alloca(D_SIZE + D_BUFSIZE);
 
 #endif /* FD_H */
