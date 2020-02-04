@@ -324,20 +324,19 @@ set_target_properties(libshish PROPERTIES
 file(GLOB SOURCES src/*.h  src/eval/*.c src/exec/*.c src/expand/*.c src/expr/*.c src/fd/*.c src/fdstack/*.c src/fdtable/*.c src/history/*.c src/job/*.c src/parse/*.c src/prompt/*.c src/redir/*.c src/sh/*.c src/sig/*.c src/source/*.c src/term/*.c src/tree/*.c src/var/*.c src/vartab/*.c)
 
 
-
-if(BUILD_DEBUG)
-  #file(GLOB ADDSOURCES src/debug/*.c)
-  #
-  set(DEBUG_SOURCES "${SOURCES}")
-  list(FILTER DEBUG_SOURCES INCLUDE REGEX ".*debug.c$")
-  foreach(SRC ${DEBUG_SOURCES})
-    string(REGEX REPLACE "debug\.c" ".c" OSRC "${SRC}")
-    message("Remove ${OSRC}")
-    list(REMOVE_ITEM SOURCES "${OSRC}")
-  endforeach(SRC ${DEBUG_SOURCES})
-else(BUILD_DEBUG)
-  list(FILTER SOURCES EXCLUDE REGEX ".*debug.c$")
-endif(BUILD_DEBUG)
+#if(BUILD_DEBUG)
+#  #file(GLOB ADDSOURCES src/debug/*.c)
+#  #
+#  set(DEBUG_SOURCES "${SOURCES}")
+#  list(FILTER DEBUG_SOURCES INCLUDE REGEX ".*debug.c$")
+#  foreach(SRC ${DEBUG_SOURCES})
+#    string(REGEX REPLACE "debug\.c" ".c" OSRC "${SRC}")
+#    message("Remove ${OSRC}")
+#    list(REMOVE_ITEM SOURCES "${OSRC}")
+#  endforeach(SRC ${DEBUG_SOURCES})
+#else(BUILD_DEBUG)
+#  list(FILTER SOURCES EXCLUDE REGEX ".*debug.c$")
+#endif(BUILD_DEBUG)
 
 if(DEBUG_ALLOC)
   list(APPEND SOURCES src/debug/debug_alloc.c src/debug/debug_free.c src/debug/debug_realloc.c)
