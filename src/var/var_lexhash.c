@@ -41,11 +41,11 @@ var_lexhash(const char* v, VAR_HASH* h) {
 
   /* we subtract 10 from the topmost 6 bits because
      there are no digits allowed */
-  hash = -10LL << shift;
+  hash = ((VAR_HASH)-10) << shift;
 
   do {
     /* map the character to a 1-63 range */
-    value = 1LL + (uint64)reduce(*p);
+    value = ((VAR_HASH)1) + (uint64)reduce(*p);
 
     /* add another 6 hash bits after shifting them.
        when the shift count is negative we have to
