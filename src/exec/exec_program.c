@@ -108,7 +108,7 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
     /* export environment */
     char** envp;
     unsigned long envn = var_count(V_EXPORT) + 1;
-    envp = var_export(alloca(envn * sizeof(char*)));
+    envp = var_export(shell_alloc(envn * sizeof(char*)));
 
     /* try to execute the program */
     execve(path, argv, envp);
