@@ -158,8 +158,12 @@ else()
   set(NAME_DEBUG "")
 endif()
 
-if(WIN32 OR WIN64)
+if(WIN32 OR WIN64 OR MINGW OR WINDOWS)
   check_library_exists(ws2_32 gethostname /usr/lib HAVE_WS2_32)
+
+  if(NOT HAVE_WS2_32)
+    check_library_exists(wsock32 gethostname /usr/lib HAVE_WSOCK32)
+  endif(NOT HAVE_WS2_32)
 
   check_function_exists(fork HAVE_FORK)
 
@@ -167,8 +171,11 @@ if(WIN32 OR WIN64)
     set(FORK_SOURCE "src/fork.c")
   endif(NOT HAVE_FORK)
 
-endif(WIN32 OR WIN64)
+endif(WIN32 OR WIN64 OR MINGW OR WINDOWS)
 
+if(HAVE_WSOCK32)
+  set(WINSOCK2_LIBRARY wsock32)
+endif(HAVE_WSOCK32)
 if(HAVE_WS2_32)
   set(WINSOCK2_LIBRARY ws2_32)
 endif(HAVE_WS2_32)
