@@ -28,7 +28,7 @@ fd_exec(struct fd* fd) {
       buffer_free(&fd->rb);
 
       /* seek the file back */
-      lseek(tmp, 0L, SEEK_SET);
+      lseek(tmp, (long)0, SEEK_SET);
 
       /* initialize the read buffer so we can read from the tempfile */
       buffer_init(&fd->rb, (buffer_op_proto*)&read, tmp, NULL, 0);
