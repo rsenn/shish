@@ -1,8 +1,8 @@
 #ifndef VAR_H
 #define VAR_H
 
-#include "stralloc.h"
-#include "uint64.h"
+#include "../lib/stralloc.h"
+#include "../lib/uint64.h"
 #include <stdlib.h>
 
 #define VAR_HASH uint64

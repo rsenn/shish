@@ -7,7 +7,7 @@
 #include <sys/wait.h>
 #endif
 
-#include "windoze.h"
+#include "../lib/windoze.h"
 #if WINDOWS_NATIVE
 typedef int sigset_t;
 #ifndef HAVE_PID_T

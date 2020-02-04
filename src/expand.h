@@ -1,7 +1,7 @@
 #ifndef EXPAND_H
 #define EXPAND_H
 
-#include "stralloc.h"
+#include "../lib/stralloc.h"
 
 #define IFS_DEFAULT " \t\n"
 

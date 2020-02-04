@@ -4,12 +4,12 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include "stralloc.h"
+#include "../lib/stralloc.h"
 #include "job.h"
 
-#include "stralloc.h"
+#include "../lib/stralloc.h"
 #include "job.h"
-#include "windoze.h"
+#include "../lib/windoze.h"
 #if WINDOWS_NATIVE
 #ifndef HAVE_UID_T
 typedef int uid_t;

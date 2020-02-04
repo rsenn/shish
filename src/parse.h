@@ -1,7 +1,7 @@
 #ifndef PARSE_H
 #define PARSE_H
 
-#include "stralloc.h"
+#include "../lib/stralloc.h"
 #include <stdlib.h>
 
 #include "tree.h"

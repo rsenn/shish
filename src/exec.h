@@ -1,7 +1,7 @@
 #ifndef EXEC_H
 #define EXEC_H
 
-#include "uint32.h"
+#include "../lib/uint32.h"
 #include <stdlib.h>
 
 enum hash_id { H_PROGRAM = 0, H_EXEC, H_SBUILTIN, H_BUILTIN, H_FUNCTION };

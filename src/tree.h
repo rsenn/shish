@@ -1,8 +1,8 @@
 #ifndef TREE_H
 #define TREE_H
 
-#include "stralloc.h"
-#include "uint64.h"
+#include "../lib/stralloc.h"
+#include "../lib/uint64.h"
 #include <stdlib.h>
 
 /* the section numbers refer to the IEEE P1003.2 Draft D11.2 */
