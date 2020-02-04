@@ -28,7 +28,7 @@
 #define C_BINARY 0x1000 /* binary digit */
 
 /* character class table */
-const unsigned short parse_chartable[CHAR_RANGE];
+extern const unsigned short parse_chartable[CHAR_RANGE];
 
 /* character class macros
  * ----------------------------------------------------------------------- */
