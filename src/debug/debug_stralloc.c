@@ -1,6 +1,6 @@
 #include "../debug.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 #include "../fd.h"
 
 /* output an allocated string
@@ -13,4 +13,4 @@ debug_stralloc(const char* msg, stralloc* s, int depth) {
   buffer_putsa(fd_err->w, s);
   buffer_puts(fd_err->w, "\"" COLOR_NONE);
 }
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */

@@ -5,7 +5,7 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H*/
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 
 #include "../lib/buffer.h"
 #include "../lib/stralloc.h"
@@ -73,6 +73,6 @@ void debug_node(union node* node, int depth);
 void debug_redir(const char* msg, int flags, int depth);
 void debug_subst(const char* msg, int flags, int depth);
 
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */
 
 #endif /* DEBUG_H */

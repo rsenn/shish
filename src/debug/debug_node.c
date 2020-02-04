@@ -1,6 +1,6 @@
 #include "../debug.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 #include "../tree.h"
 
 /* debugs a tree node!
@@ -199,4 +199,4 @@ debug_node(union node* node, int depth) {
     case N_NOT: debug_sublist("cmds", node->nandor.cmd0, depth); break;
   }
 }
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */

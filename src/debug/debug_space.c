@@ -1,6 +1,6 @@
 #include "../debug.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 #include "../fd.h"
 
 void
@@ -16,4 +16,4 @@ debug_space(int count, int newline) {
     buffer_putspace(fd_err->w);
   }
 }
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */

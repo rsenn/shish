@@ -56,7 +56,7 @@ sh_loop(void) {
 #ifdef DEBUG_OUTPUT
       debug_list(list, 0);
       buffer_putnlflush(fd_err->w);
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */
       eval_push(&e, E_JCTL);
       eval_tree(&e, list, E_ROOT | E_LIST);
       sh->exitcode = eval_pop(&e);

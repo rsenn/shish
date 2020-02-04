@@ -1,6 +1,6 @@
 #include "../debug.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 #include "../fd.h"
 
 /* output a char
@@ -13,4 +13,4 @@ debug_char(const char* msg, char c, int depth) {
   buffer_put(fd_err->w, &c, 1);
   buffer_putnlflush(fd_err->w);
 }
-#endif /* defined(DEBUG) */
+#endif /* defined(DEBUG_OUTPUT) */

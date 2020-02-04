@@ -1,6 +1,6 @@
 #include "../debug.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 #include "../sh.h"
 #include <errno.h>
 
@@ -33,4 +33,4 @@ debug_free(const char* file, unsigned int line, void* ptr) {
     free(ch);
   }
 }
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */

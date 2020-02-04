@@ -62,5 +62,5 @@ prompt_parse(void) {
 
 #ifdef DEBUG_OUTPUT
 /*  debug_list(prompt_node, 0);*/
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */
 }

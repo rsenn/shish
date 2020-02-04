@@ -1,6 +1,6 @@
 #include "../debug.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 #include "../expand.h"
 #include "../fd.h"
 #include "../../lib/str.h"
@@ -62,4 +62,4 @@ debug_subst(const char* msg, int flags, int depth) {
   buffer_puts(fd_err->w, flagstr);
   buffer_puts(fd_err->w, COLOR_NONE);
 }
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */

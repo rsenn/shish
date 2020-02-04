@@ -1,4 +1,4 @@
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 #include "../fd.h"
 #include "../fdstack.h"
 
@@ -17,4 +17,4 @@ fdstack_dump(void) {
   for(st = fdstack; st; st = st->parent)
     for(fd = st->list; fd; fd = fd->next) fd_dump(fd);
 }
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */

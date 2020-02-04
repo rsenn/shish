@@ -1,4 +1,4 @@
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 #include "../../lib/buffer.h"
 #include "../fd.h"
 #include "../fdtable.h"
@@ -20,4 +20,4 @@ fdtable_dump(void) {
     buffer_flush(fd_out->w);
   }
 }
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */

@@ -1,6 +1,6 @@
 #include "../debug.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 #include "../fd.h"
 #include "../redir.h"
 #include "../../lib/str.h"
@@ -39,4 +39,4 @@ debug_redir(const char* msg, int flags, int depth) {
 
   debug_space(depth, 1);
 }
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */

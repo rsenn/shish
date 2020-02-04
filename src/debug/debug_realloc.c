@@ -1,6 +1,6 @@
 #include "../debug.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 #include "../sh.h"
 #include <assert.h>
 #include <errno.h>
@@ -54,4 +54,4 @@ debug_realloc(const char* file, unsigned int line, void* ptr, unsigned long n) {
 
   return newch;
 }
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */

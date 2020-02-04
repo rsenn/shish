@@ -1,6 +1,6 @@
 #include "../debug.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 #include "../fd.h"
 #include "../../lib/fmt.h"
 #include "../../lib/str.h"
@@ -52,4 +52,4 @@ debug_memory(void) {
   buffer_put(fd_out->w, buf, n);
   buffer_putnlflush(fd_out->w);
 }
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */

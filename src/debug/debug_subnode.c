@@ -1,6 +1,6 @@
 #include "../debug.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 
 /* print a node which is child to the current
  * ----------------------------------------------------------------------- */
@@ -14,4 +14,4 @@ debug_subnode(const char* s, union node* node, int depth) {
     debug_str(s, NULL, depth);
   }
 }
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */

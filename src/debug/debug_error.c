@@ -1,7 +1,7 @@
 #include "../debug.h"
 #include <assert.h>
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 #include "../fd.h"
 #include "../../lib/shell.h"
 
@@ -25,4 +25,4 @@ debug_error(const char* file, unsigned int line, const char* s) {
   assert(0);
 #endif
 }
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */

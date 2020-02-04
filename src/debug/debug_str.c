@@ -1,6 +1,6 @@
 #include "../debug.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 #include "../fd.h"
 
 /* output a nul-terminated string
@@ -16,4 +16,4 @@ debug_str(const char* msg, const char* s, int depth) {
 
   buffer_puts(fd_err->w, "\"" COLOR_NONE);
 }
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */
