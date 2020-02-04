@@ -22,6 +22,7 @@ eval_command(struct eval* e, union node* node, int tempflags) {
   int oldflags;
   struct fdstack fdstack;
   stralloc heredoc;
+  char buf[FD_BUFSIZE];
   union node* redir = node->ncmd.rdir;
 
   oldflags = e->flags;
@@ -44,24 +45,18 @@ eval_command(struct eval* e, union node* node, int tempflags) {
       }
 
       if(fd_needbuf(fd))
-        fd_setbuf(fd, alloca(FD_BUFSIZE), FD_BUFSIZE);
+        fd_setbuf(fd, buf, FD_BUFSIZE);
     }
   }
 
-  switch(node->id) {
+  switch(node->id) {    
     case N_IF: ret = eval_if(e, &node->nif); break;
-
     case N_FOR: ret = eval_for(e, &node->nfor); break;
-
     case N_CASE: ret = eval_case(e, &node->ncase); break;
-
     case N_WHILE:
     case N_UNTIL: ret = eval_loop(e, &node->nloop); break;
-
     case N_SUBSHELL: ret = eval_subshell(e, &node->ngrp); break;
-
     case N_CMDLIST: ret = eval_cmdlist(e, &node->ngrp); break;
-
     default:
       break;
       /*    case N_SIMPLECMD:
