@@ -17,6 +17,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   struct job* job;
   union node* node;
   struct fdstack st;
+  struct fd* pipes = 0;
   unsigned int n;
   int pid = 0;
   int prevfd = -1;
@@ -57,8 +58,10 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
       }
     }
 
-    if((n = fdstack_npipes(FD_HERE | FD_SUBST)))
-      fdstack_pipe(n, fdstack_alloc(n));
+    if((n = fdstack_npipes(FD_HERE | FD_SUBST))) {
+      pipes = malloc(FDSTACK_ALLOC_SIZE(n));
+      fdstack_pipe(n, pipes);
+    }
 
     pid = job_fork(job, node, npipe->bgnd);
 
@@ -77,6 +80,9 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   if(!npipe->bgnd) {
     job_wait(job, 0, &status);
   }
+
+  if(pipes)
+    free(pipes);
 
   /*  if(job)
       shell_free(job);*/
