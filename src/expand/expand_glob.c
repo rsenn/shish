@@ -2,7 +2,7 @@
 #include "config.h"
 #endif
 
-#include <glob.h>
+#include "../../lib/glob.h"
 
 #include "../expand.h"
 #include "../tree.h"
