@@ -7,10 +7,10 @@
 #if WINDOWS_NATIVE
 #include <io.h>
 #else
-#include <errno.h>
-#include <fcntl.h>
 #include <unistd.h>
 #endif
+#include <errno.h>
+#include <fcntl.h>
 
 #ifndef O_NOFOLLOW
 #define O_NOFOLLOW 0
