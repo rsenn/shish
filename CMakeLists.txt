@@ -176,15 +176,15 @@ endif(HAVE_WS2_32)
 check_library_exists(owfat_debug buffer_init /usr/lib64 HAVE_LIBOWFAT)
 
 if(HAVE_LIBOWFAT)
-set(LIBOWFAT_LIBRARY owfat_debug)
+  set(LIBOWFAT_LIBRARY owfat_debug)
 endif(HAVE_LIBOWFAT)
 
 
 if(NOT HAVE_LIBOWFAT)
-check_library_exists(owfat buffer_init /usr/lib64 HAVE_LIBOWFAT)
-if(HAVE_LIBOWFAT)
-set(LIBOWFAT_LIBRARY owfat)
-endif(HAVE_LIBOWFAT)
+  check_library_exists(owfat buffer_init /usr/lib64 HAVE_LIBOWFAT)
+  if(HAVE_LIBOWFAT)
+    set(LIBOWFAT_LIBRARY owfat)
+  endif(HAVE_LIBOWFAT)
 endif(NOT HAVE_LIBOWFAT)
 
 
@@ -192,14 +192,14 @@ endif(NOT HAVE_LIBOWFAT)
 check_include_file(alloca.h HAVE_ALLOCA_H)
 
 if(HAVE_ALLOCA_H)
-check_symbol_exists(alloca alloca.h HAVE_ALLOCA)
+  check_symbol_exists(alloca alloca.h HAVE_ALLOCA)
 endif()
 
 check_include_file(sys/wait.h HAVE_SYS_WAIT_H)
 
 check_include_file(unistd.h HAVE_UNISTD_H)
 if(HAVE_UNISTD_H)
-set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} unistd.h)
+  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} unistd.h)
 endif(HAVE_UNISTD_H)
 
 check_function_exists(sethostname HAVE_SETHOSTNAME)
@@ -346,7 +346,12 @@ if(FORK_SOURCE)
   list(APPEND SOURCES ${FORK_SOURCE})
 endif(FORK_SOURCE)
 
-set(MATH_LIBRARY m)
+
+check_library_exists(m pow /usr/lib HAVE_LIBM)
+
+if(HAVE_LIBM)
+  set(MATH_LIBRARY m)
+endif(HAVE_LIBM)
 
 foreach(BUILTIN ${BUILTINS_ENABLED})
   list(APPEND SOURCES src/builtin/builtin_${BUILTIN}.c)
