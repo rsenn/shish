@@ -468,6 +468,7 @@ configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake" "${CMAKE_BINARY_
 	NEWLINE_STYLE UNIX)
 
 list(APPEND SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
+add_definitions(-DHAVE_BUILTIN_CONFIG_H=1)
 
 
 if(ENABLE_LTO)
