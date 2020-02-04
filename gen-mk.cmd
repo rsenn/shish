@@ -5,6 +5,6 @@ for %%b in (Debug RelWithDebInfo MinSizeRel Release) do (
     mkdir build/%%t/%%b
 
 	genmakefile -s windows -m ninja -t %%t --%%b lib src -o build/%%t/%%b/build.ninja
-	genmakefile -s windows -m nmake -t %%t --%%b lib src -o build/%%t/%%b/Makefile
+	genmakefile -s windows -m make -t %%t --%%b lib src -o build/%%t/%%b/Makefile
   )
 )

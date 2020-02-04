@@ -6,6 +6,6 @@ for build_type in Debug RelWithDebInfo MinSizeRel Release; do
 	mkdir -p $output_dir
 
 	genmakefile --create-bins --no-create-libs -s windows -m ninja -t $compiler --$build_type lib src -o $output_dir/build.ninja
-	genmakefile --create-bins --no-create-libs -s windows -m nmake -t $compiler --$build_type lib src -o $output_dir/Makefile
+	genmakefile --create-bins --no-create-libs -s windows -m make -t $compiler --$build_type lib src -o $output_dir/Makefile
   done
 done
