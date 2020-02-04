@@ -5,6 +5,13 @@
 #include <errno.h>
 #include <limits.h>
 
+#ifndef PATH_MAX
+#if WINDOWS
+#include <windows.h>
+#endif
+#define PATH_MAX MAX_PATH
+#endif
+
 extern int shell_canonicalize(const char* path, stralloc* sa, int symbolic);
 
 /* if the <path> is relative and <cwd> is non-null then it is prepended
