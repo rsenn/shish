@@ -15,10 +15,6 @@ typedef int uid_t;
 #include <stdlib.h>
 #include <sys/types.h>
 
-#if WINDOWS_NATIVE
-typedef int uid_t;
-#endif
-
 struct eval;
 struct fdtable;
 struct vartab;

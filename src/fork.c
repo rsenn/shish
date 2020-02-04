@@ -20,7 +20,11 @@
 #include <errno.h>
 #include <process.h>
 #include <windows.h>
+<<<<<<< HEAD
 #include "windoze.h"
+=======
+#include <winbase.h>
+>>>>>>> aa05766207b881eec8f2853d8bb2a80134246dcf
 
 #if WINDOWS_NATIVE
 typedef struct _CLIENT_ID {
