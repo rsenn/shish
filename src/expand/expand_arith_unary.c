@@ -31,8 +31,7 @@ expand_arith_unary(struct narithunary* expr, int64* r) {
     case A_POSTDECREMENT: *r = value--; break;
     case A_NOT: *r = !value; break;
     case A_BNOT: *r = ~value; break;
-
-    default: __asm__("int $3"); break;
+    default: break;
   }
 
   if(pre_post) {
