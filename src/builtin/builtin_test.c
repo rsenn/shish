@@ -77,7 +77,7 @@ builtin_test(int argc, char** argv) {
       /* return true if argument is a character device */
       case 'c': return neg ^ !(stat(shell_optarg, &st) == 0 && S_ISCHR(st.st_mode));
       /* return true if argument is a block device */
-      case 'b': return neg ^ !(stat(shell_optarg, &st) == 0 && S_IFMT(st.st_mode) == S_IFBLK);
+      case 'b': return neg ^ !(stat(shell_optarg, &st) == 0 && (st.st_mode & S_IFMT) == S_IFBLK);
       /* return true if argument is a fifo */
       case 'p': return neg ^ !(stat(shell_optarg, &st) == 0 && S_ISFIFO(st.st_mode));
       /* return true if argument is a symbolic link */
