@@ -14,7 +14,7 @@
  * from the use of this software.
  */
 
-#include "windoze.h"
+#include "../lib/windoze.h"
 
 #if WINDOWS_NATIVE
 #define _WIN32_WINNT 0x0600

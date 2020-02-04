@@ -1,10 +1,41 @@
+#include "../../lib/windoze.h"
 #include "../fd.h"
+#include <sys/stat.h>
+
+#if WINDOWS_NATIVE
+#include <io.h>
+#define stat _stat
+#define fstat _fstat
+#ifndef S_IFMT
+#define S_IFMT 	0xf000
+#endif
+#ifndef S_IFDIR
+#define S_IFDIR 0x4000
+#endif /* defined(S_IFDIR) */
+#ifndef S_IFCHR
+#define S_IFCHR 0x2000
+#endif /* defined(S_IFCHR) */
+#ifndef S_IFIFO
+#define S_IFIFO 0x1000
+#endif /* defined(S_IFIFO) */
+#ifndef S_IFREG
+#define S_IFREG 0x8000
+#endif /* defined(S_IFREG) */
+#ifndef S_IFBLK
+#define S_IFBLK 0x6000
+#endif /* defined(S_IFBLK) */
+#ifndef S_IFLNK
+#define S_IFLNK 0xA000
+#endif /* defined(S_IFLNK) */
+#else
+#include <unistd.h>
+#endif
 
 /* stat the (fd) and set appropriate flags
  * ----------------------------------------------------------------------- */
 int
 fd_stat(struct fd* fd) {
-  struct stat st;
+  struct _stat st;
 
   if(fd->mode & D_TYPE)
     return 0;
@@ -18,8 +49,12 @@ fd_stat(struct fd* fd) {
     case S_IFREG: fd->mode |= D_FILE; break;
     case S_IFDIR: fd->mode |= D_DIR; break;
     case S_IFCHR: fd->mode |= D_CHAR; break;
+#ifdef S_IFBLK
     case S_IFBLK: fd->mode |= D_BLOCK; break;
+#endif
+#ifdef S_IFIFO
     case S_IFIFO: fd->mode |= D_PIPE; break;
+#endif 
 #ifdef S_IFLNK
     case S_IFLNK: fd->mode |= D_LINK; break;
 #endif
