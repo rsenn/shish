@@ -32,7 +32,7 @@ vartab_search(struct vartab* vartab, const char* v, struct search* context) {
      a closer match */
   dist = var_hsearch(context);
 
-  if(dist == 0LL) {
+  if(dist == (VAR_HASH)0) {
     /* if the searched vars len is smaller than hashed chars
        we can safely exit, because every 6-bit pair has a value
        of 1-63 only if it is set */
@@ -55,7 +55,7 @@ vartab_search(struct vartab* vartab, const char* v, struct search* context) {
        full match :) */
     if(dist < context->hdist) {
       context->hdist = dist;
-      context->bdist = (VAR_HASH)-1LL;
+      context->bdist = (VAR_HASH)-1;
       context->closest = context->pos;
     }
 
@@ -67,7 +67,7 @@ vartab_search(struct vartab* vartab, const char* v, struct search* context) {
        a closer match */
     dist = var_bsearch(context);
 
-    if(dist == 0LL)
+    if(dist == (VAR_HASH)0)
       return *context->pos;
 
     /* set new closest match */

@@ -43,7 +43,7 @@ vartab_add(struct vartab* vartab, struct var* var, struct search* context) {
     /*  context->pos = &varlist;*/
     /* */
     /* then we search forward again until the next entry is bigger */
-    if(var_hsearch(context) == 0LL) {
+    if(var_hsearch(context) == (VAR_HASH)0) {
 #ifdef DEBUG
       size_t dist =
 #endif
@@ -52,7 +52,7 @@ vartab_add(struct vartab* vartab, struct var* var, struct search* context) {
       /* there must not be a full match, otherwise this means that
          the variable is already in the list which it should not! */
 #ifdef DEBUG
-      assert(dist != 0L);
+      assert(dist != (size_t)0);
 #endif
     }
 
