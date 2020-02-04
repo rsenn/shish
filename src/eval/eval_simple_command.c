@@ -112,12 +112,19 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   /* assemble argument list */
   argc = tree_count(args);
 
+#ifdef HAVE_ALLOCA
   argv = alloca((argc + 1) * sizeof(char*));
+#else
+  argv = shell_alloc((argc + 1) * sizeof(char*));
+#endif
   expand_argv(args, argv);
 
   /* execute the command, this may or may not return, depending on E_EXIT */
   status = exec_command(id, cmd, argc, argv, (e->flags & E_EXIT), redir);
 
+#ifndef HAVE_ALLOCA
+  free(argv);
+#endif
 end:
 
   /* restore variable stack */
