@@ -4,7 +4,9 @@
 #include "../open.h"
 #include "../str.h"
 #include "../windoze.h"
-#if !WINDOWS_NATIVE
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
