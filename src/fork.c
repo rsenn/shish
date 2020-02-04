@@ -58,10 +58,11 @@ typedef struct _RTL_USER_PROCESS_INFORMATION {
 #define RTL_CLONE_CHILD 297
 
 typedef long (*RtlCloneUserProcess_f)(ULONG ProcessFlags,
-                                          PSECURITY_DESCRIPTOR ProcessSecurityDescriptor /* optional */,
-                                          PSECURITY_DESCRIPTOR ThreadSecurityDescriptor /* optional */,
-                                          HANDLE DebugPort /* optional */,
-                                          PRTL_USER_PROCESS_INFORMATION ProcessInformation);
+                                      PSECURITY_DESCRIPTOR ProcessSecurityDescriptor /* optional */,
+                                      PSECURITY_DESCRIPTOR ThreadSecurityDescriptor /* optional */,
+                                      HANDLE DebugPort /* optional */,
+                                      PRTL_USER_PROCESS_INFORMATION ProcessInformation);
+typedef pid_t get_process_id_function(HANDLE);
 
 pid_t
 fork(void) {
@@ -87,9 +88,13 @@ fork(void) {
 
   if(result == RTL_CLONE_PARENT) {
     HANDLE me = GetCurrentProcess();
+    HANDLE kern32 = GetModuleHandle("kernel32.dll");
+    get_process_id_function* get_process_id;
     pid_t child_pid;
 
-    child_pid = GetProcessId(process_info.Process);
+    get_process_id = GetProcAddress(kern32, "GetProcessId");
+
+    child_pid = get_process_id(process_info.Process);
 
     ResumeThread(process_info.Thread);
     CloseHandle(process_info.Process);
