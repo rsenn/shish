@@ -4,7 +4,7 @@
 #include "../windoze.h"
 
 #if WINDOWS_NATIVE
-#include <winsock2.h>
+#include <winsock.h>
 #else
 #include <unistd.h>
 #endif
