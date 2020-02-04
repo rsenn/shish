@@ -16,10 +16,10 @@ sh_getcwd(struct env* sh) {
 
   stralloc_init(&sh->cwd);
 
-  if(sh == &sh_root)
-    sh->cwd.s = getcwd(rootcwd, sizeof(rootcwd));
+  //if(sh == &sh_root)
+  //  sh->cwd.s = getcwd(rootcwd, sizeof(rootcwd));
 
-  if(sh->cwd.s == NULL)
+  if(sh == &sh_root || sh->cwd.s == NULL)
     shell_getcwd(&sh->cwd);
   else
     sh->cwd.len = str_len(sh->cwd.s);
