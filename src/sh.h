@@ -4,6 +4,8 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+#include "stralloc.h"
+#include "job.h"
 
 #include "stralloc.h"
 #include "job.h"
