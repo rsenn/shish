@@ -27,6 +27,24 @@ include(CheckLibraryExists)
 include(CheckCCompilerFlag)
 
 
+include(CheckCSourceCompiles)
+
+function(check_inline)
+	foreach(KEYWORD "inline" "__inline__" "__inline")
+		if(NOT INLINE_KEYWORD)
+			set(CMAKE_REQUIRED_DEFINITIONS "-DTESTKEYWORD=${KEYWORD}")
+			check_c_source_compiles("typedef int foo_t;
+	static TESTKEYWORD foo_t static_foo(){return 0;}
+	foo_t foo(){return 0;}
+	int main(int argc, char *argv[]){return 0;}" HAVE_${KEYWORD})
+			if(HAVE_${KEYWORD})
+				set(INLINE_KEYWORD ${KEYWORD})
+			endif(HAVE_${KEYWORD})
+		endif(NOT INLINE_KEYWORD)
+	endforeach(KEYWORD)
+endfunction(check_inline)
+
+
 set(BUILD_DEBUG FALSE)
 
 if("${CMAKE_BUILD_TYPE}" MATCHES ".*Deb.*")
@@ -157,6 +175,8 @@ if(DEBUG_ALLOC)
 else()
   set(NAME_DEBUG "")
 endif()
+
+check_inline()
 
 if(WIN32 OR WIN64 OR MINGW OR WINDOWS)
   check_library_exists(ws2_32 gethostname /usr/lib HAVE_WS2_32)

@@ -7,6 +7,9 @@
 #include <unistd.h>
 #endif
 
+#define UINT32_POOLSIZE 16
+
+extern unsigned long uint32_seeds;
 extern uint32 uint32_pool[UINT32_POOLSIZE];
 
 /* feed data to the prng */
