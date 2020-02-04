@@ -88,20 +88,21 @@ struct fd {
 #define D_TRUNC 0x00000010
 
 /* types */
-#define D_TYPE 0x0007ff00
+#define D_TYPE     0x0007ff00
 
-#define D_FILE 0x00000100 /* a file that has been opened */
-#define D_DIR 0x00000200
-#define D_LINK 0x00000400
-#define D_CHAR 0x00000800
-#define D_BLOCK 0x00001000
-#define D_SOCKET 0x00002000
-#define D_PIPE 0x00004000     /* a pipe */
+#define D_FILE     0x00000100 /* a file that has been opened */
+#define D_DIR      0x00000200
+#define D_LINK     0x00000400
+#define D_CHAR     0x00000800
+#define D_BLOCK    0x00001000
+#define D_SOCKET   0x00002000
+#define D_PIPE     0x00004000     /* a pipe */
 #define D_STRALLOC 0x00008000 /* a stralloc */
-#define D_STRING 0x00010000   /* a nul-terminated string */
-#define D_DUP 0x00020000      /* a clone of another file descriptor */
-#define D_TERM 0x00040000     /* is a terminal */
-#define D_NULL 0x00080000
+#define D_STRING   0x00010000   /* a nul-terminated string */
+#define D_DUP      0x00020000      /* a clone of another file descriptor */
+#define D_TERM     0x00040000     /* is a terminal */
+#define D_NULL     0x00080000
+#define D_FREE     0x00100000
 
 #define D_SUBST (D_STRALLOC | D_WRITE)
 #define D_HERE (D_STRALLOC | D_READ)

@@ -39,8 +39,13 @@ main(int argc, char** argv, char** envp) {
   /* create new fds for every valid file descriptor until stderr */
   for(e = STDIN_FILENO; e <= STDERR_FILENO; e++) {
     if((flags = fdtable_check(e))) {
+#ifdef HAVE_ALLOCA
       fd_allocab(fd);
       fd_push(fd, e, flags);
+#else
+      fd_mallocb(fd);
+      fd_push(fd, e, flags|D_FREE);
+#endif
       fd_setfd(fd, e);
     } else {
       if(e < fd_exp)
