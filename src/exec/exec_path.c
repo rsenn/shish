@@ -2,7 +2,6 @@
 #include "shell.h"
 #include "str.h"
 #include "var.h"
-#include <limits.h>
 #include "windoze.h"
 #if WINDOWS_NATIVE
 # include <io.h>
