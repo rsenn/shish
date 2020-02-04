@@ -83,8 +83,13 @@ main(int argc, char** argv, char** envp) {
     }
 
   /* set up the source fd (where the shell reads from) */
+#ifdef HAVE_ALLOCA
   fd_alloca(fd);
   fd_push(fd, STDSRC_FILENO, D_READ);
+#else
+  fd_malloc(fd);
+  fd_push(fd, STDSRC_FILENO, D_READ|D_FREE);
+#endif
 
   /* if there were cmds supplied with the option
      -c then read input from this string. */
