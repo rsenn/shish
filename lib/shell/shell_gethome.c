@@ -4,6 +4,13 @@
 #include <limits.h>
 #include <stdlib.h>
 
+#ifndef PATH_MAX
+#if WINDOWS
+#include <windows.h>
+#endif
+#define PATH_MAX MAX_PATH
+#endif
+
 /* get home directory into a char buf not smaller than PATH_MAX + 1 chars
  * ----------------------------------------------------------------------- */
 char*

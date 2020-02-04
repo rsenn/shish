@@ -8,7 +8,6 @@
 #endif
 #define _XOPEN_SOURCE_EXTENDED 1
 #define _MISC_SOURCE 1
-#define _GNU_SOURCE 1
 #define _POSIX_SOURCE 1
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 1
@@ -16,7 +15,6 @@
 
 #define _FILE_OFFSET_BITS 64
 //#define _LARGEFILE64_SOURCE 1
-#define _LARGEFILE_SOURCE 1
 
 #include "../buffer.h"
 #include "../byte.h"
@@ -28,6 +26,13 @@
 #define PATHSEP_C '/'
 #include <unistd.h>
 #define HAVE_LSTAT 1
+#endif
+
+#ifndef PATH_MAX
+#if WINDOWS
+#include <windows.h>
+#endif
+#define PATH_MAX MAX_PATH
 #endif
 
 #include <errno.h>
