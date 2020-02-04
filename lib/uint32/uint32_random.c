@@ -7,6 +7,8 @@
 #include <unistd.h>
 #endif
 
+#define UINT32_POOLSIZE 16
+
 uint32 uint32_pool[UINT32_POOLSIZE];
 unsigned long uint32_seeds = 0;
 
