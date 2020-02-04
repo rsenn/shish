@@ -1,7 +1,12 @@
 #include "byte.h"
 #include "sh.h"
 #include "shell.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /* after forking, returns pid
  * ----------------------------------------------------------------------- */

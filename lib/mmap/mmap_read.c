@@ -1,12 +1,14 @@
+#include "../open.h"
+#include "../mmap.h"
+#include "../windoze.h"
+
 #include <sys/types.h>
-#ifdef _WIN32
+#if WINDOWS_NATIVE
 #include <windows.h>
 #else
-#include "../open.h"
 #include <sys/mman.h>
 #include <unistd.h>
 #endif
-#include "../mmap.h"
 
 const char*
 mmap_read(const char* filename, size_t* filesize) {

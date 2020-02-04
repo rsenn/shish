@@ -1,5 +1,10 @@
 #include "fdstack.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /* establishs pipes across parent/child for stralloc fds
  * ----------------------------------------------------------------------- */

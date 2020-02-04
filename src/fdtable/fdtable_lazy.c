@@ -1,6 +1,11 @@
 #include "fd.h"
 #include "fdtable.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /* try to lazy-resolve fds until the supplied fd is the bottom
  * ----------------------------------------------------------------------- */

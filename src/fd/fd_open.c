@@ -1,6 +1,11 @@
 #include "fd.h"
 #include "sh.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /* prepare the fd for opening a file
  *

@@ -1,5 +1,10 @@
 #include "fd.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 static ssize_t
 fd_nullread(int fd, char* b, unsigned long n) {

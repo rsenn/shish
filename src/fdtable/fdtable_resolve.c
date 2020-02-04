@@ -1,6 +1,11 @@
 #include "fd.h"
 #include "fdtable.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /* try to resolve the virtual to its effective file descriptor
  *

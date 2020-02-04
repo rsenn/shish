@@ -1,7 +1,12 @@
 #include "buffer.h"
 #include "fd.h"
 #include "shell.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /* reinitialize an (fd) struct
  *

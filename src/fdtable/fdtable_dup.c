@@ -1,7 +1,12 @@
 #include "fd.h"
 #include "fdstack.h"
 #include "fdtable.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /* handles pending duplicating of a dup-(fd) initialized using fd_dup()
  *

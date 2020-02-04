@@ -2,7 +2,12 @@
 #include "fdstack.h"
 #include "sh.h"
 #include "vartab.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /* destroys current shell environment and pops previous
  * ----------------------------------------------------------------------- */

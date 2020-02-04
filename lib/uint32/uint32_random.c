@@ -1,6 +1,11 @@
 #include "../open.h"
 #include "../uint32.h"
+#include "windoze.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 uint32 uint32_pool[UINT32_POOLSIZE];
 unsigned long uint32_seeds = 0;
