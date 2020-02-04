@@ -69,7 +69,7 @@ fork(void) {
   HMODULE mod;
   RtlCloneUserProcess_f clone_p;
   RTL_USER_PROCESS_INFORMATION process_info;
-  NTSTATUS result;
+  long result;
 
   mod = GetModuleHandle("ntdll.dll");
   if(!mod)
