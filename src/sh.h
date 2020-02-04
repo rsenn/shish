@@ -4,18 +4,16 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+#include "stralloc.h"
+#include "job.h"
 
 #include "windoze.h"
 #if WINDOWS_NATIVE
 #ifndef HAVE_UID_T
 typedef int uid_t;
 #endif
-#ifndef HAVE_PID_T
-typedef int pid_t;
-#endif
 #endif
 
-#include "stralloc.h"
 #include <setjmp.h>
 #include <stdlib.h>
 #include <sys/types.h>
