@@ -28,4 +28,4 @@ debug_alloc(const char* file, unsigned int line, unsigned long size) {
 
   return ch;
 }
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */

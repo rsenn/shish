@@ -1,6 +1,6 @@
 #include "../debug.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 #include "../fd.h"
 #include "../../lib/fmt.h"
 
@@ -21,4 +21,4 @@ debug_ptr(const char* msg, void* ptr, int depth) {
   buffer_puts(fd_err->w, COLOR_NONE "\n");
   buffer_flush(fd_err->w);
 }
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */

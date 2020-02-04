@@ -1,6 +1,6 @@
 #include "../debug.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
 #include "../fd.h"
 #include "../tree.h"
 
@@ -26,4 +26,4 @@ debug_list(union node* n, int depth) {
 
   buffer_flush(fd_err->w);
 }
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */

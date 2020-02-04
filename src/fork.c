@@ -14,15 +14,16 @@
  * from the use of this software.
  */
 
+#include "../lib/windoze.h"
+
+#if WINDOWS_NATIVE
 #define _WIN32_WINNT 0x0600
 #define WIN32_LEAN_AND_MEAN
 #include <stdio.h>
 #include <errno.h>
 #include <process.h>
 #include <windows.h>
-#include "../lib/windoze.h"
 
-#if WINDOWS_NATIVE
 typedef struct _CLIENT_ID {
   PVOID UniqueProcess;
   PVOID UniqueThread;

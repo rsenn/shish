@@ -76,33 +76,33 @@ endif(F_LTO)
 
 
 if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" OR CMAKE_BUILD_TYPE STREQUAL "Release")
-check_c_compiler_flag("-falign-functions" F_ALIGN_FUNCTIONS)
-check_c_compiler_flag("-falign-jumps" F_ALIGN_JUMPS)
-check_c_compiler_flag("-falign-labels" F_ALIGN_LABELS)
-check_c_compiler_flag("-falign-loops" F_ALIGN_LOOPS)
+check_c_compiler_flag("-falign-functions=1" F_ALIGN_FUNCTIONS)
+check_c_compiler_flag("-falign-jumps=1" F_ALIGN_JUMPS)
+check_c_compiler_flag("-falign-labels=1" F_ALIGN_LABELS)
+check_c_compiler_flag("-falign-loops=1" F_ALIGN_LOOPS)
 endif()
 
 
 if(F_ALIGN_COMMONS)
-  add_definitions("-falign-commons")
+  add_definitions("-falign-commons=1")
 endif(F_ALIGN_COMMONS)
 if(F_ALIGN_DOUBLE)
-  add_definitions("-falign-double")
+  add_definitions("-falign-double=1")
 endif(F_ALIGN_DOUBLE)
 if(F_ALIGN_FUNCTIONS)
-  add_definitions("-falign-functions")
+  add_definitions("-falign-functions=1")
 endif(F_ALIGN_FUNCTIONS)
 if(F_ALIGN_JUMPS)
-  add_definitions("-falign-jumps")
+  add_definitions("-falign-jumps=1")
 endif(F_ALIGN_JUMPS)
 if(F_ALIGN_LABELS)
-  add_definitions("-falign-labels")
+  add_definitions("-falign-labels=1")
 endif(F_ALIGN_LABELS)
 if(F_ALIGN_LOOPS)
-  add_definitions("-falign-loops")
+  add_definitions("-falign-loops=1")
 endif(F_ALIGN_LOOPS)
 if(F_ALIGN_STRINGOPS)
-  add_definitions("-falign-stringops")
+  add_definitions("-falign-stringops=1")
 endif(F_ALIGN_STRINGOPS)
 
 list(APPEND ALL_BUILTINS basename break cd dirname dump echo eval exec exit export expr false fdtable hash help history hostname pwd set shift source test type true unset)
@@ -432,7 +432,6 @@ endif(BUILD_DEBUG)
 
 string(REPLACE " " ";" SOURCES "${SOURCES}")
 
-
 foreach(DISABLED ${BUILTINS_DISABLED})
   set(SRC "src/builtin/builtin_${DISABLED}.c")
   list(LENGTH SOURCES N)
@@ -454,6 +453,20 @@ foreach(ENABLED ${BUILTINS_ENABLED})
 endforeach(ENABLED ${BUILTINS_ENABLED})
 
 
+set(BUILTIN_CONFIG "")
+foreach(BUILTIN ${ALL_BUILTINS})
+	string(TOUPPER ${BUILTIN} NAME)
+  if(${BUILD_BUILTIN_${NAME}})
+    set(BUILTIN_CONFIG "${BUILTIN_CONFIG}\n#define BUILTIN_${NAME} 1")
+    list(APPEND SOURCES "src/builtin/builtin_${BUILTIN}.c")
+  else(${BUILD_BUILTIN_${NAME}})
+    set(BUILTIN_CONFIG "${BUILTIN_CONFIG}\n#define BUILTIN_${NAME} 0")
+  endif(${BUILD_BUILTIN_${NAME}})
+endforeach(BUILTIN ${ALL_BUILTINS})
+
+file(WRITE "${CMAKE_BINARY_DIR}/src/builtin_config.h" "${BUILTIN_CONFIG}")
+message("${BUILTIN_CONFIG}")
+
 if(NO_TREE_PRINT)
   add_definitions(-DNO_TREE_PRINT=1)
   #list(FILTER SOURCES EXCLUDE REGEX  "src/tree/tree.*print.*\.c")
@@ -462,10 +475,11 @@ if(NO_TREE_PRINT)
 endif(NO_TREE_PRINT)
 
 
-configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake" "${CMAKE_BINARY_DIR}/src/builtin_config.h"
-	#@ONLY
-	#ESCAPE_QUOTES
-	NEWLINE_STYLE UNIX)
+#
+#configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake" "${CMAKE_BINARY_DIR}/src/builtin_config.h"
+#	#@ONLY
+#	#ESCAPE_QUOTES
+#	NEWLINE_STYLE UNIX)
 
 list(APPEND SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
 add_definitions(-DHAVE_BUILTIN_CONFIG_H=1)

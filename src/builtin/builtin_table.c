@@ -94,7 +94,7 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_DUMP
     {"dump", builtin_dump, B_DEFAULT, "[-v]"},
 #endif
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */
 #if BUILTIN_ECHO
     {"echo", builtin_echo, B_DEFAULT, "[-ne] [arg ...]"},
 #endif

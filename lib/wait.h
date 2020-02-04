@@ -14,9 +14,11 @@
 #define WAIT_EXITSTATUS(status) ((status)&0x7f)
 #endif
 
+int wait_nohang(int* wstat);
 int wait_pid(int pid, int* wstat);
 int wait_pid_nohang(int pid, int* wstat);
 int waitpid_nointr(int pid, int* wstat, int flags);
 int wait_pids_nohang(int const* pids, unsigned int len, int* wstat);
+
 
 #endif // _WAIT_H

@@ -12,7 +12,7 @@ parse_expect(struct parser* p, int tempflags, enum tok_flag toks, union node* nf
     if(nfree) {
 #ifdef DEBUG_OUTPUT
       debug_list(nfree, 0);
-#endif /* DEBUG */
+#endif /* DEBUG_OUTPUT */
       tree_free(nfree);
     }
 

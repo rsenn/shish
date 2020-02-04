@@ -44,14 +44,14 @@ vartab_add(struct vartab* vartab, struct var* var, struct search* context) {
     /* */
     /* then we search forward again until the next entry is bigger */
     if(var_hsearch(context) == (VAR_HASH)0) {
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
       size_t dist =
 #endif
           var_bsearch(context);
 
       /* there must not be a full match, otherwise this means that
          the variable is already in the list which it should not! */
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
       assert(dist != (size_t)0);
 #endif
     }
