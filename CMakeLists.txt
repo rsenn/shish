@@ -29,7 +29,7 @@ include(CheckCCompilerFlag)
 
 include(CheckCSourceCompiles)
 
-function(check_inline)
+macro(check_inline)
 	foreach(KEYWORD "__inline__" "__inline" "inline")
 		if(NOT INLINE_KEYWORD)
 			set(CMAKE_REQUIRED_DEFINITIONS "-DTESTKEYWORD=${KEYWORD}")
@@ -38,12 +38,12 @@ function(check_inline)
 	foo_t foo(){return 0;}
 	int main(int argc, char *argv[]){return 0;}" HAVE_${KEYWORD})
 			if(HAVE_${KEYWORD})
-				set(INLINE_KEYWORD ${KEYWORD})
+				set(INLINE_KEYWORD "${KEYWORD}"")
 			endif(HAVE_${KEYWORD})
 		endif(NOT INLINE_KEYWORD)
 	endforeach(KEYWORD)
   message(STATUS "inline keyword: ${INLINE_KEYWORD}")
-endfunction(check_inline)
+endmacro(check_inline)
 
 
 
