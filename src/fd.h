@@ -3,7 +3,12 @@
 
 /*#define __USE_LARGEFILE64*/
 #include <fcntl.h>
+
+#ifdef __TINYC__
+#define NO_OLDNAMES
+#endif
 #include <sys/types.h>
+#undef NO_OLDNAMES
 
 #include "../lib/buffer.h"
 #include "../lib/shell.h"

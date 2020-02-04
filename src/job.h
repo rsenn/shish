@@ -2,10 +2,13 @@
 #define _JOB_H
 
 #include <signal.h>
+
 #ifdef __TINYC__
 #define NO_OLDNAMES
 #endif
 #include <sys/types.h>
+#undef NO_OLDNAMES
+
 #ifndef _WIN32
 #include <sys/wait.h>
 #endif
