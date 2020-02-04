@@ -63,19 +63,19 @@ buffer_dump(buffer* out, buffer* b) {
   buffer_puts(out, ", op=");
   /* buffer_putspace(out); */
 
-  if(b->op == (void*)&read)
+  if(b->op == (buffer_op_proto*)&read)
     buffer_puts(out, "<read>  ");
-  else if(b->op == (void*)&write)
+  else if(b->op == (buffer_op_proto*)&write)
     buffer_puts(out, "<write> ");
-  else if(b->op == (void*)&buffer_dummyreadmmap)
+  else if(b->op == (buffer_op_proto*)&buffer_dummyreadmmap)
     buffer_puts(out, "<mmap>  ");
   /*  else if(b->op == (void*)&stralloc_write)
       buffer_puts(out, "<sa-wr> ");*/
-  else if(b->op == (void*)NULL)
+  else if(b->op == (buffer_op_proto*)NULL)
     buffer_puts(out, "NULL    ");
   else {
     /* n = fmt_xlong(xlong, (int64)(intptr_t)b->op); */
-    buffer_putptr(out, (void*)b->op); /* xlong, n); */
+    buffer_putptr(out, (buffer_op_proto*)b->op); /* xlong, n); */
   }
   buffer_puts(out, " ]");
   buffer_putnlflush(out);

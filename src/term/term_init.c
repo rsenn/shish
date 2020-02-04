@@ -16,6 +16,8 @@ int term_insert = 1;
 int term_dumb = 1;
 buffer* term_output;
 
+extern buffer term_input;
+
 /* tries to get terminal attributes and if it succeeds it will make the src
  * buffer use the term_read() function which is, like bloaty readline(),
  * the interface to the whole terminal line editing stuff.
