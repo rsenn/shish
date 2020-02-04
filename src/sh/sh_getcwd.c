@@ -7,6 +7,7 @@
 #define PATH_MAX MAX_PATH
 #else
 #include <unistd.h>
+#include <limits.h>
 #endif
 
 void

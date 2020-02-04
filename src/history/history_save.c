@@ -7,6 +7,8 @@
 #if WINDOWS_NATIVE
 #include <windows.h>
 #define PATH_MAX MAX_PATH
+#else
+#include <limits.h>
 #endif
 
 /* save the history
