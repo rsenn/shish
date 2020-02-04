@@ -1,8 +1,8 @@
 #include "fd.h"
-#include "buffer.h"
+#include "../../lib/buffer.h"
 #include "fdstack.h"
 #include <assert.h>
-#include "windoze.h"
+#include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>
 #else

@@ -1,6 +1,6 @@
 #include "history.h"
-#include "scan.h"
-#include "shell.h"
+#include "../../lib/scan.h"
+#include "../../lib/shell.h"
 #include "var.h"
 
 char** history_array;

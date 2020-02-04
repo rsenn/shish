@@ -1,4 +1,4 @@
-#include "scan.h"
+#include "../../lib/scan.h"
 #include "sh.h"
 
 /* exit built-in

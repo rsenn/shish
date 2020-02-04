@@ -1,6 +1,6 @@
 #include "expand.h"
 #include "parse.h"
-#include "scan.h"
+#include "../../lib/scan.h"
 #include "source.h"
 #include "tree.h"
 

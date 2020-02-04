@@ -4,7 +4,7 @@
 #include "fd.h"
 #include "fdtable.h"
 #include "sh.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 #include "tree.h"
 
 /* execute a command

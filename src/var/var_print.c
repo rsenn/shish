@@ -1,6 +1,6 @@
 #include "fd.h"
 #include "parse.h"
-#include "str.h"
+#include "../../lib/str.h"
 #include "var.h"
 #include <assert.h>
 

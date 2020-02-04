@@ -1,5 +1,5 @@
 #include "term.h"
-#include "windoze.h"
+#include "../../lib/windoze.h"
 #if !WINDOWS_NATIVE && !defined(__MINGW64__)
 #include <termios.h>
 
@@ -12,7 +12,7 @@ int
 term_attr(int fd, int set) {
   int ret;
 
-#include "windoze.h"
+#include "../../lib/windoze.h"
 #if !WINDOWS_NATIVE && !defined(__MINGW64__)
   if((ret = tcgetattr(fd, &term_tcattr)) == 0 && set) {
     struct termios newattr;

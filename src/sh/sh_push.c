@@ -1,5 +1,5 @@
 #include "sh.h"
-#include "byte.h"
+#include "../../lib/byte.h"
 #include "fdstack.h"
 #include "vartab.h"
 

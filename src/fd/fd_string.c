@@ -1,4 +1,4 @@
-#include "buffer.h"
+#include "../../lib/buffer.h"
 #include "fd.h"
 
 /* prepare fd for reading from a string

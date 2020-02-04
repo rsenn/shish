@@ -1,7 +1,7 @@
 #include "sh.h"
-#include "shell.h"
-#include "str.h"
-#include "windoze.h"
+#include "../../lib/shell.h"
+#include "../../lib/str.h"
+#include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <windows.h>
 #define PATH_MAX MAX_PATH

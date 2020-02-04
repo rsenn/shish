@@ -1,7 +1,7 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include "windoze.h"
+#include "../../lib/windoze.h"
 #if !WINDOWS_NATIVE
 #include <termios.h>
 #include <unistd.h>
@@ -9,7 +9,7 @@
 #include "fd.h"
 #include "job.h"
 #include "sh.h"
-#include "wait.h"
+#include "../../lib/wait.h"
 
 /* waits for a job to terminate
  * ----------------------------------------------------------------------- */

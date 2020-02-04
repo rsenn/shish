@@ -1,6 +1,6 @@
 #include "debug.h"
 #include "sh.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 
 /* set arguments of the current shell env
  * FIXME: do we always need to strdup() them?

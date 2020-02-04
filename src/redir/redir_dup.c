@@ -2,7 +2,7 @@
 #include "fd.h"
 #include "fdtable.h"
 #include "redir.h"
-#include "scan.h"
+#include "../../lib/scan.h"
 
 /* do a dup-redirection
  * ----------------------------------------------------------------------- */

@@ -1,8 +1,8 @@
 #include "builtin.h"
 #include "exec.h"
-#include "str.h"
+#include "../../lib/str.h"
 #include "vartab.h"
-#include "windoze.h"
+#include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>
 #ifndef X_OK

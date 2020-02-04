@@ -1,11 +1,11 @@
 #include "expand.h"
-#include "fmt.h"
+#include "../../lib/fmt.h"
 #include "sh.h"
-#include "shell.h"
-#include "str.h"
+#include "../../lib/shell.h"
+#include "../../lib/str.h"
 #include "tree.h"
-#include "uint16.h"
-#include "uint32.h"
+#include "../../lib/uint16.h"
+#include "../../lib/uint32.h"
 #include "var.h"
 #include <stdlib.h>
 

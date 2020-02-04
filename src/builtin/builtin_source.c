@@ -2,7 +2,7 @@
 #include "fd.h"
 #include "fdstack.h"
 #include "sh.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 #include "source.h"
 
 /* source shell script

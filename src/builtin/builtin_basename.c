@@ -1,6 +1,6 @@
 #include "builtin.h"
 #include "fd.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 
 /* ----------------------------------------------------------------------- */
 int

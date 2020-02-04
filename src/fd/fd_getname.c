@@ -1,7 +1,7 @@
 #include "fd.h"
-#include "fmt.h"
+#include "../../lib/fmt.h"
 #include "sh.h"
-#include "str.h"
+#include "../../lib/str.h"
 
 /* try to get a name for the (fd)
  * ----------------------------------------------------------------------- */

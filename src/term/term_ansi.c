@@ -1,6 +1,6 @@
 #include "history.h"
 #include "parse.h"
-#include "scan.h"
+#include "../../lib/scan.h"
 #include "term.h"
 #include "tree.h"
 

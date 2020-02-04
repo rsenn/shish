@@ -2,7 +2,7 @@
 
 #ifdef DEBUG
 #include "fd.h"
-#include "fmt.h"
+#include "../../lib/fmt.h"
 
 /* output a pointer
  * ----------------------------------------------------------------------- */

@@ -1,7 +1,7 @@
 #include "builtin.h"
 #include "exec.h"
 #include "sh.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 
 /* exec built-in
  *

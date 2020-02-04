@@ -1,4 +1,4 @@
-#include "shell.h"
+#include "../../lib/shell.h"
 #include "var.h"
 
 /* unset a variable

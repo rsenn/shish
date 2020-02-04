@@ -5,7 +5,7 @@
 #include <alloca.h>
 #endif
 
-#include "windoze.h"
+#include "../../lib/windoze.h"
 #if !WINDOWS_NATIVE
 #include <sys/wait.h>
 #include <unistd.h>

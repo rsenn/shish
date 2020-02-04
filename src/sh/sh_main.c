@@ -8,13 +8,13 @@
 #include "fd.h"
 #include "fdtable.h"
 #include "sh.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 #include "source.h"
-#include "str.h"
+#include "../../lib/str.h"
 #include "var.h"
 #include <stdlib.h>
 
-#include "uint32.h"
+#include "../../lib/uint32.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"

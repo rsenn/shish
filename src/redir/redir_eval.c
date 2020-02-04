@@ -2,9 +2,9 @@
 #include "fd.h"
 #include "fdtable.h"
 #include "redir.h"
-#include "scan.h"
+#include "../../lib/scan.h"
 #include "tree.h"
-#include "windoze.h"
+#include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>
 #else

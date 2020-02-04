@@ -1,5 +1,5 @@
 #include "sh.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 #include "vartab.h"
 
 /* create a new var on top vartab, possibly overwriting an old one

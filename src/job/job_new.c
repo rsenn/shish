@@ -1,5 +1,5 @@
 #include "job.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 
 struct job* job_list = NULL;
 struct job** job_ptr = &job_list;

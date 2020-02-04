@@ -1,8 +1,8 @@
 #include "builtin.h"
 #include "fd.h"
 #include "sh.h"
-#include "shell.h"
-#include "str.h"
+#include "../../lib/shell.h"
+#include "../../lib/str.h"
 #include <errno.h>
 #include <string.h>
 

@@ -4,7 +4,7 @@
 #include "builtin.h"
 #include "fdstack.h"
 #include "fdtable.h"
-#include "shell.h"
+#include "../../lib/shell.h"
 #include "vartab.h"
 
 /* ----------------------------------------------------------------------- */

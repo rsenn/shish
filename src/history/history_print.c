@@ -1,5 +1,5 @@
 #include "fd.h"
-#include "fmt.h"
+#include "../../lib/fmt.h"
 #include "history.h"
 
 /* print the history

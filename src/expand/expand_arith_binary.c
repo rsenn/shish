@@ -1,6 +1,6 @@
 #include "expand.h"
 #include "tree.h"
-#include "uint64.h"
+#include "../../lib/uint64.h"
 #include <math.h>
 
 /* expand a binary expression

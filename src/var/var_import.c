@@ -1,7 +1,7 @@
 #include "fd.h"
 #include "parse.h"
 #include "sh.h"
-#include "str.h"
+#include "../../lib/str.h"
 #include "vartab.h"
 #include <assert.h>
 

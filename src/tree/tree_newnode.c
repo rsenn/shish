@@ -1,5 +1,5 @@
-#include "byte.h"
-#include "shell.h"
+#include "../../lib/byte.h"
+#include "../../lib/shell.h"
 #include "tree.h"
 
 #ifndef DEBUG_ALLOC

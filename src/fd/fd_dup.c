@@ -1,5 +1,5 @@
 #include "fd.h"
-#include "fmt.h"
+#include "../../lib/fmt.h"
 #include "sh.h"
 #include <errno.h>
 #include <string.h>

@@ -1,5 +1,5 @@
 #include "exec.h"
-#include "str.h"
+#include "../../lib/str.h"
 
 /* searches hashtable entry for <name>
  * ----------------------------------------------------------------------- */

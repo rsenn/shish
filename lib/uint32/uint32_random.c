@@ -1,6 +1,6 @@
 #include "../open.h"
 #include "../uint32.h"
-#include "windoze.h"
+#include "../windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>
 #else

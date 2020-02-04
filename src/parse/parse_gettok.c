@@ -1,4 +1,4 @@
-#include "buffer.h"
+#include "../../lib/buffer.h"
 #include "parse.h"
 #include "tree.h"
 

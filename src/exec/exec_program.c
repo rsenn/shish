@@ -7,7 +7,7 @@
 #endif
 
 #include <signal.h>
-#include "windoze.h"
+#include "../../lib/windoze.h"
 #include "exec.h"
 #include "fdstack.h"
 #include "fdtable.h"
@@ -18,7 +18,7 @@
 #include "sig.h"
 #include "tree.h"
 #include "var.h"
-#include "wait.h"
+#include "../../lib/wait.h"
 
 #if WINDOWS_NATIVE
 pid_t fork(void);

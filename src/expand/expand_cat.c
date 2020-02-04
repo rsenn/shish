@@ -1,5 +1,5 @@
 #include "expand.h"
-#include "str.h"
+#include "../../lib/str.h"
 #include "tree.h"
 #include "var.h"
 #include <stdlib.h>

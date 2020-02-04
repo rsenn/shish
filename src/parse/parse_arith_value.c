@@ -1,12 +1,12 @@
 #include "expand.h"
 #include "fd.h"
-#include "fmt.h"
+#include "../../lib/fmt.h"
 #include "parse.h"
-#include "scan.h"
+#include "../../lib/scan.h"
 #include "source.h"
 #include "tree.h"
-#include "uint16.h"
-#include "uint64.h"
+#include "../../lib/uint16.h"
+#include "../../lib/uint64.h"
 
 typedef size_t scan_function(const char*, int64*);
 
