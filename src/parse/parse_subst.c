@@ -15,8 +15,7 @@ parse_subst(struct parser* p) {
 
     if(c == '(') {
       source_skip();
-      int ret = parse_arith(p);
-      return ret;
+      return parse_arith(p);
     }
 
     return parse_bquoted(p);
