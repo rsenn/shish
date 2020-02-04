@@ -1,8 +1,8 @@
-#include "expand.h"
+#include "../expand.h"
 #include "../../lib/fmt.h"
-#include "parse.h"
-#include "redir.h"
-#include "tree.h"
+#include "../parse.h"
+#include "../redir.h"
+#include "../tree.h"
 #include <stdlib.h>
 
 /* print (sub)tree(list) to a stralloc

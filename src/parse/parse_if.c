@@ -1,5 +1,5 @@
-#include "parse.h"
-#include "tree.h"
+#include "../parse.h"
+#include "../tree.h"
 
 /* 3.9.4.4 - parse if conditional
  * ----------------------------------------------------------------------- */

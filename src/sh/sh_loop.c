@@ -1,13 +1,13 @@
-#include "debug.h"
-#include "eval.h"
-#include "fd.h"
-#include "history.h"
-#include "parse.h"
-#include "prompt.h"
-#include "sh.h"
-#include "source.h"
-#include "tree.h"
-#include "var.h"
+#include "../debug.h"
+#include "../eval.h"
+#include "../fd.h"
+#include "../history.h"
+#include "../parse.h"
+#include "../prompt.h"
+#include "../sh.h"
+#include "../source.h"
+#include "../tree.h"
+#include "../var.h"
 
 /* main loop, parse lines into trees and execute them
  * ----------------------------------------------------------------------- */

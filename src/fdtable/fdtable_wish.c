@@ -1,5 +1,5 @@
-#include "fd.h"
-#include "fdtable.h"
+#include "../fd.h"
+#include "../fdtable.h"
 
 /* wish 'e' become the new expected fd before calling open()/dup()
  * ----------------------------------------------------------------------- */

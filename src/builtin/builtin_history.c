@@ -1,5 +1,5 @@
-#include "builtin.h"
-#include "history.h"
+#include "../builtin.h"
+#include "../history.h"
 #include "../../lib/shell.h"
 
 /* manage command history

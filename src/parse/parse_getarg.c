@@ -1,5 +1,5 @@
-#include "parse.h"
-#include "tree.h"
+#include "../parse.h"
+#include "../tree.h"
 
 /* make an argument node from the stuff parsed by parse_word
  * ----------------------------------------------------------------------- */

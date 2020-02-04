@@ -1,6 +1,6 @@
-#include "prompt.h"
-#include "term.h"
-#include "var.h"
+#include "../prompt.h"
+#include "../term.h"
+#include "../var.h"
 
 char prompt_var[4] = "PS0";
 int prompt_number = 0;

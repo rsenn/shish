@@ -1,5 +1,5 @@
-#include "parse.h"
-#include "tree.h"
+#include "../parse.h"
+#include "../tree.h"
 
 /* 3.9.4.2 - parse for loop
  * ----------------------------------------------------------------------- */

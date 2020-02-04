@@ -1,6 +1,6 @@
-#include "fd.h"
+#include "../fd.h"
 #include "../../lib/scan.h"
-#include "sh.h"
+#include "../sh.h"
 
 /* ----------------------------------------------------------------------- */
 int

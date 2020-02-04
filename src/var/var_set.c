@@ -1,6 +1,6 @@
 #include "../../lib/byte.h"
 #include "../../lib/str.h"
-#include "var.h"
+#include "../var.h"
 
 /* set a variable
  * ----------------------------------------------------------------------- */

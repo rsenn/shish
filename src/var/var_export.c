@@ -1,5 +1,5 @@
 #include "../../lib/byte.h"
-#include "var.h"
+#include "../var.h"
 #include <stdlib.h>
 
 /* export variables for execve()

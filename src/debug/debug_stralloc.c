@@ -1,7 +1,7 @@
-#include "debug.h"
+#include "../debug.h"
 
 #ifdef DEBUG
-#include "fd.h"
+#include "../fd.h"
 
 /* output an allocated string
  * ----------------------------------------------------------------------- */

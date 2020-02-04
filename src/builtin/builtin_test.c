@@ -1,5 +1,5 @@
-#include "builtin.h"
-#include "fd.h"
+#include "../builtin.h"
+#include "../fd.h"
 #include "../../lib/fmt.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"

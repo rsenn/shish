@@ -1,7 +1,7 @@
-#include "parse.h"
-#include "redir.h"
-#include "source.h"
-#include "tree.h"
+#include "../parse.h"
+#include "../redir.h"
+#include "../source.h"
+#include "../tree.h"
 
 /* parse a redirection word according to 3.7
  *

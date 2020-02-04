@@ -1,6 +1,6 @@
-#include "parse.h"
+#include "../parse.h"
 #include "../../lib/str.h"
-#include "tree.h"
+#include "../tree.h"
 
 static char parse_namebuf[128];
 

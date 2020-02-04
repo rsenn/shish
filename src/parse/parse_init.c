@@ -1,6 +1,6 @@
 #include "../../lib/byte.h"
-#include "parse.h"
-#include "tree.h"
+#include "../parse.h"
+#include "../tree.h"
 
 void
 parse_init(struct parser* p, int flags) {

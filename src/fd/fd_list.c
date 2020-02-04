@@ -1,4 +1,4 @@
-#include "fd.h"
+#include "../fd.h"
 
 struct fd* fd_list[D_MAX];
 unsigned int fd_exp = 0; /* expected next effective fd */

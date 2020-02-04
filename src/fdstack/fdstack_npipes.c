@@ -1,4 +1,4 @@
-#include "fdstack.h"
+#include "../fdstack.h"
 
 /* returns how many pipes we have to establish from fdstack to fdstack->parent
  * supply D_SUBST, D_HERE or both of them

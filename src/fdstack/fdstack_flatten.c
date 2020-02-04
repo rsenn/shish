@@ -1,5 +1,5 @@
-#include "fd.h"
-#include "fdstack.h"
+#include "../fd.h"
+#include "../fdstack.h"
 
 /* closes all fds which are not on top
  * ----------------------------------------------------------------------- */

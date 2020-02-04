@@ -1,7 +1,7 @@
 #ifdef DEBUG
 #include "../../lib/buffer.h"
-#include "fd.h"
-#include "fdtable.h"
+#include "../fd.h"
+#include "../fdtable.h"
 
 void
 fdtable_dump(void) {

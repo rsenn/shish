@@ -1,5 +1,5 @@
 #include "../../lib/byte.h"
-#include "history.h"
+#include "../history.h"
 
 unsigned int history_offset;
 unsigned int history_count;

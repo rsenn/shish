@@ -1,5 +1,5 @@
-#include "expand.h"
-#include "redir.h"
+#include "../expand.h"
+#include "../redir.h"
 
 /* set up an fd for a here-document
  * ----------------------------------------------------------------------- */

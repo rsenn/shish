@@ -1,7 +1,7 @@
-#include "eval.h"
-#include "expand.h"
-#include "tree.h"
-#include "var.h"
+#include "../eval.h"
+#include "../expand.h"
+#include "../tree.h"
+#include "../var.h"
 
 /* evaluate for-loop (3.9.4.2)
  * ----------------------------------------------------------------------- */

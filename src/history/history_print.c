@@ -1,6 +1,6 @@
-#include "fd.h"
+#include "../fd.h"
 #include "../../lib/fmt.h"
-#include "history.h"
+#include "../history.h"
 
 /* print the history
  * ----------------------------------------------------------------------- */

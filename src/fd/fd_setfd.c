@@ -1,6 +1,6 @@
-#include "fd.h"
+#include "../fd.h"
 #include "../../lib/buffer.h"
-#include "fdstack.h"
+#include "../fdstack.h"
 #include <assert.h>
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE

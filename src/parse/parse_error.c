@@ -1,8 +1,8 @@
-#include "fd.h"
-#include "parse.h"
-#include "sh.h"
-#include "source.h"
-#include "tree.h"
+#include "../fd.h"
+#include "../parse.h"
+#include "../sh.h"
+#include "../source.h"
+#include "../tree.h"
 
 /* parse error message
  * ----------------------------------------------------------------------- */

@@ -1,5 +1,5 @@
-#include "sh.h"
-#include "var.h"
+#include "../sh.h"
+#include "../var.h"
 
 /* count variables having the specified flag set */
 size_t

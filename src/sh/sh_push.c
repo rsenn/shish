@@ -1,7 +1,7 @@
-#include "sh.h"
+#include "../sh.h"
 #include "../../lib/byte.h"
-#include "fdstack.h"
-#include "vartab.h"
+#include "../fdstack.h"
+#include "../vartab.h"
 
 /* pushes current shell environment and creates new one
  * ----------------------------------------------------------------------- */

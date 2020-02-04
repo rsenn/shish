@@ -1,4 +1,4 @@
-#include "fd.h"
+#include "../fd.h"
 #include "../../lib/shell.h"
 
 /* allocate buffer space for the (fd).

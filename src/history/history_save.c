@@ -1,6 +1,6 @@
 #include "../../lib/buffer.h"
-#include "history.h"
-#include "sh.h"
+#include "../history.h"
+#include "../sh.h"
 #include "../../lib/str.h"
 #include "../../lib/stralloc.h"
 #include "../../lib/windoze.h"

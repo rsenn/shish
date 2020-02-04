@@ -1,8 +1,8 @@
-#include "expand.h"
-#include "fd.h"
-#include "fdtable.h"
-#include "redir.h"
-#include "tree.h"
+#include "../expand.h"
+#include "../fd.h"
+#include "../fdtable.h"
+#include "../redir.h"
+#include "../tree.h"
 
 /* open a file for redirection
  * ----------------------------------------------------------------------- */

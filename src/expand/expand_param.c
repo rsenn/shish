@@ -1,12 +1,12 @@
-#include "expand.h"
+#include "../expand.h"
 #include "../../lib/fmt.h"
-#include "sh.h"
+#include "../sh.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
-#include "tree.h"
+#include "../tree.h"
 #include "../../lib/uint16.h"
 #include "../../lib/uint32.h"
-#include "var.h"
+#include "../var.h"
 #include <stdlib.h>
 
 union node*

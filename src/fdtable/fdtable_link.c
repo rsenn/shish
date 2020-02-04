@@ -1,5 +1,5 @@
-#include "fd.h"
-#include "fdtable.h"
+#include "../fd.h"
+#include "../fdtable.h"
 
 /* link fd to the table at the current position
  * ----------------------------------------------------------------------- */

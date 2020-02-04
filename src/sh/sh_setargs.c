@@ -1,5 +1,5 @@
-#include "debug.h"
-#include "sh.h"
+#include "../debug.h"
+#include "../sh.h"
 #include "../../lib/shell.h"
 
 /* set arguments of the current shell env

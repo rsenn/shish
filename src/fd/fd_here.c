@@ -1,6 +1,6 @@
 #include "../../lib/stralloc.h"
 #include "../../lib/buffer.h"
-#include "fd.h"
+#include "../fd.h"
 #include "../../lib/fmt.h"
 
 /* prepare (fd) for reading from a stralloc

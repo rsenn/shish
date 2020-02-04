@@ -1,5 +1,5 @@
-#include "expand.h"
-#include "tree.h"
+#include "../expand.h"
+#include "../tree.h"
 
 /* expand all arguments of an argument list
  * returns count of argument nodes

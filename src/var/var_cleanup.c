@@ -1,4 +1,4 @@
-#include "var.h"
+#include "../var.h"
 
 void
 var_cleanup(struct var* var) {

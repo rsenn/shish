@@ -1,7 +1,7 @@
-#include "debug.h"
+#include "../debug.h"
 
 #ifdef DEBUG
-#include "tree.h"
+#include "../tree.h"
 
 /* debugs a tree node!
  * ----------------------------------------------------------------------- */

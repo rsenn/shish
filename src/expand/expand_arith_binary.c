@@ -1,5 +1,5 @@
-#include "expand.h"
-#include "tree.h"
+#include "../expand.h"
+#include "../tree.h"
 #include "../../lib/uint64.h"
 #include <math.h>
 

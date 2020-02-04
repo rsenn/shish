@@ -1,7 +1,7 @@
-#include "history.h"
+#include "../history.h"
 #include "../../lib/scan.h"
 #include "../../lib/shell.h"
-#include "var.h"
+#include "../var.h"
 
 char** history_array;
 unsigned int history_size;

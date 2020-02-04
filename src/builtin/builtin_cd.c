@@ -1,10 +1,10 @@
-#include "builtin.h"
+#include "../builtin.h"
 #include "../../lib/byte.h"
-#include "fd.h"
-#include "sh.h"
+#include "../fd.h"
+#include "../sh.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
-#include "var.h"
+#include "../var.h"
 #include <errno.h>
 #include <limits.h>
 #include <string.h>

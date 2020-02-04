@@ -1,10 +1,10 @@
-#include "eval.h"
-#include "expand.h"
-#include "fd.h"
-#include "fdstack.h"
-#include "sh.h"
-#include "tree.h"
-#include "var.h"
+#include "../eval.h"
+#include "../expand.h"
+#include "../fd.h"
+#include "../fdstack.h"
+#include "../sh.h"
+#include "../tree.h"
+#include "../var.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>

@@ -1,6 +1,6 @@
 #include "../../lib/buffer.h"
-#include "parse.h"
-#include "tree.h"
+#include "../parse.h"
+#include "../tree.h"
 
 /* get a token, the argument indicates whether to search for keywords or not
  * ----------------------------------------------------------------------- */

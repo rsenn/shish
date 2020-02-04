@@ -1,7 +1,7 @@
-#include "debug.h"
-#include "fd.h"
-#include "var.h"
-#include "vartab.h"
+#include "../debug.h"
+#include "../fd.h"
+#include "../var.h"
+#include "../vartab.h"
 #include <assert.h>
 
 void

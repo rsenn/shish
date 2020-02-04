@@ -2,7 +2,7 @@
 #include "config.h"
 #endif
 
-#include "fd.h"
+#include "../fd.h"
 #include "../../lib/windoze.h"
 
 #if !WINDOWS_NATIVE

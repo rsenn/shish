@@ -1,6 +1,6 @@
 #include "../../lib/byte.h"
-#include "prompt.h"
-#include "term.h"
+#include "../prompt.h"
+#include "../term.h"
 #include "../../lib/windoze.h"
 #if !WINDOWS_NATIVE && !defined(__MINGW64__)
 #include <termios.h>

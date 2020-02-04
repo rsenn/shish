@@ -1,7 +1,7 @@
 #include "../../lib/buffer.h"
-#include "history.h"
-#include "parse.h"
-#include "sh.h"
+#include "../history.h"
+#include "../parse.h"
+#include "../sh.h"
 #include "../../lib/str.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE

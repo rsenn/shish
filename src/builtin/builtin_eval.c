@@ -1,11 +1,11 @@
-#include "eval.h"
-#include "fd.h"
-#include "fdstack.h"
-#include "parse.h"
+#include "../eval.h"
+#include "../fd.h"
+#include "../fdstack.h"
+#include "../parse.h"
 #include "../../lib/shell.h"
-#include "source.h"
+#include "../source.h"
 #include "../../lib/stralloc.h"
-#include "tree.h"
+#include "../tree.h"
 
 /* parse and evaluate arguments
  * ----------------------------------------------------------------------- */

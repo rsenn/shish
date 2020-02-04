@@ -1,7 +1,7 @@
-#include "exec.h"
+#include "../exec.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
-#include "var.h"
+#include "../var.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 # include <windows.h>

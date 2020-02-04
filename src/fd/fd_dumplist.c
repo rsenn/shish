@@ -1,6 +1,6 @@
 #ifdef DEBUG
 #include "../../lib/buffer.h"
-#include "fd.h"
+#include "../fd.h"
 
 void
 fd_dumplist(void) {

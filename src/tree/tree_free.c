@@ -1,5 +1,5 @@
 #include "../../lib/shell.h"
-#include "tree.h"
+#include "../tree.h"
 
 /* free a tree node
  * ----------------------------------------------------------------------- */

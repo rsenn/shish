@@ -1,6 +1,6 @@
 #include "../../lib/byte.h"
-#include "expand.h"
-#include "tree.h"
+#include "../expand.h"
+#include "../tree.h"
 
 /* expand one N_ARG node to a stralloc (stralloc is overwritten!!!)
  * ----------------------------------------------------------------------- */

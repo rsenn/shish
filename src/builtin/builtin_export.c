@@ -1,8 +1,8 @@
-#include "builtin.h"
+#include "../builtin.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
-#include "var.h"
-#include "vartab.h"
+#include "../var.h"
+#include "../vartab.h"
 
 /* export built-in
  *

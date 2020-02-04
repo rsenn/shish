@@ -1,6 +1,6 @@
 #include "../../lib/windoze.h"
-#include "fd.h"
-#include "job.h"
+#include "../fd.h"
+#include "../job.h"
 #include "../../lib/wait.h"
 
 #ifdef HAVE_CONFIG_H

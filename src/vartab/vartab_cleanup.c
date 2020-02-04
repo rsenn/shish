@@ -1,5 +1,5 @@
 #include "../../lib/shell.h"
-#include "vartab.h"
+#include "../vartab.h"
 #include <assert.h>
 
 /* clean all vars on a variable table

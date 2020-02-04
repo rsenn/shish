@@ -1,5 +1,5 @@
-#include "fd.h"
-#include "source.h"
+#include "../fd.h"
+#include "../source.h"
 
 /* ----------------------------------------------------------------------- */
 int

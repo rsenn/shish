@@ -1,4 +1,4 @@
-#include "parse.h"
+#include "../parse.h"
 
 /* check if it is a valid variable name
  * ----------------------------------------------------------------------- */

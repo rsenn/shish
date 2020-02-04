@@ -1,8 +1,8 @@
-#include "fd.h"
-#include "parse.h"
-#include "sh.h"
+#include "../fd.h"
+#include "../parse.h"
+#include "../sh.h"
 #include "../../lib/str.h"
-#include "vartab.h"
+#include "../vartab.h"
 #include <assert.h>
 
 /* add a new variable using the supplied var struct rather

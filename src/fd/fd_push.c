@@ -1,6 +1,6 @@
-#include "fd.h"
-#include "fdstack.h"
-#include "fdtable.h"
+#include "../fd.h"
+#include "../fdstack.h"
+#include "../fdtable.h"
 
 /* push an (fd) to the top fdtable
  * ----------------------------------------------------------------------- */

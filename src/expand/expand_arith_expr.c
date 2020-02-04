@@ -1,6 +1,6 @@
-#include "expand.h"
+#include "../expand.h"
 #include "../../lib/scan.h"
-#include "tree.h"
+#include "../tree.h"
 #include "../../lib/uint64.h"
 #include <assert.h>
 

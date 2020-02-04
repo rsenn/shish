@@ -1,6 +1,6 @@
 #include "../../lib/byte.h"
-#include "fd.h"
-#include "fdstack.h"
+#include "../fd.h"
+#include "../fdstack.h"
 
 /* unreference buffer pointers of any duplicates of the olddup fd
  *

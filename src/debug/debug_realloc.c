@@ -1,7 +1,7 @@
-#include "debug.h"
+#include "../debug.h"
 
 #ifdef DEBUG
-#include "sh.h"
+#include "../sh.h"
 #include <assert.h>
 #include <errno.h>
 

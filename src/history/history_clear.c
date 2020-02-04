@@ -1,4 +1,4 @@
-#include "history.h"
+#include "../history.h"
 
 /* clear the whole history
  * ----------------------------------------------------------------------- */

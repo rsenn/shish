@@ -1,4 +1,4 @@
-#include "tree.h"
+#include "../tree.h"
 
 /* count nodes in a flat list */
 unsigned int

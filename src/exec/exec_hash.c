@@ -1,7 +1,7 @@
-#include "builtin.h"
-#include "exec.h"
+#include "../builtin.h"
+#include "../exec.h"
 #include "../../lib/str.h"
-#include "vartab.h"
+#include "../vartab.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>

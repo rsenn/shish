@@ -1,7 +1,7 @@
-#include "eval.h"
-#include "fdstack.h"
-#include "sh.h"
-#include "vartab.h"
+#include "../eval.h"
+#include "../fdstack.h"
+#include "../sh.h"
+#include "../vartab.h"
 
 void
 eval_jump(int levels, int cont) {

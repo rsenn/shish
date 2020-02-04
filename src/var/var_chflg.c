@@ -1,5 +1,5 @@
-#include "sh.h"
-#include "vartab.h"
+#include "../sh.h"
+#include "../vartab.h"
 #include <stdlib.h>
 
 /* set the flags if a variable is found on the current level

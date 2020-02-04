@@ -1,9 +1,9 @@
-#include "expand.h"
-#include "fd.h"
-#include "fdtable.h"
-#include "redir.h"
+#include "../expand.h"
+#include "../fd.h"
+#include "../fdtable.h"
+#include "../redir.h"
 #include "../../lib/scan.h"
-#include "tree.h"
+#include "../tree.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>

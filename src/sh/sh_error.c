@@ -1,4 +1,4 @@
-#include "sh.h"
+#include "../sh.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
 

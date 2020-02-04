@@ -1,4 +1,4 @@
-#include "fdstack.h"
+#include "../fdstack.h"
 
 /* links an fd to the specfied stack level
  * ----------------------------------------------------------------------- */

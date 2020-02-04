@@ -1,5 +1,5 @@
-#include "redir.h"
-#include "source.h"
+#include "../redir.h"
+#include "../source.h"
 
 /* should be called everytime we get a new line
  * ----------------------------------------------------------------------- */

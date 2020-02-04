@@ -1,7 +1,7 @@
-#include "expand.h"
-#include "parse.h"
-#include "redir.h"
-#include "tree.h"
+#include "../expand.h"
+#include "../parse.h"
+#include "../redir.h"
+#include "../tree.h"
 #include <stdlib.h>
 
 /* process all here-docs

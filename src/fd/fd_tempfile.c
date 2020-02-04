@@ -1,10 +1,10 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include "fd.h"
-#include "fdtable.h"
+#include "../fd.h"
+#include "../fdtable.h"
 #include "../../lib/open.h"
-#include "redir.h"
+#include "../redir.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
 #include <stdlib.h>
@@ -15,7 +15,7 @@
 #include <unistd.h>
 #endif
 
-#include "debug.h"
+#include "../debug.h"
 
 #ifndef PACKAGE_NAME
 #define PACKAGE_NAME "shish"

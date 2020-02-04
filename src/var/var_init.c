@@ -1,5 +1,5 @@
 #include "../../lib/byte.h"
-#include "var.h"
+#include "../var.h"
 
 struct var*
 var_init(const char* v, struct var* var, struct search* context) {

@@ -1,7 +1,7 @@
-#include "debug.h"
-#include "expand.h"
-#include "prompt.h"
-#include "tree.h"
+#include "../debug.h"
+#include "../expand.h"
+#include "../prompt.h"
+#include "../tree.h"
 #include <stdlib.h>
 
 stralloc prompt_expansion = {NULL, 0, 0}; /* expanded PS1 */

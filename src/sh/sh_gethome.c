@@ -1,6 +1,6 @@
-#include "sh.h"
+#include "../sh.h"
 #include "../../lib/shell.h"
-#include "var.h"
+#include "../var.h"
 
 /* read home directory from /etc/passwd without the whole getpw*() bloat :)
  * ----------------------------------------------------------------------- */

@@ -1,4 +1,4 @@
-#include "var.h"
+#include "../var.h"
 
 struct var*
 var_copys(const char* s, int flags) {

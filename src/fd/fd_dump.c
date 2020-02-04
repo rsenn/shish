@@ -1,7 +1,7 @@
 #ifdef DEBUG
 #include "../../lib/buffer.h"
-#include "fd.h"
-#include "fdstack.h"
+#include "../fd.h"
+#include "../fdstack.h"
 #include "../../lib/fmt.h"
 #include "../../lib/str.h"
 

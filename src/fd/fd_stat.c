@@ -1,4 +1,4 @@
-#include "fd.h"
+#include "../fd.h"
 
 /* stat the (fd) and set appropriate flags
  * ----------------------------------------------------------------------- */

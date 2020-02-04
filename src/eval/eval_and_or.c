@@ -1,5 +1,5 @@
-#include "eval.h"
-#include "tree.h"
+#include "../eval.h"
+#include "../tree.h"
 
 /* evaluate a AND-OR list (3.9.3)
  * ----------------------------------------------------------------------- */

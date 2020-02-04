@@ -1,5 +1,5 @@
-#include "redir.h"
-#include "tree.h"
+#include "../redir.h"
+#include "../tree.h"
 #include <stdlib.h>
 
 struct nredir* redir_list = NULL;
