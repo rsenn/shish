@@ -5,9 +5,9 @@
 #include "stralloc.h"
 
 #include "fd.h"
-/*
+
 extern stralloc term_cmdline;
-extern buffer term_input;*/
+extern buffer term_input;
 extern int term_insert;
 extern int term_dumb;
 extern unsigned long term_pos;

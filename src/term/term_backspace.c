@@ -1,8 +1,5 @@
 #include "term.h"
 
-extern unsigned long term_pos;
-extern stralloc term_cmdline;
-extern buffer* term_output;
 
 /* ----------------------------------------------------------------------- */
 void

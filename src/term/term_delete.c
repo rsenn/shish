@@ -1,6 +1,5 @@
 #include "term.h"
 
-extern stralloc term_cmdline;
 
 void
 term_delete(void) {
