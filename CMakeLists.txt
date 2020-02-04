@@ -329,7 +329,7 @@ if(BUILD_DEBUG)
     list(REMOVE_ITEM SOURCES "${OSRC}")
   endforeach(SRC ${DEBUG_SOURCES})
 else(BUILD_DEBUG)
-  list(FILTER SOURCES EXCLUDE REGEX ".*debug\.c")
+  list(FILTER SOURCES EXCLUDE REGEX ".*debug.c$")
 endif(BUILD_DEBUG)
 
 if(DEBUG_ALLOC)
