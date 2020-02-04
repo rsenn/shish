@@ -15,10 +15,10 @@ builtin_eval(int argc, char** argv) {
   struct source src;
   struct parser p;
   struct eval e;
-  stralloc sa;
-  stralloc_init(&sa);
   union node* cmds;
   int ret = 0;
+  stralloc sa;
+  stralloc_init(&sa);
 
   /* concatenate all arguments following the "exec", separated by a
      whitespace and terminated by a newline */

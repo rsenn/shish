@@ -62,13 +62,13 @@ typedef long (*RtlCloneUserProcess_f)(ULONG ProcessFlags,
                                       PSECURITY_DESCRIPTOR ThreadSecurityDescriptor /* optional */,
                                       HANDLE DebugPort /* optional */,
                                       PRTL_USER_PROCESS_INFORMATION ProcessInformation);
-typedef pid_t get_process_id_function(HANDLE);
+typedef int get_process_id_function(HANDLE);
 
 #ifndef ENOSYS
 #define ENOSYS 88
 #endif
 
-pid_t
+int
 fork(void) {
   HMODULE mod;
   RtlCloneUserProcess_f clone_p;
@@ -94,7 +94,7 @@ fork(void) {
     HANDLE me = GetCurrentProcess();
     HANDLE kern32;
     get_process_id_function* get_process_id;
-    pid_t child_pid;
+    int child_pid;
 
     if((kern32 = GetModuleHandle("kernel32.dll")) == NULL)
       return -ENOSYS;
