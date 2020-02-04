@@ -30,7 +30,7 @@ include(CheckCCompilerFlag)
 include(CheckCSourceCompiles)
 
 function(check_inline)
-	foreach(KEYWORD "inline" "__inline__" "__inline")
+	foreach(KEYWORD "__inline__" "__inline" "inline")
 		if(NOT INLINE_KEYWORD)
 			set(CMAKE_REQUIRED_DEFINITIONS "-DTESTKEYWORD=${KEYWORD}")
 			check_c_source_compiles("typedef int foo_t;
@@ -42,7 +42,9 @@ function(check_inline)
 			endif(HAVE_${KEYWORD})
 		endif(NOT INLINE_KEYWORD)
 	endforeach(KEYWORD)
+  message(STATUS "inline keyword: ${INLINE_KEYWORD}")
 endfunction(check_inline)
+
 
 
 set(BUILD_DEBUG FALSE)
