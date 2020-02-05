@@ -486,8 +486,8 @@ add_definitions(-DHAVE_BUILTIN_CONFIG_H=1)
 
 
 if(ENABLE_LTO)
-  add_compile_options("-flto")
-  add_link_options("-flto")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
 endif(ENABLE_LTO)
 
 

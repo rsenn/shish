@@ -1,8 +1,8 @@
 #include "../buffer.h"
 #include "../byte.h"
 
-extern int buffer_dummyread();
-extern int buffer_dummyreadmmap();
+ssize_t buffer_dummyreadmmap(fd_t, void*, size_t, void*);
+
 extern ssize_t buffer_stubborn_read(buffer_op_proto*, fd_t fd, void* buf, size_t len, void*);
 
 int

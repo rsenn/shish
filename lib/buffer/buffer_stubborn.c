@@ -10,8 +10,7 @@
 #define EINTR 4
 #endif
 
-int
-buffer_stubborn(buffer_op_proto* op, fd_t fd, const char* buf, size_t len, void* b) {
+ssize_t buffer_stubborn(buffer_op_fn* op, fd_t fd, const char* buf, size_t len, void* b) {
   ssize_t w;
   errno = 0;
   while(len) {

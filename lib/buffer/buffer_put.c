@@ -2,7 +2,7 @@
 #include "../byte.h"
 #include <string.h>
 
-extern int buffer_stubborn(buffer_op_fn* op, fd_t fd, const char* buf, size_t len, void* cookie);
+extern ssize_t buffer_stubborn(buffer_op_fn* op, fd_t fd, const char* buf, size_t len, void* cookie);
 
 #ifdef __dietlibc__
 #undef __unlikely
