@@ -38,13 +38,10 @@ function(DUMP VAR)
 endfunction(DUMP VAR)
 string(REGEX REPLACE ".*/" "" COMPILER_NAME "${CMAKE_C_COMPILER}")
 
-DUMP(EMSCRIPTEN EMCC_SUFFIX EMSCRIPTEN_PREFIX EMSCRIPTEN_TOOLCHAIN_PATH COMPILER_NAME)
-
 if(COMPILER_NAME MATCHES "em.*")
   set(EMSCRIPTEN TRUE)
+  DUMP(EMSCRIPTEN EMCC_SUFFIX EMSCRIPTEN_PREFIX EMSCRIPTEN_TOOLCHAIN_PATH COMPILER_NAME CMAKE_EXECUTABLE_SUFFIX CMAKE_EXE_LINKER_FLAGS)
 endif(COMPILER_NAME MATCHES "em.*")
-
-
 
 macro(check_inline)
 	foreach(KEYWORD "__inline__" "__inline" "inline")
@@ -515,9 +512,9 @@ target_link_libraries(shish libshish
   ${ELECTRICFENCE_LIBRARY}
   ${WINSOCK2_LIBRARY}
 )
-  if(EMSCRIPTEN)
-    set_target_properties(${PROG} PROPERTIES SUFFIX ".html")
-  endif(EMSCRIPTEN)
+if(EMSCRIPTEN)
+  set_target_properties(shish PROPERTIES SUFFIX ".html")
+endif(EMSCRIPTEN)
 
 #message(STATUS "\nBuiltin flags:\n  ${BUILTIN_FLAGS}\n")
 
