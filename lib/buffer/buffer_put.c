@@ -2,8 +2,7 @@
 #include "../byte.h"
 #include <string.h>
 
-extern int
-buffer_stubborn(buffer_op_proto* op, fd_t fd, const char* buf, size_t len, void* b);
+extern int buffer_stubborn(buffer_op_proto* op, fd_t fd, const char* buf, size_t len, void* b);
 
 #ifdef __dietlibc__
 #undef __unlikely

@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-#ifdef   __SSIZE_T_DEF
+#ifdef __SSIZE_T_DEF
 #define _SSIZE_T_DEFINED 1
 #endif
 
