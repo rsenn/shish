@@ -13,7 +13,7 @@
 
 int open_read(const char* filename);
 
-size_t uint32_bytes_seeded;
+uint32 uint32_bytes_seeded = 0;
 
 extern uint32 uint32_pool[UINT32_POOLSIZE];
 
