@@ -11,15 +11,14 @@
 #include <stdint.h>
 #else
 #define __MS_types__
-#ifdef __TINYC__
-#define NO_OLDNAMES
-#endif
 #include <sys/types.h>
-#undef NO_OLDNAMES
 #endif
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if defined(__UINT64_TYPE__) && defined(__INT64_TYPE__)
 typedef __UINT64_TYPE__ uint64;
@@ -92,5 +91,8 @@ uint64_to_double(uint64 ull) {
 #define uint64_to_double(ull) ((double)(ull))
 #endif /* _WIN32 && _MSC_VER && TSCI2_OS_WIN32 */
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

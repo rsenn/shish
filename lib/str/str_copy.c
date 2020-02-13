@@ -2,21 +2,9 @@
 
 size_t
 str_copy(char* out, const char* in) {
-  register char* s = out;
-  register const char* t = in;
+  char* s = out;
+  const char* t = in;
   for(;;) {
-    if(!(*s = *t))
-      break;
-    ++s;
-    ++t;
-    if(!(*s = *t))
-      break;
-    ++s;
-    ++t;
-    if(!(*s = *t))
-      break;
-    ++s;
-    ++t;
     if(!(*s = *t))
       break;
     ++s;

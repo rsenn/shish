@@ -8,6 +8,9 @@
 #include "uint32.h"
 #include "uint64.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __pure__
 #define __pure__
@@ -108,5 +111,8 @@ size_t scan_utf8_sem(const char* in, size_t len, uint32* num);
 
 size_t scan_eolskip(const char* s, size_t limit);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

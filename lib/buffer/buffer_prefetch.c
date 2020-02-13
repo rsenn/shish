@@ -1,14 +1,15 @@
 #include "../buffer.h"
 #include "../byte.h"
 
-ssize_t buffer_dummyreadmmap(fd_t, void*, size_t, void*);
-
+extern int buffer_dummyread();
+extern int buffer_dummyreadmmap();
 extern ssize_t buffer_stubborn_read(buffer_op_proto*, fd_t fd, void* buf, size_t len, void*);
 
 int
 buffer_prefetch(buffer* b, size_t n) {
   if(b->p && b->p + n >= b->a) {
-    if((void*)b->op == (void*)&buffer_dummyreadmmap || (void*)b->deinit == (void*)&buffer_munmap)
+    if((void*)b->op == (void*)&buffer_dummyread || (void*)b->op == (void*)&buffer_dummyreadmmap ||
+       (void*)b->deinit == (void*)&buffer_munmap)
       return b->n - b->p;
     byte_copy(b->x, b->n - b->p, &b->x[b->p]);
     b->n -= b->p;

@@ -1,5 +1,14 @@
+/* this header file comes from libowfat, http://www.fefe.de/libowfat/ */
 #ifndef OPEN_H
 #define OPEN_H
+
+#include "typedefs.h"
+#include "windoze.h"
+#include "uint64.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* open filename for reading and return the file handle or -1 on error */
 int open_read(const char* filename);
@@ -28,8 +37,19 @@ int open_write(const char* filename);
  * Return file handle or -1 on error. */
 int open_rw(const char* filename);
 
-/* create temporary file for reading and writing.
- * Return file handle or -1 on error. */
-int open_temp(char* tmpl);
+int open_rwsync(const char* filename);
+
+#ifdef STRALLOC_H
+int openreadclose(const char* fn, stralloc* sa, size_t bufsize);
+ssize_t readclose_append(int64 fd, stralloc* sa, size_t bufsize);
+ssize_t readclose(int64 fd, stralloc* sa, size_t bufsize);
+int open_filename(fd_t, stralloc*);
+#endif
+
+int open_temp(const char**);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

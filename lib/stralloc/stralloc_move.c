@@ -10,4 +10,5 @@ stralloc_move(stralloc* to, stralloc* from) {
   to->s = from->s;
   to->a = from->a;
   to->len = from->len;
+  stralloc_init(from);
 }

@@ -1,10 +1,6 @@
 #include "../fmt.h"
-#include "../uint64.h"
 
-static inline char
-tohex(char c) {
-  return (char)(c >= 10 ? c - 10 + 'a' : c + '0');
-}
+#define tohex(c) (char)((c) >= 10 ? (c)-10 + 'a' : (c) + '0')
 
 size_t
 fmt_xlonglong(char* dest, uint64 i) {
@@ -14,8 +10,9 @@ fmt_xlonglong(char* dest, uint64 i) {
   if(dest)
     for(tmp = i, dest += len;;) {
       *--dest = tohex(tmp & 15);
-      if(!(tmp >>= 4))
+      if(!(tmp >>= 4)) {
         break;
+      };
     }
   return len;
 }

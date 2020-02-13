@@ -30,7 +30,6 @@ include(CheckCSourceCompiles)
 
 function(DUMP VAR)
   message("\n\nVariable dump of: " ${ARGV} "\n")
-
   foreach(VAR ${ARGV})
   message("\t${VAR} = ${${VAR}}")
   endforeach(VAR ${ARGV})
@@ -41,6 +40,7 @@ string(REGEX REPLACE ".*/" "" COMPILER_NAME "${CMAKE_C_COMPILER}")
 if(COMPILER_NAME MATCHES "em.*")
   set(EMSCRIPTEN TRUE)
   DUMP(EMSCRIPTEN EMCC_SUFFIX EMSCRIPTEN_PREFIX EMSCRIPTEN_TOOLCHAIN_PATH COMPILER_NAME CMAKE_EXECUTABLE_SUFFIX CMAKE_EXE_LINKER_FLAGS)
+  set(EMSCRIPTEN_EXE_SUFFIX "html")
 endif(COMPILER_NAME MATCHES "em.*")
 
 macro(check_inline)
@@ -58,7 +58,6 @@ macro(check_inline)
 	endforeach(KEYWORD)
   message(STATUS "inline keyword: ${INLINE_KEYWORD}")
 endmacro(check_inline)
-
 
 
 set(BUILD_DEBUG FALSE)
@@ -513,7 +512,7 @@ target_link_libraries(shish libshish
   ${WINSOCK2_LIBRARY}
 )
 if(EMSCRIPTEN)
-  set_target_properties(shish PROPERTIES SUFFIX ".html")
+  set_target_properties(shish PROPERTIES SUFFIX ".${EMSCRIPTEN_EXE_SUFFIX}")
 endif(EMSCRIPTEN)
 
 #message(STATUS "\nBuiltin flags:\n  ${BUILTIN_FLAGS}\n")

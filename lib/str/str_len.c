@@ -8,15 +8,6 @@ str_len(const char* in) {
     if(!*t)
       break;
     ++t;
-    if(!*t)
-      break;
-    ++t;
-    if(!*t)
-      break;
-    ++t;
-    if(!*t)
-      break;
-    ++t;
   }
-  return (size_t)(t - in);
+  return t - in;
 }

@@ -116,6 +116,21 @@ cfg-emscripten() {
     "$@")
 }
 
+cfg-tcc() {
+ (build=$(cc -dumpmachine)
+  host=${build/-gnu/-tcc}
+  builddir=build/$host
+  prefix=/usr
+  includedir=/usr/lib/$build/tcc/include
+  libdir=/usr/lib/$build/tcc/
+  bindir=/usr/bin
+  
+  CC=${TCC:-tcc} \
+  cfg \
+    -DCMAKE_VERBOSE_MAKEFILE=ON \
+    "$@")
+}
+
 cfg-musl() {
  (build=$(${CC:-gcc} -dumpmachine)
   host=${build/-gnu/-musl}

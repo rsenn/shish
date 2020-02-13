@@ -5,6 +5,9 @@
 #include "typedefs.h"
 #include "uint64.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* map fd
  * return pointer to map */
@@ -38,5 +41,8 @@ int mmap_unmap(const char* mapped, size_t maplen);
 int mmap_filename(void* map, stralloc* sa);
 #endif
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

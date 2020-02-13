@@ -1,33 +1,20 @@
-unsigned long
-str_copyn(char* out, const char* in, unsigned long n) {
-  register unsigned long i;
-  register const char* t = in;
-  for(i = 0;;) {
-    if(i == n)
-      break;
-    if(!(out[i] = *t))
-      break;
-    ++i;
+#include "../str.h"
+
+size_t
+str_copyn(void* p1, const void* p2, size_t max) {
+  size_t len;
+  char* s;
+  const char* t;
+  s = p1;
+  t = p2;
+  len = 0;
+  while(max-- > 0) {
+    if(!(*s = *t))
+      return len;
+    ++s;
     ++t;
-    if(i == n)
-      break;
-    if(!(out[i] = *t))
-      break;
-    ++i;
-    ++t;
-    if(i == n)
-      break;
-    if(!(out[i] = *t))
-      break;
-    ++i;
-    ++t;
-    if(i == n)
-      break;
-    if(!(out[i] = *t))
-      break;
-    ++i;
-    ++t;
+    ++len;
   }
-  out[i] = '\0';
-  return i;
+  *s = '\0';
+  return len;
 }

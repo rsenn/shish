@@ -1,15 +1,20 @@
-#include "../open.h"
-#include "../uint32.h"
 #include "../windoze.h"
+#include "../uint32.h"
+
 #if WINDOWS_NATIVE
 #include <io.h>
 #else
 #include <unistd.h>
 #endif
 
+#include <fcntl.h>
+
 #define UINT32_POOLSIZE 16
 
-extern unsigned long uint32_seeds;
+int open_read(const char* filename);
+
+size_t uint32_bytes_seeded;
+
 extern uint32 uint32_pool[UINT32_POOLSIZE];
 
 /* feed data to the prng */
@@ -19,14 +24,12 @@ uint32_seed(const void* p, unsigned long n) {
 
   if(n == 0) {
     int i;
-
-    fd = open_read("/dev/urandom");
-    i = read(fd, uint32_pool, sizeof(uint32_pool));
-
-    if(i > 0)
-      uint32_seeds += i;
-
-    close(fd);
+    if((fd = open("/dev/urandom", O_RDONLY)) != -1) {
+      i = read(fd, uint32_pool, sizeof(uint32_pool));
+      if(i > 0)
+        uint32_bytes_seeded += i;
+      close(fd);
+    }
   } else {
     const char* b = (const char*)p;
     char* x = (char*)uint32_pool;
@@ -35,7 +38,7 @@ uint32_seed(const void* p, unsigned long n) {
       x[n % sizeof(uint32_pool)] ^= *b;
       n--;
       b++;
-      uint32_seeds++;
+      uint32_bytes_seeded++;
     }
   }
 

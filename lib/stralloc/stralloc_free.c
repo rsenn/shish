@@ -1,13 +1,11 @@
 #include "../stralloc.h"
 #include <stdlib.h>
 
-#ifndef DEBUG_ALLOC
-
 void
 stralloc_free(stralloc* sa) {
-  if(sa->s)
-    free(sa->s);
+  if(sa->s) {
+    if(sa->a)
+      free(sa->s);
+  }
   sa->s = 0;
-  sa->a = sa->len = 0;
 }
-#endif /* !defined(DEBUG_ALLOC) */

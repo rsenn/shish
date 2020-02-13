@@ -11,15 +11,14 @@
 #include <stdint.h>
 #else
 #define __MS_types__
-#ifdef __TINYC__
-#define NO_OLDNAMES
-#endif
 #include <sys/types.h>
-#undef NO_OLDNAMES
 #endif
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if defined(__BORLANDC__)
 #elif defined(__UINT16_TYPE__) && defined(__INT16_TYPE__)
@@ -102,5 +101,8 @@ uint16 uint16_read_big(const char*);
 uint16 uint16_read(const char*);
 #endif
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

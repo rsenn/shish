@@ -6,6 +6,9 @@
 #include "uint32.h"
 #include "uint64.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define FMT_LONG 41        /* enough space to hold -2^127 in decimal, plus \0 */
 #define FMT_ULONG 40       /* enough space to hold 2^128 - 1 in decimal, plus \0 */
@@ -155,4 +158,7 @@ char fmt_tohex(char c);
 size_t fmt_repeat(char* dest, const char* src, int n);
 
 size_t fmt_escapecharxml(char*, unsigned int ch);
+#ifdef __cplusplus
+}
+#endif
 #endif /* defined FMT_H */

@@ -4,28 +4,14 @@
  * such that one[i] equals needle, or len if not found. */
 size_t
 byte_rchr(const void* haystack, size_t len, char needle) {
-  register char c = needle;
-  register const char* s = haystack;
-  register const char* t = s + len;
+  char c = needle;
+  const char* s = haystack;
+  const char* t = s + len;
   for(;;) {
     --t;
-    if(s > t)
+    if(s > t) {
       break;
-    if(*t == c)
-      return (size_t)(t - s);
-    --t;
-    if(s > t)
-      break;
-    if(*t == c)
-      return (size_t)(t - s);
-    --t;
-    if(s > t)
-      break;
-    if(*t == c)
-      return (size_t)(t - s);
-    --t;
-    if(s > t)
-      break;
+    };
     if(*t == c)
       return (size_t)(t - s);
   }

@@ -2,12 +2,8 @@
 #define TYPEDEFS_H
 
 /* for ssize_t: */
-#ifdef __TINYC__
-#define NO_OLDNAMES
-#endif
 #define __POCC__OLDNAMES
 #include <sys/types.h>
-#undef NO_OLDNAMES
 
 /* for size_t & ptrdiff_t */
 #include <stddef.h>
@@ -17,15 +13,6 @@
 
 #ifdef __LCC__
 #include <stdint.h>
-#endif
-
-/* for ssize_t */
-#include "windoze.h"
-
-#if WINDOWS_NATIVE
-#include <stdio.h>
-#else
-#include <unistd.h>
 #endif
 
 //#include <time.h>
@@ -42,6 +29,13 @@
 #include <stdint.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef   __SSIZE_T_DEF
+#define _SSIZE_T_DEFINED 1
+#endif
 
 #if defined(__SSIZE_TYPE__) && !defined(_SSIZE_T_DEFINED) && !defined(_SSIZE_T_)
 #define _SSIZE_T_DEFINED 1
@@ -85,4 +79,7 @@ typedef int fd_t;
 #endif
 #endif
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* TYPEDEFS_H */
