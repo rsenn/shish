@@ -1,7 +1,7 @@
 #include "../buffer.h"
 
 extern int
-buffer_stubborn(buffer_op_proto* op, fd_t fd, const char* buf, size_t len, void* b);
+buffer_stubborn(buffer_op_proto*, fd_t fd, const char* buf, size_t len, void* b);
 
 int
 buffer_flush(buffer* b) {
