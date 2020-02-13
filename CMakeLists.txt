@@ -25,9 +25,26 @@ include(CheckTypeSize)
 include(CheckFunctionExists)
 include(CheckLibraryExists)
 include(CheckCCompilerFlag)
-
-
 include(CheckCSourceCompiles)
+
+
+function(DUMP VAR)
+  message("\n\nVariable dump of: " ${ARGV} "\n")
+
+  foreach(VAR ${ARGV})
+  message("\t${VAR} = ${${VAR}}")
+  endforeach(VAR ${ARGV})
+  message("\n")
+endfunction(DUMP VAR)
+string(REGEX REPLACE ".*/" "" COMPILER_NAME "${CMAKE_C_COMPILER}")
+
+DUMP(EMSCRIPTEN EMCC_SUFFIX EMSCRIPTEN_PREFIX EMSCRIPTEN_TOOLCHAIN_PATH COMPILER_NAME)
+
+if(COMPILER_NAME MATCHES "em.*")
+  set(EMSCRIPTEN TRUE)
+endif(COMPILER_NAME MATCHES "em.*")
+
+
 
 macro(check_inline)
 	foreach(KEYWORD "__inline__" "__inline" "inline")
@@ -498,7 +515,9 @@ target_link_libraries(shish libshish
   ${ELECTRICFENCE_LIBRARY}
   ${WINSOCK2_LIBRARY}
 )
-
+  if(EMSCRIPTEN)
+    set_target_properties(${PROG} PROPERTIES SUFFIX ".html")
+  endif(EMSCRIPTEN)
 
 #message(STATUS "\nBuiltin flags:\n  ${BUILTIN_FLAGS}\n")
 
