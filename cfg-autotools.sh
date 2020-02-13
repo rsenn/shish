@@ -8,46 +8,40 @@ realpath() {
   relsrcdir=../..
 fi
 
-cfg () 
-{ 
-    : ${build=$(gcc -dumpmachine)}
+cfg() { 
+  : ${build=$(gcc -dumpmachine)}
 
-    case "$build" in
-      *--*) build=${build%%--*}-${build#*--} ;;
-    esac
+  case "$build" in
+    *--*) build=${build%%--*}-${build#*--} ;;
+  esac
 
-    : ${host:=$build}
-    : ${builddir=build/$build}
+  : ${host:=$build}
+  : ${builddir=build/$build}
 
-    : ${prefix:=/usr}
+  : ${prefix:=/usr}
 
-    mkdir -p $builddir;
-    : ${relsrcdir=`realpath --relative-to "$builddir" .`}
+  mkdir -p $builddir;
+  : ${relsrcdir=`realpath --relative-to "$builddir" .`}
 
-    if [ "$DEBUG" -eq 1 ]; then
-      debug="--enable-debug"
-    else 
-      debug="--disable-debug"
-    fi
+  if [ "$DEBUG" -eq 1 ]; then
+    debug="--enable-debug"
+  else 
+    debug="--disable-debug"
+  fi
 
-    ( set -x; cd $builddir;
-    "$relsrcdir"/configure \
-      ${build:+--build="$build"} \
-      ${host:+--host="$host"} \
-          --prefix="$prefix" \
-          ${sysconfdir:+--sysconfdir="$sysconfdir"} \
-          ${localstatedir:+--localstatedir="$localstatedir"} \
-          --enable-{silent-rules,color,dependency-tracking} \
-          $debug \
-          "$@"
-    )
-#         #grep -r '\-O[0-9]' $builddir -lI |xargs sed -i 's,-O[1-9],-ggdb -O0,'
-
-
+  ( set -x; cd $builddir;
+  "$relsrcdir"/configure \
+    ${build:+--build="$build"} \
+    ${host:+--host="$host"} \
+        --prefix="$prefix" \
+        ${sysconfdir:+--sysconfdir="$sysconfdir"} \
+        ${localstatedir:+--localstatedir="$localstatedir"} \
+        --enable-{silent-rules,color,dependency-tracking} \
+        $debug \
+        "$@")
 }
 
-cfg-android () 
-{
+cfg-android() {
   (builddir=build/android
   host="arm-linux-androideabi"
   prefix=/opt/arm-linux-androideabi/sysroot/usr
@@ -74,7 +68,7 @@ cfg-android64()
     )
 }
 
-diet-cfg() {
+cfg-diet() {
  (build=$(${CC:-gcc} -dumpmachine)
   host=${build/-gnu/-dietlibc}
   builddir=build/$host
@@ -95,7 +89,7 @@ diet-cfg() {
 }
 
 
-mingw-cfg() {
+cfg-mingw() {
  (build=$(gcc -dumpmachine)
   host=${build%%-*}-w64-mingw32
   prefix=/usr/$host/sys-root/mingw
@@ -106,7 +100,8 @@ mingw-cfg() {
   cfg \
     "$@")
 }
-musl-cfg() {
+
+cfg-musl() {
  (build=$(${CC:-gcc} -dumpmachine)
   host=${build/-gnu/-musl}
   host=${host/-pc-/-}
