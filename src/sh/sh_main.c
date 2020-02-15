@@ -125,7 +125,6 @@ main(int argc, char** argv, char** envp) {
   sh_argc = argc - shell_optind;
 
   source_push(&src);
-  src.line = 1;
   sh_init();
 
   /*  if(fd_exp != fd_top && (flags = fdtable_check(e)))
