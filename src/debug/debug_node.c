@@ -25,61 +25,64 @@ debug_node(union node* node, int depth) {
                node->id == N_ARGARITH;
   if(is_arg)
     depth = -2;
-  if(depth > 0) {
-    debug_space(depth, 1);
-  } else if(node->id == N_ARG) {
+  if(node->id == N_ARG || node->id >= N_ARGSTR) {
     buffer_puts(fd_err->w, " ");
   }
+  debug_space(depth, depth > 0 ? 1 : 0);
+
   if(is_arg)
     s += node->id >= N_ARGSTR ? 5 : 2;
   debug_unquoted(NULL, s, node->id == N_ARG ? -2 : depth);
-  if(depth > 0)
-    debug_space(depth, /*node->id != A_NUM ? 1 : */ 0);
-  else if(depth != -1)
-    buffer_putspace(fd_err->w);
+  debug_space(depth + 1, depth > 0 ? 1 : 0);
+
   switch(node->id) {
     case N_SIMPLECMD:
-      debug_space(depth, 1);
 
       debug_ulong("bngd", node->ncmd.bgnd, depth);
 
       if(node->ncmd.vars) {
-        debug_space(depth, 1);
+        debug_space(depth + 1, 1);
         debug_sublist("vars", node->ncmd.vars, depth);
       }
       if(node->ncmd.args) {
-        debug_space(depth, 1);
+        debug_space(depth + 1, 1);
         debug_sublist("args", node->ncmd.args, depth);
       }
       if(node->ncmd.rdir) {
-        debug_space(depth, 1);
+        debug_space(depth + 1, 1);
         debug_sublist("rdir", node->ncmd.rdir, -2);
       }
 
       break;
     case N_PIPELINE:
+      debug_space(depth + 1, 1);
+
       debug_ulong("bgnd", node->npipe.bgnd, depth);
-      debug_space(depth, 1);
-      debug_sublist("cmds", node->npipe.cmds, depth);
-      debug_space(depth, 1);
-      debug_ulong("ncmd", node->npipe.ncmd, depth);
+      debug_space(depth + 1, 1);
+      debug_sublist("cmds", node->npipe.cmds, depth + 1);
+      debug_space(depth + 1, 1);
+      debug_ulong("ncmd", node->npipe.ncmd, depth + 1);
       break;
 
     case N_AND:
     case N_OR:
-      debug_ulong("bgnd", node->nandor.bgnd, depth);
-      debug_space(depth, 1);
-      debug_subnode("cmd0", node->nandor.cmd0, depth);
-      debug_space(depth, 1);
-      debug_subnode("cmd1", node->nandor.cmd1, depth);
+      debug_space(depth + 1, 1);
+
+      debug_ulong("bgnd", node->nandor.bgnd, depth + 1);
+      debug_space(depth + 1, 1);
+
+      debug_subnode("cmd0", node->nandor.cmd0, depth + 1);
+      if(node->nandor.cmd1)
+        debug_subnode("cmd1", node->nandor.cmd1, depth + 1);
       break;
 
     case N_SUBSHELL:
     case N_CMDLIST:
-      debug_sublist("cmds", node->ngrp.cmds, depth);
+
+      debug_sublist("cmds", node->ngrp.cmds, depth + 1);
 
       if(node->ngrp.rdir) {
-        debug_space(depth, 1);
+        debug_space(depth + 1, 1);
         debug_sublist("rdir", node->ngrp.rdir, -2);
       }
 
@@ -87,55 +90,63 @@ debug_node(union node* node, int depth) {
 
     case N_FOR:
       debug_str("varn", node->nfor.varn, depth, '"');
-      debug_space(depth, 1);
-      debug_sublist("cmds", node->nfor.cmds, depth);
-      debug_space(depth, 1);
-      debug_sublist("args", node->nfor.args, depth);
+      debug_space(depth + 1, 1);
+      debug_sublist("cmds", node->nfor.cmds, depth + 1);
+      debug_space(depth + 1, 1);
+      debug_sublist("args", node->nfor.args, depth + 1);
       break;
 
     case N_CASE:
+
       debug_ulong("bgnd", node->ncase.bgnd, depth);
-      debug_space(depth, 1);
-      debug_sublist("rdir", node->ncase.rdir, depth);
-      debug_space(depth, 1);
-      debug_sublist("list", node->ncase.list, depth);
-      debug_space(depth, 1);
-      debug_sublist("word", node->ncase.word, depth);
+      debug_space(depth + 1, 1);
+      debug_sublist("rdir", node->ncase.rdir, -2);
+      debug_space(depth + 1, 1);
+      debug_sublist("list", node->ncase.list, depth + 1);
+      debug_space(depth + 1, 1);
+      debug_sublist("word", node->ncase.word, depth + 1);
       break;
 
     case N_CASENODE:
       debug_sublist("pats", node->ncasenode.pats, depth);
-      debug_space(depth, 1);
-      debug_sublist("cmds", node->ncasenode.cmds, depth);
+      debug_space(depth + 1, 1);
+      debug_sublist("cmds", node->ncasenode.cmds, depth + 1);
       break;
 
     case N_IF:
+
       debug_ulong("bgnd", node->nif.bgnd, depth);
-      debug_space(depth, 1);
-      debug_sublist("rdir", node->nif.rdir, depth);
-      debug_space(depth, 1);
-      debug_sublist("cmd0", node->nif.cmd0, depth);
-      debug_space(depth, 1);
-      debug_sublist("cmd1", node->nif.cmd1, depth);
-      debug_space(depth, 1);
-      debug_subnode("test", node->nif.test, depth);
+      debug_space(depth + 1, 1);
+      debug_sublist("rdir", node->nif.rdir, -2);
+      debug_space(depth + 1, 1);
+      debug_sublist("cmd0", node->nif.cmd0, depth + 1);
+      if(node->nif.cmd1) {
+        debug_space(depth + 1, 1);
+        debug_sublist("cmd1", node->nif.cmd1, depth + 1);
+      }
+      debug_space(depth + 1, 1);
+      debug_subnode("test", node->nif.test, depth + 1);
       break;
 
     case N_WHILE:
     case N_UNTIL:
+      debug_space(depth + 1, 1);
       debug_ulong("bgnd", node->nloop.bgnd, depth);
-      debug_space(depth, 1);
-      debug_sublist("rdir", node->nif.rdir, depth);
-      debug_space(depth, 1);
-      debug_sublist("cmds", node->nloop.test, depth);
-      debug_space(depth, 1);
-      debug_subnode("test", node->nloop.test, depth);
+      debug_space(depth + 1, 1);
+      debug_sublist("rdir", node->nif.rdir, -2);
+      debug_space(depth + 1, 1);
+      debug_sublist("cmds", node->nloop.test, depth + 1);
+      debug_space(depth + 1, 1);
+      debug_subnode("test", node->nloop.test, depth + 1);
       break;
 
     case N_FUNCTION:
-      debug_sublist("cmds", node->nfunc.cmds, depth);
-      debug_space(depth, 1);
+      debug_space(depth + 1, 1);
       debug_str("name", node->nfunc.name, depth, '"');
+      debug_space(depth + 1, 1);
+
+      debug_sublist("cmds", node->nfunc.cmds, depth + 1);
+
       break;
 
     case N_ASSIGN:
@@ -143,13 +154,13 @@ debug_node(union node* node, int depth) {
     case N_ARG:
       debug_subst(0, node->narg.flag, -1);
 
-      //  debug_space(-1, 1);
+      //  debug_space(-1, 0);
       if(node->narg.stra.len > 0)
         debug_stralloc("stra", &node->narg.stra, depth, '"');
 
       if(node->narg.list)
         debug_sublist(0, node->narg.list, -2);
-      /*      debug_space(depth, 1);
+      /*      debug_space(depth, 0);
             debug_sublist("next", node->narg.next, depth);
       */
 
@@ -157,7 +168,7 @@ debug_node(union node* node, int depth) {
 
     case N_REDIR:
       debug_redir(0, node->nredir.flag, -2);
-      debug_sublist("list", node->nredir.list, depth);
+      debug_sublist(0, node->nredir.list, depth + 1);
       debug_sublist("data", node->nredir.data, depth);
       debug_ulong("fdes", node->nredir.fdes, depth);
       break;
@@ -171,22 +182,29 @@ debug_node(union node* node, int depth) {
                      node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
       break;
 
-    case N_ARGPARAM:
-      debug_subst(0, node->nargstr.flag & ~S_TABLE, depth);
-      buffer_puts(fd_err->w, "${");
+    case N_ARGPARAM: {
+      int flag = (node->nargstr.flag & ~S_TABLE);
+      debug_subst(0, flag, depth);
+      if(flag)
+        buffer_putspace(fd_err->w);
+
+      buffer_puts(fd_err->w, COLOR_LIGHTBLUE "${");
       debug_str(0, node->nargparam.name, depth, 0);
-      debug_space(depth, 0);
-      debug_sublist("word", node->nargparam.word, depth);
-      buffer_puts(fd_err->w, "}");
+      buffer_puts(fd_err->w, "}" COLOR_NONE);
+
+      if((node->nargparam.flag & S_VAR) >> 8) {
+        debug_space(depth, 0);
+        debug_sublist("word", node->nargparam.word, -1);
+      }
       if(node->nargparam.numb > 0) {
         debug_ulong(" numb", node->nargparam.numb, depth);
       }
       break;
-
+    }
     case N_ARGCMD: debug_sublist("list", node->nargcmd.list, depth); break;
     case N_ARGARITH:
       /*   debug_subst(0,node->nargcmd.flag, depth);
-         debug_space(depth, 1);*/
+         debug_space(depth, 0);*/
       debug_sublist("tree", node->nargarith.tree, depth);
       break;
 
@@ -216,7 +234,7 @@ debug_node(union node* node, int depth) {
     case A_MOD:
     case A_EXP:
       debug_sublist("left", node->narithbinary.left, depth);
-      debug_space(depth, 1);
+      debug_space(depth, 0);
       debug_sublist("right", node->narithbinary.right, depth);
       break;
 
@@ -232,10 +250,6 @@ debug_node(union node* node, int depth) {
     case A_POSTDECREMENT: debug_sublist("node", node->narithunary.node, depth); break;
 
     case N_NOT: debug_sublist("cmds", node->nandor.cmd0, depth); break;
-  }
-
-  if(node->id == N_ARG) {
-    buffer_puts(fd_err->w, "\n    ");
   }
 }
 #endif /* DEBUG_OUTPUT */

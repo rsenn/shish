@@ -9,7 +9,7 @@ void
 debug_end(int depth) {
 
   if(depth > 0) {
-    debug_space(depth - 1, 1);
+    debug_space(depth - 1, 0);
   }
   buffer_puts(fd_err->w, COLOR_CYAN DEBUG_END COLOR_NONE);
 }

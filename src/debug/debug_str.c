@@ -7,7 +7,8 @@
  * ----------------------------------------------------------------------- */
 void
 debug_str(const char* msg, const char* s, int depth, char quote) {
-  buffer_puts(fd_err->w, COLOR_YELLOW);
+  if(quote)
+    buffer_puts(fd_err->w, COLOR_CYAN);
   if(msg) {
     buffer_puts(fd_err->w, msg);
     buffer_puts(fd_err->w, COLOR_CYAN "=");
@@ -15,10 +16,20 @@ debug_str(const char* msg, const char* s, int depth, char quote) {
   if(quote)
     buffer_putc(fd_err->w, quote);
 
-  if(s)
-    buffer_puts(fd_err->w, s);
+  if(s) {
+    while(*s) {
+      char c = *s;
+      if(c == '\n')
+        buffer_puts(fd_err->w, "\\n");
+      else
+        buffer_putc(fd_err->w, c);
+      s++;
+    }
+  }
+
   if(quote)
     buffer_putc(fd_err->w, quote);
-  buffer_puts(fd_err->w, COLOR_NONE);
+  if(quote)
+    buffer_puts(fd_err->w, COLOR_NONE);
 }
 #endif /* DEBUG_OUTPUT */

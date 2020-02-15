@@ -5,6 +5,10 @@
 
 void
 debug_space(int count, int newline) {
+
+  if(!newline && fd_err->w->n == fd_err->w->p)
+    return;
+
   if(newline) {
     buffer_put(fd_err->w, "\n", 1);
     if(count < 0) {
@@ -15,5 +19,6 @@ debug_space(int count, int newline) {
   } else {
     buffer_putspace(fd_err->w);
   }
+  buffer_flush(fd_err->w);
 }
 #endif /* DEBUG_OUTPUT */

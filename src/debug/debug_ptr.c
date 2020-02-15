@@ -10,7 +10,7 @@ void
 debug_ptr(const char* msg, void* ptr, int depth) {
   char buf[FMT_XLONG];
   unsigned long n;
-  debug_space(depth, 1);
+  debug_space(depth, 0);
   buffer_puts(fd_err->w, COLOR_YELLOW);
   buffer_puts(fd_err->w, msg);
   buffer_puts(fd_err->w, COLOR_CYAN " = ");

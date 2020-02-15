@@ -40,6 +40,6 @@ debug_redir(const char* msg, int flags, int depth) {
   buffer_puts(fd_err->w, flagstr);
   buffer_puts(fd_err->w, COLOR_NONE);
 
-  debug_space(depth, 1);
+  debug_space(depth, 0);
 }
 #endif /* DEBUG_OUTPUT */
