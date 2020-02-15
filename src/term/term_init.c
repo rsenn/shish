@@ -62,6 +62,5 @@ term_init(struct fd* input, struct fd* output) {
   signal(SIGWINCH, (void*)&term_winsize);
 #endif
 
-  /*    signal(SIGINT, (void *)&term_controlc);*/
   return 1;
 }

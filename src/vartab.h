@@ -19,8 +19,8 @@ struct search {
   VAR_HASH bdist;
   size_t bucket;
   size_t len; /* length of wanted var */
-  int global;        /* go through global sorted list */
-  int exact;         /* want an exact match only */
+  int global; /* go through global sorted list */
+  int exact;  /* want an exact match only */
 };
 
 struct vartab {

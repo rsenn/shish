@@ -17,7 +17,7 @@ fdtable_newfd(int n, struct fdstack* st, int mode) {
   fd_mallocb(fd);
 
   fd_init(fd, n, D_FREE | mode);
-  fd_setbuf(fd, &fd[1], D_BUFSIZE);
+  fd_setbuf(fd, &fd[1], FD_BUFSIZE);
 
   fdstack_link(st, fd);
   fdtable_link(fd);

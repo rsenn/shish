@@ -8,6 +8,9 @@
 #ifndef BUILTIN_BREAK
 #define BUILTIN_BREAK 1
 #endif
+#ifndef BUILTIN_CAT
+#define BUILTIN_CAT 0
+#endif
 #ifndef BUILTIN_CD
 #define BUILTIN_CD 1
 #endif
@@ -86,6 +89,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_BREAK
     {"break", builtin_break, B_DEFAULT, "[n]"},
+#endif
+#if BUILTIN_CAT
+    {"cat", builtin_cat, B_DEFAULT, "[-nb] [FILE]..."},
 #endif
 #if BUILTIN_CD
     {"cd", builtin_cd, B_DEFAULT, "[-L|-P] [directory]"},

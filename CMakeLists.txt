@@ -120,7 +120,7 @@ endif(F_ALIGN_STRINGOPS)
 
 
 list(APPEND MINIMAL_BUILTINS break cd eval exec exit export hash history pwd set shift source unset)
-list(APPEND EXTRA_BUILTINS arch basename cat chmod dirname expr hostname ln ls mkdir mktemp mv print rm rmdir sort tr uname uniq which)
+list(APPEND EXTRA_BUILTINS basename cat chmod dirname expr hostname ln ls mkdir mktemp mv print rm rmdir sort tr uname uniq which)
 list(APPEND DEFAULT_BUILTINS ${MINIMAL_BUILTINS} type echo fdtable true false)
 
 
@@ -453,12 +453,16 @@ foreach(BUILTIN ${BUILTINS_ENABLED})
 endforeach(BUILTIN ${BUILTINS_ENABLED})
 
 if(BUILD_DEBUG)
+  option(USE_EFENCE "Enable electric fence" OFF)
 
  check_library_exists(efence malloc /usr/lib HAVE_EFENCE)
-   if(HAVE_EFENCE)
-   set(ELECTRICFENCE_LIBRARY efence)
-   endif(HAVE_EFENCE)
 endif(BUILD_DEBUG)
+
+if(HAVE_EFENCE)
+  if(USE_EFENCE)
+    set(ELECTRICFENCE_LIBRARY efence)
+  endif(USE_EFENCE)
+endif(HAVE_EFENCE)
 
 string(REPLACE " " ";" SOURCES "${SOURCES}")
 

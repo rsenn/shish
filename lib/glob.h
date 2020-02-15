@@ -77,10 +77,15 @@
  */
 typedef struct {
   int gl_pathc;    /**< count of total paths so far */
-  int gl_matchc;   /**< count of paths matching pattern */
+  char** gl_pathv; /**< list of paths matching pattern */
   int gl_offs;     /**< reserved at beginning of gl_pathv */
   int gl_flags;    /**< returned flags */
-  char** gl_pathv; /**< list of paths matching pattern */
+  void* (*gl_closedir)(void*);
+  void* (*gl_readdir)(void*);
+  void* (*gl_opendir)(const char*);
+  int (*gl_lstat)(const char*, void*);
+  int (*gl_stat)(const char*, void*);
+
 } glob_t;
 
 /*

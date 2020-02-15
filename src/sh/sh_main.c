@@ -56,7 +56,7 @@ main(int argc, char** argv, char** envp) {
   /* stat the file descriptors and then set the buffers */
   fdtable_foreach(v) {
     fd_stat(fdtable[v]);
-    fd_setbuf(fdtable[v], &fdtable[v][1], D_BUFSIZE);
+    fd_setbuf(fdtable[v], &fdtable[v][1], FD_BUFSIZE);
   }
 
   /* set initial $0 */
@@ -108,7 +108,7 @@ main(int argc, char** argv, char** envp) {
     fd_dup(fd_src, STDIN_FILENO);
 
   if(fd_needbuf(fd_src))
-    fd_setbuf(fd_src, &fd_src[1], D_BUFSIZE);
+    fd_setbuf(fd_src, &fd_src[1], FD_BUFSIZE);
 
   /* set our basename for the \v prompt escape seq and maybe other stuff*/
   sh_name = shell_basename(sh_argv0);
