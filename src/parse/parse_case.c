@@ -16,6 +16,7 @@
  * ----------------------------------------------------------------------- */
 union node*
 parse_case(struct parser* p) {
+  enum tok_id tok;
   union node* node;
   union node** cptr;
   union node** pptr;
@@ -29,8 +30,16 @@ parse_case(struct parser* p) {
   p->pushback++;
 
   /* then the keyword 'in' must follow */
+
+  tok = parse_gettok(p, P_DEFAULT);
+ if(p->node->id != N_ARGSTR || stralloc_diffs(&p->node->nargstr.stra, "in")) {
+  tree_free(word);
+  return -1;
+ }
+
+  /*
   if(!parse_expect(p, P_DEFAULT, T_IN, word))
-    return NULL;
+    return NULL;*/
 
   /* create new node and move the word to it */
   node = tree_newnode(N_CASE);
