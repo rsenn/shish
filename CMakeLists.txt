@@ -120,13 +120,17 @@ endif(F_ALIGN_STRINGOPS)
 
 
 list(APPEND MINIMAL_BUILTINS break cd eval exec exit export hash history pwd set shift source unset)
-list(APPEND EXTRA_BUILTINS basename cat chmod dirname expr hostname ln ls mkdir mktemp mv print rm rmdir sort tr uname uniq which)
+list(APPEND EXTRA_BUILTINS basename cat chmod dirname expr hostname ln mkdir
+
+# ls  mktemp mv print rm rmdir sort tr uname uniq which
+ )
 list(APPEND DEFAULT_BUILTINS ${MINIMAL_BUILTINS} type echo fdtable true false)
 
 
 list(APPEND ALL_BUILTINS ${MINIMAL_BUILTINS} ${DEFAULT_BUILTINS}  ${EXTRA_BUILTINS} basename break cd dirname dump echo eval exec exit export expr false fdtable hash help history hostname ln pwd set shift source test true type unset
 )
 list(SORT ALL_BUILTINS)
+list(REMOVE_DUPLICATES ALL_BUILTINS)
 
 function(isin)
   set(ARGUMENTS "${ARGV}")
@@ -152,7 +156,9 @@ set(BUILTINS_DISABLED "")
 if(ENABLE_ALL_BUILTINS)
   foreach(BUILTIN ${ALL_BUILTINS})
     string(TOUPPER ${BUILTIN} NAME)
-    set(ENABLE_${NAME} TRUE)
+    message("Enable ${BUILTIN}")
+    set(ENABLE_${NAME} ON)
+    set(BUILTIN_${NAME} ON)
   endforeach(BUILTIN ${ALL_BUILTINS})
 endif(ENABLE_ALL_BUILTINS)
 

@@ -14,6 +14,9 @@
 #ifndef BUILTIN_CD
 #define BUILTIN_CD 1
 #endif
+#ifndef BUILTIN_CHMOD
+#define BUILTIN_CHMOD 0
+#endif
 #ifndef BUILTIN_DUMP
 #define BUILTIN_DUMP 1
 #endif
@@ -95,6 +98,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_CD
     {"cd", builtin_cd, B_DEFAULT, "[-L|-P] [directory]"},
+#endif
+#if BUILTIN_CHMOD
+    {"chmod", builtin_chmod, B_DEFAULT, "[-v] [FILE]..."},
 #endif
 #if BUILTIN_BREAK
     {"continue", builtin_break, B_DEFAULT, "[n]"},

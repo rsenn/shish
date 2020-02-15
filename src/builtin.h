@@ -33,6 +33,7 @@ int builtin_basename(int argc, char** argv);
 int builtin_break(int argc, char** argv);
 int builtin_cat(int argc, char** argv);
 int builtin_cd(int argc, char** argv);
+int builtin_chmod(int argc, char** argv);
 int builtin_dirname(int argc, char** argv);
 int builtin_dump(int argc, char** argv);
 int builtin_echo(int argc, char** argv);
