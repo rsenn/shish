@@ -14,7 +14,7 @@ fdtable_newfd(int n, struct fdstack* st, int mode) {
   }
 
   /* otherwise allocate and initialize the new fd entry */
-  fd_mallocb(fd);
+  fd = fd_mallocb();
 
   fd_init(fd, n, D_FREE | mode);
   fd_setbuf(fd, &fd[1], FD_BUFSIZE);

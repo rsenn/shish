@@ -65,10 +65,10 @@ builtin_test(int argc, char** argv) {
   while((c = shell_getopt(argc, argv, "n:z:f:d:b:c:h:L:S:e:s:r:w:x:")) > 0) {
     switch(c) {
       /* return true if argument is non-zero */
-      case 'n': ret = neg ^ (!*shell_optarg); break;
+      case 'n': ret = neg ^ !!(argv[shell_optind] && *argv[shell_optind]); break;
 
       /* return true if argument is zero */
-      case 'z': ret = neg ^ (!!*shell_optarg); break;
+      case 'z': ret = neg ^ !(argv[shell_optind] && *argv[shell_optind]); break;
 
       /* return true if argument is a regular file */
       case 'f': ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && S_ISREG(st.st_mode)); break;

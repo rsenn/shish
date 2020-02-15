@@ -16,8 +16,8 @@ eval_loop(struct eval* e, struct nloop* nloop) {
   if(setjmp(en.jmpbuf) == 1)
     return ret;
 
-  while((ret =  eval_tree(e, nloop->test, E_LIST) == retcode) ==  0) {
-   /* evaluate loop body */
+  while((ret = eval_tree(e, nloop->test, E_LIST) == retcode) == 0) {
+    /* evaluate loop body */
     eval_tree(e, nloop->cmds, E_LIST);
   }
 

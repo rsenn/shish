@@ -145,7 +145,7 @@ debug_node(union node* node, int depth) {
       debug_str("name", node->nfunc.name, depth, '"');
       debug_space(depth + 1, 1);
 
-      debug_sublist("cmds", node->nfunc.cmds, depth + 1);
+      debug_sublist("body", node->nfunc.body, depth + 1);
 
       break;
 

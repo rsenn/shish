@@ -8,6 +8,5 @@
  * ----------------------------------------------------------------------- */
 int
 sh_error(const char* s) {
-  sh_msg(NULL);
   return sh_errorn(s, str_len(s));
 }

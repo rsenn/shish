@@ -74,7 +74,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
       /* if its the exec special builtin the new fd needs to be persistent */
       if(id != H_EXEC) {
 #ifdef HAVE_ALLOCA
-        fd_alloca(fd);
+        fd = fd_alloca();
 #endif
       }
 
@@ -157,6 +157,7 @@ end:
     }
   }
 
+  sh->exitcode = status;
   /*  if(fdstack == &io)
       fdstack_pop(&io);*/
 

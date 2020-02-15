@@ -171,9 +171,9 @@ void fd_setbuf(struct fd* fd, void* buf, unsigned long n);
 void fd_string(struct fd* fd, const char* s, unsigned long len);
 void fd_subst(struct fd* fd, stralloc* sa);
 
-#define fd_malloc(io) io = shell_alloc(D_SIZE);
-#define fd_mallocb(io) io = shell_alloc(D_SIZE + FD_BUFSIZE);
-#define fd_alloca(io) io = alloca(D_SIZE);
-#define fd_allocab(io) io = alloca(D_SIZE + FD_BUFSIZE);
+#define fd_malloc() ((struct fd*)shell_alloc(D_SIZE))
+#define fd_mallocb() ((struct fd*)shell_alloc(D_SIZE + FD_BUFSIZE))
+#define fd_alloca() ((struct fd*)alloca(D_SIZE))
+#define fd_allocab() ((struct fd*)alloca(D_SIZE + FD_BUFSIZE))
 
 #endif /* FD_H */

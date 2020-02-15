@@ -78,7 +78,7 @@ expand_addnode(union node** nptr) {
 //
 //#define EXPAND_ADDNODE(nptr) (nptr = expand_addnode(nptr), *nptr)
 
-union node* expand_arg(struct narg* narg, union node** nptr, int flags);
+union node* expand_arg(union node* narg, union node** nptr, int flags);
 int expand_args(union node* args, union node** nptr, int flags);
 void expand_argv(union node* args, char** argv);
 int expand_arith_binary(struct narithbinary* expr, int64* r);

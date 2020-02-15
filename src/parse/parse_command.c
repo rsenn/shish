@@ -9,8 +9,28 @@ parse_command(struct parser* p, int tempflags) {
   enum tok_flag tok;
   union node* command;
   union node** rptr;
+  int c = 0;
 
   tok = parse_gettok(p, tempflags);
+
+  //  source_skipspace(p);
+  do {
+    source_peek(&c);
+    if(!isspace(c))
+      break;
+    source_skip();
+
+  } while(1);
+
+  if(c == '(') {
+    source_skip();
+    source_peek(&c);
+    if(c == ')') {
+      source_skip();
+      p->pushback++;
+      return parse_function(p);
+    }
+  }
 
   switch(tok) {
     /* T_FOR begins an iteration statement */

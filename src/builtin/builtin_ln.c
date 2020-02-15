@@ -9,7 +9,7 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_ln(int argc, char** argv) {
-  int c, is_dir, ret;
+  int c, is_dir = 0, ret;
   stralloc path;
   int symbolic = 0, force = 0, verbose = 0;
   char *src = 0, *dst = 0;

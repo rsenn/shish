@@ -152,8 +152,8 @@ tree_free(union node* node) {
       case N_FUNCTION:
         if(node->nfunc.name)
           shell_free(node->nfunc.name);
-        if(node->nfunc.cmds)
-          tree_free(node->nfunc.cmds);
+        if(node->nfunc.body)
+          tree_free(node->nfunc.body);
         break;
     }
 
