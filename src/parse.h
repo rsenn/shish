@@ -62,7 +62,8 @@ extern const unsigned short parse_chartable[CHAR_RANGE];
 #define parse_isdesc(c) (parse_chartable[(int)(unsigned char)c] & (C_DESC))
 
 /* is either alpha, digit or underscore */
-#define parse_isname(c) (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_DIGIT | C_NAME))
+#define parse_isname(c) (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_NAME))
+
 /* is either alpha, digit or underscore or special parameter */
 #define parse_isparam(c) (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_DIGIT | C_NAME | C_SPCL))
 

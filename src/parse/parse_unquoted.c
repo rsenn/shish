@@ -76,7 +76,6 @@ parse_unquoted(struct parser* p) {
       if(parse_subst(p))
         break;
 
-      continue;
     }
     /* check for redirections */
     else if((p->flags & P_NOREDIR) == 0 && (c == '<' || c == '>')) {

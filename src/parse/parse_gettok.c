@@ -29,15 +29,17 @@ parse_gettok(struct parser* p, int tempflags) {
       buffer_puts(fd_err->w, "Got token ");
       buffer_puts(fd_err->w, parse_tokname(p->tok, 0));
 
-      if(p->tree && p->tree->id >= N_ARGSTR) {
-
+      if(p->tok & (T_ASSIGN|T_WORD|T_NAME)) {
+        debug_list(p->tree, -1);
+      } else if(p->tok != T_NL && p->tree && p->tree->id >= N_ARGSTR) {
         stralloc* sa = &p->tree->nargstr.stra;
         buffer_puts(fd_err->w, " '");
         buffer_putsa(fd_err->w, sa);
-                buffer_putc(fd_err->w, '\'');
-}
-      buffer_putnlflush(fd_err->w);
+        buffer_putc(fd_err->w, '\'');
+      }
     }
+    buffer_putnlflush(fd_err->w);
+
 #endif
   }
 
