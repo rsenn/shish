@@ -50,7 +50,7 @@ parse_command(struct parser* p, int tempflags) {
     case T_LP:
     case T_BEGIN:
       p->pushback++;
-      command = parse_grouping(p);
+      command = parse_grouping(p, 0);
       break;
 
     /* handle simple commands */

@@ -216,7 +216,7 @@ union node* parse_compound_list(struct parser* p);
 union node* parse_for(struct parser* p);
 union node* parse_function(struct parser* p);
 union node* parse_getarg(struct parser* p);
-union node* parse_grouping(struct parser* p);
+union node* parse_grouping(struct parser* p, int tempflags);
 union node* parse_if(struct parser* p);
 union node* parse_list(struct parser* p);
 union node* parse_loop(struct parser* p);

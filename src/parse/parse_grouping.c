@@ -15,7 +15,7 @@
  *
  * ----------------------------------------------------------------------- */
 union node*
-parse_grouping(struct parser* p) {
+parse_grouping(struct parser* p, int tempflags) {
   int tok;
   union node** rptr;
   union node* grouping;
@@ -24,7 +24,7 @@ parse_grouping(struct parser* p) {
   /* return NULL on empty compound */
   grouping = NULL;
 
-  if(!(tok = parse_expect(p, P_DEFAULT, T_BEGIN | T_LP, NULL)))
+  if(!(tok = parse_expect(p, P_DEFAULT | tempflags, T_BEGIN | T_LP, NULL)))
     return NULL;
 
   /* parse compound content and create a
@@ -42,7 +42,8 @@ parse_grouping(struct parser* p) {
     tree_init(grouping->ngrp.rdir, rptr);
 
     /* now any redirections may follow */
-    while(parse_gettok(p, P_DEFAULT) & T_REDIR) tree_move(p->tree, rptr);
+    while(parse_gettok(p, P_DEFAULT) & T_REDIR) 
+     tree_move(p->tree, rptr);
 
     p->pushback++;
   }
