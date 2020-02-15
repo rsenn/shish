@@ -16,7 +16,7 @@
  * ----------------------------------------------------------------------- */
 union node*
 parse_grouping(struct parser* p) {
-  enum tok_flag tok;
+  int tok;
   union node** rptr;
   union node* grouping;
   union node* compound_list;

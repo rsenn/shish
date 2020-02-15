@@ -9,8 +9,6 @@ eval_cmdlist(struct eval* e, struct ngrp* grp) {
 
   for(cmd = grp->cmds; cmd; cmd = cmd->ncmd.next) {
     ret = eval_node(e, cmd);
-
-    debug_ulong("ret", ret);
   }
 
   return ret;
