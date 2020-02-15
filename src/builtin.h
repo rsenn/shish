@@ -59,6 +59,7 @@ int builtin_shift(int argc, char** argv);
 int builtin_test(int argc, char** argv);
 int builtin_type(int argc, char** argv);
 int builtin_unset(int argc, char** argv);
+int builtin_uname(int argc, char** argv);
 int builtin_which(int argc, char** argv);
 
 #else

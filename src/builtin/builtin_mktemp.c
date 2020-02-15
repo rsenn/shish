@@ -1,4 +1,5 @@
 #include "../builtin.h"
+#include "../sh.h"
 #include "../fd.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
@@ -45,7 +46,15 @@ builtin_mktemp(int argc, char** argv) {
     stralloc_catc(&name, '/');
   }
   i = name.len;
-  stralloc_cats(&name, argv[shell_optind]);
+
+  if(argv[shell_optind]) {
+    stralloc_cats(&name, argv[shell_optind]);
+  } else {
+    size_t len = str_rchr(sh_argv0, '/');
+    stralloc_cats(&name, sh_argv0[len] ? &sh_argv0[len + 1] : sh_argv0);
+    stralloc_cats(&name, "-XXXXXXXX");
+  }
+
   while(i < name.len) {
     if(name.s[i] == 'X') {
       uint32 r = uint32_random();

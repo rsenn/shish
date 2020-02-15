@@ -83,8 +83,11 @@
 #ifndef BUILTIN_UNSET
 #define BUILTIN_UNSET 1
 #endif
+#ifndef BUILTIN_UNAME
+#define BUILTIN_UNAME 0
+#endif
 #ifndef BUILTIN_WHICH
-#define BUILTIN_WHICH 1
+#define BUILTIN_WHICH 0
 #endif
 
 /* builtin lookup table
@@ -199,6 +202,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_TYPE
     {"type", builtin_type, B_DEFAULT, "name ..."},
+#endif
+#if BUILTIN_UNAME
+    {"uname", builtin_uname, B_DEFAULT, "[-amnrspvio]"},
 #endif
 #if BUILTIN_WHICH
     {"which", builtin_which, B_DEFAULT, "[command] ..."},

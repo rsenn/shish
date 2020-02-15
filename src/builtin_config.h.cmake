@@ -1,4 +1,4 @@
-#cmakedefine BUILTIN_BASENAME     @BUILD_BUILTIN_BASENAME@
+p#cmakedefine BUILTIN_BASENAME     @BUILD_BUILTIN_BASENAME@
 #cmakedefine BUILTIN_BREAK        @BUILD_BUILTIN_BREAK@
 #cmakedefine BUILTIN_CAT          @BUILD_BUILTIN_CAT@
 #cmakedefine BUILTIN_CD           @BUILD_BUILTIN_CD@
@@ -29,5 +29,6 @@
 #cmakedefine BUILTIN_TEST         @BUILD_BUILTIN_TEST@
 #cmakedefine BUILTIN_TRUE         @BUILD_BUILTIN_TRUE@
 #cmakedefine BUILTIN_TYPE         @BUILD_BUILTIN_TYPE@
+#cmakedefine BUILTIN_UNAME        @BUILD_BUILTIN_UNAME@
 #cmakedefine BUILTIN_UNSET        @BUILD_BUILTIN_UNSET@
 #cmakedefine BUILTIN_WHICH        @BUILD_BUILTIN_WHICH@

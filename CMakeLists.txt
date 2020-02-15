@@ -124,8 +124,8 @@ list(APPEND EXTRA_BUILTINS basename cat chmod dirname expr hostname ln mkdir
 rm rmdir
 which
 mktemp
-
-# ls   mv printf   sort tr uname uniq
+uname
+# ls   mv printf   sort tr  uniq
  )
 list(APPEND DEFAULT_BUILTINS ${MINIMAL_BUILTINS} type echo fdtable true false)
 
