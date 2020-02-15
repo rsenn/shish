@@ -12,6 +12,7 @@ debug_error(const char* file, unsigned int line, const char* s) {
   buffer_putulong(fd_err->w, line);
   buffer_puts(fd_err->w, ": ");
   shell_error(s);
+
 #ifdef __GNUC__
   __builtin_trap();
 #elif defined(__thumb__)
