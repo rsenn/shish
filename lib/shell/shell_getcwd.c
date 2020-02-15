@@ -36,12 +36,12 @@ getsep(const char* path) {
  */
 void
 shell_getcwd(stralloc* sa) {
-  size_t n;
+  char* cwd;
   stralloc_zero(sa);
   /* reserve some space */
   stralloc_ready(sa, PATH_MAX);
   /* repeat until we have reserved enough space */
-  n = getcwd(sa->s, sa->a);
+  cwd = getcwd(sa->s, sa->a);
   sa->len = str_len(sa->s);
   getsep(sa->s);
 }
