@@ -67,11 +67,11 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU")
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wshift-overflow=2
           -Wnull-dereference -Wduplicated-cond)
   endif()
-  set(WERROR_FLAG "${WERROR_FLAG} -Werror -Wno-error=unused-but-set-variable")
+  set(WERROR_FLAG "${WERROR_FLAG} -Werror)
 endif()
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
   set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -pedantic -Wconversion -Wno-sign-conversion)
-  set(WERROR_FLAG "${WERROR_FLAG} -Werror -Wno-error=unused-but-set-variable")
+  set(WERROR_FLAG "${WERROR_FLAG} -Werror)
 endif()
 if(MSVC)
   set(PEDANTIC_COMPILE_FLAGS /W3)
@@ -465,24 +465,13 @@ if(NOT HAVE_LIBOWFAT)
   set(LIBSOURCES ${LIBSOURCES} ${ADDSOURCES} lib/stralloc/stralloc_cats.c lib/stralloc/stralloc_diffs.c lib/stralloc/stralloc_zero.c lib/stralloc/stralloc_free${NAME_DEBUG}.c lib/stralloc/stralloc_catlong0.c lib/stralloc/stralloc_copyb.c lib/stralloc/stralloc_copys.c lib/stralloc/stralloc_copy.c lib/stralloc/stralloc_ready${NAME_DEBUG}.c lib/stralloc/stralloc_catulong0.c lib/stralloc/stralloc_cat.c lib/stralloc/stralloc_catb.c lib/stralloc/stralloc_init.c lib/stralloc/stralloc_readyplus${NAME_DEBUG}.c lib/str/str_diff.c lib/str/str_len.c lib/str/str_rchr.c lib/str/str_chr.c lib/str/str_copy.c)
 endif(NOT HAVE_LIBOWFAT)
 
-add_library(libshish ${LIBSOURCES})
+#[[add_library(libshish ${LIBSOURCES})
 set_target_properties(libshish PROPERTIES
   LIBRARY_OUTPUT_NAME "shish"
   OUTPUT_NAME "shish"
   PREFIX "lib"
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-#[[  COMPILE_FLAGS "${F_LTO}"
-#  LINK_FLAGS "${F_LTO}"
-#  ]]
-)
-#if(F_LTO)
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto")
-#set(LINK_FLAGS "${LINK_FLAGS} -flto")
-#endif(F_LTO)
-##[[
-# ndif(F_LTO)
-# ]]
-
+]]
 file(GLOB SOURCES src/*.h  src/eval/*.c src/exec/*.c src/expand/*.c src/expr/*.c src/fd/*.c src/fdstack/*.c src/fdtable/*.c src/history/*.c src/job/*.c src/parse/*.c src/prompt/*.c src/redir/*.c src/sh/*.c src/sig/*.c src/source/*.c src/term/*.c src/tree/*.c src/var/*.c src/vartab/*.c)
 
 
@@ -598,8 +587,8 @@ if(ENABLE_LTO)
 endif(ENABLE_LTO)
 
 
-add_executable(shish ${SOURCES})
-target_link_libraries(shish libshish
+add_executable(shish ${SOURCES} ${LIBSOURCES})
+target_link_libraries(shish
   ${LIBOWFAT_LIBRARY}
   ${MATH_LIBRARY}
   ${ELECTRICFENCE_LIBRARY}

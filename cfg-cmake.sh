@@ -57,7 +57,7 @@ cfg() {
     $relsrcdir 2>&1 ) |tee "${builddir##*/}.log"
 }
 
-cfg-android () 
+cfg-android ()
 {
   (: ${builddir=build/android}
     cfg \
@@ -75,16 +75,16 @@ cfg-android ()
 }
 
 cfg-diet() {
- (build=$(${CC:-gcc} -dumpmachine)
-  host=${build/-gnu/-dietlibc}
-  : ${builddir=build/${host%-*}-diet}
+ (: ${build=$(${CC:-gcc} -dumpmachine)}
+  : ${host=${build/-gnu/-diet}}
   : ${prefix=/opt/diet}
   : ${libdir=/opt/diet/lib-${host%%-*}}
   : ${bindir=/opt/diet/bin-${host%%-*}}
-  
+
   : ${CC="diet-gcc"}
   export CC
 
+  builddir=build/${host%-*}-diet \
   PKG_CONFIG="PKG_CONFIG_PATH=$libdir/pkgconfig pkg-config" \
   cfg \
     -DCMAKE_INSTALL_PREFIX="$prefix" \
@@ -93,6 +93,8 @@ cfg-diet() {
     -DSHARED_LIBS=OFF \
     -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_VERBOSE_MAKEFILE=ON \
+      -DCMAKE_C_COMPILER_LAUNCHER="$launcher" \
+      -DRULE_LAUNCH_LINK="$launcher" \
     "$@")
 }
 
@@ -103,8 +105,9 @@ cfg-diet64() {
 
   builddir=build/$host \
   CFLAGS="-m64" \
+  CC="gcc" \
+  launcher="/opt/diet/bin-x86_64/diet" \
   cfg-diet \
-  -DCMAKE_C_COMPILER_LAUNCHER="/opt/diet/bin-x86_64/diet" \
   "$@")
 }
 
@@ -115,8 +118,8 @@ cfg-diet32() {
 
   builddir=build/$host \
   CFLAGS="-m32" \
+  launcher="/opt/diet/bin-i386/diet" \
   cfg-diet \
-  -DCMAKE_C_COMPILER_LAUNCHER="/opt/diet/bin-i386/diet" \
   "$@")
 }
 
@@ -127,7 +130,7 @@ cfg-mingw() {
 
   test -s /usr/x86_64-w64-mingw32/sys-root/toolchain-mingw64.cmake &&
   TOOLCHAIN=/usr/x86_64-w64-mingw32/sys-root/toolchain-mingw64.cmake
-  
+
   builddir=build/$host \
   bindir=$prefix/bin \
   libdir=$prefix/lib \
@@ -141,7 +144,7 @@ cfg-emscripten() {
   : ${prefix=/opt/emsdk/emscripten/incoming/system}
   : ${libdir=/opt/emsdk/emscripten/incoming/system/lib}
   : ${bindir=/opt/emsdk/emscripten/incoming/system/bin}
-  
+
   CC="emcc" \
   PKG_CONFIG="PKG_CONFIG_PATH=$libdir/pkgconfig pkg-config" \
   cfg \
@@ -162,7 +165,7 @@ cfg-tcc() {
   includedir=/usr/lib/$build/tcc/include
   libdir=/usr/lib/$build/tcc/
   bindir=/usr/bin
-  
+
   CC=${TCC:-tcc} \
   cfg \
     -DCMAKE_VERBOSE_MAKEFILE=ON \
@@ -170,14 +173,15 @@ cfg-tcc() {
 }
 
 cfg-musl() {
- (build=$(${CC:-gcc} -dumpmachine)
-  host=${build/-gnu/-musl}
-  builddir=build/$host
-  prefix=/usr
-  includedir=/usr/include/$host
-  libdir=/usr/lib/$host
-  bindir=/usr/bin/$host
-  
+ (: ${build=$(${CC:-gcc} -dumpmachine)}
+  : ${host=${build/-gnu/-musl}}
+
+ : ${prefix=/usr}
+ : ${includedir=/usr/include/$host}
+ : ${libdir=/usr/lib/$host}
+ : ${bindir=/usr/bin/$host}
+
+  builddir=build/$host \
   CC=musl-gcc \
   PKG_CONFIG=musl-pkg-config \
   cfg \
@@ -204,8 +208,7 @@ cfg-musl64() {
 
 cfg-musl32() {
  (build=$(gcc -dumpmachine)
-  host=${build%%-*}-linux-musl
-  host=i686-${host#*-}
+  host=$(echo "$build" | sed "s|x86_64|i686| ; s|-gnu|-musl|")
 
   builddir=build/$host \
   CFLAGS="-m32" \
@@ -218,7 +221,7 @@ cfg-msys() {
  (build=$(gcc -dumpmachine)
   : ${host=${build%%-*}-pc-msys}
   : ${prefix=/usr/$host/sys-root/msys}
-  
+
   builddir=build/$host \
   bindir=$prefix/bin \
   libdir=$prefix/lib \
@@ -235,7 +238,7 @@ cfg-msys32() {
   cfg-msys "$@")
 }
 
-cfg-termux() 
+cfg-termux()
 {
   (builddir=build/termux
     cfg \
@@ -250,8 +253,8 @@ cfg-termux()
    "$@"
     )
 }
-cfg-wasm() { 
-  export VERBOSE 
+cfg-wasm() {
+  export VERBOSE
  (EMCC=$(which emcc)
   EMSCRIPTEN=$(dirname "$EMCC");
   EMSCRIPTEN=${EMSCRIPTEN%%/bin*};
@@ -282,7 +285,7 @@ cfg-msys() {
  (build=$(gcc -dumpmachine)
   : ${host=${build%%-*}-pc-msys}
   : ${prefix=/usr/$host/sys-root/msys}
-  
+
   builddir=build/$host \
   bindir=$prefix/bin \
   libdir=$prefix/lib \
@@ -300,7 +303,7 @@ cfg-tcc() {
   includedir=/usr/lib/$build/tcc/include
   libdir=/usr/lib/$build/tcc/
   bindir=/usr/bin
-  
+
   CC=${TCC:-tcc} \
   cfg \
     -DCMAKE_VERBOSE_MAKEFILE=ON \

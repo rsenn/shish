@@ -77,8 +77,10 @@ main(int argc, char** argv, char** envp) {
   for(c = 0; envp[c]; c++) var_import(envp[c], V_EXPORT, &envvars[c]);
 
   /* parse command line arguments */
-  while((c = shell_getopt(argc, argv, "c:")) > 0) switch(c) {
+  while((c = shell_getopt(argc, argv, "c:xe")) > 0) switch(c) {
       case 'c': cmds = shell_optarg; break;
+      case 'x': sh->flags |= SH_DEBUG; break;
+      case 'e': sh->flags |= SH_ERREXIT; break;
       case '?': sh_usage(); break;
     }
 
