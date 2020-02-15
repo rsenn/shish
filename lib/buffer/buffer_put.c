@@ -2,7 +2,6 @@
 #include "../byte.h"
 #include <string.h>
 
-
 #ifdef __dietlibc__
 #undef __unlikely
 #endif

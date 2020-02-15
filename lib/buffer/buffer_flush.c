@@ -1,6 +1,5 @@
 #include "../buffer.h"
 
-
 int
 buffer_flush(buffer* b) {
   size_t p;

@@ -1,6 +1,5 @@
 #include "../buffer.h"
 
-
 int
 buffer_putc(buffer* b, char c) {
   if(b->a == b->p) { /* doesn't fit */
