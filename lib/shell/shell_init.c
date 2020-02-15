@@ -1,3 +1,4 @@
+#include "../shell.h"
 #include "../buffer.h"
 
 buffer* shell_buff;

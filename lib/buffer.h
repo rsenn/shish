@@ -177,70 +177,46 @@ int buffer_get_new_token_sa_pred(buffer*, stralloc* sa, sa_predicate p, void*);
 void buffer_fromsa(buffer*, const stralloc* sa); /* read from sa */
 int buffer_tosa(buffer* b, stralloc* sa);        /* write to sa,  auto-growing it */
 
-int buffer_gettok_sa(buffer*, stralloc* sa, const char* charset, size_t setlen);
+int     buffer_putsa(buffer* b, const stralloc* sa);
 #endif
 
-void buffer_frombuf(buffer*, const char* x, size_t l); /* buffer reads from static buffer */
-
-#ifdef ARRAY_H
-void buffer_fromarray(buffer*, array* a); /* buffer reads from array */
-#endif
-void buffer_dump(buffer* out, buffer* b);
-
-int buffer_putc(buffer*, char c);
-int buffer_putnspace(buffer*, int n);
-
-int buffer_putptr(buffer*, void* ptr);
-int buffer_putulong0(buffer*, unsigned long l, int pad);
-int buffer_putlong0(buffer*, long l, int pad);
-int buffer_putxlong0(buffer*, unsigned long l, int pad);
-
-int buffer_skipspace(buffer* b);
-int buffer_skip_pred(buffer*, int (*pred)(int));
-
-int buffer_put_escaped(buffer*, const char* x, size_t len);
-int buffer_puts_escaped(buffer*, const char* x);
-
-int buffer_freshen(buffer* b);
-
-int buffer_truncfile(buffer*, const char* fn);
-
-int buffer_lzma(buffer*, buffer*, int compress);
-int buffer_bz2(buffer*, buffer*, int compress);
-
-int buffer_putnc(buffer*, char c, int ntimes);
-int buffer_putns(buffer*, const char* s, int ntimes);
-
-int buffer_putspad(buffer*, const char* x, size_t pad);
-
-int buffer_deflate(buffer*, buffer* out, int level);
-int buffer_inflate(buffer*, buffer* in);
-
-int buffer_gunzip(buffer*, const char* filename);
-int buffer_gunzip_fd(buffer*, fd_t fd);
-int buffer_gzip(buffer*, const char* filename, int level);
-int buffer_gzip_fd(buffer*, fd_t fd, int level);
-int buffer_bunzip(buffer*, const char* filename);
-int buffer_bunzip_fd(buffer*, fd_t fd);
-int buffer_bzip(buffer*, const char* filename, int level);
-int buffer_bzip_fd(buffer*, fd_t fd, int level);
-
-int buffer_get_until(buffer*, char* x, size_t len, const char* charset, size_t setlen);
-
-int buffer_write_fd(buffer*, fd_t fd);
+void    buffer_close(buffer* b);
+void    buffer_default(buffer* b, buffer_op_fn* op);
+ssize_t buffer_dummyread_fromstr(void);
+ssize_t buffer_dummyreadmmap();
+void    buffer_dump(buffer* out, buffer* b);
+ssize_t buffer_feed(buffer* b);
+int     buffer_flush(buffer* b);
+void    buffer_free(void* buf);
+void    buffer_frombuf(buffer* b, const char* x, size_t l);
+void    buffer_fromstr(buffer* b, char* s, size_t len);
+ssize_t buffer_getc(buffer* b, char* x);
+int     buffer_get_until(buffer* b, char* x, size_t len, const char* charset, size_t setlen);
+void    buffer_init(buffer* b, buffer_op_proto* op, fd_t fd, char* y, size_t ylen);
+int     buffer_mmapread(buffer* b, const char* filename);
+int     buffer_mmapread_fd(buffer* b, fd_t fd);
+void    buffer_munmap(void* buf);
+int     buffer_prefetch(buffer* b, size_t n);
+int     buffer_put(buffer* b, const char* buf, size_t len);
+int     buffer_putc(buffer* b, char c);
+ssize_t buffer_putflush(buffer* b, const char* x, size_t len);
 
 #ifdef UINT64_H
-int buffer_putlonglong(buffer*, int64 l);
-int buffer_putulonglong(buffer*, uint64 l);
-int buffer_putxlonglong(buffer*, uint64 l);
-int buffer_putulonglong(buffer*, uint64 i);
-int buffer_putlonglong(buffer*, int64 i);
-int buffer_putxlonglong0(buffer*, uint64 l, int pad);
+int     buffer_putlonglong(buffer* b, int64 i);
 #endif
 
-#ifdef TAI_H
-int buffer_puttai(buffer*, const struct tai*);
-#endif
+int     buffer_putm_internal(buffer* b, ...);
+ssize_t buffer_putnlflush(buffer* b);
+int     buffer_putnspace(buffer* b, int n);
+int     buffer_putptr(buffer* b, void* ptr);
+int     buffer_putspace(buffer* b);
+int     buffer_putulong0(buffer* b, unsigned long l, int pad);
+int     buffer_putulong(buffer* b, unsigned long l);
+int     buffer_skip_until(buffer* b, const char* charset, size_t setlen);
+
+ssize_t buffer_stubborn(buffer_op_proto* op, fd_t fd, const char* buf, size_t len, void* ptr);
+ssize_t buffer_stubborn_read(buffer_op_proto* op, fd_t fd, const void* buf, size_t len, void* ptr);
+int     buffer_truncfile(buffer* b, const char* fn);
 
 #ifdef __cplusplus
 }

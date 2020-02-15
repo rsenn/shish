@@ -1,3 +1,4 @@
+#include "../shell.h"
 /* Based on dietlibc fnmatch (C) by Felix Leitner
  *
  * rewritten to support multiple runs

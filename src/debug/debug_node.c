@@ -148,7 +148,7 @@ debug_node(union node* node, int depth) {
       debug_ulong("numb", node->nargparam.numb, depth);
       break;
 
-    case N_ARGCMD:
+    case N_ARGCMD: debug_sublist("list", node->nargcmd.list, depth); break;
     case N_ARGARITH:
       /*   debug_subst("flag", node->nargcmd.flag, depth);
          debug_space(depth, 1);*/

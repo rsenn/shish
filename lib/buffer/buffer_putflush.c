@@ -22,8 +22,6 @@
 #define __unlikely(x) (x)
 #endif
 
-int buffer_stubborn(buffer_op_proto*, fd_t fd, const char* buf, size_t len, void* b);
-
 ssize_t
 buffer_putflush(buffer* b, const char* x, size_t len) {
   /* Since we know we are going to flush anyway, let's see if we can
