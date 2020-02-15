@@ -75,8 +75,7 @@ tree_free(union node* node) {
       case N_ARG:
         if(node->narg.list)
           tree_free(node->narg.list);
-        if(&node->narg.stra)
-          stralloc_free(&node->narg.stra);
+        stralloc_free(&node->narg.stra);
         break;
       case N_REDIR:
         if(node->nredir.list)

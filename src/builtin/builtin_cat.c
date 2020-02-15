@@ -53,7 +53,7 @@ builtin_cat(int argc, char** argv) {
       }
       if(ret > 0) {
         char eol = buf[ret - 1];
-        if(number_lines) {
+        if(number_lines || (number_nonempty && ret > 1)) {
           char buf[FMT_ULONG];
           n = fmt_ulong(buf, line);
           if(n < 5)
