@@ -35,6 +35,7 @@ void eval_jump(int levels, int cont);
 int eval_tree(struct eval* e, union node* node, int tempflags);
 
 int eval_command(struct eval* e, union node* node, int tempflags);
+int  eval_node(struct eval* e, union node* node);
 
 int eval_simple_command(struct eval* e, struct ncmd* ncmd);
 int eval_pipeline(struct eval* e, struct npipe* npipeline);

@@ -1,5 +1,6 @@
 #include "../eval.h"
 #include "../tree.h"
+#include "../sh.h"
 
 /* evaluate while/until-loop (3.9.4.5 - 3.9.4.6)
  * ----------------------------------------------------------------------- */
@@ -15,8 +16,10 @@ eval_loop(struct eval* e, struct nloop* nloop) {
   if(setjmp(en.jmpbuf) == 1)
     return ret;
 
-  while((eval_tree(e, nloop->test, E_LIST) == retcode)) /* evaluate loop body */
+  while((ret =  eval_tree(e, nloop->test, E_LIST) == retcode) ==  0) {
+   /* evaluate loop body */
     eval_tree(e, nloop->cmds, E_LIST);
+  }
 
   return eval_pop(&en);
 }

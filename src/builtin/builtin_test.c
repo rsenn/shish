@@ -131,9 +131,9 @@ builtin_test(int argc, char** argv) {
   if(argc - shell_optind == 0)
     ret = neg ^ (!(argv[shell_optind]));
 
-if(ret == -1) {
-  builtin_errmsg(argv, "invalid expression", argv[1]);
-  return 1;
-}
-return ret;
+  if(ret == -1) {
+    builtin_errmsg(argv, "invalid expression", argv[1]);
+    return 1;
+  }
+  return ret;
 }

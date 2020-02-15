@@ -21,6 +21,8 @@ elif:
     }
   }
 
+  sh->exitcode = ret;
+
   /* take the branch */
   branch = ret ? nif->cmd1 : nif->cmd0;
 

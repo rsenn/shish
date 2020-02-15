@@ -16,7 +16,7 @@ exec_command(enum hash_id id, union command cmd, int argc, char** argv, int exec
   switch(id) {
     case H_SBUILTIN:
     case H_BUILTIN:
-    case H_EXEC:
+    case H_EXEC: {
       /* reset shell_optind for shell_getopt() inside builtins */
       shell_optind = 1;
       shell_optidx = 0;
@@ -31,6 +31,7 @@ exec_command(enum hash_id id, union command cmd, int argc, char** argv, int exec
 
       ret = cmd.builtin->fn(argc, argv);
       break;
+    }
 
     case H_FUNCTION: {
       struct env sh;
@@ -46,11 +47,15 @@ exec_command(enum hash_id id, union command cmd, int argc, char** argv, int exec
       break;
     }
 
-    case H_PROGRAM: ret = exec_program(cmd.path, argv, exec, redir); break;
+    case H_PROGRAM: {
+      ret = exec_program(cmd.path, argv, exec, redir);
+      break;
+    }
   }
 
   /* if exec is set we never return! */
   if(exec)
     sh_exit(ret);
+
   return ret;
 }
