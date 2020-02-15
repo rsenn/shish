@@ -93,8 +93,7 @@ cfg-diet() {
     -DSHARED_LIBS=OFF \
     -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_VERBOSE_MAKEFILE=ON \
-      -DCMAKE_C_COMPILER_LAUNCHER="$launcher" \
-      -DRULE_LAUNCH_LINK="$launcher" \
+      ${launcher:+-DCMAKE_C_COMPILER_LAUNCHER="$launcher"} \
     "$@")
 }
 
@@ -104,9 +103,7 @@ cfg-diet64() {
   host=x86_64-${host#*-}
 
   builddir=build/$host \
-  CFLAGS="-m64" \
-  CC="gcc" \
-  launcher="/opt/diet/bin-x86_64/diet" \
+  CC="diet-gcc" \
   cfg-diet \
   "$@")
 }
