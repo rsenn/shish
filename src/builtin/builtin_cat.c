@@ -45,8 +45,10 @@ builtin_cat(int argc, char** argv) {
     for(;;) {
       ret = buffer_get_until(in, buf, sizeof(buf), "\r\n", 2);
       if(ret == 0) {
-        if(in->op == (buffer_op_proto*)&term_read)
-          buffer_putsflush(fd_err->w, "EOF\n");
+        if(in->op == (buffer_op_proto*)&term_read) {
+          buffer_puts(fd_err->w, "EOF");
+          buffer_putnlflush(fd_err->w);
+        }
         goto next;
       }
       if(ret > 0) {
