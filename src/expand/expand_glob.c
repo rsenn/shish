@@ -11,6 +11,7 @@
 #include "../expand.h"
 #include "../tree.h"
 #include "../var.h"
+#include "../byte.h"
 #include <stdlib.h>
 
 /* perform glob() expansion on the current argument

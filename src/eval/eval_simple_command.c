@@ -16,6 +16,7 @@
 #include "../tree.h"
 #include "../vartab.h"
 #include "../../lib/windoze.h"
+#include "../../lib/str.h"
 #if !WINDOWS_NATIVE
 #include <sys/wait.h>
 #include <unistd.h>
@@ -118,6 +119,21 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   argv = shell_alloc((argc + 1) * sizeof(char*));
 #endif
   expand_argv(args, argv);
+
+  if(sh->flags & SH_DEBUG) {
+    char** arg;
+    buffer_puts(fd_err->w, "+");
+    for(arg = argv; *arg; arg++) {
+      int quote = !!(*arg)[str_chr(*arg, ' ')];
+      buffer_putspace(fd_err->w);
+      if(quote)
+        buffer_putc(fd_err->w, '\'');
+      buffer_puts(fd_err->w, *arg);
+      if(quote)
+        buffer_putc(fd_err->w, '\'');
+    }
+    buffer_putnlflush(fd_err->w);
+  }
 
   /* execute the command, this may or may not return, depending on E_EXIT */
   status = exec_command(id, cmd, argc, argv, (e->flags & E_EXIT), redir);

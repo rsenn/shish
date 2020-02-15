@@ -20,7 +20,7 @@ debug_memory(void) {
 
   for(ch = debug_heap; ch; ch = ch->next) {
     /* ptr */
-    n = fmt_xlong(buf, &ch[1]);
+    n = fmt_xlong(buf, (unsigned long)&ch[1]);
     buffer_putnspace(fd_out->w, 8 - n);
     buffer_put(fd_out->w, buf, n);
     buffer_putspace(fd_out->w);

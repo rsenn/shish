@@ -34,11 +34,14 @@ struct arg {
   unsigned int s; /* shift count */
 };
 
+enum { SH_DEBUG = 0x80, SH_ERREXIT = 0x40 };
+
 struct env {
   struct env* parent;
   stralloc cwd;
   int cwdsym; /* is cwd symbolic or phyiscal? */
   long umask;
+  int flags;
   int exitcode; /* exit code of last evaluated tree */
   struct fdstack* fdstack;
   struct vartab* varstack;

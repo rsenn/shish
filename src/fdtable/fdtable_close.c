@@ -1,6 +1,12 @@
 #include "../fd.h"
 #include "../fdtable.h"
 
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
+
 /* handles closing of fd e maybe by resolving another fd
  * ----------------------------------------------------------------------- */
 int

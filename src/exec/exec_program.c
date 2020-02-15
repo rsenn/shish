@@ -22,6 +22,8 @@
 
 #if WINDOWS_NATIVE
 pid_t fork(void);
+#else
+#include <unistd.h>
 #endif
 
 /* execute another program, possibly searching for it first
