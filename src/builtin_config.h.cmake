@@ -19,7 +19,10 @@
 #cmakedefine BUILTIN_HOSTNAME     @BUILD_BUILTIN_HOSTNAME@
 #cmakedefine BUILTIN_LN           @BUILD_BUILTIN_LN@
 #cmakedefine BUILTIN_MKDIR        @BUILD_BUILTIN_MKDIR@
+#cmakedefine BUILTIN_MKTEMP       @BUILD_BUILTIN_MKTEMP@
 #cmakedefine BUILTIN_PWD          @BUILD_BUILTIN_PWD@
+#cmakedefine BUILTIN_RM           @BUILD_BUILTIN_RM@
+#cmakedefine BUILTIN_RMDIR        @BUILD_BUILTIN_RMDIR@
 #cmakedefine BUILTIN_SET          @BUILD_BUILTIN_SET@
 #cmakedefine BUILTIN_SHIFT        @BUILD_BUILTIN_SHIFT@
 #cmakedefine BUILTIN_SOURCE       @BUILD_BUILTIN_SOURCE@
@@ -27,3 +30,4 @@
 #cmakedefine BUILTIN_TRUE         @BUILD_BUILTIN_TRUE@
 #cmakedefine BUILTIN_TYPE         @BUILD_BUILTIN_TYPE@
 #cmakedefine BUILTIN_UNSET        @BUILD_BUILTIN_UNSET@
+#cmakedefine BUILTIN_WHICH        @BUILD_BUILTIN_WHICH@

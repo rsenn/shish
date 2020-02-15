@@ -53,8 +53,8 @@ builtin_cat(int argc, char** argv) {
         char eol = buf[ret - 1];
         if(number_lines) {
           char buf[FMT_ULONG];
-            n = fmt_ulong(buf, line);
-            if(n < 5)
+          n = fmt_ulong(buf, line);
+          if(n < 5)
             buffer_putnspace(fd_out->w, 5 - n);
           buffer_put(fd_out->w, buf, n);
           buffer_putspace(fd_out->w);

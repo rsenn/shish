@@ -10,33 +10,33 @@
 /* output stuff
  * ----------------------------------------------------------------------- */
 int
-builtin_chmod(int argc, char** argv) {
+builtin_rm(int argc, char** argv) {
   int c, mode, ret;
   stralloc path;
-  int verbose = 0;
+  int verbose = 0, force = 0, recursive = 0;
+  recursive = 0;
   char* p;
   size_t i;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "v")) > 0) {
+  while((c = shell_getopt(argc, argv, "vfr")) > 0) {
     switch(c) {
       case 'v': verbose = 1; break;
+      case 'f': force = 1; break;
+      case 'r': recursive = 1; break;
       default: builtin_invopt(argv); return 1;
     }
   }
 
-  p = argv[shell_optind++];
-  if(!scan_8int(p, &mode)) {
-  }
-
   while((p = argv[shell_optind++])) {
-    ret = chmod(p, mode);
+    ret = unlink(p);
     if(ret == -1) {
       builtin_error(argv, p);
-      return 1;
+      if(!force)
+        return 1;
     }
     if(verbose) {
-      buffer_putm_internal(fd_out->w, "changed mode of '", p, "'", 0);
+      buffer_putm_internal(fd_out->w, "removed '", p, "'", 0);
       buffer_putnlflush(fd_out->w);
     }
   }

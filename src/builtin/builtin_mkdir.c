@@ -44,7 +44,7 @@ builtin_mkdir(int argc, char** argv) {
           errno = 0;
         } else {
           builtin_error(argv, dir.s);
-          return -1;
+          return 1;
         }
       }
       if(verbose) {

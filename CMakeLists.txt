@@ -121,8 +121,11 @@ endif(F_ALIGN_STRINGOPS)
 
 list(APPEND MINIMAL_BUILTINS break cd eval exec exit export hash history pwd set shift source unset)
 list(APPEND EXTRA_BUILTINS basename cat chmod dirname expr hostname ln mkdir
+rm rmdir
+which
+mktemp
 
-# ls  mktemp mv print rm rmdir sort tr uname uniq which
+# ls   mv printf   sort tr uname uniq
  )
 list(APPEND DEFAULT_BUILTINS ${MINIMAL_BUILTINS} type echo fdtable true false)
 
@@ -168,11 +171,16 @@ foreach(BUILTIN ${ALL_BUILTINS})
 		isin("ENABLE_${NAME}" ${BUILTIN} ${DEFAULT_BUILTINS} )
   endif(NOT DEFINED ${ENABLE_${NAME}})
 
-  if(DEFINED ENABLE_${NAME})
-		option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" "${ENABLE_${NAME}}")
-	else(DEFINED ENABLE_${NAME})
-		option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" OFF)
-	endif(DEFINED ENABLE_${NAME})
+  if(ENABLE_ALL_BUILTINS)
+      option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" ON)
+  else(ENABLE_ALL_BUILTINS)
+
+    if(DEFINED ENABLE_${NAME})
+  		option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" "${ENABLE_${NAME}}")
+  	else(DEFINED ENABLE_${NAME})
+  		option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" OFF)
+  	endif(DEFINED ENABLE_${NAME})
+  endif(ENABLE_ALL_BUILTINS)
 	#message(STATUS "Builtin ${BUILTIN} - ${ENABLE_${NAME}}")
 endforeach(BUILTIN ${ALL_BUILTINS})
 
@@ -200,11 +208,11 @@ endif()
 foreach(BUILTIN ${ALL_BUILTINS})
 
   string(TOUPPER ${BUILTIN} NAME)
-	if(${BUILTIN_${NAME}} STREQUAL ON)
+	if(${BUILTIN_${NAME}} STREQUAL ON OR ENABLE_ALL_BUILTINS)
 		list(APPEND BUILTINS_ENABLED ${BUILTIN})
-	else(${BUILTIN_${NAME}} STREQUAL ON)
+	else(${BUILTIN_${NAME}} STREQUAL ON OR ENABLE_ALL_BUILTINS)
 		list(APPEND BUILTINS_DISABLED ${BUILTIN})
-	endif(${BUILTIN_${NAME}} STREQUAL ON)
+	endif(${BUILTIN_${NAME}} STREQUAL ON OR ENABLE_ALL_BUILTINS)
 endforeach(BUILTIN ${ALL_BUILTINS})
 
 if(DEBUG_ALLOC)

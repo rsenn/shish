@@ -65,6 +65,12 @@
 #ifndef BUILTIN_SET
 #define BUILTIN_SET 1
 #endif
+#ifndef BUILTIN_RM
+#define BUILTIN_RM 0
+#endif
+#ifndef BUILTIN_RMDIR
+#define BUILTIN_RMDIR 0
+#endif
 #ifndef BUILTIN_SHIFT
 #define BUILTIN_SHIFT 1
 #endif
@@ -76,6 +82,9 @@
 #endif
 #ifndef BUILTIN_UNSET
 #define BUILTIN_UNSET 1
+#endif
+#ifndef BUILTIN_WHICH
+#define BUILTIN_WHICH 1
 #endif
 
 /* builtin lookup table
@@ -155,6 +164,9 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_MKDIR
     {"mkdir", builtin_mkdir, B_DEFAULT, "[-p]"},
 #endif
+#if BUILTIN_MKTEMP
+    {"mktemp", builtin_mktemp, B_DEFAULT, "[-dt] [-p DIR] [TEMPLATE]"},
+#endif
 #if BUILTIN_PWD
     {"pwd", builtin_pwd, B_DEFAULT, "[-L|-P]"},
 #endif
@@ -163,6 +175,12 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_SHIFT
     {"shift", builtin_shift, B_SPECIAL, "[n]"},
+#endif
+#if BUILTIN_RM
+    {"rm", builtin_rm, B_DEFAULT, "[-vrf] [file]..."},
+#endif
+#if BUILTIN_RMDIR
+    {"rmdir", builtin_rmdir, B_DEFAULT, "[-p] [directory]..."},
 #endif
 #if BUILTIN_SOURCE
     {"source", builtin_source, B_DEFAULT, "file [arguments]"},
@@ -181,6 +199,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_TYPE
     {"type", builtin_type, B_DEFAULT, "name ..."},
+#endif
+#if BUILTIN_WHICH
+    {"which", builtin_which, B_DEFAULT, "[command] ..."},
 #endif
     {NULL, NULL, 0, NULL},
 };
