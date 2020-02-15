@@ -24,7 +24,7 @@
 #define FD_TEMPPFX "/tmp/" PACKAGE_NAME "-"
 #define FD_TEMPLEN (sizeof(FD_TEMPPFX) + 6)
 
-const char *fd_tempname = FD_TEMPPFX;
+const char* fd_tempname = FD_TEMPPFX;
 
 /* opens a temporary file and adds it as the specified virtual fd
  * ----------------------------------------------------------------------- */

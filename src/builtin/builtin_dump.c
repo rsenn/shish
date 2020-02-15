@@ -19,11 +19,11 @@ builtin_dump(int argc, char** argv) {
       case 't': fdtable_dump(); break;
       case 's': fdstack_dump(); break;
       case 'f': fd_dumplist(); break;
-case 'm':
+      case 'm':
 #ifdef DEBUG_ALLOC
-       debug_memory(); 
+        debug_memory();
 #endif
-       break;
+        break;
       default: builtin_invopt(argv); return 1;
     }
   }

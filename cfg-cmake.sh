@@ -96,6 +96,44 @@ cfg-diet() {
     "$@")
 }
 
+cfg-diet64() {
+ (build=$(gcc -dumpmachine)
+  host=${build%%-*}-linux-diet
+  host=x86_64-${host#*-}
+
+  builddir=build/$host \
+  CFLAGS="-m64" \
+  cfg-diet \
+  -DCMAKE_C_COMPILER_LAUNCHER="/opt/diet/bin-x86_64/diet" \
+  "$@")
+}
+
+cfg-diet32() {
+ (build=$(gcc -dumpmachine)
+  host=${build%%-*}-linux-diet
+  host=i686-${host#*-}
+
+  builddir=build/$host \
+  CFLAGS="-m32" \
+  cfg-diet \
+  -DCMAKE_C_COMPILER_LAUNCHER="/opt/diet/bin-i386/diet" \
+  "$@")
+}
+
+cfg-mingw() {
+ (build=$(gcc -dumpmachine)
+  : ${host=${build%%-*}-w64-mingw32}
+  : ${prefix=/usr/$host/sys-root/mingw}
+
+  test -s /usr/x86_64-w64-mingw32/sys-root/toolchain-mingw64.cmake &&
+  TOOLCHAIN=/usr/x86_64-w64-mingw32/sys-root/toolchain-mingw64.cmake
+  
+  builddir=build/$host \
+  bindir=$prefix/bin \
+  libdir=$prefix/lib \
+  cfg \
+    "$@")
+}
 cfg-emscripten() {
  (build=$(${CC:-emcc} -dumpmachine)
   host=${build/-gnu/-emscriptenlibc}
@@ -151,26 +189,29 @@ cfg-musl() {
     "$@")
 }
 
-cfg-mingw() {
- (build=$(gcc -dumpmachine)
-  : ${host=${build%%-*}-w64-mingw32}
-  : ${prefix=/usr/$host/sys-root/mingw}
 
-  test -s /usr/x86_64-w64-mingw32/sys-root/toolchain-mingw64.cmake &&
-  TOOLCHAIN=/usr/x86_64-w64-mingw32/sys-root/toolchain-mingw64.cmake
-  
+cfg-musl64() {
+ (build=$(gcc -dumpmachine)
+  host=${build%%-*}-linux-musl
+  host=x86_64-${host#*-}
+
   builddir=build/$host \
-  bindir=$prefix/bin \
-  libdir=$prefix/lib \
-  cfg \
-    "$@")
+  CFLAGS="-m64" \
+  cfg-musl \
+  -DCMAKE_C_COMPILER="musl-gcc" \
+  "$@")
 }
 
-cfg-mingw32() {
+cfg-musl32() {
  (build=$(gcc -dumpmachine)
-  host=${build%%-*}-w64-mingw32
+  host=${build%%-*}-linux-musl
   host=i686-${host#*-}
-  cfg-mingw "$@")
+
+  builddir=build/$host \
+  CFLAGS="-m32" \
+  cfg-musl \
+  -DCMAKE_C_COMPILER="musl-gcc" \
+  "$@")
 }
 
 cfg-msys() {
@@ -228,4 +269,40 @@ cfg-wasm() {
     -DCMAKE_EXECUTABLE_SUFFIX_INIT=".html" \
     -DUSE_{ZLIB,BZIP,LZMA,SSL}=OFF \
   "$@")
+}
+
+cfg-msys32() {
+ (build=$(gcc -dumpmachine)
+  host=${build%%-*}-pc-msys
+  host=i686-${host#*-}
+  cfg-msys "$@")
+}
+
+cfg-msys() {
+ (build=$(gcc -dumpmachine)
+  : ${host=${build%%-*}-pc-msys}
+  : ${prefix=/usr/$host/sys-root/msys}
+  
+  builddir=build/$host \
+  bindir=$prefix/bin \
+  libdir=$prefix/lib \
+  CC="$host-gcc" \
+  cfg \
+    -DCMAKE_CROSSCOMPILING=TRUE \
+    "$@")
+}
+
+cfg-tcc() {
+ (build=$(cc -dumpmachine)
+  host=${build/-gnu/-tcc}
+  builddir=build/$host
+  prefix=/usr
+  includedir=/usr/lib/$build/tcc/include
+  libdir=/usr/lib/$build/tcc/
+  bindir=/usr/bin
+  
+  CC=${TCC:-tcc} \
+  cfg \
+    -DCMAKE_VERBOSE_MAKEFILE=ON \
+    "$@")
 }

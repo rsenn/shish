@@ -11,8 +11,8 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_chmod(int argc, char** argv) {
-int c, ret;
-unsigned int mode;
+  int c, ret;
+  unsigned int mode;
   stralloc path;
   int verbose = 0;
   char* p;
