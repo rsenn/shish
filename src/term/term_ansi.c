@@ -4,7 +4,6 @@
 #include "../term.h"
 #include "../tree.h"
 
-
 void
 term_ansi(void) {
   char c;

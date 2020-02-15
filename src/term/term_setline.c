@@ -1,6 +1,5 @@
 #include "../term.h"
 
-
 /* set command line
  *
  * this assumes <s> has been malloced

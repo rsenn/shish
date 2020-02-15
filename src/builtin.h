@@ -46,6 +46,8 @@ int builtin_hash(int argc, char** argv);
 int builtin_help(int argc, char** argv);
 int builtin_history(int argc, char** argv);
 int builtin_hostname(int argc, char** argv);
+int builtin_mkdir(int argc, char** argv);
+int builtin_ln(int argc, char** argv);
 int builtin_pwd(int argc, char** argv);
 int builtin_set(int argc, char** argv);
 int builtin_shift(int argc, char** argv);

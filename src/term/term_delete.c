@@ -1,6 +1,5 @@
 #include "../term.h"
 
-
 void
 term_delete(void) {
   unsigned long len;

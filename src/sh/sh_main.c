@@ -44,7 +44,7 @@ main(int argc, char** argv, char** envp) {
       fd_push(fd, e, flags);
 #else
       fd_mallocb(fd);
-      fd_push(fd, e, flags|D_FREE);
+      fd_push(fd, e, flags | D_FREE);
 #endif
       fd_setfd(fd, e);
     } else {
@@ -72,7 +72,7 @@ main(int argc, char** argv, char** envp) {
 #ifdef HAVE_ALLOCA
   if(!(envvars = alloca(sizeof(struct var) * c)))
 #endif
-  envvars = malloc(sizeof(struct var) * c);
+    envvars = malloc(sizeof(struct var) * c);
 
   for(c = 0; envp[c]; c++) var_import(envp[c], V_EXPORT, &envvars[c]);
 
@@ -82,13 +82,13 @@ main(int argc, char** argv, char** envp) {
       case '?': sh_usage(); break;
     }
 
-  /* set up the source fd (where the shell reads from) */
+      /* set up the source fd (where the shell reads from) */
 #ifdef HAVE_ALLOCA
   fd_alloca(fd);
   fd_push(fd, STDSRC_FILENO, D_READ);
 #else
   fd_malloc(fd);
-  fd_push(fd, STDSRC_FILENO, D_READ|D_FREE);
+  fd_push(fd, STDSRC_FILENO, D_READ | D_FREE);
 #endif
 
   /* if there were cmds supplied with the option

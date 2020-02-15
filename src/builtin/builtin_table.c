@@ -47,6 +47,12 @@
 #ifndef BUILTIN_HISTORY
 #define BUILTIN_HISTORY 1
 #endif
+#ifndef BUILTIN_LN
+#define BUILTIN_LN 0
+#endif
+#ifndef BUILTIN_MKDIR
+#define BUILTIN_MKDIR 0
+#endif
 #ifndef BUILTIN_PWD
 #define BUILTIN_PWD 1
 #endif
@@ -130,6 +136,12 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_HOSTNAME
     {"hostname", builtin_hostname, B_DEFAULT, "[name]"},
+#endif
+#if BUILTIN_LN
+    {"ln", builtin_ln, B_DEFAULT, "[-sfv]"},
+#endif
+#if BUILTIN_MKDIR
+    {"mkdir", builtin_mkdir, B_DEFAULT, "[-p]"},
 #endif
 #if BUILTIN_PWD
     {"pwd", builtin_pwd, B_DEFAULT, "[-L|-P]"},

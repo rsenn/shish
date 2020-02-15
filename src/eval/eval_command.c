@@ -36,9 +36,9 @@ eval_command(struct eval* e, union node* node, int tempflags) {
 
     for(r = redir; r; r = r->list.next) {
       struct fd* fd = 0;
- #ifdef HAVE_ALLOCA
+#ifdef HAVE_ALLOCA
       fd_alloca(fd);
- #endif
+#endif
 
       /* return if a redirection failed */
       if(redir_eval(&r->nredir, fd, R_NOW)) {
@@ -51,7 +51,7 @@ eval_command(struct eval* e, union node* node, int tempflags) {
     }
   }
 
-  switch(node->id) {    
+  switch(node->id) {
     case N_IF: ret = eval_if(e, &node->nif); break;
     case N_FOR: ret = eval_for(e, &node->nfor); break;
     case N_CASE: ret = eval_case(e, &node->ncase); break;

@@ -7,7 +7,7 @@
 #define stat _stat
 #define fstat _fstat
 #ifndef S_IFMT
-#define S_IFMT 	0xf000
+#define S_IFMT 0xf000
 #endif
 #ifndef S_IFDIR
 #define S_IFDIR 0x4000
@@ -55,7 +55,7 @@ fd_stat(struct fd* fd) {
 #endif
 #ifdef S_IFIFO
     case S_IFIFO: fd->mode |= D_PIPE; break;
-#endif 
+#endif
 #ifdef S_IFLNK
     case S_IFLNK: fd->mode |= D_LINK; break;
 #endif

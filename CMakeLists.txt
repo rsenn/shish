@@ -118,9 +118,15 @@ if(F_ALIGN_STRINGOPS)
   add_definitions("-falign-stringops=1")
 endif(F_ALIGN_STRINGOPS)
 
-list(APPEND ALL_BUILTINS basename break cd dirname dump echo eval exec exit export expr false fdtable hash help history hostname pwd set shift source test type true unset)
+
 list(APPEND MINIMAL_BUILTINS break cd eval exec exit export hash history pwd set shift source unset)
+list(APPEND EXTRA_BUILTINS arch basename cat chmod dirname expr hostname ln ls mkdir mktemp mv print rm rmdir sort tr uname uniq which)
 list(APPEND DEFAULT_BUILTINS ${MINIMAL_BUILTINS} type echo fdtable true false)
+
+
+list(APPEND ALL_BUILTINS ${MINIMAL_BUILTINS} ${DEFAULT_BUILTINS}  ${EXTRA_BUILTINS} basename break cd dirname dump echo eval exec exit export expr false fdtable hash help history hostname ln pwd set shift source test true type unset
+)
+list(SORT ALL_BUILTINS)
 
 function(isin)
   set(ARGUMENTS "${ARGV}")
@@ -142,14 +148,25 @@ endfunction(isin)
 set(BUILTINS_ENABLED "")
 set(BUILTINS_DISABLED "")
 
+
+if(ENABLE_ALL_BUILTINS)
+  foreach(BUILTIN ${ALL_BUILTINS})
+    string(TOUPPER ${BUILTIN} NAME)
+    set(ENABLE_${NAME} TRUE)
+  endforeach(BUILTIN ${ALL_BUILTINS})
+endif(ENABLE_ALL_BUILTINS)
+
 foreach(BUILTIN ${ALL_BUILTINS})
 	string(TOUPPER ${BUILTIN} NAME)
 	if(NOT DEFINED ${ENABLE_${NAME}})
 		isin("ENABLE_${NAME}" ${BUILTIN} ${DEFAULT_BUILTINS} )
+  endif(NOT DEFINED ${ENABLE_${NAME}})
+
+  if(DEFINED ENABLE_${NAME})
 		option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" "${ENABLE_${NAME}}")
-	else(NOT DEFINED ${ENABLE_${NAME}})
+	else(DEFINED ENABLE_${NAME})
 		option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" OFF)
-	endif(NOT DEFINED ${ENABLE_${NAME}})
+	endif(DEFINED ENABLE_${NAME})
 	#message(STATUS "Builtin ${BUILTIN} - ${ENABLE_${NAME}}")
 endforeach(BUILTIN ${ALL_BUILTINS})
 
@@ -176,7 +193,7 @@ endif()
 
 foreach(BUILTIN ${ALL_BUILTINS})
 
-string(TOUPPER ${BUILTIN} NAME)
+  string(TOUPPER ${BUILTIN} NAME)
 	if(${BUILTIN_${NAME}} STREQUAL ON)
 		list(APPEND BUILTINS_ENABLED ${BUILTIN})
 	else(${BUILTIN_${NAME}} STREQUAL ON)

@@ -6,7 +6,6 @@
 #include <termios.h>
 #endif
 
-
 static char term_inbuf[BUFFER_INSIZE];
 buffer term_input = BUFFER_INIT(0, 0, term_inbuf, sizeof(term_inbuf));
 

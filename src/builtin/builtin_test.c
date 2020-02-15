@@ -17,7 +17,7 @@
 #define X_OK 1
 #endif /* defined(X_OK) */
 #ifndef S_IFMT
-#define S_IFMT 	0xf000
+#define S_IFMT 0xf000
 #endif
 #ifndef S_IFBLK
 #define S_IFBLK 0x6000

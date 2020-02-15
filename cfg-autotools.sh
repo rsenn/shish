@@ -30,7 +30,7 @@ cfg() {
   fi
 
   ( set -x; cd $builddir;
-  "$relsrcdir"/configure \
+  ${CONFIGURE:-"$relsrcdir"/configure} \
     ${build:+--build="$build"} \
     ${host:+--host="$host"} \
         --prefix="$prefix" \
