@@ -27,6 +27,7 @@ struct chunk {
 
 #if COLOR_DEBUG
 #define COLOR_CYAN "\033[36;1m"
+#define COLOR_MAGENTA "\033[38;5;199m"
 #define COLOR_GREEN "\033[32;1m"
 #define COLOR_RED "\033[31;1m"
 #define COLOR_YELLOW "\033[33;1m"
@@ -41,8 +42,8 @@ struct chunk {
 
 #define DEBUG_EQU " "
 #define DEBUG_SEP ","
-#define DEBUG_BEGIN " ("
-#define DEBUG_END ") "
+#define DEBUG_BEGIN " ["
+#define DEBUG_END "] "
 #define DEBUG_SPACE 2
 
 union node;
@@ -59,8 +60,8 @@ void debug_memory(void);
 
 void debug_begin(const char* s, int depth);
 void debug_end(int depth);
-void debug_str(const char* msg, const char* s, int depth);
-void debug_stralloc(const char* msg, stralloc* s, int depth);
+void debug_str(const char* msg, const char* s, int depth, char quote);
+void debug_stralloc(const char* msg, stralloc* s, int depth, char quote);
 void debug_ulong(const char* msg, unsigned long i, int depth);
 void debug_ptr(const char* msg, void* ptr, int depth);
 void debug_char(const char* msg, char c, int depth);

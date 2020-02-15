@@ -6,14 +6,19 @@
 /* output a nul-terminated string
  * ----------------------------------------------------------------------- */
 void
-debug_str(const char* msg, const char* s, int depth) {
+debug_str(const char* msg, const char* s, int depth, char quote) {
   buffer_puts(fd_err->w, COLOR_YELLOW);
-  buffer_puts(fd_err->w, msg);
-  buffer_puts(fd_err->w, COLOR_CYAN " =  \"");
+  if(msg) {
+    buffer_puts(fd_err->w, msg);
+    buffer_puts(fd_err->w, COLOR_CYAN "=");
+  }
+  if(quote)
+    buffer_putc(fd_err->w, quote);
 
   if(s)
     buffer_puts(fd_err->w, s);
-
-  buffer_puts(fd_err->w, "\"" COLOR_NONE);
+  if(quote)
+    buffer_putc(fd_err->w, quote);
+  buffer_puts(fd_err->w, COLOR_NONE);
 }
 #endif /* DEBUG_OUTPUT */

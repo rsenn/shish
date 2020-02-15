@@ -50,7 +50,7 @@ if(WARN_NO_UNUSED_FUNCTION)
 endif()
 check_c_compiler_flag("-Wno-error=unused-const-variable" WARN_NO_UNUSED_FUNCTION)
 if(WARN_NO_UNUSED_FUNCTION)
-    set(WERROR_FLAG "${WERROR_FLAG} -Wno-error=unused-const-variable")
+    set(WERROR_FLAG "${WERROR_FLAG} -Wno-error=unused-const-variablep")
 endif()
 if(CMAKE_C_COMPILER_ID MATCHES "GNU")
   set(PEDANTIC_COMPILE_FLAGS -pedantic-errors -Wall -Wextra -pedantic

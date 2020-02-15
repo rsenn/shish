@@ -14,8 +14,8 @@ builtin_rm(int argc, char** argv) {
   int c, mode, ret;
   stralloc path;
   int verbose = 0, force = 0
-  //, recursive = 0
-  ;
+      //, recursive = 0
+      ;
   char* p;
   size_t i;
 
@@ -24,7 +24,7 @@ builtin_rm(int argc, char** argv) {
     switch(c) {
       case 'v': verbose = 1; break;
       case 'f': force = 1; break;
-      //case 'r': recursive = 1; break;
+      // case 'r': recursive = 1; break;
       default: builtin_invopt(argv); return 1;
     }
   }
