@@ -18,9 +18,6 @@ parse_gettok(struct parser* p, int tempflags) {
   /*  if(!parse_keyword(p))
       p->tok = -1;
 */
-    if(p->tok == -1)
-      p->tok = parse_simpletok(p);
-
     /* check for simple tokens first */
     if(p->tok == -1)
       p->tok = parse_simpletok(p);
