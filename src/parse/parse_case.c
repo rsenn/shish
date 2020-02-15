@@ -32,10 +32,10 @@ parse_case(struct parser* p) {
   /* then the keyword 'in' must follow */
 
   tok = parse_gettok(p, P_DEFAULT);
- if(p->node->id != N_ARGSTR || stralloc_diffs(&p->node->nargstr.stra, "in")) {
-  tree_free(word);
-  return -1;
- }
+  if(p->node->id != N_ARGSTR || stralloc_diffs(&p->node->nargstr.stra, "in")) {
+    tree_free(word);
+    return -1;
+  }
 
   /*
   if(!parse_expect(p, P_DEFAULT, T_IN, word))
