@@ -27,12 +27,12 @@ parse_function(struct parser* p) {
     tok = parse_gettok(p, 0);
   while(tok == T_NL || tok == T_NAME);
   p->pushback++;
-/*
-  if((tok = parse_gettok(p, 0)) != T_BEGIN) {
-    tree_free(node);
-    return NULL;
-  }*/
-  if(!parse_expect(p, P_SKIPNL, T_BEGIN| T_LP, node))
+  /*
+    if((tok = parse_gettok(p, 0)) != T_BEGIN) {
+      tree_free(node);
+      return NULL;
+    }*/
+  if(!parse_expect(p, P_SKIPNL, T_BEGIN | T_LP, node))
     return NULL;
 
   p->pushback++;

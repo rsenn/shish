@@ -9,15 +9,20 @@
 void*
 parse_error(struct parser* p, enum tok_flag toks) {
   if(p->tok) {
-    sh_msg("unexpected token '");
+    source_msg();
+    sh_msg("unexpected token ");
+
+    if(p->tok == T_WORD && p->node && p->node->id == N_ARGSTR) {
+      buffer_puts(fd_err->w, "'");
+      buffer_putsa(fd_err->w, &p->node->nargstr.stra);
+      buffer_puts(fd_err->w, "' ");
+    }
 
     buffer_puts(fd_err->w, parse_tokname(p->tok, 0));
-    buffer_putc(fd_err->w, '\'');
 
     if(toks) {
-      buffer_puts(fd_err->w, ", expecting '");
+      buffer_puts(fd_err->w, ", expecting ");
       buffer_puts(fd_err->w, parse_tokname(toks, 1));
-      buffer_putc(fd_err->w, '\'');
     }
 
     buffer_putnlflush(fd_err->w);

@@ -26,9 +26,10 @@ parse_case(struct parser* p) {
     return NULL;
 
   word = parse_getarg(p);
+  p->pushback++;
 
   /* then the keyword 'in' must follow */
-  if(!parse_expect(p, P_SKIPNL, T_IN, word))
+  if(!parse_expect(p, P_DEFAULT, T_IN, word))
     return NULL;
 
   /* create new node and move the word to it */
