@@ -62,8 +62,7 @@ extern const unsigned short parse_chartable[CHAR_RANGE];
 #define parse_isdesc(c) (parse_chartable[(int)(unsigned char)c] & (C_DESC))
 
 /* is either alpha, digit or underscore */
-#define parse_isname(c) (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_NAME))
-
+#define parse_isname(c) (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_DIGIT | C_NAME))
 /* is either alpha, digit or underscore or special parameter */
 #define parse_isparam(c) (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_DIGIT | C_NAME | C_SPCL))
 
@@ -217,7 +216,7 @@ union node* parse_compound_list(struct parser* p);
 union node* parse_for(struct parser* p);
 union node* parse_function(struct parser* p);
 union node* parse_getarg(struct parser* p);
-union node* parse_grouping(struct parser* p, int tempflags);
+union node* parse_grouping(struct parser* p);
 union node* parse_if(struct parser* p);
 union node* parse_list(struct parser* p);
 union node* parse_loop(struct parser* p);

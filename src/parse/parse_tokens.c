@@ -22,10 +22,10 @@ struct token parse_tokens[] = {
     {1, "`"}, /* T_BQ      - backquote ` */
 
     /* special tokens */
-    {0, "NAME"},   /* T_NAME    - name */
-    {0, "WORD"},   /* T_WORD    - word */
-    {0, "ASSIGN"}, /* T_ASSIGN  - assignment */
-    {0, "REDIR"},  /* T_REDIR   - redirection */
+    {0, "name"},   /* T_NAME    - name */
+    {0, "word"},   /* T_WORD    - word */
+    {0, "assign"}, /* T_ASSIGN  - assignment */
+    {0, "redir"},  /* T_REDIR   - redirection */
 
     /* keyword tokens (sorted) */
     {0, "!"},     /* T_NOT - boolean NOT */

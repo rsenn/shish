@@ -38,6 +38,22 @@
 			}
 		},
 		{
+			"file": "src/parse/parse_grouping.c",
+			"settings":
+			{
+				"buffer_size": 1497,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/parse/parse_error.c",
+			"settings":
+			{
+				"buffer_size": 617,
+				"line_ending": "Unix"
+			}
+		},
+		{
 			"file": "src/sh/sh_main.c",
 			"settings":
 			{
@@ -77,7 +93,7 @@
 			"file": "src/parse/parse_gettok.c",
 			"settings":
 			{
-				"buffer_size": 1422,
+				"buffer_size": 888,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -274,9 +290,9 @@
 	],
 	"file_history":
 	[
+		"/home/roman/Dokumente/Sources/shish/src/parse.h",
 		"/home/roman/Dokumente/Sources/shish/src/debug/debug_list.c",
 		"/home/roman/Dokumente/Sources/shish/src/parse/parse_unquoted.c",
-		"/home/roman/Dokumente/Sources/shish/src/parse.h",
 		"/home/roman/Dokumente/Sources/shish/src/parse/parse_tokname.c",
 		"/home/roman/Dokumente/Sources/shish/src/parse/parse_expect.c",
 		"/home/roman/Dokumente/Sources/shish/src/parse/parse_error.c",
@@ -405,7 +421,7 @@
 	],
 	"find":
 	{
-		"height": 46.0
+		"height": 44.0
 	},
 	"find_in_files":
 	{
@@ -631,7 +647,7 @@
 	"groups":
 	[
 		{
-			"selected": 1,
+			"selected": 3,
 			"sheets":
 			[
 				{
@@ -662,7 +678,7 @@
 						"translation.y": 1416.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
@@ -684,9 +700,69 @@
 						],
 						"settings":
 						{
-							"color_scheme": "Packages/EmoKid Color Scheme/EmoKid-Midnight.tmTheme",
+							"color_scheme": "Packages/Dayle Rees Color Schemes/sublime/contrast/revelation-contrast.tmTheme",
 							"syntax": "Packages/HTML/HTML.sublime-syntax",
 							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "src/parse/parse_grouping.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1497,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								667,
+								667
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "src/parse/parse_error.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 617,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								453,
+								453
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
@@ -697,7 +773,7 @@
 					"type": "text"
 				},
 				{
-					"buffer": 2,
+					"buffer": 4,
 					"file": "src/sh/sh_main.c",
 					"semi_transient": false,
 					"settings":
@@ -723,11 +799,11 @@
 						"translation.y": 2730.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 5,
+					"stack_index": 7,
 					"type": "text"
 				},
 				{
-					"buffer": 3,
+					"buffer": 5,
 					"semi_transient": false,
 					"settings":
 					{
@@ -798,11 +874,11 @@
 						"translation.y": 450.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 4,
+					"stack_index": 6,
 					"type": "text"
 				},
 				{
-					"buffer": 4,
+					"buffer": 6,
 					"file": "src/parse/parse_tokname.c",
 					"semi_transient": false,
 					"settings":
@@ -828,11 +904,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 5,
 					"type": "text"
 				},
 				{
-					"buffer": 5,
+					"buffer": 7,
 					"file": "src/source/source_push.c",
 					"semi_transient": false,
 					"settings":
@@ -856,24 +932,24 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 8,
+					"stack_index": 10,
 					"type": "text"
 				},
 				{
-					"buffer": 6,
+					"buffer": 8,
 					"file": "src/parse/parse_gettok.c",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1422,
+						"buffer_size": 888,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1017,
-								1017
+								0,
+								0
 							]
 						],
 						"settings":
@@ -886,11 +962,11 @@
 						"translation.y": 380.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 4,
 					"type": "text"
 				},
 				{
-					"buffer": 7,
+					"buffer": 9,
 					"file": "src/redir/redir_here.c",
 					"semi_transient": false,
 					"settings":
@@ -914,11 +990,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 6,
+					"stack_index": 8,
 					"type": "text"
 				},
 				{
-					"buffer": 8,
+					"buffer": 10,
 					"file": "src/parse/parse_tokens.c",
 					"semi_transient": false,
 					"settings":
@@ -944,11 +1020,11 @@
 						"translation.y": 375.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 7,
+					"stack_index": 9,
 					"type": "text"
 				},
 				{
-					"buffer": 9,
+					"buffer": 11,
 					"file": "src/source/source_msg.c",
 					"semi_transient": false,
 					"settings":
@@ -972,11 +1048,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 9,
+					"stack_index": 11,
 					"type": "text"
 				},
 				{
-					"buffer": 10,
+					"buffer": 12,
 					"file": "src/source/source_peek.c",
 					"semi_transient": false,
 					"settings":
@@ -1002,7 +1078,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 10,
+					"stack_index": 12,
 					"type": "text"
 				}
 			]
@@ -1073,20 +1149,32 @@
 		"selected_items":
 		[
 			[
-				"gettok",
-				"src/parse/parse_gettok.c"
+				"parse_er",
+				"src/parse/parse_error.c"
 			],
 			[
-				"debug_li",
-				"src/debug/debug_list.c"
+				"parse_gr",
+				"src/parse/parse_grouping.c"
+			],
+			[
+				"",
+				"src/parse.h"
+			],
+			[
+				"arse.h",
+				"src/parse.h"
 			],
 			[
 				"parse.h",
 				"src/parse.h"
 			],
 			[
-				"arse.h",
-				"src/parse.h"
+				"gettok",
+				"src/parse/parse_gettok.c"
+			],
+			[
+				"debug_li",
+				"src/debug/debug_list.c"
 			],
 			[
 				"tokname",
@@ -1127,10 +1215,6 @@
 			[
 				"parse_com",
 				"src/parse/parse_command.c"
-			],
-			[
-				"parse_gr",
-				"src/parse/parse_grouping.c"
 			],
 			[
 				"fmt_xl",
@@ -1263,10 +1347,6 @@
 			[
 				"str_diff",
 				"lib/str/str_diff.c"
-			],
-			[
-				"",
-				"src/debug/debug_ulong.c"
 			],
 			[
 				"node",
@@ -1579,10 +1659,6 @@
 			[
 				"fork.c",
 				"src/fork.c"
-			],
-			[
-				"vartab.h",
-				"src/vartab.h"
 			]
 		],
 		"width": 0.0

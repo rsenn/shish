@@ -15,7 +15,7 @@
  *
  * ----------------------------------------------------------------------- */
 union node*
-parse_grouping(struct parser* p, int tempflags) {
+parse_grouping(struct parser* p) {
   enum tok_flag tok;
   union node** rptr;
   union node* grouping;
