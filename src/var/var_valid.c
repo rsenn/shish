@@ -4,15 +4,16 @@
  * ----------------------------------------------------------------------- */
 int
 var_valid(const char* v) {
-  register const char* s = v;
+  const char* s;
 
   if(parse_isdigit(*v))
     return 0;
 
-  for(;;) {
-    if(!parse_isname(*s++))
-      return 0;
-    if(!*s || *s == '=')
-      return 1;
+  for(s = v; *s; s++) {
+    if(!parse_isname(*s))
+      break;
   }
+  if(s > v && (!*s || *s == '='))
+    return 1;
+  return 0;
 }
