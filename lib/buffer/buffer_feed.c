@@ -1,7 +1,5 @@
 #include "../buffer.h"
 
-ssize_t buffer_stubborn_read(ssize_t (*)(), int, const char*, size_t, void*);
-
 ssize_t
 buffer_feed(buffer* b) {
   if(b->p == b->n) {

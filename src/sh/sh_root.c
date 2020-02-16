@@ -6,6 +6,7 @@ struct env sh_root = {/* .parent = */ NULL,
                       /* .cwd = */ {NULL, 0, 0},
                       /* .cwdsym = */ 0,
                       /* .umask = */ 022,
+                      /* .flags = */ 0,
                       /* .exitcode = */ 0,
                       /* .fdstack = */ &fdstack_root,
                       /* .varstack = */ &vartab_root};

@@ -75,8 +75,7 @@ tree_free(union node* node) {
       case N_ARG:
         if(node->narg.list)
           tree_free(node->narg.list);
-        if(node->narg.stra.s)
-          shell_free(node->narg.stra.s);
+        stralloc_free(&node->narg.stra);
         break;
       case N_REDIR:
         if(node->nredir.list)
@@ -86,12 +85,12 @@ tree_free(union node* node) {
         if(node->nassign.list)
           tree_free(node->nassign.list);
         if(node->nassign.stra.s)
-          shell_free(&node->nassign.stra.s);
+          stralloc_free(&node->nassign.stra);
         break;
 
       case N_ARGSTR:
         if(node->nargstr.stra.s)
-          shell_free(node->nargstr.stra.s);
+          stralloc_free(&node->nargstr.stra);
         break;
       case N_ARGPARAM:
         if(node->nargparam.name)
@@ -153,8 +152,8 @@ tree_free(union node* node) {
       case N_FUNCTION:
         if(node->nfunc.name)
           shell_free(node->nfunc.name);
-        if(node->nfunc.cmds)
-          tree_free(node->nfunc.cmds);
+        if(node->nfunc.body)
+          tree_free(node->nfunc.body);
         break;
     }
 

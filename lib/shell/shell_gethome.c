@@ -1,3 +1,4 @@
+#include "../shell.h"
 #include "../buffer.h"
 #include "../scan.h"
 #include "../stralloc.h"

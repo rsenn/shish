@@ -40,10 +40,10 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
       struct fd* in;
 
 #ifdef HAVE_ALLOCA
-      fd_alloca(in);
+      in = fd_alloca();
       fd_push(in, STDIN_FILENO, D_READ | D_PIPE);
 #else
-      fd_malloc(in);
+      in = fd_malloc();
       fd_push(in, STDIN_FILENO, D_READ | D_PIPE | D_FREE);
 #endif
       fd_setfd(in, prevfd);
@@ -55,10 +55,10 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
       struct fd* out;
 
 #ifdef HAVE_ALLOCA
-      fd_alloca(out);
+      out = fd_alloca();
       fd_push(out, STDOUT_FILENO, D_WRITE | D_PIPE);
 #else
-      fd_malloc(out);
+      in = fd_malloc();
       fd_push(out, STDOUT_FILENO, D_WRITE | D_PIPE | D_FREE);
 #endif
       prevfd = fd_pipe(out);

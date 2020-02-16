@@ -8,8 +8,14 @@
 #ifndef BUILTIN_BREAK
 #define BUILTIN_BREAK 1
 #endif
+#ifndef BUILTIN_CAT
+#define BUILTIN_CAT 0
+#endif
 #ifndef BUILTIN_CD
 #define BUILTIN_CD 1
+#endif
+#ifndef BUILTIN_CHMOD
+#define BUILTIN_CHMOD 0
 #endif
 #ifndef BUILTIN_DUMP
 #define BUILTIN_DUMP 1
@@ -59,6 +65,12 @@
 #ifndef BUILTIN_SET
 #define BUILTIN_SET 1
 #endif
+#ifndef BUILTIN_RM
+#define BUILTIN_RM 0
+#endif
+#ifndef BUILTIN_RMDIR
+#define BUILTIN_RMDIR 0
+#endif
 #ifndef BUILTIN_SHIFT
 #define BUILTIN_SHIFT 1
 #endif
@@ -70,6 +82,12 @@
 #endif
 #ifndef BUILTIN_UNSET
 #define BUILTIN_UNSET 1
+#endif
+#ifndef BUILTIN_UNAME
+#define BUILTIN_UNAME 0
+#endif
+#ifndef BUILTIN_WHICH
+#define BUILTIN_WHICH 0
 #endif
 
 /* builtin lookup table
@@ -87,8 +105,14 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_BREAK
     {"break", builtin_break, B_DEFAULT, "[n]"},
 #endif
+#if BUILTIN_CAT
+    {"cat", builtin_cat, B_DEFAULT, "[-nb] [FILE]..."},
+#endif
 #if BUILTIN_CD
     {"cd", builtin_cd, B_DEFAULT, "[-L|-P] [directory]"},
+#endif
+#if BUILTIN_CHMOD
+    {"chmod", builtin_chmod, B_DEFAULT, "[-v] [FILE]..."},
 #endif
 #if BUILTIN_BREAK
     {"continue", builtin_break, B_DEFAULT, "[n]"},
@@ -143,6 +167,9 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_MKDIR
     {"mkdir", builtin_mkdir, B_DEFAULT, "[-p]"},
 #endif
+#if BUILTIN_MKTEMP
+    {"mktemp", builtin_mktemp, B_DEFAULT, "[-dt] [-p DIR] [TEMPLATE]"},
+#endif
 #if BUILTIN_PWD
     {"pwd", builtin_pwd, B_DEFAULT, "[-L|-P]"},
 #endif
@@ -151,6 +178,12 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_SHIFT
     {"shift", builtin_shift, B_SPECIAL, "[n]"},
+#endif
+#if BUILTIN_RM
+    {"rm", builtin_rm, B_DEFAULT, "[-vrf] [file]..."},
+#endif
+#if BUILTIN_RMDIR
+    {"rmdir", builtin_rmdir, B_DEFAULT, "[-p] [directory]..."},
 #endif
 #if BUILTIN_SOURCE
     {"source", builtin_source, B_DEFAULT, "file [arguments]"},
@@ -169,6 +202,12 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_TYPE
     {"type", builtin_type, B_DEFAULT, "name ..."},
+#endif
+#if BUILTIN_UNAME
+    {"uname", builtin_uname, B_DEFAULT, "[-amnrspvio]"},
+#endif
+#if BUILTIN_WHICH
+    {"which", builtin_which, B_DEFAULT, "[command] ..."},
 #endif
     {NULL, NULL, 0, NULL},
 };

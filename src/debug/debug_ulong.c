@@ -8,9 +8,12 @@
 void
 debug_ulong(const char* msg, unsigned long l, int depth) {
 
-  buffer_puts(fd_err->w, COLOR_YELLOW);
-  buffer_puts(fd_err->w, msg);
-  buffer_puts(fd_err->w, COLOR_CYAN DEBUG_EQU);
+  if(msg) {
+    buffer_puts(fd_err->w, COLOR_YELLOW);
+    buffer_puts(fd_err->w, msg);
+    buffer_puts(fd_err->w, COLOR_NONE COLOR_CYAN "=");
+  }
+  buffer_puts(fd_err->w, COLOR_GREEN);
   buffer_putulong(fd_err->w, l);
   buffer_puts(fd_err->w, COLOR_NONE);
 }

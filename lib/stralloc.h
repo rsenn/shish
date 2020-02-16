@@ -285,6 +285,13 @@ void stralloc_reverse_blocks(stralloc*, size_t size);
 void stralloc_reverse(stralloc*);
 void stralloc_upper(register stralloc*);
 
+#ifdef DEBUG_ALLOC
+void stralloc_freedebug(const char* file, unsigned int line, stralloc* sa);
+int stralloc_readydebug(const char* file, unsigned int line, stralloc* sa, unsigned long int len);
+int stralloc_readyplusdebug(const char* file, unsigned int line, stralloc* sa, unsigned long len);
+int stralloc_truncdebug(const char* file, unsigned int line, stralloc* sa, unsigned long int n);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -5,12 +5,12 @@
 /* expand all parts of an N_ARG node
  * ----------------------------------------------------------------------- */
 union node*
-expand_arg(struct narg* narg, union node** nptr, int flags) {
+expand_arg(union node* node, union node** nptr, int flags) {
   union node* n = *nptr;
   union node* subarg;
 
   /* loop through all parts of the word */
-  for(subarg = narg ? narg->list : NULL; subarg; subarg = subarg->list.next) {
+  for(subarg = (node && node->id == N_ARG) ? node->narg.list : node; subarg; subarg = subarg->list.next) {
     int lflags = flags; /* local flags */
 
     if(subarg->nargstr.flag & S_NOSPLIT)

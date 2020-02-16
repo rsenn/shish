@@ -40,10 +40,10 @@ main(int argc, char** argv, char** envp) {
   for(e = STDIN_FILENO; e <= STDERR_FILENO; e++) {
     if((flags = fdtable_check(e))) {
 #ifdef HAVE_ALLOCA
-      fd_allocab(fd);
+      fd = fd_allocab();
       fd_push(fd, e, flags);
 #else
-      fd_mallocb(fd);
+      fd = fd_mallocb();
       fd_push(fd, e, flags | D_FREE);
 #endif
       fd_setfd(fd, e);
@@ -56,7 +56,7 @@ main(int argc, char** argv, char** envp) {
   /* stat the file descriptors and then set the buffers */
   fdtable_foreach(v) {
     fd_stat(fdtable[v]);
-    fd_setbuf(fdtable[v], &fdtable[v][1], D_BUFSIZE);
+    fd_setbuf(fdtable[v], &fdtable[v][1], FD_BUFSIZE);
   }
 
   /* set initial $0 */
@@ -77,17 +77,19 @@ main(int argc, char** argv, char** envp) {
   for(c = 0; envp[c]; c++) var_import(envp[c], V_EXPORT, &envvars[c]);
 
   /* parse command line arguments */
-  while((c = shell_getopt(argc, argv, "c:")) > 0) switch(c) {
+  while((c = shell_getopt(argc, argv, "c:xe")) > 0) switch(c) {
       case 'c': cmds = shell_optarg; break;
+      case 'x': sh->flags |= SH_DEBUG; break;
+      case 'e': sh->flags |= SH_ERREXIT; break;
       case '?': sh_usage(); break;
     }
 
       /* set up the source fd (where the shell reads from) */
 #ifdef HAVE_ALLOCA
-  fd_alloca(fd);
+  fd = fd_alloca();
   fd_push(fd, STDSRC_FILENO, D_READ);
 #else
-  fd_malloc(fd);
+  fd = fd_malloc();
   fd_push(fd, STDSRC_FILENO, D_READ | D_FREE);
 #endif
 
@@ -108,7 +110,7 @@ main(int argc, char** argv, char** envp) {
     fd_dup(fd_src, STDIN_FILENO);
 
   if(fd_needbuf(fd_src))
-    fd_setbuf(fd_src, &fd_src[1], D_BUFSIZE);
+    fd_setbuf(fd_src, &fd_src[1], FD_BUFSIZE);
 
   /* set our basename for the \v prompt escape seq and maybe other stuff*/
   sh_name = shell_basename(sh_argv0);
@@ -127,7 +129,7 @@ main(int argc, char** argv, char** envp) {
 
   /*  if(fd_exp != fd_top && (flags = fdtable_check(e)))
     {
-      fd_allocab(fd);
+      fd = fd_allocab();
       fd_push(fd, e, flags);
       fd_setfd(fd, e);
       fdtable_track(e, FDTABLE_LAZY);

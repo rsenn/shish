@@ -31,7 +31,9 @@ int builtin_source(int argc, char** argv);
 int builtin_true(int argc, char** argv);
 int builtin_basename(int argc, char** argv);
 int builtin_break(int argc, char** argv);
+int builtin_cat(int argc, char** argv);
 int builtin_cd(int argc, char** argv);
+int builtin_chmod(int argc, char** argv);
 int builtin_dirname(int argc, char** argv);
 int builtin_dump(int argc, char** argv);
 int builtin_echo(int argc, char** argv);
@@ -47,13 +49,18 @@ int builtin_help(int argc, char** argv);
 int builtin_history(int argc, char** argv);
 int builtin_hostname(int argc, char** argv);
 int builtin_mkdir(int argc, char** argv);
+int builtin_mktemp(int argc, char** argv);
 int builtin_ln(int argc, char** argv);
 int builtin_pwd(int argc, char** argv);
+int builtin_rm(int argc, char** argv);
+int builtin_rmdir(int argc, char** argv);
 int builtin_set(int argc, char** argv);
 int builtin_shift(int argc, char** argv);
 int builtin_test(int argc, char** argv);
 int builtin_type(int argc, char** argv);
 int builtin_unset(int argc, char** argv);
+int builtin_uname(int argc, char** argv);
+int builtin_which(int argc, char** argv);
 
 #else
 #warning "builtin.h included twice"

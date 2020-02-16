@@ -9,4 +9,8 @@ fd_allocbuf(struct fd* fd, unsigned long n) {
   char* p = shell_alloc(n);
 
   fd_setbuf(fd, p, n);
+  if(fd->r->x == p)
+    fd->r->deinit = &buffer_free;
+  if(fd->w->x == p)
+    fd->w->deinit = &buffer_free;
 }

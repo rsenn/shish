@@ -37,7 +37,7 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_test(int argc, char** argv) {
-  int c;
+  int c, ret = -1;
   int neg = 0;
   int brackets = 0;
   struct stat st;
@@ -65,41 +65,43 @@ builtin_test(int argc, char** argv) {
   while((c = shell_getopt(argc, argv, "n:z:f:d:b:c:h:L:S:e:s:r:w:x:")) > 0) {
     switch(c) {
       /* return true if argument is non-zero */
-      case 'n': return neg ^ (!*shell_optarg);
+      case 'n': ret = neg ^ !!(argv[shell_optind] && *argv[shell_optind]); break;
 
       /* return true if argument is zero */
-      case 'z': return neg ^ (!!*shell_optarg);
+      case 'z': ret = neg ^ !(argv[shell_optind] && *argv[shell_optind]); break;
 
       /* return true if argument is a regular file */
-      case 'f': return neg ^ !(stat(shell_optarg, &st) == 0 && S_ISREG(st.st_mode));
+      case 'f': ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && S_ISREG(st.st_mode)); break;
       /* return true if argument is a directory */
-      case 'd': return neg ^ !(stat(shell_optarg, &st) == 0 && S_ISDIR(st.st_mode));
+      case 'd': ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && S_ISDIR(st.st_mode)); break;
       /* return true if argument is a character device */
-      case 'c': return neg ^ !(stat(shell_optarg, &st) == 0 && S_ISCHR(st.st_mode));
+      case 'c': ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && S_ISCHR(st.st_mode)); break;
       /* return true if argument is a block device */
-      case 'b': return neg ^ !(stat(shell_optarg, &st) == 0 && (st.st_mode & S_IFMT) == S_IFBLK);
+      case 'b': ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && (st.st_mode & S_IFMT) == S_IFBLK); break;
       /* return true if argument is a fifo */
-      case 'p': return neg ^ !(stat(shell_optarg, &st) == 0 && S_ISFIFO(st.st_mode));
+      case 'p': ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && S_ISFIFO(st.st_mode)); break;
       /* return true if argument is a symbolic link */
       case 'h':
 #ifdef S_ISLNK
-      case 'L': return neg ^ !(lstat(shell_optarg, &st) == 0 && S_ISLNK(st.st_mode));
+      case 'L': ret = neg ^ !(lstat(argv[shell_optind], &st) == 0 && S_ISLNK(st.st_mode));
 #endif
+        break;
 #ifdef S_ISSOCK
       /* return true if argument is a socket */
-      case 'S': return neg ^ !(stat(shell_optarg, &st) == 0 && S_ISSOCK(st.st_mode));
+      case 'S': ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && S_ISSOCK(st.st_mode));
 #endif
+        break;
       /* return true if argument exists */
-      case 'e': return neg ^ !(stat(shell_optarg, &st) == 0);
+      case 'e': ret = neg ^ !(stat(argv[shell_optind], &st) == 0); break;
       /* return true if argument exists and is not empty */
-      case 's': return neg ^ !(stat(shell_optarg, &st) == 0 && st.st_size);
+      case 's': ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && st.st_size); break;
 
       /* return true if readable */
-      case 'r': return neg ^ !!access(shell_optarg, R_OK);
+      case 'r': ret = neg ^ !!access(argv[shell_optind], R_OK); break;
       /* return true if writeable */
-      case 'w': return neg ^ !!access(shell_optarg, W_OK);
+      case 'w': ret = neg ^ !!access(argv[shell_optind], W_OK); break;
       /* return true if executable */
-      case 'x': return neg ^ !!access(shell_optarg, X_OK);
+      case 'x': ret = neg ^ !!access(argv[shell_optind], X_OK); break;
 
       default: builtin_invopt(argv); return 1;
     }
@@ -118,18 +120,20 @@ builtin_test(int argc, char** argv) {
       int ret = str_diff(argv[1], argv[3]);
 
       switch(argv[2][0]) {
-        case '=': return neg ^ (!!ret);
-        case '!': return neg ^ (!ret);
-        case '<': return neg ^ (ret >= 0);
-        case '>': return neg ^ (ret <= 0);
+        case '=': ret = neg ^ (!!ret);
+        case '!': ret = neg ^ (!ret);
+        case '<': ret = neg ^ (ret >= 0);
+        case '>': ret = neg ^ (ret <= 0);
       }
     }
   }
 
   if(argc - shell_optind == 0)
-    return neg ^ (!(shell_optarg && *shell_optarg));
+    ret = neg ^ (!(argv[shell_optind]));
 
-  builtin_errmsg(argv, "invalid expression", argv[1]);
-
-  return 0;
+  if(ret == -1) {
+    builtin_errmsg(argv, "invalid expression", argv[1]);
+    return 1;
+  }
+  return ret;
 }

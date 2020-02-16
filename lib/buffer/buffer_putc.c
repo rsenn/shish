@@ -1,7 +1,5 @@
 #include "../buffer.h"
 
-extern int buffer_stubborn(buffer_op_proto* op, fd_t fd, const char* buf, size_t len, void* b);
-
 int
 buffer_putc(buffer* b, char c) {
   if(b->a == b->p) { /* doesn't fit */

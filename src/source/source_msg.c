@@ -6,8 +6,9 @@
  * ----------------------------------------------------------------------- */
 void
 source_msg(void) {
-  if(fdtable[STDSRC_FILENO]->name) {
-    buffer_puts(fd_err->w, fdtable[STDSRC_FILENO]->name);
+  /* if(fdtable[STDSRC_FILENO]->name)*/ {
+    char* name = fdtable[STDSRC_FILENO]->name;
+    buffer_puts(fd_err->w, name ? name : sh_name);
     buffer_puts(fd_err->w, ":");
     buffer_putulong(fd_err->w, source->line);
     buffer_puts(fd_err->w, ": ");

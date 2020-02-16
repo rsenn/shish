@@ -9,5 +9,5 @@ fd_subst(struct fd* fd, stralloc* sa) {
   fd->mode = D_SUBST;
 
   buffer_init(fd->w, (buffer_op_proto*)&stralloc_write, -1, NULL, 0);
-  fd->w->cookie = &sa;
+  fd->w->cookie = sa;
 }

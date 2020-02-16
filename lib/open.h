@@ -46,7 +46,7 @@ ssize_t readclose(int64 fd, stralloc* sa, size_t bufsize);
 int open_filename(fd_t, stralloc*);
 #endif
 
-int open_temp(const char**);
+int open_temp(const char** pt);
 
 #ifdef __cplusplus
 }

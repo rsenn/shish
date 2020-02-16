@@ -13,7 +13,7 @@ fdstack_data(void) {
   struct fd* fd;
   struct fdstack* st;
   long n;
-  char b[D_BUFSIZE / 2];
+  char b[FD_BUFSIZE / 2];
 
   for(st = fdstack; st; st = st->parent)
     for(fd = st->list; fd; fd = fd->next) {

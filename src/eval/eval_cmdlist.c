@@ -1,8 +1,15 @@
-#include "../eval.h"
 #include "../tree.h"
+#include "../eval.h"
 
-/* this could be done in tree.c */
+/* ----------------------------------------------------------------------- */
 int
-eval_cmdlist(struct eval* e, struct ngrp* ngrp) {
-  return eval_tree(e, ngrp->cmds, E_LIST);
+eval_cmdlist(struct eval* e, struct ngrp* grp) {
+  int ret = 0;
+  union node* cmd;
+
+  for(cmd = grp->cmds; cmd; cmd = cmd->ncmd.next) {
+    ret = eval_node(e, cmd);
+  }
+
+  return ret;
 }

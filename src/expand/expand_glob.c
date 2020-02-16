@@ -2,11 +2,16 @@
 #include "config.h"
 #endif
 
+#if defined(HAVE_GLOB_H) || defined(__unix__) || defined(__POSIX__)
+#include <glob.h>
+#else
 #include "../../lib/glob.h"
+#endif
 
 #include "../expand.h"
 #include "../tree.h"
 #include "../var.h"
+#include "../../lib/byte.h"
 #include <stdlib.h>
 
 /* perform glob() expansion on the current argument
@@ -25,6 +30,8 @@ expand_glob(union node** nptr, int flags) {
 
   /* glob for the pattern */
 #ifdef HAVE_GLOB
+  byte_zero(&glb, sizeof(glb));
+
   if(!(ret = glob(n->narg.stra.s, 0, NULL, &glb))) {
     unsigned int i;
 

@@ -29,21 +29,22 @@ struct eval {
 };
 
 extern struct eval* eval;
+int eval_command(struct eval* e, union node* node, int tempflags);
+void eval_jump(int levels, int cont);
+int eval_node(struct eval* e, union node* node);
 int eval_pop(struct eval* e);
 void eval_push(struct eval* e, int flags);
-void eval_jump(int levels, int cont);
 int eval_tree(struct eval* e, union node* node, int tempflags);
 
-int eval_command(struct eval* e, union node* node, int tempflags);
-
-int eval_simple_command(struct eval* e, struct ncmd* ncmd);
-int eval_pipeline(struct eval* e, struct npipe* npipeline);
 int eval_and_or(struct eval* e, struct nandor* nandor);
-int eval_subshell(struct eval* e, struct ngrp* ngrp);
 int eval_case(struct eval* e, struct ncase* ncase);
-int eval_cmdlist(struct eval* e, struct ngrp* ngrp);
-int eval_if(struct eval* e, struct nif* nif);
+int eval_cmdlist(struct eval* e, struct ngrp* grp);
+
 int eval_for(struct eval* e, struct nfor* nfor);
+int eval_if(struct eval* e, struct nif* nif);
 int eval_loop(struct eval* e, struct nloop* nloop);
+int eval_pipeline(struct eval* e, struct npipe* npipe);
+int eval_simple_command(struct eval* e, struct ncmd* ncmd);
+int eval_subshell(struct eval* e, struct ngrp* ngrp);
 
 #endif /* EVAL_H */

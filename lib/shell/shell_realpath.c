@@ -1,3 +1,4 @@
+#include "../shell.h"
 #include "../byte.h"
 #include "../str.h"
 #include "../stralloc.h"

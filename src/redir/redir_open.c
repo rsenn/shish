@@ -18,7 +18,7 @@ redir_open(struct nredir* nredir, stralloc* sa) {
   }
 
   /* MISSING: no-clobbering (with O_EXCL?) */
-  fd_open(nredir->fd, sa->s, mode);
+  fd_open(nredir->fd, shell_strdup(sa->s), mode);
 
   if(nredir->flag & R_NOW)
     return (fdtable_open(nredir->fd, FDTABLE_MOVE) == FDTABLE_ERROR);

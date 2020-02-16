@@ -22,7 +22,7 @@ eval_command(struct eval* e, union node* node, int tempflags) {
   int oldflags;
   struct fdstack fdstack;
   stralloc heredoc;
-  char buf[D_BUFSIZE];
+  char buf[FD_BUFSIZE];
   union node* redir = node->ncmd.rdir;
 
   oldflags = e->flags;
@@ -37,7 +37,7 @@ eval_command(struct eval* e, union node* node, int tempflags) {
     for(r = redir; r; r = r->list.next) {
       struct fd* fd = 0;
 #ifdef HAVE_ALLOCA
-      fd_alloca(fd);
+      fd = fd_alloca();
 #endif
 
       /* return if a redirection failed */
@@ -47,7 +47,7 @@ eval_command(struct eval* e, union node* node, int tempflags) {
       }
 
       if(fd_needbuf(fd))
-        fd_setbuf(fd, buf, D_BUFSIZE);
+        fd_setbuf(fd, buf, FD_BUFSIZE);
     }
   }
 
@@ -58,7 +58,7 @@ eval_command(struct eval* e, union node* node, int tempflags) {
     case N_WHILE:
     case N_UNTIL: ret = eval_loop(e, &node->nloop); break;
     case N_SUBSHELL: ret = eval_subshell(e, &node->ngrp); break;
-    case N_CMDLIST: ret = eval_cmdlist(e, &node->ngrp); break;
+    case N_CMDLIST: ret = eval_cmdlist(e, node->ngrp.cmds); break;
     default:
       break;
       /*    case N_SIMPLECMD:
