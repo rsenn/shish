@@ -4,6 +4,10 @@
 		"selected_items":
 		[
 			[
+				"kern",
+				"kern_release"
+			],
+			[
 				"USE_",
 				"USE_HD44780_LCD"
 			]
@@ -12,18 +16,102 @@
 	"buffers":
 	[
 		{
-			"file": "src/builtin/builtin_test.c",
+			"contents": "#include \"../parse.h\"\n#include \"../prompt.h\"\n#include \"../source.h\"\n#include \"../tree.h\"\n\nunsigned int parse_lineno;\n\n/* parse simple tokens consisting of 1 or 2 chars\n * ----------------------------------------------------------------------- */\nint\nparse_simpletok(struct parser* p) {\n  char c;\n  enum tok_flag tok;\n  int advance;\n\n  /* get a char but do not remove it from the buffer yet */\nagain:\n  if(source_peek(&c) <= 0)\n    return T_EOF;\n\n  /* skip all whitespace */\n  while(parse_isspace(c)) {\n    /* break on a newline if we aren't skipping them */\n    if(!(p->flags & P_SKIPNL) && c == '\\n')\n      break;\n\n    /* if the char was skipped, get next one */\n    if(source_next(&c) <= 0)\n      return T_EOF;\n  }\n\n  advance = 1;\n\n  /* now we have a non-space char */\n  switch(c) {\n    /* skip comments */\n    case '#':\n      do {\n        if(source_next(&c) <= 0)\n          return T_EOF;\n      } while(c != '\\n'); /* after getting chars fall into newline case */\n      goto newline;\n    /* check for escaped newline (line continuation) */\n    case '\\\\':\n      if(source_peekn(&c, 1) <= 0)\n        return T_EOF;\n\n      /* CRAP CODE to support win, mac, unix line termination */\n      if(c == '\\r') {\n        source_skip();\n        if(source_peekn(&c, 1) <= 0)\n          return T_EOF;\n        if(c == '\\n')\n          source_skip();\n        source_skip();\n        prompt_show();\n        goto again;\n      }\n      if(c == '\\n') {\n        source_skip();\n        source_skip();\n\n        if(p->flags & P_IACTIVE)\n          prompt_show();\n\n        goto again;\n      }\n      /* END OF CRAP CODE to be fixed */\n\n      return -1;\n    /* might be a mac or a windows newline */\n    case '\\r':\n      if(source_next(&c) <= 0)\n        return T_EOF;\n      if(c == '\\n')\n        source_skip();\n    /* encountered a new line */\n    case '\\n':§\n    newline:\n      /*      parse_lineno++;*/\n      tok = T_NL;\n      break;\n    /* check for a pipe char, and then check for || */\n    case '|': tok = T_PIPE; goto checkdouble;\n    /* check for a background char, and then check for && */\n    case '&': tok = T_BGND; goto checkdouble;\n    /* check for a semicolon, and then check for ;; */\n    case ';':\n      tok = T_SEMI;\n\n      /* check if the next char is the same */\n    checkdouble : {\n      char c2;\n\n      /* advance buffer position now, but not later */\n      advance = 0;\n\n      /* peek a char and look it it's the same */\n      if(source_next(&c2) > 0 && c == c2) {\n        /* advance buffer position later, because the char\n           we peeked was valid */\n        advance = 1;\n\n        /* do not change order of the ;/;;, &/&&, |/|| tokens,\n           they must be subsequent to each other for the next\n           line to work */\n        tok <<= 1;\n      }\n      break;\n    }\n    /* begin or end a subshell */\n    case '(': tok = T_LP; break;\n    case ')': tok = T_RP; break;\n    /* handle backquote as (ending) token only when\n       we're in a backquoted cmd list */\n    case '`':\n      if(p->flags & P_BQUOTE) {\n        tok = T_BQ;\n        break;\n      }\n\n    default: return -1;\n  }\n\n  if(advance)\n    source_skip();\n\n  return tok;\n}\n",
+			"file": "src/parse/parse_simpletok.c",
+			"file_size": 3128,
+			"file_write_time": 132262618387535719,
 			"settings":
 			{
-				"buffer_size": 3787,
+				"buffer_size": 3129,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "gen-mk.sh",
+			"contents": "<html>\n<head>\n<meta charset=\"UTF-8\"> \n<!-- The following scripts are available (sorted by increasing size):\n     bpgdec8.js  : 8 bit only, no animation\n     bpgdec.js   : up to 14 bits, no animation\n     bpgdec8a.js : 8 bit only, animations\n-->\n<script type=\"text/javascript\" src=\"bpgdec8a.javascript\"></script>\n</head>\n<body>\n<h1>BPG Decoding Demo</h1>\nIMG tag:<br>\n<img src=\"lena512color.bpg\">\n<p>\nIMG tag with animated image:<br>\n<img src=\"clock.bpg\">\n<p>\nDynamic loading in a canvas:<br>\n<canvas id=\"mycanvas\" width=\"512\" height=\"512\"></canvas>\n<script>\n(function ()\n{\n    var img, canvas, ctx;\n\n    canvas = document.getElementById(\"mycanvas\");\n    ctx = canvas.getContext(\"2d\");\n\n    img = new BPGDecoder(ctx);\n    img.onload = function() {\n        /* draw the image to the canvas */\n        ctx.putImageData(this.imageData, 0, 0);\n    };\n    img.load(\"lena512color.bpg\");\n})();\n</script>\n</body>\n</html>\n",
+			"file": "/home/roman/Dokumente/Sources/libbpg/html/index.html",
+			"file_size": 903,
+			"file_write_time": 132260271024334050,
 			"settings":
 			{
-				"buffer_size": 460,
+				"buffer_size": 911,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/sh/sh_main.c",
+			"settings":
+			{
+				"buffer_size": 3228,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "Searching 493 files for \"= T_NAME\" (regex, case sensitive)\n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_bquoted.c:\n   12    struct parser subp;\n   13  \n   14:   if(p->tok == T_NAME)\n   15      p->tok = T_WORD;\n   16  \n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_dquoted.c:\n    8    char c;\n    9  \n   10:   if(p->tok == T_NAME)\n   11      p->tok = T_WORD;\n   12  \n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_function.c:\n   26    do\n   27      tok = parse_gettok(p, 0);\n   28:   while(tok == T_NL || tok == T_NAME);\n   29    p->pushback++;\n   30    /*\n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_keyword.c:\n   17    stralloc* sa = &p->sa;\n   18  \n   19:   if(p->tok != T_NAME) {\n   20      if(sa->len != 1)\n   21        return 0;\n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_squoted.c:\n    7    char c;\n    8  \n    9:   if(p->tok == T_NAME)\n   10      p->tok = T_WORD;\n   11  \n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_unquoted.c:\n  108      }\n  109  \n  110:     if(p->tok == T_NAME && p->sa.len && c == '=')\n  111        p->tok = T_ASSIGN;\n  112  \n  113:     if(p->tok == T_NAME && !parse_isname(c))\n  114        p->tok = T_WORD;\n  115  \n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_word.c:\n   21    stralloc_zero(&p->sa);\n   22  \n   23:   p->tok = T_NAME;\n   24  \n   25    for(;;) {\n\n8 matches across 7 files\n",
+			"settings":
+			{
+				"buffer_size": 1372,
+				"line_ending": "Unix",
+				"name": "Find Results",
+				"scratch": true
+			}
+		},
+		{
+			"file": "src/parse/parse_tokname.c",
+			"settings":
+			{
+				"buffer_size": 552,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/source/source_push.c",
+			"settings":
+			{
+				"buffer_size": 415,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/parse/parse_gettok.c",
+			"settings":
+			{
+				"buffer_size": 1422,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/redir/redir_here.c",
+			"settings":
+			{
+				"buffer_size": 309,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/parse/parse_tokens.c",
+			"settings":
+			{
+				"buffer_size": 1677,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/source/source_msg.c",
+			"settings":
+			{
+				"buffer_size": 437,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/source/source_peek.c",
+			"settings":
+			{
+				"buffer_size": 512,
 				"line_ending": "Unix"
 			}
 		}
@@ -173,151 +261,161 @@
 	"expanded_folders":
 	[
 		"/home/roman/Dokumente/Sources/shish",
+		"/home/roman/Dokumente/Sources/shish/m4",
 		"/home/roman/Dokumente/Sources/shish/src",
+		"/home/roman/Dokumente/Sources/shish/src/debug",
 		"/home/roman/Dokumente/Sources/shish/src/eval",
+		"/home/roman/Dokumente/Sources/shish/src/exec",
 		"/home/roman/Dokumente/Sources/shish/src/parse",
-		"/home/roman/Dokumente/Sources/shish/src/term"
+		"/home/roman/Dokumente/Sources/shish/src/redir",
+		"/home/roman/Dokumente/Sources/shish/src/sh",
+		"/home/roman/Dokumente/Sources/shish/src/source",
+		"/home/roman/Dokumente/Sources/shish/tmp"
 	],
 	"file_history":
 	[
-		"/home/roman/Dokumente/Sources/shish/src/sh/sh_root.c",
-		"/home/roman/Dokumente/Sources/shish/src/var/var_hsearch.c",
-		"/home/roman/Dokumente/Sources/shish/src/var/var_lexhash.c",
-		"/home/roman/Dokumente/Sources/shish/src/vartab/vartab_add.c",
-		"/home/roman/Dokumente/Sources/shish/src/vartab/vartab_root.c",
-		"/home/roman/Dokumente/Sources/shish/src/fork.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_list.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_unquoted.c",
 		"/home/roman/Dokumente/Sources/shish/src/parse.h",
-		"/home/roman/Dokumente/Sources/shish/src/expand/expand_arith_unary.c",
-		"/home/roman/Dokumente/Sources/shish/src/fd.h",
-		"/home/roman/Dokumente/Sources/shish/src/term.h",
-		"/home/roman/Dokumente/Sources/shish/src/term/term_init.c",
-		"/home/roman/Dokumente/Sources/shish/src/fd/fd_setfd.c",
-		"/home/roman/Dokumente/Sources/shish/src/fd/fd_list.c",
-		"/home/roman/Dokumente/Sources/shish/src/term/term_read.c",
-		"/home/roman/Dokumente/Sources/shish/CMakeLists.txt",
-		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_table.c",
-		"/home/roman/Dokumente/Sources/shish/src/vartab.h",
-		"/home/roman/Dokumente/Sources/shish/src/sh.h",
-		"/home/roman/Dokumente/Sources/shish/src/job.h",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_tokname.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_expect.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_error.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_gettok.c",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_cmdlist.c",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_test.c",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_and_or.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_function.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_dquoted.c",
+		"/home/roman/Dokumente/Sources/shish/src/tree.h",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_init.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_compound_list.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_arg.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_param.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_grouping.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_msg.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_get.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_pop.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_case.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_param.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_pipeline.c",
 		"/home/roman/Dokumente/Sources/shish/src/expand/expand_arith_binary.c",
-		"/home/roman/Dokumente/Sources/shish/src/var.h",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_chartable.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_command.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith.c",
+		"/home/roman/Dokumente/Sources/shish/src/source.h",
+		"/home/roman/Dokumente/Sources/shish/src/sh/sh_msg.c",
+		"/home/roman/Dokumente/Sources/shish/src/redir/redir_source.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_getarg.c",
+		"/home/roman/Dokumente/Sources/shish/src/sh/sh_error.c",
+		"/home/roman/Dokumente/Sources/shish/src/sh/sh_errorn.c",
+		"/home/roman/Dokumente/Sources/shish/lib/fmt/fmt_xlong.c",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_if.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_here.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_skipspace.c",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_simple_command.c",
+		"/home/roman/Dokumente/Sources/shish/src/term/term_escape.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_skip.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_tosa.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_string.c",
+		"/home/roman/Dokumente/Sources/shish/src/sh/sh_cmdlist.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand.h",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_cat.c",
+		"/home/roman/Dokumente/Sources/shish/lib/stralloc.h",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_case.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_peek.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_peekn.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_next.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_ulong.c",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_loop.c",
+		"/home/roman/Dokumente/Sources/shish/src/fd.h",
+		"/home/roman/Dokumente/Sources/shish/src/fdtable/fdtable_newfd.c",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_tree.c",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_for.c",
+		"/home/roman/Dokumente/Sources/shish/src/fdstack.h",
+		"/home/roman/Dokumente/Sources/shish/src/sh/sh_main.c",
+		"/home/roman/Dokumente/Sources/shish/src/exec/exec_hash.c",
+		"/home/roman/Dokumente/Sources/shish/src/exec/exec_command.c",
+		"/home/roman/Dokumente/Sources/shish/src/exec/exec_program.c",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_node.c",
 		"/home/roman/Dokumente/Sources/shish/src/eval/eval_command.c",
 		"/home/roman/Dokumente/Sources/shish/src/eval/eval_pipeline.c",
-		"/home/roman/Dokumente/Sources/shish/src/eval/eval_simple_command.c",
-		"/home/roman/Dokumente/Sources/shish/src/exec/exec_program.c",
-		"/home/roman/Dokumente/Sources/shish/src/fd/fd_null.c",
-		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_paren.c",
-		"/home/roman/Dokumente/Sources/shish/src/parse/parse_subst.c",
-		"/home/roman/Dokumente/Sources/shish/src/fdstack.h",
-		"/home/roman/Dokumente/Sources/shish/lib/wait.h",
-		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_dirname.c",
-		"/home/roman/Dokumente/Sources/shish/src/sh/sh_main.c",
-		"/home/roman/Dokumente/Sources/shish/src/fdtable/fdtable_check.c",
-		"/home/roman/Dokumente/Sources/shish/src/job/job_status.c",
-		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_help.c",
-		"/home/roman/Dokumente/Sources/shish/src/job/job_fork.c",
-		"/home/roman/Dokumente/Sources/shish/src/job/job_init.c",
-		"/home/roman/Dokumente/Sources/shish/src/job/job_wait.c",
-		"/home/roman/Dokumente/Sources/shish/lib/wait/wait_pid.c",
-		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_putlonglong.c",
-		"/home/roman/Dokumente/Sources/shish/src/fd/fd_here.c",
-		"/home/roman/Dokumente/Sources/shish/src/var/var_get.c",
-		"/home/roman/Dokumente/Sources/shish/src/expand/expand_param.c",
-		"/home/roman/Dokumente/Sources/shish/src/prompt/prompt_parse.c",
-		"/home/roman/Dokumente/Sources/shish/src/prompt/prompt_show.c",
-		"/home/roman/Dokumente/Sources/shish/lib/shell/shell_gethome.c",
-		"/home/roman/Dokumente/Sources/shish/src/sh/sh_gethome.c",
-		"/home/roman/Dokumente/Sources/shish/src/var/var_len.c",
-		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_cd.c",
-		"/home/roman/Dokumente/Sources/shish/lib/buffer.h",
-		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_putnspace.c",
-		"/home/roman/Dokumente/Sources/shish/src/debug/debug_begin.c",
-		"/home/roman/Dokumente/Sources/shish/src/debug/debug_ptr.c",
-		"/home/roman/Dokumente/Sources/shish/src/debug/debug_redir.c",
-		"/home/roman/Dokumente/Sources/shish/src/debug/debug_str.c",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_subshell.c",
+		"/home/roman/Dokumente/Sources/shish/src/sh/sh_subshell.c",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_ln.c",
+		"/home/roman/Dokumente/Sources/shish/src/eval.h",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_pop.c",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_search.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_space.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_node.c",
 		"/home/roman/Dokumente/Sources/shish/src/debug/debug_sublist.c",
-		"/home/roman/Dokumente/Sources/shish/src/debug/debug_subst.c",
-		"/home/roman/Dokumente/Sources/shish/src/debug/debug_ulong.c",
-		"/home/roman/Dokumente/Sources/shish/src/debug/debug_unquoted.c",
-		"/home/roman/Dokumente/Sources/shish/src/parse/parse_error.c",
-		"/home/roman/Dokumente/Sources/shish/src/sh/sh_errorn.c",
-		"/home/roman/Dokumente/Sources/shish/src/term/term_backspace.c",
-		"/home/roman/Dokumente/Sources/shish/src/term/term_left.c",
-		"/home/roman/Dokumente/Sources/shish/src/var/var_print.c",
-		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_error.c",
-		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_break.c",
-		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_hash.c",
-		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_shift.c",
-		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_type.c",
-		"/home/roman/Dokumente/Sources/shish/lib/shell/shell_errorn.c",
-		"/home/roman/Dokumente/Sources/shish/src/debug/debug_stralloc.c",
-		"/home/roman/Dokumente/Sources/shish/src/tree/tree_newlink.c",
-		"/home/roman/Dokumente/Sources/shish/cfg-cmake.sh",
-		"/home/roman/Dokumente/Sources/shish/src/builtin.h",
-		"/home/roman/Dokumente/Sources/shish/doc/posix/ieee-p1003.2-d11.2-s3.txt",
-		"/home/roman/Dokumente/Sources/shish/src/fd/fd_getname.c",
-		"/home/roman/Dokumente/Sources/shish/src/redir/redir_source.c",
-		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_expr.c",
-		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_echo.c",
-		"/home/roman/Dokumente/Sources/shish/lib/str.h",
-		"/home/roman/Dokumente/Sources/shish/src/source/source_newline.c",
-		"/home/roman/Dokumente/Sources/shish/src/builtin_config.h.cmake",
-		"/home/roman/Dokumente/Sources/shish/lib/scan.h",
-		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_value.c",
-		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_putptr.c",
-		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_putulonglong.c",
-		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_putxlong.c",
-		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_putxlonglong.c",
-		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_putxlonglong0.c",
-		"/home/roman/Dokumente/Sources/shish/src/var/var_dump.c",
-		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_mmapread_fd.c",
-		"/home/roman/Dokumente/Sources/shish/lib/mmap/mmap_read_fd.c",
-		"/home/roman/Dokumente/Sources/shish/src/tree/tree_print.c",
-		"/home/roman/Dokumente/Sources/shish/shish.sublime-project",
-		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_tosa.c",
-		"/home/roman/Dokumente/Sources/shish/lib/stralloc.h",
-		"/home/roman/Dokumente/Sources/shish/lib/stralloc/stralloc_write.c",
-		"/home/roman/Dokumente/Sources/shish/src/expand/expand_arith_expr.c",
-		"/home/roman/Dokumente/Sources/shish/lib/scan/scan_longlong.c",
-		"/home/roman/Dokumente/Sources/shish/src/fd/fd_exec.c",
-		"/home/roman/Dokumente/Sources/shish/src/fd/fd_init.c",
-		"/home/roman/Dokumente/Sources/shish/src/fdstack/fdstack_pipe.c",
-		"/home/roman/Dokumente/Sources/shish/src/fdtable/fdtable_here.c",
-		"/home/roman/Dokumente/Sources/shish/src/history/history_save.c",
-		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith.c",
-		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_expr.c",
-		"/home/roman/Dokumente/Sources/shish/lib/typedefs.h",
 		"/home/roman/Dokumente/Sources/shish/src/debug.h",
-		"/home/roman/Dokumente/Sources/shish/src/expand/expand_copysa.c",
-		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_binary.c",
-		"/home/roman/Dokumente/Sources/shish/src/exec/exec_search.c",
-		"/home/roman/Dokumente/Sources/shish/src/exec/exec_hash.c",
-		"/home/roman/Dokumente/Sources/shish/src/exec/exec_hashstr.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_stralloc.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_redir.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_ptr.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_newnode.c",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_set.c",
+		"/home/roman/Dokumente/Sources/shish/src/redir/redir_eval.c",
+		"/home/roman/Dokumente/Sources/shish/src/sh.h",
+		"/home/roman/Dokumente/Sources/shish/src/fd/fd_allocbuf.c",
+		"/home/roman/Dokumente/Sources/shish/src/redir.h",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_memory.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_str.c",
+		"/home/roman/Dokumente/Sources/shish/lib/str/str_diff.c",
+		"/home/roman/Dokumente/Sources/shish/src/term.h",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_unquoted.c",
+		"/home/roman/Dokumente/Sources/shish/src/tree/tree_free.c",
+		"/home/roman/Dokumente/Sources/shish/CMakeLists.txt",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_subnode.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_subst.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_end.c",
+		"/home/roman/Dokumente/Sources/shish/lib/shell/shell_reallocdebug.c",
+		"/home/roman/Dokumente/Sources/shish/cfg-cmake.sh",
+		"/home/roman/Dokumente/Sources/shish/src/sh/sh_gethome.c",
+		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_prefetch.c",
+		"/home/roman/Dokumente/Sources/shish/lib/stralloc/stralloc_write.c",
+		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_stubborn.c",
+		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_stubborn2.c",
+		"/home/roman/Dokumente/Sources/shish/src/expand/expand_command.c",
+		"/home/roman/Dokumente/Sources/shish/src/tree/tree_print.c",
+		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_tosa.c",
+		"/home/roman/Dokumente/Sources/c-utils/CMakeLists.txt",
+		"/home/roman/Dokumente/Sources/shish/src/fd/fd_subst.c",
+		"/home/roman/Dokumente/Sources/shish/src/sh/sh_root.c",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_rmdir.c",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_which.c",
 		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_unset.c",
-		"/home/roman/Dokumente/Sources/shish/configure.ac",
-		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_export.c",
-		"/opt/microchip/xc8/v1.43/include/pic16f876a.h",
-		"/home/roman/Dokumente/Sources/shish/config.h.in",
-		"/home/roman/Dokumente/Sources/binutils-2.30/gold/configure.ac",
-		"/usr/src/gnu/bash-3.2.48/configure.in",
-		"/home/roman/Dokumente/Sources/shish/src/exec.h",
-		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_true.c",
-		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_table.c.cmake",
-		"/home/roman/Dokumente/Sources/shish/src/parse/Makefile.in",
-		"/home/roman/Dokumente/Sources/shish/src/parse/parse_getarg.c",
-		"/home/roman/Dokumente/Sources/shish/src/expand.h",
-		"/home/roman/Dokumente/Sources/shish/src/expand/expand_arg.c",
-		"/home/roman/Dokumente/Sources/shish/src/expand/expand_tosa.c"
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_uname.c",
+		"/home/roman/Dokumente/Sources/shish/src/fd/fd_free.c",
+		"/home/roman/Dokumente/Sources/shish/src/redir/redir_open.c",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_pwd.c",
+		"/home/roman/Dokumente/Sources/shish/lib/shell/shell_strdup.c",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_table.c",
+		"/home/roman/Dokumente/Sources/shish/src/builtin_config.h.cmake",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_mktemp.c",
+		"/home/roman/Dokumente/Sources/shish/lib/open/open_temp.c",
+		"/home/roman/Dokumente/Sources/mktemp-1.5/mktemp.c",
+		"/home/roman/Dokumente/Sources/shish/lib/uint32/uint32_random.c",
+		"/home/roman/Dokumente/Sources/shish/src/builtin.h",
+		"/home/roman/Dokumente/Sources/shish/lib/open.h",
+		"/home/roman/Dokumente/Sources/shish/lib/open/open_trunc.c",
+		"/home/roman/Dokumente/Sources/mktemp-1.5/priv_mktemp.c",
+		"/home/roman/Dokumente/Sources/mktemp-1.5/random.c",
+		"/home/roman/Dokumente/Sources/shish/src/var.h",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_rm.c"
 	],
 	"find":
 	{
-		"height": 41.0
+		"height": 46.0
 	},
 	"find_in_files":
 	{
-		"height": 137.0,
+		"height": 161.0,
 		"where_history":
 		[
+			"/home/roman/Dokumente/Sources/shish/src,/home/roman/Dokumente/Sources/shish/lib,*.h,*.c",
+			"\\1 = fd_alloca()",
+			"/home/roman/Dokumente/Sources/shish/src,/home/roman/Dokumente/Sources/shish/lib,*.h,*.c",
+			"/home/roman/Dokumente/Sources/shish/src,/home/roman/Dokumente/Sources/shish/lib,*.h",
 			"/home/roman/Dokumente/Sources/shish/src,/home/roman/Dokumente/Sources/shish/lib,*.c,*.h",
 			"/home/roman/Dokumente/Sources/shish/src,/home/roman/Dokumente/Sources/shish/lib,*.c",
 			"/home/roman/Dokumente/Sources/shish/src,/home/roman/Dokumente/Sources/shish/lib,*.c,*.h",
@@ -328,137 +426,137 @@
 	},
 	"find_state":
 	{
-		"case_sensitive": false,
+		"case_sensitive": true,
 		"find_history":
 		[
-			"glob\\.c",
-			"glob.\\.c",
-			"PID_T",
-			"check_type_size",
-			"INLINE_KEY",
-			"check_inline",
-			"inline",
-			"input",
-			"hsearch",
-			"(\\.[^ ]* =)",
-			"_t;",
-			"pid_t;",
-			"-gg",
-			"check_c_compiler_flag",
-			"-g",
-			"^",
-			"FILTER",
-			"MATH_LIB",
-			"check_library_exists",
-			"MATH_LIB",
-			"\\\\debug",
-			"DEBUG_OUTPUT",
-			"isin",
-			"dump",
-			"DEBUG_ALLOC",
-			"WIFSIG",
-			"waitpid_nointr",
-			"job_wait",
-			"waitpid",
-			"mmapprivate",
-			"xlonglong",
-			"add_",
-			"lto",
-			"src/builtin",
-			"NAME_DEBUG",
-			"newnode",
-			"NAME_DEBUG",
-			"\\(\\${BUILD_DEBUG}\\)",
-			"CMAKE_BUILD_TYPE STREQUAL \"Debug\" OR CMAKE_BUILD_TYPE STREQUAL \"RelWithDebInfo\"",
-			"\"Debug\"",
-			"MATCHES",
-			"\\${CMAKE_BUILD_TYPE} MATCHES \"Deb\"",
-			"\\${BUILD_DEBUG}",
-			"BUILD_DEBUG",
-			"TYPE=",
-			"\"\\${CMAKE_BUILD_TYPE}\" MATCHES \"Deb\"",
-			"MATCHES \"Debug\"",
-			"unsigned long",
-			"lines",
-			"var_get",
-			"#ifdef BUILTIN",
-			"redir_source\\(",
-			"longlong",
-			"scan_longlong",
-			"nset",
-			"stralloc_write",
-			"buffer_op_proto",
-			"-w",
-			"efence",
-			"check_lib",
-			"check_library_exists",
-			"ELECTRICFENCE_LIBRARY",
-			"parse_arith\\(",
-			"parse_arith",
-			"eval",
-			"^",
-			"config.h",
-			"AC_ARG",
-			"builtins",
-			"builtin",
-			"BUILD_",
-			"hash",
-			"exec",
-			"exec_search",
-			"exec_hashstr",
-			"exec_hash",
-			"searc",
-			"#define",
-			"cmakedefine",
-			"BUILD_BUILTIN_",
-			"option\\(",
-			"@[^@]*@",
-			"Enabled b",
-			"01 ",
-			"option\\(",
-			"option",
-			"BUILTIN_",
-			"#cmakedefine ",
-			"include_dir",
-			"builtin",
-			"#define ([^ ]*) [01]",
-			"builtin_table",
-			"builtins_",
-			"builtins",
-			"builtin",
-			"sh_name",
-			"sh_main",
-			"frachtbr",
-			"expand_init",
-			"list =",
-			"//  ",
-			"expand_args",
-			"->list\\.",
-			"ADDNODE",
-			"_INIT",
-			"expand_expr",
-			"nptr",
-			"union node",
-			"expand_input_iterator",
-			"narg",
-			"N_UNTIL",
-			"expand_arith\\(",
-			"expand_arith",
-			"F_LTO",
-			"flto",
-			"uint64",
-			"int64",
-			"asn1der",
-			"human",
-			"unint64",
-			"signed long long",
-			"longlong",
-			"define.*MACR",
-			"_MAX",
-			"fmt_longlong",
-			"A_SUB",
-			"A_",
-			"A_SUB"
+			"isname",
+			"= T_NAME",
+			"source_",
+			"NOKEY",
+			"T_WHILE",
+			"= T_WORD",
+			"T_WORD",
+			"T_IN",
+			"N_IN",
+			"parse_expect",
+			"KEYW",
+			"source_msg",
+			"sh_error",
+			"sh_err",
+			"error_",
+			"sh_msg",
+			"parse_error",
+			"T_",
+			")\n",
+			"groupin",
+			"parse_gettok",
+			"parse_skipspace",
+			"parse_init",
+			"parse_compound_list",
+			"nfunc",
+			"parse_command",
+			"node",
+			"expand_tosa",
+			"expand_arg",
+			"_move",
+			"move",
+			"expand_.*sa",
+			"tosa",
+			"to",
+			"tosa",
+			"P_",
+			"nfunc",
+			"N_FUNC",
+			"NFUNC",
+			"parse_command",
+			"parse_function",
+			"source->line",
+			"source.*line",
+			"exitcode =",
+			"eval_simple",
+			"'n'",
+			"optarg",
+			"ngrp",
+			"eval_cmdlist",
+			"is_dir",
+			"nredir",
+			"fdstack_push",
+			"alloca",
+			"fd.*alloca\\(([^)]*)\\)",
+			"fd.*alloca\\([^)]",
+			"fd.*alloc",
+			"fd_alloca",
+			"allocbuf",
+			"redir_eval",
+			"ncmd",
+			"ngrp",
+			"define\\s*R_",
+			"R_",
+			"R_NOW",
+			"redir_eval",
+			"nredir",
+			"ngrp",
+			"ncmd",
+			"eval_tree",
+			"exitcode =",
+			"exec_command",
+			"builtin_search",
+			"eval_tree",
+			"RET",
+			"eval_and",
+			"eval_and_oreval_and_or",
+			"invalid",
+			"val=",
+			"return neg ^ ",
+			"cmd1\"",
+			"bgnd\"",
+			"cmd1\"",
+			"cmd1",
+			"\"rdir\"",
+			"\"list\"",
+			"debug_space(depth + 1, 0);",
+			"debug_space.*0\\)",
+			"debug_space",
+			"ARGPARAM:",
+			"S_ARG",
+			"S_ARG,",
+			"S_ARG\"",
+			"S_ARG ",
+			"N_ARGSTR:",
+			"\"cmd",
+			"cmd1\"",
+			"\"rdir\"",
+			"N_AND",
+			"N_IF:",
+			"depth\\+2",
+			"SIMPLECMD:",
+			"N_IF:",
+			"ARGPARA",
+			"\\\\\\[",
+			"\\[",
+			"\"\\[",
+			"\".*\\[",
+			"'\\['",
+			"\"\\[\"",
+			"'['",
+			"\"args\"",
+			"N_SIMPLE",
+			"N_ARGPARAM",
+			"N_ARG",
+			"debug_list",
+			"\"flag\", ",
+			"\"flag\"",
+			"\"flag\",",
+			"\"flag",
+			"N_REDIR",
+			"COLOR_CYAN",
+			"N_REDIR",
+			"N_CASE",
+			"cmds\"",
+			"flag\"",
+			"SIMPLECMD",
+			"args\\\\n",
+			"0"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -466,6 +564,17 @@
 		"regex": true,
 		"replace_history":
 		[
+			"\\1 = fd_alloca()",
+			"ret = ",
+			"val= neg ^ ",
+			"debug_space(depth + 1, 1);",
+			"depth+1",
+			"0,",
+			"\" | ",
+			"",
+			" : ${\\1}",
+			"nodename",
+			"chmod",
 			"SIGSET_T",
 			"/* \\1 */",
 			"#",
@@ -527,29 +636,30 @@
 			[
 				{
 					"buffer": 0,
-					"file": "src/builtin/builtin_test.c",
+					"file": "src/parse/parse_simpletok.c",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 3787,
+						"buffer_size": 3129,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								319,
-								319
+								1840,
+								1840
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/C11/C11.tmLanguage",
+							"color_scheme": "Packages/EmoKid Color Scheme/EmoKid-Midnight.tmTheme",
+							"syntax": "Packages/C99/C99.tmLanguage",
 							"tab_size": 2,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 1416.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 1,
@@ -557,25 +667,27 @@
 				},
 				{
 					"buffer": 1,
-					"file": "gen-mk.sh",
+					"file": "/home/roman/Dokumente/Sources/libbpg/html/index.html",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 460,
+						"buffer_size": 911,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								73,
-								75
+								300,
+								300
 							]
 						],
 						"settings":
 						{
-							"color_scheme": "Packages/Rainglow/rainglow/Codecourse Contrast (rainglow).tmTheme",
-							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
+							"color_scheme": "Packages/EmoKid Color Scheme/EmoKid-Midnight.tmTheme",
+							"syntax": "Packages/HTML/HTML.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
@@ -583,13 +695,322 @@
 					},
 					"stack_index": 0,
 					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "src/sh/sh_main.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3228,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3137,
+								3137
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 2730.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1372,
+						"regions":
+						{
+							"match":
+							{
+								"flags": 112,
+								"regions":
+								[
+									[
+										180,
+										188
+									],
+									[
+										335,
+										343
+									],
+									[
+										530,
+										538
+									],
+									[
+										701,
+										709
+									],
+									[
+										873,
+										881
+									],
+									[
+										1027,
+										1035
+									],
+									[
+										1124,
+										1132
+									],
+									[
+										1309,
+										1317
+									]
+								],
+								"scope": ""
+							}
+						},
+						"selection":
+						[
+							[
+								1032,
+								1032
+							]
+						],
+						"settings":
+						{
+							"detect_indentation": false,
+							"line_numbers": false,
+							"output_tag": 1,
+							"result_base_dir": "",
+							"result_file_regex": "^([^ \t].*):$",
+							"result_line_regex": "^ +([0-9]+):",
+							"scroll_past_end": true,
+							"syntax": "Packages/Default/Find Results.hidden-tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 450.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "src/parse/parse_tokname.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 552,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "src/source/source_push.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 415,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								248,
+								248
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 8,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "src/parse/parse_gettok.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1422,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1017,
+								1017
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 380.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "src/redir/redir_here.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 309,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "src/parse/parse_tokens.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1677,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1677,
+								1677
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 375.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "src/source/source_msg.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 437,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 9,
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "src/source/source_peek.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 512,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C99/C99.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 10,
+					"type": "text"
 				}
 			]
 		}
 	],
 	"incremental_find":
 	{
-		"height": 29.0
+		"height": 34.0
 	},
 	"input":
 	{
@@ -642,7 +1063,7 @@
 	"project": "shish.sublime-project",
 	"replace":
 	{
-		"height": 74.0
+		"height": 84.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -652,12 +1073,472 @@
 		"selected_items":
 		[
 			[
-				"builtin_test.c",
-				"src/builtin/builtin_test.c"
+				"gettok",
+				"src/parse/parse_gettok.c"
+			],
+			[
+				"debug_li",
+				"src/debug/debug_list.c"
+			],
+			[
+				"parse.h",
+				"src/parse.h"
+			],
+			[
+				"arse.h",
+				"src/parse.h"
+			],
+			[
+				"tokname",
+				"src/parse/parse_tokname.c"
+			],
+			[
+				"arse_ex",
+				"src/parse/parse_expect.c"
+			],
+			[
+				"expand_arg",
+				"src/expand/expand_arg.c"
+			],
+			[
+				"expand_ar",
+				"src/expand/expand_arith_binary.c"
+			],
+			[
+				"tree.h",
+				"src/tree.h"
+			],
+			[
+				"parse_err",
+				"src/parse/parse_error.c"
+			],
+			[
+				"sh_err",
+				"src/sh/sh_errorn.c"
+			],
+			[
+				"sh_msg",
+				"src/sh/sh_msg.c"
+			],
+			[
+				"parse_f",
+				"src/parse/parse_function.c"
+			],
+			[
+				"parse_com",
+				"src/parse/parse_command.c"
+			],
+			[
+				"parse_gr",
+				"src/parse/parse_grouping.c"
+			],
+			[
+				"fmt_xl",
+				"lib/fmt/fmt_xlong.c"
+			],
+			[
+				"teree",
+				"src/term/term_escape.c"
+			],
+			[
+				"xlong",
+				"lib/fmt/fmt_xlong.c"
+			],
+			[
+				"source_skip",
+				"src/source/source_skip.c"
+			],
+			[
+				"eval_cmd",
+				"src/eval/eval_cmdlist.c"
+			],
+			[
+				"parser_ini",
+				"src/parse/parse_init.c"
+			],
+			[
+				"expand.h",
+				"src/expand.h"
+			],
+			[
+				"stralloc.h",
+				"lib/stralloc.h"
+			],
+			[
+				"parser.h",
+				"src/parse/parse_arith.c"
+			],
+			[
+				"peekn",
+				"src/source/source_peekn.c"
+			],
+			[
+				"peek",
+				"src/source/source_peek.c"
+			],
+			[
+				"source_nex",
+				"src/source/source_next.c"
+			],
+			[
+				"eek",
+				"src/source/source_peek.c"
+			],
+			[
+				"parse_fun",
+				"src/parse/parse_function.c"
+			],
+			[
+				"source.h",
+				"src/source.h"
+			],
+			[
+				"debug_ul",
+				"src/debug/debug_ulong.c"
+			],
+			[
+				"eval.h",
+				"src/eval.h"
+			],
+			[
+				"sh_cm",
+				"src/sh/sh_cmdlist.c"
+			],
+			[
+				"cmdlis",
+				"src/sh/sh_cmdlist.c"
+			],
+			[
+				"_ln.c",
+				"src/builtin/builtin_ln.c"
+			],
+			[
+				"redir_eva",
+				"src/redir/redir_eval.c"
+			],
+			[
+				"sh.h",
+				"src/sh.h"
+			],
+			[
+				"redir_eval",
+				"src/redir/redir_eval.c"
+			],
+			[
+				"newdf",
+				"src/fdtable/fdtable_newfd.c"
+			],
+			[
+				"fd.h",
+				"src/fd.h"
+			],
+			[
+				"fdstack.h",
+				"src/fdstack.h"
+			],
+			[
+				"fd_al",
+				"src/fd/fd_allocbuf.c"
+			],
+			[
+				"fd_all",
+				"src/fd/fd_allocbuf.c"
+			],
+			[
+				"redir.h",
+				"src/redir.h"
+			],
+			[
+				"eval_tree",
+				"src/eval/eval_tree.c"
+			],
+			[
+				"eval_tre",
+				"src/eval/eval_tree.c"
+			],
+			[
+				"debug.h",
+				"src/debug.h"
+			],
+			[
+				"str_diff",
+				"lib/str/str_diff.c"
+			],
+			[
+				"",
+				"src/debug/debug_ulong.c"
+			],
+			[
+				"node",
+				"src/parse/parse_newnode.c"
+			],
+			[
+				"node.",
+				"src/debug/debug_node.c"
+			],
+			[
+				"debug_no",
+				"src/debug/debug_node.c"
+			],
+			[
+				"str.c",
+				"src/debug/debug_str.c"
+			],
+			[
+				"debug_node",
+				"src/debug/debug_node.c"
+			],
+			[
+				"expan",
+				"src/expand.h"
+			],
+			[
+				"debug_space",
+				"src/debug/debug_space.c"
+			],
+			[
+				"list.",
+				"src/debug/debug_list.c"
+			],
+			[
+				"debug_end",
+				"src/debug/debug_end.c"
+			],
+			[
+				"sublist",
+				"src/debug/debug_sublist.c"
+			],
+			[
+				"debug_stralloc",
+				"src/debug/debug_stralloc.c"
+			],
+			[
+				"subst",
+				"src/debug/debug_subst.c"
+			],
+			[
+				"_space",
+				"src/debug/debug_space.c"
+			],
+			[
+				"debug_strall",
+				"src/debug/debug_stralloc.c"
+			],
+			[
+				"sublist.c",
+				"src/debug/debug_sublist.c"
+			],
+			[
+				"debuG_no",
+				"src/debug/debug_node.c"
+			],
+			[
+				"tree",
+				"src/tree.h"
+			],
+			[
+				"_set.c",
+				"src/builtin/builtin_set.c"
+			],
+			[
+				"sh_main",
+				"src/sh/sh_main.c"
+			],
+			[
+				"cmake",
+				"CMakeLists.txt"
+			],
+			[
+				"eval_s",
+				"src/eval/eval_simple_command.c"
+			],
+			[
+				"sh_root.c",
+				"src/sh/sh_root.c"
+			],
+			[
+				"tosa.",
+				"lib/buffer/buffer_tosa.c"
+			],
+			[
+				"tree_print",
+				"src/tree/tree_print.c"
+			],
+			[
+				"command.c",
+				"src/expand/expand_command.c"
+			],
+			[
+				"fd_subst.c",
+				"src/fd/fd_subst.c"
+			],
+			[
+				"stubbor",
+				"lib/buffer/buffer_stubborn2.c"
+			],
+			[
+				"stubb",
+				"lib/buffer/buffer_stubborn.c"
+			],
+			[
+				"fd_subst",
+				"src/fd/fd_subst.c"
+			],
+			[
+				"shell_reallocde",
+				"lib/shell/shell_reallocdebug.c"
+			],
+			[
+				"tree_free",
+				"src/tree/tree_free.c"
+			],
+			[
+				"shell_",
+				"lib/shell/shell_strdup.c"
+			],
+			[
+				"fd_free",
+				"src/fd/fd_free.c"
+			],
+			[
+				"debug_list",
+				"src/debug/debug_list.c"
+			],
+			[
+				"builtin.h",
+				"src/builtin.h"
+			],
+			[
+				"builtin.g",
+				"src/builtin_config.h.cmake"
+			],
+			[
+				"open.h",
+				"lib/open.h"
+			],
+			[
+				"open_trunc",
+				"lib/open/open_trunc.c"
+			],
+			[
+				"open_temp",
+				"lib/open/open_temp.c"
+			],
+			[
+				"expand_para",
+				"src/expand/expand_param.c"
+			],
+			[
+				"uint32_ra",
+				"lib/uint32/uint32_random.c"
+			],
+			[
+				"table.c",
+				"src/builtin/builtin_table.c"
+			],
+			[
+				"var.h",
+				"src/var.h"
+			],
+			[
+				"var.",
+				"src/var.h"
+			],
+			[
+				"cmakeli",
+				"CMakeLists.txt"
+			],
+			[
+				"builtin_rm",
+				"src/builtin/builtin_rm.c"
+			],
+			[
+				"cmakelits",
+				"CMakeLists.txt"
+			],
+			[
+				"builtin_tab",
+				"src/builtin/builtin_table.c"
+			],
+			[
+				"cat.c",
+				"src/builtin/builtin_cat.c"
+			],
+			[
+				"builtin_config",
+				"src/builtin_config.h.cmake"
+			],
+			[
+				"chmod",
+				"src/builtin/builtin_chmod.c"
+			],
+			[
+				"buffer_mmaprea",
+				"lib/buffer/buffer_mmapread.c"
+			],
+			[
+				"builtin_cat",
+				"src/builtin/builtin_cat.c"
+			],
+			[
+				"buffer.h",
+				"lib/buffer.h"
+			],
+			[
+				"fd_open",
+				"src/fd/fd_open.c"
+			],
+			[
+				"redir_ope",
+				"src/redir/redir_open.c"
+			],
+			[
+				"fd_close",
+				"src/fd/fd_close.c"
+			],
+			[
+				"eval_sim",
+				"src/eval/eval_simple_command.c"
+			],
+			[
+				"redir_ev",
+				"src/redir/redir_eval.c"
+			],
+			[
+				"fd_setfd",
+				"src/fd/fd_setfd.c"
+			],
+			[
+				"fmt.h",
+				"lib/fmt.h"
+			],
+			[
+				"fd_",
+				"src/fd/fd_new.c"
+			],
+			[
+				"fdtable.h",
+				"src/fdtable.h"
+			],
+			[
+				"getline",
+				"src/term/term_getline.c"
 			],
 			[
 				"builtin_table",
 				"src/builtin/builtin_table.c"
+			],
+			[
+				"cmakelists",
+				"CMakeLists.txt"
+			],
+			[
+				"expand_glob",
+				"src/expand/expand_glob.c"
+			],
+			[
+				"builtin_test.c",
+				"src/builtin/builtin_test.c"
 			],
 			[
 				"CMake",
@@ -688,24 +1569,12 @@
 				"src/expand/expand_arith_binary.c"
 			],
 			[
-				"sh.h",
-				"src/sh.h"
-			],
-			[
 				"CMAKELists",
 				"CMakeLists.txt"
 			],
 			[
-				"fd.h",
-				"src/fd.h"
-			],
-			[
 				"unary.c",
 				"src/expand/expand_arith_unary.c"
-			],
-			[
-				"parse.h",
-				"src/parse.h"
 			],
 			[
 				"fork.c",
@@ -714,454 +1583,6 @@
 			[
 				"vartab.h",
 				"src/vartab.h"
-			],
-			[
-				"root.c",
-				"src/vartab/vartab_root.c"
-			],
-			[
-				"var.h",
-				"src/var.h"
-			],
-			[
-				"vartab_add",
-				"src/vartab/vartab_add.c"
-			],
-			[
-				"lexhash",
-				"src/var/var_lexhash.c"
-			],
-			[
-				"hsearch",
-				"src/var/var_hsearch.c"
-			],
-			[
-				"sh_root",
-				"src/sh/sh_root.c"
-			],
-			[
-				"parse_subs",
-				"src/parse/parse_subst.c"
-			],
-			[
-				"parse_arith",
-				"src/parse/parse_arith_paren.c"
-			],
-			[
-				"fd_null",
-				"src/fd/fd_null.c"
-			],
-			[
-				"program.c",
-				"src/exec/exec_program.c"
-			],
-			[
-				"simple",
-				"src/eval/eval_simple_command.c"
-			],
-			[
-				"fdstack.h",
-				"src/fdstack.h"
-			],
-			[
-				"eval_pipe",
-				"src/eval/eval_pipeline.c"
-			],
-			[
-				"job.h",
-				"src/job.h"
-			],
-			[
-				"sh_main",
-				"src/sh/sh_main.c"
-			],
-			[
-				"CMakeLists",
-				"CMakeLists.txt"
-			],
-			[
-				"wait.h",
-				"lib/wait.h"
-			],
-			[
-				"exec_program",
-				"src/exec/exec_program.c"
-			],
-			[
-				"job_stat",
-				"src/job/job_status.c"
-			],
-			[
-				"job_statu",
-				"src/job/job_status.c"
-			],
-			[
-				"job_init",
-				"src/job/job_init.c"
-			],
-			[
-				"jobfor",
-				"src/job/job_fork.c"
-			],
-			[
-				"eval_pip",
-				"src/eval/eval_pipeline.c"
-			],
-			[
-				"wait",
-				"lib/wait/wait_pid.c"
-			],
-			[
-				"wait_",
-				"lib/wait/wait_pid.c"
-			],
-			[
-				"job_fork",
-				"src/job/job_fork.c"
-			],
-			[
-				"shell_errorn",
-				"lib/shell/shell_errorn.c"
-			],
-			[
-				"error",
-				"src/builtin/builtin_error.c"
-			],
-			[
-				"print.c",
-				"src/var/var_print.c"
-			],
-			[
-				"left.c",
-				"src/term/term_left.c"
-			],
-			[
-				"backspace",
-				"src/term/term_backspace.c"
-			],
-			[
-				"errorn.c",
-				"src/sh/sh_errorn.c"
-			],
-			[
-				"parse_error",
-				"src/parse/parse_error.c"
-			],
-			[
-				"uffer.h",
-				"lib/buffer.h"
-			],
-			[
-				"buffer.h",
-				"lib/buffer.h"
-			],
-			[
-				"cmakelists",
-				"CMakeLists.txt"
-			],
-			[
-				"cmake",
-				"CMakeLists.txt"
-			],
-			[
-				"builtin_help",
-				"src/builtin/builtin_help.c"
-			],
-			[
-				"cd.c",
-				"src/builtin/builtin_cd.c"
-			],
-			[
-				"var_len.c",
-				"src/var/var_len.c"
-			],
-			[
-				"getho",
-				"src/sh/sh_gethome.c"
-			],
-			[
-				"show.c",
-				"src/prompt/prompt_show.c"
-			],
-			[
-				"parse.",
-				"src/prompt/prompt_parse.c"
-			],
-			[
-				"112",
-				"doc/posix/ieee-p1003.2-d11.2-s3.txt"
-			],
-			[
-				"expand_param.c",
-				"src/expand/expand_param.c"
-			],
-			[
-				"var_get.c",
-				"src/var/var_get.c"
-			],
-			[
-				"fd_here",
-				"src/fd/fd_here.c"
-			],
-			[
-				"putlonglon",
-				"lib/buffer/buffer_putlonglong.c"
-			],
-			[
-				"cmakeli",
-				"CMakeLists.txt"
-			],
-			[
-				"putnspace",
-				"lib/buffer/buffer_putnspace.c"
-			],
-			[
-				"builtin.h",
-				"src/builtin.h"
-			],
-			[
-				"builtinn.h",
-				"src/builtin_config.h.cmake"
-			],
-			[
-				"str.h",
-				"lib/str.h"
-			],
-			[
-				"sh_main.c",
-				"src/sh/sh_main.c"
-			],
-			[
-				"arse.h",
-				"src/parse.h"
-			],
-			[
-				"source.c",
-				"src/redir/redir_source.c"
-			],
-			[
-				"getname.c",
-				"src/fd/fd_getname.c"
-			],
-			[
-				"read_fd",
-				"lib/mmap/mmap_read_fd.c"
-			],
-			[
-				"read_fd.c",
-				"lib/buffer/buffer_mmapread_fd.c"
-			],
-			[
-				"var_dump",
-				"src/var/var_dump.c"
-			],
-			[
-				"fd_here.c",
-				"src/fd/fd_here.c"
-			],
-			[
-				"xlonglong",
-				"lib/buffer/buffer_putxlonglong0.c"
-			],
-			[
-				"xlonglong.c",
-				"lib/buffer/buffer_putxlonglong.c"
-			],
-			[
-				"putxlong",
-				"lib/buffer/buffer_putxlong.c"
-			],
-			[
-				"putulon",
-				"lib/buffer/buffer_putulonglong.c"
-			],
-			[
-				"putptr",
-				"lib/buffer/buffer_putptr.c"
-			],
-			[
-				"longlong.c",
-				"lib/buffer/buffer_putlonglong.c"
-			],
-			[
-				"value.c",
-				"src/parse/parse_arith_value.c"
-			],
-			[
-				"scan.h",
-				"lib/scan.h"
-			],
-			[
-				"value.",
-				"src/parse/parse_arith_value.c"
-			],
-			[
-				"expr.c",
-				"src/parse/parse_arith_expr.c"
-			],
-			[
-				"debug.h",
-				"src/debug.h"
-			],
-			[
-				"arith.c",
-				"src/parse/parse_arith.c"
-			],
-			[
-				"save.c",
-				"src/history/history_save.c"
-			],
-			[
-				"here.c",
-				"src/fdtable/fdtable_here.c"
-			],
-			[
-				"pipe",
-				"src/fdstack/fdstack_pipe.c"
-			],
-			[
-				"fd_ini",
-				"src/fd/fd_init.c"
-			],
-			[
-				"fd_exec",
-				"src/fd/fd_exec.c"
-			],
-			[
-				"unary",
-				"src/expand/expand_arith_unary.c"
-			],
-			[
-				"expand_arith_exp",
-				"src/expand/expand_arith_expr.c"
-			],
-			[
-				"stralloc_wr",
-				"lib/stralloc/stralloc_write.c"
-			],
-			[
-				"buffer_tosa",
-				"lib/buffer/buffer_tosa.c"
-			],
-			[
-				"cmakelits",
-				"CMakeLists.txt"
-			],
-			[
-				"exec_hash.c",
-				"src/exec/exec_hash.c"
-			],
-			[
-				"exec_sea",
-				"src/exec/exec_search.c"
-			],
-			[
-				"CM",
-				"CMakeLists.txt"
-			],
-			[
-				"builtin_tab",
-				"src/builtin/builtin_table.c"
-			],
-			[
-				"configure.",
-				"configure.ac"
-			],
-			[
-				"config.h",
-				"src/builtin_config.h.cmake"
-			],
-			[
-				"exec.h",
-				"src/exec.h"
-			],
-			[
-				"builtin_ta",
-				"src/builtin/builtin_table.c"
-			],
-			[
-				"builtin",
-				"src/builtin/builtin_table.c"
-			],
-			[
-				"fdtable_check",
-				"src/fdtable/fdtable_check.c"
-			],
-			[
-				"_new",
-				"src/expand/expand_new.c"
-			],
-			[
-				"expand.h",
-				"src/expand.h"
-			],
-			[
-				"tree.h",
-				"src/tree.h"
-			],
-			[
-				"uint",
-				"lib/uint64.h"
-			],
-			[
-				"eval.h",
-				"src/eval.h"
-			],
-			[
-				"_unset",
-				"src/var/var_unset.c"
-			],
-			[
-				"fmt.h",
-				"lib/fmt.h"
-			],
-			[
-				"asn1",
-				"lib/scan/scan_asn1derlength.c"
-			],
-			[
-				"xlong",
-				"lib/scan/scan_xlonglong.c"
-			],
-			[
-				"fmt_ul",
-				"lib/fmt/fmt_ulonglong.c"
-			],
-			[
-				"int64",
-				"lib/uint64.h"
-			],
-			[
-				"debug_node",
-				"src/debug/debug_node.c"
-			],
-			[
-				"builtin_cd",
-				"src/builtin/builtin_cd.c"
-			],
-			[
-				"scan_",
-				"lib/scan/scan_8longn.c"
-			],
-			[
-				"scan_longlon",
-				"lib/scan/scan_longlong.c"
-			],
-			[
-				"scan_8",
-				"lib/scan/scan_8longn.c"
-			],
-			[
-				"scan_oc",
-				"lib/scan/scan_octal.c"
-			],
-			[
-				"octal",
-				"lib/scan/scan_octal.c"
-			],
-			[
-				"uint64.",
-				"lib/uint64.h"
 			]
 		],
 		"width": 0.0

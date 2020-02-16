@@ -88,6 +88,8 @@ get_prototypes() {
   while :; do
     case "$1" in
       -[dx] | --debug) DEBUG=true; shift ;;
+      -D ) DEFINES="$DEFINES -D$2"; shift 2 ;;
+      -D* ) DEFINES="$DEFINES $1"; shift ;;
       -A | --no-pad-args* | -*no*args*) PAD_ARGS=false; shift ;;
       -a | --pad-args* | -*args*) PAD_ARGS=true; shift ;;
       -r=* | --remove*=* | -R=*) REMOVE_NAMES=${1#*=}; shift ;;
@@ -107,7 +109,7 @@ get_prototypes() {
     exec 7>/dev/null
   fi
 
-  CPROTO_OUT=`cproto -D_Noreturn= -D__{value,x,y}= -p "$@"  | sed "\\|^/|d ;; $EXPR"`
+  CPROTO_OUT=`cproto -D_Noreturn= -D__{value,x,y}= $DEFINES -p "$@"  | sed "\\|^/|d ;; $EXPR"`
  
   IFS=" "
   while read_proto; do

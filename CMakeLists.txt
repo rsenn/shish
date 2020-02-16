@@ -27,6 +27,73 @@ include(CheckLibraryExists)
 include(CheckCCompilerFlag)
 include(CheckCSourceCompiles)
 
+option(WARN_WERROR "Halt the compilation with an error on compiler warnings." OFF)
+
+include(CheckCCompilerFlag)
+
+check_c_compiler_flag("-Wall" WARN_ALL)
+if(WARN_ALL)
+    set(WERROR_FLAG "${WERROR_FLAG} -Wall")
+endif()
+
+check_c_compiler_flag("-Wno-unused-variable" WARN_NO_UNUSED_VARIABLE)
+if(WARN_NO_UNUSED_VARIABLE)
+    set(WERROR_FLAG "${WERROR_FLAG} -Wno-unused-variable")
+endif()
+check_c_compiler_flag("-Wno-unused-function" WARN_NO_UNUSED_FUNCTION)
+if(WARN_NO_UNUSED_FUNCTION)
+    set(WERROR_FLAG "${WERROR_FLAG} -Wno-unused-function")
+endif()
+check_c_compiler_flag("-Wno-error=unused-but-set-variable" WARN_NO_UNUSED_FUNCTION)
+if(WARN_NO_UNUSED_FUNCTION)
+    set(WERROR_FLAG "${WERROR_FLAG} -Wno-error=unused-but-set-variable")
+endif()
+#check_c_compiler_flag("-Wno-error=unused-const-variable" WARN_NO_UNUSED_FUNCTION)
+#if(WARN_NO_UNUSED_FUNCTION)
+#    set(WERROR_FLAG "${WERROR_FLAG} -Wno-error=unused-const-variabe")
+#endif()
+if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+  set(PEDANTIC_COMPILE_FLAGS -pedantic-errors -Wall -Wextra -pedantic
+      -Wold-style-cast -Wundef
+      -Wredundant-decls -Wwrite-strings -Wpointer-arith
+      -Wcast-qual -Wformat=2 -Wmissing-include-dirs
+      -Wcast-align -Wnon-virtual-dtor
+      -Wctor-dtor-privacy -Wdisabled-optimization
+      -Winvalid-pch -Woverloaded-virtual
+      -Wconversion
+      -Wno-ctor-dtor-privacy -Wno-format-nonliteral -Wno-shadow)
+  if(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.6)
+      set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wnoexcept
+         -Wno-dangling-else -Wno-unused-local-typedefs)
+  endif()
+  if(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 5.0)
+      set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wdouble-promotion
+          -Wtrampolines -Wzero-as-null-pointer-constant -Wuseless-cast
+          -Wvector-operation-performance -Wsized-deallocation)
+  endif()
+  if(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 6.0)
+      set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wshift-overflow=2
+          -Wnull-dereference -Wduplicated-cond)
+  endif()
+  set(WERROR_FLAG "${WERROR_FLAG} -Werror")
+endif()
+if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -pedantic -Wconversion -Wno-sign-conversion)
+  set(WERROR_FLAG "${WERROR_FLAG} -Werror")
+endif()
+if(MSVC)
+  set(PEDANTIC_COMPILE_FLAGS /W3)
+  set(WERROR_FLAG /WX)
+endif()
+if(WARN_WERROR)
+  SET(WARN_C_COMPILER_FLAGS "-Wall ${WERROR_FLAG}")
+endif()
+if(WARN_PEDANTIC)
+  SET(WARN_C_COMPILER_FLAGS "-Wall ${PEDANTIC_COMPILE_FLAGS}")
+endif()
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WARN_C_COMPILER_FLAGS}")
+
 
 function(DUMP VAR)
   message("\n\nVariable dump of: " ${ARGV} "\n")
@@ -120,13 +187,20 @@ endif(F_ALIGN_STRINGOPS)
 
 
 list(APPEND MINIMAL_BUILTINS break cd eval exec exit export hash history pwd set shift source unset)
-list(APPEND EXTRA_BUILTINS arch basename cat chmod dirname expr hostname ln ls mkdir mktemp mv print rm rmdir sort tr uname uniq which)
+list(APPEND EXTRA_BUILTINS basename cat chmod dirname expr hostname ln mkdir
+rm rmdir
+which
+mktemp
+uname
+# ls   mv printf   sort tr  uniq
+ )
 list(APPEND DEFAULT_BUILTINS ${MINIMAL_BUILTINS} type echo fdtable true false)
 
 
 list(APPEND ALL_BUILTINS ${MINIMAL_BUILTINS} ${DEFAULT_BUILTINS}  ${EXTRA_BUILTINS} basename break cd dirname dump echo eval exec exit export expr false fdtable hash help history hostname ln pwd set shift source test true type unset
 )
 list(SORT ALL_BUILTINS)
+list(REMOVE_DUPLICATES ALL_BUILTINS)
 
 function(isin)
   set(ARGUMENTS "${ARGV}")
@@ -152,7 +226,9 @@ set(BUILTINS_DISABLED "")
 if(ENABLE_ALL_BUILTINS)
   foreach(BUILTIN ${ALL_BUILTINS})
     string(TOUPPER ${BUILTIN} NAME)
-    set(ENABLE_${NAME} TRUE)
+    message("Enable ${BUILTIN}")
+    set(ENABLE_${NAME} ON)
+    set(BUILTIN_${NAME} ON)
   endforeach(BUILTIN ${ALL_BUILTINS})
 endif(ENABLE_ALL_BUILTINS)
 
@@ -162,11 +238,16 @@ foreach(BUILTIN ${ALL_BUILTINS})
 		isin("ENABLE_${NAME}" ${BUILTIN} ${DEFAULT_BUILTINS} )
   endif(NOT DEFINED ${ENABLE_${NAME}})
 
-  if(DEFINED ENABLE_${NAME})
-		option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" "${ENABLE_${NAME}}")
-	else(DEFINED ENABLE_${NAME})
-		option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" OFF)
-	endif(DEFINED ENABLE_${NAME})
+  if(ENABLE_ALL_BUILTINS)
+      option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" ON)
+  else(ENABLE_ALL_BUILTINS)
+
+    if(DEFINED ENABLE_${NAME})
+  		option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" "${ENABLE_${NAME}}")
+  	else(DEFINED ENABLE_${NAME})
+  		option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" OFF)
+  	endif(DEFINED ENABLE_${NAME})
+  endif(ENABLE_ALL_BUILTINS)
 	#message(STATUS "Builtin ${BUILTIN} - ${ENABLE_${NAME}}")
 endforeach(BUILTIN ${ALL_BUILTINS})
 
@@ -194,11 +275,11 @@ endif()
 foreach(BUILTIN ${ALL_BUILTINS})
 
   string(TOUPPER ${BUILTIN} NAME)
-	if(${BUILTIN_${NAME}} STREQUAL ON)
+	if(${BUILTIN_${NAME}} STREQUAL ON OR ENABLE_ALL_BUILTINS)
 		list(APPEND BUILTINS_ENABLED ${BUILTIN})
-	else(${BUILTIN_${NAME}} STREQUAL ON)
+	else(${BUILTIN_${NAME}} STREQUAL ON OR ENABLE_ALL_BUILTINS)
 		list(APPEND BUILTINS_DISABLED ${BUILTIN})
-	endif(${BUILTIN_${NAME}} STREQUAL ON)
+	endif(${BUILTIN_${NAME}} STREQUAL ON OR ENABLE_ALL_BUILTINS)
 endforeach(BUILTIN ${ALL_BUILTINS})
 
 if(DEBUG_ALLOC)
@@ -392,24 +473,13 @@ if(NOT HAVE_LIBOWFAT)
   set(LIBSOURCES ${LIBSOURCES} ${ADDSOURCES} lib/stralloc/stralloc_cats.c lib/stralloc/stralloc_diffs.c lib/stralloc/stralloc_zero.c lib/stralloc/stralloc_free${NAME_DEBUG}.c lib/stralloc/stralloc_catlong0.c lib/stralloc/stralloc_copyb.c lib/stralloc/stralloc_copys.c lib/stralloc/stralloc_copy.c lib/stralloc/stralloc_ready${NAME_DEBUG}.c lib/stralloc/stralloc_catulong0.c lib/stralloc/stralloc_cat.c lib/stralloc/stralloc_catb.c lib/stralloc/stralloc_init.c lib/stralloc/stralloc_readyplus${NAME_DEBUG}.c lib/str/str_diff.c lib/str/str_len.c lib/str/str_rchr.c lib/str/str_chr.c lib/str/str_copy.c)
 endif(NOT HAVE_LIBOWFAT)
 
-add_library(libshish ${LIBSOURCES})
+#[[add_library(libshish ${LIBSOURCES})
 set_target_properties(libshish PROPERTIES
   LIBRARY_OUTPUT_NAME "shish"
   OUTPUT_NAME "shish"
   PREFIX "lib"
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-#[[  COMPILE_FLAGS "${F_LTO}"
-#  LINK_FLAGS "${F_LTO}"
-#  ]]
-)
-#if(F_LTO)
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto")
-#set(LINK_FLAGS "${LINK_FLAGS} -flto")
-#endif(F_LTO)
-##[[
-# ndif(F_LTO)
-# ]]
-
+]]
 file(GLOB SOURCES src/*.h  src/eval/*.c src/exec/*.c src/expand/*.c src/expr/*.c src/fd/*.c src/fdstack/*.c src/fdtable/*.c src/history/*.c src/job/*.c src/parse/*.c src/prompt/*.c src/redir/*.c src/sh/*.c src/sig/*.c src/source/*.c src/term/*.c src/tree/*.c src/var/*.c src/vartab/*.c)
 
 
@@ -428,10 +498,10 @@ file(GLOB SOURCES src/*.h  src/eval/*.c src/exec/*.c src/expand/*.c src/expr/*.c
 #endif(BUILD_DEBUG)
 
 if(DEBUG_ALLOC)
-  list(APPEND SOURCES src/debug/debug_alloc.c src/debug/debug_free.c src/debug/debug_realloc.c)
+  list(APPEND SOURCES src/debug/debug_alloc.c src/debug/debug_free.c src/debug/debug_realloc.c src/debug/debug_memory.c )
 endif(DEBUG_ALLOC)
 if(DEBUG_OUTPUT)
-  list(APPEND SOURCES src/debug/debug_begin.c src/debug/debug_char.c src/debug/debug_end.c src/debug/debug_error.c src/debug/debug_list.c src/debug/debug_memory.c src/debug/debug_node.c src/debug/debug_ptr.c src/debug/debug_redir.c src/debug/debug_space.c src/debug/debug_stralloc.c src/debug/debug_str.c src/debug/debug_sublist.c src/debug/debug_subnode.c src/debug/debug_subst.c src/debug/debug_ulong.c src/debug/debug_unquoted.c)
+  list(APPEND SOURCES src/debug/debug_begin.c src/debug/debug_char.c src/debug/debug_end.c src/debug/debug_error.c src/debug/debug_list.c src/debug/debug_node.c src/debug/debug_ptr.c src/debug/debug_redir.c src/debug/debug_space.c src/debug/debug_stralloc.c src/debug/debug_str.c src/debug/debug_sublist.c src/debug/debug_subnode.c src/debug/debug_subst.c src/debug/debug_ulong.c src/debug/debug_unquoted.c)
 endif(DEBUG_OUTPUT)
 
 list(APPEND SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
@@ -453,12 +523,16 @@ foreach(BUILTIN ${BUILTINS_ENABLED})
 endforeach(BUILTIN ${BUILTINS_ENABLED})
 
 if(BUILD_DEBUG)
+  option(USE_EFENCE "Enable electric fence" OFF)
 
  check_library_exists(efence malloc /usr/lib HAVE_EFENCE)
-   if(HAVE_EFENCE)
-   set(ELECTRICFENCE_LIBRARY efence)
-   endif(HAVE_EFENCE)
 endif(BUILD_DEBUG)
+
+if(HAVE_EFENCE)
+  if(USE_EFENCE)
+    set(ELECTRICFENCE_LIBRARY efence)
+  endif(USE_EFENCE)
+endif(HAVE_EFENCE)
 
 string(REPLACE " " ";" SOURCES "${SOURCES}")
 
@@ -521,8 +595,8 @@ if(ENABLE_LTO)
 endif(ENABLE_LTO)
 
 
-add_executable(shish ${SOURCES})
-target_link_libraries(shish libshish
+add_executable(shish ${SOURCES} ${LIBSOURCES})
+target_link_libraries(shish
   ${LIBOWFAT_LIBRARY}
   ${MATH_LIBRARY}
   ${ELECTRICFENCE_LIBRARY}
