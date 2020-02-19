@@ -38,6 +38,8 @@ expand_arg(union node* node, union node** nptr, int flags) {
       assert(subarg->nargstr.stra.s);
       n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, nptr, lflags);
       break;
+
+    default: break;
     }
 
     if(n)
