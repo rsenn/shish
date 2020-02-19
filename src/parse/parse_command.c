@@ -8,7 +8,7 @@
 union node*
 parse_command(struct parser* p, int tempflags) {
   enum tok_flag tok;
-  union node* command;
+  union node* command=0;
   union node** rptr;
   char c = 0;
 
@@ -46,7 +46,10 @@ parse_command(struct parser* p, int tempflags) {
   case T_NAME:
     if(c == '(') {
       char ch[2];
-      if(source_peekn(ch, 1) >= 2 && ch[1] == ')') {
+      if(source_peekn(ch, 1) <= 0)
+        return NULL;
+
+      if(ch[0] == ')') {
         source_skip();
         source_skip();
         p->pushback++;
