@@ -7,7 +7,7 @@
 void
 fd_close(struct fd* fd) {
 
-  if(!(fd->mode & D_DUP)) {
+  if(!(fd->mode & FD_DUP)) {
     /* update lowest fd if we're below */
     if(fd->e >= 0 && fd->e < fd_exp)
       fd_exp = fd->e;
@@ -36,7 +36,7 @@ fd_close(struct fd* fd) {
 
   /* if the buffer space was temporary then set it to NULL
      so this space isn't used below the current stack level */
-  if(fd->mode & D_TMPBUF) {
+  if(fd->mode & FD_TMPBUF) {
     fd->rb.x = 0;
     fd->rb.a = 0;
     fd->wb.x = 0;

@@ -38,7 +38,7 @@ fd_dup(struct fd* fd, int n) {
   fd->name = dupe->name;
   fd->dup = dupe;
   fd->e = dupe->e;
-  fd->mode |= (dupe->mode & D_TYPE) | D_DUP;
+  fd->mode |= (dupe->mode & FD_TYPE) | FD_DUP;
   fd->dev = dupe->dev;
 
   return 0;

@@ -28,15 +28,15 @@ fdtable_check(int e) {
 
   /* map posix file access modes to (fd) flags */
   if(pflags & (O_RDWR | O_WRONLY))
-    iflags |= D_WRITE;
+    iflags |= FD_WRITE;
   if((pflags & O_WRONLY) == 0)
-    iflags |= D_READ;
+    iflags |= FD_READ;
   if(pflags & O_APPEND)
-    iflags |= D_APPEND;
+    iflags |= FD_APPEND;
   if(pflags & O_TRUNC)
-    iflags |= D_TRUNC;
+    iflags |= FD_TRUNC;
   if(pflags & O_EXCL)
-    iflags |= D_EXCL;
+    iflags |= FD_EXCL;
 
   return iflags;
 }

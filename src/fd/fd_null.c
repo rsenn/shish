@@ -36,7 +36,7 @@ struct fd fd_nullfd = {0,
 /* ----------------------------------------------------------------------- */
 int
 fd_null(struct fd* fd) {
-  fd->mode |= D_NULL;
+  fd->mode |= FD_NULL;
 
   if(D_ISRD(fd))
     fd->r = &fd_nullfd.rb;

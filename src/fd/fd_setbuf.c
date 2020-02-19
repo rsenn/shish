@@ -36,5 +36,5 @@ fd_setbuf(struct fd* fd, void* buf, unsigned long n) {
 
   /* set the tmpbuf flag so the buffers are set to zero
      if we leave the current stack level! */
-  fd->mode |= D_TMPBUF;
+  fd->mode |= FD_TMPBUF;
 }

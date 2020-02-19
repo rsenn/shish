@@ -44,7 +44,7 @@ main(int argc, char** argv, char** envp) {
       fd_push(fd, e, flags);
 #else
       fd = fd_mallocb();
-      fd_push(fd, e, flags | D_FREE);
+      fd_push(fd, e, flags | FD_FREE);
 #endif
       fd_setfd(fd, e);
     } else {
@@ -87,10 +87,10 @@ main(int argc, char** argv, char** envp) {
     /* set up the source fd (where the shell reads from) */
 #ifdef HAVE_ALLOCA
   fd = fd_alloca();
-  fd_push(fd, STDSRC_FILENO, D_READ);
+  fd_push(fd, STDSRC_FILENO, FD_READ);
 #else
   fd = fd_malloc();
-  fd_push(fd, STDSRC_FILENO, D_READ | D_FREE);
+  fd_push(fd, STDSRC_FILENO, FD_READ | FD_FREE);
 #endif
 
   /* if there were cmds supplied with the option

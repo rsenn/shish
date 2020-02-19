@@ -16,7 +16,7 @@ struct fd*
 fd_reinit(struct fd* fd, int flags) {
   /* unset the name, and if it was allocated: free it */
   if(fd->name) {
-    if(fd->mode & D_FREENAME)
+    if(fd->mode & FD_FREENAME)
       shell_free((char*)fd->name);
 
     fd->name = NULL;
@@ -25,7 +25,7 @@ fd_reinit(struct fd* fd, int flags) {
   fd_close(fd);
 
   /* re-initialize things */
-  fd->mode &= D_FREE;
+  fd->mode &= FD_FREE;
   fd->mode |= flags;
 
   fd->dup = NULL;

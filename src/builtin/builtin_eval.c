@@ -29,7 +29,7 @@ builtin_eval(int argc, char* argv[]) {
   }
 
   /* create a new i/o context and initialize a parser */
-  fd_push(&fd, STDSRC_FILENO, D_READ);
+  fd_push(&fd, STDSRC_FILENO, FD_READ);
   fd_string(&fd, sa.s, sa.len);
   source_push(&src);
   parse_init(&p, P_DEFAULT);

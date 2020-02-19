@@ -1,7 +1,7 @@
 #include "../fdstack.h"
 
 /* returns how many pipes we have to establish from fdstack to fdstack->parent
- * supply D_SUBST, D_HERE or both of them
+ * supply FD_SUBST, FD_HERE or both of them
  * ----------------------------------------------------------------------- */
 unsigned int
 fdstack_npipes(int mode) {
@@ -11,7 +11,7 @@ fdstack_npipes(int mode) {
 
   for(st = fdstack; st; st = st->parent)
     for(fd = st->list; fd; fd = fd->next)
-      if((fd->mode & mode) == D_SUBST || (fd->mode & mode) == D_HERE)
+      if((fd->mode & mode) == FD_SUBST || (fd->mode & mode) == FD_HERE)
         ret++;
 
   return ret;

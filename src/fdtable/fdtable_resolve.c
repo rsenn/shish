@@ -24,31 +24,31 @@ fdtable_resolve(struct fd* fd, int flags) {
 
   /* do not open/close if we don't need an effective fd */
   if((flags & FDTABLE_FD) == FDTABLE_LAZY) {
-    if(fd->mode & (D_OPEN | D_CLOSE | D_STRALLOC))
+    if(fd->mode & (FD_OPEN | FD_CLOSE | FD_STRALLOC))
       return state;
   }
 
   if((flags & FDTABLE_FD) && fd != fdtable[fd->n]) {
-    fd->mode = D_CLOSE;
+    fd->mode = FD_CLOSE;
   }
   /*    state = fdtable_close(fd->n, flags);*/
 
   /* do some actions to resolve the effective file descriptor */
-  switch(fd->mode & (D_OPEN | D_CLOSE | D_STRALLOC)) {
+  switch(fd->mode & (FD_OPEN | FD_CLOSE | FD_STRALLOC)) {
   /* we're forced to close */
-  case D_CLOSE: {
+  case FD_CLOSE: {
     state = fdtable_close(fd->n, flags);
     break;
   }
 
     /* if the fd is still to be opened then try that */
-  case D_OPEN: {
+  case FD_OPEN: {
     state = fdtable_open(fd, flags);
     break;
   }
 
     /* drop here-docs to temp files */
-  case D_STRALLOC: {
+  case FD_STRALLOC: {
     if(D_ISRD(fd))
       state = fdtable_here(fd, flags);
     break;

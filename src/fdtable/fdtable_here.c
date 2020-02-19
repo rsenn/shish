@@ -60,7 +60,7 @@ fdtable_here(struct fd* fd, int flags) {
   buffer_init(&fd->wb, (buffer_op_proto*)&write, -1, NULL, 0);
 
   /* its now not longer a stralloc :) */
-  fd->mode = D_READ;
+  fd->mode = FD_READ;
 
   if(fd->e == fd->n || !(flags & FDTABLE_FORCE))
     return FDTABLE_DONE;

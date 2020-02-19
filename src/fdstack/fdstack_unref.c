@@ -35,7 +35,7 @@ fdstack_unref(struct fd* olddup) {
         fd->w = &fd->wb;
 
         /* give up temporary buffers */
-        if(olddup->mode & D_FREE) {
+        if(olddup->mode & FD_FREE) {
           if(fd->rb.deinit)
             fd->rb.deinit(&fd->rb);
           if(fd->wb.deinit)

@@ -20,7 +20,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   union node* node;
   struct fdstack st;
   struct fd* pipes = 0;
-  unsigned int n;
+  ssize_t n;
   int pid = 0;
   int prevfd = -1;
   int status = -1;
@@ -49,25 +49,25 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
 
 #ifdef HAVE_ALLOCA
       in = fd_alloca();
-      fd_push(in, STDIN_FILENO, D_READ | D_PIPE);
+      fd_push(in, STDIN_FILENO, FD_READ | FD_PIPE);
 #else
       in = fd_malloc();
-      fd_push(in, STDIN_FILENO, D_READ | D_PIPE | D_FREE);
+      fd_push(in, STDIN_FILENO, FD_READ | FD_PIPE | FD_FREE);
 #endif
       fd_setfd(in, prevfd);
     }
 
     /* if it isn't the last command we have to create a pipe
        to pass output to the next command */
-    if(node->list.next) {
+    if(node->list.next || (fdtable[STDOUT_FILENO]->mode & FD_SUBST) == FD_SUBST) {
       struct fd* out;
 
 #ifdef HAVE_ALLOCA
       out = fd_alloca();
-      fd_push(out, STDOUT_FILENO, D_WRITE | D_PIPE);
+      fd_push(out, STDOUT_FILENO, FD_WRITE | FD_PIPE);
 #else
       in = fd_malloc();
-      fd_push(out, STDOUT_FILENO, D_WRITE | D_PIPE | D_FREE);
+      fd_push(out, STDOUT_FILENO, FD_WRITE | FD_PIPE | FD_FREE);
 #endif
       prevfd = fd_pipe(out);
 
@@ -75,9 +75,9 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
         close(prevfd);
         sh_error("pipe creation failed");
       }
-    }
+    } 
 
-    if((n = fdstack_npipes(D_HERE | D_SUBST))) {
+    if((n = fdstack_npipes(FD_HERE | FD_SUBST))) {
       pipes = shell_alloc(FDSTACK_ALLOC_SIZE(n));
       fdstack_pipe(n, pipes);
     }
@@ -92,10 +92,30 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
 
       /* exit after evaluating this subtree */
       exit(exitcode);
+    } else {
+      buffer_puts(buffer_2, "forked: ");
+      buffer_putulong(buffer_2, pid);
+      buffer_putnlflush(buffer_2);
     }
 
+
+    /*
+
+        if(!node->list.next) {
+                  struct fd* fd = fdtable[1];
+          if((fd->mode & FD_SUBST) == FD_SUBST) {
+            char b[1024];
+            int  e = fd->rb.fd;
+            while((n = read(e, b, sizeof(b))) > 0) {
+              buffer_put(fd->w, b, n);
+            }
+            buffer_flush(fd->w);
+          }
+        } */
+    if(!node->list.next)
+      fdstack_data();
+
     fdstack_pop(&st);
-    fdstack_data();
   }
 
   if(!npipe->bgnd) {

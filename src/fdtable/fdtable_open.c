@@ -10,7 +10,7 @@
 
 /* handles pending opening of a file-fd initialized using fd_open()
  *
- * it resets the D_OPEN flag of the fd if the operation
+ * it resets the FD_OPEN flag of the fd if the operation
  * was successfully done
  *
  * values for flags:
@@ -29,7 +29,7 @@ fdtable_open(struct fd* fd, int flags) {
   int state;
 
   /* not a pending open()? */
-  if((fd->mode & D_OPEN) == 0)
+  if((fd->mode & FD_OPEN) == 0)
     return FDTABLE_DONE;
 
   /* wish fd->n become the next expected file descriptor */
@@ -59,7 +59,7 @@ fdtable_open(struct fd* fd, int flags) {
   fdtable_track(e, flags);
   fd_setfd(fd, e);
 
-  fd->mode &= ~D_OPEN;
+  fd->mode &= ~FD_OPEN;
 
   if(fd->n != e) {
     /* we should have been done, but doesn't look like,

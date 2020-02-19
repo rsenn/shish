@@ -68,6 +68,7 @@ job_fork(struct job* job, union node* node, int bgnd) {
 #endif
     job_pgrp = pid;
   }
+   setpgid(pid, pgrp);
 
   return pid;
 }

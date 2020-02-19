@@ -20,7 +20,7 @@ fd_freehere(buffer* b) {
 void
 fd_here(struct fd* fd, stralloc* sa) {
   fd->name = "<here>";
-  fd->mode = D_HERE;
+  fd->mode = FD_HERE;
 
   buffer_fromsa(&fd->rb, sa);
   fd->rb.deinit = &fd_freehere;

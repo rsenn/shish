@@ -13,7 +13,7 @@
  * ----------------------------------------------------------------------- */
 int
 fd_setfd(struct fd* fd, int e) {
-  assert(fd->mode & D_READWRITE);
+  assert(fd->mode & FD_READWRITE);
 
   /* set the file descriptors on the buffers */
   if(D_ISRD(fd)) {
