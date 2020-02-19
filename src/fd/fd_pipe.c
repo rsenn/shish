@@ -29,7 +29,6 @@ fd_pipe(struct fd* fd) {
   fdtable_track(p[0], FDTABLE_LAZY);
   fdtable_track(p[1], FDTABLE_LAZY);
 
-
   /* set up the file descriptors */
   if(D_ISWR(fd)) {
     fd_setfd(fd, p[1]);
@@ -49,7 +48,7 @@ fd_pipe(struct fd* fd) {
   buffer_putulong(buffer_2, fd->e);
   buffer_puts(buffer_2, " write=");
   buffer_putulong(buffer_2, p[1]);
-    buffer_puts(buffer_2, " read=");
+  buffer_puts(buffer_2, " read=");
   buffer_putulong(buffer_2, p[0]);
   buffer_putnlflush(buffer_2);
 

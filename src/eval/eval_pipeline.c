@@ -75,7 +75,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
         close(prevfd);
         sh_error("pipe creation failed");
       }
-    } 
+    }
 
     if((n = fdstack_npipes(FD_HERE | FD_SUBST))) {
       pipes = shell_alloc(FDSTACK_ALLOC_SIZE(n));
@@ -97,7 +97,6 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
       buffer_putulong(buffer_2, pid);
       buffer_putnlflush(buffer_2);
     }
-
 
     /*
 
