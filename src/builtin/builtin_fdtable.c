@@ -1,5 +1,6 @@
 #include "../builtin.h"
 #include "../fd.h"
+#include "../../lib/buffer.h"
 #include "../fdtable.h"
 #include "../sh.h"
 #include "../../lib/windoze.h"

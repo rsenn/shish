@@ -25,17 +25,21 @@ fd_setfd(struct fd* fd, int e) {
   if(D_ISWR(fd)) {
     buffer_default(&fd->wb, (buffer_op_proto*)&write);
     fd->wb.fd = e;
-   fd->w = &fd->wb;
+    fd->w = &fd->wb;
   }
-
-  buffer_puts(buffer_2, "setfd#");
-  buffer_putlong(buffer_2, fd->n);
-  buffer_puts(buffer_2, " e=");
-  buffer_putlong(buffer_2, e);
+  /*
+    buffer_puts(buffer_2, "setfd#");
+    buffer_putlong(buffer_2, fd->n);
+    buffer_puts(buffer_2, " e=");
+    buffer_putlong(buffer_2, e);
     buffer_puts(buffer_2, " mode=");
-    buffer_puts(buffer_2, (fd->mode & FD_READ) ? "FD_READ" : (fd->mode & FD_WRITE) ? "FD_WRITE" : (fd->mode & FD_READWRITE) == FD_READWRITE ? "FD_READWRITE" : "");
-
-  buffer_putnlflush(buffer_2);
+    buffer_puts(buffer_2,
+                (fd->mode & FD_READ)
+                    ? "FD_READ"
+                    : (fd->mode & FD_WRITE)
+                          ? "FD_WRITE"
+                          : (fd->mode & FD_READWRITE) == FD_READWRITE ? "FD_READWRITE" : "");
+    buffer_putnlflush(buffer_2); */
 
   /* track the file descriptor */
   fd->e = e;

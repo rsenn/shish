@@ -49,7 +49,9 @@ int fdtable_open(struct fd* fd, int force);
 int fdtable_resolve(struct fd* fd, int force);
 int fdtable_wish(int e, int flags);
 struct fd* fdtable_newfd(int n, struct fdstack* st, int mode);
-void fdtable_dump(void);
+#ifdef BUFFER_H
+void fdtable_dump(buffer*b);
+#endif
 void fdtable_link(struct fd* fd);
 void fdtable_track(int n, int flags);
 void fdtable_unexpected(int e, int u, int flags);

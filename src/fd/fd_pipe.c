@@ -32,24 +32,28 @@ fd_pipe(struct fd* fd) {
   /* set up the file descriptors */
   if(D_ISWR(fd)) {
     fd_setfd(fd, p[1]);
-   /*  fd->rb.fd = p[0];
-    fd->r = 0; */
+    /*  fd->rb.fd = p[0];
+     fd->r = 0; */
     e = p[0];
   } else {
     fd_setfd(fd, p[0]);
- /*    fd->wb.fd = p[1];
-    fd->w = 0; */
+    /*    fd->wb.fd = p[1];
+       fd->w = 0; */
     e = p[1];
   }
 
-  buffer_puts(buffer_2, "fd#");
-  buffer_putlong(buffer_2, fd->n);
-  buffer_puts(buffer_2, " e=");
-  buffer_putlong(buffer_2, fd->e);
-  buffer_puts(buffer_2, " write=");
-  buffer_putlong(buffer_2, p[1]);
-  buffer_puts(buffer_2, " read=");
-  buffer_putlong(buffer_2, p[0]);
+  /*   buffer_puts(buffer_2, "fd#");
+    buffer_putlong(buffer_2, fd->n);
+    buffer_puts(buffer_2,
+                (fd->mode & FD_READ)
+                    ? "FD_READ"
+                    : (fd->mode & FD_WRITE)
+                          ? "FD_WRITE"
+                          : (fd->mode & FD_READWRITE) == FD_READWRITE ? "FD_READWRITE" : "");
+    buffer_puts(buffer_2, " e=");
+    buffer_putlong(buffer_2, fd->e);
+   */
+  fd_dump(fd, buffer_2);
   buffer_putnlflush(buffer_2);
 
   return e;

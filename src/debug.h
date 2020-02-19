@@ -5,8 +5,6 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H*/
 
-#ifdef DEBUG_OUTPUT
-
 #include "../lib/buffer.h"
 #include "../lib/stralloc.h"
 #include <stdlib.h>
@@ -33,9 +31,17 @@
 #define COLOR_NONE "\033[0m"
 #else
 #define COLOR_CYAN ""
+#define COLOR_PURPLE ""
+#define COLOR_VIOLET ""
+#define COLOR_MAGENTA ""
+#define COLOR_DARKGREEN ""
 #define COLOR_GREEN ""
 #define COLOR_RED ""
 #define COLOR_YELLOW ""
+#define COLOR_BLUE ""
+#define COLOR_LIGHTBLUE ""
+#define COLOR_DARKBLUE ""
+#define COLOR_WHITE ""
 #define COLOR_NONE ""
 #endif /* COLOR_DEBUG */
 
@@ -44,6 +50,8 @@
 #define DEBUG_BEGIN " ["
 #define DEBUG_END "] "
 #define DEBUG_SPACE 2
+
+#ifdef DEBUG_OUTPUT
 
 union node;
 

@@ -4,20 +4,18 @@
 #include "../fdtable.h"
 
 void
-fdtable_dump(void) {
+fdtable_dump(buffer* b) {
   int i;
 
-  buffer_puts(fd_out->w,
+  buffer_puts(b,
               "  fd  name        level read-buffer                          "
               "write-buffer                        flags\n");
-  buffer_puts(fd_out->w,
+  buffer_puts(b,
               "----------------------------------------------------------------"
               "--------------------------------------------\n");
-  buffer_flush(fd_out->w);
+  buffer_flush(b);
 
-  fdtable_foreach(i) {
-    fd_dump(fdtable[i]);
-    buffer_flush(fd_out->w);
-  }
+  fdtable_foreach(i) { fd_dump(fdtable[i], b); }
+  buffer_flush(b);
 }
 #endif /* DEBUG_OUTPUT */

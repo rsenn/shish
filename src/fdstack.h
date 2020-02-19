@@ -21,7 +21,7 @@ int fdstack_pipe(unsigned int n, struct fd*);
 struct fd* fdstack_search(struct fdstack* st, int n);
 unsigned int fdstack_npipes(int mode);
 unsigned int fdstack_unref(struct fd* olddup);
-void fdstack_dump(void);
+void fdstack_dump(buffer* b);
 void fdstack_flatten(void);
 void fdstack_link(struct fdstack* st, struct fd* fd);
 void fdstack_pop(struct fdstack* st);

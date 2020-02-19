@@ -4,6 +4,7 @@
 #include "../builtin.h"
 #include "../fdstack.h"
 #include "../fdtable.h"
+#include "../fd.h"
 #include "../../lib/shell.h"
 #include "../vartab.h"
 
@@ -16,9 +17,9 @@ builtin_dump(int argc, char* argv[]) {
     switch(c) {
     case 'v': vartab_dump(&vartab_root); break;
     case 'l': vartab_dump(NULL); break;
-    case 't': fdtable_dump(); break;
-    case 's': fdstack_dump(); break;
-    case 'f': fd_dumplist(); break;
+    case 't': fdtable_dump(fd_out->w); break;
+    case 's': fdstack_dump(fd_out->w); break;
+    case 'f': fd_dumplist(fd_out->w); break;
     case 'm':
 #ifdef DEBUG_ALLOC
       debug_memory();

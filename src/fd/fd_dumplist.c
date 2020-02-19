@@ -3,16 +3,16 @@
 #include "../fd.h"
 
 void
-fd_dumplist(void) {
+fd_dumplist(buffer* b) {
   int i;
 
-  buffer_puts(fdtable[1]->w,
+  buffer_puts(b,
               "  fd  name        level read-buffer                          "
               "write-buffer                        flags\n");
-  buffer_puts(fdtable[1]->w,
+  buffer_puts(b,
               "----------------------------------------------------------------"
               "--------------------------------------------\n");
 
-  fd_foreach(i) fd_dump(fd_list[i]);
+  fd_foreach(i) fd_dump(fd_list[i], b);
 }
 #endif /* DEBUG_OUTPUT */
