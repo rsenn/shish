@@ -24,11 +24,10 @@ parse_here(struct parser* p, stralloc* delim, int nosubst) {
     p->flags |= P_HERE;
     /* if nosubst is set we treat it like single-quoted otherwise
        like double-quoted, allowing parameter and command expansions */
-     r= (nosubst ? parse_squoted : parse_dquoted)(p);
+    r = (nosubst ? parse_squoted : parse_dquoted)(p);
     p->flags &= ~P_HERE;
 
-
-     if(r) {
+    if(r) {
       r = -1;
       break;
     }
@@ -78,7 +77,7 @@ parse_here(struct parser* p, stralloc* delim, int nosubst) {
       n->nargstr.next = p->node;
       p->node = n;
 
-     // parse_string(p, 0);
+      // parse_string(p, 0);
       break;
     }
   }

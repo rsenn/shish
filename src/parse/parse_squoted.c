@@ -26,7 +26,7 @@ parse_squoted(struct parser* p) {
 
     stralloc_catc(&p->sa, c);
 
-    if((p->flags & P_HERE) &&   c == '\n')
+    if((p->flags & P_HERE) && c == '\n')
       return 0;
   }
 
