@@ -46,5 +46,6 @@ int eval_loop(struct eval* e, struct nloop* nloop);
 int eval_pipeline(struct eval* e, struct npipe* npipe);
 int eval_simple_command(struct eval* e, struct ncmd* ncmd);
 int eval_subshell(struct eval* e, struct ngrp* ngrp);
+int eval_function(struct eval* e, struct nfunc* func);
 
 #endif /* EVAL_H */

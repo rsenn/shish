@@ -185,7 +185,7 @@ struct nloop {
  * ----------------------------------------------------------------------- */
 struct nfunc {
   enum nod_id id;
-  union node* next;
+  struct nfunc* next;
   union node* body;
   char* name;
 };

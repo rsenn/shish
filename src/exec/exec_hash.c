@@ -1,5 +1,6 @@
 #include "../builtin.h"
 #include "../exec.h"
+#include "../tree.h"
 #include "../../lib/str.h"
 #include "../vartab.h"
 #include "../../lib/windoze.h"
@@ -11,6 +12,8 @@
 #else
 #include <unistd.h>
 #endif
+
+struct nfunc* functions = NULL;
 
 /* hashed command search routine
  * ----------------------------------------------------------------------- */
@@ -57,8 +60,14 @@ exec_hash(char* name, enum hash_id* idptr) {
 
       /* then search for functions */
       if(cmd.builtin == NULL) {
+        struct nfunc* fn;
         id = H_FUNCTION;
-        cmd.fn = /* FIXME */ NULL;
+
+        for(fn = functions; fn; fn = fn->next) {
+          if(!str_diff(name, fn->name))
+            break;
+        }
+        cmd.fn = fn;
       }
 
       /* then search for normal builtins */

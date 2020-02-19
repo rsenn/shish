@@ -13,6 +13,11 @@ eval_node(struct eval* e, union node* node) {
     ret = eval_simple_command(e, &node->ncmd);
     break;
   }
+    case N_FUNCTION: {
+    ret = eval_function(e, node);
+    /* ret = eval_cmdlist(e, &node->ngrp);*/
+    break;
+  }
   case N_IF:
   case N_FOR:
   case N_CASE:
