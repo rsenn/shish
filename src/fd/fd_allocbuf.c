@@ -1,6 +1,11 @@
 #include "../fd.h"
 #include "../../lib/shell.h"
 
+static void
+fd_freebuf(buffer*b ) {
+  shell_free(b->x);
+}
+
 /* allocate buffer space for the (fd).
  * this should only be called when the (fd) really lacks buffer space!
  * ----------------------------------------------------------------------- */
@@ -10,7 +15,7 @@ fd_allocbuf(struct fd* fd, unsigned long n) {
 
   fd_setbuf(fd, p, n);
   if(fd->r->x == p)
-    fd->r->deinit = &buffer_free;
+    fd->r->deinit = &fd_freebuf;
   if(fd->w->x == p)
-    fd->w->deinit = &buffer_free;
+    fd->w->deinit = &fd_freebuf;
 }

@@ -74,8 +74,11 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
       /* if its the exec special builtin the new fd needs to be persistent */
       if(id != H_EXEC) {
+#undef HAVE_ALLOCA
 #ifdef HAVE_ALLOCA
         fd = fd_alloca();
+#else
+        fd = fd_malloc();
 #endif
       }
 
