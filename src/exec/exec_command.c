@@ -43,6 +43,9 @@ exec_command(
     for(sh.arg.c = 0; argv[sh.arg.c];sh.arg.c++) 
       ;
 
+    sh.arg.v++;
+    sh.arg.c--;
+
 //    sh_setargs(argv, 0);
     eval_push(&e, 0);
     eval_cmdlist(&e, &cmd.fn->ngrp);
