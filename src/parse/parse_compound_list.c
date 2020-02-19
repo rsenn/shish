@@ -14,21 +14,31 @@ parse_compound_list(struct parser* p, enum tok_id end_tok) {
 
   tree_init(list, nptr);
 
+  for(;;) {
+    if(end_tok == T_END)
+    p->flags &= ~P_NOKEYWD;
+
   /* skip arbitrary newlines */
   while(parse_gettok(p, P_DEFAULT) & T_NL)
     ;
   p->pushback++;
 
-  for(;;) {
+   if(parse_gettok(p, P_DEFAULT) == end_tok) {
+    p->pushback++;
+    break;
+   }
+
+  p->pushback++;
+
     /* try to parse a list */
     *nptr = parse_list(p);
 
     /* skip arbitrary newlines */
     while(p->tok & T_NL) parse_gettok(p, P_DEFAULT);
     p->pushback++;
-
+/* 
     if(end_tok != -1 && (p->tok & end_tok))
-      break;
+      break; */
 
     /* no more lists */
     if(*nptr == NULL)

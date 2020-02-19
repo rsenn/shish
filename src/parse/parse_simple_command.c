@@ -50,7 +50,8 @@ parse_simple_command(struct parser* p) {
     /* after the first word token we do not longer
        scan for keywords because a simple command
        ends with a control operator */
-    p->flags |= P_NOKEYWD;
+    //p->flags |= P_NOKEYWD;
+    p->flags &= ~P_SKIPNL;
     n++;
   }
 addcmd:

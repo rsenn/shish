@@ -34,7 +34,7 @@ parse_gettok(struct parser* p, int tempflags) {
       parse_keyword(p);
 
 #ifdef DEBUG_OUTPUT
-    if(p->tok > 0 /*  && p->tok != T_NL   */) {
+    if(p->tok != -1) {
       buffer_puts(fd_err->w, "Got token ");
       if(p->flags) {
         char buf[8];
