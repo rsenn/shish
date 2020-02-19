@@ -36,12 +36,10 @@ fdstack_pipe(unsigned int n, struct fd* fda) {
 
         buffer_puts(buffer_2, "fdstack depth ");
         buffer_putlong(buffer_2, depth);
-        buffer_puts(buffer_2, " fda { n=");
-        buffer_putlong(buffer_2, fda->n);
-        buffer_puts(buffer_2, ", e=");
-        buffer_putlong(buffer_2, fda->e);
-        buffer_puts(buffer_2, " }, e=");
-        buffer_putlong(buffer_2, e);
+        buffer_puts(buffer_2, " fda=");
+
+        fd_dump(fda, buffer_2);
+
         buffer_putnlflush(buffer_2);
         fda++;
       }

@@ -34,11 +34,11 @@ buffer_dump(buffer* out, buffer* b) {
 
   buffer_puts(out, "[ ");
   buffer_puts(out, YELLOW "p" CYAN "=" MAGENTA);
-  buffer_putulong0(out, b->p, 3);
+  buffer_putlong(out, b->p);
   buffer_puts(out, NONE ", " YELLOW "n" CYAN "=" MAGENTA);
-  buffer_putulong0(out, b->n, 3);
+  buffer_putlong(out, b->n);
   buffer_puts(out, NONE ", " YELLOW "a" CYAN "=" MAGENTA);
-  buffer_putulong0(out, b->a, 3);
+  buffer_putlong(out, b->a);
   buffer_puts(out, NONE ", " YELLOW "x" CYAN "@" YELLOW "p" CYAN "=" NONE);
 
   if(b->p > 6) {
@@ -55,10 +55,7 @@ buffer_dump(buffer* out, buffer* b) {
   /*if(b->op == (void*)stralloc_write) {
     buffer_puts(out, "*sa");
   } else*/
-  {
-    n = fmt_long(xlong, b->fd);
-    buffer_put(out, xlong, n);
-  }
+  buffer_put(out, xlong, fmt_long(xlong, b->fd));
   buffer_puts(out, ", op=");
   /* buffer_putspace(out); */
 
@@ -68,8 +65,8 @@ buffer_dump(buffer* out, buffer* b) {
     buffer_puts(out, "<write> ");
   else if(b->op == (void*)&buffer_dummyreadmmap)
     buffer_puts(out, "<mmap>  ");
-  /*  else if(b->op == (void*)&stralloc_write)
-      buffer_puts(out, "<sa-wr> ");*/
+  else if(b->op == (void*)&stralloc_write)
+    buffer_puts(out, "<sa-wr> ");
   else if(b->op == (void*)NULL)
     buffer_puts(out, "NULL    ");
   else {

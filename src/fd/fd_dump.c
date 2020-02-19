@@ -37,9 +37,7 @@ fd_dump(struct fd* fd, buffer* b) {
     fd_getname(fd);
 
   /* file descriptor */
-  n = fmt_long(numbuf, fd->n);
-  buffer_putnspace(b, 4 - n);
-  buffer_put(b, numbuf, n);
+  buffer_putlong(b, fd->n);
   buffer_putspace(b);
 
   /* name */
@@ -49,20 +47,12 @@ fd_dump(struct fd* fd, buffer* b) {
     buffer_puts(b, "...");
   } else {
     buffer_put(b, fd->name, n);
-    buffer_putnspace(b, 15 - n);
   }
 
   /* level */
-  n = fmt_long(numbuf, fd->stack->level);
-  buffer_putnspace(b, 3 - n);
-  buffer_put(b, numbuf, n);
-  buffer_putspace(b);
-
-  /* buffers */
-  buffer_dump(b, fd->r);
-  buffer_putspace(b);
-  buffer_dump(b, fd->w);
-  buffer_putspace(b);
+  buffer_puts(b, " level=");
+  buffer_putlong(b, fd->stack->level);
+  buffer_puts(b, " mode=");
 
   /* flags */
   for(n = 0; n < sizeof(fd_flags) / sizeof(fd_flags[0]); n++) {
@@ -71,6 +61,20 @@ fd_dump(struct fd* fd, buffer* b) {
         buffer_putc(b, '|');
       buffer_puts(b, fd_flags[n]);
     }
+  }
+  buffer_putspace(b);
+
+  /* buffers */
+  if(fd->r && (fd->mode & FD_READ)) {
+    buffer_puts(b, "r=");
+    buffer_dump(b, fd->r);
+    buffer_putspace(b);
+  }
+  if(fd->w && (fd->mode & FD_WRITE)) {
+    buffer_puts(b, "w=");
+
+    buffer_dump(b, fd->w);
+    buffer_putspace(b);
   }
 
   buffer_putnlflush(b);
