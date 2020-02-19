@@ -13,15 +13,15 @@
 /* sets or displays current hostname
  * ----------------------------------------------------------------------- */
 int
-builtin_hostname(int argc, char** argv) {
+builtin_hostname(int argc, char* argv[]) {
   int c;
   int force = 0;
 
   /* check options */
   while((c = shell_getopt(argc, argv, "f")) > 0) {
     switch(c) {
-      case 'f': force = 1; break;
-      default: builtin_invopt(argv); return 1;
+    case 'f': force = 1; break;
+    default: builtin_invopt(argv); return 1;
     }
   }
 

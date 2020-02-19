@@ -8,7 +8,7 @@
 /* output stuff
  * ----------------------------------------------------------------------- */
 int
-builtin_which(int argc, char** argv) {
+builtin_which(int argc, char* argv[]) {
   int ret = 0;
   const char* x;
   char* arg;

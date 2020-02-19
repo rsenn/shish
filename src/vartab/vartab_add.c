@@ -21,7 +21,8 @@ vartab_add(struct vartab* vartab, struct var* var, struct search* context) {
 
   *var->blink = var;
 
-  /* if the variable has a parent we already know the position in the global list :D */
+  /* if the variable has a parent we already know the position in the global
+   * list :D */
   if(var->parent) {
     assert(var->parent->table != var->table);
 
@@ -33,9 +34,8 @@ vartab_add(struct vartab* vartab, struct var* var, struct search* context) {
     *var->glink = var;
   } else {
     /* start searching insert position in global list */
-    /*    if(context->closest && context->closest != &vartab->table[context->bucket])
-          context->pos = context->closest;
-        else*/
+    /*    if(context->closest && context->closest !=
+       &vartab->table[context->bucket]) context->pos = context->closest; else*/
     context->pos = &var_list;
 
     context->global = 1;

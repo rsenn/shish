@@ -38,39 +38,39 @@ term_read(int fd, char* buf, unsigned int len) {
 
   while((ret = buffer_getc(&term_input, &c)) > 0) {
     switch(c) {
-      /* control-c discards the current line */
-      case 3: stralloc_zero(&term_cmdline);
-      /* newline */
-      case '\n':
-        term_newline();
-        remain = term_cmdline.len;
-        goto check_remain;
-      /* control-a is HOME */
-      case 1: term_home(); break;
-      /* control-e is END */
-      case 5: term_end(); break;
-      /* control-d is EOF */
-      case 4:
-        if(!term_cmdline.len) {
-          buffer_puts(term_output, "EOF");
-          buffer_putnlflush(term_output);
-          ret = 0;
-          goto fail;
-        }
-        break;
-      /* do the ANSI codes */
-      case '\033': term_ansi(); break;
-      /* backspace */
-      case 127:
-      case '\b': term_backspace(); break;
-      /* printable chars */
-      case '\t': c = ' ';
-      default:
-        if(term_insert)
-          term_insertc(c);
-        else
-          term_overwritec(c);
-        break;
+    /* control-c discards the current line */
+    case 3: stralloc_zero(&term_cmdline);
+    /* newline */
+    case '\n':
+      term_newline();
+      remain = term_cmdline.len;
+      goto check_remain;
+    /* control-a is HOME */
+    case 1: term_home(); break;
+    /* control-e is END */
+    case 5: term_end(); break;
+    /* control-d is EOF */
+    case 4:
+      if(!term_cmdline.len) {
+        buffer_puts(term_output, "EOF");
+        buffer_putnlflush(term_output);
+        ret = 0;
+        goto fail;
+      }
+      break;
+    /* do the ANSI codes */
+    case '\033': term_ansi(); break;
+    /* backspace */
+    case 127:
+    case '\b': term_backspace(); break;
+    /* printable chars */
+    case '\t': c = ' ';
+    default:
+      if(term_insert)
+        term_insertc(c);
+      else
+        term_overwritec(c);
+      break;
     }
   }
 fail:

@@ -14,14 +14,14 @@ parse_if(struct parser* p) {
   do {
     /* create new N_IF node and parse the test expression */
     *nptr = tree_newnode(N_IF);
-    (*nptr)->nif.test = parse_compound_list(p);
+    (*nptr)->nif.test = parse_compound_list(p, T_THEN);
 
     /* next token must be a T_THEN */
     if(!parse_expect(p, P_DEFAULT, T_THEN, node))
       return NULL;
 
     /* parse the tree for the first command */
-    (*nptr)->nif.cmd0 = parse_compound_list(p);
+    (*nptr)->nif.cmd0 = parse_compound_list(p, T_ELIF | T_ELSE | T_FI);
 
     /* start a new branch on the else-case */
     tree_init((*nptr)->nif.cmd1, nptr);
@@ -29,7 +29,7 @@ parse_if(struct parser* p) {
 
   /* check if we have an else-block, parse it if so */
   if(p->tok == T_ELSE)
-    *nptr = parse_compound_list(p);
+    *nptr = parse_compound_list(p, T_FI);
   else
     p->pushback++;
 

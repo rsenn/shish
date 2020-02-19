@@ -13,7 +13,7 @@
 /* output stuff
  * ----------------------------------------------------------------------- */
 int
-builtin_mktemp(int argc, char** argv) {
+builtin_mktemp(int argc, char* argv[]) {
   int c, ret;
   stralloc dir;
   int directory = 0, quiet = 0, temp = 0, printonly = 0;
@@ -21,23 +21,24 @@ builtin_mktemp(int argc, char** argv) {
   char* d;
   stralloc name;
   size_t i;
-  static const char alphabet[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
-                                  'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
-                                  'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
-                                  'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+  static const char alphabet[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C',
+                                  'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+                                  'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c',
+                                  'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
+                                  'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
 
   /* check options */
   while((c = shell_getopt(argc, argv, "dqtp:u")) > 0) {
     switch(c) {
-      case 'd': directory = 1; break;
-      case 'q': quiet = 1; break;
-      case 't': temp = 1; break;
-      case 'u': printonly = 1; break;
-      case 'p':
-        temp = 1;
-        base = argv[shell_optind];
-        break;
-      default: builtin_invopt(argv); return 1;
+    case 'd': directory = 1; break;
+    case 'q': quiet = 1; break;
+    case 't': temp = 1; break;
+    case 'u': printonly = 1; break;
+    case 'p':
+      temp = 1;
+      base = argv[shell_optind];
+      break;
+    default: builtin_invopt(argv); return 1;
     }
   }
   stralloc_init(&name);

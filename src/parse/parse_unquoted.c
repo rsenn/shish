@@ -57,13 +57,16 @@ parse_unquoted(struct parser* p) {
     }
     /* when spotting backquote enter command substitution mode */
     else if(c == '`') {
-      parse_string(p, 0);
 
       /* if we're already parsing backquoted stuff then we should
          terminate the current subst instead of creating a new one
          inside. */
-      if(p->flags & P_BQUOTE)
+      if(p->flags & P_BQUOTE) {
+        /*  parse_gettok(p, 0);
+         p->pushback++; */
         return 1;
+      }
+      parse_string(p, 0);
 
       if(parse_bquoted(p))
         break;
@@ -76,6 +79,7 @@ parse_unquoted(struct parser* p) {
       if(parse_subst(p))
         break;
 
+      continue;
     }
     /* check for redirections */
     else if((p->flags & P_NOREDIR) == 0 && (c == '<' || c == '>')) {
@@ -98,8 +102,7 @@ parse_unquoted(struct parser* p) {
     else if(parse_isctrl(c) || parse_isspace(c)) {
       /* if we're looking for keywords, there is no word tree and
          there is a string in the parser we check for keyworsd */
-      if((p->flags & P_NOKEYWD) || p->tree || p->sa.s == NULL ||
-         !parse_keyword(p))
+      if((p->flags & P_NOKEYWD) || p->tree || p->sa.s == NULL || !parse_keyword(p))
         parse_string(p, flags);
 
       return 1;

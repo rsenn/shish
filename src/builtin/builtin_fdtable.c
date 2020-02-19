@@ -22,7 +22,7 @@
  * redirected from an internal read-buffer (for the here-docs).
  * ----------------------------------------------------------------------- */
 int
-builtin_fdtable(int argc, char** argv) {
+builtin_fdtable(int argc, char* argv[]) {
   int i;
 
   buffer_puts(fd_out->w, " vfd  rfd  wfd  lev  file\n");

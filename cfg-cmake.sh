@@ -34,12 +34,12 @@ cfg() {
       -DENABLE_PIC=OFF ;;
   esac
   if [ -z "$generator" ]; then
-    if type ninja 2>/dev/null; then
-      builddir=$builddir-ninja
-      generator="Ninja"
-    else
+#    if type ninja 2>/dev/null; then
+#      builddir=$builddir-ninja
+#      generator="Ninja"
+#    else
       generator="Unix Makefiles"
-    fi
+#    fi
   fi
   case "$generator" in
     *" - "*) break ;;

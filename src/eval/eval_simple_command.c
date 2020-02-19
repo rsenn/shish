@@ -58,7 +58,8 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
     if(!(e->flags & E_EXIT) && cmd.ptr && id != H_SBUILTIN)
       vartab_push(&vars);
 
-    for(nptr = assigns; nptr; nptr = nptr->list.next) var_setsa(&nptr->narg.stra, (cmd.ptr ? V_EXPORT : V_DEFAULT));
+    for(nptr = assigns; nptr; nptr = nptr->list.next)
+      var_setsa(&nptr->narg.stra, (cmd.ptr ? V_EXPORT : V_DEFAULT));
 
     tree_free(assigns);
   }

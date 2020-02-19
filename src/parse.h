@@ -46,11 +46,9 @@ extern const unsigned short parse_chartable[CHAR_RANGE];
 /* matches [a-z] */
 #define parse_islower(c) (parse_chartable[(int)(unsigned char)c] & (C_LOWER))
 /* matches [a-zA-Z] */
-#define parse_isalpha(c)                                                       \
-  (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER))
+#define parse_isalpha(c) (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER))
 /* matches [a-zA-Z0-9] */
-#define parse_isalnum(c)                                                       \
-  (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_DIGIT))
+#define parse_isalnum(c) (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_DIGIT))
 /* matches [@#?!$0-*] (special parameters) */
 #define parse_isspcl(c) (parse_chartable[(int)(unsigned char)c] & (C_SPCL))
 
@@ -64,13 +62,11 @@ extern const unsigned short parse_chartable[CHAR_RANGE];
 #define parse_isdesc(c) (parse_chartable[(int)(unsigned char)c] & (C_DESC))
 
 /* is either alpha, digit or underscore */
-#define parse_isname(c)                                                        \
-  (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_NAME))
+#define parse_isname(c) (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_NAME))
 
 /* is either alpha, digit or underscore or special parameter */
-#define parse_isparam(c)                                                       \
-  (parse_chartable[(int)(unsigned char)c] &                                    \
-   (C_LOWER | C_UPPER | C_DIGIT | C_NAME | C_SPCL))
+#define parse_isparam(c)                                                                           \
+  (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_DIGIT | C_NAME | C_SPCL))
 
 /* token structure:
  * ----------------------------------------------------------------------- *
@@ -178,6 +174,7 @@ struct parser {
   stralloc sa;
   union node* node;
   union node* tree;
+  int tokstart;
 };
 
 /* parser flags
@@ -203,10 +200,7 @@ enum tok_flag parse_gettok(struct parser* p, int tempflags);
 int parse_arith(struct parser* p);
 int parse_bquoted(struct parser* p);
 int parse_dquoted(struct parser* p);
-enum tok_flag parse_expect(struct parser* p,
-                           int tempflags,
-                           enum tok_flag toks,
-                           union node* nfree);
+enum tok_flag parse_expect(struct parser* p, int tempflags, enum tok_flag toks, union node* nfree);
 int parse_here(struct parser* p, stralloc* delim, int nosubst);
 int parse_keyword(struct parser* p);
 int parse_param(struct parser* p);
@@ -221,7 +215,7 @@ int parse_word(struct parser* p);
 union node* parse_and_or(struct parser* p);
 union node* parse_case(struct parser* p);
 union node* parse_command(struct parser* p, int tempflags);
-union node* parse_compound_list(struct parser* p);
+union node* parse_compound_list(struct parser* p, enum tok_id end_tok);
 union node* parse_for(struct parser* p);
 union node* parse_function(struct parser* p);
 union node* parse_getarg(struct parser* p);
@@ -243,10 +237,7 @@ void parse_init(struct parser* p, int flags);
 void parse_string(struct parser* p, int flags);
 
 #ifdef DEBUG_ALLOC
-void parse_newnodedebug(const char* file,
-                        unsigned int line,
-                        struct parser* p,
-                        enum nod_id nod);
+void parse_newnodedebug(const char* file, unsigned int line, struct parser* p, enum nod_id nod);
 #define parse_newnode(p, id) parse_newnodedebug(__FILE__, __LINE__, (p), (id))
 #else
 void parse_newnode(struct parser* p, enum nod_id nod);

@@ -13,9 +13,9 @@ debug_redir(const char* msg, int flags, int depth) {
   static char flagstr[128];
 
   switch(flags & (R_IN | R_OUT)) {
-    case R_IN | R_OUT: str_copy(flagstr, "R_IN|R_OUT"); break;
-    case R_IN: str_copy(flagstr, "R_IN"); break;
-    case R_OUT: str_copy(flagstr, "R_OUT"); break;
+  case R_IN | R_OUT: str_copy(flagstr, "R_IN|R_OUT"); break;
+  case R_IN: str_copy(flagstr, "R_IN"); break;
+  case R_OUT: str_copy(flagstr, "R_OUT"); break;
   }
 
   if(flags & R_OPEN)

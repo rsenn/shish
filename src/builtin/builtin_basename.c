@@ -4,7 +4,7 @@
 
 /* ----------------------------------------------------------------------- */
 int
-builtin_basename(int argc, char** argv) {
+builtin_basename(int argc, char* argv[]) {
   if(!argv[shell_optind]) {
     builtin_errmsg(argv, "too few arguments", NULL);
     return 1;

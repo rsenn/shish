@@ -25,7 +25,8 @@ shell_getopt(int argc, char* const argv[], const char* optstring) {
     }*/
 again:
   /* are we finished? */
-  if(shell_optind > argc || !argv[shell_optind] || *argv[shell_optind] != '-' || argv[shell_optind][1] == 0)
+  if(shell_optind > argc || !argv[shell_optind] || *argv[shell_optind] != '-' ||
+     argv[shell_optind][1] == 0)
     return -1;
 
   /* ignore a trailing - */

@@ -49,20 +49,20 @@ parse_arith_value(struct parser* p) {
           c = 'o';
 
         switch(c) {
-          case 'x':
-            scan_fn = (scan_function*)&scan_xlonglong;
-            cclass = C_HEX;
-            break;
+        case 'x':
+          scan_fn = (scan_function*)&scan_xlonglong;
+          cclass = C_HEX;
+          break;
 
-          case 'o':
-            scan_fn = (scan_function*)&scan_octal;
-            cclass = C_OCTAL;
-            break;
-          default: {
-            buffer_puts(fd_err->w, "ERROR: expecting x|b|o");
-            buffer_putnlflush(fd_err->w);
-            return NULL;
-          }
+        case 'o':
+          scan_fn = (scan_function*)&scan_octal;
+          cclass = C_OCTAL;
+          break;
+        default: {
+          buffer_puts(fd_err->w, "ERROR: expecting x|b|o");
+          buffer_putnlflush(fd_err->w);
+          return NULL;
+        }
         }
 
         if((classes & (C_UPPER | C_LOWER))) {

@@ -9,22 +9,22 @@
 
 /* ----------------------------------------------------------------------- */
 int
-builtin_dump(int argc, char** argv) {
+builtin_dump(int argc, char* argv[]) {
   int c;
 
   while((c = shell_getopt(argc, argv, "vltsfm")) > 0) {
     switch(c) {
-      case 'v': vartab_dump(&vartab_root); break;
-      case 'l': vartab_dump(NULL); break;
-      case 't': fdtable_dump(); break;
-      case 's': fdstack_dump(); break;
-      case 'f': fd_dumplist(); break;
-      case 'm':
+    case 'v': vartab_dump(&vartab_root); break;
+    case 'l': vartab_dump(NULL); break;
+    case 't': fdtable_dump(); break;
+    case 's': fdstack_dump(); break;
+    case 'f': fd_dumplist(); break;
+    case 'm':
 #ifdef DEBUG_ALLOC
-        debug_memory();
+      debug_memory();
 #endif
-        break;
-      default: builtin_invopt(argv); return 1;
+      break;
+    default: builtin_invopt(argv); return 1;
     }
   }
 

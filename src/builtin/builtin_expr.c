@@ -14,7 +14,7 @@
 /* parse and expruate arguments
  * ----------------------------------------------------------------------- */
 int
-builtin_expr(int argc, char** argv) {
+builtin_expr(int argc, char* argv[]) {
   struct fd fd;
   struct source src;
   struct parser p;

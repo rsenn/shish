@@ -12,14 +12,14 @@ parse_loop(struct parser* p) {
   node = tree_newnode((p->tok == T_WHILE) ? N_WHILE : N_UNTIL);
 
   /* there must be newline or semicolon after the test expression */
-  node->nloop.test = parse_compound_list(p);
+  node->nloop.test = parse_compound_list(p, T_DO);
 
   /* ..and then a "do" must follow */
   if(!parse_expect(p, P_DEFAULT, T_DO, node))
     return NULL;
 
   /* now parse the loop body */
-  node->nloop.cmds = parse_compound_list(p);
+  node->nloop.cmds = parse_compound_list(p, T_DONE);
 
   /* ..and then a "done" must follow */
   if(!parse_expect(p, P_DEFAULT, T_DONE, node))

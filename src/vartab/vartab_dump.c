@@ -15,11 +15,12 @@ vartab_dump(struct vartab* vartab) {
             buffer_putulong(fd_out->w, (vartab->table[46]));
             buffer_putnlflush(fd_out->w);*/
 
-  buffer_puts(
-      fd_out->w,
-      "address  name                     value                   nlen offs vlen lev buck lexhash          rndhash\n");
   buffer_puts(fd_out->w,
-              "--------------------------------------------------------------------------------------------------------"
+              "address  name                     value                   nlen "
+              "offs vlen lev buck lexhash          rndhash\n");
+  buffer_puts(fd_out->w,
+              "----------------------------------------------------------------"
+              "----------------------------------------"
               "-----------\n");
 
   if(vartab) {
@@ -27,7 +28,8 @@ vartab_dump(struct vartab* vartab) {
       buffer_puts(fd_out->w, "level: ");
       buffer_putulong(fd_out->w, vartab->level);
       buffer_puts(fd_out->w,
-                  "\n=================================================================================================="
+                  "\n=========================================================="
+                  "========================================"
                   "=================");
       buffer_putnlflush(fd_out->w);
 

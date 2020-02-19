@@ -4,7 +4,7 @@
 
 /* ----------------------------------------------------------------------- */
 int
-builtin_shift(int argc, char** argv) {
+builtin_shift(int argc, char* argv[]) {
   unsigned int n = 1;
 
   if(argv[1]) {

@@ -22,49 +22,49 @@ parse_command(struct parser* p, int tempflags) {
   }
 
   switch(tok) {
-    /* T_FOR begins an iteration statement */
-    case T_FOR: command = parse_for(p); break;
+  /* T_FOR begins an iteration statement */
+  case T_FOR: command = parse_for(p); break;
 
-    /* T_IF begins a case match statement */
-    case T_CASE: command = parse_case(p); break;
+  /* T_IF begins a case match statement */
+  case T_CASE: command = parse_case(p); break;
 
-    /* T_IF begins a conditional statement */
-    case T_IF: command = parse_if(p); break;
+  /* T_IF begins a conditional statement */
+  case T_IF: command = parse_if(p); break;
 
-    /* T_WHILE/T_UNTIL begin a for-loop statement */
-    case T_WHILE:
-    case T_UNTIL: command = parse_loop(p); break;
+  /* T_WHILE/T_UNTIL begin a for-loop statement */
+  case T_WHILE:
+  case T_UNTIL: command = parse_loop(p); break;
 
-    /* T_LP/T_BEGIN start a grouping compound */
-    case T_LP:
-    case T_BEGIN:
-      p->pushback++;
-      command = parse_grouping(p, 0);
-      break;
+  /* T_LP/T_BEGIN start a grouping compound */
+  case T_LP:
+  case T_BEGIN:
+    p->pushback++;
+    command = parse_grouping(p, 0);
+    break;
 
-    /* handle simple commands */
-    case T_NAME:
-      if(c == '(') {
-        char ch[2];
-        if(source_peekn(ch, 1) >= 2 && ch[1] == ')') {
-          source_skip();
-          source_skip();
-          p->pushback++;
-          return parse_function(p);
-        }
+  /* handle simple commands */
+  case T_NAME:
+    if(c == '(') {
+      char ch[2];
+      if(source_peekn(ch, 1) >= 2 && ch[1] == ')') {
+        source_skip();
+        source_skip();
+        p->pushback++;
+        return parse_function(p);
       }
-    case T_WORD:
-    case T_REDIR:
-    case T_ASSIGN:
-      p->pushback++;
-      command = parse_simple_command(p);
-      break;
+    }
+  case T_WORD:
+  case T_REDIR:
+  case T_ASSIGN:
+    p->pushback++;
+    command = parse_simple_command(p);
+    break;
 
-    /* it wasn't a compound command, return now */
-    default:
-      command = 0;
-      p->pushback++;
-      return NULL;
+  /* it wasn't a compound command, return now */
+  default:
+    command = 0;
+    p->pushback++;
+    return NULL;
   }
 
   if(command) {

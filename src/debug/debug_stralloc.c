@@ -18,7 +18,7 @@ debug_stralloc(const char* msg, stralloc* s, int depth, char quote) {
   if(quote)
     buffer_putc(fd_err->w, quote);
 
-  if(s->len) {
+  if(s->len && s->s) {
     const char* x = s->s;
     const char* end = s->s + s->len;
 
@@ -26,6 +26,7 @@ debug_stralloc(const char* msg, stralloc* s, int depth, char quote) {
       /*  if(*x == '\n')
           buffer_puts(fd_err->w, "\\n");
         else*/
+
       buffer_putc(fd_err->w, *x);
       x++;
     }

@@ -6,7 +6,7 @@
 /* continue/break a loop
  * ----------------------------------------------------------------------- */
 int
-builtin_break(int argc, char** argv) {
+builtin_break(int argc, char* argv[]) {
   unsigned int n = 1;
 
   if(argv[1]) {

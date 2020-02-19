@@ -74,7 +74,8 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
     if((pid = fork())) {
       int status = 1;
 
-      /* this will close child ends of the pipes and read data from the parent end :) */
+      /* this will close child ends of the pipes and read data from the parent
+       * end :) */
       fdstack_pop(&io);
       fdstack_data();
 

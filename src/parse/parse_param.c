@@ -48,13 +48,13 @@ parse_param(struct parser* p) {
 
   /* check for special arguments */
   switch(c) {
-    case '#': p->node->nargparam.flag |= S_ARGC; break;
-    case '*': p->node->nargparam.flag |= S_ARGV; break;
-    case '@': p->node->nargparam.flag |= S_ARGVS; break;
-    case '?': p->node->nargparam.flag |= S_EXITCODE; break;
-    case '-': p->node->nargparam.flag |= S_FLAGS; break;
-    case '!': p->node->nargparam.flag |= S_BGEXCODE; break;
-    case '$': p->node->nargparam.flag |= S_PID; break;
+  case '#': p->node->nargparam.flag |= S_ARGC; break;
+  case '*': p->node->nargparam.flag |= S_ARGV; break;
+  case '@': p->node->nargparam.flag |= S_ARGVS; break;
+  case '?': p->node->nargparam.flag |= S_EXITCODE; break;
+  case '-': p->node->nargparam.flag |= S_FLAGS; break;
+  case '!': p->node->nargparam.flag |= S_BGEXCODE; break;
+  case '$': p->node->nargparam.flag |= S_PID; break;
   }
 
   /* add the first char to the varname */
@@ -123,22 +123,22 @@ parse_param(struct parser* p) {
     }
 
     switch(c) {
-      case '-':
-        p->node->nargparam.flag |= S_DEFAULT;
-        source_skip();
-        break;
-      case '=':
-        p->node->nargparam.flag |= S_ASGNDEF;
-        source_skip();
-        break;
-      case '?':
-        p->node->nargparam.flag |= S_ERRNULL;
-        source_skip();
-        break;
-      case '+':
-        p->node->nargparam.flag |= S_ALTERNAT;
-        source_skip();
-        break;
+    case '-':
+      p->node->nargparam.flag |= S_DEFAULT;
+      source_skip();
+      break;
+    case '=':
+      p->node->nargparam.flag |= S_ASGNDEF;
+      source_skip();
+      break;
+    case '?':
+      p->node->nargparam.flag |= S_ERRNULL;
+      source_skip();
+      break;
+    case '+':
+      p->node->nargparam.flag |= S_ALTERNAT;
+      source_skip();
+      break;
     }
   }
 

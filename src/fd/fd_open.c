@@ -18,9 +18,9 @@ fd_open(struct fd* fd, const char* fname, long mode) {
 
   /* set POSIX read/write mode */
   switch(fd->mode & D_READWRITE) {
-    case D_READWRITE: fd->fl = O_RDWR; break;
-    case D_WRITE: fd->fl = O_WRONLY; break;
-    default: fd->fl = O_RDONLY; break;
+  case D_READWRITE: fd->fl = O_RDWR; break;
+  case D_WRITE: fd->fl = O_WRONLY; break;
+  default: fd->fl = O_RDONLY; break;
   }
 
   /* if we're opening a file for writing there are further options */

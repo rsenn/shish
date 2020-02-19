@@ -6,16 +6,16 @@
 /* print working directory
  * ----------------------------------------------------------------------- */
 int
-builtin_pwd(int argc, char** argv) {
+builtin_pwd(int argc, char* argv[]) {
   int c;
   int physical = 0;
 
   /* check options, -L for symlink, -P for physical path */
   while((c = shell_getopt(argc, argv, "LP")) > 0) {
     switch(c) {
-      case 'P': physical++; break;
-      case 'L': physical = 0; break;
-      default: builtin_invopt(argv); return 1;
+    case 'P': physical++; break;
+    case 'L': physical = 0; break;
+    default: builtin_invopt(argv); return 1;
     }
   }
 

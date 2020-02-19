@@ -10,7 +10,7 @@
 /* output stuff
  * ----------------------------------------------------------------------- */
 int
-builtin_chmod(int argc, char** argv) {
+builtin_chmod(int argc, char* argv[]) {
   int c, ret;
   unsigned int mode;
   stralloc path;
@@ -21,8 +21,8 @@ builtin_chmod(int argc, char** argv) {
   /* check options */
   while((c = shell_getopt(argc, argv, "v")) > 0) {
     switch(c) {
-      case 'v': verbose = 1; break;
-      default: builtin_invopt(argv); return 1;
+    case 'v': verbose = 1; break;
+    default: builtin_invopt(argv); return 1;
     }
   }
 

@@ -52,21 +52,21 @@ eval_command(struct eval* e, union node* node, int tempflags) {
   }
 
   switch(node->id) {
-    case N_IF: ret = eval_if(e, &node->nif); break;
-    case N_FOR: ret = eval_for(e, &node->nfor); break;
-    case N_CASE: ret = eval_case(e, &node->ncase); break;
-    case N_WHILE:
-    case N_UNTIL: ret = eval_loop(e, &node->nloop); break;
-    case N_SUBSHELL: ret = eval_subshell(e, &node->ngrp); break;
-    case N_CMDLIST: ret = eval_cmdlist(e, &node->ngrp); break;
-    default:
-      break;
-      /*    case N_SIMPLECMD:
-          case N_REDIR:
-          case N_ASSIGN:
-          default:
-            ret = eval_simple_command(&node->ncmd);
-            break;*/
+  case N_IF: ret = eval_if(e, &node->nif); break;
+  case N_FOR: ret = eval_for(e, &node->nfor); break;
+  case N_CASE: ret = eval_case(e, &node->ncase); break;
+  case N_WHILE:
+  case N_UNTIL: ret = eval_loop(e, &node->nloop); break;
+  case N_SUBSHELL: ret = eval_subshell(e, &node->ngrp); break;
+  case N_CMDLIST: ret = eval_cmdlist(e, &node->ngrp); break;
+  default:
+    break;
+    /*    case N_SIMPLECMD:
+        case N_REDIR:
+        case N_ASSIGN:
+        default:
+          ret = eval_simple_command(&node->ncmd);
+          break;*/
   }
 
 fail:

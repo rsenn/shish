@@ -8,7 +8,7 @@
  * all your drugs are belong to us
  * ----------------------------------------------------------------------- */
 int
-builtin_type(int argc, char** argv) {
+builtin_type(int argc, char* argv[]) {
   unsigned int i, n;
   struct exechash* h;
   char num[FMT_ULONG];
@@ -27,11 +27,11 @@ builtin_type(int argc, char** argv) {
       buffer_putnspace(fd_out->w, 4 + (n > 0 ? 0 : n));
 
       switch(h->id) {
-        case H_PROGRAM: buffer_puts(fd_out->w, h->cmd.path); break;
-        case H_EXEC:
-        case H_SBUILTIN: buffer_putm_internal(fd_out->w, h->name, " (special builtin)", NULL); break;
-        case H_BUILTIN: buffer_putm_internal(fd_out->w, h->name, " (builtin)", NULL); break;
-        case H_FUNCTION: buffer_putm_internal(fd_out->w, h->name, " (function)", NULL); break;
+      case H_PROGRAM: buffer_puts(fd_out->w, h->cmd.path); break;
+      case H_EXEC:
+      case H_SBUILTIN: buffer_putm_internal(fd_out->w, h->name, " (special builtin)", NULL); break;
+      case H_BUILTIN: buffer_putm_internal(fd_out->w, h->name, " (builtin)", NULL); break;
+      case H_FUNCTION: buffer_putm_internal(fd_out->w, h->name, " (function)", NULL); break;
       }
       buffer_putnlflush(fd_out->w);
     }

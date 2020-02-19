@@ -35,24 +35,24 @@ fdtable_resolve(struct fd* fd, int flags) {
 
   /* do some actions to resolve the effective file descriptor */
   switch(fd->mode & (D_OPEN | D_CLOSE | D_STRALLOC)) {
-    /* we're forced to close */
-    case D_CLOSE: {
-      state = fdtable_close(fd->n, flags);
-      break;
-    }
+  /* we're forced to close */
+  case D_CLOSE: {
+    state = fdtable_close(fd->n, flags);
+    break;
+  }
 
-      /* if the fd is still to be opened then try that */
-    case D_OPEN: {
-      state = fdtable_open(fd, flags);
-      break;
-    }
+    /* if the fd is still to be opened then try that */
+  case D_OPEN: {
+    state = fdtable_open(fd, flags);
+    break;
+  }
 
-      /* drop here-docs to temp files */
-    case D_STRALLOC: {
-      if(D_ISRD(fd))
-        state = fdtable_here(fd, flags);
-      break;
-    }
+    /* drop here-docs to temp files */
+  case D_STRALLOC: {
+    if(D_ISRD(fd))
+      state = fdtable_here(fd, flags);
+    break;
+  }
   }
 
   /* if we're not done yet we have to force the effective fd number */

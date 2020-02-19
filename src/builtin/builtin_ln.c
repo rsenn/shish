@@ -8,7 +8,7 @@
 /* output stuff
  * ----------------------------------------------------------------------- */
 int
-builtin_ln(int argc, char** argv) {
+builtin_ln(int argc, char* argv[]) {
   int c, is_dir = 0, ret;
   stralloc path;
   int symbolic = 0, force = 0, verbose = 0;
@@ -18,10 +18,10 @@ builtin_ln(int argc, char** argv) {
   /* check options */
   while((c = shell_getopt(argc, argv, "fsv")) > 0) {
     switch(c) {
-      case 's': symbolic = 1; break;
-      case 'f': force = 1; break;
-      case 'v': verbose = 1; break;
-      default: builtin_invopt(argv); return 1;
+    case 's': symbolic = 1; break;
+    case 'f': force = 1; break;
+    case 'v': verbose = 1; break;
+    default: builtin_invopt(argv); return 1;
     }
   }
 

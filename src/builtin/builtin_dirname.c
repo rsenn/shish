@@ -4,7 +4,7 @@
 
 /* ----------------------------------------------------------------------- */
 int
-builtin_dirname(int argc, char** argv) {
+builtin_dirname(int argc, char* argv[]) {
   char* path;
 
   if(argc < 2) {

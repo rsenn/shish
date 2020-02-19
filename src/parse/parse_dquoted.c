@@ -29,7 +29,9 @@ parse_dquoted(struct parser* p) {
         source_skip();
         c = nextc;
       }
-    } else if(c == '`' /* && !(p->flags & P_BACKQUOTE)*/) {
+    } else if(c == '`') {
+      if((p->flags & P_BQUOTE))
+        break;
       parse_string(p, 0);
       if(parse_bquoted(p))
         break;

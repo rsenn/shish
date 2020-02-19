@@ -5,7 +5,7 @@
 /* output stuff
  * ----------------------------------------------------------------------- */
 int
-builtin_echo(int argc, char** argv) {
+builtin_echo(int argc, char* argv[]) {
   int c;
   int nonl = 0;
   int eval = 0;
@@ -13,9 +13,9 @@ builtin_echo(int argc, char** argv) {
   /* check options */
   while((c = shell_getopt(argc, argv, "ne")) > 0) {
     switch(c) {
-      case 'n': nonl = 1; break;
-      case 'e': eval = 1; break;
-      default: builtin_invopt(argv); return 1;
+    case 'n': nonl = 1; break;
+    case 'e': eval = 1; break;
+    default: builtin_invopt(argv); return 1;
     }
   }
 

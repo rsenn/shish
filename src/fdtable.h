@@ -31,11 +31,11 @@ extern int fdtable_lo; /* lowest occupied vfd */
 extern struct fd** const fdtable;
 extern struct fd** fdtable_pos;
 
-#define fdtable_foreach(i)                                                                                             \
-  for(i = fdtable_lo; i < fdtable_hi; i++)                                                                             \
+#define fdtable_foreach(i)                                                                         \
+  for(i = fdtable_lo; i < fdtable_hi; i++)                                                         \
     if(fdtable[i])
-#define fdtable_foreach_p(i, p)                                                                                        \
-  for(i = fdtable_lo; i < fdtable_hi; i++)                                                                             \
+#define fdtable_foreach_p(i, p)                                                                    \
+  for(i = fdtable_lo; i < fdtable_hi; i++)                                                         \
     if(((p) = fdtable[i]))
 
 int fdtable_check(int e);

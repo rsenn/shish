@@ -78,13 +78,13 @@ main(int argc, char** argv, char** envp) {
 
   /* parse command line arguments */
   while((c = shell_getopt(argc, argv, "c:xe")) > 0) switch(c) {
-      case 'c': cmds = shell_optarg; break;
-      case 'x': sh->flags |= SH_DEBUG; break;
-      case 'e': sh->flags |= SH_ERREXIT; break;
-      case '?': sh_usage(); break;
+    case 'c': cmds = shell_optarg; break;
+    case 'x': sh->flags |= SH_DEBUG; break;
+    case 'e': sh->flags |= SH_ERREXIT; break;
+    case '?': sh_usage(); break;
     }
 
-      /* set up the source fd (where the shell reads from) */
+    /* set up the source fd (where the shell reads from) */
 #ifdef HAVE_ALLOCA
   fd = fd_alloca();
   fd_push(fd, STDSRC_FILENO, D_READ);

@@ -43,7 +43,8 @@ exec_hash(char* name, enum hash_id* idptr) {
       id = entry->id;
       cmd = entry->cmd;
     }
-    /* if we don't have a cache hit we're gonna search, special builtins first */
+    /* if we don't have a cache hit we're gonna search, special builtins first
+     */
     else {
       id = H_EXEC;
       cmd.builtin = builtin_search(name, B_EXEC);

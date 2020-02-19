@@ -16,6 +16,7 @@ debug_list(union node* n, int depth) {
   for(node = n; node; i++, node = node->list.next) {
     if(i == 0 && id < N_ARGSTR)
       buffer_puts(fd_err->w, COLOR_CYAN "[" COLOR_NONE);
+
     debug_space(depth + 1, depth > 0);
     if(id == N_ARG) {
       buffer_putulong(fd_err->w, i);
@@ -23,7 +24,7 @@ debug_list(union node* n, int depth) {
     } else if(id >= N_ARGSTR) {
       buffer_puts(fd_err->w, i == 0 ? (COLOR_CYAN "{" COLOR_NONE) : ", ");
     }
-    debug_node(node, id >= N_ARGSTR ? -2 : depth + 2);
+    debug_node(node, id == N_ARG ? -2 : depth > 0 ? depth + 1 : depth);
     if(node->list.next) {
       if(id == N_ARG) {
         debug_space(depth - 1, 0);

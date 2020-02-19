@@ -7,16 +7,16 @@
 /* set arguments of flags
  * ----------------------------------------------------------------------- */
 int
-builtin_set(int argc, char** argv) {
+builtin_set(int argc, char* argv[]) {
   int c;
   int debug = 0, exit_on_err = 0;
 
   /* check options */
   while((c = shell_getopt(argc, argv, "xe")) > 0) {
     switch(c) {
-      case 'x': debug = 1; break;
-      case 'e': exit_on_err = 1; break;
-      default: builtin_invopt(argv); return 1;
+    case 'x': debug = 1; break;
+    case 'e': exit_on_err = 1; break;
+    default: builtin_invopt(argv); return 1;
     }
   }
 

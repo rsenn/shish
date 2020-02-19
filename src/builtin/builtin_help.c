@@ -14,7 +14,7 @@ output_synopsis(struct builtin_cmd* b) {
 /* output stuff
  * ----------------------------------------------------------------------- */
 int
-builtin_help(int argc, char** argv) {
+builtin_help(int argc, char* argv[]) {
   size_t i, maxlen = 0, rows, offset;
   unsigned int cols;
   const char* vcols;

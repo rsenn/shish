@@ -10,6 +10,7 @@ parse_bquoted(struct parser* p) {
   char c;
   union node* cmds;
   struct parser subp;
+  enum tok_id end_tok;
 
   if(p->tok == T_NAME)
     p->tok = T_WORD;
@@ -23,22 +24,27 @@ parse_bquoted(struct parser* p) {
     /*
         if(c == '(')
           return parse_arith(p);*/
+    end_tok = T_RP;
 
     parse_init(&subp, P_DEFAULT);
   } else {
     source_skip();
     subp.flags = P_BQUOTE;
+    end_tok = T_BQ;
 
     parse_init(&subp, P_BQUOTE);
   }
 
-  if((cmds = parse_compound_list(&subp)) == NULL)
+  if((cmds = parse_compound_list(&subp, end_tok)) == NULL)
     return -1;
+  /*
+  subp.pushback++;
+  if(subp.tok == T_BQ)
+   parse_gettok(&subp, 0); */
 
   /* MUST be terminated with right parenthesis or backquote */
-  if(!parse_expect(
-         &subp, P_DEFAULT, ((subp.flags & P_BQUOTE) ? T_BQ : T_RP), cmds))
-    return -1;
+  /*   if(!parse_expect(&subp, P_DEFAULT, end_tok, cmds))
+      return -1; */
 
   parse_newnode(p, N_ARGCMD);
   p->node->nargcmd.flag = ((subp.flags & P_BQUOTE) ? S_BQUOTE : 0) | p->quot;

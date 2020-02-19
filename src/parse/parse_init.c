@@ -6,4 +6,5 @@ void
 parse_init(struct parser* p, int flags) {
   byte_zero(p, sizeof(struct parser));
   p->flags = flags;
+  p->tokstart = -1;
 }

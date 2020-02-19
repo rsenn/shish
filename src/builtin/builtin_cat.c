@@ -8,7 +8,7 @@
 /* output stuff
  * ----------------------------------------------------------------------- */
 int
-builtin_cat(int argc, char** argv) {
+builtin_cat(int argc, char* argv[]) {
   int c, ret = 0;
   int number_lines = 0, number_nonempty = 0;
   char* arg;
@@ -18,9 +18,9 @@ builtin_cat(int argc, char** argv) {
   /* check options */
   while((c = shell_getopt(argc, argv, "nb")) > 0) {
     switch(c) {
-      case 'n': number_lines = 1; break;
-      case 'b': number_nonempty = 1; break;
-      default: builtin_invopt(argv); return 1;
+    case 'n': number_lines = 1; break;
+    case 'b': number_nonempty = 1; break;
+    default: builtin_invopt(argv); return 1;
     }
   }
   if(argv[shell_optind] == NULL) {

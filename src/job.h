@@ -4,8 +4,10 @@
 #include <signal.h>
 
 #ifdef __TINYC__
+#ifdef _WIN32
 #define NO_OLDNAMES
 #define pid_t _pid_t
+#endif
 #endif
 #include <sys/types.h>
 #undef NO_OLDNAMES

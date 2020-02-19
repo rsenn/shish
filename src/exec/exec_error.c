@@ -12,9 +12,9 @@ exec_error(void) {
   int ret;
 
   switch(errno) {
-    case ENOENT: ret = 127; break;
-    case EACCES: ret = 126; break;
-    default: ret = 1; break;
+  case ENOENT: ret = 127; break;
+  case EACCES: ret = 126; break;
+  default: ret = 1; break;
   }
 
   errno = 0;

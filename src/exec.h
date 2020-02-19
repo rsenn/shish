@@ -30,7 +30,8 @@ extern struct exechash* exec_hashtbl[EXEC_HASHSIZE];
 
 char* exec_check(char* path);
 char* exec_path(char* name);
-int exec_command(enum hash_id id, union command cmd, int argc, char** argv, int exec, union node* redir);
+int exec_command(
+    enum hash_id id, union command cmd, int argc, char** argv, int exec, union node* redir);
 int exec_error(void);
 int exec_program(char* path, char** argv, int exec, union node* redir);
 uint32 exec_hashstr(const char* s);

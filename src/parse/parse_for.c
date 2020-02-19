@@ -40,7 +40,7 @@ parse_for(struct parser* p) {
     return NULL;
 
   /* parse the commands inside "do"<->"done" */
-  node->nfor.cmds = parse_compound_list(p);
+  node->nfor.cmds = parse_compound_list(p, T_DONE);
 
   /* next token must be the "done" keyword */
   if(!parse_expect(p, P_DEFAULT, T_DONE, node))

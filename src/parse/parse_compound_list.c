@@ -8,7 +8,7 @@
  * can be preceded or followed by an arbitrary number of <newline>s.
  * ----------------------------------------------------------------------- */
 union node*
-parse_compound_list(struct parser* p) {
+parse_compound_list(struct parser* p, enum tok_id end_tok) {
   union node* list;
   union node** nptr;
 
@@ -26,6 +26,9 @@ parse_compound_list(struct parser* p) {
     /* skip arbitrary newlines */
     while(p->tok & T_NL) parse_gettok(p, P_DEFAULT);
     p->pushback++;
+
+    if(end_tok != -1 && (p->tok & end_tok))
+      break;
 
     /* no more lists */
     if(*nptr == NULL)

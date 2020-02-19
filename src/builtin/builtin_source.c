@@ -8,7 +8,7 @@
 /* source shell script
  * ----------------------------------------------------------------------- */
 int
-builtin_source(int argc, char** argv) {
+builtin_source(int argc, char* argv[]) {
   const char* fname;
   struct fd src;
   struct source in;

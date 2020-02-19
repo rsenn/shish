@@ -1,5 +1,7 @@
 #include "../parse.h"
 #include "../tree.h"
+#include "../debug.h"
+#include "../fd.h"
 
 /* 3.9.4.1 parse a grouping compound
  *
@@ -16,7 +18,7 @@
  * ----------------------------------------------------------------------- */
 union node*
 parse_grouping(struct parser* p, int tempflags) {
-  int tok;
+  enum tok_flag tok;
   union node** rptr;
   union node* grouping;
   union node* compound_list;
@@ -29,7 +31,7 @@ parse_grouping(struct parser* p, int tempflags) {
 
   /* parse compound content and create a
      compound node if there are commands */
-  if((compound_list = parse_compound_list(p))) {
+  if((compound_list = parse_compound_list(p, tok << 1))) {
     grouping = tree_newnode(tok == T_BEGIN ? N_CMDLIST : N_SUBSHELL);
     grouping->ngrp.cmds = compound_list;
   }
@@ -39,6 +41,10 @@ parse_grouping(struct parser* p, int tempflags) {
     return NULL;
 
   if(grouping) {
+#if DEBUG_OUTPUT
+    debug_node(grouping, -2);
+    buffer_putnlflush(fd_err->w);
+#endif
     tree_init(grouping->ngrp.rdir, rptr);
 
     /* now any redirections may follow */

@@ -6,7 +6,7 @@
  *
  * ----------------------------------------------------------------------- */
 int
-builtin_exit(int argc, char** argv) {
+builtin_exit(int argc, char* argv[]) {
   int status = 0;
 
   if(argc > 1)

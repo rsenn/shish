@@ -19,7 +19,7 @@
 /* change working directory
  * ----------------------------------------------------------------------- */
 int
-builtin_cd(int argc, char** argv) {
+builtin_cd(int argc, char* argv[]) {
   int c;
   int ok = 0;
   int symbolic = 1;
@@ -30,9 +30,9 @@ builtin_cd(int argc, char** argv) {
   /* check options, -L for symlink, -P for physical path */
   while((c = shell_getopt(argc, argv, "LP")) > 0) {
     switch(c) {
-      case 'L': symbolic = 1; break;
-      case 'P': symbolic = 0; break;
-      default: builtin_invopt(argv); return 1;
+    case 'L': symbolic = 1; break;
+    case 'P': symbolic = 0; break;
+    default: builtin_invopt(argv); return 1;
     }
   }
 
@@ -64,7 +64,8 @@ builtin_cd(int argc, char** argv) {
       if((n = str_chr(cdpath, ':')) + len + 1 > PATH_MAX) {
         /* set error code and print the longer string in the error msg */
         errno = ENAMETOOLONG;
-        return builtin_errmsgn(argv, (n > len ? cdpath : arg), (n > len ? n : len), strerror(errno));
+        return builtin_errmsgn(
+            argv, (n > len ? cdpath : arg), (n > len ? n : len), strerror(errno));
       }
 
       /* copy path prefix from cdpath if present */
