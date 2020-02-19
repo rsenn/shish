@@ -10,11 +10,12 @@ eval_function(struct eval* e, struct nfunc* func) {
   union node* fn = tree_newnode(N_FUNCTION);
 
   fn->nfunc.next = functions;
-  functions = &fn->nfunc;
   fn->nfunc.name = func->name;
-  func->name = NULL;
   fn->nfunc.body = func->body;
-  func->body = NULL; 
+  func->name = NULL;
+  func->body = NULL;
+
+  functions = &fn->nfunc;
 
   return ret;
 }

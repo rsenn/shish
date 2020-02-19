@@ -15,7 +15,10 @@ eval_node(struct eval* e, union node* node) {
   }
   case N_FUNCTION: {
     ret = eval_function(e, &node->nfunc);
-    /* ret = eval_cmdlist(e, &node->ngrp);*/
+    break;
+  }
+  case N_CMDLIST: {
+    ret = eval_cmdlist(e, &node->ngrp);
     break;
   }
   case N_IF:
@@ -23,10 +26,8 @@ eval_node(struct eval* e, union node* node) {
   case N_CASE:
   case N_WHILE:
   case N_UNTIL:
-  case N_SUBSHELL:
-  case N_CMDLIST: {
+  case N_SUBSHELL: {
     ret = eval_command(e, node, 0);
-    /* ret = eval_cmdlist(e, &node->ngrp);*/
     break;
   }
   case N_PIPELINE: {

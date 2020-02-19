@@ -39,9 +39,13 @@ exec_command(
     struct eval e;
 
     sh_push(&sh);
-    sh_setargs(argv, 0);
+    sh.arg.v = argv;
+    for(sh.arg.c = 0; argv[sh.arg.c];sh.arg.c++) 
+      ;
+
+//    sh_setargs(argv, 0);
     eval_push(&e, 0);
-    eval_node(&e, cmd.fn);
+    eval_cmdlist(&e, &cmd.fn->ngrp);
     ret = eval_pop(&e);
     sh_pop(&sh);
 
