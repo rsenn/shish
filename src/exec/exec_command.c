@@ -41,7 +41,7 @@ exec_command(
     sh_push(&sh);
     sh_setargs(argv, 0);
     eval_push(&e, 0);
-    eval_tree(&e, cmd.fn, E_LIST);
+    eval_node(&e, cmd.fn);
     ret = eval_pop(&e);
     sh_pop(&sh);
 

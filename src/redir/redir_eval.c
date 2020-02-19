@@ -23,7 +23,7 @@ redir_eval(struct nredir* nredir, struct fd* fd, int rfl) {
   stralloc sa;
 
   stralloc_init(&sa);
-  expand_copysa((union node*)nredir, &sa, 0);
+  expand_copysa(nredir->list, &sa, 0);
   stralloc_nul(&sa);
 
   /* set the initial fd mode */

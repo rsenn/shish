@@ -1,5 +1,7 @@
 #include "../expand.h"
 #include "../tree.h"
+#include "../debug.h"
+#include "../fd.h"
 
 /* expand all arguments of an argument list
  * returns count of argument nodes
@@ -12,8 +14,12 @@ expand_args(union node* args, union node** nptr, int flags) {
 
   *nptr = NULL;
 
-  for(arg = args; arg; arg = arg->list.next) {
-    if((n = expand_arg(arg, nptr, flags))) {
+  for(arg = args; arg; arg = arg->narg.next) {
+
+    debug_node(arg, 0);
+    buffer_putnlflush(fd_err->w);
+
+    if((n = expand_arg(arg->narg.list, nptr, flags))) {
       nptr = &n;
       ret++;
     }
@@ -35,6 +41,7 @@ expand_args(union node* args, union node** nptr, int flags) {
       n->list.next = tree_newnode(N_ARG);
       n = n->list.next;
       stralloc_init(&n->narg.stra);
+      stralloc_nul(&n->narg.stra);
       ret++;
     }
   }

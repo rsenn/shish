@@ -1,6 +1,7 @@
 #include "../expand.h"
 #include "../tree.h"
 #include <stdlib.h>
+#include <assert.h>
 
 /* expand all parts of an N_ARG node
  * ----------------------------------------------------------------------- */
@@ -11,7 +12,7 @@ expand_arg(union node* node, union node** nptr, int flags) {
 
   /* loop through all parts of the word */
   for(subarg = (node && node->id == N_ARG) ? node->narg.list : node; subarg;
-      subarg = subarg->list.next) {
+      subarg = subarg->nargstr.next) {
     int lflags = flags; /* local flags */
 
     if(subarg->nargstr.flag & S_NOSPLIT)
@@ -33,7 +34,10 @@ expand_arg(union node* node, union node** nptr, int flags) {
     case N_ARGCMD: n = expand_command(&subarg->nargcmd, nptr, lflags); break;
 
     /* constant string */
-    default: n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, nptr, lflags); break;
+    case N_ARGSTR:
+      assert(subarg->nargstr.stra.s);
+      n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, nptr, lflags);
+      break;
     }
 
     if(n)

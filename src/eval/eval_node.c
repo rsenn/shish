@@ -13,8 +13,8 @@ eval_node(struct eval* e, union node* node) {
     ret = eval_simple_command(e, &node->ncmd);
     break;
   }
-    case N_FUNCTION: {
-    ret = eval_function(e, node);
+  case N_FUNCTION: {
+    ret = eval_function(e, &node->nfunc);
     /* ret = eval_cmdlist(e, &node->ngrp);*/
     break;
   }

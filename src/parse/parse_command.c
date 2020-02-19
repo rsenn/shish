@@ -8,7 +8,7 @@
 union node*
 parse_command(struct parser* p, int tempflags) {
   enum tok_flag tok;
-  union node* command=0;
+  union node* command = 0;
   union node** rptr;
   char c = 0;
 

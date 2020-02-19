@@ -67,7 +67,7 @@ exec_hash(char* name, enum hash_id* idptr) {
           if(!str_diff(name, fn->name))
             break;
         }
-        cmd.fn = fn;
+        cmd.fn = fn ? fn->body : 0;
       }
 
       /* then search for normal builtins */
