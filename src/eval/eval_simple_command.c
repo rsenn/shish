@@ -103,7 +103,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
       debug_node(r, -1);
       if(r->nredir.fd) {
         buffer_puts(buffer_2, "fd { n= ");
-        buffer_putulong(buffer_2, r->nredir.fd->n);
+        buffer_putlong(buffer_2, r->nredir.fd->n);
         buffer_puts(buffer_2, " }");
       }
       buffer_putnlflush(buffer_2);

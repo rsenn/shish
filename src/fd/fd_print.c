@@ -32,7 +32,7 @@ fd_print(struct fd* fd) {
   buffer_puts(fd_out->w, numstr);
 
   /* convert read fd to string */
-  if(fd_ok(fd->r->fd))
+  if(fd->r && fd_ok(fd->r->fd))
     n = fmt_long(numstr, fd->r->fd);
   else
     n = 0, numstr[n++] = '-';
@@ -44,7 +44,7 @@ fd_print(struct fd* fd) {
   buffer_puts(fd_out->w, numstr);
 
   /* convert write fd to string */
-  if(fd_ok(fd->w->fd))
+  if(fd->w && fd_ok(fd->w->fd))
     n = fmt_long(numstr, fd->w->fd);
   else
     n = 0, numstr[n++] = '-';

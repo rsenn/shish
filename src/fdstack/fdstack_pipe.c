@@ -15,10 +15,12 @@ fdstack_pipe(unsigned int n, struct fd* fda) {
   struct fdstack* st;
   unsigned char* b;
   unsigned int ret = 0;
+  int depth = 0;
 
   b = (unsigned char*)(&fda[n]);
 
-  for(st = fdstack; st; st = st->parent)
+  for(st = fdstack; st; st = st->parent) {
+
     for(fd = st->list; fd; fd = fd->next) {
       /* make pipes for command expansion outputs */
       if((fd->mode & FD_SUBST) == FD_SUBST) {
@@ -28,12 +30,24 @@ fdstack_pipe(unsigned int n, struct fd* fda) {
         fd_setbuf(fda, b, FD_BUFSIZE / 2);
 
         e = fd_pipe(fda);
-        buffer_init(&fd->rb, 0, e, NULL, 0);
+        buffer_init(&fd->rb, (buffer_op_proto*)&read, e, NULL, 0);
         fd->r = 0;
         b += FD_BUFSIZE / 2;
+
+        buffer_puts(buffer_2, "fdstack depth ");
+        buffer_putlong(buffer_2, depth);
+        buffer_puts(buffer_2, " fda { n=");
+        buffer_putlong(buffer_2, fda->n);
+        buffer_puts(buffer_2, ", e=");
+        buffer_putlong(buffer_2, fda->e);
+        buffer_puts(buffer_2, " }, e=");
+        buffer_putlong(buffer_2, e);
+        buffer_putnlflush(buffer_2);
         fda++;
       }
     }
+    depth++;
+  }
 
   return ret;
 }
