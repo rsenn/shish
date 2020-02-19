@@ -28,7 +28,8 @@ parse_pipeline(struct parser* p) {
     /* create a command list inside the pipeline */
     pipeline->npipe.cmds = node;
     pipeline->npipe.ncmd = 1;
-    cmdptr = &node->ncmd.next;
+    // cmdptr = &pipeline->npipe.cmds;
+    cmdptr = &node->list.next;
 
     /* parse commands and add them to the pipeline
        as long as there are pipe tokens */

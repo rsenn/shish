@@ -323,6 +323,13 @@ typedef union node node_t;
     nptr = &(node)->list.next;                                                                     \
   } while(0);
 
+/* link node to the branch nptr points to */
+#define tree_unshift(node, nptr)                                                                   \
+  do {                                                                                             \
+    (node)->list.next = *(nptr);                                                                   \
+    (*nptr) = (node);                                                                              \
+  } while(0);
+
 /* move node to the node nptr points to */
 #define tree_move(node, nptr)                                                                      \
   do {                                                                                             \

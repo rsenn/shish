@@ -11,14 +11,6 @@
 #include "../lib/stralloc.h"
 #include <stdlib.h>
 
-struct chunk {
-  struct chunk* next;
-  struct chunk** pos;
-  unsigned long size;
-  const char* file;
-  unsigned int line;
-};
-
 /* some ansi colors
  * ----------------------------------------------------------------------- */
 #ifndef COLOR_DEBUG
@@ -55,16 +47,6 @@ struct chunk {
 
 union node;
 
-extern struct chunk* debug_heap;
-extern struct chunk** debug_pos;
-
-void* debug_alloc(const char* file, unsigned int line, unsigned long size);
-void* debug_realloc(const char* file, unsigned int line, void* ptr, unsigned long size);
-void debug_free(const char* file, unsigned int line, void* ptr);
-void debug_error(const char* file, unsigned int line, const char* s);
-
-void debug_memory(void);
-
 void debug_begin(const char* s, int depth);
 void debug_end(int depth);
 void debug_str(const char* msg, const char* s, int depth, char quote);
@@ -82,5 +64,26 @@ void debug_redir(const char* msg, int flags, int depth);
 void debug_subst(const char* msg, int flags, int depth);
 
 #endif /* DEBUG_OUTPUT */
+
+#if DEBUG_ALLOC
+
+struct chunk {
+  struct chunk* next;
+  struct chunk** pos;
+  unsigned long size;
+  const char* file;
+  unsigned int line;
+};
+
+extern struct chunk* debug_heap;
+extern struct chunk** debug_pos;
+
+void* debug_alloc(const char* file, unsigned int line, unsigned long size);
+void* debug_realloc(const char* file, unsigned int line, void* ptr, unsigned long size);
+void debug_free(const char* file, unsigned int line, void* ptr);
+void debug_error(const char* file, unsigned int line, const char* s);
+
+void debug_memory(void);
+#endif
 
 #endif /* DEBUG_H */

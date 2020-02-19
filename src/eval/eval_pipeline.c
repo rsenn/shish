@@ -5,6 +5,7 @@
 #include "../fdtable.h"
 #include "../job.h"
 #include "../tree.h"
+#include "../debug.h"
 #include "../../lib/windoze.h"
 #if !WINDOWS_NATIVE
 #include <sys/wait.h>
@@ -31,6 +32,13 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
     buffer_puts(fd_err->w, "no job control");
     buffer_putnlflush(fd_err->w);
   }
+
+#if DEBUG_OUTPUT
+  for(node = npipe->cmds; node; node = node->list.next) {
+    debug_node(node, 0);
+    buffer_putnlflush(buffer_2);
+  }
+#endif
 
   for(node = npipe->cmds; node; node = node->list.next) {
     fdstack_push(&st);
@@ -77,11 +85,13 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
     pid = job_fork(job, node, npipe->bgnd);
 
     if(!pid) {
+      int exitcode;
       /* no job control for commands inside pipe */
       /*      e->mode &= E_JCTL;*/
+      exitcode = eval_tree(e, node, E_EXIT);
 
       /* exit after evaluating this subtree */
-      exit(eval_tree(e, node, E_EXIT));
+      exit(exitcode);
     }
 
     fdstack_pop(&st);

@@ -498,7 +498,7 @@ file(GLOB SOURCES src/*.h  src/eval/*.c src/exec/*.c src/expand/*.c src/expr/*.c
 #endif(BUILD_DEBUG)
 
 if(DEBUG_ALLOC)
-  list(APPEND SOURCES src/debug/debug_alloc.c src/debug/debug_free.c src/debug/debug_realloc.c src/debug/debug_memory.c )
+  list(APPEND SOURCES src/debug/debug_alloc.c src/debug/debug_free.c src/debug/debug_realloc.c src/debug/debug_error.c src/debug/debug_memory.c )
 endif(DEBUG_ALLOC)
 if(DEBUG_OUTPUT)
   list(APPEND SOURCES src/debug/debug_begin.c src/debug/debug_char.c src/debug/debug_end.c src/debug/debug_error.c src/debug/debug_list.c src/debug/debug_node.c src/debug/debug_ptr.c src/debug/debug_redir.c src/debug/debug_space.c src/debug/debug_stralloc.c src/debug/debug_str.c src/debug/debug_sublist.c src/debug/debug_subnode.c src/debug/debug_subst.c src/debug/debug_ulong.c src/debug/debug_unquoted.c)

@@ -1,6 +1,7 @@
 #include "../debug.h"
+#include <stdlib.h>
 
-#ifdef DEBUG_OUTPUT
+#if DEBUG_ALLOC
 struct chunk* debug_heap = NULL;
 struct chunk** debug_pos = &debug_heap;
 

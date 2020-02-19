@@ -1,6 +1,6 @@
 #include "../debug.h"
 
-#ifdef DEBUG_OUTPUT
+#if DEBUG_ALLOC
 #include "../fd.h"
 #include "../../lib/fmt.h"
 #include "../../lib/str.h"

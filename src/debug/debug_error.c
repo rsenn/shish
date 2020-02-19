@@ -1,7 +1,8 @@
 #include "../debug.h"
 #include <assert.h>
 
-#ifdef DEBUG_OUTPUT
+#if DEBUG_ALLOC
+
 #include "../fd.h"
 #include "../../lib/shell.h"
 

@@ -1,6 +1,6 @@
 #include "../debug.h"
 
-#ifdef DEBUG_OUTPUT
+#ifdef DEBUG_ALLOC
 #include "../sh.h"
 #include <errno.h>
 
