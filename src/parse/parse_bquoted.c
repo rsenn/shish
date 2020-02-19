@@ -36,7 +36,8 @@ parse_bquoted(struct parser* p) {
     return -1;
 
   /* MUST be terminated with right parenthesis or backquote */
-  if(!parse_expect(&subp, P_DEFAULT, ((subp.flags & P_BQUOTE) ? T_BQ : T_RP), cmds))
+  if(!parse_expect(
+         &subp, P_DEFAULT, ((subp.flags & P_BQUOTE) ? T_BQ : T_RP), cmds))
     return -1;
 
   parse_newnode(p, N_ARGCMD);

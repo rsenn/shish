@@ -13,7 +13,7 @@ expand_vars(union node* vars, union node** nptr) {
   *nptr = NULL;
 
   for(var = vars; var; var = var->list.next) {
-    if((n = expand_arg(&var->narg, nptr, X_NOSPLIT))) {
+    if((n = expand_arg(var, nptr, X_NOSPLIT))) {
       nptr = &n;
       ret++;
     }

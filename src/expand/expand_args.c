@@ -13,7 +13,7 @@ expand_args(union node* args, union node** nptr, int flags) {
   *nptr = NULL;
 
   for(arg = args; arg; arg = arg->list.next) {
-    if((n = expand_arg(&arg->narg, nptr, flags))) {
+    if((n = expand_arg(arg, nptr, flags))) {
       nptr = &n;
       ret++;
     }

@@ -1,7 +1,7 @@
 cfg() {
   : ${build:=`gcc -dumpmachine`}
 
-  if [ -z "$host" ]; then
+ (if [ -z "$host" ]; then
     host=$build
     case "$host" in
       x86_64-w64-mingw32) host="$host" builddir=build/$host prefix=/mingw64 ;;
@@ -33,7 +33,22 @@ cfg() {
       -DBUILD_SHARED_LIBS=OFF \
       -DENABLE_PIC=OFF ;;
   esac
-  : ${generator:="Unix Makefiles"}
+  if [ -z "$generator" ]; then
+    if type ninja 2>/dev/null; then
+      builddir=$builddir-ninja
+      generator="Ninja"
+    else
+      generator="Unix Makefiles"
+    fi
+  fi
+  case "$generator" in
+    *" - "*) break ;;
+    *)
+  if type codelite 2>/dev/null; then
+    generator="Sublime Text 2 - $generator"
+  fi
+  ;;
+  esac
 
  (mkdir -p $builddir
   : ${relsrcdir=`realpath --relative-to "$builddir" .`}
@@ -54,7 +69,7 @@ cfg() {
     -DCMAKE_{C,CXX}_FLAGS_RELWITHDEBINFO="-Os -g -ggdb3 -DNDEBUG" \
     ${MAKE:+-DCMAKE_MAKE_PROGRAM="$MAKE"} \
     "$@" \
-    $relsrcdir 2>&1 ) |tee "${builddir##*/}.log"
+    $relsrcdir 2>&1 ) |tee "${builddir##*/}.log")
 }
 
 cfg-android ()

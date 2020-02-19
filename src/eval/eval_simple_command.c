@@ -112,7 +112,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
   /* assemble argument list */
   argc = tree_count(args);
-
+#undef HAVE_ALLOCA
 #ifdef HAVE_ALLOCA
   argv = alloca((argc + 1) * sizeof(char*));
 #else

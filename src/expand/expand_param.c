@@ -139,7 +139,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         n = expand_cat(v, vlen, nptr, flags);
       /* unset, substitute */
       else
-        n = expand_arg(&param->word->narg, nptr, flags);
+        n = expand_arg(param->word, nptr, flags);
       break;
     }
     /* if parameter unset (or null) then expand word to it
@@ -148,7 +148,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       if(v)
         n = expand_cat(v, vlen, nptr, flags);
       else {
-        n = expand_arg(&param->word->narg, nptr, flags | X_NOSPLIT);
+        n = expand_arg(param->word, nptr, flags | X_NOSPLIT);
         var_setvsa(param->name, /* BUG */ &n->narg.stra, V_DEFAULT);
       }
       break;
@@ -161,7 +161,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       else {
         union node* tmpnode = NULL;
 
-        n = expand_arg(&param->word->narg, &tmpnode, flags);
+        n = expand_arg(param->word, &tmpnode, flags);
         sh_error((n && n->narg.stra.s) ? n->narg.stra.s : "parameter null or not set");
         if(tmpnode)
           tree_free(tmpnode);
@@ -173,7 +173,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
          otherwise substitute word */
     case S_ALTERNAT: {
       if(v)
-        n = expand_arg(&param->word->narg, nptr, flags);
+        n = expand_arg(param->word, nptr, flags);
       break;
 
         /* remove smallest matching suffix */

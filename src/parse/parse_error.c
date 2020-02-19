@@ -14,7 +14,7 @@ parse_error(struct parser* p, enum tok_flag toks) {
 
     if(p->tok == T_WORD && p->node && p->node->id == N_ARGSTR) {
       buffer_puts(fd_err->w, "'");
-      buffer_putsa(fd_err->w, p->tree ? &p->tree->nargstr.stra : p->node);
+      buffer_putsa(fd_err->w, p->tree ? &p->tree->nargstr.stra : &p->node->narg.stra);
       buffer_puts(fd_err->w, "' ");
     }
 

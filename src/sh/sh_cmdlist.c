@@ -9,5 +9,6 @@ int
 sh_cmdlist(union node* cmd) {
   int ret;
 
-  ret = eval_cmdlist(sh->eval, cmd);
+  ret = eval_cmdlist(sh->eval, &cmd->ngrp);
+  return ret;
 }

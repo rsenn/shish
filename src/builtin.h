@@ -3,22 +3,23 @@
 
 #include <stdlib.h>
 
-#define B_DEFAULT 0x00
-#define B_SPECIAL 0x01
-#define B_EXEC 0x02
-
+typedef enum {
+  B_DEFAULT =  0x00,
+ B_SPECIAL = 0x01,
+  B_EXEC = 0x02
+} builtin_flag;
 typedef int(builtin_func)(int argc, char** argv);
 
 struct builtin_cmd {
   const char* name;
   builtin_func* fn;
-  int flags;
+  builtin_flag flags;
   const char* args;
 };
 
 extern struct builtin_cmd builtin_table[];
 
-struct builtin_cmd* builtin_search(const char* name, int flags);
+struct builtin_cmd* builtin_search(const char* name, builtin_flag flags);
 
 int builtin_errmsgn(char** argv, const char* s, unsigned int n, char* msg);
 int builtin_errmsg(char** argv, char* s, char* msg);

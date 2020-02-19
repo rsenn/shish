@@ -53,14 +53,14 @@ SpacesInParentheses: false
 SpacesInSquareBrackets: false
 UseTab: Never
 AlwaysBreakAfterDefinitionReturnType: All
-ColumnLimit: 120
+ColumnLimit: 80
 ConstructorInitializerIndentWidth: 4
 ContinuationIndentWidth: 4
 IndentWidth: 2
 MaxEmptyLinesToKeep: 1
-PenaltyBreakBeforeFirstCallParameter: 120
+PenaltyBreakBeforeFirstCallParameter: 80
 PenaltyBreakComment: 300
-PenaltyBreakFirstLessLess: 120
+PenaltyBreakFirstLessLess: 80
 PenaltyBreakString: 1000
 PenaltyExcessCharacter: 1000000
 PenaltyReturnTypeOnItsOwnLine: 100

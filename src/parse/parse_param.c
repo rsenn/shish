@@ -115,7 +115,8 @@ parse_param(struct parser* p) {
   }
   /* check for the other substitution stuff */
   else {
-    /* : before -, =, ?, + means take care of set but null and not only of unset */
+    /* : before -, =, ?, + means take care of set but null and not only of unset
+     */
     if(c == ':') {
       p->node->nargparam.flag |= S_NULL;
       source_next(&c);

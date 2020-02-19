@@ -4,7 +4,7 @@
 
 /* skip any unquoted whitespace preceeding a word
  * ----------------------------------------------------------------------- */
-int
+enum tok_flag
 parse_skipspace(struct parser* p) {
   char c;
 

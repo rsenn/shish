@@ -84,7 +84,8 @@ parse_unquoted(struct parser* p) {
       if(p->sa.len == 0 || scan_uint(p->sa.s, (unsigned int*)&fd) == p->sa.len)
         return redir_parse(p, (c == '<' ? R_IN : R_OUT), fd);
     }
-    /* on a substition word in ${name:word} we parse until a right brace occurs */
+    /* on a substition word in ${name:word} we parse until a right brace occurs
+     */
     else if(p->flags & P_SUBSTW) {
       if(c == '}') {
         source_skip();
@@ -92,11 +93,13 @@ parse_unquoted(struct parser* p) {
         return 1;
       }
     }
-    /* ...when spotted a delimiter (space, or first char of an operator token) */
+    /* ...when spotted a delimiter (space, or first char of an operator token)
+     */
     else if(parse_isctrl(c) || parse_isspace(c)) {
       /* if we're looking for keywords, there is no word tree and
          there is a string in the parser we check for keyworsd */
-      if((p->flags & P_NOKEYWD) || p->tree || p->sa.s == NULL || !parse_keyword(p))
+      if((p->flags & P_NOKEYWD) || p->tree || p->sa.s == NULL ||
+         !parse_keyword(p))
         parse_string(p, flags);
 
       return 1;

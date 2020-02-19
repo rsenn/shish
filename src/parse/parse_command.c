@@ -1,5 +1,6 @@
 #include "../parse.h"
 #include "../tree.h"
+#include "../source.h"
 
 /* parse a compound- or a simple-command
  * (pipeline and lists are done outside this)
@@ -9,27 +10,15 @@ parse_command(struct parser* p, int tempflags) {
   enum tok_flag tok;
   union node* command;
   union node** rptr;
-  int c = 0;
+  char c = 0;
 
   tok = parse_gettok(p, tempflags);
 
   //  source_skipspace(p);
-  do {
-    source_peek(&c);
-    if(!isspace(c))
+  while(source_peek(&c) >= 1) {
+    if(!parse_isspace(c))
       break;
     source_skip();
-
-  } while(1);
-
-  if(c == '(') {
-    source_skip();
-    source_peek(&c);
-    if(c == ')') {
-      source_skip();
-      p->pushback++;
-      return parse_function(p);
-    }
   }
 
   switch(tok) {
@@ -55,6 +44,15 @@ parse_command(struct parser* p, int tempflags) {
 
     /* handle simple commands */
     case T_NAME:
+      if(c == '(') {
+        char ch[2];
+        if(source_peekn(ch, 1) >= 2 && ch[1] == ')') {
+          source_skip();
+          source_skip();
+          p->pushback++;
+          return parse_function(p);
+        }
+      }
     case T_WORD:
     case T_REDIR:
     case T_ASSIGN:
@@ -63,7 +61,10 @@ parse_command(struct parser* p, int tempflags) {
       break;
 
     /* it wasn't a compound command, return now */
-    default: p->pushback++; return NULL;
+    default:
+      command = 0;
+      p->pushback++;
+      return NULL;
   }
 
   if(command) {

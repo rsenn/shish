@@ -12,7 +12,8 @@ parse_arith_binary(struct parser* p, int precedence) {
   char a, b;
   int prec = precedence;
 
-  lnode = precedence < 1 ? parse_arith_unary(p) : parse_arith_binary(p, precedence - 1);
+  lnode = precedence < 1 ? parse_arith_unary(p)
+                         : parse_arith_binary(p, precedence - 1);
 
   if(lnode == NULL)
     return NULL;
@@ -97,7 +98,8 @@ parse_arith_binary(struct parser* p, int precedence) {
   source_skip();
   parse_skipspace(p);
 
-  rnode = precedence < 1 ? parse_arith_unary(p) : parse_arith_binary(p, precedence - 1);
+  rnode = precedence < 1 ? parse_arith_unary(p)
+                         : parse_arith_binary(p, precedence - 1);
 
   if(rnode == NULL) {
     tree_free(lnode);

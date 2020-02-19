@@ -34,7 +34,7 @@ parse_case(struct parser* p) {
   tok = parse_gettok(p, P_DEFAULT);
   if(p->node->id != N_ARGSTR || stralloc_diffs(&p->node->nargstr.stra, "in")) {
     tree_free(word);
-    return -1;
+    return NULL;
   }
 
   /*
@@ -73,7 +73,9 @@ parse_case(struct parser* p) {
     /* parse the compound list */
     (*cptr)->ncasenode.cmds = parse_compound_list(p);
 
-    /* expect esac or ;; */
+    /* expect ec
+
+    tzsac or ;; */
     if(!parse_expect(p, P_DEFAULT, T_ESAC | T_ECASE, node))
       return NULL;
 

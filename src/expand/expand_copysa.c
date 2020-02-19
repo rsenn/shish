@@ -10,7 +10,7 @@ expand_copysa(union node* node, stralloc* sa, int flags) {
   union node* n = &tmpnode;
 
   stralloc_init(&tmpnode.narg.stra);
-  expand_arg(&node->narg, &n, flags | X_NOSPLIT);
+  expand_arg(node, &n, flags | X_NOSPLIT);
   byte_copy(sa, sizeof(stralloc), &tmpnode.narg.stra);
   stralloc_nul(sa);
 }

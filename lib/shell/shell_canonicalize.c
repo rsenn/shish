@@ -1,6 +1,7 @@
 #include <sys/stat.h>
 
 #include "../windoze.h"
+#include "../../src/parse.h"
 #include "../shell.h"
 
 #ifndef _XOPEN_SOURCE
@@ -29,7 +30,7 @@
 #endif
 
 #ifndef PATH_MAX
-#if WINDOWS
+#if WINDOWS_NATIVE
 #include <windows.h>
 #endif
 #define PATH_MAX MAX_PATH
@@ -109,7 +110,7 @@ is_absolute(const char* p) {
   if(len > 0 && p[0] == '/')
     return 1;
 #if WINDOWS
-  if(len >= 3 && isalnum(p[0]) && p[1] == ':' && path_issep(p[2]))
+  if(len >= 3 && parse_isalnum(p[0]) && p[1] == ':' && path_issep(p[2]))
     return 1;
 #endif
   return 0;

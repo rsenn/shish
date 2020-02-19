@@ -45,5 +45,5 @@ debug_list(union node* n, int depth) {
       debug_end(depth);
     buffer_flush(fd_err->w);
   }
-#endif /* DEBUG_OUTPUT */
 }
+#endif /* DEBUG_OUTPUT */
