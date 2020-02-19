@@ -215,7 +215,7 @@ int parse_word(struct parser* p);
 union node* parse_and_or(struct parser* p);
 union node* parse_case(struct parser* p);
 union node* parse_command(struct parser* p, int tempflags);
-union node* parse_compound_list(struct parser* p, enum tok_id end_tok);
+union node* parse_compound_list(struct parser* p, enum tok_flag end_tok);
 union node* parse_for(struct parser* p);
 union node* parse_function(struct parser* p);
 union node* parse_getarg(struct parser* p);
