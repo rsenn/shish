@@ -40,13 +40,13 @@ exec_command(
 
     sh_push(&sh);
     sh.arg.v = argv;
-    for(sh.arg.c = 0; argv[sh.arg.c];sh.arg.c++) 
+    for(sh.arg.c = 0; argv[sh.arg.c]; sh.arg.c++)
       ;
 
     sh.arg.v++;
     sh.arg.c--;
 
-//    sh_setargs(argv, 0);
+    //    sh_setargs(argv, 0);
     eval_push(&e, 0);
     eval_cmdlist(&e, &cmd.fn->ngrp);
     ret = eval_pop(&e);
