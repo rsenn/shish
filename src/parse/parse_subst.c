@@ -10,7 +10,7 @@ parse_subst(struct parser* p) {
     return -1;
 
   if(c == '(') {
-    if(source_peek(&c) <= 0)
+    if(source_peekn(&c, 1) <= 0)
       return -1;
 
     if(c == '(') {

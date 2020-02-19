@@ -58,6 +58,8 @@ parse_gettok(struct parser* p, int tempflags) {
       if(p->tok & (T_ASSIGN | T_WORD | T_NAME)) {
         debug_list(p->tree, -1);
       } else if(p->tok & T_REDIR) {
+        debug_ulong(" fd", p->tree->nredir.fdes, -1);
+        debug_redir("",  p->tree->nredir.flag, -1);
         debug_list(p->tree->nredir.list, -1);
         if(p->tree->nredir.data)
           debug_list(p->tree->nredir.data, -1);
