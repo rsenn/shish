@@ -8,7 +8,7 @@ struct fd;
 struct source {
   buffer* b;
   int mode;
-  unsigned int line;
+  unsigned int line, column;
   struct source* parent;
 };
 

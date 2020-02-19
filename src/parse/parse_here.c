@@ -7,6 +7,7 @@
 int
 parse_here(struct parser* p, stralloc* delim, int nosubst) {
   int r = 0;
+  union node* n;
 
   /* if there is still a tree from the last call then remove it */
   if(p->tree)
@@ -20,9 +21,14 @@ parse_here(struct parser* p, stralloc* delim, int nosubst) {
   source->mode |= SOURCE_HERE;
 
   for(;;) {
+    p->flags |= P_HERE;
     /* if nosubst is set we treat it like single-quoted otherwise
        like double-quoted, allowing parameter and command expansions */
-    if((nosubst ? parse_squoted : parse_dquoted)(p)) {
+     r= (nosubst ? parse_squoted : parse_dquoted)(p);
+    p->flags &= ~P_HERE;
+
+
+     if(r) {
       r = -1;
       break;
     }
@@ -32,9 +38,11 @@ parse_here(struct parser* p, stralloc* delim, int nosubst) {
       continue;
     }
 
+    parse_string(p, 0);
+
     /* when the parser yields an argstr node
        we have to check for the delimiter */
-    if(p->node->id == N_ARGSTR) {
+    if(p->node && p->node->id == N_ARGSTR) {
       unsigned int si, di;
       stralloc* sa;
 
@@ -65,7 +73,12 @@ parse_here(struct parser* p, stralloc* delim, int nosubst) {
         continue;
 
       stralloc_trunc(sa, ++si);
-      parse_string(p, 0);
+
+      n = tree_newnode(N_ARGSTR);
+      n->nargstr.next = p->node;
+      p->node = n;
+
+     // parse_string(p, 0);
       break;
     }
   }

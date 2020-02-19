@@ -15,7 +15,7 @@ parse_squoted(struct parser* p) {
     if(source_get(&c) <= 0)
       return -1;
 
-    if(c == '\'') {
+    if(!(p->flags & P_HERE) && c == '\'') {
       parse_string(p, 0);
       p->quot = Q_UNQUOTED;
       break;
@@ -26,8 +26,8 @@ parse_squoted(struct parser* p) {
 
     stralloc_catc(&p->sa, c);
 
-    if(c == '\n')
-      break;
+    if((p->flags & P_HERE) &&   c == '\n')
+      return 0;
   }
 
   parse_string(p, 0);

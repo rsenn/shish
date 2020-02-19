@@ -2,8 +2,10 @@
 #include "../../lib/shell.h"
 
 static void
-fd_freebuf(buffer*b ) {
+fd_freebuf(buffer* b) {
   shell_free(b->x);
+  b->x = NULL;
+  b->a = 0;
 }
 
 /* allocate buffer space for the (fd).

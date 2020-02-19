@@ -6,8 +6,6 @@
  * ----------------------------------------------------------------------- */
 void
 fd_close(struct fd* fd) {
-  /* fd is only really closed if there are no duplicates */
-  fdstack_unref(fd);
 
   if(!(fd->mode & D_DUP)) {
     /* update lowest fd if we're below */
@@ -39,7 +37,12 @@ fd_close(struct fd* fd) {
   /* if the buffer space was temporary then set it to NULL
      so this space isn't used below the current stack level */
   if(fd->mode & D_TMPBUF) {
-    /*   buffer_free(&fd->rb);
-       buffer_free(&fd->wb);*/
+    fd->rb.x = 0;
+    fd->rb.a = 0;
+    fd->wb.x = 0;
+    fd->wb.a = 0;
   }
+
+  /* fd is only really closed if there are no duplicates */
+  fdstack_unref(fd);
 }

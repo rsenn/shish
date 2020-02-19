@@ -15,6 +15,7 @@
 #include "../redir.h"
 #include "../tree.h"
 #include "../vartab.h"
+#include "../debug.h"
 #include "../../lib/windoze.h"
 #include "../../lib/str.h"
 #if !WINDOWS_NATIVE
@@ -38,7 +39,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   union command cmd = {NULL};
   enum hash_id id = H_BUILTIN;
   struct vartab vars;
-  /*  struct fdstack io;*/
+  struct fdstack io;
   union node* r;
   union node* redir = ncmd->rdir;
   char buf[FD_BUFSIZE];
@@ -65,16 +66,15 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   }
 
   /* do redirections if present */
-  /*  if(redir && id != H_SBUILTIN && id != H_EXEC)
-      fdstack_push(&io);*/
+  if(redir && id != H_SBUILTIN && id != H_EXEC)
+    fdstack_push(&io);
 
   if(redir /* && id != H_PROGRAM*/) {
-    for(r = redir; r; r = r->list.next) {
+    for(r = redir; r; r = r->nredir.next) {
       struct fd* fd = NULL;
 
       /* if its the exec special builtin the new fd needs to be persistent */
       if(id != H_EXEC) {
-#undef HAVE_ALLOCA
 #ifdef HAVE_ALLOCA
         fd = fd_alloca();
 #else
@@ -97,6 +97,17 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
         else
           fd_allocbuf(r->nredir.fd, FD_BUFSIZE);
       }
+
+#if DEBUG_OUTPUT
+      buffer_puts(fd_err->w, "Redirection ");
+      debug_node(r, -1);
+      if(r->nredir.fd) {
+        buffer_puts(fd_err->w, "fd { n= ");
+        buffer_putulong(fd_err->w, r->nredir.fd->n);
+        buffer_puts(fd_err->w, " }");
+      }
+      buffer_putnlflush(fd_err->w);
+#endif
     }
   }
 
@@ -116,7 +127,6 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
   /* assemble argument list */
   argc = tree_count(args);
-#undef HAVE_ALLOCA
 #ifdef HAVE_ALLOCA
   argv = alloca((argc + 1) * sizeof(char*));
 #else
@@ -155,15 +165,16 @@ end:
     tree_free(args);
 
   /* undo redirections */
-  if(id != H_EXEC) {
-    for(r = redir; r; r = r->list.next) {
+
+  if(fdstack == &io)
+    fdstack_pop(&io);
+  else if(id != H_EXEC) {
+    for(r = redir; r; r = r->nredir.next) {
       fd_pop(r->nredir.fd);
     }
   }
 
   sh->exitcode = status;
-  /*  if(fdstack == &io)
-      fdstack_pop(&io);*/
 
   return status;
 }

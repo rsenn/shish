@@ -44,7 +44,7 @@ parse_dquoted(struct parser* p) {
     }
     /* when spotted a closing quote,
        skip it and unset quotation mode */
-    else if(c == '"') {
+    else if(!(p->flags & P_HERE) && c == '"') {
       source_skip();
       parse_string(p, 0);
       p->quot = Q_UNQUOTED;
@@ -59,7 +59,7 @@ parse_dquoted(struct parser* p) {
     stralloc_catc(&p->sa, c);
 
     /* return on a newline for the here-doc delimiter check */
-    if(c == '\n')
+    if((p->flags & P_HERE) && c == '\n')
       break;
   }
 

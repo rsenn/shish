@@ -36,7 +36,10 @@ parse_gettok(struct parser* p, int tempflags) {
 
 #ifdef DEBUG_OUTPUT
     if(p->tok != -1) {
-      buffer_puts(fd_err->w, "Got token ");
+      buffer_putulong(fd_err->w, source->line+1);
+      buffer_puts(fd_err->w, ":");
+      buffer_putulong(fd_err->w, source->column);
+      buffer_puts(fd_err->w, ": Got token ");
       if(p->flags) {
         char buf[8];
         buffer_puts(fd_err->w, "(");
@@ -52,8 +55,12 @@ parse_gettok(struct parser* p, int tempflags) {
 
       buffer_puts(fd_err->w, parse_tokname(p->tok, 0));
 
-      if(p->tok & (T_ASSIGN | T_WORD | T_NAME)) {
+      if(p->tok & (T_ASSIGN | T_WORD | T_NAME )) {
         debug_list(p->tree, -1);
+      } else if(p->tok & T_REDIR) {
+        debug_list(p->tree->nredir.list, -1);
+        if(p->tree->nredir.data)
+        debug_list(p->tree->nredir.data, -1);
       } else if(p->tok != T_NL && p->tree && p->tree->id >= N_ARGSTR) {
         stralloc* sa = &p->tree->nargstr.stra;
         buffer_puts(fd_err->w, " '");

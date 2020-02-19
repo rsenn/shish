@@ -12,4 +12,5 @@ source_newline(void) {
 
   /* advance to next line */
   source->line++;
+  source->column = 0;
 }

@@ -21,7 +21,7 @@ redir_source(void) {
   for(; redir_list; redir_list = &redir_list->data->nredir) {
     /* expand the delimiter */
     stralloc_init(&delim);
-    expand_catsa((union node*)redir_list, &delim, 0);
+    expand_catsa(redir_list->list, &delim, 0);
 
     /* when any character of the delimiter has been escaped
        then treat the whole here-doc as non-expanded word */
