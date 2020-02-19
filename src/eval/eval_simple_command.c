@@ -99,14 +99,14 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
       }
 
 #if DEBUG_OUTPUT
-      buffer_puts(fd_err->w, "Redirection ");
+      buffer_puts(buffer_2, "Redirection ");
       debug_node(r, -1);
       if(r->nredir.fd) {
-        buffer_puts(fd_err->w, "fd { n= ");
-        buffer_putulong(fd_err->w, r->nredir.fd->n);
-        buffer_puts(fd_err->w, " }");
+        buffer_puts(buffer_2, "fd { n= ");
+        buffer_putulong(buffer_2, r->nredir.fd->n);
+        buffer_puts(buffer_2, " }");
       }
-      buffer_putnlflush(fd_err->w);
+      buffer_putnlflush(buffer_2);
 #endif
     }
   }
@@ -136,7 +136,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
   if(sh->flags & SH_DEBUG) {
     char** arg;
-    buffer_puts(fd_err->w, "+");
+    buffer_puts(buffer_2, "+");
     for(arg = argv; *arg; arg++) {
       int quote = !!(*arg)[str_chr(*arg, ' ')];
       buffer_putspace(fd_err->w);

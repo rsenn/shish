@@ -11,14 +11,14 @@ debug_ptr(const char* msg, void* ptr, int depth) {
   char buf[FMT_XLONG];
   unsigned long n;
   debug_space(depth, 0);
-  buffer_puts(fd_err->w, COLOR_YELLOW);
-  buffer_puts(fd_err->w, msg);
-  buffer_puts(fd_err->w, COLOR_CYAN " = ");
+  buffer_puts(buffer_2, COLOR_YELLOW);
+  buffer_puts(buffer_2, msg);
+  buffer_puts(buffer_2, COLOR_CYAN " = ");
   n = fmt_xlong(buf, (unsigned long)ptr);
-  buffer_puts(fd_err->w, "0x");
-  buffer_putnspace(fd_err->w, 8 - n);
-  buffer_put(fd_err->w, buf, n);
-  buffer_puts(fd_err->w, COLOR_NONE "\n");
-  buffer_flush(fd_err->w);
+  buffer_puts(buffer_2, "0x");
+  buffer_putnspace(buffer_2, 8 - n);
+  buffer_put(buffer_2, buf, n);
+  buffer_puts(buffer_2, COLOR_NONE "\n");
+  buffer_flush(buffer_2);
 }
 #endif /* DEBUG_OUTPUT */

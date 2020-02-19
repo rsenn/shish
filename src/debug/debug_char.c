@@ -8,9 +8,9 @@
 void
 debug_char(const char* msg, char c, int depth) {
   debug_space(depth, 0);
-  buffer_puts(fd_err->w, msg);
-  buffer_puts(fd_err->w, " = ");
-  buffer_put(fd_err->w, &c, 1);
-  buffer_putnlflush(fd_err->w);
+  buffer_puts(buffer_2, msg);
+  buffer_puts(buffer_2, " = ");
+  buffer_put(buffer_2, &c, 1);
+  buffer_putnlflush(buffer_2);
 }
 #endif /* defined(DEBUG_OUTPUT) */

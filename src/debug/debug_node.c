@@ -184,11 +184,11 @@ debug_node(union node* node, int depth) {
     int flag = (node->nargstr.flag & 0x7);
     debug_subst(0, flag, depth);
     if(flag)
-      buffer_putspace(fd_err->w);
+      buffer_putspace(buffer_2);
 
-    buffer_puts(fd_err->w, COLOR_LIGHTBLUE "${");
+    buffer_puts(buffer_2, COLOR_LIGHTBLUE "${");
     debug_str(0, node->nargparam.name, depth, 0);
-    buffer_puts(fd_err->w, "}" COLOR_NONE);
+    buffer_puts(buffer_2, "}" COLOR_NONE);
 
     if((node->nargparam.flag & S_VAR) >> 8) {
       debug_space(depth, 0);

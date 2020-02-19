@@ -27,7 +27,7 @@ builtin_set(int argc, char* argv[]) {
 
   if(argv[shell_optind])
     sh_setargs(&argv[shell_optind], 1);
-  else
+  else if(!(debug || exit_on_err))
     vartab_print(V_DEFAULT);
 
   return 0;

@@ -32,13 +32,13 @@ debug_redir(const char* msg, int flags, int depth) {
     strcat(flagstr, "|R_CLOBBER");
 
   if(msg) {
-    buffer_puts(fd_err->w, COLOR_YELLOW);
-    buffer_puts(fd_err->w, msg);
-    buffer_puts(fd_err->w, COLOR_CYAN DEBUG_EQU);
+    buffer_puts(buffer_2, COLOR_YELLOW);
+    buffer_puts(buffer_2, msg);
+    buffer_puts(buffer_2, COLOR_CYAN DEBUG_EQU);
   }
-  buffer_puts(fd_err->w, COLOR_MAGENTA);
-  buffer_puts(fd_err->w, flagstr);
-  buffer_puts(fd_err->w, COLOR_NONE);
+  buffer_puts(buffer_2, COLOR_MAGENTA);
+  buffer_puts(buffer_2, flagstr);
+  buffer_puts(buffer_2, COLOR_NONE);
 
   debug_space(depth, 0);
 }

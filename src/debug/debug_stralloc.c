@@ -9,14 +9,14 @@
 void
 debug_stralloc(const char* msg, stralloc* s, int depth, char quote) {
   if(msg) {
-    buffer_puts(fd_err->w, COLOR_YELLOW);
-    buffer_puts(fd_err->w, msg);
-    buffer_puts(fd_err->w, COLOR_CYAN DEBUG_EQU COLOR_NONE);
+    buffer_puts(buffer_2, COLOR_YELLOW);
+    buffer_puts(buffer_2, msg);
+    buffer_puts(buffer_2, COLOR_CYAN DEBUG_EQU COLOR_NONE);
   }
 
-  buffer_puts(fd_err->w, quote ? COLOR_CYAN : COLOR_YELLOW);
+  buffer_puts(buffer_2, quote ? COLOR_CYAN : COLOR_YELLOW);
   if(quote)
-    buffer_putc(fd_err->w, quote);
+    buffer_putc(buffer_2, quote);
 
   if(s->len && s->s) {
     const char* x = s->s;
@@ -24,16 +24,16 @@ debug_stralloc(const char* msg, stralloc* s, int depth, char quote) {
 
     while(x < end) {
       /*  if(*x == '\n')
-          buffer_puts(fd_err->w, "\\n");
+          buffer_puts(buffer_2, "\\n");
         else*/
 
-      buffer_putc(fd_err->w, *x);
+      buffer_putc(buffer_2, *x);
       x++;
     }
   }
   if(quote)
-    buffer_putc(fd_err->w, quote);
+    buffer_putc(buffer_2, quote);
 
-  buffer_puts(fd_err->w, COLOR_NONE);
+  buffer_puts(buffer_2, COLOR_NONE);
 }
 #endif /* DEBUG_OUTPUT */

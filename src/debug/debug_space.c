@@ -6,19 +6,19 @@
 void
 debug_space(int count, int newline) {
 
-  if(!newline && fd_err->w->n == fd_err->w->p)
+  if(!newline && buffer_2->n == buffer_2->p)
     return;
 
   if(newline) {
-    buffer_put(fd_err->w, "\n", 1);
+    buffer_put(buffer_2, "\n", 1);
     if(count < 0) {
-      buffer_putspace(fd_err->w);
+      buffer_putspace(buffer_2);
     } else {
-      buffer_putnspace(fd_err->w, count * DEBUG_SPACE + 1);
+      buffer_putnspace(buffer_2, count * DEBUG_SPACE + 1);
     }
   } else {
-    buffer_putspace(fd_err->w);
+    buffer_putspace(buffer_2);
   }
-  buffer_flush(fd_err->w);
+  buffer_flush(buffer_2);
 }
 #endif /* DEBUG_OUTPUT */
