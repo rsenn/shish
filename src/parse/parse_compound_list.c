@@ -16,19 +16,19 @@ parse_compound_list(struct parser* p, enum tok_id end_tok) {
 
   for(;;) {
     if(end_tok == T_END)
-    p->flags &= ~P_NOKEYWD;
+      p->flags &= ~(P_NOKEYWD | P_SKIPNL);
 
-  /* skip arbitrary newlines */
-  while(parse_gettok(p, P_DEFAULT) & T_NL)
-    ;
-  p->pushback++;
-
-   if(parse_gettok(p, P_DEFAULT) == end_tok) {
+    /* skip arbitrary newlines */
+    while(parse_gettok(p, P_DEFAULT) & T_NL)
+      ;
     p->pushback++;
-    break;
-   }
 
-  p->pushback++;
+    if(parse_gettok(p, P_DEFAULT) == end_tok) {
+      p->pushback++;
+      break;
+    }
+
+    p->pushback++;
 
     /* try to parse a list */
     *nptr = parse_list(p);
@@ -36,9 +36,9 @@ parse_compound_list(struct parser* p, enum tok_id end_tok) {
     /* skip arbitrary newlines */
     while(p->tok & T_NL) parse_gettok(p, P_DEFAULT);
     p->pushback++;
-/* 
-    if(end_tok != -1 && (p->tok & end_tok))
-      break; */
+    /*
+        if(end_tok != -1 && (p->tok & end_tok))
+          break; */
 
     /* no more lists */
     if(*nptr == NULL)
