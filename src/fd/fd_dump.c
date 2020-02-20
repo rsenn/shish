@@ -37,6 +37,7 @@ fd_dump(struct fd* fd, buffer* b) {
     fd_getname(fd);
 
   /* file descriptor */
+  buffer_puts(b, "fd#");
   buffer_putlong(b, fd->n);
   buffer_putspace(b);
 
@@ -52,6 +53,8 @@ fd_dump(struct fd* fd, buffer* b) {
   /* level */
   buffer_puts(b, " level=");
   buffer_putlong(b, fd->stack->level);
+  buffer_puts(b, " e=");
+  buffer_putlong(b, fd->e);
   buffer_puts(b, " mode=");
 
   /* flags */

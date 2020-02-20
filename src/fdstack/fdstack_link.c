@@ -4,12 +4,16 @@
  * ----------------------------------------------------------------------- */
 void
 fdstack_link(struct fdstack* st, struct fd* fd) {
-  fd->link = &st->list;
-  fd->next = *fd->link;
 
-  if(fd->next)
-    fd->next->link = &fd->next;
+  struct fd** ptr;
 
-  st->list = fd;
+  for(ptr = &st->list; *ptr; ptr = &(*ptr)->next)
+    ;
+
+  fd->link = ptr;
+  fd->next = 0;
+
+  *ptr = fd;
+
   fd->stack = st;
 }

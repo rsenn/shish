@@ -15,12 +15,12 @@ fdstack_data(void) {
   long n;
   char b[FD_BUFSIZE / 2];
 
-  for(st = fdstack; st; st = st->parent)
+  for(st = fdstack; st; st = st->parent) {
     for(fd = st->list; fd; fd = fd->next) {
       /* read from the child and put it into output subst buffer */
       if((fd->mode & FD_WRITE)) {
 
-        while((n = read(fd->rb.fd, b, sizeof(b))) > 0) buffer_put(fd->w, b, n);
+        while((n = read(fdtable[1]->rb.fd, b, sizeof(b))) > 0) buffer_put(fd->w, b, n);
 
         buffer_flush(fd->w);
       }
@@ -32,6 +32,7 @@ fdstack_data(void) {
               write(fd->e, b, n);
           }*/
     }
+  }
 
   return 0;
 }

@@ -42,17 +42,10 @@ fd_pipe(struct fd* fd) {
     e = p[1];
   }
 
-  /*   buffer_puts(buffer_2, "fd#");
-    buffer_putlong(buffer_2, fd->n);
-    buffer_puts(buffer_2,
-                (fd->mode & FD_READ)
-                    ? "FD_READ"
-                    : (fd->mode & FD_WRITE)
-                          ? "FD_WRITE"
-                          : (fd->mode & FD_READWRITE) == FD_READWRITE ? "FD_READWRITE" : "");
-    buffer_puts(buffer_2, " e=");
-    buffer_putlong(buffer_2, fd->e);
-   */
+  buffer_puts(buffer_2, "pipe e=");
+  buffer_putlong(buffer_2, e);
+  buffer_puts(buffer_2, " ");
+
   fd_dump(fd, buffer_2);
   buffer_putnlflush(buffer_2);
 

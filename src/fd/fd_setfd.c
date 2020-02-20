@@ -27,19 +27,6 @@ fd_setfd(struct fd* fd, int e) {
     fd->wb.fd = e;
     fd->w = &fd->wb;
   }
-  /*
-    buffer_puts(buffer_2, "setfd#");
-    buffer_putlong(buffer_2, fd->n);
-    buffer_puts(buffer_2, " e=");
-    buffer_putlong(buffer_2, e);
-    buffer_puts(buffer_2, " mode=");
-    buffer_puts(buffer_2,
-                (fd->mode & FD_READ)
-                    ? "FD_READ"
-                    : (fd->mode & FD_WRITE)
-                          ? "FD_WRITE"
-                          : (fd->mode & FD_READWRITE) == FD_READWRITE ? "FD_READWRITE" : "");
-    buffer_putnlflush(buffer_2); */
 
   /* track the file descriptor */
   fd->e = e;
@@ -56,5 +43,21 @@ fd_setfd(struct fd* fd, int e) {
       fd_lo = e;
   }
 
+  if(fd->e != -1) {
+    buffer_putlong(buffer_2, getpid());
+    buffer_puts(buffer_2, " setfd#");
+    buffer_putlong(buffer_2, fd->n);
+    buffer_puts(buffer_2, " e=");
+    buffer_putlong(buffer_2, fd->e);
+    buffer_puts(buffer_2, " mode=");
+    buffer_puts(buffer_2,
+                (fd->mode & FD_READ)
+                    ? "FD_READ"
+                    : (fd->mode & FD_WRITE)
+                          ? "FD_WRITE"
+                          : (fd->mode & FD_READWRITE) == FD_READWRITE ? "FD_READWRITE" : "");
+
+    buffer_putnlflush(buffer_2);
+  }
   return e;
 }

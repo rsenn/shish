@@ -28,17 +28,12 @@ fdstack_pipe(unsigned int n, struct fd* fda) {
 
         fd_push(fda, fd->n, FD_WRITE | FD_FLUSH);
         fd_setbuf(fda, b, FD_BUFSIZE / 2);
+        buffer_puts(buffer_2, "fdstack ");
 
         e = fd_pipe(fda);
-        buffer_init(&fd->rb, (buffer_op_proto*)&read, e, NULL, 0);
-        fd->r = 0;
+        buffer_init(&fda->parent->rb, (buffer_op_proto*)&read, e, NULL, 0);
+        fda->parent->r = 0;
         b += FD_BUFSIZE / 2;
-
-        buffer_puts(buffer_2, "fdstack depth ");
-        buffer_putlong(buffer_2, depth);
-        buffer_puts(buffer_2, " fda=");
-
-        fd_dump(fda, buffer_2);
 
         buffer_putnlflush(buffer_2);
         fda++;

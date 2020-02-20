@@ -1,6 +1,7 @@
 #include "../fd.h"
 #include "../fdstack.h"
 #include "../fdtable.h"
+#include <unistd.h>
 
 /* flush and close buffers and free the associated ressources
  * ----------------------------------------------------------------------- */
@@ -29,9 +30,22 @@ fd_close(struct fd* fd) {
 
   /* if the buffers belong to this (fd) we close them
      don't close twice if we also have a writing buf */
-  if(fd->rb.fd != fd->wb.fd)
+  if(fd->rb.fd != fd->wb.fd) {
+    if(fd->rb.fd != -1 && (fd->mode & FD_READ)) {
+      buffer_putlong(buffer_2, getpid());
+      buffer_puts(buffer_2, " close fd#");
+      buffer_putlong(buffer_2, fd->rb.fd);
+      buffer_putnlflush(buffer_2);
+    }
     buffer_close(&fd->rb);
+  }
 
+  if(fd->wb.fd != -1 && (fd->mode & FD_WRITE)) {
+    buffer_putlong(buffer_2, getpid());
+    buffer_puts(buffer_2, " close fd#");
+    buffer_putlong(buffer_2, fd->wb.fd);
+    buffer_putnlflush(buffer_2);
+  }
   buffer_close(&fd->wb);
 
   /* if the buffer space was temporary then set it to NULL
