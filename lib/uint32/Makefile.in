@@ -19,7 +19,7 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 LIB = ../libshish.a
-MODULES = uint32_pack_big uint32_pack uint32_prng uint32_random uint32_read_big uint32_read uint32_seed uint32_unpack_big uint32_unpack
+MODULES = uint32_prng uint32_random uint32_seed
 
 
 SOURCES = $(MODULES:%=%.c)
