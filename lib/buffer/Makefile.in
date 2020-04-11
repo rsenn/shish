@@ -21,9 +21,7 @@ include $(top_builddir)/config.mk
 LIB = ../libshish.a
 
 MODULES = buffer_2 buffer_close buffer_default buffer_dummyreadmmap buffer_dump buffer_feed buffer_flush buffer_free buffer_frombuf buffer_fromsa buffer_fromstr buffer_getc buffer_get_until buffer_init buffer_mmapread buffer_mmapread_fd buffer_munmap buffer_prefetch buffer_put8long buffer_put buffer_putc buffer_putflush buffer_putlong0 buffer_putlong buffer_putlonglong buffer_putm_internal buffer_putnc buffer_putnlflush buffer_putnspace buffer_putptr buffer_putsa buffer_puts buffer_putspace buffer_putulong0 buffer_putulong buffer_putulonglong buffer_putxlong0 buffer_putxlong buffer_putxlonglong0 buffer_putxlonglong buffer_skip_until buffer_stubborn2 buffer_stubborn buffer_tosa buffer_truncfile
-
-
-          
+ 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
 DEPS    = $(MODULES:%=%.d)
