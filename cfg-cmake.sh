@@ -96,7 +96,7 @@ cfg-diet() {
   : ${libdir=/opt/diet/lib-${host%%-*}}
   : ${bindir=/opt/diet/bin-${host%%-*}}
 
-  : ${CC="diet-gcc"}
+  : ${CC="gcc"}
   export CC
 
   builddir=build/${host%-*}-diet \
@@ -108,7 +108,6 @@ cfg-diet() {
     -DSHARED_LIBS=OFF \
     -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_VERBOSE_MAKEFILE=ON \
-      ${launcher:+-DCMAKE_C_COMPILER_LAUNCHER="$launcher"} \
     "$@")
 }
 
@@ -118,7 +117,7 @@ cfg-diet64() {
   host=x86_64-${host#*-}
 
   builddir=build/$host \
-  CC="diet-gcc" \
+  CC="gcc" \
   cfg-diet \
   "$@")
 }
@@ -130,9 +129,9 @@ cfg-diet32() {
 
   builddir=build/$host \
   CFLAGS="-m32" \
-  launcher="/opt/diet/bin-i386/diet" \
   cfg-diet \
-  "$@")
+  "$@"
+  )
 }
 
 cfg-mingw() {
