@@ -1,0 +1,45 @@
+# $Id: Makefile.in,v 1.10 2005/04/15 18:15:12 smoli Exp $
+# ===========================================================================
+#
+# Makefile for lib/wait subdirectory
+#
+# relative directories
+# ---------------------------------------------------------------------------
+srcdir       = @srcdir@
+top_srcdir   = @top_srcdir@
+top_builddir = @top_builddir@
+thisdir      = lib/wait/
+
+VPATH        = $(srcdir)
+
+# include global make configuration
+# ---------------------------------------------------------------------------
+include $(top_builddir)/config.mk
+          
+# configuration for this directory
+# ---------------------------------------------------------------------------
+LIB = ../libshish.a
+
+MODULES = wait_nohang wait_pid wait_pid_nohang waitpid_nointr wait_pids_nohang
+
+SOURCES = $(MODULES:%=%.c)
+OBJECTS = $(MODULES:%=%.o)
+DEPS    = $(MODULES:%=%.d)
+
+# targets for this directory
+# ---------------------------------------------------------------------------
+all: Makefile .libdep
+install: 
+
+# dependencies
+# ---------------------------------------------------------------------------
+-include $(DEPS)
+
+# local build configuration
+# ---------------------------------------------------------------------------
+INCLUDES += -I$(top_srcdir)/lib -I.
+#INCLUDES += -I$(top_builddir)/lib
+          
+# include build.mk (makefile helper)
+# ---------------------------------------------------------------------------
+include $(top_builddir)/build.mk
