@@ -19,15 +19,8 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = exec.a
-MODULES = exec_check \
-          exec_command \
-          exec_create \
-          exec_error \
-          exec_hash \
-          exec_path \
-          exec_program \
-          exec_search
-          
+MODULES = exec_check exec_command exec_create exec_error exec_hash exec_hashstr exec_path exec_program exec_search
+
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
 DEPS    = $(MODULES:%=%.d)

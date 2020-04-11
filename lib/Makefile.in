@@ -35,8 +35,7 @@ CHMOD = chmod
 
 # directory configuration
 # ---------------------------------------------------------------------------
-SUBDIRS              = buffer byte fmt mmap open scan shell str stralloc uint32 uint64
-ROOT                 = 0
+SUBDIRS              = buffer byte fmt mmap open scan shell str stralloc uint32 uint64 wait
 RECURSIVE            = 1
 
 LIBRARY = libshish.a

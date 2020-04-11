@@ -19,20 +19,7 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = eval.a
-MODULES = eval_and_or \
-          eval_case \
-          eval_cmdlist \
-          eval_command \
-          eval_for \
-          eval_if \
-          eval_jump \
-          eval_loop \
-          eval_pipeline \
-          eval_pop \
-          eval_push \
-          eval_simple_command \
-          eval_subshell \
-          eval_tree
+MODULES = eval_and_or eval_case eval_cmdlist eval_command eval_for eval_function eval_if eval_jump eval_loop eval_node eval_pipeline eval_pop eval_push eval_simple_command eval_subshell eval_tree
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

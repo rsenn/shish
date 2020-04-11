@@ -247,6 +247,8 @@ lib/shell/Makefile
 lib/str/Makefile
 lib/stralloc/Makefile
 lib/uint32/Makefile
+lib/uint64/Makefile
+lib/wait/Makefile
 scripts/Makefile
 src/Makefile
 src/builtin/Makefile
