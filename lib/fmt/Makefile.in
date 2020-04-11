@@ -19,8 +19,8 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 LIB     = ../libshish.a
-MODULES = fmt_long fmt_longlong fmt_minus fmt_ulong0 fmt_ulong fmt_ulonglong fmt_xlong fmt_xlonglong
-          
+MODULES = fmt_8long fmt_long fmt_longlong fmt_minus fmt_ulong0 fmt_ulong fmt_ulonglong fmt_xlong fmt_xlonglong
+
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
 DEPS    = $(MODULES:%=%.d)
