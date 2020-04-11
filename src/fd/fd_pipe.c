@@ -42,12 +42,14 @@ fd_pipe(struct fd* fd) {
     e = p[1];
   }
 
+#ifdef DEBUG_OUTPUT
   buffer_puts(buffer_2, "pipe e=");
   buffer_putlong(buffer_2, e);
   buffer_puts(buffer_2, " ");
 
   fd_dump(fd, buffer_2);
   buffer_putnlflush(buffer_2);
+#endif
 
   return e;
 }
