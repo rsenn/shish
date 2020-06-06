@@ -69,7 +69,7 @@
 			"file": "src/fd/fd_pipe.c",
 			"settings":
 			{
-				"buffer_size": 1022,
+				"buffer_size": 1049,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -989,15 +989,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1022,
+						"buffer_size": 1049,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								690,
-								690
+								0,
+								0
 							]
 						],
 						"settings":
