@@ -2,6 +2,23 @@
 ME=`basename "$0" .sh`
 THISDIR=`dirname "$0"`
 BASEDIR=`cd "$THISDIR"/.. && pwd`
+NL="
+"
+
+check_support_arg() {
+  (CMD="cproto -h 2>&1 | grep -q '^\\s*$1\\s'"
+  eval "$CMD") }
+
+get_preprocessor() {
+  (set -- $(ls -d /usr/bin/cpp{,-[0-9]*} |sort -fuV )
+   eval "echo \$${#}") 2>/dev/null
+}
+
+check_exec() {
+  (CMD="\"\$@\" 2>&1 1>/dev/null <<<\"\" || echo \"ERROR: \$?\""
+  eval "ERROR=\$($CMD)"
+  test -z "$ERROR")
+}
 
 filter() { 
  (PATTERN="$1"; shift; OUT=; for ARG; do case "$ARG" in 
@@ -88,28 +105,50 @@ get_prototypes() {
   while :; do
     case "$1" in
       -[dx] | --debug) DEBUG=true; shift ;;
-      -D ) DEFINES="$DEFINES -D$2"; shift 2 ;;
-      -D* ) DEFINES="$DEFINES $1"; shift ;;
       -A | --no-pad-args* | -*no*args*) PAD_ARGS=false; shift ;;
       -a | --pad-args* | -*args*) PAD_ARGS=true; shift ;;
       -r=* | --remove*=* | -R=*) REMOVE_NAMES=${1#*=}; shift ;;
+      -I* ) CPROTO_ARGS="$CPROTO_ARGS$NL$1" ; shift ;; 
       -r | --remove* | -R) REMOVE_NAMES=true; shift ;;
       -c | --copy* | --xclip*) XCLIP=true; shift ;;
       -E | --ellips* | --empty*) EMPTY=true; shift ;;
+      -q | --quiet) QUIET=true; shift ;;
       -e | --expr) EXPR="${EXPR:+$EXPR ;; }$2"; shift 2 ;;
       -e=* | --expr=*) EXPR="${EXPR:+$EXPR ;; }$2"; shift ;;
       -e* ) EXPR="${1#-e}"; shift ;;
       *) break ;;
     esac
   done
-
+ IFS="$NL"
+  add_arg() {
+    CPROTO_ARGS="$CPROTO_ARGS$NL$*"
+   }
   if [ "$DEBUG" = true ]; then
     exec 7>&2
   else
     exec 7>/dev/null
   fi
-
-  CPROTO_OUT=`cproto -D_Noreturn= -D__{value,x,y}= $DEFINES -p "$@"  | sed "\\|^/|d ;; $EXPR"`
+  if check_support_arg -N; then
+    add_arg -N
+  fi
+  if check_support_arg -n; then
+    add_arg -n
+  fi
+  PP=$(get_preprocessor)
+  if [ -x "$PP" ]; then
+     check_exec "$PP" -std=c2x &&  
+      add_arg "-E" "$PP -std=c2x" ||
+      add_arg "-E" "$PP"
+  fi
+  if [ "$QUIET" = true ]; then
+    add_arg -q
+    CPROTO_REDIR="2>/dev/null"
+  fi
+  CPROTO_CMD="cproto \$CPROTO_ARGS -D_Noreturn= -D__{value,x,y}= -p \"\$@\" $CPROTO_REDIR | sed \"\\|^/|d ;; $EXPR\""
+  if [ "$DEBUG" = true ]; then
+    eval "echo \"Command:\" $CPROTO_CMD 1>&2"
+  fi
+  CPROTO_OUT=`eval "$CPROTO_CMD"`
  
   IFS=" "
   while read_proto; do

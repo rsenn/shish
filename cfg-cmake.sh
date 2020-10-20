@@ -10,7 +10,7 @@ cfg() {
       i686-pc-*) host="$host" builddir=build/${host} prefix=/usr ;;
     esac
   fi
-  : ${prefix:=/usr}
+  : ${prefix:=/usr/local}
   : ${libdir:=$prefix/lib}
   [ -d "$libdir/$host" ] && libdir=$libdir/$host
 

@@ -18,7 +18,7 @@ cfg() {
   : ${host:=$build}
   : ${builddir=build/$build}
 
-  : ${prefix:=/usr}
+  : ${prefix:=/usr/local}
 
   mkdir -p $builddir;
   : ${relsrcdir=`realpath --relative-to "$builddir" .`}
