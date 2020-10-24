@@ -243,25 +243,33 @@ cfg-musl32() {
   "$@")
 }
 
+
 cfg-msys() {
  (build=$(gcc -dumpmachine)
   : ${host=${build%%-*}-pc-msys}
-  : ${prefix=/usr/$host/sys-root/msys}
+  : ${prefix=/usr/$host/sysroot/usr}
 
+  : ${PKG_CONFIG_PATH=/usr/${host}/sysroot/usr/lib/pkgconfig}
+
+  export PKG_CONFIG_PATH
+  
   builddir=build/$host \
   bindir=$prefix/bin \
   libdir=$prefix/lib \
-  CC="$host-gcc" \
   cfg \
-    -DCMAKE_CROSSCOMPILING=TRUE \
     "$@")
 }
 
 cfg-msys32() {
- (build=$(gcc -dumpmachine)
-  host=${build%%-*}-pc-msys
-  host=i686-${host#*-}
-  cfg-msys "$@")
+  host=i686-pc-msys \
+  TOOLCHAIN=/opt/cmake-toolchains/msys32.cmake \
+    cfg-msys "$@"
+}
+
+cfg-msys64() {
+  host=x86_64-pc-msys \
+  TOOLCHAIN=/opt/cmake-toolchains/msys64.cmake \
+    cfg-msys "$@"
 }
 
 cfg-termux()
