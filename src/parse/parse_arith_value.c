@@ -84,7 +84,7 @@ parse_arith_value(struct parser* p) {
   } else if(parse_isalpha(c) || c == '_' || c == '$') {
 
     if(c == '$')
-      source_skip();
+      parse_skip(p);
 
     if(parse_param(p))
       return NULL;

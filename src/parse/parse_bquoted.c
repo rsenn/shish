@@ -28,7 +28,7 @@ parse_bquoted(struct parser* p) {
 
     parse_init(&subp, P_DEFAULT);
   } else {
-    source_skip();
+    parse_skip(p);
     subp.flags = P_BQUOTE;
     end_tok = T_BQ;
 

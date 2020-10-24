@@ -62,6 +62,7 @@ fd_dump(struct fd* fd, buffer* b) {
     if(fd->mode & (1 << n)) {
       if(out++)
         buffer_putc(b, '|');
+      buffer_puts(b, "FD_");
       buffer_puts(b, fd_flags[n]);
     }
   }

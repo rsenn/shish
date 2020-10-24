@@ -1,7 +1,7 @@
 #include "../fd.h"
 #include "../job.h"
 #include "../sh.h"
-#include "../sig.h"
+#include "../../lib/sig.h"
 #include "../../lib/windoze.h"
 
 #if !WINDOWS_NATIVE
@@ -17,7 +17,7 @@ job_fork(struct job* job, union node* node, int bgnd) {
   pid_t pid;
   pid_t pgrp;
 
-  sig_block();
+  sig_block(SIGCHLD);
 
   /* fork the process */
   if((pid = fork()) == -1) {

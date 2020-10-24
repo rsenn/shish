@@ -37,7 +37,7 @@ parse_arith_binary(struct parser* p, int precedence) {
 
     if(prec <= 1) {
       if(a == '*' && b == '*') {
-        source_skip();
+        parse_skip(p);
         ntype = A_EXP;
       }
     } else if(prec <= 2) {
@@ -55,7 +55,7 @@ parse_arith_binary(struct parser* p, int precedence) {
 
       if((a == '>' || a == '<') && a == b) {
         ntype = a == '>' ? A_RSHIFT : A_LSHIFT;
-        source_skip();
+        parse_skip(p);
       }
 
     } else if(prec <= 5) {
@@ -63,18 +63,18 @@ parse_arith_binary(struct parser* p, int precedence) {
       if(a == '>') {
         ntype = b == '=' ? A_GE : A_GT;
         if(b == '=')
-          source_skip();
+          parse_skip(p);
       } else if(a == '<') {
         ntype = b == '=' ? A_LE : A_LT;
         if(b == '=')
-          source_skip();
+          parse_skip(p);
       }
 
     } else if(prec <= 6) {
 
       if(b == '=' && (a == '=' || a == '!')) {
         ntype = a == '!' ? A_NE : A_EQ;
-        source_skip();
+        parse_skip(p);
       }
     } else if(prec <= 7) {
       switch(c) {
@@ -85,7 +85,7 @@ parse_arith_binary(struct parser* p, int precedence) {
     } else if(prec <= 8) {
       if((a == '&' || a == '|') && a == b) {
         ntype = a == '&' ? A_AND : A_OR;
-        source_skip();
+        parse_skip(p);
       }
     }
     --prec;
@@ -94,7 +94,7 @@ parse_arith_binary(struct parser* p, int precedence) {
   if(ntype == -1)
     return lnode;
 
-  source_skip();
+  parse_skip(p);
   parse_skipspace(p);
 
   rnode = precedence < 1 ? parse_arith_unary(p) : parse_arith_binary(p, precedence - 1);

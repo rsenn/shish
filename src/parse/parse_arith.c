@@ -11,7 +11,7 @@ parse_arith(struct parser* p) {
   union node* tree;
   struct parser subp;
 
-  source_skip();
+  parse_skip(p);
 
   parse_init(&subp, P_ARITH | P_NOREDIR);
 

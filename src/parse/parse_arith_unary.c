@@ -27,9 +27,9 @@ parse_arith_unary(struct parser* p) {
   }
 
   if(c == c2)
-    source_skip();
+    parse_skip(p);
 
-  source_skip();
+  parse_skip(p);
   parse_skipspace(p);
 
   node = tree_newnode(n);

@@ -24,7 +24,7 @@ parse_arith_expr(struct parser* p) {
 
               if((c == '+' || c == '-') && c == c2) {
                 union node* post = tree_newnode(c == '+' ? A_POSTINCREMENT :
-       A_POSTDECREMENT); source_skip(); source_skip();
+       A_POSTDECREMENT); parse_skip(p); parse_skip(p);
 
                 post->narithunary.node = node;
                 node = post;

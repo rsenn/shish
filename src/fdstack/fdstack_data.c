@@ -15,10 +15,17 @@ fdstack_data(void) {
   long n;
   char b[FD_BUFSIZE / 2];
 
+  fdstack_dump(fd_err->w);
+  fdtable_dump(fd_err->w);
+
   for(st = fdstack; st; st = st->parent) {
     for(fd = st->list; fd; fd = fd->next) {
+
       /* read from the child and put it into output subst buffer */
       if((fd->mode & FD_WRITE)) {
+
+        buffer_puts(fd_err->w, "FDSTACK_DATA: ");
+        fd_dump(fd, fd_err->w);
 
         while((n = read(fdtable[1]->rb.fd, b, sizeof(b))) > 0) buffer_put(fd->w, b, n);
 

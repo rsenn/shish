@@ -15,9 +15,9 @@
 #include "../parse.h"
 #include "../redir.h"
 #include "../sh.h"
-#include "../sig.h"
 #include "../tree.h"
 #include "../var.h"
+#include "../../lib/sig.h"
 #include "../../lib/wait.h"
 
 #if WINDOWS_NATIVE
@@ -57,17 +57,8 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
 
     /* block child and interrupt signal, so we won't terminate ourselves
        when the child does */
-    /*
-    sigemptyset(&nset);
-    sigaddset(&nset, SIGINT);
-
-#ifdef SIGCHLD
-    sigaddset(&nset, SIGCHLD);
-#endif
-    sigemptyset(&oset);
-    sigprocmask(SIG_BLOCK, &nset, &oset);
-*/
-    sig_block();
+    sig_block(SIGINT);
+    sig_block(SIGCHLD);
 
     /* in the parent wait for the child to finish and then return
        or exit, according to the 'exec' argument */
@@ -87,9 +78,7 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
 
       ret = WAIT_EXITSTATUS(status);
 
-#if !WINDOWS_NATIVE
-      sigprocmask(SIG_SETMASK, &oset, NULL);
-#endif
+      sig_blocknone();
 
       /* exit if 'exec' is set, otherwise return */
       if(exec)

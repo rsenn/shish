@@ -18,7 +18,7 @@ parse_param(struct parser* p) {
 
   if(c == '{') {
     braces++;
-    source_skip();
+    parse_skip(p);
   }
 
   if(source_get(&c) <= 0)
@@ -70,14 +70,14 @@ parse_param(struct parser* p) {
       if(braces) {
         while(source_peek(&c) > 0 && parse_isdigit(c)) {
           stralloc_catc(&varname, c);
-          source_skip();
+          parse_skip(p);
         }
       }
     } else {
       /* now get the complete variable name */
       while(source_peek(&c) > 0 && parse_isname(c)) {
         stralloc_catc(&varname, c);
-        source_skip();
+        parse_skip(p);
       }
     }
   }
@@ -96,11 +96,11 @@ parse_param(struct parser* p) {
   if(!braces)
     return 0;
 
-  while(source_peek(&c) && parse_isspace(c)) source_skip();
+  while(source_peek(&c) && parse_isspace(c)) parse_skip(p);
 
   /* done parsing? */
   if(c == '}') {
-    source_skip();
+    parse_skip(p);
     return 0;
   }
 
@@ -110,7 +110,7 @@ parse_param(struct parser* p) {
     p->node->nargparam.flag |= (c == '%') ? S_RSSFX : S_RSPFX;
     if(source_next(&nextc) > 0 && nextc == c) {
       p->node->nargparam.flag += (1 << 8);
-      source_skip();
+      parse_skip(p);
     }
   }
   /* check for the other substitution stuff */
@@ -125,19 +125,19 @@ parse_param(struct parser* p) {
     switch(c) {
     case '-':
       p->node->nargparam.flag |= S_DEFAULT;
-      source_skip();
+      parse_skip(p);
       break;
     case '=':
       p->node->nargparam.flag |= S_ASGNDEF;
-      source_skip();
+      parse_skip(p);
       break;
     case '?':
       p->node->nargparam.flag |= S_ERRNULL;
-      source_skip();
+      parse_skip(p);
       break;
     case '+':
       p->node->nargparam.flag |= S_ALTERNAT;
-      source_skip();
+      parse_skip(p);
       break;
     }
   }

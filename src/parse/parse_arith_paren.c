@@ -15,7 +15,7 @@ parse_arith_paren(struct parser* p) {
   if(c != '(')
     return NULL;
 
-  source_skip();
+  parse_skip(p);
   parse_skipspace(p);
 
   node = tree_newnode(A_PAREN);
@@ -32,7 +32,7 @@ again:
     return NULL;
 
   if(c == ',') {
-    source_skip();
+    parse_skip(p);
     goto again;
   }
 
@@ -42,7 +42,7 @@ again:
     return NULL;
   }
 
-  source_skip();
+  parse_skip(p);
 
   return node;
 }

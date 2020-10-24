@@ -379,6 +379,19 @@ endif(HAVE_SIGNAL_H)
 check_type_size(sigset_t SIGSET_T)
 message("sigset_t size: ${SIGSET_T}")
 
+check_function_exists(sigprocmask HAVE_SIGPROCMASK)
+
+if(HAVE_SIGPROCMASK)
+add_definitions(-DHAVE_SIGPROCMASK)
+endif(HAVE_SIGPROCMASK)
+
+
+check_function_exists(sigaction HAVE_SIGACTION)
+
+if(HAVE_SIGACTION)
+add_definitions(-DHAVE_SIGACTION)
+endif(HAVE_SIGACTION)
+
 check_type_size(pid_t PID_T)
 if(SIGSET_T GREATER 0)
   set(HAVE_SIGSET_T TRUE)
@@ -469,7 +482,7 @@ set(CMAKE_MODULE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 file(GLOB LIBSOURCES lib/*.h lib/*/*.c)
 
 if(NOT HAVE_LIBOWFAT)
-  file(GLOB ADDSOURCES lib/open/*.c lib/scan/*.c lib/buffer/*.c lib/fmt/*.c lib/byte/*.c lib/mmap/*.c lib/str/*.c lib/wait/*.c lib/unix/*.c)
+  file(GLOB ADDSOURCES lib/open/*.c lib/scan/*.c lib/buffer/*.c lib/fmt/*.c lib/byte/*.c lib/mmap/*.c lib/sig/*.c lib/str/*.c lib/wait/*.c lib/unix/*.c)
   set(LIBSOURCES ${LIBSOURCES} ${ADDSOURCES} lib/stralloc/stralloc_cats.c lib/stralloc/stralloc_diffs.c lib/stralloc/stralloc_zero.c lib/stralloc/stralloc_free${NAME_DEBUG}.c lib/stralloc/stralloc_catlong0.c lib/stralloc/stralloc_copyb.c lib/stralloc/stralloc_copys.c lib/stralloc/stralloc_copy.c lib/stralloc/stralloc_ready${NAME_DEBUG}.c lib/stralloc/stralloc_catulong0.c lib/stralloc/stralloc_cat.c lib/stralloc/stralloc_catb.c lib/stralloc/stralloc_init.c lib/stralloc/stralloc_readyplus${NAME_DEBUG}.c lib/str/str_diff.c lib/str/str_len.c lib/str/str_rchr.c lib/str/str_chr.c lib/str/str_copy.c)
 endif(NOT HAVE_LIBOWFAT)
 

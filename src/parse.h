@@ -196,6 +196,9 @@ extern struct token parse_tokens[];
 
 const char* parse_tokname(enum tok_flag tok, int multi);
 enum tok_flag parse_gettok(struct parser* p, int tempflags);
+int parse_next(struct parser*, char*);
+
+#define parse_skip(p) parse_next((p), 0)
 
 int parse_arith(struct parser* p);
 int parse_bquoted(struct parser* p);

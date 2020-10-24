@@ -18,7 +18,7 @@ parse_command(struct parser* p, int tempflags) {
   while(source_peek(&c) >= 1) {
     if(!parse_isspace(c))
       break;
-    source_skip();
+    parse_skip(p);
   }
 
   switch(tok) {
@@ -50,8 +50,8 @@ parse_command(struct parser* p, int tempflags) {
         return NULL;
 
       if(ch[0] == ')') {
-        source_skip();
-        source_skip();
+        parse_skip(p);
+        parse_skip(p);
         p->pushback++;
         return parse_function(p);
       }

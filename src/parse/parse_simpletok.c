@@ -17,9 +17,7 @@ parse_simpletok(struct parser* p) {
 again:
   if(source_peek(&c) <= 0)
     return T_EOF;
-#ifdef DEBUG_OUTPUT
-  debug_char("parse_simpletok", c);
-#endif
+
   /* skip all whitespace */
   while(parse_isspace(c)) {
     /* break on a newline if we aren't skipping them */
@@ -27,7 +25,7 @@ again:
       break;
 
     /* if the char was skipped, get next one */
-    if(source_next(&c) <= 0)
+    if(parse_next(p, &c) <= 0)
       return T_EOF;
   }
 
@@ -40,7 +38,7 @@ again:
   /* skip comments */
   case '#':
     do {
-      if(source_next(&c) <= 0)
+      if(parse_next(p, &c) <= 0)
         return T_EOF;
     } while(c != '\n'); /* after getting chars fall into newline case */
     goto newline;
@@ -51,18 +49,18 @@ again:
 
     /* CRAP CODE to support win, mac, unix line termination */
     if(c == '\r') {
-      source_skip();
+      parse_skip(p);
       if(source_peekn(&c, 1) <= 0)
         return T_EOF;
       if(c == '\n')
-        source_skip();
-      source_skip();
+        parse_skip(p);
+      parse_skip(p);
       prompt_show();
       goto again;
     }
     if(c == '\n') {
-      source_skip();
-      source_skip();
+      parse_skip(p);
+      parse_skip(p);
 
       if(p->flags & P_IACTIVE)
         prompt_show();
@@ -74,10 +72,10 @@ again:
     return -1;
   /* might be a mac or a windows newline */
   case '\r':
-    if(source_next(&c) <= 0)
+    if(parse_next(p, &c) <= 0)
       return T_EOF;
     if(c == '\n')
-      source_skip();
+      parse_skip(p);
   /* encountered a new line */
   case '\n':
   newline:
@@ -100,7 +98,7 @@ again:
     advance = 0;
 
     /* peek a char and look it it's the same */
-    if(source_next(&c2) > 0 && c == c2) {
+    if(parse_next(p, &c2) > 0 && c == c2) {
       /* advance buffer position later, because the char
          we peeked was valid */
       advance = 1;
@@ -127,7 +125,7 @@ again:
   }
 
   if(advance)
-    source_skip();
+    parse_next(p, &c);
 
   return tok;
 }
