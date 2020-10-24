@@ -40,7 +40,7 @@ term_read(int fd, char* buf, unsigned int len) {
 
   while((ret = buffer_getc(&term_input, &c)) > 0) {
 
-#ifdef DEBUG_OUTPUT
+#ifdef DEBUG_OUTPUT_
     debug_char("term_read.c", c, 0);
     debug_nl();
 #endif
@@ -81,7 +81,7 @@ term_read(int fd, char* buf, unsigned int len) {
     }
   }
 fail:
-#ifdef DEBUG_OUTPUT
+#ifdef DEBUG_OUTPUT_
   debug_ulong("term_read.ret", ret, 0);
   debug_nl();
 #endif

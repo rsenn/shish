@@ -100,7 +100,6 @@ void debug_subst(const char* msg, int flags, int depth);
 #define debug_fn_nl()
 #define debug_fn_nf()
 
-
 #endif /* DEBUG_OUTPUT */
 
 #if DEBUG_ALLOC

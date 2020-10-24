@@ -97,7 +97,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
           fd_allocbuf(r->nredir.fd, FD_BUFSIZE);
       }
 
-#if DEBUG_OUTPUT
+#if DEBUG_OUTPUT_
       buffer_puts(buffer_2, "Redirection ");
       debug_node(r, -1);
       if(r->nredir.fd) {

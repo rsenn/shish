@@ -116,8 +116,10 @@ builtin_test(int argc, char* argv[]) {
     return 2;
   }
 
+  argc -= shell_optind;
+
   /* if we have 3 arguments it should be something like STRING1 EXPR STRING2 */
-  if(argc - shell_optind >= 3) {
+  if(argc >= 3) {
     /* if operator doesn't start with '-' then its surely a string comparision
      */
     if(argv[2][0] != '-') {
@@ -130,16 +132,15 @@ builtin_test(int argc, char* argv[]) {
         case '>': ret = neg ^ (r <= 0);
       }
     }
-  }
-
-  if(argc - shell_optind == 0)
+  } else if(argc == 1) {
     ret = neg ^ (!(argv[shell_optind]));
+  }
 
   if(ret == -1) {
     builtin_errmsg(argv, "invalid expression", argv[1]);
     return 1;
   }
-#if DEBUG_OUTPUT
+#if DEBUG_OUTPUT_
   buffer_puts(fd_err->w, "test return value: ");
   buffer_putulong(fd_err->w, ret);
   buffer_putnlflush(fd_err->w);

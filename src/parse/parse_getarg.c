@@ -14,7 +14,7 @@ parse_getarg(struct parser* p) {
     n->narg.list = p->tree;
     p->tree = NULL;
 
-    /* #if DEBUG_OUTPUT
+    /* #if DEBUG_OUTPUT_
         buffer_puts(fd_err->w, "parse_getarg: ");
         debug_node(n, -2);
         buffer_putnlflush(fd_err->w);

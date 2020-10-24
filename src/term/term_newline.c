@@ -9,7 +9,7 @@ term_newline(void) {
   buffer_flush(term_output);
   term_pos = 0;
 
-#ifdef DEBUG_OUTPUT
+#ifdef DEBUG_OUTPUT_
   debug_fn_nf();
 #endif
 }

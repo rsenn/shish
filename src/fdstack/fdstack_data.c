@@ -15,7 +15,7 @@ fdstack_data(void) {
   long n;
   char b[FD_BUFSIZE / 2];
 
-#ifdef DEBUG_OUTPUT
+#ifdef DEBUG_OUTPUT_
   fdstack_dump(fd_err->w);
 #endif
   // fdtable_dump(fd_err->w);
@@ -25,7 +25,7 @@ fdstack_data(void) {
 
       /* read from the child and put it into output subst buffer */
       if((fd->mode & FD_WRITE)) {
-#ifdef DEBUG_OUTPUT
+#ifdef DEBUG_OUTPUT_
 
         buffer_puts(fd_err->w, "FDSTACK_DATA: ");
         fd_dump(fd, fd_err->w);

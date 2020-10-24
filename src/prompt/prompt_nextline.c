@@ -3,9 +3,9 @@
 
 void
 prompt_nextline(void) {
-#ifdef DEBUG_OUTPUT
+#ifdef DEBUG_OUTPUT_
   debug_fn_ws();
-   debug_n(prompt_number);
+  debug_n(prompt_number);
   debug_nl();
 #endif
   if(prompt_number <= 1)

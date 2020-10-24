@@ -61,7 +61,7 @@ prompt_parse(void) {
   source_pop();
   fd_pop(&fd);
 
-#ifdef DEBUG_OUTPUT
+#ifdef DEBUG_OUTPUT_
 /*  debug_list(prompt_node, 0);*/
 #endif /* DEBUG_OUTPUT */
 }

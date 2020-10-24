@@ -16,7 +16,7 @@ expand_args(union node* args, union node** nptr, int flags) {
 
   for(arg = args; arg; arg = arg->narg.next) {
 
-#if DEBUG_OUTPUT
+#if DEBUG_OUTPUT_
     debug_node(arg, 0);
     buffer_putnlflush(buffer_2);
 #endif

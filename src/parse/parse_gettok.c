@@ -10,7 +10,7 @@
  * ----------------------------------------------------------------------- */
 enum tok_flag
 parse_gettok(struct parser* p, int tempflags) {
-#ifdef DEBUG_OUTPUT
+#ifdef DEBUG_OUTPUT_
   size_t start = source->b->p == source->b->n ? 0 : source->b->p;
 #endif
   int oldflags = p->flags;
@@ -36,7 +36,7 @@ parse_gettok(struct parser* p, int tempflags) {
     if(p->tok & (/* T_WORD | */ T_NAME) && p->node && p->node->id == N_ARGSTR && !(p->flags & P_NOKEYWD))
       parse_keyword(p);
 
-#ifdef DEBUG_OUTPUT
+#ifdef DEBUG_OUTPUT_
     if(p->tok != -1) {
       buffer_putulong(buffer_2, source->line + 1);
       buffer_puts(buffer_2, ":");
