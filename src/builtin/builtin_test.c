@@ -264,13 +264,14 @@ test_cond(int argc, char** argv) {
     result = test_expr(argc, argv);
 
   if(result == -1)
-    result = test_unary(argc, argv);
+    result = test_binary(argc, argv);
 
   if(result == -1)
-    result = test_binary(argc, argv);
+    result = test_unary(argc, argv);
 
   return result == -1 ? result : neg ^ result;
 }
+
 /* evaluate boolean expressions (-a & -o)
  * ----------------------------------------------------------------------- */
 static int

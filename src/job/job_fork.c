@@ -17,7 +17,9 @@ job_fork(struct job* job, union node* node, int bgnd) {
   pid_t pid;
   pid_t pgrp;
 
+#if !WINDOWS_NATIVE
   sig_block(SIGCHLD);
+#endif
 
   /* fork the process */
   if((pid = fork()) == -1) {
@@ -68,7 +70,9 @@ job_fork(struct job* job, union node* node, int bgnd) {
 #endif
     job_pgrp = pid;
   }
-  setpgid(pid, pgrp);
 
+#if !WINDOWS_NATIVE
+  setpgid(pid, pgrp);
+#endif
   return pid;
 }

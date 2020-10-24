@@ -487,6 +487,7 @@ check_include_file(sys/wait.h HAVE_SYS_WAIT_H)
 check_include_file(unistd.h HAVE_UNISTD_H)
 if(HAVE_UNISTD_H)
   set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} unistd.h)
+  list(APPEND CMAKE_REQUIRED_INCLUDES unistd.h)
 endif(HAVE_UNISTD_H)
 
 check_function_exists(sethostname HAVE_SETHOSTNAME)
@@ -523,7 +524,15 @@ if(NOT SIZEOF_SIGSET_T STREQUAL "")
 endif(NOT SIZEOF_SIGSET_T STREQUAL "")
 
 check_function_exists(sigprocmask HAVE_SIGPROCMASK)
+
+if(NOT HAVE_SIGPROCMASK)
+  check_function_exists(sigblock HAVE_SIGBLOCK)
+  check_function_exists(sigsetmask HAVE_SIGSETMASK)
+  check_function_exists(sigpause HAVE_SIGPAUSE)
+
+endif(NOT HAVE_SIGPROCMASK)
 check_function_exists(sigaction HAVE_SIGACTION)
+check_function_exists(setpgid HAVE_SETPGID)
 
 check_type_size(pid_t PID_T)
 if(SIGSET_T GREATER 0)
@@ -632,7 +641,8 @@ if(NOT HAVE_LIBOWFAT)
     lib/sig/*.c
     lib/str/*.c
     lib/wait/*.c
-    lib/unix/*.c)
+    lib/unix/*.c
+    lib/utf8/*.c)
   set(LIBSOURCES
       ${LIBSOURCES}
       ${ADDSOURCES}

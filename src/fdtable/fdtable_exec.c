@@ -2,6 +2,7 @@
 #include "../fdtable.h"
 #include "../sh.h"
 #include "../../lib/windoze.h"
+
 #if WINDOWS_NATIVE
 #include <io.h>
 #else

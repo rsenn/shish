@@ -11,7 +11,7 @@ sig_block(int sig) {
   sigemptyset(&ss);
   sigaddset(&ss, sig);
   sigprocmask(SIG_BLOCK, &ss, (sigset_t*)0);
-#else
+#elif defined(HAVE_SIGBLOCK)
   sigblock(1 << (sig - 1));
 #endif
 }

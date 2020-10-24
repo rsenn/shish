@@ -56,8 +56,10 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
 
     /* block child and interrupt signal, so we won't terminate ourselves
        when the child does */
+#if !WINDOWS_NATIVE
     sig_block(SIGINT);
     sig_block(SIGCHLD);
+#endif
 
     /* in the parent wait for the child to finish and then return
        or exit, according to the 'exec' argument */

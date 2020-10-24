@@ -10,7 +10,7 @@ sig_blocknone(void) {
   sigset_t ss;
   sigemptyset(&ss);
   sigprocmask(SIG_SETMASK, &ss, (sigset_t*)0);
-#else
+#elif defined(HAVE_SIGSETMASK)
   sigsetmask(0);
 #endif
 }

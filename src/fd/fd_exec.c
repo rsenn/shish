@@ -6,6 +6,11 @@
 #else
 #include <unistd.h>
 #endif
+#include <stdio.h>
+
+#ifndef SEEK_SET
+#define SEEK_SET 0
+#endif
 
 /* make an (fd) ready for an execve()
  *

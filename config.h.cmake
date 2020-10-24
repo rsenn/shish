@@ -57,7 +57,13 @@
 /* Define this if you have the sigprocmask() function */
 #cmakedefine HAVE_SIGPROCMASK 1
 
+/* Define this if you have the sigsetmask() function */
+#cmakedefine HAVE_SIGSETMASK 1
+
 /* Define this if you have the glob() function */
+#cmakedefine HAVE_SETPGID 1
+
+/* Define this if you have the setpgid() function */
 #cmakedefine HAVE_GLOB 1
 
 /* Define this if your libc has sys_siglist[] */

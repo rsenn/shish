@@ -6,12 +6,12 @@
 
 void
 sig_unblock(int sig) {
-#ifdef HAVE_SIGPROCMASK
+#if defined(HAVE_SIGPROCMASK)
   sigset_t ss;
   sigemptyset(&ss);
   sigaddset(&ss, sig);
   sigprocmask(SIG_UNBLOCK, &ss, (sigset_t*)0);
-#else
+#elif defined(HAVE_SIGSETMASK)
   sigsetmask(sigsetmask(~0) & ~(1 << (sig - 1)));
 #endif
 }

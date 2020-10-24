@@ -1,10 +1,17 @@
 #include "../fd.h"
 #include "../fdtable.h"
 #include "../../lib/windoze.h"
+
 #if WINDOWS_NATIVE
 #include <io.h>
 #else
 #include <unistd.h>
+#endif
+
+#include <stdio.h>
+
+#ifndef SEEK_SET
+#define SEEK_SET 0
 #endif
 
 /* drop a here-document to a temporary file
