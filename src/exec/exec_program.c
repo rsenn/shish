@@ -68,6 +68,7 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
       /* this will close child ends of the pipes and read data from the parent
        * end :) */
       fdstack_pop(&io);
+      if(n)
       fdstack_data();
 
       if(pipes)
