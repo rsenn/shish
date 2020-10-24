@@ -8,10 +8,11 @@
 	"buffers":
 	[
 		{
-			"file": "src/sh/sh_init.c",
+			"file": "CMakeLists.txt",
 			"settings":
 			{
-				"buffer_size": 1260,
+				"buffer_size": 23147,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		}
@@ -27,6 +28,10 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"install pa",
+				"Package Control: Install Package"
+			],
 			[
 				"install ",
 				"Package Control: Install Package"
@@ -77,22 +82,130 @@
 	"expanded_folders":
 	[
 		"/home/roman/Dokumente/Sources/shish",
+		"/home/roman/Dokumente/Sources/shish/inst",
+		"/home/roman/Dokumente/Sources/shish/lib",
+		"/home/roman/Dokumente/Sources/shish/lib/byte",
+		"/home/roman/Dokumente/Sources/shish/lib/fmt",
+		"/home/roman/Dokumente/Sources/shish/lib/sig",
+		"/home/roman/Dokumente/Sources/shish/lib/unix",
+		"/home/roman/Dokumente/Sources/shish/lib/utf8",
 		"/home/roman/Dokumente/Sources/shish/src",
-		"/home/roman/Dokumente/Sources/shish/src/sh"
+		"/home/roman/Dokumente/Sources/shish/src/builtin",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/build",
+		"/home/roman/Dokumente/Sources/shish/src/tree",
+		"/home/roman/Dokumente/Sources/shish/src/vartab"
 	],
 	"file_history":
 	[
+		"/home/roman/Dokumente/Sources/shish/src/exec/exec_program.c",
+		"/home/roman/Dokumente/Sources/shish/lib/sig/sig_unblock.c",
+		"/home/roman/Dokumente/Sources/shish/lib/sig/sig_block.c",
+		"/home/roman/Dokumente/Sources/shish/lib/sig/sig_blocknone.c",
+		"/home/roman/Dokumente/Sources/shish/lib/sig/sig_pause.c",
+		"/home/roman/Dokumente/Sources/shish/lib/utf8.h",
+		"/home/roman/Dokumente/Sources/shish/lib/utf8/utf8.c",
+		"/home/roman/Dokumente/Sources/shish/lib/utf8/wcstou8s.c",
+		"/home/roman/Dokumente/Sources/shish/lib/utf8/wcsu8slen.c",
+		"/home/roman/Dokumente/Sources/shish/lib/utf8/wctou8.c",
+		"/home/roman/Dokumente/Sources/shish/lib/utf8/wcu8len.c",
+		"/home/roman/Dokumente/Sources/shish/lib/utf8/u8len.c",
+		"/home/roman/Dokumente/Sources/shish/lib/utf8/u8stowcs.c",
+		"/home/roman/Dokumente/Sources/shish/lib/utf8/u8swcslen.c",
+		"/home/roman/Dokumente/Sources/shish/lib/utf8/u8towc.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_node.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_list.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug.h",
+		"/home/roman/Dokumente/Sources/shish/src/term/term_newline.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_list.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_ulong.c",
+		"/home/roman/Dokumente/Sources/shish/src/prompt/prompt_expand.c",
+		"/home/roman/Dokumente/Sources/shish/src/prompt/prompt_nextline.c",
+		"/home/roman/Dokumente/Sources/shish/src/prompt/prompt_reset.c",
+		"/home/roman/Dokumente/Sources/shish/config.h.cmake",
+		"/home/roman/Dokumente/Sources/shish/src/job/job_fork.c",
+		"/home/roman/Dokumente/Sources/shish/CMakeLists.txt",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_gettok.c",
+		"/home/roman/Dokumente/Sources/shish/src/term/term_read.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_bquoted.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_unquoted.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_next.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse.h",
+		"/home/roman/Dokumente/Sources/shish/src/exec/exec_command.c",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_test.c",
+		"/home/roman/Dokumente/Sources/shish/lib/sig/sig_catch.c",
+		"/home/roman/Dokumente/Sources/shish/lib/buffer.h",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_free.c",
+		"/home/roman/Dokumente/Sources/shish/42ShellTester/tmp/bonuses-tilde-expansion-001-expanded-with-HOME-1.stderr",
+		"/home/roman/Dokumente/Sources/shish/src/fdstack/fdstack_data.c",
+		"/home/roman/Dokumente/Sources/shish/lib/stralloc.h",
+		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_dump.c",
+		"/home/roman/Dokumente/Sources/shish/src/eval/eval_tree.c",
+		"/home/roman/Dokumente/Sources/shish/src/fd/fd_dump.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_function.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_case.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_word.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_space.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_stralloc.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_sublist.c",
+		"/home/roman/Dokumente/Sources/shish/src/tree.h",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_str.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_unquoted.c",
+		"/home/roman/Dokumente/Sources/shish/lib/fmt/fmt_escapecharshell.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_begin.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_char.c",
+		"/home/roman/Dokumente/Sources/shish/src/sh/sh_loop.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_simpletok.c",
+		"/home/roman/Dokumente/Sources/shish/src/sh/sh_main.c",
+		"/home/roman/Dokumente/Sources/shish/src/fd/fd_push.c",
+		"/home/roman/Dokumente/Sources/shish/src/fd.h",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_getarg.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_param.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_string.c",
+		"/home/roman/Dokumente/Sources/shish/src/prompt.h",
+		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_exec.c",
+		"/home/roman/Dokumente/Sources/shish/src/prompt/prompt_escape.c",
+		"/home/roman/Dokumente/Sources/shish/src/prompt/prompt_show.c",
+		"/home/roman/Dokumente/Sources/shish/src/debug/debug_ptr.c",
+		"/home/roman/Dokumente/Sources/shish/src/fdtable/fdtable_dump.c",
+		"/home/roman/Dokumente/Sources/shish/src/fdtable/fdtable_table.c",
+		"/home/roman/Dokumente/Sources/shish/src/fd/fd_allocbuf.c",
+		"/home/roman/Dokumente/Sources/shish/src/fd/fd_new.c",
+		"/home/roman/Dokumente/Sources/shish/src/fdtable/fdtable_open.c",
+		"/home/roman/Dokumente/Sources/shish/src/fdtable/fdtable_newfd.c",
+		"/home/roman/Dokumente/Sources/shish/src/fd/fd_init.c",
+		"/home/roman/Dokumente/Sources/shish/src/fd/fd_open.c",
+		"/home/roman/Dokumente/Sources/shish/lib/shell/shell_alloc.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_dquoted.c",
+		"/home/roman/Dokumente/Sources/shish/src/source.h",
+		"/home/roman/Dokumente/Sources/shish/src/fd/fd_dumplist.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_skip.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_binary.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_next.c",
+		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_getc.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_get.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_peek.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_peekn.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_push.c",
+		"/home/roman/Dokumente/Sources/shish/src/history/history_advance.c",
+		"/home/roman/Dokumente/Sources/shish/lib/buffer/buffer_putnc.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_newline.c",
+		"/home/roman/Dokumente/Sources/shish/src/prompt/prompt_parse.c",
 		"/home/roman/Dokumente/Sources/c-utils/cfg.sh"
 	],
 	"find":
 	{
-		"height": 0.0
+		"height": 26.0
 	},
 	"find_in_files":
 	{
-		"height": 0.0,
+		"height": 102.0,
 		"where_history":
 		[
+			"/home/roman/Dokumente/Sources/shish/src,*.c,*.h",
+			"/home/roman/Dokumente/Sources/shish/src/parse,*.c,*.h",
+			"/home/roman/Dokumente/Sources/shish/src,*.c,*.h",
+			"/home/roman/Dokumente/Sources/shish/src/parse",
+			""
 		]
 	},
 	"find_state":
@@ -100,6 +213,110 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"stralloc",
+			"sigprocmask",
+			"unistd.h",
+			"HAVE_SIGSETMASK",
+			"unistd.h",
+			"sigprocmask",
+			"_binary",
+			"char*[]",
+			"char* argv[]",
+			"intarg",
+			"test_cond",
+			"'n'",
+			"current",
+			"argv\\[shell_optind\\]",
+			"];",
+			";\n",
+			"result = neg \\^ ",
+			"result = neg ^ ",
+			"stat\\(",
+			"stat\\«(",
+			"shell_optind",
+			"enum quot",
+			"quot",
+			"-O0",
+			"option\\(",
+			"FLAGS_DEBUG",
+			"_DEBUG",
+			"check_cflag",
+			"add_cflags",
+			"check_cflag",
+			"-ggdb",
+			"check_cflag",
+			"-ggdb",
+			"add_cflags",
+			"VERBOSE",
+			"VERBOSE_MAKEFILE",
+			"check_cflag",
+			"F_G_GDB",
+			"CHECK_CFLAG",
+			"check_cflag",
+			"check_c_compiler",
+			"check_",
+			"macro",
+			"F_ALIGN_COM",
+			"  add_def",
+			"^\\s*add_def",
+			"add_def",
+			"HAVE_UID",
+			"HAVE_PID",
+			"FILE_OFFSET",
+			"HAVE_ALLOCA",
+			"sigset",
+			"sigset_t",
+			"message\\(",
+			"check_include",
+			"HAVE_CONFIG_H",
+			"stdint",
+			"longlong",
+			"buffer_puts\\(buffer_2, ",
+			"numbuf",
+			"oset",
+			"write",
+			"debug_fn",
+			"// ",
+			"N_ARGSTR",
+			"N_SIMPLE",
+			"debug_.*list",
+			"\"\\[",
+			"'\\['",
+			"\\[",
+			"\"\\[",
+			"\\[",
+			"\\]",
+			"begin",
+			"return",
+			"debug_fn",
+			"0\\(",
+			"debug_",
+			"^\\s*prompt_number",
+			"prompt_[^ ]* =",
+			"invalid expres",
+			"fd_err",
+			"debug_char",
+			"return",
+			"toupper",
+			"\"STR",
+			"STR",
+			"debug_",
+			"debug_str",
+			"FD_WRITE",
+			"fd_mallocb",
+			"fd_err",
+			"blocknone",
+			"sigaddset",
+			"check_func",
+			"p->sa",
+			"source_skip",
+			"simpletok",
+			"gettok",
+			"_skip",
+			"source_next\\(",
+			"_next",
+			"_ne4xt",
+			"Got token"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -107,6 +324,12 @@
 		"regex": false,
 		"replace_history":
 		[
+			"char**",
+			"char** argv",
+			"current(argv)",
+			"result = ",
+			"debug_s(",
+			"parse_next(p, "
 		],
 		"reverse": false,
 		"show_context": true,
@@ -122,29 +345,29 @@
 			[
 				{
 					"buffer": 0,
-					"file": "src/sh/sh_init.c",
-					"semi_transient": true,
+					"file": "CMakeLists.txt",
+					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1260,
+						"buffer_size": 23147,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								140,
-								140
+								23119,
+								23119
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/C11/C11.tmLanguage",
+							"syntax": "Packages/CMakeEditor/CMakeEditor.tmLanguage",
 							"tab_size": 2,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 121.0,
+						"translation.y": 13942.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
@@ -155,7 +378,7 @@
 	],
 	"incremental_find":
 	{
-		"height": 0.0
+		"height": 26.0
 	},
 	"input":
 	{
@@ -192,7 +415,7 @@
 	"project": "shish.sublime-project",
 	"replace":
 	{
-		"height": 0.0
+		"height": 48.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -201,6 +424,182 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"cmakelists",
+				"CMakeLists.txt"
+			],
+			[
+				"utf8.h",
+				"lib/utf8.h"
+			],
+			[
+				"cmake",
+				"CMakeLists.txt"
+			],
+			[
+				"utf8",
+				"lib/utf8/utf8.c"
+			],
+			[
+				"utf8.",
+				"lib/utf8.h"
+			],
+			[
+				"sig_pause",
+				"lib/sig/sig_pause.c"
+			],
+			[
+				"sig_blocknone",
+				"lib/sig/sig_blocknone.c"
+			],
+			[
+				"cmakelist",
+				"CMakeLists.txt"
+			],
+			[
+				"sig_blo",
+				"lib/sig/sig_block.c"
+			],
+			[
+				"sig_",
+				"lib/sig/sig_unblock.c"
+			],
+			[
+				"blocknone",
+				"lib/sig/sig_blocknone.c"
+			],
+			[
+				"job_fo",
+				"src/job/job_fork.c"
+			],
+			[
+				"cmakelit",
+				"CMakeLists.txt"
+			],
+			[
+				"config.h.cmake",
+				"config.h.cmake"
+			],
+			[
+				"taia.h",
+				"42ShellTester/tmp/bonuses-tilde-expansion-001-expanded-with-HOME-1.stderr"
+			],
+			[
+				"parse_next",
+				"src/parse/parse_next.c"
+			],
+			[
+				"parse.h",
+				"src/parse.h"
+			],
+			[
+				"buffer.h",
+				"lib/buffer.h"
+			],
+			[
+				"debug.h",
+				"src/debug.h"
+			],
+			[
+				"arse_wor",
+				"src/parse/parse_word.c"
+			],
+			[
+				"parse_case",
+				"src/parse/parse_case.c"
+			],
+			[
+				"arse_gettok",
+				"src/parse/parse_gettok.c"
+			],
+			[
+				"parse_func",
+				"src/parse/parse_function.c"
+			],
+			[
+				"fd_dump",
+				"src/fd/fd_dump.c"
+			],
+			[
+				"exec_prog",
+				"src/exec/exec_program.c"
+			],
+			[
+				"eval_tree",
+				"src/eval/eval_tree.c"
+			],
+			[
+				"stralloc.h",
+				"lib/stralloc.h"
+			],
+			[
+				"fdstack_data",
+				"src/fdstack/fdstack_data.c"
+			],
+			[
+				"tree.h",
+				"src/tree.h"
+			],
+			[
+				"debug_node.c",
+				"src/debug/debug_node.c"
+			],
+			[
+				"debug_ilst",
+				"src/debug/debug_list.c"
+			],
+			[
+				"fmt_esca",
+				"lib/fmt/fmt_escapecharshell.c"
+			],
+			[
+				"prompt.h",
+				"src/prompt.h"
+			],
+			[
+				"debug_ulon",
+				"src/debug/debug_ulong.c"
+			],
+			[
+				"term_rea",
+				"src/term/term_read.c"
+			],
+			[
+				"parse_un",
+				"src/parse/parse_unquoted.c"
+			],
+			[
+				"fd.h",
+				"src/fd.h"
+			],
+			[
+				"exec_pr",
+				"src/exec/exec_program.c"
+			],
+			[
+				"cmakelists.t",
+				"CMakeLists.txt"
+			],
+			[
+				"parse_word",
+				"src/parse/parse_word.c"
+			],
+			[
+				"source_skip",
+				"src/source/source_skip.c"
+			],
+			[
+				"sh_loop",
+				"src/sh/sh_loop.c"
+			],
+			[
+				"parse_gettok",
+				"src/parse/parse_gettok.c"
+			],
+			[
+				"history_adv",
+				"src/history/history_advance.c"
+			],
 			[
 				"freq",
 				"Freq-meter.c"
