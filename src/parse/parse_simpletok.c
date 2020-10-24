@@ -17,7 +17,9 @@ parse_simpletok(struct parser* p) {
 again:
   if(source_peek(&c) <= 0)
     return T_EOF;
-
+#ifdef DEBUG_OUTPUT
+  debug_char("parse_simpletok", c);
+#endif
   /* skip all whitespace */
   while(parse_isspace(c)) {
     /* break on a newline if we aren't skipping them */

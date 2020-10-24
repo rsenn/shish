@@ -15,6 +15,7 @@ DEFINES += PACKAGE_NAME="\\\"shish\\\"" PACKAGE_VERSION="\\\"0.8\\\""
 
 
 QMAKE_CFLAGS_WARN_ON = -w
+QMAKE_CFLAGS_WARN_ON = -Wall -Werror -Wno-error=unused-but-set-variable -Wno-error=unused-variable
 
 #CONFIG += debug_and_release
 
@@ -36,46 +37,46 @@ HEADERS *= $$files(lib/*.h, true) $$files(src/*.h, false)
 
 PATHS *= \
     . \
-    ./lib \
-    ./build \
-    ./src \
-    ./autom4te.cache \
-    ./obj \
-    ./scripts \
-    ./m4 \
-    ./doc \
-    ./lib/open \
-    ./lib/uint32 \
-    ./lib/str \
-    ./lib/stralloc \
-    ./lib/buffer \
-    ./lib/fmt \
-    ./lib/mmap \
-    ./lib/byte \
-    ./lib/shell \
-    ./lib/scan \
-    ./src/eval \
-    ./src/exec \
-    ./src/vartab \
-    ./src/builtin \
-    ./src/term \
-    ./src/redir \
-    ./src/history \
-    ./src/debug \
-    ./src/sig \
-    ./src/fd \
-    ./src/parse \
-    ./src/prompt \
-    ./src/job \
-    ./src/expand \
-    ./src/fdstack \
-    ./src/fdtable \
-    ./src/tree \
-    ./src/var \
-    ./src/source \
-    ./src/sh \
-    ./doc/man \
-    ./doc/posix
+    lib \
+    build \
+    src \
+    autom4te.cache \
+    obj \
+    scripts \
+    m4 \
+    doc \
+    lib/open \
+    lib/uint32 \
+    lib/str \
+    lib/stralloc \
+    lib/buffer \
+    lib/fmt \
+    lib/mmap \
+    lib/byte \
+    lib/shell \
+    lib/scan \
+    src/eval \
+    src/exec \
+    src/vartab \
+    src/builtin \
+    src/term \
+    src/redir \
+    src/history \
+    src/debug \
+    src/sig \
+    src/fd \
+    src/parse \
+    src/prompt \
+    src/job \
+    src/expand \
+    src/fdstack \
+    src/fdtable \
+    src/tree \
+    src/var \
+    src/source \
+    src/sh \
+    doc/man \
+    doc/posix
 
 DEPENDPATH *= $$PATHS
 

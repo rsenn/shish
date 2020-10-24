@@ -1,6 +1,12 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+#ifdef _WIN32
+#include <windows.h>
+#else
+#define _MISC_SOURCE
+#include <unistd.h>
+#endif
 
 #include "../parse.h"
 #include "../prompt.h"
@@ -8,6 +14,7 @@
 #include "../sh.h"
 #include "../../lib/shell.h"
 #include "../tree.h"
+#include "../var.h"
 
 /* handles prompt escape sequences
  * ----------------------------------------------------------------------- */
@@ -69,6 +76,25 @@ prompt_escape(const char* s, stralloc* sa) {
       stralloc_cat(sa, &sh->cwd);
       s++;
       break;
+
+    case 'u': {
+#if WINDOWS_NATIVE
+      DWORD len = 64;
+      stralloc_readyplus(sa, len);
+      if(GetUserNameA(sa->s, &len))
+        sa->len += len;
+#else
+      size_t len;
+      const char* user = var_value("USER", &len);
+
+      if(user && len)
+        stralloc_catb(sa, user, len);
+      else
+        stralloc_catulong(sa, getuid());
+#endif
+      s++;
+      break;
+    }
 
     /* bash shit */
     case '[':

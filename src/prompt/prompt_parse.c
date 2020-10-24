@@ -9,6 +9,7 @@
 #include <stdlib.h>
 
 static unsigned int prompt_hash; /* hash of unexpanded PS1 */
+static const char prompt_default[] = "\\u@\\h:\\w \\$ ";
 
 /* hash a prompt value
  * ----------------------------------------------------------------------- */
@@ -34,7 +35,7 @@ prompt_parse(void) {
   if(prompt_number != 1)
     return;
 
-  value = var_value(prompt_var, &n);
+  value = var_vdefault(prompt_var, prompt_default, &n);
   newhash = prompt_hashstr(value, n);
 
   /* it was (most likely) the same prompt str last time */

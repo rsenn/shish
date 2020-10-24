@@ -37,6 +37,10 @@ term_read(int fd, char* buf, unsigned int len) {
   prompt_show();
 
   while((ret = buffer_getc(&term_input, &c)) > 0) {
+
+#ifdef _DEBUG
+    debug_char("term_read", c);
+#endif
     switch(c) {
     /* control-c discards the current line */
     case 3: stralloc_zero(&term_cmdline);

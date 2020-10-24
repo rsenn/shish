@@ -54,6 +54,17 @@ parse_gettok(struct parser* p, int tempflags) {
       }
 
       buffer_puts(fd_err->w, parse_tokname(p->tok, 0));
+      {
+
+        char buf[4];
+        size_t i;
+
+        buffer_puts(fd_err->w, ": \"");
+        for(i = 0; i < p->sa.len; i++)
+          buffer_put(fd_err->w, buf, fmt_escapecharshell(buf, p->sa.s[i]));
+        buffer_puts(fd_err->w, "\"");
+      }
+      buffer_flush(fd_err->w);
 
       if(p->tok & (T_ASSIGN | T_WORD | T_NAME)) {
         debug_list(p->tree, -1);

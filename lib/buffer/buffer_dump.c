@@ -44,8 +44,9 @@ buffer_dump(buffer* out, buffer* b) {
   if(b->p > 6) {
     n = b->p;
     buffer_puts(out, "...");
-  } else
+  } else {
     n = 0;
+  }
   buffer_puts(out, "\"");
   //  buffer_puts(out, "...");
   // buffer_put_escaped(out, &b->x[n], 32);

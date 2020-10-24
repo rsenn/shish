@@ -5,17 +5,21 @@
  * ----------------------------------------------------------------------- */
 int
 source_peekn(char* c, unsigned long n) {
-  register buffer* b = source->b;
-  unsigned ret = b->n - b->p;
+  buffer* b = source->b;
+  long ret = b->n - b->p;
 
   /* no data available, try to get some */
   if(ret <= n)
     if((ret = buffer_prefetch(b, n + 1)) <= 0)
       return ret;
-
+#ifdef DEBUG_OUTPUT_
+  debug_ulong("source_peekn", ret);
+#endif
   /* got data, peek the char */
-  if(c)
+  if(c) {
+
     *c = b->x[b->p + n];
+  }
 
   return ret;
 }

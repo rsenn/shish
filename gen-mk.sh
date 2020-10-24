@@ -1,6 +1,8 @@
 #!/bin/sh -x
 
-for compiler in lcc32 lcc64 tcc32 tcc64 bcc55 bcc101; do 
+[ $# -gt 0 ] || set -- lcc32 lcc64 tcc32 tcc64 bcc55 bcc101
+
+for compiler; do 
   for build_type in Debug RelWithDebInfo MinSizeRel Release; do
 	output_dir=build/$compiler/$build_type
 	mkdir -p $output_dir

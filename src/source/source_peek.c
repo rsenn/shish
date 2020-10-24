@@ -5,17 +5,15 @@
  * ----------------------------------------------------------------------- */
 int
 source_peek(char* c) {
-  register buffer* b = source->b;
-  int ret = b->n - b->p;
+  return source_peekn(c, 0);
+  /*buffer *b;
+  int ret;
+  b = source->b;
 
-  /* no data available, try to get some */
-  if(!ret)
+  if((ret = b->n - b->p) <= 0)
     if((ret = buffer_feed(b)) <= 0)
       return ret;
-
-  /* got data, peek the char */
   if(c)
     *c = b->x[b->p];
-
-  return ret;
+  return ret;*/
 }

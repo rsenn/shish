@@ -5,11 +5,12 @@
 int
 source_get(char* c) {
   int ret;
-  ret = buffer_getc(source->b, c);
+  ret = source_peek(c);
 
-  if(ret >= 0) {
-    if(*c == '\n')
-      source_newline();
+  if(ret >= 1) {
+    source_skip();
+    /*if(*c == '\n')
+       source_newline();*/
   }
 
   return ret;
