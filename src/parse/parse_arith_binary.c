@@ -42,14 +42,14 @@ parse_arith_binary(struct parser* p, int precedence) {
       }
     } else if(prec <= 2) {
       switch(c) {
-      case '*': ntype = A_MUL; break;
-      case '/': ntype = A_DIV; break;
-      case '%': ntype = A_MOD; break;
+        case '*': ntype = A_MUL; break;
+        case '/': ntype = A_DIV; break;
+        case '%': ntype = A_MOD; break;
       }
     } else if(prec <= 3) {
       switch(c) {
-      case '+': ntype = A_ADD; break;
-      case '-': ntype = A_SUB; break;
+        case '+': ntype = A_ADD; break;
+        case '-': ntype = A_SUB; break;
       }
     } else if(prec <= 4) {
 
@@ -78,9 +78,9 @@ parse_arith_binary(struct parser* p, int precedence) {
       }
     } else if(prec <= 7) {
       switch(c) {
-      case '&': ntype = A_BAND; break;
-      case '|': ntype = A_BOR; break;
-      case '^': ntype = A_BXOR; break;
+        case '&': ntype = A_BAND; break;
+        case '|': ntype = A_BOR; break;
+        case '^': ntype = A_BXOR; break;
       }
     } else if(prec <= 8) {
       if((a == '&' || a == '|') && a == b) {

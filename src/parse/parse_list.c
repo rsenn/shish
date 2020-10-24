@@ -1,5 +1,6 @@
 #include "../parse.h"
 #include "../tree.h"
+#include "../debug.h"
 
 /* 3.9.3 - Lists
  * ----------------------------------------------------------------------- */
@@ -20,6 +21,9 @@ parse_list(struct parser* p) {
   union node** nptr;
   enum tok_flag tok;
 
+#ifdef DEBUG_OUTPUT
+  debug_fn();
+#endif
   /* keep looking for and-or lists */
   tree_init(list, nptr);
 
@@ -28,7 +32,7 @@ parse_list(struct parser* p) {
 
     /* <newline> terminates the list and eats the token */
     if(tok & T_NL)
-      return list;
+      break;
 
     /* there must be & or ; after the and-or list,
        otherwise the list will be terminated */
@@ -44,6 +48,12 @@ parse_list(struct parser* p) {
     /* now check for another and-or list */
     tree_next(nptr);
   }
+
+ #ifdef DEBUG_OUTPUT
+ buffer_puts(buffer_2, "parse_list = ");
+  debug_list(list, 0);
+  debug_nl();
+#endif
 
   return list;
 }

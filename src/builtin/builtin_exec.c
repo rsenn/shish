@@ -19,10 +19,10 @@ builtin_exec(int argc, char* argv[]) {
   /* check options, -l for login dash, -c for null env, -a to set argv[0] */
   while((c = shell_getopt(argc, argv, "cla:")) > 0) {
     switch(c) {
-    case 'c': nullenv = 1; break;
-    case 'l': dash = 1; break;
-    case 'a': argv0 = shell_optarg; break;
-    default: builtin_invopt(argv); return 1;
+      case 'c': nullenv = 1; break;
+      case 'l': dash = 1; break;
+      case 'a': argv0 = shell_optarg; break;
+      default: builtin_invopt(argv); return 1;
     }
   }
 

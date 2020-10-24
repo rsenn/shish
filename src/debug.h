@@ -71,7 +71,14 @@ void debug_node(union node* node, int depth);
 void debug_redir(const char* msg, int flags, int depth);
 void debug_subst(const char* msg, int flags, int depth);
 
+#define debug_nl() buffer_putnlflush(buffer_2)
+#define debug_fn() (buffer_puts(buffer_2, __func__), buffer_putsflush(buffer_2, "()\n"))
+
 #endif /* DEBUG_OUTPUT */
+
+#ifndef debug_nl
+#define debug_nl()
+#endif
 
 #if DEBUG_ALLOC
 

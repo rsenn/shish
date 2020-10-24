@@ -11,9 +11,6 @@ union node*
 parse_function(struct parser* p) {
   int tok;
   union node* node;
-  char c;
-  size_t i;
-  char b[64];
 
   stralloc name;
   stralloc_init(&name);

@@ -13,8 +13,7 @@ prompt_show(void) {
   size_t plen;
 
   /* increment prompt number if smaller than PS2 */
-  if(prompt_number <= 1)
-    prompt_number++;
+  prompt_nextline();
 
   /* get prompt variable name */
   prompt_var[2] = '0' + prompt_number;

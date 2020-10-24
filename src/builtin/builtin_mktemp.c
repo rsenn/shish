@@ -30,15 +30,15 @@ builtin_mktemp(int argc, char* argv[]) {
   /* check options */
   while((c = shell_getopt(argc, argv, "dqtp:u")) > 0) {
     switch(c) {
-    case 'd': directory = 1; break;
-    case 'q': quiet = 1; break;
-    case 't': temp = 1; break;
-    case 'u': printonly = 1; break;
-    case 'p':
-      temp = 1;
-      base = argv[shell_optind];
-      break;
-    default: builtin_invopt(argv); return 1;
+      case 'd': directory = 1; break;
+      case 'q': quiet = 1; break;
+      case 't': temp = 1; break;
+      case 'u': printonly = 1; break;
+      case 'p':
+        temp = 1;
+        base = argv[shell_optind];
+        break;
+      default: builtin_invopt(argv); return 1;
     }
   }
   stralloc_init(&name);

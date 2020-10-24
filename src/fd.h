@@ -18,8 +18,7 @@
 #include "../lib/shell.h"
 #include "../lib/stralloc.h"
 #include "../lib/windoze.h"
-#if WINDOWS_NATIVE && !defined(__BORLANDC__) && !defined(__MINGW32__) && !defined(__TINYC__) &&    \
-    !defined(__LCC__)
+#if WINDOWS_NATIVE && !defined(__BORLANDC__) && !defined(__MINGW32__) && !defined(__TINYC__) && !defined(__LCC__)
 #ifndef HAVE_DEV_T
 typedef int dev_t;
 #endif
@@ -133,11 +132,11 @@ enum {
 
 extern struct fd** const fdtable;
 
-#define fd_foreach(i)                                                                              \
-  for(i = fd_lo; i < fd_hi; i++)                                                                   \
+#define fd_foreach(i)                                                                                                  \
+  for(i = fd_lo; i < fd_hi; i++)                                                                                       \
     if(fd_list[i])
-#define fd_foreach_p(i, p)                                                                         \
-  for(i = fd_lo; i < fd_hi; i++)                                                                   \
+#define fd_foreach_p(i, p)                                                                                             \
+  for(i = fd_lo; i < fd_hi; i++)                                                                                       \
     if((p = fd_list[i]))
 
 /* current standard fds */

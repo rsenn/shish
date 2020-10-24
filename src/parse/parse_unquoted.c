@@ -24,7 +24,7 @@ parse_unquoted(struct parser* p) {
 
       p->tok = T_WORD;
 
-      if(source_next(&nextc) <= 0)
+      if(parse_next(p, &nextc) <= 0)
         return -1;
 
       if(parse_isesc(nextc))
@@ -39,7 +39,7 @@ parse_unquoted(struct parser* p) {
     else if(c == '"') {
       parse_string(p, 0);
 
-      source_skip();
+      parse_skip(p);
       p->quot = Q_DQUOTED;
 
       parse_string(p, 0);
@@ -49,7 +49,7 @@ parse_unquoted(struct parser* p) {
     else if(c == '\'') {
       parse_string(p, 0);
 
-      source_skip();
+      parse_skip(p);
       p->quot = Q_SQUOTED;
 
       parse_string(p, 0);
@@ -92,7 +92,7 @@ parse_unquoted(struct parser* p) {
      */
     else if(p->flags & P_SUBSTW) {
       if(c == '}') {
-        source_skip();
+        parse_skip(p);
         parse_string(p, flags);
         return 1;
       }
@@ -119,7 +119,7 @@ parse_unquoted(struct parser* p) {
       p->tok = T_WORD;
 
     stralloc_catc(&p->sa, c);
-    source_skip();
+    parse_skip(p);
   }
 
   return 0;

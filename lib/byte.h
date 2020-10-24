@@ -66,14 +66,8 @@ size_t byte_finds(const void* haystack, size_t hlen, const char* what);
 #endif
 
 #ifdef STRALLOC_H
-size_t byte_fmt(const char* in,
-                size_t in_len,
-                stralloc* out,
-                size_t (*fmt_function)(char*, unsigned int ch));
-size_t byte_scan(const char* in,
-                 size_t in_len,
-                 stralloc* out,
-                 size_t (*scan_function)(const char*, char*));
+size_t byte_fmt(const char* in, size_t in_len, stralloc* out, size_t (*fmt_function)(char*, unsigned int ch));
+size_t byte_scan(const char* in, size_t in_len, stralloc* out, size_t (*scan_function)(const char*, char*));
 #endif
 
 void byte_replace(char* x, size_t n, char before, char after);
@@ -94,7 +88,7 @@ byte_trim(char* x, size_t* n, const char* trimchars, unsigned int trimcharslen) 
 size_t byte_camelize(char* x, size_t len);
 
 #define byte_foreach(x, n, p) byte_foreach_skip(x, n, p, 1)
-#define byte_foreach_skip(x, n, p, skip)                                                           \
+#define byte_foreach_skip(x, n, p, skip)                                                                               \
   for((p) = (void*)x; (void*)(p) != ((char*)(x) + (n)); (p) = (void*)(((char*)(p)) + (skip)))
 
 #ifdef __cplusplus

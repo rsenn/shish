@@ -21,9 +21,9 @@ parse_keyword(struct parser* p) {
       return 0;
 
     switch(*sa->s) {
-    case '{': p->tok = T_BEGIN; return 1;
-    case '}': p->tok = T_END; return 1;
-    case '!': p->tok = T_NOT; return 1;
+      case '{': p->tok = T_BEGIN; return 1;
+      case '}': p->tok = T_END; return 1;
+      case '!': p->tok = T_NOT; return 1;
     }
 
     return 0;

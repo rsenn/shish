@@ -30,7 +30,6 @@ static const char* fd_flags[] = {"READ",
 void
 fd_dump(struct fd* fd, buffer* b) {
   unsigned long n;
-  char numbuf[FMT_LONG];
   int out = 0;
 
   if(fd->name == NULL)

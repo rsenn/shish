@@ -5,17 +5,14 @@
 
 void
 debug_space(int count, int newline) {
-
   if(!newline && buffer_2->n == buffer_2->p)
     return;
-
   if(newline) {
     buffer_put(buffer_2, "\n", 1);
-    if(count < 0) {
-      buffer_putspace(buffer_2);
-    } else {
+    if(count < 0)
+      ; //   buffer_putspace(buffer_2);
+    else
       buffer_putnspace(buffer_2, count * DEBUG_SPACE + 1);
-    }
   } else {
     buffer_putspace(buffer_2);
   }

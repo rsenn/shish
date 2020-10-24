@@ -20,10 +20,10 @@ builtin_mkdir(int argc, char* argv[]) {
   /* check options */
   while((c = shell_getopt(argc, argv, "pv")) > 0) {
     switch(c) {
-    case 'p': components = 1; break;
-    case 'v': verbose = 1; break;
+      case 'p': components = 1; break;
+      case 'v': verbose = 1; break;
 
-    default: builtin_invopt(argv); return 1;
+      default: builtin_invopt(argv); return 1;
     }
   }
 

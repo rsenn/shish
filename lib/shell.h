@@ -18,8 +18,7 @@ int shell_readlink(const char* path, stralloc* sa);
 
 int shell_canonicalize(const char* path, stralloc* sa, int symbolic);
 
-int shell_fnmatch(
-    const char* pattern, unsigned int plen, const char* string, unsigned int slen, int flags);
+int shell_fnmatch(const char* pattern, unsigned int plen, const char* string, unsigned int slen, int flags);
 
 char* shell_basename(char* path);
 char* shell_dirname(char* path);

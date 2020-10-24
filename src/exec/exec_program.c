@@ -34,8 +34,7 @@ int
 exec_program(char* path, char** argv, int exec, union node* redir) {
   int ret = 0;
   struct fd* pipes = 0;
-  sigset_t /* nset, */ oset;
-
+  
   /* if we're gonna execve() a program and 'exec' isn't
      set or we aren't in the root shell environment we
      have to fork() so we can return */
@@ -69,7 +68,7 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
        * end :) */
       fdstack_pop(&io);
       if(n)
-      fdstack_data();
+        fdstack_data();
 
       if(pipes)
         shell_free(pipes);

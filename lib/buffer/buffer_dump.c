@@ -9,7 +9,8 @@
 #endif
 
 extern ssize_t buffer_dummyreadmmap();
-extern unsigned long stralloc_write();
+extern int stralloc_write(int, const char*, size_t, buffer*);
+
 
 void
 buffer_dump(buffer* out, buffer* b) {

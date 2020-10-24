@@ -23,11 +23,12 @@ debug_stralloc(const char* msg, stralloc* s, int depth, char quote) {
     const char* end = s->s + s->len;
 
     while(x < end) {
-      /*  if(*x == '\n')
-          buffer_puts(buffer_2, "\\n");
-        else*/
-
-      buffer_putc(buffer_2, *x);
+      if(*x == '\n')
+        buffer_puts(buffer_2, "\\n");
+      else if(*x == '\r')
+        buffer_puts(buffer_2, "\\r");
+      else
+        buffer_putc(buffer_2, *x);
       x++;
     }
   }

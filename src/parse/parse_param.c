@@ -48,13 +48,13 @@ parse_param(struct parser* p) {
 
   /* check for special arguments */
   switch(c) {
-  case '#': p->node->nargparam.flag |= S_ARGC; break;
-  case '*': p->node->nargparam.flag |= S_ARGV; break;
-  case '@': p->node->nargparam.flag |= S_ARGVS; break;
-  case '?': p->node->nargparam.flag |= S_EXITCODE; break;
-  case '-': p->node->nargparam.flag |= S_FLAGS; break;
-  case '!': p->node->nargparam.flag |= S_BGEXCODE; break;
-  case '$': p->node->nargparam.flag |= S_PID; break;
+    case '#': p->node->nargparam.flag |= S_ARGC; break;
+    case '*': p->node->nargparam.flag |= S_ARGV; break;
+    case '@': p->node->nargparam.flag |= S_ARGVS; break;
+    case '?': p->node->nargparam.flag |= S_EXITCODE; break;
+    case '-': p->node->nargparam.flag |= S_FLAGS; break;
+    case '!': p->node->nargparam.flag |= S_BGEXCODE; break;
+    case '$': p->node->nargparam.flag |= S_PID; break;
   }
 
   /* add the first char to the varname */
@@ -108,7 +108,7 @@ parse_param(struct parser* p) {
   if(c == '%' || c == '#') {
     char nextc;
     p->node->nargparam.flag |= (c == '%') ? S_RSSFX : S_RSPFX;
-    if(source_next(&nextc) > 0 && nextc == c) {
+    if(parse_next(p, &nextc) > 0 && nextc == c) {
       p->node->nargparam.flag += (1 << 8);
       parse_skip(p);
     }
@@ -119,26 +119,26 @@ parse_param(struct parser* p) {
      */
     if(c == ':') {
       p->node->nargparam.flag |= S_NULL;
-      source_next(&c);
+      parse_next(p, &c);
     }
 
     switch(c) {
-    case '-':
-      p->node->nargparam.flag |= S_DEFAULT;
-      parse_skip(p);
-      break;
-    case '=':
-      p->node->nargparam.flag |= S_ASGNDEF;
-      parse_skip(p);
-      break;
-    case '?':
-      p->node->nargparam.flag |= S_ERRNULL;
-      parse_skip(p);
-      break;
-    case '+':
-      p->node->nargparam.flag |= S_ALTERNAT;
-      parse_skip(p);
-      break;
+      case '-':
+        p->node->nargparam.flag |= S_DEFAULT;
+        parse_skip(p);
+        break;
+      case '=':
+        p->node->nargparam.flag |= S_ASGNDEF;
+        parse_skip(p);
+        break;
+      case '?':
+        p->node->nargparam.flag |= S_ERRNULL;
+        parse_skip(p);
+        break;
+      case '+':
+        p->node->nargparam.flag |= S_ALTERNAT;
+        parse_skip(p);
+        break;
     }
   }
 

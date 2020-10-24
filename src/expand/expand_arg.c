@@ -11,8 +11,7 @@ expand_arg(union node* node, union node** nptr, int flags) {
   union node* subarg;
 
   /* loop through all parts of the word */
-  for(subarg = (node && node->id == N_ARG) ? node->narg.list : node; subarg;
-      subarg = subarg->nargstr.next) {
+  for(subarg = (node && node->id == N_ARG) ? node->narg.list : node; subarg; subarg = subarg->nargstr.next) {
     int lflags = flags; /* local flags */
 
     if(subarg->nargstr.flag & S_NOSPLIT)
@@ -24,22 +23,22 @@ expand_arg(union node* node, union node** nptr, int flags) {
 
     /* expand argument parts */
     switch(subarg->id) {
-    /* exprmetic substitution */
-    case N_ARGARITH: n = expand_arith(&subarg->nargarith, nptr); break;
+      /* exprmetic substitution */
+      case N_ARGARITH: n = expand_arith(&subarg->nargarith, nptr); break;
 
-    /* parameter substitution */
-    case N_ARGPARAM: n = expand_param(&subarg->nargparam, nptr, lflags); break;
+      /* parameter substitution */
+      case N_ARGPARAM: n = expand_param(&subarg->nargparam, nptr, lflags); break;
 
-    /* command substitution */
-    case N_ARGCMD: n = expand_command(&subarg->nargcmd, nptr, lflags); break;
+      /* command substitution */
+      case N_ARGCMD: n = expand_command(&subarg->nargcmd, nptr, lflags); break;
 
-    /* constant string */
-    case N_ARGSTR:
-      assert(subarg->nargstr.stra.s);
-      n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, nptr, lflags);
-      break;
+      /* constant string */
+      case N_ARGSTR:
+        assert(subarg->nargstr.stra.s);
+        n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, nptr, lflags);
+        break;
 
-    default: break;
+      default: break;
     }
 
     if(n)

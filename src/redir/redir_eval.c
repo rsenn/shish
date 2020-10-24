@@ -37,9 +37,9 @@ redir_eval(struct nredir* nredir, struct fd* fd, int rfl) {
 
   /* do the appropriate redirection */
   switch(nredir->flag & R_ACT) {
-  case R_OPEN: r = redir_open(nredir, &sa); break;
-  case R_HERE: r = redir_here(nredir, &sa); break;
-  default: r = redir_dup(nredir, &sa); break;
+    case R_OPEN: r = redir_open(nredir, &sa); break;
+    case R_HERE: r = redir_here(nredir, &sa); break;
+    default: r = redir_dup(nredir, &sa); break;
   }
 
   /*  if(nredir->flag & R_NOW)

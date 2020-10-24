@@ -22,11 +22,11 @@ parse_dquoted(struct parser* p) {
     if(c == '\\') {
       char nextc;
 
-      if(source_next(&nextc) <= 0)
+      if(parse_next(p, &nextc) <= 0)
         return -1;
 
       if(parse_isdesc(nextc)) {
-        source_skip();
+        parse_skip(p);
         c = nextc;
       }
     } else if(c == '`') {
@@ -45,12 +45,12 @@ parse_dquoted(struct parser* p) {
     /* when spotted a closing quote,
        skip it and unset quotation mode */
     else if(!(p->flags & P_HERE) && c == '"') {
-      source_skip();
+      parse_skip(p);
       parse_string(p, 0);
       p->quot = Q_UNQUOTED;
       break;
     } else {
-      source_skip();
+      parse_skip(p);
     }
 
     if(parse_isesc(c) && !(p->flags & P_HERE))

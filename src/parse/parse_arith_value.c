@@ -37,7 +37,7 @@ parse_arith_value(struct parser* p) {
     do {
       x[n++] = c;
 
-      if(source_next(&c) <= 0)
+      if(parse_next(p, &c) <= 0)
         break;
 
       classes = parse_chartable[(int)(unsigned char)c];
@@ -49,24 +49,24 @@ parse_arith_value(struct parser* p) {
           c = 'o';
 
         switch(c) {
-        case 'x':
-          scan_fn = (scan_function*)&scan_xlonglong;
-          cclass = C_HEX;
-          break;
+          case 'x':
+            scan_fn = (scan_function*)&scan_xlonglong;
+            cclass = C_HEX;
+            break;
 
-        case 'o':
-          scan_fn = (scan_function*)&scan_octal;
-          cclass = C_OCTAL;
-          break;
-        default: {
-          buffer_puts(fd_err->w, "ERROR: expecting x|b|o");
-          buffer_putnlflush(fd_err->w);
-          return NULL;
-        }
+          case 'o':
+            scan_fn = (scan_function*)&scan_octal;
+            cclass = C_OCTAL;
+            break;
+          default: {
+            buffer_puts(fd_err->w, "ERROR: expecting x|b|o");
+            buffer_putnlflush(fd_err->w);
+            return NULL;
+          }
         }
 
         if((classes & (C_UPPER | C_LOWER))) {
-          digit = source_next(&c) > 0;
+          digit = parse_next(p, &c) > 0;
           n = 0;
         }
       }

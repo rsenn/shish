@@ -36,71 +36,71 @@ prompt_escape(const char* s, stralloc* sa) {
     }
 
     switch(s[1]) {
-    /* escape seq */
-    case 'e':
-      stralloc_catc(sa, 0x1b);
-      s++;
-      break;
+      /* escape seq */
+      case 'e':
+        stralloc_catc(sa, 0x1b);
+        s++;
+        break;
 
-    /* hostname */
-    case 'h':
-      if(!sh_hostname.s)
-        shell_gethostname(&sh_hostname);
-      if(sh_hostname.s)
-        stralloc_cat(sa, &sh_hostname);
-      s++;
-      break;
+      /* hostname */
+      case 'h':
+        if(!sh_hostname.s)
+          shell_gethostname(&sh_hostname);
+        if(sh_hostname.s)
+          stralloc_cat(sa, &sh_hostname);
+        s++;
+        break;
 
-    /* root (#) or user ($) */
-    case '$':
-      stralloc_catc(sa, (sh_uid ? '$' : '#'));
-      s++;
-      break;
+      /* root (#) or user ($) */
+      case '$':
+        stralloc_catc(sa, (sh_uid ? '$' : '#'));
+        s++;
+        break;
 
-    /* shell basename */
-    case 's':
-      stralloc_cats(sa, sh_name);
-      s++;
-      break;
+      /* shell basename */
+      case 's':
+        stralloc_cats(sa, sh_name);
+        s++;
+        break;
 
 #ifdef PACKAGE_VERSION
-    /* shell version */
-    case 'v':
-      stralloc_cats(sa, PACKAGE_VERSION);
-      s++;
-      break;
+      /* shell version */
+      case 'v':
+        stralloc_cats(sa, PACKAGE_VERSION);
+        s++;
+        break;
 #endif
 
-    /* working dir */
-    case 'w':
-      stralloc_cat(sa, &sh->cwd);
-      s++;
-      break;
+      /* working dir */
+      case 'w':
+        stralloc_cat(sa, &sh->cwd);
+        s++;
+        break;
 
-    case 'u': {
+      case 'u': {
 #if WINDOWS_NATIVE
-      DWORD len = 64;
-      stralloc_readyplus(sa, len);
-      if(GetUserNameA(sa->s, &len))
-        sa->len += len;
+        DWORD len = 64;
+        stralloc_readyplus(sa, len);
+        if(GetUserNameA(sa->s, &len))
+          sa->len += len;
 #else
-      size_t len;
-      const char* user = var_value("USER", &len);
+        size_t len;
+        const char* user = var_value("USER", &len);
 
-      if(user && len)
-        stralloc_catb(sa, user, len);
-      else
-        stralloc_catulong(sa, getuid());
+        if(user && len)
+          stralloc_catb(sa, user, len);
+        else
+          stralloc_catulong(sa, getuid());
 #endif
-      s++;
-      break;
-    }
+        s++;
+        break;
+      }
 
-    /* bash shit */
-    case '[':
-    case ']': s++; break;
+      /* bash shit */
+      case '[':
+      case ']': s++; break;
 
-    default: stralloc_catc(sa, *s); break;
+      default: stralloc_catc(sa, *s); break;
     }
   }
 }

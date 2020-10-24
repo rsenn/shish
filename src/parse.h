@@ -65,8 +65,7 @@ extern const unsigned short parse_chartable[CHAR_RANGE];
 #define parse_isname(c) (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_NAME))
 
 /* is either alpha, digit or underscore or special parameter */
-#define parse_isparam(c)                                                                           \
-  (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_DIGIT | C_NAME | C_SPCL))
+#define parse_isparam(c) (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_DIGIT | C_NAME | C_SPCL))
 
 /* token structure:
  * ----------------------------------------------------------------------- *

@@ -1,4 +1,5 @@
 #include "../debug.h"
+#include "../buffer.h"
 
 #ifdef DEBUG_OUTPUT
 #include "../fd.h"
@@ -8,8 +9,9 @@
 void
 debug_char(const char* msg, char c, int depth) {
   debug_space(depth, 0);
+  buffer_puts(buffer_2, COLOR_YELLOW);
   buffer_puts(buffer_2, msg);
-  buffer_puts(buffer_2, " = '");
+  buffer_puts(buffer_2, COLOR_CYAN " = '");
   if(c >= 20)
     buffer_put(buffer_2, &c, 1);
   else if(c == '\n')
@@ -24,6 +26,6 @@ debug_char(const char* msg, char c, int depth) {
     buffer_puts(buffer_2, "\\x");
     buffer_putxlong0(buffer_2, c, 2);
   }
-  buffer_putsflush(buffer_2, "'\n");
+  buffer_putsflush(buffer_2, "'" COLOR_NONE);
 }
 #endif /* defined(DEBUG_OUTPUT) */

@@ -16,7 +16,6 @@
  * ----------------------------------------------------------------------- */
 union node*
 parse_case(struct parser* p) {
-  enum tok_id tok;
   union node* node;
   union node** cptr;
   union node** pptr;

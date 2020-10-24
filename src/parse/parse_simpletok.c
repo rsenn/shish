@@ -35,93 +35,93 @@ again:
 
   /* now we have a non-space char */
   switch(c) {
-  /* skip comments */
-  case '#':
-    do {
-      if(parse_next(p, &c) <= 0)
-        return T_EOF;
-    } while(c != '\n'); /* after getting chars fall into newline case */
-    goto newline;
-  /* check for escaped newline (line continuation) */
-  case '\\':
-    if(source_peekn(&c, 1) <= 0)
-      return T_EOF;
-
-    /* CRAP CODE to support win, mac, unix line termination */
-    if(c == '\r') {
-      parse_skip(p);
+    /* skip comments */
+    case '#':
+      do {
+        if(parse_next(p, &c) <= 0)
+          return T_EOF;
+      } while(c != '\n'); /* after getting chars fall into newline case */
+      goto newline;
+    /* check for escaped newline (line continuation) */
+    case '\\':
       if(source_peekn(&c, 1) <= 0)
+        return T_EOF;
+
+      /* CRAP CODE to support win, mac, unix line termination */
+      if(c == '\r') {
+        parse_skip(p);
+        if(source_peekn(&c, 1) <= 0)
+          return T_EOF;
+        if(c == '\n')
+          parse_skip(p);
+        parse_skip(p);
+        prompt_show();
+        goto again;
+      }
+      if(c == '\n') {
+        parse_skip(p);
+        parse_skip(p);
+
+        if(p->flags & P_IACTIVE)
+          prompt_show();
+
+        goto again;
+      }
+      /* END OF CRAP CODE to be fixed */
+
+      return -1;
+    /* might be a mac or a windows newline */
+    case '\r':
+      if(parse_next(p, &c) <= 0)
         return T_EOF;
       if(c == '\n')
         parse_skip(p);
-      parse_skip(p);
-      prompt_show();
-      goto again;
-    }
-    if(c == '\n') {
-      parse_skip(p);
-      parse_skip(p);
+    /* encountered a new line */
+    case '\n':
+    newline:
+      /*      parse_lineno++;*/
+      tok = T_NL;
+      break;
+    /* check for a pipe char, and then check for || */
+    case '|': tok = T_PIPE; goto checkdouble;
+    /* check for a background char, and then check for && */
+    case '&': tok = T_BGND; goto checkdouble;
+    /* check for a semicolon, and then check for ;; */
+    case ';':
+      tok = T_SEMI;
 
-      if(p->flags & P_IACTIVE)
-        prompt_show();
+      /* check if the next char is the same */
+    checkdouble : {
+      char c2;
 
-      goto again;
-    }
-    /* END OF CRAP CODE to be fixed */
+      /* advance buffer position now, but not later */
+      advance = 0;
 
-    return -1;
-  /* might be a mac or a windows newline */
-  case '\r':
-    if(parse_next(p, &c) <= 0)
-      return T_EOF;
-    if(c == '\n')
-      parse_skip(p);
-  /* encountered a new line */
-  case '\n':
-  newline:
-    /*      parse_lineno++;*/
-    tok = T_NL;
-    break;
-  /* check for a pipe char, and then check for || */
-  case '|': tok = T_PIPE; goto checkdouble;
-  /* check for a background char, and then check for && */
-  case '&': tok = T_BGND; goto checkdouble;
-  /* check for a semicolon, and then check for ;; */
-  case ';':
-    tok = T_SEMI;
+      /* peek a char and look it it's the same */
+      if(parse_next(p, &c2) > 0 && c == c2) {
+        /* advance buffer position later, because the char
+           we peeked was valid */
+        advance = 1;
 
-    /* check if the next char is the same */
-  checkdouble : {
-    char c2;
-
-    /* advance buffer position now, but not later */
-    advance = 0;
-
-    /* peek a char and look it it's the same */
-    if(parse_next(p, &c2) > 0 && c == c2) {
-      /* advance buffer position later, because the char
-         we peeked was valid */
-      advance = 1;
-
-      /* do not change order of the ;/;;, &/&&, |/|| tokens,
-         they must be subsequent to each other for the next
-         line to work */
-      tok <<= 1;
-    }
-    break;
-  }
-  /* begin or end a subshell */
-  case '(': tok = T_LP; break;
-  case ')': tok = T_RP; break;
-  /* handle backquote as (ending) token only when
-     we're in a backquoted cmd list */
-  case '`':
-    if(p->flags & P_BQUOTE) {
-      tok = T_BQ;
+        /* do not change order of the ;/;;, &/&&, |/|| tokens,
+           they must be subsequent to each other for the next
+           line to work */
+        tok <<= 1;
+      }
       break;
     }
+    /* begin or end a subshell */
+    case '(': tok = T_LP; break;
+    case ')': tok = T_RP; break;
+    /* handle backquote as (ending) token only when
+       we're in a backquoted cmd list */
+    case '`':
+      if(p->flags & P_BQUOTE) {
+        tok = T_BQ;
+        break;
+      }
 
-  default: return -1;
+    default: return -1;
   }
 
   if(advance)

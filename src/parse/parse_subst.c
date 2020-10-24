@@ -6,7 +6,7 @@ int
 parse_subst(struct parser* p) {
   char c;
 
-  if(source_next(&c) <= 0)
+  if(parse_next(p, &c) <= 0)
     return -1;
 
   if(c == '(') {
@@ -14,7 +14,7 @@ parse_subst(struct parser* p) {
       return -1;
 
     if(c == '(') {
-      source_skip();
+      parse_skip(p);
       return parse_arith(p);
     }
 

@@ -37,9 +37,9 @@ sh_loop(void) {
       struct eval e;
 
       if(source->mode & SOURCE_IACTIVE) {
-        /*#ifndef NO_TREE_PRINT
-                tree_printlist(list, &cmd, NULL);
-        #endif*/
+#ifndef NO_TREE_PRINT
+        tree_printlist(list, &cmd, NULL);
+#endif
         buffer* in = source->b;
 
         stralloc_copyb(&cmd, in->x, in->n);
@@ -53,10 +53,10 @@ sh_loop(void) {
         history_advance();
       }
 
-#ifdef DEBUG_OUTPUT
-      debug_list(list, 0);
-      buffer_putnlflush(fd_err->w);
-#endif /* DEBUG_OUTPUT */
+      /*#ifdef DEBUG_OUTPUT
+            debug_list(list, 0);
+            buffer_putnlflush(fd_err->w);
+      #endif *//* DEBUG_OUTPUT */
       eval_push(&e, E_JCTL);
       eval_tree(&e, list, E_ROOT | E_LIST);
       sh->exitcode = eval_pop(&e);
@@ -82,6 +82,6 @@ sh_loop(void) {
       p.pushback = 0;
 
     /* reset prompt */
-    prompt_number = 0;
+    prompt_reset();
   }
 }

@@ -30,9 +30,9 @@ builtin_cd(int argc, char* argv[]) {
   /* check options, -L for symlink, -P for physical path */
   while((c = shell_getopt(argc, argv, "LP")) > 0) {
     switch(c) {
-    case 'L': symbolic = 1; break;
-    case 'P': symbolic = 0; break;
-    default: builtin_invopt(argv); return 1;
+      case 'L': symbolic = 1; break;
+      case 'P': symbolic = 0; break;
+      default: builtin_invopt(argv); return 1;
     }
   }
 

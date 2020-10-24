@@ -20,8 +20,8 @@ builtin_hostname(int argc, char* argv[]) {
   /* check options */
   while((c = shell_getopt(argc, argv, "f")) > 0) {
     switch(c) {
-    case 'f': force = 1; break;
-    default: builtin_invopt(argv); return 1;
+      case 'f': force = 1; break;
+      default: builtin_invopt(argv); return 1;
     }
   }
 

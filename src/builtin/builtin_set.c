@@ -14,9 +14,9 @@ builtin_set(int argc, char* argv[]) {
   /* check options */
   while((c = shell_getopt(argc, argv, "xe")) > 0) {
     switch(c) {
-    case 'x': debug = 1; break;
-    case 'e': exit_on_err = 1; break;
-    default: builtin_invopt(argv); return 1;
+      case 'x': debug = 1; break;
+      case 'e': exit_on_err = 1; break;
+      default: builtin_invopt(argv); return 1;
     }
   }
 

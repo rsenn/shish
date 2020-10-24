@@ -23,8 +23,7 @@ fd_exec(struct fd* fd) {
 
       /* read from the read buf (stralloc)
          and put it into write buf (tempfile) */
-      for(p = 0; p < fd->rb.n; p += 128)
-        buffer_put(&fd->wb, &fd->rb.x[p], (fd->rb.n - p > 128) ? 128 : (fd->rb.n - p));
+      for(p = 0; p < fd->rb.n; p += 128) buffer_put(&fd->wb, &fd->rb.x[p], (fd->rb.n - p > 128) ? 128 : (fd->rb.n - p));
 
       buffer_flush(&fd->wb);
       buffer_free(&fd->rb);

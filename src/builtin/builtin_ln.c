@@ -18,10 +18,10 @@ builtin_ln(int argc, char* argv[]) {
   /* check options */
   while((c = shell_getopt(argc, argv, "fsv")) > 0) {
     switch(c) {
-    case 's': symbolic = 1; break;
-    case 'f': force = 1; break;
-    case 'v': verbose = 1; break;
-    default: builtin_invopt(argv); return 1;
+      case 's': symbolic = 1; break;
+      case 'f': force = 1; break;
+      case 'v': verbose = 1; break;
+      default: builtin_invopt(argv); return 1;
     }
   }
 

@@ -11,8 +11,7 @@
 #define NOTFIRST 0x80
 
 int
-shell_fnmatch(
-    const char* pattern, unsigned int plen, const char* string, unsigned int slen, int flags) {
+shell_fnmatch(const char* pattern, unsigned int plen, const char* string, unsigned int slen, int flags) {
   /*  buffer_puts(buffer_2, "fnmatch: ");
     buffer_put(buffer_2, pattern, plen);
     buffer_putspace(buffer_2);
@@ -56,123 +55,122 @@ start:
   flags |= NOTFIRST;
 
   switch(*pattern) {
-  case '[': {
-    const char* start;
-    int neg = 0;
+    case '[': {
+      const char* start;
+      int neg = 0;
 
-    pattern++;
-    plen--;
+      pattern++;
+      plen--;
 
-    /* unterminated character class because in a pathname the '/' is a separator
-       and can't be matched. this means we have a mismatch */
-    if(*string == '/' && (flags & SH_FNM_PATHNAME))
-      return SH_FNM_NOMATCH;
+      /* unterminated character class because in a pathname the '/' is a separator
+         and can't be matched. this means we have a mismatch */
+      if(*string == '/' && (flags & SH_FNM_PATHNAME))
+        return SH_FNM_NOMATCH;
 
-    /* exclamation mark negates the class */
-    neg = (*pattern == '!');
-    pattern += neg;
-    plen -= neg;
+      /* exclamation mark negates the class */
+      neg = (*pattern == '!');
+      pattern += neg;
+      plen -= neg;
 
-    /* now start scanning the pattern */
-    start = pattern;
+      /* now start scanning the pattern */
+      start = pattern;
 
-    while(plen) {
-      int res = 0;
+      while(plen) {
+        int res = 0;
 
-      /* if there is a closing bracket and it's not
-         the first char the class is terminated */
-      if(*pattern == ']' && pattern != start)
-        break;
+        /* if there is a closing bracket and it's not
+           the first char the class is terminated */
+        if(*pattern == ']' && pattern != start)
+          break;
 
-      if(*pattern == '[' && pattern[1] == ':') {
-        /* MEMBER - stupid POSIX char classes */
-        /* TODO: implement them, but maybe not because POSIX sucks here! HARR HARR */
-      } else {
-        /* MEMBER - character range */
-        if(plen > 1 && pattern[1] == '-' && pattern[2] != ']') {
-          /* check wheter char is within the specified range */
-          res = (*string >= *pattern && *string <= pattern[2]);
-          pattern += 3;
-          plen -= 3;
+        if(*pattern == '[' && pattern[1] == ':') {
+          /* MEMBER - stupid POSIX char classes */
+          /* TODO: implement them, but maybe not because POSIX sucks here! HARR HARR */
+        } else {
+          /* MEMBER - character range */
+          if(plen > 1 && pattern[1] == '-' && pattern[2] != ']') {
+            /* check wheter char is within the specified range */
+            res = (*string >= *pattern && *string <= pattern[2]);
+            pattern += 3;
+            plen -= 3;
+          }
+          /* MEMBER - literal character match */
+          else {
+            res = (*pattern == *string);
+            pattern++;
+            plen--;
+          }
         }
-        /* MEMBER - literal character match */
-        else {
-          res = (*pattern == *string);
-          pattern++;
-          plen--;
+
+        /* character class seems terminated and matched */
+        if((res && !neg) || ((!res && neg) && *pattern == ']')) {
+          while(plen && *pattern != ']') {
+            pattern++;
+            plen--;
+          }
+
+          pattern += !!plen;
+          plen -= !!plen;
+          string++;
+          slen--;
+          goto start;
         }
+        /* not terminated but unmatched */
+        else if(res && neg)
+          break;
       }
+    } break;
 
-      /* character class seems terminated and matched */
-      if((res && !neg) || ((!res && neg) && *pattern == ']')) {
-        while(plen && *pattern != ']') {
-          pattern++;
-          plen--;
-        }
+    case '\\': {
+      /* do we escape chars? */
+      if(!(flags & SH_FNM_NOESCAPE)) {
+        /* escape next character... */
+        pattern++;
+        plen--;
 
-        pattern += !!plen;
-        plen -= !!plen;
-        string++;
-        slen--;
+        /* ...if there is one */
+        if(plen)
+          goto match;
+      }
+      /* don't escape -> literal match */
+      else
+        goto match;
+    } break;
+
+    case '*': {
+      /* this is the only situation where we really need to recurse */
+      if((*string == '/' && (flags & SH_FNM_PATHNAME)) || shell_fnmatch(pattern, plen, string + 1, slen - 1, flags)) {
+        pattern++;
+        plen--;
         goto start;
       }
-      /* not terminated but unmatched */
-      else if(res && neg)
+
+      return 0;
+    }
+
+    case '?': {
+      /* it can't match a / when we're matching a pathname */
+      if(*string == '/' && (flags & SH_FNM_PATHNAME))
         break;
-    }
-  } break;
 
-  case '\\': {
-    /* do we escape chars? */
-    if(!(flags & SH_FNM_NOESCAPE)) {
-      /* escape next character... */
-      pattern++;
-      plen--;
-
-      /* ...if there is one */
-      if(plen)
-        goto match;
-    }
-    /* don't escape -> literal match */
-    else
-      goto match;
-  } break;
-
-  case '*': {
-    /* this is the only situation where we really need to recurse */
-    if((*string == '/' && (flags & SH_FNM_PATHNAME)) ||
-       shell_fnmatch(pattern, plen, string + 1, slen - 1, flags)) {
-      pattern++;
-      plen--;
-      goto start;
-    }
-
-    return 0;
-  }
-
-  case '?': {
-    /* it can't match a / when we're matching a pathname */
-    if(*string == '/' && (flags & SH_FNM_PATHNAME))
-      break;
-
-    pattern++;
-    plen--;
-    string++;
-    slen--;
-  }
-    goto start;
-
-  default:
-  match : {
-    /* perform literal match */
-    if(*pattern == *string) {
       pattern++;
       plen--;
       string++;
       slen--;
-      goto start;
     }
-  } break;
+      goto start;
+
+    default:
+    match : {
+      /* perform literal match */
+      if(*pattern == *string) {
+        pattern++;
+        plen--;
+        string++;
+        slen--;
+        goto start;
+      }
+    } break;
   }
 
   return SH_FNM_NOMATCH;

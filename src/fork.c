@@ -85,12 +85,11 @@ fork(void) {
     return -ENOSYS;
 
   /* lets do this */
-  result =
-      clone_p(RTL_CLONE_PROCESS_FLAGS_CREATE_SUSPENDED | RTL_CLONE_PROCESS_FLAGS_INHERIT_HANDLES,
-              NULL,
-              NULL,
-              NULL,
-              &process_info);
+  result = clone_p(RTL_CLONE_PROCESS_FLAGS_CREATE_SUSPENDED | RTL_CLONE_PROCESS_FLAGS_INHERIT_HANDLES,
+                   NULL,
+                   NULL,
+                   NULL,
+                   &process_info);
 
   if(result == RTL_CLONE_PARENT) {
     HANDLE me = GetCurrentProcess();

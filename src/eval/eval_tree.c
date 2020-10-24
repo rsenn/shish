@@ -9,7 +9,7 @@ int
 eval_tree(struct eval* e, union node* node, int tempflags) {
   int ret = 0;
   int list = 0, ex = 0;
-  int oldflags;
+//  int oldflags;
 
   if((e->flags | tempflags) & E_LIST) {
     list = 1;
@@ -21,7 +21,7 @@ eval_tree(struct eval* e, union node* node, int tempflags) {
     e->flags &= ~E_EXIT;
     tempflags &= ~E_EXIT;
   }
-  oldflags = e->flags;
+  //oldflags = e->flags;
   e->flags |= tempflags;
 
   while(node) {

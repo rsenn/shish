@@ -20,10 +20,10 @@ builtin_rmdir(int argc, char* argv[]) {
   /* check options */
   while((c = shell_getopt(argc, argv, "vfr")) > 0) {
     switch(c) {
-    case 'v': verbose = 1; break;
-    case 'f': force = 1; break;
-    case 'p': parents = 1; break;
-    default: builtin_invopt(argv); return 1;
+      case 'v': verbose = 1; break;
+      case 'f': force = 1; break;
+      case 'p': parents = 1; break;
+      default: builtin_invopt(argv); return 1;
     }
   }
 

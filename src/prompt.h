@@ -8,9 +8,10 @@ extern union node* prompt_node;
 extern char prompt_var[4];
 extern stralloc prompt_expansion;
 
-void prompt_escape(const char* s, stralloc* sa);
-void prompt_parse(void);
+void prompt_escape(const char*, stralloc*);
 void prompt_expand(void);
+void prompt_nextline(void);
+void prompt_parse(void);
 void prompt_reset(void);
 void prompt_show(void);
 

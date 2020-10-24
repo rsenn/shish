@@ -14,7 +14,7 @@ debug_sublist(const char* s, union node* node, int depth) {
     if(s) {
       buffer_puts(buffer_2, COLOR_YELLOW);
       buffer_puts(buffer_2, s);
-      buffer_puts(buffer_2, COLOR_CYAN "=" COLOR_NONE);
+      buffer_puts(buffer_2, COLOR_CYAN " = " COLOR_NONE);
       /*
             if(!str_diffn(s, "cmd", 3)) {
               buffer_puts(buffer_2, COLOR_CYAN "[" COLOR_NONE);

@@ -31,68 +31,68 @@ redir_parse(struct parser* p, int rf, int fd) {
   /* parse input redirection operator (3.7.1) */
   if(rf & R_IN) {
     switch(c) {
-    /* << is here-doc (3.7.4) */
-    case '<':
-      rf |= R_HERE;
-      stralloc_catb(&p->sa, &c, 1);
+      /* << is here-doc (3.7.4) */
+      case '<':
+        rf |= R_HERE;
+        stralloc_catb(&p->sa, &c, 1);
 
-      if(source_next(&c) <= 0)
-        return T_EOF;
+        if(source_next(&c) <= 0)
+          return T_EOF;
 
-      /* <<- means strip leading tabs and trailing whitespace */
-      if(c == '-') {
-        rf |= R_STRIP;
+        /* <<- means strip leading tabs and trailing whitespace */
+        if(c == '-') {
+          rf |= R_STRIP;
+          stralloc_catc(&p->sa, c);
+          source_skip();
+        }
+
+        /* do not subst delimiter for here-docs because
+           here-docs are parsed before any expansion is done */
+        p->flags |= P_NOSUBST;
+        break;
+
+      /* <& dups input file descriptor (3.7.5) */
+      case '&':
+        rf |= R_DUP;
         stralloc_catc(&p->sa, c);
         source_skip();
-      }
+        break;
 
-      /* do not subst delimiter for here-docs because
-         here-docs are parsed before any expansion is done */
-      p->flags |= P_NOSUBST;
-      break;
+      /* <> opens file r/w (3.7.7) */
+      case '>':
+        rf |= R_OUT;
+        stralloc_catc(&p->sa, c);
+        source_skip();
 
-    /* <& dups input file descriptor (3.7.5) */
-    case '&':
-      rf |= R_DUP;
-      stralloc_catc(&p->sa, c);
-      source_skip();
-      break;
-
-    /* <> opens file r/w (3.7.7) */
-    case '>':
-      rf |= R_OUT;
-      stralloc_catc(&p->sa, c);
-      source_skip();
-
-    /* < opens input file */
-    default: rf |= R_OPEN; break;
+      /* < opens input file */
+      default: rf |= R_OPEN; break;
     }
   }
   /* parse output redirection operator (3.7.2) */
   if(rf & R_OUT) {
     switch(c) {
-    /* >& is dup2() (3.7.6) */
-    case '&':
-      rf |= R_DUP;
-      stralloc_catc(&p->sa, c);
-      source_skip();
-      break;
+      /* >& is dup2() (3.7.6) */
+      case '&':
+        rf |= R_DUP;
+        stralloc_catc(&p->sa, c);
+        source_skip();
+        break;
 
-    /* >> is appending-mode (3.7.3) */
-    case '>':
-      rf |= R_APPEND | R_OPEN;
-      stralloc_catc(&p->sa, c);
-      source_skip();
-      break;
+      /* >> is appending-mode (3.7.3) */
+      case '>':
+        rf |= R_APPEND | R_OPEN;
+        stralloc_catc(&p->sa, c);
+        source_skip();
+        break;
 
-    /* >| is no-clobbering-mode */
-    case '|':
-      rf |= R_CLOBBER;
-      stralloc_catc(&p->sa, c);
-      source_skip();
+      /* >| is no-clobbering-mode */
+      case '|':
+        rf |= R_CLOBBER;
+        stralloc_catc(&p->sa, c);
+        source_skip();
 
-    /* > opens output file */
-    default: rf |= R_OPEN; break;
+      /* > opens output file */
+      default: rf |= R_OPEN; break;
     }
   }
 

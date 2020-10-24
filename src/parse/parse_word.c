@@ -8,7 +8,6 @@
 int
 parse_word(struct parser* p) {
   char c;
-  ssize_t len;
 
   /* if there is still a tree from the last call then remove it */
   if(p->tree)
@@ -28,18 +27,18 @@ parse_word(struct parser* p) {
       break;
 
     switch(p->quot) {
-    case Q_DQUOTED:
-      if(!parse_dquoted(p))
-        continue;
-      break;
-    case Q_SQUOTED:
-      if(!parse_squoted(p))
-        continue;
-      break;
-    default:
-      if(!parse_unquoted(p))
-        continue;
-      break;
+      case Q_DQUOTED:
+        if(!parse_dquoted(p))
+          continue;
+        break;
+      case Q_SQUOTED:
+        if(!parse_squoted(p))
+          continue;
+        break;
+      default:
+        if(!parse_unquoted(p))
+          continue;
+        break;
     }
 
     break;
