@@ -1,8 +1,10 @@
 #include "../builtin.h"
 #include "../debug.h"
 #include "../fd.h"
+#include "../../lib/uint64.h"
 #include "../../lib/fmt.h"
 #include "../../lib/shell.h"
+#include "../../lib/scan.h"
 #include "../../lib/str.h"
 #include <sys/stat.h>
 #include "../../lib/windoze.h"
@@ -33,15 +35,280 @@
 #define lstat stat
 #endif
 #endif
+typedef enum { OP_EQ, OP_NE, OP_LT, OP_LE, OP_GT, OP_GE } binary_op;
+
+static int test_binary(int, char**);
+static int test_boolean(int, char**);
+static int test_cond(int, char**);
+static int test_expr(int, char**);
+static int test_unary(int, char**);
+
+static inline int
+contains(const char* str, char ch) {
+  return str[str_chr(str, ch)];
+}
+
+/* get number of arguments */
+static inline int
+num_args(int argc) {
+  return argc - shell_optind;
+}
+
+/* get modification time */
+static int64
+filetime(const char* arg) {
+  struct stat st;
+  if(stat(arg, &st) == -1)
+    return -1;
+
+  return st.st_mtime;
+}
+
+/* get current argument string */
+static inline const char*
+current(char** v) {
+  return v[shell_optind];
+}
+
+/* string arg to int64 */
+static int64
+intarg(const char* arg) {
+  int64 num = INT64_MAX;
+
+  scan_longlong(arg, &num);
+  return num;
+}
+
+/* get current argument, then advance to next */
+static const char*
+next(char** v) {
+  const char* ret = current(v);
+  shell_optind++;
+  return ret;
+}
+
+static binary_op
+binary(const char* op) {
+  switch(op[1]) {
+    case 'l': return op[2] == 'e' ? OP_LE : OP_LT;
+    case 'g': return op[2] == 'e' ? OP_GE : OP_GT;
+    case 'e': return OP_EQ;
+    case 'n': return OP_NE;
+  }
+  return -1;
+}
+
+/* evaluate binary expression
+ * ----------------------------------------------------------------------- */
+static int
+test_binary(int argc, char** argv) {
+  const char *left, *right, *op;
+
+  /* if we have 3 arguments it should be something like STRING1 EXPR STRING2 */
+  if(num_args(argc) < 3)
+    return -1;
+
+  left = next(argv);
+  op = next(argv);
+  right = next(argv);
+
+  if(op[0] == '-') {
+
+    if(contains("no", op[1])) {
+      struct stat st;
+
+      switch(op[1]) {
+        case 'n': return filetime(left) > filetime(right);
+        case 'o': return filetime(left) < filetime(right);
+      }
+    }
+
+    if(str_len(op) == 3 && contains("egln", op[1]) && contains("eqt", op[2])) {
+      switch(binary(op)) {
+        case OP_LE: return intarg(left) <= intarg(right);
+        case OP_LT: return intarg(left) < intarg(right);
+        case OP_GE: return intarg(left) >= intarg(right);
+        case OP_GT: return intarg(left) > intarg(right);
+        case OP_EQ: return intarg(left) == intarg(right);
+        case OP_NE: return intarg(left) != intarg(right);
+      }
+    }
+
+    /* if operator doesn't start with '-' then its surely a string comparision     */
+  } else {
+    int r = str_diff(left, right);
+
+    switch(op[0]) {
+      case '=': return r == 0;
+      case '!': return r != 0;
+      case '<': return op[1] == '=' ? r <= 0 : r < 0;
+      case '>': return op[1] == '=' ? r >= 0 : r > 0;
+    }
+  }
+  return -1;
+}
+
+/* evaluate unary expression
+ * ----------------------------------------------------------------------- */
+static int
+test_unary(int argc, char** argv) {
+  int c;
+  const char* arg = current(argv);
+
+  if(arg[0] != '-')
+    return -1;
+
+  /* check options */
+  if((c = shell_getopt(argc, argv, "n:z:f:d:b:c:h:L:S:e:s:r:w:x:")) > 0) {
+    struct stat st;
+    const char* arg = shell_optarg;
+    switch(c) {
+      /* return true if argument is non-zero */
+      case 'n': return arg && *arg;
+
+      /* return true if argument is zero */
+      case 'z': return !arg || *arg == '\0';
+
+      /* return true if argument is a regular file */
+      case 'f': return stat(arg, &st) == 0 && S_ISREG(st.st_mode);
+      /* return true if argument is a directory */
+      case 'd': return stat(arg, &st) == 0 && S_ISDIR(st.st_mode);
+      /* return true if argument is a character device */
+      case 'c':
+        return stat(arg, &st) == 0 && S_ISCHR(st.st_mode);
+
+        /* return true if argument is a block device */
+      case 'b': return stat(arg, &st) == 0 && (st.st_mode & S_IFMT) == S_IFBLK;
+      /* return true if argument is a fifo */
+      case 'p': return stat(arg, &st) == 0 && S_ISFIFO(st.st_mode);
+      /* return true if argument is a symbolic link */
+      case 'h':
+#ifdef S_ISLNK
+      case 'L': return lstat(arg, &st) == 0 && S_ISLNK(st.st_mode);
+#endif
+
+#ifdef S_ISSOCK
+      /* return true if argument is a socket */
+      case 'S': return stat(arg, &st) == 0 && S_ISSOCK(st.st_mode);
+#endif
+
+      /* return true if argument exists */
+      case 'e': return stat(arg, &st) == 0;
+      /* return true if argument exists and is not empty */
+      case 's': return stat(arg, &st) == 0 && st.st_size;
+
+      /* return true if readable */
+      case 'r': return access(arg, R_OK) == 0;
+      /* return true if writeable */
+      case 'w': return access(arg, W_OK) == 0;
+      /* return true if executable */
+      case 'x': return access(arg, X_OK) == 0;
+    }
+  }
+
+  return -1;
+}
+
+/* evaluate boolean expressions (-a & -o)
+ * ----------------------------------------------------------------------- */
+static int
+test_expr(int argc, char** argv) {
+  int result, index;
+  const char* arg;
+  int i, parens = 1;
+  /*if(shell_optind == argc)
+     return -1;
+ */
+  if(!str_equal((arg = current(argv)), "("))
+    return -1;
+
+  index = shell_optind;
+  shell_optind++;
+
+  for(i = shell_optind; i < argc; i++) {
+    const char* arg = argv[shell_optind + i];
+    if(str_len(arg) == 1 && contains("()", arg[0]))
+      parens += arg[0] == '(' ? 1 : -1;
+    if(parens == 0)
+      break;
+  }
+
+  if(shell_optind + i < argc) {
+    if((result = test_boolean(shell_optind + i, argv)) != -1) {
+      shell_optind += i;
+      return result;
+    }
+  }
+
+  shell_optind = index;
+  return -1;
+}
+
+/* evaluate condition (! negates)
+ * ----------------------------------------------------------------------- */
+static int
+test_cond(int argc, char** argv) {
+  int result = -1, neg = 0;
+  struct stat st;
+
+  /* every condition can be negated by a leading ! */
+  while(shell_optind < argc && str_equal(current(argv), "!")) {
+    neg = !neg;
+    shell_optind++;
+  }
+
+  if(shell_optind == argc)
+    return -1;
+
+  if(str_equal(current(argv), "("))
+    result = test_expr(argc, argv);
+
+  if(result == -1)
+    result = test_unary(argc, argv);
+
+  if(result == -1)
+    result = test_binary(argc, argv);
+
+  return result == -1 ? result : neg ^ result;
+}
+/* evaluate boolean expressions (-a & -o)
+ * ----------------------------------------------------------------------- */
+static int
+test_boolean(int argc, char* argv[]) {
+  int result, prev;
+  enum { TEST_AND, TEST_OR } and_or = -1;
+  const char* arg;
+
+  while(num_args(argc) > 0 && (result = test_cond(argc, argv)) != -1) {
+
+    if(and_or != -1) {
+      switch(and_or) {
+        case TEST_AND: result = prev && result; break;
+        case TEST_OR: result = prev || result; break;
+      }
+      and_or = -1;
+    }
+
+    if(num_args(argc) > 1 && (arg = next(argv))[0] == '-' && contains("ao", arg[1])) {
+      switch(arg[1]) {
+        case 'a': and_or = TEST_AND; break;
+        case 'o': and_or = TEST_OR; break;
+      }
+    }
+    if(and_or == -1)
+      break;
+    prev = result;
+  }
+  return result;
+}
 
 /* test for expression
  * ----------------------------------------------------------------------- */
 int
 builtin_test(int argc, char* argv[]) {
-  int c, ret = -1;
+  int result, ret = 1;
   int neg = 0;
   int brackets = 0;
-  struct stat st;
 
   if(argv[0][0] == '[') {
     brackets = 1;
@@ -55,91 +322,19 @@ builtin_test(int argc, char* argv[]) {
 
   /* TODO:*/
   (void)brackets;
+  result = test_cond(argc, argv);
 
-  /* every condition can be negated by a leading ! */
-  while(shell_optind < argc && argv[shell_optind][0] == '!' && argv[shell_optind][1] == '\0') {
-    neg = !neg;
-    shell_optind++;
+  if(result == -1) {
+    builtin_errmsg(argv, "invalid expression", argv[shell_optind]);
+    ret = 2;
+  } else if(num_args(argc) > 0) {
+    builtin_errmsg(argv, "extra arguments", argv[shell_optind]);
+    ret = 3;
   }
 
-  /* check options */
-  while((c = shell_getopt(argc, argv, "n:z:f:d:b:c:h:L:S:e:s:r:w:x:")) > 0) {
-    switch(c) {
-      /* return true if argument is non-zero */
-      case 'n': ret = neg ^ !!(argv[shell_optind] && *argv[shell_optind]); break;
+  if(ret <= 1)
+    ret = !result;
 
-      /* return true if argument is zero */
-      case 'z': ret = neg ^ !(argv[shell_optind] && *argv[shell_optind]); break;
-
-      /* return true if argument is a regular file */
-      case 'f': ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && S_ISREG(st.st_mode)); break;
-      /* return true if argument is a directory */
-      case 'd': ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && S_ISDIR(st.st_mode)); break;
-      /* return true if argument is a character device */
-      case 'c':
-        ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && S_ISCHR(st.st_mode));
-        break;
-        /* return true if argument is a block device */
-      case 'b': ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && (st.st_mode & S_IFMT) == S_IFBLK); break;
-      /* return true if argument is a fifo */
-      case 'p': ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && S_ISFIFO(st.st_mode)); break;
-      /* return true if argument is a symbolic link */
-      case 'h':
-#ifdef S_ISLNK
-      case 'L': ret = neg ^ !(lstat(argv[shell_optind], &st) == 0 && S_ISLNK(st.st_mode));
-#endif
-        break;
-#ifdef S_ISSOCK
-      /* return true if argument is a socket */
-      case 'S': ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && S_ISSOCK(st.st_mode));
-#endif
-        break;
-      /* return true if argument exists */
-      case 'e': ret = neg ^ !(stat(argv[shell_optind], &st) == 0); break;
-      /* return true if argument exists and is not empty */
-      case 's': ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && st.st_size); break;
-
-      /* return true if readable */
-      case 'r': ret = neg ^ !!access(argv[shell_optind], R_OK); break;
-      /* return true if writeable */
-      case 'w': ret = neg ^ !!access(argv[shell_optind], W_OK); break;
-      /* return true if executable */
-      case 'x': ret = neg ^ !!access(argv[shell_optind], X_OK); break;
-
-      default: builtin_invopt(argv); return 1;
-    }
-  }
-
-  /* we cannot have more than 3 arguments */
-  if(argc > 4) {
-    builtin_errmsg(argv, "too many arguments", NULL);
-    return 2;
-  }
-
-  argc -= shell_optind;
-
-  /* if we have 3 arguments it should be something like STRING1 EXPR STRING2 */
-  if(argc >= 3) {
-    /* if operator doesn't start with '-' then its surely a string comparision
-     */
-    if(argv[2][0] != '-') {
-      int r = str_diff(argv[1], argv[3]);
-
-      switch(argv[2][0]) {
-        case '=': ret = neg ^ (!!r);
-        case '!': ret = neg ^ (!r);
-        case '<': ret = neg ^ (r >= 0);
-        case '>': ret = neg ^ (r <= 0);
-      }
-    }
-  } else if(argc == 1) {
-    ret = neg ^ (!(argv[shell_optind]));
-  }
-
-  if(ret == -1) {
-    builtin_errmsg(argv, "invalid expression", argv[1]);
-    return 1;
-  }
 #if DEBUG_OUTPUT_
   buffer_puts(fd_err->w, "test return value: ");
   buffer_putulong(fd_err->w, ret);
