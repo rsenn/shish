@@ -11,7 +11,6 @@
 extern ssize_t buffer_dummyreadmmap();
 extern int stralloc_write(int, const char*, size_t, buffer*);
 
-
 void
 buffer_dump(buffer* out, buffer* b) {
   char xlong[FMT_LONG + FMT_LONG + FMT_LONG];

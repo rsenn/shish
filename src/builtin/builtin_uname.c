@@ -10,8 +10,8 @@ int
 builtin_uname(int argc, char* argv[]) {
   int c, ret;
   stralloc dir;
-  int all = 0, machine = 0, nodename = 0, kern_release = 0, kern_name = 0, processor = 0,
-      kern_version = 0, hw_platform = 0, os_name = 0;
+  int all = 0, machine = 0, nodename = 0, kern_release = 0, kern_name = 0, processor = 0, kern_version = 0,
+      hw_platform = 0, os_name = 0;
 
   const char* base = "/tmp";
   char* out;

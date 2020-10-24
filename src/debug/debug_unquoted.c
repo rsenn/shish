@@ -9,13 +9,13 @@ void
 debug_unquoted(const char* msg, const char* s, int depth) {
 
   if(msg) {
-    buffer_puts(buffer_2, COLOR_YELLOW);
-    buffer_puts(buffer_2, msg);
-    buffer_puts(buffer_2, COLOR_CYAN DEBUG_EQU);
+    debug_s(COLOR_YELLOW);
+    debug_s(msg);
+    debug_s(COLOR_CYAN DEBUG_EQU);
   }
-  buffer_puts(buffer_2, COLOR_RED);
-  buffer_puts(buffer_2, s);
-  buffer_puts(buffer_2, COLOR_NONE);
+  debug_s(COLOR_RED);
+  debug_s(s);
+  debug_s(COLOR_NONE);
   // buffer_flush(buffer_2);
 }
 #endif /* DEBUG_OUTPUT */

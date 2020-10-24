@@ -8,7 +8,7 @@ debug_space(int count, int newline) {
   if(!newline && buffer_2->n == buffer_2->p)
     return;
   if(newline) {
-    buffer_put(buffer_2, "\n", 1);
+    debug_b("\n", 1);
     if(count < 0)
       ; //   buffer_putspace(buffer_2);
     else

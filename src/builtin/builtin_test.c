@@ -76,11 +76,11 @@ builtin_test(int argc, char* argv[]) {
       /* return true if argument is a directory */
       case 'd': ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && S_ISDIR(st.st_mode)); break;
       /* return true if argument is a character device */
-      case 'c': ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && S_ISCHR(st.st_mode)); break;
-      /* return true if argument is a block device */
-    case 'b':
-      ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && (st.st_mode & S_IFMT) == S_IFBLK);
-      break;
+      case 'c':
+        ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && S_ISCHR(st.st_mode));
+        break;
+        /* return true if argument is a block device */
+      case 'b': ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && (st.st_mode & S_IFMT) == S_IFBLK); break;
       /* return true if argument is a fifo */
       case 'p': ret = neg ^ !(stat(argv[shell_optind], &st) == 0 && S_ISFIFO(st.st_mode)); break;
       /* return true if argument is a symbolic link */

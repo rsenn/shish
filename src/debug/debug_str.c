@@ -8,31 +8,31 @@
 void
 debug_str(const char* msg, const char* s, int depth, char quote) {
 
-  buffer_puts(buffer_2, quote ? COLOR_CYAN : COLOR_YELLOW);
+  debug_s(quote ? COLOR_CYAN : COLOR_YELLOW);
   if(msg) {
-    buffer_puts(buffer_2, msg);
-    buffer_puts(buffer_2, COLOR_CYAN "=");
+    debug_s(msg);
+    debug_s(COLOR_CYAN "=");
   }
   if(quote)
-    buffer_putc(buffer_2, quote);
+    debug_c(quote);
 
   if(s) {
     while(*s) {
       char c = *s;
       if(c == '\n')
-        buffer_puts(buffer_2, "\\n");
+        debug_s("\\n");
       else if(c == '\r')
-        buffer_puts(buffer_2, "\\r");
+        debug_s("\\r");
       else
-        buffer_putc(buffer_2, c);
+        debug_c(c);
       s++;
     }
   }
 
   if(quote)
-    buffer_putc(buffer_2, quote);
+    debug_c(quote);
   if(quote)
-    buffer_puts(buffer_2, COLOR_NONE);
+    debug_s(COLOR_NONE);
   buffer_flush(buffer_2);
 }
 #endif /* DEBUG_OUTPUT */

@@ -8,10 +8,10 @@
 
 void
 debug_error(const char* file, unsigned int line, const char* s) {
-  buffer_puts(buffer_2, file);
-  buffer_putc(buffer_2, ':');
-  buffer_putulong(buffer_2, line);
-  buffer_puts(buffer_2, ": ");
+  debug_s(file);
+  debug_c(':');
+  debug_n(line);
+  debug_s(": ");
   shell_error(s);
 
 #ifdef __GNUC__

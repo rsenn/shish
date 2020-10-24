@@ -1,4 +1,5 @@
 #include "../term.h"
+#include "../debug.h"
 
 void
 term_newline(void) {
@@ -9,6 +10,6 @@ term_newline(void) {
   term_pos = 0;
 
 #ifdef DEBUG_OUTPUT
-  buffer_putsflush(buffer_2, "term_newline\n");
+  debug_fn_nf();
 #endif
 }

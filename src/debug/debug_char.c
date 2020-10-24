@@ -9,21 +9,21 @@
 void
 debug_char(const char* msg, char c, int depth) {
   debug_space(depth, 0);
-  buffer_puts(buffer_2, COLOR_YELLOW);
-  buffer_puts(buffer_2, msg);
-  buffer_puts(buffer_2, COLOR_CYAN " = '");
+  debug_s(COLOR_YELLOW);
+  debug_s(msg);
+  debug_s(COLOR_CYAN " = '");
   if(c >= 20)
-    buffer_put(buffer_2, &c, 1);
+    debug_b(&c, 1);
   else if(c == '\n')
-    buffer_put(buffer_2, "\\n", 2);
+    debug_b("\\n", 2);
   else if(c == '\r')
-    buffer_put(buffer_2, "\\r", 2);
+    debug_b("\\r", 2);
   else if(c == '\t')
-    buffer_put(buffer_2, "\\t", 2);
+    debug_b("\\t", 2);
   else {
-    /*  buffer_puts(buffer_2, "\\0");
+    /*  debug_s("\\0");
       buffer_put8long(buffer_2, c);*/
-    buffer_puts(buffer_2, "\\x");
+    debug_s("\\x");
     buffer_putxlong0(buffer_2, c, 2);
   }
   buffer_putsflush(buffer_2, "'" COLOR_NONE);

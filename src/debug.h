@@ -5,6 +5,7 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H*/
 
+#include "../lib/uint64.h"
 #include "../lib/buffer.h"
 #include "../lib/stralloc.h"
 #include <stdlib.h>
@@ -71,14 +72,36 @@ void debug_node(union node* node, int depth);
 void debug_redir(const char* msg, int flags, int depth);
 void debug_subst(const char* msg, int flags, int depth);
 
-#define debug_nl() buffer_putnlflush(buffer_2)
-#define debug_fn() (buffer_puts(buffer_2, __func__), buffer_putsflush(buffer_2, "()\n"))
+#define debug_s(str) buffer_puts(buffer_2, str)
+#define debug_n(num) buffer_putlonglong(buffer_2, num)
+#define debug_c(chr) buffer_putc(buffer_2, chr)
+#define debug_b(buf, len) buffer_put(buffer_2, (buf), (len))
+#define debug_ws(str) debug_c(' ')
+#define debug_nl() debug_c('\n') // buffer_putnlflush(buffer_2)
+#define debug_fl() buffer_flush(buffer_2)
+#define debug_nl_fl() (debug_nl(), debug_fl())
+#define debug_fn() (debug_s(__func__), debug_s("()"))
+#define debug_fn_ws() (debug_fn(), debug_ws())
+#define debug_fn_nl() (debug_fn(), debug_nl())
+#define debug_fn_nf() (debug_fn(), debug_nl_fl())
+
+#else
+
+#define debug_s(str)
+#define debug_n(num)
+#define debug_c(chr)
+#define debug_b(buf, len)
+#define debug_ws(str)
+#define debug_nl()
+#define debug_fl()
+#define debug_nl_fl()
+#define debug_fn()
+#define debug_fn_ws()
+#define debug_fn_nl()
+#define debug_fn_nf()
+
 
 #endif /* DEBUG_OUTPUT */
-
-#ifndef debug_nl
-#define debug_nl()
-#endif
 
 #if DEBUG_ALLOC
 

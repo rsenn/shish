@@ -11,7 +11,7 @@
 enum tok_flag
 parse_gettok(struct parser* p, int tempflags) {
 #ifdef DEBUG_OUTPUT
-  size_t start = source->b->p;
+  size_t start = source->b->p == source->b->n ? 0 : source->b->p;
 #endif
   int oldflags = p->flags;
   p->flags |= tempflags;
@@ -49,8 +49,13 @@ parse_gettok(struct parser* p, int tempflags) {
           buffer_puts(buffer_2, "P_BQUOTE ");
         if(p->flags & P_NOKEYWD)
           buffer_puts(buffer_2, "P_NOKEYWD ");
-        if(p->flags & ~(P_BQUOTE | P_NOKEYWD))
-          buffer_put(buffer_2, buf, fmt_xlong(buf, p->flags & ~(P_BQUOTE | P_NOKEYWD)));
+        if(p->flags & P_NOASSIGN)
+          buffer_puts(buffer_2, "P_NOASSIGN ");
+        if(p->flags & ~(P_BQUOTE | P_NOKEYWD | P_NOASSIGN))
+          buffer_put(buffer_2, buf, fmt_xlong(buf, p->flags & ~(P_BQUOTE | P_NOKEYWD | P_NOASSIGN)));
+
+        if(buffer_2->p > 0 && buffer_2->x[buffer_2->p - 1] == ' ')
+          buffer_2->p--;
 
         buffer_puts(buffer_2, ") ");
       }
@@ -61,7 +66,7 @@ parse_gettok(struct parser* p, int tempflags) {
         char buf[4];
         size_t i;
         buffer_puts(buffer_2, ": \"");
-        for(i = start; i < source->b->n; i++) buffer_put(buffer_2, buf, fmt_escapecharshell(buf, source->b->x[i]));
+        for(i = start; i < source->b->p; i++) buffer_put(buffer_2, buf, fmt_escapecharshell(buf, source->b->x[i]));
         buffer_puts(buffer_2, "\"");
       }
       buffer_flush(buffer_2);

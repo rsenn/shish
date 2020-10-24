@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "../scan.h"
 //#include "../haveuint128.h"

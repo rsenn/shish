@@ -56,7 +56,7 @@ cfg() {
   cd $builddir
   ${CMAKE:-cmake} -Wno-dev \
     -G "$generator" \
-    ${VERBOSE+:-DCMAKE_VERBOSE_MAKEFILE=TRUE} \
+    ${VERBOSE+-DCMAKE_VERBOSE_MAKEFILE=TRUE} \
     -DCMAKE_BUILD_TYPE="${TYPE:-Debug}" \
     -DBUILD_SHARED_LIBS=ON \
     ${CC:+-DCMAKE_C_COMPILER="$CC"} \

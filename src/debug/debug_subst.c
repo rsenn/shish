@@ -64,12 +64,12 @@ debug_subst(const char* msg, int flags, int depth) {
     n += str_copy(&flagstr[n], " | S_ESCAPED");
 
   if(msg) {
-    buffer_puts(buffer_2, COLOR_YELLOW);
-    buffer_puts(buffer_2, msg);
-    buffer_puts(buffer_2, COLOR_CYAN DEBUG_EQU COLOR_NONE);
+    debug_s(COLOR_YELLOW);
+    debug_s(msg);
+    debug_s(COLOR_CYAN DEBUG_EQU COLOR_NONE);
   }
-  buffer_puts(buffer_2, COLOR_MAGENTA);
-  buffer_puts(buffer_2, flagstr);
-  buffer_puts(buffer_2, COLOR_NONE);
+  debug_s(COLOR_MAGENTA);
+  debug_s(flagstr);
+  debug_s(COLOR_NONE);
 }
 #endif /* DEBUG_OUTPUT */
