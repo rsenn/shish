@@ -1,14 +1,23 @@
 #include "../utf8.h"
 
+
 int
-wcu8len(const wchar_t w) {
-  if(!(w & ~0x7f))
+u8len(const char* u, size_t count) {
+  if(0 == count)
+    return 0;
+
+  if(NULL == u)
+    return 0;
+  else if(0 == *u)
+    return 0;
+  else if(!(*u & ~0x7f))
     return 1;
-  if(!(w & ~0x7ff))
+  else if((*u & 0xe0) == 0xc0)
     return 2;
-  if(!(w & ~0xffff))
+  else if((*u & 0xf0) == 0xe0)
     return 3;
-  if(!(w & ~0x1fffff))
+  else if((*u & 0xf8) == 0xf0)
     return 4;
-  return -1; /* error */
+  else /* error */
+    return -1;
 }
