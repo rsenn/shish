@@ -10,7 +10,7 @@
 /* execute a command
  * ----------------------------------------------------------------------- */
 int
-exec_command(enum hash_id id, union command cmd, int argc, char** argv, int exec, union node* redir) {
+exec_command(enum hash_id id, union command* cmd, int argc, char** argv, int exec, union node* redir) {
   int ret = 1;
 
   switch(id) {
@@ -29,7 +29,7 @@ exec_command(enum hash_id id, union command cmd, int argc, char** argv, int exec
       if(fd_err)
         fdtable_open(fd_err, FDTABLE_MOVE);
 
-      ret = cmd.builtin->fn(argc, argv);
+      ret = cmd->builtin->fn(argc, argv);
       break;
     }
 
@@ -47,7 +47,7 @@ exec_command(enum hash_id id, union command cmd, int argc, char** argv, int exec
 
       //    sh_setargs(argv, 0);
       eval_push(&e, 0);
-      eval_cmdlist(&e, &cmd.fn->ngrp);
+      eval_cmdlist(&e, &cmd->fn->ngrp);
       ret = eval_pop(&e);
       sh_pop(&sh);
 
@@ -55,7 +55,7 @@ exec_command(enum hash_id id, union command cmd, int argc, char** argv, int exec
     }
 
     case H_PROGRAM: {
-      ret = exec_program(cmd.path, argv, exec, redir);
+      ret = exec_program(cmd->path, argv, exec, redir);
       break;
     }
   }

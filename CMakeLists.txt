@@ -411,9 +411,9 @@ endif()
 check_inline()
 
 if(NOT "${INLINE_KEYWORD}" MATCHES "^inline$")
-  if(NOT "${INLINE_KEYWORD}" MATCHES "^$")
+  #if(NOT "${INLINE_KEYWORD}" MATCHES "^$")
     add_definitions("-Dinline=${INLINE_KEYWORD}")
-  endif(NOT "${INLINE_KEYWORD}" MATCHES "^$")
+  #endif(NOT "${INLINE_KEYWORD}" MATCHES "^$")
 endif(NOT "${INLINE_KEYWORD}" MATCHES "^inline$")
 
 if(WIN32
@@ -472,6 +472,12 @@ message("Host system name: ${CMAKE_HOST_SYSTEM_NAME}")
 message("System name: ${CMAKE_SYSTEM_NAME}")
 
 if(NOT CMAKE_CROSSCOMPILING)
+  check_type_size(ssize_t SIZEOF_SSIZE_T)
+  if(NOT SIZEOF_SSIZE_T STREQUAL "")
+    set(HAVE_SSIZE_T 1)
+    add_definitions(-D_SSIZE_T_=1)
+  endif(NOT SIZEOF_SSIZE_T STREQUAL "")
+
   check_type_size(sigset_t SIZEOF_SIGSET_T)
   if(NOT SIZEOF_SIGSET_T STREQUAL "")
     set(HAVE_SIGSET_T 1)
@@ -799,7 +805,7 @@ foreach(BUILTIN ${ALL_BUILTINS})
   endif(${BUILD_BUILTIN_${NAME}})
 endforeach(BUILTIN ${ALL_BUILTINS})
 
-file(WRITE "${CMAKE_BINARY_DIR}/src/builtin_config.h" "${BUILTIN_CONFIG}")
+file(WRITE "${CMAKE_BINARY_DIR}/src/builtin_config.h" "${BUILTIN_CONFIG}\n\n")
 # message("${BUILTIN_CONFIG}")
 
 if(NO_TREE_PRINT)

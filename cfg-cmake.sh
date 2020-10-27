@@ -65,8 +65,6 @@ cfg() {
     ${TOOLCHAIN:+-DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN"} \
     ${CC:+-DCMAKE_C_COMPILER="$CC"} \
     ${CXX:+-DCMAKE_CXX_COMPILER="$CXX"} \
-    -DCMAKE_{C,CXX}_FLAGS_DEBUG="-g -ggdb3" \
-    -DCMAKE_{C,CXX}_FLAGS_RELWITHDEBINFO="-Os -g -ggdb3 -DNDEBUG" \
     ${MAKE:+-DCMAKE_MAKE_PROGRAM="$MAKE"} \
     "$@" \
     $relsrcdir 2>&1 ) |tee "${builddir##*/}.log")
@@ -245,10 +243,13 @@ cfg-musl32() {
 
 
 cfg-msys() {
- (build=$(gcc -dumpmachine)
+ (
+echo "host: $host"
+
+  build=$(gcc -dumpmachine)
   : ${host=${build%%-*}-pc-msys}
   : ${prefix=/usr/$host/sysroot/usr}
-
+echo "host: $host"
   : ${PKG_CONFIG_PATH=/usr/${host}/sysroot/usr/lib/pkgconfig}
 
   export PKG_CONFIG_PATH
@@ -306,28 +307,7 @@ cfg-wasm() {
     -DCMAKE_EXECUTABLE_SUFFIX_INIT=".html" \
     -DUSE_{ZLIB,BZIP,LZMA,SSL}=OFF \
   "$@")
-}
-
-cfg-msys32() {
- (build=$(gcc -dumpmachine)
-  host=${build%%-*}-pc-msys
-  host=i686-${host#*-}
-  cfg-msys "$@")
-}
-
-cfg-msys() {
- (build=$(gcc -dumpmachine)
-  : ${host=${build%%-*}-pc-msys}
-  : ${prefix=/usr/$host/sys-root/msys}
-
-  builddir=build/$host \
-  bindir=$prefix/bin \
-  libdir=$prefix/lib \
-  CC="$host-gcc" \
-  cfg \
-    -DCMAKE_CROSSCOMPILING=TRUE \
-    "$@")
-}
+} 
 
 cfg-tcc() {
  (build=$(cc -dumpmachine)

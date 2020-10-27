@@ -44,9 +44,9 @@ struct job {
   struct proc* procs;
   unsigned int nproc;
   pid_t pgrp;
-  int exited : 1;
-  int control : 1; /* running under job control? */
-  int bgnd : 1;
+  unsigned exited : 1;
+  unsigned control : 1; /* running under job control? */
+  unsigned bgnd : 1;
 };
 
 extern int job_terminal;

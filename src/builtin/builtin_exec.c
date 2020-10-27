@@ -43,7 +43,7 @@ builtin_exec(int argc, char* argv[]) {
       argv[shell_optind] = argv0;
 
     /* try to exec */
-    exec_command(id, cmd, argc - shell_optind, &argv[shell_optind], 1, NULL);
+    exec_command(id, &cmd, argc - shell_optind, &argv[shell_optind], 1, NULL);
   }
 
   /* at this point the exec stuff failed */

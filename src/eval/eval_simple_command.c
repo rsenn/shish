@@ -149,7 +149,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   }
 
   /* execute the command, this may or may not return, depending on E_EXIT */
-  status = exec_command(id, cmd, argc, argv, (e->flags & E_EXIT), redir);
+  status = exec_command(id, &cmd, argc, argv, (e->flags & E_EXIT), redir);
 
 #ifndef HAVE_ALLOCA
   shell_free(argv);

@@ -1,5 +1,4 @@
 #include "../wait.h"
-#include "../uint64.h"
 #include "../windoze.h"
 
 #if WINDOWS_NATIVE

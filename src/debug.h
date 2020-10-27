@@ -5,7 +5,7 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H*/
 
-#include "../lib/uint64.h"
+//#include "../lib/uint64.h"
 #include "../lib/buffer.h"
 #include "../lib/stralloc.h"
 #include <stdlib.h>

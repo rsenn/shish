@@ -68,7 +68,7 @@ ssize_t buffer_putsflush(buffer*, const char* x);
 int buffer_putm_internal(buffer* b, ...);
 int buffer_putm_internal_flush(buffer* b, ...);
 
-#ifdef __BORLANDC__
+#if defined(__BORLANDC__) || defined(__LCC__)
 #define buffer_putm(b, args) buffer_putm_internal(b, args, (char*)0)
 #define buffer_putmflush(b, args) buffer_putm_internal_flush(b, args, (char*)0)
 #else

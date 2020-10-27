@@ -9,7 +9,7 @@
 #define HAVE_SYS_SIGLIST 1
 #endif
 #if !defined(HAVE_SYS_SIGLIST)
-extern const char* const sys_siglist[];
+extern const char* const* sys_siglist;
 #endif
 
 /* outputs job status stuff
