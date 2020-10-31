@@ -16,6 +16,8 @@
 #include "../tree.h"
 #include "../var.h"
 
+stralloc prompt_hostname = {NULL, 0, 0};
+
 /* handles prompt escape sequences
  * ----------------------------------------------------------------------- */
 void
@@ -44,10 +46,10 @@ prompt_escape(const char* s, stralloc* sa) {
 
       /* hostname */
       case 'h':
-        if(!sh_hostname.s)
-          shell_gethostname(&sh_hostname);
-        if(sh_hostname.s)
-          stralloc_cat(sa, &sh_hostname);
+        if(!prompt_hostname.s)
+          shell_gethostname(&prompt_hostname);
+        if(prompt_hostname.s)
+          stralloc_cat(sa, &prompt_hostname);
         s++;
         break;
 

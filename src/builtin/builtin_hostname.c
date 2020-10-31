@@ -6,6 +6,7 @@
 #include "../../lib/byte.h"
 #include "../fd.h"
 #include "../sh.h"
+#include "../prompt.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
 #include "../../lib/windoze.h"
@@ -37,7 +38,7 @@ builtin_hostname(int argc, char* argv[]) {
 
     /* unless force is set and if the new hostname is
        the same as the current then do not update it */
-    if(!force && n == sh_hostname.len && !byte_diff(sh_hostname.s, n, argv[shell_optind]))
+    if(!force && n == prompt_hostname.len && !byte_diff(prompt_hostname.s, n, argv[shell_optind]))
       return 0;
 
 #if defined(HAVE_SETHOSTNAME) || !WINDOWS_NATIVE
@@ -55,26 +56,26 @@ builtin_hostname(int argc, char* argv[]) {
 #endif
 
     /* on success update internal hostname */
-    stralloc_copyb(&sh_hostname, argv[shell_optind], n);
+    stralloc_copyb(&prompt_hostname, argv[shell_optind], n);
   }
   /* if there is no argument we display the current hostname */
   else {
     /* force re-get of hostname by clearing it now */
     if(force)
-      stralloc_zero(&sh_hostname);
+      stralloc_zero(&prompt_hostname);
 
     /* get hostname if it isn't there */
-    if(sh_hostname.len == 0)
-      shell_gethostname(&sh_hostname);
+    if(prompt_hostname.len == 0)
+      shell_gethostname(&prompt_hostname);
 
     /* report errors */
-    if(sh_hostname.len == 0) {
+    if(prompt_hostname.len == 0) {
       builtin_error(argv, "gethostname");
       return 1;
     }
 
     /* finally output the hostname */
-    buffer_putsa(fd_out->w, &sh_hostname);
+    buffer_putsa(fd_out->w, &prompt_hostname);
     buffer_putnlflush(fd_out->w);
   }
 

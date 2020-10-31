@@ -183,7 +183,7 @@ again:
           node = node->nif.cmd1;
           goto print_if;
         } else if(node->nif.cmd1) {
-          tree_catseparator(sa, "\nelse ", depth);
+          tree_catseparator(sa, "\nelse\n  ", depth);
           tree_catlist_n(node->nif.cmd1, sa, "\n", depth + 1);
         }
       }
@@ -241,9 +241,9 @@ again:
       stralloc_cats(sa, "case ");
       tree_cat(node->ncase.word, sa);
       stralloc_cats(sa, " in");
-      stralloc_cats(sa, sep == NULL ? "\n  " : sep);
+      tree_catseparator(sa, sep == NULL ? "\n  " : sep, depth);
       tree_catlist_n(node->ncase.list, sa, sep == NULL ? "\n" : sep, depth + 1);
-      stralloc_catc(sa, sep == NULL ? '\n' : sep[0]);
+      tree_catseparator(sa, sep == NULL ? "\n" : sep, depth);
       stralloc_cats(sa, "esac");
 
       /* concatenate redirections */
@@ -258,9 +258,9 @@ again:
       tree_catlist(node->ncasenode.pats, sa, "|");
       stralloc_cats(sa, ") ");
       if(node->ncasenode.cmds)
-        tree_catlist(node->ncasenode.cmds, sa, NULL);
+        tree_catlist_n(node->ncasenode.cmds, sa, "\n", depth + 1);
 
-      stralloc_cats(sa, " ;;");
+      stralloc_cats(sa, sep == NULL ? " ;;" : ";;");
       break;
     }
 
@@ -287,11 +287,8 @@ again:
         sep = "\n";
 
       stralloc_catc(sa, '(');
-      /*      if(sep)
-              stralloc_cats(sa, sep);*/
-      tree_catlist_n(node->ngrp.cmds, sa, sep, depth + 1);
-      /*     if(sep)
-              stralloc_catc(sa, sep[0]);*/
+
+      tree_catlist_n(node->ngrp.cmds, sa, sep, depth);
       stralloc_catc(sa, ')');
 
       /* concatenate redirections */
@@ -307,7 +304,7 @@ again:
 
       tree_catseparator(sa, sep == NULL ? " " : sep, depth);
       tree_catlist_n(node->ngrp.cmds, sa, sep, depth + 1);
-      tree_catseparator(sa, sep == NULL ? "; }" : "\n}", depth);
+      tree_catseparator(sa, sep == NULL ? "; }" : "\n}", depth - 1);
 
       /* concatenate redirections */
       for(n = node->ncmd.rdir; n; n = n->list.next) {

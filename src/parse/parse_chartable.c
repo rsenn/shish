@@ -13,6 +13,7 @@ const unsigned short parse_chartable[CHAR_RANGE] = {
     C_UNDEF,
     C_UNDEF,
     C_UNDEF,
+    /* 0x08 */
     C_UNDEF,
     C_SPACE,
     C_SPACE,
@@ -21,6 +22,7 @@ const unsigned short parse_chartable[CHAR_RANGE] = {
     C_SPACE,
     C_UNDEF,
     C_UNDEF,
+    /* 0x10 */
     C_UNDEF,
     C_UNDEF,
     C_UNDEF,
@@ -51,9 +53,14 @@ const unsigned short parse_chartable[CHAR_RANGE] = {
     C_SPCL | C_ESC,
     C_UNDEF,
     C_UNDEF,
-    C_SPCL,
+    C_SPCL
+#ifndef LEGACY
+        | C_NAME
+#endif
+    ,
     C_UNDEF,
     C_UNDEF,
+    /* 0x30 */
     C_DIGIT | C_HEX | C_OCTAL | C_BINARY,
     C_DIGIT | C_HEX | C_OCTAL | C_BINARY,
     C_DIGIT | C_HEX | C_OCTAL,

@@ -7,6 +7,7 @@ extern int prompt_number;
 extern union node* prompt_node;
 extern char prompt_var[4];
 extern stralloc prompt_expansion;
+extern stralloc prompt_hostname;
 
 void prompt_escape(const char*, stralloc*);
 void prompt_expand(void);

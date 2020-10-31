@@ -5,10 +5,14 @@
 
 struct fd;
 
+struct position {
+  unsigned int line, column;
+};
+
 struct source {
   buffer* b;
   int mode;
-  unsigned int line, column;
+  struct position pos;
   struct source* parent;
 };
 

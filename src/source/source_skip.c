@@ -16,6 +16,6 @@ source_skip(void) {
     if(c == '\n')
       source_newline();
     else
-      source->column++;
+      source->pos.column++;
   }
 }

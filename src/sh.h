@@ -55,7 +55,6 @@ extern int sh_argc;    /* initial argument count */
 extern char** sh_argv; /*    "       "     vector */
 extern char** sh_envp; /*    "    environment */
 extern char* sh_name;
-extern stralloc sh_hostname;
 extern char* sh_argv0;
 extern int sh_child;
 

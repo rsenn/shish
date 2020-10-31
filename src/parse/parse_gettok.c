@@ -21,7 +21,7 @@ parse_gettok(struct parser* p, int tempflags) {
     p->tok = -1;
     /* skip whitespace */
     // p->tok = parse_skipspace(p);
-    p->tokstart = source->b->p;
+    p->tokstart = source->pos;
 
     if(p->tree && p->tree->id == N_ARGSTR)
       stralloc_zero(&p->tree->nargstr.stra);
@@ -38,8 +38,10 @@ parse_gettok(struct parser* p, int tempflags) {
       parse_keyword(p);
 
 #ifdef DEBUG_OUTPUT
-    if(p->tok != -1) 
-   parse_dump(p, buffer_2);
+    if(sh->flags & SH_DEBUG) {
+      if(p->tok != -1)
+        parse_dump(p, buffer_2);
+    }
 #endif
   }
 

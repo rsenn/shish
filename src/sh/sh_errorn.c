@@ -10,8 +10,11 @@
 int
 sh_errorn(const char* s, unsigned int len) {
   buffer_puts(fd_err->w, sh_name);
-  buffer_putc(fd_err->w, ':');
-  buffer_putulong(fd_err->w, source->line);
+
+  if(source) {
+    buffer_putc(fd_err->w, ':');
+    buffer_putulong(fd_err->w, source->pos.line);
+  }
   buffer_puts(fd_err->w, ": ");
   if(s) {
     buffer_put(fd_err->w, s, len);

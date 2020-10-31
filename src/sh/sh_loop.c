@@ -28,21 +28,17 @@ sh_loop(void) {
 
   while(!(parse_gettok(&p, P_DEFAULT) & T_EOF)) {
     p.pushback++;
-    parse_lineno = source->line;
+    parse_lineno = source->pos.line;
 
     var_setvint("LINENO", parse_lineno, V_DEFAULT);
 
     /* launch the parser to get a complete command */
-    if((list = parse_list(&p))) {
+    list = parse_list(&p);
+    stralloc_zero(&cmd);
+
+    if(list) {
       struct eval e;
-
-#if(defined(_DEBUG) && !defined(NO_TREE_PRINT)) || defined(SHFMT)
-      stralloc_zero(&cmd);
       tree_catlist(list, &cmd, NULL);
-
-      buffer_putsa(fd_out->w, &cmd);
-      buffer_putnlflush(fd_out->w);
-#endif
 
       if(source->mode & SOURCE_IACTIVE) {
         buffer* in = source->b;
@@ -65,15 +61,19 @@ sh_loop(void) {
       }
 #endif /* DEBUG_OUTPUT */
 
-#ifndef SHFMT
       eval_push(&e, E_JCTL);
       eval_tree(&e, list, E_ROOT | E_LIST);
       sh->exitcode = eval_pop(&e);
-#endif
-      stralloc_zero(&cmd);
 
       tree_free(list);
-    } else if(!(p.tok & (T_NL | T_SEMI | T_BGND))) {
+    }
+/*
+#if(defined(_DEBUG) && !defined(NO_TREE_PRINT)) || defined(SHFMT)
+    buffer_putsa(fd_out->w, &cmd);
+    buffer_putnlflush(fd_out->w);
+#endif*/
+
+    if(!(p.tok & (T_NL | T_SEMI | T_BGND))) {
       /* we have a parse error */
       if(p.tok != T_EOF)
         parse_error(&p, 0);

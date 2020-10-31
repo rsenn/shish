@@ -8,6 +8,8 @@
 #include <unistd.h>
 #endif
 
+int sh_child = 0;
+
 /* after forking, returns pid
  * ----------------------------------------------------------------------- */
 int

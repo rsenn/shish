@@ -10,7 +10,7 @@ source_msg(void) {
     const char* name = fdtable[STDSRC_FILENO]->name;
     buffer_puts(fd_err->w, name ? name : sh_name);
     buffer_puts(fd_err->w, ":");
-    buffer_putulong(fd_err->w, source->line);
+    buffer_putulong(fd_err->w, source->pos.line);
     buffer_puts(fd_err->w, ": ");
   }
 }

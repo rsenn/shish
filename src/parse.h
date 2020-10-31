@@ -3,6 +3,7 @@
 
 #include "../lib/stralloc.h"
 #include "../lib/uint64.h"
+#include "./source.h"
 #include <stdlib.h>
 
 #include "tree.h"
@@ -176,7 +177,7 @@ struct parser {
   stralloc sa;
   union node* node;
   union node* tree;
-  int tokstart;
+  struct position tokstart;
 };
 
 /* parser flags

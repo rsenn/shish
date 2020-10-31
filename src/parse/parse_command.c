@@ -2,6 +2,7 @@
 #include "../tree.h"
 #include "../source.h"
 #include "../fd.h"
+#include "../sh.h"
 
 /* parse a compound- or a simple-command
  * (pipeline and lists are done outside this)
@@ -16,18 +17,20 @@ parse_command(struct parser* p, int tempflags) {
   tok = parse_gettok(p, tempflags);
 
 #ifdef DEBUG_OUTPUT
-  buffer_puts(fd_err->w, "\x1b[1;33mparse_command\x1b[0m tok=");
-  buffer_puts(fd_err->w, parse_tokname(tok, 1));
-  buffer_putnlflush(fd_err->w);
+  if(sh->flags & SH_DEBUG) {
+    buffer_puts(fd_err->w, "\x1b[1;33mparse_command\x1b[0m tok=");
+    buffer_puts(fd_err->w, parse_tokname(tok, 1));
+    buffer_putnlflush(fd_err->w);
+  }
 #endif
 
   //  source_skipspace(p);
-  while(source_peek(&c) >= 1) {
-    if(!parse_isspace(c))
-      break;
-    parse_skip(p);
-  }
-
+  /*  while(source_peek(&c) >= 1) {
+      if(!parse_isspace(c))
+        break;
+      parse_skip(p);
+    }
+  */
   switch(tok) {
     /* T_FOR begins an iteration statement */
     case T_FOR: command = parse_for(p); break;
@@ -51,6 +54,11 @@ parse_command(struct parser* p, int tempflags) {
 
     /* handle simple commands */
     case T_NAME:
+      parse_skipspace(p);
+
+      if(source_peek(&c) <= 0)
+        return NULL;
+
       if(c == '(') {
         char ch[2];
         if(source_peekn(ch, 1) <= 0)

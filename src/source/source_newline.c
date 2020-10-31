@@ -11,6 +11,6 @@ source_newline(void) {
     redir_source();
 
   /* advance to next line */
-  source->line++;
-  source->column = 0;
+  source->pos.line++;
+  source->pos.column = 1;
 }

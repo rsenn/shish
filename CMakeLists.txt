@@ -17,150 +17,15 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-include(CheckIncludeFile)
-include(CheckSymbolExists)
-include(CheckTypeSize)
-include(CheckFunctionExists)
-include(CheckLibraryExists)
-include(CheckCCompilerFlag)
-include(CheckCSourceCompiles)
-
 option(WARN_WERROR "Halt the compilation with an error on compiler warnings." OFF)
 
-include(CheckCCompilerFlag)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Functions.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Checks.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Pedantic.cmake)
 
-macro(add_cflags ADD)
-  if(NOT ARGN)
-    set(VAR_NAME CMAKE_C_FLAGS)
-  else(NOT ARGN)
-    set(VAR_NAME "${ARGN}")
-  endif(NOT ARGN)
-  set(C_FLAGS ${CMAKE_C_FLAGS} ${${VAR_NAME}})
-  string(REGEX REPLACE " +" ";" C_FLAGS "${C_FLAGS}")
-  string(REGEX REPLACE "^;+" "" C_FLAGS "${C_FLAGS}")
-  list(REMOVE_DUPLICATES C_FLAGS)
-  # message("VAR_NAME: ${VAR_NAME}") message("C_FLAGS: ${C_FLAGS}")
-  list(FIND C_FLAGS "${ADD}" FOUND_AT)
-  # message("FOUND_AT: ${FOUND_AT}") if("${C_FLAGS}" MATCHES "${ADD}")
-  if(NOT "${FOUND_AT}" MATCHES "-1")
-
-  else()
-    set("${VAR_NAME}"
-        "${${VAR_NAME}} ${ADD}"
-        )
-  endif()
-endmacro(add_cflags)
-
-function(check_cflag FLAG VAR)
-  message(CHECK_START "Compiler flag  ${FLAG}")
-  set(CMAKE_REQUIRED_QUIET TRUE)
-  check_c_compiler_flag("${FLAG}" "${VAR}")
-  set(CMAKE_REQUIRED_QUIET FALSE)
-  if(NOT ARGN)
-    set(VAR_NAME CMAKE_C_FLAGS)
-  else(NOT ARGN)
-    string(TOUPPER "CMAKE_C_FLAGS_${ARGN}" VAR_NAME)
-  endif(NOT ARGN)
-  # message("VAR_NAME: ${VAR_NAME}")
-  if(${VAR})
-    message(CHECK_PASS "supported")
-    add_cflags("${FLAG}" "${VAR_NAME}")
-  else(${VAR})
-    message(CHECK_FAIL "not supported")
-  endif(${VAR})
-endfunction(
-  check_cflag
-  FLAG
-  VAR)
-
-check_c_compiler_flag("-Wall" WARN_ALL)
-if(WARN_ALL)
-  set(WERROR_FLAG "${WERROR_FLAG} -Wall")
-endif()
-
-check_c_compiler_flag("-Wno-unused-variable" WARN_NO_UNUSED_VARIABLE)
-if(WARN_NO_UNUSED_VARIABLE)
-  set(WERROR_FLAG "${WERROR_FLAG} -Wno-unused-variable")
-endif()
-check_c_compiler_flag("-Wno-unused-function" WARN_NO_UNUSED_FUNCTION)
-if(WARN_NO_UNUSED_FUNCTION)
-  set(WERROR_FLAG "${WERROR_FLAG} -Wno-unused-function")
-endif()
-check_c_compiler_flag("-Wno-error=unused-but-set-variable" WARN_NO_UNUSED_FUNCTION)
-if(WARN_NO_UNUSED_FUNCTION)
-  set(WERROR_FLAG "${WERROR_FLAG} -Wno-error=unused-but-set-variable")
-endif()
-# check_c_compiler_flag("-Wno-error=unused-const-variable" WARN_NO_UNUSED_FUNCTION) if(WARN_NO_UNUSED_FUNCTION) set(WERROR_FLAG "${WERROR_FLAG} -Wno-error=unused-const-variabe") endif()
-if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-  set(PEDANTIC_COMPILE_FLAGS
-      -pedantic-errors
-      -Wall
-      -Wextra
-      -pedantic
-      -Wold-style-cast
-      -Wundef
-      -Wredundant-decls
-      -Wwrite-strings
-      -Wpointer-arith
-      -Wcast-qual
-      -Wformat=2
-      -Wmissing-include-dirs
-      -Wcast-align
-      -Wnon-virtual-dtor
-      -Wctor-dtor-privacy
-      -Wdisabled-optimization
-      -Winvalid-pch
-      -Woverloaded-virtual
-      -Wconversion
-      -Wno-ctor-dtor-privacy
-      -Wno-format-nonliteral
-      -Wno-shadow)
-  if(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.6)
-    set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wnoexcept -Wno-dangling-else -Wno-unused-local-typedefs)
-  endif()
-  if(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 5.0)
-    set(PEDANTIC_COMPILE_FLAGS
-        ${PEDANTIC_COMPILE_FLAGS}
-        -Wdouble-promotion
-        -Wtrampolines
-        -Wzero-as-null-pointer-constant
-        -Wuseless-cast
-        -Wvector-operation-performance
-        -Wsized-deallocation)
-  endif()
-  if(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 6.0)
-    set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wshift-overflow=2 -Wnull-dereference -Wduplicated-cond)
-  endif()
-  set(WERROR_FLAG "${WERROR_FLAG} -Werror")
-endif()
-if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -pedantic -Wconversion -Wno-sign-conversion)
-  set(WERROR_FLAG "${WERROR_FLAG} -Werror")
-endif()
-if(MSVC)
-  set(PEDANTIC_COMPILE_FLAGS /W3)
-  set(WERROR_FLAG /WX)
-endif()
-if(WARN_WERROR)
-  set(WARN_C_COMPILER_FLAGS "-Wall ${WERROR_FLAG}")
-endif()
-if(WARN_PEDANTIC)
-  set(WARN_C_COMPILER_FLAGS "-Wall ${PEDANTIC_COMPILE_FLAGS}")
-endif()
-
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WARN_C_COMPILER_FLAGS}")
-
-function(DUMP VAR)
-  message("\n\nVariable dump of: " ${ARGV} "\n")
-  foreach(VAR ${ARGV})
-    message("\t${VAR} = ${${VAR}}")
-  endforeach(VAR ${ARGV})
-  message("\n")
-endfunction(DUMP VAR)
 string(REGEX REPLACE ".*/" "" COMPILER_NAME "${CMAKE_C_COMPILER}")
 
 if(COMPILER_NAME MATCHES "em.*")
-
   set(EMSCRIPTEN TRUE)
   dump(
     EMSCRIPTEN
@@ -172,24 +37,6 @@ if(COMPILER_NAME MATCHES "em.*")
     CMAKE_EXE_LINKER_FLAGS)
   set(EMSCRIPTEN_EXE_SUFFIX "html")
 endif(COMPILER_NAME MATCHES "em.*")
-
-macro(check_inline)
-  foreach(KEYWORD "__inline__" "__inline" "inline")
-    if(NOT INLINE_KEYWORD)
-      set(CMAKE_REQUIRED_DEFINITIONS "-DTESTKEYWORD=${KEYWORD}")
-      check_c_source_compiles(
-        "typedef int foo_t;
-	static TESTKEYWORD foo_t static_foo(){return 0;}
-	foo_t foo(){return 0;}
-	int main(int argc, char *argv[]){return 0;}"
-        HAVE_${KEYWORD})
-      if(HAVE_${KEYWORD})
-        set(INLINE_KEYWORD "${KEYWORD}")
-      endif(HAVE_${KEYWORD})
-    endif(NOT INLINE_KEYWORD)
-  endforeach(KEYWORD)
-  message(STATUS "inline keyword: ${INLINE_KEYWORD}")
-endmacro(check_inline)
 
 set(BUILD_DEBUG FALSE)
 
@@ -210,182 +57,12 @@ check_c_compiler_flag("-flto" F_LTO)
 
 if(F_LTO)
   option(ENABLE_LTO "Enable link-time optimization" OFF)
-
 endif(F_LTO)
 
-if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" OR CMAKE_BUILD_TYPE STREQUAL "Release")
-  check_c_compiler_flag("-falign-functions=1" F_ALIGN_FUNCTIONS)
-  check_c_compiler_flag("-falign-jumps=1" F_ALIGN_JUMPS)
-  check_c_compiler_flag("-falign-labels=1" F_ALIGN_LABELS)
-  check_c_compiler_flag("-falign-loops=1" F_ALIGN_LOOPS)
-
-  if(F_ALIGN_COMMONS)
-    add_cflags(-falign-commons=1 ${CMAKE_BUILD_TYPE})
-  endif(F_ALIGN_COMMONS)
-  if(F_ALIGN_DOUBLE)
-    add_cflags(-falign-double=1 ${CMAKE_BUILD_TYPE})
-  endif(F_ALIGN_DOUBLE)
-  if(F_ALIGN_FUNCTIONS)
-    add_cflags(-falign-functions=1 ${CMAKE_BUILD_TYPE})
-  endif(F_ALIGN_FUNCTIONS)
-  if(F_ALIGN_JUMPS)
-    add_cflags(-falign-jumps=1 ${CMAKE_BUILD_TYPE})
-  endif(F_ALIGN_JUMPS)
-  if(F_ALIGN_LABELS)
-    add_cflags(-falign-labels=1 ${CMAKE_BUILD_TYPE})
-  endif(F_ALIGN_LABELS)
-  if(F_ALIGN_LOOPS)
-    add_cflags(-falign-loops=1 ${CMAKE_BUILD_TYPE})
-  endif(F_ALIGN_LOOPS)
-  if(F_ALIGN_STRINGOPS)
-    add_cflags(-falign-stringops=1 ${CMAKE_BUILD_TYPE})
-  endif(F_ALIGN_STRINGOPS)
-endif()
-
-list(
-  APPEND
-  MINIMAL_BUILTINS
-  break
-  cd
-  eval
-  exec
-  exit
-  export
-  hash
-  history
-  pwd
-  set
-  shift
-  source
-  unset)
-list(
-  APPEND
-  EXTRA_BUILTINS
-  basename
-  cat
-  chmod
-  dirname
-  expr
-  hostname
-  ln
-  mkdir
-  rm
-  rmdir
-  which
-  mktemp
-  uname
-  # ls   mv printf   sort tr  uniq
-)
-list(
-  APPEND
-  DEFAULT_BUILTINS
-  ${MINIMAL_BUILTINS}
-  type
-  echo
-  fdtable
-  true
-  false)
-
-set(ALL_BUILTINS "")
-list(
-  APPEND
-  ALL_BUILTINS
-  ${MINIMAL_BUILTINS}
-  ${DEFAULT_BUILTINS}
-  ${EXTRA_BUILTINS}
-  basename
-  break
-  cd
-  dirname
-  dump
-  echo
-  eval
-  exec
-  exit
-  export
-  expr
-  false
-  fdtable
-  hash
-  help
-  history
-  hostname
-  ln
-  pwd
-  set
-  shift
-  source
-  test
-  true
-  type
-  unset)
-list(SORT ALL_BUILTINS)
-list(REMOVE_DUPLICATES ALL_BUILTINS)
-
-function(isin)
-  set(ARGUMENTS "${ARGV}")
-  list(GET ARGUMENTS 0 RETVAR)
-  list(GET ARGUMENTS 1 ITEM)
-  list(REMOVE_AT ARGUMENTS 0 1)
-  # message("ARGUMENTS: ${ARGUMENTS}")
-  list(FIND ARGUMENTS "${ITEM}" FOUND)
-
-  if(${FOUND} EQUAL -1)
-    set(RET FALSE)
-  else()
-    set(RET TRUE)
-  endif()
-  set("${RETVAR}"
-      ${RET}
-      PARENT_SCOPE)
-  # return(${RET})
-endfunction(isin)
-
-set(BUILTINS_ENABLED "")
-set(BUILTINS_DISABLED "")
-
-option(ENABLE_ALL_BUILTINS "Enable all builtins" OFF)
-
-foreach(BUILTIN ${ALL_BUILTINS})
-  string(TOUPPER ${BUILTIN} NAME)
-  if(NOT DEFINED ${ENABLE_${NAME}})
-    isin("ENABLE_${NAME}" ${BUILTIN} ${DEFAULT_BUILTINS})
-  endif(NOT DEFINED ${ENABLE_${NAME}})
-
-  if(ENABLE_ALL_BUILTINS)
-    option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" ON)
-  else(ENABLE_ALL_BUILTINS)
-
-    if(DEFINED ENABLE_${NAME})
-      option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" "${ENABLE_${NAME}}")
-    else(DEFINED ENABLE_${NAME})
-      option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" OFF)
-    endif(DEFINED ENABLE_${NAME})
-  endif(ENABLE_ALL_BUILTINS)
-  # message(STATUS "Builtin ${BUILTIN} - ${ENABLE_${NAME}}")
-endforeach(BUILTIN ${ALL_BUILTINS})
-
-
-if(ENABLE_ALL_BUILTINS)
-message("Enable ALL builtins")
-  foreach(BUILTIN ${ALL_BUILTINS})
-    string(TOUPPER ${BUILTIN} NAME)
-    message("Enable ${BUILTIN}")
-    set(ENABLE_${NAME} ON)
-    set(BUILTIN_${NAME} ON)
-  endforeach(BUILTIN ${ALL_BUILTINS})
-endif(ENABLE_ALL_BUILTINS)
-
-
-isin(ENABLE_DUMP dump ${BUILTINS_ENABLED})
-
-set(DEBUG_OUTPUT_DEFAULT OFF)
-
-if(ENABLE_DUMP)
-  set(DEBUG_OUTPUT_DEFAULT ON)
-endif(ENABLE_DUMP)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Builtins.cmake)
 
 option(NO_TREE_PRINT "Disable tree_print for history" OFF)
+
 option(DEBUG_ALLOC "Debug memory allocations" OFF)
 option(DEBUG_COLOR "Color debug output" OFF)
 option(DEBUG_OUTPUT "Print debug output" ${DEBUG_OUTPUT_DEFAULT})
@@ -397,16 +74,6 @@ if(DEBUG_COLOR)
   add_definitions(-DCOLOR_DEBUG=1)
 endif()
 
-foreach(BUILTIN ${ALL_BUILTINS})
-
-  string(TOUPPER ${BUILTIN} NAME)
-  if(${BUILTIN_${NAME}} STREQUAL ON OR ENABLE_ALL_BUILTINS)
-    list(APPEND BUILTINS_ENABLED ${BUILTIN})
-  else(${BUILTIN_${NAME}} STREQUAL ON OR ENABLE_ALL_BUILTINS)
-    list(APPEND BUILTINS_DISABLED ${BUILTIN})
-  endif(${BUILTIN_${NAME}} STREQUAL ON OR ENABLE_ALL_BUILTINS)
-endforeach(BUILTIN ${ALL_BUILTINS})
-
 if(DEBUG_ALLOC)
   set(NAME_DEBUG "debug")
   add_definitions(-DDEBUG_ALLOC=1)
@@ -414,166 +81,8 @@ else()
   set(NAME_DEBUG "")
 endif()
 
-check_inline()
-
-if(NOT "${INLINE_KEYWORD}" MATCHES "^inline$")
-  #if(NOT "${INLINE_KEYWORD}" MATCHES "^$")
-    add_definitions("-Dinline=${INLINE_KEYWORD}")
-  #endif(NOT "${INLINE_KEYWORD}" MATCHES "^$")
-endif(NOT "${INLINE_KEYWORD}" MATCHES "^inline$")
-
-if(WIN32
-   OR WIN64
-   OR MINGW
-   OR WINDOWS)
-  check_library_exists(ws2_32 gethostname /usr/lib HAVE_WS2_32)
-
-  if(NOT HAVE_WS2_32)
-    check_library_exists(wsock32 gethostname /usr/lib HAVE_WSOCK32)
-  endif(NOT HAVE_WS2_32)
-
-  check_function_exists(fork HAVE_FORK)
-
-  if(NOT HAVE_FORK)
-    set(FORK_SOURCE "src/fork.c")
-  endif(NOT HAVE_FORK)
-
-endif(
-  WIN32
-  OR WIN64
-  OR MINGW
-  OR WINDOWS)
-
-if(HAVE_WSOCK32)
-  set(WINSOCK2_LIBRARY wsock32)
-endif(HAVE_WSOCK32)
-if(HAVE_WS2_32)
-  set(WINSOCK2_LIBRARY ws2_32)
-endif(HAVE_WS2_32)
-
-check_library_exists(owfat_debug buffer_init /usr/lib64 HAVE_LIBOWFAT)
-
-if(HAVE_LIBOWFAT)
-  set(LIBOWFAT_LIBRARY owfat_debug)
-endif(HAVE_LIBOWFAT)
-
-if(NOT HAVE_LIBOWFAT)
-  check_library_exists(owfat buffer_init /usr/lib64 HAVE_LIBOWFAT)
-  if(HAVE_LIBOWFAT)
-    set(LIBOWFAT_LIBRARY owfat)
-  endif(HAVE_LIBOWFAT)
-endif(NOT HAVE_LIBOWFAT)
-
-check_include_file(alloca.h HAVE_ALLOCA_H)
-check_include_file(stdint.h HAVE_STDINT_H)
-check_include_file(inttypes.h HAVE_INTTYPES_H)
-check_include_file(sys/types.h HAVE_SYS_TYPES_H)
-
-if(HAVE_SYS_TYPES_H)
-  set(CMAKE_REQUIRED_INCLUDES sys/types.h)
-endif(HAVE_SYS_TYPES_H)
-
-message("Cross compiling: ${CMAKE_CROSSCOMPILING}")
-message("Host system name: ${CMAKE_HOST_SYSTEM_NAME}")
-message("System name: ${CMAKE_SYSTEM_NAME}")
-
-if(NOT CMAKE_CROSSCOMPILING)
-  check_type_size(ssize_t SIZEOF_SSIZE_T)
-  if(NOT SIZEOF_SSIZE_T STREQUAL "")
-    set(HAVE_SSIZE_T 1)
-    add_definitions(-D_SSIZE_T_=1)
-  endif(NOT SIZEOF_SSIZE_T STREQUAL "")
-
-  check_type_size(sigset_t SIZEOF_SIGSET_T)
-  if(NOT SIZEOF_SIGSET_T STREQUAL "")
-    set(HAVE_SIGSET_T 1)
-  endif(NOT SIZEOF_SIGSET_T STREQUAL "")
-
-  check_type_size(pid_t SIZEOF_PID_T)
-  if(NOT SIZEOF_PID_T STREQUAL "")
-    set(HAVE_PID_T 1)
-  endif(NOT SIZEOF_PID_T STREQUAL "")
-
-  check_type_size(uid_t SIZEOF_UID_T)
-  if(NOT SIZEOF_UID_T STREQUAL "")
-    set(HAVE_UID_T 1)
-  endif(NOT SIZEOF_UID_T STREQUAL "")
-endif(NOT CMAKE_CROSSCOMPILING)
-
-if(HAVE_ALLOCA_H)
-  list(APPEND CMAKE_REQUIRED_INCLUDES alloca.h)
-  check_symbol_exists(alloca alloca.h HAVE_ALLOCA)
-endif()
-
-check_include_file(sys/wait.h HAVE_SYS_WAIT_H)
-
-check_include_file(unistd.h HAVE_UNISTD_H)
-if(HAVE_UNISTD_H)
-  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} unistd.h)
-  list(APPEND CMAKE_REQUIRED_INCLUDES unistd.h)
-endif(HAVE_UNISTD_H)
-
-check_function_exists(sethostname HAVE_SETHOSTNAME)
-check_function_exists(readlink HAVE_READLINK)
-
-check_include_file(fcntl.h HAVE_FCNTL_H)
-if(HAVE_FCNTL_H)
-  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} fcntl.h)
-endif(HAVE_FCNTL_H)
-
-check_function_exists(fcntl HAVE_FCNTL)
-
-check_include_file(sys/types.h HAVE_SYS_TYPES_H)
-if(HAVE_SYS_TYPES_H)
-  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} sys/types.h)
-endif(HAVE_SYS_TYPES_H)
-
-check_include_file(sys/stat.h HAVE_SYS_STAT_H)
-if(HAVE_SYS_STAT_H)
-  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} sys/stat.h)
-endif(HAVE_SYS_STAT_H)
-
-check_function_exists(lstat HAVE_LSTAT)
-
-check_include_file(signal.h HAVE_SIGNAL_H)
-if(HAVE_SIGNAL_H)
-  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} signal.h)
-  list(APPEND CMAKE_REQUIRED_INCLUDES signal.h)
-endif(HAVE_SIGNAL_H)
-
-check_function_exists(sigprocmask HAVE_SIGPROCMASK)
-
-if(NOT HAVE_SIGPROCMASK)
-  check_function_exists(sigblock HAVE_SIGBLOCK)
-  check_function_exists(sigsetmask HAVE_SIGSETMASK)
-  check_function_exists(sigpause HAVE_SIGPAUSE)
-
-endif(NOT HAVE_SIGPROCMASK)
-check_function_exists(sigaction HAVE_SIGACTION)
-check_function_exists(setpgid HAVE_SETPGID)
-
-
-check_include_file(glob.h HAVE_GLOB_H)
-if(HAVE_GLOB_H)
-  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} glob.h)
-endif(HAVE_GLOB_H)
-
-check_function_exists(glob HAVE_GLOB)
-
-check_type_size(pid_t PID_T)
-if(PID_T GREATER 0)
-  set(HAVE_PID_T TRUE)
-endif(PID_T GREATER 0)
-
-# if(HAVE_SIGNAL_H) check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T) check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T) check_type_size(sigset_t SIZEOF_SIGSET_T)
-#
-# if(SIZEOF_SIGSET_T) set(HAVE_SIGSET_T 1) else() set(HAVE_SIGSET_T 0) endif() endif()
-
-check_function_exists(sys_siglist HAVE_SYS_SIGLIST)
-
 configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.h")
 
-# add_definitions(-Wall   -unused-variable -Wno-unuset-but-set-variable -DHAVE_CONFIG_H=1 -D__USE_XOPEN_EXTENDED=1 -D__USE_POSIX=1) add_definitions(-w   -DHAVE_CONFIG_H=1 -D__USE_XOPEN_EXTENDED=1 -D__USE_POSIX=1)
 set(SOURCE_DEFINITIONS)
 set(SOURCE_TYPES
     ATFILE
@@ -593,39 +102,6 @@ add_definitions(-DHAVE_CONFIG_H=1)
 add_definitions(${SOURCE_DEFINITIONS})
 
 add_definitions(-D_FILE_OFFSET_BITS=64)
-
-if(BUILD_DEBUG OR CMAKE_BUILD_TYPE MATCHES Deb)
-  check_cflag("-O0" F_OPT_NONE DEBUG)
-  check_cflag("-ggdb" F_G_GDB DEBUG)
-  if(NOT F_G_GDB)
-    check_cflag("-g3" F_G3 DEBUG)
-    if(NOT F_G3)
-      check_cflag("-g" F_G DEBUG)
-    endif(NOT F_G3)
-  endif(NOT F_G_GDB)
-  #[[
-  if(F_G)
-    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g")
-  endif(F_G)
-  if(F_G_GDB)
-    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -ggdb")
-  endif(F_G_GDB)
-  if(F_OPT_NONE)
-    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0")
-  endif(F_OPT_NONE)]]
-else()
-  check_c_compiler_flag("-w" F_NOWARN)
-
-  if(F_NOWARN)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w")
-  endif(F_NOWARN)
-endif()
-
-string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_MINSIZEREL "${CMAKE_C_FLAGS_MINSIZEREL}")
-string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
-string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
-string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
 
 if(BUILD_DEBUG)
   add_definitions(-DDEBUG=1)
@@ -692,10 +168,7 @@ file(
   GLOB
   SOURCES
   src/*.h
-  src/eval/*.c
-  src/exec/*.c
-  src/expand/*.c
-  src/expr/*.c
+
   src/fd/*.c
   src/fdstack/*.c
   src/fdtable/*.c
@@ -704,17 +177,17 @@ file(
   src/parse/*.c
   src/prompt/*.c
   src/redir/*.c
-  src/sh/*.c
+# src/sh/*.c
   src/sig/*.c
   src/source/*.c
   src/term/*.c
   src/tree/*.c
   src/var/*.c
   src/vartab/*.c)
-
-# if(BUILD_DEBUG) #file(GLOB ADDSOURCES src/debug/*.c) # set(DEBUG_SOURCES "${SOURCES}") list(FILTER DEBUG_SOURCES INCLUDE REGEX ".*debug.c$") foreach(SRC ${DEBUG_SOURCES}) string(REGEX REPLACE "debug\.c" ".c" OSRC "${SRC}") message("Remove ${OSRC}") list(REMOVE_ITEM SOURCES "${OSRC}")
-# endforeach(SRC ${DEBUG_SOURCES}) else(BUILD_DEBUG) list(FILTER SOURCES EXCLUDE REGEX ".*debug.c$") endif(BUILD_DEBUG)
-
+file(GLOB EVAL_SOURCES   src/eval/*.c
+  src/exec/*.c
+  src/expand/*.c
+  src/expr/*.c)
 if(DEBUG_ALLOC)
   list(
     APPEND
@@ -747,22 +220,13 @@ if(DEBUG_OUTPUT)
     src/debug/debug_unquoted.c)
 endif(DEBUG_OUTPUT)
 
-list(APPEND SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
+list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
 list(APPEND SOURCES src/parse/parse_newnode${NAME_DEBUG}.c src/tree/tree_newnode${NAME_DEBUG}.c)
+#list(APPEND SOURCES ${BUILTIN_SOURCES})
 
 if(FORK_SOURCE)
   list(APPEND SOURCES ${FORK_SOURCE})
 endif(FORK_SOURCE)
-
-check_library_exists(m pow /usr/lib HAVE_LIBM)
-
-if(HAVE_LIBM)
-  set(MATH_LIBRARY m)
-endif(HAVE_LIBM)
-
-foreach(BUILTIN ${BUILTINS_ENABLED})
-  list(APPEND SOURCES src/builtin/builtin_${BUILTIN}.c)
-endforeach(BUILTIN ${BUILTINS_ENABLED})
 
 if(BUILD_DEBUG)
   option(USE_EFENCE "Enable electric fence" OFF)
@@ -777,39 +241,6 @@ if(HAVE_EFENCE)
 endif(HAVE_EFENCE)
 
 string(REPLACE " " ";" SOURCES "${SOURCES}")
-
-foreach(DISABLED ${BUILTINS_DISABLED})
-  set(SRC "src/builtin/builtin_${DISABLED}.c")
-  list(LENGTH SOURCES N)
-  list(REMOVE_ITEM SOURCES "${SRC}")
-  # list(FILTER SOURCES EXCLUDE REGEX  "${SRC}")
-  list(LENGTH SOURCES N2)
-  # if(${N} EQUAL ${N2}) message("ERROR ${SRC}  -  ${N} == ${N2}") endif(${N} EQUAL ${N2})
-  unset(BUILTIN_${NAME})
-  set(BUILD_BUILTIN_${NAME}
-      "0"
-      CACHE INTERNAL "Build the ${ENABLED} builtin")
-endforeach(DISABLED ${BUILTINS_DISABLED})
-
-foreach(ENABLED ${BUILTINS_ENABLED})
-  string(TOUPPER "${ENABLED}" NAME)
-  # add_definitions("-DBUILTIN_${NAME}=1")
-  set(BUILTIN_FLAGS "${BUILTIN_FLAGS} -DBUILTIN_${NAME}=1")
-  set(BUILD_BUILTIN_${NAME}
-      1
-      CACHE INTERNAL "Build the ${ENABLED} builtin")
-endforeach(ENABLED ${BUILTINS_ENABLED})
-
-set(BUILTIN_CONFIG "")
-foreach(BUILTIN ${ALL_BUILTINS})
-  string(TOUPPER ${BUILTIN} NAME)
-  if(${BUILD_BUILTIN_${NAME}})
-    set(BUILTIN_CONFIG "${BUILTIN_CONFIG}\n#define BUILTIN_${NAME} 1")
-    list(APPEND SOURCES "src/builtin/builtin_${BUILTIN}.c")
-  else(${BUILD_BUILTIN_${NAME}})
-    set(BUILTIN_CONFIG "${BUILTIN_CONFIG}\n#define BUILTIN_${NAME} 0")
-  endif(${BUILD_BUILTIN_${NAME}})
-endforeach(BUILTIN ${ALL_BUILTINS})
 
 file(WRITE "${CMAKE_BINARY_DIR}/src/builtin_config.h" "${BUILTIN_CONFIG}\n\n")
 # message("${BUILTIN_CONFIG}")
@@ -832,18 +263,30 @@ if(ENABLE_LTO)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
 endif(ENABLE_LTO)
 
-add_executable(shish ${SOURCES} ${LIBSOURCES})
+list(APPEND SOURCES ${EVAL_SOURCES}
+${BUILTIN_SOURCES})
+
+set(SHISH_SOURCES ${SOURCES}
+
+
+src/sh/sh_cmdlist.c src/sh/sh_error.c src/sh/sh_errorn.c src/sh/sh_exit.c src/sh/sh_forked.c src/sh/sh_getcwd.c src/sh/sh_gethome.c src/sh/sh_init.c src/sh/sh_loop.c src/sh/sh_main.c src/sh/sh_msg.c src/sh/sh_popargs.c src/sh/sh_pop.c src/sh/sh_pushargs.c src/sh/sh_push.c src/sh/sh_root.c src/sh/sh_setargs.c src/sh/sh_subshell.c src/sh/sh_usage.c
+
+)
+
+add_executable(shish ${SHISH_SOURCES} ${LIBSOURCES})
 target_link_libraries(shish ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY} ${WINSOCK2_LIBRARY})
 if(EMSCRIPTEN)
   set_target_properties(shish PROPERTIES SUFFIX ".${EMSCRIPTEN_EXE_SUFFIX}")
 endif(EMSCRIPTEN)
 
-add_executable(shfmt ${SOURCES}  ${LIBSOURCES})
+set(SHFMT_SOURCES ${SOURCES}
+src/sh/sh_cmdlist.c src/sh/sh_error.c src/sh/sh_errorn.c src/sh/sh_exit.c src/sh/sh_fmt.c src/sh/sh_forked.c src/sh/sh_getcwd.c src/sh/sh_gethome.c src/sh/sh_init.c src/sh/sh_loop.c src/sh/sh_msg.c src/sh/sh_popargs.c src/sh/sh_pop.c src/sh/sh_pushargs.c src/sh/sh_push.c src/sh/sh_root.c src/sh/sh_setargs.c src/sh/sh_subshell.c src/sh/sh_usage.c
+)
+
+add_executable(shfmt ${SHFMT_SOURCES} ${LIBSOURCES})
 target_link_libraries(shfmt ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY} ${WINSOCK2_LIBRARY})
 
 target_compile_definitions(shfmt PUBLIC SHFMT=1)
-
-
 
 # message(STATUS "\nBuiltin flags:\n  ${BUILTIN_FLAGS}\n")
 
