@@ -1,6 +1,5 @@
 #include "../utf8.h"
 
-
 int
 u8len(const char* u, size_t count) {
   if(0 == count)

@@ -11,7 +11,150 @@
 			"file": "CMakeLists.txt",
 			"settings":
 			{
-				"buffer_size": 23147,
+				"buffer_size": 23466,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/builtin/builtin_mkdir.c",
+			"settings":
+			{
+				"buffer_size": 1329,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/builtin/builtin_break.c",
+			"settings":
+			{
+				"buffer_size": 536,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/builtin/builtin_rm.c",
+			"settings":
+			{
+				"buffer_size": 993,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/builtin/builtin_rmdir.c",
+			"settings":
+			{
+				"buffer_size": 976,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/builtin/builtin_type.c",
+			"settings":
+			{
+				"buffer_size": 1233,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/builtin/builtin_cat.c",
+			"settings":
+			{
+				"buffer_size": 1893,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/builtin/builtin_ln.c",
+			"settings":
+			{
+				"buffer_size": 1461,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/builtin/builtin_chmod.c",
+			"settings":
+			{
+				"buffer_size": 948,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/builtin/builtin_shift.c",
+			"settings":
+			{
+				"buffer_size": 542,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/builtin/builtin_hash.c",
+			"settings":
+			{
+				"buffer_size": 1233,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/exec/exec_command.c",
+			"settings":
+			{
+				"buffer_size": 1420,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/builtin/builtin_exec.c",
+			"settings":
+			{
+				"buffer_size": 1228,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "Searching 343 files for \"exec_command\"\n\n/home/roman/Dokumente/Sources/shish/src/builtin/builtin_exec.c:\n   44  \n   45      /* try to exec */\n   46:     exec_command(id, cmd, argc - shell_optind, &argv[shell_optind], 1, NULL);\n   47    }\n   48  \n\n/home/roman/Dokumente/Sources/shish/src/eval/eval_simple_command.c:\n  150  \n  151    /* execute the command, this may or may not return, depending on E_EXIT */\n  152:   status = exec_command(id, cmd, argc, argv, (e->flags & E_EXIT), redir);\n  153  \n  154  #ifndef HAVE_ALLOCA\n\n/home/roman/Dokumente/Sources/shish/src/exec.h:\n   31  char* exec_check(char* path);\n   32  char* exec_path(char* name);\n   33: int exec_command(enum hash_id id, union command cmd, int argc, char** argv, int exec, union node* redir);\n   34  int exec_error(void);\n   35  int exec_program(char* path, char** argv, int exec, union node* redir);\n\n/home/roman/Dokumente/Sources/shish/src/exec/exec_command.c:\n   11   * ----------------------------------------------------------------------- */\n   12  int\n   13: exec_command(enum hash_id id, union command cmd, int argc, char** argv, int exec, union node* redir) {\n   14    int ret = 1;\n   15  \n\n4 matches across 4 files\n\n\nSearching 343 files for \"H_EXEC\" (regex, case sensitive)\n\n/home/roman/Dokumente/Sources/shish/src/builtin/builtin_hash.c:\n   29        switch(h->id) {\n   30          case H_PROGRAM: buffer_puts(fd_out->w, h->cmd.path); break;\n   31:         case H_EXEC:\n   32          case H_SBUILTIN: buffer_putm_internal(fd_out->w, h->name, \" (special builtin)\", NULL); break;\n   33          case H_BUILTIN: buffer_putm_internal(fd_out->w, h->name, \" (builtin)\", NULL); break;\n\n/home/roman/Dokumente/Sources/shish/src/builtin/builtin_type.c:\n   29        switch(h->id) {\n   30          case H_PROGRAM: buffer_puts(fd_out->w, h->cmd.path); break;\n   31:         case H_EXEC:\n   32          case H_SBUILTIN: buffer_putm_internal(fd_out->w, h->name, \" (special builtin)\", NULL); break;\n   33          case H_BUILTIN: buffer_putm_internal(fd_out->w, h->name, \" (builtin)\", NULL); break;\n\n/home/roman/Dokumente/Sources/shish/src/eval/eval_simple_command.c:\n   66  \n   67    /* do redirections if present */\n   68:   if(redir && id != H_SBUILTIN && id != H_EXEC)\n   69      fdstack_push(&io);\n   70  \n   ..\n   74  \n   75        /* if its the exec special builtin the new fd needs to be persistent */\n   76:       if(id != H_EXEC) {\n   77  #ifdef HAVE_ALLOCA\n   78          fd = fd_alloca();\n   ..\n   83  \n   84        /* return if a redirection failed */\n   85:       if(redir_eval(&r->nredir, fd, (id == H_EXEC ? R_NOW : 0))) {\n   86          status = 1;\n   87          goto end;\n   ..\n   92          /* if its not exec then set up buffers for\n   93             temporary redirections on the stack */\n   94:         if(id != H_EXEC)\n   95            fd_setbuf(r->nredir.fd, buf, FD_BUFSIZE);\n   96          else\n   ..\n  168    if(fdstack == &io)\n  169      fdstack_pop(&io);\n  170:   else if(id != H_EXEC) {\n  171      for(r = redir; r; r = r->nredir.next) {\n  172        fd_pop(r->nredir.fd);\n\n/home/roman/Dokumente/Sources/shish/src/exec.h:\n    5  #include <stdlib.h>\n    6  \n    7: enum hash_id { H_PROGRAM = 0, H_EXEC, H_SBUILTIN, H_BUILTIN, H_FUNCTION };\n    8  \n    9  union command {\n\n/home/roman/Dokumente/Sources/shish/src/exec/exec_command.c:\n   17      case H_SBUILTIN:\n   18      case H_BUILTIN:\n   19:     case H_EXEC: {\n   20        /* reset shell_optind for shell_getopt() inside builtins */\n   21        shell_optind = 1;\n\n/home/roman/Dokumente/Sources/shish/src/exec/exec_hash.c:\n   50       */\n   51      else {\n   52:       id = H_EXEC;\n   53        cmd.builtin = builtin_search(name, B_EXEC);\n   54  \n\n10 matches across 6 files\n\n\nSearching 343 files for \"H_:E\" (regex, case sensitive)\n\n0 matches\n\nSearching 343 files for \"H_EXEC\" (regex, case sensitive)\n\n/home/roman/Dokumente/Sources/shish/src/builtin/builtin_hash.c:\n   29        switch(h->id) {\n   30          case H_PROGRAM: buffer_puts(fd_out->w, h->cmd.path); break;\n   31:         case H_EXEC:\n   32          case H_SBUILTIN: buffer_putm_internal(fd_out->w, h->name, \" (special builtin)\", NULL); break;\n   33          case H_BUILTIN: buffer_putm_internal(fd_out->w, h->name, \" (builtin)\", NULL); break;\n\n/home/roman/Dokumente/Sources/shish/src/builtin/builtin_type.c:\n   29        switch(h->id) {\n   30          case H_PROGRAM: buffer_puts(fd_out->w, h->cmd.path); break;\n   31:         case H_EXEC:\n   32          case H_SBUILTIN: buffer_putm_internal(fd_out->w, h->name, \" (special builtin)\", NULL); break;\n   33          case H_BUILTIN: buffer_putm_internal(fd_out->w, h->name, \" (builtin)\", NULL); break;\n\n/home/roman/Dokumente/Sources/shish/src/eval/eval_simple_command.c:\n   66  \n   67    /* do redirections if present */\n   68:   if(redir && id != H_SBUILTIN && id != H_EXEC)\n   69      fdstack_push(&io);\n   70  \n   ..\n   74  \n   75        /* if its the exec special builtin the new fd needs to be persistent */\n   76:       if(id != H_EXEC) {\n   77  #ifdef HAVE_ALLOCA\n   78          fd = fd_alloca();\n   ..\n   83  \n   84        /* return if a redirection failed */\n   85:       if(redir_eval(&r->nredir, fd, (id == H_EXEC ? R_NOW : 0))) {\n   86          status = 1;\n   87          goto end;\n   ..\n   92          /* if its not exec then set up buffers for\n   93             temporary redirections on the stack */\n   94:         if(id != H_EXEC)\n   95            fd_setbuf(r->nredir.fd, buf, FD_BUFSIZE);\n   96          else\n   ..\n  168    if(fdstack == &io)\n  169      fdstack_pop(&io);\n  170:   else if(id != H_EXEC) {\n  171      for(r = redir; r; r = r->nredir.next) {\n  172        fd_pop(r->nredir.fd);\n\n/home/roman/Dokumente/Sources/shish/src/exec.h:\n    5  #include <stdlib.h>\n    6  \n    7: enum hash_id { H_PROGRAM = 0, H_EXEC, H_SBUILTIN, H_BUILTIN, H_FUNCTION };\n    8  \n    9  union command {\n\n/home/roman/Dokumente/Sources/shish/src/exec/exec_command.c:\n   17      case H_SBUILTIN:\n   18      case H_BUILTIN:\n   19:     case H_EXEC: {\n   20        /* reset shell_optind for shell_getopt() inside builtins */\n   21        shell_optind = 1;\n\n/home/roman/Dokumente/Sources/shish/src/exec/exec_hash.c:\n   50       */\n   51      else {\n   52:       id = H_EXEC;\n   53        cmd.builtin = builtin_search(name, B_EXEC);\n   54  \n\n10 matches across 6 files\n",
+			"settings":
+			{
+				"buffer_size": 6318,
+				"line_ending": "Unix",
+				"name": "Find Results",
+				"scratch": true
+			}
+		},
+		{
+			"file": "src/exec/exec_hash.c",
+			"settings":
+			{
+				"buffer_size": 2317,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/roman/.config/sublime-text-3/Packages/JavaScript Ultimate/themes/Indiana Jones.tmTheme",
+			"settings":
+			{
+				"buffer_size": 11917,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/eval/eval_simple_command.c",
+			"settings":
+			{
+				"buffer_size": 4484,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/exec.h",
+			"settings":
+			{
+				"buffer_size": 1084,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -83,15 +226,9 @@
 	[
 		"/home/roman/Dokumente/Sources/shish",
 		"/home/roman/Dokumente/Sources/shish/inst",
-		"/home/roman/Dokumente/Sources/shish/lib",
-		"/home/roman/Dokumente/Sources/shish/lib/byte",
-		"/home/roman/Dokumente/Sources/shish/lib/fmt",
-		"/home/roman/Dokumente/Sources/shish/lib/sig",
-		"/home/roman/Dokumente/Sources/shish/lib/unix",
-		"/home/roman/Dokumente/Sources/shish/lib/utf8",
 		"/home/roman/Dokumente/Sources/shish/src",
 		"/home/roman/Dokumente/Sources/shish/src/builtin",
-		"/home/roman/Dokumente/Sources/shish/src/builtin/build",
+		"/home/roman/Dokumente/Sources/shish/src/exec",
 		"/home/roman/Dokumente/Sources/shish/src/tree",
 		"/home/roman/Dokumente/Sources/shish/src/vartab"
 	],
@@ -194,7 +331,7 @@
 	],
 	"find":
 	{
-		"height": 26.0
+		"height": 40.0
 	},
 	"find_in_files":
 	{
@@ -210,9 +347,17 @@
 	},
 	"find_state":
 	{
-		"case_sensitive": false,
+		"case_sensitive": true,
 		"find_history":
 		[
+			"H_EXEC",
+			"H_:E",
+			"H_EXEC",
+			"INLINE_KEYWORD",
+			"inline",
+			"cmd\\.",
+			"cmd",
+			"exec_command",
 			"stralloc",
 			"sigprocmask",
 			"unistd.h",
@@ -321,9 +466,10 @@
 		"highlight": true,
 		"in_selection": false,
 		"preserve_case": false,
-		"regex": false,
+		"regex": true,
 		"replace_history":
 		[
+			"cmd->",
 			"char**",
 			"char** argv",
 			"current(argv)",
@@ -340,7 +486,7 @@
 	"groups":
 	[
 		{
-			"selected": 0,
+			"selected": 6,
 			"sheets":
 			[
 				{
@@ -349,15 +495,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 23147,
+						"buffer_size": 23466,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								23119,
-								23119
+								10594,
+								10594
 							]
 						],
 						"settings":
@@ -367,10 +513,632 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 13942.0,
+						"translation.y": 7014.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 16,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "src/builtin/builtin_mkdir.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1329,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C Improved/C Improved.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 15,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "src/builtin/builtin_break.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 536,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C Improved/C Improved.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 14,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "src/builtin/builtin_rm.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 993,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C Improved/C Improved.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 13,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "src/builtin/builtin_rmdir.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 976,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C Improved/C Improved.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 12,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "src/builtin/builtin_type.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1233,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C Improved/C Improved.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "src/builtin/builtin_cat.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1893,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								301,
+								301
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C Improved/C Improved.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "src/builtin/builtin_ln.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1461,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C Improved/C Improved.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 11,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "src/builtin/builtin_chmod.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 948,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C Improved/C Improved.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 10,
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "src/builtin/builtin_shift.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 542,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C Improved/C Improved.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "src/builtin/builtin_hash.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1233,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								919,
+								919
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C Improved/C Improved.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 11,
+					"file": "src/exec/exec_command.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1420,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								815,
+								815
+							],
+							[
+								1328,
+								1328
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C Improved/C Improved.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 462.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 12,
+					"file": "src/builtin/builtin_exec.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1228,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1065,
+								1065
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C Improved/C Improved.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 270.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 8,
+					"type": "text"
+				},
+				{
+					"buffer": 13,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 6318,
+						"regions":
+						{
+							"match":
+							{
+								"flags": 112,
+								"regions":
+								[
+									[
+										152,
+										164
+									],
+									[
+										424,
+										436
+									],
+									[
+										655,
+										667
+									],
+									[
+										1030,
+										1042
+									],
+									[
+										1437,
+										1443
+									],
+									[
+										1843,
+										1849
+									],
+									[
+										2226,
+										2232
+									],
+									[
+										2393,
+										2399
+									],
+									[
+										2576,
+										2582
+									],
+									[
+										2797,
+										2803
+									],
+									[
+										2970,
+										2976
+									],
+									[
+										3187,
+										3193
+									],
+									[
+										3396,
+										3402
+									],
+									[
+										3620,
+										3626
+									],
+									[
+										4035,
+										4041
+									],
+									[
+										4441,
+										4447
+									],
+									[
+										4824,
+										4830
+									],
+									[
+										4991,
+										4997
+									],
+									[
+										5174,
+										5180
+									],
+									[
+										5395,
+										5401
+									],
+									[
+										5568,
+										5574
+									],
+									[
+										5785,
+										5791
+									],
+									[
+										5994,
+										6000
+									],
+									[
+										6218,
+										6224
+									]
+								],
+								"scope": ""
+							}
+						},
+						"selection":
+						[
+							[
+								6221,
+								6221
+							]
+						],
+						"settings":
+						{
+							"detect_indentation": false,
+							"line_numbers": false,
+							"output_tag": 4,
+							"result_base_dir": "",
+							"result_file_regex": "^([^ \t].*):$",
+							"result_line_regex": "^ +([0-9]+):",
+							"scroll_past_end": true,
+							"syntax": "Packages/Default/Find Results.hidden-tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 2520.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 14,
+					"file": "src/exec/exec_hash.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2317,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								739,
+								739
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C Improved/C Improved.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 479.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 15,
+					"file": "/home/roman/.config/sublime-text-3/Packages/JavaScript Ultimate/themes/Indiana Jones.tmTheme",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 11917,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								884,
+								884
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/XML/XML.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 16,
+					"file": "src/eval/eval_simple_command.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 4484,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								4094,
+								4094
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C Improved/C Improved.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 2441.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 17,
+					"type": "text"
+				},
+				{
+					"buffer": 17,
+					"file": "src/exec.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1084,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								761,
+								761
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C11/C11.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 9,
 					"type": "text"
 				}
 			]
@@ -378,7 +1146,7 @@
 	],
 	"incremental_find":
 	{
-		"height": 26.0
+		"height": 27.0
 	},
 	"input":
 	{
@@ -415,7 +1183,7 @@
 	"project": "shish.sublime-project",
 	"replace":
 	{
-		"height": 48.0
+		"height": 71.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -424,6 +1192,18 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"exec.h",
+				"src/exec.h"
+			],
+			[
+				"cmakeli",
+				"CMakeLists.txt"
+			],
+			[
+				"builtin_exe",
+				"src/builtin/builtin_exec.c"
+			],
 			[
 				"cmakelists",
 				"CMakeLists.txt"

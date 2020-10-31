@@ -13,7 +13,7 @@ parse_validname(stralloc* sa) {
 
   /* check chars and return on mismatch */
   for(i = 0; i < sa->len; i++)
-    if(!parse_isname(sa->s[i]))
+    if(!parse_isname(sa->s[i], i))
       return 0;
 
   return 1;

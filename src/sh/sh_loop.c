@@ -36,10 +36,15 @@ sh_loop(void) {
     if((list = parse_list(&p))) {
       struct eval e;
 
-      if(source->mode & SOURCE_IACTIVE) {
-#ifndef NO_TREE_PRINT
-        tree_printlist(list, &cmd, NULL);
+#if(defined(_DEBUG) && !defined(NO_TREE_PRINT)) || defined(SHFMT)
+      stralloc_zero(&cmd);
+      tree_catlist(list, &cmd, NULL);
+
+      buffer_putsa(fd_out->w, &cmd);
+      buffer_putnlflush(fd_out->w);
 #endif
+
+      if(source->mode & SOURCE_IACTIVE) {
         buffer* in = source->b;
 
         stralloc_copyb(&cmd, in->x, in->n);
@@ -53,14 +58,18 @@ sh_loop(void) {
         history_advance();
       }
 
-      /*#ifdef DEBUG_OUTPUT_
-            debug_list(list, 0);
-            buffer_putnlflush(fd_err->w);
-      #endif *//* DEBUG_OUTPUT */
+#if defined(DEBUG_OUTPUT)
+      if(sh->flags & SH_DEBUG) {
+        debug_list(list, 0);
+        buffer_putnlflush(fd_err->w);
+      }
+#endif /* DEBUG_OUTPUT */
+
+#ifndef SHFMT
       eval_push(&e, E_JCTL);
       eval_tree(&e, list, E_ROOT | E_LIST);
       sh->exitcode = eval_pop(&e);
-
+#endif
       stralloc_zero(&cmd);
 
       tree_free(list);

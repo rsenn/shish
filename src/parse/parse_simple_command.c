@@ -1,5 +1,6 @@
 #include "../parse.h"
 #include "../tree.h"
+#include "../fd.h"
 
 /* 3.9.1 - parse a simple command
  * ----------------------------------------------------------------------- */
@@ -64,6 +65,12 @@ addcmd:
   simple_command->ncmd.args = args;
   simple_command->ncmd.vars = vars;
   simple_command->ncmd.rdir = rdir;
+
+#ifdef DEBUG_OUTPUT
+  buffer_puts(fd_err->w, "\x1b[1;33mparse_simple_command\x1b[0m = ");
+  tree_print(simple_command, fd_err->w);
+  buffer_putnlflush(fd_err->w);
+#endif
 
   return simple_command;
 }

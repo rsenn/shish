@@ -47,7 +47,7 @@ macro(add_cflags ADD)
   else()
     set("${VAR_NAME}"
         "${${VAR_NAME}} ${ADD}"
-        PARENT_SCOPE)
+        )
   endif()
 endmacro(add_cflags)
 
@@ -286,6 +286,7 @@ list(
   true
   false)
 
+set(ALL_BUILTINS "")
 list(
   APPEND
   ALL_BUILTINS
@@ -343,14 +344,7 @@ endfunction(isin)
 set(BUILTINS_ENABLED "")
 set(BUILTINS_DISABLED "")
 
-if(ENABLE_ALL_BUILTINS)
-  foreach(BUILTIN ${ALL_BUILTINS})
-    string(TOUPPER ${BUILTIN} NAME)
-    message("Enable ${BUILTIN}")
-    set(ENABLE_${NAME} ON)
-    set(BUILTIN_${NAME} ON)
-  endforeach(BUILTIN ${ALL_BUILTINS})
-endif(ENABLE_ALL_BUILTINS)
+option(ENABLE_ALL_BUILTINS "Enable all builtins" OFF)
 
 foreach(BUILTIN ${ALL_BUILTINS})
   string(TOUPPER ${BUILTIN} NAME)
@@ -370,6 +364,18 @@ foreach(BUILTIN ${ALL_BUILTINS})
   endif(ENABLE_ALL_BUILTINS)
   # message(STATUS "Builtin ${BUILTIN} - ${ENABLE_${NAME}}")
 endforeach(BUILTIN ${ALL_BUILTINS})
+
+
+if(ENABLE_ALL_BUILTINS)
+message("Enable ALL builtins")
+  foreach(BUILTIN ${ALL_BUILTINS})
+    string(TOUPPER ${BUILTIN} NAME)
+    message("Enable ${BUILTIN}")
+    set(ENABLE_${NAME} ON)
+    set(BUILTIN_${NAME} ON)
+  endforeach(BUILTIN ${ALL_BUILTINS})
+endif(ENABLE_ALL_BUILTINS)
+
 
 isin(ENABLE_DUMP dump ${BUILTINS_ENABLED})
 
@@ -832,11 +838,18 @@ if(EMSCRIPTEN)
   set_target_properties(shish PROPERTIES SUFFIX ".${EMSCRIPTEN_EXE_SUFFIX}")
 endif(EMSCRIPTEN)
 
+add_executable(shfmt ${SOURCES}  ${LIBSOURCES})
+target_link_libraries(shfmt ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY} ${WINSOCK2_LIBRARY})
+
+target_compile_definitions(shfmt PUBLIC SHFMT=1)
+
+
+
 # message(STATUS "\nBuiltin flags:\n  ${BUILTIN_FLAGS}\n")
 
 set_source_files_properties(src/builtin/builtin_table.c PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}")
 
-install(TARGETS shish DESTINATION bin)
+install(TARGETS shish shfmt DESTINATION bin)
 
 list(SORT BUILTINS_ENABLED)
 list(SORT BUILTINS_DISABLED)

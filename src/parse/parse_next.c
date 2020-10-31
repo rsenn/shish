@@ -5,7 +5,7 @@
 /* ----------------------------------------------------------------------- */
 int
 parse_next(struct parser* p, char* c) {
-#ifdef DEBUG_OUTPUT_
+#ifdef DEBUG_OUTPUT
   char ch;
   source_peek(&ch);
   debug_s("parse_next ");

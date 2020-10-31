@@ -1,5 +1,5 @@
 #include "../debug.h"
-#include "../buffer.h"
+#include "../../lib/buffer.h"
 
 #ifdef DEBUG_OUTPUT
 #include "../fd.h"

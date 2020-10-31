@@ -369,9 +369,16 @@ union node* tree_newnode(enum nod_id nod);
 
 void tree_delnode(union node* node);
 void tree_free(union node* list);
-void tree_print(union node* node, stralloc* sa);
-void tree_printlist(union node* node, stralloc* sa, const char* sep);
+void tree_cat(union node* node, stralloc* sa);
+void tree_cat_n(union node* node, stralloc* sa, int depth);
+void tree_catlist(union node* node, stralloc* sa, const char* sep);
+void tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth);
+void tree_catseparator(stralloc* sa, const char* sep, int depth);
 union node* tree_newlink(union node** nptr, enum nod_id nod);
 unsigned int tree_count(union node* node);
+
+#ifdef BUFFER_H
+void tree_print(union node*, buffer*);
+#endif
 
 #endif /* TREE_H */

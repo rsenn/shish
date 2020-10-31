@@ -75,7 +75,7 @@ parse_param(struct parser* p) {
       }
     } else {
       /* now get the complete variable name */
-      while(source_peek(&c) > 0 && parse_isname(c)) {
+      while(source_peek(&c) > 0 && parse_isname(c, varname.len)) {
         stralloc_catc(&varname, c);
         parse_skip(p);
       }

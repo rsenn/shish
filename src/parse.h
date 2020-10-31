@@ -2,6 +2,7 @@
 #define PARSE_H
 
 #include "../lib/stralloc.h"
+#include "../lib/uint64.h"
 #include <stdlib.h>
 
 #include "tree.h"
@@ -62,7 +63,8 @@ extern const unsigned short parse_chartable[CHAR_RANGE];
 #define parse_isdesc(c) (parse_chartable[(int)(unsigned char)c] & (C_DESC))
 
 /* is either alpha, digit or underscore */
-#define parse_isname(c) (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_NAME))
+#define parse_isname(c, pos)                                                                                           \
+  ((parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_NAME)) || ((pos) > 0 && parse_isdigit(c)))
 
 /* is either alpha, digit or underscore or special parameter */
 #define parse_isparam(c) (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_DIGIT | C_NAME | C_SPCL))
@@ -157,6 +159,7 @@ enum tok_flag {
   T_WHILE = (1 << TI_WHILE),
   T_BEGIN = (1 << TI_BEGIN),
   T_END = (1 << TI_END),
+  T_NONE = -1
 };
 
 /* quoting

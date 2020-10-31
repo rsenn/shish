@@ -4,6 +4,7 @@
 #include "../fd.h"
 #include "../tree.h"
 #include "../source.h"
+#include "../sh.h"
 #include "../debug.h"
 
 /* get a token, the argument indicates whether to search for keywords or not
@@ -19,7 +20,7 @@ parse_gettok(struct parser* p, int tempflags) {
   if(!p->pushback || ((p->flags & P_SKIPNL) && p->tok == T_NL)) {
     p->tok = -1;
     /* skip whitespace */
-    p->tok = parse_skipspace(p);
+    // p->tok = parse_skipspace(p);
     p->tokstart = source->b->p;
 
     if(p->tree && p->tree->id == N_ARGSTR)
@@ -36,8 +37,11 @@ parse_gettok(struct parser* p, int tempflags) {
     if(p->tok & (/* T_WORD | */ T_NAME) && p->node && p->node->id == N_ARGSTR && !(p->flags & P_NOKEYWD))
       parse_keyword(p);
 
-#ifdef DEBUG_OUTPUT_
+#ifdef DEBUG_OUTPUT
     if(p->tok != -1) {
+      buffer_puts(buffer_2, sh_argv0);
+      buffer_puts(buffer_2, ":");
+
       buffer_putulong(buffer_2, source->line + 1);
       buffer_puts(buffer_2, ":");
       buffer_putulong(buffer_2, source->column);
@@ -61,15 +65,15 @@ parse_gettok(struct parser* p, int tempflags) {
       }
 
       buffer_puts(buffer_2, parse_tokname(p->tok, 0));
-
-      {
-        char buf[4];
-        size_t i;
-        buffer_puts(buffer_2, ": \"");
-        for(i = start; i < source->b->p; i++) buffer_put(buffer_2, buf, fmt_escapecharshell(buf, source->b->x[i]));
-        buffer_puts(buffer_2, "\"");
-      }
-      buffer_flush(buffer_2);
+      /*
+            {
+              char buf[4];
+              size_t i;
+              buffer_puts(buffer_2, ": \"");
+              for(i = start; i < source->b->p; i++) buffer_put(buffer_2, buf, fmt_escapecharshell(buf,
+         source->b->x[i])); buffer_puts(buffer_2, "\"");
+            }
+            buffer_flush(buffer_2);*/
       /*
             if(p->tok & (T_ASSIGN | T_WORD | T_NAME)) {
               debug_list(p->tree, -1);

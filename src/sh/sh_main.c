@@ -15,17 +15,20 @@
 
 #include <stdlib.h>
 
+#ifndef SH_FMT
 int sh_argc;
 char** sh_argv;
 char* sh_name;
 stralloc sh_hostname = {NULL, 0, 0};
 int sh_login = 0;
 int sh_child = 0;
+#endif
 
 /* main routine
  * ----------------------------------------------------------------------- */
 int
 main(int argc, char** argv, char** envp) {
+
   int c;
   int e, v;
   int flags;

@@ -1,6 +1,7 @@
 #include "../parse.h"
 #include "../tree.h"
 #include "../source.h"
+#include "../fd.h"
 
 /* parse a compound- or a simple-command
  * (pipeline and lists are done outside this)
@@ -13,6 +14,12 @@ parse_command(struct parser* p, int tempflags) {
   char c = 0;
 
   tok = parse_gettok(p, tempflags);
+
+#ifdef DEBUG_OUTPUT
+  buffer_puts(fd_err->w, "\x1b[1;33mparse_command\x1b[0m tok=");
+  buffer_puts(fd_err->w, parse_tokname(tok, 1));
+  buffer_putnlflush(fd_err->w);
+#endif
 
   //  source_skipspace(p);
   while(source_peek(&c) >= 1) {
