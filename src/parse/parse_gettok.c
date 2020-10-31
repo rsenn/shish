@@ -38,59 +38,8 @@ parse_gettok(struct parser* p, int tempflags) {
       parse_keyword(p);
 
 #ifdef DEBUG_OUTPUT
-    if(p->tok != -1) {
-      buffer_puts(buffer_2, sh_argv0);
-      buffer_puts(buffer_2, ":");
-
-      buffer_putulong(buffer_2, source->line + 1);
-      buffer_puts(buffer_2, ":");
-      buffer_putulong(buffer_2, source->column);
-      buffer_puts(buffer_2, ": Got token ");
-      if(p->flags) {
-        char buf[8];
-        buffer_puts(buffer_2, "(");
-        if(p->flags & P_BQUOTE)
-          buffer_puts(buffer_2, "P_BQUOTE ");
-        if(p->flags & P_NOKEYWD)
-          buffer_puts(buffer_2, "P_NOKEYWD ");
-        if(p->flags & P_NOASSIGN)
-          buffer_puts(buffer_2, "P_NOASSIGN ");
-        if(p->flags & ~(P_BQUOTE | P_NOKEYWD | P_NOASSIGN))
-          buffer_put(buffer_2, buf, fmt_xlong(buf, p->flags & ~(P_BQUOTE | P_NOKEYWD | P_NOASSIGN)));
-
-        if(buffer_2->p > 0 && buffer_2->x[buffer_2->p - 1] == ' ')
-          buffer_2->p--;
-
-        buffer_puts(buffer_2, ") ");
-      }
-
-      buffer_puts(buffer_2, parse_tokname(p->tok, 0));
-      /*
-            {
-              char buf[4];
-              size_t i;
-              buffer_puts(buffer_2, ": \"");
-              for(i = start; i < source->b->p; i++) buffer_put(buffer_2, buf, fmt_escapecharshell(buf,
-         source->b->x[i])); buffer_puts(buffer_2, "\"");
-            }
-            buffer_flush(buffer_2);*/
-      /*
-            if(p->tok & (T_ASSIGN | T_WORD | T_NAME)) {
-              debug_list(p->tree, -1);
-            } else if(p->tok & T_REDIR) {
-              debug_ulong(" fd", p->tree->nredir.fdes, -1);
-              debug_redir("", p->tree->nredir.flag, -1);
-              debug_list(p->tree->nredir.list, -1);
-              if(p->tree->nredir.data)
-                debug_list(p->tree->nredir.data, -1);
-            } else if(p->tok != T_NL && p->tree && p->tree->id >= N_ARGSTR) {
-              stralloc* sa = &p->tree->nargstr.stra;
-              buffer_puts(buffer_2, " '");
-              buffer_putsa(buffer_2, sa);
-              buffer_putc(buffer_2, '\'');
-            }*/
-      buffer_putnlflush(buffer_2);
-    }
+    if(p->tok != -1) 
+   parse_dump(p, buffer_2);
 #endif
   }
 
