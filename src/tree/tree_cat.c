@@ -16,29 +16,25 @@ void
 tree_cat_n(union node* node, stralloc* sa, int depth) {
   const char* sep = NULL;
 
-again:
   switch(node->id) {
     case N_SIMPLECMD: {
       union node* n;
 
       /* concatenate vars */
-      for(n = node->ncmd.vars; n; n = n->list.next) {
-        tree_cat(n, sa);
-        if(n->list.next || node->ncmd.args)
-          stralloc_catc(sa, ' ');
-      }
+      if(node->ncmd.vars)
+        tree_catlist_n(node->ncmd.vars, sa, " ", depth + 1);
+
+      if(node->ncmd.vars && node->ncmd.args)
+        tree_catseparator(sa, " ", depth);
 
       /* concatenate arguments */
-      for(n = node->ncmd.args; n; n = n->list.next) {
-        tree_cat(n, sa);
-        if(n->list.next)
-          stralloc_catc(sa, ' ');
-      }
+      if(node->ncmd.args)
+        tree_catlist_n(node->ncmd.args, sa, " ", depth + 1);
 
       /* concatenate redirections */
-      for(n = node->ncmd.rdir; n; n = n->list.next) {
-        stralloc_catc(sa, ' ');
-        tree_cat(n, sa);
+      if(node->ncmd.rdir) {
+        tree_catseparator(sa, " ", depth);
+        tree_catlist_n(node->ncmd.rdir, sa, " ", depth + 1);
       }
       break;
     }
@@ -288,7 +284,7 @@ again:
 
       stralloc_catc(sa, '(');
 
-      tree_catlist_n(node->ngrp.cmds, sa, sep, depth);
+      tree_catlist_n(node->ngrp.cmds, sa, sep, depth - 1);
       stralloc_catc(sa, ')');
 
       /* concatenate redirections */
@@ -300,11 +296,15 @@ again:
     }
     case N_CMDLIST: {
       union node* n;
-      stralloc_catc(sa, '{');
+      // stralloc_catc(sa, '{');
+      int d = depth < 0 ? -depth : depth;
 
-      tree_catseparator(sa, sep == NULL ? " " : sep, depth);
-      tree_catlist_n(node->ngrp.cmds, sa, sep, depth + 1);
-      tree_catseparator(sa, sep == NULL ? "; }" : "\n}", depth - 1);
+      tree_catseparator(sa, sep == NULL ? "{\n" : sep, d);
+      tree_catlist_n(node->ngrp.cmds, sa, sep == NULL ? "; " : sep, d + 1);
+      if(depth < 0)
+        stralloc_cats(sa, "\n}");
+      else
+        tree_catseparator(sa, sep == NULL ? "; }" : sep, d);
 
       /* concatenate redirections */
       for(n = node->ncmd.rdir; n; n = n->list.next) {
@@ -350,12 +350,12 @@ again:
     case N_FUNCTION: {
       stralloc_cats(sa, node->nfunc.name);
       stralloc_cats(sa, "() ");
-      node = node->nfunc.body;
-      sep = "\n";
-      depth++;
-      goto again;
-      /*  tree_catlist_n(node->nfunc.body, sa, "\n", depth+1);
-        break;*/
+      /*      node = node->nfunc.body;
+            sep = "\n";
+            depth++;
+            goto again;*/
+      tree_cat_n(node->nfunc.body, sa, -(depth + 1));
+      break;
     }
 
     case N_ARGARITH: {

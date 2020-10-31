@@ -12,16 +12,20 @@
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
 #include "../../lib/uint32.h"
+#include "../../lib/scan.h"
+#include "../../lib/open.h"
+#include "../../lib/buffer.h"
 
 #include <stdlib.h>
 #include <unistd.h>
+
 extern const char* tree_separator;
-extern int tree_columnwrap;
+extern unsigned int tree_columnwrap;
 
 int sh_argc;
 char** sh_argv;
 char* sh_name;
-int indent_width = 2;
+unsigned int indent_width = 2;
 const char* tmpl = 0;
 int inplace = 0;
 
@@ -170,7 +174,7 @@ main(int argc, char** argv, char** envp) {
 
   parse_init(&p, P_DEFAULT);
 
-  buffer_init(&out_buf, &write, out_fd, alloca(1024), 1024);
+  buffer_init(&out_buf, (buffer_op_proto*)&write, out_fd, alloca(1024), 1024);
 
   while(!(((tok = parse_gettok(&p, P_DEFAULT)) & T_EOF))) {
     p.pushback++;
