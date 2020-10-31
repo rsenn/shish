@@ -14,19 +14,28 @@
 #include "../../lib/uint32.h"
 
 #include <stdlib.h>
+#include <unistd.h>
+extern const char* tree_separator;
+extern int tree_columnwrap;
 
 int sh_argc;
 char** sh_argv;
 char* sh_name;
+int indent_width = 2;
+const char* tmpl = 0;
+int inplace = 0;
 
-#define SH_INPLACE 0x1000
+const char* in_file = 0;
+stralloc out_file;
+int out_fd = 1;
+buffer out_buf;
 
 /* main routine
  * ----------------------------------------------------------------------- */
 int
 main(int argc, char** argv, char** envp) {
 
-  int c;
+  int i, c;
   int e, v;
   int flags;
   struct fd* fd;
@@ -37,6 +46,9 @@ main(int argc, char** argv, char** envp) {
   union node* list;
   stralloc cmd;
   enum tok_flag tok;
+  stralloc separator;
+  stralloc_init(&separator);
+  stralloc_init(&out_file);
 
   fd_exp = STDERR_FILENO + 1;
 
@@ -81,15 +93,32 @@ main(int argc, char** argv, char** envp) {
   */
 
   /* parse command line arguments */
-  while((c = shell_getopt(argc, argv, "c:xe")) > 0) switch(c) {
+  while((c = shell_getopt(argc, argv, "c:xeiw:l:")) > 0) switch(c) {
       case 'c': cmds = shell_optarg; break;
       case 'x': sh->flags |= SH_DEBUG; break;
       case 'e': sh->flags |= SH_ERREXIT; break;
-      case 'i': sh->flags |= SH_INPLACE; break;
-      case '?': sh_usage(); break;
-    }
+      case 'i': inplace = 1; break;
+      case 'w': scan_uint(shell_optarg, &indent_width); break;
+      case 'l': scan_uint(shell_optarg, &tree_columnwrap); break;
+      default:
+        sh_usage();
 
-      /* set up the source fd (where the shell reads from) */
+        buffer_puts(fd_err->w,
+                    "\n"
+                    "  -i          Inplace\n"
+                    "  -w NUM      Indent num spaces\n"
+                    "  -l COLS     Line width\n");
+
+        buffer_flush(fd_err->w);
+
+        sh_exit(1);
+        break;
+    }
+  for(i = 0; i < indent_width; i++) stralloc_catc(&separator, ' ');
+  stralloc_nul(&separator);
+  tree_separator = separator.s;
+
+  /* set up the source fd (where the shell reads from) */
 #ifdef HAVE_ALLOCA
   fd = fd_alloca();
   fd_push(fd, STDSRC_FILENO, FD_READ);
@@ -105,9 +134,14 @@ main(int argc, char** argv, char** envp) {
 
   /* if there is an argument we open it as input file */
   else if(argv[shell_optind]) {
+    in_file = argv[shell_optind];
     fd_mmap(fd_src, argv[shell_optind]);
 
     sh_argv0 = argv[shell_optind++];
+
+    if(inplace) {
+      out_fd = open_temp(&tmpl);
+    }
   }
 
   /* input is read from stdin, maybe interactively */
@@ -135,6 +169,8 @@ main(int argc, char** argv, char** envp) {
   stralloc_init(&cmd);
 
   parse_init(&p, P_DEFAULT);
+
+  buffer_init(&out_buf, &write, out_fd, alloca(1024), 1024);
 
   while(!(((tok = parse_gettok(&p, P_DEFAULT)) & T_EOF))) {
     p.pushback++;
@@ -166,8 +202,20 @@ main(int argc, char** argv, char** envp) {
     if(p.tok & (T_NL | T_SEMI | T_BGND))
       p.pushback = 0;
 
-    buffer_putsa(fd_out->w, &cmd);
-    buffer_putnlflush(fd_out->w);
+    buffer_putsa(&out_buf, &cmd);
+    buffer_putnlflush(&out_buf);
+  }
+
+  if(inplace) {
+    stralloc_copys(&out_file, in_file);
+    stralloc_cats(&out_file, "~");
+    stralloc_nul(&out_file);
+
+    unlink(out_file.s);
+
+    if(rename(in_file, out_file.s) != -1) {
+      rename(tmpl, in_file);
+    }
   }
 
   sh_exit(0);

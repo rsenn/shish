@@ -9,5 +9,4 @@ sh_usage(void) {
   buffer_puts(fd_err->w, sh_name);
   buffer_puts(fd_err->w, " [options] [-] [script] [args]\n");
   buffer_flush(fd_err->w);
-  sh_exit(1);
 }

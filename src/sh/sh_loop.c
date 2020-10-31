@@ -67,11 +67,11 @@ sh_loop(void) {
 
       tree_free(list);
     }
-/*
-#if(defined(_DEBUG) && !defined(NO_TREE_PRINT)) || defined(SHFMT)
-    buffer_putsa(fd_out->w, &cmd);
-    buffer_putnlflush(fd_out->w);
-#endif*/
+    /*
+    #if(defined(_DEBUG) && !defined(NO_TREE_PRINT)) || defined(SHFMT)
+        buffer_putsa(fd_out->w, &cmd);
+        buffer_putnlflush(fd_out->w);
+    #endif*/
 
     if(!(p.tok & (T_NL | T_SEMI | T_BGND))) {
       /* we have a parse error */

@@ -82,7 +82,10 @@ main(int argc, char** argv, char** envp) {
       case 'c': cmds = shell_optarg; break;
       case 'x': sh->flags |= SH_DEBUG; break;
       case 'e': sh->flags |= SH_ERREXIT; break;
-      case '?': sh_usage(); break;
+      default:
+        sh_usage();
+        sh_exit(1);
+        break;
     }
 
       /* set up the source fd (where the shell reads from) */

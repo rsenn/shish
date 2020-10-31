@@ -1,5 +1,7 @@
 #include "../tree.h"
 
+const char* tree_separator = "  ";
+
 /* ----------------------------------------------------------------------- */
 void
 tree_catseparator(stralloc* sa, const char* sep, int depth) {
@@ -11,7 +13,7 @@ tree_catseparator(stralloc* sa, const char* sep, int depth) {
     stralloc_catc(sa, c);
 
     if(c == '\n') {
-      for(count = 0; count < depth; count++) stralloc_cats(sa, "  ");
+      for(count = 0; count < depth; count++) stralloc_cats(sa, tree_separator);
     }
   }
 }
