@@ -17,6 +17,7 @@
 #include "../../lib/buffer.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <unistd.h>
 
 extern const char* tree_separator;

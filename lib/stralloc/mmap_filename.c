@@ -91,7 +91,7 @@ mmap_filename(void* map, stralloc* sa) {
       }
       p += scan_whitenskip(p, e - p);
 
-      if((uint64)map >= start && (uint64)map < end) {
+      if((size_t)map >= start && (size_t)map < end) {
         stralloc_copyb(sa, p, e - p);
         ret = 1;
         break;
