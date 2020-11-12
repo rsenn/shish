@@ -55,36 +55,11 @@ main(int argc, char** argv, char** envp) {
   stralloc_init(&separator);
   stralloc_init(&out_file);
 
-  fd_exp = STDERR_FILENO + 1;
-
-  /* create new fds for every valid file descriptor until stderr */
-  for(e = STDIN_FILENO; e <= STDERR_FILENO; e++) {
-    if((flags = fdtable_check(e))) {
-#ifdef HAVE_ALLOCA
-      fd = fd_allocab();
-      fd_push(fd, e, flags);
-#else
-      fd = fd_mallocb();
-      fd_push(fd, e, flags | FD_FREE);
-#endif
-      fd_setfd(fd, e);
-    } else {
-      if(e < fd_exp)
-        fd_exp = e;
-    }
-  }
-
-  /* stat the file descriptors and then set the buffers */
-  fdtable_foreach(v) {
-    fd_stat(fdtable[v]);
-    fd_setbuf(fdtable[v], &fdtable[v][1], FD_BUFSIZE);
-  }
-
   /* set initial $0 */
   sh_argv0 = argv[0];
   sh_name = shell_basename(sh_argv0);
 
-  shell_init(fd_err->w, sh_name);
+  shell_init(buffer_2, sh_name);
 
   /* import environment variables to the root vartab */
   /*  for(c = 0; envp[c]; c++)
@@ -132,12 +107,9 @@ main(int argc, char** argv, char** envp) {
   fd_push(fd, STDSRC_FILENO, FD_READ | FD_FREE);
 #endif
 
-  /* if there were cmds supplied with the option
-     -c then read input from this string. */
   if(cmds)
     fd_string(fd_src, cmds, str_len(cmds));
 
-  /* if there is an argument we open it as input file */
   else if(argv[shell_optind]) {
     in_file = argv[shell_optind];
     fd_mmap(fd_src, argv[shell_optind]);
@@ -149,7 +121,6 @@ main(int argc, char** argv, char** envp) {
     }
   }
 
-  /* input is read from stdin, maybe interactively */
   else if(fd_in)
     fd_dup(fd_src, STDIN_FILENO);
 
@@ -169,7 +140,7 @@ main(int argc, char** argv, char** envp) {
   sh_argc = argc - shell_optind;
 
   source_push(&src);
-  sh_init();
+  // sh_init();
 
   stralloc_init(&cmd);
 
