@@ -123,11 +123,11 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_DIRNAME
     {"dirname", &builtin_dirname, B_DEFAULT, "path"},
 #endif
-#ifdef DEBUG_OUTPUT
+#ifdef DEBUG
 #if BUILTIN_DUMP
     {"dump", &builtin_dump, B_DEFAULT, "[-v]"},
 #endif
-#endif /* DEBUG_OUTPUT */
+#endif /* DEBUG */
 #if BUILTIN_ECHO
     {"echo", &builtin_echo, B_DEFAULT, "[-ne] [arg ...]"},
 #endif

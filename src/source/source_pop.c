@@ -9,12 +9,14 @@ void
 source_pop(void) {
   assert(source);
 
+#ifndef SHFMT
   if(source->mode & SOURCE_IACTIVE) {
     term_restore(source->b);
 
     history_save();
     history_clear();
   }
+#endif
 
   source = source->parent;
 }

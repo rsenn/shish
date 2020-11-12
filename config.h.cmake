@@ -12,6 +12,9 @@
 /* Define this if you have alloca.h */
 #cmakedefine HAVE_ALLOCA_H 1
 
+/* Define to header file needed for alloca() */
+#cmakedefine ALLOCA_HEADER "@ALLOCA_HEADER@"
+
 /* Define this if your compiler supports alloca() */
 #cmakedefine HAVE_ALLOCA 1
 
@@ -66,8 +69,11 @@
 /* Define this if you have the setpgid() function */
 #cmakedefine HAVE_GLOB 1
 
-/* Define this if your libc has sys_siglist[] */
+/* Define this if your libc exports sys_siglist[] */
 #cmakedefine HAVE_SYS_SIGLIST 1
+
+/* Define this if you have a prototype declaratin for sys_siglist[]  */
+#cmakedefine HAVE_SYS_SIGLIST_DECLARATION 1
 
 /* Define this if you have the 'sigset_t' type */
 #cmakedefine HAVE_SIGSET_T 1

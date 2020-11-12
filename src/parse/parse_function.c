@@ -15,13 +15,14 @@ parse_function(struct parser* p) {
   stralloc name;
   stralloc_init(&name);
   tok = parse_gettok(p, 0);
-  expand_tosa(p->tree, &name);
+  stralloc_copy(&name, &p->tree->nargstr.stra);
+
+  // expand_tosa(p->tree, &name);
   node = tree_newnode(N_FUNCTION);
   stralloc_nul(&name);
   node->nfunc.name = name.s;
 
-  do
-    tok = parse_gettok(p, 0);
+  do tok = parse_gettok(p, 0);
   while(tok == T_NL || tok == T_NAME);
   p->pushback++;
   /*

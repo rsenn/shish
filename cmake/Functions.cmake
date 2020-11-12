@@ -27,7 +27,7 @@ macro(add_cflags ADD)
 endmacro(add_cflags)
 
 function(check_cflag FLAG VAR)
-  message(CHECK_START "Compiler flag  ${FLAG}")
+  message(STATUS "Compiler flag  ${FLAG}")
   set(CMAKE_REQUIRED_QUIET TRUE)
   check_c_compiler_flag("${FLAG}" "${VAR}")
   set(CMAKE_REQUIRED_QUIET FALSE)
@@ -38,10 +38,10 @@ function(check_cflag FLAG VAR)
   endif(NOT ARGN)
   # message("VAR_NAME: ${VAR_NAME}")
   if(${VAR})
-    message(CHECK_PASS "supported")
+    message(STATUS "supported")
     add_cflags("${FLAG}" "${VAR_NAME}")
   else(${VAR})
-    message(CHECK_FAIL "not supported")
+    message(STATUS "not supported")
   endif(${VAR})
 endfunction(
   check_cflag
@@ -92,3 +92,51 @@ function(isin)
       PARENT_SCOPE)
   # return(${RET})
 endfunction(isin)
+
+macro(show_result RESULT_VAR)
+  if(${${RESULT_VAR}})
+    set(RESULT_VALUE yes)
+  else(${${RESULT_VAR}})
+    set(RESULT_VALUE no)
+  endif(${${RESULT_VAR}})
+endmacro(show_result RESULT_VAR)
+
+macro(check_compile RESULT_VAR SOURCE)
+  set(RESULT "${${RESULT_VAR}}")
+  # message("${RESULT_VAR} = ${RESULT}" )
+  if(RESULT STREQUAL "")
+    string(
+      RANDOM
+      LENGTH 6
+      ALPHABET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" C_NAME)
+    string(REPLACE SUPPORT_ "" NAME "${RESULT_VAR}")
+    string(REPLACE _ - NAME "${NAME}")
+    string(TOLOWER "${NAME}" C_NAME)
+    set(C_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/try-${C_NAME}.c")
+    string(REPLACE "\\" "\\\\" SOURCE "${SOURCE}")
+    file(WRITE "${C_SOURCE}" "${SOURCE}")
+    message(STATUS "Trying to compile try-${C_NAME}.c ... ")
+    try_compile(
+      COMPILE_RESULT "${CMAKE_CURRENT_BINARY_DIR}"
+      "${C_SOURCE}"
+      OUTPUT_VARIABLE "OUTPUT"
+      LINK_LIBRARIES "${ARGN}")
+    file(REMOVE "${C_SOURCE}")
+
+    if(COMPILE_RESULT)
+      message(STATUS "ok")
+      #add_definitions(-D${RESULT_VAR})
+    else(COMPILE_RESULT)
+      set(COMPILE_LOG "${CMAKE_CURRENT_BINARY_DIR}/compile-${C_NAME}.log")
+      message(STATUS "fail: ${COMPILE_LOG}")
+      file(WRITE "${COMPILE_LOG}" "${OUTPUT}")
+      string(REPLACE "\n" ";" OUTPUT "${OUTPUT}")
+      list(FILTER OUTPUT INCLUDE REGEX "error")
+    endif(COMPILE_RESULT)
+
+    set("${RESULT_VAR}"
+        "${COMPILE_RESULT}"
+        CACHE BOOL "Support ${NAME}")
+  endif(RESULT STREQUAL "")
+  show_result(${RESULT_VAR})
+endmacro()

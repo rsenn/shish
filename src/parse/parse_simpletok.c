@@ -49,21 +49,18 @@ again:
 
       /* CRAP CODE to support win, mac, unix line termination */
       if(c == '\r') {
-        parse_skip(p);
-        if(source_peekn(&c, 1) <= 0)
+
+        if(parse_next(p, &c) <= 0)
           return T_EOF;
         if(c == '\n')
           parse_skip(p);
-        parse_skip(p);
-        prompt_show();
+        source_skip();
+
         goto again;
       }
       if(c == '\n') {
         parse_skip(p);
-        parse_skip(p);
-
-        if(p->flags & P_IACTIVE)
-          prompt_show();
+        //      parse_skip(p);
 
         goto again;
       }
@@ -120,12 +117,11 @@ again:
         tok = T_BQ;
         break;
       }
-
     default: return -1;
   }
 
   if(advance)
-    parse_next(p, &c);
+    parse_next(p, NULL);
 
   return tok;
 }

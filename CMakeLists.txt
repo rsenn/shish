@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.0)
 set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 
 set(PACKAGE_NAME shish)
@@ -14,10 +14,12 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
       MinSizeRel
       CACHE STRING "Choose the type of build." FORCE)
   # Set the possible values of build type for cmake-gui
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
+                                               "MinSizeRel" "RelWithDebInfo")
 endif()
 
-option(WARN_WERROR "Halt the compilation with an error on compiler warnings." OFF)
+option(WARN_WERROR "Halt the compilation with an error on compiler warnings."
+       OFF)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Functions.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Checks.cmake)
@@ -81,7 +83,8 @@ else()
   set(NAME_DEBUG "")
 endif()
 
-configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.h")
+configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake"
+               "${CMAKE_BINARY_DIR}/config.h")
 
 set(SOURCE_DEFINITIONS)
 set(SOURCE_TYPES
@@ -107,7 +110,8 @@ if(BUILD_DEBUG)
   add_definitions(-DDEBUG=1)
 endif(BUILD_DEBUG)
 
-include_directories("${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}/lib" "${CMAKE_SOURCE_DIR}/src")
+include_directories("${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}/lib"
+                    "${CMAKE_SOURCE_DIR}/src")
 
 # add_definitions(-DHAVE_CONFIG_H=1)
 
@@ -168,7 +172,6 @@ file(
   GLOB
   SOURCES
   src/*.h
-
   src/fd/*.c
   src/fdstack/*.c
   src/fdtable/*.c
@@ -177,17 +180,15 @@ file(
   src/parse/*.c
   src/prompt/*.c
   src/redir/*.c
-# src/sh/*.c
+  # src/sh/*.c
   src/sig/*.c
   src/source/*.c
   src/term/*.c
   src/tree/*.c
   src/var/*.c
   src/vartab/*.c)
-file(GLOB EVAL_SOURCES   src/eval/*.c
-  src/exec/*.c
-  src/expand/*.c
-  src/expr/*.c)
+file(GLOB EVAL_SOURCES src/eval/*.c src/exec/*.c src/expand/*.c src/expr/*.c)
+
 if(DEBUG_ALLOC)
   list(
     APPEND
@@ -220,9 +221,11 @@ if(DEBUG_OUTPUT)
     src/debug/debug_unquoted.c)
 endif(DEBUG_OUTPUT)
 
-list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
-list(APPEND SOURCES src/parse/parse_newnode${NAME_DEBUG}.c src/tree/tree_newnode${NAME_DEBUG}.c)
-#list(APPEND SOURCES ${BUILTIN_SOURCES})
+list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c
+     src/builtin/builtin_search.c src/builtin/builtin_table.c)
+list(APPEND SOURCES src/parse/parse_newnode${NAME_DEBUG}.c
+     src/tree/tree_newnode${NAME_DEBUG}.c)
+# list(APPEND SOURCES ${BUILTIN_SOURCES})
 
 if(FORK_SOURCE)
   list(APPEND SOURCES ${FORK_SOURCE})
@@ -253,7 +256,9 @@ if(NO_TREE_PRINT)
 endif(NO_TREE_PRINT)
 
 #
-# configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake" "${CMAKE_BINARY_DIR}/src/builtin_config.h" #@ONLY #ESCAPE_QUOTES NEWLINE_STYLE UNIX)
+# configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake"
+# "${CMAKE_BINARY_DIR}/src/builtin_config.h" #@ONLY #ESCAPE_QUOTES NEWLINE_STYLE
+# UNIX)
 
 list(APPEND SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
 add_definitions(-DHAVE_BUILTIN_CONFIG_H=1)
@@ -263,36 +268,83 @@ if(ENABLE_LTO)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
 endif(ENABLE_LTO)
 
-list(APPEND SOURCES ${EVAL_SOURCES}
-${BUILTIN_SOURCES})
+list(APPEND SOURCES ${EVAL_SOURCES} ${BUILTIN_SOURCES})
 
-set(SHISH_SOURCES ${SOURCES}
-
-
-src/sh/sh_cmdlist.c src/sh/sh_error.c src/sh/sh_errorn.c src/sh/sh_exit.c src/sh/sh_forked.c src/sh/sh_getcwd.c src/sh/sh_gethome.c src/sh/sh_init.c src/sh/sh_loop.c src/sh/sh_main.c src/sh/sh_msg.c src/sh/sh_popargs.c src/sh/sh_pop.c src/sh/sh_pushargs.c src/sh/sh_push.c src/sh/sh_root.c src/sh/sh_setargs.c src/sh/sh_subshell.c src/sh/sh_usage.c
-
-)
+set(SHISH_SOURCES
+    ${SOURCES}
+    src/sh/sh_cmdlist.c
+    src/sh/sh_error.c
+    src/sh/sh_errorn.c
+    src/sh/sh_exit.c
+    src/sh/sh_forked.c
+    src/sh/sh_getcwd.c
+    src/sh/sh_gethome.c
+    src/sh/sh_init.c
+    src/sh/sh_loop.c
+    src/sh/sh_main.c
+    src/sh/sh_msg.c
+    src/sh/sh_popargs.c
+    src/sh/sh_pop.c
+    src/sh/sh_pushargs.c
+    src/sh/sh_push.c
+    src/sh/sh_root.c
+    src/sh/sh_setargs.c
+    src/sh/sh_subshell.c
+    src/sh/sh_usage.c)
 
 add_executable(shish ${SHISH_SOURCES} ${LIBSOURCES})
-target_link_libraries(shish ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY} ${WINSOCK2_LIBRARY})
+target_link_libraries(shish ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
+                      ${ELECTRICFENCE_LIBRARY} ${WINSOCK2_LIBRARY})
 if(EMSCRIPTEN)
   set_target_properties(shish PROPERTIES SUFFIX ".${EMSCRIPTEN_EXE_SUFFIX}")
 endif(EMSCRIPTEN)
 
-set(SHFMT_SOURCES ${SOURCES}
-src/sh/sh_cmdlist.c src/sh/sh_error.c src/sh/sh_errorn.c src/sh/sh_exit.c src/sh/sh_fmt.c src/sh/sh_forked.c src/sh/sh_getcwd.c src/sh/sh_gethome.c src/sh/sh_init.c src/sh/sh_loop.c src/sh/sh_msg.c src/sh/sh_popargs.c src/sh/sh_pop.c src/sh/sh_pushargs.c src/sh/sh_push.c src/sh/sh_root.c src/sh/sh_setargs.c src/sh/sh_subshell.c src/sh/sh_usage.c
-)
+option(BUILD_SHFMT "Build shformat program" ON)
 
-add_executable(shishfmt ${SHFMT_SOURCES} ${LIBSOURCES})
-target_link_libraries(shishfmt ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY} ${WINSOCK2_LIBRARY})
+if(BUILD_SHFMT)
+  file(
+    GLOB
+    SHFMT_SOURCES
+    src/debug/*.c
 
-target_compile_definitions(shishfmt PUBLIC SHFMT=1)
+    src/redir/redir_addhere.c
+    src/redir/redir_dup.c
+    src/redir/redir_here.c
+    src/redir/redir_open.c
+    src/redir/redir_parse.c
+    src/parse/*.c
+    src/tree/*.c
+    src/*.h
+    src/source/*.c
+    src/fdstack/*.c
+    src/fdtable/*.c
+    src/fd/*.c
+    src/var/*.c
+    src/vartab/*.c
+    src/varstack/*.c
 
+    src/sh/sh_root.c
+    src/sh/sh_error.c
+    src/sh/sh_errorn.c
+    src/sh/sh_exit.c
+    src/sh/sh_fmt.c
+    src/sh/sh_msg.c
+    src/sh/sh_usage.c)
+
+  add_executable(shformat ${SHFMT_SOURCES} ${LIBSOURCES})
+  target_link_libraries(shformat ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
+                        ${ELECTRICFENCE_LIBRARY} ${WINSOCK2_LIBRARY})
+
+  target_compile_definitions(shformat PUBLIC SHFMT=1)
+  install(TARGETS shformat DESTINATION bin)
+
+endif(BUILD_SHFMT)
 # message(STATUS "\nBuiltin flags:\n  ${BUILTIN_FLAGS}\n")
 
-set_source_files_properties(src/builtin/builtin_table.c PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}")
+set_source_files_properties(src/builtin/builtin_table.c
+                            PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}")
 
-install(TARGETS shish shishfmt DESTINATION bin)
+install(TARGETS shish DESTINATION bin)
 
 list(SORT BUILTINS_ENABLED)
 list(SORT BUILTINS_DISABLED)
@@ -303,5 +355,6 @@ string(REPLACE ";" " " BUILTINS_DISABLED "${BUILTINS_DISABLED}")
 set(OUTSTR "")
 set(OUTSTR "${OUTSTR}\nEnabled builtins:\n  ${BUILTINS_ENABLED}\n")
 set(OUTSTR "${OUTSTR}\nDisabled builtins:\n  ${BUILTINS_DISABLED}\n")
-set(OUTSTR "${OUTSTR}\nAdditional libraries:\n  ${MATH_LIBRARY} ${WINSOCK2_LIBRARY}\n")
+set(OUTSTR
+    "${OUTSTR}\nAdditional libraries:\n  ${MATH_LIBRARY} ${WINSOCK2_LIBRARY}\n")
 message(STATUS "${OUTSTR}")

@@ -1,3 +1,10 @@
+include(CheckSymbolExists)
+
+check_symbol_exists(sys_siglist "signal.h" HAVE_SYS_SIGLIST_DECLARATION)
+
+if(HAVE_SYS_SIGLIST_DECLARATION)
+  add_definitions(-DHAVE_SYS_SIGLIST_DECLARATION)
+endif()
 check_c_compiler_flag("-Wall" WARN_ALL)
 if(WARN_ALL)
   set(WERROR_FLAG "${WERROR_FLAG} -Wall")
@@ -135,7 +142,35 @@ endif(NOT CMAKE_CROSSCOMPILING)
 
 if(HAVE_ALLOCA_H)
   list(APPEND CMAKE_REQUIRED_INCLUDES alloca.h)
-  check_symbol_exists(alloca alloca.h HAVE_ALLOCA)
+  check_symbol_exists(alloca alloca.h HAVE_ALLOCA_SYMBOL)
+endif()
+
+check_compile(
+  HAVE_ALLOCA_ALLOCA_H
+  "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}"
+)
+if(NOT HAVE_ALLOCA_ALLOCA_H)
+  check_compile(
+    HAVE_ALLOCA_MALLOC_H
+    "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}"
+  )
+endif()
+
+
+if(HAVE_ALLOCA_ALLOCA_H OR HAVE_ALLOCA_MALLOC_H)
+  set(HAVE_ALLOCA TRUE)
+  add_definitions(-DHAVE_ALLOCA)
+
+
+  if(HAVE_ALLOCA_MALLOC_H)
+      set(ALLOCA_HEADER "malloc.h" CACHE STRING "Header for alloca()")
+  else()
+      set(ALLOCA_HEADER "alloca.h" CACHE STRING "Header for alloca()")
+  endif()
+endif()
+
+if(NOT HAVE_ALLOCA)
+    set(ALLOCA_HEADER "")
 endif()
 
 check_include_file(sys/wait.h HAVE_SYS_WAIT_H)

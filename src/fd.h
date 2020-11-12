@@ -185,4 +185,16 @@ void fd_subst(struct fd* fd, stralloc* sa);
 #define fd_alloca() ((struct fd*)alloca(D_SIZE))
 #define fd_allocab() ((struct fd*)alloca(D_SIZE + FD_BUFSIZE))
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#ifdef HAVE_ALLOCA
+#define fd_alloc fd_alloca
+#define fd_allocb fd_allocab
+#else
+#define fd_alloc fd_malloc
+#define fd_allocb fd_mallocb
+#endif
+
 #endif /* FD_H */
