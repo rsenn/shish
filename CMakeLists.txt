@@ -283,16 +283,16 @@ set(SHFMT_SOURCES ${SOURCES}
 src/sh/sh_cmdlist.c src/sh/sh_error.c src/sh/sh_errorn.c src/sh/sh_exit.c src/sh/sh_fmt.c src/sh/sh_forked.c src/sh/sh_getcwd.c src/sh/sh_gethome.c src/sh/sh_init.c src/sh/sh_loop.c src/sh/sh_msg.c src/sh/sh_popargs.c src/sh/sh_pop.c src/sh/sh_pushargs.c src/sh/sh_push.c src/sh/sh_root.c src/sh/sh_setargs.c src/sh/sh_subshell.c src/sh/sh_usage.c
 )
 
-add_executable(shfmt ${SHFMT_SOURCES} ${LIBSOURCES})
-target_link_libraries(shfmt ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY} ${WINSOCK2_LIBRARY})
+add_executable(shishfmt ${SHFMT_SOURCES} ${LIBSOURCES})
+target_link_libraries(shishfmt ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY} ${WINSOCK2_LIBRARY})
 
-target_compile_definitions(shfmt PUBLIC SHFMT=1)
+target_compile_definitions(shishfmt PUBLIC SHFMT=1)
 
 # message(STATUS "\nBuiltin flags:\n  ${BUILTIN_FLAGS}\n")
 
 set_source_files_properties(src/builtin/builtin_table.c PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}")
 
-install(TARGETS shish shfmt DESTINATION bin)
+install(TARGETS shish shishfmt DESTINATION bin)
 
 list(SORT BUILTINS_ENABLED)
 list(SORT BUILTINS_DISABLED)

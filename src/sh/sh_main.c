@@ -82,6 +82,12 @@ main(int argc, char** argv, char** envp) {
       case 'c': cmds = shell_optarg; break;
       case 'x': sh->flags |= SH_DEBUG; break;
       case 'e': sh->flags |= SH_ERREXIT; break;
+
+#ifdef DEBUG
+      case 'I': sh->flags |= SH_NOINTERACTIVE; break;
+
+#endif
+
       default:
         sh_usage();
         sh_exit(1);
@@ -129,6 +135,10 @@ main(int argc, char** argv, char** envp) {
   sh_argc = argc - shell_optind;
 
   source_push(&src);
+
+  if(sh->flags & SH_NOINTERACTIVE)
+    src.mode &= ~SOURCE_IACTIVE;
+
   sh_init();
 
   /*  if(fd_exp != fd_top && (flags = fdtable_check(e)))

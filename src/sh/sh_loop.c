@@ -17,6 +17,8 @@ sh_loop(void) {
   union node* list;
   stralloc cmd;
 
+  sh->parser = &p;
+
   /* if we're in interactive mode some
      additional stuff is to be initialized */
   if(source->mode & SOURCE_IACTIVE)

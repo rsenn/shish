@@ -34,7 +34,7 @@ struct arg {
   unsigned int s; /* shift count */
 };
 
-enum { SH_DEBUG = 0x80, SH_ERREXIT = 0x40 };
+enum { SH_DEBUG = 0x80, SH_ERREXIT = 0x40, SH_NOINTERACTIVE = 0x1000 };
 
 struct env {
   struct env* parent;
@@ -48,6 +48,7 @@ struct env {
   jmp_buf jmpbuf;
   int jump;
   struct arg arg;
+  struct parser* parser;
   struct eval* eval;
 };
 
