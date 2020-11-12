@@ -146,7 +146,7 @@ main(int argc, char** argv, char** envp) {
 
   parse_init(&p, P_DEFAULT);
 
-  buffer_init(&out_buf, (buffer_op_proto*)&write, out_fd, alloca(1024), 1024);
+  buffer_init_free(&out_buf, (buffer_op_proto*)&write, out_fd, malloc(1024), 1024);
 
   while(!(((tok = parse_gettok(&p, P_DEFAULT)) & T_EOF))) {
     p.pushback++;
