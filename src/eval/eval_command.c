@@ -37,7 +37,7 @@ eval_command(struct eval* e, union node* node, int tempflags) {
     for(r = redir; r; r = r->list.next) {
       struct fd* fd = 0;
 #ifdef HAVE_ALLOCA
-      fd = fd_alloca();
+      fd = fd_alloc();
 #endif
 
       /* return if a redirection failed */

@@ -54,7 +54,7 @@ again:
           return T_EOF;
         if(c == '\n')
           parse_skip(p);
-        parse_skip(p);
+        source_skip();
         prompt_show();
         goto again;
       }
@@ -120,12 +120,11 @@ again:
         tok = T_BQ;
         break;
       }
-
     default: return -1;
   }
 
   if(advance)
-    parse_next(p, &c);
+    parse_next(p, NULL);
 
   return tok;
 }

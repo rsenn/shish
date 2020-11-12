@@ -43,7 +43,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
     if(prevfd >= 0) {
 
 #ifdef HAVE_ALLOCA
-      in = fd_alloca();
+      in = fd_alloc();
       fd_push(in, STDIN_FILENO, FD_READ | FD_PIPE);
 #else
       in = fd_malloc();
@@ -57,7 +57,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
     if(node->list.next /* || (fd_out->mode & FD_SUBST) == FD_SUBST */) {
 
 #ifdef HAVE_ALLOCA
-      out = fd_alloca();
+      out = fd_alloc();
       fd_push(out, STDOUT_FILENO, FD_WRITE | FD_PIPE);
 #else
       in = fd_malloc();

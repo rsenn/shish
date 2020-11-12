@@ -41,7 +41,7 @@ main(int argc, char** argv, char** envp) {
   for(e = STDIN_FILENO; e <= STDERR_FILENO; e++) {
     if((flags = fdtable_check(e))) {
 #ifdef HAVE_ALLOCA
-      fd = fd_allocab();
+      fd = fd_allocb();
       fd_push(fd, e, flags);
 #else
       fd = fd_mallocb();
@@ -90,7 +90,7 @@ main(int argc, char** argv, char** envp) {
 
       /* set up the source fd (where the shell reads from) */
 #ifdef HAVE_ALLOCA
-  fd = fd_alloca();
+  fd = fd_alloc();
   fd_push(fd, STDSRC_FILENO, FD_READ);
 #else
   fd = fd_malloc();
@@ -133,7 +133,7 @@ main(int argc, char** argv, char** envp) {
 
   /*  if(fd_exp != fd_top && (flags = fdtable_check(e)))
     {
-      fd = fd_allocab();
+      fd = fd_allocb();
       fd_push(fd, e, flags);
       fd_setfd(fd, e);
       fdtable_track(e, FDTABLE_LAZY);

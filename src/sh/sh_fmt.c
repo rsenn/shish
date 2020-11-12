@@ -125,7 +125,7 @@ main(int argc, char** argv, char** envp) {
 
   /* set up the source fd (where the shell reads from) */
 #ifdef HAVE_ALLOCA
-  fd = fd_alloca();
+  fd = fd_alloc();
   fd_push(fd, STDSRC_FILENO, FD_READ);
 #else
   fd = fd_malloc();
