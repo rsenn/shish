@@ -14,25 +14,8 @@ parse_arith_expr(struct parser* p) {
   node = parse_arith_binary(p, 9);
   if(!node)
     node = parse_arith_unary(p);
-  if(!node) {
+  if(!node)
     node = parse_arith_value(p);
-
-    /*    if(node) {
-          if(node->id == N_ARGPARAM) {
-            if(source_peek(&c) <= 0 || source_peekn(&c2, 1) <= 0) {
-              return 0;
-
-              if((c == '+' || c == '-') && c == c2) {
-                union node* post = tree_newnode(c == '+' ? A_POSTINCREMENT :
-       A_POSTDECREMENT); parse_skip(p); parse_skip(p);
-
-                post->narithunary.node = node;
-                node = post;
-              }
-            }
-          }
-        }*/
-  }
 
   return node;
 }
