@@ -11,7 +11,7 @@
 			"file": "src/sh/sh_fmt.c",
 			"settings":
 			{
-				"buffer_size": 5329,
+				"buffer_size": 4538,
 				"line_ending": "Unix"
 			}
 		},
@@ -24,10 +24,29 @@
 			}
 		},
 		{
-			"file": "src/exec/exec_command.c",
+			"contents": "Searching 544 files for \"parse_next\" (regex, case sensitive)\n\n/home/roman/Dokumente/Sources/shish/src/parse.h:\n  200  const char* parse_tokname(enum tok_flag tok, int multi);\n  201  enum tok_flag parse_gettok(struct parser* p, int tempflags);\n  202: int parse_next(struct parser*, char*);\n  203  \n  204: #define parse_skip(p) parse_next((p), 0)\n  205  \n  206  int parse_arith(struct parser* p);\n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_value.c:\n   38        x[n++] = c;\n   39  \n   40:       if(parse_next(p, &c) <= 0)\n   41          break;\n   42  \n   ..\n   67  \n   68          if((classes & (C_UPPER | C_LOWER))) {\n   69:           digit = parse_next(p, &c) > 0;\n   70            n = 0;\n   71          }\n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_bquoted.c:\n   20  \n   21    if(c == '(') {\n   22:     if(parse_next(p, &c) <= 0)\n   23        return -1;\n   24      /*\n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_dquoted.c:\n   23        char nextc;\n   24  \n   25:       if(parse_next(p, &nextc) <= 0)\n   26          return -1;\n   27  \n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_next.c:\n    6  /* ----------------------------------------------------------------------- */\n    7  int\n    8: parse_next(struct parser* p, char* c) {\n    9  #ifdef DEBUG_OUTPUT\n   10    if(sh->flags & SH_DEBUG) {\n   ..\n   12      source_peek(&ch);\n   13      if(ch == '\\n') {\n   14:       debug_s(\"\\x1b[1;33mparse_next\");\n   15        if(p->quot)\n   16          debug_ulong(\"quot\", p->quot, 0);\n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_param.c:\n  109      char nextc;\n  110      p->node->nargparam.flag |= (c == '%') ? S_RSSFX : S_RSPFX;\n  111:     if(parse_next(p, &nextc) > 0 && nextc == c) {\n  112        p->node->nargparam.flag += (1 << 8);\n  113        parse_skip(p);\n  ...\n  120      if(c == ':') {\n  121        p->node->nargparam.flag |= S_NULL;\n  122:       parse_next(p, &c);\n  123      }\n  124  \n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_simpletok.c:\n   26  \n   27      /* if the char was skipped, get next one */\n   28:     if(parse_next(p, &c) <= 0)\n   29        return T_EOF;\n   30    }\n   ..\n   39      case '#':\n   40        do {\n   41:         if(parse_next(p, &c) <= 0)\n   42            return T_EOF;\n   43        } while(c != '\\n'); /* after getting chars fall into newline case */\n   ..\n   73      /* might be a mac or a windows newline */\n   74      case '\\r':\n   75:       if(parse_next(p, &c) <= 0)\n   76          return T_EOF;\n   77        if(c == '\\n')\n   ..\n   99  \n  100        /* peek a char and look it it's the same */\n  101:       if(parse_next(p, &c2) > 0 && c == c2) {\n  102          /* advance buffer position later, because the char\n  103             we peeked was valid */\n  ...\n  126  \n  127    if(advance)\n  128:     parse_next(p, &c);\n  129  \n  130    return tok;\n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_subst.c:\n    7    char c;\n    8  \n    9:   if(parse_next(p, &c) <= 0)\n   10      return -1;\n   11  \n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_unquoted.c:\n   25        p->tok = T_WORD;\n   26  \n   27:       if(parse_next(p, &nextc) <= 0)\n   28          return -1;\n   29  \n\n17 matches across 9 files\n",
 			"settings":
 			{
-				"buffer_size": 1420,
+				"buffer_size": 3209,
+				"line_ending": "Unix",
+				"name": "Find Results",
+				"scratch": true
+			}
+		},
+		{
+			"file": "src/parse/parse_simpletok.c",
+			"settings":
+			{
+				"buffer_size": 3084,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/parse.h",
+			"settings":
+			{
+				"buffer_size": 8784,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
@@ -152,8 +171,7 @@
 		"/home/roman/Dokumente/Sources/shish/build",
 		"/home/roman/Dokumente/Sources/shish/inst",
 		"/home/roman/Dokumente/Sources/shish/src",
-		"/home/roman/Dokumente/Sources/shish/src/exec",
-		"/home/roman/Dokumente/Sources/shish/src/term"
+		"/home/roman/Dokumente/Sources/shish/src/parse"
 	],
 	"file_history":
 	[
@@ -292,7 +310,7 @@
 	},
 	"find_in_files":
 	{
-		"height": 102.0,
+		"height": 107.0,
 		"where_history":
 		[
 			"/home/roman/Dokumente/Sources/shish/lib,/home/roman/Dokumente/Sources/shish/src,*.c,*.h",
@@ -308,6 +326,7 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"parse_next",
 			"fd_err->w",
 			"contains",
 			"stralloc_cats",
@@ -434,8 +453,7 @@
 			"sigset",
 			"sigset_t",
 			"message\\(",
-			"check_include",
-			"HAVE_CONFIG_H"
+			"check_include"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -464,7 +482,7 @@
 	"groups":
 	[
 		{
-			"selected": 2,
+			"selected": 4,
 			"sheets":
 			[
 				{
@@ -473,15 +491,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 5329,
+						"buffer_size": 4538,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								4240,
-								4240
+								0,
+								0
 							]
 						],
 						"settings":
@@ -495,7 +513,7 @@
 						"translation.y": 3186.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 7,
+					"stack_index": 9,
 					"type": "text"
 				},
 				{
@@ -526,16 +544,128 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
 					"buffer": 2,
-					"file": "src/exec/exec_command.c",
-					"semi_transient": true,
+					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1420,
+						"buffer_size": 3209,
+						"regions":
+						{
+							"match":
+							{
+								"flags": 112,
+								"regions":
+								[
+									[
+										254,
+										264
+									],
+									[
+										326,
+										336
+									],
+									[
+										512,
+										522
+									],
+									[
+										658,
+										668
+									],
+									[
+										832,
+										842
+									],
+									[
+										1007,
+										1017
+									],
+									[
+										1233,
+										1243
+									],
+									[
+										1431,
+										1441
+									],
+									[
+										1687,
+										1697
+									],
+									[
+										1901,
+										1911
+									],
+									[
+										2084,
+										2094
+									],
+									[
+										2209,
+										2219
+									],
+									[
+										2443,
+										2453
+									],
+									[
+										2610,
+										2620
+									],
+									[
+										2800,
+										2810
+									],
+									[
+										2947,
+										2957
+									],
+									[
+										3120,
+										3130
+									]
+								],
+								"scope": ""
+							}
+						},
+						"selection":
+						[
+							[
+								2452,
+								2452
+							]
+						],
+						"settings":
+						{
+							"detect_indentation": false,
+							"function_name_status_row": 79,
+							"line_numbers": false,
+							"output_tag": 1,
+							"result_base_dir": "",
+							"result_file_regex": "^([^ \t].*):$",
+							"result_line_regex": "^ +([0-9]+):",
+							"scroll_past_end": true,
+							"syntax": "Packages/Default/Find Results.hidden-tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 810.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "src/parse/parse_simpletok.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3084,
 						"regions":
 						{
 						},
@@ -548,20 +678,51 @@
 						],
 						"settings":
 						{
-							"function_name_status_row": 0,
+							"function_name_status_row": 81,
 							"syntax": "Packages/C Improved/C Improved.tmLanguage",
 							"tab_size": 2,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 270.0,
+						"translation.y": 1319.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "src/parse.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 8784,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								6679,
+								6679
+							]
+						],
+						"settings":
+						{
+							"function_name_status_row": 203,
+							"syntax": "Packages/C++/C++.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 3654.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
 					"type": "text"
 				},
 				{
-					"buffer": 3,
+					"buffer": 5,
 					"file": "src/tree/tree_catseparator.c",
 					"semi_transient": false,
 					"settings":
@@ -588,11 +749,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 6,
+					"stack_index": 8,
 					"type": "text"
 				},
 				{
-					"buffer": 4,
+					"buffer": 6,
 					"file": "src/tree/tree_catlist.c",
 					"semi_transient": false,
 					"settings":
@@ -619,11 +780,11 @@
 						"translation.y": 224.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 5,
+					"stack_index": 7,
 					"type": "text"
 				},
 				{
-					"buffer": 5,
+					"buffer": 7,
 					"file": "src/parse/parse_error.c",
 					"semi_transient": false,
 					"settings":
@@ -650,11 +811,11 @@
 						"translation.y": 162.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 4,
+					"stack_index": 6,
 					"type": "text"
 				},
 				{
-					"buffer": 6,
+					"buffer": 8,
 					"file": "src/source/source_msg.c",
 					"semi_transient": false,
 					"settings":
@@ -679,11 +840,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 5,
 					"type": "text"
 				},
 				{
-					"buffer": 7,
+					"buffer": 9,
 					"file": "src/source/source_position.c",
 					"semi_transient": false,
 					"settings":
@@ -708,11 +869,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 4,
 					"type": "text"
 				},
 				{
-					"buffer": 8,
+					"buffer": 10,
 					"file": "lib/buffer.h",
 					"semi_transient": false,
 					"settings":
@@ -739,7 +900,7 @@
 						"translation.y": 1200.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 8,
+					"stack_index": 10,
 					"type": "text"
 				}
 			]
@@ -747,7 +908,7 @@
 	],
 	"incremental_find":
 	{
-		"height": 27.0
+		"height": 29.0
 	},
 	"input":
 	{

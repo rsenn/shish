@@ -6,7 +6,7 @@ int
 parse_subst(struct parser* p) {
   char c;
 
-  if(parse_next(p, &c) <= 0)
+  if(source_next(&c) <= 0)
     return -1;
 
   if(c == '(') {

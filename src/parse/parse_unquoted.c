@@ -24,7 +24,7 @@ parse_unquoted(struct parser* p) {
 
       p->tok = T_WORD;
 
-      if(parse_next(p, &nextc) <= 0)
+      if(source_next(&nextc) <= 0)
         return -1;
 
       if(parse_isesc(nextc))

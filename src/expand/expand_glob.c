@@ -10,9 +10,21 @@
 
 #include "../expand.h"
 #include "../tree.h"
+#include "../fd.h"
 #include "../var.h"
 #include "../../lib/byte.h"
 #include <stdlib.h>
+#include <string.h>
+
+int
+expand_globerr(const char* epath, int eerrno) {
+  buffer_puts(fd_err->w, "glob error on: ");
+  buffer_puts(fd_err->w, epath);
+  buffer_puts(fd_err->w, " ");
+  buffer_puts(fd_err->w, strerror(eerrno));
+  buffer_putnlflush(fd_err->w);
+  return 0;
+}
 
 /* perform glob() expansion on the current argument
  * ----------------------------------------------------------------------- */

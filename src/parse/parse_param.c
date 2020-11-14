@@ -108,7 +108,7 @@ parse_param(struct parser* p) {
   if(c == '%' || c == '#') {
     char nextc;
     p->node->nargparam.flag |= (c == '%') ? S_RSSFX : S_RSPFX;
-    if(parse_next(p, &nextc) > 0 && nextc == c) {
+    if(source_next(&nextc) > 0 && nextc == c) {
       p->node->nargparam.flag += (1 << 8);
       parse_skip(p);
     }
@@ -119,7 +119,7 @@ parse_param(struct parser* p) {
      */
     if(c == ':') {
       p->node->nargparam.flag |= S_NULL;
-      parse_next(p, &c);
+      source_next(&c);
     }
 
     switch(c) {

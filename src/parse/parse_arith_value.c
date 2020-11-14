@@ -37,7 +37,7 @@ parse_arith_value(struct parser* p) {
     do {
       x[n++] = c;
 
-      if(parse_next(p, &c) <= 0)
+      if(source_next(&c) <= 0)
         break;
 
       classes = parse_chartable[(int)(unsigned char)c];
@@ -66,7 +66,7 @@ parse_arith_value(struct parser* p) {
         }
 
         if((classes & (C_UPPER | C_LOWER))) {
-          digit = parse_next(p, &c) > 0;
+          digit = source_next(&c) > 0;
           n = 0;
         }
       }

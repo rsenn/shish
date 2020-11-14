@@ -19,7 +19,7 @@ parse_bquoted(struct parser* p) {
     return -1;
 
   if(c == '(') {
-    if(parse_next(p, &c) <= 0)
+    if(source_next(&c) <= 0)
       return -1;
     /*
         if(c == '(')

@@ -177,9 +177,7 @@ debug_node(union node* node, int depth) {
       debug_stralloc(0,
                      &node->nargstr.stra,
                      depth,
-                     node->nargstr.flag & S_DQUOTED   ? '"'
-                     : node->nargstr.flag & S_SQUOTED ? '\''
-                                                      : '\0');
+                     node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
       break;
 
     case N_ARGPARAM: {

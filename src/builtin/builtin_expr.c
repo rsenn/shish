@@ -10,6 +10,7 @@
 #include "../parse.h"
 #include "../source.h"
 #include "../tree.h"
+#include "../debug.h"
 
 /* parse and expruate arguments
  * ----------------------------------------------------------------------- */
@@ -46,9 +47,9 @@ builtin_expr(int argc, char* argv[]) {
 
     /* concatenate all arguments following the "expr", separated by a
        whitespace and terminated by a newline */
-    for(i = 1; i <= argc; i++) {
-      stralloc_cats(&sa, argv[shell_optind]);
-      stralloc_catc(&sa, i < argc ? ' ' : '\n');
+    for(i = 1; i < argc; i++) {
+      stralloc_cats(&sa, argv[i]);
+      stralloc_catc(&sa, i + 1 < argc ? ' ' : '\0');
     }
 
     /* create a new i/o context and initialize a parser */
@@ -60,6 +61,12 @@ builtin_expr(int argc, char* argv[]) {
 
     /* parse the string as a compound list */
     if((expr = parse_arith_expr(&p))) {
+
+#ifdef DEBUG_OUTPUT
+      debug_list(expr, 0);
+      buffer_putnlflush(fd_err->w);
+#endif /* DEBUG_OUTPUT */
+
       if(expand_arith_expr(expr, &result)) {
         ret = 1;
       }

@@ -6,7 +6,7 @@
 void
 parse_dump(struct parser* p, buffer* b) {
 
-  buffer_puts(b, sh_argv0);
+  buffer_puts(b, sh_name);
   buffer_puts(b, ":");
   buffer_putulong(b, p->tokstart.line);
   buffer_puts(b, ":");

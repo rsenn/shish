@@ -17,8 +17,8 @@ source_newline(void) {
   source->pos.line++;
   source->pos.column = 1;
 
-#ifndef SHFMT
-  if(source->mode & SOURCE_IACTIVE)
-    prompt_show();
-#endif
+  //#ifndef SHFMT
+  //  if(source->mode & SOURCE_IACTIVE)
+  //    prompt_show();
+  //#endif
 }

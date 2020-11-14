@@ -110,8 +110,11 @@ if(BUILD_DEBUG)
   add_definitions(-DDEBUG=1)
 endif(BUILD_DEBUG)
 
-include_directories("${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}/lib"
-                    "${CMAKE_SOURCE_DIR}/src")
+include_directories(
+  "${CMAKE_BINARY_DIR}"
+  "${CMAKE_SOURCE_DIR}"
+  "${CMAKE_SOURCE_DIR}"
+)
 
 # add_definitions(-DHAVE_CONFIG_H=1)
 

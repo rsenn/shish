@@ -54,10 +54,10 @@ fd_setfd(struct fd* fd, int e) {
       buffer_putlong(buffer_2, fd->e);
       buffer_puts(buffer_2, " mode=");
       buffer_puts(buffer_2,
-                  (fd->mode & FD_READ)                        ? "FD_READ"
-                  : (fd->mode & FD_WRITE)                     ? "FD_WRITE"
-                  : (fd->mode & FD_READWRITE) == FD_READWRITE ? "FD_READWRITE"
-                                                              : "");
+                  (fd->mode & FD_READ)
+                      ? "FD_READ"
+                      : (fd->mode & FD_WRITE) ? "FD_WRITE"
+                                              : (fd->mode & FD_READWRITE) == FD_READWRITE ? "FD_READWRITE" : "");
 
       buffer_putnlflush(buffer_2);
     }

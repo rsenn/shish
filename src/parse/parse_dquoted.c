@@ -22,7 +22,7 @@ parse_dquoted(struct parser* p) {
     if(c == '\\') {
       char nextc;
 
-      if(parse_next(p, &nextc) <= 0)
+      if(source_next(&nextc) <= 0)
         return -1;
 
       if(parse_isdesc(nextc)) {

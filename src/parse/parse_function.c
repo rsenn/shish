@@ -22,7 +22,8 @@ parse_function(struct parser* p) {
   stralloc_nul(&name);
   node->nfunc.name = name.s;
 
-  do tok = parse_gettok(p, 0);
+  do
+    tok = parse_gettok(p, 0);
   while(tok == T_NL || tok == T_NAME);
   p->pushback++;
   /*
