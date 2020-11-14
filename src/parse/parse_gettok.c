@@ -30,7 +30,7 @@ parse_gettok(struct parser* p, int tempflags) {
     /* check for simple tokens first */
     if(p->tok == -1)
       p->tok = parse_simpletok(p);
-    /* and finally for words */
+    /* and then for words */
     if(p->tok == -1)
       p->tok = parse_word(p);
     /* if the token is a valid name then it could be a keyword */

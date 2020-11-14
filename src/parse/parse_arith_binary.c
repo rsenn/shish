@@ -6,22 +6,22 @@
  * ----------------------------------------------------------------------- */
 union node*
 parse_arith_binary(struct parser* p, int precedence) {
-  union node *lnode, *rnode, *newnode;
+  union node *left, *right, *node;
   char c;
-  int ntype = -1;
+  int op = -1;
   char a, b;
   int prec = precedence;
 
-  lnode = precedence < 1 ? parse_arith_unary(p) : parse_arith_binary(p, precedence - 1);
+  left = precedence < 1 ? parse_arith_unary(p) : parse_arith_binary(p, precedence - 1);
 
-  if(lnode == NULL)
+  if(left == NULL)
     return NULL;
 
   parse_skipspace(p);
 
   if(source_peek(&a) <= 0 || source_peekn(&b, 1) <= 0) {
-    // tree_free(lnode);
-    return lnode;
+    // tree_free(left);
+    return left;
   }
 
   c = a;
@@ -38,34 +38,34 @@ parse_arith_binary(struct parser* p, int precedence) {
     if(prec <= 1) {
       if(a == '*' && b == '*') {
         parse_skip(p);
-        ntype = A_EXP;
+        op = A_EXP;
       }
     } else if(prec <= 2) {
       switch(c) {
-        case '*': ntype = A_MUL; break;
-        case '/': ntype = A_DIV; break;
-        case '%': ntype = A_MOD; break;
+        case '*': op = A_MUL; break;
+        case '/': op = A_DIV; break;
+        case '%': op = A_MOD; break;
       }
     } else if(prec <= 3) {
       switch(c) {
-        case '+': ntype = A_ADD; break;
-        case '-': ntype = A_SUB; break;
+        case '+': op = A_ADD; break;
+        case '-': op = A_SUB; break;
       }
     } else if(prec <= 4) {
 
       if((a == '>' || a == '<') && a == b) {
-        ntype = a == '>' ? A_RSHIFT : A_LSHIFT;
+        op = a == '>' ? A_RSHIFT : A_LSHIFT;
         parse_skip(p);
       }
 
     } else if(prec <= 5) {
 
       if(a == '>') {
-        ntype = b == '=' ? A_GE : A_GT;
+        op = b == '=' ? A_GE : A_GT;
         if(b == '=')
           parse_skip(p);
       } else if(a == '<') {
-        ntype = b == '=' ? A_LE : A_LT;
+        op = b == '=' ? A_LE : A_LT;
         if(b == '=')
           parse_skip(p);
       }
@@ -73,40 +73,40 @@ parse_arith_binary(struct parser* p, int precedence) {
     } else if(prec <= 6) {
 
       if(b == '=' && (a == '=' || a == '!')) {
-        ntype = a == '!' ? A_NE : A_EQ;
+        op = a == '!' ? A_NE : A_EQ;
         parse_skip(p);
       }
     } else if(prec <= 7) {
       switch(c) {
-        case '&': ntype = A_BAND; break;
-        case '|': ntype = A_BOR; break;
-        case '^': ntype = A_BXOR; break;
+        case '&': op = A_BAND; break;
+        case '|': op = A_BOR; break;
+        case '^': op = A_BXOR; break;
       }
     } else if(prec <= 8) {
       if((a == '&' || a == '|') && a == b) {
-        ntype = a == '&' ? A_AND : A_OR;
+        op = a == '&' ? A_AND : A_OR;
         parse_skip(p);
       }
     }
     --prec;
-  } while(ntype == -1);
+  } while(op == -1);
 
-  if(ntype == -1)
-    return lnode;
+  if(op == -1)
+    return left;
 
   parse_skip(p);
   parse_skipspace(p);
 
-  rnode = precedence < 1 ? parse_arith_unary(p) : parse_arith_binary(p, precedence - 1);
+  right = precedence < 1 ? parse_arith_unary(p) : parse_arith_binary(p, precedence - 1);
 
-  if(rnode == NULL) {
-    tree_free(lnode);
+  if(right == NULL) {
+    tree_free(left);
     return NULL;
   }
 
-  newnode = tree_newnode(ntype);
-  newnode->narithbinary.left = lnode;
-  newnode->narithbinary.right = rnode;
+  node = tree_newnode(op);
+  node->narithbinary.left = left;
+  node->narithbinary.right = right;
 
-  return newnode;
+  return node;
 }

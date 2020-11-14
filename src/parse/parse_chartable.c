@@ -41,25 +41,26 @@ const unsigned short parse_chartable[CHAR_RANGE] = {
     C_UNDEF,
     /* 0x20 */
     C_SPACE,
-    C_SPCL,
+    C_SPCL | C_ARITHOP,
     C_DESC | C_QUOT,
     C_SPCL,
     C_SPCL | C_DESC,
-    C_UNDEF,
-    C_UNDEF,
+    C_ARITHOP, /* % */
+    C_ARITHOP, /* & */
     C_QUOT,
+    /* 0x28 */
     C_CTRL,
     C_CTRL,
-    C_SPCL | C_ESC,
+    C_SPCL | C_ESC | C_ARITHOP, /* '*' */
+    C_ARITHOP,                  /* '+' */
     C_UNDEF,
-    C_UNDEF,
-    C_SPCL
+    C_SPCL | C_ARITHOP /* '-' */
 #ifndef LEGACY
         | C_NAME
 #endif
     ,
     C_UNDEF,
-    C_UNDEF,
+    C_ARITHOP, /* '/' */
     /* 0x30 */
     C_DIGIT | C_HEX | C_OCTAL | C_BINARY,
     C_DIGIT | C_HEX | C_OCTAL | C_BINARY,
@@ -69,13 +70,14 @@ const unsigned short parse_chartable[CHAR_RANGE] = {
     C_DIGIT | C_HEX | C_OCTAL,
     C_DIGIT | C_HEX | C_OCTAL,
     C_DIGIT | C_HEX | C_OCTAL,
+    /* 0x38 */
     C_DIGIT | C_HEX,
     C_DIGIT | C_HEX,
     C_UNDEF,
     C_CTRL,
-    C_UNDEF,
-    C_UNDEF,
-    C_UNDEF,
+    C_ARITHOP, /* '<' */
+    C_ARITHOP, /* '=' */
+    C_ARITHOP, /* '>' */
     C_SPCL | C_ESC,
     /* 0x40 */
     C_SPCL,
@@ -86,6 +88,7 @@ const unsigned short parse_chartable[CHAR_RANGE] = {
     C_UPPER | C_HEX,
     C_UPPER | C_HEX,
     C_UPPER,
+    /* 0x48 */
     C_UPPER,
     C_UPPER,
     C_UPPER,
@@ -94,6 +97,7 @@ const unsigned short parse_chartable[CHAR_RANGE] = {
     C_UPPER,
     C_UPPER,
     C_UPPER,
+    /* 0x50 */
     C_UPPER,
     C_UPPER,
     C_UPPER,
@@ -102,13 +106,14 @@ const unsigned short parse_chartable[CHAR_RANGE] = {
     C_UPPER,
     C_UPPER,
     C_UPPER,
+    /* 0x58 */
     C_UPPER,
     C_UPPER,
     C_UPPER,
     C_ESC,
     C_ESC,
     C_ESC,
-    C_UNDEF,
+    C_ARITHOP, /* '^' */
     C_NAME,
     /* 0x60 */
     C_DESC | C_QUOT,
@@ -119,6 +124,7 @@ const unsigned short parse_chartable[CHAR_RANGE] = {
     C_LOWER | C_HEX,
     C_LOWER | C_HEX,
     C_LOWER,
+    /* 0x68 */
     C_LOWER,
     C_LOWER,
     C_LOWER,
@@ -127,6 +133,7 @@ const unsigned short parse_chartable[CHAR_RANGE] = {
     C_LOWER,
     C_LOWER,
     C_LOWER,
+    /* 0x70 */
     C_LOWER,
     C_LOWER,
     C_LOWER,
@@ -135,13 +142,14 @@ const unsigned short parse_chartable[CHAR_RANGE] = {
     C_LOWER,
     C_LOWER,
     C_LOWER,
+    /* 0x78 */
     C_LOWER,
     C_LOWER,
     C_LOWER,
     C_UNDEF,
     C_CTRL,
     C_UNDEF,
-    C_UNDEF,
+    C_ARITHOP, /* '~' */
     C_UNDEF,
     /* 0x80 */
     C_UNDEF,

@@ -14,20 +14,21 @@
 #define CHAR_RANGE (1 << CHAR_BITS)
 
 /* character class constants */
-#define C_UNDEF 0x00    /* undefined character class */
-#define C_SPACE 0x01    /* a whitespace character */
-#define C_DIGIT 0x02    /* a numerical digit */
-#define C_UPPER 0x04    /* an uppercase char */
-#define C_LOWER 0x08    /* a lowercase char */
-#define C_NAME 0x10     /* an alphanumeric or underscore */
-#define C_SPCL 0x20     /* special parameter char */
-#define C_CTRL 0x40     /* control operator char */
-#define C_ESC 0x80      /* characters to escape before expansion */
-#define C_DESC 0x100    /* escapable characters in double quotation mode */
-#define C_QUOT 0x200    /* quotes */
-#define C_HEX 0x400     /* hex digit */
-#define C_OCTAL 0x800   /* octal digit */
-#define C_BINARY 0x1000 /* binary digit */
+#define C_UNDEF 0x00     /* undefined character class */
+#define C_SPACE 0x01     /* a whitespace character */
+#define C_DIGIT 0x02     /* a numerical digit */
+#define C_UPPER 0x04     /* an uppercase char */
+#define C_LOWER 0x08     /* a lowercase char */
+#define C_NAME 0x10      /* an alphanumeric or underscore */
+#define C_SPCL 0x20      /* special parameter char */
+#define C_CTRL 0x40      /* control operator char */
+#define C_ESC 0x80       /* characters to escape before expansion */
+#define C_DESC 0x100     /* escapable characters in double quotation mode */
+#define C_QUOT 0x200     /* quotes */
+#define C_HEX 0x400      /* hex digit */
+#define C_OCTAL 0x800    /* octal digit */
+#define C_BINARY 0x1000  /* binary digit */
+#define C_ARITHOP 0x2000 /* arithmetic operation character */
 
 /* character class table */
 extern const unsigned short parse_chartable[CHAR_RANGE];
@@ -69,6 +70,9 @@ extern const unsigned short parse_chartable[CHAR_RANGE];
 
 /* is either alpha, digit or underscore or special parameter */
 #define parse_isparam(c) (parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_DIGIT | C_NAME | C_SPCL))
+
+/* is arithmetic operation char  */
+#define parse_isarith(c) (parse_chartable[(int)(unsigned char)c] & (C_ARITHOP))
 
 /* token structure:
  * ----------------------------------------------------------------------- *
@@ -199,9 +203,7 @@ extern struct token parse_tokens[];
 
 const char* parse_tokname(enum tok_flag tok, int multi);
 enum tok_flag parse_gettok(struct parser* p, int tempflags);
-int parse_next(struct parser*, char*);
 
-//#define parse_skip(p) parse_next((p), 0)
 #define parse_skip(p) source_skip()
 
 int parse_arith(struct parser* p);
