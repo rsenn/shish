@@ -1,8 +1,8 @@
 #include "../expand.h"
 #include "../parse.h"
-#include "../../lib/scan.h"
 #include "../source.h"
 #include "../tree.h"
+#include "../../lib/scan.h"
 
 /* parse parameter substitutions
  * ----------------------------------------------------------------------- */
@@ -11,6 +11,7 @@ parse_param(struct parser* p) {
   char c;
   int braces = 0;
   struct parser newp;
+  struct nargparam* param;
   stralloc varname = {NULL, 0, 0};
 
   if(source_peek(&c) <= 0)
@@ -30,9 +31,11 @@ parse_param(struct parser* p) {
   else
     parse_newnode(p, N_ARGPARAM);
 
-  p->node->nargparam.flag = p->quot;
-  p->node->nargparam.name = NULL;
-  p->node->nargparam.word = NULL;
+  param = &p->node->nargparam;
+
+  param->flag = p->quot;
+  param->name = NULL;
+  param->word = NULL;
 
   /* if we have # as first char in substitution and we're inside a ${}
      then check if the next char is a valid parameter char. if so then
@@ -41,30 +44,31 @@ parse_param(struct parser* p) {
     char nextc;
 
     if(source_peek(&nextc) > 0 && parse_isparam(nextc)) {
-      p->node->nargparam.flag |= S_STRLEN;
+      param->flag |= S_STRLEN;
       source_get(&c);
     }
+
   }
 
   /* check for special arguments */
   switch(c) {
-    case '#': p->node->nargparam.flag |= S_ARGC; break;
-    case '*': p->node->nargparam.flag |= S_ARGV; break;
-    case '@': p->node->nargparam.flag |= S_ARGVS; break;
-    case '?': p->node->nargparam.flag |= S_EXITCODE; break;
-    case '-': p->node->nargparam.flag |= S_FLAGS; break;
-    case '!': p->node->nargparam.flag |= S_BGEXCODE; break;
-    case '$': p->node->nargparam.flag |= S_PID; break;
+    case '#': param->flag |= S_ARGC; break;
+    case '*': param->flag |= S_ARGV; break;
+    case '@': param->flag |= S_ARGVS; break;
+    case '?': param->flag |= S_EXITCODE; break;
+    case '-': param->flag |= S_FLAGS; break;
+    case '!': param->flag |= S_BGEXCODE; break;
+    case '$': param->flag |= S_PID; break;
   }
 
   /* add the first char to the varname */
   stralloc_catc(&varname, c);
   stralloc_nul(&varname);
 
-  if(!(p->node->nargparam.flag & S_SPECIAL)) {
+  if(!(param->flag & S_SPECIAL)) {
     /* check if it is numeric, if so assume S_ARG */
     if(parse_isdigit(c)) {
-      p->node->nargparam.flag |= S_ARG;
+      param->flag |= S_ARG;
 
       /* now get the complete parameter number */
       if(braces) {
@@ -85,12 +89,12 @@ parse_param(struct parser* p) {
   stralloc_nul(&varname);
 
   /* scan parameter number on S_ARG */
-  if(p->node->nargparam.flag & S_ARG) {
-    p->node->nargparam.numb = 0;
-    scan_uint(varname.s, (unsigned int*)&p->node->nargparam.numb);
+  if(param->flag & S_ARG) {
+    param->numb = 0;
+    scan_uint(varname.s, (unsigned int*)&param->numb);
   }
 
-  p->node->nargparam.name = varname.s;
+  param->name = varname.s;
 
   /* skip whitespace if inside braces (unusual), otherwise return */
   if(!braces)
@@ -107,9 +111,9 @@ parse_param(struct parser* p) {
   /* check for remove prefix/suffix pattern */
   if(c == '%' || c == '#') {
     char nextc;
-    p->node->nargparam.flag |= (c == '%') ? S_RSSFX : S_RSPFX;
+    param->flag |= (c == '%') ? S_RSSFX : S_RSPFX;
     if(source_next(&nextc) > 0 && nextc == c) {
-      p->node->nargparam.flag += (1 << 8);
+      param->flag += (1 << 8);
       parse_skip(p);
     }
   }
@@ -118,25 +122,25 @@ parse_param(struct parser* p) {
     /* : before -, =, ?, + means take care of set but null and not only of unset
      */
     if(c == ':') {
-      p->node->nargparam.flag |= S_NULL;
+      param->flag |= S_NULL;
       source_next(&c);
     }
 
     switch(c) {
       case '-':
-        p->node->nargparam.flag |= S_DEFAULT;
+        param->flag |= S_DEFAULT;
         parse_skip(p);
         break;
       case '=':
-        p->node->nargparam.flag |= S_ASGNDEF;
+        param->flag |= S_ASGNDEF;
         parse_skip(p);
         break;
       case '?':
-        p->node->nargparam.flag |= S_ERRNULL;
+        param->flag |= S_ERRNULL;
         parse_skip(p);
         break;
       case '+':
-        p->node->nargparam.flag |= S_ALTERNAT;
+        param->flag |= S_ALTERNAT;
         parse_skip(p);
         break;
     }
@@ -144,10 +148,10 @@ parse_param(struct parser* p) {
 
   if(p->node && p->node->id == N_ARGPARAM)
     if(p->flags & P_ARITH)
-      p->node->nargparam.flag |= S_ARITH;
+      param->flag |= S_ARITH;
 
   /* return now if we don't have a variable */
-  /*  if((p->node->nargparam.flag & S_SPECIAL))
+  /*  if((param->flag & S_SPECIAL))
     {
       if(braces)
         while(source_get(&c) > 0 && c != '}');

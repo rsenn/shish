@@ -1,10 +1,10 @@
 #include "../expand.h"
 #include "../fd.h"
-#include "../../lib/fmt.h"
 #include "../parse.h"
-#include "../../lib/scan.h"
 #include "../source.h"
 #include "../tree.h"
+#include "../../lib/fmt.h"
+#include "../../lib/scan.h"
 #include "../../lib/uint16.h"
 #include "../../lib/uint64.h"
 
