@@ -47,7 +47,6 @@ parse_param(struct parser* p) {
       param->flag |= S_STRLEN;
       source_get(&c);
     }
-
   }
 
   /* check for special arguments */

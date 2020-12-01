@@ -22,8 +22,7 @@ parse_arith_binary(struct parser* p, int precedence) {
     return left;
   }
 
-
-   do {
+  do {
     if(precedence <= 0)
       break;
 

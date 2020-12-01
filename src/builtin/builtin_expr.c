@@ -49,8 +49,8 @@ builtin_expr(int argc, char* argv[]) {
        whitespace and terminated by a newline */
     for(i = 1; i < argc; i++) {
       if(i > 1)
-            stralloc_catc(&sa, ' ');
-        stralloc_cats(&sa, argv[i]);
+        stralloc_catc(&sa, ' ');
+      stralloc_cats(&sa, argv[i]);
     }
 
     /* create a new i/o context and initialize a parser */

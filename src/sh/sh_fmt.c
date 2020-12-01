@@ -9,6 +9,7 @@
 #include "../sh.h"
 #include "../source.h"
 #include "../parse.h"
+#include "../debug.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
 #include "../../lib/uint32.h"
@@ -119,6 +120,14 @@ main(int argc, char** argv, char** envp) {
         sh_exit(1);
         break;
     }
+
+#ifdef DEBUG
+  debug_ulong("tree_columnwrap", tree_columnwrap, 0);
+  debug_nl();
+  debug_ulong("indent_width", indent_width, 0);
+  debug_nl_fl();
+#endif
+
   for(i = 0; i < indent_width; i++) stralloc_catc(&separator, ' ');
   stralloc_nul(&separator);
   tree_separator = separator.s;

@@ -46,14 +46,18 @@ cfg() {
   esac
 
   [ -n "$PKG_CONFIG_PATH" ] && echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" 1>&2
-
+  [ -n "$PKG_CONFIG" ] && case "$PKG_CONFIG" in
+     */*) ;;
+     *) PKG_CONFIG=$(which "$PKG_CONFIG") ;; 
+  esac
   : ${generator:="CodeLite - Unix Makefiles"}
 
  (mkdir -p $builddir
   : ${relsrcdir=`realpath --relative-to "$builddir" .`}
-  set -x
+  : set -x
   cd "${builddir:-.}"
-  ${CMAKE:-cmake} -Wno-dev \
+  IFS="$IFS "
+ set -- -Wno-dev \
     -G "$generator" \
     ${prefix:+-DCMAKE_INSTALL_PREFIX="$prefix"} \
     ${VERBOSE:+-DCMAKE_VERBOSE_MAKEFILE=${VERBOSE:-OFF}} \
@@ -67,7 +71,9 @@ cfg() {
     ${CXX:+-DCMAKE_CXX_COMPILER="$CXX"} \
     ${MAKE:+-DCMAKE_MAKE_PROGRAM="$MAKE"} \
     "$@" \
-    $relsrcdir 2>&1 ) |tee "${builddir##*/}.log"
+    $relsrcdir 
+  eval "${CMAKE:-cmake} \"\$@\""
+ ) 2>&1 |tee "${builddir##*/}.log"
 }
 
 cfg-android ()
@@ -364,16 +370,6 @@ cfg-tcc() {
     "$@")
 }
   
-cfg-rpi4 () 
-{ 
-    ( : ${builddir=build/rpi4}
-    : ${host=aarch64-linux-gnu};
-    : ${build=aarch64-linux-gnu};
-    : ${CC=aarch64-linux-gnu-gcc};
-    : ${CXX=aarch64-linux-gnu-g++};
-    prefix=/usr/aarch64-linux-gnu/sysroot/usr;
-    cfg -DCMAKE_INSTALL_PREFIX=$prefix -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN:-/opt/cmake-toolchains/aarch64-linux-gnu.toolchain.cmake} -DANDROID_NATIVE_API_LEVEL=21 -DPKG_CONFIG_EXECUTABLE=/usr/bin/aarch64-linux-gnu-pkg-config -DCMAKE_PREFIX_PATH=$prefix -DCMAKE_SYSROOT=${prefix%/usr} -DCMAKE_MAKE_PROGRAM=/usr/bin/make -DCMAKE_MODULE_PATH="$prefix/lib/cmake" "$@" )
-}
 cfg-android64 () 
 { 
     ( : ${builddir=build/android64};
@@ -406,4 +402,18 @@ LIBRARY_PATH=$(set -- /opt/*-wasm/lib ;  IFS=";"; echo "$*")
     -DCMAKE_LIBRARY_PATH="$LIBRARY_PATH" \
     -DENABLE_PIC=FALSE \
     "$@")
+}
+
+cfg-aarch64() {
+ (: ${build=$(cc -dumpmachine | sed 's|-pc-|-|g')}
+  : ${host=aarch64-${build#*-}}
+  : ${builddir=build/$host}
+
+  : ${prefix=/usr/aarch64-linux-gnu/sysroot/usr}
+
+  : ${TOOLCHAIN=/opt/cmake-toolchains/aarch64-linux-gnu.toolchain.cmake}
+  export prefix TOOLCHAIN
+
+  PKG_CONFIG=$(which ${host}-pkg-config) \
+  cfg "$@")
 }

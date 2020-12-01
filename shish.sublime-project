@@ -10,7 +10,7 @@
     },
       {
       "name": "Run CMake release",
-      "shell_cmd": "mkdir -p build/release;  cd build/release; cmake -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_C_FLAGS='-Os -w -std=c11' ../..; make" ,
+      "shell_cmd": "mkdir -p build/release;  cd build/release; cmake -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_C_FLAGS='-Os -w -std=c11' ../..; make", 
       "working_dir": "${project_path}"
     },
     {
@@ -23,7 +23,7 @@
     {
       "path": ".",
       "folder_exclude_patterns": [".*", "*.cache"],
-      "file_exclude_patterns": [".*", "*.stackdump", "*.o", "*.d", "*.m4", "*~", "*.pro.user*", "*cfg*.sh"]
+      "file_exclude_patterns": [".*", "*.stackdump", "*.o", "*.d", "*.m4", "*~", "*.pro.user*"]
     }
   ]
 }

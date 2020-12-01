@@ -13,7 +13,7 @@ tree_catlist(union node* node, stralloc* sa, const char* sep) {
  * ----------------------------------------------------------------------- */
 void
 tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth) {
-  ssize_t len, line_start;
+  ssize_t line_len, line_start;
   stralloc next;
   stralloc_init(&next);
 
@@ -29,18 +29,17 @@ tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth) {
         stralloc_cats(&next, (node->ncmd.bgnd ? " & " : "; "));
     }
 
-    if(byte_chr(next.s, next.len, '\n') == next.len) {
-      if(sa->s && sa->len) {
-        line_start = byte_rchr(sa->s, sa->len, '\n');
-        if(line_start == sa->len)
-          line_start = 0;
-        len = (ssize_t)sa->len - line_start;
+    line_len = byte_chr(next.s, next.len, '\n');
 
-        if(scan_whitenskip(&sa->s[line_start], len) < len) {
+    stralloc_readyplus(sa, next.len + next.len >> 1);
 
-          if((len - line_start + next.len) >= tree_columnwrap)
-            tree_catseparator(sa, "\\\n", depth);
-        }
+    if((line_start = byte_rchr(sa->s, sa->len, '\n')) == sa->len)
+      line_start = 0;
+
+    // if(scan_whitenskip(&sa->s[line_start], line_len) < line_len)
+    {
+      if(line_start + line_len >= tree_columnwrap) {
+        tree_catseparator(sa, "\\\n", depth);
       }
     }
 
