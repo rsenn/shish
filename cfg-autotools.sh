@@ -29,7 +29,7 @@ cfg() {
     debug="--disable-debug"
   fi
 
-  ( set -x; cd $builddir;
+  ( : set -x; cd $builddir;
   ${CONFIGURE:-"$relsrcdir"/configure} \
     ${build:+--build="$build"} \
     ${host:+--host="$host"} \

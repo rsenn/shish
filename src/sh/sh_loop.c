@@ -70,7 +70,7 @@ sh_loop(void) {
       tree_free(list);
     }
     /*
-    #if(defined(_DEBUG) && !defined(NO_TREE_PRINT)) || defined(SHFMT)
+    #if(defined(_DEBUG) && !defined(NO_TREE_PRINT)) || defined(SHFORMAT)
         buffer_putsa(fd_out->w, &cmd);
         buffer_putnlflush(fd_out->w);
     #endif*/

@@ -55,6 +55,31 @@ main(int argc, char** argv, char** envp) {
   stralloc_init(&separator);
   stralloc_init(&out_file);
 
+  fd_exp = STDERR_FILENO + 1;
+
+  /* create new fds for every valid file descriptor until stderr */
+  for(e = STDIN_FILENO; e <= STDERR_FILENO; e++) {
+    if((flags = fdtable_check(e))) {
+#ifdef HAVE_ALLOCA
+      fd = fd_allocb();
+      fd_push(fd, e, flags);
+#else
+      fd = fd_mallocb();
+      fd_push(fd, e, flags | FD_FREE);
+#endif
+      fd_setfd(fd, e);
+    } else {
+      if(e < fd_exp)
+        fd_exp = e;
+    }
+  }
+
+  /* stat the file descriptors and then set the buffers */
+  fdtable_foreach(v) {
+    fd_stat(fdtable[v]);
+    fd_setbuf(fdtable[v], &fdtable[v][1], FD_BUFSIZE);
+  }
+
   /* set initial $0 */
   sh_argv0 = argv[0];
   sh_name = shell_basename(sh_argv0);

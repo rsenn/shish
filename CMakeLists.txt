@@ -302,12 +302,12 @@ if(EMSCRIPTEN)
   set_target_properties(shish PROPERTIES SUFFIX ".${EMSCRIPTEN_EXE_SUFFIX}")
 endif(EMSCRIPTEN)
 
-option(BUILD_SHFMT "Build shformat program" ON)
+option(BUILD_SHFORMAT "Build shformat program" ON)
 
-if(BUILD_SHFMT)
+if(BUILD_SHFORMAT)
   file(
     GLOB
-    SHFMT_SOURCES
+    SHFORMAT_SOURCES
     src/debug/*.c
 
     src/redir/redir_addhere.c
@@ -334,14 +334,14 @@ if(BUILD_SHFMT)
     src/sh/sh_msg.c
     src/sh/sh_usage.c)
 
-  add_executable(shformat ${SHFMT_SOURCES} ${LIBSOURCES})
+  add_executable(shformat ${SHFORMAT_SOURCES} ${LIBSOURCES})
   target_link_libraries(shformat ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
                         ${ELECTRICFENCE_LIBRARY} ${WINSOCK2_LIBRARY})
 
-  target_compile_definitions(shformat PUBLIC SHFMT=1)
+  target_compile_definitions(shformat PUBLIC SHFORMAT=1)
   install(TARGETS shformat DESTINATION bin)
 
-endif(BUILD_SHFMT)
+endif(BUILD_SHFORMAT)
 # message(STATUS "\nBuiltin flags:\n  ${BUILTIN_FLAGS}\n")
 
 set_source_files_properties(src/builtin/builtin_table.c

@@ -8,93 +8,97 @@
 	"buffers":
 	[
 		{
-			"file": "src/sh/sh_fmt.c",
+			"contents": "   ǃǃ✔  FIXME: do we always need to strdup() them?\n—Ⓕ– sh_setargs ( ) { … } — function",
 			"settings":
 			{
-				"buffer_size": 4538,
+				"buffer_size": 86,
+				"line_ending": "Unix",
+				"name": "𝌆 Outline",
+				"scratch": true
+			}
+		},
+		{
+			"file": "src/builtin/builtin_expr.c",
+			"settings":
+			{
+				"buffer_size": 2080,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "src/tree/tree_cat.c",
+			"file": "src/parse/parse_arith_binary.c",
 			"settings":
 			{
-				"buffer_size": 12620,
+				"buffer_size": 2451,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"contents": "Searching 544 files for \"parse_next\" (regex, case sensitive)\n\n/home/roman/Dokumente/Sources/shish/src/parse.h:\n  200  const char* parse_tokname(enum tok_flag tok, int multi);\n  201  enum tok_flag parse_gettok(struct parser* p, int tempflags);\n  202: int parse_next(struct parser*, char*);\n  203  \n  204: #define parse_skip(p) parse_next((p), 0)\n  205  \n  206  int parse_arith(struct parser* p);\n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_value.c:\n   38        x[n++] = c;\n   39  \n   40:       if(parse_next(p, &c) <= 0)\n   41          break;\n   42  \n   ..\n   67  \n   68          if((classes & (C_UPPER | C_LOWER))) {\n   69:           digit = parse_next(p, &c) > 0;\n   70            n = 0;\n   71          }\n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_bquoted.c:\n   20  \n   21    if(c == '(') {\n   22:     if(parse_next(p, &c) <= 0)\n   23        return -1;\n   24      /*\n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_dquoted.c:\n   23        char nextc;\n   24  \n   25:       if(parse_next(p, &nextc) <= 0)\n   26          return -1;\n   27  \n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_next.c:\n    6  /* ----------------------------------------------------------------------- */\n    7  int\n    8: parse_next(struct parser* p, char* c) {\n    9  #ifdef DEBUG_OUTPUT\n   10    if(sh->flags & SH_DEBUG) {\n   ..\n   12      source_peek(&ch);\n   13      if(ch == '\\n') {\n   14:       debug_s(\"\\x1b[1;33mparse_next\");\n   15        if(p->quot)\n   16          debug_ulong(\"quot\", p->quot, 0);\n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_param.c:\n  109      char nextc;\n  110      p->node->nargparam.flag |= (c == '%') ? S_RSSFX : S_RSPFX;\n  111:     if(parse_next(p, &nextc) > 0 && nextc == c) {\n  112        p->node->nargparam.flag += (1 << 8);\n  113        parse_skip(p);\n  ...\n  120      if(c == ':') {\n  121        p->node->nargparam.flag |= S_NULL;\n  122:       parse_next(p, &c);\n  123      }\n  124  \n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_simpletok.c:\n   26  \n   27      /* if the char was skipped, get next one */\n   28:     if(parse_next(p, &c) <= 0)\n   29        return T_EOF;\n   30    }\n   ..\n   39      case '#':\n   40        do {\n   41:         if(parse_next(p, &c) <= 0)\n   42            return T_EOF;\n   43        } while(c != '\\n'); /* after getting chars fall into newline case */\n   ..\n   73      /* might be a mac or a windows newline */\n   74      case '\\r':\n   75:       if(parse_next(p, &c) <= 0)\n   76          return T_EOF;\n   77        if(c == '\\n')\n   ..\n   99  \n  100        /* peek a char and look it it's the same */\n  101:       if(parse_next(p, &c2) > 0 && c == c2) {\n  102          /* advance buffer position later, because the char\n  103             we peeked was valid */\n  ...\n  126  \n  127    if(advance)\n  128:     parse_next(p, &c);\n  129  \n  130    return tok;\n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_subst.c:\n    7    char c;\n    8  \n    9:   if(parse_next(p, &c) <= 0)\n   10      return -1;\n   11  \n\n/home/roman/Dokumente/Sources/shish/src/parse/parse_unquoted.c:\n   25        p->tok = T_WORD;\n   26  \n   27:       if(parse_next(p, &nextc) <= 0)\n   28          return -1;\n   29  \n\n17 matches across 9 files\n",
+			"file": "src/expand/expand_arith.c",
 			"settings":
 			{
-				"buffer_size": 3209,
+				"buffer_size": 535,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/expand/expand_arith_binary.c",
+			"settings":
+			{
+				"buffer_size": 1285,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/history/history_load.c",
+			"settings":
+			{
+				"buffer_size": 2186,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/history/history_set.c",
+			"settings":
+			{
+				"buffer_size": 416,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/history/Makefile.in",
+			"settings":
+			{
+				"buffer_size": 1770,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "Searching 544 files for \"history_set\" (regex, case sensitive)\n\n/home/roman/Dokumente/Sources/shish/src/history.h:\n   25  void history_print(void);\n   26  void history_advance(void);\n   27: void history_set(char* s);\n   28  void history_free(unsigned int index);\n   29  \n\n/home/roman/Dokumente/Sources/shish/src/history/history_load.c:\n   69      while(parse_isspace(history_buffer.x[history_buffer.p])) history_buffer.p++;\n   70  \n   71:     history_set(&history_buffer.x[history_buffer.p]);\n   72      history_advance();\n   73      history_mapped++;\n\n/home/roman/Dokumente/Sources/shish/src/history/history_prev.c:\n   11  \n   12      if(history_offset == 0)\n   13:       history_set(term_getline());\n   14  \n   15      history_offset++;\n\n/home/roman/Dokumente/Sources/shish/src/history/history_set.c:\n    5   * ----------------------------------------------------------------------- */\n    6  void\n    7: history_set(char* s) {\n    8    history_resize();\n    9  \n\n/home/roman/Dokumente/Sources/shish/src/sh/sh_loop.c:\n   52  \n   53          stralloc_nul(&cmd);\n   54:         history_set(cmd.s);\n   55          cmd.s = NULL;\n   56          history_advance();\n\n5 matches across 5 files\n",
+			"settings":
+			{
+				"buffer_size": 1186,
 				"line_ending": "Unix",
 				"name": "Find Results",
 				"scratch": true
 			}
 		},
 		{
-			"file": "src/parse/parse_simpletok.c",
+			"file": "src/sh/sh_loop.c",
 			"settings":
 			{
-				"buffer_size": 3084,
+				"buffer_size": 2224,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "src/parse.h",
+			"file": "src/sh/sh_setargs.c",
 			"settings":
 			{
-				"buffer_size": 8784,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "src/tree/tree_catseparator.c",
-			"settings":
-			{
-				"buffer_size": 496,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "src/tree/tree_catlist.c",
-			"settings":
-			{
-				"buffer_size": 1306,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "src/parse/parse_error.c",
-			"settings":
-			{
-				"buffer_size": 1264,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "src/source/source_msg.c",
-			"settings":
-			{
-				"buffer_size": 447,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "src/source/source_position.c",
-			"settings":
-			{
-				"buffer_size": 496,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "lib/buffer.h",
-			"settings":
-			{
-				"buffer_size": 10051,
+				"buffer_size": 966,
 				"line_ending": "Unix"
 			}
 		}
@@ -110,6 +114,10 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"outline",
+				"Browse Mode: Outline (Right)"
+			],
 			[
 				"instal",
 				"Package Control: Install Package"
@@ -133,10 +141,6 @@
 			[
 				"install p",
 				"Package Control: Install Package"
-			],
-			[
-				"outline",
-				"Browse Mode: Outline (Right)"
 			],
 			[
 				"add re",
@@ -168,35 +172,58 @@
 	"expanded_folders":
 	[
 		"/home/roman/Dokumente/Sources/shish",
-		"/home/roman/Dokumente/Sources/shish/build",
 		"/home/roman/Dokumente/Sources/shish/inst",
 		"/home/roman/Dokumente/Sources/shish/src",
-		"/home/roman/Dokumente/Sources/shish/src/parse"
+		"/home/roman/Dokumente/Sources/shish/src/builtin",
+		"/home/roman/Dokumente/Sources/shish/src/eval",
+		"/home/roman/Dokumente/Sources/shish/src/exec",
+		"/home/roman/Dokumente/Sources/shish/src/expand",
+		"/home/roman/Dokumente/Sources/shish/src/expr",
+		"/home/roman/Dokumente/Sources/shish/src/history",
+		"/home/roman/Dokumente/Sources/shish/src/job",
+		"/home/roman/Dokumente/Sources/shish/src/parse",
+		"/home/roman/Dokumente/Sources/shish/src/sh"
 	],
 	"file_history":
 	[
+		"/home/roman/Dokumente/Sources/shish/src/sh/sh_fmt.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_arith_value.c",
+		"/home/roman/Dokumente/Sources/shish/src/tree/tree_cat.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_simpletok.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_gettok.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_word.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse.h",
+		"/home/roman/Dokumente/Sources/shish/src/tree/tree_catseparator.c",
+		"/home/roman/Dokumente/Sources/shish/src/tree/tree_catlist.c",
+		"/home/roman/Dokumente/Sources/shish/src/parse/parse_error.c",
+		"/home/roman/Dokumente/Sources/c-shell/yash/arith.c",
+		"/home/roman/Dokumente/Sources/shish/doc/arith.ebnf",
+		"/home/roman/Dokumente/Sources/shish/42ShellTester/spec/42sh/local-variable/002-declare-and-expand-2/stdin",
+		"/home/roman/Dokumente/Sources/shish/doc/posix/ieee-p1003.2-d11.2-s4.5.txt",
+		"/home/roman/Dokumente/Sources/c-shell/mrsh/parser/arithm.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_msg.c",
+		"/home/roman/Dokumente/Sources/shish/src/source/source_position.c",
+		"/home/roman/Dokumente/Sources/shish/lib/buffer.h",
+		"/home/roman/Dokumente/Sources/c-shell/ast/src/cmd/ksh93/sh/arith.c",
+		"/home/roman/Dokumente/Sources/c-shell/ship/src/arith/arith.c",
 		"/opt/opencv4/include/opencv4/opencv2/imgproc.hpp",
 		"/home/roman/Dokumente/Sources/shish/lib/scan/scan_whitenskip.c",
 		"/home/roman/Dokumente/Sources/shish/lib/stralloc.h",
-		"/home/roman/Dokumente/Sources/shish/lib/buffer.h",
 		"/home/roman/Dokumente/Sources/shish/src/sh/sh_loop.c",
 		"/home/roman/Dokumente/Sources/shish/src/sh/sh_main.c",
 		"/home/roman/Dokumente/Sources/shish/src/prompt/prompt_escape.c",
 		"/home/roman/Dokumente/Sources/shish/src/sh/sh_forked.c",
 		"/home/roman/Dokumente/Sources/shish/src/sh/sh_exit.c",
-		"/home/roman/Dokumente/Sources/shish/src/tree/tree_catlist.c",
 		"/home/roman/Dokumente/Sources/shish/src/sh/sh_usage.c",
 		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_exec.c",
 		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_true.c",
 		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_unset.c",
-		"/home/roman/Dokumente/Sources/shish/src/sh/sh_fmt.c",
 		"/home/roman/Dokumente/Sources/shish/src/redir/redir_here.c",
 		"/home/roman/Dokumente/Sources/shish/src/fd/fd_here.c",
 		"/home/roman/Dokumente/Sources/c-utils/httptest.c",
 		"/home/roman/Dokumente/Sources/c-utils/jsonpp.c",
 		"/home/roman/Dokumente/Sources/c-utils/strip-comments.c",
 		"/home/roman/Dokumente/Sources/c-utils/xmlpp.c",
-		"/home/roman/Dokumente/Sources/shish/src/tree/tree_catseparator.c",
 		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_table.c",
 		"/home/roman/Dokumente/Sources/shish/src/sh.h",
 		"/home/roman/Dokumente/Sources/shish/src/prompt.h",
@@ -208,16 +235,12 @@
 		"/home/roman/Dokumente/Sources/shish/src/fd/fd_setfd.c",
 		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_hostname.c",
 		"/home/roman/Dokumente/Sources/shish/src/eval/eval_simple_command.c",
-		"/home/roman/Dokumente/Sources/shish/src/parse.h",
 		"/home/roman/Dokumente/Sources/shish/src/parse/parse_command.c",
 		"/home/roman/Dokumente/Sources/shish/src/parse/parse_chartable.c",
-		"/home/roman/Dokumente/Sources/shish/src/parse/parse_gettok.c",
 		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_error.c",
-		"/home/roman/Dokumente/Sources/shish/src/parse/parse_error.c",
 		"/home/roman/Dokumente/Sources/shish/src/parse/parse_tokname.c",
 		"/home/roman/Dokumente/Sources/shish/src/parse/parse_tokens.c",
 		"/home/roman/Dokumente/Sources/shish/src/sh/sh_errorn.c",
-		"/home/roman/Dokumente/Sources/shish/src/tree/tree_cat.c",
 		"/home/roman/Dokumente/Sources/shish/cmake/Pedantic.cmake",
 		"/home/roman/Dokumente/Sources/shish/cmake/Checks.cmake",
 		"/home/roman/Dokumente/Sources/shish/cmake/Builtins.cmake",
@@ -230,15 +253,12 @@
 		"/home/roman/Dokumente/Sources/shish/src/parse/parse_dump.c",
 		"/home/roman/Dokumente/Sources/shish/src/source/source_next.c",
 		"/home/roman/Dokumente/Sources/shish/src/parse/parse_dquoted.c",
-		"/home/roman/Dokumente/Sources/shish/src/source/source_msg.c",
 		"/home/roman/Dokumente/Sources/shish/src/source/source_push.c",
 		"/home/roman/Dokumente/Sources/shish/src/parse/parse_function.c",
 		"/home/roman/Dokumente/Sources/shish/src/source/source_skip.c",
 		"/home/roman/Dokumente/Sources/shish/src/source/source_newline.c",
 		"/home/roman/Dokumente/Sources/shish/src/source.h",
-		"/home/roman/Dokumente/Sources/shish/src/parse/parse_simpletok.c",
 		"/home/roman/Dokumente/Sources/shish/src/parse/parse_unquoted.c",
-		"/home/roman/Dokumente/Sources/shish/src/parse/parse_word.c",
 		"/home/roman/Dokumente/Sources/shish/src/parse/parse_list.c",
 		"/home/roman/Dokumente/Sources/shish/src/parse/parse_and_or.c",
 		"/home/roman/Dokumente/Sources/shish/src/parse/parse_compound_list.c",
@@ -293,16 +313,7 @@
 		"/home/roman/Dokumente/Sources/shish/src/debug.h",
 		"/home/roman/Dokumente/Sources/shish/src/term/term_newline.c",
 		"/home/roman/Dokumente/Sources/shish/src/debug/debug_ulong.c",
-		"/home/roman/Dokumente/Sources/shish/src/prompt/prompt_expand.c",
-		"/home/roman/Dokumente/Sources/shish/src/prompt/prompt_nextline.c",
-		"/home/roman/Dokumente/Sources/shish/src/prompt/prompt_reset.c",
-		"/home/roman/Dokumente/Sources/shish/config.h.cmake",
-		"/home/roman/Dokumente/Sources/shish/src/job/job_fork.c",
-		"/home/roman/Dokumente/Sources/shish/src/term/term_read.c",
-		"/home/roman/Dokumente/Sources/shish/src/parse/parse_bquoted.c",
-		"/home/roman/Dokumente/Sources/shish/src/builtin/builtin_test.c",
-		"/home/roman/Dokumente/Sources/shish/lib/sig/sig_catch.c",
-		"/home/roman/Dokumente/Sources/shish/src/debug/debug_free.c"
+		"/home/roman/Dokumente/Sources/shish/src/prompt/prompt_expand.c"
 	],
 	"find":
 	{
@@ -326,6 +337,13 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"history_set",
+			"argument-expression-listop",
+			"WORD",
+			"param",
+			"'\\$'",
+			"unary-expression",
+			"ternary",
 			"parse_next",
 			"fd_err->w",
 			"contains",
@@ -446,14 +464,7 @@
 			"  add_def",
 			"^\\s*add_def",
 			"add_def",
-			"HAVE_UID",
-			"HAVE_PID",
-			"FILE_OFFSET",
-			"HAVE_ALLOCA",
-			"sigset",
-			"sigset_t",
-			"message\\(",
-			"check_include"
+			"HAVE_UID"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -482,314 +493,126 @@
 	"groups":
 	[
 		{
-			"selected": 4,
+			"selected": 0,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "src/sh/sh_fmt.c",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 4538,
+						"buffer_size": 86,
+						"regions":
+						{
+						},
+						"selection":
+						[
+						],
+						"settings":
+						{
+							"current_file": "/home/roman/Dokumente/Sources/shish/src/sh/sh_setargs.c",
+							"function_name_status_row": 113,
+							"outline_rename_mode": false,
+							"symkeys":
+							[
+								[
+									116,
+									159
+								],
+								[
+									242,
+									252
+								]
+							],
+							"symlist":
+							[
+								"\tǃǃ✔  FIXME: do we always need to strdup() them?",
+								"—Ⓕ– sh_setargs ( ) { … } — function"
+							],
+							"syntax": "Packages/Outline/outline.hidden-tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 10,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 9,
+			"sheets":
+			[
+				{
+					"buffer": 1,
+					"file": "src/builtin/builtin_expr.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2080,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								1337,
+								1337
 							]
 						],
 						"settings":
 						{
-							"function_name_status_row": 177,
+							"function_name_status_row": 52,
 							"syntax": "Packages/C Improved/C Improved.tmLanguage",
 							"tab_size": 2,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 3186.0,
+						"translation.y": 810.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 9,
 					"type": "text"
 				},
 				{
-					"buffer": 1,
-					"file": "src/tree/tree_cat.c",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 12620,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								781,
-								781
-							]
-						],
-						"settings":
-						{
-							"function_name_status_row": 31,
-							"syntax": "Packages/C Improved/C Improved.tmLanguage",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 3,
-					"type": "text"
-				},
-				{
 					"buffer": 2,
+					"file": "src/parse/parse_arith_binary.c",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 3209,
-						"regions":
-						{
-							"match":
-							{
-								"flags": 112,
-								"regions":
-								[
-									[
-										254,
-										264
-									],
-									[
-										326,
-										336
-									],
-									[
-										512,
-										522
-									],
-									[
-										658,
-										668
-									],
-									[
-										832,
-										842
-									],
-									[
-										1007,
-										1017
-									],
-									[
-										1233,
-										1243
-									],
-									[
-										1431,
-										1441
-									],
-									[
-										1687,
-										1697
-									],
-									[
-										1901,
-										1911
-									],
-									[
-										2084,
-										2094
-									],
-									[
-										2209,
-										2219
-									],
-									[
-										2443,
-										2453
-									],
-									[
-										2610,
-										2620
-									],
-									[
-										2800,
-										2810
-									],
-									[
-										2947,
-										2957
-									],
-									[
-										3120,
-										3130
-									]
-								],
-								"scope": ""
-							}
-						},
-						"selection":
-						[
-							[
-								2452,
-								2452
-							]
-						],
-						"settings":
-						{
-							"detect_indentation": false,
-							"function_name_status_row": 79,
-							"line_numbers": false,
-							"output_tag": 1,
-							"result_base_dir": "",
-							"result_file_regex": "^([^ \t].*):$",
-							"result_line_regex": "^ +([0-9]+):",
-							"scroll_past_end": true,
-							"syntax": "Packages/Default/Find Results.hidden-tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 810.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 2,
-					"type": "text"
-				},
-				{
-					"buffer": 3,
-					"file": "src/parse/parse_simpletok.c",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 3084,
+						"buffer_size": 2451,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								811,
+								811
 							]
 						],
 						"settings":
 						{
-							"function_name_status_row": 81,
+							"function_name_status_row": 37,
 							"syntax": "Packages/C Improved/C Improved.tmLanguage",
 							"tab_size": 2,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1319.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 4,
-					"file": "src/parse.h",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 8784,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								6679,
-								6679
-							]
-						],
-						"settings":
-						{
-							"function_name_status_row": 203,
-							"syntax": "Packages/C++/C++.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 3654.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
-				},
-				{
-					"buffer": 5,
-					"file": "src/tree/tree_catseparator.c",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 496,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								330,
-								330
-							]
-						],
-						"settings":
-						{
-							"function_name_status_row": 16,
-							"syntax": "Packages/C Improved/C Improved.tmLanguage",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 8,
-					"type": "text"
-				},
-				{
-					"buffer": 6,
-					"file": "src/tree/tree_catlist.c",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 1306,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1129,
-								1129
-							]
-						],
-						"settings":
-						{
-							"function_name_status_row": 39,
-							"syntax": "Packages/C Improved/C Improved.tmLanguage",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 224.0,
+						"translation.y": 286.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 7,
 					"type": "text"
 				},
 				{
-					"buffer": 7,
-					"file": "src/parse/parse_error.c",
+					"buffer": 3,
+					"file": "src/expand/expand_arith.c",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1264,
+						"buffer_size": 535,
 						"regions":
 						{
 						},
@@ -808,33 +631,66 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 162.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 6,
+					"stack_index": 8,
 					"type": "text"
 				},
 				{
-					"buffer": 8,
-					"file": "src/source/source_msg.c",
+					"buffer": 4,
+					"file": "src/expand/expand_arith_binary.c",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 447,
+						"buffer_size": 1285,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								447,
-								447
+								1202,
+								1202
 							]
 						],
 						"settings":
 						{
-							"function_name_status_row": 16,
-							"syntax": "Packages/C Improved/C Improved.tmLanguage"
+							"function_name_status_row": 35,
+							"syntax": "Packages/C Improved/C Improved.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "src/history/history_load.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2186,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"function_name_status_row": 0,
+							"syntax": "Packages/C Improved/C Improved.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
@@ -844,26 +700,121 @@
 					"type": "text"
 				},
 				{
-					"buffer": 9,
-					"file": "src/source/source_position.c",
+					"buffer": 6,
+					"file": "src/history/history_set.c",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 496,
+						"buffer_size": 416,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								375,
-								375
+								180,
+								180
 							]
 						],
 						"settings":
 						{
-							"function_name_status_row": 12,
+							"function_name_status_row": 6,
 							"syntax": "Packages/C Improved/C Improved.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "src/history/Makefile.in",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1770,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"function_name_status_row": 0,
+							"syntax": "Packages/Makefile/Makefile.sublime-syntax",
+							"tab_size": 5,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1186,
+						"regions":
+						{
+							"match":
+							{
+								"flags": 112,
+								"regions":
+								[
+									[
+										194,
+										205
+									],
+									[
+										442,
+										453
+									],
+									[
+										672,
+										683
+									],
+									[
+										906,
+										917
+									],
+									[
+										1077,
+										1088
+									]
+								],
+								"scope": ""
+							}
+						},
+						"selection":
+						[
+							[
+								1084,
+								1084
+							]
+						],
+						"settings":
+						{
+							"detect_indentation": false,
+							"function_name_status_row": 33,
+							"line_numbers": false,
+							"output_tag": 1,
+							"result_base_dir": "",
+							"result_file_regex": "^([^ \t].*):$",
+							"result_line_regex": "^ +([0-9]+):",
+							"scroll_past_end": true,
+							"syntax": "Packages/Default/Find Results.hidden-tmLanguage",
+							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
@@ -873,34 +824,65 @@
 					"type": "text"
 				},
 				{
-					"buffer": 10,
-					"file": "lib/buffer.h",
+					"buffer": 9,
+					"file": "src/sh/sh_loop.c",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 10051,
+						"buffer_size": 2224,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								6508,
-								6508
+								1252,
+								1252
 							]
 						],
 						"settings":
 						{
-							"function_name_status_row": 141,
-							"syntax": "Packages/C11/C11.tmLanguage",
+							"function_name_status_row": 54,
+							"syntax": "Packages/C Improved/C Improved.tmLanguage",
 							"tab_size": 2,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1200.0,
+						"translation.y": 240.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 10,
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "src/sh/sh_setargs.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 966,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"function_name_status_row": 0,
+							"syntax": "Packages/C Improved/C Improved.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
 					"type": "text"
 				}
 			]
@@ -908,7 +890,7 @@
 	],
 	"incremental_find":
 	{
-		"height": 29.0
+		"height": 27.0
 	},
 	"input":
 	{
@@ -919,20 +901,29 @@
 		"cells":
 		[
 			[
+				2,
+				0,
+				3,
+				2
+			],
+			[
 				0,
 				0,
-				1,
-				1
+				2,
+				2
 			]
 		],
 		"cols":
 		[
 			0.0,
+			0.2,
+			0.8,
 			1.0
 		],
 		"rows":
 		[
 			0.0,
+			0.5,
 			1.0
 		]
 	},
@@ -949,7 +940,7 @@
 	"project": "shish.sublime-project",
 	"replace":
 	{
-		"height": 71.0
+		"height": 50.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -1227,7 +1218,7 @@
 		],
 		"width": 0.0
 	},
-	"selected_group": 0,
+	"selected_group": 1,
 	"settings":
 	{
 	},

@@ -6,7 +6,7 @@
  * ----------------------------------------------------------------------- */
 void
 source_newline(void) {
-#ifndef SHFMT
+#ifndef SHFORMAT
   /* process any pending here-docs for this line if we're not in a here-doc
      ourselves */
   if(redir_list && (source->mode & SOURCE_HERE) == 0)
@@ -17,7 +17,7 @@ source_newline(void) {
   source->pos.line++;
   source->pos.column = 1;
 
-  //#ifndef SHFMT
+  //#ifndef SHFORMAT
   //  if(source->mode & SOURCE_IACTIVE)
   //    prompt_show();
   //#endif

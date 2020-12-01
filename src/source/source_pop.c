@@ -9,7 +9,7 @@ void
 source_pop(void) {
   assert(source);
 
-#ifndef SHFMT
+#ifndef SHFORMAT
   if(source->mode & SOURCE_IACTIVE) {
     term_restore(source->b);
 
