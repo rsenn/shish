@@ -8,6 +8,7 @@
 void
 tree_cat(union node* node, stralloc* sa) {
   tree_cat_n(node, sa, 0);
+  stralloc_nul(sa);
 }
 
 /* print (sub)tree(list) to a stralloc
@@ -15,7 +16,7 @@ tree_cat(union node* node, stralloc* sa) {
 void
 tree_cat_n(union node* node, stralloc* sa, int depth) {
   const char* sep = NULL;
-
+again:
   switch(node->id) {
     case N_SIMPLECMD: {
       union node* n;
@@ -29,7 +30,8 @@ tree_cat_n(union node* node, stralloc* sa, int depth) {
 
       /* concatenate arguments */
       if(node->ncmd.args)
-        tree_catlist_n(node->ncmd.args, sa, " ", depth + 1);
+
+      tree_catlist_n(node->ncmd.args, sa, " ", depth + 1);
 
       /* concatenate redirections */
       if(node->ncmd.rdir) {
@@ -350,12 +352,13 @@ tree_cat_n(union node* node, stralloc* sa, int depth) {
     case N_FUNCTION: {
       stralloc_cats(sa, node->nfunc.name);
       stralloc_cats(sa, "() ");
-      /*      node = node->nfunc.body;
-            sep = "\n";
-            depth++;
-            goto again;*/
-      tree_cat_n(node->nfunc.body, sa, -(depth + 1));
-      break;
+
+      node = node->nfunc.body;
+      sep = "\n";
+      depth++;
+      goto again; /*
+ tree_cat_n(node->nfunc.body, sa, -(depth + 1));
+ break;*/
     }
 
     case N_ARGARITH: {

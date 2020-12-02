@@ -7,44 +7,50 @@ int tree_columnwrap = -1;
 void
 tree_catlist(union node* node, stralloc* sa, const char* sep) {
   tree_catlist_n(node, sa, sep, 0);
+  stralloc_nul(sa);
 }
 
 /* print (sub)tree(list) to a stralloc
  * ----------------------------------------------------------------------- */
 void
 tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth) {
-  ssize_t line_len, line_start;
+  size_t i = 0;
   stralloc next;
   stralloc_init(&next);
 
   do {
+    size_t line_start, add_len, line_len;
+
     stralloc_zero(&next);
     tree_cat_n(node, &next, depth);
+    stralloc_nul(&next);
 
     if(node->list.next || (node->id == N_SIMPLECMD && node->ncmd.bgnd)) {
 
-      if(sep)
+      if(sep  )
         tree_catseparator(&next, sep, depth);
       else
         stralloc_cats(&next, (node->ncmd.bgnd ? " & " : "; "));
     }
 
-    line_len = byte_chr(next.s, next.len, '\n');
+if(0 && i && !sep) {
 
-    stralloc_readyplus(sa, next.len + next.len >> 1);
+      add_len = byte_chr(next.s, next.len, '\n');
+      stralloc_nul(sa);
 
-    if((line_start = byte_rchr(sa->s, sa->len, '\n')) == sa->len)
-      line_start = 0;
+      line_start = byte_rchr(sa->s, sa->len, '\n');
 
-    // if(scan_whitenskip(&sa->s[line_start], line_len) < line_len)
-    {
-      if(line_start + line_len >= tree_columnwrap) {
-        tree_catseparator(sa, "\\\n", depth);
+      line_len = sa->len - line_start;
+
+      if(node->list.next && scan_whitenskip(&sa->s[line_start], line_len) < line_len - line_start) {
+        if(line_len + add_len >= tree_columnwrap) {
+          tree_catseparator(sa, "\\\n", depth);
+        }
       }
     }
 
     stralloc_cat(sa, &next);
-
+    i++;
   } while((node = node->list.next));
 
   stralloc_free(&next);

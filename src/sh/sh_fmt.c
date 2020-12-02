@@ -193,7 +193,7 @@ main(int argc, char** argv, char** envp) {
     stralloc_zero(&cmd);
 
     if(list)
-      tree_catlist(list, &cmd, NULL);
+      tree_cat(list, &cmd);
 
     if(!(p.tok & (T_NL | T_SEMI | T_BGND))) {
       /* we have a parse error */
