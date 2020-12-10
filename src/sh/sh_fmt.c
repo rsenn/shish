@@ -121,7 +121,7 @@ main(int argc, char** argv, char** envp) {
         break;
     }
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT
   debug_ulong("tree_columnwrap", tree_columnwrap, 0);
   debug_nl();
   debug_ulong("indent_width", indent_width, 0);
