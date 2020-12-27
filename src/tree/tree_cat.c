@@ -31,7 +31,7 @@ again:
       /* concatenate arguments */
       if(node->ncmd.args)
 
-      tree_catlist_n(node->ncmd.args, sa, " ", depth + 1);
+        tree_catlist_n(node->ncmd.args, sa, " ", depth + 1);
 
       /* concatenate redirections */
       if(node->ncmd.rdir) {

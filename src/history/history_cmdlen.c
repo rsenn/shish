@@ -24,7 +24,7 @@ history_cmdlen(const char* v) {
     while(parse_isspace(*b)) b++;
   }
 
-  for(; !mapping || b < mapend; b++) {
+  for(; mapping ? b < mapend : *b; b++) {
     /* to leave single quotation mode there must be a
        single quote which can't be escaped */
     if(quoted == 1) {

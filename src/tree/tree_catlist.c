@@ -27,13 +27,13 @@ tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth) {
 
     if(node->list.next || (node->id == N_SIMPLECMD && node->ncmd.bgnd)) {
 
-      if(sep  )
+      if(sep)
         tree_catseparator(&next, sep, depth);
       else
         stralloc_cats(&next, (node->ncmd.bgnd ? " & " : "; "));
     }
 
-if(0 && i && !sep) {
+    if(0 && i && !sep) {
 
       add_len = byte_chr(next.s, next.len, '\n');
       stralloc_nul(sa);
