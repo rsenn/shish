@@ -15,10 +15,12 @@ vartab_dump(struct vartab* vartab) {
             buffer_putulong(fd_out->w, (vartab->table[46]));
             buffer_putnlflush(fd_out->w);*/
 
+  buffer_putspad(fd_out->w,
+              "address ", sizeof(var)*2);
   buffer_puts(fd_out->w,
-              "address  name                     value                   nlen "
+              " name                     value                   nlen "
               "offs vlen lev buck lexhash          rndhash\n");
-  buffer_puts(fd_out->w,
+   buffer_puts(fd_out->w,
               "----------------------------------------------------------------"
               "----------------------------------------"
               "-----------\n");

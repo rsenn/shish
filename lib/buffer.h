@@ -219,6 +219,7 @@ ssize_t buffer_stubborn(buffer_op_proto* op, fd_t fd, const char* buf, size_t le
 ssize_t buffer_stubborn_read(buffer_op_proto* op, fd_t fd, const void* buf, size_t len, void* ptr);
 int buffer_truncfile(buffer* b, const char* fn);
 int buffer_putnc(buffer*, char c, int ntimes);
+int buffer_putspad(buffer*, const char* x, size_t pad);
 
 #ifdef __cplusplus
 }

@@ -125,7 +125,7 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #ifdef DEBUG
 #if DEBUG_OUTPUT && BUILTIN_DUMP
-    {"dump", &builtin_dump, B_DEFAULT, "[-v]"},
+    {"dump", &builtin_dump, B_DEFAULT, "[-vltsfm]"},
 #endif
 #endif /* DEBUG */
 #if BUILTIN_ECHO

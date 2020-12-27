@@ -11,8 +11,8 @@ var_dump(struct var* var) {
   size_t n;
 
   /* var struct address */
-  n = fmt_xlong(numbuf, (size_t)var);
-  buffer_putnspace(fd_out->w, 8 - n);
+  n = fmt_xlonglong(numbuf, (size_t)var);
+  buffer_putnspace(fd_out->w, sizeof(var)*2 - n);
   buffer_put(fd_out->w, numbuf, n);
   buffer_putspace(fd_out->w);
 
