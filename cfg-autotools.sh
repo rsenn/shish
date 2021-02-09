@@ -9,7 +9,7 @@ realpath() {
 fi
 
 cfg() { 
-  : ${build=$(gcc -dumpmachine)}
+ (: ${build=$(gcc -dumpmachine)}
 
   case "$build" in
     *--*) build=${build%%--*}-${build#*--} ;;
@@ -23,13 +23,13 @@ cfg() {
   mkdir -p $builddir;
   : ${relsrcdir=`realpath --relative-to "$builddir" .`}
 
-  if [ "$DEBUG" -eq 1 ]; then
+  if [ "${DEBUG:-0}" -eq 1 ]; then
     debug="--enable-debug"
   else 
     debug="--disable-debug"
   fi
 
-  ( : set -x; cd $builddir;
+  cd $builddir
   ${CONFIGURE:-"$relsrcdir"/configure} \
     ${build:+--build="$build"} \
     ${host:+--host="$host"} \
@@ -38,7 +38,8 @@ cfg() {
         ${localstatedir:+--localstatedir="$localstatedir"} \
         --enable-{silent-rules,color,dependency-tracking} \
         $debug \
-        "$@")
+        "$@" &&
+  echo "Configured in '$builddir'" 1>&2)
 }
 
 cfg-android() {
