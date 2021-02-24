@@ -1,5 +1,6 @@
 #include "../expand.h"
 #include "../../lib/fmt.h"
+#include "../../lib/byte.h"
 #include "../parse.h"
 #include "../redir.h"
 #include "../tree.h"
@@ -222,7 +223,7 @@ again:
       union node* n;
       stralloc_cats(sa, (node->id == N_WHILE ? "while " : "until "));
       tree_catlist(node->nloop.test, sa, NULL);
-      stralloc_cats(sa, "; do ");
+      tree_catseparator(sa, "; do\n  ", depth);
       tree_catlist_n(node->nloop.cmds, sa, NULL, depth + 1);
       stralloc_cats(sa, "; done");
 
@@ -256,7 +257,7 @@ again:
       tree_catlist(node->ncasenode.pats, sa, "|");
       stralloc_cats(sa, ") ");
       if(node->ncasenode.cmds)
-        tree_catlist_n(node->ncasenode.cmds, sa, "\n", depth + 1);
+        tree_catlist_n(node->ncasenode.cmds, sa, sep == NULL ? "\n" : sep, depth + 1);
 
       stralloc_cats(sa, sep == NULL ? " ;;" : ";;");
       break;
@@ -282,11 +283,16 @@ again:
       n = node->ngrp.cmds;
 
       if(n->id != N_SIMPLECMD || n->list.next)
-        sep = "\n";
+        sep = "";
+
+      // tree_catseparator(sa, sep == NULL ? " " : sep, depth  - 1);
+
+      if(sa->len && byte_chr(" \t", 2, sa->s[sa->len - 1]) < 2)
+        sa->len--;
 
       stralloc_catc(sa, '(');
 
-      tree_catlist_n(node->ngrp.cmds, sa, sep, depth - 1);
+      tree_catlist_n(node->ngrp.cmds, sa, sep, depth - 2);
       stralloc_catc(sa, ')');
 
       /* concatenate redirections */
@@ -298,15 +304,16 @@ again:
     }
     case N_CMDLIST: {
       union node* n;
-      // stralloc_catc(sa, '{');
+      stralloc_catc(sa, '{');
       int d = depth < 0 ? -depth : depth;
 
       tree_catseparator(sa, sep == NULL ? "{\n" : sep, d);
       tree_catlist_n(node->ngrp.cmds, sa, sep == NULL ? "; " : sep, d + 1);
-      if(depth < 0)
-        stralloc_cats(sa, "\n}");
-      else
-        tree_catseparator(sa, sep == NULL ? "; }" : sep, d);
+
+      stralloc_cats(sa, ";");
+
+      tree_catseparator(sa, sep == NULL ? "\n" : sep, d - 1);
+      stralloc_catc(sa, '}');
 
       /* concatenate redirections */
       for(n = node->ncmd.rdir; n; n = n->list.next) {

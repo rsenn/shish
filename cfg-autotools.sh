@@ -43,11 +43,11 @@ cfg() {
 }
 
 cfg-android() {
-  (builddir=build/android
-  host="arm-linux-androideabi"
-  prefix=/opt/arm-linux-androideabi/sysroot/usr
-  libdir=$prefix/lib
+  (: ${builddir=build/android}
+  : ${host="arm-linux-androideabi"}
+  : ${prefix=/opt/arm-linux-androideabi/sysroot/usr}
 
+  libdir=$prefix/lib \
   CC="arm-linux-androideabi-gcc" \
   CXX="arm-linux-androideabi-g++" \
   cfg \
@@ -57,11 +57,11 @@ cfg-android() {
 
 cfg-android64() 
 {
-  (builddir=build/android64
-  host="aarch64-linux-android"
-  prefix=/opt/aarch64-linux-android/sysroot/usr
-  libdir=$prefix/lib
-
+  (: ${builddir=build/android64}
+  : ${host="aarch64-linux-android"}
+  : ${prefix=/opt/aarch64-linux-android/sysroot/usr}
+  
+  libdir=$prefix/lib \
   CC="aarch64-linux-android-gcc" \
   CXX="aarch64-linux-android-g++" \
   cfg \
@@ -70,13 +70,13 @@ cfg-android64()
 }
 
 cfg-diet() {
- (build=$(${CC:-gcc} -dumpmachine)
-  host=${build/-gnu/-dietlibc}
-  builddir=build/$host
-  prefix=/opt/diet
-  libdir=/opt/diet/lib-${host%%-*}
-  bindir=/opt/diet/bin-${host%%-*}
+ (: ${build=$(${CC:-gcc} -dumpmachine)}
+  : ${host=${build/-gnu/-dietlibc}}
+  : ${builddir=build/$host}
+  : ${prefix=/opt/diet}
   
+  libdir=/opt/diet/lib-${host%%-*} \
+  bindir=/opt/diet/bin-${host%%-*} \
   CC="diet-gcc" \
   PKG_CONFIG="$host-pkg-config" \
   LIBS="${LIBS:+$LIBS }-liconv -lpthread" \
@@ -91,11 +91,11 @@ cfg-diet() {
 
 
 cfg-mingw() {
- (build=$(gcc -dumpmachine)
-  host=${build%%-*}-w64-mingw32
-  prefix=/usr/$host/sys-root/mingw
+ (: ${build=$(gcc -dumpmachine)}
+  : ${host=${build%%-*}-w64-mingw32}
+  : ${prefix=/usr/$host/sys-root/mingw}
+  : ${builddir=build/$host}
   
-  builddir=build/$host \
   bindir=$prefix/bin \
   libdir=$prefix/lib \
   cfg \
@@ -103,9 +103,9 @@ cfg-mingw() {
 }
 
 cfg-musl() {
- (build=$(${CC:-gcc} -dumpmachine)
-  host=${build/-gnu/-musl}
-  host=${host/-pc-/-}
+ (: ${build=$(${CC:-gcc} -dumpmachine)}
+  : ${host=${build/-gnu/-musl}}
+  : ${host=${host/-pc-/-}}
   : ${builddir=build/$host}
   : ${prefix=/usr/lib/musl}
   : ${includedir=$prefix/include}
@@ -126,14 +126,13 @@ cfg-musl() {
 }
 
 cfg-tcc() {
- (build=$(cc -dumpmachine)
-  host=${build/-gnu/-tcc}
-  builddir=build/$host
-  prefix=/usr
-  includedir=/usr/lib/$build/tcc/include
-  libdir=/usr/lib/$build/tcc/
-  bindir=/usr/bin
-  
+ (: ${build=$(cc -dumpmachine)}
+  : ${host=${build/-gnu/-tcc}}
+  : ${builddir=build/$host}
+  : ${prefix=/usr}
+  includedir=/usr/lib/$build/tcc/include \
+  libdir=/usr/lib/$build/tcc/ \
+  bindir=/usr/bin \
   CC=${TCC:-tcc} \
   cfg \
     "$@")
