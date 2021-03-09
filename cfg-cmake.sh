@@ -1,5 +1,5 @@
 cfg() {
-  if type gcc 2>/dev/null >/dev/null && type g++ 2>/dev/null >/dev/null; then
+ (if type gcc 2>/dev/null >/dev/null && type g++ 2>/dev/null >/dev/null; then
     : ${CC:=gcc} ${CXX:=g++}
   elif type clang 2>/dev/null >/dev/null && type clang++ 2>/dev/null >/dev/null; then
     : ${CC:=clang} ${CXX:=clang++}
@@ -52,7 +52,7 @@ cfg() {
   esac
   : ${generator:="CodeLite - Unix Makefiles"}
 
- (mkdir -p $builddir
+  mkdir -p $builddir
   : ${relsrcdir=`realpath --relative-to "$builddir" .`}
   : set -x
   cd "${builddir:-.}"
@@ -237,13 +237,13 @@ cfg-tcc() {
 
 cfg-musl() {
  (: ${build=$(${CC:-gcc} -dumpmachine | sed 's|-pc-|-|g')}
-  : ${host=${build%-*}-musl}
+  host=${build%-*}-musl
 
  : ${prefix=/opt/musl}
  : ${includedir=$prefix/include/$host}
  : ${libdir=$prefix/lib/$host}
  : ${bindir=$prefix/bin/$host}
-  : ${builddir=build/$host}
+  builddir=build/$host
 
   CC=musl-gcc \
   PKG_CONFIG=musl-pkg-config \
