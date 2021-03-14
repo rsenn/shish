@@ -10,8 +10,7 @@
 struct var*
 var_create(const char* v, int flags) {
   struct search ctx;
-  struct var* newvar;
-  struct var* oldvar;
+  struct var *newvar, *oldvar;
 
   vartab_hash(sh->varstack, v, &ctx);
   if((oldvar = var_search(v, &ctx))) {

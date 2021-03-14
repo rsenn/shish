@@ -20,6 +20,12 @@ var_set(char* v, int flags) {
     return 0;
   }
 
+  if(v[var->len] == '\0') {
+    var->sa.len = var->offset;
+    stralloc_nul(&var->sa);
+    return var;
+  }
+
   /* free if it was a previously allocated string */
   if(var->sa.a)
     stralloc_free(&var->sa);
@@ -28,9 +34,8 @@ var_set(char* v, int flags) {
 
   var->sa.s = v;
   var->sa.len = str_len(v);
-  var->offset = var->len;
 
-  if(var->len < var->sa.len)
+  if((var->offset = var->len) < var->sa.len)
     var->offset++;
 
   return var;

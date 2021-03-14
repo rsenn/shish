@@ -78,7 +78,7 @@ builtin_read(int argc, char* argv[]) {
       ptr += len;
     }
 
-    while(index < num_args) var_setv(argp[index++], "", 0, 0);
+    while(index < num_args) var_set(argp[index++], 0);
 
     /* set each argument */
     for(; *argp; argp++) {

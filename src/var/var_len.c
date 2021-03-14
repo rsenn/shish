@@ -2,20 +2,9 @@
 
 size_t
 var_len(const char* v) {
-  register const char* s = v;
-  for(;;) {
-    if(!*s || *s == '=')
+  register const char* s;
+  for(s = v; *s; ++s)
+    if(*s == '=')
       break;
-    ++s;
-    if(!*s || *s == '=')
-      break;
-    ++s;
-    if(!*s || *s == '=')
-      break;
-    ++s;
-    if(!*s || *s == '=')
-      break;
-    ++s;
-  }
   return s - v;
 }
