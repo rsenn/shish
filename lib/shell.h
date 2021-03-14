@@ -26,13 +26,22 @@ char* shell_dirname(char* path);
 char* shell_gethome(int uid);
 char* shell_gethostname(stralloc* sa);
 
+struct optstate {
+  int ind, idx, ofs;
+  char opt;
+  char* arg;
+};
+
+int shell_getopt_r(struct optstate*, int argc, char* const argv[], const char* optstring);
 int shell_getopt(int argc, char* const argv[], const char* optstring);
 
-extern int shell_optind;
-extern int shell_optidx;
-extern int shell_optofs;
-extern char shell_optopt;
-extern char* shell_optarg;
+extern struct optstate shell_opt;
+
+#define shell_optarg shell_opt.arg
+#define shell_optidx shell_opt.idx
+#define shell_optind shell_opt.ind
+#define shell_optofs shell_opt.ofs
+#define shell_optopt shell_opt.opt
 
 /* set the output buffer and the basename for error messages */
 void shell_init(buffer* b, const char* n);

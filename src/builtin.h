@@ -43,6 +43,7 @@ int builtin_export(int argc, char* argv[]);
 int builtin_expr(int argc, char* argv[]);
 int builtin_false(int argc, char* argv[]);
 int builtin_fdtable(int argc, char* argv[]);
+int builtin_getopts(int argc, char* argv[]);
 int builtin_hash(int argc, char* argv[]);
 int builtin_help(int argc, char* argv[]);
 int builtin_history(int argc, char* argv[]);

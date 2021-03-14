@@ -8,6 +8,7 @@ list(
   exec
   exit
   export
+  getopts
   hash
   history
   pwd

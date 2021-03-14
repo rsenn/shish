@@ -53,6 +53,9 @@
 #ifndef BUILTIN_HASH
 #define BUILTIN_HASH 1
 #endif
+#ifndef BUILTIN_GETOPTS
+#define BUILTIN_GETOPTS 1
+#endif
 #ifndef BUILTIN_HELP
 #define BUILTIN_HELP 0
 #endif
@@ -166,6 +169,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_FDTABLE
     {"fdtable", &builtin_fdtable, B_DEFAULT, ""},
+#endif
+#if BUILTIN_GETOPTS
+    {"getopts", &builtin_getopts, B_SPECIAL, "optstring name [arg ... ]"},
 #endif
 #if BUILTIN_HASH
     {"hash", &builtin_hash, B_DEFAULT, ""},
