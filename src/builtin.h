@@ -50,6 +50,7 @@ int builtin_mkdir(int argc, char* argv[]);
 int builtin_mktemp(int argc, char* argv[]);
 int builtin_ln(int argc, char* argv[]);
 int builtin_pwd(int argc, char* argv[]);
+int builtin_read(int argc, char* argv[]);
 int builtin_readonly(int argc, char* argv[]);
 int builtin_rm(int argc, char* argv[]);
 int builtin_rmdir(int argc, char* argv[]);

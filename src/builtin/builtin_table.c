@@ -68,6 +68,9 @@
 #ifndef BUILTIN_SET
 #define BUILTIN_SET 1
 #endif
+#ifndef BUILTIN_READ
+#define BUILTIN_READ 1
+#endif
 #ifndef BUILTIN_READONLY
 #define BUILTIN_READONLY 1
 #endif
@@ -184,6 +187,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_SHIFT
     {"shift", &builtin_shift, B_SPECIAL, "[n]"},
+#endif
+#if BUILTIN_READ
+    {"read", &builtin_read, B_SPECIAL, "[-rs] [-d DELIM] [-n|-N NCHARS] [-p PROMPT] [-t TIMEOUT] [-u FD] [name ...]"},
 #endif
 #if BUILTIN_READONLY
     {"readonly", &builtin_readonly, B_SPECIAL, "[-p] [name[=value] ...]"},
