@@ -15,7 +15,7 @@ int
 term_read(int fd, char* buf, unsigned int len) {
   char c;
   int ret;
-  static unsigned remain;
+  static unsigned long remain;
 
   if(remain) {
   check_remain:

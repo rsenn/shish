@@ -27,6 +27,7 @@ int builtin_invopt(char* argv[]);
  * ----------------------------------------------------------------------- */
 int builtin_source(int argc, char* argv[]);
 int builtin_true(int argc, char* argv[]);
+int builtin_alias(int argc, char* argv[]);
 int builtin_basename(int argc, char* argv[]);
 int builtin_break(int argc, char* argv[]);
 int builtin_cat(int argc, char* argv[]);

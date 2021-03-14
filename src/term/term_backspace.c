@@ -14,7 +14,7 @@ term_backspace(void) {
 
     buffer_put(term_output, out, 3);
   } else {
-    unsigned len;
+    unsigned long len;
     len = term_cmdline.len - term_pos;
     out[0] = '\b';
     buffer_putc(term_output, out[0]);

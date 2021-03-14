@@ -10,7 +10,7 @@ parse_bquoted(struct parser* p) {
   char c;
   union node* cmds;
   struct parser subp;
-  enum tok_flag end_tok;
+  enum tok_id end_tok;
 
   if(p->tok == T_NAME)
     p->tok = T_WORD;

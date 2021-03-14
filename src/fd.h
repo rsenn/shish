@@ -146,8 +146,8 @@ extern struct fd** const fdtable;
 #define fd_err fdtable[STDERR_FILENO]
 
 extern struct fd* fd_list[D_MAX];
-extern int fd_exp;
-extern int fd_top;
+extern unsigned int fd_exp;
+extern unsigned int fd_top;
 extern int fd_lo;
 extern int fd_hi;
 extern struct fd fd_nullfd;

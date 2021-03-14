@@ -5,7 +5,7 @@
  * this assumes <s> has been malloced
  * ----------------------------------------------------------------------- */
 void
-term_setline(const char* s, unsigned len) {
+term_setline(const char* s, unsigned long len) {
   unsigned int oldlen = term_cmdline.len;
 
   term_left(term_pos);

@@ -1,6 +1,7 @@
 list(
   APPEND
   MINIMAL_BUILTINS
+  alias
   break
   cd
   eval

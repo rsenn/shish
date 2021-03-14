@@ -74,7 +74,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       case S_ARG: {
         if(param->numb == 0)
           stralloc_cats(&value, sh_argv0);
-        else if((unsigned)(param->numb - 1) < sh->arg.c)
+        else if(param->numb - 1 < sh->arg.c)
           stralloc_cats(&value, (sh->arg.v + sh->arg.s)[param->numb - 1]);
 
         break;

@@ -7,9 +7,9 @@
 void
 term_ansi(void) {
   char c;
-  unsigned num;
+  unsigned long num;
   char buf[16];
-  unsigned i;
+  unsigned long i;
 
   /* when an ANSI code is received, then disable dumb terminal mode */
   /*  term_dumb = 0;*/
@@ -30,7 +30,7 @@ term_ansi(void) {
   } while(parse_isdigit(c) || c == ';');
 
   num = 1;
-  scan_uint(buf, &num);
+  scan_ulong(buf, &num);
 
   switch(c) {
     case 'A': history_prev(); break;

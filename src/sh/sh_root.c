@@ -9,12 +9,7 @@ struct env sh_root = {/* .parent = */ NULL,
                       /* .flags = */ 0,
                       /* .exitcode = */ 0,
                       /* .fdstack = */ &fdstack_root,
-                      /* .varstack = */ &vartab_root,
-                      /* .jmpbuf = */ {0},
-                      /* .jump = */ 0,
-                      /* .arg = */ {0},
-                      /* .parser = */ 0,
-                      /* .eval = */ 0};
+                      /* .varstack = */ &vartab_root};
 
 struct env* sh = &sh_root;
 

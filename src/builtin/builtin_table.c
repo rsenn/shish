@@ -8,6 +8,9 @@
 #include "src/builtin_config.h"
 #endif
 
+#ifndef BUILTIN_ALIAS
+#define BUILTIN_ALIAS 1
+#endif
 #ifndef BUILTIN_BREAK
 #define BUILTIN_BREAK 1
 #endif
@@ -107,6 +110,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_TRUE
     {":", &builtin_true, B_SPECIAL, ""},
+#endif
+#if BUILTIN_ALIAS
+    {"alias", &builtin_alias, B_SPECIAL, "[-p] [name[=value] ...]"},
 #endif
 #if BUILTIN_BASENAME
     {"basename", &builtin_basename, B_DEFAULT, "path"},
