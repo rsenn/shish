@@ -1,6 +1,8 @@
 #include "../../lib/byte.h"
 #include "../../lib/str.h"
 #include "../var.h"
+#include "../sh.h"
+#include "../fd.h"
 
 /* set a variable
  * ----------------------------------------------------------------------- */
@@ -11,6 +13,12 @@ var_set(char* v, int flags) {
   /* find/create the variable */
   if((var = var_create(v, flags)) == NULL)
     return var;
+
+  if(var->flags & V_READONLY) {
+    sh_msgn(var->sa.s, var->len);
+    buffer_putsflush(fd_err->w, ": readonly variable\n");
+    return 0;
+  }
 
   /* free if it was a previously allocated string */
   if(var->sa.a)

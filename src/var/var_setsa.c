@@ -1,4 +1,6 @@
 #include "../var.h"
+#include "../fd.h"
+#include "../sh.h"
 #include <assert.h>
 
 /* set a variable from a stralloc in the format: name=word
@@ -23,6 +25,12 @@ var_setsa(stralloc* sa, int flags) {
 
   /* find/create new variable on top vartab */
   var = var_create(sa->s, flags);
+
+  if(var->flags & V_READONLY) {
+    sh_msgn(var->sa.s, var->len);
+    buffer_putsflush(fd_err->w, ": readonly variable\n");
+    return 0;
+  }
 
   /* now check how we set the value, there are 4 possibilities */
   if(var->flags & V_FREESTR) {

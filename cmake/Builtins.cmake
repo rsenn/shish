@@ -10,6 +10,8 @@ list(
   hash
   history
   pwd
+  read
+  readonly
   set
   shift
   source

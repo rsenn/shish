@@ -68,6 +68,9 @@
 #ifndef BUILTIN_SET
 #define BUILTIN_SET 1
 #endif
+#ifndef BUILTIN_READONLY
+#define BUILTIN_READONLY 1
+#endif
 #ifndef BUILTIN_RM
 #define BUILTIN_RM 0
 #endif
@@ -181,6 +184,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_SHIFT
     {"shift", &builtin_shift, B_SPECIAL, "[n]"},
+#endif
+#if BUILTIN_READONLY
+    {"readonly", &builtin_readonly, B_SPECIAL, "[-p] [name[=value] ...]"},
 #endif
 #if BUILTIN_RM
     {"rm", &builtin_rm, B_DEFAULT, "[-vrf] [file]..."},

@@ -18,7 +18,7 @@ vartab_dump(struct vartab* vartab) {
   buffer_putspad(fd_out->w, "address ", sizeof(var) * 2);
   buffer_puts(fd_out->w,
               " name                     value                   nlen "
-              "offs vlen lev buck lexhash          rndhash\n");
+              "offs vlen lev buck lexhash          rndhash        flags\n");
   buffer_putnc(fd_out->w, '-', 111 + sizeof(var) * 2);
   buffer_putc(fd_out->w, '\n');
 

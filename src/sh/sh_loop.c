@@ -39,6 +39,7 @@ sh_loop(void) {
     stralloc_zero(&cmd);
 
     if(list) {
+      int status;
       struct eval e;
       tree_catlist(list, &cmd, NULL);
 
@@ -64,7 +65,13 @@ sh_loop(void) {
 #endif /* DEBUG_OUTPUT */
 
       eval_push(&e, E_JCTL);
-      eval_tree(&e, list, E_ROOT | E_LIST);
+      status = eval_tree(&e, list, E_ROOT | E_LIST);
+
+      debug_ulong("status", status, 0);
+      debug_nl_fl();
+      debug_ulong("sh->exitcode", sh->exitcode, 0);
+      debug_nl_fl();
+
       sh->exitcode = eval_pop(&e);
 
       tree_free(list);

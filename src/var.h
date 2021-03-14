@@ -22,6 +22,7 @@
 #define V_LOCAL 0x10
 #define V_UNSET 0x20
 #define V_INIT 0x40 /* do only set when unset */
+#define V_READONLY 0x80
 
 struct search;
 

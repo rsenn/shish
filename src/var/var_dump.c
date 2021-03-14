@@ -90,5 +90,12 @@ var_dump(struct var* var) {
   n = fmt_xlonglong(numbuf, var->rndhash);
   buffer_putnspace(fd_out->w, 16 - n);
   buffer_put(fd_out->w, numbuf, n);
+  buffer_putspace(fd_out->w);
+
+  /* flags */
+  n = fmt_xlong(numbuf, var->flags);
+  buffer_putnc(fd_out->w, '0', 2 - n);
+  buffer_put(fd_out->w, numbuf, n);
+
   buffer_putnlflush(fd_out->w);
 }

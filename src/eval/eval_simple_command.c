@@ -33,7 +33,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   union node* nptr;
   int argc;
   char** argv;
-  int status;
+  int status = 0;
   union node* args = NULL;
   union node* assigns = NULL;
   union command cmd = {NULL};
@@ -59,9 +59,17 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
     if(!(e->flags & E_EXIT) && cmd.ptr && id != H_SBUILTIN)
       vartab_push(&vars);
 
-    for(nptr = assigns; nptr; nptr = nptr->list.next) var_setsa(&nptr->narg.stra, (cmd.ptr ? V_EXPORT : V_DEFAULT));
+    for(nptr = assigns; nptr; nptr = nptr->list.next) {
+      if(!var_setsa(&nptr->narg.stra, (cmd.ptr ? V_EXPORT : V_DEFAULT))) {
+        status = 1;
+        break;
+      }
+    }
 
     tree_free(assigns);
+
+    if(status)
+      goto end;
   }
 
   /* do redirections if present */
@@ -112,10 +120,8 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
   /* if there is no command we can return after
      setting the vars and doing the redirections */
-  if(args == NULL) {
-    status = 0;
+  if(args == NULL)
     goto end;
-  }
 
   /* when the command wasn't found we abort */
   if(cmd.ptr == NULL) {

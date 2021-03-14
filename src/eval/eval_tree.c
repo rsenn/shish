@@ -29,6 +29,7 @@ eval_tree(struct eval* e, union node* node, int tempflags) {
     if(ex && (!list || node->list.next == NULL))
       e->flags |= E_EXIT;
     ret = eval_node(e, node);
+    e->exitcode = ret;
 
     if(!list)
       break;
