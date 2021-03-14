@@ -31,7 +31,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       case S_ARGV: {
         char** s;
 
-        for(s = sh->arg.v; *s;) {
+        for(s = sh->arg.v + sh->arg.s; *s;) {
           stralloc_cats(&n->narg.stra, *s);
           if(*++s)
             stralloc_catc(&n->narg.stra, ' ');
@@ -75,7 +75,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         if(param->numb == 0)
           stralloc_cats(&value, sh_argv0);
         else if(param->numb - 1 < sh->arg.c)
-          stralloc_cats(&value, sh->arg.v[param->numb - 1]);
+          stralloc_cats(&value, (sh->arg.v + sh->arg.s)[param->numb - 1]);
 
         break;
       }

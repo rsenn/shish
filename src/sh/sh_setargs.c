@@ -8,16 +8,17 @@
 void
 sh_setargs(char** argv, int dup) {
   unsigned i;
+  struct arg* args = &sh->arg;
 
-  sh->arg.v -= sh->arg.s;
-  sh->arg.c += sh->arg.s;
-  sh->arg.s = 0;
+  args->v -= args->s;
+  args->c += args->s;
+  args->s = 0;
 
   /* free current argv if it is not the initial one */
-  if(sh->arg.v != sh_argv && sh->arg.a) {
-    for(i = 0; sh->arg.v[i]; i++) shell_free(sh->arg.v[i]);
+  if(args->v != sh_argv && args->a) {
+    for(i = 0; args->v[i]; i++) shell_free(args->v[i]);
 
-    shell_free(sh->arg.v);
+    shell_free(args->v);
   }
 
   if(argv == NULL)
@@ -25,18 +26,18 @@ sh_setargs(char** argv, int dup) {
 
   /* set new args */
   if(argv == sh_argv || !dup) {
-    sh->arg.v = sh_argv;
-    sh->arg.c = sh_argc;
-    sh->arg.a = 0;
+    args->v = sh_argv;
+    args->c = sh_argc;
+    args->a = 0;
   } else {
-    for(sh->arg.c = 0; argv[sh->arg.c]; sh->arg.c++)
+    for(args->c = 0; argv[args->c]; args->c++)
       ;
 
-    sh->arg.v = shell_alloc(sizeof(char*) * (sh->arg.c + 1));
+    args->v = shell_alloc(sizeof(char*) * (args->c + 1));
 
-    for(i = 0; i < sh->arg.c; i++) sh->arg.v[i] = shell_strdup(argv[i]);
+    for(i = 0; i < args->c; i++) args->v[i] = shell_strdup(argv[i]);
 
-    sh->arg.v[i] = NULL;
-    sh->arg.a = 1;
+    args->v[i] = NULL;
+    args->a = 1;
   }
 }

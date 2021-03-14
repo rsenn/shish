@@ -67,10 +67,10 @@ sh_loop(void) {
       eval_push(&e, E_JCTL);
       status = eval_tree(&e, list, E_ROOT | E_LIST);
 
-      debug_ulong("status", status, 0);
+      /*debug_ulong("status", status, 0);
       debug_nl_fl();
       debug_ulong("sh->exitcode", sh->exitcode, 0);
-      debug_nl_fl();
+      debug_nl_fl();*/
 
       sh->exitcode = eval_pop(&e);
 

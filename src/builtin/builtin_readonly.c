@@ -4,7 +4,7 @@
 #include "../var.h"
 #include "../vartab.h"
 
-/* export built-in
+/* readonly built-in
  *
  * ----------------------------------------------------------------------- */
 int

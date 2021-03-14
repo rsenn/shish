@@ -1,11 +1,12 @@
 #include "../builtin.h"
 #include "../fd.h"
 #include "../var.h"
+#include "../debug.h"
 #include "../../lib/scan.h"
 #include "../../lib/str.h"
 #include <math.h>
 
-/* export built-in
+/* read built-in
  *
  * ----------------------------------------------------------------------- */
 int
@@ -35,6 +36,9 @@ builtin_read(int argc, char* argv[]) {
 
   if(delim)
     buffer_get_token_sa(fd_in->r, &line, delim, str_len(delim));
+
+  debug_stralloc("line", &line, 0, '"');
+  debug_nl_fl();
 
   argp = &argv[shell_optind];
 
