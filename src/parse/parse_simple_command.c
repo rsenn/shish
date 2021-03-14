@@ -40,28 +40,41 @@ parse_simple_command(struct parser* p) {
           struct alias* a;
 
           if((a = parse_findalias(p, argstr->stra.s, argstr->stra.len))) {
-            char* code;
             size_t codelen;
             struct source src;
             struct fd fd;
             struct parser aliasp;
             union node* node;
-            code = alias_code(a, &codelen);
+            char* code = alias_code(a, &codelen);
 
             source_buffer(&src, &fd, code, codelen);
             parse_init(&aliasp, P_ALIAS);
             aliasp.alias = a;
 
-            node = parse_list(&aliasp);
+            node = parse_simple_command(&aliasp);
 
             buffer_puts(fd_err->w, "alias list ");
-            debug_list(node, 0);
+            debug_node(node, 0);
 
             source_popfd(&fd);
-            debug_node(*aptr, 0);
+
+            // debug_node(*aptr, 0);
+
+            if(node && node->id == N_SIMPLECMD) {
+              struct ncmd* simple_cmd = &node->ncmd;
+              tree_free(*aptr);
+
+              vptr = tree_append(vptr, simple_cmd->vars);
+              rptr = tree_append(rptr, simple_cmd->rdir);
+              aptr = tree_append(aptr, simple_cmd->args);
+
+              shell_free(simple_cmd);
+            }
           }
         }
-        aptr = &(*aptr)->list.next;
+
+        if(*aptr)
+          aptr = &(*aptr)->list.next;
 
         p->flags |= P_NOASSIGN;
         break;

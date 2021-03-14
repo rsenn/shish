@@ -376,6 +376,7 @@ void tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth);
 void tree_catseparator(stralloc* sa, const char* sep, int depth);
 union node* tree_newlink(union node** nptr, enum nod_id nod);
 unsigned int tree_count(union node* node);
+union node** tree_append(union node**, union node*);
 
 #ifdef BUFFER_H
 void tree_print(union node*, buffer*);
