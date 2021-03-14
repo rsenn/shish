@@ -69,7 +69,7 @@ builtin_read(int argc, char* argv[]) {
     ifs = var_vdefault("IFS", IFS_DEFAULT, &ifslen);
     buffer_puts(fd_err->w, "ifslen: ");
     buffer_putlong(fd_err->w, ifslen);
-    buffer_puts(fd_err->w, "ifs: ");
+    buffer_puts(fd_err->w, " ifs: ");
     buffer_put(fd_err->w, ifs, ifslen);
     buffer_putnlflush(fd_err->w);
 
