@@ -62,6 +62,9 @@
 #ifndef BUILTIN_HISTORY
 #define BUILTIN_HISTORY 1
 #endif
+#ifndef BUILTIN_LOCAL
+#define BUILTIN_LOCAL 1
+#endif
 #ifndef BUILTIN_LN
 #define BUILTIN_LN 0
 #endif
@@ -147,11 +150,9 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_DIRNAME
     {"dirname", &builtin_dirname, B_DEFAULT, "path"},
 #endif
-#ifdef DEBUG
-#if DEBUG_OUTPUT && BUILTIN_DUMP
+#if BUILTIN_DUMP
     {"dump", &builtin_dump, B_DEFAULT, "[-vltsfm]"},
 #endif
-#endif /* DEBUG */
 #if BUILTIN_ECHO
     {"echo", &builtin_echo, B_DEFAULT, "[-ne] [arg ...]"},
 #endif
@@ -193,6 +194,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_LN
     {"ln", &builtin_ln, B_DEFAULT, "[-sfv]"},
+#endif
+#if BUILTIN_LOCAL
+    {"local", &builtin_local, B_SPECIAL, "[option] name[=value] ..."},
 #endif
 #if BUILTIN_MKDIR
     {"mkdir", &builtin_mkdir, B_DEFAULT, "[-p]"},

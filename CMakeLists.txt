@@ -47,6 +47,9 @@ endif("${CMAKE_BUILD_TYPE}" MATCHES ".*Deb.*")
 
 if(BUILD_DEBUG)
   add_definitions(-DDEBUG=1)
+  set(ENABLE_DUMP
+      TRUE
+      CACHE BOOL "Enable `dump' builtin" FORCE)
 else(BUILD_DEBUG)
   add_definitions(-DNDEBUG=1)
 endif(BUILD_DEBUG)
@@ -346,4 +349,3 @@ set(OUTSTR "${OUTSTR}\nEnabled builtins:\n  ${BUILTINS_ENABLED}\n")
 set(OUTSTR "${OUTSTR}\nDisabled builtins:\n  ${BUILTINS_DISABLED}\n")
 set(OUTSTR "${OUTSTR}\nAdditional libraries:\n  ${MATH_LIBRARY} ${WINSOCK2_LIBRARY}\n")
 message(STATUS "${OUTSTR}")
- 

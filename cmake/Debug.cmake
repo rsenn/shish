@@ -18,8 +18,6 @@ if(OPT_C_G_GDB)
   endif(NOT "${CMAKE_C_FLAGS_DEBUG}" MATCHES "-ggdb")
 endif(OPT_C_G_GDB)
 
-
-
 foreach(M ALLOC FD FDSTACK FDTABLE PARSE)
   string(TOLOWER NAME "${M}")
   option(DEBUG_${M} "Debug ${NAME}" OFF)
@@ -27,3 +25,7 @@ foreach(M ALLOC FD FDSTACK FDTABLE PARSE)
     add_definitions(-DDEBUG_${M})
   endif(DEBUG_${M})
 endforeach(M ALLOC FD FDSTACK FDTABLE PARSE)
+
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+  set(ENABLE_DUMP TRUE)
+endif("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")

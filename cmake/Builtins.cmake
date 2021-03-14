@@ -12,6 +12,7 @@ list(
   getopts
   hash
   history
+  local
   pwd
   read
   readonly
@@ -113,11 +114,16 @@ if(ENABLE_ALL_BUILTINS)
   message("Enable ALL builtins")
   foreach(BUILTIN ${ALL_BUILTINS})
     string(TOUPPER ${BUILTIN} NAME)
-    #message("Enable ${BUILTIN}")
+    # message("Enable ${BUILTIN}")
     set(ENABLE_${NAME} ON)
     set(BUILTIN_${NAME} ON)
   endforeach(BUILTIN ${ALL_BUILTINS})
 endif(ENABLE_ALL_BUILTINS)
+
+if(BUILD_DEBUG)
+  set(ENABLE_DUMP TRUE)
+  list(APPEND BUILTINS_ENABLED dump)
+endif(BUILD_DEBUG)
 
 isin(ENABLE_DUMP dump ${BUILTINS_ENABLED})
 
@@ -147,8 +153,7 @@ foreach(DISABLED ${BUILTINS_DISABLED})
   list(REMOVE_ITEM SOURCES "${SRC}")
   # list(FILTER SOURCES EXCLUDE REGEX  "${SRC}")
   list(LENGTH SOURCES N2)
-  # if(${N} EQUAL ${N2}) message("ERROR ${SRC}  -  ${N} == ${N2}") endif(${N}
-  # EQUAL ${N2})
+  # if(${N} EQUAL ${N2}) message("ERROR ${SRC}  -  ${N} == ${N2}") endif(${N} EQUAL ${N2})
   unset(BUILTIN_${NAME})
   set(BUILD_BUILTIN_${NAME}
       "0"

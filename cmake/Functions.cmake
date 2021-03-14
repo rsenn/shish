@@ -108,8 +108,7 @@ macro(check_compile RESULT_VAR SOURCE)
     string(
       RANDOM
       LENGTH 6
-      ALPHABET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-               C_NAME)
+      ALPHABET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" C_NAME)
     string(REPLACE SUPPORT_ "" NAME "${RESULT_VAR}")
     string(REPLACE _ - NAME "${NAME}")
     string(TOLOWER "${NAME}" C_NAME)
