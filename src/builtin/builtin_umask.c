@@ -46,25 +46,35 @@ scan_rwx(char* in, uint16* bits) {
 
 size_t
 scan_umask(char* in, uint16* umask) {
-  char* src;
-  *umask = 0000;
-  for(src = in; *src; src++) {
-    uint16_t bits = 0;
+  char *src, c, op;
+   for(src = in; *src; src++) {
+    uint16_t bits = 0, shift = 0;
     size_t n;
-    char c = *src++;
-    if(*src++ != '=')
+    c = *src++;
+    op = *src++;
+    if(str_chr("=+-", op) == 3)
       return 0;
     n = scan_rwx(src, &bits);
     switch(c) {
-      case 'u': *umask |= bits << 6; break;
-      case 'g': *umask |= bits << 3; break;
-      case 'o': *umask |= bits; break;
+      case 'u': shift = 6; break;
+      case 'g': shift = 3; break;
+      case 'o': shift = 0; break;
       default: return 0;
     }
+
+    switch(op) {
+      case '=':
+        *umask |= (0x7 << shift);
+        *umask &= ~(bits << shift);
+        break;
+      case '+': *umask &= ~(bits << shift); break;
+      case '-': *umask |= (bits << shift); break;
+    }
+
     if(*(src += n) != ',')
       break;
   }
-  *umask ^= 0777;
+  //*umask ^= 0777;
   return src - in;
 }
 
@@ -88,8 +98,11 @@ builtin_umask(int argc, char* argv[]) {
   if(shell_optind < argc) {
     uint16 num;
 
-    if(scan_8short(argv[shell_optind], &num) || scan_umask(argv[shell_optind], &num))
+    if(scan_8short(argv[shell_optind], &num))
       sh->umask = num;
+
+    else
+       scan_umask(argv[shell_optind], &sh->umask);
 
   } else {
     char buf[64];

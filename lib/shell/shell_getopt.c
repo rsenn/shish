@@ -74,6 +74,7 @@ shell_getopt_r(struct optstate* state, int argc, char* const argv[], const char*
       }
 
       optind++;
+      break;
     } else {
       /* no argument */
       optofs++;
@@ -81,7 +82,6 @@ shell_getopt_r(struct optstate* state, int argc, char* const argv[], const char*
     }
   }
 
-found:
   optind++;
   return optopt;
 }

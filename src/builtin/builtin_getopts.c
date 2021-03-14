@@ -1,21 +1,27 @@
 #include "../builtin.h"
 #include "../sh.h"
 #include "../var.h"
+#include "../../lib/str.h"
 #include "../../lib/shell.h"
 
-static struct optstate state;
+struct optstate builtin_getopts_state = {0, 0, 0};
+
+#define optarg builtin_getopts_state.arg
+#define optind builtin_getopts_state.ind
+#define optofs builtin_getopts_state.ofs
+#define optopt builtin_getopts_state.opt
 
 /* getopts built-in
  * ----------------------------------------------------------------------- */
 int
 builtin_getopts(int argc, char* argv[]) {
-  const char *optstring, *name;
+  char *optstring, *name;
 
-  if(argc < 1) {
+  if(argc < 2) {
     builtin_errmsg(argv, "optstring argument required", NULL);
     return 1;
   }
-  if(argc < 2) {
+  if(argc < 3) {
     builtin_errmsg(argv, "name argument required", NULL);
     return 1;
   }
@@ -32,10 +38,9 @@ builtin_getopts(int argc, char* argv[]) {
     int ac;
     char** av;
     int c;
-    char ch;
     int ret = 0;
 
-    if(argc > 2) {
+    if(argc > 3) {
       ac = argc - 2;
       av = argv + 2;
     } else {
@@ -43,20 +48,35 @@ builtin_getopts(int argc, char* argv[]) {
       av = sh->arg.v;
     }
 
-    c = shell_getopt_r(&state, ac, av, optstring);
+    if(optind == 0) {
+      optind = 1;
+      optofs = 0;
+      optarg = 0;
+      optopt = '\0';
+    }
+
+    c = shell_getopt_r(&builtin_getopts_state, ac + 1, av - 1, optstring);
+    var_unset("OPTARG");
 
     switch(c) {
-      case '?': ret = 1; break;
-      default:
-        ch = c;
-        var_setv(name, &ch, 1, V_LOCAL);
-        var_setvint("OPTIND", state.ind,  V_LOCAL);
+      case '?': ret = 2; break;
+      case -1: ret = 1; break;
 
-        if(state.arg) var_setv("OPTARG", state.arg, str_len(state.arg), V_LOCAL);
-        else var_unset("OPTARG");
+      default:
+        if(optarg)
+          var_setv("OPTARG", optarg, str_len(optarg), V_LOCAL);
 
         break;
     }
+
+    if(c != -1) {
+      char ch = optopt;
+      var_setv(name, &ch, 1, V_LOCAL);
+    } else {
+      var_unset(name);
+    }
+
+    var_setvint("OPTIND", optind, V_LOCAL);
 
     return ret;
   }

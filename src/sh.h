@@ -6,6 +6,7 @@
 #endif
 #include "job.h"
 
+#include "../lib/uint16.h"
 #include "../lib/stralloc.h"
 #include "../lib/windoze.h"
 #if WINDOWS_NATIVE
@@ -40,7 +41,7 @@ struct env {
   struct env* parent;
   stralloc cwd;
   int cwdsym; /* is cwd symbolic or phyiscal? */
-  int umask;
+  uint16 umask;
   int flags;
   int exitcode; /* exit code of last evaluated tree */
   struct fdstack* fdstack;
