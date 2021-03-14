@@ -58,7 +58,7 @@ builtin_read(int argc, char* argv[]) {
   {
     int ret, status = 0;
     const char* ifs;
-    size_t ifslen;
+    size_t len;
     char *ptr, *end;
     index = 0;
 
@@ -72,7 +72,7 @@ builtin_read(int argc, char* argv[]) {
       }
     }
 
-    ifs = var_vdefault("IFS", IFS_DEFAULT, &ifslen);
+    ifs = var_vdefault("IFS", IFS_DEFAULT, &len);
 
     if(!raw)
       expand_unescape(&data, any);
@@ -80,13 +80,9 @@ builtin_read(int argc, char* argv[]) {
     stralloc_nul(&data);
 
     for(ptr = stralloc_begin(&data), end = stralloc_end(&data); ptr < end;) {
-      size_t len;
-
-      len = scan_charsetnskip(ptr, ifs, end - ptr);
-
+        len = scan_charsetnskip(ptr, ifs, end - ptr);
       if((ptr += len) >= end)
         break;
-
       len = index + 1 == num_args ? end - ptr : scan_noncharsetnskip(ptr, ifs, end - ptr);
       var_setv(argp[index], ptr, len, 0);
       index++;
