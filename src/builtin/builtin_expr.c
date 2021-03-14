@@ -54,10 +54,7 @@ builtin_expr(int argc, char* argv[]) {
     }
 
     /* create a new i/o context and initialize a parser */
-    fd_push(&fd, STDSRC_FILENO, FD_READ);
-    fd_string(&fd, sa.s, sa.len);
-    source_push(&src);
-
+    source_buffer(&src, &fd, sa.s, sa.len);
     parse_init(&p, P_ARITH | P_NOREDIR);
 
     /* parse the string as a compound list */
@@ -75,8 +72,7 @@ builtin_expr(int argc, char* argv[]) {
       tree_free(expr);
     }
 
-    source_pop();
-    fd_pop(&fd);
+    source_popfd(&fd);
   }
 
   if(ret == 0) {

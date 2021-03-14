@@ -4,7 +4,7 @@
 /* prepare fd for reading from a string
  * ----------------------------------------------------------------------- */
 void
-fd_string(struct fd* fd, const char* s, unsigned long len) {
+fd_string(struct fd* fd, const char* s, size_t len) {
   fd->mode = FD_STRING;
   fd->name = "<string>";
 

@@ -15,7 +15,7 @@
  * this should only be called when the (fd) really lacks buffer space!
  * ----------------------------------------------------------------------- */
 void
-fd_setbuf(struct fd* fd, void* buf, unsigned long n) {
+fd_setbuf(struct fd* fd, void* buf, size_t n) {
   char* p = buf;
   int r = D_ISRD(fd) && !fd->r->x;
   int w = D_ISWR(fd) && !fd->w->x;

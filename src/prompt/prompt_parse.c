@@ -43,9 +43,8 @@ prompt_parse(void) {
     return;
 
   /* now initialize input buffer from the prompt str and parse */
-  fd_push(&fd, STDSRC_FILENO, FD_READ);
-  fd_string(&fd, value, n);
-  source_push(&src);
+  source_buffer(&src, &fd, value, n);
+
   parse_init(&p, P_DEFAULT);
   parse_dquoted(&p);
   parse_string(&p, 0);
@@ -58,8 +57,7 @@ prompt_parse(void) {
   prompt_node = parse_getarg(&p);
 
   /* now leave the context in which the prompt was parsed */
-  source_pop();
-  fd_pop(&fd);
+  source_popfd(&fd);
 
 #ifdef DEBUG_OUTPUT_
 /*  debug_list(prompt_node, 0);*/

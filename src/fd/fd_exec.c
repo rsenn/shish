@@ -24,7 +24,7 @@ fd_exec(struct fd* fd) {
      temporary file */
   if((fd->mode & FD_HERE) == FD_HERE) {
     if((tmp = fd_tempfile(fd)) >= 0) {
-      unsigned long p;
+      size_t p;
 
       /* read from the read buf (stralloc)
          and put it into write buf (tempfile) */

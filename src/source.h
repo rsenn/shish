@@ -22,8 +22,9 @@ struct source {
 extern struct source* source;
 extern int source_psn;
 
-int source_string(const char* s, unsigned long len);
+void source_buffer(struct source*, struct fd*, const char* x, size_t n);
 void source_pop(void);
+void source_popfd(struct fd*);
 void source_prompt(void);
 int source_peek(char* c);
 int source_get(char* c);

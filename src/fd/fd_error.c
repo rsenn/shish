@@ -8,7 +8,7 @@
 int
 fd_error(int n, const char* msg) {
   char buf[FMT_ULONG + 2];
-  unsigned long sz;
+  size_t sz;
   sz = fmt_ulong(buf, n);
   str_copy(&buf[sz], ": ");
   sh_msg(buf);

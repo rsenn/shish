@@ -12,7 +12,7 @@ fd_freebuf(buffer* b) {
  * this should only be called when the (fd) really lacks buffer space!
  * ----------------------------------------------------------------------- */
 void
-fd_allocbuf(struct fd* fd, unsigned long n) {
+fd_allocbuf(struct fd* fd, size_t n) {
   char* p = shell_alloc(n);
 
   fd_setbuf(fd, p, n);

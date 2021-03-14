@@ -33,8 +33,7 @@ builtin_source(int argc, char* argv[]) {
     ret = 1;
   }
 
-  source_pop();
-  fd_pop(&src);
+  source_popfd(&src);
 
   return ret;
 }

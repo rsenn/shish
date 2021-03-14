@@ -166,7 +166,7 @@ int fd_tempfile(struct fd* fd);
 struct fd* fd_new(int fd, int mode);
 struct fd* fd_push(struct fd* fd, int n, int mode);
 struct fd* fd_reinit(struct fd* fd, int flags);
-void fd_allocbuf(struct fd* fd, unsigned long n);
+void fd_allocbuf(struct fd* fd, size_t n);
 void fd_close(struct fd* fd);
 void fd_dump(struct fd* fd, buffer* b);
 void fd_dumplist(buffer* b);
@@ -176,8 +176,8 @@ void fd_init(struct fd* fd, int n, int flags);
 void fd_open(struct fd* fd, const char* fname, long mode);
 void fd_pop(struct fd* fd);
 void fd_print(struct fd* fd);
-void fd_setbuf(struct fd* fd, void* buf, unsigned long n);
-void fd_string(struct fd* fd, const char* s, unsigned long len);
+void fd_setbuf(struct fd* fd, void* buf, size_t n);
+void fd_string(struct fd* fd, const char* s, size_t len);
 void fd_subst(struct fd* fd, stralloc* sa);
 
 #define fd_malloc() ((struct fd*)shell_alloc(D_SIZE))

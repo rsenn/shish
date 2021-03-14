@@ -242,13 +242,21 @@ struct parser {
 
 struct alias {
   struct alias* next;
-  char* def;
-  size_t len; /**< name length */
+  size_t namelen; /**< name length */
+  size_t codelen; /**< code length */
+  char def[];
 };
 
 extern struct alias* parse_aliases;
 extern unsigned int parse_lineno;
 extern struct token parse_tokens[];
+
+static inline char*
+alias_code(struct alias* a, size_t* len) {
+  if(len)
+    *len = a->codelen;
+  return &a->def[a->namelen + 1];
+}
 
 struct alias* parse_findalias(const char* name, size_t len);
 

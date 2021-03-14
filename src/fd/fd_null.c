@@ -7,12 +7,12 @@
 #endif
 
 static ssize_t
-fd_nullread(int fd, char* b, unsigned long n) {
+fd_nullread(int fd, char* b, size_t n) {
   return 0;
 }
 
 static ssize_t
-fd_nullwrite(int fd, char* b, unsigned long n) {
+fd_nullwrite(int fd, char* b, size_t n) {
   return n;
 }
 

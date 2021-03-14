@@ -29,7 +29,7 @@ static const char* fd_flags[] = {"READ",
  * ----------------------------------------------------------------------- */
 void
 fd_dump(struct fd* fd, buffer* b) {
-  unsigned long n;
+  size_t n;
   int out = 0;
 
   if(fd->name == NULL)
