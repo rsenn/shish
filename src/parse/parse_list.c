@@ -51,12 +51,12 @@ parse_list(struct parser* p) {
 
 #ifdef DEBUG_PARSE
   if(list) {
-    buffer_puts(buffer_2, "parse_list list = ");
+    buffer_puts(buffer_2, COLOR_YELLOW "parse_list" COLOR_NONE " list = ");
     debug_list(list, 0);
     debug_nl();
   }
   if(list) {
-    buffer_puts(buffer_2, "parse_list ");
+    buffer_puts(buffer_2, COLOR_YELLOW "parse_list" COLOR_NONE " ");
     debug_ulong("tok", tok, 0);
     debug_nl();
   }

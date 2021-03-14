@@ -1,9 +1,9 @@
-
 #include "../parse.h"
 #include "../tree.h"
 #include "../fd.h"
 #include "../sh.h"
 #include "../debug.h"
+#include "../source.h"
 
 /* 3.9.1 - parse a simple command
  * ----------------------------------------------------------------------- */
@@ -42,28 +42,30 @@ parse_simple_command(struct parser* p) {
           struct alias* a;
 
           stralloc_init(&sa);
-          stralloc_move(&sa, &argstr->stra);
+          stralloc_copy(&sa, &argstr->stra);
 
-          if((a = parse_findalias(p,  sa.s, sa.len))) {
+          if((a = parse_findalias(p, sa.s, sa.len))) {
             size_t codelen;
             struct source src;
             struct fd fd;
             struct parser aliasp;
-            struct ncmd* simple_cmd;
+            union node* node;
             char* code;
 
-            source_buffer(&src, &fd, (code = alias_code(a, &codelen)), codelen);
+            code = alias_code(a, &codelen);
+            source_buffer(&src, &fd, code, codelen);
             parse_init(&aliasp, P_ALIAS);
             aliasp.alias = a;
 
-            if((simple_cmd = (struct ncmd*)parse_simple_command(&aliasp))) {
-              debug_node((union node*)simple_cmd, 0);
+            if((node = parse_simple_command(&aliasp))) {
+              debug_node(node, 0);
 
               tree_remove(aptr);
-              vptr = tree_append(vptr, simple_cmd->vars);
-              rptr = tree_append(rptr, simple_cmd->rdir);
-              aptr = tree_append(aptr, simple_cmd->args);
-              shell_free(simple_cmd);
+
+              vptr = tree_append(vptr, node->ncmd.vars);
+              rptr = tree_append(rptr, node->ncmd.rdir);
+              aptr = tree_append(aptr, node->ncmd.args);
+              shell_free(node);
             }
 
             source_popfd(&fd);
@@ -108,7 +110,7 @@ addcmd:
 
 #ifdef DEBUG_PARSE
   if(sh->flags & SH_DEBUG) {
-    buffer_puts(fd_err->w, "\x1b[1;33mparse_simple_command\x1b[0m = ");
+    buffer_puts(fd_err->w, COLOR_YELLOW"parse_simple_command"COLOR_NONE" = ");
     tree_print(simple_command, fd_err->w);
     buffer_putnlflush(fd_err->w);
   }

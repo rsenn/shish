@@ -3,6 +3,7 @@
 #include "../source.h"
 #include "../fd.h"
 #include "../sh.h"
+#include "../debug.h"
 
 /* parse a compound- or a simple-command
  * (pipeline and lists are done outside this)
@@ -18,7 +19,7 @@ parse_command(struct parser* p, int tempflags) {
 
 #ifdef DEBUG_PARSE
   if(sh->flags & SH_DEBUG) {
-    buffer_puts(fd_err->w, "\x1b[1;33mparse_command\x1b[0m tok=");
+    buffer_puts(fd_err->w, COLOR_YELLOW "parse_command" COLOR_NONE " tok=");
     buffer_puts(fd_err->w, parse_tokname(tok, 1));
     buffer_putnlflush(fd_err->w);
   }
