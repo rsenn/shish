@@ -4,10 +4,10 @@
 #include "../lib/uint32.h"
 #include <stdlib.h>
 
-enum hash_id { H_PROGRAM = 0, H_EXEC = 1, H_SBUILTIN = 2, H_BUILTIN = 4, H_FUNCTION = 8 };
+enum hash { H_PROGRAM = 0, H_EXEC = 1, H_SBUILTIN = 2, H_BUILTIN = 4, H_FUNCTION = 8 };
 
 struct command {
-  enum hash_id id;
+  enum hash id;
   union {
     char* path;
     union node* fn;
@@ -21,7 +21,7 @@ struct exechash {
   uint32 hash;
   unsigned int hits;
   char* name; /* name of builtin, function or command */
-              // enum hash_id id;
+              // enum hash id;
   struct command cmd;
 };
 

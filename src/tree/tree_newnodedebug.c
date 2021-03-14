@@ -7,7 +7,7 @@
 /* allocate a tree node
  * ----------------------------------------------------------------------- */
 union node*
-tree_newnodedebug(const char* file, unsigned int line, enum nod_id nod) {
+tree_newnodedebug(const char* file, unsigned int line, enum kind nod) {
   union node* ret;
 
   if((ret = shell_allocdebug(file, line, sizeof(union node)))) {

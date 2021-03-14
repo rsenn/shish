@@ -7,7 +7,7 @@
 
 /* the section numbers refer to the IEEE P1003.2 Draft D11.2 */
 
-enum nod_id {
+enum kind {
   /* simple   */ N_SIMPLECMD = 0,
   /* pipeline */ N_PIPELINE, /* execute cmd list, while passing
                                 stdout amongst them */
@@ -76,7 +76,7 @@ enum nod_id {
    rdir members in common, because they all can be redirected and put in
    background */
 struct ncmd {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   int bgnd;         /* run in background */
   union node* rdir; /* redirections */
@@ -87,7 +87,7 @@ struct ncmd {
 /* 3.9.2 - pipeline
  * ----------------------------------------------------------------------- */
 struct npipe {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   int bgnd;
   union node* cmds;
@@ -99,7 +99,7 @@ struct npipe {
 
 /* AND-OR list */
 struct nandor {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   int bgnd;
   union node* cmd0;
@@ -108,7 +108,7 @@ struct nandor {
 
 /* list */
 struct nlist {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   int bgnd;
   union node* cmds;
@@ -120,7 +120,7 @@ struct nlist {
 /* 3.9.4.1 - grouping compound
  * ----------------------------------------------------------------------- */
 struct ngrp {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   int bgnd;         /* run in background */
   union node* rdir; /* redirections */
@@ -130,7 +130,7 @@ struct ngrp {
 /* 3.9.4.2 - for loop
  * ----------------------------------------------------------------------- */
 struct nfor {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   int bgnd;         /* run in background */
   union node* rdir; /* redirections */
@@ -142,7 +142,7 @@ struct nfor {
 /* 3.9.4.3 - case conditional
  * ----------------------------------------------------------------------- */
 struct ncase {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   int bgnd;         /* run in background */
   union node* rdir; /* redirections */
@@ -151,7 +151,7 @@ struct ncase {
 };
 
 struct ncasenode {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   union node* pats;
   union node* cmds;
@@ -160,7 +160,7 @@ struct ncasenode {
 /* 3.9.4.4 - if conditional
  * ----------------------------------------------------------------------- */
 struct nif {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   int bgnd;         /* run in background */
   union node* rdir; /* redirections */
@@ -173,7 +173,7 @@ struct nif {
  * 3.9.4.6 until loop
  * ----------------------------------------------------------------------- */
 struct nloop {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   int bgnd;         /* run in background */
   union node* rdir; /* redirections */
@@ -184,7 +184,7 @@ struct nloop {
 /* 3.9.5 function definition
  * ----------------------------------------------------------------------- */
 struct nfunc {
-  enum nod_id id;
+  enum kind id;
   struct nfunc* next;
   union node* body;
   char* name;
@@ -193,7 +193,7 @@ struct nfunc {
 /* internally used nodes
  * ----------------------------------------------------------------------- */
 struct list {
-  enum nod_id id;
+  enum kind id;
   union node* next;
 };
 
@@ -204,7 +204,7 @@ struct list {
  *
  * ----------------------------------------------------------------------- */
 struct narg {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   union node* list;
   int flag;
@@ -213,7 +213,7 @@ struct narg {
 
 /* [fd]<operator><file> */
 struct nredir {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   union node* list; /* can be file, fd, delim, here-doc-data */
   int flag;
@@ -223,7 +223,7 @@ struct nredir {
 };
 
 struct nassign {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   union node* list;
   stralloc stra;
@@ -232,14 +232,14 @@ struct nassign {
 /* argument (word) subnodes
  * ----------------------------------------------------------------------- */
 struct nargstr {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   int flag;
   stralloc stra;
 };
 
 struct nargparam {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   int flag;
   char* name;
@@ -248,39 +248,39 @@ struct nargparam {
 };
 
 struct nargcmd {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   int flag;
   union node* list;
 };
 
 struct nargarith {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   union node* tree;
   int flag;
 };
 
 struct narithnum {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   int64 num;
 };
 
 struct narithvar {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   const char* var;
 };
 
 struct narithunary {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   union node* node;
 };
 
 struct narithbinary {
-  enum nod_id id;
+  enum kind id;
   union node* next;
   union node* left;
   union node* right;
@@ -288,7 +288,7 @@ struct narithbinary {
 
 /* ----------------------------------------------------------------------- */
 union node {
-  enum nod_id id;
+  enum kind id;
   struct list list;
   struct ncmd ncmd;
   struct npipe npipe;
@@ -361,10 +361,10 @@ typedef union node node_t;
   } while(0);
 
 #ifdef DEBUG_ALLOC
-union node* tree_newnodedebug(const char* file, unsigned int line, enum nod_id nod);
+union node* tree_newnodedebug(const char* file, unsigned int line, enum kind nod);
 #define tree_newnode(id) tree_newnodedebug(__FILE__, __LINE__, (id))
 #else
-union node* tree_newnode(enum nod_id nod);
+union node* tree_newnode(enum kind nod);
 #endif /* DEBUG_ALLOC */
 
 void tree_delnode(union node* node);
@@ -374,7 +374,7 @@ void tree_cat_n(union node* node, stralloc* sa, int depth);
 void tree_catlist(union node* node, stralloc* sa, const char* sep);
 void tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth);
 void tree_catseparator(stralloc* sa, const char* sep, int depth);
-union node* tree_newlink(union node** nptr, enum nod_id nod);
+union node* tree_newlink(union node** nptr, enum kind nod);
 unsigned int tree_count(union node* node);
 union node** tree_append(union node**, union node*);
 void tree_remove(union node**);

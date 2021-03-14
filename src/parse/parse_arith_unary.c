@@ -7,7 +7,7 @@
 union node*
 parse_arith_unary(struct parser* p) {
   union node* node;
-  enum nod_id n;
+  enum kind n;
 
   char c, c2 = 0;
   if(source_peek(&c) <= 0)

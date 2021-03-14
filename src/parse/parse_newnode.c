@@ -4,7 +4,7 @@
 #ifndef DEBUG_ALLOC
 
 void
-parse_newnode(struct parser* p, enum nod_id nod) {
+parse_newnode(struct parser* p, enum kind nod) {
   if(p->tree) {
     p->node->list.next = tree_newnode(nod);
     p->node = p->node->list.next;

@@ -313,10 +313,10 @@ void parse_dump(struct parser* p, buffer* b);
 #endif
 
 #ifdef DEBUG_ALLOC
-void parse_newnodedebug(const char* file, unsigned int line, struct parser* p, enum nod_id nod);
+void parse_newnodedebug(const char* file, unsigned int line, struct parser* p, enum kind nod);
 #define parse_newnode(p, id) parse_newnodedebug(__FILE__, __LINE__, (p), (id))
 #else
-void parse_newnode(struct parser* p, enum nod_id nod);
+void parse_newnode(struct parser* p, enum kind nod);
 #endif
 
 #endif /* PARSE_H */
