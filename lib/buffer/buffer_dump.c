@@ -75,5 +75,5 @@ buffer_dump(buffer* out, buffer* b) {
     buffer_putptr(out, (void*)b->op); /* xlong, n); */
   }
   buffer_puts(out, " ]");
-  //buffer_flush(out);
+  // buffer_flush(out);
 }

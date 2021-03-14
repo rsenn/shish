@@ -46,14 +46,10 @@ builtin_read(int argc, char* argv[]) {
       return 1;
     }
   }
-
   if(delim)
     ndelims = str_len(delim);
-
-
-  if(prompt) 
+  if(prompt)
     buffer_putsflush(fd_out->w, prompt);
-  
 
   {
     int ret, status = 0;
@@ -65,15 +61,18 @@ builtin_read(int argc, char* argv[]) {
     stralloc_init(&data);
 
     if(delim) {
-      if((ret = buffer_get_token_sa(fd_in->r, &data, delim, ndelims)) > 0) {
+      if((ret = buffer_get_token_sa(fdtable[fd]->r, &data, delim, ndelims)) > 0) {
         stralloc_trimr(&data, "\r\n", 2);
-        stralloc_nul(&data);
       } else {
         status = 1;
       }
     }
 
     ifs = var_vdefault("IFS", IFS_DEFAULT, &ifslen);
+
+    if(!raw)
+      expand_unescape(&data);
+    stralloc_nul(&data);
 
     for(ptr = stralloc_begin(&data), end = stralloc_end(&data); ptr < end;) {
       size_t len;
@@ -84,27 +83,14 @@ builtin_read(int argc, char* argv[]) {
         break;
 
       len = index + 1 == num_args ? end - ptr : scan_noncharsetnskip(ptr, ifs, end - ptr);
-
-      if(!var_valid(argp[index]))
-        builtin_errmsg(argv, argp[index], "not a valid identifier");
-      else
-        var_setv(argp[index], ptr, len, 0);
+      var_setv(argp[index], ptr, len, 0);
       index++;
       ptr += len;
     }
-
     while(index < num_args) {
-      if(!var_valid(argp[index]))
-        builtin_errmsg(argv, argp[index], "not a valid identifier");
-      else
-        var_set(argp[index], 0);
+      var_set(argp[index], 0);
       index++;
     }
-
-    /* set each argument */
-    for(; *argp; argp++) {
-    }
-
     return status;
   }
 }

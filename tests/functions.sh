@@ -9,6 +9,6 @@ func2() (
 )
 echo "define func3"
 
-func3 () {
+func3() {
   echo "called func3"
 }

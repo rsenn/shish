@@ -50,7 +50,7 @@ fd_dump(struct fd* fd, buffer* b) {
   }
 
   /* level */
-    buffer_putulong0(b, fd->stack->level, 5);
+  buffer_putulong0(b, fd->stack->level, 5);
   buffer_puts(b, " e=");
   buffer_putlong(b, fd->e);
   buffer_puts(b, " mode=");
@@ -60,7 +60,7 @@ fd_dump(struct fd* fd, buffer* b) {
     if(fd->mode & (1 << n)) {
       if(out++)
         buffer_putc(b, '|');
-      //buffer_puts(b, "FD_");
+      // buffer_puts(b, "FD_");
       buffer_puts(b, fd_flags[n]);
     }
   }
