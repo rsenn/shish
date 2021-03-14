@@ -14,8 +14,9 @@ int
 builtin_read(int argc, char* argv[]) {
   int c, raw = 0, silent = 0, nchars = -1, fd = 0;
   char** argp;
+  int num_args;
   const char *delim = "\n", *prompt = 0;
-  size_t ndelims, nfields;
+  size_t ndelims;
   double timeout = -1;
   stralloc line;
 
@@ -34,7 +35,7 @@ builtin_read(int argc, char* argv[]) {
     }
   }
   argp = &argv[shell_optind];
-  nfields = argc - shell_optind;
+  num_args = argc - shell_optind;
 
   if(delim)
     ndelims = str_len(delim);
@@ -44,6 +45,7 @@ builtin_read(int argc, char* argv[]) {
     const char* ifs;
     size_t ifslen;
     char *ptr, *end;
+    int index = 0;
 
     stralloc_init(&line);
 
@@ -65,15 +67,34 @@ builtin_read(int argc, char* argv[]) {
     debug_nl_fl();
 
     ifs = var_vdefault("IFS", IFS_DEFAULT, &ifslen);
+    buffer_puts(fd_err->w, "ifslen: ");
+    buffer_putlong(fd_err->w, ifslen);
+    buffer_puts(fd_err->w, "ifs: ");
+    buffer_put(fd_err->w, ifs, ifslen);
+    buffer_putnlflush(fd_err->w);
 
     for(ptr = stralloc_begin(&line), end = stralloc_end(&line); ptr < end;) {
-      size_t i = scan_charsetnskip(ptr, ifs, ifslen);
+      size_t len;
 
-      if((ptr += i) >= end)
+      len = scan_charsetnskip(ptr, ifs, end - ptr);
+
+      if((ptr += len) >= end)
         break;
 
-      if(ptr + (i = scan_noncharsetnskip(ptr, ifs, ifslen)) > end)
-        i = end - ptr;
+      len = index + 1 == num_args ? end - ptr : scan_noncharsetnskip(ptr, ifs, end - ptr);
+
+      var_setv(argp[index], ptr, len, 0);
+
+      buffer_putlong(fd_err->w, index);
+      buffer_puts(fd_err->w, ": ");
+      buffer_puts(fd_err->w, argp[index]);
+      buffer_puts(fd_err->w, " = ");
+      buffer_put(fd_err->w, ptr, len);
+      buffer_putnlflush(fd_err->w);
+
+      index++;
+
+      ptr += len;
     }
 
     /* set each argument */

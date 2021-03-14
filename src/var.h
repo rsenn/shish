@@ -51,6 +51,7 @@ VAR_HASH var_hsearch(struct search* context);
 char** var_export(char** dest);
 
 const char* var_get(const char* v, size_t* offset);
+const char* var_setv(const char* name, const char* value, size_t vlen, int flags);
 const char* var_setvint(const char* v, int i, int flags);
 const char* var_setvsa(const char* name, stralloc* sa, int flags);
 const char* var_value(const char* v, size_t* plen);

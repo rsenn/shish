@@ -44,6 +44,6 @@ void vartab_cleanup(struct vartab* vartab);
 
 char** vartab_export(void);
 void vartab_print(int flags);
-void vartab_dump(struct vartab* vartab);
+void vartab_dump(struct vartab* vartab, int argc, char* argv[]);
 
 #endif /* VARTAB_H */
