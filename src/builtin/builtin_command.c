@@ -4,11 +4,11 @@
 #include "../exec.h"
 #include "../../lib/shell.h"
 
-/* exec built-in
+/* command built-in
  *
  * ----------------------------------------------------------------------- */
 int
-builtin_exec(int argc, char* argv[]) {
+builtin_command(int argc, char* argv[]) {
   int c;
   int nullenv = 0;
   int dash = 0;

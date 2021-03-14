@@ -10,10 +10,10 @@
 /* execute a command
  * ----------------------------------------------------------------------- */
 int
-exec_command(enum hash_id id, union command* cmd, int argc, char** argv, int exec, union node* redir) {
+exec_command(union command* cmd, int argc, char** argv, int exec, union node* redir) {
   int ret = 1;
 
-  switch(id) {
+  switch(cmd->id) {
     case H_SBUILTIN:
     case H_BUILTIN:
     case H_EXEC: {

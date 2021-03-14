@@ -18,14 +18,13 @@ struct nfunc* functions = NULL;
 /* hashed command search routine
  * ----------------------------------------------------------------------- */
 union command
-exec_hash(char* name, enum hash_id* idptr) {
-  enum hash_id id;
-  union command cmd;
+exec_hash(char* name, int mask) {
+  union command cmd = {0, {0}};
 
   /* name contains slashes, its a path */
   if(name[str_chr(name, '/')]) {
     /* do not hash this... */
-    id = H_PROGRAM;
+    cmd.id = H_PROGRAM;
     cmd.path = name;
 
     /* ...but validate the path */
@@ -43,25 +42,24 @@ exec_hash(char* name, enum hash_id* idptr) {
     /* do we have a cache hit? */
     if((entry = exec_search(name, &hash))) {
       entry->hits++;
-      id = entry->id;
       cmd = entry->cmd;
     }
     /* if we don't have a cache hit we're gonna search, special builtins first
      */
     else {
-      id = H_EXEC;
+      cmd.id = H_EXEC;
       cmd.builtin = builtin_search(name, B_EXEC);
 
       /* then search for functions */
       if(cmd.builtin == NULL) {
-        id = H_SBUILTIN;
+        cmd.id = H_SBUILTIN;
         cmd.builtin = builtin_search(name, B_SPECIAL);
       }
 
       /* then search for functions */
-      if(cmd.builtin == NULL) {
+      if(!(mask & H_FUNCTION) && cmd.builtin == NULL) {
         struct nfunc* fn;
-        id = H_FUNCTION;
+        cmd.id = H_FUNCTION;
 
         for(fn = functions; fn; fn = fn->next) {
           if(!str_diff(name, fn->name))
@@ -72,13 +70,13 @@ exec_hash(char* name, enum hash_id* idptr) {
 
       /* then search for normal builtins */
       if(cmd.fn == NULL) {
-        id = H_BUILTIN;
+        cmd.id = H_BUILTIN;
         cmd.builtin = builtin_search(name, B_DEFAULT);
       }
 
       /* then search for external commands */
       if(cmd.builtin == NULL) {
-        id = H_PROGRAM;
+        cmd.id = H_PROGRAM;
         cmd.path = exec_path(name);
       }
 
@@ -86,15 +84,9 @@ exec_hash(char* name, enum hash_id* idptr) {
       if(cmd.ptr) {
         entry = exec_create(name, hash);
         entry->hits++;
-        entry->id = id;
         entry->cmd = cmd;
       }
     }
   }
-
-  /* we have a command, set the id */
-  if(cmd.ptr && idptr)
-    *idptr = id;
-
   return cmd;
 }

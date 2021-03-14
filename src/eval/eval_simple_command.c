@@ -36,8 +36,8 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   int status = 0;
   union node* args = NULL;
   union node* assigns = NULL;
-  union command cmd = {NULL};
-  enum hash_id id = H_BUILTIN;
+  union command cmd = {H_BUILTIN, {0}};
+  // enum hash_id id = H_BUILTIN;
   struct vartab vars;
   struct fdstack io;
   union node* r;
@@ -48,7 +48,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
      if there are arguments we start a hashed search for the command */
   if(expand_args(ncmd->args, &args, 0)) {
     stralloc_nul(&args->narg.stra);
-    cmd = exec_hash(args->narg.stra.s, &id);
+    cmd = exec_hash(args->narg.stra.s, 0);
   }
 
   /* expand and set the variables,
@@ -56,7 +56,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   if(expand_vars(ncmd->vars, &assigns)) {
     /* if we don't exit after the command, have a command and not a
        special builtin the variable changes should be temporary */
-    if(!(e->flags & E_EXIT) && cmd.ptr && id != H_SBUILTIN)
+    if(!(e->flags & E_EXIT) && cmd.ptr && cmd.id != H_SBUILTIN)
       vartab_push(&vars);
 
     for(nptr = assigns; nptr; nptr = nptr->list.next) {
@@ -73,15 +73,15 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   }
 
   /* do redirections if present */
-  if(redir && id != H_SBUILTIN && id != H_EXEC)
+  if(redir && cmd.id != H_SBUILTIN && cmd.id != H_EXEC)
     fdstack_push(&io);
 
-  if(redir /* && id != H_PROGRAM*/) {
+  if(redir /* && cmd.id != H_PROGRAM*/) {
     for(r = redir; r; r = r->nredir.next) {
       struct fd* fd = NULL;
 
       /* if its the exec special builtin the new fd needs to be persistent */
-      if(id != H_EXEC) {
+      if(cmd.id != H_EXEC) {
 #ifdef HAVE_ALLOCA
         fd = fd_alloc();
 #else
@@ -90,7 +90,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
       }
 
       /* return if a redirection failed */
-      if(redir_eval(&r->nredir, fd, (id == H_EXEC ? R_NOW : 0))) {
+      if(redir_eval(&r->nredir, fd, (cmd.id == H_EXEC ? R_NOW : 0))) {
         status = 1;
         goto end;
       }
@@ -99,7 +99,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
       if(fd_needbuf(r->nredir.fd)) {
         /* if its not exec then set up buffers for
            temporary redirections on the stack */
-        if(id != H_EXEC)
+        if(cmd.id != H_EXEC)
           fd_setbuf(r->nredir.fd, buf, FD_BUFSIZE);
         else
           fd_allocbuf(r->nredir.fd, FD_BUFSIZE);
@@ -155,7 +155,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   }
 
   /* execute the command, this may or may not return, depending on E_EXIT */
-  status = exec_command(id, &cmd, argc, argv, (e->flags & E_EXIT), redir);
+  status = exec_command(&cmd, argc, argv, (e->flags & E_EXIT), redir);
 
 #ifndef HAVE_ALLOCA
   shell_free(argv);
@@ -173,7 +173,7 @@ end:
 
   if(fdstack == &io)
     fdstack_pop(&io);
-  else if(id != H_EXEC) {
+  else if(cmd.id != H_EXEC) {
     for(r = redir; r; r = r->nredir.next) {
       fd_pop(r->nredir.fd);
     }

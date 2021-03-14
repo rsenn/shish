@@ -4,13 +4,18 @@
 #include "../lib/uint32.h"
 #include <stdlib.h>
 
-enum hash_id { H_PROGRAM = 0, H_EXEC, H_SBUILTIN, H_BUILTIN, H_FUNCTION };
+enum hash_id { H_PROGRAM = 0, H_EXEC = 1, H_SBUILTIN = 2, H_BUILTIN = 4, H_FUNCTION = 8 };
 
 union command {
-  char* path;
-  union node* fn;
-  struct builtin_cmd* builtin;
-  void* ptr;
+  struct {
+    enum hash_id id;
+    union {
+      char* path;
+      union node* fn;
+      struct builtin_cmd* builtin;
+      void* ptr;
+    };
+  };
 };
 
 struct exechash {
@@ -18,7 +23,7 @@ struct exechash {
   uint32 hash;
   unsigned int hits;
   char* name; /* name of builtin, function or command */
-  enum hash_id id;
+              // enum hash_id id;
   union command cmd;
 };
 
@@ -30,12 +35,12 @@ extern struct exechash* exec_hashtbl[EXEC_HASHSIZE];
 
 char* exec_check(char* path);
 char* exec_path(char* name);
-int exec_command(enum hash_id id, union command* cmd, int argc, char** argv, int exec, union node* redir);
+int exec_command(union command* cmd, int argc, char** argv, int exec, union node* redir);
 int exec_error(void);
 int exec_program(char* path, char** argv, int exec, union node* redir);
 uint32 exec_hashstr(const char* s);
 struct exechash* exec_create(char* name, uint32 hash);
 struct exechash* exec_search(char* name, uint32* hashptr);
-union command exec_hash(char* name, enum hash_id* idptr);
+union command exec_hash(char* name, int mask);
 
 #endif /* EXEC_H */

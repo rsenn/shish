@@ -135,7 +135,10 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_CHMOD
     {"chmod", &builtin_chmod, B_DEFAULT, "[-v] [FILE]..."},
 #endif
-#if BUILTIN_BREAK
+#if BUILTIN_COMMAND
+    {"command", &builtin_command, B_DEFAULT, "[-pVv] command [arg ...]"},
+#endif
+#if BUILTIN_CONTINUE
     {"continue", &builtin_break, B_DEFAULT, "[n]"},
 #endif
 #if BUILTIN_DIRNAME

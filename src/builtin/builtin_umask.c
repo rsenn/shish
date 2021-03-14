@@ -47,7 +47,7 @@ scan_rwx(char* in, uint16* bits) {
 size_t
 scan_umask(char* in, uint16* umask) {
   char *src, c, op;
-   for(src = in; *src; src++) {
+  for(src = in; *src; src++) {
     uint16_t bits = 0, shift = 0;
     size_t n;
     c = *src++;
@@ -102,7 +102,7 @@ builtin_umask(int argc, char* argv[]) {
       sh->umask = num;
 
     else
-       scan_umask(argv[shell_optind], &sh->umask);
+      scan_umask(argv[shell_optind], &sh->umask);
 
   } else {
     char buf[64];

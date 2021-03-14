@@ -4,6 +4,7 @@ list(
   alias
   break
   cd
+  command
   eval
   exec
   exit

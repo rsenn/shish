@@ -62,11 +62,11 @@ remove_work_dir="true"
 use_valgrind="false"
 while getopts rv opt; do
     case $opt in
-	(r)
+	r)
 	    remove_work_dir="false";;
-	(v)
+	v)
 	    use_valgrind="true";;
-	(*)
+	*)
 	    exit 64 # sysexits.h EX_USAGE
     esac
 done

@@ -26,7 +26,7 @@ builtin_hash(int argc, char* argv[]) {
       /* print command left aligned in next column */
       buffer_putnspace(fd_out->w, 4 + (n > 0 ? 0 : n));
 
-      switch(h->id) {
+      switch(h->cmd.id) {
         case H_PROGRAM: buffer_puts(fd_out->w, h->cmd.path); break;
         case H_EXEC:
         case H_SBUILTIN: buffer_putm_internal(fd_out->w, h->name, " (special builtin)", NULL); break;
