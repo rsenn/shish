@@ -240,8 +240,17 @@ struct parser {
 #define P_HERE 0x2000     /* parse here-doc */
 #define P_ARITH 0x4000    /* parse arithmetic expression */
 
+struct alias {
+  struct alias* next;
+  char* def;
+  size_t len; /**< name length */
+};
+
+extern struct alias* parse_aliases;
 extern unsigned int parse_lineno;
 extern struct token parse_tokens[];
+
+struct alias* parse_findalias(const char* name, size_t len);
 
 const char* parse_tokname(enum tok_flag tok, int multi);
 enum tok_flag parse_gettok(struct parser* p, int tempflags);

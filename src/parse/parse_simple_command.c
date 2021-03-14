@@ -2,6 +2,7 @@
 #include "../tree.h"
 #include "../fd.h"
 #include "../sh.h"
+#include "../debug.h"
 
 /* 3.9.1 - parse a simple command
  * ----------------------------------------------------------------------- */
@@ -32,6 +33,17 @@ parse_simple_command(struct parser* p) {
       case T_NAME:
       case T_WORD:
         *aptr = parse_getarg(p);
+
+        /* first argument */
+        if(!(p->flags & P_NOASSIGN)) {
+          struct nargstr* argstr = &(*aptr)->narg.list->nargstr;
+          struct alias* a;
+
+          if((a = parse_findalias(argstr->stra.s, argstr->stra.len))) {
+
+            debug_node(*aptr, 0);
+          }
+        }
         aptr = &(*aptr)->list.next;
 
         p->flags |= P_NOASSIGN;
