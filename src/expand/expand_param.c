@@ -1,12 +1,14 @@
 #include "../expand.h"
-#include "../../lib/fmt.h"
 #include "../sh.h"
-#include "../../lib/shell.h"
-#include "../../lib/str.h"
 #include "../tree.h"
+#include "../fd.h"
+#include "../var.h"
 #include "../../lib/uint16.h"
 #include "../../lib/uint32.h"
-#include "../var.h"
+#include "../../lib/fmt.h"
+#include "../../lib/shell.h"
+#include "../../lib/str.h"
+
 #include <stdlib.h>
 
 union node*
@@ -117,6 +119,12 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         v = &v[offset];
         vlen = str_len(v);
       }
+    } else if(sh->flags & SH_UNSET) {
+      sh_msg(param->name);
+      buffer_putsflush(fd_err->w, ": unbound variable\n");
+      tree_free(n);
+      n = 0;
+      goto fail;
     }
   }
 
@@ -253,6 +261,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
     }
   }
 
+fail:
   stralloc_free(&value);
   return n;
 }

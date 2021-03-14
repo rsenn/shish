@@ -54,11 +54,7 @@ const unsigned short parse_chartable[CHAR_RANGE] = {
     C_SPCL | C_ESC | C_ARITHOP, /* '*' */
     C_ARITHOP,                  /* '+' */
     C_UNDEF,
-    C_SPCL | C_ARITHOP /* '-' */
-#ifndef LEGACY
-        | C_NAME
-#endif
-    ,
+    C_SPCL | C_ARITHOP, /* '-' */
     C_UNDEF,
     C_ARITHOP, /* '/' */
     /* 0x30 */

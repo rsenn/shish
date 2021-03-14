@@ -35,21 +35,21 @@ eprintf() {
 }
 
 # $1 = pathname
-absolute()
+absolute() {
 case "$1" in
     (/*)
 	printf '%s\n' "$1";;
     (*)
 	printf '%s/%s' "${PWD%/}" "$1";;
 esac
-
+}
 ##### Script startup
 
 # require yash for alias support and ulimit built-ins
-if ! [ "${YASH_VERSION-}" ]; then
-    eprintf '%s: must be run with yash\n' "$0"
-    exit 64 # sysexits.h EX_USAGE
-fi
+#if ! [ "${YASH_VERSION-}" ]; then
+#    eprintf '%s: must be run with yash\n' "$0"
+#    exit 64 # sysexits.h EX_USAGE
+#fi
 
 command -b ulimit -c 0 2>/dev/null || :
 
@@ -95,11 +95,12 @@ export -X LINENO OPTIND
 
 work_dir="tmp.$$"
 
-rm_work_dir()
-if "$remove_work_dir"; then
-    if [ -d "$work_dir" ]; then chmod -R a+rX "$work_dir"; fi
-    rm -fr "$work_dir"
-fi
+rm_work_dir() {
+  if "$remove_work_dir"; then
+      if [ -d "$work_dir" ]; then chmod -R a+rX "$work_dir"; fi
+      rm -fr "$work_dir"
+  fi
+}
 
 trap rm_work_dir EXIT
 trap 'rm_work_dir; trap - INT;  kill -INT  $$' INT

@@ -16,6 +16,7 @@ list(
   set
   shift
   source
+  umask
   unset)
 list(
   APPEND

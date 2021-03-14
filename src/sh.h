@@ -34,7 +34,7 @@ struct arg {
   unsigned int s; /* shift count */
 };
 
-enum { SH_DEBUG = 0x80, SH_ERREXIT = 0x40, SH_NOINTERACTIVE = 0x1000 };
+enum { SH_UNSET = 0x08, SH_NOCLOBBER = 0x10, SH_DEBUG = 0x80, SH_ERREXIT = 0x40, SH_NOINTERACTIVE = 0x1000 };
 
 struct env {
   struct env* parent;

@@ -92,6 +92,9 @@
 #ifndef BUILTIN_TRUE
 #define BUILTIN_TRUE 1
 #endif
+#ifndef BUILTIN_UMASK
+#define BUILTIN_UMASK 1
+#endif
 #ifndef BUILTIN_UNSET
 #define BUILTIN_UNSET 1
 #endif
@@ -214,6 +217,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_TRUE
     {"true", &builtin_true, B_DEFAULT, ""},
+#endif
+#if BUILTIN_UMASK
+    {"umask", &builtin_umask, B_SPECIAL, "[-p] [-S] [mode]"},
 #endif
 #if BUILTIN_UNSET
     {"unset", &builtin_unset, B_SPECIAL, "[name ...]"},

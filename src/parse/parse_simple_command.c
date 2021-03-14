@@ -58,7 +58,7 @@ parse_simple_command(struct parser* p) {
             aliasp.alias = a;
 
             if((node = parse_simple_command(&aliasp))) {
-              debug_node(node, 0);
+              // debug_node(node, 0);
 
               tree_remove(aptr);
 
@@ -110,7 +110,7 @@ addcmd:
 
 #ifdef DEBUG_PARSE
   if(sh->flags & SH_DEBUG) {
-    buffer_puts(fd_err->w, COLOR_YELLOW"parse_simple_command"COLOR_NONE" = ");
+    buffer_puts(fd_err->w, COLOR_YELLOW "parse_simple_command" COLOR_NONE " = ");
     tree_print(simple_command, fd_err->w);
     buffer_putnlflush(fd_err->w);
   }
