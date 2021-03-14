@@ -55,12 +55,14 @@ retry:
   if(e == -1)
     return FDTABLE_ERROR;
 
+#ifdef DEBUG_FDTABLE
   buffer_putulong(buffer_2, getpid());
   buffer_puts(buffer_2, " dup fd ");
   buffer_putulong(buffer_2, o);
   buffer_puts(buffer_2, " = ");
   buffer_putulong(buffer_2, e);
   buffer_putnlflush(buffer_2);
+#endif
 
   /* track the new file descriptor if its not above fd_exp */
   if(e <= fd_exp)

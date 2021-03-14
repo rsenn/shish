@@ -5,6 +5,8 @@
 #include "../debug.h"
 #include "../../lib/scan.h"
 #include "../../lib/str.h"
+#include "../../lib/fmt.h"
+#include "../../lib/buffer.h"
 #include <math.h>
 
 /* read built-in
@@ -58,20 +60,9 @@ builtin_read(int argc, char* argv[]) {
       } else {
         status = 1;
       }
-
-      debug_ulong("ret", ret, 0);
-      debug_nl_fl();
     }
 
-    debug_stralloc("line", &line, 0, '"');
-    debug_nl_fl();
-
     ifs = var_vdefault("IFS", IFS_DEFAULT, &ifslen);
-    buffer_puts(fd_err->w, "ifslen: ");
-    buffer_putlong(fd_err->w, ifslen);
-    buffer_puts(fd_err->w, " ifs: ");
-    buffer_puts_escaped(fd_err->w, ifs, &fmt_escapecharshell);
-    buffer_putnlflush(fd_err->w);
 
     for(ptr = stralloc_begin(&line), end = stralloc_end(&line); ptr < end;) {
       size_t len;
@@ -82,20 +73,12 @@ builtin_read(int argc, char* argv[]) {
         break;
 
       len = index + 1 == num_args ? end - ptr : scan_noncharsetnskip(ptr, ifs, end - ptr);
-
       var_setv(argp[index], ptr, len, 0);
-
-      buffer_putlong(fd_err->w, index);
-      buffer_puts(fd_err->w, ": ");
-      buffer_puts(fd_err->w, argp[index]);
-      buffer_puts(fd_err->w, " = ");
-      buffer_put(fd_err->w, ptr, len);
-      buffer_putnlflush(fd_err->w);
-
       index++;
-
       ptr += len;
     }
+
+    while(index < num_args) var_setv(argp[index++], "", 0, 0);
 
     /* set each argument */
     for(; *argp; argp++) {
@@ -104,8 +87,7 @@ builtin_read(int argc, char* argv[]) {
         continue;
       }
     }
-    debug_ulong("status", status, 0);
-    debug_nl_fl();
+
     return status;
   }
 }

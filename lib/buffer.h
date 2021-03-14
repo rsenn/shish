@@ -201,10 +201,6 @@ int buffer_put(buffer* b, const char* buf, size_t len);
 int buffer_putc(buffer* b, char c);
 ssize_t buffer_putflush(buffer* b, const char* x, size_t len);
 
-#ifdef UINT64_H
-int buffer_putlonglong(buffer* b, int64 i);
-#endif
-
 int buffer_putm_internal(buffer* b, ...);
 ssize_t buffer_putnlflush(buffer* b);
 int buffer_putnspace(buffer* b, int n);
@@ -220,6 +216,13 @@ ssize_t buffer_stubborn_read(buffer_op_proto* op, fd_t fd, const void* buf, size
 int buffer_truncfile(buffer* b, const char* fn);
 int buffer_putnc(buffer*, char c, int ntimes);
 int buffer_putspad(buffer*, const char* x, size_t pad);
+int buffer_puts_escaped(buffer* b, const char* x, size_t (*)());
+
+#ifdef UINT64_H
+int buffer_putlonglong(buffer* b, int64 i);
+int buffer_putxlonglong0(buffer* b, uint64 l, int pad);
+int buffer_putxlonglong(buffer* b, uint64 l);
+#endif
 
 #ifdef __cplusplus
 }

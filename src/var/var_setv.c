@@ -23,6 +23,7 @@ var_setv(const char* name, const char* value, size_t vlen, int flags) {
   stralloc_catc(&var->sa, '=');
   var->offset = var->sa.len;
   stralloc_catb(&var->sa, value, vlen);
+  stralloc_nul(&var->sa);
 
   /* set flags */
   var->flags |= flags;

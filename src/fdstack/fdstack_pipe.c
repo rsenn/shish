@@ -1,5 +1,7 @@
-#include "../fdstack.h"
+#include "../../lib/uint64.h"
+#include "../../lib/buffer.h"
 #include "../../lib/windoze.h"
+#include "../fdstack.h"
 #if WINDOWS_NATIVE
 #include <io.h>
 #else
@@ -28,13 +30,16 @@ fdstack_pipe(unsigned int n, struct fd* fda) {
 
         fd_push(fda, fd->n, FD_WRITE | FD_FLUSH);
         fd_setbuf(fda, b, FD_BUFSIZE / 2);
-        buffer_puts(buffer_2, "fdstack ");
 
         e = fd_pipe(fda);
         buffer_init(&fda->parent->rb, (buffer_op_proto*)&read, e, NULL, 0);
         fda->parent->r = 0;
         b += FD_BUFSIZE / 2;
 
+        buffer_puts(buffer_2, "fdstack_pipe n=");
+        buffer_putulong(buffer_2, n);
+        buffer_puts(buffer_2, " fda=");
+        buffer_putxlonglong(buffer_2, (size_t)fda);
         buffer_putnlflush(buffer_2);
         fda++;
       }

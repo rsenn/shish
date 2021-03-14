@@ -44,7 +44,7 @@ fd_setfd(struct fd* fd, int e) {
       fd_lo = e;
   }
 
-#ifdef DEBUG_OUTPUT
+#ifdef DEBUG_FD
   if(sh->flags & SH_DEBUG) {
     if(fd->e != -1) {
       buffer_putlong(buffer_2, getpid());
