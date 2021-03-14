@@ -9,6 +9,10 @@
 #include "../../lib/buffer.h"
 #include <math.h>
 
+static int any(int c) {
+  return 1;
+}
+
 /* read built-in
  *
  * ----------------------------------------------------------------------- */
@@ -71,7 +75,8 @@ builtin_read(int argc, char* argv[]) {
     ifs = var_vdefault("IFS", IFS_DEFAULT, &ifslen);
 
     if(!raw)
-      expand_unescape(&data);
+      expand_unescape(&data, any);
+
     stralloc_nul(&data);
 
     for(ptr = stralloc_begin(&data), end = stralloc_end(&data); ptr < end;) {

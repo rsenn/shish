@@ -12,6 +12,7 @@
 #include "../tree.h"
 #include "../fd.h"
 #include "../var.h"
+#include "../parse.h"
 #include "../../lib/byte.h"
 #include <stdlib.h>
 #include <string.h>
@@ -75,7 +76,7 @@ expand_glob(union node** nptr, int flags) {
   } else
 #endif
   {
-    expand_unescape(&n->narg.stra);
+    expand_unescape(&n->narg.stra, parse_isesc);
   }
 
   return n;

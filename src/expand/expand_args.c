@@ -2,6 +2,7 @@
 #include "../tree.h"
 #include "../debug.h"
 #include "../fd.h"
+#include "../parse.h"
 
 /* expand all arguments of an argument list
  * returns count of argument nodes
@@ -35,7 +36,7 @@ expand_args(union node* args, union node** nptr, int flags) {
         ret++;
       }
     } else {
-      expand_unescape(&n->narg.stra);
+      expand_unescape(&n->narg.stra, parse_isesc);
       n->narg.flag &= ~X_GLOB;
     }
 

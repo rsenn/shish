@@ -5,12 +5,12 @@
 /* in-place unescape
  * ----------------------------------------------------------------------- */
 void
-expand_unescape(stralloc* sa) {
+expand_unescape(stralloc* sa, int (pred)(int)) {
   unsigned int s, d;
 
   for(s = d = 0; s < sa->len; s++) {
     /* skip backslash */
-    if(sa->s[s] == '\\' && parse_isesc(sa->s[s + 1]))
+    if(sa->s[s] == '\\' && pred(sa->s[s + 1]))
       s++;
 
     /* damn, string shouldn't end here */

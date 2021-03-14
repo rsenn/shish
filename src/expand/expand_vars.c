@@ -1,5 +1,7 @@
 #include "../expand.h"
 #include "../tree.h"
+#include "../parse.h"
+
 #include <stdlib.h>
 
 /* expand an assignment list
@@ -18,7 +20,7 @@ expand_vars(union node* vars, union node** nptr) {
       ret++;
     }
 
-    expand_unescape(&n->narg.stra);
+    expand_unescape(&n->narg.stra, parse_isesc);
 
     if(n)
       nptr = &n->list.next;

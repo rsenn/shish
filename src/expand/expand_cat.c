@@ -2,6 +2,8 @@
 #include "../../lib/str.h"
 #include "../tree.h"
 #include "../var.h"
+#include "../parse.h"
+
 #include <stdlib.h>
 
 /* concatenate <len> bytes from <b> to the argument list pointed to by <nptr>
@@ -54,7 +56,7 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
         if((n = expand_glob(nptr, flags & ~X_GLOB)))
           nptr = &n;
       } else {
-        expand_unescape(&n->narg.stra);
+        expand_unescape(&n->narg.stra, parse_isesc);
         n->narg.flag &= ~X_GLOB;
       }
 
