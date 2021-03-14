@@ -224,21 +224,23 @@ struct parser {
   union node* node;
   union node* tree;
   struct position tokstart;
+  struct alias* alias;
 };
 
 /* parser flags
  * ----------------------------------------------------------------------- */
 #define P_DEFAULT 0x0000
 #define P_IACTIVE 0x0001
-#define P_NOKEYWD 0x0002  /* do not recognize keyowrds */
-#define P_NOASSIGN 0x0004 /* don't parse assignments */
-#define P_NOREDIR 0x0008  /* don't parse redirections */
-#define P_SKIPNL 0x0040   /* skip newlines */
-#define P_SUBSTW 0x0100   /* word is inside a var, so its terminated with } */
-#define P_BQUOTE 0x0800   /* bquoted mode, delimit words on unesc'd bquotes */
-#define P_NOSUBST 0x1000  /* do not create substitution nodes */
-#define P_HERE 0x2000     /* parse here-doc */
-#define P_ARITH 0x4000    /* parse arithmetic expression */
+#define P_NOKEYWD 0x0002  /**< do not recognize keywords */
+#define P_NOASSIGN 0x0004 /**< don't parse assignments */
+#define P_NOREDIR 0x0008  /**< don't parse redirections */
+#define P_SKIPNL 0x0040   /**< skip newlines */
+#define P_SUBSTW 0x0100   /**< word is inside a var, so its terminated with } */
+#define P_BQUOTE 0x0800   /**< bquoted mode, delimit words on unesc'd bquotes */
+#define P_NOSUBST 0x1000  /**< do not create substitution nodes */
+#define P_HERE 0x2000     /**< parse here-doc */
+#define P_ARITH 0x4000    /**< parse arithmetic expression */
+#define P_ALIAS 0x8000    /**< parse alias */
 
 struct alias {
   struct alias* next;
@@ -258,7 +260,7 @@ alias_code(struct alias* a, size_t* len) {
   return &a->def[a->namelen + 1];
 }
 
-struct alias* parse_findalias(const char* name, size_t len);
+struct alias* parse_findalias(struct parser* p, const char* name, size_t len);
 
 const char* parse_tokname(enum tok_flag tok, int multi);
 enum tok_flag parse_gettok(struct parser* p, int tempflags);

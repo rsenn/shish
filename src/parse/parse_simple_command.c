@@ -39,8 +39,25 @@ parse_simple_command(struct parser* p) {
           struct nargstr* argstr = &(*aptr)->narg.list->nargstr;
           struct alias* a;
 
-          if((a = parse_findalias(argstr->stra.s, argstr->stra.len))) {
+          if((a = parse_findalias(p, argstr->stra.s, argstr->stra.len))) {
+            char* code;
+            size_t codelen;
+            struct source src;
+            struct fd fd;
+            struct parser aliasp;
+            union node* node;
+            code = alias_code(a, &codelen);
 
+            source_buffer(&src, &fd, code, codelen);
+            parse_init(&aliasp, P_ALIAS);
+            aliasp.alias = a;
+
+            node = parse_list(&aliasp);
+
+            buffer_puts(fd_err->w, "alias list ");
+            debug_list(node, 0);
+
+            source_popfd(&fd);
             debug_node(*aptr, 0);
           }
         }
