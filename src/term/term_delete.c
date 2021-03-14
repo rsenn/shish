@@ -2,7 +2,7 @@
 
 void
 term_delete(void) {
-  unsigned long len;
+  unsigned len;
 
   if(term_pos == term_cmdline.len)
     return;

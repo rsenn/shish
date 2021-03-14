@@ -2,7 +2,7 @@
 
 /* ----------------------------------------------------------------------- */
 void
-term_left(unsigned long n) {
+term_left(unsigned n) {
   if(!term_pos || !n)
     return;
 
@@ -12,7 +12,7 @@ term_left(unsigned long n) {
   if(n > 4 && !term_dumb) {
     term_escape(n, 'D');
   } else {
-    int i;
+    unsigned i;
     char c = '\b';
 
     for(i = 0; i < n; i++) buffer_putc(term_output, c);

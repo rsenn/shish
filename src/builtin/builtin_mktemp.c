@@ -14,11 +14,9 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_mktemp(int argc, char* argv[]) {
-  int c, ret;
-  stralloc dir;
+  int c;
   int directory = 0, quiet = 0, temp = 0, printonly = 0;
   const char* base = "/tmp";
-  char* d;
   stralloc name;
   size_t i;
   static const char alphabet[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',

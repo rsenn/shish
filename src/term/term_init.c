@@ -11,7 +11,7 @@
 static char term_buffer[64];
 
 stralloc term_cmdline;
-unsigned long term_pos;
+unsigned term_pos;
 int term_insert = 1;
 int term_dumb = 1;
 buffer* term_output;
@@ -30,7 +30,7 @@ term_init(struct fd* input, struct fd* output) {
     return 0;
 
   if(term_attr(input->r->fd, 0, &term_tcattr) == 0) {
-    unsigned int i;
+    int i;
 
     /* set terminal flags on all fds that are char devices
        and have the same inode */

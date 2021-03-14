@@ -62,7 +62,7 @@ builtin_expr(int argc, char* argv[]) {
 
     /* parse the string as a compound list */
     if((expr = parse_arith_expr(&p))) {
-      enum tok_flag tok = parse_gettok(&p, P_SKIPNL);
+      /*enum tok_flag tok =*/parse_gettok(&p, P_SKIPNL);
 
 #ifdef DEBUG_OUTPUT
       debug_list(expr, 0);

@@ -10,7 +10,7 @@ extern stralloc term_cmdline;
 extern buffer term_input;
 extern int term_insert;
 extern int term_dumb;
-extern unsigned long term_pos;
+extern unsigned term_pos;
 extern buffer* term_output;
 
 extern struct termios term_tcattr;
@@ -29,13 +29,13 @@ void term_backspace(void);
 void term_delete(void);
 void term_home(void);
 void term_end(void);
-void term_left(unsigned long n);
-void term_right(unsigned long n);
+void term_left(unsigned n);
+void term_right(unsigned n);
 void term_newline(void);
 void term_ansi(void);
-void term_escape(unsigned long n, char type);
+void term_escape(unsigned n, char type);
 
-void term_setline(const char* s, unsigned long len);
+void term_setline(const char* s, unsigned len);
 char* term_getline(void);
 
 #endif /* TERM_H */

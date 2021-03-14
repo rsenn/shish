@@ -115,8 +115,6 @@ test_binary(int argc, char** argv) {
   if(op[0] == '-') {
 
     if(contains("no", op[1])) {
-      struct stat st;
-
       switch(op[1]) {
         case 'n': return filetime(left) > filetime(right);
         case 'o': return filetime(left) < filetime(right);
@@ -249,7 +247,6 @@ test_expr(int argc, char** argv) {
 static int
 test_cond(int argc, char** argv) {
   int result = -1, neg = 0;
-  struct stat st;
 
   /* every condition can be negated by a leading ! */
   while(shell_optind < argc && str_equal(current(argv), "!")) {
@@ -277,17 +274,17 @@ test_cond(int argc, char** argv) {
 static int
 test_boolean(int argc, char* argv[]) {
   int result, prev;
-  enum { TEST_AND, TEST_OR } and_or = -1;
+  enum { TEST_AND = 1, TEST_OR = 2 } and_or = 0;
   const char* arg;
 
   while(num_args(argc) > 0 && (result = test_cond(argc, argv)) != -1) {
 
-    if(and_or != -1) {
+    if(and_or) {
       switch(and_or) {
         case TEST_AND: result = prev && result; break;
         case TEST_OR: result = prev || result; break;
       }
-      and_or = -1;
+      and_or = 0;
     }
 
     if(num_args(argc) > 1 && (arg = next(argv))[0] == '-' && contains("ao", arg[1])) {
@@ -296,7 +293,7 @@ test_boolean(int argc, char* argv[]) {
         case 'o': and_or = TEST_OR; break;
       }
     }
-    if(and_or == -1)
+    if(and_or == 0)
       break;
     prev = result;
   }
@@ -308,7 +305,6 @@ test_boolean(int argc, char* argv[]) {
 int
 builtin_test(int argc, char* argv[]) {
   int result, ret = 1;
-  int neg = 0;
   int brackets = 0;
 
   if(argv[0][0] == '[') {

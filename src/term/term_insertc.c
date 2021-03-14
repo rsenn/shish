@@ -8,7 +8,7 @@ term_insertc(char c) {
   if(term_pos == term_cmdline.len) {
     stralloc_catb(&term_cmdline, &c, 1);
   } else {
-    unsigned long len;
+    unsigned len;
     len = term_cmdline.len - term_pos;
     buffer_put(term_output, &term_cmdline.s[term_pos], len);
     stralloc_insertb(&term_cmdline, &c, term_pos, 1);

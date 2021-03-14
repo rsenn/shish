@@ -22,8 +22,7 @@ shell_readlink(const char* path, stralloc* sa) {
 #ifdef HAVE_READLINK
   /* do not allocate PATH_MAX from the beginning,
      most paths will be smaller */
-  unsigned long n = (START ? START : 32);
-  int sz;
+  size_t sz, n = (START ? START : 32);
 
   do {
     /* reserve some space */

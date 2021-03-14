@@ -22,7 +22,7 @@ job_wait(struct job* job, int pid, int* status) {
     int n = job->nproc;
 
     while(n > 0) {
-      int i;
+      unsigned int i;
 
       ret = wait_pid(-job->pgrp, &st);
 

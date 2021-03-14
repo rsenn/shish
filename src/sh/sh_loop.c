@@ -44,7 +44,7 @@ sh_loop(void) {
       tree_catlist(list, &cmd, NULL);
 
       if(source->mode & SOURCE_IACTIVE) {
-        buffer* in = source->b;
+        // buffer* in = source->b;
 
         /*stralloc_copyb(&cmd, in->x, in->n);
 

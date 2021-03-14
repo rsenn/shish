@@ -11,11 +11,9 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_rmdir(int argc, char* argv[]) {
-  int c, mode, ret;
-  stralloc path;
+  int c, ret;
   int verbose = 0, force = 0, parents = 0;
   char* p;
-  size_t i;
 
   /* check options */
   while((c = shell_getopt(argc, argv, "vfr")) > 0) {

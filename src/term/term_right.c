@@ -2,7 +2,7 @@
 
 /* ----------------------------------------------------------------------- */
 void
-term_right(unsigned long n) {
+term_right(unsigned n) {
   if(term_pos == term_cmdline.len || !n)
     return;
 

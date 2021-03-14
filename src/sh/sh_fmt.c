@@ -128,7 +128,7 @@ main(int argc, char** argv, char** envp) {
   debug_nl_fl();
 #endif
 
-  for(i = 0; i < indent_width; i++) stralloc_catc(&separator, ' ');
+  for(i = 0; (unsigned)i < indent_width; i++) stralloc_catc(&separator, ' ');
   stralloc_nul(&separator);
   tree_separator = separator.s;
 

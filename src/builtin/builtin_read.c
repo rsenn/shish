@@ -26,11 +26,11 @@ static int
 predicate_function(stralloc* sa, void* ptr) {
   struct predicate_data* p = ptr;
   if(p->delim && p->ndelim > 0) {
-    if(sa->len && byte_chr(p->delim, p->ndelim, sa->s[sa->len - 1]) < p->ndelim)
+    if(sa->len && byte_chr(p->delim, p->ndelim, sa->s[sa->len - 1]) < (size_t)p->ndelim)
       return 1;
   }
   if(p->nchars > 0)
-    return sa->len >= p->nchars;
+    return sa->len >= (size_t)p->nchars;
 
   return 0;
 }
