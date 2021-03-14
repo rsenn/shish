@@ -70,7 +70,7 @@ builtin_read(int argc, char* argv[]) {
     buffer_puts(fd_err->w, "ifslen: ");
     buffer_putlong(fd_err->w, ifslen);
     buffer_puts(fd_err->w, " ifs: ");
-    buffer_put(fd_err->w, ifs, ifslen);
+    buffer_puts_escaped(fd_err->w, ifs);
     buffer_putnlflush(fd_err->w);
 
     for(ptr = stralloc_begin(&line), end = stralloc_end(&line); ptr < end;) {

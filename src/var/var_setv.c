@@ -16,14 +16,14 @@ var_setv(const char* name, const char* value, size_t vlen, int flags) {
     stralloc_init(&var->sa);
     stralloc_cats(&var->sa, name);
   }
- 
+
   assert(var->sa.a);
 
   var->sa.len = var->len;
   stralloc_catc(&var->sa, '=');
   var->offset = var->sa.len;
   stralloc_catb(&var->sa, value, vlen);
- 
+
   /* set flags */
   var->flags |= flags;
   return var->sa.s;

@@ -2,6 +2,8 @@
 #include "../str.h"
 #include "../fmt.h"
 
+int buffer_putfmt_args(buffer*, const char*, size_t, size_t (*)(char*, int, void*, void*, void*, void*), void*[]);
+
 int
 buffer_puts_escaped_args(buffer* b, const char* x, size_t (*escape)(char*, void*, void*, void*, void*), void* args[]) {
   if(escape == NULL)
