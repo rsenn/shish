@@ -19,8 +19,7 @@ exec_command(enum hash_id id, union command* cmd, int argc, char** argv, int exe
     case H_EXEC: {
       /* reset shell_optind for shell_getopt() inside builtins */
       shell_optind = 1;
-      shell_optidx = 0;
-      shell_optofs = 0;
+       shell_optofs = 0;
 
       if(fd_in)
         fdtable_open(fd_in, FDTABLE_MOVE);

@@ -14,7 +14,7 @@ shell_getopt(int argc, char* const argv[], const char* optstring) {
 }
 
 #define optarg state->arg
-#define optidx state->idx
+//#define optidx state->idx
 #define optind state->ind
 #define optofs state->ofs
 #define optopt state->opt
@@ -26,7 +26,7 @@ shell_getopt_r(struct optstate* state, int argc, char* const argv[], const char*
   /* no-one will get shot for setting optind to 0 in libshish.a :) */
   if(optind == 0) {
     optind = 1;
-    optidx = 0;
+   // optidx = 0;
     optofs = 0;
   }
 
@@ -42,10 +42,10 @@ shell_getopt_r(struct optstate* state, int argc, char* const argv[], const char*
     }
 
     /* if we're just starting then initialize local static vars */
-    if(optidx != optind) {
+   /* if(optidx != optind) {
       optidx = optind;
       optofs = 0;
-    }
+    }*/
 
     /* get next option char */
     optopt = argv[optind][optofs + 1];

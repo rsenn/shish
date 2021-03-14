@@ -27,7 +27,7 @@ char* shell_gethome(int uid);
 char* shell_gethostname(stralloc* sa);
 
 struct optstate {
-  int ind, idx, ofs;
+  int ind, ofs;
   char opt;
   char* arg;
 };
@@ -38,7 +38,6 @@ int shell_getopt(int argc, char* const argv[], const char* optstring);
 extern struct optstate shell_opt;
 
 #define shell_optarg shell_opt.arg
-#define shell_optidx shell_opt.idx
 #define shell_optind shell_opt.ind
 #define shell_optofs shell_opt.ofs
 #define shell_optopt shell_opt.opt
