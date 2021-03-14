@@ -40,7 +40,7 @@ struct env {
   struct env* parent;
   stralloc cwd;
   int cwdsym; /* is cwd symbolic or phyiscal? */
-  long umask;
+  int umask;
   int flags;
   int exitcode; /* exit code of last evaluated tree */
   struct fdstack* fdstack;
