@@ -83,25 +83,24 @@ struct fd {
 
 /* fd mode */
 enum {
-  FD_READ = 0x00000001,
-  FD_WRITE = 0x00000002,
-  FD_APPEND = 0x00000004,
-  FD_EXCL = 0x00000008,
-  FD_TRUNC = 0x00000010,
+  FD_READ = 0x0001,
+  FD_WRITE = 0x0002,
+  FD_APPEND = 0x0004,
+  FD_EXCL = 0x0008,
+  FD_TRUNC = 0x0010,
 };
 
 /* types */
 enum {
   FD_TYPE = 0x0007ff00,
-
-  FD_FILE = 0x00000100, /* a file that has been opened */
-  FD_DIR = 0x00000200,
-  FD_LINK = 0x00000400,
-  FD_CHAR = 0x00000800,
-  FD_BLOCK = 0x00001000,
-  FD_SOCKET = 0x00002000,
-  FD_PIPE = 0x00004000,     /* a pipe */
-  FD_STRALLOC = 0x00008000, /* a stralloc */
+  FD_FILE = 0x0100, /* a file that has been opened */
+  FD_DIR = 0x0200,
+  FD_LINK = 0x0400,
+  FD_CHAR = 0x0800,
+  FD_BLOCK = 0x1000,
+  FD_SOCKET = 0x2000,
+  FD_PIPE = 0x4000,     /* a pipe */
+  FD_STRALLOC = 0x8000, /* a stralloc */
   FD_STRING = 0x00010000,   /* a nul-terminated string */
   FD_DUP = 0x00020000,      /* a clone of another file descriptor */
   FD_TERM = 0x00040000,     /* is a terminal */
