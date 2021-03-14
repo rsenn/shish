@@ -99,11 +99,11 @@ enum {
   FD_CHAR = 0x0800,
   FD_BLOCK = 0x1000,
   FD_SOCKET = 0x2000,
-  FD_PIPE = 0x4000,     /* a pipe */
-  FD_STRALLOC = 0x8000, /* a stralloc */
-  FD_STRING = 0x00010000,   /* a nul-terminated string */
-  FD_DUP = 0x00020000,      /* a clone of another file descriptor */
-  FD_TERM = 0x00040000,     /* is a terminal */
+  FD_PIPE = 0x4000,       /* a pipe */
+  FD_STRALLOC = 0x8000,   /* a stralloc */
+  FD_STRING = 0x00010000, /* a nul-terminated string */
+  FD_DUP = 0x00020000,    /* a clone of another file descriptor */
+  FD_TERM = 0x00040000,   /* is a terminal */
   FD_NULL = 0x00080000,
 };
 /* todo mode */

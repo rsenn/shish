@@ -346,3 +346,4 @@ set(OUTSTR "${OUTSTR}\nEnabled builtins:\n  ${BUILTINS_ENABLED}\n")
 set(OUTSTR "${OUTSTR}\nDisabled builtins:\n  ${BUILTINS_DISABLED}\n")
 set(OUTSTR "${OUTSTR}\nAdditional libraries:\n  ${MATH_LIBRARY} ${WINSOCK2_LIBRARY}\n")
 message(STATUS "${OUTSTR}")
+ 

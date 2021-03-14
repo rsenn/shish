@@ -17,3 +17,13 @@ if(OPT_C_G_GDB)
         CACHE STRING "C compiler options" FORCE)
   endif(NOT "${CMAKE_C_FLAGS_DEBUG}" MATCHES "-ggdb")
 endif(OPT_C_G_GDB)
+
+
+
+foreach(M ALLOC FD FDSTACK FDTABLE PARSE)
+  string(TOLOWER NAME "${M}")
+  option(DEBUG_${M} "Debug ${NAME}" OFF)
+  if(DEBUG_${M})
+    add_definitions(-DDEBUG_${M})
+  endif(DEBUG_${M})
+endforeach(M ALLOC FD FDSTACK FDTABLE PARSE)

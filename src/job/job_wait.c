@@ -19,10 +19,10 @@ job_wait(struct job* job, int pid, int* status) {
   int st; /* status */
 
   if(job) {
-    int n = job->nproc;
+    unsigned int n = job->nproc;
 
     while(n > 0) {
-      int i;
+      unsigned int i;
 
       ret = wait_pid(-job->pgrp, &st);
 

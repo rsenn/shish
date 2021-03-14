@@ -37,10 +37,14 @@ parse_simple_command(struct parser* p) {
 
         /* first argument */
         if(!(p->flags & P_NOASSIGN)) {
+          stralloc sa;
           struct nargstr* argstr = &(*aptr)->narg.list->nargstr;
           struct alias* a;
 
-          if((a = parse_findalias(p, argstr->stra.s, argstr->stra.len))) {
+          stralloc_init(&sa);
+          stralloc_move(&sa, &argstr->stra);
+
+          if((a = parse_findalias(p,  sa.s, sa.len))) {
             size_t codelen;
             struct source src;
             struct fd fd;
@@ -51,16 +55,18 @@ parse_simple_command(struct parser* p) {
             source_buffer(&src, &fd, (code = alias_code(a, &codelen)), codelen);
             parse_init(&aliasp, P_ALIAS);
             aliasp.alias = a;
-            simple_cmd = (struct ncmd*)parse_simple_command(&aliasp);
-            source_popfd(&fd);
 
-            if(simple_cmd) {
-              tree_free(*aptr);
+            if((simple_cmd = (struct ncmd*)parse_simple_command(&aliasp))) {
+              debug_node((union node*)simple_cmd, 0);
+
+              tree_remove(aptr);
               vptr = tree_append(vptr, simple_cmd->vars);
               rptr = tree_append(rptr, simple_cmd->rdir);
               aptr = tree_append(aptr, simple_cmd->args);
               shell_free(simple_cmd);
             }
+
+            source_popfd(&fd);
           }
         }
 
