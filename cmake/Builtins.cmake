@@ -18,6 +18,7 @@ list(
   set
   shift
   source
+  type
   umask
   unset)
 list(

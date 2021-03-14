@@ -17,7 +17,7 @@ builtin_chmod(int argc, char* argv[]) {
   char* p;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, ":v")) > 0) {
+  while((c = shell_getopt(argc, argv, "v")) > 0) {
     switch(c) {
       case 'v': verbose = 1; break;
       default: builtin_invopt(argv); return 1;

@@ -15,7 +15,7 @@ builtin_export(int argc, char* argv[]) {
   char** argp;
 
   /* check options, -n for unexport, -p for output */
-  while((c = shell_getopt(argc, argv, ":np")) > 0) {
+  while((c = shell_getopt(argc, argv, "np")) > 0) {
     switch(c) {
       case 'n': clear = 1; break;
       case 'p': print = 1; break;

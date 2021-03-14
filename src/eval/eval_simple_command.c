@@ -36,7 +36,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   int status = 0;
   union node* args = NULL;
   union node* assigns = NULL;
-  union command cmd = {H_BUILTIN, {0}};
+  struct command cmd = {H_BUILTIN, {0}};
   // enum hash_id id = H_BUILTIN;
   struct vartab vars;
   struct fdstack io;

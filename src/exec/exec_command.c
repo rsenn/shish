@@ -10,7 +10,7 @@
 /* execute a command
  * ----------------------------------------------------------------------- */
 int
-exec_command(union command* cmd, int argc, char** argv, int exec, union node* redir) {
+exec_command(struct command* cmd, int argc, char** argv, int exec, union node* redir) {
   int ret = 1;
 
   switch(cmd->id) {

@@ -9,41 +9,28 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_command(int argc, char* argv[]) {
-  int c;
-  int nullenv = 0;
-  int dash = 0;
-  char* argv0 = NULL;
-  enum hash_id id;
-  union command cmd;
+  int c, default_path = 0, print_desc = 0, verbose = 0;
+  struct command cmd;
 
   /* check options, -l for login dash, -c for null env, -a to set argv[0] */
-  while((c = shell_getopt(argc, argv, ":cla:")) > 0) {
+  while((c = shell_getopt(argc, argv, "pvV")) > 0) {
     switch(c) {
-      case 'c': nullenv = 1; break;
-      case 'l': dash = 1; break;
-      case 'a': argv0 = shell_optarg; break;
+      case 'p': default_path = 1; break;
+      case 'v': print_desc = 1; break;
+      case 'V': verbose = 1; break;
       default: builtin_invopt(argv); return 1;
     }
   }
-
-  /* TODO*/
-  (void)dash;
-  (void)nullenv;
 
   /* no arguments? return now! */
   if(argv[shell_optind] == NULL)
     return 0;
 
   /* look up the command and exec if found */
-  cmd = exec_hash(argv[shell_optind], H_FUNCTION);
-
-  if(cmd.ptr) {
-    /* command name was set, replace argv[shell_optind] */
-    if(argv0)
-      argv[shell_optind] = argv0;
+  if((cmd = exec_hash(argv[shell_optind], H_FUNCTION)).ptr) {
 
     /* try to exec */
-    exec_command(&cmd, argc - shell_optind, &argv[shell_optind], 1, NULL);
+    exec_command(&cmd, argc - shell_optind, &argv[shell_optind], 0, NULL);
   }
 
   /* at this point the exec stuff failed */

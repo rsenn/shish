@@ -18,7 +18,7 @@ builtin_rm(int argc, char* argv[]) {
   char* p;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, ":vfr")) > 0) {
+  while((c = shell_getopt(argc, argv, "vfr")) > 0) {
     switch(c) {
       case 'v': verbose = 1; break;
       case 'f': force = 1; break;

@@ -17,7 +17,7 @@ builtin_dump(int argc, char* argv[]) {
   int what = 0, num_args;
   char** argp;
 
-  while((c = shell_getopt(argc, argv, ":vltsfm")) > 0) {
+  while((c = shell_getopt(argc, argv, "vltsfm")) > 0) {
     switch(c) {
       case 'v': what = VARTAB_ROOT; break;
       case 'l': what = VARTAB_LOCAL; break;

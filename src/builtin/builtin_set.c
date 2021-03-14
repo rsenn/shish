@@ -12,7 +12,7 @@ builtin_set(int argc, char* argv[]) {
   int debug = 0, exit_on_err = 0, no_clobber = 0, error_on_unset = 0;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, ":xeCu")) > 0) {
+  while((c = shell_getopt(argc, argv, "xeCu")) > 0) {
     switch(c) {
       case 'x': debug = 1; break;
       case 'e': exit_on_err = 1; break;

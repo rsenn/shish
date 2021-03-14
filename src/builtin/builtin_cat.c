@@ -16,7 +16,7 @@ builtin_cat(int argc, char* argv[]) {
   buffer inb;
   buffer* in;
   /* check options */
-  while((c = shell_getopt(argc, argv, ":nb")) > 0) {
+  while((c = shell_getopt(argc, argv, "nb")) > 0) {
     switch(c) {
       case 'n': number_lines = 1; break;
       case 'b': number_nonempty = 1; break;

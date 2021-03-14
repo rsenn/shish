@@ -23,7 +23,7 @@ builtin_hostname(int argc, char* argv[]) {
   int force = 0;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, ":f")) > 0) {
+  while((c = shell_getopt(argc, argv, "f")) > 0) {
     switch(c) {
       case 'f': force = 1; break;
       default: builtin_invopt(argv); return 1;

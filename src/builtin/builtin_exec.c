@@ -14,10 +14,10 @@ builtin_exec(int argc, char* argv[]) {
   int dash = 0;
   char* argv0 = NULL;
   enum hash_id id;
-  union command cmd;
+  struct command cmd;
 
   /* check options, -l for login dash, -c for null env, -a to set argv[0] */
-  while((c = shell_getopt(argc, argv, ":cla:")) > 0) {
+  while((c = shell_getopt(argc, argv, "cla:")) > 0) {
     switch(c) {
       case 'c': nullenv = 1; break;
       case 'l': dash = 1; break;

@@ -11,7 +11,7 @@ builtin_pwd(int argc, char* argv[]) {
   int physical = 0;
 
   /* check options, -L for symlink, -P for physical path */
-  while((c = shell_getopt(argc, argv, ":LP")) > 0) {
+  while((c = shell_getopt(argc, argv, "LP")) > 0) {
     switch(c) {
       case 'P': physical++; break;
       case 'L': physical = 0; break;

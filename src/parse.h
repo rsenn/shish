@@ -174,6 +174,8 @@ enum tok_id {
   TI_END,   /* right brace } */
 };
 
+extern struct token parse_tokens[];
+
 enum tok_flag {
   T_EOF = (1 << TI_EOF),
   T_NL = (1 << TI_NL),

@@ -95,6 +95,9 @@
 #ifndef BUILTIN_TRUE
 #define BUILTIN_TRUE 1
 #endif
+#ifndef BUILTIN_TYPE
+#define BUILTIN_TYPE 1
+#endif
 #ifndef BUILTIN_UMASK
 #define BUILTIN_UMASK 1
 #endif
@@ -226,6 +229,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_TRUE
     {"true", &builtin_true, B_DEFAULT, ""},
+#endif
+#if BUILTIN_TYPE
+    {"type", &builtin_type, B_DEFAULT, "[-afptP] name [name ...]"},
 #endif
 #if BUILTIN_UMASK
     {"umask", &builtin_umask, B_SPECIAL, "[-p] [-S] [mode]"},

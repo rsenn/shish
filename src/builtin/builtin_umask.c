@@ -86,7 +86,7 @@ builtin_umask(int argc, char* argv[]) {
   int symbolic = 0, print = 0;
 
   /* check options, -p for print, -S for symbolic output */
-  while((c = shell_getopt(argc, argv, ":pS")) > 0) {
+  while((c = shell_getopt(argc, argv, "pS")) > 0) {
     switch(c) {
       case 'p': print = 1; break;
       case 'S': symbolic = 1; break;

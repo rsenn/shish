@@ -17,9 +17,9 @@ struct nfunc* functions = NULL;
 
 /* hashed command search routine
  * ----------------------------------------------------------------------- */
-union command
+struct command
 exec_hash(char* name, int mask) {
-  union command cmd = {0, {0}};
+  struct command cmd = {0, {0}};
 
   /* name contains slashes, its a path */
   if(name[str_chr(name, '/')]) {
@@ -50,8 +50,8 @@ exec_hash(char* name, int mask) {
       cmd.id = H_EXEC;
       cmd.builtin = builtin_search(name, B_EXEC);
 
-      /* then search for functions */
-      if(cmd.builtin == NULL) {
+      /* then search for special builtins */
+      if(!(mask & H_SBUILTIN) && cmd.builtin == NULL) {
         cmd.id = H_SBUILTIN;
         cmd.builtin = builtin_search(name, B_SPECIAL);
       }
@@ -69,7 +69,7 @@ exec_hash(char* name, int mask) {
       }
 
       /* then search for normal builtins */
-      if(cmd.fn == NULL) {
+      if(!(mask & H_BUILTIN) & cmd.fn == NULL) {
         cmd.id = H_BUILTIN;
         cmd.builtin = builtin_search(name, B_DEFAULT);
       }
