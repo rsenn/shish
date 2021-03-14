@@ -3,40 +3,65 @@
 #include "../expand.h"
 #include "../var.h"
 #include "../debug.h"
+#include "../term.h"
+#include "../../lib/byte.h"
 #include "../../lib/scan.h"
 #include "../../lib/str.h"
 #include "../../lib/fmt.h"
 #include "../../lib/buffer.h"
-#include <math.h>
+#include <termios.h>
 
-static int any(int c) {
+static int
+any(int c) {
   return 1;
 }
 
+struct predicate_data {
+  const char* delim;
+  int ndelim;
+  int nchars;
+};
+
+static int
+predicate_function(stralloc* sa, void* ptr) {
+  struct predicate_data* p = ptr;
+  if(p->delim && p->ndelim > 0) {
+    if(sa->len && byte_chr(p->delim, p->ndelim, sa->s[sa->len - 1]) < p->ndelim)
+      return 1;
+  }
+  if(p->nchars > 0)
+    return sa->len >= p->nchars;
+
+  return 0;
+}
 /* read built-in
  *
  * ----------------------------------------------------------------------- */
 int
 builtin_read(int argc, char* argv[]) {
-  int c, raw = 0, silent = 0, nchars = -1, fd = 0;
+  int c, raw = 0, silent = 0, fd = 0;
   char** argp;
   int num_args;
-  const char *delim = "\n", *prompt = 0;
-  size_t ndelims;
-  double timeout = -1;
+  const char* prompt = 0;
+  // double timeout = -1;
   stralloc data;
   int index;
+  struct predicate_data p = {"\n", 1, -1};
 
-  /* check options, -p for output */
-  while((c = shell_getopt(argc, argv, "d:n:N:p:rst:u:")) > 0) {
+  while((c = shell_getopt(argc, argv, "d:n:N:p:rsu:")) > 0) {
     switch(c) {
-      case 'd': delim = shell_optarg; break;
-      case 'N': delim = 0;
-      case 'n': nchars = scan_int(shell_optarg, &nchars); break;
+      case 'd':
+        p.delim = shell_optarg;
+        p.ndelim = str_len(p.delim);
+        break;
+      case 'N': p.delim = 0; p.ndelim = 0;
+      case 'n': scan_int(shell_optarg, &p.nchars); break;
       case 'p': prompt = shell_optarg; break;
       case 'r': raw = 1; break;
-      case 's': silent = 1; break;
-      case 't': scan_double(shell_optarg, &timeout); break;
+      case 's':
+        silent = 1;
+        break;
+        // case 't': scan_double(shell_optarg, &timeout); break;
       case 'u': scan_int(shell_optarg, &fd); break;
       default: builtin_invopt(argv); return 1;
     }
@@ -50,8 +75,6 @@ builtin_read(int argc, char* argv[]) {
       return 1;
     }
   }
-  if(delim)
-    ndelims = str_len(delim);
   if(prompt)
     buffer_putsflush(fd_out->w, prompt);
 
@@ -61,16 +84,22 @@ builtin_read(int argc, char* argv[]) {
     size_t len;
     char *ptr, *end;
     index = 0;
+    struct termios attrs;
+    buffer* input = fdtable[fd]->r;
 
     stralloc_init(&data);
 
-    if(delim) {
-      if((ret = buffer_get_token_sa(fdtable[fd]->r, &data, delim, ndelims)) > 0) {
-        stralloc_trimr(&data, "\r\n", 2);
-      } else {
-        status = 1;
-      }
+    if(silent)
+      term_attr(input->fd, 1, &attrs);
+
+    if((ret = buffer_get_token_sa_pred(input, &data, predicate_function, &p)) > 0) {
+      stralloc_trimr(&data, "\r\n", 2);
+    } else {
+      status = 1;
     }
+
+    if(silent)
+      term_restore(input->fd, &attrs);
 
     ifs = var_vdefault("IFS", IFS_DEFAULT, &len);
 
@@ -79,18 +108,24 @@ builtin_read(int argc, char* argv[]) {
 
     stralloc_nul(&data);
 
-    for(ptr = stralloc_begin(&data), end = stralloc_end(&data); ptr < end;) {
+    ptr = stralloc_begin(&data);
+    end = stralloc_end(&data);
+
+    for(index = 0; index < num_args; index++) {
+
+      if(ptr < end) {
         len = scan_charsetnskip(ptr, ifs, end - ptr);
-      if((ptr += len) >= end)
-        break;
-      len = index + 1 == num_args ? end - ptr : scan_noncharsetnskip(ptr, ifs, end - ptr);
-      var_setv(argp[index], ptr, len, 0);
-      index++;
-      ptr += len;
-    }
-    while(index < num_args) {
+        ptr += len;
+
+        len = end - ptr;
+        if(index < num_args - 1)
+          len = scan_noncharsetnskip(ptr, ifs, len);
+
+        var_setv(argp[index], ptr, len, 0);
+        ptr += len;
+        continue;
+      }
       var_set(argp[index], 0);
-      index++;
     }
     return status;
   }

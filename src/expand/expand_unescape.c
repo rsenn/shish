@@ -5,7 +5,7 @@
 /* in-place unescape
  * ----------------------------------------------------------------------- */
 void
-expand_unescape(stralloc* sa, int (pred)(int)) {
+expand_unescape(stralloc* sa, int(pred)(int)) {
   unsigned int s, d;
 
   for(s = d = 0; s < sa->len; s++) {

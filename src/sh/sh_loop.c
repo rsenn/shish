@@ -57,7 +57,7 @@ sh_loop(void) {
         history_advance();
       }
 
-#if defined(DEBUG_OUTPUT)
+#ifdef DEBUG_OUTPUT
       if(sh->flags & SH_DEBUG) {
         debug_list(list, 0);
         buffer_putnlflush(fd_err->w);

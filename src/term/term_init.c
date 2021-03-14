@@ -29,7 +29,7 @@ term_init(struct fd* input, struct fd* output) {
   if((input->mode & output->mode & FD_CHAR) == 0)
     return 0;
 
-  if(term_attr(input->r->fd, 0) == 0) {
+  if(term_attr(input->r->fd, 0, &term_tcattr) == 0) {
     unsigned int i;
 
     /* set terminal flags on all fds that are char devices

@@ -34,7 +34,7 @@ term_read(int fd, char* buf, unsigned int len) {
   }
 
   /*  tcsetattr(fd, TCSANOW, &term_tcattr);*/
-  term_attr(term_input.fd, 1);
+  term_attr(term_input.fd, 1, &term_tcattr);
 
   prompt_show();
 

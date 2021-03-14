@@ -8,9 +8,9 @@
 /* restore old terminal attrs
  * ----------------------------------------------------------------------- */
 void
-term_restore(buffer* input) {
+term_restore(int fd, const struct termios* tcattr) {
 #ifdef TCSANOW
-  tcsetattr(input->fd, TCSANOW, &term_tcattr);
+  tcsetattr(fd, TCSANOW, tcattr);
 #endif
 #ifdef SIGWINCH
   signal(SIGWINCH, SIG_DFL);

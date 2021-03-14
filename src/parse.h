@@ -37,42 +37,84 @@ extern const unsigned short parse_chartable[CHAR_RANGE];
  * ----------------------------------------------------------------------- */
 
 /* matches [ \t\n] */
-static inline int parse_isspace(int c) { return !!(parse_chartable[(int)(unsigned char)c] & C_SPACE); }
+static inline int
+parse_isspace(int c) {
+  return !!(parse_chartable[(int)(unsigned char)c] & C_SPACE);
+}
 /* matches [0-9] */
-static inline int parse_isdigit(int c) { return !!(parse_chartable[(int)(unsigned char)c] & (C_DIGIT)); }
+static inline int
+parse_isdigit(int c) {
+  return !!(parse_chartable[(int)(unsigned char)c] & (C_DIGIT));
+}
 /* matches [0-9A-Fa-f] */
-static inline int parse_isxdigit(int c) { return !!(parse_chartable[(int)(unsigned char)c] & (C_HEX)); }
+static inline int
+parse_isxdigit(int c) {
+  return !!(parse_chartable[(int)(unsigned char)c] & (C_HEX));
+}
 /* matches [0-7] */
-static inline int parse_isodigit(int c) { return !!(parse_chartable[(int)(unsigned char)c] & (C_OCTAL)); }
+static inline int
+parse_isodigit(int c) {
+  return !!(parse_chartable[(int)(unsigned char)c] & (C_OCTAL));
+}
 /* matches [A-Z] */
-static inline int parse_isupper(int c) { return !!(parse_chartable[(int)(unsigned char)c] & (C_UPPER)); }
+static inline int
+parse_isupper(int c) {
+  return !!(parse_chartable[(int)(unsigned char)c] & (C_UPPER));
+}
 /* matches [a-z] */
-static inline int parse_islower(int c) { return !!(parse_chartable[(int)(unsigned char)c] & (C_LOWER)); }
+static inline int
+parse_islower(int c) {
+  return !!(parse_chartable[(int)(unsigned char)c] & (C_LOWER));
+}
 /* matches [a-zA-Z] */
-static inline int parse_isalpha(int c) { return !!(parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER)); }
+static inline int
+parse_isalpha(int c) {
+  return !!(parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER));
+}
 /* matches [a-zA-Z0-9] */
-static inline int parse_isalnum(int c) { return !!(parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_DIGIT)); }
+static inline int
+parse_isalnum(int c) {
+  return !!(parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_DIGIT));
+}
 /* matches [@#?!$0-*] (special parameters) */
-static inline int parse_isspcl(int c) { return !!(parse_chartable[(int)(unsigned char)c] & (C_SPCL)); }
+static inline int
+parse_isspcl(int c) {
+  return !!(parse_chartable[(int)(unsigned char)c] & (C_SPCL));
+}
 
 /* matches [;&|()] (control operator) */
-static inline int parse_isctrl(int c) { return !!(parse_chartable[(int)(unsigned char)c] & (C_CTRL)); }
+static inline int
+parse_isctrl(int c) {
+  return !!(parse_chartable[(int)(unsigned char)c] & (C_CTRL));
+}
 
 /* matches [*?[]\] (glob expansion escape stuff) */
-static inline int parse_isesc(int c) { return !!(parse_chartable[(int)(unsigned char)c] &  C_ESC); }
+static inline int
+parse_isesc(int c) {
+  return !!(parse_chartable[(int)(unsigned char)c] & C_ESC);
+}
 
 /* matches [$`"] (double quote escape stuff) */
-static inline int parse_isdesc(int c) { return !!(parse_chartable[(int)(unsigned char)c] & (C_DESC)); }
+static inline int
+parse_isdesc(int c) {
+  return !!(parse_chartable[(int)(unsigned char)c] & (C_DESC));
+}
 
 /* is either alpha, digit or underscore */
 #define parse_isname(c, pos)                                                                                           \
   ((parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_NAME)) || ((pos) > 0 && parse_isdigit(c)))
 
 /* is either alpha, digit or underscore or special parameter */
-static inline int parse_isparam(int c) { return !!(parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_DIGIT | C_NAME | C_SPCL)); }
+static inline int
+parse_isparam(int c) {
+  return !!(parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_DIGIT | C_NAME | C_SPCL));
+}
 
 /* is arithmetic operation char  */
-static inline int parse_isarith(int c) { return !!(parse_chartable[(int)(unsigned char)c] & (C_ARITHOP)); }
+static inline int
+parse_isarith(int c) {
+  return !!(parse_chartable[(int)(unsigned char)c] & (C_ARITHOP));
+}
 
 /* token structure:
  * ----------------------------------------------------------------------- *

@@ -9,15 +9,15 @@ struct termios term_tcattr;
 /* backup and set terminal attributes
  * ----------------------------------------------------------------------- */
 int
-term_attr(int fd, int set) {
+term_attr(int fd, int set, struct termios* oldattr) {
   int ret;
 
 #include "../../lib/windoze.h"
 #if !WINDOWS_NATIVE && !defined(__MINGW64__)
-  if((ret = tcgetattr(fd, &term_tcattr)) == 0 && set) {
+  if((ret = tcgetattr(fd, oldattr)) == 0 && set) {
     struct termios newattr;
     /* backup tty settings */
-    newattr = term_tcattr;
+    newattr = *oldattr;
     /* set non-canonical and disable echo */
     newattr.c_lflag &= ~(ICANON | ECHO | ISIG);
     return tcsetattr(fd, TCSANOW, &newattr);

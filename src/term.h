@@ -17,8 +17,8 @@ extern struct termios term_tcattr;
 extern struct winsize term_size;
 
 int term_init(struct fd* input, struct fd* output);
-void term_restore(buffer* input);
-int term_attr(int fd, int set);
+void term_restore(int fd, const struct termios*);
+int term_attr(int fd, int set, struct termios*);
 int term_read(int fd, char* buf, unsigned int len);
 
 void term_winsize(void);

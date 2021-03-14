@@ -1,3 +1,15 @@
+ask_passwd() {
+    read -r -p"Password: " -s PASSWORD
+    echo
+    echo "Password is '$PASSWORD'"
+}
+
+read_partial() {
+    echo "ABCDEFGHIJKLMNOPQRSTUVWXYZ" >tmp.txt
+    read -r -n 10 ABCD <tmp.txt
+    echo "ABCD='$ABCD'" 1>&2
+}
+
 while read -r DEV MNT TYPE OPTS REST; do
   case "$DEV" in
   "" | "#"*) continue ;;
@@ -23,3 +35,5 @@ done </etc/fstab
 
   echo "TEST2=$TEST2" 1>&2
 ) <tmp.txt
+
+read_partial

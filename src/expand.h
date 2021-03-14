@@ -95,7 +95,7 @@ union node* expand_getorcreate(union node** out);
 union node* expand_glob(union node** nptr, int flags);
 union node* expand_param(struct nargparam* param, union node** nptr, int flags);
 void expand_tosa(union node* node, stralloc* sa);
-void expand_unescape(stralloc* sa, int(*pred)(int));
+void expand_unescape(stralloc* sa, int (*pred)(int));
 int expand_vars(union node* vars, union node** nptr);
 
 #endif /* EXPAND_H */
