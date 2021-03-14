@@ -2,6 +2,7 @@
 #include "../fd.h"
 #include "../var.h"
 #include "../../lib/scan.h"
+#include "../../lib/str.h"
 #include <math.h>
 
 /* export built-in
@@ -9,13 +10,11 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_read(int argc, char* argv[]) {
-  int c;
-  int raw = 0, silent = 0;
+  int c, raw = 0, silent = 0, nchars = -1, fd = 0;
   char** argp;
-  const char *delim = 0, *prompt = 0;
-  int nchars = -1;
-  int fd = 0;
+  const char *delim = "\n", *prompt = 0;
   double timeout = -1;
+  stralloc line;
 
   /* check options, -p for output */
   while((c = shell_getopt(argc, argv, "d:n:N:p:rst:u:")) > 0) {
@@ -31,6 +30,11 @@ builtin_read(int argc, char* argv[]) {
       default: builtin_invopt(argv); return 1;
     }
   }
+
+  stralloc_init(&line);
+
+  if(delim)
+    buffer_get_token_sa(fd_in->r, &line, delim, str_len(delim));
 
   argp = &argv[shell_optind];
 
