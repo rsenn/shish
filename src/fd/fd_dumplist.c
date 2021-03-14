@@ -7,8 +7,8 @@ fd_dumplist(buffer* b) {
   int i;
 
   buffer_puts(b,
-              "  fd  name        level read-buffer                          "
-              "write-buffer                        flags\n");
+              "  fd  name     level     read-buffer                          "
+              "   write-buffer\n");
   buffer_puts(b,
               "----------------------------------------------------------------"
               "--------------------------------------------\n");

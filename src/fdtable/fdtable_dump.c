@@ -8,7 +8,7 @@ fdtable_dump(buffer* b) {
   int i;
 
   buffer_puts(b,
-              "  fd  name        level read-buffer                          "
+              "  fd  name   level read-buffer                          "
               "write-buffer                        flags\n");
   buffer_puts(b,
               "----------------------------------------------------------------"

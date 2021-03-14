@@ -20,7 +20,8 @@ builtin_read(int argc, char* argv[]) {
   const char *delim = "\n", *prompt = 0;
   size_t ndelims;
   double timeout = -1;
-  stralloc line;
+  stralloc data;
+  int index;
 
   /* check options, -p for output */
   while((c = shell_getopt(argc, argv, "d:n:N:p:rst:u:")) > 0) {
@@ -39,24 +40,34 @@ builtin_read(int argc, char* argv[]) {
   argp = &argv[shell_optind];
   num_args = argc - shell_optind;
 
+  for(index = 0; index < num_args; index++) {
+    if(!var_valid(argp[index])) {
+      builtin_errmsg(argv, argp[index], "not a valid identifier");
+      return 1;
+    }
+  }
+
   if(delim)
     ndelims = str_len(delim);
+
+
+  if(prompt) 
+    buffer_putsflush(fd_out->w, prompt);
+  
 
   {
     int ret, status = 0;
     const char* ifs;
     size_t ifslen;
     char *ptr, *end;
-    int index = 0;
+    index = 0;
 
-    stralloc_init(&line);
+    stralloc_init(&data);
 
     if(delim) {
-      ret = buffer_get_token_sa(fd_in->r, &line, delim, ndelims);
-
-      if(ret > 0) {
-        stralloc_trimr(&line, "\r\n", 2);
-        stralloc_nul(&line);
+      if((ret = buffer_get_token_sa(fd_in->r, &data, delim, ndelims)) > 0) {
+        stralloc_trimr(&data, "\r\n", 2);
+        stralloc_nul(&data);
       } else {
         status = 1;
       }
@@ -64,7 +75,7 @@ builtin_read(int argc, char* argv[]) {
 
     ifs = var_vdefault("IFS", IFS_DEFAULT, &ifslen);
 
-    for(ptr = stralloc_begin(&line), end = stralloc_end(&line); ptr < end;) {
+    for(ptr = stralloc_begin(&data), end = stralloc_end(&data); ptr < end;) {
       size_t len;
 
       len = scan_charsetnskip(ptr, ifs, end - ptr);
@@ -73,19 +84,25 @@ builtin_read(int argc, char* argv[]) {
         break;
 
       len = index + 1 == num_args ? end - ptr : scan_noncharsetnskip(ptr, ifs, end - ptr);
-      var_setv(argp[index], ptr, len, 0);
+
+      if(!var_valid(argp[index]))
+        builtin_errmsg(argv, argp[index], "not a valid identifier");
+      else
+        var_setv(argp[index], ptr, len, 0);
       index++;
       ptr += len;
     }
 
-    while(index < num_args) var_set(argp[index++], 0);
+    while(index < num_args) {
+      if(!var_valid(argp[index]))
+        builtin_errmsg(argv, argp[index], "not a valid identifier");
+      else
+        var_set(argp[index], 0);
+      index++;
+    }
 
     /* set each argument */
     for(; *argp; argp++) {
-      if(!var_valid(*argp)) {
-        builtin_errmsg(argv, *argp, "not a valid identifier");
-        continue;
-      }
     }
 
     return status;
