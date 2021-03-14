@@ -9,9 +9,9 @@ parse_expect(struct parser* p, int tempflags, enum tok_flag toks, union node* nf
   if(!(parse_gettok(p, tempflags) & toks)) {
     parse_error(p, toks);
     if(nfree) {
-#ifdef DEBUG_OUTPUT_
+#ifdef DEBUG_PARSE
       debug_list(nfree, 0);
-#endif /* DEBUG_OUTPUT */
+#endif /* DEBUG_PARSE */
       tree_free(nfree);
     }
 

@@ -1,3 +1,4 @@
+
 #include "../parse.h"
 #include "../tree.h"
 #include "../fd.h"
@@ -44,30 +45,20 @@ parse_simple_command(struct parser* p) {
             struct source src;
             struct fd fd;
             struct parser aliasp;
-            union node* node;
-            char* code = alias_code(a, &codelen);
+            struct ncmd* simple_cmd;
+            char* code;
 
-            source_buffer(&src, &fd, code, codelen);
+            source_buffer(&src, &fd, (code = alias_code(a, &codelen)), codelen);
             parse_init(&aliasp, P_ALIAS);
             aliasp.alias = a;
-
-            node = parse_simple_command(&aliasp);
-
-            buffer_puts(fd_err->w, "alias list ");
-            debug_node(node, 0);
-
+            simple_cmd = (struct ncmd*)parse_simple_command(&aliasp);
             source_popfd(&fd);
 
-            // debug_node(*aptr, 0);
-
-            if(node && node->id == N_SIMPLECMD) {
-              struct ncmd* simple_cmd = &node->ncmd;
+            if(simple_cmd) {
               tree_free(*aptr);
-
               vptr = tree_append(vptr, simple_cmd->vars);
               rptr = tree_append(rptr, simple_cmd->rdir);
               aptr = tree_append(aptr, simple_cmd->args);
-
               shell_free(simple_cmd);
             }
           }
@@ -109,7 +100,7 @@ addcmd:
   simple_command->ncmd.vars = vars;
   simple_command->ncmd.rdir = rdir;
 
-#ifdef DEBUG_OUTPUT
+#ifdef DEBUG_PARSE
   if(sh->flags & SH_DEBUG) {
     buffer_puts(fd_err->w, "\x1b[1;33mparse_simple_command\x1b[0m = ");
     tree_print(simple_command, fd_err->w);

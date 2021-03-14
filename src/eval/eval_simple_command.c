@@ -141,7 +141,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
   if(sh->flags & SH_DEBUG) {
     char** arg;
-    buffer_puts(buffer_2, "+");
+    buffer_puts(fd_err->w, "+");
     for(arg = argv; *arg; arg++) {
       int quote = !!(*arg)[str_chr(*arg, ' ')];
       buffer_putspace(fd_err->w);

@@ -16,7 +16,7 @@ parse_command(struct parser* p, int tempflags) {
 
   tok = parse_gettok(p, tempflags);
 
-#ifdef DEBUG_OUTPUT
+#ifdef DEBUG_PARSE
   if(sh->flags & SH_DEBUG) {
     buffer_puts(fd_err->w, "\x1b[1;33mparse_command\x1b[0m tok=");
     buffer_puts(fd_err->w, parse_tokname(tok, 1));

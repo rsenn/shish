@@ -43,6 +43,12 @@ sh_loop(void) {
       struct eval e;
       tree_catlist(list, &cmd, NULL);
 
+      /* if(sh->flags & SH_DEBUG) {
+         buffer_puts(fd_err->w, "+ ");
+         buffer_putsa(fd_err->w, &cmd);
+         buffer_putnlflush(fd_err->w);
+       }
+ */
       if(source->mode & SOURCE_IACTIVE) {
         buffer* in = source->b;
 
@@ -56,13 +62,6 @@ sh_loop(void) {
         cmd.s = NULL;
         history_advance();
       }
-
-#ifdef DEBUG_OUTPUT
-      if(sh->flags & SH_DEBUG) {
-        debug_list(list, 0);
-        buffer_putnlflush(fd_err->w);
-      }
-#endif /* DEBUG_OUTPUT */
 
       eval_push(&e, E_JCTL);
       status = eval_tree(&e, list, E_ROOT | E_LIST);

@@ -14,7 +14,7 @@ parse_getarg(struct parser* p) {
     n->narg.list = p->tree;
     p->tree = NULL;
 
-#if DEBUG_OUTPUT_
+#if DEBUG_PARSE
     buffer_puts(fd_err->w, "\x1b[1;33mparse_getarg\x1b[0m = ");
     tree_print(n, fd_err->w);
     buffer_putnlflush(fd_err->w);
