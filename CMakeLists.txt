@@ -14,16 +14,15 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
       MinSizeRel
       CACHE STRING "Choose the type of build." FORCE)
   # Set the possible values of build type for cmake-gui
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
-                                               "MinSizeRel" "RelWithDebInfo")
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-option(WARN_WERROR "Halt the compilation with an error on compiler warnings."
-       OFF)
+option(WARN_WERROR "Halt the compilation with an error on compiler warnings." OFF)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Functions.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Checks.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Pedantic.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Debug.cmake)
 
 string(REGEX REPLACE ".*/" "" COMPILER_NAME "${CMAKE_C_COMPILER}")
 
@@ -83,8 +82,7 @@ else()
   set(NAME_DEBUG "")
 endif()
 
-configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake"
-               "${CMAKE_BINARY_DIR}/config.h")
+configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.h")
 
 set(SOURCE_DEFINITIONS)
 set(SOURCE_TYPES
@@ -110,11 +108,7 @@ if(BUILD_DEBUG)
   add_definitions(-DDEBUG=1)
 endif(BUILD_DEBUG)
 
-include_directories(
-  "${CMAKE_BINARY_DIR}"
-  "${CMAKE_SOURCE_DIR}"
-  "${CMAKE_SOURCE_DIR}"
-)
+include_directories("${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}")
 
 # add_definitions(-DHAVE_CONFIG_H=1)
 
@@ -224,10 +218,8 @@ if(DEBUG_OUTPUT)
     src/debug/debug_unquoted.c)
 endif(DEBUG_OUTPUT)
 
-list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c
-     src/builtin/builtin_search.c src/builtin/builtin_table.c)
-list(APPEND SOURCES src/parse/parse_newnode${NAME_DEBUG}.c
-     src/tree/tree_newnode${NAME_DEBUG}.c)
+list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
+list(APPEND SOURCES src/parse/parse_newnode${NAME_DEBUG}.c src/tree/tree_newnode${NAME_DEBUG}.c)
 # list(APPEND SOURCES ${BUILTIN_SOURCES})
 
 if(FORK_SOURCE)
@@ -259,9 +251,8 @@ if(NO_TREE_PRINT)
 endif(NO_TREE_PRINT)
 
 #
-# configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake"
-# "${CMAKE_BINARY_DIR}/src/builtin_config.h" #@ONLY #ESCAPE_QUOTES NEWLINE_STYLE
-# UNIX)
+# configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake" "${CMAKE_BINARY_DIR}/src/builtin_config.h" #@ONLY
+# #ESCAPE_QUOTES NEWLINE_STYLE UNIX)
 
 list(APPEND SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
 add_definitions(-DHAVE_BUILTIN_CONFIG_H=1)
@@ -296,8 +287,7 @@ set(SHISH_SOURCES
     src/sh/sh_usage.c)
 
 add_executable(shish ${SHISH_SOURCES} ${LIBSOURCES})
-target_link_libraries(shish ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
-                      ${ELECTRICFENCE_LIBRARY} ${WINSOCK2_LIBRARY})
+target_link_libraries(shish ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY} ${WINSOCK2_LIBRARY})
 if(EMSCRIPTEN)
   set_target_properties(shish PROPERTIES SUFFIX ".${EMSCRIPTEN_EXE_SUFFIX}")
 endif(EMSCRIPTEN)
@@ -309,7 +299,6 @@ if(BUILD_SHFORMAT)
     GLOB
     SHFORMAT_SOURCES
     src/debug/*.c
-
     src/redir/redir_addhere.c
     src/redir/redir_dup.c
     src/redir/redir_here.c
@@ -325,7 +314,6 @@ if(BUILD_SHFORMAT)
     src/var/*.c
     src/vartab/*.c
     src/varstack/*.c
-
     src/sh/sh_root.c
     src/sh/sh_error.c
     src/sh/sh_errorn.c
@@ -335,8 +323,7 @@ if(BUILD_SHFORMAT)
     src/sh/sh_usage.c)
 
   add_executable(shformat ${SHFORMAT_SOURCES} ${LIBSOURCES})
-  target_link_libraries(shformat ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
-                        ${ELECTRICFENCE_LIBRARY} ${WINSOCK2_LIBRARY})
+  target_link_libraries(shformat ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY} ${WINSOCK2_LIBRARY})
 
   target_compile_definitions(shformat PUBLIC SHFORMAT=1)
   install(TARGETS shformat DESTINATION bin)
@@ -344,8 +331,7 @@ if(BUILD_SHFORMAT)
 endif(BUILD_SHFORMAT)
 # message(STATUS "\nBuiltin flags:\n  ${BUILTIN_FLAGS}\n")
 
-set_source_files_properties(src/builtin/builtin_table.c
-                            PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}")
+set_source_files_properties(src/builtin/builtin_table.c PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}")
 
 install(TARGETS shish DESTINATION bin)
 
@@ -358,6 +344,5 @@ string(REPLACE ";" " " BUILTINS_DISABLED "${BUILTINS_DISABLED}")
 set(OUTSTR "")
 set(OUTSTR "${OUTSTR}\nEnabled builtins:\n  ${BUILTINS_ENABLED}\n")
 set(OUTSTR "${OUTSTR}\nDisabled builtins:\n  ${BUILTINS_DISABLED}\n")
-set(OUTSTR
-    "${OUTSTR}\nAdditional libraries:\n  ${MATH_LIBRARY} ${WINSOCK2_LIBRARY}\n")
+set(OUTSTR "${OUTSTR}\nAdditional libraries:\n  ${MATH_LIBRARY} ${WINSOCK2_LIBRARY}\n")
 message(STATUS "${OUTSTR}")

@@ -156,21 +156,23 @@ if(NOT HAVE_ALLOCA_ALLOCA_H)
   )
 endif()
 
-
 if(HAVE_ALLOCA_ALLOCA_H OR HAVE_ALLOCA_MALLOC_H)
   set(HAVE_ALLOCA TRUE)
   add_definitions(-DHAVE_ALLOCA)
 
-
   if(HAVE_ALLOCA_MALLOC_H)
-      set(ALLOCA_HEADER "malloc.h" CACHE STRING "Header for alloca()")
+    set(ALLOCA_HEADER
+        "malloc.h"
+        CACHE STRING "Header for alloca()")
   else()
-      set(ALLOCA_HEADER "alloca.h" CACHE STRING "Header for alloca()")
+    set(ALLOCA_HEADER
+        "alloca.h"
+        CACHE STRING "Header for alloca()")
   endif()
 endif()
 
 if(NOT HAVE_ALLOCA)
-    set(ALLOCA_HEADER "")
+  set(ALLOCA_HEADER "")
 endif()
 
 check_include_file(sys/wait.h HAVE_SYS_WAIT_H)

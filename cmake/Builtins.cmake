@@ -142,7 +142,8 @@ foreach(DISABLED ${BUILTINS_DISABLED})
   list(REMOVE_ITEM SOURCES "${SRC}")
   # list(FILTER SOURCES EXCLUDE REGEX  "${SRC}")
   list(LENGTH SOURCES N2)
-  # if(${N} EQUAL ${N2}) message("ERROR ${SRC}  -  ${N} == ${N2}") endif(${N} EQUAL ${N2})
+  # if(${N} EQUAL ${N2}) message("ERROR ${SRC}  -  ${N} == ${N2}") endif(${N}
+  # EQUAL ${N2})
   unset(BUILTIN_${NAME})
   set(BUILD_BUILTIN_${NAME}
       "0"
