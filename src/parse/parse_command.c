@@ -56,10 +56,7 @@ parse_command(struct parser* p, int tempflags) {
     case T_NAME:
       parse_skipspace(p);
 
-      if(source_peek(&c) <= 0)
-        return NULL;
-
-      if(c == '(') {
+      if(source_peek(&c) > 0 && c == '(') {
         char ch[2];
         if(source_peekn(ch, 1) <= 0)
           return NULL;
