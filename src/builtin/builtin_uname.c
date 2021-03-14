@@ -16,7 +16,7 @@ builtin_uname(int argc, char* argv[]) {
   struct utsname unbuf;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "amnrspvio")) > 0) {
+  while((c = shell_getopt(argc, argv, ":amnrspvio")) > 0) {
     switch(c) {
       case 'a': all = 1; break;
       case 'm': machine = 1; break;

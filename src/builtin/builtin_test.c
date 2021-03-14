@@ -157,7 +157,7 @@ test_unary(int argc, char** argv) {
     return -1;
 
   /* check options */
-  if((c = shell_getopt(argc, argv, "n:z:f:d:b:c:h:L:S:e:s:r:w:x:")) > 0) {
+  if((c = shell_getopt(argc, argv, ":n:z:f:d:b:c:h:L:S:e:s:r:w:x:")) > 0) {
     struct stat st;
     const char* arg = shell_optarg;
     switch(c) {

@@ -18,7 +18,7 @@ builtin_mkdir(int argc, char* argv[]) {
   size_t i;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "pv")) > 0) {
+  while((c = shell_getopt(argc, argv, ":pv")) > 0) {
     switch(c) {
       case 'p': components = 1; break;
       case 'v': verbose = 1; break;

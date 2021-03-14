@@ -48,7 +48,7 @@ builtin_read(int argc, char* argv[]) {
   int index;
   struct predicate_data p = {"\n", 1, -1};
 
-  while((c = shell_getopt(argc, argv, "d:n:N:p:rsu:")) > 0) {
+  while((c = shell_getopt(argc, argv, ":d:n:N:p:rsu:")) > 0) {
     switch(c) {
       case 'd':
         p.delim = shell_optarg;

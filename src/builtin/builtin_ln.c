@@ -16,7 +16,7 @@ builtin_ln(int argc, char* argv[]) {
   size_t len;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "fsv")) > 0) {
+  while((c = shell_getopt(argc, argv, ":fsv")) > 0) {
     switch(c) {
       case 's': symbolic = 1; break;
       case 'f': force = 1; break;

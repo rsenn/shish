@@ -25,7 +25,7 @@ builtin_mktemp(int argc, char* argv[]) {
                                   'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "dqtp:u")) > 0) {
+  while((c = shell_getopt(argc, argv, ":dqtp:u")) > 0) {
     switch(c) {
       case 'd': directory = 1; break;
       case 'q': quiet = 1; break;

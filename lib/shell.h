@@ -27,8 +27,7 @@ char* shell_gethome(int uid);
 char* shell_gethostname(stralloc* sa);
 
 struct optstate {
-  int ind, ofs;
-  char opt;
+  int ind, ofs, opt;
   char* arg;
 };
 

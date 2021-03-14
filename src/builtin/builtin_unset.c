@@ -13,7 +13,7 @@ builtin_unset(int argc, char* argv[]) {
   char** argp;
 
   /* check options, -n for unexport, -p for output */
-  while((c = shell_getopt(argc, argv, "fv")) > 0) {
+  while((c = shell_getopt(argc, argv, ":fv")) > 0) {
     switch(c) {
       case 'f': fun = 1; break;
       case 'v': var = 1; break;
