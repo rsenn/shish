@@ -12,13 +12,13 @@ var_dump(struct var* var) {
   size_t n;
 
   /* var struct address */
-  n = fmt_xlonglong(numbuf, (size_t)var);
+  /*n = fmt_xlonglong(numbuf, (size_t)var);
   buffer_putnc(fd_out->w, '0', sizeof(var) * 2 - n);
   buffer_put(fd_out->w, numbuf, n);
   buffer_putspace(fd_out->w);
 
-   buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(18));
- /* variable name */
+  buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(19));*/
+  /* variable name */
   if(var->len > 24) {
     buffer_put(fd_out->w, var->sa.s, 21);
     buffer_puts(fd_out->w, "...");
@@ -29,7 +29,7 @@ var_dump(struct var* var) {
 
   /* variable value */
   n = var_vlen(var->sa.s);
-  buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(38));
+  buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(25));
 
   buffer_putc(fd_out->w, '"');
   if(n) {
@@ -56,7 +56,7 @@ var_dump(struct var* var) {
     n = 24;
   buffer_putc(fd_out->w, '"');
 
-  buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(58));
+  buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(46));
 
   /* name length */
   n = fmt_ulong(numbuf, var->len);
@@ -70,7 +70,7 @@ var_dump(struct var* var) {
 
   /* total length */
   n = fmt_ulong(numbuf, var->sa.len);
-  buffer_putnspace(fd_out->w, 5 - n);
+  buffer_putnspace(fd_out->w, 6 - n);
   buffer_put(fd_out->w, numbuf, n);
 
   /* vartab level */
@@ -86,14 +86,17 @@ var_dump(struct var* var) {
   buffer_putspace(fd_out->w);
 
   /* lexical hash */
+  buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(78));
   buffer_putxlonglong0(fd_out->w, var->lexhash, 16);
   buffer_putspace(fd_out->w);
 
   /* randomized hash */
+  buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(95));
   buffer_putxlonglong0(fd_out->w, var->rndhash, 16);
   buffer_putspace(fd_out->w);
 
   /* flags */
+  buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(112));
   dump_flags(var->flags, VAR_FLAG_NAMES);
 
   buffer_putnlflush(fd_out->w);
