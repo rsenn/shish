@@ -28,6 +28,7 @@ struct exechash {
   unsigned int hits;
   char* name; /* name of builtin, function or command */
   struct command cmd;
+  int mask;
 };
 
 #define EXEC_HASHBITS 5

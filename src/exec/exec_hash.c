@@ -2,6 +2,7 @@
 #include "../exec.h"
 #include "../tree.h"
 #include "../../lib/str.h"
+#include "../../lib/shell.h"
 #include "../vartab.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
@@ -28,9 +29,9 @@ exec_hash(char* name, int mask) {
     /* ...but validate the path */
     if(access(cmd.path, X_OK) != 0)
       cmd.path = NULL;
-  }
-  /* otherwise try to find hashed entry */
-  else {
+
+  } else {
+    /* otherwise try to find hashed entry */
     struct exechash* entry;
     uint32 hash;
 
@@ -41,16 +42,28 @@ exec_hash(char* name, int mask) {
     if((entry = exec_lookup(name, &hash))) {
       entry->hits++;
       cmd = entry->cmd;
-    } else {
+    }
+
+    if(!entry || entry->mask != mask) {
       /* if we don't have a cache hit we're gonna search, special builtins first */
       cmd = exec_search(name, mask);
+    }
+    if(entry && entry->mask != mask) {
+      if(entry->cmd.id == H_PROGRAM)
+        shell_free(entry->cmd.path);
+      entry->hits = 1;
+    }
 
-      /* if we found something then create a new cache entry */
-      if(cmd.ptr) {
-        entry = exec_create(name, hash);
-        entry->hits++;
-        entry->cmd = cmd;
-      }
+    /* if we found something then create a new cache entry */
+    if(cmd.ptr && !entry) {
+      entry = exec_create(name, hash);
+      entry->mask = mask;
+      entry->hits = 1;
+    }
+
+    if(entry) {
+      entry->cmd = cmd;
+      entry->mask = mask;
     }
   }
   return cmd;

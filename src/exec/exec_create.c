@@ -19,5 +19,6 @@ exec_create(char* name, uint32 hash) {
     entry->next = exec_hashtbl[entry->hash & EXEC_HASHMASK];
     exec_hashtbl[entry->hash & EXEC_HASHMASK] = entry;
   }
+
   return entry;
 }
