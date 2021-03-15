@@ -29,7 +29,7 @@ done </etc/fstab
 ) >tmp.txt
 
 (
-  read -r -p "Test: " TEST
+  read -r -p"Test: " TEST
   echo "TEST=$TEST" 1>&2
   read -r TEST2
 

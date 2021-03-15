@@ -44,13 +44,13 @@ struct __attribute__((__packed__)) arg {
 };*/
 
 union __attribute__((__packed__)) shopt {
-  unsigned flags;
+  unsigned flags : 5;
   struct __attribute__((__packed__)) {
-    int unset : 1;
-    int no_clobber : 1;
-    int debug : 1;
-    int exit_on_error : 1;
-    int no_interactive : 1;
+    unsigned unset : 1;
+    unsigned no_clobber : 1;
+    unsigned debug : 1;
+    unsigned exit_on_error : 1;
+    unsigned no_interactive : 1;
   };
 };
 

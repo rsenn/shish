@@ -23,6 +23,9 @@
 #ifndef BUILTIN_CHMOD
 #define BUILTIN_CHMOD 0
 #endif
+#ifndef BUILTIN_CONTINUE
+#define BUILTIN_CONTINUE 1
+#endif
 #ifndef BUILTIN_DUMP
 #define BUILTIN_DUMP 1
 #endif
