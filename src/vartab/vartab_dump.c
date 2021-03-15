@@ -21,12 +21,12 @@ vartab_dump(struct vartab* vartab, int argc, char* argv[]) {
   unsigned int i;
   struct var* var;
 
-  buffer_puts(
-      fd_out->w,
-     /* "ADDRESS" CURSOR_HORIZONTAL_ABSOLUTE(19) */"NAME" CURSOR_HORIZONTAL_ABSOLUTE(25) "VALUE" CURSOR_HORIZONTAL_ABSOLUTE(
-          50) "NLEN "
-              "OFFS VLEN LEV BUCK" CURSOR_HORIZONTAL_ABSOLUTE(78) "LEXHASH" CURSOR_HORIZONTAL_ABSOLUTE(
-                  95) "RNDHASH" CURSOR_HORIZONTAL_ABSOLUTE(112) "FLAGS\n");
+  buffer_puts(fd_out->w,
+              /* "ADDRESS" CURSOR_HORIZONTAL_ABSOLUTE(19) */
+              "NAME" CURSOR_HORIZONTAL_ABSOLUTE(25) "VALUE" CURSOR_HORIZONTAL_ABSOLUTE(
+                  50) "NLEN "
+                      "OFFS VLEN LEV BUCK" CURSOR_HORIZONTAL_ABSOLUTE(78) "LEXHASH" CURSOR_HORIZONTAL_ABSOLUTE(
+                          95) "RNDHASH" CURSOR_HORIZONTAL_ABSOLUTE(112) "FLAGS\n");
 
   if(vartab) {
     for(; vartab; vartab = vartab->parent) {

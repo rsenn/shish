@@ -3,6 +3,7 @@
 #include "../fdtable.h"
 #include "../redir.h"
 #include "../tree.h"
+#include "../sh.h"
 
 /* open a file for redirection
  * ----------------------------------------------------------------------- */
@@ -15,6 +16,8 @@ redir_open(struct nredir* nredir, stralloc* sa) {
     /* check for appending mode */
     if(nredir->flag & R_APPEND)
       mode |= FD_APPEND;
+    else if(sh->opts.no_clobber)
+      mode |= FD_EXCL;
   }
 
   /* MISSING: no-clobbering (with O_EXCL?) */

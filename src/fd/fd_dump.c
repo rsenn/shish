@@ -1,4 +1,4 @@
-#ifdef DEBUG_FD
+#ifdef DEBUG_OUTPUT
 #include "../../lib/buffer.h"
 #include "../fd.h"
 #include "../fdstack.h"
@@ -81,4 +81,4 @@ fd_dump(struct fd* fd, buffer* b) {
 
   buffer_putnlflush(b);
 }
-#endif /* DEBUG_FD */
+#endif /* DEBUG_OUTPUT */

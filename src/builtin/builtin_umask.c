@@ -5,6 +5,8 @@
 #include "../../lib/fmt.h"
 #include "../../lib/scan.h"
 #include "../../lib/uint16.h"
+#include <sys/types.h>
+#include <sys/stat.h>
 
 size_t
 fmt_rwx(char* out, uint16 bits) {
@@ -94,17 +96,19 @@ builtin_umask(int argc, char* argv[]) {
     }
   }
 
-  /* print umask, suitable for re-input */
   if(shell_optind < argc) {
-    uint16 num;
+    uint16 num, prev = sh->umask;
 
     if(scan_8short(argv[shell_optind], &num))
       sh->umask = num;
 
     else
       scan_umask(argv[shell_optind], &sh->umask);
+    if(sh->umask != prev)
+      umask(sh->umask);
 
   } else {
+    /* print umask, suitable for re-input */
     char buf[64];
     size_t n = symbolic ? fmt_umask(buf, ~sh->umask) : fmt_8long(buf, sh->umask);
 

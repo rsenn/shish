@@ -51,6 +51,9 @@ sh_init(void) {
   sh->arg.a = 0;
   sh->arg.s = 0;
 
+  sh->umask = umask(sh->umask);
+  umask(sh->umask);
+
   /* set up signal handling */
   /*  signal(SIGTTOU, SIG_IGN);
     signal(SIGTTIN, SIG_IGN);*/
