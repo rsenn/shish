@@ -132,7 +132,7 @@ void debug_memory(void);
 static inline int
 dump_flags(int bits, const char* const names[]) {
   int i, n = 0;
-  for(i = 0; i < sizeof(bits) * 8; i++) {
+  for(i = 0; (size_t)i < sizeof(bits) * 8; i++) {
     if(bits & (1 << i)) {
       if(n)
         debug_c('|');
