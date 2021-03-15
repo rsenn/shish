@@ -28,10 +28,10 @@ is_keyword(const char* str) {
   return 0;
 }
 
-void
+int
 exec_type(char* name, int mask, int force_path, int type_name) {
-   struct command cmd;
- enum type_index id = TYPE_NONE;
+  struct command cmd;
+  enum type_index id = TYPE_NONE;
   struct alias* a;
 
   if(force_path)
@@ -62,5 +62,7 @@ exec_type(char* name, int mask, int force_path, int type_name) {
                            id == TYPE_ALIAS ? "'" : 0,
                            0);
     buffer_putnlflush(fd_out->w);
+    return 0;
   }
+  return 1;
 }

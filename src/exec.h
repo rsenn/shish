@@ -44,8 +44,9 @@ int exec_error(void);
 int exec_program(char* path, char** argv, int exec, union node* redir);
 uint32 exec_hashstr(const char* s);
 struct exechash* exec_create(char* name, uint32 hash);
-struct exechash* exec_search(char* name, uint32* hashptr);
+struct exechash* exec_lookup(char* name, uint32* hashptr);
 struct command exec_hash(char* name, int mask);
-void exec_type(char* name, int mask, int force_path, int type_name);
+struct command exec_search(char* name, int mask);
+int exec_type(char* name, int mask, int force_path, int type_name);
 
 #endif /* EXEC_H */

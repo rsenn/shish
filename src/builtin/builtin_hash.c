@@ -4,8 +4,6 @@
 #include "../../lib/buffer.h"
 
 /* hash built-in
- *
- * all your drugs are belong to us
  * ----------------------------------------------------------------------- */
 int
 builtin_hash(int argc, char* argv[]) {

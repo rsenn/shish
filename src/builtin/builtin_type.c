@@ -33,8 +33,6 @@ is_keyword(const char* str) {
 }
 
 /* type built-in
- *
- * all your drugs are belong to us
  * ----------------------------------------------------------------------- */
 int
 builtin_type(int argc, char* argv[]) {

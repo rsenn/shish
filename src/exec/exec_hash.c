@@ -13,8 +13,6 @@
 #include <unistd.h>
 #endif
 
-struct nfunc* functions = NULL;
-
 /* hashed command search routine
  * ----------------------------------------------------------------------- */
 struct command
@@ -40,45 +38,12 @@ exec_hash(char* name, int mask) {
     hash = exec_hashstr(name);
 
     /* do we have a cache hit? */
-    if((entry = exec_search(name, &hash))) {
+    if((entry = exec_lookup(name, &hash))) {
       entry->hits++;
       cmd = entry->cmd;
-    }
-    /* if we don't have a cache hit we're gonna search, special builtins first
-     */
-    else {
-      cmd.id = H_EXEC;
-      cmd.builtin = builtin_search(name, B_EXEC);
-
-      /* then search for special builtins */
-      if(!(mask & H_SBUILTIN) && cmd.builtin == NULL) {
-        cmd.id = H_SBUILTIN;
-        cmd.builtin = builtin_search(name, B_SPECIAL);
-      }
-
-      /* then search for functions */
-      if(!(mask & H_FUNCTION) && cmd.builtin == NULL) {
-        struct nfunc* fn;
-        cmd.id = H_FUNCTION;
-
-        for(fn = functions; fn; fn = fn->next) {
-          if(!str_diff(name, fn->name))
-            break;
-        }
-        cmd.fn = fn ? fn->body : 0;
-      }
-
-      /* then search for normal builtins */
-      if(!(mask & H_BUILTIN) & cmd.fn == NULL) {
-        cmd.id = H_BUILTIN;
-        cmd.builtin = builtin_search(name, B_DEFAULT);
-      }
-
-      /* then search for external commands */
-      if(cmd.builtin == NULL) {
-        cmd.id = H_PROGRAM;
-        cmd.path = exec_path(name);
-      }
+    } else {
+      /* if we don't have a cache hit we're gonna search, special builtins first */
+      cmd = exec_search(name, mask);
 
       /* if we found something then create a new cache entry */
       if(cmd.ptr) {
