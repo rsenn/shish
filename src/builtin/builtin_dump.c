@@ -32,7 +32,7 @@ builtin_dump(int argc, char* argv[]) {
   num_args = argc - shell_optind;
 
   switch(what) {
-    case VARTAB_ROOT: vartab_dump(&vartab_root, num_args, argp); break;
+    case VARTAB_ROOT: vartab_dump(varstack, num_args, argp); break;
     case VARTAB_LOCAL: vartab_dump(NULL, num_args, argp); break;
     case FDTABLE: fdtable_dump(fd_out->w); break;
     case FDSTACK: fdstack_dump(fd_out->w); break;

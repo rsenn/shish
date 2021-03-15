@@ -2,6 +2,7 @@
 #include "../fd.h"
 #include "../../lib/fmt.h"
 #include "../var.h"
+#include "../debug.h"
 
 /* dump a variable entry
  * ----------------------------------------------------------------------- */
@@ -27,7 +28,9 @@ var_dump(struct var* var) {
 
   /* variable value */
   n = var_vlen(var->sa.s);
+  buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(37));
 
+  buffer_putc(fd_out->w, '"');
   if(n) {
     unsigned int i, l, rl, rn;
     rn = var->sa.len - var->offset;
@@ -50,8 +53,9 @@ var_dump(struct var* var) {
     n = 24 - rl;
   } else
     n = 24;
+  buffer_putc(fd_out->w, '"');
 
-  buffer_putnspace(fd_out->w, n);
+  buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(58));
 
   /* name length */
   n = fmt_ulong(numbuf, var->len);
@@ -81,21 +85,15 @@ var_dump(struct var* var) {
   buffer_putspace(fd_out->w);
 
   /* lexical hash */
-  n = fmt_xlonglong(numbuf, var->lexhash);
-  buffer_putnspace(fd_out->w, 16 - n);
-  buffer_put(fd_out->w, numbuf, n);
+  buffer_putxlonglong0(fd_out->w, var->lexhash, 16);
   buffer_putspace(fd_out->w);
 
   /* randomized hash */
-  n = fmt_xlonglong(numbuf, var->rndhash);
-  buffer_putnspace(fd_out->w, 16 - n);
-  buffer_put(fd_out->w, numbuf, n);
+  buffer_putxlonglong0(fd_out->w, var->rndhash, 16);
   buffer_putspace(fd_out->w);
 
   /* flags */
-  n = fmt_xlong(numbuf, var->flags);
-  buffer_putnc(fd_out->w, '0', 2 - n);
-  buffer_put(fd_out->w, numbuf, n);
+  dump_flags(var->flags, VAR_FLAG_NAMES);
 
   buffer_putnlflush(fd_out->w);
 }

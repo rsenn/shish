@@ -1,6 +1,7 @@
 #include "../fd.h"
 #include "../fdstack.h"
 #include "../fdtable.h"
+#include "../debug.h"
 #include <unistd.h>
 
 /* flush and close buffers and free the associated ressources
@@ -33,8 +34,7 @@ fd_close(struct fd* fd) {
   if(fd->rb.fd != fd->wb.fd) {
 #ifdef DEBUG_FD
     if(fd->rb.fd != -1 && (fd->mode & FD_READ)) {
-      buffer_putlong(buffer_2, getpid());
-      buffer_puts(buffer_2, " close fd#");
+      buffer_puts(buffer_2, COLOR_YELLOW "fd_close" COLOR_NONE " #");
       buffer_putlong(buffer_2, fd->rb.fd);
       buffer_putnlflush(buffer_2);
     }
@@ -44,8 +44,7 @@ fd_close(struct fd* fd) {
 
 #ifdef DEBUG_FD
   if(fd->wb.fd != -1 && (fd->mode & FD_WRITE)) {
-    buffer_putlong(buffer_2, getpid());
-    buffer_puts(buffer_2, " close fd#");
+    buffer_puts(buffer_2, COLOR_YELLOW "fd_close" COLOR_NONE " #");
     buffer_putlong(buffer_2, fd->wb.fd);
     buffer_putnlflush(buffer_2);
   }

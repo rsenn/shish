@@ -15,7 +15,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
   struct vartab vars;
 
   fdstack_push(&io);
-  vartab_push(&vars);
+  vartab_push(&vars, 0);
   sh_push(&sh);
 
   ret = sh_subshell(ngrp->cmds, e->flags);

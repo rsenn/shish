@@ -80,11 +80,11 @@ main(int argc, char** argv, char** envp) {
   /* parse command line arguments */
   while((c = shell_getopt(argc, argv, "c:xe")) > 0) switch(c) {
       case 'c': cmds = shell_optarg; break;
-      case 'x': sh->flags |= SH_DEBUG; break;
-      case 'e': sh->flags |= SH_ERREXIT; break;
+      case 'x': sh->opts.debug = 1; break;
+      case 'e': sh->opts.exit_on_error = 1; break;
 
 #ifdef DEBUG
-      case 'I': sh->flags |= SH_NOINTERACTIVE; break;
+      case 'I': sh->opts.no_interactive = 1; break;
 
 #endif
 
@@ -136,7 +136,7 @@ main(int argc, char** argv, char** envp) {
 
   source_push(&src);
 
-  if(sh->flags & SH_NOINTERACTIVE)
+  if(sh->opts.no_interactive)
     src.mode &= ~SOURCE_IACTIVE;
 
   sh_init();

@@ -27,18 +27,19 @@ struct vartab {
   struct var* table[VARTAB_BUCKETS];
   struct var** pos;
   struct vartab* parent;
-  unsigned int level;
+  unsigned int level : 31;
+  unsigned int function : 1;
 };
 
 extern struct vartab vartab_root;
 extern struct vartab* varstack;
 
-size_t vartab_hash(struct vartab* vartab, const char* v, struct search* context);
+size_t vartab_hash(const char* v, struct search* context);
 struct var* vartab_search(struct vartab* vartab, const char* v, struct search* context);
 
 void vartab_add(struct vartab* vartab, struct var* var, struct search* context);
 
-void vartab_push(struct vartab* vartab);
+void vartab_push(struct vartab* vartab, int function);
 void vartab_pop(struct vartab* vartab);
 void vartab_cleanup(struct vartab* vartab);
 

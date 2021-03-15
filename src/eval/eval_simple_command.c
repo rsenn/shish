@@ -57,7 +57,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
     /* if we don't exit after the command, have a command and not a
        special builtin the variable changes should be temporary */
     if(!(e->flags & E_EXIT) && cmd.ptr && cmd.id != H_SBUILTIN)
-      vartab_push(&vars);
+      vartab_push(&vars, 0);
 
     for(nptr = assigns; nptr; nptr = nptr->list.next) {
       if(!var_setsa(&nptr->narg.stra, (cmd.ptr ? V_EXPORT : V_DEFAULT))) {
@@ -139,7 +139,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 #endif
   expand_argv(args, argv);
 
-  if(sh->flags & SH_DEBUG) {
+  if(sh->opts.debug) {
     char** arg;
     buffer_puts(fd_err->w, "+");
     for(arg = argv; *arg; arg++) {

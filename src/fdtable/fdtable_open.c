@@ -48,7 +48,7 @@ fdtable_open(struct fd* fd, int flags) {
     close(fd->n);
 
   /* now open the file, and return -1 if we failed */
-  e = open(fd->name, fd->fl | ((sh->flags & SH_NOCLOBBER) ? O_EXCL : 0), (0666 & ~sh->umask));
+  e = open(fd->name, fd->fl | ((sh->opts.no_clobber) ? O_EXCL : 0), (0666 & ~sh->umask));
 
   if(!fd_ok(e)) {
     sh_error(fd->name);

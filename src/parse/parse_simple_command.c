@@ -109,7 +109,7 @@ addcmd:
   simple_command->ncmd.rdir = rdir;
 
 #ifdef DEBUG_PARSE
-  if(sh->flags & SH_DEBUG) {
+  if(sh->opts.debug) {
     buffer_puts(fd_err->w, COLOR_YELLOW "parse_simple_command" COLOR_NONE " = ");
     tree_print(simple_command, fd_err->w);
     buffer_putnlflush(fd_err->w);

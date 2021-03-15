@@ -12,7 +12,7 @@ var_create(const char* v, int flags) {
   struct search ctx;
   struct var *newvar, *oldvar;
 
-  vartab_hash(sh->varstack, v, &ctx);
+  vartab_hash(v, &ctx);
   if((oldvar = var_search(v, &ctx))) {
     /* if we have the V_INIT flag and the var was found return NULL */
     if(flags & V_INIT)
@@ -37,8 +37,14 @@ var_create(const char* v, int flags) {
     newvar->sa.a = 0;
   }
 
-  /* finally add it to the bucket and to the global list */
-  vartab_add(sh->varstack, newvar, &ctx);
+  {
+    struct vartab* tab = sh->varstack;
 
+    if(!(flags & V_LOCAL) && tab->function)
+      tab = tab->parent;
+
+    /* finally add it to the bucket and to the global list */
+    vartab_add(tab, newvar, &ctx);
+  }
   return newvar;
 }

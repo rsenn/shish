@@ -36,13 +36,24 @@ struct arg {
 };
 
 enum { SH_UNSET = 0x08, SH_NOCLOBBER = 0x10, SH_DEBUG = 0x80, SH_ERREXIT = 0x40, SH_NOINTERACTIVE = 0x1000 };
+union shopt {
+  unsigned flags;
+  struct {
+    int unset : 1;
+    int no_clobber : 1;
+    int debug : 1;
+    int exit_on_error : 1;
+    int no_interactive : 1;
+  };
+};
 
 struct env {
   struct env* parent;
   stralloc cwd;
   int cwdsym; /* is cwd symbolic or phyiscal? */
   uint16 umask;
-  int flags;
+  //  int opts;
+  union shopt opts;
   int exitcode; /* exit code of last evaluated tree */
   struct fdstack* fdstack;
   struct vartab* varstack;

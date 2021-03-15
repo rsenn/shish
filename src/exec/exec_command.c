@@ -6,6 +6,7 @@
 #include "../sh.h"
 #include "../../lib/shell.h"
 #include "../tree.h"
+#include "../vartab.h"
 
 /* execute a command
  * ----------------------------------------------------------------------- */
@@ -35,6 +36,9 @@ exec_command(struct command* cmd, int argc, char** argv, int exec, union node* r
     case H_FUNCTION: {
       struct env sh;
       struct eval e;
+      struct vartab vars;
+
+      vartab_push(&vars, 1);
 
       sh_push(&sh);
       sh.arg.v = argv;
@@ -49,6 +53,7 @@ exec_command(struct command* cmd, int argc, char** argv, int exec, union node* r
       eval_cmdlist(&e, &cmd->fn->ngrp);
       ret = eval_pop(&e);
       sh_pop(&sh);
+      vartab_pop(&vars);
 
       break;
     }

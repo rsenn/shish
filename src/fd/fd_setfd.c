@@ -1,5 +1,6 @@
 #include "../fd.h"
 #include "../sh.h"
+#include "../debug.h"
 #include "../../lib/buffer.h"
 #include "../fdstack.h"
 #include <assert.h>
@@ -45,10 +46,9 @@ fd_setfd(struct fd* fd, int e) {
   }
 
 #ifdef DEBUG_FD
-  if(sh->flags & SH_DEBUG) {
+  if(sh->opts.debug) {
     if(fd->e != -1) {
-      buffer_putlong(buffer_2, getpid());
-      buffer_puts(buffer_2, " setfd#");
+      buffer_puts(buffer_2, COLOR_YELLOW "fd_setfd" COLOR_NONE " #");
       buffer_putlong(buffer_2, fd->n);
       buffer_puts(buffer_2, " e=");
       buffer_putlong(buffer_2, fd->e);

@@ -19,6 +19,7 @@ sh_push(struct env* env) {
 
   env->cwdsym = sh->cwdsym;
 
+  env->opts = sh->opts;
   env->umask = sh->umask;
   env->exitcode = 0;
 

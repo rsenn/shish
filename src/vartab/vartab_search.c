@@ -18,7 +18,7 @@ vartab_search(struct vartab* vartab, const char* v, struct search* context) {
     /* FIXME: exact match should be assumed from here because there
        is no way to evaluate the search context */
     struct search ctx;
-    vartab_hash(sh->varstack, v, &ctx);
+    vartab_hash(v, &ctx);
     return vartab_search(vartab, v, &ctx);
   }
 

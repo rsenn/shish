@@ -18,7 +18,7 @@ parse_command(struct parser* p, int tempflags) {
   tok = parse_gettok(p, tempflags);
 
 #ifdef DEBUG_PARSE
-  if(sh->flags & SH_DEBUG) {
+  if(sh->opts.debug) {
     buffer_puts(fd_err->w, COLOR_YELLOW "parse_command" COLOR_NONE " tok=");
     buffer_puts(fd_err->w, parse_tokname(tok, 1));
     buffer_putnlflush(fd_err->w);

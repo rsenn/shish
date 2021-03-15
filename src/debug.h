@@ -8,6 +8,7 @@
 //#include "../lib/uint64.h"
 #include "../lib/buffer.h"
 #include "../lib/stralloc.h"
+#include "fd.h"
 #include <stdlib.h>
 
 /* some ansi colors
@@ -45,6 +46,9 @@
 #define COLOR_WHITE ""
 #define COLOR_NONE ""
 #endif /* COLOR_DEBUG */
+
+#define CURSOR_FORWARD(n) "\x1b[" #n "C"
+#define CURSOR_HORIZONTAL_ABSOLUTE(n) "\x1b[" #n "G"
 
 #define DEBUG_EQU " "
 #define DEBUG_SEP ","
@@ -122,5 +126,19 @@ void debug_error(const char* file, unsigned int line, const char* s);
 
 void debug_memory(void);
 #endif
+
+static inline int
+dump_flags(int bits, const char* const names[]) {
+  int i, n = 0;
+  for(i = 0; i < sizeof(bits) * 8; i++) {
+    if(bits & (1 << i)) {
+      if(n)
+        buffer_putc(fd_out->w, '|');
+      buffer_puts(fd_out->w, names[i]);
+      n++;
+    }
+  }
+  return n;
+}
 
 #endif /* DEBUG_H */

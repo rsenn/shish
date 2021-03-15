@@ -30,17 +30,19 @@ builtin_local(int argc, char* argv[]) {
 
   /* set each argument */
   for(; *argp; argp++) {
+    size_t namelen, valuelen;
+
     if(!var_valid(*argp)) {
       builtin_errmsg(argv, *argp, "not a valid identifier");
       continue;
     }
-
+    namelen = str_chr(*argp, '=');
+    valuelen = str_len(*argp) - (namelen + 1);
     /* if there is a = we assign the variable first */
-    if((*argp)[str_chr(*argp, '=')])
-      var_copys(*argp, V_READONLY);
-    else
-      /* and now apply the local flag change */
-      var_chflg(*argp, V_READONLY, 1);
+    if((*argp)[namelen] == '\0')
+      (*argp)[namelen] = '=';
+
+    var_setv(*argp, *argp + namelen + 1, valuelen, V_LOCAL);
   }
 
   return 0;

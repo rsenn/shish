@@ -21,7 +21,7 @@ var_import(const char* v, int flags, struct var* var) {
     return var;
 
   /* search if the var already exists */
-  vartab_hash(sh->varstack, v, &ctx);
+  vartab_hash(v, &ctx);
 
   if(!(newvar = var_search(v, &ctx))) {
     /* if not we take the supplied var struct,  */

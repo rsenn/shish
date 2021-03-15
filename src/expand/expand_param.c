@@ -119,7 +119,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         v = &v[offset];
         vlen = str_len(v);
       }
-    } else if(sh->flags & SH_UNSET) {
+    } else if(sh->opts.unset) {
       sh_msg(param->name);
       buffer_putsflush(fd_err->w, ": unbound variable\n");
       tree_free(n);

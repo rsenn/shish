@@ -25,7 +25,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
   stralloc_init(&sa);
 
   /* do this in a new i/o context so we can redirect stdout */
-  vartab_push(&vars);
+  vartab_push(&vars, 0);
 
   /* make the output buffer write to the stralloc */
   fdstack_push(&fdst);

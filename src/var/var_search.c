@@ -12,7 +12,7 @@ var_search(const char* v, struct search* context) {
   /* do a context inside here if none was supplied */
   if(context == NULL) {
     struct search ctx;
-    vartab_hash(sh->varstack, v, &ctx);
+    vartab_hash(v, &ctx);
     ctx.exact = 1;
     return var_search(v, &ctx);
   }

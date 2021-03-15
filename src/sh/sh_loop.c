@@ -43,7 +43,7 @@ sh_loop(void) {
       struct eval e;
       tree_catlist(list, &cmd, NULL);
 
-      /* if(sh->flags & SH_DEBUG) {
+      /* if(sh->opts.debug) {
          buffer_puts(fd_err->w, "+ ");
          buffer_putsa(fd_err->w, &cmd);
          buffer_putnlflush(fd_err->w);

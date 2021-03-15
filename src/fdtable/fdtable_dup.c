@@ -1,6 +1,7 @@
 #include "../fd.h"
 #include "../fdstack.h"
 #include "../fdtable.h"
+#include "../debug.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>
@@ -56,8 +57,7 @@ retry:
     return FDTABLE_ERROR;
 
 #ifdef DEBUG_FDTABLE
-  buffer_putulong(buffer_2, getpid());
-  buffer_puts(buffer_2, " dup fd ");
+  buffer_puts(buffer_2, COLOR_YELLOW "fdtable_dup" COLOR_NONE " #");
   buffer_putulong(buffer_2, o);
   buffer_puts(buffer_2, " = ");
   buffer_putulong(buffer_2, e);
