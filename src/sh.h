@@ -43,7 +43,7 @@ struct __attribute__((__packed__)) arg {
   SH_NOINTERACTIVE = 0x1000
 };*/
 
-union __attribute__((__packed__))   shopt {
+union __attribute__((__packed__)) shopt {
   unsigned flags;
   struct __attribute__((__packed__)) {
     int unset : 1;
