@@ -17,7 +17,8 @@ var_dump(struct var* var) {
   buffer_put(fd_out->w, numbuf, n);
   buffer_putspace(fd_out->w);
 
-  /* variable name */
+   buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(18));
+ /* variable name */
   if(var->len > 24) {
     buffer_put(fd_out->w, var->sa.s, 21);
     buffer_puts(fd_out->w, "...");
@@ -28,7 +29,7 @@ var_dump(struct var* var) {
 
   /* variable value */
   n = var_vlen(var->sa.s);
-  buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(37));
+  buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(38));
 
   buffer_putc(fd_out->w, '"');
   if(n) {
