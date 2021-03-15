@@ -1,3 +1,4 @@
+#ifdef DEBUG_OUTPUT
 #include "../../lib/buffer.h"
 #include "../fd.h"
 
@@ -14,3 +15,4 @@ fd_dumplist(buffer* b) {
 
   fd_foreach(i) fd_dump(fd_list[i], b);
 }
+#endif /* DEBUG_OUTPUT */

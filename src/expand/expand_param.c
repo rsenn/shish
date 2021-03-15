@@ -3,6 +3,8 @@
 #include "../tree.h"
 #include "../fd.h"
 #include "../var.h"
+#include "../vartab.h"
+
 #include "../../lib/uint16.h"
 #include "../../lib/uint32.h"
 #include "../../lib/fmt.h"
@@ -120,9 +122,12 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         vlen = str_len(v);
       }
     } else if(sh->opts.unset) {
+      vartab_dump(varstack, 1, &param->name);
+
       sh_msg(param->name);
       buffer_putsflush(fd_err->w, ": unbound variable\n");
       tree_free(n);
+
       n = 0;
       goto fail;
     }

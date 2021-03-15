@@ -5,7 +5,7 @@
 
 struct fd;
 
-struct position {
+struct __attribute__((__packed__)) position {
   unsigned int line, column;
 };
 

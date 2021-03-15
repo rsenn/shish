@@ -60,7 +60,7 @@ again:
       }
       if(c == '\n') {
         parse_skip(p);
-        //      parse_skip(p);
+        parse_skip(p);
 
         goto again;
       }

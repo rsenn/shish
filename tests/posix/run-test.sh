@@ -377,6 +377,9 @@ alias test_oE='testcase "$LINENO" 3<<\__IN__ 4<<\__OUT__ 5</dev/null'
 alias test_OE='testcase "$LINENO" 3<<\__IN__ 4</dev/null 5</dev/null'
 
 ##### Run test
+echo "Run test"
+dump -v PWD
+dump -l PWD
 
 # The test is run in a subshell. The main shell waits for a possible trap and
 # lastly removes the temporary directory.
