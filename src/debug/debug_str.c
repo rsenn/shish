@@ -33,6 +33,6 @@ debug_str(const char* msg, const char* s, int depth, char quote) {
     debug_c(quote);
   if(quote)
     debug_s(COLOR_NONE);
-  buffer_flush(buffer_2);
+  debug_fl();
 }
 #endif /* DEBUG_OUTPUT */

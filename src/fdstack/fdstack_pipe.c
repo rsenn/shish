@@ -37,11 +37,11 @@ fdstack_pipe(unsigned int n, struct fd* fda) {
         b += FD_BUFSIZE / 2;
 
 #ifdef DEBUG_FDSTACK
-        buffer_puts(buffer_2, "fdstack_pipe n=");
-        buffer_putulong(buffer_2, n);
-        buffer_puts(buffer_2, " fda=");
-        buffer_putxlonglong(buffer_2, (size_t)fda);
-        buffer_putnlflush(buffer_2);
+        buffer_puts(&debug_buffer, "fdstack_pipe n=");
+        buffer_putulong(&debug_buffer, n);
+        buffer_puts(&debug_buffer, " fda=");
+        buffer_putxlonglong(&debug_buffer, (size_t)fda);
+        debug_nl_fl();
 #endif
         fda++;
       }

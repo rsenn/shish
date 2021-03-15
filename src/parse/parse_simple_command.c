@@ -110,9 +110,9 @@ addcmd:
 
 #ifdef DEBUG_PARSE
   if(sh->opts.debug) {
-    buffer_puts(fd_err->w, COLOR_YELLOW "parse_simple_command" COLOR_NONE " = ");
-    tree_print(simple_command, fd_err->w);
-    buffer_putnlflush(fd_err->w);
+    debug_begin("parse_simple_command", 0);
+    tree_print(simple_command, &debug_buffer);
+    debug_nl_fl();
   }
 #endif
 

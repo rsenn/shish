@@ -17,5 +17,6 @@ debug_ulong(const char* msg, unsigned long l, int depth) {
   debug_s(COLOR_GREEN);
   debug_n(l);
   debug_s(COLOR_NONE);
+  debug_fl();
 }
 #endif /* DEBUG_OUTPUT */

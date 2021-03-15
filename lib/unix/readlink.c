@@ -31,14 +31,27 @@ get_reparse_data(const char* LinkPath, union REPARSE_DATA_BUFFER_UNION* u) {
     return FALSE;
   }
 
-  hFile = CreateFile(LinkPath, 0, 0, 0, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS, 0);
+  hFile = CreateFile(LinkPath,
+                     0,
+                     0,
+                     0,
+                     OPEN_EXISTING,
+                     FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
+                     0);
 
   if(hFile == INVALID_HANDLE_VALUE) {
     return FALSE;
   }
 
   /* Get the link */
-  if(!DeviceIoControl(hFile, FSCTL_GET_REPARSE_POINT, 0, 0, &u->iobuf, 1024, &returnedLength, 0)) {
+  if(!DeviceIoControl(hFile,
+                      FSCTL_GET_REPARSE_POINT,
+                      0,
+                      0,
+                      &u->iobuf,
+                      1024,
+                      &returnedLength,
+                      0)) {
 
     CloseHandle(hFile);
     return FALSE;
@@ -46,7 +59,8 @@ get_reparse_data(const char* LinkPath, union REPARSE_DATA_BUFFER_UNION* u) {
 
   CloseHandle(hFile);
 
-  if(u->iobuf.ReparseTag != IO_REPARSE_TAG_MOUNT_POINT && u->iobuf.ReparseTag != IO_REPARSE_TAG_SYMLINK) {
+  if(u->iobuf.ReparseTag != IO_REPARSE_TAG_MOUNT_POINT &&
+     u->iobuf.ReparseTag != IO_REPARSE_TAG_SYMLINK) {
     return FALSE;
   }
 

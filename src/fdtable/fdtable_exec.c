@@ -25,7 +25,8 @@ fdtable_exec(void) {
   /* the sources can be closed if an execve() follows */
   while(fdtable[STDSRC_FILENO]) fd_pop(fdtable[STDSRC_FILENO]);
 
-  fdtable_foreach(i) if(fdtable_resolve(fdtable[i], FDTABLE_FORCE) == FDTABLE_ERROR) return -1;
+  fdtable_foreach(i) if(fdtable_resolve(fdtable[i], FDTABLE_FORCE) ==
+                        FDTABLE_ERROR) return -1;
 
   return 0;
 }

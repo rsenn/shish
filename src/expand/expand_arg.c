@@ -11,7 +11,8 @@ expand_arg(union node* node, union node** nptr, int flags) {
   union node* subarg;
 
   /* loop through all parts of the word */
-  for(subarg = (node && node->id == N_ARG) ? node->narg.list : node; subarg; subarg = subarg->nargstr.next) {
+  for(subarg = (node && node->id == N_ARG) ? node->narg.list : node; subarg;
+      subarg = subarg->nargstr.next) {
     int lflags = flags; /* local flags */
 
     if(subarg->nargstr.flag & S_NOSPLIT)
@@ -35,7 +36,10 @@ expand_arg(union node* node, union node** nptr, int flags) {
       /* constant string */
       case N_ARGSTR:
         assert(subarg->nargstr.stra.s);
-        n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, nptr, lflags);
+        n = expand_cat(subarg->nargstr.stra.s,
+                       subarg->nargstr.stra.len,
+                       nptr,
+                       lflags);
         break;
 
       default: break;

@@ -5,7 +5,8 @@
 typedef size_t format_function(char*, int, void*, void*, void*, void*);
 
 int
-buffer_putfmt_args(buffer* b, const char* x, size_t len, format_function* escape, void* args[]) {
+buffer_putfmt_args(
+    buffer* b, const char* x, size_t len, format_function* escape, void* args[]) {
   char buf[16];
   size_t i, n, r = 0;
   for(i = 0; i < len; i++) {
@@ -18,7 +19,11 @@ buffer_putfmt_args(buffer* b, const char* x, size_t len, format_function* escape
 }
 
 int
-buffer_putfmt_va(buffer* b, const char* x, size_t len, size_t (*escape)(char*, int), va_list args) {
+buffer_putfmt_va(buffer* b,
+                 const char* x,
+                 size_t len,
+                 size_t (*escape)(char*, int),
+                 va_list args) {
   void* av[4];
   av[0] = va_arg(args, void*);
   av[1] = va_arg(args, void*);
@@ -29,7 +34,8 @@ buffer_putfmt_va(buffer* b, const char* x, size_t len, size_t (*escape)(char*, i
 }
 
 int
-buffer_putfmt(buffer* b, const char* x, size_t len, size_t (*escape)(char*, int), ...) {
+buffer_putfmt(
+    buffer* b, const char* x, size_t len, size_t (*escape)(char*, int), ...) {
   va_list args;
   int ret;
 

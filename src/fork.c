@@ -58,11 +58,12 @@ typedef struct _RTL_USER_PROCESS_INFORMATION {
 #define RTL_CLONE_PARENT 0
 #define RTL_CLONE_CHILD 297
 
-typedef long (*RtlCloneUserProcess_f)(ULONG ProcessFlags,
-                                      PSECURITY_DESCRIPTOR ProcessSecurityDescriptor /* optional */,
-                                      PSECURITY_DESCRIPTOR ThreadSecurityDescriptor /* optional */,
-                                      HANDLE DebugPort /* optional */,
-                                      PRTL_USER_PROCESS_INFORMATION ProcessInformation);
+typedef long (*RtlCloneUserProcess_f)(
+    ULONG ProcessFlags,
+    PSECURITY_DESCRIPTOR ProcessSecurityDescriptor /* optional */,
+    PSECURITY_DESCRIPTOR ThreadSecurityDescriptor /* optional */,
+    HANDLE DebugPort /* optional */,
+    PRTL_USER_PROCESS_INFORMATION ProcessInformation);
 typedef int get_process_id_function(HANDLE);
 
 #ifndef ENOSYS
@@ -85,7 +86,8 @@ fork(void) {
     return -ENOSYS;
 
   /* lets do this */
-  result = clone_p(RTL_CLONE_PROCESS_FLAGS_CREATE_SUSPENDED | RTL_CLONE_PROCESS_FLAGS_INHERIT_HANDLES,
+  result = clone_p(RTL_CLONE_PROCESS_FLAGS_CREATE_SUSPENDED |
+                       RTL_CLONE_PROCESS_FLAGS_INHERIT_HANDLES,
                    NULL,
                    NULL,
                    NULL,

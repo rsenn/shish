@@ -11,6 +11,7 @@
 #include "fd.h"
 #include <stdlib.h>
 
+extern buffer debug_buffer;
 /* some ansi colors
  * ----------------------------------------------------------------------- */
 #ifndef COLOR_DEBUG
@@ -76,14 +77,14 @@ void debug_node(union node* node, int depth);
 void debug_redir(const char* msg, int flags, int depth);
 void debug_subst(const char* msg, int flags, int depth);
 
-#define debug_s(str) buffer_puts(buffer_2, str)
-#define debug_n(num) buffer_putlonglong(buffer_2, num)
-#define debug_c(chr) buffer_putc(buffer_2, chr)
-#define debug_b(buf, len) buffer_put(buffer_2, (buf), (len))
+#define debug_s(str) buffer_puts(&debug_buffer, str)
+#define debug_n(num) buffer_putlonglong(&debug_buffer, num)
+#define debug_c(chr) buffer_putc(&debug_buffer, chr)
+#define debug_b(buf, len) buffer_put(&debug_buffer, (buf), (len))
 #define debug_ws(str) debug_c(' ')
-#define debug_nl() debug_c('\n') // buffer_putnlflush(buffer_2)
-#define debug_fl() buffer_flush(buffer_2)
-#define debug_nl_fl() (debug_nl(), debug_fl())
+#define debug_nl() debug_c('\n') //
+#define debug_fl() buffer_flush(&debug_buffer)
+#define debug_nl_fl() buffer_putnlflush(&debug_buffer) //(debug_nl(), debug_fl())
 #define debug_fn() (debug_s(__func__), debug_s("()"))
 #define debug_fn_ws() (debug_fn(), debug_ws())
 #define debug_fn_nl() (debug_fn(), debug_nl())
@@ -120,7 +121,8 @@ extern struct chunk* debug_heap;
 extern struct chunk** debug_pos;
 
 void* debug_alloc(const char* file, unsigned int line, unsigned long size);
-void* debug_realloc(const char* file, unsigned int line, void* ptr, unsigned long size);
+void*
+debug_realloc(const char* file, unsigned int line, void* ptr, unsigned long size);
 void debug_free(const char* file, unsigned int line, void* ptr);
 void debug_error(const char* file, unsigned int line, const char* s);
 
@@ -133,8 +135,8 @@ dump_flags(int bits, const char* const names[]) {
   for(i = 0; i < sizeof(bits) * 8; i++) {
     if(bits & (1 << i)) {
       if(n)
-        buffer_putc(fd_out->w, '|');
-      buffer_puts(fd_out->w, names[i]);
+        debug_c('|');
+      debug_s(names[i]);
       n++;
     }
   }

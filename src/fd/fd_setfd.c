@@ -48,18 +48,21 @@ fd_setfd(struct fd* fd, int e) {
 #ifdef DEBUG_FD
   if(sh->opts.debug) {
     if(fd->e != -1) {
-      buffer_puts(buffer_2, COLOR_YELLOW "fd_setfd" COLOR_NONE " #");
-      buffer_putlong(buffer_2, fd->n);
-      buffer_puts(buffer_2, " e=");
-      buffer_putlong(buffer_2, fd->e);
-      buffer_puts(buffer_2, " mode=");
-      buffer_puts(buffer_2,
+      buffer_puts(&debug_buffer, COLOR_YELLOW "fd_setfd" COLOR_NONE " #");
+      buffer_putlong(&debug_buffer, fd->n);
+      buffer_puts(&debug_buffer, " e=");
+      buffer_putlong(&debug_buffer, fd->e);
+      buffer_puts(&debug_buffer, " mode=");
+      buffer_puts(&debug_buffer,
                   (fd->mode & FD_READ)
                       ? "FD_READ"
-                      : (fd->mode & FD_WRITE) ? "FD_WRITE"
-                                              : (fd->mode & FD_READWRITE) == FD_READWRITE ? "FD_READWRITE" : "");
+                      : (fd->mode & FD_WRITE)
+                            ? "FD_WRITE"
+                            : (fd->mode & FD_READWRITE) == FD_READWRITE
+                                  ? "FD_READWRITE"
+                                  : "");
 
-      buffer_putnlflush(buffer_2);
+      debug_nl_fl();
     }
   }
 #endif

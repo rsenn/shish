@@ -11,7 +11,11 @@
 #define NOTFIRST 0x80
 
 int
-shell_fnmatch(const char* pattern, unsigned int plen, const char* string, unsigned int slen, int flags) {
+shell_fnmatch(const char* pattern,
+              unsigned int plen,
+              const char* string,
+              unsigned int slen,
+              int flags) {
   /*  buffer_puts(buffer_2, "fnmatch: ");
     buffer_put(buffer_2, pattern, plen);
     buffer_putspace(buffer_2);
@@ -85,7 +89,8 @@ start:
 
         if(*pattern == '[' && pattern[1] == ':') {
           /* MEMBER - stupid POSIX char classes */
-          /* TODO: implement them, but maybe not because POSIX sucks here! HARR HARR */
+          /* TODO: implement them, but maybe not because POSIX sucks here! HARR HARR
+           */
         } else {
           /* MEMBER - character range */
           if(plen > 1 && pattern[1] == '-' && pattern[2] != ']') {
@@ -139,7 +144,8 @@ start:
 
     case '*': {
       /* this is the only situation where we really need to recurse */
-      if((*string == '/' && (flags & SH_FNM_PATHNAME)) || shell_fnmatch(pattern, plen, string + 1, slen - 1, flags)) {
+      if((*string == '/' && (flags & SH_FNM_PATHNAME)) ||
+         shell_fnmatch(pattern, plen, string + 1, slen - 1, flags)) {
         pattern++;
         plen--;
         goto start;

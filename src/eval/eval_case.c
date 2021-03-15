@@ -26,7 +26,8 @@ eval_case(struct eval* e, struct ncase* ncase) {
       expand_catsa(pat, &pattern, X_NOSPLIT);
       stralloc_nul(&pattern);
 
-      if(shell_fnmatch(pattern.s, pattern.len, word.s, word.len, SH_FNM_PERIOD) == 0) {
+      if(shell_fnmatch(pattern.s, pattern.len, word.s, word.len, SH_FNM_PERIOD) ==
+         0) {
         ret = eval_tree(e, node->ncasenode.cmds, E_LIST);
         goto end;
       }

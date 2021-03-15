@@ -116,7 +116,9 @@ again:
       else if(node->list.next && node->list.next->id == N_ARGSTR) {
         stralloc* sa = &node->list.next->nargstr.stra;
 
-        if((!(node->nargparam.flag & S_SPECIAL) && sa->len && parse_isname(sa->s[0], 0)) || node->nargparam.numb > 9)
+        if((!(node->nargparam.flag & S_SPECIAL) && sa->len &&
+            parse_isname(sa->s[0], 0)) ||
+           node->nargparam.numb > 9)
           braces = 1;
       }
 
@@ -136,7 +138,8 @@ again:
         stralloc_cats(sa, node->nargparam.name);
 
       if(node->nargparam.word) {
-        static const char* vsubst_types[] = {"-", "=", "?", "+", "%", "%%", "#", "##"};
+        static const char* vsubst_types[] = {
+            "-", "=", "?", "+", "%", "%%", "#", "##"};
 
         if(node->nargparam.flag & S_NULL)
           stralloc_catc(sa, ':');
@@ -257,7 +260,10 @@ again:
       tree_catlist(node->ncasenode.pats, sa, "|");
       stralloc_cats(sa, ") ");
       if(node->ncasenode.cmds)
-        tree_catlist_n(node->ncasenode.cmds, sa, sep == NULL ? "\n" : sep, depth + 1);
+        tree_catlist_n(node->ncasenode.cmds,
+                       sa,
+                       sep == NULL ? "\n" : sep,
+                       depth + 1);
 
       stralloc_cats(sa, sep == NULL ? " ;;" : ";;");
       break;

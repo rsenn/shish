@@ -19,7 +19,7 @@ expand_args(union node* args, union node** nptr, int flags) {
 
 #if DEBUG_OUTPUT_
     debug_node(arg, 0);
-    buffer_putnlflush(buffer_2);
+    debug_nl_fl();
 #endif
 
     if((n = expand_arg(arg->narg.list, nptr, flags))) {

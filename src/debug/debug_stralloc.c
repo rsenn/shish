@@ -36,5 +36,6 @@ debug_stralloc(const char* msg, stralloc* s, int depth, char quote) {
     debug_c(quote);
 
   debug_s(COLOR_NONE);
+  debug_fl();
 }
 #endif /* DEBUG_OUTPUT */

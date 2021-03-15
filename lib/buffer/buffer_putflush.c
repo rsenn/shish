@@ -51,7 +51,8 @@ buffer_putflush(buffer* b, const char* x, size_t len) {
           return -1;
       } else {
         w -= v[0].iov_len;
-        return buffer_stubborn(b->op, b->fd, v[1].iov_base + w, v[1].iov_len - w, b);
+        return buffer_stubborn(
+            b->op, b->fd, v[1].iov_base + w, v[1].iov_len - w, b);
       }
     }
     b->p = 0;

@@ -85,7 +85,7 @@ main(int argc, char** argv, char** envp) {
   sh_argv0 = argv[0];
   sh_name = shell_basename(sh_argv0);
 
-  shell_init(buffer_2, sh_name);
+  shell_init(&debug_buffer, sh_name);
 
   /* import environment variables to the root vartab */
   /*  for(c = 0; envp[c]; c++)

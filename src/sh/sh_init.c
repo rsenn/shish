@@ -9,6 +9,8 @@
 
 #if !WINDOWS_NATIVE
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #endif
 
 static struct var sh_ps1;

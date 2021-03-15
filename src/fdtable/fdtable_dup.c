@@ -57,11 +57,11 @@ retry:
     return FDTABLE_ERROR;
 
 #ifdef DEBUG_FDTABLE
-  buffer_puts(buffer_2, COLOR_YELLOW "fdtable_dup" COLOR_NONE " #");
-  buffer_putulong(buffer_2, o);
-  buffer_puts(buffer_2, " = ");
-  buffer_putulong(buffer_2, e);
-  buffer_putnlflush(buffer_2);
+  buffer_puts(&debug_buffer, COLOR_YELLOW "fdtable_dup" COLOR_NONE " #");
+  buffer_putulong(&debug_buffer, o);
+  buffer_puts(&debug_buffer, " = ");
+  buffer_putulong(&debug_buffer, e);
+  debug_nl_fl();
 #endif
 
   /* track the new file descriptor if its not above fd_exp */

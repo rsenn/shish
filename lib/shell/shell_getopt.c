@@ -25,12 +25,16 @@ shell_getopt(int argc, char* const argv[], const char* optstring) {
 #define optarg state->arg
 
 int
-shell_getopt_r(struct optstate* state, int argc, char* const argv[], const char* optstring) {
+shell_getopt_r(struct optstate* state,
+               int argc,
+               char* const argv[],
+               const char* optstring) {
   unsigned int offset;
 
   for(;;) {
     /* are we finished? */
-    if(optind > argc || !argv[optind] || *argv[optind] != '-' || argv[optind][1] == 0)
+    if(optind > argc || !argv[optind] || *argv[optind] != '-' ||
+       argv[optind][1] == 0)
       return -1;
 
     /* ignore a trailing - */

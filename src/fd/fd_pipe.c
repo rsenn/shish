@@ -43,12 +43,12 @@ fd_pipe(struct fd* fd) {
   }
 
 #ifdef DEBUG_FD
-  buffer_puts(buffer_2, "pipe e=");
-  buffer_putlong(buffer_2, e);
-  buffer_puts(buffer_2, " ");
+  buffer_puts(&debug_buffer, "pipe e=");
+  buffer_putlong(&debug_buffer, e);
+  buffer_puts(&debug_buffer, " ");
 
-  fd_dump(fd, buffer_2);
-  buffer_putnlflush(buffer_2);
+  fd_dump(fd, &debug_buffer);
+  debug_nl_fl();
 #endif
 
   return e;

@@ -35,7 +35,9 @@ extern struct vartab vartab_root;
 extern struct vartab* varstack;
 
 size_t vartab_hash(const char* v, struct search* context);
-struct var* vartab_search(struct vartab* vartab, const char* v, struct search* context);
+struct var* vartab_search(struct vartab* vartab,
+                          const char* v,
+                          struct search* context);
 
 void vartab_add(struct vartab* vartab, struct var* var, struct search* context);
 

@@ -8,6 +8,7 @@
 #include "../fdtable.h"
 #include "../job.h"
 #include "../tree.h"
+#include "../debug.h"
 #include "../../lib/windoze.h"
 #if !WINDOWS_NATIVE
 #include <sys/wait.h>
@@ -85,9 +86,9 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
       /* exit after evaluating this subtree */
       exit(eval_tree(e, node, E_EXIT));
     } else {
-      buffer_puts(buffer_2, "forked ");
-      buffer_putlong(buffer_2, pid);
-      buffer_putnlflush(buffer_2);
+#ifdef DEBUG_OUTPUT
+      debug_ulong("forked", pid, 0);
+#endif
     }
 
     if(!node->list.next) {

@@ -21,9 +21,6 @@ parse_list(struct parser* p) {
   union node** nptr;
   enum tok_flag tok;
 
-#ifdef DEBUG_PARSE
-  debug_fn_nf();
-#endif
   /* keep looking for and-or lists */
   tree_init(list, nptr);
 
@@ -51,12 +48,12 @@ parse_list(struct parser* p) {
 
 #ifdef DEBUG_PARSE
   if(list) {
-    buffer_puts(buffer_2, COLOR_YELLOW "parse_list" COLOR_NONE " list = ");
+    buffer_puts(&debug_buffer, COLOR_YELLOW "parse_list" COLOR_NONE " list = ");
     debug_list(list, 0);
     debug_nl();
   }
   if(list) {
-    buffer_puts(buffer_2, COLOR_YELLOW "parse_list" COLOR_NONE " ");
+    buffer_puts(&debug_buffer, COLOR_YELLOW "parse_list" COLOR_NONE " ");
     debug_ulong("tok", tok, 0);
     debug_nl();
   }

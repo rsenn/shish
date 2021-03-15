@@ -35,7 +35,13 @@ struct arg {
   unsigned int s; /* shift count */
 };
 
-enum { SH_UNSET = 0x08, SH_NOCLOBBER = 0x10, SH_DEBUG = 0x80, SH_ERREXIT = 0x40, SH_NOINTERACTIVE = 0x1000 };
+enum {
+  SH_UNSET = 0x08,
+  SH_NOCLOBBER = 0x10,
+  SH_DEBUG = 0x80,
+  SH_ERREXIT = 0x40,
+  SH_NOINTERACTIVE = 0x1000
+};
 union shopt {
   unsigned flags;
   struct {
@@ -89,8 +95,8 @@ const char* sh_gethome(void);
 void sh_init(void);
 void sh_loop(void);
 int sh_main(int argc, char** argv, char** envp);
-void sh_msg(char* s);
-void sh_msgn(char* s, size_t n);
+void sh_msg(const char* s);
+void sh_msgn(const char* s, size_t n);
 int sh_pop(struct env* env);
 void sh_popargs(struct arg* arg);
 void sh_push(struct env* env);

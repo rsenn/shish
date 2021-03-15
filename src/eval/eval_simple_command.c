@@ -106,14 +106,14 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
       }
 
 #if DEBUG_OUTPUT_
-      buffer_puts(buffer_2, "Redirection ");
+      buffer_puts(&debug_buffer, "Redirection ");
       debug_node(r, -1);
       if(r->nredir.fd) {
-        buffer_puts(buffer_2, "fd { n= ");
-        buffer_putlong(buffer_2, r->nredir.fd->n);
-        buffer_puts(buffer_2, " }");
+        buffer_puts(&debug_buffer, "fd { n= ");
+        buffer_putlong(&debug_buffer, r->nredir.fd->n);
+        buffer_puts(&debug_buffer, " }");
       }
-      buffer_putnlflush(buffer_2);
+      debug_nl_fl();
 #endif
     }
   }

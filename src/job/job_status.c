@@ -49,20 +49,23 @@ const char* const __sys_siglist[] = {"Signal 0",
                                      "Illegal instruction",
                                      "Trace/breakpoint trap",
                                      "ABRT/IOT trap",
-#if defined(__alpha__) || defined(__sparc__) || defined(__mips__) || defined(__hppa__)
+#if defined(__alpha__) || defined(__sparc__) || defined(__mips__) ||               \
+    defined(__hppa__)
                                      "EMT trap",
 #else
                                      "Bus error",
 #endif
                                      "Floating point exception",
                                      "Killed",
-#if defined(__alpha__) || defined(__sparc__) || defined(__mips__) || defined(__hppa__)
+#if defined(__alpha__) || defined(__sparc__) || defined(__mips__) ||               \
+    defined(__hppa__)
                                      "Bus error",
 #else
                                      "User defined signal 1",
 #endif
                                      "Segmentation fault",
-#if defined(__alpha__) || defined(__sparc__) || defined(__mips__) || defined(__hppa__)
+#if defined(__alpha__) || defined(__sparc__) || defined(__mips__) ||               \
+    defined(__hppa__)
                                      "Bad system call",
 #else
                                      "User defined signal 2",

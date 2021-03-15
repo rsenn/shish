@@ -19,17 +19,17 @@ debug_redir(const char* msg, int flags, int depth) {
   }
 
   if(flags & R_OPEN)
-    strcat(flagstr, "|R_OPEN");
+    strcat(flagstr, COLOR_CYAN "|" COLOR_MAGENTA "R_OPEN");
   if(flags & R_DUP)
-    strcat(flagstr, "|R_DUP");
+    strcat(flagstr, COLOR_CYAN "|" COLOR_MAGENTA "R_DUP");
   if(flags & R_HERE)
-    strcat(flagstr, "|R_HERE");
+    strcat(flagstr, COLOR_CYAN "|" COLOR_MAGENTA "R_HERE");
   if(flags & R_STRIP)
-    strcat(flagstr, "|R_STRIP");
+    strcat(flagstr, COLOR_CYAN "|" COLOR_MAGENTA "R_STRIP");
   if(flags & R_APPEND)
-    strcat(flagstr, "|R_APPEND");
+    strcat(flagstr, COLOR_CYAN "|" COLOR_MAGENTA "R_APPEND");
   if(flags & R_CLOBBER)
-    strcat(flagstr, "|R_CLOBBER");
+    strcat(flagstr, COLOR_CYAN "|" COLOR_MAGENTA "R_CLOBBER");
 
   if(msg) {
     debug_s(COLOR_YELLOW);
@@ -41,5 +41,6 @@ debug_redir(const char* msg, int flags, int depth) {
   debug_s(COLOR_NONE);
 
   debug_space(depth, 0);
+  debug_fl();
 }
 #endif /* DEBUG_OUTPUT */

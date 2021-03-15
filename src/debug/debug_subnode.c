@@ -13,5 +13,6 @@ debug_subnode(const char* s, union node* node, int depth) {
   } else {
     debug_str(s, NULL, depth, '"');
   }
+  debug_fl();
 }
 #endif /* DEBUG_OUTPUT */

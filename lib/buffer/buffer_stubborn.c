@@ -11,7 +11,8 @@
 #endif
 
 ssize_t
-buffer_stubborn(buffer_op_proto* op, fd_t fd, const char* buf, size_t len, void* ptr) {
+buffer_stubborn(
+    buffer_op_proto* op, fd_t fd, const char* buf, size_t len, void* ptr) {
   ssize_t w;
   errno = 0;
   while(len) {

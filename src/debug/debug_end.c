@@ -12,5 +12,6 @@ debug_end(int depth) {
     debug_space(depth - 1, 0);
   }
   debug_s(COLOR_CYAN DEBUG_END COLOR_NONE);
+  debug_fl();
 }
 #endif /* DEBUG_OUTPUT */

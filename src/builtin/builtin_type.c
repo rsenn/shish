@@ -7,15 +7,21 @@
 #include "../../lib/fmt.h"
 #include "../../lib/buffer.h"
 
-enum type_id { TYPE_NONE = -1, TYPE_FILE, TYPE_ALIAS, TYPE_KEYWORD, TYPE_FUNCTION, TYPE_BUILTIN };
+enum type_index {
+  TYPE_NONE = -1,
+  TYPE_FILE,
+  TYPE_ALIAS,
+  TYPE_KEYWORD,
+  TYPE_FUNCTION,
+  TYPE_BUILTIN
+};
 
-static struct {
-  const char *word, *desc;
-} type_descriptions[] = {{"file", 0},
-                         {"alias", "aliased to `"},
-                         {"keyword", "shell keyword"},
-                         {"function", "function"},
-                         {"builtin", "shell builtin"}};
+#define TYPE_NAMES                                                                 \
+  ((const char* const[]){"file", "alias", "keyword", "function", "builtin"})
+
+#define TYPE_DESCRIPTIONS                                                          \
+  ((const char* const[]){                                                          \
+      0, "aliased to `", "shell keyword", "function", "shell builtin"})
 
 static inline int
 is_keyword(const char* str) {
@@ -32,11 +38,11 @@ is_keyword(const char* str) {
  * ----------------------------------------------------------------------- */
 int
 builtin_type(int argc, char* argv[]) {
-  int c, all_locations = 0, suppress_functions = 0, force_path = 0, print_path = 0, type_name = 0;
-  struct command cmd;
+  int c, all_locations = 0, suppress_functions = 0, force_path = 0, print_path = 0,
+         type_name = 0;
   char* name;
 
-  /* check options, -l for login dash, -c for null env, -a to set argv[0] */
+  /* check options */
   while((c = shell_getopt(argc, argv, "afPpt")) > 0) {
     switch(c) {
       case 'a': all_locations = 1; break;
@@ -52,43 +58,7 @@ builtin_type(int argc, char* argv[]) {
   if(!(name = argv[shell_optind]))
     return 0;
 
-  {
-    enum type_id id = TYPE_NONE;
-    struct alias* a;
-    int hash_flags = force_path ? (H_BUILTIN | H_SBUILTIN | H_FUNCTION) : suppress_functions ? H_FUNCTION : 0;
+  exec_type(name, suppress_functions ? H_FUNCTION : 0, force_path, type_name);
 
-    if(!force_path && (a = parse_findalias(0, name, str_len(name)))) {
-      id = TYPE_ALIAS;
-
-    } else if(!force_path && is_keyword(name)) {
-      id = TYPE_KEYWORD;
-    } else if((cmd = exec_hash(name, hash_flags)).ptr) {
-
-      switch(cmd.id) {
-        case H_FUNCTION: id = TYPE_FUNCTION; break;
-        case H_SBUILTIN:
-        case H_BUILTIN: id = TYPE_BUILTIN; break;
-        case H_EXEC:
-        case H_PROGRAM: id = TYPE_FILE; break;
-      }
-    }
-
-    if(id >= 0) {
-
-      if(type_name)
-        buffer_puts(fd_out->w, type_descriptions[id].word);
-      else
-        buffer_putm_internal(fd_out->w,
-                             name,
-                             " is ",
-                             id == TYPE_FILE ? cmd.path : type_descriptions[id].desc,
-                             id == TYPE_ALIAS ? a->def : 0,
-                             id == TYPE_ALIAS ? "'" : 0,
-                             0);
-
-      buffer_putnlflush(fd_out->w);
-    }
-
-    return 0;
-  }
+  return 0;
 }

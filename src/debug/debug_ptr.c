@@ -16,9 +16,9 @@ debug_ptr(const char* msg, void* ptr, int depth) {
   debug_s(COLOR_CYAN " = ");
   n = fmt_xlong(buf, (unsigned long)ptr);
   debug_s("0x");
-  buffer_putnspace(buffer_2, 8 - n);
+  buffer_putnspace(&debug_buffer, 8 - n);
   debug_b(buf, n);
   debug_s(COLOR_NONE "\n");
-  buffer_flush(buffer_2);
+  debug_fl();
 }
 #endif /* DEBUG_OUTPUT */

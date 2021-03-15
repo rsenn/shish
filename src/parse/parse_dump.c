@@ -17,7 +17,9 @@ parse_dump(struct parser* p, buffer* b) {
     if(p->flags & P_NOASSIGN)
       buffer_puts(b, "P_NOASSIGN ");
     if(p->flags & ~(P_BQUOTE | P_NOKEYWD | P_NOASSIGN))
-      buffer_put(b, buf, fmt_xlong(buf, p->flags & ~(P_BQUOTE | P_NOKEYWD | P_NOASSIGN)));
+      buffer_put(b,
+                 buf,
+                 fmt_xlong(buf, p->flags & ~(P_BQUOTE | P_NOKEYWD | P_NOASSIGN)));
     if(b->p > 0 && b->x[b->p - 1] == ' ')
       b->p--;
     buffer_puts(b, ") ");

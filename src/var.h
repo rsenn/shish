@@ -24,8 +24,15 @@
 #define V_INIT 0x40 /* do only set when unset */
 #define V_READONLY 0x80
 
-#define VAR_FLAG_NAMES                                                                                                 \
-  ((const char* const[]){"FREE", "FREESTR", "ZEROSA", "EXPORT", "LOCAL", "UNSET", "INIT", "READONLY"})
+#define VAR_FLAG_NAMES                                                             \
+  ((const char* const[]){"FREE",                                                   \
+                         "FREESTR",                                                \
+                         "ZEROSA",                                                 \
+                         "EXPORT",                                                 \
+                         "LOCAL",                                                  \
+                         "UNSET",                                                  \
+                         "INIT",                                                   \
+                         "READONLY"})
 
 struct search;
 

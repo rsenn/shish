@@ -16,6 +16,6 @@ debug_unquoted(const char* msg, const char* s, int depth) {
   debug_s(COLOR_RED);
   debug_s(s);
   debug_s(COLOR_NONE);
-  // buffer_flush(buffer_2);
+  debug_fl();
 }
 #endif /* DEBUG_OUTPUT */

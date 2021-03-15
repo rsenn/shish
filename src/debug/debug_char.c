@@ -22,10 +22,11 @@ debug_char(const char* msg, char c, int depth) {
     debug_b("\\t", 2);
   else {
     /*  debug_s("\\0");
-      buffer_put8long(buffer_2, c);*/
+      buffer_put8long(&debug_buffer, c);*/
     debug_s("\\x");
-    buffer_putxlong0(buffer_2, c, 2);
+    buffer_putxlong0(&debug_buffer, c, 2);
   }
-  buffer_putsflush(buffer_2, "'" COLOR_NONE);
+  buffer_puts(&debug_buffer, "'" COLOR_NONE);
+  debug_fl();
 }
 #endif /* defined(DEBUG_OUTPUT) */

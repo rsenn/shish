@@ -15,9 +15,9 @@ parse_getarg(struct parser* p) {
     p->tree = NULL;
 
 #if DEBUG_PARSE
-    buffer_puts(fd_err->w, COLOR_YELLOW "parse_getarg" COLOR_NONE " = ");
-    tree_print(n, fd_err->w);
-    buffer_putnlflush(fd_err->w);
+    debug_begin("parse_getarg", 0);
+    tree_print(n, &debug_buffer);
+    debug_nl_fl();
 #endif
     return n;
   }

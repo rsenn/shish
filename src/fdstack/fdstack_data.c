@@ -31,7 +31,8 @@ fdstack_data(void) {
         fd_dump(fd, fd_err->w);
 #endif
 
-        while((n = read(fdtable[1]->rb.fd, b, sizeof(b))) > 0) buffer_put(fd->w, b, n);
+        while((n = read(fdtable[1]->rb.fd, b, sizeof(b))) > 0)
+          buffer_put(fd->w, b, n);
 
         buffer_flush(fd->w);
       }

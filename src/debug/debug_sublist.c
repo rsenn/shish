@@ -25,5 +25,6 @@ debug_sublist(const char* s, union node* node, int depth) {
   } else {
     debug_unquoted(s, COLOR_CYAN DEBUG_BEGIN DEBUG_END, depth);
   }
+  debug_fl();
 }
 #endif /* DEBUG_OUTPUT */

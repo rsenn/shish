@@ -29,11 +29,12 @@ debug_list(union node* n, int depth) {
         debug_space(depth - 1, 0);
       } else if(id >= N_ARGSTR) {
 
-      } else if(depth > 0) {
-        debug_s(COLOR_CYAN DEBUG_END);
-        debug_s(DEBUG_SEP);
+      } else /*if(depth > 0)*/ {
+        debug_s(COLOR_CYAN DEBUG_SEP COLOR_NONE);
         debug_space(depth, id == N_ARG ? 0 : depth > 0);
-        debug_s(DEBUG_BEGIN COLOR_NONE);
+
+        /*debug_space(depth, id == N_ARG ? 0 : depth > 0);
+        debug_s(DEBUG_BEGIN COLOR_NONE);*/
       }
     }
   }
@@ -49,6 +50,6 @@ debug_list(union node* n, int depth) {
     debug_s(COLOR_CYAN "]" COLOR_NONE);
   }
 
-  buffer_flush(buffer_2);
+  debug_fl();
 }
 #endif /* DEBUG_OUTPUT */
