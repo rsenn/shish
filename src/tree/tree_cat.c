@@ -20,7 +20,6 @@ tree_cat_n(union node* node, stralloc* sa, int depth) {
 again:
   switch(node->id) {
     case N_SIMPLECMD: {
-      union node* n;
 
       /* concatenate vars */
       if(node->ncmd.vars)
@@ -82,7 +81,7 @@ again:
 
     /* concatenate arguments */
     case N_ARGSTR: {
-      int i;
+      size_t i;
       stralloc* arg = &node->nargstr.stra;
 
       for(i = 0; i < arg->len; i++) {

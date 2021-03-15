@@ -13,7 +13,6 @@ builtin_exec(int argc, char* argv[]) {
   int nullenv = 0;
   int dash = 0;
   char* argv0 = NULL;
-  enum hash id;
   struct command cmd;
 
   /* check options, -l for login dash, -c for null env, -a to set argv[0] */

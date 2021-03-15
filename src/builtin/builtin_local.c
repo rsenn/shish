@@ -8,17 +8,7 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_local(int argc, char* argv[]) {
-  int c;
-  int print = 0;
   char** argp;
-
-  /* check options, -p for output */
-  /*  while((c = shell_getopt(argc, argv, "p")) > 0) {
-      switch(c) {
-        case 'p': print = 1; break;
-        default: builtin_invopt(argv); return 1;
-      }
-    }*/
 
   argp = &argv[1 /*shell_optind*/];
 

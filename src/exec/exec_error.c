@@ -1,3 +1,4 @@
+#include "../exec.h"
 #include <errno.h>
 
 /* map errors to posix
@@ -12,8 +13,8 @@ exec_error(void) {
   int ret;
 
   switch(errno) {
-    case ENOENT: ret = 127; break;
-    case EACCES: ret = 126; break;
+    case ENOENT: ret = EXIT_NOTFOUND; break;
+    case EACCES: ret = EXIT_NOEXEC; break;
     default: ret = 1; break;
   }
 

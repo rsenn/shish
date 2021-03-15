@@ -13,6 +13,7 @@
 #include "../../lib/scan.h"
 #include "../sh.h"
 #include "../../lib/shell.h"
+#include "../../lib/str.h"
 #include "../tree.h"
 #include "../var.h"
 
@@ -75,7 +76,13 @@ prompt_escape(const char* s, stralloc* sa) {
 
       /* working dir */
       case 'w':
-        stralloc_cat(sa, &sh->cwd);
+        if(stralloc_starts(&sh->cwd, sh_home)) {
+          size_t hlen = str_len(sh_home);
+          stralloc_catc(sa, '~');
+          stralloc_catb(sa, sh->cwd.s + hlen, sh->cwd.len - hlen);
+        } else {
+          stralloc_cat(sa, &sh->cwd);
+        }
         s++;
         break;
 

@@ -1,36 +1,6 @@
 #include "../builtin.h"
-#include "../fd.h"
 #include "../exec.h"
-#include "../parse.h"
-#include "../sh.h"
-#include "../../lib/str.h"
-#include "../../lib/fmt.h"
-#include "../../lib/buffer.h"
-
-enum type_index {
-  TYPE_NONE = -1,
-  TYPE_FILE,
-  TYPE_ALIAS,
-  TYPE_KEYWORD,
-  TYPE_FUNCTION,
-  TYPE_BUILTIN
-};
-
-#define TYPE_NAMES                                                                 \
-  ((const char* const[]){"file", "alias", "keyword", "function", "builtin"})
-
-#define TYPE_DESCRIPTIONS                                                          \
-  ((const char* const[]){                                                          \
-      0, "aliased to `", "shell keyword", "function", "shell builtin"})
-
-static inline int
-is_keyword(const char* str) {
-  int i;
-  for(i = TI_NOT; i <= TI_END; i++)
-    if(str_equal(parse_tokens[i].name, str))
-      return 1;
-  return 0;
-}
+#include "../../lib/shell.h"
 
 /* type built-in
  * ----------------------------------------------------------------------- */

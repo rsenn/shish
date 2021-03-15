@@ -8,8 +8,8 @@
 #include "../var.h"
 #include <stdlib.h>
 
-static unsigned int prompt_hash; /* hash of unexpanded PS1 */
-static const char prompt_default[] = "\\u@\\h:\\w \\$ ";
+unsigned int prompt_hash; /* hash of unexpanded PS1 */
+const char prompt_default[] = "\\u@\\h:\\w \\$ ";
 
 /* hash a prompt value
  * ----------------------------------------------------------------------- */

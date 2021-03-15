@@ -33,7 +33,7 @@ exec_search(char* name, int mask) {
   }
 
   /* then search for normal builtins */
-  if(!(mask & H_BUILTIN) & cmd.fn == NULL) {
+  if(!(mask & H_BUILTIN) && cmd.fn == NULL) {
     cmd.id = H_BUILTIN;
     cmd.builtin = builtin_search(name, B_DEFAULT);
   }

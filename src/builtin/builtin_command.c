@@ -35,7 +35,7 @@ builtin_command(int argc, char* argv[]) {
   if((cmd = exec_hash(name, H_FUNCTION)).ptr) {
 
     /* try to exec */
-    if(126 >
+    if(EXIT_NOEXEC >
        (ret =
             exec_command(&cmd, argc - shell_optind, &argv[shell_optind], 0, NULL)))
       return ret;

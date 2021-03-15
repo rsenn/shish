@@ -1,6 +1,7 @@
 #include "../builtin.h"
 #include "../debug.h"
 #include "../fd.h"
+#include "../exec.h"
 #include "../../lib/uint64.h"
 #include "../../lib/fmt.h"
 #include "../../lib/shell.h"
@@ -314,7 +315,7 @@ builtin_test(int argc, char* argv[]) {
 
     if(argv[argc][0] != ']') {
       builtin_errmsg(argv, "missing ]'", NULL);
-      return 2;
+      return EXIT_ERROR;
     }
   }
 

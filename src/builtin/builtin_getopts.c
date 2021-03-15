@@ -1,10 +1,11 @@
 #include "../builtin.h"
 #include "../sh.h"
 #include "../var.h"
+#include "../exec.h"
 #include "../../lib/str.h"
 #include "../../lib/shell.h"
 
-struct optstate builtin_getopts_state = {0, 0, 0};
+struct optstate builtin_getopts_state = {0, 0, 0, 0};
 
 #define optarg builtin_getopts_state.arg
 #define optind builtin_getopts_state.ind
@@ -31,7 +32,7 @@ builtin_getopts(int argc, char* argv[]) {
 
   if(!var_valid(name)) {
     builtin_errmsg(argv, name, "not a valid identifier");
-    return 2;
+    return EXIT_ERROR;
   }
 
   {

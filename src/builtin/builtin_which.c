@@ -1,6 +1,7 @@
 #include "../builtin.h"
 #include "../fd.h"
 #include "../var.h"
+#include "../exec.h"
 #include "../../lib/byte.h"
 #include <unistd.h>
 #include <errno.h>
@@ -31,7 +32,7 @@ builtin_which(int argc, char* argv[]) {
         buffer_puts(fd_out->w, path.s);
         buffer_putnlflush(fd_out->w);
       } else {
-        ret = errno == ENOENT ? 127 : 1;
+        ret = errno == ENOENT ? EXIT_NOTFOUND : EXIT_FAILURE;
         break;
       }
       i += len;

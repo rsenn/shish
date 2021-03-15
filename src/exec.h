@@ -35,6 +35,16 @@ struct exechash {
 #define EXEC_HASHSIZE (1 << EXEC_HASHBITS)
 #define EXEC_HASHMASK (EXEC_HASHSIZE - 1)
 
+#define EXIT_SUCCESS 0
+#define EXIT_FAILURE 1
+#define EXIT_ERROR 2
+#define EXIT_NOEXEC 126
+#define EXIT_NOTFOUND 127
+#define EXIT_SYNERROR (256 + EXIT_ERROR)
+#define EXIT_EXPERROR EXIT_ERROR
+#define EXIT_ASSGNERR EXIT_ERROR
+#define EXIT_REDIRERR EXIT_ERROR
+
 extern struct exechash* exec_hashtbl[EXEC_HASHSIZE];
 
 char* exec_check(char* path);

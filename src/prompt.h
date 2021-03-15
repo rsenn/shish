@@ -9,6 +9,9 @@ extern char prompt_var[4];
 extern stralloc prompt_expansion;
 extern stralloc prompt_hostname;
 
+extern unsigned int prompt_hash;
+extern const char prompt_default[];
+
 void prompt_escape(const char*, stralloc*);
 void prompt_expand(void);
 void prompt_nextline(void);

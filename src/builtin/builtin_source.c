@@ -4,6 +4,7 @@
 #include "../sh.h"
 #include "../../lib/shell.h"
 #include "../source.h"
+#include "../exec.h"
 
 /* source shell script
  * ----------------------------------------------------------------------- */
@@ -17,7 +18,7 @@ builtin_source(int argc, char* argv[]) {
 
   if((fname = argv[shell_optind]) == NULL) {
     builtin_errmsg(argv, "filename argument required", NULL);
-    return 2;
+    return EXIT_ERROR;
   }
 
   fd_push(&src, STDSRC_FILENO, FD_READ);
