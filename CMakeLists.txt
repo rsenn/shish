@@ -14,15 +14,15 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
       MinSizeRel
       CACHE STRING "Choose the type of build." FORCE)
 endif()
-# Set the possible values of build type for cmake-gui
+
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release MinSizeRel RelWithDebInfo)
 
 option(WARN_WERROR "Halt the compilation with an error on compiler warnings." OFF)
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Functions.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Checks.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Pedantic.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Debug.cmake)
+include(cmake/Functions.cmake)
+include(cmake/Checks.cmake)
+include(cmake/Pedantic.cmake)
+include(cmake/Debug.cmake)
 
 string(REGEX REPLACE ".*/" "" COMPILER_NAME "${CMAKE_C_COMPILER}")
 
@@ -63,7 +63,7 @@ if(F_LTO)
   option(ENABLE_LTO "Enable link-time optimization" OFF)
 endif(F_LTO)
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Builtins.cmake)
+include(cmake/Builtins.cmake)
 
 option(NO_TREE_PRINT "Disable tree_print for history" OFF)
 
@@ -161,17 +161,14 @@ if(NOT HAVE_LIBOWFAT)
       lib/str/str_copy.c)
 endif(NOT HAVE_LIBOWFAT)
 
-#[[add_library(libshish ${LIBSOURCES})
-set_target_properties(libshish PROPERTIES
-  LIBRARY_OUTPUT_NAME "shish"
-  OUTPUT_NAME "shish"
-  PREFIX "lib"
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-]]
 file(
   GLOB
   SOURCES
   src/*.h
+  src/eval/*.c
+  src/exec/*.c
+  src/expand/*.c
+  src/expr/*.c
   src/fd/*.c
   src/fdstack/*.c
   src/fdtable/*.c
@@ -187,7 +184,6 @@ file(
   src/tree/*.c
   src/var/*.c
   src/vartab/*.c)
-file(GLOB EVAL_SOURCES src/eval/*.c src/exec/*.c src/expand/*.c src/expr/*.c)
 
 if(DEBUG_ALLOC)
   list(
@@ -223,7 +219,6 @@ endif(DEBUG_OUTPUT)
 
 list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
 list(APPEND SOURCES src/parse/parse_newnode${NAME_DEBUG}.c src/tree/tree_newnode${NAME_DEBUG}.c)
-# list(APPEND SOURCES ${BUILTIN_SOURCES})
 
 if(FORK_SOURCE)
   list(APPEND SOURCES ${FORK_SOURCE})
@@ -243,29 +238,23 @@ endif(HAVE_EFENCE)
 
 string(REPLACE " " ";" SOURCES "${SOURCES}")
 
-file(WRITE "${CMAKE_BINARY_DIR}/src/builtin_config.h" "${BUILTIN_CONFIG}\n\n")
-# message("${BUILTIN_CONFIG}")
-
 if(NO_TREE_PRINT)
   add_definitions(-DNO_TREE_PRINT=1)
-  # list(FILTER SOURCES EXCLUDE REGEX  "src/tree/tree.*print.*\.c")
   list(REMOVE_ITEM SOURCES "src/tree/tree_print.c")
   list(REMOVE_ITEM SOURCES "src/tree/tree_printlist.c")
 endif(NO_TREE_PRINT)
 
 #
 # configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake" "${CMAKE_BINARY_DIR}/src/builtin_config.h" #@ONLY
-# #ESCAPE_QUOTES NEWLINE_STYLE UNIX)
 
 list(APPEND SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
-add_definitions(-DHAVE_BUILTIN_CONFIG_H=1)
 
 if(ENABLE_LTO)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
 endif(ENABLE_LTO)
 
-list(APPEND SOURCES ${EVAL_SOURCES} ${BUILTIN_SOURCES})
+list(APPEND SOURCES ${BUILTIN_SOURCES})
 
 set(SHISH_SOURCES
     ${SOURCES}
@@ -290,7 +279,7 @@ set(SHISH_SOURCES
     src/sh/sh_usage.c)
 
 add_executable(shish ${SHISH_SOURCES} ${LIBSOURCES})
-target_link_libraries(shish ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY} ${WINSOCK2_LIBRARY})
+target_link_libraries(shish ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 if(EMSCRIPTEN)
   set_target_properties(shish PROPERTIES SUFFIX ".${EMSCRIPTEN_EXE_SUFFIX}")
 endif(EMSCRIPTEN)
@@ -326,26 +315,13 @@ if(BUILD_SHFORMAT)
     src/sh/sh_usage.c)
 
   add_executable(shformat ${SHFORMAT_SOURCES} ${LIBSOURCES})
-  target_link_libraries(shformat ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY} ${WINSOCK2_LIBRARY})
+  target_link_libraries(shformat ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shformat PUBLIC SHFORMAT=1)
   install(TARGETS shformat DESTINATION bin)
 
 endif(BUILD_SHFORMAT)
-# message(STATUS "\nBuiltin flags:\n  ${BUILTIN_FLAGS}\n")
 
 set_source_files_properties(src/builtin/builtin_table.c PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}")
 
 install(TARGETS shish DESTINATION bin)
-
-list(SORT BUILTINS_ENABLED)
-list(SORT BUILTINS_DISABLED)
-
-string(REPLACE ";" " " BUILTINS_ENABLED "${BUILTINS_ENABLED}")
-string(REPLACE ";" " " BUILTINS_DISABLED "${BUILTINS_DISABLED}")
-
-set(OUTSTR "")
-set(OUTSTR "${OUTSTR}\nEnabled builtins:\n  ${BUILTINS_ENABLED}\n")
-set(OUTSTR "${OUTSTR}\nDisabled builtins:\n  ${BUILTINS_DISABLED}\n")
-set(OUTSTR "${OUTSTR}\nAdditional libraries:\n  ${MATH_LIBRARY} ${WINSOCK2_LIBRARY}\n")
-message(STATUS "${OUTSTR}")

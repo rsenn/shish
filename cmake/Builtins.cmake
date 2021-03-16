@@ -37,9 +37,7 @@ list(
   rmdir
   which
   mktemp
-  uname
-  # ls   mv printf   sort tr  uniq
-)
+  uname)
 list(
   APPEND
   DEFAULT_BUILTINS
@@ -107,14 +105,12 @@ foreach(BUILTIN ${ALL_BUILTINS})
       option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" OFF)
     endif(DEFINED ENABLE_${NAME})
   endif(ENABLE_ALL_BUILTINS)
-  # message(STATUS "Builtin ${BUILTIN} - ${ENABLE_${NAME}}")
 endforeach(BUILTIN ${ALL_BUILTINS})
 
 if(ENABLE_ALL_BUILTINS)
-  message("Enable ALL builtins")
+  message(STATUS "Enable all builtins")
   foreach(BUILTIN ${ALL_BUILTINS})
     string(TOUPPER ${BUILTIN} NAME)
-    # message("Enable ${BUILTIN}")
     set(ENABLE_${NAME} ON)
     set(BUILTIN_${NAME} ON)
   endforeach(BUILTIN ${ALL_BUILTINS})
@@ -134,7 +130,6 @@ if(ENABLE_DUMP)
 endif(ENABLE_DUMP)
 
 foreach(BUILTIN ${ALL_BUILTINS})
-
   string(TOUPPER ${BUILTIN} NAME)
   if(${BUILTIN_${NAME}} STREQUAL ON OR ENABLE_ALL_BUILTINS)
     list(APPEND BUILTINS_ENABLED ${BUILTIN})
@@ -151,9 +146,7 @@ foreach(DISABLED ${BUILTINS_DISABLED})
   set(SRC "src/builtin/builtin_${DISABLED}.c")
   list(LENGTH SOURCES N)
   list(REMOVE_ITEM SOURCES "${SRC}")
-  # list(FILTER SOURCES EXCLUDE REGEX  "${SRC}")
   list(LENGTH SOURCES N2)
-  # if(${N} EQUAL ${N2}) message("ERROR ${SRC}  -  ${N} == ${N2}") endif(${N} EQUAL ${N2})
   unset(BUILTIN_${NAME})
   set(BUILD_BUILTIN_${NAME}
       "0"
@@ -162,7 +155,6 @@ endforeach(DISABLED ${BUILTINS_DISABLED})
 
 foreach(ENABLED ${BUILTINS_ENABLED})
   string(TOUPPER "${ENABLED}" NAME)
-  # add_definitions("-DBUILTIN_${NAME}=1")
   set(BUILTIN_FLAGS "${BUILTIN_FLAGS} -DBUILTIN_${NAME}=1")
   set(BUILD_BUILTIN_${NAME}
       1
@@ -179,3 +171,46 @@ foreach(BUILTIN ${ALL_BUILTINS})
     set(BUILTIN_CONFIG "${BUILTIN_CONFIG}\n#define BUILTIN_${NAME} 0")
   endif(${BUILD_BUILTIN_${NAME}})
 endforeach(BUILTIN ${ALL_BUILTINS})
+
+file(WRITE "${CMAKE_BINARY_DIR}/src/builtin_config.h" "${BUILTIN_CONFIG}\n\n")
+
+set_source_files_properties(src/builtin/builtin_table.c PROPERTIES COMPILE_DEFINITIONS HAVE_BUILTIN_CONFIG_H=1)
+
+list(SORT BUILTINS_ENABLED)
+list(SORT BUILTINS_DISABLED)
+
+string(REPLACE ";" " " BUILTINS_ENABLED "${BUILTINS_ENABLED}")
+string(REPLACE ";" " " BUILTINS_DISABLED "${BUILTINS_DISABLED}")
+
+function(make_list OUTPUT_VAR MAX_LINE_LEN)
+  set(${OUTPUT_VAR}
+      ""
+      PARENT_SCOPE)
+  string(REPLACE " " ";" ARGS "${ARGN}")
+  set(OUTPUT "${${OUTPUT_VAR}}")
+  set(LINE "")
+  foreach(ITEM ${ARGS})
+    string(LENGTH "${LINE} ${ITEM}" LEN)
+    if(LEN GREATER MAX_LINE_LEN)
+      set(OUTPUT "${OUTPUT}\n--  ${LINE}")
+      set(LINE " ${ITEM}")
+      string(LENGTH "${LINE}" LEN)
+    else(LEN GREATER MAX_LINE_LEN)
+      set(LINE "${LINE} ${ITEM}")
+    endif(LEN GREATER MAX_LINE_LEN)
+  endforeach(ITEM ${ARGN})
+  if(LINE)
+    set(OUTPUT "${OUTPUT}\n--  ${LINE}")
+  endif(LINE)
+  set("${OUTPUT_VAR}"
+      "${OUTPUT}"
+      PARENT_SCOPE)
+endfunction(make_list OUTPUT_VAR)
+
+make_list(BUILTINS_ENABLED_LIST 80 ${BUILTINS_ENABLED})
+
+message(STATUS "Enabled builtins: ${BUILTINS_ENABLED_LIST}")
+if(BUILTINS_DISABLED)
+  make_list(BUILTINS_DISABLED_LIST 80 ${BUILTINS_DISABLED})
+  message(STATUS "Disabled builtins: ${BUILTINS_DISABLED}")
+endif(BUILTINS_DISABLED)

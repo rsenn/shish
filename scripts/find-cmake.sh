@@ -23,6 +23,9 @@ find_cmake_files() (
 		")"
 	set -- "$@" -and "(" \
 		-not -wholename "*build/*" \
+		-not -name "*.h.cmake" \
+		-not -name "cmake_install.cmake" \
+		-not -wholename "*CMakeFiles/*" \
 		-or -wholename "*build/cmake/*" \
 		")"
 	if [ "$NOT" ]; then

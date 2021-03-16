@@ -55,9 +55,7 @@ endif()
 check_inline()
 
 if(NOT "${INLINE_KEYWORD}" MATCHES "^inline$")
-  # if(NOT "${INLINE_KEYWORD}" MATCHES "^$")
   add_definitions("-Dinline=${INLINE_KEYWORD}")
-  # endif(NOT "${INLINE_KEYWORD}" MATCHES "^$")
 endif(NOT "${INLINE_KEYWORD}" MATCHES "^inline$")
 
 if(WIN32
@@ -111,9 +109,11 @@ if(HAVE_SYS_TYPES_H)
   set(CMAKE_REQUIRED_INCLUDES sys/types.h)
 endif(HAVE_SYS_TYPES_H)
 
-message("Cross compiling: ${CMAKE_CROSSCOMPILING}")
-message("Host system name: ${CMAKE_HOST_SYSTEM_NAME}")
-message("System name: ${CMAKE_SYSTEM_NAME}")
+if(CMAKE_CROSSCOMPILING)
+  message(STATUS "Cross compiling")
+  message(STATUS "Host system name: ${CMAKE_HOST_SYSTEM_NAME}")
+  message(STATUS "System name: ${CMAKE_SYSTEM_NAME}")
+endif(CMAKE_CROSSCOMPILING)
 
 if(NOT CMAKE_CROSSCOMPILING)
   check_type_size(ssize_t SIZEOF_SSIZE_T)
