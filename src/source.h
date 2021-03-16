@@ -31,7 +31,7 @@ int source_get(char* c);
 int source_next(char* c);
 int source_peekn(char* c, unsigned long n);
 void source_flush(void);
-void source_msg(void);
+void source_msg(const struct position* pos);
 void source_skip(void);
 int source_fork(buffer* child_source);
 void source_exec(void);

@@ -19,6 +19,7 @@ list(
   set
   shift
   source
+  trap
   type
   umask
   unset)

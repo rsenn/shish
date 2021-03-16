@@ -61,6 +61,7 @@ int builtin_rmdir(int argc, char* argv[]);
 int builtin_set(int argc, char* argv[]);
 int builtin_shift(int argc, char* argv[]);
 int builtin_test(int argc, char* argv[]);
+int builtin_trap(int argc, char* argv[]);
 int builtin_type(int argc, char* argv[]);
 int builtin_umask(int argc, char* argv[]);
 int builtin_unset(int argc, char* argv[]);

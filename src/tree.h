@@ -1,6 +1,7 @@
 #ifndef TREE_H
 #define TREE_H
 
+#include "source.h"
 #include "../lib/stralloc.h"
 #include "../lib/uint64.h"
 #include <stdlib.h>
@@ -245,6 +246,7 @@ struct nargparam {
   char* name;
   union node* word;
   int numb;
+  struct position pos;
 };
 
 struct nargcmd {

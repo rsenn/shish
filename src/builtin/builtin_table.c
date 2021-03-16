@@ -252,6 +252,9 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_TEST
     {"[", &builtin_test, B_DEFAULT, "name ..."},
 #endif
+#if BUILTIN_TRAP
+    {"trap", &builtin_trap, B_DEFAULT, "[-lp] [[arg] signal_spec ...]"},
+#endif
 #if BUILTIN_TYPE
     {"type", &builtin_type, B_DEFAULT, "name ..."},
 #endif
