@@ -26,7 +26,7 @@ parse_simple_command(struct parser* p) {
       case T_ASSIGN:
         if(!(p->flags & P_NOASSIGN)) {
           *vptr = parse_getarg(p);
-          vptr = &(*vptr)->list.next;
+          tree_skip(vptr);
           break;
         }
 
@@ -73,7 +73,7 @@ parse_simple_command(struct parser* p) {
         }
 
         if(*aptr)
-          aptr = &(*aptr)->list.next;
+          tree_skip(aptr);
 
         p->flags |= P_NOASSIGN;
         break;

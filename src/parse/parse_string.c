@@ -12,18 +12,12 @@ parse_string(struct parser* p, int flags) {
     return;
 
   /* add a node if there is none */
-  if(p->node == NULL) {
+  if(p->node == NULL || p->node->id != N_ARGSTR ||
+     (p->node->nargstr.flag & S_TABLE) != p->quot) {
     parse_newnode(p, N_ARGSTR);
     p->node->nargstr.flag = p->quot | flags;
+    p->node->nargstr.pos = p->tokstart;
   }
-
-  /* add a node if required */
-  if(p->node->id != N_ARGSTR || (p->node->nargstr.flag & S_TABLE) != p->quot)
-    parse_newnode(p, N_ARGSTR);
-
-  // stralloc_init(&p->node->nargstr.stra);
-  // stralloc_catb(&p->node->nargstr.stra, "", 1);
-  // stralloc_zero(&p->node->nargstr.stra);
 
   assert(p->node);
   assert(p->node->id == N_ARGSTR);

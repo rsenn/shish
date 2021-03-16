@@ -19,10 +19,12 @@ tree_free(union node* node) {
         if(node->ncmd.vars)
           tree_free(node->ncmd.vars);
         break;
+
       case N_PIPELINE:
         if(node->npipe.cmds)
           tree_free(node->npipe.cmds);
         break;
+
       case N_AND:
       case N_OR:
       case N_NOT:
@@ -31,11 +33,13 @@ tree_free(union node* node) {
         if(node->nandor.cmd1)
           tree_free(node->nandor.cmd1);
         break;
+
       case N_SUBSHELL:
       case N_CMDLIST:
         if(node->ngrp.cmds)
           tree_free(node->ngrp.cmds);
         break;
+
       case N_FOR:
         if(node->nfor.cmds)
           tree_free(node->nfor.cmds);
@@ -44,18 +48,21 @@ tree_free(union node* node) {
         if(node->nfor.varn)
           shell_free(node->nfor.varn);
         break;
+
       case N_CASE:
         if(node->ncase.list)
           tree_free(node->ncase.list);
         if(node->ncase.word)
           tree_free(node->ncase.word);
         break;
+
       case N_CASENODE:
         if(node->ncasenode.pats)
           tree_free(node->ncasenode.pats);
         if(node->ncasenode.cmds)
           tree_free(node->ncasenode.cmds);
         break;
+
       case N_IF:
         if(node->nif.cmd0)
           tree_free(node->nif.cmd0);
@@ -64,6 +71,7 @@ tree_free(union node* node) {
         if(node->nif.test)
           tree_free(node->nif.test);
         break;
+
       case N_WHILE:
       case N_UNTIL:
         if(node->nloop.cmds)
@@ -77,31 +85,29 @@ tree_free(union node* node) {
           tree_free(node->narg.list);
         stralloc_free(&node->narg.stra);
         break;
+
       case N_REDIR:
         if(node->nredir.list)
           tree_free(node->nredir.list);
-        break;
-      case N_ASSIGN:
-        if(node->nassign.list)
-          tree_free(node->nassign.list);
-        if(node->nassign.stra.s)
-          stralloc_free(&node->nassign.stra);
         break;
 
       case N_ARGSTR:
         if(node->nargstr.stra.s)
           stralloc_free(&node->nargstr.stra);
         break;
+
       case N_ARGPARAM:
         if(node->nargparam.name)
           shell_free(node->nargparam.name);
         if(node->nargparam.word)
           tree_free(node->nargparam.word);
         break;
+
       case N_ARGCMD:
         if(node->nargcmd.list)
           tree_free(node->nargcmd.list);
         break;
+
       case N_ARGARITH:
         if(node->nargarith.tree)
           tree_free(node->nargarith.tree);
@@ -109,6 +115,7 @@ tree_free(union node* node) {
 
       case A_NUM:
         break;
+
         //    case A_VAR: shell_free(node->narithvar.var); break;
 
       case A_OR:

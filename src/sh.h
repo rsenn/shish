@@ -57,15 +57,14 @@ union __attribute__((__packed__)) shopt {
 struct env {
   struct env* parent;
   stralloc cwd;
-  int cwdsym; /* is cwd symbolic or phyiscal? */
-  uint16 umask;
-  //  int opts;
+  unsigned cwdsym : 1; /* is cwd symbolic or phyiscal? */
+  unsigned umask : 12;
+  short exitcode; /* exit code of last evaluated tree */
+  unsigned jump : 1;
   union shopt opts;
-  int exitcode; /* exit code of last evaluated tree */
   struct fdstack* fdstack;
   struct vartab* varstack;
   jmp_buf jmpbuf;
-  int jump;
   struct arg arg;
   struct parser* parser;
   struct eval* eval;

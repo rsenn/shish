@@ -40,10 +40,10 @@ parse_list(struct parser* p) {
 
     /* & causes async exec of preceding and-or list */
     if(tok & T_BGND)
-      (*nptr)->nlist.bgnd = 1;
+      (*nptr)->ngrp.bgnd = 1;
 
     /* now check for another and-or list */
-    tree_next(nptr);
+    tree_skip(nptr);
   }
 
 #ifdef DEBUG_PARSE

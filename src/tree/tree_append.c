@@ -5,7 +5,7 @@ union node**
 tree_append(union node** nptr, union node* list) {
   *nptr = list;
 
-  while(*nptr) nptr = &(*nptr)->list.next;
+  while(*nptr) tree_skip(nptr);
 
   return nptr;
 }

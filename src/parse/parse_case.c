@@ -56,7 +56,7 @@ parse_case(struct parser* p) {
     /* parse the pattern list */
     while(parse_gettok(p, P_SKIPNL) & (T_WORD | T_NAME | T_ASSIGN)) {
       *pptr = parse_getarg(p);
-      pptr = &(*pptr)->list.next;
+      pptr = tree_next(pptr);
 
       if(!(parse_gettok(p, P_DEFAULT) & T_PIPE))
         break;
@@ -78,7 +78,7 @@ parse_case(struct parser* p) {
     if(p->tok & T_ESAC)
       break;
 
-    tree_next(cptr);
+    tree_skip(cptr);
   }
 
   return node;

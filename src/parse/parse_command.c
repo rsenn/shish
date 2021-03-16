@@ -92,7 +92,7 @@ parse_command(struct parser* p, int tempflags) {
      * redirections in the list (because in a simple command they
      * can appear between arguments), so skip to the end of the list.
      */
-    while(*rptr) tree_next(rptr);
+    while(*rptr) tree_skip(rptr);
 
     while(parse_gettok(p, P_DEFAULT) & T_REDIR) tree_move(p->tree, rptr);
   }

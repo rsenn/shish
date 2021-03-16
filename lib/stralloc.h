@@ -263,9 +263,6 @@ int stralloc_catdouble(stralloc*, double d, int prec);
 size_t stralloc_chr(const stralloc* sa, char c);
 size_t stralloc_rchr(const stralloc* sa, char c);
 
-int stralloc_copywcb(stralloc* sa, const wchar_t* buf, size_t len);
-int stralloc_copywcs(stralloc* sa, const wchar_t* buf);
-
 int stralloc_shrink(stralloc* sa);
 
 int stralloc_prependb(stralloc* sa, const char* s, size_t n);
@@ -276,9 +273,6 @@ size_t stralloc_ends(const stralloc* sa, const stralloc* suffix);
 size_t stralloc_endsb(const stralloc* sa, const char* x, size_t n);
 
 int stralloc_expand(stralloc* sa);
-
-int stralloc_catwcb(stralloc* sa, const wchar_t* buf, size_t len);
-int stralloc_catwcs(stralloc* sa, const wchar_t* buf);
 
 size_t stralloc_remove(stralloc*, size_t pos, size_t n);
 void stralloc_replacec(stralloc*, char before, char after);

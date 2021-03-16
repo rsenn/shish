@@ -34,14 +34,12 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   int argc;
   char** argv;
   int status = 0;
-  union node* args = NULL;
-  union node* assigns = NULL;
+  union node *args = 0, *assigns = 0;
   struct command cmd = {H_BUILTIN, {0}};
   // enum hash id = H_BUILTIN;
   struct vartab vars;
   struct fdstack io;
-  union node* r;
-  union node* redir = ncmd->rdir;
+  union node *r, *redir = ncmd->rdir;
   char buf[FD_BUFSIZE];
 
   /* expand arguments,

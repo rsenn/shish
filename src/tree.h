@@ -78,21 +78,21 @@ enum kind {
    background */
 struct ncmd {
   enum kind id;
+  unsigned bgnd : 1; /* run in background */
   union node* next;
-  int bgnd;         /* run in background */
   union node* rdir; /* redirections */
-  union node* args; /* arguments */
   union node* vars; /* cmd-local variable assigns */
+  union node* args; /* arguments */
 };
 
 /* 3.9.2 - pipeline
  * ----------------------------------------------------------------------- */
 struct npipe {
   enum kind id;
+  unsigned bgnd : 1;
   union node* next;
-  int bgnd;
+  unsigned ncmd;
   union node* cmds;
-  int ncmd;
 };
 
 /* 3.9.3 - lists
@@ -101,18 +101,10 @@ struct npipe {
 /* AND-OR list */
 struct nandor {
   enum kind id;
+  unsigned bgnd : 1;
   union node* next;
-  int bgnd;
   union node* cmd0;
   union node* cmd1;
-};
-
-/* list */
-struct nlist {
-  enum kind id;
-  union node* next;
-  int bgnd;
-  union node* cmds;
 };
 
 /* the compound list is simply done with node->next, because we don't
@@ -122,8 +114,8 @@ struct nlist {
  * ----------------------------------------------------------------------- */
 struct ngrp {
   enum kind id;
+  unsigned bgnd : 1; /* run in background */
   union node* next;
-  int bgnd;         /* run in background */
   union node* rdir; /* redirections */
   union node* cmds;
 };
@@ -132,8 +124,8 @@ struct ngrp {
  * ----------------------------------------------------------------------- */
 struct nfor {
   enum kind id;
+  unsigned bgnd : 1; /* run in background */
   union node* next;
-  int bgnd;         /* run in background */
   union node* rdir; /* redirections */
   union node* cmds;
   union node* args;
@@ -144,8 +136,8 @@ struct nfor {
  * ----------------------------------------------------------------------- */
 struct ncase {
   enum kind id;
+  unsigned bgnd : 1; /* run in background */
   union node* next;
-  int bgnd;         /* run in background */
   union node* rdir; /* redirections */
   union node* list;
   union node* word;
@@ -162,8 +154,8 @@ struct ncasenode {
  * ----------------------------------------------------------------------- */
 struct nif {
   enum kind id;
+  unsigned bgnd : 1; /* run in background */
   union node* next;
-  int bgnd;         /* run in background */
   union node* rdir; /* redirections */
   union node* cmd0;
   union node* cmd1;
@@ -175,8 +167,8 @@ struct nif {
  * ----------------------------------------------------------------------- */
 struct nloop {
   enum kind id;
+  unsigned bgnd : 1; /* run in background */
   union node* next;
-  int bgnd;         /* run in background */
   union node* rdir; /* redirections */
   union node* cmds;
   union node* test;
@@ -187,8 +179,8 @@ struct nloop {
 struct nfunc {
   enum kind id;
   struct nfunc* next;
-  union node* body;
   char* name;
+  union node* body;
 };
 
 /* internally used nodes
@@ -198,69 +190,73 @@ struct list {
   union node* next;
 };
 
-/* those are a subset of T_WORD
+/* word nodes
  *
  * a word is either a redirection, an argument or an assignment.
- * the members nredir.file and nassign.args are themselves a narg.
- *
  * ----------------------------------------------------------------------- */
 struct narg {
   enum kind id;
-  union node* next;
-  union node* list;
   int flag;
-  stralloc stra;
+  union node* next;
+  union {
+    stralloc stra;
+    struct {
+      char* str;
+      size_t len;
+    };
+  };
+  union node* list;
 };
 
 /* [fd]<operator><file> */
 struct nredir {
   enum kind id;
+  int flag;
   union node* next;
   union node* list; /* can be file, fd, delim, here-doc-data */
-  int flag;
   union node* data; /* next here-doc or expansion */
   int fdes;
   struct fd* fd;
-};
-
-struct nassign {
-  enum kind id;
-  union node* next;
-  union node* list;
-  stralloc stra;
 };
 
 /* argument (word) subnodes
  * ----------------------------------------------------------------------- */
 struct nargstr {
   enum kind id;
-  union node* next;
   int flag;
-  stralloc stra;
+  union node* next;
+  union {
+    stralloc stra;
+    struct {
+      char* str;
+      size_t len;
+    };
+  };
+  struct position pos;
 };
 
 struct nargparam {
   enum kind id;
-  union node* next;
   int flag;
+  union node* next;
   char* name;
   union node* word;
-  int numb;
+  long numb;
   struct position pos;
 };
 
 struct nargcmd {
   enum kind id;
-  union node* next;
   int flag;
+  union node* next;
   union node* list;
 };
 
 struct nargarith {
   enum kind id;
+  int flag;
   union node* next;
   union node* tree;
-  int flag;
 };
 
 struct narithnum {
@@ -295,7 +291,6 @@ union node {
   struct ncmd ncmd;
   struct npipe npipe;
   struct nandor nandor;
-  struct nlist nlist;
   struct ngrp ngrp;
   struct nfor nfor;
   struct ncase ncase;
@@ -305,7 +300,6 @@ union node {
   struct nfunc nfunc;
   struct narg narg;
   struct nredir nredir;
-  struct nassign nassign;
   struct nargstr nargstr;
   struct nargcmd nargcmd;
   struct nargarith nargarith;
@@ -341,7 +335,8 @@ typedef union node node_t;
   } while(0);
 
 /* skip to the next node */
-#define tree_next(nptr) (nptr) = &(*(nptr))->nlist.next;
+#define tree_next(nptr) (&((*(nptr)))->list.next)
+#define tree_skip(nptr) (nptr) = tree_next(nptr)
 
 /*
  * initialize a branch in the tree.
@@ -380,6 +375,7 @@ union node* tree_newlink(union node** nptr, enum kind nod);
 unsigned int tree_count(union node* node);
 union node** tree_append(union node**, union node*);
 void tree_remove(union node**);
+int tree_position(union node*, struct position*);
 
 #ifdef BUFFER_H
 void tree_print(union node*, buffer*);

@@ -16,6 +16,7 @@ parse_word(struct parser* p) {
   p->tree = NULL;
   p->node = NULL;
   p->quot = Q_UNQUOTED;
+  p->tokstart = source->pos;
 
   /* initialize string data */
   stralloc_zero(&p->sa);
