@@ -30,13 +30,10 @@
  * ----------------------------------------------------------------------- */
 int
 eval_simple_command(struct eval* e, struct ncmd* ncmd) {
-  union node* nptr;
-  int argc;
+   int argc, status = 0;
   char** argv;
-  int status = 0;
-  union node *args = 0, *assigns = 0;
+  union node *node, *args = 0, *assigns = 0;
   struct command cmd = {H_BUILTIN, {0}};
-  // enum hash id = H_BUILTIN;
   struct vartab vars;
   struct fdstack io;
   union node *r, *redir = ncmd->rdir;
@@ -57,8 +54,8 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
     if(!(e->flags & E_EXIT) && cmd.ptr && cmd.id != H_SBUILTIN)
       vartab_push(&vars, 0);
 
-    for(nptr = assigns; nptr; nptr = nptr->list.next) {
-      if(!var_setsa(&nptr->narg.stra, (cmd.ptr ? V_EXPORT : V_DEFAULT))) {
+    for(node = assigns; node; node = node->narg.next) {
+      if(!var_setsa(&node->narg.stra, (cmd.ptr ? V_EXPORT : V_DEFAULT))) {
         status = 1;
         break;
       }
@@ -71,11 +68,10 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   }
 
   /* do redirections if present */
-  if(redir && cmd.id != H_SBUILTIN && cmd.id != H_EXEC)
+  if( ncmd->rdir && cmd.id != H_SBUILTIN && cmd.id != H_EXEC)
     fdstack_push(&io);
 
-  if(redir /* && cmd.id != H_PROGRAM*/) {
-    for(r = redir; r; r = r->nredir.next) {
+    for(r =  ncmd->rdir; r; r = r->nredir.next) {
       struct fd* fd = NULL;
 
       /* if its the exec special builtin the new fd needs to be persistent */
@@ -114,7 +110,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
       debug_nl_fl();
 #endif
     }
-  }
+
 
   /* if there is no command we can return after
      setting the vars and doing the redirections */
@@ -169,12 +165,11 @@ end:
 
   /* undo redirections */
 
-  if(fdstack == &io)
+  if(fdstack == &io) {
     fdstack_pop(&io);
-  else if(cmd.id != H_EXEC) {
-    for(r = redir; r; r = r->nredir.next) {
+  } else if(cmd.id != H_EXEC) {
+    for(r = redir; r; r = r->nredir.next)
       fd_pop(r->nredir.fd);
-    }
   }
 
   sh->exitcode = status;

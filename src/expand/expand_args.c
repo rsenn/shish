@@ -40,9 +40,9 @@ expand_args(union node* args, union node** nptr, int flags) {
       n->narg.flag &= ~X_GLOB;
     }
 
-    if(arg->list.next) {
-      n->list.next = tree_newnode(N_ARG);
-      n = n->list.next;
+    if(arg->narg.next) {
+      n->narg.next = tree_newnode(N_ARG);
+      n = n->narg.next;
       stralloc_init(&n->narg.stra);
       stralloc_nul(&n->narg.stra);
       ret++;

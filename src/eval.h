@@ -16,19 +16,22 @@
 struct fdtable;
 struct vartab;
 
-struct eval {
+struct  eval {
   struct eval* parent;
-  int flags;
-  int exitcode; /* exit code of last evaluated node */
+  unsigned char flags;
+  short exitcode; /* exit code of last evaluated node */
 
   struct fdstack* fdstack;
   struct vartab* varstack;
 
-  jmp_buf jmpbuf;
+  jmp_buf jumpbuf;
   int jump;
+
+  struct position pos;
 };
 
 extern struct eval* eval;
+
 int eval_command(struct eval* e, union node* node, int tempflags);
 void eval_jump(int levels, int cont);
 int eval_node(struct eval* e, union node* node);

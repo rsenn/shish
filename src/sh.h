@@ -64,7 +64,7 @@ struct env {
   union shopt opts;
   struct fdstack* fdstack;
   struct vartab* varstack;
-  jmp_buf jmpbuf;
+  jmp_buf jumpbuf;
   struct arg arg;
   struct parser* parser;
   struct eval* eval;

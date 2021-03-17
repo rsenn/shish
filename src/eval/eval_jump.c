@@ -26,6 +26,6 @@ eval_jump(int levels, int cont) {
 
     while(varstack != j->varstack) vartab_pop(varstack);
 
-    longjmp(j->jmpbuf, cont << 1);
+    longjmp(j->jumpbuf, cont << 1);
   }
 }

@@ -8,6 +8,9 @@
 int
 eval_node(struct eval* e, union node* node) {
   int ret = -1;
+
+  tree_position(node, &e->pos);
+
   switch(node->id) {
     case N_SIMPLECMD: {
       ret = eval_simple_command(e, &node->ncmd);

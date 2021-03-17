@@ -21,8 +21,8 @@ eval_case(struct eval* e, struct ncase* ncase) {
 
   stralloc_nul(&word);
 
-  for(node = ncase->list; node; node = node->list.next) {
-    for(pat = node->ncasenode.pats; pat; pat = pat->list.next) {
+  for(node = ncase->list; node; node = node->ncasenode.next) {
+    for(pat = node->ncasenode.pats; pat; pat = pat->narg.next) {
       expand_catsa(pat, &pattern, X_NOSPLIT);
       stralloc_nul(&pattern);
 

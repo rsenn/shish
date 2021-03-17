@@ -55,7 +55,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
           n = expand_param(param, nptr, flags);
 
           if(++i < sh->arg.c)
-            nptr = &n->list.next;
+            nptr = &n->narg.next;
         }
 
         return n;

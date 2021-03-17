@@ -45,7 +45,7 @@ again:
     case N_PIPELINE: {
       union node* command;
 
-      for(command = node->npipe.cmds; command; command = command->list.next) {
+      for(command = node->npipe.cmds; command; command = command->ncmd.next) {
         tree_cat(command, sa);
 
         if(command->list.next)
@@ -191,7 +191,7 @@ again:
       tree_catseparator(sa, "\nfi\n", depth);
 
       /* concatenate redirections */
-      for(n = node->ncmd.rdir; n; n = n->list.next) {
+      for(n = node->ncmd.rdir; n; n = n->nredir.next) {
         stralloc_catc(sa, ' ');
         tree_cat(n, sa);
       }
@@ -212,7 +212,7 @@ again:
       stralloc_cats(sa, "; done");
 
       /* concatenate redirections */
-      for(n = node->ncmd.rdir; n; n = n->list.next) {
+      for(n = node->ncmd.rdir; n; n = n->nredir.next) {
         stralloc_catc(sa, ' ');
         tree_cat(n, sa);
       }
@@ -230,7 +230,7 @@ again:
       stralloc_cats(sa, "; done");
 
       /* concatenate redirections */
-      for(n = node->ncmd.rdir; n; n = n->list.next) {
+      for(n = node->ncmd.rdir; n; n = n->nredir.next) {
         stralloc_catc(sa, ' ');
         tree_cat(n, sa);
       }
@@ -248,7 +248,7 @@ again:
       stralloc_cats(sa, "esac");
 
       /* concatenate redirections */
-      for(n = node->ncmd.rdir; n; n = n->list.next) {
+      for(n = node->ncmd.rdir; n; n = n->nredir.next) {
         stralloc_catc(sa, ' ');
         tree_cat(n, sa);
       }
@@ -301,7 +301,7 @@ again:
       stralloc_catc(sa, ')');
 
       /* concatenate redirections */
-      for(n = node->ncmd.rdir; n; n = n->list.next) {
+      for(n = node->ncmd.rdir; n; n = n->nredir.next) {
         stralloc_catc(sa, ' ');
         tree_cat(n, sa);
       }
@@ -321,7 +321,7 @@ again:
       stralloc_catc(sa, '}');
 
       /* concatenate redirections */
-      for(n = node->ncmd.rdir; n; n = n->list.next) {
+      for(n = node->ncmd.rdir; n; n = n->nredir.next) {
         stralloc_catc(sa, ' ');
         tree_cat(n, sa);
       }

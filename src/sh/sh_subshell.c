@@ -17,7 +17,7 @@ sh_subshell(union node* list, int flags) {
   /* set up a long jump so we can exit the subshell and end up just
      after the setjmp call, which will return nonzero in this case */
   sh->jump = 1;
-  jmpret = setjmp(sh->jmpbuf);
+  jmpret = setjmp(sh->jumpbuf);
 
   if(jmpret) {
     ret = (jmpret >> 1);

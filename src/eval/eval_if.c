@@ -15,7 +15,7 @@ elif:
 
   /* do not recurse for elifs */
   if(ret && nif->cmd1) {
-    if(nif->cmd1->list.id == N_IF) {
+    if(nif->cmd1->nif.id == N_IF) {
       nif = &nif->cmd1->nif;
       goto elif;
     }

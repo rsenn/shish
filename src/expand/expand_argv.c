@@ -6,7 +6,7 @@
  * ----------------------------------------------------------------------- */
 void
 expand_argv(union node* args, char** argv) {
-  for(; args; args = args->list.next) {
+  for(; args; args = args->narg.next) {
     if(args->narg.stra.s)
       *argv++ = args->narg.stra.s;
   }

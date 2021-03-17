@@ -169,7 +169,7 @@ debug_node(union node* node, int depth) {
     case N_REDIR:
       debug_redir(0, node->nredir.flag, -2);
       debug_sublist(0, node->nredir.list, depth + 1);
-      debug_sublist("data", node->nredir.data, depth);
+      //debug_sublist("data", node->nredir.data, depth);
       debug_ulong("fdes", node->nredir.fdes, depth);
       break;
 

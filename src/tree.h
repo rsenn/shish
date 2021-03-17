@@ -286,7 +286,10 @@ struct narithbinary {
 
 /* ----------------------------------------------------------------------- */
 union node {
+  struct {
   enum kind id;
+  union node* next;
+  };
   struct list list;
   struct ncmd ncmd;
   struct npipe npipe;

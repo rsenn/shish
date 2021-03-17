@@ -34,7 +34,7 @@ eval_command(struct eval* e, union node* node, int tempflags) {
     fdstack_push(&fdstack);
     stralloc_init(&heredoc);
 
-    for(r = redir; r; r = r->list.next) {
+    for(r = redir; r; r = r->nredir.next) {
       struct fd* fd = 0;
 #ifdef HAVE_ALLOCA
       fd = fd_alloc();

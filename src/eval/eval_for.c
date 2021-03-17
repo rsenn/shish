@@ -14,16 +14,14 @@ eval_for(struct eval* e, struct nfor* nfor) {
   if(nfor->args)
     expand_args(nfor->args, &args, 0);
 
-  node = args;
-
   eval_push(&en, 0);
 
   en.jump = 1;
 
-  for(; node; node = node->list.next) {
+  for(node = args; node; node = node->narg.next) {
     int jmpret;
 
-    if((jmpret = setjmp(en.jmpbuf)) == 2)
+    if((jmpret = setjmp(en.jumpbuf)) == 2)
       continue;
     else if(jmpret)
       break;

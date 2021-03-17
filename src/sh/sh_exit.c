@@ -15,7 +15,7 @@ sh_exit(int retcode) {
         while(varstack != sh->vartab)
           vartab_pop(varstack);*/
 
-    longjmp(sh->jmpbuf, (retcode << 1) | 1);
+    longjmp(sh->jumpbuf, (retcode << 1) | 1);
   }
   /* not in a subshell, exit the process */
   else {

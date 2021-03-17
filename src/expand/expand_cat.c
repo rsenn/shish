@@ -60,8 +60,8 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
         n->narg.flag &= ~X_GLOB;
       }
 
-      n->list.next = tree_newnode(N_ARG);
-      n = n->list.next;
+      n->narg.next = tree_newnode(N_ARG);
+      n = n->narg.next;
       stralloc_init(&n->narg.stra);
     }
 

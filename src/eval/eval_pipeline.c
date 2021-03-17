@@ -37,7 +37,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   }
   fdstack_push(&st);
 
-  for(node = npipe->cmds; node; node = node->list.next) {
+  for(node = npipe->cmds; node; node = node->ncmd.next) {
     struct fd *in = 0, *out = 0;
 
     /* if there was a previous command we read input from pipe */
@@ -55,7 +55,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
 
     /* if it isn't the last command we have to create a pipe
        to pass output to the next command */
-    if(node->list.next /* || (fd_out->mode & FD_SUBST) == FD_SUBST */) {
+    if(node->ncmd.next /* || (fd_out->mode & FD_SUBST) == FD_SUBST */) {
 
 #ifdef HAVE_ALLOCA
       out = fd_alloc();
@@ -91,7 +91,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
 #endif
     }
 
-    if(!node->list.next) {
+    if(!node->ncmd.next) {
       if((fd_out->parent->mode & (FD_SUBST)) == (FD_SUBST)) {
         int fd = fd_out->parent->rb.fd;
         ssize_t r;
