@@ -43,8 +43,8 @@ parse_and_or(struct parser* p) {
 
     /* set up a nandor node and continue */
     and_or = tree_newnode(tok == T_AND ? N_AND : N_OR);
-    and_or->nandor.cmd0 = pipeline0;
-    and_or->nandor.cmd1 = pipeline1;
+    and_or->nandor.left = pipeline0;
+    and_or->nandor.right = pipeline1;
     pipeline0 = and_or;
   }
 

@@ -44,6 +44,8 @@ sh_init(void) {
 
   /* initialize the shell environment */
   sh_getcwd(sh);
+  var_setv("PWD", sh->cwd.s, sh->cwd.len, 0);
+
   sh_home = sh_gethome();
 
   uint32_seed(sh->cwd.s, sh->cwd.len);

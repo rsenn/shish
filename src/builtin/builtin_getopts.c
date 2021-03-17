@@ -5,7 +5,7 @@
 #include "../../lib/str.h"
 #include "../../lib/shell.h"
 
-struct optstate builtin_getopts_state = {0, 0, 0, 0};
+struct optstate builtin_getopts_state = {0};
 
 #define optarg builtin_getopts_state.arg
 #define optind builtin_getopts_state.ind
@@ -47,13 +47,6 @@ builtin_getopts(int argc, char* argv[]) {
     } else {
       ac = sh->arg.c;
       av = sh->arg.v;
-    }
-
-    if(optind == 0) {
-      optind = 1;
-      optofs = 0;
-      optarg = 0;
-      optopt = '\0';
     }
 
     c = shell_getopt_r(&builtin_getopts_state, ac + 1, av - 1, optstring);

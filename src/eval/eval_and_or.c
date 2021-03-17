@@ -7,10 +7,10 @@ int
 eval_and_or(struct eval* e, struct nandor* nandor) {
   int ret;
 
-  ret = eval_tree(e, nandor->cmd0, 0);
+  ret = eval_tree(e, nandor->left, 0);
 
   if((nandor->id == N_AND && !ret) || (nandor->id == N_OR && ret))
-    ret = eval_tree(e, nandor->cmd1, 0);
+    ret = eval_tree(e, nandor->right, 0);
 
   if(nandor->id == N_NOT)
     ret = !ret;

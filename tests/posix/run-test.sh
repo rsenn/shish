@@ -1,4 +1,4 @@
-# run-test.sh: runs a set of test cases
+ run-test.sh: runs a set of test cases
 # (C) 2016-2019 magicant
 #
 # This program is free software: you can redistribute it and/or modify
@@ -385,7 +385,9 @@ dump -l PWD
 # lastly removes the temporary directory.
 (
 abs_test_file="$(absolute "$test_file")"
+echo "abs_test_file=$abs_test_file" 1>&2
 abs_suppressions="$(absolute valgrind.supp)"
+echo "abs_suppressions=$abs_suppressions" 1>&2
 cd "$work_dir"
 
 ln -s -- "$testee" sh

@@ -50,8 +50,7 @@ parse_pipeline(struct parser* p) {
   if(negate) {
     union node* neg;
     neg = tree_newnode(N_NOT);
-    neg->nandor.cmd0 = node;
-    neg->nandor.cmd1 = NULL;
+    neg->nnot.pipeline = node;
     node = neg;
   }
 

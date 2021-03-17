@@ -71,9 +71,9 @@ debug_node(union node* node, int depth) {
       debug_ulong("bgnd", node->nandor.bgnd, depth + 1);
       debug_space(depth + 1, 1);
 
-      debug_subnode("cmd0", node->nandor.cmd0, depth + 1);
-      if(node->nandor.cmd1)
-        debug_subnode("cmd1", node->nandor.cmd1, depth + 1);
+      debug_subnode("left", node->nandor.left, depth + 1);
+      if(node->nandor.right)
+        debug_subnode("right", node->nandor.right, depth + 1);
       break;
 
     case N_SUBSHELL:
@@ -254,7 +254,7 @@ debug_node(union node* node, int depth) {
       debug_sublist("node", node->narithunary.node, depth);
       break;
 
-    case N_NOT: debug_sublist("cmds", node->nandor.cmd0, depth); break;
+    case N_NOT: debug_sublist("cmds", node->nandor.left, depth); break;
   }
 }
 #endif /* DEBUG_OUTPUT */

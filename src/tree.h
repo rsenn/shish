@@ -37,7 +37,6 @@ enum kind {
   N_ARGARITH,
 
   A_NUM,
-  // A_VAR,
   A_PAREN,
   // binary
   A_OR,
@@ -95,6 +94,12 @@ struct npipe {
   union node* cmds;
 };
 
+struct nnot {
+  enum kind id;
+  union node* next;
+  union node* pipeline;
+};
+
 /* 3.9.3 - lists
  * ----------------------------------------------------------------------- */
 
@@ -103,8 +108,8 @@ struct nandor {
   enum kind id;
   unsigned bgnd : 1;
   union node* next;
-  union node* cmd0;
-  union node* cmd1;
+  union node* left;
+  union node* right;
 };
 
 /* the compound list is simply done with node->next, because we don't
@@ -294,6 +299,7 @@ union node {
   struct ncmd ncmd;
   struct npipe npipe;
   struct nandor nandor;
+  struct nnot nnot;
   struct ngrp ngrp;
   struct nfor nfor;
   struct ncase ncase;
@@ -366,6 +372,8 @@ union node* tree_newnodedebug(const char* file, unsigned int line, enum kind nod
 #else
 union node* tree_newnode(enum kind nod);
 #endif /* DEBUG_ALLOC */
+
+extern const int tree_nodesizes[];
 
 void tree_delnode(union node* node);
 void tree_free(union node* list);

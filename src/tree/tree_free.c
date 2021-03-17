@@ -28,10 +28,10 @@ tree_free(union node* node) {
       case N_AND:
       case N_OR:
       case N_NOT:
-        if(node->nandor.cmd0)
-          tree_free(node->nandor.cmd0);
-        if(node->nandor.cmd1)
-          tree_free(node->nandor.cmd1);
+        if(node->nandor.left)
+          tree_free(node->nandor.left);
+        if(node->nandor.right)
+          tree_free(node->nandor.right);
         break;
 
       case N_SUBSHELL:

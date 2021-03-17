@@ -20,8 +20,6 @@ builtin_echo(int argc, char* argv[]) {
   /* TODO*/
   (void)eval;
 
-  buffer_puts(fd_out->w, "echo: ");
-
   for(i = shell_optind; i < argc; i++) {
     buffer_puts(fd_out->w, argv[i]);
 

@@ -28,11 +28,17 @@ builtin_command(int argc, char* argv[]) {
   if(!(name = argv[shell_optind]))
     return 0;
 
-  if(print_desc || print_verbose)
-    return exec_type(name, H_FUNCTION, 0, !print_verbose);
+  if(print_verbose && !print_desc)
+    return exec_type(name, H_FUNCTION, 0, 1);
 
   /* look up the command and exec if found */
   if((cmd = exec_hash(name, H_FUNCTION)).ptr) {
+
+    if(print_desc) {
+      buffer_puts(fd_out->w, cmd.id == H_PROGRAM ? cmd.path : name);
+      buffer_putnlflush(fd_out->w);
+      return 0;
+    }
 
     /* try to exec */
     if(EXIT_NOEXEC >

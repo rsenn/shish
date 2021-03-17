@@ -272,11 +272,11 @@ again:
     case N_NOT: stralloc_cats(sa, "! ");
     case N_AND:
     case N_OR: {
-      tree_catlist(node->nandor.cmd0, sa, NULL);
+      tree_catlist(node->nandor.left, sa, NULL);
 
       if(node->id == N_AND || node->id == N_OR) {
         stralloc_cats(sa, node->id == N_AND ? " && " : " || ");
-        tree_catlist(node->nandor.cmd1, sa, NULL);
+        tree_catlist(node->nandor.right, sa, NULL);
       }
 
       break;

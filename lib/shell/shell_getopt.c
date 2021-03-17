@@ -6,18 +6,21 @@
 
 #include "../str.h"
 
-static const char default_prefixes[] = {'-',0};
-struct optstate shell_opt = { default_prefixes };
+static const char default_prefixes[] = {'-', 0};
+struct optstate shell_opt = {default_prefixes};
+
+static void
+state_clear(struct optstate* st) {
+  st->ind = 0;
+  st->ofs = 0;
+  st->opt = '\0';
+  st->arg = 0;
+  st->prefixes = default_prefixes;
+}
 
 int
 shell_getopt(int argc, char* const argv[], const char* optstring) {
-  if(shell_opt.ind == 0) {
-    //shell_opt.ind = 1;
-    shell_opt.ofs = 0;
-    shell_opt.opt = '\0';
-    shell_opt.arg = 0;
-    shell_opt.prefixes = default_prefixes;
-  }
+
   return shell_getopt_r(&shell_opt, argc, argv, optstring);
 }
 
@@ -25,8 +28,8 @@ shell_getopt(int argc, char* const argv[], const char* optstring) {
 #define optofs state->ofs
 #define optopt state->opt
 #define optarg state->arg
-#define optprefix state->prefix
-#define optprefixes state->prefixes
+#define prefix state->prefix
+#define prefixchars state->prefixes
 
 int
 shell_getopt_r(struct optstate* state,
@@ -36,13 +39,14 @@ shell_getopt_r(struct optstate* state,
   unsigned int offset;
 
   if(optind == 0) {
+    state_clear(state);
     if(optstring[0] == '+') {
-    optprefixes = "+-";
-    optstring++;
-  } else {
-    optprefixes = default_prefixes;
-  }
-  optind++;
+      prefixchars = "+-";
+      optstring++;
+    } else {
+      prefixchars = default_prefixes;
+    }
+    optind++;
   }
 
 again:
@@ -50,10 +54,10 @@ again:
   if(optind > argc || !argv[optind])
     return -1;
 
-  offset = str_chr(optprefixes, argv[optind][0]);
+  offset = str_chr(prefixchars, argv[optind][0]);
 
   /* are we finished? */
-  if(!(optprefix = optprefixes[offset]) || argv[optind][1] == 0)
+  if(!(prefix = prefixchars[offset]) || argv[optind][1] == 0)
     return -1;
 
   /* ignore a trailing - */
