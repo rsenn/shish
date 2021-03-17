@@ -4,10 +4,8 @@
 #include <signal.h>
 
 void
-sig_blocknone(void) {
+sig_blockset(const void* set) {
 #if !WINDOWS_NATIVE
-  sigset_t ss;
-  sigemptyset(&ss);
-  sigprocmask(SIG_SETMASK, &ss, 0);
+  sigprocmask(SIG_SETMASK, set, 0);
 #endif
 }

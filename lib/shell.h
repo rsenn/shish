@@ -31,8 +31,10 @@ char* shell_gethome(int uid);
 char* shell_gethostname(stralloc* sa);
 
 struct optstate {
-  int ind, ofs, opt, idx;
+  const char* prefixes;
+  int ind, ofs, opt;
   char* arg;
+  char prefix;
 };
 
 int shell_getopt_r(struct optstate*,
@@ -47,6 +49,8 @@ extern struct optstate shell_opt;
 #define shell_optind shell_opt.ind
 #define shell_optofs shell_opt.ofs
 #define shell_optopt shell_opt.opt
+#define shell_optprefix shell_opt.prefix
+#define shell_optprefixes shell_opt.prefixes
 
 /* set the output buffer and the basename for error messages */
 void shell_init(buffer* b, const char* n);

@@ -26,7 +26,7 @@ eval_tree(struct eval* e, union node* node, int tempflags) {
 
   while(node) {
     /* not the last node, disable E_EXIT for now */
-    if(ex && (!list || node->list.next == NULL))
+    if(ex && (!list || node->next == NULL))
       e->flags |= E_EXIT;
     ret = eval_node(e, node);
     e->exitcode = ret;
@@ -34,7 +34,7 @@ eval_tree(struct eval* e, union node* node, int tempflags) {
     if(!list)
       break;
 
-    node = node->list.next;
+    node = node->next;
   }
 
   if(ex)

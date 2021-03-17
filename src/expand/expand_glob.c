@@ -63,8 +63,8 @@ expand_glob(union node** nptr, int flags) {
         }
         /* otherwise create a new node */
         else {
-          n->narg.next = tree_newnode(N_ARG);
-          n = n->narg.next;
+          n->next = tree_newnode(N_ARG);
+          n = n->next;
           stralloc_init(&n->narg.stra);
         }
 

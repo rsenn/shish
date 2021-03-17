@@ -91,6 +91,9 @@ char* str_triml(char*, const char* charset, unsigned int charsetlen);
   for((ptr) = (void*)(s); *(const char*)(ptr);                                     \
       (ptr) = ((const char*)(ptr)) + (skipcall))
 
+#define str_contains(s, needle) (((s)[str_find((s), (needle))]) != 0)
+#define str_containsc(s, ch) (((s)[str_chr((s), (ch))]) != 0)
+
 #ifdef __cplusplus
 }
 #endif

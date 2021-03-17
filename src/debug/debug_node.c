@@ -161,7 +161,7 @@ debug_node(union node* node, int depth) {
       if(node->narg.list)
         debug_sublist(0, node->narg.list, -2);
       /*      debug_space(depth, 0);
-            debug_sublist("next", node->narg.next, depth);
+            debug_sublist("next", node->next, depth);
       */
 
       break;
@@ -169,7 +169,7 @@ debug_node(union node* node, int depth) {
     case N_REDIR:
       debug_redir(0, node->nredir.flag, -2);
       debug_sublist(0, node->nredir.list, depth + 1);
-      //debug_sublist("data", node->nredir.data, depth);
+      // debug_sublist("data", node->nredir.data, depth);
       debug_ulong("fdes", node->nredir.fdes, depth);
       break;
 

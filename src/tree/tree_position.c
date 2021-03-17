@@ -5,43 +5,40 @@
 int
 tree_position(union node* node, struct position* pos) {
   while(node) {
-    union node* arg;
-    for(arg = node->narg.list; arg; arg = arg->list.next) {
-      switch(arg->id) {
-        case N_ARGSTR:
-          *pos = arg->nargstr.pos;
+    switch(node->id) {
+      case N_ARGSTR:
+        *pos = node->nargstr.pos;
+        return 1;
+        break;
+      case N_ARGPARAM:
+        *pos = node->nargparam.pos;
+        return 1;
+        break;
+      case N_ARGCMD:
+        if(tree_position(node->nargcmd.list, pos))
           return 1;
-          break;
-        case N_ARGPARAM:
-          *pos = arg->nargparam.pos;
+        break;
+      case N_ARG:
+        if(tree_position(node->narg.list, pos))
           return 1;
-          break;
-        case N_ARGCMD:
-          if(tree_position(node->nargcmd.list, pos))
-            return 1;
-          break;
-        case N_ARG:
-          if(tree_position(node->narg.list, pos))
-            return 1;
-          break;
-        case N_CASE:
-          if(tree_position(node->ncase.word, pos))
-            return 1;
-          if(tree_position(node->ncase.list, pos))
-            return 1;
-          break;
+        break;
+      case N_CASE:
+        if(tree_position(node->ncase.word, pos))
+          return 1;
+        if(tree_position(node->ncase.list, pos))
+          return 1;
+        break;
 
-        case N_SIMPLECMD:
-          if(tree_position(node->ncmd.vars, pos))
-            return 1;
-          if(tree_position(node->ncmd.args, pos))
-            return 1;
-          if(tree_position(node->ncmd.rdir, pos))
-            return 1;
-          break;
-      }
+      case N_SIMPLECMD:
+        if(tree_position(node->ncmd.vars, pos))
+          return 1;
+        if(tree_position(node->ncmd.args, pos))
+          return 1;
+        if(tree_position(node->ncmd.rdir, pos))
+          return 1;
+        break;
     }
-    switch(arg->id) {
+    switch(node->id) {
       case N_SIMPLECMD:
       case N_SUBSHELL:
       case N_CMDLIST:
@@ -54,7 +51,7 @@ tree_position(union node* node, struct position* pos) {
           return 1;
         break;
     }
-    switch(arg->id) {
+    switch(node->id) {
       case N_PIPELINE:
       case N_CMDLIST:
       case N_SUBSHELL:
@@ -65,7 +62,7 @@ tree_position(union node* node, struct position* pos) {
         break;
     }
 
-    node = node->narg.next;
+    node = node->next;
   }
   return 0;
 }

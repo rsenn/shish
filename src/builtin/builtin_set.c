@@ -9,15 +9,16 @@
 int
 builtin_set(int argc, char* argv[]) {
   int c;
-  union shopt opts = {0};
+  union shopt opts = sh->opts;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "xeCu")) > 0) {
+  while((c = shell_getopt(argc, argv, "+xeCu")) > 0) {
+    int on = shell_optprefix == '-';
     switch(c) {
-      case 'x': opts.debug = 1; break;
-      case 'e': opts.exit_on_error = 1; break;
-      case 'C': opts.no_clobber = 1; break;
-      case 'u': opts.unset = 1; break;
+      case 'x': opts.debug = on; break;
+      case 'e': opts.exit_on_error = on; break;
+      case 'C': opts.no_clobber = on; break;
+      case 'u': opts.unset = on; break;
       default: builtin_invopt(argv); return 1;
     }
   }

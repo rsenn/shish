@@ -15,7 +15,7 @@ expand_args(union node* args, union node** nptr, int flags) {
 
   *nptr = NULL;
 
-  for(arg = args; arg; arg = arg->narg.next) {
+  for(arg = args; arg; arg = arg->next) {
 
 #if DEBUG_OUTPUT_
     debug_node(arg, 0);
@@ -40,9 +40,9 @@ expand_args(union node* args, union node** nptr, int flags) {
       n->narg.flag &= ~X_GLOB;
     }
 
-    if(arg->narg.next) {
-      n->narg.next = tree_newnode(N_ARG);
-      n = n->narg.next;
+    if(arg->next) {
+      n->next = tree_newnode(N_ARG);
+      n = n->next;
       stralloc_init(&n->narg.stra);
       stralloc_nul(&n->narg.stra);
       ret++;

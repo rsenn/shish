@@ -7,7 +7,7 @@ eval_cmdlist(struct eval* e, struct ngrp* grp) {
   int ret = 0;
   union node* cmd;
 
-  for(cmd = grp->cmds; cmd; cmd = cmd->ncmd.next) {
+  for(cmd = grp->cmds; cmd; cmd = cmd->next) {
     ret = eval_node(e, cmd);
   }
 

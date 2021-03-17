@@ -6,9 +6,7 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_echo(int argc, char* argv[]) {
-  int c;
-  int nonl = 0;
-  int eval = 0;
+  int c, i, nonl = 0, eval = 0;
 
   /* check options */
   while((c = shell_getopt(argc, argv, "ne")) > 0) {
@@ -22,10 +20,12 @@ builtin_echo(int argc, char* argv[]) {
   /* TODO*/
   (void)eval;
 
-  for(argv += shell_optind; *argv;) {
-    buffer_puts(fd_out->w, *argv);
+  buffer_puts(fd_out->w, "echo: ");
 
-    if(*++argv)
+  for(i = shell_optind; i < argc; i++) {
+    buffer_puts(fd_out->w, argv[i]);
+
+    if(i + 1 < argc)
       buffer_putspace(fd_out->w);
   }
 

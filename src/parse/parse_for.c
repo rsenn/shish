@@ -26,7 +26,7 @@ parse_for(struct parser* p) {
     /* now parse the arguments and build a list of them */
     while(parse_gettok(p, P_DEFAULT) & (T_WORD | T_NAME | T_ASSIGN)) {
       *nptr = parse_getarg(p);
-      nptr = &(*nptr)->narg.next;
+      nptr = &(*nptr)->next;
     }
   }
   p->pushback++;

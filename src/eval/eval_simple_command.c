@@ -30,7 +30,7 @@
  * ----------------------------------------------------------------------- */
 int
 eval_simple_command(struct eval* e, struct ncmd* ncmd) {
-   int argc, status = 0;
+  int argc, status = 0;
   char** argv;
   union node *node, *args = 0, *assigns = 0;
   struct command cmd = {H_BUILTIN, {0}};
@@ -54,7 +54,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
     if(!(e->flags & E_EXIT) && cmd.ptr && cmd.id != H_SBUILTIN)
       vartab_push(&vars, 0);
 
-    for(node = assigns; node; node = node->narg.next) {
+    for(node = assigns; node; node = node->next) {
       if(!var_setsa(&node->narg.stra, (cmd.ptr ? V_EXPORT : V_DEFAULT))) {
         status = 1;
         break;
@@ -68,49 +68,48 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   }
 
   /* do redirections if present */
-  if( ncmd->rdir && cmd.id != H_SBUILTIN && cmd.id != H_EXEC)
+  if(ncmd->rdir && cmd.id != H_SBUILTIN && cmd.id != H_EXEC)
     fdstack_push(&io);
 
-    for(r =  ncmd->rdir; r; r = r->nredir.next) {
-      struct fd* fd = NULL;
+  for(r = ncmd->rdir; r; r = r->next) {
+    struct fd* fd = NULL;
 
-      /* if its the exec special builtin the new fd needs to be persistent */
-      if(cmd.id != H_EXEC) {
+    /* if its the exec special builtin the new fd needs to be persistent */
+    if(cmd.id != H_EXEC) {
 #ifdef HAVE_ALLOCA
-        fd = fd_alloc();
+      fd = fd_alloc();
 #else
-        fd = fd_malloc();
-#endif
-      }
-
-      /* return if a redirection failed */
-      if(redir_eval(&r->nredir, fd, (cmd.id == H_EXEC ? R_NOW : 0))) {
-        status = 1;
-        goto end;
-      }
-
-      /* check if we need to initialize fd buffers for the new redirection */
-      if(fd_needbuf(r->nredir.fd)) {
-        /* if its not exec then set up buffers for
-           temporary redirections on the stack */
-        if(cmd.id != H_EXEC)
-          fd_setbuf(r->nredir.fd, buf, FD_BUFSIZE);
-        else
-          fd_allocbuf(r->nredir.fd, FD_BUFSIZE);
-      }
-
-#if DEBUG_OUTPUT_
-      buffer_puts(&debug_buffer, "Redirection ");
-      debug_node(r, -1);
-      if(r->nredir.fd) {
-        buffer_puts(&debug_buffer, "fd { n= ");
-        buffer_putlong(&debug_buffer, r->nredir.fd->n);
-        buffer_puts(&debug_buffer, " }");
-      }
-      debug_nl_fl();
+      fd = fd_malloc();
 #endif
     }
 
+    /* return if a redirection failed */
+    if(redir_eval(&r->nredir, fd, (cmd.id == H_EXEC ? R_NOW : 0))) {
+      status = 1;
+      goto end;
+    }
+
+    /* check if we need to initialize fd buffers for the new redirection */
+    if(fd_needbuf(r->nredir.fd)) {
+      /* if its not exec then set up buffers for
+         temporary redirections on the stack */
+      if(cmd.id != H_EXEC)
+        fd_setbuf(r->nredir.fd, buf, FD_BUFSIZE);
+      else
+        fd_allocbuf(r->nredir.fd, FD_BUFSIZE);
+    }
+
+#if DEBUG_OUTPUT_
+    buffer_puts(&debug_buffer, "Redirection ");
+    debug_node(r, -1);
+    if(r->nredir.fd) {
+      buffer_puts(&debug_buffer, "fd { n= ");
+      buffer_putlong(&debug_buffer, r->nredir.fd->n);
+      buffer_puts(&debug_buffer, " }");
+    }
+    debug_nl_fl();
+#endif
+  }
 
   /* if there is no command we can return after
      setting the vars and doing the redirections */
@@ -168,8 +167,7 @@ end:
   if(fdstack == &io) {
     fdstack_pop(&io);
   } else if(cmd.id != H_EXEC) {
-    for(r = redir; r; r = r->nredir.next)
-      fd_pop(r->nredir.fd);
+    for(r = redir; r; r = r->next) fd_pop(r->nredir.fd);
   }
 
   sh->exitcode = status;

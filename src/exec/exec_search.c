@@ -3,7 +3,7 @@
 #include "../tree.h"
 #include "../../lib/str.h"
 
-struct nfunc* functions = NULL;
+union node* functions = NULL;
 
 /* command search routine
  * ----------------------------------------------------------------------- */
@@ -25,7 +25,7 @@ exec_search(char* name, int mask) {
     struct nfunc* fn;
     cmd.id = H_FUNCTION;
 
-    for(fn = functions; fn; fn = fn->next) {
+    for(fn = &functions->nfunc; fn; fn = fn->next) {
       if(!str_diff(name, fn->name))
         break;
     }

@@ -62,7 +62,7 @@ struct narg;
 static inline union node**
 expand_addnode(union node** nptr) {
   if(*(nptr)) {
-    nptr = &(*nptr)->narg.next;
+    nptr = &(*nptr)->next;
   };
   *nptr = tree_newnode(N_ARG);
   return nptr;

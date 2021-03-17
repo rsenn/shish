@@ -9,8 +9,8 @@ parse_newnodedebug(const char* file,
                    struct parser* p,
                    enum kind nod) {
   if(p->tree) {
-    p->node->list.next = tree_newnodedebug(file, line, nod);
-    p->node = p->node->list.next;
+    p->node->next = tree_newnodedebug(file, line, nod);
+    p->node = p->node->next;
   } else {
     p->node = tree_newnodedebug(file, line, nod);
     p->tree = p->node;

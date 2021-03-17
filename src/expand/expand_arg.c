@@ -12,7 +12,7 @@ expand_arg(union node* node, union node** nptr, int flags) {
 
   /* loop through all parts of the word */
   for(subarg = (node && node->id == N_ARG) ? node->narg.list : node; subarg;
-      subarg = subarg->nargstr.next) {
+      subarg = subarg->next) {
     int lflags = flags; /* local flags */
 
     if(subarg->nargstr.flag & S_NOSPLIT)

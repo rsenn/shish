@@ -74,7 +74,7 @@ parse_here(struct parser* p, stralloc* delim, int nosubst) {
       stralloc_trunc(sa, ++si);
 
       n = tree_newnode(N_ARGSTR);
-      n->nargstr.next = p->node;
+      n->next = p->node;
       p->node = n;
 
       // parse_string(p, 0);

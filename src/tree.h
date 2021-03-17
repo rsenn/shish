@@ -287,8 +287,8 @@ struct narithbinary {
 /* ----------------------------------------------------------------------- */
 union node {
   struct {
-  enum kind id;
-  union node* next;
+    enum kind id;
+    union node* next;
   };
   struct list list;
   struct ncmd ncmd;
@@ -319,13 +319,13 @@ typedef union node node_t;
 #define tree_link(node, nptr)                                                      \
   do {                                                                             \
     *(nptr) = (node);                                                              \
-    nptr = &(node)->list.next;                                                     \
+    nptr = &(node)->next;                                                          \
   } while(0);
 
 /* link node to the branch nptr points to */
 #define tree_unshift(node, nptr)                                                   \
   do {                                                                             \
-    (node)->list.next = *(nptr);                                                   \
+    (node)->next = *(nptr);                                                        \
     (*nptr) = (node);                                                              \
   } while(0);
 
@@ -333,12 +333,12 @@ typedef union node node_t;
 #define tree_move(node, nptr)                                                      \
   do {                                                                             \
     *(nptr) = (node);                                                              \
-    nptr = &(node)->list.next;                                                     \
+    nptr = &(node)->next;                                                          \
     (node) = NULL;                                                                 \
   } while(0);
 
 /* skip to the next node */
-#define tree_next(nptr) (&((*(nptr)))->list.next)
+#define tree_next(nptr) (&((*(nptr)))->next)
 #define tree_skip(nptr) (nptr) = tree_next(nptr)
 
 /*

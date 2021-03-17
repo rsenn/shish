@@ -10,7 +10,7 @@ tree_newlink(union node** nptr, enum kind nod) {
   if(*nptr == NULL)
     *nptr = n;
   else
-    (*nptr)->list.next = n;
+    (*nptr)->next = n;
 
   return n;
 }

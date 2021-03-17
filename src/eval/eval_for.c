@@ -18,7 +18,7 @@ eval_for(struct eval* e, struct nfor* nfor) {
 
   en.jump = 1;
 
-  for(node = args; node; node = node->narg.next) {
+  for(node = args; node; node = node->next) {
     int jmpret;
 
     if((jmpret = setjmp(en.jumpbuf)) == 2)

@@ -1,16 +1,13 @@
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-#include <signal.h>
 #include "../sig.h"
+#include "../windoze.h"
+
+#include <signal.h>
 
 void
 sig_pause(void) {
-#ifdef HAVE_SIGPROCMASK
   sigset_t ss;
   sigemptyset(&ss);
+#if !WINDOWS_NATIVE
   sigsuspend(&ss);
-#elif defined(HAVE_SIGPAUSE)
-  sigpause(0);
 #endif
 }

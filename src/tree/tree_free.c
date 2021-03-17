@@ -8,7 +8,7 @@ tree_free(union node* node) {
   union node* next;
 
   do {
-    next = node->list.next;
+    next = node->next;
 
     switch(node->id) {
       case N_SIMPLECMD:

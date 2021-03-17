@@ -11,7 +11,7 @@ debug_list(union node* n, int depth) {
   unsigned long i = 0;
   union node* node;
   int id = n->id;
-  for(node = n; node; i++, node = node->list.next) {
+  for(node = n; node; i++, node = node->next) {
     if(i == 0 && id < N_ARGSTR) {
       debug_s(COLOR_CYAN "[" COLOR_NONE);
     }
@@ -24,7 +24,7 @@ debug_list(union node* n, int depth) {
       debug_s(i == 0 ? (COLOR_CYAN "{" COLOR_NONE) : ", ");
     }
     debug_node(node, id == N_ARG ? -2 : depth > 0 ? depth + 1 : depth);
-    if(node->list.next) {
+    if(node->next) {
       if(id == N_ARG) {
         debug_space(depth - 1, 0);
       } else if(id >= N_ARGSTR) {

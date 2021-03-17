@@ -14,7 +14,7 @@ expand_vars(union node* vars, union node** nptr) {
 
   *nptr = NULL;
 
-  for(var = vars; var; var = var->narg.next) {
+  for(var = vars; var; var = var->next) {
     if((n = expand_arg(var, nptr, X_NOSPLIT))) {
       nptr = &n;
       ret++;
@@ -23,7 +23,7 @@ expand_vars(union node* vars, union node** nptr) {
     expand_unescape(&n->narg.stra, parse_isesc);
 
     if(n)
-      nptr = &n->narg.next;
+      nptr = &n->next;
   }
 
   return ret;

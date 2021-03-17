@@ -26,7 +26,7 @@ again:
   if((*nptr = parse_arith_expr(p)) == NULL)
     return NULL;
 
-  nptr = &(*nptr)->nargarith.next;
+  nptr = &(*nptr)->next;
 
   if(source_peek(&c) <= 0)
     return NULL;

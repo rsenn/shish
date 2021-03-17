@@ -1,17 +1,16 @@
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-#include <signal.h>
+#include "../windoze.h"
 #include "../sig.h"
 
+#include <signal.h>
+
 void
-sig_block(int sig) {
-#ifdef HAVE_SIGPROCMASK
+sig_block(int signum) {
+#if !WINDOWS_NATIVE
   sigset_t ss;
   sigemptyset(&ss);
-  sigaddset(&ss, sig);
-  sigprocmask(SIG_BLOCK, &ss, (sigset_t*)0);
-#elif defined(HAVE_SIGBLOCK)
-  sigblock(1 << (sig - 1));
+  sigprocmask(SIG_SETMASK, 0, &ss);
+
+  sigaddset(&ss, signum);
+  sigprocmask(SIG_BLOCK, &ss, 0);
 #endif
 }

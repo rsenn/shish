@@ -6,16 +6,17 @@
 
 #include "../str.h"
 
-struct optstate shell_opt;
+static const char default_prefixes[] = {'-',0};
+struct optstate shell_opt = { default_prefixes };
 
 int
 shell_getopt(int argc, char* const argv[], const char* optstring) {
   if(shell_opt.ind == 0) {
-    shell_opt.ind = 1;
+    //shell_opt.ind = 1;
     shell_opt.ofs = 0;
     shell_opt.opt = '\0';
     shell_opt.arg = 0;
-    shell_opt.idx = 0;
+    shell_opt.prefixes = default_prefixes;
   }
   return shell_getopt_r(&shell_opt, argc, argv, optstring);
 }
@@ -24,7 +25,8 @@ shell_getopt(int argc, char* const argv[], const char* optstring) {
 #define optofs state->ofs
 #define optopt state->opt
 #define optarg state->arg
-#define optidx state->idx
+#define optprefix state->prefix
+#define optprefixes state->prefixes
 
 int
 shell_getopt_r(struct optstate* state,
@@ -33,16 +35,25 @@ shell_getopt_r(struct optstate* state,
                const char* optstring) {
   unsigned int offset;
 
-  /* no-one will get shot for setting optind to 0 in libshish.a :) */
-  /*  if(optind == 0)
-    {
-      optind = 1;
-      optidx = 0;
-      optofs = 0;
-    }*/
+  if(optind == 0) {
+    if(optstring[0] == '+') {
+    optprefixes = "+-";
+    optstring++;
+  } else {
+    optprefixes = default_prefixes;
+  }
+  optind++;
+  }
+
 again:
   /* are we finished? */
-  if(optind > argc || !argv[optind] || *argv[optind] != '-' || argv[optind][1] == 0)
+  if(optind > argc || !argv[optind])
+    return -1;
+
+  offset = str_chr(optprefixes, argv[optind][0]);
+
+  /* are we finished? */
+  if(!(optprefix = optprefixes[offset]) || argv[optind][1] == 0)
     return -1;
 
   /* ignore a trailing - */
@@ -52,10 +63,9 @@ again:
   }
 
   /* if we're just starting then initialize local static vars */
-  if(optidx != optind) {
+  /*if(optidx != optind) {
     optidx = optind;
-    optofs = 0;
-  }
+  }*(
 
   /* get next option char */
   optopt = argv[optind][optofs + 1];
@@ -64,6 +74,7 @@ again:
   /* end of argument, continue on next one */
   if(optopt == '\0') {
     optind++;
+    optofs = 0;
     goto again;
   }
 
