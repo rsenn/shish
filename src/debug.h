@@ -145,8 +145,8 @@ dump_flags(buffer* b, int bits, const char* const names[], int pad) {
       n += len;
     }
   }
-if(n < pad)
-  buffer_putnspace(b, pad - n);
+  if(n < pad)
+    buffer_putnspace(b, pad - n);
   return n;
 }
 

@@ -215,7 +215,7 @@ test_unary(int argc, char** argv) {
  * ----------------------------------------------------------------------- */
 static int
 test_expr(int argc, char** argv) {
-  int result, index;
+  int index;
   const char* arg;
   int i, parens = 1;
   /*if(shell_optind == argc)
@@ -236,6 +236,7 @@ test_expr(int argc, char** argv) {
   }
 
   if(shell_optind + i < argc) {
+    int result;
     if((result = test_boolean(shell_optind + i, argv)) != -1) {
       shell_optind += i;
       return result;
@@ -270,14 +271,17 @@ test_cond(int argc, char** argv) {
   if(result == -1)
     result = test_unary(argc, argv);
 
-  return result == -1 ? result : neg ^ result;
+  if(result == -1)
+    result = neg ^ result;
+
+  return result;
 }
 
 /* evaluate boolean expressions (-a & -o)
  * ----------------------------------------------------------------------- */
 static int
 test_boolean(int argc, char* argv[]) {
-  int result, prev;
+  int result = 1, prev;
   enum { TEST_AND = 1, TEST_OR = 2 } and_or = 0;
   const char* arg;
 

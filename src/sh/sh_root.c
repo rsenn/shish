@@ -11,7 +11,7 @@ struct env sh_root = {/* .parent = */ NULL,
                       /* .opts = */ {0},
                       /* .fdstack = */ &fdstack_root,
                       /* .varstack = */ &vartab_root,
-                      /* .jumpbuf = */ {0},
+                      /* .jumpbuf = */ {},
                       /* .arg = */ {0},
                       /* .parser = */ 0,
                       /* .eval = */ 0};

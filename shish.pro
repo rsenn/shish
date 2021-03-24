@@ -32,6 +32,7 @@ DEFINES += DEBUG=1
 CONFIG(debug, debug|release):message(Debug build!) #no print
 
 SOURCES *= $$files(lib/*.c, true) $$files(src/*.c, true)
+SOURCES -= src/sh/sh_fmt.c
 
 HEADERS *= $$files(lib/*.h, true) $$files(src/*.h, false)
 
