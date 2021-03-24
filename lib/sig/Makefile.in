@@ -1,13 +1,13 @@
 # ===========================================================================
 #
-# Makefile for lib/shell subdirectory
+# Makefile for lib/sig subdirectory
 #
 # relative directories
 # ---------------------------------------------------------------------------
 srcdir       = @srcdir@
 top_srcdir   = @top_srcdir@
 top_builddir = @top_builddir@
-thisdir      = lib/shell/
+thisdir      = lib/sig/
 
 VPATH        = $(srcdir)
 
@@ -18,7 +18,8 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 LIB = ../libshish.a
-MODULES = shell_alloc shell_allocdebug shell_basename shell_canonicalize shell_error shell_errorn shell_fnmatch shell_getcwd shell_gethome shell_gethostname shell_getopt shell_init shell_readlink shell_realloc shell_reallocdebug shell_realpath shell_strdup shell_strdupdebug
+A_LIBRARY = ../sig.a
+MODULES = sig_action sig_block sig_blocknone sig_blockset sig_catch sig_dfl sig_ignore sig_name sig_number sig_pause sig_push sig_restoreto sig_shield sig_stack sig_table sig_unblock sig_unshield sigfpe sigsegv
 
 
 SOURCES = $(MODULES:%=%.c)

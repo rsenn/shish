@@ -8,7 +8,7 @@
 #elif defined(__MSYS__) || defined(__CYGWIN__)
 #define HAVE_SYS_SIGLIST 1
 #endif
-#if !defined(HAVE_SYS_SIGLIST_DECLARATION)
+#if !defined(HAVE_SYS_SIGLIST)
 extern const char* const* sys_siglist;
 #endif
 

@@ -40,7 +40,6 @@ SUBDIRS   = builtin \
             prompt \
             redir \
             sh \
-            sig \
             source \
             term \
             tree \

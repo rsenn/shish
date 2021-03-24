@@ -242,10 +242,12 @@ lib/mmap/Makefile
 lib/open/Makefile
 lib/scan/Makefile
 lib/shell/Makefile
+lib/sig/Makefile
 lib/str/Makefile
 lib/stralloc/Makefile
 lib/uint32/Makefile
 lib/uint64/Makefile
+lib/unix/Makefile
 lib/wait/Makefile
 scripts/Makefile
 src/Makefile

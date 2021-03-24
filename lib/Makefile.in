@@ -34,7 +34,7 @@ CHMOD = chmod
 
 # directory configuration
 # ---------------------------------------------------------------------------
-SUBDIRS              = buffer byte fmt mmap open scan shell str stralloc uint32 uint64 wait
+SUBDIRS              = buffer byte fmt mmap open scan shell sig str stralloc uint32 unix wait
 RECURSIVE            = 1
 
 LIBRARY = libshish.a
@@ -46,21 +46,7 @@ CLEANFILES = $(LIBRARY)
 #  LOCAL DIRECTORY CONFIGURATION     ########################################
 #                                    ########################################
 #############################################################################
-HEADERS = \
-	buffer.h \
-	byte.h \
-	fmt.h \
-	glob.h \
-	mmap.h \
-	open.h \
-	safemult.h \
-	scan.h \
-	shell.h \
-	str.h \
-	stralloc.h \
-	uint16.h \
-	uint32.h \
-	uint64.h
+HEADERS = buffer.h byte.h case.h fmt.h glob.h ioctlcmd.h mmap.h open.h safemult.h scan.h shell.h sig.h sig_internal.h str.h stralloc.h typedefs.h uint16.h uint32.h uint64.h uint8.h unix.h utf8.h wait.h windoze.h
    
 # targets           build.mk config.h $(srcdir)/configure 
 # ---------------------------------------------------------------------------
