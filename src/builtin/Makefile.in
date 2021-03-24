@@ -18,32 +18,8 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = builtin.a
-MODULES = builtin_basename \
-          builtin_break \
-          builtin_cd \
-          builtin_dirname \
-          builtin_dump \
-          builtin_echo \
-          builtin_error \
-          builtin_eval \
-          builtin_exec \
-          builtin_exit \
-          builtin_export \
-          builtin_false \
-          builtin_fdtable \
-          builtin_hash \
-          builtin_history \
-          builtin_hostname \
-          builtin_pwd \
-          builtin_search \
-          builtin_set \
-          builtin_shift \
-          builtin_source \
-          builtin_table \
-          builtin_test \
-          builtin_true \
-          builtin_unset
-          
+MODULES = builtin_alias builtin_basename builtin_break builtin_cat builtin_cd builtin_chmod builtin_command builtin_dirname builtin_dump builtin_echo builtin_error builtin_eval builtin_exec builtin_exit builtin_export builtin_expr builtin_false builtin_fdtable builtin_getopts builtin_hash builtin_help builtin_history builtin_hostname builtin_ln builtin_local builtin_mkdir builtin_mktemp builtin_pwd builtin_read builtin_readonly builtin_rm builtin_rmdir builtin_search builtin_set builtin_shift builtin_source builtin_table builtin_test builtin_trap builtin_true builtin_type builtin_umask builtin_uname builtin_unset builtin_which
+
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
 DEPS    = $(MODULES:%=%.d)
@@ -51,7 +27,7 @@ DEPS    = $(MODULES:%=%.d)
 # targets for this directory
 # ---------------------------------------------------------------------------
 all: Makefile $(ARCHIVE)
-install: 
+install:
 
 # dependencies
 # ---------------------------------------------------------------------------

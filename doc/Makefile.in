@@ -37,6 +37,3 @@ dep-local:
 # include build.mk (makefile helper)
 # ---------------------------------------------------------------------------
 include $(top_builddir)/build.mk
-
-
-

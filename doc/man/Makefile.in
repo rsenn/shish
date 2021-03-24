@@ -14,7 +14,7 @@ VPATH        = $(srcdir)
 # include global make configuration
 # ---------------------------------------------------------------------------
 include $(top_builddir)/config.mk
-          
+
 # configuration for this directory
 # ---------------------------------------------------------------------------
 POD = shish.pod
@@ -29,7 +29,7 @@ $(MAN): Makefile $(POD)
 # ---------------------------------------------------------------------------
 all: Makefile $(MAN)
 #	echo $(DISTFILES)
-install: 
+install:
 
 # distribution configuration
 # ---------------------------------------------------------------------------

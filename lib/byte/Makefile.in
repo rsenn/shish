@@ -17,24 +17,19 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
-LIB = ../libshish.a
+LIB = ../libowfat.a
+ARCHIVE = byte.a
 
-MODULES = byte_chr \
-byte_copy \
-byte_copyr \
-byte_diff \
-byte_fill \
-byte_rchr \
-byte_zero
-          
+MODULES = byte_ccopy byte_chr byte_copy byte_copyr byte_count byte_diff byte_equal byte_fill byte_rchr byte_trimr byte_zero
+
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
 DEPS    = $(MODULES:%=%.d)
 
 # targets for this directory
 # ---------------------------------------------------------------------------
-all: Makefile .libdep
-install: 
+all: Makefile .libdep $(ARCHIVE)
+install:
 
 # dependencies
 # ---------------------------------------------------------------------------

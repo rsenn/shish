@@ -17,7 +17,8 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
-LIB = ../libshish.a
+LIB = ../libowfat.a
+ARCHIVE = str.a
 MODULES = str_chr str_copy str_copyn str_diff str_diffn str_len str_rchr
 
 
@@ -27,7 +28,7 @@ DEPS    = $(MODULES:%=%.d)
 
 # targets for this directory
 # ---------------------------------------------------------------------------
-all: Makefile .libdep
+all: Makefile .libdep $(ARCHIVE)
 install:
 
 # dependencies

@@ -49,6 +49,7 @@ dnl ])
 
 dnl AC_CHECK_LIB([owfat], [array_allocate])
 dnl AC_CHECK_TERMIOS
+AC_CHECK_LIB([m],[powl],[LIBS="$LIBS -lm"])
 
 dnl AC_FUNC_POLL([cp $srcdir/iopause.h2 iopause.h], [cp $srcdir/iopause.h1 iopause.h])
 dnl AC_FUNC_EPOLL
@@ -224,16 +225,16 @@ AC_SUBST([BUILTINS],[$enabled_builtins])
 
 # library subdirectories
 # ---------------------------------------------------------------------------
-dnl AC_CONFIG_LIBRARIES([lib/libshish])
-dnl AC_CONFIG_PROGRAMS([src/shish], [lib/libshish.a])
+dnl AC_CONFIG_LIBRARIES([lib/libowfat])
+dnl AC_CONFIG_PROGRAMS([src/shish], [lib/libowfat.a])
 
 AC_CONFIG_FILES([
 Makefile
 config.mk
 build.mk
 doc/Makefile
-doc/man/Makefile
 doc/posix/Makefile
+doc/man/Makefile
 lib/Makefile
 lib/buffer/Makefile
 lib/byte/Makefile

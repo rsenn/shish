@@ -18,21 +18,8 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = fdstack.a
-MODULES = fdstack_data \
-          fdstack_dump \
-          fdstack_flatten \
-          fdstack_fork \
-          fdstack_link \
-          fdstack_npipes \
-          fdstack_pipe \
-          fdstack_push \
-          fdstack_pop \
-          fdstack_root \
-          fdstack_search \
-          fdstack_unlink \
-          fdstack_unref \
-          fdstack_update
-          
+MODULES = fdstack_data fdstack_dump fdstack_flatten fdstack_fork fdstack_link fdstack_npipes fdstack_pipe fdstack_pop fdstack_push fdstack_root fdstack_search fdstack_unlink fdstack_unref fdstack_update
+
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
 DEPS    = $(MODULES:%=%.d)
@@ -40,7 +27,7 @@ DEPS    = $(MODULES:%=%.d)
 # targets for this directory
 # ---------------------------------------------------------------------------
 all: Makefile $(ARCHIVE)
-install: 
+install:
 
 # dependencies
 # ---------------------------------------------------------------------------

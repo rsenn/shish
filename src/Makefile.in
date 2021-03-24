@@ -47,7 +47,7 @@ SUBDIRS   = builtin \
             vartab
 
 PROGRAM = shish$(EXEEXT)
-LIB     = $(top_builddir)/lib/libshish.a   
+LIB     = $(top_builddir)/lib/libowfat.a   
 LDADD   = builtin/builtin.a \
           debug/debug.a \
           eval/eval.a \
@@ -62,7 +62,6 @@ LDADD   = builtin/builtin.a \
           prompt/prompt.a \
           redir/redir.a \
           sh/sh.a \
-          sig/sig.a \
           source/source.a \
           term/term.a \
           tree/tree.a \

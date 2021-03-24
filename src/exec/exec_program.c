@@ -55,8 +55,10 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
       fdstack_pipe(n, pipes);
     }
 
+#ifdef DEBUG_OUTPUT
    fdstack_dump(&debug_buffer);
    // fdtable_dump(&debug_buffer);
+#endif
 
     /* block child and interrupt signal, so we won't terminate ourselves
        when the child does */

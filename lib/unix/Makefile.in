@@ -17,7 +17,8 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
-LIB = ../libshish.a
+LIB = ../libowfat.a
+ARCHIVE = unix.a
 MODULES = glob readlink win32_glob
 
 SOURCES = $(MODULES:%=%.c)
@@ -26,8 +27,8 @@ DEPS    = $(MODULES:%=%.d)
 
 # targets for this directory
 # ---------------------------------------------------------------------------
-all: Makefile .libdep
-install: 
+all: Makefile .libdep $(ARCHIVE)
+install:
 
 # dependencies
 # ---------------------------------------------------------------------------

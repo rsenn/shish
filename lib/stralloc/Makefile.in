@@ -17,33 +17,9 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
-LIB = ../libshish.a
-
-MODULES = stralloc_cat \
-    stralloc_catb \
-    stralloc_catc \
-    stralloc_catlong0 \
-    stralloc_cats \
-    stralloc_catulong0 \
-    stralloc_copy \
-    stralloc_copyb \
-    stralloc_copys \
-    stralloc_diffs \
-    stralloc_free \
-    stralloc_init \
-    stralloc_insertb \
-    stralloc_move \
-    stralloc_nul \
-    stralloc_ready \
-    stralloc_readyplus \
-    stralloc_remove \
-    stralloc_trunc \
-    stralloc_write \
-    stralloc_zero \
-    stralloc_freedebug \
-    stralloc_readydebug \
-    stralloc_readyplusdebug \
-    stralloc_truncdebug
+LIB = ../libowfat.a
+ARCHIVE = stralloc.a
+MODULES = mmap_filename stralloc_append stralloc_cat stralloc_catb stralloc_catc stralloc_catint stralloc_catint0 stralloc_catlong stralloc_catlong0 stralloc_catm_internal stralloc_cats stralloc_catuint stralloc_catuint0 stralloc_catulong stralloc_catulong0 stralloc_catxlong stralloc_contains stralloc_copy stralloc_copyb stralloc_copys stralloc_count stralloc_diff stralloc_diffb stralloc_diffs stralloc_find stralloc_findb stralloc_finds stralloc_free stralloc_freedebug stralloc_init stralloc_insertb stralloc_move stralloc_nul stralloc_ready stralloc_readydebug stralloc_readyplus stralloc_readyplusdebug stralloc_remove stralloc_starts stralloc_trimr stralloc_trunc stralloc_truncdebug stralloc_write stralloc_zero
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
@@ -51,8 +27,8 @@ DEPS    = $(MODULES:%=%.d)
 
 # targets for this directory
 # ---------------------------------------------------------------------------
-all: Makefile .libdep
-install: 
+all: Makefile .libdep $(ARCHIVE)
+install:
 
 # dependencies
 # ---------------------------------------------------------------------------

@@ -14,15 +14,12 @@ VPATH        = $(srcdir)
 # include global make configuration
 # ---------------------------------------------------------------------------
 include $(top_builddir)/config.mk
-          
+
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = prompt.a
-MODULES = prompt_escape \
-          prompt_expand \
-          prompt_parse \
-          prompt_show
-          
+MODULES = prompt_escape prompt_expand prompt_nextline prompt_parse prompt_reset prompt_show
+
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
 DEPS    = $(MODULES:%=%.d)
@@ -30,7 +27,7 @@ DEPS    = $(MODULES:%=%.d)
 # targets for this directory
 # ---------------------------------------------------------------------------
 all: Makefile $(ARCHIVE)
-install: 
+install:
 
 # dependencies
 # ---------------------------------------------------------------------------
@@ -43,7 +40,7 @@ INCLUDES += -I$(top_srcdir)/lib -I$(top_builddir)
 INCLUDES += -I$(top_srcdir)/src
 #INCLUDES += -I$(top_builddir)/src
 INCLUDES += -I$(top_builddir)
-          
+
 # include build.mk (makefile helper)
 # ---------------------------------------------------------------------------
 include $(top_builddir)/build.mk

@@ -17,8 +17,8 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
-LIB = ../libshish.a
-A_LIBRARY = ../sig.a
+LIB = ../libowfat.a
+ARCHIVE = sig.a
 MODULES = sig_action sig_block sig_blocknone sig_blockset sig_catch sig_dfl sig_ignore sig_name sig_number sig_pause sig_push sig_restoreto sig_shield sig_stack sig_table sig_unblock sig_unshield sigfpe sigsegv
 
 
@@ -28,8 +28,8 @@ DEPS    = $(MODULES:%=%.d)
 
 # targets for this directory
 # ---------------------------------------------------------------------------
-all: Makefile .libdep
-install: 
+all: Makefile .libdep $(ARCHIVE)
+install:
 
 # dependencies
 # ---------------------------------------------------------------------------

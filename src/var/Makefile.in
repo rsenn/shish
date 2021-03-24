@@ -14,37 +14,12 @@ VPATH        = $(srcdir)
 # include global make configuration
 # ---------------------------------------------------------------------------
 include $(top_builddir)/config.mk
-          
+
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = var.a
-MODULES = var_bsearch \
-          var_chflg \
-          var_cleanup \
-          var_copys \
-          var_count \
-          var_create \
-          var_dump \
-          var_export \
-          var_get \
-          var_hsearch \
-          var_import \
-          var_init \
-          var_len \
-          var_lexhash \
-          var_print \
-          var_rndhash \
-          var_search \
-          var_set \
-          var_setsa \
-          var_setvint \
-          var_setvsa \
-          var_unset \
-          var_valid \
-          var_value \
-          var_vdefault \
-          var_vlen 
-          
+MODULES = var_bsearch var_chflg var_cleanup var_copys var_count var_create var_dump var_export var_get var_hsearch var_import var_init var_len var_lexhash var_print var_rndhash var_search var_set var_setsa var_setv var_setvint var_setvsa var_unset var_valid var_value var_vdefault var_vlen
+
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
 DEPS    = $(MODULES:%=%.d)
@@ -52,7 +27,7 @@ DEPS    = $(MODULES:%=%.d)
 # targets for this directory
 # ---------------------------------------------------------------------------
 all: Makefile $(ARCHIVE)
-install: 
+install:
 
 # dependencies
 # ---------------------------------------------------------------------------
@@ -66,7 +41,7 @@ INCLUDES += -I$(top_srcdir)/src
 #INCLUDES += -I$(top_builddir)/src
 INCLUDES += -I$(top_builddir)
 INCLUDES += -include assert.h
-          
+
 # include build.mk (makefile helper)
 # ---------------------------------------------------------------------------
 include $(top_builddir)/build.mk

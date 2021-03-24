@@ -18,7 +18,7 @@
    - `sh-ish` which is derived from `sh`, the original System V and bourne 
       shells, this shell is sh-ish because we support their syntax.
    
-   - the libowfat-based library this package ships is called `libshish.a`,
+   - the libowfat-based library this package ships is called `libowfat.a`,
      derived from `shisha` which is the name for an oriental water pipe.
      this is because shells and pipes are very related topics 
      

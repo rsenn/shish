@@ -17,7 +17,8 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
-LIB = ../libshish.a
+LIB = ../libowfat.a
+ARCHIVE = uint32.a
 MODULES = uint32_prng uint32_random uint32_seed
 
 
@@ -27,8 +28,8 @@ DEPS    = $(MODULES:%=%.d)
 
 # targets for this directory
 # ---------------------------------------------------------------------------
-all: Makefile .libdep
-install: 
+all: Makefile .libdep $(ARCHIVE)
+install:
 
 # dependencies
 # ---------------------------------------------------------------------------

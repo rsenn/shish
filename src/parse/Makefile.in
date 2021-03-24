@@ -14,13 +14,13 @@ VPATH        = $(srcdir)
 # include global make configuration
 # ---------------------------------------------------------------------------
 include $(top_builddir)/config.mk
-          
+
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = parse.a
-MODULES = parse_and_or parse_arith_binary parse_arith parse_arith_expr parse_arith_paren parse_arith_unary parse_arith_value parse_bquoted parse_case parse_chartable parse_command parse_compound_list parse_dquoted parse_error parse_expect parse_for parse_function parse_getarg parse_gettok parse_grouping parse_here parse_if parse_init parse_keyword parse_list parse_loop parse_newnode parse_newnodedebug parse_param parse_pipeline parse_simple_command parse_simpletok parse_skipspace parse_squoted parse_string parse_subst parse_tokens parse_tokname parse_unquoted parse_validname parse_word
+MODULES = parse_and_or parse_arith parse_arith_binary parse_arith_expr parse_arith_paren parse_arith_unary parse_arith_value parse_bquoted parse_case parse_chartable parse_command parse_compound_list parse_dquoted parse_dump parse_error parse_expect parse_findalias parse_for parse_function parse_getarg parse_gettok parse_grouping parse_here parse_if parse_init parse_keyword parse_list parse_loop parse_newnode parse_newnodedebug parse_param parse_pipeline parse_simple_command parse_simpletok parse_skipspace parse_squoted parse_string parse_subst parse_tokens parse_tokname parse_unquoted parse_validname parse_word
 
-          
+
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
 DEPS    = $(MODULES:%=%.d)
@@ -28,7 +28,7 @@ DEPS    = $(MODULES:%=%.d)
 # targets for this directory
 # ---------------------------------------------------------------------------
 all: Makefile $(ARCHIVE)
-install: 
+install:
 
 # dependencies
 # ---------------------------------------------------------------------------
@@ -41,7 +41,7 @@ INCLUDES += -I$(top_srcdir)/lib -I$(top_builddir)
 INCLUDES += -I$(top_srcdir)/src
 #INCLUDES += -I$(top_builddir)/src
 INCLUDES += -I$(top_builddir)
-          
+
 # include build.mk (makefile helper)
 # ---------------------------------------------------------------------------
 include $(top_builddir)/build.mk

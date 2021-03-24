@@ -36,7 +36,7 @@ cfg() {
         --prefix="$prefix" \
         ${sysconfdir:+--sysconfdir="$sysconfdir"} \
         ${localstatedir:+--localstatedir="$localstatedir"} \
-        --enable-{silent-rules,color,dependency-tracking} \
+        --enable-{color,dependency-tracking} \
         $debug \
         "$@" &&
   echo "Configured in '$builddir'" 1>&2)

@@ -1,6 +1,6 @@
 # ===========================================================================
 #
-# GNU Makefile for libshish
+# GNU Makefile for libowfat
 #
 # relative directories
 # ---------------------------------------------------------------------------
@@ -37,7 +37,7 @@ CHMOD = chmod
 SUBDIRS              = buffer byte fmt mmap open scan shell sig str stralloc uint32 unix wait
 RECURSIVE            = 1
 
-LIBRARY = libshish.a
+LIBRARY = libowfat.a
 
 CLEANFILES = $(LIBRARY)
 
