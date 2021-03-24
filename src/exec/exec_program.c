@@ -17,6 +17,7 @@
 #include "../sh.h"
 #include "../tree.h"
 #include "../var.h"
+#include "../debug.h"
 #include "../../lib/sig.h"
 #include "../../lib/wait.h"
 
@@ -33,13 +34,13 @@ pid_t fork(void);
 int
 exec_program(char* path, char** argv, int exec, union node* redir) {
   int ret = 0;
-  struct fd* pipes = 0;
 
   /* if we're gonna execve() a program and 'exec' isn't
      set or we aren't in the root shell environment we
      have to fork() so we can return */
   if(!exec || sh->parent) {
     pid_t pid;
+    struct fd* pipes = 0;
     struct fdstack io;
     unsigned int n;
 
@@ -53,6 +54,9 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
       pipes = shell_alloc(FDSTACK_ALLOC_SIZE(n));
       fdstack_pipe(n, pipes);
     }
+
+   fdstack_dump(&debug_buffer);
+   // fdtable_dump(&debug_buffer);
 
     /* block child and interrupt signal, so we won't terminate ourselves
        when the child does */

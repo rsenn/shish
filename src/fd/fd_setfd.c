@@ -18,13 +18,13 @@ fd_setfd(struct fd* fd, int e) {
   assert(fd->mode & FD_READWRITE);
 
   /* set the file descriptors on the buffers */
-  if(D_ISRD(fd)) {
+  if(FD_ISRD(fd)) {
     buffer_default(&fd->rb, (buffer_op_proto*)&read);
     fd->rb.fd = e;
     fd->r = &fd->rb;
   }
 
-  if(D_ISWR(fd)) {
+  if(FD_ISWR(fd)) {
     buffer_default(&fd->wb, (buffer_op_proto*)&write);
     fd->wb.fd = e;
     fd->w = &fd->wb;

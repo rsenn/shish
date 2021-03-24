@@ -4,12 +4,12 @@
  * doesn't advance buffer pointer, use input_skipcn() for that
  * ----------------------------------------------------------------------- */
 int
-source_peekn(char* c, unsigned long n) {
+source_peekn(char* c, unsigned int n) {
   buffer* b = source->b;
-  long ret = b->n - b->p;
+  int ret = b->n - b->p;
 
   /* no data available, try to get some */
-  if(ret <= n)
+  if((unsigned)ret <= n)
     if((ret = buffer_prefetch(b, n + 1)) <= 0)
       return ret;
 #ifdef DEBUG_OUTPUT_

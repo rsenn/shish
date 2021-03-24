@@ -1,7 +1,6 @@
-#include "../sig.h"
+#include "../sig_internal.h"
 
 #include <strings.h>
-#include "sig-internal.h"
 
 int
 sig_number(char const* name) {

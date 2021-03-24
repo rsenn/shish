@@ -1,85 +1,40 @@
 #include "../windoze.h"
-#include "../sig.h"
+#include "../sig_internal.h"
 
 #include <signal.h>
-#include "sig-internal.h"
 
 sigtable_t const sigtable[] = {
 #if !WINDOWS_NATIVE
-
-    {SIGABRT, "ABRT"},
-    {SIGALRM, "ALRM"},
-    {SIGBUS, "BUS"},
-    {SIGCHLD, "CHLD"},
-    {SIGCONT, "CONT"},
-    {SIGFPE, "FPE"},
-    {SIGHUP, "HUP"},
-    {SIGILL, "ILL"},
-    {SIGINT, "INT"},
-    {SIGKILL, "KILL"},
-    {SIGPIPE, "PIPE"},
-    {SIGQUIT, "QUIT"},
-    {SIGSEGV, "SEGV"},
-    {SIGSTOP, "STOP"},
-    {SIGTERM, "TERM"},
-    {SIGTSTP, "TSTP"},
-    {SIGTTIN, "TTIN"},
-    {SIGTTOU, "TTOU"},
-    {SIGUSR1, "USR1"},
-    {SIGUSR2, "USR2"},
-#ifdef SIGPOLL
-    {SIGPOLL, "POLL"},
-#endif
-#ifdef SIGPROF
-    {SIGPROF, "PROF"},
-#endif
-#ifdef SIGSYS
-    {SIGSYS, "SYS"},
-#endif
-#ifdef SIGTRAP
-    {SIGTRAP, "TRAP"},
-#endif
-#ifdef SIGURG
-    {SIGURG, "URG"},
-#endif
-#ifdef SIGVTALRM
-    {SIGVTALRM, "VTALRM"},
-#endif
-#ifdef SIGXCPU
-    {SIGXCPU, "XCPU"},
-#endif
-#ifdef SIGXFSZ
-    {SIGXFSZ, "XFSZ"},
-#endif
-#ifdef SIGIOT
-    {SIGIOT, "IOT"},
-#endif
-#ifdef SIGEMT
-    {SIGEMT, "EMT"},
-#endif
-#ifdef SIGSTKFLT
-    {SIGSTKFLT, "STKFLT"},
-#endif
-#ifdef SIGCLD
-    {SIGCLD, "CLD"},
-#endif
-#ifdef SIGWINCH
-    {SIGWINCH, "WINCH"},
-#endif
-#ifdef SIGIO
-    {SIGIO, "IO"},
-#endif
-#ifdef SIGINFO
-    {SIGINFO, "INFO"},
-#endif
-#ifdef SIGLOST
-    {SIGLOST, "LOST"},
-#endif
-#ifdef SIGPWR
-    {SIGPWR, "PWR"},
-#endif
-#ifdef SIGUNUSED
-    {SIGUNUSED, "UNUSED"},
-#endif
+    {SIGHUP, "HUP"},       /* 1 */
+    {SIGINT, "INT"},       /* 2 */
+    {SIGQUIT, "QUIT"},     /* 3 */
+    {SIGILL, "ILL"},       /* 4 */
+    {SIGTRAP, "TRAP"},     /* 5 */
+    {SIGABRT, "ABRT"},     /* 6 */
+    {SIGBUS, "BUS"},       /* 7 */
+    {SIGFPE, "FPE"},       /* 8 */
+    {SIGKILL, "KILL"},     /* 9 */
+    {SIGUSR1, "USR1"},     /* 10 */
+    {SIGSEGV, "SEGV"},     /* 11 */
+    {SIGUSR2, "USR2"},     /* 12 */
+    {SIGPIPE, "PIPE"},     /* 13 */
+    {SIGALRM, "ALRM"},     /* 14 */
+    {SIGTERM, "TERM"},     /* 15 */
+    {SIGSTKFLT, "STKFLT"}, /* 16 */
+    {SIGCHLD, "CHLD"},     /* 17 */
+    {SIGCONT, "CONT"},     /* 18 */
+    {SIGSTOP, "STOP"},     /* 19 */
+    {SIGTSTP, "TSTP"},     /* 20 */
+    {SIGTTIN, "TTIN"},     /* 21 */
+    {SIGTTOU, "TTOU"},     /* 22 */
+    {SIGURG, "URG"},       /* 23 */
+    {SIGXCPU, "XCPU"},     /* 24 */
+    {SIGXFSZ, "XFSZ"},     /* 25 */
+    {SIGVTALRM, "VTALRM"}, /* 26 */
+    {SIGPROF, "PROF"},     /* 27 */
+    {SIGWINCH, "WINCH"},   /* 28 */
+    {SIGIO, "IO"},         /* 29 */
+    {SIGPWR, "PWR"},       /* 30 */
+    {SIGSYS, "SYS"},       /* 31 */
 #endif
     {0, 0}};

@@ -1,4 +1,3 @@
-# $Id: maintainer.m4,v 1.1 2006/09/27 10:10:38 roman Exp $
 # ===========================================================================
 #
 # Sophisticated debugging mode macro for autoconf

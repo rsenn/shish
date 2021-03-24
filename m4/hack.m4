@@ -1,4 +1,3 @@
-# $Id: hack.m4,v 1.3 2006/09/27 10:52:28 roman Exp $
 # ===========================================================================
 #
 # Hack autoconf default behaviour on some points

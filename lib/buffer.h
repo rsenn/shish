@@ -132,11 +132,15 @@ int buffer_skipn(buffer*, size_t n);
 int buffer_prefetch(buffer*, size_t n);
 
 #define buffer_PEEK(s) ((s)->x + (s)->p)
+#define buffer_LEN(b) ((b)->n - (b)->p)
 #define buffer_SEEK(s, len) ((s)->p += (len))
 
 #define buffer_GETC(s, c)                                                          \
   (((s)->p < (s)->n) ? (*(c) = *buffer_PEEK(s), buffer_SEEK((s), 1), 1)            \
                      : buffer_get((s), (c), 1))
+
+#define buffer_BEGIN(b) buffer_PEEK(b)
+#define buffer_END(b) ((b)->x + (b)->n)
 
 int buffer_putulong(buffer*, unsigned long int l);
 int buffer_put8long(buffer*, unsigned long int l);
@@ -224,6 +228,7 @@ ssize_t buffer_putnlflush(buffer* b);
 int buffer_putnspace(buffer* b, int n);
 int buffer_putptr(buffer* b, void* ptr);
 int buffer_putspace(buffer* b);
+int buffer_putlong0(buffer* b, long l, int pad);
 int buffer_putulong0(buffer* b, unsigned long l, int pad);
 int buffer_putxlong0(buffer*, unsigned long, int);
 int buffer_putulong(buffer* b, unsigned long l);

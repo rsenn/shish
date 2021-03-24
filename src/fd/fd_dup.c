@@ -21,13 +21,13 @@ fd_dup(struct fd* fd, int n) {
     return fd_error(n, "we cannot duplicate ourselves");
 
   /* redirect buffer pointers */
-  if(D_ISRD(fd)) {
-    if(!D_ISRD(dupe))
+  if(FD_ISRD(fd)) {
+    if(!FD_ISRD(dupe))
       return fd_error(n, "not opened for reading");
   }
 
-  if(D_ISWR(fd)) {
-    if(!D_ISWR(dupe))
+  if(FD_ISWR(fd)) {
+    if(!FD_ISWR(dupe))
       return fd_error(n, "not opened for writing");
   }
 

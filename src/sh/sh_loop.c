@@ -50,9 +50,9 @@ sh_loop(void) {
        }
  */
       if(source->mode & SOURCE_IACTIVE) {
-        buffer* in = source->b;
+        /*buffer* in = source->b;
 
-        /*stralloc_copyb(&cmd, in->x, in->n);
+        stralloc_copyb(&cmd, in->x, in->n);
 
         if(!(cmd.len > 0 && cmd.s[cmd.len - 1] == '\n'))
           stralloc_catc(&cmd, '\n');*/

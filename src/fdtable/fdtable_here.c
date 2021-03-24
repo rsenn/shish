@@ -47,7 +47,7 @@ fdtable_here(struct fd* fd, int flags) {
   x = fd->rb.x;
 
   while(n) {
-    unsigned long sz = (n > D_BUFSIZE2 ? D_BUFSIZE2 : n);
+    unsigned long sz = (n > FD_BUFSIZE2 ? FD_BUFSIZE2 : n);
     buffer_put(&fd->wb, x, sz);
     n -= sz;
     x += sz;

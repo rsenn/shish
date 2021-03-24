@@ -32,8 +32,8 @@ builtin_dump(int argc, char* argv[]) {
   }
   argp = &argv[shell_optind];
   num_args = argc - shell_optind;
- out = fd == -1 ? buffer_2 : fdtable[fd]->w;
- 
+  out = fd == -1 ? buffer_2 : fdtable[fd]->w;
+
   switch(what) {
     case VARTAB_ROOT: vartab_dump(varstack, num_args, argp); break;
     case VARTAB_LOCAL: vartab_dump(NULL, num_args, argp); break;

@@ -158,7 +158,7 @@ test_unary(int argc, char** argv) {
     return -1;
 
   /* check options */
-  if((c = shell_getopt(argc, argv, "n:z:f:d:b:c:h:L:S:e:s:r:w:x:")) > 0) {
+  if((c = shell_getopt(argc, argv, "a:n:z:f:d:b:c:h:L:S:e:s:r:w:x:")) > 0) {
     struct stat st;
     const char* arg = shell_optarg;
     switch(c) {
@@ -167,6 +167,9 @@ test_unary(int argc, char** argv) {
 
       /* return true if argument is zero */
       case 'z': return !arg || *arg == '\0';
+
+      /* return true if argument exists */
+      case 'a': return stat(arg, &st) == 0;
 
       /* return true if argument is a regular file */
       case 'f': return stat(arg, &st) == 0 && S_ISREG(st.st_mode);

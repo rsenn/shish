@@ -178,7 +178,7 @@ struct builtin_cmd builtin_table[] = {
     {"false", &builtin_false, B_DEFAULT, ""},
 #endif
 #if BUILTIN_FDTABLE
-    {"fdtable", &builtin_fdtable, B_DEFAULT, ""},
+    {"fdtable", &builtin_fdtable, B_DEFAULT, "[-u FD]"},
 #endif
 #if BUILTIN_GETOPTS
     {"getopts", &builtin_getopts, B_SPECIAL, "optstring name [arg ... ]"},
@@ -250,7 +250,7 @@ struct builtin_cmd builtin_table[] = {
     {"unset", &builtin_unset, B_SPECIAL, "[name ...]"},
 #endif
 #if BUILTIN_TEST
-    {"[", &builtin_test, B_DEFAULT, "name ..."},
+    {"[", &builtin_test, B_DEFAULT, "expr ]"},
 #endif
 #if BUILTIN_TRAP
     {"trap", &builtin_trap, B_DEFAULT, "[-lp] [[arg] signal_spec ...]"},

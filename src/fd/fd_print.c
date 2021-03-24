@@ -11,7 +11,7 @@
 /* print an fdtablele entry (mainly for the 'fdtable' builtin)
  * ----------------------------------------------------------------------- */
 void
-fd_print(struct fd* fd) {
+fd_print(struct fd* fd, buffer* b) {
   char numstr[FMT_LONG];
   unsigned int n = 1;
 
@@ -28,8 +28,8 @@ fd_print(struct fd* fd) {
   numstr[n] = '\0';
 
   /* print virtual fd number */
-  buffer_putnspace(fd_out->w, 4 - n);
-  buffer_puts(fd_out->w, numstr);
+  buffer_putnspace(b, 4 - n);
+  buffer_puts(b, numstr);
 
   /* convert read fd to string */
   if(fd->r && fd_ok(fd->r->fd))
@@ -40,8 +40,8 @@ fd_print(struct fd* fd) {
   numstr[n] = '\0';
 
   /* print effective fd number */
-  buffer_putnspace(fd_out->w, 5 - n);
-  buffer_puts(fd_out->w, numstr);
+  buffer_putnspace(b, 5 - n);
+  buffer_puts(b, numstr);
 
   /* convert write fd to string */
   if(fd->w && fd_ok(fd->w->fd))
@@ -52,19 +52,19 @@ fd_print(struct fd* fd) {
   numstr[n] = '\0';
 
   /* print effective fd number */
-  buffer_putnspace(fd_out->w, 5 - n);
-  buffer_puts(fd_out->w, numstr);
+  buffer_putnspace(b, 5 - n);
+  buffer_puts(b, numstr);
 
   /* print stack-level */
   n = fmt_long(numstr, fd->stack->level);
   numstr[n] = '\0';
-  buffer_putnspace(fd_out->w, 5 - n);
-  buffer_puts(fd_out->w, numstr);
+  buffer_putnspace(b, 5 - n);
+  buffer_puts(b, numstr);
 
   /* print filename */
-  buffer_putnspace(fd_out->w, 2);
-  buffer_puts(fd_out->w, (fd->name ? fd->name : "-"));
+  buffer_putnspace(b, 2);
+  buffer_puts(b, (fd->name ? fd->name : "-"));
 
   /* finally put newline */
-  buffer_put(fd_out->w, "\n", 1);
+  buffer_put(b, "\n", 1);
 }

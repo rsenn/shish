@@ -13,7 +13,7 @@
  * (except for the links which are initialized on fdtable_link())
  * ----------------------------------------------------------------------- */
 struct fd*
-fd_reinit(struct fd* fd, int flags) {
+fd_reinit(struct fd* fd, int mode) {
   /* unset the name, and if it was allocated: free it */
   if(fd->name) {
     if(fd->mode & FD_FREENAME)
@@ -26,7 +26,7 @@ fd_reinit(struct fd* fd, int flags) {
 
   /* re-initialize things */
   fd->mode &= FD_FREE;
-  fd->mode |= flags;
+  fd->mode |= mode;
 
   fd->dup = NULL;
   fd->dev = 0;

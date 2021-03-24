@@ -24,7 +24,7 @@ fd_open(struct fd* fd, const char* fname, long mode) {
   }
 
   /* if we're opening a file for writing there are further options */
-  if(D_ISWR(fd)) {
+  if(FD_ISWR(fd)) {
     /* append or truncate, never overwrite! */
     fd->fl |= ((mode & (FD_APPEND | FD_READ)) ? O_APPEND : O_TRUNC);
 

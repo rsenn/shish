@@ -37,6 +37,7 @@ tree_position(union node* node, struct position* pos) {
         if(tree_position(node->ncmd.rdir, pos))
           return 1;
         break;
+      default: break;
     }
     switch(node->id) {
       case N_SIMPLECMD:
@@ -50,6 +51,7 @@ tree_position(union node* node, struct position* pos) {
         if(tree_position(node->ngrp.rdir, pos))
           return 1;
         break;
+      default: break;
     }
     switch(node->id) {
       case N_PIPELINE:
@@ -60,6 +62,7 @@ tree_position(union node* node, struct position* pos) {
         if(tree_position(node->npipe.cmds, pos))
           return 1;
         break;
+      default: break;
     }
 
     node = node->next;

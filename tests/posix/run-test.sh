@@ -42,6 +42,7 @@ case "$1" in
     (*)
 	printf '%s/%s' "${PWD%/}" "$1";;
 esac
+fdtable -u 2
 }
 ##### Script startup
 

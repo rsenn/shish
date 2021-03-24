@@ -7,7 +7,9 @@
 
 #include "../lib/uint64.h"
 #include "../lib/buffer.h"
+#include "../lib/str.h"
 #include "../lib/stralloc.h"
+#include "../lib/open.h"
 #include "fd.h"
 #include <stdlib.h>
 
@@ -130,17 +132,33 @@ void debug_memory(void);
 #endif
 
 static inline int
-dump_flags(int bits, const char* const names[]) {
-  int i, n = 0;
-  for(i = 0; (size_t)i < sizeof(bits) * 8; i++) {
+dump_flags(buffer* b, int bits, const char* const names[], int pad) {
+  size_t i, n = 0;
+  for(i = 0; i < sizeof(bits) * 8; i++) {
     if(bits & (1 << i)) {
-      if(n)
-        debug_c('|');
-      debug_s(names[i]);
-      n++;
+      size_t len = str_len(names[i]);
+      if(n) {
+        n++;
+        buffer_puts(b, COLOR_CYAN "|" COLOR_NONE);
+      }
+      buffer_put(b, names[i], len);
+      n += len;
     }
   }
+if(n < pad)
+  buffer_putnspace(b, pad - n);
   return n;
+}
+
+static inline int
+debug_flags(int bits, const char* const names[]) {
+  return dump_flags(&debug_buffer, bits, names, 0);
+}
+
+static inline void
+debug_open() {
+  if(debug_buffer.fd == -1)
+    debug_buffer.fd = open_trunc("debug.log");
 }
 
 #endif /* DEBUG_H */

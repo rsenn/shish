@@ -12,9 +12,9 @@ fdtable_link(struct fd* fd) {
   if(fd->parent)
     fd->parent->pos = &fd->parent;
 
-  if(fdtable_lo > fd->n)
-    fdtable_lo = fd->n;
+  if(fdtable_bottom > fd->n)
+    fdtable_bottom = fd->n;
 
-  if(fdtable_hi <= fd->n)
-    fdtable_hi = fd->n + 1;
+  if(fdtable_top <= fd->n)
+    fdtable_top = fd->n + 1;
 }

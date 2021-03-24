@@ -7,7 +7,7 @@
 #include "../str.h"
 
 static const char default_prefixes[] = {'-', 0};
-struct optstate shell_opt = {default_prefixes};
+struct optstate shell_opt = {default_prefixes, 0, 0, 0, 0, 0};
 
 static void
 state_clear(struct optstate* st) {
@@ -65,11 +65,6 @@ again:
     optind++;
     return -1;
   }
-
-  /* if we're just starting then initialize local static vars */
-  /*if(optidx != optind) {
-    optidx = optind;
-  }*(
 
   /* get next option char */
   optopt = argv[optind][optofs + 1];

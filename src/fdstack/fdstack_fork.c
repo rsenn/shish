@@ -3,7 +3,7 @@
 
 /* ----------------------------------------------------------------------- */
 int
-fdstack_fork(unsigned int n, struct fd* fda) {
+fdstack_fork(unsigned int n, struct fd* fds) {
   struct fd* fd;
   struct fdstack* st;
 

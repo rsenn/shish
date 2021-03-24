@@ -5,6 +5,7 @@
 #include "../../lib/shell.h"
 #include "../../lib/uint32.h"
 #include "../var.h"
+#include "../debug.h"
 #include "../../lib/windoze.h"
 
 #if !WINDOWS_NATIVE
@@ -23,6 +24,10 @@ static struct var sh_ifs;
  * ----------------------------------------------------------------------- */
 void
 sh_init(void) {
+#ifdef DEBUG_OUTPUT
+  debug_open();
+#endif
+
   job_init();
 
   /* get current uid and pid */

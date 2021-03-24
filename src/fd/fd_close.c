@@ -20,7 +20,7 @@ fd_close(struct fd* fd) {
 
   /* when the buffer is opened for writing
      we have to flush it to not loose any data */
-  if(D_ISWR(fd))
+  if(FD_ISWR(fd))
     buffer_flush(&fd->wb);
 
   /* set the filedescriptor (which is in fact a stralloc *) on

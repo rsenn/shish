@@ -111,6 +111,8 @@ builtin_cd(int argc, char* argv[]) {
     /* if the path has symlinks then set sh->cwdsym */
     sh->cwdsym = (ok > 1);
 
+    var_setv("PWD", sh->cwd.s, sh->cwd.len, V_DEFAULT);
+
     return 0;
   }
 

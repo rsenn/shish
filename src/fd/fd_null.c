@@ -38,9 +38,9 @@ int
 fd_null(struct fd* fd) {
   fd->mode |= FD_NULL;
 
-  if(D_ISRD(fd))
+  if(FD_ISRD(fd))
     fd->r = &fd_nullfd.rb;
-  if(D_ISWR(fd))
+  if(FD_ISWR(fd))
     fd->w = &fd_nullfd.wb;
 
   //  fd->name = "/dev/null";

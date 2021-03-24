@@ -97,7 +97,7 @@ var_dump(struct var* var) {
 
   /* flags */
   buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(112));
-  dump_flags(var->flags, VAR_FLAG_NAMES);
+  debug_flags(var->flags, VAR_FLAG_NAMES);
 
   buffer_putnlflush(fd_out->w);
 }

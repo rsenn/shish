@@ -29,7 +29,7 @@ void source_prompt(void);
 int source_peek(char* c);
 int source_get(char* c);
 int source_next(char* c);
-int source_peekn(char* c, unsigned long n);
+int source_peekn(char* c, unsigned int n);
 void source_flush(void);
 void source_msg(const struct position* pos);
 void source_skip(void);

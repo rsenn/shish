@@ -2,7 +2,6 @@
 
 #ifdef DEBUG_OUTPUT
 #include "../fd.h"
-#include "../../lib/open.h"
 #include <unistd.h>
 
 char debug_b[1024];
@@ -13,8 +12,7 @@ buffer debug_buffer = BUFFER_INIT(&write, -1, debug_b, sizeof(debug_b));
 void
 debug_begin(const char* s, int depth) {
 
-  if(debug_buffer.fd == -1)
-    debug_buffer.fd = open_trunc("debug.log");
+  debug_open();
 
   debug_space(depth - 1, 0);
   debug_space(depth, 0);

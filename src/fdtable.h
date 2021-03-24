@@ -1,13 +1,13 @@
 #ifndef FDTABLE_H
 #define FDTABLE_H
 
-#ifdef D_SETSIZE
-#define FDTABLE_SIZE D_SETSIZE
+#ifdef FD_SETSIZE
+#define FDTABLE_SIZE FD_SETSIZE
 #else
 #define FDTABLE_SIZE 1024
 #endif
 
-#define fdtable_ok(e) ((e) >= -1 && (e) < FDTABLE_SIZE)
+#define fdtable_ok(e) ((e) >= -1 && (e) < FDTABLE_S IZE)
 #define efdtable_ok(e) ((e) >= 0 && (e) < FDTABLE_SIZE)
 
 #define FDTABLE_LAZY 0
@@ -26,16 +26,16 @@
 struct fd;
 struct fdstack;
 
-extern int fdtable_hi; /* highest occupied vfd + 1 */
-extern int fdtable_lo; /* lowest occupied vfd */
+extern int fdtable_top; /* highest occupied vfd + 1 */
+extern int fdtable_bottom; /* lowest occupied vfd */
 extern struct fd** const fdtable;
 extern struct fd** fdtable_pos;
 
 #define fdtable_foreach(i)                                                         \
-  for(i = fdtable_lo; i < fdtable_hi; i++)                                         \
+  for(i = fdtable_bottom; i < fdtable_top; i++)                                         \
     if(fdtable[i])
 #define fdtable_foreach_p(i, p)                                                    \
-  for(i = fdtable_lo; i < fdtable_hi; i++)                                         \
+  for(i = fdtable_bottom; i < fdtable_top; i++)                                         \
     if(((p) = fdtable[i]))
 
 int fdtable_check(int e);

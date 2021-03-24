@@ -13,6 +13,9 @@ fd_dumplist(buffer* b) {
               "----------------------------------------------------------------"
               "--------------------------------------------\n");
 
-  fd_foreach(i) fd_dump(fd_list[i], b);
+  fd_foreach(i) {
+    fd_dump(fd_list[i], b);
+    buffer_putnlflush(b);
+  }
 }
 #endif /* DEBUG_OUTPUT */

@@ -13,9 +13,9 @@
  * (except for the links which are initialized on fdtable_link())
  * ----------------------------------------------------------------------- */
 void
-fd_init(struct fd* fd, int n, int flags) {
+fd_init(struct fd* fd, int n, int mode) {
   /* (re-)initialize things */
-  fd->mode = flags;
+  fd->mode = mode;
   fd->name = NULL;
   fd->n = n;
   fd->e = -1;

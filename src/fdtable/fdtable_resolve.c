@@ -1,5 +1,6 @@
 #include "../fd.h"
 #include "../fdtable.h"
+#include "../debug.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>
@@ -49,7 +50,7 @@ fdtable_resolve(struct fd* fd, int flags) {
 
       /* drop here-docs to temp files */
     case FD_STRALLOC: {
-      if(D_ISRD(fd))
+      if(FD_ISRD(fd))
         state = fdtable_here(fd, flags);
       break;
     }
@@ -77,6 +78,20 @@ fdtable_resolve(struct fd* fd, int flags) {
       state = FDTABLE_DONE;
     }
   }
+
+#ifdef DEBUG_FDTABLE_
+  debug_open();
+  buffer_puts(&debug_buffer, COLOR_YELLOW "fdtable_resolve" COLOR_NONE "(");
+  fd_dump(fd, &debug_buffer);
+  buffer_puts(&debug_buffer, ", ");
+  debug_flags(flags,
+              (const char* const[]){"LAZY", "MOVE", "FORCE", "NOCLOSE", "CLOSE"});
+  buffer_puts(&debug_buffer, ") = ");
+
+  buffer_puts(&debug_buffer,
+              ((const char* const[]){"0", "DONE", "ERROR", "PENDING"})[-state]);
+  debug_nl_fl();
+#endif
 
   return state;
 }

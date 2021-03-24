@@ -4,6 +4,7 @@
 #include "../fdtable.h"
 #include "../sh.h"
 #include "../../lib/windoze.h"
+#include "../../lib/scan.h"
 #if WINDOWS_NATIVE
 #include <io.h>
 #else
@@ -24,12 +25,19 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_fdtable(int argc, char* argv[]) {
-  int i;
+  int i, c, fd = 1;
 
-  buffer_puts(fd_out->w, " vfd  rfd  wfd  lev  file\n");
+  while((c = shell_getopt(argc, argv, "u:")) > 0) {
+    switch(c) {
 
-  fdtable_foreach(i) fd_print(fdtable[i]);
+      case 'u': scan_int(shell_optarg, &fd); break;
+      default: builtin_invopt(argv); return 1;
+    }
+  }
+  buffer_puts(fdtable[fd]->w, " vfd  rfd  wfd  lev  file\n");
 
-  buffer_flush(fd_out->w);
+  fdtable_foreach(i) fd_print(fdtable[i], fdtable[fd]->w);
+
+  buffer_flush(fdtable[fd]->w);
   return 0;
 }

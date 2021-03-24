@@ -4,10 +4,10 @@
  * ----------------------------------------------------------------------- */
 int
 fd_needbuf(struct fd* fd) {
-  if(D_ISRD(fd) && !fd->r->x)
+  if(FD_ISRD(fd) && !fd->r->x)
     return 1;
 
-  if(D_ISWR(fd) && !fd->w->x)
+  if(FD_ISWR(fd) && !fd->w->x)
     return 1;
 
   return 0;

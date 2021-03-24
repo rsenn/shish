@@ -8,14 +8,15 @@ fdtable_dump(buffer* b) {
   int i;
 
   buffer_puts(b,
-              "  fd  name   level read-buffer                          "
-              "write-buffer                        flags\n");
-  buffer_puts(b,
-              "----------------------------------------------------------------"
-              "--------------------------------------------\n");
-  buffer_flush(b);
+              "  fd name                                level  e  mode               "
+              "              buffer(s)\n");
+  buffer_putnc(b, '-', 108);
+  buffer_putnlflush(b);
 
-  fdtable_foreach(i) { fd_dump(fdtable[i], b); }
+  fdtable_foreach(i) {
+    fd_dump(fdtable[i], b);
+    buffer_putnlflush(b);
+  }
   buffer_flush(b);
 }
 #endif /* DEBUG_OUTPUT */

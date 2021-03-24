@@ -1,4 +1,3 @@
-# $Id: summary.m4,v 1.1 2006/09/27 10:10:38 roman Exp $
 # ===========================================================================
 #
 # m4 macros for outputting a summary after the ./configure script ran

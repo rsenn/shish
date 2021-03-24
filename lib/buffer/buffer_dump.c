@@ -15,7 +15,7 @@ void
 buffer_dump(buffer* out, buffer* b) {
   char xlong[FMT_LONG + FMT_LONG + FMT_LONG];
   unsigned long n;
-
+#define COLOR_DUMP
 #ifndef COLOR_DUMP
 #define RED ""
 #define GREEN ""
@@ -25,7 +25,8 @@ buffer_dump(buffer* out, buffer* b) {
 #define NONE ""
 #else
 #define RED "\033[1;31m"
-#define GREEN "\033[1;32m"
+#define GREEN "\033[0;32m"
+#define LIGHTGREEN "\033[1;32m"
 #define YELLOW "\033[1;33m"
 #define CYAN "\033[1;36m"
 #define MAGENTA "\033[1;35m"
@@ -52,12 +53,12 @@ buffer_dump(buffer* out, buffer* b) {
   // buffer_put_escaped(out, &b->x[n], 32);
   buffer_puts(out, "\"");
 
-  buffer_puts(out, NONE ", " YELLOW "fd" CYAN "=" NONE);
+  buffer_puts(out, NONE ", " YELLOW "fd" CYAN "=" MAGENTA);
   /*if(b->op == (void*)stralloc_write) {
     buffer_puts(out, "*sa");
   } else*/
   buffer_put(out, xlong, fmt_long(xlong, b->fd));
-  buffer_puts(out, ", op=");
+  buffer_puts(out, NONE ", op=");
   /* buffer_putspace(out); */
 
   if(b->op == (void*)&read)

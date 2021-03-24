@@ -81,6 +81,7 @@ tree_free(union node* node) {
         break;
 
       case N_ARG:
+      case N_ASSIGN:
         if(node->narg.list)
           tree_free(node->narg.list);
         stralloc_free(&node->narg.stra);

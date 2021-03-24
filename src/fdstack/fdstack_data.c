@@ -29,6 +29,7 @@ fdstack_data(void) {
 
         buffer_puts(fd_err->w, "FDSTACK_DATA: ");
         fd_dump(fd, fd_err->w);
+        buffer_putnlflush(fd_err->w);
 #endif
 
         while((n = read(fdtable[1]->rb.fd, b, sizeof(b))) > 0)

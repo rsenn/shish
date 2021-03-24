@@ -1,4 +1,4 @@
-#include "../sig.h"
+#include "sig.h"
 
 #ifndef SIG_INTERNAL
 #define SIG_INTERNAL

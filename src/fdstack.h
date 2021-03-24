@@ -1,4 +1,3 @@
-/* $Id: fdstack.h,v 1.8 2005/04/08 09:34:09 smoli Exp $
  * ----------------------------------------------------------------------- */
 #ifndef FDSTACK_H
 #define FDSTACK_H
@@ -30,7 +29,7 @@ void fdstack_unlink(struct fd* fd);
 void fdstack_update(struct fd* dup);
 
 /* allocate space for pipe fds */
-#define FDSTACK_ALLOC_SIZE(n) ((D_SIZE + FD_BUFSIZE / 2) * (n))
+#define FDSTACK_ALLOC_SIZE(n) ((FD_SIZE + FD_BUFSIZE / 2) * (n))
 #define fdstack_alloc(n) alloca(FDSTACK_ALLOC_SIZE(n))
 
 #endif /* FDSTACK_H */

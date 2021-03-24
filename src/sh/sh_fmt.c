@@ -40,16 +40,13 @@ buffer out_buf;
  * ----------------------------------------------------------------------- */
 int
 main(int argc, char** argv, char** envp) {
-
-  int i, c;
-  int e, v;
-  int flags;
+  unsigned int i;
+  int c, e, v;
   struct fd* fd;
   struct source src;
   char* cmds = NULL;
   /*  struct var* envvars;*/
   struct parser p;
-  union node* list;
   stralloc cmd;
   enum tok_flag tok;
   stralloc separator;
@@ -60,6 +57,7 @@ main(int argc, char** argv, char** envp) {
 
   /* create new fds for every valid file descriptor until stderr */
   for(e = STDIN_FILENO; e <= STDERR_FILENO; e++) {
+    int flags;
     if((flags = fdtable_check(e))) {
 #ifdef HAVE_ALLOCA
       fd = fd_allocb();
@@ -183,6 +181,7 @@ main(int argc, char** argv, char** envp) {
   buffer_init_free(&out_buf, (buffer_op_proto*)&write, out_fd, malloc(1024), 1024);
 
   while(!(((tok = parse_gettok(&p, P_DEFAULT)) & T_EOF))) {
+    union node* list;
     p.pushback++;
     parse_lineno = source->pos.line;
 

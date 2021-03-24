@@ -25,14 +25,14 @@ typedef int dev_t;
 #endif
 #endif
 
-#ifdef D_SETSIZE
-#define D_MAX D_SETSIZE
+#ifdef FD_SETSIZE
+#define FD_MAX FD_SETSIZE
 #else
-#define D_MAX 1024
+#define FD_MAX 1024
 #endif
 
 #define FD_BUFSIZE 1024
-#define D_BUFSIZE2 (FD_BUFSIZE >> 1)
+#define FD_BUFSIZE2 (FD_BUFSIZE >> 1)
 
 #ifndef STDSRC_FILENO
 #define STDSRC_FILENO -1
@@ -53,10 +53,10 @@ typedef int dev_t;
 
 struct fdtable;
 
-#define D_ISRD(i) ((i)->mode & FD_READ)
-#define D_ISWR(i) ((i)->mode & FD_WRITE)
+#define FD_ISRD(fd) ((fd)->mode & FD_READ)
+#define FD_ISWR(fd) ((fd)->mode & FD_WRITE)
 
-#define D_SIZE (sizeof(struct fd))
+#define FD_SIZE (sizeof(struct fd))
 
 struct fd {
   int n;            /* virtual fd */
@@ -72,7 +72,7 @@ struct fd {
   struct fdstack* stack; /* stack level */
 
   dev_t dev; /* device for terminal recognition */
-  int fl;    /* posix fcntl() flags */
+  int fl;    /* posix fcntl() mode */
 
   buffer rb;
   buffer wb;
@@ -80,19 +80,18 @@ struct fd {
   buffer* w; /* pointer to effective write buffer */
 };
 
-#define fd_ok(e) ((e) >= 0 && (e) < D_MAX)
+#define fd_ok(e) ((e) >= 0 && (e) < FD_MAX)
 
 /* fd mode */
-enum {
+enum fd_mode {
   FD_READ = 0x0001,
   FD_WRITE = 0x0002,
   FD_APPEND = 0x0004,
   FD_EXCL = 0x0008,
   FD_TRUNC = 0x0010,
-};
 
-/* types */
-enum {
+  /* types */
+
   FD_TYPE = 0x0007ff00,
   FD_FILE = 0x0100, /* a file that has been opened */
   FD_DIR = 0x0200,
@@ -106,9 +105,9 @@ enum {
   FD_DUP = 0x00020000,    /* a clone of another file descriptor */
   FD_TERM = 0x00040000,   /* is a terminal */
   FD_NULL = 0x00080000,
-};
-/* todo mode */
-enum {
+
+  /* todo mode */
+
   FD_FLUSH = 0x01000000,    /* flush the buffer */
   FD_CLOSE = 0x02000000,    /* close the buffer */
   FD_FREENAME = 0x04000000, /* free the name */
@@ -145,7 +144,7 @@ extern struct fd** const fdtable;
 #define fd_out fdtable[STDOUT_FILENO]
 #define fd_err fdtable[STDERR_FILENO]
 
-extern struct fd* fd_list[D_MAX];
+extern struct fd* fd_list[FD_MAX];
 extern int fd_exp;
 extern int fd_top;
 extern int fd_lo;
@@ -165,25 +164,25 @@ int fd_stat(struct fd* fd);
 int fd_tempfile(struct fd* fd);
 struct fd* fd_new(int fd, int mode);
 struct fd* fd_push(struct fd* fd, int n, int mode);
-struct fd* fd_reinit(struct fd* fd, int flags);
+struct fd* fd_reinit(struct fd* fd, int mode);
 void fd_allocbuf(struct fd* fd, size_t n);
 void fd_close(struct fd* fd);
 void fd_dump(struct fd* fd, buffer* b);
 void fd_dumplist(buffer* b);
 void fd_free(struct fd* fd);
 void fd_here(struct fd* fd, stralloc* sa);
-void fd_init(struct fd* fd, int n, int flags);
+void fd_init(struct fd* fd, int n, int mode);
 void fd_open(struct fd* fd, const char* fname, long mode);
 void fd_pop(struct fd* fd);
-void fd_print(struct fd* fd);
+void fd_print(struct fd* fd, buffer* b);
 void fd_setbuf(struct fd* fd, void* buf, size_t n);
 void fd_string(struct fd* fd, const char* s, size_t len);
 void fd_subst(struct fd* fd, stralloc* sa);
 
-#define fd_malloc() ((struct fd*)shell_alloc(D_SIZE))
-#define fd_mallocb() ((struct fd*)shell_alloc(D_SIZE + FD_BUFSIZE))
-#define fd_alloca() ((struct fd*)alloca(D_SIZE))
-#define fd_allocab() ((struct fd*)alloca(D_SIZE + FD_BUFSIZE))
+#define fd_malloc() ((struct fd*)shell_alloc(FD_SIZE))
+#define fd_mallocb() ((struct fd*)shell_alloc(FD_SIZE + FD_BUFSIZE))
+#define fd_alloca() ((struct fd*)alloca(FD_SIZE))
+#define fd_allocab() ((struct fd*)alloca(FD_SIZE + FD_BUFSIZE))
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
