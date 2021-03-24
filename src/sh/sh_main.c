@@ -83,7 +83,7 @@ main(int argc, char** argv, char** envp) {
       case 'x': sh->opts.debug = 1; break;
       case 'e': sh->opts.exit_on_error = 1; break;
 
-#ifdef DEBUG
+#ifdef _DEBUG
       case 'I': sh->opts.no_interactive = 1; break;
 
 #endif
