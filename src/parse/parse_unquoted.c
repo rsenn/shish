@@ -115,7 +115,7 @@ parse_unquoted(struct parser* p) {
     if(p->tok == T_NAME && p->sa.len && c == '=')
       p->tok = T_ASSIGN;
 
-    if(p->tok == T_NAME && !parse_isname(c, p->sa.len))
+    if(p->tok == T_NAME && !parse_isfuncname(c, p->sa.len))
       p->tok = T_WORD;
 
     stralloc_catc(&p->sa, c);

@@ -8,12 +8,10 @@
 void
 debug_subnode(const char* s, union node* node, int depth) {
   if(node) {
-    debug_begin(s, depth);
-    debug_node(node, depth + 1);
-    debug_end(depth);
-  } else {
-    debug_str(s, NULL, depth, '"');
+    if(s)
+      debug_field(s, depth);
+    debug_node(node, depth >= 0 ? depth + 1 : depth);
+    //     debug_fl();
   }
-  debug_fl();
 }
 #endif /* DEBUG_OUTPUT */

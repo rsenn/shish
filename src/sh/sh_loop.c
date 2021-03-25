@@ -16,18 +16,19 @@ sh_loop(void) {
   struct parser p;
   union node* list;
   stralloc cmd;
+  int is_interactive = !!(source->mode & SOURCE_IACTIVE);
 
   sh->parser = &p;
 
   /* if we're in interactive mode some
      additional stuff is to be initialized */
-  if(source->mode & SOURCE_IACTIVE) {
+  if(is_interactive) {
     history_load();
   }
 
   stralloc_init(&cmd);
 
-  parse_init(&p, P_DEFAULT);
+  parse_init(&p, is_interactive ? P_IACTIVE : P_DEFAULT);
 
   while(!(parse_gettok(&p, P_DEFAULT) & T_EOF)) {
     p.pushback++;
@@ -43,7 +44,7 @@ sh_loop(void) {
       int status;
       struct eval e;
 
-#if defined(DEBUG_OUTPUT) && (defined(SHPARSE2AST) || defined(DEBUG_PARSE))
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHPARSE2AST)
       debug_list(list, 0);
       debug_nl_fl();
       debug_list(list, -1);
@@ -58,7 +59,7 @@ sh_loop(void) {
             buffer_putnlflush(fd_err->w);
           }*/
 
-      if(source->mode & SOURCE_IACTIVE) {
+      if(is_interactive) {
         /*buffer* in = source->b;
 
         stralloc_copyb(&cmd, in->x, in->n);

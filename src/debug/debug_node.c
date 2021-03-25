@@ -112,8 +112,8 @@ debug_node(union node* node, int depth) {
     case N_FUNCTION:
       debug_str(", name", node->nfunc.name, depth, debug_quote);
 
-      debug_sublist(", body", node->nfunc.body, depth);
       debug_position(", loc", &node->nfunc.loc, depth);
+      debug_sublist(", body", node->nfunc.body, depth);
       break;
 
     case N_ASSIGN:
@@ -141,11 +141,11 @@ debug_node(union node* node, int depth) {
     case N_ARGSTR:
 
       debug_ulong(", flag", node->nargstr.flag /*& 0x7*/, depth);
+      debug_position(", loc", &node->nargstr.loc, depth); // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
       debug_stralloc(", stra",
                      &node->nargstr.stra,
                      depth,
-                     debug_quote);                        // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
-      debug_position(", loc", &node->nargstr.loc, depth); // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
+                     debug_quote); // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
       break;
 
     case N_ARGPARAM: {
@@ -166,10 +166,10 @@ debug_node(union node* node, int depth) {
          }*/
 
       debug_ulong(", flag", node->nargparam.flag, depth);
-      debug_str(", name", node->nargparam.name, depth, debug_quote);
-      debug_subnode(", word", node->nargparam.word, depth);
-      debug_ulong(", numb", node->nargparam.numb, depth);
       debug_position(", loc", &node->nargparam.loc, depth);
+      debug_str(", name", node->nargparam.name, depth, debug_quote);
+      debug_sublist(", word", node->nargparam.word, depth);
+      debug_ulong(", numb", node->nargparam.numb, depth);
 
       break;
     }

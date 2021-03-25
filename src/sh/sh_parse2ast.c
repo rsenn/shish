@@ -86,6 +86,7 @@ main(int argc, char** argv, char** envp) {
   shell_init(buffer_2, sh_name);
 
   debug_buffer.fd = 1;
+  debug_nindent = 2;
 
   /* parse command line arguments */
   while((c = shell_getopt(argc, argv, "c:xeo:q:w:l:")) > 0) switch(c) {
@@ -164,10 +165,10 @@ main(int argc, char** argv, char** envp) {
   buffer_init_free(&out_buf, (buffer_op_proto*)&write, out_fd, malloc(1024), 1024);
   {
     int n;
-    /*    union node* compound_list;
-  compound_list =tree_newnode(N_CMDLIST);
-  */
-    debug_begin(0, 0);
+    union node *script = 0, **nptr;
+    nptr = &script;
+
+    // debug_begin(0, 0);
     for(n = 0;; n++) {
       union node* list;
 
@@ -181,23 +182,16 @@ main(int argc, char** argv, char** envp) {
       parse_lineno = source->position.line;
 
       /* launch the parser to get a complete command */
-      list = parse_compound_list(&p, T_EOF);
-      stralloc_zero(&cmd);
+      list = parse_list(&p); // parse_compound_list(&p, T_EOF);
 
-      if(list) {
-        if(n) {
-          debug_c(',');
-          debug_newline(1);
-        } else
-          debug_indent(1);
-        if(list->next)
-          debug_list(list, 1);
-        else
-          debug_node(list, 1);
-        debug_fl();
-      }
+      nptr = tree_append(nptr, list);
     }
-    debug_end(0);
+
+    if(script) {
+      debug_list(script, 1);
+      debug_nl_fl();
+    }
+    //  debug_end(0);
   }
   sh_exit(0);
 

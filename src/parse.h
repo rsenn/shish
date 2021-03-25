@@ -29,6 +29,7 @@
 #define C_OCTAL 0x800    /* octal digit */
 #define C_BINARY 0x1000  /* binary digit */
 #define C_ARITHOP 0x2000 /* arithmetic operation character */
+#define C_FNNAME 0x4000  /* function-name */
 
 /* character class table */
 extern const unsigned short parse_chartable[CHAR_RANGE];
@@ -102,6 +103,7 @@ parse_isdesc(int c) {
 
 /* is either alpha, digit or underscore */
 #define parse_isname(c, pos) ((parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_NAME)) || ((pos) > 0 && parse_isdigit(c)))
+#define parse_isfuncname(c, pos) ((parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_NAME)) || ((pos) > 0 && (parse_isdigit(c) || (c) == '-')))
 
 /* is either alpha, digit or underscore or special parameter */
 static inline int

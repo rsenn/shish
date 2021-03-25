@@ -17,7 +17,7 @@ parse_command(struct parser* p, int tempflags) {
 
   tok = parse_gettok(p, tempflags);
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHFORMAT)
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
   if(sh->opts.debug) {
     debug_begin("parse_command", 0);
     debug_str("tok", parse_tokname(tok, 1), 0, 0);

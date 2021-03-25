@@ -46,7 +46,7 @@ parse_list(struct parser* p) {
     tree_skip(nptr);
   }
 
-#ifdef DEBUG_PARSE_
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHPARSE2AST)
   if(list) {
     buffer_puts(&debug_buffer, COLOR_YELLOW "parse_list" COLOR_NONE " list = ");
     debug_list(list, 0);

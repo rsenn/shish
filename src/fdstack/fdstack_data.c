@@ -12,7 +12,7 @@
 int
 fdstack_data(void) {
   struct fdstack* st;
-#if 0 // defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK) && defined(DEBUG_FD) && !defined(SHFORMAT)
+#if 0 // defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK) && defined(DEBUG_FD) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
   fdstack_dump(fd_err->w);
 #endif
   // fdtable_dump(fd_err->w);
