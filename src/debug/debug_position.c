@@ -7,10 +7,12 @@ void
 debug_position(const char* msg, const struct position* pos, int depth) {
   if(msg)
     debug_field(msg, depth);
-  debug_c('"');
-  debug_n(pos->line);
-  debug_s(COLOR_CYAN ":");
-  debug_n(pos->column);
-  debug_c('"');
+  debug_s("{");
+
+  debug_ulong("line", pos->line, -1);
+  debug_ulong(", column", pos->column, -1);
+
+  debug_newline(-1);
+  debug_s("}");
   debug_fl();
 }

@@ -186,7 +186,7 @@ struct nfunc {
   struct nfunc* next;
   char* name;
   union node* body;
-    struct position pos;
+  struct position pos;
 };
 
 /* internally used nodes

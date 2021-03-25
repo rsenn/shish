@@ -21,7 +21,6 @@ parse_list(struct parser* p) {
   union node** nptr;
   enum tok_flag tok;
 
-
   /* keep looking for and-or lists */
   tree_init(list, nptr);
 

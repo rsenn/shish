@@ -185,10 +185,10 @@ main(int argc, char** argv, char** envp) {
     stralloc_zero(&cmd);
 
     if(list) {
-if(list->next)
-      debug_list(list, 0);
-    else
-      debug_node(list,0);
+      if(list->next)
+        debug_list(list, 0);
+      else
+        debug_node(list, 0);
       debug_nl_fl();
     }
   }
