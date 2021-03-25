@@ -1,6 +1,7 @@
 #include "../fd.h"
 #include "../source.h"
 #include "../term.h"
+#include "../sh.h"
 
 struct source* source = 0;
 
@@ -17,9 +18,11 @@ source_push(struct source* s) {
   source = s;
 
 #if !defined(SHFORMAT) && !defined(SHPARSE2AST)
-  if(fd_src->mode & FD_CHAR) {
+  if((fd_src->mode & FD_CHAR) && !sh->opts.no_interactive) {
     if(term_init(fd_src, fd_err))
-      source->mode |= SOURCE_IACTIVE;
+      s->mode |= SOURCE_IACTIVE;
+    else
+      s->mode &= ~SOURCE_IACTIVE;
   }
 #endif
 }

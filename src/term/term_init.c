@@ -43,7 +43,7 @@ term_init(struct fd* input, struct fd* output) {
     }
   }
 
-  if((input->mode & output->mode & FD_TERM))
+  if((input->mode & output->mode & FD_TERM) == 0)
     return 0;
 
   /* intercept input buffer */

@@ -118,7 +118,7 @@ addcmd:
   simple_command->ncmd.rdir = rdir;
 
 #if defined(DEBUG_PARSE)
-  if(sh->opts.debug) {  
+  if(sh->opts.debug) {
     debug_begin("parse_simple_command", 0);
     debug_position(0, &p->tokstart, 1);
     debug_newline(1);

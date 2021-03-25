@@ -21,8 +21,9 @@ sh_loop(void) {
 
   /* if we're in interactive mode some
      additional stuff is to be initialized */
-  if(source->mode & SOURCE_IACTIVE)
+  if(source->mode & SOURCE_IACTIVE) {
     history_load();
+  }
 
   stralloc_init(&cmd);
 

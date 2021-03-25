@@ -18,7 +18,7 @@ source_newline(void) {
   source->position.column = 1;
   source->position.offset++;
 
-#if !defined(SHFORMAT) && !defined(SHPARSE2AST)
+#if !defined(SHFORMAT) // && !defined(SHPARSE2AST)
   if(source->mode & SOURCE_IACTIVE)
     prompt_show();
 #endif

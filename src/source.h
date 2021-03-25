@@ -12,7 +12,7 @@ struct __attribute__((__packed__)) location {
 
 struct source {
   buffer* b;
-  int mode;
+  unsigned mode;
   struct source* parent;
   struct location position;
 };

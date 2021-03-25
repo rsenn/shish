@@ -134,12 +134,15 @@ main(int argc, char** argv, char** envp) {
   sh_argv = &argv[shell_optind];
   sh_argc = argc - shell_optind;
 
+  sh_init();
+
   source_push(&src);
 
   if(sh->opts.no_interactive)
     src.mode &= ~SOURCE_IACTIVE;
-
-  sh_init();
+  /*  else
+      src.mode |= SOURCE_IACTIVE;
+  */
 
   /*  if(fd_expected != fd_top && (flags = fdtable_check(e)))
     {

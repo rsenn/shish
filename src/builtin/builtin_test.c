@@ -154,8 +154,17 @@ test_unary(int argc, char** argv) {
   int c;
   const char* arg = current(argv);
 
-  if(arg[0] != '-')
+  if(arg[0] != '-') {
+    if(argc == 2) {
+      int balanced = !str_diff(argv[0], "[") && !str_diff(argv[2], "]");
+      if(balanced) {
+        shell_optind++;
+        return !!*argv[1];
+      }
+    }
+
     return -1;
+  }
 
   /* check options */
   if((c = shell_getopt(argc, argv, "a:n:z:f:d:b:c:h:L:S:e:s:r:w:x:")) > 0) {

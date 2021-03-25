@@ -55,7 +55,9 @@ again:
         if(c == '\n')
           parse_skip(p);
         source_skip();
-
+#if !defined(SHFORMAT) && !defined(SHPARSE2AST)
+        prompt_show();
+#endif
         goto again;
       }
       if(c == '\n') {
