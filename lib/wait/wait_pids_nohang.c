@@ -17,8 +17,7 @@ wait_pids_nohang(int const* pids, unsigned int len, int* wstat) {
   int ret;
 
   for(i = 0; i < len; i++) {
-    handles[i] =
-        OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, pids[i]);
+    handles[i] = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, pids[i]);
   }
 
   for(;;) {

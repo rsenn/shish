@@ -19,8 +19,7 @@ fdtable_gap(int e, int flags) {
     return FDTABLE_DONE;
 
   /* if we can close the gap fd then delete it */
-  if((gap->mode & FD_CLOSE) ||
-     ((flags & FDTABLE_FORCE) && gap != fdtable[gap->n])) {
+  if((gap->mode & FD_CLOSE) || ((flags & FDTABLE_FORCE) && gap != fdtable[gap->n])) {
     /* set fd to -1 so it isn't closed in fd_close()
        because we'll maybe handle this later by dup2() */
     if(flags & FDTABLE_NOCLOSE) {

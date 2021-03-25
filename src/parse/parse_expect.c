@@ -5,10 +5,7 @@
 /* expect a token, print error msg and return 0 if it wasn't that token
  * ----------------------------------------------------------------------- */
 enum tok_flag
-parse_expect(struct parser* p,
-             int tempflags,
-             enum tok_flag toks,
-             union node* nfree) {
+parse_expect(struct parser* p, int tempflags, enum tok_flag toks, union node* nfree) {
   if(!(parse_gettok(p, tempflags) & toks)) {
     parse_error(p, toks);
     if(nfree) {

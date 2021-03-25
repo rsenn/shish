@@ -46,8 +46,7 @@ term_init(struct fd* input, struct fd* output) {
     return 0;
 
   /* intercept input buffer */
-  buffer_init(
-      &term_input, input->r->op, input->r->fd, term_buffer, sizeof(term_buffer));
+  buffer_init(&term_input, input->r->op, input->r->fd, term_buffer, sizeof(term_buffer));
 
   input->r->op = (ssize_t(*)())term_read;
 

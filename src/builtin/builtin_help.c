@@ -20,8 +20,7 @@ builtin_help(int argc, char* argv[]) {
   const char* vcols;
 
   for(i = 0; builtin_table[i].name; i++) {
-    size_t len =
-        str_len(builtin_table[i].name) + 1 + str_len(builtin_table[i].args);
+    size_t len = str_len(builtin_table[i].name) + 1 + str_len(builtin_table[i].args);
     if(maxlen < len)
       maxlen = len;
   }

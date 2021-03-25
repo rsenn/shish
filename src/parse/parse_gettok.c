@@ -34,8 +34,7 @@ parse_gettok(struct parser* p, int tempflags) {
     if(p->tok == -1)
       p->tok = parse_word(p);
     /* if the token is a valid name then it could be a keyword */
-    if(p->tok & T_NAME && p->node && p->node->id == N_ARGSTR &&
-       !(p->flags & P_NOKEYWD))
+    if(p->tok & T_NAME && p->node && p->node->id == N_ARGSTR && !(p->flags & P_NOKEYWD))
       parse_keyword(p);
 
 #ifdef DEBUG_PARSE

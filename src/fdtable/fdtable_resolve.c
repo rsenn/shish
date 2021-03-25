@@ -84,12 +84,10 @@ fdtable_resolve(struct fd* fd, int flags) {
   buffer_puts(&debug_buffer, COLOR_YELLOW "fdtable_resolve" COLOR_NONE "(");
   fd_dump(fd, &debug_buffer);
   buffer_puts(&debug_buffer, ", ");
-  debug_flags(flags,
-              (const char* const[]){"LAZY", "MOVE", "FORCE", "NOCLOSE", "CLOSE"});
+  debug_flags(flags, (const char* const[]){"LAZY", "MOVE", "FORCE", "NOCLOSE", "CLOSE"});
   buffer_puts(&debug_buffer, ") = ");
 
-  buffer_puts(&debug_buffer,
-              ((const char* const[]){"0", "DONE", "ERROR", "PENDING"})[-state]);
+  buffer_puts(&debug_buffer, ((const char* const[]){"0", "DONE", "ERROR", "PENDING"})[-state]);
   debug_nl_fl();
 #endif
 

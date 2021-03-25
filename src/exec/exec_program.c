@@ -41,8 +41,8 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
   if(!exec || sh->parent) {
     pid_t pid;
     struct fd* pipes = 0;
+    unsigned int npipes;
     struct fdstack io;
-    unsigned int n;
 
     fdstack_push(&io);
 
@@ -50,14 +50,15 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
        like here-docs which are read from strallocs and command
        expansions, which write to strallocs can't be shared across
        different process spaces, so we have to establish pipes */
-    if((n = fdstack_npipes(FD_HERE | FD_SUBST))) {
-      pipes = shell_alloc(FDSTACK_ALLOC_SIZE(n));
-      fdstack_pipe(n, pipes);
+    if((npipes = fdstack_npipes(FD_HERE | FD_SUBST))) {
+      pipes = shell_alloc(FDSTACK_ALLOC_SIZE(npipes));
+      fdstack_pipe(npipes, pipes);
     }
 
 #ifdef DEBUG_OUTPUT
-   fdstack_dump(&debug_buffer);
-   // fdtable_dump(&debug_buffer);
+    // fdstack_dump(&debug_buffer);
+    fdtable_dump(&debug_buffer);
+    // fd_dumplist(&debug_buffer);
 #endif
 
     /* block child and interrupt signal, so we won't terminate ourselves
@@ -75,7 +76,7 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
       /* this will close child ends of the pipes and read data from the parent
        * end :) */
       fdstack_pop(&io);
-      if(n)
+      if(npipes)
         fdstack_data();
 
       if(pipes)

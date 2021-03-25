@@ -64,10 +64,7 @@ builtin_cd(int argc, char* argv[]) {
       if((n = str_chr(cdpath, ':')) + len + 1 > PATH_MAX) {
         /* set error code and print the longer string in the error msg */
         errno = ENAMETOOLONG;
-        return builtin_errmsgn(argv,
-                               (n > len ? cdpath : arg),
-                               (n > len ? n : len),
-                               strerror(errno));
+        return builtin_errmsgn(argv, (n > len ? cdpath : arg), (n > len ? n : len), strerror(errno));
       }
 
       /* copy path prefix from cdpath if present */

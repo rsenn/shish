@@ -322,25 +322,25 @@ union node {
 typedef union node node_t;
 
 /* link node to the branch nptr points to */
-#define tree_link(node, nptr)                                                      \
-  do {                                                                             \
-    *(nptr) = (node);                                                              \
-    nptr = &(node)->next;                                                          \
+#define tree_link(node, nptr)                                                                                                                                  \
+  do {                                                                                                                                                         \
+    *(nptr) = (node);                                                                                                                                          \
+    nptr = &(node)->next;                                                                                                                                      \
   } while(0);
 
 /* link node to the branch nptr points to */
-#define tree_unshift(node, nptr)                                                   \
-  do {                                                                             \
-    (node)->next = *(nptr);                                                        \
-    (*nptr) = (node);                                                              \
+#define tree_unshift(node, nptr)                                                                                                                               \
+  do {                                                                                                                                                         \
+    (node)->next = *(nptr);                                                                                                                                    \
+    (*nptr) = (node);                                                                                                                                          \
   } while(0);
 
 /* move node to the node nptr points to */
-#define tree_move(node, nptr)                                                      \
-  do {                                                                             \
-    *(nptr) = (node);                                                              \
-    nptr = &(node)->next;                                                          \
-    (node) = NULL;                                                                 \
+#define tree_move(node, nptr)                                                                                                                                  \
+  do {                                                                                                                                                         \
+    *(nptr) = (node);                                                                                                                                          \
+    nptr = &(node)->next;                                                                                                                                      \
+    (node) = NULL;                                                                                                                                             \
   } while(0);
 
 /* skip to the next node */
@@ -354,16 +354,16 @@ typedef union node node_t;
  * current node in conjunction with
  * tree_link
  */
-#define tree_init(node, nptr)                                                      \
-  do {                                                                             \
-    (node) = NULL;                                                                 \
-    (nptr) = &(node);                                                              \
+#define tree_init(node, nptr)                                                                                                                                  \
+  do {                                                                                                                                                         \
+    (node) = NULL;                                                                                                                                             \
+    (nptr) = &(node);                                                                                                                                          \
   } while(0);
 
-#define tree_initn(node, nptr, init)                                               \
-  do {                                                                             \
-    (node) = (init);                                                               \
-    (nptr) = &(node);                                                              \
+#define tree_initn(node, nptr, init)                                                                                                                           \
+  do {                                                                                                                                                         \
+    (node) = (init);                                                                                                                                           \
+    (nptr) = &(node);                                                                                                                                          \
   } while(0);
 
 #ifdef DEBUG_ALLOC

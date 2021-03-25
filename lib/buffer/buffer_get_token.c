@@ -5,8 +5,7 @@
 #include <string.h> /* for memccpy */
 
 ssize_t
-buffer_get_token(
-    buffer* b, char* x, size_t len, const char* charset, size_t setlen) {
+buffer_get_token(buffer* b, char* x, size_t len, const char* charset, size_t setlen) {
   size_t blen;
 
   if((ssize_t)len < 0)
@@ -19,8 +18,7 @@ buffer_get_token(
         return blen;
       if(n > (ssize_t)(len - blen))
         n = len - blen;
-      if((i = byte_ccopy(x + blen, n, b->x + b->p, (unsigned char)charset[0])) <
-         n) {
+      if((i = byte_ccopy(x + blen, n, b->x + b->p, (unsigned char)charset[0])) < n) {
         d = x + blen + i;
 
         /* memccpy returns a pointer to the next char after matching

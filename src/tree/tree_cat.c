@@ -115,9 +115,7 @@ again:
       else if(node->next && node->next->id == N_ARGSTR) {
         stralloc* sa = &node->next->nargstr.stra;
 
-        if((!(node->nargparam.flag & S_SPECIAL) && sa->len &&
-            parse_isname(sa->s[0], 0)) ||
-           node->nargparam.numb > 9)
+        if((!(node->nargparam.flag & S_SPECIAL) && sa->len && parse_isname(sa->s[0], 0)) || node->nargparam.numb > 9)
           braces = 1;
       }
 
@@ -137,8 +135,7 @@ again:
         stralloc_cats(sa, node->nargparam.name);
 
       if(node->nargparam.word) {
-        static const char* vsubst_types[] = {
-            "-", "=", "?", "+", "%", "%%", "#", "##"};
+        static const char* vsubst_types[] = {"-", "=", "?", "+", "%", "%%", "#", "##"};
 
         if(node->nargparam.flag & S_NULL)
           stralloc_catc(sa, ':');
@@ -259,10 +256,7 @@ again:
       tree_catlist(node->ncasenode.pats, sa, "|");
       stralloc_cats(sa, ") ");
       if(node->ncasenode.cmds)
-        tree_catlist_n(node->ncasenode.cmds,
-                       sa,
-                       sep == NULL ? "\n" : sep,
-                       depth + 1);
+        tree_catlist_n(node->ncasenode.cmds, sa, sep == NULL ? "\n" : sep, depth + 1);
 
       stralloc_cats(sa, sep == NULL ? " ;;" : ";;");
       break;
@@ -332,8 +326,7 @@ again:
     case N_REDIR: {
       /*      stralloc_catc(sa, ' ');*/
 
-      if(((node->nredir.flag & R_IN) && node->nredir.fdes != 0) ||
-         ((node->nredir.flag & R_OUT) && node->nredir.fdes != 1))
+      if(((node->nredir.flag & R_IN) && node->nredir.fdes != 0) || ((node->nredir.flag & R_OUT) && node->nredir.fdes != 1))
         stralloc_catulong0(sa, node->nredir.fdes, 0);
 
       if(node->nredir.flag & R_IN)

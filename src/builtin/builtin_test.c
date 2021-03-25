@@ -295,8 +295,7 @@ test_boolean(int argc, char* argv[]) {
       and_or = 0;
     }
 
-    if(num_args(argc) > 1 && (arg = next(argv))[0] == '-' &&
-       contains("ao", arg[1])) {
+    if(num_args(argc) > 1 && (arg = next(argv))[0] == '-' && contains("ao", arg[1])) {
       switch(arg[1]) {
         case 'a': and_or = TEST_AND; break;
         case 'o': and_or = TEST_OR; break;

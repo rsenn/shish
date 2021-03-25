@@ -1,4 +1,5 @@
 #include "../fdstack.h"
+#include "../debug.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>
@@ -10,30 +11,28 @@
  * ----------------------------------------------------------------------- */
 int
 fdstack_data(void) {
-  struct fd* fd;
   struct fdstack* st;
-  long n;
-  char b[FD_BUFSIZE / 2];
-
 #ifdef DEBUG_OUTPUT_
   fdstack_dump(fd_err->w);
 #endif
   // fdtable_dump(fd_err->w);
 
   for(st = fdstack; st; st = st->parent) {
+    struct fd* fd;
     for(fd = st->list; fd; fd = fd->next) {
 
       /* read from the child and put it into output subst buffer */
-      if((fd->mode & FD_WRITE)) {
-#ifdef DEBUG_OUTPUT_
+      if((fd->mode & FD_SUBST)) {
+        ssize_t n;
+        char buf[FD_BUFSIZE / 2];
 
-        buffer_puts(fd_err->w, "FDSTACK_DATA: ");
-        fd_dump(fd, fd_err->w);
-        buffer_putnlflush(fd_err->w);
+#ifdef DEBUG_OUTPUT
+        buffer_puts(&debug_buffer, "fdstack_data\n");
+        fd_dump(fd, &debug_buffer);
+        buffer_putnlflush(&debug_buffer);
 #endif
 
-        while((n = read(fdtable[1]->rb.fd, b, sizeof(b))) > 0)
-          buffer_put(fd->w, b, n);
+        while((n = read(fd->rb.fd, buf, sizeof(buf))) > 0) buffer_put(fd->w, buf, n);
 
         buffer_flush(fd->w);
       }
@@ -41,8 +40,8 @@ fdstack_data(void) {
       /* read from the stralloc and put it to here-doc pipe */
       /*    if((fd->mode & FD_HERE) == FD_HERE)
           {
-            while((n = buffer_get(&fd->rb, b, sizeof(b))) > 0)
-              write(fd->e, b, n);
+            while((n = buffer_get(&fd->rb, buf, sizeof(buf))) > 0)
+              write(fd->e, buf, n);
           }*/
     }
   }

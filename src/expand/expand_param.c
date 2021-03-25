@@ -175,8 +175,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         union node* tmpnode = NULL;
 
         n = expand_arg(param->word, &tmpnode, flags);
-        sh_error((n && n->narg.stra.s) ? n->narg.stra.s
-                                       : "parameter null or not set");
+        sh_error((n && n->narg.stra.s) ? n->narg.stra.s : "parameter null or not set");
         if(tmpnode)
           tree_free(tmpnode);
       }

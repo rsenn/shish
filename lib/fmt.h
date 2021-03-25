@@ -10,10 +10,10 @@
 extern "C" {
 #endif
 
-#define FMT_LONG 41  /* enough space to hold -2^127 in decimal, plus \0 */
-#define FMT_ULONG 40 /* enough space to hold 2^128 - 1 in decimal, plus \0 */
-#define FMT_8LONG 44 /* enough space to hold 2^128 - 1 in octal, plus \0 */
-#define FMT_XLONG 33 /* enough space to hold 2^128 - 1 in hexadecimal, plus \0 */
+#define FMT_LONG 41        /* enough space to hold -2^127 in decimal, plus \0 */
+#define FMT_ULONG 40       /* enough space to hold 2^128 - 1 in decimal, plus \0 */
+#define FMT_8LONG 44       /* enough space to hold 2^128 - 1 in octal, plus \0 */
+#define FMT_XLONG 33       /* enough space to hold 2^128 - 1 in hexadecimal, plus \0 */
 #define FMT_LEN ((char*)0) /* convenient abbreviation */
 
 #define FMT_ISO8601 63
@@ -71,8 +71,7 @@ size_t fmt_strn(char* dest, const char* src, size_t limit);
  * write padlen - srclen spaces, if that is >= 0.  Then copy srclen
  * characters from src.  Truncate only if total length is larger than
  * maxlen.  Return number of characters written. */
-size_t
-fmt_pad(char* dest, const char* src, size_t srclen, size_t padlen, size_t maxlen);
+size_t fmt_pad(char* dest, const char* src, size_t srclen, size_t padlen, size_t maxlen);
 
 /* "foo" -> "foo  "
  * append padlen - srclen spaces after dest, if that is >= 0.  Truncate
@@ -93,12 +92,9 @@ size_t fmt_httpdate(char* dest, time_t t);
 #define FMT_ASN1LENGTH 17 /* enough space to hold 2^128 - 1 */
 #define FMT_ASN1TAG 19    /* enough space to hold 2^128 - 1 */
 /* some variable length encodings for integers */
-size_t fmt_utf8(char* dest, uint32 n); /* can store 0 - 0x7fffffff */
-size_t fmt_asn1derlength(
-    char* dest, uint64 l); /* 0 - 0x7f: 1 byte, above that 1 + bytes_needed bytes */
-size_t fmt_asn1dertag(
-    char* dest,
-    uint64 l); /* 1 byte for each 7 bits; upper bit = more bytes coming */
+size_t fmt_utf8(char* dest, uint32 n);          /* can store 0 - 0x7fffffff */
+size_t fmt_asn1derlength(char* dest, uint64 l); /* 0 - 0x7f: 1 byte, above that 1 + bytes_needed bytes */
+size_t fmt_asn1dertag(char* dest, uint64 l);    /* 1 byte for each 7 bits; upper bit = more bytes coming */
 
 /* internal functions, may be independently useful */
 char fmt_tohex(char c);
@@ -116,22 +112,22 @@ size_t fmt_strm_internal(char* dest, ...);
 #endif
 
 #ifdef __BORLANDC__
-#define fmt_strm_alloca(a, args)                                                   \
-  ({                                                                               \
-    size_t len = fmt_strm((char*)0, a, args) + 1;                                  \
-    char* c = (len < MAX_ALLOCA ? alloca(len) : 0);                                \
-    if(c)                                                                          \
-      c[fmt_strm(c, a, args)] = 0;                                                 \
-    c;                                                                             \
+#define fmt_strm_alloca(a, args)                                                                                                                               \
+  ({                                                                                                                                                           \
+    size_t len = fmt_strm((char*)0, a, args) + 1;                                                                                                              \
+    char* c = (len < MAX_ALLOCA ? alloca(len) : 0);                                                                                                            \
+    if(c)                                                                                                                                                      \
+      c[fmt_strm(c, a, args)] = 0;                                                                                                                             \
+    c;                                                                                                                                                         \
   })
 #else
-#define fmt_strm_alloca(a, ...)                                                    \
-  ({                                                                               \
-    size_t len = fmt_strm((char*)0, a, __VA_ARGS__) + 1;                           \
-    char* c = (len < MAX_ALLOCA ? alloca(len) : 0);                                \
-    if(c)                                                                          \
-      c[fmt_strm(c, a, __VA_ARGS__)] = 0;                                          \
-    c;                                                                             \
+#define fmt_strm_alloca(a, ...)                                                                                                                                \
+  ({                                                                                                                                                           \
+    size_t len = fmt_strm((char*)0, a, __VA_ARGS__) + 1;                                                                                                       \
+    char* c = (len < MAX_ALLOCA ? alloca(len) : 0);                                                                                                            \
+    if(c)                                                                                                                                                      \
+      c[fmt_strm(c, a, __VA_ARGS__)] = 0;                                                                                                                      \
+    c;                                                                                                                                                         \
   })
 #endif
 

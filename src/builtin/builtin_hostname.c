@@ -38,8 +38,7 @@ builtin_hostname(int argc, char* argv[]) {
 
     /* unless force is set and if the new hostname is
        the same as the current then do not update it */
-    if(!force && n == prompt_hostname.len &&
-       !byte_diff(prompt_hostname.s, n, argv[shell_optind]))
+    if(!force && n == prompt_hostname.len && !byte_diff(prompt_hostname.s, n, argv[shell_optind]))
       return 0;
 
 #if defined(HAVE_SETHOSTNAME) || !WINDOWS_NATIVE

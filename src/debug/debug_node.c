@@ -8,17 +8,12 @@
 
 /* debugs a tree node!
  * ----------------------------------------------------------------------- */
-const char* debug_nodes[] = {
-    "N_SIMPLECMD", "N_PIPELINE",     "N_AND",         "N_OR",        "N_NOT",
-    "N_SUBSHELL",  "N_CMDLIST",      "N_FOR",         "N_CASE",      "N_CASENODE",
-    "N_IF",        "N_WHILE",        "N_UNTIL",       "N_FUNCTION",  "N_ARG",
-    "N_ASSIGN",    "N_REDIR",        "N_ARGSTR",      "N_ARGCMD",    "N_ARGPARAM",
-    "N_ARGARITH",  "A_NUM",          "A_PAREN",       "A_OR",        "A_AND",
-    "A_BOR",       "A_BXOR",         "A_BAND",        "A_EQ",        "A_NE",
-    "A_LT",        "A_GT",           "A_GE",          "A_LE",        "A_LSHIFT",
-    "A_RSHIFT",    "A_ADD",          "A_SUB",         "A_MUL",       "A_DIV",
-    "A_MOD",       "A_EXP",          "A_UNARYMINUS",  "A_UNARYPLUS", "A_NOT",
-    "A_BNOT",      "A_PREDECREMENT", "A_PREINCREMENT"};
+const char* debug_nodes[] = {"N_SIMPLECMD", "N_PIPELINE", "N_AND",        "N_OR",        "N_NOT",      "N_SUBSHELL", "N_CMDLIST",      "N_FOR",
+                             "N_CASE",      "N_CASENODE", "N_IF",         "N_WHILE",     "N_UNTIL",    "N_FUNCTION", "N_ARG",          "N_ASSIGN",
+                             "N_REDIR",     "N_ARGSTR",   "N_ARGCMD",     "N_ARGPARAM",  "N_ARGARITH", "A_NUM",      "A_PAREN",        "A_OR",
+                             "A_AND",       "A_BOR",      "A_BXOR",       "A_BAND",      "A_EQ",       "A_NE",       "A_LT",           "A_GT",
+                             "A_GE",        "A_LE",       "A_LSHIFT",     "A_RSHIFT",    "A_ADD",      "A_SUB",      "A_MUL",          "A_DIV",
+                             "A_MOD",       "A_EXP",      "A_UNARYMINUS", "A_UNARYPLUS", "A_NOT",      "A_BNOT",     "A_PREDECREMENT", "A_PREINCREMENT"};
 
 void
 debug_node(union node* node, int depth) {
@@ -176,12 +171,7 @@ debug_node(union node* node, int depth) {
     case N_ARGSTR:
 
       debug_subst(0, node->nargstr.flag & 0x7, depth);
-      debug_stralloc(0,
-                     &node->nargstr.stra,
-                     depth,
-                     node->nargstr.flag & S_DQUOTED
-                         ? '"'
-                         : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
+      debug_stralloc(0, &node->nargstr.stra, depth, node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
       break;
 
     case N_ARGPARAM: {
@@ -250,9 +240,7 @@ debug_node(union node* node, int depth) {
     case A_PREINCREMENT:
     case A_PREDECREMENT:
     case A_POSTINCREMENT:
-    case A_POSTDECREMENT:
-      debug_sublist("node", node->narithunary.node, depth);
-      break;
+    case A_POSTDECREMENT: debug_sublist("node", node->narithunary.node, depth); break;
 
     case N_NOT: debug_sublist("cmds", node->nandor.left, depth); break;
   }

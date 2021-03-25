@@ -21,19 +21,9 @@ const char* debug_subst_special[] = {
     "S_PID",
 };
 
-const char* debug_subst_var[] = {"S_DEFAULT",
-                                 "S_ASGNDEF",
-                                 "S_ERRNULL",
-                                 "S_ALTERNAT",
-                                 "S_RSSFX",
-                                 "S_RLSFX",
-                                 "S_RSPFX",
-                                 "S_RLPFX"};
+const char* debug_subst_var[] = {"S_DEFAULT", "S_ASGNDEF", "S_ERRNULL", "S_ALTERNAT", "S_RSSFX", "S_RLSFX", "S_RSPFX", "S_RLPFX"};
 
-const char* debug_subst_tables[] = {"S_UNQUOTED",
-                                    "S_DQUOTED",
-                                    "S_SQUOTED",
-                                    "S_EXPR"};
+const char* debug_subst_tables[] = {"S_UNQUOTED", "S_DQUOTED", "S_SQUOTED", "S_EXPR"};
 
 void
 debug_subst(const char* msg, int flags, int depth) {

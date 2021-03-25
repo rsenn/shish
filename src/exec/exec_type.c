@@ -3,21 +3,11 @@
 #include "../parse.h"
 #include "../../lib/str.h"
 
-enum type_index {
-  TYPE_NONE = -1,
-  TYPE_FILE,
-  TYPE_ALIAS,
-  TYPE_KEYWORD,
-  TYPE_FUNCTION,
-  TYPE_BUILTIN
-};
+enum type_index { TYPE_NONE = -1, TYPE_FILE, TYPE_ALIAS, TYPE_KEYWORD, TYPE_FUNCTION, TYPE_BUILTIN };
 
-#define TYPE_NAMES                                                                 \
-  ((const char* const[]){"file", "alias", "keyword", "function", "builtin"})
+#define TYPE_NAMES ((const char* const[]){"file", "alias", "keyword", "function", "builtin"})
 
-#define TYPE_DESCRIPTIONS                                                          \
-  ((const char* const[]){                                                          \
-      0, "aliased to `", "a shell keyword", "a function", "a shell builtin"})
+#define TYPE_DESCRIPTIONS ((const char* const[]){0, "aliased to `", "a shell keyword", "a function", "a shell builtin"})
 
 static inline int
 is_keyword(const char* str) {
@@ -54,13 +44,8 @@ exec_type(char* name, int mask, int force_path, int type_name) {
     if(type_name)
       buffer_puts(fd_out->w, TYPE_NAMES[id]);
     else
-      buffer_putm_internal(fd_out->w,
-                           name,
-                           " is ",
-                           id == TYPE_FILE ? cmd.path : TYPE_DESCRIPTIONS[id],
-                           id == TYPE_ALIAS ? a->def : 0,
-                           id == TYPE_ALIAS ? "'" : 0,
-                           0);
+      buffer_putm_internal(
+          fd_out->w, name, " is ", id == TYPE_FILE ? cmd.path : TYPE_DESCRIPTIONS[id], id == TYPE_ALIAS ? a->def : 0, id == TYPE_ALIAS ? "'" : 0, 0);
     buffer_putnlflush(fd_out->w);
     return 0;
   }

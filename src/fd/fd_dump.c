@@ -16,31 +16,26 @@ fd_dump(struct fd* fd, buffer* b) {
     fd_getname(fd);
 
   /* file descriptor */
+  buffer_puts(b, COLOR_MAGENTA);
   buffer_putlong0(b, fd->n, 4);
-  buffer_putspace(b);
+  buffer_puts(b, COLOR_NONE " ");
 
   /* name */
   buffer_putspad(b, fd->name, 36);
 
   /* level */
   buffer_putulong0(b, fd->stack->level, 2);
-  buffer_putnspace(b, 3);
+  buffer_putnspace(b, 2);
 
   buffer_putlong0(b, fd->e, 3);
   buffer_putnspace(b, 2);
 
   dump_flags(b,
              fd->mode,
-             (const char* const[]){"READ",   "WRITE",  "APPEND",   "EXCL",
-                                   "TRUNC",  0,        0,          0,
-                                   "FILE",   "DIR",    "LINK",     "CHAR",
-                                   "BLOCK",  "SOCKET", "PIPE",     "STRALLOC",
-                                   "STRING", "DUP",    "TERM",     "NULL",
-                                   0,        0,        0,          0,
-                                   "FLUSH",  "CLOSE",  "FREENAME", "DUPNAME",
-                                   "FREE",   0,        "TMPBUF",   "OPEN"}, 32);
-
-
+             (const char* const[]){"READ", "WRITE", "APPEND", "EXCL",  "TRUNC",    0,         0,      0,      "FILE",   "DIR", "LINK",
+                                   "CHAR", "BLOCK", "SOCKET", "PIPE",  "STRALLOC", "STRING",  "DUP",  "TERM", "NULL",   0,     0,
+                                   0,      0,       "FLUSH",  "CLOSE", "FREENAME", "DUPNAME", "FREE", 0,      "TMPBUF", "OPEN"},
+             32);
 
   buffer_putspace(b);
 

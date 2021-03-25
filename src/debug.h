@@ -34,6 +34,8 @@ extern buffer debug_buffer;
 #define COLOR_DARKBLUE "\033[0;34m"
 #define COLOR_WHITE "\033[37;1m"
 #define COLOR_NONE "\033[0m"
+#define COLOR_DARKGRAY "\033[38;5;238m"
+
 #else
 #define COLOR_CYAN ""
 #define COLOR_PURPLE ""
@@ -48,6 +50,7 @@ extern buffer debug_buffer;
 #define COLOR_DARKBLUE ""
 #define COLOR_WHITE ""
 #define COLOR_NONE ""
+#define COLOR_DARKGRAY ""
 #endif /* COLOR_DEBUG */
 
 #define CURSOR_FORWARD(n) "\x1b[" #n "C"
@@ -123,8 +126,7 @@ extern struct chunk* debug_heap;
 extern struct chunk** debug_pos;
 
 void* debug_alloc(const char* file, unsigned int line, unsigned long size);
-void*
-debug_realloc(const char* file, unsigned int line, void* ptr, unsigned long size);
+void* debug_realloc(const char* file, unsigned int line, void* ptr, unsigned long size);
 void debug_free(const char* file, unsigned int line, void* ptr);
 void debug_error(const char* file, unsigned int line, const char* s);
 
@@ -145,7 +147,7 @@ dump_flags(buffer* b, int bits, const char* const names[], int pad) {
       n += len;
     }
   }
-  if(n < pad)
+  if(n < (size_t)pad)
     buffer_putnspace(b, pad - n);
   return n;
 }

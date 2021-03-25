@@ -15,8 +15,7 @@ var_bsearch(struct search* context) {
   struct var* var;
 
   /* continue looping through the current list */
-  for(; (var = *context->pos);
-      context->pos = (context->global ? &var->gnext : &var->bnext)) {
+  for(; (var = *context->pos); context->pos = (context->global ? &var->gnext : &var->bnext)) {
     const char* w = context->name;
     const char* m = var->sa.s;
     size_t lw = context->len;

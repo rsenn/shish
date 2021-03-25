@@ -18,11 +18,7 @@ int shell_readlink(const char* path, stralloc* sa);
 
 int shell_canonicalize(const char* path, stralloc* sa, int symbolic);
 
-int shell_fnmatch(const char* pattern,
-                  unsigned int plen,
-                  const char* string,
-                  unsigned int slen,
-                  int flags);
+int shell_fnmatch(const char* pattern, unsigned int plen, const char* string, unsigned int slen, int flags);
 
 char* shell_basename(char* path);
 char* shell_dirname(char* path);
@@ -37,10 +33,7 @@ struct optstate {
   char prefix;
 };
 
-int shell_getopt_r(struct optstate*,
-                   int argc,
-                   char* const argv[],
-                   const char* optstring);
+int shell_getopt_r(struct optstate*, int argc, char* const argv[], const char* optstring);
 int shell_getopt(int argc, char* const argv[], const char* optstring);
 
 extern struct optstate shell_opt;
@@ -68,10 +61,7 @@ void* shell_strdup(const char* s);
 #else
 extern void debug_free(const char* file, unsigned int line, void* p);
 void* shell_allocdebug(const char* file, unsigned int line, unsigned long size);
-void* shell_reallocdebug(const char* file,
-                         unsigned int line,
-                         void* ptr,
-                         unsigned long size);
+void* shell_reallocdebug(const char* file, unsigned int line, void* ptr, unsigned long size);
 void* shell_strdupdebug(const char* file, unsigned int line, const char* s);
 #define shell_alloc(n) shell_allocdebug(__FILE__, __LINE__, (n))
 #define shell_realloc(p, n) shell_reallocdebug(__FILE__, __LINE__, (p), (n))
