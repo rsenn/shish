@@ -22,7 +22,14 @@
   "folders": [
     {
       "path": ".",
-      "folder_exclude_patterns": [".*", "*.cache"],
+          "follow_symlinks": false,
+ "folder_exclude_patterns": [".*", "*.cache", "/home/roman/Sources/[!s][!h]*", "/home/roman/Sources/[^s][^h].*"],
+      "file_exclude_patterns": [".*", "*.stackdump", "*.o", "*.d", "*.m4", "*~", "*.pro.user*"],
+    },
+      {
+      "path": "/home/roman/Sources/shish",
+          "follow_symlinks": false,
+ "folder_exclude_patterns": [".*", "*.cache" ],
       "file_exclude_patterns": [".*", "*.stackdump", "*.o", "*.d", "*.m4", "*~", "*.pro.user*"],
     }
   ],
