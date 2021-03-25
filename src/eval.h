@@ -27,7 +27,7 @@ struct eval {
   jmp_buf jumpbuf;
   int jump;
 
-  struct position pos;
+  struct location pos;
 };
 
 extern struct eval* eval;

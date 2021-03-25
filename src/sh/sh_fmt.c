@@ -183,7 +183,7 @@ main(int argc, char** argv, char** envp) {
   while(!(((tok = parse_gettok(&p, P_DEFAULT)) & T_EOF))) {
     union node* list;
     p.pushback++;
-    parse_lineno = source->pos.line;
+    parse_lineno = source->position.line;
 
     //   var_setvint("LINENO", parse_lineno, V_DEFAULT);
 

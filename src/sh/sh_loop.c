@@ -30,7 +30,7 @@ sh_loop(void) {
 
   while(!(parse_gettok(&p, P_DEFAULT) & T_EOF)) {
     p.pushback++;
-    parse_lineno = source->pos.line;
+    parse_lineno = source->position.line;
 
     var_setvint("LINENO", parse_lineno, V_DEFAULT);
 

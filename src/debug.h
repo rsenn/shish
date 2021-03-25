@@ -70,7 +70,7 @@ void debug_argv(char**, buffer*);
 #ifdef DEBUG_OUTPUT
 
 union node;
-struct position;
+struct location;
 
 void debug_begin(const char* s, int depth);
 void debug_end(int depth);
@@ -87,7 +87,7 @@ void debug_space(int count, int newline);
 void debug_node(union node* node, int depth);
 void debug_redir(const char* msg, int flags, int depth);
 void debug_subst(const char* msg, int flags, int depth);
-void debug_position(const char* msg, const struct position* pos, int depth);
+void debug_position(const char* msg, const struct location* pos, int depth);
 #define debug_s(str) buffer_puts(&debug_buffer, str)
 #define debug_n(num) buffer_putlonglong(&debug_buffer, num)
 #define debug_c(chr) buffer_putc(&debug_buffer, chr)

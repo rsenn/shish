@@ -178,7 +178,7 @@ main(int argc, char** argv, char** envp) {
         break;
 
       p.pushback++;
-      parse_lineno = source->pos.line;
+      parse_lineno = source->position.line;
 
       /* launch the parser to get a complete command */
       list = parse_compound_list(&p, T_EOF);

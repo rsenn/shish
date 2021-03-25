@@ -224,7 +224,7 @@ struct parser {
   stralloc sa;
   union node* node;
   union node* tree;
-  struct position tokstart;
+  struct location tokstart;
   struct alias* alias;
 };
 

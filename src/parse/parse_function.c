@@ -11,7 +11,7 @@ union node*
 parse_function(struct parser* p) {
   int tok;
   union node* node;
-  struct position loc;
+  struct location loc;
   struct nargstr* argstr;
 
   stralloc name;

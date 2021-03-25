@@ -186,7 +186,7 @@ struct nfunc {
   struct nfunc* next;
   char* name;
   union node* body;
-  struct position loc;
+  struct location loc;
 };
 
 /* internally used nodes
@@ -238,7 +238,7 @@ struct nargstr {
       size_t len;
     };
   };
-  struct position loc;
+  struct location loc;
 };
 
 struct nargparam {
@@ -248,7 +248,7 @@ struct nargparam {
   char* name;
   union node* word;
   long numb;
-  struct position loc;
+  struct location loc;
 };
 
 struct nargcmd {
@@ -380,7 +380,7 @@ union node* tree_newlink(union node** nptr, enum kind nod);
 unsigned int tree_count(union node* node);
 union node** tree_append(union node**, union node*);
 void tree_remove(union node**);
-int tree_location(union node*, struct position*);
+int tree_location(union node*, struct location*);
 
 #ifdef BUFFER_H
 void tree_print(union node*, buffer*);

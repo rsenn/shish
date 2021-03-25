@@ -10,7 +10,7 @@
 void*
 parse_error(struct parser* p, enum tok_flag toks) {
   if(p->tok) {
-    source_msg(&source->pos);
+    source_msg(&source->position);
     sh_msg("unexpected token ");
 
     /* if(p->tok == T_WORD && p->node && p->node->id == N_ARGSTR) {

@@ -8,8 +8,8 @@ struct source* source = 0;
 void
 source_push(struct source* src) {
   src->parent = source;
-  src->pos.line = 1;
-  src->pos.column = 1;
+  src->position.line = 1;
+  src->position.column = 1;
   src->mode = 0;
   src->b = fd_src->r;
 

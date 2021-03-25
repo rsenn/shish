@@ -3,7 +3,7 @@
 /* get position of N_ARG nodes
  * ----------------------------------------------------------------------- */
 int
-tree_location(union node* node, struct position* loc) {
+tree_location(union node* node, struct location* loc) {
   while(node) {
     switch(node->id) {
       case N_ARGSTR:

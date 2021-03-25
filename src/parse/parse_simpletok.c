@@ -31,7 +31,7 @@ again:
 
   advance = 1;
 
-  p->tokstart = source->pos;
+  p->tokstart = source->position;
 
   /* now we have a non-space char */
   switch(c) {

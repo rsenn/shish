@@ -37,7 +37,7 @@ parse_param(struct parser* p) {
   param->flag = p->quot;
   param->name = NULL;
   param->word = NULL;
-  param->loc = source->pos;
+  param->loc = source->position;
 
   /* if we have # as first char in substitution and we're inside a ${}
      then check if the next char is a valid parameter char. if so then

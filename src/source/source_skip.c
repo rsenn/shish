@@ -16,8 +16,8 @@ source_skip(void) {
     if(c == '\n')
       source_newline();
     else {
-      source->pos.column++;
-      source->pos.offset++;
+      source->position.column++;
+      source->position.offset++;
     }
   }
 }

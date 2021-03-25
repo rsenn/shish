@@ -5,7 +5,7 @@
 
 struct fd;
 
-struct __attribute__((__packed__)) position {
+struct __attribute__((__packed__)) location {
   unsigned int line, column;
   size_t offset;
 };
@@ -14,7 +14,7 @@ struct source {
   buffer* b;
   int mode;
   struct source* parent;
-    struct position pos;
+  struct location position;
 };
 
 #define SOURCE_IACTIVE 0x01
@@ -32,7 +32,7 @@ int source_get(char* c);
 int source_next(char* c);
 int source_peekn(char* c, unsigned int n);
 void source_flush(void);
-void source_msg(const struct position* pos);
+void source_msg(const struct location* pos);
 void source_skip(void);
 int source_fork(buffer* child_source);
 void source_exec(void);

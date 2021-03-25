@@ -21,7 +21,7 @@ parse_gettok(struct parser* p, int tempflags) {
     p->tok = -1;
     /* skip whitespace */
     // p->tok = parse_skipspace(p);
-    p->tokstart = source->pos;
+    p->tokstart = source->position;
 
     if(p->tree && p->tree->id == N_ARGSTR)
       stralloc_zero(&p->tree->nargstr.stra);

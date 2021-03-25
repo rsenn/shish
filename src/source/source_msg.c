@@ -5,7 +5,7 @@
 /* source msg
  * ----------------------------------------------------------------------- */
 void
-source_msg(const struct position* pos) {
+source_msg(const struct location* pos) {
   const char* name = fdtable[STDSRC_FILENO]->name;
   buffer_puts(fd_err->w, name ? name : sh_name);
   buffer_puts(fd_err->w, ":");

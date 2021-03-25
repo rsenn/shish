@@ -4,7 +4,7 @@
 
 /* ----------------------------------------------------------------------- */
 void
-debug_position(const char* msg, const struct position* pos, int depth) {
+debug_position(const char* msg, const struct location* pos, int depth) {
   if(msg)
     debug_field(msg, depth);
   debug_s("{");
