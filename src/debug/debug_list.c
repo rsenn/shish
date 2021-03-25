@@ -28,7 +28,7 @@ debug_list(union node* n, int depth) {
       {
         int n;
         debug_c(',');
-        debug_newline(depth);
+        debug_newline(depth+1);
 
         //        debug_s(COLOR_CYAN DEBUG_SEP COLOR_NONE);
       }

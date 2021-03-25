@@ -14,6 +14,9 @@
 #include <stdlib.h>
 
 extern buffer debug_buffer;
+extern int debug_nindent;
+extern char debug_quote;
+
 /* some ansi colors
  * ----------------------------------------------------------------------- */
 #ifndef COLOR_DEBUG
@@ -168,12 +171,14 @@ debug_open() {
 
 static inline void
 debug_indent(int depth) {
-  while(depth-- > 0) debug_s("  ");
+  depth *= debug_nindent;
+  while(depth-- > 0)
+    debug_c(' ');
 }
 
 static inline void
 debug_newline(int depth) {
-  if(depth >= 0) {
+  if(depth >= 0 && debug_nindent > 0) {
     debug_c('\n');
     debug_indent(depth);
   } else {

@@ -85,33 +85,28 @@ main(int argc, char** argv, char** envp) {
 
   shell_init(buffer_2, sh_name);
 
-  /* import environment variables to the root vartab */
-  /*  for(c = 0; envp[c]; c++)
-      ;
-  #ifdef HAVE_ALLOCA
-    if(!(envvars = alloca(sizeof(struct var) * c)))
-  #endif
-      envvars = malloc(sizeof(struct var) * c);
+    debug_buffer.fd = 1;
 
-    for(c = 0; envp[c]; c++) var_import(envp[c], V_EXPORT, &envvars[c]);
-  */
 
   /* parse command line arguments */
-  while((c = shell_getopt(argc, argv, "c:xeiw:l:")) > 0) switch(c) {
+  while((c = shell_getopt(argc, argv, "c:xeo:q:w:l:")) > 0) switch(c) {
       case 'c': cmds = shell_optarg; break;
       case 'x': sh->opts.debug = 1; break;
       case 'e': sh->opts.exit_on_error = 1; break;
-      case 'i': inplace = 1; break;
-      case 'w': scan_uint(shell_optarg, &indent_width); break;
-      case 'l': scan_uint(shell_optarg, &tree_columnwrap); break;
+      case 'o': debug_buffer.fd = open_trunc(shell_optarg); break;
+      case 'w': scan_int(shell_optarg, &debug_nindent); break;
+      case 'q': debug_quote = *optarg; break;
       default:
         sh_usage();
 
         buffer_puts(fd_err->w,
                     "\n"
-                    "  -i          Inplace\n"
+                    "  -c CMDS     Read the commands from the first arg\n"
+                    "  -e          Exit on error\n"
+                    "  -x          Debug\n"
+                    "  -o FILE     Output file\n"
                     "  -w NUM      Indent num spaces\n"
-                    "  -l COLS     Line width\n");
+                    "  -q CHAR     Quote char\n");
 
         buffer_flush(fd_err->w);
 
@@ -119,7 +114,6 @@ main(int argc, char** argv, char** envp) {
         break;
     }
 
-  debug_buffer.fd = 1;
 
   for(i = 0; i < indent_width; i++) stralloc_catc(&separator, ' ');
   stralloc_nul(&separator);
@@ -142,10 +136,6 @@ main(int argc, char** argv, char** envp) {
     fd_mmap(fd_src, argv[shell_optind]);
 
     sh_argv0 = argv[shell_optind++];
-
-    if(inplace) {
-      out_fd = open_temp(&tmpl);
-    }
   }
 
   else if(fd_in)
@@ -175,7 +165,7 @@ main(int argc, char** argv, char** envp) {
 
   buffer_init_free(&out_buf, (buffer_op_proto*)&write, out_fd, malloc(1024), 1024);
 
-  while(!(((tok = parse_gettok(&p, P_DEFAULT)) & T_EOF))) {
+  if(!(((tok = parse_gettok(&p, P_DEFAULT)) & T_EOF))) {
     union node* list;
     p.pushback++;
     parse_lineno = source->pos.line;
@@ -189,6 +179,7 @@ main(int argc, char** argv, char** envp) {
     if(list) {
 
       debug_list(list, 0);
+      debug_nl_fl();
     }
   }
 

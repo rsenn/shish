@@ -7,6 +7,8 @@
 #include "../tree.h"
 #include "../fd.h"
 
+int debug_nindent = 2;
+
 /* debugs a tree node!
  * ----------------------------------------------------------------------- */
 const char* debug_nodes[] = {"N_SIMPLECMD",     "N_PIPELINE",     "N_AND",       "N_OR",     "N_NOT",    "N_SUBSHELL",     "N_CMDLIST",
@@ -22,8 +24,8 @@ void
 debug_node(union node* node, int depth) {
   const char* name = debug_nodes[node->id];
 
-  debug_s("{ ");
-  debug_str(" kind", name, depth, '"');
+  debug_c('{');
+  debug_str(" kind", name, depth, debug_quote);
 
   switch(node->id) {
     case N_SIMPLECMD:
@@ -70,7 +72,7 @@ debug_node(union node* node, int depth) {
       break;
 
     case N_FOR:
-      debug_str(", varn", node->nfor.varn, depth, '"');
+      debug_str(", varn", node->nfor.varn, depth, debug_quote);
       debug_sublist(", cmds", node->nfor.cmds, depth);
       debug_sublist(", args", node->nfor.args, depth);
       break;
@@ -108,7 +110,7 @@ debug_node(union node* node, int depth) {
       break;
 
     case N_FUNCTION:
-      debug_str(", name", node->nfunc.name, depth, '"');
+      debug_str(", name", node->nfunc.name, depth, debug_quote);
 
       debug_sublist(", body", node->nfunc.body, depth);
 
@@ -120,7 +122,7 @@ debug_node(union node* node, int depth) {
       //      debug_subst(0, node->narg.flag, -1);
 
       if(node->narg.stra.len > 0)
-        debug_stralloc(", stra", &node->narg.stra, depth, '"');
+        debug_stralloc(", stra", &node->narg.stra, depth, debug_quote);
 
       if(node->narg.list)
         debug_sublist(", list", node->narg.list, depth);
@@ -139,7 +141,7 @@ debug_node(union node* node, int depth) {
     case N_ARGSTR:
 
       debug_ulong(", flag", node->nargstr.flag /*& 0x7*/, depth);
-      debug_stralloc(", stra", &node->nargstr.stra, depth, '"'); // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
+      debug_stralloc(", stra", &node->nargstr.stra, depth, debug_quote); // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
       debug_position(", pos", &node->nargstr.pos, depth);        // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
       break;
 
@@ -161,7 +163,7 @@ debug_node(union node* node, int depth) {
          }*/
 
       debug_ulong(", flag", node->nargparam.flag, depth);
-      debug_str(", name", node->nargparam.name, depth, '"');
+      debug_str(", name", node->nargparam.name, depth, debug_quote);
       debug_subnode(", word", node->nargparam.word, depth);
       debug_ulong(", numb", node->nargparam.numb, depth);
       debug_position(", pos", &node->nargparam.pos, depth);
