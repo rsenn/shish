@@ -1,6 +1,23 @@
 #include "../builtin.h"
 #include "../../lib/shell.h"
+#include "../../lib/str.h"
+#include "../parse.h"
 #include "../var.h"
+#include "../tree.h"
+extern union node* functions;
+
+static inline union node**
+find_function(const char* name) {
+
+  union node** nptr = &functions;
+
+  for(nptr = &functions; *nptr; nptr = tree_next(nptr)) {
+    struct nfunc* fn = &(*nptr)->nfunc;
+    if(!str_diff(fn->name, name))
+      return nptr;
+  }
+  return 0;
+}
 
 /* unset built-in
  *
@@ -29,12 +46,31 @@ builtin_unset(int argc, char* argv[]) {
 
   /* unset each argument */
   for(; *argp; argp++) {
-    if(!var_valid(*argp)) {
-      builtin_errmsg(argv, *argp, "not a valid identifier");
+    if(fun && !parse_isfuncname(*argp)) {
+      builtin_errmsg(argv, *argp, "not a valid function name");
       continue;
     }
 
-    var_unset(*argp);
+    if(var && !var_valid(*argp)) {
+      builtin_errmsg(argv, *argp, "not a valid variable name");
+      continue;
+    }
+
+    if(!var) {
+      union node** nptr;
+      if((nptr = find_function(*argp))) {
+        union node* fn = *nptr;
+        *nptr = fn->next;
+        fn->next = 0;
+        tree_free(fn);
+        continue;
+      }
+    }
+    if(!fun) {
+      if(var_unset(*argp))
+        continue;
+    }
+    builtin_errmsg(argv, *argp, fun ? "no such function" : var ? "no such variable" : "no such variable/function");
   }
 
   return 0;

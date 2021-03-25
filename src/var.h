@@ -79,6 +79,6 @@ size_t var_vlen(const char* v);
 void var_cleanup(struct var* var);
 void var_dump(struct var* var);
 void var_print(struct var* var, int flags);
-void var_unset(char* v);
+int var_unset(char* v);
 
 #endif /* VAR_H */

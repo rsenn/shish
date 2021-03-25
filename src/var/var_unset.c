@@ -3,13 +3,13 @@
 
 /* unset a variable
  * ----------------------------------------------------------------------- */
-void
+int
 var_unset(char* v) {
   struct var* var;
 
   /* find the variable */
   if((var = var_search(v, NULL)) == NULL)
-    return;
+    return 0;
 
   do {
     /*    if(var->child &&
@@ -18,4 +18,5 @@ var_unset(char* v) {
 
     var_cleanup(var);
   } while((var = var->parent));
+  return 1;
 }
