@@ -109,7 +109,7 @@ static inline int
 parse_isfuncname(const char* s) {
   size_t i;
   for(i = 0; s[i]; i++) {
-    if(!parse_isfname(s[i],i))
+    if(!parse_isfname(s[i], i))
       return 0;
   }
   return 1;
