@@ -14,11 +14,11 @@
 #include "../../lib/scan.h"
 
 #include <stdlib.h>
-#include <limits.h>
+#include <stdint.h>
 
 struct range {
-  int offset;
-  int length;
+  int32_t offset;
+  int32_t length;
 };
 
 static inline int
@@ -49,12 +49,12 @@ expand_range(union node* word, struct range* r) {
   if((p = scan_int(sa.s, &r->offset)) > 0 && p < sa.len && sa.s[p] == ':') {
     p++;
     if((q = scan_int(&sa.s[p], &r->length)) == 0)
-      r->length = INT_MAX;
+      r->length = INT32_MAX;
   } else {
-    r->offset = INT_MIN;
+    r->offset = INT32_MIN;
   }
   stralloc_free(&sa);
-  return p > 0 && r->offset != INT_MIN;
+  return p > 0 && r->offset != INT32_MIN;
 }
 
 union node*
@@ -97,9 +97,9 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
             r = limit(&r, 0, sh->arg.c);
           } else {
 
-            if(r.offset == INT_MIN)
+            if(r.offset == INT32_MIN)
              sh_msg("expecting offset\n");
-            else if(r.length == INT_MAX)
+            else if(r.length == INT32_MAX)
               sh_msg("expecting length\n");
             return n;
           }
@@ -334,9 +334,9 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
           n = expand_cat(v + r.offset, r.length, nptr, flags);
         } else {
 
-          if(r.offset == INT_MIN)
+          if(r.offset == INT32_MIN)
             sh_msg("expecting offset\n");
-          else if(r.length == INT_MAX)
+          else if(r.length == INT32_MAX)
             sh_msg("expecting length\n");
         }
       }
