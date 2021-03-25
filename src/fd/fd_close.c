@@ -32,7 +32,7 @@ fd_close(struct fd* fd) {
   /* if the buffers belong to this (fd) we close them
      don't close twice if we also have a writing buf */
   if(fd->rb.fd != fd->wb.fd) {
-#ifdef DEBUG_FD
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
     if(fd->rb.fd != -1 && (fd->mode & FD_READ)) {
       buffer_puts(&debug_buffer, COLOR_YELLOW "fd_close" COLOR_NONE " #");
       buffer_putlong(&debug_buffer, fd->rb.fd);
@@ -42,7 +42,7 @@ fd_close(struct fd* fd) {
     buffer_close(&fd->rb);
   }
 
-#ifdef DEBUG_FD
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
   if(fd->wb.fd != -1 && (fd->mode & FD_WRITE)) {
     buffer_puts(&debug_buffer, COLOR_YELLOW "fd_close" COLOR_NONE " #");
     buffer_putlong(&debug_buffer, fd->wb.fd);

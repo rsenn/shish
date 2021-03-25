@@ -42,7 +42,7 @@ sh_loop(void) {
       int status;
       struct eval e;
 
-#ifdef DEBUG_OUTPUT
+#if defined(SHPARSE2AST)
       debug_list(list, 0);
       debug_nl_fl();
       debug_list(list, -1);

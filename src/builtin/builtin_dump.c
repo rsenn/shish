@@ -37,9 +37,15 @@ builtin_dump(int argc, char* argv[]) {
   switch(what) {
     case VARTAB_ROOT: vartab_dump(varstack, num_args, argp); break;
     case VARTAB_LOCAL: vartab_dump(NULL, num_args, argp); break;
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE)
     case FDTABLE: fdtable_dump(out); break;
+#endif
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK)
     case FDSTACK: fdstack_dump(out); break;
+#endif
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
     case FDLIST: fd_dumplist(out); break;
+#endif
     case MEMORY:
 #ifdef DEBUG_ALLOC
       debug_memory();

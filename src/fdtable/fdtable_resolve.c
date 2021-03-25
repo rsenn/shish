@@ -79,7 +79,7 @@ fdtable_resolve(struct fd* fd, int flags) {
     }
   }
 
-#ifdef DEBUG_FDTABLE_
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE) && !defined(SHFORMAT)
   debug_open();
   buffer_puts(&debug_buffer, COLOR_YELLOW "fdtable_resolve" COLOR_NONE "(");
   fd_dump(fd, &debug_buffer);

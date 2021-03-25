@@ -55,7 +55,7 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
       fdstack_pipe(npipes, pipes);
     }
 
-#ifdef DEBUG_OUTPUT
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE)
     // fdstack_dump(&debug_buffer);
     fdtable_dump(&debug_buffer);
     // fd_dumplist(&debug_buffer);

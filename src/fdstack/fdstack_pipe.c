@@ -37,7 +37,7 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
         fds->parent->r = 0;
         b += FD_BUFSIZE / 2;
 
-#ifdef DEBUG_FDSTACK
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK)
         buffer_puts(&debug_buffer, "fdstack_pipe n=");
         buffer_putulong(&debug_buffer, n);
         buffer_puts(&debug_buffer, " fds=");

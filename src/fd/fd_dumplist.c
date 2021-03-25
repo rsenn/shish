@@ -1,4 +1,5 @@
-#ifdef DEBUG_OUTPUT
+#if defined(DEBUG_OUTPUT) && (defined(DEBUG_FDTABLE) || defined(DEBUG_FDSTACK) || defined(DEBUG_FD))
+
 #include "../../lib/buffer.h"
 #include "../fd.h"
 

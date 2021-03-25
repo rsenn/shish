@@ -312,6 +312,7 @@ if(BUILD_SHFORMAT)
     src/fdstack/*.c
     src/fdtable/*.c
     src/fd/*.c
+    #src/term/term_escape.c
     src/var/*.c
     src/vartab/*.c
     src/varstack/*.c
@@ -323,7 +324,7 @@ if(BUILD_SHFORMAT)
     src/sh/sh_msg.c
     src/sh/sh_usage.c)
 
-  list(FILTER SHFORMAT_SOURCES EXCLUDE REGEX "dump")
+ list(FILTER SHFORMAT_SOURCES EXCLUDE REGEX "dump")
 
   add_executable(shformat ${SHFORMAT_SOURCES} ${LIBSOURCES})
   target_link_libraries(shformat ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})

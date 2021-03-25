@@ -1,9 +1,10 @@
-#ifdef DEBUG_OUTPUT
+#include "../debug.h"
+
+#if defined(DEBUG_OUTPUT) /*&& (defined(DEBUG_FDTABLE) || defined(DEBUG_FDSTACK) || defined(DEBUG_FD))*/
 #include "../../lib/buffer.h"
 #include "../term.h"
 #include "../fd.h"
 #include "../fdstack.h"
-#include "../debug.h"
 #include "../../lib/fmt.h"
 #include "../../lib/str.h"
 

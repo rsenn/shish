@@ -39,7 +39,7 @@ fd_pipe(struct fd* fd) {
     e = p[1];
   }
 
-#ifdef DEBUG_FD
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
   buffer_puts(&debug_buffer, "fd_pipe n=");
   buffer_putlong(&debug_buffer, fd->n);
   buffer_puts(&debug_buffer, " e=");

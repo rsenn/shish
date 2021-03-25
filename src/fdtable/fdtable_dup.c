@@ -56,7 +56,7 @@ retry:
   if(e == -1)
     return FDTABLE_ERROR;
 
-#ifdef DEBUG_FDTABLE
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE)
   buffer_puts(&debug_buffer, COLOR_YELLOW "fdtable_dup" COLOR_NONE " #");
   buffer_putulong(&debug_buffer, o);
   buffer_puts(&debug_buffer, " = ");

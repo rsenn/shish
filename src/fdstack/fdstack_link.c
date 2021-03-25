@@ -7,7 +7,7 @@ void
 fdstack_link(struct fdstack* st, struct fd* fd) {
   struct fd **link, *next;
 
-#ifdef DEBUG_FDSTACK
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK)
   buffer_puts(&debug_buffer, "fdstack_link n=");
   buffer_putlong(&debug_buffer, fd->n);
   buffer_putnlflush(&debug_buffer);

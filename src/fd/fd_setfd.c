@@ -45,7 +45,7 @@ fd_setfd(struct fd* fd, int e) {
       fd_lo = e;
   }
 
-#ifdef DEBUG_FD
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
   if(sh->opts.debug) {
     if(fd->e != -1) {
       buffer_puts(&debug_buffer, COLOR_YELLOW "fd_setfd" COLOR_NONE " #");
