@@ -66,6 +66,7 @@ extern buffer debug_buffer;
 
 union node;
 
+void debug_argv(const char**, buffer*);
 void debug_begin(const char* s, int depth);
 void debug_end(int depth);
 void debug_str(const char* msg, const char* s, int depth, char quote);

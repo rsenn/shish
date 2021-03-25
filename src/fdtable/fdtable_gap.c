@@ -2,11 +2,11 @@
 #include "../fdstack.h"
 #include "../fdtable.h"
 
-/* request a gap below fd_exp, a gap can be created if the fd
+/* request a gap below fd_expected, a gap can be created if the fd
  * is owned by an fd not on top. a gap can also be forced through
  * fd_resolve.
  *
- * fd is assumed to be smaller than 'fd_exp'
+ * fd is assumed to be smaller than 'fd_expected'
  *
  * return 1 if we made a gap
  * ----------------------------------------------------------------------- */

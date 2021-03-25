@@ -133,17 +133,8 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   expand_argv(args, argv);
 
   if(sh->opts.debug) {
-    char** arg;
-    buffer_puts(fd_err->w, "+");
-    for(arg = argv; *arg; arg++) {
-      int quote = !!(*arg)[str_chr(*arg, ' ')];
-      buffer_putspace(fd_err->w);
-      if(quote)
-        buffer_putc(fd_err->w, '\'');
-      buffer_puts(fd_err->w, *arg);
-      if(quote)
-        buffer_putc(fd_err->w, '\'');
-    }
+    buffer_puts(fd_err->w, "+ ");
+    debug_argv(argv, fd_err->w);
     buffer_putnlflush(fd_err->w);
   }
 

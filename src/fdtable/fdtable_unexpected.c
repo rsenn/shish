@@ -23,7 +23,7 @@ fdtable_unexpected(int e, int u, int flags) {
     /* if there is not already a virtual fd
         for this effective fd then add one */
     if(!fd_list[e]) {
-      mode = fdtable_check(fd_exp);
+      mode = fdtable_check(fd_expected);
       fd = fdtable_newfd(e, &fdstack_root, mode);
       fd_setfd(fd, e);
     }

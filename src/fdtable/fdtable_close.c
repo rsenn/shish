@@ -15,8 +15,8 @@ fdtable_close(int e, int flags) {
 
   /* don't waste the chance to resolve the fd above the current
      expected file descriptor, so go into a recursion */
-  while(e < fd_exp && fdtable[fd_exp]) {
-    state = fdtable_resolve(fdtable[fd_exp], flags);
+  while(e < fd_expected && fdtable[fd_expected]) {
+    state = fdtable_resolve(fdtable[fd_expected], flags);
 
     if(state == FDTABLE_ERROR)
       return FDTABLE_ERROR;
@@ -38,8 +38,8 @@ fdtable_close(int e, int flags) {
     close(e);
   }
 
-  if(fd_exp > e)
-    fd_exp = e;
+  if(fd_expected > e)
+    fd_expected = e;
 
   return FDTABLE_DONE;
 }

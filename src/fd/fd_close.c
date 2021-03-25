@@ -11,8 +11,8 @@ fd_close(struct fd* fd) {
 
   if(!(fd->mode & FD_DUP)) {
     /* update lowest fd if we're below */
-    if(fd->e >= 0 && fd->e < fd_exp)
-      fd_exp = fd->e;
+    if(fd->e >= 0 && fd->e < fd_expected)
+      fd_expected = fd->e;
 
     if(fd_list[fd->e] == fd)
       fd_list[fd->e] = 0;

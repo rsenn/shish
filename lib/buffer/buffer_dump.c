@@ -1,6 +1,7 @@
 #include "../windoze.h"
 #include "../buffer.h"
 #include "../fmt.h"
+#include "../stralloc.h"
 
 #if WINDOWS_NATIVE
 #include <io.h>
@@ -28,7 +29,7 @@ buffer_dump(buffer* out, buffer* b) {
 #define GREEN "\033[38;5;34m"
 #define LIGHTGREEN "\033[1;32m"
 #define YELLOW "\033[1;33m"
-#define DARKYELLOW  "\033[38;5;220m"
+#define DARKYELLOW "\033[38;5;220m"
 #define CYAN "\033[1;36m"
 #define MAGENTA "\033[1;35m"
 #define NONE "\033[0m"
@@ -68,7 +69,7 @@ buffer_dump(buffer* out, buffer* b) {
   buffer_put(out, xlong, fmt_long(xlong, b->fd));
   buffer_puts(out, NONE ", op" DARKGRAY "=");
 
-  if(b->op == (void*)&read){
+  if(b->op == (void*)&read) {
     buffer_puts(out, ORANGE "read" NONE);
   } else if(b->op == (void*)&write) {
     buffer_puts(out, ORANGE "write" NONE);
@@ -77,10 +78,10 @@ buffer_dump(buffer* out, buffer* b) {
   } else if(b->op == (void*)&stralloc_write) {
     stralloc* sa = b->cookie;
     buffer_puts(out, ORANGE "sa-wr" NONE " ");
-
+    stralloc_dump(sa, out);
   } else if(b->op == (void*)NULL) {
     buffer_puts(out, ORANGE "0" NONE);
- }  else {
+  } else {
     buffer_putptr(out, (void*)b->op);
   }
   buffer_puts(out, " ]");

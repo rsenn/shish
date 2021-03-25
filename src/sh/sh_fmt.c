@@ -53,7 +53,7 @@ main(int argc, char** argv, char** envp) {
   stralloc_init(&separator);
   stralloc_init(&out_file);
 
-  fd_exp = STDERR_FILENO + 1;
+  fd_expected = STDERR_FILENO + 1;
 
   /* create new fds for every valid file descriptor until stderr */
   for(e = STDIN_FILENO; e <= STDERR_FILENO; e++) {
@@ -68,8 +68,8 @@ main(int argc, char** argv, char** envp) {
 #endif
       fd_setfd(fd, e);
     } else {
-      if(e < fd_exp)
-        fd_exp = e;
+      if(e < fd_expected)
+        fd_expected = e;
     }
   }
 

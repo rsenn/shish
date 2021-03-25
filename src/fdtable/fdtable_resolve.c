@@ -69,7 +69,7 @@ fdtable_resolve(struct fd* fd, int flags) {
     if(fd_ok(state)) {
       /* if this is gonna change the expected fd we do a lazy
          check before */
-      if(fd_exp < state) {
+      if(fd_expected < state) {
         if(fdtable_lazy(-1, flags) == FDTABLE_ERROR)
           return FDTABLE_ERROR;
       }

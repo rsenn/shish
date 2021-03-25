@@ -14,7 +14,7 @@ fdtable_lazy(int e, int flags) {
   struct fd* fd;
   int r;
 
-  while((e != fd_exp) && (fd = fdtable[fd_exp])) {
+  while((e != fd_expected) && (fd = fdtable[fd_expected])) {
     /* try to resolve the current expected efd */
     r = fdtable_resolve(fd, flags);
 
@@ -27,5 +27,5 @@ fdtable_lazy(int e, int flags) {
       break;
   }
 
-  return (e == fd_exp ? FDTABLE_DONE : FDTABLE_PENDING);
+  return (e == fd_expected ? FDTABLE_DONE : FDTABLE_PENDING);
 }

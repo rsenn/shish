@@ -144,10 +144,7 @@ extern struct fd** const fdtable;
 #define fd_err fdtable[STDERR_FILENO]
 
 extern struct fd* fd_list[FD_MAX];
-extern int fd_exp;
-extern int fd_top;
-extern int fd_lo;
-extern int fd_hi;
+extern int fd_expected, fd_top, fd_lo, fd_hi;
 extern struct fd fd_nullfd;
 
 int fd_dup(struct fd* fd, int dfd);

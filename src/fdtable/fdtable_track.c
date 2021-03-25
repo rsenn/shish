@@ -7,10 +7,10 @@
  * ----------------------------------------------------------------------- */
 void
 fdtable_track(int n, int flags) {
-  if(n < fd_exp)
-    fd_exp = n;
-  if(n > fd_exp)
-    fdtable_unexpected(fd_exp, n, flags);
+  if(n < fd_expected)
+    fd_expected = n;
+  if(n > fd_expected)
+    fdtable_unexpected(fd_expected, n, flags);
 
   fdtable_up();
 }

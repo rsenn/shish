@@ -225,9 +225,10 @@ int buffer_putspad(buffer*, const char* x, size_t pad);
 int buffer_puts_escaped(buffer* b, const char* x, size_t (*)());
 
 #ifdef UINT64_H
-int buffer_putlonglong(buffer* b, int64 i);
-int buffer_putxlonglong0(buffer* b, uint64 l, int pad);
-int buffer_putxlonglong(buffer* b, uint64 l);
+int buffer_putlonglong(buffer*, int64);
+int buffer_putulonglong(buffer*, uint64);
+int buffer_putxlonglong0(buffer*, uint64, int pad);
+int buffer_putxlonglong(buffer*, uint64);
 #endif
 
 #ifdef __cplusplus

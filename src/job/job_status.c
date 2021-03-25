@@ -2,6 +2,7 @@
 #include "../fd.h"
 #include "../job.h"
 #include "../../lib/wait.h"
+#include "../../lib/sig.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -12,7 +13,7 @@
 void
 job_status(int pid, int status) {
   if(WAIT_IF_SIGNALED(status)) {
-    const char* signame = sys_siglist[WAIT_TERMSIG(status)];
+    const char* signame = sig_name(WAIT_TERMSIG(status));
 
     if(pid) {
       buffer_put(fd_err->w, "process ", 8);

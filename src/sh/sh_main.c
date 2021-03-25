@@ -35,7 +35,7 @@ main(int argc, char** argv, char** envp) {
   char* cmds = NULL;
   struct var* envvars;
 
-  fd_exp = STDERR_FILENO + 1;
+  fd_expected = STDERR_FILENO + 1;
 
   /* create new fds for every valid file descriptor until stderr */
   for(e = STDIN_FILENO; e <= STDERR_FILENO; e++) {
@@ -49,8 +49,8 @@ main(int argc, char** argv, char** envp) {
 #endif
       fd_setfd(fd, e);
     } else {
-      if(e < fd_exp)
-        fd_exp = e;
+      if(e < fd_expected)
+        fd_expected = e;
     }
   }
 
@@ -141,7 +141,7 @@ main(int argc, char** argv, char** envp) {
 
   sh_init();
 
-  /*  if(fd_exp != fd_top && (flags = fdtable_check(e)))
+  /*  if(fd_expected != fd_top && (flags = fdtable_check(e)))
     {
       fd = fd_allocb();
       fd_push(fd, e, flags);

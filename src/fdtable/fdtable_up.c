@@ -11,16 +11,16 @@ fdtable_up(void) {
   struct fd* fd;
   struct fdstack* st;
 
-  if(fd_exp > fd_top)
-    fd_top = fd_exp;
+  if(fd_top < fd_expected)
+    fd_top = fd_expected;
 
   /* find next lowest */
 again:
-  fd_exp++;
+  fd_expected++;
 
   for(st = fdstack; st; st = st->parent) {
     for(fd = st->list; fd; fd = fd->next) {
-      if(fd->e == fd_exp)
+      if(fd->e == fd_expected)
         goto again;
     }
   }

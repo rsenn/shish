@@ -13,20 +13,19 @@
  * ----------------------------------------------------------------------- */
 int
 fdstack_pipe(unsigned int n, struct fd* fds) {
-  int e;
-  struct fd* fd;
   struct fdstack* st;
+  int ret = 0, depth = 0;
   unsigned char* b;
-  unsigned int ret = 0;
-  int depth = 0;
 
   b = (unsigned char*)(&fds[n]);
 
   for(st = fdstack; st; st = st->parent) {
+    struct fd* fd;
 
     for(fd = st->list; fd; fd = fd->next) {
       /* make pipes for command expansion outputs */
       if((fd->mode & FD_SUBST) == FD_SUBST) {
+        int e;
         /*      fd->mode |= FD_READ;*/
 
         fd_push(fds, fd->n, FD_WRITE | FD_FLUSH);
@@ -34,6 +33,7 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
 
         e = fd_pipe(fds);
         buffer_init(&fds->parent->rb, (buffer_op_proto*)&read, e, NULL, 0);
+        // fds->parent->mode |= FD_PIPE;
         fds->parent->r = 0;
         b += FD_BUFSIZE / 2;
 
@@ -45,6 +45,7 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
         debug_nl_fl();
 #endif
         fds++;
+        ret++;
       }
     }
     depth++;

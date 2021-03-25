@@ -287,6 +287,10 @@ int stralloc_readyplusdebug(const char* file, unsigned int line, stralloc* sa, u
 int stralloc_truncdebug(const char* file, unsigned int line, stralloc* sa, unsigned long int n);
 #endif
 
+#ifdef BUFFER_H
+void stralloc_dump(const stralloc*, buffer*);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
