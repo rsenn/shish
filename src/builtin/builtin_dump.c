@@ -1,15 +1,17 @@
 #include "../debug.h"
 
-#ifdef DEBUG_OUTPUT
+#if defined(DEBUG_OUTPUT)
 #include "../builtin.h"
 #include "../fdstack.h"
 #include "../fdtable.h"
 #include "../fd.h"
+#include "../tree.h"
 #include "../../lib/shell.h"
 #include "../../lib/scan.h"
 #include "../vartab.h"
 
-enum { VARTAB_ROOT, VARTAB_LOCAL, FDTABLE, FDSTACK, FDLIST, MEMORY };
+enum { VARTAB_ROOT, VARTAB_LOCAL, FDTABLE, FDSTACK, FDLIST, MEMORY, FUNCTIONS };
+extern union node* functions;
 
 /* ----------------------------------------------------------------------- */
 int
@@ -18,7 +20,7 @@ builtin_dump(int argc, char* argv[]) {
   char** argp;
   buffer* out;
 
-  while((c = shell_getopt(argc, argv, "vltsfmu:")) > 0) {
+  while((c = shell_getopt(argc, argv, "Fvltsfmu:")) > 0) {
     switch(c) {
       case 'v': what = VARTAB_ROOT; break;
       case 'l': what = VARTAB_LOCAL; break;
@@ -26,6 +28,7 @@ builtin_dump(int argc, char* argv[]) {
       case 's': what = FDSTACK; break;
       case 'f': what = FDLIST; break;
       case 'm': what = MEMORY; break;
+      case 'F': what = FUNCTIONS; break;
       case 'u': scan_int(shell_optarg, &fd); break;
       default: builtin_invopt(argv); return 1;
     }
@@ -51,6 +54,15 @@ builtin_dump(int argc, char* argv[]) {
       debug_memory();
 #endif
       break;
+    case FUNCTIONS: {
+      union node* n;
+      for(n = functions; n; n = n->next) {
+        struct nfunc* fn = &n->nfunc;
+        buffer_puts(out, fn->name);
+        buffer_putnlflush(out);
+      }
+      break;
+    }
   }
   return 0;
 }

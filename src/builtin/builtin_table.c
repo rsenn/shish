@@ -153,7 +153,7 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_DIRNAME
     {"dirname", &builtin_dirname, B_DEFAULT, "path"},
 #endif
-#if BUILTIN_DUMP && defined(DEBUG_OUTPUT)
+#if BUILTIN_DUMP //&& defined(DEBUG_OUTPUT)
     {"dump", &builtin_dump, B_DEFAULT, "[-vltsfm]"},
 #endif
 #if BUILTIN_ECHO

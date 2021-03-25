@@ -293,7 +293,7 @@ again:
         if(tree_count(n) > 1)
           sep = "\n ";
         else
-        sep = 0; //"\n";
+          sep = 0; //"\n";
       }
 
       // tree_catseparator(sa, sep == NULL ? " " : sep, depth  - 1);
