@@ -20,37 +20,36 @@ struct range {
 };
 
 static inline int
-min(int a, int b) {
-  return a < b ? a : b;
-}
-static inline int
-max(int a, int b) {
-  return a > b ? a : b;
-}
-
-static inline int
 clamp(int value, int from, int to) {
   return value < from ? from : value > to ? to : value;
 }
 
-static struct range
-expand_range(union node* word) {
+static inline struct range
+limit(const struct range* r, int from, int to) {
+  struct range ret;
 
-  struct range r;
+  if(r->offset < 0 && (-r->offset) <= to)
+    ret.offset = to + r->offset;
+  else
+    ret.offset = clamp(r->offset, from, to);
+
+  ret.length = clamp(ret.offset + r->length, from, to) - ret.offset;
+  return ret;
+}
+
+static int
+expand_range(union node* word, struct range* r) {
   stralloc sa;
   size_t p, q;
   expand_copysa(word, &sa, 0);
-
   stralloc_nul(&sa);
-
-  p = scan_int(sa.s, &r.offset);
-
+  p = scan_int(sa.s, &r->offset);
   if(p > 0 && p < sa.len && sa.s[p] == ':') {
     p++;
-    q = scan_int(&sa.s[p], &r.length);
+    q = scan_int(&sa.s[p], &r->length);
   }
-
-  return r;
+  stralloc_free(&sa);
+  return p > 0 || q > 0;
 }
 
 union node*
@@ -85,18 +84,16 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
       /* $@ substitution */
       case S_ARGVS: {
-        unsigned int i = 0;
+        unsigned int i, e;
         struct range r = {0, sh->arg.c};
 
         if((param->flag & S_VAR) == S_RANGE) {
-          r = expand_range(param->word);
-
-          r.offset = clamp(r.offset, 0, sh->arg.c);
-          r.length = clamp(r.offset + r.length, 0, sh->arg.c) - r.offset;
+          if(expand_range(param->word, &r))
+            r = limit(&r, 0, sh->arg.c);
         }
 
-        for(i = r.offset; i < r.length;) {
-          param->flag &= ~(S_SPECIAL|S_RANGE);
+        for(i = r.offset, e = r.offset + r.length; i < e;) {
+          param->flag &= ~(S_SPECIAL | S_RANGE);
           param->flag |= S_ARG;
           param->numb = 1 + i;
 
@@ -317,10 +314,9 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       stralloc sa;
 
       if(v && vlen) {
-        struct range r = expand_range(param->word);
-
-        r.offset = clamp(r.offset, 0, vlen);
-        r.length = clamp(r.offset + r.length, 0, vlen) - r.offset;
+        struct range r = {0, vlen};
+        if(expand_range(param->word, &r))
+          r = limit(&r, 0, vlen);
 
         n = expand_cat(v + r.offset, r.length, nptr, flags);
       }
