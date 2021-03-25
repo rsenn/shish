@@ -2,6 +2,7 @@
 #define EXPAND_H
 
 #include "../lib/stralloc.h"
+#include "features.h"
 
 #define IFS_DEFAULT " \t\n"
 
@@ -15,18 +16,18 @@ enum subst_type {
   S_BQUOTE = 4,
 
   /* substitution types */
-  S_SPECIAL = 0x00f8,
-  S_ARGC = 0x08,     /* $# */
-  S_ARGV = 0x10,     /* $* */
-  S_ARGVS = 0x18,    /* $@ */
-  S_EXITCODE = 0x20, /* $? */
-  S_FLAGS = 0x28,    /* $- */
-  S_BGEXCODE = 0x30, /* $! */
-  S_ARG = 0x38,      /* $[0-9] */
-  S_PID = 0x40,      /* $$ */
+  S_SPECIAL = 0xf0,
+  S_ARGC = 0x10,     /* $# */
+  S_ARGV = 0x20,     /* $* */
+  S_ARGVS = 0x30,    /* $@ */
+  S_EXITCODE = 0x40, /* $? */
+  S_FLAGS = 0x50,    /* $- */
+  S_BGEXCODE = 0x60, /* $! */
+  S_ARG = 0x70,      /* $[0-9] */
+  S_PID = 0x80,      /* $$ */
 
   S_VAR = 0x0f00,
-  S_DEFAULT = 0,       /* ${parameter:-word} */
+  S_DEFAULT = 0x0000,  /* ${parameter:-word} */
   S_ASGNDEF = 0x0100,  /* ${parameter:=word} */
   S_ERRNULL = 0x0200,  /* ${parameter:?[word]} */
   S_ALTERNAT = 0x0300, /* ${parameter:+word} */
@@ -34,9 +35,9 @@ enum subst_type {
   S_RLSFX = 0x0500,    /* ${parameter%%word} */
   S_RSPFX = 0x0600,    /* ${parameter#word} */
   S_RLPFX = 0x0700,    /* ${parameter##word} */
-
+#if PARAM_RANGE
   S_RANGE = 0x0800, /* ${parameter:offset:length} */
-
+#endif
   S_STRLEN = 0x1000,
   S_NULL = 0x2000, /* treat set but null as unset (:) */
   S_NOSPLIT = 0x4000,

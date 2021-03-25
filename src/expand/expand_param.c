@@ -1,3 +1,4 @@
+#include "../features.h"
 #include "../expand.h"
 #include "../sh.h"
 #include "../tree.h"
@@ -86,14 +87,14 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       case S_ARGVS: {
         unsigned int i, e;
         struct range r = {0, sh->arg.c};
-
+#if PARAM_RANGE
         if((param->flag & S_VAR) == S_RANGE) {
           if(expand_range(param->word, &r))
             r = limit(&r, 0, sh->arg.c);
         }
-
+#endif
         for(i = r.offset, e = r.offset + r.length; i < e;) {
-          param->flag &= ~(S_SPECIAL | S_RANGE);
+          param->flag &= ~(int)(S_SPECIAL | S_VAR);
           param->flag |= S_ARG;
           param->numb = 1 + i;
 
@@ -309,7 +310,8 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       }
       break;
     }
-      /* character or field range */
+#if PARAM_RANGE
+    /* character or field range */
     case S_RANGE: {
       stralloc sa;
 
@@ -322,6 +324,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       }
       break;
     }
+#endif
   }
 
 fail:

@@ -202,7 +202,7 @@ struct list {
  * ----------------------------------------------------------------------- */
 struct narg {
   enum kind id;
-  int flag;
+  unsigned flag;
   union node* next;
   union {
     stralloc stra;
@@ -217,7 +217,7 @@ struct narg {
 /* [fd]<operator><file> */
 struct nredir {
   enum kind id;
-  int flag;
+  unsigned flag;
   union node* next;
   union node* list; /* can be file, fd, delim, here-doc-data */
   union node* data; /* next here-doc or expansion */
@@ -229,7 +229,7 @@ struct nredir {
  * ----------------------------------------------------------------------- */
 struct nargstr {
   enum kind id;
-  int flag;
+  unsigned flag;
   union node* next;
   union {
     stralloc stra;
@@ -243,7 +243,7 @@ struct nargstr {
 
 struct nargparam {
   enum kind id;
-  int flag;
+  unsigned flag;
   union node* next;
   char* name;
   union node* word;
@@ -253,14 +253,14 @@ struct nargparam {
 
 struct nargcmd {
   enum kind id;
-  int flag;
+  unsigned flag;
   union node* next;
   union node* list;
 };
 
 struct nargarith {
   enum kind id;
-  int flag;
+  unsigned flag;
   union node* next;
   union node* tree;
 };

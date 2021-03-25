@@ -1,4 +1,5 @@
 #include "../expand.h"
+#include "../features.h"
 #include "../../lib/fmt.h"
 #include "../../lib/byte.h"
 #include "../parse.h"
@@ -134,20 +135,16 @@ again:
       else
         stralloc_cats(sa, node->nargparam.name);
 
-      /* if((node->nargparam.flag & S_VAR) == S_RANGE) {
-         stralloc_catc(sa, ':');
-         tree_cat(node->nargparam.word, sa);
-         stralloc_catc(sa, ':');
-         tree_cat(node->nargparam.word->next, sa);
-
-       } else */
       if(node->nargparam.word) {
         static const char* vsubst_types[] = {"-", "=", "?", "+", "%", "%%", "#", "##"};
 
+#if PARAM_RANGE
         if((node->nargparam.flag & S_VAR) == S_RANGE) {
           stralloc_catc(sa, ':');
 
-        } else {
+        } else
+#endif
+        {
           if((node->nargparam.flag & S_NULL))
             stralloc_catc(sa, ':');
 

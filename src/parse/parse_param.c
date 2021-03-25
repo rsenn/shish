@@ -1,3 +1,4 @@
+#include "../features.h"
 #include "../expand.h"
 #include "../parse.h"
 #include "../source.h"
@@ -143,12 +144,14 @@ parse_param(struct parser* p) {
         param->flag |= S_ALTERNAT;
         parse_skip(p);
         break;
+#if PARAM_RANGE
       default:
         if(param->flag & S_NULL) {
           param->flag &= ~S_NULL;
           param->flag |= S_RANGE;
         }
         break;
+#endif
     }
   }
 
