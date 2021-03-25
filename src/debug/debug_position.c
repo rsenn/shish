@@ -2,6 +2,8 @@
 #include "../debug.h"
 #include "../tree.h"
 
+#if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
+
 /* ----------------------------------------------------------------------- */
 void
 debug_position(const char* msg, const struct location* pos, int depth) {
@@ -17,3 +19,4 @@ debug_position(const char* msg, const struct location* pos, int depth) {
   debug_s("}");
   debug_fl();
 }
+#endif

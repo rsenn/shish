@@ -2,7 +2,7 @@
 #include "../debug.h"
 #include "../../lib/buffer.h"
 
-#ifdef DEBUG_OUTPUT
+#if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 #include "../fd.h"
 
 /* output a char

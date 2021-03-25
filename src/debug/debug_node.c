@@ -3,7 +3,7 @@
 #include "../expand.h"
 #include "../../lib/str.h"
 
-#ifdef DEBUG_OUTPUT
+#if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 #include "../tree.h"
 #include "../fd.h"
 

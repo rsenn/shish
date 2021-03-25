@@ -6,14 +6,4 @@
 int
 source_peek(char* c) {
   return source_peekn(c, 0);
-  /*buffer *b;
-  int ret;
-  b = source->b;
-
-  if((ret = b->n - b->p) <= 0)
-    if((ret = buffer_feed(b)) <= 0)
-      return ret;
-  if(c)
-    *c = b->x[b->p];
-  return ret;*/
 }

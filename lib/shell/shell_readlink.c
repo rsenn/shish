@@ -1,29 +1,23 @@
+#include "../windoze.h"
 #include "../shell.h"
 #include "../str.h"
 #include "../stralloc.h"
-#include "../windoze.h"
 
 #include <limits.h>
-
 #if !WINDOWS_NATIVE
 #include <unistd.h>
-#endif
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
+#include <fcntl.h>
 #endif
 
 #define START ((PATH_MAX + 1) >> 7)
-
 /* read the link into a stralloc
- * ----------------------------------------------------------------------- */
+ */
 int
 shell_readlink(const char* path, stralloc* sa) {
-#ifdef HAVE_READLINK
   /* do not allocate PATH_MAX from the beginning,
      most paths will be smaller */
-  size_t sz, n = (START ? START : 32);
-
+  ssize_t n = (START ? START : 32);
+  ssize_t sz;
   do {
     /* reserve some space */
     n <<= 1;
@@ -32,15 +26,11 @@ shell_readlink(const char* path, stralloc* sa) {
     /* repeat until we have reserved enough space */
   } while(sz == n);
 
+  sa->len = sz;
   /* now truncate to effective length */
-  if(sz >= 0) {
-    stralloc_trunc(sa, sz);
-    return 0;
-  }
-
-  return -1;
-#else
-  stralloc_copys(sa, shell_basename((char*)path));
-  return 0;
-#endif
+  /*  if(sz >= 0) {
+      stralloc_trunc(sa, sz);
+      return 0;
+    }*/
+  return sa->len;
 }

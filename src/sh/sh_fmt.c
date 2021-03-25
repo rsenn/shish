@@ -28,7 +28,7 @@ int sh_argc;
 char** sh_argv;
 char* sh_name;
 unsigned int indent_width = 2;
-const char* tmpl = 0;
+char* tmpl = 0;
 int inplace = 0;
 
 const char* in_file = 0;

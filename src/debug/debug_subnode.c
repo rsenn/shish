@@ -1,7 +1,7 @@
 #define DEBUG_NOCOLOR 1
 #include "../debug.h"
 
-#ifdef DEBUG_OUTPUT
+#if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 
 /* print a node which is child to the current
  * ----------------------------------------------------------------------- */

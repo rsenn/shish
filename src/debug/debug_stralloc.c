@@ -2,7 +2,7 @@
 #include "../debug.h"
 #include "../expand.h"
 
-#ifdef DEBUG_OUTPUT
+#if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 #include "../fd.h"
 
 /* output an allocated string

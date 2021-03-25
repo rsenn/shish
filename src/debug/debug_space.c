@@ -1,6 +1,6 @@
 #include "../debug.h"
 
-#ifdef DEBUG_OUTPUT
+#if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 #include "../fd.h"
 
 void

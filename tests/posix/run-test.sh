@@ -1,4 +1,6 @@
- run-test.sh: runs a set of test cases
+#!/bin/sh
+#
+# run-test.sh: runs a set of test cases
 # (C) 2016-2019 magicant
 #
 # This program is free software: you can redistribute it and/or modify

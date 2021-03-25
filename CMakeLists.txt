@@ -165,9 +165,19 @@ file(
   GLOB
   SOURCES
   src/*.h
-  src/debug/debug_argv.c
+     src/debug/debug_begin.c
+  src/debug/debug_end.c
+ src/debug/debug_argv.c
+    src/debug/debug_redir.c
   src/debug/debug_position.c
-  src/eval/*.c
+      src/debug/debug_ulong.c
+      src/debug/debug_node.c
+     src/debug/debug_sublist.c
+    src/debug/debug_subnode.c
+     src/debug/debug_list.c
+    src/debug/debug_str.c
+    src/debug/debug_stralloc.c
+src/eval/*.c
   src/exec/*.c
   src/expand/*.c
   src/expr/*.c
@@ -201,21 +211,12 @@ if(DEBUG_OUTPUT)
   list(
     APPEND
     SOURCES
-    src/debug/debug_begin.c
     src/debug/debug_char.c
-    src/debug/debug_end.c
-    src/debug/debug_error.c
-    src/debug/debug_list.c
-    src/debug/debug_node.c
+      src/debug/debug_error.c
+ #   src/debug/debug_node.c
     src/debug/debug_ptr.c
-    src/debug/debug_redir.c
     src/debug/debug_space.c
-    src/debug/debug_stralloc.c
-    src/debug/debug_str.c
-    src/debug/debug_sublist.c
-    src/debug/debug_subnode.c
     src/debug/debug_subst.c
-    src/debug/debug_ulong.c
     src/debug/debug_unquoted.c)
 endif(DEBUG_OUTPUT)
 
@@ -332,7 +333,7 @@ if(BUILD_SHFORMAT)
 
 endif(BUILD_SHFORMAT)
 
-option(BUILD_SHPARSE2AST "Build shformat program" ON)
+option(BUILD_SHPARSE2AST "Build shformat program" OFF)
 
 if(BUILD_SHPARSE2AST)
   file(

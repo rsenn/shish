@@ -29,7 +29,7 @@ fd_open(struct fd* fd, const char* fname, long mode) {
     fd->fl |= ((mode & (FD_APPEND | FD_READ)) ? O_APPEND : O_TRUNC);
 
     /* exclude or create */
-    fd->fl |= ((mode & (FD_EXCL)) ? O_EXCL : O_CREAT);
+    fd->fl |= /*(mode & (FD_EXCL)) ? O_EXCL :*/ O_CREAT;
   }
 
 #ifdef O_LARGEFILE

@@ -20,7 +20,7 @@ fd_dump(struct fd* fd, buffer* b) {
   buffer_puts(b, COLOR_NONE " ");
 
   /* name */
-  buffer_putspad(b, fd->name, 10);
+  buffer_putspad(b, fd->name ? fd->name : "NULL", 10);
 
   /* level */
   term_escape(b, 42, 'G');
