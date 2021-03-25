@@ -1,4 +1,4 @@
-#include "../term.h"
+#include "../../lib/buffer.h"
 
 /* put an ANSI escape sequence to the terminal
  * ----------------------------------------------------------------------- */
