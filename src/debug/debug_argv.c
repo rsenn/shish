@@ -1,3 +1,4 @@
+#define DEBUG_NOCOLOR 1
 #include "../debug.h"
 #include "../../lib/str.h"
 

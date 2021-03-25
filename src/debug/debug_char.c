@@ -1,3 +1,4 @@
+#define DEBUG_NOCOLOR 1
 #include "../debug.h"
 #include "../../lib/buffer.h"
 
@@ -8,7 +9,7 @@
  * ----------------------------------------------------------------------- */
 void
 debug_char(const char* msg, char c, int depth) {
-  debug_space(depth, 0);
+  // debug_space(depth, 0);
   debug_s(COLOR_YELLOW);
   debug_s(msg);
   debug_s(COLOR_CYAN " = '");

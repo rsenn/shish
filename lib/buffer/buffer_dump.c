@@ -9,6 +9,7 @@
 #include <unistd.h>
 #endif
 
+extern ssize_t buffer_dummyread();
 extern ssize_t buffer_dummyreadmmap();
 extern int stralloc_write(int, const char*, size_t, buffer*);
 
@@ -73,11 +74,13 @@ buffer_dump(buffer* out, buffer* b) {
     buffer_puts(out, ORANGE "read" NONE);
   } else if(b->op == (void*)&write) {
     buffer_puts(out, ORANGE "write" NONE);
+  } else if(b->op == (void*)&buffer_dummyread) {
+    buffer_puts(out, ORANGE "buffer_dummyread" NONE);
   } else if(b->op == (void*)&buffer_dummyreadmmap) {
-    buffer_puts(out, ORANGE "mmap" NONE);
+    buffer_puts(out, ORANGE "buffer_dummyreadmmap" NONE);
   } else if(b->op == (void*)&stralloc_write) {
     stralloc* sa = b->cookie;
-    buffer_puts(out, ORANGE "sa-wr" NONE " ");
+    buffer_puts(out, ORANGE "stralloc_write" NONE " ");
     stralloc_dump(sa, out);
   } else if(b->op == (void*)NULL) {
     buffer_puts(out, ORANGE "0" NONE);

@@ -20,7 +20,7 @@ extern buffer debug_buffer;
 #define COLOR_DEBUG 0
 #endif
 
-#if COLOR_DEBUG
+#if COLOR_DEBUG && !DEBUG_NOCOLOR
 #define COLOR_CYAN "\033[36;1m"
 #define COLOR_PURPLE "\033[38;5;89m"
 #define COLOR_VIOLET "\033[38;5;55m"
@@ -56,22 +56,24 @@ extern buffer debug_buffer;
 #define CURSOR_FORWARD(n) "\x1b[" #n "C"
 #define CURSOR_HORIZONTAL_ABSOLUTE(n) "\x1b[" #n "G"
 
-#define DEBUG_EQU " "
+#define DEBUG_EQU ": "
 #define DEBUG_SEP ","
-#define DEBUG_BEGIN " ["
-#define DEBUG_END "] "
+#define DEBUG_BEGIN "["
+#define DEBUG_END "]"
 #define DEBUG_SPACE 2
+
+void debug_argv(char**, buffer*);
 
 #ifdef DEBUG_OUTPUT
 
 union node;
+struct position;
 
-void debug_argv(char**, buffer*);
 void debug_begin(const char* s, int depth);
 void debug_end(int depth);
 void debug_str(const char* msg, const char* s, int depth, char quote);
 void debug_stralloc(const char* msg, stralloc* s, int depth, char quote);
-void debug_ulong(const char* msg, unsigned long i, int depth);
+void debug_ulong(const char* msg, uint64 i, int depth);
 void debug_ptr(const char* msg, void* ptr, int depth);
 void debug_char(const char* msg, char c, int depth);
 void debug_sublist(const char* s, union node* node, int depth);
@@ -82,7 +84,7 @@ void debug_space(int count, int newline);
 void debug_node(union node* node, int depth);
 void debug_redir(const char* msg, int flags, int depth);
 void debug_subst(const char* msg, int flags, int depth);
-
+void debug_position(const char* msg, const struct position* pos, int depth);
 #define debug_s(str) buffer_puts(&debug_buffer, str)
 #define debug_n(num) buffer_putlonglong(&debug_buffer, num)
 #define debug_c(chr) buffer_putc(&debug_buffer, chr)
@@ -162,6 +164,43 @@ static inline void
 debug_open() {
   if(debug_buffer.fd == -1)
     debug_buffer.fd = open_trunc("debug.log");
+}
+
+static inline void
+debug_indent(int depth) {
+  while(depth-- > 0) debug_s("  ");
+}
+
+static inline void
+debug_newline(int depth) {
+  if(depth >= 0) {
+    debug_c('\n');
+    debug_indent(depth);
+  } else {
+    debug_c(' ');
+  }
+}
+
+static inline void
+debug_field(const char* s, int depth) {
+  if(s[str_chr(", ", *s)]) {
+    if(*s == ',')
+      debug_c(',');
+
+    if(depth >= 0)
+      debug_newline(depth);
+    else
+      debug_c(' ');
+
+    if(*s == ',')
+      s++;
+    if(*s == ' ')
+      s++;
+  }
+  debug_c('"');
+  debug_s(s);
+  debug_c('"');
+  debug_s(COLOR_CYAN ": ");
 }
 
 #endif /* DEBUG_H */

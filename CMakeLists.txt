@@ -166,6 +166,7 @@ file(
   SOURCES
   src/*.h
   src/debug/debug_argv.c
+  src/debug/debug_position.c
   src/eval/*.c
   src/exec/*.c
   src/expand/*.c

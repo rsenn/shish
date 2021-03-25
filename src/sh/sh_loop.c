@@ -42,16 +42,20 @@ sh_loop(void) {
       int status;
       struct eval e;
 
+#ifdef DEBUG_OUTPUT
       debug_list(list, 0);
       debug_nl_fl();
+      debug_list(list, -1);
+      debug_nl_fl();
+#endif
 
       tree_catlist(list, &cmd, NULL);
 
-  /*    if(sh->opts.debug) {
-        buffer_puts(fd_err->w, "+ ");
-        buffer_putsa(fd_err->w, &cmd);
-        buffer_putnlflush(fd_err->w);
-      }*/
+      /*    if(sh->opts.debug) {
+            buffer_puts(fd_err->w, "+ ");
+            buffer_putsa(fd_err->w, &cmd);
+            buffer_putnlflush(fd_err->w);
+          }*/
 
       if(source->mode & SOURCE_IACTIVE) {
         /*buffer* in = source->b;

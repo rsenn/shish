@@ -1,3 +1,4 @@
+#define DEBUG_NOCOLOR 1
 #include "../debug.h"
 
 #ifdef DEBUG_OUTPUT
@@ -9,10 +10,8 @@ void
 debug_str(const char* msg, const char* s, int depth, char quote) {
 
   debug_s(quote ? COLOR_CYAN : COLOR_YELLOW);
-  if(msg) {
-    debug_s(msg);
-    debug_s(COLOR_CYAN "=");
-  }
+  if(msg)
+    debug_field(msg, depth);
   if(quote)
     debug_c(quote);
 

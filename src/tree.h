@@ -271,12 +271,6 @@ struct narithnum {
   int64 num;
 };
 
-struct narithvar {
-  enum kind id;
-  union node* next;
-  const char* var;
-};
-
 struct narithunary {
   enum kind id;
   union node* next;
@@ -315,7 +309,6 @@ union node {
   struct nargarith nargarith;
   struct nargparam nargparam;
   struct narithnum narithnum;
-  struct narithvar narithvar;
   struct narithunary narithunary;
   struct narithbinary narithbinary;
 };

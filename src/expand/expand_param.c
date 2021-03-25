@@ -45,7 +45,7 @@ expand_range(union node* word, struct range* r) {
   size_t p, q;
   expand_copysa(word, &sa, 0);
   stralloc_nul(&sa);
-  
+
   if((p = scan_int(sa.s, &r->offset)) > 0 && p < sa.len && sa.s[p] == ':') {
     p++;
     if((q = scan_int(&sa.s[p], &r->length)) == 0)
@@ -98,7 +98,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
           } else {
 
             if(r.offset == INT32_MIN)
-             sh_msg("expecting offset\n");
+              sh_msg("expecting offset\n");
             else if(r.length == INT32_MAX)
               sh_msg("expecting length\n");
             return n;

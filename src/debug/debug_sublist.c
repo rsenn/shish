@@ -1,3 +1,4 @@
+#define DEBUG_NOCOLOR 1
 #include "../debug.h"
 #include "../../lib/str.h"
 
@@ -9,21 +10,10 @@
  * ----------------------------------------------------------------------- */
 void
 debug_sublist(const char* s, union node* node, int depth) {
-
   if(node) {
-    if(s) {
-      debug_s(COLOR_YELLOW);
-      debug_s(s);
-      debug_s(COLOR_CYAN " = " COLOR_NONE);
-      /*
-            if(!str_diffn(s, "cmd", 3)) {
-              debug_s(COLOR_CYAN "[" COLOR_NONE);
-            }*/
-    }
-    debug_list(node, depth < 0 ? depth : depth + 1);
-
-  } else {
-    debug_unquoted(s, COLOR_CYAN DEBUG_BEGIN DEBUG_END, depth);
+    if(s)
+      debug_field(s, depth);
+    debug_list(node, depth);
   }
   debug_fl();
 }

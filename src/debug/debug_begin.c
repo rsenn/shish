@@ -1,3 +1,4 @@
+#define DEBUG_NOCOLOR 1
 #include "../debug.h"
 
 #ifdef DEBUG_OUTPUT
@@ -14,10 +15,13 @@ debug_begin(const char* s, int depth) {
 
   debug_open();
 
-  debug_space(depth - 1, 0);
-  debug_space(depth, 0);
-  debug_s(COLOR_YELLOW);
-  debug_s(s);
-  debug_s(COLOR_CYAN DEBUG_EQU DEBUG_BEGIN COLOR_NONE);
+  if(s)
+    debug_field(s, depth);
+
+  // debug_space(depth - 1, 0);
+  // debug_space(depth, 0);
+
+  debug_s(COLOR_CYAN DEBUG_BEGIN COLOR_NONE);
+  debug_newline(depth);
 }
 #endif /* DEBUG_OUTPUT */

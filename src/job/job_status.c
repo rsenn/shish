@@ -21,8 +21,8 @@ job_status(int pid, int status) {
       buffer_put(fd_err->w, " signaled: ", 11);
     }
 
-    buffer_putc(fd_err->w, signame[0] + 0x20);
-    buffer_puts(fd_err->w, &signame[1]);
+    //    buffer_putc(fd_err->w, signame[0] + 0x20);
+    buffer_puts(fd_err->w, signame);
 
 #ifdef WCOREDUMP
     if(WCOREDUMP(status)) {
@@ -33,6 +33,6 @@ job_status(int pid, int status) {
 
     buffer_putnlflush(fd_err->w);
 
-    exit(666);
+    // exit(666);
   }
 }

@@ -1,7 +1,7 @@
 #include "../buffer.h"
 
-static ssize_t
-dummyreadwrite(fd_t fd, void* buf, size_t len, void* arg) {
+ssize_t
+buffer_dummyread(fd_t fd, void* buf, size_t len, void* arg) {
   (void)fd;
   (void)buf;
   (void)len;
@@ -15,6 +15,6 @@ buffer_frombuf(buffer* b, const char* x, size_t l) {
   b->n = l;
   b->a = l;
   b->fd = 0;
-  b->op = &dummyreadwrite;
+  b->op = &buffer_dummyread;
   b->deinit = 0;
 }
