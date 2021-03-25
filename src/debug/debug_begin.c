@@ -12,15 +12,12 @@ buffer debug_buffer = BUFFER_INIT(&write, -1, debug_b, sizeof(debug_b));
  * ----------------------------------------------------------------------- */
 void
 debug_begin(const char* s, int depth) {
-
   debug_open();
-
   if(s)
     debug_field(s, depth);
-
-  // debug_space(depth - 1, 0);
-  // debug_space(depth, 0);
-
+  /* else
+       debug_indent(depth);
+ */
   debug_s(COLOR_CYAN DEBUG_BEGIN COLOR_NONE);
   debug_newline(depth);
 }

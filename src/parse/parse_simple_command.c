@@ -4,6 +4,7 @@
 #include "../sh.h"
 #include "../debug.h"
 #include "../source.h"
+#include <assert.h>
 
 /* 3.9.1 - parse a simple command
  * ----------------------------------------------------------------------- */
@@ -38,40 +39,48 @@ parse_simple_command(struct parser* p) {
         /* first argument */
         if(!(p->flags & P_NOASSIGN)) {
           stralloc sa;
-          struct nargstr* argstr = &(*aptr)->narg.list->nargstr;
+          struct narg* arg;
+          struct nargstr* argstr;
           struct alias* a;
 
-          stralloc_init(&sa);
-          stralloc_copy(&sa, &argstr->stra);
+          arg = &(*aptr)->narg;
 
-          if((a = parse_findalias(p, sa.s, sa.len))) {
-            size_t codelen;
-            struct source src;
-            struct fd fd;
-            struct parser aliasp;
-            union node* node;
-            char* code;
+          //          assert(arg->list->id == N_ARGSTR);
+          if(arg->list->id == N_ARGSTR) {
 
-            code = alias_code(a, &codelen);
-            source_buffer(&src, &fd, code, codelen);
-            parse_init(&aliasp, P_ALIAS);
-            aliasp.alias = a;
+            argstr = &arg->list->nargstr;
 
-            if((node = parse_simple_command(&aliasp))) {
-              // debug_node(node, 0);
+            stralloc_init(&sa);
+            stralloc_copy(&sa, &argstr->stra);
 
-              tree_remove(aptr);
+            if((a = parse_findalias(p, sa.s, sa.len))) {
+              size_t codelen;
+              struct source src;
+              struct fd fd;
+              struct parser aliasp;
+              union node* node;
+              char* code;
 
-              vptr = tree_append(vptr, node->ncmd.vars);
-              rptr = tree_append(rptr, node->ncmd.rdir);
-              aptr = tree_append(aptr, node->ncmd.args);
-              shell_free(node);
+              code = alias_code(a, &codelen);
+              source_buffer(&src, &fd, code, codelen);
+              parse_init(&aliasp, P_ALIAS);
+              aliasp.alias = a;
+
+              if((node = parse_simple_command(&aliasp))) {
+                // debug_node(node, 0);
+
+                tree_remove(aptr);
+
+                vptr = tree_append(vptr, node->ncmd.vars);
+                rptr = tree_append(rptr, node->ncmd.rdir);
+                aptr = tree_append(aptr, node->ncmd.args);
+                shell_free(node);
+              }
+
+              source_popfd(&fd);
             }
-
-            source_popfd(&fd);
           }
         }
-
         if(*aptr)
           tree_skip(aptr);
 

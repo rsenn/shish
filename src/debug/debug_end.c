@@ -9,7 +9,6 @@
 void
 debug_end(int depth) {
   debug_newline(depth);
-
   debug_s(COLOR_CYAN DEBUG_END COLOR_NONE);
   debug_fl();
 }

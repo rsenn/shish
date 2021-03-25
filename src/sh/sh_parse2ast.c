@@ -162,37 +162,43 @@ main(int argc, char** argv, char** envp) {
   parse_init(&p, P_DEFAULT);
 
   buffer_init_free(&out_buf, (buffer_op_proto*)&write, out_fd, malloc(1024), 1024);
-  /*{
-        union node* compound_list;
+  {
+    int n;
+    /*    union node* compound_list;
   compound_list =tree_newnode(N_CMDLIST);
   */
-  for(;;) {
-    union node* list;
+    debug_begin(0, 0);
+    for(n = 0;; n++) {
+      union node* list;
 
-    p.pushback = 0;
-    tok = parse_gettok(&p, P_DEFAULT);
+      p.pushback = 0;
+      tok = parse_gettok(&p, P_DEFAULT);
 
-    if(tok & T_EOF)
-      break;
+      if(tok & T_EOF)
+        break;
 
-    p.pushback++;
-    parse_lineno = source->pos.line;
+      p.pushback++;
+      parse_lineno = source->pos.line;
 
-    //   var_setvint("LINENO", parse_lineno, V_DEFAULT);
+      /* launch the parser to get a complete command */
+      list = parse_compound_list(&p, T_EOF);
+      stralloc_zero(&cmd);
 
-    /* launch the parser to get a complete command */
-    list = parse_compound_list(&p, T_EOF);
-    stralloc_zero(&cmd);
-
-    if(list) {
-      if(list->next)
-        debug_list(list, 0);
-      else
-        debug_node(list, 0);
-      debug_nl_fl();
+      if(list) {
+        if(n) {
+          debug_c(',');
+          debug_newline(1);
+        } else
+          debug_indent(1);
+        if(list->next)
+          debug_list(list, 1);
+        else
+          debug_node(list, 1);
+        debug_fl();
+      }
     }
+    debug_end(0);
   }
-
   sh_exit(0);
 
   return 0;

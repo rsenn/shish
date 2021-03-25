@@ -5,11 +5,12 @@
 
 void
 stralloc_dump(const stralloc* sa, buffer* b) {
-  size_t i, len;
-  char buf[16] = {'\\'};
+  size_t len = 0;
   buffer_puts(b, "{ s=");
   buffer_putptr(b, sa->s);
   if(sa->s) {
+    char buf[16] = {'\\'};
+    size_t i;
     buffer_puts(b, " \"");
     len = sa->len < 100 ? sa->len : 100;
     for(i = 0; i < len; i++) {

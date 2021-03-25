@@ -24,6 +24,7 @@ void
 debug_node(union node* node, int depth) {
   const char* name = debug_nodes[node->id];
 
+  // debug_indent(depth);
   debug_c('{');
   debug_str(" kind", name, depth, debug_quote);
 

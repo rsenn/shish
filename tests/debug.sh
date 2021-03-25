@@ -1,4 +1,3 @@
-
 set -x
 
 ls -la >/dev/null

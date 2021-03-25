@@ -8,7 +8,6 @@
  * ----------------------------------------------------------------------- */
 void
 debug_unquoted(const char* msg, const char* s, int depth) {
-
   if(msg) {
     debug_s(COLOR_YELLOW);
     debug_s(msg);

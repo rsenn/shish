@@ -1,5 +1,3 @@
-
-
 test_fn1() {
   local LXXXXXX LYYYYYY='b'
   
@@ -18,4 +16,3 @@ echo LYYYYYY=${LV2-unset}
 echo GWWWWWW=${GWWWWWW-unset}
 
 dump -v LXXXXXX LYYYYYY GWWWWWW
-

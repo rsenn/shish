@@ -9,7 +9,6 @@
  * ----------------------------------------------------------------------- */
 void
 debug_char(const char* msg, char c, int depth) {
-  // debug_space(depth, 0);
   debug_s(COLOR_YELLOW);
   debug_s(msg);
   debug_s(COLOR_CYAN " = '");
@@ -22,8 +21,6 @@ debug_char(const char* msg, char c, int depth) {
   else if(c == '\t')
     debug_b("\\t", 2);
   else {
-    /*  debug_s("\\0");
-      buffer_put8long(&debug_buffer, c);*/
     debug_s("\\x");
     buffer_putxlong0(&debug_buffer, c, 2);
   }
