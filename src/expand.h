@@ -7,13 +7,12 @@
 #define IFS_DEFAULT " \t\n"
 
 enum subst_type {
-  S_TABLE = 0x0003,
-  S_UNQUOTED = 0,
-  S_DQUOTED = 1,
-  S_SQUOTED = 2,
-  S_EXPR = 3,
-
-  S_BQUOTE = 4,
+  S_TABLE = 0x0f,
+  S_UNQUOTED = 0x00,
+  S_DQUOTED = 0x01,
+  S_SQUOTED = 0x02,
+  S_EXPR = 0x03,
+  S_BQUOTE = 0x04,
 
   /* substitution types */
   S_SPECIAL = 0xf0,
@@ -35,9 +34,10 @@ enum subst_type {
   S_RLSFX = 0x0500,    /* ${parameter%%word} */
   S_RSPFX = 0x0600,    /* ${parameter#word} */
   S_RLPFX = 0x0700,    /* ${parameter##word} */
-#if PARAM_RANGE
+#if WITH_PARAM_RANGE
   S_RANGE = 0x0800, /* ${parameter:offset:length} */
 #endif
+
   S_STRLEN = 0x1000,
   S_NULL = 0x2000, /* treat set but null as unset (:) */
   S_NOSPLIT = 0x4000,

@@ -47,11 +47,11 @@ sh_loop(void) {
 
       tree_catlist(list, &cmd, NULL);
 
-      if(sh->opts.debug) {
+  /*    if(sh->opts.debug) {
         buffer_puts(fd_err->w, "+ ");
         buffer_putsa(fd_err->w, &cmd);
         buffer_putnlflush(fd_err->w);
-      }
+      }*/
 
       if(source->mode & SOURCE_IACTIVE) {
         /*buffer* in = source->b;

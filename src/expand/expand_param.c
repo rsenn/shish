@@ -14,6 +14,7 @@
 #include "../../lib/scan.h"
 
 #include <stdlib.h>
+#include <limits.h>
 
 struct range {
   int offset;
@@ -44,13 +45,16 @@ expand_range(union node* word, struct range* r) {
   size_t p, q;
   expand_copysa(word, &sa, 0);
   stralloc_nul(&sa);
-  p = scan_int(sa.s, &r->offset);
-  if(p > 0 && p < sa.len && sa.s[p] == ':') {
+  
+  if((p = scan_int(sa.s, &r->offset)) > 0 && p < sa.len && sa.s[p] == ':') {
     p++;
-    q = scan_int(&sa.s[p], &r->length);
+    if((q = scan_int(&sa.s[p], &r->length)) == 0)
+      r->length = INT_MAX;
+  } else {
+    r->offset = INT_MIN;
   }
   stralloc_free(&sa);
-  return p > 0 || q > 0;
+  return p > 0 && r->offset != INT_MIN;
 }
 
 union node*
@@ -87,10 +91,18 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       case S_ARGVS: {
         unsigned int i, e;
         struct range r = {0, sh->arg.c};
-#if PARAM_RANGE
+#if WITH_PARAM_RANGE
         if((param->flag & S_VAR) == S_RANGE) {
-          if(expand_range(param->word, &r))
+          if(expand_range(param->word, &r)) {
             r = limit(&r, 0, sh->arg.c);
+          } else {
+
+            if(r.offset == INT_MIN)
+             sh_msg("expecting offset\n");
+            else if(r.length == INT_MAX)
+              sh_msg("expecting length\n");
+            return n;
+          }
         }
 #endif
         for(i = r.offset, e = r.offset + r.length; i < e;) {
@@ -291,7 +303,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       break;
     }
 
-      /* remove largest matching prefix */
+    /* remove largest matching prefix */
     case S_RLPFX: {
       unsigned int i;
       stralloc sa;
@@ -310,17 +322,23 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       }
       break;
     }
-#if PARAM_RANGE
+
+#if WITH_PARAM_RANGE
     /* character or field range */
     case S_RANGE: {
-      stralloc sa;
-
       if(v && vlen) {
         struct range r = {0, vlen};
-        if(expand_range(param->word, &r))
+        if(expand_range(param->word, &r)) {
           r = limit(&r, 0, vlen);
 
-        n = expand_cat(v + r.offset, r.length, nptr, flags);
+          n = expand_cat(v + r.offset, r.length, nptr, flags);
+        } else {
+
+          if(r.offset == INT_MIN)
+            sh_msg("expecting offset\n");
+          else if(r.length == INT_MAX)
+            sh_msg("expecting length\n");
+        }
       }
       break;
     }

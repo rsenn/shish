@@ -138,7 +138,7 @@ again:
       if(node->nargparam.word) {
         static const char* vsubst_types[] = {"-", "=", "?", "+", "%", "%%", "#", "##"};
 
-#if PARAM_RANGE
+#if WITH_PARAM_RANGE
         if((node->nargparam.flag & S_VAR) == S_RANGE) {
           stralloc_catc(sa, ':');
 
