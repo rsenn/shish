@@ -46,7 +46,7 @@ if("${CMAKE_BUILD_TYPE}" MATCHES ".*Deb.*")
 endif("${CMAKE_BUILD_TYPE}" MATCHES ".*Deb.*")
 
 if(BUILD_DEBUG)
-  add_definitions(-DDEBUG=1)
+  add_definitions(-D_DEBUG=1)
   set(ENABLE_DUMP
       TRUE
       CACHE BOOL "Enable `dump' builtin" FORCE)
@@ -108,7 +108,7 @@ add_definitions(${SOURCE_DEFINITIONS})
 add_definitions(-D_FILE_OFFSET_BITS=64)
 
 if(BUILD_DEBUG)
-  add_definitions(-DDEBUG=1)
+  add_definitions(-D_DEBUG)
 endif(BUILD_DEBUG)
 
 include_directories("${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}")

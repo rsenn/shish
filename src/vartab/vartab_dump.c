@@ -31,10 +31,10 @@ vartab_dump(struct vartab* vartab, int argc, char* argv[]) {
 
   if(vartab) {
     for(; vartab; vartab = vartab->parent) {
-      buffer_puts(fd_out->w, "─── level ");
+      buffer_puts(fd_out->w, "--- level ");
       buffer_putulong(fd_out->w, vartab->level);
       buffer_putc(fd_out->w, ' ');
-      buffer_putns(fd_out->w, "─" /*"―"*/, 99 + sizeof(var) * 2);
+      buffer_putns(fd_out->w, "-" /*"―"*/, 99 + sizeof(var) * 2);
       buffer_putnlflush(fd_out->w);
 
       for(i = 0; i < (unsigned int)VARTAB_BUCKETS; i++) {

@@ -17,14 +17,17 @@ void
 buffer_dump(buffer* out, buffer* b) {
   char xlong[FMT_LONG + FMT_LONG + FMT_LONG];
   unsigned long n;
-#define COLOR_DUMP
-#ifndef COLOR_DUMP
+
+#ifndef DEBUG_COLOR
 #define RED ""
 #define GREEN ""
 #define YELLOW ""
+#define DARKYELLOW ""
 #define CYAN ""
 #define MAGENTA ""
 #define NONE ""
+#define ORANGE ""
+#define DARKGRAY ""
 #else
 #define RED "\033[1;31m"
 #define GREEN "\033[38;5;34m"
