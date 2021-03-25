@@ -7,6 +7,7 @@
 
 #if !WINDOWS_NATIVE
 #include <fcntl.h>
+#include <unistd.h>
 #endif
 
 /* check for the presence of an effective file descriptor
@@ -27,16 +28,20 @@ fdtable_check(int e) {
 #endif
 
   /* map posix file access modes to (fd) flags */
-  if(pflags & (O_RDWR | O_WRONLY))
-    iflags |= FD_WRITE;
-  if((pflags & O_WRONLY) == 0)
-    iflags |= FD_READ;
+  switch(pflags & O_ACCMODE) {
+    case O_RDONLY: iflags |= FD_READ; break;
+    case O_WRONLY: iflags |= FD_WRITE; break;
+    case O_RDWR: iflags |= FD_READ|FD_WRITE; break;
+  }
+
+  if(!isatty(e)) {
   if(pflags & O_APPEND)
     iflags |= FD_APPEND;
   if(pflags & O_TRUNC)
     iflags |= FD_TRUNC;
   if(pflags & O_EXCL)
     iflags |= FD_EXCL;
+}
 
   return iflags;
 }
