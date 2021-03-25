@@ -10,7 +10,7 @@ term_left(unsigned long n) {
     n = term_pos;
 
   if(n > 4 && !term_dumb) {
-    term_escape(n, 'D');
+    term_escape(term_output, n, 'D');
   } else {
     unsigned long i;
     char c = '\b';

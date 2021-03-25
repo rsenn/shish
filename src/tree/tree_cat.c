@@ -108,9 +108,9 @@ again:
 
       /* if we have a word substitution inside the var we MUST
         put it inside braces */
-      if(node->nargparam.word || (node->nargparam.flag & S_STRLEN)) {
+      if(node->nargparam.word || (node->nargparam.flag & S_STRLEN))
         braces = 1;
-      }
+
       /* use braces if the next char after the variable name
         is a valid name char */
       else if(node->next && node->next->id == N_ARGSTR) {

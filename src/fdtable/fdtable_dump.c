@@ -22,6 +22,6 @@ fdtable_dump(buffer* b) {
       buffer_putnlflush(b);
     }
   }
-  buffer_flush(b);
+  buffer_putnlflush(b);
 }
 #endif /* DEBUG_OUTPUT */

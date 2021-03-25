@@ -4,7 +4,7 @@
 #include "../lib/buffer.h"
 #include "../lib/stralloc.h"
 
-#include "fd.h"
+struct fd;
 
 extern stralloc term_cmdline;
 extern buffer term_input;
@@ -33,7 +33,7 @@ void term_left(unsigned long n);
 void term_right(unsigned long n);
 void term_newline(void);
 void term_ansi(void);
-void term_escape(unsigned long n, char type);
+void term_escape(buffer*, unsigned long n, char type);
 
 void term_setline(const char* s, unsigned long len);
 char* term_getline(void);

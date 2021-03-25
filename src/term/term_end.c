@@ -7,7 +7,7 @@ term_end(void) {
     return;
 
   if(term_cmdline.len - term_pos > 4 && !term_dumb)
-    term_escape(term_cmdline.len - term_pos, 'C');
+    term_escape(term_output, term_cmdline.len - term_pos, 'C');
   else
     buffer_put(term_output, &term_cmdline.s[term_pos], term_cmdline.len - term_pos);
 

@@ -34,7 +34,6 @@ enum kind {
   N_ARGSTR,
   N_ARGCMD,
   N_ARGPARAM,
-  N_ARGRANGE,
   N_ARGARITH,
 
   A_NUM,

@@ -1,5 +1,6 @@
 #ifdef DEBUG_OUTPUT
 #include "../../lib/buffer.h"
+#include "../term.h"
 #include "../fd.h"
 #include "../fdstack.h"
 #include "../debug.h"
@@ -10,8 +11,6 @@
  * ----------------------------------------------------------------------- */
 void
 fd_dump(struct fd* fd, buffer* b) {
-  ssize_t pos, len;
-
   if(fd->name == NULL)
     fd_getname(fd);
 
@@ -21,9 +20,11 @@ fd_dump(struct fd* fd, buffer* b) {
   buffer_puts(b, COLOR_NONE " ");
 
   /* name */
-  buffer_putspad(b, fd->name, 36);
+  buffer_putspad(b, fd->name, 10);
 
   /* level */
+  term_escape(b, 42, 'G');
+
   buffer_putulong0(b, fd->stack->level, 2);
   buffer_putnspace(b, 2);
 
@@ -37,7 +38,7 @@ fd_dump(struct fd* fd, buffer* b) {
                                    0,      0,       "FLUSH",  "CLOSE", "FREENAME", "DUPNAME", "FREE", 0,      "TMPBUF", "OPEN"},
              32);
 
-  buffer_putspace(b);
+  term_escape(b, 84, 'G');
 
   /* buffers */
   if(fd->r && (fd->mode & FD_READ)) {

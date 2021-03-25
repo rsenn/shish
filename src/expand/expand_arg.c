@@ -41,9 +41,6 @@ expand_arg(union node* node, union node** nptr, int flags) {
         n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, nptr, lflags);
         break;
 
-        /* argument range */
-      case N_ARGRANGE: break;
-
       default: break;
     }
 

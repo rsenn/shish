@@ -1,4 +1,5 @@
 #include "../fdtable.h"
+#include "../fd.h"
 #include "../term.h"
 #include <signal.h>
 #include "../../lib/windoze.h"
