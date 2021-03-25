@@ -32,16 +32,16 @@
 #define HAVE_LSTAT 1
 #endif
 
+#include <limits.h>
+#include <errno.h>
+#include <fcntl.h>
+
 #ifndef PATH_MAX
 #if WINDOWS_NATIVE
 #include <windows.h>
 #endif
 #define PATH_MAX MAX_PATH
 #endif
-
-#include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
 
 #ifndef HAVE_LSTAT
 #define lstat stat

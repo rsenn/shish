@@ -41,7 +41,8 @@ parse_grouping(struct parser* p, int tempflags) {
     return NULL;
 
   if(grouping) {
-#if DEBUG_PARSE
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHFORMAT)
+
     debug_node(grouping, -2);
     buffer_putnlflush(fd_err->w);
 #endif
