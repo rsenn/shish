@@ -15,7 +15,7 @@ parse_string(struct parser* p, int flags) {
   if(p->node == NULL || p->node->id != N_ARGSTR || (p->node->nargstr.flag & S_TABLE) != p->quot) {
     parse_newnode(p, N_ARGSTR);
     p->node->nargstr.flag = p->quot | flags;
-    p->node->nargstr.pos = p->tokstart;
+    p->node->nargstr.loc = p->tokstart;
   }
 
   assert(p->node);

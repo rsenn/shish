@@ -3,38 +3,38 @@
 /* get position of N_ARG nodes
  * ----------------------------------------------------------------------- */
 int
-tree_position(union node* node, struct position* pos) {
+tree_location(union node* node, struct position* loc) {
   while(node) {
     switch(node->id) {
       case N_ARGSTR:
-        *pos = node->nargstr.pos;
+        *loc = node->nargstr.loc;
         return 1;
         break;
       case N_ARGPARAM:
-        *pos = node->nargparam.pos;
+        *loc = node->nargparam.loc;
         return 1;
         break;
       case N_ARGCMD:
-        if(tree_position(node->nargcmd.list, pos))
+        if(tree_location(node->nargcmd.list, loc))
           return 1;
         break;
       case N_ARG:
-        if(tree_position(node->narg.list, pos))
+        if(tree_location(node->narg.list, loc))
           return 1;
         break;
       case N_CASE:
-        if(tree_position(node->ncase.word, pos))
+        if(tree_location(node->ncase.word, loc))
           return 1;
-        if(tree_position(node->ncase.list, pos))
+        if(tree_location(node->ncase.list, loc))
           return 1;
         break;
 
       case N_SIMPLECMD:
-        if(tree_position(node->ncmd.vars, pos))
+        if(tree_location(node->ncmd.vars, loc))
           return 1;
-        if(tree_position(node->ncmd.args, pos))
+        if(tree_location(node->ncmd.args, loc))
           return 1;
-        if(tree_position(node->ncmd.rdir, pos))
+        if(tree_location(node->ncmd.rdir, loc))
           return 1;
         break;
       default: break;
@@ -48,7 +48,7 @@ tree_position(union node* node, struct position* pos) {
       case N_IF:
       case N_WHILE:
       case N_UNTIL:
-        if(tree_position(node->ngrp.rdir, pos))
+        if(tree_location(node->ngrp.rdir, loc))
           return 1;
         break;
       default: break;
@@ -59,7 +59,7 @@ tree_position(union node* node, struct position* pos) {
       case N_SUBSHELL:
       case N_FOR:
       case N_CASENODE:
-        if(tree_position(node->npipe.cmds, pos))
+        if(tree_location(node->npipe.cmds, loc))
           return 1;
         break;
       default: break;

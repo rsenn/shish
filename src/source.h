@@ -7,13 +7,14 @@ struct fd;
 
 struct __attribute__((__packed__)) position {
   unsigned int line, column;
+  size_t offset;
 };
 
 struct source {
   buffer* b;
   int mode;
-  struct position pos;
   struct source* parent;
+    struct position pos;
 };
 
 #define SOURCE_IACTIVE 0x01

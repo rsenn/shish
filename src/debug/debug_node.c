@@ -113,7 +113,7 @@ debug_node(union node* node, int depth) {
       debug_str(", name", node->nfunc.name, depth, debug_quote);
 
       debug_sublist(", body", node->nfunc.body, depth);
-      debug_position(", pos", &node->nfunc.pos, depth);
+      debug_position(", loc", &node->nfunc.loc, depth);
       break;
 
     case N_ASSIGN:
@@ -145,7 +145,7 @@ debug_node(union node* node, int depth) {
                      &node->nargstr.stra,
                      depth,
                      debug_quote);                        // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
-      debug_position(", pos", &node->nargstr.pos, depth); // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
+      debug_position(", loc", &node->nargstr.loc, depth); // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
       break;
 
     case N_ARGPARAM: {
@@ -169,7 +169,7 @@ debug_node(union node* node, int depth) {
       debug_str(", name", node->nargparam.name, depth, debug_quote);
       debug_subnode(", word", node->nargparam.word, depth);
       debug_ulong(", numb", node->nargparam.numb, depth);
-      debug_position(", pos", &node->nargparam.pos, depth);
+      debug_position(", loc", &node->nargparam.loc, depth);
 
       break;
     }

@@ -16,6 +16,7 @@ source_newline(void) {
   /* advance to next line */
   source->pos.line++;
   source->pos.column = 1;
+  source->pos.offset++;
 
   //#ifndef SHFORMAT
   //  if(source->mode & SOURCE_IACTIVE)

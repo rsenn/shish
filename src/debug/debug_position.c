@@ -10,7 +10,8 @@ debug_position(const char* msg, const struct position* pos, int depth) {
   debug_s("{");
 
   debug_ulong("line", pos->line, -1);
-  debug_ulong(", column", pos->column, -1);
+  debug_ulong(", col", pos->column, -1);
+  debug_ulong(", offset", pos->offset, -1);
 
   debug_newline(-1);
   debug_s("}");

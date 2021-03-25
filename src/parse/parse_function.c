@@ -11,14 +11,14 @@ union node*
 parse_function(struct parser* p) {
   int tok;
   union node* node;
-  struct position pos;
+  struct position loc;
   struct nargstr* argstr;
 
   stralloc name;
   stralloc_init(&name);
   tok = parse_gettok(p, P_DEFAULT);
   argstr = &p->tree->nargstr;
-  pos = argstr->pos;
+  loc = argstr->loc;
   stralloc_copy(&name, &argstr->stra);
 
   // expand_tosa(p->tree, &name);
@@ -40,6 +40,6 @@ parse_function(struct parser* p) {
 
   p->pushback++;
   node->nfunc.body = parse_grouping(p, P_SKIPNL);
-  node->nfunc.pos = pos;
+  node->nfunc.loc = loc;
   return node;
 }
