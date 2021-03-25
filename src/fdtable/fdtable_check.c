@@ -31,17 +31,17 @@ fdtable_check(int e) {
   switch(pflags & O_ACCMODE) {
     case O_RDONLY: iflags |= FD_READ; break;
     case O_WRONLY: iflags |= FD_WRITE; break;
-    case O_RDWR: iflags |= FD_READ|FD_WRITE; break;
+    case O_RDWR: iflags |= FD_READ | FD_WRITE; break;
   }
 
   if(!isatty(e)) {
-  if(pflags & O_APPEND)
-    iflags |= FD_APPEND;
-  if(pflags & O_TRUNC)
-    iflags |= FD_TRUNC;
-  if(pflags & O_EXCL)
-    iflags |= FD_EXCL;
-}
+    if(pflags & O_APPEND)
+      iflags |= FD_APPEND;
+    if(pflags & O_TRUNC)
+      iflags |= FD_TRUNC;
+    if(pflags & O_EXCL)
+      iflags |= FD_EXCL;
+  }
 
   return iflags;
 }
