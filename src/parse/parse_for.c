@@ -9,7 +9,7 @@ parse_for(struct parser* p) {
   union node** nptr;
 
   /* next token must be the variable name */
-  if(!parse_expect(p, P_DEFAULT, T_NAME, node))
+  if(!parse_expect(p, P_NOKEYWD, T_NAME, node))
     return NULL;
 
   /* allocate and init N_FOR node */
@@ -24,7 +24,7 @@ parse_for(struct parser* p) {
   /* next token can be 'in' */
   if(parse_gettok(p, P_DEFAULT) & T_IN) {
     /* now parse the arguments and build a list of them */
-    while(parse_gettok(p, P_DEFAULT) & (T_WORD | T_NAME | T_ASSIGN)) {
+    while(parse_gettok(p, P_NOKEYWD) & (T_WORD | T_NAME | T_ASSIGN)) {
       *nptr = parse_getarg(p);
       nptr = &(*nptr)->next;
     }

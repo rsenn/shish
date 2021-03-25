@@ -32,15 +32,14 @@ debug_node(union node* node, int depth) {
 
       debug_ulong(", bngd", node->ncmd.bgnd, depth);
 
-      if(node->ncmd.vars) {
+     // if(node->ncmd.vars) 
         debug_sublist(", vars", node->ncmd.vars, depth);
-      }
-      if(node->ncmd.args) {
+      
+      //if(node->ncmd.args) 
         debug_sublist(", args", node->ncmd.args, depth);
-      }
-      if(node->ncmd.rdir) {
+      
+      //if(node->ncmd.rdir) 
         debug_sublist(", rdir", node->ncmd.rdir, depth);
-      }
 
       break;
     case N_PIPELINE:
@@ -113,7 +112,7 @@ debug_node(union node* node, int depth) {
       debug_str(", name", node->nfunc.name, depth, debug_quote);
 
       debug_sublist(", body", node->nfunc.body, depth);
-
+debug_position(", pos", &node->nfunc.pos, depth);
       break;
 
     case N_ASSIGN:
@@ -141,8 +140,11 @@ debug_node(union node* node, int depth) {
     case N_ARGSTR:
 
       debug_ulong(", flag", node->nargstr.flag /*& 0x7*/, depth);
-      debug_stralloc(", stra", &node->nargstr.stra, depth, debug_quote); // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
-      debug_position(", pos", &node->nargstr.pos, depth);        // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
+      debug_stralloc(", stra",
+                     &node->nargstr.stra,
+                     depth,
+                     debug_quote);                        // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
+      debug_position(", pos", &node->nargstr.pos, depth); // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
       break;
 
     case N_ARGPARAM: {

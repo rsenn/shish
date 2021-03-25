@@ -4,7 +4,7 @@
 #ifdef DEBUG_OUTPUT
 #include "../fd.h"
 
-char debug_quote='"';
+char debug_quote = '"';
 
 /* output a nul-terminated string
  * ----------------------------------------------------------------------- */

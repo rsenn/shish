@@ -85,8 +85,7 @@ main(int argc, char** argv, char** envp) {
 
   shell_init(buffer_2, sh_name);
 
-    debug_buffer.fd = 1;
-
+  debug_buffer.fd = 1;
 
   /* parse command line arguments */
   while((c = shell_getopt(argc, argv, "c:xeo:q:w:l:")) > 0) switch(c) {
@@ -113,7 +112,6 @@ main(int argc, char** argv, char** envp) {
         sh_exit(1);
         break;
     }
-
 
   for(i = 0; i < indent_width; i++) stralloc_catc(&separator, ' ');
   stralloc_nul(&separator);
@@ -164,21 +162,33 @@ main(int argc, char** argv, char** envp) {
   parse_init(&p, P_DEFAULT);
 
   buffer_init_free(&out_buf, (buffer_op_proto*)&write, out_fd, malloc(1024), 1024);
-
-  if(!(((tok = parse_gettok(&p, P_DEFAULT)) & T_EOF))) {
+  /*{
+        union node* compound_list;
+  compound_list =tree_newnode(N_CMDLIST);
+  */
+  for(;;) {
     union node* list;
+
+    p.pushback = 0;
+    tok = parse_gettok(&p, P_DEFAULT);
+
+    if(tok & T_EOF)
+      break;
+
     p.pushback++;
     parse_lineno = source->pos.line;
 
     //   var_setvint("LINENO", parse_lineno, V_DEFAULT);
 
     /* launch the parser to get a complete command */
-    list = parse_list(&p);
+    list = parse_compound_list(&p, T_EOF);
     stralloc_zero(&cmd);
 
     if(list) {
-
+if(list->next)
       debug_list(list, 0);
+    else
+      debug_node(list,0);
       debug_nl_fl();
     }
   }

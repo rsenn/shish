@@ -33,7 +33,7 @@ done
 __IN__
 
 test_oE 'explicit words, one word, newline-separated do'
-for	i	in	do
+for	i	in	"do"
 do
     echo $i
 done
@@ -42,7 +42,7 @@ do
 __OUT__
 
 test_oE 'explicit words, two words, newline-separated do'
-for	word	in	do done
+for	word	in	"do" "done"
 do
     echo $word
 done

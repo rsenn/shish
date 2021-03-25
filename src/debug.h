@@ -172,8 +172,7 @@ debug_open() {
 static inline void
 debug_indent(int depth) {
   depth *= debug_nindent;
-  while(depth-- > 0)
-    debug_c(' ');
+  while(depth-- > 0) debug_c(' ');
 }
 
 static inline void
