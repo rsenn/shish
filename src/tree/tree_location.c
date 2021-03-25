@@ -42,7 +42,7 @@ tree_location(union node* node, struct location* loc) {
     switch(node->id) {
       case N_SIMPLECMD:
       case N_SUBSHELL:
-      case N_CMDLIST:
+      case N_BRACEGROUP:
       case N_FOR:
       case N_CASE:
       case N_IF:
@@ -55,7 +55,7 @@ tree_location(union node* node, struct location* loc) {
     }
     switch(node->id) {
       case N_PIPELINE:
-      case N_CMDLIST:
+      case N_BRACEGROUP:
       case N_SUBSHELL:
       case N_FOR:
       case N_CASENODE:

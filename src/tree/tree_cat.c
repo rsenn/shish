@@ -193,7 +193,7 @@ again:
           tree_catlist_n(node->nif.cmd1, sa, "\n", depth + 1);
         }
       }
-      tree_catseparator(sa, "\nfi\n", depth);
+      tree_catseparator(sa, "\nfi", depth);
 
       /* concatenate redirections */
       for(n = node->ncmd.rdir; n; n = n->next) {
@@ -289,8 +289,12 @@ again:
       union node* n;
       n = node->ngrp.cmds;
 
-      if(n->id != N_SIMPLECMD || n->next)
-        sep = "";
+      if(n->id != N_SIMPLECMD || n->next) {
+        if(tree_count(n) > 1)
+          sep = "\n ";
+        else
+        sep = 0; //"\n";
+      }
 
       // tree_catseparator(sa, sep == NULL ? " " : sep, depth  - 1);
 
@@ -299,7 +303,7 @@ again:
 
       stralloc_catc(sa, '(');
 
-      tree_catlist_n(node->ngrp.cmds, sa, sep, depth - 2);
+      tree_catlist_n(node->ngrp.cmds, sa, sep, depth - 1);
       stralloc_catc(sa, ')');
 
       /* concatenate redirections */
@@ -309,12 +313,12 @@ again:
       }
       break;
     }
-    case N_CMDLIST: {
+    case N_BRACEGROUP: {
       union node* n;
       stralloc_catc(sa, '{');
       int d = depth < 0 ? -depth : depth;
 
-      tree_catseparator(sa, sep == NULL ? "{\n" : sep, d);
+      tree_catseparator(sa, sep == NULL ? "\n" : sep, d);
       tree_catlist_n(node->ngrp.cmds, sa, sep == NULL ? "; " : sep, d + 1);
 
       stralloc_cats(sa, ";");

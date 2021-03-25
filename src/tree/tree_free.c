@@ -35,7 +35,7 @@ tree_free(union node* node) {
         break;
 
       case N_SUBSHELL:
-      case N_CMDLIST:
+      case N_BRACEGROUP:
         if(node->ngrp.cmds)
           tree_free(node->ngrp.cmds);
         break;

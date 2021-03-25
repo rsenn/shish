@@ -20,7 +20,7 @@ eval_node(struct eval* e, union node* node) {
       ret = eval_function(e, &node->nfunc);
       break;
     }
-    case N_CMDLIST: {
+    case N_BRACEGROUP: {
       ret = eval_cmdlist(e, &node->ngrp);
       break;
     }

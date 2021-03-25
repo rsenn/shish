@@ -17,7 +17,7 @@ enum kind {
   //               N_SEMI,           /* execute both */
   N_NOT,                     /* execute cmd and negate return status */
   /* compound */ N_SUBSHELL, /* execute the list in a subshell */
-  N_CMDLIST,                 /* execute the list in the current env */
+  N_BRACEGROUP,                 /* execute the list in the current env */
   /* for      */ N_FOR,      /* execute body for each arg,
                                 while putting the arg into var */
   /* case */ N_CASE,         /* execute the case matching the expr */

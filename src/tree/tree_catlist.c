@@ -27,7 +27,7 @@ tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth) {
 
     if(node->next || (node->id == N_SIMPLECMD && node->ncmd.bgnd)) {
 
-      if(sep)
+      if(sep /*&& *sep*/)
         tree_catseparator(&next, sep, depth);
       else
         stralloc_cats(&next, (node->ncmd.bgnd ? " & " : "; "));

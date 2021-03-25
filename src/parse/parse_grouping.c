@@ -32,7 +32,7 @@ parse_grouping(struct parser* p, int tempflags) {
   /* parse compound content and create a
      compound node if there are commands */
   if((compound_list = parse_compound_list(p, tok << 1))) {
-    grouping = tree_newnode(tok == T_BEGIN ? N_CMDLIST : N_SUBSHELL);
+    grouping = tree_newnode(tok == T_BEGIN ? N_BRACEGROUP : N_SUBSHELL);
     grouping->ngrp.cmds = compound_list;
   }
 

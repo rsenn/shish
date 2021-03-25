@@ -7,7 +7,7 @@ const int tree_nodesizes[] = {
     sizeof(struct nandor),       /* N_OR */
     sizeof(struct nnot),         /* N_NOT */
     sizeof(struct ngrp),         /* N_SUBSHELL */
-    sizeof(struct ngrp),         /* N_CMDLIST */
+    sizeof(struct ngrp),         /* N_BRACEGROUP */
     sizeof(struct nfor),         /* N_FOR */
     sizeof(struct ncase),        /* N_CASE */
     sizeof(struct ncasenode),    /* N_CASENODE */

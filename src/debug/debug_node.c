@@ -11,7 +11,7 @@ int debug_nindent = 2;
 
 /* debugs a tree node!
  * ----------------------------------------------------------------------- */
-const char* debug_nodes[] = {"N_SIMPLECMD",     "N_PIPELINE",     "N_AND",       "N_OR",     "N_NOT",    "N_SUBSHELL",     "N_CMDLIST",
+const char* debug_nodes[] = {"N_SIMPLECMD",     "N_PIPELINE",     "N_AND",       "N_OR",     "N_NOT",    "N_SUBSHELL",     "N_BRACEGROUP",
                              "N_FOR",           "N_CASE",         "N_CASENODE",  "N_IF",     "N_WHILE",  "N_UNTIL",        "N_FUNCTION",
                              "N_ARG",           "N_ASSIGN",       "N_REDIR",     "N_ARGSTR", "N_ARGCMD", "N_ARGPARAM",     "N_ARGRANGE",
                              "N_ARGARITH",      "A_NUM",          "A_PAREN",     "A_OR",     "A_AND",    "A_BOR",          "A_BXOR",
@@ -61,7 +61,7 @@ debug_node(union node* node, int depth) {
       break;
 
     case N_SUBSHELL:
-    case N_CMDLIST:
+    case N_BRACEGROUP:
 
       debug_sublist(", cmds", node->ngrp.cmds, depth);
 
