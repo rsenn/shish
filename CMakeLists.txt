@@ -322,6 +322,8 @@ if(BUILD_SHFORMAT)
     src/sh/sh_msg.c
     src/sh/sh_usage.c)
 
+  list(FILTER SHFORMAT_SOURCES EXCLUDE REGEX "dump")
+
   add_executable(shformat ${SHFORMAT_SOURCES} ${LIBSOURCES})
   target_link_libraries(shformat ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 
@@ -329,6 +331,46 @@ if(BUILD_SHFORMAT)
   install(TARGETS shformat DESTINATION bin)
 
 endif(BUILD_SHFORMAT)
+
+option(BUILD_SHPARSE2AST "Build shformat program" ON)
+
+if(BUILD_SHPARSE2AST)
+  file(
+    GLOB
+    SHPARSE2AST_SOURCES
+    src/debug/*.c
+    src/redir/redir_addhere.c
+    src/redir/redir_dup.c
+    src/redir/redir_here.c
+    src/redir/redir_open.c
+    src/redir/redir_parse.c
+    src/parse/*.c
+    src/tree/*.c
+    src/*.h
+    src/source/*.c
+    src/fdstack/*.c
+    src/fdtable/*.c
+    src/fd/*.c
+    src/var/*.c
+    src/vartab/*.c
+    src/varstack/*.c
+    src/sh/sh_root.c
+    src/sh/sh_error.c
+    src/sh/sh_errorn.c
+    src/sh/sh_exit.c
+    src/sh/sh_parse2ast.c
+    src/sh/sh_msg.c
+    src/sh/sh_usage.c)
+
+  list(FILTER SHPARSE2AST_SOURCES EXCLUDE REGEX "dump")
+
+  add_executable(shparse2ast ${SHPARSE2AST_SOURCES} ${LIBSOURCES})
+  target_link_libraries(shparse2ast ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
+
+  target_compile_definitions(shparse2ast PUBLIC SHPARSE2AST=1 DEBUG_OUTPUT=1)
+  install(TARGETS shparse2ast DESTINATION bin)
+
+endif(BUILD_SHPARSE2AST)
 
 set_source_files_properties(src/builtin/builtin_table.c PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}")
 
