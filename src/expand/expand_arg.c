@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#define max(a, b) ((a) >= (b) ? (a) : (b))
+#define min(a, b) ((a) <= (b) ? (a) : (b))
+
 /* expand all parts of an N_ARG node
  * ----------------------------------------------------------------------- */
 union node*
@@ -37,6 +40,9 @@ expand_arg(union node* node, union node** nptr, int flags) {
         assert(subarg->nargstr.stra.s);
         n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, nptr, lflags);
         break;
+
+        /* argument range */
+      case N_ARGRANGE: break;
 
       default: break;
     }

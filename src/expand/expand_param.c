@@ -10,8 +10,48 @@
 #include "../../lib/fmt.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
+#include "../../lib/scan.h"
 
 #include <stdlib.h>
+
+struct range {
+  int offset;
+  int length;
+};
+
+static inline int
+min(int a, int b) {
+  return a < b ? a : b;
+}
+static inline int
+max(int a, int b) {
+  return a > b ? a : b;
+}
+
+static inline int
+clamp(int value, int from, int to) {
+  return value < from ? from : value > to ? to : value;
+}
+
+static struct range
+expand_range(union node* word) {
+
+  struct range r;
+  stralloc sa;
+  size_t p, q;
+  expand_copysa(word, &sa, 0);
+
+  stralloc_nul(&sa);
+
+  p = scan_int(sa.s, &r.offset);
+
+  if(p > 0 && p < sa.len && sa.s[p] == ':') {
+    p++;
+    q = scan_int(&sa.s[p], &r.length);
+  }
+
+  return r;
+}
 
 union node*
 expand_param(struct nargparam* param, union node** nptr, int flags) {
@@ -46,9 +86,17 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       /* $@ substitution */
       case S_ARGVS: {
         unsigned int i = 0;
+        struct range r = {0, sh->arg.c};
 
-        while(i < sh->arg.c) {
-          param->flag &= ~S_SPECIAL;
+        if((param->flag & S_VAR) == S_RANGE) {
+          r = expand_range(param->word);
+
+          r.offset = clamp(r.offset, 0, sh->arg.c);
+          r.length = clamp(r.offset + r.length, 0, sh->arg.c) - r.offset;
+        }
+
+        for(i = r.offset; i < r.length;) {
+          param->flag &= ~(S_SPECIAL|S_RANGE);
           param->flag |= S_ARG;
           param->numb = 1 + i;
 
@@ -261,6 +309,20 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
           i = vlen;
 
         n = expand_cat(v + i, vlen - i, nptr, flags);
+      }
+      break;
+    }
+      /* character or field range */
+    case S_RANGE: {
+      stralloc sa;
+
+      if(v && vlen) {
+        struct range r = expand_range(param->word);
+
+        r.offset = clamp(r.offset, 0, vlen);
+        r.length = clamp(r.offset + r.length, 0, vlen) - r.offset;
+
+        n = expand_cat(v + r.offset, r.length, nptr, flags);
       }
       break;
     }

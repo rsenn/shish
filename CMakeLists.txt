@@ -165,6 +165,7 @@ file(
   GLOB
   SOURCES
   src/*.h
+  src/debug/debug_argv.c
   src/eval/*.c
   src/exec/*.c
   src/expand/*.c

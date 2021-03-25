@@ -3,8 +3,8 @@
 
 /* ----------------------------------------------------------------------- */
 void
-debug_argv(const char** argv, buffer* out) {
-  const char** arg;
+debug_argv(char** argv, buffer* out) {
+  char** arg;
   for(arg = argv; *arg; arg++) {
     int quote = !!(*arg)[str_chr(*arg, ' ')];
     if(arg > argv)

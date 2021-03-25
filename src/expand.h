@@ -5,43 +5,47 @@
 
 #define IFS_DEFAULT " \t\n"
 
-#define S_TABLE 0x0003
-#define S_UNQUOTED (0 << 0)
-#define S_DQUOTED (1 << 0)
-#define S_SQUOTED (2 << 0)
-#define S_EXPR (3 << 0)
+enum subst_type {
+  S_TABLE = 0x0003,
+  S_UNQUOTED = 0,
+  S_DQUOTED = 1,
+  S_SQUOTED = 2,
+  S_EXPR = 3,
 
-#define S_BQUOTE (1 << 2)
+  S_BQUOTE = 4,
 
-/* substitution types */
-#define S_SPECIAL 0x00f8
-#define S_ARGC (1 << 3)     /* $# */
-#define S_ARGV (2 << 3)     /* $* */
-#define S_ARGVS (3 << 3)    /* $@ */
-#define S_EXITCODE (4 << 3) /* $? */
-#define S_FLAGS (5 << 3)    /* $- */
-#define S_BGEXCODE (6 << 3) /* $! */
-#define S_ARG (7 << 3)      /* $[0-9] */
-#define S_PID (8 << 3)      /* $$ */
+  /* substitution types */
+  S_SPECIAL = 0x00f8,
+  S_ARGC = 0x08,     /* $# */
+  S_ARGV = 0x10,     /* $* */
+  S_ARGVS = 0x18,    /* $@ */
+  S_EXITCODE = 0x20, /* $? */
+  S_FLAGS = 0x28,    /* $- */
+  S_BGEXCODE = 0x30, /* $! */
+  S_ARG = 0x38,      /* $[0-9] */
+  S_PID = 0x40,      /* $$ */
 
-#define S_VAR 0x0f00
-#define S_DEFAULT (0 << 8)  /* ${parameter:-word} */
-#define S_ASGNDEF (1 << 8)  /* ${parameter:=word} */
-#define S_ERRNULL (2 << 8)  /* ${parameter:?[word]} */
-#define S_ALTERNAT (3 << 8) /* ${parameter:+word} */
-#define S_RSSFX (4 << 8)    /* ${parameter%word} */
-#define S_RLSFX (5 << 8)    /* ${parameter%%word} */
-#define S_RSPFX (6 << 8)    /* ${parameter#word} */
-#define S_RLPFX (7 << 8)    /* ${parameter##word} */
+  S_VAR = 0x0f00,
+  S_DEFAULT = 0,       /* ${parameter:-word} */
+  S_ASGNDEF = 0x0100,  /* ${parameter:=word} */
+  S_ERRNULL = 0x0200,  /* ${parameter:?[word]} */
+  S_ALTERNAT = 0x0300, /* ${parameter:+word} */
+  S_RSSFX = 0x0400,    /* ${parameter%word} */
+  S_RLSFX = 0x0500,    /* ${parameter%%word} */
+  S_RSPFX = 0x0600,    /* ${parameter#word} */
+  S_RLPFX = 0x0700,    /* ${parameter##word} */
 
-#define S_STRLEN 0x1000
-#define S_NULL 0x2000 /* treat set but null as unset (:) */
-#define S_NOSPLIT 0x4000
-#define S_ESCAPED 0x8000
-/* a char within here-doc delim is escaped */
-#define S_GLOB 0x10000
+  S_RANGE = 0x0800, /* ${parameter:offset:length} */
 
-#define S_ARITH 0x80000
+  S_STRLEN = 0x1000,
+  S_NULL = 0x2000, /* treat set but null as unset (:) */
+  S_NOSPLIT = 0x4000,
+  S_ESCAPED = 0x8000,
+  /* a char within here-doc delim is escaped */
+  S_GLOB = 0x10000,
+
+  S_ARITH = 0x080000
+};
 
 /* expansion modes */
 #define X_DEFAULT 0x00

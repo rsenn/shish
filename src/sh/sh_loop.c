@@ -41,6 +41,10 @@ sh_loop(void) {
     if(list) {
       int status;
       struct eval e;
+
+      debug_list(list, 0);
+      debug_nl_fl();
+
       tree_catlist(list, &cmd, NULL);
 
       if(sh->opts.debug) {

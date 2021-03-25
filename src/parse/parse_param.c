@@ -143,12 +143,19 @@ parse_param(struct parser* p) {
         param->flag |= S_ALTERNAT;
         parse_skip(p);
         break;
+      default:
+        if(param->flag & S_NULL) {
+          param->flag &= ~S_NULL;
+          param->flag |= S_RANGE;
+        }
+        break;
     }
   }
 
-  if(p->node && p->node->id == N_ARGPARAM)
+  if(p->node && p->node->id == N_ARGPARAM) {
     if(p->flags & P_ARITH)
       param->flag |= S_ARITH;
+  }
 
   /* return now if we don't have a variable */
   /*  if((param->flag & S_SPECIAL))

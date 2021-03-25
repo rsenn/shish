@@ -134,14 +134,25 @@ again:
       else
         stralloc_cats(sa, node->nargparam.name);
 
+      /* if((node->nargparam.flag & S_VAR) == S_RANGE) {
+         stralloc_catc(sa, ':');
+         tree_cat(node->nargparam.word, sa);
+         stralloc_catc(sa, ':');
+         tree_cat(node->nargparam.word->next, sa);
+
+       } else */
       if(node->nargparam.word) {
         static const char* vsubst_types[] = {"-", "=", "?", "+", "%", "%%", "#", "##"};
 
-        if(node->nargparam.flag & S_NULL)
+        if((node->nargparam.flag & S_VAR) == S_RANGE) {
           stralloc_catc(sa, ':');
 
-        stralloc_cats(sa, vsubst_types[(node->nargparam.flag & S_VAR) >> 8]);
+        } else {
+          if((node->nargparam.flag & S_NULL))
+            stralloc_catc(sa, ':');
 
+          stralloc_cats(sa, vsubst_types[(node->nargparam.flag & S_VAR) >> 8]);
+        }
         tree_cat(node->nargparam.word, sa);
       }
 
