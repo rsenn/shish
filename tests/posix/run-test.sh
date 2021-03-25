@@ -7,12 +7,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -33,18 +33,20 @@ umask u+rwx
 ##### Some utility functions and aliases
 
 eprintf() {
-    printf "$@" >&2
+  printf "$@" >&2
 }
 
 # $1 = pathname
 absolute() {
-case "$1" in
-    (/*)
-	printf '%s\n' "$1";;
-    (*)
-	printf '%s/%s' "${PWD%/}" "$1";;
-esac
-fdtable -u 2
+  case "$1" in
+  /*)
+    printf '%s\n' "$1"
+    ;;
+  *)
+    printf '%s/%s' "${PWD%/}" "$1"
+    ;;
+  esac
+  #fdtable -u 2
 }
 ##### Script startup
 
@@ -56,7 +58,7 @@ fdtable -u 2
 
 command -b ulimit -c 0 2>/dev/null || :
 
-exec </dev/null 3>&- 4>&- 5>&-
+#exec </dev/null 3>&- 4>&- 5>&-
 
 # ensure correctness of $PWD
 cd -L .
@@ -64,17 +66,20 @@ cd -L .
 remove_work_dir="true"
 use_valgrind="false"
 while getopts rv opt; do
-    case $opt in
-	r)
-	    remove_work_dir="false";;
-	v)
-	    use_valgrind="true";;
-	*)
-	    exit 64 # sysexits.h EX_USAGE
-    esac
+  case $opt in
+  r)
+    remove_work_dir="false"
+    ;;
+  v)
+    use_valgrind="true"
+    ;;
+  *)
+    exit 64 # sysexits.h EX_USAGE
+    ;;
+  esac
 done
 echo "OPTIND=$OPTIND" 1>&2
-shift "$((OPTIND-1))"
+shift "$((OPTIND - 1))"
 echo "\$1=$1" >&2
 echo "\$2=$2" >&2
 
@@ -92,7 +97,7 @@ unset -v CDPATH COLUMNS COMMAND_NOT_FOUND_HANDLER DIRSTACK ECHO_STYLE ENV
 unset -v FCEDIT HANDLED HISTFILE HISTRMDUP HISTSIZE HOME IFS LC_ALL
 unset -v LC_COLLATE LC_MESSAGES LC_MONETARY LC_NUMERIC LC_TIME LINES MAIL
 unset -v MAILCHECK MAILPATH NLSPATH OLDPWD OPTARG PROMPT_COMMAND
-unset -v PS1 PS1R PS1S PS2 PS2R PS2S PS3 PS3R PS3S PS4 PS4R PS4S 
+unset -v PS1 PS1R PS1S PS2 PS2R PS2S PS3 PS3R PS3S PS4 PS4R PS4S
 unset -v RANDOM TERM YASH_AFTER_CD YASH_LE_TIMEOUT YASH_VERSION
 unset -v A B C D E F G H I J K L M N O P Q R S T U V W X Y Z _
 unset -v a b c d e f g h i j k l m n o p q r s t u v w x y z
@@ -105,8 +110,8 @@ work_dir="tmp.$$"
 
 rm_work_dir() {
   if "$remove_work_dir"; then
-      if [ -d "$work_dir" ]; then chmod -R a+rX "$work_dir"; fi
-      rm -fr "$work_dir"
+    if [ -d "$work_dir" ]; then chmod -R a+rX "$work_dir"; fi
+    rm -fr "$work_dir"
   fi
 }
 
@@ -120,14 +125,14 @@ mkdir "$work_dir"
 ##### Some more utilities
 
 {
-    if diff -U 10000 /dev/null /dev/null; then
-	diff_opt='-U 10000'
-    elif diff -C 10000 /dev/null /dev/null; then
-	diff_opt='-C 10000'
-    else
-	diff_opt=''
-    fi
-} >/dev/null 2>&1
+  if diff -U 10000 /dev/null /dev/null; then
+    diff_opt='-U 10000'
+  elif diff -C 10000 /dev/null /dev/null; then
+    diff_opt='-C 10000'
+  else
+    diff_opt=''
+  fi
+} #>/dev/null 2>&1
 
 setup_script=""
 
@@ -136,12 +141,12 @@ setup_script=""
 # If the first argument is "-d", the default utility functions are added.
 # Otherwise, the first argument is added as the script.
 setup() {
-    case "${1--}" in
-	(-)
-	    setup "$(cat)"
-	    ;;
-	(-d)
-	    setup <<\END
+  case "${1--}" in
+  -)
+    setup "$(cat)"
+    ;;
+  -d)
+    setup <<\END
 _empty= _sp=' ' _tab='	' _nl='
 '
 echoraw() {
@@ -152,12 +157,12 @@ bracket() {
     echo
 }
 END
-	    ;;
-	(*)
-	    setup_script="$setup_script
+    ;;
+  *)
+    setup_script="$setup_script
 $1"
-	    ;;
-    esac
+    ;;
+  esac
 }
 
 # Invokes the testee.
@@ -165,20 +170,20 @@ $1"
 # If the "use_valgrind" variable is true, Valgrind is used to run the testee,
 # in which case the testee will ignore argv[0].
 testee() (
-    if [ "${posix:+set}" = set ]; then
-	testee="$testee_sh"
-	export TESTEE="$testee"
-    fi
-    if ! "$use_valgrind"; then
-	exec "$testee" "$@"
-    else
-	test -r "$abs_suppressions" || abs_suppressions=
-	exec valgrind --leak-check=full --vgdb=no --log-fd=17 \
-	    ${abs_suppressions:+--suppressions="$abs_suppressions"} \
-	    --gen-suppressions=all \
-	    "$testee" "$@" \
-	    17>>"${valgrind_file-0.valgrind}"
-    fi
+  if [ "${posix:+set}" = set ]; then
+    testee="$testee_sh"
+    export TESTEE="$testee"
+  fi
+  if ! "$use_valgrind"; then
+    exec "$testee" "$@"
+  else
+    test -r "$abs_suppressions" || abs_suppressions=
+    exec valgrind --leak-check=full --vgdb=no --log-fd=17 \
+      ${abs_suppressions:+--suppressions="$abs_suppressions"} \
+      --gen-suppressions=all \
+      "$testee" "$@" \
+      17>>"${valgrind_file-0.valgrind}"
+  fi
 )
 
 # The test case runner.
@@ -206,167 +211,171 @@ testee() (
 #
 # If the "skip" variable is defined non-empty, the test case is skipped.
 testcase() {
-    test_lineno="${1:?line number unspecified}"
-    shift 1
-    OPTIND=1
-    diagnostic_required="false"
-    expected_exit_status=""
-    while getopts de: opt; do
-	case $opt in
-	    (d)
-		diagnostic_required="true";;
-	    (e)
-		expected_exit_status="$OPTARG";;
-	    (*)
-		return 64 # sysexits.h EX_USAGE
-	esac
-    done
-    shift "$((OPTIND-1))"
-    test_case_name="${1:?unnamed test case \($test_file:$test_lineno\)}"
-    shift 1
-
-    log_stdout() {
-	printf '%%%%%% %s: %s:%d: %s\n' \
-	    "$1" "$test_file" "$test_lineno" "$test_case_name"
-    }
-
-    in_file="$test_lineno.in"
-    out_file="$test_lineno.out"
-    err_file="$test_lineno.err"
-    valgrind_file="$test_lineno.valgrind"
-
-    # prepare input file
-    {
-	if [ "$setup_script" ]; then
-	    printf '%s\n' "$setup_script"
-	fi
-	cat <&3
-    } >"$in_file"
-    chmod u+r "$in_file"
-
-    if [ "${skip-}" ]; then
-	log_stdout SKIPPED
-	echo
-	return
-    fi
-
-    if [ -e "$out_file" ]; then
-	printf 'Output file %s already exists.\n' "$out_file"
-	return 1
-    fi
-    if [ -e "$err_file" ]; then
-	printf 'Output file %s already exists.\n' "$err_file"
-	return 1
-    fi
-
-    # run the testee
-    log_stdout START
-    set +e
-    # Output files are opened in append mode to ensure write atomicity.
-    testee "$@" <"$in_file" >>"$out_file" 2>>"$err_file" 3>&- 4>&- 5>&-
-    actual_exit_status="$?"
-    set -e
-
-    chmod u+r "$out_file" "$err_file"
-
-    failed="false"
-
-    # check exit status
-    exit_status_fail() {
-	failed="true"
-	eprintf '%s:%d: %s: exit status mismatch\n' \
-	    "$test_file" "$test_lineno" "$test_case_name"
-    }
-    case "$expected_exit_status" in
-	('')
-	    ;;
-	(n)
-	    printf '%% exit status: expected=non-zero actual=%d\n\n' \
-		"$actual_exit_status"
-	    if [ "$actual_exit_status" -eq 0 ]; then
-		exit_status_fail
-	    fi
-	    ;;
-	([[:alpha:]]*)
-	    printf '%% exit status: expected=%s ' "$expected_exit_status"
-	    if [ "$actual_exit_status" -le 128 ] ||
-		    ! actual_signal="$(kill -l "$actual_exit_status" \
-			2>/dev/null)"; then
-		printf 'actual=%d\n\n' "$actual_exit_status"
-		exit_status_fail
-	    else
-		printf 'actual=%d(%s)\n\n' \
-		    "$actual_exit_status" "$actual_signal"
-		if [ "$actual_signal" != "$expected_exit_status" ]; then
-		    exit_status_fail
-		fi
-	    fi
-	    ;;
-	(*)
-	    printf '%% exit status: expected=%d actual=%d\n\n' \
-		"$expected_exit_status" "$actual_exit_status"
-	    if [ "$actual_exit_status" -ne "$expected_exit_status" ]; then
-		exit_status_fail
-	    fi
-	    ;;
+  test_lineno="${1:?line number unspecified}"
+  shift 1
+  OPTIND=1
+  diagnostic_required="false"
+  expected_exit_status=""
+  while getopts de: opt; do
+    case $opt in
+    d)
+      diagnostic_required="true"
+      ;;
+    e)
+      expected_exit_status="$OPTARG"
+      ;;
+    *)
+      return 64 # sysexits.h EX_USAGE
+      ;;
     esac
+  done
+  shift "$((OPTIND - 1))"
+  test_case_name="${1:?unnamed test case \($test_file:$test_lineno\)}"
+  shift 1
 
-    # check standard output
-    if { exec <&4; } 2>/dev/null; then
-	printf '%% standard output diff:\n'
-	if ! diff $diff_opt - "$out_file"; then
-	    failed="true"
-	    eprintf '%s:%d: %s: standard output mismatch\n' \
-		"$test_file" "$test_lineno" "$test_case_name"
-	fi
-	echo
+  log_stdout() {
+    printf '%%%%%% %s: %s:%d: %s\n' \
+      "$1" "$test_file" "$test_lineno" "$test_case_name"
+  }
+
+  in_file="$test_lineno.in"
+  out_file="$test_lineno.out"
+  err_file="$test_lineno.err"
+  valgrind_file="$test_lineno.valgrind"
+
+  # prepare input file
+  {
+    if [ "$setup_script" ]; then
+      printf '%s\n' "$setup_script"
     fi
+    cat <&3
+  } >"$in_file"
+  chmod u+r "$in_file"
 
-    # check standard error
-    if "$diagnostic_required"; then
-	printf '%% standard error (expecting non-empty output):\n'
-	cat "$err_file"
-	if ! [ -s "$err_file" ]; then
-	    failed="true"
-	    eprintf '%s:%d: %s: standard error mismatch\n' \
-		"$test_file" "$test_lineno" "$test_case_name"
-	fi
-	echo
-    elif { exec <&5; } 2>/dev/null; then
-	printf '%% standard error diff:\n'
-	if ! diff $diff_opt - "$err_file"; then
-	    failed="true"
-	    eprintf '%s:%d: %s: standard error mismatch\n' \
-		"$test_file" "$test_lineno" "$test_case_name"
-	fi
-	echo
+  if [ "${skip-}" ]; then
+    log_stdout SKIPPED
+    echo
+    return
+  fi
+
+  if [ -e "$out_file" ]; then
+    printf 'Output file %s already exists.\n' "$out_file"
+    return 1
+  fi
+  if [ -e "$err_file" ]; then
+    printf 'Output file %s already exists.\n' "$err_file"
+    return 1
+  fi
+
+  # run the testee
+  log_stdout START
+  set +e
+  # Output files are opened in append mode to ensure write atomicity.
+  testee "$@" <"$in_file" >>"$out_file" 2>>"$err_file" 3>&- 4>&- 5>&-
+  actual_exit_status="$?"
+
+  set -e
+
+  chmod u+r "$out_file" "$err_file"
+
+  failed="false"
+
+  # check exit status
+  exit_status_fail() {
+    failed="true"
+    eprintf '%s:%d: %s: exit status mismatch\n' \
+      "$test_file" "$test_lineno" "$test_case_name"
+  }
+  case "$expected_exit_status" in
+  '') ;;
+
+  n)
+    printf '%% exit status: expected=non-zero actual=%d\n\n' \
+      "$actual_exit_status"
+    if [ "$actual_exit_status" -eq 0 ]; then
+      exit_status_fail
     fi
-
-    # check Valgrind results
-    if [ -f "$valgrind_file" ]; then
-	chmod a+r "$valgrind_file"
-	printf '%% Valgrind log:\n'
-	cat "$valgrind_file"
-	echo
-	if grep -q 'valgrind: fatal error:' "$valgrind_file"; then
-	    # There was an error in Valgrind. Treat this test case as skipped.
-	    log_stdout SKIPPED
-	    echo
-	    return
-	fi
-	if grep 'ERROR SUMMARY:' "$valgrind_file" | grep -qv ' 0 errors'; then
-	    failed="true"
-	    eprintf '%s:%d: %s: Valgrind detected error\n' \
-		"$test_file" "$test_lineno" "$test_case_name"
-	fi
-    fi
-
-    if "$failed"; then
-	log_stdout FAILED
+    ;;
+  [[:alpha:]]*)
+    printf '%% exit status: expected=%s ' "$expected_exit_status"
+    if [ "$actual_exit_status" -le 128 ] ||
+      ! actual_signal="$(kill -l "$actual_exit_status" \
+        2>/dev/null)"; then
+      printf 'actual=%d\n\n' "$actual_exit_status"
+      exit_status_fail
     else
-	log_stdout PASSED
+      printf 'actual=%d(%s)\n\n' \
+        "$actual_exit_status" "$actual_signal"
+      if [ "$actual_signal" != "$expected_exit_status" ]; then
+        exit_status_fail
+      fi
+    fi
+    ;;
+  *)
+    printf '%% exit status: expected=%d actual=%d\n\n' \
+      "$expected_exit_status" "$actual_exit_status"
+    if [ "$actual_exit_status" -ne "$expected_exit_status" ]; then
+      exit_status_fail
+    fi
+    ;;
+  esac
+
+  # check standard output
+  if { exec <&4; } 2>/dev/null; then
+    printf '%% standard output diff:\n'
+    if ! diff $diff_opt - "$out_file"; then
+      failed="true"
+      eprintf '%s:%d: %s: standard output mismatch\n' \
+        "$test_file" "$test_lineno" "$test_case_name"
     fi
     echo
+  fi
+
+  # check standard error
+  if "$diagnostic_required"; then
+    printf '%% standard error (expecting non-empty output):\n'
+    cat "$err_file"
+    if ! [ -s "$err_file" ]; then
+      failed="true"
+      eprintf '%s:%d: %s: standard error mismatch\n' \
+        "$test_file" "$test_lineno" "$test_case_name"
+    fi
+    echo
+  elif { exec <&5; } 2>/dev/null; then
+    printf '%% standard error diff:\n'
+    if ! diff $diff_opt - "$err_file"; then
+      failed="true"
+      eprintf '%s:%d: %s: standard error mismatch\n' \
+        "$test_file" "$test_lineno" "$test_case_name"
+    fi
+    echo
+  fi
+
+  # check Valgrind results
+  if [ -f "$valgrind_file" ]; then
+    chmod a+r "$valgrind_file"
+    printf '%% Valgrind log:\n'
+    cat "$valgrind_file"
+    echo
+    if grep -q 'valgrind: fatal error:' "$valgrind_file"; then
+      # There was an error in Valgrind. Treat this test case as skipped.
+      log_stdout SKIPPED
+      echo
+      return
+    fi
+    if grep 'ERROR SUMMARY:' "$valgrind_file" | grep -qv ' 0 errors'; then
+      failed="true"
+      eprintf '%s:%d: %s: Valgrind detected error\n' \
+        "$test_file" "$test_lineno" "$test_case_name"
+    fi
+  fi
+
+  if "$failed"; then
+    log_stdout FAILED
+  else
+    log_stdout PASSED
+  fi
+  echo
 }
 
 alias test_x='testcase "$LINENO" 3<<\__IN__'
@@ -381,23 +390,23 @@ alias test_OE='testcase "$LINENO" 3<<\__IN__ 4</dev/null 5</dev/null'
 
 ##### Run test
 echo "Run test"
-dump -v PWD
-dump -l PWD
+#dump -v PWD
+#dump -l PWD
 
 # The test is run in a subshell. The main shell waits for a possible trap and
 # lastly removes the temporary directory.
 (
-abs_test_file="$(absolute "$test_file")"
-echo "abs_test_file=$abs_test_file" 1>&2
-abs_suppressions="$(absolute valgrind.supp)"
-echo "abs_suppressions=$abs_suppressions" 1>&2
-cd "$work_dir"
+  abs_test_file="$(absolute "$test_file")"
+  echo "abs_test_file=$abs_test_file" 1>&2
+  abs_suppressions="$(absolute valgrind.supp)"
+  echo "abs_suppressions=$abs_suppressions" 1>&2
+  cd "$work_dir"
 
-ln -s -- "$testee" sh
-testee_sh="$(absolute sh)"
-export TESTEE="$testee"
+  ln -s -- "$testee" sh
+  testee_sh="$(absolute sh)"
+  export TESTEE="$testee"
 
-. "$abs_test_file"
+  . "$abs_test_file"
 )
 
 # vim: set ts=8 sts=4 sw=4 noet:

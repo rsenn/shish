@@ -117,10 +117,14 @@ addcmd:
   simple_command->ncmd.vars = vars;
   simple_command->ncmd.rdir = rdir;
 
-#ifdef DEBUG_PARSE
-  if(sh->opts.debug) {
+#if defined(DEBUG_PARSE)
+  if(sh->opts.debug) {  
     debug_begin("parse_simple_command", 0);
+    debug_position(0, &p->tokstart, 1);
+    debug_newline(1);
+    debug_s("«");
     tree_print(simple_command, &debug_buffer);
+    debug_s("»");
     debug_nl_fl();
   }
 #endif

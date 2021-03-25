@@ -91,7 +91,7 @@ void debug_position(const char* msg, const struct location* pos, int depth);
 
 #define debug_s(str) buffer_puts(&debug_buffer, str)
 #define debug_n(num) buffer_putlonglong(&debug_buffer, num)
-#define debug_c(chr) buffer_putc(&debug_buffer, chr)
+#define debug_c(chr) buffer_putc(&debug_buffer, (unsigned int)(unsigned char)(chr))
 #define debug_b(buf, len) buffer_put(&debug_buffer, (buf), (len))
 #define debug_ws(str) debug_c(' ')
 #define debug_nl() debug_c('\n') //

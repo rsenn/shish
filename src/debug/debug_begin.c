@@ -14,7 +14,7 @@ void
 debug_begin(const char* s, int depth) {
   debug_open();
   if(s)
-    debug_field(s, depth);
+    debug_s(s);
   /* else
        debug_indent(depth);
  */

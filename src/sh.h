@@ -46,10 +46,10 @@ struct __attribute__((__packed__)) arg {
 union __attribute__((__packed__)) shopt {
   unsigned flags : 5;
   struct __attribute__((__packed__)) {
-    unsigned unset : 1;
-    unsigned no_clobber : 1;
-    unsigned debug : 1;
-    unsigned exit_on_error : 1;
+    unsigned unset : 1;         /* -u */
+    unsigned no_clobber : 1;    /* -C */
+    unsigned debug : 1;         /* -x */
+    unsigned exit_on_error : 1; /* -e */
     unsigned no_interactive : 1;
   };
 };
