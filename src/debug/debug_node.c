@@ -243,7 +243,7 @@ debug_node(union node* node, int depth) {
       debug_sublist(", tree", node->nargarith.tree, depth);
       break;
 
-    case A_NUM: debug_ulong(0, node->narithnum.num, depth); break;
+    case A_NUM: debug_ulong(", num", node->narithnum.num, depth); break;
 
     case A_ADD:
     case A_SUB:

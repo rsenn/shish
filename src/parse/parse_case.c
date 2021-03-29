@@ -54,7 +54,10 @@ parse_case(struct parser* p) {
     tree_init((*cptr)->ncasenode.pats, pptr);
 
     /* parse the pattern list */
-    while(parse_gettok(p, P_SKIPNL) & (T_WORD | T_NAME | T_ASSIGN)) {
+    while(parse_gettok(p, P_SKIPNL) & (T_WORD | T_NAME | T_ASSIGN | T_LP)) {
+      if(p->tok == T_LP)
+        continue;
+
       *pptr = parse_getarg(p);
       pptr = tree_next(pptr);
 

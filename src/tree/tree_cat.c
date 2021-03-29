@@ -491,7 +491,7 @@ again:
     case A_ASSIGNBOR: {
 
       tree_cat(node->narithbinary.left, sa);
-
+      stralloc_catc(sa, ' ');
       switch(node->narithbinary.id) {
         case A_ASSIGN: stralloc_catc(sa, '='); break;
         case A_ASSIGNADD: stralloc_cats(sa, "+="); break;
@@ -507,6 +507,7 @@ again:
         default: break;
       }
 
+      stralloc_catc(sa, ' ');
       tree_cat(node->narithbinary.right, sa);
       break;
     }

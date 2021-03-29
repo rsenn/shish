@@ -241,18 +241,21 @@ struct parser {
 
 /* parser flags
  * ----------------------------------------------------------------------- */
-#define P_DEFAULT 0x0000
-#define P_IACTIVE 0x0001
-#define P_NOKEYWD 0x0002  /**< do not recognize keywords */
-#define P_NOASSIGN 0x0004 /**< don't parse assignments */
-#define P_NOREDIR 0x0008  /**< don't parse redirections */
-#define P_SKIPNL 0x0040   /**< skip newlines */
-#define P_SUBSTW 0x0100   /**< word is inside a var, so its terminated with } */
-#define P_BQUOTE 0x0800   /**< bquoted mode, delimit words on unesc'd bquotes */
-#define P_NOSUBST 0x1000  /**< do not create substitution nodes */
-#define P_HERE 0x2000     /**< parse here-doc */
-#define P_ARITH 0x4000    /**< parse arithmetic expression */
-#define P_ALIAS 0x8000    /**< parse alias */
+enum parser_flag {
+  P_DEFAULT = 0x0000,
+  P_IACTIVE = 0x0001,
+  P_NOKEYWD = 0x0002,  /**< do not recognize keywords */
+  P_NOASSIGN = 0x0004, /**< don't parse assignments */
+  P_NOREDIR = 0x0008,  /**< don't parse redirections */
+  P_SKIPNL = 0x0010,   /**< skip newlines */
+  P_SUBSTW = 0x0020,   /**< word is inside a var, so its terminated with } */
+  P_BQUOTE = 0x0040,   /**< bquoted mode, delimit words on unesc'd bquotes */
+  P_NOSUBST = 0x0080,  /**< do not create substitution nodes */
+  P_HERE = 0x0100,     /**< parse here-doc */
+  P_ARITH = 0x0200,    /**< parse arithmetic expression */
+  P_ALIAS = 0x0400,    /**< parse alias */
+  P_COMMENT = 0x0800   /**< parse comments */
+};
 
 struct alias {
   struct alias* next;
@@ -308,12 +311,12 @@ union node* parse_loop(struct parser* p);
 union node* parse_pipeline(struct parser* p);
 union node* parse_simple_command(struct parser* p);
 
-union node* parse_arith_assign(struct parser* p);
 union node* parse_arith_binary(struct parser* p, int precedence);
 union node* parse_arith_expr(struct parser* p);
 union node* parse_arith_paren(struct parser* p);
 union node* parse_arith_unary(struct parser* p);
 union node* parse_arith_value(struct parser* p);
+union node* parse_arith_assign(struct parser*, union node*);
 
 void* parse_error(struct parser* p, enum tok_flag toks);
 void parse_init(struct parser* p, int flags);

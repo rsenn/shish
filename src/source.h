@@ -2,7 +2,9 @@
 #define SOURCE_H
 
 #include "../lib/buffer.h"
-
+#include "../lib/fmt.h"
+#include "../lib/shell.h"
+ 
 struct fd;
 
 struct __attribute__((__packed__)) location {
@@ -38,18 +40,18 @@ int source_fork(buffer* child_source);
 void source_exec(void);
 void source_newline(void);
 void source_push(struct source* in);
+int source_peeknc(int pos);
+int source_peekc();
 
-static int
-source_peeknc(int pos) {
-  char c;
-  if(!source_peekn(&c, pos))
-    return -1;
-  return c;
-}
+#define FMT_LOC (FMT_ULONG * 2 + 1)
 
-static inline int
-source_peekc() {
-  return source_peeknc(0);
+size_t fmt_loc(char* dest, const struct location* loc);
+
+static inline const char*
+location2str(const struct location* loc) {
+  char buf[FMT_LOC];
+  buf[fmt_loc(buf, loc)] = '\0';
+  return shell_strdup(buf);
 }
 
 #endif /* SOURCE_H */

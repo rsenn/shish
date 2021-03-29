@@ -178,43 +178,49 @@ main(int argc, char** argv, char** envp) {
 
   stralloc_init(&cmd);
 
-  parse_init(&p, P_DEFAULT);
+  parse_init(&p, P_COMMENT);
 
   buffer_init_free(&out_buf, (buffer_op_proto*)&write, out_fd, malloc(1024), 1024);
 
   while(!(((tok = parse_gettok(&p, P_DEFAULT)) & T_EOF))) {
     union node* list;
-    p.pushback++;
-    parse_lineno = source->position.line;
+    stralloc* sa = tok == -2 ? &p.sa : &cmd;
 
-    //   var_setvint("LINENO", parse_lineno, V_DEFAULT);
+    if(tok >= 0) {
+      p.pushback++;
+      parse_lineno = source->position.line;
 
-    /* launch the parser to get a complete command */
-    list = parse_list(&p);
-    stralloc_zero(&cmd);
+      //   var_setvint("LINENO", parse_lineno, V_DEFAULT);
 
-    if(list)
-      tree_cat(list, &cmd);
+      /* launch the parser to get a complete command */
+      list = parse_list(&p);
+      stralloc_zero(&cmd);
 
-    if(!(p.tok & (T_NL | T_SEMI | T_BGND))) {
-      /* we have a parse error */
-      if(p.tok != T_EOF)
-        parse_error(&p, 0);
+      if(list)
+        tree_cat(list, &cmd);
 
-      /* exit if not interactive */
-      if(!(source->mode & SOURCE_IACTIVE))
-        sh_exit(1);
+      if(!(p.tok & (T_NL | T_SEMI | T_BGND))) {
+        /* we have a parse error */
+        if(p.tok != T_EOF)
+          parse_error(&p, 0);
 
-      /* ..otherwise discard the input buffer */
-      source_flush();
-      p.pushback = 0;
+        /* exit if not interactive */
+        if(!(source->mode & SOURCE_IACTIVE))
+          sh_exit(1);
+
+        /* ..otherwise discard the input buffer */
+        source_flush();
+        p.pushback = 0;
+      }
+
+      if(p.tok & (T_NL | T_SEMI | T_BGND))
+        p.pushback = 0;
     }
 
-    if(p.tok & (T_NL | T_SEMI | T_BGND))
-      p.pushback = 0;
-
-    buffer_putsa(&out_buf, &cmd);
+    buffer_putsa(&out_buf, sa);
     buffer_putnlflush(&out_buf);
+
+    // stralloc_zero(&cmd);
   }
 
   if(inplace) {

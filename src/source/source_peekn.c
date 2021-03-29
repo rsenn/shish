@@ -23,3 +23,11 @@ source_peekn(char* c, unsigned int n) {
 
   return ret;
 }
+
+int
+source_peeknc(int pos) {
+  char c;
+  if(!source_peekn(&c, pos))
+    return -1;
+  return c;
+}

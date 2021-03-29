@@ -8,7 +8,7 @@ union node*
 parse_arith_binary(struct parser* p, int precedence) {
   union node *left, *right, *node;
   int op = -1;
-  char a, b;
+  char a, b, c;
 
   left = precedence <= 1 ? parse_arith_unary(p) : parse_arith_binary(p, precedence - 1);
 
@@ -37,22 +37,26 @@ parse_arith_binary(struct parser* p, int precedence) {
         op = A_EXP;
       }
     } else if(precedence <= 2) {
-      switch(a) {
-        case '*': op = A_MUL; break;
-        case '/': op = A_DIV; break;
-        case '%': op = A_MOD; break;
-      }
+      if(b != '=')
+        switch(a) {
+          case '*': op = A_MUL; break;
+          case '/': op = A_DIV; break;
+          case '%': op = A_MOD; break;
+        }
     } else if(precedence <= 3) {
-      switch(a) {
-        case '+': op = A_ADD; break;
-        case '-': op = A_SUB; break;
-      }
+      if(b != '=')
+        switch(a) {
+          case '+': op = A_ADD; break;
+          case '-': op = A_SUB; break;
+        }
     } else if(precedence <= 4) {
-
-      if((a == '>' || a == '<') && a == b) {
-        op = a == '>' ? A_RSHIFT : A_LSHIFT;
-        parse_skip(p);
-      }
+      if(source_peekn(&c, 2) <= 0)
+        return left;
+      if(c != '=')
+        if((a == '>' || a == '<') && a == b) {
+          op = a == '>' ? A_RSHIFT : A_LSHIFT;
+          parse_skip(p);
+        }
 
     } else if(precedence <= 5) {
 
@@ -73,11 +77,12 @@ parse_arith_binary(struct parser* p, int precedence) {
         parse_skip(p);
       }
     } else if(precedence <= 7) {
-      switch(a) {
-        case '&': op = A_BAND; break;
-        case '|': op = A_BOR; break;
-        case '^': op = A_BXOR; break;
-      }
+      if(b != '=')
+        switch(a) {
+          case '&': op = A_BAND; break;
+          case '|': op = A_BOR; break;
+          case '^': op = A_BXOR; break;
+        }
     } else if(precedence <= 8) {
       if((a == '&' || a == '|') && a == b) {
         op = a == '&' ? A_AND : A_OR;
@@ -95,12 +100,18 @@ parse_arith_binary(struct parser* p, int precedence) {
 
   right = precedence <= 1 ? parse_arith_unary(p) : parse_arith_binary(p, precedence - 1);
 
-  if(right == NULL) {
+  if(right == NULL)
+    right = parse_arith_value(p);
+  if(right == NULL)
+    return left;
+  /*
     tree_free(left);
-    parse_gettok(p, P_DEFAULT);
-    parse_error(p, 0);
-    return NULL;
-  }
+    //parse_gettok(p, P_DEFAULT);
+
+    //sh_msg("no")
+    //parse_error(p, 0);
+    return 0;
+  */
 
   node = tree_newnode(op);
   node->narithbinary.left = left;
