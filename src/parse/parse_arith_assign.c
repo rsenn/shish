@@ -35,7 +35,16 @@ parse_arith_assign(struct parser* p) {
       id = A_ASSIGN;
       source_skip();
       break;
-    } else if(c[1] == '<' || c[1] == '>') {
+    } else if((c[0] == '<' || c[0] == '>') && c[0] == c[1]) {
+
+      if(source_peekn(&c[2], 2) <= 0 || c[2] != '=')
+        break;
+
+      id = c[0] == '<' ? A_ASSIGNLSHIFT : A_ASSIGNRSHIFT;
+        source_skip();
+        source_skip();
+        source_skip();
+
     } else if(c[1] == '=') {
 
       switch(c[0]) {

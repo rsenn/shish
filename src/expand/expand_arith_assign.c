@@ -2,7 +2,6 @@
 #include "../tree.h"
 #include "../var.h"
 #include "../../lib/uint64.h"
-#include <math.h>
 
 /* expand a assignment expression
  * ----------------------------------------------------------------------- */

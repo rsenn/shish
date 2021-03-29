@@ -71,18 +71,17 @@ expand_arith_expr(union node* expr, int64* r) {
         *r = 0;
       break;
     }
-      case A_ASSIGN:
-  case A_ASSIGNADD:
-  case A_ASSIGNSUB:
-  case A_ASSIGNMUL:
-  case A_ASSIGNDIV:
-  case A_ASSIGNMOD:
-  case A_ASSIGNLSHIFT:
-  case A_ASSIGNRSHIFT:
-  case A_ASSIGNBAND:
-  case A_ASSIGNBXOR:
-  case A_ASSIGNBOR:
- {
+    case A_ASSIGN:
+    case A_ASSIGNADD:
+    case A_ASSIGNSUB:
+    case A_ASSIGNMUL:
+    case A_ASSIGNDIV:
+    case A_ASSIGNMOD:
+    case A_ASSIGNLSHIFT:
+    case A_ASSIGNRSHIFT:
+    case A_ASSIGNBAND:
+    case A_ASSIGNBXOR:
+    case A_ASSIGNBOR: {
       ret = expand_arith_assign(&expr->narithbinary, r);
       break;
     }
