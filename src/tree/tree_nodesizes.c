@@ -50,5 +50,16 @@ const int tree_nodesizes[] = {
     sizeof(struct narithunary),  /* A_PREDECREMENT */
     sizeof(struct narithunary),  /* A_PREINCREMENT */
     sizeof(struct narithunary),  /* A_POSTDECREMENT */
-    sizeof(struct narithunary)   /* A_POSTINCREMENT */
+    sizeof(struct narithunary),  /* A_POSTINCREMENT */
+    sizeof(struct narithbinary), /* A_ASSIGN */
+    sizeof(struct narithbinary), /* A_ASSIGNADD */
+    sizeof(struct narithbinary), /* A_ASSIGNSUB */
+    sizeof(struct narithbinary), /* A_ASSIGNMUL */
+    sizeof(struct narithbinary), /* A_ASSIGNDIV */
+    sizeof(struct narithbinary), /* A_ASSIGNMOD */
+    sizeof(struct narithbinary), /* A_ASSIGNLSHIFT */
+    sizeof(struct narithbinary), /* A_ASSIGNRSHIFT */
+    sizeof(struct narithbinary), /* A_ASSIGNBAND */
+    sizeof(struct narithbinary), /* A_ASSIGNBXOR */
+    sizeof(struct narithbinary)  /* A_ASSIGNBOR */
 };

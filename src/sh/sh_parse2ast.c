@@ -36,6 +36,8 @@ stralloc out_file;
 int out_fd = 1;
 buffer out_buf;
 
+int sh_no_position = 0;
+
 /* main routine
  * ----------------------------------------------------------------------- */
 int
@@ -89,10 +91,11 @@ main(int argc, char** argv, char** envp) {
   debug_nindent = 2;
 
   /* parse command line arguments */
-  while((c = shell_getopt(argc, argv, "c:xeo:q:w:l:")) > 0) switch(c) {
+  while((c = shell_getopt(argc, argv, "c:xeo:q:w:l:P")) > 0) switch(c) {
       case 'c': cmds = shell_optarg; break;
       case 'x': sh->opts.debug = 1; break;
       case 'e': sh->opts.exit_on_error = 1; break;
+      case 'P': sh_no_position = 1; break;
       case 'o': debug_buffer.fd = open_trunc(shell_optarg); break;
       case 'w': scan_int(shell_optarg, &debug_nindent); break;
       case 'q': debug_quote = *optarg; break;
@@ -104,6 +107,7 @@ main(int argc, char** argv, char** envp) {
                     "  -c CMDS     Read the commands from the first arg\n"
                     "  -e          Exit on error\n"
                     "  -x          Debug\n"
+                    "  -P          Suppress position information\n"
                     "  -o FILE     Output file\n"
                     "  -w NUM      Indent num spaces\n"
                     "  -q CHAR     Quote char\n");

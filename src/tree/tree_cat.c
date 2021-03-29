@@ -477,5 +477,38 @@ again:
       }
       break;
     }
+
+    case A_ASSIGN:
+    case A_ASSIGNADD:
+    case A_ASSIGNSUB:
+    case A_ASSIGNMUL:
+    case A_ASSIGNDIV:
+    case A_ASSIGNMOD:
+    case A_ASSIGNLSHIFT:
+    case A_ASSIGNRSHIFT:
+    case A_ASSIGNBAND:
+    case A_ASSIGNBXOR:
+    case A_ASSIGNBOR: {
+
+      tree_cat(node->narithbinary.left, sa);
+
+      switch(node->narithbinary.id) {
+        case A_ASSIGN: stralloc_catc(sa, '='); break;
+        case A_ASSIGNADD: stralloc_cats(sa, "+="); break;
+        case A_ASSIGNSUB: stralloc_cats(sa, "-="); break;
+        case A_ASSIGNMUL: stralloc_cats(sa, "*="); break;
+        case A_ASSIGNDIV: stralloc_cats(sa, "/="); break;
+        case A_ASSIGNMOD: stralloc_cats(sa, "%="); break;
+        case A_ASSIGNLSHIFT: stralloc_cats(sa, "<<="); break;
+        case A_ASSIGNRSHIFT: stralloc_cats(sa, ">>="); break;
+        case A_ASSIGNBAND: stralloc_cats(sa, "&="); break;
+        case A_ASSIGNBXOR: stralloc_cats(sa, "^="); break;
+        case A_ASSIGNBOR: stralloc_cats(sa, "|="); break;
+        default: break;
+      }
+
+      tree_cat(node->narithbinary.right, sa);
+      break;
+    }
   }
 }

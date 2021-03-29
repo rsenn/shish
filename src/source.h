@@ -39,4 +39,17 @@ void source_exec(void);
 void source_newline(void);
 void source_push(struct source* in);
 
+static int
+source_peeknc(int pos) {
+  char c;
+  if(!source_peekn(&c, pos))
+    return -1;
+  return c;
+}
+
+static inline int
+source_peekc() {
+  return source_peeknc(0);
+}
+
 #endif /* SOURCE_H */

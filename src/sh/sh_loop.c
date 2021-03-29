@@ -9,6 +9,8 @@
 #include "../tree.h"
 #include "../var.h"
 
+int sh_no_position = 0;
+
 /* main loop, parse lines into trees and execute them
  * ----------------------------------------------------------------------- */
 void

@@ -56,7 +56,7 @@ expand_arith_expr(union node* expr, int64* r) {
     }
     case N_ARGPARAM: {
       union node* node = tree_newnode(N_ARG);
-      union node* n = expand_param((struct nargparam*)expr, &node, 0);
+      union node* n = expand_param(&expr->nargparam, &node, 0);
       stralloc* value;
       size_t len = 0;
       assert(n);
@@ -69,6 +69,21 @@ expand_arith_expr(union node* expr, int64* r) {
       ret = len == 0;
       if(ret)
         *r = 0;
+      break;
+    }
+      case A_ASSIGN:
+  case A_ASSIGNADD:
+  case A_ASSIGNSUB:
+  case A_ASSIGNMUL:
+  case A_ASSIGNDIV:
+  case A_ASSIGNMOD:
+  case A_ASSIGNLSHIFT:
+  case A_ASSIGNRSHIFT:
+  case A_ASSIGNBAND:
+  case A_ASSIGNBXOR:
+  case A_ASSIGNBOR:
+ {
+      ret = expand_arith_assign(&expr->narithbinary, r);
       break;
     }
     default: {

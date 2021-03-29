@@ -36,6 +36,8 @@ stralloc out_file;
 int out_fd = 1;
 buffer out_buf;
 
+int sh_no_position = 0;
+
 /* main routine
  * ----------------------------------------------------------------------- */
 int

@@ -8,21 +8,78 @@
 #include "../fd.h"
 
 int debug_nindent = 2;
+extern int sh_no_position;
 
 /* debugs a tree node!
  * ----------------------------------------------------------------------- */
-const char* debug_nodes[] = {"N_SIMPLECMD",     "N_PIPELINE",     "N_AND",       "N_OR",     "N_NOT",    "N_SUBSHELL",     "N_BRACEGROUP",
-                             "N_FOR",           "N_CASE",         "N_CASENODE",  "N_IF",     "N_WHILE",  "N_UNTIL",        "N_FUNCTION",
-                             "N_ARG",           "N_ASSIGN",       "N_REDIR",     "N_ARGSTR", "N_ARGCMD", "N_ARGPARAM",     "N_ARGRANGE",
-                             "N_ARGARITH",      "A_NUM",          "A_PAREN",     "A_OR",     "A_AND",    "A_BOR",          "A_BXOR",
-                             "A_BAND",          "A_EQ",           "A_NE",        "A_LT",     "A_GT",     "A_GE",           "A_LE",
-                             "A_LSHIFT",        "A_RSHIFT",       "A_ADD",       "A_SUB",    "A_MUL",    "A_DIV",          "A_MOD",
-                             "A_EXP",           "A_UNARYMINUS",   "A_UNARYPLUS", "A_NOT",    "A_BNOT",   "A_PREDECREMENT", "A_PREINCREMENT",
-                             "A_POSTDECREMENT", "A_POSTINCREMENT"};
+const char* debug_nodes[] = {"N_SIMPLECMD",
+                             "N_PIPELINE",
+                             "N_AND",
+                             "N_OR",
+                             "N_NOT",
+                             "N_SUBSHELL",
+                             "N_BRACEGROUP",
+                             "N_FOR",
+                             "N_CASE",
+                             "N_CASENODE",
+                             "N_IF",
+                             "N_WHILE",
+                             "N_UNTIL",
+                             "N_FUNCTION",
+                             "N_ARG",
+                             "N_ASSIGN",
+                             "N_REDIR",
+                             "N_ARGSTR",
+                             "N_ARGCMD",
+                             "N_ARGPARAM",
+                             "N_ARGARITH",
+                             "N_ARGRANGE",
+                             "A_NUM",
+                             "A_PAREN",
+                             "A_OR",
+                             "A_AND",
+                             "A_BOR",
+                             "A_BXOR",
+                             "A_BAND",
+                             "A_EQ",
+                             "A_NE",
+                             "A_LT",
+                             "A_GT",
+                             "A_GE",
+                             "A_LE",
+                             "A_LSHIFT",
+                             "A_RSHIFT",
+                             "A_ADD",
+                             "A_SUB",
+                             "A_MUL",
+                             "A_DIV",
+                             "A_MOD",
+                             "A_EXP",
+                             "A_UNARYMINUS",
+                             "A_UNARYPLUS",
+                             "A_NOT",
+                             "A_BNOT",
+                             "A_PREDECREMENT",
+                             "A_PREINCREMENT",
+                             "A_POSTDECREMENT",
+                             "A_POSTINCREMENT",
+                             "A_ASSIGN",
+                             "A_ASSIGNADD",
+                             "A_ASSIGNSUB",
+                             "A_ASSIGNMUL",
+                             "A_ASSIGNDIV",
+                             "A_ASSIGNMOD",
+                             "A_ASSIGNLSHIFT",
+                             "A_ASSIGNRSHIFT",
+                             "A_ASSIGNBAND",
+                             "A_ASSIGNBXOR",
+                             "A_ASSIGNBOR"};
 
 void
 debug_node(union node* node, int depth) {
-  const char* name = debug_nodes[node->id];
+  const char* name;
+
+  name = debug_nodes[node->id];
 
   // debug_indent(depth);
   debug_c('{');
@@ -141,7 +198,8 @@ debug_node(union node* node, int depth) {
     case N_ARGSTR:
 
       debug_ulong(", flag", node->nargstr.flag /*& 0x7*/, depth);
-      debug_position(", loc", &node->nargstr.loc, depth); // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
+      if(!sh_no_position)
+        debug_position(", loc", &node->nargstr.loc, depth); // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
       debug_stralloc(", stra",
                      &node->nargstr.stra,
                      depth,
@@ -166,7 +224,8 @@ debug_node(union node* node, int depth) {
          }*/
 
       debug_ulong(", flag", node->nargparam.flag, depth);
-      debug_position(", loc", &node->nargparam.loc, depth);
+      if(!sh_no_position)
+        debug_position(", loc", &node->nargparam.loc, depth);
       debug_str(", name", node->nargparam.name, depth, debug_quote);
       debug_sublist(", word", node->nargparam.word, depth);
       debug_ulong(", numb", node->nargparam.numb, depth);
@@ -205,6 +264,17 @@ debug_node(union node* node, int depth) {
     case A_RSHIFT:
     case A_MOD:
     case A_EXP:
+    case A_ASSIGN:
+    case A_ASSIGNADD:
+    case A_ASSIGNSUB:
+    case A_ASSIGNMUL:
+    case A_ASSIGNDIV:
+    case A_ASSIGNMOD:
+    case A_ASSIGNLSHIFT:
+    case A_ASSIGNRSHIFT:
+    case A_ASSIGNBAND:
+    case A_ASSIGNBXOR:
+    case A_ASSIGNBOR:
       debug_subnode(", left", node->narithbinary.left, depth);
       debug_subnode(", right", node->narithbinary.right, depth);
       break;

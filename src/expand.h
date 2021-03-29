@@ -82,6 +82,7 @@ int expand_args(union node* args, union node** nptr, int flags);
 void expand_argv(union node* args, char** argv);
 int expand_arith_binary(struct narithbinary* expr, int64* r);
 int expand_arith_expr(union node* expr, int64* r);
+int expand_arith_assign(struct narithbinary*, int64*);
 union node* expand_arith(struct nargarith* arith, union node** nptr);
 int expand_arith_unary(struct narithunary* expr, int64* r);
 union node** expand_break(union node** out);
