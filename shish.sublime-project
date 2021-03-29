@@ -25,9 +25,12 @@
           "follow_symlinks": false,
  "folder_exclude_patterns": [".*", "*.cache", "/home/roman/Sources/[!s][!h]*", "/home/roman/Sources/[^s][^h].*"],
       "file_exclude_patterns": [".*", "*.stackdump", "*.o", "*.d", "*.m4", "*~", "*.pro.user*"],
-    }
+    },
+    {
+			"path": "VSC-PCTS2016-2.19/vsc/tset/POSIX.shell/shell"
+		},
   ],
   "debugger_configurations":
   [
-	],
+  ],
 }

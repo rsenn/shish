@@ -92,7 +92,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
     }
 
     if(!node->next) {
-      if((fd_out->parent->mode & (FD_SUBST)) == (FD_SUBST)) {
+      if((fd_out->mode & FD_STRALLOC)) {
         int fd = fd_out->parent->rb.fd;
         ssize_t r;
         char b[1024];

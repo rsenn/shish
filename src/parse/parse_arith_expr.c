@@ -11,7 +11,9 @@ parse_arith_expr(struct parser* p) {
 
   parse_skipspace(p);
 
-  node = parse_arith_binary(p, 9);
+  node = parse_arith_assign(p);
+  if(!node)
+    node = parse_arith_binary(p, 9);
   if(!node)
     node = parse_arith_unary(p);
   if(!node)
