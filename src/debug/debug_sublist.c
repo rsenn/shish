@@ -10,7 +10,7 @@
  * ----------------------------------------------------------------------- */
 void
 debug_sublist(const char* s, union node* node, int depth) {
-  if(node) {
+  /*if(node)*/ {
     if(s)
       debug_field(s, depth);
     debug_list(node, depth);

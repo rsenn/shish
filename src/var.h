@@ -33,7 +33,14 @@ struct var {
   struct var** blink;
   struct var* gnext;  /* for the sorted list in the global vartab */
   struct var** glink; /* position within the global sorted list */
-  stralloc sa;
+  union {
+    stralloc sa;
+    struct {
+      char* s;
+      size_t total;
+      size_t a;
+    };
+  };
   size_t len;    /* name length */
   size_t offset; /* offset to value start */
   int flags;

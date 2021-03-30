@@ -51,6 +51,10 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   /* expand and set the variables,
      mark them for export if we're gonna execute a command */
   if(expand_vars(ncmd->vars, &assigns)) {
+
+    debug_stralloc("var", &node->narg.stra, 1, '"');
+    debug_nl_fl();
+
     /* if we don't exit after the command, have a command and not a
        special builtin the variable changes should be temporary */
     if(!(e->flags & E_EXIT) && cmd.ptr && cmd.id != H_SBUILTIN)

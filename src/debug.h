@@ -84,6 +84,7 @@ void debug_node(union node* node, int depth);
 void debug_redir(const char* msg, int flags, int depth);
 void debug_subst(const char* msg, int flags, int depth);
 void debug_position(const char* msg, const struct location* pos, int depth);
+void debug_location(const char* msg, const struct location* pos, int depth);
 
 size_t debug_argv(char** argv, buffer* out);
 

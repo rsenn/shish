@@ -79,6 +79,8 @@ void
 debug_node(union node* node, int depth) {
   const char* name;
 
+  if(depth > 0 && node->id >= N_ARG)
+    depth = -2;
   name = debug_nodes[node->id];
 
   // debug_indent(depth);
@@ -178,8 +180,8 @@ debug_node(union node* node, int depth) {
       debug_ulong(", flag", node->narg.flag, depth);
       //      debug_subst(0, node->narg.flag, -1);
 
-      if(node->narg.stra.len > 0)
-        debug_stralloc(", stra", &node->narg.stra, depth, debug_quote);
+      // if(node->narg.stra.len > 0)
+      debug_stralloc(", stra", &node->narg.stra, depth, debug_quote);
 
       if(node->narg.list)
         debug_sublist(", list", node->narg.list, depth);
@@ -199,7 +201,7 @@ debug_node(union node* node, int depth) {
 
       debug_ulong(", flag", node->nargstr.flag /*& 0x7*/, depth);
       if(!sh_no_position)
-        debug_position(", loc", &node->nargstr.loc, depth); // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
+        debug_location(", loc", &node->nargstr.loc, depth); // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
       debug_stralloc(", stra",
                      &node->nargstr.stra,
                      depth,
@@ -224,11 +226,14 @@ debug_node(union node* node, int depth) {
          }*/
 
       debug_ulong(", flag", node->nargparam.flag, depth);
-      if(!sh_no_position)
-        debug_position(", loc", &node->nargparam.loc, depth);
       debug_str(", name", node->nargparam.name, depth, debug_quote);
-      debug_sublist(", word", node->nargparam.word, depth);
+      if(node->nargparam.word)
+        debug_sublist(", word", node->nargparam.word, depth);
+      else
+        debug_str(", word", "NULL", depth, 0);
       debug_ulong(", numb", node->nargparam.numb, depth);
+      if(!sh_no_position)
+        debug_location(", loc", &node->nargparam.loc, depth);
 
       break;
     }

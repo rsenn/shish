@@ -1,6 +1,7 @@
 #include "../expand.h"
 #include "../../lib/scan.h"
 #include "../tree.h"
+#include "../debug.h"
 #include "../../lib/uint64.h"
 #include <assert.h>
 
@@ -97,6 +98,9 @@ expand_arith_expr(union node* expr, int64* r) {
       break;
     }
     default: {
+      debug_s("expand_arith_expr ");
+      debug_node(expr, 1);
+      debug_nl_fl();
       ret = -1;
       break;
     }

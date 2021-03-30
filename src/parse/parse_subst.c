@@ -5,7 +5,7 @@
 int
 parse_subst(struct parser* p) {
   char c[3];
-
+  int ret = 0;
   if(source_peek(&c[0]) <= 0)
     return -1;
 
@@ -28,5 +28,5 @@ parse_subst(struct parser* p) {
   }
 
   stralloc_catc(&p->sa, '$');
-  return 0;
+  return ret;
 }

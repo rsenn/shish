@@ -90,6 +90,8 @@ main(int argc, char** argv, char** envp) {
   debug_buffer.fd = 1;
   debug_nindent = 2;
 
+  sh_no_position = 0;
+
   /* parse command line arguments */
   while((c = shell_getopt(argc, argv, "c:xeo:q:w:l:P")) > 0) switch(c) {
       case 'c': cmds = shell_optarg; break;

@@ -24,8 +24,8 @@ var_create(const char* v, int flags) {
   }
 
   newvar = shell_alloc(sizeof(struct var));
-  newvar->flags |= V_FREE;
   var_init(v, newvar, &ctx);
+  newvar->flags |= V_FREE;
 
   /* if the variable was found on another
      level then do some pointer setup :) */
