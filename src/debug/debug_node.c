@@ -162,8 +162,8 @@ debug_node(union node* node, int depth) {
     case N_UNTIL:
       debug_ulong(", bgnd", node->nloop.bgnd, depth);
       debug_sublist(", rdir", node->nif.rdir, depth);
-      debug_sublist(", cmds", node->nloop.test, depth);
       debug_subnode(", test", node->nloop.test, depth);
+      debug_sublist(", cmds", node->nloop.cmds, depth);
       break;
 
     case N_FUNCTION:

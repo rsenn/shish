@@ -8,8 +8,7 @@
  * ----------------------------------------------------------------------- */
 int
 expand_vars(union node* vars, union node** nptr) {
-  union node* var;
-  union node* n;
+  union node* var, *n;
   int ret = 0;
 
   *nptr = NULL;
