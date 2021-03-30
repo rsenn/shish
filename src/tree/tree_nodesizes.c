@@ -22,6 +22,7 @@ const int tree_nodesizes[] = {
     sizeof(struct nargcmd),      /* N_ARGCMD */
     sizeof(struct nargparam),    /* N_ARGPARAM */
     sizeof(struct nargarith),    /* N_ARGARITH */
+    sizeof(struct nargparam),    /* N_ARGRANGE */
     sizeof(struct narithnum),    /* A_NUM */
     sizeof(struct nargarith),    /* A_PAREN */
     sizeof(struct narithbinary), /* A_OR */
