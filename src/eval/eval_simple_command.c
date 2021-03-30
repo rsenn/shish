@@ -59,8 +59,8 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
     for(node = assigns; node; node = node->next) {
 
-      debug_stralloc("var", &node->narg.stra, 1, '"');
-      debug_nl_fl();
+      debug_stralloc("var", &node->narg.stra, 0, 0);
+      debug_fl();
 
       if(!var_setsa(&node->narg.stra, (cmd.ptr ? V_EXPORT : V_DEFAULT))) {
         status = 1;
