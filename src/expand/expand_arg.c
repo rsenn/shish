@@ -1,5 +1,7 @@
+#include "../../lib/uint64.h"
 #include "../expand.h"
 #include "../tree.h"
+#include "../debug.h"
 #include <stdlib.h>
 #include <assert.h>
 
@@ -12,6 +14,7 @@ union node*
 expand_arg(union node* node, union node** nptr, int flags) {
   union node* n = *nptr;
   union node* subarg;
+  int i = 0;
 
   /* loop through all parts of the word */
   for(subarg = (node && node->id == N_ARG) ? node->narg.list : node; subarg; subarg = subarg->next) {
@@ -41,12 +44,30 @@ expand_arg(union node* node, union node** nptr, int flags) {
         n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, nptr, lflags);
         break;
 
-      default: break;
+      default:
+
+        debug_node(subarg, 0);
+        debug_nl_fl();
+        break;
     }
+
+    debug_s("sub args #");
+    debug_n(i);
+    debug_c(' ');
+    debug_node(subarg, 1);
+    debug_newline(0);
+    debug_fl();
+    i++;
 
     if(n)
       nptr = &n;
   }
+
+  debug_s("expanded arg ");
+
+  debug_node(n, 1);
+  debug_newline(0);
+  debug_fl();
 
   return n;
 }
