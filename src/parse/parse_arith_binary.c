@@ -54,7 +54,7 @@ parse_arith_binary(struct parser* p, int precedence) {
         return left;
       if(c != '=')
         if((a == '>' || a == '<') && a == b) {
-          op = a == '>' ? A_RSHIFT : A_LSHIFT;
+          op = a == '>' ? A_SHR : A_SHL;
           parse_skip(p);
         }
 
@@ -79,9 +79,9 @@ parse_arith_binary(struct parser* p, int precedence) {
     } else if(precedence <= 7) {
       if(b != '=')
         switch(a) {
-          case '&': op = A_BAND; break;
-          case '|': op = A_BOR; break;
-          case '^': op = A_BXOR; break;
+          case '&': op = A_BITAND; break;
+          case '|': op = A_BITOR; break;
+          case '^': op = A_BITXOR; break;
         }
     } else if(precedence <= 8) {
       if((a == '&' || a == '|') && a == b) {

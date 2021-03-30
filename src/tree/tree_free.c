@@ -121,17 +121,17 @@ tree_free(union node* node) {
 
       case A_OR:
       case A_AND:
-      case A_BOR:
-      case A_BXOR:
-      case A_BAND:
+      case A_BITOR:
+      case A_BITXOR:
+      case A_BITAND:
       case A_EQ:
       case A_NE:
       case A_LT:
       case A_GT:
       case A_GE:
       case A_LE:
-      case A_LSHIFT:
-      case A_RSHIFT:
+      case A_SHL:
+      case A_SHR:
       case A_ADD:
       case A_SUB:
       case A_MUL:
@@ -149,10 +149,10 @@ tree_free(union node* node) {
       case A_UNARYPLUS:
       case A_NOT:
       case A_BNOT:
-      case A_PREINCREMENT:
-      case A_PREDECREMENT:
-      case A_POSTINCREMENT:
-      case A_POSTDECREMENT:
+      case A_PREINCR:
+      case A_PREDECR:
+      case A_POSTINCR:
+      case A_POSTDECR:
         if(node->narithunary.node)
           tree_free(node->narithunary.node);
         break;

@@ -26,17 +26,17 @@ const int tree_nodesizes[] = {
     sizeof(struct nargarith),    /* A_PAREN */
     sizeof(struct narithbinary), /* A_OR */
     sizeof(struct narithbinary), /* A_AND */
-    sizeof(struct narithbinary), /* A_BOR */
-    sizeof(struct narithbinary), /* A_BXOR */
-    sizeof(struct narithbinary), /* A_BAND */
+    sizeof(struct narithbinary), /* A_BITOR */
+    sizeof(struct narithbinary), /* A_BITXOR */
+    sizeof(struct narithbinary), /* A_BITAND */
     sizeof(struct narithbinary), /* A_EQ */
     sizeof(struct narithbinary), /* A_NE */
     sizeof(struct narithbinary), /* A_LT */
     sizeof(struct narithbinary), /* A_GT */
     sizeof(struct narithbinary), /* A_GE */
     sizeof(struct narithbinary), /* A_LE */
-    sizeof(struct narithbinary), /* A_LSHIFT */
-    sizeof(struct narithbinary), /* A_RSHIFT */
+    sizeof(struct narithbinary), /* A_SHL */
+    sizeof(struct narithbinary), /* A_SHR */
     sizeof(struct narithbinary), /* A_ADD */
     sizeof(struct narithbinary), /* A_SUB */
     sizeof(struct narithbinary), /* A_MUL */
@@ -47,19 +47,19 @@ const int tree_nodesizes[] = {
     sizeof(struct narithunary),  /* A_UNARYPLUS */
     sizeof(struct narithunary),  /* A_NOT */
     sizeof(struct narithunary),  /* A_BNOT */
-    sizeof(struct narithunary),  /* A_PREDECREMENT */
-    sizeof(struct narithunary),  /* A_PREINCREMENT */
-    sizeof(struct narithunary),  /* A_POSTDECREMENT */
-    sizeof(struct narithunary),  /* A_POSTINCREMENT */
-    sizeof(struct narithbinary), /* A_ASSIGN */
-    sizeof(struct narithbinary), /* A_ASSIGNADD */
-    sizeof(struct narithbinary), /* A_ASSIGNSUB */
-    sizeof(struct narithbinary), /* A_ASSIGNMUL */
-    sizeof(struct narithbinary), /* A_ASSIGNDIV */
-    sizeof(struct narithbinary), /* A_ASSIGNMOD */
-    sizeof(struct narithbinary), /* A_ASSIGNLSHIFT */
-    sizeof(struct narithbinary), /* A_ASSIGNRSHIFT */
-    sizeof(struct narithbinary), /* A_ASSIGNBAND */
-    sizeof(struct narithbinary), /* A_ASSIGNBXOR */
-    sizeof(struct narithbinary)  /* A_ASSIGNBOR */
+    sizeof(struct narithunary),  /* A_PREDECR */
+    sizeof(struct narithunary),  /* A_PREINCR */
+    sizeof(struct narithunary),  /* A_POSTDECR */
+    sizeof(struct narithunary),  /* A_POSTINCR */
+    sizeof(struct narithbinary), /* A_VASSIGN */
+    sizeof(struct narithbinary), /* A_VADD */
+    sizeof(struct narithbinary), /* A_VSUB */
+    sizeof(struct narithbinary), /* A_VMUL */
+    sizeof(struct narithbinary), /* A_VDIV */
+    sizeof(struct narithbinary), /* A_VMOD */
+    sizeof(struct narithbinary), /* A_VSHL */
+    sizeof(struct narithbinary), /* A_VSHR */
+    sizeof(struct narithbinary), /* A_VBITAND */
+    sizeof(struct narithbinary), /* A_VBITXOR */
+    sizeof(struct narithbinary)  /* A_VBITOR */
 };

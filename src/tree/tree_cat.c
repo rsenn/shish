@@ -401,17 +401,17 @@ again:
     case A_DIV:
     case A_OR:
     case A_AND:
-    case A_BOR:
-    case A_BXOR:
-    case A_BAND:
+    case A_BITOR:
+    case A_BITXOR:
+    case A_BITAND:
     case A_EQ:
     case A_NE:
     case A_LT:
     case A_GT:
     case A_GE:
     case A_LE:
-    case A_LSHIFT:
-    case A_RSHIFT:
+    case A_SHL:
+    case A_SHR:
     case A_MOD:
     case A_EXP: {
 
@@ -424,17 +424,17 @@ again:
         case A_DIV: stralloc_catc(sa, '/'); break;
         case A_OR: stralloc_cats(sa, "||"); break;
         case A_AND: stralloc_cats(sa, "&&"); break;
-        case A_BOR: stralloc_catc(sa, '|'); break;
-        case A_BXOR: stralloc_catc(sa, '^'); break;
-        case A_BAND: stralloc_catc(sa, '&'); break;
+        case A_BITOR: stralloc_catc(sa, '|'); break;
+        case A_BITXOR: stralloc_catc(sa, '^'); break;
+        case A_BITAND: stralloc_catc(sa, '&'); break;
         case A_EQ: stralloc_cats(sa, "=="); break;
         case A_NE: stralloc_cats(sa, "!="); break;
         case A_LT: stralloc_cats(sa, "<"); break;
         case A_GT: stralloc_cats(sa, ">"); break;
         case A_GE: stralloc_cats(sa, ">="); break;
         case A_LE: stralloc_cats(sa, "<="); break;
-        case A_LSHIFT: stralloc_cats(sa, "<<"); break;
-        case A_RSHIFT: stralloc_cats(sa, ">>"); break;
+        case A_SHL: stralloc_cats(sa, "<<"); break;
+        case A_SHR: stralloc_cats(sa, ">>"); break;
         case A_MOD: stralloc_catc(sa, '%'); break;
         case A_EXP: stralloc_cats(sa, "**"); break;
         default: break;
@@ -455,55 +455,55 @@ again:
     case A_BNOT:
     case A_UNARYMINUS:
     case A_UNARYPLUS:
-    case A_PREINCREMENT:
-    case A_PREDECREMENT:
-    case A_POSTINCREMENT:
-    case A_POSTDECREMENT: {
+    case A_PREINCR:
+    case A_PREDECR:
+    case A_POSTINCR:
+    case A_POSTDECR: {
 
       switch(node->narithunary.id) {
         case A_NOT: stralloc_catc(sa, '!'); break;
         case A_BNOT: stralloc_catc(sa, '~'); break;
         case A_UNARYMINUS: stralloc_catc(sa, '-'); break;
         case A_UNARYPLUS: stralloc_catc(sa, '+'); break;
-        case A_PREINCREMENT: stralloc_cats(sa, "++"); break;
-        case A_PREDECREMENT: stralloc_cats(sa, "--"); break;
+        case A_PREINCR: stralloc_cats(sa, "++"); break;
+        case A_PREDECR: stralloc_cats(sa, "--"); break;
         default: break;
       }
       tree_cat(node->narithunary.node, sa);
       switch(node->narithunary.id) {
-        case A_POSTINCREMENT: stralloc_cats(sa, "++"); break;
-        case A_POSTDECREMENT: stralloc_cats(sa, "--"); break;
+        case A_POSTINCR: stralloc_cats(sa, "++"); break;
+        case A_POSTDECR: stralloc_cats(sa, "--"); break;
         default: break;
       }
       break;
     }
 
-    case A_ASSIGN:
-    case A_ASSIGNADD:
-    case A_ASSIGNSUB:
-    case A_ASSIGNMUL:
-    case A_ASSIGNDIV:
-    case A_ASSIGNMOD:
-    case A_ASSIGNLSHIFT:
-    case A_ASSIGNRSHIFT:
-    case A_ASSIGNBAND:
-    case A_ASSIGNBXOR:
-    case A_ASSIGNBOR: {
+    case A_VASSIGN:
+    case A_VADD:
+    case A_VSUB:
+    case A_VMUL:
+    case A_VDIV:
+    case A_VMOD:
+    case A_VSHL:
+    case A_VSHR:
+    case A_VBITAND:
+    case A_VBITXOR:
+    case A_VBITOR: {
 
       tree_cat(node->narithbinary.left, sa);
       stralloc_catc(sa, ' ');
       switch(node->narithbinary.id) {
-        case A_ASSIGN: stralloc_catc(sa, '='); break;
-        case A_ASSIGNADD: stralloc_cats(sa, "+="); break;
-        case A_ASSIGNSUB: stralloc_cats(sa, "-="); break;
-        case A_ASSIGNMUL: stralloc_cats(sa, "*="); break;
-        case A_ASSIGNDIV: stralloc_cats(sa, "/="); break;
-        case A_ASSIGNMOD: stralloc_cats(sa, "%="); break;
-        case A_ASSIGNLSHIFT: stralloc_cats(sa, "<<="); break;
-        case A_ASSIGNRSHIFT: stralloc_cats(sa, ">>="); break;
-        case A_ASSIGNBAND: stralloc_cats(sa, "&="); break;
-        case A_ASSIGNBXOR: stralloc_cats(sa, "^="); break;
-        case A_ASSIGNBOR: stralloc_cats(sa, "|="); break;
+        case A_VASSIGN: stralloc_catc(sa, '='); break;
+        case A_VADD: stralloc_cats(sa, "+="); break;
+        case A_VSUB: stralloc_cats(sa, "-="); break;
+        case A_VMUL: stralloc_cats(sa, "*="); break;
+        case A_VDIV: stralloc_cats(sa, "/="); break;
+        case A_VMOD: stralloc_cats(sa, "%="); break;
+        case A_VSHL: stralloc_cats(sa, "<<="); break;
+        case A_VSHR: stralloc_cats(sa, ">>="); break;
+        case A_VBITAND: stralloc_cats(sa, "&="); break;
+        case A_VBITXOR: stralloc_cats(sa, "^="); break;
+        case A_VBITOR: stralloc_cats(sa, "|="); break;
         default: break;
       }
 

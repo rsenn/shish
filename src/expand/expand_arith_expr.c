@@ -32,26 +32,26 @@ expand_arith_expr(union node* expr, int64* r) {
     case A_UNARYPLUS:
     case A_NOT:
     case A_BNOT:
-    case A_PREINCREMENT:
-    case A_PREDECREMENT:
-    case A_POSTINCREMENT:
-    case A_POSTDECREMENT: {
+    case A_PREINCR:
+    case A_PREDECR:
+    case A_POSTINCR:
+    case A_POSTDECR: {
       ret = expand_arith_unary(&expr->narithunary, r);
       break;
     }
     case A_OR:
     case A_AND:
-    case A_BOR:
-    case A_BXOR:
-    case A_BAND:
+    case A_BITOR:
+    case A_BITXOR:
+    case A_BITAND:
     case A_EQ:
     case A_NE:
     case A_LT:
     case A_GT:
     case A_GE:
     case A_LE:
-    case A_LSHIFT:
-    case A_RSHIFT:
+    case A_SHL:
+    case A_SHR:
     case A_ADD:
     case A_SUB:
     case A_MUL:
@@ -83,17 +83,17 @@ expand_arith_expr(union node* expr, int64* r) {
         *r = 0;
       break;
     }
-    case A_ASSIGN:
-    case A_ASSIGNADD:
-    case A_ASSIGNSUB:
-    case A_ASSIGNMUL:
-    case A_ASSIGNDIV:
-    case A_ASSIGNMOD:
-    case A_ASSIGNLSHIFT:
-    case A_ASSIGNRSHIFT:
-    case A_ASSIGNBAND:
-    case A_ASSIGNBXOR:
-    case A_ASSIGNBOR: {
+    case A_VASSIGN:
+    case A_VADD:
+    case A_VSUB:
+    case A_VMUL:
+    case A_VDIV:
+    case A_VMOD:
+    case A_VSHL:
+    case A_VSHR:
+    case A_VBITAND:
+    case A_VBITXOR:
+    case A_VBITOR: {
       ret = expand_arith_assign(&expr->narithbinary, r);
       break;
     }

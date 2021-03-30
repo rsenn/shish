@@ -24,17 +24,17 @@ expand_arith_assign(struct narithbinary* assign, int64* r) {
     right = 0;
 
   switch(assign->id) {
-    case A_ASSIGN: left = right; break;
-    case A_ASSIGNADD: left += right; break;
-    case A_ASSIGNSUB: left -= right; break;
-    case A_ASSIGNMUL: left *= right; break;
-    case A_ASSIGNDIV: left /= right; break;
-    case A_ASSIGNMOD: left %= right; break;
-    case A_ASSIGNLSHIFT: left <<= right; break;
-    case A_ASSIGNRSHIFT: left >>= right; break;
-    case A_ASSIGNBAND: left &= right; break;
-    case A_ASSIGNBXOR: left ^= right; break;
-    case A_ASSIGNBOR: left |= right; break;
+    case A_VASSIGN: left = right; break;
+    case A_VADD: left += right; break;
+    case A_VSUB: left -= right; break;
+    case A_VMUL: left *= right; break;
+    case A_VDIV: left /= right; break;
+    case A_VMOD: left %= right; break;
+    case A_VSHL: left <<= right; break;
+    case A_VSHR: left >>= right; break;
+    case A_VBITAND: left &= right; break;
+    case A_VBITXOR: left ^= right; break;
+    case A_VBITOR: left |= right; break;
     default: return 1;
   }
 

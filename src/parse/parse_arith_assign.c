@@ -39,14 +39,14 @@ parse_arith_assign(struct parser* p, union node* left) {
       break;
 
     if(c[0] == '=') {
-      id = A_ASSIGN;
+      id = A_VASSIGN;
       source_skip();
     } else if((c[0] == '<' || c[0] == '>') && c[0] == c[1]) {
 
       if(source_peekn(&c[2], 2) <= 0 || c[2] != '=')
         break;
 
-      id = c[0] == '<' ? A_ASSIGNLSHIFT : A_ASSIGNRSHIFT;
+      id = c[0] == '<' ? A_VSHL : A_VSHR;
       source_skip();
       source_skip();
       source_skip();
@@ -54,14 +54,14 @@ parse_arith_assign(struct parser* p, union node* left) {
     } else if(c[1] == '=') {
 
       switch(c[0]) {
-        case '*': id = A_ASSIGNMUL; break;
-        case '/': id = A_ASSIGNDIV; break;
-        case '%': id = A_ASSIGNMOD; break;
-        case '+': id = A_ASSIGNADD; break;
-        case '-': id = A_ASSIGNSUB; break;
-        case '&': id = A_ASSIGNBAND; break;
-        case '^': id = A_ASSIGNBXOR; break;
-        case '|': id = A_ASSIGNBOR; break;
+        case '*': id = A_VMUL; break;
+        case '/': id = A_VDIV; break;
+        case '%': id = A_VMOD; break;
+        case '+': id = A_VADD; break;
+        case '-': id = A_VSUB; break;
+        case '&': id = A_VBITAND; break;
+        case '^': id = A_VBITXOR; break;
+        case '|': id = A_VBITOR; break;
         default: c[0] = '\0'; break;
       }
       if(c[0]) {

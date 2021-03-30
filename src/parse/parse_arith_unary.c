@@ -21,8 +21,8 @@ parse_arith_unary(struct parser* p) {
   switch(c) {
     case '!': n = A_NOT; break;
     case '~': n = A_BNOT; break;
-    case '-': n = c2 == '-' ? A_PREDECREMENT : A_UNARYMINUS; break;
-    case '+': n = c2 == '+' ? A_PREINCREMENT : A_UNARYPLUS; break;
+    case '-': n = c2 == '-' ? A_PREDECR : A_UNARYMINUS; break;
+    case '+': n = c2 == '+' ? A_PREINCR : A_UNARYPLUS; break;
     default: return parse_arith_value(p);
   }
 

@@ -38,17 +38,17 @@ const char* debug_nodes[] = {"N_SIMPLECMD",
                              "A_PAREN",
                              "A_OR",
                              "A_AND",
-                             "A_BOR",
-                             "A_BXOR",
-                             "A_BAND",
+                             "A_BITOR",
+                             "A_BITXOR",
+                             "A_BITAND",
                              "A_EQ",
                              "A_NE",
                              "A_LT",
                              "A_GT",
                              "A_GE",
                              "A_LE",
-                             "A_LSHIFT",
-                             "A_RSHIFT",
+                             "A_SHL",
+                             "A_SHR",
                              "A_ADD",
                              "A_SUB",
                              "A_MUL",
@@ -59,21 +59,21 @@ const char* debug_nodes[] = {"N_SIMPLECMD",
                              "A_UNARYPLUS",
                              "A_NOT",
                              "A_BNOT",
-                             "A_PREDECREMENT",
-                             "A_PREINCREMENT",
-                             "A_POSTDECREMENT",
-                             "A_POSTINCREMENT",
-                             "A_ASSIGN",
-                             "A_ASSIGNADD",
-                             "A_ASSIGNSUB",
-                             "A_ASSIGNMUL",
-                             "A_ASSIGNDIV",
-                             "A_ASSIGNMOD",
-                             "A_ASSIGNLSHIFT",
-                             "A_ASSIGNRSHIFT",
-                             "A_ASSIGNBAND",
-                             "A_ASSIGNBXOR",
-                             "A_ASSIGNBOR"};
+                             "A_PREDECR",
+                             "A_PREINCR",
+                             "A_POSTDECR",
+                             "A_POSTINCR",
+                             "A_VASSIGN",
+                             "A_VADD",
+                             "A_VSUB",
+                             "A_VMUL",
+                             "A_VDIV",
+                             "A_VMOD",
+                             "A_VSHL",
+                             "A_VSHR",
+                             "A_VBITAND",
+                             "A_VBITXOR",
+                             "A_VBITOR"};
 
 void
 debug_node(union node* node, int depth) {
@@ -256,30 +256,30 @@ debug_node(union node* node, int depth) {
     case A_DIV:
     case A_OR:
     case A_AND:
-    case A_BOR:
-    case A_BXOR:
-    case A_BAND:
+    case A_BITOR:
+    case A_BITXOR:
+    case A_BITAND:
     case A_EQ:
     case A_NE:
     case A_LT:
     case A_GT:
     case A_GE:
     case A_LE:
-    case A_LSHIFT:
-    case A_RSHIFT:
+    case A_SHL:
+    case A_SHR:
     case A_MOD:
     case A_EXP:
-    case A_ASSIGN:
-    case A_ASSIGNADD:
-    case A_ASSIGNSUB:
-    case A_ASSIGNMUL:
-    case A_ASSIGNDIV:
-    case A_ASSIGNMOD:
-    case A_ASSIGNLSHIFT:
-    case A_ASSIGNRSHIFT:
-    case A_ASSIGNBAND:
-    case A_ASSIGNBXOR:
-    case A_ASSIGNBOR:
+    case A_VASSIGN:
+    case A_VADD:
+    case A_VSUB:
+    case A_VMUL:
+    case A_VDIV:
+    case A_VMOD:
+    case A_VSHL:
+    case A_VSHR:
+    case A_VBITAND:
+    case A_VBITXOR:
+    case A_VBITOR:
       debug_subnode(", left", node->narithbinary.left, depth);
       debug_subnode(", right", node->narithbinary.right, depth);
       break;
@@ -290,10 +290,10 @@ debug_node(union node* node, int depth) {
     case A_BNOT:
     case A_UNARYMINUS:
     case A_UNARYPLUS:
-    case A_PREINCREMENT:
-    case A_PREDECREMENT:
-    case A_POSTINCREMENT:
-    case A_POSTDECREMENT: debug_subnode(", node", node->narithunary.node, depth); break;
+    case A_PREINCR:
+    case A_PREDECR:
+    case A_POSTINCR:
+    case A_POSTDECR: debug_subnode(", node", node->narithunary.node, depth); break;
 
     case N_NOT: debug_sublist(", cmds", node->nandor.left, depth); break;
   }
