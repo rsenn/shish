@@ -3,6 +3,7 @@
 
 #include "source.h"
 #include "../lib/stralloc.h"
+#include "../lib/uint8.h"
 #include "../lib/uint64.h"
 #include <stdlib.h>
 
@@ -281,7 +282,7 @@ struct narithnum {
   enum kind id;
   union node* next;
   int64 num;
-  unsigned base;
+  uint8 base;
 };
 
 struct narithunary {

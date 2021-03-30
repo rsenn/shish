@@ -33,10 +33,12 @@ size_t scan_8long(const char* src, unsigned long* dest);
  * and return the number of bytes that were parsed */
 size_t scan_long(const char* src, signed long* dest);
 
+#ifdef UINT64_H
 size_t scan_longlong(const char* src, int64* dest);
 size_t scan_ulonglong(const char* src, uint64* dest);
 size_t scan_xlonglong(const char* src, uint64* dest);
 size_t scan_octal(const char* src, uint64* dest);
+#endif
 
 size_t scan_uint(const char* src, unsigned int* dest);
 size_t scan_xint(const char* src, unsigned int* dest);

@@ -1,7 +1,8 @@
-#include "../expand.h"
-#include "../features.h"
+#include "../../lib/uint64.h"
 #include "../../lib/fmt.h"
 #include "../../lib/byte.h"
+#include "../expand.h"
+#include "../features.h"
 #include "../parse.h"
 #include "../redir.h"
 #include "../tree.h"
@@ -386,7 +387,16 @@ again:
     }
 
     case A_NUM: {
-      stralloc_catlong(sa, node->narithnum.num);
+      char buf[FMT_8LONG];
+      size_t (*fn)();
+
+      switch(node->narithnum.base) {
+        case 8: fn = fmt_8longlong; break;
+        case 10: fn = fmt_longlong; break;
+        case 16: fn = fmt_xlonglong; break;
+      }
+
+      stralloc_catb(sa, buf, fn(buf, node->narithnum.num));
       break;
     }
       /*
