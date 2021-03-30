@@ -65,8 +65,6 @@ extern char debug_quote;
 #define DEBUG_END "]"
 #define DEBUG_SPACE 2
 
-void debug_argv(char**, buffer*);
-
 union node;
 struct location;
 
@@ -86,6 +84,8 @@ void debug_node(union node* node, int depth);
 void debug_redir(const char* msg, int flags, int depth);
 void debug_subst(const char* msg, int flags, int depth);
 void debug_position(const char* msg, const struct location* pos, int depth);
+
+size_t debug_argv(char** argv, buffer* out);
 
 #ifdef DEBUG_OUTPUT
 

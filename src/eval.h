@@ -1,13 +1,16 @@
 #ifndef EVAL_H
 #define EVAL_H
 
-#define E_EXIT 0x01   /* exit after evaluating tree */
-#define E_ROOT 0x02   /* we're in the rootnode */
-#define E_BQUOTE 0x04 /* backquoted command */
-#define E_JCTL 0x08   /* job control */
-#define E_LIST 0x10   /* evaluate a node list */
-#define E_BREAK 0x20
-#define E_CONTINUE 0x40
+enum {
+  E_EXIT = 0x01,   /* exit after evaluating tree */
+  E_ROOT = 0x02,   /* we're in the rootnode */
+  E_BQUOTE = 0x04, /* backquoted command */
+  E_JCTL = 0x08,   /* job control */
+  E_LIST = 0x10,   /* evaluate a node list */
+  E_BREAK = 0x20,
+  E_CONTINUE = 0x40,
+  E_PRINT = 0x80 /* print simpe command */
+};
 
 #include "tree.h"
 #include <setjmp.h>
@@ -50,5 +53,12 @@ int eval_pipeline(struct eval* e, struct npipe* npipe);
 int eval_simple_command(struct eval* e, struct ncmd* ncmd);
 int eval_subshell(struct eval* e, struct ngrp* ngrp);
 int eval_function(struct eval* e, struct nfunc* func);
+
+static inline unsigned int
+eval_depth(struct eval* e) {
+  unsigned int n;
+  for(n = 0; e; e = e->parent) n++;
+  return n;
+}
 
 #endif /* EVAL_H */

@@ -4,9 +4,13 @@
 #include "../../lib/str.h"
 
 /* ----------------------------------------------------------------------- */
-void
+size_t
 debug_argv(char** argv, buffer* out) {
   char** arg;
+  size_t i;
+
+  i = out->p;
+
   for(arg = argv; *arg; arg++) {
     int quote = !!(*arg)[str_chr(*arg, ' ')];
 
@@ -27,4 +31,5 @@ debug_argv(char** argv, buffer* out) {
     if(quote)
       buffer_putc(out, '\'');
   }
+  return out->p - i;
 }

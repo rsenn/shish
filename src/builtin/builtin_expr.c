@@ -63,7 +63,7 @@ builtin_expr(int argc, char* argv[]) {
 
 #ifdef DEBUG_OUTPUT
       debug_list(expr, 0);
-      buffer_putnlflush(fd_err->w);
+      debug_nl_fl();
 #endif /* DEBUG_OUTPUT */
 
       if(expand_arith_expr(expr, &result)) {

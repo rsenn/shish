@@ -1,7 +1,7 @@
 #include "../source.h"
 
 /* ----------------------------------------------------------------------- */
-void
+int
 source_skip(void) {
   register buffer* b = source->b;
   unsigned char c;
@@ -19,5 +19,16 @@ source_skip(void) {
       source->position.column++;
       source->position.offset++;
     }
+    return 1;
   }
+  return 0;
+}
+
+/* ----------------------------------------------------------------------- */
+int
+source_skipn(int n) {
+  while(n-- >= 0)
+    if(!source_skip())
+      break;
+  return n;
 }

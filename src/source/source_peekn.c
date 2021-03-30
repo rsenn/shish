@@ -4,7 +4,7 @@
  * doesn't advance buffer pointer, use input_skipcn() for that
  * ----------------------------------------------------------------------- */
 int
-source_peekn(char* c, unsigned int n) {
+source_peekn(char* c, unsigned n) {
   buffer* b = source->b;
   int ret = b->n - b->p;
 
@@ -24,10 +24,7 @@ source_peekn(char* c, unsigned int n) {
   return ret;
 }
 
-int
-source_peeknc(int pos) {
-  char c;
-  if(!source_peekn(&c, pos))
-    return -1;
-  return c;
+char
+source_peeknc(unsigned pos) {
+  return *source_peeks(pos);
 }

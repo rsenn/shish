@@ -14,7 +14,6 @@ expand_arith_binary(struct narithbinary* expr, int64* r) {
     return 1;
 
   switch(expr->id) {
-
     case A_OR: *r = left || right; break;
     case A_AND: *r = left && right; break;
     case A_BOR: *r = left | right; break;

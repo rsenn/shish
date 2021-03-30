@@ -11,6 +11,17 @@ expand_arith_expr(union node* expr, int64* r) {
   int ret = 0;
 
   switch(expr->id) {
+    case N_ARGCMD: {
+      stralloc sa;
+      stralloc_init(&sa);
+      expand_tosa(expr, &sa);
+      stralloc_nul(&sa);
+
+      *r = 0;
+      scan_longlong(sa.s, r);
+      stralloc_free(&sa);
+      break;
+    }
     case A_PAREN: {
       ret = expand_arith_expr(((struct narithunary*)expr)->node, r);
       break;

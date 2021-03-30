@@ -34,25 +34,25 @@ exec_command(struct command* cmd, int argc, char** argv, int exec, union node* r
     }
 
     case H_FUNCTION: {
-      struct env sh;
+      struct env inst;
       struct eval e;
       struct vartab vars;
 
       vartab_push(&vars, 1);
 
-      sh_push(&sh);
-      sh.arg.v = argv;
-      for(sh.arg.c = 0; argv[sh.arg.c]; sh.arg.c++)
+      sh_push(&inst);
+      inst.arg.v = argv;
+      for(inst.arg.c = 0; argv[inst.arg.c]; inst.arg.c++)
         ;
 
-      sh.arg.v++;
-      sh.arg.c--;
+      inst.arg.v++;
+      inst.arg.c--;
 
       //    sh_setargs(argv, 0);
-      eval_push(&e, 0);
+      eval_push(&e, sh->opts.debug ? E_PRINT : 0);
       eval_cmdlist(&e, &cmd->fn->ngrp);
       ret = eval_pop(&e);
-      sh_pop(&sh);
+      sh_pop(&inst);
       vartab_pop(&vars);
 
       break;

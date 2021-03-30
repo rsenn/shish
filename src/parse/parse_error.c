@@ -35,7 +35,7 @@ parse_error(struct parser* p, enum tok_flag toks) {
     }
     buffer_putnlflush(fd_err->w);
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
+#if 0 // defined(DEBUG_OUTPUT_) && defined(DEBUG_PARSE) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
     if(p->node) {
       buffer_puts(fd_err->w, p->tree ? "tree: " : "node: ");
       debug_node(p->tree ? p->tree : p->node, -1);

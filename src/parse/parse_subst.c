@@ -4,22 +4,26 @@
 
 int
 parse_subst(struct parser* p) {
-  char c;
+  char c[3];
 
-  if(source_next(&c) <= 0)
+  if(source_peek(&c[0]) <= 0)
     return -1;
 
-  if(c == '(') {
-    if(source_peekn(&c, 1) <= 0)
+  if(c[0] == '$')
+    source_next(&c[0]);
+
+  if(c[0] == '(') {
+    if(source_peekn(&c[1], 1) <= 0)
       return -1;
 
-    if(c == '(') {
-      parse_skip(p);
+    if(c[1] == '(') {
+      source_skip();
       return parse_arith(p);
     }
+    //    source_skip();
 
     return parse_bquoted(p);
-  } else if(parse_isparam(c) || c == '{') {
+  } else if(parse_isparam(c[0]) || c[0] == '{') {
     return parse_param(p);
   }
 

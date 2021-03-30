@@ -14,25 +14,24 @@ parse_simpletok(struct parser* p) {
   int advance;
 
   /* get a char but do not remove it from the buffer yet */
-again:
-  if(source_peek(&c) <= 0)
-    return T_EOF;
-
-  /* skip all whitespace */
-  while(parse_isspace(c)) {
-    /* break on a newline if we aren't skipping them */
-    if(!(p->flags & P_SKIPNL) && c == '\n')
-      break;
-
-    /* if the char was skipped, get next one */
-    if(source_next(&c) <= 0)
-      return T_EOF;
-  }
-
-  advance = 1;
-
-  p->tokstart = source->position;
   for(;;) {
+    if(source_peek(&c) <= 0)
+      return T_EOF;
+
+    /* skip all whitespace */
+    while(parse_isspace(c)) {
+      /* break on a newline if we aren't skipping them */
+      if(!(p->flags & P_SKIPNL) && c == '\n')
+        break;
+
+      /* if the char was skipped, get next one */
+      if(source_next(&c) <= 0)
+        return T_EOF;
+    }
+
+    advance = 1;
+
+    p->tokstart = source->position;
     /* now we have a non-space char */
     switch(c) {
       /* skip comments */
@@ -52,9 +51,6 @@ again:
         if(p->flags & P_COMMENT)
           return -2;
 
-        if(p->flags & P_SKIPNL)
-          continue;
-
         /* after getting chars fall into newline case */
         goto newline;
       /* check for escaped newline (line continuation) */
@@ -73,13 +69,13 @@ again:
 #if !defined(SHFORMAT) && !defined(SHPARSE2AST)
           prompt_show();
 #endif
-          goto again;
+          continue;
         }
         if(c == '\n') {
           parse_skip(p);
           parse_skip(p);
 
-          goto again;
+          continue;
         }
         /* END OF CRAP CODE to be fixed */
 
@@ -93,7 +89,8 @@ again:
       /* encountered a new line */
       case '\n':
       newline:
-        /*      parse_lineno++;*/
+        if(p->flags & P_SKIPNL)
+          continue;
         tok = T_NL;
         break;
       /* check for a pipe char, and then check for || */

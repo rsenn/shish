@@ -394,6 +394,8 @@ union node** tree_append(union node**, union node*);
 void tree_remove(union node**);
 int tree_location(union node*, struct location*);
 
+const char* node2str(const union node n);
+
 #ifdef BUFFER_H
 void tree_print(union node*, buffer*);
 #endif

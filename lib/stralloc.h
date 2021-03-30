@@ -272,6 +272,13 @@ size_t stralloc_catxlong(stralloc*, unsigned long u);
 size_t stralloc_count(const stralloc*, char c);
 size_t stralloc_erase(stralloc*);
 void stralloc_lower(stralloc*);
+static inline char* stralloc_take(stralloc* from,size_t *lenp,size_t *allocated) {
+  char*s = from->s;
+  if(lenp) *lenp=from->len;
+  if(allocated) *allocated=from->a;
+   stralloc_init(from);
+  return s;
+}
 void stralloc_move(stralloc*, stralloc* from);
 int stralloc_ready_tuned(stralloc*, size_t n, size_t base, size_t a, size_t b);
 void stralloc_remove_all(stralloc*, register const char* delchars, register unsigned int delcharslen);

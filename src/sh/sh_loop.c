@@ -75,7 +75,7 @@ sh_loop(void) {
         history_advance();
       }
 
-      eval_push(&e, E_JCTL);
+      eval_push(&e, E_JCTL | (sh->opts.debug ? E_PRINT : 0));
       status = eval_tree(&e, list, E_ROOT | E_LIST);
 
       /*debug_ulong("status", status, 0);

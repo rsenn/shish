@@ -4,6 +4,7 @@
 #include "../parse.h"
 #include "../source.h"
 #include "../tree.h"
+#include "../sh.h"
 #include "../../lib/shell.h"
 #include "../../lib/stralloc.h"
 
@@ -34,7 +35,7 @@ builtin_eval(int argc, char* argv[]) {
 
   /* parse the string as a compound list */
   if((cmds = parse_compound_list(&p, 0))) {
-    eval_push(&e, 0);
+    eval_push(&e, sh->opts.debug ? E_PRINT : 0);
     eval_tree(&e, cmds, E_ROOT | E_LIST);
     ret = eval_pop(&e);
     tree_free(cmds);

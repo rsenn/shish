@@ -4,6 +4,7 @@
 #include "../source.h"
 #include "../tree.h"
 #include "../../lib/fmt.h"
+#include "../../lib/byte.h"
 #include "../../lib/scan.h"
 #include "../../lib/uint16.h"
 #include "../../lib/uint64.h"
@@ -14,7 +15,7 @@ typedef size_t scan_function(const char*, int64*);
  * ----------------------------------------------------------------------- */
 union node*
 parse_arith_value(struct parser* p) {
-  char c;
+  char buf[3];
   uint16 digit, classes;
   int cclass = C_DIGIT;
 
@@ -22,33 +23,33 @@ parse_arith_value(struct parser* p) {
 
   union node* node = NULL;
 
-  if(source_peek(&c) <= 0)
+  if(source_peek(&buf[0]) <= 0)
     return NULL;
 
-  if(c == '(')
+  if(buf[0] == '(')
     return parse_arith_paren(p);
 
-  if(parse_isdigit(c)) {
+  if(parse_isdigit(buf[0])) {
     char x[FMT_LONG + 1];
 
     size_t n = 0;
     int64 num;
 
     do {
-      x[n++] = c;
+      x[n++] = buf[0];
 
-      if(source_next(&c) <= 0)
+      if(source_next(&buf[1]) <= 0)
         break;
 
-      classes = parse_chartable[(int)(unsigned char)c];
+      classes = parse_chartable[(int)(unsigned char)buf[1]];
       digit = !!(classes & cclass);
 
       if(n == 1 && (cclass == C_DIGIT && x[0] == '0')) {
 
         if((classes & C_OCTAL))
-          c = 'o';
+          buf[1] = 'o';
 
-        switch(c) {
+        switch(buf[1]) {
           case 'x':
             scan_fn = (scan_function*)&scan_xlonglong;
             cclass = C_HEX;
@@ -66,7 +67,7 @@ parse_arith_value(struct parser* p) {
         }
 
         if((classes & (C_UPPER | C_LOWER))) {
-          digit = source_next(&c) > 0;
+          digit = source_next(&buf[2]) > 0;
           n = 0;
         }
       }
@@ -81,21 +82,22 @@ parse_arith_value(struct parser* p) {
     node->narithnum.num = num;
 
     return node;
-  } else if(parse_isalpha(c) || c == '_' || c == '$') {
+  } else if(parse_isalpha(buf[0]) || buf[0] == '_' || buf[0] == '$') {
 
-    if(c == '$')
-      parse_skip(p);
+    source_peekn(&buf[1], 1);
 
-    if(parse_param(p))
-      return NULL;
+    if((byte_chr("({", 2, buf[1]) < 2 || parse_isname(buf[1], 0)) && !parse_subst(p)) {
 
-    node = p->node;
-    p->node = p->tree = NULL;
+      //  parse_skip(p);
 
-    if(node->id == N_ARGPARAM)
-      node->nargparam.flag |= S_ARITH;
+      node = p->tree;
+      p->node = p->tree = NULL;
 
-    return node;
+      if(node->id == N_ARGPARAM)
+        node->nargparam.flag |= S_ARITH;
+
+      return node;
+    }
   }
 
   return NULL;

@@ -43,7 +43,7 @@ parse_grouping(struct parser* p, int tempflags) {
   if(grouping) {
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
     debug_node(grouping, -2);
-    buffer_putnlflush(fd_err->w);
+    debug_nl_fl();
 #endif
     tree_init(grouping->ngrp.rdir, rptr);
 

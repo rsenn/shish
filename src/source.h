@@ -4,7 +4,7 @@
 #include "../lib/buffer.h"
 #include "../lib/fmt.h"
 #include "../lib/shell.h"
- 
+
 struct fd;
 
 struct __attribute__((__packed__)) location {
@@ -35,23 +35,21 @@ int source_next(char* c);
 int source_peekn(char* c, unsigned int n);
 void source_flush(void);
 void source_msg(const struct location* pos);
-void source_skip(void);
+int source_skip(void);
+int source_skipn(int n);
 int source_fork(buffer* child_source);
 void source_exec(void);
 void source_newline(void);
 void source_push(struct source* in);
-int source_peeknc(int pos);
-int source_peekc();
+char source_peeknc(unsigned pos);
+char source_peekc();
+char* source_peeks(unsigned pos);
+
+#define source_PEEKN(n) (char)source_peeknc(n);
 
 #define FMT_LOC (FMT_ULONG * 2 + 1)
 
 size_t fmt_loc(char* dest, const struct location* loc);
-
-static inline const char*
-location2str(const struct location* loc) {
-  char buf[FMT_LOC];
-  buf[fmt_loc(buf, loc)] = '\0';
-  return shell_strdup(buf);
-}
+const char* location2str(const struct location loc);
 
 #endif /* SOURCE_H */

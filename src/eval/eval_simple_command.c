@@ -22,6 +22,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
+#include <errno.h>
+#include <string.h>
 
 /* evaluate a simple command (3.9.1)
  *
@@ -118,7 +120,11 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
   /* when the command wasn't found we abort */
   if(cmd.ptr == NULL) {
-    sh_error(args->narg.stra.s);
+    source_msg(&e->pos);
+
+    buffer_putsa(fd_err->w, &args->narg.stra);
+    buffer_putm_internal(fd_err->w, ": ", strerror(ENOENT), 0);
+    buffer_putnlflush(fd_err->w);
     status = exec_error();
     goto end;
   }
@@ -132,10 +138,12 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 #endif
   expand_argv(args, argv);
 
-  if(sh->opts.debug) {
-    buffer_puts(fd_err->w, "+ ");
-    debug_argv(argv, fd_err->w);
-    buffer_putnlflush(fd_err->w);
+  if(e->flags & E_PRINT) {
+    buffer_putnc(fd_err->w, '+', eval_depth(e));
+    buffer_putspace(fd_err->w);
+
+    if(debug_argv(argv, fd_err->w))
+      buffer_putnlflush(fd_err->w);
   }
 
   /* execute the command, this may or may not return, depending on E_EXIT */
