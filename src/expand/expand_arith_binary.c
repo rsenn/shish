@@ -2,6 +2,7 @@
 #include "../tree.h"
 #include "../../lib/uint64.h"
 #include <math.h>
+#include <assert.h>
 
 /* expand a binary expression
  * ----------------------------------------------------------------------- */
@@ -33,7 +34,9 @@ expand_arith_binary(struct narithbinary* expr, int64* r) {
     case A_DIV: *r = left / right; break;
     case A_MOD: *r = left % right; break;
     case A_EXP: *r = powl(left, right); break;
-    default: break;
+    default: 
+assert(0);
+     break;
   }
 
   return 0;
