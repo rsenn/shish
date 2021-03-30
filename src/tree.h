@@ -281,6 +281,7 @@ struct narithnum {
   enum kind id;
   union node* next;
   int64 num;
+  unsigned base;
 };
 
 struct narithunary {

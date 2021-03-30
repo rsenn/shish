@@ -23,10 +23,8 @@ expand_arith_expr(union node* expr, int64* r) {
       stralloc_free(&sa);
       break;
     }
-    case A_PAREN: {
-      ret = expand_arith_expr(((struct narithunary*)expr)->node, r);
-      break;
-    }
+
+    case A_PAREN: ret = expand_arith_expr(((struct narithunary*)expr)->node, r); break;
 
     case A_UNARYMINUS:
     case A_UNARYPLUS:
@@ -35,10 +33,8 @@ expand_arith_expr(union node* expr, int64* r) {
     case A_PREINCR:
     case A_PREDECR:
     case A_POSTINCR:
-    case A_POSTDECR: {
-      ret = expand_arith_unary(&expr->narithunary, r);
-      break;
-    }
+    case A_POSTDECR: ret = expand_arith_unary(&expr->narithunary, r); break;
+
     case A_OR:
     case A_AND:
     case A_BITOR:
@@ -57,15 +53,13 @@ expand_arith_expr(union node* expr, int64* r) {
     case A_MUL:
     case A_DIV:
     case A_MOD:
-    case A_EXP: {
-      ret = expand_arith_binary(&expr->narithbinary, r);
-      break;
-    }
-    case A_NUM: {
+    case A_EXP: ret = expand_arith_binary(&expr->narithbinary, r); break;
+
+    case A_NUM:
       *r = ((struct narithnum*)expr)->num;
       ret = 0;
       break;
-    }
+
     case N_ARGPARAM: {
       union node* node = tree_newnode(N_ARG);
       union node* n = expand_param(&expr->nargparam, &node, 0);
@@ -75,14 +69,14 @@ expand_arith_expr(union node* expr, int64* r) {
       value = &n->narg.stra;
       assert(value);
       ret = len == 0;
-      if(n && value->s) {
+      if(n && value->s)
         len = scan_longlong(value->s, r);
-      }
       ret = len == 0;
       if(ret)
         *r = 0;
       break;
     }
+
     case A_VASSIGN:
     case A_VADD:
     case A_VSUB:
@@ -93,17 +87,14 @@ expand_arith_expr(union node* expr, int64* r) {
     case A_VSHR:
     case A_VBITAND:
     case A_VBITXOR:
-    case A_VBITOR: {
-      ret = expand_arith_assign(&expr->narithbinary, r);
-      break;
-    }
-    default: {
+    case A_VBITOR: ret = expand_arith_assign(&expr->narithbinary, r); break;
+
+    default:
       debug_s("expand_arith_expr ");
       debug_node(expr, 1);
       debug_nl_fl();
       ret = -1;
       break;
-    }
   }
 
   return ret;

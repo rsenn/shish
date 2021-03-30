@@ -9,7 +9,6 @@
  * ----------------------------------------------------------------------- */
 int
 expand_arith_assign(struct narithbinary* assign, int64* r) {
-
   int64 left = 0, right = 0;
   size_t offset;
   char buf[FMT_LONG * 2];

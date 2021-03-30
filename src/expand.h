@@ -62,21 +62,6 @@ struct narg;
 
 #include "tree.h"
 
-//#define EXPAND_INIT(r, p, f) {(union node*)(r), (p), (f)};
-/*
-static inline union node**
-expand_addnode(union node** nptr) {
-  if(*(nptr)) {
-    nptr = &(*nptr)->next;
-  };
-  *nptr = tree_newnode(N_ARG);
-  return nptr;
-}
-
-*/
-//
-//#define EXPAND_ADDNODE(nptr) (nptr = expand_addnode(nptr), *nptr)
-
 union node* expand_arg(union node* narg, union node** nptr, int flags);
 int expand_args(union node* args, union node** nptr, int flags);
 void expand_argv(union node* args, char** argv);

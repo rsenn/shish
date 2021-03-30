@@ -6,9 +6,8 @@
  * ----------------------------------------------------------------------- */
 void
 expand_tosa(union node* node, stralloc* out) {
-  union node* arg = 0; /*tree_newnode(N_ARG);
-  stralloc_init(&arg->narg.stra);
-**/
+  union node* arg = 0;
+
   expand_arg(node, &arg, X_NOSPLIT);
 
   if(arg->id == N_ARG) {

@@ -113,6 +113,11 @@ size_t scan_utf8_sem(const char* in, size_t len, uint32* num);
 
 size_t scan_eolskip(const char* s, size_t limit);
 
+#ifdef UINT64_H
+size_t scan_8longlong(const char* src, uint64* dest);
+size_t scan_8longlongn(const char* src, size_t n, uint64* dest);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

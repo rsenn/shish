@@ -13,18 +13,17 @@ extern int sh_no_position;
  * ----------------------------------------------------------------------- */
 union node*
 expand_arg(union node* node, union node** nptr, int flags) {
-  union node **start = nptr, *n = *nptr;
-  union node* subarg;
+  union node **start = nptr, *n = *nptr, *subarg;
   int i = 0;
 
   if(node) {
     debug_s("arg ");
-
     debug_node(node, 1);
     // sh_no_position = 0;
     debug_newline(0);
     debug_fl();
   }
+
   /* loop through all parts of the word */
   for(subarg = (node && node->id == N_ARG) ? node->narg.list : node; subarg; subarg = subarg->next) {
     int lflags = flags; /* local flags */
@@ -40,21 +39,16 @@ expand_arg(union node* node, union node** nptr, int flags) {
     switch(subarg->id) {
       /* arithmetic substitution */
       case N_ARGARITH: n = expand_arith(&subarg->nargarith, nptr); break;
-
       /* parameter substitution */
       case N_ARGPARAM: n = expand_param(&subarg->nargparam, nptr, lflags); break;
-
       /* command substitution */
       case N_ARGCMD: n = expand_command(&subarg->nargcmd, nptr, lflags); break;
-
       /* constant string */
       case N_ARGSTR:
         assert(subarg->nargstr.stra.s);
         n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, nptr, lflags);
         break;
-
       default:
-
         /*  debug_node(subarg, 0);
           debug_nl_fl();*/
         break;
@@ -63,16 +57,14 @@ expand_arg(union node* node, union node** nptr, int flags) {
     debug_s("sub args #");
     debug_n(i);
     debug_s("  ");
-    // sh_no_position = 1;
     debug_node(subarg, 1);
-    // sh_no_position = 0;
     debug_newline(0);
     debug_fl();
     i++;
-
     if(n)
       nptr = &n;
   }
+
   i = 0;
   for(subarg = *start; subarg; subarg = subarg->next) {
     debug_s("sub arg  #");
@@ -85,7 +77,6 @@ expand_arg(union node* node, union node** nptr, int flags) {
   }
 
   debug_s("expanded arg ");
-
   debug_node(*start, 1);
   debug_newline(0);
   debug_fl();

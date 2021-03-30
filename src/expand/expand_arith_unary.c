@@ -17,7 +17,6 @@ expand_arith_unary(struct narithunary* expr, int64* r) {
 
   if(pre_post) {
     param = &expr->node->nargparam;
-
     var_search(param->name, NULL);
   }
 

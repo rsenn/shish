@@ -9,9 +9,8 @@
 int
 expand_arith_binary(struct narithbinary* expr, int64* r) {
   int64 left = -1, right = -1;
-  if(expand_arith_expr(expr->left, &left))
-    return 1;
-  if(expand_arith_expr(expr->right, &right))
+
+  if(expand_arith_expr(expr->left, &left) || expand_arith_expr(expr->right, &right))
     return 1;
 
   switch(expr->id) {
@@ -34,9 +33,7 @@ expand_arith_binary(struct narithbinary* expr, int64* r) {
     case A_DIV: *r = left / right; break;
     case A_MOD: *r = left % right; break;
     case A_EXP: *r = powl(left, right); break;
-    default: 
-assert(0);
-     break;
+    default: assert(0); break;
   }
 
   return 0;

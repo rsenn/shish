@@ -26,5 +26,4 @@ expand_unescape(stralloc* sa, int(pred)(int)) {
 
   sa->len = d;
   stralloc_nul(sa);
-  /*  stralloc_trunc(sa, d);*/
 }

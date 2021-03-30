@@ -38,7 +38,6 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
   sh_pop(&sh);
 
   fdstack_pop(&fdst);
-
   vartab_pop(&vars);
 
   /* split trailing newlines */
