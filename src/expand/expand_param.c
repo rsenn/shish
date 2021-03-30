@@ -209,7 +209,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       if(v)
         n = expand_cat(v, vlen, nptr, flags);
       /* unset, substitute */
-      else
+      else if(param->word)
         n = expand_arg(param->word, nptr, flags);
       break;
     }

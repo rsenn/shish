@@ -5,21 +5,43 @@
 #include "../../lib/uint64.h"
 #include <assert.h>
 
+static size_t
+scan_number(const char* x, uint64* n, unsigned* base) {
+  const char* p;
+  size_t r = 0;
+  if(base)
+    *base = 10;
+  if(*p == '0') {
+    if(base)
+      *base = 8;
+    if(*++p == 'x') {
+      if(base)
+        *base = 16;
+      return scan_xlonglong(++p, n);
+    }
+    return scan_8longlong(++p, n);
+  }
+  return scan_longlong(p, n);
+}
+
 /* expand a binary expression
  * ----------------------------------------------------------------------- */
 int
 expand_arith_expr(union node* expr, int64* r) {
   int ret = 0;
 
+  *r = 0;
+
   switch(expr->id) {
+    // case N_ARGPARAM:
     case N_ARGCMD: {
       stralloc sa;
       stralloc_init(&sa);
       expand_tosa(expr, &sa);
       stralloc_nul(&sa);
 
-      *r = 0;
-      scan_longlong(sa.s, r);
+      scan_number(sa.s, r, 0);
+
       stralloc_free(&sa);
       break;
     }
@@ -61,13 +83,17 @@ expand_arith_expr(union node* expr, int64* r) {
       break;
 
     case N_ARGPARAM: {
-      union node* node = tree_newnode(N_ARG);
-      union node* n = expand_param(&expr->nargparam, &node, 0);
+      union node *node, *n;
       stralloc* value;
       size_t len = 0;
+
+      node = tree_newnode(N_ARG);
+      n = expand_param(&expr->nargparam, &node, 0);
       assert(n);
+
       value = &n->narg.stra;
       assert(value);
+
       ret = len == 0;
       if(n && value->s)
         len = scan_longlong(value->s, r);

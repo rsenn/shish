@@ -388,16 +388,22 @@ again:
 
     case A_NUM: {
       char buf[FMT_8LONG];
-      size_t (*fn)(char*, uint64);
+      size_t n;
 
       switch(node->narithnum.base) {
-        case 8: fn = (size_t(*)(char*, uint64)) & fmt_8longlong; break;
-        case 16: fn = (size_t(*)(char*, uint64)) & fmt_xlonglong; break;
+        case 8:
+          stralloc_catc(sa, '0');
+          n = fmt_8longlong(buf, node->narithnum.num);
+          break;
+        case 16:
+          stralloc_cats(sa, "0x");
+          n = fmt_xlonglong(buf, node->narithnum.num);
+          break;
         case 10:
-        default: fn = (size_t(*)(char*, uint64)) & fmt_longlong; break;
+        default: n = fmt_longlong(buf, node->narithnum.num); break;
       }
 
-      stralloc_catb(sa, buf, fn(buf, node->narithnum.num));
+      stralloc_catb(sa, buf, n);
       break;
     }
       /*

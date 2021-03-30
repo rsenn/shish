@@ -33,6 +33,7 @@ expand_vars(union node* vars, union node** nptr) {
 
     *nptr = node;
     nptr = tree_next(nptr);
+    ret++;
   }
 
   return ret;

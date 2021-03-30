@@ -76,10 +76,12 @@ expand_arg(union node* node, union node** nptr, int flags) {
     i++;
   }
 
-  debug_s("expanded arg ");
-  debug_node(*start, 1);
-  debug_newline(0);
-  debug_fl();
+  if(*start) {
+    debug_s("expanded arg ");
+    debug_node(*start, 1);
+    debug_newline(0);
+    debug_fl();
+  }
 
   return n;
 }

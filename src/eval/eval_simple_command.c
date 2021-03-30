@@ -52,15 +52,16 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
      mark them for export if we're gonna execute a command */
   if(expand_vars(ncmd->vars, &assigns)) {
 
-    debug_stralloc("var", &node->narg.stra, 1, '"');
-    debug_nl_fl();
-
     /* if we don't exit after the command, have a command and not a
        special builtin the variable changes should be temporary */
     if(!(e->flags & E_EXIT) && cmd.ptr && cmd.id != H_SBUILTIN)
       vartab_push(&vars, 0);
 
     for(node = assigns; node; node = node->next) {
+
+      debug_stralloc("var", &node->narg.stra, 1, '"');
+      debug_nl_fl();
+
       if(!var_setsa(&node->narg.stra, (cmd.ptr ? V_EXPORT : V_DEFAULT))) {
         status = 1;
         break;

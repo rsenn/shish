@@ -10,9 +10,8 @@ expand_tosa(union node* node, stralloc* out) {
 
   expand_arg(node, &arg, X_NOSPLIT);
 
-  if(arg->id == N_ARG) {
-    stralloc* sa;
-    sa = &arg->narg.stra;
+  if(arg && arg->id == N_ARG) {
+    stralloc* sa = &arg->narg.stra;
     stralloc_copy(out, sa);
   }
 }
