@@ -2,7 +2,7 @@
 #include "../../lib/fmt.h"
 #include "../tree.h"
 
-/* expand an exprmetic expression
+/* expand an arithmetic expression
  * ----------------------------------------------------------------------- */
 union node*
 expand_arith(struct nargarith* arith, union node** nptr) {

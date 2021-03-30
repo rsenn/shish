@@ -13,7 +13,7 @@ eval_loop(struct eval* e, struct nloop* nloop) {
   eval_push(&en, 0);
 
   en.jump = 1;
-  if(setjmp(en.jumpbuf) == 1)
+  if(setjmp(en.jumpbuf) & 1)
     return ret;
 
   while((ret = eval_tree(e, nloop->test, E_LIST) == retcode)) {

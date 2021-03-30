@@ -1,6 +1,7 @@
 #include "../expand.h"
 #include "../tree.h"
 #include "../parse.h"
+#include "../debug.h"
 
 #include <stdlib.h>
 
@@ -8,21 +9,30 @@
  * ----------------------------------------------------------------------- */
 int
 expand_vars(union node* vars, union node** nptr) {
-  union node* var, *n;
+  union node *var, *node;
   int ret = 0;
-
-  *nptr = NULL;
+  stralloc name;
+  stralloc_init(&name);
 
   for(var = vars; var; var = var->next) {
-    if((n = expand_arg(var, nptr, X_NOSPLIT))) {
-      nptr = &n;
-      ret++;
+    node = 0;
+    node = expand_arg(var, &node, X_NOSPLIT);
+
+    if(node) {
+      debug_node(node, 0);
+      debug_nl_fl();
+
+      expand_unescape(&node->narg.stra, parse_isesc);
+    }
+    if(node->id == N_ARG) {
+      debug_stralloc("var", &node->narg.stra, 0, 0);
+      debug_nl_fl();
     }
 
-    expand_unescape(&n->narg.stra, parse_isesc);
+    while(*nptr) tree_skip(nptr);
 
-    if(n)
-      nptr = &n->next;
+    *nptr = node;
+    nptr = tree_next(nptr);
   }
 
   return ret;

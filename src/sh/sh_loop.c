@@ -83,6 +83,8 @@ sh_loop(void) {
       debug_ulong("sh->exitcode", sh->exitcode, 0);
       debug_nl_fl();*/
 
+      while(sh->eval != &e) eval_pop(sh->eval);
+
       sh->exitcode = eval_pop(&e);
 
       tree_free(list);
