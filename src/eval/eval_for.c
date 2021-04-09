@@ -2,6 +2,7 @@
 #include "../expand.h"
 #include "../tree.h"
 #include "../var.h"
+#include "../fd.h"
 
 /* evaluate for-loop (3.9.4.2)
  * ----------------------------------------------------------------------- */
@@ -25,6 +26,13 @@ eval_for(struct eval* e, struct nfor* nfor) {
       continue;
     else if(jmpret)
       break;
+
+    if(e->flags & E_PRINT) {
+      eval_print_prefix(e, fd_err->w);
+      buffer_putm_internal(fd_err->w, "for ", nfor->varn, " in ", 0);
+      tree_print(nfor->args, fd_err->w);
+      buffer_putnlflush(fd_err->w);
+    }
 
     /* iterate the loop variable */
     var_setvsa(nfor->varn, &node->narg.stra, V_DEFAULT);

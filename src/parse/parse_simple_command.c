@@ -15,6 +15,9 @@ parse_simple_command(struct parser* p) {
   union node **rptr, *rdir;
   union node* simple_command;
   size_t n = 0;
+  struct location pos;
+
+  pos = p->tokstart;
 
   tree_init(args, aptr);
   tree_init(vars, vptr);
@@ -120,7 +123,7 @@ addcmd:
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
   if(sh->opts.debug) {
     debug_begin("parse_simple_command", 0);
-    debug_position(0, &p->tokstart, 1);
+    debug_position(0, &pos, 1);
     debug_newline(1);
     debug_s("«");
     tree_print(simple_command, &debug_buffer);

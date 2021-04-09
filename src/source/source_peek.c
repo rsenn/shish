@@ -8,7 +8,7 @@ source_peek(char* c) {
   return source_peekn(c, 0);
 }
 
-char
+int
 source_peekc() {
   return source_peeknc(0);
 }

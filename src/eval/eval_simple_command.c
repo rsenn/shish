@@ -59,8 +59,11 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
     for(node = assigns; node; node = node->next) {
 
-      debug_stralloc("var", &node->narg.stra, 0, 0);
-      debug_fl();
+      if(e->flags & E_PRINT) {
+        eval_print_prefix(e, fd_err->w);
+        buffer_putsa(fd_err->w, &node->narg.stra);
+        buffer_putnlflush(fd_err->w);
+      }
 
       if(!var_setsa(&node->narg.stra, (cmd.ptr ? V_EXPORT : V_DEFAULT))) {
         status = 1;
@@ -144,9 +147,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   expand_argv(args, argv);
 
   if(e->flags & E_PRINT) {
-    buffer_putnc(fd_err->w, '+', eval_depth(e));
-    buffer_putspace(fd_err->w);
-
+    eval_print_prefix(e, fd_err->w);
     if(debug_argv(argv, fd_err->w))
       buffer_putnlflush(fd_err->w);
   }

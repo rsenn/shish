@@ -4,7 +4,7 @@
 int
 source_skip(void) {
   register buffer* b = source->b;
-  unsigned char c;
+  char c;
 
   if(b->p < b->n) {
     c = b->x[b->p];
@@ -13,9 +13,15 @@ source_skip(void) {
 #endif
     b->p++;
 
-    if(c == '\n')
+    if(c == '\\') {
+      if(source_peek(&c) > 0 && c == '\n')
+        b->p++;
+    }
+
+    if(c == '\n') {
       source_newline();
-    else {
+
+    } else {
       source->position.column++;
       source->position.offset++;
     }

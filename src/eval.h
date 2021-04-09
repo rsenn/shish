@@ -61,4 +61,10 @@ eval_depth(struct eval* e) {
   return n;
 }
 
+static inline void
+eval_print_prefix(struct eval* e, buffer* b) {
+  buffer_putnc(b, '+', eval_depth(e));
+  buffer_putspace(b);
+}
+
 #endif /* EVAL_H */

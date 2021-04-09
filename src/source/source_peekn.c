@@ -10,8 +10,8 @@ source_peekn(char* c, unsigned n) {
   unsigned lookahead = n;
 
   for(;;) {
-    char* x;
-
+    char *x, *y;
+    unsigned i, j;
     /* no data available, try to get some */
     if((unsigned)ret <= lookahead)
       if((ret = buffer_prefetch(b, lookahead + 1)) <= 0)
@@ -20,16 +20,25 @@ source_peekn(char* c, unsigned n) {
     debug_ulong("source_peekn", ret);
 #endif
     x = buffer_PEEK(b);
+    y = buffer_END(b);
+    j = y - x;
 
-    if(x[0] == '\\') {
-      if(lookahead == n) {
-        lookahead++;
-        continue;
-      } else {
-        if(x[1] == '\n') {
-          b->p += 2;
-          lookahead = n;
-          continue;
+    for(i = 0; i < lookahead + 1; i++) {
+
+      if(x[i] == '\\') {
+        if(i + 1 >= j) {
+          if((ret = buffer_prefetch(b, i + 1)) <= 0)
+            return ret;
+          y = buffer_END(b);
+          j = y - x;
+        }
+        if(x[i + 1] == '\n') {
+          if(i == 0) {
+            b->p += 2;
+            source_newline();
+          } else {
+            n += 2;
+          }
         }
       }
     }
@@ -44,7 +53,10 @@ source_peekn(char* c, unsigned n) {
   return ret;
 }
 
-char
+int
 source_peeknc(unsigned pos) {
-  return *source_peeks(pos);
+  char c;
+  if(source_peekn(&c, pos) <= 0)
+    return -1;
+  return (unsigned int)(unsigned char)c;
 }

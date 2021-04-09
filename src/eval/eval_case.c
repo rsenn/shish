@@ -3,6 +3,7 @@
 #include "../../lib/shell.h"
 #include "../../lib/stralloc.h"
 #include "../tree.h"
+#include "../fd.h"
 
 /* evaluate case conditional construct (3.9.4.3)
  * ----------------------------------------------------------------------- */
@@ -20,6 +21,15 @@ eval_case(struct eval* e, struct ncase* ncase) {
     expand_catsa(ncase->word, &word, X_NOSPLIT);
 
   stralloc_nul(&word);
+
+  if(e->flags & E_PRINT) {
+    eval_print_prefix(e, fd_err->w);
+
+    buffer_puts(fd_err->w, "case ");
+    tree_print(ncase->word, fd_err->w);
+    buffer_puts(fd_err->w, " in");
+    buffer_putnlflush(fd_err->w);
+  }
 
   for(node = ncase->list; node; node = node->next) {
     for(pat = node->ncasenode.pats; pat; pat = pat->next) {

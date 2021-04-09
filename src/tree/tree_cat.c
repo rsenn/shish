@@ -117,7 +117,8 @@ again:
       else if(node->next && node->next->id == N_ARGSTR) {
         stralloc* sa = &node->next->nargstr.stra;
 
-        if((!(node->nargparam.flag & S_SPECIAL) && sa->len && parse_isname(sa->s[0], 0)) || node->nargparam.numb > 9)
+        if((!(node->nargparam.flag & S_SPECIAL) && sa->len && parse_isname(sa->s[0], 0)) ||
+           ((node->nargparam.flag & S_SPECIAL) == S_ARG && node->nargparam.numb > 9))
           braces = 1;
       }
 

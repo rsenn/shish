@@ -5,6 +5,8 @@
 #include "../../lib/scan.h"
 #include <assert.h>
 
+size_t scan_number(const char* x, int64* n, unsigned* base);
+
 /* expand a assignment expression
  * ----------------------------------------------------------------------- */
 int
@@ -15,7 +17,7 @@ expand_arith_assign(struct narithbinary* assign, int64* r) {
   const char *s, *name = assign->left->nargparam.name;
   assert(assign->left->id == N_ARGPARAM);
 
-  if((s = var_vdefault(name, "0", 0)) == 0 || !scan_longlong(s, &left))
+  if((s = var_vdefault(name, "0", 0)) == 0 || !scan_number(s, &left, 0))
     left = 0;
 
   if(expand_arith_expr(assign->right, &right))

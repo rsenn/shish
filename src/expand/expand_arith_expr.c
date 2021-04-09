@@ -5,7 +5,7 @@
 #include "../../lib/uint64.h"
 #include <assert.h>
 
-static size_t
+size_t
 scan_number(const char* x, int64* n, unsigned* base) {
   const char* p = x;
   if(base)
