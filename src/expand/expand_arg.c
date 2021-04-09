@@ -13,7 +13,7 @@ extern int sh_no_position;
  * ----------------------------------------------------------------------- */
 union node*
 expand_arg(union node* node, union node** nptr, int flags) {
-  union node **start = nptr, *n = *nptr, *subarg;
+  union node *n = *nptr, *subarg;
   int i = 0;
 
   /* if(node) {

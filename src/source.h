@@ -51,6 +51,6 @@ char* source_peeks(unsigned pos);
 
 size_t fmt_loc(char* dest, const struct location* loc);
 const char* location2str(const struct location loc);
-const size_t fmt_location(char*, const struct location);
+size_t fmt_location(char*, const struct location);
 
 #endif /* SOURCE_H */

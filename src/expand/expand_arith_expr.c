@@ -6,9 +6,8 @@
 #include <assert.h>
 
 static size_t
-scan_number(const char* x, uint64* n, unsigned* base) {
-  const char* p;
-  size_t r = 0;
+scan_number(const char* x, int64* n, unsigned* base) {
+  const char* p = x;
   if(base)
     *base = 10;
   if(*p == '0') {
@@ -17,9 +16,9 @@ scan_number(const char* x, uint64* n, unsigned* base) {
     if(*++p == 'x') {
       if(base)
         *base = 16;
-      return scan_xlonglong(++p, n);
+      return scan_xlonglong(++p, (uint64*)n);
     }
-    return scan_8longlong(++p, n);
+    return scan_8longlong(++p, (uint64*)n);
   }
   return scan_longlong(p, n);
 }

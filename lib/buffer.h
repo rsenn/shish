@@ -8,9 +8,9 @@
 extern "C" {
 #endif
 
-typedef ssize_t(buffer_op_sys)(fd_t fd, void* buf, size_t len);
-typedef ssize_t(buffer_op_proto)(fd_t fd, void* buf, size_t len, void* arg);
-typedef ssize_t(buffer_op_fn)(/*fd_t fd, void* buf, size_t len, void* arg*/);
+typedef ssize_t(buffer_op_sys)(int fd, void* buf, size_t len);
+typedef ssize_t(buffer_op_proto)(int fd, void* buf, size_t len, void* arg);
+typedef ssize_t(buffer_op_fn)(/*int fd, void* buf, size_t len, void* arg*/);
 typedef buffer_op_fn* buffer_op_ptr;
 
 typedef struct buffer {
@@ -34,21 +34,21 @@ typedef struct buffer {
 #define BUFFER_INSIZE 65535
 #define BUFFER_OUTSIZE 32768
 
-void buffer_init(buffer*, buffer_op_proto*, fd_t fd, char* y, size_t ylen);
-void buffer_init_free(buffer*, buffer_op_proto*, fd_t fd, char* y, size_t ylen);
+void buffer_init(buffer*, buffer_op_proto*, int fd, char* y, size_t ylen);
+void buffer_init_free(buffer*, buffer_op_proto*, int fd, char* y, size_t ylen);
 void buffer_free(void* buf);
 void buffer_munmap(void* buf);
 int buffer_mmapread(buffer*, const char* filename);
-int buffer_mmapread_fd(buffer*, fd_t fd);
+int buffer_mmapread_fd(buffer*, int fd);
 int buffer_mmapprivate(buffer*, const char* filename);
-int buffer_mmapprivate_fd(buffer*, fd_t fd);
+int buffer_mmapprivate_fd(buffer*, int fd);
 int buffer_mmapshared(buffer*, const char* filename);
-int buffer_mmapshared_fd(buffer*, fd_t fd);
+int buffer_mmapshared_fd(buffer*, int fd);
 void buffer_close(buffer* b);
 
 /* reading from an fd... if it is a regular file,  then  buffer_mmapread_fd is
    called, otherwise  buffer_init(&b,  read,  fd,  malloc(8192),  8192) */
-int buffer_read_fd(buffer*, fd_t fd);
+int buffer_read_fd(buffer*, int fd);
 
 int buffer_flush(buffer* b);
 int buffer_put(buffer*, const char* x, size_t len);
@@ -196,9 +196,9 @@ void buffer_frombuf(buffer* b, const char* x, size_t l);
 void buffer_fromstr(buffer* b, char* s, size_t len);
 ssize_t buffer_getc(buffer* b, char* x);
 int buffer_get_until(buffer* b, char* x, size_t len, const char* charset, size_t setlen);
-void buffer_init(buffer* b, buffer_op_proto* op, fd_t fd, char* y, size_t ylen);
+void buffer_init(buffer* b, buffer_op_proto* op, int fd, char* y, size_t ylen);
 int buffer_mmapread(buffer* b, const char* filename);
-int buffer_mmapread_fd(buffer* b, fd_t fd);
+int buffer_mmapread_fd(buffer* b, int fd);
 void buffer_munmap(void* buf);
 int buffer_prefetch(buffer* b, size_t n);
 int buffer_put(buffer* b, const char* buf, size_t len);
@@ -216,8 +216,8 @@ int buffer_putxlong0(buffer*, unsigned long, int);
 int buffer_putulong(buffer* b, unsigned long l);
 int buffer_skip_until(buffer* b, const char* charset, size_t setlen);
 
-ssize_t buffer_stubborn(buffer_op_proto* op, fd_t fd, const char* buf, size_t len, void* ptr);
-ssize_t buffer_stubborn_read(buffer_op_proto* op, fd_t fd, const void* buf, size_t len, void* ptr);
+ssize_t buffer_stubborn(buffer_op_proto* op, int fd, const char* buf, size_t len, void* ptr);
+ssize_t buffer_stubborn_read(buffer_op_proto* op, int fd, const void* buf, size_t len, void* ptr);
 int buffer_truncfile(buffer* b, const char* fn);
 int buffer_putnc(buffer*, char c, int ntimes);
 int buffer_putns(buffer*, const char*, int ntimes);

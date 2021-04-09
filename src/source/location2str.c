@@ -3,7 +3,7 @@
 #include "../fdtable.h"
 #include "../fd.h"
 
-const size_t
+size_t
 fmt_location(char* buf, const struct location loc) {
   const char* name;
   size_t pos = 0;

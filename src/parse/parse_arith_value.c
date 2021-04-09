@@ -65,11 +65,11 @@ parse_arith_value(struct parser* p) {
               cclass = C_OCTAL;
               base = 8;
               break;
-              /*      default:
-                      buffer_puts(fd_err->w, "ERROR: expecting x|b|o, got ");
-                      buffer_putulong(fd_err->w, c);
-                      buffer_putnlflush(fd_err->w);
-                      return NULL;*/
+              /*default:
+                buffer_puts(fd_err->w, "ERROR: expecting x|b|o, got ");
+                buffer_putulong(fd_err->w, c);
+                buffer_putnlflush(fd_err->w);
+                return NULL;*/
           }
 
           if((classes & (C_UPPER | C_LOWER))) {
@@ -83,8 +83,8 @@ parse_arith_value(struct parser* p) {
     x[n] = '\0';
 
     switch(base) {
-      case 8: scan_8longlong(x, &num); break;
-      case 16: scan_xlonglong(x, &num); break;
+      case 8: scan_8longlong(x, (uint64*)&num); break;
+      case 16: scan_xlonglong(x, (uint64*)&num); break;
       case 10:
       default: scan_longlong(x, &num); break;
     }

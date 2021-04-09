@@ -259,7 +259,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
             if(shell_fnmatch(sa.s, sa.len, v + i, vlen - i, SH_FNM_PERIOD) == 0)
               break;
 
-          n = expand_cat(v, (i < 0 ? vlen : i), nptr, flags);
+          n = expand_cat(v, (i < 0 ? vlen : (size_t)i), nptr, flags);
         }
         break;
       }

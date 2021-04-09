@@ -6,15 +6,35 @@
 int
 source_peekn(char* c, unsigned n) {
   buffer* b = source->b;
-  int ret = b->n - b->p;
+  int ret = buffer_LEN(b);
+  unsigned lookahead = n;
 
-  /* no data available, try to get some */
-  if((unsigned)ret <= n)
-    if((ret = buffer_prefetch(b, n + 1)) <= 0)
-      return ret;
+  for(;;) {
+    char* x;
+
+    /* no data available, try to get some */
+    if((unsigned)ret <= lookahead)
+      if((ret = buffer_prefetch(b, lookahead + 1)) <= 0)
+        return ret;
 #ifdef DEBUG_OUTPUT_
-  debug_ulong("source_peekn", ret);
+    debug_ulong("source_peekn", ret);
 #endif
+    x = buffer_PEEK(b);
+
+    if(x[0] == '\\') {
+      if(lookahead == n) {
+        lookahead++;
+        continue;
+      } else {
+        if(x[1] == '\n') {
+          b->p += 2;
+          lookahead = n;
+          continue;
+        }
+      }
+    }
+    break;
+  }
   /* got data, peek the char */
   if(c) {
 

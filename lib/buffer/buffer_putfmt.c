@@ -25,7 +25,7 @@ buffer_putfmt_va(buffer* b, const char* x, size_t len, size_t (*escape)(char*, i
   av[2] = va_arg(args, void*);
   av[3] = va_arg(args, void*);
 
-  return buffer_putfmt_args(b, x, len, (format_function*)escape, av);
+  return buffer_putfmt_args(b, x, len, (format_function*)(void*)&escape, av);
 }
 
 int

@@ -43,7 +43,7 @@ tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth) {
       line_len = sa->len - line_start;
 
       if(node->next && scan_whitenskip(&sa->s[line_start], line_len) < line_len - line_start) {
-        if(line_len + add_len >= tree_columnwrap) {
+        if(line_len + add_len >= (size_t)tree_columnwrap) {
           tree_catseparator(sa, "\\\n", depth);
         }
       }

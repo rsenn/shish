@@ -9,7 +9,7 @@
  * ----------------------------------------------------------------------- */
 union node*
 parse_arith_assign(struct parser* p, union node* left) {
-  union node *right, *node = 0, **nptr;
+  union node *node = 0, **nptr;
   enum kind id;
   char c[4] = {0, 0, 0, 0};
 

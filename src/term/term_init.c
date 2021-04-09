@@ -49,7 +49,7 @@ term_init(struct fd* input, struct fd* output) {
   /* intercept input buffer */
   buffer_init(&term_input, input->r->op, input->r->fd, term_buffer, sizeof(term_buffer));
 
-  input->r->op = (ssize_t(*)())term_read;
+  input->r->op = (ssize_t(*)())(void*)&term_read;
 
   /* get window size */
   term_winsize();

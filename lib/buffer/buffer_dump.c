@@ -16,7 +16,6 @@ extern int stralloc_write(int, const char*, size_t, buffer*);
 void
 buffer_dump(buffer* out, buffer* b) {
   char xlong[FMT_LONG + FMT_LONG + FMT_LONG];
-  unsigned long n;
 
 #ifndef DEBUG_COLOR
 #define RED ""
@@ -60,10 +59,7 @@ buffer_dump(buffer* out, buffer* b) {
     buffer_puts(out, (b->p || b->n || b->a) ? NONE ", x" CYAN "@p" DARKGRAY "=" NONE : "x" CYAN "@p" DARKGRAY "=" CYAN);
 
     if(b->p > 6) {
-      n = b->p;
       buffer_puts(out, "...");
-    } else {
-      n = 0;
     }
     buffer_puts(out, "\"");
     buffer_puts(out, "\"");

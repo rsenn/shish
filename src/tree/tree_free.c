@@ -157,6 +157,21 @@ tree_free(union node* node) {
           tree_free(node->narithunary.node);
         break;
 
+      case A_VASSIGN:
+      case A_VADD:
+      case A_VSUB:
+      case A_VMUL:
+      case A_VDIV:
+      case A_VMOD:
+      case A_VSHL:
+      case A_VSHR:
+      case A_VBITAND:
+      case A_VBITXOR:
+      case A_VBITOR:
+        tree_free(node->narithbinary.left);
+        tree_free(node->narithbinary.right);
+        break;
+
       case N_FUNCTION:
         if(node->nfunc.name)
           shell_free(node->nfunc.name);
