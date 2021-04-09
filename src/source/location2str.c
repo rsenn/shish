@@ -1,7 +1,7 @@
 #include "../source.h"
-#include "../str.h"
 #include "../fdtable.h"
 #include "../fd.h"
+#include "../../lib/str.h"
 
 size_t
 fmt_location(char* buf, const struct location loc) {

@@ -115,9 +115,11 @@ expand_arith_expr(union node* expr, int64* r) {
     case A_VBITOR: ret = expand_arith_assign(&expr->narithbinary, r); break;
 
     default:
+#ifdef DEBUG_OUTPUT
       debug_s("expand_arith_expr ");
       debug_node(expr, 1);
       debug_nl_fl();
+#endif
       ret = -1;
       break;
   }
