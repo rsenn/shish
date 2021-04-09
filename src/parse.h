@@ -114,6 +114,7 @@ parse_isfuncname(const char* s) {
   }
   return 1;
 }
+
 /* is either alpha, digit or underscore or special parameter */
 static inline int
 parse_isparam(int c) {

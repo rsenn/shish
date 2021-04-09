@@ -98,7 +98,7 @@ parse_arith_value(struct parser* p) {
 
   if(parse_isalpha(c) || c == '_' || c == '$') {
     source_peekn(&c, 1);
-    if((byte_chr("({", 2, c) < 2 || parse_isname(c, 0))) {
+    if(parse_isparam(c) || byte_chr("({", 2, c) < 2) {
       parse_subst(p);
       node = p->tree;
       p->node = p->tree = NULL;

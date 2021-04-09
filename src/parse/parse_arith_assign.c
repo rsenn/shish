@@ -18,14 +18,12 @@ parse_arith_assign(struct parser* p, union node* left) {
         return left;*/
 
   for(nptr = &node;; left = 0) {
-    if(left == 0) {
-      if((left = parse_arith_binary(p, 9)) == 0)
-        break;
-      if(left->id != N_ARGPARAM) {
-        *nptr = left;
-        return node;
-      }
-    }
+
+    if(((*nptr) = parse_arith_binary(p, 9)) == 0)
+      break;
+
+    if((*nptr)->id != N_ARGPARAM)
+      return node;
 
     parse_skipspace(p);
 
@@ -74,15 +72,16 @@ parse_arith_assign(struct parser* p, union node* left) {
 
     parse_skipspace(p);
 
+    left = *nptr;
     *nptr = tree_newnode(id);
     (*nptr)->narithbinary.left = left;
-    // l
-    left = *nptr;
+
+    // left = *nptr;
     nptr = &(*nptr)->narithbinary.right;
   }
 
-  if(nptr && *nptr == 0)
-    *nptr = parse_arith_binary(p, 9);
+  /*  if(nptr && *nptr == 0)
+   *nptr = parse_arith_binary(p, 9);*/
 
   return node;
 }

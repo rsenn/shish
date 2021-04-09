@@ -13,7 +13,7 @@ expand_arith(struct nargarith* arith, union node** nptr) {
 
   if(!expand_arith_expr(expr, &ret)) {
     len = fmt_longlong(buf, ret);
-   // stralloc_zero(&n->narg.stra);
+    // stralloc_zero(&n->narg.stra);
     n = expand_cat(buf, len, &n, 0);
   }
 

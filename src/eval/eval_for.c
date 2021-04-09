@@ -30,7 +30,7 @@ eval_for(struct eval* e, struct nfor* nfor) {
     if(e->flags & E_PRINT) {
       eval_print_prefix(e, fd_err->w);
       buffer_putm_internal(fd_err->w, "for ", nfor->varn, " in ", 0);
-      tree_print(nfor->args, fd_err->w);
+      tree_printlist(nfor->args, " ", fd_err->w);
       buffer_putnlflush(fd_err->w);
     }
 

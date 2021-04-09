@@ -73,6 +73,7 @@ void debug_end(int depth);
 void debug_str(const char* msg, const char* s, int depth, char quote);
 void debug_stralloc(const char* msg, stralloc* s, int depth, char quote);
 void debug_ulong(const char* msg, uint64 i, int depth);
+void debug_xlong(const char* msg, uint64 i, int depth);
 void debug_ptr(const char* msg, void* ptr, int depth);
 void debug_char(const char* msg, char c, int depth);
 void debug_sublist(const char* s, union node* node, int depth);
@@ -92,6 +93,7 @@ size_t debug_argv(char** argv, buffer* out);
 
 #define debug_s(str) buffer_puts(&debug_buffer, str)
 #define debug_n(num) buffer_putlonglong(&debug_buffer, num)
+#define debug_xn(num) buffer_putxlonglong(&debug_buffer, num)
 #define debug_c(chr) buffer_putc(&debug_buffer, (unsigned int)(unsigned char)(chr))
 #define debug_b(buf, len) buffer_put(&debug_buffer, (buf), (len))
 #define debug_ws(str) debug_c(' ')
@@ -107,6 +109,7 @@ size_t debug_argv(char** argv, buffer* out);
 
 #define debug_s(str)
 #define debug_n(num)
+#define debug_xn(num)
 #define debug_c(chr)
 #define debug_b(buf, len)
 #define debug_ws(str)

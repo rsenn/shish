@@ -1,36 +1,11 @@
 {
   "build_systems": [
-    {
-      "name": "List",
-      "shell_cmd": "ls -l",
-    },
-    {
-      "name": "Build CMake debug",
-      "shell_cmd": "mkdir -p build/debug; cd build/debug; cmake -DCMAKE_BUILD_TYPE=Debug ../..; make",
-    },
-      {
-      "name": "Run CMake release",
-      "shell_cmd": "mkdir -p build/release;  cd build/release; cmake -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_C_FLAGS='-Os -w -std=c11' ../..; make", 
-      "working_dir": "${project_path}",
-    },
-    {
-      "name": "clang-format",
-      "shell_cmd": "clang-format -verbose -style=file -i `find lib src -name '*.c' -or -name '*.h'`",
-      "working_dir": "${project_path:${folder:${file_path}}}",
-    }
+    { "name": "List", "shell_cmd": "ls -l" },
+    { "name": "Build CMake debug", "shell_cmd": "mkdir -p build/debug; cd build/debug; cmake -DCMAKE_BUILD_TYPE=Debug ../..; make" },
+    { "name": "Run CMake release", "shell_cmd": "mkdir -p build/release;  cd build/release; cmake -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_C_FLAGS='-Os -w -std=c11' ../..; make", "working_dir": "${project_path}" },
+    { "name": "clang-format", "shell_cmd": "clang-format -verbose -style=file -i `find lib src -name '*.c' -or -name '*.h'`", "working_dir": "${project_path:${folder:${file_path}}}" }
   ],
   "folders": [
-    {
-      "path": ".",
-          "follow_symlinks": false,
- "folder_exclude_patterns": [".*", "*.cache", "/home/roman/Sources/[!s][!h]*", "/home/roman/Sources/[^s][^h].*"],
-      "file_exclude_patterns": [".*", "*.stackdump", "*.o", "*.d", "*.m4", "*~", "*.pro.user*"],
-    },
-    {
-			"path": "VSC-PCTS2016-2.19/vsc/tset/POSIX.shell/shell"
-		},
-  ],
-  "debugger_configurations":
-  [
-  ],
+    { "path": ".", "follow_symlinks": false, "folder_exclude_patterns": [ ".*", "*.cache", "/home/roman/Sources/[!s][!h]*", "/home/roman/Sources/[^s][^h].*" ], "file_exclude_patterns": [ ".*", "*.stackdump", "*.o", "*.d", "*.m4", "*~", "*.pro.user*" ] }
+  ]
 }

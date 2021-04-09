@@ -24,8 +24,8 @@ void
 debug_node(union node* node, int depth) {
   const char* name;
 
-  if(depth > 0 && node->id >= N_ARG)
-    depth = -2;
+//  if(depth > 0 && node->id >= N_ARG)
+//    depth = -2;
   name = debug_nodes[node->id];
 
   // debug_indent(depth);
@@ -122,17 +122,13 @@ debug_node(union node* node, int depth) {
 
     case N_ASSIGN:
     case N_ARG:
-      debug_ulong(", flag", node->narg.flag, depth);
-      //      debug_subst(0, node->narg.flag, -1);
-
-      // if(node->narg.stra.len > 0)
-      debug_stralloc(", stra", &node->narg.stra, depth, debug_quote);
+      if(node->narg.flag)
+        debug_xlong(", flag", node->narg.flag, depth);
 
       if(node->narg.list)
         debug_sublist(", list", node->narg.list, depth);
-      /*      debug_space(depth, 0);
-            debug_sublist(", next", node->next, depth+1);
-      */
+      else
+        debug_stralloc(", stra", &node->narg.stra, depth, debug_quote);
 
       break;
 
@@ -144,7 +140,7 @@ debug_node(union node* node, int depth) {
 
     case N_ARGSTR:
 
-      debug_ulong(", flag", node->nargstr.flag /*& 0x7*/, depth);
+      debug_xlong(", flag", node->nargstr.flag /*& 0x7*/, depth);
       if(!sh_no_position)
         debug_location(", loc", &node->nargstr.loc, depth); // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
       debug_stralloc(", stra",
@@ -170,26 +166,29 @@ debug_node(union node* node, int depth) {
            debug_ulong(",  numb", node->nargparam.numb, depth+1);
          }*/
 
-      debug_ulong(", flag", node->nargparam.flag, depth);
+      debug_xlong(", flag", node->nargparam.flag, depth);
       debug_str(", name", node->nargparam.name, depth, debug_quote);
       if(node->nargparam.word)
         debug_sublist(", word", node->nargparam.word, depth);
       else
-        debug_str(", word", "NULL", depth, 0);
-      debug_ulong(", numb", node->nargparam.numb, depth);
+        debug_str(", word", "null", depth, 0);
+
+      if((node->nargparam.flag & S_SPECIAL) == S_ARG)
+        debug_ulong(", numb", node->nargparam.numb, depth);
+
       if(!sh_no_position)
         debug_location(", loc", &node->nargparam.loc, depth);
 
       break;
     }
     case N_ARGCMD:
-      debug_ulong(", flag", node->nargcmd.flag, depth);
+      debug_xlong(", flag", node->nargcmd.flag, depth);
       debug_sublist(", list", node->nargcmd.list, depth);
       break;
     case N_ARGARITH:
       /*   debug_subst(0,node->nargcmd.flag, depth+1);
          //debug_space(depth, 0);*/
-      debug_ulong(", flag", node->nargarith.flag, depth);
+      debug_xlong(", flag", node->nargarith.flag, depth);
       debug_sublist(", tree", node->nargarith.tree, depth);
       break;
 

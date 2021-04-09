@@ -7,6 +7,8 @@
 #include "../lib/uint64.h"
 #include <stdlib.h>
 
+#define __packed __attribute__((packed))
+
 /* the section numbers refer to the IEEE P1003.2 Draft D11.2 */
 
 enum kind {
@@ -212,7 +214,7 @@ struct list {
  *
  * a word is either a redirection, an argument or an assignment.
  * ----------------------------------------------------------------------- */
-struct narg {
+__packed struct narg {
   enum kind id;
   unsigned flag;
   union node* next;
@@ -399,6 +401,7 @@ const char* node2str(const union node n);
 
 #ifdef BUFFER_H
 void tree_print(union node*, buffer*);
+void tree_printlist(union node* node, const char* sep, buffer* b);
 #endif
 
 #endif /* TREE_H */

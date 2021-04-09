@@ -165,19 +165,20 @@ file(
   GLOB
   SOURCES
   src/*.h
-     src/debug/debug_begin.c
+  src/debug/debug_begin.c
   src/debug/debug_end.c
- src/debug/debug_argv.c
-    src/debug/debug_redir.c
+  src/debug/debug_argv.c
+  src/debug/debug_redir.c
   src/debug/debug_position.c
-      src/debug/debug_ulong.c
-      src/debug/debug_node.c
-     src/debug/debug_sublist.c
-    src/debug/debug_subnode.c
-     src/debug/debug_list.c
-    src/debug/debug_str.c
-    src/debug/debug_stralloc.c
-src/eval/*.c
+  src/debug/debug_ulong.c
+  src/debug/debug_xlong.c
+  src/debug/debug_node.c
+  src/debug/debug_sublist.c
+  src/debug/debug_subnode.c
+  src/debug/debug_list.c
+  src/debug/debug_str.c
+  src/debug/debug_stralloc.c
+  src/eval/*.c
   src/exec/*.c
   src/expand/*.c
   src/expr/*.c
@@ -212,15 +213,16 @@ if(DEBUG_OUTPUT)
     APPEND
     SOURCES
     src/debug/debug_char.c
-      src/debug/debug_error.c
- #   src/debug/debug_node.c
+    src/debug/debug_error.c
+    # src/debug/debug_node.c
     src/debug/debug_ptr.c
     src/debug/debug_space.c
     src/debug/debug_subst.c
     src/debug/debug_unquoted.c)
 endif(DEBUG_OUTPUT)
 
-list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
+list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c
+     src/builtin/builtin_table.c)
 list(APPEND SOURCES src/parse/parse_newnode${NAME_DEBUG}.c src/tree/tree_newnode${NAME_DEBUG}.c)
 
 if(FORK_SOURCE)
@@ -248,7 +250,8 @@ if(NO_TREE_PRINT)
 endif(NO_TREE_PRINT)
 
 #
-# configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake" "${CMAKE_BINARY_DIR}/src/builtin_config.h" #@ONLY
+# configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake"
+# "${CMAKE_BINARY_DIR}/src/builtin_config.h" #@ONLY
 
 list(APPEND SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
 
@@ -260,7 +263,7 @@ endif(ENABLE_LTO)
 option(LINK_STATIC "Link executables statically" OFF)
 
 if(LINK_STATIC)
-   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
 endif(LINK_STATIC)
 
 list(APPEND SOURCES ${BUILTIN_SOURCES})
@@ -312,7 +315,7 @@ if(BUILD_SHFORMAT)
     src/fdstack/*.c
     src/fdtable/*.c
     src/fd/*.c
-    #src/term/term_escape.c
+    # src/term/term_escape.c
     src/var/*.c
     src/vartab/*.c
     src/varstack/*.c
@@ -324,7 +327,7 @@ if(BUILD_SHFORMAT)
     src/sh/sh_msg.c
     src/sh/sh_usage.c)
 
- list(FILTER SHFORMAT_SOURCES EXCLUDE REGEX "dump")
+  list(FILTER SHFORMAT_SOURCES EXCLUDE REGEX "dump")
 
   add_executable(shformat ${SHFORMAT_SOURCES} ${LIBSOURCES})
   target_link_libraries(shformat ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})

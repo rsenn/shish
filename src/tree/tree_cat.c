@@ -122,7 +122,7 @@ again:
           braces = 1;
       }
 
-      if(!(node->nargparam.flag & S_ARITH) || braces)
+      if(!(node->nargparam.flag & S_ARITH) || (node->nargparam.flag & S_SPECIAL) || braces)
         stralloc_catc(sa, '$');
 
       if(braces)
