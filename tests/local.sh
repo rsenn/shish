@@ -1,7 +1,7 @@
 test_fn1() {
   local LXXXXXX LYYYYYY='b'
   
-  dump -v LXXXXXX 
+  dump -v LXXXXXX LYYYYYY
 
   LXXXXXX="a"
   GWWWWWW='c'
