@@ -88,6 +88,7 @@ void debug_position(const char* msg, const struct location* pos, int depth);
 void debug_location(const char* msg, const struct location* pos, int depth);
 
 size_t debug_argv(char** argv, buffer* out);
+void debug_squoted(const char*, size_t n, buffer* out);
 
 #ifdef DEBUG_OUTPUT
 

@@ -18,6 +18,7 @@
 #include "../debug.h"
 #include "../../lib/windoze.h"
 #include "../../lib/str.h"
+#include "../../lib/byte.h"
 #if !WINDOWS_NATIVE
 #include <sys/wait.h>
 #include <unistd.h>
@@ -52,13 +53,34 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
      mark them for export if we're gonna execute a command */
   if(expand_vars(ncmd->vars, &assigns)) {
 
+#if DEBUG_OUTPUT_
+    if(ncmd->vars) {
+      buffer_puts(&debug_buffer, "Vars ");
+      debug_list(ncmd->vars, 0);
+      debug_nl_fl();
+      buffer_puts(&debug_buffer, "Assigns ");
+    }
+#endif
     /* if we don't exit after the command, have a command and not a
        special builtin the variable changes should be temporary */
     if(!(e->flags & E_EXIT) && cmd.ptr && cmd.id != H_SBUILTIN)
       vartab_push(&vars, 0);
 
     for(node = assigns; node; node = node->next) {
+#if DEBUG_OUTPUT
+      {
+        stralloc* sa = &node->narg.stra;
+        size_t offs = byte_chr(sa->s, sa->len, '=');
 
+        if(offs < sa->len)
+          offs++;
+
+        buffer_puts(&debug_buffer, "Assignment ");
+        buffer_put(&debug_buffer, sa->s, offs);
+        debug_squoted(&sa->s[offs], sa->len - offs, &debug_buffer);
+        debug_nl_fl();
+      }
+#endif
       if(e->flags & E_PRINT) {
         eval_print_prefix(e, fd_err->w);
         buffer_putsa(fd_err->w, &node->narg.stra);

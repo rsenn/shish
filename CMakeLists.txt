@@ -175,6 +175,7 @@ file(
   src/debug/debug_node.c
   src/debug/debug_sublist.c
   src/debug/debug_subnode.c
+  src/debug/debug_squoted.c
   src/debug/debug_list.c
   src/debug/debug_str.c
   src/debug/debug_stralloc.c

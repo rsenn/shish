@@ -44,16 +44,15 @@ enum subst_type {
   S_ESCAPED = 0x8000,
   /* a char within here-doc delim is escaped */
   S_GLOB = 0x10000,
-
-  S_ARITH = 0x080000
+  S_ARITH = 0x20000
 };
 
 /* expansion modes */
-#define X_DEFAULT 0x00
-#define X_NOSPLIT 0x01
-#define X_ESCAPE 0x02
-#define X_GLOB 0x04
-#define X_QUOTED 0x08
+#define X_DEFAULT 0x00000000
+#define X_NOSPLIT 0x01000000
+#define X_ESCAPE 0x02000000
+#define X_GLOB 0x04000000
+#define X_QUOTED 0x08000000
 
 extern char expand_ifs[4];
 
