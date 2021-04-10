@@ -84,21 +84,21 @@ again:
     /* concatenate arguments */
     case N_ARGSTR: {
       size_t i;
-      stralloc* arg = &node->nargstr.stra;
+      struct nargstr* arg = &node->nargstr;
 
       for(i = 0; i < arg->len; i++) {
-        if(!parse_isesc(arg->s[i])) {
-          if(arg->s[i] == '\\' && !parse_isdesc(arg->s[i]))
+        if(!parse_isesc(arg->str[i])) {
+          if(arg->str[i] == '\\' && !parse_isdesc(arg->str[i]))
             continue;
-          if((node->nargstr.flag & S_TABLE) == S_DQUOTED && parse_isdesc(arg->s[i]))
+          if((node->nargstr.flag & S_TABLE) == S_DQUOTED && parse_isdesc(arg->str[i]))
             stralloc_catc(sa, '\\');
-        } else if(arg->s[i] == '\\') {
+        } /*else if(arg->str[i] == '\\') {
           if(++i < arg->len)
-            stralloc_catc(sa, arg->s[i]);
+            stralloc_catc(sa, arg->str[i]);
           continue;
-        }
+        }*/
 
-        stralloc_catc(sa, arg->s[i]);
+        stralloc_catc(sa, arg->str[i]);
       }
       break;
     }
@@ -109,7 +109,7 @@ again:
 
       /* if we have a word substitution inside the var we MUST
         put it inside braces */
-      if(node->nargparam.word || (node->nargparam.flag & S_STRLEN))
+      if(node->nargparam.word || (node->nargparam.flag & S_STRLEN) || (node->nargparam.flag & S_VAR))
         braces = 1;
 
       /* use braces if the next char after the variable name
@@ -137,7 +137,7 @@ again:
       else
         stralloc_cats(sa, node->nargparam.name);
 
-      if(node->nargparam.word) {
+      if(node->nargparam.word || (node->nargparam.flag & S_VAR)) {
         static const char* vsubst_types[] = {"-", "=", "?", "+", "%", "%%", "#", "##"};
 
 #if WITH_PARAM_RANGE
@@ -152,7 +152,8 @@ again:
 
           stralloc_cats(sa, vsubst_types[(node->nargparam.flag & S_VAR) >> 8]);
         }
-        tree_cat(node->nargparam.word, sa);
+        if(node->nargparam.word)
+          tree_cat(node->nargparam.word, sa);
       }
 
       if(braces)
@@ -233,8 +234,9 @@ again:
       stralloc_cats(sa, (node->id == N_WHILE ? "while " : "until "));
       tree_catlist(node->nloop.test, sa, NULL);
       tree_catseparator(sa, "; do\n  ", depth);
-      tree_catlist_n(node->nloop.cmds, sa, NULL, depth + 1);
-      stralloc_cats(sa, "; done");
+      tree_catlist_n(node->nloop.cmds, sa, "\n  ", depth + 1);
+      tree_catseparator(sa, sep == NULL ? "\n" : sep, depth);
+      stralloc_cats(sa, "done");
 
       /* concatenate redirections */
       for(n = node->ncmd.rdir; n; n = n->next) {
@@ -320,12 +322,12 @@ again:
       stralloc_catc(sa, '{');
       int d = depth < 0 ? -depth : depth;
 
-      tree_catseparator(sa, sep == NULL ? "\n" : sep, d);
+      tree_catseparator(sa, sep == NULL ? "\n  " : sep, d + 1);
       tree_catlist_n(node->ngrp.cmds, sa, sep == NULL ? "; " : sep, d + 1);
 
       stralloc_cats(sa, ";");
 
-      tree_catseparator(sa, sep == NULL ? "\n" : sep, d - 1);
+      tree_catseparator(sa, sep == NULL ? "\n  " : sep, d - 1);
       stralloc_catc(sa, '}');
 
       /* concatenate redirections */
@@ -374,10 +376,9 @@ again:
 
       node = node->nfunc.body;
       sep = "\n";
-      depth++;
-      goto again; /*
- tree_cat_n(node->nfunc.body, sa, -(depth + 1));
- break;*/
+      // depth++;
+      goto again;
+      /// tree_cat_n(node->nfunc.body, sa, /*sep == NULL ? "\n  " :sep,*/ depth); break;
     }
 
     case N_ARGARITH: {
@@ -434,6 +435,7 @@ again:
     case A_EXP: {
 
       tree_cat(node->narithbinary.left, sa);
+      stralloc_catc(sa, ' ');
 
       switch(node->narithbinary.id) {
         case A_ADD: stralloc_catc(sa, '+'); break;
@@ -458,6 +460,7 @@ again:
         default: break;
       }
 
+      stralloc_catc(sa, ' ');
       tree_cat(node->narithbinary.right, sa);
       break;
     }

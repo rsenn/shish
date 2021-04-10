@@ -12,6 +12,11 @@ var_create(const char* v, int flags) {
   struct search ctx;
   struct var *newvar, *oldvar;
 
+  struct vartab* tab = varstack;
+
+  if(!(flags & V_LOCAL) && tab->function)
+    tab = tab->parent;
+
   vartab_hash(v, &ctx);
   if((oldvar = var_search(v, &ctx))) {
     /* if we have the V_INIT flag and the var was found return NULL */
@@ -19,7 +24,7 @@ var_create(const char* v, int flags) {
       return NULL;
 
     /* if variable was found on topmost level -> immediately return it */
-    if(oldvar->table == sh->varstack)
+    if(oldvar->table == tab)
       return oldvar;
   }
 
@@ -37,14 +42,7 @@ var_create(const char* v, int flags) {
     newvar->sa.a = 0;
   }
 
-  {
-    struct vartab* tab = sh->varstack;
-
-    if(!(flags & V_LOCAL) && tab->function)
-      tab = tab->parent;
-
-    /* finally add it to the bucket and to the global list */
-    vartab_add(tab, newvar, &ctx);
-  }
+  /* finally add it to the bucket and to the global list */
+  vartab_add(tab, newvar, &ctx);
   return newvar;
 }

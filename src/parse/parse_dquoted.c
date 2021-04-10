@@ -25,9 +25,9 @@ parse_dquoted(struct parser* p) {
       if(source_next(&nextc) <= 0)
         return -1;
 
-      if(parse_isdesc(nextc)) {
-        parse_skip(p);
+      if(parse_isdesc(nextc) || nextc == '\\') {
         c = nextc;
+        source_skip();
       }
     } else if(c == '`') {
       if((p->flags & P_BQUOTE))

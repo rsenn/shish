@@ -22,7 +22,7 @@ var_search(const char* v, struct search* context) {
     buffer_putnlflush(&fd_out->b);*/
 
   /* loop through tables */
-  for(vartab = sh->varstack; vartab; vartab = vartab->parent) {
+  for(vartab = varstack; vartab; vartab = vartab->parent) {
     /* exact match always returns immediately */
     if((var = vartab_search(vartab, v, context)))
       break;

@@ -49,9 +49,16 @@ exec_command(struct command* cmd, int argc, char** argv, int exec, union node* r
       inst.arg.c--;
 
       //    sh_setargs(argv, 0);
-      eval_push(&e, sh->opts.debug ? E_PRINT : 0);
-      eval_cmdlist(&e, &cmd->fn->ngrp);
-      ret = eval_pop(&e);
+      eval_push(&e, E_FUNCTION | (sh->opts.debug ? E_PRINT : 0));
+
+      if((ret = setjmp(e.returnbuf)) == 0) {
+        eval_cmdlist(&e, &cmd->fn->ngrp);
+
+        ret = eval_pop(&e);
+      } else {
+        ret >>= 1;
+      }
+
       sh_pop(&inst);
       vartab_pop(&vars);
 

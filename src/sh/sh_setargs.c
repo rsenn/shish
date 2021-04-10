@@ -37,7 +37,7 @@ sh_setargs(char** argv, int dup) {
 
     for(i = 0; i < args->c; i++) args->v[i] = shell_strdup(argv[i]);
 
-    args->v[i] = NULL;
-    args->a = 1;
+    args->v[args->c] = NULL;
+    args->a = args->c + 1;
   }
 }

@@ -10,5 +10,8 @@ source_peek(char* c) {
 
 int
 source_peekc() {
-  return source_peeknc(0);
+  char c = 0;
+  if(source_peekn(&c, 0) <= 0)
+    return -1;
+  return (unsigned int)(unsigned char)c;
 }

@@ -7,7 +7,8 @@
 #include "../lib/uint64.h"
 #include <stdlib.h>
 
-#define __packed __attribute__((packed))
+//#define __packed __attribute__((packed))
+#define __packed
 
 /* the section numbers refer to the IEEE P1003.2 Draft D11.2 */
 
@@ -96,7 +97,7 @@ struct ncmd {
   union node* rdir; /* redirections */
   union node* vars; /* cmd-local variable assigns */
   union node* args; /* arguments */
-};
+} __packed;
 
 /* 3.9.2 - pipeline
  * ----------------------------------------------------------------------- */
@@ -106,13 +107,13 @@ struct npipe {
   union node* next;
   unsigned ncmd;
   union node* cmds;
-};
+} __packed;
 
 struct nnot {
   enum kind id;
   union node* next;
   union node* pipeline;
-};
+} __packed;
 
 /* 3.9.3 - lists
  * ----------------------------------------------------------------------- */
@@ -124,7 +125,7 @@ struct nandor {
   union node* next;
   union node* left;
   union node* right;
-};
+} __packed;
 
 /* the compound list is simply done with node->next, because we don't
    need any further information */
@@ -137,7 +138,7 @@ struct ngrp {
   union node* next;
   union node* rdir; /* redirections */
   union node* cmds;
-};
+} __packed;
 
 /* 3.9.4.2 - for loop
  * ----------------------------------------------------------------------- */
@@ -149,7 +150,7 @@ struct nfor {
   union node* cmds;
   union node* args;
   char* varn;
-};
+} __packed;
 
 /* 3.9.4.3 - case conditional
  * ----------------------------------------------------------------------- */
@@ -160,14 +161,14 @@ struct ncase {
   union node* rdir; /* redirections */
   union node* list;
   union node* word;
-};
+} __packed;
 
 struct ncasenode {
   enum kind id;
   union node* next;
   union node* pats;
   union node* cmds;
-};
+} __packed;
 
 /* 3.9.4.4 - if conditional
  * ----------------------------------------------------------------------- */
@@ -179,7 +180,7 @@ struct nif {
   union node* cmd0;
   union node* cmd1;
   union node* test;
-};
+} __packed;
 
 /* 3.9.4.5 while loop
  * 3.9.4.6 until loop
@@ -191,7 +192,7 @@ struct nloop {
   union node* rdir; /* redirections */
   union node* cmds;
   union node* test;
-};
+} __packed;
 
 /* 3.9.5 function definition
  * ----------------------------------------------------------------------- */
@@ -201,32 +202,26 @@ struct nfunc {
   char* name;
   union node* body;
   struct location loc;
-};
+} __packed;
 
 /* internally used nodes
  * ----------------------------------------------------------------------- */
 struct list {
   enum kind id;
   union node* next;
-};
+} __packed;
 
 /* word nodes
  *
  * a word is either a redirection, an argument or an assignment.
  * ----------------------------------------------------------------------- */
-__packed struct narg {
+struct narg {
   enum kind id;
   unsigned flag;
   union node* next;
-  union {
-    stralloc stra;
-    struct {
-      char* str;
-      size_t len;
-    };
-  };
+  stralloc stra;
   union node* list;
-};
+} __packed;
 
 /* [fd]<operator><file> */
 struct nredir {
@@ -237,7 +232,7 @@ struct nredir {
   union node* data; /* next here-doc or expansion */
   int fdes;
   struct fd* fd;
-};
+} __packed;
 
 /* argument (word) subnodes
  * ----------------------------------------------------------------------- */
@@ -253,7 +248,7 @@ struct nargstr {
     };
   };
   struct location loc;
-};
+} __packed;
 
 struct nargparam {
   enum kind id;
@@ -263,41 +258,41 @@ struct nargparam {
   union node* word;
   long numb;
   struct location loc;
-};
+} __packed;
 
 struct nargcmd {
   enum kind id;
   unsigned flag;
   union node* next;
   union node* list;
-};
+} __packed;
 
 struct nargarith {
   enum kind id;
   unsigned flag;
   union node* next;
   union node* tree;
-};
+} __packed;
 
 struct narithnum {
   enum kind id;
   union node* next;
   int64 num;
   unsigned base;
-};
+} __packed;
 
 struct narithunary {
   enum kind id;
   union node* next;
   union node* node;
-};
+} __packed;
 
 struct narithbinary {
   enum kind id;
   union node* next;
   union node* left;
   union node* right;
-};
+} __packed;
 
 /* ----------------------------------------------------------------------- */
 union node {

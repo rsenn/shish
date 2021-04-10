@@ -122,9 +122,9 @@ addcmd:
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
   if(sh->opts.debug) {
-    debug_begin("parse_simple_command", 0);
-    debug_position(0, &pos, 1);
-    debug_newline(1);
+    buffer_putm_internal(&debug_buffer, COLOR_YELLOW "parse_simple_command" COLOR_NONE " loc = ", 0);
+    debug_location(0, &pos, 1);
+    debug_s(" ");
     debug_s("«");
     tree_print(simple_command, &debug_buffer);
     debug_s("»");

@@ -2,6 +2,7 @@
 #include "../tree.h"
 #include "../expand.h"
 #include "../fd.h"
+#include "../debug.h"
 #include "../../lib/str.h"
 #include "../../lib/stralloc.h"
 
@@ -41,5 +42,12 @@ parse_function(struct parser* p) {
   p->pushback++;
   node->nfunc.body = parse_grouping(p, P_SKIPNL);
   node->nfunc.loc = loc;
+
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHPARSE2AST)
+  buffer_puts(&debug_buffer, COLOR_YELLOW "parse_function" COLOR_NONE " node = ");
+  debug_node(node, 1);
+  debug_nl_fl();
+#endif
+
   return node;
 }

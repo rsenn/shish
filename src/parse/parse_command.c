@@ -17,14 +17,6 @@ parse_command(struct parser* p, int tempflags) {
 
   tok = parse_gettok(p, tempflags);
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
-  if(sh->opts.debug) {
-    debug_begin("parse_command", 0);
-    debug_str("tok", parse_tokname(tok, 1), 0, 0);
-    debug_nl_fl();
-  }
-#endif
-
   //  source_skipspace(p);
   /*  while(source_peek(&c) >= 1) {
       if(!parse_isspace(c))
@@ -98,6 +90,12 @@ parse_command(struct parser* p, int tempflags) {
   }
 
   p->pushback++;
+
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
+  buffer_putm_internal(&debug_buffer, COLOR_YELLOW "parse_command" COLOR_NONE " command = ", 0);
+  debug_node(command, 1);
+  debug_nl_fl();
+#endif
 
   return command;
 }

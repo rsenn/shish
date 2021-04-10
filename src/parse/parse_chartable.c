@@ -40,7 +40,7 @@ const unsigned short parse_chartable[CHAR_RANGE] = {
     C_UNDEF,
     C_UNDEF,
     /* 0x20 */
-    C_SPACE,
+    C_SPACE | C_ESC,
     C_SPCL | C_ARITHOP, /* ! */
     C_DESC | C_QUOT,    /* " */
     C_SPCL,             /* # */

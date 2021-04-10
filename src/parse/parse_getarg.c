@@ -15,7 +15,7 @@ parse_getarg(struct parser* p) {
     p->tree = NULL;
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
-    debug_begin("parse_getarg", 0);
+    buffer_putm_internal(&debug_buffer, COLOR_YELLOW "parse_getarg" COLOR_NONE " ", 0);
     tree_print(n, &debug_buffer);
     debug_nl_fl();
 #endif

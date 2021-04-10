@@ -6,6 +6,5 @@
 int
 source_next(char* c) {
   source_skip();
-
-  return c ? source_peek(c) : 1;
+  return source_peek(c);
 }

@@ -7,9 +7,8 @@ enum {
   E_BQUOTE = 0x04, /* backquoted command */
   E_JCTL = 0x08,   /* job control */
   E_LIST = 0x10,   /* evaluate a node list */
-  E_BREAK = 0x20,
-  E_CONTINUE = 0x40,
-  E_PRINT = 0x80 /* print simpe command */
+  E_FUNCTION = 0x20,
+  E_PRINT = 0x80 /* print simple command */
 };
 
 #include "tree.h"
@@ -29,6 +28,8 @@ struct eval {
 
   jmp_buf jumpbuf;
   int jump;
+
+  jmp_buf returnbuf;
 
   struct location pos;
 };

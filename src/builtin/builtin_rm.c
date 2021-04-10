@@ -30,9 +30,11 @@ builtin_rm(int argc, char* argv[]) {
   while((p = argv[shell_optind++])) {
     ret = unlink(p);
     if(ret == -1) {
-      builtin_error(argv, p);
-      if(!force)
+      if(!force) {
+        builtin_error(argv, p);
         return 1;
+      }
+      continue;
     }
     if(verbose) {
       buffer_putm_internal(fd_out->w, "removed '", p, "'", 0);

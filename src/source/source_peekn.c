@@ -1,4 +1,5 @@
 #include "../source.h"
+#include "../debug.h"
 
 /* gets more data from buffer (at least n + 1 chars)
  * doesn't advance buffer pointer, use input_skipcn() for that
@@ -13,12 +14,14 @@ source_peekn(char* c, unsigned n) {
     char *x, *y;
     unsigned i, j;
     /* no data available, try to get some */
-    if((unsigned)ret <= lookahead)
+    if((unsigned)ret <= lookahead) {
       if((ret = buffer_prefetch(b, lookahead + 1)) <= 0)
         return ret;
-#ifdef DEBUG_OUTPUT_
-    debug_ulong("source_peekn", ret);
+#ifdef DEBUG
+      debug_ulong("source_peekn", ret, 0);
+      debug_nl_fl();
 #endif
+    }
     x = buffer_PEEK(b);
     y = buffer_END(b);
     j = y - x;

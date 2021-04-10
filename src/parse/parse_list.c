@@ -47,12 +47,22 @@ parse_list(struct parser* p) {
   }
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHPARSE2AST)
-  if(list) {
-    buffer_puts(&debug_buffer, COLOR_YELLOW "parse_list" COLOR_NONE " list = ");
-    debug_list(list, 0);
+  if(list && list->next) {
+    buffer_puts(&debug_buffer, COLOR_YELLOW "parse_list" COLOR_NONE " ");
+    if(list->next) {
+      buffer_puts(&debug_buffer, "[");
+      buffer_putulong(&debug_buffer, tree_count(list));
+      buffer_puts(&debug_buffer, "] ");
+    }
+    buffer_puts(&debug_buffer, "list = ");
+
+    if(list->next)
+      debug_list(list, 0);
+    else
+      debug_node(list, 1);
+
     debug_nl_fl();
   }
-
 #endif
 
   return list;

@@ -12,12 +12,13 @@ debug_argv(char** argv, buffer* out) {
   i = out->p;
 
   for(arg = argv; *arg; arg++) {
-    int quote = !!(*arg)[str_chr(*arg, ' ')];
+    int quote = 0;
+    // parse_isesc(*arg); //!!(*arg)[str_chr(*arg, ' ')];
 
     if(!quote) {
       char* s;
       for(s = *arg; *s; s++)
-        if(parse_isctrl(*s)) {
+        if(parse_isctrl(*s) || parse_isesc(*s)) {
           quote++;
           break;
         }
@@ -25,11 +26,27 @@ debug_argv(char** argv, buffer* out) {
 
     if(arg > argv)
       buffer_putspace(out);
-    if(quote)
+    if(quote) {
+      char* s;
+      size_t next;
+
       buffer_putc(out, '\'');
-    buffer_puts(out, *arg);
-    if(quote)
+      for(s = *arg; *s; s += next) {
+        if(*s == '\'') {
+          buffer_puts(out, "'\\''");
+          next = 1;
+          continue;
+        }
+
+        next = str_chr(s, '\'');
+        if(next > 0)
+          buffer_put(out, s, next);
+      }
+
       buffer_putc(out, '\'');
+    } else {
+      buffer_puts(out, *arg);
+    }
   }
   return out->p - i;
 }

@@ -24,8 +24,8 @@ void
 debug_node(union node* node, int depth) {
   const char* name;
 
-//  if(depth > 0 && node->id >= N_ARG)
-//    depth = -2;
+  //  if(depth > 0 && node->id >= N_ARG)
+  //    depth = -2;
   name = debug_nodes[node->id];
 
   // debug_indent(depth);
@@ -37,14 +37,14 @@ debug_node(union node* node, int depth) {
 
       debug_ulong(", bngd", node->ncmd.bgnd, depth);
 
-      // if(node->ncmd.vars)
-      debug_sublist(", vars", node->ncmd.vars, depth);
+      if(node->ncmd.vars)
+        debug_sublist(", vars", node->ncmd.vars, depth);
 
-      // if(node->ncmd.args)
-      debug_sublist(", args", node->ncmd.args, depth);
+      if(node->ncmd.args)
+        debug_sublist(", args", node->ncmd.args, depth);
 
-      // if(node->ncmd.rdir)
-      debug_sublist(", rdir", node->ncmd.rdir, depth);
+      if(node->ncmd.rdir)
+        debug_sublist(", rdir", node->ncmd.rdir, depth);
 
       break;
     case N_PIPELINE:
@@ -69,9 +69,8 @@ debug_node(union node* node, int depth) {
 
       debug_sublist(", cmds", node->ngrp.cmds, depth);
 
-      if(node->ngrp.rdir) {
+      if(node->ngrp.rdir)
         debug_sublist(", rdir", node->ngrp.rdir, depth);
-      }
 
       break;
 
@@ -84,7 +83,8 @@ debug_node(union node* node, int depth) {
     case N_CASE:
 
       debug_ulong(", bgnd", node->ncase.bgnd, depth);
-      debug_sublist(", rdir", node->ncase.rdir, depth);
+      if(node->ncase.rdir)
+        debug_sublist(", rdir", node->ncase.rdir, depth);
       debug_sublist(", list", node->ncase.list, depth);
       debug_sublist(", word", node->ncase.word, depth);
       break;
@@ -97,7 +97,8 @@ debug_node(union node* node, int depth) {
     case N_IF:
 
       debug_ulong(", bgnd", node->nif.bgnd, depth);
-      debug_sublist(", rdir", node->nif.rdir, depth);
+      if(node->nif.rdir)
+        debug_sublist(", rdir", node->nif.rdir, depth);
       debug_sublist(", cmd0", node->nif.cmd0, depth);
       if(node->nif.cmd1) {
         debug_sublist(", cmd1", node->nif.cmd1, depth);
@@ -108,7 +109,9 @@ debug_node(union node* node, int depth) {
     case N_WHILE:
     case N_UNTIL:
       debug_ulong(", bgnd", node->nloop.bgnd, depth);
-      debug_sublist(", rdir", node->nif.rdir, depth);
+
+      if(node->nloop.rdir)
+        debug_sublist(", rdir", node->nloop.rdir, depth);
       debug_subnode(", test", node->nloop.test, depth);
       debug_sublist(", cmds", node->nloop.cmds, depth);
       break;
@@ -116,7 +119,7 @@ debug_node(union node* node, int depth) {
     case N_FUNCTION:
       debug_str(", name", node->nfunc.name, depth, debug_quote);
 
-      debug_position(", loc", &node->nfunc.loc, depth);
+      debug_location(", loc", &node->nfunc.loc, depth);
       debug_sublist(", body", node->nfunc.body, depth);
       break;
 
