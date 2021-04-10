@@ -11,8 +11,9 @@ test_fn1() {
 
 test_fn1
 
+dump -v LXXXXXX LYYYYYY GWWWWWW
+
 echo LXXXXXX=${LXXXXXX-unset}
 echo LYYYYYY=${LV2-unset}
 echo GWWWWWW=${GWWWWWW-unset}
 
-dump -v LXXXXXX LYYYYYY GWWWWWW
