@@ -13,7 +13,7 @@ var_create(const char* v, int flags) {
   struct var *newvar, *oldvar;
 
   struct vartab* tab = varstack;
- 
+
   vartab_hash(v, &ctx);
   if((oldvar = var_search(v, &ctx))) {
     /* if we have the V_INIT flag and the var was found return NULL */
@@ -26,7 +26,7 @@ var_create(const char* v, int flags) {
   }
 
   if(!(flags & V_LOCAL) && tab->function)
-    tab = tab->parent; 
+    tab = tab->parent;
 
   newvar = shell_alloc(sizeof(struct var));
   var_init(v, newvar, &ctx);

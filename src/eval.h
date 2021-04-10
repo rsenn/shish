@@ -30,7 +30,6 @@ struct eval {
   jmp_buf jumpbuf;
   int jump;
 
- 
   struct location pos;
 };
 
