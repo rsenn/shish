@@ -20,7 +20,8 @@ var_set(char* v, int flags) {
     return 0;
   }
 
-if(v == var->sa.s) return var;
+  if(v == var->sa.s)
+    return var;
 
   if(v[var->len] == '\0') {
     var->sa.len = var->offset;

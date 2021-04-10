@@ -16,6 +16,7 @@ list(
   pwd
   read
   readonly
+  return
   set
   shift
   source

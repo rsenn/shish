@@ -5,13 +5,13 @@
 #include "../vartab.h"
 
 void
-eval_return(int64 value) {
-  struct eval* e,* f = NULL;
+eval_return(int value) {
+  struct eval *e, *f = NULL;
 
   for(e = sh->eval; e; e = e->parent) {
-    if(e->function)
+    if(e->flags & E_FUNCTION) {
       f = e;
-break;
+      break;
     }
   }
 

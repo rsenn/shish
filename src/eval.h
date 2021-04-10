@@ -38,6 +38,7 @@ extern struct eval* eval;
 
 int eval_command(struct eval* e, union node* node, int tempflags);
 void eval_jump(int levels, int cont);
+void eval_return(int);
 int eval_node(struct eval* e, union node* node);
 int eval_pop(struct eval* e);
 void eval_push(struct eval* e, int flags);
