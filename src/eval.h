@@ -8,6 +8,7 @@ enum {
   E_JCTL = 0x08,   /* job control */
   E_LIST = 0x10,   /* evaluate a node list */
   E_FUNCTION = 0x20,
+  E_LOOP = 0x40,
   E_PRINT = 0x80 /* print simple command */
 };
 
@@ -29,8 +30,7 @@ struct eval {
   jmp_buf jumpbuf;
   int jump;
 
-  jmp_buf returnbuf;
-
+ 
   struct location pos;
 };
 

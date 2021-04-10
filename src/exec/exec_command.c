@@ -51,7 +51,10 @@ exec_command(struct command* cmd, int argc, char** argv, int exec, union node* r
       //    sh_setargs(argv, 0);
       eval_push(&e, E_FUNCTION | (sh->opts.debug ? E_PRINT : 0));
 
-      if((ret = setjmp(e.returnbuf)) == 0) {
+
+
+      if((ret = setjmp(e.jumpbuf)) == 0) {
+        e.jump = 1;
         eval_cmdlist(&e, &cmd->fn->ngrp);
 
         ret = eval_pop(&e);

@@ -13,7 +13,7 @@ eval_jump(int levels, int cont) {
     if(levels <= 0)
       break;
 
-    if(e->jump) {
+    if(e->jump && (e->flags & E_LOOP)) {
       j = e;
       levels--;
     }
@@ -23,7 +23,6 @@ eval_jump(int levels, int cont) {
     sh->eval = j;
 
     while(fdstack != j->fdstack) fdstack_pop(fdstack);
-
     while(varstack != j->varstack) vartab_pop(varstack);
 
     longjmp(j->jumpbuf, cont << 1);

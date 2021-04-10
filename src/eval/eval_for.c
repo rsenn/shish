@@ -15,7 +15,7 @@ eval_for(struct eval* e, struct nfor* nfor) {
   if(nfor->args)
     expand_args(nfor->args, &args, 0);
 
-  eval_push(&en, 0);
+  eval_push(&en, E_LOOP);
 
   en.jump = 1;
 

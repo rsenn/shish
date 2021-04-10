@@ -10,7 +10,7 @@ eval_loop(struct eval* e, struct nloop* nloop) {
   int retcode = (nloop->id == N_WHILE) ? 0 : 1;
   int ret = 0;
 
-  eval_push(&en, 0);
+  eval_push(&en, E_LOOP);
 
   en.jump = 1;
   if(setjmp(en.jumpbuf) & 1)
