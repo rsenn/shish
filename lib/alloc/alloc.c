@@ -1,9 +1,10 @@
+#include "../alloc.h"
 #include "../shell.h"
 
 #ifndef DEBUG_ALLOC
 
 void*
-shell_alloc(unsigned long size) {
+alloc(unsigned long size) {
   void* ptr = malloc(size);
 
   /* exit if failed */

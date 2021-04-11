@@ -1,13 +1,14 @@
+#include "../alloc.h"
 #include "../shell.h"
 
 #ifndef DEBUG_ALLOC
 
 void*
-shell_realloc(void* ptr, unsigned long size) {
+alloc_re(void* ptr, unsigned long size) {
   void* newptr;
 
   if(ptr == NULL)
-    return shell_alloc(size);
+    return alloc(size);
 
   newptr = realloc(ptr, size);
 

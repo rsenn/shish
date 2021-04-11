@@ -1,3 +1,4 @@
+#include "../../lib/alloc.h"
 #include "../eval.h"
 #include "../expand.h"
 #include "../fd.h"

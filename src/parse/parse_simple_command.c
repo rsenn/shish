@@ -77,7 +77,7 @@ parse_simple_command(struct parser* p) {
                 vptr = tree_append(vptr, node->ncmd.vars);
                 rptr = tree_append(rptr, node->ncmd.rdir);
                 aptr = tree_append(aptr, node->ncmd.args);
-                shell_free(node);
+                alloc_free(node);
               }
 
               source_popfd(&fd);

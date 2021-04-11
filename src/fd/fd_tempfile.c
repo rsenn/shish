@@ -1,3 +1,4 @@
+#include "../../lib/alloc.h"
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -52,7 +53,7 @@ fd_tempfile(struct fd* fd) {
 
   /* make a copy of the name because the
      next call will change fd_tempname */
-  fd->name = shell_strdup(fd_tempname);
+  fd->name = str_dup(fd_tempname);
   fd->mode |= FD_FREENAME;
 
   return e;

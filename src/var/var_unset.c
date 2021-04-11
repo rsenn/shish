@@ -14,7 +14,7 @@ var_unset(char* v) {
   do {
     /*    if(var->child &&
          (var->child->flags & V_FREE))
-          shell_free(var->child);*/
+          alloc_free(var->child);*/
 
     var_cleanup(var);
   } while((var = var->parent));

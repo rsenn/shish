@@ -1,3 +1,4 @@
+#include "../alloc.h"
 #include "../shell.h"
 #include "../stralloc.h"
 
@@ -14,7 +15,7 @@ stralloc_readydebug(const char* file, unsigned int line, stralloc* sa, unsigned 
   register int wanted = len + (len >> 3) + 30; /* heuristic from djb */
   if(!sa->s || sa->a < len) {
     register char* tmp;
-    if(!(tmp = shell_reallocdebug(file, line, sa->s, wanted)))
+    if(!(tmp = alloc_redebug(file, line, sa->s, wanted)))
       return 0;
     sa->a = wanted;
     sa->s = tmp;

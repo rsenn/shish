@@ -1,3 +1,4 @@
+#include "../../lib/alloc.h"
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -73,7 +74,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
     }
 
     if((n = fdstack_npipes(FD_HERE | FD_SUBST))) {
-      pipes = shell_alloc(FDSTACK_ALLOC_SIZE(n));
+      pipes = alloc(FDSTACK_ALLOC_SIZE(n));
       fdstack_pipe(n, pipes);
     }
 
@@ -114,10 +115,10 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   }
 
   if(pipes)
-    shell_free(pipes);
+    alloc_free(pipes);
 
   /*  if(job)
-      shell_free(job);*/
+      alloc_free(job);*/
 
   return WEXITSTATUS(status);
 }

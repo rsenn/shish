@@ -1,3 +1,4 @@
+#include "../../lib/alloc.h"
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -163,7 +164,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 #ifdef HAVE_ALLOCA
   argv = alloca((argc + 1) * sizeof(char*));
 #else
-  argv = shell_alloc((argc + 1) * sizeof(char*));
+  argv = alloc((argc + 1) * sizeof(char*));
 #endif
   expand_argv(args, argv);
 
@@ -177,7 +178,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   status = exec_command(&cmd, argc, argv, (e->flags & E_EXIT), redir);
 
 #ifndef HAVE_ALLOCA
-  shell_free(argv);
+  alloc_free(argv);
 #endif
 end:
 

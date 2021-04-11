@@ -77,6 +77,7 @@ extern struct sigaction const sig_ign;
 
 int sig_action(int sig, struct sigaction const* new, struct sigaction* old);
 void sig_block(int);
+void sig_unblock(int);
 void sig_blocknone(void);
 void sig_blockset(const void*);
 int sig_catch(int, sighandler_t_ref);

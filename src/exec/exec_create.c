@@ -1,3 +1,4 @@
+#include "../../lib/alloc.h"
 #include "../../lib/byte.h"
 #include "../exec.h"
 #include "../sh.h"
@@ -12,10 +13,10 @@ struct exechash*
 exec_create(char* name, uint32 hash) {
   struct exechash* entry;
 
-  if((entry = shell_alloc(sizeof(struct exechash)))) {
+  if((entry = alloc(sizeof(struct exechash)))) {
     byte_zero(entry, sizeof(struct exechash));
     entry->hash = hash;
-    entry->name = shell_strdup(name);
+    entry->name = str_dup(name);
     entry->next = exec_hashtbl[entry->hash & EXEC_HASHMASK];
     exec_hashtbl[entry->hash & EXEC_HASHMASK] = entry;
   }

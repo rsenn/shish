@@ -50,7 +50,7 @@ exec_hash(char* name, int mask) {
     }
     if(entry && entry->mask != mask) {
       if(entry->cmd.id == H_PROGRAM)
-        shell_free(entry->cmd.path);
+        alloc_free(entry->cmd.path);
       entry->hits = 1;
     }
 

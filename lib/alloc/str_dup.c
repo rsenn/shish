@@ -1,17 +1,17 @@
 #include "../byte.h"
-#include "../shell.h"
+#include "../alloc.h"
 #include "../str.h"
 
 #ifndef DEBUG_ALLOC
 
 void*
-shell_strdup(const char* s) {
+str_dup(const char* s) {
   unsigned long n;
   void* ptr;
 
   n = str_len(s);
 
-  ptr = shell_alloc(n + 1);
+  ptr = alloc(n + 1);
 
   if(ptr)
     byte_copy(ptr, n + 1, s);

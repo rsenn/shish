@@ -1,3 +1,4 @@
+#include "../../lib/alloc.h"
 #include "../sh.h"
 #include "../../lib/shell.h"
 #include "../vartab.h"
@@ -28,7 +29,7 @@ var_create(const char* v, int flags) {
   if(!(flags & V_LOCAL) && tab->function)
     tab = tab->parent;
 
-  newvar = shell_alloc(sizeof(struct var));
+  newvar = alloc(sizeof(struct var));
   var_init(v, newvar, &ctx);
   newvar->flags |= V_FREE;
 

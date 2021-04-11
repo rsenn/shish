@@ -1,3 +1,4 @@
+#include "../../lib/alloc.h"
 #include "../source.h"
 #include "../fdtable.h"
 #include "../fd.h"
@@ -21,5 +22,5 @@ location2str(const struct location loc) {
   char buf[FMT_LOC];
   size_t len = fmt_location(buf, loc);
   buf[len] = '\0';
-  return shell_strdup(buf);
+  return str_dup(buf);
 }

@@ -1,3 +1,4 @@
+#include "../../lib/alloc.h"
 #include "../../lib/byte.h"
 #include "../../lib/shell.h"
 #include "../tree.h"
@@ -11,7 +12,7 @@ tree_newnodedebug(const char* file, unsigned int line, enum kind id) {
   union node* ret;
   size_t size = tree_nodesizes[id];
 
-  if((ret = shell_allocdebug(file, line, size))) {
+  if((ret = allocdebug(file, line, size))) {
     byte_zero(ret, size);
     ret->id = id;
   }

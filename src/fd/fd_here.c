@@ -6,7 +6,7 @@
 static void
 fd_freehere(buffer* b) {
   if(b->x) {
-    shell_free(b->x);
+    alloc_free(b->x);
     b->x = 0;
   }
   b->a = 0;

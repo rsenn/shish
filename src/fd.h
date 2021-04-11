@@ -18,6 +18,7 @@
 #include "../lib/shell.h"
 #include "../lib/stralloc.h"
 #include "../lib/windoze.h"
+#include "../lib/alloc.h"
 
 #if WINDOWS_NATIVE && !defined(__BORLANDC__) && !defined(__MINGW32__) && !defined(__TINYC__) && !defined(__LCC__)
 #ifndef HAVE_DEV_T
@@ -166,8 +167,8 @@ void fd_setbuf(struct fd* fd, void* buf, size_t n);
 void fd_string(struct fd* fd, const char* s, size_t len);
 void fd_subst(struct fd* fd, stralloc* sa);
 
-#define fd_malloc() ((struct fd*)shell_alloc(FD_SIZE))
-#define fd_mallocb() ((struct fd*)shell_alloc(FD_SIZE + FD_BUFSIZE))
+#define fd_malloc() ((struct fd*)alloc(FD_SIZE))
+#define fd_mallocb() ((struct fd*)alloc(FD_SIZE + FD_BUFSIZE))
 #define fd_alloca() ((struct fd*)alloca(FD_SIZE))
 #define fd_allocab() ((struct fd*)alloca(FD_SIZE + FD_BUFSIZE))
 

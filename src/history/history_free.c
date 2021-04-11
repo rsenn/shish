@@ -22,6 +22,6 @@ history_free(unsigned int index) {
   }
   /* it was malloced rather than mapped */
   else {
-    shell_free(s);
+    alloc_free(s);
   }
 }

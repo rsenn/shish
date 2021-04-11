@@ -149,19 +149,21 @@ if(NOT HAVE_LIBOWFAT)
   file(
     GLOB
     LIBSOURCES
+    lib/alloc/*.c
+    lib/buffer/*.c
+    lib/byte/*.c
+    lib/fmt/*.c
+    lib/mmap/*.c
     lib/open/*.c
     lib/scan/*.c
-    lib/buffer/*.c
-    lib/fmt/*.c
-    lib/byte/*.c
-    lib/mmap/*.c
     lib/shell/*.c
     lib/sig/*.c
     lib/str/*.c
-    lib/wait/*.c
     lib/uint32/*.c
     lib/unix/*.c
-    lib/utf8/*.c)
+    lib/utf8/*.c
+    lib/wait/*.c
+    )
   set(LIBSOURCES
       ${LIBSOURCES}
       ${LIBHEADERS}

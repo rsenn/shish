@@ -1,3 +1,4 @@
+#include "../../lib/alloc.h"
 #include "../history.h"
 #include "../../lib/scan.h"
 #include "../../lib/shell.h"
@@ -25,9 +26,9 @@ history_resize(void) {
   /* shrink history if needed */
   for(i = newsize; i < history_size; i++)
     if(history_array[i])
-      shell_free(history_array[i]);
+      alloc_free(history_array[i]);
 
-  history_array = shell_realloc(history_array, newsize * sizeof(char*));
+  history_array = alloc_re(history_array, newsize * sizeof(char*));
 
   /* initialize new entries when history has grown */
   for(i = history_size; i < newsize; i++) history_array[i] = NULL;

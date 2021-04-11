@@ -1,9 +1,10 @@
+#include "../../lib/alloc.h"
 #include "../fd.h"
 #include "../../lib/shell.h"
 
 static void
 fd_freebuf(buffer* b) {
-  shell_free(b->x);
+  alloc_free(b->x);
   b->x = NULL;
   b->a = 0;
 }
@@ -13,7 +14,7 @@ fd_freebuf(buffer* b) {
  * ----------------------------------------------------------------------- */
 void
 fd_allocbuf(struct fd* fd, size_t n) {
-  char* p = shell_alloc(n);
+  char* p = alloc(n);
 
   fd_setbuf(fd, p, n);
   if(fd->r->x == p)

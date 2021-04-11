@@ -1,0 +1,23 @@
+#include "../byte.h"
+#include "../alloc.h"
+#include "../str.h"
+
+#ifdef DEBUG_ALLOC
+
+extern void* allocdebug(const char* file, unsigned int line, unsigned long n);
+
+void*
+str_dupdebug(const char* file, unsigned int line, const char* s) {
+  unsigned long n;
+  void* ptr;
+
+  n = str_len(s);
+
+  ptr = allocdebug(file, line, n + 1);
+
+  if(ptr)
+    byte_copy(ptr, n + 1, s);
+
+  return ptr;
+}
+#endif /* defined(DEBUG_ALLOC) */

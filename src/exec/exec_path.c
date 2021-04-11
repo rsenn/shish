@@ -1,3 +1,4 @@
+#include "../../lib/alloc.h"
 #include "../exec.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
@@ -51,7 +52,7 @@ exec_path(char* name) {
 
     /* check if file accessible and executable */
     if(access(path, X_OK) == 0)
-      return shell_strdup(path);
+      return str_dup(path);
 
     si += ni;
   } while(vpath[si]);

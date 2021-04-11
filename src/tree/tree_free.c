@@ -46,7 +46,7 @@ tree_free(union node* node) {
         if(node->nfor.args)
           tree_free(node->nfor.args);
         if(node->nfor.varn)
-          shell_free(node->nfor.varn);
+          alloc_free(node->nfor.varn);
         break;
 
       case N_CASE:
@@ -99,7 +99,7 @@ tree_free(union node* node) {
 
       case N_ARGPARAM:
         if(node->nargparam.name)
-          shell_free(node->nargparam.name);
+          alloc_free(node->nargparam.name);
         if(node->nargparam.word)
           tree_free(node->nargparam.word);
         break;
@@ -117,7 +117,7 @@ tree_free(union node* node) {
       case A_NUM:
         break;
 
-        //    case A_VAR: shell_free(node->narithvar.var); break;
+        //    case A_VAR: alloc_free(node->narithvar.var); break;
 
       case A_OR:
       case A_AND:
@@ -174,13 +174,13 @@ tree_free(union node* node) {
 
       case N_FUNCTION:
         if(node->nfunc.name)
-          shell_free(node->nfunc.name);
+          alloc_free(node->nfunc.name);
         if(node->nfunc.body)
           tree_free(node->nfunc.body);
         break;
     }
 
-    shell_free(node);
+    alloc_free(node);
 
   } while((node = next));
 }

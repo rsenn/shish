@@ -17,7 +17,7 @@ fd_reinit(struct fd* fd, int mode) {
   /* unset the name, and if it was allocated: free it */
   if(fd->name) {
     if(fd->mode & FD_FREENAME)
-      shell_free((char*)fd->name);
+      alloc_free((char*)fd->name);
 
     fd->name = NULL;
   }

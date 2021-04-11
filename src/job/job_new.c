@@ -1,3 +1,4 @@
+#include "../../lib/alloc.h"
 #include "../job.h"
 #include "../../lib/shell.h"
 
@@ -10,7 +11,7 @@ struct job*
 job_new(unsigned int n) {
   struct job* job;
 
-  job = shell_alloc(sizeof(struct job) + sizeof(struct proc) * n);
+  job = alloc(sizeof(struct job) + sizeof(struct proc) * n);
 
   if(job) {
     job->next = NULL;

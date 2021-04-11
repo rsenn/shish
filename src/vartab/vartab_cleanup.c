@@ -36,7 +36,7 @@ vartab_cleanup(struct vartab* vartab) {
 
       /* if it was malloc()ed we have to free it now */
       if((var->flags & V_FREE))
-        shell_free(var);
+        alloc_free(var);
     }
 
     /* clear the hash bucket */

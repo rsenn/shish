@@ -1,3 +1,4 @@
+#include "../../lib/alloc.h"
 #include "../builtin.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
@@ -24,7 +25,7 @@ static struct alias*
 alias_new(const char* str) {
   size_t len = str_len(str);
   struct alias* a;
-  if((a = shell_alloc(offsetof(struct alias, def) + len + 1))) {
+  if((a = alloc(offsetof(struct alias, def) + len + 1))) {
     a->namelen = str_chr(str, '=');
     a->codelen = len - (a->namelen + 1);
     a->next = 0;
@@ -37,7 +38,7 @@ static void
 alias_remove(struct alias** aptr) {
   struct alias* a = *aptr;
   *aptr = a->next;
-  shell_free(a);
+  alloc_free(a);
 }
 
 static inline void

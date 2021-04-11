@@ -1,5 +1,6 @@
 #include "../fdstack.h"
 #include "../fdtable.h"
+#include "../../lib/alloc.h"
 
 /* create an fd entry on the specified stack level
  * ----------------------------------------------------------------------- */

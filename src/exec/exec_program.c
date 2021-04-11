@@ -1,3 +1,4 @@
+#include "../../lib/alloc.h"
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -51,7 +52,7 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
        expansions, which write to strallocs can't be shared across
        different process spaces, so we have to establish pipes */
     if((npipes = fdstack_npipes(FD_HERE | FD_SUBST))) {
-      pipes = shell_alloc(FDSTACK_ALLOC_SIZE(npipes));
+      pipes = alloc(FDSTACK_ALLOC_SIZE(npipes));
       fdstack_pipe(npipes, pipes);
     }
 
@@ -80,7 +81,7 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
         fdstack_data();
 
       if(pipes)
-        shell_free(pipes);
+        alloc_free(pipes);
 
       job_wait(NULL, pid, &status);
       job_status(pid, status);
@@ -109,7 +110,7 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
     /* export environment */
     char** envp;
     unsigned long envn = var_count(V_EXPORT) + 1;
-    envp = var_export(shell_alloc(envn * sizeof(char*)));
+    envp = var_export(alloc(envn * sizeof(char*)));
 
     /* try to execute the program */
     execve(path, argv, envp);
