@@ -1,5 +1,6 @@
 #include "../source.h"
 #include "../debug.h"
+#include "../prompt.h"
 
 /* gets more data from buffer (at least n + 1 chars)
  * doesn't advance buffer pointer, use input_skipcn() for that
@@ -9,6 +10,13 @@ source_peekn(char* c, unsigned n) {
   buffer* b = source->b;
   int ret = buffer_LEN(b);
   unsigned lookahead = n;
+
+/* #if !defined(SHFORMAT) && !defined(SHPARSE2AST)
+   if((source->mode & SOURCE_IACTIVE) && source->show_prompt) {
+      prompt_show();
+      source->show_prompt = 0;
+    }
+#endif*/
 
   for(;;) {
     char *x, *y;

@@ -137,7 +137,7 @@ parse_simpletok(struct parser* p) {
   }
 
   if(advance)
-    source_next(NULL);
+    source_skip();
 
   return tok;
 }

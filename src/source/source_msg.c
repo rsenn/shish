@@ -7,10 +7,13 @@
 void
 source_msg(const struct location* pos) {
   const char* name = fdtable[STDSRC_FILENO]->name;
-  buffer_puts(fd_err->w, name ? name : sh_name);
-  buffer_putc(fd_err->w, ':');
-  buffer_putulong(fd_err->w, pos->line);
-  buffer_putc(fd_err->w, ':');
-  buffer_putulong(fd_err->w, pos->column);
-  buffer_puts(fd_err->w, ": ");
+ 
+  if(!(source->mode & SOURCE_IACTIVE)) {
+    buffer_puts(fd_err->w, name ? name : sh_name);
+    buffer_putc(fd_err->w, ':');
+    buffer_putulong(fd_err->w, pos->line);
+    buffer_putc(fd_err->w, ':');
+    buffer_putulong(fd_err->w, pos->column);
+    buffer_puts(fd_err->w, ": ");
+  }
 }

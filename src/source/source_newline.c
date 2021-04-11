@@ -18,6 +18,6 @@ source_newline(void) {
 
 #if !defined(SHFORMAT) && !defined(SHPARSE2AST)
   if(source->mode & SOURCE_IACTIVE)
-    prompt_show();
+    source->show_prompt=1;
 #endif
 }
