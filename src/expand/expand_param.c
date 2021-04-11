@@ -9,7 +9,7 @@
 #include "../../lib/uint16.h"
 #include "../../lib/uint32.h"
 #include "../../lib/fmt.h"
-#include "../../lib/shell.h"
+#include "../../lib/path.h"
 #include "../../lib/str.h"
 #include "../../lib/scan.h"
 
@@ -258,7 +258,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
           expand_copysa(param->word, &sa, 0);
 
           for(i = vlen - 1; i >= 0; i--)
-            if(shell_fnmatch(sa.s, sa.len, v + i, vlen - i, SH_FNM_PERIOD) == 0)
+            if(path_fnmatch(sa.s, sa.len, v + i, vlen - i, SH_FNM_PERIOD) == 0)
               break;
 
           n = expand_cat(v, (i < 0 ? vlen : (size_t)i), nptr, flags);
@@ -276,7 +276,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         expand_copysa(param->word, &sa, 0);
 
         for(i = 0; i <= vlen; i++)
-          if(shell_fnmatch(sa.s, sa.len, v + i, vlen - i, SH_FNM_PERIOD) == 0)
+          if(path_fnmatch(sa.s, sa.len, v + i, vlen - i, SH_FNM_PERIOD) == 0)
             break;
 
         n = expand_cat(v, (i > vlen ? vlen : i), nptr, flags);
@@ -294,7 +294,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         expand_copysa(param->word, &sa, 0);
 
         for(i = 1; i <= vlen; i++)
-          if(shell_fnmatch(sa.s, sa.len, v, i, SH_FNM_PERIOD) == 0)
+          if(path_fnmatch(sa.s, sa.len, v, i, SH_FNM_PERIOD) == 0)
             break;
 
         if(i > vlen)
@@ -314,7 +314,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         expand_copysa(param->word, &sa, 0);
 
         for(i = vlen; i > 0; i--)
-          if(shell_fnmatch(sa.s, sa.len, v, i, SH_FNM_PERIOD) == 0)
+          if(path_fnmatch(sa.s, sa.len, v, i, SH_FNM_PERIOD) == 0)
             break;
 
         if(i == 0)

@@ -40,6 +40,8 @@ size_t str_chr(const char* haystack, char needle) __pure__;
 /* str_rchr returns the index of the last occurance of needle or \0 in haystack */
 size_t str_rchr(const char* haystack, char needle) __pure__;
 
+size_t str_rchrs(const char*, char needles[], size_t nn);
+
 /* convenience shortcut to test for string equality */
 #define str_equal(s, t) (!str_diff((s), (t)))
 

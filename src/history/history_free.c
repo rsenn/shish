@@ -1,5 +1,5 @@
 #include "../history.h"
-#include "../../lib/shell.h"
+#include "../../lib/alloc.h"
 
 /* clear a history entry
  * ----------------------------------------------------------------------- */

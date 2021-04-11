@@ -2,6 +2,7 @@
 #include "../../lib/fmt.h"
 #include "../sh.h"
 #include "../../lib/str.h"
+#include "../../lib/path.h"
 
 /* try to get a name for the (fd)
  * ----------------------------------------------------------------------- */
@@ -38,7 +39,7 @@ fd_getname(struct fd* fd) {
     path[plen + fmt_ulong(&path[plen], fd->n)] = '\0';
 
     /* try to read the link */
-    if(!shell_readlink(path, &name)) {
+    if(!path_readlink(path, &name)) {
       fd->name = name.s;
       fd->mode |= FD_FREENAME;
       return 0;

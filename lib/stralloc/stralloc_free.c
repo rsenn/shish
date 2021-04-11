@@ -1,4 +1,4 @@
-#include "../shell.h"
+#include "../alloc.h"
 #include "../stralloc.h"
 #include <stdlib.h>
 

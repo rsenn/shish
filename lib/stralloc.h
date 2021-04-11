@@ -121,11 +121,10 @@ void stralloc_free(stralloc* sa);
 #define stralloc_catint0(sa, i, n) (stralloc_catlong0((sa), (i), (n)))
 #define stralloc_catint(sa, i) (stralloc_catlong0((sa), (i), 0))
 
- /* remove trailing "\r\n", "\n" or "\r".  Return number of removed chars (0, 1 or 2)
+/* remove trailing "\r\n", "\n" or "\r".  Return number of removed chars (0, 1 or 2)
  */
 
 void stralloc_trimr(stralloc* sa, const char* trimchars, unsigned int trimcharslen);
-
 
 #ifdef BUFFER_H
 /* write stralloc to buffer */
@@ -184,7 +183,6 @@ stralloc_length(const stralloc* sa) {
 #define stralloc_iterator_distance(it1, it2) ((it2) - (it1))
 #define stralloc_is_last(sa, ptr) ((sa)->len > 0 && ((sa)->s + (sa)->len - 1) == (ptr))
 
-
 #ifdef BYTE_H
 size_t byte_scan(const char* in, size_t in_len, stralloc* out, size_t (*scan_function)(const char*, char*));
 #endif
@@ -195,8 +193,8 @@ typedef size_t(stralloc_fmt_fn)(char*, unsigned int);
 
 int stralloc_prepends(stralloc* sa, const char* s);
 
-
 size_t stralloc_remove(stralloc*, size_t pos, size_t n);
+void stralloc_replacec(stralloc*, char before, char after);
 
 static inline char*
 stralloc_take(stralloc* from, size_t* lenp, size_t* allocated) {

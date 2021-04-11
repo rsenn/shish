@@ -1,7 +1,7 @@
 #include "../builtin.h"
 #include "../fdtable.h"
 #include "../sh.h"
-#include "../../lib/shell.h"
+#include "../../lib/path.h"
 
 /* print working directory
  * ----------------------------------------------------------------------- */
@@ -23,7 +23,7 @@ builtin_pwd(int argc, char* argv[]) {
   if(sh->cwdsym && physical) {
     stralloc sa;
     stralloc_init(&sa);
-    shell_getcwd(&sa);
+    path_getcwd(&sa);
     buffer_putsa(fd_out->w, &sa);
     buffer_putnlflush(fd_out->w);
     stralloc_free(&sa);

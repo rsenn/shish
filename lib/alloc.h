@@ -12,7 +12,6 @@
 extern "C" {
 #endif
 
-
 #ifndef DEBUG_ALLOC
 void* alloc(unsigned long size);
 void* alloc_re(void* ptr, unsigned long size);
@@ -29,11 +28,9 @@ void* str_dupdebug(const char* file, unsigned int line, const char* s);
 #define alloc_free(p) debug_free(__FILE__, __LINE__, (p))
 #endif /* DEBUG_ALLOC */
 
-
 #ifdef __cplusplus
 }
 #endif
 
 #endif
 /** @} */
-  

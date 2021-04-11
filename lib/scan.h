@@ -45,6 +45,9 @@ size_t scan_charsetnskip(const char* in, const char* charset, size_t limit) __pu
  * charset (ASCIIZ string) for all 0 <= i <= n */
 size_t scan_noncharsetnskip(const char* in, const char* charset, size_t limit) __pure__;
 
+size_t scan_nonwhitenskip(const char*, size_t limit);
+size_t scan_whitenskip(const char*, size_t limit);
+
 /* convert from hex ASCII, return 0 to 15 for success or -1 for failure */
 int scan_fromhex(unsigned char c);
 

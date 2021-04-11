@@ -2,7 +2,7 @@
 #include "../../lib/byte.h"
 #include "../fdtable.h"
 #include "../sh.h"
-#include "../../lib/shell.h"
+#include "../../lib/path.h"
 #include "../../lib/str.h"
 #include "../var.h"
 #include <errno.h>
@@ -77,7 +77,7 @@ builtin_cd(int argc, char* argv[]) {
       /* copy the argument and canonicalize */
       str_copy(&path[n], arg);
 
-      ok = shell_realpath(path, &newcwd, symbolic, &sh->cwd);
+      ok = path_realpath(path, &newcwd, symbolic, &sh->cwd);
 
       /* skip the colon */
       if(*cdpath == ':')
@@ -89,7 +89,7 @@ builtin_cd(int argc, char* argv[]) {
   else {
     /* last cdpath length set to 0, because we're not using cdpath here */
     n = 0;
-    ok = shell_canonicalize(arg, &newcwd, symbolic);
+    ok = path_canonicalize(arg, &newcwd, symbolic);
   }
 
   stralloc_nul(&newcwd);

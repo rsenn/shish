@@ -1,5 +1,5 @@
 #include "../sh.h"
-#include "../../lib/shell.h"
+#include "../../lib/path.h"
 #include "../var.h"
 
 /* read home directory from /etc/passwd without the whole getpw*() bloat :)
@@ -13,5 +13,5 @@ sh_gethome(void) {
   if((v = var_get("HOME", &offset)))
     return &v[offset];
 
-  return shell_gethome(sh_uid);
+  return path_gethome(sh_uid);
 }

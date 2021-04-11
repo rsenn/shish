@@ -2,7 +2,6 @@
 
 #include "../windoze.h"
 #include "../path_internal.h"
-#include "../readlink.h"
 
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 1

@@ -155,6 +155,7 @@ if(NOT HAVE_LIBOWFAT)
     lib/fmt/*.c
     lib/mmap/*.c
     lib/open/*.c
+    lib/path/*.c
     lib/scan/*.c
     lib/shell/*.c
     lib/sig/*.c
@@ -162,42 +163,40 @@ if(NOT HAVE_LIBOWFAT)
     lib/uint32/*.c
     lib/unix/*.c
     lib/utf8/*.c
-    lib/wait/*.c
-    )
+    lib/wait/*.c)
   set(LIBSOURCES
       ${LIBSOURCES}
       ${LIBHEADERS}
+      lib/stralloc/mmap_filename.c
       lib/stralloc/stralloc_append.c
+      lib/stralloc/stralloc_cat.c
+      lib/stralloc/stralloc_catb.c
+      lib/stralloc/stralloc_catc.c
+      lib/stralloc/stralloc_catlong0.c
+      lib/stralloc/stralloc_catm_internal.c
+      lib/stralloc/stralloc_cats.c
       lib/stralloc/stralloc_catulong.c
+      lib/stralloc/stralloc_catulong0.c
+      lib/stralloc/stralloc_copy.c
+      lib/stralloc/stralloc_copyb.c
+      lib/stralloc/stralloc_copys.c
+      lib/stralloc/stralloc_diffs.c
       lib/stralloc/stralloc_dump.c
+      lib/stralloc/stralloc_init.c
       lib/stralloc/stralloc_insertb.c
+      lib/stralloc/stralloc_move.c
       lib/stralloc/stralloc_nul.c
       lib/stralloc/stralloc_remove.c
+      lib/stralloc/stralloc_replacec.c
       lib/stralloc/stralloc_starts.c
       lib/stralloc/stralloc_trimr.c
       lib/stralloc/stralloc_write.c
-      lib/stralloc/stralloc_move.c
-      lib/stralloc/stralloc_trunc${NAME_DEBUG}.c
-      lib/stralloc/stralloc_catc.c
-      lib/stralloc/stralloc_cats.c
-      lib/stralloc/stralloc_diffs.c
       lib/stralloc/stralloc_zero.c
       lib/stralloc/stralloc_free${NAME_DEBUG}.c
-      lib/stralloc/stralloc_catlong0.c
-      lib/stralloc/stralloc_copyb.c
-      lib/stralloc/stralloc_copys.c
-      lib/stralloc/stralloc_copy.c
       lib/stralloc/stralloc_ready${NAME_DEBUG}.c
-      lib/stralloc/stralloc_catulong0.c
-      lib/stralloc/stralloc_cat.c
-      lib/stralloc/stralloc_catb.c
-      lib/stralloc/stralloc_init.c
       lib/stralloc/stralloc_readyplus${NAME_DEBUG}.c
-      lib/str/str_diff.c
-      lib/str/str_len.c
-      lib/str/str_rchr.c
-      lib/str/str_chr.c
-      lib/str/str_copy.c)
+      lib/stralloc/stralloc_trunc${NAME_DEBUG}.c)
+  
   add_library(owfat STATIC ${LIBSOURCES})
   link_directories(${CMAKE_CURRENT_BINARY_DIR})
   set(LIBOWFAT_LIBRARY

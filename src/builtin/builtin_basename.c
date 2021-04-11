@@ -1,6 +1,6 @@
 #include "../builtin.h"
 #include "../fdtable.h"
-#include "../../lib/shell.h"
+#include "../../lib/path.h"
 
 /* ----------------------------------------------------------------------- */
 int
@@ -10,7 +10,7 @@ builtin_basename(int argc, char* argv[]) {
     return 1;
   }
 
-  buffer_puts(fd_out->w, shell_basename(argv[shell_optind]));
+  buffer_puts(fd_out->w, path_basename(argv[shell_optind]));
   buffer_putnlflush(fd_out->w);
   return 0;
 }

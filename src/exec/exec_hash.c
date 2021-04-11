@@ -2,7 +2,7 @@
 #include "../exec.h"
 #include "../tree.h"
 #include "../../lib/str.h"
-#include "../../lib/shell.h"
+#include "../../lib/alloc.h"
 #include "../vartab.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE

@@ -74,6 +74,8 @@ ssize_t buffer_putnlflush(buffer* b); /* put \n and flush */
 ssize_t buffer_feed(buffer* b);
 ssize_t buffer_getc(buffer*, char* x);
 
+ssize_t buffer_getline(buffer*, char* x, size_t len);
+
 /* read bytes until the destination buffer is full (len bytes),  end of
  * file is reached or the read char is in charset (setlen bytes).  An
  * empty line when looking for \n will write '\n' to x and return 0.  If
@@ -104,24 +106,6 @@ extern buffer* buffer_2;
 #ifdef STRALLOC_H
 /* write stralloc to buffer */
 int buffer_putsa(buffer*, const stralloc* sa);
-/* write stralloc to buffer and flush */
-
-/* these "read token" functions return 0 if the token was complete or
- * EOF was hit or -1 on error.  In contrast to the non-stralloc token
- * functions,  the separator is also put in the stralloc; use
- * stralloc_chop or stralloc_chomp to get rid of it. */
-
-/* WARNING!  These token reading functions will not clear the stralloc!
- * They _append_ the token to the contents of the stralloc.  The idea is
- * that this way these functions can be used on non-blocking sockets;
- * when you get signalled EAGAIN,  just call the functions again when new
- * data is available. */
-
-/* read token from buffer to stralloc */
-/* read line from buffer to stralloc */
-
-/* same as buffer_get_token_sa but empty sa first */
-/* same as buffer_getline_sa but empty sa first */
 
 typedef int (*sa_predicate)(stralloc* sa, void*);
 

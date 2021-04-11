@@ -54,6 +54,8 @@ size_t byte_equal(const void* s, size_t n, const void* t);
 
 size_t byte_trimr(char* x, size_t n, const char* trimchars, unsigned int trimcharslen);
 
+void byte_replace(char* x, size_t n, char before, char after);
+
 #ifdef __cplusplus
 }
 #endif

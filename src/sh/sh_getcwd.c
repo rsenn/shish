@@ -1,5 +1,5 @@
 #include "../sh.h"
-#include "../../lib/shell.h"
+#include "../../lib/path.h"
 #include "../../lib/str.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
@@ -20,7 +20,7 @@ sh_getcwd(struct env* sh) {
   //  sh->cwd.s = getcwd(rootcwd, sizeof(rootcwd));
 
   if(sh == &sh_root || sh->cwd.s == NULL)
-    shell_getcwd(&sh->cwd);
+    path_getcwd(&sh->cwd);
   else
     sh->cwd.len = str_len(sh->cwd.s);
 }

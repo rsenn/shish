@@ -1,4 +1,4 @@
-#include "../../lib/shell.h"
+#include "../../lib/alloc.h"
 #include "../vartab.h"
 #include <assert.h>
 
