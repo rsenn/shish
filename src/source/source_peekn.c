@@ -11,13 +11,6 @@ source_peekn(char* c, unsigned n) {
   int ret = buffer_LEN(b);
   unsigned lookahead = n;
 
-/* #if !defined(SHFORMAT) && !defined(SHPARSE2AST)
-   if((source->mode & SOURCE_IACTIVE) && source->show_prompt) {
-      prompt_show();
-      source->show_prompt = 0;
-    }
-#endif*/
-
   for(;;) {
     char *x, *y;
     unsigned i, j;

@@ -5,7 +5,7 @@
 
 void
 eval_exit(int exitcode) {
-   struct eval* e, *parent_eval = sh->parent ? sh->parent->eval : 0;
+  struct eval *e, *parent_eval = sh->parent ? sh->parent->eval : 0;
 
   for(e = sh->eval; e; e = e->parent) {
     if(e == parent_eval)

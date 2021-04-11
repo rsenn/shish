@@ -17,7 +17,6 @@ struct source {
   unsigned mode;
   struct source* parent;
   struct location position;
-  unsigned show_prompt:1;
 };
 
 #define SOURCE_IACTIVE 0x01
@@ -44,7 +43,7 @@ void source_newline(void);
 void source_push(struct source* in);
 int source_peeknc(unsigned pos);
 int source_peekc(void);
- 
+
 #define source_PEEKN(n) (char)source_peeknc(n);
 
 #define FMT_LOC (FMT_ULONG * 2 + 1)
