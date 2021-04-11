@@ -1,12 +1,16 @@
 #define DEBUG_NOCOLOR 1
 #include "../debug.h"
-
-#if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
-#include "../fd.h"
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 char debug_b[1024];
 buffer debug_buffer = BUFFER_INIT(&write, -1, debug_b, sizeof(debug_b));
+
+#if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
+#include "../fd.h"
 
 /* begin a {}-block
  * ----------------------------------------------------------------------- */

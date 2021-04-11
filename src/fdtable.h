@@ -3,7 +3,7 @@
 
 #include "fd.h"
 
-#define FDTABLE_SIZE FD_SETSIZE
+#define FDTABLE_SIZE FD_MAX
 
 #define fdtable_ok(e) ((e) >= -1 && (e) < FDTABLE_S IZE)
 #define efdtable_ok(e) ((e) >= 0 && (e) < FDTABLE_SIZE)

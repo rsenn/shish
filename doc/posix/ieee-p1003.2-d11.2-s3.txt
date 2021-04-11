@@ -1458,8 +1458,8 @@
  P1003.2/D11.2                               INFORMATION TECHNOLOGY--POSIX
 
        PATH=$(printf %s:  rms/bin  bfox/bin ...)                            2
-       PATH=$(printf %s  ~karels/bi~n :  bostic/bin)                          2
-       for Dir in  maart~/bin  srb/bin ~...                                   2
+       PATH=$(printf %s  karels/bin :  bostic/bin)                          2
+       for Dir in  maart/bin  srb/bin ...                                   2
        do         ~          ~                                              2
                PATH=${PATH:+$PATH:}$Dir                                     2
        done                                                                 2
@@ -1492,14 +1492,14 @@
        rcp hostname: marc/.profile .                                        2
                     ~
  A suggestion was made that the special sequence ``$ '' should be allowed   2
- to force tilde expansion anywhere.  Since this is n~ot historical           2
+ to force tilde expansion anywhere.  Since this is not historical           2
  practice, it has been left for future implementations to evaluate.  (The   2
  description in 3.2 requires that a dollar-sign be quoted to represent      2
  itself, so the $  combination is already unspecified.)                     2
                  ~
  The results of giving tilde with an unknown login name are undefined
  because the KornShell  + and  - constructs make use of this condition,
- but in general it is a~n error~to give an incorrect login name with tilde.
+ but in general it is an error~to give an incorrect login name with tilde.
  The results of having HOME unset are unspecified because some historical
  shells treat this as an error.
 
@@ -1721,7 +1721,7 @@
 
  P1003.2/D11.2                               INFORMATION TECHNOLOGY--POSIX
 
-                             ppppaaaarrrraaaammmmeeeetttteeeerrrr        ppppaaaarrrraaaammmmeeeetttteeeerrrr     ppppaaaarrrraaaammmmeeeetttteeeerrrr
+                             parameter        parameter     parameter
                           set and not null   set but null     unset
                           ________________   ____________   __________
      ${parameter:-word}      substitute       substitute    substitute
@@ -1964,7 +1964,7 @@
  to solve a problem of inconsistent behavior when using backquotes.  For
  example:
 
-                        _____C_o_m_m_a_n_d_______   O_u_t_p_u_t_
+                        _____Command______   Output
                         echo '\$x'           \$x
 
 
@@ -2757,7 +2757,7 @@
  write a diagnostic message to standard error and exit as shown in the
  following table:
 
-                                     S_p_e_c_i_a_l__B_u_i_l_t_-_i_n_ O_t_h_e_r__U_t_i_l_i_t_i_e_s_
+                                     Special_Built-in Other_Utilities
 
 
 

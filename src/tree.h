@@ -228,7 +228,7 @@ struct nredir {
   enum kind id;
   unsigned flag;
   union node* next;
-  union node* list; /* can be file, fd, delim, here-doc-data */
+  union node* word; /* can be file, fd, delim, here-doc-data */
   union node* data; /* next here-doc or expansion */
   int fdes;
   struct fd* fd;

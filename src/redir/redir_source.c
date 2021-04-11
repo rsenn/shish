@@ -21,17 +21,17 @@ redir_source(void) {
   for(; redir_list; redir_list = &redir_list->data->nredir) {
     /* expand the delimiter */
     stralloc_init(&delim);
-    expand_catsa(redir_list->list, &delim, 0);
+    expand_str(redir_list->word, &delim, 0);
 
     /* when any character of the delimiter has been escaped
        then treat the whole here-doc as non-expanded word */
-    if(parse_here(&p, &delim, (redir_list->list->nargstr.flag & S_ESCAPED))) {
+    if(parse_here(&p, &delim, (redir_list->word->nargstr.flag & S_ESCAPED))) {
       parse_error(&p, p.tok);
       break;
     }
 
-    tree_free(redir_list->list);
-    redir_list->list = parse_getarg(&p);
+    tree_free(redir_list->word);
+    redir_list->word = parse_getarg(&p);
 
     /* free expanded delimiters */
     stralloc_free(&delim);

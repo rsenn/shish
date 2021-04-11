@@ -363,8 +363,8 @@ again:
       if(node->nredir.flag & R_CLOBBER)
         stralloc_catc(sa, '|');
 
-      if(node->nredir.list)
-        tree_catlist(node->nredir.list, sa, "");
+      if(node->nredir.word)
+        tree_catlist(node->nredir.word, sa, "");
 
       break;
     }

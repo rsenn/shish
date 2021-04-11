@@ -3,11 +3,12 @@
 #include "../expand.h"
 #include "../../lib/str.h"
 
+int debug_nindent = 2;
+
 #if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 #include "../tree.h"
 #include "../fd.h"
 
-int debug_nindent = 2;
 extern int sh_no_position;
 
 /* debugs a tree node!
@@ -137,7 +138,7 @@ debug_node(union node* node, int depth) {
 
     case N_REDIR:
       debug_redir(", flag", node->nredir.flag, depth);
-      debug_sublist(", list", node->nredir.list, depth);
+      debug_sublist(", word", node->nredir.word, depth);
       debug_ulong(", fdes", node->nredir.fdes, depth);
       break;
 

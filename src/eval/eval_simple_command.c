@@ -67,7 +67,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
       vartab_push(&vars, 0);
 
     for(node = assigns; node; node = node->next) {
-      
+
       if(e->flags & E_PRINT) {
         stralloc* sa = &node->narg.stra;
         size_t offs = byte_chr(sa->s, sa->len, '=');

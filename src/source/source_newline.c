@@ -6,12 +6,10 @@
  * ----------------------------------------------------------------------- */
 void
 source_newline(void) {
-#if !defined(SHFORMAT) && !defined(SHPARSE2AST)
   /* process any pending here-docs for this line if we're not in a here-doc
      ourselves */
   if(redir_list && (source->mode & SOURCE_HERE) == 0)
     redir_source();
-#endif
 
   /* advance to next line */
   source->position.line++;

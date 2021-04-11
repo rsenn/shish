@@ -75,7 +75,7 @@
  4.5.1  Synopsis
 
 
- cd  [_d_i_r_e_c_t_o_r_y]
+ cd  [directory]
 
 
  4.5.2  Description
@@ -98,10 +98,10 @@
 
  The following operands shall be supported by the implementation:
 
-    _d_i_r_e_c_t_o_r_y   An absolute or relative pathname of the directory that
+    directory   An absolute or relative pathname of the directory that
                 becomes the new working directory.  The interpretation of
                 a relative pathname by cd depends on the CDPATH
-                environment variable.  If _d_i_r_e_c_t_o_r_y is -, the results are
+                environment variable.  If directory is -, the results are
                 implementation defined.
 
 
@@ -140,10 +140,10 @@
  The following environment variables shall affect the execution of cd:
 
     CDPATH             A colon-separated list of pathnames that refer to
-                       directories.  If the _d_i_r_e_c_t_o_r_y operand does not
+                       directories.  If the directory operand does not
                        begin with a slash (/) character, and the first
                        component is not dot or dot-dot, cd shall search
-                       for _d_i_r_e_c_t_o_r_y relative to each directory named in
+                       for directory relative to each directory named in
                        the CDPATH variable, in the order listed.  The new
                        working directory shall be set to the first
                        matching directory found.  An empty string in place
@@ -152,7 +152,7 @@
                        treated as if it were an empty string.
 
     HOME               The name of the home directory, used when no
-                       _d_i_r_e_c_t_o_r_y operand is specified.
+                       directory operand is specified.
 
     LANG               This variable shall determine the locale to use for
                        the locale categories when both LC_ALL and the
@@ -207,7 +207,7 @@
  the new working directory shall be written to the standard output as
  follows:
 
-       "%s\n", <_n_e_w _d_i_r_e_c_t_o_r_y>
+       "%s\n", <new directory>
 
  Otherwise, there shall be no output.
 
@@ -242,12 +242,12 @@
  BEGIN_RATIONALE
 
 
- 4.5.10  Rationale. (_T_h_i_s _s_u_b_c_l_a_u_s_e _i_s _n_o_t _a _p_a_r_t _o_f _P_1_0_0_3._2)
+ 4.5.10  Rationale. (This subclause is not a part of P1003.2)
 
- _E_x_a_m_p_l_e_s_,__U_s_a_g_e
+ Examples,_Usage
 
- _E_d_i_t_o_r'_s _N_o_t_e:  _A _b_a_l_l_o_t_e_r _r_e_q_u_e_s_t_e_d _t_h_a_t _t_h_e _f_o_l_l_o_w_i_n_g _r_a_t_i_o_n_a_l_e _b_e       2
- _h_i_g_h_l_i_g_h_t_e_d _i_n _t_h_e _D_1_1._2 _r_e_c_i_r_c_u_l_a_t_i_o_n.                                    2
+ Editor's Note:  A balloter requested that the following rationale be       2
+ highlighted in the D11.2 recirculation.                                    2
 
 
 
@@ -281,7 +281,7 @@
  analogous to the use of the PATH variable in the shell.  Earlier systems
  such as the BSD C-shell used a shell parameter cdpath for this purpose.
 
- _H_i_s_t_o_r_y__o_f__D_e_c_i_s_i_o_n_s__M_a_d_e
+ History_of_Decisions_Made
 
  A common extension when HOME is undefined is to get the login directory
  from the user database for the invoking user.  This does not occur on
@@ -289,7 +289,7 @@
 
  Not included in this description are the features from the KornShell such
  as setting OLDPWD, toggling current and previous directory (cd -), and
- the two-operand form of cd (cd _o_l_d _n_e_w). This standard does not specify
+ the two-operand form of cd (cd old new). This standard does not specify
  the results of cd - or of calls with more than one operand.  Since these
  extensions are mostly used in interactive situations, they may be
  considered for inclusion in POSIX.2a.  The result of cd - and of using no
@@ -339,22 +339,22 @@
  4.6.1  Synopsis
 
 
- chgrp  [-R] _g_r_o_u_p _f_i_l_e ...
+ chgrp  [-R] group file ...
 
 
  4.6.2  Description
 
- The chgrp utility shall set the group ID of the file named by each _f_i_l_e
- operand to the group ID specified by the _g_r_o_u_p operand.
+ The chgrp utility shall set the group ID of the file named by each file
+ operand to the group ID specified by the group operand.
 
- For each _f_i_l_e operand, it shall perform actions equivalent to the
- POSIX.1 {8} _c_h_o_w_n() function, called with the following arguments:
+ For each file operand, it shall perform actions equivalent to the
+ POSIX.1 {8} chown() function, called with the following arguments:
 
-     (1)  The _f_i_l_e operand shall be used as the _p_a_t_h argument.
+     (1)  The file operand shall be used as the path argument.
 
-     (2)  The user ID of the file shall be used as the _o_w_n_e_r argument.
+     (2)  The user ID of the file shall be used as the owner argument.
 
-     (3)  The specified _g_r_o_u_p _I_D shall be used as the _g_r_o_u_p argument.
+     (3)  The specified group ID shall be used as the group argument.
 
 
  4.6.3  Options
@@ -364,7 +364,7 @@
 
  The following option shall be supported by the implementation:
 
-    -R          Recursively change file group IDs.  For each _f_i_l_e operand
+    -R          Recursively change file group IDs.  For each file operand
                 that names a directory, chgrp shall change the group of
                 the directory and all files in the file hierarchy below
                 it.
@@ -374,9 +374,9 @@
 
  The following operands shall be supported by the implementation:
 
-    _g_r_o_u_p       A group name from the group database or a numeric group
+    group       A group name from the group database or a numeric group
                 ID.  Either specifies a group ID to be given to each file
-                named by one of the _f_i_l_e operands.  If a numeric _g_r_o_u_p
+                named by one of the file operands.  If a numeric group
                 operand exists in the group database as a group name, the
                 group ID number associated with that group name is used as
                 the group ID.

@@ -54,11 +54,11 @@ sh_loop(void) {
 
       tree_catlist(list, &cmd, NULL);
 
-/*      if(sh->opts.debug) {
-        buffer_puts(fd_err->w, "%% ");
-        buffer_putsa(fd_err->w, &cmd);
-        buffer_putnlflush(fd_err->w);
-      }*/
+      /*      if(sh->opts.debug) {
+              buffer_puts(fd_err->w, "%% ");
+              buffer_putsa(fd_err->w, &cmd);
+              buffer_putnlflush(fd_err->w);
+            }*/
 
       if(is_interactive) {
         stralloc_nul(&cmd);
@@ -69,14 +69,13 @@ sh_loop(void) {
 
       eval_push(&e, E_JCTL | (sh->opts.debug ? E_PRINT : 0));
       status = eval_tree(&e, list, E_ROOT | E_LIST);
- 
+
       while(sh->eval != &e) eval_pop(sh->eval);
 
       sh->exitcode = eval_pop(&e);
 
       tree_free(list);
     }
- 
 
     if(!(p.tok & (T_NL | T_SEMI | T_BGND))) {
       /* we have a parse error */

@@ -102,7 +102,7 @@ redir_parse(struct parser* p, int rf, int fd) {
     node = tree_newnode(N_REDIR);
     node->nredir.flag = rf;
     node->nredir.fdes = fd;
-    node->nredir.list = p->tree;
+    node->nredir.word = p->tree;
     p->tree = node;
 
     if(node->nredir.flag & R_HERE)

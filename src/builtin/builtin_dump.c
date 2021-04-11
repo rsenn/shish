@@ -1,6 +1,4 @@
 #include "../debug.h"
-
-#if defined(DEBUG_OUTPUT)
 #include "../builtin.h"
 #include "../fdstack.h"
 #include "../fdtable.h"
@@ -58,7 +56,7 @@ builtin_dump(int argc, char* argv[]) {
       union node* n;
       for(n = functions; n; n = n->next) {
         struct nfunc* fn = &n->nfunc;
-        tree_print(  n,out);
+        tree_print(n, out);
         buffer_putnlflush(out);
       }
       break;
@@ -66,4 +64,3 @@ builtin_dump(int argc, char* argv[]) {
   }
   return 0;
 }
-#endif /* DEBUG_OUTPUT */
