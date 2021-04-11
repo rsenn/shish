@@ -2,7 +2,6 @@
 #include <stdlib.h>
 
 void
-buffer_free(void* buf) {
-  buffer* b = buf;
+buffer_free(buffer* b) {
   free(b->x);
 }

@@ -1,6 +1,6 @@
 #include "../builtin.h"
 #include "../sh.h"
-#include "../fd.h"
+#include "../fdtable.h"
 
 #include <sys/utsname.h>
 

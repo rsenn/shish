@@ -1,5 +1,5 @@
 #include "../var.h"
-#include "../fd.h"
+#include "../fdtable.h"
 #include "../sh.h"
 #include <assert.h>
 

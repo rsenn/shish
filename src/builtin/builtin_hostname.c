@@ -4,7 +4,7 @@
 
 #include "../builtin.h"
 #include "../../lib/byte.h"
-#include "../fd.h"
+#include "../fdtable.h"
 #include "../sh.h"
 #include "../prompt.h"
 #include "../../lib/shell.h"

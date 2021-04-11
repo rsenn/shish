@@ -69,4 +69,17 @@ void* shell_strdupdebug(const char* file, unsigned int line, const char* s);
 #define shell_free(p) debug_free(__FILE__, __LINE__, (p))
 #endif /* DEBUG_ALLOC */
 
+#include <limits.h>
+
+#ifndef PATH_MAX
+#if WINDOWS_NATIVE
+#include <windows.h>
+#define PATH_MAX MAX_PATH
+#endif
+#endif
+
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
 #endif /* SHELL_H */

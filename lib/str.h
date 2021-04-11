@@ -73,7 +73,6 @@ struct tm;
 
 char* str_ptime(const char* s, const char* format, struct tm* tm);
 
-char* str_basename(const char* s);
 
 int str_endb(const char* a, const char* x, size_t n);
 

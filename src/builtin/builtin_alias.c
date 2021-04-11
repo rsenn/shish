@@ -5,7 +5,7 @@
 #include "../var.h"
 #include "../vartab.h"
 #include "../parse.h"
-#include "../fd.h"
+#include "../fdtable.h"
 
 #ifndef offsetof
 #define offsetof(type, field) ((size_t) & ((type*)0)->field)

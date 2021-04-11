@@ -1,4 +1,4 @@
-#include "../fd.h"
+#include "../fdtable.h"
 #include "../var.h"
 #include "../vartab.h"
 #include "../debug.h"

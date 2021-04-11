@@ -2,7 +2,7 @@
 #include "../../lib/str.h"
 #include "../var.h"
 #include "../sh.h"
-#include "../fd.h"
+#include "../fdtable.h"
 
 /* set a variable
  * ----------------------------------------------------------------------- */

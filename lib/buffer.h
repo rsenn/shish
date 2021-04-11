@@ -38,8 +38,8 @@ typedef struct buffer {
 
 void buffer_init(buffer*, buffer_op_proto*, int fd, char* y, size_t ylen);
 void buffer_init_free(buffer*, buffer_op_proto*, int fd, char* y, size_t ylen);
-void buffer_free(void* buf);
-void buffer_munmap(void* buf);
+void buffer_free(buffer* buf);
+void buffer_munmap(buffer* buf);
 int buffer_mmapread(buffer*, const char* filename);
 int buffer_mmapread_fd(buffer*, int fd);
 int buffer_mmapprivate(buffer*, const char* filename);
@@ -183,40 +183,23 @@ int buffer_get_new_token_sa_pred(buffer*, stralloc* sa, sa_predicate p, void*);
 void buffer_fromsa(buffer*, const stralloc* sa); /* read from sa */
 int buffer_tosa(buffer* b, stralloc* sa);        /* write to sa,  auto-growing it */
 
-int buffer_putsa(buffer* b, const stralloc* sa);
 #endif
 
-void buffer_close(buffer* b);
 void buffer_default(buffer* b, buffer_op_fn* op);
-ssize_t buffer_dummyread_fromstr(void);
-ssize_t buffer_dummyreadmmap();
+ssize_t buffer_dummyread_fromstr(int, void*, size_t, void*);
+ssize_t buffer_dummyread(int, void*, size_t, void*);
+ssize_t buffer_dummyreadmmap(int, void*, size_t, void*);
 void buffer_dump(buffer* out, buffer* b);
-ssize_t buffer_feed(buffer* b);
-int buffer_flush(buffer* b);
-void buffer_free(void* buf);
 void buffer_frombuf(buffer* b, const char* x, size_t l);
 void buffer_fromstr(buffer* b, char* s, size_t len);
-ssize_t buffer_getc(buffer* b, char* x);
 int buffer_get_until(buffer* b, char* x, size_t len, const char* charset, size_t setlen);
-void buffer_init(buffer* b, buffer_op_proto* op, int fd, char* y, size_t ylen);
-int buffer_mmapread(buffer* b, const char* filename);
-int buffer_mmapread_fd(buffer* b, int fd);
-void buffer_munmap(void* buf);
-int buffer_prefetch(buffer* b, size_t n);
-int buffer_put(buffer* b, const char* buf, size_t len);
 int buffer_putc(buffer* b, char c);
-ssize_t buffer_putflush(buffer* b, const char* x, size_t len);
 
-int buffer_putm_internal(buffer* b, ...);
-ssize_t buffer_putnlflush(buffer* b);
 int buffer_putnspace(buffer* b, int n);
 int buffer_putptr(buffer* b, void* ptr);
-int buffer_putspace(buffer* b);
 int buffer_putlong0(buffer* b, long l, int pad);
 int buffer_putulong0(buffer* b, unsigned long l, int pad);
 int buffer_putxlong0(buffer*, unsigned long, int);
-int buffer_putulong(buffer* b, unsigned long l);
-int buffer_skip_until(buffer* b, const char* charset, size_t setlen);
 
 ssize_t buffer_stubborn(buffer_op_proto* op, int fd, const char* buf, size_t len, void* ptr);
 ssize_t buffer_stubborn_read(buffer_op_proto* op, int fd, const void* buf, size_t len, void* ptr);

@@ -2,7 +2,7 @@
 #include "../expand.h"
 #include "../sh.h"
 #include "../tree.h"
-#include "../fd.h"
+#include "../fdtable.h"
 #include "../var.h"
 #include "../vartab.h"
 

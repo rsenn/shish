@@ -3,7 +3,7 @@
 #include "../../lib/shell.h"
 #include "../../lib/stralloc.h"
 #include "../tree.h"
-#include "../fd.h"
+#include "../fdtable.h"
 
 /* evaluate case conditional construct (3.9.4.3)
  * ----------------------------------------------------------------------- */

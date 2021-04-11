@@ -97,12 +97,7 @@ size_t scan_asn1dertag(const char* in, size_t len, uint64* n) __pure__;
 /* convert from hex ASCII, return 0 to 15 for success or -1 for failure */
 int scan_fromhex(unsigned char c);
 
-size_t scan_8long(const char* src, unsigned long* dest);
-size_t scan_octal(const char* src, uint64* dest);
 size_t scan_8longn(const char* src, size_t n, unsigned long* dest);
-size_t scan_int(const char* src, int* dest);
-size_t scan_long(const char* src, long* dest);
-size_t scan_longlong(const char* src, int64* dest);
 size_t scan_longn(const char* src, size_t n, long* dest);
 size_t scan_xlongn(const char* src, size_t n, unsigned long* dest);
 size_t scan_pb_tag(const char* in, size_t len, size_t* fieldno, unsigned char* type);

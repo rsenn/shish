@@ -1,4 +1,5 @@
 #include "../fd.h"
+#include "../fdtable.h"
 #include "../parse.h"
 #include "../sh.h"
 #include "../source.h"

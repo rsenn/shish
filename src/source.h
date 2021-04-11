@@ -42,7 +42,7 @@ void source_exec(void);
 void source_newline(void);
 void source_push(struct source* in);
 int source_peeknc(unsigned pos);
-int source_peekc();
+int source_peekc(void);
 char* source_peeks(unsigned pos);
 
 #define source_PEEKN(n) (char)source_peeknc(n);

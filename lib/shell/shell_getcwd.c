@@ -15,13 +15,6 @@
 #define PATHSEP_C '/'
 #endif
 
-#ifndef PATH_MAX
-#if WINDOWS
-#include <windows.h>
-#endif
-#define PATH_MAX MAX_PATH
-#endif
-
 static int
 getsep(const char* path) {
   while(*path) {

@@ -18,6 +18,7 @@
 #include "../lib/shell.h"
 #include "../lib/stralloc.h"
 #include "../lib/windoze.h"
+
 #if WINDOWS_NATIVE && !defined(__BORLANDC__) && !defined(__MINGW32__) && !defined(__TINYC__) && !defined(__LCC__)
 #ifndef HAVE_DEV_T
 typedef int dev_t;
@@ -33,6 +34,10 @@ typedef int dev_t;
 #define FD_BUFSIZE 1024
 #define FD_BUFSIZE2 (FD_BUFSIZE >> 1)
 
+#ifndef O_LARGEFILE
+#define O_LARGEFILE 0
+#endif
+
 #ifndef STDSRC_FILENO
 #define STDSRC_FILENO -1
 #endif
@@ -45,12 +50,6 @@ typedef int dev_t;
 #ifndef STDERR_FILENO
 #define STDERR_FILENO 2
 #endif
-
-#ifndef O_LARGEFILE
-#define O_LARGEFILE 0
-#endif
-
-struct fdtable;
 
 #define FD_ISRD(fd) ((fd)->mode & FD_READ)
 #define FD_ISWR(fd) ((fd)->mode & FD_WRITE)
@@ -128,20 +127,12 @@ enum {
   FD_RWFILE = (FD_READFILE | FD_WRITEFILE),
 };
 
-extern struct fd** const fdtable;
-
 #define fd_foreach(i)                                                                                                                                          \
   for(i = fd_lo; i < fd_hi; i++)                                                                                                                               \
     if(fd_list[i])
 #define fd_foreach_p(i, p)                                                                                                                                     \
   for(i = fd_lo; i < fd_hi; i++)                                                                                                                               \
     if((p = fd_list[i]))
-
-/* current standard fds */
-#define fd_src fdtable[STDSRC_FILENO]
-#define fd_in fdtable[STDIN_FILENO]
-#define fd_out fdtable[STDOUT_FILENO]
-#define fd_err fdtable[STDERR_FILENO]
 
 extern struct fd* fd_list[FD_MAX];
 extern int fd_expected, fd_top, fd_lo, fd_hi;

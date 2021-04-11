@@ -1,5 +1,5 @@
 #include "../exec.h"
-#include "../fd.h"
+#include "../fdtable.h"
 #include "../parse.h"
 #include "../../lib/str.h"
 

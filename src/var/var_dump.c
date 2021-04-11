@@ -1,5 +1,5 @@
 #include "../../lib/uint64.h"
-#include "../fd.h"
+#include "../fdtable.h"
 #include "../../lib/fmt.h"
 #include "../var.h"
 #include "../debug.h"

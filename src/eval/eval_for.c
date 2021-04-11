@@ -2,7 +2,7 @@
 #include "../expand.h"
 #include "../tree.h"
 #include "../var.h"
-#include "../fd.h"
+#include "../fdtable.h"
 
 /* evaluate for-loop (3.9.4.2)
  * ----------------------------------------------------------------------- */

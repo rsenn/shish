@@ -1,9 +1,11 @@
 #include "../../lib/buffer.h"
 #include "../history.h"
 #include "../sh.h"
+#include "../../lib/shell.h"
 #include "../../lib/str.h"
 #include "../../lib/stralloc.h"
 #include "../../lib/windoze.h"
+
 #if WINDOWS_NATIVE
 #include <windows.h>
 #define PATH_MAX MAX_PATH

@@ -1,5 +1,5 @@
 #include "../builtin.h"
-#include "../fd.h"
+#include "../fdtable.h"
 #include "../var.h"
 #include "../exec.h"
 #include "../../lib/byte.h"

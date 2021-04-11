@@ -1,5 +1,5 @@
 #include "../builtin.h"
-#include "../fd.h"
+#include "../fdtable.h"
 #include "../../lib/shell.h"
 #include <sys/stat.h>
 #include <unistd.h>

@@ -1,6 +1,6 @@
 #include "../builtin.h"
 #include "../sh.h"
-#include "../fd.h"
+#include "../fdtable.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
 #include "../../lib/uint32.h"

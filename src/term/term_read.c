@@ -41,7 +41,7 @@ term_read(int fd, char* buf, unsigned int len) {
   while((ret = buffer_getc(&term_input, &c)) > 0) {
 
 #ifdef DEBUG_OUTPUT_
-    debug_char("term_read.c", c, 0);
+    debug_char("term_read.c", c);
     debug_nl();
 #endif
     switch(c) {

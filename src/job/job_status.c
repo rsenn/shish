@@ -1,5 +1,5 @@
 #include "../../lib/windoze.h"
-#include "../fd.h"
+#include "../fdtable.h"
 #include "../job.h"
 #include "../../lib/wait.h"
 #include "../../lib/sig.h"

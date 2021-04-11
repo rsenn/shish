@@ -145,7 +145,6 @@ size_t stralloc_decamelize(const char*, stralloc* sa, char sep);
 int stralloc_case_diff(const stralloc* sa1, const stralloc* sa2);
 int stralloc_case_diffs(const stralloc* sa, const char* s);
 int stralloc_diffb(const stralloc* sa, const void* d, unsigned int dlen);
-int stralloc_diffs(const stralloc* a, const char* b);
 size_t stralloc_case_equal(const stralloc* sa1, const stralloc* sa2);
 size_t stralloc_case_equals(const stralloc* sa, const char* s);
 size_t stralloc_cathexb(stralloc* sa, const void* d, unsigned int n);

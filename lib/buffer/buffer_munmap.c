@@ -9,8 +9,7 @@
 #include <fcntl.h>
 
 void
-buffer_munmap(void* buf) {
-  buffer* b = (buffer*)buf;
+buffer_munmap(buffer* b) {
 #if WINDOWS_NATIVE
   UnmapViewOfFile(b->x);
 #else

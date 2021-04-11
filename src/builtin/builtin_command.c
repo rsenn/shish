@@ -1,4 +1,4 @@
-#include "../fd.h"
+#include "../fdtable.h"
 #include "../sh.h"
 #include "../builtin.h"
 #include "../exec.h"

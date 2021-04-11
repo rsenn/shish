@@ -1,4 +1,4 @@
-#include "../fd.h"
+#include "../fdtable.h"
 #include "../../lib/scan.h"
 #include "../eval.h"
 #include "../sh.h"

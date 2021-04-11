@@ -154,7 +154,7 @@ debug_node(union node* node, int depth) {
 
     case N_ARGPARAM: {
       /*   int flag = (node->nargstr.flag & 0x7);
-         debug_subst(0, flag, depth+1);
+         debug_subst(0, flag);
          if(flag)
            buffer_putspace(&debug_buffer);
 
@@ -188,8 +188,9 @@ debug_node(union node* node, int depth) {
       debug_xlong(", flag", node->nargcmd.flag, depth);
       debug_sublist(", list", node->nargcmd.list, depth);
       break;
+
     case N_ARGARITH:
-      /*   debug_subst(0,node->nargcmd.flag, depth+1);
+      /*   debug_subst(0,node->nargcmd.flag);
          //debug_space(depth, 0);*/
       debug_xlong(", flag", node->nargarith.flag, depth);
       debug_sublist(", tree", node->nargarith.tree, depth);

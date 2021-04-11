@@ -13,8 +13,6 @@
 #define PATH_MAX MAX_PATH
 #endif
 
-extern int shell_canonicalize(const char* path, stralloc* sa, int symbolic);
-
 /* if the <path> is relative and <cwd> is non-null then it is prepended
  * to the path, so it will work like shell_canonicalize, except that
  * relative paths will be resolved to absolute ones.

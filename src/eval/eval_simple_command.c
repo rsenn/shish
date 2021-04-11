@@ -4,7 +4,7 @@
 #ifdef HAVE_ALLOCA
 #include <alloca.h>
 #endif
-#include "../fd.h"
+#include "../fdtable.h"
 #include "../sh.h"
 #include "../eval.h"
 #include "../exec.h"

@@ -75,7 +75,7 @@ void debug_stralloc(const char* msg, stralloc* s, int depth, char quote);
 void debug_ulong(const char* msg, uint64 i, int depth);
 void debug_xlong(const char* msg, uint64 i, int depth);
 void debug_ptr(const char* msg, void* ptr, int depth);
-void debug_char(const char* msg, char c, int depth);
+void debug_char(const char* msg, char c);
 void debug_sublist(const char* s, union node* node, int depth);
 void debug_subnode(const char* s, union node* node, int depth);
 void debug_list(union node* node, int depth);
@@ -83,7 +83,7 @@ void debug_unquoted(const char* msg, const char* s, int depth);
 void debug_space(int count, int newline);
 void debug_node(union node* node, int depth);
 void debug_redir(const char* msg, int flags, int depth);
-void debug_subst(const char* msg, int flags, int depth);
+void debug_subst(const char* msg, int flags);
 void debug_position(const char* msg, const struct location* pos, int depth);
 void debug_location(const char* msg, const struct location* pos, int depth);
 

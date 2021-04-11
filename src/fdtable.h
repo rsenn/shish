@@ -1,11 +1,9 @@
 #ifndef FDTABLE_H
 #define FDTABLE_H
 
-#ifdef FD_SETSIZE
+#include "fd.h"
+
 #define FDTABLE_SIZE FD_SETSIZE
-#else
-#define FDTABLE_SIZE 1024
-#endif
 
 #define fdtable_ok(e) ((e) >= -1 && (e) < FDTABLE_S IZE)
 #define efdtable_ok(e) ((e) >= 0 && (e) < FDTABLE_SIZE)
@@ -23,7 +21,6 @@
 #define FDTABLE_ERROR -2
 #define FDTABLE_DONE -1
 
-struct fd;
 struct fdstack;
 
 /* fdtable_top:    highest occupied vfd + 1
@@ -31,6 +28,12 @@ struct fdstack;
 extern int fdtable_top, fdtable_bottom;
 extern struct fd** const fdtable;
 extern struct fd** fdtable_pos;
+
+/* current standard fds */
+#define fd_src fdtable[STDSRC_FILENO]
+#define fd_in fdtable[STDIN_FILENO]
+#define fd_out fdtable[STDOUT_FILENO]
+#define fd_err fdtable[STDERR_FILENO]
 
 #define fdtable_foreach(i)                                                                                                                                     \
   for(i = fdtable_bottom; i < fdtable_top; i++)                                                                                                                \

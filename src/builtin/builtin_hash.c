@@ -1,4 +1,4 @@
-#include "../fd.h"
+#include "../fdtable.h"
 #include "../exec.h"
 #include "../../lib/fmt.h"
 #include "../../lib/buffer.h"

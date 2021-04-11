@@ -27,7 +27,7 @@ const char* debug_subst_var[] = {"S_DEFAULT", "S_ASGNDEF", "S_ERRNULL", "S_ALTER
 const char* debug_subst_tables[] = {"S_UNQUOTED", "S_DQUOTED", "S_SQUOTED", "S_EXPR"};
 
 void
-debug_subst(const char* msg, int flags, int depth) {
+debug_subst(const char* msg, int flags) {
   static char flagstr[128];
   unsigned long n = 0;
   int subst;

@@ -7,14 +7,13 @@
 #elif defined(__LCC__)
 #include <stdint.h>
 #elif !defined(_MSC_VER) && !defined(__MSYS__) && !defined(__CYGWIN__)
-#include <inttypes.h>
+//#include <inttypes.h>
 #include <stdint.h>
 #else
 #define __MS_types__
 #include <sys/types.h>
 #endif
 
-#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {

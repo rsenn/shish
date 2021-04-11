@@ -4,7 +4,7 @@
 #include "../../lib/str.h"
 #include "../../lib/stralloc.h"
 #include "../../lib/buffer.h"
-#include "../fd.h"
+#include "../fdtable.h"
 #include "../expand.h"
 #include "../fdstack.h"
 #include "../parse.h"

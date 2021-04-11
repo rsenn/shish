@@ -156,7 +156,6 @@ size_t fmt_tai(char* dest, const struct tai* ta);
 #endif
 size_t fmt_iso8601(char* dest, time_t t);
 
-char fmt_tohex(char c);
 size_t fmt_repeat(char* dest, const char* src, int n);
 
 size_t fmt_escapecharxml(char*, unsigned int ch);

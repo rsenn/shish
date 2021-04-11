@@ -10,7 +10,7 @@
 
 #include "../expand.h"
 #include "../tree.h"
-#include "../fd.h"
+#include "../fdtable.h"
 #include "../var.h"
 #include "../parse.h"
 #include "../../lib/byte.h"
