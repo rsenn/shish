@@ -11,13 +11,13 @@ int
 eval_subshell(struct eval* e, struct ngrp* ngrp) {
   int ret, jmpret;
   struct eval en;
-  struct env sh;
+  struct env she;
   struct fdstack io;
   struct vartab vars;
 
   fdstack_push(&io);
   vartab_push(&vars, 0);
-  sh_push(&sh);
+  sh_push(&she);
 
   eval_push(&en, E_ROOT);
 
@@ -34,9 +34,11 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
 
   ret = eval_pop(&en);
 
-  sh_pop(&sh);
+  sh_pop(&she);
   vartab_pop(&vars);
   fdstack_pop(&io);
+
+  sh->exitcode = ret;
 
   return ret;
 }

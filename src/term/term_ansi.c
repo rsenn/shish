@@ -46,9 +46,9 @@ term_ansi(void) {
         term_insert = !term_insert;
       else if(num == 3)
         term_delete();
-      else if(num == 7)
+      else if(num == 1)
         term_home();
-      else if(num == 8)
+      else if(num == 4)
         term_end();
       break;
   }
