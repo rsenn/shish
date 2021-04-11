@@ -7,7 +7,6 @@
 #elif defined(__LCC__)
 #include <stdint.h>
 #elif !defined(_MSC_VER) && !defined(__MSYS__) && !defined(__CYGWIN__)
-//#include <inttypes.h>
 #include <stdint.h>
 #else
 #define __MS_types__
@@ -87,10 +86,6 @@ void uint32_unpack(const char* in, uint32* out);
 #endif
 #endif
 
-void uint32_pack_big(char* out, uint32 in);
-void uint32_unpack_big(const char* in, uint32* out);
-uint32 uint32_read_big(const char* in);
-
 uint32 uint32_random(void);
 int uint32_seed(const void*, unsigned long n);
 uint32 uint32_prng(uint32, uint32 seed);
@@ -98,8 +93,6 @@ uint32 uint32_prng(uint32, uint32 seed);
 /* bit rotating macros */
 #define uint32_ror(v, c) (((uint32)(v) >> (c)) | ((uint32)(v) << (32 - (c))))
 #define uint32_rol(v, c) (((uint32)(v) << (c)) | ((uint32)(v) >> (32 - (c))))
-#define uint32_ror_safe(v, c) (((uint32)(v) >> uint32rc(c)) | ((uint32)(v) << (32 - uint32rc(c))))
-#define uint32_rol_safe(v, c) (((uint32)(v) << uint32rc(c)) | ((uint32)(v) >> (32 - uint32rc(c))))
 
 #ifdef __cplusplus
 }

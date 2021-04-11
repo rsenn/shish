@@ -7,7 +7,6 @@
 #elif defined(__LCC__)
 #include <stdint.h>
 #elif !defined(_MSC_VER) && !defined(__MSYS__) && !defined(__CYGWIN__)
-//#include <inttypes.h>
 #include <stdint.h>
 #else
 #define __MS_types__
@@ -66,9 +65,7 @@ inline static uint16
 uint16_read(const char* in) {
   return *(uint16*)in;
 }
-
 #else
-
 inline static uint16
 uint16_get(const void* ptr) {
   const unsigned char* in = ptr;
@@ -79,24 +76,7 @@ inline static uint16
 uint16_read(const char* in) {
   return ((uint16)in[0] << 8) | (in[1]);
 }
-
-void uint16_pack(char* out, uint16 in);
-void uint16_unpack(const char* in, uint16* out);
 #endif
-
-#else
-void uint16_pack(char* out, uint16 in);
-void uint16_unpack(const char* in, uint16* out);
-uint16 uint16_read(const char* in);
-uint16 uint16_get(const void* ptr);
-#endif
-
-void uint16_pack_big(char* out, uint16 in);
-void uint16_unpack_big(const char* in, uint16* out);
-uint16 uint16_read_big(const char*);
-
-#ifdef NO_UINT16_MACROS
-uint16 uint16_read(const char*);
 #endif
 
 #ifdef __cplusplus

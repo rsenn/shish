@@ -3,7 +3,6 @@
 #define STRALLOC_H
 
 #include "typedefs.h"
-//#include <wchar.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,20 +93,12 @@ int stralloc_append(stralloc* sa, const char* in); /* beware: this takes a point
  * the terminating \0, is a prefix of the string stored in sa. Otherwise
  * it returns 0. sa must already be allocated. */
 int stralloc_starts(stralloc* sa, const char* in) __pure__;
-size_t stralloc_startb(const stralloc*, const void* prefix, size_t len);
-size_t stralloc_start(const stralloc*, const stralloc* prefix);
-
-/* stralloc_diff returns negative, 0, or positive, depending on whether
- * a is lexicographically smaller than, equal to, or greater than the
- * string b. */
-int stralloc_diff(const stralloc* a, const stralloc* b) __pure__;
 
 /* stralloc_diffs returns negative, 0, or positive, depending on whether
  * a is lexicographically smaller than, equal to, or greater than the
  * string b[0], b[1], ..., b[n] == '\0'. */
 int stralloc_diffs(const stralloc* a, const char* b) __pure__;
 
-#define stralloc_equal(a, b) (!stralloc_diff((a), (b)))
 #define stralloc_equals(a, b) (!stralloc_diffs((a), (b)))
 
 /* stralloc_0 appends \0 */
@@ -132,26 +123,13 @@ void stralloc_free(stralloc* sa);
 
 /* remove last char.  Return removed byte as unsigned char (or -1 if stralloc was
  * empty). */
-int stralloc_chop(stralloc* sa);
 
 /* remove trailing "\r\n", "\n" or "\r".  Return number of removed chars (0, 1 or 2)
  */
-int stralloc_chomp(stralloc* sa);
 
 void stralloc_trimr(stralloc* sa, const char* trimchars, unsigned int trimcharslen);
 
-size_t stralloc_decamelize(const char*, stralloc* sa, char sep);
-
-int stralloc_case_diff(const stralloc* sa1, const stralloc* sa2);
-int stralloc_case_diffs(const stralloc* sa, const char* s);
-int stralloc_diffb(const stralloc* sa, const void* d, unsigned int dlen);
-size_t stralloc_case_equal(const stralloc* sa1, const stralloc* sa2);
-size_t stralloc_case_equals(const stralloc* sa, const char* s);
-size_t stralloc_cathexb(stralloc* sa, const void* d, unsigned int n);
 size_t stralloc_equalb(const stralloc* sa, const void* d, unsigned int dlen);
-size_t stralloc_find(const stralloc* sa, const stralloc* what);
-size_t stralloc_findb(const stralloc* sa, const void* what, size_t len);
-size_t stralloc_finds(const stralloc* sa, const char* what);
 
 #ifdef BUFFER_H
 /* write stralloc to buffer */
@@ -194,8 +172,6 @@ void buffer_fromsa(buffer* b, const stralloc* sa);
 int stralloc_write(int, const char*, size_t, buffer*);
 #endif
 
-size_t stralloc_scan(stralloc* out, const stralloc* in, size_t (*scan_function)(const char*, char*));
-
 #ifdef __BORLANDC__
 #define stralloc_length(sa) (sa)->len
 #else
@@ -214,63 +190,21 @@ stralloc_length(const stralloc* sa) {
 
 size_t stralloc_endb(const stralloc* sa, const void* suffix, size_t len);
 
-inline static void
-stralloc_iterator_increment(char** it) {
-  ++(*it);
-}
-inline static int
-stralloc_iterator_equal(char** it1, char** it2) {
-  return it1 == it2;
-}
-
 #ifdef BYTE_H
 size_t byte_scan(const char* in, size_t in_len, stralloc* out, size_t (*scan_function)(const char*, char*));
 #endif
 
 int stralloc_insertb(stralloc* sa, const char* s, size_t pos, size_t n);
-int stralloc_inserts(stralloc* sa, const char* s, size_t pos);
-int stralloc_insert(stralloc* sa, const stralloc* other, size_t pos);
-
-int stralloc_subst(stralloc* out, const char* b, size_t len, const char* from, const char* to);
 
 typedef size_t(stralloc_fmt_fn)(char*, unsigned int);
-size_t stralloc_fmt_call(stralloc*, stralloc_fmt_fn*, void* av[4]);
-size_t stralloc_fmt_pred(stralloc*, const char* in, size_t in_len, size_t (*fmt_function)(char*, unsigned int ch), int (*pred)(int));
-size_t stralloc_fmt(stralloc*, const char* in, size_t in_len, size_t (*fmt_function)());
 
-int stralloc_catdouble(stralloc*, double d, int prec);
-
-size_t stralloc_chr(const stralloc* sa, char c);
-size_t stralloc_rchr(const stralloc* sa, char c);
-
-int stralloc_shrink(stralloc* sa);
-
-int stralloc_prependb(stralloc* sa, const char* s, size_t n);
 int stralloc_prepends(stralloc* sa, const char* s);
-int stralloc_prepend(stralloc* sa, const stralloc* other);
 
 size_t stralloc_ends(const stralloc* sa, const stralloc* suffix);
 size_t stralloc_endsb(const stralloc* sa, const char* x, size_t n);
 
-int stralloc_expand(stralloc* sa);
-
 size_t stralloc_remove(stralloc*, size_t pos, size_t n);
-void stralloc_replacec(stralloc*, char before, char after);
-int stralloc_removesuffixs(stralloc*, const char* suffix);
-int stralloc_removesuffixb(stralloc*, const char* x, size_t len);
 
-int stralloc_contains(const stralloc* sa, const char* what);
-int stralloc_replaces(stralloc*, const char* from, const char* to);
-int stralloc_replace(stralloc*, size_t pos, size_t len, const char* to, size_t tolen);
-
-size_t stralloc_case_end(const stralloc*, const stralloc* suffix);
-size_t stralloc_case_starts(const stralloc*, const char* prefix);
-size_t stralloc_case_start(const stralloc*, const stralloc* prefix);
-size_t stralloc_catuint(stralloc*, unsigned int ui);
-size_t stralloc_catxlong(stralloc*, unsigned long u);
-size_t stralloc_count(const stralloc*, char c);
-size_t stralloc_erase(stralloc*);
-void stralloc_lower(stralloc*);
 static inline char*
 stralloc_take(stralloc* from, size_t* lenp, size_t* allocated) {
   char* s = from->s;
@@ -282,12 +216,6 @@ stralloc_take(stralloc* from, size_t* lenp, size_t* allocated) {
   return s;
 }
 void stralloc_move(stralloc*, stralloc* from);
-int stralloc_ready_tuned(stralloc*, size_t n, size_t base, size_t a, size_t b);
-void stralloc_remove_all(stralloc*, register const char* delchars, register unsigned int delcharslen);
-void stralloc_replace_non_printable(stralloc*, char ch);
-void stralloc_reverse_blocks(stralloc*, size_t size);
-void stralloc_reverse(stralloc*);
-void stralloc_upper(register stralloc*);
 
 #ifdef DEBUG_ALLOC
 void stralloc_freedebug(const char* file, unsigned int line, stralloc* sa);
