@@ -1,4 +1,5 @@
 include(CheckSymbolExists)
+include(CheckTypeSize)
 
 check_symbol_exists(sys_siglist "signal.h" HAVE_SYS_SIGLIST_DECLARATION)
 
@@ -18,12 +19,14 @@ check_c_compiler_flag("-Wno-unused-function" WARN_NO_UNUSED_FUNCTION)
 if(WARN_NO_UNUSED_FUNCTION)
   set(WERROR_FLAG "${WERROR_FLAG} -Wno-unused-function")
 endif()
-check_c_compiler_flag("-Wno-error=unused-but-set-variable" WARN_NO_UNUSED_FUNCTION)
+check_c_compiler_flag("-Wno-error=unused-but-set-variable"
+                      WARN_NO_UNUSED_FUNCTION)
 if(WARN_NO_UNUSED_FUNCTION)
   set(WERROR_FLAG "${WERROR_FLAG} -Wno-error=unused-but-set-variable")
 endif()
 
-if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" OR CMAKE_BUILD_TYPE STREQUAL "Release")
+if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" OR CMAKE_BUILD_TYPE STREQUAL
+                                             "Release")
   check_c_compiler_flag("-falign-functions=1" F_ALIGN_FUNCTIONS)
   check_c_compiler_flag("-falign-jumps=1" F_ALIGN_JUMPS)
   check_c_compiler_flag("-falign-labels=1" F_ALIGN_LABELS)
@@ -115,6 +118,20 @@ if(CMAKE_CROSSCOMPILING)
   message(STATUS "System name: ${CMAKE_SYSTEM_NAME}")
 endif(CMAKE_CROSSCOMPILING)
 
+set(CMAKE_REQUIRED_QUIET TRUE)
+
+message(CHECK_START "Checking for pointer size")
+check_type_size("void*" SIZEOF_POINTER)
+
+if(NOT SIZEOF_POINTER STREQUAL "")
+  math(EXPR POINTER_BITS "${SIZEOF_POINTER} * 8")
+  message(CHECK_PASS "${POINTER_BITS}bit")
+  set(POINTER_SIZE "${SIZEOF_POINTER}")
+  add_definitions(-DPOINTER_SIZE=${POINTER_SIZE})
+else(NOT SIZEOF_POINTER STREQUAL "")
+  message(CHECK_FAIL "failed")
+endif(NOT SIZEOF_POINTER STREQUAL "")
+
 if(NOT CMAKE_CROSSCOMPILING)
   check_type_size(ssize_t SIZEOF_SSIZE_T)
   if(NOT SIZEOF_SSIZE_T STREQUAL "")
@@ -138,6 +155,8 @@ if(NOT CMAKE_CROSSCOMPILING)
   endif(NOT SIZEOF_UID_T STREQUAL "")
 endif(NOT CMAKE_CROSSCOMPILING)
 
+set(CMAKE_REQUIRED_QUIET FALSE)
+
 if(HAVE_ALLOCA_H)
   list(APPEND CMAKE_REQUIRED_INCLUDES alloca.h)
   check_symbol_exists(alloca alloca.h HAVE_ALLOCA_SYMBOL)
@@ -145,11 +164,13 @@ endif()
 
 check_compile(
   HAVE_ALLOCA_ALLOCA_H
-  "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}")
+  "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}"
+)
 if(NOT HAVE_ALLOCA_ALLOCA_H)
   check_compile(
     HAVE_ALLOCA_MALLOC_H
-    "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}")
+    "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}"
+  )
 endif()
 
 if(HAVE_ALLOCA_ALLOCA_H OR HAVE_ALLOCA_MALLOC_H)
@@ -230,10 +251,12 @@ if(PID_T GREATER 0)
   set(HAVE_PID_T TRUE)
 endif(PID_T GREATER 0)
 
-# if(HAVE_SIGNAL_H) check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T) check_symbol_exists(sigset_t signal.h
-# HAVE_SIGSET_T) check_type_size(sigset_t SIZEOF_SIGSET_T)
+# if(HAVE_SIGNAL_H) check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T)
+# check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T) check_type_size(sigset_t
+# SIZEOF_SIGSET_T)
 #
-# if(SIZEOF_SIGSET_T) set(HAVE_SIGSET_T 1) else() set(HAVE_SIGSET_T 0) endif() endif()
+# if(SIZEOF_SIGSET_T) set(HAVE_SIGSET_T 1) else() set(HAVE_SIGSET_T 0) endif()
+# endif()
 
 check_function_exists(sys_siglist HAVE_SYS_SIGLIST)
 
@@ -254,10 +277,14 @@ else()
 endif()
 
 string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_MINSIZEREL "${CMAKE_C_FLAGS_MINSIZEREL}")
-string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
-string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
-string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_MINSIZEREL
+                     "${CMAKE_C_FLAGS_MINSIZEREL}")
+string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELEASE
+                     "${CMAKE_C_FLAGS_RELEASE}")
+string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELWITHDEBINFO
+                     "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
+string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_DEBUG
+                     "${CMAKE_C_FLAGS_DEBUG}")
 
 check_library_exists(m pow /usr/lib HAVE_LIBM)
 

@@ -19,6 +19,11 @@ set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release MinSizeRel Re
 
 option(WARN_WERROR "Halt the compilation with an error on compiler warnings." OFF)
 
+include(CheckLibraryExists)
+include(CheckIncludeFile)
+include(CheckTypeSize)
+include(CheckFunctionExists)
+
 include(cmake/Functions.cmake)
 include(cmake/Checks.cmake)
 include(cmake/Pedantic.cmake)
@@ -307,11 +312,11 @@ list(APPEND LIBSHELL_SOURCES ${BUILTIN_SOURCES})
 
 add_library(shell STATIC ${LIBSHELL_SOURCES})
 
-set(SHISH_SOURCES src/sh/sh_init.c  src/sh/sh_main.c)
+set(SHISH_SOURCES src/sh/sh_init.c src/sh/sh_main.c)
 
 add_executable(shish ${SHISH_SOURCES})
 target_link_libraries(shish PRIVATE shell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
-                                   ${ELECTRICFENCE_LIBRARY})
+                                    ${ELECTRICFENCE_LIBRARY})
 if(EMSCRIPTEN)
   set_target_properties(shish PROPERTIES SUFFIX ".${EMSCRIPTEN_EXE_SUFFIX}")
 endif(EMSCRIPTEN)
@@ -319,18 +324,13 @@ endif(EMSCRIPTEN)
 option(BUILD_SHFORMAT "Build shformat program" ON)
 
 if(BUILD_SHFORMAT)
-  file(
-    GLOB
-    SHFORMAT_SOURCES
-    src/*.h
-    src/debug/*.c
-    src/sh/sh_fmt.c
-    )
+  file(GLOB SHFORMAT_SOURCES src/*.h src/debug/*.c src/sh/sh_fmt.c)
 
   list(FILTER SHFORMAT_SOURCES EXCLUDE REGEX "dump")
 
   add_executable(shformat ${SHFORMAT_SOURCES})
-  target_link_libraries(shformat PRIVATE shell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
+  target_link_libraries(shformat PRIVATE shell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
+                                         ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shformat PUBLIC SHFORMAT=1)
   install(TARGETS shformat DESTINATION bin)
@@ -340,18 +340,13 @@ endif(BUILD_SHFORMAT)
 option(BUILD_SHPARSE2AST "Build shformat program" OFF)
 
 if(BUILD_SHPARSE2AST)
-  file(
-    GLOB
-    SHPARSE2AST_SOURCES
-    src/*.h
-    src/debug/*.c
-    src/sh/sh_parse2ast.c
-)
+  file(GLOB SHPARSE2AST_SOURCES src/*.h src/debug/*.c src/sh/sh_parse2ast.c)
 
   list(FILTER SHPARSE2AST_SOURCES EXCLUDE REGEX "dump")
 
   add_executable(shparse2ast ${SHPARSE2AST_SOURCES})
-  target_link_libraries(shparse2ast PRIVATE shell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
+  target_link_libraries(shparse2ast PRIVATE shell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
+                                            ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shparse2ast PUBLIC SHPARSE2AST=1 DEBUG_OUTPUT=1)
   install(TARGETS shparse2ast DESTINATION bin)

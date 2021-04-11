@@ -94,18 +94,22 @@ option(ENABLE_ALL_BUILTINS "Enable all builtins" OFF)
 function(ON_ENABLE_ALL_BUILTINS VAR ACCESS VALUE CURRENT_LIST_FILE STACK)
 
   if(NOT "${ACCESS}" STREQUAL "READ_ACCESS")
-  message("VAR = ${VAR}")
-  message("ACCESS = ${ACCESS}")
-  message("VALUE = ${VALUE}")
-  message("CURRENT_LIST_FILE = ${CURRENT_LIST_FILE}")
-  message("STACK = ${STACK}")
+    message("VAR = ${VAR}")
+    message("ACCESS = ${ACCESS}")
+    message("VALUE = ${VALUE}")
+    message("CURRENT_LIST_FILE = ${CURRENT_LIST_FILE}")
+    message("STACK = ${STACK}")
   endif(NOT "${ACCESS}" STREQUAL "READ_ACCESS")
 
-endfunction(ON_ENABLE_ALL_BUILTINS VAR ACCESS VALUE CURRENT_LIST_FILE STACK)
+endfunction(
+  ON_ENABLE_ALL_BUILTINS
+  VAR
+  ACCESS
+  VALUE
+  CURRENT_LIST_FILE
+  STACK)
 
-variable_watch(ENABLE_ALL_BUILTINS  ON_ENABLE_ALL_BUILTINS)
-
-
+variable_watch(ENABLE_ALL_BUILTINS ON_ENABLE_ALL_BUILTINS)
 
 foreach(BUILTIN ${ALL_BUILTINS})
   string(TOUPPER ${BUILTIN} NAME)
@@ -115,7 +119,9 @@ foreach(BUILTIN ${ALL_BUILTINS})
 
   if(ENABLE_ALL_BUILTINS)
     option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" ON)
-    set(BUILTIN_${NAME} TRUE CACHE BOOL "Enable ${BUILTIN} builtin" FORCE)
+    set(BUILTIN_${NAME}
+        TRUE
+        CACHE BOOL "Enable ${BUILTIN} builtin" FORCE)
   else(ENABLE_ALL_BUILTINS)
 
     if(DEFINED ENABLE_${NAME})
@@ -137,7 +143,7 @@ endif(ENABLE_ALL_BUILTINS)
 
 if(BUILD_DEBUG)
   set(ENABLE_DUMP TRUE)
-  #list(APPEND BUILTINS_ENABLED dump)
+  # list(APPEND BUILTINS_ENABLED dump)
 endif(BUILD_DEBUG)
 
 isin(ENABLE_DUMP dump ${BUILTINS_ENABLED})
@@ -193,7 +199,8 @@ endforeach(BUILTIN ${ALL_BUILTINS})
 
 file(WRITE "${CMAKE_BINARY_DIR}/src/builtin_config.h" "${BUILTIN_CONFIG}\n\n")
 
-set_source_files_properties(src/builtin/builtin_table.c PROPERTIES COMPILE_DEFINITIONS HAVE_BUILTIN_CONFIG_H=1)
+set_source_files_properties(src/builtin/builtin_table.c PROPERTIES COMPILE_DEFINITIONS
+                                                                   HAVE_BUILTIN_CONFIG_H=1)
 
 list(SORT BUILTINS_ENABLED)
 list(SORT BUILTINS_DISABLED)

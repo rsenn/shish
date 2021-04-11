@@ -4,6 +4,13 @@
 
 #include "../scan.h"
 //#include "../haveuint128.h"
+#if LONG_MAX == 2147483647
+#define IS_32BIT 1
+#define WORD_SIZE 4
+#elif LONG_MAX == 9223372036854775807L
+#define IS_64BIT 1
+#define WORD_SIZE 8
+#endif
 
 size_t
 scan_ulongn(const char* src, size_t n, unsigned long int* dest) {
@@ -26,7 +33,11 @@ scan_ulongn(const char* src, size_t n, unsigned long int* dest) {
     return (size_t)(tmp - src);
   } else
 #endif
+
+#ifndef WORD_SIZE
       if(sizeof(unsigned long) < sizeof(uint64)) {
+#endif
+#ifdef IS_32BIT
     /* implementation for 32-bit platforms */
     for(; n-- > 0 && (c = (unsigned char)(*tmp - '0')) < 10; ++tmp) {
       uint64 L = (uint64)l * 10 + c;
@@ -36,7 +47,11 @@ scan_ulongn(const char* src, size_t n, unsigned long int* dest) {
     }
     *dest = l;
     return (size_t)(tmp - src);
+#endif
+#ifndef WORD_SIZE
   } else {
+#endif
+#ifdef IS_64BIT
     /* implementation for 64-bit platforms without gcc */
     while(n-- > 0 && (c = (unsigned char)(*tmp - '0')) < 10) {
       unsigned long int n;
@@ -58,5 +73,8 @@ scan_ulongn(const char* src, size_t n, unsigned long int* dest) {
     if(tmp - src)
       *dest = l;
     return (size_t)(tmp - src);
+#endif
+#ifndef WORD_SIZE
   }
+#endif
 }

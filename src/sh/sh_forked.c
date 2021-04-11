@@ -32,7 +32,7 @@ sh_forked(void) {
   sh = &sh_root;
   byte_copy(sh, sizeof(struct env), e);
   sh->parent = NULL;
-  //sh->eval->jump = 0;
+  // sh->eval->jump = 0;
   sh_child = 1;
 
   return 0; /*(sh_pid = getpid());*/

@@ -9,7 +9,6 @@
 #include "../tree.h"
 #include "../var.h"
 
-
 /* main loop, parse lines into trees and execute them
  * ----------------------------------------------------------------------- */
 void

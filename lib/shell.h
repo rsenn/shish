@@ -10,11 +10,6 @@
 #define SH_FNM_NOESCAPE (1 << 1) /* Backslashes don't quote special chars.  */
 #define SH_FNM_PERIOD (1 << 2)   /* Leading .' is matched only explicitly.  */
 
-
-
-
-
-
 char* shell_dirname(char* path);
 
 char* shell_gethostname(stralloc* sa);
