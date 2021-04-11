@@ -11,9 +11,6 @@
  * ----------------------------------------------------------------------- */
 enum tok_flag
 parse_gettok(struct parser* p, int tempflags) {
-#ifdef DEBUG_PARSE
-  size_t start = source->b->p == source->b->n ? 0 : source->b->p;
-#endif
   int oldflags = p->flags;
   p->flags |= tempflags;
 
@@ -37,7 +34,7 @@ parse_gettok(struct parser* p, int tempflags) {
     if(p->tok & T_NAME && p->node && p->node->id == N_ARGSTR && !(p->flags & P_NOKEYWD))
       parse_keyword(p);
 
-#if 0 // defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE)
     if(sh->opts.debug) {
       if(p->tok != -1)
         parse_dump(p, &debug_buffer);

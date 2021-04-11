@@ -19,7 +19,7 @@ parse_arith(struct parser* p) {
   tree = parse_arith_expr(&subp);
 
   if(tree) {
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE)
     buffer_putm_internal(&debug_buffer, COLOR_YELLOW "parse_arith" COLOR_NONE " tree = ", 0);
     debug_node(tree, 1);
     debug_nl_fl();

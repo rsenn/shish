@@ -120,7 +120,7 @@ addcmd:
   simple_command->ncmd.vars = vars;
   simple_command->ncmd.rdir = rdir;
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE)
   if(sh->opts.debug) {
     buffer_putm_internal(&debug_buffer, COLOR_YELLOW "parse_simple_command" COLOR_NONE " loc = ", 0);
     debug_location(0, &pos, 1);

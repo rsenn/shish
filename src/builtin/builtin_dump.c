@@ -55,7 +55,6 @@ builtin_dump(int argc, char* argv[]) {
     case FUNCTIONS: {
       union node* n;
       for(n = functions; n; n = n->next) {
-        struct nfunc* fn = &n->nfunc;
         tree_print(n, out);
         buffer_putnlflush(out);
       }

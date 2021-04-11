@@ -9,7 +9,7 @@ parse_expect(struct parser* p, int tempflags, enum tok_flag toks, union node* nf
   if(!(parse_gettok(p, tempflags) & toks)) {
     parse_error(p, toks);
     if(nfree) {
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE)
 
       debug_list(nfree, 0);
 #endif /* DEBUG_PARSE */

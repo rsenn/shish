@@ -5,7 +5,7 @@
 #ifndef ENAMETOOLONG
 #define ENAMETOOLONG 91
 #endif
-extern int path_canonicalize(const char* path, stralloc* sa, int symbolic);
+
 /* if the <path> is relative and <cwd> is non-null then it is prepended
  * to the path, so it will work like path_canonicalize, except that
  * relative paths will be resolved to absolute ones.
