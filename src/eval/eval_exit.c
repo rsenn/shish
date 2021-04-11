@@ -5,11 +5,10 @@
 
 void
 eval_exit(int exitcode) {
-  struct env* parent_sh = sh->parent;
-  struct eval* e;
+   struct eval* e, *parent_eval = sh->parent ? sh->parent->eval : 0;
 
-  for(e = sh->eval; e && e != parent_sh->eval; e = e->parent) {
-    if(e == parent_sh->eval)
+  for(e = sh->eval; e; e = e->parent) {
+    if(e == parent_eval)
       return;
 
     if(e->jump && (e->flags & E_ROOT))
