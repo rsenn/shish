@@ -5,14 +5,15 @@
 
 void
 eval_exit(int exitcode) {
-  struct eval *e;
+  struct eval* e;
 
   for(e = sh->eval; e; e = e->parent) {
     if(e->jump && (e->flags & E_ROOT))
-       break;
+      break;
   }
 
   if(e) {
+    sh->exitcode = e->exitcode = exitcode;
     sh->eval = e;
 
     while(fdstack != e->fdstack) fdstack_pop(fdstack);

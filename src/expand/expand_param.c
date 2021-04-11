@@ -236,7 +236,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
           expand_copysa(param->word, &msg, flags);
         sh_error(param->word ? msg.s : "parameter null or not set");
         stralloc_free(&msg);
-        n = 0;
+        sh_exit(1);
       }
       break;
     }

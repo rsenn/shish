@@ -17,6 +17,5 @@ sh_errorn(const char* s, unsigned int len) {
     buffer_puts(fd_err->w, strerror(errno));
   }
   buffer_putnlflush(fd_err->w);
-  sh->exitcode = 1;
   return 1;
 }

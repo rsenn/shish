@@ -49,8 +49,11 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   if(expand_args(ncmd->args, &args, 0)) {
     stralloc_nul(&args->narg.stra);
     cmd = exec_hash(args->narg.stra.s, 0);
-  } else if(sh->exitcode) {
-    return sh->exitcode;
+  }
+
+  if(sh->exitcode) {
+    tree_free(args);
+    eval_exit(sh->exitcode);
   }
 
   /* expand and set the variables,

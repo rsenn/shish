@@ -14,7 +14,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
   struct env sh;
   struct fdstack io;
   struct vartab vars;
-  
+
   fdstack_push(&io);
   vartab_push(&vars, 0);
   sh_push(&sh);
@@ -27,7 +27,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
   jmpret = setjmp(en.jumpbuf);
 
   if(jmpret) {
-    ret = (jmpret >> 1);
+    en.exitcode = (jmpret >> 1);
   } else {
     eval_tree(&en, ngrp->cmds, E_LIST);
   }
