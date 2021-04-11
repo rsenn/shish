@@ -16,8 +16,8 @@ sh_subshell(union node* list, int flags) {
   eval_push(&e, E_ROOT);
   /* set up a long jump so we can exit the subshell and end up just
      after the setjmp call, which will return nonzero in this case */
-  sh->jump = 1;
-  jmpret = setjmp(sh->jumpbuf);
+  e.jump = 1;
+  jmpret = setjmp(e.jumpbuf);
 
   if(jmpret) {
     ret = (jmpret >> 1);
@@ -27,6 +27,5 @@ sh_subshell(union node* list, int flags) {
 
   ret = eval_pop(&e);
 
-  sh->jump = 0;
   return ret;
 }

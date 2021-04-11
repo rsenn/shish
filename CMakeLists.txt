@@ -159,6 +159,9 @@ if(NOT HAVE_LIBOWFAT)
       lib/str/str_rchr.c
       lib/str/str_chr.c
       lib/str/str_copy.c)
+  add_library(owfat STATIC ${LIBSOURCES})
+  link_directories(${CMAKE_CURRENT_BINARY_DIR})
+  set(LIBOWFAT_LIBRARY owfat)
 endif(NOT HAVE_LIBOWFAT)
 
 file(
@@ -291,7 +294,7 @@ set(SHISH_SOURCES
     src/sh/sh_subshell.c
     src/sh/sh_usage.c)
 
-add_executable(shish ${SHISH_SOURCES} ${LIBSOURCES})
+add_executable(shish ${SHISH_SOURCES})
 target_link_libraries(shish ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 if(EMSCRIPTEN)
   set_target_properties(shish PROPERTIES SUFFIX ".${EMSCRIPTEN_EXE_SUFFIX}")
@@ -315,7 +318,20 @@ if(BUILD_SHFORMAT)
     src/parse/*.c
     src/tree/*.c
     src/*.h
-    src/source/*.c
+    src/source/fmt_loc.c
+    src/source/location2str.c
+    src/source/source_skip.c
+    src/source/source_next.c
+    src/source/source_peek.c
+    src/source/source_peekn.c
+    src/source/source_flush.c
+    src/source/source_get.c
+    src/source/source_newline.c
+    src/source/source_msg.c
+    src/source/source_buffer.c
+    src/source/source_push.c
+    src/source/source_pop.c
+    src/source/source_popfd.c
     src/fdstack/*.c
     src/fdtable/*.c
     src/fd/*.c
@@ -358,7 +374,20 @@ if(BUILD_SHPARSE2AST)
     src/parse/*.c
     src/tree/*.c
     src/*.h
-    src/source/*.c
+    src/source/fmt_loc.c
+    src/source/location2str.c
+    src/source/source_skip.c
+    src/source/source_next.c
+    src/source/source_peek.c
+    src/source/source_peekn.c
+    src/source/source_flush.c
+    src/source/source_get.c
+    src/source/source_newline.c
+    src/source/source_msg.c
+    src/source/source_buffer.c
+    src/source/source_push.c
+    src/source/source_pop.c
+    src/source/source_popfd.c
     src/fdstack/*.c
     src/fdtable/*.c
     src/fd/*.c

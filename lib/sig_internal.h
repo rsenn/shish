@@ -6,8 +6,8 @@
 typedef struct sigtable_s sigtable_t, *sigtable_t_ref;
 struct sigtable_s {
   int number;
-  char const* name;
-};
+  const char* name;
+} __attribute__((packed));
 
 extern sigtable_t const sigtable[];
 

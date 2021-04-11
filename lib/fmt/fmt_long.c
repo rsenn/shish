@@ -1,7 +1,7 @@
 #include "../fmt.h"
 
 size_t
-fmt_long(char* dest, long int i) {
+fmt_long(char* dest, long i) {
   if(i < 0) {
     if(dest)
       *dest++ = '-';

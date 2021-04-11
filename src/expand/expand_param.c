@@ -78,11 +78,12 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       /* $* substitution */
       case S_ARGV: {
         char** s;
+        const char* ifs = var_vdefault("IFS", IFS_DEFAULT, NULL);
 
         for(s = sh->arg.v + sh->arg.s; *s;) {
-          stralloc_cats(&n->narg.stra, *s);
+          stralloc_cats(&value, *s);
           if(*++s)
-            stralloc_catc(&n->narg.stra, ' ');
+            stralloc_catc(&value, ifs[0]);
         }
         break;
       }
@@ -106,7 +107,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         }
 #endif
         for(i = r.offset, e = r.offset + r.length; i < e;) {
-          param->flag &= ~(int)(S_SPECIAL | S_VAR);
+          param->flag &= ~(int)(S_SPECIAL /*| S_VAR*/);
           param->flag |= S_ARG;
           param->numb = 1 + i;
 

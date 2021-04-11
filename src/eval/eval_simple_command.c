@@ -142,8 +142,10 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
   /* if there is no command we can return after
      setting the vars and doing the redirections */
-  if(args == NULL)
+  if(args == NULL) {
+    status = e->exitcode;
     goto end;
+  }
 
   /* when the command wasn't found we abort */
   if(cmd.ptr == NULL) {

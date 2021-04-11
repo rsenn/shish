@@ -12,6 +12,8 @@
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
 #include "../../lib/uint32.h"
+#include "../term.h"
+#include "../history.h"
 
 #include <stdlib.h>
 
@@ -138,11 +140,10 @@ main(int argc, char** argv, char** envp) {
 
   source_push(&src);
 
-  if(sh->opts.no_interactive)
+  if((fd_src->mode & FD_CHAR) && !sh->opts.no_interactive && term_init(fd_src, fd_err))
+    src.mode |= SOURCE_IACTIVE;
+  else
     src.mode &= ~SOURCE_IACTIVE;
-  /*  else
-      src.mode |= SOURCE_IACTIVE;
-  */
 
   /*  if(fd_expected != fd_top && (flags = fdtable_check(e)))
     {
@@ -153,6 +154,13 @@ main(int argc, char** argv, char** envp) {
     }*/
 
   sh_loop();
+
+  if(source->mode & SOURCE_IACTIVE) {
+    term_restore(source->b->fd, &term_tcattr);
+
+    history_save();
+    history_clear();
+  }
 
   sh_exit(0);
 

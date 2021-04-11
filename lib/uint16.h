@@ -14,7 +14,6 @@
 #include <sys/types.h>
 #endif
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif

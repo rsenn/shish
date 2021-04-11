@@ -73,7 +73,6 @@ struct tm;
 
 char* str_ptime(const char* s, const char* format, struct tm* tm);
 
-
 int str_endb(const char* a, const char* x, size_t n);
 
 int str_is(const char* s, int (*pred)());

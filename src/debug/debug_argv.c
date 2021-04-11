@@ -12,7 +12,7 @@ debug_argv(char** argv, buffer* out) {
   i = out->p;
 
   for(arg = argv; *arg; arg++) {
-    int quote = 0;
+    int quote = **arg == '\0';
     // parse_isesc(*arg); //!!(*arg)[str_chr(*arg, ' ')];
 
     if(!quote) {

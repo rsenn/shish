@@ -20,12 +20,12 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
   struct vartab vars;
   struct fd fd;
   struct fdstack fdst;
-  struct env sh;
+  struct eval en;
+  int jmpret;
   stralloc sa;
   stralloc_init(&sa);
 
   /* do this in a new i/o context so we can redirect stdout */
-  vartab_push(&vars, 0);
 
   /* make the output buffer write to the stralloc */
   fdstack_push(&fdst);
@@ -33,12 +33,26 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
   fd_subst(&fd, &sa);
 
   /* evaluate the command tree in a subshell */
-  sh_push(&sh);
-  sh_subshell(cmd->list, E_EXIT);
-  sh_pop(&sh);
+  vartab_push(&vars, 0);
+
+  eval_push(&en, E_ROOT);
+
+  /* set up a long jump so we can exit the subshell and end up just
+     after the setjmp call, which will return nonzero in this case */
+  en.jump = 1;
+  jmpret = setjmp(en.jumpbuf);
+
+  if(jmpret) {
+    en.exitcode = (jmpret >> 1);
+  } else {
+    eval_tree(&en, cmd->list, E_LIST);
+  }
+
+  sh->eval->exitcode = eval_pop(&en);
+
+  vartab_pop(&vars);
 
   fdstack_pop(&fdst);
-  vartab_pop(&vars);
 
   /* split trailing newlines */
   while(sa.len && sa.s[sa.len - 1] == '\n') sa.len--;

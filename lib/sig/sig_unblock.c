@@ -1,7 +1,16 @@
 #include "../windoze.h"
 #include "../sig.h"
 
-#if !WINDOWS_NATIVE
 #include <signal.h>
-// typedef _sigset_t sigset_t;
+
+void
+sig_unblock(int signum) {
+#if !WINDOWS_NATIVE
+  sigset_t ss;
+  sigemptyset(&ss);
+  sigprocmask(SIG_SETMASK, 0, &ss);
+
+  sigdelset(&ss, signum);
+  sigprocmask(SIG_BLOCK, &ss, 0);
 #endif
+}

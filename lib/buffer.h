@@ -16,16 +16,16 @@ typedef buffer_op_fn* buffer_op_ptr;
 struct buffer;
 
 typedef struct buffer {
-  char* x;             /* actual buffer space */
-  size_t p;            /* current position */
-  size_t n;            /* current size of string in buffer */
-  size_t a;            /* allocated buffer size */
-  buffer_op_proto* op; /* use read(2) or write(2) */
-  void* cookie;        /* used internally by the to-stralloc buffers,  and for buffer
-                          chaini(ng */
+  char* x;                        /* actual buffer space */
+  size_t p;                       /* current position */
+  size_t n;                       /* current size of string in buffer */
+  size_t a;                       /* allocated buffer size */
+  buffer_op_proto* op;            /* use read(2) or write(2) */
+  void* cookie;                   /* used internally by the to-stralloc buffers,  and for buffer
+                                     chaini(ng */
   void (*deinit)(struct buffer*); /* called to munmap/free cleanup,  with a pointer to the buffer
                               as argument */
-  fd_t fd;             /* passed as first argument to op */
+  fd_t fd;                        /* passed as first argument to op */
 } buffer;
 
 #define BUFFER_INIT(op, fd, buf, len)                                                                                                                          \
@@ -208,8 +208,8 @@ int buffer_putnc(buffer*, char c, int ntimes);
 int buffer_putns(buffer*, const char*, int ntimes);
 int buffer_putspad(buffer*, const char* x, size_t pad);
 
-int buffer_puts_escaped_args(buffer* b, const char* x, size_t (*escape)(char* , void* , void* , void* , void* ), void* args[]);
-int buffer_puts_escaped(buffer* b, const char* x, size_t (*escape)(char* , int));
+int buffer_puts_escaped_args(buffer* b, const char* x, size_t (*escape)(char*, void*, void*, void*, void*), void* args[]);
+int buffer_puts_escaped(buffer* b, const char* x, size_t (*escape)(char*, int));
 
 #ifdef UINT64_H
 int buffer_putlonglong(buffer*, int64);

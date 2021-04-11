@@ -65,19 +65,19 @@ buffer_dump(buffer* out, buffer* b) {
   buffer_put(out, xlong, fmt_long(xlong, b->fd));
   buffer_puts(out, NONE ", op" DARKGRAY "=");
 
-  if(b->op == (buffer_op_proto*)&read) {
+  if(b->op == (buffer_op_proto*)(void*)&read) {
     buffer_puts(out, ORANGE "read" NONE);
-  } else if(b->op == (buffer_op_proto*)&write) {
+  } else if(b->op == (buffer_op_proto*)(void*)&write) {
     buffer_puts(out, ORANGE "write" NONE);
-  } else if(b->op == (buffer_op_proto*)&buffer_dummyread) {
+  } else if(b->op == (buffer_op_proto*)(void*)&buffer_dummyread) {
     buffer_puts(out, ORANGE "buffer_dummyread" NONE);
-  } else if(b->op == (buffer_op_proto*)&buffer_dummyreadmmap) {
+  } else if(b->op == (buffer_op_proto*)(void*)&buffer_dummyreadmmap) {
     buffer_puts(out, ORANGE "buffer_dummyreadmmap" NONE);
-  } else if(b->op == (buffer_op_proto*)&stralloc_write) {
+  } else if(b->op == (buffer_op_proto*)(void*)&stralloc_write) {
     stralloc* sa = b->cookie;
     buffer_puts(out, ORANGE "stralloc_write" NONE " ");
     stralloc_dump(sa, out);
-  } else if(b->op == (buffer_op_proto*)NULL) {
+  } else if(b->op == (buffer_op_proto*)(void*)NULL) {
     buffer_puts(out, ORANGE "0" NONE);
   } else {
     buffer_putptr(out, (void*)b->op);
