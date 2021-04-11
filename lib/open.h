@@ -29,21 +29,10 @@ int open_append(const char* filename);
  * handle or -1 on error. */
 int open_trunc(const char* filename);
 
-/* open filename for writing.  Create the file if it does not exist.
- * Return the file handle or -1 on error. */
-int open_write(const char* filename);
-
-/* open filename for reading and writing.  Create file if not there.
- * Return file handle or -1 on error. */
-int open_rw(const char* filename);
-
-int open_rwsync(const char* filename);
-
 #ifdef STRALLOC_H
 int openreadclose(const char* fn, stralloc* sa, size_t bufsize);
 ssize_t readclose_append(int64 fd, stralloc* sa, size_t bufsize);
 ssize_t readclose(int64 fd, stralloc* sa, size_t bufsize);
-int open_filename(fd_t, stralloc*);
 #endif
 
 int open_temp(char** tmpl);

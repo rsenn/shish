@@ -167,7 +167,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       uint16 random = uint32_random();
 
       v = tmpbuf;
-      vlen = fmt_uint(tmpbuf, random);
+      vlen = fmt_ulong(tmpbuf, random);
 
       /* look for the variable.
          if the S_NULL flag is set and we have a var which is null
