@@ -54,6 +54,29 @@ else(BUILD_DEBUG)
   add_definitions(-DNDEBUG=1)
 endif(BUILD_DEBUG)
 
+if(BUILD_DEBUG)
+  option(USE_EFENCE "Enable electric fence" OFF)
+
+  check_library_exists(efence malloc /usr/lib HAVE_EFENCE)
+endif(BUILD_DEBUG)
+
+if(HAVE_EFENCE)
+  if(USE_EFENCE)
+    set(ELECTRICFENCE_LIBRARY efence)
+  endif(USE_EFENCE)
+endif(HAVE_EFENCE)
+
+if(ENABLE_LTO)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
+endif(ENABLE_LTO)
+
+option(LINK_STATIC "Link executables statically" OFF)
+
+if(LINK_STATIC)
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+endif(LINK_STATIC)
+
 set(ENABLE_SHARED OFF)
 set(BUILD_SHARED_LIBS FALSE)
 
@@ -120,26 +143,40 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 set(CMAKE_MODULE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
-file(GLOB LIBSOURCES lib/*.h lib/*/*.c)
+file(GLOB LIBHEADERS lib/*.h)
 
 if(NOT HAVE_LIBOWFAT)
   file(
     GLOB
-    ADDSOURCES
+    LIBSOURCES
     lib/open/*.c
     lib/scan/*.c
     lib/buffer/*.c
     lib/fmt/*.c
     lib/byte/*.c
     lib/mmap/*.c
+    lib/shell/*.c
     lib/sig/*.c
     lib/str/*.c
     lib/wait/*.c
+    lib/uint32/*.c
     lib/unix/*.c
     lib/utf8/*.c)
   set(LIBSOURCES
       ${LIBSOURCES}
-      ${ADDSOURCES}
+      ${LIBHEADERS}
+      lib/stralloc/stralloc_append.c
+      lib/stralloc/stralloc_catulong.c
+      lib/stralloc/stralloc_dump.c
+      lib/stralloc/stralloc_insertb.c
+      lib/stralloc/stralloc_nul.c
+      lib/stralloc/stralloc_remove.c
+      lib/stralloc/stralloc_starts.c
+      lib/stralloc/stralloc_trimr.c
+      lib/stralloc/stralloc_write.c
+      lib/stralloc/stralloc_move.c
+      lib/stralloc/stralloc_trunc${NAME_DEBUG}.c
+      lib/stralloc/stralloc_catc.c
       lib/stralloc/stralloc_cats.c
       lib/stralloc/stralloc_diffs.c
       lib/stralloc/stralloc_zero.c
@@ -161,7 +198,9 @@ if(NOT HAVE_LIBOWFAT)
       lib/str/str_copy.c)
   add_library(owfat STATIC ${LIBSOURCES})
   link_directories(${CMAKE_CURRENT_BINARY_DIR})
-  set(LIBOWFAT_LIBRARY owfat)
+  set(LIBOWFAT_LIBRARY
+      owfat
+      CACHE STRING "-lowfat library name" FORCE)
 endif(NOT HAVE_LIBOWFAT)
 
 file(
@@ -233,18 +272,6 @@ if(FORK_SOURCE)
   list(APPEND SOURCES ${FORK_SOURCE})
 endif(FORK_SOURCE)
 
-if(BUILD_DEBUG)
-  option(USE_EFENCE "Enable electric fence" OFF)
-
-  check_library_exists(efence malloc /usr/lib HAVE_EFENCE)
-endif(BUILD_DEBUG)
-
-if(HAVE_EFENCE)
-  if(USE_EFENCE)
-    set(ELECTRICFENCE_LIBRARY efence)
-  endif(USE_EFENCE)
-endif(HAVE_EFENCE)
-
 string(REPLACE " " ";" SOURCES "${SOURCES}")
 
 if(NO_TREE_PRINT)
@@ -253,27 +280,16 @@ if(NO_TREE_PRINT)
   list(REMOVE_ITEM SOURCES "src/tree/tree_printlist.c")
 endif(NO_TREE_PRINT)
 
-#
 # configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake"
 # "${CMAKE_BINARY_DIR}/src/builtin_config.h" #@ONLY
 
 list(APPEND SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
 
-if(ENABLE_LTO)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
-endif(ENABLE_LTO)
-
-option(LINK_STATIC "Link executables statically" OFF)
-
-if(LINK_STATIC)
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
-endif(LINK_STATIC)
-
 list(APPEND SOURCES ${BUILTIN_SOURCES})
 
+add_library(shell STATIC ${SOURCES})
+
 set(SHISH_SOURCES
-    ${SOURCES}
     src/sh/sh_cmdlist.c
     src/sh/sh_error.c
     src/sh/sh_errorn.c
@@ -295,7 +311,8 @@ set(SHISH_SOURCES
     src/sh/sh_usage.c)
 
 add_executable(shish ${SHISH_SOURCES})
-target_link_libraries(shish ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
+target_link_libraries(shish PUBLIC shell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
+                                   ${ELECTRICFENCE_LIBRARY})
 if(EMSCRIPTEN)
   set_target_properties(shish PROPERTIES SUFFIX ".${EMSCRIPTEN_EXE_SUFFIX}")
 endif(EMSCRIPTEN)
@@ -348,7 +365,7 @@ if(BUILD_SHFORMAT)
 
   list(FILTER SHFORMAT_SOURCES EXCLUDE REGEX "dump")
 
-  add_executable(shformat ${SHFORMAT_SOURCES} ${LIBSOURCES})
+  add_executable(shformat ${SHFORMAT_SOURCES})
   target_link_libraries(shformat ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shformat PUBLIC SHFORMAT=1)
@@ -403,7 +420,7 @@ if(BUILD_SHPARSE2AST)
 
   list(FILTER SHPARSE2AST_SOURCES EXCLUDE REGEX "dump")
 
-  add_executable(shparse2ast ${SHPARSE2AST_SOURCES} ${LIBSOURCES})
+  add_executable(shparse2ast ${SHPARSE2AST_SOURCES})
   target_link_libraries(shparse2ast ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shparse2ast PUBLIC SHPARSE2AST=1 DEBUG_OUTPUT=1)

@@ -22,7 +22,7 @@ debug_char(const char* msg, char c) {
     debug_b("\\t", 2);
   else {
     debug_s("\\x");
-    buffer_putxlong0(&debug_buffer, c, 2);
+    buffer_putxlonglong0(&debug_buffer, c, 2);
   }
   buffer_puts(&debug_buffer, "'" COLOR_NONE);
   debug_fl();
