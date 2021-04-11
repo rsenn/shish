@@ -308,12 +308,8 @@ if(BUILD_SHFORMAT)
     src/expand/expand_unescape.c
     src/expand/expand_cat.c
     src/expand/expand_str.c
-  
-
     src/redir/redir_addhere.c
-    src/redir/redir_dup.c
     src/redir/redir_here.c
-    src/redir/redir_open.c
     src/redir/redir_parse.c
     src/redir/redir_source.c
     src/parse/*.c
@@ -330,7 +326,6 @@ if(BUILD_SHFORMAT)
     src/sh/sh_root.c
     src/sh/sh_error.c
     src/sh/sh_errorn.c
-    src/sh/sh_exit.c
     src/sh/sh_fmt.c
     src/sh/sh_msg.c
     src/sh/sh_usage.c)
@@ -352,15 +347,12 @@ if(BUILD_SHPARSE2AST)
     GLOB
     SHPARSE2AST_SOURCES
     src/debug/*.c
-     src/expand/expand_glob.c
+    src/expand/expand_glob.c
     src/expand/expand_cat.c
     src/expand/expand_unescape.c
     src/expand/expand_str.c
-
     src/redir/redir_addhere.c
-    src/redir/redir_dup.c
     src/redir/redir_here.c
-    src/redir/redir_open.c
     src/redir/redir_parse.c
     src/redir/redir_source.c
     src/parse/*.c
@@ -376,7 +368,6 @@ if(BUILD_SHPARSE2AST)
     src/sh/sh_root.c
     src/sh/sh_error.c
     src/sh/sh_errorn.c
-    src/sh/sh_exit.c
     src/sh/sh_parse2ast.c
     src/sh/sh_msg.c
     src/sh/sh_usage.c)

@@ -53,6 +53,8 @@ expand_arg(union node* node, union node** nptr, int flags) {
         break;
     }
 
+    if(n == 0) break;
+
     /* debug_s("sub args #");
      debug_n(i);
      debug_s("  ");
@@ -60,7 +62,6 @@ expand_arg(union node* node, union node** nptr, int flags) {
      debug_newline(0);
      debug_fl();*/
     i++;
-    if(n)
       nptr = &n;
   }
 

@@ -230,12 +230,13 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       if(v)
         n = expand_cat(v, vlen, nptr, flags);
       else {
-        union node* tmpnode = NULL;
+        stralloc msg = {0, 0, 0};
 
-        n = expand_arg(param->word, &tmpnode, flags);
-        sh_error((n && n->narg.stra.s) ? n->narg.stra.s : "parameter null or not set");
-        if(tmpnode)
-          tree_free(tmpnode);
+        if(param->word)
+          expand_copysa(param->word, &msg, flags);
+        sh_error(param->word ? msg.s : "parameter null or not set");
+        stralloc_free(&msg);
+        n = 0;
       }
       break;
     }

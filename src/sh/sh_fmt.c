@@ -117,7 +117,7 @@ main(int argc, char** argv, char** envp) {
 
         buffer_flush(fd_err->w);
 
-        sh_exit(1);
+        exit(1);
         break;
     }
 
@@ -206,7 +206,7 @@ main(int argc, char** argv, char** envp) {
 
         /* exit if not interactive */
         if(!(source->mode & SOURCE_IACTIVE))
-          sh_exit(1);
+          exit(1);
 
         /* ..otherwise discard the input buffer */
         source_flush();
@@ -235,7 +235,7 @@ main(int argc, char** argv, char** envp) {
     }
   }
 
-  sh_exit(0);
+  exit(0);
 
   return 0;
 }

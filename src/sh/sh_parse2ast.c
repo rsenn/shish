@@ -116,7 +116,7 @@ main(int argc, char** argv, char** envp) {
 
         buffer_flush(fd_err->w);
 
-        sh_exit(1);
+        exit(1);
         break;
     }
 
@@ -199,7 +199,7 @@ main(int argc, char** argv, char** envp) {
     }
     //  debug_end(0);
   }
-  sh_exit(0);
+  exit(0);
 
   return 0;
 }

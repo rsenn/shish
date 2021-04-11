@@ -42,11 +42,15 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   union node *r, *redir = ncmd->rdir;
   char buf[FD_BUFSIZE];
 
+  sh->exitcode = 0;
+
   /* expand arguments,
      if there are arguments we start a hashed search for the command */
   if(expand_args(ncmd->args, &args, 0)) {
     stralloc_nul(&args->narg.stra);
     cmd = exec_hash(args->narg.stra.s, 0);
+  } else if(sh->exitcode) {
+    return sh->exitcode;
   }
 
   /* expand and set the variables,
