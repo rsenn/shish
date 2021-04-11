@@ -54,20 +54,13 @@ sh_loop(void) {
 
       tree_catlist(list, &cmd, NULL);
 
-      /*    if(sh->opts.debug) {
-            buffer_puts(fd_err->w, "+ ");
-            buffer_putsa(fd_err->w, &cmd);
-            buffer_putnlflush(fd_err->w);
-          }*/
+/*      if(sh->opts.debug) {
+        buffer_puts(fd_err->w, "%% ");
+        buffer_putsa(fd_err->w, &cmd);
+        buffer_putnlflush(fd_err->w);
+      }*/
 
       if(is_interactive) {
-        /*buffer* in = source->b;
-
-        stralloc_copyb(&cmd, in->x, in->n);
-
-        if(!(cmd.len > 0 && cmd.s[cmd.len - 1] == '\n'))
-          stralloc_catc(&cmd, '\n');*/
-
         stralloc_nul(&cmd);
         history_set(cmd.s);
         cmd.s = NULL;
@@ -76,23 +69,14 @@ sh_loop(void) {
 
       eval_push(&e, E_JCTL | (sh->opts.debug ? E_PRINT : 0));
       status = eval_tree(&e, list, E_ROOT | E_LIST);
-
-      /*debug_ulong("status", status, 0);
-      debug_nl_fl();
-      debug_ulong("sh->exitcode", sh->exitcode, 0);
-      debug_nl_fl();*/
-
+ 
       while(sh->eval != &e) eval_pop(sh->eval);
 
       sh->exitcode = eval_pop(&e);
 
       tree_free(list);
     }
-    /*
-    #if(defined(_DEBUG) && !defined(NO_TREE_PRINT)) || defined(SHFORMAT)
-        buffer_putsa(fd_out->w, &cmd);
-        buffer_putnlflush(fd_out->w);
-    #endif*/
+ 
 
     if(!(p.tok & (T_NL | T_SEMI | T_BGND))) {
       /* we have a parse error */

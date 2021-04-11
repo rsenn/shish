@@ -157,7 +157,7 @@ struct builtin_cmd builtin_table[] = {
     {"dirname", &builtin_dirname, B_DEFAULT, "path"},
 #endif
 #if BUILTIN_DUMP //&& defined(DEBUG_OUTPUT)
-    {"dump", &builtin_dump, B_DEFAULT, "[-vltsfm]"},
+    {"dump", &builtin_dump, B_DEFAULT, "[-Fvltsfm] [-u FD]"},
 #endif
 #if BUILTIN_ECHO
     {"echo", &builtin_echo, B_DEFAULT, "[-ne] [arg ...]"},

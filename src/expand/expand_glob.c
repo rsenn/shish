@@ -2,7 +2,7 @@
 #include "config.h"
 #endif
 
-#if defined(HAVE_GLOB_H) || defined(__unix__) || defined(__POSIX__)
+#if 0 //defined(HAVE_GLOB_H) || defined(__unix__) || defined(__POSIX__)
 #include <glob.h>
 #else
 #include "../../lib/glob.h"

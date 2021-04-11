@@ -58,7 +58,7 @@ builtin_dump(int argc, char* argv[]) {
       union node* n;
       for(n = functions; n; n = n->next) {
         struct nfunc* fn = &n->nfunc;
-        buffer_puts(out, fn->name);
+        tree_print(  n,out);
         buffer_putnlflush(out);
       }
       break;

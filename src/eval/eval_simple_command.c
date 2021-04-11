@@ -71,10 +71,8 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
       if(e->flags & E_PRINT) {
         stralloc* sa = &node->narg.stra;
         size_t offs = byte_chr(sa->s, sa->len, '=');
-
         if(offs < sa->len)
           offs++;
-
         eval_print_prefix(e, fd_err->w);
         buffer_put(fd_err->w, sa->s, offs);
         debug_squoted(&sa->s[offs], sa->len - offs, fd_err->w);

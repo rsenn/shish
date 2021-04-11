@@ -13,6 +13,8 @@ typedef ssize_t(buffer_op_proto)(int fd, void* buf, size_t len, void* arg);
 typedef ssize_t(buffer_op_fn)(/*int fd, void* buf, size_t len, void* arg*/);
 typedef buffer_op_fn* buffer_op_ptr;
 
+struct buffer;
+
 typedef struct buffer {
   char* x;             /* actual buffer space */
   size_t p;            /* current position */
@@ -21,8 +23,8 @@ typedef struct buffer {
   buffer_op_proto* op; /* use read(2) or write(2) */
   void* cookie;        /* used internally by the to-stralloc buffers,  and for buffer
                           chaini(ng */
-  void (*deinit)();    /* called to munmap/free cleanup,  with a pointer to the buffer
-                          as argument */
+  void (*deinit)(struct buffer*); /* called to munmap/free cleanup,  with a pointer to the buffer
+                              as argument */
   fd_t fd;             /* passed as first argument to op */
 } buffer;
 
@@ -222,7 +224,9 @@ int buffer_truncfile(buffer* b, const char* fn);
 int buffer_putnc(buffer*, char c, int ntimes);
 int buffer_putns(buffer*, const char*, int ntimes);
 int buffer_putspad(buffer*, const char* x, size_t pad);
-int buffer_puts_escaped(buffer* b, const char* x, size_t (*)());
+
+int buffer_puts_escaped_args(buffer* b, const char* x, size_t (*escape)(char* , void* , void* , void* , void* ), void* args[]);
+int buffer_puts_escaped(buffer* b, const char* x, size_t (*escape)(char* , int));
 
 #ifdef UINT64_H
 int buffer_putlonglong(buffer*, int64);

@@ -8,11 +8,13 @@
 void
 sh_msgn(const char* s, size_t n) {
 
-  if((source->mode & SOURCE_IACTIVE)) {
-    buffer_puts(fd_err->w, sh_name);
-    buffer_puts(fd_err->w, ": ");
-  } else {
-    source_msg(&source->position);
+  if(source) {
+    if((source->mode & SOURCE_IACTIVE)) {
+      buffer_puts(fd_err->w, sh_name);
+      buffer_puts(fd_err->w, ": ");
+    } else {
+      source_msg(&source->position);
+    }
   }
 
   if(s)
@@ -21,5 +23,5 @@ sh_msgn(const char* s, size_t n) {
 
 void
 sh_msg(const char* s) {
-  return sh_msgn(s, str_len(s));
+  sh_msgn(s, str_len(s));
 }
