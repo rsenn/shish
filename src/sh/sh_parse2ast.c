@@ -168,7 +168,7 @@ main(int argc, char** argv, char** envp) {
 
   parse_init(&p, P_DEFAULT);
 
-  buffer_init_free(&out_buf, (buffer_op_proto*)(void*)&write, out_fd, malloc(1024), 1024);
+  buffer_init(&out_buf, (buffer_op_proto*)(void*)&write, out_fd, alloca(1024), 1024);
   {
     int n;
     union node *script = 0, **nptr;

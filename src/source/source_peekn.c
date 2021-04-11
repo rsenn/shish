@@ -4,7 +4,6 @@
 
 struct source* source = 0;
 
-
 /* gets more data from buffer (at least n + 1 chars)
  * doesn't advance buffer pointer, use input_skipcn() for that
  * ----------------------------------------------------------------------- */

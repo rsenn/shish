@@ -6,6 +6,6 @@
 void
 source_pop(void) {
   assert(source);
-  
+
   source = source->parent;
 }

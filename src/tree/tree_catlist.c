@@ -33,22 +33,6 @@ tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth) {
         stralloc_cats(&next, (node->ncmd.bgnd ? " & " : "; "));
     }
 
-    if(0 && i && !sep) {
-
-      add_len = byte_chr(next.s, next.len, '\n');
-      stralloc_nul(sa);
-
-      line_start = byte_rchr(sa->s, sa->len, '\n');
-
-      line_len = sa->len - line_start;
-
-      if(node->next && scan_whitenskip(&sa->s[line_start], line_len) < line_len - line_start) {
-        if(line_len + add_len >= (size_t)tree_columnwrap) {
-          tree_catseparator(sa, "\\\n", depth);
-        }
-      }
-    }
-
     stralloc_cat(sa, &next);
     i++;
   } while((node = node->next));

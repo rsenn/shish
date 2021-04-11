@@ -14,6 +14,4 @@ source_push(struct source* s) {
   s->b = fd_src->r;
 
   source = s;
-
-
 }
