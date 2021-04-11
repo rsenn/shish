@@ -74,6 +74,7 @@ ssize_t buffer_putnlflush(buffer* b); /* put \n and flush */
 ssize_t buffer_feed(buffer* b);
 ssize_t buffer_getc(buffer*, char* x);
 
+ssize_t buffer_get_token(buffer*, char* x, size_t len, const char* charset, size_t setlen);
 ssize_t buffer_getline(buffer*, char* x, size_t len);
 
 /* read bytes until the destination buffer is full (len bytes),  end of

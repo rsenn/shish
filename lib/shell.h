@@ -10,20 +10,13 @@
 #define SH_FNM_NOESCAPE (1 << 1) /* Backslashes don't quote special chars.  */
 #define SH_FNM_PERIOD (1 << 2)   /* Leading .' is matched only explicitly.  */
 
-void shell_getcwd(stralloc* sa);
 
-int shell_realpath(const char* path, stralloc* sa, int symbolic, stralloc* cwd);
 
-int shell_readlink(const char* path, stralloc* sa);
 
-int shell_canonicalize(const char* path, stralloc* sa, int symbolic);
 
-int shell_fnmatch(const char* pattern, unsigned int plen, const char* string, unsigned int slen, int flags);
 
-char* shell_basename(char* path);
 char* shell_dirname(char* path);
 
-char* shell_gethome(int uid);
 char* shell_gethostname(stralloc* sa);
 
 struct optstate {

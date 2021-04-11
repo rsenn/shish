@@ -10,7 +10,7 @@
 void
 term_restore(int fd, const struct termios* tcattr) {
 #ifdef TCSANOW
-  tcsetattr(fd, TCSANOW, tcattr);
+  tcsetattr(fd, TCSANOW, (struct termios*)tcattr);
 #endif
 #ifdef SIGWINCH
   signal(SIGWINCH, SIG_DFL);

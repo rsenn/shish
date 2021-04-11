@@ -143,12 +143,12 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 set(CMAKE_MODULE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
-file(GLOB LIBHEADERS lib/*.h)
+file(GLOB LIBOWFAT_HEADERS lib/*.h)
 
 if(NOT HAVE_LIBOWFAT)
   file(
     GLOB
-    LIBSOURCES
+    LIBOWFAT_SOURCES
     lib/alloc/*.c
     lib/buffer/*.c
     lib/byte/*.c
@@ -164,9 +164,9 @@ if(NOT HAVE_LIBOWFAT)
     lib/unix/*.c
     lib/utf8/*.c
     lib/wait/*.c)
-  set(LIBSOURCES
-      ${LIBSOURCES}
-      ${LIBHEADERS}
+  set(LIBOWFAT_SOURCES
+      ${LIBOWFAT_SOURCES}
+      ${LIBOWFAT_HEADERS}
       lib/stralloc/mmap_filename.c
       lib/stralloc/stralloc_append.c
       lib/stralloc/stralloc_cat.c
@@ -196,8 +196,8 @@ if(NOT HAVE_LIBOWFAT)
       lib/stralloc/stralloc_ready${NAME_DEBUG}.c
       lib/stralloc/stralloc_readyplus${NAME_DEBUG}.c
       lib/stralloc/stralloc_trunc${NAME_DEBUG}.c)
-  
-  add_library(owfat STATIC ${LIBSOURCES})
+
+  add_library(owfat STATIC ${LIBOWFAT_SOURCES})
   link_directories(${CMAKE_CURRENT_BINARY_DIR})
   set(LIBOWFAT_LIBRARY
       owfat
@@ -206,7 +206,7 @@ endif(NOT HAVE_LIBOWFAT)
 
 file(
   GLOB
-  SOURCES
+  LIBSHELL_SOURCES
   src/*.h
   src/debug/debug_begin.c
   src/debug/debug_end.c
@@ -234,7 +234,23 @@ file(
   src/parse/*.c
   src/prompt/*.c
   src/redir/*.c
-  # src/sh/*.c
+  src/sh/sh_cmdlist.c
+  src/sh/sh_error.c
+  src/sh/sh_errorn.c
+  src/sh/sh_exit.c
+  src/sh/sh_forked.c
+  src/sh/sh_getcwd.c
+  src/sh/sh_gethome.c
+  src/sh/sh_msg.c
+  src/sh/sh_loop.c
+  src/sh/sh_popargs.c
+  src/sh/sh_pop.c
+  src/sh/sh_pushargs.c
+  src/sh/sh_push.c
+  src/sh/sh_root.c
+  src/sh/sh_setargs.c
+  src/sh/sh_subshell.c
+  src/sh/sh_usage.c
   src/sig/*.c
   src/source/*.c
   src/term/*.c
@@ -245,7 +261,7 @@ file(
 if(DEBUG_ALLOC)
   list(
     APPEND
-    SOURCES
+    LIBSHELL_SOURCES
     src/debug/debug_alloc.c
     src/debug/debug_free.c
     src/debug/debug_realloc.c
@@ -255,7 +271,7 @@ endif(DEBUG_ALLOC)
 if(DEBUG_OUTPUT)
   list(
     APPEND
-    SOURCES
+    LIBSHELL_SOURCES
     src/debug/debug_char.c
     src/debug/debug_error.c
     # src/debug/debug_node.c
@@ -267,52 +283,34 @@ endif(DEBUG_OUTPUT)
 
 list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c
      src/builtin/builtin_table.c)
-list(APPEND SOURCES src/parse/parse_newnode${NAME_DEBUG}.c src/tree/tree_newnode${NAME_DEBUG}.c)
+list(APPEND LIBSHELL_SOURCES src/parse/parse_newnode${NAME_DEBUG}.c
+     src/tree/tree_newnode${NAME_DEBUG}.c)
 
 if(FORK_SOURCE)
-  list(APPEND SOURCES ${FORK_SOURCE})
+  list(APPEND LIBSHELL_SOURCES ${FORK_SOURCE})
 endif(FORK_SOURCE)
 
-string(REPLACE " " ";" SOURCES "${SOURCES}")
+string(REPLACE " " ";" LIBSHELL_SOURCES "${LIBSHELL_SOURCES}")
 
 if(NO_TREE_PRINT)
   add_definitions(-DNO_TREE_PRINT=1)
-  list(REMOVE_ITEM SOURCES "src/tree/tree_print.c")
-  list(REMOVE_ITEM SOURCES "src/tree/tree_printlist.c")
+  list(REMOVE_ITEM LIBSHELL_SOURCES "src/tree/tree_print.c")
+  list(REMOVE_ITEM LIBSHELL_SOURCES "src/tree/tree_printlist.c")
 endif(NO_TREE_PRINT)
 
 # configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake"
 # "${CMAKE_BINARY_DIR}/src/builtin_config.h" #@ONLY
 
-list(APPEND SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
+list(APPEND LIBSHELL_SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
 
-list(APPEND SOURCES ${BUILTIN_SOURCES})
+list(APPEND LIBSHELL_SOURCES ${BUILTIN_SOURCES})
 
-add_library(shell STATIC ${SOURCES})
+add_library(shell STATIC ${LIBSHELL_SOURCES})
 
-set(SHISH_SOURCES
-    src/sh/sh_cmdlist.c
-    src/sh/sh_error.c
-    src/sh/sh_errorn.c
-    src/sh/sh_exit.c
-    src/sh/sh_forked.c
-    src/sh/sh_getcwd.c
-    src/sh/sh_gethome.c
-    src/sh/sh_init.c
-    src/sh/sh_loop.c
-    src/sh/sh_main.c
-    src/sh/sh_msg.c
-    src/sh/sh_popargs.c
-    src/sh/sh_pop.c
-    src/sh/sh_pushargs.c
-    src/sh/sh_push.c
-    src/sh/sh_root.c
-    src/sh/sh_setargs.c
-    src/sh/sh_subshell.c
-    src/sh/sh_usage.c)
+set(SHISH_SOURCES src/sh/sh_init.c  src/sh/sh_main.c)
 
 add_executable(shish ${SHISH_SOURCES})
-target_link_libraries(shish PUBLIC shell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
+target_link_libraries(shish PRIVATE shell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
                                    ${ELECTRICFENCE_LIBRARY})
 if(EMSCRIPTEN)
   set_target_properties(shish PROPERTIES SUFFIX ".${EMSCRIPTEN_EXE_SUFFIX}")
@@ -324,50 +322,15 @@ if(BUILD_SHFORMAT)
   file(
     GLOB
     SHFORMAT_SOURCES
-    src/debug/*.c
-    src/expand/expand_glob.c
-    src/expand/expand_unescape.c
-    src/expand/expand_cat.c
-    src/expand/expand_str.c
-    src/redir/redir_addhere.c
-    src/redir/redir_here.c
-    src/redir/redir_parse.c
-    src/redir/redir_source.c
-    src/parse/*.c
-    src/tree/*.c
     src/*.h
-    src/source/fmt_loc.c
-    src/source/location2str.c
-    src/source/source_skip.c
-    src/source/source_next.c
-    src/source/source_peek.c
-    src/source/source_peekn.c
-    src/source/source_flush.c
-    src/source/source_get.c
-    src/source/source_newline.c
-    src/source/source_msg.c
-    src/source/source_buffer.c
-    src/source/source_push.c
-    src/source/source_pop.c
-    src/source/source_popfd.c
-    src/fdstack/*.c
-    src/fdtable/*.c
-    src/fd/*.c
-    # src/term/term_escape.c
-    src/var/*.c
-    src/vartab/*.c
-    src/varstack/*.c
-    src/sh/sh_root.c
-    src/sh/sh_error.c
-    src/sh/sh_errorn.c
+    src/debug/*.c
     src/sh/sh_fmt.c
-    src/sh/sh_msg.c
-    src/sh/sh_usage.c)
+    )
 
   list(FILTER SHFORMAT_SOURCES EXCLUDE REGEX "dump")
 
   add_executable(shformat ${SHFORMAT_SOURCES})
-  target_link_libraries(shformat ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
+  target_link_libraries(shformat PRIVATE shell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shformat PUBLIC SHFORMAT=1)
   install(TARGETS shformat DESTINATION bin)
@@ -380,49 +343,15 @@ if(BUILD_SHPARSE2AST)
   file(
     GLOB
     SHPARSE2AST_SOURCES
-    src/debug/*.c
-    src/expand/expand_glob.c
-    src/expand/expand_cat.c
-    src/expand/expand_unescape.c
-    src/expand/expand_str.c
-    src/redir/redir_addhere.c
-    src/redir/redir_here.c
-    src/redir/redir_parse.c
-    src/redir/redir_source.c
-    src/parse/*.c
-    src/tree/*.c
     src/*.h
-    src/source/fmt_loc.c
-    src/source/location2str.c
-    src/source/source_skip.c
-    src/source/source_next.c
-    src/source/source_peek.c
-    src/source/source_peekn.c
-    src/source/source_flush.c
-    src/source/source_get.c
-    src/source/source_newline.c
-    src/source/source_msg.c
-    src/source/source_buffer.c
-    src/source/source_push.c
-    src/source/source_pop.c
-    src/source/source_popfd.c
-    src/fdstack/*.c
-    src/fdtable/*.c
-    src/fd/*.c
-    src/var/*.c
-    src/vartab/*.c
-    src/varstack/*.c
-    src/sh/sh_root.c
-    src/sh/sh_error.c
-    src/sh/sh_errorn.c
+    src/debug/*.c
     src/sh/sh_parse2ast.c
-    src/sh/sh_msg.c
-    src/sh/sh_usage.c)
+)
 
   list(FILTER SHPARSE2AST_SOURCES EXCLUDE REGEX "dump")
 
   add_executable(shparse2ast ${SHPARSE2AST_SOURCES})
-  target_link_libraries(shparse2ast ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
+  target_link_libraries(shparse2ast PRIVATE shell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shparse2ast PUBLIC SHPARSE2AST=1 DEBUG_OUTPUT=1)
   install(TARGETS shparse2ast DESTINATION bin)

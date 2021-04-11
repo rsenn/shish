@@ -17,12 +17,11 @@
 
 #include <stdlib.h>
 
-#ifndef SH_FMT
 int sh_argc;
 char** sh_argv;
 char* sh_name;
 int sh_login = 0;
-#endif
+int sh_no_position = 0;
 
 /* main routine
  * ----------------------------------------------------------------------- */

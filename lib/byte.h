@@ -56,6 +56,8 @@ size_t byte_trimr(char* x, size_t n, const char* trimchars, unsigned int trimcha
 
 void byte_replace(char* x, size_t n, char before, char after);
 
+size_t byte_ccopy(void*, size_t count, const void* src, char c);
+
 #ifdef __cplusplus
 }
 #endif

@@ -5,6 +5,7 @@
 #include "../fd.h"
 #include "../../lib/uint64.h"
 #include "../../lib/fmt.h"
+#include "../../lib/typedefs.h"
 
 /* output a pointer
  * ----------------------------------------------------------------------- */
@@ -15,7 +16,7 @@ debug_ptr(const char* msg, void* ptr, int depth) {
   // debug_space(depth, 0);
   if(msg)
     debug_field(msg, depth);
-  n = fmt_xlonglong(buf, (uint64)ptr);
+  n = fmt_xlonglong(buf, (uint64)(size_t)ptr);
   debug_s("0x");
   buffer_putnspace(&debug_buffer, 8 - n);
   debug_b(buf, n);

@@ -60,11 +60,9 @@ struct env {
   unsigned cwdsym : 1; /* is cwd symbolic or phyiscal? */
   unsigned umask : 12;
   short exitcode; /* exit code of last evaluated tree */
-  unsigned jump : 1;
   union shopt opts;
   struct fdstack* fdstack;
   struct vartab* varstack;
-  jmp_buf jumpbuf;
   struct arg arg;
   struct parser* parser;
   struct eval* eval;
