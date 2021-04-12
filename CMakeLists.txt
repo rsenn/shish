@@ -157,55 +157,13 @@ file(
   GLOB
   LIBSHELL_SOURCES
   src/*.h
-  src/debug/debug_begin.c
-  src/debug/debug_end.c
-  src/debug/debug_argv.c
-  src/debug/debug_redir.c
-  src/debug/debug_position.c
-  src/debug/debug_ulong.c
-  src/debug/debug_xlong.c
-  src/debug/debug_node.c
-  src/debug/debug_sublist.c
-  src/debug/debug_subnode.c
-  src/debug/debug_squoted.c
-  src/debug/debug_list.c
-  src/debug/debug_str.c
-  src/debug/debug_stralloc.c
-  src/eval/*.c
-  src/exec/*.c
-  src/expand/*.c
-  src/expr/*.c
-  src/fd/*.c
-  src/fdstack/*.c
-  src/fdtable/*.c
-  src/history/*.c
-  src/job/*.c
-  src/parse/*.c
-  src/prompt/*.c
-  src/redir/*.c
-  src/sh/sh_cmdlist.c
-  src/sh/sh_error.c
-  src/sh/sh_errorn.c
-  src/sh/sh_exit.c
-  src/sh/sh_forked.c
-  src/sh/sh_getcwd.c
-  src/sh/sh_gethome.c
-  src/sh/sh_msg.c
-  src/sh/sh_loop.c
-  src/sh/sh_popargs.c
-  src/sh/sh_pop.c
-  src/sh/sh_pushargs.c
-  src/sh/sh_push.c
-  src/sh/sh_root.c
-  src/sh/sh_setargs.c
-  src/sh/sh_subshell.c
-  src/sh/sh_usage.c
-  src/sig/*.c
-  src/source/*.c
-  src/term/*.c
-  src/tree/*.c
-  src/var/*.c
-  src/vartab/*.c)
+  src/*/*.c)
+
+
+list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "(sh_fmt\\.c|sh_parse2ast\\.c|sh_init\\.c|sh_main\\.c)")
+
+#string(REGEX REPLACE ";" "\n" SHELL_SOURCES "${LIBSHELL_SOURCES}")
+#message("LIBSHELL_SOURCES: ${SHELL_SOURCES}")
 
 if(DEBUG_ALLOC)
   list(
