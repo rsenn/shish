@@ -1,6 +1,6 @@
 #include "../sig_internal.h"
 
-char const*
+const char*
 sig_name(int sig) {
   sigtable_t const* p = sigtable;
   for(; p->number; p++)

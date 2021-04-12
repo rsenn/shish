@@ -3,7 +3,7 @@
 #include <strings.h>
 
 int
-sig_number(char const* name) {
+sig_number(const char* name) {
   sigtable_t const* p = sigtable;
   for(; p->name; p++)
     if(!strcasecmp(name, p->name))

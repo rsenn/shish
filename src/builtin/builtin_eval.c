@@ -18,15 +18,16 @@ builtin_eval(int argc, char* argv[]) {
   struct eval e;
   union node* cmds;
   int ret = 0;
+  size_t i;
   stralloc sa;
   stralloc_init(&sa);
 
   /* concatenate all arguments following the "exec", separated by a
      whitespace and terminated by a newline */
-  shell_optind = 1;
-  while(argv[shell_optind]) {
-    stralloc_cats(&sa, argv[shell_optind]);
-    stralloc_catc(&sa, (argv[++shell_optind] ? ' ' : '\n'));
+  i = 1;
+  while(argv[i]) {
+    stralloc_cats(&sa, argv[i]);
+    stralloc_catc(&sa, (argv[++i] ? ' ' : '\n'));
   }
 
   /* create a new i/o context and initialize a parser */

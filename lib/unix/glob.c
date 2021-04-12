@@ -20,10 +20,10 @@
  * Helper functions
  */
 
-static char const*
-strrpbrk(char const* s, char const* charset) {
+static const char*
+strrpbrk(const char* s, const char* charset) {
   char* part = NULL;
-  char const* pch;
+  const char* pch;
 
   for(pch = charset; *pch; ++pch) {
     char* p = strrchr(s, *pch);
@@ -51,17 +51,17 @@ strrpbrk(char const* s, char const* charset) {
  */
 
 int
-glob(char const* pattern, int flags, int (*errfunc)(char const*, int), glob_t* pglob) {
+glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* pglob) {
   int result;
   char szRelative[1 + _MAX_PATH];
-  char const* file_part;
+  const char* file_part;
   WIN32_FIND_DATAA find_data;
   HANDLE hFind;
   char* buffer;
   char szPattern2[1 + _MAX_PATH];
   char szPattern3[1 + _MAX_PATH];
-  char const* effectivePattern = pattern;
-  char const* leafMost;
+  const char* effectivePattern = pattern;
+  const char* leafMost;
   const int bMagic = (NULL != strpbrk(pattern, "?*"));
   int bNoMagic = 0;
   int bMagic0;

@@ -9,24 +9,23 @@
  * if found on a
  * ----------------------------------------------------------------------- */
 struct var*
-var_create(const char* v, int flags) {
+var_create(const char* s, int flags) {
   struct search ctx;
-  struct var *newvar, *oldvar;
-
+  struct var *newv, *v;
   struct vartab* tab = varstack;
 
-  vartab_hash(v, &ctx);
-  if((oldvar = var_search(v, &ctx))) {
+  vartab_hash(s, &ctx);
+  if((v = var_search(s, &ctx))) {
     /* if we have the V_INIT flag and the var was found return NULL */
     if(flags & V_INIT)
       return NULL;
 
     /* if variable was found on topmost level -> immediately return it */
-    if(oldvar->table == tab)
-      return oldvar;
+    if(v->table == tab)
+      return v;
 
-    if(oldvar->flags & V_LOCAL)
-      return oldvar;
+    if(v->flags & V_LOCAL)
+      return v;
   }
 
   if(!(flags & V_LOCAL)) {
@@ -34,25 +33,25 @@ var_create(const char* v, int flags) {
     while(tab->function) tab = tab->parent;
 
     /* if variable is found on that table -> immediately return it */
-    if(oldvar && oldvar->table == tab)
-      return oldvar;
+    if(v && v->table == tab)
+      return v;
   }
 
-  newvar = alloc(sizeof(struct var));
-  var_init(v, newvar, &ctx);
-  newvar->flags |= V_FREE;
+  newv = alloc(sizeof(struct var));
+  var_init(s, newv, &ctx);
+  newv->flags |= V_FREE;
 
   /* if the variable was found on another
      level then do some pointer setup :) */
-  if(oldvar) {
-    oldvar->child = newvar;
-    newvar->parent = oldvar;
+  if(v) {
+    v->child = newv;
+    newv->parent = v;
 
-    newvar->sa = oldvar->sa;
-    newvar->sa.a = 0;
+    newv->sa = v->sa;
+    newv->sa.a = 0;
   }
 
   /* finally add it to the bucket and to the global list */
-  vartab_add(tab, newvar, &ctx);
-  return newvar;
+  vartab_add(tab, newv, &ctx);
+  return newv;
 }
