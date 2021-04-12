@@ -199,8 +199,9 @@ endforeach(BUILTIN ${ALL_BUILTINS})
 
 file(WRITE "${CMAKE_BINARY_DIR}/src/builtin_config.h" "${BUILTIN_CONFIG}\n\n")
 
-set_source_files_properties(src/builtin/builtin_table.c PROPERTIES COMPILE_DEFINITIONS
-                                                                   HAVE_BUILTIN_CONFIG_H=1)
+set_source_files_properties(
+  src/builtin/builtin_table.c PROPERTIES COMPILE_DEFINITIONS
+                                         HAVE_BUILTIN_CONFIG_H=1)
 
 list(SORT BUILTINS_ENABLED)
 list(SORT BUILTINS_DISABLED)
