@@ -148,66 +148,10 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 set(CMAKE_MODULE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
-file(GLOB LIBOWFAT_HEADERS lib/*.h)
+include(cmake/libowfat.cmake)
+link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
 
-if(NOT HAVE_LIBOWFAT)
-  file(
-    GLOB
-    LIBOWFAT_SOURCES
-    lib/alloc/*.c
-    lib/buffer/*.c
-    lib/byte/*.c
-    lib/fmt/*.c
-    lib/mmap/*.c
-    lib/open/*.c
-    lib/path/*.c
-    lib/scan/*.c
-    lib/shell/*.c
-    lib/sig/*.c
-    lib/str/*.c
-    lib/uint32/*.c
-    lib/unix/*.c
-    lib/utf8/*.c
-    lib/wait/*.c)
-  set(LIBOWFAT_SOURCES
-      ${LIBOWFAT_SOURCES}
-      ${LIBOWFAT_HEADERS}
-      lib/stralloc/mmap_filename.c
-      lib/stralloc/stralloc_append.c
-      lib/stralloc/stralloc_cat.c
-      lib/stralloc/stralloc_catb.c
-      lib/stralloc/stralloc_catc.c
-      lib/stralloc/stralloc_catlong0.c
-      lib/stralloc/stralloc_catm_internal.c
-      lib/stralloc/stralloc_cats.c
-      lib/stralloc/stralloc_catulong.c
-      lib/stralloc/stralloc_catulong0.c
-      lib/stralloc/stralloc_copy.c
-      lib/stralloc/stralloc_copyb.c
-      lib/stralloc/stralloc_copys.c
-      lib/stralloc/stralloc_diffs.c
-      lib/stralloc/stralloc_dump.c
-      lib/stralloc/stralloc_init.c
-      lib/stralloc/stralloc_insertb.c
-      lib/stralloc/stralloc_move.c
-      lib/stralloc/stralloc_nul.c
-      lib/stralloc/stralloc_remove.c
-      lib/stralloc/stralloc_replacec.c
-      lib/stralloc/stralloc_starts.c
-      lib/stralloc/stralloc_trimr.c
-      lib/stralloc/stralloc_write.c
-      lib/stralloc/stralloc_zero.c
-      lib/stralloc/stralloc_free${NAME_DEBUG}.c
-      lib/stralloc/stralloc_ready${NAME_DEBUG}.c
-      lib/stralloc/stralloc_readyplus${NAME_DEBUG}.c
-      lib/stralloc/stralloc_trunc${NAME_DEBUG}.c)
-
-  add_library(owfat STATIC ${LIBOWFAT_SOURCES})
-  link_directories(${CMAKE_CURRENT_BINARY_DIR})
-  set(LIBOWFAT_LIBRARY
-      owfat
-      CACHE STRING "-lowfat library name" FORCE)
-endif(NOT HAVE_LIBOWFAT)
+message(STATUS "LIBOWFAT = ${LIBOWFAT_LIBRARY}")
 
 file(
   GLOB
@@ -310,12 +254,13 @@ list(APPEND LIBSHELL_SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
 
 list(APPEND LIBSHELL_SOURCES ${BUILTIN_SOURCES})
 
-add_library(shell STATIC ${LIBSHELL_SOURCES})
+add_library(libshell STATIC ${LIBSHELL_SOURCES})
+set_target_properties(libshell PROPERTIES  OUTPUT_NAME shell)
 
 set(SHISH_SOURCES src/sh/sh_init.c src/sh/sh_main.c)
 
 add_executable(shish ${SHISH_SOURCES})
-target_link_libraries(shish PRIVATE shell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
+target_link_libraries(shish PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
                                     ${ELECTRICFENCE_LIBRARY})
 if(EMSCRIPTEN)
   set_target_properties(shish PROPERTIES SUFFIX ".${EMSCRIPTEN_EXE_SUFFIX}")
@@ -329,7 +274,7 @@ if(BUILD_SHFORMAT)
   list(FILTER SHFORMAT_SOURCES EXCLUDE REGEX "dump")
 
   add_executable(shformat ${SHFORMAT_SOURCES})
-  target_link_libraries(shformat PRIVATE shell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
+  target_link_libraries(shformat PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
                                          ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shformat PUBLIC SHFORMAT=1)
@@ -345,7 +290,7 @@ if(BUILD_SHPARSE2AST)
   list(FILTER SHPARSE2AST_SOURCES EXCLUDE REGEX "dump")
 
   add_executable(shparse2ast ${SHPARSE2AST_SOURCES})
-  target_link_libraries(shparse2ast PRIVATE shell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
+  target_link_libraries(shparse2ast PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
                                             ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shparse2ast PUBLIC SHPARSE2AST=1 DEBUG_OUTPUT=1)
