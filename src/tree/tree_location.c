@@ -6,14 +6,8 @@ int
 tree_location(union node* node, struct location* loc) {
   while(node) {
     switch(node->id) {
-      case N_ARGSTR:
-        *loc = node->nargstr.loc;
-        return 1;
-        break;
-      case N_ARGPARAM:
-        *loc = node->nargparam.loc;
-        return 1;
-        break;
+      case N_ARGSTR: *loc = node->nargstr.loc; return 1;
+      case N_ARGPARAM: *loc = node->nargparam.loc; return 1;
       case N_ARGCMD:
         if(tree_location(node->nargcmd.list, loc))
           return 1;

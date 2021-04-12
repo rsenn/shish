@@ -45,12 +45,10 @@ wait_pids_nohang(int const* pids, unsigned int len, int* wstat) {
   }
   return -1;
 #else
+  int r;
   for(;;) {
     int w;
-    int r = wait_nohang(&w);
-    if(!r || (r == (int)-1))
-      return (int)r;
-    {
+    if((r = wait_nohang(&w)) > 0) {
       unsigned int i = 0;
       for(; i < len; i++)
         if(r == pids[i])
@@ -59,8 +57,10 @@ wait_pids_nohang(int const* pids, unsigned int len, int* wstat) {
         *wstat = w;
         return 1 + i;
       }
+      continue;
     }
+    break;
   }
-  return -1;
+  return r;
 #endif
 }

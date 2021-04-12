@@ -9,7 +9,8 @@ int
 var_chflg(char* v, int flags, int set) {
   struct var* var;
 
-  var = var_create(v, 0);
+  if(!(var = var_create(v, 0)))
+    return 0;
 
   /* if we found it on the current level
      then we just set the flags */
@@ -19,18 +20,15 @@ var_chflg(char* v, int flags, int set) {
     else
       var->flags &= (~flags);
 
-    return 1;
-  }
-  /* otherwise create a new entry on the current level */
-  else {
+  } else {
+    /* otherwise create a new entry on the current level */
     if(set)
       flags = var->flags | flags;
     else
       flags = var->flags & (~flags);
 
     var_set(var->sa.s, flags);
-    return 1;
   }
 
-  return 0;
+  return 1;
 }

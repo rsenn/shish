@@ -115,9 +115,7 @@ main(int argc, char** argv, char** envp) {
                     "  -q CHAR     Quote char\n");
 
         buffer_flush(fd_err->w);
-
-        exit(1);
-        break;
+        return 1;
     }
 
   for(i = 0; i < indent_width; i++) stralloc_catc(&separator, ' ');
@@ -199,7 +197,6 @@ main(int argc, char** argv, char** envp) {
     }
     //  debug_end(0);
   }
-  exit(0);
 
   return 0;
 }

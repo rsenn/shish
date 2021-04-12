@@ -116,9 +116,7 @@ main(int argc, char** argv, char** envp) {
                     "  -l COLS     Line width\n");
 
         buffer_flush(fd_err->w);
-
-        exit(1);
-        break;
+        return 1;
     }
 
 #ifdef DEBUG_OUTPUT
@@ -234,8 +232,6 @@ main(int argc, char** argv, char** envp) {
       rename(tmpl, in_file);
     }
   }
-
-  exit(0);
 
   return 0;
 }

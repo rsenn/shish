@@ -33,7 +33,7 @@ expand_arith_binary(struct narithbinary* expr, int64* r) {
     case A_DIV: *r = left / right; break;
     case A_MOD: *r = left % right; break;
     case A_EXP: *r = powl(left, right); break;
-    default: assert(0); break;
+    default: return 1;
   }
 
   return 0;
