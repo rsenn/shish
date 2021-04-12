@@ -38,11 +38,7 @@
 #endif
 typedef enum { OP_EQ, OP_NE, OP_LT, OP_LE, OP_GT, OP_GE } binary_op;
 
-static int test_binary(int, char**);
 static int test_boolean(int, char**);
-static int test_cond(int, char**);
-static int test_expr(int, char**);
-static int test_unary(int, char**);
 
 static inline int
 contains(const char* str, char ch) {
