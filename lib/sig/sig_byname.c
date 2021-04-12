@@ -7,7 +7,7 @@ sig_byname(const char* name) {
   if(!str_case_diffn(name, "SIG", 3))
     name += 3;
 
-  for(p = sigtable; p->number; p++)
+  for(p = sigtable; p->name; p++)
     if(!str_case_diff(p->name, name))
       return p->number;
   return -1;
