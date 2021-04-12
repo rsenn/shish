@@ -9,9 +9,9 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_trap(int argc, char* argv[]) {
-  union node* cmds=0;
-    int signum=-1;
-  
+  union node* cmds = 0;
+  int signum = -1;
+
   if(argc > 1) {
     struct fd fd;
     struct source src;
@@ -35,11 +35,9 @@ builtin_trap(int argc, char* argv[]) {
     signum = sig_byname(argv[2]);
   }
 
-
-
-   debug_str("builtin_trap", argv[1], 0, '"');
-   debug_s("signum: ");
-   debug_n( signum);
-   debug_nl_fl();
+  debug_str("builtin_trap", argv[1], 0, '"');
+  debug_s("signum: ");
+  debug_n(signum);
+  debug_nl_fl();
   return 0;
 }
