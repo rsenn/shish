@@ -35,6 +35,7 @@ main(int argc, char** argv, char** envp) {
   struct source src;
   char* cmds = NULL;
   struct var* envvars;
+  int no_interactive = 0;
 
   fd_expected = STDERR_FILENO + 1;
 
@@ -85,7 +86,7 @@ main(int argc, char** argv, char** envp) {
       case 'e': sh->opts.exit_on_error = 1; break;
 
 #ifdef _DEBUG
-      case 'I': sh->opts.no_interactive = 1; break;
+      case 'I': no_interactive = 1; break;
 
 #endif
 
@@ -139,7 +140,7 @@ main(int argc, char** argv, char** envp) {
 
   source_push(&src);
 
-  if((fd_src->mode & FD_CHAR) && !sh->opts.no_interactive && term_init(fd_src, fd_err))
+  if((fd_src->mode & FD_CHAR) && !no_interactive && term_init(fd_src, fd_err))
     src.mode |= SOURCE_IACTIVE;
   else
     src.mode &= ~SOURCE_IACTIVE;

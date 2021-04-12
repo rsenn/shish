@@ -50,7 +50,6 @@ union __attribute__((__packed__)) shopt {
     unsigned no_clobber : 1;    /* -C */
     unsigned debug : 1;         /* -x */
     unsigned exit_on_error : 1; /* -e */
-    unsigned no_interactive : 1;
   };
 };
 
@@ -87,6 +86,7 @@ union node;
 int sh_error(const char* s);
 int sh_errorn(const char* s, unsigned int len);
 void sh_exit(int retcode);
+size_t sh_fmtflags(char* dest, const union shopt*);
 int sh_forked(void);
 void sh_getcwd(struct env* sh);
 const char* sh_gethome(void);

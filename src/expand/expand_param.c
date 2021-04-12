@@ -127,7 +127,11 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       }
 
       /* $- substitution */
-      case S_FLAGS: break;
+      case S_FLAGS:
+
+        stralloc_ready(&value, 16);
+        value.len = sh_fmtflags(value.s, &sh->opts);
+        break;
 
       /* $! substitution */
       case S_BGEXCODE:
