@@ -10,9 +10,11 @@ builtin_exit(int argc, char* argv[]) {
   int status = 0;
 
   if(argc > 1)
-    scan_uint(argv[1], (unsigned int*)&status);
+    scan_int(argv[1], &status);
   else
     status = sh->exitcode;
+
+  status &= 0xff;
 
   sh_exit(status);
 

@@ -24,10 +24,19 @@ var_create(const char* v, int flags) {
     /* if variable was found on topmost level -> immediately return it */
     if(oldvar->table == tab)
       return oldvar;
+
+    if(oldvar->flags & V_LOCAL)
+      return oldvar;
   }
 
-  if(!(flags & V_LOCAL) && tab->function)
-    tab = tab->parent;
+  if(!(flags & V_LOCAL)) {
+
+    while(tab->function) tab = tab->parent;
+
+    /* if variable is found on that table -> immediately return it */
+    if(oldvar && oldvar->table == tab)
+      return oldvar;
+  }
 
   newvar = alloc(sizeof(struct var));
   var_init(v, newvar, &ctx);

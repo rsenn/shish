@@ -12,13 +12,18 @@ builtin_set(int argc, char* argv[]) {
   union shopt opts = sh->opts;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "+xeCu")) > 0) {
+  while((c = shell_getopt(argc, argv, "+efhmuxBCH")) > 0) {
     int on = shell_optprefix == '-';
     switch(c) {
-      case 'x': opts.xtrace = on; break;
       case 'e': opts.errexit = on; break;
-      case 'C': opts.noclobber = on; break;
+      case 'f': opts.noglob = on; break;
+      case 'h': opts.hashall = on; break;
+      case 'm': opts.monitor = on; break;
       case 'u': opts.unset = on; break;
+      case 'x': opts.xtrace = on; break;
+      case 'B': opts.braceexpand = on; break;
+      case 'C': opts.noclobber = on; break;
+      case 'H': opts.histexpand = on; break;
       default: builtin_invopt(argv); return 1;
     }
   }

@@ -10,6 +10,7 @@ struct env sh_root = {/* .parent = */ NULL,
                       /* .opts = */
                       {
                           .errexit = 0,
+                          .noglob = 0,
                           .hashall = 1,
                           .monitor = 0,
                           .unset = 0,

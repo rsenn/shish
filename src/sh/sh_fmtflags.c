@@ -5,6 +5,8 @@ sh_fmtflags(char* dest, const union shopt* opts) {
   size_t i = 0;
   if(opts->errexit)
     dest[i++] = 'e';
+  if(opts->noglob)
+    dest[i++] = 'f';
   if(opts->hashall)
     dest[i++] = 'h';
   if(opts->monitor)

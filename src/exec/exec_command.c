@@ -49,7 +49,7 @@ exec_command(struct command* cmd, int argc, char** argv, int exec, union node* r
       inst.arg.c--;
 
       //    sh_setargs(argv, 0);
-      eval_push(&e, E_FUNCTION | (sh->opts.xtrace ? E_PRINT : 0));
+      eval_push(&e, E_FUNCTION);
 
       if((ret = setjmp(e.jumpbuf)) == 0) {
         e.jump = 1;

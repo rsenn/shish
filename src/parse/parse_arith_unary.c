@@ -6,10 +6,10 @@
  * ----------------------------------------------------------------------- */
 union node*
 parse_arith_unary(struct parser* p) {
-  union node* node;
+  union node *node = 0, *unary;
   enum kind n;
-
   char c, c2 = 0;
+
   if(source_peek(&c) <= 0)
     return 0;
 
@@ -23,7 +23,21 @@ parse_arith_unary(struct parser* p) {
     case '~': n = A_BNOT; break;
     case '-': n = c2 == '-' ? A_PREDECR : A_UNARYMINUS; break;
     case '+': n = c2 == '+' ? A_PREINCR : A_UNARYPLUS; break;
-    default: return parse_arith_value(p);
+    default: {
+      if((node = parse_arith_value(p))) {
+        if(source_peek(&c) > 0 && (c == '+' || c == '-')) {
+          if(source_peekn(&c2, 1) > 0 && c2 == c) {
+            switch(c) {
+              case '-': n = A_POSTDECR; break;
+              case '+': n = A_POSTINCR; break;
+            }
+
+            break;
+          }
+        }
+      }
+      return node;
+    }
   }
 
   if(c == c2)
@@ -32,8 +46,8 @@ parse_arith_unary(struct parser* p) {
   parse_skip(p);
   parse_skipspace(p);
 
-  node = tree_newnode(n);
-  node->narithunary.node = parse_arith_value(p);
+  unary = tree_newnode(n);
+  unary->narithunary.node = node ? node : parse_arith_value(p);
 
-  return node;
+  return unary;
 }

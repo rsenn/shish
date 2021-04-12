@@ -64,9 +64,8 @@ main(int argc, char** argv, char** envp) {
 
   /* set initial $0 */
   sh_argv0 = argv[0];
-  sh_name = path_basename(sh_argv0);
 
-  shell_init(fd_err->w, sh_name);
+  shell_init(fd_err->w, path_basename(sh_argv0));
 
   /* import environment variables to the root vartab */
   for(c = 0; envp[c]; c++)
@@ -143,10 +142,9 @@ main(int argc, char** argv, char** envp) {
   if((fd_src->mode & FD_CHAR) && !no_interactive && term_init(fd_src, fd_err)) {
     src.mode |= SOURCE_IACTIVE;
 
-sh->opts.monitor = 1;
-sh->opts.histexpand = 1;
-  }
-  else
+    sh->opts.monitor = 1;
+    sh->opts.histexpand = 1;
+  } else
     src.mode &= ~SOURCE_IACTIVE;
 
   /*  if(fd_expected != fd_top && (flags = fdtable_check(e)))

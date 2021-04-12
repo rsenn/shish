@@ -10,7 +10,7 @@ int
 expand_arith_unary(struct narithunary* expr, int64* r) {
   int64 value;
   struct nargparam* param = 0;
-  int pre_post = expr->id == A_PREINCR || expr->id == A_PREDECR || expr->id == A_POSTINCR || expr->id == A_POSTDECR;
+  int pre_post = expr->id >= A_PREDECR && expr->id <= A_POSTINCR;
 
   if(expand_arith_expr(expr->node, &value))
     return 1;
