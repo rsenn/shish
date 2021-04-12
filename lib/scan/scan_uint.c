@@ -4,7 +4,6 @@
 #define IS_32BIT 1
 #define WORD_SIZE 4
 #elif LONG_MAX == 9223372036854775807L || defined(__x86_64__) || POINTER_SIZE == 8
-#define IS_32BIT 1
 #define IS_64BIT 1
 #define WORD_SIZE 8
 #endif
