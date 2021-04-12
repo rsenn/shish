@@ -3,15 +3,22 @@
 size_t
 sh_fmtflags(char* dest, const union shopt* opts) {
   size_t i = 0;
+  if(opts->errexit)
+    dest[i++] = 'e';
+  if(opts->hashall)
+    dest[i++] = 'h';
+  if(opts->monitor)
+    dest[i++] = 'm';
   if(opts->unset)
     dest[i++] = 'u';
-  if(opts->no_clobber)
-    dest[i++] = 'C';
-  if(opts->debug)
+  if(opts->xtrace)
     dest[i++] = 'x';
-  if(opts->exit_on_error)
-    dest[i++] = 'e';
-  if(opts->no_clobber)
+  if(opts->braceexpand)
+    dest[i++] = 'B';
+  if(opts->noclobber)
     dest[i++] = 'C';
+  if(opts->histexpand)
+    dest[i++] = 'H';
+
   return i;
 }

@@ -52,7 +52,7 @@ unset Y
 Z=`(: ${Y?"Y is unset"}) 2>&1`; assert_equal "$?" "1"; assert_equal "${Z##*: }" "Y is unset"
 set -e
 
-## Special parameters
+## Positional parameters
 
 set -- A1 A2 A3 A4 A5 A6 A7 A8 \
        ARG9 ARG10 ARG11 ARG12 ARG13 ARG14 ARG15 ARG16
@@ -62,6 +62,7 @@ assert_equal "$3" A3
 assert_equal "${3}" A3
 assert_equal "$14" A14
 assert_equal "${14}" ARG14
+## Special parameters
 
 saved_IFS=$IFS
 IFS="."

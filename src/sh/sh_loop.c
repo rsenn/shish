@@ -52,7 +52,7 @@ sh_loop(void) {
 
       tree_catlist(list, &cmd, NULL);
 
-      /*      if(sh->opts.debug) {
+      /*      if(sh->opts.xtrace) {
               buffer_puts(fd_err->w, "%% ");
               buffer_putsa(fd_err->w, &cmd);
               buffer_putnlflush(fd_err->w);
@@ -65,7 +65,7 @@ sh_loop(void) {
         history_advance();
       }
 
-      eval_push(&e, E_JCTL | (sh->opts.debug ? E_PRINT : 0));
+      eval_push(&e, E_JCTL | (sh->opts.xtrace ? E_PRINT : 0));
       status = eval_tree(&e, list, E_ROOT | E_LIST);
 
       while(sh->eval != &e) eval_pop(sh->eval);

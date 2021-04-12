@@ -35,7 +35,7 @@ parse_gettok(struct parser* p, int tempflags) {
       parse_keyword(p);
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE)
-    if(sh->opts.debug) {
+    if(sh->opts.xtrace) {
       if(p->tok != -1)
         parse_dump(p, &debug_buffer);
     }

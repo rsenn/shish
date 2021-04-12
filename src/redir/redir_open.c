@@ -17,7 +17,7 @@ redir_open(struct nredir* nredir, stralloc* sa) {
     /* check for appending mode */
     if(nredir->flag & R_APPEND)
       mode |= FD_APPEND;
-    else if(sh->opts.no_clobber)
+    else if(sh->opts.noclobber)
       mode |= FD_EXCL;
   }
 

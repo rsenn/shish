@@ -15,9 +15,9 @@ builtin_set(int argc, char* argv[]) {
   while((c = shell_getopt(argc, argv, "+xeCu")) > 0) {
     int on = shell_optprefix == '-';
     switch(c) {
-      case 'x': opts.debug = on; break;
-      case 'e': opts.exit_on_error = on; break;
-      case 'C': opts.no_clobber = on; break;
+      case 'x': opts.xtrace = on; break;
+      case 'e': opts.errexit = on; break;
+      case 'C': opts.noclobber = on; break;
       case 'u': opts.unset = on; break;
       default: builtin_invopt(argv); return 1;
     }

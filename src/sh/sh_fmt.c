@@ -101,8 +101,8 @@ main(int argc, char** argv, char** envp) {
   /* parse command line arguments */
   while((c = shell_getopt(argc, argv, "c:xeiw:l:")) > 0) switch(c) {
       case 'c': cmds = shell_optarg; break;
-      case 'x': sh->opts.debug = 1; break;
-      case 'e': sh->opts.exit_on_error = 1; break;
+      case 'x': sh->opts.xtrace = 1; break;
+      case 'e': sh->opts.errexit = 1; break;
       case 'i': inplace = 1; break;
       case 'w': scan_uint(shell_optarg, &indent_width); break;
       case 'l': scan_uint(shell_optarg, &tree_columnwrap); break;
