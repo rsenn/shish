@@ -23,7 +23,8 @@ list(
   trap
   type
   umask
-  unset)
+  unset
+  wait)
 list(
   APPEND
   EXTRA_BUILTINS

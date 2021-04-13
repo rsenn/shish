@@ -41,12 +41,12 @@ struct proc {
 
 struct job {
   struct job* next;
-  struct proc* procs;
-  unsigned int nproc;
   pid_t pgrp;
   unsigned exited : 1;
   unsigned control : 1; /* running under job control? */
   unsigned bgnd : 1;
+  unsigned int nproc;
+  struct proc procs[];
 };
 
 extern int job_terminal;

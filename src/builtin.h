@@ -67,6 +67,7 @@ int builtin_type(int argc, char* argv[]);
 int builtin_umask(int argc, char* argv[]);
 int builtin_unset(int argc, char* argv[]);
 int builtin_uname(int argc, char* argv[]);
+int builtin_wait(int argc, char* argv[]);
 int builtin_which(int argc, char* argv[]);
 
 #else

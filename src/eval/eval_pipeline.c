@@ -117,8 +117,8 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   if(pipes)
     alloc_free(pipes);
 
-  /*  if(job)
-      alloc_free(job);*/
+   if(job)
+      alloc_free(job);
 
   return WEXITSTATUS(status);
 }

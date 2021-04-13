@@ -116,6 +116,9 @@
 #ifndef BUILTIN_UNAME
 #define BUILTIN_UNAME 0
 #endif
+#ifndef BUILTIN_WAIT
+#define BUILTIN_WAIT 1
+#endif
 #ifndef BUILTIN_WHICH
 #define BUILTIN_WHICH 0
 #endif
@@ -263,6 +266,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_UNAME
     {"uname", &builtin_uname, B_DEFAULT, "[-amnrspvio]"},
+#endif
+#if BUILTIN_WAIT
+    {"wait", &builtin_wait, B_DEFAULT, "[-fn] [-p var] [id ...]"},
 #endif
 #if BUILTIN_WHICH
     {"which", &builtin_which, B_DEFAULT, "[command] ..."},
