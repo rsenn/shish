@@ -201,6 +201,9 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_HOSTNAME
     {"hostname", &builtin_hostname, B_DEFAULT, "[name]"},
 #endif
+#if BUILTIN_JOBS
+    {"jobs", &builtin_jobs, B_DEFAULT, "[-lnprs] [job...]"},
+#endif
 #if BUILTIN_LN
     {"ln", &builtin_ln, B_DEFAULT, "[-sfv]"},
 #endif

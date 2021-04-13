@@ -43,9 +43,9 @@ struct __attribute__((__packed__)) arg {
   SH_NOINTERACTIVE = 0x1000
 };*/
 
-union __attribute__((__packed__)) shopt {
-  unsigned flags : 5;
-  struct __attribute__((__packed__)) {
+/*union __attribute__((__packed__)) shopt {
+  unsigned flags : 5;*/
+  struct __attribute__((__packed__)) shopt{
     unsigned errexit : 1;     /* -e */
     unsigned noglob : 1;      /* -f */
     unsigned hashall : 1;     /* -h */
@@ -56,7 +56,7 @@ union __attribute__((__packed__)) shopt {
     unsigned noclobber : 1;   /* -C */
     unsigned histexpand : 1;  /* -H */
   };
-};
+/*};*/
 
 typedef void handler_fn(void);
 
@@ -71,7 +71,7 @@ struct env {
   unsigned cwdsym : 1; /* is cwd symbolic or phyiscal? */
   unsigned umask : 12;
   short exitcode; /* exit code of last evaluated tree */
-  union shopt opts;
+  struct shopt opts;
   struct fdstack* fdstack;
   struct vartab* varstack;
   struct arg arg;
@@ -99,7 +99,7 @@ union node;
 int sh_error(const char* s);
 int sh_errorn(const char* s, unsigned int len);
 void sh_exit(int retcode);
-size_t sh_fmtflags(char* dest, const union shopt*);
+size_t sh_fmtflags(char* dest, const struct shopt*);
 int sh_forked(void);
 void sh_getcwd(struct env* sh);
 const char* sh_gethome(void);

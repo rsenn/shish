@@ -34,6 +34,8 @@ tree_free(union node* node) {
           tree_free(node->nandor.right);
         break;
 
+      case N_LIST: tree_free(node->nlist.cmds); break;
+
       case N_SUBSHELL:
       case N_BRACEGROUP:
         if(node->ngrp.cmds)

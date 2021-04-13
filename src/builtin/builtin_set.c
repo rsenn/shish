@@ -9,7 +9,7 @@
 int
 builtin_set(int argc, char* argv[]) {
   int c;
-  union shopt opts = sh->opts;
+  struct shopt opts = sh->opts;
 
   /* check options */
   while((c = shell_getopt(argc, argv, "+efhmuxBCH")) > 0) {
@@ -32,7 +32,7 @@ builtin_set(int argc, char* argv[]) {
 
   if(argv[shell_optind])
     sh_setargs(&argv[shell_optind], 1);
-  else if(!opts.flags)
+  else if(byte_count(&opts, sizeof(opts), 0) == sizeof(opts))
     vartab_print(V_DEFAULT);
 
   return 0;

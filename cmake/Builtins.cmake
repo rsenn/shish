@@ -1,89 +1,9 @@
-list(
-  APPEND
-  MINIMAL_BUILTINS
-  alias
-  break
-  cd
-  command
-  eval
-  exec
-  exit
-  export
-  getopts
-  hash
-  history
-  local
-  pwd
-  read
-  readonly
-  return
-  set
-  shift
-  source
-  trap
-  type
-  umask
-  unset
-  wait)
-list(
-  APPEND
-  EXTRA_BUILTINS
-  basename
-  cat
-  chmod
-  dirname
-  expr
-  hostname
-  ln
-  mkdir
-  rm
-  rmdir
-  which
-  mktemp
-  uname)
-list(
-  APPEND
-  DEFAULT_BUILTINS
-  ${MINIMAL_BUILTINS}
-  type
-  echo
-  fdtable
-  true
-  false)
+list(APPEND MINIMAL_BUILTINS alias break cd command eval exec exit export getopts hash history jobs local pwd read readonly return set shift source trap type umask unset wait)
+list(APPEND EXTRA_BUILTINS basename cat chmod dirname expr hostname ln mkdir rm rmdir which mktemp uname)
+list(APPEND DEFAULT_BUILTINS ${MINIMAL_BUILTINS} type echo fdtable true false)
 
 set(ALL_BUILTINS "")
-list(
-  APPEND
-  ALL_BUILTINS
-  ${MINIMAL_BUILTINS}
-  ${DEFAULT_BUILTINS}
-  ${EXTRA_BUILTINS}
-  basename
-  break
-  cd
-  dirname
-  dump
-  echo
-  eval
-  exec
-  exit
-  export
-  expr
-  false
-  fdtable
-  hash
-  help
-  history
-  hostname
-  ln
-  pwd
-  set
-  shift
-  source
-  test
-  true
-  type
-  unset)
+list(APPEND ALL_BUILTINS ${MINIMAL_BUILTINS} ${DEFAULT_BUILTINS} ${EXTRA_BUILTINS} basename break cd dirname dump echo eval exec exit export expr false fdtable hash help history hostname ln pwd set shift source test true type unset)
 list(SORT ALL_BUILTINS)
 list(REMOVE_DUPLICATES ALL_BUILTINS)
 
@@ -200,9 +120,7 @@ endforeach(BUILTIN ${ALL_BUILTINS})
 
 file(WRITE "${CMAKE_BINARY_DIR}/src/builtin_config.h" "${BUILTIN_CONFIG}\n\n")
 
-set_source_files_properties(
-  src/builtin/builtin_table.c PROPERTIES COMPILE_DEFINITIONS
-                                         HAVE_BUILTIN_CONFIG_H=1)
+set_source_files_properties(src/builtin/builtin_table.c PROPERTIES COMPILE_DEFINITIONS HAVE_BUILTIN_CONFIG_H=1)
 
 list(SORT BUILTINS_ENABLED)
 list(SORT BUILTINS_DISABLED)

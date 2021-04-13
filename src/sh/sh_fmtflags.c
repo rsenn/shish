@@ -1,7 +1,7 @@
 #include "../sh.h"
 
 size_t
-sh_fmtflags(char* dest, const union shopt* opts) {
+sh_fmtflags(char* dest, const struct shopt* opts) {
   size_t i = 0;
   if(opts->errexit)
     dest[i++] = 'e';

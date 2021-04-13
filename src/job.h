@@ -35,7 +35,7 @@ union node;
 struct proc {
   pid_t pid;
   int status;
-    sigset_t sigold;
+  sigset_t sigold;
   sigset_t signew;
 };
 

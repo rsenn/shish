@@ -19,7 +19,8 @@ enum kind {
   /* list     */ N_AND,      /* execute cmd2 if cmd succeeded */
   N_OR,                      /* execute cmd2 if cmd failed */
   //               N_SEMI,           /* execute both */
-  N_NOT,                     /* execute cmd and negate return status */
+  N_NOT, /* execute cmd and negate return status */
+  N_LIST,
   /* compound */ N_SUBSHELL, /* execute the list in a subshell */
   N_BRACEGROUP,              /* execute the list in the current env */
   /* for      */ N_FOR,      /* execute body for each arg,
@@ -204,11 +205,14 @@ struct nfunc {
   struct location loc;
 } __packed;
 
-/* internally used nodes
+/* command list
  * ----------------------------------------------------------------------- */
-struct list {
+struct nlist {
   enum kind id;
+  unsigned bgnd : 1;
   union node* next;
+  union node* rdir;
+  union node* cmds;
 } __packed;
 
 /* word nodes
@@ -300,7 +304,7 @@ union node {
     enum kind id;
     union node* next;
   };
-  struct list list;
+  struct nlist nlist;
   struct ncmd ncmd;
   struct npipe npipe;
   struct nandor nandor;

@@ -15,11 +15,9 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
       CACHE STRING "Choose the type of build." FORCE)
 endif()
 
-set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release MinSizeRel
-                                             RelWithDebInfo)
+set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release MinSizeRel RelWithDebInfo)
 
-option(WARN_WERROR "Halt the compilation with an error on compiler warnings."
-       OFF)
+option(WARN_WERROR "Halt the compilation with an error on compiler warnings." OFF)
 
 include(CheckLibraryExists)
 include(CheckIncludeFile)
@@ -35,14 +33,7 @@ string(REGEX REPLACE ".*/" "" COMPILER_NAME "${CMAKE_C_COMPILER}")
 
 if(COMPILER_NAME MATCHES "em.*")
   set(EMSCRIPTEN TRUE)
-  dump(
-    EMSCRIPTEN
-    EMCC_SUFFIX
-    EMSCRIPTEN_PREFIX
-    EMSCRIPTEN_TOOLCHAIN_PATH
-    COMPILER_NAME
-    CMAKE_EXECUTABLE_SUFFIX
-    CMAKE_EXE_LINKER_FLAGS)
+  dump(EMSCRIPTEN EMCC_SUFFIX EMSCRIPTEN_PREFIX EMSCRIPTEN_TOOLCHAIN_PATH COMPILER_NAME CMAKE_EXECUTABLE_SUFFIX CMAKE_EXE_LINKER_FLAGS)
   set(EMSCRIPTEN_EXE_SUFFIX "html")
 endif(COMPILER_NAME MATCHES "em.*")
 
@@ -115,20 +106,10 @@ else()
   set(NAME_DEBUG "")
 endif()
 
-configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake"
-               "${CMAKE_BINARY_DIR}/config.h")
+configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.h")
 
 set(SOURCE_DEFINITIONS)
-set(SOURCE_TYPES
-    ATFILE
-    GNU
-    LARGEFILE
-    LARGE_FILE
-    LARGEFILE64
-    POSIX
-    POSIX_C
-    XOPEN
-    XOPEN_EXTENDED)
+set(SOURCE_TYPES ATFILE GNU LARGEFILE LARGE_FILE LARGEFILE64 POSIX POSIX_C XOPEN XOPEN_EXTENDED)
 foreach(S ${SOURCE_TYPES})
   list(APPEND SOURCE_DEFINITIONS -D_${S}_SOURCE)
 endforeach(S ${SOURCE_TYPES})
@@ -156,42 +137,23 @@ file(GLOB CMAKE_SOURCES CMakeLists.txt cmake/*.cmake)
 include(cmake/libowfat.cmake)
 link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
 
- 
 file(GLOB LIBSHELL_SOURCES src/*.h src/*/*.c)
 
-list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX
-     "(sh_fmt\\.c|sh_parse2ast\\.c|sh_init\\.c|sh_main\\.c)")
+list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "(sh_fmt\\.c|sh_parse2ast\\.c|sh_init\\.c|sh_main\\.c)")
 
-# string(REGEX REPLACE ";" "\n" SHELL_SOURCES "${LIBSHELL_SOURCES}")
-# message("LIBSHELL_SOURCES: ${SHELL_SOURCES}")
+# string(REGEX REPLACE ";" "\n" SHELL_SOURCES "${LIBSHELL_SOURCES}") message("LIBSHELL_SOURCES: ${SHELL_SOURCES}")
 
 if(DEBUG_ALLOC)
-  list(
-    APPEND
-    LIBSHELL_SOURCES
-    src/debug/debug_alloc.c
-    src/debug/debug_free.c
-    src/debug/debug_realloc.c
-    src/debug/debug_error.c
-    src/debug/debug_memory.c)
+  list(APPEND LIBSHELL_SOURCES src/debug/debug_alloc.c src/debug/debug_free.c src/debug/debug_realloc.c src/debug/debug_error.c src/debug/debug_memory.c)
 endif(DEBUG_ALLOC)
 if(DEBUG_OUTPUT)
-  list(
-    APPEND
-    LIBSHELL_SOURCES
-    src/debug/debug_char.c
-    src/debug/debug_error.c
-    # src/debug/debug_node.c
-    src/debug/debug_ptr.c
-    src/debug/debug_space.c
-    src/debug/debug_subst.c
-    src/debug/debug_unquoted.c)
+  list(APPEND LIBSHELL_SOURCES src/debug/debug_char.c src/debug/debug_error.c
+       # src/debug/debug_node.c
+       src/debug/debug_ptr.c src/debug/debug_space.c src/debug/debug_subst.c src/debug/debug_unquoted.c)
 endif(DEBUG_OUTPUT)
 
-list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c
-     src/builtin/builtin_search.c src/builtin/builtin_table.c)
-list(APPEND LIBSHELL_SOURCES src/parse/parse_newnode${NAME_DEBUG}.c
-     src/tree/tree_newnode${NAME_DEBUG}.c)
+list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
+list(APPEND LIBSHELL_SOURCES src/parse/parse_newnode${NAME_DEBUG}.c src/tree/tree_newnode${NAME_DEBUG}.c)
 
 if(FORK_SOURCE)
   list(APPEND LIBSHELL_SOURCES ${FORK_SOURCE})
@@ -205,8 +167,7 @@ if(NO_TREE_PRINT)
   list(REMOVE_ITEM LIBSHELL_SOURCES "src/tree/tree_printlist.c")
 endif(NO_TREE_PRINT)
 
-# configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake"
-# "${CMAKE_BINARY_DIR}/src/builtin_config.h" #@ONLY
+# configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake" "${CMAKE_BINARY_DIR}/src/builtin_config.h" #@ONLY
 
 list(APPEND LIBSHELL_SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
 
@@ -220,8 +181,7 @@ set(SHISH_SOURCES src/sh/sh_init.c src/sh/sh_main.c)
 list(APPEND ALL_SOURCES ${SHISH_SOURCES})
 
 add_executable(shish ${SHISH_SOURCES})
-target_link_libraries(shish PRIVATE libshell ${LIBOWFAT_LIBRARY}
-                                    ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
+target_link_libraries(shish PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 if(EMSCRIPTEN)
   set_target_properties(shish PROPERTIES SUFFIX ".${EMSCRIPTEN_EXE_SUFFIX}")
 endif(EMSCRIPTEN)
@@ -235,9 +195,7 @@ if(BUILD_SHFORMAT)
   list(APPEND ALL_SOURCES ${SHFORMAT_SOURCES})
 
   add_executable(shformat ${SHFORMAT_SOURCES})
-  target_link_libraries(
-    shformat PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
-                     ${ELECTRICFENCE_LIBRARY})
+  target_link_libraries(shformat PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shformat PUBLIC SHFORMAT=1)
   install(TARGETS shformat DESTINATION bin)
@@ -253,24 +211,20 @@ if(BUILD_SHPARSE2AST)
   list(APPEND ALL_SOURCES ${SHPARSE2AST_SOURCES})
 
   add_executable(shparse2ast ${SHPARSE2AST_SOURCES})
-  target_link_libraries(
-    shparse2ast PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
-                        ${ELECTRICFENCE_LIBRARY})
+  target_link_libraries(shparse2ast PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shparse2ast PUBLIC SHPARSE2AST=1 DEBUG_OUTPUT=1)
   install(TARGETS shparse2ast DESTINATION bin)
 
 endif(BUILD_SHPARSE2AST)
 
-set_source_files_properties(src/builtin/builtin_table.c
-                            PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}")
+set_source_files_properties(src/builtin/builtin_table.c PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}")
 
 install(TARGETS shish DESTINATION bin)
 
 add_custom_target(
   cmake-format
-  COMMAND cmake-format --line-width 240 -i -l info CMakeLists.txt
-          ${CMAKE_SOURCES}
+  COMMAND cmake-format --line-width 300 --max-pargs-hwrap 100 -i CMakeLists.txt ${CMAKE_SOURCES}
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
   COMMENT "Format CMake files"
   SOURCES ${CMAKE_SOURCES})

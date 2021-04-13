@@ -1,3 +1,4 @@
+
 /* this header file comes from libowfat, http://www.fefe.de/libowfat/ */
 #ifndef BYTE_H
 #define BYTE_H
@@ -53,5 +54,7 @@ size_t byte_trimr(char* x, size_t n, const char* trimchars, unsigned int trimcha
 void byte_replace(char* x, size_t n, char before, char after);
 
 size_t byte_ccopy(void*, size_t count, const void* src, char c);
+
+size_t byte_count(const void*, size_t, char c);
 
 #endif
