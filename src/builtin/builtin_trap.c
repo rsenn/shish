@@ -105,29 +105,29 @@ builtin_trap(int argc, char* argv[]) {
 
     buffer_putnlflush(fd_out->w);
     return 0;
-  } 
+  }
 
   if(print) {
 
     if(shell_optind == argc) {
-    const char* name;
-    for(signum = 0; (name = sig_name(signum)); signum++) {
-      trap* tr;
-      if((tr = trap_find(signum))) {
-        buffer_puts(fd_out->w, "trap '");
-        tree_print(tr->tree, fd_out->w);
-        buffer_putm_internal(fd_out->w, "' ", name, "\n", 0);
+      const char* name;
+      for(signum = 0; (name = sig_name(signum)); signum++) {
+        trap* tr;
+        if((tr = trap_find(signum))) {
+          buffer_puts(fd_out->w, "trap '");
+          tree_print(tr->tree, fd_out->w);
+          buffer_putm_internal(fd_out->w, "' ", name, "\n", 0);
+        }
       }
-    }
 
-    buffer_flush(fd_out->w);
-  }
+      buffer_flush(fd_out->w);
+    }
     return 0;
   }
 
   if(argc < 3) {
-       builtin_errmsg(argv, "usage",   "trap [-lp] [[arg] signal_spec ...]");
-       return 2;
+    builtin_errmsg(argv, "usage", "trap [-lp] [[arg] signal_spec ...]");
+    return 2;
   }
 
   if(str_diff(argv[1], "-")) {
@@ -149,11 +149,12 @@ builtin_trap(int argc, char* argv[]) {
     source_popfd(&fd);
   }
 
-    if((signum = sig_byname(argv[2])) == -1) {
-      builtin_errmsg(argv, argv[2], "no such signal");
-      if(cmds)tree_free(cmds);
-      return 1;
-    }
+  if((signum = sig_byname(argv[2])) == -1) {
+    builtin_errmsg(argv, argv[2], "no such signal");
+    if(cmds)
+      tree_free(cmds);
+    return 1;
+  }
 
   if(signum >= 0) {
     ret = 0;
@@ -163,9 +164,9 @@ builtin_trap(int argc, char* argv[]) {
       ret = trap_uninstall(signum);
   }
 
-  debug_str("builtin_trap", argv[1], 0, '"');
+  /*debug_str("builtin_trap", argv[1], 0, '"');
   debug_s("signum: ");
   debug_n(signum);
-  debug_nl_fl();
+  debug_nl_fl();*/
   return ret;
 }
