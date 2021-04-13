@@ -6,10 +6,6 @@
 #include "windoze.h"
 #include "uint64.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* open filename for reading and return the file handle or -1 on error */
 int open_read(const char* filename);
 
@@ -36,9 +32,5 @@ ssize_t readclose(int64 fd, stralloc* sa, size_t bufsize);
 #endif
 
 int open_temp(char** tmpl);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

@@ -17,6 +17,7 @@
 #endif
 
 #include "../lib/windoze.h"
+#include "../lib/buffer.h"
 
 #if WINDOWS_NATIVE
 typedef int sigset_t;
@@ -34,30 +35,32 @@ union node;
 struct proc {
   pid_t pid;
   int status;
-  char* cmd;
-  sigset_t sigold;
+    sigset_t sigold;
   sigset_t signew;
 };
 
 struct job {
-  struct job* next;
+  int id;
   pid_t pgrp;
-  unsigned exited : 1;
+  char* command;
+  unsigned stopped : 1;
   unsigned control : 1; /* running under job control? */
   unsigned bgnd : 1;
+  struct job* next;
   unsigned int nproc;
   struct proc procs[];
 };
 
-extern int job_terminal;
-extern int job_pgrp;
-extern struct job* job_list;
-extern struct job** job_ptr;
+extern int job_terminal, job_pgrp;
+extern struct job *jobs, **jobptr;
 
 struct job* job_new(unsigned int n);
+struct job* job_get(int id);
 int job_fork(struct job* job, union node* node, int bg);
 int job_wait(struct job* job, int pid, int* status);
 void job_status(int pid, int status);
 void job_init(void);
+void job_delete(struct job*);
+void job_print(struct job*, buffer*);
 
 #endif /* _JOB_H */

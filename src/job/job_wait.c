@@ -28,15 +28,12 @@ job_wait(struct job* job, int pid, int* status) {
 
       if(ret <= 0)
         break;
-
       for(i = 0; i < job->nproc; i++) {
         if(job->procs[i].pid == ret)
           n--;
       }
-
       if(ret == job->pgrp)
         *status = st;
-
       job_status(ret, st);
     }
   } else {

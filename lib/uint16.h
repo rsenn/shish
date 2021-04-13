@@ -13,10 +13,6 @@
 #include <sys/types.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if defined(__BORLANDC__)
 #elif defined(__UINT16_TYPE__) && defined(__INT16_TYPE__)
 typedef __UINT16_TYPE__ uint16;
@@ -77,10 +73,6 @@ uint16_read(const char* in) {
   return ((uint16)in[0] << 8) | (in[1]);
 }
 #endif
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 #endif

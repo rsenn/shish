@@ -4,10 +4,6 @@
 
 #include "typedefs.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef __pure__
 #define __pure__
 #endif
@@ -217,10 +213,6 @@ int stralloc_truncdebug(const char* file, unsigned int line, stralloc* sa, unsig
 
 #ifdef BUFFER_H
 void stralloc_dump(const stralloc*, buffer*);
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 #endif

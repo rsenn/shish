@@ -9,10 +9,6 @@
 #include <unistd.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern const short __spm[13];
 
 char is_junction(const char* LinkPath);
@@ -23,7 +19,4 @@ ssize_t readlink(const char* LinkPath, char* buf, size_t maxlen);
 size_t getpagesize();
 #endif
 
-#ifdef __cplusplus
-}
-#endif
 #endif /* defined(UNIX_H) */

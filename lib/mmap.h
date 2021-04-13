@@ -5,10 +5,6 @@
 #include "typedefs.h"
 #include "uint64.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* map fd for reading
  * return pointer to map */
 char* mmap_read_fd(fd_t fd, size_t* filesize);
@@ -22,10 +18,6 @@ int mmap_unmap(const char* mapped, size_t maplen);
 
 #ifdef STRALLOC_H
 int mmap_filename(void* map, stralloc* sa);
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 #endif

@@ -49,6 +49,7 @@ int builtin_hash(int argc, char* argv[]);
 int builtin_help(int argc, char* argv[]);
 int builtin_history(int argc, char* argv[]);
 int builtin_hostname(int argc, char* argv[]);
+int builtin_jobs(int argc, char* argv[]);
 int builtin_mkdir(int argc, char* argv[]);
 int builtin_mktemp(int argc, char* argv[]);
 int builtin_local(int argc, char* argv[]);

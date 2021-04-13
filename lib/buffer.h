@@ -4,10 +4,6 @@
 
 #include "typedefs.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef ssize_t(buffer_op_sys)(int fd, void* buf, size_t len);
 typedef ssize_t(buffer_op_proto)(int fd, void* buf, size_t len, void* arg);
 typedef ssize_t(buffer_op_fn)(/*int fd, void* buf, size_t len, void* arg*/);
@@ -149,10 +145,6 @@ int buffer_putlonglong(buffer*, int64);
 int buffer_putulonglong(buffer*, uint64);
 int buffer_putxlonglong0(buffer*, uint64, int pad);
 int buffer_putxlonglong(buffer*, uint64);
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 #endif

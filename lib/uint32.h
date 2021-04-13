@@ -13,10 +13,6 @@
 #include <sys/types.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if defined(__BORLANDC__)
 #elif defined(__UINT32_TYPE__) && defined(__INT32_TYPE__)
 typedef __UINT32_TYPE__ uint32;
@@ -94,7 +90,4 @@ uint32 uint32_prng(uint32, uint32 seed);
 #define uint32_ror(v, c) (((uint32)(v) >> (c)) | ((uint32)(v) << (32 - (c))))
 #define uint32_rol(v, c) (((uint32)(v) << (c)) | ((uint32)(v) >> (32 - (c))))
 
-#ifdef __cplusplus
-}
-#endif
 #endif

@@ -8,10 +8,6 @@
 #include "uint32.h"
 #include "uint64.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef __pure__
 #define __pure__
 #endif
@@ -56,10 +52,6 @@ size_t scan_8longn(const char* src, size_t n, unsigned long* dest);
 #ifdef UINT64_H
 size_t scan_8longlong(const char* src, uint64* dest);
 size_t scan_8longlongn(const char* src, size_t n, uint64* dest);
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 #endif

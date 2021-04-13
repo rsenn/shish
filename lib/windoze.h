@@ -34,15 +34,9 @@
 #include <io.h>
 #endif
 */
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #if !WINDOWS_NATIVE
 #define WINDOWS_NATIVE 0
 #endif
 
-#ifdef __cplusplus
-}
-#endif
 #endif /* defined(WINDOZE_H) */

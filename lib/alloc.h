@@ -6,11 +6,7 @@
 #ifndef ALLOC_H
 #define ALLOC_H
 
-#include "typedefs.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <stdlib.h>
 
 #ifndef DEBUG_ALLOC
 void* alloc(unsigned long size);
@@ -29,10 +25,6 @@ void* str_dupdebug(const char* file, unsigned int line, const char* s);
 #define str_dup(s) str_dupdebug(__FILE__, __LINE__, (s))
 #define alloc_free(p) debug_free(__FILE__, __LINE__, (p))
 #endif /* DEBUG_ALLOC */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
 /** @} */

@@ -12,10 +12,6 @@
 
 #include <limits.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct {
   size_t sz1, sz2;
 } SizePair;
@@ -70,10 +66,6 @@ size_t path_right(const char* s, size_t n);
 
 #ifndef PATH_MAX
 #define PATH_MAX MAX_PATH
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 #endif /* _PATH_H__ */

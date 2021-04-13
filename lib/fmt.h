@@ -6,10 +6,6 @@
 #include "uint32.h"
 #include "uint64.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define FMT_LONG 41        /* enough space to hold -2^127 in decimal, plus \0 */
 #define FMT_ULONG 40       /* enough space to hold 2^128 - 1 in decimal, plus \0 */
 #define FMT_8LONG 44       /* enough space to hold 2^128 - 1 in octal, plus \0 */
@@ -52,7 +48,4 @@ size_t fmt_xlonglong(char* dest, uint64 x);
 size_t fmt_escapecharc(char* dest, uint32 ch);
 #endif
 
-#ifdef __cplusplus
-}
-#endif
 #endif /* defined FMT_H */

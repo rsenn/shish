@@ -4,10 +4,6 @@
 
 #include "typedefs.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef __pure__
 #define __pure__
 #endif
@@ -52,9 +48,5 @@ size_t str_rchrs(const char*, char needles[], size_t nn);
 #define str_foreach_skip(s, ptr, skipcall) for((ptr) = (void*)(s); *(const char*)(ptr); (ptr) = ((const char*)(ptr)) + (skipcall))
 
 #define str_containsc(s, ch) (((s)[str_chr((s), (ch))]) != 0)
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
