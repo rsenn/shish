@@ -58,6 +58,13 @@ union __attribute__((__packed__)) shopt {
   };
 };
 
+typedef void handler_fn(void);
+
+struct handler {
+  struct handler* next;
+  handler_fn* fn;
+};
+
 struct env {
   struct env* parent;
   stralloc cwd;
@@ -70,6 +77,7 @@ struct env {
   struct arg arg;
   struct parser* parser;
   struct eval* eval;
+  struct handler* finalizers;
 };
 
 extern int sh_argc;    /* initial argument count */

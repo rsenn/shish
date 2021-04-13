@@ -6,5 +6,5 @@ sig_name(int sig) {
   for(; p->name; p++)
     if(sig == p->number)
       break;
-  return p->number ? p->name : "???";
+  return p->name;
 }
