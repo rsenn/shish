@@ -2,14 +2,15 @@
 #define EVAL_H
 
 enum {
-  E_EXIT = 0x01,   /* exit after evaluating tree */
-  E_ROOT = 0x02,   /* we're in the rootnode */
-  E_BQUOTE = 0x04, /* backquoted command */
-  E_JCTL = 0x08,   /* job control */
-  E_LIST = 0x10,   /* evaluate a node list */
-  E_FUNCTION = 0x20,
-  E_LOOP = 0x40,
-  E_PRINT = 0x80 /* print simple command */
+  E_EXIT = (1 << 0),   /* exit after evaluating tree */
+  E_ROOT = (1 << 1),   /* we're in the rootnode */
+  E_BQUOTE = (1 << 2), /* backquoted command */
+  E_JCTL = (1 << 3),   /* job control */
+  E_LIST = (1 << 4),   /* evaluate a node list */
+  E_FUNCTION = (1 << 5),
+  E_LOOP = (1 << 6),
+  E_PRINT = (1 << 7),
+  E_DEBUG = (1 << 8)
 };
 
 #include "tree.h"
@@ -24,7 +25,7 @@ typedef int exit_callback(int);
 
 struct eval {
   struct eval* parent;
-  unsigned char flags;
+  int flags;
   short exitcode; /* exit code of last evaluated node */
 
   struct fdstack* fdstack;

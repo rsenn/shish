@@ -9,11 +9,12 @@
 #include "../expand.h"
 #include "../../lib/sig.h"
 #include "../../lib/scan.h"
+#include <assert.h>
 
-typedef struct trap {
+typedef struct trap_s {
   unsigned char sig;
   union node* tree;
-  struct trap* next;
+  struct trap_s* next;
   struct env* sh;
 } trap;
 
@@ -72,6 +73,13 @@ static void
 trap_handler(int sig) {
   trap* tr;
   struct eval e;
+#ifdef DEBUG_OUTPUT
+  debug_to(buffer_2);
+  debug_s("trap handler ");
+  debug_n(sig);
+  debug_nl_fl();
+  debug_to(&debug_buffer);
+#endif
   if(!(tr = trap_find(sig))) {
     sh_exit(1);
     return;
@@ -142,11 +150,16 @@ trap_install(int sig, union node* tree) {
   if((char)sig > 0) {
     signal(sig, &trap_handler);
   } else if((unsigned char)sig == TRAP_DEBUG) {
-    eval->debug = trap_debug;
+    struct eval* e = eval_find(E_ROOT);
+    assert(e);
+    e->debug = trap_debug;
   } else if(sig == TRAP_EXIT || (unsigned char)sig == TRAP_RETURN) {
     struct eval* e = eval_find(sig ? E_FUNCTION : E_ROOT);
+    // assert(e);
     if(e)
       e->destructor = sig ? trap_return : trap_exit;
+  } else {
+    assert(0);
   }
 }
 
@@ -164,6 +177,13 @@ trap_uninstall(int sig) {
       return 0;
     }
   }
+#ifdef DEBUG_OUTPUT
+  debug_to(buffer_2);
+  debug_s("trap_uninstall ");
+  debug_n(sig);
+  debug_nl_fl();
+  debug_to(&debug_buffer);
+#endif
   return 1;
 }
 
@@ -260,14 +280,16 @@ builtin_trap(int argc, char* argv[]) {
 
       return 1;
     }
+#ifdef DEBUG_OUTPUT
 
     debug_to(buffer_2);
-    debug_str("builtin_trap", code, 0, '"');
-    debug_s("signum: ");
+    debug_s("builtin_trap ");
     debug_n(signum);
+    debug_c(' ');
+    debug_str("code", code, 0, 0);
     debug_nl_fl();
     debug_to(&debug_buffer);
-
+#endif
     if(signum != 1) {
       ret = 0;
       if(cmds)
