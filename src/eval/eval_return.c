@@ -15,8 +15,8 @@ eval_return(int value) {
     }
   }
 
-  if(f->exit_handler)
-    value = f->exit_handler(value);
+  if(f->destructor)
+    value = f->destructor(value);
 
   if(f) {
     sh->eval = f;

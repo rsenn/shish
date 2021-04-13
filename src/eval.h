@@ -33,8 +33,8 @@ struct eval {
   jmp_buf jumpbuf;
   int jump;
 
-  debug_callback* debug_handler;
-  exit_callback* exit_handler;
+  debug_callback* debug;
+  exit_callback* destructor;
 
   struct location pos;
 };

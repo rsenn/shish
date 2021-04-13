@@ -139,23 +139,14 @@ trap_install(int sig, union node* tree) {
   tr->sh = sh;
   traps = tr;
 
-  if(sig >= 0) {
+  if((char)sig > 0) {
     signal(sig, &trap_handler);
   } else if((unsigned char)sig == TRAP_DEBUG) {
-    eval->debug_handler = trap_debug;
-  } else if((unsigned char)sig == TRAP_RETURN) {
-    struct eval* e;
-    for(e = eval; e; e = e->parent)
-      if(e->flags & E_FUNCTION)
-        break;
-
+    eval->debug = trap_debug;
+  } else if(sig == TRAP_EXIT || (unsigned char)sig == TRAP_RETURN) {
+    struct eval* e = eval_find(sig ? E_FUNCTION : E_ROOT);
     if(e)
-      e->exit_handler = trap_return;
-  } else if((unsigned char)sig == TRAP_EXIT) {
-    struct eval* e;
-
-    if((e = eval_find(E_ROOT)))
-      e->exit_handler = trap_exit;
+      e->destructor = sig ? trap_return : trap_exit;
   }
 }
 

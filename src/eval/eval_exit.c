@@ -16,8 +16,8 @@ eval_exit(int exitcode) {
   }
 
   if(e) {
-    if(e->exit_handler)
-      exitcode = e->exit_handler(exitcode);
+    if(e->destructor)
+      exitcode = e->destructor(exitcode);
 
     e->exitcode = exitcode;
 
