@@ -157,7 +157,7 @@ debug_node(union node* node, int depth) {
       /*   int flag = (node->nargstr.flag & 0x7);
          debug_subst(0, flag);
          if(flag)
-           buffer_putspace(&debug_buffer);
+           buffer_putspace(debug_output);
 
          debug_s("${");
          debug_str(0, node->nargparam.name, depth, 0);

@@ -57,10 +57,10 @@ retry:
     return FDTABLE_ERROR;
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE)
-  buffer_puts(&debug_buffer, COLOR_YELLOW "fdtable_dup" COLOR_NONE " #");
-  buffer_putulong(&debug_buffer, o);
-  buffer_puts(&debug_buffer, " = ");
-  buffer_putulong(&debug_buffer, e);
+  buffer_puts(debug_output, COLOR_YELLOW "fdtable_dup" COLOR_NONE " #");
+  buffer_putulong(debug_output, o);
+  buffer_puts(debug_output, " = ");
+  buffer_putulong(debug_output, e);
   debug_nl_fl();
 #endif
 

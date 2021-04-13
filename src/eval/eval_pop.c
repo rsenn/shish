@@ -19,6 +19,7 @@ eval_pop(struct eval* e) {
 
   sh->exitcode = e->exitcode;
   sh->eval = e->parent;
+  eval = e->parent;
 
   return ret;
 }

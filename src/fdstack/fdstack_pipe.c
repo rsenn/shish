@@ -38,10 +38,10 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
         b += FD_BUFSIZE / 2;
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK)
-        buffer_puts(&debug_buffer, "fdstack_pipe n=");
-        buffer_putulong(&debug_buffer, n);
-        buffer_puts(&debug_buffer, " fds=");
-        buffer_putxlonglong(&debug_buffer, (size_t)fds);
+        buffer_puts(debug_output, "fdstack_pipe n=");
+        buffer_putulong(debug_output, n);
+        buffer_puts(debug_output, " fds=");
+        buffer_putxlonglong(debug_output, (size_t)fds);
         debug_nl_fl();
 #endif
         fds++;

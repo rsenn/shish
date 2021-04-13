@@ -122,11 +122,11 @@ addcmd:
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE)
   if(sh->opts.xtrace) {
-    buffer_putm_internal(&debug_buffer, COLOR_YELLOW "parse_simple_command" COLOR_NONE " loc = ", 0);
+    buffer_putm_internal(debug_output, COLOR_YELLOW "parse_simple_command" COLOR_NONE " loc = ", 0);
     debug_location(0, &pos, 1);
     debug_s(" ");
     debug_s("«");
-    tree_print(simple_command, &debug_buffer);
+    tree_print(simple_command, debug_output);
     debug_s("»");
     debug_nl_fl();
   }

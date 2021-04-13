@@ -40,12 +40,12 @@ fd_pipe(struct fd* fd) {
   }
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
-  buffer_puts(&debug_buffer, "fd_pipe n=");
-  buffer_putlong(&debug_buffer, fd->n);
-  buffer_puts(&debug_buffer, " e=");
-  buffer_putlong(&debug_buffer, fd->e);
-  buffer_puts(&debug_buffer, " ret=");
-  buffer_putlong(&debug_buffer, e);
+  buffer_puts(debug_output, "fd_pipe n=");
+  buffer_putlong(debug_output, fd->n);
+  buffer_puts(debug_output, " e=");
+  buffer_putlong(debug_output, fd->e);
+  buffer_puts(debug_output, " ret=");
+  buffer_putlong(debug_output, e);
   debug_nl_fl();
 #endif
 

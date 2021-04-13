@@ -44,7 +44,7 @@ parse_function(struct parser* p) {
   node->nfunc.loc = loc;
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHPARSE2AST)
-  buffer_puts(&debug_buffer, COLOR_YELLOW "parse_function" COLOR_NONE " node = ");
+  buffer_puts(debug_output, COLOR_YELLOW "parse_function" COLOR_NONE " node = ");
   debug_node(node, 1);
   debug_nl_fl();
 #endif

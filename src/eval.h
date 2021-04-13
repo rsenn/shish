@@ -19,6 +19,9 @@ enum {
 struct fdtable;
 struct vartab;
 
+typedef void debug_callback(union node*);
+typedef int exit_callback(int);
+
 struct eval {
   struct eval* parent;
   unsigned char flags;
@@ -30,8 +33,13 @@ struct eval {
   jmp_buf jumpbuf;
   int jump;
 
+  debug_callback* debug_handler;
+  exit_callback* exit_handler;
+
   struct location pos;
 };
+
+extern struct eval* eval;
 
 int eval_command(struct eval* e, union node* node, int tempflags);
 void eval_jump(int levels, int cont);
@@ -65,6 +73,15 @@ static inline void
 eval_print_prefix(struct eval* e, buffer* b) {
   buffer_putnc(b, '+', eval_depth(e));
   buffer_putspace(b);
+}
+
+static inline struct eval*
+eval_find(int mask) {
+  struct eval* e;
+  for(e = eval; e; e = e->parent)
+    if((e->flags & mask) == mask)
+      return e;
+  return 0;
 }
 
 #endif /* EVAL_H */

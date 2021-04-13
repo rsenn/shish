@@ -46,8 +46,7 @@ typedef int64_t int64;
 
 inline static uint64
 uint64_get(const void* ptr) {
-  const char* in = ptr;
-  return *(uint64*)in;
+  return *(uint64*)ptr;
 }
 #endif
 #endif

@@ -34,8 +34,8 @@ fd_close(struct fd* fd) {
   if(fd->rb.fd != fd->wb.fd) {
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
     if(fd->rb.fd != -1 && (fd->mode & FD_READ)) {
-      buffer_puts(&debug_buffer, COLOR_YELLOW "fd_close" COLOR_NONE " #");
-      buffer_putlong(&debug_buffer, fd->rb.fd);
+      buffer_puts(debug_output, COLOR_YELLOW "fd_close" COLOR_NONE " #");
+      buffer_putlong(debug_output, fd->rb.fd);
       debug_nl_fl();
     }
 #endif
@@ -44,8 +44,8 @@ fd_close(struct fd* fd) {
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
   if(fd->wb.fd != -1 && (fd->mode & FD_WRITE)) {
-    buffer_puts(&debug_buffer, COLOR_YELLOW "fd_close" COLOR_NONE " #");
-    buffer_putlong(&debug_buffer, fd->wb.fd);
+    buffer_puts(debug_output, COLOR_YELLOW "fd_close" COLOR_NONE " #");
+    buffer_putlong(debug_output, fd->wb.fd);
     debug_nl_fl();
   }
 #endif

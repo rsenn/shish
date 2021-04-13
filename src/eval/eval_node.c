@@ -9,6 +9,9 @@ int
 eval_node(struct eval* e, union node* node) {
   int ret = -1;
 
+  if(e->debug_handler)
+    e->debug_handler(node);
+
   tree_location(node, &e->pos);
 
   switch(node->id) {

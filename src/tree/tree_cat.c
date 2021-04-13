@@ -85,12 +85,17 @@ again:
     case N_ARGSTR: {
       size_t i;
       struct nargstr* arg = &node->nargstr;
+      int table = arg->flag & S_TABLE;
 
       for(i = 0; i < arg->len; i++) {
+        if(arg->str[i] == '\\' && table == S_SQUOTED)
+          continue;
+
+        if(arg->str[i] == '\\' && table == S_DQUOTED && !parse_isdesc(arg->str[i]))
+          continue;
         if(!parse_isesc(arg->str[i])) {
-          if(arg->str[i] == '\\' && !parse_isdesc(arg->str[i]))
-            continue;
-          if((node->nargstr.flag & S_TABLE) == S_DQUOTED && parse_isdesc(arg->str[i]))
+
+          if(table == S_DQUOTED && parse_isdesc(arg->str[i]))
             stralloc_catc(sa, '\\');
         } /*else if(arg->str[i] == '\\') {
           if(++i < arg->len)

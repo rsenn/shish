@@ -18,7 +18,7 @@ debug_ptr(const char* msg, void* ptr, int depth) {
     debug_field(msg, depth);
   n = fmt_xlonglong(buf, (uint64)(size_t)ptr);
   debug_s("0x");
-  buffer_putnspace(&debug_buffer, 8 - n);
+  buffer_putnspace(debug_output, 8 - n);
   debug_b(buf, n);
   debug_s(COLOR_NONE "\n");
   debug_fl();

@@ -57,9 +57,9 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
     }
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE)
-    // fdstack_dump(&debug_buffer);
-    fdtable_dump(&debug_buffer);
-    // fd_dumplist(&debug_buffer);
+    // fdstack_dump(debug_output);
+    fdtable_dump(debug_output);
+    // fd_dumplist(debug_output);
 #endif
 
     /* block child and interrupt signal, so we won't terminate ourselves

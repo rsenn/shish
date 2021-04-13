@@ -48,12 +48,12 @@ fd_setfd(struct fd* fd, int e) {
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
   if(sh->opts.xtrace) {
     if(fd->e != -1) {
-      buffer_puts(&debug_buffer, COLOR_YELLOW "fd_setfd" COLOR_NONE " #");
-      buffer_putlong(&debug_buffer, fd->n);
-      buffer_puts(&debug_buffer, " e=");
-      buffer_putlong(&debug_buffer, fd->e);
-      buffer_puts(&debug_buffer, " mode=");
-      buffer_puts(&debug_buffer,
+      buffer_puts(debug_output, COLOR_YELLOW "fd_setfd" COLOR_NONE " #");
+      buffer_putlong(debug_output, fd->n);
+      buffer_puts(debug_output, " e=");
+      buffer_putlong(debug_output, fd->e);
+      buffer_puts(debug_output, " mode=");
+      buffer_puts(debug_output,
                   (fd->mode & FD_READ) ? "FD_READ" : (fd->mode & FD_WRITE) ? "FD_WRITE" : (fd->mode & FD_READWRITE) == FD_READWRITE ? "FD_READWRITE" : "");
 
       debug_nl_fl();

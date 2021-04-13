@@ -13,7 +13,7 @@
 #include "fd.h"
 #include <stdlib.h>
 
-extern buffer debug_buffer;
+extern buffer debug_buffer, *debug_output;
 extern int debug_nindent;
 extern char debug_quote;
 
@@ -92,15 +92,16 @@ void debug_squoted(const char*, size_t n, buffer* out);
 
 #ifdef DEBUG_OUTPUT
 
-#define debug_s(str) buffer_puts(&debug_buffer, str)
-#define debug_n(num) buffer_putlonglong(&debug_buffer, num)
-#define debug_xn(num) buffer_putxlonglong(&debug_buffer, num)
-#define debug_c(chr) buffer_putc(&debug_buffer, (unsigned int)(unsigned char)(chr))
-#define debug_b(buf, len) buffer_put(&debug_buffer, (buf), (len))
+#define debug_to(buf) debug_output = buf;
+#define debug_s(str) buffer_puts(debug_output, str)
+#define debug_n(num) buffer_putlonglong(debug_output, num)
+#define debug_xn(num) buffer_putxlonglong(debug_output, num)
+#define debug_c(chr) buffer_putc(debug_output, (unsigned int)(unsigned char)(chr))
+#define debug_b(buf, len) buffer_put(debug_output, (buf), (len))
 #define debug_ws(str) debug_c(' ')
 #define debug_nl() debug_c('\n') //
-#define debug_fl() buffer_flush(&debug_buffer)
-#define debug_nl_fl() buffer_putnlflush(&debug_buffer) //(debug_nl(), debug_fl())
+#define debug_fl() buffer_flush(debug_output)
+#define debug_nl_fl() buffer_putnlflush(debug_output) //(debug_nl(), debug_fl())
 #define debug_fn() (debug_s(__func__), debug_s("()"))
 #define debug_fn_ws() (debug_fn(), debug_ws())
 #define debug_fn_nl() (debug_fn(), debug_nl())
@@ -166,7 +167,7 @@ dump_flags(buffer* b, int bits, const char* const names[], int pad) {
 
 static inline int
 debug_flags(int bits, const char* const names[]) {
-  return dump_flags(&debug_buffer, bits, names, 0);
+  return dump_flags(debug_output, bits, names, 0);
 }
 
 static inline void

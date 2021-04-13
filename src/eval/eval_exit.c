@@ -16,6 +16,9 @@ eval_exit(int exitcode) {
   }
 
   if(e) {
+    if(e->exit_handler)
+      exitcode = e->exit_handler(exitcode);
+
     e->exitcode = exitcode;
 
     /*    while(fdstack != e->fdstack) fdstack_pop(fdstack);

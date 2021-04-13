@@ -61,10 +61,10 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
 #if DEBUG_OUTPUT_
     if(ncmd->vars) {
-      buffer_puts(&debug_buffer, "Vars ");
+      buffer_puts(debug_output, "Vars ");
       debug_list(ncmd->vars, 0);
       debug_nl_fl();
-      buffer_puts(&debug_buffer, "Assigns ");
+      buffer_puts(debug_output, "Assigns ");
     }
 #endif
     /* if we don't exit after the command, have a command and not a
@@ -130,12 +130,12 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
     }
 
 #if DEBUG_OUTPUT_
-    buffer_puts(&debug_buffer, "Redirection ");
+    buffer_puts(debug_output, "Redirection ");
     debug_node(r, -1);
     if(r->nredir.fd) {
-      buffer_puts(&debug_buffer, "fd { n= ");
-      buffer_putlong(&debug_buffer, r->nredir.fd->n);
-      buffer_puts(&debug_buffer, " }");
+      buffer_puts(debug_output, "fd { n= ");
+      buffer_putlong(debug_output, r->nredir.fd->n);
+      buffer_puts(debug_output, " }");
     }
     debug_nl_fl();
 #endif
