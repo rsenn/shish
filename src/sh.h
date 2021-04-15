@@ -45,17 +45,17 @@ struct __attribute__((__packed__)) arg {
 
 /*union __attribute__((__packed__)) shopt {
   unsigned flags : 5;*/
-  struct __attribute__((__packed__)) shopt{
-    unsigned errexit : 1;     /* -e */
-    unsigned noglob : 1;      /* -f */
-    unsigned hashall : 1;     /* -h */
-    unsigned monitor : 1;     /* -m */
-    unsigned unset : 1;       /* -u */
-    unsigned xtrace : 1;      /* -x */
-    unsigned braceexpand : 1; /* -B */
-    unsigned noclobber : 1;   /* -C */
-    unsigned histexpand : 1;  /* -H */
-  };
+struct __attribute__((__packed__)) shopt {
+  unsigned errexit : 1;     /* -e */
+  unsigned noglob : 1;      /* -f */
+  unsigned hashall : 1;     /* -h */
+  unsigned monitor : 1;     /* -m */
+  unsigned unset : 1;       /* -u */
+  unsigned xtrace : 1;      /* -x */
+  unsigned braceexpand : 1; /* -B */
+  unsigned noclobber : 1;   /* -C */
+  unsigned histexpand : 1;  /* -H */
+};
 /*};*/
 
 typedef void handler_fn(void);

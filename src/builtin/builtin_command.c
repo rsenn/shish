@@ -41,7 +41,7 @@ builtin_command(int argc, char* argv[]) {
     }
 
     /* try to exec */
-    if(EXIT_NOEXEC > (ret = exec_command(&cmd, argc - shell_optind, &argv[shell_optind], 0, NULL)))
+    if(EXIT_NOEXEC > (ret = exec_command(&cmd, argc - shell_optind, &argv[shell_optind], 0)))
       return ret;
   }
 

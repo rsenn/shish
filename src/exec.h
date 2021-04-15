@@ -6,6 +6,8 @@
 
 enum hash { H_PROGRAM = 0, H_EXEC = 1, H_SBUILTIN = 2, H_BUILTIN = 4, H_FUNCTION = 8 };
 
+enum execflag { X_EXEC = 1, X_NOWAIT = 2 };
+
 struct command {
   enum hash id;
   union {
@@ -43,9 +45,9 @@ extern struct exechash* exec_hashtbl[EXEC_HASHSIZE];
 
 char* exec_check(char* path);
 char* exec_path(char* name);
-int exec_command(struct command* cmd, int argc, char** argv, int exec, union node* redir);
+int exec_command(struct command* cmd, int argc, char** argv, enum execflag);
 int exec_error(void);
-int exec_program(char* path, char** argv, int exec, union node* redir);
+int exec_program(char* path, char** argv, enum execflag);
 uint32 exec_hashstr(const char* s);
 struct exechash* exec_create(char* name, uint32 hash);
 struct exechash* exec_lookup(char* name, uint32* hashptr);

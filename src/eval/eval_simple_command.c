@@ -16,6 +16,7 @@
 #include "../redir.h"
 #include "../tree.h"
 #include "../vartab.h"
+#include "../job.h"
 #include "../debug.h"
 #include "../../lib/windoze.h"
 #include "../../lib/str.h"
@@ -175,7 +176,13 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   }
 
   /* execute the command, this may or may not return, depending on E_EXIT */
-  status = exec_command(&cmd, argc, argv, (e->flags & E_EXIT), redir);
+  status = exec_command(&cmd, argc, argv, ((e->flags & E_EXIT) ? X_EXEC : 0) | (ncmd->bgnd ? X_NOWAIT : 0));
+
+  if(ncmd->bgnd) {
+    struct job* job = *jobptr;
+
+    job->command = tree_string((union node*)ncmd);
+  }
 
 #ifndef HAVE_ALLOCA
   alloc_free(argv);

@@ -11,7 +11,7 @@
 /* execute a command
  * ----------------------------------------------------------------------- */
 int
-exec_command(struct command* cmd, int argc, char** argv, int exec, union node* redir) {
+exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
   int ret = 1;
 
   switch(cmd->id) {
@@ -67,13 +67,13 @@ exec_command(struct command* cmd, int argc, char** argv, int exec, union node* r
     }
 
     case H_PROGRAM: {
-      ret = exec_program(cmd->path, argv, exec, redir);
+      ret = exec_program(cmd->path, argv, flag);
       break;
     }
   }
 
   /* if exec is set we never return! */
-  if(exec)
+  if(flag & X_EXEC)
     sh_exit(ret);
 
   return ret;

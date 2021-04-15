@@ -267,11 +267,14 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_TYPE
     {"type", &builtin_type, B_DEFAULT, "name ..."},
 #endif
+#if BUILTIN_ALIAS
+    {"unqalias", &builtin_alias, B_SPECIAL, "[-p] [name[=value] ...]"},
+#endif
 #if BUILTIN_UNAME
     {"uname", &builtin_uname, B_DEFAULT, "[-amnrspvio]"},
 #endif
 #if BUILTIN_WAIT
-    {"wait", &builtin_wait, B_DEFAULT, "[-fn] [-p var] [id ...]"},
+    {"wait", &builtin_wait, B_DEFAULT, "[pid...]"},
 #endif
 #if BUILTIN_WHICH
     {"which", &builtin_which, B_DEFAULT, "[command] ..."},

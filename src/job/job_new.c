@@ -1,14 +1,14 @@
 #include "../../lib/alloc.h"
 #include "../job.h"
 
-struct job* jobs = NULL;
+struct job *jobs = NULL, **jobptr;
 // struct job** jobptr = &jobs;
 
 /* creates a new job structure
  * ----------------------------------------------------------------------- */
 struct job*
 job_new(unsigned int n) {
-  struct job *job, **jptr;
+  struct job *job, **jptr = 0;
 
   job = alloc_zero(sizeof(struct job) + sizeof(struct proc) * n);
 
@@ -25,6 +25,8 @@ job_new(unsigned int n) {
     job->next = *jptr;
     *jptr = job;
   }
+
+  jobptr = jptr;
 
   return job;
 }

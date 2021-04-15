@@ -62,5 +62,6 @@ void job_status(int pid, int status);
 void job_init(void);
 void job_delete(struct job*);
 void job_print(struct job*, buffer*);
+struct job* job_find(const char*);
 
 #endif /* _JOB_H */

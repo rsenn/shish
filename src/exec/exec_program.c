@@ -33,13 +33,13 @@ pid_t fork(void);
  * if the 'exec' argument is set it will never return
  * ----------------------------------------------------------------------- */
 int
-exec_program(char* path, char** argv, int exec, union node* redir) {
+exec_program(char* path, char** argv, enum execflag flag) {
   int ret = 0;
 
   /* if we're gonna execve() a program and 'exec' isn't
      set or we aren't in the root shell environment we
      have to fork() so we can return */
-  if(!exec || sh->parent) {
+  if(!(flag & X_EXEC) || sh->parent) {
     pid_t pid;
     struct fd* pipes = 0;
     unsigned int npipes;
@@ -83,15 +83,23 @@ exec_program(char* path, char** argv, int exec, union node* redir) {
       if(pipes)
         alloc_free(pipes);
 
-      job_wait(NULL, pid, &status);
-      job_status(pid, status);
+      if(flag & X_NOWAIT) {
+        struct job* job = job_new(1);
 
-      ret = WAIT_EXITSTATUS(status);
+        job->procs[0].pid = pid;
 
-      sig_blocknone();
+        ret = 0;
+      } else {
+        job_wait(NULL, pid, &status);
+        job_status(pid, status);
+
+        ret = WAIT_EXITSTATUS(status);
+
+        sig_blocknone();
+      }
 
       /* exit if 'exec' is set, otherwise return */
-      if(exec)
+      if((flag & X_EXEC))
         sh_exit(ret);
 
       return ret;
