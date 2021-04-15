@@ -88,6 +88,12 @@ exec_program(char* path, char** argv, enum execflag flag) {
 
         job->procs[0].pid = pid;
 
+        buffer_putc(fd_err->w, '[');
+        buffer_putulong(fd_err->w, job->id);
+        buffer_puts(fd_err->w, "] ");
+        buffer_putulong(fd_err->w, pid);
+        buffer_putnlflush(fd_err->w);
+
         ret = 0;
       } else {
         job_wait(NULL, pid, &status);

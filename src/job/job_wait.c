@@ -24,16 +24,16 @@ job_wait(struct job* job, int pid, int* status) {
       unsigned int i;
       int st; /* status */
 
-      ret = wait_pid(-job->pgrp, &st);
-
-      if(ret <= 0)
+      if((ret = wait_pid(job->pgrp ? -job->pgrp : job->procs[0].pid, &st)) <= 0)
         break;
-      for(i = 0; i < job->nproc; i++) {
+
+      for(i = 0; i < job->nproc; i++)
         if(job->procs[i].pid == ret)
           n--;
-      }
+
       if(ret == job->pgrp)
         *status = st;
+
       job_status(ret, st);
     }
   } else {

@@ -1,18 +1,15 @@
-#include "../../lib/alloc.h"
 #include "../job.h"
 
-/* creates a new job structure
- * ----------------------------------------------------------------------- */
 void
 job_delete(struct job* job) {
-  struct job** jp;
+  struct job** jptr;
 
-  for(jp = &jobs; *jp; jp = &(*jp)->next) {
-    if(*jp == job) {
-
-      *jp = job->next;
+  for(jptr = &jobs; *jptr; jptr = &(*jptr)->next) {
+    if(*jptr == job) {
+      *jptr = job->next;
       alloc_free(job);
-      break;
+      return;
     }
   }
+  assert(0);
 }

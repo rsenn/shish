@@ -11,7 +11,7 @@ job_find(const char* str) {
   scan_uint(*str == '%' ? str + 1 : str, &id);
 
   if(id) {
-    for(job = jobs; job; job->next) {
+    for(job = jobs; job; job = job->next) {
 
       if(*str == '%') {
         if(job->id == id)
