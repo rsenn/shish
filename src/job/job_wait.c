@@ -6,7 +6,7 @@
 #include <termios.h>
 #include <unistd.h>
 #endif
-#include "../fd.h"
+#include "../fdtable.h"
 #include "../job.h"
 #include "../sh.h"
 #include "../../lib/wait.h"
@@ -27,15 +27,26 @@ job_wait(struct job* job, int pid, int* status) {
       if((ret = wait_pid(job->pgrp ? -job->pgrp : job->procs[0].pid, &st)) <= 0)
         break;
 
-      for(i = 0; i < job->nproc; i++)
-        if(job->procs[i].pid == ret)
+      for(i = 0; i < job->nproc; i++) {
+        if(job->procs[i].pid == ret) {
           n--;
+          job->procs[i].status = st;
+        }
+      }
 
       if(ret == job->pgrp)
         *status = st;
 
       job_status(ret, st);
     }
+    buffer_putc(fd_err->w, '[');
+    buffer_putulong(fd_err->w, job->id);
+    buffer_putspad(fd_err->w, "]+  Done", 28);
+    buffer_puts(fd_err->w, job->command);
+    buffer_putnlflush(fd_err->w);
+
+    job->done = 1;
+
   } else {
     /* wait for the last process in the group to terminate */
     ret = wait_pid(pid, status);

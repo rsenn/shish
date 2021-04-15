@@ -43,6 +43,7 @@ struct job {
   int id;
   pid_t pgrp;
   char* command;
+  unsigned done : 1;
   unsigned stopped : 1;
   unsigned control : 1; /* running under job control? */
   unsigned bgnd : 1;
