@@ -71,7 +71,7 @@ cfg-android64()
 
 cfg-diet() {
  (: ${build=$(${CC:-gcc} -dumpmachine)}
-  : ${host=${build/-gnu/-dietlibc}}
+  : ${host=${build/-gnu/-diet}}
   : ${builddir=build/$host}
   : ${prefix=/opt/diet}
   

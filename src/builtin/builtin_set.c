@@ -2,6 +2,7 @@
 #include "../fd.h"
 #include "../sh.h"
 #include "../../lib/shell.h"
+#include "../../lib/byte.h"
 #include "../vartab.h"
 
 /* set arguments of flags

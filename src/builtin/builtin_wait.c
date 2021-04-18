@@ -1,6 +1,7 @@
 #include "../builtin.h"
 #include "../exec.h"
 #include "../job.h"
+#include "../../lib/typedefs.h"
 
 /* command built-in
  *

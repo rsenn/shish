@@ -8,8 +8,7 @@ if(NOT HAVE_LIBOWFAT)
 
   list(APPEND LIBOWFAT_DEBUG_SOURCES ${LIBOWFAT_SOURCES})
   list(FILTER LIBOWFAT_DEBUG_SOURCES INCLUDE REGEX "debug\\.c")
-  string(REGEX REPLACE "debug\\.c" ".c" LIBOWFAT_NODEBUG_SOURCES
-                       "${LIBOWFAT_DEBUG_SOURCES}")
+  string(REGEX REPLACE "debug\\.c" ".c" LIBOWFAT_NODEBUG_SOURCES "${LIBOWFAT_DEBUG_SOURCES}")
 
   # dump(LIBOWFAT_DEBUG_SOURCES LIBOWFAT_NODEBUG_SOURCES)
 
@@ -27,7 +26,8 @@ if(NOT HAVE_LIBOWFAT)
   set(LIBOWFAT_LIBRARY
       libowfat
       CACHE STRING "-lowfat library name" FORCE)
-  set(LIBOWFAT_LIBDIR "${CMAKE_CURRENT_BINARY_DIR}"CACHE STRING
-                      "-lowfat library directory" FORCE)
+  set(LIBOWFAT_LIBDIR
+      "${CMAKE_CURRENT_BINARY_DIR}"
+      CACHE STRING "-lowfat library directory" FORCE)
 
 endif(NOT HAVE_LIBOWFAT)
