@@ -41,7 +41,9 @@ job_wait(struct job* job, int pid, int* status) {
     }
     buffer_putc(fd_err->w, '[');
     buffer_putulong(fd_err->w, job->id);
-    buffer_putspad(fd_err->w, "]+  Done", 28);
+    buffer_putc(fd_err->w, ']');
+    buffer_putc(fd_err->w, *jobptr == job ? '+' : (struct job*)jobptr == job ? '-' : ' ');
+    buffer_putspad(fd_err->w, "  Done", 26);
     buffer_puts(fd_err->w, job->command);
     buffer_putnlflush(fd_err->w);
 
@@ -60,6 +62,9 @@ job_wait(struct job* job, int pid, int* status) {
 #endif
     }
   }
+
+  if(job && job->done)
+    job_delete(job);
 
   return ret;
 }

@@ -10,9 +10,11 @@
 #include "../source.h"
 #include "../var.h"
 #include "../../lib/path.h"
+#include "../../lib/sig.h"
 #include "../../lib/str.h"
 #include "../../lib/uint32.h"
 #include "../term.h"
+#include "../prompt.h"
 #include "../history.h"
 
 #include <stdlib.h>
@@ -22,6 +24,20 @@ char** sh_argv;
 char* sh_name;
 int sh_login = 0;
 int sh_no_position = 0;
+
+static void
+sh_sigchld(int signum) {
+  term_erase();
+  term_restore(term_input.fd, &term_tcattr);
+  buffer_puts(fd_err->w, "SIGCHLD");
+  buffer_putnlflush(fd_err->w);
+  term_attr(term_input.fd, 1, &term_tcattr);
+  prompt_number--;
+  prompt_show();
+  buffer_putsa(term_output, &term_cmdline);
+  term_escape(term_output, term_cmdline.len - term_pos, 'D');
+  buffer_flush(term_output);
+}
 
 /* main routine
  * ----------------------------------------------------------------------- */
@@ -146,6 +162,8 @@ main(int argc, char** argv, char** envp) {
     sh->opts.histexpand = 1;
   } else
     src.mode &= ~SOURCE_IACTIVE;
+
+  sig_catch(SIGCHLD, sh_sigchld);
 
   /*  if(fd_expected != fd_top && (flags = fdtable_check(e)))
     {

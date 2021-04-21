@@ -66,7 +66,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
        when the child does */
 #if !WINDOWS_NATIVE
     sig_block(SIGINT);
-    sig_block(SIGCHLD);
+    // sig_block(SIGCHLD);
 #endif
 
     /* in the parent wait for the child to finish and then return

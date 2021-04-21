@@ -2,7 +2,6 @@
 #include "../job.h"
 
 struct job *jobs = NULL, **jobptr;
-// struct job** jobptr = &jobs;
 
 /* creates a new job structure
  * ----------------------------------------------------------------------- */

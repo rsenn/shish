@@ -40,6 +40,7 @@ struct proc {
 };
 
 struct job {
+  struct job* next;
   int id;
   pid_t pgrp;
   char* command;
@@ -47,7 +48,6 @@ struct job {
   unsigned stopped : 1;
   unsigned control : 1; /* running under job control? */
   unsigned bgnd : 1;
-  struct job* next;
   unsigned int nproc;
   struct proc procs[];
 };
