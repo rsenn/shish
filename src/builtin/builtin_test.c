@@ -332,7 +332,7 @@ builtin_test(int argc, char* argv[]) {
 
   /* TODO:*/
   (void)brackets;
-  result = test_cond(argc, argv);
+  result = test_boolean(argc, argv);
 
   if(result == -1) {
     builtin_errmsg(argv, "invalid expression", argv[shell_optind]);
