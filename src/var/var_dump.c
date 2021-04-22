@@ -31,30 +31,31 @@ var_dump(struct var* var) {
   n = var_vlen(var->sa.s);
   buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(25));
 
-  buffer_putc(fd_out->w, '"');
-  if(n) {
-    unsigned int i, l, rl, rn;
-    rn = var->sa.len - var->offset;
-    rl = (rn > 24 ? 21 : rn);
-    l = (n > 24 ? 21 : n);
-
-    for(i = 0; i < rl; i++) {
-      if(var->sa.s[var->offset + i] != '\n' && var->sa.s[var->offset + i] != '\t')
-        buffer_put(fd_out->w, &var->sa.s[var->offset + i], 1);
-      else
-        buffer_putspace(fd_out->w);
-    }
-
-    if(rl < rn) {
-      buffer_puts(fd_out->w, "...");
-      rl += 3;
-      l += 3;
-    }
-
-    n = 24 - rl;
-  } else
-    n = 24;
-  buffer_putc(fd_out->w, '"');
+  if(var->offset == var->len) {
+    buffer_putc(fd_out->w, '-');
+  } else {
+    buffer_putc(fd_out->w, '"');
+    if(n) {
+      unsigned int i, l, rl, rn;
+      rn = var->sa.len - var->offset;
+      rl = (rn > 24 ? 21 : rn);
+      l = (n > 24 ? 21 : n);
+      for(i = 0; i < rl; i++) {
+        if(var->sa.s[var->offset + i] != '\n' && var->sa.s[var->offset + i] != '\t')
+          buffer_put(fd_out->w, &var->sa.s[var->offset + i], 1);
+        else
+          buffer_putspace(fd_out->w);
+      }
+      if(rl < rn) {
+        buffer_puts(fd_out->w, "...");
+        rl += 3;
+        l += 3;
+      }
+      n = 24 - rl;
+    } else
+      n = 24;
+    buffer_putc(fd_out->w, '"');
+  }
 
   buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(46));
 

@@ -37,11 +37,9 @@ sh_pop(struct env* env) {
   /*while(sh->eval)
     eval_pop(sh->eval);*/
 
-  while(fdstack != sh->fdstack)
-    fdstack_pop(fdstack);
+  while(fdstack != sh->fdstack) fdstack_pop(fdstack);
 
-  while(varstack != sh->varstack)
-    vartab_pop(varstack);
+  while(varstack != sh->varstack) vartab_pop(varstack);
 
   sh = parent;
   return 1;

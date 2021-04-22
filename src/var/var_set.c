@@ -20,6 +20,11 @@ var_set(char* v, int flags) {
     return 0;
   }
 
+  if(var->sa.s == 0) {
+    stralloc_copys(&var->sa, v);
+    return var;
+  }
+
   if(v == var->sa.s)
     return var;
 

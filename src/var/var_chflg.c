@@ -27,7 +27,7 @@ var_chflg(char* v, int flags, int set) {
     else
       flags = var->flags & (~flags);
 
-    var_set(var->sa.s, flags);
+    var_set(var->sa.s ? var->sa.s : v, flags);
   }
 
   return 1;
