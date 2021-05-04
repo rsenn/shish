@@ -63,16 +63,19 @@ int eval_simple_command(struct eval* e, struct ncmd* ncmd);
 int eval_subshell(struct eval* e, struct ngrp* ngrp);
 int eval_function(struct eval* e, struct nfunc* func);
 
+#include "sh.h"
+
 static inline unsigned int
-eval_depth(struct eval* e) {
-  unsigned int n;
-  for(n = 0; e; e = e->parent) n++;
+eval_depth() {
+  struct env* e;
+  unsigned int n = 0;
+  for(e = sh; e; e = e->parent) n++;
   return n;
 }
 
 static inline void
 eval_print_prefix(struct eval* e, buffer* b) {
-  buffer_putnc(b, '+', eval_depth(e));
+  buffer_putnc(b, '+', eval_depth());
   buffer_putspace(b);
 }
 

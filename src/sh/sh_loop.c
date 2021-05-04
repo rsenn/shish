@@ -68,7 +68,8 @@ sh_loop(void) {
       eval_push(&e, E_JCTL);
       status = eval_tree(&e, list, E_ROOT | E_LIST);
 
-      while(sh->eval != &e) eval_pop(sh->eval);
+      // eval_pop(&e);
+      // while(sh->eval != &e) eval_pop(sh->eval);
 
       sh->exitcode = eval_pop(&e);
 

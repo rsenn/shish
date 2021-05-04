@@ -9,9 +9,9 @@ int
 eval_pop(struct eval* e) {
   int ret;
 
-  assert(e == sh->eval);
+  // assert(e == sh->eval);
 
-  ret = sh->eval->exitcode;
+  ret = e->exitcode;
 
   while(fdstack != e->fdstack && &fdstack_root != fdstack) fdstack_pop(fdstack);
 

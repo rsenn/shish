@@ -17,6 +17,6 @@ eval_push(struct eval* e, int flags) {
   e->fdstack = fdstack;
   e->varstack = varstack;
 
-  sh->eval = e;
+  // sh->eval = e;
   eval = e;
 }

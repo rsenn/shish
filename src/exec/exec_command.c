@@ -58,6 +58,7 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
         ret = eval_pop(&e);
       } else {
         ret >>= 1;
+        eval_pop(&e);
       }
 
       sh_pop(&inst);
