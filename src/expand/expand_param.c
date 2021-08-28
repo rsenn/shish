@@ -77,13 +77,14 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
       /* $* substitution */
       case S_ARGV: {
-        char** s;
+        //char** s;
+        size_t i;
         const char* ifs = var_vdefault("IFS", IFS_DEFAULT, NULL);
 
-        for(s = sh->arg.v + sh->arg.s; *s;) {
-          stralloc_cats(&value, *s);
-          if(*++s)
+        for(i = 0; i < sh->arg.c; i++) {
+          if(i > 0)
             stralloc_catc(&value, ifs[0]);
+          stralloc_cats(&value, sh->arg.v[i]);
         }
         break;
       }
@@ -142,7 +143,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         if(param->numb == 0)
           stralloc_cats(&value, sh_argv0);
         else if((unsigned)(param->numb - 1) < sh->arg.c)
-          stralloc_cats(&value, (sh->arg.v + sh->arg.s)[param->numb - 1]);
+          stralloc_cats(&value, (sh->arg.v/* + sh->arg.s*/)[param->numb - 1]);
 
         break;
       }

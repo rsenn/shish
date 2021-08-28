@@ -5,6 +5,9 @@
 #include "../../lib/windoze.h"
 #if !WINDOWS_NATIVE && !defined(__MINGW64__)
 #include <termios.h>
+#include <unistd.h>
+#else
+#include <io.h>
 #endif
 
 /* other shells seem to read char by char in interactive/terminal-mode.
@@ -15,7 +18,10 @@ stralloc term_cmdline;
 unsigned long term_pos;
 int term_insert = 1;
 int term_dumb = 1;
-buffer* term_output;
+char term_obuf[128];
+static buffer term_default_output = BUFFER_INIT(&write, 1, term_obuf, sizeof(term_obuf));
+
+buffer* term_output = 0; //&term_default_output;
 
 /* tries to get terminal attributes and if it succeeds it will make the src
  * buffer use the term_read() function which is, like bloaty readline(),
@@ -48,6 +54,7 @@ term_init(struct fd* input, struct fd* output) {
 
   /* intercept input buffer */
   buffer_init(&term_input, input->r->op, input->r->fd, term_buffer, sizeof(term_buffer));
+  //term_output = output->w;
 
   input->r->op = (ssize_t(*)())(void*)&term_read;
 

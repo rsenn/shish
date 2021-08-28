@@ -9,7 +9,7 @@ int
 eval_pop(struct eval* e) {
   int ret;
 
-  // assert(e == sh->eval);
+  assert(e == eval);
 
   ret = e->exitcode;
 
@@ -17,8 +17,8 @@ eval_pop(struct eval* e) {
 
   while(varstack != e->varstack && &vartab_root != varstack) vartab_pop(varstack);
 
-  sh->exitcode = e->exitcode;
-  sh->eval = e->parent;
+ // sh->exitcode = e->exitcode;
+  //sh->eval = e->parent;
   eval = e->parent;
 
   return ret;

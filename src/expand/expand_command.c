@@ -49,7 +49,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
     eval_tree(&en, cmd->list, E_LIST);
   }
 
-  sh->eval->exitcode = eval_pop(&en);
+  sh->exitcode = eval_pop(&en);
 
   vartab_pop(&vars);
 

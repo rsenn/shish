@@ -27,16 +27,20 @@ int sh_no_position = 0;
 
 static void
 sh_sigchld(int signum) {
-  term_erase();
-  term_restore(term_input.fd, &term_tcattr);
+  if(term_output) {
+    term_erase();
+    term_restore(term_input.fd, &term_tcattr);
+  }
   buffer_puts(fd_err->w, "SIGCHLD");
   buffer_putnlflush(fd_err->w);
-  term_attr(term_input.fd, 1, &term_tcattr);
-  prompt_number--;
-  prompt_show();
-  buffer_putsa(term_output, &term_cmdline);
-  term_escape(term_output, term_cmdline.len - term_pos, 'D');
-  buffer_flush(term_output);
+  if(term_output) {
+    term_attr(term_input.fd, 1, &term_tcattr);
+    prompt_number--;
+    prompt_show();
+    buffer_putsa(term_output, &term_cmdline);
+    term_escape(term_output, term_cmdline.len - term_pos, 'D');
+    buffer_flush(term_output);
+  }
 }
 
 /* main routine
