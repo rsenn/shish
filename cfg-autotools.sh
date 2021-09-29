@@ -41,18 +41,17 @@ cfg() {
         "$@" &&
   echo "Configured in '$builddir'" 1>&2)
 }
-
-cfg-android() {
-  (: ${builddir=build/android}
-  : ${host="arm-linux-androideabi"}
-  : ${prefix=/opt/arm-linux-androideabi/sysroot/usr}
-
-  libdir=$prefix/lib \
-  CC="arm-linux-androideabi-gcc" \
-  CXX="arm-linux-androideabi-g++" \
-  cfg \
-   "$@"
-    )
+ 
+cfg-android()
+{
+ (build=arm-linux-androideabi
+  : ${builddir=build/$build}
+ 
+  TOOLCHAIN=/opt/cmake-toolchains/android.cmake \
+  prefix=/opt/$build/sysroot/usr \
+  PKG_CONFIG=$build-pkg-config \
+  CMAKE_PREFIX_PATH=/opt/$build/sysroot/usr \
+  cfg "$@")
 }
 
 cfg-android64() 
