@@ -44,11 +44,11 @@ cfg() {
  
 cfg-android()
 {
-  (build=$(cc -dumpmachine)
- host=arm-linux-androideabi
+ (build=$(cc -dumpmachine)
+  host=arm-linux-androideabi
   : ${builddir=build/$host}
  
-PKG_CONFIG_PATH=/opt/${host}/sysroot/usr/lib/pkgconfig:/opt/${host}/sysroot/usr/share/pkgconfig \
+  PKG_CONFIG_PATH=/opt/${host}/sysroot/usr/lib/pkgconfig:/opt/${host}/sysroot/usr/share/pkgconfig \
   TOOLCHAIN=/opt/cmake-toolchains/android.cmake \
   prefix=/opt/$host/sysroot/usr \
   CMAKE_PREFIX_PATH=/opt/$host/sysroot/usr \
