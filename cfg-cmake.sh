@@ -76,23 +76,6 @@ cfg() {
  ) 2>&1 |tee "${builddir##*/}.log"
 }
 
-cfg-android ()
-{
-  (: ${builddir=build/android}
-    cfg \
-  -DCMAKE_INSTALL_PREFIX=/opt/arm-linux-androideabi/sysroot/usr \
-  \
-  -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN:-/opt/android-cmake/android.cmake} \
-  -DANDROID_NATIVE_API_LEVEL=21 \
-  -DPKG_CONFIG_EXECUTABLE=arm-linux-androideabi-pkg-config \
-  -DCMAKE_PREFIX_PATH=/opt/arm-linux-androideabi/sysroot/usr \
-  -DCMAKE_MAKE_PROGRAM=/usr/bin/make \
-   -DCMAKE_MODULE_PATH="/opt/OpenCV-3.4.1-android-sdk/sdk/native/jni/abi-armeabi-v7a" \
-   -DOpenCV_DIR="/opt/OpenCV-3.4.1-android-sdk/sdk/native/jni/abi-armeabi-v7a" \
-   "$@"
-    )
-}
-
 cfg-diet() {
  (: ${build=$(${CC:-gcc} -dumpmachine | sed 's|-pc-|-|g')}
   : ${host=${build/-gnu/-diet}}
@@ -369,11 +352,26 @@ cfg-tcc() {
   cfg \
     "$@")
 }
-  
+
+cfg-android () 
+{ 
+    ( build=$(cc -dumpmachine);
+    host=arm-linux-androideabi;
+    : ${builddir=build/$host};
+    PKG_CONFIG_PATH=/opt/${host}/sysroot/usr/lib/pkgconfig:/opt/${host}/sysroot/usr/share/pkgconfig TOOLCHAIN=/opt/cmake-toolchains/android.cmake prefix=/opt/$host/sysroot/usr CMAKE_PREFIX_PATH=/opt/$host/sysroot/usr cfg "$@" )
+}
+
 cfg-android64 () 
 { 
     ( : ${builddir=build/android64};
-    cfg -DCMAKE_INSTALL_PREFIX=/opt/aarch64-linux-android64eabi/sysroot/usr -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN:-/opt/android64-cmake/android64.cmake} -DANDROID_NATIVE_API_LEVEL=21 -DPKG_CONFIG_EXECUTABLE=aarch64-linux-android64eabi-pkg-config -DCMAKE_PREFIX_PATH=/opt/aarch64-linux-android64eabi/sysroot/usr -DCMAKE_MAKE_PROGRAM=/usr/bin/make -DCMAKE_MODULE_PATH="/opt/OpenCV-3.4.1-android64-sdk/sdk/native/jni/abi-armeabi-v7a" -DOpenCV_DIR="/opt/OpenCV-3.4.1-android64-sdk/sdk/native/jni/abi-armeabi-v7a" "$@" )
+    cfg \
+      -DCMAKE_INSTALL_PREFIX=/opt/aarch64-linux-android/sysroot/usr \
+      -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN:-/opt/cmake-toolchains/android64.cmake} \
+      -DANDROID_NATIVE_API_LEVEL=21 \
+      -DPKG_CONFIG_EXECUTABLE=aarch64-linux-android-pkg-config \
+      -DCMAKE_PREFIX_PATH=/opt/aarch64-linux-android/sysroot/usr \
+      -DCMAKE_MAKE_PROGRAM=/usr/bin/make \
+      "$@" )
 }
 
 cfg-emscripten() {

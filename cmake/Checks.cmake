@@ -289,5 +289,5 @@ string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_DEBUG
 check_library_exists(m pow /usr/lib HAVE_LIBM)
 
 if(HAVE_LIBM)
-  set(MATH_LIBRARY m)
+  set(MATH_LIBRARY m CACHE STRING "Define this to the name of your Math library")
 endif(HAVE_LIBM)

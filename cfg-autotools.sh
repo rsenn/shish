@@ -47,12 +47,16 @@ cfg-android()
  (build=$(cc -dumpmachine)
   host=arm-linux-androideabi
   : ${builddir=build/$host}
- 
+
+  CC="$host-gcc" \
+  CXX="$host-g++" \
+  RANLIB="$host-ranlib" \
+  LD="$host-ld" \
   PKG_CONFIG_PATH=/opt/${host}/sysroot/usr/lib/pkgconfig:/opt/${host}/sysroot/usr/share/pkgconfig \
   TOOLCHAIN=/opt/cmake-toolchains/android.cmake \
   prefix=/opt/$host/sysroot/usr \
   CMAKE_PREFIX_PATH=/opt/$host/sysroot/usr \
-  cfg "$@")
+  cfg "$@" --build="$build" --host="$host" )
 }
 
 cfg-android64() 
@@ -73,7 +77,7 @@ cfg-diet() {
  (: ${build=$(${CC:-gcc} -dumpmachine)}
   : ${host=${build/-gnu/-diet}}
   : ${builddir=build/$host}
-  : ${prefix=/opt/diet}
+  prefix=/opt/diet
   
   libdir=/opt/diet/lib-${host%%-*} \
   bindir=/opt/diet/bin-${host%%-*} \
@@ -107,7 +111,7 @@ cfg-musl() {
   : ${host=${build/-gnu/-musl}}
   : ${host=${host/-pc-/-}}
   : ${builddir=build/$host}
-  : ${prefix=/usr/lib/musl}
+  prefix=/opt/musl
   : ${includedir=$prefix/include}
   : ${libdir=$prefix/lib}
   : ${bindir=$prefix/bin}
@@ -117,7 +121,7 @@ cfg-musl() {
   RANLIB=ranlib \
   PKG_CONFIG=musl-pkg-config \
   cfg \
-    --with-{neon,lib{iconv,intl}-prefix}=/opt/diet \
+    --with-{neon,lib{iconv,intl}-prefix}=/opt/musl \
     --disable-nls \
     --with-ssl=openssl \
     --without-included-gettext \

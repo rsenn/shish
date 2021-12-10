@@ -195,7 +195,7 @@ if(BUILD_SHFORMAT)
   list(APPEND ALL_SOURCES ${SHFORMAT_SOURCES})
 
   add_executable(shformat ${SHFORMAT_SOURCES})
-  target_link_libraries(shformat PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
+  target_link_libraries(shformat PUBLIC libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shformat PUBLIC SHFORMAT=1)
   install(TARGETS shformat DESTINATION bin)
