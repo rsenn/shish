@@ -19,7 +19,7 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 LIB = ../libowfat.a
 ARCHIVE = shell.a
-MODULES = shell_alloc shell_allocdebug shell_basename shell_canonicalize shell_error shell_errorn shell_fnmatch shell_getcwd shell_gethome shell_gethostname shell_getopt shell_init shell_readlink shell_realloc shell_reallocdebug shell_realpath shell_strdup shell_strdupdebug
+MODULES = shell_error shell_errorn shell_gethostname shell_getopt shell_init
 
 
 SOURCES = $(MODULES:%=%.c)

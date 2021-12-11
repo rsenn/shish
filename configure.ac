@@ -241,6 +241,7 @@ lib/byte/Makefile
 lib/fmt/Makefile
 lib/mmap/Makefile
 lib/open/Makefile
+lib/path/Makefile
 lib/scan/Makefile
 lib/shell/Makefile
 lib/sig/Makefile

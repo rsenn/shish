@@ -7,7 +7,7 @@
 srcdir       = @srcdir@
 top_srcdir   = @top_srcdir@
 top_builddir = @top_builddir@
-thisdir      = lib/stralloc/
+thisdir      = lib/path/
 
 VPATH        = $(srcdir)
 
@@ -18,8 +18,8 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 LIB = ../libowfat.a
-ARCHIVE = stralloc.a
-MODULES = mmap_filename stralloc_append stralloc_catb stralloc_cat stralloc_catc stralloc_catlong0 stralloc_catm_internal stralloc_cats stralloc_catulong0 stralloc_catulong stralloc_copyb stralloc_copy stralloc_copys stralloc_diffs stralloc_dump stralloc_free stralloc_freedebug stralloc_init stralloc_insertb stralloc_move stralloc_nul stralloc_ready stralloc_readydebug stralloc_readyplus stralloc_readyplusdebug stralloc_remove stralloc_replacec stralloc_starts stralloc_trimr stralloc_trunc stralloc_truncdebug stralloc_write stralloc_zero
+ARCHIVE = path.a
+MODULES = path_basename path_canonical path_canonicalize path_canonical_sa path_collapse path_fnmatch path_getcwd path_gethome path_getsep path_is_absolute_b path_is_absolute path_len_s path_readlink path_realpath path_right
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

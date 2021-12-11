@@ -18,7 +18,7 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = tree.a
-MODULES = tree_append tree_cat tree_catlist tree_catseparator tree_count tree_free tree_newlink tree_newnode tree_newnodedebug tree_nodesizes tree_position tree_print tree_remove
+MODULES = node2str tree_append tree_cat tree_catlist tree_catseparator tree_count tree_free tree_location tree_newlink tree_newnode tree_newnodedebug tree_nodesizes tree_print tree_printlist tree_remove tree_show tree_string
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

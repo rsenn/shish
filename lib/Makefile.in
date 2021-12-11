@@ -34,7 +34,7 @@ CHMOD = chmod
 
 # directory configuration
 # ---------------------------------------------------------------------------
-SUBDIRS              = buffer byte fmt mmap open scan shell sig str stralloc uint32 unix wait
+SUBDIRS              = buffer byte fmt mmap open path scan shell sig str stralloc uint32 unix wait
 RECURSIVE            = 1
 
 LIBRARY = libowfat.a
