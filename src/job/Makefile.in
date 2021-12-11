@@ -18,7 +18,7 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = job.a
-MODULES = job_fork job_init job_new job_status job_wait
+MODULES = job_delete job_find job_foreground job_fork job_get job_init job_new job_print job_status job_wait
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

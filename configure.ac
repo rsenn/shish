@@ -236,6 +236,7 @@ doc/Makefile
 doc/posix/Makefile
 doc/man/Makefile
 lib/Makefile
+lib/alloc/Makefile
 lib/buffer/Makefile
 lib/byte/Makefile
 lib/fmt/Makefile
