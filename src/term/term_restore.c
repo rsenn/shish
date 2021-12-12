@@ -9,7 +9,7 @@
  * ----------------------------------------------------------------------- */
 void
 term_restore(int fd, const struct termios* tcattr) {
-#ifdef TCSANOW
+#if defined(TCSANOW) && !defined(__ANDROID__)
   tcsetattr(fd, TCSANOW, (struct termios*)tcattr);
 #endif
 #ifdef SIGWINCH

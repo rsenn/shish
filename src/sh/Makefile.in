@@ -17,9 +17,9 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
-#ARCHIVE = sh.a
+ARCHIVE = sh.a
 MODULES = sh_cmdlist sh_error sh_errorn sh_exit sh_fmtflags sh_forked sh_getcwd sh_gethome sh_init sh_loop sh_main sh_msg sh_parse2ast sh_popargs sh_pop sh_pushargs sh_push sh_root sh_setargs sh_subshell sh_usage
-MODULES += sh_fmt
+#MODULES += sh_fmt
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

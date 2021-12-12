@@ -85,7 +85,15 @@ main(int argc, char** argv, char** envp) {
   /* set initial $0 */
   sh_argv0 = argv[0];
 
-  shell_init(fd_err->w, path_basename(sh_argv0));
+  /* set our basename for the \v prompt escape seq and maybe other stuff*/
+  sh_name = path_basename(sh_argv0);
+
+  if(*sh_name == '-') {
+    sh_name++;
+    sh_login++;
+  }
+
+  shell_init(fd_err->w, sh_name);
 
   /* import environment variables to the root vartab */
   for(c = 0; envp[c]; c++)
@@ -142,14 +150,6 @@ main(int argc, char** argv, char** envp) {
 
   if(fd_needbuf(fd_src))
     fd_setbuf(fd_src, &fd_src[1], FD_BUFSIZE);
-
-  /* set our basename for the \v prompt escape seq and maybe other stuff*/
-  sh_name = path_basename(sh_argv0);
-
-  if(*sh_name == '-') {
-    sh_name++;
-    sh_login++;
-  }
 
   /* set global shell argument vector */
   sh_argv = &argv[shell_optind];

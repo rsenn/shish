@@ -24,7 +24,7 @@ term_read(int fd, char* buf, unsigned int len) {
     byte_copy(buf, len, &term_cmdline.s[term_cmdline.len - remain]);
     remain -= len;
     if(!remain) {
-#ifdef TCSANOW
+#if defined(TCSANOW) && !defined(__ANDROID__)
       tcsetattr(fd, TCSANOW, &term_tcattr);
 #endif
       stralloc_zero(&term_cmdline);
