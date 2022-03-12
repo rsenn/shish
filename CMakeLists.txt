@@ -235,3 +235,29 @@ add_custom_target(
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
   COMMENT "Format *.c/*.h source files"
   SOURCES ${ALL_SOURCES})
+
+
+file(GLOB TESTS tests/*.sh)
+list(FILTER TESTS EXCLUDE REGEX "common.sh")
+
+relative_path(TESTS "${CMAKE_CURRENT_SOURCE_DIR}" ${TESTS})
+
+option(DO_TESTS "Perform tests" ON)
+
+get_target_property(SHISH_SUFFIX  shish SUFFIX)
+if(NOT SHISH_SUFFIX)
+  set(SHISH_SUFFIX "")
+endif(NOT SHISH_SUFFIX)
+set(SHISH_PATH "${CMAKE_CURRENT_BINARY_DIR}/shish${SHISH_SUFFIX}")
+
+message("SHISH_PATH: ${SHISH_PATH}")
+
+if(DO_TESTS)
+  include(CTest)
+
+  foreach(TEST ${TESTS})
+    basename(NAME "${TEST}")
+    add_test(NAME "${NAME}" WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" COMMAND "${SHISH_PATH}" "${TEST}")
+  endforeach(TEST ${TESTS})
+endif(DO_TESTS)
+message("TESTS: ${TESTS}")

@@ -139,3 +139,24 @@ macro(check_compile RESULT_VAR SOURCE)
   endif(RESULT STREQUAL "")
   show_result(${RESULT_VAR})
 endmacro()
+
+
+function(RELATIVE_PATH OUT_VAR RELATIVE_TO)
+  set(LIST "")
+
+  foreach(ARG ${ARGN})
+    file(RELATIVE_PATH ARG "${RELATIVE_TO}" "${ARG}")
+    list(APPEND LIST "${ARG}")
+  endforeach(ARG ${ARGN})
+
+  set("${OUT_VAR}" "${LIST}" PARENT_SCOPE)
+endfunction(RELATIVE_PATH RELATIVE_TO OUT_VAR)
+
+function(BASENAME OUTPUT_VAR STR)
+  string(REGEX REPLACE ".*/" "" TMP_STR "${STR}")
+  if(ARGN)
+    string(REGEX REPLACE "\\${ARGN}\$" "" TMP_STR "${TMP_STR}")
+  endif(ARGN)
+
+  set("${OUTPUT_VAR}" "${TMP_STR}" PARENT_SCOPE)
+endfunction(BASENAME OUTPUT_VAR FILE)

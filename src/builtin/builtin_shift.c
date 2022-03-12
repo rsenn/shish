@@ -16,8 +16,8 @@ builtin_shift(int argc, char* argv[]) {
     }
   }
 
-if(n > sh->arg.c - sh->arg.s)
-  n = sh->arg.c - sh->arg.s;
+if(n > sh->arg.c)
+  n = sh->arg.c;
 
 
   while(sh->arg.c && n--) {

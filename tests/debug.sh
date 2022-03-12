@@ -1,3 +1,10 @@
+DIR=$(dirname "${0}")
+. "$DIR/common.sh"
+
+set -e
+
+## Testing debug flag
+
 set -x
 
 ls -la >/dev/null

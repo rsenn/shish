@@ -31,8 +31,10 @@ sh_sigchld(int signum) {
     term_erase();
     term_restore(term_input.fd, &term_tcattr);
   }
+#ifdef DEBUG_OUTPUT
   buffer_puts(fd_err->w, "SIGCHLD");
   buffer_putnlflush(fd_err->w);
+#endif
   if(term_output) {
     term_attr(term_input.fd, 1, &term_tcattr);
     prompt_number--;

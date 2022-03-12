@@ -78,12 +78,13 @@ while getopts rv opt; do
     ;;
   esac
 done
-echo "OPTIND=$OPTIND" 1>&2
-shift "$((OPTIND - 1))"
-echo "\$1=$1" >&2
-echo "\$2=$2" >&2
+#echo "OPTIND=$OPTIND" 1>&2
+#shift "$((OPTIND - 1))"
+#echo "\$1=$1" >&2
+#echo "\$2=$2" >&2
 
-testee="$(command -v "${1:?testee not specified}")"
+#testee="$(command -v "${1:?testee not specified}")"
+testee="$1"
 echo "testee=$testee" 1>&2
 test_file="${2:?test file not specified}"
 echo "test_file=$test_file" 1>&2

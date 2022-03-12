@@ -1,3 +1,10 @@
+DIR=$(dirname "${0}")
+. "$DIR/common.sh"
+
+set -e
+
+## Testing while loop
+
 set -- A B C D E F G H
 echo $#
 IFS=","

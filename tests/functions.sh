@@ -1,3 +1,10 @@
+DIR=$(dirname "${0}")
+. "$DIR/common.sh"
+
+set -e
+
+## Testing functions
+
 func1() {
   echo "called func1"
   return 0

@@ -52,8 +52,10 @@ assert_equal "$X" "..."
 : ${X:="if-zero"}
 assert_equal "$X" "..."
 
-set +e
+#set +e
+Y=
 unset Y
+Y=A
 Z=$( (: ${Y?"Y is unset"}) 2>&1)
 assert_equal "$?" "1"
 assert_equal "${Z##*: }" "Y is unset"

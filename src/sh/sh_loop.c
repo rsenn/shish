@@ -83,7 +83,7 @@ sh_loop(void) {
 
       /* exit if not interactive */
       if(!(source->mode & SOURCE_IACTIVE))
-        sh_exit(1);
+        sh_exit(p.tok != T_EOF);
 
       /* ..otherwise discard the input buffer */
       source_flush();
