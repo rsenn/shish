@@ -2,6 +2,8 @@
 #include "../byte.h"
 #include <string.h>
 
+extern ssize_t buffer_stubborn(buffer_op_proto* op, int fd, const char* buf, size_t len, void* b);
+
 #ifdef __dietlibc__
 #undef __unlikely
 #endif
