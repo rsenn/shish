@@ -11,10 +11,11 @@
 
 #include "../buffer.h"
 
+typedef void deinit_fn_t(buffer*);
 void
 buffer_close(buffer* b) {
   if(b->deinit)
-    b->deinit(b);
+    ((deinit_fn_t*)b->deinit)(b);
   if(b->fd > 2)
     close(b->fd);
 }

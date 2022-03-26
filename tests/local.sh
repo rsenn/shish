@@ -1,3 +1,10 @@
+DIR=$(dirname "${0}")
+. "$DIR/common.sh"
+
+set -e
+
+## Testing local builtin
+
 test_fn1() {
   local LXXXXXX LYYYYYY='b'
   

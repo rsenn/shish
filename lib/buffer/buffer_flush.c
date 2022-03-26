@@ -1,5 +1,7 @@
 #include "../buffer.h"
 
+ssize_t buffer_stubborn(buffer_op_proto* op, int fd, const char* buf, size_t len, void* ptr);
+
 int
 buffer_flush(buffer* b) {
   size_t p;

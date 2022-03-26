@@ -1,6 +1,4 @@
-# check_c_compiler_flag("-Wno-error=unused-const-variable"
-# WARN_NO_UNUSED_FUNCTION) if(WARN_NO_UNUSED_FUNCTION) set(WERROR_FLAG
-# "${WERROR_FLAG} -Wno-error=unused-const-variabe") endif()
+# check_c_compiler_flag("-Wno-error=unused-const-variable" WARN_NO_UNUSED_FUNCTION) if(WARN_NO_UNUSED_FUNCTION) set(WERROR_FLAG "${WERROR_FLAG} -Wno-error=unused-const-variabe") endif()
 if(CMAKE_C_COMPILER_ID MATCHES "GNU")
   set(PEDANTIC_COMPILE_FLAGS
       -pedantic-errors
@@ -26,8 +24,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU")
       -Wno-format-nonliteral
       -Wno-shadow)
   if(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.6)
-    set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wnoexcept
-                               -Wno-dangling-else -Wno-unused-local-typedefs)
+    set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wnoexcept -Wno-dangling-else -Wno-unused-local-typedefs)
   endif()
   if(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 5.0)
     set(PEDANTIC_COMPILE_FLAGS
@@ -40,14 +37,12 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU")
         -Wsized-deallocation)
   endif()
   if(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 6.0)
-    set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wshift-overflow=2
-                               -Wnull-dereference -Wduplicated-cond)
+    set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wshift-overflow=2 -Wnull-dereference -Wduplicated-cond)
   endif()
   set(WERROR_FLAG "${WERROR_FLAG} -Werror")
 endif()
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -pedantic -Wconversion
-                             -Wno-sign-conversion)
+  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -pedantic -Wconversion -Wno-sign-conversion)
   set(WERROR_FLAG "${WERROR_FLAG} -Werror")
 endif()
 if(MSVC)

@@ -1,9 +1,7 @@
 #include "../windoze.h"
 #include "../buffer.h"
 
-#if WINDOWS_NATIVE
-#include <io.h>
-#else
+#if !WINDOWS_NATIVE
 #include <unistd.h>
 #include <sys/uio.h>
 #endif
@@ -22,13 +20,15 @@
 #define __unlikely(x) (x)
 #endif
 
+ssize_t buffer_stubborn(buffer_op_proto* op, int fd, const char* buf, size_t len, void* ptr);
+
 ssize_t
 buffer_putflush(buffer* b, const char* x, size_t len) {
   /* Since we know we are going to flush anyway, let's see if we can
    * optimize a bit */
   if(!b->p) /* if the buffer is empty, just call buffer_stubborn directly */
     return buffer_stubborn(b->op, b->fd, x, len, b);
-#if !defined(_DEBUG) && !WINDOWS_NATIVE
+#if !defined(_DEBUG) && !WINDOWS_NATIVE && defined(HAVE_WRITEV)
   if(b->op == (buffer_op_proto*)&write) {
     struct iovec v[2];
     ssize_t w;
@@ -45,7 +45,9 @@ buffer_putflush(buffer* b, const char* x, size_t len) {
     if(__unlikely((size_t)w != cl)) {
       /* partial write. ugh. */
       if((size_t)w < v[0].iov_len) {
-        if(buffer_stubborn(b->op, b->fd, (char*)v[0].iov_base + w, v[0].iov_len - w, b) || buffer_stubborn(b->op, b->fd, v[1].iov_base, v[0].iov_len, b))
+        if(buffer_stubborn(b->op, b->fd, (char*)v[0].iov_base + w, v[0].iov_len - w, b) ||
+
+           buffer_stubborn(b->op, b->fd, (char*)v[1].iov_base, v[0].iov_len, b))
           return -1;
       } else {
         w -= v[0].iov_len;

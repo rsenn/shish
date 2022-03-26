@@ -1,3 +1,10 @@
+DIR=$(dirname "${0}")
+. "$DIR/common.sh"
+
+set -e
+
+## Testing read builtin
+
 ask_passwd() {
     read -r -p"Password: " -s PASSWORD
     echo

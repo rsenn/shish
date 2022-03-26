@@ -1,7 +1,8 @@
+#include "../alloc.h"
 #include "../buffer.h"
 #include <stdlib.h>
 
 void
 buffer_free(buffer* b) {
-  free(b->x);
+  alloc_free(b->x);
 }

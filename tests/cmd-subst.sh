@@ -1,3 +1,10 @@
+DIR=$(dirname "${0}")
+. "$DIR/common.sh"
+
+set -e
+
+## Testing command substitution
+
 fn() {
   #fdtable -u 2
   dump -t

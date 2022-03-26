@@ -1,10 +1,5 @@
 #include "../buffer.h"
-
-typedef struct stralloc_s {
-  char* s;
-  size_t len;
-  size_t a;
-} stralloc;
+#include "../stralloc.h"
 
 void
 buffer_fromsa(buffer* b, const stralloc* sa) {

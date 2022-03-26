@@ -1,6 +1,3 @@
 #include "../buffer.h"
 
-ssize_t
-buffer_dummyreadmmap(int fd, void* buf, size_t len, void* ptr) {
-  return 0;
-}
+ssize_t buffer_dummyreadmmap(int fd, void* x, size_t n, void* p) { return 0; }

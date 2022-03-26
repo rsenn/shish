@@ -1,6 +1,12 @@
-build=$(gcc -dumpmachine)
-: ${build:=$(gcc -dumpmachine)}
+DIR=$(dirname "${0}")
+. "$DIR/common.sh"
 
-cfg() {
-  : ${build:=$(gcc -dumpmachine)}
-}
+set -e
+
+## Testing backquote expansion
+
+str=`echo BLAH`
+
+assert_equal "$str" BLAH
+
+

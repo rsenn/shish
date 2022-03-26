@@ -33,7 +33,14 @@ string(REGEX REPLACE ".*/" "" COMPILER_NAME "${CMAKE_C_COMPILER}")
 
 if(COMPILER_NAME MATCHES "em.*")
   set(EMSCRIPTEN TRUE)
-  dump(EMSCRIPTEN EMCC_SUFFIX EMSCRIPTEN_PREFIX EMSCRIPTEN_TOOLCHAIN_PATH COMPILER_NAME CMAKE_EXECUTABLE_SUFFIX CMAKE_EXE_LINKER_FLAGS)
+  dump(
+    EMSCRIPTEN
+    EMCC_SUFFIX
+    EMSCRIPTEN_PREFIX
+    EMSCRIPTEN_TOOLCHAIN_PATH
+    COMPILER_NAME
+    CMAKE_EXECUTABLE_SUFFIX
+    CMAKE_EXE_LINKER_FLAGS)
   set(EMSCRIPTEN_EXE_SUFFIX "html")
 endif(COMPILER_NAME MATCHES "em.*")
 
@@ -109,7 +116,16 @@ endif()
 configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.h")
 
 set(SOURCE_DEFINITIONS)
-set(SOURCE_TYPES ATFILE GNU LARGEFILE LARGE_FILE LARGEFILE64 POSIX POSIX_C XOPEN XOPEN_EXTENDED)
+set(SOURCE_TYPES
+    ATFILE
+    GNU
+    LARGEFILE
+    LARGE_FILE
+    LARGEFILE64
+    POSIX
+    POSIX_C
+    XOPEN
+    XOPEN_EXTENDED)
 foreach(S ${SOURCE_TYPES})
   list(APPEND SOURCE_DEFINITIONS -D_${S}_SOURCE)
 endforeach(S ${SOURCE_TYPES})
@@ -144,12 +160,26 @@ list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "(sh_fmt\\.c|sh_parse2ast\\.c|sh_init
 # string(REGEX REPLACE ";" "\n" SHELL_SOURCES "${LIBSHELL_SOURCES}") message("LIBSHELL_SOURCES: ${SHELL_SOURCES}")
 
 if(DEBUG_ALLOC)
-  list(APPEND LIBSHELL_SOURCES src/debug/debug_alloc.c src/debug/debug_free.c src/debug/debug_realloc.c src/debug/debug_error.c src/debug/debug_memory.c)
+  list(
+    APPEND
+    LIBSHELL_SOURCES
+    src/debug/debug_alloc.c
+    src/debug/debug_free.c
+    src/debug/debug_realloc.c
+    src/debug/debug_error.c
+    src/debug/debug_memory.c)
 endif(DEBUG_ALLOC)
 if(DEBUG_OUTPUT)
-  list(APPEND LIBSHELL_SOURCES src/debug/debug_char.c src/debug/debug_error.c
-       # src/debug/debug_node.c
-       src/debug/debug_ptr.c src/debug/debug_space.c src/debug/debug_subst.c src/debug/debug_unquoted.c)
+  list(
+    APPEND
+    LIBSHELL_SOURCES
+    src/debug/debug_char.c
+    src/debug/debug_error.c
+    # src/debug/debug_node.c
+    src/debug/debug_ptr.c
+    src/debug/debug_space.c
+    src/debug/debug_subst.c
+    src/debug/debug_unquoted.c)
 endif(DEBUG_OUTPUT)
 
 list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
@@ -235,3 +265,31 @@ add_custom_target(
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
   COMMENT "Format *.c/*.h source files"
   SOURCES ${ALL_SOURCES})
+
+file(GLOB TESTS tests/*.sh)
+list(FILTER TESTS EXCLUDE REGEX "common.sh")
+
+relative_path(TESTS "${CMAKE_CURRENT_SOURCE_DIR}" ${TESTS})
+
+option(DO_TESTS "Perform tests" ON)
+
+get_target_property(SHISH_SUFFIX shish SUFFIX)
+if(NOT SHISH_SUFFIX)
+  set(SHISH_SUFFIX "")
+endif(NOT SHISH_SUFFIX)
+set(SHISH_PATH "${CMAKE_CURRENT_BINARY_DIR}/shish${SHISH_SUFFIX}")
+
+message("SHISH_PATH: ${SHISH_PATH}")
+
+if(DO_TESTS)
+  include(CTest)
+
+  foreach(TEST ${TESTS})
+    basename(NAME "${TEST}")
+    add_test(
+      NAME "${NAME}"
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+      COMMAND "${SHISH_PATH}" "${TEST}")
+  endforeach(TEST ${TESTS})
+endif(DO_TESTS)
+message("TESTS: ${TESTS}")
