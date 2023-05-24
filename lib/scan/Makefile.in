@@ -19,7 +19,8 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 LIB = ../libowfat.a
 ARCHIVE = scan.a
-MODULES = scan_8int scan_8long scan_8longn scan_8short scan_charsetnskip scan_double scan_fromhex scan_int scan_longlong scan_noncharsetnskip scan_nonwhitenskip scan_octal scan_uint scan_ulong scan_ulonglong scan_ulongn scan_whitenskip scan_xlonglong
+MODULES = \
+scan_8int scan_8long scan_8longlong scan_8longlongn scan_8longn scan_8short scan_charsetnskip scan_fromhex scan_int scan_longlong scan_noncharsetnskip scan_nonwhitenskip scan_uint scan_ulong scan_ulonglong scan_ulongn scan_whitenskip scan_xlonglong
 
 
 SOURCES = $(MODULES:%=%.c)
