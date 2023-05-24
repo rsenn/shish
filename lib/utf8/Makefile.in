@@ -1,13 +1,13 @@
 # ===========================================================================
 #
-# Makefile for src/debug subdirectory
+# Makefile for lib/utf8 subdirectory
 #
 # relative directories
 # ---------------------------------------------------------------------------
 srcdir       = @srcdir@
 top_srcdir   = @top_srcdir@
 top_builddir = @top_builddir@
-thisdir      = src/debug/
+thisdir      = lib/utf8/
 
 VPATH        = $(srcdir)
 
@@ -17,9 +17,10 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
-ARCHIVE = debug.a
+LIB = ../libowfat.a
+ARCHIVE = utf8.a
 MODULES = \
-debug_alloc debug_argv debug_begin debug_char debug_end debug_error debug_free debug_list debug_memory debug_node debug_position debug_ptr debug_realloc debug_redir debug_space debug_squoted debug_str debug_stralloc debug_sublist debug_subnode debug_subst debug_ulong debug_unquoted debug_xlong
+u8len u8stowcs u8swcslen u8towc wcstou8s wcsu8slen wctou8 wcu8len
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
@@ -27,7 +28,7 @@ DEPS    = $(MODULES:%=%.d)
 
 # targets for this directory
 # ---------------------------------------------------------------------------
-all: Makefile $(ARCHIVE)
+all: Makefile .libdep $(ARCHIVE)
 install:
 
 # dependencies
@@ -38,10 +39,6 @@ install:
 # ---------------------------------------------------------------------------
 INCLUDES += -I$(top_srcdir)/lib -I$(top_builddir)
 #INCLUDES += -I$(top_builddir)/lib
-INCLUDES += -I$(top_srcdir)/src
-#INCLUDES += -I$(top_builddir)/src
-INCLUDES += -I$(top_builddir)
-INCLUDES += -include assert.h
 
 # include build.mk (makefile helper)
 # ---------------------------------------------------------------------------

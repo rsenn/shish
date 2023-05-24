@@ -7,8 +7,9 @@
 #include "../lib/uint64.h"
 #include <stdlib.h>
 
-//#define __packed __attribute__((packed))
-#define __packed
+#ifndef __packed
+#define __packed __attribute__((packed))
+#endif
 
 /* the section numbers refer to the IEEE P1003.2 Draft D11.2 */
 
