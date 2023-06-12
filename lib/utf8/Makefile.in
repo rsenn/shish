@@ -1,13 +1,13 @@
 # ===========================================================================
 #
-# Makefile for lib/alloc subdirectory
+# Makefile for lib/utf8 subdirectory
 #
 # relative directories
 # ---------------------------------------------------------------------------
 srcdir       = @srcdir@
 top_srcdir   = @top_srcdir@
 top_builddir = @top_builddir@
-thisdir      = lib/alloc/
+thisdir      = lib/utf8/
 
 VPATH        = $(srcdir)
 
@@ -18,9 +18,9 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 LIB = ../libowfat.a
-ARCHIVE = alloc.a
+ARCHIVE = utf8.a
 MODULES = \
-alloc alloc_re alloc_redebug alloc_zero alloc_zerodebug allocdebug str_dup str_dupdebug
+u8len u8stowcs u8swcslen u8towc wcstou8s wcsu8slen wctou8 wcu8len
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

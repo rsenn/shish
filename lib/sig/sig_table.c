@@ -2,6 +2,9 @@
 #include "../sig_internal.h"
 
 #include <signal.h>
+#ifndef SIGSTKFLT
+#define SIGSTKFLT 16
+#endif
 
 sigtable_t const sigtable[] = {{0, "EXIT"},
 #if !WINDOWS_NATIVE

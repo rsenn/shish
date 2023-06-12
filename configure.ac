@@ -236,11 +236,13 @@ doc/Makefile
 doc/posix/Makefile
 doc/man/Makefile
 lib/Makefile
+lib/alloc/Makefile
 lib/buffer/Makefile
 lib/byte/Makefile
 lib/fmt/Makefile
 lib/mmap/Makefile
 lib/open/Makefile
+lib/path/Makefile
 lib/scan/Makefile
 lib/shell/Makefile
 lib/sig/Makefile
@@ -249,6 +251,7 @@ lib/stralloc/Makefile
 lib/uint32/Makefile
 lib/uint64/Makefile
 lib/unix/Makefile
+lib/utf8/Makefile
 lib/wait/Makefile
 scripts/Makefile
 src/Makefile

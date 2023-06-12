@@ -368,20 +368,20 @@ install-libEXEC: $(lib_EXEC)
 # install shared libraries into libdir
 # ---------------------------------------------------------------------------
 install-slibEXEC: $(slib_EXEC)
-	@-if test ! -d $(DESTDIR)$(slibdir)$(slib_PREFIX) && test "$(slib_EXEC)"; then \
-		$(ECHO_MKDIR)$(DESTDIR)$(slibdir)$(slib_PREFIX) ; \
-		$(INSTALL_DIR) $(DESTDIR)$(slibdir)$(slib_PREFIX) >/dev/null ; \
-	fi
-	@-if test ! -d $(DESTDIR)$(slibdir)$(slib_PREFIX); then \
-		$(ECHO_MKDIR)$(DESTDIR)$(slibdir)$(slib_PREFIX) ; \
-		$(INSTALL_DIR) $(DESTDIR)$(slibdir)$(slib_PREFIX) 2>/dev/null ; \
-	fi
-	@list='$(slib_EXEC)'; for p in $$list; do \
-		if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-		f="`echo $$p | sed -e 's|^.*/||'`"; \
-		$(ECHO_INSTALL)$(slibdir)$(slib_PREFIX)/$$f; \
-		$(INSTALL_EXEC) $$d$$p $(DESTDIR)$(slibdir)$(slib_PREFIX)/$$f >/dev/null; \
-	done
+	#@-if test ! -d $(DESTDIR)$(slibdir)$(slib_PREFIX) && test "$(slib_EXEC)"; then \
+	#	$(ECHO_MKDIR)$(DESTDIR)$(slibdir)$(slib_PREFIX) ; \
+	#	$(INSTALL_DIR) $(DESTDIR)$(slibdir)$(slib_PREFIX) >/dev/null ; \
+	#fi
+	#@-if test ! -d $(DESTDIR)$(slibdir)$(slib_PREFIX); then \
+	#	$(ECHO_MKDIR)$(DESTDIR)$(slibdir)$(slib_PREFIX) ; \
+	#	$(INSTALL_DIR) $(DESTDIR)$(slibdir)$(slib_PREFIX) 2>/dev/null ; \
+	#fi
+	#@list='$(slib_EXEC)'; for p in $$list; do \
+	#	if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	#	f="`echo $$p | sed -e 's|^.*/||'`"; \
+	#	$(ECHO_INSTALL)$(slibdir)$(slib_PREFIX)/$$f; \
+	#	$(INSTALL_EXEC) $$d$$p $(DESTDIR)$(slibdir)$(slib_PREFIX)/$$f >/dev/null; \
+	#done
         
 # install plugins into plugindir
 # ---------------------------------------------------------------------------

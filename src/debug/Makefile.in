@@ -18,7 +18,8 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = debug.a
-MODULES = debug_alloc debug_begin debug_char debug_end debug_error debug_free debug_list debug_memory debug_node debug_ptr debug_realloc debug_redir debug_space debug_str debug_stralloc debug_sublist debug_subnode debug_subst debug_ulong debug_unquoted
+MODULES = \
+debug_alloc debug_argv debug_begin debug_char debug_end debug_error debug_free debug_list debug_memory debug_node debug_position debug_ptr debug_realloc debug_redir debug_space debug_squoted debug_str debug_stralloc debug_sublist debug_subnode debug_subst debug_ulong debug_unquoted debug_xlong
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
@@ -45,4 +46,3 @@ INCLUDES += -include assert.h
 # include build.mk (makefile helper)
 # ---------------------------------------------------------------------------
 include $(top_builddir)/build.mk
-

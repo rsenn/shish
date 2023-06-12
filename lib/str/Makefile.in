@@ -19,8 +19,8 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 LIB = ../libowfat.a
 ARCHIVE = str.a
-MODULES = str_chr str_copy str_copyn str_diff str_diffn str_len str_rchr
-
+MODULES = \
+str_case_diff str_case_diffn str_chr str_copy str_copyn str_diff str_diffn str_len str_rchr str_rchrs
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

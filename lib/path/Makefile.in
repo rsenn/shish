@@ -1,13 +1,13 @@
 # ===========================================================================
 #
-# Makefile for lib/alloc subdirectory
+# Makefile for lib/path subdirectory
 #
 # relative directories
 # ---------------------------------------------------------------------------
 srcdir       = @srcdir@
 top_srcdir   = @top_srcdir@
 top_builddir = @top_builddir@
-thisdir      = lib/alloc/
+thisdir      = lib/path/
 
 VPATH        = $(srcdir)
 
@@ -18,9 +18,9 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 LIB = ../libowfat.a
-ARCHIVE = alloc.a
+ARCHIVE = path.a
 MODULES = \
-alloc alloc_re alloc_redebug alloc_zero alloc_zerodebug allocdebug str_dup str_dupdebug
+path_basename path_canonical path_canonical_sa path_canonicalize path_collapse path_fnmatch path_getcwd path_gethome path_getsep path_is_absolute path_is_absolute_b path_len_s path_readlink path_realpath path_right
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
