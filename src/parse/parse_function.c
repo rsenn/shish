@@ -10,7 +10,7 @@
  * ----------------------------------------------------------------------- */
 union node*
 parse_function(struct parser* p) {
-  int tok;
+  enum tok_flag tok;
   union node* node;
   struct location loc;
   struct nargstr* argstr;
@@ -27,9 +27,10 @@ parse_function(struct parser* p) {
   stralloc_nul(&name);
   node->nfunc.name = name.s;
 
-  do
+  do {
     tok = parse_gettok(p, P_DEFAULT);
-  while(tok == T_NL || tok == T_NAME);
+  } while(tok == T_NL || tok == T_NAME);
+
   p->pushback++;
   /*
     if((tok = parse_gettok(p, 0)) != T_BEGIN) {

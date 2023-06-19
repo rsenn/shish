@@ -8,7 +8,7 @@
 #include <stdlib.h>
 
 #ifndef __packed
-#define __packed __attribute__((packed))
+#define __packed /*__attribute__((packed))*/
 #endif
 
 /* the section numbers refer to the IEEE P1003.2 Draft D11.2 */
@@ -113,6 +113,7 @@ struct npipe {
 
 struct nnot {
   enum kind id;
+  unsigned dummy : 1;
   union node* next;
   union node* pipeline;
 } __packed;
@@ -167,6 +168,7 @@ struct ncase {
 
 struct ncasenode {
   enum kind id;
+  unsigned dummy : 1;
   union node* next;
   union node* pats;
   union node* cmds;
@@ -200,6 +202,7 @@ struct nloop {
  * ----------------------------------------------------------------------- */
 struct nfunc {
   enum kind id;
+  unsigned dummy : 1;
   struct nfunc* next;
   char* name;
   union node* body;
@@ -281,6 +284,7 @@ struct nargarith {
 
 struct narithnum {
   enum kind id;
+  unsigned dummy : 1;
   union node* next;
   int64 num;
   unsigned base;
@@ -288,12 +292,14 @@ struct narithnum {
 
 struct narithunary {
   enum kind id;
+  unsigned dummy : 1;
   union node* next;
   union node* node;
 } __packed;
 
 struct narithbinary {
   enum kind id;
+  unsigned dummy : 1;
   union node* next;
   union node* left;
   union node* right;
@@ -303,6 +309,7 @@ struct narithbinary {
 union node {
   struct {
     enum kind id;
+    unsigned dummy : 1;
     union node* next;
   };
   struct nlist nlist;
@@ -354,7 +361,7 @@ typedef union node node_t;
 
 /* skip to the next node */
 #define tree_next(nptr) (&((*(nptr)))->next)
-#define tree_skip(nptr) (nptr) = tree_next(nptr)
+#define tree_skip(nptr) ((nptr) = tree_next(nptr), *(nptr) = NULL)
 
 /*
  * initialize a branch in the tree.

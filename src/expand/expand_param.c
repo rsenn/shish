@@ -59,7 +59,7 @@ expand_range(union node* word, struct range* r) {
 
 union node*
 expand_param(struct nargparam* param, union node** nptr, int flags) {
-  union node* n = *nptr;
+  union node *start = *nptr, *n = *nptr;
   stralloc value;
   const char* v = NULL;
   size_t vlen = 0;
@@ -77,7 +77,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
       /* $* substitution */
       case S_ARGV: {
-        //char** s;
+        // char** s;
         size_t i;
         const char* ifs = var_vdefault("IFS", IFS_DEFAULT, NULL);
 
@@ -93,6 +93,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       case S_ARGVS: {
         unsigned int i, e;
         struct range r = {0, sh->arg.c};
+
 #if WITH_PARAM_RANGE
         if((param->flag & S_VAR) == S_RANGE) {
           if(expand_range(param->word, &r)) {
@@ -107,12 +108,14 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
           }
         }
 #endif
-        for(i = r.offset, e = r.offset + r.length; i < e;) {
-          param->flag &= ~(int)(S_SPECIAL /*| S_VAR*/);
-          param->flag |= S_ARG;
-          param->numb = 1 + i;
+        struct nargparam arg = {N_ARGPARAM, S_ARG, NULL, NULL, NULL, 0};
 
-          n = expand_param(param, nptr, flags);
+        for(i = r.offset, e = r.offset + r.length; i < e;) {
+          // param->flag &= ~(int)(S_SPECIAL /*| S_VAR*/);
+          // param->flag |= S_ARG;
+          arg.numb = 1 + i;
+
+          n = expand_param(&arg, nptr, flags);
 
           if(++i < sh->arg.c)
             nptr = &n->next;
@@ -143,7 +146,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         if(param->numb == 0)
           stralloc_cats(&value, sh_argv0);
         else if((unsigned)(param->numb - 1) < sh->arg.c)
-          stralloc_cats(&value, (sh->arg.v/* + sh->arg.s*/)[param->numb - 1]);
+          stralloc_cats(&value, (sh->arg.v /* + sh->arg.s*/)[param->numb - 1]);
 
         break;
       }

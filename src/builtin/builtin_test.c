@@ -233,17 +233,17 @@ test_expr(int argc, char** argv) {
   shell_optind++;
 
   for(i = shell_optind; i < argc; i++) {
-    const char* arg = argv[shell_optind + i];
+    const char* arg = argv[/*shell_optind +*/ i];
     if(str_len(arg) == 1 && contains("()", arg[0]))
       parens += arg[0] == '(' ? 1 : -1;
     if(parens == 0)
       break;
   }
 
-  if(shell_optind + i < argc) {
+  if(/*shell_optind + */ i < argc) {
     int result;
-    if((result = test_boolean(shell_optind + i, argv)) != -1) {
-      shell_optind += i;
+    if((result = test_boolean(/*shell_optind +*/ i, argv)) != -1) {
+      shell_optind++ /* += i*/;
       return result;
     }
   }
@@ -276,8 +276,8 @@ test_cond(int argc, char** argv) {
   if(result == -1)
     result = test_unary(argc, argv);
 
-  if(result == -1)
-    result = neg ^ result;
+  // if(result == -1)
+  result = neg ^ result;
 
   return result;
 }

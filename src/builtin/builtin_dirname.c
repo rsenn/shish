@@ -6,6 +6,7 @@
 int
 builtin_dirname(int argc, char* argv[]) {
   char* path;
+  int i;
 
   if(argc < 2) {
     builtin_errmsg(argv, "too few arguments", NULL);
@@ -13,13 +14,17 @@ builtin_dirname(int argc, char* argv[]) {
   }
 
   path = argv[1];
+
   if(path) {
-    int i;
     for(i = str_len(path) - 1; i >= 0; i--) {
       if(path[i] == '/') {
         path[i] = '\0';
         break;
       }
+    }
+    if(i < 0) {
+      path[0] = '.';
+      path[1] = '\0';
     }
   }
 
