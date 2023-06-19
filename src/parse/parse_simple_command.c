@@ -24,8 +24,10 @@ parse_simple_command(struct parser* p) {
   tree_init(rdir, rptr);
 
   for(;;) {
+    enum tok_flag tok = parse_gettok(p, P_DEFAULT);
+
     /* look for assignments only when we have no args yet */
-    switch(parse_gettok(p, P_DEFAULT)) {
+    switch(tok) {
       /* handle variable assignments */
       case T_ASSIGN:
         if(!(p->flags & P_NOASSIGN)) {
@@ -87,7 +89,7 @@ parse_simple_command(struct parser* p) {
         if(*aptr)
           tree_skip(aptr);
 
-        p->flags |= P_NOASSIGN;
+        p->flags |= P_NOASSIGN|P_NOKEYWD;
         break;
 
       /* handle redirections */
