@@ -96,7 +96,8 @@ void debug_squoted(const char*, size_t n, buffer* out);
 #define debug_s(str) buffer_puts(debug_output, str)
 #define debug_n(num) buffer_putlonglong(debug_output, num)
 #define debug_xn(num) buffer_putxlonglong(debug_output, num)
-#define debug_c(chr) buffer_putc(debug_output, (unsigned int)(unsigned char)(chr))
+#define debug_c(chr) \
+  buffer_putc(debug_output, (unsigned int)(unsigned char)(chr))
 #define debug_b(buf, len) buffer_put(debug_output, (buf), (len))
 #define debug_ws(str) debug_c(' ')
 #define debug_nl() debug_c('\n') //
@@ -139,7 +140,10 @@ extern struct chunk* debug_heap;
 extern struct chunk** debug_pos;
 
 void* debug_alloc(const char* file, unsigned int line, unsigned long size);
-void* debug_realloc(const char* file, unsigned int line, void* ptr, unsigned long size);
+void* debug_realloc(const char* file,
+                    unsigned int line,
+                    void* ptr,
+                    unsigned long size);
 void debug_free(const char* file, unsigned int line, void* ptr);
 void debug_error(const char* file, unsigned int line, const char* s);
 
@@ -179,7 +183,8 @@ debug_open() {
 static inline void
 debug_indent(int depth) {
   depth *= debug_nindent;
-  while(depth-- > 0) debug_c(' ');
+  while(depth-- > 0)
+    debug_c(' ');
 }
 
 static inline void

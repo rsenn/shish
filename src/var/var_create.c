@@ -30,7 +30,8 @@ var_create(const char* s, int flags) {
 
   if(!(flags & V_LOCAL)) {
 
-    while(tab->function) tab = tab->parent;
+    while(tab->function)
+      tab = tab->parent;
 
     /* if variable is found on that table -> immediately return it */
     if(v && v->table == tab)

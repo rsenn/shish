@@ -10,7 +10,8 @@ var_vlen(const char* v) {
     if(*s == 0x1b) {
       if(s[1] == '[') {
         s++;
-        while(parse_isdigit(s[1]) || s[1] == ';') s++;
+        while(parse_isdigit(s[1]) || s[1] == ';')
+          s++;
         s++;
       }
       continue;

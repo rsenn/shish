@@ -34,7 +34,8 @@ u8towc(wchar_t* w, const char* u, size_t count) {
       return -1;
     if((u[3] & 0xc0) != 0x80) /* error */
       return -1;
-    w[0] = ((u[0] & 0x07) << 18) | ((u[1] & 0x3f) << 12) | ((u[2] & 0x3f) << 6) | (u[3] & 0x3f);
+    w[0] = ((u[0] & 0x07) << 18) | ((u[1] & 0x3f) << 12) |
+           ((u[2] & 0x3f) << 6) | (u[3] & 0x3f);
     return 4;
   } else /* error */
     return -1;

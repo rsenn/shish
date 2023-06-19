@@ -51,7 +51,10 @@ strrpbrk(const char* s, const char* charset) {
  */
 
 int
-glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* pglob) {
+glob(const char* pattern,
+     int flags,
+     int (*errfunc)(const char*, int),
+     glob_t* pglob) {
   int result;
   char szRelative[1 + _MAX_PATH];
   const char* file_part;
@@ -76,15 +79,20 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
   }
 
   if(flags & GLOB_TILDE) {
-    if('~' == pattern[0] && ('\0' == pattern[1] || '/' == pattern[1] || '\\' == pattern[1])) {
+    if('~' == pattern[0] &&
+       ('\0' == pattern[1] || '/' == pattern[1] || '\\' == pattern[1])) {
       DWORD dw;
 
       (void)lstrcpyA(&szPattern2[0], "%HOMEDRIVE%%HOMEPATH%");
 
-      dw = ExpandEnvironmentStringsA(&szPattern2[0], &szPattern3[0], NUM_ELEMENTS(szPattern3) - 1);
+      dw = ExpandEnvironmentStringsA(&szPattern2[0],
+                                     &szPattern3[0],
+                                     NUM_ELEMENTS(szPattern3) - 1);
 
       if(0 != dw) {
-        (void)lstrcpynA(&szPattern3[0] + dw - 1, &pattern[1], (int)(NUM_ELEMENTS(szPattern3) - dw));
+        (void)lstrcpynA(&szPattern3[0] + dw - 1,
+                        &pattern[1],
+                        (int)(NUM_ELEMENTS(szPattern3) - dw));
         szPattern3[NUM_ELEMENTS(szPattern3) - 1] = '\0';
 
         effectivePattern = szPattern3;
@@ -148,7 +156,8 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
 
         if(bMagic0 && GLOB_NODOTSDIRS == (flags & GLOB_NODOTSDIRS)) {
           /* Pattern must begin with '.' to match either dots directory */
-          if(0 == lstrcmpA(".", find_data.cFileName) || 0 == lstrcmpA("..", find_data.cFileName)) {
+          if(0 == lstrcmpA(".", find_data.cFileName) ||
+             0 == lstrcmpA("..", find_data.cFileName)) {
             continue;
           }
         }
@@ -195,7 +204,9 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
         cbAlloc = new_cbAlloc;
       }
 
-      (void)lstrcpynA(buffer + cbCurr, szRelative, 1 + (file_part - effectivePattern));
+      (void)lstrcpynA(buffer + cbCurr,
+                      szRelative,
+                      1 + (file_part - effectivePattern));
       (void)lstrcatA(buffer + cbCurr, find_data.cFileName);
       cbCurr += cch + 1;
 
@@ -248,7 +259,8 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
           }
         } else {
           /* The normal way. */
-          for(begin = pp, next_str = buffer + cbPointers; begin != end; ++begin) {
+          for(begin = pp, next_str = buffer + cbPointers; begin != end;
+              ++begin) {
             *begin = next_str;
 
             /* Find the next s. */
@@ -277,7 +289,8 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
     if((flags & GLOB_TILDE_CHECK) && effectivePattern == szPattern3) {
       result = GLOB_NOMATCH;
     } else if(bNoMagic || (flags & GLOB_NOCHECK)) {
-      size_t cbNeeded = ((2 + pglob->gl_offs) * sizeof(char*)) + (1 + strlen(effectivePattern));
+      size_t cbNeeded = ((2 + pglob->gl_offs) * sizeof(char*)) +
+                        (1 + strlen(effectivePattern));
       char** pp = (char**)realloc(buffer, cbNeeded);
 
       if(NULL == pp) {

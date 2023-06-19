@@ -176,7 +176,11 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   }
 
   /* execute the command, this may or may not return, depending on E_EXIT */
-  status = exec_command(&cmd, argc, argv, ((e->flags & E_EXIT) ? X_EXEC : 0) | (ncmd->bgnd ? X_NOWAIT : 0));
+  status = exec_command(&cmd,
+                        argc,
+                        argv,
+                        ((e->flags & E_EXIT) ? X_EXEC : 0) |
+                            (ncmd->bgnd ? X_NOWAIT : 0));
 
   if(ncmd->bgnd) {
     struct job* job = *jobptr;
@@ -201,7 +205,8 @@ end:
   if(fdstack == &io) {
     fdstack_pop(&io);
   } else if(cmd.id != H_EXEC) {
-    for(r = redir; r; r = r->next) fd_pop(r->nredir.fd);
+    for(r = redir; r; r = r->next)
+      fd_pop(r->nredir.fd);
   }
 
   sh->exitcode = status;

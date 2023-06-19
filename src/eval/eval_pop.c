@@ -13,9 +13,11 @@ eval_pop(struct eval* e) {
 
   ret = e->exitcode;
 
-  while(fdstack != e->fdstack && &fdstack_root != fdstack) fdstack_pop(fdstack);
+  while(fdstack != e->fdstack && &fdstack_root != fdstack)
+    fdstack_pop(fdstack);
 
-  while(varstack != e->varstack && &vartab_root != varstack) vartab_pop(varstack);
+  while(varstack != e->varstack && &vartab_root != varstack)
+    vartab_pop(varstack);
 
   // sh->exitcode = e->exitcode;
   // sh->eval = e->parent;

@@ -16,7 +16,8 @@ fd_dup(struct fd* fd, int n) {
   if((dupe = fdtable[n]) == NULL)
     return fd_error(n, strerror(EBADF));
 
-  while(dupe->dup) dupe = dupe->dup;
+  while(dupe->dup)
+    dupe = dupe->dup;
 
   if(dupe == fd)
     return fd_error(n, "we cannot duplicate ourselves");

@@ -41,7 +41,8 @@ typedef int32_t int32;
 
 #if !defined(NO_UINT32_MACROS)
 
-#if(defined(__i386__) || defined(_M_IX86) || defined(_X86_) || defined(__x86_64__) || defined(_M_AMD64) || defined(__LITTLE_ENDIAN__) ||                       \
+#if(defined(__i386__) || defined(_M_IX86) || defined(_X86_) || \
+    defined(__x86_64__) || defined(_M_AMD64) || defined(__LITTLE_ENDIAN__) || \
     (BYTE_ORDER == _LITTLE_ENDIAN) || defined(_AMD64_) || defined(I_X86_))
 inline static void
 uint32_pack(char* out, uint32 in) {

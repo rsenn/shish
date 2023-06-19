@@ -34,7 +34,8 @@ parse_compound_list(struct parser* p, enum tok_flag end_tok) {
     *nptr = parse_list(p);
 
     /* skip arbitrary newlines */
-    while(p->tok & T_NL) parse_gettok(p, P_DEFAULT);
+    while(p->tok & T_NL)
+      parse_gettok(p, P_DEFAULT);
     p->pushback++;
     /*
         if(end_tok != -1 && (p->tok & end_tok))
@@ -46,7 +47,8 @@ parse_compound_list(struct parser* p, enum tok_flag end_tok) {
 
     /* parse_list already returns a list, so we
        must skip over it to get &lastnode->next */
-    while(*nptr) tree_skip(nptr);
+    while(*nptr)
+      tree_skip(nptr);
   }
 
   return list;

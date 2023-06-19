@@ -66,7 +66,8 @@ history_load(void) {
     if(!(len = history_cmdlen(&history_buffer.x[history_buffer.p])))
       break;
 
-    while(parse_isspace(history_buffer.x[history_buffer.p])) history_buffer.p++;
+    while(parse_isspace(history_buffer.x[history_buffer.p]))
+      history_buffer.p++;
 
     history_set(&history_buffer.x[history_buffer.p]);
     history_advance();

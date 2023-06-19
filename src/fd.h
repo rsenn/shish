@@ -20,7 +20,8 @@
 #include "../lib/windoze.h"
 #include "../lib/alloc.h"
 
-#if WINDOWS_NATIVE && !defined(__BORLANDC__) && !defined(__MINGW32__) && !defined(__TINYC__) && !defined(__LCC__)
+#if WINDOWS_NATIVE && !defined(__BORLANDC__) && !defined(__MINGW32__) && \
+    !defined(__TINYC__) && !defined(__LCC__)
 #ifndef HAVE_DEV_T
 typedef int dev_t;
 #endif
@@ -128,11 +129,11 @@ enum {
   FD_RWFILE = (FD_READFILE | FD_WRITEFILE),
 };
 
-#define fd_foreach(i)                                                                                                                                          \
-  for(i = fd_lo; i < fd_hi; i++)                                                                                                                               \
+#define fd_foreach(i) \
+  for(i = fd_lo; i < fd_hi; i++) \
     if(fd_list[i])
-#define fd_foreach_p(i, p)                                                                                                                                     \
-  for(i = fd_lo; i < fd_hi; i++)                                                                                                                               \
+#define fd_foreach_p(i, p) \
+  for(i = fd_lo; i < fd_hi; i++) \
     if((p = fd_list[i]))
 
 extern struct fd* fd_list[FD_MAX];

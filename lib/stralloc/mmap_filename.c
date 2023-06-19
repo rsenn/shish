@@ -30,12 +30,15 @@ mmap_filename(void* map, stralloc* sa) {
 
   if(get_mmaped_filename == 0) {
     HINSTANCE psapi = LoadLibraryA("psapi.dll");
-    if((get_mmaped_filename = (get_mmaped_filename_fn*)GetProcAddress(psapi, "GetMappedFileNameA")) == 0)
+    if((get_mmaped_filename =
+            (get_mmaped_filename_fn*)GetProcAddress(psapi,
+                                                    "GetMappedFileNameA")) == 0)
       return 0;
   }
 
   stralloc_ready(sa, MAX_PATH + 1);
-  if((sa->len = (size_t)(*get_mmaped_filename)(GetCurrentProcess(), map, sa->s, sa->a))) {
+  if((sa->len = (size_t)(*get_mmaped_filename)(
+          GetCurrentProcess(), map, sa->s, sa->a))) {
 
     /* Translate path with device name to drive letters. */
     char szTemp[BUFSIZE];
@@ -56,7 +59,8 @@ mmap_filename(void* map, stralloc* sa) {
           size_t uNameLen = str_len(szName);
 
           if(uNameLen < MAX_PATH) {
-            bFound = strnicmp(sa->s, szName, uNameLen) == 0 && *(sa->s + uNameLen) == '\\';
+            bFound = strnicmp(sa->s, szName, uNameLen) == 0 &&
+                     *(sa->s + uNameLen) == '\\';
 
             if(bFound) {
               /* Reconstruct sa->s using szTempFile
@@ -77,7 +81,8 @@ mmap_filename(void* map, stralloc* sa) {
   return sa->len > 0;
 #else
   char buf[1024];
-  buffer b = BUFFER_INIT(read, open("/proc/self/maps", O_RDONLY), buf, sizeof(buf));
+  buffer b =
+      BUFFER_INIT(read, open("/proc/self/maps", O_RDONLY), buf, sizeof(buf));
   char line[73 + PATH_MAX + 1];
   ssize_t n;
   int ret = 0;

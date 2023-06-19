@@ -30,8 +30,8 @@ typedef struct {
 
 #define PATH_FNM_NOMATCH 1
 #define PATH_FNM_PATHNAME (1 << 0) /* No wildcard can ever match /'.  */
-#define PATH_FNM_NOESCAPE                                                                                                                                      \
-  (1 << 1)                       /* Backslashes don't quote special chars.                                                                                     \
+#define PATH_FNM_NOESCAPE \
+  (1 << 1)                       /* Backslashes don't quote special chars. \
                                   */
 #define PATH_FNM_PERIOD (1 << 2) /* Leading .' is matched only explicitly.  */
 
@@ -40,7 +40,11 @@ int path_canonicalize(const char* path, stralloc* sa, int symbolic);
 int path_canonical_sa(stralloc* sa);
 int path_canonical(const char* path, stralloc* out);
 size_t path_collapse(char* path, size_t n);
-int path_fnmatch(const char* pattern, unsigned int plen, const char* string, unsigned int slen, int flags);
+int path_fnmatch(const char* pattern,
+                 unsigned int plen,
+                 const char* string,
+                 unsigned int slen,
+                 int flags);
 void path_getcwd(stralloc* sa);
 char* path_gethome(int uid);
 int path_getsep(const char* path);

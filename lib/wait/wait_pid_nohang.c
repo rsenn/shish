@@ -12,7 +12,8 @@ int
 wait_pid_nohang(int pid, int* wstat) {
 #if WINDOWS_NATIVE
   DWORD exitcode = 0;
-  HANDLE process = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, pid);
+  HANDLE process =
+      OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, pid);
   WaitForSingleObject(process, INFINITE);
   GetExitCodeProcess(process, &exitcode);
   CloseHandle(process);

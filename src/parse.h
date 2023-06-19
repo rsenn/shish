@@ -75,7 +75,8 @@ parse_isalpha(int c) {
 /* matches [a-zA-Z0-9] */
 static inline int
 parse_isalnum(int c) {
-  return !!(parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_DIGIT));
+  return !!(parse_chartable[(int)(unsigned char)c] &
+            (C_LOWER | C_UPPER | C_DIGIT));
 }
 /* matches [@#?!$0-*] (special parameters) */
 static inline int
@@ -102,8 +103,12 @@ parse_isdesc(int c) {
 }
 
 /* is either alpha, digit or underscore */
-#define parse_isname(c, pos) ((parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_NAME)) || ((pos) > 0 && parse_isdigit(c)))
-#define parse_isfname(c, pos) ((parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_NAME)) || ((pos) > 0 && (parse_isdigit(c) || (c) == '-')))
+#define parse_isname(c, pos) \
+  ((parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_NAME)) || \
+   ((pos) > 0 && parse_isdigit(c)))
+#define parse_isfname(c, pos) \
+  ((parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_NAME)) || \
+   ((pos) > 0 && (parse_isdigit(c) || (c) == '-')))
 
 static inline int
 parse_isfuncname(const char* s) {
@@ -118,7 +123,8 @@ parse_isfuncname(const char* s) {
 /* is either alpha, digit or underscore or special parameter */
 static inline int
 parse_isparam(int c) {
-  return !!(parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_DIGIT | C_NAME | C_SPCL));
+  return !!(parse_chartable[(int)(unsigned char)c] &
+            (C_LOWER | C_UPPER | C_DIGIT | C_NAME | C_SPCL));
 }
 
 /* is arithmetic operation char  */
@@ -284,7 +290,10 @@ enum tok_flag parse_gettok(struct parser* p, int tempflags);
 int parse_arith(struct parser* p);
 int parse_bquoted(struct parser* p);
 int parse_dquoted(struct parser* p);
-enum tok_flag parse_expect(struct parser* p, int tempflags, enum tok_flag toks, union node* nfree);
+enum tok_flag parse_expect(struct parser* p,
+                           int tempflags,
+                           enum tok_flag toks,
+                           union node* nfree);
 int parse_here(struct parser* p, stralloc* delim, int nosubst);
 int parse_keyword(struct parser* p);
 int parse_param(struct parser* p);
@@ -326,7 +335,10 @@ void parse_dump(struct parser* p, buffer* b);
 #endif
 
 #ifdef DEBUG_ALLOC
-void parse_newnodedebug(const char* file, unsigned int line, struct parser* p, enum kind nod);
+void parse_newnodedebug(const char* file,
+                        unsigned int line,
+                        struct parser* p,
+                        enum kind nod);
 #define parse_newnode(p, id) parse_newnodedebug(__FILE__, __LINE__, (p), (id))
 #else
 void parse_newnode(struct parser* p, enum kind nod);

@@ -79,15 +79,19 @@ fdtable_resolve(struct fd* fd, int flags) {
     }
   }
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE) && !defined(SHFORMAT) && \
+    !defined(SHPARSE2AST)
   debug_open();
   buffer_puts(debug_output, COLOR_YELLOW "fdtable_resolve" COLOR_NONE "(");
   fd_dump(fd, debug_output);
   buffer_puts(debug_output, ", ");
-  debug_flags(flags, (const char* const[]){"LAZY", "MOVE", "FORCE", "NOCLOSE", "CLOSE"});
+  debug_flags(
+      flags,
+      (const char* const[]){"LAZY", "MOVE", "FORCE", "NOCLOSE", "CLOSE"});
   buffer_puts(debug_output, ") = ");
 
-  buffer_puts(debug_output, ((const char* const[]){"0", "DONE", "ERROR", "PENDING"})[-state]);
+  buffer_puts(debug_output,
+              ((const char* const[]){"0", "DONE", "ERROR", "PENDING"})[-state]);
   debug_nl_fl();
 #endif
 

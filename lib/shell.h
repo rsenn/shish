@@ -21,7 +21,10 @@ struct optstate {
   char prefix;
 };
 
-int shell_getopt_r(struct optstate*, int argc, char* const argv[], const char* optstring);
+int shell_getopt_r(struct optstate*,
+                   int argc,
+                   char* const argv[],
+                   const char* optstring);
 int shell_getopt(int argc, char* const argv[], const char* optstring);
 
 extern struct optstate shell_opt;

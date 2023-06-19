@@ -32,7 +32,8 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
         fd_setbuf(fds, b, FD_BUFSIZE / 2);
 
         e = fd_pipe(fds);
-        buffer_init(&fds->parent->rb, (buffer_op_proto*)(void*)&read, e, NULL, 0);
+        buffer_init(
+            &fds->parent->rb, (buffer_op_proto*)(void*)&read, e, NULL, 0);
         // fds->parent->mode |= FD_PIPE;
         fds->parent->r = 0;
         b += FD_BUFSIZE / 2;

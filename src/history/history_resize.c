@@ -31,7 +31,8 @@ history_resize(void) {
   history_array = alloc_re(history_array, newsize * sizeof(char*));
 
   /* initialize new entries when history has grown */
-  for(i = history_size; i < newsize; i++) history_array[i] = NULL;
+  for(i = history_size; i < newsize; i++)
+    history_array[i] = NULL;
 
   history_size = newsize;
 }

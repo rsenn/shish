@@ -15,7 +15,8 @@ var_hsearch(struct search* context) {
   struct var* var;
 
   /* continue looping through the current list */
-  for(; (var = *context->pos); context->pos = (context->global ? &var->gnext : &var->bnext)) {
+  for(; (var = *context->pos);
+      context->pos = (context->global ? &var->gnext : &var->bnext)) {
     /* because the list is sorted ascending we can skip all
        the vars while their literal hash is smaller than the
        one of the wanted var */

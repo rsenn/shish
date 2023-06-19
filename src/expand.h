@@ -70,7 +70,8 @@ int expand_arith_assign(struct narithbinary*, int64*);
 union node* expand_arith(struct nargarith* arith, union node** nptr);
 int expand_arith_unary(struct narithunary* expr, int64* r);
 union node** expand_break(union node** out);
-union node* expand_cat(const char* b, unsigned int len, union node** nptr, int flags);
+union node*
+expand_cat(const char* b, unsigned int len, union node** nptr, int flags);
 void expand_catsa(union node* node, stralloc* sa, int flags);
 union node* expand_command(struct nargcmd* cmd, union node** nptr, int flags);
 void expand_copysa(union node* node, stralloc* sa, int flags);

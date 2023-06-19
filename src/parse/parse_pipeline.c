@@ -12,7 +12,8 @@ parse_pipeline(struct parser* p) {
   enum tok_flag tok;
 
   /* on T_NOT toggle negate */
-  while((tok = parse_gettok(p, P_DEFAULT)) == T_NOT) negate = !negate;
+  while((tok = parse_gettok(p, P_DEFAULT)) == T_NOT)
+    negate = !negate;
 
   p->pushback++;
 

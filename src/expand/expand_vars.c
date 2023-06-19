@@ -28,7 +28,8 @@ expand_vars(union node* vars, union node** nptr) {
        debug_stralloc("var", &node->narg.stra, 0, 0);
        debug_nl_fl();
      }*/
-    while(*nptr) tree_skip(nptr);
+    while(*nptr)
+      tree_skip(nptr);
 
     *nptr = node;
     nptr = tree_next(nptr);

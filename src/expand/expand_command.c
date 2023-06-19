@@ -56,7 +56,8 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
   fdstack_pop(&fdst);
 
   /* split trailing newlines */
-  while(sa.len && sa.s[sa.len - 1] == '\n') sa.len--;
+  while(sa.len && sa.s[sa.len - 1] == '\n')
+    sa.len--;
 
   /* expand the output of the command
 
@@ -66,7 +67,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
 
             so we won't have to alloc all the stuff twice!
    */
-  n = expand_cat(sa.s, sa.len, nptr, flags);
+  n = expand_cat(sa.s, sa.len, nptr, flags & (~(X_QUOTED)));
   stralloc_free(&sa);
 
   return n;

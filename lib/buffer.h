@@ -12,23 +12,24 @@ typedef buffer_op_fn* buffer_op_ptr;
 struct buffer;
 
 typedef struct buffer {
-  char* x;                        /* actual buffer space */
-  size_t p;                       /* current position */
-  size_t n;                       /* current size of string in buffer */
-  size_t a;                       /* allocated buffer size */
-  buffer_op_proto* op;            /* use read(2) or write(2) */
-  void* cookie;                   /* used internally by the to-stralloc buffers,  and for buffer
-                                     chaini(ng */
-  void (*deinit)(struct buffer*); /* called to munmap/free cleanup,  with a pointer to the buffer
-                              as argument */
+  char* x;             /* actual buffer space */
+  size_t p;            /* current position */
+  size_t n;            /* current size of string in buffer */
+  size_t a;            /* allocated buffer size */
+  buffer_op_proto* op; /* use read(2) or write(2) */
+  void* cookie; /* used internally by the to-stralloc buffers,  and for buffer
+                   chaini(ng */
+  void (*deinit)(struct buffer*); /* called to munmap/free cleanup,  with a
+                              pointer to the buffer as argument */
   fd_t fd;                        /* passed as first argument to op */
 } buffer;
 
-#define BUFFER_INIT(op, fd, buf, len)                                                                                                                          \
+#define BUFFER_INIT(op, fd, buf, len) \
   { (buf), 0, 0, (len), (buffer_op_proto*)(void*)(op), NULL, NULL, (fd) }
-#define BUFFER_INIT_FREE(op, fd, buf, len)                                                                                                                     \
+#define BUFFER_INIT_FREE(op, fd, buf, len) \
   { (buf), 0, 0, (len), (buffer_op_proto*)(void*)(op), NULL, buffer_free, (fd) }
-#define BUFFER_INIT_READ(op, fd, buf, len) BUFFER_INIT(op, fd, buf, len) /*obsolete*/
+#define BUFFER_INIT_READ(op, fd, buf, len) \
+  BUFFER_INIT(op, fd, buf, len) /*obsolete*/
 #define BUFFER_INSIZE 65535
 #define BUFFER_OUTSIZE 32768
 
@@ -48,12 +49,17 @@ ssize_t buffer_putflush(buffer*, const char* x, size_t len);
 int buffer_puts(buffer*, const char* x);
 ssize_t buffer_putsflush(buffer*, const char* x);
 
-#if defined(__GNUC__) && !defined(__LIBOWFAT_INTERNAL) && !defined(__dietlibc__) && !defined(NO_BUILTINS)
+#if defined(__GNUC__) && !defined(__LIBOWFAT_INTERNAL) && \
+    !defined(__dietlibc__) && !defined(NO_BUILTINS)
 /* as a little gcc-specific hack,  if somebody calls buffer_puts with a
  * constant string,  where we know its length at compile-time,  call
  * buffer_put with the known length instead */
-#define buffer_puts(b, s) (__builtin_constant_p(s) ? buffer_put(b, s, __builtin_strlen(s)) : buffer_puts(b, s))
-#define buffer_putsflush(b, s) (__builtin_constant_p(s) ? buffer_putflush(b, s, __builtin_strlen(s)) : buffer_putsflush(b, s))
+#define buffer_puts(b, s) \
+  (__builtin_constant_p(s) ? buffer_put(b, s, __builtin_strlen(s)) \
+                           : buffer_puts(b, s))
+#define buffer_putsflush(b, s) \
+  (__builtin_constant_p(s) ? buffer_putflush(b, s, __builtin_strlen(s)) \
+                           : buffer_putsflush(b, s))
 #endif
 
 int buffer_putm_internal(buffer* b, ...);
@@ -65,12 +71,14 @@ int buffer_putm_internal(buffer* b, ...);
 int buffer_putspace(buffer* b);
 ssize_t buffer_putnlflush(buffer* b); /* put \n and flush */
 
-#define buffer_PUTC(s, c) (((s)->a != (s)->p) ? ((s)->x[(s)->p++] = (c), 0) : buffer_putc((s), (c)))
+#define buffer_PUTC(s, c) \
+  (((s)->a != (s)->p) ? ((s)->x[(s)->p++] = (c), 0) : buffer_putc((s), (c)))
 
 ssize_t buffer_feed(buffer* b);
 ssize_t buffer_getc(buffer*, char* x);
 
-ssize_t buffer_get_token(buffer*, char* x, size_t len, const char* charset, size_t setlen);
+ssize_t buffer_get_token(
+    buffer*, char* x, size_t len, const char* charset, size_t setlen);
 ssize_t buffer_getline(buffer*, char* x, size_t len);
 
 /* read bytes until the destination buffer is full (len bytes),  end of
@@ -114,7 +122,7 @@ int buffer_get_new_token_sa_pred(buffer*, stralloc* sa, sa_predicate p, void*);
 /* make a buffer from a stralloc.
  * Do not change the stralloc after this! */
 void buffer_fromsa(buffer*, const stralloc* sa); /* read from sa */
-int buffer_tosa(buffer* b, stralloc* sa);        /* write to sa,  auto-growing it */
+int buffer_tosa(buffer* b, stralloc* sa); /* write to sa,  auto-growing it */
 
 #endif
 
@@ -125,7 +133,8 @@ ssize_t buffer_dummyreadmmap(int, void*, size_t, void*);
 void buffer_dump(buffer* out, buffer* b);
 void buffer_frombuf(buffer* b, const char* x, size_t l);
 void buffer_fromstr(buffer* b, char* s, size_t len);
-int buffer_get_until(buffer* b, char* x, size_t len, const char* charset, size_t setlen);
+int buffer_get_until(
+    buffer* b, char* x, size_t len, const char* charset, size_t setlen);
 int buffer_putc(buffer* b, char c);
 
 int buffer_putnspace(buffer* b, int n);
@@ -133,8 +142,10 @@ int buffer_putptr(buffer* b, void* ptr);
 int buffer_putlong0(buffer* b, long l, int pad);
 int buffer_putulong0(buffer* b, unsigned long l, int pad);
 
-ssize_t buffer_stubborn(buffer_op_proto* op, int fd, const char* buf, size_t len, void* ptr);
-ssize_t buffer_stubborn_read(buffer_op_proto* op, int fd, const void* buf, size_t len, void* ptr);
+ssize_t buffer_stubborn(
+    buffer_op_proto* op, int fd, const char* buf, size_t len, void* ptr);
+ssize_t buffer_stubborn_read(
+    buffer_op_proto* op, int fd, const void* buf, size_t len, void* ptr);
 int buffer_truncfile(buffer* b, const char* fn);
 int buffer_putnc(buffer*, char c, int ntimes);
 int buffer_putns(buffer*, const char*, int ntimes);

@@ -16,7 +16,8 @@ const char prompt_default[] = "\\u@\\h:\\w \\$ ";
 static inline unsigned int
 prompt_hashstr(const char* s, unsigned long n) {
   unsigned int hash = 0x7fedcb95; /* some prime number */
-  while(n) hash = (hash * 0x0123456b) ^ *s++, n--;
+  while(n)
+    hash = (hash * 0x0123456b) ^ *s++, n--;
   return hash;
 }
 

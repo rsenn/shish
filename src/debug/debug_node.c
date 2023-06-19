@@ -13,13 +13,21 @@ extern int sh_no_position;
 
 /* debugs a tree node!
  * ----------------------------------------------------------------------- */
-const char* debug_nodes[] = {"N_SIMPLECMD", "N_PIPELINE", "N_AND",      "N_OR",       "N_NOT",      "N_SUBSHELL", "N_BRACEGROUP", "N_FOR",        "N_CASE",
-                             "N_CASENODE",  "N_IF",       "N_WHILE",    "N_UNTIL",    "N_FUNCTION", "N_ARG",      "N_ASSIGN",     "N_REDIR",      "N_ARGSTR",
-                             "N_ARGCMD",    "N_ARGPARAM", "N_ARGARITH", "N_ARGRANGE", "A_NUM",      "A_PAREN",    "A_OR",         "A_AND",        "A_BITOR",
-                             "A_BITXOR",    "A_BITAND",   "A_EQ",       "A_NE",       "A_LT",       "A_GT",       "A_GE",         "A_LE",         "A_SHL",
-                             "A_SHR",       "A_ADD",      "A_SUB",      "A_MUL",      "A_DIV",      "A_MOD",      "A_EXP",        "A_UNARYMINUS", "A_UNARYPLUS",
-                             "A_NOT",       "A_BNOT",     "A_PREDECR",  "A_PREINCR",  "A_POSTDECR", "A_POSTINCR", "A_VASSIGN",    "A_VADD",       "A_VSUB",
-                             "A_VMUL",      "A_VDIV",     "A_VMOD",     "A_VSHL",     "A_VSHR",     "A_VBITAND",  "A_VBITXOR",    "A_VBITOR"};
+const char* debug_nodes[] = {
+    "N_SIMPLECMD", "N_PIPELINE", "N_AND",        "N_OR",         "N_NOT",
+    "N_LIST",      "N_SUBSHELL", "N_BRACEGROUP", "N_FOR",        "N_CASE",
+    "N_CASENODE",  "N_IF",       "N_WHILE",      "N_UNTIL",      "N_FUNCTION",
+    "N_ARG",       "N_ASSIGN",   "N_REDIR",      "N_ARGSTR",     "N_ARGCMD",
+    "N_ARGPARAM",  "N_ARGARITH", "A_NUM",        "A_PAREN",      "A_OR",
+    "A_AND",       "A_BITOR",    "A_BITXOR",     "A_BITAND",     "A_EQ",
+    "A_NE",        "A_LT",       "A_GT",         "A_GE",         "A_LE",
+    "A_SHL",       "A_SHR",      "A_ADD",        "A_SUB",        "A_MUL",
+    "A_DIV",       "A_MOD",      "A_EXP",        "A_UNARYMINUS", "A_UNARYPLUS",
+    "A_NOT",       "A_BNOT",     "A_PREDECR",    "A_PREINCR",    "A_POSTDECR",
+    "A_POSTINCR",  "A_VASSIGN",  "A_VADD",       "A_VSUB",       "A_VMUL",
+    "A_VDIV",      "A_VMOD",     "A_VSHL",       "A_VSHR",       "A_VBITAND",
+    "A_VBITXOR",   "A_VBITOR",
+};
 
 void
 debug_node(union node* node, int depth) {
@@ -146,11 +154,16 @@ debug_node(union node* node, int depth) {
 
       debug_xlong(", flag", node->nargstr.flag /*& 0x7*/, depth);
       if(!sh_no_position)
-        debug_location(", loc", &node->nargstr.loc, depth); // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
-      debug_stralloc(", stra",
-                     &node->nargstr.stra,
-                     depth,
-                     debug_quote); // node->nargstr.flag & S_DQUOTED ? '"' : node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
+        debug_location(", loc",
+                       &node->nargstr.loc,
+                       depth); // node->nargstr.flag & S_DQUOTED ? '"' :
+                               // node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
+      debug_stralloc(
+          ", stra",
+          &node->nargstr.stra,
+          depth,
+          debug_quote); // node->nargstr.flag & S_DQUOTED ? '"' :
+                        // node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
       break;
 
     case N_ARGPARAM: {
@@ -245,7 +258,9 @@ debug_node(union node* node, int depth) {
     case A_PREINCR:
     case A_PREDECR:
     case A_POSTINCR:
-    case A_POSTDECR: debug_subnode(", node", node->narithunary.node, depth); break;
+    case A_POSTDECR:
+      debug_subnode(", node", node->narithunary.node, depth);
+      break;
 
     case N_NOT: debug_sublist(", cmds", node->nandor.left, depth); break;
     case N_LIST: debug_sublist(", cmds", node->nlist.cmds, depth); break;

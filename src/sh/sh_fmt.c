@@ -99,7 +99,8 @@ main(int argc, char** argv, char** envp) {
   */
 
   /* parse command line arguments */
-  while((c = shell_getopt(argc, argv, "c:xeiw:l:")) > 0) switch(c) {
+  while((c = shell_getopt(argc, argv, "c:xeiw:l:")) > 0)
+    switch(c) {
       case 'c': cmds = shell_optarg; break;
       case 'x': sh->opts.xtrace = 1; break;
       case 'e': sh->opts.errexit = 1; break;
@@ -126,7 +127,8 @@ main(int argc, char** argv, char** envp) {
   debug_nl_fl();
 #endif
 
-  for(i = 0; i < indent_width; i++) stralloc_catc(&separator, ' ');
+  for(i = 0; i < indent_width; i++)
+    stralloc_catc(&separator, ' ');
   stralloc_nul(&separator);
   tree_separator = separator.s;
 
@@ -178,7 +180,8 @@ main(int argc, char** argv, char** envp) {
 
   parse_init(&p, P_COMMENT);
 
-  buffer_init(&out_buf, (buffer_op_proto*)(void*)&write, out_fd, alloca(1024), 1024);
+  buffer_init(
+      &out_buf, (buffer_op_proto*)(void*)&write, out_fd, alloca(1024), 1024);
 
   while(!(((tok = parse_gettok(&p, P_DEFAULT)) & T_EOF))) {
     union node* list;

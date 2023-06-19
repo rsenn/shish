@@ -118,7 +118,8 @@ start:
   /* loop once for every /path/component/
      we canonicalize absolute paths, so we must always have a '/' here */
   while(*path) {
-    while(path_issep(*path)) sep = *path++;
+    while(path_issep(*path))
+      sep = *path++;
 
     /* check for various relative directory parts beginning with '.' */
     if(path[0] == '.') {

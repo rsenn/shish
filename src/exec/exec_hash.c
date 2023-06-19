@@ -45,7 +45,8 @@ exec_hash(char* name, int mask) {
     }
 
     if(!entry || entry->mask != mask) {
-      /* if we don't have a cache hit we're gonna search, special builtins first */
+      /* if we don't have a cache hit we're gonna search, special builtins first
+       */
       cmd = exec_search(name, mask);
     }
     if(entry && entry->mask != mask) {

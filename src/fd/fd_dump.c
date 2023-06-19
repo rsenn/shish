@@ -1,6 +1,7 @@
 #include "../debug.h"
 
-#if defined(DEBUG_OUTPUT) /*&& (defined(DEBUG_FDTABLE) || defined(DEBUG_FDSTACK) || defined(DEBUG_FD))*/
+#if defined(DEBUG_OUTPUT) /*&& (defined(DEBUG_FDTABLE) || \
+                             defined(DEBUG_FDSTACK) || defined(DEBUG_FD))*/
 #include "../../lib/buffer.h"
 #include "../term.h"
 #include "../fd.h"
@@ -34,9 +35,14 @@ fd_dump(struct fd* fd, buffer* b) {
 
   dump_flags(b,
              fd->mode,
-             (const char* const[]){"READ", "WRITE", "APPEND", "EXCL",  "TRUNC",    0,         0,      0,      "FILE",   "DIR", "LINK",
-                                   "CHAR", "BLOCK", "SOCKET", "PIPE",  "STRALLOC", "STRING",  "DUP",  "TERM", "NULL",   0,     0,
-                                   0,      0,       "FLUSH",  "CLOSE", "FREENAME", "DUPNAME", "FREE", 0,      "TMPBUF", "OPEN"},
+             (const char* const[]){"READ",   "WRITE",  "APPEND",   "EXCL",
+                                   "TRUNC",  0,        0,          0,
+                                   "FILE",   "DIR",    "LINK",     "CHAR",
+                                   "BLOCK",  "SOCKET", "PIPE",     "STRALLOC",
+                                   "STRING", "DUP",    "TERM",     "NULL",
+                                   0,        0,        0,          0,
+                                   "FLUSH",  "CLOSE",  "FREENAME", "DUPNAME",
+                                   "FREE",   0,        "TMPBUF",   "OPEN"},
              32);
 
   term_escape(b, 84, 'G');

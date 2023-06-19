@@ -27,9 +27,15 @@ builtin_hash(int argc, char* argv[]) {
       switch(h->cmd.id) {
         case H_PROGRAM: buffer_puts(fd_out->w, h->cmd.path); break;
         case H_EXEC:
-        case H_SBUILTIN: buffer_putm_internal(fd_out->w, h->name, " (special builtin)", NULL); break;
-        case H_BUILTIN: buffer_putm_internal(fd_out->w, h->name, " (builtin)", NULL); break;
-        case H_FUNCTION: buffer_putm_internal(fd_out->w, h->name, " (function)", NULL); break;
+        case H_SBUILTIN:
+          buffer_putm_internal(fd_out->w, h->name, " (special builtin)", NULL);
+          break;
+        case H_BUILTIN:
+          buffer_putm_internal(fd_out->w, h->name, " (builtin)", NULL);
+          break;
+        case H_FUNCTION:
+          buffer_putm_internal(fd_out->w, h->name, " (function)", NULL);
+          break;
       }
       buffer_putnlflush(fd_out->w);
     }

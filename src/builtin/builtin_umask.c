@@ -99,7 +99,8 @@ builtin_umask(int argc, char* argv[]) {
   if(shell_optind < argc) {
     uint16 num, prev = sh->umask;
 
-    if(scan_8short(argv[shell_optind], &num) || scan_umask(argv[shell_optind], &num))
+    if(scan_8short(argv[shell_optind], &num) ||
+       scan_umask(argv[shell_optind], &num))
       sh->umask = num;
 
     if(sh->umask != prev)
@@ -108,7 +109,8 @@ builtin_umask(int argc, char* argv[]) {
   } else {
     /* print umask, suitable for re-input */
     char buf[64];
-    size_t n = symbolic ? fmt_umask(buf, ~sh->umask) : fmt_8long(buf, sh->umask);
+    size_t n =
+        symbolic ? fmt_umask(buf, ~sh->umask) : fmt_8long(buf, sh->umask);
 
     if(print)
       buffer_puts(fd_out->w, "umask ");

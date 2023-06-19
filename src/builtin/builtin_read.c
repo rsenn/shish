@@ -26,7 +26,8 @@ static int
 predicate_function(stralloc* sa, void* ptr) {
   struct predicate_data* p = ptr;
   if(p->delim && p->ndelim > 0) {
-    if(sa->len && byte_chr(p->delim, p->ndelim, sa->s[sa->len - 1]) < (size_t)p->ndelim)
+    if(sa->len &&
+       byte_chr(p->delim, p->ndelim, sa->s[sa->len - 1]) < (size_t)p->ndelim)
       return 1;
   }
   if(p->nchars > 0)
@@ -92,7 +93,8 @@ builtin_read(int argc, char* argv[]) {
     if(silent)
       term_attr(input->fd, 1, &attrs);
 
-    if((ret = buffer_get_token_sa_pred(input, &data, predicate_function, &p)) > 0) {
+    if((ret = buffer_get_token_sa_pred(input, &data, predicate_function, &p)) >
+       0) {
       stralloc_trimr(&data, "\r\n", 2);
     } else {
       status = 1;

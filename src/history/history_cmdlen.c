@@ -15,13 +15,15 @@ history_cmdlen(const char* v) {
     mapping = 1;
 
     /* skip leading newlines */
-    while(b < mapend && parse_isspace(*b)) b++;
+    while(b < mapend && parse_isspace(*b))
+      b++;
 
     /* do not go beyond the map */
     if(b == mapend)
       return 0;
   } else {
-    while(parse_isspace(*b)) b++;
+    while(parse_isspace(*b))
+      b++;
   }
 
   for(; mapping ? b < mapend : *b; b++) {

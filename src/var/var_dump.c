@@ -41,7 +41,8 @@ var_dump(struct var* var) {
       rl = (rn > 24 ? 21 : rn);
       l = (n > 24 ? 21 : n);
       for(i = 0; i < rl; i++) {
-        if(var->sa.s[var->offset + i] != '\n' && var->sa.s[var->offset + i] != '\t')
+        if(var->sa.s[var->offset + i] != '\n' &&
+           var->sa.s[var->offset + i] != '\t')
           buffer_put(fd_out->w, &var->sa.s[var->offset + i], 1);
         else
           buffer_putspace(fd_out->w);

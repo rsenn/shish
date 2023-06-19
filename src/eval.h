@@ -69,7 +69,8 @@ static inline unsigned int
 eval_depth() {
   struct env* e;
   unsigned int n = 0;
-  for(e = sh; e; e = e->parent) n++;
+  for(e = sh; e; e = e->parent)
+    n++;
   return n;
 }
 

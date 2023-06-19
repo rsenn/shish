@@ -63,7 +63,7 @@ again:
       int prevtable = 0;
 
       for(subarg = node->narg.list; subarg;) {
-        int table = subarg->nargstr.flag & S_TABLE;
+        int table = subarg->nargstr.flag & (S_SQUOTED | S_DQUOTED);
 
         if(table != prevtable && table)
           stralloc_catc(sa, (table == S_DQUOTED ? '"' : '\''));
@@ -72,7 +72,7 @@ again:
         prevtable = table;
         subarg = subarg->next;
 
-        table = subarg ? subarg->nargstr.flag & S_TABLE : 0;
+        table = subarg ? subarg->nargstr.flag & (S_SQUOTED | S_DQUOTED) : 0;
 
         if(table != prevtable && prevtable)
           stralloc_catc(sa, (prevtable == S_DQUOTED ? '"' : '\''));
@@ -89,8 +89,10 @@ again:
 
       for(i = 0; i < arg->len; i++) {
         if(arg->str[i] == '\\' && table == S_SQUOTED) {
-          i++;  
-        } else if(arg->str[i] == '\\' && table == S_DQUOTED && !parse_isdesc(arg->str[i])) {
+          i++;
+
+        } else if(arg->str[i] == '\\' && table == S_DQUOTED &&
+                  !parse_isdesc(arg->str[i])) {
           continue;
         } else if(!parse_isesc(arg->str[i])) {
 
@@ -113,7 +115,8 @@ again:
 
       /* if we have a word substitution inside the var we MUST
         put it inside braces */
-      if(node->nargparam.word || (node->nargparam.flag & S_STRLEN) || (node->nargparam.flag & S_VAR))
+      if(node->nargparam.word || (node->nargparam.flag & S_STRLEN) ||
+         (node->nargparam.flag & S_VAR))
         braces = 1;
 
       /* use braces if the next char after the variable name
@@ -121,12 +124,15 @@ again:
       else if(node->next && node->next->id == N_ARGSTR) {
         stralloc* sa = &node->next->nargstr.stra;
 
-        if((!(node->nargparam.flag & S_SPECIAL) && sa->len && parse_isname(sa->s[0], 0)) ||
-           ((node->nargparam.flag & S_SPECIAL) == S_ARG && node->nargparam.numb > 9))
+        if((!(node->nargparam.flag & S_SPECIAL) && sa->len &&
+            parse_isname(sa->s[0], 0)) ||
+           ((node->nargparam.flag & S_SPECIAL) == S_ARG &&
+            node->nargparam.numb > 9))
           braces = 1;
       }
 
-      if(!(node->nargparam.flag & S_ARITH) || (node->nargparam.flag & S_SPECIAL) || braces)
+      if(!(node->nargparam.flag & S_ARITH) ||
+         (node->nargparam.flag & S_SPECIAL) || braces)
         stralloc_catc(sa, '$');
 
       if(braces)
@@ -142,7 +148,16 @@ again:
         stralloc_cats(sa, node->nargparam.name);
 
       if(node->nargparam.word || (node->nargparam.flag & S_VAR)) {
-        static const char* vsubst_types[] = {"-", "=", "?", "+", "%", "%%", "#", "##"};
+        static const char* vsubst_types[] = {
+            "-",
+            "=",
+            "?",
+            "+",
+            "%",
+            "%%",
+            "#",
+            "##",
+        };
 
 #if WITH_PARAM_RANGE
         if((node->nargparam.flag & S_VAR) == S_RANGE) {
@@ -272,7 +287,10 @@ again:
       tree_catlist(node->ncasenode.pats, sa, "|");
       stralloc_cats(sa, ") ");
       if(node->ncasenode.cmds)
-        tree_catlist_n(node->ncasenode.cmds, sa, sep == NULL ? "\n" : sep, depth + 1);
+        tree_catlist_n(node->ncasenode.cmds,
+                       sa,
+                       sep == NULL ? "\n" : sep,
+                       depth + 1);
 
       stralloc_cats(sa, sep == NULL ? " ;;" : ";;");
       break;
@@ -351,7 +369,8 @@ again:
     case N_REDIR: {
       /*      stralloc_catc(sa, ' ');*/
 
-      if(((node->nredir.flag & R_IN) && node->nredir.fdes != 0) || ((node->nredir.flag & R_OUT) && node->nredir.fdes != 1))
+      if(((node->nredir.flag & R_IN) && node->nredir.fdes != 0) ||
+         ((node->nredir.flag & R_OUT) && node->nredir.fdes != 1))
         stralloc_catulong0(sa, node->nredir.fdes, 0);
 
       if(node->nredir.flag & R_IN)
@@ -387,7 +406,8 @@ again:
       sep = "\n";
       // depth++;
       goto again;
-      /// tree_cat_n(node->nfunc.body, sa, /*sep == NULL ? "\n  " :sep,*/ depth); break;
+      /// tree_cat_n(node->nfunc.body, sa, /*sep == NULL ? "\n  " :sep,*/
+      /// depth); break;
     }
 
     case N_ARGARITH: {

@@ -10,7 +10,8 @@ int
 expand_arith_binary(struct narithbinary* expr, int64* r) {
   int64 left, right;
 
-  if(expand_arith_expr(expr->left, &left) || expand_arith_expr(expr->right, &right))
+  if(expand_arith_expr(expr->left, &left) ||
+     expand_arith_expr(expr->right, &right))
     return 1;
 
   switch(expr->id) {

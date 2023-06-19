@@ -6,7 +6,8 @@ fmt_ulong0(char* dest, unsigned long i, size_t pad) {
   unsigned long tmp;
 
   /* first count the number of bytes needed */
-  for(len = 1, tmp = i; tmp > 9; ++len) tmp /= 10;
+  for(len = 1, tmp = i; tmp > 9; ++len)
+    tmp /= 10;
 
   /* now see if we need to pad */
   if(dest) {

@@ -226,7 +226,11 @@ struct builtin_cmd builtin_table[] = {
     {"shift", &builtin_shift, B_SPECIAL, "[n]"},
 #endif
 #if BUILTIN_READ
-    {"read", &builtin_read, B_SPECIAL, "[-rs] [-d DELIM] [-n|-N NCHARS] [-p PROMPT] [-t TIMEOUT] [-u FD] [name ...]"},
+    {"read",
+     &builtin_read,
+     B_SPECIAL,
+     "[-rs] [-d DELIM] [-n|-N NCHARS] [-p PROMPT] [-t TIMEOUT] [-u FD] [name "
+     "...]"},
 #endif
 #if BUILTIN_READONLY
     {"readonly", &builtin_readonly, B_SPECIAL, "[-p] [name[=value] ...]"},

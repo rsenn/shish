@@ -17,7 +17,8 @@ sh_setargs(char** argv, int dup) {
 
   /* free current argv if it is not the initial one */
   if(args->v != sh_argv && args->a) {
-    for(i = 0; args->v[i]; i++) alloc_free(args->v[i]);
+    for(i = 0; args->v[i]; i++)
+      alloc_free(args->v[i]);
 
     alloc_free(args->v);
   }
@@ -36,7 +37,8 @@ sh_setargs(char** argv, int dup) {
 
     args->v = alloc(sizeof(char*) * (args->c + 1));
 
-    for(i = 0; i < args->c; i++) args->v[i] = str_dup(argv[i]);
+    for(i = 0; i < args->c; i++)
+      args->v[i] = str_dup(argv[i]);
 
     args->v[args->c] = NULL;
     args->a = args->c + 1;

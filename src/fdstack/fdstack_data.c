@@ -12,7 +12,8 @@
 int
 fdstack_data(void) {
   struct fdstack* st;
-#if 0 // defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK) && defined(DEBUG_FD) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
+#if 0 // defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK) && defined(DEBUG_FD) &&
+      // !defined(SHFORMAT) && !defined(SHPARSE2AST)
   fdstack_dump(fd_err->w);
 #endif
   // fdtable_dump(fd_err->w);
@@ -26,13 +27,15 @@ fdstack_data(void) {
         ssize_t n;
         char buf[FD_BUFSIZE / 2];
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK) && !defined(SHFORMAT) && \
+    !defined(SHPARSE2AST)
         buffer_puts(debug_output, "fdstack_data\n");
         fd_dump(fd, debug_output);
         buffer_putnlflush(debug_output);
 #endif
 
-        while((n = read(fd->rb.fd, buf, sizeof(buf))) > 0) buffer_put(fd->w, buf, n);
+        while((n = read(fd->rb.fd, buf, sizeof(buf))) > 0)
+          buffer_put(fd->w, buf, n);
 
         buffer_flush(fd->w);
       }

@@ -5,7 +5,8 @@ unsigned int
 tree_count(union node* node) {
   unsigned int n;
 
-  for(n = 0; node; node = node->next) n++;
+  for(n = 0; node; node = node->next)
+    n++;
 
   return n;
 }

@@ -19,7 +19,8 @@ unsigned long term_pos;
 int term_insert = 1;
 int term_dumb = 1;
 char term_obuf[128];
-static buffer term_default_output = BUFFER_INIT(&write, 1, term_obuf, sizeof(term_obuf));
+static buffer term_default_output =
+    BUFFER_INIT(&write, 1, term_obuf, sizeof(term_obuf));
 
 buffer* term_output = 0; //&term_default_output;
 
@@ -53,7 +54,11 @@ term_init(struct fd* input, struct fd* output) {
     return 0;
 
   /* intercept input buffer */
-  buffer_init(&term_input, input->r->op, input->r->fd, term_buffer, sizeof(term_buffer));
+  buffer_init(&term_input,
+              input->r->op,
+              input->r->fd,
+              term_buffer,
+              sizeof(term_buffer));
   // term_output = output->w;
 
   input->r->op = (ssize_t(*)())(void*)&term_read;

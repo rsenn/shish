@@ -32,7 +32,10 @@ shell_getopt(int argc, char* const argv[], const char* optstring) {
 #define prefixchars state->prefixes
 
 int
-shell_getopt_r(struct optstate* state, int argc, char* const argv[], const char* optstring) {
+shell_getopt_r(struct optstate* state,
+               int argc,
+               char* const argv[],
+               const char* optstring) {
   unsigned int offset;
 
   if(optind == 0) {

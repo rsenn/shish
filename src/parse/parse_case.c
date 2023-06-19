@@ -36,9 +36,8 @@ parse_case(struct parser* p) {
     return NULL;
   /*
     tok = parse_gettok(p, P_DEFAULT);
-    if(p->node->id != N_ARGSTR || stralloc_diffs(&p->node->nargstr.stra, "in")) {
-      tree_free(word);
-      return NULL;
+    if(p->node->id != N_ARGSTR || stralloc_diffs(&p->node->nargstr.stra, "in"))
+    { tree_free(word); return NULL;
     } */
 
   /* initialize tree for the cases */

@@ -20,7 +20,8 @@
 #define __unlikely(x) (x)
 #endif
 
-ssize_t buffer_stubborn(buffer_op_proto* op, int fd, const char* buf, size_t len, void* ptr);
+ssize_t buffer_stubborn(
+    buffer_op_proto* op, int fd, const char* buf, size_t len, void* ptr);
 
 ssize_t
 buffer_putflush(buffer* b, const char* x, size_t len) {
@@ -45,13 +46,15 @@ buffer_putflush(buffer* b, const char* x, size_t len) {
     if(__unlikely((size_t)w != cl)) {
       /* partial write. ugh. */
       if((size_t)w < v[0].iov_len) {
-        if(buffer_stubborn(b->op, b->fd, (char*)v[0].iov_base + w, v[0].iov_len - w, b) ||
+        if(buffer_stubborn(
+               b->op, b->fd, (char*)v[0].iov_base + w, v[0].iov_len - w, b) ||
 
            buffer_stubborn(b->op, b->fd, (char*)v[1].iov_base, v[0].iov_len, b))
           return -1;
       } else {
         w -= v[0].iov_len;
-        return buffer_stubborn(b->op, b->fd, (char*)v[1].iov_base + w, v[1].iov_len - w, b);
+        return buffer_stubborn(
+            b->op, b->fd, (char*)v[1].iov_base + w, v[1].iov_len - w, b);
       }
     }
     b->p = 0;

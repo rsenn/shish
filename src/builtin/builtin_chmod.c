@@ -25,8 +25,7 @@ builtin_chmod(int argc, char* argv[]) {
   }
 
   p = argv[shell_optind++];
-  if(!scan_8int(p, &mode)) {
-  }
+  if(!scan_8int(p, &mode)) {}
 
   while((p = argv[shell_optind++])) {
     ret = chmod(p, mode);

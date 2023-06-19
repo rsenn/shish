@@ -35,11 +35,11 @@ extern struct fd** fdtable_pos;
 #define fd_out fdtable[STDOUT_FILENO]
 #define fd_err fdtable[STDERR_FILENO]
 
-#define fdtable_foreach(i)                                                                                                                                     \
-  for(i = fdtable_bottom; i < fdtable_top; i++)                                                                                                                \
+#define fdtable_foreach(i) \
+  for(i = fdtable_bottom; i < fdtable_top; i++) \
     if(fdtable[i])
-#define fdtable_foreach_p(i, p)                                                                                                                                \
-  for(i = fdtable_bottom; i < fdtable_top; i++)                                                                                                                \
+#define fdtable_foreach_p(i, p) \
+  for(i = fdtable_bottom; i < fdtable_top; i++) \
     if(((p) = fdtable[i]))
 
 int fdtable_check(int e);

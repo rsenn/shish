@@ -3,7 +3,9 @@
 
 #ifdef DEBUG_ALLOC
 
-extern void* debug_alloc(const char* file, unsigned int line, unsigned long size);
+extern void* debug_alloc(const char* file,
+                         unsigned int line,
+                         unsigned long size);
 
 void*
 allocdebug(const char* file, unsigned int line, unsigned long size) {

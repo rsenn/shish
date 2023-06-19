@@ -100,10 +100,12 @@ main(int argc, char** argv, char** envp) {
 #endif
     envvars = malloc(sizeof(struct var) * c);
 
-  for(c = 0; envp[c]; c++) var_import(envp[c], V_EXPORT, &envvars[c]);
+  for(c = 0; envp[c]; c++)
+    var_import(envp[c], V_EXPORT, &envvars[c]);
 
   /* parse command line arguments */
-  while((c = shell_getopt(argc, argv, "c:xe")) > 0) switch(c) {
+  while((c = shell_getopt(argc, argv, "c:xe")) > 0)
+    switch(c) {
       case 'c': cmds = shell_optarg; break;
       case 'x': sh->opts.xtrace = 1; break;
       case 'e': sh->opts.errexit = 1; break;

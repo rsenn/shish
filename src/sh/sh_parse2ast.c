@@ -93,7 +93,8 @@ main(int argc, char** argv, char** envp) {
   sh_no_position = 0;
 
   /* parse command line arguments */
-  while((c = shell_getopt(argc, argv, "c:xeo:q:w:l:P")) > 0) switch(c) {
+  while((c = shell_getopt(argc, argv, "c:xeo:q:w:l:P")) > 0)
+    switch(c) {
       case 'c': cmds = shell_optarg; break;
       case 'x': sh->opts.xtrace = 1; break;
       case 'e': sh->opts.errexit = 1; break;
@@ -118,7 +119,8 @@ main(int argc, char** argv, char** envp) {
         return 1;
     }
 
-  for(i = 0; i < indent_width; i++) stralloc_catc(&separator, ' ');
+  for(i = 0; i < indent_width; i++)
+    stralloc_catc(&separator, ' ');
   stralloc_nul(&separator);
   tree_separator = separator.s;
 
@@ -166,7 +168,8 @@ main(int argc, char** argv, char** envp) {
 
   parse_init(&p, P_DEFAULT);
 
-  buffer_init(&out_buf, (buffer_op_proto*)(void*)&write, out_fd, alloca(1024), 1024);
+  buffer_init(
+      &out_buf, (buffer_op_proto*)(void*)&write, out_fd, alloca(1024), 1024);
   {
     int n;
     union node *script = 0, **nptr;

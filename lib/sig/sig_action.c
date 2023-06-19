@@ -6,7 +6,8 @@
 int
 sig_action(int sig, struct sigaction const* new, struct sigaction* old) {
   struct sigaction sanew, saold;
-  if(((new->sa_flags& SA_MASKALL) ? sigfillset(&sanew.sa_mask) : sigemptyset(&sanew.sa_mask)) == -1)
+  if(((new->sa_flags& SA_MASKALL) ? sigfillset(&sanew.sa_mask)
+                                  : sigemptyset(&sanew.sa_mask)) == -1)
     return -1;
   sanew.sa_handler = new->sa_handler;
   sanew.sa_flags = (new->sa_flags& SA_NOCLDSTOP) ? SA_NOCLDSTOP : 0;

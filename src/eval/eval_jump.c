@@ -22,8 +22,10 @@ eval_jump(int levels, int cont) {
   if(j) {
     eval = j;
 
-    while(fdstack != j->fdstack) fdstack_pop(fdstack);
-    while(varstack != j->varstack) vartab_pop(varstack);
+    while(fdstack != j->fdstack)
+      fdstack_pop(fdstack);
+    while(varstack != j->varstack)
+      vartab_pop(varstack);
 
     longjmp(j->jumpbuf, cont << 1);
   }

@@ -101,7 +101,8 @@ parse_param(struct parser* p) {
   if(!braces)
     return 0;
 
-  while(source_peek(&c) && parse_isspace(c)) parse_skip(p);
+  while(source_peek(&c) && parse_isspace(c))
+    parse_skip(p);
 
   /* done parsing? */
   if(c == '}') {

@@ -22,8 +22,12 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
       stralloc_zero(&n->narg.stra);
     }
 
-    n->narg.flag |= flags;
-    stralloc_catb(&n->narg.stra, b, len);
+    n->narg.flag |= flags /*& (~(X_QUOTED))*/;
+
+    /*if(flags & X_QUOTED)
+      expand_escape(&n->narg.stra, b, len);
+    else*/
+      stralloc_catb(&n->narg.stra, b, len);
 
     return n;
   }
@@ -47,8 +51,8 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
       nptr = &n;
       stralloc_init(&n->narg.stra);
     }
-    /* if there were separators delimit the
-     current field by creating a new node */
+    /* if there were separators delimit the current field by creating a new node
+     */
     else if(x) {
       stralloc_nul(&n->narg.stra);
 
@@ -66,18 +70,16 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
     }
 
     /* skip non-separators */
-    for(x = 0; i < len; i++, x++) {
+    for(x = 0; i < len; i++, x++)
       if(ifs[str_chr(ifs, b[i])])
         break;
-    }
 
-    /* there were non-separators: fill the
-     stralloc of the current argument node */
-    /*      if(flags & X_ESCAPE)
-     expand_escape(&n->narg.stra, &b[i - x], x);
-     else*/
+    /* there were non-separators: fill the stralloc of the current argument node
+     */
     n->narg.flag |= flags;
-    stralloc_catb(&n->narg.stra, &b[i - x], x);
+    expand_escape(&n->narg.stra, &b[i - x], x);
+    // if(flags & X_ESCAPE) expand_escape(&n->narg.stra, &b[i - x], x); else
+    // stralloc_catb(&n->narg.stra, &b[i - x], x);
 
     /* finished */
     if(i == len)
