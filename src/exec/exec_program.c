@@ -99,7 +99,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
         job_wait(NULL, pid, &status);
         job_status(pid, status);
 
-        ret = WAIT_EXITSTATUS(status);
+        ret = status >> 8;
 
         sig_blocknone();
       }

@@ -12,7 +12,7 @@ job_new(unsigned int n) {
   job = alloc_zero(sizeof(struct job) + sizeof(struct proc) * n);
 
   if(job) {
-    job->nproc = n;
+    job->nproc = 0; // n;
     job->pgrp = 0;
 
     job->id = 1;

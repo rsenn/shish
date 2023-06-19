@@ -89,7 +89,7 @@ parse_simple_command(struct parser* p) {
         if(*aptr)
           tree_skip(aptr);
 
-        p->flags |= P_NOASSIGN|P_NOKEYWD;
+        p->flags |= P_NOASSIGN | P_NOKEYWD;
         break;
 
       /* handle redirections */

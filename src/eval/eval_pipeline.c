@@ -108,6 +108,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
     if(in)
       fd_pop(in);
   }
+
   fdstack_pop(&st);
 
   if(!npipe->bgnd) {
@@ -118,7 +119,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
     alloc_free(pipes);
 
   if(job)
-    alloc_free(job);
+    job_delete(job);
 
   return WEXITSTATUS(status);
 }

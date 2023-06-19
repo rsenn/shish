@@ -88,12 +88,11 @@ again:
       int table = arg->flag & S_TABLE;
 
       for(i = 0; i < arg->len; i++) {
-        if(arg->str[i] == '\\' && table == S_SQUOTED)
+        if(arg->str[i] == '\\' && table == S_SQUOTED) {
+          i++;  
+        } else if(arg->str[i] == '\\' && table == S_DQUOTED && !parse_isdesc(arg->str[i])) {
           continue;
-
-        if(arg->str[i] == '\\' && table == S_DQUOTED && !parse_isdesc(arg->str[i]))
-          continue;
-        if(!parse_isesc(arg->str[i])) {
+        } else if(!parse_isesc(arg->str[i])) {
 
           if(table == S_DQUOTED && parse_isdesc(arg->str[i]))
             stralloc_catc(sa, '\\');

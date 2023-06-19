@@ -39,12 +39,13 @@ job_wait(struct job* job, int pid, int* status) {
 
       job_status(ret, st);
     }
+
     buffer_putc(fd_err->w, '[');
     buffer_putulong(fd_err->w, job->id);
     buffer_putc(fd_err->w, ']');
     buffer_putc(fd_err->w, *jobptr == job ? '+' : (struct job*)jobptr == job ? '-' : ' ');
     buffer_putspad(fd_err->w, "  Done", 26);
-    buffer_puts(fd_err->w, job->command);
+    buffer_puts(fd_err->w, job->command ? job->command : "(null)");
     buffer_putnlflush(fd_err->w);
 
     job->done = 1;

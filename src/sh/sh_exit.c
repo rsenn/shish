@@ -10,8 +10,10 @@ sh_exit(int retcode) {
   eval_exit(retcode);
 
   /* not in a subshell, exit the process */
-  if(sh == &sh_root && source)
-    source_pop();
+  if(sh == &sh_root) {
+    if(source)
+      source_pop();
 
-  exit(retcode);
+    exit(retcode);
+  }
 }
