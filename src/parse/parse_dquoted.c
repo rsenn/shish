@@ -4,7 +4,7 @@
 
 int
 parse_dquoted(struct parser* p) {
-  int flags = 0;
+  int flags = p->flags;
   char c;
 
   if(p->tok == T_NAME)
@@ -30,7 +30,7 @@ parse_dquoted(struct parser* p) {
         source_skip();
       }
     } else if(c == '`') {
-      if((p->flags & P_BQUOTE))
+      if((flags & P_BQUOTE))
         break;
       parse_string(p, 0);
       if(parse_bquoted(p))
@@ -44,7 +44,7 @@ parse_dquoted(struct parser* p) {
     }
     /* when spotted a closing quote,
        skip it and unset quotation mode */
-    else if(!(p->flags & P_HERE) && c == '"') {
+    else if(!(flags & P_HERE) && c == '"') {
       parse_skip(p);
       parse_string(p, 0);
       p->quot = Q_UNQUOTED;
@@ -53,16 +53,18 @@ parse_dquoted(struct parser* p) {
       parse_skip(p);
     }
 
-    if(parse_isesc(c) && !(p->flags & P_HERE))
+    if(parse_isesc(c) && !(flags & P_HERE))
       stralloc_catc(&p->sa, '\\');
 
     stralloc_catc(&p->sa, c);
 
     /* return on a newline for the here-doc delimiter check */
-    if((p->flags & P_HERE) && c == '\n')
+    if((flags & P_HERE) && c == '\n')
       break;
   }
 
-  parse_string(p, flags);
+  if(!(flags & P_HERE))
+    parse_string(p, flags);
+
   return 0;
 }

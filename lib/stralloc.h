@@ -241,4 +241,6 @@ int stralloc_truncdebug(const char* file,
 void stralloc_dump(const stralloc*, buffer*);
 #endif
 
+#define stralloc_endc(sa, c) ((sa)->len > 0 && (sa)->s[(sa)->len - 1] == (c))
+
 #endif

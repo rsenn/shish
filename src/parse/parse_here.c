@@ -1,6 +1,7 @@
 #include "../parse.h"
 #include "../source.h"
 #include "../tree.h"
+#include "../../lib/byte.h"
 
 /* parses a here-doc body, ending at <delim>
  * ----------------------------------------------------------------------- */
@@ -22,64 +23,29 @@ parse_here(struct parser* p, stralloc* delim, int nosubst) {
 
   for(;;) {
     p->flags |= P_HERE;
+
     /* if nosubst is set we treat it like single-quoted otherwise
        like double-quoted, allowing parameter and command expansions */
     r = (nosubst ? parse_squoted : parse_dquoted)(p);
     p->flags &= ~P_HERE;
 
-    if(r) {
-      r = -1;
-      break;
-    }
-
-    if(p->quot == Q_UNQUOTED) {
+    /*if(p->quot == Q_UNQUOTED) {
       stralloc_catc(&p->sa, (nosubst ? '\'' : '"'));
       continue;
+    }*/
+
+    if(p->sa.len == delim->len + 1) {
+      stralloc* sa = &p->sa;
+
+      if(stralloc_endc(sa, '\n'))
+        if(byte_equal(sa->s, delim->len, delim->s))
+          break;
     }
 
     parse_string(p, 0);
 
-    /* when the parser yields an argstr node
-       we have to check for the delimiter */
-    if(p->node && p->node->id == N_ARGSTR) {
-      unsigned int si, di;
-      stralloc* sa;
-
-      sa = &p->node->nargstr.stra;
-
-      /* can't be our delimiter, because we
-         do not have the required length yet */
-      if(sa->len < delim->len + 1)
-        continue;
-
-      si = sa->len;
-      di = delim->len;
-
-      if(sa->s[--si] != '\n')
-        continue;
-
-      while(sa->s[--si] == delim->s[--di])
-        if(di == 0)
-          break;
-
-      if(di)
-        continue;
-
-      if(si && sa->s[--si] != '\n')
-        continue;
-
-      if(si == 0 && p->node != p->tree)
-        continue;
-
-      stralloc_trunc(sa, ++si);
-
-      n = tree_newnode(N_ARGSTR);
-      n->next = p->node;
-      p->node = n;
-
-      // parse_string(p, 0);
+    if(r)
       break;
-    }
   }
 
   source->mode &= ~SOURCE_HERE;
