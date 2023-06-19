@@ -27,7 +27,7 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
     /*if(flags & X_QUOTED)
       expand_escape(&n->narg.stra, b, len);
     else*/
-      stralloc_catb(&n->narg.stra, b, len);
+    stralloc_catb(&n->narg.stra, b, len);
 
     return n;
   }

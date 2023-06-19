@@ -361,7 +361,7 @@ typedef union node node_t;
 
 /* skip to the next node */
 #define tree_next(nptr) (&((*(nptr)))->next)
-#define tree_skip(nptr) ((nptr) = tree_next(nptr), *(nptr) = NULL)
+#define tree_skip(nptr) ((nptr) = tree_next(nptr))
 
 /*
  * initialize a branch in the tree.

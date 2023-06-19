@@ -43,6 +43,7 @@ parse_list(struct parser* p) {
 
     /* now check for another and-or cmds */
     tree_skip(nptr);
+    *nptr = NULL;
   }
 
   if(tree_count(cmds) > 1) {

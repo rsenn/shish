@@ -45,8 +45,8 @@ sh_loop(void) {
       struct eval e;
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHPARSE2AST)
-      tree_print(list, buffer_2);
-      buffer_putnlflush(buffer_2);
+      /* tree_print(list, buffer_2);
+       buffer_putnlflush(buffer_2);*/
 
       buffer_puts(debug_output, COLOR_YELLOW "sh_loop" COLOR_NONE " list = ");
       debug_list(list, 0);
