@@ -18,9 +18,9 @@
 
 #include "../lib/windoze.h"
 #include "../lib/buffer.h"
+#include "../lib/sig.h"
 
 #if WINDOWS_NATIVE
-typedef int sigset_t;
 #if !defined(HAVE_PID_T) && !defined(__MINGW32__) && !defined(__TINYC__)
 typedef int pid_t;
 #endif

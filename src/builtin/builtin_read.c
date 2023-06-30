@@ -9,7 +9,6 @@
 #include "../../lib/str.h"
 #include "../../lib/fmt.h"
 #include "../../lib/buffer.h"
-#include <termios.h>
 
 static int
 any(int c) {

@@ -3,6 +3,15 @@
 
 #include "../lib/buffer.h"
 #include "../lib/stralloc.h"
+#include "../lib/windoze.h"
+
+#if WINDOWS_NATIVE
+__attribute__((packed))
+struct termios {
+  int c_iflag, c_oflag, c_cflag, c_lflag;
+  int __dummy[12];
+};
+#endif
 
 struct fd;
 

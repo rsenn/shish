@@ -233,6 +233,8 @@ endif(NOT HAVE_SIGPROCMASK)
 check_function_exists(sigaction HAVE_SIGACTION)
 check_function_exists(setpgid HAVE_SETPGID)
 
+check_include_file(sys/utsname.h HAVE_SYS_UTSNAME_H)
+
 check_include_file(glob.h HAVE_GLOB_H)
 if(HAVE_GLOB_H)
   set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} glob.h)

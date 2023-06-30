@@ -1,7 +1,9 @@
 #include "../builtin.h"
 #include "../sh.h"
 #include "../fdtable.h"
+#include "config.h"
 
+#ifdef HAVE_SYS_UTSNAME_H
 #include <sys/utsname.h>
 
 /* output stuff
@@ -56,3 +58,4 @@ builtin_uname(int argc, char* argv[]) {
 
   return 0;
 }
+#endif

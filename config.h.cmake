@@ -87,6 +87,9 @@
 /* Define this if you have fcntl.h */
 #cmakedefine HAVE_FCNTL_H 1
 
+/* Define this if you have sys/utsname.h */
+#cmakedefine HAVE_SYS_UTSNAME_H 1
+
 /* Define this if you have the symlink() function */
 #cmakedefine HAVE_SYMLINK 1
 
