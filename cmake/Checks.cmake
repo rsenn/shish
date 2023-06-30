@@ -213,6 +213,8 @@ if(HAVE_SYS_STAT_H)
 endif(HAVE_SYS_STAT_H)
 
 check_function_exists(lstat HAVE_LSTAT)
+check_function_exists(symlink HAVE_SYMLINK)
+check_function_exists(link HAVE_LINK)
 
 check_include_file(signal.h HAVE_SIGNAL_H)
 if(HAVE_SIGNAL_H)

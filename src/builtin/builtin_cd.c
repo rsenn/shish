@@ -9,9 +9,12 @@
 #include <limits.h>
 #include <string.h>
 #include "../../lib/windoze.h"
+
 #if WINDOWS_NATIVE
 #include <windows.h>
+#ifndef PATH_MAX
 #define PATH_MAX MAX_PATH
+#endif
 #else
 #include <unistd.h>
 #endif

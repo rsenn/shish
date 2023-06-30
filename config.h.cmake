@@ -87,4 +87,10 @@
 /* Define this if you have fcntl.h */
 #cmakedefine HAVE_FCNTL_H 1
 
+/* Define this if you have the symlink() function */
+#cmakedefine HAVE_SYMLINK 1
+
+/* Define this if you have the link() function */
+#cmakedefine HAVE_LINK 1
+
 

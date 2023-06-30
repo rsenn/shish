@@ -1,9 +1,16 @@
 #include "../builtin.h"
 #include "../fdtable.h"
 #include "../../lib/shell.h"
+#include "config.h"
 #include <sys/stat.h>
 #include <unistd.h>
 #include <libgen.h>
+
+#if defined(HAVE_SYMLINK) && defined(HAVE_LINK)
+
+#ifndef HAVE_LSTAT
+#define lstat stat
+#endif
 
 /* output stuff
  * ----------------------------------------------------------------------- */
@@ -66,3 +73,4 @@ builtin_ln(int argc, char* argv[]) {
   }
   return 0;
 }
+#endif
