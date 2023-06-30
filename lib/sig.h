@@ -5,9 +5,6 @@
 #include <signal.h>
 #include "windoze.h"
 
-#if WINDOWS_NATIVE
-typedef long sigset_t;
-
 #ifndef SIG_BLOCK
 #define SIG_BLOCK 1
 #endif /* defined(SIG_BLOCK) */
@@ -16,17 +13,17 @@ typedef long sigset_t;
 #endif /* defined(SIG_UNBLOCK) */
 
 #ifndef SIGALL
-#define SIGALL (~(sigset_t)0L) /* All signals.    */
+#define SIGALL (~(sigset_t)0ll) /* All signals.    */
 #endif
 
 #ifndef sigbit
-#define sigbit(n) (1L << ((n)-1))
+#define sigbit(n) (1ll << ((n) - 1))
 #endif
 #ifndef sigemptyset
-#define sigemptyset(s) *(s) = ~SIGALL
+#define sigemptyset(s) (*(s) = 0ll)
 #endif
 #ifndef sigfillset
-#define sigfillset(s) *(s) = SIGALL
+#define sigfillset(s) (*(s) = ~(0ll))
 #endif
 
 #ifndef sigaddset
@@ -36,29 +33,34 @@ typedef long sigset_t;
 #define sigdelset(s, n) *(s) &= ~sigbit(n)
 #endif
 #ifndef sigismember
-#define sigismember(set, n) ((*(set)&sigbit(n)) == sigbit(n))
+#define sigismember(s, n) ((*(s) & sigbit(n)) == sigbit(n))
 #endif
+
 #include <errno.h>
+
 #ifndef ENOBUFS
 #define ENOBUFS 1039
 #endif
-#endif
 
+#ifndef SA_MASKALL
 #define SA_MASKALL 1
-
+#endif
 #ifndef SA_NOCLDSTOP
 #define SA_NOCLDSTOP 2
 #endif
 
 typedef void sighandler_t_fn(int);
 typedef sighandler_t_fn* sighandler_t_ref;
+  
+#if (!defined(_POSIX_SOURCE) && !defined(__linux__) && !defined(__unix__) && \
+    !defined(__wasi__)) || (defined(_WIN32) && !defined(__MSYS__) && !defined(__CYGWIN__))
+typedef unsigned long long sigset_t;
 
-#if !defined(_POSIX_SOURCE) && !defined(__linux__) && !defined(__unix__) && \
-    !defined(__wasi__)
 struct sigaction {
   sighandler_t_ref sa_handler;
-  unsigned int sa_mask[32];
+  sigset_t sa_mask;
   unsigned int sa_flags;
+  void (*sa_restorer)(void);
 };
 #endif
 

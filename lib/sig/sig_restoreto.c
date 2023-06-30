@@ -10,7 +10,7 @@ sig_restoreto(const void* set, unsigned int n) {
 #if !WINDOWS_NATIVE
   unsigned int i = 1;
   for(; i <= n; i++) {
-    int h = sigismember(set, i);
+    int h = sigismember((sigset_t*)set, i);
     if(h < 0)
       continue;
     if(h)
