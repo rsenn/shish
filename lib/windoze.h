@@ -41,7 +41,7 @@
 #define WINDOWS_NATIVE 0
 #endif
 
-#ifdef WINDOWS_NATIVE
+#if WINDOWS_NATIVE
 #include <io.h>
 #include <direct.h>
 #define mkdir(path, mode) mkdir(path)

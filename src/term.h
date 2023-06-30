@@ -11,6 +11,8 @@ struct termios {
   int c_iflag, c_oflag, c_cflag, c_lflag;
   int __dummy[12];
 };
+#else
+#include <termios.h>
 #endif
 
 struct fd;
