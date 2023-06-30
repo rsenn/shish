@@ -1,10 +1,7 @@
 #include "../term.h"
 #include "../../lib/windoze.h"
-#if !WINDOWS_NATIVE && !defined(__MINGW64__)
-#include <termios.h>
 
 struct termios term_tcattr;
-#endif
 
 /* backup and set terminal attributes
  * ----------------------------------------------------------------------- */
