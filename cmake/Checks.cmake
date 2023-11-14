@@ -160,9 +160,15 @@ if(HAVE_ALLOCA_H)
   check_symbol_exists(alloca alloca.h HAVE_ALLOCA_SYMBOL)
 endif()
 
-check_compile(HAVE_ALLOCA_ALLOCA_H "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}")
+check_compile(
+  HAVE_ALLOCA_ALLOCA_H
+  "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}"
+)
 if(NOT HAVE_ALLOCA_ALLOCA_H)
-  check_compile(HAVE_ALLOCA_MALLOC_H "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}")
+  check_compile(
+    HAVE_ALLOCA_MALLOC_H
+    "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}"
+  )
 endif()
 
 if(HAVE_ALLOCA_ALLOCA_H OR HAVE_ALLOCA_MALLOC_H)
@@ -247,7 +253,8 @@ if(PID_T GREATER 0)
   set(HAVE_PID_T TRUE)
 endif(PID_T GREATER 0)
 
-# if(HAVE_SIGNAL_H) check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T) check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T) check_type_size(sigset_t SIZEOF_SIGSET_T)
+# if(HAVE_SIGNAL_H) check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T)
+# check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T) check_type_size(sigset_t SIZEOF_SIGSET_T)
 #
 # if(SIZEOF_SIGSET_T) set(HAVE_SIGSET_T 1) else() set(HAVE_SIGSET_T 0) endif() endif()
 

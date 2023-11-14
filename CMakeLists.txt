@@ -92,6 +92,16 @@ if(F_LTO)
 endif(F_LTO)
 
 include(cmake/Builtins.cmake)
+check_functions(
+  sigaction
+  sigaddset
+  sigdelset
+  sigemptyset
+  sigfillset
+  sigismember
+  signal
+  sigprocmask
+  sigsuspend)
 
 option(NO_TREE_PRINT "Disable tree_print for history" OFF)
 
@@ -165,7 +175,8 @@ file(GLOB LIBSHELL_SOURCES src/*.h src/*/*.c)
 
 list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "(sh_fmt\\.c|sh_parse2ast\\.c|sh_init\\.c|sh_main\\.c)")
 
-# string(REGEX REPLACE ";" "\n" SHELL_SOURCES "${LIBSHELL_SOURCES}") message("LIBSHELL_SOURCES: ${SHELL_SOURCES}")
+# string(REGEX REPLACE ";" "\n" SHELL_SOURCES "${LIBSHELL_SOURCES}") message("LIBSHELL_SOURCES:
+# ${SHELL_SOURCES}")
 
 if(DEBUG_ALLOC)
   list(
@@ -190,8 +201,10 @@ if(DEBUG_OUTPUT)
     src/debug/debug_unquoted.c)
 endif(DEBUG_OUTPUT)
 
-list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
-list(APPEND LIBSHELL_SOURCES src/parse/parse_newnode${NAME_DEBUG}.c src/tree/tree_newnode${NAME_DEBUG}.c)
+list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c
+     src/builtin/builtin_table.c)
+list(APPEND LIBSHELL_SOURCES src/parse/parse_newnode${NAME_DEBUG}.c
+     src/tree/tree_newnode${NAME_DEBUG}.c)
 
 if(FORK_SOURCE)
   list(APPEND LIBSHELL_SOURCES ${FORK_SOURCE})
@@ -205,7 +218,8 @@ if(NO_TREE_PRINT)
   list(REMOVE_ITEM LIBSHELL_SOURCES "src/tree/tree_printlist.c")
 endif(NO_TREE_PRINT)
 
-# configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake" "${CMAKE_BINARY_DIR}/src/builtin_config.h" #@ONLY
+# configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake"
+# "${CMAKE_BINARY_DIR}/src/builtin_config.h" #@ONLY
 
 list(APPEND LIBSHELL_SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
 
@@ -219,7 +233,8 @@ set(SHISH_SOURCES src/sh/sh_init.c src/sh/sh_main.c)
 list(APPEND ALL_SOURCES ${SHISH_SOURCES})
 
 add_executable(shish ${SHISH_SOURCES})
-target_link_libraries(shish PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
+target_link_libraries(shish PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
+                                    ${ELECTRICFENCE_LIBRARY})
 if(EMSCRIPTEN)
   set_target_properties(shish PROPERTIES SUFFIX ".${EMSCRIPTEN_EXE_SUFFIX}")
 endif(EMSCRIPTEN)
@@ -233,7 +248,8 @@ if(BUILD_SHFORMAT)
   list(APPEND ALL_SOURCES ${SHFORMAT_SOURCES})
 
   add_executable(shformat ${SHFORMAT_SOURCES})
-  target_link_libraries(shformat PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
+  target_link_libraries(shformat PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
+                                         ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shformat PUBLIC SHFORMAT=1)
   install(TARGETS shformat DESTINATION bin)
@@ -249,7 +265,8 @@ if(BUILD_SHPARSE2AST)
   list(APPEND ALL_SOURCES ${SHPARSE2AST_SOURCES})
 
   add_executable(shparse2ast ${SHPARSE2AST_SOURCES})
-  target_link_libraries(shparse2ast PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
+  target_link_libraries(shparse2ast PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
+                                            ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shparse2ast PUBLIC SHPARSE2AST=1 DEBUG_OUTPUT=1)
   install(TARGETS shparse2ast DESTINATION bin)

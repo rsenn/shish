@@ -13,6 +13,20 @@
 void
 job_status(pid_t pid, int status) {
 
+  if(WAIT_IF_EXITED(status)) {
+    buffer_put(fd_err->w, "process ", 8);
+    buffer_putulong(fd_err->w, pid);
+    buffer_puts(fd_err->w, " exited: ");
+    buffer_putulong(fd_err->w, WAIT_EXITSTATUS(status));
+    buffer_putnlflush(fd_err->w);
+  }
+
+  if(WAIT_IF_STOPPED(status)) {
+    buffer_put(fd_err->w, "process ", 8);
+    buffer_putulong(fd_err->w, pid);
+    buffer_putsflush(fd_err->w, " stopped\n");
+  }
+
   if(WAIT_IF_SIGNALED(status)) {
     const char* signame = sig_name(WAIT_TERMSIG(status));
 

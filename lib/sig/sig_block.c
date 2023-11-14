@@ -6,11 +6,11 @@
 void
 sig_block(int signum) {
 #if !WINDOWS_NATIVE
-  sigset_type ss;
-  sig_emptyset(&ss);
+  sigset_t ss;
+  sigemptyset(&ss);
   sigprocmask(SIG_SETMASK, 0, &ss);
 
-  sig_addset(&ss, signum);
+  sigaddset(&ss, signum);
   sigprocmask(SIG_BLOCK, &ss, 0);
 #endif
 }

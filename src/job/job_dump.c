@@ -13,7 +13,7 @@ job_dump(buffer* b) {
   for(job = jobs; job; job = job->next) {
     int current = job_current() == job;
 
-    buffer_puts(b, current ? "\x1b[1;33m " : " ");
+    buffer_puts(b, current ? "\033[1;33m " : " ");
     buffer_putlong0(b, job->id, 3);
     buffer_putlong0(b, job->pgrp, 9);
     buffer_putc(b, '\t');
@@ -24,6 +24,9 @@ job_dump(buffer* b) {
       buffer_putc(b, ' ');
       buffer_putlong0(b, job->procs[i].pid, 3);
     }
+
+    if(current)
+      buffer_puts(b, "\033[0m");
 
     buffer_putnlflush(b);
   }

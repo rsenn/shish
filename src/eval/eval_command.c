@@ -18,7 +18,7 @@
  * ----------------------------------------------------------------------- */
 int
 eval_command(struct eval* e, union node* node, int tempflags) {
-  int ret = 1, oldflags=e->flags;
+  int ret = 1, oldflags = e->flags;
   struct fdstack fdstack;
   stralloc heredoc;
   char buf[FD_BUFSIZE];

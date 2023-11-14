@@ -167,3 +167,35 @@ endfunction(
   BASENAME
   OUTPUT_VAR
   FILE)
+
+macro(CHECK_FUNCTION_DEF FUNC)
+  if(ARGC GREATER_EQUAL 2)
+    set(RESULT_VAR "${ARGV1}")
+    set(PREPROC_DEF "${ARGV2}")
+  else(ARGC GREATER_EQUAL 2)
+    string(TOUPPER "HAVE_${FUNC}" RESULT_VAR)
+    string(TOUPPER "HAVE_${FUNC}" PREPROC_DEF)
+  endif(ARGC GREATER_EQUAL 2)
+  check_function_exists("${FUNC}" "${RESULT_VAR}")
+  if(${${RESULT_VAR}})
+    set("${RESULT_VAR}"
+        TRUE
+        CACHE BOOL "Define this if you have the '${FUNC}' function")
+    if(NOT "${PREPROC_DEF}" STREQUAL "")
+      add_definitions(-D${PREPROC_DEF})
+    endif(NOT "${PREPROC_DEF}" STREQUAL "")
+  endif(${${RESULT_VAR}})
+endmacro(CHECK_FUNCTION_DEF FUNC)
+
+macro(CHECK_FUNCTIONS)
+  foreach(FUNC ${ARGN})
+    string(TOUPPER "HAVE_${FUNC}" RESULT_VAR)
+    check_function_def("${FUNC}" "${RESULT_VAR}")
+  endforeach(FUNC ${ARGN})
+endmacro(CHECK_FUNCTIONS)
+
+macro(CHECK_FUNCTIONS_DEF)
+  foreach(FUNC ${ARGN})
+    check_function_def("${FUNC}")
+  endforeach(FUNC ${ARGN})
+endmacro(CHECK_FUNCTIONS_DEF)

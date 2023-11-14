@@ -47,10 +47,10 @@ job_fork(struct job* job, union node* node, int bgnd) {
 
   /* in the parent update the process list of the job */
   if(job) {
-    struct proc* proc = &job->procs[job->nproc];
+    struct proc* p = &job->procs[0 /*job->nproc*/];
 
-    proc->pid = pid;
-    proc->status = -1;
+    p->pid = pid;
+    p->status = -1;
 
     if(job->nproc == 0)
       job->pgrp = pgrp;

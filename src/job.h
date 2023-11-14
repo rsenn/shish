@@ -37,7 +37,7 @@ union node;
 struct proc {
   pid_t pid;
   int status;
-  sigset_type sigold, signew;
+  sigset_type signals;
 };
 
 struct job {

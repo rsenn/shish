@@ -14,46 +14,45 @@
 /* waits for a job to terminate
  * ----------------------------------------------------------------------- */
 int
-job_wait(struct job* job, pid_t pid, int* status) {
-  int ret = 0;
+job_wait(struct job* j, pid_t pid, int* status) {
+  int ret = 0, s;
+  size_t n, i;
 
-  if(job) {
-    unsigned int n = job->nproc;
+  if(j) {
+    n = j->nproc;
 
     while(n > 0) {
-      unsigned int i;
-      int st; /* status */
-
-      if((ret = wait_pid(job->pgrp ? -job->pgrp : job->procs[0].pid, &st)) <= 0)
+      if((ret = wait_pid(j->pgrp ? -j->pgrp : j->procs[0].pid, &s)) <= 0)
         break;
 
-      if(job_signal(ret, st))
+      if(job_signal(ret, s))
         n--;
 
-      /*for(i = 0; i < job->nproc; i++) {
-        if(job->procs[i].pid == ret) {
+      /*for(i = 0; i < j->nproc; i++) {
+        if(j->procs[i].pid == ret) {
           n--;
-          job->procs[i].status = st;
+          j->procs[i].status = s;
         }
       }*/
 
-      if(ret == job->pgrp)
-        *status = st;
+      if(ret == j->pgrp)
+        *status = s;
 
-      job_status(ret, st);
+      job_status(ret, s);
     }
 
-    char ch = job_current() == job ? '+' : (struct job*)jobptr == job ? '-' : ' ';
+    char ch = job_current() == j ? '+' : (struct job*)jobptr == j ? '-' : ' ';
 
     buffer_putc(fd_err->w, '[');
-    buffer_putulong(fd_err->w, job->id);
+    buffer_putulong(fd_err->w, j->id);
     buffer_putc(fd_err->w, ']');
     buffer_putc(fd_err->w, ch);
     buffer_putspad(fd_err->w, "  Done", 26);
-    buffer_puts(fd_err->w, job->command ? job->command : "(null)");
+    buffer_puts(fd_err->w, j->command ? j->command : "(null)");
     buffer_putnlflush(fd_err->w);
 
-    // job->done = 1;
+    if(job_done(j))
+      job_free(j);
 
   } else {
     /* wait for the last process in the group to terminate */
@@ -68,9 +67,6 @@ job_wait(struct job* job, pid_t pid, int* status) {
 #endif
     }
   }
-
-  if(job && job_done(job))
-    job_free(job);
 
   return ret;
 }
