@@ -92,12 +92,13 @@ if(F_LTO)
 endif(F_LTO)
 
 include(cmake/Builtins.cmake)
+
 check_functions(
   sigaction
-  sigaddset
-  sigdelset
-  sigemptyset
-  sigfillset
+  #sigaddset
+  #sigdelset
+  #sigemptyset
+  #sigfillset
   sigismember
   signal
   sigprocmask
