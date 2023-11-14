@@ -34,13 +34,12 @@ test_cmd 0 -gt 0
 test_cmd -1 -gt 0
 
 test_or_fail() {
-	EXPECT=$1
+  CMD="test \"\$@\""
+	echo -n    test_or_fail "$@" 1>&2
+  EXPECT="$1"
 	shift
-	CMD="test \"\$@\""
-	eval echo -n "$CMD" 1>&2
-	eval "$CMD"
-	R=$?
-	echo " = $R"
+	eval "$CMD; R=\$?"
+	echo -e "\x1b[1;36m = $R\x1b[0m"
 	case "$R" in
 	$EXPECT) return 0 ;;
 	*)

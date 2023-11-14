@@ -1,6 +1,9 @@
 #include "../builtin.h"
 #include "../fdtable.h"
+#include "../../lib/str.h"
+#include "../../lib/scan.h"
 #include "../../lib/shell.h"
+#include "../../lib/alloc.h"
 
 /* output stuff
  * ----------------------------------------------------------------------- */
@@ -21,7 +24,38 @@ builtin_echo(int argc, char* argv[]) {
   (void)eval;
 
   for(i = shell_optind; i < argc; i++) {
-    buffer_puts(fd_out->w, argv[i]);
+    size_t j, len = str_len(argv[i]);
+    char* s = alloc(len + 1);
+
+    for(j = 0; j < len; j++) {
+      if(argv[i][j] == '\\') {
+        size_t n = 0;
+        unsigned char ch = '\0';
+
+        if(argv[i][j + 1] == 'x') {
+          n = scan_xchar(&argv[i][j + 2], &ch);
+
+          if(n > 0)
+            ++n;
+
+        } else if(argv[i][j + 1] == '0') {
+
+          n = scan_8int(&argv[i][j + 1], &ch);
+        }
+
+        if(n > 0) {
+          s[j] = ch;
+          j += n;
+          continue;
+        }
+      }
+
+      s[j] = argv[i][j];
+    }
+
+    buffer_put(fd_out->w, s, j);
+
+    alloc_free(s);
 
     if(i + 1 < argc)
       buffer_putspace(fd_out->w);

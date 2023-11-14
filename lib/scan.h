@@ -58,4 +58,6 @@ size_t scan_8longlong(const char* src, uint64* dest);
 size_t scan_8longlongn(const char* src, size_t n, uint64* dest);
 #endif
 
+size_t scan_xchar(const char* src, unsigned char* dest);
+
 #endif
