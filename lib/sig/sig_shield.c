@@ -6,16 +6,16 @@
 void
 sig_shield(void) {
 #if !WINDOWS_NATIVE
-  sigset_type ss;
+  sigset_t ss;
 
-  sig_emptyset(&ss);
+  sigemptyset(&ss);
 
-  sig_addset(&ss, SIGTERM);
-  sig_addset(&ss, SIGQUIT);
-  sig_addset(&ss, SIGABRT);
-  sig_addset(&ss, SIGINT);
-  sig_addset(&ss, SIGPIPE);
-  sig_addset(&ss, SIGHUP);
+  sigaddset(&ss, SIGTERM);
+  sigaddset(&ss, SIGQUIT);
+  sigaddset(&ss, SIGABRT);
+  sigaddset(&ss, SIGINT);
+  sigaddset(&ss, SIGPIPE);
+  sigaddset(&ss, SIGHUP);
 
   sigprocmask(SIG_BLOCK, &ss, 0);
 #endif

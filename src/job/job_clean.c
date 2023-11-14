@@ -6,7 +6,8 @@ job_clean(void) {
   struct job *j, *next;
 
   if(job_signaled) {
-    sig_block(SIGCHLD);
+    job_signaled = 0;
+    // sig_block(SIGCHLD);
 
     for(j = jobs; j; j = next) {
       next = j->next;
@@ -16,6 +17,6 @@ job_clean(void) {
     }
 
     job_signaled = 0;
-    sig_unblock(SIGCHLD);
+    // sig_unblock(SIGCHLD);
   }
 }
