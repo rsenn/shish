@@ -48,11 +48,13 @@ expand_range(union node* word, struct range* r) {
 
   if((p = scan_int(sa.s, &r->offset)) > 0 && p < sa.len && sa.s[p] == ':') {
     p++;
+
     if((q = scan_int(&sa.s[p], &r->length)) == 0)
       r->length = INT32_MAX;
   } else {
     r->offset = INT32_MIN;
   }
+
   stralloc_free(&sa);
   return p > 0 && r->offset != INT32_MIN;
 }
@@ -166,6 +168,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
     vlen = value.len;
   }
+
   /* ..and variable substitutions */
   else {
     size_t offset;
@@ -231,6 +234,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         n = expand_arg(param->word, nptr, flags | X_NOSPLIT);
         var_setvsa(param->name, /* BUG */ &n->narg.stra, V_DEFAULT);
       }
+
       break;
     }
 
@@ -247,6 +251,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         stralloc_free(&msg);
         sh_exit(1);
       }
+
       break;
     }
 
@@ -271,6 +276,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
           n = expand_cat(v, (i < 0 ? vlen : (size_t)i), nptr, flags);
         }
+
         break;
       }
     }
@@ -310,6 +316,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
         n = expand_cat(v + i, vlen - i, nptr, flags);
       }
+
       break;
     }
 
@@ -330,6 +337,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
         n = expand_cat(v + i, vlen - i, nptr, flags);
       }
+
       break;
     }
 
@@ -338,6 +346,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
     case S_RANGE: {
       if(v && vlen) {
         struct range r = {0, vlen};
+
         if(expand_range(param->word, &r)) {
           r = limit(&r, 0, vlen);
 

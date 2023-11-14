@@ -69,7 +69,8 @@ static inline unsigned int
 eval_depth() {
   struct env* e;
   unsigned int n = 0;
-  for(e = sh; e; e = e->parent)
+  
+for(e = sh; e; e = e->parent)
     n++;
   return n;
 }
@@ -83,7 +84,8 @@ eval_print_prefix(struct eval* e, buffer* b) {
 static inline struct eval*
 eval_find(int mask) {
   struct eval* e;
-  for(e = eval; e; e = e->parent)
+  
+for(e = eval; e; e = e->parent)
     if((e->flags & mask) == mask)
       return e;
   return 0;

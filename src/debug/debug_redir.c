@@ -21,15 +21,20 @@ debug_redir(const char* msg, int flags, int depth) {
 
    if(flags & R_OPEN)
      strcat(flagstr, COLOR_CYAN "|" COLOR_MAGENTA "R_OPEN");
-   if(flags & R_DUP)
+
+if(flags & R_DUP)
      strcat(flagstr, COLOR_CYAN "|" COLOR_MAGENTA "R_DUP");
-   if(flags & R_HERE)
+
+if(flags & R_HERE)
      strcat(flagstr, COLOR_CYAN "|" COLOR_MAGENTA "R_HERE");
-   if(flags & R_STRIP)
+
+if(flags & R_STRIP)
      strcat(flagstr, COLOR_CYAN "|" COLOR_MAGENTA "R_STRIP");
-   if(flags & R_APPEND)
+
+if(flags & R_APPEND)
      strcat(flagstr, COLOR_CYAN "|" COLOR_MAGENTA "R_APPEND");
-   if(flags & R_CLOBBER)
+
+if(flags & R_CLOBBER)
      strcat(flagstr, COLOR_CYAN "|" COLOR_MAGENTA "R_CLOBBER");*/
   /*
     if(msg) {

@@ -16,6 +16,7 @@ parse_findalias(struct parser* p, const char* name, size_t len) {
   for(a = parse_aliases; a; a = a->next) {
     if(p && (p->flags & P_ALIAS) && alias_match(a, name, len))
       continue;
+
     if(a->namelen == len && !byte_diff(a->def, len, name))
       break;
   }

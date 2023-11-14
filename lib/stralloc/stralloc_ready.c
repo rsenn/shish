@@ -13,11 +13,14 @@ int
 stralloc_ready(stralloc* sa, size_t len) {
   size_t wanted = len + (len >> 3) + 30; /* heuristic from djb */
   char* tmp;
+
   if(sa->s && sa->a >= len)
     return 1;
+
   if(sa->a == 0 || sa->s == NULL) {
     if(!(tmp = alloc(wanted)))
       return 0;
+
     if(sa->s)
       byte_copy(tmp, len, sa->s);
     else

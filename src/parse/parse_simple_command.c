@@ -51,6 +51,7 @@ parse_simple_command(struct parser* p) {
           arg = &(*aptr)->narg;
 
           //          assert(arg->list->id == N_ARGSTR);
+
           if(arg->list->id == N_ARGSTR) {
 
             argstr = &arg->list->nargstr;
@@ -86,6 +87,7 @@ parse_simple_command(struct parser* p) {
             }
           }
         }
+
         if(*aptr)
           tree_skip(aptr);
 
@@ -111,6 +113,7 @@ parse_simple_command(struct parser* p) {
     p->flags &= ~P_SKIPNL;
     n++;
   }
+
 addcmd:
   p->flags &= ~(P_NOKEYWD | P_NOASSIGN);
 

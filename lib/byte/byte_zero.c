@@ -8,11 +8,13 @@ byte_zero(void* out, size_t len) {
    * simpler code */
   char* s = out;
   size_t i;
+
   for(i = 0; i < len; ++i)
     s[i] = 0;
 #else
   char* s = out;
   const char* t = s + len;
+
   for(;;) {
     if(s == t) {
       break;

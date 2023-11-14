@@ -91,6 +91,7 @@ builtin_cd(int argc, char* argv[]) {
     } while(*cdpath && !ok);
 
   }
+
   /* absolute path */
   else {
     /* last cdpath length set to 0, because we're not using cdpath here */

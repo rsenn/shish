@@ -21,6 +21,7 @@ history_free(unsigned int index) {
     if(--history_mapped == 0)
       buffer_close(&history_buffer);
   }
+
   /* it was malloced rather than mapped */
   else {
     alloc_free(s);

@@ -7,8 +7,10 @@
 static int
 match_args(const char* x, size_t n, int argc, char* argv[]) {
   int i;
+
   for(i = 0; i < argc; i++) {
     size_t arglen = str_len(argv[i]);
+
     if(n == arglen && !str_diffn(x, argv[i], n))
       return 1;
   }
@@ -57,5 +59,6 @@ vartab_dump(struct vartab* vartab, int argc, char* argv[]) {
       var_dump(var);
     }
   }
+
   buffer_putnlflush(fd_out->w);
 }

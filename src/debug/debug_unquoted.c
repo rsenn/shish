@@ -13,6 +13,7 @@ debug_unquoted(const char* msg, const char* s, int depth) {
     debug_s(msg);
     debug_s(COLOR_CYAN DEBUG_EQU);
   }
+
   debug_s(COLOR_RED);
   debug_s(s);
   debug_s(COLOR_NONE);

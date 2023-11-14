@@ -14,8 +14,10 @@ tree_free(union node* node) {
       case N_SIMPLECMD:
         if(node->ncmd.rdir)
           tree_free(node->ncmd.rdir);
+
         if(node->ncmd.args)
           tree_free(node->ncmd.args);
+
         if(node->ncmd.vars)
           tree_free(node->ncmd.vars);
         break;
@@ -30,6 +32,7 @@ tree_free(union node* node) {
       case N_NOT:
         if(node->nandor.left)
           tree_free(node->nandor.left);
+
         if(node->nandor.right)
           tree_free(node->nandor.right);
         break;
@@ -45,8 +48,10 @@ tree_free(union node* node) {
       case N_FOR:
         if(node->nfor.cmds)
           tree_free(node->nfor.cmds);
+
         if(node->nfor.args)
           tree_free(node->nfor.args);
+
         if(node->nfor.varn)
           alloc_free(node->nfor.varn);
         break;
@@ -54,6 +59,7 @@ tree_free(union node* node) {
       case N_CASE:
         if(node->ncase.list)
           tree_free(node->ncase.list);
+
         if(node->ncase.word)
           tree_free(node->ncase.word);
         break;
@@ -61,6 +67,7 @@ tree_free(union node* node) {
       case N_CASENODE:
         if(node->ncasenode.pats)
           tree_free(node->ncasenode.pats);
+
         if(node->ncasenode.cmds)
           tree_free(node->ncasenode.cmds);
         break;
@@ -68,8 +75,10 @@ tree_free(union node* node) {
       case N_IF:
         if(node->nif.cmd0)
           tree_free(node->nif.cmd0);
+
         if(node->nif.cmd1)
           tree_free(node->nif.cmd1);
+
         if(node->nif.test)
           tree_free(node->nif.test);
         break;
@@ -78,6 +87,7 @@ tree_free(union node* node) {
       case N_UNTIL:
         if(node->nloop.cmds)
           tree_free(node->nloop.cmds);
+
         if(node->nloop.test)
           tree_free(node->nloop.test);
         break;
@@ -102,6 +112,7 @@ tree_free(union node* node) {
       case N_ARGPARAM:
         if(node->nargparam.name)
           alloc_free(node->nargparam.name);
+
         if(node->nargparam.word)
           tree_free(node->nargparam.word);
         break;
@@ -142,6 +153,7 @@ tree_free(union node* node) {
       case A_EXP:
         if(node->narithbinary.left)
           tree_free(node->narithbinary.left);
+
         if(node->narithbinary.right)
           tree_free(node->narithbinary.right);
         break;
@@ -177,6 +189,7 @@ tree_free(union node* node) {
       case N_FUNCTION:
         if(node->nfunc.name)
           alloc_free(node->nfunc.name);
+
         if(node->nfunc.body)
           tree_free(node->nfunc.body);
         break;

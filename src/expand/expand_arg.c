@@ -30,8 +30,10 @@ expand_arg(union node* node, union node** nptr, int flags) {
 
     if(subarg->nargstr.flag & S_NOSPLIT)
       lflags |= X_NOSPLIT;
+
     if(subarg->nargstr.flag & S_TABLE)
       lflags |= X_QUOTED;
+
     if(subarg->nargstr.flag & S_GLOB)
       lflags |= X_GLOB;
 
@@ -42,17 +44,20 @@ expand_arg(union node* node, union node** nptr, int flags) {
         n = expand_arith(&subarg->nargarith, nptr);
         break;
       }
-      /* parameter substitution */
+
+        /* parameter substitution */
       case N_ARGPARAM: {
         n = expand_param(&subarg->nargparam, nptr, lflags);
         break;
       }
-      /* command substitution */
+
+        /* command substitution */
       case N_ARGCMD: {
         n = expand_command(&subarg->nargcmd, nptr, lflags);
         break;
       }
-      /* constant string */
+
+        /* constant string */
       case N_ARGSTR: {
         assert(subarg->nargstr.stra.s);
         n = expand_cat(subarg->nargstr.stra.s,
@@ -61,6 +66,7 @@ expand_arg(union node* node, union node** nptr, int flags) {
                        lflags);
         break;
       }
+
       default: {
         /*debug_node(subarg, 0);
           debug_nl_fl();*/
@@ -82,7 +88,8 @@ expand_arg(union node* node, union node** nptr, int flags) {
   }
 
   /*  i = 0;
-    for(subarg = *start; subarg; subarg = subarg->next) {
+
+for(subarg = *start; subarg; subarg = subarg->next) {
       debug_s("sub arg  #");
       debug_n(i);
       debug_s(" ");
@@ -98,6 +105,7 @@ expand_arg(union node* node, union node** nptr, int flags) {
       debug_newline(0);
       debug_fl();
     }
-  */
+
+*/
   return n;
 }

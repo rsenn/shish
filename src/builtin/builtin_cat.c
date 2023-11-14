@@ -23,6 +23,7 @@ builtin_cat(int argc, char* argv[]) {
       default: builtin_invopt(argv); return 1;
     }
   }
+
   if(argv[shell_optind] == NULL) {
     argv[shell_optind] = "-";
     argc++;
@@ -36,6 +37,7 @@ builtin_cat(int argc, char* argv[]) {
       in = fd_in->r;
     } else {
       in = &inb;
+
       if(buffer_mmapread(in, arg)) {
         builtin_error(argv, arg);
         ret = 1;
@@ -44,6 +46,7 @@ builtin_cat(int argc, char* argv[]) {
     }
     for(;;) {
       ret = buffer_get_until(in, buf, sizeof(buf), "\r\n", 2);
+
       if(ret == 0) {
         if(in->op == (buffer_op_proto*)(void*)&term_read) {
           buffer_puts(fd_err->w, "EOF");
@@ -53,9 +56,11 @@ builtin_cat(int argc, char* argv[]) {
       }
       if(ret > 0) {
         char eol = buf[ret - 1];
+
         if(number_lines || (number_nonempty && ret > 1)) {
           char buf[FMT_ULONG];
           n = fmt_ulong(buf, line);
+
           if(n < 5)
             buffer_putnspace(fd_out->w, 5 - n);
           buffer_put(fd_out->w, buf, n);
@@ -63,6 +68,7 @@ builtin_cat(int argc, char* argv[]) {
         }
         buffer_put(fd_out->w, buf, ret);
         buffer_flush(fd_out->w);
+
         if(eol == '\n')
           line++;
       }

@@ -17,9 +17,11 @@ parse_error(struct parser* p, enum tok_flag toks) {
 
     /* if(p->tok == T_WORD && p->node && p->node->id == N_ARGSTR) {
        ssize_t len = source->b->p - p->tokstart;
-       if(len <= 0)
+
+if(len <= 0)
          len = source->b->n - p->tokstart;
-       if(len > 100)
+
+if(len > 100)
          len = 10;
 
        buffer_puts(fd_err->w, "'");
@@ -48,5 +50,6 @@ parse_error(struct parser* p, enum tok_flag toks) {
       exit(1);
     }
   }
+
   return NULL;
 }

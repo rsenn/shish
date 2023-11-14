@@ -20,6 +20,7 @@ mmap_read_fd(fd_t fd, size_t* filesize) {
   char* map;
   m = CreateFileMapping(h, 0, PAGE_READONLY, 0, 0, NULL);
   map = 0;
+
   if(m) {
     if((map = MapViewOfFile(m, FILE_MAP_READ, 0, 0, 0)))
       *filesize = GetFileSize((HANDLE)fd, NULL);
@@ -29,8 +30,10 @@ mmap_read_fd(fd_t fd, size_t* filesize) {
 #else
   struct stat st;
   char* map = mmap_empty;
+
   if(fstat(fd, &st) == 0 && (*filesize = st.st_size)) {
     map = mmap(0, *filesize, PROT_READ, MAP_SHARED, fd, 0);
+
     if(map == (char*)-1)
       map = 0;
   }

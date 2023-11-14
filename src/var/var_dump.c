@@ -35,11 +35,13 @@ var_dump(struct var* var) {
     buffer_putc(fd_out->w, '-');
   } else {
     buffer_putc(fd_out->w, '"');
+
     if(n) {
       unsigned int i, l, rl, rn;
       rn = var->sa.len - var->offset;
       rl = (rn > 24 ? 21 : rn);
       l = (n > 24 ? 21 : n);
+
       for(i = 0; i < rl; i++) {
         if(var->sa.s[var->offset + i] != '\n' &&
            var->sa.s[var->offset + i] != '\t')

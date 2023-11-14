@@ -8,6 +8,7 @@ fdstack_fork(unsigned int n, struct fd* fds) {
 
   for(st = fdstack; st; st = st->parent) {
     struct fd* fd;
+
     for(fd = st->list; fd; fd = fd->next) {
       /* make files out of stralloc here-docs */
       if((fd->mode & FD_HERE) == FD_HERE) {

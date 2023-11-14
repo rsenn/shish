@@ -53,6 +53,7 @@ parse_arith_binary(struct parser* p, int precedence) {
     } else if(precedence <= 4) {
       if(source_peekn(&c, 2) <= 0)
         return left;
+
       if(c != '=')
         if((a == '>' || a == '<') && a == b) {
           op = a == '>' ? A_SHR : A_SHL;
@@ -63,10 +64,12 @@ parse_arith_binary(struct parser* p, int precedence) {
 
       if(a == '>') {
         op = b == '=' ? A_GE : A_GT;
+
         if(b == '=')
           parse_skip(p);
       } else if(a == '<') {
         op = b == '=' ? A_LE : A_LT;
+
         if(b == '=')
           parse_skip(p);
       }
@@ -90,6 +93,7 @@ parse_arith_binary(struct parser* p, int precedence) {
         parse_skip(p);
       }
     }
+
     --precedence;
   } while(op == -1);
 
@@ -104,6 +108,7 @@ parse_arith_binary(struct parser* p, int precedence) {
 
   if(right == NULL)
     right = parse_arith_value(p);
+
   if(right == NULL)
     return left;
   /*

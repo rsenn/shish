@@ -9,6 +9,7 @@ fd_freehere(buffer* b) {
     alloc_free(b->x);
     b->x = 0;
   }
+
   b->a = 0;
 }
 

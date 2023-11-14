@@ -22,7 +22,8 @@ eval_return(int value) {
     //  eval = f;
 
     /*  while(fdstack != f->fdstack) fdstack_pop(fdstack);
-      while(varstack != f->varstack) vartab_pop(varstack);
+
+while(varstack != f->varstack) vartab_pop(varstack);
   */
     longjmp(f->jumpbuf, value << 1);
   }

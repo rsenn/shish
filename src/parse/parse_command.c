@@ -23,7 +23,8 @@ parse_command(struct parser* p, int tempflags) {
         break;
       parse_skip(p);
     }
-  */
+
+*/
   switch(tok) {
     /* T_FOR begins an iteration statement */
     case T_FOR: command = parse_for(p); break;
@@ -51,6 +52,7 @@ parse_command(struct parser* p, int tempflags) {
 
       if(source_peek(&c) > 0 && c == '(') {
         char ch[2];
+
         if(source_peekn(ch, 1) <= 0)
           return NULL;
 
@@ -61,6 +63,7 @@ parse_command(struct parser* p, int tempflags) {
           return parse_function(p);
         }
       }
+
     case T_WORD:
     case T_REDIR:
     case T_ASSIGN:

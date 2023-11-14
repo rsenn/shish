@@ -17,6 +17,7 @@ wait_pid_nohang(int pid, int* wstat) {
   WaitForSingleObject(process, INFINITE);
   GetExitCodeProcess(process, &exitcode);
   CloseHandle(process);
+
   if(exitcode == STILL_ACTIVE)
     return -1;
   return pid;
@@ -24,8 +25,10 @@ wait_pid_nohang(int pid, int* wstat) {
 #else
   int w = 0;
   int r = 0;
+
   while(r != pid) {
     r = wait_nohang(&w);
+
     if(!r || (r == (int)-1))
       return r;
   }

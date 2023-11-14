@@ -40,6 +40,7 @@ fd_null(struct fd* fd) {
 
   if(FD_ISRD(fd))
     fd->r = &fd_nullfd.rb;
+
   if(FD_ISWR(fd))
     fd->w = &fd_nullfd.wb;
 

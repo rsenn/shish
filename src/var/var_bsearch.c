@@ -33,6 +33,7 @@ var_bsearch(struct search* context) {
 
     if(ret < 0)
       continue;
+
     if(ret > 0)
       return ret;
 

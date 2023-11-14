@@ -62,6 +62,7 @@ parse_arith_assign(struct parser* p, union node* left) {
         case '|': id = A_VBITOR; break;
         default: c[0] = '\0'; break;
       }
+
       if(c[0]) {
         source_skip();
         source_skip();

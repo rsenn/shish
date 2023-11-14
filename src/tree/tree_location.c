@@ -19,6 +19,7 @@ tree_location(union node* node, struct location* loc) {
       case N_CASE:
         if(tree_location(node->ncase.word, loc))
           return 1;
+
         if(tree_location(node->ncase.list, loc))
           return 1;
         break;
@@ -26,8 +27,10 @@ tree_location(union node* node, struct location* loc) {
       case N_SIMPLECMD:
         if(tree_location(node->ncmd.vars, loc))
           return 1;
+
         if(tree_location(node->ncmd.args, loc))
           return 1;
+
         if(tree_location(node->ncmd.rdir, loc))
           return 1;
         break;
@@ -47,6 +50,7 @@ tree_location(union node* node, struct location* loc) {
         break;
       default: break;
     }
+
     switch(node->id) {
       case N_PIPELINE:
       case N_BRACEGROUP:
@@ -61,5 +65,6 @@ tree_location(union node* node, struct location* loc) {
 
     node = node->next;
   }
+
   return 0;
 }

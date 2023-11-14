@@ -9,6 +9,7 @@ u8stowcs(wchar_t* pw, const char* pu, size_t count) {
 
   while(*pu && clen < count) {
     int ulen = u8towc(&pw[clen], pu, 1);
+
     if(ulen < 0)
       return (size_t)-1;
     else {

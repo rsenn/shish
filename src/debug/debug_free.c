@@ -13,12 +13,14 @@ debug_free(const char* file, unsigned int line, void* ptr) {
     if(&ch[1] == ptr)
       break;
   }
+
   /* error invalid pointer! */
   if(ch == NULL) {
     errno = EFAULT;
     debug_error(file, line, "free");
     exit(1);
   }
+
   /* remove and free the chunk */
   if(ch) {
     if(ch->next)

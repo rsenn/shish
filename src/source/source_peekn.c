@@ -38,6 +38,7 @@ source_peekn(char* c, unsigned n) {
           y = buffer_END(b);
           j = y - x;
         }
+
         if(x[i + 1] == '\n') {
           if(i == 0) {
             b->p += 2;
@@ -48,8 +49,10 @@ source_peekn(char* c, unsigned n) {
         }
       }
     }
+
     break;
   }
+
   /* got data, peek the char */
   if(c) {
 
@@ -62,6 +65,7 @@ source_peekn(char* c, unsigned n) {
 int
 source_peeknc(unsigned pos) {
   char c;
+
   if(source_peekn(&c, pos) <= 0)
     return -1;
   return (unsigned int)(unsigned char)c;

@@ -24,6 +24,7 @@ eval_jump(int levels, int cont) {
 
     while(fdstack != j->fdstack)
       fdstack_pop(fdstack);
+
     while(varstack != j->varstack)
       vartab_pop(varstack);
 

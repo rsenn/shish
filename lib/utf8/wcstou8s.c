@@ -10,6 +10,7 @@ wcstou8s(char* pu, const wchar_t* pw, size_t count) {
     return (size_t)len;
 
   clen = 0;
+
   while((w = *pw++)) {
     int ulen = wcu8len(w);
 

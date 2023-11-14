@@ -153,10 +153,12 @@ void debug_memory(void);
 static inline int
 dump_flags(buffer* b, int bits, const char* const names[], int pad) {
   size_t i, n = 0;
-  for(i = 0; i < sizeof(bits) * 8; i++) {
+  
+for(i = 0; i < sizeof(bits) * 8; i++) {
     if(bits & (1 << i)) {
       size_t len = str_len(names[i]);
-      if(n) {
+      
+if(n) {
         n++;
         buffer_puts(b, COLOR_CYAN "|" COLOR_NONE);
       }
@@ -185,7 +187,8 @@ debug_open() {
 static inline void
 debug_indent(int depth) {
   depth *= debug_nindent;
-  while(depth-- > 0)
+  
+while(depth-- > 0)
     debug_c(' ');
 }
 
@@ -212,10 +215,11 @@ debug_field(const char* s, int depth) {
 
     if(*s == ',')
       s++;
-    if(*s == ' ')
+    
+if(*s == ' ')
       s++;
   }
-  
+
   debug_c('"');
   debug_s(s);
   debug_c('"');

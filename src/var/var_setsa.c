@@ -52,6 +52,7 @@ var_setsa(stralloc* sa, int flags) {
     var->sa = *sa;
     stralloc_init(sa);
   }
+
   /* the source should not be free'd, so copy */
   else {
     /* src should not be freed */

@@ -12,6 +12,7 @@ debug_char(const char* msg, char c) {
   debug_s(COLOR_YELLOW);
   debug_s(msg);
   debug_s(COLOR_CYAN " = '");
+
   if(c >= 20)
     debug_b(&c, 1);
   else if(c == '\n')
@@ -24,6 +25,7 @@ debug_char(const char* msg, char c) {
     debug_s("\\x");
     buffer_putxlonglong0(debug_output, c, 2);
   }
+
   buffer_puts(debug_output, "'" COLOR_NONE);
   debug_fl();
 }

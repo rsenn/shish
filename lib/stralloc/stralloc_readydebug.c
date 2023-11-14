@@ -18,6 +18,7 @@ stralloc_readydebug(const char* file,
   register int wanted = len + (len >> 3) + 30; /* heuristic from djb */
   if(!sa->s || sa->a < len) {
     register char* tmp;
+
     if(!(tmp = alloc_redebug(file, line, sa->s, wanted)))
       return 0;
     sa->a = wanted;

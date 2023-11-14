@@ -11,6 +11,7 @@
 int
 sh_errorn(const char* s, unsigned int len) {
   sh_msgn(s, len);
+
   if(errno) {
     if(s)
       buffer_puts(fd_err->w, ": ");

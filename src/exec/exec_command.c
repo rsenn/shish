@@ -24,8 +24,10 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
 
       if(fd_in)
         fdtable_open(fd_in, FDTABLE_MOVE);
+
       if(fd_out)
         fdtable_open(fd_out, FDTABLE_MOVE);
+
       if(fd_err)
         fdtable_open(fd_err, FDTABLE_MOVE);
 
@@ -42,6 +44,7 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
 
       sh_push(&inst);
       inst.arg.v = argv;
+
       for(inst.arg.c = 0; argv[inst.arg.c]; inst.arg.c++)
         ;
 

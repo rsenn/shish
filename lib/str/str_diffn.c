@@ -12,13 +12,16 @@ str_diffn(const char* a, const char* b, size_t limit) {
   const unsigned char* u = t + limit;
   int j;
   j = 0;
+
   for(;;) {
     if(t >= u) {
       break;
     };
+
     if((j = (*s - *t))) {
       break;
     };
+
     if(!*t) {
       break;
     };

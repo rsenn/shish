@@ -69,6 +69,7 @@ debug_node(union node* node, int depth) {
       debug_ulong(", bgnd", node->nandor.bgnd, depth);
 
       debug_subnode(", left", node->nandor.left, depth);
+
       if(node->nandor.right)
         debug_subnode(", right", node->nandor.right, depth);
       break;
@@ -92,6 +93,7 @@ debug_node(union node* node, int depth) {
     case N_CASE:
 
       debug_ulong(", bgnd", node->ncase.bgnd, depth);
+
       if(node->ncase.rdir)
         debug_sublist(", rdir", node->ncase.rdir, depth);
       debug_sublist(", list", node->ncase.list, depth);
@@ -106,9 +108,11 @@ debug_node(union node* node, int depth) {
     case N_IF:
 
       debug_ulong(", bgnd", node->nif.bgnd, depth);
+
       if(node->nif.rdir)
         debug_sublist(", rdir", node->nif.rdir, depth);
       debug_sublist(", cmd0", node->nif.cmd0, depth);
+
       if(node->nif.cmd1) {
         debug_sublist(", cmd1", node->nif.cmd1, depth);
       }
@@ -153,6 +157,7 @@ debug_node(union node* node, int depth) {
     case N_ARGSTR:
 
       debug_xlong(", flag", node->nargstr.flag /*& 0x7*/, depth);
+
       if(!sh_no_position)
         debug_location(", loc",
                        &node->nargstr.loc,
@@ -169,7 +174,8 @@ debug_node(union node* node, int depth) {
     case N_ARGPARAM: {
       /*   int flag = (node->nargstr.flag & 0x7);
          debug_subst(0, flag);
-         if(flag)
+
+if(flag)
            buffer_putspace(debug_output);
 
          debug_s("${");
@@ -185,6 +191,7 @@ debug_node(union node* node, int depth) {
 
       debug_xlong(", flag", node->nargparam.flag, depth);
       debug_str(", name", node->nargparam.name, depth, debug_quote);
+
       if(node->nargparam.word)
         debug_sublist(", word", node->nargparam.word, depth);
       else
@@ -198,6 +205,7 @@ debug_node(union node* node, int depth) {
 
       break;
     }
+
     case N_ARGCMD:
       debug_xlong(", flag", node->nargcmd.flag, depth);
       debug_sublist(", list", node->nargcmd.list, depth);

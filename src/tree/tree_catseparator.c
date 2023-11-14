@@ -17,6 +17,7 @@ tree_catseparator(stralloc* sa, const char* sep, int depth) {
 
     if(c == '\n') {
       int count;
+
       if(depth > 0)
         for(count = 0; count < depth; count++)
           stralloc_cats(sa, tree_separator);

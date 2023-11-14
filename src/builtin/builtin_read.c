@@ -24,7 +24,8 @@ struct predicate_data {
 static int
 predicate_function(stralloc* sa, void* ptr) {
   struct predicate_data* p = ptr;
-  if(p->delim && p->ndelim > 0) {
+  
+if(p->delim && p->ndelim > 0) {
     if(sa->len &&
        byte_chr(p->delim, p->ndelim, sa->s[sa->len - 1]) < (size_t)p->ndelim)
       return 1;
@@ -39,13 +40,10 @@ predicate_function(stralloc* sa, void* ptr) {
  * ----------------------------------------------------------------------- */
 int
 builtin_read(int argc, char* argv[]) {
-  int c, raw = 0, silent = 0, fd = 0;
+  int c, raw = 0, silent = 0, fd = 0, num_args, index;
   char** argp;
-  int num_args;
   const char* prompt = 0;
-  // double timeout = -1;
   stralloc data;
-  int index;
   struct predicate_data p = {"\n", 1, -1};
 
   while((c = shell_getopt(argc, argv, "d:n:N:p:rsu:")) > 0) {
@@ -66,6 +64,7 @@ builtin_read(int argc, char* argv[]) {
       default: builtin_invopt(argv); return 1;
     }
   }
+
   argp = &argv[shell_optind];
   num_args = argc - shell_optind;
 
@@ -75,6 +74,7 @@ builtin_read(int argc, char* argv[]) {
       return 1;
     }
   }
+
   if(prompt)
     buffer_putsflush(fd_out->w, prompt);
 
@@ -119,7 +119,8 @@ builtin_read(int argc, char* argv[]) {
         ptr += len;
 
         len = end - ptr;
-        if(index < num_args - 1)
+        
+if(index < num_args - 1)
           len = scan_noncharsetnskip(ptr, ifs, len);
 
         var_setv(argp[index], ptr, len, 0);

@@ -15,6 +15,7 @@ expand_str(union node* node, stralloc* sa, int flags) {
 
     if(subarg->nargstr.flag & S_TABLE)
       lflags |= X_QUOTED;
+
     if(subarg->nargstr.flag & S_GLOB)
       lflags |= X_GLOB;
 

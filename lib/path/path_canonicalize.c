@@ -51,6 +51,7 @@ is_link(const char* path) {
 #ifdef HAVE_LSTAT
   {
     struct stat st;
+
     if(lstat(path, &st) != -1)
       return S_ISLNK(st.st_mode);
   }
@@ -61,6 +62,7 @@ is_link(const char* path) {
 static int
 is_link(const char* path) {
   struct stat st;
+
   if(lstat(path, &st) == -1)
     return 0;
   return S_ISLNK(st.st_mode);
@@ -144,6 +146,7 @@ start:
     /* look for the next path separator and then copy the component */
     n = path_len_s(path);
     stralloc_catb(sa, path, n);
+
     if(n == 2 && path[1] == ':')
       stralloc_catc(sa, sep);
     stralloc_nul(sa);

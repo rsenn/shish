@@ -51,16 +51,22 @@ fd_getname(struct fd* fd) {
   /* we don't seem to have a /proc tree */
   if(fd->mode & FD_FILE)
     fd->name = "file";
+
   if(fd->mode & FD_DIR)
     fd->name = "directory";
+
   if(fd->mode & FD_LINK)
     fd->name = "link";
+
   if(fd->mode & FD_CHAR)
     fd->name = "char device";
+
   if(fd->mode & FD_BLOCK)
     fd->name = "block device";
+
   if(fd->mode & FD_SOCKET)
     fd->name = "socket";
+
   if(fd->mode & FD_PIPE)
     fd->name = "pipe";
 

@@ -61,8 +61,10 @@ builtin_ln(int argc, char* argv[]) {
     }
     unlink(path.s);
     ret = (symbolic ? symlink : link)(src, path.s);
+
     if(ret == -1) {
       builtin_error(argv, path.s);
+
       if(!force)
         return 1;
     }

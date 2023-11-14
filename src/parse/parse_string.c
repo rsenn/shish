@@ -8,6 +8,7 @@
 void
 parse_string(struct parser* p, int flags) {
   struct nargstr* arg;
+
   if(p->sa.len == 0 && !p->quot)
     return;
 

@@ -8,11 +8,14 @@
 size_t
 scan_number(const char* x, int64* n, unsigned* base) {
   const char* p = x;
+
   if(base)
     *base = 10;
+
   if(*p == '0') {
     if(base)
       *base = 8;
+
     if(*++p == 'x') {
       if(base)
         *base = 16;
@@ -96,9 +99,11 @@ expand_arith_expr(union node* expr, int64* r) {
       assert(value);
 
       ret = len == 0;
+
       if(n && value->s)
         len = scan_longlong(value->s, r);
       ret = len == 0;
+
       if(ret)
         *r = 0;
       break;

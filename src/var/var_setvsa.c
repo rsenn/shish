@@ -26,6 +26,7 @@ var_setvsa(const char* name, stralloc* sa, int flags) {
 
     if(flags & V_FREESTR)
       stralloc_free(sa);
+
     if(flags & (V_FREESTR | V_ZEROSA))
       stralloc_zero(sa);
   }

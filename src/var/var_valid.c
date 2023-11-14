@@ -12,6 +12,7 @@ var_valid(const char* v) {
   for(i = 0; v[i]; i++) {
     if(v[i] == '=')
       break;
+
     if(!parse_isname(v[i], i))
       return 0;
   }

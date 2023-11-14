@@ -24,12 +24,14 @@ wait_pid(int pid, int* wstat) {
 
     if(ret == WAIT_TIMEOUT)
       continue;
+
     if(ret == WAIT_FAILED)
       return -1;
 
     if(ret == WAIT_OBJECT_0) {
       GetExitCodeProcess(hproc, &exitcode);
       CloseHandle(hproc);
+
       if(exitcode == STILL_ACTIVE)
         return -1;
 

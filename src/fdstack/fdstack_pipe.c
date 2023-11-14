@@ -49,6 +49,7 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
         ret++;
       }
     }
+
     depth++;
   }
 

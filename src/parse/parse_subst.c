@@ -6,6 +6,7 @@ int
 parse_subst(struct parser* p) {
   char c[3];
   int ret = 0;
+
   if(source_peek(&c[0]) <= 0)
     return -1;
 
@@ -20,6 +21,7 @@ parse_subst(struct parser* p) {
       source_skip();
       return parse_arith(p);
     }
+
     //    source_skip();
 
     return parse_bquoted(p);

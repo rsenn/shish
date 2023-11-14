@@ -60,6 +60,7 @@ main(int argc, char** argv, char** envp) {
   /* create new fds for every valid file descriptor until stderr */
   for(e = STDIN_FILENO; e <= STDERR_FILENO; e++) {
     int flags;
+
     if((flags = fdtable_check(e))) {
 #ifdef HAVE_ALLOCA
       fd = fd_allocb();
@@ -176,6 +177,7 @@ main(int argc, char** argv, char** envp) {
     nptr = &script;
 
     // debug_begin(0, 0);
+
     for(n = 0;; n++) {
       union node* list;
 
@@ -198,6 +200,7 @@ main(int argc, char** argv, char** envp) {
       debug_list(script, 1);
       debug_nl_fl();
     }
+
     //  debug_end(0);
   }
 

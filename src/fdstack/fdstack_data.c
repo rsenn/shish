@@ -20,6 +20,7 @@ fdstack_data(void) {
 
   for(st = fdstack; st; st = st->parent) {
     struct fd* fd;
+
     for(fd = st->list; fd; fd = fd->next) {
 
       /* read from the child and put it into output subst buffer */

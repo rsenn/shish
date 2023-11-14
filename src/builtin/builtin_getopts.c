@@ -22,6 +22,7 @@ builtin_getopts(int argc, char* argv[]) {
     builtin_errmsg(argv, "optstring argument required", NULL);
     return 1;
   }
+
   if(argc < 3) {
     builtin_errmsg(argv, "name argument required", NULL);
     return 1;

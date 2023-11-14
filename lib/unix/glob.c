@@ -179,11 +179,13 @@ glob(const char* pattern,
       }
 
       cch = lstrlenA(find_data.cFileName);
+
       if(NULL != file_part) {
         cch += file_part - effectivePattern;
       }
 
       new_cbAlloc = (size_t)cbCurr + cch + 1;
+
       if(new_cbAlloc > cbAlloc) {
         char* new_buffer;
 
@@ -251,6 +253,7 @@ glob(const char* pattern,
            * findfile_sequence.
            */
           *end = NULL;
+
           for(begin = pp, next_str = buffer + cbPointers; begin != end; --end) {
             *(end - 1) = next_str;
 
@@ -273,6 +276,7 @@ glob(const char* pattern,
         pglob->gl_pathc = (int)cMatches;
         pglob->gl_matchc = (int)cMatches;
         pglob->gl_flags = 0;
+
         if(bMagic) {
           pglob->gl_flags |= GLOB_MAGCHAR;
         }
@@ -316,6 +320,7 @@ glob(const char* pattern,
         pglob->gl_pathc = 1;
         pglob->gl_matchc = 1;
         pglob->gl_flags = 0;
+
         if(bMagic) {
           pglob->gl_flags |= GLOB_MAGCHAR;
         }

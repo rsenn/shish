@@ -25,6 +25,7 @@ redir_parse(struct parser* p, int rf, int fd) {
   /* get next character */
   source_peek(&c);
   stralloc_catc(&p->sa, c);
+
   if(source_next(&c) <= 0)
     return T_EOF;
 
@@ -68,6 +69,7 @@ redir_parse(struct parser* p, int rf, int fd) {
       default: rf |= R_OPEN; break;
     }
   }
+
   /* parse output redirection operator (3.7.2) */
   if(rf & R_OUT) {
     switch(c) {

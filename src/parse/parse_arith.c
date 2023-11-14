@@ -39,5 +39,6 @@ parse_arith(struct parser* p) {
 
     return 0;
   }
+
   return -1;
 }

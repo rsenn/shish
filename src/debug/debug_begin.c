@@ -18,6 +18,7 @@ buffer* debug_output = &debug_buffer;
 void
 debug_begin(const char* s, int depth) {
   debug_open();
+
   if(s)
     debug_s(s);
   /* else

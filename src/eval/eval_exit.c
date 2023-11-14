@@ -22,7 +22,8 @@ eval_exit(int exitcode) {
     e->exitcode = exitcode;
 
     /*    while(fdstack != e->fdstack) fdstack_pop(fdstack);
-        while(varstack != e->varstack) vartab_pop(varstack);
+
+while(varstack != e->varstack) vartab_pop(varstack);
     */
     longjmp(e->jumpbuf, (exitcode << 1) | 1);
   }

@@ -14,8 +14,10 @@ fmt_oct3(char* dest, unsigned char w) {
 size_t
 fmt_escapecharc(char* dest, uint32 ch) {
   char c;
+
   if(ch > 0xff)
     return 0;
+
   switch(ch) {
     case '\a': c = 'a'; goto doescape;
     case '\b': c = 'b'; goto doescape;

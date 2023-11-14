@@ -37,8 +37,10 @@ fdtable_check(int e) {
   if(!isatty(e)) {
     if(pflags & O_APPEND)
       iflags |= FD_APPEND;
+
     if(pflags & O_TRUNC)
       iflags |= FD_TRUNC;
+
     if(pflags & O_EXCL)
       iflags |= FD_EXCL;
   }

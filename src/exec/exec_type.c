@@ -22,6 +22,7 @@ enum type_index {
 static inline int
 is_keyword(const char* str) {
   int i;
+
   for(i = TI_NOT; i <= TI_END; i++)
     if(str_equal(parse_tokens[i].name, str))
       return 1;
@@ -50,6 +51,7 @@ exec_type(char* name, int mask, int force_path, int type_name) {
       case H_PROGRAM: id = TYPE_FILE; break;
     }
   }
+
   if(id >= 0) {
     if(type_name)
       buffer_puts(fd_out->w, TYPE_NAMES[id]);
@@ -64,5 +66,6 @@ exec_type(char* name, int mask, int force_path, int type_name) {
     buffer_putnlflush(fd_out->w);
     return 0;
   }
+
   return 1;
 }

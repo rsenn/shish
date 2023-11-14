@@ -20,6 +20,7 @@ path_getcwd(stralloc* sa) {
   p = getcwd(sa->s, sa->a);
   sa->len = str_len(sa->s);
   sep = path_getsep(sa->s);
+
   if(sep && sep != PATHSEP_C)
     stralloc_replacec(sa, sep, PATHSEP_C);
 }

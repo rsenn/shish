@@ -25,10 +25,12 @@ builtin_chmod(int argc, char* argv[]) {
   }
 
   p = argv[shell_optind++];
+
   if(!scan_8int(p, &mode)) {}
 
   while((p = argv[shell_optind++])) {
     ret = chmod(p, mode);
+
     if(ret == -1) {
       builtin_error(argv, p);
       return 1;

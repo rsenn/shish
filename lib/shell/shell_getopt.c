@@ -40,6 +40,7 @@ shell_getopt_r(struct optstate* state,
 
   if(optind == 0) {
     state_clear(state);
+
     if(optstring[0] == '+') {
       prefixchars = "+-";
       optstring++;

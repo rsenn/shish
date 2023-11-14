@@ -60,6 +60,7 @@ main(int argc, char** argv, char** envp) {
   /* create new fds for every valid file descriptor until stderr */
   for(e = STDIN_FILENO; e <= STDERR_FILENO; e++) {
     int flags;
+
     if((flags = fdtable_check(e))) {
 #ifdef HAVE_ALLOCA
       fd = fd_allocb();

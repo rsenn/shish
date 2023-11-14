@@ -111,6 +111,7 @@ readlink(const char* LinkPath, char* buf, size_t maxlen) {
   }
 
   u8len = wcstou8s(buf, wbuf, len);
+
   if(u8len >= maxlen)
     u8len = maxlen - 1;
 

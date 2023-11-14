@@ -15,6 +15,7 @@ uint32 uint32_entropy[8] = {
 uint32
 uint32_prng(uint32 value, uint32 seed) {
   register int i = 27;
+
   while(i >= 0) {
     /* whatever, try to re-use entropy as many as possible with
        as less as possible instructions */

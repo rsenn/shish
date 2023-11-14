@@ -47,7 +47,8 @@ parse_word(struct parser* p) {
   /*
     if(p->sa.len == 0) {
       len = source->b->p - p->tokstart;
-      if(len > 0)
+
+if(len > 0)
         stralloc_catb(&p->sa, &source->b->x[p->tokstart], len);
     }
    */

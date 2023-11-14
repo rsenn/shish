@@ -30,8 +30,10 @@ scan_uint(const char* src, unsigned int* dest) {
 #if !defined(WORD_SIZE) || defined(IS_64BIT)
     const char* cur;
     unsigned int l;
+
     for(cur = src, l = 0; *cur >= '0' && *cur <= '9'; ++cur) {
       unsigned long tmp = l * 10ul + *cur - '0';
+
       if((unsigned int)tmp != tmp)
         break;
       l = tmp;

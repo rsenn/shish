@@ -25,6 +25,7 @@ builtin_eval(int argc, char* argv[]) {
   /* concatenate all arguments following the "exec", separated by a
      whitespace and terminated by a newline */
   i = 1;
+
   while(argv[i]) {
     stralloc_cats(&sa, argv[i]);
     stralloc_catc(&sa, (argv[++i] ? ' ' : '\n'));

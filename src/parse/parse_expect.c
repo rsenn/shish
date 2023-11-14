@@ -11,6 +11,7 @@ parse_expect(struct parser* p,
              union node* nfree) {
   if(!(parse_gettok(p, tempflags) & toks)) {
     parse_error(p, toks);
+
     if(nfree) {
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE)
 
@@ -21,6 +22,7 @@ parse_expect(struct parser* p,
 
     return 0;
   }
+
   p->pushback = 0;
   return p->tok;
 }

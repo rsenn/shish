@@ -13,6 +13,7 @@ eval_loop(struct eval* e, struct nloop* nloop) {
   eval_push(&en, E_LOOP);
 
   en.jump = 1;
+
   if(setjmp(en.jumpbuf) & 1)
     return ret;
 

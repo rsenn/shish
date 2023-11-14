@@ -16,6 +16,7 @@ void
 buffer_close(buffer* b) {
   if(b->deinit)
     ((deinit_fn_t*)b->deinit)(b);
+
   if(b->fd > 2)
     close(b->fd);
 }

@@ -15,6 +15,7 @@ var_create(const char* s, int flags) {
   struct vartab* tab = varstack;
 
   vartab_hash(s, &ctx);
+
   if((v = var_search(s, &ctx))) {
     /* if we have the V_INIT flag and the var was found return NULL */
     if(flags & V_INIT)

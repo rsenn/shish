@@ -27,6 +27,7 @@ wait_pids_nohang(int const* pids, unsigned int len, int* wstat) {
 
     if(ret == WAIT_TIMEOUT)
       return 0;
+
     if(ret == WAIT_FAILED)
       return -1;
 
@@ -34,6 +35,7 @@ wait_pids_nohang(int const* pids, unsigned int len, int* wstat) {
       if(ret == WAIT_OBJECT_0 + i) {
         GetExitCodeProcess(handles[i], &exitcode);
         CloseHandle(handles[i]);
+
         if(exitcode == STILL_ACTIVE)
           i = -2;
         break;

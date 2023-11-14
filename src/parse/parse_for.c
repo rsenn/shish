@@ -29,6 +29,7 @@ parse_for(struct parser* p) {
       nptr = &(*nptr)->next;
     }
   }
+
   p->pushback++;
 
   /* there can be a semicolon after the argument list */

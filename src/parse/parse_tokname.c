@@ -16,6 +16,7 @@ parse_tokname(enum tok_flag tok, int multi) {
       if(di)
         parse_namebuf[di++] = ',';
       di += str_copy(&parse_namebuf[di], parse_tokens[i].name);
+
       if(!multi)
         break;
     }

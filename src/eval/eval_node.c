@@ -19,15 +19,18 @@ eval_node(struct eval* e, union node* node) {
       ret = eval_simple_command(e, &node->ncmd);
       break;
     }
+
     case N_FUNCTION: {
       ret = eval_function(e, &node->nfunc);
       break;
     }
+
     case N_LIST:
     case N_BRACEGROUP: {
       ret = eval_cmdlist(e, &node->ngrp);
       break;
     }
+
     case N_IF:
     case N_FOR:
     case N_CASE:
@@ -37,16 +40,19 @@ eval_node(struct eval* e, union node* node) {
       ret = eval_command(e, node, 0);
       break;
     }
+
     case N_PIPELINE: {
       ret = eval_pipeline(e, &node->npipe);
       break;
     }
+
     case N_AND:
     case N_OR:
     case N_NOT: {
       ret = eval_and_or(e, &node->nandor);
       break;
     }
+
     default: {
       ret = 0;
       break;

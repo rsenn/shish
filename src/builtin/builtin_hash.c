@@ -37,6 +37,7 @@ builtin_hash(int argc, char* argv[]) {
           buffer_putm_internal(fd_out->w, h->name, " (function)", NULL);
           break;
       }
+
       buffer_putnlflush(fd_out->w);
     }
   }

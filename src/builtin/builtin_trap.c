@@ -31,6 +31,7 @@ trap_name(int sig) {
     case TRAP_EXIT: return "EXIT";
     default: return sig_name(sig);
   }
+
   return 0;
 }
 
@@ -43,9 +44,11 @@ trap_byname(const char* name) {
   }
   if(!str_case_diff(name, "RETURN"))
     return TRAP_RETURN;
-  if(!str_case_diff(name, "DEBUG"))
+  
+if(!str_case_diff(name, "DEBUG"))
     return TRAP_DEBUG;
-  if(!str_case_diff(name, "EXIT"))
+  
+if(!str_case_diff(name, "EXIT"))
     return TRAP_EXIT;
   return sig_byname(name);
 }
@@ -84,6 +87,7 @@ trap_handler(int sig) {
     sh_exit(1);
     return;
   }
+
   eval_push(&e, 0);
   eval_tree(&e, tr->tree, 0);
   eval_pop(&e);
@@ -110,7 +114,8 @@ trap_debug(union node* tree) {
 int
 trap_return(int result) {
   trap* tr;
-  if((tr = trap_find(TRAP_RETURN))) {
+  
+if((tr = trap_find(TRAP_RETURN))) {
     struct env sh;
     char* args[2] = {alloc(FMT_ULONG), 0};
     args[0][fmt_ulong(args[0], result)] = '\0';
@@ -119,13 +124,15 @@ trap_return(int result) {
     trap_handler(TRAP_RETURN);
     sh_pop(&sh);
   }
+
   return result;
 }
 
 int
 trap_exit(int exitcode) {
   trap* tr;
-  if((tr = trap_find(TRAP_EXIT))) {
+  
+if((tr = trap_find(TRAP_EXIT))) {
     struct env sh;
     char* args[2] = {alloc(FMT_ULONG), 0};
     args[0][fmt_ulong(args[0], exitcode)] = '\0';
@@ -134,6 +141,7 @@ trap_exit(int exitcode) {
     trap_handler(TRAP_EXIT);
     sh_pop(&sh);
   }
+
   return exitcode;
 }
 
@@ -156,7 +164,8 @@ trap_install(int sig, union node* tree) {
   } else if(sig == TRAP_EXIT || (unsigned char)sig == TRAP_RETURN) {
     struct eval* e = eval_find(sig ? E_FUNCTION : E_ROOT);
     // assert(e);
-    if(e)
+    
+if(e)
       e->destructor = sig ? trap_return : trap_exit;
   } else {
     assert(0);
@@ -166,10 +175,12 @@ trap_install(int sig, union node* tree) {
 static int
 trap_uninstall(int sig) {
   trap** trp;
-  for(trp = &traps; *trp; trp = &(*trp)->next) {
+  
+for(trp = &traps; *trp; trp = &(*trp)->next) {
     if((*trp)->sig == sig) {
       trap* tr = *trp;
-      if((char)tr->sig >= 0)
+      
+if((char)tr->sig >= 0)
         signal(sig, SIG_DFL);
       tree_free(tr->tree);
       *trp = tr->next;
@@ -211,7 +222,8 @@ builtin_trap(int argc, char* argv[]) {
   if(list) {
     const char* name;
     unsigned char num;
-    for(num = TRAP_DEBUG; (name = trap_name(num)); num++) {
+    
+for(num = TRAP_DEBUG; (name = trap_name(num)); num++) {
       if(num && (num % 5) == 0)
         buffer_putc(fd_out->w, '\n');
 
@@ -226,10 +238,12 @@ builtin_trap(int argc, char* argv[]) {
 
   if(print) {
     trap* tr;
-    if(shell_optind == argc) {
+    
+if(shell_optind == argc) {
       const char* name;
       unsigned char num;
-      for(num = TRAP_DEBUG; (name = trap_name(num)); num++) {
+      
+for(num = TRAP_DEBUG; (name = trap_name(num)); num++) {
         if((tr = trap_find(num)))
           trap_print(tr);
       }
@@ -246,6 +260,7 @@ builtin_trap(int argc, char* argv[]) {
       if((tr = trap_find(signum)))
         trap_print(tr);
     }
+
     return 0;
   }
 
@@ -292,7 +307,8 @@ builtin_trap(int argc, char* argv[]) {
 #endif
     if(signum != 1) {
       ret = 0;
-      if(cmds)
+      
+if(cmds)
         trap_install(signum, cmds);
       else
         ret = trap_uninstall(signum);

@@ -36,6 +36,7 @@ parse_arith_unary(struct parser* p) {
           }
         }
       }
+
       return node;
     }
   }

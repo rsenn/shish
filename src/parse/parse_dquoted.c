@@ -33,11 +33,13 @@ parse_dquoted(struct parser* p) {
       if((flags & P_BQUOTE))
         break;
       parse_string(p, 0);
+
       if(parse_bquoted(p))
         break;
       continue;
     } else if(c == '$') {
       parse_string(p, 0);
+
       if(parse_subst(p))
         break;
       continue;

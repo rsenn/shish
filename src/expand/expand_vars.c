@@ -24,10 +24,11 @@ expand_vars(union node* vars, union node** nptr) {
 
       expand_unescape(&node->narg.stra, parse_isesc);
     }
+
     /* if(node->id == N_ARG) {
-       debug_stralloc("var", &node->narg.stra, 0, 0);
-       debug_nl_fl();
-     }*/
+           debug_stralloc("var", &node->narg.stra, 0, 0);
+           debug_nl_fl();
+         }*/
     while(*nptr)
       tree_skip(nptr);
 

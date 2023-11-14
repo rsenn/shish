@@ -5,6 +5,7 @@ char*
 tree_string(union node* node) {
   stralloc sa;
   stralloc_init(&sa);
+
   if(node->id == N_ARG)
     tree_catlist(node, &sa, " ");
   else

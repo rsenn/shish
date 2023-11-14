@@ -11,10 +11,13 @@
 size_t
 fmt_rwx(char* out, uint16 bits) {
   char* dst = out;
+
   if(bits & 4)
     *dst++ = 'r';
+
   if(bits & 2)
     *dst++ = 'w';
+
   if(bits & 1)
     *dst++ = 'x';
   return dst - out;
@@ -35,6 +38,7 @@ fmt_umask(char* out, uint16 umask) {
 size_t
 scan_rwx(char* in, uint16* bits) {
   char* src;
+
   for(src = in; *src; src++) {
     switch(*src) {
       case 'r': *bits |= 4; continue;
@@ -49,14 +53,17 @@ scan_rwx(char* in, uint16* bits) {
 size_t
 scan_umask(char* in, uint16* umask) {
   char *src, c, op;
+
   for(src = in; *src; src++) {
     uint16_t bits = 0, shift = 0;
     size_t n;
     c = *src++;
     op = *src++;
+
     if(str_chr("=+-", op) == 3)
       return 0;
     n = scan_rwx(src, &bits);
+
     switch(c) {
       case 'u': shift = 6; break;
       case 'g': shift = 3; break;
@@ -76,6 +83,7 @@ scan_umask(char* in, uint16* umask) {
     if(*(src += n) != ',')
       break;
   }
+
   //*umask ^= 0777;
   return src - in;
 }

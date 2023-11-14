@@ -44,6 +44,7 @@ parse_simpletok(struct parser* p) {
 
           if(p->flags & P_COMMENT)
             stralloc_catc(&p->sa, c);
+
           if(source_next(&c) <= 0)
             return T_EOF;
         }
@@ -63,6 +64,7 @@ parse_simpletok(struct parser* p) {
 
           if(source_next(&c) <= 0)
             return T_EOF;
+
           if(c == '\n')
             parse_skip(p);
           source_skip();
@@ -84,6 +86,7 @@ parse_simpletok(struct parser* p) {
       case '\r':
         if(source_next(&c) <= 0)
           return T_EOF;
+
         if(c == '\n')
           parse_skip(p);
       /* encountered a new line */
@@ -119,9 +122,11 @@ parse_simpletok(struct parser* p) {
              line to work */
           tok <<= 1;
         }
+
         break;
       }
-      /* begin or end a subshell */
+
+        /* begin or end a subshell */
       case '(': tok = T_LP; break;
       case ')': tok = T_RP; break;
       /* handle backquote as (ending) token only when
@@ -131,8 +136,10 @@ parse_simpletok(struct parser* p) {
           tok = T_BQ;
           break;
         }
+
       default: return -1;
     }
+
     break;
   }
 

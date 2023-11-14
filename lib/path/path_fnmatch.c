@@ -48,6 +48,7 @@ start:
       return PATH_FNM_NOMATCH;
   }
   flags |= NOTFIRST;
+
   switch(*pattern) {
     case '[': {
       const char* start;
@@ -64,12 +65,14 @@ start:
       plen -= neg;
       /* now start scanning the pattern */
       start = pattern;
+
       while(plen) {
         int res = 0;
         /* if there is a closing bracket and it's not
            the first char the class is terminated */
         if(*pattern == ']' && pattern != start)
           break;
+
         if(*pattern == '[' && pattern[1] == ':') {
           /* MEMBER - stupid POSIX char classes */
           /* TODO: implement them, but maybe not because POSIX sucks here! HARR

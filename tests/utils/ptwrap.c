@@ -56,14 +56,17 @@ errno_exit(const char* message) {
 static int
 prepare_master_pseudo_terminal(void) {
   int fd = posix_openpt(O_RDWR | O_NOCTTY);
-  if(fd < 0)
+  
+if(fd < 0)
     errno_exit("cannot open master pseudo-terminal");
-  if(fd <= STDERR_FILENO)
+  
+if(fd <= STDERR_FILENO)
     error_exit("stdin/stdout/stderr are not open");
 
   if(grantpt(fd) < 0)
     errno_exit("pseudo-terminal permission not granted");
-  if(unlockpt(fd) < 0)
+  
+if(unlockpt(fd) < 0)
     errno_exit("pseudo-terminal permission not unlocked");
 
   return fd;
@@ -73,7 +76,8 @@ static const char*
 slave_pseudo_terminal_name(int master_fd) {
   errno = 0; /* ptsname may not assign to errno, even if on error */
   const char* name = ptsname(master_fd);
-  if(name == NULL)
+  
+if(name == NULL)
     errno_exit("cannot name slave pseudo-terminal");
   return name;
 }
@@ -81,7 +85,8 @@ slave_pseudo_terminal_name(int master_fd) {
 static int
 open_noctty(const char* pathname) {
   int fd = open(pathname, O_RDWR | O_NOCTTY);
-  if(fd < 0)
+  
+if(fd < 0)
     errno_exit("cannot open slave pseudo-terminal");
   return fd;
 }
@@ -110,14 +115,16 @@ set_fd_set(struct channel_T* channel, fd_set* read_fds, fd_set* write_fds) {
 static void
 process_buffer(struct channel_T* channel, fd_set* read_fds, fd_set* write_fds) {
   ssize_t size;
-  switch(channel->state) {
+  
+switch(channel->state) {
     case INACTIVE: break;
     case READING:
       if(!FD_ISSET(channel->from_fd, read_fds))
         break;
       channel->buffer_position = 0;
       size = read(channel->from_fd, channel->buffer, BUFSIZ);
-      if(size <= 0) {
+      
+if(size <= 0) {
         channel->state = INACTIVE;
       } else {
         channel->state = WRITING;
@@ -131,10 +138,12 @@ process_buffer(struct channel_T* channel, fd_set* read_fds, fd_set* write_fds) {
       size = write(channel->to_fd,
                    &channel->buffer[channel->buffer_position],
                    channel->buffer_length - channel->buffer_position);
-      if(size < 0)
+      
+if(size < 0)
         break; /* ignore any error */
       channel->buffer_position += size;
-      if(channel->buffer_position == channel->buffer_length)
+      
+if(channel->buffer_position == channel->buffer_length)
         channel->state = READING;
       break;
   }
@@ -155,7 +164,8 @@ forward_all_io(int master_fd) {
     FD_ZERO(&read_fds);
     FD_ZERO(&write_fds);
     set_fd_set(&outgoing, &read_fds, &write_fds);
-    if(select(master_fd + 1, &read_fds, &write_fds, NULL, NULL) < 0)
+    
+if(select(master_fd + 1, &read_fds, &write_fds, NULL, NULL) < 0)
       errno_exit("cannot find file descriptor to forward");
 
     /* read to or write from buffer */
@@ -166,11 +176,14 @@ forward_all_io(int master_fd) {
 static int
 await_child(pid_t child_pid) {
   int wait_status;
-  if(waitpid(child_pid, &wait_status, 0) != child_pid)
+  
+if(waitpid(child_pid, &wait_status, 0) != child_pid)
     errno_exit("cannot await child process");
-  if(WIFEXITED(wait_status))
+  
+if(WIFEXITED(wait_status))
     return WEXITSTATUS(wait_status);
-  if(WIFSIGNALED(wait_status))
+  
+if(WIFSIGNALED(wait_status))
     return WTERMSIG(wait_status) | 0x80;
   return EXIT_FAILURE;
 }
@@ -195,17 +208,20 @@ prepare_slave_pseudo_terminal_fds(const char* slave_name) {
   if(close(STDIN_FILENO) < 0)
     errno_exit("cannot close old stdin");
   int slave_fd = open(slave_name, O_RDWR);
-  if(slave_fd != STDIN_FILENO)
+  
+if(slave_fd != STDIN_FILENO)
     errno_exit("cannot open slave pseudo-terminal at stdin");
 
   if(close(STDOUT_FILENO) < 0)
     errno_exit("cannot close old stdout");
-  if(dup(slave_fd) != STDOUT_FILENO)
+  
+if(dup(slave_fd) != STDOUT_FILENO)
     errno_exit("cannot open slave pseudo-terminal at stdout");
 
   if(close(STDERR_FILENO) < 0)
     errno_exit("cannot close old stderr");
-  if(dup(slave_fd) != STDERR_FILENO)
+  
+if(dup(slave_fd) != STDERR_FILENO)
     errno_exit("cannot open slave pseudo-terminal at stderr");
 
 #ifdef TIOCSCTTY
@@ -233,7 +249,8 @@ main(int argc, char* argv[]) {
       exit(EXIT_FAILURE);
   */
   optind = 1;
-  if(optind < argc && strcmp(argv[optind], "--") == 0)
+  
+if(optind < argc && strcmp(argv[optind], "--") == 0)
     optind++;
 
   if(optind == argc)
@@ -244,9 +261,11 @@ main(int argc, char* argv[]) {
   int slave_fd = open_noctty(slave_name);
 
   pid_t child_pid = fork();
-  if(child_pid < 0)
+  
+if(child_pid < 0)
     errno_exit("cannot spawn child process");
-  if(child_pid > 0) {
+  
+if(child_pid > 0) {
     /* parent process */
     close(slave_fd);
     forward_all_io(master_fd);

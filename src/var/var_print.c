@@ -27,7 +27,9 @@ var_print(struct var* var, int flags) {
 
       buffer_putc(fd_out->w, var->sa.s[i]);
     }
+
     buffer_puts(fd_out->w, "\"");
   }
+
   buffer_putnlflush(fd_out->w);
 }

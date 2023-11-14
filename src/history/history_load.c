@@ -28,6 +28,7 @@ history_load(void) {
   char fname[PATH_MAX + 1];
 
   hlen = str_copyn(fname, sh_home, PATH_MAX);
+
   if(hlen >= PATH_MAX - 3)
     return;
 

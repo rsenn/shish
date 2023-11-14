@@ -12,5 +12,6 @@ expand_break(union node** out) {
       stralloc_init(&this->stra);
     }
   }
+
   return out;
 }

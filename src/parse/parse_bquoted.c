@@ -39,7 +39,8 @@ parse_bquoted(struct parser* p) {
     return -1;
   /*
   subp.pushback++;
-  if(subp.tok == T_BQ)
+
+if(subp.tok == T_BQ)
    parse_gettok(&subp, 0); */
 
   /* MUST be terminated with right parenthesis or backquote */

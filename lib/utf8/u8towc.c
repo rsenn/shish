@@ -23,6 +23,7 @@ u8towc(wchar_t* w, const char* u, size_t count) {
   } else if(3 == len) {
     if((u[1] & 0xc0) != 0x80) /* error */
       return -1;
+
     if((u[2] & 0xc0) != 0x80) /* error */
       return -1;
     w[0] = ((u[0] & 0x0f) << 12) | ((u[1] & 0x3f) << 6) | (u[2] & 0x3f);
@@ -30,8 +31,10 @@ u8towc(wchar_t* w, const char* u, size_t count) {
   } else if(4 == len) {
     if((u[1] & 0xc0) != 0x80) /* error */
       return -1;
+
     if((u[2] & 0xc0) != 0x80) /* error */
       return -1;
+
     if((u[3] & 0xc0) != 0x80) /* error */
       return -1;
     w[0] = ((u[0] & 0x07) << 18) | ((u[1] & 0x3f) << 12) |

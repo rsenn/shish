@@ -15,6 +15,7 @@ builtin_set(int argc, char* argv[]) {
   /* check options */
   while((c = shell_getopt(argc, argv, "+efhmuxBCH")) > 0) {
     int on = shell_optprefix == '-';
+
     switch(c) {
       case 'e': opts.errexit = on; break;
       case 'f': opts.noglob = on; break;

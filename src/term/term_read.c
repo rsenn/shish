@@ -23,6 +23,7 @@ term_read(int fd, char* buf, unsigned int len) {
       len = remain;
     byte_copy(buf, len, &term_cmdline.s[term_cmdline.len - remain]);
     remain -= len;
+
     if(!remain) {
 #ifdef TCSANOW
       tcsetattr(fd, TCSANOW, &term_tcattr);
@@ -64,6 +65,7 @@ term_read(int fd, char* buf, unsigned int len) {
           ret = 0;
           goto fail;
         }
+
         break;
       /* do the ANSI codes */
       case '\033': term_ansi(); break;

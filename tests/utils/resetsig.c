@@ -37,7 +37,8 @@ main(int argc, char** argv) {
   action.sa_flags = 0;
   sigemptyset(&action.sa_mask);
   sigprocmask(SIG_SETMASK, &action.sa_mask, NULL);
-  for(const int* s = signals; *s != 0; s++)
+  
+for(const int* s = signals; *s != 0; s++)
     if(*s != SIGKILL && *s != SIGSTOP)
       sigaction(*s, &action, NULL);
 

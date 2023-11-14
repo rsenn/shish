@@ -31,6 +31,7 @@ builtin_dump(int argc, char* argv[]) {
       default: builtin_invopt(argv); return 1;
     }
   }
+
   argp = &argv[shell_optind];
   num_args = argc - shell_optind;
   out = fd == -1 ? buffer_2 : fdtable[fd]->w;
@@ -54,12 +55,15 @@ builtin_dump(int argc, char* argv[]) {
       break;
     case FUNCTIONS: {
       union node* n;
+
       for(n = functions; n; n = n->next) {
         tree_print(n, out);
         buffer_putnlflush(out);
       }
+
       break;
     }
   }
+
   return 0;
 }

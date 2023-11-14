@@ -9,6 +9,7 @@ extern void* debug_alloc(const char* file,
 void*
 alloc_zerodebug(const char* file, unsigned int line, unsigned long size) {
   void* ptr = debug_alloc(file, line, size);
+
   if(ptr)
     byte_zero(ptr, size);
   return ptr;

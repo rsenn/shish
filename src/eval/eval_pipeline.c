@@ -36,6 +36,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
     buffer_puts(fd_err->w, "no job control");
     buffer_putnlflush(fd_err->w);
   }
+
   fdstack_push(&st);
 
   for(node = npipe->cmds; node; node = node->next) {
@@ -97,6 +98,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
         int fd = fd_out->parent->rb.fd;
         ssize_t r;
         char b[1024];
+
         while((r = read(fd, b, sizeof(b))) > 0) {
           buffer_put(fd_out->w, b, r);
         }
@@ -105,6 +107,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
 
     if(out)
       fd_pop(out);
+
     if(in)
       fd_pop(in);
   }

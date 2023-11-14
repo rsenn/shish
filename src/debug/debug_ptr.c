@@ -14,6 +14,7 @@ debug_ptr(const char* msg, void* ptr, int depth) {
   char buf[FMT_XLONG];
   size_t n;
   // debug_space(depth, 0);
+
   if(msg)
     debug_field(msg, depth);
   n = fmt_xlonglong(buf, (uint64)(size_t)ptr);

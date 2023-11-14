@@ -57,6 +57,7 @@ parse_list(struct parser* p) {
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHPARSE2AST)
   if(cmds && cmds->next) {
     buffer_puts(debug_output, COLOR_YELLOW "parse_list" COLOR_NONE " ");
+
     if(cmds->next) {
       buffer_puts(debug_output, "[");
       buffer_putulong(debug_output, tree_count(cmds));

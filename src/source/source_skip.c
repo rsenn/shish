@@ -25,8 +25,10 @@ source_skip(void) {
       source->position.column++;
       source->position.offset++;
     }
+
     return 1;
   }
+
   return 0;
 }
 

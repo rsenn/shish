@@ -10,6 +10,7 @@
 int
 stralloc_write(int fd, const char* buf, size_t len, buffer* b) {
   stralloc* sa = (stralloc*)b->cookie;
+
   if(stralloc_readyplus(sa, len)) {
     byte_copy(sa->s + sa->len, len, buf);
     sa->len += len;

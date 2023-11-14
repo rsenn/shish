@@ -53,6 +53,7 @@ fd_dump(struct fd* fd, buffer* b) {
     buffer_dump(b, fd->r);
     buffer_putspace(b);
   }
+
   if(fd->w && (fd->mode & FD_WRITE)) {
     buffer_puts(b, "w=");
 

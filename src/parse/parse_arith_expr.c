@@ -15,11 +15,14 @@ parse_arith_expr(struct parser* p) {
 
   /* if(!node)
      node = parse_arith_binary(p, 9);
-   if(node->id == N_ARGPARAM)*/
+
+if(node->id == N_ARGPARAM)*/
   if(!node)
     node = parse_arith_assign(p, node);
+
   if(!node)
     node = parse_arith_unary(p);
+
   if(!node)
     node = parse_arith_value(p);
 

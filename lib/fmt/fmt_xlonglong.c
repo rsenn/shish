@@ -9,9 +9,11 @@ fmt_xlonglong(char* dest, uint64 i) {
   /* first count the number of bytes needed */
   for(len = 1, tmp = i; tmp > 15; ++len)
     tmp >>= 4;
+
   if(dest) {
     len2 = len + 1;
     dest += len;
+
     for(tmp = i; --len2; tmp >>= 4)
       *--dest = tohex(tmp & 15);
   }

@@ -78,11 +78,13 @@ fork(void) {
   long result;
 
   mod = GetModuleHandle("ntdll.dll");
-  if(!mod)
+  
+if(!mod)
     return -ENOSYS;
 
   clone_p = GetProcAddress(mod, "RtlCloneUserProcess");
-  if(clone_p == NULL)
+  
+if(clone_p == NULL)
     return -ENOSYS;
 
   /* lets do this */
@@ -101,7 +103,8 @@ fork(void) {
 
     if((kern32 = GetModuleHandle("kernel32.dll")) == NULL)
       return -ENOSYS;
-    if((get_process_id = GetProcAddress(kern32, "GetProcessId")) == NULL)
+    
+if((get_process_id = GetProcAddress(kern32, "GetProcessId")) == NULL)
       return -ENOSYS;
 
     child_pid = get_process_id(process_info.Process);

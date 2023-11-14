@@ -48,6 +48,7 @@ open_temp(char** pt) {
     str_copy(default_tmpl, tmpl);
     tmpl = default_tmpl;
     tmp = tmpl + str_chr(tmpl, 'X');
+
     if(tmp < tmpl)
       goto error;
   }

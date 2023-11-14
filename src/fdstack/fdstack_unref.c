@@ -38,6 +38,7 @@ fdstack_unref(struct fd* olddup) {
         if(olddup->mode & FD_FREE) {
           if(fd->rb.deinit)
             fd->rb.deinit(&fd->rb);
+
           if(fd->wb.deinit)
             fd->wb.deinit(&fd->wb);
         }

@@ -11,13 +11,17 @@ char debug_quote = '"';
 void
 debug_str(const char* msg, const char* s, int depth, char quote) {
   debug_s(quote ? COLOR_CYAN : COLOR_YELLOW);
+
   if(msg)
     debug_field(msg, depth);
+
   if(quote)
     debug_c(quote);
+
   if(s) {
     while(*s) {
       char c = *s;
+
       if(c == '\n')
         debug_s("\\n");
       else if(c == '\r')
@@ -29,6 +33,7 @@ debug_str(const char* msg, const char* s, int depth, char quote) {
   }
   if(quote)
     debug_c(quote);
+
   if(quote)
     debug_s(COLOR_NONE);
   debug_fl();

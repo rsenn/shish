@@ -22,11 +22,13 @@
 int
 main(void) {
   int ttyfd = open("/dev/tty", O_RDWR | O_NOCTTY | O_NONBLOCK);
-  if(ttyfd < 0)
+  
+if(ttyfd < 0)
     return EXIT_FAILURE;
 
   pid_t tpgid = tcgetpgrp(ttyfd);
-  if(tpgid < 0)
+  
+if(tpgid < 0)
     return EXIT_FAILURE;
 
   pid_t pgid = getpgrp();

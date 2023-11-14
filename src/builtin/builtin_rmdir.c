@@ -27,8 +27,10 @@ builtin_rmdir(int argc, char* argv[]) {
 
   while((p = argv[shell_optind++])) {
     ret = rmdir(p);
+
     if(ret == -1) {
       builtin_error(argv, p);
+
       if(!force)
         return 1;
     }

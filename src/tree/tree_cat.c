@@ -40,6 +40,7 @@ again:
         tree_catseparator(sa, " ", depth);
         tree_catlist_n(node->ncmd.rdir, sa, " ", depth + 1);
       }
+
       break;
     }
 
@@ -53,6 +54,7 @@ again:
         if(command->next)
           stralloc_cats(sa, " | ");
       }
+
       break;
     }
 
@@ -106,6 +108,7 @@ again:
 
         stralloc_catc(sa, arg->str[i]);
       }
+
       break;
     }
 
@@ -171,6 +174,7 @@ again:
 
           stralloc_cats(sa, vsubst_types[(node->nargparam.flag & S_VAR) >> 8]);
         }
+
         if(node->nargparam.word)
           tree_cat(node->nargparam.word, sa);
       }
@@ -222,6 +226,7 @@ again:
         stralloc_catc(sa, ' ');
         tree_cat(n, sa);
       }
+
       break;
     }
 
@@ -230,6 +235,7 @@ again:
       union node* n;
       stralloc_cats(sa, "for ");
       stralloc_cats(sa, node->nfor.varn);
+
       if(node->nfor.args) {
         stralloc_cats(sa, " in ");
         tree_catlist(node->nfor.args, sa, " ");
@@ -243,6 +249,7 @@ again:
         stralloc_catc(sa, ' ');
         tree_cat(n, sa);
       }
+
       break;
     }
 
@@ -262,6 +269,7 @@ again:
         stralloc_catc(sa, ' ');
         tree_cat(n, sa);
       }
+
       break;
     }
 
@@ -286,6 +294,7 @@ again:
     case N_CASENODE: {
       tree_catlist(node->ncasenode.pats, sa, "|");
       stralloc_cats(sa, ") ");
+
       if(node->ncasenode.cmds)
         tree_catlist_n(node->ncasenode.cmds,
                        sa,
@@ -342,8 +351,10 @@ again:
         stralloc_catc(sa, ' ');
         tree_cat(n, sa);
       }
+
       break;
     }
+
     case N_BRACEGROUP: {
       union node* n;
       stralloc_catc(sa, '{');
@@ -362,6 +373,7 @@ again:
         stralloc_catc(sa, ' ');
         tree_cat(n, sa);
       }
+
       break;
     }
 
@@ -375,12 +387,16 @@ again:
 
       if(node->nredir.flag & R_IN)
         stralloc_catc(sa, '<');
+
       if(node->nredir.flag & R_OUT)
         stralloc_catc(sa, '>');
+
       if(node->nredir.flag & R_APPEND)
         stralloc_catc(sa, '>');
+
       if(node->nredir.flag & R_DUP)
         stralloc_catc(sa, '&');
+
       if(node->nredir.flag & R_HERE) {
         stralloc_catc(sa, '<');
 
@@ -437,11 +453,12 @@ again:
       stralloc_catb(sa, buf, n);
       break;
     }
+
       /*
-          case A_VAR: {
-            stralloc_cats(sa, node->narithvar.var);
-            break;
-          }*/
+                case A_VAR: {
+                  stralloc_cats(sa, node->narithvar.var);
+                  break;
+                }*/
 
     case A_ADD:
     case A_SUB:
@@ -520,11 +537,13 @@ again:
         default: break;
       }
       tree_cat(node->narithunary.node, sa);
+
       switch(node->narithunary.id) {
         case A_POSTINCR: stralloc_cats(sa, "++"); break;
         case A_POSTDECR: stralloc_cats(sa, "--"); break;
         default: break;
       }
+
       break;
     }
 
@@ -542,6 +561,7 @@ again:
 
       tree_cat(node->narithbinary.left, sa);
       stralloc_catc(sa, ' ');
+
       switch(node->narithbinary.id) {
         case A_VASSIGN: stralloc_catc(sa, '='); break;
         case A_VADD: stralloc_cats(sa, "+="); break;

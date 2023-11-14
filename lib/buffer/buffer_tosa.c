@@ -6,6 +6,7 @@ strallocwrite(fd_t fd, char* buf, size_t len, void* myself) {
   buffer* b = myself;
   stralloc* sa = b->cookie;
   sa->len += len;
+
   if(stralloc_readyplus(sa, 1024) == 0)
     return 0;
   b->x = sa->s + sa->len;

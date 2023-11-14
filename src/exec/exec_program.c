@@ -77,6 +77,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
       /* this will close child ends of the pipes and read data from the parent
        * end :) */
       fdstack_pop(&io);
+
       if(npipes)
         fdstack_data();
 

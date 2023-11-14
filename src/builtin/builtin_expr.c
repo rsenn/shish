@@ -50,6 +50,7 @@ builtin_expr(int argc, char* argv[]) {
     for(i = 1; i < argc; i++) {
       if(i > 1)
         stralloc_catc(&sa, ' ');
+
       stralloc_cats(&sa, argv[i]);
     }
 

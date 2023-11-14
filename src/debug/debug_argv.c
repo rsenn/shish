@@ -17,6 +17,7 @@ debug_argv(char** argv, buffer* out) {
 
     if(!quote) {
       char* s;
+
       for(s = *arg; *s; s++)
         if(parse_isctrl(*s) || parse_isesc(*s)) {
           quote++;
@@ -26,11 +27,13 @@ debug_argv(char** argv, buffer* out) {
 
     if(arg > argv)
       buffer_putspace(out);
+
     if(quote) {
       char* s;
       size_t next;
 
       buffer_putc(out, '\'');
+
       for(s = *arg; *s; s += next) {
         if(*s == '\'') {
           buffer_puts(out, "'\\''");
@@ -39,6 +42,7 @@ debug_argv(char** argv, buffer* out) {
         }
 
         next = str_chr(s, '\'');
+
         if(next > 0)
           buffer_put(out, s, next);
       }
@@ -48,5 +52,6 @@ debug_argv(char** argv, buffer* out) {
       buffer_puts(out, *arg);
     }
   }
+
   return out->p - i;
 }

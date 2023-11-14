@@ -12,5 +12,6 @@ job_delete(struct job* job) {
       return;
     }
   }
+
   // assert(0);
 }

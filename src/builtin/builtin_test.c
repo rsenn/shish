@@ -147,6 +147,7 @@ test_binary(int argc, char** argv) {
       case '>': return op[1] == '=' ? r >= 0 : r > 0;
     }
   }
+
   return -1;
 }
 
@@ -215,6 +216,7 @@ test_unary(int argc, char** argv) {
       case ':': {
         if(shell_optopt == 'z')
           return 1;
+
         if(shell_optopt == 'n')
           return 0;
 
@@ -256,6 +258,7 @@ test_expr(int argc, char** argv) {
 
   if(/*shell_optind + */ i < argc) {
     int result;
+
     if((result = test_boolean(/*shell_optind +*/ i, argv)) != -1) {
       shell_optind++ /* += i*/;
       return result;

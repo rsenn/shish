@@ -7,6 +7,7 @@ ssize_t
 buffer_feed(buffer* b) {
   if(b->p == b->n) {
     ssize_t w;
+
     if((w = b->op ? buffer_stubborn_read(b->op, b->fd, b->x, b->a, b) : 0) < 0)
       return -1;
     b->n = (size_t)w;

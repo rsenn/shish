@@ -10,6 +10,7 @@
 static int
 get_host_name(char* x, size_t n) {
   DWORD len = n;
+
   if(GetComputerNameA(x, &len))
     return 0;
   return -1;

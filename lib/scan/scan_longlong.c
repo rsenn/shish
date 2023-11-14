@@ -9,6 +9,7 @@ scan_longlong(const char* src, int64* dest) {
   char c = src[0];
   unsigned int neg = c == '-';
   o = c == '-' || c == '+';
+
   if((i = scan_ulonglong(src + o, &l))) {
     if(i > 0 && l > maxlong + neg) {
       l /= 10;

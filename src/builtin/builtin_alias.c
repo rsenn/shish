@@ -15,6 +15,7 @@
 static int
 alias_valid(const char* v) {
   size_t i;
+
   for(i = 0; v[i] && v[i] != '='; i++)
     if(!parse_isname(v[i], i) && !(i > 0 && v[i] == '-'))
       return 0;
@@ -25,12 +26,14 @@ static struct alias*
 alias_new(const char* str) {
   size_t len = str_len(str);
   struct alias* a;
+
   if((a = alloc(offsetof(struct alias, def) + len + 1))) {
     a->namelen = str_chr(str, '=');
     a->codelen = len - (a->namelen + 1);
     a->next = 0;
     byte_copy(a->def, len + 1, str);
   }
+
   return a;
 }
 
@@ -56,6 +59,7 @@ alias_search(const char* str) {
     if((*aptr)->namelen == len && byte_equal((*aptr)->def, len, str))
       break;
   }
+
   return aptr;
 }
 

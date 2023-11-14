@@ -114,6 +114,7 @@ parse_param(struct parser* p) {
   if(c == '%' || c == '#') {
     char nextc;
     param->flag |= (c == '%') ? S_RSSFX : S_RSPFX;
+
     if(source_next(&nextc) > 0 && nextc == c) {
       param->flag += (1 << 8);
       parse_skip(p);

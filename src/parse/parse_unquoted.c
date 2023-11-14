@@ -35,6 +35,7 @@ parse_unquoted(struct parser* p) {
 
       c = nextc;
     }
+
     /* when spotting double-quotes enter double-quotation mode */
     else if(c == '"') {
       parse_string(p, 0);
@@ -45,6 +46,7 @@ parse_unquoted(struct parser* p) {
       parse_string(p, 0);
       break;
     }
+
     /* when spotting single-quote enter single-quotation mode */
     else if(c == '\'') {
       parse_string(p, 0);
@@ -55,6 +57,7 @@ parse_unquoted(struct parser* p) {
       parse_string(p, 0);
       break;
     }
+
     /* when spotting backquote enter command substitution mode */
     else if(c == '`') {
 
@@ -66,6 +69,7 @@ parse_unquoted(struct parser* p) {
          p->pushback++; */
         return 1;
       }
+
       parse_string(p, 0);
 
       if(parse_bquoted(p))
@@ -76,6 +80,7 @@ parse_unquoted(struct parser* p) {
     /* when spotting $ enter parameter substitution mode */
     else if(c == '$') {
       parse_string(p, 0);
+
       if(parse_subst(p))
         break;
 
@@ -88,6 +93,7 @@ parse_unquoted(struct parser* p) {
       if(p->sa.len == 0 || scan_uint(p->sa.s, (unsigned int*)&fd) == p->sa.len)
         return redir_parse(p, (c == '<' ? R_IN : R_OUT), fd);
     }
+
     /* on a substition word in ${name:word} we parse until a right brace occurs
      */
     else if(p->flags & P_SUBSTW) {
@@ -97,6 +103,7 @@ parse_unquoted(struct parser* p) {
         return 1;
       }
     }
+
     /* ...when spotted a delimiter (space, or first char of an operator token)
      */
     else if(parse_isctrl(c) || parse_isspace(c)) {

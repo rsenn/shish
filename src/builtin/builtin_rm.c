@@ -29,6 +29,7 @@ builtin_rm(int argc, char* argv[]) {
 
   while((p = argv[shell_optind++])) {
     ret = unlink(p);
+
     if(ret == -1) {
       if(!force) {
         builtin_error(argv, p);

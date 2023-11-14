@@ -22,6 +22,7 @@ builtin_dirname(int argc, char* argv[]) {
         break;
       }
     }
+
     if(i < 0) {
       path[0] = '.';
       path[1] = '\0';

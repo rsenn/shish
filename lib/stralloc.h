@@ -212,8 +212,10 @@ void stralloc_replacec(stralloc*, char before, char after);
 static inline char*
 stralloc_take(stralloc* from, size_t* lenp, size_t* allocated) {
   char* s = from->s;
+
   if(lenp)
     *lenp = from->len;
+
   if(allocated)
     *allocated = from->a;
   stralloc_init(from);

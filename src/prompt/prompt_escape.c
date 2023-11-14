@@ -49,6 +49,7 @@ prompt_escape(const char* s, stralloc* sa) {
       case 'h':
         if(!prompt_hostname.s)
           shell_gethostname(&prompt_hostname);
+
         if(prompt_hostname.s)
           stralloc_cat(sa, &prompt_hostname);
         s++;
@@ -83,6 +84,7 @@ prompt_escape(const char* s, stralloc* sa) {
         } else {
           stralloc_cat(sa, &sh->cwd);
         }
+
         s++;
         break;
 
@@ -90,6 +92,7 @@ prompt_escape(const char* s, stralloc* sa) {
 #if WINDOWS_NATIVE
         DWORD len = 64;
         stralloc_readyplus(sa, len);
+
         if(GetUserNameA(sa->s, &len))
           sa->len += len;
 #else

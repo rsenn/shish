@@ -13,10 +13,12 @@ path_gethome(int uid) {
   /* try to read /etc/passwd */
   if(buffer_mmapread(&b, "/etc/passwd"))
     return NULL;
+
   for(;;) {
     /* skip the next two colon-separators to get the uid */
     if(buffer_skip_until(&b, ":", 1) <= 0)
       break;
+
     if(buffer_skip_until(&b, ":", 1) <= 0)
       break;
     /* get the uid or the home */

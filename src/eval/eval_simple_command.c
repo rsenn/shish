@@ -78,6 +78,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
       if(e->flags & E_PRINT) {
         stralloc* sa = &node->narg.stra;
         size_t offs = byte_chr(sa->s, sa->len, '=');
+
         if(offs < sa->len)
           offs++;
         eval_print_prefix(e, fd_err->w);
@@ -133,6 +134,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 #if DEBUG_OUTPUT_
     buffer_puts(debug_output, "Redirection ");
     debug_node(r, -1);
+
     if(r->nredir.fd) {
       buffer_puts(debug_output, "fd { n= ");
       buffer_putlong(debug_output, r->nredir.fd->n);
@@ -171,6 +173,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
   if(e->flags & E_PRINT) {
     eval_print_prefix(e, fd_err->w);
+
     if(debug_argv(argv, fd_err->w))
       buffer_putnlflush(fd_err->w);
   }

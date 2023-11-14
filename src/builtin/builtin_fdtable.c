@@ -34,10 +34,12 @@ builtin_fdtable(int argc, char* argv[]) {
       default: builtin_invopt(argv); return 1;
     }
   }
+
   buffer_puts(fdtable[fd]->w, " vfd  rfd  wfd  lev  file\n");
 
   fdtable_foreach(i) fd_print(fdtable[i], fdtable[fd]->w);
 
   buffer_flush(fdtable[fd]->w);
+
   return 0;
 }

@@ -41,6 +41,7 @@ fd_setfd(struct fd* fd, int e) {
 
     if(fd_hi <= e)
       fd_hi = e + 1;
+
     if(fd_lo > e)
       fd_lo = e;
   }

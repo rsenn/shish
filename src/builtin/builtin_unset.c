@@ -12,7 +12,7 @@ find_function(const char* name) {
 
   for(nptr = &functions; *nptr; nptr = tree_next(nptr)) {
     struct nfunc* fn = &(*nptr)->nfunc;
-  
+
     if(!str_diff(fn->name, name))
       return nptr;
   }
@@ -59,7 +59,8 @@ builtin_unset(int argc, char* argv[]) {
 
     if(!var) {
       union node** nptr;
-      if((nptr = find_function(*argp))) {
+      
+if((nptr = find_function(*argp))) {
         union node* fn = *nptr;
         *nptr = fn->next;
         fn->next = 0;
@@ -67,6 +68,7 @@ builtin_unset(int argc, char* argv[]) {
         continue;
       }
     }
+
     if(!fun) {
       if(var_unset(*argp))
         continue;

@@ -30,6 +30,7 @@ mmap_filename(void* map, stralloc* sa) {
 
   if(get_mmaped_filename == 0) {
     HINSTANCE psapi = LoadLibraryA("psapi.dll");
+
     if((get_mmaped_filename =
             (get_mmaped_filename_fn*)GetProcAddress(psapi,
                                                     "GetMappedFileNameA")) == 0)
@@ -37,6 +38,7 @@ mmap_filename(void* map, stralloc* sa) {
   }
 
   stralloc_ready(sa, MAX_PATH + 1);
+
   if((sa->len = (size_t)(*get_mmaped_filename)(
           GetCurrentProcess(), map, sa->s, sa->a))) {
 
@@ -92,6 +94,7 @@ mmap_filename(void* map, stralloc* sa) {
     uint64 start, end;
 
     p += scan_xlonglong(p, &start);
+
     if(*p == '-') {
       char* e = line + n - 1;
       int i = 4;

@@ -53,6 +53,7 @@ debug_subst(const char* msg, int flags) {
   }
 
   subst = ((flags & S_VAR) >> 8) & 0x0f;
+
   if(subst) {
     if(n)
       n += str_copy(&flagstr[n], " | ");
@@ -68,12 +69,16 @@ debug_subst(const char* msg, int flags) {
   }
   if(flags & S_STRLEN)
     n += str_copy(&flagstr[n], " | S_STRLEN");
+
   if(flags & S_NULL)
     n += str_copy(&flagstr[n], " | S_NULL");
+
   if(flags & S_NOSPLIT)
     n += str_copy(&flagstr[n], " | S_NOSPLIT");
+
   if(flags & S_GLOB)
     n += str_copy(&flagstr[n], " | S_GLOB");
+
   if(flags & S_ESCAPED)
     n += str_copy(&flagstr[n], " | S_ESCAPED");
 
@@ -82,6 +87,7 @@ debug_subst(const char* msg, int flags) {
     debug_s(msg);
     debug_s(COLOR_CYAN DEBUG_EQU COLOR_NONE);
   }
+
   debug_s(COLOR_MAGENTA);
   debug_s(flagstr);
   debug_s(COLOR_NONE);

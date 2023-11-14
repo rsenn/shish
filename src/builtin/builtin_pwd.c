@@ -7,8 +7,7 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_pwd(int argc, char* argv[]) {
-  int c;
-  int physical = 0;
+  int c, physical = 0;
 
   /* check options, -L for symlink, -P for physical path */
   while((c = shell_getopt(argc, argv, "LP")) > 0) {

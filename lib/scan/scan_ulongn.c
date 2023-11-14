@@ -27,6 +27,7 @@ scan_ulongn(const char* src, size_t n, unsigned long int* dest) {
     /* implementation for 64-bit platforms with gcc */
     for(; n-- > 0 && (c = (unsigned char)(*tmp - '0')) < 10; ++tmp) {
       __uint128_t L = (__uint128_t)l * 10 + c;
+
       if((L >> ((sizeof(L) - sizeof(l)) * 8)))
         break;
       l = (unsigned long)L;
@@ -43,6 +44,7 @@ scan_ulongn(const char* src, size_t n, unsigned long int* dest) {
     /* implementation for 32-bit platforms */
     for(; n-- > 0 && (c = (unsigned char)(*tmp - '0')) < 10; ++tmp) {
       uint64 L = (uint64)l * 10 + c;
+
       if((unsigned long)L != L)
         break;
       l = (unsigned long)L;
@@ -65,8 +67,10 @@ scan_ulongn(const char* src, size_t n, unsigned long int* dest) {
        * so instead of *10 we do(l<<3) (i.e. *8) + (l<<1) (i.e. *2)
        * and check for overflow on all the intermediate steps */
       n = l << 3;
+
       if((n >> 3) != l)
         break;
+
       if(n + (l << 1) + c < n)
         break;
       l = n + (l << 1) + c;

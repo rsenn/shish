@@ -11,6 +11,7 @@ byte_chr(const void* haystack, size_t len, char needle) {
   for(;;) {
     if(s == t)
       break;
+
     if(*s == c)
       break;
     ++s;

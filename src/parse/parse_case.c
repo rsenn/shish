@@ -36,7 +36,8 @@ parse_case(struct parser* p) {
     return NULL;
   /*
     tok = parse_gettok(p, P_DEFAULT);
-    if(p->node->id != N_ARGSTR || stralloc_diffs(&p->node->nargstr.stra, "in"))
+
+if(p->node->id != N_ARGSTR || stralloc_diffs(&p->node->nargstr.stra, "in"))
     { tree_free(word); return NULL;
     } */
 
@@ -65,6 +66,7 @@ parse_case(struct parser* p) {
     }
 
     p->pushback++;
+
     if(!parse_expect(p, P_DEFAULT, T_RP | T_PIPE, node))
       return NULL;
 

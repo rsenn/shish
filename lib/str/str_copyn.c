@@ -8,6 +8,7 @@ str_copyn(void* p1, const void* p2, size_t max) {
   s = p1;
   t = p2;
   len = 0;
+
   while(max-- > 0) {
     if(!(*s = *t))
       return len;

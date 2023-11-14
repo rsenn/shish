@@ -28,6 +28,7 @@ builtin_readonly(int argc, char* argv[]) {
     vartab_print(V_READONLY);
     return 0;
   }
+
   /* set each argument */
   for(; *argp; argp++) {
     if(!var_valid(*argp)) {

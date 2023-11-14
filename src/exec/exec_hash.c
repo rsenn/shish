@@ -49,6 +49,7 @@ exec_hash(char* name, int mask) {
        */
       cmd = exec_search(name, mask);
     }
+
     if(entry && entry->mask != mask) {
       if(entry->cmd.id == H_PROGRAM)
         alloc_free(entry->cmd.path);
@@ -67,5 +68,6 @@ exec_hash(char* name, int mask) {
       entry->mask = mask;
     }
   }
+
   return cmd;
 }
