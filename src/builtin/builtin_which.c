@@ -10,12 +10,21 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_which(int argc, char* argv[]) {
-  int ret = 0;
+  int ret = 0, c, all = 0;
   const char* x;
   char* arg;
-  stralloc path;
+  stralloc p;
   size_t i, len, n;
-  stralloc_init(&path);
+
+  /* check options */
+  while((c = shell_getopt(argc, argv, "a")) > 0) {
+    switch(c) {
+      case 'a': all = 1; break;
+      default: builtin_invopt(argv); return 1;
+    }
+  }
+
+  stralloc_init(&p);
 
   while((arg = argv[shell_optind++])) {
     x = var_value("PATH", &n);
@@ -23,18 +32,24 @@ builtin_which(int argc, char* argv[]) {
     for(i = 0; i < n; i++) {
       len = byte_chr(&x[i], n - i, ':');
 
-      stralloc_copyb(&path, &x[i], len);
-      stralloc_catc(&path, '/');
-      stralloc_cats(&path, arg);
-      stralloc_nul(&path);
+      stralloc_copyb(&p, &x[i], len);
+      stralloc_catc(&p, '/');
+      stralloc_cats(&p, arg);
+      stralloc_nul(&p);
 
-      if(access(path.s, X_OK) == 0) {
-        buffer_puts(fd_out->w, path.s);
+      if(access(p.s, X_OK) == 0) {
+        buffer_puts(fd_out->w, p.s);
         buffer_putnlflush(fd_out->w);
-      } else {
+        ret = 0;
+
+        if(!all)
+          break;
+
+      } else if(!all) {
         ret = errno == ENOENT ? EXIT_NOTFOUND : EXIT_FAILURE;
-        break;
+        // break;
       }
+
       i += len;
     }
 
@@ -43,5 +58,6 @@ builtin_which(int argc, char* argv[]) {
       break;
     }
   }
+
   return ret;
 }

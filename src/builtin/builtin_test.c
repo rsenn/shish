@@ -10,6 +10,7 @@
 #include "../../lib/str.h"
 #include <sys/stat.h>
 #include "../../lib/windoze.h"
+
 #if WINDOWS_NATIVE
 #include <io.h>
 #ifndef R_OK
@@ -37,6 +38,7 @@
 #define lstat stat
 #endif
 #endif
+
 typedef enum { OP_EQ, OP_NE, OP_LT, OP_LE, OP_GT, OP_GE } binary_op;
 
 static int test_boolean(int, char**);
@@ -56,6 +58,7 @@ num_args(int argc) {
 static int64
 filetime(const char* arg) {
   struct stat st;
+
   if(stat(arg, &st) == -1)
     return -1;
 
@@ -81,7 +84,9 @@ intarg(const char* arg) {
 static const char*
 next(char** v) {
   const char* ret = current(v);
+
   shell_optind++;
+
   return ret;
 }
 
@@ -93,6 +98,7 @@ binary(const char* op) {
     case 'e': return OP_EQ;
     case 'n': return OP_NE;
   }
+
   return -1;
 }
 
@@ -111,7 +117,6 @@ test_binary(int argc, char** argv) {
   right = next(argv);
 
   if(op[0] == '-') {
-
     if(contains("no", op[1])) {
       switch(op[1]) {
         case 'n': return filetime(left) > filetime(right);
@@ -153,18 +158,8 @@ test_unary(int argc, char** argv) {
   const char* arg = current(argv);
 
   if(arg[0] != '-') {
-    /*if(argc >= 2)*/ {
-      /* int balanced =
-           argc == 2 || (str_equal(argv[0], "[") && str_equal(argv[2], "]"));
-
-       if(balanced)*/
-      {
-        shell_optind++;
-        return !!*arg;
-      }
-    }
-
-    return -1;
+    shell_optind++;
+    return !!*arg;
   }
 
   /* check options */
@@ -218,17 +213,12 @@ test_unary(int argc, char** argv) {
       case 'x': return access(arg, X_OK) == 0;
 
       case ':': {
-        if(shell_opt.opt == 'z')
+        if(shell_optopt == 'z')
           return 1;
-        if(shell_opt.opt == 'n')
+        if(shell_optopt == 'n')
           return 0;
 
-        builtin_errmsg_nonl(argv,
-                            argv[shell_opt.ind - 1],
-                            "expecting argument for option '");
-        buffer_putc(fd_err->w, shell_opt.opt);
-        buffer_putc(fd_err->w, '\'');
-        buffer_putnlflush(fd_err->w);
+        builtin_errmsg(argv, argv[shell_optind - 1], "expecting argument");
         return -2;
       }
     }
@@ -244,9 +234,10 @@ test_expr(int argc, char** argv) {
   int index;
   const char* arg;
   int i, parens = 1;
+
   /*if(shell_optind == argc)
-     return -1;
- */
+     return -1;*/
+
   if(!str_equal((arg = current(argv)), "("))
     return -1;
 
@@ -255,8 +246,10 @@ test_expr(int argc, char** argv) {
 
   for(i = shell_optind; i < argc; i++) {
     const char* arg = argv[/*shell_optind +*/ i];
+
     if(str_len(arg) == 1 && contains("()", arg[0]))
       parens += arg[0] == '(' ? 1 : -1;
+
     if(parens == 0)
       break;
   }

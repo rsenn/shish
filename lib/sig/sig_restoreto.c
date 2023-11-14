@@ -9,12 +9,16 @@ void
 sig_restoreto(const void* set, unsigned int n) {
 #if !WINDOWS_NATIVE
   unsigned int i = 1;
+
   for(; i <= n; i++) {
-    int h = sigismember((sigset_t*)set, i);
+    int h = sig_ismember((sigset_type*)set, i);
+
     if(h < 0)
       continue;
+
     if(h)
       sig_restore(i);
   }
+
 #endif
 }

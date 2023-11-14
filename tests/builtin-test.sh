@@ -39,7 +39,7 @@ test_or_fail() {
   EXPECT="$1"
 	shift
 	eval "$CMD; R=\$?"
-	echo -e "\x1b[1;36m = $R\x1b[0m"
+	echo -e "\x1b[1;36m =\x1b[1;35m $R\x1b[0m"
 	case "$R" in
 	$EXPECT) return 0 ;;
 	*)

@@ -11,7 +11,8 @@
 /* outputs job status stuff
  * ----------------------------------------------------------------------- */
 void
-job_status(int pid, int status) {
+job_status(pid_t pid, int status) {
+
   if(WAIT_IF_SIGNALED(status)) {
     const char* signame = sig_name(WAIT_TERMSIG(status));
 
@@ -21,7 +22,7 @@ job_status(int pid, int status) {
       buffer_put(fd_err->w, " signaled: ", 11);
     }
 
-    //    buffer_putc(fd_err->w, signame[0] + 0x20);
+    // buffer_putc(fd_err->w, signame[0] + 0x20);
     buffer_puts(fd_err->w, signame);
 
 #ifdef WCOREDUMP

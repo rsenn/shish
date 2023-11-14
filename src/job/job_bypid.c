@@ -1,13 +1,14 @@
-#include "../../lib/alloc.h"
 #include "../job.h"
 
-/* creates a new job structure
+/* find a job by PID
  * ----------------------------------------------------------------------- */
 struct job*
-job_get(int id) {
+job_bypid(pid_t pid) {
+
   for(struct job* job = jobs; job; job = job->next)
-    if(job->id == id)
-      return job;
+    for(size_t i = 0; i < job->nproc; i++)
+      if(job->procs[i].pid == pid)
+        return job;
 
   return 0;
 }

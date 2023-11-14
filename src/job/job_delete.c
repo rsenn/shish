@@ -4,11 +4,10 @@
 
 void
 job_delete(struct job* job) {
-  struct job** jptr;
 
-  for(jptr = &jobs; *jptr; jptr = &(*jptr)->next) {
-    if(*jptr == job) {
-      *jptr = job->next;
+  for(struct job** jp = &jobs; *jp; jp = &(*jp)->next) {
+    if(*jp == job) {
+      *jp = job->next;
       alloc_free(job);
       return;
     }

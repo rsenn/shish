@@ -6,8 +6,8 @@
 void
 sig_blocknone(void) {
 #if !WINDOWS_NATIVE
-  sigset_t ss;
-  sigemptyset(&ss);
+  sigset_type ss;
+  sig_emptyset(&ss);
   sigprocmask(SIG_SETMASK, &ss, 0);
 #endif
 }

@@ -39,6 +39,7 @@ wait_pids_nohang(int const* pids, unsigned int len, int* wstat) {
         break;
       }
     }
+
     if(i < len) {
       *wstat = exitcode;
       return 1 + i;
@@ -47,21 +48,28 @@ wait_pids_nohang(int const* pids, unsigned int len, int* wstat) {
   return -1;
 #else
   int r;
+
   for(;;) {
     int w;
+
     if((r = wait_nohang(&w)) > 0) {
       unsigned int i = 0;
+
       for(; i < len; i++)
         if(r == pids[i])
           break;
+
       if(i < len) {
         *wstat = w;
         return 1 + i;
       }
+
       continue;
     }
+
     break;
   }
+
   return r;
 #endif
 }

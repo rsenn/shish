@@ -5,8 +5,8 @@
 
 void
 sig_pause(void) {
-  sigset_t ss;
-  sigemptyset(&ss);
+  sigset_type ss;
+  sig_emptyset(&ss);
 #if !WINDOWS_NATIVE
   sigsuspend(&ss);
 #endif

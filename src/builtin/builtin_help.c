@@ -11,7 +11,7 @@ output_synopsis(struct builtin_cmd* b) {
   buffer_puts(fd_out->w, b->args);
 }
 
-/* output stuff
+/* help builtin
  * ----------------------------------------------------------------------- */
 int
 builtin_help(int argc, char* argv[]) {

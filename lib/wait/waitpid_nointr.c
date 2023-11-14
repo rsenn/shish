@@ -13,9 +13,11 @@ waitpid_nointr(int pid, int* wstat, int flags) {
 #if WINDOWS_NATIVE
 #else
   int r;
+
   do {
     r = waitpid(pid, wstat, flags);
   } while((r == (int)-1) && (errno == EINTR));
+
   return r;
 #endif
 }

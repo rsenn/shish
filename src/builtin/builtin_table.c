@@ -138,6 +138,9 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_BASENAME
     {"basename", &builtin_basename, B_DEFAULT, "path"},
 #endif
+#if BUILTIN_JOBS
+    {"bg", &builtin_fg, B_DEFAULT, "[job...]"},
+#endif
 #if BUILTIN_BREAK
     {"break", &builtin_break, B_DEFAULT, "[n]"},
 #endif
@@ -185,6 +188,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_FDTABLE
     {"fdtable", &builtin_fdtable, B_DEFAULT, "[-u FD]"},
+#endif
+#if BUILTIN_JOBS
+    {"fg", &builtin_fg, B_DEFAULT, "[job...]"},
 #endif
 #if BUILTIN_GETOPTS
     {"getopts", &builtin_getopts, B_SPECIAL, "optstring name [arg ... ]"},
@@ -281,7 +287,7 @@ struct builtin_cmd builtin_table[] = {
     {"wait", &builtin_wait, B_DEFAULT, "[pid...]"},
 #endif
 #if BUILTIN_WHICH
-    {"which", &builtin_which, B_DEFAULT, "[command] ..."},
+    {"which", &builtin_which, B_DEFAULT, "[-a] filename ..."},
 #endif
     {NULL, NULL, 0, NULL},
 };

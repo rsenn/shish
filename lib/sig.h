@@ -46,29 +46,15 @@
 #define SIG_UNBLOCK 2
 #endif
 
-#ifndef SIGALL
-#define SIGALL (~(sigset_t)0ll) /* All signals.    */
-#endif
+#define SIG_ALL (~(sigset_type)0) /* All signals.    */
 
-#ifndef sigbit
-#define sigbit(n) (1ll << ((n)-1))
-#endif
-//#ifndef sigemptyset
-//#define sigemptyset(s) (*(s) = 0ll)
-//#endif
-//#ifndef sigfillset
-//#define sigfillset(s) (*(s) = ~(0ll))
-//#endif
+#define sig_bit(n) (1 << ((n)-1))
+#define sig_emptyset(s) (*(s) = 0)
+#define sig_fillset(s) (*(s) = ~(0))
 
-//#ifndef sigaddset
-//#define sigaddset(s, n) *(s) |= sigbit(n)
-//#endif
-//#ifndef sigdelset
-//#define sigdelset(s, n) *(s) &= ~sigbit(n)
-//#endif
-//#ifndef sigismember
-//#define sigismember(s, n) ((*(s) & sigbit(n)) == sigbit(n))
-//#endif
+#define sig_addset(s, n) *(s) |= sig_bit(n)
+#define sig_delset(s, n) *(s) &= ~sig_bit(n)
+#define sig_ismember(s, n) ((*(s)&sig_bit(n)) == sig_bit(n))
 
 #include <errno.h>
 
@@ -79,6 +65,7 @@
 #ifndef SA_MASKALL
 #define SA_MASKALL 1
 #endif
+
 #ifndef SA_NOCLDSTOP
 #define SA_NOCLDSTOP 2
 #endif
@@ -93,11 +80,13 @@ typedef unsigned long long sigset_t;
 
 struct sigaction {
   sighandler_t_ref sa_handler;
-  sigset_t sa_mask;
+  sigset_type sa_mask;
   unsigned int sa_flags;
   void (*sa_restorer)(void);
 };
 #endif
+
+typedef unsigned long sigset_type;
 
 extern struct sigaction const sig_dfl;
 extern struct sigaction const sig_ign;

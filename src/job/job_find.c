@@ -16,13 +16,16 @@ job_find(const char* str) {
       if(*str == '%') {
         if(job->id == id)
           break;
+
       } else {
         size_t i;
+
         for(i = 0; i < job->nproc; i++)
           if(job->procs[i].pid == id)
             break;
       }
     }
   }
+
   return job;
 }

@@ -16,6 +16,7 @@
 #include "../term.h"
 #include "../prompt.h"
 #include "../history.h"
+#include "../../lib/wait.h"
 
 #include <stdlib.h>
 
@@ -26,24 +27,50 @@ int sh_login = 0;
 int sh_no_position = 0;
 
 static void
-sh_sigchld(int signum) {
-  if(term_output) {
-    term_erase();
-    term_restore(term_input.fd, &term_tcattr);
-  }
+sh_onsig(int signum) {
+  switch(signum) {
+    case SIGCHLD: {
+      pid_t pid;
+      int status;
+      struct job* job = 0;
+
+      if(term_output) {
+        term_erase();
+        term_restore(term_input.fd, &term_tcattr);
+      }
+
+      if((pid = wait_nohang(&status)) > 0) {
+
+        job = job_signal(pid, status);
+      }
 
 #ifdef DEBUG_OUTPUT
-  buffer_puts(fd_err->w, "SIGCHLD");
-  buffer_putnlflush(fd_err->w);
+      buffer_puts(fd_err->w, "SIGCHLD");
+      buffer_putc(fd_err->w, ' ');
+
+      buffer_putc(fd_err->w, '(');
+
+      if(job) {
+
+      } else {
+        buffer_puts(fd_err->w, "PID: ");
+        buffer_putlong(fd_err->w, pid);
+      }
+      buffer_putc(fd_err->w, ')');
+      buffer_putnlflush(fd_err->w);
 #endif
 
-  if(term_output) {
-    term_attr(term_input.fd, 1, &term_tcattr);
-    prompt_number--;
-    prompt_show();
-    buffer_putsa(term_output, &term_cmdline);
-    term_escape(term_output, term_cmdline.len - term_pos, 'D');
-    buffer_flush(term_output);
+      if(term_output) {
+        term_attr(term_input.fd, 1, &term_tcattr);
+        prompt_number--;
+        prompt_show();
+        buffer_putsa(term_output, &term_cmdline);
+        term_escape(term_output, term_cmdline.len - term_pos, 'D');
+        buffer_flush(term_output);
+      }
+
+      break;
+    }
   }
 }
 
@@ -172,7 +199,7 @@ main(int argc, char** argv, char** envp) {
   } else
     src.mode &= ~SOURCE_IACTIVE;
 
-  sig_catch(SIGCHLD, sh_sigchld);
+  sig_catch(SIGCHLD, sh_onsig);
 
   /*  if(fd_expected != fd_top && (flags = fdtable_check(e)))
     {

@@ -14,8 +14,7 @@ int job_pgrp;
  * ----------------------------------------------------------------------- */
 int
 job_fork(struct job* job, union node* node, int bgnd) {
-  pid_t pid;
-  pid_t pgrp;
+  pid_t pid, pgrp;
 
 #if !WINDOWS_NATIVE
   sig_block(SIGCHLD);
@@ -31,10 +30,7 @@ job_fork(struct job* job, union node* node, int bgnd) {
   if(pid == 0) {
     sh_forked();
 
-    if(job && job->nproc)
-      pgrp = job->procs[0].pid;
-    else
-      pgrp = sh_pid;
+    pgrp = job && job->nproc ? job->procs[0].pid : sh_pid;
 
 #if !WINDOWS_NATIVE
     setpgid(sh_pid, pgrp);
@@ -52,6 +48,7 @@ job_fork(struct job* job, union node* node, int bgnd) {
   /* in the parent update the process list of the job */
   if(job) {
     struct proc* proc = &job->procs[job->nproc];
+
     proc->pid = pid;
     proc->status = -1;
 

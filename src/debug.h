@@ -164,8 +164,10 @@ dump_flags(buffer* b, int bits, const char* const names[], int pad) {
       n += len;
     }
   }
+
   if(n < (size_t)pad)
     buffer_putnspace(b, pad - n);
+
   return n;
 }
 
@@ -213,6 +215,7 @@ debug_field(const char* s, int depth) {
     if(*s == ' ')
       s++;
   }
+  
   debug_c('"');
   debug_s(s);
   debug_c('"');

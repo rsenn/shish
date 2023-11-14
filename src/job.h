@@ -35,8 +35,8 @@ union node;
 struct proc {
   pid_t pid;
   int status;
-  sigset_t sigold;
-  sigset_t signew;
+  sigset_type sigold;
+  sigset_type signew;
 };
 
 struct job {
@@ -55,15 +55,20 @@ struct job {
 extern int job_terminal, job_pgrp;
 extern struct job *jobs, **jobptr;
 
+#define job_current() (jobptr && *jobptr ? *jobptr : 0)
+
 struct job* job_new(unsigned int n);
 struct job* job_get(int id);
 int job_fork(struct job* job, union node* node, int bg);
-int job_wait(struct job* job, int pid, int* status);
-void job_status(int pid, int status);
+int job_wait(struct job* job, pid_t pid, int* status);
+void job_status(pid_t pid, int status);
 void job_init(void);
 void job_delete(struct job*);
 void job_print(struct job*, buffer*);
 struct job* job_find(const char*);
+struct job* job_bypid(pid_t id);
 void job_delete(struct job*);
+int job_done(struct job*);
+struct job* job_signal(pid_t pid, int status);
 
 #endif /* _JOB_H */

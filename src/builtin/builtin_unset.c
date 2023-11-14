@@ -8,14 +8,15 @@ extern union node* functions;
 
 static inline union node**
 find_function(const char* name) {
-
   union node** nptr = &functions;
 
   for(nptr = &functions; *nptr; nptr = tree_next(nptr)) {
     struct nfunc* fn = &(*nptr)->nfunc;
+  
     if(!str_diff(fn->name, name))
       return nptr;
   }
+
   return 0;
 }
 

@@ -6,11 +6,12 @@
 void
 sig_unblock(int signum) {
 #if !WINDOWS_NATIVE
-  sigset_t ss;
-  sigemptyset(&ss);
+  sigset_type ss;
+
+  sig_emptyset(&ss);
   sigprocmask(SIG_SETMASK, 0, &ss);
 
-  sigdelset(&ss, signum);
+  sig_delset(&ss, signum);
   sigprocmask(SIG_BLOCK, &ss, 0);
 #endif
 }
