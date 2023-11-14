@@ -155,7 +155,7 @@ main(int argc, char** argv, char** envp) {
 
   if(*sh_name == '-') {
     sh_name++;
-    //sh_login++;
+    // sh_login++;
   }
 
   /* set global shell argument vector */
@@ -200,7 +200,7 @@ main(int argc, char** argv, char** envp) {
       debug_nl_fl();
     }
 
-    //debug_end(0);
+    // debug_end(0);
   }
 
   return 0;

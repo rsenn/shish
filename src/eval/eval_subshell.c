@@ -26,11 +26,10 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
   en.jump = 1;
   jmpret = setjmp(en.jumpbuf);
 
-  if(jmpret) {
+  if(jmpret)
     en.exitcode = (jmpret >> 1);
-  } else {
+  else
     eval_tree(&en, ngrp->cmds, E_LIST);
-  }
 
   ret = eval_pop(&en);
 

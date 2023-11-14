@@ -19,10 +19,7 @@
 union node*
 parse_grouping(struct parser* p, int tempflags) {
   enum tok_flag tok;
-  union node **rptr, *grouping, *compound_list;
-
-  /* return NULL on empty compound */
-  grouping = NULL;
+  union node **rptr, *g = NULL, *compound_list;
 
   if(!(tok = parse_expect(p, P_DEFAULT | tempflags, T_BEGIN | T_LP, NULL)))
     return NULL;
@@ -30,21 +27,21 @@ parse_grouping(struct parser* p, int tempflags) {
   /* parse compound content and create a
      compound node if there are commands */
   if((compound_list = parse_compound_list(p, tok << 1))) {
-    grouping = tree_newnode(tok == T_BEGIN ? N_BRACEGROUP : N_SUBSHELL);
-    grouping->ngrp.cmds = compound_list;
+    g = tree_newnode(tok == T_BEGIN ? N_BRACEGROUP : N_SUBSHELL);
+    g->ngrp.cmds = compound_list;
   }
 
   /* expect the appropriate ending token */
-  if(!parse_expect(p, P_DEFAULT, tok << 1, grouping))
+  if(!parse_expect(p, P_DEFAULT, tok << 1, g))
     return NULL;
 
-  if(grouping) {
+  if(g) {
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE)
     buffer_puts(debug_output, COLOR_YELLOW "parse_grouping" COLOR_NONE " grouping = ");
-    debug_node(grouping, 1);
+    debug_node(g, 1);
     debug_nl_fl();
 #endif
-    tree_init(grouping->ngrp.rdir, rptr);
+    tree_init(g->ngrp.rdir, rptr);
 
     /* now any redirections may follow */
     while(parse_gettok(p, P_DEFAULT) & T_REDIR)
@@ -53,5 +50,5 @@ parse_grouping(struct parser* p, int tempflags) {
     p->pushback++;
   }
 
-  return grouping;
+  return g;
 }

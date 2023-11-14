@@ -9,9 +9,7 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_export(int argc, char* argv[]) {
-  int c;
-  int clear = 0;
-  int print = 0;
+  int c, clear = 0, print = 0;
   char** argp;
 
   /* check options, -n for unexport, -p for output */

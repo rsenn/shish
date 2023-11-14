@@ -7,8 +7,9 @@
 #include "../../lib/shell.h"
 #include "../../lib/scan.h"
 #include "../vartab.h"
+#include "../job.h"
 
-enum { VARTAB_ROOT, VARTAB_LOCAL, FDTABLE, FDSTACK, FDLIST, MEMORY, FUNCTIONS };
+enum { VARTAB_ROOT, VARTAB_LOCAL, FDTABLE, FDSTACK, FDLIST, MEMORY, FUNCTIONS, JOBS };
 extern union node* functions;
 
 /* ----------------------------------------------------------------------- */
@@ -18,7 +19,25 @@ builtin_dump(int argc, char* argv[]) {
   char** argp;
   buffer* out;
 
-  while((c = shell_getopt(argc, argv, "Fvltsfmu:")) > 0) {
+  while((c = shell_getopt(argc,
+                          argv,
+                          "Fvlu:"
+#ifdef DEBUG_FDTABLE
+                          "t"
+#endif
+#ifdef DEBUG_FDSTACK
+                          "s"
+#endif
+#ifdef DEBUG_JOB
+                          "j"
+#endif
+#ifdef DEBUG_ALLOC
+                          "m"
+#endif
+#ifdef DEBUG_FD
+                          "f"
+#endif
+                          )) > 0) {
     switch(c) {
       case 'v': what = VARTAB_ROOT; break;
       case 'l': what = VARTAB_LOCAL; break;
@@ -27,6 +46,7 @@ builtin_dump(int argc, char* argv[]) {
       case 'f': what = FDLIST; break;
       case 'm': what = MEMORY; break;
       case 'F': what = FUNCTIONS; break;
+      case 'j': what = JOBS; break;
       case 'u': scan_int(shell_optarg, &fd); break;
       default: builtin_invopt(argv); return 1;
     }
@@ -63,6 +83,9 @@ builtin_dump(int argc, char* argv[]) {
 
       break;
     }
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_JOB)
+    case JOBS: job_dump(out); break;
+#endif
   }
 
   return 0;

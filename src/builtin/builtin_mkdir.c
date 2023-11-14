@@ -32,12 +32,10 @@ builtin_mkdir(int argc, char* argv[]) {
     stralloc_copys(&dir, d);
     stralloc_nul(&dir);
 
-    if(components) {
-      for(i = 0; i < dir.len; i++) {
+    if(components)
+      for(i = 0; i < dir.len; i++)
         if(dir.s[i] == '/')
           dir.s[i] = '\0';
-      }
-    }
 
     for(i = 0; i < dir.len;) {
       ret = mkdir(dir.s, 0755);

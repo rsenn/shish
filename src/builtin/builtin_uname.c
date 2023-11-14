@@ -10,10 +10,8 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_uname(int argc, char* argv[]) {
-  int c;
-  int all = 0, machine = 0, nodename = 0, kern_release = 0, kern_name = 0, processor = 0,
-      kern_version = 0, hw_platform = 0, os_name = 0;
-
+  int c, all = 0, machine = 0, nodename = 0, kern_release = 0, kern_name = 0, processor = 0,
+         kern_version = 0, hw_platform = 0, os_name = 0;
   char* out;
   struct utsname unbuf;
 
@@ -39,19 +37,18 @@ builtin_uname(int argc, char* argv[]) {
     return 1;
   }
 
-  if(kern_release) {
+  if(kern_release)
     out = unbuf.release;
-  } else if(kern_version) {
+  else if(kern_version)
     out = unbuf.version;
-  } else if(machine) {
+  else if(machine)
     out = unbuf.machine;
-  } else if(nodename) {
+  else if(nodename)
     out = unbuf.nodename;
-  } else if(hw_platform) {
+  else if(hw_platform)
     out = "unknown";
-  } else {
+  else
     out = unbuf.sysname;
-  }
 
   buffer_puts(fd_out->w, out);
   buffer_putnlflush(fd_out->w);

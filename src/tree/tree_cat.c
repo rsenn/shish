@@ -241,7 +241,14 @@ again:
 
       stralloc_cats(sa, "; do ");
       tree_catlist_n(node->nfor.cmds, sa, NULL, depth + 1);
-      stralloc_cats(sa, "; done");
+
+      if(!(sa->len > 1 && sa->s[sa->len - 2] == '&'))
+        stralloc_catc(sa, ';');
+
+      if(!(sa->len > 0 && sa->s[sa->len - 1] == ' '))
+        stralloc_catc(sa, ' ');
+
+      stralloc_cats(sa, "done");
 
       /* concatenate redirections */
       for(n = node->ncmd.rdir; n; n = n->next) {

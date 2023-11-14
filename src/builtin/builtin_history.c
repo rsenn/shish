@@ -6,8 +6,7 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_history(int argc, char* argv[]) {
-  int c;
-  int clear = 0;
+  int c, clear = 0;
 
   /* check options, -c for clear */
   while((c = shell_getopt(argc, argv, "c")) > 0) {

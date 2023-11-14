@@ -8,6 +8,7 @@
 #include "../source.h"
 #include "../tree.h"
 #include "../var.h"
+#include "../job.h"
 
 /* main loop, parse lines into trees and execute them
  * ----------------------------------------------------------------------- */
@@ -95,6 +96,8 @@ sh_loop(void) {
 
     if(p.tok & (T_NL | T_SEMI | T_BGND))
       p.pushback = 0;
+
+    job_clean();
 
     /* reset prompt */
     prompt_reset();

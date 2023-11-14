@@ -9,8 +9,7 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_readonly(int argc, char* argv[]) {
-  int c;
-  int print = 0;
+  int c, print = 0;
   char** argp;
 
   /* check options, -p for output */

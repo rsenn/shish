@@ -47,7 +47,7 @@ parse_simple_command(struct parser* p) {
 
           arg = &(*aptr)->narg;
 
-          //assert(arg->list->id == N_ARGSTR);
+          // assert(arg->list->id == N_ARGSTR);
 
           if(arg->list->id == N_ARGSTR) {
 

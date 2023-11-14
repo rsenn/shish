@@ -23,8 +23,7 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_cd(int argc, char* argv[]) {
-  int c;
-  int ok = 0;
+  int c, ok = 0;
   int symbolic = 1;
   const char* arg;
   size_t len, n;

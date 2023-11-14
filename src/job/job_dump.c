@@ -1,0 +1,31 @@
+#if defined(DEBUG_OUTPUT) && (defined(DEBUG_JOB))
+#include "../../lib/buffer.h"
+#include "../debug.h"
+#include "../job.h"
+
+void
+job_dump(buffer* b) {
+  struct job* job = 0;
+
+  if(jobs)
+    buffer_puts(b, "  id     pgrp   command       done PIDs\n");
+
+  for(job = jobs; job; job = job->next) {
+    int current = job_current() == job;
+
+    buffer_puts(b, current ? "\x1b[1;33m " : " ");
+    buffer_putlong0(b, job->id, 3);
+    buffer_putlong0(b, job->pgrp, 9);
+    buffer_putc(b, '\t');
+    buffer_putspad(b, job->command, 14);
+    buffer_putspad(b, job_done(job) ? "🞩" : "–", 6);
+
+    for(int i = 0; i < job->nproc; i++) {
+      buffer_putc(b, ' ');
+      buffer_putlong0(b, job->procs[i].pid, 3);
+    }
+
+    buffer_putnlflush(b);
+  }
+}
+#endif /* DEBUG_OUTPUT */

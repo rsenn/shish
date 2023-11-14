@@ -16,6 +16,7 @@
 #include "../term.h"
 #include "../prompt.h"
 #include "../history.h"
+#include "../job.h"
 #include "../../lib/wait.h"
 
 #include <stdlib.h>
@@ -51,7 +52,10 @@ sh_onsig(int signum) {
       buffer_putc(fd_err->w, '(');
 
       if(job) {
+        job_signaled = true;
 
+        buffer_puts(fd_err->w, "JOB: ");
+        buffer_puts(fd_err->w, job->command);
       } else {
         buffer_puts(fd_err->w, "PID: ");
         buffer_putlong(fd_err->w, pid);
@@ -79,8 +83,7 @@ sh_onsig(int signum) {
  * ----------------------------------------------------------------------- */
 int
 main(int argc, char** argv, char** envp) {
-  int c;
-  int e, v;
+  int c, e, v;
   int flags;
   struct fd* fd;
   struct source src;

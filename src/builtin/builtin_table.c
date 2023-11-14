@@ -163,7 +163,26 @@ struct builtin_cmd builtin_table[] = {
     {"dirname", &builtin_dirname, B_DEFAULT, "path"},
 #endif
 #if BUILTIN_DUMP //&& defined(DEBUG_OUTPUT)
-    {"dump", &builtin_dump, B_DEFAULT, "[-Fvltsfm] [-u FD]"},
+    {"dump",
+     &builtin_dump,
+     B_DEFAULT,
+     "[-Fvl"
+#ifdef DEBUG_FDTABLE
+     "t"
+#endif
+#ifdef DEBUG_FDSTACK
+     "s"
+#endif
+#ifdef DEBUG_JOB
+     "j"
+#endif
+#ifdef DEBUG_ALLOC
+     "m"
+#endif
+#ifdef DEBUG_FD
+     "f"
+#endif
+     "] [-u FD]"},
 #endif
 #if BUILTIN_ECHO
     {"echo", &builtin_echo, B_DEFAULT, "[-ne] [arg ...]"},

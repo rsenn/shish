@@ -21,9 +21,6 @@ builtin_echo(int argc, char* argv[]) {
     }
   }
 
-  /* TODO*/
-  (void)eval;
-
   for(i = shell_optind; i < argc; i++) {
     const char* arg = argv[i];
     size_t len = str_len(arg);

@@ -9,9 +9,7 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_exec(int argc, char* argv[]) {
-  int c;
-  int nullenv = 0;
-  int dash = 0;
+  int c, nullenv = 0, dash = 0;
   char* argv0 = NULL;
   struct command cmd;
 

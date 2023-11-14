@@ -18,19 +18,18 @@
  * ----------------------------------------------------------------------- */
 int
 eval_command(struct eval* e, union node* node, int tempflags) {
-  int ret = 1;
-  int oldflags;
+  int ret = 1, oldflags=e->flags;
   struct fdstack fdstack;
   stralloc heredoc;
   char buf[FD_BUFSIZE];
   union node* redir = node->ncmd.rdir;
 
-  oldflags = e->flags;
   e->flags |= tempflags;
 
   /* do redirections if present */
   if(redir) {
     union node* r;
+
     fdstack_push(&fdstack);
     stralloc_init(&heredoc);
 

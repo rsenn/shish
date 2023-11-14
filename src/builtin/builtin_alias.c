@@ -68,8 +68,7 @@ alias_search(const char* str) {
  * ----------------------------------------------------------------------- */
 int
 builtin_alias(int argc, char* argv[]) {
-  int c;
-  int print = 0;
+  int c, print = 0;
   char** argp;
 
   while((c = shell_getopt(argc, argv, "p")) > 0) {

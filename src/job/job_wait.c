@@ -53,7 +53,7 @@ job_wait(struct job* job, pid_t pid, int* status) {
     buffer_puts(fd_err->w, job->command ? job->command : "(null)");
     buffer_putnlflush(fd_err->w);
 
-    job->done = 1;
+    // job->done = 1;
 
   } else {
     /* wait for the last process in the group to terminate */
@@ -69,8 +69,8 @@ job_wait(struct job* job, pid_t pid, int* status) {
     }
   }
 
-  if(job && job->done)
-    job_delete(job);
+  if(job && job_done(job))
+    job_free(job);
 
   return ret;
 }

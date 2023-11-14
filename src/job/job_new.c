@@ -1,7 +1,9 @@
 #include "../../lib/alloc.h"
 #include "../job.h"
+#include <stdbool.h>
 
 struct job *jobs = NULL, **jobptr;
+volatile bool job_signaled = 0;
 
 /* creates a new job structure
  * ----------------------------------------------------------------------- */
@@ -21,6 +23,11 @@ job_new(unsigned int n) {
         break;
 
       job->id++;
+    }
+
+    for(int i = 0; i < job->nproc; i++) {
+      job->procs[i].pid = 0;
+      job->procs[i].status = -1;
     }
 
     job->next = *ptr;

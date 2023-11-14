@@ -14,8 +14,7 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_mktemp(int argc, char* argv[]) {
-  int c;
-  int directory = 0, quiet = 0, temp = 0, printonly = 0;
+  int c, directory = 0, quiet = 0, temp = 0, printonly = 0;
   const char* base = "/tmp";
   stralloc name;
   size_t i;
@@ -37,6 +36,7 @@ builtin_mktemp(int argc, char* argv[]) {
         temp = 1;
         base = argv[shell_optind];
         break;
+
       default: builtin_invopt(argv); return 1;
     }
   }
@@ -47,12 +47,14 @@ builtin_mktemp(int argc, char* argv[]) {
     stralloc_cats(&name, base);
     stralloc_catc(&name, '/');
   }
+
   i = name.len;
 
   if(argv[shell_optind]) {
     stralloc_cats(&name, argv[shell_optind]);
   } else {
     size_t len = str_rchr(sh_argv0, '/');
+
     stralloc_cats(&name, sh_argv0[len] ? &sh_argv0[len + 1] : sh_argv0);
     stralloc_cats(&name, "-XXXXXXXX");
   }

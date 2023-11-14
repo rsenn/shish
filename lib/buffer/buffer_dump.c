@@ -47,8 +47,8 @@ buffer_dump(buffer* out, buffer* b) {
   } else
     n = 0;
   buffer_puts(out, "\"");
-  //buffer_puts(out, "...");
-  //buffer_putfmt(out, &b->x[n], 32);
+  // buffer_puts(out, "...");
+  // buffer_putfmt(out, &b->x[n], 32);
   buffer_puts(out, "\"");
 
   buffer_puts(out, NONE ", " YELLOW "fd" CYAN "=" NONE);

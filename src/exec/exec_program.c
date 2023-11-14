@@ -88,6 +88,8 @@ exec_program(char* path, char** argv, enum execflag flag) {
         struct job* job = job_new(1);
 
         job->procs[0].pid = pid;
+        job->procs[0].status = -1;
+        job->pgrp = pid;
 
         buffer_putc(fd_err->w, '[');
         buffer_putulong(fd_err->w, job->id);

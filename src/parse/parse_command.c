@@ -16,7 +16,7 @@ parse_command(struct parser* p, int tempflags) {
 
   tok = parse_gettok(p, tempflags);
 
-  //source_skipspace(p);
+  // source_skipspace(p);
   /*  while(source_peek(&c) >= 1) {
       if(!parse_isspace(c))
         break;
@@ -43,6 +43,12 @@ parse_command(struct parser* p, int tempflags) {
     case T_BEGIN:
       p->pushback++;
       command = parse_grouping(p, 0);
+
+      if(p->tok == T_BGND) {
+        command->ncmd.bgnd = 1;
+        parse_gettok(p, 0);
+      }
+
       break;
 
     /* handle simple commands */

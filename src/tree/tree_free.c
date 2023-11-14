@@ -130,7 +130,7 @@ tree_free(union node* node) {
       case A_NUM:
         break;
 
-        //case A_VAR: alloc_free(node->narithvar.var); break;
+        // case A_VAR: alloc_free(node->narithvar.var); break;
 
       case A_OR:
       case A_AND:

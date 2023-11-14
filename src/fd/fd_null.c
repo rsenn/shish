@@ -46,7 +46,7 @@ fd_null(struct fd* fd) {
   if(FD_ISWR(fd))
     fd->w = &fd_nullfd.wb;
 
-  //fd->name = "/dev/null";
+  // fd->name = "/dev/null";
 
   return 0;
 }

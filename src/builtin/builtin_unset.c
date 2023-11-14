@@ -25,9 +25,7 @@ find_function(const char* name) {
  * ----------------------------------------------------------------------- */
 int
 builtin_unset(int argc, char* argv[]) {
-  int c;
-  int fun = 0;
-  int var = 0;
+  int c, fun = 0, var = 0;
   char** argp;
 
   /* check options, -n for unexport, -p for output */
@@ -38,10 +36,6 @@ builtin_unset(int argc, char* argv[]) {
       default: builtin_invopt(argv); return 1;
     }
   }
-
-  /* TODO:*/
-  (void)fun;
-  (void)var;
 
   argp = &argv[shell_optind];
 
@@ -74,8 +68,8 @@ builtin_unset(int argc, char* argv[]) {
         continue;
     }
 
-    // builtin_errmsg(argv, *argp, fun ? "no such function" : var ? "no such
-    // variable" : "no such variable/function");
+    // builtin_errmsg(argv, *argp, fun ? "no such function" : var ? "no such variable" : "no such
+    // variable/function");
   }
 
   return 0;

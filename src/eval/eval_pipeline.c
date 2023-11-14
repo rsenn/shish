@@ -122,7 +122,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
     alloc_free(pipes);
 
   if(job)
-    job_delete(job);
+    job_free(job);
 
   return WEXITSTATUS(status);
 }

@@ -19,7 +19,7 @@ enum kind {
                                 stdout amongst them */
   /* list     */ N_AND,      /* execute cmd2 if cmd succeeded */
   N_OR,                      /* execute cmd2 if cmd failed */
-  //N_SEMI,           /* execute both */
+  // N_SEMI,           /* execute both */
   N_NOT, /* execute cmd and negate return status */
   N_LIST,
   /* compound */ N_SUBSHELL, /* execute the list in a subshell */

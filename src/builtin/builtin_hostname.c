@@ -19,8 +19,7 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_hostname(int argc, char* argv[]) {
-  int c;
-  int force = 0;
+  int c, force = 0;
 
   /* check options */
   while((c = shell_getopt(argc, argv, "f")) > 0) {

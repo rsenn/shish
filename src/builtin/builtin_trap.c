@@ -51,6 +51,7 @@ trap_byname(const char* name) {
 
   if(!str_case_diff(name, "EXIT"))
     return TRAP_EXIT;
+
   return sig_byname(name);
 }
 
@@ -205,8 +206,7 @@ int
 builtin_trap(int argc, char* argv[]) {
   union node* cmds = 0;
   const char* code;
-  int c, ret = 1, list = 0, print = 0;
-  int signum;
+  int c, ret = 1, list = 0, print = 0, signum;
 
   /* check options, -l for list, -p for output */
   while((c = shell_getopt(argc, argv, "lp")) > 0) {

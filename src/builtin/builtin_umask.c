@@ -20,18 +20,21 @@ fmt_rwx(char* out, uint16 bits) {
 
   if(bits & 1)
     *dst++ = 'x';
+
   return dst - out;
 }
 
 size_t
 fmt_umask(char* out, uint16 umask) {
   char* dst = out;
+
   dst += str_copy(dst, "u=");
   dst += fmt_rwx(dst, umask >> 6);
   dst += str_copy(dst, ",g=");
   dst += fmt_rwx(dst, umask >> 3);
   dst += str_copy(dst, ",o=");
   dst += fmt_rwx(dst, umask);
+
   return dst - out;
 }
 
@@ -45,8 +48,10 @@ scan_rwx(char* in, uint16* bits) {
       case 'w': *bits |= 2; continue;
       case 'x': *bits |= 1; continue;
     }
+
     break;
   }
+
   return src - in;
 }
 
@@ -62,6 +67,7 @@ scan_umask(char* in, uint16* umask) {
 
     if(str_chr("=+-", op) == 3)
       return 0;
+
     n = scan_rwx(src, &bits);
 
     switch(c) {
@@ -92,8 +98,7 @@ scan_umask(char* in, uint16* umask) {
  * ----------------------------------------------------------------------- */
 int
 builtin_umask(int argc, char* argv[]) {
-  int c;
-  int symbolic = 0, print = 0;
+  int c, symbolic = 0, print = 0;
 
   /* check options, -p for print, -S for symbolic output */
   while((c = shell_getopt(argc, argv, "pS")) > 0) {

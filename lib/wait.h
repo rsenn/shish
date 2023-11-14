@@ -14,6 +14,9 @@
 #define WAIT_EXITSTATUS(status) ((status)&0x7f)
 #endif
 
+#define WAIT_IF_EXITED(status) (WTERMSIG(status) == 0)
+#define WAIT_IF_STOPPED(status) (((status)&0xff) == 0x7f)
+
 int wait_nohang(int* wstat);
 int wait_pid(int pid, int* wstat);
 int wait_pid_nohang(int pid, int* wstat);

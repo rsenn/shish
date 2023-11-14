@@ -2,6 +2,8 @@
 #define _JOB_H
 
 #include <signal.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __TINYC__
 #ifdef _WIN32
@@ -35,8 +37,7 @@ union node;
 struct proc {
   pid_t pid;
   int status;
-  sigset_type sigold;
-  sigset_type signew;
+  sigset_type sigold, signew;
 };
 
 struct job {
@@ -44,31 +45,30 @@ struct job {
   int id;
   pid_t pgrp;
   char* command;
-  unsigned done : 1;
-  unsigned stopped : 1;
-  unsigned control : 1; /* running under job control? */
-  unsigned bgnd : 1;
-  unsigned int nproc;
+  uint8_t nproc;
   struct proc procs[];
 };
 
 extern int job_terminal, job_pgrp;
+extern volatile bool job_signaled;
 extern struct job *jobs, **jobptr;
 
 #define job_current() (jobptr && *jobptr ? *jobptr : 0)
 
-struct job* job_new(unsigned int n);
-struct job* job_get(int id);
-int job_fork(struct job* job, union node* node, int bg);
-int job_wait(struct job* job, pid_t pid, int* status);
-void job_status(pid_t pid, int status);
-void job_init(void);
-void job_delete(struct job*);
-void job_print(struct job*, buffer*);
-struct job* job_find(const char*);
-struct job* job_bypid(pid_t id);
-void job_delete(struct job*);
 int job_done(struct job*);
-struct job* job_signal(pid_t pid, int status);
+int job_fork(struct job*, union node* node, int bgnd);
+int job_wait(struct job*, pid_t pid, int* status);
+struct job* job_bypid(pid_t);
+struct job* job_find(const char*);
+struct job* job_get(int);
+struct job* job_new(unsigned int);
+struct job* job_signal(pid_t, int status);
+void job_clean(void);
+void job_free(struct job*);
+void job_dump(buffer*);
+void job_foreground(struct job*);
+void job_init(void);
+void job_print(struct job*, buffer* out);
+void job_status(pid_t, int status);
 
 #endif /* _JOB_H */
