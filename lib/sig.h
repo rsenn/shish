@@ -51,24 +51,24 @@
 #endif
 
 #ifndef sigbit
-#define sigbit(n) (1ll << ((n) - 1))
+#define sigbit(n) (1ll << ((n)-1))
 #endif
-#ifndef sigemptyset
-#define sigemptyset(s) (*(s) = 0ll)
-#endif
-#ifndef sigfillset
-#define sigfillset(s) (*(s) = ~(0ll))
-#endif
+//#ifndef sigemptyset
+//#define sigemptyset(s) (*(s) = 0ll)
+//#endif
+//#ifndef sigfillset
+//#define sigfillset(s) (*(s) = ~(0ll))
+//#endif
 
-#ifndef sigaddset
-#define sigaddset(s, n) *(s) |= sigbit(n)
-#endif
-#ifndef sigdelset
-#define sigdelset(s, n) *(s) &= ~sigbit(n)
-#endif
-#ifndef sigismember
-#define sigismember(s, n) ((*(s) & sigbit(n)) == sigbit(n))
-#endif
+//#ifndef sigaddset
+//#define sigaddset(s, n) *(s) |= sigbit(n)
+//#endif
+//#ifndef sigdelset
+//#define sigdelset(s, n) *(s) &= ~sigbit(n)
+//#endif
+//#ifndef sigismember
+//#define sigismember(s, n) ((*(s) & sigbit(n)) == sigbit(n))
+//#endif
 
 #include <errno.h>
 
@@ -85,9 +85,10 @@
 
 typedef void sighandler_t_fn(int);
 typedef sighandler_t_fn* sighandler_t_ref;
-  
-#if (!defined(_POSIX_SOURCE) && !defined(__linux__) && !defined(__unix__) && \
-    !defined(__wasi__)) || (defined(_WIN32) && !defined(__MSYS__) && !defined(__CYGWIN__))
+
+#if(!defined(_POSIX_SOURCE) && !defined(__linux__) && !defined(__unix__) && \
+    !defined(__wasi__)) || \
+    (defined(_WIN32) && !defined(__MSYS__) && !defined(__CYGWIN__))
 typedef unsigned long long sigset_t;
 
 struct sigaction {

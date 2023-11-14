@@ -1,6 +1,7 @@
 #include "../builtin.h"
 #include "../debug.h"
 #include "../fd.h"
+#include "../fdtable.h"
 #include "../exec.h"
 #include "../../lib/uint64.h"
 #include "../../lib/fmt.h"
@@ -152,11 +153,14 @@ test_unary(int argc, char** argv) {
   const char* arg = current(argv);
 
   if(arg[0] != '-') {
-    if(argc == 2) {
-      int balanced = !str_diff(argv[0], "[") && !str_diff(argv[2], "]");
-      if(balanced) {
+    /*if(argc >= 2)*/ {
+      /* int balanced =
+           argc == 2 || (str_equal(argv[0], "[") && str_equal(argv[2], "]"));
+
+       if(balanced)*/
+      {
         shell_optind++;
-        return !!*argv[1];
+        return !!*arg;
       }
     }
 
@@ -167,6 +171,7 @@ test_unary(int argc, char** argv) {
   if((c = shell_getopt(argc, argv, "a:n:z:f:d:b:c:h:L:S:e:s:r:w:x:")) > 0) {
     struct stat st;
     const char* arg = shell_optarg;
+
     switch(c) {
       /* return true if argument is non-zero */
       case 'n': return arg && *arg;
@@ -211,6 +216,21 @@ test_unary(int argc, char** argv) {
       case 'w': return access(arg, W_OK) == 0;
       /* return true if executable */
       case 'x': return access(arg, X_OK) == 0;
+
+      case ':': {
+        if(shell_opt.opt == 'z')
+          return 1;
+        if(shell_opt.opt == 'n')
+          return 0;
+
+        builtin_errmsg_nonl(argv,
+                            argv[shell_opt.ind - 1],
+                            "expecting argument for option '");
+        buffer_putc(fd_err->w, shell_opt.opt);
+        buffer_putc(fd_err->w, '\'');
+        buffer_putnlflush(fd_err->w);
+        return -2;
+      }
     }
   }
 
@@ -298,6 +318,7 @@ test_boolean(int argc, char* argv[]) {
         case TEST_AND: result = prev && result; break;
         case TEST_OR: result = prev || result; break;
       }
+
       and_or = 0;
     }
 
@@ -308,10 +329,13 @@ test_boolean(int argc, char* argv[]) {
         case 'o': and_or = TEST_OR; break;
       }
     }
+
     if(and_or == 0)
       break;
+
     prev = result;
   }
+
   return result;
 }
 
@@ -336,8 +360,9 @@ builtin_test(int argc, char* argv[]) {
   //  (void)brackets;
   result = test_boolean(argc, argv);
 
-  if(result == -1) {
-    builtin_errmsg(argv, "invalid expression", argv[shell_optind]);
+  if(result < 0) {
+    if(result == -1)
+      builtin_errmsg(argv, "invalid expression", argv[shell_optind]);
     ret = 2;
   } else if(num_args(argc) > 0) {
     builtin_errmsg(argv, "extra arguments", argv[shell_optind]);

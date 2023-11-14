@@ -18,7 +18,10 @@ extern struct builtin_cmd builtin_table[];
 
 struct builtin_cmd* builtin_search(const char* name, builtin_flag flags);
 
+int
+builtin_errmsgn_nonl(char* argv[], const char* s, unsigned int n, char* msg);
 int builtin_errmsgn(char* argv[], const char* s, unsigned int n, char* msg);
+int builtin_errmsg_nonl(char* argv[], char* s, char* msg);
 int builtin_errmsg(char* argv[], char* s, char* msg);
 int builtin_error(char* argv[], char* s);
 int builtin_invopt(char* argv[]);

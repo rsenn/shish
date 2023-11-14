@@ -6,8 +6,7 @@
 #include "../lib/windoze.h"
 
 #if WINDOWS_NATIVE
-__attribute__((packed))
-struct termios {
+__attribute__((packed)) struct termios {
   int c_iflag, c_oflag, c_cflag, c_lflag;
   int __dummy[12];
 };

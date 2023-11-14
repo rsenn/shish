@@ -21,7 +21,7 @@
 
 int sh_argc;
 char** sh_argv;
-char* sh_name;
+const char* sh_name;
 int sh_login = 0;
 int sh_no_position = 0;
 
@@ -51,7 +51,6 @@ sh_sigchld(int signum) {
  * ----------------------------------------------------------------------- */
 int
 main(int argc, char** argv, char** envp) {
-
   int c;
   int e, v;
   int flags;
@@ -90,6 +89,14 @@ main(int argc, char** argv, char** envp) {
   sh_argv0 = argv[0];
 
   shell_init(fd_err->w, path_basename(sh_argv0));
+
+  /* set our basename for the \v prompt escape seq and maybe other stuff*/
+  sh_name = shell_name;
+
+  if(*sh_name == '-') {
+    sh_name++;
+    sh_login++;
+  }
 
   /* import environment variables to the root vartab */
   for(c = 0; envp[c]; c++)
@@ -148,14 +155,6 @@ main(int argc, char** argv, char** envp) {
 
   if(fd_needbuf(fd_src))
     fd_setbuf(fd_src, &fd_src[1], FD_BUFSIZE);
-
-  /* set our basename for the \v prompt escape seq and maybe other stuff*/
-  sh_name = path_basename(sh_argv0);
-
-  if(*sh_name == '-') {
-    sh_name++;
-    sh_login++;
-  }
 
   /* set global shell argument vector */
   sh_argv = &argv[shell_optind];
