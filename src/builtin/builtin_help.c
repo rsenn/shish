@@ -20,10 +20,9 @@ builtin_help(int argc, char* argv[]) {
   const char* vcols;
 
   for(i = 0; builtin_table[i].name; i++) {
-    size_t len =
-        str_len(builtin_table[i].name) + 1 + str_len(builtin_table[i].args);
-    
-if(maxlen < len)
+    size_t len = str_len(builtin_table[i].name) + 1 + str_len(builtin_table[i].args);
+
+    if(maxlen < len)
       maxlen = len;
   }
 
@@ -41,8 +40,8 @@ if(maxlen < len)
     buffer_putnspace(fd_out->w, maxlen + 1 - len);
 
     b += rows;
-    
-if(b->name)
+
+    if(b->name)
       output_synopsis(b);
 
     buffer_putnlflush(fd_out->w);

@@ -96,8 +96,7 @@ void debug_squoted(const char*, size_t n, buffer* out);
 #define debug_s(str) buffer_puts(debug_output, str)
 #define debug_n(num) buffer_putlonglong(debug_output, num)
 #define debug_xn(num) buffer_putxlonglong(debug_output, num)
-#define debug_c(chr) \
-  buffer_putc(debug_output, (unsigned int)(unsigned char)(chr))
+#define debug_c(chr) buffer_putc(debug_output, (unsigned int)(unsigned char)(chr))
 #define debug_b(buf, len) buffer_put(debug_output, (buf), (len))
 #define debug_ws(str) debug_c(' ')
 #define debug_nl() debug_c('\n') //
@@ -140,10 +139,7 @@ extern struct chunk* debug_heap;
 extern struct chunk** debug_pos;
 
 void* debug_alloc(const char* file, unsigned int line, unsigned long size);
-void* debug_realloc(const char* file,
-                    unsigned int line,
-                    void* ptr,
-                    unsigned long size);
+void* debug_realloc(const char* file, unsigned int line, void* ptr, unsigned long size);
 void debug_free(const char* file, unsigned int line, void* ptr);
 void debug_error(const char* file, unsigned int line, const char* s);
 
@@ -153,12 +149,12 @@ void debug_memory(void);
 static inline int
 dump_flags(buffer* b, int bits, const char* const names[], int pad) {
   size_t i, n = 0;
-  
-for(i = 0; i < sizeof(bits) * 8; i++) {
+
+  for(i = 0; i < sizeof(bits) * 8; i++) {
     if(bits & (1 << i)) {
       size_t len = str_len(names[i]);
-      
-if(n) {
+
+      if(n) {
         n++;
         buffer_puts(b, COLOR_CYAN "|" COLOR_NONE);
       }
@@ -187,8 +183,8 @@ debug_open() {
 static inline void
 debug_indent(int depth) {
   depth *= debug_nindent;
-  
-while(depth-- > 0)
+
+  while(depth-- > 0)
     debug_c(' ');
 }
 
@@ -215,8 +211,8 @@ debug_field(const char* s, int depth) {
 
     if(*s == ',')
       s++;
-    
-if(*s == ' ')
+
+    if(*s == ' ')
       s++;
   }
 

@@ -30,12 +30,8 @@ builtin_hash(int argc, char* argv[]) {
         case H_SBUILTIN:
           buffer_putm_internal(fd_out->w, h->name, " (special builtin)", NULL);
           break;
-        case H_BUILTIN:
-          buffer_putm_internal(fd_out->w, h->name, " (builtin)", NULL);
-          break;
-        case H_FUNCTION:
-          buffer_putm_internal(fd_out->w, h->name, " (function)", NULL);
-          break;
+        case H_BUILTIN: buffer_putm_internal(fd_out->w, h->name, " (builtin)", NULL); break;
+        case H_FUNCTION: buffer_putm_internal(fd_out->w, h->name, " (function)", NULL); break;
       }
 
       buffer_putnlflush(fd_out->w);

@@ -10,8 +10,7 @@ parse_arith_binary(struct parser* p, int precedence) {
   int op = -1;
   char a, b, c;
 
-  left = precedence <= 1 ? parse_arith_unary(p)
-                         : parse_arith_binary(p, precedence - 1);
+  left = precedence <= 1 ? parse_arith_unary(p) : parse_arith_binary(p, precedence - 1);
 
   if(left == NULL)
     return NULL;
@@ -103,8 +102,7 @@ parse_arith_binary(struct parser* p, int precedence) {
   parse_skip(p);
   parse_skipspace(p);
 
-  right = precedence <= 1 ? parse_arith_unary(p)
-                          : parse_arith_binary(p, precedence - 1);
+  right = precedence <= 1 ? parse_arith_unary(p) : parse_arith_binary(p, precedence - 1);
 
   if(right == NULL)
     right = parse_arith_value(p);

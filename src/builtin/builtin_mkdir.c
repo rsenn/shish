@@ -38,6 +38,7 @@ builtin_mkdir(int argc, char* argv[]) {
           dir.s[i] = '\0';
       }
     }
+
     for(i = 0; i < dir.len;) {
       ret = mkdir(dir.s, 0755);
 

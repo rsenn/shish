@@ -28,6 +28,7 @@ builtin_cat(int argc, char* argv[]) {
     argv[shell_optind] = "-";
     argc++;
   }
+
   while((arg = argv[shell_optind])) {
     char buf[1024];
     /*   buffer_putm_internal(fd_err->w, "File: '", arg, "'\n", 0);
@@ -44,6 +45,7 @@ builtin_cat(int argc, char* argv[]) {
         break;
       }
     }
+
     for(;;) {
       ret = buffer_get_until(in, buf, sizeof(buf), "\r\n", 2);
 
@@ -54,6 +56,7 @@ builtin_cat(int argc, char* argv[]) {
         }
         goto next;
       }
+
       if(ret > 0) {
         char eol = buf[ret - 1];
 

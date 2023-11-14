@@ -43,8 +43,7 @@ typedef struct _REPARSE_DATA_BUFFER {
   };
 } REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
 
-#define REPARSE_DATA_BUFFER_HEADER_SIZE \
-  FIELD_OFFSET(REPARSE_DATA_BUFFER, GenericReparseBuffer)
+#define REPARSE_DATA_BUFFER_HEADER_SIZE FIELD_OFFSET(REPARSE_DATA_BUFFER, GenericReparseBuffer)
 #endif /* REPARSE_DATA_BUFFER_HEADER_SIZE */
 
 #ifndef MAXIMUM_REPARSE_DATA_BUFFER_SIZE
@@ -67,22 +66,16 @@ typedef struct _REPARSE_DATA_BUFFER {
 #undef FSCTL_GET_REPARSE_POINT
 #undef FSCTL_DELETE_REPARSE_POINT
 #define FSCTL_SET_REPARSE_POINT \
-  CTL_CODE(FILE_DEVICE_FILE_SYSTEM, \
-           41, \
-           METHOD_BUFFERED, \
-           FILE_ANY_ACCESS) /* REPARSE_DATA_BUFFER, \
-                             */
+  CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 41, METHOD_BUFFERED, FILE_ANY_ACCESS) /* REPARSE_DATA_BUFFER, \
+                                                                           */
 #define FSCTL_GET_REPARSE_POINT \
   CTL_CODE(FILE_DEVICE_FILE_SYSTEM, \
            42, \
            METHOD_BUFFERED, \
            FILE_ANY_ACCESS) /* , REPARSE_DATA_BUFFER */
 #define FSCTL_DELETE_REPARSE_POINT \
-  CTL_CODE(FILE_DEVICE_FILE_SYSTEM, \
-           43, \
-           METHOD_BUFFERED, \
-           FILE_ANY_ACCESS) /* REPARSE_DATA_BUFFER, \
-                             */
+  CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 43, METHOD_BUFFERED, FILE_ANY_ACCESS) /* REPARSE_DATA_BUFFER, \
+                                                                           */
 
 //
 // Symlink

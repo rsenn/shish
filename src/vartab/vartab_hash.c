@@ -12,8 +12,7 @@ vartab_hash(const char* v, struct search* context) {
   context->closest = NULL;
   var_lexhash(v, &context->lexhash);
   context->len = var_rndhash(v, &context->rndhash);
-  context->bucket =
-      (size_t)((VAR_HASH)context->rndhash % (VAR_HASH)VARTAB_BUCKETS);
+  context->bucket = (size_t)((VAR_HASH)context->rndhash % (VAR_HASH)VARTAB_BUCKETS);
 
   /*  buffer_puts(&fd_out->b, "bucket: ");
     buffer_putulong(&fd_out->b, context->bucket);

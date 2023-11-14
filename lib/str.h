@@ -49,8 +49,7 @@ size_t str_rchrs(const char*, char needles[], size_t nn);
 #define str_foreach(s, ptr) \
   for((ptr) = (void*)(s); *(const char*)(ptr); (ptr) = ((const char*)(ptr)) + 1)
 #define str_foreach_skip(s, ptr, skipcall) \
-  for((ptr) = (void*)(s); *(const char*)(ptr); \
-      (ptr) = ((const char*)(ptr)) + (skipcall))
+  for((ptr) = (void*)(s); *(const char*)(ptr); (ptr) = ((const char*)(ptr)) + (skipcall))
 
 #define str_containsc(s, ch) (((s)[str_chr((s), (ch))]) != 0)
 

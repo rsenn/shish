@@ -20,9 +20,7 @@ parse_arith(struct parser* p) {
 
   if(tree) {
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE)
-    buffer_putm_internal(debug_output,
-                         COLOR_YELLOW "parse_arith" COLOR_NONE " tree = ",
-                         0);
+    buffer_putm_internal(debug_output, COLOR_YELLOW "parse_arith" COLOR_NONE " tree = ", 0);
     debug_node(tree, 1);
     debug_nl_fl();
 #endif
@@ -30,8 +28,7 @@ parse_arith(struct parser* p) {
     buffer_flush(fd_err->w);
 
     /* MUST be terminated with 2 right parentheses */
-    if(!parse_expect(&subp, P_DEFAULT, T_RP, tree) ||
-       !parse_expect(&subp, P_DEFAULT, T_RP, tree))
+    if(!parse_expect(&subp, P_DEFAULT, T_RP, tree) || !parse_expect(&subp, P_DEFAULT, T_RP, tree))
       return -1;
 
     parse_newnode(p, N_ARGARITH);

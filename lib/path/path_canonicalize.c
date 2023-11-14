@@ -200,6 +200,7 @@ start:
     }
 #endif
   }
+
   if(sa->len == 0)
     stralloc_catc(sa, sep);
   return ret;

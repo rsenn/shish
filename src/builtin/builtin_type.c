@@ -6,8 +6,7 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_type(int argc, char* argv[]) {
-  int c, all_locations = 0, suppress_functions = 0, force_path = 0,
-         print_path = 0, type_name = 0;
+  int c, all_locations = 0, suppress_functions = 0, force_path = 0, print_path = 0, type_name = 0;
   char* name;
 
   /* check options */

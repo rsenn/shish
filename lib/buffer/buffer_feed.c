@@ -1,7 +1,6 @@
 #include "../buffer.h"
 
-ssize_t buffer_stubborn_read(
-    buffer_op_proto* op, int fd, const void* x, size_t n, void* p);
+ssize_t buffer_stubborn_read(buffer_op_proto* op, int fd, const void* x, size_t n, void* p);
 
 ssize_t
 buffer_feed(buffer* b) {

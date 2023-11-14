@@ -58,12 +58,11 @@ typedef struct _RTL_USER_PROCESS_INFORMATION {
 #define RTL_CLONE_PARENT 0
 #define RTL_CLONE_CHILD 297
 
-typedef long (*RtlCloneUserProcess_f)(
-    ULONG ProcessFlags,
-    PSECURITY_DESCRIPTOR ProcessSecurityDescriptor /* optional */,
-    PSECURITY_DESCRIPTOR ThreadSecurityDescriptor /* optional */,
-    HANDLE DebugPort /* optional */,
-    PRTL_USER_PROCESS_INFORMATION ProcessInformation);
+typedef long (*RtlCloneUserProcess_f)(ULONG ProcessFlags,
+                                      PSECURITY_DESCRIPTOR ProcessSecurityDescriptor /* optional */,
+                                      PSECURITY_DESCRIPTOR ThreadSecurityDescriptor /* optional */,
+                                      HANDLE DebugPort /* optional */,
+                                      PRTL_USER_PROCESS_INFORMATION ProcessInformation);
 typedef int get_process_id_function(HANDLE);
 
 #ifndef ENOSYS
@@ -78,22 +77,22 @@ fork(void) {
   long result;
 
   mod = GetModuleHandle("ntdll.dll");
-  
-if(!mod)
+
+  if(!mod)
     return -ENOSYS;
 
   clone_p = GetProcAddress(mod, "RtlCloneUserProcess");
-  
-if(clone_p == NULL)
+
+  if(clone_p == NULL)
     return -ENOSYS;
 
   /* lets do this */
-  result = clone_p(RTL_CLONE_PROCESS_FLAGS_CREATE_SUSPENDED |
-                       RTL_CLONE_PROCESS_FLAGS_INHERIT_HANDLES,
-                   NULL,
-                   NULL,
-                   NULL,
-                   &process_info);
+  result =
+      clone_p(RTL_CLONE_PROCESS_FLAGS_CREATE_SUSPENDED | RTL_CLONE_PROCESS_FLAGS_INHERIT_HANDLES,
+              NULL,
+              NULL,
+              NULL,
+              &process_info);
 
   if(result == RTL_CLONE_PARENT) {
     HANDLE me = GetCurrentProcess();
@@ -103,8 +102,8 @@ if(clone_p == NULL)
 
     if((kern32 = GetModuleHandle("kernel32.dll")) == NULL)
       return -ENOSYS;
-    
-if((get_process_id = GetProcAddress(kern32, "GetProcessId")) == NULL)
+
+    if((get_process_id = GetProcAddress(kern32, "GetProcessId")) == NULL)
       return -ENOSYS;
 
     child_pid = get_process_id(process_info.Process);

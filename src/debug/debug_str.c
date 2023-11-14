@@ -31,6 +31,7 @@ debug_str(const char* msg, const char* s, int depth, char quote) {
       s++;
     }
   }
+
   if(quote)
     debug_c(quote);
 

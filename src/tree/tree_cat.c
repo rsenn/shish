@@ -93,8 +93,7 @@ again:
         if(arg->str[i] == '\\' && table == S_SQUOTED) {
           i++;
 
-        } else if(arg->str[i] == '\\' && table == S_DQUOTED &&
-                  !parse_isdesc(arg->str[i])) {
+        } else if(arg->str[i] == '\\' && table == S_DQUOTED && !parse_isdesc(arg->str[i])) {
           continue;
         } else if(!parse_isesc(arg->str[i])) {
 
@@ -127,15 +126,12 @@ again:
       else if(node->next && node->next->id == N_ARGSTR) {
         stralloc* sa = &node->next->nargstr.stra;
 
-        if((!(node->nargparam.flag & S_SPECIAL) && sa->len &&
-            parse_isname(sa->s[0], 0)) ||
-           ((node->nargparam.flag & S_SPECIAL) == S_ARG &&
-            node->nargparam.numb > 9))
+        if((!(node->nargparam.flag & S_SPECIAL) && sa->len && parse_isname(sa->s[0], 0)) ||
+           ((node->nargparam.flag & S_SPECIAL) == S_ARG && node->nargparam.numb > 9))
           braces = 1;
       }
 
-      if(!(node->nargparam.flag & S_ARITH) ||
-         (node->nargparam.flag & S_SPECIAL) || braces)
+      if(!(node->nargparam.flag & S_ARITH) || (node->nargparam.flag & S_SPECIAL) || braces)
         stralloc_catc(sa, '$');
 
       if(braces)
@@ -208,6 +204,7 @@ again:
         tree_catseparator(sa, "; then\n", depth + 1);
         tree_catlist_n(node->nif.cmd0, sa, "\n", depth + 1);
       }
+
       if(node->nif.cmd1) {
         /* handle elif */
         if(node->nif.cmd1->id == N_IF && node->nif.cmd1->next == NULL) {
@@ -296,10 +293,7 @@ again:
       stralloc_cats(sa, ") ");
 
       if(node->ncasenode.cmds)
-        tree_catlist_n(node->ncasenode.cmds,
-                       sa,
-                       sep == NULL ? "\n" : sep,
-                       depth + 1);
+        tree_catlist_n(node->ncasenode.cmds, sa, sep == NULL ? "\n" : sep, depth + 1);
 
       stralloc_cats(sa, sep == NULL ? " ;;" : ";;");
       break;

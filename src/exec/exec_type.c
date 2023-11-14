@@ -12,12 +12,10 @@ enum type_index {
   TYPE_BUILTIN
 };
 
-#define TYPE_NAMES \
-  ((const char* const[]){"file", "alias", "keyword", "function", "builtin"})
+#define TYPE_NAMES ((const char* const[]){"file", "alias", "keyword", "function", "builtin"})
 
 #define TYPE_DESCRIPTIONS \
-  ((const char* const[]){ \
-      0, "aliased to `", "a shell keyword", "a function", "a shell builtin"})
+  ((const char* const[]){0, "aliased to `", "a shell keyword", "a function", "a shell builtin"})
 
 static inline int
 is_keyword(const char* str) {

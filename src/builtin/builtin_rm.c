@@ -37,6 +37,7 @@ builtin_rm(int argc, char* argv[]) {
       }
       continue;
     }
+
     if(verbose) {
       buffer_putm_internal(fd_out->w, "removed '", p, "'", 0);
       buffer_putnlflush(fd_out->w);

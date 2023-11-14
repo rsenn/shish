@@ -33,8 +33,7 @@ redir_eval(struct nredir* nredir, struct fd* fd, int rfl) {
   nredir->flag |= rfl;
 
   /* setup up a new fd for the redirection */
-  nredir->fd =
-      !fd ? fd_new(nredir->fdes, mode) : fd_push(fd, nredir->fdes, mode);
+  nredir->fd = !fd ? fd_new(nredir->fdes, mode) : fd_push(fd, nredir->fdes, mode);
 
   /* do the appropriate redirection */
   switch(nredir->flag & R_ACT) {

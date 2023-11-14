@@ -17,6 +17,7 @@ u8stowcs(wchar_t* pw, const char* pu, size_t count) {
       pu += ulen;
     }
   }
+
   if('\0' == *pu && clen < count)
     pw[clen++] = '\0';
   return clen;

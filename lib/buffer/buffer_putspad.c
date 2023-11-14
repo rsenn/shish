@@ -9,6 +9,7 @@ buffer_putspad(buffer* b, const char* x, size_t pad) {
     if(buffer_put(b, x, len) < 0)
       return -1;
   }
+
   if(len < pad) {
     if(buffer_putnspace(b, pad - len) < 0)
       return -1;

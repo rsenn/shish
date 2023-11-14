@@ -36,10 +36,7 @@ typedef struct {
   size_t gl_matchc;
 } glob_t;
 
-int glob(const char* pattern,
-         int flags,
-         int (*errfunc)(const char*, int),
-         glob_t* pglob);
+int glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* pglob);
 void globfree(glob_t* pglob);
 
 #endif

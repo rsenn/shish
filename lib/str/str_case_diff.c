@@ -20,6 +20,7 @@ str_case_diff(const char* p1, const char* p2) {
     if(y >= 'A' && y <= 'Z') { /* upper case */
       y += 'a' - 'A';
     }
+
     if(x != y)
       break;
 

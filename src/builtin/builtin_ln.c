@@ -68,6 +68,7 @@ builtin_ln(int argc, char* argv[]) {
       if(!force)
         return 1;
     }
+
     if(verbose) {
       buffer_putm_internal(fd_out->w, "'", path.s, "' -> '", src, "'", 0);
       buffer_putnlflush(fd_out->w);

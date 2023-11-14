@@ -59,8 +59,8 @@ builtin_unset(int argc, char* argv[]) {
 
     if(!var) {
       union node** nptr;
-      
-if((nptr = find_function(*argp))) {
+
+      if((nptr = find_function(*argp))) {
         union node* fn = *nptr;
         *nptr = fn->next;
         fn->next = 0;

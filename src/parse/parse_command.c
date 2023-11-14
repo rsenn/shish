@@ -97,9 +97,7 @@ parse_command(struct parser* p, int tempflags) {
   p->pushback++;
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE)
-  buffer_putm_internal(debug_output,
-                       COLOR_YELLOW "parse_command" COLOR_NONE " command = ",
-                       0);
+  buffer_putm_internal(debug_output, COLOR_YELLOW "parse_command" COLOR_NONE " command = ", 0);
   debug_node(command, 1);
   debug_nl_fl();
 #endif

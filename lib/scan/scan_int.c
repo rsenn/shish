@@ -23,6 +23,7 @@ scan_int(const char* src, int* dest) {
       break;
     }
   }
+
   while((c = (unsigned char)(*tmp - '0')) < 10) {
     unsigned int n;
     /* we want to do: l=l*10+c
@@ -51,6 +52,7 @@ scan_int(const char* src, int* dest) {
     ++tmp;
     ok = 1;
   }
+
   if(!ok)
     return 0;
   *dest = (neg ? -l : l);

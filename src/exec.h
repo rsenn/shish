@@ -4,13 +4,7 @@
 #include "../lib/uint32.h"
 #include <stdlib.h>
 
-enum hash {
-  H_PROGRAM = 0,
-  H_EXEC = 1,
-  H_SBUILTIN = 2,
-  H_BUILTIN = 4,
-  H_FUNCTION = 8
-};
+enum hash { H_PROGRAM = 0, H_EXEC = 1, H_SBUILTIN = 2, H_BUILTIN = 4, H_FUNCTION = 8 };
 
 enum execflag { X_EXEC = 1, X_NOWAIT = 2 };
 

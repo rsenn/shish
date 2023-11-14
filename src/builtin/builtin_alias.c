@@ -19,6 +19,7 @@ alias_valid(const char* v) {
   for(i = 0; v[i] && v[i] != '='; i++)
     if(!parse_isname(v[i], i) && !(i > 0 && v[i] == '-'))
       return 0;
+
   return 1;
 }
 
@@ -55,10 +56,9 @@ alias_search(const char* str) {
   size_t len = str_chr(str, '=');
   struct alias** aptr;
 
-  for(aptr = &parse_aliases; *aptr; aptr = &(*aptr)->next) {
+  for(aptr = &parse_aliases; *aptr; aptr = &(*aptr)->next)
     if((*aptr)->namelen == len && byte_equal((*aptr)->def, len, str))
       break;
-  }
 
   return aptr;
 }

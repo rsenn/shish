@@ -15,8 +15,7 @@ history_free(unsigned int index) {
    * decrement the count of initial entries still used in the history.
    * after that, if said count is zero, we'll unmap the file.
    */
-  if(history_mapped && s >= history_buffer.x &&
-     s < history_buffer.x + history_buffer.n) {
+  if(history_mapped && s >= history_buffer.x && s < history_buffer.x + history_buffer.n) {
     /* if there no mapped entries left we can unmap the file */
     if(--history_mapped == 0)
       buffer_close(&history_buffer);

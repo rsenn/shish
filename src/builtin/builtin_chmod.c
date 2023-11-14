@@ -35,6 +35,7 @@ builtin_chmod(int argc, char* argv[]) {
       builtin_error(argv, p);
       return 1;
     }
+
     if(verbose) {
       buffer_putm_internal(fd_out->w, "changed mode of '", p, "'", 0);
       buffer_putnlflush(fd_out->w);

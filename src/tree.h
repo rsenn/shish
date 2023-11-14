@@ -383,9 +383,7 @@ typedef union node node_t;
   } while(0);
 
 #ifdef DEBUG_ALLOC
-union node* tree_newnodedebug(const char* file,
-                              unsigned int line,
-                              enum kind nod);
+union node* tree_newnodedebug(const char* file, unsigned int line, enum kind nod);
 #define tree_newnode(id) tree_newnodedebug(__FILE__, __LINE__, (id))
 #else
 union node* tree_newnode(enum kind nod);

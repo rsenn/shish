@@ -48,9 +48,7 @@ expand_arith_expr(union node* expr, int64* r) {
       break;
     }
 
-    case A_PAREN:
-      ret = expand_arith_expr(((struct narithunary*)expr)->node, r);
-      break;
+    case A_PAREN: ret = expand_arith_expr(((struct narithunary*)expr)->node, r); break;
 
     case A_UNARYMINUS:
     case A_UNARYPLUS:

@@ -60,10 +60,7 @@ expand_arg(union node* node, union node** nptr, int flags) {
         /* constant string */
       case N_ARGSTR: {
         assert(subarg->nargstr.stra.s);
-        n = expand_cat(subarg->nargstr.stra.s,
-                       subarg->nargstr.stra.len,
-                       nptr,
-                       lflags);
+        n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, nptr, lflags);
         break;
       }
 

@@ -44,14 +44,7 @@ get_reparse_data(const char* LinkPath, union REPARSE_DATA_BUFFER_UNION* u) {
   }
 
   /* Get the link */
-  if(!DeviceIoControl(hFile,
-                      FSCTL_GET_REPARSE_POINT,
-                      0,
-                      0,
-                      &u->iobuf,
-                      1024,
-                      &returnedLength,
-                      0)) {
+  if(!DeviceIoControl(hFile, FSCTL_GET_REPARSE_POINT, 0, 0, &u->iobuf, 1024, &returnedLength, 0)) {
 
     CloseHandle(hFile);
     return FALSE;
@@ -81,18 +74,14 @@ readlink(const char* LinkPath, char* buf, size_t maxlen) {
   switch(u.iobuf.ReparseTag) {
     case IO_REPARSE_TAG_MOUNT_POINT: { /* Junction */
       wbuf = u.iobuf.MountPointReparseBuffer.PathBuffer +
-             u.iobuf.MountPointReparseBuffer.SubstituteNameOffset /
-                 sizeof(wchar_t);
-      wlen =
-          u.iobuf.MountPointReparseBuffer.SubstituteNameLength / sizeof(WCHAR);
+             u.iobuf.MountPointReparseBuffer.SubstituteNameOffset / sizeof(wchar_t);
+      wlen = u.iobuf.MountPointReparseBuffer.SubstituteNameLength / sizeof(WCHAR);
       break;
     }
     case IO_REPARSE_TAG_SYMLINK: { /* Symlink */
       wbuf = u.iobuf.SymbolicLinkReparseBuffer.PathBuffer +
-             u.iobuf.SymbolicLinkReparseBuffer.SubstituteNameOffset /
-                 sizeof(WCHAR);
-      wlen = u.iobuf.SymbolicLinkReparseBuffer.SubstituteNameLength /
-             sizeof(WCHAR);
+             u.iobuf.SymbolicLinkReparseBuffer.SubstituteNameOffset / sizeof(WCHAR);
+      wlen = u.iobuf.SymbolicLinkReparseBuffer.SubstituteNameLength / sizeof(WCHAR);
       break;
     }
   }
@@ -106,6 +95,7 @@ readlink(const char* LinkPath, char* buf, size_t maxlen) {
     if(u8len >= maxlen)
       break;
   }
+
   if(u8len > maxlen) {
     len--;
   }

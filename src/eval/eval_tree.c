@@ -16,6 +16,7 @@ eval_tree(struct eval* e, union node* node, int tempflags) {
     e->flags &= ~E_LIST;
     tempflags &= ~E_LIST;
   }
+
   if((e->flags | tempflags) & E_EXIT) {
     ex = 1;
     e->flags &= ~E_EXIT;

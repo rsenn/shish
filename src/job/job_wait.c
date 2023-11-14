@@ -43,9 +43,7 @@ job_wait(struct job* job, pid_t pid, int* status) {
       job_status(ret, st);
     }
 
-    char ch = job_current() == job         ? '+'
-              : (struct job*)jobptr == job ? '-'
-                                           : ' ';
+    char ch = job_current() == job ? '+' : (struct job*)jobptr == job ? '-' : ' ';
 
     buffer_putc(fd_err->w, '[');
     buffer_putulong(fd_err->w, job->id);

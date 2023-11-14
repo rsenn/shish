@@ -16,22 +16,24 @@ fd_nullwrite(int fd, char* b, size_t n) {
   return n;
 }
 
-struct fd fd_nullfd = {0,
-                       0,
-                       0,
-                       "/dev/null",
-                       NULL,
-                       NULL,
-                       NULL,
-                       NULL,
-                       NULL,
-                       NULL,
-                       0,
-                       0,
-                       BUFFER_INIT(fd_nullread, -1, NULL, 0),
-                       BUFFER_INIT(fd_nullwrite, -1, NULL, 0),
-                       NULL,
-                       NULL};
+struct fd fd_nullfd = {
+    0,
+    0,
+    0,
+    "/dev/null",
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    0,
+    0,
+    BUFFER_INIT(fd_nullread, -1, NULL, 0),
+    BUFFER_INIT(fd_nullwrite, -1, NULL, 0),
+    NULL,
+    NULL,
+};
 
 /* ----------------------------------------------------------------------- */
 int

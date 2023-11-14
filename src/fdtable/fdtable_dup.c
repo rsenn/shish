@@ -46,8 +46,7 @@ fdtable_dup(struct fd* fd, int flags) {
 retry:
   /* if the wish was satisfied or we should change the
      effective fd then dup() the file descriptor */
-  if((fd->n == fd_expected) || (state == FDTABLE_DONE) ||
-     (flags & FDTABLE_MOVE))
+  if((fd->n == fd_expected) || (state == FDTABLE_DONE) || (flags & FDTABLE_MOVE))
     e = dup(o);
 
   /* position forced or destination fd can be closed */

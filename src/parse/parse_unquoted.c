@@ -109,8 +109,7 @@ parse_unquoted(struct parser* p) {
     else if(parse_isctrl(c) || parse_isspace(c)) {
       /* if we're looking for keywords, there is no word tree and
          there is a string in the parser we check for keyworsd */
-      if((p->flags & P_NOKEYWD) || p->tree || p->sa.s == NULL ||
-         !parse_keyword(p))
+      if((p->flags & P_NOKEYWD) || p->tree || p->sa.s == NULL || !parse_keyword(p))
         parse_string(p, flags);
 
       return 1;

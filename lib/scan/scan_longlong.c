@@ -15,6 +15,7 @@ scan_longlong(const char* src, int64* dest) {
       l /= 10;
       --i;
     }
+
     if(i + o)
       *dest = (int64)(c == '-' ? -l : l);
     return i + o;

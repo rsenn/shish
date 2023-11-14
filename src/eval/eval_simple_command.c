@@ -182,8 +182,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   status = exec_command(&cmd,
                         argc,
                         argv,
-                        ((e->flags & E_EXIT) ? X_EXEC : 0) |
-                            (ncmd->bgnd ? X_NOWAIT : 0));
+                        ((e->flags & E_EXIT) ? X_EXEC : 0) | (ncmd->bgnd ? X_NOWAIT : 0));
 
   if(ncmd->bgnd) {
     struct job* job = *jobptr;

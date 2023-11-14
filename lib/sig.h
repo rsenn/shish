@@ -73,8 +73,7 @@
 typedef void sighandler_t_fn(int);
 typedef sighandler_t_fn* sighandler_t_ref;
 
-#if(!defined(_POSIX_SOURCE) && !defined(__linux__) && !defined(__unix__) && \
-    !defined(__wasi__)) || \
+#if(!defined(_POSIX_SOURCE) && !defined(__linux__) && !defined(__unix__) && !defined(__wasi__)) || \
     (defined(_WIN32) && !defined(__MSYS__) && !defined(__CYGWIN__))
 typedef unsigned long long sigset_t;
 

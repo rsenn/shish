@@ -28,8 +28,7 @@ fdstack_data(void) {
         ssize_t n;
         char buf[FD_BUFSIZE / 2];
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK) && !defined(SHFORMAT) && \
-    !defined(SHPARSE2AST)
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
         buffer_puts(debug_output, "fdstack_data\n");
         fd_dump(fd, debug_output);
         buffer_putnlflush(debug_output);

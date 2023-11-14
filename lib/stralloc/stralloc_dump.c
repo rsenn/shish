@@ -29,6 +29,7 @@ stralloc_dump(const stralloc* sa, buffer* b) {
     }
     buffer_puts(b, "\"");
   }
+
   if(len < sa->len)
     buffer_puts(b, "... ");
   buffer_puts(b, ", len=");

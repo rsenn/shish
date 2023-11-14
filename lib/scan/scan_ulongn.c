@@ -7,8 +7,7 @@
 #if LONG_MAX == 2147483647 || defined(__i386__) || POINTER_SIZE == 4
 #define IS_32BIT 1
 #define WORD_SIZE 4
-#elif LONG_MAX == 9223372036854775807L || defined(__x86_64__) || \
-    POINTER_SIZE == 8
+#elif LONG_MAX == 9223372036854775807L || defined(__x86_64__) || POINTER_SIZE == 8
 #define IS_64BIT 1
 #define WORD_SIZE 8
 #endif
@@ -22,8 +21,7 @@ scan_ulongn(const char* src, size_t n, unsigned long int* dest) {
  * should only emit code for one of the implementations, depending on
  * which architecture the code is compiled for. */
 #ifdef HAVE_UINT128
-  if(sizeof(unsigned long) == sizeof(uint64) &&
-     sizeof(unsigned long) < sizeof(__uint128_t)) {
+  if(sizeof(unsigned long) == sizeof(uint64) && sizeof(unsigned long) < sizeof(__uint128_t)) {
     /* implementation for 64-bit platforms with gcc */
     for(; n-- > 0 && (c = (unsigned char)(*tmp - '0')) < 10; ++tmp) {
       __uint128_t L = (__uint128_t)l * 10 + c;
@@ -76,6 +74,7 @@ scan_ulongn(const char* src, size_t n, unsigned long int* dest) {
       l = n + (l << 1) + c;
       ++tmp;
     }
+
     if(tmp - src)
       *dest = l;
     return (size_t)(tmp - src);

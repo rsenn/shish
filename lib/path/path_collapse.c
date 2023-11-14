@@ -15,8 +15,7 @@ path_collapse(char* path, size_t n) {
       i++;
 
       if(x + i + 2 < end) {
-        if(x[i] == '.' && x[i + 1] == '.' &&
-           (x + i + 2 == end || x[i + 2] == sep)) {
+        if(x[i] == '.' && x[i + 1] == '.' && (x + i + 2 == end || x[i + 2] == sep)) {
           i += 3;
           byte_copy(x, n - i, &x[i]);
           end -= i;
@@ -32,8 +31,7 @@ path_collapse(char* path, size_t n) {
 
   n = x - path;
 
-  if(n > 3 && path[n - 1] == PATHSEP_C && path[n - 2] == '.' &&
-     path[n - 3] == PATHSEP_C)
+  if(n > 3 && path[n - 1] == PATHSEP_C && path[n - 2] == '.' && path[n - 3] == PATHSEP_C)
     n -= 3;
   else if(n > 2 && path[n - 1] == '.' && path[n - 2] == PATHSEP_C)
     n -= 2;

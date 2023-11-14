@@ -11,8 +11,7 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_rmdir(int argc, char* argv[]) {
-  int c, ret;
-  int verbose = 0, force = 0, parents = 0;
+  int c, ret, verbose = 0, force = 0, parents = 0;
   char* p;
 
   /* check options */
@@ -34,6 +33,7 @@ builtin_rmdir(int argc, char* argv[]) {
       if(!force)
         return 1;
     }
+
     if(verbose) {
       buffer_putm_internal(fd_out->w, "removed dir '", p, "'", 0);
       buffer_putnlflush(fd_out->w);

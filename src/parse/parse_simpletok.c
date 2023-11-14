@@ -73,6 +73,7 @@ parse_simpletok(struct parser* p) {
 #endif
           continue;
         }
+
         if(c == '\n') {
           parse_skip(p);
           parse_skip(p);

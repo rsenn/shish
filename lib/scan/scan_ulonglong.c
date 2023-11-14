@@ -23,6 +23,7 @@ scan_ulonglong(const char* src, uint64* dest) {
     l = n + c;
     ++tmp;
   }
+
   if(tmp - src)
     *dest = l;
   return (size_t)(tmp - src);

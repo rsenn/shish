@@ -22,10 +22,7 @@ expand_str(union node* node, stralloc* sa, int flags) {
     assert(subarg->id == N_ARGSTR);
     assert(subarg->nargstr.stra.s);
 
-    expand_cat(subarg->nargstr.stra.s,
-               subarg->nargstr.stra.len,
-               &n,
-               lflags | X_NOSPLIT);
+    expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, &n, lflags | X_NOSPLIT);
   }
 
   stralloc_move(sa, &n->narg.stra);

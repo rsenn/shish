@@ -6,8 +6,7 @@
 /* for size_t: */
 #include "typedefs.h"
 
-#if !defined(_MSC_VER) && !defined(__MSYS__) && !defined(__CYGWIN__) && \
-    !defined(__BORLANDC__)
+#if !defined(_MSC_VER) && !defined(__MSYS__) && !defined(__CYGWIN__) && !defined(__BORLANDC__)
 #include <stdint.h>
 #endif
 
@@ -50,8 +49,7 @@ size_t byte_equal(const void* s, size_t n, const void* t);
 
 /* read only trim-left */
 
-size_t
-byte_trimr(char* x, size_t n, const char* trimchars, unsigned int trimcharslen);
+size_t byte_trimr(char* x, size_t n, const char* trimchars, unsigned int trimcharslen);
 
 void byte_replace(char* x, size_t n, char before, char after);
 

@@ -59,14 +59,17 @@ debug_subst(const char* msg, int flags) {
       n += str_copy(&flagstr[n], " | ");
     n += str_copy(&flagstr[n], debug_subst_var[subst]);
   }
+
   if(flags & S_TABLE) {
     if(n)
       n += str_copy(&flagstr[n], " | ");
     n += str_copy(&flagstr[n], debug_subst_tables[flags & S_TABLE]);
   }
+
   if(flags & S_BQUOTE) {
     n += str_copy(&flagstr[n], " | S_BQUOTE");
   }
+
   if(flags & S_STRLEN)
     n += str_copy(&flagstr[n], " | S_STRLEN");
 

@@ -36,6 +36,7 @@ tree_location(union node* node, struct location* loc) {
         break;
       default: break;
     }
+
     switch(node->id) {
       case N_SIMPLECMD:
       case N_SUBSHELL:

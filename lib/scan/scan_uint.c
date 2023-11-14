@@ -3,8 +3,7 @@
 #if LONG_MAX == 2147483647 || defined(__i386__) || POINTER_SIZE == 4
 #define IS_32BIT 1
 #define WORD_SIZE 4
-#elif LONG_MAX == 9223372036854775807L || defined(__x86_64__) || \
-    POINTER_SIZE == 8
+#elif LONG_MAX == 9223372036854775807L || defined(__x86_64__) || POINTER_SIZE == 8
 #define IS_64BIT 1
 #define WORD_SIZE 8
 #endif
@@ -38,6 +37,7 @@ scan_uint(const char* src, unsigned int* dest) {
         break;
       l = tmp;
     }
+
     if(cur > src)
       *dest = l;
     return (size_t)(cur - src);
