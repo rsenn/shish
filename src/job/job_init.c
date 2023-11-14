@@ -16,15 +16,15 @@ int job_terminal = -1;
  * ----------------------------------------------------------------------- */
 void
 job_init(void) {
-  struct fd* fd;
+  struct fd* d;
 
   /* find a filedescriptor which is a terminal */
-  if((fd = fdtable[STDERR_FILENO]) && (fd_err->mode & FD_TERM)) {
+  if((d = fdtable[STDERR_FILENO]) && (fd_err->mode & FD_TERM)) {
 #include "../../lib/windoze.h"
 #if !WINDOWS_NATIVE && !defined(__MINGW64__)
-    job_terminal = fcntl(fd->e, F_DUPFD, 0x80);
+  job_terminal = fcntl(d->e, F_DUPFD, 0x80);
 #else
-    job_terminal = dup(fd->e);
+   job_terminal = dup(d->e);
 #endif
 
 #ifdef FD_CLOEXEC

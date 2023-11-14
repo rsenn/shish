@@ -44,22 +44,22 @@ extern struct fd** fdtable_pos;
 
 int fdtable_check(int e);
 int fdtable_close(int e, int flags);
-int fdtable_dup(struct fd* fd, int flags);
+int fdtable_dup(struct fd*, int flags);
 int fdtable_exec(void);
 int fdtable_gap(int e, int force);
-int fdtable_here(struct fd* fd, int flags);
+int fdtable_here(struct fd*, int flags);
 int fdtable_lazy(int e, int flags);
-int fdtable_open(struct fd* fd, int force);
-int fdtable_resolve(struct fd* fd, int force);
+int fdtable_open(struct fd*, int force);
+int fdtable_resolve(struct fd*, int force);
 int fdtable_wish(int e, int flags);
 struct fd* fdtable_newfd(int n, struct fdstack* st, int mode);
 #ifdef BUFFER_H
 void fdtable_dump(buffer* b);
 #endif
-void fdtable_link(struct fd* fd);
+void fdtable_link(struct fd*);
 void fdtable_track(int n, int flags);
 void fdtable_unexpected(int e, int u, int flags);
-void fdtable_unlink(struct fd* fd);
+void fdtable_unlink(struct fd*);
 void fdtable_up(void);
 
 #endif /* FDTABLE_H */

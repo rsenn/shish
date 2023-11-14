@@ -13,19 +13,19 @@
  * (except for the links which are initialized on fdtable_link())
  * ----------------------------------------------------------------------- */
 void
-fd_init(struct fd* fd, int n, int mode) {
+fd_init(struct fd* d, int n, int mode) {
   /* (re-)initialize things */
-  fd->mode = mode;
-  fd->name = NULL;
-  fd->n = n;
-  fd->e = -1;
-  fd->dup = NULL;
-  fd->dev = 0;
+  d->mode = mode;
+  d->name = NULL;
+  d->n = n;
+  d->e = -1;
+  d->dup = NULL;
+  d->dev = 0;
   /*  fdrefc = 0;*/
 
-  fd->r = &fd->rb;
-  fd->w = &fd->wb;
+  d->r = &d->rb;
+  d->w = &d->wb;
 
-  buffer_init(fd->r, (buffer_op_proto*)(void*)&read, fd->e, NULL, 0);
-  buffer_init(fd->w, (buffer_op_proto*)(void*)&write, fd->e, NULL, 0);
+  buffer_init(d->r, (buffer_op_proto*)(void*)&read, d->e, NULL, 0);
+  buffer_init(d->w, (buffer_op_proto*)(void*)&write, d->e, NULL, 0);
 }

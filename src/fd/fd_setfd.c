@@ -14,30 +14,30 @@
 /* initialize (fd) from file descriptor
  * ----------------------------------------------------------------------- */
 int
-fd_setfd(struct fd* fd, int e) {
-  assert(fd->mode & FD_READWRITE);
+fd_setfd(struct fd* d, int e) {
+  assert(d->mode & FD_READWRITE);
 
   /* set the file descriptors on the buffers */
-  if(FD_ISRD(fd)) {
-    buffer_default(&fd->rb, (buffer_op_proto*)(void*)&read);
-    fd->rb.fd = e;
-    fd->r = &fd->rb;
+  if(FD_ISRD(d)) {
+    buffer_default(&d->rb, (buffer_op_proto*)(void*)&read);
+    d->rb.fd = e;
+    d->r = &d->rb;
   }
 
-  if(FD_ISWR(fd)) {
-    buffer_default(&fd->wb, (buffer_op_proto*)(void*)&write);
-    fd->wb.fd = e;
-    fd->w = &fd->wb;
+  if(FD_ISWR(d)) {
+    buffer_default(&d->wb, (buffer_op_proto*)(void*)&write);
+    d->wb.fd = e;
+    d->w = &d->wb;
   }
 
   /* track the file descriptor */
-  fd->e = e;
+  d->e = e;
 
-  /* update duplicates of fd */
-  fdstack_update(fd);
+  /* update duplicates of d */
+  fdstack_update(d);
 
   if(fd_ok(e)) {
-    fd_list[e] = fd;
+    fd_list[e] = d;
 
     if(fd_hi <= e)
       fd_hi = e + 1;
@@ -48,16 +48,16 @@ fd_setfd(struct fd* fd, int e) {
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
   if(sh->opts.xtrace) {
-    if(fd->e != -1) {
+    if(d->e != -1) {
       buffer_puts(debug_output, COLOR_YELLOW "fd_setfd" COLOR_NONE " #");
-      buffer_putlong(debug_output, fd->n);
+      buffer_putlong(debug_output, d->n);
       buffer_puts(debug_output, " e=");
-      buffer_putlong(debug_output, fd->e);
+      buffer_putlong(debug_output, d->e);
       buffer_puts(debug_output, " mode=");
       buffer_puts(debug_output,
-                  (fd->mode & FD_READ)                        ? "FD_READ"
-                  : (fd->mode & FD_WRITE)                     ? "FD_WRITE"
-                  : (fd->mode & FD_READWRITE) == FD_READWRITE ? "FD_READWRITE"
+                  (d->mode & FD_READ)                        ? "FD_READ"
+                  : (d->mode & FD_WRITE)                     ? "FD_WRITE"
+                  : (d->mode & FD_READWRITE) == FD_READWRITE ? "FD_READWRITE"
                                                               : "");
 
       debug_nl_fl();

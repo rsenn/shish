@@ -24,50 +24,50 @@
  * otherwise the new effective file descriptor
  * ----------------------------------------------------------------------- */
 int
-fdtable_open(struct fd* fd, int flags) {
+fdtable_open(struct fd* d, int flags) {
   int e;
   int state;
 
   /* not a pending open()? */
-  if((fd->mode & FD_OPEN) == 0)
+  if((d->mode & FD_OPEN) == 0)
     return FDTABLE_DONE;
 
-  /* wish fd->n become the next expected file descriptor */
-  state = fdtable_wish(fd->n, flags);
+  /* wish d->n become the next expected file descriptor */
+  state = fdtable_wish(d->n, flags);
 
-  /* the wish may have (recursively) resolved our fd already */
-  if(fd->e == fd->n)
+  /* the wish may have (recursively) resolved our d already */
+  if(d->e == d->n)
     return FDTABLE_DONE;
 
   /* leave it for now if we're in lazy mode and still pending */
   if(state == FDTABLE_PENDING && (flags & FDTABLE_FD) == FDTABLE_LAZY)
     return state;
 
-  /* maybe we can close the destination fd */
-  if(state == fd->n)
-    close(fd->n);
+  /* maybe we can close the destination d */
+  if(state == d->n)
+    close(d->n);
 
   /* now open the file, and return -1 if we failed */
-  e = open(fd->name,
-           fd->fl /*| ((sh->opts.noclobber && (fd->fl & O_CREAT)) ? O_EXCL : 0)*/,
+  e = open(d->name,
+           d->fl /*| ((sh->opts.noclobber && (d->fl & O_CREAT)) ? O_EXCL : 0)*/,
            (0666 & ~sh->umask));
 
   if(!fd_ok(e)) {
-    sh_error(fd->name);
+    sh_error(d->name);
     return FDTABLE_ERROR;
   }
 
-  /* track new bottom file descriptor and set the new fd */
+  /* track new bottom file descriptor and set the new d */
   fdtable_track(e, flags);
-  fd_setfd(fd, e);
+  fd_setfd(d, e);
 
-  fd->mode &= ~FD_OPEN;
+  d->mode &= ~FD_OPEN;
 
-  if(fd->n != e) {
+  if(d->n != e) {
     /* we should have been done, but doesn't look like,
        let fdtable_dup in fdtable_resolve do the work */
     if(state >= FDTABLE_DONE)
-      return fd->n;
+      return d->n;
 
     return FDTABLE_PENDING;
   }

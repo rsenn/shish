@@ -6,8 +6,8 @@
 #include <termios.h>
 #include <unistd.h>
 #endif
-#include "../fdtable.h"
 #include "../job.h"
+#include "../fdtable.h"
 #include "../sh.h"
 #include "../../lib/wait.h"
 
@@ -38,10 +38,10 @@ job_wait(struct job* j, pid_t pid, int* status) {
       if(ret == j->pgrp)
         *status = s;
 
-      job_status(ret, s);
+      job_printstatus(ret, s);
     }
 
-    char ch = job_current() == j ? '+' : (struct job*)jobptr == j ? '-' : ' ';
+    char ch = job_current() == j ? '+' : (struct job*)job_pointer == j ? '-' : ' ';
 
     buffer_putc(fd_err->w, '[');
     buffer_putulong(fd_err->w, j->id);

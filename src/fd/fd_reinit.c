@@ -13,30 +13,30 @@
  * (except for the links which are initialized on fdtable_link())
  * ----------------------------------------------------------------------- */
 struct fd*
-fd_reinit(struct fd* fd, int mode) {
+fd_reinit(struct fd* d, int mode) {
   /* unset the name, and if it was allocated: free it */
-  if(fd->name) {
-    if(fd->mode & FD_FREENAME)
-      alloc_free((char*)fd->name);
+  if(d->name) {
+    if(d->mode & FD_FREENAME)
+      alloc_free((char*)d->name);
 
-    fd->name = NULL;
+    d->name = NULL;
   }
 
-  fd_close(fd);
+  fd_close(d);
 
   /* re-initialize things */
-  fd->mode &= FD_FREE;
-  fd->mode |= mode;
+  d->mode &= FD_FREE;
+  d->mode |= mode;
 
-  fd->dup = NULL;
-  fd->dev = 0;
-  fd->e = -1;
+  d->dup = NULL;
+  d->dev = 0;
+  d->e = -1;
 
-  fd->r = &fd->rb;
-  fd->w = &fd->wb;
+  d->r = &d->rb;
+  d->w = &d->wb;
 
-  buffer_default(&fd->rb, (buffer_op_proto*)(void*)&read);
-  buffer_default(&fd->wb, (buffer_op_proto*)(void*)&write);
+  buffer_default(&d->rb, (buffer_op_proto*)(void*)&read);
+  buffer_default(&d->wb, (buffer_op_proto*)(void*)&write);
 
-  return fd;
+  return d;
 }

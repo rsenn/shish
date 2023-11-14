@@ -4,16 +4,16 @@
 #include "../fdtable.h"
 #include "../../lib/wait.h"
 
-/* jobs builtin
+/* job_list builtin
  * ----------------------------------------------------------------------- */
 int
 builtin_jobs(int argc, char* argv[]) {
+  struct job* j;
 
-  struct job* job;
+  job_clean();
 
-  for(job = jobs; job; job = job->next) {
-    job_print(job, fd_out->w);
-  }
+  for(j = job_list; j; j = j->next)
+    job_print(j, fd_out->w);
 
   return 0;
 }
@@ -23,7 +23,7 @@ builtin_jobs(int argc, char* argv[]) {
 int
 builtin_fg(int argc, char* argv[]) {
   size_t njobs = argc - 1, jobindex = 0, npids = 0, k;
-  struct job *job, *joblist[njobs];
+  struct job *j, *joblist[njobs];
   int *pidlist, status, r;
 
   if(argc == 1) {
@@ -31,14 +31,14 @@ builtin_fg(int argc, char* argv[]) {
     njobs = 1;
   } else {
     for(int i = 1; i < argc; i++) {
-      job = job_find(argv[i]);
+      j = job_find(argv[i]);
 
-      if(!job) {
-        builtin_errmsg(argv, argv[i], "no such job");
+      if(!j) {
+        builtin_errmsg(argv, argv[i], "no such j");
         return 1;
       }
 
-      joblist[jobindex++] = job;
+      joblist[jobindex++] = j;
     }
   }
 

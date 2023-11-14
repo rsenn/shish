@@ -16,59 +16,59 @@
  * FDTABLE_CLOSE  means that the current fd->e can already be closed
  * ----------------------------------------------------------------------- */
 int
-fdtable_resolve(struct fd* fd, int flags) {
+fdtable_resolve(struct fd* d, int flags) {
   int state = FDTABLE_PENDING;
 
   /* already resolved */
-  if(fd->e == fd->n)
+  if(d->e == d->n)
     return FDTABLE_DONE;
 
-  /* do not open/close if we don't need an effective fd */
+  /* do not open/close if we don't need an effective d */
   if((flags & FDTABLE_FD) == FDTABLE_LAZY) {
-    if(fd->mode & (FD_OPEN | FD_CLOSE | FD_STRALLOC))
+    if(d->mode & (FD_OPEN | FD_CLOSE | FD_STRALLOC))
       return state;
   }
 
-  if((flags & FDTABLE_FD) && fd != fdtable[fd->n]) {
-    fd->mode = FD_CLOSE;
+  if((flags & FDTABLE_FD) && d != fdtable[d->n]) {
+    d->mode = FD_CLOSE;
   }
 
-  /*    state = fdtable_close(fd->n, flags);*/
+  /*    state = fdtable_close(d->n, flags);*/
 
   /* do some actions to resolve the effective file descriptor */
-  switch(fd->mode & (FD_OPEN | FD_CLOSE | FD_STRALLOC)) {
+  switch(d->mode & (FD_OPEN | FD_CLOSE | FD_STRALLOC)) {
     /* we're forced to close */
     case FD_CLOSE: {
-      state = fdtable_close(fd->n, flags);
+      state = fdtable_close(d->n, flags);
       break;
     }
 
-      /* if the fd is still to be opened then try that */
+      /* if the d is still to be opened then try that */
     case FD_OPEN: {
-      state = fdtable_open(fd, flags);
+      state = fdtable_open(d, flags);
       break;
     }
 
       /* drop here-docs to temp files */
     case FD_STRALLOC: {
-      if(FD_ISRD(fd))
-        state = fdtable_here(fd, flags);
+      if(FD_ISRD(d))
+        state = fdtable_here(d, flags);
       break;
     }
   }
 
-  /* if we're not done yet we have to force the effective fd number */
+  /* if we're not done yet we have to force the effective d number */
   if(state != FDTABLE_DONE) {
     if(fd_ok(state))
       flags |= FDTABLE_CLOSE;
 
     /* try to move/duplicate the old effective file descriptor,
-       maybe this returns a valid fd number which we'll have to
+       maybe this returns a valid d number which we'll have to
        close */
-    state = fdtable_dup(fd, flags);
+    state = fdtable_dup(d, flags);
 
     if(fd_ok(state)) {
-      /* if this is gonna change the expected fd we do a lazy
+      /* if this is gonna change the expected d we do a lazy
          check before */
       if(fd_expected < state) {
         if(fdtable_lazy(-1, flags) == FDTABLE_ERROR)
@@ -83,7 +83,7 @@ fdtable_resolve(struct fd* fd, int flags) {
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
   debug_open();
   buffer_puts(debug_output, COLOR_YELLOW "fdtable_resolve" COLOR_NONE "(");
-  fd_dump(fd, debug_output);
+  fd_dump(d, debug_output);
   buffer_puts(debug_output, ", ");
   debug_flags(flags, (const char* const[]){"LAZY", "MOVE", "FORCE", "NOCLOSE", "CLOSE"});
   buffer_puts(debug_output, ") = ");

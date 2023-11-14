@@ -17,7 +17,7 @@ expand_args(union node* args, union node** nptr, int flags) {
 
   for(arg = args; arg; arg = arg->next) {
 
-#if DEBUG_OUTPUT_
+#ifdef DEBUG_OUTPUT_
     debug_node(arg, 0);
     debug_nl_fl();
 #endif

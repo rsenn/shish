@@ -59,7 +59,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
      mark them for export if we're gonna execute a command */
   if(expand_vars(ncmd->vars, &assigns)) {
 
-#if DEBUG_OUTPUT_
+#ifdef DEBUG_OUTPUT_
     if(ncmd->vars) {
       buffer_puts(debug_output, "Vars ");
       debug_list(ncmd->vars, 0);
@@ -130,7 +130,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
         fd_allocbuf(r->nredir.fd, FD_BUFSIZE);
     }
 
-#if DEBUG_OUTPUT_
+#ifdef DEBUG_OUTPUT_
     buffer_puts(debug_output, "Redirection ");
     debug_node(r, -1);
 
@@ -185,9 +185,9 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
                         ((e->flags & E_EXIT) ? X_EXEC : 0) | (ncmd->bgnd ? X_NOWAIT : 0));
 
   if(ncmd->bgnd) {
-    struct job* job = *jobptr;
+    struct job* j = *job_pointer;
 
-    job->command = tree_string((union node*)ncmd);
+    j->command = tree_string((union node*)ncmd);
   }
 
 #ifndef HAVE_ALLOCA

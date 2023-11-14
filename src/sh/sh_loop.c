@@ -97,7 +97,7 @@ sh_loop(void) {
     if(p.tok & (T_NL | T_SEMI | T_BGND))
       p.pushback = 0;
 
-    job_clean();
+    job_update();
 
     /* reset prompt */
     prompt_reset();

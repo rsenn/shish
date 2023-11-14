@@ -2,7 +2,7 @@
 #include "../debug.h"
 #include <stdlib.h>
 
-#if DEBUG_ALLOC
+#ifdef DEBUG_ALLOC
 struct chunk* debug_heap = NULL;
 struct chunk** debug_pos = &debug_heap;
 

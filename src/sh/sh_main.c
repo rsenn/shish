@@ -41,18 +41,16 @@ sh_onsig(int signum) {
       }
 
       if((pid = wait_nohang(&status)) > 0) {
-
         job = job_signal(pid, status);
       }
 
-#ifdef DEBUG_OUTPUT
+#ifdef DEBUG_OUTPUT_
       buffer_puts(fd_err->w, "SIGCHLD");
       buffer_putc(fd_err->w, ' ');
 
       buffer_putc(fd_err->w, '(');
 
       if(job) {
-        job_signaled = true;
 
         buffer_puts(fd_err->w, "JOB: ");
         buffer_puts(fd_err->w, job->command);

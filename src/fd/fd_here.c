@@ -19,11 +19,11 @@ fd_freehere(buffer* b) {
  * (means it will be free'd wenn the (fd) is closed)
  * ----------------------------------------------------------------------- */
 void
-fd_here(struct fd* fd, stralloc* sa) {
-  fd->name = "<here>";
-  fd->mode = FD_HERE;
+fd_here(struct fd* d, stralloc* sa) {
+  d->name = "<here>";
+  d->mode = FD_HERE;
 
-  buffer_fromsa(&fd->rb, sa);
-  fd->rb.deinit = &fd_freehere;
-  fd->e = -1;
+  buffer_fromsa(&d->rb, sa);
+  d->rb.deinit = &fd_freehere;
+  d->e = -1;
 }

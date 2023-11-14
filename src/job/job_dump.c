@@ -7,10 +7,10 @@ void
 job_dump(buffer* b) {
   struct job* job = 0;
 
-  if(jobs)
+  if(job_list)
     buffer_puts(b, "  id     pgrp   command       done PIDs\n");
 
-  for(job = jobs; job; job = job->next) {
+  for(job = job_list; job; job = job->next) {
     int current = job_current() == job;
 
     buffer_puts(b, current ? "\033[1;33m " : " ");

@@ -367,7 +367,7 @@ builtin_test(int argc, char* argv[]) {
   if(ret <= 1)
     ret = !result;
 
-#if DEBUG_OUTPUT_
+#ifdef DEBUG_OUTPUT_
   buffer_puts(fd_err->w, "test return value: ");
   buffer_putulong(fd_err->w, ret);
   buffer_putnlflush(fd_err->w);

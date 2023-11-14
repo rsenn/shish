@@ -15,26 +15,26 @@
  * this should only be called when the (fd) really lacks buffer space!
  * ----------------------------------------------------------------------- */
 void
-fd_setbuf(struct fd* fd, void* buf, size_t n) {
+fd_setbuf(struct fd* d, void* buf, size_t n) {
   char* p = buf;
-  int r = FD_ISRD(fd) && !fd->r->x;
-  int w = FD_ISWR(fd) && !fd->w->x;
+  int r = FD_ISRD(d) && !d->r->x;
+  int w = FD_ISWR(d) && !d->w->x;
 
   assert(r || w);
 
   /* assign buffer space to read buffer */
   if(r) {
-    fd->r->x = p;
-    p += fd->r->a = n >> w;
+    d->r->x = p;
+    p += d->r->a = n >> w;
   }
 
   /* assign buffer space to write buffer */
   if(w) {
-    fd->w->x = p;
-    fd->w->a = n >> r;
+    d->w->x = p;
+    d->w->a = n >> r;
   }
 
   /* set the tmpbuf flag so the buffers are set to zero
      if we leave the current stack level! */
-  fd->mode |= FD_TMPBUF;
+  d->mode |= FD_TMPBUF;
 }

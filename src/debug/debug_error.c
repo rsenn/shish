@@ -2,7 +2,7 @@
 #include "../debug.h"
 #include <assert.h>
 
-#if DEBUG_ALLOC
+#ifdef DEBUG_ALLOC
 
 #include "../fd.h"
 #include "../../lib/shell.h"

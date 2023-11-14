@@ -34,19 +34,19 @@ eval_command(struct eval* e, union node* node, int tempflags) {
     stralloc_init(&heredoc);
 
     for(r = redir; r; r = r->next) {
-      struct fd* fd = 0;
+      struct fd* d = 0;
 #ifdef HAVE_ALLOCA
-      fd = fd_alloc();
+      d = fd_alloc();
 #endif
 
       /* return if a redirection failed */
-      if(redir_eval(&r->nredir, fd, R_NOW)) {
+      if(redir_eval(&r->nredir, d, R_NOW)) {
         ret = 1;
         goto fail;
       }
 
-      if(fd_needbuf(fd))
-        fd_setbuf(fd, buf, FD_BUFSIZE);
+      if(fd_needbuf(d))
+        fd_setbuf(d, buf, FD_BUFSIZE);
     }
   }
 

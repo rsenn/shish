@@ -1,8 +1,8 @@
 #define DEBUG_NOCOLOR 1
 #include "../debug.h"
 
-#if DEBUG_ALLOC
-#include "../fd.h"
+#ifdef DEBUG_ALLOC
+#include "../fdtable.h"
 #include "../../lib/fmt.h"
 #include "../../lib/str.h"
 

@@ -3,6 +3,7 @@
 #include "../sh.h"
 #include "../../lib/sig.h"
 #include "../../lib/windoze.h"
+#include <assert.h>
 
 #if !WINDOWS_NATIVE
 #include <unistd.h>
@@ -13,8 +14,10 @@ int job_pgrp;
 /* forks off a job
  * ----------------------------------------------------------------------- */
 int
-job_fork(struct job* job, union node* node, int bgnd) {
+job_fork(struct job* j, union node* node, int bgnd) {
   pid_t pid, pgrp;
+
+assert(j);
 
 #if !WINDOWS_NATIVE
   sig_block(SIGCHLD);
@@ -30,7 +33,7 @@ job_fork(struct job* job, union node* node, int bgnd) {
   if(pid == 0) {
     sh_forked();
 
-    pgrp = job && job->nproc ? job->procs[0].pid : sh_pid;
+    pgrp = j && j->nproc ? j->procs[0].pid : sh_pid;
 
 #if !WINDOWS_NATIVE
     setpgid(sh_pid, pgrp);
@@ -45,19 +48,19 @@ job_fork(struct job* job, union node* node, int bgnd) {
 
   pgrp = pid;
 
-  /* in the parent update the process list of the job */
-  if(job) {
-    struct proc* p = &job->procs[0 /*job->nproc*/];
+  /* in the parent update the process list of the j */
+  if(j) {
+    struct proc* p = &j->procs[0 /*j->nproc*/];
 
     p->pid = pid;
     p->status = -1;
 
-    if(job->nproc == 0)
-      job->pgrp = pgrp;
+    if(j->nproc == 0)
+      j->pgrp = pgrp;
     else
-      pgrp = job->procs[0].pid;
+      pgrp = j->procs[0].pid;
 
-    job->nproc++;
+    j->nproc++;
   }
 
   if(pgrp != job_pgrp && !bgnd) {

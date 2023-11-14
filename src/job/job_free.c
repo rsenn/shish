@@ -7,15 +7,15 @@ job_delete(struct job** j) {
 
   alloc_free(*j);
 
-  if(j == jobptr)
-    jobptr = NULL;
+  if(j == job_pointer)
+    job_pointer = NULL;
 
   *j = next;
 }
 
 void
 job_free(struct job* job) {
-  for(struct job** jp = &jobs; *jp; jp = &(*jp)->next)
+  for(struct job** jp = &job_list; *jp; jp = &(*jp)->next)
     if(*jp == job) {
       job_delete(jp);
       break;

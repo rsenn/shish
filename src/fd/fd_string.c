@@ -4,9 +4,9 @@
 /* prepare fd for reading from a string
  * ----------------------------------------------------------------------- */
 void
-fd_string(struct fd* fd, const char* s, size_t len) {
-  fd->mode = FD_STRING;
-  fd->name = "<string>";
+fd_string(struct fd* d, const char* s, size_t len) {
+  d->mode = FD_STRING;
+  d->name = "<string>";
 
-  buffer_fromstr(fd->r, (char*)s, len);
+  buffer_fromstr(d->r, (char*)s, len);
 }

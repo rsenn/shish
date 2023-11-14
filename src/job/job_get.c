@@ -5,7 +5,7 @@
  * ----------------------------------------------------------------------- */
 struct job*
 job_get(int id) {
-  for(struct job* job = jobs; job; job = job->next)
+  for(struct job* job = job_list; job; job = job->next)
     if(job->id == id)
       return job;
 

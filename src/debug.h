@@ -125,7 +125,7 @@ void debug_squoted(const char*, size_t n, buffer* out);
 
 #endif /* DEBUG_OUTPUT */
 
-#if DEBUG_ALLOC
+#ifdef DEBUG_ALLOC
 
 struct chunk {
   struct chunk* next;

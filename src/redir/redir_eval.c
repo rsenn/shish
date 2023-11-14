@@ -17,23 +17,22 @@
  * NULL a persistent redirection is assumed (whose fd will be malloced)
  * ----------------------------------------------------------------------- */
 int
-redir_eval(struct nredir* nredir, struct fd* fd, int rfl) {
-  int mode;
-  int r;
+redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
+  int mode,r;
   stralloc sa;
 
   stralloc_init(&sa);
   expand_copysa(nredir->word, &sa, 0);
   stralloc_nul(&sa);
 
-  /* set the initial fd mode */
+  /* set the initial d mode */
   mode = nredir->flag & (R_IN | R_OUT);
 
   /* additional redirection mode */
   nredir->flag |= rfl;
 
-  /* setup up a new fd for the redirection */
-  nredir->fd = !fd ? fd_new(nredir->fdes, mode) : fd_push(fd, nredir->fdes, mode);
+  /* setup up a new d for the redirection */
+  nredir->fd = !d ? fd_new(nredir->fdes, mode) : fd_push(d, nredir->fdes, mode);
 
   /* do the appropriate redirection */
   switch(nredir->flag & R_ACT) {
@@ -43,7 +42,7 @@ redir_eval(struct nredir* nredir, struct fd* fd, int rfl) {
   }
 
   /*  if(nredir->flag & R_NOW)
-      return fdtable_resolve(nredir->fd, FDTABLE_MOVE);*/
+      return fdtable_resolve(nredir->d, FDTABLE_MOVE);*/
 
   return r;
 }

@@ -1,6 +1,6 @@
 #include "../../lib/windoze.h"
-#include "../fdtable.h"
 #include "../job.h"
+#include "../fdtable.h"
 #include "../../lib/wait.h"
 #include "../../lib/sig.h"
 
@@ -11,7 +11,7 @@
 /* outputs job status stuff
  * ----------------------------------------------------------------------- */
 void
-job_status(pid_t pid, int status) {
+job_printstatus(pid_t pid, int status) {
 
   if(WAIT_IF_EXITED(status)) {
     buffer_put(fd_err->w, "process ", 8);

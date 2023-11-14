@@ -21,10 +21,10 @@ unsigned int fdstack_npipes(int mode);
 unsigned int fdstack_unref(struct fd* olddup);
 void fdstack_dump(buffer* b);
 void fdstack_flatten(void);
-void fdstack_link(struct fdstack* st, struct fd* fd);
+void fdstack_link(struct fdstack* st, struct fd*);
 void fdstack_pop(struct fdstack* st);
 void fdstack_push(struct fdstack* st);
-void fdstack_unlink(struct fd* fd);
+void fdstack_unlink(struct fd*);
 void fdstack_update(struct fd* dup);
 
 /* allocate space for pipe fds */

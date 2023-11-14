@@ -9,9 +9,16 @@ sig_unblock(int signum) {
   sigset_t ss;
 
   sigemptyset(&ss);
-  sigprocmask(SIG_SETMASK, 0, &ss);
-
-  sigdelset(&ss, signum);
-  sigprocmask(SIG_BLOCK, &ss, 0);
+  sigaddset(&ss, signum);
+  sigprocmask(SIG_UNBLOCK, &ss, 0);
 #endif
+  /*#if 0 && !WINDOWS_NATIVE
+    sigset_t ss;
+
+    sigemptyset(&ss);
+    sigprocmask(SIG_SETMASK, 0, &ss);
+
+    sigdelset(&ss, signum);
+    sigprocmask(SIG_BLOCK, &ss, 0);
+  #endif*/
 }

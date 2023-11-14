@@ -38,7 +38,7 @@ extern char redir_tempname[];
 struct parser;
 
 int redir_dup(struct nredir* nredir, stralloc* sa);
-int redir_eval(struct nredir* nredir, struct fd* fd, int rfl);
+int redir_eval(struct nredir* nredir, struct fd*, int rfl);
 int redir_here(struct nredir* nredir, stralloc* sa);
 int redir_open(struct nredir* nredir, stralloc* sa);
 int redir_parse(struct parser* p, int rf, int fd);

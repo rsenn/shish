@@ -1,7 +1,7 @@
 #define DEBUG_NOCOLOR 1
 #include "../debug.h"
 
-#if DEBUG_ALLOC
+#ifdef DEBUG_ALLOC
 #include "../sh.h"
 #include <assert.h>
 #include <errno.h>
