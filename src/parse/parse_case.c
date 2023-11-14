@@ -16,10 +16,7 @@
  * ----------------------------------------------------------------------- */
 union node*
 parse_case(struct parser* p) {
-  union node* node;
-  union node** cptr;
-  union node** pptr;
-  union node* word;
+  union node *node, **cptr, **pptr, *word;
 
   /* next tok must be a word */
   if(!parse_expect(p, P_DEFAULT, T_WORD | T_NAME | T_ASSIGN, NULL))

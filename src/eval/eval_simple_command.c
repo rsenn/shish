@@ -37,11 +37,10 @@ int
 eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   int argc, status = 0;
   char** argv;
-  union node *node, *args = 0, *assigns = 0;
+  union node *node, *args = 0, *assigns = 0, *r, *redir = ncmd->rdir;
   struct command cmd = {H_BUILTIN, {0}};
   struct vartab vars;
   struct fdstack io;
-  union node *r, *redir = ncmd->rdir;
   char buf[FD_BUFSIZE];
 
   /* expand arguments,
@@ -140,6 +139,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
       buffer_putlong(debug_output, r->nredir.fd->n);
       buffer_puts(debug_output, " }");
     }
+
     debug_nl_fl();
 #endif
   }

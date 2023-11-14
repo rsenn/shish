@@ -9,8 +9,7 @@
 int
 eval_for(struct eval* e, struct nfor* nfor) {
   struct eval en;
-  union node* node;
-  union node* args = NULL;
+  union node *node, *args = NULL;
 
   if(nfor->args)
     expand_args(nfor->args, &args, 0);

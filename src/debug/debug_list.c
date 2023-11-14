@@ -24,6 +24,7 @@ debug_list(union node* n, int depth) {
       debug_newline(depth >= 0 ? depth + 1 : depth);
     }
   }
+
   debug_end(depth);
 }
 #endif

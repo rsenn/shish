@@ -352,7 +352,7 @@ builtin_test(int argc, char* argv[]) {
   }
 
   /* TODO:*/
-  //  (void)brackets;
+  //(void)brackets;
   result = test_boolean(argc, argv);
 
   if(result < 0) {

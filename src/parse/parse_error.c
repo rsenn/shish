@@ -36,6 +36,7 @@ if(len > 100)
       buffer_puts(fd_err->w, parse_tokname(toks, 1));
       buffer_puts(fd_err->w, "'");
     }
+
     buffer_putnlflush(fd_err->w);
 
 #if 0 // defined(DEBUG_OUTPUT_) && defined(DEBUG_PARSE)

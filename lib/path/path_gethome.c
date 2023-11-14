@@ -42,6 +42,7 @@ path_gethome(int uid) {
         break;
     }
   }
+
   buffer_close(&b);
   return NULL;
 }

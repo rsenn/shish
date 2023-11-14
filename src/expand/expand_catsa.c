@@ -7,8 +7,7 @@
  * ----------------------------------------------------------------------- */
 void
 expand_catsa(union node* node, stralloc* sa, int flags) {
-  union node tmpnode;
-  union node* n = &tmpnode;
+  union node tmpnode, *n = &tmpnode;
 
   byte_copy(&tmpnode.narg.stra, sizeof(stralloc), sa);
   expand_arg(node, &n, flags | X_NOSPLIT);

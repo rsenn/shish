@@ -21,10 +21,13 @@ buffer_put(buffer* b, const char* buf, size_t len) {
     if(len > b->a) {
       if(buffer_stubborn(b->op, b->fd, buf, len, b) < 0)
         return -1;
+
       return 0;
     }
   }
+
   byte_copy(b->x + b->p, len, buf);
   b->p += len;
+
   return 0;
 }

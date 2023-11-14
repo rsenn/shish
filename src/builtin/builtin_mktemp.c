@@ -40,6 +40,7 @@ builtin_mktemp(int argc, char* argv[]) {
       default: builtin_invopt(argv); return 1;
     }
   }
+
   stralloc_init(&name);
 
   if(temp) {

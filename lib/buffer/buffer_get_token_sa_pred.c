@@ -15,6 +15,7 @@ buffer_get_token_sa_pred(buffer* b, stralloc* sa, sa_predicate p, void* arg) {
       case -1: return -1;
       case 0: return 0;
     }
+
     stralloc_append(sa, &x);
 
     switch(p(sa, arg)) {

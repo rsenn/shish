@@ -6,9 +6,7 @@
 union node*
 parse_pipeline(struct parser* p) {
   int negate = 0;
-  union node* node;
-  union node* pipeline;
-  union node** cmdptr;
+  union node *node, *pipeline, **cmdptr;
   enum tok_flag tok;
 
   /* on T_NOT toggle negate */
@@ -29,7 +27,7 @@ parse_pipeline(struct parser* p) {
     /* create a command list inside the pipeline */
     pipeline->npipe.cmds = node;
     pipeline->npipe.ncmd = 1;
-    //  cmdptr = &pipeline->npipe.cmds;
+    //cmdptr = &pipeline->npipe.cmds;
     cmdptr = &node->next;
 
     /* parse commands and add them to the pipeline

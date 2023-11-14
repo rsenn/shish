@@ -11,7 +11,7 @@ debug_subnode(const char* s, union node* node, int depth) {
     if(s)
       debug_field(s, depth);
     debug_node(node, depth >= 0 ? depth + 1 : depth);
-    //     debug_fl();
+    //debug_fl();
   }
 }
 #endif /* DEBUG_OUTPUT */

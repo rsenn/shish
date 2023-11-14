@@ -5,8 +5,7 @@
  * ----------------------------------------------------------------------- */
 union node*
 parse_for(struct parser* p) {
-  union node* node = NULL;
-  union node** nptr;
+  union node *node = NULL, **nptr;
 
   /* next token must be the variable name */
   if(!parse_expect(p, P_NOKEYWD, T_NAME, node))

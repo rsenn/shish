@@ -10,10 +10,7 @@
  * ----------------------------------------------------------------------- */
 union node*
 parse_simple_command(struct parser* p) {
-  union node **aptr, *args;
-  union node **vptr, *vars;
-  union node **rptr, *rdir;
-  union node* simple_command;
+  union node **aptr, *args, **vptr, *vars, **rptr, *rdir, *simple_command;
   size_t n = 0;
   struct location pos;
 
@@ -50,7 +47,7 @@ parse_simple_command(struct parser* p) {
 
           arg = &(*aptr)->narg;
 
-          //          assert(arg->list->id == N_ARGSTR);
+          //assert(arg->list->id == N_ARGSTR);
 
           if(arg->list->id == N_ARGSTR) {
 

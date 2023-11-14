@@ -15,6 +15,7 @@ debug_sublist(const char* s, union node* node, int depth) {
       debug_field(s, depth);
     debug_list(node, depth >= 0 ? depth : 0);
   }
+
   debug_fl();
 }
 #endif /* DEBUG_OUTPUT */

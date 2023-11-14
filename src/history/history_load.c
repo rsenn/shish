@@ -25,8 +25,7 @@ const char* history_files[] = {
  * ----------------------------------------------------------------------- */
 void
 history_load(void) {
-  unsigned int i;
-  unsigned int hlen;
+  unsigned int i, hlen;
   char fname[PATH_MAX + 1];
 
   hlen = str_copyn(fname, sh_home, PATH_MAX);

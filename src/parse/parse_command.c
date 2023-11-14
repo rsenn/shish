@@ -11,13 +11,12 @@
 union node*
 parse_command(struct parser* p, int tempflags) {
   enum tok_flag tok;
-  union node* command = 0;
-  union node** rptr;
+  union node *command = 0, **rptr;
   char c = 0;
 
   tok = parse_gettok(p, tempflags);
 
-  //  source_skipspace(p);
+  //source_skipspace(p);
   /*  while(source_peek(&c) >= 1) {
       if(!parse_isspace(c))
         break;

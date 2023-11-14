@@ -5,8 +5,7 @@
  * ----------------------------------------------------------------------- */
 union node*
 parse_if(struct parser* p) {
-  union node* node;
-  union node** nptr;
+  union node *node, **nptr;
 
   tree_init(node, nptr);
 

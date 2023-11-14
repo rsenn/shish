@@ -56,6 +56,7 @@ sh_onsig(int signum) {
         buffer_puts(fd_err->w, "PID: ");
         buffer_putlong(fd_err->w, pid);
       }
+
       buffer_putc(fd_err->w, ')');
       buffer_putnlflush(fd_err->w);
 #endif

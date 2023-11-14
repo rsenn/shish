@@ -28,6 +28,7 @@ parse_dump(struct parser* p, buffer* b) {
       b->p--;
     buffer_puts(b, ") ");
   }
+
   buffer_puts(b, parse_tokname(p->tok, 0));
   buffer_putnlflush(b);
 }

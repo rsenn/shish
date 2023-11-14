@@ -12,9 +12,7 @@
  * ----------------------------------------------------------------------- */
 union node*
 parse_and_or(struct parser* p) {
-  union node* pipeline0;
-  union node* pipeline1;
-  union node* and_or;
+  union node *pipeline0, *pipeline1, *and_or;
   enum tok_flag tok;
 
   /* parse a command or a pipeline first */

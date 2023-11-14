@@ -27,6 +27,7 @@ stralloc_dump(const stralloc* sa, buffer* b) {
         buffer_putc(b, c);
       }
     }
+
     buffer_puts(b, "\"");
   }
 

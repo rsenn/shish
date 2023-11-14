@@ -93,7 +93,8 @@ int testmain(void)
         for (i = 0; i < gg.gl_pathc; i++)
             printf("GLOBED:%i %s\n", i, gg.gl_pathv[i]);
     }
-    globfree(&gg);
+    
+globfree(&gg);
 
     return 0;
 }

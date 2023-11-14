@@ -63,6 +63,7 @@ parse_list(struct parser* p) {
       buffer_putulong(debug_output, tree_count(cmds));
       buffer_puts(debug_output, "] ");
     }
+
     buffer_puts(debug_output, "cmds = ");
 
     if(cmds->next)

@@ -13,6 +13,7 @@ buffer_putm_internal(buffer* b, ...) {
       r = -1;
       break;
     }
+
   va_end(a);
   return r;
 }

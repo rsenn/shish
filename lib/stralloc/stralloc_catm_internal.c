@@ -23,6 +23,7 @@ stralloc_catm_internal(stralloc* sa, ...) {
       va_end(a);
       return 0;
     }
+
   va_end(a);
   return 1;
 }

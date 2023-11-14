@@ -16,6 +16,7 @@ fmt_ulong0(char* dest, unsigned long i, size_t pad) {
       ++dest;
       ++len;
     }
+
     fmt_ulong(dest, i);
     return len;
   }

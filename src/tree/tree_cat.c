@@ -216,6 +216,7 @@ again:
           tree_catlist_n(node->nif.cmd1, sa, "\n", depth + 1);
         }
       }
+
       tree_catseparator(sa, "\nfi", depth);
 
       /* concatenate redirections */
@@ -237,6 +238,7 @@ again:
         stralloc_cats(sa, " in ");
         tree_catlist(node->nfor.args, sa, " ");
       }
+
       stralloc_cats(sa, "; do ");
       tree_catlist_n(node->nfor.cmds, sa, NULL, depth + 1);
       stralloc_cats(sa, "; done");
@@ -530,6 +532,7 @@ again:
         case A_PREDECR: stralloc_cats(sa, "--"); break;
         default: break;
       }
+
       tree_cat(node->narithunary.node, sa);
 
       switch(node->narithunary.id) {

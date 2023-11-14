@@ -19,9 +19,7 @@
 union node*
 parse_grouping(struct parser* p, int tempflags) {
   enum tok_flag tok;
-  union node** rptr;
-  union node* grouping;
-  union node* compound_list;
+  union node **rptr, *grouping, *compound_list;
 
   /* return NULL on empty compound */
   grouping = NULL;

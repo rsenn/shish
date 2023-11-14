@@ -158,6 +158,7 @@ dump_flags(buffer* b, int bits, const char* const names[], int pad) {
         n++;
         buffer_puts(b, COLOR_CYAN "|" COLOR_NONE);
       }
+
       buffer_put(b, names[i], len);
       n += len;
     }

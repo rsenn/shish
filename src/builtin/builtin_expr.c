@@ -70,6 +70,7 @@ builtin_expr(int argc, char* argv[]) {
       if(expand_arith_expr(expr, &result)) {
         ret = 1;
       }
+
       tree_free(expr);
     }
 

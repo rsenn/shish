@@ -9,8 +9,7 @@
  * ----------------------------------------------------------------------- */
 union node*
 parse_compound_list(struct parser* p, enum tok_flag end_tok) {
-  union node* list;
-  union node** nptr;
+  union node *list, **nptr;
 
   tree_init(list, nptr);
 

@@ -69,6 +69,7 @@ builtin_cat(int argc, char* argv[]) {
           buffer_put(fd_out->w, buf, n);
           buffer_putspace(fd_out->w);
         }
+
         buffer_put(fd_out->w, buf, ret);
         buffer_flush(fd_out->w);
 

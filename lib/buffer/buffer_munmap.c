@@ -20,6 +20,7 @@ buffer_munmap(buffer* b) {
       if(flags & (O_WRONLY | O_RDWR))
         msync(b->x, b->a, MS_SYNC);
   }
+
   munmap(b->x, b->a);
 #endif
   b->x = NULL;

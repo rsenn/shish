@@ -31,8 +31,8 @@ void
 debug_node(union node* node, int depth) {
   const char* name;
 
-  //  if(depth > 0 && node->id >= N_ARG)
-  //    depth = -2;
+  //if(depth > 0 && node->id >= N_ARG)
+  //depth = -2;
   name = debug_nodes[node->id];
 
   // debug_indent(depth);
@@ -114,6 +114,7 @@ debug_node(union node* node, int depth) {
       if(node->nif.cmd1) {
         debug_sublist(", cmd1", node->nif.cmd1, depth);
       }
+
       debug_subnode(", test", node->nif.test, depth);
       break;
 

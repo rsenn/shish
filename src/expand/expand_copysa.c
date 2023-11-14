@@ -7,8 +7,7 @@
  * ----------------------------------------------------------------------- */
 void
 expand_copysa(union node* node, stralloc* sa, int flags) {
-  union node tmpnode;
-  union node* n = &tmpnode;
+  union node tmpnode, *n = &tmpnode;
 
   stralloc_init(&tmpnode.narg.stra);
   expand_arg(node, &n, flags | X_NOSPLIT);

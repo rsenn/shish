@@ -59,6 +59,7 @@ builtin_ln(int argc, char* argv[]) {
       stralloc_cats(&path, basename(src));
       stralloc_nul(&path);
     }
+
     unlink(path.s);
     ret = (symbolic ? symlink : link)(src, path.s);
 

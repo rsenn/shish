@@ -47,8 +47,8 @@ buffer_dump(buffer* out, buffer* b) {
   } else
     n = 0;
   buffer_puts(out, "\"");
-  //  buffer_puts(out, "...");
-  // buffer_putfmt(out, &b->x[n], 32);
+  //buffer_puts(out, "...");
+  //buffer_putfmt(out, &b->x[n], 32);
   buffer_puts(out, "\"");
 
   buffer_puts(out, NONE ", " YELLOW "fd" CYAN "=" NONE);
@@ -59,6 +59,7 @@ buffer_dump(buffer* out, buffer* b) {
     n = fmt_long(xlong, b->fd);
     buffer_put(out, xlong, n);
   }
+
   buffer_puts(out, ", op=");
   /* buffer_putspace(out); */
 
@@ -72,10 +73,10 @@ buffer_dump(buffer* out, buffer* b) {
       buffer_puts(out, "<sa-wr> ");*/
   else if(b->op == (buffer_op_proto*)NULL)
     buffer_puts(out, "NULL    ");
-  else {
+  else
     /* n = fmt_xlong(xlong, (int64)(intptr_t)b->op); */
     buffer_putptr(out, (void*)b->op); /* xlong, n); */
-  }
+
   buffer_puts(out, " ]");
   buffer_putnlflush(out);
 }
