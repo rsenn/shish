@@ -58,7 +58,7 @@ fd_setfd(struct fd* d, int e) {
                   (d->mode & FD_READ)                        ? "FD_READ"
                   : (d->mode & FD_WRITE)                     ? "FD_WRITE"
                   : (d->mode & FD_READWRITE) == FD_READWRITE ? "FD_READWRITE"
-                                                              : "");
+                                                             : "");
 
       debug_nl_fl();
     }

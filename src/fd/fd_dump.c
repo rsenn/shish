@@ -35,12 +35,12 @@ fd_dump(struct fd* d, buffer* b) {
 
   dump_flags(b,
              d->mode,
-             (const char* const[]){"READ",   "WRITE",  "APPEND",   "EXCL",     "TRUNC",  0,
-                                   0,        0,        "FILE",     "DIR",      "LINK",   "CHAR",
-                                   "BLOCK",  "SOCKET", "PIPE",     "STRALLOC", "STRING", "DUP",
-                                   "TERM",   "NULL",   0,          0,          0,        0,
-                                   "FLUSH",  "CLOSE",  "FREENAME", "DUPNAME",  "FREE",   0,
-                                   "TMPBUF", "OPEN",},
+             (const char* const[]){
+                 "READ",   "WRITE", "APPEND",   "EXCL",    "TRUNC", 0,        0,        0,
+                 "FILE",   "DIR",   "LINK",     "CHAR",    "BLOCK", "SOCKET", "PIPE",   "STRALLOC",
+                 "STRING", "DUP",   "TERM",     "NULL",    0,       0,        0,        0,
+                 "FLUSH",  "CLOSE", "FREENAME", "DUPNAME", "FREE",  0,        "TMPBUF", "OPEN",
+             },
              32);
 
   term_escape(b, 84, 'G');

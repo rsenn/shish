@@ -51,7 +51,7 @@ struct job {
 
 extern int job_terminal, job_pgrp;
 extern volatile bool job_signaled;
- extern struct job *job_list, **job_pointer;
+extern struct job *job_list, **job_pointer;
 
 #define job_current() (job_pointer && *job_pointer ? *job_pointer : 0)
 #define job_done(j) (!job_running(j))
@@ -69,7 +69,7 @@ void job_foreground(struct job*);
 void job_free(struct job*);
 void job_print(struct job*, buffer* out);
 
-void job_clean(void);
+void job_clean(bool);
 void job_dump(buffer*);
 void job_init(void);
 void job_printstatus(pid_t, int status);

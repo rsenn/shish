@@ -10,10 +10,10 @@ int
 builtin_jobs(int argc, char* argv[]) {
   struct job* j;
 
-  job_clean();
-
   for(j = job_list; j; j = j->next)
     job_print(j, fd_out->w);
+
+  job_clean(false);
 
   return 0;
 }

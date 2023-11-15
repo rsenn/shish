@@ -8,7 +8,7 @@ job_update(void) {
   if(job_signaled) {
     sig_block(SIGCHLD);
 
-    job_clean();
+    job_clean(true);
 
     job_signaled = 0;
     sig_unblock(SIGCHLD);

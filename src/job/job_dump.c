@@ -8,7 +8,7 @@ job_dump(buffer* b) {
   struct job* job = 0;
 
   if(job_list)
-    buffer_puts(b, "  id     pgrp   command       done PIDs\n");
+    buffer_puts(b, "  id     pgrp   command      ""        "" done PIDs\n");
 
   for(job = job_list; job; job = job->next) {
     int current = job_current() == job;
@@ -17,7 +17,7 @@ job_dump(buffer* b) {
     buffer_putlong0(b, job->id, 3);
     buffer_putlong0(b, job->pgrp, 9);
     buffer_putc(b, '\t');
-    buffer_putspad(b, job->command, 14);
+    buffer_putspad(b, job->command, 22);
     buffer_putspad(b, job_done(job) ? "🞩" : "–", 6);
 
     for(int i = 0; i < job->nproc; i++) {

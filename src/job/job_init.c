@@ -22,9 +22,9 @@ job_init(void) {
   if((d = fdtable[STDERR_FILENO]) && (fd_err->mode & FD_TERM)) {
 #include "../../lib/windoze.h"
 #if !WINDOWS_NATIVE && !defined(__MINGW64__)
-  job_terminal = fcntl(d->e, F_DUPFD, 0x80);
+    job_terminal = fcntl(d->e, F_DUPFD, 0x80);
 #else
-   job_terminal = dup(d->e);
+    job_terminal = dup(d->e);
 #endif
 
 #ifdef FD_CLOEXEC

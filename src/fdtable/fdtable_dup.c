@@ -24,7 +24,7 @@
  * ----------------------------------------------------------------------- */
 int
 fdtable_dup(struct fd* d, int flags) {
-  int state,o, e = -1;
+  int state, o, e = -1;
 
   /* already resolved? */
   if((o = d->e) == d->n)

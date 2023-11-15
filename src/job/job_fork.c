@@ -17,7 +17,7 @@ int
 job_fork(struct job* j, union node* node, int bgnd) {
   pid_t pid, pgrp;
 
-assert(j);
+  assert(j);
 
 #if !WINDOWS_NATIVE
   sig_block(SIGCHLD);

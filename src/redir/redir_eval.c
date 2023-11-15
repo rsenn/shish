@@ -18,7 +18,7 @@
  * ----------------------------------------------------------------------- */
 int
 redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
-  int mode,r;
+  int mode, r;
   stralloc sa;
 
   stralloc_init(&sa);
