@@ -79,15 +79,17 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
       /* $* substitution */
       case S_ARGV: {
-        // char** s;
         size_t i;
         const char* ifs = var_vdefault("IFS", IFS_DEFAULT, NULL);
 
         for(i = 0; i < sh->arg.c; i++) {
+
           if(i > 0)
             stralloc_catc(&value, ifs[0]);
+
           stralloc_cats(&value, sh->arg.v[i]);
         }
+
         break;
       }
 
@@ -98,6 +100,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
 #if WITH_PARAM_RANGE
         if((param->flag & S_VAR) == S_RANGE) {
+
           if(expand_range(param->word, &r)) {
             r = limit(&r, 0, sh->arg.c);
           } else {
@@ -106,6 +109,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
               sh_msg("expecting offset\n");
             else if(r.length == INT32_MAX)
               sh_msg("expecting length\n");
+
             return n;
           }
         }
@@ -261,24 +265,24 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       if(v)
         n = expand_arg(param->word, nptr, flags);
       break;
+    }
 
-        /* remove smallest matching suffix */
-      case S_RSSFX: {
-        int i;
-        stralloc sa;
+      /* remove smallest matching suffix */
+    case S_RSSFX: {
+      int i;
+      stralloc sa;
 
-        if(v && vlen) {
-          expand_copysa(param->word, &sa, 0);
+      if(v && vlen) {
+        expand_copysa(param->word, &sa, 0);
 
-          for(i = vlen - 1; i >= 0; i--)
-            if(path_fnmatch(sa.s, sa.len, v + i, vlen - i, SH_FNM_PERIOD) == 0)
-              break;
+        for(i = vlen - 1; i >= 0; i--)
+          if(path_fnmatch(sa.s, sa.len, v + i, vlen - i, SH_FNM_PERIOD) == 0)
+            break;
 
-          n = expand_cat(v, (i < 0 ? vlen : (size_t)i), nptr, flags);
-        }
-
-        break;
+        n = expand_cat(v, (i < 0 ? vlen : (size_t)i), nptr, flags);
       }
+
+      break;
     }
 
       /* remove largest matching suffix */

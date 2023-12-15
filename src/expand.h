@@ -82,5 +82,6 @@ void expand_tosa(union node* node, stralloc* sa);
 void expand_unescape(stralloc* sa, int (*pred)(int));
 int expand_vars(union node* vars, union node** nptr);
 void expand_str(union node*, stralloc*, int flags);
+char* expand_tostr(union node* node, int flags);
 
 #endif /* EXPAND_H */
