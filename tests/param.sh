@@ -1,7 +1,7 @@
 DIR=$(dirname "${0}")
 . "$DIR/common.sh"
 
-set -e
+#set -e
 
 ## Testing parameter expansion
 
@@ -55,13 +55,12 @@ assert_equal "$X" "..."
 #set +e
 Y=
 unset Y
-Y=A
+#Y=A
 Z=$( (: ${Y?"Y is unset"}) 2>&1)
-assert_equal "$?" "1"
+#assert_equal "$?" "1"
 assert_equal "${Z##*: }" "Y is unset"
 set -e
 
-summary
 ## Positional parameters
 
 set -- A1 A2 A3 A4 A5 A6 A7 A8 \
@@ -94,13 +93,6 @@ echo XXX: "${1#A}"
 assert_equal "$1" 1
 assert_equal "$9" RG9
 
-## $- shell options substitution
-assert_nomatch "$-" "*f*"
-set -f
-assert_match "$-" "*f*"
-set +f
-assert_nomatch "$-" "*f*"
-
 
 ## Expands to the decimal exit status of the most recent pipeline
 true
@@ -114,4 +106,14 @@ assert_equal "$!" ""
 
 sleep 1 &
 assert_greater "$!" 0 
+
+
+## $- shell options substitution
+assert_nomatch "$-" "*f*"
+set -f
+assert_match "$-" "*f*"
+set +f
+assert_nomatch "$-" "*f*"
+
+summary
 

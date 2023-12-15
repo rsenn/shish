@@ -11,10 +11,11 @@ int
 builtin_set(int argc, char* argv[]) {
   int c;
   struct shopt opts = sh->opts;
+  struct optstate opt = {"+-", 0, 0, 0, 0, 0};
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "+efhmuxBCH")) > 0) {
-    int on = shell_optprefix == '-';
+  while((c = shell_getopt_r(&opt, argc, argv, "+efhmuxBCH")) > 0) {
+    int on = opt.prefix == '-';
 
     switch(c) {
       case 'e': opts.errexit = on; break;
@@ -32,8 +33,8 @@ builtin_set(int argc, char* argv[]) {
 
   sh->opts = opts;
 
-  if(argv[shell_optind])
-    sh_setargs(&argv[shell_optind], 1);
+  if(argv[opt.ind])
+    sh_setargs(&argv[opt.ind], 1);
   else if(byte_count(&opts, sizeof(opts), 0) == sizeof(opts))
     vartab_print(V_DEFAULT);
 

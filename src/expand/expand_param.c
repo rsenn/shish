@@ -114,10 +114,11 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
           }
         }
 #endif
-        struct nargparam arg = {N_ARGPARAM, S_ARG, NULL, NULL, NULL, 0};
+        struct nargparam arg = {
+            N_ARGPARAM, S_ARG | (param->flag & S_VAR), NULL, NULL, param->word, 0};
 
         for(i = r.offset, e = r.offset + r.length; i < e;) {
-          // param->flag &= ~(int)(S_SPECIAL /*| S_VAR*/);
+
           // param->flag |= S_ARG;
           arg.numb = 1 + i;
 

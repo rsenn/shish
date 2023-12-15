@@ -78,13 +78,15 @@ static void
 trap_handler(int sig) {
   trap* tr;
   struct eval e;
-#ifdef DEBUG_OUTPUT
+
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_BUILTIN)
   debug_to(buffer_2);
   debug_s("trap handler ");
   debug_n(sig);
   debug_nl_fl();
   debug_to(&debug_buffer);
 #endif
+
   if(!(tr = trap_find(sig))) {
     sh_exit(1);
     return;
@@ -103,6 +105,7 @@ trap_debug(union node* tree) {
     struct env sh;
     stralloc stra;
     char* args[2] = {0, 0};
+
     stralloc_init(&stra);
     tree_cat(tree, &stra);
     args[0] = stra.s;
@@ -120,6 +123,7 @@ trap_return(int result) {
   if((tr = trap_find(TRAP_RETURN))) {
     struct env sh;
     char* args[2] = {alloc(FMT_ULONG), 0};
+
     args[0][fmt_ulong(args[0], result)] = '\0';
     sh_push(&sh);
     sh_setargs(args, 0);
@@ -137,6 +141,7 @@ trap_exit(int exitcode) {
   if((tr = trap_find(TRAP_EXIT))) {
     struct env sh;
     char* args[2] = {alloc(FMT_ULONG), 0};
+
     args[0][fmt_ulong(args[0], exitcode)] = '\0';
     sh_push(&sh);
     sh_setargs(args, 0);
@@ -149,8 +154,13 @@ trap_exit(int exitcode) {
 
 static void
 trap_install(int sig, union node* tree) {
+  struct eval* e;
   trap* tr;
+
   tr = alloc(sizeof(trap));
+
+  assert(tr);
+
   tr->sig = sig;
   tr->tree = tree;
   tr->next = traps;
@@ -158,17 +168,21 @@ trap_install(int sig, union node* tree) {
   traps = tr;
 
   if((char)sig > 0) {
-    signal(sig, &trap_handler);
-  } else if((unsigned char)sig == TRAP_DEBUG) {
-    struct eval* e = eval_find(E_ROOT);
-    assert(e);
-    e->debug = trap_debug;
-  } else if(sig == TRAP_EXIT || (unsigned char)sig == TRAP_RETURN) {
-    struct eval* e = eval_find(sig ? E_FUNCTION : E_ROOT);
-    // assert(e);
 
-    if(e)
+    signal(sig, &trap_handler);
+
+  } else if((unsigned char)sig == TRAP_DEBUG) {
+    e = eval_find(E_ROOT);
+
+    assert(e);
+
+    e->debug = trap_debug;
+
+  } else if(sig == TRAP_EXIT || (unsigned char)sig == TRAP_RETURN) {
+
+    if((e = eval_find(sig ? E_FUNCTION : E_ROOT)))
       e->destructor = sig ? trap_return : trap_exit;
+
   } else {
     assert(0);
   }
@@ -176,27 +190,29 @@ trap_install(int sig, union node* tree) {
 
 static int
 trap_uninstall(int sig) {
-  trap** trp;
+  trap **ptr, *t;
 
-  for(trp = &traps; *trp; trp = &(*trp)->next) {
-    if((*trp)->sig == sig) {
-      trap* tr = *trp;
-
-      if((char)tr->sig >= 0)
+  for(ptr = &traps; (t = *ptr); ptr = &(*ptr)->next) {
+    if((*ptr)->sig == sig) {
+      if((char)t->sig > 0)
         signal(sig, SIG_DFL);
-      tree_free(tr->tree);
-      *trp = tr->next;
-      alloc_free(tr);
+
+      tree_free(t->tree);
+      *ptr = t->next;
+      alloc_free(t);
+
       return 0;
     }
   }
-#ifdef DEBUG_OUTPUT
+
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_BUILTIN)
   debug_to(buffer_2);
   debug_s("trap_uninstall ");
   debug_n(sig);
   debug_nl_fl();
   debug_to(&debug_buffer);
 #endif
+
   return 1;
 }
 
@@ -222,15 +238,15 @@ builtin_trap(int argc, char* argv[]) {
 
   if(list) {
     const char* name;
-    unsigned char num;
+    unsigned char num, count = 0;
 
-    for(num = TRAP_DEBUG; (name = trap_name(num)); num++) {
-      if(num && (num % 5) == 0)
+    for(num = TRAP_DEBUG; (name = trap_name(num)); num++, count++) {
+      if(count && (count % 5) == 0)
         buffer_putc(fd_out->w, '\n');
 
-      buffer_putulong0(fd_out->w, num, 2);
+      buffer_putulong0(fd_out->w, num, 3);
       buffer_puts(fd_out->w, ") ");
-      buffer_putspad(fd_out->w, name, 8);
+      buffer_putspad(fd_out->w, name, 6);
     }
 
     buffer_putnlflush(fd_out->w);
@@ -296,8 +312,8 @@ builtin_trap(int argc, char* argv[]) {
 
       return 1;
     }
-#ifdef DEBUG_OUTPUT
 
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_BUILTIN)
     debug_to(buffer_2);
     debug_s("builtin_trap ");
     debug_n(signum);
@@ -306,6 +322,7 @@ builtin_trap(int argc, char* argv[]) {
     debug_nl_fl();
     debug_to(&debug_buffer);
 #endif
+
     if(signum != 1) {
       ret = 0;
 

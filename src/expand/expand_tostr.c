@@ -7,5 +7,7 @@ expand_tostr(union node* node, int flags) {
 
   expand_str(node, &sa, flags);
 
+  stralloc_nul(&sa);
+
   return sa.s;
 }

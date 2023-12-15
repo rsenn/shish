@@ -6,11 +6,20 @@
  * ----------------------------------------------------------------------- */
 void
 sh_exit(int retcode) {
+  struct env* s = sh;
+
+#if BUILTIN_TRAP
+  trap_exit(retcode);
+#endif
+
   /* we're in a subshell, jump back where we established it */
   eval_exit(retcode);
 
+  while(s->eval && s->eval->flags & E_FUNCTION)
+    s = s->parent;
+
   /* not in a subshell, exit the process */
-  if(sh == &sh_root) {
+  if(s == &sh_root) {
     if(source)
       source_pop();
 

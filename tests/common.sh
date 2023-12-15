@@ -16,10 +16,11 @@ failure() {
 }
 
 assert_equal() {
+    echo "${3:-"'$1' = '$2'"}" 1>&2
   if test "$1" = "$2"; then
     success
   else
-    echo "${3:-"'$1' != '$2'"}" 1>&2
+  #  echo "${3:-"'$1' != '$2'"}" 1>&2
     failure
   fi
   return $?
@@ -77,8 +78,14 @@ print_stats() {
 }
 
 summary() {
+  R=$?
   print_stats
-  echo "Success" 1>&2
+  if [ "$R" = 0 ]; then
+    echo "Success" 1>&2
+  else
+    echo "Fail: $R" 1>&2
+  fi
+  trap - EXIT
   exit 0
 }
 

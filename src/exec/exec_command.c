@@ -53,6 +53,7 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
 
       // sh_setargs(argv, 0);
       eval_push(&e, E_FUNCTION);
+      sh->eval = &e;
 
       if((ret = setjmp(e.jumpbuf)) == 0) {
         e.jump = 1;
