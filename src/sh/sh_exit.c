@@ -8,7 +8,7 @@ void
 sh_exit(int retcode) {
   struct env* s = sh;
 
-#if BUILTIN_TRAP
+#ifdef BUILTIN_TRAP
   trap_exit(retcode);
 #endif
 
