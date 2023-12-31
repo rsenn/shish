@@ -95,22 +95,14 @@ include(cmake/Builtins.cmake)
 
 check_functions(
   sigaction
-  #sigaddset
-  #sigdelset
-  #sigemptyset
-  #sigfillset
-  sigismember
-  signal
-  sigprocmask
-  sigsuspend)
+  # sigaddset sigdelset sigemptyset sigfillset
+  sigismember signal sigprocmask sigsuspend)
 
 option(NO_TREE_PRINT "Disable tree_print for history" OFF)
 
 option(DEBUG_ALLOC "Debug memory allocations" OFF)
 option(DEBUG_COLOR "Color debug output" OFF)
 option(DEBUG_OUTPUT "Print debug output" ${DEBUG_OUTPUT_DEFAULT})
-option(DEBUG_PARSE "debug parser" OFF)
-option(DEBUG_JOB "debug job control" OFF)
 
 debug_flag(PARSE "debug parser")
 debug_flag(JOB "debug job control")
@@ -118,10 +110,10 @@ debug_flag(BUILTIN "debug builtins")
 
 if(DEBUG_OUTPUT)
   add_definitions(-DDEBUG_OUTPUT=1)
-endif() 
+endif()
 if(DEBUG_COLOR)
   add_definitions(-DDEBUG_COLOR=1)
-endif() 
+endif()
 
 if(DEBUG_ALLOC)
   set(NAME_DEBUG "debug")
@@ -156,7 +148,8 @@ if(BUILD_DEBUG)
   add_definitions(-D_DEBUG)
 endif(BUILD_DEBUG)
 
-include_directories("${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
+include_directories("${CMAKE_CURRENT_BINARY_DIR}/src" "${CMAKE_CURRENT_BINARY_DIR}"
+                    "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # add_definitions(-DHAVE_CONFIG_H=1)
 

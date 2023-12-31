@@ -27,16 +27,16 @@ clamp(int value, int from, int to) {
 }
 
 static inline struct range
-limit(const struct range* r, int from, int to) {
-  struct range ret;
+limit(const struct range* in, int from, int to) {
+  struct range out;
 
-  if(r->offset < 0 && (-r->offset) <= to)
-    ret.offset = to + r->offset;
+  if(in->offset < 0 && (-in->offset) <= to)
+    out.offset = to + in->offset;
   else
-    ret.offset = clamp(r->offset, from, to);
+    out.offset = clamp(in->offset, from, to);
 
-  ret.length = clamp(ret.offset + r->length, from, to) - ret.offset;
-  return ret;
+  out.length = clamp(out.offset + in->length, from, to) - out.offset;
+  return out;
 }
 
 static int
@@ -131,7 +131,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         return n;
       }
 
-        /* $? substitution */
+      /* $? substitution */
       case S_EXITCODE: {
         stralloc_catulong0(&value, sh->exitcode, 0);
         break;
@@ -230,8 +230,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         n = expand_arg(param->word, nptr, flags);
       break;
     }
-    /* if parameter unset (or null) then expand word to it
-       and substitute paramter */
+    /* if parameter unset (or null) then expand word to it and substitute paramter */
     case S_ASGNDEF: {
       if(v)
         n = expand_cat(v, vlen, nptr, flags);
@@ -260,15 +259,14 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       break;
     }
 
-      /* if parameter unset (or null) then substitute null,
-         otherwise substitute word */
+    /* if parameter unset (or null) then substitute null, otherwise substitute word */
     case S_ALTERNAT: {
       if(v)
         n = expand_arg(param->word, nptr, flags);
       break;
     }
 
-      /* remove smallest matching suffix */
+    /* remove smallest matching suffix */
     case S_RSSFX: {
       int i;
       stralloc sa;
@@ -286,7 +284,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       break;
     }
 
-      /* remove largest matching suffix */
+    /* remove largest matching suffix */
     case S_RLSFX: {
       unsigned int i;
       stralloc sa;
@@ -304,7 +302,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       break;
     }
 
-      /* remove smallest matching prefix */
+    /* remove smallest matching prefix */
     case S_RSPFX: {
       unsigned int i;
       stralloc sa;

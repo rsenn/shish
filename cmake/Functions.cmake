@@ -200,12 +200,13 @@ macro(CHECK_FUNCTIONS_DEF)
   endforeach(FUNC ${ARGN})
 endmacro(CHECK_FUNCTIONS_DEF)
 
-
-
 macro(DEBUG_FLAG NAME DESC)
   option(DEBUG_${NAME} "${DESC}" OFF)
 
   if(DEBUG_${NAME})
     add_definitions(-DDEBUG_${NAME}=1)
   endif()
-endmacro(DEBUG_FLAG NAME DESC)
+endmacro(
+  DEBUG_FLAG
+  NAME
+  DESC)

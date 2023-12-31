@@ -1,6 +1,9 @@
 #include "../eval.h"
 #include "../sh.h"
 #include "../source.h"
+#include "builtin_config.h"
+
+int trap_exit(int);
 
 /* exits current subshell, never returns!
  * ----------------------------------------------------------------------- */
@@ -8,7 +11,7 @@ void
 sh_exit(int retcode) {
   struct env* s = sh;
 
-#ifdef BUILTIN_TRAP
+#if BUILTIN_TRAP
   trap_exit(retcode);
 #endif
 

@@ -6,23 +6,22 @@
  * ----------------------------------------------------------------------- */
 void
 expand_str(union node* node, stralloc* sa, int flags) {
-  union node *n = 0, *subarg;
+  union node *n = 0, *m;
 
   /* loop through all parts of the word */
-  for(subarg = (node && node->id == N_ARG) ? node->narg.list : node; subarg;
-      subarg = subarg->next) {
+  for(m = (node && node->id == N_ARG) ? node->narg.list : node; m; m = m->next) {
     int lflags = flags; /* local flags */
 
-    if(subarg->nargstr.flag & S_TABLE)
+    if(m->nargstr.flag & S_TABLE)
       lflags |= X_QUOTED;
 
-    if(subarg->nargstr.flag & S_GLOB)
+    if(m->nargstr.flag & S_GLOB)
       lflags |= X_GLOB;
 
-    assert(subarg->id == N_ARGSTR);
-    assert(subarg->nargstr.stra.s);
+    assert(m->id == N_ARGSTR);
+    assert(m->nargstr.stra.s);
 
-    expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, &n, lflags | X_NOSPLIT);
+    expand_cat(m->nargstr.stra.s, m->nargstr.stra.len, &n, lflags | X_NOSPLIT);
   }
 
   stralloc_move(sa, &n->narg.stra);
