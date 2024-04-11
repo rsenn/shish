@@ -46,6 +46,7 @@ list(
   APPEND
   DEFAULT_BUILTINS
   ${MINIMAL_BUILTINS}
+  help
   type
   echo
   fdtable
