@@ -142,7 +142,7 @@ cfg-diet64() {
 
   export PKG_CONFIG_PATH=/opt/diet/lib-x86_64/pkgconfig
 
-  builddir=build/$host \
+  : ${builddir=build/$host}
   CC="diet-gcc" \
   cfg-diet \
     -DCMAKE_SYSTEM_LIBRARY_PATH=/opt/diet/lib-x86_64 \
@@ -169,7 +169,7 @@ cfg-diet32() {
   
   export PKG_CONFIG_PATH=/opt/diet/lib-i386/pkgconfig
 
-  builddir=build/$host \
+  : ${builddir=build/$host}
   cfg-diet \
     -DCMAKE_SYSTEM_LIBRARY_PATH=/opt/diet/lib-i386 \
     "$@")
@@ -189,7 +189,7 @@ cfg-mingw() {
 
   export TOOLCHAIN PKG_CONFIG_PATH
   
-  builddir=build/$host \
+  : ${builddir=build/$host}
   bindir=$prefix/bin \
   libdir=$prefix/lib \
   cfg \
@@ -205,7 +205,7 @@ cfg-mingw64() {
 cfg-emscripten() {
  (build=$(${CC:-emcc} -dumpmachine | sed 's|-pc-|-|g')
   host=${build/-gnu/-emscriptenlibc}
-  builddir=build/${host%-*}-emscripten
+  : ${builddir=build/${host%-*}-emscripten}
   
   prefix=`which emcc | sed 's|/emcc$|/system|'` 
   libdir=$prefix/lib
@@ -225,7 +225,7 @@ cfg-emscripten() {
 cfg-tcc() {
  (build=$(cc -dumpmachine | sed 's|-pc-|-|g')
   host=${build/-gnu/-tcc}
-  builddir=build/$host
+  : ${builddir=build/$host}
   prefix=/usr
   includedir=/usr/lib/$build/tcc/include
   libdir=/usr/lib/$build/tcc/
@@ -244,7 +244,7 @@ cfg-musl() {
  : ${includedir=$prefix/include/$host}
  : ${libdir=$prefix/lib/$host}
  : ${bindir=$prefix/bin/$host}
-  builddir=build/$host
+ : ${builddir=build/$host}
 
   CC=musl-gcc \
   PKG_CONFIG=musl-pkg-config \
