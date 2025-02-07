@@ -7,7 +7,7 @@
  * ----------------------------------------------------------------------- */
 int
 builtin_return(int argc, char* argv[]) {
-  unsigned int ret = 1;
+  unsigned int ret = 0;
 
   if(argv[1]) {
     if(scan_uint(argv[1], &ret) == 0) {

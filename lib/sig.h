@@ -74,11 +74,11 @@ typedef void sighandler_t_fn(int);
 typedef sighandler_t_fn* sighandler_t_ref;
 
 #ifndef WTERMSIG
-#define WTERMSIG(status)      ((status) & 0x7f)
+#define WTERMSIG(status) ((status)&0x7f)
 #endif
 
 #ifndef WIFSTOPPED
-#define WIFSTOPPED(status)      (((status) & 0xff) == 0x7f)
+#define WIFSTOPPED(status) (((status)&0xff) == 0x7f)
 #endif
 
 #if(!defined(_POSIX_SOURCE) && !defined(__linux__) && !defined(__unix__) && !defined(__wasi__)) || \

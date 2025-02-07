@@ -24,6 +24,11 @@ builtin_chmod(int argc, char* argv[]) {
     }
   }
 
+  if(!argv[shell_optind]) {
+    builtin_errmsg(argv, "missing operand", NULL);
+    return 1;
+  }
+
   p = argv[shell_optind++];
 
   if(!scan_8int(p, &mode)) {}
