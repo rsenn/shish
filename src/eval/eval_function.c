@@ -1,3 +1,4 @@
+#include "../../lib/str.h"
 #include "../tree.h"
 #include "../eval.h"
 
