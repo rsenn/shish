@@ -89,6 +89,37 @@ cfg-diet() {
     "$@")
 }
 
+cfg-diet64 () 
+{ 
+    ( build=$(gcc -dumpmachine | sed 's|-pc-|-|g');
+    host=${build%%-*}-linux-diet;
+    host=x86_64-${host#*-};
+    export prefix=/opt/diet;
+    builddir=build/$host PKG_CONFIG_PATH=/opt/diet/lib-x86_64/pkgconfig:/usr/lib/diet/lib-x86_64/pkgconfig CC="diet-gcc" cfg-diet "$@" )
+}
+
+cfg-diet32 () 
+{ 
+    ( build=$(gcc -dumpmachine | sed 's|-pc-|-|g');
+    host=${build%%-*}-linux-diet;
+    host=i686-${host#*-};
+    if type diet32-clang 2> /dev/null > /dev/null; then
+        CC="diet32-clang";
+        export CC;
+    else
+        if type diet32-gcc 2> /dev/null > /dev/null; then
+            CC="diet32-gcc";
+            export CC;
+        else
+            CC="gcc";
+            launcher="/opt/diet/bin-i386/diet";
+            CFLAGS="-m32";
+            export CC launcher CFLAGS;
+        fi;
+    fi;
+    export prefix=/opt/diet
+    builddir=build/$host PKG_CONFIG_PATH=/opt/diet/lib-i386/pkgconfig:/usr/lib/diet/lib-i386/pkgconfig cfg-diet "$@" )
+}
 
 cfg-mingw() {
  (: ${build=$(gcc -dumpmachine)}
