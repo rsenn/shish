@@ -9,6 +9,7 @@
 #include "../../lib/scan.h"
 #include "../../lib/str.h"
 #include <sys/stat.h>
+#include <stdint.h>
 #include "../../lib/windoze.h"
 
 #if WINDOWS_NATIVE
