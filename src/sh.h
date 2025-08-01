@@ -28,11 +28,11 @@ struct vartab;
 
 /*#define SH_INTERACTIVE 0x0001*/
 
-struct __attribute__((__packed__)) arg {
+struct arg {
   char** v;
-  unsigned int c;
+   int c;
   int a;          /* arguments alloced? */
-  unsigned int s; /* shift count */
+   int s; /* shift count */
 };
 
 /*enum {
@@ -43,9 +43,9 @@ struct __attribute__((__packed__)) arg {
   SH_NOINTERACTIVE = 0x1000
 };*/
 
-/*union __attribute__((__packed__)) shopt {
+/*union shopt {
   unsigned flags : 5;*/
-struct __attribute__((__packed__)) shopt {
+struct shopt {
   unsigned errexit : 1;     /* -e */
   unsigned noglob : 1;      /* -f */
   unsigned hashall : 1;     /* -h */

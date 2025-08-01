@@ -12,8 +12,9 @@ debug_xlong(const char* msg, uint64 l, int depth) {
   if(msg)
     debug_field(msg, depth);
   debug_s(COLOR_GREEN);
-  debug_s("0x");
+  debug_s("\"0x");
   debug_xn(l);
+  debug_s("\"");
   debug_s(COLOR_NONE);
   debug_fl();
 }

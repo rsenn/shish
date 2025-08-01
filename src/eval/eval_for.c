@@ -3,6 +3,7 @@
 #include "../tree.h"
 #include "../var.h"
 #include "../fdtable.h"
+#include "../../lib/str.h"
 
 /* evaluate for-loop (3.9.4.2)
  * ----------------------------------------------------------------------- */
@@ -11,8 +12,18 @@ eval_for(struct eval* e, struct nfor* nfor) {
   struct eval en;
   union node *node, *args = NULL;
 
-  if(nfor->args)
+  if(nfor->args) {
     expand_args(nfor->args, &args, 0);
+  } else {
+     union node** nptr = &args;
+
+    for(int i = 0; i < sh->arg.c; i++) {
+      expand_cat(sh->arg.v[i], str_len(sh->arg.v[i]), nptr, X_QUOTED);
+
+      if(*nptr)
+        nptr = &(*nptr)->next;
+    }
+  }
 
   eval_push(&en, E_LOOP);
 
