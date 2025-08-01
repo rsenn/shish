@@ -410,6 +410,7 @@ const char* node2str(const union node n);
 #ifdef BUFFER_H
 void tree_print(union node*, buffer*);
 void tree_printlist(union node* node, const char* sep, buffer* b);
+void tree_print_out(union node*);
 void tree_show(union node* node);
 #endif
 

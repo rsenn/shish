@@ -100,7 +100,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
         ret = 0;
       } else {
         job_wait(NULL, pid, &status);
-        job_printstatus(pid, status);
+        // job_printstatus(pid, status);
 
         ret = status >> 8;
 

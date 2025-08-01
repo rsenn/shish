@@ -14,8 +14,10 @@ eval_loop(struct eval* e, struct nloop* nloop) {
 
   en.jump = 1;
 
-  if(setjmp(en.jumpbuf) & 1)
+  if(setjmp(en.jumpbuf) & 1) {
+    eval = e;
     return ret;
+  }
 
   while((ret = eval_tree(e, nloop->test, E_LIST) == retcode)) {
     /* evaluate loop body */

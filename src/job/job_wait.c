@@ -38,7 +38,8 @@ job_wait(struct job* j, pid_t pid, int* status) {
       if(ret == j->pgrp)
         *status = s;
 
-      job_printstatus(ret, s);
+      if(!WAIT_IF_EXITED(s))
+        job_printstatus(ret, s);
     }
 
     char ch = job_current() == j ? '+' : (struct job*)job_pointer == j ? '-' : ' ';
