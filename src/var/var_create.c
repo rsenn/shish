@@ -30,7 +30,6 @@ var_create(const char* s, int flags) {
   }
 
   if(!(flags & V_LOCAL)) {
-
     while(tab->function)
       tab = tab->parent;
 
