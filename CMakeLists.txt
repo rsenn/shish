@@ -165,11 +165,14 @@ list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "(sh_fmt\\.c|sh_parse2ast\\.c|sh_init
 if(DEBUG_ALLOC)
   list(
     APPEND
+    LIBOWFAT_SOURCES
+    lib/alloc/debug_error.c
+    lib/alloc/debug_alloc.c
+    lib/alloc/debug_free.c
+    lib/alloc/debug_realloc.c)
+  list(
+    APPEND
     LIBSHELL_SOURCES
-    src/debug/debug_alloc.c
-    src/debug/debug_free.c
-    src/debug/debug_realloc.c
-    src/debug/debug_error.c
     src/debug/debug_memory.c)
 endif(DEBUG_ALLOC)
 if(DEBUG_OUTPUT)
@@ -177,7 +180,7 @@ if(DEBUG_OUTPUT)
     APPEND
     LIBSHELL_SOURCES
     src/debug/debug_char.c
-    src/debug/debug_error.c
+
     # src/debug/debug_node.c
     src/debug/debug_ptr.c
     src/debug/debug_space.c

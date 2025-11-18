@@ -1,18 +1,17 @@
 #define DEBUG_NOCOLOR 1
-#include "../debug.h"
+#include "../../src/debug.h"
 #include <assert.h>
 
 #ifdef DEBUG_ALLOC
 
-#include "../fd.h"
-#include "../../lib/shell.h"
+#include "../shell.h"
 
 void
 debug_error(const char* file, unsigned int line, const char* s) {
-  debug_s(file);
-  debug_c(':');
-  debug_n(line);
-  debug_s(": ");
+  buffer_puts(shell_buff, file);
+  buffer_putc(shell_buff, ':');
+  buffer_putlong(shell_buff, line);
+  buffer_puts(shell_buff, ": ");
   shell_error(s);
 
 #ifdef __GNUC__
