@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 
 set(PACKAGE_NAME shish)
