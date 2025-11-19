@@ -21,7 +21,7 @@ sh_exit(int retcode) {
 
   while(s->eval && s->eval->flags & E_FUNCTION)
     s = s->parent;
-  
+
   stralloc_free(&sh->cwd);
 
 #ifdef DEBUG_ALLOC
