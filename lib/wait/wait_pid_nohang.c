@@ -20,7 +20,7 @@ wait_pid_nohang(int pid, int* wstat) {
   if(exitcode == STILL_ACTIVE)
     return -1;
   return pid;
-//#warning No windows implementation
+// #warning No windows implementation
 #else
   int w = 0;
   int r = 0;

@@ -48,13 +48,13 @@
 
 #define SIG_ALL (~(sigset_type)0) /* All signals.    */
 
-#define sig_bit(n) (1 << ((n)-1))
+#define sig_bit(n) (1 << ((n) - 1))
 #define sig_emptyset(s) (*(s) = 0)
 #define sig_fillset(s) (*(s) = ~(0))
 
 #define sig_addset(s, n) *(s) |= sig_bit(n)
 #define sig_delset(s, n) *(s) &= ~sig_bit(n)
-#define sig_ismember(s, n) ((*(s)&sig_bit(n)) == sig_bit(n))
+#define sig_ismember(s, n) ((*(s) & sig_bit(n)) == sig_bit(n))
 
 #include <errno.h>
 
@@ -74,14 +74,15 @@ typedef void sighandler_t_fn(int);
 typedef sighandler_t_fn* sighandler_t_ref;
 
 #ifndef WTERMSIG
-#define WTERMSIG(status) ((status)&0x7f)
+#define WTERMSIG(status) ((status) & 0x7f)
 #endif
 
 #ifndef WIFSTOPPED
-#define WIFSTOPPED(status) (((status)&0xff) == 0x7f)
+#define WIFSTOPPED(status) (((status) & 0xff) == 0x7f)
 #endif
 
-#if(!defined(_POSIX_SOURCE) && !defined(__linux__) && !defined(__unix__) && !defined(__wasi__)) || \
+#if (!defined(_POSIX_SOURCE) && !defined(__linux__) && !defined(__unix__) && \
+     !defined(__wasi__)) || \
     (defined(_WIN32) && !defined(__MSYS__) && !defined(__CYGWIN__))
 typedef unsigned long long sigset_t;
 

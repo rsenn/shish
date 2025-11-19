@@ -15,7 +15,7 @@ eval_for(struct eval* e, struct nfor* nfor) {
   if(nfor->args) {
     expand_args(nfor->args, &args, 0);
   } else {
-     union node** nptr = &args;
+    union node** nptr = &args;
 
     for(int i = 0; i < sh->arg.c; i++) {
       expand_cat(sh->arg.v[i], str_len(sh->arg.v[i]), nptr, X_QUOTED);

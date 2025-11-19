@@ -106,7 +106,7 @@ parse_simpletok(struct parser* p) {
         tok = T_SEMI;
 
         /* check if the next char is the same */
-      checkdouble : {
+      checkdouble: {
         char c2;
 
         /* advance buffer position now, but not later */

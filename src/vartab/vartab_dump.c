@@ -23,23 +23,18 @@ vartab_dump(struct vartab* vartab, int argc, char* argv[]) {
   unsigned int i;
   struct var* var;
 
-  buffer_puts(
-      fd_out->w,
-      /* "ADDRESS" CURSOR_HORIZONTAL_ABSOLUTE(19) */
-      "NAME" CURSOR_HORIZONTAL_ABSOLUTE(25) "VALUE" CURSOR_HORIZONTAL_ABSOLUTE(
-          50) "NLEN "
-              "OFFS VLEN LEV BUCK" CURSOR_HORIZONTAL_ABSOLUTE(
-                  78) "LEXHASH" CURSOR_HORIZONTAL_ABSOLUTE(95) "RNDHAS"
-                                                               "H" CURSOR_HORIZONTAL_ABSOLUTE(
-                                                                   112) "FLAGS"
-                                                                        "\n");
+  buffer_puts(fd_out->w,
+              /* "ADDRESS" CURSOR_HORIZONTAL_ABSOLUTE(19) */
+              "NAME              VALUE" CURSOR_HORIZONTAL_ABSOLUTE(
+                  34) "NLEN OFFS VLEN LEV BUCK     LEXHASH          "
+                      "RNDHASH" CURSOR_HORIZONTAL_ABSOLUTE(92) "FLAGS\n");
 
   if(vartab) {
     for(; vartab; vartab = vartab->parent) {
-      buffer_puts(fd_out->w, "--- level ");
-      buffer_putulong(fd_out->w, vartab->level);
+      buffer_puts(fd_out->w, "--- level");
+      buffer_putulong0(fd_out->w, vartab->level, 2);
       buffer_putc(fd_out->w, ' ');
-      buffer_putns(fd_out->w, "-" /*"―"*/, 99 + sizeof(var) * 2);
+      buffer_putns(fd_out->w, "-", 86);
       buffer_putnlflush(fd_out->w);
 
       for(i = 0; i < (unsigned int)VARTAB_BUCKETS; i++) {

@@ -15,7 +15,7 @@
 #endif
 
 #define _FILE_OFFSET_BITS 64
-//#define _LARGEFILE64_SOURCE 1
+// #define _LARGEFILE64_SOURCE 1
 #define _LARGEFILE_SOURCE 1
 
 #include "../buffer.h"
@@ -68,7 +68,7 @@ is_link(const char* path) {
   return S_ISLNK(st.st_mode);
 }
 #endif
-//#define lstat lstat64
+// #define lstat lstat64
 #define issep(c) ((c) == '/' || (c) == '\\')
 /* canonicalizes a <path> and puts it into <sa>
  *

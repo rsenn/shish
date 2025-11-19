@@ -8,12 +8,12 @@ void
 fdtable_dump(buffer* b) {
   int i;
 
-  buffer_puts(b, "  fd name\t\t\t\tlevel  e  mode\t\t\t\t   buffer(s)\n");
+  buffer_puts(b, "  fd name             level  e  mode                      buffer(s)\n");
 
   fdtable_foreach(i) {
     struct fd* fd;
     buffer_puts(b, COLOR_DARKGRAY);
-    buffer_putns(b, "-", 138);
+    buffer_putns(b, "-", 108);
     buffer_puts(b, COLOR_NONE);
     buffer_putnlflush(b);
 

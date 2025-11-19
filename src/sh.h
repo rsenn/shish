@@ -30,9 +30,9 @@ struct vartab;
 
 struct arg {
   char** v;
-   int c;
-  int a;          /* arguments alloced? */
-   int s; /* shift count */
+  int c;
+  int a; /* arguments alloced? */
+  int s; /* shift count */
 };
 
 /*enum {

@@ -34,11 +34,11 @@ buffer_dump(buffer* out, buffer* b) {
 
   buffer_puts(out, "[ ");
   buffer_puts(out, YELLOW "p" CYAN "=" MAGENTA);
-  buffer_putulong0(out, b->p, 3);
+  buffer_putulong(out, b->p);
   buffer_puts(out, NONE ", " YELLOW "n" CYAN "=" MAGENTA);
-  buffer_putulong0(out, b->n, 3);
+  buffer_putulong(out, b->n);
   buffer_puts(out, NONE ", " YELLOW "a" CYAN "=" MAGENTA);
-  buffer_putulong0(out, b->a, 3);
+  buffer_putulong(out, b->a);
   buffer_puts(out, NONE ", " YELLOW "x" CYAN "@" YELLOW "p" CYAN "=" NONE);
 
   if(b->p > 6) {
@@ -64,19 +64,19 @@ buffer_dump(buffer* out, buffer* b) {
   /* buffer_putspace(out); */
 
   if((void*)b->op == (void*)&read)
-    buffer_puts(out, "<read>  ");
+    buffer_puts(out, "<read>");
   else if((void*)b->op == (void*)&write)
-    buffer_puts(out, "<write> ");
+    buffer_puts(out, "<write>");
   else if((void*)b->op == (void*)&buffer_dummyreadmmap)
-    buffer_puts(out, "<mmap>  ");
+    buffer_puts(out, "<mmap>");
   /*  else if(b->op == (void*)&stralloc_write)
       buffer_puts(out, "<sa-wr> ");*/
   else if(b->op == (buffer_op_proto*)NULL)
-    buffer_puts(out, "NULL    ");
+    buffer_puts(out, "NULL");
   else
     /* n = fmt_xlong(xlong, (int64)(intptr_t)b->op); */
     buffer_putptr(out, (void*)b->op); /* xlong, n); */
 
   buffer_puts(out, " ]");
-  buffer_putnlflush(out);
+  buffer_flush(out);
 }

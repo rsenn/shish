@@ -1,6 +1,6 @@
 #include "../fmt.h"
 
-#define tohex(c) (char)((c) >= 10 ? (c)-10 + 'a' : (c) + '0')
+#define tohex(c) (char)((c) >= 10 ? (c) - 10 + 'a' : (c) + '0')
 
 size_t
 fmt_xlonglong(char* dest, uint64 i) {

@@ -7,7 +7,7 @@ void
 fd_dumplist(buffer* b) {
   int i;
 
-  buffer_puts(b, "  fd name\t\t\t\tlevel  e  mode\t\t\t\t   buffer(s)\n");
+  buffer_puts(b, "  fd name             level  e  mode                      buffer(s)\n");
   buffer_putnc(b, '-', 108);
   buffer_putnlflush(b);
 
