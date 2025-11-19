@@ -34,7 +34,7 @@ builtin_fg(int argc, char* argv[]) {
       j = job_find(argv[i]);
 
       if(!j) {
-        builtin_errmsg(argv, argv[i], "no such j");
+        builtin_errmsg(argv, argv[i], "no such job");
         return 1;
       }
 
