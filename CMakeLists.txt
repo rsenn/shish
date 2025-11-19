@@ -1,11 +1,12 @@
+project(${PACKAGE_NAME} C)
+
 cmake_minimum_required(VERSION 3.5)
+
 set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 
 set(PACKAGE_NAME shish)
 set(PACKAGE_VERSION 0.8)
 set(PACKAGE_TARNAME "${PACKAGE_NAME}-${PACKAGE_VERSION}")
-
-project(${PACKAGE_NAME} C)
 
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
