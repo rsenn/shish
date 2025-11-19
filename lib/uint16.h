@@ -18,7 +18,7 @@
 typedef __UINT16_TYPE__ uint16;
 typedef __INT16_TYPE__ int16;
 
-#elif defined(___int16_t_defined) || defined(__BIT_TYPES_DEFINED__)
+#elif defined(___int16_t_defined) //|| defined(__BIT_TYPES_DEFINED__)
 typedef u_int16_t uint16;
 typedef int16_t int16;
 

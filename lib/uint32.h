@@ -18,7 +18,7 @@
 typedef __UINT32_TYPE__ uint32;
 typedef __INT32_TYPE__ int32;
 
-#elif defined(___int32_t_defined) || defined(__BIT_TYPES_DEFINED__)
+#elif defined(___int32_t_defined) //|| defined(__BIT_TYPES_DEFINED__)
 typedef u_int32_t uint32;
 typedef int32_t int32;
 
