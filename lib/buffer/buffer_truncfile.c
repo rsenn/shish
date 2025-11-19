@@ -1,6 +1,7 @@
 #include "../windoze.h"
 #include "../buffer.h"
 #include "../open.h"
+#include "../alloc.h"
 
 #if WINDOWS_NATIVE
 #ifdef _MSC_VER
@@ -25,7 +26,7 @@ buffer_truncfile(buffer* b, const char* fn) {
   b->p = 0;
   b->n = 0;
   b->a = BUFFER_OUTSIZE;
-  b->x = malloc(b->a);
+  b->x = alloc(b->a);
   b->op = (buffer_op_proto*)(void*)&write;
   b->deinit = buffer_free;
   return 0;

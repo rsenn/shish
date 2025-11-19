@@ -94,7 +94,7 @@ main(int argc, char** argv, char** envp) {
   #ifdef HAVE_ALLOCA
     if(!(envvars = alloca(sizeof(struct var) * c)))
   #endif
-      envvars = malloc(sizeof(struct var) * c);
+      envvars = alloc(sizeof(struct var) * c);
 
     for(c = 0; envp[c]; c++) var_import(envp[c], V_EXPORT, &envvars[c]);
   */

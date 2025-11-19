@@ -14,32 +14,50 @@ debug_memory(void) {
   char buf[FMT_XLONG + FMT_LONG];
   unsigned long n;
 
-  buffer_puts(fd_out->w, "ptr       size file                     line\n");
-  buffer_puts(fd_out->w, "--------------------------------------------\n");
+  buffer_puts(fd_out->w, "ptr                size    file:line\n");
+  buffer_puts(fd_out->w, "----------------------------------------------------------------\n");
 
   debug_memory_total = 0;
 
   for(ch = debug_heap; ch; ch = ch->next) {
     /* ptr */
     n = fmt_xlonglong(buf, (unsigned long)&ch[1]);
-    buffer_putnspace(fd_out->w, 8 - n);
+    buffer_putnspace(fd_out->w, 16 - n);
     buffer_put(fd_out->w, buf, n);
     buffer_putspace(fd_out->w);
 
     /* size */
     n = fmt_ulong(buf, ch->size);
-    buffer_putnspace(fd_out->w, 5 - n);
+    int m = (9 - n + 1) / 2;
+    buffer_putnspace(fd_out->w, m);
     buffer_put(fd_out->w, buf, n);
+    buffer_putnspace(fd_out->w, (9 - n) - m);
 
     /* file */
+    const char* f = ch->file;
+
     n = str_len(ch->file);
+
+    for(int i = 0; i < n; i++) {
+      if(!str_diffn(f + i, "/shish", 6)) {
+        f += i;
+        f++;
+
+        while(*f && *f != '/')
+          f++;
+        f++;
+        break;
+      }
+    }
     buffer_putspace(fd_out->w);
-    buffer_put(fd_out->w, ch->file, n);
-    buffer_putnspace(fd_out->w, 24 - n);
+    buffer_puts(fd_out->w, f);
+    n = str_len(f);
+    // buffer_putnspace(fd_out->w, 36 - n);
+    buffer_putc(fd_out->w, ':');
 
     /* line */
     n = fmt_ulong(buf, ch->line);
-    buffer_putnspace(fd_out->w, 5 - n);
+    // buffer_putnspace(fd_out->w, 5 - n);
     buffer_put(fd_out->w, buf, n);
 
     buffer_putnlflush(fd_out->w);
@@ -47,7 +65,7 @@ debug_memory(void) {
     debug_memory_total += ch->size;
   }
 
-  buffer_puts(fd_out->w, "--------------------------------------------\n");
+  buffer_puts(fd_out->w, "----------------------------------------------------------------\n");
   buffer_puts(fd_out->w, "total allocated: ");
   n = fmt_ulong(buf, debug_memory_total);
   buffer_put(fd_out->w, buf, n);

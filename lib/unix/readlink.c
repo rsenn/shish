@@ -1,5 +1,6 @@
 #include "../windoze.h"
 #include "../typedefs.h"
+#include "../alloc.h"
 
 #if WINDOWS_NATIVE
 #include "../ioctlcmd.h"
@@ -17,7 +18,7 @@
 #endif
 
 #ifndef Newx
-#define Newx(v, n, t) v = (t*)malloc((n));
+#define Newx(v, n, t) v = (t*)alloc((n));
 #endif
 
 static BOOL
