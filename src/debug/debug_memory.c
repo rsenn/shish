@@ -15,12 +15,13 @@ debug_memory(void) {
   unsigned long n;
 
   buffer_puts(fd_out->w, "ptr                size    file:line\n");
-  buffer_puts(fd_out->w, "----------------------------------------------------------------\n");
+  buffer_puts(fd_out->w, "-------------------------------------------------------------------\n");
 
   debug_memory_total = 0;
 
   for(ch = debug_heap; ch; ch = ch->next) {
     /* ptr */
+    buffer_puts(fd_out->w, "*0x");
     n = fmt_xlonglong(buf, (unsigned long)&ch[1]);
     buffer_putnspace(fd_out->w, 16 - n);
     buffer_put(fd_out->w, buf, n);
