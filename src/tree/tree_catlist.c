@@ -1,4 +1,6 @@
 #include "../tree.h"
+#include "../../lib/alloc.h"
+#include "../../lib/stralloc.h"
 #include "../../lib/byte.h"
 #include "../../lib/scan.h"
 
