@@ -29,7 +29,6 @@ void byte_copy(void* out, size_t len, const void* in);
  * ... and in[0] to out[0] */
 void byte_copyr(void* out, size_t len, const void* in);
 
-
 /* byte_diff returns negative, 0, or positive, depending on whether the
  * string a[0], a[1], ..., a[len-1] is lexicographically smaller
  * than, equal to, or greater than the string b[0], b[1], ...,
@@ -59,12 +58,14 @@ size_t byte_ccopy(void*, size_t count, const void* src, char c);
 size_t byte_count(const void*, size_t, char c);
 
 #if !LINK_STATIC
-#define byte_copy(o,n,i) memcpy((o),(i),(n))
-#define byte_copyr(o,n,i) memmove((o),(i),(n))
-#define byte_diff(o,n,i) memcmp((o),(i),(n))
-#define byte_equal(o,n,i) (!memcmp((o),(i),(n)))
-#define byte_zero(o,n) memset((o), 0, (n))
-#define byte_fill(o,n,c) memset((o),(c),(n))
+#include <string.h>
+
+#define byte_copy(o, n, i) memcpy((o), (i), (n))
+#define byte_copyr(o, n, i) memmove((o), (i), (n))
+#define byte_diff(o, n, i) memcmp((o), (i), (n))
+#define byte_equal(o, n, i) (!memcmp((o), (i), (n)))
+#define byte_zero(o, n) memset((o), 0, (n))
+#define byte_fill(o, n, c) memset((o), (c), (n))
 #endif
 
 #endif

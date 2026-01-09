@@ -1,6 +1,7 @@
 #undef __dietlibc__
 #include "../str.h"
 
+#if LINK_STATIC
 size_t
 str_len(const char* in) {
   register const char* t = in;
@@ -12,3 +13,4 @@ str_len(const char* in) {
   }
   return t - in;
 }
+#endif

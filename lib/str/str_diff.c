@@ -5,6 +5,7 @@
  * equal to, or greater than the string b[0], b[1], ..., b[m-1]=='\0'.
  * When the strings are different, str_diff does not read bytes past the
  * first difference. */
+#if LINK_STATIC
 int
 str_diff(const char* a, const char* b) {
   const unsigned char* s = (const unsigned char*)a;
@@ -22,3 +23,4 @@ str_diff(const char* a, const char* b) {
   }
   return j;
 }
+#endif

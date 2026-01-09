@@ -1,5 +1,6 @@
 #include "../str.h"
 
+#if LINK_STATIC
 int
 str_case_diff(const char* p1, const char* p2) {
   int x;
@@ -32,3 +33,4 @@ str_case_diff(const char* p1, const char* p2) {
   }
   return x - y;
 }
+#endif

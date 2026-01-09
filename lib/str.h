@@ -53,4 +53,14 @@ size_t str_rchrs(const char*, char needles[], size_t nn);
 
 #define str_containsc(s, ch) (((s)[str_chr((s), (ch))]) != 0)
 
+#if !LINK_STATIC
+#include <string.h>
+
+#define str_len(s) strlen((s))
+#define str_diff(a, b) strcmp((a), (b))
+#define str_diffn(a, b, n) strncmp((a), (b), (n))
+#define str_case_diff(a, b) strcasecmp((a), (b))
+#define str_case_diffn(a, b, n) strncasecmp((a), (b), (n))
+#endif
+
 #endif
