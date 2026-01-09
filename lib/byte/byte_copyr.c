@@ -2,6 +2,7 @@
 
 /* byte_copyr copies in[len - 1] to out[len - 1], in[len - 2] to out[len - 2],
  * ... and in[0] to out[0] */
+#if LINK_STATIC
 void
 byte_copyr(void* out, size_t len, const void* in) {
   char* s = (char*)out + len;
@@ -16,3 +17,4 @@ byte_copyr(void* out, size_t len, const void* in) {
     *s = *u;
   }
 }
+#endif

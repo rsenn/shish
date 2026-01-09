@@ -5,6 +5,7 @@
  * than, equal to, or greater than the string one[0], one[1], ...,
  * one[len - 1]. When the strings are different, byte_diff does not read
  * bytes past the first difference. */
+#if LINK_STATIC
 int
 byte_diff(const void* a, size_t len, const void* b) {
 #if 0
@@ -31,3 +32,4 @@ for(;;) {
   return 0;
 #endif
 }
+#endif

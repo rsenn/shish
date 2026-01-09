@@ -1,6 +1,7 @@
 #include "../byte.h"
 
 /* byte_zero sets the bytes out[0], out[1], ..., out[len - 1] to 0 */
+#if LINK_STATIC
 void
 byte_zero(void* out, size_t len) {
 #if 1
@@ -24,3 +25,4 @@ byte_zero(void* out, size_t len) {
   }
 #endif
 }
+#endif

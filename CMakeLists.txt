@@ -73,6 +73,8 @@ option(LINK_STATIC "Link executables statically" OFF)
 
 if(LINK_STATIC)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+
+  add_definitions(-DLINK_STATIC=1)
 endif(LINK_STATIC)
 
 set(ENABLE_SHARED OFF)
