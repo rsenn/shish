@@ -4,7 +4,7 @@
 #include <sys/ioctl.h>
 #include <termios.h>
 
-struct winsize term_size;
+struct winsize term_size={0,0};
 #endif
 
 /* get window size on a resize interrupt

@@ -1,7 +1,10 @@
+#include <sys/ioctl.h>
+#include <termios.h>
 #include "../builtin.h"
 #include "../fdtable.h"
 #include "../../lib/str.h"
 #include "../var.h"
+#include "../term.h"
 #include "../../lib/scan.h"
 
 static void
@@ -17,7 +20,6 @@ int
 builtin_help(int argc, char* argv[]) {
   size_t i, maxlen = 0, rows, offset;
   unsigned int cols;
-  const char* vcols;
 
   for(i = 0; builtin_table[i].name; i++) {
     size_t len = str_len(builtin_table[i].name) + 1 + str_len(builtin_table[i].args);
@@ -27,8 +29,7 @@ builtin_help(int argc, char* argv[]) {
 
   rows = (i + 1) >> 1;
 
-  if((vcols = var_get("COLUMNS", &offset)))
-    if(scan_uint(&vcols[offset], &cols))
+  if((cols = term_size.ws_col))
       maxlen = (cols / 2) - 1;
 
   for(i = 0; i < rows; i++) {

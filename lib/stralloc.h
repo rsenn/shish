@@ -210,7 +210,7 @@ int stralloc_readydebug(const char* file, unsigned int line, stralloc* sa, unsig
 int stralloc_readyplusdebug(const char* file, unsigned int line, stralloc* sa, unsigned long len);
 int stralloc_truncdebug(const char* file, unsigned int line, stralloc* sa, unsigned long int n);
 
-#define stralloc_free(sa) stralloc_freedebug(__FILE__, __LINE__, (sa)) 
+#define stralloc_free(sa) stralloc_freedebug(__FILE__, __LINE__, (sa))
 #define stralloc_ready(sa, n) stralloc_readydebug(__FILE__, __LINE__, (sa), (n))
 #define stralloc_readyplus(sa, n) stralloc_readyplusdebug(__FILE__, __LINE__, (sa), (n))
 #define stralloc_trunc(sa, n) stralloc_truncdebug(__FILE__, __LINE__, (sa), (n))
