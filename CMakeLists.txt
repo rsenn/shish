@@ -1,4 +1,4 @@
-project(${PACKAGE_NAME} C)
+project(shish C)
 
 cmake_minimum_required(VERSION 3.5)
 
