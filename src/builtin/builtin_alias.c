@@ -9,7 +9,7 @@
 #include "../fdtable.h"
 
 #ifndef offsetof
-#define offsetof(type, field) ((size_t)&((type*)0)->field)
+#define offsetof(type, field) ((size_t) & ((type*)0)->field)
 #endif
 
 static int

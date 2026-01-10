@@ -37,9 +37,9 @@ typedef int64_t int64;
 
 #if !defined(NO_UINT64_MACROS)
 
-#if (defined(__i386__) || defined(_M_IX86) || defined(_X86_) || defined(__x86_64__) || \
-     defined(_M_AMD64) || defined(__LITTLE_ENDIAN__) || (BYTE_ORDER == _LITTLE_ENDIAN) || \
-     defined(_AMD64_) || defined(I_X86_))
+#if(defined(__i386__) || defined(_M_IX86) || defined(_X86_) || defined(__x86_64__) || \
+    defined(_M_AMD64) || defined(__LITTLE_ENDIAN__) || (BYTE_ORDER == _LITTLE_ENDIAN) || \
+    defined(_AMD64_) || defined(I_X86_))
 
 inline static uint64
 uint64_get(const void* ptr) {

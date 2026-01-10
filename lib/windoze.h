@@ -1,11 +1,11 @@
 #ifndef WINDOZE_H
 #define WINDOZE_H 1
 
-#if (defined(WIN32) || defined(__MINGW32__)) && !defined(_WIN32)
+#if(defined(WIN32) || defined(__MINGW32__)) && !defined(_WIN32)
 #define _WIN32 1
 #endif
 
-#if (defined(WIN64) || defined(__MINGW64__)) && !defined(_WIN64)
+#if(defined(WIN64) || defined(__MINGW64__)) && !defined(_WIN64)
 #define _WIN64 1
 #endif
 

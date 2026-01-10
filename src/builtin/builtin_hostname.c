@@ -41,7 +41,7 @@ builtin_hostname(int argc, char* argv[]) {
       return 0;
 
 #if defined(HAVE_SETHOSTNAME) || !WINDOWS_NATIVE
-    /* set the supplied hostname */
+      /* set the supplied hostname */
 #if !WINDOWS_NATIVE
     if(sethostname(argv[shell_optind], n))
 #else

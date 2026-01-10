@@ -14,6 +14,6 @@ buffer_mmapread_fd(buffer* b, int fd) {
   b->op = (buffer_op_proto*)&buffer_dummyreadmmap;
 
   if(b->n)
-    b->deinit = (void (*)())&buffer_munmap; /*    b->todo=MUNMAP; */
+    b->deinit = (void (*)()) & buffer_munmap; /*    b->todo=MUNMAP; */
   return 0;
 }

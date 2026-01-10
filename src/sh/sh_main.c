@@ -157,7 +157,7 @@ main(int argc, char** argv, char** envp) {
         break;
     }
 
-    /* set up the source fd (where the shell reads from) */
+      /* set up the source fd (where the shell reads from) */
 #ifdef HAVE_ALLOCA
   fd = fd_alloc();
   fd_push(fd, STDSRC_FILENO, FD_READ);

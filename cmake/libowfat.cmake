@@ -20,7 +20,7 @@ if(NOT HAVE_LIBOWFAT)
 
   list(APPEND ALL_SOURCES ${LIBOWFAT_SOURCES})
 
-  add_library(libowfat STATIC ${LIBOWFAT_SOURCES})
+  add_library(libowfat STATIC ${LIBOWFAT_SOURCES} ${LIBOWFAT_HEADERS})
   set_target_properties(libowfat PROPERTIES OUTPUT_NAME owfat)
 
   set(LIBOWFAT_LIBRARY

@@ -8,7 +8,7 @@ int
 buffer_prefetch(buffer* b, size_t n) {
   if(b->p && b->p + n >= b->a) {
     if((buffer_op_proto*)b->op == (buffer_op_proto*)(void*)&buffer_dummyreadmmap ||
-       b->deinit == (void (*)())&buffer_munmap)
+       b->deinit == (void (*)()) & buffer_munmap)
       return b->n - b->p;
     byte_copy(b->x, b->n - b->p, &b->x[b->p]);
     b->n -= b->p;

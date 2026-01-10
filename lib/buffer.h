@@ -25,9 +25,9 @@ typedef struct buffer {
 } buffer;
 
 #define BUFFER_INIT(op, fd, buf, len) \
-  {(buf), 0, 0, (len), (buffer_op_proto*)(void*)(op), NULL, NULL, (fd)}
+  { (buf), 0, 0, (len), (buffer_op_proto*)(void*)(op), NULL, NULL, (fd) }
 #define BUFFER_INIT_FREE(op, fd, buf, len) \
-  {(buf), 0, 0, (len), (buffer_op_proto*)(void*)(op), NULL, buffer_free, (fd)}
+  { (buf), 0, 0, (len), (buffer_op_proto*)(void*)(op), NULL, buffer_free, (fd) }
 #define BUFFER_INIT_READ(op, fd, buf, len) BUFFER_INIT(op, fd, buf, len) /*obsolete*/
 #define BUFFER_INSIZE 65535
 #define BUFFER_OUTSIZE 32768
