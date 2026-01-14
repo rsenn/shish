@@ -112,7 +112,7 @@ endfunction(
   CURRENT_LIST_FILE
   STACK)
 
-#variable_watch(ENABLE_ALL_BUILTINS ON_ENABLE_ALL_BUILTINS)
+# variable_watch(ENABLE_ALL_BUILTINS ON_ENABLE_ALL_BUILTINS)
 
 foreach(BUILTIN ${ALL_BUILTINS})
   string(TOUPPER ${BUILTIN} NAME)
@@ -207,8 +207,9 @@ endforeach(BUILTIN ${ALL_BUILTINS})
 
 file(WRITE "${CMAKE_BINARY_DIR}/src/builtin_config.h" "${BUILTIN_CONFIG}\n\n")
 
-set_source_files_properties(src/builtin/builtin_table.c PROPERTIES COMPILE_DEFINITIONS
-                                                                   HAVE_BUILTIN_CONFIG_H=1)
+set_source_files_properties(
+  src/builtin/builtin_table.c PROPERTIES COMPILE_DEFINITIONS
+                                         HAVE_BUILTIN_CONFIG_H=1)
 
 list(SORT BUILTINS_ENABLED)
 list(SORT BUILTINS_DISABLED)

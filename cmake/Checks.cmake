@@ -19,12 +19,14 @@ check_c_compiler_flag("-Wno-unused-function" WARN_NO_UNUSED_FUNCTION)
 if(WARN_NO_UNUSED_FUNCTION)
   set(WERROR_FLAG "${WERROR_FLAG} -Wno-unused-function")
 endif()
-check_c_compiler_flag("-Wno-error=unused-but-set-variable" WARN_NO_UNUSED_FUNCTION)
+check_c_compiler_flag("-Wno-error=unused-but-set-variable"
+                      WARN_NO_UNUSED_FUNCTION)
 if(WARN_NO_UNUSED_FUNCTION)
   set(WERROR_FLAG "${WERROR_FLAG} -Wno-error=unused-but-set-variable")
 endif()
 
-if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" OR CMAKE_BUILD_TYPE STREQUAL "Release")
+if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" OR CMAKE_BUILD_TYPE STREQUAL
+                                             "Release")
   check_c_compiler_flag("-falign-functions=1" F_ALIGN_FUNCTIONS)
   check_c_compiler_flag("-falign-jumps=1" F_ALIGN_JUMPS)
   check_c_compiler_flag("-falign-labels=1" F_ALIGN_LABELS)
@@ -254,9 +256,11 @@ if(PID_T GREATER 0)
 endif(PID_T GREATER 0)
 
 # if(HAVE_SIGNAL_H) check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T)
-# check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T) check_type_size(sigset_t SIZEOF_SIGSET_T)
+# check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T) check_type_size(sigset_t
+# SIZEOF_SIGSET_T)
 #
-# if(SIZEOF_SIGSET_T) set(HAVE_SIGSET_T 1) else() set(HAVE_SIGSET_T 0) endif() endif()
+# if(SIZEOF_SIGSET_T) set(HAVE_SIGSET_T 1) else() set(HAVE_SIGSET_T 0) endif()
+# endif()
 
 check_function_exists(sys_siglist HAVE_SYS_SIGLIST)
 
@@ -277,10 +281,14 @@ else()
 endif()
 
 string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_MINSIZEREL "${CMAKE_C_FLAGS_MINSIZEREL}")
-string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
-string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
-string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_MINSIZEREL
+                     "${CMAKE_C_FLAGS_MINSIZEREL}")
+string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELEASE
+                     "${CMAKE_C_FLAGS_RELEASE}")
+string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELWITHDEBINFO
+                     "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
+string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_DEBUG
+                     "${CMAKE_C_FLAGS_DEBUG}")
 
 check_library_exists(m pow /usr/lib HAVE_LIBM)
 
