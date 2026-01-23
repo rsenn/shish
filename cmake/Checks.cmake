@@ -290,7 +290,7 @@ string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELWITHDEBINFO
 string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_DEBUG
                      "${CMAKE_C_FLAGS_DEBUG}")
 
-check_library_exists(m pow /usr/lib HAVE_LIBM)
+check_library_exists(m pow "" HAVE_LIBM)
 
 if(HAVE_LIBM)
   set(MATH_LIBRARY m)

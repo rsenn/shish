@@ -1,6 +1,6 @@
 #include "../str.h"
 
-#if LINK_STATIC
+#if LINK_STATIC || defined(__dietlibc__)
 int
 str_case_diff(const char* p1, const char* p2) {
   int x;

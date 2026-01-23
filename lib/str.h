@@ -59,8 +59,10 @@ size_t str_rchrs(const char*, char needles[], size_t nn);
 #define str_len(s) strlen((s))
 #define str_diff(a, b) strcmp((a), (b))
 #define str_diffn(a, b, n) strncmp((a), (b), (n))
+#ifndef __dietlibc__
 #define str_case_diff(a, b) strcasecmp((a), (b))
 #define str_case_diffn(a, b, n) strncasecmp((a), (b), (n))
+#endif
 #endif
 
 #endif
