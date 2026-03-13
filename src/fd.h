@@ -20,6 +20,10 @@
 #include "../lib/windoze.h"
 #include "../lib/alloc.h"
 
+#ifdef HAVE_ALLOCA
+#include <alloca.h>
+#endif
+
 #if WINDOWS_NATIVE && !defined(__BORLANDC__) && !defined(__MINGW32__) && !defined(__TINYC__) && \
     !defined(__LCC__)
 #ifndef HAVE_DEV_T

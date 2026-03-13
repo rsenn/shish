@@ -140,6 +140,49 @@ macro(check_compile RESULT_VAR SOURCE)
   show_result(${RESULT_VAR})
 endmacro()
 
+
+macro(check_run RESULT_VAR SOURCE)
+  set(RESULT "${${RESULT_VAR}}")
+  # message("${RESULT_VAR} = ${RESULT}" )
+  if(RESULT STREQUAL "")
+    string(
+      RANDOM
+      LENGTH 6
+      ALPHABET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+               C_NAME)
+    string(REPLACE SUPPORT_ "" NAME "${RESULT_VAR}")
+    string(REPLACE _ - NAME "${NAME}")
+    string(TOLOWER "${NAME}" C_NAME)
+    set(C_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/try-${C_NAME}.c")
+    string(REPLACE "\\" "\\\\" SOURCE "${SOURCE}")
+    file(WRITE "${C_SOURCE}" "${SOURCE}")
+    message(STATUS "Trying to compile try-${C_NAME}.c ... ")
+    try_run(
+      RUN_RESULT 
+      COMPILE_RESULT "${CMAKE_CURRENT_BINARY_DIR}"
+      "${C_SOURCE}"
+      COMPILE_OUTPUT_VARIABLE "OUTPUT"
+      LINK_LIBRARIES "${ARGN}")
+    file(REMOVE "${C_SOURCE}")
+
+    if(COMPILE_RESULT AND RUN_RESULT)
+      message(STATUS "ok")
+      # add_definitions(-D${RESULT_VAR})
+    else(COMPILE_RESULT AND RUN_RESULT)
+      set(COMPILE_LOG "${CMAKE_CURRENT_BINARY_DIR}/compile-${C_NAME}.log")
+      message(STATUS "fail: ${COMPILE_LOG}")
+      file(WRITE "${COMPILE_LOG}" "${OUTPUT}")
+      string(REPLACE "\n" ";" OUTPUT "${OUTPUT}")
+      list(FILTER OUTPUT INCLUDE REGEX "error")
+    endif(COMPILE_RESULT AND RUN_RESULT)
+
+    set("${RESULT_VAR}"
+        "${COMPILE_RESULT}"
+        CACHE BOOL "Support ${NAME}")
+  endif(RESULT STREQUAL "")
+  show_result(${RESULT_VAR})
+endmacro()
+
 function(RELATIVE_PATH OUT_VAR RELATIVE_TO)
   set(LIST "")
 

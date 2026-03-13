@@ -3,8 +3,8 @@
 
 #include <stdlib.h>
 #include <sys/types.h>
-// #include <wchar.h>
-typedef int wchar_t;
+#include <wchar.h>
+//typedef int wchar_t;
 
 int u8len(const char*, size_t count);
 size_t u8stowcs(wchar_t*, const char* pu, size_t count);

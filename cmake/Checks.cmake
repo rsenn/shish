@@ -162,12 +162,12 @@ if(HAVE_ALLOCA_H)
   check_symbol_exists(alloca alloca.h HAVE_ALLOCA_SYMBOL)
 endif()
 
-check_compile(
+check_run(
   HAVE_ALLOCA_ALLOCA_H
   "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}"
 )
 if(NOT HAVE_ALLOCA_ALLOCA_H)
-  check_compile(
+  check_run(
     HAVE_ALLOCA_MALLOC_H
     "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}"
   )
