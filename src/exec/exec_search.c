@@ -44,16 +44,5 @@ exec_search(char* name, int mask) {
     cmd.path = exec_path(name);
   }
 
-  {
-    extern int dprintf(int, const char*, ...);
-    if(cmd.id == H_PROGRAM && cmd.path == NULL) {
-      union node* n;
-      dprintf(2, "[NF] '%s' mask=%d functions=%p:", name, mask, (void*)functions);
-      for(n = functions; n; n = n->next)
-        dprintf(2, " %s", n->nfunc.name);
-      dprintf(2, "\n");
-    }
-  }
-
   return cmd;
 }
