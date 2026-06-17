@@ -57,9 +57,15 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
 
       if((ret = setjmp(e.jumpbuf)) == 0) {
         e.jump = 1;
-        eval_cmdlist(&e, &cmd->fn->ngrp);
+        /* Use eval_cmdlist's return (last command's status) rather than
+           eval_pop's e->exitcode, which is only set on longjmp/return.
+           Without this, `f() { (exit 1); }; f` returns 0 because the
+           subshell longjmps to ITS OWN E_ROOT, not the function's eval,
+           so e->exitcode stays at 0. */
+        ret = eval_cmdlist(&e, &cmd->fn->ngrp);
+        e.exitcode = ret;
 
-        ret = eval_pop(&e);
+        eval_pop(&e);
       } else {
         ret >>= 1;
         eval_pop(&e);

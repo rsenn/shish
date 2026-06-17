@@ -185,6 +185,18 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       v = tmpbuf;
       vlen = fmt_ulong(tmpbuf, random);
 
+      /* $LINENO: source line of the $LINENO reference itself, captured
+         at parse time in param->loc. This is what autoconf's "is the
+         shell tracking LINENO?" probe depends on -- without it, every
+         $LINENO returns 1 and configure goes into the .lineno rewrite
+         path on every shell. Using a static buffer is safe because v
+         is consumed by the immediately-following expand_cat below. */
+    } else if(str_equal(param->name, "LINENO")) {
+      static char linebuf[FMT_ULONG];
+      vlen = fmt_ulong(linebuf, param->loc.line);
+      linebuf[vlen] = '\0';
+      v = linebuf;
+
       /* look for the variable.
          if the S_NULL flag is set and we have a var which is null
          set v to NULL */
