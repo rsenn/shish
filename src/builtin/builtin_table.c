@@ -74,6 +74,9 @@
 #ifndef BUILTIN_MKDIR
 #define BUILTIN_MKDIR 0
 #endif
+#ifndef BUILTIN_PRINTF
+#define BUILTIN_PRINTF 1
+#endif
 #ifndef BUILTIN_PWD
 #define BUILTIN_PWD 1
 #endif
@@ -241,6 +244,9 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_MKTEMP
     {"mktemp", &builtin_mktemp, B_DEFAULT, "[-dt] [-p DIR] [TEMPLATE]"},
 #endif
+#if BUILTIN_PRINTF
+    {"printf", &builtin_printf, B_DEFAULT, "format [args ...]"},
+#endif
 #if BUILTIN_PWD
     {"pwd", &builtin_pwd, B_DEFAULT, "[-L|-P]"},
 #endif
@@ -297,7 +303,7 @@ struct builtin_cmd builtin_table[] = {
     {"type", &builtin_type, B_DEFAULT, "name ..."},
 #endif
 #if BUILTIN_ALIAS
-    {"unqalias", &builtin_alias, B_SPECIAL, "[-p] [name[=value] ...]"},
+    {"unalias", &builtin_alias, B_SPECIAL, "[-a] [name ...]"},
 #endif
 #if BUILTIN_UNAME
     {"uname", &builtin_uname, B_DEFAULT, "[-amnrspvio]"},

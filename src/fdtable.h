@@ -5,7 +5,7 @@
 
 #define FDTABLE_SIZE FD_MAX
 
-#define fdtable_ok(e) ((e) >= -1 && (e) < FDTABLE_S IZE)
+#define fdtable_ok(e) ((e) >= -1 && (e) < FDTABLE_SIZE)
 #define efdtable_ok(e) ((e) >= 0 && (e) < FDTABLE_SIZE)
 
 #define FDTABLE_LAZY 0
