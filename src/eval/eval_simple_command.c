@@ -162,14 +162,15 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
     goto end;
   }
 
-  /* assemble argument list */
+  /* allocate based on tree_count (upper bound); expand_argv returns the
+     actual count after dropping empty unquoted fields */
   argc = tree_count(args);
 #ifdef HAVE_ALLOCA
   argv = alloca((argc + 1) * sizeof(char*));
 #else
   argv = alloc((argc + 1) * sizeof(char*));
 #endif
-  expand_argv(args, argv);
+  argc = expand_argv(args, argv);
 
   if(e->flags & E_PRINT) {
     eval_print_prefix(e, fd_err->w);
