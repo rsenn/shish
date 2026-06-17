@@ -22,14 +22,17 @@ sh_exit(int retcode) {
   while(s->eval && s->eval->flags & E_FUNCTION)
     s = s->parent;
 
-  stralloc_free(&sh->cwd);
-
 #ifdef DEBUG_ALLOC
   debug_memory();
 #endif
 
-  /* not in a subshell, exit the process */
+  /* not in a subshell, exit the process. Only free cwd on the way out --
+     the previous unconditional free here trashed sh->cwd on every fall-
+     through (when eval_exit had nothing to longjmp to), so any subsequent
+     sh_pop would dereference a freed buffer. */
   if(s == &sh_root) {
+    stralloc_free(&sh->cwd);
+
     if(source)
       source_pop();
 

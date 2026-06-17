@@ -21,8 +21,9 @@ sh_pop(struct env* env) {
   if((parent = sh->parent) == NULL)
     return 0;
 
-  /* change back to prev working dir */
-  if(stralloc_diffs(&sh->cwd, parent->cwd.s)) {
+  /* change back to prev working dir (skip if our cwd was already freed,
+     e.g. by sh_exit's fall-through path) */
+  if(sh->cwd.s && stralloc_diffs(&sh->cwd, parent->cwd.s)) {
     if(chdir(parent->cwd.s) == -1)
       sh_errorn(parent->cwd.s, parent->cwd.len);
   }

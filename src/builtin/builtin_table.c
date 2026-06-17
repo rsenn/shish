@@ -74,8 +74,32 @@
 #ifndef BUILTIN_MKDIR
 #define BUILTIN_MKDIR 0
 #endif
+#ifndef BUILTIN_BASENAME
+#define BUILTIN_BASENAME 1
+#endif
+#ifndef BUILTIN_COMMAND
+#define BUILTIN_COMMAND 1
+#endif
+#ifndef BUILTIN_DIRNAME
+#define BUILTIN_DIRNAME 1
+#endif
+#ifndef BUILTIN_HOSTNAME
+#define BUILTIN_HOSTNAME 0
+#endif
+#ifndef BUILTIN_JOBS
+#define BUILTIN_JOBS 1
+#endif
+#ifndef BUILTIN_MKTEMP
+#define BUILTIN_MKTEMP 0
+#endif
 #ifndef BUILTIN_PRINTF
 #define BUILTIN_PRINTF 1
+#endif
+#ifndef BUILTIN_TEST
+#define BUILTIN_TEST 1
+#endif
+#ifndef BUILTIN_TRAP
+#define BUILTIN_TRAP 1
 #endif
 #ifndef BUILTIN_PWD
 #define BUILTIN_PWD 1

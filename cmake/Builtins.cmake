@@ -14,6 +14,7 @@ list(
   history
   jobs
   local
+  printf
   pwd
   read
   readonly
@@ -21,6 +22,7 @@ list(
   set
   shift
   source
+  test
   trap
   type
   umask
@@ -78,6 +80,7 @@ list(
   history
   hostname
   ln
+  printf
   pwd
   set
   shift

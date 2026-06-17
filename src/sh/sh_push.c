@@ -11,11 +11,15 @@ sh_push(struct env* env) {
 
   env->parent = sh;
 
-  /* copy cwd */
-  /*  stralloc_copyb(&env->cwd, sh->cwd.s, sh->cwd.len);*/
-  env->cwd.a = 0;
-  env->cwd.s = sh->cwd.s;
-  env->cwd.len = sh->cwd.len;
+  /* Own a private cwd copy. Aliasing sh->cwd.s here without taking
+     ownership (the previous behavior) means any stralloc reallocation
+     of the parent's cwd -- which happens on cd, getcwd refresh, etc. --
+     leaves this env's cwd.s dangling, and sh_pop later dereferences it
+     in stralloc_diffs. autoconf's nested-subshell shell-detection probe
+     triggered this within ~140 lines of `./configure` start. */
+  stralloc_init(&env->cwd);
+  if(sh->cwd.len)
+    stralloc_copyb(&env->cwd, sh->cwd.s, sh->cwd.len);
 
   env->cwdsym = sh->cwdsym;
 

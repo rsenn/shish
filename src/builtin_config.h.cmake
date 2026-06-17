@@ -1,4 +1,4 @@
-p#cmakedefine BUILTIN_BASENAME     @BUILD_BUILTIN_BASENAME@
+#cmakedefine BUILTIN_BASENAME     @BUILD_BUILTIN_BASENAME@
 #cmakedefine BUILTIN_BREAK        @BUILD_BUILTIN_BREAK@
 #cmakedefine BUILTIN_CAT          @BUILD_BUILTIN_CAT@
 #cmakedefine BUILTIN_CD           @BUILD_BUILTIN_CD@
@@ -20,6 +20,7 @@ p#cmakedefine BUILTIN_BASENAME     @BUILD_BUILTIN_BASENAME@
 #cmakedefine BUILTIN_LN           @BUILD_BUILTIN_LN@
 #cmakedefine BUILTIN_MKDIR        @BUILD_BUILTIN_MKDIR@
 #cmakedefine BUILTIN_MKTEMP       @BUILD_BUILTIN_MKTEMP@
+#cmakedefine BUILTIN_PRINTF       @BUILD_BUILTIN_PRINTF@
 #cmakedefine BUILTIN_PWD          @BUILD_BUILTIN_PWD@
 #cmakedefine BUILTIN_RM           @BUILD_BUILTIN_RM@
 #cmakedefine BUILTIN_RMDIR        @BUILD_BUILTIN_RMDIR@
