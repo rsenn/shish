@@ -36,8 +36,14 @@ job_wait(struct job* j, pid_t pid, int* status) {
         }
       }*/
 
-      if(ret == j->pgrp)
-        *status = s;
+      /* POSIX: pipeline exit status is the last command's status. job_fork's
+         j->pgrp is unreliable (job_new pre-sets nproc to the pipeline width,
+         so the `if(nproc==0) j->pgrp=pgrp` branch never fires), and using the
+         pgrp leader's status would give the FIRST command's status anyway.
+         Update on every reap; the last child to be reaped wins, which for a
+         normal pipeline is the last command -- the only one whose stdin
+         can only close after every upstream stage has finished writing. */
+      *status = s;
 
       /* Non-interactive shells (scripts like ./configure) parse stderr to
          detect command behavior; the kernel often delivers SIGPIPE to the

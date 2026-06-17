@@ -1,6 +1,7 @@
 #include "../../lib/str.h"
 #include "../tree.h"
 #include "../eval.h"
+#include "../exec.h"
 
 extern union node* functions;
 
@@ -34,6 +35,18 @@ eval_function(struct eval* e, struct nfunc* func) {
        configure redefines as_fn_nop). */
     fn->next = NULL;
     tree_free(fn);
+  }
+
+  /* Invalidate any cached exec_hash entry for this name. The cache holds
+     cmd.fn = body pointer, which we either just freed (redefine) or are
+     about to replace. Without this, autoconf's `. ./$as_me.lineno` self-
+     source resets all functions but the cache still serves the stale body
+     pointer, producing a use-after-free on the next invocation. */
+  {
+    uint32 h;
+    struct exechash* e = exec_lookup(func->name, &h);
+    if(e)
+      e->mask = -1; /* force exec_search re-run on next lookup */
   }
 
   fn = tree_newnode(N_FUNCTION);
