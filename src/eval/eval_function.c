@@ -27,6 +27,10 @@ eval_function(struct eval* e, struct nfunc* func) {
   if((nptr = find_function(func->name))) {
     fn = *nptr;
     *nptr = (*nptr)->next;
+    {
+      extern int dprintf(int, const char*, ...);
+      dprintf(2, "[REDEF] %s (unlink+free)\n", func->name);
+    }
     tree_free(fn);
   }
 
@@ -39,6 +43,10 @@ eval_function(struct eval* e, struct nfunc* func) {
   func->body = NULL;
 
   functions = fn;
+  {
+    extern int dprintf(int, const char*, ...);
+    dprintf(2, "[DEF] %s -> functions=%p\n", fn->nfunc.name, (void*)functions);
+  }
 
   return ret;
 }
