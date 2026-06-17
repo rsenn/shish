@@ -64,14 +64,18 @@ redir_parse(struct parser* p, int rf, int fd) {
         rf |= R_OUT;
         stralloc_catc(&p->sa, c);
         source_skip();
+        rf |= R_OPEN;
+        break;
 
       /* < opens input file */
       default: rf |= R_OPEN; break;
     }
   }
 
-  /* parse output redirection operator (3.7.2) */
-  if(rf & R_OUT) {
+  /* parse output redirection operator (3.7.2) -- skip if R_IN already
+     consumed the operator (e.g., <>file), otherwise the second '>' of <>
+     would be misread as the append marker of >> */
+  else if(rf & R_OUT) {
     switch(c) {
       /* >& is dup2() (3.7.6) */
       case '&':

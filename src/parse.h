@@ -292,7 +292,7 @@ int parse_arith(struct parser* p);
 int parse_bquoted(struct parser* p);
 int parse_dquoted(struct parser* p);
 enum tok_flag parse_expect(struct parser* p, int tempflags, enum tok_flag toks, union node* nfree);
-int parse_here(struct parser* p, stralloc* delim, int nosubst);
+int parse_here(struct parser* p, stralloc* delim, int nosubst, int strip);
 int parse_keyword(struct parser* p);
 int parse_param(struct parser* p);
 enum tok_flag parse_simpletok(struct parser* p);

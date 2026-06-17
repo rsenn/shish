@@ -25,7 +25,10 @@ redir_source(void) {
 
     /* when any character of the delimiter has been escaped
        then treat the whole here-doc as non-expanded word */
-    if(parse_here(&p, &delim, (redir_list->word->nargstr.flag & S_ESCAPED))) {
+    if(parse_here(&p,
+                  &delim,
+                  (redir_list->word->nargstr.flag & S_ESCAPED),
+                  (redir_list->flag & R_STRIP))) {
       parse_error(&p, p.tok);
       break;
     }

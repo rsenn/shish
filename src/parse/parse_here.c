@@ -6,7 +6,7 @@
 /* parses a here-doc body, ending at <delim>
  * ----------------------------------------------------------------------- */
 int
-parse_here(struct parser* p, stralloc* delim, int nosubst) {
+parse_here(struct parser* p, stralloc* delim, int nosubst, int strip) {
   int r = 0;
   union node* n;
 
@@ -33,6 +33,18 @@ parse_here(struct parser* p, stralloc* delim, int nosubst) {
       stralloc_catc(&p->sa, (nosubst ? '\'' : '"'));
       continue;
     }*/
+
+    /* <<- strips leading tabs from every body line, including the
+       line containing the closing delimiter (POSIX 2.7.4) */
+    if(strip && p->sa.len) {
+      size_t i = 0;
+      while(i < p->sa.len && p->sa.s[i] == '\t')
+        i++;
+      if(i) {
+        byte_copy(p->sa.s, p->sa.len - i, p->sa.s + i);
+        p->sa.len -= i;
+      }
+    }
 
     if(p->sa.len == delim->len + 1) {
       stralloc* sa = &p->sa;

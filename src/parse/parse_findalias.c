@@ -20,5 +20,6 @@ parse_findalias(struct parser* p, const char* name, size_t len) {
     if(a->namelen == len && !byte_diff(a->def, len, name))
       break;
   }
+  
   return a;
 }

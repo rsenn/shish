@@ -25,12 +25,15 @@ eval_node(struct eval* e, union node* node) {
       break;
     }
 
-    case N_LIST:
-    case N_BRACEGROUP: {
+    case N_LIST: {
       ret = eval_cmdlist(e, &node->ngrp);
       break;
     }
 
+    /* brace groups must route through eval_command so the group's
+       redirections (parse_grouping stores them in ngrp.rdir) are
+       applied before the body runs */
+    case N_BRACEGROUP:
     case N_IF:
     case N_FOR:
     case N_CASE:
