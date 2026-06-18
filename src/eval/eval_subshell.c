@@ -1,5 +1,6 @@
 #include "../fd.h"
 #include "../eval.h"
+#include "../exec.h"
 #include "../fdstack.h"
 #include "../sh.h"
 #include "../tree.h"
@@ -14,10 +15,15 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
   struct env she;
   struct fdstack io;
   struct vartab vars;
+  struct func_snapshot funcs;
 
   fdstack_push(&io);
   vartab_push(&vars, 0);
   sh_push(&she);
+  /* function definitions are stored in a process-global list rather than
+     scoped to env frames, so subshells leak them into the parent unless we
+     snapshot/restore around the eval. See exec_functions_save. */
+  exec_functions_save(&funcs);
 
   eval_push(&en, E_ROOT);
 
@@ -33,6 +39,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
 
   ret = eval_pop(&en);
 
+  exec_functions_restore(&funcs);
   sh_pop(&she);
   vartab_pop(&vars);
   fdstack_pop(&io);

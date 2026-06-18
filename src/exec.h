@@ -55,4 +55,20 @@ struct command exec_hash(char* name, int mask);
 struct command exec_search(char* name, int mask);
 int exec_type(char* name, int mask, int force_path, int type_name);
 
+union node;
+
+/* Snapshot of the function list (head + per-node next pointers) so a subshell
+   can restore the parent's view on exit. functions defined or redefined inside
+   the subshell get unlinked from the parent's list on restore; nodes are not
+   freed because the exec_hash cache may still reference them. */
+struct func_snapshot {
+  size_t n;
+  union node** nodes;
+};
+
+extern int exec_subshell_depth;
+
+void exec_functions_save(struct func_snapshot* snap);
+void exec_functions_restore(struct func_snapshot* snap);
+
 #endif /* EXEC_H */

@@ -22,7 +22,10 @@ parse_unquoted(struct parser* p) {
     if(c == '\\') {
       char nextc;
 
-      p->tok = T_WORD;
+      /* don't downgrade T_ASSIGN: a backslash in the assignment value
+         (e.g. `x=\'`) is part of the value, not the variable name. */
+      if(p->tok != T_ASSIGN)
+        p->tok = T_WORD;
 
       if(source_next(&nextc) <= 0)
         return -1;

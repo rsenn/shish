@@ -34,7 +34,11 @@ eval_function(struct eval* e, struct nfunc* func) {
        than this one (as_fn_exit, as_fn_unset, ... all gone when
        configure redefines as_fn_nop). */
     fn->next = NULL;
-    tree_free(fn);
+    /* While a subshell is evaluating, the parent shell's func_snapshot may
+       still reference this node. Leak it for now (orphaned but safe);
+       exec_functions_restore will relink the parent's list on exit. */
+    if(exec_subshell_depth == 0)
+      tree_free(fn);
   }
 
   /* Invalidate any cached exec_hash entry for this name. The cache holds

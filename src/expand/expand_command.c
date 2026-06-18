@@ -1,5 +1,6 @@
 #include "../../lib/alloc.h"
 #include "../eval.h"
+#include "../exec.h"
 #include "../expand.h"
 #include "../fd.h"
 #include "../fdstack.h"
@@ -24,6 +25,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
   struct eval en;
   int jmpret;
   stralloc sa;
+  struct func_snapshot funcs;
   stralloc_init(&sa);
 
   /* do this in a new i/o context so we can redirect stdout */
@@ -35,6 +37,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
 
   /* evaluate the command tree in a subshell */
   vartab_push(&vars, 0);
+  exec_functions_save(&funcs);
 
   eval_push(&en, E_ROOT);
 
@@ -51,6 +54,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
 
   sh->exitcode = eval_pop(&en);
 
+  exec_functions_restore(&funcs);
   vartab_pop(&vars);
 
   fdstack_pop(&fdst);
