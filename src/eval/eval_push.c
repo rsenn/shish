@@ -3,6 +3,7 @@
 #include "../eval.h"
 #include "../fdstack.h"
 #include "../sh.h"
+#include "../source.h"
 #include "../vartab.h"
 
 struct eval* eval = NULL;
@@ -16,6 +17,7 @@ eval_push(struct eval* e, int flags) {
   /* remember stack locations in current nesting level */
   e->fdstack = fdstack;
   e->varstack = varstack;
+  e->source = source;
 
   // sh->eval = e;
   eval = e;

@@ -23,6 +23,8 @@ struct vartab;
 typedef void debug_callback(union node*);
 typedef int exit_callback(int);
 
+struct source;
+
 struct eval {
   struct eval* parent;
   int flags;
@@ -30,6 +32,11 @@ struct eval {
 
   struct fdstack* fdstack;
   struct vartab* varstack;
+  /* Source stack depth at push time. `exit` inside `eval` longjmps past
+     builtin_eval's source_popfd, so eval_pop has to unwind sources to here
+     or the next parse_gettok will read from the consumed eval buffer and
+     return EOF immediately — making the parent script silently stop. */
+  struct source* source;
 
   jmp_buf jumpbuf;
   int jump;

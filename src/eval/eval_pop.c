@@ -2,6 +2,7 @@
 #include "../sh.h"
 #include "../eval.h"
 #include "../fdstack.h"
+#include "../source.h"
 #include "../vartab.h"
 #include <assert.h>
 
@@ -18,6 +19,10 @@ eval_pop(struct eval* e) {
 
   while(varstack != e->varstack && &vartab_root != varstack)
     vartab_pop(varstack);
+
+  /* `exit` inside `eval` longjmped past source_popfd; recover here. */
+  while(source && source != e->source)
+    source_pop();
 
   // sh->exitcode = e->exitcode;
   // sh->eval = e->parent;
