@@ -42,14 +42,6 @@ fdtable_dup(struct fd* d, int flags) {
   if(d->e == d->n)
     return FDTABLE_DONE;
 
-  /* fdtable_wish may have moved d itself (when fdtable_gap recursed on d
-     to clear the gap at d->n). The old d->e was dup'd to a new fd and then
-     closed; o (captured at entry) now points at a closed fd. dup(o) below
-     would fail with EBADF, leaving fdtable_resolve unfinished — `exec 0<file`
-     followed by command substitution then leaks the child's output to stdout
-     because the cmd-sub pipe never gets mapped to fd 1. Use post-wish d->e. */
-  o = d->e;
-
 retry:
   /* if the wish was satisfied or we should change the
      effective d then dup() the file descriptor */

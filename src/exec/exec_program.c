@@ -8,7 +8,6 @@
 #endif
 
 #include <signal.h>
-#include <stdio.h>
 #include "../../lib/windoze.h"
 #include "../exec.h"
 #include "../fdstack.h"
@@ -72,8 +71,6 @@ exec_program(char* path, char** argv, enum execflag flag) {
 
     /* in the parent wait for the child to finish and then return
        or exit, according to the 'exec' argument */
-    fprintf(stderr, "DBG[%d] forking for %s argv0=%s\n", getpid(), path, argv[0]);
-    fflush(stderr);
     if((pid = fork())) {
       int status = 1;
 

@@ -352,6 +352,16 @@ builtin_test(int argc, char* argv[]) {
     }
   }
 
+  /* POSIX: `test` and `[ ]` with no expression are false. autoconf's
+     `if test ${ac_cv_prog_CC+y}; then : (cached); else lookup; fi`
+     relies on this — when the variable is unset, the expansion is empty,
+     so the if-test runs `test` with no args. shish previously fell through
+     to test_boolean which initialized result=1 (true) and returned 0
+     (success), so autoconf took the cached path with an empty CC and
+     reported "no acceptable C compiler". */
+  if(argc <= 1)
+    return 1;
+
   /* TODO:*/
   //(void)brackets;
   result = test_boolean(argc, argv);
