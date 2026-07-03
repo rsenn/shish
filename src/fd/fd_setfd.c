@@ -15,6 +15,7 @@
  * ----------------------------------------------------------------------- */
 int
 fd_setfd(struct fd* d, int e) {
+  int old_e = d->e;
   assert(d->mode & FD_READWRITE);
 
   /* set the file descriptors on the buffers */
@@ -29,6 +30,18 @@ fd_setfd(struct fd* d, int e) {
     d->wb.fd = e;
     d->w = &d->wb;
   }
+
+  /* fd_list[e] should map each live kernel fd to the shish-fd struct
+     that currently owns it. When d->e changes, fd_list[old_e] becomes
+     stale — fdtable_gap(old_e) would then find a struct whose e is no
+     longer old_e and recurse into resolving it, eventually closing a
+     kernel fd the caller is still relying on (the cmd-sub pipe path).
+     Common trigger: `exec 0<file` runs fdtable_open → fdtable_track
+     → fdtable_unexpected, which fills the gap at d->n by reinit'ing d
+     to e=0; fdtable_open's final fd_setfd then sets d->e to the open()
+     result without ever clearing fd_list[0]. */
+  if(old_e != e && fd_ok(old_e) && fd_list[old_e] == d)
+    fd_list[old_e] = 0;
 
   /* track the file descriptor */
   d->e = e;

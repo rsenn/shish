@@ -77,10 +77,16 @@ retry:
 
   /* if theres an d in effective d list at this position we
      have to remove it carefully by using fd_setfd first so
-     it will not close the d 'e' */
-  if(fd_list[e]) {
-    fd_setfd(fd_list[e], -1);
-    fd_pop(fd_list[e]);
+     it will not close the d 'e'. Capture the pointer first:
+     fd_setfd now clears fd_list[old_e] when it points at the struct
+     being moved (the fd_list invariant fix), so re-reading fd_list[e]
+     after fd_setfd would yield NULL and fd_pop would deref it. */
+  {
+    struct fd* victim = fd_list[e];
+    if(victim) {
+      fd_setfd(victim, -1);
+      fd_pop(victim);
+    }
   }
 
   /* set the new effective d */
