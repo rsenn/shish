@@ -1,0 +1,4 @@
+- stack-use-after-scope in fdstack_unref() (src/fdstack/fdstack_unref.c:17)
+  whenever an external command runs, caught by asan: fd_close -> fd_pop ->
+  fdtable_exec -> exec_program, where exec_program's local "struct fdstack
+  io" (exec_program.c:46) is referenced after its scope ends
