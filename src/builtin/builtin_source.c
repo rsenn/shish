@@ -23,6 +23,7 @@ builtin_source(int argc, char* argv[]) {
 
   fd_push(&src, STDSRC_FILENO, FD_READ);
   source_push(&in);
+  in.fd = &src;
 
   if(!fd_mmap(&src, argv[shell_optind])) {
     sh_pushargs(&oldarg);

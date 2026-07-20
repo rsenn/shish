@@ -17,6 +17,14 @@ struct source {
   unsigned mode;
   struct source* parent;
   struct location position;
+  /* the fd this source frame owns and must fd_pop() when popped (set by
+     source_buffer(), NULL for sources -- like the top-level script/-c
+     source -- that don't own a temporary fd). Recorded here, rather than
+     only known to the pusher's local variable, so code that has to pop
+     several source frames it didn't itself push (e.g. break/continue
+     unwinding past an "eval"/"." /trap that's still mid-evaluation) can
+     still fd_pop() the right fd for each one instead of just leaking it. */
+  struct fd* fd;
 };
 
 #define SOURCE_IACTIVE 0x01

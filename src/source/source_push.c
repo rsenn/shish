@@ -12,6 +12,7 @@ source_push(struct source* s) {
   s->position.offset = 0;
   s->mode = 0;
   s->b = fd_src->r;
+  s->fd = NULL;
 
   source = s;
 }
