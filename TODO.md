@@ -224,8 +224,92 @@ exercised `fg`/`bg`/background jobs through a pty). Sorted by leverage.
 
 ---
 
-## Known-but-not-yet-actioned (from `BUGS`, still true)
+## Old `TODO` file, investigated
 
-- `while ...; exec 5<>lala` bug (unverified against current code, not
-  re-tested during this pass — do so once item 1 above is fixed, they may
-  share a root cause in the fdtable).
+Every item in the plain-text `TODO` file was individually checked against
+current code and, where practical, against a live build. Real, confirmed
+defects were moved into `BUGS` with precise repros; here's the evidence for
+each conclusion. `TODO` itself has been trimmed down to just the handful of
+items that are still genuinely open or unverified.
+
+**Resolved / no longer true, removed from `TODO`:**
+
+- *"leaving interactive mode e.g. in a forked subshell should free the
+  prompt tree"* — not reproducible under the current architecture.
+  `prompt_node`/`prompt_hash` (`src/prompt.h`) are plain process-wide
+  globals, not part of `struct env`, so `sh_push`/`sh_pop` never touch
+  them. `(...)` subshells (`eval_subshell.c`) don't fork at all — they're
+  simulated in-process via `setjmp`/`longjmp` plus `vartab_push`/
+  `sh_push`/`fdstack_push` — so they never re-parse a prompt either. Real
+  forked children (anything going through `job_fork()`) never re-enter
+  `sh_loop()`/`prompt_parse()`, so there's nothing for them to free before
+  their `_exit()` reclaims everything anyway. Likely stale from a pre-2010
+  version of the codebase (see below).
+
+- *"fix iofd_exec() ???"* — `iofd_exec` never existed in this project's
+  recorded git history at all (`git log --all -S"iofd_exec"` only matches
+  the *first* commit, "imported from shish-0.7-pre3 tarball", and that
+  commit's tree doesn't contain any file with "iofd" in the name either).
+  The note predates git history. Its most plausible modern descendant,
+  `fd_exec()`, was already found to be dead code (zero callers, superseded
+  by `fdtable_here()`) and deleted in the `src/fd*` bug-fixing pass, and
+  `fdtable_here()` itself was already reviewed and fixed there too.
+
+- *"exporting of unset variables"* — works correctly today: confirmed live
+  that `export FOO; FOO=bar` followed by running a child shows `FOO=bar`
+  in its environment. `var_setsa()`'s `var->flags |= flags` (not `=`)
+  preserves the `V_EXPORT` bit set by a prior bare `export FOO` across the
+  later assignment. (Investigating this surfaced a real, separate crash —
+  see `BUGS`: listing such a variable with `export -p` segfaults.)
+
+- *"push variable stack only when needed?"* — already implemented where
+  it matters: `eval_simple_command.c` only calls `vartab_push()` when
+  `!(e->flags & E_EXIT) && cmd.ptr && cmd.id != H_SBUILTIN`, i.e. exactly
+  skips it when unnecessary. The other 3 call sites (`eval_subshell.c`,
+  `expand_command.c`, `exec_command.c`'s function-call path) push
+  unconditionally, but each represents a genuinely new scope that needs
+  its own variable table, not avoidable overhead.
+
+- *"implement background processes and more sophisticated job control"*
+  — superseded by Goal 3 above (which found `fg`/`bg` are actively broken,
+  not just unsophisticated) plus a new finding: backgrounding a
+  *non-simple* command has its own, distinct, more severe bug — see
+  `BUGS`.
+
+**Real, but different from how `TODO` described them — moved to `BUGS`
+with the corrected/precise version:**
+
+- *"redirections ... fdtable resolving code can end up in an infinite
+  recursion"* — real; already mitigated with a depth cap in the `src/fd*`
+  fixes, but the root cause (why a cycle would occur at all) is still
+  open. Kept in `BUGS` in its more precise form.
+
+- *"closing of file descriptors on >&-"* — half right, half wrong: for
+  external commands it already works correctly (confirmed: a forked
+  child sees a genuine `EBADF`, matching bash exactly). For the shell's
+  *own* builtins, though, `fd_null()` silently turns a `>&-`'d fd into a
+  null sink instead of making further use of it fail — `echo hi >&3`
+  after `exec 3>&-` exits 0 in shish, where bash reports "Bad file
+  descriptor" and exits 1. Precise version now in `BUGS`.
+
+- *"conform to 3.9.1.1 Command Search and Execution"* — too vague to act
+  on as written, so this was actually checked against the spec text
+  (`doc/posix/ieee-p1003.2-d11.2-s3.txt:3148`). The core precedence order
+  (`exec_search.c`: special builtins → functions → regular builtins →
+  `PATH` search) matches the spec. But testing the spec's explicit caveat
+  — "an implementation may remember [a command's] location ... unless the
+  `PATH` variable has been the subject of an assignment" — found a real
+  gap: reassigning `PATH` does *not* invalidate shish's command-location
+  cache. Confirmed live against bash with two same-named commands in two
+  different `PATH` directories. Precise version now in `BUGS`.
+
+**Found along the way, not in the original `TODO` at all:** backgrounding
+a non-simple (compound) command — `eval_tree.c`'s bgnd handling has the
+`job_fork()` parent/child branches backwards, causing duplicated
+execution and corrupted subsequent parsing. See `BUGS` for the repro.
+
+**Still open, kept in `TODO`:** the line-editing/terminal-abstraction/
+key-bindings rewrite (a design-sized project, not a fixable bug) and
+"glob check on subargs other than argstr" (looks like it may already be
+handled via `expand_arg.c`'s `S_GLOB` check, but wasn't confirmed either
+way with a repro).

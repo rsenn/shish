@@ -1,33 +1,22 @@
-What is implemented and needs to be tested:
+This file is mostly historical at this point -- see TODO.md for the
+current roadmap and BUGS for concrete, verified defects. Every item
+that used to be here was investigated; most turned out to be either
+already implemented or already fixed, and are gone from this list now
+(see TODO.md's "old TODO file, investigated" section for the evidence
+trail on each one). What's left is either a genuinely open, but too
+broad/design-shaped to be a single "bug", item, or one I couldn't fully
+verify.
 
-- except for shell functions, the whole parser grammar
-  is established
-- command and variable expansion
-- variables
-- evaluation of conditionals and loops
-- evaluation of PS1 for custom prompts
-- some (non-standard) builtins
+Open design work (not bugs -- see TODO.md if you want these prioritized):
 
-What is implemented and is buggy:
-
-- redirections seem to work most of the time, but the fdtable
-  resolving code (which "lazy-resolves" redirections) can end
-  up in an infinite recursion
-- simple line editing (to be rewritten with a finer terminal abstraction
-  and key-bindings)
-
-What needs to be implemented:
-
-- implement background processes and more sophisticated job control
-- fix iofd_exec() ???
-- glob check on subargs other than argstr
-- tilde expansion
-- shell functions
-- stripped here documents (<<-)
-- key bindings
+- simple line editing should be rewritten with a finer terminal
+  abstraction and key-bindings
 - terminal abstraction (for special capabilities etc.)
-- closing of file descriptors on >&-
-- conform to 3.9.1.1 "Command Search and Execution"
-- push variable stack only when needed?
-- exporting of unset variables
-- leaving interactive mode i.E. in a forked subshell should free the prompt tree
+- key bindings
+
+Needs verification (not confirmed with a live repro):
+
+- glob check on subargs other than argstr: expand_arg.c does check the
+  S_GLOB flag on nargstr sub-nodes the same way the top-level argstr
+  path does, so this may already be handled -- didn't build a repro
+  that proves or disproves a gap

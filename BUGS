@@ -17,11 +17,37 @@
   nonzero, even when unrelated to the message; e.g. ${Y?"Y is unset"}
   prints "Y is unset: Inappropriate ioctl for device" instead of just
   "Y is unset", from a stale ENOTTY left by an earlier ioctl
-- iofd_exec() has a known problem, never diagnosed (old TODO note,
-  possibly the since-removed fd_exec()/fdtable_here() here-doc-to-
-  tempfile path)
-- leaving interactive mode e.g. in a forked subshell should free the
-  prompt tree but doesn't
+- backgrounding a non-simple (compound) command, e.g. "{ cmd; } &",
+  duplicates its execution and corrupts whatever comes after it in the
+  same command list: eval_tree.c's bgnd handling has the job_fork()
+  parent/child branches backwards -- "if((pid = job_fork(job, 0, 1)))"
+  is true in the PARENT, which then runs eval_node()+exit() itself,
+  while the CHILD (pid 0, condition false) falls through and continues
+  interpreting the rest of the script instead of exiting; confirmed
+  live: "{ sleep 1; echo bg_done; } & echo after_bg; wait; echo end"
+  prints "bg_done" twice and never reaches "after_bg"/"end", with a
+  spurious parse error in between
+- "export FOO" (or any way of marking a variable for export before
+  it's ever assigned a value) followed by "export -p" or bare "export"
+  segfaults: var_print() (src/var/var_print.c) unconditionally does
+  buffer_put(fd_out->w, var->sa.s, var->len) to print the name, but
+  var->sa.s is NULL until the variable is actually assigned
+  (var_init() only stralloc_init()s it); the guard that was clearly
+  meant to prevent this, "if(!(var->flags & V_UNSET))", never fires
+  because V_UNSET (src/var.h) is declared and checked but nothing in
+  the codebase ever sets it
+- ">&-" (closing a file descriptor) only really closes it for external
+  commands (confirmed correct: a forked child genuinely gets EBADF).
+  For the shell's own builtins it doesn't close anything -- fd_null()
+  silently redirects it to a null sink instead, so e.g. "exec 3>&-;
+  echo hi >&3" exits 0 with no error in shish where every POSIX shell
+  (bash included) reports "Bad file descriptor" and exits 1
+- PATH reassignment doesn't invalidate the remembered command-search
+  cache (POSIX 3.9.1.1 requires it to): confirmed live against bash --
+  "PATH=/a:$PATH; cmd; PATH=/b:$PATH; cmd" runs /a's cmd both times in
+  shish, but correctly switches to /b's cmd the second time in bash;
+  exec_search()/the exec hash never gets invalidated on a PATH=
+  assignment
 - builtin_fg (src/builtin/builtin_jobs.c) has a stack out-of-bounds
   write for the common no-argument case: "struct job *joblist[njobs]"
   is sized argc-1 (0 for bare "fg"), then joblist[0] is written anyway;
