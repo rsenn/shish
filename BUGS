@@ -2,3 +2,62 @@
   whenever an external command runs, caught by asan: fd_close -> fd_pop ->
   fdtable_exec -> exec_program, where exec_program's local "struct fdstack
   io" (exec_program.c:46) is referenced after its scope ends
+- the fdtable resolver (fdtable_resolve/fdtable_close/fdtable_dup/...)
+  has no real cycle detection, only a defensive depth cap added later;
+  a genuinely cyclic redirection still fails instead of resolving, root
+  cause (why the recursion can happen at all) is untouched
+- running this repo's own ./configure under shish duplicates whole
+  blocks of output ("checking for gcc" etc, interleaved) and a child
+  process segfaults mid-run; config.log shows $? getting corrupted, not
+  just the terminal output, so it's state corruption and not merely a
+  display glitch; suspected to be the fdtable recursion bug above,
+  triggered by autoconf's dense "{ ... } >&5" redirection nesting
+- sh_errorn() (src/sh/sh_errorn.c) unconditionally appends
+  strerror(errno) to any custom error message if errno happens to be
+  nonzero, even when unrelated to the message; e.g. ${Y?"Y is unset"}
+  prints "Y is unset: Inappropriate ioctl for device" instead of just
+  "Y is unset", from a stale ENOTTY left by an earlier ioctl
+- iofd_exec() has a known problem, never diagnosed (old TODO note,
+  possibly the since-removed fd_exec()/fdtable_here() here-doc-to-
+  tempfile path)
+- leaving interactive mode e.g. in a forked subshell should free the
+  prompt tree but doesn't
+- builtin_fg (src/builtin/builtin_jobs.c) has a stack out-of-bounds
+  write for the common no-argument case: "struct job *joblist[njobs]"
+  is sized argc-1 (0 for bare "fg"), then joblist[0] is written anyway;
+  confirmed crash under asan (dynamic-stack-buffer-overflow)
+- job_fork() (src/job/job_fork.c) blocks SIGCHLD before fork() but
+  never unblocks it in either the parent or child path; after the
+  first forked job the shell likely stops getting async job-completion
+  notifications, and the blocked mask leaks across fork+exec into every
+  subsequently launched program
+- fg/bg don't implement job control's stop/resume half: fg never calls
+  job_foreground() (never called from anywhere) so it doesn't actually
+  hand over the terminal, never sends SIGCONT, and busy-waits via
+  wait_pids_nohang() instead of blocking; bg (builtin_bg) is an empty
+  stub; there is no SIGCONT anywhere and no kill builtin, so a
+  Ctrl-Z-stopped job can't be resumed at all
+- WAIT_EXITSTATUS (lib/wait.h) and the fallback WEXITSTATUS (src/job.h)
+  both mask the wrong byte of the raw wait status ("(status) & 0x7f"
+  instead of "(status >> 8) & 0xff"), so they always evaluate to 0 for
+  a normally-exited process; WEXITSTATUS feeds $? for external commands
+  and is only masked on linux/glibc because <sys/wait.h>'s own macro
+  wins first, so this is live and wrong on WINDOWS_NATIVE builds
+- exec_program.c's second, independent fork path for X_NOWAIT
+  background jobs skips the sig_block(SIGCHLD)-before-fork() guard
+  job_fork() has (that line is commented out), so a fast-exiting
+  child's SIGCHLD can be handled and silently dropped before job_new()
+  has registered the job
+- wait_nohang() (lib/wait/wait_nohang.c) has no return statement on its
+  WINDOWS_NATIVE branch, undefined behavior; it drives the SIGCHLD
+  handler in sh_main.c, so child reaping is broken on native windows
+- sig_push() (lib/sig/sig_push.c) reinterprets sigset_t (a 128-byte
+  struct on glibc) through an unsigned long*, undefined behavior;
+  currently harmless only because the function is unused
+- sh_onsig(), the SIGCHLD handler in sh_main.c, calls
+  term_erase()/term_restore()/buffered i/o directly from signal-handler
+  context; none of that is async-signal-safe
+- job_free()'s job_delete() sets job_pointer to NULL when the current
+  job is deleted instead of promoting the previous job to current (bash
+  promotes "-" to "+"), so the "+"-marked job just disappears once it
+  finishes
