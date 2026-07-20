@@ -216,8 +216,7 @@ main(int argc, char** argv, char** envp) {
   if(source->mode & SOURCE_IACTIVE) {
     term_restore(source->b->fd, &term_tcattr);
 
-    history_save();
-    history_clear();
+    history_shutdown();
   }
 
   sh_exit(0);

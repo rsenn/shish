@@ -14,8 +14,7 @@ What is implemented and is buggy:
   resolving code (which "lazy-resolves" redirections) can end
   up in an infinite recursion
 - simple line editing (to be rewritten with a finer terminal abstraction
-  and key-bindings)  
-- a basic command history, which is not properly saved currently
+  and key-bindings)
 
 What needs to be implemented:
 

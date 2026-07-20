@@ -19,7 +19,7 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 LIB = ../libowfat.a
 ARCHIVE = mmap.a
-MODULES = mmap_read mmap_read_fd
+MODULES = mmap_read mmap_read_fd mmap_unmap
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

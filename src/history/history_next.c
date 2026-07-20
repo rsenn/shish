@@ -1,19 +1,18 @@
 #include "../history.h"
 #include "../term.h"
 
-/* put the next entry of the history into the cmdline
+/* move to a newer history entry (down arrow), eventually landing back
+ * on the live edit line as it was before browsing started.
  * ----------------------------------------------------------------------- */
 void
 history_next(void) {
-  if(history_offset > 0) {
-    unsigned long len = 0;
-    char* p;
+  if(history_cursor == 0)
+    return;
 
-    history_offset--;
+  history_cursor--;
 
-    if((p = history_array[history_offset]))
-      len = history_cmdlen(p);
-
-    term_setline(p, len);
-  }
+  if(history_cursor == 0)
+    term_setline(history_pending.s, history_pending.len);
+  else
+    history_show(history_cursor);
 }

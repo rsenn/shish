@@ -248,7 +248,7 @@ struct builtin_cmd builtin_table[] = {
     {"help", &builtin_help, B_DEFAULT, "[command]"},
 #endif
 #if BUILTIN_HISTORY
-    {HISTORY, builtin_history, B_DEFAULT, "[-c]"},
+    {"history", builtin_history, B_DEFAULT, "[-c]"},
 #endif
 #if BUILTIN_HOSTNAME
     {"hostname", &builtin_hostname, B_DEFAULT, "[name]"},

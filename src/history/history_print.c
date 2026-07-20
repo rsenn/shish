@@ -1,31 +1,45 @@
-#include "../fdtable.h"
 #include "../../lib/fmt.h"
+#include "../../lib/str.h"
+#include "../fdtable.h"
 #include "../history.h"
 
-/* print the history
+static void
+history_print_line(unsigned long n, const char* s, size_t len) {
+  char numstr[FMT_ULONG];
+  size_t nn = fmt_ulong(numstr, n);
+
+  buffer_putnspace(fd_out->w, nn < 5 ? 5 - nn : 0);
+  buffer_put(fd_out->w, numstr, nn);
+  buffer_putnspace(fd_out->w, 2);
+  buffer_put(fd_out->w, s, len);
+  buffer_putnlflush(fd_out->w);
+}
+
+/* list the whole history, oldest first and numbered, like other
+ * shells' `history` builtin: the on-disk entries (decoded back from
+ * their one-line-per-entry escaped form) followed by whatever's been
+ * entered so far this session. this is the one operation that
+ * legitimately walks the entire file -- it's what the user asked for.
  * ----------------------------------------------------------------------- */
 void
 history_print(void) {
-  unsigned int i, n;
-  char numstr[FMT_ULONG];
+  unsigned long n = 1;
+  size_t pos = 0;
+  const char* line;
+  size_t len;
+  unsigned int i;
 
-  if(history_array == NULL)
-    return;
+  while(history_file_next(&pos, &line, &len)) {
+    stralloc decoded = {0, 0, 0};
 
-  for(i = history_size - 1; i > 0; i--) {
-    unsigned long len;
+    history_decode(line, len, &decoded);
+    history_print_line(n++, decoded.s, decoded.len);
+    stralloc_free(&decoded);
+  }
 
-    if(history_array[i] == NULL)
-      continue;
+  for(i = 0; i < history_session_count; i++) {
+    const char* s = history_session[(history_session_head + i) % history_session_cap];
 
-    len = history_cmdlen(history_array[i]);
-
-    n = fmt_ulong(numstr, history_count - i + 1);
-
-    buffer_putnspace(fd_out->w, 5 - n);
-    buffer_put(fd_out->w, numstr, n);
-    buffer_putnspace(fd_out->w, 2);
-    buffer_put(fd_out->w, history_array[i], len);
-    buffer_putnlflush(fd_out->w);
+    history_print_line(n++, s, str_len(s));
   }
 }

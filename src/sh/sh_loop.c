@@ -24,7 +24,7 @@ sh_loop(void) {
   /* if we're in interactive mode some
      additional stuff is to be initialized */
   if(is_interactive) {
-    history_load();
+    history_init();
   }
 
   stralloc_init(&cmd);
@@ -62,12 +62,8 @@ sh_loop(void) {
               buffer_putnlflush(fd_err->w);
             }*/
 
-      if(is_interactive) {
-        stralloc_nul(&cmd);
-        history_set(cmd.s);
-        cmd.s = NULL;
-        history_advance();
-      }
+      if(is_interactive)
+        history_add(cmd.s, cmd.len);
 
       eval_push(&e, E_JCTL);
       status = eval_tree(&e, list, E_ROOT | E_LIST);
