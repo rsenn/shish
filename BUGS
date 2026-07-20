@@ -1,3 +1,13 @@
+- "eval continue" inside a for/while/until loop body hangs forever
+  (100% CPU spin) instead of continuing the loop and eventually
+  terminating normally: "for i in 1 2; do echo $i; eval continue; done"
+  prints 1 and 2 (so continue-via-eval does skip the rest of each
+  iteration correctly) but then spins instead of exiting the loop once
+  the item list is exhausted. Found while validating the newly-wired
+  tests/posix conformance suite (continue-p.tst:440, "continuing out
+  of eval") -- ctest's 120s per-test timeout is what stops it from
+  hanging the whole suite. tests/posix/fnmatch-p.tst also hangs
+  (confirmed via the same run, not yet isolated to a specific case)
 - the fdtable resolver (fdtable_resolve/fdtable_close/fdtable_dup/...)
   has no real cycle detection, only a defensive depth cap added later;
   a genuinely cyclic redirection still fails instead of resolving, root

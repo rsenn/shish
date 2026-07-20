@@ -281,7 +281,7 @@ add_custom_target(
   SOURCES ${ALL_SOURCES})
 
 file(GLOB TESTS tests/*.sh)
-list(FILTER TESTS EXCLUDE REGEX "common.sh")
+list(FILTER TESTS EXCLUDE REGEX "common.sh|run-tst.sh")
 
 relative_path(TESTS "${CMAKE_CURRENT_SOURCE_DIR}" ${TESTS})
 
@@ -295,6 +295,8 @@ set(SHISH_PATH "${CMAKE_CURRENT_BINARY_DIR}/shish${SHISH_SUFFIX}")
 
 message("SHISH_PATH: ${SHISH_PATH}")
 
+option(DO_CONFORMANCE_TESTS "Also run the tests/posix and tests/yash conformance suites" ON)
+
 if(DO_TESTS)
   include(CTest)
 
@@ -305,5 +307,28 @@ if(DO_TESTS)
       WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
       COMMAND "${SHISH_PATH}" "${TEST}")
   endforeach(TEST ${TESTS})
+
+  # tests/posix/*.tst and tests/yash/*.tst: yash's own POSIX/self conformance
+  # suite (yash's run-test.sh harness interprets each *.tst file's test_oE/
+  # test_x/... cases). Each file is one CTest case, wrapped by
+  # tests/run-tst.sh (which drives the harness under bash -- it needs
+  # $LINENO and alias-expansion-in-scripts, neither of which dash has, and
+  # bash needs -O expand_aliases explicitly for the latter) and translates
+  # its per-case PASSED/FAILED/SKIPPED result file into a single pass/fail
+  # for the whole test.
+  if(DO_CONFORMANCE_TESTS)
+    foreach(SUITE posix yash)
+      file(GLOB CONFORMANCE_TESTS "tests/${SUITE}/*.tst")
+
+      foreach(TEST ${CONFORMANCE_TESTS})
+        basename(NAME "${TEST}")
+        add_test(
+          NAME "${SUITE}/${NAME}"
+          WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+          COMMAND sh "tests/run-tst.sh" "${SHISH_PATH}" "tests/${SUITE}" "${NAME}")
+        set_tests_properties("${SUITE}/${NAME}" PROPERTIES TIMEOUT 120)
+      endforeach(TEST ${CONFORMANCE_TESTS})
+    endforeach(SUITE posix yash)
+  endif(DO_CONFORMANCE_TESTS)
 endif(DO_TESTS)
 message("TESTS: ${TESTS}")

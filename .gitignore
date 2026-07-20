@@ -1,0 +1,10 @@
+# result artifacts left behind by tests/run-tst.sh / tests/{posix,yash}/run-test.sh
+# (tmp.* work dirs are only left behind if a test is killed by SIGKILL, e.g.
+# ctest's TIMEOUT firing on a hung testee -- SIGKILL can't be trapped, so
+# run-test.sh's own cleanup trap never runs)
+tests/posix/*.trs
+tests/posix/*.trs.stderr
+tests/posix/tmp.*/
+tests/yash/*.trs
+tests/yash/*.trs.stderr
+tests/yash/tmp.*/

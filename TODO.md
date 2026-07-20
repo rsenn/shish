@@ -81,20 +81,23 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
 
 ## Goal 2 — Broader POSIX compliance
 
-4. **Wire `tests/posix/*.tst` (127 files) and `tests/yash/*.tst` (121
-   files) into the build.** These are an existing, substantial POSIX/yash
-   conformance test corpus (yash's own `.tst` format, with a runner already
-   present at `tests/posix/run-test.sh`) that is sitting in the repo
-   entirely unreferenced by `CMakeLists.txt` — `ctest` only runs the 11
-   ad hoc top-level `tests/*.sh` scripts. Nothing here is currently
-   measuring real POSIX coverage; this is the highest-leverage item in this
-   goal because it replaces guessing at gaps with a concrete, ranked
-   failure list to work through. `run-test.sh` was written for yash and
-   uses a couple of yash-isms (`command -b ulimit`) — expect to need a
-   small adapter, not a rewrite, to point it at `shish` and register each
-   `.tst` file (or a summarized subset) as a CTest case.
-5. Once 4 is wired up, prioritize by what it reports — don't hand-pick
-   POSIX sections to fix ahead of that data.
+4. ~~Wire `tests/posix/*.tst` and `tests/yash/*.tst` into the build.~~
+   **Done.** `tests/run-tst.sh` drives the upstream `run-test.sh` harness
+   under `bash -O expand_aliases` (it needs `$LINENO` and alias expansion
+   in non-interactive scripts, neither of which `dash`/plain POSIX `sh`
+   provide) and turns its per-case result file into a single pass/fail,
+   one CTest case per `.tst` file, named `posix/<file>.tst` /
+   `yash/<file>.tst`. Runs by default as part of `ctest`/`make test`
+   (gate it off with `-DDO_CONFORMANCE_TESTS=OFF` if you just want the
+   fast core suite). As expected, this immediately surfaces a large,
+   concrete failure list instead of the previous zero conformance
+   coverage — e.g. a quick sample already found real gaps: `getopts`
+   (most of it), functions as loop/if/case bodies, `&&`/`||` exit status
+   in a couple of shapes, comments after `&`/in compound-command bodies.
+5. Now that 4 is wired up, prioritize by what it reports — don't
+   hand-pick POSIX sections to fix ahead of that data. (Not done in this
+   pass — wiring it up was the deliverable; triaging the failure list is
+   its own follow-on task.)
 6. **Process note, not code:** most recent commits (`git log --oneline`)
    have the placeholder message `...`. `fixes/*.patch` is currently the
    only place the *why* for the last 18 fixes is written down, and it's an
