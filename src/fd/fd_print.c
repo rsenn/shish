@@ -28,7 +28,7 @@ fd_print(struct fd* d, buffer* b) {
   numstr[n] = '\0';
 
   /* print virtual d number */
-  buffer_putnspace(b, 4 - n);
+  buffer_putnspace(b, n < 4 ? 4 - n : 0);
   buffer_puts(b, numstr);
 
   /* convert read d to string */

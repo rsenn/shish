@@ -8,8 +8,6 @@
 #include <unistd.h>
 #endif
 
-#include <stdio.h>
-
 #ifndef SEEK_SET
 #define SEEK_SET 0
 #endif
@@ -54,10 +52,9 @@ fdtable_here(struct fd* d, int flags) {
 
   buffer_flush(&d->wb);
 
-  /* make the d read-only and seek to the current position */
-#ifdef F_SETFL
-  fcntl(e, F_SETFL, O_RDONLY);
-#endif
+  /* seek back to the current read position; note there is no portable
+     way to actually downgrade an already-open fd to read-only via
+     fcntl(F_SETFL) -- access mode isn't one of the flags it can change */
   lseek(e, d->rb.p, SEEK_SET);
 
   /* initialize the read buffer so we can read from
@@ -66,7 +63,7 @@ fdtable_here(struct fd* d, int flags) {
   buffer_init(&d->wb, (buffer_op_proto*)(void*)&write, -1, NULL, 0);
 
   /* its now not longer a stralloc :) */
-  d->mode = FD_READ;
+  d->mode = (d->mode & FD_FREE) | FD_READ;
 
   if(d->e == d->n || !(flags & FDTABLE_FORCE))
     return FDTABLE_DONE;

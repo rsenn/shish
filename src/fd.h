@@ -146,7 +146,6 @@ extern struct fd fd_nullfd;
 
 int fd_dup(struct fd*, int dfd);
 int fd_error(int n, const char* msg);
-int fd_exec(struct fd*);
 int fd_getname(struct fd*);
 int fd_mmap(struct fd*, const char* fname);
 int fd_needbuf(struct fd*);

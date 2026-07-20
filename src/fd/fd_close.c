@@ -14,7 +14,9 @@ fd_close(struct fd* fd) {
     if(fd->e >= 0 && fd->e < fd_expected)
       fd_expected = fd->e;
 
-    if(fd_list[fd->e] == fd)
+    /* fd->e is -1 for fds that never got a real effective descriptor
+       (stralloc-backed here-docs, command substitution, ...) */
+    if(fd_ok(fd->e) && fd_list[fd->e] == fd)
       fd_list[fd->e] = 0;
   }
 

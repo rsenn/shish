@@ -41,7 +41,9 @@ fd_stat(struct fd* fd) {
   if(fd->mode & FD_TYPE)
     return 0;
 
-  if(fstat(fd->n, &st) == -1)
+  /* stat the actual backing descriptor, not the shell-visible virtual
+     one -- they coincide right after fd_setfd() but can diverge later */
+  if(fstat(fd->e, &st) == -1)
     return 1;
 
   fd->dev = st.st_rdev;

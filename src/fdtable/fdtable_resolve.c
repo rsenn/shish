@@ -1,12 +1,26 @@
 #include "../fd.h"
 #include "../fdtable.h"
 #include "../debug.h"
+#include "../sh.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>
 #else
 #include <unistd.h>
 #endif
+
+/* fdtable_resolve, fdtable_close, fdtable_dup, fdtable_here,
+ * fdtable_open, fdtable_gap, fdtable_wish and fdtable_lazy recurse into
+ * each other, following whatever fd currently occupies the slot a
+ * redirection wants. That's normally a short, acyclic chain, but
+ * nothing here detects a cycle (e.g. two or more fds all wanting each
+ * other's slot) -- so a pathological redirection could in principle
+ * recurse forever and blow the stack. There can be at most FDTABLE_SIZE
+ * distinct fds involved, so any legitimate resolution finishes well
+ * within that many nested calls; past it, we're going in circles.
+ * ----------------------------------------------------------------------- */
+static int
+fdtable_resolve_depth;
 
 /* try to resolve the virtual to its effective file descriptor
  *
@@ -15,8 +29,8 @@
  * FDTABLE_FORCE  forces the fd->e to be (re-)mapped to fd->n
  * FDTABLE_CLOSE  means that the current fd->e can already be closed
  * ----------------------------------------------------------------------- */
-int
-fdtable_resolve(struct fd* d, int flags) {
+static int
+fdtable_resolve_1(struct fd* d, int flags) {
   int state = FDTABLE_PENDING;
 
   /* already resolved */
@@ -30,7 +44,7 @@ fdtable_resolve(struct fd* d, int flags) {
   }
 
   if((flags & FDTABLE_FD) && d != fdtable[d->n]) {
-    d->mode = FD_CLOSE;
+    d->mode = (d->mode & FD_FREE) | FD_CLOSE;
   }
 
   /*    state = fdtable_close(d->n, flags);*/
@@ -91,6 +105,22 @@ fdtable_resolve(struct fd* d, int flags) {
   buffer_puts(debug_output, ((const char* const[]){"0", "DONE", "ERROR", "PENDING"})[-state]);
   debug_nl_fl();
 #endif
+
+  return state;
+}
+
+int
+fdtable_resolve(struct fd* d, int flags) {
+  int state;
+
+  if(fdtable_resolve_depth >= FDTABLE_SIZE) {
+    sh_error("fdtable: redirection cycle detected");
+    return FDTABLE_ERROR;
+  }
+
+  fdtable_resolve_depth++;
+  state = fdtable_resolve_1(d, flags);
+  fdtable_resolve_depth--;
 
   return state;
 }

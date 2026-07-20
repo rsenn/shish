@@ -1,3 +1,0 @@
-- it may be that the fdtable ends up in an
-  infinite recursion when doing redirections
-- bug while: exec 5<>lala

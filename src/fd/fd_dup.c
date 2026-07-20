@@ -11,6 +11,9 @@ int
 fd_dup(struct fd* d, int n) {
   struct fd* dupe;
 
+  if(!fdtable_ok(n))
+    return fd_error(n, strerror(EBADF));
+
   /* search the (d) to be duplicated and
      output error message and return if not found */
   if((dupe = fdtable[n]) == NULL)

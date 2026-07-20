@@ -12,9 +12,17 @@ redir_dup(struct nredir* nredir, stralloc* sa) {
 
   /* [n]>&- means closing a file descriptor */
   if(sa->len != 1 || sa->s[0] != '-') {
-    int fd;
+    int fd = 0;
 
     scan_uint(sa->s, (unsigned int*)&fd);
+
+    /* a bogus fd number (e.g. "3<&99999") must not reach fd_dup()'s
+       fdtable[fd] lookup unchecked */
+    if(fd < 0 || fd >= FD_MAX) {
+      fd_error(fd, "bad file descriptor");
+      stralloc_free(sa);
+      return 1;
+    }
 
     /* dup only if the filedescriptors are different */
     if(nredir->fdes == fd) {

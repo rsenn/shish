@@ -93,7 +93,12 @@ parse_unquoted(struct parser* p) {
     else if((p->flags & P_NOREDIR) == 0 && (c == '<' || c == '>')) {
       int fd = (c == '<' ? 0 : 1);
 
-      if(p->sa.len == 0 || scan_uint(p->sa.s, (unsigned int*)&fd) == p->sa.len)
+      /* an out-of-range [n] prefix (e.g. "99999<&1") must not reach
+         fd_push()/fdtable_link(), which index fdtable[n] unchecked --
+         fall through to ordinary word parsing instead, same as any
+         other malformed prefix (non-digit chars mixed with the digits) */
+      if(p->sa.len == 0 ||
+         (scan_uint(p->sa.s, (unsigned int*)&fd) == p->sa.len && fd >= 0 && fd < FD_MAX))
         return redir_parse(p, (c == '<' ? R_IN : R_OUT), fd);
     }
 

@@ -6,7 +6,7 @@
 void
 fd_subst(struct fd* d, stralloc* sa) {
   d->name = "<subst>";
-  d->mode = FD_SUBST;
+  d->mode = (d->mode & FD_FREE) | FD_SUBST;
 
   buffer_init(d->w, (buffer_op_proto*)(void*)&stralloc_write, -1, NULL, 0);
   d->w->cookie = sa;

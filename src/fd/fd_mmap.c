@@ -1,6 +1,7 @@
 #include "../fd.h"
 #include "../fdtable.h"
 #include "../sh.h"
+#include "../../lib/alloc.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>
@@ -34,7 +35,10 @@ fd_mmap(struct fd* d, const char* fname) {
     return -1;
   }
 
-  d->name = (char*)fname;
+  /* copy the name: the caller's string isn't guaranteed to outlive
+     this (fd) */
+  d->name = str_dup(fname);
+  d->mode |= FD_FREENAME;
 
   return 0;
 }
