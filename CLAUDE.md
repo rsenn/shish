@@ -157,3 +157,66 @@ detected). `libshell.a` is the rest of the shell as a static lib, which both
   not `<stdio.h>` deliberately.
 - `HAVE_CONFIG_H` is always defined; gate platform-conditional code on the
   `HAVE_*` macros emitted into `config.h` (CMake) or `config.h.in` (autotools).
+
+## Tracking bugs and roadmap
+
+This repo tracks known defects and the work plan in two plain files at the
+repo root instead of an issue tracker:
+
+- `BUGS` — a flat list of confirmed, currently-open defects, one bullet
+  each (dash + short lowercase description, wrapped/indented like the
+  existing entries). Only things that are still true belong here. When
+  you fix something listed, remove its entry (or narrow it) in the same
+  change — don't leave it for later cleanup. When you find a new bug,
+  including ones you stumble into while working on something unrelated,
+  add it with enough detail to reproduce; a concrete repro command beats
+  a vague description every time.
+- `TODO.md` — the leverage-sorted roadmap: goals, the evidence for why
+  each item matters, what's already been tried and ruled out. Keep it in
+  sync with `BUGS` — when a `BUGS` item gets fixed, go update or remove
+  the corresponding `TODO.md` mention too, so the two files don't
+  quietly drift apart and start contradicting each other.
+- `TODO` (no extension) is the old pre-2010 file. Mostly superseded; only
+  a couple of genuinely still-open design items remain in it. See
+  `TODO.md`'s "old TODO file, investigated" section for the evidence
+  trail on why everything else was removed from it.
+
+Update both files as part of the change that makes them true, not as a
+follow-up — a stale `BUGS`/`TODO.md` is worse than a stale comment, since
+the entire point of these files is to be trusted at a glance without
+re-deriving the state of the project from scratch.
+
+## Current focus
+
+Recent and ongoing work, roughly newest-first (see `BUGS`/`TODO.md` and
+git log for full detail — this is a pointer into them, not a replacement):
+
+- `break`/`continue` jumping out of `eval`/`.`/`source` left dangling
+  `source`/`fd` state behind (a `longjmp` bypassing `eval_pop()`-style
+  cleanup), causing a hang or a crash depending on what ran next. Fixed.
+- Wired `tests/posix/*.tst` and `tests/yash/*.tst` (yash's own POSIX/self
+  conformance suite, 239 files) into `ctest`/`make test` via
+  `tests/run-tst.sh`. This now gives a real, concrete POSIX-compliance
+  failure list instead of no signal at all — triaging that list is
+  unstarted and is the natural next step for POSIX-compliance work.
+- Fixed several bugs specifically blocking this repo's own `./configure`
+  from running under `shish` (stray errno text on unrelated error
+  messages, SIGCHLD/SIGINT staying blocked across fork+exec, a stack-
+  use-after-scope in `exec_program()`). `./configure` still doesn't
+  complete — duplicated output, a segfault, and a `fdstack_push()`
+  consistency-assertion failure are all still open in `BUGS`. This is
+  ongoing; the next step is bisecting `configure` itself to narrow down
+  which construct triggers it, rather than guessing further.
+- Found and fixed a batch of `src/fd*` bugs: fd numbers indexing
+  `fdtable[]`/`fd_list[]` with no bounds check (segfault on `exec
+  3<&99999`), `<>` truncating a file it should be opening in place,
+  `struct fd` leaks from an inconsistent mode-field-overwrite pattern,
+  and some dead code.
+- Rewrote `src/history/` to lazily `mmap()` + scan the history file
+  backward from the end, instead of reading and parsing it fully at
+  startup — startup time is now independent of history file size.
+- `lib/sig`/`src/job` (job control: `fg`/`bg`, SIGCHLD handling,
+  `WAIT_EXITSTATUS`) were surveyed in depth but the fixes haven't been
+  applied yet (see `BUGS`) — `fg` in particular has a confirmed stack
+  out-of-bounds crash on the plain no-argument invocation, and `bg` is
+  an unimplemented stub. Good next target if picking up fresh work here.
