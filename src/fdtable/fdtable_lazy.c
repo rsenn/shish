@@ -25,6 +25,12 @@ fdtable_lazy(int e, int flags) {
     /* if we cannot continue filling up the table, finish for now */
     if(r == FDTABLE_PENDING)
       break;
+
+    /* propagate failure: every other resolve result exits this loop
+       above, so looping on FDTABLE_ERROR would re-resolve the same fd
+       (and re-fail the same syscall) forever */
+    if(r == FDTABLE_ERROR)
+      return FDTABLE_ERROR;
   }
 
   return (e == fd_expected ? FDTABLE_DONE : FDTABLE_PENDING);

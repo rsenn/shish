@@ -5,6 +5,24 @@
   has no real cycle detection, only a defensive depth cap added later;
   a genuinely cyclic redirection still fails instead of resolving, root
   cause (why the recursion can happen at all) is untouched
+- fd_expected (the shell's guess of the kernel's lowest free fd) goes
+  stale: resolution paths leave kernel fds open at slots the table
+  thinks are free (e.g. resolving stdin from a pipe does dup(pipe)=9;
+  dup2(9,0) and never closes the original pipe fd; here-doc temp fds
+  stay open after being dup2'd onto 0). this used to make
+  fdtable_dup()'s "d->n == fd_expected" dup() bet fail forever and
+  endlessly dup() until EMFILE (fixed: the retry now falls back to
+  dup2(), and fdtable_lazy() now propagates FDTABLE_ERROR instead of
+  re-resolving the same fd in an infinite loop), so a stale
+  fd_expected now only costs one stray dup+close per miss -- but the
+  staleness itself is still there, and so are the leaked kernel fds
+  behind it (visible as fds accumulating in long-running scripts)
+- arithmetic expansion containing a variable name fails to parse:
+  "echo $((i+1))" prints the literal "i+1" followed by "unexpected
+  token )" and exit 1 (same for $(( i + 1 )) and in assignments,
+  "i=$((i+1))"); constant-only arithmetic like "echo $((1+1))" works.
+  found while trying to write a while-loop repro -- any POSIX script
+  using the idiomatic i=$((i+1)) counter dies on this
 - builtin_wait (src/builtin/builtin_wait.c) always "return 0;" no
   matter what the waited-for job(s) actually exited with -- it captures
   job_wait()'s status into a local variable and never uses it. Found
@@ -13,13 +31,21 @@
   instead of 42. Separately, "$!" (the last background PID) isn't
   implemented at all -- always expands empty
 - running this repo's own ./configure under shish still duplicates
-  blocks of output and a child process still segfaults mid-run, even
-  after the SIGCHLD/errno/fdstack-scope fixes below landed (duplicated
-  output shrank somewhat, but the core issue is still there); still
-  suspected to be the fdtable recursion above and/or the fdstack_push
-  assertion below, both triggered by autoconf's dense subshell/
-  redirection nesting -- needs a bisection of configure itself to
-  narrow down further, this pass didn't get to the bottom of it
+  blocks of output and dies at AC_PROG_CC with a false "C compiler
+  cannot create executables" (gcc works); with the fdtable_dup
+  dup-storm fixed, configure now runs that far in seconds instead of
+  burning the whole fd table -- the remaining suspects are the
+  duplicated-output/re-execution bug (command substitution of a
+  pipeline also returns an empty string and runs the surrounding
+  command twice: 'x=`echo hi | sed 1q`; echo "[$x]"' prints "[]"
+  twice) and the fdstack_push assertion below. the MinSizeRel build
+  behaves differently from Debug on the same configure: pre-fix its
+  forked children died with SEGV at address 0x10 where Debug stormed,
+  and post-fix it bails at the as_myself check ("configure: error:
+  cannot find myself") where Debug proceeds to AC_PROG_CC -- $0 and
+  "case $0 in *[\\/]*)" work fine in isolation on both builds, so
+  something earlier in configure corrupts state only in the
+  optimized build; worth an asan build to catch what Debug tolerates
 - fdstack_push() (src/fdstack/fdstack_push.c:8) can hit its own
   consistency assertion, "st < fdstack || fdstack == &fdstack_root",
   under heavy nested command-substitution + subshell use; confirmed
@@ -30,7 +56,8 @@
   underlying corruption is still there -- tests/param.sh's last
   assertion silently evaluates to the wrong value ('0' instead of the
   expected string) instead of crashing
-- backgrounding a non-simple (compound) command, e.g. "{ cmd; } &",
+- FIXED: 
+  backgrounding a non-simple (compound) command, e.g. "{ cmd; } &",
   duplicates its execution and corrupts whatever comes after it in the
   same command list: eval_tree.c's bgnd handling has the job_fork()
   parent/child branches backwards -- "if((pid = job_fork(job, 0, 1)))"

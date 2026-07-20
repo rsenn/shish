@@ -50,6 +50,25 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
      `case` inside the retry loop, or a second layer of subshell). Worth
      bisecting configure itself (binary-search which `AC_*` check block
      first shows duplicated output) rather than guessing.
+   - **Fd-side root cause found and fixed (2026-07-21):** the resolver
+     endlessly `dup()`ed until EMFILE, then spun at 100% CPU: a stale
+     `fd_expected` made the `d->n == fd_expected` branch in
+     `src/fdtable/fdtable_dup.c` retry `dup()` under `FDTABLE_FORCE`
+     forever (leaking one fd per iteration), and `fdtable_lazy()` looped
+     on `FDTABLE_ERROR`. Fixed by letting the `dup()` bet be tried at
+     most once (the forced retry now goes straight to `dup2()`) and by
+     propagating `FDTABLE_ERROR` out of `fdtable_lazy()`. Repro that
+     used to storm (~3700 dups, now ~750 with no runaway chains):
+     `sed -n 1,2053p configure > /tmp/storm.sh && strace -f -e trace=dup
+     ./shish /tmp/storm.sh`. A Debug-build `./configure` now runs in
+     seconds up to the `AC_PROG_CC` false negative. Still open, in
+     likely-blocking order: the duplicated-output/re-execution bug
+     (command substitution of a pipeline returns empty and re-runs the
+     surrounding command — see `BUGS`), the `AC_PROG_CC` "cannot create
+     executables" false negative, and the MinSizeRel-only early death
+     (`BUGS` has the details). Longer-term the underlying `fd_expected`
+     staleness (leaked kernel fds after pipe/here-doc wiring) should go
+     away too — see its own `BUGS` entry.
    - Build a debug config (`cfg-cmake.sh`'s Debug type, or add
      `-DUSE_EFENCE=ON`/ASan) to get a real backtrace for the SEGV instead of
      just the job-control "signaled" line.

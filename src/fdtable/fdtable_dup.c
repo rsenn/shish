@@ -26,6 +26,7 @@
 int
 fdtable_dup(struct fd* d, int flags) {
   int state, o, e = -1;
+  int retried = 0;
 
   /* already resolved? */
   if((o = d->e) == d->n)
@@ -44,8 +45,18 @@ fdtable_dup(struct fd* d, int flags) {
 
 retry:
   /* if the wish was satisfied or we should change the
-     effective d then dup() the file descriptor */
-  if((d->n == fd_expected) || (state == FDTABLE_DONE) || (flags & FDTABLE_MOVE))
+     effective d then dup() the file descriptor.
+
+     the dup() here is a bet that the kernel's lowest free fd equals
+     fd_expected (== d->n), so dup() lands exactly on the target.
+     fd_expected is only the shell's guess, though -- if a kernel fd
+     is still open at that slot the bet is lost, and it stays lost on
+     every subsequent attempt (each dup() only raises the lowest free
+     fd further). so the bet may be tried at most once: on the forced
+     retry below we go straight to dup2(), which cannot miss. without
+     this, a stale fd_expected made the retry loop dup() its own
+     result forever, leaking one fd per iteration until EMFILE. */
+  if(!retried && ((d->n == fd_expected) || (state == FDTABLE_DONE) || (flags & FDTABLE_MOVE)))
     e = dup(o);
 
   /* position forced or destination d can be closed */
@@ -93,11 +104,22 @@ retry:
   if(fd_ok(e))
     fd_setfd(d, e);
 
-  /* we didn't get the expected file descriptor and we're forcing, retry! */
+  /* we didn't get the expected file descriptor and we're forcing, retry!
+     the missed dup() above created a stepping-stone fd we own
+     exclusively: close it right away and retry with dup2() from the
+     original o, so the ownership contract of the return value below
+     stays intact. shifting o to the stepping stone instead (as this
+     used to) meant nobody ever closed the original kernel fd -- the
+     leaked fd then occupied a slot the table considers free, which is
+     what made fd_expected go stale (and leaked fds into exec'd
+     programs, since only the stepping stone is marked cloexec). */
   if(d->e != d->n && (flags & FDTABLE_FORCE)) {
-    state = o;
-    o = d->e;
-    d->mode &= ~FD_DUP;
+    if(e >= 0 && e != o) {
+      if(fd_ok(e) && fd_list[e] == d)
+        fd_list[e] = 0;
+      close(e);
+    }
+    retried = 1;
     goto retry;
   }
 

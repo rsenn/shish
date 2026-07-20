@@ -38,7 +38,7 @@ eval_tree(struct eval* e, union node* node, int tempflags) {
       if(node->ncmd.bgnd) {
         job = job_new(1);
 
-        if((pid = job_fork(job, 0, 1))) {
+        if(!(pid = job_fork(job, 0, 1))) {
           ret = eval_node(e, node);
           exit(ret);
         }
