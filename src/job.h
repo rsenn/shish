@@ -29,7 +29,7 @@ typedef int pid_t;
 #endif
 
 #ifndef WEXITSTATUS
-#define WEXITSTATUS(st) ((char)((unsigned char)st & 0xff))
+#define WEXITSTATUS(st) ((unsigned char)((st) >> 8))
 #endif
 
 union node;

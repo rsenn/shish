@@ -25,7 +25,7 @@ sh_pop(struct env* env) {
      e.g. by sh_exit's fall-through path) */
   if(sh->cwd.s && stralloc_diffs(&sh->cwd, parent->cwd.s)) {
     if(chdir(parent->cwd.s) == -1)
-      sh_errorn(parent->cwd.s, parent->cwd.len);
+      sh_errorn_errno(parent->cwd.s, parent->cwd.len);
   }
 
   /* free arguments */

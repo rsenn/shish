@@ -25,7 +25,10 @@ job_fork(struct job* j, union node* node, int bgnd) {
 
   /* fork the process */
   if((pid = fork()) == -1) {
-    sh_error("fork failed");
+#if !WINDOWS_NATIVE
+    sig_unblock(SIGCHLD);
+#endif
+    sh_error_errno("fork failed");
     return -1;
   }
 
@@ -42,6 +45,11 @@ job_fork(struct job* j, union node* node, int bgnd) {
       /* and then give the child terminal access */
       if(!bgnd)
         tcsetpgrp(job_terminal, pgrp);
+
+    /* the blocked mask survives exec(), so a program this child later
+       execs (or a builtin/subshell it runs in-process) would otherwise
+       inherit SIGCHLD blocked forever */
+    sig_unblock(SIGCHLD);
 #endif
     return pid;
   }
@@ -73,6 +81,7 @@ job_fork(struct job* j, union node* node, int bgnd) {
 
 #if !WINDOWS_NATIVE
   setpgid(pid, pgrp);
+  sig_unblock(SIGCHLD);
 #endif
   return pid;
 }

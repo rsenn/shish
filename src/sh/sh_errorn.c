@@ -3,21 +3,16 @@
 #include "../sh.h"
 #include "../source.h"
 #include "../../lib/shell.h"
-#include <errno.h>
-#include <string.h>
 
 /* output error message
+ *
+ * does NOT append strerror(errno): errno is whatever the last syscall
+ * anywhere left it, not necessarily related to this message. callers
+ * reporting a failed syscall want sh_errorn_errno() instead.
  * ----------------------------------------------------------------------- */
 int
 sh_errorn(const char* s, unsigned int len) {
   sh_msgn(s, len);
-
-  if(errno) {
-    if(s)
-      buffer_puts(fd_err->w, ": ");
-    buffer_puts(fd_err->w, strerror(errno));
-  }
-
   buffer_putnlflush(fd_err->w);
   return 1;
 }

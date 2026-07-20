@@ -7,11 +7,11 @@
 #if WINDOWS_NATIVE
 #define WAIT_IF_SIGNALED(status) ((status) & 0)
 #define WAIT_TERMSIG(status) ((status) & 0)
-#define WAIT_EXITSTATUS(status) ((status) & 0x7f)
+#define WAIT_EXITSTATUS(status) (((status) >> 8) & 0xff)
 #else
 #define WAIT_IF_SIGNALED(status) WIFSIGNALED(status)
 #define WAIT_TERMSIG(status) WTERMSIG(status)
-#define WAIT_EXITSTATUS(status) ((status) & 0x7f)
+#define WAIT_EXITSTATUS(status) (((status) >> 8) & 0xff)
 #endif
 
 #define WAIT_IF_EXITED(status) (WTERMSIG(status) == 0)

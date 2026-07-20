@@ -53,7 +53,7 @@ fdtable_open(struct fd* d, int flags) {
            (0666 & ~sh->umask));
 
   if(!fd_ok(e)) {
-    sh_error(d->name);
+    sh_error_errno(d->name);
     return FDTABLE_ERROR;
   }
 

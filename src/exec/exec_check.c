@@ -28,7 +28,7 @@ exec_check(char* path) {
     ret = path;
 
   if(ret == NULL)
-    sh_error(path);
+    sh_error_errno(path);
 
   return ret;
 }

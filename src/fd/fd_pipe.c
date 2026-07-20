@@ -19,7 +19,7 @@ fd_pipe(struct fd* fd) {
 
   /* try to create a pipe and return on error */
   if(pipe(p) == -1) {
-    sh_error("pipe creation failed");
+    sh_error_errno("pipe creation failed");
     return -1;
   }
 

@@ -1,22 +1,32 @@
-- stack-use-after-scope in fdstack_unref() (src/fdstack/fdstack_unref.c:17)
-  whenever an external command runs, caught by asan: fd_close -> fd_pop ->
-  fdtable_exec -> exec_program, where exec_program's local "struct fdstack
-  io" (exec_program.c:46) is referenced after its scope ends
 - the fdtable resolver (fdtable_resolve/fdtable_close/fdtable_dup/...)
   has no real cycle detection, only a defensive depth cap added later;
   a genuinely cyclic redirection still fails instead of resolving, root
   cause (why the recursion can happen at all) is untouched
-- running this repo's own ./configure under shish duplicates whole
-  blocks of output ("checking for gcc" etc, interleaved) and a child
-  process segfaults mid-run; config.log shows $? getting corrupted, not
-  just the terminal output, so it's state corruption and not merely a
-  display glitch; suspected to be the fdtable recursion bug above,
-  triggered by autoconf's dense "{ ... } >&5" redirection nesting
-- sh_errorn() (src/sh/sh_errorn.c) unconditionally appends
-  strerror(errno) to any custom error message if errno happens to be
-  nonzero, even when unrelated to the message; e.g. ${Y?"Y is unset"}
-  prints "Y is unset: Inappropriate ioctl for device" instead of just
-  "Y is unset", from a stale ENOTTY left by an earlier ioctl
+- builtin_wait (src/builtin/builtin_wait.c) always "return 0;" no
+  matter what the waited-for job(s) actually exited with -- it captures
+  job_wait()'s status into a local variable and never uses it. Found
+  while checking that the WAIT_EXITSTATUS fix actually surfaces through
+  "wait": confirmed live, "sh -c 'exit 42' & wait; echo $?" prints 0
+  instead of 42. Separately, "$!" (the last background PID) isn't
+  implemented at all -- always expands empty
+- running this repo's own ./configure under shish still duplicates
+  blocks of output and a child process still segfaults mid-run, even
+  after the SIGCHLD/errno/fdstack-scope fixes below landed (duplicated
+  output shrank somewhat, but the core issue is still there); still
+  suspected to be the fdtable recursion above and/or the fdstack_push
+  assertion below, both triggered by autoconf's dense subshell/
+  redirection nesting -- needs a bisection of configure itself to
+  narrow down further, this pass didn't get to the bottom of it
+- fdstack_push() (src/fdstack/fdstack_push.c:8) can hit its own
+  consistency assertion, "st < fdstack || fdstack == &fdstack_root",
+  under heavy nested command-substitution + subshell use; confirmed
+  with tests/param.sh under asan (a script that's mostly repeated
+  "assert_equal ... $(...)" calls). Confirmed pre-existing, not a
+  regression: reproduces identically on a clean checkout via a
+  separate worktree. Non-asan builds don't hit the assertion but the
+  underlying corruption is still there -- tests/param.sh's last
+  assertion silently evaluates to the wrong value ('0' instead of the
+  expected string) instead of crashing
 - backgrounding a non-simple (compound) command, e.g. "{ cmd; } &",
   duplicates its execution and corrupts whatever comes after it in the
   same command list: eval_tree.c's bgnd handling has the job_fork()
@@ -52,28 +62,12 @@
   write for the common no-argument case: "struct job *joblist[njobs]"
   is sized argc-1 (0 for bare "fg"), then joblist[0] is written anyway;
   confirmed crash under asan (dynamic-stack-buffer-overflow)
-- job_fork() (src/job/job_fork.c) blocks SIGCHLD before fork() but
-  never unblocks it in either the parent or child path; after the
-  first forked job the shell likely stops getting async job-completion
-  notifications, and the blocked mask leaks across fork+exec into every
-  subsequently launched program
 - fg/bg don't implement job control's stop/resume half: fg never calls
   job_foreground() (never called from anywhere) so it doesn't actually
   hand over the terminal, never sends SIGCONT, and busy-waits via
   wait_pids_nohang() instead of blocking; bg (builtin_bg) is an empty
   stub; there is no SIGCONT anywhere and no kill builtin, so a
   Ctrl-Z-stopped job can't be resumed at all
-- WAIT_EXITSTATUS (lib/wait.h) and the fallback WEXITSTATUS (src/job.h)
-  both mask the wrong byte of the raw wait status ("(status) & 0x7f"
-  instead of "(status >> 8) & 0xff"), so they always evaluate to 0 for
-  a normally-exited process; WEXITSTATUS feeds $? for external commands
-  and is only masked on linux/glibc because <sys/wait.h>'s own macro
-  wins first, so this is live and wrong on WINDOWS_NATIVE builds
-- exec_program.c's second, independent fork path for X_NOWAIT
-  background jobs skips the sig_block(SIGCHLD)-before-fork() guard
-  job_fork() has (that line is commented out), so a fast-exiting
-  child's SIGCHLD can be handled and silently dropped before job_new()
-  has registered the job
 - wait_nohang() (lib/wait/wait_nohang.c) has no return statement on its
   WINDOWS_NATIVE branch, undefined behavior; it drives the SIGCHLD
   handler in sh_main.c, so child reaping is broken on native windows

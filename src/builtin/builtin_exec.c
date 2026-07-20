@@ -44,6 +44,6 @@ builtin_exec(int argc, char* argv[]) {
   }
 
   /* at this point the exec stuff failed */
-  sh_error(argv[shell_optind]);
+  sh_error_errno(argv[shell_optind]);
   return exec_error();
 }

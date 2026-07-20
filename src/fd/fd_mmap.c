@@ -19,7 +19,7 @@ fd_mmap(struct fd* d, const char* fname) {
   d->mode |= FD_FILE;
 
   if((e = open(fname, O_RDONLY | O_LARGEFILE)) == -1) {
-    sh_error(fname);
+    sh_error_errno(fname);
     return -1;
   }
 
@@ -31,7 +31,7 @@ fd_mmap(struct fd* d, const char* fname) {
   d->r->fd = -1;
 
   if(r) {
-    sh_error(fname);
+    sh_error_errno(fname);
     return -1;
   }
 

@@ -69,8 +69,9 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
       prevfd = fd_pipe(out);
 
       if(prevfd == -1) {
-        close(prevfd);
-        sh_error("pipe creation failed");
+        /* prevfd is already -1 here; close(-1) is a no-op that only
+           risks clobbering errno (with EBADF) before it's reported */
+        sh_error_errno("pipe creation failed");
       }
     }
 

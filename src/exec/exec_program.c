@@ -35,6 +35,14 @@ pid_t fork(void);
 int
 exec_program(char* path, char** argv, enum execflag flag) {
   int ret = 0;
+  /* declared at function scope, not block scope: the child path below
+     falls through past the closing brace of the "if" below and into
+     fdtable_exec()/fdstack_flatten(), which still reference this frame
+     via the global fdstack pointer fdstack_push() sets -- it was never
+     popped in the child (only the parent branch pops it). Scoping it
+     to the "if" block let the compiler treat that as a use-after-scope
+     even though the child's use was intentional. */
+  struct fdstack io;
 
   /* if we're gonna execve() a program and 'exec' isn't
      set or we aren't in the root shell environment we
@@ -43,7 +51,6 @@ exec_program(char* path, char** argv, enum execflag flag) {
     pid_t pid;
     struct fd* pipes = 0;
     unsigned int npipes;
-    struct fdstack io;
 
     fdstack_push(&io);
 
@@ -63,10 +70,13 @@ exec_program(char* path, char** argv, enum execflag flag) {
 #endif
 
     /* block child and interrupt signal, so we won't terminate ourselves
-       when the child does */
+       when the child does. SIGCHLD in particular has to be blocked
+       before fork(): otherwise a fast-exiting child can deliver it (and
+       have it handled -> job_signal() -> job_bypid() finding nothing)
+       before job_new() below has even registered the job. */
 #if !WINDOWS_NATIVE
     sig_block(SIGINT);
-    // sig_block(SIGCHLD);
+    sig_block(SIGCHLD);
 #endif
 
     /* in the parent wait for the child to finish and then return
@@ -97,6 +107,9 @@ exec_program(char* path, char** argv, enum execflag flag) {
         buffer_putulong(fd_err->w, pid);
         buffer_putnlflush(fd_err->w);
 
+#if !WINDOWS_NATIVE
+        sig_unblock(SIGCHLD);
+#endif
         ret = 0;
       } else {
         job_wait(NULL, pid, &status);
@@ -116,6 +129,13 @@ exec_program(char* path, char** argv, enum execflag flag) {
 
     /* ...in the child we always exit */
     sh_forked();
+
+    /* the blocked mask set above survives exec(); the program we're
+       about to run (or exit() out of) must not inherit SIGINT/SIGCHLD
+       blocked */
+#if !WINDOWS_NATIVE
+    sig_blocknone();
+#endif
   }
 
   fdtable_exec();
@@ -137,7 +157,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
     ret = exec_error();
 
     /* yield an error message */
-    sh_error(path);
+    sh_error_errno(path);
   }
 
   /* we never return at this point! */

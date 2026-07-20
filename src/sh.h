@@ -98,6 +98,8 @@ union node;
 
 int sh_error(const char* s);
 int sh_errorn(const char* s, unsigned int len);
+int sh_error_errno(const char* s);
+int sh_errorn_errno(const char* s, unsigned int len);
 void sh_exit(int retcode);
 size_t sh_fmtflags(char* dest, const struct shopt*);
 int sh_forked(void);
