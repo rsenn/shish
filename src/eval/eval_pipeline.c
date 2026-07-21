@@ -75,7 +75,18 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
       }
     }
 
-    if((n = fdstack_npipes(FD_HERE | FD_SUBST))) {
+    /* fdstack_npipes()/fdstack_pipe() wire a real pipe for a
+       command-substitution target found in the fdstack (fd_subst()
+       only sets up an in-process stralloc sink, nothing a forked
+       child can write into -- and job_fork() always forks, even for
+       a builtin). This only makes sense for the *last* pipeline
+       member: it's the only one whose stdout the substitution target
+       actually cares about, and calling it for an earlier member
+       would hijack that member's stdout away from the inter-stage
+       pipe ("out" above) that's supposed to feed the next member's
+       stdin instead. exec_program.c uses this same pair for the
+       (pipeline-free) command-substitution case. */
+    if(!node->next && (n = fdstack_npipes(FD_HERE | FD_SUBST))) {
       pipes = alloc(FDSTACK_ALLOC_SIZE(n));
       fdstack_pipe(n, pipes);
     }
@@ -94,16 +105,23 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
 #endif
     }
 
-    if(!node->next) {
-      if((fd_out->mode & FD_STRALLOC)) {
-        int fd = fd_out->parent->rb.fd;
-        ssize_t r;
-        char b[1024];
+    if(!node->next && pipes) {
+      unsigned int i;
 
-        while((r = read(fd, b, sizeof(b))) > 0) {
-          buffer_put(fd_out->w, b, r);
-        }
-      }
+      /* the pipe write-end(s) fdstack_pipe() created above are only
+         needed by the child we just forked into -- close our own
+         (parent-side) copies before draining, or fdstack_data()'s
+         read() would never see EOF (our own open copy would keep the
+         pipe writable forever). Matches exec_program.c's
+         fdstack_pop(&io) (which is fdstack_pop(&st) below, but that
+         has to wait until every pipeline member has run) followed by
+         fdstack_data() -- the same shared drain used there, so a
+         command substitution nested inside this pipeline's own
+         members gets read back correctly too, not just this one. */
+      for(i = 0; i < n; i++)
+        fd_pop(&pipes[i]);
+
+      fdstack_data();
     }
 
     if(out)

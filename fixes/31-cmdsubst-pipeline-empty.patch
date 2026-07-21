@@ -1,0 +1,153 @@
+diff --git a/src/eval/eval_pipeline.c b/src/eval/eval_pipeline.c
+index c2353a55..8308809e 100644
+--- a/src/eval/eval_pipeline.c
++++ b/src/eval/eval_pipeline.c
+@@ -75,7 +75,18 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
+       }
+     }
+ 
+-    if((n = fdstack_npipes(FD_HERE | FD_SUBST))) {
++    /* fdstack_npipes()/fdstack_pipe() wire a real pipe for a
++       command-substitution target found in the fdstack (fd_subst()
++       only sets up an in-process stralloc sink, nothing a forked
++       child can write into -- and job_fork() always forks, even for
++       a builtin). This only makes sense for the *last* pipeline
++       member: it's the only one whose stdout the substitution target
++       actually cares about, and calling it for an earlier member
++       would hijack that member's stdout away from the inter-stage
++       pipe ("out" above) that's supposed to feed the next member's
++       stdin instead. exec_program.c uses this same pair for the
++       (pipeline-free) command-substitution case. */
++    if(!node->next && (n = fdstack_npipes(FD_HERE | FD_SUBST))) {
+       pipes = alloc(FDSTACK_ALLOC_SIZE(n));
+       fdstack_pipe(n, pipes);
+     }
+@@ -94,16 +105,23 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
+ #endif
+     }
+ 
+-    if(!node->next) {
+-      if((fd_out->mode & FD_STRALLOC)) {
+-        int fd = fd_out->parent->rb.fd;
+-        ssize_t r;
+-        char b[1024];
+-
+-        while((r = read(fd, b, sizeof(b))) > 0) {
+-          buffer_put(fd_out->w, b, r);
+-        }
+-      }
++    if(!node->next && pipes) {
++      unsigned int i;
++
++      /* the pipe write-end(s) fdstack_pipe() created above are only
++         needed by the child we just forked into -- close our own
++         (parent-side) copies before draining, or fdstack_data()'s
++         read() would never see EOF (our own open copy would keep the
++         pipe writable forever). Matches exec_program.c's
++         fdstack_pop(&io) (which is fdstack_pop(&st) below, but that
++         has to wait until every pipeline member has run) followed by
++         fdstack_data() -- the same shared drain used there, so a
++         command substitution nested inside this pipeline's own
++         members gets read back correctly too, not just this one. */
++      for(i = 0; i < n; i++)
++        fd_pop(&pipes[i]);
++
++      fdstack_data();
+     }
+ 
+     if(out)
+diff --git a/src/fdstack/fdstack_npipes.c b/src/fdstack/fdstack_npipes.c
+index cef40cef..362af625 100644
+--- a/src/fdstack/fdstack_npipes.c
++++ b/src/fdstack/fdstack_npipes.c
+@@ -9,10 +9,29 @@ fdstack_npipes(int mode) {
+   struct fdstack* st;
+   unsigned int ret = 0;
+ 
+-  for(st = fdstack; st; st = st->parent)
++  /* Walk outward through fdstack levels that don't themselves carry
++     any FD_SUBST/FD_HERE target (redirection scopes, function-call
++     scopes, ... all push their own empty level), but stop at the
++     first level that does. A command substitution nested inside
++     another one (e.g. "$(cmd $(cmd | cmd))") pushes its own such
++     level for its own fd_subst() target; walking past that (into the
++     OUTER substitution's still-pending target further out) would
++     make fdstack_pipe() wire a pipe for the outer one too and hand
++     it to whatever gets forked next here, instead of leaving it for
++     the outer command substitution's own eval_tree()/eval_pipeline()
++     call to handle when *it* forks. */
++  for(st = fdstack; st; st = st->parent) {
++    unsigned int here = 0;
++
+     for(fd = st->list; fd; fd = fd->next)
+       if((fd->mode & mode) == FD_SUBST || (fd->mode & mode) == FD_HERE)
+-        ret++;
++        here++;
++
++    ret += here;
++
++    if(here)
++      break;
++  }
+ 
+   return ret;
+ }
+diff --git a/src/fdstack/fdstack_pipe.c b/src/fdstack/fdstack_pipe.c
+index 8b4ae896..c73e126e 100644
+--- a/src/fdstack/fdstack_pipe.c
++++ b/src/fdstack/fdstack_pipe.c
+@@ -14,13 +14,17 @@
+ int
+ fdstack_pipe(unsigned int n, struct fd* fds) {
+   struct fdstack* st;
+-  int ret = 0, depth = 0;
++  int ret = 0;
+   unsigned char* b;
+ 
+   b = (unsigned char*)(&fds[n]);
+ 
++  /* stop at the first fdstack level that actually has a match, same
++     as fdstack_npipes() (which "n" came from) -- not an unbounded
++     walk all the way out; see its comment for why. */
+   for(st = fdstack; st; st = st->parent) {
+     struct fd* fd;
++    int found = 0;
+ 
+     for(fd = st->list; fd; fd = fd->next) {
+       /* make pipes for command expansion outputs */
+@@ -32,9 +36,18 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
+         fd_setbuf(fds, b, FD_BUFSIZE / 2);
+ 
+         e = fd_pipe(fds);
+-        buffer_init(&fds->parent->rb, (buffer_op_proto*)(void*)&read, e, NULL, 0);
+-        // fds->parent->mode |= FD_PIPE;
+-        fds->parent->r = 0;
++
++        /* wire the read end back to "fd" itself -- the struct our
++           scan actually matched -- not "fds->parent" (whatever
++           currently happens to occupy fd->n's slot at push time).
++           Those coincide only when nothing else is shadowing fd yet;
++           once something is (e.g. an earlier pipeline stage's own
++           inter-stage pipe), fds->parent is that unrelated fd, and
++           the real pipe's read end got recorded on a struct that's
++           about to be popped and discarded, orphaning fd's own
++           buffer with nothing to read from. */
++        buffer_init(&fd->rb, (buffer_op_proto*)(void*)&read, e, NULL, 0);
++        fd->r = 0;
+         b += FD_BUFSIZE / 2;
+ 
+ #if defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK)
+@@ -46,10 +59,12 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
+ #endif
+         fds++;
+         ret++;
++        found = 1;
+       }
+     }
+ 
+-    depth++;
++    if(found)
++      break;
+   }
+ 
+   return ret;

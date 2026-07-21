@@ -14,13 +14,17 @@
 int
 fdstack_pipe(unsigned int n, struct fd* fds) {
   struct fdstack* st;
-  int ret = 0, depth = 0;
+  int ret = 0;
   unsigned char* b;
 
   b = (unsigned char*)(&fds[n]);
 
+  /* stop at the first fdstack level that actually has a match, same
+     as fdstack_npipes() (which "n" came from) -- not an unbounded
+     walk all the way out; see its comment for why. */
   for(st = fdstack; st; st = st->parent) {
     struct fd* fd;
+    int found = 0;
 
     for(fd = st->list; fd; fd = fd->next) {
       /* make pipes for command expansion outputs */
@@ -32,9 +36,18 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
         fd_setbuf(fds, b, FD_BUFSIZE / 2);
 
         e = fd_pipe(fds);
-        buffer_init(&fds->parent->rb, (buffer_op_proto*)(void*)&read, e, NULL, 0);
-        // fds->parent->mode |= FD_PIPE;
-        fds->parent->r = 0;
+
+        /* wire the read end back to "fd" itself -- the struct our
+           scan actually matched -- not "fds->parent" (whatever
+           currently happens to occupy fd->n's slot at push time).
+           Those coincide only when nothing else is shadowing fd yet;
+           once something is (e.g. an earlier pipeline stage's own
+           inter-stage pipe), fds->parent is that unrelated fd, and
+           the real pipe's read end got recorded on a struct that's
+           about to be popped and discarded, orphaning fd's own
+           buffer with nothing to read from. */
+        buffer_init(&fd->rb, (buffer_op_proto*)(void*)&read, e, NULL, 0);
+        fd->r = 0;
         b += FD_BUFSIZE / 2;
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK)
@@ -46,10 +59,12 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
 #endif
         fds++;
         ret++;
+        found = 1;
       }
     }
 
-    depth++;
+    if(found)
+      break;
   }
 
   return ret;

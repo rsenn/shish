@@ -20,14 +20,6 @@
     wait
     echo $?
 
-- configure-duplicate-output: this repo's own ./configure under shish
-  still duplicates output and dies at AC_PROG_CC. Clearest isolated
-  piece: command substitution of a pipeline returns empty and runs
-  the surrounding command twice.
-
-    x=`echo hi | sed 1q`
-    echo "[$x]"
-
 - quoted-at-empty-param-split: quoted "$@" silently drops empty
   positional parameters when expanded as command arguments; the same
   case in a for-loop additionally fails to *parse* rather than just
@@ -157,3 +149,22 @@
   pre-existing on a clean checkout, not a regression.
 
     shish -c 'for i in a b c; do echo "[$i]"; done'
+
+- job-fork-nproc-oob: any pipeline of 2+ commands corrupts its own
+  job's proc array. job_new() sets job->nproc = the pipeline's member
+  count up front (matching the array it allocates), but job_fork()
+  treats nproc as a separate running "how many procs registered so
+  far" counter instead (checking "if(j->nproc == 0)" to detect the
+  first fork, then unconditionally "j->nproc++" after every fork) --
+  the two meanings collide, so nproc ends up counted twice past the
+  array's actual allocated size. It also always writes to
+  "j->procs[0]" (a stale, seemingly-simplified-from "j->procs[j->nproc]"
+  comment still marks the spot) rather than the slot for the process
+  actually being registered. Confirmed with an ASan build: a plain
+  top-level 2-stage pipeline heap-buffer-overflows in job_bypid.c
+  reading job->procs[i] past the allocation. Non-ASan builds don't
+  crash (existing heap layout tolerates the overwrite/OOB read
+  silently) but the underlying corruption is real. Found while
+  verifying the cmdsubst-pipeline-empty fix.
+
+    shish -c 'echo a | grep a'

@@ -82,12 +82,26 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
      used to storm (~3700 dups, now ~750 with no runaway chains):
      `sed -n 1,2053p configure > /tmp/storm.sh && strace -f -e trace=dup
      ./shish /tmp/storm.sh`. A Debug-build `./configure` now runs in
-     seconds up to the `AC_PROG_CC` false negative. Still open, in
-     likely-blocking order: the duplicated-output/re-execution bug
-     (command substitution of a pipeline returns empty and re-runs the
-     surrounding command — see `BUGS`), the `AC_PROG_CC` "cannot create
-     executables" false negative, and the MinSizeRel-only early death
-     (`BUGS` has the details).
+     seconds up to the `AC_PROG_CC` false negative.
+   - **Command substitution of a pipeline always expanding to empty,
+     fixed (2026-07-21):** root-caused with gdb -- `fd_subst()` only
+     sets up an in-process memory sink, but a pipeline always forks
+     real children (even for builtins), and nothing wired a real pipe
+     from the forked last member back into that sink.
+     `eval_pipeline.c` now reuses the same `fdstack_npipes()`/
+     `fdstack_pipe()`/`fdstack_data()` machinery `exec_program.c`
+     already relied on for the (pipeline-free) substitution case,
+     restricted to the pipeline's last member and to the closest
+     fdstack level (`fdstack_npipes()`/`fdstack_pipe()` used to walk
+     the whole chain unbounded, which is what broke a substitution
+     nested inside another one). See `fixes/31`. Verifying this
+     surfaced a separate, unrelated, pre-existing bug via an ASan
+     build: `job-fork-nproc-oob` (`BUGS`) -- any 2+-stage pipeline,
+     substituted or not, corrupts its own job's proc array.
+   - Still open, in likely-blocking order: `job-fork-nproc-oob` (just
+     found, above), the `AC_PROG_CC` "cannot create executables" false
+     negative, and the MinSizeRel-only early death (`BUGS` has the
+     details).
    - **`fd_expected` staleness and the leaked kernel fds behind it fixed
      (2026-07-21):** the leaks themselves (pipe-stdin fd never closed
      after `dup2` onto 0, here-doc temp fds staying open) fell to the

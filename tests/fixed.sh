@@ -193,4 +193,29 @@ STATUS=$?
 assert_equal "1" "$STATUS" "assigning to a readonly variable via a redirected command must report failure, not crash"
 assert_equal "original" "$READONLYVAR" "a rejected readonly assignment must not change the variable's value"
 
+## fixes/31: command substitution of a pipeline ("$(cmd | cmd)")
+## always expanded to empty. Root cause: fd_subst() only sets up an
+## in-process memory sink, but a pipeline always forks real children
+## (even for builtins), and nothing wired a real pipe from the last
+## forked member back into that sink. eval_pipeline.c now reuses the
+## same fdstack_npipes()/fdstack_pipe()/fdstack_data() machinery
+## exec_program.c already relied on for the (pipeline-free) command
+## substitution case, restricted to the pipeline's last member and to
+## the closest fdstack level (so a substitution nested inside another
+## one, or a here-doc feeding some other member, isn't hijacked).
+X=$(echo hi | sed 1q)
+assert_equal "hi" "$X" "command substitution of a 2-stage pipeline must capture its output"
+
+X=$(printf "a\nb\nc\n" | grep b)
+assert_equal "b" "$X" "command substitution of a pipeline must still work when input is multi-line"
+
+X=$(echo one | tr a-z A-Z | rev)
+assert_equal "ENO" "$X" "command substitution of a 3-stage pipeline must capture the last stage's output"
+
+X=$(echo $(echo a | cat) b)
+assert_equal "a b" "$X" "a command substitution with its own pipeline, nested inside another command substitution, must not steal the outer one's output"
+
+X=$(echo hi)
+assert_equal "hi" "$X" "command substitution of a plain (non-piped) simple command must still work"
+
 summary
