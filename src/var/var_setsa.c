@@ -60,6 +60,7 @@ var_setsa(stralloc* sa, int flags) {
   }
 
   var->flags |= flags;
+  var->flags &= ~V_UNSET;
 
   /* truncate and set flags */
   stralloc_nul(&var->sa);

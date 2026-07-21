@@ -1,0 +1,172 @@
+diff --git a/src/var/var_copys.c b/src/var/var_copys.c
+index 22ef3f4b..b678dcd8 100644
+--- a/src/var/var_copys.c
++++ b/src/var/var_copys.c
+@@ -19,5 +19,7 @@ var_copys(const char* s, int flags) {
+   if(var->sa.len > var->len)
+     var->offset = var->len + 1;
+ 
++  var->flags &= ~V_UNSET;
++
+   return var;
+ }
+diff --git a/src/var/var_export.c b/src/var/var_export.c
+index bf70a971..97f25ed5 100644
+--- a/src/var/var_export.c
++++ b/src/var/var_export.c
+@@ -10,7 +10,13 @@ var_export(char** dest) {
+   size_t n = 0;
+ 
+   for(var = var_list; var; var = var->gnext)
+-    if((var->flags & V_EXPORT))
++    /* a variable marked for export before it was ever assigned a
++       value (V_UNSET, see var_init.c) has no "=value" to hand a
++       child process -- its bare name alone (var->sa.s without a '=')
++       would be a malformed envp entry, so skip it, matching bash's
++       "export FOO" not actually appearing in a child's environment
++       until FOO is assigned */
++    if((var->flags & V_EXPORT) && !(var->flags & V_UNSET))
+       dest[n++] = var->sa.s;
+ 
+   dest[n] = NULL;
+diff --git a/src/var/var_import.c b/src/var/var_import.c
+index cc5d2b74..4725168c 100644
+--- a/src/var/var_import.c
++++ b/src/var/var_import.c
+@@ -29,6 +29,18 @@ var_import(const char* v, int flags, struct var* var) {
+     var = NULL;
+     var_init(v, newvar, &ctx);
+ 
++    /* var_init() now allocates its own copy of the name into sa (see
++       its comment) so sa.s is never NULL -- but this path is about to
++       point sa.s directly at the caller's own storage instead (v,
++       typically a pointer straight into the process's real envp[]),
++       so free that allocation and reset sa.a to 0 right away. Leaving
++       it non-zero here would claim ownership of borrowed memory: the
++       next stralloc_free() on this var (e.g. from var_set()/
++       var_setsa() on a later real assignment) would try to
++       alloc_free() a pointer that was never malloc()'d by us. */
++    stralloc_free(&newvar->sa);
++    newvar->sa.a = 0;
++
+     /* ...and then add it to the table */
+     vartab_add(sh->varstack, newvar, &ctx);
+   } else if(flags & V_INIT)
+diff --git a/src/var/var_init.c b/src/var/var_init.c
+index eac72345..03aea6c0 100644
+--- a/src/var/var_init.c
++++ b/src/var/var_init.c
+@@ -9,7 +9,19 @@ var_init(const char* v, struct var* var, struct search* context) {
+   var->glink = NULL;
+   stralloc_init(&var->sa);
+   var->offset = var->len = context->len;
+-  var->flags = 0;
++
++  /* var->sa.s must never be NULL: var_bsearch() (var lookup) and
++     var_print()/var_export() all read var->len bytes from it
++     unconditionally, with no separate place to keep the name if it
++     isn't in there. A variable can go through var_chflg() (e.g.
++     "export FOO") with no value ever assigned -- store its name now
++     and mark it V_UNSET, so it behaves like a real (if valueless)
++     variable everywhere else instead of leaving sa.s dangling until
++     whatever the first real assignment turns out to be. */
++  stralloc_copyb(&var->sa, v, context->len);
++  stralloc_nul(&var->sa);
++  var->flags = V_UNSET;
++
+   var->lexhash = context->lexhash;
+   var->rndhash = context->rndhash;
+   var->parent = NULL;
+diff --git a/src/var/var_set.c b/src/var/var_set.c
+index c39dacc9..0d02ef71 100644
+--- a/src/var/var_set.c
++++ b/src/var/var_set.c
+@@ -20,8 +20,12 @@ var_set(char* v, int flags) {
+     return 0;
+   }
+ 
+-  if(var->sa.s == 0) {
++  /* var->sa.s always holds at least the variable's name (var_init()
++     guarantees that), so this is no longer a "was it ever assigned"
++     check by itself -- V_UNSET is */
++  if(var->flags & V_UNSET) {
+     stralloc_copys(&var->sa, v);
++    var->flags &= ~V_UNSET;
+     return var;
+   }
+ 
+@@ -31,6 +35,7 @@ var_set(char* v, int flags) {
+   if(v[var->len] == '\0') {
+     var->sa.len = var->offset;
+     stralloc_nul(&var->sa);
++    var->flags &= ~V_UNSET;
+     return var;
+   }
+ 
+@@ -46,5 +51,7 @@ var_set(char* v, int flags) {
+   if((var->offset = var->len) < var->sa.len)
+     var->offset++;
+ 
++  var->flags &= ~V_UNSET;
++
+   return var;
+ }
+diff --git a/src/var/var_setsa.c b/src/var/var_setsa.c
+index 7f7928dc..cf1ab7da 100644
+--- a/src/var/var_setsa.c
++++ b/src/var/var_setsa.c
+@@ -60,6 +60,7 @@ var_setsa(stralloc* sa, int flags) {
+   }
+ 
+   var->flags |= flags;
++  var->flags &= ~V_UNSET;
+ 
+   /* truncate and set flags */
+   stralloc_nul(&var->sa);
+diff --git a/src/var/var_setv.c b/src/var/var_setv.c
+index 376c363f..c06df0a9 100644
+--- a/src/var/var_setv.c
++++ b/src/var/var_setv.c
+@@ -27,5 +27,6 @@ var_setv(const char* name, const char* value, size_t vlen, int flags) {
+ 
+   /* set flags */
+   var->flags |= flags;
++  var->flags &= ~V_UNSET;
+   return var->sa.s;
+ }
+diff --git a/src/var/var_setvint.c b/src/var/var_setvint.c
+index 128c3056..340eb195 100644
+--- a/src/var/var_setvint.c
++++ b/src/var/var_setvint.c
+@@ -19,5 +19,6 @@ var_setvint(const char* v, int i, int flags) {
+   stralloc_catlong(&var->sa, i);
+   stralloc_nul(&var->sa);
+   var->offset = var->len + 1;
++  var->flags &= ~V_UNSET;
+   return var->sa.s;
+ }
+diff --git a/src/var/var_setvsa.c b/src/var/var_setvsa.c
+index 16961a5e..c0c5eed7 100644
+--- a/src/var/var_setvsa.c
++++ b/src/var/var_setvsa.c
+@@ -32,6 +32,13 @@ var_setvsa(const char* name, stralloc* sa, int flags) {
+   }
+   /* variable currently has no controlable stralloc.. . */
+   else {
++    /* var_init() always allocates a (small, name-only) buffer for a
++       freshly created var now, whether or not V_FREESTR ends up set
++       -- free it before either branch below unconditionally
++       overwrites/replaces var->sa, or it leaks */
++    stralloc_free(&var->sa);
++    var->sa.a = 0;
++
+     /* look if we can take the one from the value */
+     if(flags & (V_FREESTR | V_ZEROSA)) {
+       var->sa = *sa;
+@@ -50,5 +57,6 @@ var_setvsa(const char* name, stralloc* sa, int flags) {
+ 
+   /* set flags */
+   var->flags |= flags;
++  var->flags &= ~V_UNSET;
+   return var->sa.s;
+ }

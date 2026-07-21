@@ -148,4 +148,36 @@ COUNT=$(wc -l <"$OUTFILE")
 assert_equal "1" "$COUNT" "backgrounding a compound command followed by more on the same line must not fail to parse or duplicate"
 rm -f "$OUTFILE"
 
+## fixes/29: marking a variable for export before it was ever assigned
+## a value crashed on a later "export"/"export -p": var_init() never
+## stored the variable's name anywhere (var->sa.s stayed NULL), which
+## var_print() dereferenced unconditionally to print it. The same
+## NULL also silently truncated every OTHER exported variable after
+## it in a child process's environment (var_export() put the NULL
+## straight into the middle of the envp array, which execve() reads
+## as the end of the whole array).
+OUTFILE=$(mktemp)
+export UNSETEXPORTVAR
+export -p >"$OUTFILE" 2>/dev/null
+STATUS=$?
+assert_equal "0" "$STATUS" "export -p after exporting an unset variable must not crash"
+grep -q "export UNSETEXPORTVAR$" "$OUTFILE"
+assert_equal "0" "$?" "export -p must list a declared-but-unassigned variable with no ='value'"
+rm -f "$OUTFILE"
+
+OUTFILE=$(mktemp)
+export UNSETEXPORTVAR2
+env >"$OUTFILE"
+grep -q "^UNSETEXPORTVAR2" "$OUTFILE"
+assert_equal "1" "$?" "an exported-but-unassigned variable must not itself appear in a child's environment"
+rm -f "$OUTFILE"
+
+COUNTFILE=$(mktemp)
+export UNSETEXPORTVAR3
+export FIXEDEXPORTVAR=x
+env >"$COUNTFILE"
+grep -q "^FIXEDEXPORTVAR=x$" "$COUNTFILE"
+assert_equal "0" "$?" "an exported-but-unassigned variable must not truncate the rest of a child's environment"
+rm -f "$COUNTFILE"
+
 summary

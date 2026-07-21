@@ -46,12 +46,6 @@
 
     ./shish tests/param.sh
 
-- export-unset-segfault: marking a variable for export before it's
-  ever assigned a value segfaults on a later "export"/"export -p".
-
-    export FOO
-    export -p
-
 - fd-close-noop: ">&-"/"<&-" doesn't really close a file descriptor,
   for builtins (silently redirected to a null sink) or external
   commands (fd left pointing at the shell's original target).
@@ -155,3 +149,27 @@
     X=outer
     f
     echo $X
+
+- readonly-assign-fdpop-null: assigning to a readonly variable in a
+  simple command that also carries a redirection crashes:
+  eval_simple_command.c bails out (var_setsa() failing the readonly
+  check) before ever reaching the redirection-processing loop that
+  sets each r->nredir.fd, but its "end:" cleanup path unconditionally
+  walks the full parsed redirection list and calls fd_pop() on each
+  one's (still NULL) ->nredir.fd, which fd_close() then dereferences.
+  Confirmed with gdb: SIGSEGV in fd_close() at fd=0x0, called via
+  fd_pop() from eval_simple_command.c's cleanup. Found while working
+  on export-unset-segfault (an unrelated, already-fixed var-table
+  crash); confirmed pre-existing on a clean checkout, not a
+  regression.
+
+    readonly FOO=bar
+    FOO=baz 2>&1
+
+- dash-c-for-loop-parse-error: a "for" (and likely "while"/"until")
+  loop passed via "-c" fails to parse with "unexpected token EOF,
+  expecting 'done'", while the exact same text parses fine as a
+  script file. Found while testing export-unset-segfault; confirmed
+  pre-existing on a clean checkout, not a regression.
+
+    shish -c 'for i in a b c; do echo "[$i]"; done'

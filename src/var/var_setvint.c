@@ -19,5 +19,6 @@ var_setvint(const char* v, int i, int flags) {
   stralloc_catlong(&var->sa, i);
   stralloc_nul(&var->sa);
   var->offset = var->len + 1;
+  var->flags &= ~V_UNSET;
   return var->sa.s;
 }

@@ -19,5 +19,7 @@ var_copys(const char* s, int flags) {
   if(var->sa.len > var->len)
     var->offset = var->len + 1;
 
+  var->flags &= ~V_UNSET;
+
   return var;
 }

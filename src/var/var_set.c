@@ -20,8 +20,12 @@ var_set(char* v, int flags) {
     return 0;
   }
 
-  if(var->sa.s == 0) {
+  /* var->sa.s always holds at least the variable's name (var_init()
+     guarantees that), so this is no longer a "was it ever assigned"
+     check by itself -- V_UNSET is */
+  if(var->flags & V_UNSET) {
     stralloc_copys(&var->sa, v);
+    var->flags &= ~V_UNSET;
     return var;
   }
 
@@ -31,6 +35,7 @@ var_set(char* v, int flags) {
   if(v[var->len] == '\0') {
     var->sa.len = var->offset;
     stralloc_nul(&var->sa);
+    var->flags &= ~V_UNSET;
     return var;
   }
 
@@ -45,6 +50,8 @@ var_set(char* v, int flags) {
 
   if((var->offset = var->len) < var->sa.len)
     var->offset++;
+
+  var->flags &= ~V_UNSET;
 
   return var;
 }

@@ -32,6 +32,13 @@ var_setvsa(const char* name, stralloc* sa, int flags) {
   }
   /* variable currently has no controlable stralloc.. . */
   else {
+    /* var_init() always allocates a (small, name-only) buffer for a
+       freshly created var now, whether or not V_FREESTR ends up set
+       -- free it before either branch below unconditionally
+       overwrites/replaces var->sa, or it leaks */
+    stralloc_free(&var->sa);
+    var->sa.a = 0;
+
     /* look if we can take the one from the value */
     if(flags & (V_FREESTR | V_ZEROSA)) {
       var->sa = *sa;
@@ -50,5 +57,6 @@ var_setvsa(const char* name, stralloc* sa, int flags) {
 
   /* set flags */
   var->flags |= flags;
+  var->flags &= ~V_UNSET;
   return var->sa.s;
 }

@@ -27,5 +27,6 @@ var_setv(const char* name, const char* value, size_t vlen, int flags) {
 
   /* set flags */
   var->flags |= flags;
+  var->flags &= ~V_UNSET;
   return var->sa.s;
 }

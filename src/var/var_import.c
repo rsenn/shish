@@ -29,6 +29,18 @@ var_import(const char* v, int flags, struct var* var) {
     var = NULL;
     var_init(v, newvar, &ctx);
 
+    /* var_init() now allocates its own copy of the name into sa (see
+       its comment) so sa.s is never NULL -- but this path is about to
+       point sa.s directly at the caller's own storage instead (v,
+       typically a pointer straight into the process's real envp[]),
+       so free that allocation and reset sa.a to 0 right away. Leaving
+       it non-zero here would claim ownership of borrowed memory: the
+       next stralloc_free() on this var (e.g. from var_set()/
+       var_setsa() on a later real assignment) would try to
+       alloc_free() a pointer that was never malloc()'d by us. */
+    stralloc_free(&newvar->sa);
+    newvar->sa.a = 0;
+
     /* ...and then add it to the table */
     vartab_add(sh->varstack, newvar, &ctx);
   } else if(flags & V_INIT)
