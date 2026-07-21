@@ -44,83 +44,6 @@
   "case $0 in *[\\/]*)" work fine in isolation on both builds, so
   something earlier in configure corrupts state only in the
   optimized build; worth an asan build to catch what Debug tolerates
-- FIXED: a pipeline inside a subshell used to leak its builtin members
-  as extra copies of the interpreter -- "(true | true)" made everything
-  after the subshell run 3 times. Root cause: eval_pipeline() forks a
-  real child per pipeline member and expects sh_exit() (invoked via
-  the E_EXIT-flagged eval_tree() call, wrapped in "exit(...)") to
-  really terminate that child. But sh_exit()/eval_exit() longjmp back
-  to the nearest jump-enabled `struct eval` frame instead of exiting
-  whenever one is on the (global) `eval` chain -- and a subshell
-  (eval_subshell()) pushes exactly such a frame via setjmp(), which
-  survives fork() as a still-valid stack address in the child's copy
-  of the stack. The forked child's sh_exit() found that inherited
-  frame and longjmped back into eval_subshell() *inside the child*,
-  which then returned normally into the top-level eval_tree() loop --
-  so the "exited" child kept interpreting the rest of the script as a
-  second full copy of the shell. Fixed in sh_forked() (called from
-  every fork path, job_fork() included) by clearing `jump` on every
-  frame in the inherited `eval` chain right after forking, so
-  eval_exit() never finds a target and sh_exit() always falls through
-  to a real exit() in a forked child. This is the fix the file already
-  half-attempted: sh_forked() had "// sh->eval->jump = 0;" commented
-  out, targeting the wrong variable (sh->eval is never actually
-  updated -- eval_push()/eval_pop() maintain a separate global `eval`)
-  and only the top frame besides.
-- FIXED: the PATH search (exec_path.c) and exec_hash()'s direct-path
-  branch (name containing "/") both checked candidates with nothing
-  but access(path, X_OK), so a DIRECTORY matched (directories are
-  "executable" as in searchable); POSIX requires an executable regular
-  file. Bit for real: with emscripten's SDK dir on PATH, "test"
-  resolved to emsdk/test/ (a directory) and shadowed /usr/bin/test --
-  which was exactly why tests/builtin-test.sh failed on builds
-  configured with BUILTIN_TEST=OFF (the cfg'd build/x86_64-linux-gnu)
-  while default builds passed. Fixed by adding an S_ISDIR check after
-  access() succeeds in both exec_path() (skip and keep searching PATH)
-  and exec_hash() (reject, matching what execve() itself reports).
-- FIXED: exec failure exit statuses and messages were wrong in both
-  halves of the exec path. Parent half (PATH/path lookup failing
-  before anything is even forked): always exited 1 where POSIX wants
-  127 (not found) / 126 (found but not executable) -- exec_error()'s
-  ENOENT/EACCES mapping was only ever invoked from the post-fork
-  execve() path, and separately the message hardcoded
-  strerror(ENOENT) regardless of what actually went wrong ("shish -c
-  /etc/hostname" said "No such file or directory" for a file that
-  exists but isn't executable). Fixed by having exec_hash()/exec_path()
-  record the real errno from the failing access()/stat() into a new
-  `exec_lasterrno` (plain "errno" isn't trustworthy -- redirections,
-  variable expansion etc. all run between the lookup and the message,
-  and routinely clobber it), and having eval_simple_command.c's "not
-  found" branch use that instead of a hardcoded ENOENT. exec_error()
-  also didn't map EISDIR/ENOEXEC to 126, relevant now that directory
-  matches are correctly rejected rather than silently accepted. Child
-  half (execve() itself failing post-fork on a path that passed every
-  pre-check, e.g. a chmod +x'd file that isn't actually a valid
-  executable -> ENOEXEC): the forked child SEGV'd handling its own
-  error, and the "silent success, status 0" originally reported was
-  really that SEGV's exit status getting silently swallowed somewhere
-  on the way back through job_wait (a directory match specifically
-  looked fine only because the parent-side PATH-search fix above now
-  intercepts it before it ever reaches this path). Root cause:
-  fdtable_exec() -- called right before execve(), on the assumption
-  that a successful exec makes cleanup moot -- pops every pushed
-  source off the source stack, but exec_program()'s post-execve()
-  failure handler still unconditionally calls sh_error_errno() ->
-  sh_msgn() -> source_msg(), which dereferenced
-  fdtable[STDSRC_FILENO]->name assuming a source was still there.
-  Fixed source_msg() to fall back to sh_name (matching what it already
-  does when a source has no name of its own) when no source is
-  pushed. Separately, once that no longer crashed, the message lost
-  its strerror() text and the exit status still came out wrong:
-  exec_error() (called right before sh_error_errno() in
-  exec_program.c) zeroes errno as its very last step, and
-  sh_error_errno()'s own buffer_puts()/write() calls are free to leave
-  errno changed too (POSIX only guarantees it's preserved on failure,
-  not success) -- so by either path, whichever of the two ran second
-  was reading a clobbered value. Fixed by saving errno once, right
-  after execve() returns, and using that saved copy for both the
-  message and the status mapping instead of a live "errno" that nothing
-  else in this function should have been trusting in the first place.
 - "for x in \"$@\"; do ...; done" fails to parse when positional
   params include a quoted empty string: 'set -- -n ""; for a in
   "$@"; do echo "[$a]"; done' gives "unexpected token EOF, expecting
@@ -207,3 +130,17 @@
   job is deleted instead of promoting the previous job to current (bash
   promotes "-" to "+"), so the "+"-marked job just disappears once it
   finishes
+- the shell's own diagnostic messages (source_msg()/sh_error*() writing
+  through fd_err->w) ignore active fd 2 redirections instead of
+  respecting them; found while writing tests/fixed.sh, trying to
+  capture the "command not found"/"not executable" messages added by
+  fixes/21-exec-failure-status-messages.patch. Repro: 'cd
+  /some/dir 2>file.txt' correctly writes into file.txt, but
+  'PATH=/nonexistent nosuchcommand 2>file.txt' (or even a preceding
+  'exec 2>file.txt') leaves file.txt empty and prints the "not found"
+  message to the shell's real stderr instead -- the redirection is set
+  up (redir_eval() runs, fdtable[2] is updated) before
+  eval_simple_command.c's "cmd.ptr == NULL" branch runs, so fd_err
+  itself looks like a stale cached pointer that isn't resynced to the
+  new fdtable[2] on this path, unlike whatever path builtin error
+  messages (e.g. cd's) go through

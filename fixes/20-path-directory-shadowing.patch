@@ -1,0 +1,147 @@
+diff --git a/src/exec/exec_check.c b/src/exec/exec_check.c
+index 533ea813..732c0b01 100644
+--- a/src/exec/exec_check.c
++++ b/src/exec/exec_check.c
+@@ -10,6 +10,8 @@
+ #endif
+ #else
+ #include <unistd.h>
++#include <sys/stat.h>
++#include <errno.h>
+ #endif
+ 
+ /* check if the path is valid
+@@ -23,9 +25,20 @@ exec_check(char* path) {
+   if(!path[str_chr(path, '/')])
+     ret = exec_path(path);
+ 
+-  /* otherwise check immediately for access */
+-  else if(access(path, X_OK) == 0)
+-    ret = path;
++  /* otherwise check immediately for access. access(X_OK) alone would
++     also accept a directory (it's "executable" as in searchable) --
++     reject that explicitly with EISDIR, matching what execve() itself
++     would report */
++  else if(access(path, X_OK) == 0) {
++#if !WINDOWS_NATIVE
++    struct stat st;
++
++    if(stat(path, &st) == 0 && S_ISDIR(st.st_mode))
++      errno = EISDIR;
++    else
++#endif
++      ret = path;
++  }
+ 
+   if(ret == NULL)
+     sh_error_errno(path);
+diff --git a/src/exec/exec_hash.c b/src/exec/exec_hash.c
+index bdca4820..4f626f46 100644
+--- a/src/exec/exec_hash.c
++++ b/src/exec/exec_hash.c
+@@ -5,6 +5,7 @@
+ #include "../../lib/alloc.h"
+ #include "../vartab.h"
+ #include "../../lib/windoze.h"
++#include <errno.h>
+ #if WINDOWS_NATIVE
+ #include <io.h>
+ #ifndef X_OK
+@@ -12,6 +13,7 @@
+ #endif
+ #else
+ #include <unistd.h>
++#include <sys/stat.h>
+ #endif
+ 
+ /* hashed command search routine
+@@ -26,9 +28,23 @@ exec_hash(char* name, int mask) {
+     cmd.id = H_PROGRAM;
+     cmd.path = name;
+ 
+-    /* ...but validate the path */
+-    if(access(cmd.path, X_OK) != 0)
++    /* ...but validate the path. access(X_OK) alone accepts directories
++       too (they're "executable" as in searchable) -- reject those
++       explicitly, matching what execve() itself would report */
++    if(access(cmd.path, X_OK) != 0) {
++      exec_lasterrno = errno;
+       cmd.path = NULL;
++    }
++#if !WINDOWS_NATIVE
++    else {
++      struct stat st;
++
++      if(stat(cmd.path, &st) == 0 && S_ISDIR(st.st_mode)) {
++        exec_lasterrno = EISDIR;
++        cmd.path = NULL;
++      }
++    }
++#endif
+ 
+   } else {
+     /* otherwise try to find hashed entry */
+diff --git a/src/exec/exec_path.c b/src/exec/exec_path.c
+index 71f161e4..634d2a61 100644
+--- a/src/exec/exec_path.c
++++ b/src/exec/exec_path.c
+@@ -4,6 +4,7 @@
+ #include "../../lib/str.h"
+ #include "../var.h"
+ #include "../../lib/windoze.h"
++#include <errno.h>
+ #if WINDOWS_NATIVE
+ #include <windows.h>
+ #include <io.h>
+@@ -14,8 +15,11 @@
+ #else
+ #include <unistd.h>
+ #include <limits.h>
++#include <sys/stat.h>
+ #endif
+ 
++int exec_lasterrno;
++
+ /* searches for relative path <name> within PATH and returns absolute
+  * path if found
+  * ----------------------------------------------------------------------- */
+@@ -26,6 +30,8 @@ exec_path(char* name) {
+   unsigned long si = 0, pi = 0;
+   vpath = var_value("PATH", NULL);
+ 
++  exec_lasterrno = ENOENT;
++
+   do {
+     /* splitting up path variable */
+     unsigned long ni;
+@@ -50,9 +56,27 @@ exec_path(char* name) {
+     /* append command name */
+     str_copyn(&path[pi], name, PATH_MAX - pi - 1);
+ 
+-    /* check if file accessible and executable */
+-    if(access(path, X_OK) == 0)
+-      return str_dup(path);
++    /* check if file accessible and executable. access(X_OK) alone
++       isn't enough -- directories are "executable" (searchable) too,
++       so a directory on PATH would otherwise match and shadow the
++       real command of the same name (e.g. an SDK's "test/" build
++       output directory sitting on PATH ahead of /usr/bin/test) */
++    if(access(path, X_OK) == 0) {
++      int isdir = 0;
++#if !WINDOWS_NATIVE
++      struct stat st;
++
++      isdir = stat(path, &st) == 0 && S_ISDIR(st.st_mode);
++#endif
++      if(!isdir)
++        return str_dup(path);
++
++#if !WINDOWS_NATIVE
++      exec_lasterrno = EISDIR;
++#endif
++    } else if(errno != ENOENT) {
++      exec_lasterrno = errno;
++    }
+ 
+     si += ni;
+   } while(vpath[si]);

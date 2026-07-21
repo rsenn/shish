@@ -1,0 +1,128 @@
+diff --git a/src/eval/eval_simple_command.c b/src/eval/eval_simple_command.c
+index c946878b..1aa0d35e 100644
+--- a/src/eval/eval_simple_command.c
++++ b/src/eval/eval_simple_command.c
+@@ -151,13 +151,19 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+     goto end;
+   }
+ 
+-  /* when the command wasn't found we abort */
++  /* when the command wasn't found we abort. exec_lasterrno is what
++     exec_hash()/exec_path() actually saw (ENOENT if nothing on PATH
++     matched, EACCES/EISDIR if something did but couldn't run) --
++     plain "errno" isn't trustworthy here, since redirections, variable
++     expansion and everything else between the lookup and this check
++     routinely clobber it */
+   if(cmd.ptr == NULL) {
+     source_msg(&e->pos);
+ 
+     buffer_putsa(fd_err->w, &args->narg.stra);
+-    buffer_putm_internal(fd_err->w, ": ", strerror(ENOENT), 0);
++    buffer_putm_internal(fd_err->w, ": ", strerror(exec_lasterrno), 0);
+     buffer_putnlflush(fd_err->w);
++    errno = exec_lasterrno;
+     status = exec_error();
+     goto end;
+   }
+diff --git a/src/exec.h b/src/exec.h
+index 458723a9..83d48370 100644
+--- a/src/exec.h
++++ b/src/exec.h
+@@ -43,6 +43,14 @@ struct exechash {
+ 
+ extern struct exechash* exec_hashtbl[EXEC_HASHSIZE];
+ 
++/* errno from the access()/stat() call that made exec_hash()/exec_path()
++   give up on a candidate (ENOENT if nothing matching PATH existed at
++   all, EACCES/EISDIR if something matched but couldn't be executed).
++   The caller can't rely on plain "errno" for this by the time it
++   notices cmd.ptr == NULL -- redirections, variable expansion and
++   other syscalls run in between and routinely clobber it. */
++extern int exec_lasterrno;
++
+ char* exec_check(char* path);
+ char* exec_path(char* name);
+ int exec_command(struct command* cmd, int argc, char** argv, enum execflag);
+diff --git a/src/exec/exec_error.c b/src/exec/exec_error.c
+index cfee2f76..ad76c16f 100644
+--- a/src/exec/exec_error.c
++++ b/src/exec/exec_error.c
+@@ -4,7 +4,7 @@
+ /* map errors to posix
+  *
+  * ENOENT -> 127
+- * EACCES -> 126
++ * EACCES, EISDIR, ENOEXEC -> 126
+  *
+  * other: -> 1
+  * ----------------------------------------------------------------------- */
+@@ -14,7 +14,9 @@ exec_error(void) {
+ 
+   switch(errno) {
+     case ENOENT: ret = EXIT_NOTFOUND; break;
+-    case EACCES: ret = EXIT_NOEXEC; break;
++    case EACCES:
++    case EISDIR:
++    case ENOEXEC: ret = EXIT_NOEXEC; break;
+     default: ret = 1; break;
+   }
+ 
+diff --git a/src/exec/exec_program.c b/src/exec/exec_program.c
+index fe61bd14..fd86f2bd 100644
+--- a/src/exec/exec_program.c
++++ b/src/exec/exec_program.c
+@@ -7,6 +7,7 @@
+ #include <alloca.h>
+ #endif
+ 
++#include <errno.h>
+ #include <signal.h>
+ #include "../../lib/windoze.h"
+ #include "../exec.h"
+@@ -152,12 +153,21 @@ exec_program(char* path, char** argv, enum execflag flag) {
+     /* try to execute the program */
+     execve(path, argv, envp);
+ 
+-    /* execve() returned so it failed, we're gonna map
+-       the error code to the appropriate POSIX errors */
+-    ret = exec_error();
++    /* execve() returned so it failed. Save errno immediately: the
++       buffer_puts()/write() calls inside sh_error_errno() below are
++       free to leave errno changed (POSIX only guarantees it on
++       failure, not success), so exec_error()'s mapping needs its own
++       copy rather than re-reading a possibly-clobbered global. */
++    {
++      int saved_errno = errno;
+ 
+-    /* yield an error message */
+-    sh_error_errno(path);
++      /* yield an error message */
++      sh_error_errno(path);
++
++      /* map the error code to the appropriate POSIX exit status */
++      errno = saved_errno;
++      ret = exec_error();
++    }
+   }
+ 
+   /* we never return at this point! */
+diff --git a/src/source/source_msg.c b/src/source/source_msg.c
+index a442bff1..cfa2d928 100644
+--- a/src/source/source_msg.c
++++ b/src/source/source_msg.c
+@@ -6,7 +6,14 @@
+  * ----------------------------------------------------------------------- */
+ void
+ source_msg(const struct location* pos) {
+-  const char* name = fdtable[STDSRC_FILENO]->name;
++  /* fdtable[STDSRC_FILENO] can be NULL here: fdtable_exec() pops every
++     pushed source right before execve(), on the assumption that a
++     successful exec makes them moot. If execve() then fails, the
++     error-reporting path (exec_program() -> sh_error_errno() ->
++     sh_msgn() -> here) runs with no source left on the stack at all --
++     fall back to sh_name the same way the SOURCE_IACTIVE-off branch
++     below already does when a source has no name of its own. */
++  const char* name = fdtable[STDSRC_FILENO] ? fdtable[STDSRC_FILENO]->name : NULL;
+ 
+   if(!(source->mode & SOURCE_IACTIVE)) {
+     buffer_puts(fd_err->w, name ? name : sh_name);
