@@ -151,13 +151,19 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
     goto end;
   }
 
-  /* when the command wasn't found we abort */
+  /* when the command wasn't found we abort. exec_lasterrno is what
+     exec_hash()/exec_path() actually saw (ENOENT if nothing on PATH
+     matched, EACCES/EISDIR if something did but couldn't run) --
+     plain "errno" isn't trustworthy here, since redirections, variable
+     expansion and everything else between the lookup and this check
+     routinely clobber it */
   if(cmd.ptr == NULL) {
     source_msg(&e->pos);
 
     buffer_putsa(fd_err->w, &args->narg.stra);
-    buffer_putm_internal(fd_err->w, ": ", strerror(ENOENT), 0);
+    buffer_putm_internal(fd_err->w, ": ", strerror(exec_lasterrno), 0);
     buffer_putnlflush(fd_err->w);
+    errno = exec_lasterrno;
     status = exec_error();
     goto end;
   }

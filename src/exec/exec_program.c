@@ -7,6 +7,7 @@
 #include <alloca.h>
 #endif
 
+#include <errno.h>
 #include <signal.h>
 #include "../../lib/windoze.h"
 #include "../exec.h"
@@ -152,12 +153,21 @@ exec_program(char* path, char** argv, enum execflag flag) {
     /* try to execute the program */
     execve(path, argv, envp);
 
-    /* execve() returned so it failed, we're gonna map
-       the error code to the appropriate POSIX errors */
-    ret = exec_error();
+    /* execve() returned so it failed. Save errno immediately: the
+       buffer_puts()/write() calls inside sh_error_errno() below are
+       free to leave errno changed (POSIX only guarantees it on
+       failure, not success), so exec_error()'s mapping needs its own
+       copy rather than re-reading a possibly-clobbered global. */
+    {
+      int saved_errno = errno;
 
-    /* yield an error message */
-    sh_error_errno(path);
+      /* yield an error message */
+      sh_error_errno(path);
+
+      /* map the error code to the appropriate POSIX exit status */
+      errno = saved_errno;
+      ret = exec_error();
+    }
   }
 
   /* we never return at this point! */

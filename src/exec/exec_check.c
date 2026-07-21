@@ -10,6 +10,8 @@
 #endif
 #else
 #include <unistd.h>
+#include <sys/stat.h>
+#include <errno.h>
 #endif
 
 /* check if the path is valid
@@ -23,9 +25,20 @@ exec_check(char* path) {
   if(!path[str_chr(path, '/')])
     ret = exec_path(path);
 
-  /* otherwise check immediately for access */
-  else if(access(path, X_OK) == 0)
-    ret = path;
+  /* otherwise check immediately for access. access(X_OK) alone would
+     also accept a directory (it's "executable" as in searchable) --
+     reject that explicitly with EISDIR, matching what execve() itself
+     would report */
+  else if(access(path, X_OK) == 0) {
+#if !WINDOWS_NATIVE
+    struct stat st;
+
+    if(stat(path, &st) == 0 && S_ISDIR(st.st_mode))
+      errno = EISDIR;
+    else
+#endif
+      ret = path;
+  }
 
   if(ret == NULL)
     sh_error_errno(path);

@@ -1,3 +1,13 @@
+- a backgrounded command followed by more commands on the *same input
+  line* either mis-parses or crashes the shell outright, found while
+  re-testing the "{ cmd; } &" fix below: "true & echo after" (a single
+  line passed via -c) segfaults the shell itself (confirmed pre-
+  existing on a clean checkout, not a regression); "{ true; } & echo
+  after" instead gives a parse error, "unexpected token NAME", right
+  after the "}". Putting the next command on its own line (a real
+  newline instead of continuing after "&") works fine in both cases,
+  so this is specific to same-line "&"-then-more parsing, not
+  backgrounding itself
 - tests/posix/fnmatch-p.tst hangs the testee (100% CPU spin), found via
   the same conformance-suite run that found the "eval continue" hang
   below; not yet isolated to a specific case within the file
@@ -34,42 +44,94 @@
   "case $0 in *[\\/]*)" work fine in isolation on both builds, so
   something earlier in configure corrupts state only in the
   optimized build; worth an asan build to catch what Debug tolerates
-- a pipeline inside a subshell leaks its builtin members as extra
-  copies of the interpreter: every pipeline member that is a builtin
-  (so its forked child doesn't exec) returns from the pipeline instead
-  of exiting and continues interpreting the script after the subshell.
-  "(true | true)" makes everything that follows run 3 times (parent +
-  both members), "(echo hi | cat)" 2 times (cat execs away, echo's
-  child survives); repro: printf '(true | true)\necho after\n' | shish
-  prints "after" three times. a bare "true | true" (no subshell) and
-  "if true; then true | true; fi" are both fine, so it's specific to
-  the pipeline-inside-forked-subshell path. very likely the same root
-  cause as the cmdsubst-of-a-pipeline duplication blamed in the
-  configure entry above (a cmdsubst evaluates its tree in a forked
-  context just like a subshell)
-- the PATH search (exec_path.c) checks candidates with nothing but
-  access(path, X_OK), so a DIRECTORY on PATH matches a command name
-  (directories are "executable"); POSIX requires an executable
-  regular file. Bites for real: with emscripten's SDK dir on PATH,
-  "test" resolves to emsdk/test/ (a directory) and shadows
-  /usr/bin/test -- which is exactly why tests/builtin-test.sh fails
-  on builds configured with BUILTIN_TEST=OFF (the cfg'd
-  build/x86_64-linux-gnu) while default builds pass: combined with
-  the silent-status-0 exec bug below, every "test" invocation
-  "succeeds" with 0
-- exec failure exit statuses and messages are wrong in both halves of
-  the exec path. Parent half (exec_check/exec_path failing the
-  lookup): always exits 1 where POSIX wants 127 (not found) / 126
-  (found but not executable) -- the EXIT_NOTFOUND/EXIT_NOEXEC mapping
-  in exec_error() is only reachable from the post-fork execve path --
-  and the errno in the message can be wrong too ("shish -c
-  /etc/hostname" says "No such file or directory" for a file that
-  exists but isn't executable). Child half (execve itself failing,
-  e.g. the resolved path is a directory): completely silent success
-  -- "shish -c '/some/directory; echo $?'" prints 0 with no
-  diagnostic at all (the child's exit(126) is lost on the way back
-  through job_wait, and its sh_error_errno message never appears),
-  where bash prints "Is a directory" and exits 126
+- FIXED: a pipeline inside a subshell used to leak its builtin members
+  as extra copies of the interpreter -- "(true | true)" made everything
+  after the subshell run 3 times. Root cause: eval_pipeline() forks a
+  real child per pipeline member and expects sh_exit() (invoked via
+  the E_EXIT-flagged eval_tree() call, wrapped in "exit(...)") to
+  really terminate that child. But sh_exit()/eval_exit() longjmp back
+  to the nearest jump-enabled `struct eval` frame instead of exiting
+  whenever one is on the (global) `eval` chain -- and a subshell
+  (eval_subshell()) pushes exactly such a frame via setjmp(), which
+  survives fork() as a still-valid stack address in the child's copy
+  of the stack. The forked child's sh_exit() found that inherited
+  frame and longjmped back into eval_subshell() *inside the child*,
+  which then returned normally into the top-level eval_tree() loop --
+  so the "exited" child kept interpreting the rest of the script as a
+  second full copy of the shell. Fixed in sh_forked() (called from
+  every fork path, job_fork() included) by clearing `jump` on every
+  frame in the inherited `eval` chain right after forking, so
+  eval_exit() never finds a target and sh_exit() always falls through
+  to a real exit() in a forked child. This is the fix the file already
+  half-attempted: sh_forked() had "// sh->eval->jump = 0;" commented
+  out, targeting the wrong variable (sh->eval is never actually
+  updated -- eval_push()/eval_pop() maintain a separate global `eval`)
+  and only the top frame besides.
+- FIXED: the PATH search (exec_path.c) and exec_hash()'s direct-path
+  branch (name containing "/") both checked candidates with nothing
+  but access(path, X_OK), so a DIRECTORY matched (directories are
+  "executable" as in searchable); POSIX requires an executable regular
+  file. Bit for real: with emscripten's SDK dir on PATH, "test"
+  resolved to emsdk/test/ (a directory) and shadowed /usr/bin/test --
+  which was exactly why tests/builtin-test.sh failed on builds
+  configured with BUILTIN_TEST=OFF (the cfg'd build/x86_64-linux-gnu)
+  while default builds passed. Fixed by adding an S_ISDIR check after
+  access() succeeds in both exec_path() (skip and keep searching PATH)
+  and exec_hash() (reject, matching what execve() itself reports).
+- FIXED: exec failure exit statuses and messages were wrong in both
+  halves of the exec path. Parent half (PATH/path lookup failing
+  before anything is even forked): always exited 1 where POSIX wants
+  127 (not found) / 126 (found but not executable) -- exec_error()'s
+  ENOENT/EACCES mapping was only ever invoked from the post-fork
+  execve() path, and separately the message hardcoded
+  strerror(ENOENT) regardless of what actually went wrong ("shish -c
+  /etc/hostname" said "No such file or directory" for a file that
+  exists but isn't executable). Fixed by having exec_hash()/exec_path()
+  record the real errno from the failing access()/stat() into a new
+  `exec_lasterrno` (plain "errno" isn't trustworthy -- redirections,
+  variable expansion etc. all run between the lookup and the message,
+  and routinely clobber it), and having eval_simple_command.c's "not
+  found" branch use that instead of a hardcoded ENOENT. exec_error()
+  also didn't map EISDIR/ENOEXEC to 126, relevant now that directory
+  matches are correctly rejected rather than silently accepted. Child
+  half (execve() itself failing post-fork on a path that passed every
+  pre-check, e.g. a chmod +x'd file that isn't actually a valid
+  executable -> ENOEXEC): the forked child SEGV'd handling its own
+  error, and the "silent success, status 0" originally reported was
+  really that SEGV's exit status getting silently swallowed somewhere
+  on the way back through job_wait (a directory match specifically
+  looked fine only because the parent-side PATH-search fix above now
+  intercepts it before it ever reaches this path). Root cause:
+  fdtable_exec() -- called right before execve(), on the assumption
+  that a successful exec makes cleanup moot -- pops every pushed
+  source off the source stack, but exec_program()'s post-execve()
+  failure handler still unconditionally calls sh_error_errno() ->
+  sh_msgn() -> source_msg(), which dereferenced
+  fdtable[STDSRC_FILENO]->name assuming a source was still there.
+  Fixed source_msg() to fall back to sh_name (matching what it already
+  does when a source has no name of its own) when no source is
+  pushed. Separately, once that no longer crashed, the message lost
+  its strerror() text and the exit status still came out wrong:
+  exec_error() (called right before sh_error_errno() in
+  exec_program.c) zeroes errno as its very last step, and
+  sh_error_errno()'s own buffer_puts()/write() calls are free to leave
+  errno changed too (POSIX only guarantees it's preserved on failure,
+  not success) -- so by either path, whichever of the two ran second
+  was reading a clobbered value. Fixed by saving errno once, right
+  after execve() returns, and using that saved copy for both the
+  message and the status mapping instead of a live "errno" that nothing
+  else in this function should have been trusting in the first place.
+- "for x in \"$@\"; do ...; done" fails to parse when positional
+  params include a quoted empty string: 'set -- -n ""; for a in
+  "$@"; do echo "[$a]"; done' gives "unexpected token EOF, expecting
+  'done'" instead of looping twice. Found chasing a
+  tests/builtin-test.sh failure on the BUILTIN_TEST=OFF build ("test
+  -n \"\"" resolving to a lost second argument, so /usr/bin/test saw
+  only "-n" and reported the single-argument-string-test true instead
+  of the intended empty-string-is-false result) -- "$#" alone reports
+  the right count (2) for the same "set --", so the params themselves
+  are intact; the parser chokes specifically on iterating "$@" in a
+  for-loop when one element is empty
 - fdstack_push() (src/fdstack/fdstack_push.c:8) can hit its own
   consistency assertion, "st < fdstack || fdstack == &fdstack_root",
   under heavy nested command-substitution + subshell use; confirmed

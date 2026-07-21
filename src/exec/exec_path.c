@@ -4,6 +4,7 @@
 #include "../../lib/str.h"
 #include "../var.h"
 #include "../../lib/windoze.h"
+#include <errno.h>
 #if WINDOWS_NATIVE
 #include <windows.h>
 #include <io.h>
@@ -14,7 +15,10 @@
 #else
 #include <unistd.h>
 #include <limits.h>
+#include <sys/stat.h>
 #endif
+
+int exec_lasterrno;
 
 /* searches for relative path <name> within PATH and returns absolute
  * path if found
@@ -25,6 +29,8 @@ exec_path(char* name) {
   static char path[PATH_MAX];
   unsigned long si = 0, pi = 0;
   vpath = var_value("PATH", NULL);
+
+  exec_lasterrno = ENOENT;
 
   do {
     /* splitting up path variable */
@@ -50,9 +56,27 @@ exec_path(char* name) {
     /* append command name */
     str_copyn(&path[pi], name, PATH_MAX - pi - 1);
 
-    /* check if file accessible and executable */
-    if(access(path, X_OK) == 0)
-      return str_dup(path);
+    /* check if file accessible and executable. access(X_OK) alone
+       isn't enough -- directories are "executable" (searchable) too,
+       so a directory on PATH would otherwise match and shadow the
+       real command of the same name (e.g. an SDK's "test/" build
+       output directory sitting on PATH ahead of /usr/bin/test) */
+    if(access(path, X_OK) == 0) {
+      int isdir = 0;
+#if !WINDOWS_NATIVE
+      struct stat st;
+
+      isdir = stat(path, &st) == 0 && S_ISDIR(st.st_mode);
+#endif
+      if(!isdir)
+        return str_dup(path);
+
+#if !WINDOWS_NATIVE
+      exec_lasterrno = EISDIR;
+#endif
+    } else if(errno != ENOENT) {
+      exec_lasterrno = errno;
+    }
 
     si += ni;
   } while(vpath[si]);

@@ -43,6 +43,14 @@ struct exechash {
 
 extern struct exechash* exec_hashtbl[EXEC_HASHSIZE];
 
+/* errno from the access()/stat() call that made exec_hash()/exec_path()
+   give up on a candidate (ENOENT if nothing matching PATH existed at
+   all, EACCES/EISDIR if something matched but couldn't be executed).
+   The caller can't rely on plain "errno" for this by the time it
+   notices cmd.ptr == NULL -- redirections, variable expansion and
+   other syscalls run in between and routinely clobber it. */
+extern int exec_lasterrno;
+
 char* exec_check(char* path);
 char* exec_path(char* name);
 int exec_command(struct command* cmd, int argc, char** argv, enum execflag);

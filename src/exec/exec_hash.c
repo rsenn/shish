@@ -5,6 +5,7 @@
 #include "../../lib/alloc.h"
 #include "../vartab.h"
 #include "../../lib/windoze.h"
+#include <errno.h>
 #if WINDOWS_NATIVE
 #include <io.h>
 #ifndef X_OK
@@ -12,6 +13,7 @@
 #endif
 #else
 #include <unistd.h>
+#include <sys/stat.h>
 #endif
 
 /* hashed command search routine
@@ -26,9 +28,23 @@ exec_hash(char* name, int mask) {
     cmd.id = H_PROGRAM;
     cmd.path = name;
 
-    /* ...but validate the path */
-    if(access(cmd.path, X_OK) != 0)
+    /* ...but validate the path. access(X_OK) alone accepts directories
+       too (they're "executable" as in searchable) -- reject those
+       explicitly, matching what execve() itself would report */
+    if(access(cmd.path, X_OK) != 0) {
+      exec_lasterrno = errno;
       cmd.path = NULL;
+    }
+#if !WINDOWS_NATIVE
+    else {
+      struct stat st;
+
+      if(stat(cmd.path, &st) == 0 && S_ISDIR(st.st_mode)) {
+        exec_lasterrno = EISDIR;
+        cmd.path = NULL;
+      }
+    }
+#endif
 
   } else {
     /* otherwise try to find hashed entry */

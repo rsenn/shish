@@ -50,13 +50,27 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
      `case` inside the retry loop, or a second layer of subshell). Worth
      bisecting configure itself (binary-search which `AC_*` check block
      first shows duplicated output) rather than guessing.
-   - **Minimal duplication repro found (2026-07-21), no cmdsubst needed:**
-     `(true | true)` — a pipeline inside a subshell — makes everything
-     after the subshell run once per surviving builtin pipeline member
-     (the forked members return from the pipeline instead of exiting;
-     see the new `BUGS` entry). configure is full of exactly this
-     shape, so this is now the prime suspect for the duplicated-output
-     bug, and a far easier debugging target than bisecting configure.
+   - **Minimal duplication repro found and fixed (2026-07-21), no cmdsubst
+     needed:** `(true | true)` — a pipeline inside a subshell — made
+     everything after the subshell run once per surviving builtin
+     pipeline member. Root cause: `eval_pipeline()`'s forked children
+     call `sh_exit()` (via an `E_EXIT`-flagged `eval_tree()` call) to
+     terminate, but `sh_exit()`/`eval_exit()` `longjmp()` to the
+     nearest jump-enabled `struct eval` frame instead of exiting
+     whenever the (process-global) `eval` chain has one — and
+     `eval_subshell()` always pushes exactly such a frame via
+     `setjmp()`, which is still a physically valid stack address in a
+     forked child's copy of the stack. The child's "exit" landed back
+     inside the parent-context's `eval_subshell()` call (now running
+     in the child), which returned normally into the top-level
+     `eval_tree()` loop — so the "exited" child kept interpreting the
+     rest of the script as an extra copy of the shell. Fixed in
+     `sh_forked()` (runs on every fork path) by clearing `jump` on
+     every frame in the inherited `eval` chain, so `eval_exit()` never
+     finds a stale target in a forked child and always falls through
+     to a real `exit()`. This is likely the exact bug behind
+     configure's duplicated-output symptom (autoconf's checks are full
+     of subshells wrapping pipelines).
    - **Fd-side root cause found and fixed (2026-07-21):** the resolver
      endlessly `dup()`ed until EMFILE, then spun at 100% CPU: a stale
      `fd_expected` made the `d->n == fd_expected` branch in
@@ -349,20 +363,36 @@ with the corrected/precise version:**
   gap: reassigning `PATH` does *not* invalidate shish's command-location
   cache. Confirmed live against bash with two same-named commands in two
   different `PATH` directories. Precise version now in `BUGS`.
-  A second search gap found later (2026-07-21): the `PATH` walk accepts
-  a *directory* as a command match (`access(X_OK)` is its only check),
-  and exec failure statuses are wrong in both the parent (always 1,
-  never 126/127) and child (execve failure silently reports 0) halves —
-  both now in `BUGS` with repros.
+  A second search gap found later (2026-07-21), now fixed: the `PATH`
+  walk (`exec_path()`) and `exec_hash()`'s direct-path branch both
+  accepted a *directory* as a command match (`access(X_OK)` alone
+  doesn't exclude directories) -- fixed by adding an `S_ISDIR` check
+  after `access()` succeeds in both places. Exec failure statuses and
+  messages were also wrong on both sides of the exec path: the parent
+  (lookup failing before any fork) always exited 1 instead of 127/126,
+  with the wrong `strerror()` text besides, because nothing captured
+  the `access()`/`stat()` errno before later syscalls clobbered plain
+  `errno` -- fixed via a new `exec_lasterrno`. The child side (execve()
+  itself failing post-fork on something that passed every pre-check,
+  e.g. `ENOEXEC`) turned out to flat-out SEGV handling its own error --
+  `fdtable_exec()` pops the source stack in preparation for a
+  successful exec, and the failure path's error message
+  (`source_msg()`) dereferenced the now-empty source unconditionally.
+  All of the above now fixed; see `BUGS` for the full writeup.
 
 **Found along the way, not in the original `TODO` at all:** backgrounding
 a non-simple (compound) command — `eval_tree.c`'s bgnd handling caused
 duplicated execution and corrupted subsequent parsing. The backwards
 parent/child branch was flipped in c039280e, but that turned out not to
-be the whole bug: the parent still falls through into an unconditional
-second `eval_node()` and synchronously `job_wait()`s the "background"
-job, so the observable behavior is unchanged — see `BUGS` for the
-current state and repro.
+be the whole bug: the parent still fell through into an unconditional
+second `eval_node()` and synchronously `job_wait()`ed the "background"
+job. **Fixed (2026-07-21):** reworked to mirror how a backgrounded
+*simple* command already behaves (`eval_simple_command.c`'s `X_NOWAIT`
+path) — fork, print `"[N] pid"`, and return immediately without a
+second evaluation or a blocking wait. While re-testing this, found (but
+did not fix, out of scope here) that a backgrounded command followed by
+more commands on the *same input line* is separately broken at the
+parser level regardless of this fix — see `BUGS`.
 
 **Still open, kept in `TODO`:** the line-editing/terminal-abstraction/
 key-bindings rewrite (a design-sized project, not a fixable bug) and

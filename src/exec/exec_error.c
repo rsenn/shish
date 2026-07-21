@@ -4,7 +4,7 @@
 /* map errors to posix
  *
  * ENOENT -> 127
- * EACCES -> 126
+ * EACCES, EISDIR, ENOEXEC -> 126
  *
  * other: -> 1
  * ----------------------------------------------------------------------- */
@@ -14,7 +14,9 @@ exec_error(void) {
 
   switch(errno) {
     case ENOENT: ret = EXIT_NOTFOUND; break;
-    case EACCES: ret = EXIT_NOEXEC; break;
+    case EACCES:
+    case EISDIR:
+    case ENOEXEC: ret = EXIT_NOEXEC; break;
     default: ret = 1; break;
   }
 
