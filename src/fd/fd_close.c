@@ -31,6 +31,18 @@ fd_close(struct fd* fd) {
   if(fd->wb.op == (ssize_t(*)())(void*)&stralloc_write)
     fd->wb.fd = -1;
 
+  /* the buffers may sit on kernel fds of their own that never became
+     the fd's effective descriptor (fd->e stays -1), e.g. the pipe read
+     end a command substitution's stralloc-fd reads the child's output
+     from. buffer_close() below really close()s those, so tell the
+     fdtable -- otherwise fd_expected stays stale forever and every
+     dup() bet in fdtable_dup() misses from then on. */
+  if(fd->rb.fd != fd->wb.fd && fd->rb.fd > 2)
+    fdtable_untrack(fd->rb.fd);
+
+  if(fd->wb.fd > 2)
+    fdtable_untrack(fd->wb.fd);
+
   /* if the buffers belong to this (fd) we close them
      don't close twice if we also have a writing buf */
   if(fd->rb.fd != fd->wb.fd) {

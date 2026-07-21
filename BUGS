@@ -5,18 +5,6 @@
   has no real cycle detection, only a defensive depth cap added later;
   a genuinely cyclic redirection still fails instead of resolving, root
   cause (why the recursion can happen at all) is untouched
-- fd_expected (the shell's guess of the kernel's lowest free fd) goes
-  stale: resolution paths leave kernel fds open at slots the table
-  thinks are free (e.g. resolving stdin from a pipe does dup(pipe)=9;
-  dup2(9,0) and never closes the original pipe fd; here-doc temp fds
-  stay open after being dup2'd onto 0). this used to make
-  fdtable_dup()'s "d->n == fd_expected" dup() bet fail forever and
-  endlessly dup() until EMFILE (fixed: the retry now falls back to
-  dup2(), and fdtable_lazy() now propagates FDTABLE_ERROR instead of
-  re-resolving the same fd in an infinite loop), so a stale
-  fd_expected now only costs one stray dup+close per miss -- but the
-  staleness itself is still there, and so are the leaked kernel fds
-  behind it (visible as fds accumulating in long-running scripts)
 - arithmetic expansion containing a variable name fails to parse:
   "echo $((i+1))" prints the literal "i+1" followed by "unexpected
   token )" and exit 1 (same for $(( i + 1 )) and in assignments,
@@ -46,6 +34,42 @@
   "case $0 in *[\\/]*)" work fine in isolation on both builds, so
   something earlier in configure corrupts state only in the
   optimized build; worth an asan build to catch what Debug tolerates
+- a pipeline inside a subshell leaks its builtin members as extra
+  copies of the interpreter: every pipeline member that is a builtin
+  (so its forked child doesn't exec) returns from the pipeline instead
+  of exiting and continues interpreting the script after the subshell.
+  "(true | true)" makes everything that follows run 3 times (parent +
+  both members), "(echo hi | cat)" 2 times (cat execs away, echo's
+  child survives); repro: printf '(true | true)\necho after\n' | shish
+  prints "after" three times. a bare "true | true" (no subshell) and
+  "if true; then true | true; fi" are both fine, so it's specific to
+  the pipeline-inside-forked-subshell path. very likely the same root
+  cause as the cmdsubst-of-a-pipeline duplication blamed in the
+  configure entry above (a cmdsubst evaluates its tree in a forked
+  context just like a subshell)
+- the PATH search (exec_path.c) checks candidates with nothing but
+  access(path, X_OK), so a DIRECTORY on PATH matches a command name
+  (directories are "executable"); POSIX requires an executable
+  regular file. Bites for real: with emscripten's SDK dir on PATH,
+  "test" resolves to emsdk/test/ (a directory) and shadows
+  /usr/bin/test -- which is exactly why tests/builtin-test.sh fails
+  on builds configured with BUILTIN_TEST=OFF (the cfg'd
+  build/x86_64-linux-gnu) while default builds pass: combined with
+  the silent-status-0 exec bug below, every "test" invocation
+  "succeeds" with 0
+- exec failure exit statuses and messages are wrong in both halves of
+  the exec path. Parent half (exec_check/exec_path failing the
+  lookup): always exits 1 where POSIX wants 127 (not found) / 126
+  (found but not executable) -- the EXIT_NOTFOUND/EXIT_NOEXEC mapping
+  in exec_error() is only reachable from the post-fork execve path --
+  and the errno in the message can be wrong too ("shish -c
+  /etc/hostname" says "No such file or directory" for a file that
+  exists but isn't executable). Child half (execve itself failing,
+  e.g. the resolved path is a directory): completely silent success
+  -- "shish -c '/some/directory; echo $?'" prints 0 with no
+  diagnostic at all (the child's exit(126) is lost on the way back
+  through job_wait, and its sh_error_errno message never appears),
+  where bash prints "Is a directory" and exits 126
 - fdstack_push() (src/fdstack/fdstack_push.c:8) can hit its own
   consistency assertion, "st < fdstack || fdstack == &fdstack_root",
   under heavy nested command-substitution + subshell use; confirmed
@@ -56,17 +80,17 @@
   underlying corruption is still there -- tests/param.sh's last
   assertion silently evaluates to the wrong value ('0' instead of the
   expected string) instead of crashing
-- FIXED: 
-  backgrounding a non-simple (compound) command, e.g. "{ cmd; } &",
-  duplicates its execution and corrupts whatever comes after it in the
-  same command list: eval_tree.c's bgnd handling has the job_fork()
-  parent/child branches backwards -- "if((pid = job_fork(job, 0, 1)))"
-  is true in the PARENT, which then runs eval_node()+exit() itself,
-  while the CHILD (pid 0, condition false) falls through and continues
-  interpreting the rest of the script instead of exiting; confirmed
-  live: "{ sleep 1; echo bg_done; } & echo after_bg; wait; echo end"
-  prints "bg_done" twice and never reaches "after_bg"/"end", with a
-  spurious parse error in between
+- backgrounding a non-simple (compound) command, e.g. "{ cmd; } &",
+  still duplicates its execution and corrupts what follows -- NOT
+  actually fixed by the branch flip committed as c039280e: that flip
+  corrected which process runs eval_node()+exit(), but the parent then
+  falls through to the unconditional "ret = eval_node(e, node)" at
+  eval_tree.c:50 and runs the same compound a second time itself, and
+  the "job_wait(job, pid, &st)" in the bgnd block makes the parent
+  wait synchronously for a job that's supposed to be background;
+  repro unchanged: "{ sleep 1; echo bg_done; } & echo after_bg; wait;
+  echo end" prints "bg_done" twice and never reaches
+  "after_bg"/"end", with a spurious parse error in between
 - "export FOO" (or any way of marking a variable for export before
   it's ever assigned a value) followed by "export -p" or bare "export"
   segfaults: var_print() (src/var/var_print.c) unconditionally does
@@ -76,18 +100,28 @@
   meant to prevent this, "if(!(var->flags & V_UNSET))", never fires
   because V_UNSET (src/var.h) is declared and checked but nothing in
   the codebase ever sets it
-- ">&-" (closing a file descriptor) only really closes it for external
-  commands (confirmed correct: a forked child genuinely gets EBADF).
-  For the shell's own builtins it doesn't close anything -- fd_null()
-  silently redirects it to a null sink instead, so e.g. "exec 3>&-;
-  echo hi >&3" exits 0 with no error in shish where every POSIX shell
-  (bash included) reports "Bad file descriptor" and exits 1
+- ">&-"/"<&-" (closing a file descriptor) doesn't really close.
+  For the shell's own builtins fd_null() silently redirects it to a
+  null sink, so e.g. "exec 3>&-; echo hi >&3" exits 0 with no error in
+  shish where every POSIX shell (bash included) reports "Bad file
+  descriptor" and exits 1. For external commands it's broken on stdin
+  at least: "cat <&-" leaves fd 0 pointing at the shell's own stdin
+  (hangs on a terminal/pipe stdin where bash's cat gets EBADF and
+  exits 1), and combining it with a preceding redirect, "cat < infile
+  <&-", silently drops the infile redirect too -- cat reads the
+  shell's original stdin (repro: 'shish -c "cat < infile <&-" < outer'
+  prints outer's contents; bash prints nothing and exits 1)
 - PATH reassignment doesn't invalidate the remembered command-search
   cache (POSIX 3.9.1.1 requires it to): confirmed live against bash --
   "PATH=/a:$PATH; cmd; PATH=/b:$PATH; cmd" runs /a's cmd both times in
   shish, but correctly switches to /b's cmd the second time in bash;
   exec_search()/the exec hash never gets invalidated on a PATH=
   assignment
+- builtin echo rejects any unrecognized word starting with "-" as an
+  "invalid option" instead of printing it as an operand: "echo -x" and
+  "echo ---foo" both error and exit 1 in shish, print the word in
+  bash/every POSIX shell (found because a test script doing "echo
+  ---marker---" died on it)
 - builtin_fg (src/builtin/builtin_jobs.c) has a stack out-of-bounds
   write for the common no-argument case: "struct job *joblist[njobs]"
   is sized argc-1 (0 for bare "fg"), then joblist[0] is written anyway;

@@ -79,7 +79,10 @@ builtin_mktemp(int argc, char* argv[]) {
       return 1;
     }
 
-    close(fd);
+    /* mkdir() returns 0 on success, not an fd -- closing it would
+       close the shell's stdin */
+    if(!directory)
+      close(fd);
   }
 
   buffer_putsa(fd_out->w, &name);

@@ -18,7 +18,7 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = fdtable.a
-MODULES = fdtable_check fdtable_close fdtable_dump fdtable_dup fdtable_exec fdtable_gap fdtable_here fdtable_lazy fdtable_link fdtable_newfd fdtable_open fdtable_resolve fdtable_table fdtable_track fdtable_unexpected fdtable_unlink fdtable_up fdtable_wish
+MODULES = fdtable_check fdtable_close fdtable_dump fdtable_dup fdtable_exec fdtable_gap fdtable_here fdtable_lazy fdtable_link fdtable_newfd fdtable_open fdtable_resolve fdtable_table fdtable_track fdtable_unexpected fdtable_unlink fdtable_untrack fdtable_up fdtable_wish
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

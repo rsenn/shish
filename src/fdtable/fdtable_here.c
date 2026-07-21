@@ -32,8 +32,10 @@ fdtable_here(struct fd* d, int flags) {
     return state;
 
   /* maybe we can close the destination d */
-  if(state == d->n)
+  if(state == d->n) {
     close(d->n);
+    fdtable_untrack(d->n);
+  }
 
   /* try to create temporary file */
   if((e = fd_tempfile(d)) < 0)

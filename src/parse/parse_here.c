@@ -38,8 +38,10 @@ parse_here(struct parser* p, stralloc* delim, int nosubst, int strip) {
        line containing the closing delimiter (POSIX 2.7.4) */
     if(strip && p->sa.len) {
       size_t i = 0;
+
       while(i < p->sa.len && p->sa.s[i] == '\t')
         i++;
+      
       if(i) {
         byte_copy(p->sa.s, p->sa.len - i, p->sa.s + i);
         p->sa.len -= i;

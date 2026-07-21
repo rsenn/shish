@@ -90,6 +90,7 @@ fdtable_resolve_1(struct fd* d, int flags) {
       }
 
       close(state);
+      fdtable_untrack(state);
       state = FDTABLE_DONE;
     }
   }

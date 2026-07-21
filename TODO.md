@@ -50,6 +50,13 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
      `case` inside the retry loop, or a second layer of subshell). Worth
      bisecting configure itself (binary-search which `AC_*` check block
      first shows duplicated output) rather than guessing.
+   - **Minimal duplication repro found (2026-07-21), no cmdsubst needed:**
+     `(true | true)` — a pipeline inside a subshell — makes everything
+     after the subshell run once per surviving builtin pipeline member
+     (the forked members return from the pipeline instead of exiting;
+     see the new `BUGS` entry). configure is full of exactly this
+     shape, so this is now the prime suspect for the duplicated-output
+     bug, and a far easier debugging target than bisecting configure.
    - **Fd-side root cause found and fixed (2026-07-21):** the resolver
      endlessly `dup()`ed until EMFILE, then spun at 100% CPU: a stale
      `fd_expected` made the `d->n == fd_expected` branch in
@@ -66,9 +73,24 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
      (command substitution of a pipeline returns empty and re-runs the
      surrounding command — see `BUGS`), the `AC_PROG_CC` "cannot create
      executables" false negative, and the MinSizeRel-only early death
-     (`BUGS` has the details). Longer-term the underlying `fd_expected`
-     staleness (leaked kernel fds after pipe/here-doc wiring) should go
-     away too — see its own `BUGS` entry.
+     (`BUGS` has the details).
+   - **`fd_expected` staleness and the leaked kernel fds behind it fixed
+     (2026-07-21):** the leaks themselves (pipe-stdin fd never closed
+     after `dup2` onto 0, here-doc temp fds staying open) fell to the
+     retry rework above; the remaining staleness had three sources, all
+     raw `close()`s the table never learned about — `fd_mmap()` closing
+     the script fd after mmap, `fdtable_resolve()`/`fdtable_dup()`/
+     `fdtable_here()`/`fdtable_open()` closing old effective fds during
+     resolution, and (the one that hit every script) `fd_close()`
+     closing buffer-owned kernel fds like the command-substitution pipe
+     read end, whose `fd->e` is -1 so the existing bookkeeping missed
+     it. New `fdtable_untrack()` (inverse of `fdtable_track()`) is now
+     called at every such site. Verified with temporary sh_loop
+     instrumentation (compare `fd_expected` against `dup(0)` and scan
+     `/proc/self/fd` vs `fd_list[]` after every toplevel command):
+     silent across all of `tests/*.sh`, and `strace` shows zero stray
+     `dup()`s where every redirection-heavy command used to pay one
+     stray dup+close per miss.
    - Build a debug config (`cfg-cmake.sh`'s Debug type, or add
      `-DUSE_EFENCE=ON`/ASan) to get a real backtrace for the SEGV instead of
      just the job-control "signaled" line.
@@ -306,13 +328,16 @@ with the corrected/precise version:**
   fixes, but the root cause (why a cycle would occur at all) is still
   open. Kept in `BUGS` in its more precise form.
 
-- *"closing of file descriptors on >&-"* — half right, half wrong: for
-  external commands it already works correctly (confirmed: a forked
-  child sees a genuine `EBADF`, matching bash exactly). For the shell's
-  *own* builtins, though, `fd_null()` silently turns a `>&-`'d fd into a
-  null sink instead of making further use of it fail — `echo hi >&3`
-  after `exec 3>&-` exits 0 in shish, where bash reports "Bad file
-  descriptor" and exits 1. Precise version now in `BUGS`.
+- *"closing of file descriptors on >&-"* — real, and broader than first
+  assessed. For the shell's *own* builtins, `fd_null()` silently turns
+  a `>&-`'d fd into a null sink instead of making further use of it
+  fail — `echo hi >&3` after `exec 3>&-` exits 0 in shish, where bash
+  reports "Bad file descriptor" and exits 1. For external commands it
+  was first believed correct (`exec 3>&-` on a high fd does produce a
+  genuine `EBADF` in the child), but stdin is broken: `cat <&-` leaves
+  fd 0 pointing at the shell's own stdin, and `cat < infile <&-` even
+  drops the preceding `< infile` redirect (2026-07-21, found while
+  leak-hunting). Precise version with repros now in `BUGS`.
 
 - *"conform to 3.9.1.1 Command Search and Execution"* — too vague to act
   on as written, so this was actually checked against the spec text
@@ -324,11 +349,20 @@ with the corrected/precise version:**
   gap: reassigning `PATH` does *not* invalidate shish's command-location
   cache. Confirmed live against bash with two same-named commands in two
   different `PATH` directories. Precise version now in `BUGS`.
+  A second search gap found later (2026-07-21): the `PATH` walk accepts
+  a *directory* as a command match (`access(X_OK)` is its only check),
+  and exec failure statuses are wrong in both the parent (always 1,
+  never 126/127) and child (execve failure silently reports 0) halves —
+  both now in `BUGS` with repros.
 
 **Found along the way, not in the original `TODO` at all:** backgrounding
-a non-simple (compound) command — `eval_tree.c`'s bgnd handling has the
-`job_fork()` parent/child branches backwards, causing duplicated
-execution and corrupted subsequent parsing. See `BUGS` for the repro.
+a non-simple (compound) command — `eval_tree.c`'s bgnd handling caused
+duplicated execution and corrupted subsequent parsing. The backwards
+parent/child branch was flipped in c039280e, but that turned out not to
+be the whole bug: the parent still falls through into an unconditional
+second `eval_node()` and synchronously `job_wait()`s the "background"
+job, so the observable behavior is unchanged — see `BUGS` for the
+current state and repro.
 
 **Still open, kept in `TODO`:** the line-editing/terminal-abstraction/
 key-bindings rewrite (a design-sized project, not a fixable bug) and

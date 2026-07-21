@@ -60,6 +60,7 @@ void fdtable_link(struct fd*);
 void fdtable_track(int n, int flags);
 void fdtable_unexpected(int e, int u, int flags);
 void fdtable_unlink(struct fd*);
+void fdtable_untrack(int e);
 void fdtable_up(void);
 
 #endif /* FDTABLE_H */

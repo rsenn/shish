@@ -50,10 +50,10 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
     cmd = exec_hash(args->narg.stra.s, 0);
   }
 
-  /*  if(sh->exitcode) {
-      tree_free(args);
-      eval_exit(sh->exitcode);
-    }*/
+  /*if(sh->exitcode) {
+    tree_free(args);
+    eval_exit(sh->exitcode);
+  }*/
 
   /* expand and set the variables,
      mark them for export if we're gonna execute a command */

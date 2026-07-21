@@ -118,6 +118,7 @@ retry:
       if(fd_ok(e) && fd_list[e] == d)
         fd_list[e] = 0;
       close(e);
+      fdtable_untrack(e);
     }
     retried = 1;
     goto retry;

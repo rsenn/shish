@@ -28,6 +28,7 @@ fd_mmap(struct fd* d, const char* fname) {
   r = buffer_mmapread_fd(d->r, e);
 
   close(e);
+  fdtable_untrack(e);
   d->r->fd = -1;
 
   if(r) {
