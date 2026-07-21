@@ -218,4 +218,29 @@ assert_equal "a b" "$X" "a command substitution with its own pipeline, nested in
 X=$(echo hi)
 assert_equal "hi" "$X" "command substitution of a plain (non-piped) simple command must still work"
 
+## fixes/32: job_new() sets job->nproc to a pipeline's fixed member
+## count up front, but job_fork() also (wrongly) treated it as a
+## running "how many registered so far" counter -- incrementing it
+## past the array job_new() actually allocated, and always writing to
+## procs[0] instead of the slot for the process actually being
+## registered. Confirmed with an ASan build: any 2+-stage pipeline
+## heap-buffer-overflowed job->procs[]; a plain (non-ASan) build
+## tolerates the overwrite/OOB read silently, so this can't be turned
+## into an assertion that would actually fail on the old code the way
+## the rest of this file's checks can -- these are still worth having
+## as basic pipeline/job-tracking smoke tests, but the real
+## verification for this one was the ASan run itself.
+X=$(echo a | grep a)
+assert_equal "a" "$X" "a 2-stage pipeline must still produce the right output"
+X=$(echo a | tr a-z A-Z | rev)
+assert_equal "A" "$X" "a 3-stage pipeline must still produce the right output"
+
+I=0
+while [ "$I" -lt 5 ]; do
+  echo "x$I" | cat >/dev/null
+  I=$(( $I + 1 ))
+done
+echo done >/dev/null
+assert_equal "5" "$I" "several 2-stage pipelines in a row must not corrupt job tracking badly enough to break the loop"
+
 summary

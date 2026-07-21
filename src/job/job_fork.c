@@ -16,8 +16,31 @@ int job_pgrp;
 int
 job_fork(struct job* j, union node* node, int bgnd) {
   pid_t pid, pgrp;
+  int index = -1;
 
   assert(j);
+
+  /* find the next unclaimed proc slot -- job_new() zeroes every
+     procs[i].pid to 0 up front. j->nproc is the job's fixed total
+     member count, set once by job_new() before the first fork ever
+     happens (e.g. to a pipeline's member count) -- it's not a
+     running "how many forked so far" counter, so it can't be used to
+     pick an index or to detect "am I the first member" (both the
+     child and parent branches below used to do exactly that, and
+     both were wrong: nproc is never 0 by the time job_fork() runs at
+     all). Confirmed with an ASan build: any 2+-process job wrote past
+     the end of its own procs[] array. */
+  if(j) {
+    unsigned int i;
+
+    for(i = 0; i < j->nproc; i++)
+      if(j->procs[i].pid == 0) {
+        index = (int)i;
+        break;
+      }
+
+    assert(index >= 0);
+  }
 
 #if !WINDOWS_NATIVE
   sig_block(SIGCHLD);
@@ -36,7 +59,7 @@ job_fork(struct job* j, union node* node, int bgnd) {
   if(pid == 0) {
     sh_forked();
 
-    pgrp = j && j->nproc ? j->procs[0].pid : sh_pid;
+    pgrp = index > 0 ? j->procs[0].pid : sh_pid;
 
 #if !WINDOWS_NATIVE
     setpgid(sh_pid, pgrp);
@@ -58,17 +81,15 @@ job_fork(struct job* j, union node* node, int bgnd) {
 
   /* in the parent update the process list of the j */
   if(j) {
-    struct proc* p = &j->procs[0 /*j->nproc*/];
+    struct proc* p = &j->procs[index];
 
     p->pid = pid;
     p->status = -1;
 
-    if(j->nproc == 0)
+    if(index == 0)
       j->pgrp = pgrp;
     else
       pgrp = j->procs[0].pid;
-
-    j->nproc++;
   }
 
   if(pgrp != job_pgrp && !bgnd) {
