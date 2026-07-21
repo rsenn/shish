@@ -117,7 +117,13 @@ Every `tests/*.sh` file must:
 a bug (whether it started life as a `BUGS` entry or was found and fixed in
 the same change), add a case to `tests/fixed.sh` that fails without the fix
 and passes with it, plus a patch in `fixes/` (see below) — a fix without a
-test protects nothing the next time someone touches that code path.
+test protects nothing the next time someone touches that code path. The one
+exception is a fix that only compiles/runs on a platform this repo isn't
+being developed on (e.g. a `WINDOWS_NATIVE`-only code path) — don't pad
+`tests/fixed.sh` with an assertion that's always true just to have a line
+item; instead leave a comment there explaining why, and verify the fix by
+actually building for that platform (`cfg-mingw64`/`cfg-mingw32` etc., see
+`cfg-cmake.sh`) and confirming it compiles and links clean.
 
 `tests/common.sh` defines the `assert_equal`, `assert_match`, `success`,
 `failure`, `summary` helpers; each test sources it via

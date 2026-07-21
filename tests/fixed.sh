@@ -148,4 +148,11 @@ COUNT=$(wc -l <"$OUTFILE")
 assert_equal "1" "$COUNT" "backgrounding a compound command followed by more on the same line must not fail to parse or duplicate"
 rm -f "$OUTFILE"
 
+## fixes/26 (wait_nohang()'s WINDOWS_NATIVE branch, lib/wait/wait_nohang.c)
+## isn't covered here: the fixed code only compiles under
+## WINDOWS_NATIVE, which this platform isn't, and a fake always-true
+## assertion here wouldn't protect anything. Verified instead by
+## cross-compiling with cfg-mingw64 (see cfg-cmake.sh) and confirming
+## lib/wait/*.c and src/fork.c build clean and link into shish.exe.
+
 summary

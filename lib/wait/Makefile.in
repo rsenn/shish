@@ -19,7 +19,7 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 LIB = ../libowfat.a
 ARCHIVE = wait.a
-MODULES = wait_nohang wait_pid wait_pid_nohang wait_pids_nohang waitpid_nointr
+MODULES = wait_nohang wait_pid wait_pid_nohang wait_pids_nohang waitpid_nointr wait_track
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

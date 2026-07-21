@@ -31,6 +31,7 @@ wait_pid(int pid, int* wstat) {
     if(ret == WAIT_OBJECT_0) {
       GetExitCodeProcess(hproc, &exitcode);
       CloseHandle(hproc);
+      wait_track_remove(pid);
 
       if(exitcode == STILL_ACTIVE)
         return -1;

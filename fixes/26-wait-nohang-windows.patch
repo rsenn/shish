@@ -1,0 +1,213 @@
+diff --git a/lib/wait.h b/lib/wait.h
+index 97849ed6..33e0c553 100644
+--- a/lib/wait.h
++++ b/lib/wait.h
+@@ -23,4 +23,21 @@ int wait_pid_nohang(int pid, int* wstat);
+ int waitpid_nointr(int pid, int* wstat, int flags);
+ int wait_pids_nohang(int const* pids, unsigned int len, int* wstat);
+ 
++#if WINDOWS_NATIVE
++/* Windows has no equivalent of POSIX's "wait for any child of this
++ * process" (the kernel doesn't track a parent/child relationship the
++ * way it does on unix) -- fork() in src/fork.c is the sole producer
++ * of child processes here, and registers each one's pid via
++ * wait_track_add() right after creating it, so wait_nohang() has
++ * something to enumerate. wait_pid()/wait_pid_nohang()/
++ * wait_pids_nohang() call wait_track_remove() once they've reaped a
++ * given pid directly, so the registry doesn't accumulate stale
++ * entries for children reaped some other way than wait_nohang().
++ */
++void wait_track_add(int pid);
++void wait_track_remove(int pid);
++unsigned int wait_track_count(void);
++int wait_track_pid(unsigned int i);
++#endif
++
+ #endif // _WAIT_H
+diff --git a/lib/wait/Makefile.in b/lib/wait/Makefile.in
+index d3024d81..b83ade3d 100644
+--- a/lib/wait/Makefile.in
++++ b/lib/wait/Makefile.in
+@@ -19,7 +19,7 @@ include $(top_builddir)/config.mk
+ # ---------------------------------------------------------------------------
+ LIB = ../libowfat.a
+ ARCHIVE = wait.a
+-MODULES = wait_nohang wait_pid wait_pid_nohang wait_pids_nohang waitpid_nointr
++MODULES = wait_nohang wait_pid wait_pid_nohang wait_pids_nohang waitpid_nointr wait_track
+ 
+ SOURCES = $(MODULES:%=%.c)
+ OBJECTS = $(MODULES:%=%.o)
+diff --git a/lib/wait/wait_nohang.c b/lib/wait/wait_nohang.c
+index 38800678..9ebe8dbb 100644
+--- a/lib/wait/wait_nohang.c
++++ b/lib/wait/wait_nohang.c
+@@ -1,7 +1,9 @@
+ #include "../wait.h"
+ #include "../windoze.h"
+ 
+-#if !WINDOWS_NATIVE
++#if WINDOWS_NATIVE
++#include <windows.h>
++#else
+ #include <sys/types.h>
+ #include <sys/wait.h>
+ #endif
+@@ -9,7 +11,41 @@
+ int
+ wait_nohang(int* wstat) {
+ #if WINDOWS_NATIVE
+-// #warning No windows implementation
++  unsigned int i, n = wait_track_count();
++
++  /* no children left to wait for -- mirrors POSIX waitpid(-1, ...)
++   * returning -1/ECHILD in the same situation */
++  if(n == 0)
++    return -1;
++
++  for(i = 0; i < n; i++) {
++    int pid = wait_track_pid(i);
++    HANDLE hproc = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, pid);
++    DWORD exitcode = 0;
++
++    if(!hproc) {
++      /* the process object is gone without ever being reaped here
++       * (reaped directly via wait_pid()/wait_pid_nohang() instead) --
++       * drop it so we stop trying */
++      wait_track_remove(pid);
++      continue;
++    }
++
++    if(WaitForSingleObject(hproc, 0) == WAIT_OBJECT_0) {
++      GetExitCodeProcess(hproc, &exitcode);
++      CloseHandle(hproc);
++      wait_track_remove(pid);
++      *wstat = exitcode;
++      return pid;
++    }
++
++    CloseHandle(hproc);
++  }
++
++  /* children exist, but none of them have exited yet -- mirrors
++   * POSIX waitpid(-1, ..., WNOHANG) returning 0 in the same
++   * situation */
++  return 0;
+ #elif defined(__unix__)
+   return waitpid(-1, wstat, WNOHANG);
+ #else
+diff --git a/lib/wait/wait_pid.c b/lib/wait/wait_pid.c
+index d82fdf48..9fa9e823 100644
+--- a/lib/wait/wait_pid.c
++++ b/lib/wait/wait_pid.c
+@@ -31,6 +31,7 @@ wait_pid(int pid, int* wstat) {
+     if(ret == WAIT_OBJECT_0) {
+       GetExitCodeProcess(hproc, &exitcode);
+       CloseHandle(hproc);
++      wait_track_remove(pid);
+ 
+       if(exitcode == STILL_ACTIVE)
+         return -1;
+diff --git a/lib/wait/wait_pid_nohang.c b/lib/wait/wait_pid_nohang.c
+index ab4ac040..1c479fe0 100644
+--- a/lib/wait/wait_pid_nohang.c
++++ b/lib/wait/wait_pid_nohang.c
+@@ -16,11 +16,11 @@ wait_pid_nohang(int pid, int* wstat) {
+   WaitForSingleObject(process, INFINITE);
+   GetExitCodeProcess(process, &exitcode);
+   CloseHandle(process);
++  wait_track_remove(pid);
+ 
+   if(exitcode == STILL_ACTIVE)
+     return -1;
+   return pid;
+-// #warning No windows implementation
+ #else
+   int w = 0;
+   int r = 0;
+diff --git a/lib/wait/wait_pids_nohang.c b/lib/wait/wait_pids_nohang.c
+index ab79cf28..091bf007 100644
+--- a/lib/wait/wait_pids_nohang.c
++++ b/lib/wait/wait_pids_nohang.c
+@@ -42,6 +42,7 @@ wait_pids_nohang(int const* pids, unsigned int len, int* wstat) {
+     }
+ 
+     if(i < len) {
++      wait_track_remove(pids[i]);
+       *wstat = exitcode;
+       return 1 + i;
+     }
+diff --git a/src/fork.c b/src/fork.c
+index 2309656d..b10c2f16 100644
+--- a/src/fork.c
++++ b/src/fork.c
+@@ -15,6 +15,7 @@
+  */
+ 
+ #include "../lib/windoze.h"
++#include "../lib/wait.h"
+ 
+ #if WINDOWS_NATIVE
+ #define _WIN32_WINNT 0x0600
+@@ -108,6 +109,11 @@ fork(void) {
+ 
+     child_pid = get_process_id(process_info.Process);
+ 
++    /* register the child so wait_nohang() (which has no pid to open
++       a handle by, unlike wait_pid()/wait_pid_nohang()) has
++       something to enumerate -- see lib/wait.h */
++    wait_track_add(child_pid);
++
+     ResumeThread(process_info.Thread);
+     CloseHandle(process_info.Process);
+     CloseHandle(process_info.Thread);
+diff --git a/lib/wait/wait_track.c b/lib/wait/wait_track.c
+new file mode 100644
+index 00000000..912b4e94
+--- /dev/null
++++ b/lib/wait/wait_track.c
+@@ -0,0 +1,45 @@
++#include "../wait.h"
++#include "../windoze.h"
++
++#if WINDOWS_NATIVE
++
++/* pids of children spawned via src/fork.c's Windows fork() emulation
++ * that haven't been reaped yet -- see the comment in ../wait.h. Fixed
++ * size, matching this codebase's other simple static-table limits
++ * (e.g. FD_MAX); a shell realistically never has anywhere near this
++ * many un-reaped children at once.
++ * ----------------------------------------------------------------------- */
++#define WAIT_TRACK_MAX 256
++
++static int wait_track_pids[WAIT_TRACK_MAX];
++static unsigned int wait_track_n = 0;
++
++void
++wait_track_add(int pid) {
++  if(wait_track_n < WAIT_TRACK_MAX)
++    wait_track_pids[wait_track_n++] = pid;
++}
++
++void
++wait_track_remove(int pid) {
++  unsigned int i;
++
++  for(i = 0; i < wait_track_n; i++) {
++    if(wait_track_pids[i] == pid) {
++      wait_track_pids[i] = wait_track_pids[--wait_track_n];
++      return;
++    }
++  }
++}
++
++unsigned int
++wait_track_count(void) {
++  return wait_track_n;
++}
++
++int
++wait_track_pid(unsigned int i) {
++  return wait_track_pids[i];
++}
++
++#endif

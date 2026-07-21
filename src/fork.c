@@ -15,6 +15,7 @@
  */
 
 #include "../lib/windoze.h"
+#include "../lib/wait.h"
 
 #if WINDOWS_NATIVE
 #define _WIN32_WINNT 0x0600
@@ -107,6 +108,11 @@ fork(void) {
       return -ENOSYS;
 
     child_pid = get_process_id(process_info.Process);
+
+    /* register the child so wait_nohang() (which has no pid to open
+       a handle by, unlike wait_pid()/wait_pid_nohang()) has
+       something to enumerate -- see lib/wait.h */
+    wait_track_add(child_pid);
 
     ResumeThread(process_info.Thread);
     CloseHandle(process_info.Process);

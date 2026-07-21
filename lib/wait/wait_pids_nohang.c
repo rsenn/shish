@@ -42,6 +42,7 @@ wait_pids_nohang(int const* pids, unsigned int len, int* wstat) {
     }
 
     if(i < len) {
+      wait_track_remove(pids[i]);
       *wstat = exitcode;
       return 1 + i;
     }

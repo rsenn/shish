@@ -88,12 +88,6 @@
     bg
     fg
 
-- wait-nohang-windows-missing-return: wait_nohang() has no return
-  statement on its WINDOWS_NATIVE branch (UB), breaking the
-  SIGCHLD-driven reaping it exists for on native Windows. Not
-  triggerable via a shell script; a code-level defect in
-  lib/wait/wait_nohang.c.
-
 - sig-push-sigset-cast: sig_push() reinterprets sigset_t through an
   unsigned long*, UB on any ABI where sizeof(sigset_t) differs;
   currently harmless because the function is unused (dead code, not
@@ -161,3 +155,12 @@
     X=outer
     f
     echo $X
+
+- wait-pid-nohang-windows-blocks: wait_pid_nohang()'s WINDOWS_NATIVE
+  branch (lib/wait/wait_pid_nohang.c) calls
+  "WaitForSingleObject(process, INFINITE)" -- it actually blocks until
+  the given pid exits, despite the function's whole contract being to
+  poll without blocking (as its unix branch, and every other "_nohang"
+  function in lib/wait/, do via a 0 timeout / WNOHANG). Found while
+  implementing the wait_nohang() Windows support this depends on; not
+  triggerable via a shell script, a code-level defect.

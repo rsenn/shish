@@ -16,11 +16,11 @@ wait_pid_nohang(int pid, int* wstat) {
   WaitForSingleObject(process, INFINITE);
   GetExitCodeProcess(process, &exitcode);
   CloseHandle(process);
+  wait_track_remove(pid);
 
   if(exitcode == STILL_ACTIVE)
     return -1;
   return pid;
-// #warning No windows implementation
 #else
   int w = 0;
   int r = 0;
