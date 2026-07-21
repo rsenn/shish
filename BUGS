@@ -1,10 +1,3 @@
-- bgnd-same-line-parse: a backgrounded command followed by more
-  commands on the *same input line* either mis-parses or crashes the
-  shell (putting the next command on its own line works fine).
-
-    true & echo after
-    { true; } & echo after
-
 - fnmatch-p-hang: tests/posix/fnmatch-p.tst hangs the testee at 100%
   CPU; not yet isolated to a specific case within the file.
 
@@ -52,12 +45,6 @@
   builds silently corrupt a value instead of crashing.
 
     ./shish tests/param.sh
-
-- bgnd-compound-duplicate: backgrounding a non-simple (compound)
-  command duplicates its execution and blocks synchronously instead
-  of actually backgrounding it.
-
-    { sleep 1; echo bg_done; } & echo after_bg; wait; echo end
 
 - export-unset-segfault: marking a variable for export before it's
   ever assigned a value segfaults on a later "export"/"export -p".

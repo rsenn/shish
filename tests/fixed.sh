@@ -127,4 +127,25 @@ i=0
 i=$((i + 1))
 assert_equal "1" "$i" "arithmetic expansion must accept a single-character bare variable name"
 
+## fixes/25: a backgrounded command sharing its input line with more
+## commands ("cmd & more...") used to either crash the shell (a
+## backgrounded simple command, e.g. a builtin, wasn't forked at all)
+## or fail to parse (a backgrounded compound command's "&" was
+## consumed wrong by parse_command.c, corrupting lookahead for
+## whatever followed) or, once forking, run its later sibling(s) in
+## eval_cmdlist()'s own list loop without going through the same
+## fork-and-return-immediately path eval_tree() already had, still
+## duplicating it.
+OUTFILE=$(mktemp)
+true & echo after >"$OUTFILE"
+COUNT=$(wc -l <"$OUTFILE")
+assert_equal "1" "$COUNT" "backgrounding a simple builtin followed by more on the same line must not crash or duplicate"
+rm -f "$OUTFILE"
+
+OUTFILE=$(mktemp)
+{ true; } & echo after >"$OUTFILE"
+COUNT=$(wc -l <"$OUTFILE")
+assert_equal "1" "$COUNT" "backgrounding a compound command followed by more on the same line must not fail to parse or duplicate"
+rm -f "$OUTFILE"
+
 summary

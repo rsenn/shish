@@ -3,6 +3,7 @@
 #include "../exec.h"
 #include "../fd.h"
 #include "../fdtable.h"
+#include "../job.h"
 #include "../sh.h"
 #include "../../lib/shell.h"
 #include "../tree.h"
@@ -13,6 +14,34 @@
 int
 exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
   int ret = 1;
+
+  /* H_PROGRAM handles X_NOWAIT itself below (exec_program() forks and
+     registers the job); every other kind (builtin, special builtin,
+     function) otherwise just runs in-process regardless of "&", which
+     both isn't real backgrounding and used to crash the caller:
+     eval_simple_command.c unconditionally dereferences *job_pointer
+     after a bgnd command returns, assuming a job_new() happened
+     somewhere in here, and for these cases nothing ever created one
+     (confirmed crash: "true & echo after", job_pointer still NULL or
+     stale from an earlier job). Fork here too, mirroring exactly what
+     exec_program()'s X_NOWAIT branch already does. */
+  if((flag & X_NOWAIT) && cmd->id != H_PROGRAM) {
+    struct job* job = job_new(1);
+    pid_t pid = job_fork(job, 0, 1);
+
+    if(!pid) {
+      flag &= ~X_NOWAIT;
+      exit(exec_command(cmd, argc, argv, flag));
+    }
+
+    buffer_putc(fd_err->w, '[');
+    buffer_putulong(fd_err->w, job->id);
+    buffer_puts(fd_err->w, "] ");
+    buffer_putulong(fd_err->w, pid);
+    buffer_putnlflush(fd_err->w);
+
+    return 0;
+  }
 
   switch(cmd->id) {
     case H_SBUILTIN:

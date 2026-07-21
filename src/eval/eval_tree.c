@@ -1,7 +1,5 @@
 #include "../fd.h"
-#include "../fdtable.h"
 #include "../eval.h"
-#include "../job.h"
 #include "../tree.h"
 #include "../sh.h"
 
@@ -28,39 +26,16 @@ eval_tree(struct eval* e, union node* node, int tempflags) {
   // oldflags = e->flags;
   e->flags |= tempflags;
 
-  pid_t pid;
-  struct job* job = 0;
-
   while(node) {
     /* not the last node, disable E_EXIT for now */
     if(ex && (!list || node->next == NULL))
       e->flags |= E_EXIT;
 
-    /* a backgrounded compound command ("{ cmd; } &", "(cmd) &", ...)
-       has to fork and return immediately, exactly like a backgrounded
-       simple command (see eval_simple_command.c's X_NOWAIT path) --
-       not run again by the parent afterwards, and not waited for
-       synchronously (that would defeat backgrounding it at all) */
-    if(node->id != N_SIMPLECMD && node->ncmd.bgnd) {
-      job = job_new(1);
-      pid = job_fork(job, 0, 1);
-
-      if(!pid) {
-        ret = eval_node(e, node);
-        exit(ret);
-      }
-
-      buffer_putc(fd_err->w, '[');
-      buffer_putulong(fd_err->w, job->id);
-      buffer_puts(fd_err->w, "] ");
-      buffer_putulong(fd_err->w, pid);
-      buffer_putnlflush(fd_err->w);
-
-      ret = 0;
-    } else {
-      ret = eval_node(e, node);
-    }
-
+    /* eval_node_bgnd() forks a backgrounded compound command
+       ("{ cmd; } &", "(cmd) &", ...) instead of running it in-process
+       -- see its own comment for why a bare eval_node() call is wrong
+       here */
+    ret = eval_node_bgnd(e, node);
     e->exitcode = ret;
 
     if(!list)

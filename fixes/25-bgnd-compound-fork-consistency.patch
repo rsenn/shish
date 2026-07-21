@@ -1,0 +1,222 @@
+diff --git a/src/eval.h b/src/eval.h
+index 2dd67131..ad1a60d8 100644
+--- a/src/eval.h
++++ b/src/eval.h
+@@ -54,6 +54,7 @@ void eval_jump(int levels, int cont);
+ void eval_return(int);
+ void eval_exit(int);
+ int eval_node(struct eval* e, union node* node);
++int eval_node_bgnd(struct eval* e, union node* node);
+ int eval_pop(struct eval* e);
+ void eval_push(struct eval* e, int flags);
+ int eval_tree(struct eval* e, union node* node, int tempflags);
+diff --git a/src/eval/eval_cmdlist.c b/src/eval/eval_cmdlist.c
+index 35c039c5..081e50b1 100644
+--- a/src/eval/eval_cmdlist.c
++++ b/src/eval/eval_cmdlist.c
+@@ -7,8 +7,14 @@ eval_cmdlist(struct eval* e, struct ngrp* grp) {
+   int ret = 0;
+   union node* cmd;
+ 
++  /* eval_node_bgnd() (not a bare eval_node()) so a backgrounded
++     compound command sharing this list with other commands
++     ("{ cmd; } & echo after" -- more than one and-or-list on the same
++     input line, chained here instead of eval_tree()'s own loop) still
++     forks and returns immediately instead of running in-process; see
++     eval_node_bgnd()'s comment for the full reasoning */
+   for(cmd = grp->cmds; cmd; cmd = cmd->next) {
+-    ret = eval_node(e, cmd);
++    ret = eval_node_bgnd(e, cmd);
+   }
+ 
+   return ret;
+diff --git a/src/eval/eval_tree.c b/src/eval/eval_tree.c
+index 0d92e9e2..a108e327 100644
+--- a/src/eval/eval_tree.c
++++ b/src/eval/eval_tree.c
+@@ -1,7 +1,5 @@
+ #include "../fd.h"
+-#include "../fdtable.h"
+ #include "../eval.h"
+-#include "../job.h"
+ #include "../tree.h"
+ #include "../sh.h"
+ 
+@@ -28,39 +26,16 @@ eval_tree(struct eval* e, union node* node, int tempflags) {
+   // oldflags = e->flags;
+   e->flags |= tempflags;
+ 
+-  pid_t pid;
+-  struct job* job = 0;
+-
+   while(node) {
+     /* not the last node, disable E_EXIT for now */
+     if(ex && (!list || node->next == NULL))
+       e->flags |= E_EXIT;
+ 
+-    /* a backgrounded compound command ("{ cmd; } &", "(cmd) &", ...)
+-       has to fork and return immediately, exactly like a backgrounded
+-       simple command (see eval_simple_command.c's X_NOWAIT path) --
+-       not run again by the parent afterwards, and not waited for
+-       synchronously (that would defeat backgrounding it at all) */
+-    if(node->id != N_SIMPLECMD && node->ncmd.bgnd) {
+-      job = job_new(1);
+-      pid = job_fork(job, 0, 1);
+-
+-      if(!pid) {
+-        ret = eval_node(e, node);
+-        exit(ret);
+-      }
+-
+-      buffer_putc(fd_err->w, '[');
+-      buffer_putulong(fd_err->w, job->id);
+-      buffer_puts(fd_err->w, "] ");
+-      buffer_putulong(fd_err->w, pid);
+-      buffer_putnlflush(fd_err->w);
+-
+-      ret = 0;
+-    } else {
+-      ret = eval_node(e, node);
+-    }
+-
++    /* eval_node_bgnd() forks a backgrounded compound command
++       ("{ cmd; } &", "(cmd) &", ...) instead of running it in-process
++       -- see its own comment for why a bare eval_node() call is wrong
++       here */
++    ret = eval_node_bgnd(e, node);
+     e->exitcode = ret;
+ 
+     if(!list)
+diff --git a/src/exec/exec_command.c b/src/exec/exec_command.c
+index 6e33c645..17a4ea3c 100644
+--- a/src/exec/exec_command.c
++++ b/src/exec/exec_command.c
+@@ -3,6 +3,7 @@
+ #include "../exec.h"
+ #include "../fd.h"
+ #include "../fdtable.h"
++#include "../job.h"
+ #include "../sh.h"
+ #include "../../lib/shell.h"
+ #include "../tree.h"
+@@ -14,6 +15,34 @@ int
+ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
+   int ret = 1;
+ 
++  /* H_PROGRAM handles X_NOWAIT itself below (exec_program() forks and
++     registers the job); every other kind (builtin, special builtin,
++     function) otherwise just runs in-process regardless of "&", which
++     both isn't real backgrounding and used to crash the caller:
++     eval_simple_command.c unconditionally dereferences *job_pointer
++     after a bgnd command returns, assuming a job_new() happened
++     somewhere in here, and for these cases nothing ever created one
++     (confirmed crash: "true & echo after", job_pointer still NULL or
++     stale from an earlier job). Fork here too, mirroring exactly what
++     exec_program()'s X_NOWAIT branch already does. */
++  if((flag & X_NOWAIT) && cmd->id != H_PROGRAM) {
++    struct job* job = job_new(1);
++    pid_t pid = job_fork(job, 0, 1);
++
++    if(!pid) {
++      flag &= ~X_NOWAIT;
++      exit(exec_command(cmd, argc, argv, flag));
++    }
++
++    buffer_putc(fd_err->w, '[');
++    buffer_putulong(fd_err->w, job->id);
++    buffer_puts(fd_err->w, "] ");
++    buffer_putulong(fd_err->w, pid);
++    buffer_putnlflush(fd_err->w);
++
++    return 0;
++  }
++
+   switch(cmd->id) {
+     case H_SBUILTIN:
+     case H_BUILTIN:
+diff --git a/src/parse/parse_command.c b/src/parse/parse_command.c
+index acfea86d..df3967d4 100644
+--- a/src/parse/parse_command.c
++++ b/src/parse/parse_command.c
+@@ -38,17 +38,26 @@ parse_command(struct parser* p, int tempflags) {
+     case T_WHILE:
+     case T_UNTIL: command = parse_loop(p); break;
+ 
+-    /* T_LP/T_BEGIN start a grouping compound */
++    /* T_LP/T_BEGIN start a grouping compound. Backgrounding a compound
++       command is handled uniformly for every node kind by parse_list()
++       (it just sets ->ngrp.bgnd on whatever and-or-list it got back),
++       so this used to duplicate that with a broken shortcut: peeking
++       p->tok directly (bypassing the normal push-back-and-re-read
++       protocol) and then calling parse_gettok(p, 0) to "consume" it.
++       Since parse_grouping() leaves the '&' pending via pushback (not
++       yet re-read), that call didn't advance to a new token -- it just
++       returned the still-cached '&' and cleared pushback. With
++       pushback now clear, the redirection-lookahead loop right below
++       genuinely read the *next* token (the start of the following
++       command) as its lookahead and left it pushed back instead,
++       which parse_list() then saw in place of the '&' it needed,
++       terminating the list early and leaking that command's first
++       token as bogus leftover state. Repro: "{ true; } & echo after"
++       ("unexpected token NAME" right after the "}"). */
+     case T_LP:
+     case T_BEGIN:
+       p->pushback++;
+       command = parse_grouping(p, 0);
+-
+-      if(p->tok == T_BGND) {
+-        command->ncmd.bgnd = 1;
+-        parse_gettok(p, 0);
+-      }
+-
+       break;
+ 
+     /* handle simple commands */
+diff --git a/src/eval/eval_node_bgnd.c b/src/eval/eval_node_bgnd.c
+new file mode 100644
+index 00000000..24e4946c
+--- /dev/null
++++ b/src/eval/eval_node_bgnd.c
+@@ -0,0 +1,42 @@
++#include "../fd.h"
++#include "../fdtable.h"
++#include "../eval.h"
++#include "../job.h"
++#include "../tree.h"
++#include "../sh.h"
++
++/* evaluate a node the same way eval_node() does, except that a
++ * backgrounded compound command ("{ cmd; } &", "(cmd) &", ...) forks
++ * and returns immediately instead of running in-process, exactly like
++ * a backgrounded simple command already does (see
++ * eval_simple_command.c's X_NOWAIT path). Every caller that walks a
++ * chain of sibling nodes (a plain command list, or the pipeline-free
++ * and-or-list chain built by parse_list()) needs this instead of a
++ * bare eval_node() call, or a bgnd compound sitting anywhere but the
++ * chain's sole node silently runs synchronously.
++ * ----------------------------------------------------------------------- */
++int
++eval_node_bgnd(struct eval* e, union node* node) {
++  int ret;
++  pid_t pid;
++  struct job* job;
++
++  if(node->id == N_SIMPLECMD || !node->ncmd.bgnd)
++    return eval_node(e, node);
++
++  job = job_new(1);
++  pid = job_fork(job, 0, 1);
++
++  if(!pid) {
++    ret = eval_node(e, node);
++    exit(ret);
++  }
++
++  buffer_putc(fd_err->w, '[');
++  buffer_putulong(fd_err->w, job->id);
++  buffer_puts(fd_err->w, "] ");
++  buffer_putulong(fd_err->w, pid);
++  buffer_putnlflush(fd_err->w);
++
++  return 0;
++}
