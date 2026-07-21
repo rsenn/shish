@@ -35,7 +35,7 @@ sh_onsig(int signum) {
       int status;
       struct job* job = 0;
 
-      if(term_output) {
+      if(term_output && term_reading) {
         term_erase();
         term_restore(term_input.fd, &term_tcattr);
       }
@@ -63,7 +63,7 @@ sh_onsig(int signum) {
       buffer_putnlflush(fd_err->w);
 #endif
 
-      if(term_output) {
+      if(term_output && term_reading) {
         term_attr(term_input.fd, 1, &term_tcattr);
         prompt_number--;
         prompt_show();

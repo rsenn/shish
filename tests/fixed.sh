@@ -302,4 +302,28 @@ grep -q "null" "$STDERRFILE"
 assert_equal "1" "$?" "a command substitution's internal pipeline must not print a job-completion banner"
 rm -f "$STDERRFILE"
 
+## fixes/36: sh_onsig()'s SIGCHLD handler erased and redrew the
+## current prompt line on *every* SIGCHLD it caught, unconditional on
+## whether the shell was actually sitting idle in term_read() waiting
+## on interactive keystrokes. A foreground command substitution's
+## pipeline ("$(cmd | cmd)") forks its own children, each exiting
+## while the shell is mid-eval, not at the prompt -- so each of their
+## SIGCHLDs triggered a spurious erase+redraw, splattering
+## "\033[2K\033[0G<prompt>" onto the terminal before the substitution's
+## own output. Fixed by adding term_reading (src/term.h,
+## src/term/term_read.c), set only while term_read()'s read loop is
+## actually blocked waiting for more input, and gating both of
+## sh_onsig()'s erase/redraw blocks on it.
+##
+## This only manifests with a real interactive tty (term_output is
+## unset otherwise, so sh_onsig() never reaches the affected code at
+## all in a script/ctest context) -- not reproducible here. Verified
+## instead with a pty-simulated session (python's `pty` module): before
+## the fix, `x=$(echo hi | sed 1q); echo [$x]` produced two
+## "\033[2K\033[0G<prompt>\033[0D" sequences before "[hi]"; after the
+## fix, none. A genuinely backgrounded job ("sleep 0.3 &" under
+## "set -m") still gets its erase+redraw and "[N]+ Done ..." banner
+## once the shell is back at the prompt, so real job-control notifications
+## are unaffected.
+
 summary

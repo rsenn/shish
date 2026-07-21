@@ -9,6 +9,7 @@
 
 static char term_inbuf[BUFFER_INSIZE];
 buffer term_input = BUFFER_INIT(0, 0, term_inbuf, sizeof(term_inbuf));
+volatile int term_reading;
 
 /* ----------------------------------------------------------------------- */
 int
@@ -38,6 +39,8 @@ term_read(int fd, char* buf, unsigned int len) {
   term_attr(term_input.fd, 1, &term_tcattr);
 
   prompt_show();
+
+  term_reading = 1;
 
   while((ret = buffer_getc(&term_input, &c)) > 0) {
 
@@ -83,6 +86,7 @@ term_read(int fd, char* buf, unsigned int len) {
     }
   }
 fail:
+  term_reading = 0;
 #ifdef DEBUG_OUTPUT_
   debug_ulong("term_read.ret", ret, 0);
   debug_nl();
