@@ -1,0 +1,27 @@
+diff --git a/src/eval/eval_simple_command.c b/src/eval/eval_simple_command.c
+index 1aa0d35e..0efb69be 100644
+--- a/src/eval/eval_simple_command.c
++++ b/src/eval/eval_simple_command.c
+@@ -158,6 +158,22 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+      expansion and everything else between the lookup and this check
+      routinely clobber it */
+   if(cmd.ptr == NULL) {
++    /* the redirections above only *allocate* a pending fd (FD_OPEN,
++       real open()/dup2() deferred) -- exec_command() is what normally
++       resolves them, right before running a builtin or program. We
++       bail out before ever reaching exec_command(), so without this,
++       the message below goes out through whatever fd_err->w was still
++       wired to beforehand (typically the original terminal), and the
++       redirection target file is never even created */
++    if(fd_in)
++      fdtable_open(fd_in, FDTABLE_MOVE);
++
++    if(fd_out)
++      fdtable_open(fd_out, FDTABLE_MOVE);
++
++    if(fd_err)
++      fdtable_open(fd_err, FDTABLE_MOVE);
++
+     source_msg(&e->pos);
+ 
+     buffer_putsa(fd_err->w, &args->narg.stra);

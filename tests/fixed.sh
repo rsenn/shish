@@ -88,4 +88,22 @@ STATUS=$?
 assert_equal "126" "$STATUS" "an unexecutable file (ENOEXEC) must exit 126, not crash or exit 0"
 rm -rf "$TESTDIR"
 
+## fixes/22: the "command not found" error message is printed before
+## eval_simple_command.c ever reaches exec_command() -- the only place
+## that normally resolves a command's still-pending (open()/dup2()
+## deferred) redirections -- so without the fix the message escaped to
+## the shell's original stderr and the redirection target was never
+## even created.
+## ("IFS= read -r" rather than "$(cat file)" -- quoted command
+## substitution currently doesn't suppress field splitting in shish,
+## a separate, pre-existing bug logged in BUGS)
+MSGFILE=$(mktemp)
+OLDPATH="$PATH"
+PATH="/nonexistent-dir-for-test"
+this-command-does-not-exist >/dev/null 2>"$MSGFILE"
+PATH="$OLDPATH"
+IFS= read -r MSGLINE <"$MSGFILE"
+assert_match "$MSGLINE" "*No such file or directory*" "command-not-found message must go through its own redirection, not the shell's original stderr"
+rm -f "$MSGFILE"
+
 summary

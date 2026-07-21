@@ -130,17 +130,12 @@
   job is deleted instead of promoting the previous job to current (bash
   promotes "-" to "+"), so the "+"-marked job just disappears once it
   finishes
-- the shell's own diagnostic messages (source_msg()/sh_error*() writing
-  through fd_err->w) ignore active fd 2 redirections instead of
-  respecting them; found while writing tests/fixed.sh, trying to
-  capture the "command not found"/"not executable" messages added by
-  fixes/21-exec-failure-status-messages.patch. Repro: 'cd
-  /some/dir 2>file.txt' correctly writes into file.txt, but
-  'PATH=/nonexistent nosuchcommand 2>file.txt' (or even a preceding
-  'exec 2>file.txt') leaves file.txt empty and prints the "not found"
-  message to the shell's real stderr instead -- the redirection is set
-  up (redir_eval() runs, fdtable[2] is updated) before
-  eval_simple_command.c's "cmd.ptr == NULL" branch runs, so fd_err
-  itself looks like a stale cached pointer that isn't resynced to the
-  new fdtable[2] on this path, unlike whatever path builtin error
-  messages (e.g. cd's) go through
+- quoted command substitution doesn't suppress field splitting: 'set --
+  "$(printf "a b c")"; echo $#' prints 3 instead of 1, and more
+  generally any "$(cmd)" whose output contains IFS characters gets
+  split into multiple words/positional-params even though it's inside
+  double quotes. Found while writing tests/fixed.sh, trying to capture
+  a multi-word error message into a variable via "$(cat "$MSGFILE")"
+  -- worked around there with "IFS= read -r line <file" instead, but
+  this is a general, POSIX-violating quoting bug wherever "$(...)" is
+  used for anything but a single word

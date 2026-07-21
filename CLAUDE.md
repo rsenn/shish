@@ -82,6 +82,12 @@ ctest -R if.sh -V              # run one test, verbose
 ./shish ../../tests/if.sh      # invoke a test directly through shish
 ```
 
+**Do not run the full `tests/posix/` suite** (e.g. bare `ctest` with no
+`-E`/`-R` filter, or `ctest -R posix`): `tests/posix/fnmatch-p.tst` hangs
+the testee at 100% CPU (see `BUGS`), so a run that includes it never
+returns. Filter it out, e.g. `ctest -E posix`, or target specific tests
+with `-R`.
+
 `tests/common.sh` defines the `assert_equal`, `assert_match`, `success`,
 `failure`, `summary` helpers; each test sources it via
 `. "$(dirname "$0")/common.sh"`. A test "fails" by calling `failure` which
@@ -191,6 +197,15 @@ re-deriving the state of the project from scratch.
 Recent and ongoing work, roughly newest-first (see `BUGS`/`TODO.md` and
 git log for full detail — this is a pointer into them, not a replacement):
 
+- The "command not found"/"not executable" messages added alongside
+  the exec-failure-status fixes ignored active redirections on fd 2
+  (and fd 0/1): `eval_simple_command.c` prints them before ever calling
+  `exec_command()`, which is the only place that resolves a command's
+  still-pending (`open()`/`dup2()` deferred) redirections. Fixed by
+  resolving `fd_in`/`fd_out`/`fd_err` right before the message. Found
+  while writing `tests/fixed.sh`; while testing the fix, also found and
+  logged a separate, unrelated bug: quoted command substitution
+  (`"$(cmd)"`) doesn't suppress field splitting.
 - `break`/`continue` jumping out of `eval`/`.`/`source` left dangling
   `source`/`fd` state behind (a `longjmp` bypassing `eval_pop()`-style
   cleanup), causing a hang or a crash depending on what ran next. Fixed.
