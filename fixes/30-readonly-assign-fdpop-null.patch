@@ -1,0 +1,18 @@
+diff --git a/src/fd/fd_pop.c b/src/fd/fd_pop.c
+index c4966369..84ff7f6c 100644
+--- a/src/fd/fd_pop.c
++++ b/src/fd/fd_pop.c
+@@ -7,6 +7,13 @@
+  * ----------------------------------------------------------------------- */
+ void
+ fd_pop(struct fd* fd) {
++  /* eval_simple_command.c's cleanup path walks every redirection
++     parsed for a command and pops each one's ->nredir.fd, even if it
++     bailed out (e.g. a readonly-variable assignment failing) before
++     ever reaching the loop that actually allocates/assigns those --
++     nothing to pop yet for those, unlike a real (fd) that was pushed */
++  if(!fd)
++    return;
+ 
+ #if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
+   buffer_puts(debug_output, COLOR_YELLOW "fd_pop" COLOR_NONE " 0x");

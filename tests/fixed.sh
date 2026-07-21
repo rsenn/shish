@@ -180,4 +180,17 @@ grep -q "^FIXEDEXPORTVAR=x$" "$COUNTFILE"
 assert_equal "0" "$?" "an exported-but-unassigned variable must not truncate the rest of a child's environment"
 rm -f "$COUNTFILE"
 
+## fixes/30: assigning to a readonly variable in a simple command that
+## also carries a redirection crashed. eval_simple_command.c bails out
+## (the readonly check failing) before ever reaching the loop that
+## sets up each redirection's ->nredir.fd, but its cleanup path
+## unconditionally fd_pop()s every parsed redirection regardless of
+## whether it actually got that far, and fd_close() dereferenced the
+## still-NULL fd.
+readonly READONLYVAR=original 2>/dev/null
+READONLYVAR=changed 2>/dev/null
+STATUS=$?
+assert_equal "1" "$STATUS" "assigning to a readonly variable via a redirected command must report failure, not crash"
+assert_equal "original" "$READONLYVAR" "a rejected readonly assignment must not change the variable's value"
+
 summary
