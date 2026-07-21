@@ -29,10 +29,17 @@ int wait_pids_nohang(int const* pids, unsigned int len, int* wstat);
  * way it does on unix) -- fork() in src/fork.c is the sole producer
  * of child processes here, and registers each one's pid via
  * wait_track_add() right after creating it, so wait_nohang() has
- * something to enumerate. wait_pid()/wait_pid_nohang()/
- * wait_pids_nohang() call wait_track_remove() once they've reaped a
- * given pid directly, so the registry doesn't accumulate stale
- * entries for children reaped some other way than wait_nohang().
+ * something to enumerate.
+ *
+ * wait_nohang() and waitpid_nointr() are the only two functions in
+ * this directory with a real WINDOWS_NATIVE implementation of their
+ * own (wait for any child non-blocking, and wait for a specific pid
+ * blocking, respectively -- the two things Windows can't do without
+ * this registry or without a pid to open a handle by). Both call
+ * wait_track_remove() once they've reaped a pid, so the registry
+ * doesn't accumulate stale entries. wait_pid(), wait_pid_nohang() and
+ * wait_pids_nohang() are just expressed in terms of those two
+ * primitives on every platform, unix included -- see their .c files.
  */
 void wait_track_add(int pid);
 void wait_track_remove(int pid);

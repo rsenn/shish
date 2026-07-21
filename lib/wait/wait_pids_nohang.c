@@ -1,54 +1,16 @@
 #include "../wait.h"
-#include "../windoze.h"
 
-#if WINDOWS_NATIVE
-#include <windows.h>
-#else
-#include <sys/types.h>
-#include <sys/wait.h>
-#endif
-
+/* drains wait_nohang() (wait for *any* child, non-blocking) until it
+ * reports a pid that's in our list, discarding any other children
+ * reaped along the way. wait_nohang() already has a WINDOWS_NATIVE
+ * implementation, so this needs none of its own -- the old
+ * WINDOWS_NATIVE branch that used to live in this file duplicated
+ * wait_nohang()'s OpenProcess()/WaitForMultipleObjects(0) logic
+ * instead of just calling it (and leaked its HANDLE array on every
+ * call besides).
+ * ----------------------------------------------------------------------- */
 int
 wait_pids_nohang(int const* pids, unsigned int len, int* wstat) {
-#if WINDOWS_NATIVE
-  DWORD exitcode = 0;
-  HANDLE* handles = LocalAlloc(LHND, sizeof(HANDLE) * len);
-  unsigned int i;
-  int ret;
-
-  for(i = 0; i < len; i++) {
-    handles[i] = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, pids[i]);
-  }
-
-  for(;;) {
-
-    ret = WaitForMultipleObjects(len, handles, FALSE, 0);
-
-    if(ret == WAIT_TIMEOUT)
-      return 0;
-
-    if(ret == WAIT_FAILED)
-      return -1;
-
-    for(i = 0; i < len; i++) {
-      if(ret == WAIT_OBJECT_0 + i) {
-        GetExitCodeProcess(handles[i], &exitcode);
-        CloseHandle(handles[i]);
-
-        if(exitcode == STILL_ACTIVE)
-          i = -2;
-        break;
-      }
-    }
-
-    if(i < len) {
-      wait_track_remove(pids[i]);
-      *wstat = exitcode;
-      return 1 + i;
-    }
-  }
-  return -1;
-#else
   int r;
 
   for(;;) {
@@ -73,5 +35,4 @@ wait_pids_nohang(int const* pids, unsigned int len, int* wstat) {
   }
 
   return r;
-#endif
 }

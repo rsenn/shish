@@ -1,39 +1,15 @@
 #include "../wait.h"
-#include "../windoze.h"
 
-#if WINDOWS_NATIVE
-#include <windows.h>
-#else
-#include <sys/types.h>
-#include <sys/wait.h>
-#endif
-
+/* drains wait_nohang() (wait for *any* child, non-blocking) until it
+ * reports the specific pid we're after, discarding any other
+ * children reaped along the way. wait_nohang() already has a
+ * WINDOWS_NATIVE implementation, so this needs none of its own --
+ * the old WINDOWS_NATIVE branch that used to live in this file
+ * duplicated wait_nohang()'s OpenProcess()/WaitForSingleObject(0)
+ * logic instead of just calling it.
+ * ----------------------------------------------------------------------- */
 int
 wait_pid_nohang(int pid, int* wstat) {
-#if WINDOWS_NATIVE
-  DWORD exitcode = 0;
-  HANDLE process = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, pid);
-
-  if(!process)
-    return -1;
-
-  /* 0 timeout -- this is the *_nohang() variant, it must poll and
-     return immediately instead of blocking until pid exits */
-  if(WaitForSingleObject(process, 0) != WAIT_OBJECT_0) {
-    CloseHandle(process);
-    return 0;
-  }
-
-  GetExitCodeProcess(process, &exitcode);
-  CloseHandle(process);
-  wait_track_remove(pid);
-
-  if(exitcode == STILL_ACTIVE)
-    return 0;
-
-  *wstat = exitcode;
-  return pid;
-#else
   int w = 0;
   int r = 0;
 
@@ -45,5 +21,4 @@ wait_pid_nohang(int pid, int* wstat) {
   }
   *wstat = w;
   return r;
-#endif
 }

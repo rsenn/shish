@@ -12,13 +12,11 @@ int
 waitpid_nointr(int pid, int* wstat, int flags) {
 #if WINDOWS_NATIVE
   /* no project-defined equivalent of WNOHANG/WUNTRACED exists for
-     Windows (see lib/wait.h) -- the only current caller,
-     wait_pid.c's non-Windows branch, always passes flags=0, so
-     "flags" is accepted for interface parity but otherwise ignored
-     here, same as wait_pid()'s own Windows branch a few lines over.
-     There's also no real EINTR-equivalent to retry on: an
-     un-alerted WaitForSingleObject() can't be interrupted the way a
-     blocking unix syscall can. */
+     Windows (see lib/wait.h) -- the only current caller, wait_pid(),
+     always passes flags=0, so "flags" is accepted for interface
+     parity but otherwise ignored here. There's also no real
+     EINTR-equivalent to retry on: an un-alerted WaitForSingleObject()
+     can't be interrupted the way a blocking unix syscall can. */
   HANDLE hproc = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, pid);
   DWORD exitcode = 0;
 
