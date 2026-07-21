@@ -93,7 +93,14 @@ builtin_read(int argc, char* argv[]) {
       term_attr(input->fd, 1, &attrs);
 
     if((ret = buffer_get_token_sa_pred(input, &data, predicate_function, &p)) > 0) {
-      stralloc_trimr(&data, "\r\n", 2);
+      /* strip the delimiter that actually terminated the read. The
+         default newline delimiter also trims a preceding '\r', to
+         cope with CRLF line endings; a custom -d delimiter has no
+         such convention, so only its own character(s) are trimmed */
+      if(p.delim && p.ndelim == 1 && p.delim[0] == '\n')
+        stralloc_trimr(&data, "\r\n", 2);
+      else if(p.delim && p.ndelim > 0)
+        stralloc_trimr(&data, p.delim, p.ndelim);
     } else {
       status = 1;
     }

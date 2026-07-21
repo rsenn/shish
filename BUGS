@@ -1,141 +1,176 @@
-- a backgrounded command followed by more commands on the *same input
-  line* either mis-parses or crashes the shell outright, found while
-  re-testing the "{ cmd; } &" fix below: "true & echo after" (a single
-  line passed via -c) segfaults the shell itself (confirmed pre-
-  existing on a clean checkout, not a regression); "{ true; } & echo
-  after" instead gives a parse error, "unexpected token NAME", right
-  after the "}". Putting the next command on its own line (a real
-  newline instead of continuing after "&") works fine in both cases,
-  so this is specific to same-line "&"-then-more parsing, not
-  backgrounding itself
-- tests/posix/fnmatch-p.tst hangs the testee (100% CPU spin), found via
-  the same conformance-suite run that found the "eval continue" hang
-  below; not yet isolated to a specific case within the file
-- the fdtable resolver (fdtable_resolve/fdtable_close/fdtable_dup/...)
-  has no real cycle detection, only a defensive depth cap added later;
-  a genuinely cyclic redirection still fails instead of resolving, root
-  cause (why the recursion can happen at all) is untouched
-- arithmetic expansion containing a variable name fails to parse:
-  "echo $((i+1))" prints the literal "i+1" followed by "unexpected
-  token )" and exit 1 (same for $(( i + 1 )) and in assignments,
-  "i=$((i+1))"); constant-only arithmetic like "echo $((1+1))" works.
-  found while trying to write a while-loop repro -- any POSIX script
-  using the idiomatic i=$((i+1)) counter dies on this
-- builtin_wait (src/builtin/builtin_wait.c) always "return 0;" no
-  matter what the waited-for job(s) actually exited with -- it captures
-  job_wait()'s status into a local variable and never uses it. Found
-  while checking that the WAIT_EXITSTATUS fix actually surfaces through
-  "wait": confirmed live, "sh -c 'exit 42' & wait; echo $?" prints 0
-  instead of 42. Separately, "$!" (the last background PID) isn't
-  implemented at all -- always expands empty
-- running this repo's own ./configure under shish still duplicates
-  blocks of output and dies at AC_PROG_CC with a false "C compiler
-  cannot create executables" (gcc works); with the fdtable_dup
-  dup-storm fixed, configure now runs that far in seconds instead of
-  burning the whole fd table -- the remaining suspects are the
-  duplicated-output/re-execution bug (command substitution of a
-  pipeline also returns an empty string and runs the surrounding
-  command twice: 'x=`echo hi | sed 1q`; echo "[$x]"' prints "[]"
-  twice) and the fdstack_push assertion below. the MinSizeRel build
-  behaves differently from Debug on the same configure: pre-fix its
-  forked children died with SEGV at address 0x10 where Debug stormed,
-  and post-fix it bails at the as_myself check ("configure: error:
-  cannot find myself") where Debug proceeds to AC_PROG_CC -- $0 and
-  "case $0 in *[\\/]*)" work fine in isolation on both builds, so
-  something earlier in configure corrupts state only in the
-  optimized build; worth an asan build to catch what Debug tolerates
-- "for x in \"$@\"; do ...; done" fails to parse when positional
-  params include a quoted empty string: 'set -- -n ""; for a in
-  "$@"; do echo "[$a]"; done' gives "unexpected token EOF, expecting
-  'done'" instead of looping twice. Found chasing a
-  tests/builtin-test.sh failure on the BUILTIN_TEST=OFF build ("test
-  -n \"\"" resolving to a lost second argument, so /usr/bin/test saw
-  only "-n" and reported the single-argument-string-test true instead
-  of the intended empty-string-is-false result) -- "$#" alone reports
-  the right count (2) for the same "set --", so the params themselves
-  are intact; the parser chokes specifically on iterating "$@" in a
-  for-loop when one element is empty
-- fdstack_push() (src/fdstack/fdstack_push.c:8) can hit its own
-  consistency assertion, "st < fdstack || fdstack == &fdstack_root",
-  under heavy nested command-substitution + subshell use; confirmed
-  with tests/param.sh under asan (a script that's mostly repeated
-  "assert_equal ... $(...)" calls). Confirmed pre-existing, not a
-  regression: reproduces identically on a clean checkout via a
-  separate worktree. Non-asan builds don't hit the assertion but the
-  underlying corruption is still there -- tests/param.sh's last
-  assertion silently evaluates to the wrong value ('0' instead of the
-  expected string) instead of crashing
-- backgrounding a non-simple (compound) command, e.g. "{ cmd; } &",
-  still duplicates its execution and corrupts what follows -- NOT
-  actually fixed by the branch flip committed as c039280e: that flip
-  corrected which process runs eval_node()+exit(), but the parent then
-  falls through to the unconditional "ret = eval_node(e, node)" at
-  eval_tree.c:50 and runs the same compound a second time itself, and
-  the "job_wait(job, pid, &st)" in the bgnd block makes the parent
-  wait synchronously for a job that's supposed to be background;
-  repro unchanged: "{ sleep 1; echo bg_done; } & echo after_bg; wait;
-  echo end" prints "bg_done" twice and never reaches
-  "after_bg"/"end", with a spurious parse error in between
-- "export FOO" (or any way of marking a variable for export before
-  it's ever assigned a value) followed by "export -p" or bare "export"
-  segfaults: var_print() (src/var/var_print.c) unconditionally does
-  buffer_put(fd_out->w, var->sa.s, var->len) to print the name, but
-  var->sa.s is NULL until the variable is actually assigned
-  (var_init() only stralloc_init()s it); the guard that was clearly
-  meant to prevent this, "if(!(var->flags & V_UNSET))", never fires
-  because V_UNSET (src/var.h) is declared and checked but nothing in
-  the codebase ever sets it
-- ">&-"/"<&-" (closing a file descriptor) doesn't really close.
-  For the shell's own builtins fd_null() silently redirects it to a
-  null sink, so e.g. "exec 3>&-; echo hi >&3" exits 0 with no error in
-  shish where every POSIX shell (bash included) reports "Bad file
-  descriptor" and exits 1. For external commands it's broken on stdin
-  at least: "cat <&-" leaves fd 0 pointing at the shell's own stdin
-  (hangs on a terminal/pipe stdin where bash's cat gets EBADF and
-  exits 1), and combining it with a preceding redirect, "cat < infile
-  <&-", silently drops the infile redirect too -- cat reads the
-  shell's original stdin (repro: 'shish -c "cat < infile <&-" < outer'
-  prints outer's contents; bash prints nothing and exits 1)
-- PATH reassignment doesn't invalidate the remembered command-search
-  cache (POSIX 3.9.1.1 requires it to): confirmed live against bash --
-  "PATH=/a:$PATH; cmd; PATH=/b:$PATH; cmd" runs /a's cmd both times in
-  shish, but correctly switches to /b's cmd the second time in bash;
-  exec_search()/the exec hash never gets invalidated on a PATH=
-  assignment
-- builtin echo rejects any unrecognized word starting with "-" as an
-  "invalid option" instead of printing it as an operand: "echo -x" and
-  "echo ---foo" both error and exit 1 in shish, print the word in
-  bash/every POSIX shell (found because a test script doing "echo
-  ---marker---" died on it)
-- builtin_fg (src/builtin/builtin_jobs.c) has a stack out-of-bounds
-  write for the common no-argument case: "struct job *joblist[njobs]"
-  is sized argc-1 (0 for bare "fg"), then joblist[0] is written anyway;
-  confirmed crash under asan (dynamic-stack-buffer-overflow)
-- fg/bg don't implement job control's stop/resume half: fg never calls
-  job_foreground() (never called from anywhere) so it doesn't actually
-  hand over the terminal, never sends SIGCONT, and busy-waits via
-  wait_pids_nohang() instead of blocking; bg (builtin_bg) is an empty
-  stub; there is no SIGCONT anywhere and no kill builtin, so a
-  Ctrl-Z-stopped job can't be resumed at all
-- wait_nohang() (lib/wait/wait_nohang.c) has no return statement on its
-  WINDOWS_NATIVE branch, undefined behavior; it drives the SIGCHLD
-  handler in sh_main.c, so child reaping is broken on native windows
-- sig_push() (lib/sig/sig_push.c) reinterprets sigset_t (a 128-byte
-  struct on glibc) through an unsigned long*, undefined behavior;
-  currently harmless only because the function is unused
-- sh_onsig(), the SIGCHLD handler in sh_main.c, calls
+- bgnd-same-line-parse: a backgrounded command followed by more
+  commands on the *same input line* either mis-parses or crashes the
+  shell (putting the next command on its own line works fine).
+
+    true & echo after
+    { true; } & echo after
+
+- fnmatch-p-hang: tests/posix/fnmatch-p.tst hangs the testee at 100%
+  CPU; not yet isolated to a specific case within the file.
+
+    ./shish tests/posix/fnmatch-p.tst
+
+- fdtable-cycle-detection: the fdtable resolver has no real cycle
+  detection, only a defensive depth cap; a genuinely cyclic
+  redirection fails instead of resolving. Not yet isolated to a
+  concrete repro; illustrative (unconfirmed) attempt:
+
+    exec 3<&0
+    exec 4<&3
+    exec 3<&4
+
+- wait-exitstatus-lost: builtin wait always returns 0 regardless of
+  the waited-for job's real exit status; "$!" isn't implemented
+  either (always expands empty).
+
+    sh -c 'exit 42' &
+    wait
+    echo $?
+
+- configure-duplicate-output: this repo's own ./configure under shish
+  still duplicates output and dies at AC_PROG_CC. Clearest isolated
+  piece: command substitution of a pipeline returns empty and runs
+  the surrounding command twice.
+
+    x=`echo hi | sed 1q`
+    echo "[$x]"
+
+- quoted-at-empty-param-split: quoted "$@" silently drops empty
+  positional parameters when expanded as command arguments; the same
+  case in a for-loop additionally fails to *parse* rather than just
+  misbehave.
+
+    f() { test "$@"; echo $?; }
+    f -n ""
+
+    set -- -n ""
+    for a in "$@"; do echo "[$a]"; done
+
+- fdstack-push-assertion: fdstack_push() can hit its own consistency
+  assertion under heavy nested command-substitution + subshell use
+  (confirmed pre-existing, reproduces on a clean checkout). Non-asan
+  builds silently corrupt a value instead of crashing.
+
+    ./shish tests/param.sh
+
+- bgnd-compound-duplicate: backgrounding a non-simple (compound)
+  command duplicates its execution and blocks synchronously instead
+  of actually backgrounding it.
+
+    { sleep 1; echo bg_done; } & echo after_bg; wait; echo end
+
+- export-unset-segfault: marking a variable for export before it's
+  ever assigned a value segfaults on a later "export"/"export -p".
+
+    export FOO
+    export -p
+
+- fd-close-noop: ">&-"/"<&-" doesn't really close a file descriptor,
+  for builtins (silently redirected to a null sink) or external
+  commands (fd left pointing at the shell's original target).
+
+    exec 3>&-
+    echo hi >&3
+
+- path-cache-stale: PATH reassignment doesn't invalidate the
+  remembered command-search cache (POSIX 3.9.1.1 requires it to).
+
+    PATH=/a:$PATH
+    cmd
+    PATH=/b:$PATH
+    cmd
+
+- echo-dash-operand: builtin echo rejects any unrecognized word
+  starting with "-" as an "invalid option" instead of printing it as
+  an operand.
+
+    echo ---marker---
+
+- fg-stack-oob: builtin_fg has a stack out-of-bounds write for the
+  common no-argument case (confirmed crash under asan).
+
+    fg
+
+- fg-bg-stop-resume-stub: fg/bg don't implement job control's
+  stop/resume half -- no terminal handover, no SIGCONT, no kill
+  builtin, so a Ctrl-Z-stopped job can't be resumed. (Interactive-only;
+  doesn't reproduce via a non-interactive script.)
+
+    sleep 100
+    ^Z
+    bg
+    fg
+
+- wait-nohang-windows-missing-return: wait_nohang() has no return
+  statement on its WINDOWS_NATIVE branch (UB), breaking the
+  SIGCHLD-driven reaping it exists for on native Windows. Not
+  triggerable via a shell script; a code-level defect in
+  lib/wait/wait_nohang.c.
+
+- sig-push-sigset-cast: sig_push() reinterprets sigset_t through an
+  unsigned long*, UB on any ABI where sizeof(sigset_t) differs;
+  currently harmless because the function is unused (dead code, not
+  reachable from any shell script).
+
+- sh-onsig-async-unsafe: sh_onsig(), the SIGCHLD handler, calls
   term_erase()/term_restore()/buffered i/o directly from signal-handler
-  context; none of that is async-signal-safe
-- job_free()'s job_delete() sets job_pointer to NULL when the current
-  job is deleted instead of promoting the previous job to current (bash
-  promotes "-" to "+"), so the "+"-marked job just disappears once it
-  finishes
-- quoted command substitution doesn't suppress field splitting: 'set --
-  "$(printf "a b c")"; echo $#' prints 3 instead of 1, and more
-  generally any "$(cmd)" whose output contains IFS characters gets
-  split into multiple words/positional-params even though it's inside
-  double quotes. Found while writing tests/fixed.sh, trying to capture
-  a multi-word error message into a variable via "$(cat "$MSGFILE")"
-  -- worked around there with "IFS= read -r line <file" instead, but
-  this is a general, POSIX-violating quoting bug wherever "$(...)" is
-  used for anything but a single word
+  context; none of that is async-signal-safe. Any background job
+  finishing exercises the handler, though the unsafety is a latent
+  race, not a deterministic per-run failure.
+
+    sleep 1 &
+    sleep 2 &
+    wait
+
+- job-delete-current-promotion: job_free()'s job_delete() sets
+  job_pointer to NULL when the current job is deleted instead of
+  promoting the previous job to current (bash promotes "-" to "+"), so
+  the "+"-marked job just disappears once it finishes.
+
+    sleep 1 &
+    sleep 2 &
+    jobs
+    wait
+    jobs
+
+- quoted-cmdsubst-field-split: quoted "$(cmd)" doesn't suppress field
+  splitting -- any "$(cmd)" whose output contains IFS characters gets
+  split into multiple words/positional-params even inside double
+  quotes.
+
+    set -- "$(printf "a b c")"
+    echo $#
+
+- nested-backquote: nested backquote command substitution (inner
+  backquotes escaped with backslash, per POSIX 2.6.3) doesn't work;
+  the inner backquotes are left completely unprocessed.
+
+    nested=`echo \`echo inner\``
+    echo "$nested"
+
+- heredoc-quoted-delim-expansion: a here-document whose delimiter is
+  quoted must suppress parameter/command/arithmetic expansion in its
+  body (POSIX 2.7.4), but shish expands it anyway.
+
+    X=hi
+    cat <<'EOF'
+    literal $X
+    EOF
+
+- printf-field-width: builtin printf doesn't support a field
+  width/flags on numeric conversions -- the format string is printed
+  back completely unprocessed instead of being applied. A bare
+  conversion with no width works fine, and "%X" prints lowercase
+  digits instead of uppercase.
+
+    printf "%08x\n" 255
+
+- subshell-function-body-isolation: a function defined with a
+  subshell as its body ("f() ( ... )") does not actually isolate
+  variable assignments into a subshell the way a bare "( ... )"
+  subshell does.
+
+    f() ( X=inner )
+    X=outer
+    f
+    echo $X

@@ -1,92 +1,85 @@
 ASSERTIONS_SUCCEEDED=0
 ASSERTIONS_FAILED=0
 
-success() {
-  ASSERTIONS_SUCCEEDED=$((ASSERTIONS_SUCCEEDED + 1))
-  #: $((ASSERTIONS_SUCCEEDED++))
-  return 0
-}
+## every test reports "<description>: OK"/"<description>: FAIL" (OK in
+## green, FAIL in red) as it runs, rather than stopping at the first
+## failure -- so a single run always shows the full pass/fail picture
+## for the file. Overall pass/fail is decided at the end by summary(),
+## which must be the last thing every tests/*.sh file calls.
+report() {
+  DESC="$1"
 
-failure() {
-  ASSERTIONS_FAILED=$((ASSERTIONS_FAILED + 1))
-  #: $((ASSERTIONS_FAILED++))
-  echo "FAILURE" 1>&2
-  exit 1
-  return 1
+  if [ "$2" = 0 ]; then
+    ASSERTIONS_SUCCEEDED=$((ASSERTIONS_SUCCEEDED + 1))
+    printf '%s: \033[32mOK\033[0m\n' "$DESC" 1>&2
+  else
+    ASSERTIONS_FAILED=$((ASSERTIONS_FAILED + 1))
+    printf '%s: \033[31mFAIL\033[0m\n' "$DESC" 1>&2
+  fi
 }
 
 assert_equal() {
-    echo "${3:-"'$1' = '$2'"}" 1>&2
   if test "$1" = "$2"; then
-    success
+    report "${3:-"'$1' = '$2'"}" 0
   else
-  #  echo "${3:-"'$1' != '$2'"}" 1>&2
-    failure
+    report "${3:-"'$1' = '$2'"}" 1
   fi
-  return $?
 }
 
 assert_greater() {
   if test "$1" -gt "$2"; then
-    success
+    report "${3:-"'$1' -gt '$2'"}" 0
   else
-    echo "${3:-"'$1' -le '$2'"}" 1>&2
-    failure
+    report "${3:-"'$1' -gt '$2'"}" 1
   fi
-  return $?
 }
 
 assert_less() {
   if test "$1" -lt "$2"; then
-    success
+    report "${3:-"'$1' -lt '$2'"}" 0
   else
-    echo "${3:-"'$1' -ge '$2'"}" 1>&2
-    failure
+    report "${3:-"'$1' -lt '$2'"}" 1
   fi
-  return $?
 }
 
 assert_match() {
   case "$1" in
   $2)
-    success
+    report "${3:-"'$1' MATCH '$2'"}" 0
     ;;
   *)
-    echo "${3:-"'$1' MATCH '$2'"}" 1>&2
-    failure
+    report "${3:-"'$1' MATCH '$2'"}" 1
     ;;
   esac
-  return $?
 }
 
 assert_nomatch() {
   case "$1" in
   $2)
-    echo "${3:-"'$1' NOMATCH '$2'"}" 1>&2
-    failure
+    report "${3:-"'$1' NOMATCH '$2'"}" 1
     ;;
   *)
-    success
+    report "${3:-"'$1' NOMATCH '$2'"}" 0
     ;;
   esac
-  return $?
 }
 
 print_stats() {
   echo "Tests succeeded: ${ASSERTIONS_SUCCEEDED}" 1>&2
-  echo "Tests failure: ${ASSERTIONS_FAILED}" 1>&2
+  echo "Tests failed: ${ASSERTIONS_FAILED}" 1>&2
 }
 
+## must be the last statement in every tests/*.sh file: prints the
+## final tally and exits non-zero (so ctest sees the failure) if any
+## assertion failed.
 summary() {
-  R=$?
   print_stats
-  if [ "$R" = 0 ]; then
-    echo "Success" 1>&2
-  else
-    echo "Fail: $R" 1>&2
+
+  if [ "$ASSERTIONS_FAILED" -gt 0 ]; then
+    echo "Fail: ${ASSERTIONS_FAILED}" 1>&2
+    exit 1
   fi
-  trap - EXIT
+
+  echo "Success" 1>&2
   exit 0
 }
-
-trap 'print_stats' EXIT

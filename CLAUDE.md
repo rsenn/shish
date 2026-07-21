@@ -70,23 +70,54 @@ make install
 
 ## Tests
 
-Tests are shell scripts under `tests/` (top-level `*.sh`, plus `tests/posix/`
-and `tests/yash/`). CMake registers each top-level `tests/*.sh` (excluding
-`common.sh`) as a CTest target that runs the script through the freshly built
-`shish` binary.
+Tests are shell scripts under `tests/` (top-level `*.sh`; `common.sh` and
+`run-tst.sh` are support files, not tests themselves). CMake registers each
+top-level `tests/*.sh` (excluding those two) as a CTest target that runs the
+script through the freshly built `shish` binary. This is the only thing
+`ctest`/`make test` runs.
 
 ```sh
 cd build/x86_64-linux-gnu
-ctest                          # run all tests
+ctest                          # run every tests/*.sh
 ctest -R if.sh -V              # run one test, verbose
 ./shish ../../tests/if.sh      # invoke a test directly through shish
 ```
 
-**Do not run the full `tests/posix/` suite** (e.g. bare `ctest` with no
-`-E`/`-R` filter, or `ctest -R posix`): `tests/posix/fnmatch-p.tst` hangs
-the testee at 100% CPU (see `BUGS`), so a run that includes it never
-returns. Filter it out, e.g. `ctest -E posix`, or target specific tests
-with `-R`.
+`tests/posix/*.tst` and `tests/yash/*.tst` (yash's own POSIX/self
+conformance suite, run through `tests/run-tst.sh`) exist in the tree but
+their CTest registration in `CMakeLists.txt` is commented out and must stay
+that way: `tests/posix/fnmatch-p.tst` hangs the testee at 100% CPU (see
+`BUGS`), so a `ctest` run that includes the suite never returns. Run it
+manually and deliberately when needed, e.g. excluding that one file:
+
+```sh
+sh tests/run-tst.sh ./shish tests/posix some-other-test.tst
+```
+
+### Writing a test
+
+Every `tests/*.sh` file must:
+
+- source `tests/common.sh` (`. "$(dirname "$0")/common.sh"`) and make every
+  actual check go through its `assert_equal`/`assert_match`/`assert_nomatch`/
+  `assert_greater`/`assert_less` helpers — not ad-hoc `echo`/manual `if`
+  blocks with nothing checking the result. Each call takes a `description`
+  as its last argument (recommended: say what must be true, not just restate
+  the expression) and prints one `<description>: OK`/`<description>: FAIL`
+  line as it runs (green/red) — assertions do not stop the script on
+  failure, so a single run always shows every check in the file, pass or
+  fail.
+- end with a call to `summary` (`tests/common.sh`), which prints the final
+  tally and is what actually makes the script exit non-zero (so CTest sees
+  the failure) if anything failed. A file that doesn't call `summary` at the
+  end will report nothing and always "pass" as far as CTest is concerned,
+  regardless of what its assertions found.
+
+**Every fix needs a regression test in `tests/fixed.sh`.** Whenever you fix
+a bug (whether it started life as a `BUGS` entry or was found and fixed in
+the same change), add a case to `tests/fixed.sh` that fails without the fix
+and passes with it, plus a patch in `fixes/` (see below) — a fix without a
+test protects nothing the next time someone touches that code path.
 
 `tests/common.sh` defines the `assert_equal`, `assert_match`, `success`,
 `failure`, `summary` helpers; each test sources it via
@@ -186,6 +217,12 @@ repo root instead of an issue tracker:
   a couple of genuinely still-open design items remain in it. See
   `TODO.md`'s "old TODO file, investigated" section for the evidence
   trail on why everything else was removed from it.
+- `fixes/` — one numbered patch file per fixed bug (`NN-short-name.patch`,
+  plain `git diff` output, no commit message), a permanent record of what
+  the fix actually was, kept even after the corresponding `BUGS` entry is
+  deleted. Add the next-numbered patch as part of the same change that
+  removes the entry from `BUGS`, and add its regression test to
+  `tests/fixed.sh` (see "Tests" above) in that same change too.
 
 Update both files as part of the change that makes them true, not as a
 follow-up — a stale `BUGS`/`TODO.md` is worse than a stale comment, since
@@ -197,6 +234,19 @@ re-deriving the state of the project from scratch.
 Recent and ongoing work, roughly newest-first (see `BUGS`/`TODO.md` and
 git log for full detail — this is a pointer into them, not a replacement):
 
+- Rewrote every `tests/*.sh` file to make its checks go through
+  `tests/common.sh`'s `assert_*` helpers (see "Tests" above) instead of
+  ad-hoc `echo`s nothing was checking against, and disabled the
+  `tests/posix`/`tests/yash` CTest registration (still hangs on
+  `fnmatch-p.tst`) so plain `ctest` only runs `tests/*.sh` and always
+  terminates. Doing this surfaced a run of real, previously-undocumented
+  bugs now in `BUGS`: arithmetic expansion rejecting single-character
+  variable names (fixed, `fixes/24`), `read -d` leaving the delimiter in
+  the captured value (fixed, `fixes/23`), quoted `"$(cmd)"` not
+  suppressing field splitting, nested backquotes not working, a quoted
+  here-doc delimiter not suppressing expansion, `printf` not supporting
+  field widths, and a subshell-bodied function (`f() ( ... )`) not
+  actually isolating its variables into a subshell.
 - The "command not found"/"not executable" messages added alongside
   the exec-failure-status fixes ignored active redirections on fd 2
   (and fd 0/1): `eval_simple_command.c` prints them before ever calling

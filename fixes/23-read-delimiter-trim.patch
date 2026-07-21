@@ -1,0 +1,20 @@
+diff --git a/src/builtin/builtin_read.c b/src/builtin/builtin_read.c
+index 7bf7d04e..cf09207c 100644
+--- a/src/builtin/builtin_read.c
++++ b/src/builtin/builtin_read.c
+@@ -93,7 +93,14 @@ builtin_read(int argc, char* argv[]) {
+       term_attr(input->fd, 1, &attrs);
+ 
+     if((ret = buffer_get_token_sa_pred(input, &data, predicate_function, &p)) > 0) {
+-      stralloc_trimr(&data, "\r\n", 2);
++      /* strip the delimiter that actually terminated the read. The
++         default newline delimiter also trims a preceding '\r', to
++         cope with CRLF line endings; a custom -d delimiter has no
++         such convention, so only its own character(s) are trimmed */
++      if(p.delim && p.ndelim == 1 && p.delim[0] == '\n')
++        stralloc_trimr(&data, "\r\n", 2);
++      else if(p.delim && p.ndelim > 0)
++        stralloc_trimr(&data, p.delim, p.ndelim);
+     } else {
+       status = 1;
+     }

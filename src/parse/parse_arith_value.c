@@ -97,9 +97,24 @@ parse_arith_value(struct parser* p) {
   }
 
   if(parse_isalpha(c) || c == '_' || c == '$') {
-    source_peekn(&c, 1);
+    /* a bare identifier ("i", "prev", ...) is always a valid
+       arithmetic operand on its own and needs no lookahead -- only
+       "$" needs disambiguating, since it can start "$var"/"${var}" as
+       well as "$(cmd)"/"$((expr))". Without this, a single-character
+       bare identifier ("i") had nothing left to look at after itself,
+       so peeking one character past it landed on whatever follows in
+       the expression (an operator, a space, ")") -- none of which are
+       a valid param char or "(" / "{", so the check below rejected
+       it. A multi-character identifier ("prev") happened to still
+       pass, because its own second character is a valid param char. */
+    int ok = c != '$';
 
-    if(parse_isparam(c) || byte_chr("({", 2, c) < 2) {
+    if(!ok) {
+      source_peekn(&c, 1);
+      ok = parse_isparam(c) || byte_chr("({", 2, c) < 2;
+    }
+
+    if(ok) {
       parse_subst(p);
       node = p->tree;
       p->node = p->tree = NULL;

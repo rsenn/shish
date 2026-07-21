@@ -106,4 +106,25 @@ IFS= read -r MSGLINE <"$MSGFILE"
 assert_match "$MSGLINE" "*No such file or directory*" "command-not-found message must go through its own redirection, not the shell's original stderr"
 rm -f "$MSGFILE"
 
+## fixes/23: "read -d X" left the terminating delimiter X in the
+## captured value instead of stripping it (unlike the default newline
+## delimiter, which was always stripped) -- builtin_read.c's trim
+## step was hardcoded to "\r\n" regardless of what delimiter was
+## actually in effect.
+TMPFILE=$(mktemp)
+printf 'first;second;third' >"$TMPFILE"
+read -r -d ';' FIRST <"$TMPFILE"
+assert_equal "first" "$FIRST" "read -d must not leave the delimiter in the captured value"
+rm -f "$TMPFILE"
+
+## fixes/24: arithmetic expansion containing a single-character
+## variable name failed to parse ("echo $((i+1))"): parse_arith_value
+## peeked one character past the variable name to decide whether to
+## treat it as a substitution, which for a single-character name landed
+## on whatever followed the expression (an operator/space/paren) rather
+## than another character of the name itself, and got rejected.
+i=0
+i=$((i + 1))
+assert_equal "1" "$i" "arithmetic expansion must accept a single-character bare variable name"
+
 summary

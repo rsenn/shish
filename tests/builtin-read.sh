@@ -1,46 +1,48 @@
 DIR=$(dirname "${0}")
 . "$DIR/common.sh"
 
-set -e
-
 ## Testing read builtin
 
-ask_passwd() {
-    read -r -p"Password: " -s PASSWORD
-    echo
-    echo "Password is '$PASSWORD'"
-}
+TMPFILE=$(mktemp)
 
-read_partial() {
-    echo "ABCDEFGHIJKLMNOPQRSTUVWXYZ" >tmp.txt
-    read -r -n 10 ABCD <tmp.txt
-    echo "ABCD='$ABCD'" 1>&2
-}
+## basic single-word read
+printf 'hello\n' >"$TMPFILE"
+read -r WORD <"$TMPFILE"
+assert_equal "hello" "$WORD" "read must capture a single-word line"
 
-while read -r DEV MNT TYPE OPTS REST; do
-  case "$DEV" in
-  "" | "#"*) continue ;;
-  esac
-  #dump -v DEV MNT TYPE OPTS REST
-  echo "Device: $DEV"
-  echo "Type: $TYPE"
-  echo "Mount point: $MNT"
-  echo "Mount options: $OPTS"
-  echo
-  #printf "Device: %-42s Mount point: %-20s Type: %-10s Mount options: %-20s\n" "$DEV" "$MNT" "$TYPE" "$OPTS"
-done </etc/fstab
+## field splitting across multiple variables, remainder goes to the last one
+printf 'dev mnt type opt1,opt2 extra field\n' >"$TMPFILE"
+read -r DEV MNT TYPE OPTS REST <"$TMPFILE"
+assert_equal "dev" "$DEV" "read splits into the 1st variable"
+assert_equal "mnt" "$MNT" "read splits into the 2nd variable"
+assert_equal "type" "$TYPE" "read splits into the 3rd variable"
+assert_equal "opt1,opt2" "$OPTS" "read splits into the 4th variable"
+assert_equal "extra field" "$REST" "read puts every remaining field into the last variable"
 
-(
-  echo '\\BL\nAH'
-  echo '\\Line\n2'
-) >tmp.txt
+## -r (raw) must not interpret backslash escapes
+printf 'line with \\\\n backslash\n' >"$TMPFILE"
+read -r RAWLINE <"$TMPFILE"
+assert_equal 'line with \\n backslash' "$RAWLINE" "read -r must leave backslashes untouched"
 
-(
-  read -r -p"Test: " TEST
-  echo "TEST=$TEST" 1>&2
-  read -r TEST2
+## -n N reads at most N characters, ignoring further input
+printf 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\n' >"$TMPFILE"
+read -r -n 10 PARTIAL <"$TMPFILE"
+assert_equal "ABCDEFGHIJ" "$PARTIAL" "read -n N must stop after N characters"
 
-  echo "TEST2=$TEST2" 1>&2
-) <tmp.txt
+## -d sets a custom delimiter instead of newline
+printf 'first;second;third' >"$TMPFILE"
+read -r -d ';' FIRST <"$TMPFILE"
+assert_equal "first" "$FIRST" "read -d must split on the given delimiter instead of newline"
 
-read_partial
+## reading two separate lines in sequence from the same fd
+printf 'one\ntwo\n' >"$TMPFILE"
+exec 9<"$TMPFILE"
+read -r -u 9 LINE1
+read -r -u 9 LINE2
+exec 9<&-
+assert_equal "one" "$LINE1" "read -u must read the 1st line from the given fd"
+assert_equal "two" "$LINE2" "read -u must read the 2nd line from the same fd on the next call"
+
+rm -f "$TMPFILE"
+
+summary
