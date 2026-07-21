@@ -12,14 +12,6 @@
     exec 4<&3
     exec 3<&4
 
-- wait-exitstatus-lost: builtin wait always returns 0 regardless of
-  the waited-for job's real exit status; "$!" isn't implemented
-  either (always expands empty).
-
-    sh -c 'exit 42' &
-    wait
-    echo $?
-
 - quoted-at-empty-param-split: quoted "$@" silently drops empty
   positional parameters when expanded as command arguments; the same
   case in a for-loop additionally fails to *parse* rather than just
@@ -30,13 +22,6 @@
 
     set -- -n ""
     for a in "$@"; do echo "[$a]"; done
-
-- fdstack-push-assertion: fdstack_push() can hit its own consistency
-  assertion under heavy nested command-substitution + subshell use
-  (confirmed pre-existing, reproduces on a clean checkout). Non-asan
-  builds silently corrupt a value instead of crashing.
-
-    ./shish tests/param.sh
 
 - fd-close-noop: ">&-"/"<&-" doesn't really close a file descriptor,
   for builtins (silently redirected to a null sink) or external
@@ -138,3 +123,24 @@
   pre-existing on a clean checkout, not a regression.
 
     shish -c 'for i in a b c; do echo "[$i]"; done'
+
+- pipeline-last-stage-status-lost: a foreground pipeline's exit status
+  is not reliably the last command's status the way POSIX requires --
+  confirmed wrong even for the simplest 2-stage case, builtins or
+  external commands. Found while verifying the wait-exitstatus-lost
+  fix (a related but distinct job_wait()/job_fork() area); an earlier,
+  already-committed fix (fixes/13-pipeline-exit-status.patch) covered
+  a different part of this same general problem, not this case.
+
+    true | false
+    echo $?
+
+- expand-glob-stack-overflow: found via an ASan build running
+  tests/param.sh (which exercises heavy nested command-substitution +
+  subshell use) -- a stack-buffer-overflow in
+  src/expand/expand_glob.c:48. Not yet isolated to a minimal repro
+  outside that test; noted here so it doesn't get lost, since the
+  ASan run that found it was chasing an unrelated bug
+  (fdstack-push-assertion, now fixed) that had been masking it.
+
+    ./shish tests/param.sh   # under an ASan build

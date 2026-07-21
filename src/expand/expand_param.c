@@ -1,5 +1,6 @@
 #include "../features.h"
 #include "../expand.h"
+#include "../job.h"
 #include "../sh.h"
 #include "../tree.h"
 #include "../fdtable.h"
@@ -144,8 +145,11 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         value.len = sh_fmtflags(value.s, &sh->opts);
         break;
 
-      /* $! substitution */
+      /* $! substitution: pid of the most recently backgrounded
+         command, or empty if nothing has been backgrounded yet */
       case S_BGEXCODE:
+        if(job_bgpid)
+          stralloc_catulong0(&value, job_bgpid, 0);
         break;
 
         /* $[0-9] arg subst */

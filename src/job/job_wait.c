@@ -17,44 +17,68 @@
 int
 job_wait(struct job* j, pid_t pid, int* status) {
   int ret = 0, s;
-  size_t n, i;
+  size_t i;
+  /* bail-out bound for the retry loop below, in case wait_pid() and
+     the async SIGCHLD handler both keep finding nothing (e.g. an
+     unrelated bug loses track of a process entirely) -- 5000 * 1ms is
+     ~5s, generous for a real race but short enough not to hang the
+     shell indefinitely on a genuine bug elsewhere */
+  int spins = 5000;
 
   if(j) {
-    n = j->nproc;
+    for(;;) {
+      size_t remaining = 0;
 
-    while(n > 0) {
-      if((ret = wait_pid(j->pgrp ? -j->pgrp : j->procs[0].pid, &s)) <= 0)
+      /* the SIGCHLD handler (sh_onsig() -> wait_nohang() ->
+         job_signal()) can race ahead of us and reap a process on its
+         own -- a real race for a child that exits fast, e.g. "cmd &"
+         immediately followed by "wait": the child can be long gone
+         (and its status already recorded here via job_signal(), same
+         as our own reap below does) before we ever get to try
+         wait_pid() ourselves. Recompute what's still outstanding from
+         procs[].status on every pass, rather than trying to reap
+         everything ourselves and losing whatever the handler already
+         got to first (confirmed: "cmd & wait; echo $?" always printed
+         0 this way, regardless of cmd's real exit status). */
+      for(i = 0; i < j->nproc; i++) {
+        if(j->procs[i].status != -1)
+          *status = j->procs[i].status;
+        else
+          remaining++;
+      }
+
+      if(remaining == 0)
         break;
 
-      if(job_signal(ret, s))
-        n--;
+      ret = wait_pid(j->pgrp ? -j->pgrp : j->procs[0].pid, &s);
 
-      /*for(i = 0; i < j->nproc; i++) {
-        if(j->procs[i].pid == ret) {
-          n--;
-          j->procs[i].status = s;
+      if(ret > 0) {
+        job_signal(ret, s);
+        *status = s;
+
+        /* Non-interactive shells (scripts like ./configure) parse
+           stderr to detect command behavior; the kernel often
+           delivers SIGPIPE to the left side of a pipeline when the
+           right side exits early, which is not an error worth
+           printing. Keep the message in interactive (job control)
+           mode and for signals other than SIGPIPE. */
+        if(!WAIT_IF_EXITED(s)) {
+          int squelch = !sh->opts.monitor && WAIT_IF_SIGNALED(s) &&
+                        WAIT_TERMSIG(s) == SIGPIPE;
+          if(!squelch)
+            job_printstatus(ret, s);
         }
-      }*/
+      } else {
+        /* wait_pid() found nothing left to reap itself -- either the
+           SIGCHLD handler beat us to everything (loop back around;
+           the scan above will pick up what it recorded) or there
+           really is nothing left. Either way, avoid spinning a tight
+           CPU-bound loop against an async handler that hasn't run
+           yet: give it a moment. */
+        if(--spins <= 0)
+          break;
 
-      /* POSIX: pipeline exit status is the last command's status. job_fork's
-         j->pgrp is unreliable (job_new pre-sets nproc to the pipeline width,
-         so the `if(nproc==0) j->pgrp=pgrp` branch never fires), and using the
-         pgrp leader's status would give the FIRST command's status anyway.
-         Update on every reap; the last child to be reaped wins, which for a
-         normal pipeline is the last command -- the only one whose stdin
-         can only close after every upstream stage has finished writing. */
-      *status = s;
-
-      /* Non-interactive shells (scripts like ./configure) parse stderr to
-         detect command behavior; the kernel often delivers SIGPIPE to the
-         left side of a pipeline when the right side exits early, which is
-         not an error worth printing. Keep the message in interactive (job
-         control) mode and for signals other than SIGPIPE. */
-      if(!WAIT_IF_EXITED(s)) {
-        int squelch = !sh->opts.monitor && WAIT_IF_SIGNALED(s) &&
-                      WAIT_TERMSIG(s) == SIGPIPE;
-        if(!squelch)
-          job_printstatus(ret, s);
+        usleep(1000);
       }
     }
 

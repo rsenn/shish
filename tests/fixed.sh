@@ -258,4 +258,24 @@ grep -q "^\[1\]+" "$JOBSFILE"
 assert_equal "0" "$?" "the remaining job must be promoted to current (\"+\") once the previous current job is cleaned up"
 rm -f "$JOBSFILE"
 
+## fixes/34: builtin_wait() ignored the exit status it waited for and
+## always returned 0; "$!" always expanded empty. Both had a deeper
+## root cause: sh_forked() never actually updated sh_pid to the
+## forked child's own real pid (a commented-out line, doing nothing),
+## so a backgrounded child's own setpgid() call used the wrong pid
+## for both "who" and "which group", meaning it never actually ended
+## up in the process group its parent expected -- job_wait()'s
+## wait_pid(-j->pgrp, ...) then reliably failed to find it. Also fixed
+## along the way: job_find()'s bare-pid lookup (used by e.g. "wait
+## $!") broke out of its inner scan loop on a match but never told the
+## outer one, so it kept walking past every real match.
+X=$(sh -c 'exit 42' 2>/dev/null &
+wait
+echo $?)
+assert_equal "42" "$X" "wait with no operands must report the exit status of the backgrounded job it waited for"
+
+true &
+BGPID=$!
+assert_greater "$BGPID" "0" "\"\$!\" must expand to the backgrounded command's pid, not stay empty"
+
 summary

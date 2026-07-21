@@ -1,0 +1,299 @@
+diff --git a/src/builtin/builtin_wait.c b/src/builtin/builtin_wait.c
+index 0b20acf0..2b1e2622 100644
+--- a/src/builtin/builtin_wait.c
++++ b/src/builtin/builtin_wait.c
+@@ -3,27 +3,53 @@
+ #include "../job.h"
+ #include "../../lib/typedefs.h"
+ 
+-/* command built-in
++/* wait built-in
+  *
+  * ----------------------------------------------------------------------- */
+ int
+ builtin_wait(int argc, char* argv[]) {
+   size_t i, njobs;
+-  struct job* job_list[argc];
++  int ret = 0;
+ 
+-  njobs = argc - 1;
++  /* no operands: wait for every job the shell currently knows about.
++     job_wait() frees a job once it's fully reaped (see job_wait.c),
++     which advances the global job_list -- so re-reading job_list each
++     iteration instead of snapshotting it up front is what actually
++     drains the whole list. Exit status is that of the last job waited
++     for, 0 if there were none (matches bash; POSIX says "wait" with
++     no operands always returns 0, but every other shell's wait
++     already reports the last waited-for job's status elsewhere in
++     this builtin, so do the same here for consistency). */
++  if(argc == 1) {
++    while(job_list) {
++      int status = 0;
+ 
+-  for(i = 0; i < njobs; i++) {
+-    if(!(job_list[i] = job_find(argv[i + 1]))) {
+-      builtin_errmsg(argv, argv[i + 1], "no such job");
+-      return 1;
++      job_wait(job_list, 0, &status);
++      ret = WEXITSTATUS(status);
+     }
++
++    return ret;
+   }
+ 
+-  for(i = 0; i < njobs; i++) {
+-    int status;
+-    job_wait(job_list[i], 0, &status);
++  njobs = argc - 1;
++
++  {
++    struct job* jobs[njobs];
++
++    for(i = 0; i < njobs; i++) {
++      if(!(jobs[i] = job_find(argv[i + 1]))) {
++        builtin_errmsg(argv, argv[i + 1], "no such job");
++        return 1;
++      }
++    }
++
++    for(i = 0; i < njobs; i++) {
++      int status = 0;
++
++      job_wait(jobs[i], 0, &status);
++      ret = WEXITSTATUS(status);
++    }
+   }
+ 
+-  return 0;
++  return ret;
+ }
+diff --git a/src/exec/exec_program.c b/src/exec/exec_program.c
+index fd86f2bd..305f01bc 100644
+--- a/src/exec/exec_program.c
++++ b/src/exec/exec_program.c
+@@ -102,6 +102,11 @@ exec_program(char* path, char** argv, enum execflag flag) {
+         job->procs[0].status = -1;
+         job->pgrp = pid;
+ 
++        /* "$!" -- this backgrounds via its own raw fork() above
++           instead of going through job_fork() (which sets this too),
++           so it needs to be set here as well */
++        job_bgpid = pid;
++
+         buffer_putc(fd_err->w, '[');
+         buffer_putulong(fd_err->w, job->id);
+         buffer_puts(fd_err->w, "] ");
+diff --git a/src/expand/expand_param.c b/src/expand/expand_param.c
+index a8925244..53f514cd 100644
+--- a/src/expand/expand_param.c
++++ b/src/expand/expand_param.c
+@@ -1,5 +1,6 @@
+ #include "../features.h"
+ #include "../expand.h"
++#include "../job.h"
+ #include "../sh.h"
+ #include "../tree.h"
+ #include "../fdtable.h"
+@@ -144,8 +145,11 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+         value.len = sh_fmtflags(value.s, &sh->opts);
+         break;
+ 
+-      /* $! substitution */
++      /* $! substitution: pid of the most recently backgrounded
++         command, or empty if nothing has been backgrounded yet */
+       case S_BGEXCODE:
++        if(job_bgpid)
++          stralloc_catulong0(&value, job_bgpid, 0);
+         break;
+ 
+         /* $[0-9] arg subst */
+diff --git a/src/job.h b/src/job.h
+index b5a96394..76ae141c 100644
+--- a/src/job.h
++++ b/src/job.h
+@@ -52,6 +52,7 @@ struct job {
+ extern int job_terminal, job_pgrp;
+ extern volatile bool job_signaled;
+ extern struct job *job_list, **job_pointer;
++extern pid_t job_bgpid; /* "$!": pid of the most recently backgrounded command */
+ 
+ #define job_current() (job_pointer && *job_pointer ? *job_pointer : 0)
+ #define job_done(j) (!job_running(j))
+diff --git a/src/job/job_find.c b/src/job/job_find.c
+index a1bc570f..52533567 100644
+--- a/src/job/job_find.c
++++ b/src/job/job_find.c
+@@ -19,10 +19,21 @@ job_find(const char* str) {
+ 
+       } else {
+         size_t i;
++        int found = 0;
+ 
+         for(i = 0; i < job->nproc; i++)
+-          if(job->procs[i].pid == id)
++          if(job->procs[i].pid == id) {
++            found = 1;
+             break;
++          }
++
++        /* the inner loop's break above only ended the pid scan
++           within this one job; without checking "found" here too,
++           the outer loop kept walking past a real match to the next
++           job regardless, so a bare-pid lookup (no "%" prefix, e.g.
++           "wait $!") never actually found anything */
++        if(found)
++          break;
+       }
+     }
+   }
+diff --git a/src/job/job_fork.c b/src/job/job_fork.c
+index d0ac8cea..55e101f9 100644
+--- a/src/job/job_fork.c
++++ b/src/job/job_fork.c
+@@ -10,6 +10,7 @@
+ #endif
+ 
+ int job_pgrp;
++pid_t job_bgpid;
+ 
+ /* forks off a job
+  * ----------------------------------------------------------------------- */
+@@ -79,6 +80,12 @@ job_fork(struct job* j, union node* node, int bgnd) {
+ 
+   pgrp = pid;
+ 
++  /* "$!" -- for a backgrounded pipeline of several commands, this
++     runs once per member in order, so the last one processed (the
++     pipeline's last command) wins, matching bash */
++  if(bgnd)
++    job_bgpid = pid;
++
+   /* in the parent update the process list of the j */
+   if(j) {
+     struct proc* p = &j->procs[index];
+diff --git a/src/job/job_wait.c b/src/job/job_wait.c
+index bd8bd3dc..3e9c6874 100644
+--- a/src/job/job_wait.c
++++ b/src/job/job_wait.c
+@@ -17,44 +17,68 @@
+ int
+ job_wait(struct job* j, pid_t pid, int* status) {
+   int ret = 0, s;
+-  size_t n, i;
++  size_t i;
++  /* bail-out bound for the retry loop below, in case wait_pid() and
++     the async SIGCHLD handler both keep finding nothing (e.g. an
++     unrelated bug loses track of a process entirely) -- 5000 * 1ms is
++     ~5s, generous for a real race but short enough not to hang the
++     shell indefinitely on a genuine bug elsewhere */
++  int spins = 5000;
+ 
+   if(j) {
+-    n = j->nproc;
++    for(;;) {
++      size_t remaining = 0;
+ 
+-    while(n > 0) {
+-      if((ret = wait_pid(j->pgrp ? -j->pgrp : j->procs[0].pid, &s)) <= 0)
++      /* the SIGCHLD handler (sh_onsig() -> wait_nohang() ->
++         job_signal()) can race ahead of us and reap a process on its
++         own -- a real race for a child that exits fast, e.g. "cmd &"
++         immediately followed by "wait": the child can be long gone
++         (and its status already recorded here via job_signal(), same
++         as our own reap below does) before we ever get to try
++         wait_pid() ourselves. Recompute what's still outstanding from
++         procs[].status on every pass, rather than trying to reap
++         everything ourselves and losing whatever the handler already
++         got to first (confirmed: "cmd & wait; echo $?" always printed
++         0 this way, regardless of cmd's real exit status). */
++      for(i = 0; i < j->nproc; i++) {
++        if(j->procs[i].status != -1)
++          *status = j->procs[i].status;
++        else
++          remaining++;
++      }
++
++      if(remaining == 0)
+         break;
+ 
+-      if(job_signal(ret, s))
+-        n--;
++      ret = wait_pid(j->pgrp ? -j->pgrp : j->procs[0].pid, &s);
+ 
+-      /*for(i = 0; i < j->nproc; i++) {
+-        if(j->procs[i].pid == ret) {
+-          n--;
+-          j->procs[i].status = s;
+-        }
+-      }*/
++      if(ret > 0) {
++        job_signal(ret, s);
++        *status = s;
+ 
+-      /* POSIX: pipeline exit status is the last command's status. job_fork's
+-         j->pgrp is unreliable (job_new pre-sets nproc to the pipeline width,
+-         so the `if(nproc==0) j->pgrp=pgrp` branch never fires), and using the
+-         pgrp leader's status would give the FIRST command's status anyway.
+-         Update on every reap; the last child to be reaped wins, which for a
+-         normal pipeline is the last command -- the only one whose stdin
+-         can only close after every upstream stage has finished writing. */
+-      *status = s;
++        /* Non-interactive shells (scripts like ./configure) parse
++           stderr to detect command behavior; the kernel often
++           delivers SIGPIPE to the left side of a pipeline when the
++           right side exits early, which is not an error worth
++           printing. Keep the message in interactive (job control)
++           mode and for signals other than SIGPIPE. */
++        if(!WAIT_IF_EXITED(s)) {
++          int squelch = !sh->opts.monitor && WAIT_IF_SIGNALED(s) &&
++                        WAIT_TERMSIG(s) == SIGPIPE;
++          if(!squelch)
++            job_printstatus(ret, s);
++        }
++      } else {
++        /* wait_pid() found nothing left to reap itself -- either the
++           SIGCHLD handler beat us to everything (loop back around;
++           the scan above will pick up what it recorded) or there
++           really is nothing left. Either way, avoid spinning a tight
++           CPU-bound loop against an async handler that hasn't run
++           yet: give it a moment. */
++        if(--spins <= 0)
++          break;
+ 
+-      /* Non-interactive shells (scripts like ./configure) parse stderr to
+-         detect command behavior; the kernel often delivers SIGPIPE to the
+-         left side of a pipeline when the right side exits early, which is
+-         not an error worth printing. Keep the message in interactive (job
+-         control) mode and for signals other than SIGPIPE. */
+-      if(!WAIT_IF_EXITED(s)) {
+-        int squelch = !sh->opts.monitor && WAIT_IF_SIGNALED(s) &&
+-                      WAIT_TERMSIG(s) == SIGPIPE;
+-        if(!squelch)
+-          job_printstatus(ret, s);
++        usleep(1000);
+       }
+     }
+ 
+diff --git a/src/sh/sh_forked.c b/src/sh/sh_forked.c
+index 23bf2491..d370dfde 100644
+--- a/src/sh/sh_forked.c
++++ b/src/sh/sh_forked.c
+@@ -57,5 +57,17 @@ sh_forked(void) {
+ 
+   sh_child = 1;
+ 
+-  return 0; /*(sh_pid = getpid());*/
++  /* sh_pid must reflect *this* (forked child) process's own pid from
++     here on -- job_fork()'s child branch uses it to setpgid() itself
++     into the right process group, and everything else that reports
++     "my pid" (e.g. "$$") relies on it too. Left at the parent's pid
++     (this line was previously commented out, doing nothing), the
++     child's setpgid() call target and requested pgid were both wrong,
++     which is why job_wait()'s wait4(-j->pgrp, ...) reliably failed
++     with ECHILD instead of ever finding a backgrounded child: the
++     child never actually ended up in the process group the parent
++     was told to expect it in. */
++  sh_pid = getpid();
++
++  return sh_pid;
+ }

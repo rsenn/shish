@@ -102,6 +102,11 @@ exec_program(char* path, char** argv, enum execflag flag) {
         job->procs[0].status = -1;
         job->pgrp = pid;
 
+        /* "$!" -- this backgrounds via its own raw fork() above
+           instead of going through job_fork() (which sets this too),
+           so it needs to be set here as well */
+        job_bgpid = pid;
+
         buffer_putc(fd_err->w, '[');
         buffer_putulong(fd_err->w, job->id);
         buffer_puts(fd_err->w, "] ");

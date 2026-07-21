@@ -52,6 +52,7 @@ struct job {
 extern int job_terminal, job_pgrp;
 extern volatile bool job_signaled;
 extern struct job *job_list, **job_pointer;
+extern pid_t job_bgpid; /* "$!": pid of the most recently backgrounded command */
 
 #define job_current() (job_pointer && *job_pointer ? *job_pointer : 0)
 #define job_done(j) (!job_running(j))

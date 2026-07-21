@@ -19,10 +19,21 @@ job_find(const char* str) {
 
       } else {
         size_t i;
+        int found = 0;
 
         for(i = 0; i < job->nproc; i++)
-          if(job->procs[i].pid == id)
+          if(job->procs[i].pid == id) {
+            found = 1;
             break;
+          }
+
+        /* the inner loop's break above only ended the pid scan
+           within this one job; without checking "found" here too,
+           the outer loop kept walking past a real match to the next
+           job regardless, so a bare-pid lookup (no "%" prefix, e.g.
+           "wait $!") never actually found anything */
+        if(found)
+          break;
       }
     }
   }

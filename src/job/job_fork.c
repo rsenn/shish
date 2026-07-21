@@ -10,6 +10,7 @@
 #endif
 
 int job_pgrp;
+pid_t job_bgpid;
 
 /* forks off a job
  * ----------------------------------------------------------------------- */
@@ -78,6 +79,12 @@ job_fork(struct job* j, union node* node, int bgnd) {
   }
 
   pgrp = pid;
+
+  /* "$!" -- for a backgrounded pipeline of several commands, this
+     runs once per member in order, so the last one processed (the
+     pipeline's last command) wins, matching bash */
+  if(bgnd)
+    job_bgpid = pid;
 
   /* in the parent update the process list of the j */
   if(j) {

@@ -57,5 +57,17 @@ sh_forked(void) {
 
   sh_child = 1;
 
-  return 0; /*(sh_pid = getpid());*/
+  /* sh_pid must reflect *this* (forked child) process's own pid from
+     here on -- job_fork()'s child branch uses it to setpgid() itself
+     into the right process group, and everything else that reports
+     "my pid" (e.g. "$$") relies on it too. Left at the parent's pid
+     (this line was previously commented out, doing nothing), the
+     child's setpgid() call target and requested pgid were both wrong,
+     which is why job_wait()'s wait4(-j->pgrp, ...) reliably failed
+     with ECHILD instead of ever finding a backgrounded child: the
+     child never actually ended up in the process group the parent
+     was told to expect it in. */
+  sh_pid = getpid();
+
+  return sh_pid;
 }
