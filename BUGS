@@ -89,17 +89,6 @@
     sleep 2 &
     wait
 
-- job-delete-current-promotion: job_free()'s job_delete() sets
-  job_pointer to NULL when the current job is deleted instead of
-  promoting the previous job to current (bash promotes "-" to "+"), so
-  the "+"-marked job just disappears once it finishes.
-
-    sleep 1 &
-    sleep 2 &
-    jobs
-    wait
-    jobs
-
 - quoted-cmdsubst-field-split: quoted "$(cmd)" doesn't suppress field
   splitting -- any "$(cmd)" whose output contains IFS characters gets
   split into multiple words/positional-params even inside double

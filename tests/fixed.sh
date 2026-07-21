@@ -243,4 +243,19 @@ done
 echo done >/dev/null
 assert_equal "5" "$I" "several 2-stage pipelines in a row must not corrupt job tracking badly enough to break the loop"
 
+## fixes/33: when the current ("%+") job finished and got cleaned up,
+## job_free()'s job_delete() just set the "current job" pointer to
+## NULL instead of promoting the previous job to current the way bash
+## promotes "%-" to "%+" -- so the "+" marker just disappeared from
+## "jobs" output instead of moving to the remaining job.
+JOBSFILE=$(mktemp)
+sleep 1 &
+sleep 0.2 &
+sleep 0.4
+jobs >/dev/null
+jobs >"$JOBSFILE"
+grep -q "^\[1\]+" "$JOBSFILE"
+assert_equal "0" "$?" "the remaining job must be promoted to current (\"+\") once the previous current job is cleaned up"
+rm -f "$JOBSFILE"
+
 summary

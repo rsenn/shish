@@ -1,0 +1,34 @@
+diff --git a/src/job/job_free.c b/src/job/job_free.c
+index 2b7b3da0..3235bd9e 100644
+--- a/src/job/job_free.c
++++ b/src/job/job_free.c
+@@ -4,13 +4,26 @@
+ static void
+ job_delete(struct job** j) {
+   struct job* next = (*j)->next;
++  int was_current = (j == job_pointer);
+ 
+   alloc_free(*j);
++  *j = next;
+ 
+-  if(j == job_pointer)
+-    job_pointer = NULL;
++  if(was_current) {
++    /* promote the previous job to current ("%-" becoming the new
++       "%+", as bash does) instead of just losing track of "current"
++       once it's gone. job_list is kept in ascending-id order (see
++       job_new()), so the last surviving entry is the most-recently-
++       created still-alive job -- nothing here tracks "%-" more
++       precisely than that, but it's the same job job_new() would
++       have made current next anyway. */
++    struct job** p = &job_list;
+ 
+-  *j = next;
++    while(*p && (*p)->next)
++      p = &(*p)->next;
++
++    job_pointer = *p ? p : NULL;
++  }
+ }
+ 
+ void
