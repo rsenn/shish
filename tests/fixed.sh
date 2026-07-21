@@ -326,4 +326,20 @@ rm -f "$STDERRFILE"
 ## once the shell is back at the prompt, so real job-control notifications
 ## are unaffected.
 
+## fixes/37: builtin echo used shell_getopt() (shared, strict getopt
+## infrastructure meant for real builtins with real options) to parse
+## its "options", so any unrecognized word starting with "-" -- which
+## for echo isn't an option at all, just an operand that happens to
+## start with a dash -- hit shell_getopt()'s default case and errored
+## out via builtin_invopt() instead of being printed. Replaced with
+## manual parsing matching POSIX/dash/bash: an argument starting with
+## "-" only ends option parsing (and is consumed) if every remaining
+## character is one of n/e/E; the first word that doesn't qualify ends
+## option parsing right there and is itself the first operand.
+X=$(echo ---marker---)
+assert_equal "---marker---" "$X" "echo must print a dash-led word it doesn't recognize as an option, not error out"
+
+X=$(echo -n hi)
+assert_equal "hi" "$X" "echo -n must still be recognized as an option"
+
 summary

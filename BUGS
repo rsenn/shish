@@ -38,12 +38,6 @@
     PATH=/b:$PATH
     cmd
 
-- echo-dash-operand: builtin echo rejects any unrecognized word
-  starting with "-" as an "invalid option" instead of printing it as
-  an operand.
-
-    echo ---marker---
-
 - fg-stack-oob: builtin_fg has a stack out-of-bounds write for the
   common no-argument case (confirmed crash under asan).
 

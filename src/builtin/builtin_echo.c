@@ -2,26 +2,44 @@
 #include "../fdtable.h"
 #include "../../lib/str.h"
 #include "../../lib/scan.h"
-#include "../../lib/shell.h"
 #include "../../lib/alloc.h"
 
 /* output stuff
  * ----------------------------------------------------------------------- */
 int
 builtin_echo(int argc, char* argv[]) {
-  int c, i, nonl = 0, eval = 0;
+  int i, nonl = 0, eval = 0, optind = 1;
 
-  /* check options */
-  while((c = shell_getopt(argc, argv, "neE")) > 0) {
-    switch(c) {
-      case 'n': nonl = 1; break;
-      case 'e': eval = 1; break;
-      case 'E': eval = 0; break;
-      default: builtin_invopt(argv); return 1;
+  /* echo doesn't have real options in the getopt sense: any word
+     starting with "-" that isn't made up entirely of n/e/E letters
+     ends option parsing right there and is itself the first operand,
+     printed as-is -- there's no such thing as an "invalid option" to
+     echo (POSIX/dash/bash agree; "echo ---marker---" must print
+     "---marker---", not error out) */
+  for(; optind < argc; optind++) {
+    const char* arg = argv[optind];
+    size_t j;
+
+    if(arg[0] != '-' || arg[1] == '\0')
+      break;
+
+    for(j = 1; arg[j]; j++)
+      if(arg[j] != 'n' && arg[j] != 'e' && arg[j] != 'E')
+        break;
+
+    if(arg[j])
+      break;
+
+    for(j = 1; arg[j]; j++) {
+      switch(arg[j]) {
+        case 'n': nonl = 1; break;
+        case 'e': eval = 1; break;
+        case 'E': eval = 0; break;
+      }
     }
   }
 
-  for(i = shell_optind; i < argc; i++) {
+  for(i = optind; i < argc; i++) {
     const char* arg = argv[i];
     size_t len = str_len(arg);
     char* s = eval ? alloc(len) : str_dup(arg);
