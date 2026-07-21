@@ -1,0 +1,145 @@
+diff --git a/src/eval/eval_node_bgnd.c b/src/eval/eval_node_bgnd.c
+index 24e4946c..233626cb 100644
+--- a/src/eval/eval_node_bgnd.c
++++ b/src/eval/eval_node_bgnd.c
+@@ -25,6 +25,7 @@ eval_node_bgnd(struct eval* e, union node* node) {
+     return eval_node(e, node);
+ 
+   job = job_new(1);
++  job->bgnd = 1;
+   pid = job_fork(job, 0, 1);
+ 
+   if(!pid) {
+diff --git a/src/eval/eval_pipeline.c b/src/eval/eval_pipeline.c
+index 8308809e..5124057e 100644
+--- a/src/eval/eval_pipeline.c
++++ b/src/eval/eval_pipeline.c
+@@ -32,6 +32,9 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
+   /*  job = (e->flags & E_JCTL) ? job_new(npipe->ncmd) : NULL;*/
+   job = job_new(npipe->ncmd);
+ 
++  if(job)
++    job->bgnd = npipe->bgnd;
++
+   if(job == NULL) {
+     buffer_puts(fd_err->w, "no job control");
+     buffer_putnlflush(fd_err->w);
+diff --git a/src/exec/exec_command.c b/src/exec/exec_command.c
+index 17a4ea3c..97d1b1ab 100644
+--- a/src/exec/exec_command.c
++++ b/src/exec/exec_command.c
+@@ -27,7 +27,10 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
+      exec_program()'s X_NOWAIT branch already does. */
+   if((flag & X_NOWAIT) && cmd->id != H_PROGRAM) {
+     struct job* job = job_new(1);
+-    pid_t pid = job_fork(job, 0, 1);
++    pid_t pid;
++
++    job->bgnd = 1;
++    pid = job_fork(job, 0, 1);
+ 
+     if(!pid) {
+       flag &= ~X_NOWAIT;
+diff --git a/src/exec/exec_program.c b/src/exec/exec_program.c
+index 305f01bc..1cbbff4d 100644
+--- a/src/exec/exec_program.c
++++ b/src/exec/exec_program.c
+@@ -101,6 +101,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
+         job->procs[0].pid = pid;
+         job->procs[0].status = -1;
+         job->pgrp = pid;
++        job->bgnd = 1;
+ 
+         /* "$!" -- this backgrounds via its own raw fork() above
+            instead of going through job_fork() (which sets this too),
+diff --git a/src/job.h b/src/job.h
+index 76ae141c..89abc1b9 100644
+--- a/src/job.h
++++ b/src/job.h
+@@ -46,6 +46,12 @@ struct job {
+   pid_t pgrp;
+   char* command;
+   uint8_t nproc;
++  uint8_t bgnd; /* was this job actually backgrounded ("cmd &")? job_wait()'s
++                   "[N]+ Done ..." banner is only for these -- a foreground
++                   pipeline (including one run internally to capture a
++                   command substitution's output) isn't something the user
++                   is waiting to be notified about; they're already watching
++                   it (or, for a substitution, it was never visible at all). */
+   struct proc procs[];
+ };
+ 
+diff --git a/src/job/job_clean.c b/src/job/job_clean.c
+index 90ae1b1d..75e6f19d 100644
+--- a/src/job/job_clean.c
++++ b/src/job/job_clean.c
+@@ -1,16 +1,29 @@
+ #include "../job.h"
+ #include "../fdtable.h"
++#include "../term.h"
+ 
+ void
+ job_clean(bool print) {
+   struct job *j, *next;
++  int erased = 0;
+ 
+   for(j = job_list; j; j = next) {
+     next = j->next;
+ 
+     if(job_done(j)) {
+-      if(print)
++      if(print) {
++        /* whatever's on the current line (a prompt, in-progress
++           typing) isn't ours to print over -- clear it and move to
++           column 1 before the first banner, matching what
++           sh_onsig()'s SIGCHLD handler already does before anything
++           it prints. Once per call, not once per job. */
++        if(!erased && term_output) {
++          term_erase();
++          erased = 1;
++        }
++
+         job_print(j, fd_err->w);
++      }
+       job_free(j);
+     }
+   }
+diff --git a/src/job/job_wait.c b/src/job/job_wait.c
+index 3e9c6874..09368a66 100644
+--- a/src/job/job_wait.c
++++ b/src/job/job_wait.c
+@@ -9,6 +9,7 @@
+ #include "../job.h"
+ #include "../fdtable.h"
+ #include "../sh.h"
++#include "../term.h"
+ #include "../../lib/wait.h"
+ #include <signal.h>
+ 
+@@ -83,10 +84,24 @@ job_wait(struct job* j, pid_t pid, int* status) {
+     }
+ 
+     /* The "[id]+ Done command" job-completion banner is for interactive
+-       use only; suppress it in scripts so configure's stderr stays clean. */
+-    if(sh->opts.monitor) {
++       use only; suppress it in scripts so configure's stderr stays clean.
++       It's also only meaningful for a job that was actually backgrounded
++       ("cmd &") -- a foreground pipeline (including one run internally
++       just to capture a command substitution's output, which never had
++       a ->command string set at all, hence "(null)") isn't something the
++       user asked to be notified about finishing; they were already
++       watching it, or for a substitution, never saw it as a job in the
++       first place. */
++    if(sh->opts.monitor && j->bgnd) {
+       char ch = job_current() == j ? '+' : (struct job*)job_pointer == j ? '-' : ' ';
+ 
++      /* whatever's on the current line (a prompt, in-progress typing)
++         isn't ours to print over -- clear it and move to column 1
++         first, matching what sh_onsig()'s SIGCHLD handler already does
++         before anything it prints */
++      if(term_output)
++        term_erase();
++
+       buffer_putc(fd_err->w, '[');
+       buffer_putulong(fd_err->w, j->id);
+       buffer_putc(fd_err->w, ']');

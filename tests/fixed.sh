@@ -278,4 +278,28 @@ true &
 BGPID=$!
 assert_greater "$BGPID" "0" "\"\$!\" must expand to the backgrounded command's pid, not stay empty"
 
+## fixes/35: job_wait()'s "[N]+ Done ..." job-completion banner (only
+## meant for the interactive/job-control case, "set -m") printed for
+## *any* job it waited on, not just ones that were actually
+## backgrounded -- including the fully-internal job eval_pipeline()
+## creates just to fork the last member of a pipeline sitting inside a
+## command substitution ("$(cmd | cmd)"), which has no ->command
+## string at all, hence "[1]+  Done   (null)" leaking onto a normal,
+## non-backgrounded command substitution's stderr. Added job->bgnd,
+## set only where a job is genuinely backgrounded, and gated the
+## banner on it (both here and in the async job_clean() path used
+## between prompts) -- and while there, made both banner sites erase
+## the current line and move to column 1 first, matching what
+## sh_onsig() already does before anything else it prints, so a
+## legitimate banner doesn't land mid-prompt.
+STDERRFILE=$(mktemp)
+(
+  set -m
+  X=$(echo hi | sed 1q)
+  echo "[$X]"
+) 2>"$STDERRFILE"
+grep -q "null" "$STDERRFILE"
+assert_equal "1" "$?" "a command substitution's internal pipeline must not print a job-completion banner"
+rm -f "$STDERRFILE"
+
 summary

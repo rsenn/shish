@@ -101,6 +101,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
         job->procs[0].pid = pid;
         job->procs[0].status = -1;
         job->pgrp = pid;
+        job->bgnd = 1;
 
         /* "$!" -- this backgrounds via its own raw fork() above
            instead of going through job_fork() (which sets this too),

@@ -9,6 +9,7 @@
 #include "../job.h"
 #include "../fdtable.h"
 #include "../sh.h"
+#include "../term.h"
 #include "../../lib/wait.h"
 #include <signal.h>
 
@@ -83,9 +84,23 @@ job_wait(struct job* j, pid_t pid, int* status) {
     }
 
     /* The "[id]+ Done command" job-completion banner is for interactive
-       use only; suppress it in scripts so configure's stderr stays clean. */
-    if(sh->opts.monitor) {
+       use only; suppress it in scripts so configure's stderr stays clean.
+       It's also only meaningful for a job that was actually backgrounded
+       ("cmd &") -- a foreground pipeline (including one run internally
+       just to capture a command substitution's output, which never had
+       a ->command string set at all, hence "(null)") isn't something the
+       user asked to be notified about finishing; they were already
+       watching it, or for a substitution, never saw it as a job in the
+       first place. */
+    if(sh->opts.monitor && j->bgnd) {
       char ch = job_current() == j ? '+' : (struct job*)job_pointer == j ? '-' : ' ';
+
+      /* whatever's on the current line (a prompt, in-progress typing)
+         isn't ours to print over -- clear it and move to column 1
+         first, matching what sh_onsig()'s SIGCHLD handler already does
+         before anything it prints */
+      if(term_output)
+        term_erase();
 
       buffer_putc(fd_err->w, '[');
       buffer_putulong(fd_err->w, j->id);

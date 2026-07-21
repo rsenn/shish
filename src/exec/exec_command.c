@@ -27,7 +27,10 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
      exec_program()'s X_NOWAIT branch already does. */
   if((flag & X_NOWAIT) && cmd->id != H_PROGRAM) {
     struct job* job = job_new(1);
-    pid_t pid = job_fork(job, 0, 1);
+    pid_t pid;
+
+    job->bgnd = 1;
+    pid = job_fork(job, 0, 1);
 
     if(!pid) {
       flag &= ~X_NOWAIT;

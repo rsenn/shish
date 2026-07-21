@@ -32,6 +32,9 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   /*  job = (e->flags & E_JCTL) ? job_new(npipe->ncmd) : NULL;*/
   job = job_new(npipe->ncmd);
 
+  if(job)
+    job->bgnd = npipe->bgnd;
+
   if(job == NULL) {
     buffer_puts(fd_err->w, "no job control");
     buffer_putnlflush(fd_err->w);

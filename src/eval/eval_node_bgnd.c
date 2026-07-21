@@ -25,6 +25,7 @@ eval_node_bgnd(struct eval* e, union node* node) {
     return eval_node(e, node);
 
   job = job_new(1);
+  job->bgnd = 1;
   pid = job_fork(job, 0, 1);
 
   if(!pid) {
