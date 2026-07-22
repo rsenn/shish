@@ -1,0 +1,102 @@
+diff --git a/lib/wait.h b/lib/wait.h
+index 32bb4848..581b9b91 100644
+--- a/lib/wait.h
++++ b/lib/wait.h
+@@ -18,7 +18,9 @@
+ #define WAIT_IF_STOPPED(status) (((status) & 0xff) == 0x7f)
+ 
+ int wait_nohang(int* wstat);
++int wait_nohang_untraced(int* wstat);
+ int wait_pid(int pid, int* wstat);
++int wait_pid_untraced(int pid, int* wstat);
+ int wait_pid_nohang(int pid, int* wstat);
+ int waitpid_nointr(int pid, int* wstat, int flags);
+ int wait_pids_nohang(int const* pids, unsigned int len, int* wstat);
+diff --git a/src/sh/sh_main.c b/src/sh/sh_main.c
+index 0f84bec7..8502ab55 100644
+--- a/src/sh/sh_main.c
++++ b/src/sh/sh_main.c
+@@ -40,8 +40,22 @@ sh_onsig(int signum) {
+         term_restore(term_input.fd, &term_tcattr);
+       }
+ 
+-      if((pid = wait_nohang(&status)) > 0) {
++      /* only ask to be woken on a stop too (WUNTRACED) in interactive
++         job-control mode -- see job_wait()'s matching wait_pid()/
++         wait_pid_untraced() choice for why */
++      if((pid = (sh->opts.monitor ? wait_nohang_untraced : wait_nohang)(&status)) > 0) {
+         job = job_signal(pid, status);
++
++        /* a backgrounded job just stopped with nothing actively
++           fg/bg/wait-ing on it to notice on its own -- announce it
++           here, the same "[N]+ Stopped ..." line job_wait() prints
++           when it catches a stop synchronously instead */
++        if(sh->opts.monitor && job && WAIT_IF_STOPPED(status) && job_stopped(job)) {
++          if(term_output)
++            term_erase();
++
++          job_banner(job, fd_err->w, JOB_STOPPED);
++        }
+       }
+ 
+ #ifdef DEBUG_OUTPUT_
+diff --git a/lib/wait/wait_pid_untraced.c b/lib/wait/wait_pid_untraced.c
+new file mode 100644
+index 00000000..f0963cb5
+--- /dev/null
++++ b/lib/wait/wait_pid_untraced.c
+@@ -0,0 +1,21 @@
++#include "../wait.h"
++#include "../windoze.h"
++#if !WINDOWS_NATIVE
++#include <sys/wait.h>
++#endif
++
++/* like wait_pid(), but also returns when the child stops (e.g.
++ * Ctrl-Z / SIGTSTP) instead of only when it exits -- job_wait() needs
++ * this to notice a foreground job getting stopped rather than
++ * blocking until it eventually exits. No WINDOWS_NATIVE equivalent
++ * exists (there's no POSIX-style job-control stop state to wait for
++ * there), so it just behaves like wait_pid().
++ * ----------------------------------------------------------------------- */
++int
++wait_pid_untraced(int pid, int* wstat) {
++#if WINDOWS_NATIVE
++  return wait_pid(pid, wstat);
++#else
++  return waitpid_nointr(pid, wstat, WUNTRACED);
++#endif
++}
+diff --git a/lib/wait/wait_nohang_untraced.c b/lib/wait/wait_nohang_untraced.c
+new file mode 100644
+index 00000000..98c32488
+--- /dev/null
++++ b/lib/wait/wait_nohang_untraced.c
+@@ -0,0 +1,27 @@
++#include "../wait.h"
++#include "../windoze.h"
++
++#if !WINDOWS_NATIVE
++#include <sys/types.h>
++#include <sys/wait.h>
++#endif
++
++/* like wait_nohang(), but also reports a child that just stopped
++ * (Ctrl-Z / SIGTSTP, or an explicit "kill -STOP"), not only ones that
++ * exited -- needed so the SIGCHLD handler can notice a backgrounded
++ * job stopping even though nothing is actively fg/bg/wait-ing on it
++ * at that moment (job_wait()'s own wait_pid_untraced() only covers
++ * the case where something *is*). No WINDOWS_NATIVE equivalent
++ * exists (there's no POSIX-style job-control stop state there), so it
++ * just behaves like wait_nohang().
++ * ----------------------------------------------------------------------- */
++int
++wait_nohang_untraced(int* wstat) {
++#if WINDOWS_NATIVE
++  return wait_nohang(wstat);
++#elif defined(__unix__)
++  return waitpid(-1, wstat, WNOHANG | WUNTRACED);
++#else
++  return wait_nohang(wstat);
++#endif
++}

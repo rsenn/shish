@@ -417,4 +417,116 @@ rm -f "$OUTFILE"
 ## "chmod: +q: invalid mode" and exits 1 rather than silently
 ## chmod()ing to 0.
 
+## fixes/41-44: fg/bg were fully implemented (jobs/fg/bg in
+## src/builtin/builtin_jobs.c). Along the way:
+## - builtin_fg had a stack out-of-bounds write for the common bare
+##   "fg" (no operand) case: a "struct job *joblist[argc - 1]" VLA is
+##   zero-length there, and "joblist[0] = job_current();" wrote past
+##   it regardless. Rewritten to resolve a single job directly (fg
+##   only ever moves one job to the foreground) instead of building an
+##   array at all.
+## - builtin_table.c's dispatch table had "bg" wired to &builtin_fg
+##   instead of &builtin_bg -- bg silently ran fg's code instead.
+## - job_wait() never asked wait()/waitpid() for WUNTRACED, so a
+##   stopped process was indistinguishable from "still running" to it.
+##   Added wait_pid_untraced()/wait_nohang_untraced() and wired them
+##   into job_wait()'s synchronous wait and sh_onsig()'s async SIGCHLD
+##   path (gated on sh->opts.monitor -- script behavior is unchanged).
+## - job_done(j) didn't exclude a stopped job (job_running() only
+##   checks status == -1), so a job that just stopped looked "done"
+##   and got job_free()'d instead of staying around for fg/bg.
+## - exec_program.c's separate X_NOWAIT fork path (used for any
+##   backgrounded *external* command, e.g. "cmd &") never called
+##   setpgid() at all, so job->pgrp recorded the child's pid as if it
+##   were a real process group without that ever being true at the OS
+##   level -- killpg(job->pgrp, SIGCONT) (fg/bg) and job_wait()'s own
+##   wait_pid(-job->pgrp, ...) both silently failed (ESRCH) against a
+##   process group that didn't exist. Fixed by adding the same
+##   parent+child setpgid() dance job_fork() already does elsewhere.
+##
+## "kill -STOP"/"kill -CONT" are used here instead of a real Ctrl-Z
+## (SIGTSTP from a terminal driver) since these tests don't run under
+## a pty -- the resulting process state is identical either way, and
+## exercises the exact same job_wait()/job_signal() bookkeeping.
+JOBSFILE2=$(mktemp)
+(
+  set -m
+  sleep 0.5 &
+  PID=$!
+  kill -STOP "$PID"
+  sleep 0.2
+  jobs >"$JOBSFILE2.stopped"
+  bg >/dev/null
+  wait "$PID"
+  echo "waitstatus=$?" >"$JOBSFILE2.wait"
+  jobs >"$JOBSFILE2.after"
+)
+grep -q "Stopped" "$JOBSFILE2.stopped"
+assert_equal "0" "$?" "kill -STOP on a backgrounded job must be detected and reported as Stopped"
+
+IFS= read -r WAITLINE <"$JOBSFILE2.wait"
+assert_equal "waitstatus=0" "$WAITLINE" "\"bg\" (not \"fg\" via the mis-wired dispatch table) must actually resume the stopped job so \"wait\" sees it exit cleanly"
+
+[ -s "$JOBSFILE2.after" ]
+assert_equal "1" "$?" "a resumed-then-waited-for job must be fully reaped, not left listed by \"jobs\""
+
+rm -f "$JOBSFILE2" "$JOBSFILE2.stopped" "$JOBSFILE2.wait" "$JOBSFILE2.after"
+
+## "fg" (no operand, the common case that used to crash) on a stopped
+## job must resume it and block until it actually finishes.
+FGFILE=$(mktemp)
+(
+  set -m
+  sleep 0.3 &
+  PID=$!
+  kill -STOP "$PID"
+  sleep 0.1
+  fg >/dev/null
+  echo "fgstatus=$?" >"$FGFILE.status"
+  jobs >"$FGFILE.after"
+)
+IFS= read -r FGLINE <"$FGFILE.status"
+assert_equal "fgstatus=0" "$FGLINE" "\"fg\" on a stopped job must resume it (no stack OOB crash on the bare no-operand form) and wait for it to finish"
+
+[ -s "$FGFILE.after" ]
+assert_equal "1" "$?" "a job brought to the foreground and waited out must be fully reaped, not left listed by \"jobs\""
+
+rm -f "$FGFILE" "$FGFILE.status" "$FGFILE.after"
+
+## "bg" on a job that's already running (never stopped) must refuse,
+## not silently do nothing (or, pre-fix, silently run fg's code
+## instead via the mis-wired dispatch table).
+BGERRFILE=$(mktemp)
+(
+  set -m
+  sleep 0.2 &
+  bg
+  echo "bgstatus=$?"
+) >/dev/null 2>"$BGERRFILE"
+grep -q "already in background" "$BGERRFILE"
+assert_equal "0" "$?" "\"bg\" on a job that was never stopped must report an error, not silently succeed"
+rm -f "$BGERRFILE"
+
+## fixes/45: every "[id] ..." job banner (a job starting in the
+## background, job_wait()'s/sh_onsig()'s Done/Stopped notices, bg's
+## resume line, and "jobs"'s own listing) used to hand-roll its own
+## buffer_put*() calls -- job_wait()'s banners padded the status word
+## to a different column than job_print()'s (26 vs. 24, though they
+## came out the same total width by coincidence), and two of the three
+## Done/Stopped sites computed the "is this the current job" marker
+## via "(struct job*)job_pointer == j", comparing a struct job** cast
+## to struct job* against a struct job* -- meaningless, always false
+## in practice, so the "%-" ('-') marker never actually appeared.
+## Consolidated into one job_banner(job, out, kind) (src/job/
+## job_banner.c) that every site now calls; job_print() (used by the
+## "jobs" builtin) is now just job_banner() with the status
+## auto-selected from the job's current state.
+JOBSFILE3=$(mktemp)
+sleep 0.2 &
+jobs >"$JOBSFILE3"
+grep -q "^\[1\][+ ]  Running" "$JOBSFILE3"
+assert_equal "0" "$?" "job_print() must still format a running job's status line correctly after routing through job_banner()"
+wait
+rm -f "$JOBSFILE3"
+
 summary

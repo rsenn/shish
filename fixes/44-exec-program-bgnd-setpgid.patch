@@ -1,0 +1,56 @@
+diff --git a/src/exec/exec_program.c b/src/exec/exec_program.c
+index 1cbbff4d..e143ea79 100644
+--- a/src/exec/exec_program.c
++++ b/src/exec/exec_program.c
+@@ -85,6 +85,19 @@ exec_program(char* path, char** argv, enum execflag flag) {
+     if((pid = fork())) {
+       int status = 1;
+ 
++      /* give the child its own process group (same double-setpgid-in-
++         both-parent-and-child dance job_fork() already does, to avoid
++         a race against whichever of the two runs first) -- without
++         this, a backgrounded external command ("cmd &", the common
++         case this branch handles) never gets a real process group of
++         its own: job->pgrp below records 'pid' as if it were one, but
++         killpg(job->pgrp, ...) (fg/bg's SIGCONT) and job_wait()'s own
++         wait_pid(-job->pgrp, ...) both then target a process group
++         that doesn't exist (ESRCH), silently doing nothing */
++#if !WINDOWS_NATIVE
++      setpgid(pid, pid);
++#endif
++
+       /* this will close child ends of the pipes and read data from the parent
+        * end :) */
+       fdstack_pop(&io);
+@@ -108,11 +121,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
+            so it needs to be set here as well */
+         job_bgpid = pid;
+ 
+-        buffer_putc(fd_err->w, '[');
+-        buffer_putulong(fd_err->w, job->id);
+-        buffer_puts(fd_err->w, "] ");
+-        buffer_putulong(fd_err->w, pid);
+-        buffer_putnlflush(fd_err->w);
++        job_banner(job, fd_err->w, JOB_START);
+ 
+ #if !WINDOWS_NATIVE
+         sig_unblock(SIGCHLD);
+@@ -137,6 +146,18 @@ exec_program(char* path, char** argv, enum execflag flag) {
+     /* ...in the child we always exit */
+     sh_forked();
+ 
++#if !WINDOWS_NATIVE
++    /* see the matching setpgid() call in the parent branch above */
++    setpgid(sh_pid, sh_pid);
++
++    /* a foreground external command should own the terminal while it
++       runs, same as job_fork() already arranges for the job_fork()-
++       based path -- a backgrounded one (X_NOWAIT) must not, it isn't
++       supposed to be fighting the shell for input */
++    if(!(flag & X_NOWAIT) && fd_ok(job_terminal))
++      tcsetpgrp(job_terminal, sh_pid);
++#endif
++
+     /* the blocked mask set above survives exec(); the program we're
+        about to run (or exit() out of) must not inherit SIGINT/SIGCHLD
+        blocked */

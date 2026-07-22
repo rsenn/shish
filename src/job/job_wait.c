@@ -29,6 +29,7 @@ job_wait(struct job* j, pid_t pid, int* status) {
   if(j) {
     for(;;) {
       size_t remaining = 0;
+      int stopped = 0;
 
       /* the SIGCHLD handler (sh_onsig() -> wait_nohang() ->
          job_signal()) can race ahead of us and reap a process on its
@@ -42,20 +43,40 @@ job_wait(struct job* j, pid_t pid, int* status) {
          got to first (confirmed: "cmd & wait; echo $?" always printed
          0 this way, regardless of cmd's real exit status). */
       for(i = 0; i < j->nproc; i++) {
-        if(j->procs[i].status != -1)
-          *status = j->procs[i].status;
-        else
+        if(j->procs[i].status == -1) {
           remaining++;
+        } else {
+          *status = j->procs[i].status;
+
+          if(WAIT_IF_STOPPED(j->procs[i].status))
+            stopped = 1;
+        }
       }
+
+      /* a process stopping (Ctrl-Z, or an explicit "kill -STOP") isn't
+         "done" -- hand control back to the caller right away instead
+         of blocking until it eventually exits, the same way a real
+         shell's job control does; fg/bg can resume it later */
+      if(stopped)
+        break;
 
       if(remaining == 0)
         break;
 
-      ret = wait_pid(j->pgrp ? -j->pgrp : j->procs[0].pid, &s);
+      /* only ask to be woken on a stop too (WUNTRACED) in interactive
+         job-control mode -- a script isn't going to fg/bg anything, so
+         there's no reason to make its wait() sensitive to a stop it
+         has no way to act on */
+      ret = (sh->opts.monitor ? wait_pid_untraced : wait_pid)(j->pgrp ? -j->pgrp : j->procs[0].pid, &s);
 
       if(ret > 0) {
         job_signal(ret, s);
         *status = s;
+
+        if(WAIT_IF_STOPPED(s))
+          /* loop back around; the scan above will notice it via
+             procs[].status and break out of the wait properly */
+          continue;
 
         /* Non-interactive shells (scripts like ./configure) parse
            stderr to detect command behavior; the kernel often
@@ -70,12 +91,12 @@ job_wait(struct job* j, pid_t pid, int* status) {
             job_printstatus(ret, s);
         }
       } else {
-        /* wait_pid() found nothing left to reap itself -- either the
-           SIGCHLD handler beat us to everything (loop back around;
-           the scan above will pick up what it recorded) or there
-           really is nothing left. Either way, avoid spinning a tight
-           CPU-bound loop against an async handler that hasn't run
-           yet: give it a moment. */
+        /* wait_pid()/wait_pid_untraced() found nothing left to reap
+           itself -- either the SIGCHLD handler beat us to everything
+           (loop back around; the scan above will pick up what it
+           recorded) or there really is nothing left. Either way,
+           avoid spinning a tight CPU-bound loop against an async
+           handler that hasn't run yet: give it a moment. */
         if(--spins <= 0)
           break;
 
@@ -83,17 +104,26 @@ job_wait(struct job* j, pid_t pid, int* status) {
       }
     }
 
-    /* The "[id]+ Done command" job-completion banner is for interactive
-       use only; suppress it in scripts so configure's stderr stays clean.
-       It's also only meaningful for a job that was actually backgrounded
-       ("cmd &") -- a foreground pipeline (including one run internally
-       just to capture a command substitution's output, which never had
-       a ->command string set at all, hence "(null)") isn't something the
-       user asked to be notified about finishing; they were already
-       watching it, or for a substitution, never saw it as a job in the
-       first place. */
-    if(sh->opts.monitor && j->bgnd) {
-      char ch = job_current() == j ? '+' : (struct job*)job_pointer == j ? '-' : ' ';
+    if(sh->opts.monitor && job_stopped(j)) {
+      /* a process in this job just stopped rather than exited -- tell
+         the user and leave the job in job_list (job_done() below
+         already excludes a stopped job) so a later "fg"/"bg" can
+         resume it */
+      if(term_output)
+        term_erase();
+
+      job_banner(j, fd_err->w, JOB_STOPPED);
+    } else if(sh->opts.monitor && j->bgnd && job_done(j)) {
+      /* The "[id]+ Done command" job-completion banner is for
+         interactive use only; suppress it in scripts so configure's
+         stderr stays clean. It's also only meaningful for a job that
+         was actually backgrounded ("cmd &") -- a foreground pipeline
+         (including one run internally just to capture a command
+         substitution's output, which never had a ->command string
+         set at all, hence "(null)") isn't something the user asked to
+         be notified about finishing; they were already watching it,
+         or for a substitution, never saw it as a job in the first
+         place. */
 
       /* whatever's on the current line (a prompt, in-progress typing)
          isn't ours to print over -- clear it and move to column 1
@@ -102,13 +132,7 @@ job_wait(struct job* j, pid_t pid, int* status) {
       if(term_output)
         term_erase();
 
-      buffer_putc(fd_err->w, '[');
-      buffer_putulong(fd_err->w, j->id);
-      buffer_putc(fd_err->w, ']');
-      buffer_putc(fd_err->w, ch);
-      buffer_putspad(fd_err->w, "  Done", 26);
-      buffer_puts(fd_err->w, j->command ? j->command : "(null)");
-      buffer_putnlflush(fd_err->w);
+      job_banner(j, fd_err->w, JOB_DONE);
     }
 
     if(job_done(j))

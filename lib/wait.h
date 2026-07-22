@@ -18,7 +18,9 @@
 #define WAIT_IF_STOPPED(status) (((status) & 0xff) == 0x7f)
 
 int wait_nohang(int* wstat);
+int wait_nohang_untraced(int* wstat);
 int wait_pid(int pid, int* wstat);
+int wait_pid_untraced(int pid, int* wstat);
 int wait_pid_nohang(int pid, int* wstat);
 int waitpid_nointr(int pid, int* wstat, int flags);
 int wait_pids_nohang(int const* pids, unsigned int len, int* wstat);

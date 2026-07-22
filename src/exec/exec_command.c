@@ -37,11 +37,7 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
       exit(exec_command(cmd, argc, argv, flag));
     }
 
-    buffer_putc(fd_err->w, '[');
-    buffer_putulong(fd_err->w, job->id);
-    buffer_puts(fd_err->w, "] ");
-    buffer_putulong(fd_err->w, pid);
-    buffer_putnlflush(fd_err->w);
+    job_banner(job, fd_err->w, JOB_START);
 
     return 0;
   }

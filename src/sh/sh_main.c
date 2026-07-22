@@ -40,8 +40,22 @@ sh_onsig(int signum) {
         term_restore(term_input.fd, &term_tcattr);
       }
 
-      if((pid = wait_nohang(&status)) > 0) {
+      /* only ask to be woken on a stop too (WUNTRACED) in interactive
+         job-control mode -- see job_wait()'s matching wait_pid()/
+         wait_pid_untraced() choice for why */
+      if((pid = (sh->opts.monitor ? wait_nohang_untraced : wait_nohang)(&status)) > 0) {
         job = job_signal(pid, status);
+
+        /* a backgrounded job just stopped with nothing actively
+           fg/bg/wait-ing on it to notice on its own -- announce it
+           here, the same "[N]+ Stopped ..." line job_wait() prints
+           when it catches a stop synchronously instead */
+        if(sh->opts.monitor && job && WAIT_IF_STOPPED(status) && job_stopped(job)) {
+          if(term_output)
+            term_erase();
+
+          job_banner(job, fd_err->w, JOB_STOPPED);
+        }
       }
 
 #ifdef DEBUG_OUTPUT_

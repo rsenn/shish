@@ -33,11 +33,7 @@ eval_node_bgnd(struct eval* e, union node* node) {
     exit(ret);
   }
 
-  buffer_putc(fd_err->w, '[');
-  buffer_putulong(fd_err->w, job->id);
-  buffer_puts(fd_err->w, "] ");
-  buffer_putulong(fd_err->w, pid);
-  buffer_putnlflush(fd_err->w);
+  job_banner(job, fd_err->w, JOB_START);
 
   return 0;
 }

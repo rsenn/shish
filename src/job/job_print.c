@@ -4,12 +4,5 @@
 /* ----------------------------------------------------------------------- */
 void
 job_print(struct job* job, buffer* out) {
-  buffer_putc(out, '[');
-  buffer_putulong(out, job->id);
-  buffer_putc(out, ']');
-  buffer_putc(out, job == job_current() ? '+' : ' ');
-  buffer_puts(out, "  ");
-  buffer_putspad(out, job_done(job) ? "Done" : job_stopped(job) ? "Stopped" : "Running", 24);
-  buffer_puts(out, job->command ? job->command : "(null)");
-  buffer_putnlflush(out);
+  job_banner(job, out, job_done(job) ? JOB_DONE : job_stopped(job) ? JOB_STOPPED : JOB_RUNNING);
 }

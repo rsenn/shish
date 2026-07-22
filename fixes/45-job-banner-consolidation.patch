@@ -1,0 +1,107 @@
+diff --git a/src/eval/eval_node_bgnd.c b/src/eval/eval_node_bgnd.c
+index 233626cb..3785d1bb 100644
+--- a/src/eval/eval_node_bgnd.c
++++ b/src/eval/eval_node_bgnd.c
+@@ -33,11 +33,7 @@ eval_node_bgnd(struct eval* e, union node* node) {
+     exit(ret);
+   }
+ 
+-  buffer_putc(fd_err->w, '[');
+-  buffer_putulong(fd_err->w, job->id);
+-  buffer_puts(fd_err->w, "] ");
+-  buffer_putulong(fd_err->w, pid);
+-  buffer_putnlflush(fd_err->w);
++  job_banner(job, fd_err->w, JOB_START);
+ 
+   return 0;
+ }
+diff --git a/src/exec/exec_command.c b/src/exec/exec_command.c
+index 97d1b1ab..b72f3540 100644
+--- a/src/exec/exec_command.c
++++ b/src/exec/exec_command.c
+@@ -37,11 +37,7 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
+       exit(exec_command(cmd, argc, argv, flag));
+     }
+ 
+-    buffer_putc(fd_err->w, '[');
+-    buffer_putulong(fd_err->w, job->id);
+-    buffer_puts(fd_err->w, "] ");
+-    buffer_putulong(fd_err->w, pid);
+-    buffer_putnlflush(fd_err->w);
++    job_banner(job, fd_err->w, JOB_START);
+ 
+     return 0;
+   }
+diff --git a/src/job/job_print.c b/src/job/job_print.c
+index b3ddbe3c..589eb62e 100644
+--- a/src/job/job_print.c
++++ b/src/job/job_print.c
+@@ -4,12 +4,5 @@
+ /* ----------------------------------------------------------------------- */
+ void
+ job_print(struct job* job, buffer* out) {
+-  buffer_putc(out, '[');
+-  buffer_putulong(out, job->id);
+-  buffer_putc(out, ']');
+-  buffer_putc(out, job == job_current() ? '+' : ' ');
+-  buffer_puts(out, "  ");
+-  buffer_putspad(out, job_done(job) ? "Done" : job_stopped(job) ? "Stopped" : "Running", 24);
+-  buffer_puts(out, job->command ? job->command : "(null)");
+-  buffer_putnlflush(out);
++  job_banner(job, out, job_done(job) ? JOB_DONE : job_stopped(job) ? JOB_STOPPED : JOB_RUNNING);
+ }
+diff --git a/src/job/job_banner.c b/src/job/job_banner.c
+new file mode 100644
+index 00000000..c4559f85
+--- /dev/null
++++ b/src/job/job_banner.c
+@@ -0,0 +1,49 @@
++#include "../../lib/buffer.h"
++#include "../job.h"
++
++/* every line the shell prints to tell the user something happened to
++ * a job -- "[id] pid" when one is freshly backgrounded
++ * (eval_node_bgnd.c, exec_command.c, exec_program.c), "[id]+ Done
++ * ..."/"[id]+ Stopped ..." once job_wait() (synchronously) or
++ * sh_onsig() (asynchronously, via SIGCHLD) notices it finished or
++ * stopped, "[id]+ command &" when "bg" resumes a stopped one, and the
++ * "[id]+ Status command" line "jobs" lists each job with (job_print()
++ * below) -- used to each hand-roll their own buffer_put*() calls,
++ * which had already drifted out of sync once (job_wait()'s banners
++ * padded to a different column than job_print()'s, though they came
++ * out the same width by coincidence; the "current job" marker had
++ * three subtly different implementations). One formatter now, so
++ * there's exactly one place left to get it right.
++ * ----------------------------------------------------------------------- */
++void
++job_banner(struct job* job, buffer* out, enum job_banner_kind kind) {
++  buffer_putc(out, '[');
++  buffer_putulong(out, job->id);
++  buffer_putc(out, ']');
++
++  if(kind == JOB_START) {
++    /* no status/current-job marker for this one -- it's just "here's
++       the job id and pid you'll want for a later fg/bg/wait/kill" */
++    buffer_putc(out, ' ');
++    buffer_putulong(out, job->procs[0].pid);
++    buffer_putnlflush(out);
++    return;
++  }
++
++  buffer_putc(out, job_current() == job ? '+' : ' ');
++
++  switch(kind) {
++    case JOB_RUNNING: buffer_putspad(out, "  Running", 26); break;
++    case JOB_DONE: buffer_putspad(out, "  Done", 26); break;
++    case JOB_STOPPED: buffer_putspad(out, "  Stopped", 26); break;
++    case JOB_BGRESUME: buffer_putc(out, ' '); break;
++    default: break;
++  }
++
++  buffer_puts(out, job->command ? job->command : "(null)");
++
++  if(kind == JOB_BGRESUME)
++    buffer_puts(out, " &");
++
++  buffer_putnlflush(out);
++}

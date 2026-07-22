@@ -166,7 +166,7 @@ struct builtin_cmd builtin_table[] = {
     {"basename", &builtin_basename, B_DEFAULT, "path"},
 #endif
 #if BUILTIN_JOBS
-    {"bg", &builtin_fg, B_DEFAULT, "[job...]"},
+    {"bg", &builtin_bg, B_DEFAULT, "[job...]"},
 #endif
 #if BUILTIN_BREAK
     {"break", &builtin_break, B_DEFAULT, "[n]"},

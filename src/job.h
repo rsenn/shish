@@ -61,7 +61,12 @@ extern struct job *job_list, **job_pointer;
 extern pid_t job_bgpid; /* "$!": pid of the most recently backgrounded command */
 
 #define job_current() (job_pointer && *job_pointer ? *job_pointer : 0)
-#define job_done(j) (!job_running(j))
+/* "done" means fully reaped -- a job with a stopped (Ctrl-Z'd) process
+   isn't running (job_running() only looks for status == -1, unset)
+   but isn't done either; without excluding job_stopped() here, a job
+   that just stopped would look "done" and get job_free()'d instead of
+   staying in job_list for a later "fg"/"bg" to resume */
+#define job_done(j) (!job_running(j) && !job_stopped(j))
 
 struct job* job_bypid(pid_t);
 struct job* job_find(const char*);
@@ -74,6 +79,21 @@ int job_wait(struct job*, pid_t pid, int* status);
 
 void job_foreground(struct job*);
 void job_free(struct job*);
+
+/* every user-visible "the shell is telling you something about a job"
+   line shares one formatter, job_banner() -- see src/job/job_banner.c
+   for the rationale. job_print() (used by the "jobs" builtin and
+   job_clean()'s listing) is just JOB_RUNNING/JOB_DONE/JOB_STOPPED
+   auto-selected from the job's current state. */
+enum job_banner_kind {
+  JOB_START,   /* "[id] pid" -- a job was just forked/backgrounded */
+  JOB_RUNNING, /* "[id]+  Running   command" */
+  JOB_DONE,    /* "[id]+  Done      command" */
+  JOB_STOPPED, /* "[id]+  Stopped   command" */
+  JOB_BGRESUME /* "[id]+ command &" -- bg resumed a stopped job */
+};
+
+void job_banner(struct job*, buffer* out, enum job_banner_kind);
 void job_print(struct job*, buffer* out);
 
 void job_clean(bool);

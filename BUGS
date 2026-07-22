@@ -38,20 +38,23 @@
     PATH=/b:$PATH
     cmd
 
-- fg-stack-oob: builtin_fg has a stack out-of-bounds write for the
-  common no-argument case (confirmed crash under asan).
-
-    fg
-
-- fg-bg-stop-resume-stub: fg/bg don't implement job control's
-  stop/resume half -- no terminal handover, no SIGCONT, no kill
-  builtin, so a Ctrl-Z-stopped job can't be resumed. (Interactive-only;
-  doesn't reproduce via a non-interactive script.)
+- fg-no-job-for-foreground-command: a plain foreground command (no
+  "&") never gets a struct job at all -- exec_program.c's non-X_NOWAIT
+  path calls job_wait(NULL, pid, &status) (the pid-only branch, no job
+  tracking whatsoever), unlike the X_NOWAIT/backgrounded path. So a
+  foreground command that gets Ctrl-Z'd (SIGTSTP) still can't be
+  resumed via fg/bg -- there's no job in job_list to resume, and
+  nothing recorded its stop in the first place. fg/bg do work
+  correctly for anything that started out backgrounded ("cmd &"),
+  including one that's later stopped via "kill -STOP" and brought
+  back via fg/bg (see fixes/41-44) -- this is specifically about the
+  "stop something running in the foreground" half. (Interactive-only;
+  doesn't reproduce via a non-interactive script, since a script never
+  has a real foreground process group to receive SIGTSTP from a
+  terminal.)
 
     sleep 100
     ^Z
-    bg
-    fg
 
 - sig-push-sigset-cast: sig_push() reinterprets sigset_t through an
   unsigned long*, UB on any ABI where sizeof(sigset_t) differs;

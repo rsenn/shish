@@ -184,64 +184,64 @@ Produced by reading every file in the three modules, grepping every call
 site in `src/`, and verifying the standout claims live (debug+ASan build,
 exercised `fg`/`bg`/background jobs through a pty). Sorted by leverage.
 
-1. **Fix the `fg` out-of-bounds crash.** `builtin_fg`
-   (`src/builtin/builtin_jobs.c`) declares `struct job *joblist[njobs]`
-   where `njobs = argc - 1` — **0** for bare `fg` (no arguments, the common
-   case) — and only corrects `njobs` to 1 *after* that zero-length VLA is
-   already allocated. `joblist[0] = job_current();` then writes past it.
-   Reproduced live under ASan:
-   ```
-   $ sleep 3 & fg
-   ==ERROR: AddressSanitizer: dynamic-stack-buffer-overflow ... in builtin_fg src/builtin/builtin_jobs.c:30
-   ```
-   Highest-leverage item here: it's a crash in the single most common
-   invocation of a builtin that ships enabled by default.
+1. ~~Fix the `fg` out-of-bounds crash.~~ **Done (2026-07-22).** Rewrote
+   `builtin_fg` to resolve a single job directly instead of building a
+   `struct job *joblist[argc - 1]` VLA at all (fg only ever moves *one*
+   job to the foreground — there's only one terminal to hand over), which
+   sidesteps the zero-length-VLA write entirely rather than just special-
+   casing it. See `fixes/41`.
 
-2. **`job_fork()` blocks `SIGCHLD` before `fork()` and never unblocks it**,
-   in either the parent or child path (`src/job/job_fork.c`). Grepped every
-   call site — the only `sig_unblock(SIGCHLD)` in the codebase is inside
-   `job_update()`, gated behind `if(job_signaled)`, which can only become
-   true by the SIGCHLD handler firing — which can't happen while the signal
-   stays blocked. Net effect after the *first* forked job: (a) the shell
-   likely stops getting async job-completion notifications from then on,
-   and (b) worse, the blocked mask is inherited across `fork`+`exec` into
-   every subsequently launched program — anything that expects to catch
-   its own children's `SIGCHLD` (`make`, a nested shell) silently gets it
-   blocked by shish. Fix: `sig_unblock(SIGCHLD)` on the parent-return path,
-   and reset the mask before the child execs. Affects every external
-   command, not just job control — second-highest leverage.
+2. ~~`job_fork()` blocks `SIGCHLD` before `fork()` and never unblocks
+   it.~~ **Stale — already fixed by the time this was re-checked
+   (2026-07-22):** `src/job/job_fork.c`'s parent branch now does
+   `sig_unblock(SIGCHLD)` unconditionally before returning, and the child
+   branch unblocks it too, right before the comment noting exactly why
+   (a program it execs must not inherit the blocked mask).
 
-3. **`fg`/`bg` don't implement job control's stop/resume half at all.**
-   Beyond the crash in #1, `fg` never calls `job_foreground()` (the *only*
-   function in the codebase that hands the controlling terminal to a job's
-   process group via `tcsetpgrp` — and it is never called from anywhere),
-   never sends `SIGCONT`, and waits via a CPU-spinning busy loop
-   (`while((r = wait_pids_nohang(...)) > 1) {}`) instead of blocking.
-   `builtin_bg` is an empty stub (`return 0;`, nothing else). There is no
-   `SIGCONT` anywhere in the codebase and no `kill` builtin, so even
-   fixing `fg`/`bg`'s internals, nothing can resume a `Ctrl-Z`-stopped job
-   today. Needs: a real `fg` (call `job_foreground()`, send `SIGCONT`,
-   block on `job_wait()`), a real `bg` (send `SIGCONT`, leave it running,
-   print the `[n] pid` line the same way `exec_program.c`'s `X_NOWAIT`
-   path already does), and a minimal `kill` builtin so signals are
-   reachable from scripts at all.
+3. ~~`fg`/`bg` don't implement job control's stop/resume half at
+   all.~~ **Done (2026-07-22).** `builtin_fg`/`builtin_bg`
+   (`src/builtin/builtin_jobs.c`) now call `job_foreground()`, send
+   `SIGCONT` via `killpg()`, and block on `job_wait()` (fg) or leave the
+   job running and print its `[n]+ command &` line (bg) — see
+   `fixes/41`-`fixes/44`. This needed three supporting fixes beyond the
+   builtin file itself, found while making fg/bg actually work end to
+   end rather than just compile:
+   - `job_wait()` never asked `wait()`/`waitpid()` for `WUNTRACED`, so a
+     stopped process was never distinguishable from "still running" --
+     it would just block until the process eventually exited. Added
+     `wait_pid_untraced()`/`wait_nohang_untraced()` (`lib/wait/`, new)
+     and wired them into `job_wait()`'s synchronous wait and
+     `sh_onsig()`'s async SIGCHLD path, gated on `sh->opts.monitor` so
+     script (non-interactive) behavior is unchanged.
+   - `job_done(j)` (`src/job.h`) was `#define`d as `!job_running(j)`
+     alone, which doesn't exclude a *stopped* job (`job_running()` only
+     checks for `status == -1`, unset) -- a job that just stopped would
+     look "done" and get `job_free()`'d (by `job_wait()` itself, and by
+     `job_clean()`) instead of staying around for `fg`/`bg` to resume.
+   - The real headline bug, found while chasing a spurious ~5s hang:
+     `exec_program.c`'s second, independent fork path for `X_NOWAIT`
+     background jobs (see item 6 below) never called `setpgid()` at
+     all -- so a backgrounded *external* command (the common case,
+     "cmd &") never actually got its own process group; `job->pgrp`
+     recorded the child's pid as if it were one, but nothing made that
+     true at the OS level. `killpg(job->pgrp, SIGCONT)` and
+     `job_wait()`'s own `wait_pid(-job->pgrp, ...)` both therefore
+     targeted a process group that didn't exist (`ESRCH`), silently
+     doing nothing -- confirmed via `ps -o pid,pgid` showing the
+     "backgrounded" child still sitting in the *shell's* process group.
+     Fixed by adding the same double-`setpgid()`-in-both-parent-and-
+     child dance `job_fork()` already does for its own path.
+   - Still open, not attempted here: no `kill` builtin (signals are
+     only reachable from fg/bg's own internal `SIGCONT`, not from
+     scripts generally), and — a deeper, separate architectural gap
+     found while working this — a plain *foreground* command never
+     gets a `struct job` at all (`exec_program.c`'s non-`X_NOWAIT` path
+     is just `job_wait(NULL, pid, &status)`), so Ctrl-Z on one still
+     can't be resumed; see `BUGS`'s `fg-no-job-for-foreground-command`.
 
-4. **`WAIT_EXITSTATUS` (`lib/wait.h`) and the fallback `WEXITSTATUS`
-   (`src/job.h`) are both wrong**, same bug in two places: both are
-   `(status) & 0x7f`-style masks of the raw wait-status low byte instead
-   of `(status >> 8) & 0xff`. For any normally-exited process the low byte
-   is 0 by construction, so `WAIT_EXITSTATUS` always evaluates to 0 —
-   currently dormant only because its one live call site
-   (`job_printstatus`'s "exited" branch) is only reached when `job_wait`
-   already determined the process did *not* exit normally; there's a
-   commented-out call in `exec_program.c` that looks like a past attempt
-   to use it directly, which would immediately hit this. `WEXITSTATUS` is
-   the one that matters more: `eval_pipeline.c` uses it to compute `$?`.
-   It's masked on Linux/glibc only because `<sys/wait.h>`'s own correct
-   macro wins via the `#ifndef WEXITSTATUS` guard — on `WINDOWS_NATIVE`
-   builds (no `<sys/wait.h>`), this broken fallback is what's actually
-   used, so `$?` for external commands is wrong there today. Fix both to
-   `((status) >> 8) & 0xff`.
+4. ~~`WAIT_EXITSTATUS` (`lib/wait.h`) and the fallback `WEXITSTATUS`
+   (`src/job.h`) are both wrong`.~~ **Stale — already fixed** (both are
+   `((status) >> 8) & 0xff` as of this re-check, 2026-07-22).
 
 5. **Delete `src/job/job_x.c`.** It's a complete, byte-for-byte duplicate
    of `job_printstatus.c` under the name `job_status` — not declared in
