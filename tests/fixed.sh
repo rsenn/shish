@@ -803,4 +803,31 @@ assert_equal "$DEFAULT_IFS" "$X" "a prefix assignment on \"umask\" must not leak
 X=$(f() { IFS=: local x=1; echo "[$IFS]"; }; f)
 assert_equal "$DEFAULT_IFS" "$X" "a prefix assignment on \"local\" must not leak past the command"
 
+## fixes/54 (quoted-at-empty-param-split): a quoted "$@" silently
+## dropped empty positional parameters instead of expanding them to an
+## empty word -- expand_param()'s special-parameter branch only ever
+## set its "v" (value) pointer when the built stralloc was non-empty,
+## so an empty positional parameter fell through to the same "v is
+## NULL" path used for an actually-unset parameter and contributed no
+## argument node at all, despite the code's own comment ("special
+## parameters are always set"). Found and fixed alongside a second,
+## independent bug hit while testing the unquoted case: an unquoted
+## "$@"/"$*" with an empty positional parameter in the *middle* of the
+## list (not first or last) crashed with a segfault, because the
+## S_ARGVS loop advanced its node-chaining pointer with "&n->next" even
+## when the previous index had contributed no node at all (n == NULL),
+## corrupting the chain for every following index.
+X=$(f() { test "$@"; echo $?; }; f -n "")
+assert_equal "1" "$X" "a quoted \"\$@\" must expand an empty positional parameter to its own (empty) word"
+
+set -- -n ""
+X=""
+for a in "$@"; do X="$X[$a]"; done
+assert_equal "[-n][]" "$X" "a for-loop over a quoted \"\$@\" must iterate an empty positional parameter as its own (empty) word"
+
+set -- a "" c
+X=""
+for a in $@; do X="$X[$a]"; done
+assert_equal "[a][c]" "$X" "a for-loop over an unquoted \$@ with an empty positional parameter in the middle must not crash, and must still drop the empty word via field splitting"
+
 summary

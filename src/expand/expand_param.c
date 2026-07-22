@@ -124,8 +124,15 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
           arg.numb = 1 + i;
 
           n = expand_param(&arg, nptr, flags);
+          i++;
 
-          if(++i < sh->arg.c)
+          /* n is NULL when this index contributed no node at all (an
+             empty positional parameter, unquoted, dropped by field
+             splitting) -- nptr must stay put so the next index writes
+             into that same still-empty slot, instead of computing a
+             bogus "&NULL->next" that corrupts the chain for every
+             following iteration */
+          if(n && i < sh->arg.c)
             nptr = &n->next;
         }
 
@@ -169,11 +176,12 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       }
     }
 
-    /* special parameters are always set */
-    if(value.len) {
-      stralloc_nul(&value);
-      v = value.s;
-    }
+    /* special parameters are always set, even when their value is the
+       empty string -- e.g. an empty positional parameter inside "$@"
+       must still produce an (empty) word, not be treated as unset and
+       dropped entirely by the S_DEFAULT case below */
+    stralloc_nul(&value);
+    v = value.s;
 
     vlen = value.len;
   }

@@ -12,17 +12,6 @@
     exec 4<&3
     exec 3<&4
 
-- quoted-at-empty-param-split: quoted "$@" silently drops empty
-  positional parameters when expanded as command arguments; the same
-  case in a for-loop additionally fails to *parse* rather than just
-  misbehave.
-
-    f() { test "$@"; echo $?; }
-    f -n ""
-
-    set -- -n ""
-    for a in "$@"; do echo "[$a]"; done
-
 - fd-close-noop: ">&-"/"<&-" doesn't really close a file descriptor,
   for builtins (silently redirected to a null sink) or external
   commands (fd left pointing at the shell's original target).
