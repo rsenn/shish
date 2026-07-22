@@ -159,7 +159,17 @@ test_unary(int argc, char** argv) {
   int c;
   const char* arg = current(argv);
 
-  if(arg[0] != '-') {
+  /* POSIX's argument-count table only ever treats a leading "-X" as a
+     real unary operator when it has an operand following it (the
+     2-argument case, "UNARY_OP STRING"). With exactly one argument
+     left, the rule is unconditionally "is $1 non-null" -- even if it
+     looks like an operator, recognized or not. Configure scripts rely
+     on exactly this: `test "$LIBS"` with LIBS=-lm is a single-argument
+     invocation, and "-lm" isn't one of the recognized unary letters
+     below, so this used to fall through to "invalid expression"
+     instead of just being a non-empty string
+     (configure-summary-test-invalid-expression, fixes/72). */
+  if(arg[0] != '-' || num_args(argc) < 2) {
     shell_optind++;
     return !!*arg;
   }

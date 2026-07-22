@@ -1,12 +1,3 @@
-- configure-summary-test-invalid-expression: `./configure
-  --enable-maintainer-mode` prints "test: invalid expression" three
-  times (around the builtins-summary loop, autoconf's
-  `for var in ...; do case "$var" in ...; esac; done`-style block)
-  right before the final "Enabled builtins:" line. Doesn't stop
-  configure from completing or corrupt config.status/Makefile as far
-  as tested; not yet isolated to the exact construct. Found while
-  verifying fixes/69.
-
 - fdtable-cycle-detection: the fdtable resolver has no real cycle
   detection, only a defensive depth cap; a genuinely cyclic
   redirection fails instead of resolving. Not yet isolated to a

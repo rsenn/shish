@@ -1424,4 +1424,26 @@ INNEREOF2
 )
 assert_equal 'hello world a\b' "$Z71" "an unquoted-delimiter here-document body must still expand parameters and collapse an escaped backslash to one, matching double-quote rules"
 
+## fixes/72 (configure-summary-test-invalid-expression): "test STRING"
+## (or "[ STRING ]") with exactly one argument must always just check
+## whether STRING is non-null, per POSIX's argument-count table --
+## even when STRING starts with "-" and isn't one of the unary
+## operator letters test_unary() recognizes (or even when it *is* one,
+## like "-f", but has no following operand). test_unary() used to try
+## parsing any single "-..."-shaped argument as a real unary operator
+## regardless of whether an operand actually followed, so a single
+## argument like "-lm" (autoconf's "if test \"$LIBS\"; then ..." with
+## LIBS=-lm) fell through to shell_getopt() finding no matching
+## option, returning -1, and the whole "test" call reporting "invalid
+## expression" instead of true.
+LIBS72=-lm
+if test "$LIBS72"; then X72=nonempty; else X72=empty; fi
+assert_equal "nonempty" "$X72" "test with a single argument that looks like an unrecognized unary operator must just check non-emptiness"
+
+if test -f; then X72=nonempty; else X72=empty; fi
+assert_equal "nonempty" "$X72" "test with a single argument that looks like a real unary operator (missing its operand) must also just check non-emptiness"
+
+if test -f "$0"; then X72=exists; else X72=missing; fi
+assert_equal "exists" "$X72" "test -f with an actual operand must still perform the real file test, unaffected by the single-argument fix above"
+
 summary

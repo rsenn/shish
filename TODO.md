@@ -199,6 +199,20 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
      chunk with a new `S_HEREDOC` flag at parse time and having
      `expand_arg()` leave `X_LITERAL` off for it.
 
+   - **Update (2026-07-22, last one today):**
+     `configure-summary-test-invalid-expression` fixed (`fixes/72`,
+     user-diagnosed) — root cause: `test`/`[` with exactly one
+     argument must always just check whether it's non-null per POSIX's
+     argument-count table, even when that argument starts with "-" and
+     isn't (or even *is*, but lacks its operand) a recognized unary
+     operator letter. `test_unary()` in `src/builtin/builtin_test.c`
+     tried real unary-operator parsing on any "-..."-shaped single
+     argument regardless of whether an operand followed, so
+     `test "$LIBS"` with `LIBS=-lm` (the configure summary loop's
+     `if test "$LIBS"; then ... fi`) fell through to "invalid
+     expression" instead of true. Fixed by only attempting
+     operator parsing when at least one more argument remains.
+
 ---
 
 ## Goal 2 — Broader POSIX compliance
