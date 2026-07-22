@@ -334,9 +334,34 @@ exercised `fg`/`bg`/background jobs through a pty). Sorted by leverage.
      since-exited child's defunct process group forever once a
      foreground command finished, wedging the shell's own next
      terminal read behind a `SIGTTIN`. See `fixes/48`.
-   - Still open, not attempted: no `kill` builtin (signals are only
+   - ~~Still open, not attempted: no `kill` builtin (signals are only
      reachable from fg/bg's own internal `SIGCONT`, not from scripts
-     generally).
+     generally).~~ **Done (2026-07-23).** Added `src/builtin/builtin_kill.c`
+     (`kill [-signal|-number] pid|%job ...`), the first real caller of
+     `sig_number()` (see item 8 below and `fixes/74`) — signal names
+     are looked up case-insensitively with or without a "SIG" prefix,
+     falling back to a plain integer for `-9`-style operands. `%job`
+     operands resolve via the existing `job_find()`/`struct job.pgrp`
+     and signal the whole process group via `killpg()`, same as
+     `fg`/`bg`'s own `SIGCONT`. Found and logged a new, unrelated
+     parser bug while testing it: `kill-arg-redirect-parse` in `BUGS`.
+   - Also extended (2026-07-23, `fixes/75`, user-requested):
+     `src/builtin/builtin_hash.c` was a read-only table dump with no
+     argument handling at all. Added `-r` (forget every entry, a real
+     free rather than the private, PATH-staleness-driven
+     `exec_hash_invalidate_all()` in `exec_hash.c`, which only
+     distrusts entries for a re-search, not remove them), `-l`
+     (reprint every `H_PROGRAM` entry as a `hash -p pathname name`
+     line, directly reusable as input), `-p pathname name` (remember
+     an arbitrary name → pathname mapping without searching `PATH`),
+     `-d name` (forget one entry), and bare `name` operands (hash
+     without running). Caught one bug of its own before it ever
+     shipped: `exec_lookup()` only writes back through its `hashptr`
+     out-param on a cache *hit* — `-p`'s insert path needs the hash on
+     a *miss* (the common case, hashing a name for the first time),
+     so it has to be precomputed via `exec_hashstr()` rather than left
+     for `exec_lookup()` to maybe fill in, or `exec_create()` buckets
+     the new entry by a garbage value nothing can ever look up again.
 
 4. ~~`WAIT_EXITSTATUS` (`lib/wait.h`) and the fallback `WEXITSTATUS`
    (`src/job.h`) are both wrong`.~~ **Stale — already fixed** (both are
@@ -364,10 +389,11 @@ exercised `fg`/`bg`/background jobs through a pty). Sorted by leverage.
 
 8. **Prune dead code**, mostly in `lib/sig`: of the ~20 declared
    functions/macros only `sig_block`, `sig_unblock`, `sig_blocknone`,
-   `sig_catch`, `sig_name`, `sig_byname` are ever called from `src/`. The
-   rest (`sig_push`/`sig_pusha`/`sig_pop`, `sig_restoreto`, `sig_shield`/
+   `sig_catch`, `sig_name`, `sig_byname`, and (since `fixes/74`, the new
+   `kill` builtin) `sig_number` are ever called from `src/`. The rest
+   (`sig_push`/`sig_pusha`/`sig_pop`, `sig_restoreto`, `sig_shield`/
    `sig_unshield`, `sig_ignore`, `sig_pause`, `sigfpe`, `sigsegv`,
-   `sig_number`, `sig_blockset`, `SIG_ALL`, the `sig_addset`/`sig_delset`/
+   `sig_blockset`, `SIG_ALL`, the `sig_addset`/`sig_delset`/
    `sig_fillset`/`sig_emptyset` macros) only call each other in a closed
    loop nobody enters. `sig_pop` isn't even declared in `sig.h` — a total
    orphan. In `src/job`: `job_get`, `job_proc`/`proc_bypid` (inline in

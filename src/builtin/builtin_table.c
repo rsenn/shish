@@ -89,6 +89,9 @@
 #ifndef BUILTIN_JOBS
 #define BUILTIN_JOBS 1
 #endif
+#ifndef BUILTIN_KILL
+#define BUILTIN_KILL 1
+#endif
 #ifndef BUILTIN_MKTEMP
 #define BUILTIN_MKTEMP 0
 #endif
@@ -242,7 +245,7 @@ struct builtin_cmd builtin_table[] = {
     {"getopts", &builtin_getopts, B_DEFAULT, "optstring name [arg ... ]"},
 #endif
 #if BUILTIN_HASH
-    {"hash", &builtin_hash, B_DEFAULT, ""},
+    {"hash", &builtin_hash, B_DEFAULT, "[-lr] [-p pathname name] [-d name ...] [name ...]"},
 #endif
 #if BUILTIN_HELP
     {"help", &builtin_help, B_DEFAULT, "[command]"},
@@ -255,6 +258,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_JOBS
     {"jobs", &builtin_jobs, B_DEFAULT, "[-lnprs] [job...]"},
+#endif
+#if BUILTIN_KILL
+    {"kill", &builtin_kill, B_DEFAULT, "[-signal|-number] pid|%job ..."},
 #endif
 #if BUILTIN_LN
     {"ln", &builtin_ln, B_DEFAULT, "[-sfv]"},

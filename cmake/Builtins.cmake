@@ -13,6 +13,7 @@ list(
   hash
   history
   jobs
+  kill
   local
   printf
   pwd

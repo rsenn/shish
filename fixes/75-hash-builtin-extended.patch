@@ -1,0 +1,339 @@
+diff --git a/TODO.md b/TODO.md
+index eeddfefe..6b61bf42 100644
+--- a/TODO.md
++++ b/TODO.md
+@@ -334,9 +334,34 @@ exercised `fg`/`bg`/background jobs through a pty). Sorted by leverage.
+      since-exited child's defunct process group forever once a
+      foreground command finished, wedging the shell's own next
+      terminal read behind a `SIGTTIN`. See `fixes/48`.
+-   - Still open, not attempted: no `kill` builtin (signals are only
++   - ~~Still open, not attempted: no `kill` builtin (signals are only
+      reachable from fg/bg's own internal `SIGCONT`, not from scripts
+-     generally).
++     generally).~~ **Done (2026-07-23).** Added `src/builtin/builtin_kill.c`
++     (`kill [-signal|-number] pid|%job ...`), the first real caller of
++     `sig_number()` (see item 8 below and `fixes/74`) — signal names
++     are looked up case-insensitively with or without a "SIG" prefix,
++     falling back to a plain integer for `-9`-style operands. `%job`
++     operands resolve via the existing `job_find()`/`struct job.pgrp`
++     and signal the whole process group via `killpg()`, same as
++     `fg`/`bg`'s own `SIGCONT`. Found and logged a new, unrelated
++     parser bug while testing it: `kill-arg-redirect-parse` in `BUGS`.
++   - Also extended (2026-07-23, `fixes/75`, user-requested):
++     `src/builtin/builtin_hash.c` was a read-only table dump with no
++     argument handling at all. Added `-r` (forget every entry, a real
++     free rather than the private, PATH-staleness-driven
++     `exec_hash_invalidate_all()` in `exec_hash.c`, which only
++     distrusts entries for a re-search, not remove them), `-l`
++     (reprint every `H_PROGRAM` entry as a `hash -p pathname name`
++     line, directly reusable as input), `-p pathname name` (remember
++     an arbitrary name → pathname mapping without searching `PATH`),
++     `-d name` (forget one entry), and bare `name` operands (hash
++     without running). Caught one bug of its own before it ever
++     shipped: `exec_lookup()` only writes back through its `hashptr`
++     out-param on a cache *hit* — `-p`'s insert path needs the hash on
++     a *miss* (the common case, hashing a name for the first time),
++     so it has to be precomputed via `exec_hashstr()` rather than left
++     for `exec_lookup()` to maybe fill in, or `exec_create()` buckets
++     the new entry by a garbage value nothing can ever look up again.
+ 
+ 4. ~~`WAIT_EXITSTATUS` (`lib/wait.h`) and the fallback `WEXITSTATUS`
+    (`src/job.h`) are both wrong`.~~ **Stale — already fixed** (both are
+@@ -364,10 +389,11 @@ exercised `fg`/`bg`/background jobs through a pty). Sorted by leverage.
+ 
+ 8. **Prune dead code**, mostly in `lib/sig`: of the ~20 declared
+    functions/macros only `sig_block`, `sig_unblock`, `sig_blocknone`,
+-   `sig_catch`, `sig_name`, `sig_byname` are ever called from `src/`. The
+-   rest (`sig_push`/`sig_pusha`/`sig_pop`, `sig_restoreto`, `sig_shield`/
++   `sig_catch`, `sig_name`, `sig_byname`, and (since `fixes/74`, the new
++   `kill` builtin) `sig_number` are ever called from `src/`. The rest
++   (`sig_push`/`sig_pusha`/`sig_pop`, `sig_restoreto`, `sig_shield`/
+    `sig_unshield`, `sig_ignore`, `sig_pause`, `sigfpe`, `sigsegv`,
+-   `sig_number`, `sig_blockset`, `SIG_ALL`, the `sig_addset`/`sig_delset`/
++   `sig_blockset`, `SIG_ALL`, the `sig_addset`/`sig_delset`/
+    `sig_fillset`/`sig_emptyset` macros) only call each other in a closed
+    loop nobody enters. `sig_pop` isn't even declared in `sig.h` — a total
+    orphan. In `src/job`: `job_get`, `job_proc`/`proc_bypid` (inline in
+diff --git a/src/builtin/builtin_hash.c b/src/builtin/builtin_hash.c
+index 1e67d474..0c49e61a 100644
+--- a/src/builtin/builtin_hash.c
++++ b/src/builtin/builtin_hash.c
+@@ -1,12 +1,15 @@
++#include "../builtin.h"
+ #include "../fdtable.h"
+ #include "../exec.h"
++#include "../../lib/alloc.h"
+ #include "../../lib/fmt.h"
+ #include "../../lib/buffer.h"
++#include "../../lib/str.h"
+ 
+-/* hash built-in
++/* print the "hits    command" table (no options / default output)
+  * ----------------------------------------------------------------------- */
+-int
+-builtin_hash(int argc, char* argv[]) {
++static void
++hash_print_table(void) {
+   unsigned int i, n;
+   struct exechash* h;
+   char num[FMT_ULONG];
+@@ -37,6 +40,187 @@ builtin_hash(int argc, char* argv[]) {
+       buffer_putnlflush(fd_out->w);
+     }
+   }
++}
++
++/* -l: print in a form that can be fed straight back in as a script to
++ * recreate the table -- only H_PROGRAM entries have a pathname "-p"
++ * can reuse, so entries hashed as a builtin/function/special builtin
++ * are skipped (there's no "-p"-shaped way to re-hash those anyway).
++ * ----------------------------------------------------------------------- */
++static void
++hash_print_reusable(void) {
++  unsigned int i;
++  struct exechash* h;
++
++  for(i = 0; i < EXEC_HASHSIZE; i++)
++    for(h = exec_hashtbl[i]; h; h = h->next)
++      if(h->cmd.id == H_PROGRAM)
++        buffer_putm_internal(fd_out->w, "hash -p ", h->cmd.path, " ", h->name, "\n", NULL);
++
++  buffer_flush(fd_out->w);
++}
++
++/* -r: forget every remembered command location. Unlike
++ * exec_hash_invalidate_all() (exec_hash.c, private to that file --
++ * used internally to force a re-search after PATH changes, keeping
++ * each entry's slot around for reuse), this actually frees every
++ * entry, matching "forget", not just "distrust", every remembered
++ * location.
++ * ----------------------------------------------------------------------- */
++static void
++hash_forget_all(void) {
++  unsigned int i;
++  struct exechash *h, *next;
++
++  for(i = 0; i < EXEC_HASHSIZE; i++) {
++    for(h = exec_hashtbl[i]; h; h = next) {
++      next = h->next;
++
++      if(h->cmd.id == H_PROGRAM)
++        alloc_free(h->cmd.path);
++
++      alloc_free(h->name);
++      alloc_free(h);
++    }
++
++    exec_hashtbl[i] = NULL;
++  }
++}
++
++/* -d name: forget one remembered command location
++ * ----------------------------------------------------------------------- */
++static int
++hash_forget(char* name) {
++  uint32 hash = exec_hashstr(name);
++  struct exechash **hp, *h;
++
++  for(hp = &exec_hashtbl[hash & EXEC_HASHMASK]; (h = *hp); hp = &h->next) {
++    if(h->hash == hash && !str_diff(h->name, name)) {
++      *hp = h->next;
++
++      if(h->cmd.id == H_PROGRAM)
++        alloc_free(h->cmd.path);
++
++      alloc_free(h->name);
++      alloc_free(h);
++      return 1;
++    }
++  }
++
++  return 0;
++}
++
++/* -p pathname name: remember 'name' as located at 'pathname', without
++ * searching PATH for it at all -- same as bash's "-p", this is taken
++ * on faith; a wrong pathname just fails the next time 'name' actually
++ * runs. Overwrites any existing entry for 'name' (of any kind, not
++ * just a previous H_PROGRAM one).
++ * ----------------------------------------------------------------------- */
++static void
++hash_set(char* name, char* pathname) {
++  /* exec_lookup() only writes back through its hashptr param on a
++     cache *hit* -- on a miss (the common case here, hashing a name
++     for the first time) it leaves it untouched, so it has to be
++     pre-computed here rather than left for exec_lookup() to maybe
++     fill in, or exec_create() below ends up hashing/bucketing the new
++     entry by a garbage value nothing will ever look up correctly. */
++  uint32 hash = exec_hashstr(name);
++  struct exechash* entry = exec_lookup(name, &hash);
++
++  if(!entry)
++    entry = exec_create(name, hash);
++  else if(entry->cmd.id == H_PROGRAM)
++    alloc_free(entry->cmd.path);
++
++  entry->cmd.id = H_PROGRAM;
++  entry->cmd.path = str_dup(pathname);
++  entry->mask = 0;
++  entry->hits = 0;
++}
++
++/* hash built-in
++ *
++ * usage: hash [-lr] [-p pathname name] [-d name ...] [name ...]
++ * ----------------------------------------------------------------------- */
++int
++builtin_hash(int argc, char* argv[]) {
++  int i = 1, ret = 0;
++  int opt_r = 0, opt_l = 0, opt_d = 0, opt_p = 0;
++  char* pathname = NULL;
++
++  for(; i < argc && argv[i][0] == '-' && argv[i][1]; i++) {
++    switch(argv[i][1]) {
++      case 'r': opt_r = 1; break;
++      case 'l': opt_l = 1; break;
++      case 'd': opt_d = 1; break;
++
++      case 'p':
++        opt_p = 1;
++
++        if(argv[i][2])
++          pathname = &argv[i][2];
++        else if(i + 1 < argc)
++          pathname = argv[++i];
++        else
++          return builtin_errmsg(argv, "-p", "option requires an argument");
++
++        break;
++
++      default: return builtin_invopt(argv);
++    }
++  }
++
++  if(opt_r) {
++    hash_forget_all();
++    return 0;
++  }
++
++  if(opt_p) {
++    if(i >= argc)
++      return builtin_errmsg(argv, "-p", "requires a name argument");
++
++    for(; i < argc; i++)
++      hash_set(argv[i], pathname);
++
++    return 0;
++  }
++
++  if(opt_d) {
++    if(i >= argc)
++      return builtin_errmsg(argv, "-d", "requires a name argument");
++
++    for(; i < argc; i++) {
++      if(!hash_forget(argv[i])) {
++        builtin_errmsg(argv, argv[i], "not found");
++        ret = 1;
++      }
++    }
++
++    return ret;
++  }
++
++  if(opt_l) {
++    hash_print_reusable();
++    return 0;
++  }
++
++  /* bare names (no options): (re-)hash each, same as the shell would
++     do the first time it tries to run them, without actually running
++     anything */
++  if(i < argc) {
++    for(; i < argc; i++) {
++      struct command cmd = exec_hash(argv[i], 0);
++
++      if(!cmd.ptr) {
++        builtin_errmsg(argv, argv[i], "not found");
++        ret = 1;
++      }
++    }
++
++    return ret;
++  }
++
++  hash_print_table();
+ 
+   return 0;
+ }
+diff --git a/tests/builtin-hash.sh b/tests/builtin-hash.sh
+new file mode 100644
+index 00000000..80c1d9b3
+--- /dev/null
++++ b/tests/builtin-hash.sh
+@@ -0,0 +1,53 @@
++DIR=$(dirname "${0}")
++. "$DIR/common.sh"
++
++## Testing hash builtin
++
++## a freshly hashed builtin shows up in the plain table
++true
++X=$(hash | grep -c 'true (builtin)')
++assert_equal "1" "$X" "running a builtin once hashes it, and it shows up in the plain table"
++
++## -d forgets a single entry
++hash -d true >/dev/null
++X=$(hash | grep -c 'true (builtin)')
++assert_equal "0" "$X" "hash -d forgets exactly the named entry"
++
++## -d on an entry that was never hashed fails
++( hash -d this-name-was-never-hashed )
++assert_equal "1" "$?" "hash -d on an unknown name fails with a non-zero exit status"
++
++## -r forgets everything (checked via true/false specifically, not an
++## overall empty table -- "hash | grep ..." itself hashes "hash" and
++## "grep" as it runs, so the table is never actually empty right after)
++true
++false
++X=$(hash | grep -c 'true (builtin)\|false (builtin)')
++assert_equal "2" "$X" "sanity: the table has true and false entries before hash -r"
++hash -r
++X=$(hash | grep -c 'true (builtin)\|false (builtin)')
++assert_equal "0" "$X" "hash -r forgets every remembered entry, including true and false"
++
++## -p pathname name remembers an arbitrary name -> pathname mapping,
++## and it's actually used the next time that name runs
++hash -p /bin/echo my_hashed_echo
++X=$(my_hashed_echo hi-from-hash-p)
++assert_equal "hi-from-hash-p" "$X" "hash -p pathname name makes that name runnable via the given pathname"
++
++## -l prints the -p entries above back out in a directly reusable form
++hash -r
++hash -p /bin/echo my_hashed_echo
++X=$(hash -l)
++assert_equal "hash -p /bin/echo my_hashed_echo" "$X" "hash -l reprints a hashed pathname entry as a reusable \"hash -p ...\" line"
++
++## a bare name with no options hashes it without running it
++hash -r
++X=$(hash | grep -c 'true (builtin)')
++assert_equal "0" "$X" "sanity: true is not hashed right after hash -r"
++hash true
++X=$(hash | grep -c 'true (builtin)')
++assert_equal "1" "$X" "a bare \"hash name\" (no options) hashes that name without running it"
++
++hash -r
++
++summary
+diff --git a/src/builtin/builtin_table.c b/src/builtin/builtin_table.c
+index f1971316..b9274bc5 100644
+--- a/src/builtin/builtin_table.c
++++ b/src/builtin/builtin_table.c
+@@ -242,7 +245,7 @@ struct builtin_cmd builtin_table[] = {
+     {"getopts", &builtin_getopts, B_DEFAULT, "optstring name [arg ... ]"},
+ #endif
+ #if BUILTIN_HASH
+-    {"hash", &builtin_hash, B_DEFAULT, ""},
++    {"hash", &builtin_hash, B_DEFAULT, "[-lr] [-p pathname name] [-d name ...] [name ...]"},
+ #endif
+ #if BUILTIN_HELP
+     {"help", &builtin_help, B_DEFAULT, "[command]"},
