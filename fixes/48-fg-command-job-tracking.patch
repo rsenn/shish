@@ -1,0 +1,81 @@
+diff --git a/src/exec/exec_program.c b/src/exec/exec_program.c
+index e143ea79..ab84ca1f 100644
+--- a/src/exec/exec_program.c
++++ b/src/exec/exec_program.c
+@@ -22,6 +22,7 @@
+ #include "../debug.h"
+ #include "../../lib/sig.h"
+ #include "../../lib/wait.h"
++#include "../../lib/stralloc.h"
+ 
+ #if WINDOWS_NATIVE
+ pid_t fork(void);
+@@ -128,10 +129,65 @@ exec_program(char* path, char** argv, enum execflag flag) {
+ #endif
+         ret = 0;
+       } else {
+-        job_wait(NULL, pid, &status);
+-        // job_printstatus(pid, status);
++        struct job* job = job_new(1);
++
++        job->procs[0].pid = pid;
++        job->procs[0].status = -1;
++        job->pgrp = pid;
++        job->bgnd = 0;
++
++        /* unlike a job_fork()-based backgrounded command, nothing
++           downstream of this raw fork() ever gets a chance to set
++           job->command from the parsed command line (that happens in
++           eval_simple_command.c, but only for "ncmd->bgnd", and only
++           by reading back *job_pointer -- which for a foreground job
++           that already ran to completion no longer even points at
++           this job, since job_wait() below just freed it). Build a
++           display string from argv directly instead, so a "Stopped"/
++           "jobs" line for a foreground command doesn't just say
++           "(null)". */
++        {
++          stralloc sa;
++          int k;
++
++          stralloc_init(&sa);
++
++          for(k = 0; argv[k]; k++) {
++            if(k)
++              stralloc_catc(&sa, ' ');
++
++            stralloc_cats(&sa, argv[k]);
++          }
++
++          stralloc_nul(&sa);
++          job->command = sa.s;
++        }
++
++        /* mirror job_fork()'s own bookkeeping for a foreground job:
++           the child's own tcsetpgrp() call above already handed the
++           terminal to its new process group, but job_wait()'s
++           end-of-function "hand the terminal back to us" check
++           compares against this global -- without updating it here
++           too, that check never notices anything changed and the
++           terminal stays with the now-exited child's defunct
++           process group forever, wedging the shell's own next
++           terminal read behind a SIGTTIN. This is also what makes a
++           plain foreground command (no "&") resumable via fg/bg at
++           all if it gets stopped (Ctrl-Z): before this, only a
++           job_fork()-based path (i.e. one that started out
++           backgrounded) ever created a struct job, so a foreground
++           command's stop was never recorded anywhere to resume. */
++        if(pid != job_pgrp) {
++#if !WINDOWS_NATIVE
++          if(fd_ok(job_terminal))
++            tcsetpgrp(job_terminal, pid);
++#endif
++          job_pgrp = pid;
++        }
++
++        job_wait(job, 0, &status);
+ 
+-        ret = status >> 8;
++        ret = WEXITSTATUS(status);
+ 
+         sig_blocknone();
+       }

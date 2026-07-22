@@ -556,4 +556,79 @@ assert_equal "0" "$X" "\"\$?\" after a 3-stage pipeline ending in success must b
 X=$(true | false & wait; echo $?)
 assert_equal "0" "$X" "backgrounding a pipeline (\"cmd1 | cmd2 &\") must itself report success as \"\$?\", independent of what it later exits with"
 
+## fixes/47: exec_hash()'s command-search cache remembered a name's
+## resolved path forever, even after PATH was reassigned to something
+## that would find (or no longer find) a different file for the same
+## name -- POSIX 3.9.1.1 requires a PATH change to invalidate this.
+## Fixed by having exec_hash() compare PATH's current value against
+## the last one it saw on every call, invalidating every cached entry
+## (forcing a fresh exec_search()) the first time it notices PATH has
+## changed since.
+TESTDIR=$(mktemp -d)
+mkdir "$TESTDIR/a" "$TESTDIR/b"
+cat >"$TESTDIR/a/pathcachecmd" <<'EOF'
+#!/bin/sh
+echo from-a
+EOF
+cat >"$TESTDIR/b/pathcachecmd" <<'EOF'
+#!/bin/sh
+echo from-b
+EOF
+chmod +x "$TESTDIR/a/pathcachecmd" "$TESTDIR/b/pathcachecmd"
+
+OLDPATH="$PATH"
+OUTFILE=$(mktemp)
+PATH="$TESTDIR/a:$OLDPATH"
+pathcachecmd >"$OUTFILE"
+PATH="$TESTDIR/b:$OLDPATH"
+pathcachecmd >>"$OUTFILE"
+PATH="$OLDPATH"
+
+IFS= read -r LINE1 <"$OUTFILE"
+assert_equal "from-a" "$LINE1" "a command must resolve against PATH as it was at the time it's first run"
+
+{ IFS= read -r _; IFS= read -r LINE2; } <"$OUTFILE"
+assert_equal "from-b" "$LINE2" "the same command name run again after PATH changes must re-resolve, not reuse the stale cached path"
+
+rm -rf "$TESTDIR"
+rm -f "$OUTFILE"
+
+## fixes/48: a plain foreground external command (no "&") never got a
+## struct job at all -- exec_program.c's non-X_NOWAIT path called
+## job_wait(NULL, pid, &status) (the pid-only branch, no job tracking
+## whatsoever), unlike the X_NOWAIT/backgrounded path just above it in
+## the same function. So a foreground command that got Ctrl-Z'd
+## (SIGTSTP) could never be resumed via fg/bg -- there was no job in
+## job_list to resume, and nothing recorded its stop in the first
+## place. Fixed by creating a real struct job for this path too (mask
+## job->bgnd = 0 so job_wait() doesn't print a redundant "Done"
+## banner), building job->command from argv directly (nothing else
+## downstream gets a chance to -- eval_simple_command.c only does that
+## for "ncmd->bgnd", by reading back *job_pointer once exec_command()
+## returns, which for a foreground job that already ran to completion
+## no longer even points at this job, since job_wait() already freed
+## it by then), and mirroring job_fork()'s job_pgrp bookkeeping so a
+## stopped-then-resumed job correctly hands the terminal back to the
+## shell once it's actually done (without this, the terminal would
+## have stayed with the exited child's defunct process group forever,
+## wedging the shell's own next terminal read behind a SIGTTIN).
+##
+## The actual "stop it, fg it, it resumes" behavior needs a real
+## foreground process group receiving a real SIGTSTP (or "kill -STOP"
+## sent to a pid a *script* has no way to learn, since a foreground
+## command was never backgrounded and so never got a "$!") -- not
+## reproducible here. Verified instead with a pty-simulated session
+## (python's `pty` module, same technique as fixes/36): typed "sleep
+## 2" as a genuine foreground command, sent SIGSTOP to the resulting
+## child (found via /proc), and confirmed "[1]+  Stopped   sleep 2"
+## appeared (not "(null)"), "fg" resumed it and it ran to completion,
+## and "jobs" afterward was empty (fully reaped, not left dangling).
+## Also confirmed several plain foreground external commands in a row
+## still work normally and don't leave the terminal wedged (each one
+## now takes and hands back real process-group ownership, where
+## before this fix nothing did).
+X=$(true; echo one; false; echo status=$?)
+assert_equal "one
+status=1" "$X" "plain foreground external/builtin commands must still work normally now that they get a real struct job"
+
 summary

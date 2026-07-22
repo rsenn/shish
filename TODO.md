@@ -231,13 +231,23 @@ exercised `fg`/`bg`/background jobs through a pty). Sorted by leverage.
      "backgrounded" child still sitting in the *shell's* process group.
      Fixed by adding the same double-`setpgid()`-in-both-parent-and-
      child dance `job_fork()` already does for its own path.
-   - Still open, not attempted here: no `kill` builtin (signals are
-     only reachable from fg/bg's own internal `SIGCONT`, not from
-     scripts generally), and — a deeper, separate architectural gap
-     found while working this — a plain *foreground* command never
-     gets a `struct job` at all (`exec_program.c`'s non-`X_NOWAIT` path
-     is just `job_wait(NULL, pid, &status)`), so Ctrl-Z on one still
-     can't be resumed; see `BUGS`'s `fg-no-job-for-foreground-command`.
+   - ~~A deeper, separate architectural gap found while working this:
+     a plain *foreground* command never got a `struct job` at all
+     (`exec_program.c`'s non-`X_NOWAIT` path was just
+     `job_wait(NULL, pid, &status)`), so Ctrl-Z on one couldn't be
+     resumed.~~ **Done (2026-07-22).** Gave this path a real
+     `struct job` too (`job->bgnd = 0` so no redundant "Done" banner;
+     `job->command` built from `argv` directly, since nothing
+     downstream gets a chance to set it the way `eval_simple_command.c`
+     does for a backgrounded job); also mirrored `job_fork()`'s
+     `job_pgrp` bookkeeping, which the earlier fix's `tcsetpgrp()` call
+     needed but didn't have -- without it, the terminal stayed with a
+     since-exited child's defunct process group forever once a
+     foreground command finished, wedging the shell's own next
+     terminal read behind a `SIGTTIN`. See `fixes/48`.
+   - Still open, not attempted: no `kill` builtin (signals are only
+     reachable from fg/bg's own internal `SIGCONT`, not from scripts
+     generally).
 
 4. ~~`WAIT_EXITSTATUS` (`lib/wait.h`) and the fallback `WEXITSTATUS`
    (`src/job.h`) are both wrong`.~~ **Stale — already fixed** (both are
