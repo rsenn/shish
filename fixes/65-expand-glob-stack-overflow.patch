@@ -1,0 +1,25 @@
+diff --git a/src/expand/expand_glob.c b/src/expand/expand_glob.c
+index db4f6907..5433f18d 100644
+--- a/src/expand/expand_glob.c
++++ b/src/expand/expand_glob.c
+@@ -2,7 +2,19 @@
+ #include "config.h"
+ #endif
+ 
+-#if 0 // defined(HAVE_GLOB_H) || defined(__unix__) || defined(__POSIX__)
++/* lib/unix/glob.c -- the project's own glob()/globfree() -- only
++ * actually compiles in on Windows (its whole body is guarded by "#if
++ * WINDOWS_NATIVE"); everywhere else HAVE_GLOB means the platform's
++ * real libc glob() gets linked instead. glob_t's layout has to come
++ * from whichever one that is: the system <glob.h> struct is
++ * considerably larger than lib/glob.h's own (glibc's, for instance,
++ * adds several GLOB_ALTDIRFUNC callback members) -- unconditionally
++ * using the small lib/glob.h struct here while HAVE_GLOB silently
++ * links the *system*'s glob() made it write past the end of a
++ * too-small on-stack glob_t on every normal (non-Windows) build,
++ * corrupting the stack on any command using a glob pattern
++ * (confirmed via AddressSanitizer, expand-glob-stack-overflow). */
++#ifdef HAVE_GLOB
+ #include <glob.h>
+ #else
+ #include "../../lib/glob.h"

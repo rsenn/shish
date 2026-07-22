@@ -430,7 +430,7 @@ more commands on the *same input line* is separately broken at the
 parser level regardless of this fix — see `BUGS`.
 
 **Still open, kept in `TODO`:** the line-editing/terminal-abstraction/
-key-bindings rewrite (a design-sized project, not a fixable bug) and
-"glob check on subargs other than argstr" (looks like it may already be
-handled via `expand_arg.c`'s `S_GLOB` check, but wasn't confirmed either
-way with a repro).
+key-bindings rewrite (a design-sized project, not a fixable bug).
+"glob check on subargs other than argstr" has since been confirmed
+with a repro and moved to `BUGS` as
+`glob-not-triggered-for-plain-arguments`.

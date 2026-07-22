@@ -1148,4 +1148,40 @@ assert_equal "" "$X" "sanity: without \"2>&1\", an external command's stderr mus
 ## "-DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS=-fsanitize=address,undefined"
 ## and confirming "shish -c 'x=$(true 2>&1)'" no longer aborts.
 
+## fixes/65 (expand-glob-stack-overflow): a stack-buffer-overflow in
+## expand_glob() at src/expand/expand_glob.c:48, the glob(3) call
+## itself. expand_glob.c always used lib/glob.h's own, much smaller
+## glob_t layout ("#if 0 // defined(HAVE_GLOB_H) || ..." -- the
+## intended condition had been disabled, unconditionally falling back
+## to the "#else" branch) regardless of platform. But lib/unix/glob.c
+## -- the project's own glob()/globfree() implementation, the only
+## thing that could make that small layout correct -- has its entire
+## body guarded by "#if WINDOWS_NATIVE"; on any non-Windows build it
+## compiles to nothing, so HAVE_GLOB there actually means the
+## platform's real libc glob() gets linked in instead. glibc's real
+## glob_t is considerably larger (several GLOB_ALTDIRFUNC callback
+## members lib/glob.h's doesn't have), so libc's glob() wrote past the
+## end of the too-small on-stack glob_t on every non-Windows build --
+## corrupting the stack on ANY unquoted word containing a glob-special
+## character ("*?[]\", see parse_isesc()), including innocuous cases
+## like the test builtin's "[" name itself (S_GLOB gets set on it same
+## as a real wildcard, glob(3) just reports no match for a literal
+## "["). Fixed by using the real <glob.h>/glob_t whenever HAVE_GLOB
+## means the system's own glob() is what gets linked, matching what
+## the code already did for the glob() *call* just below (also
+## "#ifdef HAVE_GLOB"), instead of an unconditional small-struct
+## fallback.
+##
+## The corruption doesn't reliably crash outside of ASan (silently
+## overwrites otherwise-unused stack space in a plain build) -- the
+## crash itself was verified via ASan specifically:
+## "-DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS=-fsanitize=address,undefined",
+## then "shish -c '[ 1 = 1 ]'" (previously a guaranteed stack-buffer-
+## overflow abort every time, since "[" alone is enough to trigger it)
+## no longer aborts. Functional coverage below is a normal-build
+## regression check that the affected code paths still behave
+## correctly, not a crash reproduction.
+assert_equal "0" "$( [ 1 = 1 ]; echo $? )" "the \"[\" test builtin (itself a glob-special character, see fixes/65) must still work correctly"
+assert_equal "1" "$( [ 1 = 2 ]; echo $? )" "sanity: \"[\" must still correctly report a false comparison"
+
 summary
