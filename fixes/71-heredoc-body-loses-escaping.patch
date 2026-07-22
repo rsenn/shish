@@ -1,0 +1,152 @@
+diff --git a/BUGS b/BUGS
+index 04908c2c..b0fceff0 100644
+--- a/BUGS
++++ b/BUGS
+@@ -1,21 +1,3 @@
+-- heredoc-body-loses-escaping: a here-document body loses one level of
+-  backslash escaping before whatever reads it ever sees it -- `cat
+-  <<'EOF'` / `a\\b` / `EOF` delivers "a\b" (one backslash) on the pipe,
+-  confirmed via `od -c` on the receiving end, not just in how it's
+-  later displayed. The delimiter is quoted (`<<'EOF'`), so this isn't
+-  parameter/command/arithmetic expansion or backslash-newline line
+-  splicing stripping it (those are the only two things POSIX allows a
+-  quoted-delimiter here-doc body to undergo) -- the body's literal
+-  bytes are wrong before any of that logic could even run. Found while
+-  verifying fixes/70; confirmed unaffected by that fix (a different
+-  subsystem: heredoc content storage/delivery in src/redir/, not
+-  argument expansion), so still open.
+-
+-    cat <<'EOF' | od -c
+-    a\\b
+-    EOF
+-    # prints "a \ b \n" (one backslash) -- should be "a \ \ b \n" (two)
+-
+ - configure-summary-test-invalid-expression: `./configure
+   --enable-maintainer-mode` prints "test: invalid expression" three
+   times (around the builtins-summary loop, autoconf's
+diff --git a/TODO.md b/TODO.md
+index b6db50c7..dde6fa87 100644
+--- a/TODO.md
++++ b/TODO.md
+@@ -185,6 +185,20 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
+      a reader, confirmed via `od -c` on the receiving end of a pipe (a
+      different subsystem, `src/redir/`, not argument expansion).
+ 
++   - **Update (2026-07-22, still later):** `heredoc-body-loses-escaping`
++     fixed (`fixes/71`) — turned out to be the *same* subsystem after
++     all (`expand_copysa()`/`expand_arg()`, not `src/redir/`): a
++     heredoc body's `N_ARGSTR` chunk was indistinguishable, at the
++     expand-time flag level, from ordinary quoted/unquoted literal
++     text, so it got the same `expand_unescape()` pass that undoes the
++     parser's glob-protection doubling — even though `parse_here.c`'s
++     underlying `parse_squoted()`/`parse_dquoted()` calls skip that
++     doubling entirely for heredoc content (never pathname-expanded,
++     nothing to protect), so the pass had nothing correct left to do
++     but strip a real backslash. Fixed by tagging every heredoc-body
++     chunk with a new `S_HEREDOC` flag at parse time and having
++     `expand_arg()` leave `X_LITERAL` off for it.
++
+ ---
+ 
+ ## Goal 2 — Broader POSIX compliance
+diff --git a/src/expand.h b/src/expand.h
+index af0ed3ec..80051156 100644
+--- a/src/expand.h
++++ b/src/expand.h
+@@ -52,7 +52,19 @@ enum subst_type {
+      nibble made an unquoted backquote substitution's flags OR in as
+      nonzero under the S_TABLE mask, so expand_arg() mistook it for
+      quoted and suppressed its field splitting -- fixes/60 */
+-  S_BQUOTE = 0x40000
++  S_BQUOTE = 0x40000,
++  /* set on every N_ARGSTR chunk of a here-document body (parse_here.c).
++     parse_squoted.c/parse_dquoted.c both skip their usual parse_isesc
++     doubling for P_HERE content -- a heredoc body never undergoes
++     pathname expansion, so there's nothing to protect a glob-special
++     char from -- meaning a heredoc chunk's bytes are already final and
++     must not go through the expand_unescape() pass literal chunks
++     elsewhere need to undo that doubling. Without this, that pass ran
++     anyway (indistinguishable from a real quoted/unquoted literal
++     chunk once stored) and quietly collapsed a genuine "\\" in the
++     body down to one backslash (heredoc-body-loses-escaping,
++     fixes/71). */
++  S_HEREDOC = 0x80000
+ };
+ 
+ /* expansion modes */
+diff --git a/src/expand/expand_arg.c b/src/expand/expand_arg.c
+index 09a46afa..f2708be5 100644
+--- a/src/expand/expand_arg.c
++++ b/src/expand/expand_arg.c
+@@ -70,9 +70,18 @@ expand_arg(union node* node, union node** nptr, int flags) {
+            expand_unescape() is meant to undo. Parser code routinely
+            emits exactly such an empty N_ARGSTR immediately before a
+            substitution (e.g. "$x" opens with a zero-length literal
+-           flush), so this isn't a rare edge case. */
++           flush), so this isn't a rare edge case.
++
++           A here-document body chunk (S_HEREDOC) is the same story
++           for a different reason: parse_here.c's underlying
++           parse_squoted()/parse_dquoted() calls skip the doubling
++           entirely for P_HERE content, so it's already final too, and
++           X_LITERAL must stay off for it as well (heredoc-body-loses-
++           escaping, fixes/71). */
+         n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, nptr,
+-                        subarg->nargstr.stra.len ? (lflags | X_LITERAL) : lflags);
++                        (subarg->nargstr.stra.len && !(subarg->nargstr.flag & S_HEREDOC))
++                            ? (lflags | X_LITERAL)
++                            : lflags);
+         break;
+       }
+ 
+diff --git a/src/parse/parse_here.c b/src/parse/parse_here.c
+index 7cb5cb51..935497bc 100644
+--- a/src/parse/parse_here.c
++++ b/src/parse/parse_here.c
+@@ -1,3 +1,4 @@
++#include "../expand.h"
+ #include "../parse.h"
+ #include "../source.h"
+ #include "../tree.h"
+@@ -56,7 +57,7 @@ parse_here(struct parser* p, stralloc* delim, int nosubst, int strip) {
+           break;
+     }
+ 
+-    parse_string(p, 0);
++    parse_string(p, S_HEREDOC);
+ 
+     if(r)
+       break;
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index ea88bc61..88445bb2 100644
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -1400,4 +1400,28 @@ myfunc70() {
+ myfunc70 'a\\b' 'a\\b'
+ assert_equal "0" "$?" "a plain fully-quoted command argument containing a real backslash must still match itself"
+ 
++## fixes/71 (heredoc-body-loses-escaping): a here-document body's
++## N_ARGSTR chunk(s) were indistinguishable, at the expand-time flag
++## level, from ordinary quoted/unquoted literal text -- so they got
++## the same expand_unescape() pass that undoes the parser's
++## glob-protection doubling, even though parse_here.c's underlying
++## parse_squoted()/parse_dquoted() calls skip that doubling entirely
++## for P_HERE content (a heredoc body is never pathname-expanded, so
++## there's nothing to protect). That pass silently collapsed a genuine
++## "\\" in the body down to one backslash. Fixed by tagging every
++## heredoc-body chunk with a new S_HEREDOC flag at parse time and
++## having expand_arg() leave X_LITERAL off for it.
++X71=$(cat <<'INNEREOF'
++a\\b
++INNEREOF
++)
++assert_equal 'a\\b' "$X71" "a quoted-delimiter here-document body must preserve a real backslash verbatim"
++
++Y71=world
++Z71=$(cat <<INNEREOF2
++hello ${Y71} a\\b
++INNEREOF2
++)
++assert_equal 'hello world a\b' "$Z71" "an unquoted-delimiter here-document body must still expand parameters and collapse an escaped backslash to one, matching double-quote rules"
++
+ summary

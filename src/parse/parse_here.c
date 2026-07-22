@@ -1,3 +1,4 @@
+#include "../expand.h"
 #include "../parse.h"
 #include "../source.h"
 #include "../tree.h"
@@ -56,7 +57,7 @@ parse_here(struct parser* p, stralloc* delim, int nosubst, int strip) {
           break;
     }
 
-    parse_string(p, 0);
+    parse_string(p, S_HEREDOC);
 
     if(r)
       break;

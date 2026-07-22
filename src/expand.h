@@ -52,7 +52,19 @@ enum subst_type {
      nibble made an unquoted backquote substitution's flags OR in as
      nonzero under the S_TABLE mask, so expand_arg() mistook it for
      quoted and suppressed its field splitting -- fixes/60 */
-  S_BQUOTE = 0x40000
+  S_BQUOTE = 0x40000,
+  /* set on every N_ARGSTR chunk of a here-document body (parse_here.c).
+     parse_squoted.c/parse_dquoted.c both skip their usual parse_isesc
+     doubling for P_HERE content -- a heredoc body never undergoes
+     pathname expansion, so there's nothing to protect a glob-special
+     char from -- meaning a heredoc chunk's bytes are already final and
+     must not go through the expand_unescape() pass literal chunks
+     elsewhere need to undo that doubling. Without this, that pass ran
+     anyway (indistinguishable from a real quoted/unquoted literal
+     chunk once stored) and quietly collapsed a genuine "\\" in the
+     body down to one backslash (heredoc-body-loses-escaping,
+     fixes/71). */
+  S_HEREDOC = 0x80000
 };
 
 /* expansion modes */

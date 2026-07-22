@@ -1400,4 +1400,28 @@ myfunc70() {
 myfunc70 'a\\b' 'a\\b'
 assert_equal "0" "$?" "a plain fully-quoted command argument containing a real backslash must still match itself"
 
+## fixes/71 (heredoc-body-loses-escaping): a here-document body's
+## N_ARGSTR chunk(s) were indistinguishable, at the expand-time flag
+## level, from ordinary quoted/unquoted literal text -- so they got
+## the same expand_unescape() pass that undoes the parser's
+## glob-protection doubling, even though parse_here.c's underlying
+## parse_squoted()/parse_dquoted() calls skip that doubling entirely
+## for P_HERE content (a heredoc body is never pathname-expanded, so
+## there's nothing to protect). That pass silently collapsed a genuine
+## "\\" in the body down to one backslash. Fixed by tagging every
+## heredoc-body chunk with a new S_HEREDOC flag at parse time and
+## having expand_arg() leave X_LITERAL off for it.
+X71=$(cat <<'INNEREOF'
+a\\b
+INNEREOF
+)
+assert_equal 'a\\b' "$X71" "a quoted-delimiter here-document body must preserve a real backslash verbatim"
+
+Y71=world
+Z71=$(cat <<INNEREOF2
+hello ${Y71} a\\b
+INNEREOF2
+)
+assert_equal 'hello world a\b' "$Z71" "an unquoted-delimiter here-document body must still expand parameters and collapse an escaped backslash to one, matching double-quote rules"
+
 summary

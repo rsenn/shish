@@ -185,6 +185,20 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
      a reader, confirmed via `od -c` on the receiving end of a pipe (a
      different subsystem, `src/redir/`, not argument expansion).
 
+   - **Update (2026-07-22, still later):** `heredoc-body-loses-escaping`
+     fixed (`fixes/71`) — turned out to be the *same* subsystem after
+     all (`expand_copysa()`/`expand_arg()`, not `src/redir/`): a
+     heredoc body's `N_ARGSTR` chunk was indistinguishable, at the
+     expand-time flag level, from ordinary quoted/unquoted literal
+     text, so it got the same `expand_unescape()` pass that undoes the
+     parser's glob-protection doubling — even though `parse_here.c`'s
+     underlying `parse_squoted()`/`parse_dquoted()` calls skip that
+     doubling entirely for heredoc content (never pathname-expanded,
+     nothing to protect), so the pass had nothing correct left to do
+     but strip a real backslash. Fixed by tagging every heredoc-body
+     chunk with a new `S_HEREDOC` flag at parse time and having
+     `expand_arg()` leave `X_LITERAL` off for it.
+
 ---
 
 ## Goal 2 — Broader POSIX compliance

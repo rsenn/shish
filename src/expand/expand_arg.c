@@ -70,9 +70,18 @@ expand_arg(union node* node, union node** nptr, int flags) {
            expand_unescape() is meant to undo. Parser code routinely
            emits exactly such an empty N_ARGSTR immediately before a
            substitution (e.g. "$x" opens with a zero-length literal
-           flush), so this isn't a rare edge case. */
+           flush), so this isn't a rare edge case.
+
+           A here-document body chunk (S_HEREDOC) is the same story
+           for a different reason: parse_here.c's underlying
+           parse_squoted()/parse_dquoted() calls skip the doubling
+           entirely for P_HERE content, so it's already final too, and
+           X_LITERAL must stay off for it as well (heredoc-body-loses-
+           escaping, fixes/71). */
         n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, nptr,
-                        subarg->nargstr.stra.len ? (lflags | X_LITERAL) : lflags);
+                        (subarg->nargstr.stra.len && !(subarg->nargstr.flag & S_HEREDOC))
+                            ? (lflags | X_LITERAL)
+                            : lflags);
         break;
       }
 
