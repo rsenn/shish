@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.5)
 set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 
 set(PACKAGE_NAME shish)
-set(PACKAGE_VERSION 0.8)
+set(PACKAGE_VERSION 0.9)
 set(PACKAGE_TARNAME "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 
 # Set a default build type if none was specified
