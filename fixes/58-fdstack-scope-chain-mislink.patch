@@ -1,0 +1,34 @@
+diff --git a/src/fdstack/fdstack_search.c b/src/fdstack/fdstack_search.c
+index 43c8b09a..3567a303 100644
+--- a/src/fdstack/fdstack_search.c
++++ b/src/fdstack/fdstack_search.c
+@@ -8,13 +8,23 @@ struct fd*
+ fdstack_search(struct fdstack* st, int n) {
+   struct fd* vfd;
+ 
+-  for(fdtable_pos = &fdtable[n]; (vfd = *fdtable_pos); fdtable_pos = &vfd->parent) {
+-    if(vfd->stack == st)
+-      return vfd;
++  fdtable_pos = &fdtable[n];
++  vfd = *fdtable_pos;
+ 
+-    if(vfd->stack->level >= st->level)
+-      break;
+-  }
++  /* an existing entry either belongs to our own exact scope (reuse
++     it) or to some ancestor scope -- leave fdtable_pos at &fdtable[n]
++     either way, so fdtable_link() links a fresh entry *on top* of the
++     ancestor's instead of walking into its ->parent slot and linking
++     underneath it (which left fdtable[n] still resolving to the
++     ancestor's entry, invisible to anything done in the new, deeper
++     scope: closing/redirecting a fd already open when shish started,
++     from inside a subshell, silently did nothing). Under correct
++     push/pop discipline (see fdtable_unlink()) an existing entry can
++     never belong to a *deeper* scope than the one creating a new
++     entry here, so there's never anything useful further down the
++     ->parent chain to walk into. */
++  if(vfd && vfd->stack == st)
++    return vfd;
+ 
+   return 0;
+ }

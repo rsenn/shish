@@ -12,28 +12,6 @@
     exec 4<&3
     exec 3<&4
 
-- fdstack-scope-chain-mislink: when a fd number already has an entry
-  tracked by an ANCESTOR fdstack scope (e.g. a fd the process that
-  launched shish already had open) and a NESTED scope (a subshell, or
-  "exec" inside one) redirects that same number, fdstack_search()'s
-  walk (src/fdstack/fdstack_search.c) leaves fdtable_pos pointing at
-  the ancestor struct's own "parent" slot instead of at the top-level
-  fdtable[] slot, so fdtable_newfd()'s subsequent fdtable_link() links
-  the new struct in *underneath* the ancestor entry rather than
-  replacing it as what's visible -- fdtable[n] keeps resolving to the
-  ancestor's original (still fully open) descriptor, so the "new"
-  redirection/close is invisible to anything that looks the fd number
-  up afterward. Found via fd-close-noop's regression tests, which is
-  why they deliberately use fd 9 (unlikely to already be open) rather
-  than a low number. Repro needs an extra fd already open on the
-  shish invocation itself -- run this as script.sh:
-
-    (exec 3>&-; echo hi >&3)   # wrongly succeeds, "hi" still gets out
-
-  ...via:
-
-    ./shish script.sh 3>&1
-
 - sig-push-sigset-cast: sig_push() reinterprets sigset_t through an
   unsigned long*, UB on any ABI where sizeof(sigset_t) differs;
   currently harmless because the function is unused (dead code, not

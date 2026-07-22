@@ -377,9 +377,16 @@ with the corrected/precise version:**
   otherwise hand it to a child. Covers both the builtin case
   (`echo hi >&3` after `exec 3>&-` now correctly fails) and the
   external-command stdin cases found while leak-hunting (`cat <&-`,
-  `cat < infile <&-`). Fixing it surfaced a separate, deeper,
-  still-open bug in `fdstack_search()`/`fdtable_newfd()`'s scope-chain
-  linking -- see `fdstack-scope-chain-mislink` in `BUGS`.
+  `cat < infile <&-`). Fixing it surfaced a separate, deeper bug in
+  `fdstack_search()`/`fdtable_newfd()`'s scope-chain linking, also now
+  **fixed** (`fixes/58-fdstack-scope-chain-mislink.patch`):
+  `fdstack_search()` was walking past an ancestor scope's existing
+  entry for a fd number instead of stopping there, so a nested scope's
+  new entry for that same number got linked *underneath* the
+  ancestor's instead of replacing it as the visible top -- simplified
+  to a direct top-of-chain check, since under correct push/pop
+  discipline there's never anything useful further down the chain to
+  walk into.
 
 - *"conform to 3.9.1.1 Command Search and Execution"* — too vague to act
   on as written, so this was actually checked against the spec text

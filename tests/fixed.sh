@@ -842,18 +842,15 @@ assert_equal "[a][c]" "$X" "a for-loop over an unquoted \$@ with an empty positi
 ## descriptor would) and by real close()ing the underlying kernel
 ## descriptor in fdtable_resolve() right before an execve() would
 ## otherwise hand it to a child process.
-## note: fd 9 is used here (rather than a low number like 3) because a
-## fd number a caller of shish already had open (e.g. a launcher's own
-## pipe) hits a separate, pre-existing bug: fdstack_search()/
-## fdtable_newfd() mislink a nested scope's new struct for that number
-## as a *child* of the ancestor scope's already-tracked entry instead
-## of replacing it as the visible top, so fdtable[n] keeps resolving
-## to the ancestor's real, still-open descriptor. fd 9 is never open
-## in practice, which avoids tripping over that unrelated bug here.
-## Each case also runs in its own, single (not nested) subshell -- an
-## "exec 9>&-"/"exec 9>file" done inside one subshell scope and then
-## reused by a LATER, separate subshell hits the very same bug (a
-## stale fd struct outliving the fdstack frame it was linked into).
+## note: fd 9 is used here (rather than a low number like 3) because,
+## at the time this was written, a fd number a caller of shish already
+## had open (e.g. a launcher's own pipe) hit a separate bug --
+## fdstack-scope-chain-mislink, since fixed (fixes/58) -- where a
+## nested scope's new struct for that number got linked as a *child*
+## of the ancestor scope's already-tracked entry instead of replacing
+## it as the visible top. Left on fd 9 rather than reverted back to a
+## low number: it costs nothing and keeps this test independent of
+## that other fix.
 (exec 9>&-
 echo hi >&9 2>/dev/null
 STATUS=$?
@@ -949,5 +946,33 @@ assert_equal "5" "$?" "\"X=\$(cmd)\" with no command name must reflect the subst
 false
 X=$?
 assert_equal "1" "$X" "\"X=\$?\" must still capture the PRECEDING command's status, not be treated as a substitution"
+
+## fixes/58 (fdstack-scope-chain-mislink): when a fd number already
+## had an entry tracked by an ANCESTOR fdstack scope and a NESTED
+## scope (a subshell here) redirected that same number,
+## fdstack_search()'s walk left fdtable_pos pointing at the ancestor
+## struct's own "parent" slot instead of at the top-level fdtable[]
+## slot, so fdtable_newfd()'s subsequent fdtable_link() linked the new
+## struct in *underneath* the ancestor entry rather than replacing it
+## as what's visible -- fdtable[n] kept resolving to the ancestor's
+## original (still fully open) descriptor, so the nested scope's own
+## close/redirect of that fd was invisible to anything that looked the
+## fd number up afterward, INCLUDING the ancestor scope once the
+## nested one popped (fdtable_unlink() restores *fd->pos = fd->parent,
+## which -- since fd->pos pointed at the ancestor's own parent slot,
+## not at fdtable[n] -- clobbered the ancestor's own ->parent instead
+## of fdtable[n], though that corruption isn't itself exercised here).
+TMPFILE=$(mktemp)
+exec 4>"$TMPFILE"
+echo before >&4
+(exec 4>&-
+echo hidden >&4 2>/dev/null)
+STATUS=$?
+echo after >&4
+assert_equal "1" "$STATUS" "a nested subshell closing a fd an ancestor scope already had open must actually fail the redirection, not silently succeed"
+X=$(cat "$TMPFILE")
+assert_equal "before
+after" "$X" "the ancestor scope's own fd must keep working after the nested scope's close/pop, with nothing leaked in between"
+rm -f "$TMPFILE"
 
 summary
