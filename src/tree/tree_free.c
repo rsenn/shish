@@ -33,8 +33,9 @@ tree_free(union node* node) {
         if(node->nandor.left)
           tree_free(node->nandor.left);
 
-        if(node->nandor.right)
-          tree_free(node->nandor.right);
+        if(node->id != N_NOT)
+          if(node->nandor.right)
+            tree_free(node->nandor.right);
         break;
 
       case N_LIST: tree_free(node->nlist.cmds); break;

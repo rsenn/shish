@@ -256,7 +256,6 @@ src/parse/Makefile
 src/prompt/Makefile
 src/redir/Makefile
 src/sh/Makefile
-src/sig/Makefile
 src/source/Makefile
 src/term/Makefile
 src/tree/Makefile
