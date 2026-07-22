@@ -85,12 +85,21 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
 
       if((ret = setjmp(e.jumpbuf)) == 0) {
         e.jump = 1;
-        /* Use eval_cmdlist's return (last command's status) rather than
-           eval_pop's e->exitcode, which is only set on longjmp/return.
-           Without this, `f() { (exit 1); }; f` returns 0 because the
-           subshell longjmps to ITS OWN E_ROOT, not the function's eval,
-           so e->exitcode stays at 0. */
-        ret = eval_cmdlist(&e, &cmd->fn->ngrp);
+        /* Use eval_cmdlist's/eval_subshell's return (last command's
+           status) rather than eval_pop's e->exitcode, which is only
+           set on longjmp/return. Without this, `f() { (exit 1); }; f`
+           returns 0 because the subshell longjmps to ITS OWN E_ROOT,
+           so e->exitcode stays at 0.
+
+           A function whose body is "(...)" rather than "{...}" must
+           get the same subshell isolation (variable assignments,
+           etc. not surviving the call) a bare "(...)" gets -- dispatch
+           on the body's node kind the same way eval_command.c does
+           for a standalone grouping, instead of always going through
+           eval_cmdlist(), which runs in the current environment with
+           no isolation at all. */
+        ret = (cmd->fn->id == N_SUBSHELL) ? eval_subshell(&e, &cmd->fn->ngrp)
+                                           : eval_cmdlist(&e, &cmd->fn->ngrp);
         e.exitcode = ret;
 
         eval_pop(&e);

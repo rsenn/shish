@@ -1067,4 +1067,62 @@ assert_equal 'uniquefn988() {
   echo `echo plain`;
 }' "$X" "reprinting a plain (non-nested) backquote substitution must still keep its original backquote syntax"
 
+## fixes/62 (subshell-function-body-isolation): a function defined
+## with a subshell as its body ("f() ( ... )") didn't actually isolate
+## variable assignments into a subshell the way a bare "( ... )"
+## subshell does -- exec_command.c's H_FUNCTION case always evaluated
+## the body via eval_cmdlist() regardless of whether it had been
+## parsed as N_SUBSHELL or N_BRACEGROUP, unlike eval_command.c's own
+## dispatch for a standalone grouping (N_SUBSHELL -> eval_subshell(),
+## which does the actual isolating; N_BRACEGROUP -> eval_cmdlist(),
+## no isolation) -- so a function's own "(...)" body ran exactly like
+## "{...}" would, sharing the caller's environment. Fixed by making
+## exec_command.c dispatch the same way.
+X=$(subiso_f() ( X=inner ); X=outer; subiso_f; echo "$X")
+assert_equal "outer" "$X" "a function whose body is \"(...)\" must isolate its own assignments from the caller, exactly like a bare \"(...)\" subshell"
+
+X=$(subiso_f() ( exit 5 ); subiso_f; echo "$?")
+assert_equal "5" "$X" "a subshell-bodied function's own exit status must still propagate to its caller"
+
+X=$(subiso_f() ( echo "arg=$1" ); subiso_f hello)
+assert_equal "arg=hello" "$X" "a subshell-bodied function must still see its own call arguments"
+
+## fixes/63 (cmdsubst-external-stderr-redirect-lost): an external
+## command's "2>&1" inside a command substitution didn't get
+## captured -- it leaked straight to the shell's own real stderr, and
+## the substitution captured nothing for it. Root causes (three,
+## compounding):
+##
+## 1. fdstack_npipes()/fdstack_pipe() stop walking outward at the
+##    first fdstack level carrying an FD_SUBST/FD_HERE target, to
+##    avoid also wiring a pipe for an OUTER command substitution's own
+##    target (see their own comments). But fd_dup() (redir_dup.c, for
+##    "2>&1") copies the FD_TYPE bits of whatever it duplicates --
+##    which includes FD_STRALLOC, part of FD_SUBST -- onto its own
+##    FD_DUP'd struct, at the *redirected command's own* (inner)
+##    fdstack level. That level isn't a nested substitution's own
+##    target, just an alias of the outer one, but looked exactly like
+##    one to the walk, which then stopped one level too early and
+##    never reached the real fd 1 target further out at all.
+## 2. fdstack_pipe() nulled the real target's "->r" after wiring its
+##    read side to the pipe. Nothing in the normal (no duplicate) path
+##    needs it (fdstack_data(), which drains the pipe, reads via
+##    "->rb.fd" directly) -- but fdstack_unref(), which hands off
+##    pipe ownership to a surviving duplicate when the original is
+##    popped, dereferences "->r" as a byte_copy() source, segfaulting
+##    on the now-reachable real target once (1) was fixed.
+## 3. fdstack_pipe() installs a brand new struct as the live occupant
+##    of the target fd's slot (to hold the real pipe write end) but
+##    left any duplicate created *before* it ran (like "2>&1",
+##    evaluated during the command's own earlier redirect loop) still
+##    pointing at the old, now-shadowed struct, which never gets a
+##    real descriptor -- dup2()ing an unresolved -1 for the child once
+##    (1) and (2) were fixed. Fixed by repointing any such duplicate's
+##    ->dup to the new struct.
+X=$(ls /nonexistent-dir-for-bug-repro-fixes63 2>&1)
+assert_match "$X" "*nonexistent-dir-for-bug-repro-fixes63*" "an external command's \"2>&1\" inside a command substitution must actually be captured, not leak to the shell's real stderr"
+
+X=$(ls /nonexistent-dir-for-bug-repro-fixes63 2>/dev/null)
+assert_equal "" "$X" "sanity: without \"2>&1\", an external command's stderr must still NOT be captured"
+
 summary

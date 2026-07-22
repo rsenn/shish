@@ -26,7 +26,12 @@ assert_equal "0" "$?" "a function ending on a successful command must exit 0"
 func3
 assert_equal "7" "$?" "a function's explicit \"return N\" must be its exit status"
 
-assert_equal "123" "$CALLED" "functions must run in the order they're called, each seeing the caller's variables"
+## func2's own assignment must NOT be visible here: its body is a
+## subshell ("(...)"), which isolates variable assignments from the
+## caller exactly like a bare "(...)" does (fixes/62,
+## subshell-function-body-isolation) -- so only func1's and func3's
+## "1"/"3" show up, not func2's "2".
+assert_equal "13" "$CALLED" "functions must run in the order they're called, each seeing the caller's variables, except a subshell-bodied one whose own assignments must stay isolated"
 
 ## argument handling: $1/$#/$@ inside a function are its own, not the
 ## caller's
