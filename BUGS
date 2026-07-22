@@ -27,19 +27,6 @@
     sleep 2 &
     wait
 
-- cmdsubst-external-stderr-redirect-lost: an external command's
-  "2>&1" inside a command substitution doesn't get captured -- it
-  leaks straight to the shell's own real stderr instead, and the
-  substitution captures nothing for it. A builtin's own error message
-  (e.g. command-not-found, printed by the shell itself) *is* captured
-  correctly in the same position, so this is specific to redirections
-  applied to a forked external command's fds inside fd_subst()'s
-  in-process sink. Found incidentally while verifying the
-  quoted-cmdsubst-field-split fix; not yet investigated further.
-
-    x=$(ls /nonexistent-dir-for-bug-repro 2>&1)
-    echo "got: [$x]"
-
 - expand-glob-stack-overflow: found via an ASan build running
   tests/param.sh (which exercises heavy nested command-substitution +
   subshell use) -- a stack-buffer-overflow in
@@ -50,24 +37,4 @@
 
     ./shish tests/param.sh   # under an ASan build
 
-- fdstack-push-assertion-cmdsubst-redir: fdstack_push()'s own sanity
-  assertion ("st < fdstack || fdstack == &fdstack_root") fires and
-  aborts the shell for ANY redirection (not just "2>&1", and not
-  specific to external commands -- a plain builtin hits it too) on a
-  command directly inside a command substitution, under an
-  ASan/Debug build. Found via an ASan smoke-test while fixing
-  cmdsubst-external-stderr-redirect-lost; confirmed unrelated to that
-  fix (reproduces identically on an unmodified checkout). Might be an
-  ASan-instrumentation-specific false positive (the assertion compares
-  a stack-allocated struct's address against the global "fdstack"
-  pointer, an assumption ASan's redzones/fake-stack allocation could
-  break) rather than a genuine bug -- not investigated further.
-
-    cmake -S . -B build/asan -DCMAKE_BUILD_TYPE=Debug \
-      -DCMAKE_C_FLAGS="-fsanitize=address,undefined -g" \
-      -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
-    cmake --build build/asan -j
-    build/asan/shish -c 'x=$(true 2>&1)'
-    # shish: .../fdstack_push.c:8: fdstack_push: Assertion
-    # `st < fdstack || fdstack == &fdstack_root' failed.
 

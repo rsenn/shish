@@ -1125,4 +1125,27 @@ assert_match "$X" "*nonexistent-dir-for-bug-repro-fixes63*" "an external command
 X=$(ls /nonexistent-dir-for-bug-repro-fixes63 2>/dev/null)
 assert_equal "" "$X" "sanity: without \"2>&1\", an external command's stderr must still NOT be captured"
 
+## fixes/64 (fdstack-push-assertion-cmdsubst-redir): fdstack_push()'s
+## own sanity assertion ("st < fdstack || fdstack == &fdstack_root")
+## fired and aborted the shell for any redirection at all inside a
+## command substitution, under an ASan/Debug build. The check compared
+## the new frame's raw stack address against the current top,
+## assuming normal downward stack growth so a callee's (deeper) frame
+## always sits below its caller's -- not a portable invariant:
+## AddressSanitizer's stack-use-after-return detection allocates
+## "escaping" locals like this one (its address is stored into the
+## global "fdstack" pointer) on a separate fake stack, in no
+## particular order relative to each other, so the comparison was a
+## false positive. Fixed by replacing it with a meaningful, portable
+## check -- "st != fdstack", matching the sibling vartab_push()'s own
+## "vartab != varstack" pattern -- instead of the address comparison.
+## No assertion added here: assert() is a no-op under the NDEBUG this
+## repo's default (non-Debug) CMake build type defines, so nothing in
+## a normal "ctest" run exercises fdstack_push()'s assertion either
+## way, and the crash itself only reproduced under ASan specifically
+## (confirmed via ASAN_OPTIONS=detect_stack_use_after_return=0 making
+## it disappear even under ASan). Verified instead by building with
+## "-DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS=-fsanitize=address,undefined"
+## and confirming "shish -c 'x=$(true 2>&1)'" no longer aborts.
+
 summary
