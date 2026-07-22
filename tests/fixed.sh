@@ -975,4 +975,50 @@ assert_equal "before
 after" "$X" "the ancestor scope's own fd must keep working after the nested scope's close/pop, with nothing leaked in between"
 rm -f "$TMPFILE"
 
+## fixes/59 (nested-backquote): nested backquote command substitution
+## (inner backquotes escaped with backslash, per POSIX 2.6.3) didn't
+## work -- the inner backquotes were left completely unprocessed,
+## becoming literal text instead of a nested substitution.
+## parse_bquoted() used to parse a backquoted substitution's body
+## directly off the live source stream, the same way "$( )" already
+## correctly does -- but unlike "$( )", a backquoted substitution's
+## open and close delimiter are the *same* character, so a nested one
+## is only distinguishable via backslash-escaping, which a single
+## recursive-descent pass over the live source can't resolve on its
+## own (by the time a "\`" is seen, there's no way to know yet whether
+## it's the start of a nested substitution or the escaped end of the
+## current one -- that depends on what comes *after* it). Fixed by
+## collecting the whole backquoted body as raw text first (unescaping
+## "\`"/"\$"/"\\" per POSIX 2.6.3 along the way), then reparsing that
+## text as its own independent script -- exactly the same two-pass
+## approach POSIX shells use, and exactly how a "-c" argument or a
+## ". "'d file already gets parsed here.
+X=$(nested=`echo \`echo inner\``; echo "$nested")
+assert_equal "inner" "$X" "a backquote substitution nested inside another (backslash-escaped) must actually run, not be left as literal text"
+
+## fed through a variable rather than used as a direct unquoted
+## argument -- a direct unquoted backquote substitution's own output
+## doesn't field-split on IFS at all, a separate, pre-existing bug
+## (bquote-direct-no-field-split) unrelated to nesting; see BUGS.
+X=$(Y=`echo \`echo a; echo b\``; echo $Y)
+assert_equal "a b" "$X" "a nested backquote substitution's own multiple commands/words must all run and field-split normally"
+
+X=$(echo `echo $(echo mixed)`)
+assert_equal "mixed" "$X" "a \"\$( )\" substitution nested inside a backquoted one (no escaping needed for \"\$( )\") must still work"
+
+X=$(echo $(echo `echo mixed2`))
+assert_equal "mixed2" "$X" "a backquoted substitution nested inside a \"\$( )\" one must still work (this direction never needed escaping and worked already)"
+
+## the escaped backslash isn't placed at the very end of the nested
+## body on purpose -- an escape sequence with nothing at all after it
+## once reparsed hits a separate, pre-existing "escape at end-of-
+## input" parser gap (the same one "an unterminated substitution
+## silently accepts EOF as its close" falls out of), unrelated to
+## nesting.
+X=$(V=1; echo `echo \$V and \\a-backslash and \`echo nested\``)
+assert_equal "1 and a-backslash and nested" "$X" "\"\\\$\" and \"\\\\\" inside a backquoted substitution must still unescape to \"\$\"/\"\\\" as POSIX 2.6.3 requires, alongside the new \"\\\`\" handling"
+
+X=$(echo `echo plain`)
+assert_equal "plain" "$X" "a plain (non-nested) backquote substitution must still work exactly as before"
+
 summary
