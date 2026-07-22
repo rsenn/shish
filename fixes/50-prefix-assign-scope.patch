@@ -1,0 +1,67 @@
+diff --git a/src/builtin/builtin_table.c b/src/builtin/builtin_table.c
+index d034b974..8e5e6d62 100644
+--- a/src/builtin/builtin_table.c
++++ b/src/builtin/builtin_table.c
+@@ -283,7 +283,7 @@ struct builtin_cmd builtin_table[] = {
+ #if BUILTIN_READ
+     {"read",
+      &builtin_read,
+-     B_SPECIAL,
++     B_DEFAULT,
+      "[-rs] [-d DELIM] [-n|-N NCHARS] [-p PROMPT] [-t TIMEOUT] [-u FD] [name "
+      "...]"},
+ #endif
+diff --git a/src/eval/eval_simple_command.c b/src/eval/eval_simple_command.c
+index 0efb69be..661c57fb 100644
+--- a/src/eval/eval_simple_command.c
++++ b/src/eval/eval_simple_command.c
+@@ -68,9 +68,27 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+     }
+ #endif
+     /* if we don't exit after the command, have a command and not a
+-       special builtin the variable changes should be temporary */
+-    if(!(e->flags & E_EXIT) && cmd.ptr && cmd.id != H_SBUILTIN)
+-      vartab_push(&vars, 0);
++       special builtin the variable changes should be temporary --
++       pushed as a function-like scope (the "1") so that a *non-local*
++       var_create() elsewhere (a builtin like "read" writing its
++       target variable, or a called function doing a plain, non-
++       "local" assignment) walks straight past it to the real
++       enclosing scope instead of being silently captured and thrown
++       away by vartab_pop() below along with the prefix assignment
++       itself. Confirmed both ways were broken before: "IFS=x read
++       line" leaked IFS afterward (no scope was pushed for "read" at
++       all, since it used to be misclassified as H_SBUILTIN), and once
++       that got fixed, "FOO=bar f" for a function f that sets a plain
++       (non-local) global went from "leaks FOO, keeps its own global
++       write" to "keeps neither" -- var_create()'s walk-past-transient-
++       scope logic (already used to skip a *function call's* own
++       scope for exactly this reason) didn't know this prefix-
++       assignment scope was transient too, since it was pushed with
++       function=0. */
++    int temp_scope = !(e->flags & E_EXIT) && cmd.ptr && cmd.id != H_SBUILTIN;
++
++    if(temp_scope)
++      vartab_push(&vars, 1);
+ 
+     for(node = assigns; node; node = node->next) {
+ 
+@@ -86,7 +104,17 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+         buffer_putnlflush(fd_err->w);
+       }
+ 
+-      if(!var_setsa(&node->narg.stra, (cmd.ptr ? V_EXPORT : V_DEFAULT))) {
++      /* when a temp scope was pushed above, V_LOCAL forces the
++         assignment into that exact scope, bypassing the same
++         walk-past-transient-scope logic used elsewhere -- the prefix
++         assignment itself must land here, not wherever an existing
++         same-named variable already lives, or it would permanently
++         overwrite that variable instead of shadowing it for just this
++         command's duration. Without a temp scope (a special builtin,
++         or E_EXIT), there's nothing to shadow into -- fall back to
++         ordinary assignment semantics, which already correctly finds
++         and updates whatever scope the variable actually lives in. */
++      if(!var_setsa(&node->narg.stra, (cmd.ptr ? V_EXPORT : V_DEFAULT) | (temp_scope ? V_LOCAL : 0))) {
+         status = 1;
+         break;
+       }

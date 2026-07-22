@@ -283,7 +283,7 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_READ
     {"read",
      &builtin_read,
-     B_SPECIAL,
+     B_DEFAULT,
      "[-rs] [-d DELIM] [-n|-N NCHARS] [-p PROMPT] [-t TIMEOUT] [-u FD] [name "
      "...]"},
 #endif

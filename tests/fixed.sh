@@ -658,4 +658,58 @@ assert_equal "[a b c]" "$X" "a quoted \"\$(cmd)\" assigned to a variable must ke
 X=$(set -- "`printf "a b c"`"; echo $#)
 assert_equal "1" "$X" "a quoted backquoted command substitution must also stay one word, not just \"\$(...)\""
 
+## fixes/50: "read" was classified as a POSIX special builtin
+## (B_SPECIAL/H_SBUILTIN), which is wrong -- it isn't one of the
+## special builtins POSIX 2.14 actually lists. Consequence:
+## "IFS=x read line"'s prefix assignment persisted past the command
+## instead of being scoped to it, since eval_simple_command.c only
+## pushes a temporary var scope for prefix assignments when
+## "cmd.id != H_SBUILTIN". Reclassifying "read" as a regular builtin
+## alone made things *worse*, though: the temporary scope
+## vartab_push() creates was pushed as function=0, so var_create()'s
+## existing walk-past-transient-scope logic (already used to skip a
+## *function call's* own scope for a plain, non-"local" assignment)
+## didn't recognize this scope as transient too -- "read"'s own
+## var_setv() call for its target variable(s) landed in the temp
+## scope and got silently discarded along with the prefix assignment
+## when it was popped, and the same happened for any function called
+## with a prefix assignment that made a plain (non-"local") global
+## assignment of its own. Fixed by pushing the temp scope as
+## function=1 (so those writes correctly walk past it to the real
+## enclosing scope) while forcing the prefix assignment itself to
+## land in that exact scope via V_LOCAL (bypassing the same walk, so
+## it doesn't escape into whatever outer scope an existing
+## same-named variable happens to live in).
+X=$(
+  echo "before=[$IFS]"
+  IFS= read -r x <<EOF
+hello
+EOF
+  echo "after=[$IFS]"
+)
+assert_equal "before=[$IFS]
+after=[$IFS]" "$X" "\"IFS=x read ...\"'s prefix assignment must not persist past the command"
+
+X=$(IFS=: read -r a b <<EOF
+x:y
+EOF
+echo "a=[$a] b=[$b]")
+assert_equal "a=[x] b=[y]" "$X" "\"read\"'s own prefix-scoped IFS must still take effect during the read itself"
+
+X=$(
+  myfn() { GLOBALVAR=set-by-fn; }
+  FOO=bar myfn
+  echo "GLOBALVAR=[$GLOBALVAR] FOO=[$FOO]"
+)
+assert_equal "GLOBALVAR=[set-by-fn] FOO=[]" "$X" "a function called with a prefix assignment must keep its own plain (non-local) global assignment, and the prefix assignment must not leak"
+
+X=$(
+  X=outer
+  f() { local X=inner; echo "in=$X"; }
+  FOO=bar f
+  echo "after=$X"
+)
+assert_equal "in=inner
+after=outer" "$X" "\"local\" inside a function called with a prefix assignment must still shadow correctly"
+
 summary
