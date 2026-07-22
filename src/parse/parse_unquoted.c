@@ -15,8 +15,27 @@ parse_unquoted(struct parser* p) {
 
   for(;;) {
     /* get the next char */
-    if(source_peek(&c) <= 0)
+    if(source_peek(&c) <= 0) {
+      /* true end-of-input, not just "no delimiter yet": mirror the
+         delimiter branch below exactly -- try a keyword match first
+         (fixes/56's dash-c-for-loop-parse-error fix relies on p->sa
+         still holding the raw word when parse_word() checks it,
+         which requires NOT flushing here if this turns out to be a
+         keyword), and only if that fails, flush what's accumulated
+         so far *with* the locally-tracked flags (S_GLOB in
+         particular) -- "flags" only lives in this function's own
+         stack frame, so once we return without persisting it here,
+         it's gone for good. Without this second part, a word ending
+         exactly at EOF (no trailing whitespace/newline, e.g.
+         "-c 'echo *.txt'", which unlike a script file has no
+         trailing newline) fell through to parse_word()'s own final
+         parse_string(p, 0) call, losing S_GLOB and leaving the
+         pattern completely unexpanded
+         (glob-not-triggered-for-plain-arguments, fixes/66). */
+      if((p->flags & P_NOKEYWD) || p->tree || p->sa.s == NULL || !parse_keyword(p))
+        parse_string(p, flags);
       return -1;
+    }
 
     /* everything can be escaped */
     if(c == '\\') {

@@ -58,7 +58,6 @@ enum subst_type {
 /* expansion modes */
 #define X_DEFAULT 0x00000000
 #define X_NOSPLIT 0x01000000
-#define X_ESCAPE 0x02000000
 #define X_GLOB 0x04000000
 #define X_QUOTED 0x08000000
 
@@ -82,7 +81,6 @@ union node* expand_cat(const char* b, unsigned int len, union node** nptr, int f
 void expand_catsa(union node* node, stralloc* sa, int flags);
 union node* expand_command(struct nargcmd* cmd, union node** nptr, int flags);
 void expand_copysa(union node* node, stralloc* sa, int flags);
-void expand_escape(stralloc* sa, const char* b, unsigned int n);
 union node* expand_getorcreate(union node** out);
 union node* expand_glob(union node** nptr, int flags);
 union node* expand_param(struct nargparam* param, union node** nptr, int flags);

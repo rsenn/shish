@@ -1,0 +1,137 @@
+diff --git a/src/expand.h b/src/expand.h
+index d40cfbaa..84de9c37 100644
+--- a/src/expand.h
++++ b/src/expand.h
+@@ -58,7 +58,6 @@ enum subst_type {
+ /* expansion modes */
+ #define X_DEFAULT 0x00000000
+ #define X_NOSPLIT 0x01000000
+-#define X_ESCAPE 0x02000000
+ #define X_GLOB 0x04000000
+ #define X_QUOTED 0x08000000
+ 
+@@ -82,7 +81,6 @@ union node* expand_cat(const char* b, unsigned int len, union node** nptr, int f
+ void expand_catsa(union node* node, stralloc* sa, int flags);
+ union node* expand_command(struct nargcmd* cmd, union node** nptr, int flags);
+ void expand_copysa(union node* node, stralloc* sa, int flags);
+-void expand_escape(stralloc* sa, const char* b, unsigned int n);
+ union node* expand_getorcreate(union node** out);
+ union node* expand_glob(union node** nptr, int flags);
+ union node* expand_param(struct nargparam* param, union node** nptr, int flags);
+diff --git a/src/expand/expand_cat.c b/src/expand/expand_cat.c
+index 9262ca53..70f60810 100644
+--- a/src/expand/expand_cat.c
++++ b/src/expand/expand_cat.c
+@@ -24,9 +24,6 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
+ 
+     n->narg.flag |= flags /*& (~(X_QUOTED))*/;
+ 
+-    /*if(flags & X_QUOTED)
+-      expand_escape(&n->narg.stra, b, len);
+-    else*/
+     stralloc_catb(&n->narg.stra, b, len);
+ 
+     return n;
+@@ -75,11 +72,20 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
+         break;
+ 
+     /* there were non-separators: fill the stralloc of the current argument node
+-     */
++     *
++     * plain copy, not expand_escape(): the raw text here already has
++     * exactly the right shape for glob(3) to interpret -- an
++     * unescaped "*"/"?"/"[" is a real wildcard the user wrote bare,
++     * and a "\*"/"\?"/"\[" the user backslash-escaped is *already*
++     * glob(3)'s own escape syntax for a literal char, preserved
++     * as-is by parse_unquoted.c's own backslash handling (it only
++     * strips the backslash for non-glob-special chars). Blanket
++     * re-escaping every occurrence here (as expand_escape() does)
++     * turned every bare wildcard into an escaped literal, so no glob
++     * pattern was ever actually reachable from a plain command
++     * argument (glob-not-triggered-for-plain-arguments, fixes/66). */
+     n->narg.flag |= flags;
+-    expand_escape(&n->narg.stra, &b[i - x], x);
+-    // if(flags & X_ESCAPE) expand_escape(&n->narg.stra, &b[i - x], x); else
+-    // stralloc_catb(&n->narg.stra, &b[i - x], x);
++    stralloc_catb(&n->narg.stra, &b[i - x], x);
+ 
+     /* finished */
+     if(i == len)
+diff --git a/src/expand/expand_escape.c b/src/expand/expand_escape.c
+deleted file mode 100644
+index dace87c3..00000000
+--- a/src/expand/expand_escape.c
++++ /dev/null
+@@ -1,14 +0,0 @@
+-#include "../../lib/str.h"
+-#include "../../lib/stralloc.h"
+-
+-/* escape characters subject to glob() expansion
+- * ----------------------------------------------------------------------- */
+-void
+-expand_escape(stralloc* sa, const char* b, unsigned int n) {
+-  while(n--) {
+-    if(str_chr("\\*?[", *b) < 4)
+-      stralloc_catc(sa, '\\');
+-
+-    stralloc_catc(sa, *b++);
+-  }
+-}
+diff --git a/src/expand/expand_glob.c b/src/expand/expand_glob.c
+index 5433f18d..f7849ec3 100644
+--- a/src/expand/expand_glob.c
++++ b/src/expand/expand_glob.c
+@@ -67,6 +67,20 @@ expand_glob(union node** nptr, int flags) {
+     for(i = 0; i < glb.gl_pathc;) {
+       stralloc_cats(&n->narg.stra, glb.gl_pathv[i]);
+ 
++      /* the *first* match's node is "n" as handed in by the caller,
++         reused via stralloc_zero() above rather than freshly
++         allocated -- that only resets .len, leaving the original
++         pattern text physically sitting in the buffer past the new
++         (usually shorter) match. Nothing else in this loop
++         NUL-terminates at the new, correct length, so anything
++         downstream that reads ->stra.s as a plain C string (instead
++         of using ->stra.len) reads straight through into that
++         leftover tail. Every subsequent node is stralloc_init()'d
++         fresh below and wouldn't have stale bytes to leak, but
++         terminating unconditionally here is cheap and keeps this
++         from depending on that. */
++      stralloc_nul(&n->narg.stra);
++
+       /* if there is another path then delimit the current one */
+       if(++i < glb.gl_pathc) {
+         /* if we should not split then just concat ifs[0] */
+diff --git a/src/parse/parse_unquoted.c b/src/parse/parse_unquoted.c
+index acd39926..ff02bd7f 100644
+--- a/src/parse/parse_unquoted.c
++++ b/src/parse/parse_unquoted.c
+@@ -15,8 +15,27 @@ parse_unquoted(struct parser* p) {
+ 
+   for(;;) {
+     /* get the next char */
+-    if(source_peek(&c) <= 0)
++    if(source_peek(&c) <= 0) {
++      /* true end-of-input, not just "no delimiter yet": mirror the
++         delimiter branch below exactly -- try a keyword match first
++         (fixes/56's dash-c-for-loop-parse-error fix relies on p->sa
++         still holding the raw word when parse_word() checks it,
++         which requires NOT flushing here if this turns out to be a
++         keyword), and only if that fails, flush what's accumulated
++         so far *with* the locally-tracked flags (S_GLOB in
++         particular) -- "flags" only lives in this function's own
++         stack frame, so once we return without persisting it here,
++         it's gone for good. Without this second part, a word ending
++         exactly at EOF (no trailing whitespace/newline, e.g.
++         "-c 'echo *.txt'", which unlike a script file has no
++         trailing newline) fell through to parse_word()'s own final
++         parse_string(p, 0) call, losing S_GLOB and leaving the
++         pattern completely unexpanded
++         (glob-not-triggered-for-plain-arguments, fixes/66). */
++      if((p->flags & P_NOKEYWD) || p->tree || p->sa.s == NULL || !parse_keyword(p))
++        parse_string(p, flags);
+       return -1;
++    }
+ 
+     /* everything can be escaped */
+     if(c == '\\') {

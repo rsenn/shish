@@ -27,25 +27,4 @@
     sleep 2 &
     wait
 
-- glob-not-triggered-for-plain-arguments: filename globbing
-  ("*"/"?"/"["/"]" in an ordinary, unquoted command argument) never
-  actually runs glob(3) for a plain top-level argument -- confirmed
-  with a debugger: parse_unquoted.c sets S_GLOB on the parsed
-  N_ARGSTR node for other glob-special-char cases (e.g. the "["/"]"
-  the test builtin's own name is made of, or a stray one inside an
-  escape-sequence-like string), but NOT for an ordinary wildcard
-  pattern like "*.txt" as a bare command argument -- expand_arg.c's
-  own "subarg->nargstr.flag & S_GLOB" check saw flag == 0 for it, so
-  expand_glob() is never even called and the pattern is passed
-  through completely unexpanded/literal. This was previously an
-  unconfirmed suspicion in TODO.md ("glob check on subargs other than
-  argstr") -- now confirmed and repro'd; not yet root-caused further
-  (i.e. why S_GLOB ends up set for some glob-special-char words but
-  not this one specifically hasn't been traced into parse_unquoted.c
-  yet).
-
-    mkdir -p /tmp/globtest && touch /tmp/globtest/a.txt /tmp/globtest/b.txt
-    ./shish -c 'echo /tmp/globtest/*.txt'
-    # prints the literal "/tmp/globtest/*.txt", not "a.txt b.txt"
-
 

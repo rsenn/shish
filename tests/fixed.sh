@@ -1184,4 +1184,71 @@ assert_equal "" "$X" "sanity: without \"2>&1\", an external command's stderr mus
 assert_equal "0" "$( [ 1 = 1 ]; echo $? )" "the \"[\" test builtin (itself a glob-special character, see fixes/65) must still work correctly"
 assert_equal "1" "$( [ 1 = 2 ]; echo $? )" "sanity: \"[\" must still correctly report a false comparison"
 
+## fixes/66 (glob-not-triggered-for-plain-arguments): filename
+## globbing ("*"/"?"/"[]" in an ordinary, unquoted command argument)
+## never actually ran glob(3) at all -- three separate, compounding
+## bugs, each masking the next:
+##
+## 1. expand_cat.c's word-splitting loop unconditionally called
+##    expand_escape() on every literal text chunk, which blindly
+##    prepends a backslash to *every* occurrence of "\*?[" -- turning
+##    a bare, user-intended wildcard into an escaped literal before it
+##    ever reached expand_glob()/glob(3), and double-escaping an
+##    already backslash-protected literal on top of that. A stale,
+##    never-set "X_ESCAPE" flag and a commented-out conditional right
+##    next to the active code showed this was supposed to be
+##    conditional, never unconditional. Fixed by using a plain copy
+##    instead: parse_unquoted.c already leaves a bare wildcard bare
+##    and an escaped literal already in glob(3)'s own "\X" syntax, so
+##    no further escaping was ever needed here. (expand_escape() and
+##    the dead X_ESCAPE flag removed entirely -- nothing else used
+##    either.)
+## 2. Even once (1) let a bare wildcard survive, parse_unquoted()'s
+##    S_GLOB flag -- tracked in a local variable -- was lost whenever
+##    the glob pattern was the last thing before true end-of-input
+##    (e.g. a "-c" argument with nothing after it, which unlike a
+##    script file has no trailing newline): the EOF branch returned
+##    without ever persisting it, the same root cause
+##    dash-c-for-loop-parse-error (fixes/56) had for keyword
+##    recognition, just for a different flag. Fixed by mirroring the
+##    delimiter branch exactly: try a keyword match first (so fixes/56
+##    keeps working), and only if that fails, flush with the
+##    locally-tracked flags instead of parse_word()'s own flags-less
+##    fallback flush.
+## 3. Once glob(3) actually started running (after (1) and (2)),
+##    expand_glob()'s own loop building the result nodes reused the
+##    *first* match's node (the one that held the original pattern
+##    text) via stralloc_zero(), which only resets the logical length,
+##    not the underlying buffer -- so a shorter match left the
+##    pattern's own leftover tail bytes physically sitting right after
+##    it, and nothing re-terminated the string at the new, shorter
+##    length. Anything reading it as a plain C string read straight
+##    through into that stale tail (e.g. a pattern matching "a.txt"
+##    where the original pattern text happened to also end in "txt"
+##    printed "a.txttxt"). Fixed by NUL-terminating each match's node
+##    right after filling it in.
+TMPDIR_GLOB=$(mktemp -d)
+touch "$TMPDIR_GLOB/a.txt" "$TMPDIR_GLOB/b.txt"
+
+X=$(echo "$TMPDIR_GLOB"/*.txt)
+assert_equal "$TMPDIR_GLOB/a.txt $TMPDIR_GLOB/b.txt" "$X" "a bare wildcard as a command argument must actually glob-expand, even as the very last thing before end-of-input"
+
+X=$(echo "$TMPDIR_GLOB"/*.txt more)
+assert_equal "$TMPDIR_GLOB/a.txt $TMPDIR_GLOB/b.txt more" "$X" "a bare wildcard followed by more words must still glob-expand"
+
+X=$(for f in "$TMPDIR_GLOB"/*.txt; do echo "[$f]"; done)
+assert_equal "[$TMPDIR_GLOB/a.txt]
+[$TMPDIR_GLOB/b.txt]" "$X" "a wildcard in a \"for\" loop's word list must glob-expand into separate words"
+
+X=$(echo "$TMPDIR_GLOB"/*.nomatch)
+assert_equal "$TMPDIR_GLOB/*.nomatch" "$X" "a wildcard with no matches must fall back to the literal pattern text"
+
+X=$(echo "$TMPDIR_GLOB"/\*.txt)
+assert_equal "$TMPDIR_GLOB/*.txt" "$X" "a backslash-escaped wildcard must stay a literal, not glob-expand"
+
+X=$(echo "$TMPDIR_GLOB"/[ab].txt)
+assert_equal "$TMPDIR_GLOB/a.txt $TMPDIR_GLOB/b.txt" "$X" "a bracket-expression wildcard must glob-expand without leftover garbage appended to the first match"
+
+rm -rf "$TMPDIR_GLOB"
+
 summary

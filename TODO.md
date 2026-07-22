@@ -431,6 +431,16 @@ parser level regardless of this fix — see `BUGS`.
 
 **Still open, kept in `TODO`:** the line-editing/terminal-abstraction/
 key-bindings rewrite (a design-sized project, not a fixable bug).
-"glob check on subargs other than argstr" has since been confirmed
-with a repro and moved to `BUGS` as
-`glob-not-triggered-for-plain-arguments`.
+"glob check on subargs other than argstr" turned out to be three
+separate, compounding bugs once confirmed with a repro -- all now
+**fixed** (`fixes/66-glob-not-triggered-for-plain-arguments.patch`):
+`expand_cat.c` unconditionally re-escaped every glob-special char via
+`expand_escape()` (removed entirely, along with the dead, never-set
+`X_ESCAPE` flag it existed for) before `expand_glob()` ever saw it;
+`parse_unquoted()` lost its locally-tracked `S_GLOB` flag whenever the
+pattern was the last thing before end-of-input (the same root cause
+as `dash-c-for-loop-parse-error`, fixes/56, had for keyword
+recognition); and `expand_glob()`'s own result-building loop left the
+first match's node unterminated at its new, shorter length, leaking
+the original pattern's own leftover bytes into the output for some
+match shapes.

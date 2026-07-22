@@ -24,9 +24,6 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
 
     n->narg.flag |= flags /*& (~(X_QUOTED))*/;
 
-    /*if(flags & X_QUOTED)
-      expand_escape(&n->narg.stra, b, len);
-    else*/
     stralloc_catb(&n->narg.stra, b, len);
 
     return n;
@@ -75,11 +72,20 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
         break;
 
     /* there were non-separators: fill the stralloc of the current argument node
-     */
+     *
+     * plain copy, not expand_escape(): the raw text here already has
+     * exactly the right shape for glob(3) to interpret -- an
+     * unescaped "*"/"?"/"[" is a real wildcard the user wrote bare,
+     * and a "\*"/"\?"/"\[" the user backslash-escaped is *already*
+     * glob(3)'s own escape syntax for a literal char, preserved
+     * as-is by parse_unquoted.c's own backslash handling (it only
+     * strips the backslash for non-glob-special chars). Blanket
+     * re-escaping every occurrence here (as expand_escape() does)
+     * turned every bare wildcard into an escaped literal, so no glob
+     * pattern was ever actually reachable from a plain command
+     * argument (glob-not-triggered-for-plain-arguments, fixes/66). */
     n->narg.flag |= flags;
-    expand_escape(&n->narg.stra, &b[i - x], x);
-    // if(flags & X_ESCAPE) expand_escape(&n->narg.stra, &b[i - x], x); else
-    // stralloc_catb(&n->narg.stra, &b[i - x], x);
+    stralloc_catb(&n->narg.stra, &b[i - x], x);
 
     /* finished */
     if(i == len)

@@ -67,6 +67,20 @@ expand_glob(union node** nptr, int flags) {
     for(i = 0; i < glb.gl_pathc;) {
       stralloc_cats(&n->narg.stra, glb.gl_pathv[i]);
 
+      /* the *first* match's node is "n" as handed in by the caller,
+         reused via stralloc_zero() above rather than freshly
+         allocated -- that only resets .len, leaving the original
+         pattern text physically sitting in the buffer past the new
+         (usually shorter) match. Nothing else in this loop
+         NUL-terminates at the new, correct length, so anything
+         downstream that reads ->stra.s as a plain C string (instead
+         of using ->stra.len) reads straight through into that
+         leftover tail. Every subsequent node is stralloc_init()'d
+         fresh below and wouldn't have stale bytes to leak, but
+         terminating unconditionally here is cheap and keeps this
+         from depending on that. */
+      stralloc_nul(&n->narg.stra);
+
       /* if there is another path then delimit the current one */
       if(++i < glb.gl_pathc) {
         /* if we should not split then just concat ifs[0] */
