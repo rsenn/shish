@@ -7,6 +7,7 @@ struct env sh_root = {/* .parent = */ NULL,
                       /* .cwdsym = */ 0,
                       /* .umask = */ 022,
                       /* .exitcode = */ 0,
+                      /* .cmdsubst_ran = */ 0,
                       /* .opts = */
                       {/*.errexit =*/0,
                        /*.noglob =*/0,

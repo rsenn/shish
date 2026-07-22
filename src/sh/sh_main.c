@@ -233,7 +233,7 @@ main(int argc, char** argv, char** envp) {
     history_shutdown();
   }
 
-  sh_exit(0);
+  sh_exit(sh->exitcode);
 
   return 0;
 }

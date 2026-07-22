@@ -1,0 +1,105 @@
+diff --git a/src/eval/eval_simple_command.c b/src/eval/eval_simple_command.c
+index 661c57fb..2d378f6c 100644
+--- a/src/eval/eval_simple_command.c
++++ b/src/eval/eval_simple_command.c
+@@ -56,7 +56,15 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+   }*/
+ 
+   /* expand and set the variables,
+-     mark them for export if we're gonna execute a command */
++     mark them for export if we're gonna execute a command --
++     cmdsubst_ran is reset here (not any earlier, since "$?" within
++     ncmd->args above must still see whatever ran before this command)
++     so the "no command, only assignments" status handling below can
++     tell "a command substitution in one of these assignments ran"
++     apart from "sh->exitcode is just still holding the previous
++     command's status" */
++  sh->cmdsubst_ran = 0;
++
+   if(expand_vars(ncmd->vars, &assigns)) {
+ 
+ #ifdef DEBUG_OUTPUT_
+@@ -173,9 +181,11 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+   }
+ 
+   /* if there is no command we can return after
+-     setting the vars and doing the redirections */
++     setting the vars and doing the redirections -- per POSIX, this
++     command's status is that of the last command substitution
++     performed in one of the assignments above, or 0 if none ran */
+   if(args == NULL) {
+-    status = e->exitcode;
++    status = sh->cmdsubst_ran ? sh->exitcode : 0;
+     goto end;
+   }
+ 
+diff --git a/src/expand/expand_command.c b/src/expand/expand_command.c
+index d8bb9b10..e62d9d6e 100644
+--- a/src/expand/expand_command.c
++++ b/src/expand/expand_command.c
+@@ -53,6 +53,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
+   }
+ 
+   sh->exitcode = eval_pop(&en);
++  sh->cmdsubst_ran = 1;
+ 
+   exec_functions_restore(&funcs);
+   vartab_pop(&vars);
+diff --git a/src/sh.h b/src/sh.h
+index ed9b4279..9da763ce 100644
+--- a/src/sh.h
++++ b/src/sh.h
+@@ -71,6 +71,9 @@ struct env {
+   unsigned cwdsym : 1; /* is cwd symbolic or phyiscal? */
+   unsigned umask : 12;
+   short exitcode; /* exit code of last evaluated tree */
++  unsigned cmdsubst_ran : 1; /* did the most recent word expansion run a
++                                command substitution? see eval_simple_command's
++                                "no command, only assignments" status handling */
+   struct shopt opts;
+   struct fdstack* fdstack;
+   struct vartab* varstack;
+diff --git a/src/sh/sh_loop.c b/src/sh/sh_loop.c
+index 099c3528..1445cf81 100644
+--- a/src/sh/sh_loop.c
++++ b/src/sh/sh_loop.c
+@@ -81,9 +81,12 @@ sh_loop(void) {
+       if(p.tok != T_EOF)
+         parse_error(&p, 0);
+ 
+-      /* exit if not interactive */
++      /* exit if not interactive -- a clean T_EOF right after the last
++         command (no trailing newline/semicolon, as with a "-c"
++         argument) is not itself an error, so it must exit with that
++         command's own status rather than a hardcoded 0 */
+       if(!(source->mode & SOURCE_IACTIVE))
+-        sh_exit(p.tok != T_EOF);
++        sh_exit(p.tok != T_EOF ? 1 : sh->exitcode);
+ 
+       /* ..otherwise discard the input buffer */
+       source_flush();
+diff --git a/src/sh/sh_main.c b/src/sh/sh_main.c
+index 8502ab55..4336b60f 100644
+--- a/src/sh/sh_main.c
++++ b/src/sh/sh_main.c
+@@ -233,7 +233,7 @@ main(int argc, char** argv, char** envp) {
+     history_shutdown();
+   }
+ 
+-  sh_exit(0);
++  sh_exit(sh->exitcode);
+ 
+   return 0;
+ }
+diff --git a/src/sh/sh_root.c b/src/sh/sh_root.c
+index 9985477e..3d92f097 100644
+--- a/src/sh/sh_root.c
++++ b/src/sh/sh_root.c
+@@ -7,6 +7,7 @@ struct env sh_root = {/* .parent = */ NULL,
+                       /* .cwdsym = */ 0,
+                       /* .umask = */ 022,
+                       /* .exitcode = */ 0,
++                      /* .cmdsubst_ran = */ 0,
+                       /* .opts = */
+                       {/*.errexit =*/0,
+                        /*.noglob =*/0,

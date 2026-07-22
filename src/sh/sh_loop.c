@@ -81,9 +81,12 @@ sh_loop(void) {
       if(p.tok != T_EOF)
         parse_error(&p, 0);
 
-      /* exit if not interactive */
+      /* exit if not interactive -- a clean T_EOF right after the last
+         command (no trailing newline/semicolon, as with a "-c"
+         argument) is not itself an error, so it must exit with that
+         command's own status rather than a hardcoded 0 */
       if(!(source->mode & SOURCE_IACTIVE))
-        sh_exit(p.tok != T_EOF);
+        sh_exit(p.tok != T_EOF ? 1 : sh->exitcode);
 
       /* ..otherwise discard the input buffer */
       source_flush();

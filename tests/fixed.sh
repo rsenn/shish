@@ -878,4 +878,76 @@ assert_equal "before
 after" "$X" "a temporary (non-\"exec\") \">&-\" on one command must not close the fd for commands after it"
 rm -f "$TMPFILE"
 
+## fixes/56 (dash-c-for-loop-parse-error): a compound command whose
+## closing keyword ("done"/"fi"/...) landed exactly at end-of-input --
+## with no trailing whitespace/newline after it, e.g. a "-c" argument
+## (which unlike a script file has no trailing newline unless the
+## caller added one) -- failed to parse with "unexpected token EOF,
+## expecting 'done'". parse_unquoted() only recognizes a keyword when
+## it can peek a delimiter char *after* the word (see its
+## parse_isctrl()/parse_isspace() branch); at true EOF there's no such
+## char to peek, so parse_word() fell through to its final
+## parse_string() call, which cleared p->sa (the accumulated "done")
+## before parse_gettok()'s own fallback keyword check ever ran against
+## it -- so the fallback always saw an empty string. Reproduced here
+## by sourcing a file with no trailing newline (same underlying
+## source_peek()-hits-true-EOF mechanism as "-c", without needing to
+## invoke a second shish process to prove it).
+TMPFILE=$(mktemp)
+printf 'for i in a b c; do echo "[$i]"; done' >"$TMPFILE"
+X=$(. "$TMPFILE")
+assert_equal "[a]
+[b]
+[c]" "$X" "a \"for\" loop whose closing \"done\" lands exactly at end-of-input must still parse"
+rm -f "$TMPFILE"
+
+TMPFILE=$(mktemp)
+printf 'if true; then echo hi; fi' >"$TMPFILE"
+X=$(. "$TMPFILE")
+assert_equal "hi" "$X" "an \"if\" whose closing \"fi\" lands exactly at end-of-input must still parse"
+rm -f "$TMPFILE"
+
+## fixes/57 (last-command-status-not-propagated): a script's/"-c"
+## string's own process exit status didn't reflect its last command's
+## natural (non-"exit") failure -- only an explicit "exit N" ever
+## changed it. Two separate spots hardcoded a 0: sh_main.c called
+## "sh_exit(0)" unconditionally after sh_loop() returned (the path a
+## script file with a trailing newline after its last command takes),
+## and sh_loop.c itself called "sh_exit(p.tok != T_EOF)" when the last
+## command wasn't followed by a newline/semicolon (the path "-c 'cmd'"
+## takes, since a "-c" argument has no trailing newline unless the
+## caller added one) -- both now use sh->exitcode instead. Also fixed:
+## "$?" right after a command-substitution-only assignment ("X=$(cmd)"
+## with no command name) reflected a stale, always-0 per-command
+## eval frame value instead of the substitution's real status.
+##
+## the sh_loop.c half needs its own subprocess/subshell to observe (it
+## calls sh_exit(), which -- since a plain, non-forking "(...)"
+## subshell here still sets up a matching longjmp target, see
+## eval_subshell.c -- unwinds only the subshell rather than the whole
+## test process, which is why this is wrapped in one).
+TMPFILE=$(mktemp)
+printf 'false' >"$TMPFILE"
+(. "$TMPFILE")
+STATUS=$?
+assert_equal "1" "$STATUS" "sourcing a file whose last command (no trailing newline) fails must propagate that status"
+rm -f "$TMPFILE"
+
+X=$(false)
+assert_equal "" "$X" "sanity: \$(false) itself still produces no output"
+false; X=5; STATUS_AFTER_PLAIN_ASSIGN=$?
+assert_equal "0" "$STATUS_AFTER_PLAIN_ASSIGN" "a plain assignment with no command substitution must reset status to 0, not carry over the previous command's"
+
+false
+X=$(true)
+assert_equal "0" "$?" "\"X=\$(cmd)\" with no command name must reflect the substitution's own (successful) status"
+
+true
+X=$(exit 5)
+assert_equal "5" "$?" "\"X=\$(cmd)\" with no command name must reflect the substitution's own (failing) status"
+
+false
+X=$?
+assert_equal "1" "$X" "\"X=\$?\" must still capture the PRECEDING command's status, not be treated as a substitution"
+
 summary

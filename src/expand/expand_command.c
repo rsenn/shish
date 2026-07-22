@@ -53,6 +53,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
   }
 
   sh->exitcode = eval_pop(&en);
+  sh->cmdsubst_ran = 1;
 
   exec_functions_restore(&funcs);
   vartab_pop(&vars);

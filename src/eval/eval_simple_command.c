@@ -56,7 +56,15 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   }*/
 
   /* expand and set the variables,
-     mark them for export if we're gonna execute a command */
+     mark them for export if we're gonna execute a command --
+     cmdsubst_ran is reset here (not any earlier, since "$?" within
+     ncmd->args above must still see whatever ran before this command)
+     so the "no command, only assignments" status handling below can
+     tell "a command substitution in one of these assignments ran"
+     apart from "sh->exitcode is just still holding the previous
+     command's status" */
+  sh->cmdsubst_ran = 0;
+
   if(expand_vars(ncmd->vars, &assigns)) {
 
 #ifdef DEBUG_OUTPUT_
@@ -173,9 +181,11 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   }
 
   /* if there is no command we can return after
-     setting the vars and doing the redirections */
+     setting the vars and doing the redirections -- per POSIX, this
+     command's status is that of the last command substitution
+     performed in one of the assignments above, or 0 if none ran */
   if(args == NULL) {
-    status = e->exitcode;
+    status = sh->cmdsubst_ran ? sh->exitcode : 0;
     goto end;
   }
 

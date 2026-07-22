@@ -66,14 +66,6 @@
     f
     echo $X
 
-- dash-c-for-loop-parse-error: a "for" (and likely "while"/"until")
-  loop passed via "-c" fails to parse with "unexpected token EOF,
-  expecting 'done'", while the exact same text parses fine as a
-  script file. Found while testing export-unset-segfault; confirmed
-  pre-existing on a clean checkout, not a regression.
-
-    shish -c 'for i in a b c; do echo "[$i]"; done'
-
 - cmdsubst-external-stderr-redirect-lost: an external command's
   "2>&1" inside a command substitution doesn't get captured -- it
   leaks straight to the shell's own real stderr instead, and the
@@ -96,14 +88,3 @@
   (fdstack-push-assertion, now fixed) that had been masking it.
 
     ./shish tests/param.sh   # under an ASan build
-
-- last-command-status-not-propagated: a script's/(-c string's) own
-  process exit status doesn't reflect its last command's natural
-  (non-"exit") failure -- only an explicit "exit N" ever changes it;
-  falling off the end after a failing command always exits 0. The
-  same thing happens to "$?" right after a command substitution: it
-  reflects the substitution's own status, not the last command run
-  inside it. Found incidentally while testing fd-close-noop's fix.
-
-    ./shish -c 'false'; echo "$?"        # prints 0, should be 1
-    ./shish -c 'X=$(false); echo "$?"'   # prints 0, should be 1
