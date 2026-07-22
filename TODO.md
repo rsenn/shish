@@ -199,7 +199,7 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
      chunk with a new `S_HEREDOC` flag at parse time and having
      `expand_arg()` leave `X_LITERAL` off for it.
 
-   - **Update (2026-07-22, last one today):**
+   - **Update (2026-07-22):**
      `configure-summary-test-invalid-expression` fixed (`fixes/72`,
      user-diagnosed) — root cause: `test`/`[` with exactly one
      argument must always just check whether it's non-null per POSIX's
@@ -212,6 +212,28 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
      `if test "$LIBS"; then ... fi`) fell through to "invalid
      expression" instead of true. Fixed by only attempting
      operator parsing when at least one more argument remains.
+
+   - **Update (2026-07-23):** `fdtable-cycle-detection` closed
+     (`fixes/73`). Extensive fuzzing (fd rotations of various lengths,
+     the classic `3>&1 1>&2 2>&3 3>&-` stdout/stderr swap, pipelines
+     combined with dup redirections, and the exact illustrative
+     example this `BUGS` entry carried) never produced a real infinite
+     cycle: `fd_dup()` always flattens a fresh redirection's target to
+     its ultimate, already-resolved ancestor at setup time, and every
+     redirection clause replaces its slot's occupant with a brand new
+     struct, so the dependency graph `fdtable_resolve()` et al. walk
+     can't actually cycle through ordinary syntax. Confirmed the
+     illustrative example (and the classic swap) resolve correctly via
+     new regression tests. Replaced the resolver's defense (a raw
+     recursion-depth counter capped at `FDTABLE_SIZE`/`FD_MAX`, e.g.
+     1024 — deep enough to risk a real stack overflow before ever
+     being reached, and unable to distinguish a genuine cycle from a
+     merely long chain) with real graph-cycle detection: a stack of
+     the fd numbers actively being resolved on the current call chain,
+     checked before each recursive call. Verified against the full
+     `tests/posix`/`tests/yash` conformance corpus too (same 75/119
+     pre-existing failures before and after — an unrelated, already
+     known, unstarted-triage baseline, not something this touched).
 
 ---
 

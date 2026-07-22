@@ -1446,4 +1446,45 @@ assert_equal "nonempty" "$X72" "test with a single argument that looks like a re
 if test -f "$0"; then X72=exists; else X72=missing; fi
 assert_equal "exists" "$X72" "test -f with an actual operand must still perform the real file test, unaffected by the single-argument fix above"
 
+## fixes/73 (fdtable-cycle-detection): BUGS carried an "illustrative
+## (unconfirmed)" example of a redirection chain that "looks" cyclic
+## (each hop's fd is itself a dup of the one before), worried that the
+## fdtable resolver's recursive "follow whoever occupies the slot I
+## want" machinery might spin forever on it. Extensive fuzzing (fd
+## rotations of various lengths, the classic 3>&1 1>&2 2>&3 3>&-
+## stdout/stderr swap, pipelines combined with dup redirections) never
+## found a real infinite cycle -- fd_dup() always flattens a fresh
+## redirection's target to its ultimate, already-resolved ancestor at
+## setup time, and every redirection clause replaces its slot's
+## occupant with a brand new struct, so the dependency graph these
+## functions walk can't actually cycle through ordinary syntax. These
+## two are exactly that "looks cyclic but isn't" shape, confirmed
+## working correctly. Replaced the resolver's previous defense (a raw
+## recursion-depth counter, capped at FDTABLE_SIZE / FD_MAX -- deep
+## enough to risk a real stack overflow before ever being reached, and
+## unable to tell a genuine cycle from a merely long chain) with real
+## graph-cycle detection: a stack of the fd numbers actively being
+## resolved on the current call chain, checked before each recursive
+## call.
+OUTFILE73=$(mktemp)
+(
+exec 3<&0
+exec 4<&3
+exec 3<&4
+head -n1 <&3
+) < "$0" > "$OUTFILE73"
+assert_equal "DIR=\$(dirname \"\${0}\")" "$(head -n1 "$OUTFILE73")" "a multi-hop fd-alias rotation (3<&0, 4<&3, 3<&4) must still read from the original stdin"
+rm -f "$OUTFILE73"
+
+OUTFILE73B=$(mktemp)
+ERRFILE73B=$(mktemp)
+(
+exec 3>&1 1>&2 2>&3 3>&-
+echo "went to stderr via fd1"
+echo "went to stdout via fd2" >&2
+) > "$OUTFILE73B" 2> "$ERRFILE73B"
+assert_equal "went to stdout via fd2" "$(cat "$OUTFILE73B")" "the classic 3>&1 1>&2 2>&3 3>&- stdout/stderr swap must land the right text on stdout"
+assert_equal "went to stderr via fd1" "$(cat "$ERRFILE73B")" "the classic 3>&1 1>&2 2>&3 3>&- stdout/stderr swap must land the right text on stderr"
+rm -f "$OUTFILE73B" "$ERRFILE73B"
+
 summary

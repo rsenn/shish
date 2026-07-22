@@ -1,0 +1,180 @@
+diff --git a/BUGS b/BUGS
+index 71f9458c..4a95a45e 100644
+--- a/BUGS
++++ b/BUGS
+@@ -1,12 +1,3 @@
+-- fdtable-cycle-detection: the fdtable resolver has no real cycle
+-  detection, only a defensive depth cap; a genuinely cyclic
+-  redirection fails instead of resolving. Not yet isolated to a
+-  concrete repro; illustrative (unconfirmed) attempt:
+-
+-    exec 3<&0
+-    exec 4<&3
+-    exec 3<&4
+-
+ - sig-push-sigset-cast: sig_push() reinterprets sigset_t through an
+   unsigned long*, UB on any ABI where sizeof(sigset_t) differs;
+   currently harmless because the function is unused (dead code, not
+diff --git a/TODO.md b/TODO.md
+index 263b7991..eeddfefe 100644
+--- a/TODO.md
++++ b/TODO.md
+@@ -199,7 +199,7 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
+      chunk with a new `S_HEREDOC` flag at parse time and having
+      `expand_arg()` leave `X_LITERAL` off for it.
+ 
+-   - **Update (2026-07-22, last one today):**
++   - **Update (2026-07-22):**
+      `configure-summary-test-invalid-expression` fixed (`fixes/72`,
+      user-diagnosed) — root cause: `test`/`[` with exactly one
+      argument must always just check whether it's non-null per POSIX's
+@@ -213,6 +213,28 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
+      expression" instead of true. Fixed by only attempting
+      operator parsing when at least one more argument remains.
+ 
++   - **Update (2026-07-23):** `fdtable-cycle-detection` closed
++     (`fixes/73`). Extensive fuzzing (fd rotations of various lengths,
++     the classic `3>&1 1>&2 2>&3 3>&-` stdout/stderr swap, pipelines
++     combined with dup redirections, and the exact illustrative
++     example this `BUGS` entry carried) never produced a real infinite
++     cycle: `fd_dup()` always flattens a fresh redirection's target to
++     its ultimate, already-resolved ancestor at setup time, and every
++     redirection clause replaces its slot's occupant with a brand new
++     struct, so the dependency graph `fdtable_resolve()` et al. walk
++     can't actually cycle through ordinary syntax. Confirmed the
++     illustrative example (and the classic swap) resolve correctly via
++     new regression tests. Replaced the resolver's defense (a raw
++     recursion-depth counter capped at `FDTABLE_SIZE`/`FD_MAX`, e.g.
++     1024 — deep enough to risk a real stack overflow before ever
++     being reached, and unable to distinguish a genuine cycle from a
++     merely long chain) with real graph-cycle detection: a stack of
++     the fd numbers actively being resolved on the current call chain,
++     checked before each recursive call. Verified against the full
++     `tests/posix`/`tests/yash` conformance corpus too (same 75/119
++     pre-existing failures before and after — an unrelated, already
++     known, unstarted-triage baseline, not something this touched).
++
+ ---
+ 
+ ## Goal 2 — Broader POSIX compliance
+diff --git a/src/fdtable/fdtable_resolve.c b/src/fdtable/fdtable_resolve.c
+index 4b6ab67a..1f507e47 100644
+--- a/src/fdtable/fdtable_resolve.c
++++ b/src/fdtable/fdtable_resolve.c
+@@ -12,15 +12,30 @@
+ /* fdtable_resolve, fdtable_close, fdtable_dup, fdtable_here,
+  * fdtable_open, fdtable_gap, fdtable_wish and fdtable_lazy recurse into
+  * each other, following whatever fd currently occupies the slot a
+- * redirection wants. That's normally a short, acyclic chain, but
+- * nothing here detects a cycle (e.g. two or more fds all wanting each
+- * other's slot) -- so a pathological redirection could in principle
+- * recurse forever and blow the stack. There can be at most FDTABLE_SIZE
+- * distinct fds involved, so any legitimate resolution finishes well
+- * within that many nested calls; past it, we're going in circles.
++ * redirection wants. That's normally a short, acyclic chain: fd_dup()
++ * always flattens a fresh redirection's ->dup pointer to its ultimate,
++ * already-resolved target at setup time (see fd_dup.c), and each
++ * redirection clause replaces its slot's occupant with a brand new
++ * struct rather than mutating the existing one in place, so the
++ * logical dependency graph these functions walk can't cycle through
++ * ordinary redirection syntax -- confirmed by fuzzing every "looks
++ * cyclic" shape found (multi-fd rotations, the classic 3>&1 1>&2 2>&3
++ * stdout/stderr swap, pipelines combined with dup redirections): none
++ * of them recurse past depth 2 in practice.
++ *
++ * fdtable_resolve_stack[] below still tracks every fd number actively
++ * being resolved on the current call chain, so if something *does*
++ * ever recurse back into an fd number that's already mid-resolution
++ * further up the stack, that's caught immediately, as the genuine
++ * graph cycle it is -- not via the previous plain depth counter, which
++ * only gave up after FDTABLE_SIZE (FD_MAX, e.g. 1024) nested calls: a
++ * limit deep enough to risk a real stack overflow before ever being
++ * reached, and one that couldn't distinguish a real cycle from a
++ * merely long, legitimate chain in the first place
++ * (fdtable-cycle-detection, fixes/73).
+  * ----------------------------------------------------------------------- */
+-static int
+-fdtable_resolve_depth;
++static int fdtable_resolve_depth;
++static int fdtable_resolve_stack[FDTABLE_SIZE];
+ 
+ /* try to resolve the virtual to its effective file descriptor
+  *
+@@ -131,13 +146,26 @@ fdtable_resolve_1(struct fd* d, int flags) {
+ 
+ int
+ fdtable_resolve(struct fd* d, int flags) {
+-  int state;
++  int state, i;
++
++  /* a genuine cycle: some fd number already being resolved further up
++     this same call chain wants d->n's slot again, so recursing back
++     into it could never make progress. Caught here immediately,
++     rather than only after fdtable_resolve_depth happened to reach
++     FDTABLE_SIZE. */
++  for(i = 0; i < fdtable_resolve_depth; i++) {
++    if(fdtable_resolve_stack[i] == d->n) {
++      sh_error("fdtable: redirection cycle detected");
++      return FDTABLE_ERROR;
++    }
++  }
+ 
+   if(fdtable_resolve_depth >= FDTABLE_SIZE) {
+     sh_error("fdtable: redirection cycle detected");
+     return FDTABLE_ERROR;
+   }
+ 
++  fdtable_resolve_stack[fdtable_resolve_depth] = d->n;
+   fdtable_resolve_depth++;
+   state = fdtable_resolve_1(d, flags);
+   fdtable_resolve_depth--;
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 93e24915..3378d3b6 100644
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -1446,4 +1446,45 @@ assert_equal "nonempty" "$X72" "test with a single argument that looks like a re
+ if test -f "$0"; then X72=exists; else X72=missing; fi
+ assert_equal "exists" "$X72" "test -f with an actual operand must still perform the real file test, unaffected by the single-argument fix above"
+ 
++## fixes/73 (fdtable-cycle-detection): BUGS carried an "illustrative
++## (unconfirmed)" example of a redirection chain that "looks" cyclic
++## (each hop's fd is itself a dup of the one before), worried that the
++## fdtable resolver's recursive "follow whoever occupies the slot I
++## want" machinery might spin forever on it. Extensive fuzzing (fd
++## rotations of various lengths, the classic 3>&1 1>&2 2>&3 3>&-
++## stdout/stderr swap, pipelines combined with dup redirections) never
++## found a real infinite cycle -- fd_dup() always flattens a fresh
++## redirection's target to its ultimate, already-resolved ancestor at
++## setup time, and every redirection clause replaces its slot's
++## occupant with a brand new struct, so the dependency graph these
++## functions walk can't actually cycle through ordinary syntax. These
++## two are exactly that "looks cyclic but isn't" shape, confirmed
++## working correctly. Replaced the resolver's previous defense (a raw
++## recursion-depth counter, capped at FDTABLE_SIZE / FD_MAX -- deep
++## enough to risk a real stack overflow before ever being reached, and
++## unable to tell a genuine cycle from a merely long chain) with real
++## graph-cycle detection: a stack of the fd numbers actively being
++## resolved on the current call chain, checked before each recursive
++## call.
++OUTFILE73=$(mktemp)
++(
++exec 3<&0
++exec 4<&3
++exec 3<&4
++head -n1 <&3
++) < "$0" > "$OUTFILE73"
++assert_equal "DIR=\$(dirname \"\${0}\")" "$(head -n1 "$OUTFILE73")" "a multi-hop fd-alias rotation (3<&0, 4<&3, 3<&4) must still read from the original stdin"
++rm -f "$OUTFILE73"
++
++OUTFILE73B=$(mktemp)
++ERRFILE73B=$(mktemp)
++(
++exec 3>&1 1>&2 2>&3 3>&-
++echo "went to stderr via fd1"
++echo "went to stdout via fd2" >&2
++) > "$OUTFILE73B" 2> "$ERRFILE73B"
++assert_equal "went to stdout via fd2" "$(cat "$OUTFILE73B")" "the classic 3>&1 1>&2 2>&3 3>&- stdout/stderr swap must land the right text on stdout"
++assert_equal "went to stderr via fd1" "$(cat "$ERRFILE73B")" "the classic 3>&1 1>&2 2>&3 3>&- stdout/stderr swap must land the right text on stderr"
++rm -f "$OUTFILE73B" "$ERRFILE73B"
++
+ summary

@@ -1,12 +1,3 @@
-- fdtable-cycle-detection: the fdtable resolver has no real cycle
-  detection, only a defensive depth cap; a genuinely cyclic
-  redirection fails instead of resolving. Not yet isolated to a
-  concrete repro; illustrative (unconfirmed) attempt:
-
-    exec 3<&0
-    exec 4<&3
-    exec 3<&4
-
 - sig-push-sigset-cast: sig_push() reinterprets sigset_t through an
   unsigned long*, UB on any ABI where sizeof(sigset_t) differs;
   currently harmless because the function is unused (dead code, not

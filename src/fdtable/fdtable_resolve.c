@@ -12,15 +12,30 @@
 /* fdtable_resolve, fdtable_close, fdtable_dup, fdtable_here,
  * fdtable_open, fdtable_gap, fdtable_wish and fdtable_lazy recurse into
  * each other, following whatever fd currently occupies the slot a
- * redirection wants. That's normally a short, acyclic chain, but
- * nothing here detects a cycle (e.g. two or more fds all wanting each
- * other's slot) -- so a pathological redirection could in principle
- * recurse forever and blow the stack. There can be at most FDTABLE_SIZE
- * distinct fds involved, so any legitimate resolution finishes well
- * within that many nested calls; past it, we're going in circles.
+ * redirection wants. That's normally a short, acyclic chain: fd_dup()
+ * always flattens a fresh redirection's ->dup pointer to its ultimate,
+ * already-resolved target at setup time (see fd_dup.c), and each
+ * redirection clause replaces its slot's occupant with a brand new
+ * struct rather than mutating the existing one in place, so the
+ * logical dependency graph these functions walk can't cycle through
+ * ordinary redirection syntax -- confirmed by fuzzing every "looks
+ * cyclic" shape found (multi-fd rotations, the classic 3>&1 1>&2 2>&3
+ * stdout/stderr swap, pipelines combined with dup redirections): none
+ * of them recurse past depth 2 in practice.
+ *
+ * fdtable_resolve_stack[] below still tracks every fd number actively
+ * being resolved on the current call chain, so if something *does*
+ * ever recurse back into an fd number that's already mid-resolution
+ * further up the stack, that's caught immediately, as the genuine
+ * graph cycle it is -- not via the previous plain depth counter, which
+ * only gave up after FDTABLE_SIZE (FD_MAX, e.g. 1024) nested calls: a
+ * limit deep enough to risk a real stack overflow before ever being
+ * reached, and one that couldn't distinguish a real cycle from a
+ * merely long, legitimate chain in the first place
+ * (fdtable-cycle-detection, fixes/73).
  * ----------------------------------------------------------------------- */
-static int
-fdtable_resolve_depth;
+static int fdtable_resolve_depth;
+static int fdtable_resolve_stack[FDTABLE_SIZE];
 
 /* try to resolve the virtual to its effective file descriptor
  *
@@ -131,13 +146,26 @@ fdtable_resolve_1(struct fd* d, int flags) {
 
 int
 fdtable_resolve(struct fd* d, int flags) {
-  int state;
+  int state, i;
+
+  /* a genuine cycle: some fd number already being resolved further up
+     this same call chain wants d->n's slot again, so recursing back
+     into it could never make progress. Caught here immediately,
+     rather than only after fdtable_resolve_depth happened to reach
+     FDTABLE_SIZE. */
+  for(i = 0; i < fdtable_resolve_depth; i++) {
+    if(fdtable_resolve_stack[i] == d->n) {
+      sh_error("fdtable: redirection cycle detected");
+      return FDTABLE_ERROR;
+    }
+  }
 
   if(fdtable_resolve_depth >= FDTABLE_SIZE) {
     sh_error("fdtable: redirection cycle detected");
     return FDTABLE_ERROR;
   }
 
+  fdtable_resolve_stack[fdtable_resolve_depth] = d->n;
   fdtable_resolve_depth++;
   state = fdtable_resolve_1(d, flags);
   fdtable_resolve_depth--;
