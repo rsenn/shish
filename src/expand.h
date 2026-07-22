@@ -58,6 +58,16 @@ enum subst_type {
 /* expansion modes */
 #define X_DEFAULT 0x00000000
 #define X_NOSPLIT 0x01000000
+/* set only on chunks that came straight from source text (N_ARGSTR),
+   where parse_squoted/parse_dquoted/parse_unquoted doubled every
+   glob-special char (parse_isesc) to protect it through this pipeline.
+   Those chunks need exactly one expand_unescape(parse_isesc) pass to
+   reveal the real literal text. Parameter/command/arithmetic
+   substitution results (expand_param.c et al) never went through that
+   doubling -- they're already real bytes -- so unescaping them again
+   corrupts any backslash the substituted value genuinely contains
+   (dollar-pid-changes-across-fork's sibling bug, fixes/69). */
+#define X_LITERAL 0x02000000
 #define X_GLOB 0x04000000
 #define X_QUOTED 0x08000000
 

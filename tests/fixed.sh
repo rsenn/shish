@@ -1300,4 +1300,71 @@ assert_equal "matched" "$X" "a bracket-expression equivalence class ([=x=]) must
 X=$(case a in [[:) echo unreachable;; *) echo fallback;; esac)
 assert_equal "fallback" "$X" "an unterminated/malformed bracket class must fall back to a literal '[' member instead of hanging"
 
+## fixes/68 (dollar-pid-changes-across-fork): "$$" is supposed to stay
+## the pid of the originally invoked shell for the whole script, no
+## matter how many pipeline/subshell/cmdsubst forks happen along the
+## way (this repo's own "./configure --enable-maintainer-mode" relies
+## on exactly this to build a stable "conf$$subs.awk" filename it
+## reuses across several separately-forked pipeline stages). It used
+## to read the same global (sh_pid) that job control's sh_forked()
+## updates to the real OS pid on every fork, so each forked pipeline
+## member reported a different, wrong "$$". Fixed by giving "$$" its
+## own global (sh_shpid), set once at startup and never touched again.
+X=$(echo $$)
+assert_equal "$$" "$X" "\"\$\$\" inside a command substitution must match the top-level shell's pid"
+
+X=$(echo "pipeline: $$" | cat)
+assert_equal "pipeline: $$" "$X" "\"\$\$\" inside a pipeline member (its own forked child) must still match the top-level shell's pid"
+
+X=$( ( echo $$ ) )
+assert_equal "$$" "$X" "\"\$\$\" inside a subshell must still match the top-level shell's pid"
+
+## fixes/69 (variable-value-double-unescaped): expand_args()/expand_vars()
+## always ran the final assembled argument through
+## expand_unescape(parse_isesc), a pass meant to undo the doubling
+## parse_squoted.c/parse_dquoted.c/parse_unquoted.c add to protect a
+## LITERAL source character from being misread as a real glob
+## metachar later on. Parameter/command-substitution results were
+## never doubled that way -- they're already real bytes -- so running
+## the same pass over them stripped a genuine backslash the
+## substituted value contained (this repo's own
+## "./configure --enable-maintainer-mode" builds a sed script in a
+## variable this way and passes it straight to sed, so every
+## backslash in that script lost one level of escaping, corrupting
+## the script -- "sed: -e expression #1, char N: unterminated `s'
+## command"). Fixed with a new X_LITERAL flag, set only on chunks
+## that actually came from source text, gating the unescape call.
+## Fixing that surfaced a second bug in the same change: expand_unescape()
+## also nul-terminates its stralloc as a side effect, so skipping it
+## entirely for substituted content (no literal chunk in the word at
+## all) left that argument's buffer not nul-terminated -- anything
+## reading it as a plain C string (e.g. the "." builtin building a
+## path from a command-substitution result) walked off the end into
+## unrelated heap memory. Fixed by nul-terminating unconditionally.
+## (single-quoted assignment, not a command-substitution RHS: a
+## variable assignment's own "name=" prefix is literal source text
+## sharing the same argument buffer as its value, so an assignment
+## whose RHS is itself a command substitution containing backslashes
+## is a separate, still-open, pre-existing issue -- confirmed
+## unaffected by this fix either way -- and deliberately not exercised
+## here.)
+X='a\\b'
+myfunc69a() {
+  test "$1" = "$2"
+}
+myfunc69a 'a\\b' "$X"
+assert_equal "0" "$?" "a variable holding literal backslashes must survive being re-substituted (quoted) as a command argument"
+
+myfunc69a 'a\\b' $X
+assert_equal "0" "$?" "a variable holding literal backslashes must survive being re-substituted (unquoted) as a command argument"
+
+SAVED_OK69=$ASSERTIONS_SUCCEEDED
+SAVED_FAIL69=$ASSERTIONS_FAILED
+DIR69=$(dirname "$0")
+. "$DIR69/common.sh"
+ASSERTIONS_SUCCEEDED=$SAVED_OK69
+ASSERTIONS_FAILED=$SAVED_FAIL69
+UNRELATED69=$(printf '%s' 'sentinel-value-should-not-be-corrupted')
+assert_equal "sentinel-value-should-not-be-corrupted" "$UNRELATED69" "sourcing a file via a command-substitution-built path must not corrupt an unrelated later substitution's buffer"
+
 summary

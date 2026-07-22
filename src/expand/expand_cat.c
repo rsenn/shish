@@ -56,7 +56,7 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
       if(flags & X_GLOB) {
         if((n = expand_glob(nptr, flags & ~X_GLOB)))
           nptr = &n;
-      } else {
+      } else if(flags & X_LITERAL) {
         expand_unescape(&n->narg.stra, parse_isesc);
         n->narg.flag &= ~X_GLOB;
       }

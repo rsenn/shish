@@ -171,7 +171,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
         /* $$ arg subst */
       case S_PID: {
-        stralloc_catulong0(&value, sh_pid, 0);
+        stralloc_catulong0(&value, sh_shpid, 0);
         break;
       }
     }

@@ -29,6 +29,7 @@ struct env sh_root = {/* .parent = */ NULL,
 struct env* sh = &sh_root;
 
 pid_t sh_pid;
+pid_t sh_shpid;
 uid_t sh_uid;
 const char* sh_home;
 char* sh_argv0;

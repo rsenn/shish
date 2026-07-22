@@ -35,9 +35,17 @@ expand_args(union node* args, union node** nptr, int flags) {
         nptr = &n;
         ret++;
       }
-    } else {
+    } else if(n->narg.flag & X_LITERAL) {
       expand_unescape(&n->narg.stra, parse_isesc);
       n->narg.flag &= ~X_GLOB;
+    } else {
+      /* expand_unescape() nul-terminates as a side effect -- skipping
+         it here for non-literal content must not also skip that, or
+         ->stra.s stops being a valid C string and anything reading it
+         as one (e.g. the "." builtin building a path from a command
+         substitution result) walks off the end into whatever memory
+         happens to follow the allocation. */
+      stralloc_nul(&n->narg.stra);
     }
 
     if(arg->next) {

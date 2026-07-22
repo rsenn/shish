@@ -1,3 +1,26 @@
+- assign-cmdsubst-value-loses-escaping: a variable assignment whose RHS
+  is a command substitution containing a literal backslash loses one
+  level of backslash escaping (`X=$(echo 'a\\b'); echo "$X"` prints
+  "a\b" instead of "a\\b"). The assignment's own "name=" text is
+  literal source (parser-doubled for glob protection) sharing the same
+  argument buffer as the substituted value (which was never doubled),
+  and only one expand_unescape() pass runs over the whole buffer --
+  confirmed present before and after fixes/69 (that fix only handles a
+  word that's *purely* a substitution, not one mixing a literal prefix
+  with substituted content in the same buffer). Needs per-fragment
+  unescape tracking instead of one flag per assembled argument node;
+  see fixes/69's patch comment in expand_arg.c for the mechanism this
+  would extend.
+
+- configure-summary-test-invalid-expression: `./configure
+  --enable-maintainer-mode` prints "test: invalid expression" three
+  times (around the builtins-summary loop, autoconf's
+  `for var in ...; do case "$var" in ...; esac; done`-style block)
+  right before the final "Enabled builtins:" line. Doesn't stop
+  configure from completing or corrupt config.status/Makefile as far
+  as tested; not yet isolated to the exact construct. Found while
+  verifying fixes/69.
+
 - fdtable-cycle-detection: the fdtable resolver has no real cycle
   detection, only a defensive depth cap; a genuinely cyclic
   redirection fails instead of resolving. Not yet isolated to a

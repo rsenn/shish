@@ -18,8 +18,14 @@ expand_vars(union node* vars, union node** nptr) {
     node = 0;
     node = expand_arg(var, &node, X_NOSPLIT);
 
-    if(node)
-      expand_unescape(&node->narg.stra, parse_isesc);
+    if(node) {
+      if(node->narg.flag & X_LITERAL)
+        expand_unescape(&node->narg.stra, parse_isesc);
+      else
+        /* expand_unescape() nul-terminates as a side effect -- see
+           expand_args.c's identical comment */
+        stralloc_nul(&node->narg.stra);
+    }
 
     while(*nptr)
       tree_skip(nptr);

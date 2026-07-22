@@ -37,6 +37,7 @@ sh_init(void) {
   sh_uid = getuid();
 #endif
   sh_pid = getpid();
+  sh_shpid = sh_pid;
 
   uint32_seed(&sh_pid, sizeof(sh_pid));
 

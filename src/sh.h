@@ -95,7 +95,15 @@ extern struct env* sh;
 extern struct env sh_root;
 extern const char* sh_home;
 extern uid_t sh_uid;
+/* sh_pid is *this* process's real OS pid -- it changes across fork()
+   (sh_forked() updates it) because job control (setpgid/tcsetpgrp) and
+   /proc/<pid>/fd/ paths need the actual pid of whichever process is
+   running right now. sh_shpid is "$$": POSIX defines it as the pid of
+   the originally invoked shell, fixed for the whole script no matter
+   how many pipeline/subshell/cmdsubst forks happen along the way, so
+   it's set once at startup and never touched again. */
 extern pid_t sh_pid;
+extern pid_t sh_shpid;
 
 union node;
 

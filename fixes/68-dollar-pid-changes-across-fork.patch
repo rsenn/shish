@@ -1,0 +1,57 @@
+diff --git a/src/expand/expand_param.c b/src/expand/expand_param.c
+index fef58bad..ff223f2f 100644
+--- a/src/expand/expand_param.c
++++ b/src/expand/expand_param.c
+@@ -171,7 +171,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+ 
+         /* $$ arg subst */
+       case S_PID: {
+-        stralloc_catulong0(&value, sh_pid, 0);
++        stralloc_catulong0(&value, sh_shpid, 0);
+         break;
+       }
+     }
+diff --git a/src/sh.h b/src/sh.h
+index 9da763ce..2f871307 100644
+--- a/src/sh.h
++++ b/src/sh.h
+@@ -95,7 +95,15 @@ extern struct env* sh;
+ extern struct env sh_root;
+ extern const char* sh_home;
+ extern uid_t sh_uid;
++/* sh_pid is *this* process's real OS pid -- it changes across fork()
++   (sh_forked() updates it) because job control (setpgid/tcsetpgrp) and
++   /proc/<pid>/fd/ paths need the actual pid of whichever process is
++   running right now. sh_shpid is "$$": POSIX defines it as the pid of
++   the originally invoked shell, fixed for the whole script no matter
++   how many pipeline/subshell/cmdsubst forks happen along the way, so
++   it's set once at startup and never touched again. */
+ extern pid_t sh_pid;
++extern pid_t sh_shpid;
+ 
+ union node;
+ 
+diff --git a/src/sh/sh_init.c b/src/sh/sh_init.c
+index 44334613..243e78d5 100644
+--- a/src/sh/sh_init.c
++++ b/src/sh/sh_init.c
+@@ -37,6 +37,7 @@ sh_init(void) {
+   sh_uid = getuid();
+ #endif
+   sh_pid = getpid();
++  sh_shpid = sh_pid;
+ 
+   uint32_seed(&sh_pid, sizeof(sh_pid));
+ 
+diff --git a/src/sh/sh_root.c b/src/sh/sh_root.c
+index 3d92f097..830c9cd0 100644
+--- a/src/sh/sh_root.c
++++ b/src/sh/sh_root.c
+@@ -29,6 +29,7 @@ struct env sh_root = {/* .parent = */ NULL,
+ struct env* sh = &sh_root;
+ 
+ pid_t sh_pid;
++pid_t sh_shpid;
+ uid_t sh_uid;
+ const char* sh_home;
+ char* sh_argv0;

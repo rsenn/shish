@@ -60,7 +60,19 @@ expand_arg(union node* node, union node** nptr, int flags) {
         /* constant string */
       case N_ARGSTR: {
         assert(subarg->nargstr.stra.s);
-        n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, nptr, lflags);
+
+        /* an empty literal chunk contributes zero bytes, but the
+           X_LITERAL flag OR's cumulatively onto the shared argument
+           node (expand_cat() keeps appending into the same node
+           across subarg parts) -- setting it here regardless would
+           taint an adjacent, still-to-come parameter/command
+           substitution chunk that never went through the doubling
+           expand_unescape() is meant to undo. Parser code routinely
+           emits exactly such an empty N_ARGSTR immediately before a
+           substitution (e.g. "$x" opens with a zero-length literal
+           flush), so this isn't a rare edge case. */
+        n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, nptr,
+                        subarg->nargstr.stra.len ? (lflags | X_LITERAL) : lflags);
         break;
       }
 

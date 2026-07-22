@@ -146,6 +146,26 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
    the next task.** This is a self-refilling queue — don't try to
    pre-guess further than the current blocker.
 
+   - **Update (2026-07-22):** `./configure --enable-maintainer-mode`
+     now runs to completion end-to-end (past the point described
+     above) and writes `Makefile`/`config.mk`/`build.mk`. Two more bugs
+     found and fixed getting here, neither previously listed: `$$`
+     changing value across every pipeline/subshell/cmdsubst fork
+     instead of staying fixed for the whole script (`fixes/68`), which
+     broke `config.status`'s `conf$$subs.awk` temp-file scheme; and a
+     variable/substitution value's backslashes getting one level of
+     escaping stripped when re-substituted as a command argument
+     (`fixes/69`), which corrupted the `sed` script `config.status`
+     builds in `$ac_script` to derive `DEFS` from `confdefs.h`. Two new
+     issues surfaced along the way, both in `BUGS`:
+     `assign-cmdsubst-value-loses-escaping` (a narrower variant of the
+     fixes/69 bug that fixes/69 doesn't cover) and
+     `configure-summary-test-invalid-expression` (harmless as far as
+     tested, but unisolated). Next step is still the same "run it,
+     read config.log, fix the next failure" loop — the two most
+     concrete unstarted items are `job-fork-nproc-oob` and the
+     `AC_PROG_CC` false negative referenced above.
+
 ---
 
 ## Goal 2 — Broader POSIX compliance
