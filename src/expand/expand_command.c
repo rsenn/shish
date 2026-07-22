@@ -71,7 +71,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
 
             so we won't have to alloc all the stuff twice!
    */
-  n = expand_cat(sa.s, sa.len, nptr, flags & (~(X_QUOTED)));
+  n = expand_cat(sa.s, sa.len, nptr, flags);
   stralloc_free(&sa);
 
   return n;

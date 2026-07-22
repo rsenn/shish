@@ -45,14 +45,6 @@
     sleep 2 &
     wait
 
-- quoted-cmdsubst-field-split: quoted "$(cmd)" doesn't suppress field
-  splitting -- any "$(cmd)" whose output contains IFS characters gets
-  split into multiple words/positional-params even inside double
-  quotes.
-
-    set -- "$(printf "a b c")"
-    echo $#
-
 - nested-backquote: nested backquote command substitution (inner
   backquotes escaped with backslash, per POSIX 2.6.3) doesn't work;
   the inner backquotes are left completely unprocessed.
@@ -94,6 +86,39 @@
   pre-existing on a clean checkout, not a regression.
 
     shish -c 'for i in a b c; do echo "[$i]"; done'
+
+- cmdsubst-external-stderr-redirect-lost: an external command's
+  "2>&1" inside a command substitution doesn't get captured -- it
+  leaks straight to the shell's own real stderr instead, and the
+  substitution captures nothing for it. A builtin's own error message
+  (e.g. command-not-found, printed by the shell itself) *is* captured
+  correctly in the same position, so this is specific to redirections
+  applied to a forked external command's fds inside fd_subst()'s
+  in-process sink. Found incidentally while verifying the
+  quoted-cmdsubst-field-split fix; not yet investigated further.
+
+    x=$(ls /nonexistent-dir-for-bug-repro 2>&1)
+    echo "got: [$x]"
+
+- read-prefix-assign-leaks: "read" is classified as a POSIX special
+  builtin (B_SPECIAL/H_SBUILTIN in builtin_table.c), which is wrong --
+  it's not one of the special builtins POSIX 2.14 actually lists
+  (break/colon/continue/./eval/exec/exit/export/readonly/return/set/
+  shift/times/trap/unset). Consequence: a variable-assignment prefix
+  on "read" (e.g. "IFS= read -r line") persists after the command
+  instead of being scoped to it, since eval_simple_command.c only
+  pushes a temporary var scope for prefix assignments when
+  "cmd.id != H_SBUILTIN". Found incidentally while adding a
+  regression test for the quoted-cmdsubst-field-split fix (several
+  existing tests/fixed.sh assertions already used "IFS= read -r ..."
+  as a workaround for a different, older bug, silently leaving IFS
+  empty for the rest of the script).
+
+    echo "before: [$IFS]"
+    IFS= read -r x <<EOF
+    hello
+    EOF
+    echo "after: [$IFS]"
 
 - expand-glob-stack-overflow: found via an ASan build running
   tests/param.sh (which exercises heavy nested command-substitution +

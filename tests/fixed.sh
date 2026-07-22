@@ -631,4 +631,31 @@ X=$(true; echo one; false; echo status=$?)
 assert_equal "one
 status=1" "$X" "plain foreground external/builtin commands must still work normally now that they get a real struct job"
 
+## fixes/49: quoted "$(cmd)" didn't suppress field splitting --
+## expand_command() correctly received X_QUOTED (set from the
+## parser's S_DQUOTED/S_SQUOTED/... flag on the N_ARGCMD node, same
+## mechanism a quoted plain string or "$var" already used), but then
+## explicitly stripped it ("flags & (~(X_QUOTED))") right before
+## passing the substituted output to expand_cat() -- the one function
+## that actually decides whether to split on IFS. Fixed by passing
+## flags through unchanged, same as every other expand_arg.c call
+## site (expand_param(), expand_cat() for a literal string part) that
+## doesn't second-guess its caller's quoting.
+X=$(set -- "$(printf "a b c")"; echo $#)
+assert_equal "1" "$X" "a quoted \"\$(cmd)\" producing space-separated output must stay one word"
+
+## IFS is reset explicitly here rather than relied on as inherited --
+## an unrelated, separate bug ("IFS= read" leaking its prefix
+## assignment past the command, since builtin_read.c is misclassified
+## as a POSIX special builtin) can leave it emptied out by an earlier
+## "IFS= read ..." elsewhere in this same file.
+X=$(unset IFS; set -- $(printf "a b c"); echo $#)
+assert_equal "3" "$X" "an UNQUOTED \$(cmd) must still field-split on IFS as before"
+
+X=$(x="$(printf "a b c")"; echo "[$x]")
+assert_equal "[a b c]" "$X" "a quoted \"\$(cmd)\" assigned to a variable must keep its internal spaces"
+
+X=$(set -- "`printf "a b c"`"; echo $#)
+assert_equal "1" "$X" "a quoted backquoted command substitution must also stay one word, not just \"\$(...)\""
+
 summary
