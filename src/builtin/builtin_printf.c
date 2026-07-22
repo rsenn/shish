@@ -3,6 +3,7 @@
 #include "../../lib/buffer.h"
 #include "../../lib/fmt.h"
 #include "../../lib/scan.h"
+#include "../../lib/str.h"
 #include "../../lib/uint64.h"
 
 /* expand a single backslash escape starting at p[0] (the '\\').
@@ -131,6 +132,116 @@ printf_arg_ulong(int argc, char* argv[], int* idx) {
   return v;
 }
 
+/* a parsed "%[flags][width][.precision]" directive, minus the final
+ * conversion character */
+typedef struct {
+  int left, zero, plus, space, alt;
+  int width; /* -1 if unspecified */
+  int prec;  /* -1 if unspecified */
+} printf_spec;
+
+static const char*
+printf_parse_flags(const char* f, printf_spec* sp) {
+  for(;;) {
+    switch(*f) {
+      case '-': sp->left = 1; break;
+      case '0': sp->zero = 1; break;
+      case '+': sp->plus = 1; break;
+      case ' ': sp->space = 1; break;
+      case '#': sp->alt = 1; break;
+      default: return f;
+    }
+    f++;
+  }
+}
+
+/* parse a "%[flags][width][.precision]" spec starting right after the
+ * '%'; a '*' width/precision consumes the next printf argument. Returns
+ * a pointer to the conversion character. */
+static const char*
+printf_parse_spec(const char* f, printf_spec* sp, int argc, char* argv[],
+                   int* idx) {
+  sp->left = sp->zero = sp->plus = sp->space = sp->alt = 0;
+  sp->width = -1;
+  sp->prec = -1;
+
+  f = printf_parse_flags(f, sp);
+
+  if(*f == '*') {
+    int64 w = printf_arg_long(argc, argv, idx);
+    if(w < 0) {
+      sp->left = 1;
+      w = -w;
+    }
+    sp->width = (int)w;
+    f++;
+  } else if(*f >= '0' && *f <= '9') {
+    unsigned int w = 0;
+    f += scan_uint(f, &w);
+    sp->width = (int)w;
+  }
+
+  if(*f == '.') {
+    f++;
+    if(*f == '*') {
+      int64 p = printf_arg_long(argc, argv, idx);
+      sp->prec = p < 0 ? -1 : (int)p;
+      f++;
+    } else {
+      unsigned int p = 0;
+      f += scan_uint(f, &p);
+      sp->prec = (int)p;
+    }
+  }
+
+  return f;
+}
+
+/* emit a (sign)(prefix)(zero-padding to precision)(digits) numeric
+ * conversion, applying width/flag padding around it */
+static void
+printf_emit_numeric(const printf_spec* sp, char sign, const char* prefix,
+                     const char* digits, size_t dlen) {
+  size_t plen = prefix ? str_len(prefix) : 0;
+  size_t prec_pad = 0;
+  size_t body, width, pad;
+  int zero_pad;
+
+  if(sp->prec == 0 && dlen == 1 && digits[0] == '0')
+    dlen = 0;
+  else if(sp->prec > (int)dlen)
+    prec_pad = (size_t)sp->prec - dlen;
+
+  body = (sign ? 1u : 0u) + plen + prec_pad + dlen;
+  width = sp->width > 0 ? (size_t)sp->width : 0;
+  pad = width > body ? width - body : 0;
+
+  zero_pad = sp->zero && !sp->left && sp->prec < 0;
+
+  if(!sp->left && !zero_pad)
+    while(pad--)
+      buffer_put(fd_out->w, " ", 1);
+
+  if(sign)
+    buffer_put(fd_out->w, &sign, 1);
+  if(plen)
+    buffer_put(fd_out->w, prefix, plen);
+
+  if(!sp->left && zero_pad)
+    while(pad--)
+      buffer_put(fd_out->w, "0", 1);
+
+  while(prec_pad--)
+    buffer_put(fd_out->w, "0", 1);
+
+  if(dlen)
+    buffer_put(fd_out->w, digits, dlen);
+
+  if(sp->left)
+    while(pad--)
+      buffer_put(fd_out->w, " ", 1);
+}
+
 int
 builtin_printf(int argc, char* argv[]) {
   const char* fmt;
@@ -161,67 +272,117 @@ builtin_printf(int argc, char* argv[]) {
         continue;
       }
 
-      /* directive: just the conversion char for now -- configure relies
-         almost entirely on %s, %d, and %b; width/precision are uncommon
-         and can be added later if needed */
-      switch(*f) {
-        case 's': {
-          const char* s = printf_arg(argc, argv, &idx);
-          buffer_puts(fd_out->w, s);
-          did_arg = 1;
-          break;
+      {
+        const char* spec_start = f;
+        printf_spec sp;
+        f = printf_parse_spec(f, &sp, argc, argv, &idx);
+
+        switch(*f) {
+          case 's': {
+            const char* s = printf_arg(argc, argv, &idx);
+            size_t slen = str_len(s);
+            size_t width, pad;
+            if(sp.prec >= 0 && (size_t)sp.prec < slen)
+              slen = (size_t)sp.prec;
+            width = sp.width > 0 ? (size_t)sp.width : 0;
+            pad = width > slen ? width - slen : 0;
+            if(!sp.left)
+              while(pad--)
+                buffer_put(fd_out->w, " ", 1);
+            if(slen)
+              buffer_put(fd_out->w, s, slen);
+            if(sp.left)
+              while(pad--)
+                buffer_put(fd_out->w, " ", 1);
+            did_arg = 1;
+            break;
+          }
+          case 'b': {
+            const char* s = printf_arg(argc, argv, &idx);
+            printf_emit_bstring(s, &stop);
+            did_arg = 1;
+            break;
+          }
+          case 'c': {
+            const char* s = printf_arg(argc, argv, &idx);
+            size_t clen = s[0] ? 1 : 0;
+            size_t width = sp.width > 0 ? (size_t)sp.width : 0;
+            size_t pad = width > clen ? width - clen : 0;
+            if(!sp.left)
+              while(pad--)
+                buffer_put(fd_out->w, " ", 1);
+            if(clen)
+              buffer_put(fd_out->w, s, 1);
+            if(sp.left)
+              while(pad--)
+                buffer_put(fd_out->w, " ", 1);
+            did_arg = 1;
+            break;
+          }
+          case 'd':
+          case 'i': {
+            int64 v = printf_arg_long(argc, argv, &idx);
+            uint64 uv;
+            char sign = 0;
+            size_t n;
+            if(v < 0) {
+              sign = '-';
+              uv = (uint64)(-(v + 1)) + 1;
+            } else {
+              uv = (uint64)v;
+              if(sp.plus)
+                sign = '+';
+              else if(sp.space)
+                sign = ' ';
+            }
+            n = fmt_ulonglong(numbuf, uv);
+            printf_emit_numeric(&sp, sign, NULL, numbuf, n);
+            did_arg = 1;
+            break;
+          }
+          case 'u': {
+            uint64 v = printf_arg_ulong(argc, argv, &idx);
+            size_t n = fmt_ulonglong(numbuf, v);
+            printf_emit_numeric(&sp, 0, NULL, numbuf, n);
+            did_arg = 1;
+            break;
+          }
+          case 'o': {
+            uint64 v = printf_arg_ulong(argc, argv, &idx);
+            size_t n = fmt_8longlong(numbuf, v);
+            if(sp.alt && (n == 0 || numbuf[0] != '0') && sp.prec <= (int)n)
+              sp.prec = (int)n + 1;
+            printf_emit_numeric(&sp, 0, NULL, numbuf, n);
+            did_arg = 1;
+            break;
+          }
+          case 'x':
+          case 'X': {
+            uint64 v = printf_arg_ulong(argc, argv, &idx);
+            size_t n = fmt_xlonglong(numbuf, v);
+            const char* prefix = NULL;
+            if(*f == 'X') {
+              size_t i;
+              for(i = 0; i < n; i++)
+                if(numbuf[i] >= 'a' && numbuf[i] <= 'f')
+                  numbuf[i] = (char)(numbuf[i] - ('a' - 'A'));
+            }
+            if(sp.alt && v != 0)
+              prefix = (*f == 'X') ? "0X" : "0x";
+            printf_emit_numeric(&sp, 0, prefix, numbuf, n);
+            did_arg = 1;
+            break;
+          }
+          default:
+            /* unknown directive: emit the original "%..." text as a
+               fallback, rather than aborting --- configure scripts
+               sometimes pass through user-provided format strings */
+            buffer_put(fd_out->w, "%", 1);
+            buffer_put(fd_out->w, spec_start, (size_t)(f - spec_start));
+            if(*f)
+              buffer_put(fd_out->w, f, 1);
+            break;
         }
-        case 'b': {
-          const char* s = printf_arg(argc, argv, &idx);
-          printf_emit_bstring(s, &stop);
-          did_arg = 1;
-          break;
-        }
-        case 'c': {
-          const char* s = printf_arg(argc, argv, &idx);
-          if(s[0])
-            buffer_put(fd_out->w, s, 1);
-          did_arg = 1;
-          break;
-        }
-        case 'd':
-        case 'i': {
-          int64 v = printf_arg_long(argc, argv, &idx);
-          size_t n = fmt_longlong(numbuf, v);
-          buffer_put(fd_out->w, numbuf, n);
-          did_arg = 1;
-          break;
-        }
-        case 'u': {
-          uint64 v = printf_arg_ulong(argc, argv, &idx);
-          size_t n = fmt_ulonglong(numbuf, v);
-          buffer_put(fd_out->w, numbuf, n);
-          did_arg = 1;
-          break;
-        }
-        case 'o': {
-          uint64 v = printf_arg_ulong(argc, argv, &idx);
-          size_t n = fmt_8longlong(numbuf, v);
-          buffer_put(fd_out->w, numbuf, n);
-          did_arg = 1;
-          break;
-        }
-        case 'x':
-        case 'X': {
-          uint64 v = printf_arg_ulong(argc, argv, &idx);
-          size_t n = fmt_xlonglong(numbuf, v);
-          buffer_put(fd_out->w, numbuf, n);
-          did_arg = 1;
-          break;
-        }
-        default:
-          /* unknown directive: emit the % and the char as a fallback,
-             rather than aborting --- configure scripts sometimes pass
-             through user-provided format strings */
-          buffer_put(fd_out->w, "%", 1);
-          if(*f)
-            buffer_put(fd_out->w, f, 1);
-          break;
       }
       if(*f)
         f++;

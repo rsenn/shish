@@ -1,0 +1,49 @@
+diff --git a/src/builtin/builtin_table.c b/src/builtin/builtin_table.c
+index 8e5e6d62..f1971316 100644
+--- a/src/builtin/builtin_table.c
++++ b/src/builtin/builtin_table.c
+@@ -160,7 +160,7 @@ struct builtin_cmd builtin_table[] = {
+     {":", &builtin_true, B_SPECIAL, ""},
+ #endif
+ #if BUILTIN_ALIAS
+-    {"alias", &builtin_alias, B_SPECIAL, "[-p] [name[=value] ...]"},
++    {"alias", &builtin_alias, B_DEFAULT, "[-p] [name[=value] ...]"},
+ #endif
+ #if BUILTIN_BASENAME
+     {"basename", &builtin_basename, B_DEFAULT, "path"},
+@@ -239,7 +239,7 @@ struct builtin_cmd builtin_table[] = {
+     {"fg", &builtin_fg, B_DEFAULT, "[job...]"},
+ #endif
+ #if BUILTIN_GETOPTS
+-    {"getopts", &builtin_getopts, B_SPECIAL, "optstring name [arg ... ]"},
++    {"getopts", &builtin_getopts, B_DEFAULT, "optstring name [arg ... ]"},
+ #endif
+ #if BUILTIN_HASH
+     {"hash", &builtin_hash, B_DEFAULT, ""},
+@@ -260,7 +260,7 @@ struct builtin_cmd builtin_table[] = {
+     {"ln", &builtin_ln, B_DEFAULT, "[-sfv]"},
+ #endif
+ #if BUILTIN_LOCAL
+-    {"local", &builtin_local, B_SPECIAL, "[option] name[=value] ..."},
++    {"local", &builtin_local, B_DEFAULT, "[option] name[=value] ..."},
+ #endif
+ #if BUILTIN_MKDIR
+     {"mkdir", &builtin_mkdir, B_DEFAULT, "[-p]"},
+@@ -312,7 +312,7 @@ struct builtin_cmd builtin_table[] = {
+     {"type", &builtin_type, B_DEFAULT, "[-afptP] name [name ...]"},
+ #endif
+ #if BUILTIN_UMASK
+-    {"umask", &builtin_umask, B_SPECIAL, "[-p] [-S] [mode]"},
++    {"umask", &builtin_umask, B_DEFAULT, "[-p] [-S] [mode]"},
+ #endif
+ #if BUILTIN_UNSET
+     {"unset", &builtin_unset, B_SPECIAL, "[name ...]"},
+@@ -327,7 +327,7 @@ struct builtin_cmd builtin_table[] = {
+     {"type", &builtin_type, B_DEFAULT, "name ..."},
+ #endif
+ #if BUILTIN_ALIAS
+-    {"unalias", &builtin_alias, B_SPECIAL, "[-a] [name ...]"},
++    {"unalias", &builtin_alias, B_DEFAULT, "[-a] [name ...]"},
+ #endif
+ #if BUILTIN_UNAME
+     {"uname", &builtin_uname, B_DEFAULT, "[-amnrspvio]"},

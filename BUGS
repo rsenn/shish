@@ -52,14 +52,6 @@
     nested=`echo \`echo inner\``
     echo "$nested"
 
-- printf-field-width: builtin printf doesn't support a field
-  width/flags on numeric conversions -- the format string is printed
-  back completely unprocessed instead of being applied. A bare
-  conversion with no width works fine, and "%X" prints lowercase
-  digits instead of uppercase.
-
-    printf "%08x\n" 255
-
 - subshell-function-body-isolation: a function defined with a
   subshell as its body ("f() ( ... )") does not actually isolate
   variable assignments into a subshell the way a bare "( ... )"
@@ -90,22 +82,6 @@
 
     x=$(ls /nonexistent-dir-for-bug-repro 2>&1)
     echo "got: [$x]"
-
-- misclassified-special-builtins: "alias", "getopts", "local", "umask",
-  and "unalias" are all marked B_SPECIAL in builtin_table.c, but none
-  of them are in POSIX 2.14's actual special-builtin list
-  (break/colon/continue/./eval/exec/exit/export/readonly/return/set/
-  shift/times/trap/unset) -- same misclassification "read" had (fixed,
-  fixes/50), just not yet confirmed to cause the same degree of
-  user-visible breakage for each of these. "getopts" is the most
-  likely to actually matter: like "read", it sets caller-visible
-  variables (OPTARG, OPTIND, the named variable), so a prefix
-  assignment on it probably has the exact same "persists afterward"
-  symptom "read" had. Found while fixing read-prefix-assign-leaks; not
-  investigated further per builtin.
-
-    IFS=: getopts ":a:" opt "-a" "x:y"
-    echo "IFS after=[$IFS]"
 
 - expand-glob-stack-overflow: found via an ASan build running
   tests/param.sh (which exercises heavy nested command-substitution +

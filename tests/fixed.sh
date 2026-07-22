@@ -752,4 +752,55 @@ EOF
 )
 assert_equal "literal \$X" "$X" "a heredoc delimiter with only PART of it quoted must still suppress expansion"
 
+## fixes/52 (printf-field-width): builtin printf ignored flags/width/
+## precision on numeric (and %s/%c) conversions -- the format string
+## was printed back completely unprocessed instead of being applied,
+## and %X printed lowercase hex digits instead of uppercase.
+X=$(printf "%08x\n" 255)
+assert_equal "000000ff" "$X" "printf %08x must zero-pad a hex conversion to the given width"
+
+X=$(printf "%X\n" 255)
+assert_equal "FF" "$X" "printf %X must print uppercase hex digits"
+
+X=$(printf "%5d|\n" 42)
+assert_equal "   42|" "$X" "printf %5d must space-pad a decimal conversion to the given width"
+
+X=$(printf "%-5d|\n" 42)
+assert_equal "42   |" "$X" "printf %-5d must left-justify within the given width"
+
+X=$(printf "%+d\n" 42)
+assert_equal "+42" "$X" "printf %+d must force a sign on a positive value"
+
+X=$(printf "%.3d\n" 5)
+assert_equal "005" "$X" "printf %.3d must zero-extend a decimal conversion to the given precision"
+
+X=$(printf "%-8s|\n" hi)
+assert_equal "hi      |" "$X" "printf %-8s must left-justify a string within the given width"
+
+X=$(printf "%05d\n" -5)
+assert_equal "-0005" "$X" "printf %05d must keep the sign before zero-padding a negative value"
+
+## fixes/53 (misclassified-special-builtins): "alias", "getopts",
+## "local", "umask", and "unalias" were all marked B_SPECIAL in
+## builtin_table.c even though none of them are in POSIX 2.14's actual
+## special-builtin list -- the same misclassification "read" had
+## (fixes/50), with the same symptom: a prefix assignment on the
+## command leaked past it instead of being scoped to just that command.
+DEFAULT_IFS=$(echo "[$IFS]")
+
+X=$(IFS=: getopts ":a:" opt "-a" "x:y" >/dev/null 2>&1; echo "[$IFS]")
+assert_equal "$DEFAULT_IFS" "$X" "a prefix assignment on \"getopts\" must not leak past the command"
+
+X=$(IFS=: alias foo=bar; echo "[$IFS]")
+assert_equal "$DEFAULT_IFS" "$X" "a prefix assignment on \"alias\" must not leak past the command"
+
+X=$(alias foo=bar; IFS=: unalias foo; echo "[$IFS]")
+assert_equal "$DEFAULT_IFS" "$X" "a prefix assignment on \"unalias\" must not leak past the command"
+
+X=$(IFS=: umask >/dev/null; echo "[$IFS]")
+assert_equal "$DEFAULT_IFS" "$X" "a prefix assignment on \"umask\" must not leak past the command"
+
+X=$(f() { IFS=: local x=1; echo "[$IFS]"; }; f)
+assert_equal "$DEFAULT_IFS" "$X" "a prefix assignment on \"local\" must not leak past the command"
+
 summary
