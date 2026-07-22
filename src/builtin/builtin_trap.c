@@ -152,50 +152,26 @@ trap_exit(int exitcode) {
   return exitcode;
 }
 
-static void
-trap_install(int sig, union node* tree) {
-  struct eval* e;
-  trap* tr;
-
-  tr = alloc(sizeof(trap));
-
-  assert(tr);
-
-  tr->sig = sig;
-  tr->tree = tree;
-  tr->next = traps;
-  tr->sh = sh;
-  traps = tr;
-
-  if((char)sig > 0) {
-
-    signal(sig, &trap_handler);
-
-  } else if((unsigned char)sig == TRAP_DEBUG) {
-    e = eval_find(E_ROOT);
-
-    assert(e);
-
-    e->debug = trap_debug;
-
-  } else if(sig == TRAP_EXIT || (unsigned char)sig == TRAP_RETURN) {
-
-    if((e = eval_find(sig ? E_FUNCTION : E_ROOT)))
-      e->destructor = sig ? trap_return : trap_exit;
-
-  } else {
-    assert(0);
-  }
-}
-
+/* remove any existing trap for exactly this signal/pseudo-signal --
+ * used both by the "trap - SIG" builtin syntax and, before installing
+ * a new one, by trap_install() itself. Every real-signal trap has a
+ * matching sig_push() (below); popping it here is what keeps a
+ * "trap CMD SIG" run twice for the same SIG from leaking the old tree
+ * and list node forever (the previous, un-deduplicated code did, and
+ * every trap_install() call added another list entry that trap_find()
+ * could never see again, since it always stops at the first --
+ * newest -- match) and, more importantly, from exhausting
+ * sig_push()'s small fixed-size per-signal stack (SIGSTACKSIZE, 16)
+ * after a handful of retraps.
+ * ----------------------------------------------------------------------- */
 static int
 trap_uninstall(int sig) {
   trap **ptr, *t;
 
   for(ptr = &traps; (t = *ptr); ptr = &(*ptr)->next) {
-    if((*ptr)->sig == sig) {
+    if(t->sig == (unsigned char)sig) {
       if((char)t->sig > 0)
-        signal(sig, SIG_DFL);
+        sig_pop(sig);
 
       tree_free(t->tree);
       *ptr = t->next;
@@ -214,6 +190,52 @@ trap_uninstall(int sig) {
 #endif
 
   return 1;
+}
+
+static void
+trap_install(int sig, union node* tree) {
+  struct eval* e;
+  trap* tr;
+
+  /* replace, don't stack, any trap already installed for this exact
+     signal -- see trap_uninstall()'s comment */
+  trap_uninstall(sig);
+
+  tr = alloc(sizeof(trap));
+
+  assert(tr);
+
+  tr->sig = sig;
+  tr->tree = tree;
+  tr->next = traps;
+  tr->sh = sh;
+  traps = tr;
+
+  if((char)sig > 0) {
+
+    /* sig_push() (lib/sig) saves whatever disposition the signal
+       already had (SIG_DFL, for a signal never trapped before) on a
+       per-signal stack, installing trap_handler with SA_MASKALL so
+       another signal can't re-enter it while a trap action is
+       already running -- trap_uninstall()'s matching sig_pop() above
+       restores exactly what was there before, not just SIG_DFL. */
+    sig_push(sig, &trap_handler);
+
+  } else if((unsigned char)sig == TRAP_DEBUG) {
+    e = eval_find(E_ROOT);
+
+    assert(e);
+
+    e->debug = trap_debug;
+
+  } else if(sig == TRAP_EXIT || (unsigned char)sig == TRAP_RETURN) {
+
+    if((e = eval_find(sig ? E_FUNCTION : E_ROOT)))
+      e->destructor = sig ? trap_return : trap_exit;
+
+  } else {
+    assert(0);
+  }
 }
 
 /* output stuff

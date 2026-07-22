@@ -387,24 +387,51 @@ exercised `fg`/`bg`/background jobs through a pty). Sorted by leverage.
    function driving the SIGCHLD handler in `sh_main.c`, so child-process
    reaping is broken there. Cheap fix, even a `return -1` stub beats UB.
 
-8. **Prune dead code**, mostly in `lib/sig`: of the ~20 declared
-   functions/macros only `sig_block`, `sig_unblock`, `sig_blocknone`,
-   `sig_catch`, `sig_name`, `sig_byname`, and (since `fixes/74`, the new
-   `kill` builtin) `sig_number` are ever called from `src/`. The rest
-   (`sig_push`/`sig_pusha`/`sig_pop`, `sig_restoreto`, `sig_shield`/
-   `sig_unshield`, `sig_ignore`, `sig_pause`, `sigfpe`, `sigsegv`,
-   `sig_blockset`, `SIG_ALL`, the `sig_addset`/`sig_delset`/
-   `sig_fillset`/`sig_emptyset` macros) only call each other in a closed
-   loop nobody enters. `sig_pop` isn't even declared in `sig.h` — a total
-   orphan. In `src/job`: `job_get`, `job_proc`/`proc_bypid` (inline in
-   `job.h`) are never called from anywhere either. Either wire the
-   signal-shielding functions up (they look like they were meant for the
-   async-signal-safety issue below) or delete them — carrying ~15
-   functions nothing calls is pure maintenance cost. While in there:
-   `sig.h` defines `SA_MASKALL`/`SA_NOCLDSTOP` twice, back to back
-   (copy-paste leftover), and `sig_push.c` reinterprets `sigset_t`
-   (a 128-byte struct on glibc) through an `unsigned long*` — undefined
-   behavior, currently harmless only because the function is unused.
+8. ~~Prune dead code, mostly in `lib/sig`~~ **Done (2026-07-23,
+   `fixes/76`, user-requested), for `lib/sig` at least.** `builtin_trap.c`
+   rewritten to install/remove real-signal traps via `sig_push()`/
+   `sig_pop()` (a per-signal save/restore stack, see `sig_stack.c`)
+   instead of raw `signal()`/`SIG_DFL` -- `sig_pop()` now correctly
+   restores whatever disposition the signal actually had before
+   (`SIG_DFL` the first time, matching the old behavior, but the right
+   thing on a *nested* retrap too), not just a blanket default. Wiring
+   `sig_push()` up for real surfaced two bugs of its own, both fixed:
+   `sig_push.c` reinterpreted `sigset_t` (a 128-byte struct on glibc)
+   through an `unsigned long*`, undefined behavior that was harmless
+   only because the function was unused -- it meant to write the
+   `SA_MASKALL`/`SA_NOCLDSTOP` flags into `sa_flags`, not stomp on
+   `sa_mask` -- and `trap_install()` never removed the previous trap
+   for a signal before installing a new one, so retrapping the same
+   signal N times leaked N-1 list nodes forever (pre-existing) and, new
+   with a real per-signal stack in the picture, would have exhausted
+   `sig_push()`'s fixed 16-deep stack (`SIGSTACKSIZE`) after the 16th
+   retrap. Fixed by having `trap_install()` call `trap_uninstall()`
+   first. Verified retrapping the same signal 30 times still works. Also
+   fixed the `sig.h` double `SA_MASKALL`/`SA_NOCLDSTOP` definitions
+   noted below.
+
+   Removed everything left unused after the rewrite: `sig_restoreto`,
+   `sig_shield`/`sig_unshield`, `sig_ignore`, `sig_pause`, `sigfpe`,
+   `sigsegv`, `sig_blockset`, `sig_dfl`/`sig_ign` (and the `sig_restore`
+   macro built on them, likewise never called), `SIG_ALL`, and the
+   `sig_addset`/`sig_delset`/`sig_fillset`/`sig_emptyset`/`sig_ismember`/
+   `sig_bit` macros (only `sig_restoreto` used any of those, and it's
+   gone too). Kept `sigset_type` (used by `struct proc` in `job.h`) and
+   `sig_catcha` (turned out to still be needed internally by
+   `sig_catch.c`, missed on the first pass). `src/job`'s `job_get`,
+   `job_proc`/`proc_bypid` are a separate, still-open item -- not
+   touched here.
+
+   Verifying this surfaced a real, unrelated, deep pre-existing bug
+   (confirmed present with `sig_push()`/`sig_pop()` stashed out too),
+   now in `BUGS`: `subshell-exit-trap-output-misdirected` -- a
+   (sub)shell's EXIT/DEBUG/RETURN trap's own output always lands on the
+   top-level shell's original stdout, never wherever that (sub)shell's
+   own output was actually going, and the parent doesn't wait for the
+   trap to finish before continuing. Likely an eval-frame/fdstack
+   teardown ordering issue in `trap_exit()`/`trap_debug()`/
+   `trap_return()`'s destructor-callback path; not root-caused past
+   that.
 
 9. **Lower priority, bigger scope:** `sh_onsig` (`sh_main.c`'s SIGCHLD
    handler) calls `term_erase()`/`term_restore()`/buffered I/O directly

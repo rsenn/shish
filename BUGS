@@ -1,3 +1,24 @@
+- subshell-exit-trap-output-misdirected: an EXIT (also DEBUG/RETURN)
+  trap's own output always lands on the top-level shell's original
+  stdout, never wherever the (sub)shell whose exit fired it had its
+  own output going -- neither a plain "> file" redirect on the
+  subshell nor capturing it via "$(...)" gets any of the trap's
+  output. Confirmed via `od`/direct file checks, not just terminal
+  display. The parent also doesn't wait for the trap to actually
+  finish running before continuing on to its own next command, so the
+  trap's (misdirected) output can appear interleaved arbitrarily late
+  relative to whatever runs after the subshell. Most likely an
+  eval-frame/fdstack teardown ordering issue: trap_exit()/trap_debug()/
+  trap_return() run through the eval frame's destructor callback (see
+  src/builtin/builtin_trap.c), and whatever fdstack state is current at
+  that point appears to already be the *outer* one, not the
+  (sub)shell's own. Not yet root-caused past that.
+
+    X=$( ( trap 'echo trap-ran' EXIT; : ) )
+    echo "captured=[$X]"
+    # prints "captured=[]" then "trap-ran" on its own line -- should
+    # print "captured=[trap-ran]" and nothing else
+
 - kill-arg-redirect-parse: a redirection ("N>word"/"N<word") right
   after a command argument that's both (a) preceded somewhere earlier
   by a "-N"-shaped argument (a dash followed only by digits, e.g. a

@@ -1,0 +1,622 @@
+diff --git a/BUGS b/BUGS
+index f1d9bf91..91e9e6fc 100644
+--- a/BUGS
++++ b/BUGS
+@@ -1,3 +1,24 @@
++- subshell-exit-trap-output-misdirected: an EXIT (also DEBUG/RETURN)
++  trap's own output always lands on the top-level shell's original
++  stdout, never wherever the (sub)shell whose exit fired it had its
++  own output going -- neither a plain "> file" redirect on the
++  subshell nor capturing it via "$(...)" gets any of the trap's
++  output. Confirmed via `od`/direct file checks, not just terminal
++  display. The parent also doesn't wait for the trap to actually
++  finish running before continuing on to its own next command, so the
++  trap's (misdirected) output can appear interleaved arbitrarily late
++  relative to whatever runs after the subshell. Most likely an
++  eval-frame/fdstack teardown ordering issue: trap_exit()/trap_debug()/
++  trap_return() run through the eval frame's destructor callback (see
++  src/builtin/builtin_trap.c), and whatever fdstack state is current at
++  that point appears to already be the *outer* one, not the
++  (sub)shell's own. Not yet root-caused past that.
++
++    X=$( ( trap 'echo trap-ran' EXIT; : ) )
++    echo "captured=[$X]"
++    # prints "captured=[]" then "trap-ran" on its own line -- should
++    # print "captured=[trap-ran]" and nothing else
++
+ - kill-arg-redirect-parse: a redirection ("N>word"/"N<word") right
+   after a command argument that's both (a) preceded somewhere earlier
+   by a "-N"-shaped argument (a dash followed only by digits, e.g. a
+diff --git a/TODO.md b/TODO.md
+index 6b61bf42..da9c5192 100644
+--- a/TODO.md
++++ b/TODO.md
+@@ -387,24 +387,51 @@ exercised `fg`/`bg`/background jobs through a pty). Sorted by leverage.
+    function driving the SIGCHLD handler in `sh_main.c`, so child-process
+    reaping is broken there. Cheap fix, even a `return -1` stub beats UB.
+ 
+-8. **Prune dead code**, mostly in `lib/sig`: of the ~20 declared
+-   functions/macros only `sig_block`, `sig_unblock`, `sig_blocknone`,
+-   `sig_catch`, `sig_name`, `sig_byname`, and (since `fixes/74`, the new
+-   `kill` builtin) `sig_number` are ever called from `src/`. The rest
+-   (`sig_push`/`sig_pusha`/`sig_pop`, `sig_restoreto`, `sig_shield`/
+-   `sig_unshield`, `sig_ignore`, `sig_pause`, `sigfpe`, `sigsegv`,
+-   `sig_blockset`, `SIG_ALL`, the `sig_addset`/`sig_delset`/
+-   `sig_fillset`/`sig_emptyset` macros) only call each other in a closed
+-   loop nobody enters. `sig_pop` isn't even declared in `sig.h` — a total
+-   orphan. In `src/job`: `job_get`, `job_proc`/`proc_bypid` (inline in
+-   `job.h`) are never called from anywhere either. Either wire the
+-   signal-shielding functions up (they look like they were meant for the
+-   async-signal-safety issue below) or delete them — carrying ~15
+-   functions nothing calls is pure maintenance cost. While in there:
+-   `sig.h` defines `SA_MASKALL`/`SA_NOCLDSTOP` twice, back to back
+-   (copy-paste leftover), and `sig_push.c` reinterprets `sigset_t`
+-   (a 128-byte struct on glibc) through an `unsigned long*` — undefined
+-   behavior, currently harmless only because the function is unused.
++8. ~~Prune dead code, mostly in `lib/sig`~~ **Done (2026-07-23,
++   `fixes/76`, user-requested), for `lib/sig` at least.** `builtin_trap.c`
++   rewritten to install/remove real-signal traps via `sig_push()`/
++   `sig_pop()` (a per-signal save/restore stack, see `sig_stack.c`)
++   instead of raw `signal()`/`SIG_DFL` -- `sig_pop()` now correctly
++   restores whatever disposition the signal actually had before
++   (`SIG_DFL` the first time, matching the old behavior, but the right
++   thing on a *nested* retrap too), not just a blanket default. Wiring
++   `sig_push()` up for real surfaced two bugs of its own, both fixed:
++   `sig_push.c` reinterpreted `sigset_t` (a 128-byte struct on glibc)
++   through an `unsigned long*`, undefined behavior that was harmless
++   only because the function was unused -- it meant to write the
++   `SA_MASKALL`/`SA_NOCLDSTOP` flags into `sa_flags`, not stomp on
++   `sa_mask` -- and `trap_install()` never removed the previous trap
++   for a signal before installing a new one, so retrapping the same
++   signal N times leaked N-1 list nodes forever (pre-existing) and, new
++   with a real per-signal stack in the picture, would have exhausted
++   `sig_push()`'s fixed 16-deep stack (`SIGSTACKSIZE`) after the 16th
++   retrap. Fixed by having `trap_install()` call `trap_uninstall()`
++   first. Verified retrapping the same signal 30 times still works. Also
++   fixed the `sig.h` double `SA_MASKALL`/`SA_NOCLDSTOP` definitions
++   noted below.
++
++   Removed everything left unused after the rewrite: `sig_restoreto`,
++   `sig_shield`/`sig_unshield`, `sig_ignore`, `sig_pause`, `sigfpe`,
++   `sigsegv`, `sig_blockset`, `sig_dfl`/`sig_ign` (and the `sig_restore`
++   macro built on them, likewise never called), `SIG_ALL`, and the
++   `sig_addset`/`sig_delset`/`sig_fillset`/`sig_emptyset`/`sig_ismember`/
++   `sig_bit` macros (only `sig_restoreto` used any of those, and it's
++   gone too). Kept `sigset_type` (used by `struct proc` in `job.h`) and
++   `sig_catcha` (turned out to still be needed internally by
++   `sig_catch.c`, missed on the first pass). `src/job`'s `job_get`,
++   `job_proc`/`proc_bypid` are a separate, still-open item -- not
++   touched here.
++
++   Verifying this surfaced a real, unrelated, deep pre-existing bug
++   (confirmed present with `sig_push()`/`sig_pop()` stashed out too),
++   now in `BUGS`: `subshell-exit-trap-output-misdirected` -- a
++   (sub)shell's EXIT/DEBUG/RETURN trap's own output always lands on the
++   top-level shell's original stdout, never wherever that (sub)shell's
++   own output was actually going, and the parent doesn't wait for the
++   trap to finish before continuing. Likely an eval-frame/fdstack
++   teardown ordering issue in `trap_exit()`/`trap_debug()`/
++   `trap_return()`'s destructor-callback path; not root-caused past
++   that.
+ 
+ 9. **Lower priority, bigger scope:** `sh_onsig` (`sh_main.c`'s SIGCHLD
+    handler) calls `term_erase()`/`term_restore()`/buffered I/O directly
+diff --git a/lib/sig.h b/lib/sig.h
+index 3442e422..08db17fd 100644
+--- a/lib/sig.h
++++ b/lib/sig.h
+@@ -46,30 +46,12 @@
+ #define SIG_UNBLOCK 2
+ #endif
+ 
+-#define SIG_ALL (~(sigset_type)0) /* All signals.    */
+-
+-#define sig_bit(n) (1 << ((n) - 1))
+-#define sig_emptyset(s) (*(s) = 0)
+-#define sig_fillset(s) (*(s) = ~(0))
+-
+-#define sig_addset(s, n) *(s) |= sig_bit(n)
+-#define sig_delset(s, n) *(s) &= ~sig_bit(n)
+-#define sig_ismember(s, n) ((*(s) & sig_bit(n)) == sig_bit(n))
+-
+ #include <errno.h>
+ 
+ #ifndef ENOBUFS
+ #define ENOBUFS 1039
+ #endif
+ 
+-#ifndef SA_MASKALL
+-#define SA_MASKALL 1
+-#endif
+-
+-#ifndef SA_NOCLDSTOP
+-#define SA_NOCLDSTOP 2
+-#endif
+-
+ typedef void sighandler_t_fn(int);
+ typedef sighandler_t_fn* sighandler_t_ref;
+ 
+@@ -96,9 +78,6 @@ struct sigaction {
+ 
+ typedef unsigned long sigset_type;
+ 
+-extern struct sigaction const sig_dfl;
+-extern struct sigaction const sig_ign;
+-
+ #ifndef SA_MASKALL
+ #define SA_MASKALL ((unsigned long)0x01)
+ #endif
+@@ -108,26 +87,19 @@ extern struct sigaction const sig_ign;
+ 
+ #define SIGSTACKSIZE 16
+ 
++/* used internally by sig_catch.c */
+ #define sig_catcha(sig, ac) sig_action(sig, (ac), 0)
+-#define sig_restore(sig) sig_action((sig), &sig_dfl, 0)
+ 
+ int sig_action(int sig, struct sigaction const* new, struct sigaction* old);
+ void sig_block(int);
+ void sig_unblock(int);
+ void sig_blocknone(void);
+-void sig_blockset(const void*);
+ int sig_catch(int, sighandler_t_ref);
+-int sigfpe(void);
+-int sig_ignore(int);
+ const char* sig_name(int);
+ int sig_byname(const char* name);
+ int sig_number(const char*);
+-void sig_pause(void);
+ int sig_push(int, sighandler_t_ref);
+ int sig_pusha(int sig, struct sigaction const* ssa);
+-void sig_restoreto(const void*, unsigned int);
+-int sigsegv(void);
+-void sig_shield(void);
+-void sig_unshield(void);
++int sig_pop(int sig);
+ 
+ #endif
+diff --git a/lib/sig/Makefile.in b/lib/sig/Makefile.in
+index 98d912b6..f218c38e 100644
+--- a/lib/sig/Makefile.in
++++ b/lib/sig/Makefile.in
+@@ -20,7 +20,7 @@ include $(top_builddir)/config.mk
+ LIB = ../libowfat.a
+ ARCHIVE = sig.a
+ MODULES = \
+-sig_action sig_block sig_blocknone sig_blockset sig_byname sig_catch sig_dfl sig_ignore sig_name sig_number sig_pause sig_push sig_restoreto sig_shield sig_stack sig_table sig_unblock sig_unshield sigfpe sigsegv
++sig_action sig_block sig_blocknone sig_byname sig_catch sig_name sig_number sig_push sig_stack sig_table sig_unblock
+ 
+ SOURCES = $(MODULES:%=%.c)
+ OBJECTS = $(MODULES:%=%.o)
+diff --git a/lib/sig/sig_blockset.c b/lib/sig/sig_blockset.c
+deleted file mode 100644
+index 97c5fe20..00000000
+--- a/lib/sig/sig_blockset.c
++++ /dev/null
+@@ -1,11 +0,0 @@
+-#include "../windoze.h"
+-#include "../sig.h"
+-
+-#include <signal.h>
+-
+-void
+-sig_blockset(const void* set) {
+-#if !WINDOWS_NATIVE
+-  sigprocmask(SIG_SETMASK, set, 0);
+-#endif
+-}
+diff --git a/lib/sig/sig_dfl.c b/lib/sig/sig_dfl.c
+deleted file mode 100644
+index b59fd8e5..00000000
+--- a/lib/sig/sig_dfl.c
++++ /dev/null
+@@ -1,16 +0,0 @@
+-#include "../sig.h"
+-
+-#include <signal.h>
+-
+-#undef sig_dfl
+-struct sigaction const sig_dfl = {
+-    .sa_handler = (void (*)(int))0,
+-    .sa_mask = 0,
+-    .sa_flags = 0,
+-};
+-#undef sig_ign
+-struct sigaction const sig_ign = {
+-    .sa_handler = (void (*)(int))1,
+-    .sa_mask = 0,
+-    .sa_flags = 0,
+-};
+diff --git a/lib/sig/sig_ignore.c b/lib/sig/sig_ignore.c
+deleted file mode 100644
+index 586adcc3..00000000
+--- a/lib/sig/sig_ignore.c
++++ /dev/null
+@@ -1,17 +0,0 @@
+-#include "../windoze.h"
+-#include "../sig.h"
+-#include <signal.h>
+-
+-int
+-sig_ignore(int sig) {
+-#if !WINDOWS_NATIVE
+-  struct sigaction sa;
+-
+-  sigemptyset(&sa.sa_mask);
+-
+-  sa.sa_handler = SIG_IGN;
+-  sa.sa_flags = 0;
+-
+-  return sigaction(sig, &sa, 0);
+-#endif
+-}
+diff --git a/lib/sig/sig_pause.c b/lib/sig/sig_pause.c
+deleted file mode 100644
+index f158e89b..00000000
+--- a/lib/sig/sig_pause.c
++++ /dev/null
+@@ -1,14 +0,0 @@
+-#include "../sig.h"
+-#include "../windoze.h"
+-
+-#include <signal.h>
+-
+-void
+-sig_pause(void) {
+-  sigset_t ss;
+-
+-  sigemptyset(&ss);
+-#if !WINDOWS_NATIVE
+-  sigsuspend(&ss);
+-#endif
+-}
+diff --git a/lib/sig/sig_push.c b/lib/sig/sig_push.c
+index 59351c18..06f6c026 100644
+--- a/lib/sig/sig_push.c
++++ b/lib/sig/sig_push.c
+@@ -6,10 +6,19 @@
+ int
+ sig_push(int sig, sighandler_t_ref f) {
+ #if !WINDOWS_NATIVE
+-  struct sigaction ssa;
++  struct sigaction ssa = {0};
+ 
++  /* sig_action() (called via sig_pusha() below) never reads ssa.sa_mask
++     as an actual signal set -- it only looks at the SA_MASKALL/
++     SA_NOCLDSTOP bits in ssa.sa_flags and builds its own real sigset_t
++     from those. The two flags therefore belong in sa_flags, not
++     sa_mask; writing them into sa_mask through a cast to unsigned
++     long* (sig_push's previous body) is undefined behavior on any ABI
++     where sigset_t isn't itself a plain unsigned long (glibc's is a
++     128-byte struct) and, regardless of ABI, leaves the real
++     sa_flags field uninitialized (sig-push-sigset-cast, fixes/76). */
+   ssa.sa_handler = f;
+-  *((unsigned long*)&ssa.sa_mask) = SA_MASKALL | SA_NOCLDSTOP;
++  ssa.sa_flags = SA_MASKALL | SA_NOCLDSTOP;
+ 
+   return sig_pusha(sig, &ssa);
+ #endif
+diff --git a/lib/sig/sig_restoreto.c b/lib/sig/sig_restoreto.c
+deleted file mode 100644
+index 0153f0bc..00000000
+--- a/lib/sig/sig_restoreto.c
++++ /dev/null
+@@ -1,24 +0,0 @@
+-#include "../windoze.h"
+-#include "../sig.h"
+-
+-/* MT-unsafe */
+-
+-#include <signal.h>
+-
+-void
+-sig_restoreto(const void* set, unsigned int n) {
+-#if !WINDOWS_NATIVE
+-  unsigned int i = 1;
+-
+-  for(; i <= n; i++) {
+-    int h = sig_ismember((sigset_type*)set, i);
+-
+-    if(h < 0)
+-      continue;
+-
+-    if(h)
+-      sig_restore(i);
+-  }
+-
+-#endif
+-}
+diff --git a/lib/sig/sig_shield.c b/lib/sig/sig_shield.c
+deleted file mode 100644
+index 1faa142b..00000000
+--- a/lib/sig/sig_shield.c
++++ /dev/null
+@@ -1,22 +0,0 @@
+-#include "../windoze.h"
+-#include "../sig.h"
+-
+-#include <signal.h>
+-
+-void
+-sig_shield(void) {
+-#if !WINDOWS_NATIVE
+-  sigset_t ss;
+-
+-  sigemptyset(&ss);
+-
+-  sigaddset(&ss, SIGTERM);
+-  sigaddset(&ss, SIGQUIT);
+-  sigaddset(&ss, SIGABRT);
+-  sigaddset(&ss, SIGINT);
+-  sigaddset(&ss, SIGPIPE);
+-  sigaddset(&ss, SIGHUP);
+-
+-  sigprocmask(SIG_BLOCK, &ss, 0);
+-#endif
+-}
+diff --git a/lib/sig/sig_unshield.c b/lib/sig/sig_unshield.c
+deleted file mode 100644
+index e018141b..00000000
+--- a/lib/sig/sig_unshield.c
++++ /dev/null
+@@ -1,22 +0,0 @@
+-#include "../windoze.h"
+-#include "../sig.h"
+-
+-#include <signal.h>
+-
+-void
+-sig_unshield(void) {
+-#if !WINDOWS_NATIVE
+-  sigset_t ss;
+-
+-  sigemptyset(&ss);
+-
+-  sigaddset(&ss, SIGTERM);
+-  sigaddset(&ss, SIGQUIT);
+-  sigaddset(&ss, SIGABRT);
+-  sigaddset(&ss, SIGINT);
+-  sigaddset(&ss, SIGPIPE);
+-  sigaddset(&ss, SIGHUP);
+-
+-  sigprocmask(SIG_UNBLOCK, &ss, 0);
+-#endif
+-}
+diff --git a/lib/sig/sigfpe.c b/lib/sig/sigfpe.c
+deleted file mode 100644
+index 130e42c4..00000000
+--- a/lib/sig/sigfpe.c
++++ /dev/null
+@@ -1,8 +0,0 @@
+-#include "../sig.h"
+-
+-#include <signal.h>
+-
+-int
+-sigfpe(void) {
+-  return raise(SIGFPE) == 0;
+-}
+diff --git a/lib/sig/sigsegv.c b/lib/sig/sigsegv.c
+deleted file mode 100644
+index b4b1e351..00000000
+--- a/lib/sig/sigsegv.c
++++ /dev/null
+@@ -1,8 +0,0 @@
+-#include "../sig.h"
+-
+-#include <signal.h>
+-
+-int
+-sigsegv(void) {
+-  return raise(SIGSEGV) == 0;
+-}
+diff --git a/src/builtin/builtin_trap.c b/src/builtin/builtin_trap.c
+index fa20e200..05f8402a 100644
+--- a/src/builtin/builtin_trap.c
++++ b/src/builtin/builtin_trap.c
+@@ -152,11 +152,55 @@ trap_exit(int exitcode) {
+   return exitcode;
+ }
+ 
++/* remove any existing trap for exactly this signal/pseudo-signal --
++ * used both by the "trap - SIG" builtin syntax and, before installing
++ * a new one, by trap_install() itself. Every real-signal trap has a
++ * matching sig_push() (below); popping it here is what keeps a
++ * "trap CMD SIG" run twice for the same SIG from leaking the old tree
++ * and list node forever (the previous, un-deduplicated code did, and
++ * every trap_install() call added another list entry that trap_find()
++ * could never see again, since it always stops at the first --
++ * newest -- match) and, more importantly, from exhausting
++ * sig_push()'s small fixed-size per-signal stack (SIGSTACKSIZE, 16)
++ * after a handful of retraps.
++ * ----------------------------------------------------------------------- */
++static int
++trap_uninstall(int sig) {
++  trap **ptr, *t;
++
++  for(ptr = &traps; (t = *ptr); ptr = &(*ptr)->next) {
++    if(t->sig == (unsigned char)sig) {
++      if((char)t->sig > 0)
++        sig_pop(sig);
++
++      tree_free(t->tree);
++      *ptr = t->next;
++      alloc_free(t);
++
++      return 0;
++    }
++  }
++
++#if defined(DEBUG_OUTPUT) && defined(DEBUG_BUILTIN)
++  debug_to(buffer_2);
++  debug_s("trap_uninstall ");
++  debug_n(sig);
++  debug_nl_fl();
++  debug_to(&debug_buffer);
++#endif
++
++  return 1;
++}
++
+ static void
+ trap_install(int sig, union node* tree) {
+   struct eval* e;
+   trap* tr;
+ 
++  /* replace, don't stack, any trap already installed for this exact
++     signal -- see trap_uninstall()'s comment */
++  trap_uninstall(sig);
++
+   tr = alloc(sizeof(trap));
+ 
+   assert(tr);
+@@ -169,7 +213,13 @@ trap_install(int sig, union node* tree) {
+ 
+   if((char)sig > 0) {
+ 
+-    signal(sig, &trap_handler);
++    /* sig_push() (lib/sig) saves whatever disposition the signal
++       already had (SIG_DFL, for a signal never trapped before) on a
++       per-signal stack, installing trap_handler with SA_MASKALL so
++       another signal can't re-enter it while a trap action is
++       already running -- trap_uninstall()'s matching sig_pop() above
++       restores exactly what was there before, not just SIG_DFL. */
++    sig_push(sig, &trap_handler);
+ 
+   } else if((unsigned char)sig == TRAP_DEBUG) {
+     e = eval_find(E_ROOT);
+@@ -188,34 +238,6 @@ trap_install(int sig, union node* tree) {
+   }
+ }
+ 
+-static int
+-trap_uninstall(int sig) {
+-  trap **ptr, *t;
+-
+-  for(ptr = &traps; (t = *ptr); ptr = &(*ptr)->next) {
+-    if((*ptr)->sig == sig) {
+-      if((char)t->sig > 0)
+-        signal(sig, SIG_DFL);
+-
+-      tree_free(t->tree);
+-      *ptr = t->next;
+-      alloc_free(t);
+-
+-      return 0;
+-    }
+-  }
+-
+-#if defined(DEBUG_OUTPUT) && defined(DEBUG_BUILTIN)
+-  debug_to(buffer_2);
+-  debug_s("trap_uninstall ");
+-  debug_n(sig);
+-  debug_nl_fl();
+-  debug_to(&debug_buffer);
+-#endif
+-
+-  return 1;
+-}
+-
+ /* output stuff
+  * ----------------------------------------------------------------------- */
+ int
+diff --git a/tests/builtin-trap.sh b/tests/builtin-trap.sh
+new file mode 100644
+index 00000000..27395ff1
+--- /dev/null
++++ b/tests/builtin-trap.sh
+@@ -0,0 +1,94 @@
++DIR=$(dirname "${0}")
++. "$DIR/common.sh"
++
++## Testing trap builtin (rewritten to use lib/sig's sig_push()/sig_pop()
++## instead of raw signal()/SIG_DFL -- see fixes/76)
++
++## a trap on a real signal actually runs when that signal arrives
++OUTFILE=$(mktemp)
++(
++  trap 'echo caught-term' TERM
++  kill -TERM $$
++  sleep 0.2
++  echo after-term
++) > "$OUTFILE"
++assert_equal "caught-term
++after-term" "$(cat "$OUTFILE")" "a trap on TERM runs when TERM is delivered, and execution continues afterward"
++rm -f "$OUTFILE"
++
++## re-trapping the same signal replaces the old handler, doesn't stack
++## both (dedup fix -- the old code leaked a "traps" list node and a
++## sig_push() stack frame on every retrap of the same signal)
++OUTFILE=$(mktemp)
++(
++  trap 'echo first' USR1
++  trap 'echo second' USR1
++  kill -USR1 $$
++  sleep 0.2
++) > "$OUTFILE"
++assert_equal "second" "$(cat "$OUTFILE")" "retrapping the same signal replaces the handler -- only the newest one fires, not both"
++rm -f "$OUTFILE"
++
++## retrapping the same signal many more times than sig_push()'s
++## per-signal stack depth (SIGSTACKSIZE, 16) must not exhaust it --
++## confirms trap_install() actually pops the previous registration
++## before pushing a new one
++OUTFILE=$(mktemp)
++(
++  i=0
++  while [ "$i" -lt 30 ]; do
++    trap "echo iter-$i" USR2
++    i=$((i + 1))
++  done
++  kill -USR2 $$
++  sleep 0.2
++) > "$OUTFILE"
++assert_equal "iter-29" "$(cat "$OUTFILE")" "retrapping a signal 30 times (past sig_push()'s 16-deep stack) still works, and only the last trap fires"
++rm -f "$OUTFILE"
++
++## "trap - SIG" resets to the default disposition and removes it from
++## "trap -p"'s listing
++OUTFILE=$(mktemp)
++(
++  trap 'echo should-not-print' TERM
++  trap - TERM
++  trap -p TERM
++) > "$OUTFILE"
++assert_equal "" "$(cat "$OUTFILE")" "trap - SIG resets to default and trap -p SIG then prints nothing for it"
++rm -f "$OUTFILE"
++
++## trap -p with no operand lists every currently-installed trap
++OUTFILE=$(mktemp)
++(
++  trap 'echo t1' TERM
++  trap 'echo t2' INT
++  trap -p
++) > "$OUTFILE"
++X=$(grep -c "trap 'echo t1' TERM\|trap 'echo t2' INT" "$OUTFILE")
++assert_equal "2" "$X" "trap -p with no operand lists every installed trap"
++rm -f "$OUTFILE"
++
++## an EXIT trap can be installed and shows up in trap -p's listing.
++## Deliberately *not* testing that a subshell's EXIT trap actually
++## *runs* here -- confirmed present before this rewrite too (same
++## behavior with sig_push()/sig_pop() stashed out), a subshell's EXIT
++## trap's own output always lands on the top-level shell's original
++## stdout instead of wherever the subshell's own output was going
++## (whether a plain "> file" redirect or a "$(...)" capture), and the
++## parent doesn't wait for it to actually finish running before moving
++## on to its own next command -- see BUGS:
++## subshell-exit-trap-output-misdirected. That's an eval-frame/fdstack
++## teardown timing issue in the EXIT-trap path generically (also
++## affects DEBUG/RETURN), unrelated to this rewrite (trap_install()'s
++## EXIT/DEBUG/RETURN branch is untouched -- only the real-signal branch
++## now goes through sig_push()/sig_pop()).
++## checked at top level, not inside a subshell -- "trap -p"'s own
++## output is also subject to the misdirection bug above once a
++## subshell has an EXIT trap registered, for the same underlying
++## reason. Cleaned up immediately via "trap - EXIT" so this doesn't
++## leave a dangling top-level EXIT trap for the rest of this file.
++X=$(trap 'echo should-show-in-listing' EXIT; trap -p EXIT)
++trap - EXIT
++assert_equal "trap 'echo should-show-in-listing' EXIT" "$X" "an EXIT trap can be installed and shows up in trap -p's listing"
++
++summary

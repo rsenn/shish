@@ -46,28 +46,10 @@
 #define SIG_UNBLOCK 2
 #endif
 
-#define SIG_ALL (~(sigset_type)0) /* All signals.    */
-
-#define sig_bit(n) (1 << ((n) - 1))
-#define sig_emptyset(s) (*(s) = 0)
-#define sig_fillset(s) (*(s) = ~(0))
-
-#define sig_addset(s, n) *(s) |= sig_bit(n)
-#define sig_delset(s, n) *(s) &= ~sig_bit(n)
-#define sig_ismember(s, n) ((*(s) & sig_bit(n)) == sig_bit(n))
-
 #include <errno.h>
 
 #ifndef ENOBUFS
 #define ENOBUFS 1039
-#endif
-
-#ifndef SA_MASKALL
-#define SA_MASKALL 1
-#endif
-
-#ifndef SA_NOCLDSTOP
-#define SA_NOCLDSTOP 2
 #endif
 
 typedef void sighandler_t_fn(int);
@@ -96,9 +78,6 @@ struct sigaction {
 
 typedef unsigned long sigset_type;
 
-extern struct sigaction const sig_dfl;
-extern struct sigaction const sig_ign;
-
 #ifndef SA_MASKALL
 #define SA_MASKALL ((unsigned long)0x01)
 #endif
@@ -108,26 +87,19 @@ extern struct sigaction const sig_ign;
 
 #define SIGSTACKSIZE 16
 
+/* used internally by sig_catch.c */
 #define sig_catcha(sig, ac) sig_action(sig, (ac), 0)
-#define sig_restore(sig) sig_action((sig), &sig_dfl, 0)
 
 int sig_action(int sig, struct sigaction const* new, struct sigaction* old);
 void sig_block(int);
 void sig_unblock(int);
 void sig_blocknone(void);
-void sig_blockset(const void*);
 int sig_catch(int, sighandler_t_ref);
-int sigfpe(void);
-int sig_ignore(int);
 const char* sig_name(int);
 int sig_byname(const char* name);
 int sig_number(const char*);
-void sig_pause(void);
 int sig_push(int, sighandler_t_ref);
 int sig_pusha(int sig, struct sigaction const* ssa);
-void sig_restoreto(const void*, unsigned int);
-int sigsegv(void);
-void sig_shield(void);
-void sig_unshield(void);
+int sig_pop(int sig);
 
 #endif
