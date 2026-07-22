@@ -1,21 +1,26 @@
 #include "../builtin.h"
 #include "../fd.h"
+#include "../fdtable.h"
 #include "../sh.h"
+#include "../tree.h"
 #include "../../lib/shell.h"
-#include "../../lib/byte.h"
 #include "../vartab.h"
+
+extern union node* functions;
 
 /* set arguments of flags
  * ----------------------------------------------------------------------- */
 int
 builtin_set(int argc, char* argv[]) {
-  int c;
+  int c, got_opt = 0;
   struct shopt opts = sh->opts;
   struct optstate opt = {"+-", 0, 0, 0, 0, 0};
 
   /* check options */
   while((c = shell_getopt_r(&opt, argc, argv, "+efhmuxBCH")) > 0) {
     int on = opt.prefix == '-';
+
+    got_opt = 1;
 
     switch(c) {
       case 'e': opts.errexit = on; break;
@@ -35,8 +40,16 @@ builtin_set(int argc, char* argv[]) {
 
   if(argv[opt.ind])
     sh_setargs(&argv[opt.ind], 1);
-  else if(byte_count(&opts, sizeof(opts), 0) == sizeof(opts))
+  else if(!got_opt) {
+    union node* n;
+
     vartab_print(V_DEFAULT);
+
+    for(n = functions; n; n = n->next) {
+      tree_print(n, fd_out->w);
+      buffer_putnlflush(fd_out->w);
+    }
+  }
 
   return 0;
 }

@@ -342,4 +342,54 @@ assert_equal "---marker---" "$X" "echo must print a dash-led word it doesn't rec
 X=$(echo -n hi)
 assert_equal "hi" "$X" "echo -n must still be recognized as an option"
 
+## fixes/38: configure.ac's per-builtin AC_DEFINE_UNQUOTED loop was
+## generated with m4_foreach(), but a stray "dnl" was placed right
+## before the closing "])" meant to end the loop body -- "dnl" eats
+## the rest of its physical line (including that "])"), so the
+## m4_foreach() call was left unterminated and silently swallowed
+## everything up to the next "])" it could find later in the file,
+## producing a generated configure script with the raw builtin-name
+## list dumped as literal shell text instead of the intended
+## per-builtin case/AC_DEFINE_UNQUOTED blocks. A later, botched
+## attempt to work around this (m4_echo()/AC_FOREACH(), the latter
+## not a real Autoconf macro) made it worse rather than fixing it.
+## Rewrote the block as a single well-formed m4_foreach() over
+## ALL_BUILTINS, with the per-builtin uppercased macro name built via
+## the standard "[BUILTIN_]m4_toupper(BUILTIN)" concatenation idiom
+## (bracket-quoting the loop variable, as the previous version did,
+## prevents it from being substituted before m4_toupper() runs on it).
+##
+## This is a configure.ac / autotools-generation bug, not a shish
+## runtime behavior -- ctest never invokes autoconf/autoheader, so
+## there's no way to exercise it from tests/*.sh. Verified instead by
+## running ./autogen.sh && ./configure --enable-builtins=echo &&
+## ./config.status config.h and confirming config.h now has
+## "#define BUILTIN_ECHO 1" (plus the rest of the default builtin
+## set) instead of the generated configure script containing the raw,
+## unexpanded builtin-name list as literal text.
+
+## fixes/39: "set" with no arguments and no options is supposed to
+## dump every variable (and, per POSIX/bash, every defined function)
+## for re-input, but its "were any options given?" check tested
+## whether the *resulting* shopt struct was all-zero rather than
+## whether shell_getopt_r() actually matched anything -- so on any
+## shell where a shopt flag was ever turned on (interactively, "set
+## -m" is common), the struct was never all-zero again and the dump
+## silently stopped firing for the rest of the session. Also never
+## dumped functions at all. Fixed with an explicit got_opt flag, and
+## added a functions dump (reusing tree_print(), same as "dump -F")
+## after the variable dump.
+OUTFILE=$(mktemp)
+(
+  set -m
+  FOO=setnoargsvalue
+  myfn() { echo hi; }
+  set
+) >"$OUTFILE"
+grep -q '^FOO="setnoargsvalue"$' "$OUTFILE"
+assert_equal "0" "$?" "\"set\" with no args must dump variables even after a shopt flag was turned on"
+grep -q '^myfn() {$' "$OUTFILE"
+assert_equal "0" "$?" "\"set\" with no args must also dump defined functions"
+rm -f "$OUTFILE"
+
 summary
