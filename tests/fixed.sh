@@ -1021,4 +1021,50 @@ assert_equal "1 and a-backslash and nested" "$X" "\"\\\$\" and \"\\\\\" inside a
 X=$(echo `echo plain`)
 assert_equal "plain" "$X" "a plain (non-nested) backquote substitution must still work exactly as before"
 
+## fixes/60 (bquote-direct-no-field-split): an unquoted backquote
+## command substitution used directly as a command's own argument
+## (rather than first assigned to a variable) didn't field-split on
+## IFS. parse_bquoted.c set the N_ARGCMD node's flag to
+## "S_BQUOTE | p->quot" -- but S_BQUOTE (0x04) shared the low nibble
+## expand_arg.c masks off with S_TABLE (0x0f) to detect quoting, so an
+## UNQUOTED backquote substitution (p->quot == Q_UNQUOTED == 0) still
+## produced a nonzero "flag & S_TABLE", which expand_arg.c mistook for
+## "this word part is quoted" and suppressed its splitting. S_BQUOTE
+## marks the *syntax* a substitution was written with (for tree_cat()
+## alone, see fixes/61 below) and has nothing to do with whether its
+## *result* is quoted -- moved it out of the S_TABLE-masked nibble
+## into its own, non-overlapping bit.
+X=$(echo `echo a; echo b`)
+assert_equal "a b" "$X" "an unquoted backquote substitution used directly as an argument must field-split on IFS, like \"\$( )\" and a variable already did"
+
+X=$(echo "`echo a; echo b`")
+assert_equal "a
+b" "$X" "a QUOTED backquote substitution used directly as an argument must still NOT field-split"
+
+## fixes/61 (tree-cat-nested-backquote-unescaped): tree_cat() (used by
+## shformat, and by "set"'s own function-definition dump, exercised
+## here without needing to locate/invoke the separate shformat binary)
+## reprinted a N_ARGCMD node written with backquotes as a bare
+## "`...`" unconditionally, with no awareness of whether it was
+## already nested inside another backquoted substitution being
+## printed -- so a nested backquote substitution's own backquotes came
+## out unescaped, producing text that no longer parses the way the
+## original source did (POSIX 2.6.3 requires a backslash before each
+## nesting level's backquotes, see fixes/59). Fixed by always
+## re-emitting "$( )" for anything nested inside a backquote-printed
+## substitution's own body, regardless of how it was originally
+## written -- "$( )" doesn't have backquote's escaping problem in the
+## first place, so there's nothing to get wrong at any further depth.
+X=$(uniquefn987() { echo `echo \`echo inner\``; }
+set | grep -A2 "^uniquefn987")
+assert_equal 'uniquefn987() {
+  echo `echo $(echo inner)`;
+}' "$X" "reprinting a nested backquote substitution must re-emit it as \"\$( )\" so the result still parses back to the same thing"
+
+X=$(uniquefn988() { echo `echo plain`; }
+set | grep -A2 "^uniquefn988")
+assert_equal 'uniquefn988() {
+  echo `echo plain`;
+}' "$X" "reprinting a plain (non-nested) backquote substitution must still keep its original backquote syntax"
+
 summary

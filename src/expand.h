@@ -12,7 +12,6 @@ enum subst_type {
   S_DQUOTED = 0x01,
   S_SQUOTED = 0x02,
   S_EXPR = 0x03,
-  S_BQUOTE = 0x04,
 
   /* substitution types */
   S_SPECIAL = 0xf0,
@@ -44,7 +43,16 @@ enum subst_type {
   S_ESCAPED = 0x8000,
   /* a char within here-doc delim is escaped */
   S_GLOB = 0x10000,
-  S_ARITH = 0x20000
+  S_ARITH = 0x20000,
+  /* was inside the S_TABLE-masked nibble (as 0x04) alongside the
+     quoting states above, which it isn't one of: it marks the syntax
+     ("`...`" vs "$(...)") a command substitution was written with,
+     purely for tree_cat()'s own re-printing, and is unrelated to
+     whether the substitution's *result* is quoted. Sharing that
+     nibble made an unquoted backquote substitution's flags OR in as
+     nonzero under the S_TABLE mask, so expand_arg() mistook it for
+     quoted and suppressed its field splitting -- fixes/60 */
+  S_BQUOTE = 0x40000
 };
 
 /* expansion modes */

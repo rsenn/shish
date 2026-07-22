@@ -1,0 +1,47 @@
+diff --git a/src/tree/tree_cat.c b/src/tree/tree_cat.c
+index 9668ea77..7d2b21c5 100644
+--- a/src/tree/tree_cat.c
++++ b/src/tree/tree_cat.c
+@@ -8,6 +8,17 @@
+ #include "../tree.h"
+ #include <stdlib.h>
+ 
++/* how many enclosing N_ARGCMD substitutions currently being printed
++ * are themselves using backquote syntax ("`...`", as opposed to
++ * "$(...)"). A command substitution nested inside one needs to be
++ * printed as "$(...)" regardless of its own S_BQUOTE flag: a raw
++ * "`" would prematurely close the enclosing backquote pair once
++ * reparsed, and POSIX 2.6.3's backslash-escaping for a nested
++ * backquote pair isn't reproduced here. Safe as file-scope state
++ * since printing a tree is always a single synchronous recursive
++ * walk with no concurrent/interleaved callers. */
++static int tree_cat_bqdepth;
++
+ void
+ tree_cat(union node* node, stralloc* sa) {
+   tree_cat_n(node, sa, 0);
+@@ -183,12 +194,21 @@ again:
+ 
+     /* command substitutions */
+     case N_ARGCMD: {
+-      stralloc_cats(sa, (node->nargcmd.flag & S_BQUOTE) ? "`" : "$(");
++      int as_bquote = (node->nargcmd.flag & S_BQUOTE) && tree_cat_bqdepth == 0;
++
++      stralloc_cats(sa, as_bquote ? "`" : "$(");
++
++      if(node->nargcmd.list) {
++        if(as_bquote)
++          tree_cat_bqdepth++;
+ 
+-      if(node->nargcmd.list)
+         tree_catlist(node->nargcmd.list, sa, NULL);
+ 
+-      stralloc_catc(sa, (node->nargcmd.flag & S_BQUOTE) ? '`' : ')');
++        if(as_bquote)
++          tree_cat_bqdepth--;
++      }
++
++      stralloc_catc(sa, as_bquote ? '`' : ')');
+ 
+       break;
+     }

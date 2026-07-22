@@ -60,37 +60,3 @@
 
     ./shish tests/param.sh   # under an ASan build
 
-- tree-cat-nested-backquote-unescaped: tree_cat() (src/tree/tree_cat.c,
-  used by shformat, "set"/history re-serialization, and trap's own
-  signal-handler re-run) reprints a N_ARGCMD node written with
-  backquotes by unconditionally emitting a bare "`...`", with no
-  awareness of whether it's already nested inside another backquoted
-  substitution being printed -- so a nested backquote command
-  substitution's own backquotes come out unescaped, producing text
-  that no longer parses the way the original source did (POSIX 2.6.3
-  requires a backslash before each nesting level's backquotes).
-  Reachable now that nested-backquote parsing itself works (fixed,
-  fixes/59) -- fixing this needs either threading "am I already inside
-  a backquote" state through tree_cat()'s/tree_catlist()'s recursive
-  calls (touches every caller across src/tree/, src/sh/sh_fmt.c,
-  src/sh/sh_loop.c, src/builtin/builtin_trap.c), or simpler but more
-  visible, always re-emitting "$( )" for a nested substitution
-  regardless of how it was originally written.
-
-    echo 'nested=`echo \`echo inner\``' >/tmp/t.sh
-    ./shformat /tmp/t.sh   # prints "nested=`echo `echo inner``" --
-                           # the inner backquotes need "\`" to
-                           # round-trip back to the original meaning
-
-- bquote-direct-no-field-split: an unquoted backquote command
-  substitution used directly as a command's own argument (rather than
-  first assigned to a variable) doesn't field-split on IFS -- its
-  whole multi-line output becomes one argument instead of several,
-  unlike the exact same content via "$( )" or via a variable. Found
-  while writing regression tests for nested-backquote (fixes/59).
-
-    echo `echo a; echo b`      # prints "a\nb" on one echo call --
-                                # should field-split into two args and
-                                # print "a b", like the next two do:
-    echo $(echo a; echo b)     # correctly prints "a b"
-    X=`echo a; echo b`; echo $X   # correctly prints "a b"
