@@ -1367,4 +1367,37 @@ ASSERTIONS_FAILED=$SAVED_FAIL69
 UNRELATED69=$(printf '%s' 'sentinel-value-should-not-be-corrupted')
 assert_equal "sentinel-value-should-not-be-corrupted" "$UNRELATED69" "sourcing a file via a command-substitution-built path must not corrupt an unrelated later substitution's buffer"
 
+## fixes/70 (assign-cmdsubst-value-loses-escaping): an assignment's own
+## "NAME=" text is literal source (parser-doubled for glob protection,
+## same as any other literal word) sharing one argument buffer with
+## its value, which fixes/69 left running through a single deferred,
+## whole-buffer expand_unescape() pass gated on "does this word
+## contain any literal chunk at all" -- correct for a *pure* literal
+## or *pure* substitution value, but wrong the moment the two mix in
+## one buffer (a plain assignment always mixes them, via its own
+## "NAME=" prefix): the literal "NAME=" chunk needing the pass and the
+## substituted value chunk that must not get it were indistinguishable
+## once concatenated. Fixed by having expand_cat()'s non-splitting
+## branch (X_NOSPLIT|X_QUOTED -- what every assignment routes through,
+## unconditionally, per expand_vars.c's X_NOSPLIT) unescape each
+## literal chunk itself, immediately, before it ever touches the
+## shared buffer, so a later substitution chunk's real bytes are never
+## touched. Marked via a new X_UNESCAPED flag so expand_args() (command
+## arguments, which can still mix a quoted chunk that already went
+## through this branch with an unquoted chunk that hasn't) knows not
+## to run its own deferred pass a second time over already-final bytes.
+Y70='a\\b'
+Z70=prefix${Y70}suffix
+assert_equal 'prefixa\\bsuffix' "$Z70" "an assignment mixing a literal prefix/suffix with a substituted value containing a real backslash must not lose that backslash"
+
+## the fix above must not regress a plain, fully-quoted command
+## argument (no assignment, no mixing at all) -- expand_cat()'s
+## self-correction and expand_args()'s deferred pass must not both run
+## and strip the backslash twice.
+myfunc70() {
+  test "$1" = "$2"
+}
+myfunc70 'a\\b' 'a\\b'
+assert_equal "0" "$?" "a plain fully-quoted command argument containing a real backslash must still match itself"
+
 summary

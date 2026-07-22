@@ -1,7 +1,6 @@
 #include "../../lib/byte.h"
 #include "../expand.h"
 #include "../tree.h"
-#include "../parse.h"
 
 /* expand one N_ARG nodes to a stralloc (appending)
  * ----------------------------------------------------------------------- */
@@ -9,13 +8,16 @@ void
 expand_catsa(union node* node, stralloc* sa, int flags) {
   union node tmpnode, *n = &tmpnode;
 
+  /* X_NOSPLIT always routes every chunk through expand_cat()'s
+     non-splitting branch, which now unescapes each literal chunk
+     itself as it's appended (fixes/70) -- nothing left to do here but
+     copy out the already-final buffer and nul-terminate it. The
+     pre-existing bytes copied in from *sa below are left untouched,
+     as they should be: they were already finalized by whatever
+     produced them. */
   tmpnode.narg.flag = 0;
   byte_copy(&tmpnode.narg.stra, sizeof(stralloc), sa);
   expand_arg(node, &n, flags | X_NOSPLIT);
   byte_copy(sa, sizeof(stralloc), &tmpnode.narg.stra);
-
-  if(tmpnode.narg.flag & X_LITERAL)
-    expand_unescape(sa, parse_isesc);
-
   stralloc_nul(sa);
 }

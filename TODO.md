@@ -166,6 +166,25 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
      concrete unstarted items are `job-fork-nproc-oob` and the
      `AC_PROG_CC` false negative referenced above.
 
+   - **Update (2026-07-22, later same day):**
+     `assign-cmdsubst-value-loses-escaping` fixed (`fixes/70`) — an
+     assignment's own "NAME=" text is literal source text sharing one
+     argument buffer with its value, and fixes/69's single deferred
+     unescape pass over the whole buffer couldn't tell that literal
+     prefix apart from an adjacent substitution chunk once the two
+     were concatenated. Fixed by having the non-splitting expand_cat()
+     branch (what every assignment routes through) unescape each
+     literal chunk immediately, before it touches the shared buffer,
+     tracked via a new `X_UNESCAPED` flag so `expand_args()` (which can
+     still mix a self-corrected quoted chunk with a not-yet-processed
+     unquoted one in one command argument) doesn't run its own pass a
+     second time over already-final bytes. Verifying this surfaced yet
+     another, unrelated, still-open bug, now in `BUGS`:
+     `heredoc-body-loses-escaping` — a quoted-delimiter here-document
+     body loses one level of backslash escaping before it ever reaches
+     a reader, confirmed via `od -c` on the receiving end of a pipe (a
+     different subsystem, `src/redir/`, not argument expansion).
+
 ---
 
 ## Goal 2 — Broader POSIX compliance

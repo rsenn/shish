@@ -1,0 +1,300 @@
+diff --git a/BUGS b/BUGS
+index 688cc0e7..04908c2c 100644
+--- a/BUGS
++++ b/BUGS
+@@ -1,16 +1,20 @@
+-- assign-cmdsubst-value-loses-escaping: a variable assignment whose RHS
+-  is a command substitution containing a literal backslash loses one
+-  level of backslash escaping (`X=$(echo 'a\\b'); echo "$X"` prints
+-  "a\b" instead of "a\\b"). The assignment's own "name=" text is
+-  literal source (parser-doubled for glob protection) sharing the same
+-  argument buffer as the substituted value (which was never doubled),
+-  and only one expand_unescape() pass runs over the whole buffer --
+-  confirmed present before and after fixes/69 (that fix only handles a
+-  word that's *purely* a substitution, not one mixing a literal prefix
+-  with substituted content in the same buffer). Needs per-fragment
+-  unescape tracking instead of one flag per assembled argument node;
+-  see fixes/69's patch comment in expand_arg.c for the mechanism this
+-  would extend.
++- heredoc-body-loses-escaping: a here-document body loses one level of
++  backslash escaping before whatever reads it ever sees it -- `cat
++  <<'EOF'` / `a\\b` / `EOF` delivers "a\b" (one backslash) on the pipe,
++  confirmed via `od -c` on the receiving end, not just in how it's
++  later displayed. The delimiter is quoted (`<<'EOF'`), so this isn't
++  parameter/command/arithmetic expansion or backslash-newline line
++  splicing stripping it (those are the only two things POSIX allows a
++  quoted-delimiter here-doc body to undergo) -- the body's literal
++  bytes are wrong before any of that logic could even run. Found while
++  verifying fixes/70; confirmed unaffected by that fix (a different
++  subsystem: heredoc content storage/delivery in src/redir/, not
++  argument expansion), so still open.
++
++    cat <<'EOF' | od -c
++    a\\b
++    EOF
++    # prints "a \ b \n" (one backslash) -- should be "a \ \ b \n" (two)
+ 
+ - configure-summary-test-invalid-expression: `./configure
+   --enable-maintainer-mode` prints "test: invalid expression" three
+diff --git a/TODO.md b/TODO.md
+index cfbe3393..b6db50c7 100644
+--- a/TODO.md
++++ b/TODO.md
+@@ -166,6 +166,25 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
+      concrete unstarted items are `job-fork-nproc-oob` and the
+      `AC_PROG_CC` false negative referenced above.
+ 
++   - **Update (2026-07-22, later same day):**
++     `assign-cmdsubst-value-loses-escaping` fixed (`fixes/70`) — an
++     assignment's own "NAME=" text is literal source text sharing one
++     argument buffer with its value, and fixes/69's single deferred
++     unescape pass over the whole buffer couldn't tell that literal
++     prefix apart from an adjacent substitution chunk once the two
++     were concatenated. Fixed by having the non-splitting expand_cat()
++     branch (what every assignment routes through) unescape each
++     literal chunk immediately, before it touches the shared buffer,
++     tracked via a new `X_UNESCAPED` flag so `expand_args()` (which can
++     still mix a self-corrected quoted chunk with a not-yet-processed
++     unquoted one in one command argument) doesn't run its own pass a
++     second time over already-final bytes. Verifying this surfaced yet
++     another, unrelated, still-open bug, now in `BUGS`:
++     `heredoc-body-loses-escaping` — a quoted-delimiter here-document
++     body loses one level of backslash escaping before it ever reaches
++     a reader, confirmed via `od -c` on the receiving end of a pipe (a
++     different subsystem, `src/redir/`, not argument expansion).
++
+ ---
+ 
+ ## Goal 2 — Broader POSIX compliance
+diff --git a/src/expand.h b/src/expand.h
+index 1aed4a72..af0ed3ec 100644
+--- a/src/expand.h
++++ b/src/expand.h
+@@ -70,6 +70,20 @@ enum subst_type {
+ #define X_LITERAL 0x02000000
+ #define X_GLOB 0x04000000
+ #define X_QUOTED 0x08000000
++/* set by expand_cat()'s non-splitting (X_NOSPLIT|X_QUOTED) branch on
++   every chunk it appends, literal or not: that branch now unescapes a
++   literal chunk itself, immediately, before it ever reaches the
++   shared accumulator (fixes/70), so by the time expand_args() etc.
++   look at the finished node there's nothing left for their own
++   whole-buffer expand_unescape() pass to do -- running it anyway would
++   unescape already-final bytes a second time. Marks "don't bother",
++   not "was literal": a node built entirely from quoted/no-split chunks
++   carries this even if none of them needed unescaping. A node that
++   mixes a quoted chunk with a still-unprocessed unquoted one (e.g.
++   trailing off a splittable word) is a narrower, pre-existing case
++   this doesn't fully resolve either way -- see assign-cmdsubst-value-
++   loses-escaping in BUGS. */
++#define X_UNESCAPED 0x10000000
+ 
+ extern char expand_ifs[4];
+ 
+diff --git a/src/expand/expand_args.c b/src/expand/expand_args.c
+index e9dd92c7..c5b9576a 100644
+--- a/src/expand/expand_args.c
++++ b/src/expand/expand_args.c
+@@ -35,12 +35,14 @@ expand_args(union node* args, union node** nptr, int flags) {
+         nptr = &n;
+         ret++;
+       }
+-    } else if(n->narg.flag & X_LITERAL) {
++    } else if((n->narg.flag & X_LITERAL) && !(n->narg.flag & X_UNESCAPED)) {
+       expand_unescape(&n->narg.stra, parse_isesc);
+       n->narg.flag &= ~X_GLOB;
+     } else {
+       /* expand_unescape() nul-terminates as a side effect -- skipping
+-         it here for non-literal content must not also skip that, or
++         it here (whether because there was no literal chunk at all,
++         or because expand_cat() already unescaped every literal chunk
++         itself -- X_UNESCAPED, fixes/70) must not also skip that, or
+          ->stra.s stops being a valid C string and anything reading it
+          as one (e.g. the "." builtin building a path from a command
+          substitution result) walks off the end into whatever memory
+diff --git a/src/expand/expand_cat.c b/src/expand/expand_cat.c
+index b2a9a89b..4caebace 100644
+--- a/src/expand/expand_cat.c
++++ b/src/expand/expand_cat.c
+@@ -24,7 +24,37 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
+ 
+     n->narg.flag |= flags /*& (~(X_QUOTED))*/;
+ 
+-    stralloc_catb(&n->narg.stra, b, len);
++    /* this branch never splits into fields and never globs, so unlike
++       the loop below there's no later point where a deferred,
++       whole-buffer expand_unescape() pass could tell a literal
++       source-text chunk (parser-doubled, needs unescaping) apart from
++       an already-real parameter/command-substitution chunk sharing
++       this same node (e.g. an assignment's own "NAME=" prefix next to
++       a "$(...)" value) -- the two get concatenated right here and
++       any later pass over the combined bytes can only get one of them
++       right. Unescaping each chunk immediately, before it ever touches
++       the accumulator, keeps the two kinds of bytes from ever being
++       confused (assign-cmdsubst-value-loses-escaping, fixes/70).
++
++       X_UNESCAPED is only set when this chunk actually was literal:
++       a plain substitution chunk that happens to route through this
++       same branch (e.g. quoted "$x") contributes nothing that needs
++       correcting, and marking the node anyway would wrongly tell a
++       *later*, still-unprocessed chunk sharing this node (e.g. an
++       unquoted "\*" tail glued onto "$x" with no separator, still
++       headed for the split loop below on its own call) that it's
++       already been handled when it hasn't. */
++    if(flags & X_LITERAL) {
++      stralloc tmp;
++      stralloc_init(&tmp);
++      stralloc_catb(&tmp, b, len);
++      expand_unescape(&tmp, parse_isesc);
++      stralloc_catb(&n->narg.stra, tmp.s, tmp.len);
++      stralloc_free(&tmp);
++      n->narg.flag |= X_UNESCAPED;
++    } else {
++      stralloc_catb(&n->narg.stra, b, len);
++    }
+ 
+     return n;
+   }
+diff --git a/src/expand/expand_catsa.c b/src/expand/expand_catsa.c
+index 8c65636c..120cb954 100644
+--- a/src/expand/expand_catsa.c
++++ b/src/expand/expand_catsa.c
+@@ -1,7 +1,6 @@
+ #include "../../lib/byte.h"
+ #include "../expand.h"
+ #include "../tree.h"
+-#include "../parse.h"
+ 
+ /* expand one N_ARG nodes to a stralloc (appending)
+  * ----------------------------------------------------------------------- */
+@@ -9,13 +8,16 @@ void
+ expand_catsa(union node* node, stralloc* sa, int flags) {
+   union node tmpnode, *n = &tmpnode;
+ 
++  /* X_NOSPLIT always routes every chunk through expand_cat()'s
++     non-splitting branch, which now unescapes each literal chunk
++     itself as it's appended (fixes/70) -- nothing left to do here but
++     copy out the already-final buffer and nul-terminate it. The
++     pre-existing bytes copied in from *sa below are left untouched,
++     as they should be: they were already finalized by whatever
++     produced them. */
+   tmpnode.narg.flag = 0;
+   byte_copy(&tmpnode.narg.stra, sizeof(stralloc), sa);
+   expand_arg(node, &n, flags | X_NOSPLIT);
+   byte_copy(sa, sizeof(stralloc), &tmpnode.narg.stra);
+-
+-  if(tmpnode.narg.flag & X_LITERAL)
+-    expand_unescape(sa, parse_isesc);
+-
+   stralloc_nul(sa);
+ }
+diff --git a/src/expand/expand_copysa.c b/src/expand/expand_copysa.c
+index 7f953f2c..cce61239 100644
+--- a/src/expand/expand_copysa.c
++++ b/src/expand/expand_copysa.c
+@@ -1,7 +1,6 @@
+ #include "../../lib/byte.h"
+ #include "../expand.h"
+ #include "../tree.h"
+-#include "../parse.h"
+ 
+ /* expand one N_ARG node to a stralloc (stralloc is overwritten!!!)
+  * ----------------------------------------------------------------------- */
+@@ -11,11 +10,12 @@ expand_copysa(union node* node, stralloc* sa, int flags) {
+ 
+   tmpnode.narg.flag = 0;
+   stralloc_init(&tmpnode.narg.stra);
++
++  /* X_NOSPLIT always routes every chunk through expand_cat()'s
++     non-splitting branch, which now unescapes each literal chunk
++     itself as it's appended (fixes/70) -- nothing left to do here but
++     copy out the already-final buffer and nul-terminate it. */
+   expand_arg(node, &n, flags | X_NOSPLIT);
+   byte_copy(sa, sizeof(stralloc), &tmpnode.narg.stra);
+-
+-  if(tmpnode.narg.flag & X_LITERAL)
+-    expand_unescape(sa, &parse_isesc);
+-
+   stralloc_nul(sa);
+ }
+diff --git a/src/expand/expand_vars.c b/src/expand/expand_vars.c
+index b2497604..a3bf708a 100644
+--- a/src/expand/expand_vars.c
++++ b/src/expand/expand_vars.c
+@@ -1,10 +1,7 @@
+ #include "../expand.h"
+ #include "../tree.h"
+-#include "../parse.h"
+ #include "../debug.h"
+ 
+-#include <stdlib.h>
+-
+ /* expand an assignment list
+  * ----------------------------------------------------------------------- */
+ int
+@@ -18,14 +15,15 @@ expand_vars(union node* vars, union node** nptr) {
+     node = 0;
+     node = expand_arg(var, &node, X_NOSPLIT);
+ 
+-    if(node) {
+-      if(node->narg.flag & X_LITERAL)
+-        expand_unescape(&node->narg.stra, parse_isesc);
+-      else
+-        /* expand_unescape() nul-terminates as a side effect -- see
+-           expand_args.c's identical comment */
+-        stralloc_nul(&node->narg.stra);
+-    }
++    /* expand_arg() is called with X_NOSPLIT above, which always routes
++       every chunk through expand_cat()'s non-splitting branch -- that
++       branch now unescapes each literal chunk itself as it's appended
++       (fixes/70), so the buffer here is already final; nul-terminate
++       is all that's left to do (expand_unescape() used to do both as
++       one unconditional call, back when this ran a second, redundant,
++       whole-buffer pass over content expand_cat() had already fixed). */
++    if(node)
++      stralloc_nul(&node->narg.stra);
+ 
+     while(*nptr)
+       tree_skip(nptr);
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index e5862210..ea88bc61 100644
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -1367,4 +1367,37 @@ ASSERTIONS_FAILED=$SAVED_FAIL69
+ UNRELATED69=$(printf '%s' 'sentinel-value-should-not-be-corrupted')
+ assert_equal "sentinel-value-should-not-be-corrupted" "$UNRELATED69" "sourcing a file via a command-substitution-built path must not corrupt an unrelated later substitution's buffer"
+ 
++## fixes/70 (assign-cmdsubst-value-loses-escaping): an assignment's own
++## "NAME=" text is literal source (parser-doubled for glob protection,
++## same as any other literal word) sharing one argument buffer with
++## its value, which fixes/69 left running through a single deferred,
++## whole-buffer expand_unescape() pass gated on "does this word
++## contain any literal chunk at all" -- correct for a *pure* literal
++## or *pure* substitution value, but wrong the moment the two mix in
++## one buffer (a plain assignment always mixes them, via its own
++## "NAME=" prefix): the literal "NAME=" chunk needing the pass and the
++## substituted value chunk that must not get it were indistinguishable
++## once concatenated. Fixed by having expand_cat()'s non-splitting
++## branch (X_NOSPLIT|X_QUOTED -- what every assignment routes through,
++## unconditionally, per expand_vars.c's X_NOSPLIT) unescape each
++## literal chunk itself, immediately, before it ever touches the
++## shared buffer, so a later substitution chunk's real bytes are never
++## touched. Marked via a new X_UNESCAPED flag so expand_args() (command
++## arguments, which can still mix a quoted chunk that already went
++## through this branch with an unquoted chunk that hasn't) knows not
++## to run its own deferred pass a second time over already-final bytes.
++Y70='a\\b'
++Z70=prefix${Y70}suffix
++assert_equal 'prefixa\\bsuffix' "$Z70" "an assignment mixing a literal prefix/suffix with a substituted value containing a real backslash must not lose that backslash"
++
++## the fix above must not regress a plain, fully-quoted command
++## argument (no assignment, no mixing at all) -- expand_cat()'s
++## self-correction and expand_args()'s deferred pass must not both run
++## and strip the backslash twice.
++myfunc70() {
++  test "$1" = "$2"
++}
++myfunc70 'a\\b' 'a\\b'
++assert_equal "0" "$?" "a plain fully-quoted command argument containing a real backslash must still match itself"
++
+ summary

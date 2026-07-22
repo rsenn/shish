@@ -35,12 +35,14 @@ expand_args(union node* args, union node** nptr, int flags) {
         nptr = &n;
         ret++;
       }
-    } else if(n->narg.flag & X_LITERAL) {
+    } else if((n->narg.flag & X_LITERAL) && !(n->narg.flag & X_UNESCAPED)) {
       expand_unescape(&n->narg.stra, parse_isesc);
       n->narg.flag &= ~X_GLOB;
     } else {
       /* expand_unescape() nul-terminates as a side effect -- skipping
-         it here for non-literal content must not also skip that, or
+         it here (whether because there was no literal chunk at all,
+         or because expand_cat() already unescaped every literal chunk
+         itself -- X_UNESCAPED, fixes/70) must not also skip that, or
          ->stra.s stops being a valid C string and anything reading it
          as one (e.g. the "." builtin building a path from a command
          substitution result) walks off the end into whatever memory

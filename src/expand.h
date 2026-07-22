@@ -70,6 +70,20 @@ enum subst_type {
 #define X_LITERAL 0x02000000
 #define X_GLOB 0x04000000
 #define X_QUOTED 0x08000000
+/* set by expand_cat()'s non-splitting (X_NOSPLIT|X_QUOTED) branch on
+   every chunk it appends, literal or not: that branch now unescapes a
+   literal chunk itself, immediately, before it ever reaches the
+   shared accumulator (fixes/70), so by the time expand_args() etc.
+   look at the finished node there's nothing left for their own
+   whole-buffer expand_unescape() pass to do -- running it anyway would
+   unescape already-final bytes a second time. Marks "don't bother",
+   not "was literal": a node built entirely from quoted/no-split chunks
+   carries this even if none of them needed unescaping. A node that
+   mixes a quoted chunk with a still-unprocessed unquoted one (e.g.
+   trailing off a splittable word) is a narrower, pre-existing case
+   this doesn't fully resolve either way -- see assign-cmdsubst-value-
+   loses-escaping in BUGS. */
+#define X_UNESCAPED 0x10000000
 
 extern char expand_ifs[4];
 

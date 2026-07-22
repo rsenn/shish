@@ -24,7 +24,37 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
 
     n->narg.flag |= flags /*& (~(X_QUOTED))*/;
 
-    stralloc_catb(&n->narg.stra, b, len);
+    /* this branch never splits into fields and never globs, so unlike
+       the loop below there's no later point where a deferred,
+       whole-buffer expand_unescape() pass could tell a literal
+       source-text chunk (parser-doubled, needs unescaping) apart from
+       an already-real parameter/command-substitution chunk sharing
+       this same node (e.g. an assignment's own "NAME=" prefix next to
+       a "$(...)" value) -- the two get concatenated right here and
+       any later pass over the combined bytes can only get one of them
+       right. Unescaping each chunk immediately, before it ever touches
+       the accumulator, keeps the two kinds of bytes from ever being
+       confused (assign-cmdsubst-value-loses-escaping, fixes/70).
+
+       X_UNESCAPED is only set when this chunk actually was literal:
+       a plain substitution chunk that happens to route through this
+       same branch (e.g. quoted "$x") contributes nothing that needs
+       correcting, and marking the node anyway would wrongly tell a
+       *later*, still-unprocessed chunk sharing this node (e.g. an
+       unquoted "\*" tail glued onto "$x" with no separator, still
+       headed for the split loop below on its own call) that it's
+       already been handled when it hasn't. */
+    if(flags & X_LITERAL) {
+      stralloc tmp;
+      stralloc_init(&tmp);
+      stralloc_catb(&tmp, b, len);
+      expand_unescape(&tmp, parse_isesc);
+      stralloc_catb(&n->narg.stra, tmp.s, tmp.len);
+      stralloc_free(&tmp);
+      n->narg.flag |= X_UNESCAPED;
+    } else {
+      stralloc_catb(&n->narg.stra, b, len);
+    }
 
     return n;
   }

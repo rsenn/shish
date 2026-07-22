@@ -1,9 +1,6 @@
 #include "../expand.h"
 #include "../tree.h"
-#include "../parse.h"
 #include "../debug.h"
-
-#include <stdlib.h>
 
 /* expand an assignment list
  * ----------------------------------------------------------------------- */
@@ -18,14 +15,15 @@ expand_vars(union node* vars, union node** nptr) {
     node = 0;
     node = expand_arg(var, &node, X_NOSPLIT);
 
-    if(node) {
-      if(node->narg.flag & X_LITERAL)
-        expand_unescape(&node->narg.stra, parse_isesc);
-      else
-        /* expand_unescape() nul-terminates as a side effect -- see
-           expand_args.c's identical comment */
-        stralloc_nul(&node->narg.stra);
-    }
+    /* expand_arg() is called with X_NOSPLIT above, which always routes
+       every chunk through expand_cat()'s non-splitting branch -- that
+       branch now unescapes each literal chunk itself as it's appended
+       (fixes/70), so the buffer here is already final; nul-terminate
+       is all that's left to do (expand_unescape() used to do both as
+       one unconditional call, back when this ran a second, redundant,
+       whole-buffer pass over content expand_cat() had already fixed). */
+    if(node)
+      stralloc_nul(&node->narg.stra);
 
     while(*nptr)
       tree_skip(nptr);
