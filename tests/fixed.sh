@@ -1251,4 +1251,53 @@ assert_equal "$TMPDIR_GLOB/a.txt $TMPDIR_GLOB/b.txt" "$X" "a bracket-expression 
 
 rm -rf "$TMPDIR_GLOB"
 
+## fixes/67 (fnmatch-p-hang): lib/path/path_fnmatch.c (the fnmatch(3)
+## workalike behind "case" pattern matching, and glob(3)'s own
+## bracket-expression fallback) spun at 100% CPU forever on a POSIX
+## bracket character class ("[:lower:]", "[:digit:]", etc.) -- the
+## branch that was supposed to handle "[:" inside a bracket expression
+## was an empty placeholder ("/* TODO: implement them */"), so it
+## never advanced past the "[:" it had just recognized, and the
+## enclosing "while(plen)" loop just kept re-examining the exact same
+## two bytes forever. Fixed by actually implementing POSIX 2.13.1's
+## character classes (upper/lower/alpha/digit/alnum/punct/graph/
+## print/cntrl/blank/space/xdigit, via <ctype.h>), plus "[.x.]"
+## (collating symbol) and "[=x=]" (equivalence class), which -- since
+## full locale-aware collation isn't implemented -- degrade to
+## matching just the single enclosed character in the C/POSIX locale,
+## the only behavior POSIX actually requires a conforming application
+## be able to rely on. A malformed/unterminated "[:"/"[."/"[=" no
+## longer hangs either: it now falls back to treating the "[" as an
+## ordinary literal bracket-expression member, same as any other char.
+##
+## Not fixed here, confirmed separate and pre-existing (not caused or
+## masked by the hang -- the same file's other test blocks running
+## after this fix's own now-non-hanging one still fail the same way):
+## a bracket-expression range whose endpoints are themselves
+## "[.x.]"-wrapped ("[[.0.]-[.2.]]") doesn't match as a range, and
+## quoted substrings inside a "case" pattern's bracket expression
+## (e.g. "[\".]"/'["."]') don't get their quoting handled correctly.
+## See BUGS.
+X=$(case a in [[:lower:]]) echo lower;; esac)
+assert_equal "lower" "$X" "a POSIX bracket character class must actually match, not hang forever"
+
+X=$(case A in [[:lower:]]) echo lower;; *) echo nomatch;; esac)
+assert_equal "nomatch" "$X" "a POSIX bracket character class must correctly NOT match a character outside the class"
+
+X=$(case 5 in [[:digit:]]) echo digit;; esac)
+assert_equal "digit" "$X" "a different POSIX bracket character class (:digit:) must also match correctly"
+
+X=$(case a in [[.a.]]) echo matched;; esac)
+assert_equal "matched" "$X" "a bracket-expression collating symbol ([.x.]) must degrade to matching its single enclosed character"
+
+X=$(case a in [[=a=]]) echo matched;; esac)
+assert_equal "matched" "$X" "a bracket-expression equivalence class ([=x=]) must degrade to matching its single enclosed character"
+
+## no explicit timeout wrapper needed here -- this is exactly the
+## shape that used to hang forever before this fix; if it regressed,
+## this whole test file (and "ctest") would simply hang too, which is
+## its own unmistakable signal.
+X=$(case a in [[:) echo unreachable;; *) echo fallback;; esac)
+assert_equal "fallback" "$X" "an unterminated/malformed bracket class must fall back to a literal '[' member instead of hanging"
+
 summary

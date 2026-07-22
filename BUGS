@@ -1,8 +1,3 @@
-- fnmatch-p-hang: tests/posix/fnmatch-p.tst hangs the testee at 100%
-  CPU; not yet isolated to a specific case within the file.
-
-    ./shish tests/posix/fnmatch-p.tst
-
 - fdtable-cycle-detection: the fdtable resolver has no real cycle
   detection, only a defensive depth cap; a genuinely cyclic
   redirection fails instead of resolving. Not yet isolated to a
@@ -26,5 +21,43 @@
     sleep 1 &
     sleep 2 &
     wait
+
+- fnmatch-bracket-collating-range: a bracket-expression range whose
+  endpoints are themselves "[.x.]"-wrapped collating symbols (as
+  opposed to bare characters, e.g. "[0-2]") doesn't match as a range
+  at all -- lib/path/path_fnmatch.c's range-detection only recognizes
+  "X-Y" where X and Y are literal single characters, not
+  "[.X.]-[.Y.]"; each "[.symbol.]" gets matched as its own standalone
+  member (fixes/67 added support for that part on its own) and the
+  "-" in between as a third, literal "-" member, rather than the three
+  being fused into a single range. Found while confirming
+  fnmatch-p-hang's fix didn't paper over anything else in the same
+  test block; POSIX 2.13.1 does define this range form but it's a
+  narrow, rarely-used corner of bracket-expression syntax.
+
+    case 1 in [[.0.]-[.2.]]) echo matched;; *) echo no;; esac
+    # prints "no"; POSIX says this range covers 0-2, so it should
+    # print "matched"
+
+- case-pattern-bracket-quote-stripping: a "case" pattern with a quoted
+  substring inside a bracket expression (e.g. "[\".]"/'["."]', which
+  ought to reduce to the bracket expression "[.]" after quote removal,
+  matching a literal ".") matches nothing at all -- not just failing
+  to match correctly, but every arm of the "case" including the "*"
+  catch-all is silently skipped, as if the whole case-item's pattern
+  list came out empty. This looks like a parser-level bug (the
+  case-item's pattern node(s) apparently never get built at all for
+  this shape) rather than a runtime fnmatch/glob-matching issue.
+  Found via tests/posix/fnmatch-p.tst's "brackets and quotations" and
+  "quotations of quotations" blocks, both of which fail on exactly
+  this (not on the fnmatch-p-hang bug fixed alongside them, which
+  those two blocks don't otherwise exercise).
+
+    y="."
+    case "$y" in
+    ["."]) echo matched;;
+    *) echo no;;
+    esac
+    # prints nothing at all -- neither "matched" nor "no"
 
 

@@ -1,4 +1,6 @@
 #include "../path_internal.h"
+#include "../byte.h"
+#include <ctype.h>
 
 /*#include "../buffer.h"*/
 /* Based on dietlibc fnmatch (C) by Felix Leitner
@@ -6,6 +8,52 @@
  * rewritten to support strings that are not nul-terminated
  */
 #define NOTFIRST 0x80
+
+/* does character c belong to POSIX bracket class "name" (the "lower"
+ * in "[:lower:]"), name/namelen not including the surrounding "[:"/
+ * ":]"? Only the classes POSIX 2.13.1 actually lists are recognized;
+ * an unknown class name matches nothing, same as glibc.
+ * ----------------------------------------------------------------------- */
+static int
+path_fnmatch_class(const char* name, unsigned int namelen, int c) {
+#define CLASS(s, fn) \
+  if(namelen == sizeof(s) - 1 && byte_equal(name, namelen, s)) \
+  return !!fn((unsigned char)c)
+  CLASS("upper", isupper);
+  CLASS("lower", islower);
+  CLASS("alpha", isalpha);
+  CLASS("digit", isdigit);
+  CLASS("alnum", isalnum);
+  CLASS("punct", ispunct);
+  CLASS("graph", isgraph);
+  CLASS("print", isprint);
+  CLASS("cntrl", iscntrl);
+  CLASS("blank", isblank);
+  CLASS("space", isspace);
+  CLASS("xdigit", isxdigit);
+#undef CLASS
+  return 0;
+}
+
+/* find the end of a "[:class:]"/"[.symbol.]"/"[=equiv=]" bracket
+ * sub-expression starting at "pattern" (pattern[0] == '[', pattern[1]
+ * is the delimiter char "delim"): returns the number of pattern bytes
+ * it occupies (including both delimiter pairs), or 0 if "plen" bytes
+ * aren't enough to find a closing "delim]" -- the caller falls back
+ * to treating "[" as an ordinary bracket-expression character in that
+ * case, same as an unterminated "[:"/"[."/"[=" always has.
+ * ----------------------------------------------------------------------- */
+static unsigned int
+path_fnmatch_subexpr_len(const char* pattern, unsigned int plen, char delim) {
+  unsigned int i;
+
+  for(i = 2; i + 1 < plen; i++) {
+    if(pattern[i] == delim && pattern[i + 1] == ']')
+      return i + 2;
+  }
+
+  return 0;
+}
 
 int
 path_fnmatch(
@@ -70,10 +118,40 @@ start:
         if(*pattern == ']' && pattern != start)
           break;
 
-        if(*pattern == '[' && pattern[1] == ':') {
-          /* MEMBER - stupid POSIX char classes */
-          /* TODO: implement them, but maybe not because POSIX sucks here! HARR
-           * HARR */
+        if(*pattern == '[' && plen > 1 &&
+           (pattern[1] == ':' || pattern[1] == '.' || pattern[1] == '=')) {
+          /* MEMBER - "[:class:]" / "[.symbol.]" / "[=equiv=]" */
+          char delim = pattern[1];
+          unsigned int sublen = path_fnmatch_subexpr_len(pattern, plen, delim);
+
+          if(sublen == 0) {
+            /* unterminated -- treat the "[" itself as an ordinary
+               literal member character, same as any other char
+               falling through to the plain "else" branch below */
+            res = (*pattern == *string);
+            pattern++;
+            plen--;
+          } else if(delim == ':') {
+            res = path_fnmatch_class(&pattern[2], sublen - 4, *string);
+            pattern += sublen;
+            plen -= sublen;
+          } else {
+            /* collating symbol / equivalence class: full locale-aware
+               collation isn't implemented, so in the C/POSIX locale
+               both degenerate to matching just the single enclosed
+               character -- the only behavior a conforming
+               application can rely on anyway. A multi-character
+               symbol (no locale data to resolve it against) matches
+               nothing rather than mismatching the bracket expression
+               outright. */
+            unsigned int symlen = sublen - 4;
+
+            if(symlen == 1)
+              res = (pattern[2] == *string);
+
+            pattern += sublen;
+            plen -= sublen;
+          }
         } else {
           /* MEMBER - character range */
           if(plen > 1 && pattern[1] == '-' && pattern[2] != ']') {
