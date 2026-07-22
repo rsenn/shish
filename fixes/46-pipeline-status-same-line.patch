@@ -1,0 +1,34 @@
+diff --git a/src/eval/eval_pipeline.c b/src/eval/eval_pipeline.c
+index 5124057e..1f98c550 100644
+--- a/src/eval/eval_pipeline.c
++++ b/src/eval/eval_pipeline.c
+@@ -138,6 +138,12 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
+ 
+   if(!npipe->bgnd) {
+     job_wait(job, 0, &status);
++  } else {
++    /* backgrounding a pipeline ("cmd1 | cmd2 &") succeeds as soon as
++       it's launched -- status is never touched by job_wait() (it's
++       not called for a bgnd pipeline), so leaving it at its initial
++       -1 would report a bogus 255 as "$?" once that's wired up below */
++    status = 0;
+   }
+ 
+   if(pipes)
+@@ -146,5 +152,15 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
+   if(job)
+     job_free(job);
+ 
+-  return WEXITSTATUS(status);
++  /* eval_simple_command() updates sh->exitcode directly (not just its
++     return value) so "$?" sees a command's status immediately, even
++     from a later command on the very same line -- e->exitcode only
++     gets synced back to sh->exitcode once the *whole* line's
++     eval_tree() call returns (see eval_pop()/sh_loop.c), which is too
++     late for "cmd1 | cmd2; echo $?" sitting on one line together.
++     Without this, "$?" after a pipeline kept reporting whatever it
++     was *before* the pipeline ran. */
++  sh->exitcode = WEXITSTATUS(status);
++
++  return sh->exitcode;
+ }

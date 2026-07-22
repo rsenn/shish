@@ -121,17 +121,6 @@
 
     shish -c 'for i in a b c; do echo "[$i]"; done'
 
-- pipeline-last-stage-status-lost: a foreground pipeline's exit status
-  is not reliably the last command's status the way POSIX requires --
-  confirmed wrong even for the simplest 2-stage case, builtins or
-  external commands. Found while verifying the wait-exitstatus-lost
-  fix (a related but distinct job_wait()/job_fork() area); an earlier,
-  already-committed fix (fixes/13-pipeline-exit-status.patch) covered
-  a different part of this same general problem, not this case.
-
-    true | false
-    echo $?
-
 - expand-glob-stack-overflow: found via an ASan build running
   tests/param.sh (which exercises heavy nested command-substitution +
   subshell use) -- a stack-buffer-overflow in

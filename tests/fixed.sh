@@ -529,4 +529,31 @@ assert_equal "0" "$?" "job_print() must still format a running job's status line
 wait
 rm -f "$JOBSFILE3"
 
+## fixes/46: "$?" right after a foreground pipeline on the same line
+## kept reporting whatever it was *before* the pipeline ran, instead
+## of the pipeline's own (already correctly computed -- eval_pipeline()
+## itself returned the right value) exit status. Root cause:
+## eval_simple_command() updates sh->exitcode directly, but
+## eval_pipeline() only returned its status, relying on eval_tree()'s
+## loop to stash it in the per-frame e->exitcode -- which isn't synced
+## back to sh->exitcode (what "$?" actually reads) until the *whole*
+## line's eval_tree() call returns, too late for a later command on
+## the same line ("cmd1 | cmd2; echo $?"). Fixed by having
+## eval_pipeline() set sh->exitcode directly too, the same as
+## eval_simple_command() already does.
+X=$(true | false; echo $?)
+assert_equal "1" "$X" "\"\$?\" right after a 2-stage pipeline (builtin | builtin) on the same line must be the last stage's status"
+
+X=$(false | true; echo $?)
+assert_equal "0" "$X" "\"\$?\" right after a pipeline must be the LAST stage's status, not the first"
+
+X=$(true | false | false; echo $?)
+assert_equal "1" "$X" "\"\$?\" after a 3-stage pipeline must still be the last stage's status"
+
+X=$(false | false | true; echo $?)
+assert_equal "0" "$X" "\"\$?\" after a 3-stage pipeline ending in success must be 0"
+
+X=$(true | false & wait; echo $?)
+assert_equal "0" "$X" "backgrounding a pipeline (\"cmd1 | cmd2 &\") must itself report success as \"\$?\", independent of what it later exits with"
+
 summary
