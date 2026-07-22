@@ -392,4 +392,29 @@ grep -q '^myfn() {$' "$OUTFILE"
 assert_equal "0" "$?" "\"set\" with no args must also dump defined functions"
 rm -f "$OUTFILE"
 
+## fixes/40: builtin_chmod only ever accepted a plain octal mode
+## ("chmod 755 file") -- any symbolic mode ("chmod a+x file", "chmod
+## u+rwx,go-w file") fell through scan_8int() untested (it stops at
+## the first non-octal-digit character and silently returns whatever
+## it managed to parse before that, so e.g. "u+x" parsed as "0" and
+## every file got chmod(path, 0)). Added chmod_symbolic(), a
+## [ugoa]*[+-=][rwx]* parser (repeatable, comma-separated) applied on
+## top of each file's own current mode via stat(); a mode string only
+## takes the numeric path now if it's made up entirely of octal
+## digits.
+##
+## Not exercisable through this default ctest build: chmod is an
+## EXTRA_BUILTINS entry, off by default (BUILTIN_CHMOD=0), so "chmod"
+## here resolves to the system PATH binary, which already understands
+## symbolic mode natively regardless of this fix -- a test running
+## against this binary would pass whether or not the fix is present,
+## so it wouldn't actually be testing anything. Verified instead by
+## building a separate tree with -DBUILTIN_CHMOD=ON and confirming:
+## "chmod a+x file" / "chmod go-r file" / "chmod a=rwx file" / "chmod
+## u+rwx,go-w file" all produce the expected mode bits (checked via
+## "stat -c %a"), "chmod 644 file" (plain octal) still works
+## unchanged, and "chmod +q file" (an invalid perm letter) reports
+## "chmod: +q: invalid mode" and exits 1 rather than silently
+## chmod()ing to 0.
+
 summary
