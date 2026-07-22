@@ -52,15 +52,6 @@
     nested=`echo \`echo inner\``
     echo "$nested"
 
-- heredoc-quoted-delim-expansion: a here-document whose delimiter is
-  quoted must suppress parameter/command/arithmetic expansion in its
-  body (POSIX 2.7.4), but shish expands it anyway.
-
-    X=hi
-    cat <<'EOF'
-    literal $X
-    EOF
-
 - printf-field-width: builtin printf doesn't support a field
   width/flags on numeric conversions -- the format string is printed
   back completely unprocessed instead of being applied. A bare

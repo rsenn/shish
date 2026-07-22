@@ -712,4 +712,44 @@ X=$(
 assert_equal "in=inner
 after=outer" "$X" "\"local\" inside a function called with a prefix assignment must still shadow correctly"
 
+## fixes/51: a here-document whose delimiter is quoted must suppress
+## parameter/command/arithmetic expansion in its body (POSIX 2.7.4),
+## but redir_source.c only checked the delimiter word's S_ESCAPED flag
+## (set for a lone backslash escape, e.g. "<<\EOF") when deciding
+## whether to suppress expansion -- missing S_TABLE entirely, the
+## flag bits that actually record single/double-quoting (S_SQUOTED/
+## S_DQUOTED). It also only ever looked at the top node's flags,
+## which for a delimiter mixing quoted and unquoted parts (e.g.
+## "E\"O\"F") is an N_ARG wrapper whose own flag field is never set at
+## all -- every sub-part needs checking, not just the top node.
+X=$(X=hi; cat <<'EOF'
+literal $X
+EOF
+)
+assert_equal "literal \$X" "$X" "a single-quoted heredoc delimiter must suppress expansion in the body"
+
+X=$(X=hi; cat <<"EOF"
+literal $X
+EOF
+)
+assert_equal "literal \$X" "$X" "a double-quoted heredoc delimiter must suppress expansion in the body"
+
+X=$(X=hi; cat <<\EOF
+literal $X
+EOF
+)
+assert_equal "literal \$X" "$X" "a backslash-escaped heredoc delimiter must suppress expansion in the body"
+
+X=$(X=hi; cat <<EOF
+literal $X
+EOF
+)
+assert_equal "literal hi" "$X" "an UNQUOTED heredoc delimiter must still expand its body as before"
+
+X=$(X=hi; cat <<E"O"F
+literal $X
+EOF
+)
+assert_equal "literal \$X" "$X" "a heredoc delimiter with only PART of it quoted must still suppress expansion"
+
 summary

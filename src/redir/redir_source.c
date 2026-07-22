@@ -4,6 +4,28 @@
 #include "../tree.h"
 #include <stdlib.h>
 
+/* POSIX 2.7.4: "if any part of word is quoted, the delimiter shall be
+ * formed by performing quote removal on word, and the here-document
+ * lines shall not be expanded" -- word can be a single node (a plain
+ * delimiter like "EOF", or one entirely inside one pair of quotes
+ * like 'EOF') or an N_ARG wrapping a list of sub-parts (a delimiter
+ * mixing quoted and unquoted characters, e.g. E"O"F or EO\F). Either
+ * way, quoting anywhere in it -- single/double quotes (the S_TABLE
+ * bits) or a lone backslash escape (S_ESCAPED) -- must suppress
+ * expansion in the body, so every sub-part needs checking, not just
+ * whichever flags happen to be readable off the top node.
+ * ----------------------------------------------------------------------- */
+static int
+redir_here_quoted(union node* word) {
+  union node* part;
+
+  for(part = (word->id == N_ARG) ? word->narg.list : word; part; part = part->next)
+    if(part->nargstr.flag & (S_TABLE | S_ESCAPED))
+      return 1;
+
+  return 0;
+}
+
 /* process all here-docs
  *
  * nredir->data is set to the next here-doc redirection by redir_addhere()
@@ -23,12 +45,9 @@ redir_source(void) {
     stralloc_init(&delim);
     expand_str(redir_list->word, &delim, 0);
 
-    /* when any character of the delimiter has been escaped
-       then treat the whole here-doc as non-expanded word */
-    if(parse_here(&p,
-                  &delim,
-                  (redir_list->word->nargstr.flag & S_ESCAPED),
-                  (redir_list->flag & R_STRIP))) {
+    /* when any part of the delimiter was quoted or escaped, treat the
+       whole here-doc as a non-expanded word (POSIX 2.7.4) */
+    if(parse_here(&p, &delim, redir_here_quoted(redir_list->word), (redir_list->flag & R_STRIP))) {
       parse_error(&p, p.tok);
       break;
     }
