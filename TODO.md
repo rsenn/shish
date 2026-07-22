@@ -367,15 +367,19 @@ with the corrected/precise version:**
   open. Kept in `BUGS` in its more precise form.
 
 - *"closing of file descriptors on >&-"* — real, and broader than first
-  assessed. For the shell's *own* builtins, `fd_null()` silently turns
-  a `>&-`'d fd into a null sink instead of making further use of it
-  fail — `echo hi >&3` after `exec 3>&-` exits 0 in shish, where bash
-  reports "Bad file descriptor" and exits 1. For external commands it
-  was first believed correct (`exec 3>&-` on a high fd does produce a
-  genuine `EBADF` in the child), but stdin is broken: `cat <&-` leaves
-  fd 0 pointing at the shell's own stdin, and `cat < infile <&-` even
-  drops the preceding `< infile` redirect (2026-07-21, found while
-  leak-hunting). Precise version with repros now in `BUGS`.
+  assessed. **Fixed** (`fixes/55-fd-close-noop.patch`): `fd_null()`
+  (`redir_dup()`'s "-" branch) now clears `FD_READ`/`FD_WRITE` on the
+  closed fd's entry instead of swapping in a null-sink buffer pair, so
+  a later `fd_dup()` against it -- what both builtins' and external
+  commands' own redirections go through -- fails exactly like a real
+  closed descriptor, and `fdtable_resolve()` real `close()`s the
+  underlying kernel descriptor right before an `execve()` would
+  otherwise hand it to a child. Covers both the builtin case
+  (`echo hi >&3` after `exec 3>&-` now correctly fails) and the
+  external-command stdin cases found while leak-hunting (`cat <&-`,
+  `cat < infile <&-`). Fixing it surfaced a separate, deeper,
+  still-open bug in `fdstack_search()`/`fdtable_newfd()`'s scope-chain
+  linking -- see `fdstack-scope-chain-mislink` in `BUGS`.
 
 - *"conform to 3.9.1.1 Command Search and Execution"* — too vague to act
   on as written, so this was actually checked against the spec text

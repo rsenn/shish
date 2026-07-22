@@ -6,47 +6,25 @@
 #include <unistd.h>
 #endif
 
-static ssize_t
-fd_nullread(int fd, char* b, size_t n) {
-  return 0;
-}
-
-static ssize_t
-fd_nullwrite(int fd, char* b, size_t n) {
-  return n;
-}
-
-struct fd fd_nullfd = {
-    0,
-    0,
-    0,
-    "/dev/null",
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    0,
-    0,
-    BUFFER_INIT(fd_nullread, -1, NULL, 0),
-    BUFFER_INIT(fd_nullwrite, -1, NULL, 0),
-    NULL,
-    NULL,
-};
-
-/* ----------------------------------------------------------------------- */
+/* mark an (fd) entry as closed (">&-" / "<&-")
+ *
+ * neither FD_READ nor FD_WRITE stay set, so a later fd_dup() against
+ * this entry fails exactly like it would against a real closed
+ * descriptor (see its FD_ISRD()/FD_ISWR() checks) -- this is what
+ * makes a builtin's own I/O (which never goes through the fdtable,
+ * see fdtable_resolve()) correctly fail instead of being silently
+ * redirected to a null sink as before. The real, possibly still-open
+ * kernel descriptor at this fd's number is only closed for real once
+ * fdtable_resolve() forces this entry ahead of an execve() (see its
+ * FD_NULL check) -- nothing here touches it eagerly, so a plain
+ * (non-"exec") ">&-" on a builtin still leaves the original
+ * descriptor intact for whatever restores it once the command's fd
+ * frame is popped.
+ * ----------------------------------------------------------------------- */
 int
 fd_null(struct fd* fd) {
+  fd->mode &= ~(FD_READ | FD_WRITE);
   fd->mode |= FD_NULL;
-
-  if(FD_ISRD(fd))
-    fd->r = &fd_nullfd.rb;
-
-  if(FD_ISWR(fd))
-    fd->w = &fd_nullfd.wb;
-
-  // fd->name = "/dev/null";
 
   return 0;
 }

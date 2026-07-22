@@ -37,6 +37,25 @@ fdtable_resolve_1(struct fd* d, int flags) {
   if(d->e == d->n)
     return FDTABLE_DONE;
 
+  /* an explicitly closed fd (">&-"/"<&-", see fd_null()): its
+     underlying kernel descriptor, if it's still actually open --
+     fd_null() itself never closes anything, it only marks the slot
+     unusable -- has to be closed for real before an execve() can
+     inherit it. This can't be routed through the ordinary FD_CLOSE
+     case below: that case's job is closing whatever *other* fd
+     struct currently occupies this slot to make room for (d), which
+     is meaningless here since (d) itself is the occupant -- doing so
+     would just recurse into fdtable_close() calling back into this
+     same resolve. Respect FDTABLE_NOCLOSE like fdtable_close() does,
+     and only actually close() when an effective fd is being forced
+     (FDTABLE_LAZY calls defer, same as everything else here). */
+  if(d->mode & FD_NULL) {
+    if((flags & FDTABLE_FD) && !(flags & FDTABLE_NOCLOSE))
+      close(d->n);
+
+    return FDTABLE_DONE;
+  }
+
   /* do not open/close if we don't need an effective d */
   if((flags & FDTABLE_FD) == FDTABLE_LAZY) {
     if(d->mode & (FD_OPEN | FD_CLOSE | FD_STRALLOC))

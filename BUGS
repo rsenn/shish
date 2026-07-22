@@ -12,12 +12,27 @@
     exec 4<&3
     exec 3<&4
 
-- fd-close-noop: ">&-"/"<&-" doesn't really close a file descriptor,
-  for builtins (silently redirected to a null sink) or external
-  commands (fd left pointing at the shell's original target).
+- fdstack-scope-chain-mislink: when a fd number already has an entry
+  tracked by an ANCESTOR fdstack scope (e.g. a fd the process that
+  launched shish already had open) and a NESTED scope (a subshell, or
+  "exec" inside one) redirects that same number, fdstack_search()'s
+  walk (src/fdstack/fdstack_search.c) leaves fdtable_pos pointing at
+  the ancestor struct's own "parent" slot instead of at the top-level
+  fdtable[] slot, so fdtable_newfd()'s subsequent fdtable_link() links
+  the new struct in *underneath* the ancestor entry rather than
+  replacing it as what's visible -- fdtable[n] keeps resolving to the
+  ancestor's original (still fully open) descriptor, so the "new"
+  redirection/close is invisible to anything that looks the fd number
+  up afterward. Found via fd-close-noop's regression tests, which is
+  why they deliberately use fd 9 (unlikely to already be open) rather
+  than a low number. Repro needs an extra fd already open on the
+  shish invocation itself -- run this as script.sh:
 
-    exec 3>&-
-    echo hi >&3
+    (exec 3>&-; echo hi >&3)   # wrongly succeeds, "hi" still gets out
+
+  ...via:
+
+    ./shish script.sh 3>&1
 
 - sig-push-sigset-cast: sig_push() reinterprets sigset_t through an
   unsigned long*, UB on any ABI where sizeof(sigset_t) differs;
@@ -81,3 +96,14 @@
   (fdstack-push-assertion, now fixed) that had been masking it.
 
     ./shish tests/param.sh   # under an ASan build
+
+- last-command-status-not-propagated: a script's/(-c string's) own
+  process exit status doesn't reflect its last command's natural
+  (non-"exit") failure -- only an explicit "exit N" ever changes it;
+  falling off the end after a failing command always exits 0. The
+  same thing happens to "$?" right after a command substitution: it
+  reflects the substitution's own status, not the last command run
+  inside it. Found incidentally while testing fd-close-noop's fix.
+
+    ./shish -c 'false'; echo "$?"        # prints 0, should be 1
+    ./shish -c 'X=$(false); echo "$?"'   # prints 0, should be 1

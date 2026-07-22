@@ -830,4 +830,52 @@ X=""
 for a in $@; do X="$X[$a]"; done
 assert_equal "[a][c]" "$X" "a for-loop over an unquoted \$@ with an empty positional parameter in the middle must not crash, and must still drop the empty word via field splitting"
 
+## fixes/55 (fd-close-noop): ">&-"/"<&-" didn't really close a file
+## descriptor -- fd_null() (its only caller, redir_dup()'s "-" branch)
+## swapped in a null-sink buffer pair instead, so writes/reads against
+## the "closed" fd silently succeeded against nothing instead of
+## failing, and an external command exec'd afterward still inherited
+## the real, still-open kernel descriptor untouched. Fixed by making
+## the closed fd's entry fail FD_ISRD()/FD_ISWR() (so a later fd_dup()
+## against it -- what both builtins and external commands' own
+## redirections go through -- fails exactly like a real closed
+## descriptor would) and by real close()ing the underlying kernel
+## descriptor in fdtable_resolve() right before an execve() would
+## otherwise hand it to a child process.
+## note: fd 9 is used here (rather than a low number like 3) because a
+## fd number a caller of shish already had open (e.g. a launcher's own
+## pipe) hits a separate, pre-existing bug: fdstack_search()/
+## fdtable_newfd() mislink a nested scope's new struct for that number
+## as a *child* of the ancestor scope's already-tracked entry instead
+## of replacing it as the visible top, so fdtable[n] keeps resolving
+## to the ancestor's real, still-open descriptor. fd 9 is never open
+## in practice, which avoids tripping over that unrelated bug here.
+## Each case also runs in its own, single (not nested) subshell -- an
+## "exec 9>&-"/"exec 9>file" done inside one subshell scope and then
+## reused by a LATER, separate subshell hits the very same bug (a
+## stale fd struct outliving the fdstack frame it was linked into).
+(exec 9>&-
+echo hi >&9 2>/dev/null
+STATUS=$?
+assert_equal "1" "$STATUS" "\"echo >&9\" after \"exec 9>&-\" must fail instead of silently succeeding")
+
+(exec 9>&-
+X=$(echo hi >&9 2>/dev/null)
+assert_equal "" "$X" "\"echo >&9\" after \"exec 9>&-\" must not produce any output")
+
+(exec 9<&-
+read X <&9 2>/dev/null
+STATUS=$?
+assert_equal "1" "$STATUS" "\"read <&9\" after \"exec 9<&-\" must fail instead of silently succeeding")
+
+TMPFILE=$(mktemp)
+(exec 9>"$TMPFILE"
+echo before >&9
+echo hidden 9>&- >&9 2>/dev/null
+echo after >&9)
+X=$(cat "$TMPFILE")
+assert_equal "before
+after" "$X" "a temporary (non-\"exec\") \">&-\" on one command must not close the fd for commands after it"
+rm -f "$TMPFILE"
+
 summary

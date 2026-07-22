@@ -1,0 +1,119 @@
+diff --git a/src/fd.h b/src/fd.h
+index 9043e62b..e5e4a8f7 100644
+--- a/src/fd.h
++++ b/src/fd.h
+@@ -108,7 +108,7 @@ enum fd_mode {
+   FD_STRING = 0x00010000, /* a nul-terminated string */
+   FD_DUP = 0x00020000,    /* a clone of another file descriptor */
+   FD_TERM = 0x00040000,   /* is a terminal */
+-  FD_NULL = 0x00080000,
++  FD_NULL = 0x00080000, /* explicitly closed (">&-"/"<&-"), see fd_null() */
+ 
+   /* todo mode */
+ 
+@@ -142,7 +142,6 @@ enum {
+ 
+ extern struct fd* fd_list[FD_MAX];
+ extern int fd_expected, fd_top, fd_lo, fd_hi;
+-extern struct fd fd_nullfd;
+ 
+ int fd_dup(struct fd*, int dfd);
+ int fd_error(int n, const char* msg);
+diff --git a/src/fd/fd_null.c b/src/fd/fd_null.c
+index 2ca36d29..487b2ea5 100644
+--- a/src/fd/fd_null.c
++++ b/src/fd/fd_null.c
+@@ -6,47 +6,25 @@
+ #include <unistd.h>
+ #endif
+ 
+-static ssize_t
+-fd_nullread(int fd, char* b, size_t n) {
+-  return 0;
+-}
+-
+-static ssize_t
+-fd_nullwrite(int fd, char* b, size_t n) {
+-  return n;
+-}
+-
+-struct fd fd_nullfd = {
+-    0,
+-    0,
+-    0,
+-    "/dev/null",
+-    NULL,
+-    NULL,
+-    NULL,
+-    NULL,
+-    NULL,
+-    NULL,
+-    0,
+-    0,
+-    BUFFER_INIT(fd_nullread, -1, NULL, 0),
+-    BUFFER_INIT(fd_nullwrite, -1, NULL, 0),
+-    NULL,
+-    NULL,
+-};
+-
+-/* ----------------------------------------------------------------------- */
++/* mark an (fd) entry as closed (">&-" / "<&-")
++ *
++ * neither FD_READ nor FD_WRITE stay set, so a later fd_dup() against
++ * this entry fails exactly like it would against a real closed
++ * descriptor (see its FD_ISRD()/FD_ISWR() checks) -- this is what
++ * makes a builtin's own I/O (which never goes through the fdtable,
++ * see fdtable_resolve()) correctly fail instead of being silently
++ * redirected to a null sink as before. The real, possibly still-open
++ * kernel descriptor at this fd's number is only closed for real once
++ * fdtable_resolve() forces this entry ahead of an execve() (see its
++ * FD_NULL check) -- nothing here touches it eagerly, so a plain
++ * (non-"exec") ">&-" on a builtin still leaves the original
++ * descriptor intact for whatever restores it once the command's fd
++ * frame is popped.
++ * ----------------------------------------------------------------------- */
+ int
+ fd_null(struct fd* fd) {
++  fd->mode &= ~(FD_READ | FD_WRITE);
+   fd->mode |= FD_NULL;
+ 
+-  if(FD_ISRD(fd))
+-    fd->r = &fd_nullfd.rb;
+-
+-  if(FD_ISWR(fd))
+-    fd->w = &fd_nullfd.wb;
+-
+-  // fd->name = "/dev/null";
+-
+   return 0;
+ }
+diff --git a/src/fdtable/fdtable_resolve.c b/src/fdtable/fdtable_resolve.c
+index f3a61bc9..4b6ab67a 100644
+--- a/src/fdtable/fdtable_resolve.c
++++ b/src/fdtable/fdtable_resolve.c
+@@ -37,6 +37,25 @@ fdtable_resolve_1(struct fd* d, int flags) {
+   if(d->e == d->n)
+     return FDTABLE_DONE;
+ 
++  /* an explicitly closed fd (">&-"/"<&-", see fd_null()): its
++     underlying kernel descriptor, if it's still actually open --
++     fd_null() itself never closes anything, it only marks the slot
++     unusable -- has to be closed for real before an execve() can
++     inherit it. This can't be routed through the ordinary FD_CLOSE
++     case below: that case's job is closing whatever *other* fd
++     struct currently occupies this slot to make room for (d), which
++     is meaningless here since (d) itself is the occupant -- doing so
++     would just recurse into fdtable_close() calling back into this
++     same resolve. Respect FDTABLE_NOCLOSE like fdtable_close() does,
++     and only actually close() when an effective fd is being forced
++     (FDTABLE_LAZY calls defer, same as everything else here). */
++  if(d->mode & FD_NULL) {
++    if((flags & FDTABLE_FD) && !(flags & FDTABLE_NOCLOSE))
++      close(d->n);
++
++    return FDTABLE_DONE;
++  }
++
+   /* do not open/close if we don't need an effective d */
+   if((flags & FDTABLE_FD) == FDTABLE_LAZY) {
+     if(d->mode & (FD_OPEN | FD_CLOSE | FD_STRALLOC))
