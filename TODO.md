@@ -385,7 +385,14 @@ exercised `fg`/`bg`/background jobs through a pty). Sorted by leverage.
      operands resolve via the existing `job_find()`/`struct job.pgrp`
      and signal the whole process group via `killpg()`, same as
      `fg`/`bg`'s own `SIGCONT`. Found and logged a new, unrelated
-     parser bug while testing it: `kill-arg-redirect-parse` in `BUGS`.
+     parser bug while testing it: `kill-arg-redirect-parse`, since
+     **fixed (2026-07-23, `fixes/79`)** — `parse_unquoted.c`'s
+     redirection-prefix check ran `scan_uint()` over the parser's
+     reused scratch stralloc buffer without nul-terminating it first,
+     so a short numeric prefix reusing a buffer that previously held a
+     longer, digit-ending token (e.g. `kill`'s own `-0`/`-9`-shaped
+     signal arguments) read into stale trailing bytes and silently
+     failed to recognize the redirection at all.
    - Also extended (2026-07-23, `fixes/75`, user-requested):
      `src/builtin/builtin_hash.c` was a read-only table dump with no
      argument handling at all. Added `-r` (forget every entry, a real

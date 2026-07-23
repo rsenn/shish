@@ -1487,4 +1487,24 @@ assert_equal "went to stdout via fd2" "$(cat "$OUTFILE73B")" "the classic 3>&1 1
 assert_equal "went to stderr via fd1" "$(cat "$ERRFILE73B")" "the classic 3>&1 1>&2 2>&3 3>&- stdout/stderr swap must land the right text on stderr"
 rm -f "$OUTFILE73B" "$ERRFILE73B"
 
+## fixes/79 (kill-arg-redirect-parse): a bare-digit redirection prefix
+## ("2>word") right after a quoted/expanded argument wasn't recognized
+## as a redirection at all when the parser's reused scratch stralloc
+## buffer (p->sa) still held stale trailing bytes from an earlier,
+## longer token ending in a digit (e.g. "-0", exactly the shape of a
+## signal number passed to "kill"). scan_uint() reads p->sa.s as a
+## plain C string with no length bound, so without a nul terminator at
+## the real end of the current token it kept reading into that
+## leftover byte, mismatching p->sa.len and causing the whole
+## redirection to be silently skipped and treated as a literal
+## trailing word instead.
+X79=$(echo -0 "x" 2>/dev/null)
+assert_equal "-0 x" "$X79" "a bare-digit redirection after a -N-shaped argument and a quoted word must still be parsed as a redirection"
+
+X79B=$(echo -9 "z" 2>/dev/null)
+assert_equal "-9 z" "$X79B" "same bare-digit-redirection case with a different -N digit"
+
+X79C=$(echo a "x" 2>/dev/null)
+assert_equal "a x" "$X79C" "a plain (non-dash) preceding argument must still parse the following redirection correctly (no regression)"
+
 summary

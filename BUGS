@@ -35,31 +35,6 @@
     # prints "captured=[]" then "trap-ran" on its own line -- should
     # print "captured=[trap-ran]" and nothing else
 
-- kill-arg-redirect-parse: a redirection ("N>word"/"N<word") right
-  after a command argument that's both (a) preceded somewhere earlier
-  by a "-N"-shaped argument (a dash followed only by digits, e.g. a
-  signal number given to the new `kill` builtin -- `kill -0 "$pid"`)
-  and (b) itself quoted or the result of an expansion, is not
-  recognized as a redirection at all -- it's handed to the command as
-  a literal trailing argument instead. A literal (unquoted, unexpanded)
-  word in that same position parses fine, so this isn't about
-  redirection parsing in general, just this specific combination.
-  Found via `kill -0 "$pid" 2>/dev/null` (kill sees "2>/dev/null" as a
-  bogus extra operand); not yet isolated to the exact parser state
-  involved.
-
-    echo -0 "x" 2>/dev/null
-    # prints "-0 x 2>/dev/null" -- should print "-0 x" (to stdout,
-    # with fd 2 redirected to /dev/null)
-
-    echo -0 x 2>/dev/null
-    # prints "-0 x" correctly -- only the quoted/expanded case breaks
-
-- sig-push-sigset-cast: sig_push() reinterprets sigset_t through an
-  unsigned long*, UB on any ABI where sizeof(sigset_t) differs;
-  currently harmless because the function is unused (dead code, not
-  reachable from any shell script).
-
 - sh-onsig-async-unsafe: sh_onsig(), the SIGCHLD handler, calls
   term_erase()/term_restore()/buffered i/o directly from signal-handler
   context; none of that is async-signal-safe. Any background job

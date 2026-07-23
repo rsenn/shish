@@ -112,6 +112,23 @@ parse_unquoted(struct parser* p) {
     else if((p->flags & P_NOREDIR) == 0 && (c == '<' || c == '>')) {
       int fd = (c == '<' ? 0 : 1);
 
+      /* scan_uint() reads a plain C string, stopping at the first
+         non-digit -- it has no idea p->sa is only supposed to hold
+         p->sa.len bytes. p->sa is a reused scratch buffer (each
+         finished token resets .len to 0 but never touches the
+         underlying bytes), so without nul-terminating it here first,
+         a short numeric prefix like "2" sitting in a buffer that
+         previously held a longer token ending in a digit (e.g. "-0",
+         "-9" -- exactly the shape a signal number given to "kill"
+         takes) reads straight through into that leftover trailing
+         digit. scan_uint("2" followed by a stale '0') returns 2, which
+         then can't equal p->sa.len (1), so this check spuriously
+         concludes "2" isn't a bare fd-number prefix after all and
+         never calls redir_parse() -- the whole redirection is missed
+         and "2>word" is left to be parsed as an ordinary trailing
+         argument instead (kill-arg-redirect-parse, fixes/79). */
+      stralloc_nul(&p->sa);
+
       /* an out-of-range [n] prefix (e.g. "99999<&1") must not reach
          fd_push()/fdtable_link(), which index fdtable[n] unchecked --
          fall through to ordinary word parsing instead, same as any
