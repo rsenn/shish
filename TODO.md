@@ -762,6 +762,215 @@ AST is a textbook arena candidate that currently isn't one.
      — a function's node lifetime is tied to the `functions` list, never
      to any statement's parse scope.
 
+### Report (2026-07-24): packing the AST densely into the arena, and an alternative to `stralloc` for it
+
+The AST today is a directed acyclic graph of individually `malloc()`'d
+nodes (`tree_newnode()` → `alloc()`, one call per node) plus, hanging
+off several of those nodes, individually `malloc()`'d string buffers
+(`stralloc`s and plain `str_dup()`'d `char*`s) — every one of those is
+its own independent heap allocation, scattered whichever way the
+allocator happens to place them, with no relationship to each other or
+to the node that owns them. Once `tree_newnode()` draws from an
+`arena` (`lib/arena.h`) instead, there's a stronger opportunity than
+just "fewer `malloc`/`free` calls": a node and the string data it owns
+can be packed *immediately adjacent* to each other in the same block,
+in the order the parser actually discovers them — `[node][string
+bytes][node][string bytes]…` — instead of being unrelated pointers
+into far-apart heap chunks. This section investigates what that
+actually takes, since `stralloc`'s growable-buffer design doesn't fit
+an arena directly.
+
+**Which tree fields actually need this, checked one by one (not
+assumed):** grepping every read/write site of each string-carrying
+field in `src/tree.h` turns up exactly four that are populated once,
+during parsing, and never touched again afterward — good arena
+candidates — and one look-alike that is not:
+
+- `nargstr.stra` (`N_ARGSTR`'s own text) — written incrementally by
+  `parse_string.c` while a token is being scanned, read-only
+  afterward (`expand_arg.c`, `expand_str.c`, `tree_cat.c`,
+  `debug_node.c` all only read `.s`/`.len`). Confirmed by grep: no
+  writer outside `parse_string.c` and the token-scratch-reuse case
+  below.
+- `nargparam.name` (`${name}`'s variable name, `parse_param.c:98`) —
+  built in a local scratch `stralloc` during parsing
+  (`parse_param.c`'s `varname`), handed off by raw pointer once
+  complete, never touched again.
+- `nfor.varn` (the loop variable name, `parse_for.c:18`) — see below,
+  its own small story.
+- `nfunc.name` (a function's name, `parse_function.c:28`) — same
+  shape, str_dup'd once at parse time.
+- **Not a candidate:** `narg.stra` (`N_ARG`/`N_ASSIGN`'s own
+  `stralloc`) looks like the same kind of field but isn't — it's
+  `byte_zero()`-empty straight out of `tree_newnode()` and is only
+  ever populated *later*, at expansion time, by `expand_cat()`/
+  `expand_args()` (confirmed: zero writes to it anywhere in
+  `src/parse/`). Its lifetime is one evaluation of the command, not
+  the parse — already covered by this Goal's item 2 in the "where
+  else it'd help" list above, and it must keep growing/shrinking via
+  a real `stralloc`, not move to whatever replaces it here.
+
+**The replacement type isn't a redesign so much as formalizing
+something already half-present.** `struct nargstr` in `src/tree.h`
+already has this, unused:
+
+    struct nargstr {
+      ...
+      union {
+        stralloc stra;
+        struct { char* str; size_t len; };
+      };
+      ...
+    };
+
+Nothing in the tree reads `.str`/`.len` today (grepped, zero hits) —
+it's a dead, unused alternate view, but it previews exactly the right
+shape: a `stralloc` minus its `.a` (allocated-capacity) field, because
+an arena-resident string is never grown in place after it's written.
+Call it `arena_str`:
+
+    /* immutable, arena-resident string view -- no separate heap
+       allocation, no growth after construction. Built by copying a
+       scratch buffer's *finished* content into the arena in one shot
+       (arena_strcpy()), landing immediately next to whatever
+       arena_alloc() call came before it (typically the node that
+       owns it). */
+    typedef struct {
+      size_t len;
+      char* s; /* NUL-terminated (arena_strcpy always reserves len+1
+                  bytes); the NUL is not counted in len */
+    } arena_str;
+
+    /* copies len bytes from s (a normal, still-heap, still-growable
+       scratch buffer -- e.g. the parser's existing p->sa -- untouched
+       by this call) into a, appends a NUL, and returns a view of the
+       copy. */
+    arena_str arena_strcpy(arena* a, const char* s, size_t len);
+
+This only replaces the *tree's own* copy of a parse-time string.
+`stralloc` itself isn't going anywhere — the parser's scratch
+accumulator (`p->sa`), the expansion pipeline's own buffers
+(`narg.stra`, everything in `src/expand/`), and general string work
+throughout the shell keep using it exactly as today; only the four
+write-once tree fields above switch to `arena_str`.
+
+**`parse_string.c` needs to accumulate-then-commit, not append-then-
+append.** Right now it eagerly creates (or reuses) an `N_ARGSTR` node
+and `stralloc_catb()`s straight into *that node's own* `stralloc`,
+potentially across several calls while the quoting mode stays the
+same (e.g. multiple chunks flushed while still inside one `"..."`
+run). An arena allocation can't be grown back into after later
+`arena_alloc()` calls have moved the bump pointer on, so this has to
+invert: keep accumulating into the scratch buffer (`p->sa`, unchanged)
+across however many `parse_string()` calls belong to the same still-
+open chunk, and defer the actual `tree_newnode()` + `arena_strcpy()`
+commit until the chunk is genuinely finished — either the quoting mode
+is about to change (today's cue for "start a new node") or the word
+ends. This is a real restructuring of `parse_string()`'s control flow
+(a pending chunk needs to exist as loose state — mode, flags, start
+location — before it becomes a real arena node), not just a
+type-swap.
+
+**Three existing "steal a heap pointer across a lifetime boundary"
+call sites get simpler, except one:**
+
+- `parse_for.c:17-19` — steals `p->node->nargstr.stra.s` for
+  `nfor.varn`, then `stralloc_init()`s the source to stop it from
+  being freed twice. Under `arena_str`, there's nothing to steal or
+  reinit: `nfor.varn` just becomes a plain *value copy* of the
+  already-committed `arena_str` (2 words, pointing at the same arena
+  bytes) — the dance disappears entirely.
+- `parse_param.c:98` — hands off a local scratch `stralloc`'s buffer
+  wholesale to `nargparam.name`. Same simplification: `arena_strcpy()`
+  the scratch buffer's finished content once, store the `arena_str`
+  by value, let the local scratch `stralloc` go out of scope normally
+  (nothing to "steal" out from under it).
+- `eval_function.c:56-62` — this is the one that *doesn't* get
+  simpler, because what it's stealing is a whole `body` *subtree*
+  (arbitrarily large, arena-allocated at parse time in the enclosing
+  statement's transient arena) into the long-lived `functions` list,
+  not just a string. This is exactly the obstacle this Goal's item 3
+  already identified — packing strings into the arena doesn't change
+  that problem or its two sketched resolutions (deep-copy on adopt, or
+  a parser-side allocator switch while inside a function body); it
+  just means the deep-copy, if that's the option chosen, now also has
+  to `arena_strcpy()` each adopted node's `arena_str` fields into the
+  destination arena, not merely copy the node structs.
+
+**The bigger consequence: `tree_free()` stops being a per-node walk.**
+Once nodes and their strings live in an arena, freeing one is
+meaningless — there's no `alloc_free()` left to call. Of the 23
+`tree_free()` call sites already inventoried in this Goal's item 2:
+the ~17 "ordinary nested cleanup of a subtree still inside the current
+statement" ones (aborted partial parses, transient `N_ARG` chains)
+simply lose their `tree_free()` call outright — nothing replaces it,
+the dead nodes just ride along until the enclosing arena resets. The
+~6 true scope-boundary ones (`sh_loop.c`, `builtin_eval.c`,
+`builtin_source.c`'s nested `sh_loop()`, `builtin_expr.c`,
+`prompt_parse.c`, `builtin_trap.c`'s inline parse) instead call
+`arena_reset()` (reusing the block for the next statement — the
+`sh_loop.c` main-loop case) or `arena_free()` (one-shot scopes) on
+whichever arena that scope pushed at its matching `parse_init()`. So
+this isn't a drop-in allocator swap under an unchanged API — every
+`tree_free()` call site needs to be individually re-examined and
+either deleted or replaced with an arena call, which is exactly why
+this remains a plan and not a patch.
+
+**Packing order falls out of the parser for free.** Recursive-descent
+parsing already allocates a compound construct's own node before
+recursing into its children (`node = tree_newnode(N_IF); node->nif.cmd0
+= parse_...(); ...`), so nodes naturally land in the arena in
+depth-first discovery order with their owned strings immediately
+after — nothing needs to be reordered or batched to get the "packed
+sequentially, strings in between" layout; it's just what bump
+allocation does when called in the order the parser already calls it.
+And it's safe to pack at arbitrary byte offsets with no alignment
+padding between a string and the next node: `src/tree.h`'s node
+structs are already `__packed` (`CLAUDE.md`: "All node structs are
+`__packed`"), which specifically tells the compiler not to assume
+natural alignment when accessing them — precisely the property tight,
+unpadded arena packing needs.
+
+**Looking ahead to a precompiled/on-disk AST, without over-committing
+to it yet:** two designs, in order of how much they'd disturb the rest
+of the codebase:
+
+1. **Real in-memory pointers (as designed above), serialized at the
+   edge only.** Dump each arena block's used bytes to disk back-to-back
+   behind a small header (magic, version, root-node offset, total
+   size), rewriting every `union node*` field and every `arena_str.s`
+   to an arena-relative byte offset as they're written — a linear walk
+   structured exactly like `tree_free()`'s existing `switch(node->id)`
+   (same per-kind field knowledge, opposite action). Loading is the
+   mirror image: read the blob back (or `mmap()` it) at whatever base
+   address the OS hands out, then run *one* fixup pass over the same
+   structure turning every offset back into `base + offset`, after
+   which `eval_*`/`expand_*`/`tree_cat`/`tree_print`/etc. all keep
+   working completely unmodified — they never learn the tree was ever
+   anything but an ordinary freshly-parsed one. Low risk, isolated to
+   two new files (a serializer and a deserializer), and it's the
+   option that actually delivers the feature (skip lexing + recursive-
+   descent parsing entirely for a cached script) without touching
+   any existing tree-walking code.
+2. **Offsets natively, everywhere, all the time** — every node field
+   is a `size_t` offset instead of a pointer from the start, resolved
+   through an accessor (`tree_child(arena, node, field)`-shaped) at
+   every single use. This is what gets genuine zero-copy `mmap()`
+   loading (no fixup pass at all, even shareable read-only across
+   multiple `shish` processes via `MAP_SHARED`) — but it means
+   rewriting every tree-walking call site in `eval/`, `expand/`,
+   `tree_cat.c`, `tree_print.c`, and everywhere else a bare
+   `node->next`/`node->list`/etc. dereference happens today, dozens of
+   files, for a benefit (skipping one linear fixup pass over
+   already-parsed-once data) that's unlikely to matter next to the
+   cost of lexing and parsing it would otherwise replace.
+
+Recommendation if/when this gets picked up: build option 1 first (it's
+the one that actually ships the "precompiled shell AST" capability),
+and only consider option 2 later if profiling ever shows the fixup
+pass itself is a real bottleneck — which lexing/parsing being far more
+expensive already makes unlikely.
+
 ---
 
 ## Old `TODO` file, investigated
