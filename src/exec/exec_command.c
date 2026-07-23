@@ -99,7 +99,7 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
            eval_cmdlist(), which runs in the current environment with
            no isolation at all. */
         ret = (cmd->fn->id == N_SUBSHELL) ? eval_subshell(&e, &cmd->fn->ngrp)
-                                           : eval_cmdlist(&e, &cmd->fn->ngrp);
+                                          : eval_cmdlist(&e, &cmd->fn->ngrp);
         e.exitcode = ret;
 
         eval_pop(&e);

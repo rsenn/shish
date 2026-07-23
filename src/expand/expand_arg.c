@@ -78,10 +78,12 @@ expand_arg(union node* node, union node** nptr, int flags) {
            entirely for P_HERE content, so it's already final too, and
            X_LITERAL must stay off for it as well (heredoc-body-loses-
            escaping, fixes/71). */
-        n = expand_cat(subarg->nargstr.stra.s, subarg->nargstr.stra.len, nptr,
-                        (subarg->nargstr.stra.len && !(subarg->nargstr.flag & S_HEREDOC))
-                            ? (lflags | X_LITERAL)
-                            : lflags);
+        n = expand_cat(subarg->nargstr.stra.s,
+                       subarg->nargstr.stra.len,
+                       nptr,
+                       (subarg->nargstr.stra.len && !(subarg->nargstr.flag & S_HEREDOC))
+                           ? (lflags | X_LITERAL)
+                           : lflags);
         break;
       }
 

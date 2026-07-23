@@ -32,8 +32,6 @@ exec_functions_save(struct func_snapshot* snap) {
   }
 }
 
-
-
 void
 exec_functions_restore(struct func_snapshot* snap) {
   int i;

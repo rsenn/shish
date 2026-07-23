@@ -19,8 +19,7 @@ expand_argv(union node* args, char** argv) {
   for(; args; args = args->next) {
     if(!args->narg.stra.s)
       continue;
-    if(args->narg.stra.len == 0 &&
-       !(args->narg.flag & (X_QUOTED | X_NOSPLIT)))
+    if(args->narg.stra.len == 0 && !(args->narg.flag & (X_QUOTED | X_NOSPLIT)))
       continue;
     *argv++ = args->narg.stra.s;
     n++;

@@ -37,8 +37,7 @@ fdstack_npipes(int mode) {
     unsigned int here = 0;
 
     for(fd = st->list; fd; fd = fd->next)
-      if(!(fd->mode & FD_DUP) &&
-         ((fd->mode & mode) == FD_SUBST || (fd->mode & mode) == FD_HERE))
+      if(!(fd->mode & FD_DUP) && ((fd->mode & mode) == FD_SUBST || (fd->mode & mode) == FD_HERE))
         here++;
 
     ret += here;

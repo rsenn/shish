@@ -249,7 +249,8 @@ static const char* bre_match(struct bre_ctx* ctx, const char* pat, const char* s
  * result.
  * ----------------------------------------------------------------------- */
 static const char*
-bre_match_star(struct bre_ctx* ctx, const char* atom, size_t alen, const char* rest, const char* s) {
+bre_match_star(
+    struct bre_ctx* ctx, const char* atom, size_t alen, const char* rest, const char* s) {
   size_t maxrun = 0;
   size_t k;
 

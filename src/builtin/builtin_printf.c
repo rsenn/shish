@@ -52,9 +52,7 @@ printf_esc(const char* p, char* out, int* stop) {
       *out = (char)(v & 0xff);
       return 1 + n;
     }
-    case '\0':
-      *out = '\\';
-      return 1;
+    case '\0': *out = '\\'; return 1;
     default:
       /* unknown escape: copy backslash verbatim */
       *out = '\\';
@@ -159,8 +157,7 @@ printf_parse_flags(const char* f, printf_spec* sp) {
  * '%'; a '*' width/precision consumes the next printf argument. Returns
  * a pointer to the conversion character. */
 static const char*
-printf_parse_spec(const char* f, printf_spec* sp, int argc, char* argv[],
-                   int* idx) {
+printf_parse_spec(const char* f, printf_spec* sp, int argc, char* argv[], int* idx) {
   sp->left = sp->zero = sp->plus = sp->space = sp->alt = 0;
   sp->width = -1;
   sp->prec = -1;
@@ -200,8 +197,8 @@ printf_parse_spec(const char* f, printf_spec* sp, int argc, char* argv[],
 /* emit a (sign)(prefix)(zero-padding to precision)(digits) numeric
  * conversion, applying width/flag padding around it */
 static void
-printf_emit_numeric(const printf_spec* sp, char sign, const char* prefix,
-                     const char* digits, size_t dlen) {
+printf_emit_numeric(
+    const printf_spec* sp, char sign, const char* prefix, const char* digits, size_t dlen) {
   size_t plen = prefix ? str_len(prefix) : 0;
   size_t prec_pad = 0;
   size_t body, width, pad;

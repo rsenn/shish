@@ -35,7 +35,8 @@ history_session_resize(void) {
 
   /* copy over the n newest entries, oldest-of-those-kept first */
   for(i = 0; i < n; i++) {
-    unsigned int src = (history_session_head + (history_session_count - n) + i) % history_session_cap;
+    unsigned int src =
+        (history_session_head + (history_session_count - n) + i) % history_session_cap;
     ring[i] = history_session[src];
   }
 

@@ -108,7 +108,7 @@ enum fd_mode {
   FD_STRING = 0x00010000, /* a nul-terminated string */
   FD_DUP = 0x00020000,    /* a clone of another file descriptor */
   FD_TERM = 0x00040000,   /* is a terminal */
-  FD_NULL = 0x00080000, /* explicitly closed (">&-"/"<&-"), see fd_null() */
+  FD_NULL = 0x00080000,   /* explicitly closed (">&-"/"<&-"), see fd_null() */
 
   /* todo mode */
 

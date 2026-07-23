@@ -42,7 +42,7 @@ parse_here(struct parser* p, stralloc* delim, int nosubst, int strip) {
 
       while(i < p->sa.len && p->sa.s[i] == '\t')
         i++;
-      
+
       if(i) {
         byte_copy(p->sa.s, p->sa.len - i, p->sa.s + i);
         p->sa.len -= i;

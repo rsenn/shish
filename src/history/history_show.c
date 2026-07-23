@@ -10,7 +10,8 @@
 void
 history_show(unsigned int cursor) {
   if(cursor >= 1 && cursor <= history_session_count) {
-    unsigned int idx = (history_session_head + history_session_count - cursor) % history_session_cap;
+    unsigned int idx =
+        (history_session_head + history_session_count - cursor) % history_session_cap;
     const char* s = history_session[idx];
 
     term_setline(s, str_len(s));

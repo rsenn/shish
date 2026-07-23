@@ -28,7 +28,7 @@ fd_close(struct fd* fd) {
   /* set the filedescriptor (which is in fact a stralloc *) on
      stralloc redirections to -1 so they aren't accidentally passed
      to close() */
-  if(fd->wb.op == (ssize_t(*)())(void*)&stralloc_write)
+  if(fd->wb.op == (ssize_t (*)())(void*)&stralloc_write)
     fd->wb.fd = -1;
 
   /* the buffers may sit on kernel fds of their own that never became

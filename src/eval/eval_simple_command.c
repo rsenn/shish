@@ -122,7 +122,8 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
          or E_EXIT), there's nothing to shadow into -- fall back to
          ordinary assignment semantics, which already correctly finds
          and updates whatever scope the variable actually lives in. */
-      if(!var_setsa(&node->narg.stra, (cmd.ptr ? V_EXPORT : V_DEFAULT) | (temp_scope ? V_LOCAL : 0))) {
+      if(!var_setsa(&node->narg.stra,
+                    (cmd.ptr ? V_EXPORT : V_DEFAULT) | (temp_scope ? V_LOCAL : 0))) {
         status = 1;
         break;
       }

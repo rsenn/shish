@@ -67,7 +67,8 @@ job_wait(struct job* j, pid_t pid, int* status) {
          job-control mode -- a script isn't going to fg/bg anything, so
          there's no reason to make its wait() sensitive to a stop it
          has no way to act on */
-      ret = (sh->opts.monitor ? wait_pid_untraced : wait_pid)(j->pgrp ? -j->pgrp : j->procs[0].pid, &s);
+      ret = (sh->opts.monitor ? wait_pid_untraced : wait_pid)(j->pgrp ? -j->pgrp : j->procs[0].pid,
+                                                              &s);
 
       if(ret > 0) {
         job_signal(ret, s);
@@ -85,8 +86,7 @@ job_wait(struct job* j, pid_t pid, int* status) {
            printing. Keep the message in interactive (job control)
            mode and for signals other than SIGPIPE. */
         if(!WAIT_IF_EXITED(s)) {
-          int squelch = !sh->opts.monitor && WAIT_IF_SIGNALED(s) &&
-                        WAIT_TERMSIG(s) == SIGPIPE;
+          int squelch = !sh->opts.monitor && WAIT_IF_SIGNALED(s) && WAIT_TERMSIG(s) == SIGPIPE;
           if(!squelch)
             job_printstatus(ret, s);
         }

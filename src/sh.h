@@ -70,7 +70,7 @@ struct env {
   stralloc cwd;
   unsigned cwdsym : 1; /* is cwd symbolic or phyiscal? */
   unsigned umask : 12;
-  short exitcode; /* exit code of last evaluated tree */
+  short exitcode;            /* exit code of last evaluated tree */
   unsigned cmdsubst_ran : 1; /* did the most recent word expansion run a
                                 command substitution? see eval_simple_command's
                                 "no command, only assignments" status handling */
