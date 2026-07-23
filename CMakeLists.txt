@@ -97,7 +97,6 @@ check_functions(
 
 option(NO_TREE_PRINT "Disable tree_print for history" OFF)
 
-option(DEBUG_ALLOC "Debug memory allocations" OFF)
 option(DEBUG_COLOR "Color debug output" OFF)
 option(DEBUG_OUTPUT "Print debug output" ${DEBUG_OUTPUT_DEFAULT})
 
@@ -110,13 +109,6 @@ if(DEBUG_OUTPUT)
 endif()
 if(DEBUG_COLOR)
   add_definitions(-DDEBUG_COLOR=1)
-endif()
-
-if(DEBUG_ALLOC)
-  set(NAME_DEBUG "debug")
-  add_definitions(-DDEBUG_ALLOC=1)
-else()
-  set(NAME_DEBUG "")
 endif()
 
 configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake"
@@ -169,11 +161,6 @@ list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX
 # string(REGEX REPLACE ";" "\n" SHELL_SOURCES "${LIBSHELL_SOURCES}")
 # message("LIBSHELL_SOURCES: ${SHELL_SOURCES}")
 
-if(DEBUG_ALLOC)
-  list(APPEND LIBOWFAT_SOURCES lib/alloc/debug_error.c lib/alloc/debug_alloc.c
-       lib/alloc/debug_free.c lib/alloc/debug_realloc.c)
-  list(APPEND LIBSHELL_SOURCES src/debug/debug_memory.c)
-endif(DEBUG_ALLOC)
 if(DEBUG_OUTPUT)
   list(
     APPEND
@@ -188,8 +175,6 @@ endif(DEBUG_OUTPUT)
 
 list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c
      src/builtin/builtin_search.c src/builtin/builtin_table.c)
-list(APPEND LIBSHELL_SOURCES src/parse/parse_newnode${NAME_DEBUG}.c
-     src/tree/tree_newnode${NAME_DEBUG}.c)
 
 if(FORK_SOURCE)
   list(APPEND LIBSHELL_SOURCES ${FORK_SOURCE})

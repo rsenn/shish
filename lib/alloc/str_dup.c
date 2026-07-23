@@ -2,8 +2,6 @@
 #include "../alloc.h"
 #include "../str.h"
 
-#ifndef DEBUG_ALLOC
-
 void*
 str_dup(const char* s) {
   unsigned long n;
@@ -18,4 +16,3 @@ str_dup(const char* s) {
 
   return ptr;
 }
-#endif /* !defined(DEBUG_ALLOC) */

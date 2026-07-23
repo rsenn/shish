@@ -1,0 +1,22 @@
+diff --git a/src/eval/eval_node.c b/src/eval/eval_node.c
+index eeb59be7..29995c94 100644
+--- a/src/eval/eval_node.c
++++ b/src/eval/eval_node.c
+@@ -25,12 +25,15 @@ eval_node(struct eval* e, union node* node) {
+       break;
+     }
+ 
+-    case N_LIST:
+-    case N_BRACEGROUP: {
++    case N_LIST: {
+       ret = eval_cmdlist(e, &node->ngrp);
+       break;
+     }
+ 
++    /* brace groups must route through eval_command so the group's
++       redirections (parse_grouping stores them in ngrp.rdir) are
++       applied before the body runs */
++    case N_BRACEGROUP:
+     case N_IF:
+     case N_FOR:
+     case N_CASE:

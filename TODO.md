@@ -580,6 +580,190 @@ exercised `fg`/`bg`/background jobs through a pty). Sorted by leverage.
 
 ---
 
+## Goal 4 — arena allocator for `lib/arena.h`/`lib/arena/` (planned, not started)
+
+**Not implemented yet — this section is a plan to come back to, written
+down per explicit request rather than acted on.** The trigger: `src/tree.h`'s
+AST is a textbook arena candidate that currently isn't one.
+
+- **Why the tree specifically:** every node is `tree_newnode()`'d
+  one-at-a-time via `lib/alloc.h`'s `alloc()` (a thin `malloc()` wrapper;
+  see `tree/tree_newnode.c`, sized per-`kind` from the `tree_nodesizes[]`
+  table in `tree/tree_nodesizes.c`), and freed the same way, one node at
+  a time, via `tree_free()`'s recursive walk (`tree/tree_free.c`) —
+  matching `malloc()`/`free()` call for call. But an AST's actual
+  lifetime is coarse and all-or-nothing: `sh_loop.c` parses one full
+  statement into a tree, evaluates it, then `tree_free()`s the *entire*
+  thing and moves on to the next line; nothing ever frees or re-links a
+  single node in isolation without the rest of its subtree. That's
+  exactly the shape an arena (bump-allocate as you go, free the whole
+  region in one call when the *owning* tree goes away) turns from O(nodes)
+  malloc+free pairs into O(1) region create + O(1) region destroy, and
+  incidentally improves locality (`tree_free()`'s recursive walk over
+  scattered `malloc()` chunks becomes irrelevant — nothing to walk).
+  `grep -rn "tree_newnode(" src/ --include=*.c | wc -l` currently shows
+  32 call sites across the parser/eval/expand layers; every one of them
+  is a candidate carried along for free once the underlying node
+  allocator changes.
+
+- **Where else it'd help, roughly in order of how cleanly the lifetime
+  matches "allocate a batch, discard the batch":**
+  1. The AST itself (above) — highest leverage, cleanest lifetime match.
+  2. `expand_arg()`/`expand_cat()`'s intermediate `N_ARG`/`N_ARGSTR` chains
+     built during word expansion (`src/expand/`) — these are constructed
+     fresh per command, consumed immediately (`expand_argv()`,
+     `expand_catsa()`, etc.), then thrown away; same shape as the AST,
+     smaller scale.
+  3. `struct trap_s` in `src/builtin/builtin_trap.c` (fixes/80's
+     `trap_snapshot_save()`/`_restore()` already leans on "a subshell's
+     nodes get bulk-discarded on restore, not individually freed" as a
+     *manual* version of exactly this pattern — see the
+     `exec_subshell_depth` guard in `trap_uninstall()`) and the parallel
+     `functions` list snapshot in `exec_search.c` are two more places
+     already doing informal, hand-rolled "bulk free later" bookkeeping
+     that a real arena would subsume more safely (right now both leak
+     deliberately between snapshot and restore as their safety margin —
+     an arena turns that deliberate leak into an actual, bounded-lifetime
+     free).
+  4. General scratch allocation during a single eval (`struct eval`
+     frames already stack-allocate per-call, not heap — lower priority,
+     already fine).
+
+- **API sketch (not committed to — decide at implementation time):**
+  `lib/arena.h` declaring `struct arena` (a chain of growable blocks) and
+  `arena_alloc(struct arena*, size_t)` (bump-allocate, grow by appending a
+  new block on overflow, no per-call `free()`), `arena_reset()` (rewind
+  to empty without releasing the underlying blocks, for reusing one arena
+  across many statements in the interactive loop — the common case) and
+  `arena_free()` (release every block back to the system). `lib/arena/`
+  holds the `.c` files (one function per file, matching every other
+  `lib/*/` module's convention) plus a `Makefile.in`/CMake `file(GLOB)`
+  pickup, same as `lib/sig/`, `lib/stralloc/`, etc.
+  `tree_newnode()` would grow a `struct arena*` parameter (probably
+  threaded through `struct parser`, since that's what currently owns a
+  tree's lifetime start-to-end) and `tree_free()` would shrink to a
+  single `arena_reset()`/`arena_free()` call at the tree's root instead
+  of a recursive per-node walk.
+
+- **The three open questions above have now been investigated
+  (2026-07-23) — still not implemented, but each one has an answer or a
+  concrete plan instead of a question mark:**
+
+  1. **`DEBUG_ALLOC`'s existing debug story: there wasn't one to
+     preserve, and the option is now gone entirely.** Confirmed by
+     actually building it (`cmake -S . -B /tmp/b -DDEBUG_ALLOC=ON &&
+     cmake --build /tmp/b`): it failed at the *link* step.
+     `debug_alloc()`/`debug_free()`/`debug_realloc()`/`debug_heap` were
+     declared (`src/debug.h`) and called from every `alloc()`/
+     `alloc_free()` call site once the option was on, but
+     `CMakeLists.txt` listed three source files for them
+     (`lib/alloc/debug_alloc.c`, `debug_free.c`, `debug_realloc.c`) that
+     didn't exist anywhere in the tree — only `debug_error.c` did. This
+     had apparently been broken for a while (not something this
+     session's other changes touched). **Removed entirely
+     (2026-07-23)**, per explicit request, rather than left broken: the
+     option, every `*debug.c` file it gated in `lib/alloc/`/
+     `lib/stralloc/` (`allocdebug.c`, `alloc_zerodebug.c`,
+     `alloc_redebug.c`, `str_dupdebug.c`, `debug_error.c` — orphaned,
+     never called outside its own gated definition —
+     `stralloc_freedebug.c`/`readydebug.c`/`readyplusdebug.c`/
+     `truncdebug.c`), `parse_newnodedebug.c`/`tree_newnodedebug.c`,
+     `src/debug/debug_memory.c`, the `dump` builtin's now-gone `-m`
+     option, and every `#ifdef`/`#ifndef DEBUG_ALLOC` guard around the
+     surviving plain implementations. Verified via an A/B `git stash`
+     comparison that the same 4 pre-existing flaky test failures
+     (fd/pipeline-related, environment resource pressure — `/mnt/data`
+     is at 100% full and ~28 stray `shish` processes from old hung
+     `yash-random-y-tst-hangs` runs are still lingering) occur
+     identically with and without this removal, i.e. no regression.
+     Consequence for this plan: there's no working per-allocation
+     tracking to match or preserve, and no such tracking exists in the
+     tree to design around anymore either — the arena's own debug/
+     leak-hunting story, if wanted, gets designed from scratch.
+
+  2. **A single arena is *not* enough, but the fix is a plain stack of
+     them, not anything fancier.** `grep -rn "tree_free(" src/` (23
+     call sites, excluding `tree/tree_free.c` itself) sorts into two
+     kinds: most are ordinary nested cleanup of a subtree that's still
+     part of the *current* enclosing statement's tree (aborted partial
+     parses in `parse_expect.c`/`parse_word.c`/`parse_here.c`/
+     `parse_arith_binary.c`/`parse_arith_paren.c`; transient `N_ARG`
+     chains fully consumed within one eval call in
+     `eval_simple_command.c`/`eval_for.c`/`expand_param.c`/
+     `expand_str.c`) — these need no special handling at all under an
+     arena: they'd just become no-ops, leaving the now-dead nodes to be
+     reclaimed whenever the *enclosing* scope's arena eventually resets,
+     which is strictly a small, one-time-per-statement memory-locality
+     cost, not a correctness concern. The other kind is a short list of
+     genuinely **independent** parse-evaluate-free scopes, each with its
+     own dedicated `parse_init()` + matching `tree_free()`, confirmed to
+     nest strictly via ordinary C call-stack recursion and never run
+     concurrently (shish is single-threaded and synchronous, so there is
+     no scenario where two such scopes are simultaneously "open" without
+     one being nested inside the other): the top-level loop
+     (`sh_loop.c`), `builtin_eval.c`, `builtin_source.c` (which just
+     calls `sh_loop()` recursively — same scope shape one level deeper,
+     via `source_push()`), `builtin_expr.c`'s arithmetic-string parse,
+     `prompt_parse.c`'s `PS1`-string parse, and `builtin_trap.c`'s own
+     inline parse of a trap's command string. A plain **stack of
+     arenas** — push one on entering any of these, pop (and release) it
+     at the matching `tree_free()` — covers every one of them with no
+     need for reference counting, a tree of arenas, or anything
+     per-subshell specifically (a subshell doesn't get its own parse
+     scope at all; `eval_subshell()` evaluates a subtree that was
+     already part of its parent statement's single parse, so it just
+     rides along in whatever arena is already on top of the stack).
+
+  3. **The real obstacle isn't `tree_free()`'s non-node-memory frees —
+     it's `eval_function()`'s ownership-transfer trick, and only that.**
+     Full enumeration of `tree_free()`'s frees beyond the node struct
+     itself: `N_ARG`/`N_ASSIGN` and `N_ARGSTR`'s own `stralloc` buffers,
+     `N_FOR`'s `varn` string, `N_ARGPARAM`'s `name` string, and
+     `N_FUNCTION`'s `name` string. All five are variable-length
+     buffers that grow via `realloc()` (stralloc) or are sized exactly
+     once at parse time (the plain strings) — neither shape fits a bump
+     allocator cleanly, so the plan going in is: **the arena covers only
+     the fixed-size `union node` structs**, and every string/`stralloc`
+     payload a node carries stays on the ordinary heap exactly as today
+     (still individually `alloc()`/`alloc_free()`'d). This alone doesn't
+     block anything; nodes are the majority of the allocation *count*
+     even where strings dominate total *bytes*.
+     The actual hard case, reading `eval_function.c` closely: redefining
+     or first-defining a function doesn't reuse the already-parsed
+     `N_FUNCTION` node from the current statement's tree at all — it
+     allocates a **brand new** one, steals that node's `name`/`body`
+     pointers onto it (`fn->nfunc.name = func->name; fn->nfunc.body =
+     func->body;`), and nulls out the original's fields
+     (`func->name = func->body = NULL;`) so the enclosing tree's own
+     `tree_free()` — which null-checks both fields — skips them and
+     doesn't cascade into what's now owned by the long-lived, global
+     `functions` list instead. That body subtree, though, was allocated
+     *as part of* the enclosing statement's own transient parse — under
+     a "reset the whole arena once this statement's `tree_free()` runs"
+     scheme, the adopted body would be sitting on memory that's about
+     to be invalidated. Trap bodies don't have this problem (see #2:
+     `builtin_trap.c` parses a trap's command string through its own
+     fully independent `parse_init()` call already, so it can simply get
+     its own dedicated arena that's never reset until the trap is
+     replaced/removed — no adoption trick needed at all), but function
+     bodies parse inline as an ordinary part of whatever statement
+     defines them, so there's no separate parse scope to redirect ahead
+     of time. Two ways to resolve this, to decide between at
+     implementation time rather than now: **(a)** deep-copy the adopted
+     body subtree out of the transient arena into long-lived storage at
+     the exact point `eval_function()` currently does the pointer-steal
+     (correctness-preserving, only pays a copy once per function
+     definition/redefinition, which is rare), or **(b)** have the parser
+     itself detect "currently parsing a function body" and switch which
+     allocator `tree_newnode()` draws from for just that subtree's
+     duration, so it's never in the transient arena to begin with.
+     `builtin_unset.c`'s own `tree_free(fn)` (removing a function) is the
+     same long-lived-list shape from the other end and corroborates this
+     — a function's node lifetime is tied to the `functions` list, never
+     to any statement's parse scope.
+
+---
+
 ## Old `TODO` file, investigated
 
 Every item in the plain-text `TODO` file was individually checked against

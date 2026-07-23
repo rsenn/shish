@@ -1,0 +1,61 @@
+diff --git a/src/parse.h b/src/parse.h
+index 849dde09..474c036a 100644
+--- a/src/parse.h
++++ b/src/parse.h
+@@ -292,7 +292,7 @@ int parse_arith(struct parser* p);
+ int parse_bquoted(struct parser* p);
+ int parse_dquoted(struct parser* p);
+ enum tok_flag parse_expect(struct parser* p, int tempflags, enum tok_flag toks, union node* nfree);
+-int parse_here(struct parser* p, stralloc* delim, int nosubst);
++int parse_here(struct parser* p, stralloc* delim, int nosubst, int strip);
+ int parse_keyword(struct parser* p);
+ int parse_param(struct parser* p);
+ enum tok_flag parse_simpletok(struct parser* p);
+diff --git a/src/parse/parse_here.c b/src/parse/parse_here.c
+index 648b1a65..15a4edc8 100644
+--- a/src/parse/parse_here.c
++++ b/src/parse/parse_here.c
+@@ -6,7 +6,7 @@
+ /* parses a here-doc body, ending at <delim>
+  * ----------------------------------------------------------------------- */
+ int
+-parse_here(struct parser* p, stralloc* delim, int nosubst) {
++parse_here(struct parser* p, stralloc* delim, int nosubst, int strip) {
+   int r = 0;
+   union node* n;
+ 
+@@ -34,6 +34,18 @@ parse_here(struct parser* p, stralloc* delim, int nosubst) {
+       continue;
+     }*/
+ 
++    /* <<- strips leading tabs from every body line, including the
++       line containing the closing delimiter (POSIX 2.7.4) */
++    if(strip && p->sa.len) {
++      size_t i = 0;
++      while(i < p->sa.len && p->sa.s[i] == '\t')
++        i++;
++      if(i) {
++        byte_copy(p->sa.s, p->sa.len - i, p->sa.s + i);
++        p->sa.len -= i;
++      }
++    }
++
+     if(p->sa.len == delim->len + 1) {
+       stralloc* sa = &p->sa;
+ 
+diff --git a/src/redir/redir_source.c b/src/redir/redir_source.c
+index ff390b7a..ab66ef54 100644
+--- a/src/redir/redir_source.c
++++ b/src/redir/redir_source.c
+@@ -25,7 +25,10 @@ redir_source(void) {
+ 
+     /* when any character of the delimiter has been escaped
+        then treat the whole here-doc as non-expanded word */
+-    if(parse_here(&p, &delim, (redir_list->word->nargstr.flag & S_ESCAPED))) {
++    if(parse_here(&p,
++                  &delim,
++                  (redir_list->word->nargstr.flag & S_ESCAPED),
++                  (redir_list->flag & R_STRIP))) {
+       parse_error(&p, p.tok);
+       break;
+     }

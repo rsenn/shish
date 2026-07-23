@@ -1,0 +1,28 @@
+commit 2c248413a2358479c79ed221f7cb6896c6de867e
+Author: Roman Senn <roman.l.senn@gmail.com>
+Date:   Thu Jun 18 00:55:49 2026 +0200
+
+    ...
+
+diff --git a/src/exec/exec_command.c b/src/exec/exec_command.c
+index 4affc799..6e33c645 100644
+--- a/src/exec/exec_command.c
++++ b/src/exec/exec_command.c
+@@ -57,9 +57,15 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
+ 
+       if((ret = setjmp(e.jumpbuf)) == 0) {
+         e.jump = 1;
+-        eval_cmdlist(&e, &cmd->fn->ngrp);
++        /* Use eval_cmdlist's return (last command's status) rather than
++           eval_pop's e->exitcode, which is only set on longjmp/return.
++           Without this, `f() { (exit 1); }; f` returns 0 because the
++           subshell longjmps to ITS OWN E_ROOT, not the function's eval,
++           so e->exitcode stays at 0. */
++        ret = eval_cmdlist(&e, &cmd->fn->ngrp);
++        e.exitcode = ret;
+ 
+-        ret = eval_pop(&e);
++        eval_pop(&e);
+       } else {
+         ret >>= 1;
+         eval_pop(&e);

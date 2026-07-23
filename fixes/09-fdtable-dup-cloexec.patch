@@ -1,0 +1,27 @@
+diff --git a/src/fdtable/fdtable_dup.c b/src/fdtable/fdtable_dup.c
+index cec990ac..802c569b 100644
+--- a/src/fdtable/fdtable_dup.c
++++ b/src/fdtable/fdtable_dup.c
+@@ -7,6 +7,7 @@
+ #include <io.h>
+ #else
+ #include <unistd.h>
++#include <fcntl.h>
+ #endif
+ 
+ /* handles pending duplicating of a dup-(fd) initialized using fd_dup()
+@@ -54,6 +55,14 @@ retry:
+   if(e == -1)
+     return FDTABLE_ERROR;
+ 
++#if !WINDOWS_NATIVE && defined(FD_CLOEXEC)
++  /* Mark shell-internal bookkeeping fds close-on-exec so they don't leak
++     into spawned external programs. Standard fds 0/1/2 are user-facing and
++     must stay inheritable; anything else is the shell's private state. */
++  if(e > STDERR_FILENO)
++    fcntl(e, F_SETFD, FD_CLOEXEC);
++#endif
++
+ #if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE)
+   buffer_puts(debug_output, COLOR_YELLOW "fdtable_dup" COLOR_NONE " #");
+   buffer_putulong(debug_output, o);

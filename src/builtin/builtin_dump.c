@@ -9,7 +9,7 @@
 #include "../vartab.h"
 #include "../job.h"
 
-enum { VARTAB_ROOT, VARTAB_LOCAL, FDTABLE, FDSTACK, FDLIST, MEMORY, FUNCTIONS, JOBS };
+enum { VARTAB_ROOT, VARTAB_LOCAL, FDTABLE, FDSTACK, FDLIST, FUNCTIONS, JOBS };
 extern union node* functions;
 
 /* ----------------------------------------------------------------------- */
@@ -31,9 +31,6 @@ builtin_dump(int argc, char* argv[]) {
 #ifdef DEBUG_JOB
                           "j"
 #endif
-#ifdef DEBUG_ALLOC
-                          "m"
-#endif
 #ifdef DEBUG_FD
                           "f"
 #endif
@@ -44,7 +41,6 @@ builtin_dump(int argc, char* argv[]) {
       case 't': what = FDTABLE; break;
       case 's': what = FDSTACK; break;
       case 'f': what = FDLIST; break;
-      case 'm': what = MEMORY; break;
       case 'F': what = FUNCTIONS; break;
       case 'j': what = JOBS; break;
       case 'u': scan_int(shell_optarg, &fd); break;
@@ -68,11 +64,6 @@ builtin_dump(int argc, char* argv[]) {
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
     case FDLIST: fd_dumplist(out); break;
 #endif
-    case MEMORY:
-#ifdef DEBUG_ALLOC
-      debug_memory();
-#endif
-      break;
     case FUNCTIONS: {
       union node* n;
 

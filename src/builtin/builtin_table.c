@@ -206,9 +206,6 @@ struct builtin_cmd builtin_table[] = {
 #ifdef DEBUG_JOB
      "j"
 #endif
-#ifdef DEBUG_ALLOC
-     "m"
-#endif
 #ifdef DEBUG_FD
      "f"
 #endif

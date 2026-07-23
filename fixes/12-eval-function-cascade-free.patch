@@ -1,0 +1,32 @@
+diff --git a/src/eval/eval_function.c b/src/eval/eval_function.c
+index 9278d641..da7ad124 100644
+--- a/src/eval/eval_function.c
++++ b/src/eval/eval_function.c
+@@ -27,10 +27,12 @@ eval_function(struct eval* e, struct nfunc* func) {
+   if((nptr = find_function(func->name))) {
+     fn = *nptr;
+     *nptr = (*nptr)->next;
+-    {
+-      extern int dprintf(int, const char*, ...);
+-      dprintf(2, "[REDEF] %s (unlink+free)\n", func->name);
+-    }
++    /* IMPORTANT: detach fn from the rest of the list before freeing.
++       tree_free walks via node->next, so without this the call below
++       would cascade and free every function that was defined earlier
++       than this one (as_fn_exit, as_fn_unset, ... all gone when
++       configure redefines as_fn_nop). */
++    fn->next = NULL;
+     tree_free(fn);
+   }
+ 
+@@ -43,10 +45,6 @@ eval_function(struct eval* e, struct nfunc* func) {
+   func->body = NULL;
+ 
+   functions = fn;
+-  {
+-    extern int dprintf(int, const char*, ...);
+-    dprintf(2, "[DEF] %s -> functions=%p\n", fn->nfunc.name, (void*)functions);
+-  }
+ 
+   return ret;
+ }

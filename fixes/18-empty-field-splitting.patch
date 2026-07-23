@@ -1,0 +1,74 @@
+diff --git a/src/eval/eval_simple_command.c b/src/eval/eval_simple_command.c
+index 8c5307f0..778af56a 100644
+--- a/src/eval/eval_simple_command.c
++++ b/src/eval/eval_simple_command.c
+@@ -162,14 +162,15 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+     goto end;
+   }
+ 
+-  /* assemble argument list */
++  /* allocate based on tree_count (upper bound); expand_argv returns the
++     actual count after dropping empty unquoted fields */
+   argc = tree_count(args);
+ #ifdef HAVE_ALLOCA
+   argv = alloca((argc + 1) * sizeof(char*));
+ #else
+   argv = alloc((argc + 1) * sizeof(char*));
+ #endif
+-  expand_argv(args, argv);
++  argc = expand_argv(args, argv);
+ 
+   if(e->flags & E_PRINT) {
+     eval_print_prefix(e, fd_err->w);
+diff --git a/src/expand.h b/src/expand.h
+index fc28d51e..6ccaef79 100644
+--- a/src/expand.h
++++ b/src/expand.h
+@@ -63,7 +63,7 @@ struct narg;
+ 
+ union node* expand_arg(union node* narg, union node** nptr, int flags);
+ int expand_args(union node* args, union node** nptr, int flags);
+-void expand_argv(union node* args, char** argv);
++int expand_argv(union node* args, char** argv);
+ int expand_arith_binary(struct narithbinary* expr, int64* r);
+ int expand_arith_expr(union node* expr, int64* r);
+ int expand_arith_assign(struct narithbinary*, int64*);
+diff --git a/src/expand/expand_argv.c b/src/expand/expand_argv.c
+index 8ac76c95..c37d5bd3 100644
+--- a/src/expand/expand_argv.c
++++ b/src/expand/expand_argv.c
+@@ -1,15 +1,31 @@
+ #include "../../lib/byte.h"
++#include "../expand.h"
+ #include "../tree.h"
+ #include <stdlib.h>
+ 
+ /* expand argument vector
++ *
++ * POSIX field-splitting: an unquoted parameter expansion that produces
++ * an empty value contributes NO field. Without this, `exec $CONFIG_SHELL
++ * $as_opts "$as_myself"` in autoconf's re-exec passes argv[1] = "" to
++ * the new shell, which then complains "/bin/bash: : No such file or
++ * directory". Keep empty fields when they came from quoted ("") text.
++ * Returns the number of slots written (not counting the terminating
++ * NULL); pair with expand_args's return as the canonical argc.
+  * ----------------------------------------------------------------------- */
+-void
++int
+ expand_argv(union node* args, char** argv) {
++  int n = 0;
+   for(; args; args = args->next) {
+-    if(args->narg.stra.s)
+-      *argv++ = args->narg.stra.s;
++    if(!args->narg.stra.s)
++      continue;
++    if(args->narg.stra.len == 0 &&
++       !(args->narg.flag & (X_QUOTED | X_NOSPLIT)))
++      continue;
++    *argv++ = args->narg.stra.s;
++    n++;
+   }
+ 
+   *argv = NULL;
++  return n;
+ }

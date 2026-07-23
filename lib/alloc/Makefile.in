@@ -20,7 +20,7 @@ include $(top_builddir)/config.mk
 LIB = ../libowfat.a
 ARCHIVE = alloc.a
 MODULES = \
-alloc alloc_re alloc_redebug alloc_zero alloc_zerodebug allocdebug str_dup str_dupdebug
+alloc alloc_re alloc_zero str_dup
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

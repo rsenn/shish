@@ -1,8 +1,6 @@
 #include "../alloc.h"
 #include "../shell.h"
 
-#ifndef DEBUG_ALLOC
-
 void*
 alloc(unsigned long size) {
   void* ptr = malloc(size);
@@ -16,4 +14,3 @@ alloc(unsigned long size) {
   /* return pointer otherwise */
   return ptr;
 }
-#endif /* !defined(DEBUG_ALLOC) */

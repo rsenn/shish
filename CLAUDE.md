@@ -45,7 +45,7 @@ to `cmake`):
   force-enables the `dump` builtin.
 - `LINK_STATIC=ON` — static-link the executables.
 - `ENABLE_LTO=ON`, `USE_EFENCE=ON` (debug builds), `WARN_WERROR=ON`.
-- `DEBUG_OUTPUT`, `DEBUG_COLOR`, `DEBUG_ALLOC` — verbose debug instrumentation;
+- `DEBUG_OUTPUT`, `DEBUG_COLOR` — verbose debug instrumentation;
   `DEBUG_PARSE`, `DEBUG_JOB`, `DEBUG_BUILTIN` are per-subsystem (see
   `cmake/Debug.cmake`).
 - `BUILD_SHFORMAT=ON` (default), `BUILD_SHPARSE2AST=OFF`.
@@ -144,8 +144,7 @@ matching `<subsystem>.h` at `src/`'s root.
   `parse_chartable.c`) with `parse_is{space,name,ctrl,esc,…}` inline macros in
   `parse.h`. Each grammar production (`parse_if`, `parse_for`, `parse_case`,
   `parse_pipeline`, `parse_simple_command`, `parse_arith_*`, etc.) has its own
-  file. Nodes are allocated via `parse_newnode.c` (or `parse_newnodedebug.c`
-  when `DEBUG_ALLOC=ON`).
+  file. Nodes are allocated via `parse_newnode.c`.
 - `src/tree/` + `src/tree.h` — the AST. `enum kind` (N_SIMPLECMD, N_PIPELINE,
   N_AND/OR/NOT, N_LIST, N_SUBSHELL, N_BRACEGROUP, N_FOR, N_CASE, N_IF, N_WHILE,
   N_UNTIL, N_FUNCTION, N_ARG*, N_ASSIGN, N_REDIR, plus an `A_*` arithmetic

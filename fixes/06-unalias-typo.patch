@@ -1,0 +1,13 @@
+diff --git a/src/builtin/builtin_table.c b/src/builtin/builtin_table.c
+index 0b2272f5..16048154 100644
+--- a/src/builtin/builtin_table.c
++++ b/src/builtin/builtin_table.c
+@@ -303,7 +303,7 @@ struct builtin_cmd builtin_table[] = {
+     {"type", &builtin_type, B_DEFAULT, "name ..."},
+ #endif
+ #if BUILTIN_ALIAS
+-    {"unqalias", &builtin_alias, B_SPECIAL, "[-p] [name[=value] ...]"},
++    {"unalias", &builtin_alias, B_SPECIAL, "[-a] [name ...]"},
+ #endif
+ #if BUILTIN_UNAME
+     {"uname", &builtin_uname, B_DEFAULT, "[-amnrspvio]"},

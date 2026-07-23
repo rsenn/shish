@@ -1,0 +1,13 @@
+diff --git a/src/fdtable.h b/src/fdtable.h
+index 6a4abc8f..ad3ff3ef 100644
+--- a/src/fdtable.h
++++ b/src/fdtable.h
+@@ -5,7 +5,7 @@
+ 
+ #define FDTABLE_SIZE FD_MAX
+ 
+-#define fdtable_ok(e) ((e) >= -1 && (e) < FDTABLE_S IZE)
++#define fdtable_ok(e) ((e) >= -1 && (e) < FDTABLE_SIZE)
+ #define efdtable_ok(e) ((e) >= 0 && (e) < FDTABLE_SIZE)
+ 
+ #define FDTABLE_LAZY 0

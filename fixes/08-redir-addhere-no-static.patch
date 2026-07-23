@@ -1,0 +1,30 @@
+diff --git a/src/redir/redir_addhere.c b/src/redir/redir_addhere.c
+index f33dde8c..6e8ccd8a 100644
+--- a/src/redir/redir_addhere.c
++++ b/src/redir/redir_addhere.c
+@@ -5,14 +5,21 @@
+ struct nredir* redir_list = NULL;
+ 
+ /* add a here-doc
++ *
++ * Maintains the pending here-doc list. Previously this used a static tail
++ * pointer (rptr) that survived across calls; if redir_source consumed
++ * entries between two add calls (which happens with multiple here-docs
++ * per command, e.g. `cat <<A <<B`) the static rptr aliased a freed slot
++ * and corruption followed. Re-derive the tail each time -- the list is
++ * always short, and the simplicity beats keeping cross-call state in sync.
+  * ----------------------------------------------------------------------- */
+ void
+ redir_addhere(struct nredir* nredir) {
+-  static struct nredir** rptr;
++  struct nredir** rptr = &redir_list;
+ 
+-  if(redir_list == NULL)
+-    rptr = &redir_list;
++  while(*rptr)
++    rptr = (struct nredir**)&(*rptr)->data;
+ 
+   *rptr = nredir;
+-  rptr = (struct nredir**)&nredir->data;
++  nredir->data = NULL;
+ }

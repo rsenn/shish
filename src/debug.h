@@ -125,27 +125,6 @@ void debug_squoted(const char*, size_t n, buffer* out);
 
 #endif /* DEBUG_OUTPUT */
 
-#ifdef DEBUG_ALLOC
-
-struct chunk {
-  struct chunk* next;
-  struct chunk** pos;
-  unsigned long size;
-  const char* file;
-  unsigned int line;
-};
-
-extern struct chunk* debug_heap;
-extern struct chunk** debug_pos;
-
-void* debug_alloc(const char* file, unsigned int line, unsigned long size);
-void* debug_realloc(const char* file, unsigned int line, void* ptr, unsigned long size);
-void debug_free(const char* file, unsigned int line, void* ptr);
-void debug_error(const char* file, unsigned int line, const char* s);
-
-void debug_memory(void);
-#endif
-
 static inline int
 dump_flags(buffer* b, int bits, const char* const names[], int pad) {
   size_t i, n = 0;

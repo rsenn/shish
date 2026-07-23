@@ -1,0 +1,84 @@
+diff --git a/cmake/Builtins.cmake b/cmake/Builtins.cmake
+index 56a393b5..a608b325 100644
+--- a/cmake/Builtins.cmake
++++ b/cmake/Builtins.cmake
+@@ -14,6 +14,7 @@ list(
+   history
+   jobs
+   local
++  printf
+   pwd
+   read
+   readonly
+@@ -21,6 +22,7 @@ list(
+   set
+   shift
+   source
++  test
+   trap
+   type
+   umask
+@@ -78,6 +80,7 @@ list(
+   history
+   hostname
+   ln
++  printf
+   pwd
+   set
+   shift
+diff --git a/src/builtin/builtin_table.c b/src/builtin/builtin_table.c
+index 16048154..3e5c035e 100644
+--- a/src/builtin/builtin_table.c
++++ b/src/builtin/builtin_table.c
+@@ -74,9 +74,33 @@
+ #ifndef BUILTIN_MKDIR
+ #define BUILTIN_MKDIR 0
+ #endif
++#ifndef BUILTIN_BASENAME
++#define BUILTIN_BASENAME 1
++#endif
++#ifndef BUILTIN_COMMAND
++#define BUILTIN_COMMAND 1
++#endif
++#ifndef BUILTIN_DIRNAME
++#define BUILTIN_DIRNAME 1
++#endif
++#ifndef BUILTIN_HOSTNAME
++#define BUILTIN_HOSTNAME 0
++#endif
++#ifndef BUILTIN_JOBS
++#define BUILTIN_JOBS 1
++#endif
++#ifndef BUILTIN_MKTEMP
++#define BUILTIN_MKTEMP 0
++#endif
+ #ifndef BUILTIN_PRINTF
+ #define BUILTIN_PRINTF 1
+ #endif
++#ifndef BUILTIN_TEST
++#define BUILTIN_TEST 1
++#endif
++#ifndef BUILTIN_TRAP
++#define BUILTIN_TRAP 1
++#endif
+ #ifndef BUILTIN_PWD
+ #define BUILTIN_PWD 1
+ #endif
+diff --git a/src/builtin_config.h.cmake b/src/builtin_config.h.cmake
+index 4c7bd735..54163d60 100644
+--- a/src/builtin_config.h.cmake
++++ b/src/builtin_config.h.cmake
+@@ -1,4 +1,4 @@
+-p#cmakedefine BUILTIN_BASENAME     @BUILD_BUILTIN_BASENAME@
++#cmakedefine BUILTIN_BASENAME     @BUILD_BUILTIN_BASENAME@
+ #cmakedefine BUILTIN_BREAK        @BUILD_BUILTIN_BREAK@
+ #cmakedefine BUILTIN_CAT          @BUILD_BUILTIN_CAT@
+ #cmakedefine BUILTIN_CD           @BUILD_BUILTIN_CD@
+@@ -20,6 +20,7 @@ p#cmakedefine BUILTIN_BASENAME     @BUILD_BUILTIN_BASENAME@
+ #cmakedefine BUILTIN_LN           @BUILD_BUILTIN_LN@
+ #cmakedefine BUILTIN_MKDIR        @BUILD_BUILTIN_MKDIR@
+ #cmakedefine BUILTIN_MKTEMP       @BUILD_BUILTIN_MKTEMP@
++#cmakedefine BUILTIN_PRINTF       @BUILD_BUILTIN_PRINTF@
+ #cmakedefine BUILTIN_PWD          @BUILD_BUILTIN_PWD@
+ #cmakedefine BUILTIN_RM           @BUILD_BUILTIN_RM@
+ #cmakedefine BUILTIN_RMDIR        @BUILD_BUILTIN_RMDIR@

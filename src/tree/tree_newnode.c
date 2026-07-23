@@ -3,8 +3,6 @@
 #include "../../lib/shell.h"
 #include "../tree.h"
 
-#ifndef DEBUG_ALLOC
-
 /* allocate a tree node
  * ----------------------------------------------------------------------- */
 union node*
@@ -18,4 +16,3 @@ tree_newnode(enum kind id) {
   }
   return ret;
 }
-#endif /* !defined(DEBUG_ALLOC) */

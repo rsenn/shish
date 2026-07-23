@@ -1,8 +1,6 @@
 #include "../alloc.h"
 #include "../byte.h"
 
-#ifndef DEBUG_ALLOC
-
 void*
 alloc_zero(unsigned long size) {
   void* ptr = alloc(size);
@@ -11,4 +9,3 @@ alloc_zero(unsigned long size) {
     byte_zero(ptr, size);
   return ptr;
 }
-#endif /* !defined(DEBUG_ALLOC) */

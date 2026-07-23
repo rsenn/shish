@@ -1,8 +1,6 @@
 #include "../parse.h"
 #include "../tree.h"
 
-#ifndef DEBUG_ALLOC
-
 void
 parse_newnode(struct parser* p, enum kind nod) {
   if(p->tree) {
@@ -13,4 +11,3 @@ parse_newnode(struct parser* p, enum kind nod) {
     p->tree = p->node;
   }
 }
-#endif /* !defined(DEBUG_ALLOC) */

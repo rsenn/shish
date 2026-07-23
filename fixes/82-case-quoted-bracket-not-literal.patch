@@ -1,0 +1,115 @@
+diff --git a/lib/path/path_fnmatch.c b/lib/path/path_fnmatch.c
+index 4be17d53..bf8d1961 100644
+--- a/lib/path/path_fnmatch.c
++++ b/lib/path/path_fnmatch.c
+@@ -113,12 +113,32 @@ start:
+ 
+       while(plen) {
+         int res = 0;
++        int escaped = 0;
++
++        /* a backslash-escaped member is always a literal char -- it
++           can't close the bracket, start a range, or open a
++           "[:class:]"/"[.symbol.]"/"[=equiv=]" construct either.
++           POSIX bracket expressions don't define an escape mechanism
++           of their own, but shish's own quote-removal reuses a real
++           backslash as its internal "protect this literal char"
++           marker regardless of whether the character ends up inside
++           an open bracket expression or not (case "[.]" produces the
++           same "\[.\]" text as case [\.]/[\]] do) -- so this parser
++           has to honor it here too, or an escaped "]"/"[" inside a
++           class is misread as really closing/opening one
++           (case-quoted-bracket-not-literal, fixes/82). */
++        if(*pattern == '\\' && plen > 1 && !(flags & PATH_FNM_NOESCAPE)) {
++          escaped = 1;
++          pattern++;
++          plen--;
++        }
++
+         /* if there is a closing bracket and it's not
+            the first char the class is terminated */
+-        if(*pattern == ']' && pattern != start)
++        if(!escaped && *pattern == ']' && pattern != start)
+           break;
+ 
+-        if(*pattern == '[' && plen > 1 &&
++        if(!escaped && *pattern == '[' && plen > 1 &&
+            (pattern[1] == ':' || pattern[1] == '.' || pattern[1] == '=')) {
+           /* MEMBER - "[:class:]" / "[.symbol.]" / "[=equiv=]" */
+           char delim = pattern[1];
+@@ -154,7 +174,7 @@ start:
+           }
+         } else {
+           /* MEMBER - character range */
+-          if(plen > 1 && pattern[1] == '-' && pattern[2] != ']') {
++          if(!escaped && plen > 1 && pattern[1] == '-' && pattern[2] != ']') {
+             /* check wheter char is within the specified range */
+             res = (*string >= *pattern && *string <= pattern[2]);
+             pattern += 3;
+@@ -170,6 +190,16 @@ start:
+         /* character class seems terminated and matched */
+         if((res && !neg) || ((!res && neg) && *pattern == ']')) {
+           while(plen && *pattern != ']') {
++            /* skip an escaped char whole (backslash + the char it
++               protects) so an escaped "]" further along the class
++               doesn't end this scan early -- same escape rule as
++               above, needed once matching has already succeeded and
++               the rest of the class just needs skipping past. */
++            if(*pattern == '\\' && plen > 1 && !(flags & PATH_FNM_NOESCAPE)) {
++              pattern++;
++              plen--;
++            }
++
+             pattern++;
+             plen--;
+           }
+diff --git a/src/eval/eval_case.c b/src/eval/eval_case.c
+index 7a3fa015..64588a78 100644
+--- a/src/eval/eval_case.c
++++ b/src/eval/eval_case.c
+@@ -33,7 +33,7 @@ eval_case(struct eval* e, struct ncase* ncase) {
+ 
+   for(node = ncase->list; node; node = node->next) {
+     for(pat = node->ncasenode.pats; pat; pat = pat->next) {
+-      expand_catsa(pat, &pattern, X_NOSPLIT);
++      expand_catsa(pat, &pattern, X_NOSPLIT | X_PATTERN);
+       stralloc_nul(&pattern);
+ 
+       /* unlike pathname expansion (globbing), case-statement pattern
+diff --git a/src/expand.h b/src/expand.h
+index 80051156..09683f1c 100644
+--- a/src/expand.h
++++ b/src/expand.h
+@@ -96,6 +96,19 @@ enum subst_type {
+    this doesn't fully resolve either way -- see assign-cmdsubst-value-
+    loses-escaping in BUGS. */
+ #define X_UNESCAPED 0x10000000
++/* the result feeds path_fnmatch() (case patterns, ${var%pattern} and
++   friends) rather than being used as a plain string value -- keep the
++   parser's protective backslash-doubling (parse_isesc) intact instead
++   of running expand_cat()'s usual expand_unescape() pass on it, since
++   that doubling *is* path_fnmatch()'s own escape syntax for "this
++   char is literal, not a wildcard". Without this, a quoted glob-
++   special char that's meant to end up literal for matching purposes
++   (e.g. the fully-quoted case pattern "[.]", parsed as "\[.\]" to mark
++   both brackets literal) had its escaping stripped down to a plain
++   "[.]" before ever reaching path_fnmatch(), which then read it back
++   as a live bracket expression instead of a 3-character literal
++   (case-quoted-bracket-not-literal, fixes/82). */
++#define X_PATTERN 0x20000000
+ 
+ extern char expand_ifs[4];
+ 
+diff --git a/src/expand/expand_cat.c b/src/expand/expand_cat.c
+index 4caebace..6c6c239f 100644
+--- a/src/expand/expand_cat.c
++++ b/src/expand/expand_cat.c
+@@ -44,7 +44,7 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
+        unquoted "\*" tail glued onto "$x" with no separator, still
+        headed for the split loop below on its own call) that it's
+        already been handled when it hasn't. */
+-    if(flags & X_LITERAL) {
++    if((flags & X_LITERAL) && !(flags & X_PATTERN)) {
+       stralloc tmp;
+       stralloc_init(&tmp);
+       stralloc_catb(&tmp, b, len);

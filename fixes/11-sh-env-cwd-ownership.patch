@@ -1,0 +1,66 @@
+diff --git a/src/sh/sh_exit.c b/src/sh/sh_exit.c
+index dc0c3b42..7809c788 100644
+--- a/src/sh/sh_exit.c
++++ b/src/sh/sh_exit.c
+@@ -22,14 +22,17 @@ sh_exit(int retcode) {
+   while(s->eval && s->eval->flags & E_FUNCTION)
+     s = s->parent;
+ 
+-  stralloc_free(&sh->cwd);
+-
+ #ifdef DEBUG_ALLOC
+   debug_memory();
+ #endif
+ 
+-  /* not in a subshell, exit the process */
++  /* not in a subshell, exit the process. Only free cwd on the way out --
++     the previous unconditional free here trashed sh->cwd on every fall-
++     through (when eval_exit had nothing to longjmp to), so any subsequent
++     sh_pop would dereference a freed buffer. */
+   if(s == &sh_root) {
++    stralloc_free(&sh->cwd);
++
+     if(source)
+       source_pop();
+ 
+diff --git a/src/sh/sh_pop.c b/src/sh/sh_pop.c
+index 15f0c38f..a1142acf 100644
+--- a/src/sh/sh_pop.c
++++ b/src/sh/sh_pop.c
+@@ -21,8 +21,9 @@ sh_pop(struct env* env) {
+   if((parent = sh->parent) == NULL)
+     return 0;
+ 
+-  /* change back to prev working dir */
+-  if(stralloc_diffs(&sh->cwd, parent->cwd.s)) {
++  /* change back to prev working dir (skip if our cwd was already freed,
++     e.g. by sh_exit's fall-through path) */
++  if(sh->cwd.s && stralloc_diffs(&sh->cwd, parent->cwd.s)) {
+     if(chdir(parent->cwd.s) == -1)
+       sh_errorn(parent->cwd.s, parent->cwd.len);
+   }
+diff --git a/src/sh/sh_push.c b/src/sh/sh_push.c
+index 8d0602cc..bfe70107 100644
+--- a/src/sh/sh_push.c
++++ b/src/sh/sh_push.c
+@@ -11,11 +11,15 @@ sh_push(struct env* env) {
+ 
+   env->parent = sh;
+ 
+-  /* copy cwd */
+-  /*  stralloc_copyb(&env->cwd, sh->cwd.s, sh->cwd.len);*/
+-  env->cwd.a = 0;
+-  env->cwd.s = sh->cwd.s;
+-  env->cwd.len = sh->cwd.len;
++  /* Own a private cwd copy. Aliasing sh->cwd.s here without taking
++     ownership (the previous behavior) means any stralloc reallocation
++     of the parent's cwd -- which happens on cd, getcwd refresh, etc. --
++     leaves this env's cwd.s dangling, and sh_pop later dereferences it
++     in stralloc_diffs. autoconf's nested-subshell shell-detection probe
++     triggered this within ~140 lines of `./configure` start. */
++  stralloc_init(&env->cwd);
++  if(sh->cwd.len)
++    stralloc_copyb(&env->cwd, sh->cwd.s, sh->cwd.len);
+ 
+   env->cwdsym = sh->cwdsym;
+ 

@@ -1,8 +1,6 @@
 #include "../alloc.h"
 #include "../shell.h"
 
-#ifndef DEBUG_ALLOC
-
 void*
 alloc_re(void* ptr, unsigned long size) {
   void* newptr;
@@ -21,4 +19,3 @@ alloc_re(void* ptr, unsigned long size) {
   /* return pointer otherwise */
   return newptr;
 }
-#endif /* !defined(DEBUG_ALLOC) */

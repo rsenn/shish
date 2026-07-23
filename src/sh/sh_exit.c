@@ -1,7 +1,6 @@
 #include "../eval.h"
 #include "../sh.h"
 #include "../source.h"
-#include "../debug.h"
 #include "builtin_config.h"
 
 int trap_exit(int);
@@ -31,10 +30,6 @@ sh_exit(int retcode) {
 
   while(s->eval && s->eval->flags & E_FUNCTION)
     s = s->parent;
-
-#ifdef DEBUG_ALLOC
-  debug_memory();
-#endif
 
   /* not in a subshell, exit the process. Only free cwd on the way out --
      the previous unconditional free here trashed sh->cwd on every fall-
