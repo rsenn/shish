@@ -83,15 +83,18 @@ ctest -R if.sh -V              # run one test, verbose
 ./shish ../../tests/if.sh      # invoke a test directly through shish
 ```
 
-`tests/posix/*.tst` and `tests/yash/*.tst` (yash's own POSIX/self
-conformance suite, run through `tests/run-tst.sh`) exist in the tree but
-their CTest registration in `CMakeLists.txt` is commented out and must stay
-that way: `tests/posix/fnmatch-p.tst` hangs the testee at 100% CPU (see
-`BUGS`), so a `ctest` run that includes the suite never returns. Run it
-manually and deliberately when needed, e.g. excluding that one file:
+`tests/posix/*.tst` (run through `tests/run-tst.sh`) is wired into `ctest`
+by default via `DO_CONFORMANCE_TESTS` (`ON` by default; pass
+`-DDO_CONFORMANCE_TESTS=OFF` to skip it for a faster inner loop).
+`tests/yash/*.tst` (yash's own POSIX/self conformance suite) is registered
+the same way but gated by its own `DO_YASH_TESTS`, **off by default**:
+`tests/yash/random-y.tst` hangs and only terminates via its own 120s
+per-test `TIMEOUT` (see `BUGS: yash-random-y-tst-hangs`), which otherwise
+dominates a default `ctest` run's wall time. Pass `-DDO_YASH_TESTS=ON` to
+include it, or run a single file manually without rebuilding:
 
 ```sh
-sh tests/run-tst.sh ./shish tests/posix some-other-test.tst
+sh tests/run-tst.sh ./shish tests/yash some-file.tst
 ```
 
 ### Writing a test

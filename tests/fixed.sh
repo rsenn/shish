@@ -1545,4 +1545,57 @@ assert_equal "matched" "$X82C" "a backslash-escaped ] inside an unquoted bracket
 X82D=$(case \] in ["]"]) echo matched;; esac)
 assert_equal "matched" "$X82D" "a bracket expression with just the closing ] quoted inside it must still match a literal ] (no regression)"
 
+## fixes/83 (expand-param-pattern-leading-dot): like the case-statement
+## bug fixed in fixes/82, ${var#pattern}/${var##pattern}/${var%pattern}/
+## ${var%%pattern} passed SH_FNM_PERIOD to path_fnmatch(), so a
+## "?"/"*"/bracket-expression pattern refused to match a leading "."
+## in the parameter's own value.
+X83=$(X=".abc"; echo "${X#?}")
+assert_equal "abc" "$X83" "\${var#pattern} must match a leading dot with a single-char ? pattern"
+
+X83B=$(X=".abc"; echo "${X##?}")
+assert_equal "abc" "$X83B" "\${var##pattern} must also match a leading dot with a single-char ? pattern"
+
+X83C=$(X=".abc"; echo "${X#*.}")
+assert_equal "abc" "$X83C" "\${var#pattern} with a leading * must still match through a leading dot"
+
+## no-regression: ordinary (non-leading-dot) prefix/suffix removal
+X83D=$(X="foo.bar.baz"; echo "${X%.*}")
+assert_equal "foo.bar" "$X83D" "\${var%pattern} smallest-suffix removal is unaffected by the fix (no regression)"
+
+X83E=$(X="foo.bar.baz"; echo "${X##*.}")
+assert_equal "baz" "$X83E" "\${var##pattern} largest-prefix removal is unaffected by the fix (no regression)"
+
+## fixes/84 (fnmatch-bracket-collating-range): a bracket-expression
+## range whose endpoints are "[.x.]"-wrapped collating symbols (not
+## bare characters) must fuse into a single range, matching everything
+## in between -- lib/path/path_fnmatch.c used to match each
+## "[.symbol.]" as its own standalone member and the "-" in between as
+## a third, literal "-" member instead.
+X84=$(case 1 in [[.0.]-[.2.]]) echo matched;; *) echo no;; esac)
+assert_equal "matched" "$X84" "a range between two [.symbol.] collating-symbol endpoints must match a value inside it"
+
+X84B=$(case 0 in [[.0.]-[.2.]]) echo matched;; *) echo no;; esac)
+assert_equal "matched" "$X84B" "a [.symbol.]-[.symbol.] range must match its own start endpoint"
+
+X84C=$(case 2 in [[.0.]-[.2.]]) echo matched;; *) echo no;; esac)
+assert_equal "matched" "$X84C" "a [.symbol.]-[.symbol.] range must match its own end endpoint"
+
+X84D=$(case 3 in [[.0.]-[.2.]]) echo matched;; *) echo no;; esac)
+assert_equal "no" "$X84D" "a [.symbol.]-[.symbol.] range must not match a value outside it"
+
+X84E=$(case 1 in [0-[.2.]]) echo matched;; *) echo no;; esac)
+assert_equal "matched" "$X84E" "a range with one plain-char endpoint and one [.symbol.] endpoint must also fuse correctly"
+
+## no-regression: a standalone collating symbol, a plain range, and a
+## trailing literal dash must all still work as before
+X84F=$(case a in [[.a.]]) echo matched;; *) echo no;; esac)
+assert_equal "matched" "$X84F" "a standalone [.symbol.] (no following range) still matches its single character (no regression)"
+
+X84G=$(case 1 in [0-2]) echo matched;; *) echo no;; esac)
+assert_equal "matched" "$X84G" "an ordinary bare-character range is unaffected by the fix (no regression)"
+
+X84H=$(case - in [a-]) echo matched;; *) echo no;; esac)
+assert_equal "matched" "$X84H" "a trailing dash right before the closing ] is still a literal member, not a range (no regression)"
+
 summary

@@ -1,61 +1,37 @@
-- yash-random-y-tst-hangs: `tests/yash/random-y.tst` hangs the testee
-  (confirmed via CTest's 120s per-file TIMEOUT actually triggering, not
-  just "slow") -- found immediately after re-enabling the
-  `tests/posix`/`tests/yash` conformance suites in CMakeLists.txt. The
-  rest of the suite (238 other files) completes fine, so this is
-  bounded/contained by the existing TIMEOUT property, not a reason to
-  disable the suite again. `$RANDOM` itself varies correctly when
-  checked directly (`echo $RANDOM $RANDOM $RANDOM` gives different
-  values each time), so the two busy-`until`-loops the test opens with
-  aren't the obvious suspect; the file's later cases pipe a function's
-  output through `print > seeded1; print > seeded2; diff seeded1
-  seeded2` inside subshells, which is closer to the shape of the
-  already-logged `subshell-exit-trap-output-misdirected` and
-  `kill-arg-redirect-parse` bugs (subshell + redirect interactions).
-  Not yet isolated to a specific line within the file.
+- yash-random-y-tst-hangs: `tests/yash/random-y.tst` hangs (bounded by
+  CTest's 120s per-file TIMEOUT). The rest of the suite is fine.
+  `$RANDOM` itself varies correctly when checked directly, so the
+  two busy-`until`-loops at the top aren't the obvious cause; more
+  likely the later cases piping a function's output through subshells
+  (`print > seeded1; print > seeded2; diff seeded1 seeded2`), similar
+  in shape to `subshell-exit-trap-output-misdirected`. Not isolated to
+  a specific line yet.
 
-- sh-onsig-async-unsafe: sh_onsig(), the SIGCHLD handler, calls
-  term_erase()/term_restore()/buffered i/o directly from signal-handler
-  context; none of that is async-signal-safe. Any background job
-  finishing exercises the handler, though the unsafety is a latent
-  race, not a deterministic per-run failure.
+- sh-onsig-async-unsafe: `sh_onsig()` (`src/sh/sh_main.c`'s SIGCHLD
+  handler) calls `term_erase()`/`term_restore()`/`prompt_show()`/
+  `buffer_*` directly from signal-handler context -- none of that is
+  async-signal-safe. Latent race, not a deterministic failure.
 
     sleep 1 &
     sleep 2 &
     wait
 
-- fnmatch-bracket-collating-range: a bracket-expression range whose
-  endpoints are themselves "[.x.]"-wrapped collating symbols (as
-  opposed to bare characters, e.g. "[0-2]") doesn't match as a range
-  at all -- lib/path/path_fnmatch.c's range-detection only recognizes
-  "X-Y" where X and Y are literal single characters, not
-  "[.X.]-[.Y.]"; each "[.symbol.]" gets matched as its own standalone
-  member (fixes/67 added support for that part on its own) and the
-  "-" in between as a third, literal "-" member, rather than the three
-  being fused into a single range. Found while confirming
-  fnmatch-p-hang's fix didn't paper over anything else in the same
-  test block; POSIX 2.13.1 does define this range form but it's a
-  narrow, rarely-used corner of bracket-expression syntax.
+  Proposed fix (2026-07-24, not implemented): shrink `sh_onsig()` to
+  only `wait_nohang()`/`job_signal()` (both safe -- plain memory
+  writes, no I/O), matching the pattern `job_signal()`/`job_update()`/
+  `job_clean()` already use correctly for job-done banners. Extend
+  `job_clean()` to also announce newly-*stopped* jobs the same way, so
+  the stopped-job banner moves out of the handler too.
 
-    case 1 in [[.0.]-[.2.]]) echo matched;; *) echo no;; esac
-    # prints "no"; POSIX says this range covers 0-2, so it should
-    # print "matched"
-
-- expand-param-pattern-leading-dot: like the (now-fixed, fixes/82)
-  case-statement bug, `${var#pattern}`/`${var##pattern}`/
-  `${var%pattern}`/`${var%%pattern}` also pass SH_FNM_PERIOD to
-  path_fnmatch() (src/expand/expand_param.c), so a "?"/"*"/bracket
-  expression in the removal pattern refuses to match a leading "."
-  in the parameter's value, same underlying mistake (this notation
-  isn't pathname expansion either, and POSIX 2.6.2 gives it no such
-  rule). Found while fixing the case-statement version of this same
-  bug and confirmed against bash; not fixed here since it's outside
-  that fix's scope (a different function/callsite) and this one
-  wasn't in a failing test yet -- probably the very next thing worth
-  doing in this area given how similar the fix is.
-
-    X=".abc"
-    echo "${X#?}"
-    # prints ".abc" (unchanged) -- bash prints "abc"; "?" should match
-    # the leading "." like any other single character here
-
+  The harder part: repainting the prompt while `term_read()` is
+  blocked mid-line can't just defer to `job_update()` (that only runs
+  between whole statements). An EINTR-based nudge won't work either --
+  every signal here installs via `sig_action()` with `SA_RESTART`
+  unconditionally set (no `FLAG_PREFERSELECT`), so the kernel silently
+  restarts the interrupted `read()` before `term_read()` ever sees it.
+  Recommended: the standard self-pipe trick (as bash/zsh/dash use) --
+  `sh_onsig()` writes one byte to a pipe (async-signal-safe); `term_read()`
+  blocks on `select()`/`poll()` over both the terminal fd and the
+  pipe instead of a bare `read()`, doing the real repaint in ordinary
+  context when the pipe wakes it. New dependency (`select`/`poll`,
+  unused elsewhere in the tree) but both are plain POSIX syscalls.

@@ -1,0 +1,88 @@
+diff --git a/lib/path/path_fnmatch.c b/lib/path/path_fnmatch.c
+index bf8d1961..310aa2f1 100644
+--- a/lib/path/path_fnmatch.c
++++ b/lib/path/path_fnmatch.c
+@@ -55,6 +55,38 @@ path_fnmatch_subexpr_len(const char* pattern, unsigned int plen, char delim) {
+   return 0;
+ }
+ 
++/* if the "plen" bytes at "pattern" form a valid range suffix ("-"
++ * followed by a second endpoint that isn't the bracket's closing
++ * "]"), resolves that second endpoint -- which may itself be a
++ * "[.symbol.]"/"[=equiv=]" single-character collating construct
++ * (e.g. the "-[.2.]" in "[[.0.]-[.2.]]"), not just a bare character --
++ * and returns 1, filling in *end (the endpoint's character value) and
++ * *skip (how many pattern bytes the whole "-<endpoint>" occupies).
++ * Returns 0 (not a range -- a trailing "-]", or a multi-character/
++ * class endpoint this implementation can't resolve to a single
++ * character) without touching *end/*skip otherwise.
++ * ----------------------------------------------------------------------- */
++static int
++path_fnmatch_range_end(const char* pattern, unsigned int plen, char* end, unsigned int* skip) {
++  if(plen < 2 || pattern[0] != '-' || pattern[1] == ']')
++    return 0;
++
++  if(plen >= 3 && pattern[1] == '[' && (pattern[2] == '.' || pattern[2] == '=')) {
++    unsigned int sublen = path_fnmatch_subexpr_len(pattern + 1, plen - 1, pattern[2]);
++
++    if(sublen == 0 || sublen - 4 != 1)
++      return 0;
++
++    *end = pattern[3];
++    *skip = 1 + sublen;
++    return 1;
++  }
++
++  *end = pattern[1];
++  *skip = 2;
++  return 1;
++}
++
+ int
+ path_fnmatch(
+     const char* pattern, unsigned int plen, const char* string, unsigned int slen, int flags) {
+@@ -166,19 +198,37 @@ start:
+                outright. */
+             unsigned int symlen = sublen - 4;
+ 
+-            if(symlen == 1)
+-              res = (pattern[2] == *string);
++            if(symlen == 1) {
++              char rangeend;
++              unsigned int rangeskip;
++
++              /* "[.x.]-[.y.]" (or "[.x.]-y"): fuse into a real range
++                 instead of matching "[.x.]", then "-", then "[.y.]"
++                 as three separate members (fnmatch-bracket-collating-
++                 range, fixes/83). */
++              if(path_fnmatch_range_end(pattern + sublen, plen - sublen, &rangeend, &rangeskip)) {
++                res = (*string >= pattern[2] && *string <= rangeend);
++                sublen += rangeskip;
++              } else {
++                res = (pattern[2] == *string);
++              }
++            }
+ 
+             pattern += sublen;
+             plen -= sublen;
+           }
+         } else {
+-          /* MEMBER - character range */
+-          if(!escaped && plen > 1 && pattern[1] == '-' && pattern[2] != ']') {
++          /* MEMBER - character range (endpoint may be a plain char or
++             a "[.symbol.]"/"[=equiv=]" single-character collating
++             construct, e.g. the "-[.2.]" in "[a-[.2.]]") */
++          char rangeend;
++          unsigned int rangeskip;
++
++          if(!escaped && path_fnmatch_range_end(pattern + 1, plen - 1, &rangeend, &rangeskip)) {
+             /* check wheter char is within the specified range */
+-            res = (*string >= *pattern && *string <= pattern[2]);
+-            pattern += 3;
+-            plen -= 3;
++            res = (*string >= *pattern && *string <= rangeend);
++            pattern += 1 + rangeskip;
++            plen -= 1 + rangeskip;
+           }
+           /* MEMBER - literal character match */
+           else {

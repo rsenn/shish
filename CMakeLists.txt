@@ -280,7 +280,10 @@ set(SHISH_PATH "${CMAKE_CURRENT_BINARY_DIR}/shish${SHISH_SUFFIX}")
 
 message("SHISH_PATH: ${SHISH_PATH}")
 
-option(DO_CONFORMANCE_TESTS "Also run the tests/posix and tests/yash conformance suites" ON)
+option(DO_CONFORMANCE_TESTS "Also run the tests/posix conformance suite" ON)
+option(DO_YASH_TESTS
+       "Also run the tests/yash conformance suite (off by default -- tests/yash/random-y.tst hangs and eats a 120s TIMEOUT on every run, see BUGS)"
+       OFF)
 
 if(DO_TESTS)
   include(CTest)
@@ -310,19 +313,34 @@ if(DO_TESTS)
   # about a minute with no hangs. Most individual files still fail (POSIX
   # compliance triage is ongoing, see TODO.md Goal 2) -- that's expected
   # and is what CTest is here to report, not a reason to keep this off.
-  if(DO_CONFORMANCE_TESTS)
-    foreach(SUITE posix yash)
-      file(GLOB CONFORMANCE_TESTS "tests/${SUITE}/*.tst")
+  #
+  # tests/yash split into its own DO_YASH_TESTS option, off by default
+  # (2026-07-24): unlike the rest of the corpus, tests/yash/random-y.tst
+  # hangs and only terminates via its own 120s TIMEOUT (BUGS:
+  # yash-random-y-tst-hangs), so it alone dominates a default `ctest`
+  # run's wall time. tests/posix has no such straggler and stays on by
+  # default under DO_CONFORMANCE_TESTS.
+  set(CONFORMANCE_SUITES)
 
-      foreach(TEST ${CONFORMANCE_TESTS})
-        basename(NAME "${TEST}")
-        add_test(
-          NAME "${SUITE}/${NAME}"
-          WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-          COMMAND sh "tests/run-tst.sh" "${SHISH_PATH}" "tests/${SUITE}" "${NAME}")
-        set_tests_properties("${SUITE}/${NAME}" PROPERTIES TIMEOUT 120)
-      endforeach(TEST ${CONFORMANCE_TESTS})
-    endforeach(SUITE posix yash)
+  if(DO_CONFORMANCE_TESTS)
+    list(APPEND CONFORMANCE_SUITES posix)
   endif(DO_CONFORMANCE_TESTS)
+
+  if(DO_YASH_TESTS)
+    list(APPEND CONFORMANCE_SUITES yash)
+  endif(DO_YASH_TESTS)
+
+  foreach(SUITE ${CONFORMANCE_SUITES})
+    file(GLOB CONFORMANCE_TESTS "tests/${SUITE}/*.tst")
+
+    foreach(TEST ${CONFORMANCE_TESTS})
+      basename(NAME "${TEST}")
+      add_test(
+        NAME "${SUITE}/${NAME}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        COMMAND sh "tests/run-tst.sh" "${SHISH_PATH}" "tests/${SUITE}" "${NAME}")
+      set_tests_properties("${SUITE}/${NAME}" PROPERTIES TIMEOUT 120)
+    endforeach(TEST ${CONFORMANCE_TESTS})
+  endforeach(SUITE ${CONFORMANCE_SUITES})
 endif(DO_TESTS)
 message("TESTS: ${TESTS}")

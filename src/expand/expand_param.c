@@ -295,11 +295,19 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       int i;
       stralloc sa;
 
+      /* ${var#pattern}/${var%pattern} and friends aren't pathname
+         expansion either (POSIX 2.6.2 gives this notation no
+         "leading dot must be matched explicitly" rule), so passing
+         SH_FNM_PERIOD here made a "?"/"*"/bracket expression in the
+         pattern refuse to match a leading "." in the parameter's
+         value -- same mistake already fixed for case statements, see
+         eval_case.c and fixes/82 (expand-param-pattern-leading-dot,
+         BUGS). */
       if(v && vlen) {
         expand_copysa(param->word, &sa, 0);
 
         for(i = vlen - 1; i >= 0; i--)
-          if(path_fnmatch(sa.s, sa.len, v + i, vlen - i, SH_FNM_PERIOD) == 0)
+          if(path_fnmatch(sa.s, sa.len, v + i, vlen - i, 0) == 0)
             break;
 
         n = expand_cat(v, (i < 0 ? vlen : (size_t)i), nptr, flags);
@@ -317,7 +325,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         expand_copysa(param->word, &sa, 0);
 
         for(i = 0; i <= vlen; i++)
-          if(path_fnmatch(sa.s, sa.len, v + i, vlen - i, SH_FNM_PERIOD) == 0)
+          if(path_fnmatch(sa.s, sa.len, v + i, vlen - i, 0) == 0)
             break;
 
         n = expand_cat(v, (i > vlen ? vlen : i), nptr, flags);
@@ -335,7 +343,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         expand_copysa(param->word, &sa, 0);
 
         for(i = 1; i <= vlen; i++)
-          if(path_fnmatch(sa.s, sa.len, v, i, SH_FNM_PERIOD) == 0)
+          if(path_fnmatch(sa.s, sa.len, v, i, 0) == 0)
             break;
 
         if(i > vlen)
@@ -356,7 +364,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         expand_copysa(param->word, &sa, 0);
 
         for(i = vlen; i > 0; i--)
-          if(path_fnmatch(sa.s, sa.len, v, i, SH_FNM_PERIOD) == 0)
+          if(path_fnmatch(sa.s, sa.len, v, i, 0) == 0)
             break;
 
         if(i == 0)
