@@ -44,7 +44,7 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
        unquoted "\*" tail glued onto "$x" with no separator, still
        headed for the split loop below on its own call) that it's
        already been handled when it hasn't. */
-    if(flags & X_LITERAL) {
+    if((flags & X_LITERAL) && !(flags & X_PATTERN)) {
       stralloc tmp;
       stralloc_init(&tmp);
       stralloc_catb(&tmp, b, len);

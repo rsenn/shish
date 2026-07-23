@@ -113,12 +113,32 @@ start:
 
       while(plen) {
         int res = 0;
+        int escaped = 0;
+
+        /* a backslash-escaped member is always a literal char -- it
+           can't close the bracket, start a range, or open a
+           "[:class:]"/"[.symbol.]"/"[=equiv=]" construct either.
+           POSIX bracket expressions don't define an escape mechanism
+           of their own, but shish's own quote-removal reuses a real
+           backslash as its internal "protect this literal char"
+           marker regardless of whether the character ends up inside
+           an open bracket expression or not (case "[.]" produces the
+           same "\[.\]" text as case [\.]/[\]] do) -- so this parser
+           has to honor it here too, or an escaped "]"/"[" inside a
+           class is misread as really closing/opening one
+           (case-quoted-bracket-not-literal, fixes/82). */
+        if(*pattern == '\\' && plen > 1 && !(flags & PATH_FNM_NOESCAPE)) {
+          escaped = 1;
+          pattern++;
+          plen--;
+        }
+
         /* if there is a closing bracket and it's not
            the first char the class is terminated */
-        if(*pattern == ']' && pattern != start)
+        if(!escaped && *pattern == ']' && pattern != start)
           break;
 
-        if(*pattern == '[' && plen > 1 &&
+        if(!escaped && *pattern == '[' && plen > 1 &&
            (pattern[1] == ':' || pattern[1] == '.' || pattern[1] == '=')) {
           /* MEMBER - "[:class:]" / "[.symbol.]" / "[=equiv=]" */
           char delim = pattern[1];
@@ -154,7 +174,7 @@ start:
           }
         } else {
           /* MEMBER - character range */
-          if(plen > 1 && pattern[1] == '-' && pattern[2] != ']') {
+          if(!escaped && plen > 1 && pattern[1] == '-' && pattern[2] != ']') {
             /* check wheter char is within the specified range */
             res = (*string >= *pattern && *string <= pattern[2]);
             pattern += 3;
@@ -170,6 +190,16 @@ start:
         /* character class seems terminated and matched */
         if((res && !neg) || ((!res && neg) && *pattern == ']')) {
           while(plen && *pattern != ']') {
+            /* skip an escaped char whole (backslash + the char it
+               protects) so an escaped "]" further along the class
+               doesn't end this scan early -- same escape rule as
+               above, needed once matching has already succeeded and
+               the rest of the class just needs skipping past. */
+            if(*pattern == '\\' && plen > 1 && !(flags & PATH_FNM_NOESCAPE)) {
+              pattern++;
+              plen--;
+            }
+
             pattern++;
             plen--;
           }

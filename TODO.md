@@ -318,7 +318,46 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
      quoted bracket-expression-shaped pattern (`"[.]"`, all three chars
      quoted, unlike `[".]"` where only the char inside is quoted)
      should reduce to the literal 3-character string `[.]` after quote
-     removal, but is still treated as a live bracket expression.
+     removal, but is still treated as a live bracket expression --
+     since **fixed (2026-07-23, `fixes/82`)**. Two changes were
+     needed together, since the underlying representation (shish
+     reuses a literal backslash as its own "protect this char from
+     glob reinterpretation" marker) is ambiguous on its own: (1)
+     `expand_cat()`'s non-splitting branch unconditionally stripped
+     that protective backslash (`expand_unescape()`) before a
+     pattern-bound chunk ever reached `path_fnmatch()`, destroying the
+     very marker that should have told it `[`/`]` were quoted-literal,
+     not real delimiters. Added a new `X_PATTERN` expand flag
+     (`expand.h`) that `eval_case.c` now passes to suppress that strip
+     for pattern-matching contexts specifically (a plain string value
+     still gets unescaped as before). (2) That alone regressed two
+     *already-passing* cases in the same test block (`[\]]`/`["]"]`
+     matching a literal `]`) — the surviving backslash, now correctly
+     preserved outside brackets, was misread by `path_fnmatch()`'s
+     bracket-parsing loop as a literal member character when it
+     landed *inside* an open bracket expression (real POSIX bracket
+     expressions have no escape mechanism, unlike top-level pattern
+     text, where a backslash is already handled), so an escaped `]`
+     both wrongly counted as a class member on its own AND no longer
+     reliably closed the class. Extended `path_fnmatch()`
+     (`lib/path/path_fnmatch.c`) to also treat a backslash inside a
+     bracket expression as escaping the next char to always be a
+     literal member — never a closing `]`, negation, range dash, or
+     `[:class:]`-style construct opener — in both the member-matching
+     loop and the post-match skip-to-`]` loop. Confirmed all of: the
+     new fully-quoted case, the original quoted-inside-brackets case,
+     both previously-passing escaped-`]` cases, unquoted ranges, and
+     `[:class:]` classes still match correctly; dotfile globbing
+     (`expand_glob.c`, a separate code path using real `glob()`, not
+     `path_fnmatch()`) is untouched. `tests/posix/fnmatch-p.tst`'s
+     "brackets and quotations" block now fully passes (was 4/7 in the
+     file, now 6/7 — the file's remaining two failures are the
+     unrelated, already-logged `fnmatch-bracket-collating-range` and a
+     pre-existing parse error in its unrelated "quotations of
+     quotations" block). Found and logged a further, still-open,
+     narrower bug while fixing this one: `expand-param-pattern-
+     leading-dot` — `expand_param.c`'s `${var#pattern}` family passes
+     the same wrong `SH_FNM_PERIOD` flag `eval_case.c` used to.
 6. **Process note, not code:** most recent commits (`git log --oneline`)
    have the placeholder message `...`. `fixes/*.patch` is currently the
    only place the *why* for the last 18 fixes is written down, and it's an

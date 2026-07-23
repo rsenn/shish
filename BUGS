@@ -41,27 +41,21 @@
     # prints "no"; POSIX says this range covers 0-2, so it should
     # print "matched"
 
-- case-quoted-bracket-not-literal: a "case" pattern that is a bracket
-  expression *entirely* inside quotes (e.g. "[.]", all three chars
-  quoted, as opposed to only a character within the brackets being
-  quoted) should become a plain 3-character literal string after quote
-  removal -- POSIX 2.13.1 says quoting removes special meaning from
-  "*", "?", and "[", so a quoted "[" can't open a bracket expression
-  at all. It's still being treated as a live bracket expression
-  instead, so it matches a bare "." as if the pattern were the
-  unquoted bracket "[.]" (single-char class containing ".") rather
-  than the 5-char sequence "[", ".", "]" it should now literally be
-  (which can only match the 3-character string "[.]" itself). Found
-  via tests/posix/fnmatch-p.tst's "brackets and quotations" block
-  (case 31: `case \. in "[.]") echo 31; esac` wrongly prints 31) while
-  confirming case-pattern-bracket-quote-stripping's fix (fixes/81) --
-  that bug's repro looked like the same shape but had a different root
-  cause (case matching wrongly applying pathname-globbing's
-  leading-dot rule) and is fixed now; this is a distinct, narrower
-  bug this surfaced once the broader breakage stopped masking it.
+- expand-param-pattern-leading-dot: like the (now-fixed, fixes/82)
+  case-statement bug, `${var#pattern}`/`${var##pattern}`/
+  `${var%pattern}`/`${var%%pattern}` also pass SH_FNM_PERIOD to
+  path_fnmatch() (src/expand/expand_param.c), so a "?"/"*"/bracket
+  expression in the removal pattern refuses to match a leading "."
+  in the parameter's value, same underlying mistake (this notation
+  isn't pathname expansion either, and POSIX 2.6.2 gives it no such
+  rule). Found while fixing the case-statement version of this same
+  bug and confirmed against bash; not fixed here since it's outside
+  that fix's scope (a different function/callsite) and this one
+  wasn't in a failing test yet -- probably the very next thing worth
+  doing in this area given how similar the fix is.
 
-    case \. in "[.]") echo should-not-match; esac
-    # prints "should-not-match" -- a fully-quoted "[.]" is a literal
-    # 3-character string and shouldn't match the single character "."
-
+    X=".abc"
+    echo "${X#?}"
+    # prints ".abc" (unchanged) -- bash prints "abc"; "?" should match
+    # the leading "." like any other single character here
 

@@ -96,6 +96,19 @@ enum subst_type {
    this doesn't fully resolve either way -- see assign-cmdsubst-value-
    loses-escaping in BUGS. */
 #define X_UNESCAPED 0x10000000
+/* the result feeds path_fnmatch() (case patterns, ${var%pattern} and
+   friends) rather than being used as a plain string value -- keep the
+   parser's protective backslash-doubling (parse_isesc) intact instead
+   of running expand_cat()'s usual expand_unescape() pass on it, since
+   that doubling *is* path_fnmatch()'s own escape syntax for "this
+   char is literal, not a wildcard". Without this, a quoted glob-
+   special char that's meant to end up literal for matching purposes
+   (e.g. the fully-quoted case pattern "[.]", parsed as "\[.\]" to mark
+   both brackets literal) had its escaping stripped down to a plain
+   "[.]" before ever reaching path_fnmatch(), which then read it back
+   as a live bracket expression instead of a 3-character literal
+   (case-quoted-bracket-not-literal, fixes/82). */
+#define X_PATTERN 0x20000000
 
 extern char expand_ifs[4];
 

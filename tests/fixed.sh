@@ -1522,4 +1522,27 @@ assert_equal "matched" "$X81B" "a bracket expression explicitly containing a lit
 X81C=$(y="."; case "$y" in ["."]) echo matched;; *) echo no;; esac)
 assert_equal "matched" "$X81C" "a bracket expression with a quoted dot inside it must match a leading-dot scrutinee (the original BUGS repro)"
 
+## fixes/82 (case-quoted-bracket-not-literal): a case pattern that is a
+## bracket expression *entirely* inside quotes (all of "[", ".", "]"
+## quoted, not just the char inside the brackets) must become the
+## literal 3-character string "[.]" after quote removal, not stay a
+## live bracket expression -- so it must NOT match a bare ".", only
+## the literal text "[.]" itself.
+X82=$(case \. in "[.]") echo should-not-match;; *) echo no-match;; esac)
+assert_equal "no-match" "$X82" "a fully-quoted bracket-expression-shaped case pattern is a literal string, not a live bracket expression"
+
+X82B=$(case "[.]" in "[.]") echo literal-match;; *) echo no;; esac)
+assert_equal "literal-match" "$X82B" "a fully-quoted bracket-expression-shaped case pattern must still match its own literal text"
+
+## fixes/82 also had to teach path_fnmatch() that a backslash inside
+## an *unquoted* bracket expression escapes the next char to always be
+## a literal member (never a closing "]", range dash, or class
+## opener) -- otherwise the fix above regressed these two, which
+## worked before it.
+X82C=$(case \] in [\]] ) echo matched;; esac)
+assert_equal "matched" "$X82C" "a backslash-escaped ] inside an unquoted bracket expression must still match a literal ] (no regression)"
+
+X82D=$(case \] in ["]"]) echo matched;; esac)
+assert_equal "matched" "$X82D" "a bracket expression with just the closing ] quoted inside it must still match a literal ] (no regression)"
+
 summary

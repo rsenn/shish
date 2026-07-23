@@ -33,7 +33,7 @@ eval_case(struct eval* e, struct ncase* ncase) {
 
   for(node = ncase->list; node; node = node->next) {
     for(pat = node->ncasenode.pats; pat; pat = pat->next) {
-      expand_catsa(pat, &pattern, X_NOSPLIT);
+      expand_catsa(pat, &pattern, X_NOSPLIT | X_PATTERN);
       stralloc_nul(&pattern);
 
       /* unlike pathname expansion (globbing), case-statement pattern
