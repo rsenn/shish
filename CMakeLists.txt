@@ -317,24 +317,27 @@ if(DO_TESTS)
   # its per-case PASSED/FAILED/SKIPPED result file into a single pass/fail
   # for the whole test.
   #
-  # Disabled: tests/posix/fnmatch-p.tst hangs the testee at 100% CPU (see
-  # BUGS), so a plain `ctest`/`make test` run that includes this suite
-  # never returns. Re-enable once that's fixed, or run it manually via
-  # tests/run-tst.sh (see CLAUDE.md).
-  #
-  # if(DO_CONFORMANCE_TESTS)
-  #   foreach(SUITE posix yash)
-  #     file(GLOB CONFORMANCE_TESTS "tests/${SUITE}/*.tst")
-  #
-  #     foreach(TEST ${CONFORMANCE_TESTS})
-  #       basename(NAME "${TEST}")
-  #       add_test(
-  #         NAME "${SUITE}/${NAME}"
-  #         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-  #         COMMAND sh "tests/run-tst.sh" "${SHISH_PATH}" "tests/${SUITE}" "${NAME}")
-  #       set_tests_properties("${SUITE}/${NAME}" PROPERTIES TIMEOUT 120)
-  #     endforeach(TEST ${CONFORMANCE_TESTS})
-  #   endforeach(SUITE posix yash)
-  # endif(DO_CONFORMANCE_TESTS)
+  # Re-enabled (2026-07-23): this was disabled because
+  # tests/posix/fnmatch-p.tst hung the testee at 100% CPU, which made a
+  # plain `ctest`/`make test` run that included this suite never return.
+  # Fixed by path_fnmatch()'s bracket-class rewrite (fixes/67) -- confirmed
+  # the whole suite (239 files across both directories) now completes in
+  # about a minute with no hangs. Most individual files still fail (POSIX
+  # compliance triage is ongoing, see TODO.md Goal 2) -- that's expected
+  # and is what CTest is here to report, not a reason to keep this off.
+  if(DO_CONFORMANCE_TESTS)
+    foreach(SUITE posix yash)
+      file(GLOB CONFORMANCE_TESTS "tests/${SUITE}/*.tst")
+
+      foreach(TEST ${CONFORMANCE_TESTS})
+        basename(NAME "${TEST}")
+        add_test(
+          NAME "${SUITE}/${NAME}"
+          WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+          COMMAND sh "tests/run-tst.sh" "${SHISH_PATH}" "tests/${SUITE}" "${NAME}")
+        set_tests_properties("${SUITE}/${NAME}" PROPERTIES TIMEOUT 120)
+      endforeach(TEST ${CONFORMANCE_TESTS})
+    endforeach(SUITE posix yash)
+  endif(DO_CONFORMANCE_TESTS)
 endif(DO_TESTS)
 message("TESTS: ${TESTS}")

@@ -235,6 +235,47 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
      pre-existing failures before and after — an unrelated, already
      known, unstarted-triage baseline, not something this touched).
 
+   - **Update (2026-07-23, later):** `expr`'s `STRING : PATTERN` match
+     operator implemented (`fixes/78`, user-requested) — the classic
+     autoconf/libtool idiom `expr conftest.o : '.*\.\(.*\)'` (strip a
+     file extension) now works, along with the general BRE `:` match
+     operator (literals, `.`, `*`, bracket expressions with ranges/
+     negation/`[:class:]`, `^`/`$` anchors, up to 9 `\( \)` capture
+     groups). `builtin_expr.c` previously only implemented arithmetic
+     (via the same tokenizer `$((...))` uses) plus `length`/`index`;
+     `:` was entirely unhandled. Implemented as a small, self-contained
+     backtracking BRE matcher (no libc `<regex.h>` — consistent with
+     this project's general avoidance of libc facilities, and several
+     cross-build targets, e.g. dietlibc, either lack POSIX regex or
+     only have a stripped one). Cross-checked 20 cases against real GNU
+     `expr` (output and exit status both) with no mismatches. `expr`
+     moved from `EXTRA_BUILTINS` to `MINIMAL_BUILTINS`
+     (`cmake/Builtins.cmake`) so it's actually enabled (and testable)
+     by default, now that it does something real. New
+     `tests/builtin-expr.sh` (17 cases).
+
+     Found and fixed a real, separate, unrelated bug while testing
+     this: `sh -c command_string [command_name [args...]]` never
+     consumed `command_name` into `$0` — it left `$0` as the shish
+     binary's own path and every real argument ended up shifted by
+     one, with `command_name` itself leaking in as `$1`
+     (`dash-c-argv0-not-consumed`, `fixes/77`). Verified against
+     bash/dash. No dedicated regression test added for this one — the
+     test harness has no portable way to invoke `shish -c` recursively
+     from inside a `tests/*.sh` file (no exposed path to the testee);
+     verified manually instead.
+
+   - **Update (2026-07-23, incidental):** re-enabled the
+     `tests/posix`/`tests/yash` conformance suites in `CMakeLists.txt`
+     (they'd been commented out since `tests/posix/fnmatch-p.tst` used
+     to hang the testee — fixed since, by `fixes/67`). Confirmed the
+     full 239-file corpus now completes in about a minute with no
+     hangs from `ctest` itself; found one new one, though:
+     `tests/yash/random-y.tst` hangs and hits its own 120s per-file
+     `TIMEOUT`, logged as `yash-random-y-tst-hangs` in `BUGS` — bounded
+     by that timeout, so it doesn't block `ctest` from terminating, and
+     wasn't a reason to leave the suite disabled.
+
 ---
 
 ## Goal 2 — Broader POSIX compliance

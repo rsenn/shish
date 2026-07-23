@@ -1,3 +1,19 @@
+- yash-random-y-tst-hangs: `tests/yash/random-y.tst` hangs the testee
+  (confirmed via CTest's 120s per-file TIMEOUT actually triggering, not
+  just "slow") -- found immediately after re-enabling the
+  `tests/posix`/`tests/yash` conformance suites in CMakeLists.txt. The
+  rest of the suite (238 other files) completes fine, so this is
+  bounded/contained by the existing TIMEOUT property, not a reason to
+  disable the suite again. `$RANDOM` itself varies correctly when
+  checked directly (`echo $RANDOM $RANDOM $RANDOM` gives different
+  values each time), so the two busy-`until`-loops the test opens with
+  aren't the obvious suspect; the file's later cases pipe a function's
+  output through `print > seeded1; print > seeded2; diff seeded1
+  seeded2` inside subshells, which is closer to the shape of the
+  already-logged `subshell-exit-trap-output-misdirected` and
+  `kill-arg-redirect-parse` bugs (subshell + redirect interactions).
+  Not yet isolated to a specific line within the file.
+
 - subshell-exit-trap-output-misdirected: an EXIT (also DEBUG/RETURN)
   trap's own output always lands on the top-level shell's original
   stdout, never wherever the (sub)shell whose exit fired it had its

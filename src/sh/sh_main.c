@@ -181,9 +181,20 @@ main(int argc, char** argv, char** envp) {
 #endif
 
   /* if there were cmds supplied with the option
-     -c then read input from this string. */
-  if(cmds)
+     -c then read input from this string. POSIX: "sh -c command_string
+     [command_name [argument...]]" -- command_name, if present, becomes
+     $0 (and is consumed here so it doesn't also leak into $1 as an
+     extra positional parameter below); the remaining arguments become
+     $1, $2, ... Without this, $0 stayed the shish binary's own path
+     and every real argument was off by one, with command_name itself
+     showing up as $1 instead of being consumed as $0
+     (dash-c-argv0-not-consumed, fixes/77). */
+  if(cmds) {
     fd_string(fd_src, cmds, str_len(cmds));
+
+    if(argv[shell_optind])
+      sh_argv0 = argv[shell_optind++];
+  }
 
   /* if there is an argument we open it as input file */
   else if(argv[shell_optind]) {

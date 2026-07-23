@@ -45,7 +45,7 @@
 #define BUILTIN_EXPORT 1
 #endif
 #ifndef BUILTIN_EXPR
-#define BUILTIN_EXPR 0
+#define BUILTIN_EXPR 1
 #endif
 #ifndef BUILTIN_FALSE
 #define BUILTIN_FALSE 1

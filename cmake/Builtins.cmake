@@ -9,6 +9,7 @@ list(
   exec
   exit
   export
+  expr
   getopts
   hash
   history
@@ -36,7 +37,6 @@ list(
   cat
   chmod
   dirname
-  expr
   hostname
   ln
   mkdir
