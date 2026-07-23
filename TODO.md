@@ -472,14 +472,37 @@ exercised `fg`/`bg`/background jobs through a pty). Sorted by leverage.
 
    Verifying this surfaced a real, unrelated, deep pre-existing bug
    (confirmed present with `sig_push()`/`sig_pop()` stashed out too),
-   now in `BUGS`: `subshell-exit-trap-output-misdirected` -- a
-   (sub)shell's EXIT/DEBUG/RETURN trap's own output always lands on the
-   top-level shell's original stdout, never wherever that (sub)shell's
-   own output was actually going, and the parent doesn't wait for the
-   trap to finish before continuing. Likely an eval-frame/fdstack
-   teardown ordering issue in `trap_exit()`/`trap_debug()`/
-   `trap_return()`'s destructor-callback path; not root-caused past
-   that.
+   logged as `subshell-exit-trap-output-misdirected` -- since **fixed
+   (2026-07-23, `fixes/80`)**. Two independent bugs turned out to be
+   bundled under that one symptom: (1) `eval_subshell()` doesn't fork
+   (it isolates a subshell's vars/functions/fds via push-and-pop
+   instead, see `exec_functions_save`/`restore`), but never did the
+   same for the global `traps` list -- a trap installed inside `(...)`
+   stayed installed after the subshell "returned" and only fired later
+   on the *parent's* own eventual exit, with the parent's fdstack/
+   stdout in effect. Fixed with the same snapshot/restore pattern as
+   functions (`trap_snapshot_save`/`_restore` in `builtin_trap.c`,
+   called from `eval_subshell.c`; `trap_uninstall()` now also defers
+   freeing a removed/replaced node while `exec_subshell_depth` is
+   nonzero, exactly like `eval_function.c` already does for redefined
+   functions, so a snapshot's saved pointers can't dangle). (2) a
+   subshell ending via an explicit `exit` double-fired its own EXIT
+   trap: `sh_exit()` unconditionally called `trap_exit()` directly
+   *and* called `eval_exit()`, which for a subshell frame *also* runs
+   the same trap through the frame's destructor callback before its
+   `longjmp`. Fixed by reordering `sh_exit()` to try `eval_exit()`
+   first (which only returns without jumping when there's no subshell
+   boundary to unwind to, i.e. this really is the outermost shell
+   exiting) and only fall through to the direct `trap_exit()` call in
+   that top-level case. Separately, falling off the end of a subshell
+   body *without* an explicit `exit` never ran the destructor at all
+   (only the jump path did) -- `eval_subshell()` now also invokes it
+   for that path, while the subshell's own fdstack/vartab/sh context is
+   still current, matching bash/dash's observed behavior for all of:
+   normal fall-through, explicit `exit`, a real-signal trap installed
+   in a subshell (confirmed not to leak into the parent's disposition
+   either), and an outer trap left untouched by a same-named one set
+   and already fired inside a nested subshell.
 
 9. **Lower priority, bigger scope:** `sh_onsig` (`sh_main.c`'s SIGCHLD
    handler) calls `term_erase()`/`term_restore()`/buffered I/O directly

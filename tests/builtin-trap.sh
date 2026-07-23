@@ -69,19 +69,6 @@ assert_equal "2" "$X" "trap -p with no operand lists every installed trap"
 rm -f "$OUTFILE"
 
 ## an EXIT trap can be installed and shows up in trap -p's listing.
-## Deliberately *not* testing that a subshell's EXIT trap actually
-## *runs* here -- confirmed present before this rewrite too (same
-## behavior with sig_push()/sig_pop() stashed out), a subshell's EXIT
-## trap's own output always lands on the top-level shell's original
-## stdout instead of wherever the subshell's own output was going
-## (whether a plain "> file" redirect or a "$(...)" capture), and the
-## parent doesn't wait for it to actually finish running before moving
-## on to its own next command -- see BUGS:
-## subshell-exit-trap-output-misdirected. That's an eval-frame/fdstack
-## teardown timing issue in the EXIT-trap path generically (also
-## affects DEBUG/RETURN), unrelated to this rewrite (trap_install()'s
-## EXIT/DEBUG/RETURN branch is untouched -- only the real-signal branch
-## now goes through sig_push()/sig_pop()).
 ## checked at top level, not inside a subshell -- "trap -p"'s own
 ## output is also subject to the misdirection bug above once a
 ## subshell has an EXIT trap registered, for the same underlying
@@ -90,5 +77,35 @@ rm -f "$OUTFILE"
 X=$(trap 'echo should-show-in-listing' EXIT; trap -p EXIT)
 trap - EXIT
 assert_equal "trap 'echo should-show-in-listing' EXIT" "$X" "an EXIT trap can be installed and shows up in trap -p's listing"
+
+## fixes/80 (subshell-exit-trap-output-misdirected): a subshell's own
+## EXIT trap must run when the subshell itself finishes (whether by
+## falling off the end or via an explicit "exit"), using the
+## subshell's own fd context, not the top-level shell's -- and it must
+## not still be installed (leaked) afterward.
+X=$( ( trap 'echo trap-ran' EXIT; : ) )
+assert_equal "trap-ran" "$X" "a subshell's own EXIT trap fires -- into the subshell's own capture -- when its body falls off the end"
+
+X=$( ( trap 'echo trap-ran' EXIT; exit 0 ) )
+assert_equal "trap-ran" "$X" "a subshell's own EXIT trap fires exactly once (not twice) when the subshell exits via an explicit 'exit'"
+
+OUTFILE80=$(mktemp)
+( trap 'echo inner-trap' EXIT )
+trap -p EXIT > "$OUTFILE80"
+assert_equal "" "$(cat "$OUTFILE80")" "an EXIT trap set inside a subshell must not leak into the parent shell's trap list"
+rm -f "$OUTFILE80"
+
+## the parent's own EXIT trap must be unaffected by an unrelated one
+## set (and already fired) inside a subshell
+OUTFILE80B=$(mktemp)
+(
+  trap 'echo outer-trap' EXIT
+  ( trap 'echo inner-trap' EXIT; : )
+  echo after-subshell
+) > "$OUTFILE80B"
+assert_equal "inner-trap
+after-subshell
+outer-trap" "$(cat "$OUTFILE80B")" "an outer EXIT trap still fires at the right time, unaffected by a same-named trap set and already run inside a nested subshell"
+rm -f "$OUTFILE80B"
 
 summary

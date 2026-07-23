@@ -5,6 +5,7 @@
 #include "../source.h"
 #include "../sh.h"
 #include "../eval.h"
+#include "../exec.h"
 #include "../fdtable.h"
 #include "../expand.h"
 #include "../../lib/sig.h"
@@ -173,9 +174,19 @@ trap_uninstall(int sig) {
       if((char)t->sig > 0)
         sig_pop(sig);
 
-      tree_free(t->tree);
       *ptr = t->next;
-      alloc_free(t);
+
+      /* while a subshell is evaluating, the parent shell's
+         trap_snapshot_save() may still reference this node (see
+         eval_subshell.c) -- leak it for now (orphaned but safe, same
+         tradeoff eval_function.c already makes for redefined
+         functions via the same exec_subshell_depth counter);
+         trap_snapshot_restore() frees anything left over once the
+         subshell that's actually responsible for it exits. */
+      if(!exec_subshell_depth) {
+        tree_free(t->tree);
+        alloc_free(t);
+      }
 
       return 0;
     }
@@ -236,6 +247,94 @@ trap_install(int sig, union node* tree) {
   } else {
     assert(0);
   }
+}
+
+/* snapshot/restore the global trap list around a subshell (see
+ * eval_subshell.c), the same way exec_functions_save/restore isolates
+ * function definitions -- without this, any "trap CMD SIG" run inside
+ * "( ... )" (including its own implicit EXIT trap) stayed installed
+ * after the subshell "returned" (eval_subshell doesn't fork; it's the
+ * same process, so nothing else would ever remove it), and fired
+ * later on the *parent's* next exit with the parent's own fdstack/
+ * stdout in effect (subshell-exit-trap-output-misdirected). The saved
+ * array is NULL-terminated rather than paired with a count, since a
+ * live trap node pointer is never itself NULL.
+ * ----------------------------------------------------------------------- */
+void*
+trap_snapshot_save(void) {
+  trap* p;
+  trap** nodes;
+  size_t n = 0, i;
+
+  for(p = traps; p; p = p->next)
+    n++;
+
+  if(!n)
+    return NULL;
+
+  nodes = alloc((n + 1) * sizeof(trap*));
+
+  for(p = traps, i = 0; p; p = p->next, i++)
+    nodes[i] = p;
+
+  nodes[n] = NULL;
+
+  return nodes;
+}
+
+void
+trap_snapshot_restore(void* handle) {
+  trap** nodes = handle;
+  trap* t = traps;
+  size_t n = 0, k;
+
+  if(nodes)
+    while(nodes[n])
+      n++;
+
+  /* undo anything installed fresh during the subshell: a node not
+     present in the saved array didn't exist when the subshell
+     started, so free it and, for a real signal, sig_pop() to revert
+     the OS-level handler trap_install() gave it. A node that DOES
+     appear in the saved array survived because trap_uninstall()'s
+     exec_subshell_depth guard skipped freeing it even if the
+     subshell removed or replaced it -- relinking the saved array
+     below restores the parent's exact list regardless of whatever
+     surgery happened to it in the meantime. */
+  while(t) {
+    trap* next = t->next;
+    int keep = 0;
+
+    for(k = 0; k < n; k++) {
+      if(nodes[k] == t) {
+        keep = 1;
+        break;
+      }
+    }
+
+    if(!keep) {
+      if((char)t->sig > 0)
+        sig_pop(t->sig);
+
+      tree_free(t->tree);
+      alloc_free(t);
+    }
+
+    t = next;
+  }
+
+  for(k = 0; k + 1 < n; k++)
+    nodes[k]->next = nodes[k + 1];
+
+  if(n) {
+    nodes[n - 1]->next = NULL;
+    traps = nodes[0];
+  } else {
+    traps = NULL;
+  }
+
+  if(nodes)
+    alloc_free(nodes);
 }
 
 /* output stuff
