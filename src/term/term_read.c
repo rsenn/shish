@@ -75,8 +75,9 @@ term_read(int fd, char* buf, unsigned int len) {
       /* backspace */
       case 127:
       case '\b': term_backspace(); break;
+      /* tab triggers filename completion */
+      case '\t': term_complete(); break;
       /* printable chars */
-      case '\t': c = ' ';
       default:
         if(term_insert)
           term_insertc(c);
