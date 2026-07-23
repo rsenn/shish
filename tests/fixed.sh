@@ -1507,4 +1507,19 @@ assert_equal "-9 z" "$X79B" "same bare-digit-redirection case with a different -
 X79C=$(echo a "x" 2>/dev/null)
 assert_equal "a x" "$X79C" "a plain (non-dash) preceding argument must still parse the following redirection correctly (no regression)"
 
+## fixes/81 (case-pattern-bracket-quote-stripping, root-caused as
+## "case matching wrongly applied pathname-globbing's leading-dot
+## rule"): eval_case.c passed SH_FNM_PERIOD to path_fnmatch(), so any
+## case statement whose scrutinee started with "." failed to match
+## "*"/"?"/a bracket expression at all -- including the universal "*"
+## fallback, which normally can never fail to match anything.
+X81=$(case "." in *) echo matched;; esac)
+assert_equal "matched" "$X81" "case's universal * pattern must match a scrutinee value that starts with a literal dot"
+
+X81B=$(case "." in [.]) echo matched;; *) echo no;; esac)
+assert_equal "matched" "$X81B" "a bracket expression explicitly containing a literal dot must match a leading-dot scrutinee"
+
+X81C=$(y="."; case "$y" in ["."]) echo matched;; *) echo no;; esac)
+assert_equal "matched" "$X81C" "a bracket expression with a quoted dot inside it must match a leading-dot scrutinee (the original BUGS repro)"
+
 summary

@@ -297,6 +297,28 @@ etc. — see `fixes/*.patch` for the reasoning behind each). What's left:
    hand-pick POSIX sections to fix ahead of that data. (Not done in this
    pass — wiring it up was the deliverable; triaging the failure list is
    its own follow-on task.)
+   - **Update (2026-07-23):** triaged `tests/posix/fnmatch-p.tst`'s
+     `case` failures, logged as `case-pattern-bracket-quote-stripping`
+     in `BUGS` ("looked like" a parser bug — a quoted bracket-expression
+     `case` pattern matching nothing at all). Root cause turned out to
+     be much broader than the name suggested and unrelated to
+     quoting/brackets specifically: `eval_case.c` passed `SH_FNM_PERIOD`
+     to `path_fnmatch()`, the flag that makes pathname *globbing* hide a
+     leading `.` from wildcards — but `case` pattern matching (POSIX
+     2.13.1) has no such rule, so *any* `case` statement whose
+     scrutinee started with `.` failed to match `*`/`?`/a bracket
+     expression at all, including the universal `*` fallback (bracket
+     expressions with quoting inside just happened to be what the
+     failing test used). Fixed (`fixes/81`) by dropping the flag
+     (`path_fnmatch(..., 0)`); confirmed dotfile *globbing* is
+     unaffected (separate code path, `expand_glob.c`, untouched).
+     Verified against bash/dash. Removing this bug's masking effect
+     surfaced one further, genuinely distinct bug in the same test
+     block, now logged as `case-quoted-bracket-not-literal`: a fully
+     quoted bracket-expression-shaped pattern (`"[.]"`, all three chars
+     quoted, unlike `[".]"` where only the char inside is quoted)
+     should reduce to the literal 3-character string `[.]` after quote
+     removal, but is still treated as a live bracket expression.
 6. **Process note, not code:** most recent commits (`git log --oneline`)
    have the placeholder message `...`. `fixes/*.patch` is currently the
    only place the *why* for the last 18 fixes is written down, and it's an
