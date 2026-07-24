@@ -18,6 +18,17 @@ parse_here(struct parser* p, stralloc* delim, int nosubst, int strip) {
   p->tree = NULL;
   p->node = NULL;
 
+  /* when redir_source() has more than one here-doc queued for the
+     same command line (e.g. `cmd <<A <<B`), it reuses this same
+     struct parser across calls -- one per queued here-doc. The loop
+     below breaks out as soon as a line matches the delimiter without
+     ever flushing/clearing p->sa (the only path that clears it is the
+     parse_string() call later in the loop, which a delimiter match
+     skips), so the previous here-doc's matched delimiter line was
+     left sitting in p->sa and got prepended onto the very first line
+     the next here-doc read. */
+  stralloc_zero(&p->sa);
+
   /* set the here-doc flag on the source so we won't start
      parsing any other here docs before finishing this one */
   source->mode |= SOURCE_HERE;

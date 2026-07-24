@@ -77,7 +77,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
        have it handled -> job_signal() -> job_bypid() finding nothing)
        before job_new() below has even registered the job. */
 #if !WINDOWS_NATIVE
-    sig_block(SIGINT);
+    //sig_block(SIGINT);
     sig_block(SIGCHLD);
 #endif
 
@@ -169,6 +169,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
            end-of-function "hand the terminal back to us" check
            compares against this global -- without updating it here
            too, that check never notices anything changed and the
+           F
            terminal stays with the now-exited child's defunct
            process group forever, wedging the shell's own next
            terminal read behind a SIGTTIN. This is also what makes a

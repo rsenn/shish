@@ -1614,4 +1614,32 @@ X85=$(V85=hi; cat <<-EOF
 )
 assert_equal "line with hi" "$X85" "<<- must strip leading tabs even on a line whose tabs are followed by an expansion"
 
+## fixes/86: `redir_source()` reuses one `struct parser` across every
+## here-doc queued on the same command line (e.g. `cmd <<A <<B`), one
+## `parse_here()` call per queued here-doc. `parse_here()`'s loop
+## breaks out as soon as a line matches the delimiter, but that break
+## skips the `parse_string()` call that is the only thing that ever
+## flushes/clears `p->sa` -- so the matched delimiter line's raw text
+## was left sitting in `p->sa` and got prepended onto the first line
+## the *next* here-doc in the queue read, corrupting its body. Fixed
+## by zeroing `p->sa` at the top of `parse_here()`, alongside the
+## existing `p->tree`/`p->node` reset for the same reused-parser case.
+X86=$(cat <<A <<B
+first
+A
+second
+B
+)
+assert_equal "second" "$X86" "the later of two here-docs redirected to the same fd must fully win, with no leftover from the first"
+
+X86B=$(cat <<A <<B <<C
+one
+A
+two
+B
+three
+C
+)
+assert_equal "three" "$X86B" "the same holds with three here-docs queued on one command line"
+
 summary

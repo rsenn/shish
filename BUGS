@@ -1,22 +1,3 @@
-- heredoc-multi-same-fd-leaks-first-body: when two here-docs redirect
-  to the same fd on one command (`cat <<A <<B`), POSIX says the
-  rightmost redirection wins and only its body should be visible, but
-  shish concatenates the first here-doc's terminating delimiter line
-  onto the second's body:
-
-    printf 'cat <<A <<B\nfirst\nA\nsecond\nB\n' | shish -s
-    # prints "A\nsecond"; should print just "second" (bash: "second")
-
-  Note it's specifically the delimiter word "A" that leaks, not
-  "first" -- so the first here-doc's own body is parsed/discarded
-  correctly, but something in `redir_source()`/`redir_addhere()`'s
-  per-nredir chaining (`src/redir/redir_source.c`,
-  `src/redir/redir_addhere.c`) or the `fd_push()`/`fd_here()` fd-stack
-  setup (`src/fd/fd_push.c`, `src/fd/fd_here.c`) re-surfaces the first
-  redirection's delimiter text into the fd the second redirection is
-  supposed to fully own. Not isolated further yet -- found while
-  writing `tests/here-doc.sh`.
-
 - yash-random-y-tst-hangs: `tests/yash/random-y.tst` hangs (bounded by
   CTest's 120s per-file TIMEOUT). The rest of the suite is fine.
   `$RANDOM` itself varies correctly when checked directly, so the

@@ -103,11 +103,23 @@ EOF
 assert_equal "" "$Y" "a here-doc with an empty body produces empty output"
 
 ## --- multiple here-docs on the same command line, consumed in order ---
-## NOTE: `cat <<A <<B` (two here-docs targeting the same fd on one
-## command) is intentionally not asserted here -- it currently leaks
-## the first here-doc's delimiter line into the output instead of
-## letting the rightmost redirection fully win; see BUGS:
-## heredoc-multi-same-fd-leaks-first-body.
+Y=$(cat <<A <<B
+first
+A
+second
+B
+)
+assert_equal "second" "$Y" "the later of two here-docs redirected to the same fd wins"
+
+Y=$(cat <<A <<B <<C
+one
+A
+two
+B
+three
+C
+)
+assert_equal "three" "$Y" "with three here-docs on the same fd, the last one still wins cleanly"
 
 Y=$(
   cat <<A
