@@ -50,11 +50,17 @@ strrpbrk(const char* s, const char* charset) {
  * directories must be included
  */
 
+static int
+glob_cmp(const void* a, const void* b) {
+  return lstrcmpA(*(char* const*)a, *(char* const*)b);
+}
+
 int
 glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* pglob) {
   int result;
   char szRelative[1 + _MAX_PATH];
   const char* file_part;
+  size_t dirlen;
   WIN32_FIND_DATAA find_data;
   HANDLE hFind;
   char* buffer;
@@ -83,7 +89,12 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
 
       dw = ExpandEnvironmentStringsA(&szPattern2[0], &szPattern3[0], NUM_ELEMENTS(szPattern3) - 1);
 
-      if(0 != dw) {
+      /* dw comes back as the number of chars *needed* (including the
+       * NUL) when the destination was too small -- that can exceed
+       * NUM_ELEMENTS(szPattern3), which would underflow the size
+       * passed to lstrcpynA below into a huge value. Bail out and
+       * fall back to using the pattern verbatim instead. */
+      if(0 != dw && dw <= NUM_ELEMENTS(szPattern3)) {
         (void)lstrcpynA(&szPattern3[0] + dw - 1, &pattern[1], (int)(NUM_ELEMENTS(szPattern3) - dw));
         szPattern3[NUM_ELEMENTS(szPattern3) - 1] = '\0';
 
@@ -99,12 +110,18 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
 
     (void)lstrcpyA(szRelative, effectivePattern);
     szRelative[file_part - effectivePattern] = '\0';
+    dirlen = (size_t)(file_part - effectivePattern);
   } else {
     szRelative[0] = '\0';
     leafMost = effectivePattern;
+    dirlen = 0;
   }
 
-  bMagic0 = (leafMost == strpbrk(leafMost, "?*"));
+  /* does the leaf component itself contain a wildcard anywhere, not
+   * just as its first character -- used below to decide whether
+   * dotfiles/"."/".." should be filtered out of a wildcard match
+   * (they should, unless the pattern explicitly starts with '.') */
+  bMagic0 = (NULL != strpbrk(leafMost, "?*"));
 
   hFind = FindFirstFileA(effectivePattern, &find_data);
   buffer = NULL;
@@ -140,11 +157,9 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
       }
 
       if(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-#ifdef GLOB_ONLYFILE
         if(flags & GLOB_ONLYFILE) {
           continue;
         }
-#endif /* GLOB_ONLYFILE */
 
         if(bMagic0 && GLOB_NODOTSDIRS == (flags & GLOB_NODOTSDIRS)) {
           /* Pattern must begin with '.' to match either dots directory */
@@ -154,26 +169,16 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
         }
 
         if(flags & GLOB_MARK) {
-#if 0
-                    if(find_data.cFileName[0] >= 'A' && find_data.cFileName[0] <= 'M')
-#endif /* 0 */
           (void)lstrcatA(find_data.cFileName, "/");
         }
       } else {
         if(flags & GLOB_ONLYDIR) {
           /* Skip all further actions, and get the next entry */
-#if 0
-                    if(find_data.cFileName[0] >= 'A' && find_data.cFileName[0] <= 'M')
-#endif /* 0 */
           continue;
         }
       }
 
-      cch = lstrlenA(find_data.cFileName);
-
-      if(NULL != file_part) {
-        cch += file_part - effectivePattern;
-      }
+      cch = lstrlenA(find_data.cFileName) + (int)dirlen;
 
       new_cbAlloc = (size_t)cbCurr + cch + 1;
 
@@ -197,7 +202,7 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
         cbAlloc = new_cbAlloc;
       }
 
-      (void)lstrcpynA(buffer + cbCurr, szRelative, 1 + (file_part - effectivePattern));
+      (void)lstrcpynA(buffer + cbCurr, szRelative, (int)(1 + dirlen));
       (void)lstrcatA(buffer + cbCurr, find_data.cFileName);
       cbCurr += cch + 1;
 
@@ -232,37 +237,27 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
           *begin = NULL;
         }
 
-        /* Sort, or no sort. */
+        /* Lay the pointers down in the order the entries were found
+         * in, then sort them alphabetically -- POSIX glob() sorts by
+         * default and only skips that when GLOB_NOSORT is passed. */
         pp = (char**)new_buffer + pglob->gl_offs;
-        begin = pp;
-        end = begin + cMatches;
+        end = pp + cMatches;
 
-        if(flags & GLOB_NOSORT) {
-          /* The way we need in order to test the removal of dots in the
-           * findfile_sequence.
-           */
-          *end = NULL;
+        for(begin = pp, next_str = buffer + cbPointers; begin != end; ++begin) {
+          *begin = next_str;
 
-          for(begin = pp, next_str = buffer + cbPointers; begin != end; --end) {
-            *(end - 1) = next_str;
+          /* Find the next s. */
+          next_str += 1 + lstrlenA(next_str);
+        }
+        *begin = NULL;
 
-            /* Find the next s. */
-            next_str += 1 + lstrlenA(next_str);
-          }
-        } else {
-          /* The normal way. */
-          for(begin = pp, next_str = buffer + cbPointers; begin != end; ++begin) {
-            *begin = next_str;
-
-            /* Find the next s. */
-            next_str += 1 + lstrlenA(next_str);
-          }
-          *begin = NULL;
+        if(0 == (flags & GLOB_NOSORT)) {
+          qsort(pp, cMatches, sizeof(char*), glob_cmp);
         }
 
         /* Return results to caller. */
-        pglob->gl_pathc = (int)cMatches;
-        pglob->gl_matchc = (int)cMatches;
+        pglob->gl_pathc = cMatches;
+        pglob->gl_matchc = cMatches;
         pglob->gl_flags = 0;
 
         if(bMagic) {
@@ -278,8 +273,11 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
   }
 
   if(GLOB_NOMATCH == result) {
+    /* GLOB_TILDE_CHECK: a "~user" that failed to expand to a real
+     * home directory should stay a genuine no-match, not get
+     * synthesized back as a literal path below. */
     if((flags & GLOB_TILDE_CHECK) && effectivePattern == szPattern3) {
-      result = GLOB_NOMATCH;
+      /* leave result as GLOB_NOMATCH */
     } else if(bNoMagic || (flags & GLOB_NOCHECK)) {
       size_t cbNeeded = ((2 + pglob->gl_offs) * sizeof(char*)) + (1 + strlen(effectivePattern));
       char** pp = (char**)realloc(buffer, cbNeeded);
