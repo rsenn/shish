@@ -1598,4 +1598,20 @@ assert_equal "matched" "$X84G" "an ordinary bare-character range is unaffected b
 X84H=$(case - in [a-]) echo matched;; *) echo no;; esac)
 assert_equal "matched" "$X84H" "a trailing dash right before the closing ] is still a literal member, not a range (no regression)"
 
+## fixes/85: `<<-` only stripped a here-doc body line's leading tabs
+## from whatever chunk of `p->sa` was still pending when
+## parse_squoted/parse_dquoted returned -- but parse_dquoted flushes
+## p->sa into a tree node early, as soon as it hits a `$`/`` ` `` (see
+## parse_dquoted.c), which happens *before* parse_here.c's post-hoc
+## strip ever runs. So a line whose leading tabs were followed later
+## by a parameter/command expansion never got stripped, while a line
+## with no expansion (or an expansion right at the start) did. Fixed
+## by stripping leading tabs straight off the source at the start of
+## each body line, before parse_squoted/parse_dquoted ever reads it.
+X85=$(V85=hi; cat <<-EOF
+	line with ${V85}
+	EOF
+)
+assert_equal "line with hi" "$X85" "<<- must strip leading tabs even on a line whose tabs are followed by an expansion"
+
 summary

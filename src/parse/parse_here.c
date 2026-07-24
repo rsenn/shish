@@ -23,6 +23,21 @@ parse_here(struct parser* p, stralloc* delim, int nosubst, int strip) {
   source->mode |= SOURCE_HERE;
 
   for(;;) {
+    /* <<- strips leading tabs from every body line, including the
+       line containing the closing delimiter (POSIX 2.7.4). This has
+       to happen on the raw source before parse_squoted/parse_dquoted
+       ever sees the line: those parsers flush p->sa into a tree node
+       as soon as they hit a '$'/'`' (see parse_dquoted.c), which is
+       before control ever returns here, so a post-hoc strip of p->sa
+       below would miss a line's leading tabs whenever an expansion
+       appeared anywhere on that line. */
+    if(strip) {
+      char c;
+
+      while(source_peek(&c) > 0 && c == '\t')
+        source_skip();
+    }
+
     p->flags |= P_HERE;
 
     /* if nosubst is set we treat it like single-quoted otherwise
@@ -34,20 +49,6 @@ parse_here(struct parser* p, stralloc* delim, int nosubst, int strip) {
       stralloc_catc(&p->sa, (nosubst ? '\'' : '"'));
       continue;
     }*/
-
-    /* <<- strips leading tabs from every body line, including the
-       line containing the closing delimiter (POSIX 2.7.4) */
-    if(strip && p->sa.len) {
-      size_t i = 0;
-
-      while(i < p->sa.len && p->sa.s[i] == '\t')
-        i++;
-
-      if(i) {
-        byte_copy(p->sa.s, p->sa.len - i, p->sa.s + i);
-        p->sa.len -= i;
-      }
-    }
 
     if(p->sa.len == delim->len + 1) {
       stralloc* sa = &p->sa;
