@@ -14,5 +14,6 @@ source_peekc() {
 
   if(source_peekn(&c, 0) <= 0)
     return -1;
+  
   return (unsigned int)(unsigned char)c;
 }

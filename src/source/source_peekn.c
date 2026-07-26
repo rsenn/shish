@@ -16,15 +16,18 @@ source_peekn(char* c, unsigned n) {
   for(;;) {
     char *x, *y;
     unsigned i, j;
+
     /* no data available, try to get some */
     if((unsigned)ret <= lookahead) {
       if((ret = buffer_prefetch(b, lookahead + 1)) <= 0)
         return ret;
+
 #ifdef DEBUG
       debug_ulong("source_peekn", ret, 0);
       debug_nl_fl();
 #endif
     }
+
     x = buffer_PEEK(b);
     y = buffer_END(b);
     j = y - x;
@@ -35,6 +38,7 @@ source_peekn(char* c, unsigned n) {
         if(i + 1 >= j) {
           if((ret = buffer_prefetch(b, i + 1)) <= 0)
             return ret;
+
           y = buffer_END(b);
           j = y - x;
         }
@@ -54,10 +58,8 @@ source_peekn(char* c, unsigned n) {
   }
 
   /* got data, peek the char */
-  if(c) {
-
+  if(c)
     *c = b->x[b->p + n];
-  }
 
   return ret;
 }
@@ -68,5 +70,6 @@ source_peeknc(unsigned pos) {
 
   if(source_peekn(&c, pos) <= 0)
     return -1;
+  
   return (unsigned int)(unsigned char)c;
 }

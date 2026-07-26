@@ -126,7 +126,6 @@ void sh_popargs(struct arg* arg);
 void sh_push(struct env* env);
 void sh_pushargs(struct arg* arg);
 void sh_setargs(char** argv, int dup);
-int sh_subshell(union node* list, int flags);
 void sh_usage(void);
 
 #endif /* SH_H */

@@ -47,7 +47,6 @@ main(int argc, char** argv, char** envp) {
   struct fd* fd;
   struct source src;
   char* cmds = NULL;
-  /*  struct var* envvars;*/
   struct parser p;
   stralloc cmd;
   enum tok_flag tok;
@@ -87,17 +86,6 @@ main(int argc, char** argv, char** envp) {
   sh_name = path_basename(sh_argv0);
 
   shell_init(buffer_2, sh_name);
-
-  /* import environment variables to the root vartab */
-  /*  for(c = 0; envp[c]; c++)
-      ;
-  #ifdef HAVE_ALLOCA
-    if(!(envvars = alloca(sizeof(struct var) * c)))
-  #endif
-      envvars = alloc(sizeof(struct var) * c);
-
-    for(c = 0; envp[c]; c++) var_import(envp[c], V_EXPORT, &envvars[c]);
-  */
 
   /* parse command line arguments */
   while((c = shell_getopt(argc, argv, "c:xeiw:l:")) > 0)
@@ -151,9 +139,8 @@ main(int argc, char** argv, char** envp) {
 
     sh_argv0 = argv[shell_optind++];
 
-    if(inplace) {
+    if(inplace) 
       out_fd = open_temp(&tmpl);
-    }
   }
 
   else if(fd_in)
@@ -165,17 +152,14 @@ main(int argc, char** argv, char** envp) {
   /* set our basename for the \v prompt escape seq and maybe other stuff*/
   sh_name = path_basename(sh_argv0);
 
-  if(*sh_name == '-') {
+  if(*sh_name == '-') 
     sh_name++;
-    // sh_login++;
-  }
 
   /* set global shell argument vector */
   sh_argv = &argv[shell_optind];
   sh_argc = argc - shell_optind;
 
   source_push(&src);
-  // sh_init();
 
   stralloc_init(&cmd);
 
@@ -220,8 +204,6 @@ main(int argc, char** argv, char** envp) {
 
     buffer_putsa(&out_buf, sa);
     buffer_putnlflush(&out_buf);
-
-    // stralloc_zero(&cmd);
   }
 
   if(inplace) {
@@ -231,9 +213,8 @@ main(int argc, char** argv, char** envp) {
 
     unlink(out_file.s);
 
-    if(rename(in_file, out_file.s) != -1) {
+    if(rename(in_file, out_file.s) != -1) 
       rename(tmpl, in_file);
-    }
   }
 
   return 0;
