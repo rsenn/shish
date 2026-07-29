@@ -25,3 +25,22 @@
   a debug build (`cfg -DCMAKE_BUILD_TYPE=Debug`) under a debugger to
   catch exactly which loop is spinning and why the two `$RANDOM` reads
   it compares aren't diverging.
+
+- ln-trailing-slash-on-plain-destination: `builtin_ln()`
+  (`src/builtin/builtin_ln.c`) unconditionally appends a `/` to the
+  destination operand while building the link path, before ever
+  checking whether that destination is a directory (`is_dir`) -- so
+  `ln -s target name` (destination `name` not an existing directory)
+  always ends up calling `symlink(target, "name/")`, which fails with
+  `ENOTDIR`/`ENOENT` since a trailing-slash path requires the
+  component before it to already be a directory. Only
+  `ln -s target existing-dir/` (or a bare existing directory as
+  destination) happens to work, because that path's `is_dir` branch
+  overwrites `path` with `dst/basename(target)` before the trailing
+  slash matters. Found while writing `tests/builtin-rm.sh` (worked
+  around there via `/bin/ln`, not fixed here -- unrelated to that
+  change).
+
+    ln -s /etc/hostname mylink
+    # symlink: mylink/: No such file or directory -- should silently
+    # create ./mylink -> /etc/hostname
