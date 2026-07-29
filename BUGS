@@ -44,19 +44,3 @@
     ln -s /etc/hostname mylink
     # symlink: mylink/: No such file or directory -- should silently
     # create ./mylink -> /etc/hostname
-
-- mkdir-p-absolute-path-leading-slash: `builtin_mkdir()`
-  (`src/builtin/builtin_mkdir.c`)'s `-p` component-splitting
-  (`if(components) for(...) if(dir.s[i] == '/') dir.s[i] = '\0';`)
-  NUL-terminates *every* `/` in the operand, including a leading one
-  on an absolute path -- so `mkdir -p /a/b`'s first `mkdir()` call
-  sees `dir.s` starting with that now-`\0` former leading slash, i.e.
-  `mkdir("")`, which always fails and aborts the whole call before any
-  component is ever created. `mkdir -p relative/path` (no leading
-  slash) is unaffected. Found while implementing `rmdir -p`
-  (`src/builtin/builtin_rmdir.c`) and testing it against directories
-  made with `mkdir -p`; not fixed here, unrelated to that change.
-
-    mkdir -p /tmp/somewhere/deep
-    # mkdir: : No such file or directory -- should create the whole
-    # /tmp/somewhere/deep chain
