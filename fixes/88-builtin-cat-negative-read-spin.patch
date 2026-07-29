@@ -1,0 +1,22 @@
+diff --git a/src/builtin/builtin_cat.c b/src/builtin/builtin_cat.c
+index cfa97c9c..75576d92 100644
+--- a/src/builtin/builtin_cat.c
++++ b/src/builtin/builtin_cat.c
+@@ -57,6 +57,17 @@ builtin_cat(int argc, char* argv[]) {
+         goto next;
+       }
+ 
++      /* a negative return is a real read(2) failure (e.g. EBADF off a
++         misresolved fd) -- neither of the branches below handles it,
++         so without this the loop just called buffer_get_until()
++         again forever instead of ever finishing
++         (redir-p.tst-hang-on-fd-chain, fixes/88) */
++      if(ret < 0) {
++        builtin_error(argv, arg);
++        ret = 1;
++        break;
++      }
++
+       if(ret > 0) {
+         char eol = buf[ret - 1];
+ 

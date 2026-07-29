@@ -52,6 +52,14 @@ struct job {
                    command substitution's output) isn't something the user
                    is waiting to be notified about; they're already watching
                    it (or, for a substitution, it was never visible at all). */
+  uint8_t announced; /* has a "Stopped" banner already been printed for the
+                         job's *current* stop? job_clean() (see job_clean.c)
+                         announces a background job stopping on its own, and
+                         is called on every job_update() (i.e. after every
+                         statement while the job stays stopped) -- without
+                         this it would reprint the banner every time instead
+                         of once per stop. job_resume() clears it again so a
+                         later stop gets announced too. */
   struct proc procs[];
 };
 
@@ -59,6 +67,17 @@ extern int job_terminal, job_pgrp;
 extern volatile bool job_signaled;
 extern struct job *job_list, **job_pointer;
 extern pid_t job_bgpid; /* "$!": pid of the most recently backgrounded command */
+
+/* self-pipe (see sh_onsig() in sh_main.c and term_read.c): the SIGCHLD
+   handler itself only does async-signal-safe work (wait_nohang()/
+   job_signal(), both plain memory writes) and then writes one byte
+   here -- write() is async-signal-safe, unlike the term_erase()/
+   term_restore()/prompt_show()/buffer_* calls the handler used to make
+   directly. term_read()'s select() loop wakes on job_sigfd[0] and does
+   that I/O from ordinary (non-signal) context instead. POSIX only --
+   job_sigfd[0]/[1] stay -1 on WINDOWS_NATIVE and nothing reads/writes
+   them there. */
+extern int job_sigfd[2];
 
 #define job_current() (job_pointer && *job_pointer ? *job_pointer : 0)
 /* "done" means fully reaped -- a job with a stopped (Ctrl-Z'd) process

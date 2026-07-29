@@ -1,0 +1,377 @@
+diff --git a/src/builtin/builtin_jobs.c b/src/builtin/builtin_jobs.c
+index 128295ae..483779bb 100644
+--- a/src/builtin/builtin_jobs.c
++++ b/src/builtin/builtin_jobs.c
+@@ -78,6 +78,10 @@ job_resume(struct job* j) {
+   for(p = 0; p < j->nproc; p++)
+     if(j->procs[p].status != -1 && WAIT_IF_STOPPED(j->procs[p].status))
+       j->procs[p].status = -1;
++
++  /* the job is no longer stopped -- let a future stop be announced
++     again (see struct job's "announced" field in job.h) */
++  j->announced = 0;
+ }
+ 
+ /* fg builtin: bring one job into the foreground and wait for it,
+diff --git a/src/job.h b/src/job.h
+index dd33d7be..fa32155c 100644
+--- a/src/job.h
++++ b/src/job.h
+@@ -52,6 +52,14 @@ struct job {
+                    command substitution's output) isn't something the user
+                    is waiting to be notified about; they're already watching
+                    it (or, for a substitution, it was never visible at all). */
++  uint8_t announced; /* has a "Stopped" banner already been printed for the
++                         job's *current* stop? job_clean() (see job_clean.c)
++                         announces a background job stopping on its own, and
++                         is called on every job_update() (i.e. after every
++                         statement while the job stays stopped) -- without
++                         this it would reprint the banner every time instead
++                         of once per stop. job_resume() clears it again so a
++                         later stop gets announced too. */
+   struct proc procs[];
+ };
+ 
+@@ -60,6 +68,17 @@ extern volatile bool job_signaled;
+ extern struct job *job_list, **job_pointer;
+ extern pid_t job_bgpid; /* "$!": pid of the most recently backgrounded command */
+ 
++/* self-pipe (see sh_onsig() in sh_main.c and term_read.c): the SIGCHLD
++   handler itself only does async-signal-safe work (wait_nohang()/
++   job_signal(), both plain memory writes) and then writes one byte
++   here -- write() is async-signal-safe, unlike the term_erase()/
++   term_restore()/prompt_show()/buffer_* calls the handler used to make
++   directly. term_read()'s select() loop wakes on job_sigfd[0] and does
++   that I/O from ordinary (non-signal) context instead. POSIX only --
++   job_sigfd[0]/[1] stay -1 on WINDOWS_NATIVE and nothing reads/writes
++   them there. */
++extern int job_sigfd[2];
++
+ #define job_current() (job_pointer && *job_pointer ? *job_pointer : 0)
+ /* "done" means fully reaped -- a job with a stopped (Ctrl-Z'd) process
+    isn't running (job_running() only looks for status == -1, unset)
+diff --git a/src/job/job_clean.c b/src/job/job_clean.c
+index 75e6f19d..9ec9fefb 100644
+--- a/src/job/job_clean.c
++++ b/src/job/job_clean.c
+@@ -1,5 +1,6 @@
+ #include "../job.h"
+ #include "../fdtable.h"
++#include "../sh.h"
+ #include "../term.h"
+ 
+ void
+@@ -25,6 +26,25 @@ job_clean(bool print) {
+         job_print(j, fd_err->w);
+       }
+       job_free(j);
++    } else if(print && sh->opts.monitor && job_stopped(j) && !j->announced) {
++      /* a backgrounded job just stopped with nothing actively
++         fg/bg/wait-ing on it to notice on its own -- announce it
++         here, the same "[N]+ Stopped ..." line job_wait() prints
++         when it catches a stop synchronously instead. Moved out of
++         sh_onsig() (sh-onsig-async-unsafe, fixes/87): that handler
++         isn't safe to do I/O from, so it now only records the status
++         change and wakes term_read()'s select() loop, which calls
++         job_update() -> here from ordinary context. j->announced
++         keeps this from re-printing on every subsequent job_update()
++         call while the job stays stopped -- job_resume() clears it
++         again once the job actually resumes. */
++      if(!erased && term_output) {
++        term_erase();
++        erased = 1;
++      }
++
++      job_banner(j, fd_err->w, JOB_STOPPED);
++      j->announced = 1;
+     }
+   }
+ }
+diff --git a/src/job/job_init.c b/src/job/job_init.c
+index 8169e57e..72b1f1a8 100644
+--- a/src/job/job_init.c
++++ b/src/job/job_init.c
+@@ -11,6 +11,7 @@
+ #endif
+ 
+ int job_terminal = -1;
++int job_sigfd[2] = {-1, -1};
+ 
+ /* initializes job control
+  * ----------------------------------------------------------------------- */
+@@ -34,4 +35,39 @@ job_init(void) {
+     job_pgrp = tcgetpgrp(job_terminal);
+ #endif
+   }
++
++#if !WINDOWS_NATIVE
++  /* see job_sigfd's declaration in job.h -- sh_onsig() writes one
++     byte per SIGCHLD, term_read() wakes on it via select() */
++  if(pipe(job_sigfd) == 0) {
++    int i;
++
++    /* move both ends up above 0x80, same as job_terminal above --
++       a raw pipe() hands back the two lowest-numbered free fds
++       (typically 3 and 4 this early), which is exactly the range a
++       script's own redirections use ("exec 3>&-", "9<in0 8<&9 ...").
++       Leaving job_sigfd sitting on those collided with
++       tests/posix/redir-p.tst's fd-chaining tests (hung, since a
++       "3<&4"/"4<&5"-style dup could silently repoint or close a fd
++       select() was still waiting on) -- confirmed by testing before
++       this fix. */
++    for(i = 0; i < 2; i++) {
++      int hi = fcntl(job_sigfd[i], F_DUPFD, 0x80);
++
++      if(hi != -1) {
++        close(job_sigfd[i]);
++        job_sigfd[i] = hi;
++      }
++    }
++
++    for(i = 0; i < 2; i++) {
++      int flags;
++
++      if((flags = fcntl(job_sigfd[i], F_GETFL)) != -1)
++        fcntl(job_sigfd[i], F_SETFL, flags | O_NONBLOCK);
++
++      fcntl(job_sigfd[i], F_SETFD, FD_CLOEXEC);
++    }
++  }
++#endif
+ }
+diff --git a/src/job/job_wait.c b/src/job/job_wait.c
+index 1964f0a8..674c56ca 100644
+--- a/src/job/job_wait.c
++++ b/src/job/job_wait.c
+@@ -113,6 +113,7 @@ job_wait(struct job* j, pid_t pid, int* status) {
+         term_erase();
+ 
+       job_banner(j, fd_err->w, JOB_STOPPED);
++      j->announced = 1;
+     } else if(sh->opts.monitor && j->bgnd && job_done(j)) {
+       /* The "[id]+ Done command" job-completion banner is for
+          interactive use only; suppress it in scripts so configure's
+diff --git a/src/sh/sh_main.c b/src/sh/sh_main.c
+index ea627ba7..aa8a7469 100644
+--- a/src/sh/sh_main.c
++++ b/src/sh/sh_main.c
+@@ -18,8 +18,13 @@
+ #include "../history.h"
+ #include "../job.h"
+ #include "../../lib/wait.h"
++#include "../../lib/windoze.h"
+ 
++#include <errno.h>
+ #include <stdlib.h>
++#if !WINDOWS_NATIVE
++#include <unistd.h>
++#endif
+ 
+ int sh_argc;
+ char** sh_argv;
+@@ -27,65 +32,42 @@ const char* sh_name;
+ int sh_login = 0;
+ int sh_no_position = 0;
+ 
++/* SIGCHLD handler -- kept to only async-signal-safe work (plain memory
++ * writes: wait_nohang()/wait_nohang_untraced() + job_signal(), and a
++ * write() to the job_sigfd self-pipe). It used to also call
++ * term_erase()/term_restore()/prompt_show()/buffer_*() directly from
++ * signal-handler context, none of which is async-signal-safe (see
++ * BUGS: sh-onsig-async-unsafe, fixed as fixes/87) -- that work now
++ * happens in term_read()'s select() loop (src/term/term_read.c),
++ * which wakes on job_sigfd[0] instead of relying on this handler to
++ * do it inline. job_clean() (src/job/job_clean.c) has grown the
++ * "announce a background job that just stopped" banner this handler
++ * used to print itself, for the same reason.
++ * ----------------------------------------------------------------------- */
+ static void
+ sh_onsig(int signum) {
+   switch(signum) {
+     case SIGCHLD: {
+       pid_t pid;
+       int status;
+-      struct job* job = 0;
+-
+-      if(term_output && term_reading) {
+-        term_erase();
+-        term_restore(term_input.fd, &term_tcattr);
+-      }
+ 
+       /* only ask to be woken on a stop too (WUNTRACED) in interactive
+          job-control mode -- see job_wait()'s matching wait_pid()/
+          wait_pid_untraced() choice for why */
+-      if((pid = (sh->opts.monitor ? wait_nohang_untraced : wait_nohang)(&status)) > 0) {
+-        job = job_signal(pid, status);
+-
+-        /* a backgrounded job just stopped with nothing actively
+-           fg/bg/wait-ing on it to notice on its own -- announce it
+-           here, the same "[N]+ Stopped ..." line job_wait() prints
+-           when it catches a stop synchronously instead */
+-        if(sh->opts.monitor && job && WAIT_IF_STOPPED(status) && job_stopped(job)) {
+-          if(term_output)
+-            term_erase();
+-
+-          job_banner(job, fd_err->w, JOB_STOPPED);
+-        }
+-      }
++      if((pid = (sh->opts.monitor ? wait_nohang_untraced : wait_nohang)(&status)) > 0)
++        job_signal(pid, status);
+ 
+-#ifdef DEBUG_OUTPUT_
+-      buffer_puts(fd_err->w, "SIGCHLD");
+-      buffer_putc(fd_err->w, ' ');
++#if !WINDOWS_NATIVE
++      if(job_sigfd[1] >= 0) {
++        char c = 0;
++        ssize_t r;
+ 
+-      buffer_putc(fd_err->w, '(');
+-
+-      if(job) {
+-
+-        buffer_puts(fd_err->w, "JOB: ");
+-        buffer_puts(fd_err->w, job->command);
+-      } else {
+-        buffer_puts(fd_err->w, "PID: ");
+-        buffer_putlong(fd_err->w, pid);
++        do
++          r = write(job_sigfd[1], &c, 1);
++        while(r == -1 && errno == EINTR);
+       }
+-
+-      buffer_putc(fd_err->w, ')');
+-      buffer_putnlflush(fd_err->w);
+ #endif
+ 
+-      if(term_output && term_reading) {
+-        term_attr(term_input.fd, 1, &term_tcattr);
+-        prompt_number--;
+-        prompt_show();
+-        buffer_putsa(term_output, &term_cmdline);
+-        term_escape(term_output, term_cmdline.len - term_pos, 'D');
+-        buffer_flush(term_output);
+-      }
+-
+       break;
+     }
+   }
+diff --git a/src/term/term_read.c b/src/term/term_read.c
+index 428d8a2f..608f7786 100644
+--- a/src/term/term_read.c
++++ b/src/term/term_read.c
+@@ -1,4 +1,5 @@
+ #include "../../lib/byte.h"
++#include "../job.h"
+ #include "../prompt.h"
+ #include "../term.h"
+ #include "../debug.h"
+@@ -6,11 +7,89 @@
+ #if !WINDOWS_NATIVE && !defined(__MINGW64__)
+ #include <termios.h>
+ #endif
++#if !WINDOWS_NATIVE
++#include <errno.h>
++#include <sys/select.h>
++#include <unistd.h>
++#endif
+ 
+ static char term_inbuf[BUFFER_INSIZE];
+ buffer term_input = BUFFER_INIT(0, 0, term_inbuf, sizeof(term_inbuf));
+ volatile int term_reading;
+ 
++#if !WINDOWS_NATIVE
++/* runs the work sh_onsig()'s SIGCHLD handler used to do inline (see
++ * BUGS: sh-onsig-async-unsafe, fixed as fixes/87) -- called from
++ * ordinary context once term_jobwait() below sees job_sigfd[0] wake
++ * up, never from the signal handler itself. */
++static void
++term_jobnotify(void) {
++  if(term_output && term_reading) {
++    term_erase();
++    term_restore(term_input.fd, &term_tcattr);
++  }
++
++  /* prints "Done"/"Stopped" banners for whatever job_signal() (run
++     from signal context) recorded since the last call */
++  job_update();
++
++  if(term_output && term_reading) {
++    term_attr(term_input.fd, 1, &term_tcattr);
++    prompt_number--;
++    prompt_show();
++    buffer_putsa(term_output, &term_cmdline);
++    term_escape(term_output, term_cmdline.len - term_pos, 'D');
++    buffer_flush(term_output);
++  }
++}
++
++/* blocks until term_input.fd has data to read, servicing job_sigfd
++ * wakeups (one per SIGCHLD) along the way instead of depending on
++ * EINTR -- every signal here installs via sig_action() with
++ * SA_RESTART unconditionally set, so a bare blocking read() would
++ * never even notice the signal arrived. Only called when term_input's
++ * buffer is actually empty, i.e. right before buffer_getc() would
++ * otherwise block in read() itself. */
++static void
++term_jobwait(void) {
++  for(;;) {
++    fd_set rfds;
++    int maxfd = term_input.fd;
++
++    FD_ZERO(&rfds);
++    FD_SET(term_input.fd, &rfds);
++
++    if(job_sigfd[0] >= 0) {
++      FD_SET(job_sigfd[0], &rfds);
++
++      if(job_sigfd[0] > maxfd)
++        maxfd = job_sigfd[0];
++    }
++
++    if(select(maxfd + 1, &rfds, 0, 0, 0) == -1) {
++      if(errno == EINTR)
++        continue;
++
++      return;
++    }
++
++    if(job_sigfd[0] >= 0 && FD_ISSET(job_sigfd[0], &rfds)) {
++      char drain[64];
++
++      while(read(job_sigfd[0], drain, sizeof(drain)) > 0)
++        ;
++
++      term_jobnotify();
++
++      if(!FD_ISSET(term_input.fd, &rfds))
++        continue;
++    }
++
++    return;
++  }
++}
++#endif
++
+ /* ----------------------------------------------------------------------- */
+ int
+ term_read(int fd, char* buf, unsigned int len) {
+@@ -42,7 +121,17 @@ term_read(int fd, char* buf, unsigned int len) {
+ 
+   term_reading = 1;
+ 
+-  while((ret = buffer_getc(&term_input, &c)) > 0) {
++  for(;;) {
++#if !WINDOWS_NATIVE
++    /* only wait when the buffer's actually empty -- that's the only
++       point buffer_getc() below would otherwise block in read()
++       itself */
++    if(term_input.p == term_input.n)
++      term_jobwait();
++#endif
++
++    if((ret = buffer_getc(&term_input, &c)) <= 0)
++      break;
+ 
+ #ifdef DEBUG_OUTPUT_
+     debug_char("term_read.c", c);

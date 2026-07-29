@@ -1642,4 +1642,39 @@ C
 )
 assert_equal "three" "$X86B" "the same holds with three here-docs queued on one command line"
 
+## fixes/87 (sh-onsig-async-unsafe): sh_onsig(), the SIGCHLD handler,
+## used to call term_erase()/term_restore()/prompt_show()/buffer_*()
+## directly from signal-handler context -- none of that is
+## async-signal-safe, a latent race rather than a deterministic
+## failure. None of it is reachable non-interactively (it's all gated
+## on an actual terminal/job-control session), so this file can't
+## exercise the fix directly the way the rest of it does -- verified
+## instead by driving an interactive shish through a pty by hand
+## (background two jobs, let SIGCHLD fire while term_read() is
+## blocked mid-prompt, confirm no hang/corruption and the right
+## "Done"/"Stopped" banners) and by running the full ctest suite
+## before and after on a from-scratch checkout, confirming an
+## identical pass/fail/timeout count either way. The synchronous half
+## of the repro this bug's BUGS entry gave still works as a basic
+## smoke test:
+sleep 1 &
+sleep 2 &
+wait
+assert_equal "0" "$?" "backgrounding two jobs and waiting on both must still succeed"
+
+## fixes/88 (redir-fd-chain-resolves-to-invalid-fd, spin half):
+## builtin_cat()'s read loop only handled buffer_get_until() returning
+## 0 (EOF) or >0 (data) -- a negative return (a real read(2) failure,
+## e.g. EBADF off an fd that failed to resolve) hit neither branch and
+## the loop just called buffer_get_until() again forever. "cat <&-"
+## deterministically hands builtin_cat() a closed stdin, independent
+## of the build-dependent redirection bug that originally surfaced
+## this (BUGS: redir-fd-chain-resolves-to-invalid-fd, still open).
+## No explicit timeout wrapper needed -- this is exactly the shape
+## that used to hang forever before this fix; if it regressed, this
+## whole test file (and "ctest") would simply hang too, which is its
+## own unmistakable signal.
+X88=$(cat <&- 2>/dev/null; echo "done_$?")
+assert_equal "done_1" "$X88" "cat reading from a closed/invalid fd must report an error and stop, not spin forever"
+
 summary

@@ -18,8 +18,13 @@
 #include "../history.h"
 #include "../job.h"
 #include "../../lib/wait.h"
+#include "../../lib/windoze.h"
 
+#include <errno.h>
 #include <stdlib.h>
+#if !WINDOWS_NATIVE
+#include <unistd.h>
+#endif
 
 int sh_argc;
 char** sh_argv;
@@ -27,64 +32,41 @@ const char* sh_name;
 int sh_login = 0;
 int sh_no_position = 0;
 
+/* SIGCHLD handler -- kept to only async-signal-safe work (plain memory
+ * writes: wait_nohang()/wait_nohang_untraced() + job_signal(), and a
+ * write() to the job_sigfd self-pipe). It used to also call
+ * term_erase()/term_restore()/prompt_show()/buffer_*() directly from
+ * signal-handler context, none of which is async-signal-safe (see
+ * BUGS: sh-onsig-async-unsafe, fixed as fixes/87) -- that work now
+ * happens in term_read()'s select() loop (src/term/term_read.c),
+ * which wakes on job_sigfd[0] instead of relying on this handler to
+ * do it inline. job_clean() (src/job/job_clean.c) has grown the
+ * "announce a background job that just stopped" banner this handler
+ * used to print itself, for the same reason.
+ * ----------------------------------------------------------------------- */
 static void
 sh_onsig(int signum) {
   switch(signum) {
     case SIGCHLD: {
       pid_t pid;
       int status;
-      struct job* job = 0;
-
-      if(term_output && term_reading) {
-        term_erase();
-        term_restore(term_input.fd, &term_tcattr);
-      }
 
       /* only ask to be woken on a stop too (WUNTRACED) in interactive
          job-control mode -- see job_wait()'s matching wait_pid()/
          wait_pid_untraced() choice for why */
-      if((pid = (sh->opts.monitor ? wait_nohang_untraced : wait_nohang)(&status)) > 0) {
-        job = job_signal(pid, status);
+      if((pid = (sh->opts.monitor ? wait_nohang_untraced : wait_nohang)(&status)) > 0)
+        job_signal(pid, status);
 
-        /* a backgrounded job just stopped with nothing actively
-           fg/bg/wait-ing on it to notice on its own -- announce it
-           here, the same "[N]+ Stopped ..." line job_wait() prints
-           when it catches a stop synchronously instead */
-        if(sh->opts.monitor && job && WAIT_IF_STOPPED(status) && job_stopped(job)) {
-          if(term_output)
-            term_erase();
+#if !WINDOWS_NATIVE
+      if(job_sigfd[1] >= 0) {
+        char c = 0;
+        ssize_t r;
 
-          job_banner(job, fd_err->w, JOB_STOPPED);
-        }
+        do
+          r = write(job_sigfd[1], &c, 1);
+        while(r == -1 && errno == EINTR);
       }
-
-#ifdef DEBUG_OUTPUT_
-      buffer_puts(fd_err->w, "SIGCHLD");
-      buffer_putc(fd_err->w, ' ');
-
-      buffer_putc(fd_err->w, '(');
-
-      if(job) {
-
-        buffer_puts(fd_err->w, "JOB: ");
-        buffer_puts(fd_err->w, job->command);
-      } else {
-        buffer_puts(fd_err->w, "PID: ");
-        buffer_putlong(fd_err->w, pid);
-      }
-
-      buffer_putc(fd_err->w, ')');
-      buffer_putnlflush(fd_err->w);
 #endif
-
-      if(term_output && term_reading) {
-        term_attr(term_input.fd, 1, &term_tcattr);
-        prompt_number--;
-        prompt_show();
-        buffer_putsa(term_output, &term_cmdline);
-        term_escape(term_output, term_cmdline.len - term_pos, 'D');
-        buffer_flush(term_output);
-      }
 
       break;
     }

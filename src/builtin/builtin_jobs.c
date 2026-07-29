@@ -78,6 +78,10 @@ job_resume(struct job* j) {
   for(p = 0; p < j->nproc; p++)
     if(j->procs[p].status != -1 && WAIT_IF_STOPPED(j->procs[p].status))
       j->procs[p].status = -1;
+
+  /* the job is no longer stopped -- let a future stop be announced
+     again (see struct job's "announced" field in job.h) */
+  j->announced = 0;
 }
 
 /* fg builtin: bring one job into the foreground and wait for it,

@@ -113,6 +113,7 @@ job_wait(struct job* j, pid_t pid, int* status) {
         term_erase();
 
       job_banner(j, fd_err->w, JOB_STOPPED);
+      j->announced = 1;
     } else if(sh->opts.monitor && j->bgnd && job_done(j)) {
       /* The "[id]+ Done command" job-completion banner is for
          interactive use only; suppress it in scripts so configure's

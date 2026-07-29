@@ -18,8 +18,17 @@ hangs and only terminates via its own 120s `TIMEOUT`, `BUGS:
 yash-random-y-tst-hangs`, which otherwise dominates a default `ctest`
 run's wall time).
 
-What's left is whatever the next triage pass over these suites turns up —
-nothing else currently confirmed and open.
+What's left is whatever the next triage pass over these suites turns up,
+plus two build-sensitive hangs found while doing exactly that (2026-07-29):
+`BUGS: yash-random-y-tst-hangs` (still open — now narrowed to the file's
+own busy-`until` `$RANDOM`-comparison loops rather than the later
+subshell-piping cases originally suspected) and `BUGS:
+redir-fd-chain-resolves-to-invalid-fd` (an 8-deep `<&` dup chain
+misresolves to fd -1 on a `-DCMAKE_BUILD_TYPE=Release` build only; the
+resulting infinite loop was fixed separately in `builtin_cat()`,
+`fixes/88`, but the fd misresolution itself is still open). Both read
+like undefined behavior sensitive to optimization level/stack layout —
+a debug-build/debugger session is the likely next step for either.
 
 ---
 
@@ -33,16 +42,6 @@ fixed — see `fixes/41` through `fixes/76`):
   `job_printstatus.c`, confirmed zero callers anywhere.
 - **Delete `job_get`/`job_proc`/`proc_bypid`** (`src/job.h`,
   `src/job/job_get.c`) — confirmed zero callers anywhere.
-- **`sh_onsig()`** (`src/sh/sh_main.c`'s SIGCHLD handler) calls
-  `term_erase()`/`term_restore()`/buffered I/O directly from
-  signal-handler context — none of that is async-signal-safe. Proposed
-  fix worked out in `BUGS: sh-onsig-async-unsafe` (not yet implemented):
-  shrink the handler to `wait_nohang()` + `job_signal()` only (both
-  safe), and add a self-pipe so `term_read()`'s blocking read can
-  `select()`/`poll()` for pending work instead of relying on `EINTR` —
-  confirmed not viable as-is, since every signal here installs with
-  `SA_RESTART` (`lib/sig/sig_action.c`), so the kernel transparently
-  restarts the interrupted read without `term_read()` ever seeing it.
 
 ---
 
