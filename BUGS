@@ -8,42 +8,20 @@
   a specific line yet.
 
   2026-07-29: confirmed still open and unrelated to any in-tree
-  change -- reproduces identically on a from-scratch checkout of this
-  exact commit, with no local modifications. The failure is genuinely
-  build/timing-sensitive: a `-DCMAKE_BUILD_TYPE=Release` build of
-  `shish` ran this file to completion (with its normal 3 case
-  failures) across several repeated direct
-  `sh tests/run-tst.sh ./shish tests/yash random-y.tst` invocations,
-  while the project's *default* `-DCMAKE_BUILD_TYPE=MinSizeRel` build
-  hangs on it almost every time, both under `ctest -R yash/random-y.tst`
-  and via direct `run-tst.sh` invocation. Whatever's wrong reads like
-  undefined behavior whose effect flips with optimization level/stack
-  layout, not a straightforward logic bug -- the same flavor of bug as
-  `redir-p.tst`'s builtin_cat.c landmine below, though not confirmed
-  to be the same root cause. The hung process sits at 100% CPU (a
-  spin, not a blocked syscall), which does point back at the two
-  busy-`until` `$RANDOM`-comparison loops at the top of the file after
-  all, despite the earlier note ruling them out from a shallower
-  check -- next step is bisecting with a debug build (`cfg -DCMAKE_BUILD_TYPE=Debug`)
-  attached via a debugger to catch exactly which loop is spinning and
-  why the two `$RANDOM` reads it compares aren't diverging.
-
-- redir-fd-chain-resolves-to-invalid-fd: `tests/posix/redir-p.tst`'s
-  "file descriptors up to 9 are supported" case --
-  `cat 9<in0 8<&9 7<&8 6<&7 5<&6 4<&5 3<&4 0<&3` -- on a
-  `-DCMAKE_BUILD_TYPE=Release` build specifically (the project's
-  default `MinSizeRel` build runs this file to completion, with its
-  normal handful of unrelated case failures, every time) this 8-deep
-  `<&` dup chain resolves `fd_in`'s effective fd to -1 (confirmed via
-  `strace`: `cat`'s first read comes back `EBADF`). Not yet isolated
-  past that -- `fdtable_resolve.c`'s `fd_expected`/`fdtable_dup()`
-  interaction is the likely area, per its own comments about
-  `fd_expected` going stale, but unconfirmed. Confirmed present on a
-  from-scratch checkout with zero local changes, so unrelated to any
-  in-tree work in progress; reads like undefined behavior whose effect
-  depends on optimization level/stack layout rather than a
-  straightforward logic bug -- possibly the same underlying cause as
-  `yash-random-y-tst-hangs` above, though unconfirmed. (Used to hang
-  the shell forever instead of just misbehaving --
-  `builtin_cat()` had no handling for a negative `buffer_get_until()`
-  return and looped calling it forever; fixed separately, fixes/88.)
+  change -- reproduces on a from-scratch checkout of this exact
+  commit, with no local modifications. Earlier testing this same day
+  claimed this (and a since-fixed, unrelated `redir-p.tst` bug,
+  `fixes/89`) were sensitive to `-DCMAKE_BUILD_TYPE=Release` vs the
+  project's default `MinSizeRel` -- that turned out, for the
+  `redir-p.tst` case, to be two stacked *testing* mistakes (a stale
+  `enabled-builtins` comparison and a relative testee path silently
+  breaking after `run-tst.sh`'s `cd`), not a real build-type
+  sensitivity, so treat the same claim here with equal suspicion until
+  it's re-confirmed with paths/builtins actually held constant across
+  the comparison. What is solid: the hung process sits at 100% CPU (a
+  spin, not a blocked syscall), which points at the two busy-`until`
+  `$RANDOM`-comparison loops at the top of the file, despite the
+  earlier note ruling them out from a shallower check -- next step is
+  a debug build (`cfg -DCMAKE_BUILD_TYPE=Debug`) under a debugger to
+  catch exactly which loop is spinning and why the two `$RANDOM` reads
+  it compares aren't diverging.

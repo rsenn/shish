@@ -19,16 +19,20 @@ yash-random-y-tst-hangs`, which otherwise dominates a default `ctest`
 run's wall time).
 
 What's left is whatever the next triage pass over these suites turns up,
-plus two build-sensitive hangs found while doing exactly that (2026-07-29):
-`BUGS: yash-random-y-tst-hangs` (still open — now narrowed to the file's
-own busy-`until` `$RANDOM`-comparison loops rather than the later
-subshell-piping cases originally suspected) and `BUGS:
-redir-fd-chain-resolves-to-invalid-fd` (an 8-deep `<&` dup chain
-misresolves to fd -1 on a `-DCMAKE_BUILD_TYPE=Release` build only; the
-resulting infinite loop was fixed separately in `builtin_cat()`,
-`fixes/88`, but the fd misresolution itself is still open). Both read
-like undefined behavior sensitive to optimization level/stack layout —
-a debug-build/debugger session is the likely next step for either.
+plus `BUGS: yash-random-y-tst-hangs`, found and narrowed (not yet fixed)
+while doing exactly that on 2026-07-29 — now points at the file's own
+busy-`until` `$RANDOM`-comparison loops rather than the later
+subshell-piping cases originally suspected. A related-looking
+`redir-p.tst` hang found the same day turned out to be a real,
+deterministic bug once properly isolated (an 8-deep `<&` dup chain off
+a freshly-opened fd resolved before its source ever got a chance to
+open) — fixed as `fixes/89` (fd-resolution ordering, both the builtin
+and forked-external-command paths) plus `fixes/88` (`builtin_cat()`
+spinning instead of erroring on the resulting bad fd). What first
+looked like Release-vs-MinSizeRel build sensitivity for that one turned
+out to be two stacked testing mistakes instead (see `BUGS`) — a caution
+for `yash-random-y-tst-hangs`'s own still-unconfirmed build-sensitivity
+claim, not evidence either way.
 
 ---
 

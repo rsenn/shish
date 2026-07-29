@@ -1662,19 +1662,81 @@ sleep 2 &
 wait
 assert_equal "0" "$?" "backgrounding two jobs and waiting on both must still succeed"
 
-## fixes/88 (redir-fd-chain-resolves-to-invalid-fd, spin half):
-## builtin_cat()'s read loop only handled buffer_get_until() returning
-## 0 (EOF) or >0 (data) -- a negative return (a real read(2) failure,
-## e.g. EBADF off an fd that failed to resolve) hit neither branch and
-## the loop just called buffer_get_until() again forever. "cat <&-"
-## deterministically hands builtin_cat() a closed stdin, independent
-## of the build-dependent redirection bug that originally surfaced
-## this (BUGS: redir-fd-chain-resolves-to-invalid-fd, still open).
-## No explicit timeout wrapper needed -- this is exactly the shape
-## that used to hang forever before this fix; if it regressed, this
-## whole test file (and "ctest") would simply hang too, which is its
-## own unmistakable signal.
+## fixes/88: builtin_cat()'s read loop only handled
+## buffer_get_until() returning 0 (EOF) or >0 (data) -- a negative
+## return (a real read(2) failure, e.g. EBADF off an fd that failed to
+## resolve) hit neither branch and the loop just called
+## buffer_get_until() again forever. "cat <&-" deterministically hands
+## builtin_cat() a closed stdin, independent of whatever originally
+## produces the invalid fd (fixes/89 below is one real way to get
+## there; this test only needs *a* negative read()). No explicit
+## timeout wrapper needed -- this is exactly the shape that used to
+## hang forever before this fix; if it regressed, this whole test file
+## (and "ctest") would simply hang too, which is its own unmistakable
+## signal.
 X88=$(cat <&- 2>/dev/null; echo "done_$?")
 assert_equal "done_1" "$X88" "cat reading from a closed/invalid fd must report an error and stop, not spin forever"
+
+## fixes/89 (redir-fd-chain-resolves-to-invalid-fd): a plain (non-exec)
+## command's redirections are only *recorded* as parsed, with the real
+## open()/dup2() deferred until the command actually runs
+## (eval_simple_command.c) -- so when "9<in0" is followed later in the
+## same command by a "<&"-dup chain ("8<&9 7<&8 ... 0<&3"), fd 9 hasn't
+## been opened yet by the time those dups snapshot its (still -1)
+## effective fd. Two call sites shared this bug, one per way a command
+## actually runs:
+##  - exec_command()'s builtin path used to only resolve
+##    fd_in/fd_out/fd_err themselves via fdtable_open() -- a no-op for
+##    one of these that's a dup (FD_DUP mode) rather than itself
+##    pending an open (FD_OPEN mode), so fd 9's real open() never
+##    happened at all and fd_in stayed permanently unresolved
+##    (confirmed via strace: builtin_cat() ends up read()ing fd -1,
+##    EBADF -- see fixes/88 for why that used to hang instead of just
+##    failing). Fixed by also opening fd_in/out/err's ->dup source
+##    (fd_dup() already flattens ->dup straight to that ultimate
+##    source, however deep the chain) if it's still pending, before
+##    running the builtin.
+##  - fdtable_exec() (forked external commands, right before execve())
+##    resolves every virtual fd in ascending order, so it hit fd 0
+##    (whose dup source, fd 9, comes *later* in that order) before fd 9
+##    ever got a chance to open -- resolving fd 0 first just failed
+##    outright, and its return value was silently ignored by its only
+##    caller (exec_program.c), so the child execve()d anyway with a
+##    broken fd 0 (confirmed: no hang here, just silently empty
+##    output). Fixed by having fdtable_exec() open every still-pending
+##    real file first, in one pass, before resolving anything else --
+##    by the time any dup is resolved, its source (however many other
+##    dups share it) is already correct.
+IN0=$(mktemp)
+echo in0content >"$IN0"
+X89=$(cat 9<"$IN0" 8<&9 7<&8 6<&7 5<&6 4<&5 3<&4 0<&3)
+assert_equal "in0content" "$X89" "an 8-deep <& dup chain off a freshly-opened fd must still read the right data, not fail/hang on an unresolved fd"
+
+X89B=$(/bin/cat 9<"$IN0" 8<&9 7<&8 6<&7 5<&6 4<&5 3<&4 0<&3 2>/dev/null)
+assert_equal "in0content" "$X89B" "the same dup chain must also work for a forked external command, not just a builtin"
+rm -f "$IN0"
+
+## fixes/90 (redir-pipeline-builtin-stdin-unbuffered): eval_pipeline.c
+## builds a fresh "struct fd" to wrap a pipeline member's stdin (the
+## previous member's pipe read end), but never gave it a real buffer --
+## fd_init() (via fd_push()) leaves ->r with a NULL, zero-length one.
+## That's harmless for a forked *external* program (it never reads
+## through this struct at all, just inherits the raw pipe fd via
+## dup2()), but a *builtin* runs in-process and reads through
+## fd_in->r directly -- read(fd, NULL, 0) is well-defined to return 0
+## immediately, which buffer_get_until() can't tell apart from real
+## EOF. Any builtin that reads stdin as a non-first pipeline member
+## ("... | cat", "... | read x", ...) silently produced no output/no
+## value at all, every time, regardless of what the pipe actually
+## carried. Found by hand ("echo hi | cat" printed nothing) while
+## verifying fixes/87 through fixes/89 -- confirmed present on a
+## from-scratch checkout with zero local changes, so pre-existing and
+## unrelated to any of those three. Fixed by giving the wrapper struct
+## a real buffer whenever fd_needbuf() says it still needs one.
+X90=$(echo hi | cat)
+assert_equal "hi" "$X90" "a builtin reading stdin as a non-first pipeline member must see the actual piped data, not immediate EOF"
+
+X90B=$(printf 'a\nb\nc\n' | cat -n)
+assert_equal "$(printf '    1 a\n    2 b\n    3 c')" "$X90B" "the same holds for a pipeline that actually pushes multiple lines through the builtin"
 
 summary

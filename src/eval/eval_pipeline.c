@@ -44,6 +44,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
 
   for(node = npipe->cmds; node; node = node->next) {
     struct fd *in = 0, *out = 0;
+    char inbuf[FD_BUFSIZE];
 
     /* if there was a previous command we read input from pipe */
     if(prevfd >= 0) {
@@ -56,6 +57,19 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
       fd_push(in, STDIN_FILENO, FD_READ | FD_PIPE | FD_FREE);
 #endif
       fd_setfd(in, prevfd);
+
+      /* fd_init() (via fd_push()) leaves ->r with a NULL, zero-length
+         buffer -- fine for a *forked external* program (it never
+         reads through this struct at all, just inherits the raw pipe
+         fd via dup2()), but a builtin runs in-process and reads
+         through fd_in->r directly. read(fd, NULL, 0) is well-defined
+         to return 0 immediately, which buffer_get_until() (and
+         everything built on it) can't tell apart from real EOF --
+         "cmd | builtin_that_reads_stdin" silently produced no output
+         at all, for every such builtin, confirmed with "echo hi | cat"
+         (redir-pipeline-builtin-stdin-unbuffered, fixes/90). */
+      if(fd_needbuf(in))
+        fd_setbuf(in, inbuf, sizeof(inbuf));
     }
 
     /* if it isn't the last command we have to create a pipe

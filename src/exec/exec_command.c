@@ -50,14 +50,42 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
       shell_optind = 1;
       shell_optofs = 0;
 
-      if(fd_in)
+      /* fdtable_open() only resolves a fd struct that's itself
+         pending a real open() (FD_OPEN mode) -- it's a no-op for one
+         that's instead a "N<&M"-style dup (FD_DUP mode) of some
+         *other*, possibly still-unopened fd, which a builtin's
+         stdin/stdout/stderr can easily be: a plain command's
+         redirections are only ever recorded as parsed, with the real
+         open()/dup2() deferred to here (eval_simple_command.c), so
+         "cmd 9<in0 8<&9 ... 0<&3" leaves fd_in a dup of fd 9, which
+         nothing above this ever asked to actually open. fd_dup()
+         already flattened ->dup to that ultimate source, and once
+         *it* is open, fd_setfd()'s fdstack_update() fans the real fd
+         out to every dup sharing it (including fd_in, via the ->r/->w
+         buffer pointer fd_dup() also already aliased directly to the
+         source's own) -- so opening the source here is sufficient,
+         with no need to also resolve fd_in itself.
+         (redir-fd-chain-resolves-to-invalid-fd, fixes/89) */
+      if(fd_in) {
+        if((fd_in->mode & FD_DUP) && fd_in->dup)
+          fdtable_open(fd_in->dup, FDTABLE_MOVE);
+
         fdtable_open(fd_in, FDTABLE_MOVE);
+      }
 
-      if(fd_out)
+      if(fd_out) {
+        if((fd_out->mode & FD_DUP) && fd_out->dup)
+          fdtable_open(fd_out->dup, FDTABLE_MOVE);
+
         fdtable_open(fd_out, FDTABLE_MOVE);
+      }
 
-      if(fd_err)
+      if(fd_err) {
+        if((fd_err->mode & FD_DUP) && fd_err->dup)
+          fdtable_open(fd_err->dup, FDTABLE_MOVE);
+
         fdtable_open(fd_err, FDTABLE_MOVE);
+      }
 
       ret = cmd->builtin->fn(argc, argv);
       break;
