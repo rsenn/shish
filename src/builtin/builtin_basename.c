@@ -3,6 +3,11 @@
 #include "../../lib/path.h"
 
 /* ----------------------------------------------------------------------- */
+const char help_basename[] =
+    "    Strip directory components from a path.\n"
+    "\n"
+    "    path            print PATH's last component (after the final '/')\n";
+
 int
 builtin_basename(int argc, char* argv[]) {
   if(!argv[shell_optind]) {

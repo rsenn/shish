@@ -12,6 +12,7 @@ struct builtin_cmd {
   builtin_func* fn;
   builtin_flag flags;
   const char* args;
+  const char* help;
 };
 
 extern struct builtin_cmd builtin_table[];
@@ -76,6 +77,60 @@ int builtin_unset(int argc, char* argv[]);
 int builtin_uname(int argc, char* argv[]);
 int builtin_wait(int argc, char* argv[]);
 int builtin_which(int argc, char* argv[]);
+
+/* builtin help text, one string per builtin_<name>() implementation
+ * (shared between every table entry that dispatches to the same
+ * function, e.g. "." and "source")
+ * ----------------------------------------------------------------------- */
+extern const char help_alias[];
+extern const char help_basename[];
+extern const char help_break[];
+extern const char help_cat[];
+extern const char help_cd[];
+extern const char help_chmod[];
+extern const char help_command[];
+extern const char help_dirname[];
+extern const char help_dump[];
+extern const char help_echo[];
+extern const char help_eval[];
+extern const char help_exec[];
+extern const char help_exit[];
+extern const char help_export[];
+extern const char help_expr[];
+extern const char help_false[];
+extern const char help_fdtable[];
+extern const char help_fg[];
+extern const char help_bg[];
+extern const char help_getopts[];
+extern const char help_hash[];
+extern const char help_help[];
+extern const char help_history[];
+extern const char help_hostname[];
+extern const char help_jobs[];
+extern const char help_kill[];
+extern const char help_ln[];
+extern const char help_local[];
+extern const char help_mkdir[];
+extern const char help_mktemp[];
+extern const char help_printf[];
+extern const char help_pwd[];
+extern const char help_read[];
+extern const char help_readonly[];
+extern const char help_return[];
+extern const char help_rm[];
+extern const char help_rmdir[];
+extern const char help_set[];
+extern const char help_shift[];
+extern const char help_source[];
+extern const char help_test[];
+extern const char help_trap[];
+extern const char help_true[];
+extern const char help_type[];
+extern const char help_umask[];
+extern const char help_unset[];
+extern const char help_uname[];
+extern const char help_wait[];
+extern const char help_which[];
 
 #else
 #warning "builtin.h included twice"

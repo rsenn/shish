@@ -23,6 +23,11 @@
  * redirected to an internal write-buffer (for command substitution) or
  * redirected from an internal read-buffer (for the here-docs).
  * ----------------------------------------------------------------------- */
+const char help_fdtable[] =
+    "    Print the shell's open file descriptor table.\n"
+    "\n"
+    "    -u fd           write the table to fd instead of stdout\n";
+
 int
 builtin_fdtable(int argc, char* argv[]) {
   int i, c, fd = 1;

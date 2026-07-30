@@ -5,6 +5,12 @@
 
 /* continue/break a loop
  * ----------------------------------------------------------------------- */
+const char help_break[] =
+    "    Exit (break) or resume the next iteration of (continue) an\n"
+    "    enclosing loop.\n"
+    "\n"
+    "    n               loop nesting level to break/continue (default 1)\n";
+
 int
 builtin_break(int argc, char* argv[]) {
   unsigned int n = 1;

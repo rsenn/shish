@@ -10,6 +10,23 @@ extern union node* functions;
 
 /* set arguments of flags
  * ----------------------------------------------------------------------- */
+const char help_set[] =
+    "    Set shell options and/or positional parameters.\n"
+    "\n"
+    "    -e              exit if a simple command fails\n"
+    "    -f              disable pathname expansion (globbing)\n"
+    "    -h              remember command locations as they're looked up\n"
+    "    -m              enable job control (monitor mode)\n"
+    "    -u              treat unset variables as an error on expansion\n"
+    "    -x              print each command before running it\n"
+    "    -B              enable brace expansion\n"
+    "    -C              don't let '>' clobber an existing file\n"
+    "    -H              enable history expansion ('!')\n"
+    "    +option         turn the option off instead of on\n"
+    "    arg             new positional parameters ($1, $2, ...)\n"
+    "\n"
+    "    With no options or arguments, print every variable and function.\n";
+
 int
 builtin_set(int argc, char* argv[]) {
   int c, got_opt = 0;

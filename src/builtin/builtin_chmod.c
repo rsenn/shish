@@ -72,6 +72,15 @@ chmod_symbolic(const char* spec, unsigned int* mode) {
 
 /* output stuff
  * ----------------------------------------------------------------------- */
+const char help_chmod[] =
+    "    Change file permissions.\n"
+    "\n"
+    "    -v              print a line for each file whose mode changed\n"
+    "    mode            octal number, or symbolic \"[ugoa]+-=[rwx]\",\n"
+    "                    comma-separated clauses applied to each file's\n"
+    "                    current mode (e.g. \"u+rwx,go-w\")\n"
+    "    file            file(s) to change the mode of\n";
+
 int
 builtin_chmod(int argc, char* argv[]) {
   int c, ret;

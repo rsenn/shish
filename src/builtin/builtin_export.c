@@ -7,6 +7,14 @@
 /* export built-in
  *
  * ----------------------------------------------------------------------- */
+const char help_export[] =
+    "    Mark variables for export to child process environments.\n"
+    "\n"
+    "    -n              remove the export attribute instead of setting it\n"
+    "    -p              print every exported variable as 'export NAME=VALUE'\n"
+    "    name            variable to export (defined in the shell if unset)\n"
+    "    name=value      assign then export the variable\n";
+
 int
 builtin_export(int argc, char* argv[]) {
   int c, clear = 0, print = 0;

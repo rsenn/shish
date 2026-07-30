@@ -21,6 +21,16 @@
 
 /* change working directory
  * ----------------------------------------------------------------------- */
+const char help_cd[] =
+    "    Change the shell's current working directory.\n"
+    "\n"
+    "    -L              keep symlinks in the resulting path (default)\n"
+    "    -P              resolve symlinks away from the resulting path\n"
+    "    directory       directory to change into; default is $HOME\n"
+    "\n"
+    "    A relative directory is first tried against each prefix in\n"
+    "    $CDPATH; $PWD is updated on success.\n";
+
 int
 builtin_cd(int argc, char* argv[]) {
   int c, ok = 0;

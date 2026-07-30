@@ -38,6 +38,18 @@ predicate_function(stralloc* sa, void* ptr) {
 /* read built-in
  *
  * ----------------------------------------------------------------------- */
+const char help_read[] =
+    "    Read a line and split it into variables.\n"
+    "\n"
+    "    -r              don't treat backslash as an escape character\n"
+    "    -s              don't echo input (e.g. for passwords)\n"
+    "    -d delim        read until delim instead of newline\n"
+    "    -n nchars       read at most nchars characters\n"
+    "    -N nchars       read exactly nchars characters, ignoring delim\n"
+    "    -p prompt       print prompt before reading (if input is a tty)\n"
+    "    -u fd           read from fd instead of stdin\n"
+    "    name            variable(s) to split the input into by $IFS\n";
+
 int
 builtin_read(int argc, char* argv[]) {
   int c, raw = 0, silent = 0, fd = 0, num_args, index;

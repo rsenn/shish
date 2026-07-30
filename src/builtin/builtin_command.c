@@ -7,6 +7,18 @@
 /* command built-in
  *
  * ----------------------------------------------------------------------- */
+const char help_command[] =
+    "    Run a command, bypassing any shell function of the same name.\n"
+    "\n"
+    "    -p              use a default PATH guaranteed to find the standard\n"
+    "                    utilities\n"
+    "    -v              print the resolved path/description instead of\n"
+    "                    running the command\n"
+    "    -V              like -v, but more verbose\n"
+    "    command         command to run, bypassing any shell function of\n"
+    "                    the same name\n"
+    "    arg             arguments passed to command\n";
+
 int
 builtin_command(int argc, char* argv[]) {
   int c, default_path = 0, print_desc = 0, print_verbose = 0;

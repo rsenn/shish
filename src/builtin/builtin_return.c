@@ -3,8 +3,13 @@
 #include "../eval.h"
 #include "../sh.h"
 
-/* continue/break a loop
+/* return built-in
  * ----------------------------------------------------------------------- */
+const char help_return[] =
+    "    Return from a shell function or sourced script.\n"
+    "\n"
+    "    n               exit status to return (default: the last command's)\n";
+
 int
 builtin_return(int argc, char* argv[]) {
   unsigned int ret = 0;

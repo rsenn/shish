@@ -6,6 +6,12 @@
 /* local built-in
  *
  * ----------------------------------------------------------------------- */
+const char help_local[] =
+    "    Declare variables local to the current function.\n"
+    "\n"
+    "    name            declare name local, unset\n"
+    "    name=value      declare name local and assign value\n";
+
 int
 builtin_local(int argc, char* argv[]) {
   char** argp;

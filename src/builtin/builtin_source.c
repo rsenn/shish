@@ -8,6 +8,12 @@
 
 /* source shell script
  * ----------------------------------------------------------------------- */
+const char help_source[] =
+    "    Read and run commands from a file in the current shell.\n"
+    "\n"
+    "    file            script to read and run\n"
+    "    arguments       positional parameters ($1, $2, ...) while running\n";
+
 int
 builtin_source(int argc, char* argv[]) {
   const char* fname;

@@ -5,6 +5,11 @@
 /* exit built-in
  *
  * ----------------------------------------------------------------------- */
+const char help_exit[] =
+    "    Exit the shell.\n"
+    "\n"
+    "    exitcode        status to exit with (default: the last command's)\n";
+
 int
 builtin_exit(int argc, char* argv[]) {
   int status = 0;

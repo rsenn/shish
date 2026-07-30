@@ -7,6 +7,13 @@
 
 /* output stuff
  * ----------------------------------------------------------------------- */
+const char help_cat[] =
+    "    Concatenate files to standard output.\n"
+    "\n"
+    "    -n              number every output line\n"
+    "    -b              number only non-empty output lines\n"
+    "    file            file to print; '-' or omitted means stdin\n";
+
 int
 builtin_cat(int argc, char* argv[]) {
   int c, ret = 0;

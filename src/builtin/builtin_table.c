@@ -157,40 +157,40 @@
  * ----------------------------------------------------------------------- */
 struct builtin_cmd builtin_table[] = {
 #if BUILTIN_SOURCE
-    {".", &builtin_source, B_SPECIAL, "file [arguments]"},
+    {".", &builtin_source, B_SPECIAL, "file [arguments]", help_source},
 #endif
 #if BUILTIN_TRUE
-    {":", &builtin_true, B_SPECIAL, ""},
+    {":", &builtin_true, B_SPECIAL, "", help_true},
 #endif
 #if BUILTIN_ALIAS
-    {"alias", &builtin_alias, B_DEFAULT, "[-p] [name[=value] ...]"},
+    {"alias", &builtin_alias, B_DEFAULT, "[-p] [name[=value] ...]", help_alias},
 #endif
 #if BUILTIN_BASENAME
-    {"basename", &builtin_basename, B_DEFAULT, "path"},
+    {"basename", &builtin_basename, B_DEFAULT, "path", help_basename},
 #endif
 #if BUILTIN_JOBS
-    {"bg", &builtin_bg, B_DEFAULT, "[job...]"},
+    {"bg", &builtin_bg, B_DEFAULT, "[job...]", help_bg},
 #endif
 #if BUILTIN_BREAK
-    {"break", &builtin_break, B_DEFAULT, "[n]"},
+    {"break", &builtin_break, B_DEFAULT, "[n]", help_break},
 #endif
 #if BUILTIN_CAT
-    {"cat", &builtin_cat, B_DEFAULT, "[-nb] [FILE]..."},
+    {"cat", &builtin_cat, B_DEFAULT, "[-nb] [FILE]...", help_cat},
 #endif
 #if BUILTIN_CD
-    {"cd", &builtin_cd, B_DEFAULT, "[-L|-P] [directory]"},
+    {"cd", &builtin_cd, B_DEFAULT, "[-L|-P] [directory]", help_cd},
 #endif
 #if BUILTIN_CHMOD
-    {"chmod", &builtin_chmod, B_DEFAULT, "[-v] [FILE]..."},
+    {"chmod", &builtin_chmod, B_DEFAULT, "[-v] [FILE]...", help_chmod},
 #endif
 #if BUILTIN_COMMAND
-    {"command", &builtin_command, B_DEFAULT, "[-pVv] command [arg ...]"},
+    {"command", &builtin_command, B_DEFAULT, "[-pVv] command [arg ...]", help_command},
 #endif
 #if BUILTIN_CONTINUE
-    {"continue", &builtin_break, B_DEFAULT, "[n]"},
+    {"continue", &builtin_break, B_DEFAULT, "[n]", help_break},
 #endif
 #if BUILTIN_DIRNAME
-    {"dirname", &builtin_dirname, B_DEFAULT, "path"},
+    {"dirname", &builtin_dirname, B_DEFAULT, "path", help_dirname},
 #endif
 #if BUILTIN_DUMP //&& defined(DEBUG_OUTPUT)
     {"dump",
@@ -209,137 +209,143 @@ struct builtin_cmd builtin_table[] = {
 #ifdef DEBUG_FD
      "f"
 #endif
-     "] [-u FD]"},
+     "] [-u FD]",
+     help_dump},
 #endif
 #if BUILTIN_ECHO
-    {"echo", &builtin_echo, B_DEFAULT, "[-ne] [arg ...]"},
+    {"echo", &builtin_echo, B_DEFAULT, "[-ne] [arg ...]", help_echo},
 #endif
 #if BUILTIN_EVAL
-    {"eval", &builtin_eval, B_SPECIAL, "[args]"},
+    {"eval", &builtin_eval, B_SPECIAL, "[args]", help_eval},
 #endif
 #if BUILTIN_EXEC
-    {"exec", &builtin_exec, B_EXEC, "[-cl] [-a name] [cmd [args]]"},
+    {"exec", &builtin_exec, B_EXEC, "[-cl] [-a name] [cmd [args]]", help_exec},
 #endif
 #if BUILTIN_EXIT
-    {"exit", &builtin_exit, B_SPECIAL, "[exitcode]"},
+    {"exit", &builtin_exit, B_SPECIAL, "[exitcode]", help_exit},
 #endif
 #if BUILTIN_EXPORT
-    {"export", &builtin_export, B_SPECIAL, "[-np] [name=[value]]"},
+    {"export", &builtin_export, B_SPECIAL, "[-np] [name=[value]]", help_export},
 #endif
 #if BUILTIN_EXPR
-    {"expr", &builtin_expr, B_DEFAULT, "[expression]"},
+    {"expr", &builtin_expr, B_DEFAULT, "[expression]", help_expr},
 #endif
 #if BUILTIN_FALSE
-    {"false", &builtin_false, B_DEFAULT, ""},
+    {"false", &builtin_false, B_DEFAULT, "", help_false},
 #endif
 #if BUILTIN_FDTABLE
-    {"fdtable", &builtin_fdtable, B_DEFAULT, "[-u FD]"},
+    {"fdtable", &builtin_fdtable, B_DEFAULT, "[-u FD]", help_fdtable},
 #endif
 #if BUILTIN_JOBS
-    {"fg", &builtin_fg, B_DEFAULT, "[job...]"},
+    {"fg", &builtin_fg, B_DEFAULT, "[job...]", help_fg},
 #endif
 #if BUILTIN_GETOPTS
-    {"getopts", &builtin_getopts, B_DEFAULT, "optstring name [arg ... ]"},
+    {"getopts", &builtin_getopts, B_DEFAULT, "optstring name [arg ... ]", help_getopts},
 #endif
 #if BUILTIN_HASH
-    {"hash", &builtin_hash, B_DEFAULT, "[-lr] [-p pathname name] [-d name ...] [name ...]"},
+    {"hash",
+     &builtin_hash,
+     B_DEFAULT,
+     "[-lr] [-p pathname name] [-d name ...] [name ...]",
+     help_hash},
 #endif
 #if BUILTIN_HELP
-    {"help", &builtin_help, B_DEFAULT, "[command]"},
+    {"help", &builtin_help, B_DEFAULT, "[command]", help_help},
 #endif
 #if BUILTIN_HISTORY
-    {"history", builtin_history, B_DEFAULT, "[-c]"},
+    {"history", builtin_history, B_DEFAULT, "[-c]", help_history},
 #endif
 #if BUILTIN_HOSTNAME
-    {"hostname", &builtin_hostname, B_DEFAULT, "[name]"},
+    {"hostname", &builtin_hostname, B_DEFAULT, "[name]", help_hostname},
 #endif
 #if BUILTIN_JOBS
-    {"jobs", &builtin_jobs, B_DEFAULT, "[-lnprs] [job...]"},
+    {"jobs", &builtin_jobs, B_DEFAULT, "[-lnprs] [job...]", help_jobs},
 #endif
 #if BUILTIN_KILL
-    {"kill", &builtin_kill, B_DEFAULT, "[-signal|-number] pid|%job ..."},
+    {"kill", &builtin_kill, B_DEFAULT, "[-signal|-number] pid|%job ...", help_kill},
 #endif
 #if BUILTIN_LN
-    {"ln", &builtin_ln, B_DEFAULT, "[-sfv]"},
+    {"ln", &builtin_ln, B_DEFAULT, "[-sfv]", help_ln},
 #endif
 #if BUILTIN_LOCAL
-    {"local", &builtin_local, B_DEFAULT, "[option] name[=value] ..."},
+    {"local", &builtin_local, B_DEFAULT, "[option] name[=value] ...", help_local},
 #endif
 #if BUILTIN_MKDIR
-    {"mkdir", &builtin_mkdir, B_DEFAULT, "[-p]"},
+    {"mkdir", &builtin_mkdir, B_DEFAULT, "[-p]", help_mkdir},
 #endif
 #if BUILTIN_MKTEMP
-    {"mktemp", &builtin_mktemp, B_DEFAULT, "[-dt] [-p DIR] [TEMPLATE]"},
+    {"mktemp", &builtin_mktemp, B_DEFAULT, "[-dt] [-p DIR] [TEMPLATE]", help_mktemp},
 #endif
 #if BUILTIN_PRINTF
-    {"printf", &builtin_printf, B_DEFAULT, "format [args ...]"},
+    {"printf", &builtin_printf, B_DEFAULT, "format [args ...]", help_printf},
 #endif
 #if BUILTIN_PWD
-    {"pwd", &builtin_pwd, B_DEFAULT, "[-L|-P]"},
+    {"pwd", &builtin_pwd, B_DEFAULT, "[-L|-P]", help_pwd},
 #endif
 #if BUILTIN_SET
-    {"set", &builtin_set, B_SPECIAL, "[arguments]"},
+    {"set", &builtin_set, B_SPECIAL, "[arguments]", help_set},
 #endif
 #if BUILTIN_SHIFT
-    {"shift", &builtin_shift, B_SPECIAL, "[n]"},
+    {"shift", &builtin_shift, B_SPECIAL, "[n]", help_shift},
 #endif
 #if BUILTIN_READ
     {"read",
      &builtin_read,
      B_DEFAULT,
      "[-rs] [-d DELIM] [-n|-N NCHARS] [-p PROMPT] [-t TIMEOUT] [-u FD] [name "
-     "...]"},
+     "...]",
+     help_read},
 #endif
 #if BUILTIN_READONLY
-    {"readonly", &builtin_readonly, B_SPECIAL, "[-p] [name[=value] ...]"},
+    {"readonly", &builtin_readonly, B_SPECIAL, "[-p] [name[=value] ...]", help_readonly},
 #endif
 #if BUILTIN_RETURN
-    {"return", &builtin_return, B_SPECIAL, "[n]"},
+    {"return", &builtin_return, B_SPECIAL, "[n]", help_return},
 #endif
 #if BUILTIN_RM
-    {"rm", &builtin_rm, B_DEFAULT, "[-vrf] [file]..."},
+    {"rm", &builtin_rm, B_DEFAULT, "[-vrf] [file]...", help_rm},
 #endif
 #if BUILTIN_RMDIR
-    {"rmdir", &builtin_rmdir, B_DEFAULT, "[-p] [directory]..."},
+    {"rmdir", &builtin_rmdir, B_DEFAULT, "[-p] [directory]...", help_rmdir},
 #endif
 #if BUILTIN_SOURCE
-    {"source", &builtin_source, B_DEFAULT, "file [arguments]"},
+    {"source", &builtin_source, B_DEFAULT, "file [arguments]", help_source},
 #endif
 #if BUILTIN_TEST
-    {"test", &builtin_test, B_DEFAULT, "[expr]"},
+    {"test", &builtin_test, B_DEFAULT, "[expr]", help_test},
 #endif
 #if BUILTIN_TRUE
-    {"true", &builtin_true, B_DEFAULT, ""},
+    {"true", &builtin_true, B_DEFAULT, "", help_true},
 #endif
 #if BUILTIN_TYPE
-    {"type", &builtin_type, B_DEFAULT, "[-afptP] name [name ...]"},
+    {"type", &builtin_type, B_DEFAULT, "[-afptP] name [name ...]", help_type},
 #endif
 #if BUILTIN_UMASK
-    {"umask", &builtin_umask, B_DEFAULT, "[-p] [-S] [mode]"},
+    {"umask", &builtin_umask, B_DEFAULT, "[-p] [-S] [mode]", help_umask},
 #endif
 #if BUILTIN_UNSET
-    {"unset", &builtin_unset, B_SPECIAL, "[name ...]"},
+    {"unset", &builtin_unset, B_SPECIAL, "[name ...]", help_unset},
 #endif
 #if BUILTIN_TEST
-    {"[", &builtin_test, B_DEFAULT, "expr ]"},
+    {"[", &builtin_test, B_DEFAULT, "expr ]", help_test},
 #endif
 #if BUILTIN_TRAP
-    {"trap", &builtin_trap, B_DEFAULT, "[-lp] [[arg] signal_spec ...]"},
+    {"trap", &builtin_trap, B_DEFAULT, "[-lp] [[arg] signal_spec ...]", help_trap},
 #endif
 #if BUILTIN_TYPE
-    {"type", &builtin_type, B_DEFAULT, "name ..."},
+    {"type", &builtin_type, B_DEFAULT, "name ...", help_type},
 #endif
 #if BUILTIN_ALIAS
-    {"unalias", &builtin_alias, B_DEFAULT, "[-a] [name ...]"},
+    {"unalias", &builtin_alias, B_DEFAULT, "[-a] [name ...]", help_alias},
 #endif
 #if BUILTIN_UNAME
-    {"uname", &builtin_uname, B_DEFAULT, "[-amnrspvio]"},
+    {"uname", &builtin_uname, B_DEFAULT, "[-amnrspvio]", help_uname},
 #endif
 #if BUILTIN_WAIT
-    {"wait", &builtin_wait, B_DEFAULT, "[pid...]"},
+    {"wait", &builtin_wait, B_DEFAULT, "[pid...]", help_wait},
 #endif
 #if BUILTIN_WHICH
-    {"which", &builtin_which, B_DEFAULT, "[-a] filename ..."},
+    {"which", &builtin_which, B_DEFAULT, "[-a] filename ...", help_which},
 #endif
-    {NULL, NULL, 0, NULL},
+    {NULL, NULL, 0, NULL, NULL},
 };

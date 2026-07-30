@@ -5,6 +5,12 @@
 
 /* print working directory
  * ----------------------------------------------------------------------- */
+const char help_pwd[] =
+    "    Print the current working directory.\n"
+    "\n"
+    "    -L              print it with symlinks kept (default)\n"
+    "    -P              print it with symlinks resolved away\n";
+
 int
 builtin_pwd(int argc, char* argv[]) {
   int c, physical = 0;

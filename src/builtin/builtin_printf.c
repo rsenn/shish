@@ -239,6 +239,16 @@ printf_emit_numeric(
       buffer_put(fd_out->w, " ", 1);
 }
 
+/* printf built-in
+ * ----------------------------------------------------------------------- */
+const char help_printf[] =
+    "    Format and print arguments.\n"
+    "\n"
+    "    format          a printf-style format string, with %s %b %c %d %i\n"
+    "                    %u %o %x %X %% conversions and \\ escapes; reused\n"
+    "                    repeatedly if there are more args than directives\n"
+    "    args            values consumed by the format's conversions\n";
+
 int
 builtin_printf(int argc, char* argv[]) {
   const char* fmt;

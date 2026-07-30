@@ -13,6 +13,17 @@ enum { VARTAB_ROOT, VARTAB_LOCAL, FDTABLE, FDSTACK, FDLIST, FUNCTIONS, JOBS };
 extern union node* functions;
 
 /* ----------------------------------------------------------------------- */
+const char help_dump[] =
+    "    Debug builtin: dump internal shell state.\n"
+    "\n"
+    "    -v              dump the root variable table\n"
+    "    -l              dump the innermost local variable table\n"
+    "    -F              dump every defined function\n"
+    "    -u fd           write the dump to fd (default stderr)\n"
+    "\n"
+    "    Debug builds also support -t (fd table), -s (fd stack), -f\n"
+    "    (fd list), -j (jobs).\n";
+
 int
 builtin_dump(int argc, char* argv[]) {
   int c, fd = -1, what = 0, num_args;
@@ -55,13 +66,13 @@ builtin_dump(int argc, char* argv[]) {
   switch(what) {
     case VARTAB_ROOT: vartab_dump(varstack, num_args, argp); break;
     case VARTAB_LOCAL: vartab_dump(NULL, num_args, argp); break;
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE)
+#if defined(DEBUG_FDTABLE)
     case FDTABLE: fdtable_dump(out); break;
 #endif
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK)
+#if defined(DEBUG_FDSTACK)
     case FDSTACK: fdstack_dump(out); break;
 #endif
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
+#if defined(DEBUG_FD)
     case FDLIST: fd_dumplist(out); break;
 #endif
     case FUNCTIONS: {
@@ -74,7 +85,7 @@ builtin_dump(int argc, char* argv[]) {
 
       break;
     }
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_JOB)
+#if defined(DEBUG_JOB)
     case JOBS: job_dump(out); break;
 #endif
   }

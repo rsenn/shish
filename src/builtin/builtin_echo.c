@@ -6,6 +6,17 @@
 
 /* output stuff
  * ----------------------------------------------------------------------- */
+const char help_echo[] =
+    "    Write arguments to standard output.\n"
+    "\n"
+    "    -n              suppress the trailing newline\n"
+    "    -e              enable \\n \\t \\r \\v \\b \\f \\\\ \\0NNN \\xHH escapes\n"
+    "    -E              disable those escapes (default)\n"
+    "    arg             text to print, space-separated\n"
+    "\n"
+    "    A leading '-' operand not made up entirely of n/e/E letters\n"
+    "    ends option parsing and is itself printed.\n";
+
 int
 builtin_echo(int argc, char* argv[]) {
   int i, nonl = 0, eval = 0, optind = 1;

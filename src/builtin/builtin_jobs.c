@@ -9,6 +9,8 @@
  * command" line each, via the same job_print() "fg"/"bg" also use for
  * the "[N]+ Done ..."/"[N]+ Stopped ..." banners.
  * ----------------------------------------------------------------------- */
+const char help_jobs[] = "    List jobs the shell is currently tracking.\n";
+
 int
 builtin_jobs(int argc, char* argv[]) {
   struct job* j;
@@ -87,6 +89,11 @@ job_resume(struct job* j) {
 /* fg builtin: bring one job into the foreground and wait for it,
  * resuming it first (SIGCONT) if it had been stopped.
  * ----------------------------------------------------------------------- */
+const char help_fg[] =
+    "    Bring a job into the foreground and wait for it.\n"
+    "\n"
+    "    job             job to resume; defaults to the current job\n";
+
 int
 builtin_fg(int argc, char* argv[]) {
   struct job* j;
@@ -133,6 +140,11 @@ builtin_fg(int argc, char* argv[]) {
 /* bg builtin: resume one or more *stopped* jobs, left running in the
  * background (no terminal handover, no waiting).
  * ----------------------------------------------------------------------- */
+const char help_bg[] =
+    "    Resume one or more stopped jobs in the background.\n"
+    "\n"
+    "    job             job(s) to resume; defaults to the current job\n";
+
 int
 builtin_bg(int argc, char* argv[]) {
   int i, ret = 0;

@@ -14,6 +14,15 @@
 
 /* output stuff
  * ----------------------------------------------------------------------- */
+const char help_ln[] =
+    "    Create links between files.\n"
+    "\n"
+    "    -s              make a symbolic link instead of a hard link\n"
+    "    -f              remove an existing destination first\n"
+    "    -v              print each link created\n"
+    "    source          existing file to link to\n"
+    "    dest            link name, or directory to create it in\n";
+
 int
 builtin_ln(int argc, char* argv[]) {
   int c, is_dir = 0, ret;

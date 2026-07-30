@@ -17,6 +17,12 @@
 
 /* sets or displays current hostname
  * ----------------------------------------------------------------------- */
+const char help_hostname[] =
+    "    Print or set the system hostname.\n"
+    "\n"
+    "    -f              force a re-get/set even if unchanged\n"
+    "    name            new hostname to set\n";
+
 int
 builtin_hostname(int argc, char* argv[]) {
   int c, force = 0;

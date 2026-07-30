@@ -14,6 +14,14 @@ struct optstate builtin_getopts_state = {0};
 
 /* getopts built-in
  * ----------------------------------------------------------------------- */
+const char help_getopts[] =
+    "    Parse positional (or given) arguments option by option.\n"
+    "\n"
+    "    optstring       letters getopts recognizes; a trailing ':' on a\n"
+    "                    letter means it takes an argument (in $OPTARG)\n"
+    "    name            variable set to the option letter found, or '?'\n"
+    "    arg             arguments to parse instead of $1.. ($OPTIND advances)\n";
+
 int
 builtin_getopts(int argc, char* argv[]) {
   char *optstring, *name;

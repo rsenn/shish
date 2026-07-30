@@ -88,6 +88,14 @@ rm_recursive(char* argv[], stralloc* path, int force, int verbose) {
 
 /* output stuff
  * ----------------------------------------------------------------------- */
+const char help_rm[] =
+    "    Remove files or directories.\n"
+    "\n"
+    "    -r, -R          remove directories and their contents recursively\n"
+    "    -f              ignore missing files, never prompt\n"
+    "    -v              print each file/directory removed\n"
+    "    file            file (or, with -r, directory) to remove\n";
+
 int
 builtin_rm(int argc, char* argv[]) {
   int c, ret;

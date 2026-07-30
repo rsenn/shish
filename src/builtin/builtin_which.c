@@ -8,6 +8,12 @@
 
 /* output stuff
  * ----------------------------------------------------------------------- */
+const char help_which[] =
+    "    Locate a command on $PATH.\n"
+    "\n"
+    "    -a              print every match on $PATH, not just the first\n"
+    "    name            command name to search for\n";
+
 int
 builtin_which(int argc, char* argv[]) {
   int ret = 0, c, all = 0;
