@@ -1,3 +1,4 @@
+#include "../../lib/alloc.h"
 #include "../../lib/str.h"
 #include "../tree.h"
 #include "../eval.h"
@@ -55,11 +56,26 @@ eval_function(struct eval* e, struct nfunc* func) {
 
   fn = tree_newnode(N_FUNCTION);
 
+  /* Deep-copy the name/body into the "functions" list entry instead of
+     stealing (moving, then NULLing) the pointers straight out of `func`.
+     Stealing only works if this N_FUNCTION node is evaluated exactly
+     once before its enclosing statement is freed (sh_loop.c frees each
+     top-level statement right after running it) -- it breaks the moment
+     the same node is evaluated again, e.g. a function defined inside a
+     loop body or a repeatedly-invoked in-process subshell (see
+     eval_subshell.c's exec_functions_save/restore, which deliberately
+     discards subshell-installed definitions when the subshell scope
+     ends, so the definition must be reinstallable on every visit). A
+     second visit found func->name/func->body already NULLed out from
+     the first, and the exec_lookup() call above dereferenced the NULL
+     name directly -> segfault. tree_copy() gives every installed
+     definition its own independent copy, so `func` is left untouched
+     and can be evaluated any number of times. Confirmed via a real
+     crash: looping "f() { :; }" inside a while loop segfaulted in
+     exec_hashstr() on a NULL name within a few iterations. */
   fn->next = functions;
-  fn->nfunc.name = func->name;
-  fn->nfunc.body = func->body;
-  func->name = NULL;
-  func->body = NULL;
+  fn->nfunc.name = str_dup(func->name);
+  fn->nfunc.body = func->body ? tree_copy(func->body) : NULL;
 
   functions = fn;
 

@@ -1929,4 +1929,65 @@ cd - >/dev/null
 rm -rf "$F100"
 assert_equal "$CONTROL100" "$AFTER100" "a subshell's umask change must not leak into files created after the subshell exits, regardless of this machine's ambient umask"
 
+## fixes/101 (eval-exit-frame-skip-leak-and-bogus-early-return):
+## eval_exit() ("exit" inside a function/subshell) had two bugs:
+##
+## 1. Like eval_return.c/eval_jump.c (fixes/97, fixes/99), its
+##    fdstack/varstack/source unwind was commented out, and unlike
+##    either of those, "exit" specifically walks *past* any number of
+##    E_FUNCTION frames on its way to the nearest E_ROOT frame (a
+##    subshell or the top-level script) -- so it also has to pop the
+##    struct env exec_command.c's H_FUNCTION case pushed for each
+##    skipped function call (sh_push(&inst) at H_FUNCTION), or that
+##    env dangles the moment its stack slot is reused. Confirmed via a
+##    real crash: looping "(f() { exit 5; }; f)" completed all
+##    iterations but then segfaulted in sh_exit()'s final
+##    "while(s->eval...) s = s->parent" walk, with corrupted register
+##    state proving sh->eval was garbage by then.
+##
+## 2. A separate, pre-existing "if(e == sh->parent->eval) return"
+##    early-out (meant to stop the search from crossing into a forked
+##    child's stale, inherited eval chain -- already redundant, since
+##    sh_forked() separately clears ev->jump on every inherited frame)
+##    fired incorrectly any time "exit" was called two or more function
+##    calls deep in the *same* process: exec_command.c's H_FUNCTION
+##    case always does "sh->eval = &e" (its own local frame) on entry,
+##    so sh->parent->eval is simply the immediately-enclosing function
+##    call's own eval frame -- exactly the first frame the search
+##    walks onto -- making "exit" silently return without ever
+##    reaching the subshell/root, i.e. a silent no-op.
+X101=$(g() { exit 7; }; f() { g; echo unreachable; }; (f); echo "after: $?")
+assert_equal "after: 7" "$X101" "exit inside a function called from another function inside a subshell must terminate the subshell, not silently no-op"
+
+i=0
+while [ $i -lt 2000 ]; do
+  (f() { exit 5; }; f) >/dev/null
+  i=$((i + 1))
+done
+echo ok >/dev/null
+assert_equal "0" "$?" "2000 iterations of exit-inside-a-function-inside-a-subshell must not crash or hang"
+
+## fixes/102 (eval-function-redefinition-corrupts-ast-on-reexecution):
+## eval_function() (running a "name() { ... }" definition) stole
+## (moved, then NULLed) the name/body pointers straight out of the
+## defining AST node and into a freshly allocated "functions" list
+## entry. That only works if the node is evaluated exactly once before
+## its enclosing top-level statement is freed (sh_loop.c frees each
+## top-level statement right after running it) -- it breaks the moment
+## the very same node is evaluated again, e.g. a function defined
+## inside a loop body, or inside a shish "(...)" subshell (which runs
+## in-process, not forked, so exec_functions_save/restore deliberately
+## discards subshell-installed definitions every time the subshell
+## scope ends, meaning the definition must be reinstallable on every
+## visit). A second visit found name/body already NULLed from the
+## first and dereferenced the NULL name -> segfault. Fixed by giving
+## every installed definition its own independent copy (a new
+## tree_copy() helper) instead of stealing the AST's own pointers, so
+## the defining node can be evaluated any number of times.
+X102=$(i=0; while [ $i -lt 5 ]; do f() { echo "call $i"; }; i=$((i + 1)); done; f)
+assert_equal "call 5" "$X102" "a function defined inside a loop must not crash on the loop's second+ visit"
+
+X102B=$(i=0; while [ $i -lt 500 ]; do (g() { :; }; g); i=$((i + 1)); done; echo "$i")
+assert_equal "500" "$X102B" "a function defined and called inside an in-process subshell, repeated many times, must not crash"
+
 summary

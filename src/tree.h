@@ -388,6 +388,7 @@ extern const int tree_nodesizes[];
 
 void tree_delnode(union node* node);
 void tree_free(union node* list);
+union node* tree_copy(union node* node);
 void tree_cat(union node* node, stralloc* sa);
 void tree_cat_n(union node* node, stralloc* sa, int depth);
 void tree_catlist(union node* node, stralloc* sa, const char* sep);

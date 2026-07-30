@@ -1,11 +1,12 @@
 #include "../sh.h"
 #include "../eval.h"
 #include "../fdstack.h"
+#include "../source.h"
 #include "../vartab.h"
 
 void
 eval_exit(int exitcode) {
-  struct eval *e, *parent_eval = sh->parent ? sh->parent->eval : 0;
+  struct eval* e;
 
   /* Walk the actual eval stack -- the global `eval` is the topmost push
      (see eval_push). sh->eval is never updated by eval_push (the line is
@@ -13,13 +14,49 @@ eval_exit(int exitcode) {
      and `exit N` inside a subshell silently fell through to sh_exit's
      no-op path, leaving sh->exitcode at 0. autoconf's as_required probe
      `as_fn_failure () { as_fn_return 1; }` (where as_fn_return uses
-     `(exit $1)`) depends on this propagating. */
-  for(e = eval; e; e = e->parent) {
-    if(e == parent_eval)
-      return;
+     `(exit $1)`) depends on this propagating.
 
+     This used to also bail out early via "if(e == sh->parent->eval)
+     return", meant to stop the search from crossing into a forked
+     child's inherited-but-stale eval chain. But exec_command.c's
+     H_FUNCTION case sets sh->eval = &e (its own local frame) on every
+     function call, so sh->parent->eval is simply *the immediately
+     enclosing function's own eval frame* in the plain, same-process
+     nested-call case -- e.g. "g() { exit 7; }; f() { g; }; (f)" always
+     has sh->parent->eval (f's frame) sitting one step above sh->eval
+     (g's frame) in the very chain being walked, so the very first
+     non-trivial step of the search hit this check and returned without
+     ever reaching the subshell's E_ROOT frame, silently turning "exit"
+     into a no-op. The actual forked-child case this was guarding
+     against is already handled: sh_forked() clears ev->jump on every
+     inherited eval frame, so the `e->jump &&` test below already skips
+     all of them on its own. */
+  for(e = eval; e; e = e->parent) {
     if(e->jump && (e->flags & E_ROOT))
       break;
+
+    /* "exit" is the one construct that deliberately walks past any
+       number of E_FUNCTION frames to reach the nearest enclosing
+       subshell/root -- unlike eval_jump() (break/continue), which
+       aborts outright the instant it meets a function boundary, and
+       eval_return(), whose own target search stops at the *first*
+       E_FUNCTION|E_ROOT frame so it never has one to skip. Each
+       E_FUNCTION frame is paired 1:1 with a sh_push() in
+       exec_command.c's H_FUNCTION case (the struct env holding that
+       call's arguments/positional params); skipping the eval frame
+       without also popping its struct env leaves `sh` pointing at a
+       stack-allocated env whose C frame (exec_command.c's H_FUNCTION
+       block) is never going to return normally, since this longjmp
+       goes straight past it. That struct env then dangles the moment
+       its stack slot is reused by any later call -- sh_exit()'s own
+       "while(s->eval && ...) s = s->parent" walk (run for every
+       process exit, including the ordinary one at end of script) reads
+       through exactly that corrupted chain and segfaults on garbage.
+       Confirmed via a real crash: looping "(f() { exit 5; }; f)"
+       completes all iterations but segfaults in sh_exit() afterward,
+       with corrupted register state proving `sh->eval` was garbage. */
+    if(e->flags & E_FUNCTION)
+      sh_pop(NULL);
   }
 
   if(e) {
@@ -33,15 +70,48 @@ eval_exit(int exitcode) {
        calls eval_pop(e) -- that asserts e == eval. Without this loop,
        any intermediate evals pushed between e and the current top (e.g.
        a nested builtin_eval inside a subshell) are still on the list,
-       eval_pop's assertion fires, and the shell aborts. fdstack and
-       varstack still need to be unwound at the setjmp site, but the
-       commented-out lines below would do that for THIS level only; the
-       real unwind happens via the inner pops as they were skipped. */
+       eval_pop's assertion fires, and the shell aborts. */
     while(eval && eval != e)
       eval = eval->parent;
 
-    /*while(fdstack != e->fdstack) fdstack_pop(fdstack);
-    while(varstack != e->varstack) vartab_pop(varstack);*/
+    /* fdstack/varstack (and, transitively, sh->parent -- see
+       eval_return.c/eval_jump.c, fixes/97 and fixes/99) still need
+       unwinding here: "exit" only ever targets the nearest E_ROOT
+       frame (a subshell, or the top-level script), which is very
+       often *not* the frame that was actually active when exit was
+       called -- e.g. "exit" inside a function called from within a
+       subshell finds the subshell's E_ROOT, skipping straight past
+       that function's own exec_command.c H_FUNCTION frame. The
+       comment this replaced claimed "the real unwind happens via the
+       inner pops as they were skipped", but skipped means skipped:
+       nothing runs exec_command.c's own sh_pop()/vartab_pop() for
+       that function call, since control never returns there -- it
+       longjmps directly past it. Left unfixed, that leaks the
+       function's env/vartab state (a leaked struct env is stack-
+       allocated, so it goes on to alias whatever unrelated call later
+       reuses that same stack memory) and, worse, leaves fdstack/
+       varstack sitting at the *function's* level instead of the
+       subshell's target level -- eval_subshell()'s post-longjmp
+       exec_functions_restore() call then runs against the wrong
+       vartab depth, corrupting the process-global function list.
+       Confirmed via a real crash: looping "( f() { exit 5; }; f )"
+       segfaults inside eval_function()'s exec_hashstr() on a NULL
+       function name within a few thousand iterations. */
+    while(fdstack != e->fdstack)
+      fdstack_pop(fdstack);
+
+    while(varstack != e->varstack)
+      vartab_pop(varstack);
+
+    /* same source_popfd() recovery eval_jump()/eval_pop() already do
+       for the analogous cases -- see eval_jump.c's comment. */
+    while(source && source != e->source) {
+      struct fd* fd = source->fd;
+      source_pop();
+
+      if(fd)
+        fd_pop(fd);
+    }
 
     longjmp(e->jumpbuf, (exitcode << 1) | 1);
   }
