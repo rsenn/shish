@@ -1,0 +1,700 @@
+diff --git a/src/expand.h b/src/expand.h
+index 09683f1c..13736be5 100644
+--- a/src/expand.h
++++ b/src/expand.h
+@@ -125,6 +125,7 @@ int expand_arith_expr(union node* expr, int64* r);
+ int expand_arith_assign(struct narithbinary*, int64*);
+ union node* expand_arith(struct nargarith* arith, union node** nptr);
+ int expand_arith_unary(struct narithunary* expr, int64* r);
++union node* expand_brace_args(union node* args);
+ union node** expand_break(union node** out);
+ union node* expand_cat(const char* b, unsigned int len, union node** nptr, int flags);
+ void expand_catsa(union node* node, stralloc* sa, int flags);
+@@ -132,6 +133,10 @@ union node* expand_command(struct nargcmd* cmd, union node** nptr, int flags);
+ void expand_copysa(union node* node, stralloc* sa, int flags);
+ union node* expand_getorcreate(union node** out);
+ union node* expand_glob(union node** nptr, int flags);
++int expand_tilde_lookup(const char* text, size_t len, int stop_at_colon, stralloc* home,
++                         size_t* prefixlen);
++void expand_tilde_word(union node* arg);
++void expand_tilde_assign(union node* var);
+ union node* expand_param(struct nargparam* param, union node** nptr, int flags);
+ void expand_tosa(union node* node, stralloc* sa);
+ void expand_unescape(stralloc* sa, int (*pred)(int));
+diff --git a/src/expand/expand_args.c b/src/expand/expand_args.c
+index c5b9576a..7a226cfc 100644
+--- a/src/expand/expand_args.c
++++ b/src/expand/expand_args.c
+@@ -11,17 +11,30 @@ int
+ expand_args(union node* args, union node** nptr, int flags) {
+   union node* arg;
+   union node* n;
++  union node* owned;
+   int ret = 0;
+ 
+   *nptr = NULL;
+ 
+-  for(arg = args; arg; arg = arg->next) {
++  /* args is ncmd->args, the permanent parsed command tree -- reused on
++     every execution of this command node (e.g. inside a loop), so
++     brace/tilde expansion (both of which rewrite word text/structure)
++     must only ever touch a private, disposable copy of it, never the
++     original. Freed again below, once this call's own output (built
++     fresh into *nptr by expand_arg()/expand_glob() as it goes) no
++     longer needs it. */
++  owned = tree_copy(args);
++  owned = expand_brace_args(owned);
++
++  for(arg = owned; arg; arg = arg->next) {
+ 
+ #ifdef DEBUG_OUTPUT_
+     debug_node(arg, 0);
+     debug_nl_fl();
+ #endif
+ 
++    expand_tilde_word(arg);
++
+     if((n = expand_arg(arg->narg.list, nptr, flags))) {
+       nptr = &n;
+       ret++;
+@@ -59,5 +72,8 @@ expand_args(union node* args, union node** nptr, int flags) {
+     }
+   }
+ 
++  if(owned)
++    tree_free(owned);
++
+   return ret;
+ }
+diff --git a/src/expand/expand_brace.c b/src/expand/expand_brace.c
+new file mode 100644
+index 00000000..44c0b910
+--- /dev/null
++++ b/src/expand/expand_brace.c
+@@ -0,0 +1,259 @@
++#include "../expand.h"
++#include "../tree.h"
++#include "../sh.h"
++#include "../../lib/alloc.h"
++#include "../../lib/byte.h"
++
++/* Brace expansion ("{a,b,c}" -> "a" "b" "c", combined across multiple
++ * groups in the same word -- "{a,b}{1,2}" -> "a1" "a2" "b1" "b2").
++ *
++ * v1 scope (see the implementation plan): only fires on a raw argument
++ * word that is *entirely one unquoted literal chunk* -- no $var/`cmd`/
++ * quoting mixed in ("{a,$X}" stays literal). Known, accepted gap: an
++ * escaped brace/comma ("\{", "\,") isn't distinguished from a real one
++ * here, since '{'/','/'}' were never added to parse_isesc's protected
++ * set (there was nothing to protect them from before this) -- only
++ * *quoting* ("{" or similar) reliably suppresses expansion in v1, by
++ * way of the single-unquoted-chunk restriction above.
++ * ----------------------------------------------------------------------- */
++
++struct brace_list {
++  char** v;
++  size_t n;
++  size_t a;
++};
++
++static void
++brace_list_init(struct brace_list* bl) {
++  bl->v = NULL;
++  bl->n = 0;
++  bl->a = 0;
++}
++
++static void
++brace_list_add(struct brace_list* bl, const char* s, size_t len) {
++  char* dup;
++
++  if(bl->n >= bl->a) {
++    bl->a = bl->a ? bl->a * 2 : 8;
++    bl->v = alloc_re(bl->v, bl->a * sizeof(char*));
++  }
++
++  dup = alloc(len + 1);
++  byte_copy(dup, len, s);
++  dup[len] = 0;
++  bl->v[bl->n++] = dup;
++}
++
++static void
++brace_list_free(struct brace_list* bl) {
++  size_t i;
++
++  for(i = 0; i < bl->n; i++)
++    alloc_free(bl->v[i]);
++
++  alloc_free(bl->v);
++}
++
++/* finds the first "{...}" in [text,len) that is balanced (every nested
++ * '{' has a matching '}') *and* contains at least one top-level comma
++ * -- a "{foo}" with no comma at all isn't a valid group (matches
++ * bash's "malformed/non-list braces are left unchanged"), so scanning
++ * continues past it looking for a later one instead of giving up
++ * immediately. An unmatched '{' stops the search for good: everything
++ * from there on is treated as plain literal text, same as bash.
++ * ----------------------------------------------------------------------- */
++static int
++find_valid_group(const char* text, size_t len, size_t* gopen, size_t* gclose) {
++  size_t i = 0;
++
++  while(i < len) {
++    if(text[i] == '{') {
++      size_t depth = 1, j = i + 1, close = len, k;
++      int has_comma = 0;
++
++      while(j < len) {
++        if(text[j] == '{')
++          depth++;
++        else if(text[j] == '}') {
++          depth--;
++
++          if(depth == 0) {
++            close = j;
++            break;
++          }
++        }
++
++        j++;
++      }
++
++      if(close == len) /* unmatched '{' -- nothing past here can expand */
++        return 0;
++
++      depth = 0;
++
++      for(k = i + 1; k < close; k++) {
++        if(text[k] == '{')
++          depth++;
++        else if(text[k] == '}')
++          depth--;
++        else if(text[k] == ',' && depth == 0) {
++          has_comma = 1;
++          break;
++        }
++      }
++
++      if(has_comma) {
++        *gopen = i;
++        *gclose = close;
++        return 1;
++      }
++
++      i = close + 1;
++      continue;
++    }
++
++    i++;
++  }
++
++  return 0;
++}
++
++/* expands [text,len), appending every resulting string to *out. Always
++ * appends at least one string -- [text,len) itself, unchanged, when it
++ * contains no valid group at all (the recursion's base case, and also
++ * how a top-level call reports "nothing to expand" to its caller). */
++static void
++expand_brace_text(const char* text, size_t len, struct brace_list* out) {
++  size_t gopen, gclose, altstart, k, depth;
++  struct brace_list tails;
++
++  if(!find_valid_group(text, len, &gopen, &gclose)) {
++    brace_list_add(out, text, len);
++    return;
++  }
++
++  brace_list_init(&tails);
++  expand_brace_text(text + gclose + 1, len - gclose - 1, &tails);
++
++  altstart = gopen + 1;
++  depth = 0;
++
++  for(k = gopen + 1; k <= gclose; k++) {
++    int is_sep = (k == gclose) || (text[k] == ',' && depth == 0);
++
++    if(k < gclose) {
++      if(text[k] == '{')
++        depth++;
++      else if(text[k] == '}')
++        depth--;
++    }
++
++    if(is_sep) {
++      size_t ti;
++
++      for(ti = 0; ti < tails.n; ti++) {
++        stralloc piece;
++
++        stralloc_init(&piece);
++        stralloc_catb(&piece, text, gopen);
++        stralloc_catb(&piece, text + altstart, k - altstart);
++        stralloc_cats(&piece, tails.v[ti]);
++        brace_list_add(out, piece.s, piece.len);
++        stralloc_free(&piece);
++      }
++
++      altstart = k + 1;
++    }
++  }
++
++  brace_list_free(&tails);
++}
++
++/* rewrites one raw argument word, in isolation, into N sibling N_ARG
++ * nodes (linked via ->next, caller relinks them into place) if it's
++ * eligible and contains at least one valid brace group; returns NULL
++ * (word untouched) otherwise. Never mutates the passed-in `arg`. */
++static union node*
++expand_brace_word(union node* arg) {
++  union node* chunk;
++  struct brace_list result;
++  union node *head = NULL, **tail = &head;
++  size_t i;
++
++  if(!arg || arg->id != N_ARG || !(chunk = arg->narg.list))
++    return NULL;
++
++  if(chunk->id != N_ARGSTR || (chunk->nargstr.flag & S_TABLE) != S_UNQUOTED || chunk->next)
++    return NULL;
++
++  if(byte_chr(chunk->nargstr.stra.s, chunk->nargstr.stra.len, '{') >= chunk->nargstr.stra.len)
++    return NULL;
++
++  brace_list_init(&result);
++  expand_brace_text(chunk->nargstr.stra.s, chunk->nargstr.stra.len, &result);
++
++  if(result.n <= 1) {
++    brace_list_free(&result);
++    return NULL;
++  }
++
++  for(i = 0; i < result.n; i++) {
++    union node* n = tree_newnode(N_ARG);
++    union node* s = tree_newnode(N_ARGSTR);
++
++    stralloc_init(&s->nargstr.stra);
++    stralloc_cats(&s->nargstr.stra, result.v[i]);
++    s->nargstr.flag = S_UNQUOTED | (chunk->nargstr.flag & S_GLOB);
++    s->nargstr.loc = chunk->nargstr.loc;
++
++    n->narg.list = s;
++
++    *tail = n;
++    tail = &n->next;
++  }
++
++  brace_list_free(&result);
++  return head;
++}
++
++/* top-level entry point: rewrites `args` in place so that any
++ * brace-eligible word becomes its N generated sibling words, returning
++ * the (possibly different -- replacing the very first arg changes the
++ * list's own head) resulting list.
++ *
++ * `args` must already be a private, disposable copy the caller owns
++ * outright -- never the permanent parsed command tree (ncmd->args is
++ * reused on every execution of that command node, e.g. inside a loop,
++ * so mutating/freeing pieces of it here would corrupt it for next
++ * time). expand_args.c is responsible for tree_copy()-ing before
++ * calling this, and tree_free()-ing the result once done with it.
++ * ----------------------------------------------------------------------- */
++union node*
++expand_brace_args(union node* args) {
++  union node *arg, **link;
++
++  if(!sh->opts.braceexpand)
++    return args;
++
++  for(link = &args; (arg = *link);) {
++    union node* alts = expand_brace_word(arg);
++
++    if(alts) {
++      union node* rest = arg->next;
++
++      arg->next = NULL;
++      tree_free(arg);
++      *link = alts;
++
++      while(*link)
++        link = &(*link)->next;
++
++      *link = rest;
++    } else {
++      link = &arg->next;
++    }
++  }
++
++  return args;
++}
+diff --git a/src/expand/expand_tilde.c b/src/expand/expand_tilde.c
+new file mode 100644
+index 00000000..af5b0a5b
+--- /dev/null
++++ b/src/expand/expand_tilde.c
+@@ -0,0 +1,232 @@
++#include "../expand.h"
++#include "../tree.h"
++#include "../var.h"
++#include "../../lib/byte.h"
++#include "../../lib/windoze.h"
++
++#if !WINDOWS_NATIVE
++#include <pwd.h>
++#include <unistd.h>
++#endif
++
++/* Known, accepted gap (see tests/posix/tilde-p.tst for the exact
++ * cases): POSIX also requires a tilde-prefix to stay completely
++ * literal if *any* character within it (the '~', the name, or the
++ * terminating '/') was quoted or escaped -- e.g. "\~", "~\foo",
++ * "~'foo'", or a name that came from `~$var` expansion. Distinguishing
++ * that requires per-byte quote-tracking within a chunk (or adding
++ * '~' to parse_isesc's protected set, mirroring how '*'/'?'/'['
++ * already survive escaping through to expand time); this module only
++ * checks a whole chunk's own S_TABLE quoting state, so an escaped '~'
++ * that reduces to a plain, indistinguishable '~' byte before this
++ * ever runs is (incorrectly) still expanded. Quoting the '~' itself
++ * ("~"/'~') still works correctly, since that already puts it in a
++ * differently-flagged (non-S_UNQUOTED) chunk this code never touches.
++ * ----------------------------------------------------------------------- */
++
++/* resolve a tilde-prefix ("~" or "~name") at the very start of
++ * [text,len) -- POSIX 2.6.1. An empty name resolves via $HOME (falling
++ * back to the current user's passwd entry if HOME is unset); a
++ * non-empty name is looked up via getpwnam(). On success, *home is
++ * filled with the resolved (nul-terminated) directory and prefixlen
++ * is set to how many bytes of the input the "~name" prefix itself
++ * occupied (never including a trailing '/', which stays for the
++ * caller to keep). Returns 0 (leaving home and prefixlen untouched)
++ * for anything that isn't a resolvable tilde-prefix at all -- text not
++ * starting with '~', or an unknown user -- so the caller's convention
++ * is always "0 means leave the original text alone", matching
++ * expand_glob.c's own "no match -> literal" fallback.
++ * ----------------------------------------------------------------------- */
++int
++expand_tilde_lookup(const char* text, size_t len, int stop_at_colon, stralloc* home,
++                     size_t* prefixlen) {
++  size_t namelen;
++
++  if(!len || text[0] != '~')
++    return 0;
++
++  namelen = 0;
++
++  while(namelen + 1 < len && text[1 + namelen] != '/' &&
++        !(stop_at_colon && text[1 + namelen] == ':'))
++    namelen++;
++
++  if(namelen == 0) {
++    size_t hlen;
++    const char* h = var_vdefault("HOME", NULL, &hlen);
++
++    if(h) {
++      stralloc_copyb(home, h, hlen);
++    } else {
++#if !WINDOWS_NATIVE
++      struct passwd* pw = getpwuid(getuid());
++
++      if(!pw)
++        return 0;
++
++      stralloc_copys(home, pw->pw_dir);
++#else
++      return 0;
++#endif
++    }
++  } else {
++#if !WINDOWS_NATIVE
++    stralloc namesa;
++    struct passwd* pw;
++
++    stralloc_init(&namesa);
++    stralloc_copyb(&namesa, text + 1, namelen);
++    stralloc_nul(&namesa);
++
++    pw = getpwnam(namesa.s);
++    stralloc_free(&namesa);
++
++    if(!pw)
++      return 0;
++
++    stralloc_copys(home, pw->pw_dir);
++#else
++    return 0;
++#endif
++  }
++
++  stralloc_nul(home);
++  *prefixlen = 1 + namelen;
++  return 1;
++}
++
++/* splits a chunk in two right at "prefixlen": the front becomes the
++ * resolved home directory, marked S_DQUOTED so it's exempt from field
++ * splitting like any other expansion result the shell itself produced
++ * (POSIX: a tilde-expansion's result is not subject to field
++ * splitting or pathname expansion) -- a new sibling chunk holds
++ * whatever text followed the prefix, keeping the original chunk's own
++ * flags (S_UNQUOTED, plus S_GLOB if it had it) so *that* part still
++ * behaves exactly as if the tilde-prefix had never been there. */
++static void
++expand_tilde_splice(union node* n, stralloc* home, size_t prefixlen) {
++  union node* rest = tree_newnode(N_ARGSTR);
++
++  stralloc_init(&rest->nargstr.stra);
++  stralloc_catb(&rest->nargstr.stra, n->nargstr.stra.s + prefixlen,
++                n->nargstr.stra.len - prefixlen);
++  stralloc_nul(&rest->nargstr.stra);
++  rest->nargstr.flag = n->nargstr.flag;
++  rest->nargstr.loc = n->nargstr.loc;
++  rest->next = n->next;
++
++  stralloc_free(&n->nargstr.stra);
++  stralloc_init(&n->nargstr.stra);
++  stralloc_cat(&n->nargstr.stra, home);
++  stralloc_nul(&n->nargstr.stra);
++  n->nargstr.flag = S_DQUOTED;
++  n->next = rest;
++}
++
++/* rewrites a plain command-argument word in place: a tilde-prefix only
++ * ever applies at the very start of the word, so only the first chunk
++ * (and only if it's unquoted literal text) is ever eligible.
++ * ----------------------------------------------------------------------- */
++void
++expand_tilde_word(union node* arg) {
++  union node* n;
++  stralloc home;
++  size_t prefixlen;
++
++  if(!arg || arg->id != N_ARG || !(n = arg->narg.list))
++    return;
++
++  if(n->id != N_ARGSTR || (n->nargstr.flag & S_TABLE) != S_UNQUOTED)
++    return;
++
++  stralloc_init(&home);
++
++  if(expand_tilde_lookup(n->nargstr.stra.s, n->nargstr.stra.len, 0, &home, &prefixlen))
++    expand_tilde_splice(n, &home, prefixlen);
++
++  stralloc_free(&home);
++}
++
++/* same idea for an assignment word ("NAME=value..."): the name and its
++ * '=' are always literal, unquoted text at the very start of the first
++ * chunk (assignment grammar guarantees this), so the value begins
++ * right after that '='. From there, walks the remaining chunk list as
++ * a small state machine tracking "am I at a ':'-or-value-start
++ * boundary" -- true at the start of the value and immediately after
++ * any unquoted literal ':', false after anything else (including any
++ * substitution chunk or quoted text: a boundary must be a real
++ * unquoted ':' in the source, never inferred from an expansion's
++ * eventual result) -- resolving+splicing a tilde-prefix at each one.
++ * ----------------------------------------------------------------------- */
++void
++expand_tilde_assign(union node* var) {
++  union node* n;
++  size_t eq;
++  int at_boundary;
++
++  if(!var || var->id != N_ARG || !(n = var->narg.list))
++    return;
++
++  if(n->id != N_ARGSTR || (n->nargstr.flag & S_TABLE) != S_UNQUOTED)
++    return;
++
++  eq = byte_chr(n->nargstr.stra.s, n->nargstr.stra.len, '=');
++
++  if(eq >= n->nargstr.stra.len)
++    return;
++
++  eq++; /* the value (where tilde-prefixes are eligible) starts right
++           after the '=', not on it */
++
++  at_boundary = 1;
++
++  while(n) {
++    if(n->id != N_ARGSTR || (n->nargstr.flag & S_TABLE) != S_UNQUOTED) {
++      at_boundary = 0;
++      n = n->next;
++      continue;
++    }
++
++    while(eq < n->nargstr.stra.len) {
++      if(at_boundary) {
++        stralloc home;
++        size_t prefixlen;
++
++        stralloc_init(&home);
++
++        if(expand_tilde_lookup(n->nargstr.stra.s + eq, n->nargstr.stra.len - eq, 1, &home,
++                                &prefixlen)) {
++          /* splice into just the tail starting at eq, then keep
++             scanning right after the replacement -- the chunk's
++             length/content just changed under us */
++          stralloc tail;
++
++          stralloc_init(&tail);
++          stralloc_catb(&tail, n->nargstr.stra.s, eq);
++          stralloc_cat(&tail, &home);
++          stralloc_catb(&tail, n->nargstr.stra.s + eq + prefixlen,
++                        n->nargstr.stra.len - eq - prefixlen);
++          stralloc_nul(&tail);
++
++          eq += home.len;
++
++          stralloc_free(&n->nargstr.stra);
++          n->nargstr.stra = tail;
++        }
++
++        stralloc_free(&home);
++        at_boundary = 0;
++      }
++
++      if(eq < n->nargstr.stra.len && n->nargstr.stra.s[eq] == ':')
++        at_boundary = 1;
++      else
++        at_boundary = 0;
++
++      eq++;
++    }
++
++    eq = 0;
++    n = n->next;
++  }
++}
+diff --git a/src/expand/expand_vars.c b/src/expand/expand_vars.c
+index a3bf708a..921746ff 100644
+--- a/src/expand/expand_vars.c
++++ b/src/expand/expand_vars.c
+@@ -7,11 +7,20 @@
+ int
+ expand_vars(union node* vars, union node** nptr) {
+   union node *var, *node;
++  union node* owned;
+   int ret = 0;
+   stralloc name;
+   stralloc_init(&name);
+ 
+-  for(var = vars; var; var = var->next) {
++  /* vars is ncmd->vars, the permanent parsed command tree -- same
++     reasoning as expand_args.c: expand_tilde_assign() rewrites a
++     word's text in place, so it must only ever run on a private,
++     disposable copy, never the original (reused on every execution of
++     this command node). */
++  owned = tree_copy(vars);
++
++  for(var = owned; var; var = var->next) {
++    expand_tilde_assign(var);
+     node = 0;
+     node = expand_arg(var, &node, X_NOSPLIT);
+ 
+@@ -33,5 +42,8 @@ expand_vars(union node* vars, union node** nptr) {
+     ret++;
+   }
+ 
++  if(owned)
++    tree_free(owned);
++
+   return ret;
+ }
+diff --git a/src/term/term_complete.c b/src/term/term_complete.c
+index 541a1bf0..6efe0006 100644
+--- a/src/term/term_complete.c
++++ b/src/term/term_complete.c
+@@ -1,6 +1,7 @@
+ #include "../term.h"
+ #include "../prompt.h"
+ #include "../var.h"
++#include "../expand.h"
+ #include "../../lib/str.h"
+ #include "../../lib/alloc.h"
+ #include "../../lib/windoze.h"
+@@ -123,7 +124,7 @@ term_complete(void) {
+ #if !WINDOWS_NATIVE
+   unsigned long start, wlen, dlen, blen, i;
+   const char *word, *slash, *bstart;
+-  stralloc dir, base, common;
++  stralloc dir, base, common, realdir;
+   DIR* dp;
+   struct dirent* de;
+   unsigned int nmatch = 0;
+@@ -151,6 +152,7 @@ term_complete(void) {
+   stralloc_init(&dir);
+   stralloc_init(&base);
+   stralloc_init(&common);
++  stralloc_init(&realdir);
+ 
+   if(dlen)
+     stralloc_catb(&dir, word, dlen);
+@@ -161,7 +163,31 @@ term_complete(void) {
+   stralloc_catb(&base, bstart, blen);
+   stralloc_nul(&base);
+ 
+-  if(!(dp = opendir(dir.s)))
++  /* resolve a leading tilde-prefix in the typed directory part against
++     the real filesystem for opendir()/stat() purposes only -- what's
++     actually shown/inserted on the command line (word/term_cmdline)
++     never gets touched, so "~/doc<TAB>" completes against $HOME/doc*
++     on disk but the line still reads "~/documents/" afterward,
++     matching bash/readline. */
++  {
++    stralloc home;
++    size_t prefixlen;
++
++    stralloc_init(&home);
++
++    if(expand_tilde_lookup(dir.s, dir.len, 0, &home, &prefixlen)) {
++      stralloc_cat(&realdir, &home);
++      stralloc_catb(&realdir, dir.s + prefixlen, dir.len - prefixlen);
++    } else {
++      stralloc_cat(&realdir, &dir);
++    }
++
++    stralloc_free(&home);
++  }
++
++  stralloc_nul(&realdir);
++
++  if(!(dp = opendir(realdir.s)))
+     goto done;
+ 
+   while((de = readdir(dp))) {
+@@ -206,15 +232,18 @@ term_complete(void) {
+     struct stat st;
+     stralloc full;
+ 
+-    /* "dir" is "." when the word had no '/' of its own -- that's
+-       only meaningful to opendir(), not as a path prefix (there's
+-       no separator to join it to "common" with), so build the
+-       stat() target from the directory part actually typed (if
+-       any) instead of always going through "dir". */
++    /* "dir"/"realdir" is "." when the word had no '/' of its own --
++       that's only meaningful to opendir(), not as a path prefix
++       (there's no separator to join it to "common" with), so build
++       the stat() target from the directory part actually typed (if
++       any) instead of always going through "realdir". Using
++       "realdir" rather than the raw "word" here (unlike the comment
++       below used to say) is what makes a tilde-prefixed directory
++       part stat()-able at all. */
+     stralloc_init(&full);
+ 
+     if(dlen)
+-      stralloc_catb(&full, word, dlen);
++      stralloc_cat(&full, &realdir);
+ 
+     stralloc_cat(&full, &common);
+     stralloc_nul(&full);
+@@ -238,5 +267,6 @@ done:
+   stralloc_free(&dir);
+   stralloc_free(&base);
+   stralloc_free(&common);
++  stralloc_free(&realdir);
+ #endif
+ }

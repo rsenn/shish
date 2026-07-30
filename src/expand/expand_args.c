@@ -11,16 +11,29 @@ int
 expand_args(union node* args, union node** nptr, int flags) {
   union node* arg;
   union node* n;
+  union node* owned;
   int ret = 0;
 
   *nptr = NULL;
 
-  for(arg = args; arg; arg = arg->next) {
+  /* args is ncmd->args, the permanent parsed command tree -- reused on
+     every execution of this command node (e.g. inside a loop), so
+     brace/tilde expansion (both of which rewrite word text/structure)
+     must only ever touch a private, disposable copy of it, never the
+     original. Freed again below, once this call's own output (built
+     fresh into *nptr by expand_arg()/expand_glob() as it goes) no
+     longer needs it. */
+  owned = tree_copy(args);
+  owned = expand_brace_args(owned);
+
+  for(arg = owned; arg; arg = arg->next) {
 
 #ifdef DEBUG_OUTPUT_
     debug_node(arg, 0);
     debug_nl_fl();
 #endif
+
+    expand_tilde_word(arg);
 
     if((n = expand_arg(arg->narg.list, nptr, flags))) {
       nptr = &n;
@@ -58,6 +71,9 @@ expand_args(union node* args, union node** nptr, int flags) {
       ret++;
     }
   }
+
+  if(owned)
+    tree_free(owned);
 
   return ret;
 }

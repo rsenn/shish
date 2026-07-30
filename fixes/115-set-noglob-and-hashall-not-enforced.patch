@@ -1,0 +1,50 @@
+diff --git a/src/exec/exec_hash.c b/src/exec/exec_hash.c
+index 37d43983..c3cf0825 100644
+--- a/src/exec/exec_hash.c
++++ b/src/exec/exec_hash.c
+@@ -1,5 +1,6 @@
+ #include "../builtin.h"
+ #include "../exec.h"
++#include "../sh.h"
+ #include "../tree.h"
+ #include "../../lib/str.h"
+ #include "../../lib/alloc.h"
+@@ -80,6 +81,11 @@ exec_hash(char* name, int mask) {
+     }
+ #endif
+ 
++  } else if(!sh->opts.hashall) {
++    /* set +h: don't remember (or trust an already-remembered) command
++       location at all -- a plain, uncached search every time is the
++       only way "off" is actually distinguishable from "on" */
++    cmd = exec_search(name, mask);
+   } else {
+     /* otherwise try to find hashed entry */
+     struct exechash* entry;
+diff --git a/src/expand/expand_glob.c b/src/expand/expand_glob.c
+index f7849ec3..4fcc1be0 100644
+--- a/src/expand/expand_glob.c
++++ b/src/expand/expand_glob.c
+@@ -23,6 +23,7 @@
+ #include "../expand.h"
+ #include "../tree.h"
+ #include "../fdtable.h"
++#include "../sh.h"
+ #include "../var.h"
+ #include "../parse.h"
+ #include "../../lib/byte.h"
+@@ -53,6 +54,14 @@ expand_glob(union node** nptr, int flags) {
+ 
+   stralloc_nul(&n->narg.stra);
+ 
++  /* set -f: pathname expansion is off, the pattern stays literal --
++     same as the "no match" fallback below, just without ever calling
++     glob() at all */
++  if(sh->opts.noglob) {
++    expand_unescape(&n->narg.stra, parse_isesc);
++    return n;
++  }
++
+   /* glob for the pattern */
+ #ifdef HAVE_GLOB
+   byte_zero(&glb, sizeof(glb));

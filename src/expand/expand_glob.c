@@ -23,6 +23,7 @@
 #include "../expand.h"
 #include "../tree.h"
 #include "../fdtable.h"
+#include "../sh.h"
 #include "../var.h"
 #include "../parse.h"
 #include "../../lib/byte.h"
@@ -52,6 +53,14 @@ expand_glob(union node** nptr, int flags) {
     return n;
 
   stralloc_nul(&n->narg.stra);
+
+  /* set -f: pathname expansion is off, the pattern stays literal --
+     same as the "no match" fallback below, just without ever calling
+     glob() at all */
+  if(sh->opts.noglob) {
+    expand_unescape(&n->narg.stra, parse_isesc);
+    return n;
+  }
 
   /* glob for the pattern */
 #ifdef HAVE_GLOB

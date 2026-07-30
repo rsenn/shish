@@ -1,0 +1,152 @@
+diff --git a/src/expand/expand_param.c b/src/expand/expand_param.c
+index 4ffd065a..d7d8ece7 100644
+--- a/src/expand/expand_param.c
++++ b/src/expand/expand_param.c
+@@ -190,9 +190,9 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+   else {
+     size_t offset;
+ 
+-    if(str_equal(param->name, "RANDOM")) {
++    if(var_random_active && str_equal(param->name, "RANDOM")) {
+       char tmpbuf[FMT_ULONG];
+-      uint16 random = uint32_random();
++      uint16 random = var_random_next();
+ 
+       v = tmpbuf;
+       vlen = fmt_ulong(tmpbuf, random);
+diff --git a/src/var.h b/src/var.h
+index b0c05076..22926546 100644
+--- a/src/var.h
++++ b/src/var.h
+@@ -2,6 +2,7 @@
+ #define VAR_H
+ 
+ #include "../lib/stralloc.h"
++#include "../lib/uint16.h"
+ #include "../lib/uint64.h"
+ #include <stdlib.h>
+ 
+@@ -73,6 +74,12 @@ const char* var_vdefault(const char* v, const char* def, size_t* lenp);
+ int var_chflg(char* v, int flags, int set);
+ int var_valid(const char* v);
+ 
++/* $RANDOM special-variable state, see var_random.c */
++extern int var_random_active;
++void var_random_assign(const char* value, size_t len);
++void var_random_unset(void);
++uint16 var_random_next(void);
++
+ struct var* var_copys(const char* s, int flags);
+ struct var* var_create(const char* v, int flags);
+ struct var* var_import(const char* v, int flags, struct var* var);
+diff --git a/src/var/var_random.c b/src/var/var_random.c
+new file mode 100644
+index 00000000..148ee04e
+--- /dev/null
++++ b/src/var/var_random.c
+@@ -0,0 +1,60 @@
++#include "../var.h"
++#include "../../lib/scan.h"
++#include "../../lib/uint16.h"
++#include "../../lib/uint32.h"
++
++/* $RANDOM: bash/yash-compatible special-variable behavior.
++ *
++ * Active (the default): every read of $RANDOM produces the next value of
++ * a pseudo-random sequence instead of an ordinary variable lookup.
++ * Assigning an integer to RANDOM reseeds that sequence deterministically
++ * (two shells seeded with the same integer must produce the same
++ * sequence); assigning anything else (including empty) permanently turns
++ * the magic off, at which point RANDOM behaves like any other variable --
++ * `unset RANDOM` also permanently turns it off, per bash's documented
++ * quirk that RANDOM never regains its special behavior once unset.
++ * ----------------------------------------------------------------------- */
++
++int var_random_active = 1;
++
++static uint32 rnd_state;
++static int rnd_seeded = 0;
++
++static uint32
++rnd_next(void) {
++  uint32 x = rnd_state;
++  x ^= x << 13;
++  x ^= x >> 17;
++  x ^= x << 5;
++  return (rnd_state = x);
++}
++
++void
++var_random_assign(const char* value, size_t len) {
++  signed int n;
++
++  if(!var_random_active)
++    return;
++
++  if(len && scan_int(value, &n) == len) {
++    rnd_state = ((uint32)n * 2654435761u) + 1;
++    rnd_seeded = 1;
++  } else {
++    var_random_active = 0;
++  }
++}
++
++void
++var_random_unset(void) {
++  var_random_active = 0;
++}
++
++uint16
++var_random_next(void) {
++  if(!rnd_seeded) {
++    rnd_state = uint32_random() | 1;
++    rnd_seeded = 1;
++  }
++
++  return (uint16)rnd_next();
++}
+diff --git a/src/var/var_setsa.c b/src/var/var_setsa.c
+index cf1ab7da..e7683e0c 100644
+--- a/src/var/var_setsa.c
++++ b/src/var/var_setsa.c
+@@ -1,6 +1,7 @@
+ #include "../var.h"
+ #include "../fdtable.h"
+ #include "../sh.h"
++#include "../../lib/byte.h"
+ #include <assert.h>
+ 
+ /* set a variable from a stralloc in the format: name=word
+@@ -32,6 +33,10 @@ var_setsa(stralloc* sa, int flags) {
+     return 0;
+   }
+ 
++  if(var->len == 6 && byte_equal(sa->s, 6, "RANDOM"))
++    var_random_assign(sa->len > var->len ? sa->s + var->len + 1 : "",
++                       sa->len > var->len ? sa->len - var->len - 1 : 0);
++
+   /* now check how we set the value, there are 4 possibilities */
+   if(var->flags & V_FREESTR) {
+     /* if both, old and new variable should be freed
+diff --git a/src/var/var_unset.c b/src/var/var_unset.c
+index be089166..3f516917 100644
+--- a/src/var/var_unset.c
++++ b/src/var/var_unset.c
+@@ -1,4 +1,5 @@
+ #include "../../lib/shell.h"
++#include "../../lib/str.h"
+ #include "../var.h"
+ 
+ /* unset a variable
+@@ -7,6 +8,11 @@ int
+ var_unset(char* v) {
+   struct var* var;
+ 
++  /* RANDOM's magic is permanently disabled by unset, even if it's never
++     reassigned afterward -- matches bash, see var_random.c */
++  if(str_equal(v, "RANDOM"))
++    var_random_unset();
++
+   /* find the variable */
+   if((var = var_search(v, NULL)) == NULL)
+     return 0;

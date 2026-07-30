@@ -2,6 +2,7 @@
 #define VAR_H
 
 #include "../lib/stralloc.h"
+#include "../lib/uint16.h"
 #include "../lib/uint64.h"
 #include <stdlib.h>
 
@@ -72,6 +73,12 @@ const char* var_vdefault(const char* v, const char* def, size_t* lenp);
 
 int var_chflg(char* v, int flags, int set);
 int var_valid(const char* v);
+
+/* $RANDOM special-variable state, see var_random.c */
+extern int var_random_active;
+void var_random_assign(const char* value, size_t len);
+void var_random_unset(void);
+uint16 var_random_next(void);
 
 struct var* var_copys(const char* s, int flags);
 struct var* var_create(const char* v, int flags);

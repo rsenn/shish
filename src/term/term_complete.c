@@ -1,6 +1,7 @@
 #include "../term.h"
 #include "../prompt.h"
 #include "../var.h"
+#include "../expand.h"
 #include "../../lib/str.h"
 #include "../../lib/alloc.h"
 #include "../../lib/windoze.h"
@@ -123,7 +124,7 @@ term_complete(void) {
 #if !WINDOWS_NATIVE
   unsigned long start, wlen, dlen, blen, i;
   const char *word, *slash, *bstart;
-  stralloc dir, base, common;
+  stralloc dir, base, common, realdir;
   DIR* dp;
   struct dirent* de;
   unsigned int nmatch = 0;
@@ -151,6 +152,7 @@ term_complete(void) {
   stralloc_init(&dir);
   stralloc_init(&base);
   stralloc_init(&common);
+  stralloc_init(&realdir);
 
   if(dlen)
     stralloc_catb(&dir, word, dlen);
@@ -161,7 +163,31 @@ term_complete(void) {
   stralloc_catb(&base, bstart, blen);
   stralloc_nul(&base);
 
-  if(!(dp = opendir(dir.s)))
+  /* resolve a leading tilde-prefix in the typed directory part against
+     the real filesystem for opendir()/stat() purposes only -- what's
+     actually shown/inserted on the command line (word/term_cmdline)
+     never gets touched, so "~/doc<TAB>" completes against $HOME/doc*
+     on disk but the line still reads "~/documents/" afterward,
+     matching bash/readline. */
+  {
+    stralloc home;
+    size_t prefixlen;
+
+    stralloc_init(&home);
+
+    if(expand_tilde_lookup(dir.s, dir.len, 0, &home, &prefixlen)) {
+      stralloc_cat(&realdir, &home);
+      stralloc_catb(&realdir, dir.s + prefixlen, dir.len - prefixlen);
+    } else {
+      stralloc_cat(&realdir, &dir);
+    }
+
+    stralloc_free(&home);
+  }
+
+  stralloc_nul(&realdir);
+
+  if(!(dp = opendir(realdir.s)))
     goto done;
 
   while((de = readdir(dp))) {
@@ -206,15 +232,18 @@ term_complete(void) {
     struct stat st;
     stralloc full;
 
-    /* "dir" is "." when the word had no '/' of its own -- that's
-       only meaningful to opendir(), not as a path prefix (there's
-       no separator to join it to "common" with), so build the
-       stat() target from the directory part actually typed (if
-       any) instead of always going through "dir". */
+    /* "dir"/"realdir" is "." when the word had no '/' of its own --
+       that's only meaningful to opendir(), not as a path prefix
+       (there's no separator to join it to "common" with), so build
+       the stat() target from the directory part actually typed (if
+       any) instead of always going through "realdir". Using
+       "realdir" rather than the raw "word" here (unlike the comment
+       below used to say) is what makes a tilde-prefixed directory
+       part stat()-able at all. */
     stralloc_init(&full);
 
     if(dlen)
-      stralloc_catb(&full, word, dlen);
+      stralloc_cat(&full, &realdir);
 
     stralloc_cat(&full, &common);
     stralloc_nul(&full);
@@ -238,5 +267,6 @@ done:
   stralloc_free(&dir);
   stralloc_free(&base);
   stralloc_free(&common);
+  stralloc_free(&realdir);
 #endif
 }

@@ -2325,4 +2325,108 @@ X112C=$(echo printed > "$F112/out"; cat "$F112/out"; echo "status:$?")
 assert_equal "$(printf 'printed\nstatus:0')" "$X112C" "an ordinary, successful redirection on a real command must still work"
 rm -rf "$F112"
 
+## fixes/113 (random-seed-unset-nonseed-ignored, found while chasing down
+## the yash-random-y-tst-hangs BUGS entry -- the hang itself no longer
+## reproduces as of fixes/111/112, but running the test file for real
+## once it stopped hanging turned up three genuine, separate $RANDOM
+## bugs): expand_param.c's $RANDOM special-case always called
+## uint32_random() directly on every read, completely ignoring any
+## assignment to RANDOM -- "RANDOM=123" never seeded anything, a
+## non-integer assignment (including empty) never turned the magic off
+## the way bash/yash require, and "unset RANDOM" never permanently
+## disabled it either. Fixed by adding var_random_active/_assign/_unset/
+## _next (src/var/var_random.c) and hooking them into the actual
+## assignment (var_setsa.c) and unset (var_unset.c) paths.
+X113A=$(RANDOM=42; echo $RANDOM $RANDOM $RANDOM)
+X113B=$(RANDOM=42; echo $RANDOM $RANDOM $RANDOM)
+assert_equal "$X113A" "$X113B" "seeding RANDOM with the same integer twice must produce the same sequence both times"
+
+X113C=$( (RANDOM=; echo [$RANDOM]); (RANDOM=X; echo [$RANDOM]) )
+assert_equal "$(printf '[]\n[X]')" "$X113C" "assigning a non-integer (including empty) to RANDOM must turn off its magic and leave it holding that literal value"
+
+X113D=$(unset RANDOM; echo ${RANDOM-unset}; RANDOM=123; echo $RANDOM $RANDOM $RANDOM)
+assert_equal "$(printf 'unset\n123 123 123')" "$X113D" "unset RANDOM must permanently disable its magic -- it stays an ordinary variable even after being reassigned"
+
+## fixes/114 (nounset-crashes-and-over-fires): "set -u" referencing a
+## bare, truly-unset ${parameter}/$parameter segfaulted every time --
+## expand_param.c's fatal path freed the argument-list node it was
+## building the substitution into (tree_free(n)), but that node was
+## already linked into the caller's own argument list
+## (expand_args.c's "n->next = tree_newnode(...)"); freeing it without
+## unlinking left that ->next dangling, and the next simple command's
+## tree_count() crashed walking into freed memory. There was also a
+## leftover debug "vartab_dump()" call left in the same path (dumping
+## the whole variable table to stderr on every unbound-variable error)
+## and a second, separate bug: the nounset check fired even for
+## "${parameter:-word}"/":="/":?"/ ":+"" forms, which POSIX explicitly
+## exempts since each already defines its own behavior for an unset
+## parameter -- only a bare ${parameter}/$parameter with no operator
+## at all is what nounset is meant to guard.
+X114A=$(set -u; echo $UNSET_VAR_114A; echo not_reached 2>/dev/null)
+X114A_STATUS=$?
+assert_equal "" "$X114A" "a bare unset variable reference under set -u must not run any later command in the same (non-interactive) shell"
+assert_equal "1" "$X114A_STATUS" "...and must exit with a plain nonzero status, not crash"
+
+X114B=$(set -u; echo ${UNSET_VAR_114B-default})
+assert_equal "default" "$X114B" "\${parameter-word} on an unset parameter must not trigger nounset at all"
+
+X114C=$(set -u; echo ${UNSET_VAR_114C:-default})
+assert_equal "default" "$X114C" "\${parameter:-word} on an unset parameter must not trigger nounset at all"
+
+X114D=$(set -u; : ${UNSET_VAR_114D:=assigned}; echo $UNSET_VAR_114D)
+assert_equal "assigned" "$X114D" "\${parameter:=word} on an unset parameter must not trigger nounset, and must still assign the default"
+
+X114E=$(set -u; echo [${UNSET_VAR_114E:+alt}])
+assert_equal "[]" "$X114E" "\${parameter:+word} on an unset parameter must not trigger nounset"
+
+## fixes/115 (set-noglob-and-hashall-not-enforced): both `struct
+## shopt` bits were set correctly by set -f/+f and -h/+h and reflected
+## correctly in $-, but nothing ever actually checked them.
+## expand_glob.c now skips glob() entirely (falling back to the same
+## "treat as literal" path already used for a real no-match) when
+## noglob is on. exec_hash.c now bypasses its whole hash-cache lookup/
+## creation and just re-searches PATH every time when hashall is off,
+## which is the only way "off" is observably different from "on" (the
+## default) at all.
+F115=$(mktemp -d)
+touch "$F115/a.c" "$F115/b.c"
+X115A=$(cd "$F115" && set -f; echo *.c)
+assert_equal "*.c" "$X115A" "set -f disables pathname expansion -- a glob pattern is left literal"
+X115B=$(cd "$F115" && set -f; set +f; echo *.c)
+assert_equal "a.c b.c" "$X115B" "set +f turns it back on"
+rm -rf "$F115"
+
+F115H1=$(mktemp -d)
+F115H2=$(mktemp -d)
+printf '#!/bin/sh\necho FIRST\n' >"$F115H1/f115cmd"
+chmod +x "$F115H1/f115cmd"
+printf '#!/bin/sh\necho SECOND\n' >"$F115H2/f115cmd"
+chmod +x "$F115H2/f115cmd"
+X115C=$(PATH="$F115H1:$F115H2"; f115cmd; rm -f "$F115H1/f115cmd"; f115cmd 2>/dev/null)
+assert_equal "FIRST" "$X115C" "set +h is not the default -- a removed-but-cached command location is still used and fails"
+printf '#!/bin/sh\necho FIRST\n' >"$F115H1/f115cmd"
+chmod +x "$F115H1/f115cmd"
+X115D=$(set +h; PATH="$F115H1:$F115H2"; f115cmd; rm -f "$F115H1/f115cmd"; f115cmd)
+assert_equal "$(printf 'FIRST\nSECOND')" "$X115D" "set +h re-searches PATH every time instead of trusting a cached (now-stale) location"
+rm -rf "$F115H1" "$F115H2"
+
+## fixes/116 (add tilde and brace expansion): neither existed at all
+## before this -- "~"/"~user" and "{a,b,c}" were both printed back
+## literally regardless of any option. See src/expand/expand_tilde.c
+## and src/expand/expand_brace.c; tests/expand-tilde.sh and
+## tests/expand-brace.sh cover the features themselves in depth, this
+## is just the specific regression that motivated a private
+## tree_copy() in expand_args.c/expand_vars.c: both rewrite the
+## argument/assignment word text or structure, and ncmd->args/vars is
+## the *permanent* parsed command tree, reused on every execution of
+## that command node -- rewriting it in place the first time through a
+## loop would leave every later iteration seeing an already-expanded
+## (or, worse, half-rewritten) tree instead of expanding fresh.
+X116=""
+for i in 1 2 3; do
+  X116="$X116$(echo ~/x{1,2})."
+done
+assert_equal "$HOME/x1 $HOME/x2.$HOME/x1 $HOME/x2.$HOME/x1 $HOME/x2." "$X116" \
+  "tilde and brace expansion both re-run fresh on every loop iteration, never mutating the parsed command tree"
+
 summary

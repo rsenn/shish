@@ -1,5 +1,6 @@
 #include "../builtin.h"
 #include "../exec.h"
+#include "../sh.h"
 #include "../tree.h"
 #include "../../lib/str.h"
 #include "../../lib/alloc.h"
@@ -80,6 +81,11 @@ exec_hash(char* name, int mask) {
     }
 #endif
 
+  } else if(!sh->opts.hashall) {
+    /* set +h: don't remember (or trust an already-remembered) command
+       location at all -- a plain, uncached search every time is the
+       only way "off" is actually distinguishable from "on" */
+    cmd = exec_search(name, mask);
   } else {
     /* otherwise try to find hashed entry */
     struct exechash* entry;

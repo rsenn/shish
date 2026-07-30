@@ -13,9 +13,9 @@ nested command substitution, heavy fd juggling, `eval`, here-docs,
 trap/exit interplay) now runs to completion end-to-end. The `tests/posix`
 conformance suite (120 files) is wired into `ctest` and runs by default.
 `tests/yash` (119 more files) is wired in the same way but gated behind
-its own `-DDO_YASH_TESTS=ON` (off by default — `tests/yash/random-y.tst`
-hangs and only terminates via its own 120s `TIMEOUT`, `BUGS:
-yash-random-y-tst-hangs`, which otherwise dominates a default `ctest`
+its own `-DDO_YASH_TESTS=ON` (off by default — several files hang and
+only terminate via their own 120s `TIMEOUT`, `BUGS:
+yash-suite-other-hangs`, which otherwise dominates a default `ctest`
 run's wall time).
 
 A separate, much larger real-world stress test — gettext-tools'
@@ -244,21 +244,23 @@ each with its own regression test in `tests/fixed.sh`:
   own state once the substitution finished. This is very plausibly what
   was actually behind `confdefs-h-duplication` above.
 
-What's left is whatever the next triage pass over these suites turns up,
-plus `BUGS: yash-random-y-tst-hangs`, found and narrowed (not yet fixed)
-while doing exactly that on 2026-07-29 — now points at the file's own
-busy-`until` `$RANDOM`-comparison loops rather than the later
-subshell-piping cases originally suspected. A related-looking
-`redir-p.tst` hang found the same day turned out to be a real,
-deterministic bug once properly isolated (an 8-deep `<&` dup chain off
-a freshly-opened fd resolved before its source ever got a chance to
-open) — fixed as `fixes/89` (fd-resolution ordering, both the builtin
-and forked-external-command paths) plus `fixes/88` (`builtin_cat()`
-spinning instead of erroring on the resulting bad fd). What first
-looked like Release-vs-MinSizeRel build sensitivity for that one turned
-out to be two stacked testing mistakes instead (see `BUGS`) — a caution
-for `yash-random-y-tst-hangs`'s own still-unconfirmed build-sensitivity
-claim, not evidence either way.
+What's left is whatever the next triage pass over these suites turns up.
+`tests/yash/random-y.tst` itself (formerly `BUGS: yash-random-y-tst-hangs`)
+turned out to already be fixed as a side effect of unrelated 2026-07-30
+work by the time it was next checked — running it for real (instead of
+timing out) turned up three genuine `$RANDOM` bugs, fixed as `fixes/113`.
+A related-looking `redir-p.tst` hang found on 2026-07-29 turned out to be
+a real, deterministic bug once properly isolated (an 8-deep `<&` dup
+chain off a freshly-opened fd resolved before its source ever got a
+chance to open) — fixed as `fixes/89` (fd-resolution ordering, both the
+builtin and forked-external-command paths) plus `fixes/88` (`builtin_cat()`
+spinning instead of erroring on the resulting bad fd).
+
+`DO_YASH_TESTS` stays off by default regardless — a full sweep of all 119
+`tests/yash/*.tst` files (2026-07-30) found several *other* files
+(`arith-y.tst`, `cmdprint-y.tst`, `pipeline-y.tst`, `redir-y.tst`,
+`until-y.tst`, `while-y.tst`) that still hang, none yet isolated to a
+specific case; see `BUGS: yash-suite-other-hangs`.
 
 ---
 

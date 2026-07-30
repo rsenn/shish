@@ -2,10 +2,10 @@
 #include "../expand.h"
 #include "../job.h"
 #include "../sh.h"
+#include "../source.h"
 #include "../tree.h"
 #include "../fdtable.h"
 #include "../var.h"
-#include "../vartab.h"
 
 #include "../../lib/uint16.h"
 #include "../../lib/uint32.h"
@@ -190,9 +190,9 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
   else {
     size_t offset;
 
-    if(str_equal(param->name, "RANDOM")) {
+    if(var_random_active && str_equal(param->name, "RANDOM")) {
       char tmpbuf[FMT_ULONG];
-      uint16 random = uint32_random();
+      uint16 random = var_random_next();
 
       v = tmpbuf;
       vlen = fmt_ulong(tmpbuf, random);
@@ -220,12 +220,29 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         v = &v[offset];
         vlen = str_len(v);
       }
-    } else if(sh->opts.unset) {
-      vartab_dump(varstack, 1, &param->name);
-
+      /* POSIX exempts "${parameter:-word}" (and the "=", "?", "+"
+         forms, colon or not) from nounset entirely -- each already
+         has its own defined behavior for an unset parameter (supply
+         a default, assign one, raise its own custom message, or
+         substitute nothing), handled below by the switch on
+         param->flag & S_VAR once v is left NULL here. Only a truly
+         bare ${parameter}/$parameter (S_DEFAULT with no word at all)
+         is the "must be already set" case nounset actually guards. */
+    } else if(sh->opts.unset && (param->flag & S_VAR) == S_DEFAULT && !param->word) {
       sh_msg(param->name);
       buffer_putsflush(fd_err->w, ": unbound variable\n");
-      tree_free(n);
+
+      /* POSIX: a non-interactive shell must exit outright here, not
+         just fail this one word -- sh_exit() never returns. Doing
+         this ourselves also sidesteps the alternative entirely: `n`
+         is a placeholder node owned by (already linked into) the
+         caller's argument list, e.g. expand_args.c's own
+         `n->next = tree_newnode(...)` -- freeing it here without
+         unlinking it left that list's own `->next` dangling, a
+         use-after-free the next simple command's tree_count() (or
+         anything else walking the list) would immediately hit. */
+      if(!(source->mode & SOURCE_IACTIVE))
+        sh_exit(1);
 
       n = 0;
       goto fail;

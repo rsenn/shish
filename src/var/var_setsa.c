@@ -1,6 +1,7 @@
 #include "../var.h"
 #include "../fdtable.h"
 #include "../sh.h"
+#include "../../lib/byte.h"
 #include <assert.h>
 
 /* set a variable from a stralloc in the format: name=word
@@ -31,6 +32,10 @@ var_setsa(stralloc* sa, int flags) {
     buffer_putsflush(fd_err->w, ": readonly variable\n");
     return 0;
   }
+
+  if(var->len == 6 && byte_equal(sa->s, 6, "RANDOM"))
+    var_random_assign(sa->len > var->len ? sa->s + var->len + 1 : "",
+                       sa->len > var->len ? sa->len - var->len - 1 : 0);
 
   /* now check how we set the value, there are 4 possibilities */
   if(var->flags & V_FREESTR) {

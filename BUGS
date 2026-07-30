@@ -1,30 +1,32 @@
-- yash-random-y-tst-hangs: `tests/yash/random-y.tst` hangs (bounded by
-  CTest's 120s per-file TIMEOUT). The rest of the suite is fine.
-  `$RANDOM` itself varies correctly when checked directly, so the
-  two busy-`until`-loops at the top aren't the obvious cause; more
-  likely the later cases piping a function's output through subshells
-  (`print > seeded1; print > seeded2; diff seeded1 seeded2`), similar
-  in shape to `subshell-exit-trap-output-misdirected`. Not isolated to
-  a specific line yet.
+- yash-suite-other-hangs: `tests/yash/random-y.tst` (formerly
+  `yash-random-y-tst-hangs`) no longer hangs -- confirmed fixed as a
+  side effect of unrelated 2026-07-30 work (most likely
+  `fixes/111`/`fixes/112`, both about pipeline/redirection-failure
+  control flow); it now completes in well under a second and, once
+  actually inspected, turned up three genuine `$RANDOM` bugs (seeding,
+  non-integer assignment, and `unset` not disabling the magic), fixed
+  separately as `fixes/113`.
 
-  2026-07-29: confirmed still open and unrelated to any in-tree
-  change -- reproduces on a from-scratch checkout of this exact
-  commit, with no local modifications. Earlier testing this same day
-  claimed this (and a since-fixed, unrelated `redir-p.tst` bug,
-  `fixes/89`) were sensitive to `-DCMAKE_BUILD_TYPE=Release` vs the
-  project's default `MinSizeRel` -- that turned out, for the
-  `redir-p.tst` case, to be two stacked *testing* mistakes (a stale
-  `enabled-builtins` comparison and a relative testee path silently
-  breaking after `run-tst.sh`'s `cd`), not a real build-type
-  sensitivity, so treat the same claim here with equal suspicion until
-  it's re-confirmed with paths/builtins actually held constant across
-  the comparison. What is solid: the hung process sits at 100% CPU (a
-  spin, not a blocked syscall), which points at the two busy-`until`
-  `$RANDOM`-comparison loops at the top of the file, despite the
-  earlier note ruling them out from a shallower check -- next step is
-  a debug build (`cfg -DCMAKE_BUILD_TYPE=Debug`) under a debugger to
-  catch exactly which loop is spinning and why the two `$RANDOM` reads
-  it compares aren't diverging.
+  However, a full sweep of all 119 `tests/yash/*.tst` files (each run
+  individually with a 10s timeout via `run-tst.sh`, same as CTest's own
+  per-file `TIMEOUT` but much shorter to survey quickly) found several
+  *other* files that still hang or run suspiciously long, so
+  `DO_YASH_TESTS` staying off by default (see `TODO.md`) is still
+  correct, just for a different, not-yet-isolated reason:
+
+    arith-y.tst, cmdprint-y.tst, pipeline-y.tst, redir-y.tst,
+    until-y.tst, while-y.tst -- all hit the 10s timeout (still running,
+    not just slow).
+
+    function-y.tst (~8s), if-y.tst (~9.5s), typeset-y.tst (~8.5s) --
+    finished but suspiciously slow for a conformance test file; may or
+    may not be a real bug (could just be an intentionally slow test
+    case), not investigated.
+
+  None of these are isolated to a specific line/case yet -- same next
+  step as before applies (debug build + debugger, or bisecting each
+  file's test cases individually via a copy with cases removed) but
+  hasn't been done for any of them.
 
 - eval-lineno-imprecise-inside-function: `$LINENO` read from within an
   `eval`'d string now counts from the invoking statement's line
@@ -79,27 +81,6 @@
     set - a b c; echo "$1 $2 $3"
     # prints "- a b", should print "a b c"
 
-- set-noglob-not-enforced: `struct shopt`'s `noglob` bit (`src/sh.h`,
-  `-f`) is set correctly by `set -f`/`set +f` and reflected back
-  correctly in `$-`, but `src/expand/expand_glob.c` (and everything
-  else) never checks it -- pathname expansion always runs regardless:
-
-    set -f; echo *.c
-    # still expands *.c -- should print the literal "*.c"
-
-- set-hashall-not-enforced: `struct shopt`'s `hashall` bit (`src/sh.h`,
-  `-h`) is set correctly by `set -h`/`set +h` and reflected back
-  correctly in `$-`, but nothing in `src/exec/` ever checks it --
-  command locations are always remembered on first lookup regardless
-  of this flag. The default is even "on" (`src/sh/sh_root.c`), so
-  turning it "off" can't be observed at all.
-
-- set-braceexpand-not-enforced: `struct shopt`'s `braceexpand` bit
-  (`src/sh.h`, `-B`) is set correctly by `set -B`/`set +B` and
-  reflected back correctly in `$-`, but neither `src/parse/parse_param.c`
-  nor `src/parse/parse_unquoted.c` (where brace expansion is actually
-  parsed) ever checks it -- behavior is identical with the flag on or
-  off.
 
 - set-histexpand-unimplemented: `struct shopt`'s `histexpand` bit
   (`src/sh.h`, `-H`) is set correctly by `set -H`/`set +H` and
