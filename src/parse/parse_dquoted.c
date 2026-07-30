@@ -15,8 +15,29 @@ parse_dquoted(struct parser* p) {
 
   for(;;) {
     /* peek the next char */
-    if(source_peek(&c) <= 0)
+    if(source_peek(&c) <= 0) {
+      /* end of input with no trailing newline is a hard error in
+         general, but inside a here-document it must instead be
+         treated as an implicit line terminator for whatever's
+         accumulated so far -- exactly like a real '\n' would be,
+         complete with the synthetic newline appended below so
+         parse_here.c's delimiter-length comparison still lines up.
+         Without this, a here-doc whose closing delimiter is the very
+         last thing in the source (no newline after it -- routine for
+         a `-c` script string, which unlike a file has no implicit
+         trailing newline of its own) never matched the delimiter at
+         all: parsing errored out here instead, and redir_source.c's
+         error path left the redirection's word as the original,
+         unexpanded delimiter node -- so the here-doc's "content"
+         silently became the literal delimiter text instead of the
+         real body. */
+      if(flags & P_HERE) {
+        stralloc_catc(&p->sa, '\n');
+        break;
+      }
+
       return -1;
+    }
 
     /* only ", $ and ` must be escaped */
     if(c == '\\') {

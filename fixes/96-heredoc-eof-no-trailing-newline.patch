@@ -1,0 +1,97 @@
+diff --git a/lib/buffer/buffer_prefetch.c b/lib/buffer/buffer_prefetch.c
+index fb9de9fd..8a1903f4 100644
+--- a/lib/buffer/buffer_prefetch.c
++++ b/lib/buffer/buffer_prefetch.c
+@@ -2,12 +2,33 @@
+ #include "../byte.h"
+ 
+ ssize_t buffer_dummyreadmmap(int, void* buf, size_t len, void* p);
++ssize_t buffer_dummyread_fromstr(int, void* buf, size_t len, void* p);
+ ssize_t buffer_stubborn_read(buffer_op_proto*, int fd, const void* buf, size_t len, void* ptr);
+ 
+ int
+ buffer_prefetch(buffer* b, size_t n) {
+   if(b->p && b->p + n >= b->a) {
++    /* a buffer that will never read any more data from an underlying
++       fd (mmap'd, or -- buffer_fromstr()'s -c/eval/here-doc/command-
++       substitution case -- backed directly by a plain string) has
++       nothing to gain from compacting: there's no later read() that
++       would benefit from the freed room at the end. Worse, doing it
++       anyway is actively wrong for buffer_fromstr(): unlike mmap
++       (read-only, and already exempted below), its b->x is the
++       *original* string pointer handed in by the caller -- for `-c`,
++       that's literally the argv string holding the whole script.
++       byte_copy()'ing it left in place to "compact" mutates that
++       string as a side effect of mere lookahead, corrupting whatever
++       hasn't been consumed yet. Confirmed via a here-document under
++       `-c`: something later reads past this same offset again (the
++       delimiter search in parse_here.c does exactly that, needing
++       both forward progress and to re-examine what it's already
++       scanned) and every byte from the current read position onward
++       had already been shifted out from under it, so the here-doc
++       body came back as the literal delimiter text instead of the
++       real content. */
+     if((buffer_op_proto*)b->op == (buffer_op_proto*)(void*)&buffer_dummyreadmmap ||
++       (buffer_op_proto*)b->op == (buffer_op_proto*)(void*)&buffer_dummyread_fromstr ||
+        b->deinit == (void (*)())&buffer_munmap)
+       return b->n - b->p;
+     byte_copy(b->x, b->n - b->p, &b->x[b->p]);
+diff --git a/src/parse/parse_dquoted.c b/src/parse/parse_dquoted.c
+index 796bf9f8..9b97a903 100644
+--- a/src/parse/parse_dquoted.c
++++ b/src/parse/parse_dquoted.c
+@@ -15,8 +15,29 @@ parse_dquoted(struct parser* p) {
+ 
+   for(;;) {
+     /* peek the next char */
+-    if(source_peek(&c) <= 0)
++    if(source_peek(&c) <= 0) {
++      /* end of input with no trailing newline is a hard error in
++         general, but inside a here-document it must instead be
++         treated as an implicit line terminator for whatever's
++         accumulated so far -- exactly like a real '\n' would be,
++         complete with the synthetic newline appended below so
++         parse_here.c's delimiter-length comparison still lines up.
++         Without this, a here-doc whose closing delimiter is the very
++         last thing in the source (no newline after it -- routine for
++         a `-c` script string, which unlike a file has no implicit
++         trailing newline of its own) never matched the delimiter at
++         all: parsing errored out here instead, and redir_source.c's
++         error path left the redirection's word as the original,
++         unexpanded delimiter node -- so the here-doc's "content"
++         silently became the literal delimiter text instead of the
++         real body. */
++      if(flags & P_HERE) {
++        stralloc_catc(&p->sa, '\n');
++        break;
++      }
++
+       return -1;
++    }
+ 
+     /* only ", $ and ` must be escaped */
+     if(c == '\\') {
+diff --git a/src/parse/parse_squoted.c b/src/parse/parse_squoted.c
+index 0b2e8634..a19f118c 100644
+--- a/src/parse/parse_squoted.c
++++ b/src/parse/parse_squoted.c
+@@ -12,8 +12,18 @@ parse_squoted(struct parser* p) {
+   p->quot = Q_SQUOTED;
+ 
+   for(;;) {
+-    if(source_get(&c) <= 0)
++    if(source_get(&c) <= 0) {
++      /* same "end of input inside a here-doc must act like a
++         trailing newline" fix as parse_dquoted.c -- see its comment
++         for why. This is the nosubst (quoted-delimiter, e.g.
++         "<<'EOF'") path, which needs it just as much. */
++      if(p->flags & P_HERE) {
++        stralloc_catc(&p->sa, '\n');
++        return 0;
++      }
++
+       return -1;
++    }
+ 
+     if(!(p->flags & P_HERE) && c == '\'') {
+       parse_string(p, 0);

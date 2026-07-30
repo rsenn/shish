@@ -1821,4 +1821,22 @@ rm -f "$F95" /tmp/fixed95.err
 assert_equal "hi" "$X95" "a pipeline's builtin stage, forked from inside a function via a command substitution, must still produce the right output"
 assert_equal "" "$STDERR95" "the same construct must not crash the forked builtin's own process on exit"
 
+## fixes/96 (heredoc-eof-no-trailing-newline): a here-document whose
+## closing delimiter is the very last thing in the source, with no
+## newline after it, failed to parse at all -- parse_dquoted.c/
+## parse_squoted.c's per-character read loop only recognized "end of
+## this line" on an actual '\n' byte, so hitting end-of-input first
+## returned a hard error instead. redir_source.c's error path then
+## left the redirection's word as the original, unexpanded delimiter
+## node, so the here-doc's "content" silently became the literal
+## delimiter text ("EOF") instead of the real body. A `-c` command
+## string is the routine way to hit this (unlike a file, it has no
+## implicit trailing newline of its own), but a sourced file missing
+## its own final newline hits the identical code path.
+F96=$(mktemp)
+printf 'cat <<EOF\nHEREDOCCONTENT\nEOF' >"$F96"
+X96=$(. "$F96")
+rm -f "$F96"
+assert_equal "HEREDOCCONTENT" "$X96" "a here-doc whose closing delimiter is the last thing in the source, with no trailing newline, must still work"
+
 summary
