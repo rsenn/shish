@@ -1739,4 +1739,22 @@ assert_equal "hi" "$X90" "a builtin reading stdin as a non-first pipeline member
 X90B=$(printf 'a\nb\nc\n' | cat -n)
 assert_equal "$(printf '    1 a\n    2 b\n    3 c')" "$X90B" "the same holds for a pipeline that actually pushes multiple lines through the builtin"
 
+## fixes/92 (eval-lineno-always-1): eval builds its own in-memory
+## source via source_buffer(), which used to always reset to line 1
+## (source_push()'s default for a genuinely new file) -- so a $LINENO
+## reference inside an eval'd string always printed 1, no matter where
+## the eval call itself appeared in the surrounding script. Fixed by
+## having source_buffer() seed the new source's starting line from
+## parse_lineno for any buffer that has a parent source (i.e. every
+## caller except a top-level script/-c source, which still starts
+## fresh at line 1 via source_push() directly). Sourcing a separate
+## temp file (rather than checking $LINENO against this script's own
+## line count) keeps the assertion below stable if lines are ever
+## added above it.
+F92=$(mktemp)
+printf 'echo line1\neval "echo \$LINENO"\n' >"$F92"
+X92=$(. "$F92")
+rm -f "$F92"
+assert_equal "$(printf 'line1\n2')" "$X92" "\$LINENO inside an eval'd string must count from the eval call's own line, not always report 1"
+
 summary

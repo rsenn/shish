@@ -44,3 +44,20 @@
     ln -s /etc/hostname mylink
     # symlink: mylink/: No such file or directory -- should silently
     # create ./mylink -> /etc/hostname
+
+- eval-lineno-imprecise-inside-function: `$LINENO` read from within an
+  `eval`'d string now counts from the invoking statement's line
+  (fixed, see fixes/92) rather than always reporting 1, but the value
+  it inherits (`parse_lineno`, stamped once per top-level list by
+  `sh_loop()`) is the *call site's* line, not the eval statement's own
+  line when eval runs from inside a function or loop body whose
+  definition spans multiple lines -- there is no per-command location
+  tracking to fall back on for that case (unlike a direct, non-eval'd
+  `$LINENO` reference, which reads the parse-time `loc` stamped
+  individually on its own `N_ARGPARAM` node). Confirmed:
+
+    f() {
+      echo $LINENO   # correctly prints 2
+      eval 'echo $LINENO'   # prints 5 (f's call site), should print 3
+    }
+    f
