@@ -8,6 +8,7 @@
 int
 parse_unquoted(struct parser* p) {
   int flags = 0;
+  int in_bracket = 0;
   char c;
 
   /* set the quotation mode */
@@ -157,6 +158,26 @@ parse_unquoted(struct parser* p) {
         parse_string(p, flags);
 
       return 1;
+    }
+    /* '[' only makes a word worth handing to glob(3) if it's later
+       matched by a ']' in the same word -- an unpaired '[' can never
+       be a valid bracket expression, so it's always used literally
+       regardless. Flagging S_GLOB for it anyway used to send every
+       such word through a real glob(3) call, which (unlike a
+       metacharacter-free pattern) can't take glob(3)'s own "just
+       stat() it" fast path once it's seen a '[', so it actually reads
+       the current directory (getdents64) and stat()s candidate
+       entries against the pattern before giving up -- paid on every
+       single use of the POSIX "[ ... ]" test syntax, one of the most
+       common constructs in any real script
+       (unpaired-bracket-triggers-real-glob-every-time). */
+    else if(c == '[') {
+      in_bracket = 1;
+    } else if(c == ']') {
+      if(in_bracket) {
+        flags |= S_GLOB;
+        in_bracket = 0;
+      }
     }
     /* if it is a character subject to globbing then set S_GLOB flag */
     else if(parse_isesc(c)) {

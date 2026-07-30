@@ -1855,4 +1855,30 @@ assert_equal "HEREDOCCONTENT" "$X96" "a here-doc whose closing delimiter is the 
 X97=$(f() { ( return 5 ); echo "after: $?"; }; f; echo "f returned: $?")
 assert_equal "$(printf 'after: 5\nf returned: 0')" "$X97" "return inside a subshell must only end the subshell, not propagate out through the enclosing function"
 
+## fixes/98 (unpaired-bracket-triggers-real-glob-every-time):
+## parse_unquoted.c set S_GLOB on a word the instant it saw any
+## unquoted character in "* ? [ ] \", with no check for whether those
+## characters actually formed a syntactically plausible pattern -- so
+## a lone "[" (POSIX test/"[ ]" syntax, the single most common token
+## in any real script) sent every word through a real glob(3) call,
+## which reads the current directory (getdents64) and stat()s
+## candidates before giving up, every single time. Fixed by only
+## setting S_GLOB for "[" once a later "]" in the same word actually
+## completes a bracket expression.
+##
+## Correctness is covered above and elsewhere (glob patterns still
+## expand correctly); this is specifically a performance regression
+## guard, timing-based since the bug produced correct output, just
+## catastrophically slower. 50000 iterations of a bare "[ ]" loop
+## condition: ~0.02s fixed, ~3.6s with the bug reintroduced (measured
+## via `git stash` against the pre-fix tree) -- generous margin below
+## to tolerate a slow/loaded CI machine while still failing hard if
+## the real glob(3) call comes back.
+T98_0=$(date +%s)
+i=0
+while [ $i -lt 50000 ]; do i=$((i + 1)); done
+T98_1=$(date +%s)
+ELAPSED98=$((T98_1 - T98_0))
+assert_less "$ELAPSED98" "5" "50000 iterations of a bare '[ ]' loop condition must not trigger a real glob(3) call per iteration"
+
 summary
