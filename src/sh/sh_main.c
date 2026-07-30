@@ -205,6 +205,13 @@ main(int argc, char** argv, char** envp) {
 
     sh->opts.monitor = 1;
     sh->opts.histexpand = 1;
+
+    /* only now does fd_err->mode & FD_TERM actually reflect reality --
+       term_init() above is what sets it. See job_terminal_init()'s own
+       comment (BUGS: job-terminal-never-initialized) for why this
+       can't just happen inside job_init() (called earlier, from
+       sh_init()). */
+    job_terminal_init();
   } else
     src.mode &= ~SOURCE_IACTIVE;
 

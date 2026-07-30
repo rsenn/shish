@@ -12,7 +12,22 @@ job_clean(bool print) {
     next = j->next;
 
     if(job_done(j)) {
-      if(print) {
+      /* the "Done"/"Stopped"/etc. banner job_print() -> job_banner()
+         prints is for interactive use only -- job_wait()'s own
+         equivalent JOB_DONE banner is explicitly gated on
+         sh->opts.monitor for exactly that reason ("so configure's
+         stderr stays clean"), but this path (job_update(), called
+         unconditionally every sh_loop() iteration whenever the async
+         SIGCHLD handler beat job_wait() to reaping a job) printed it
+         regardless of mode. A foreground job whose process gets
+         reaped asynchronously before job_wait()'s own synchronous
+         wait_pid() loop gets to it (a real race, not just
+         theoretical -- e.g. a child killed by a signal while shish
+         itself is between event-loop iterations) could have this path
+         announce it before job_wait() ever runs its own gating, i.e. a
+         stray "[1]+ Done ..." line in a plain non-interactive script's
+         stderr. */
+      if(print && sh->opts.monitor) {
         /* whatever's on the current line (a prompt, in-progress
            typing) isn't ours to print over -- clear it and move to
            column 1 before the first banner, matching what

@@ -118,6 +118,7 @@ void job_print(struct job*, buffer* out);
 void job_clean(bool);
 void job_dump(buffer*);
 void job_init(void);
+void job_terminal_init(void);
 void job_printstatus(pid_t, int status);
 void job_update(void);
 

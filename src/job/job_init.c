@@ -13,10 +13,18 @@
 int job_terminal = -1;
 int job_sigfd[2] = {-1, -1};
 
-/* initializes job control
+/* sets up job_terminal/job_pgrp once it's known whether stderr is
+ * really a terminal -- split out of job_init() (see its call site in
+ * sh_main.c) because that flag (FD_TERM) isn't set until term_init()
+ * runs, which happens *after* job_init() does; calling this from
+ * job_init() itself always saw a not-yet-updated fd_err->mode and left
+ * job_terminal permanently at -1, silently disabling every
+ * tcsetpgrp()-based terminal handoff in exec_program.c/job_fork.c/
+ * job_wait.c even for a genuinely interactive session (BUGS:
+ * job-terminal-never-initialized).
  * ----------------------------------------------------------------------- */
 void
-job_init(void) {
+job_terminal_init(void) {
   struct fd* d;
 
   /* find a filedescriptor which is a terminal */
@@ -35,7 +43,12 @@ job_init(void) {
     job_pgrp = tcgetpgrp(job_terminal);
 #endif
   }
+}
 
+/* initializes job control
+ * ----------------------------------------------------------------------- */
+void
+job_init(void) {
 #if !WINDOWS_NATIVE
   /* see job_sigfd's declaration in job.h -- sh_onsig() writes one
      byte per SIGCHLD, term_read() wakes on it via select() */
