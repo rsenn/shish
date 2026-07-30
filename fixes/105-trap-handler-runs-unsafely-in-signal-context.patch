@@ -1,0 +1,470 @@
+diff --git a/lib/sig.h b/lib/sig.h
+index 08db17fd..9e2c94e9 100644
+--- a/lib/sig.h
++++ b/lib/sig.h
+@@ -84,6 +84,16 @@ typedef unsigned long sigset_type;
+ #ifndef SA_NOCLDSTOP
+ #define SA_NOCLDSTOP ((unsigned long)0x02)
+ #endif
++/* sig_action() otherwise always adds the real SA_RESTART flag
++ * (see its own comment) -- pass this to opt a specific handler out.
++ * Needed for a real-signal trap ("trap CMD INT"): the whole point of
++ * catching the signal is to interrupt whatever blocking syscall the
++ * shell is in the middle of (typically job_wait()'s wait_pid()) so
++ * the trap body can actually run promptly, not have the kernel
++ * silently resume that syscall as if nothing happened. */
++#ifndef SA_NORESTART
++#define SA_NORESTART ((unsigned long)0x04)
++#endif
+ 
+ #define SIGSTACKSIZE 16
+ 
+diff --git a/lib/sig/sig_action.c b/lib/sig/sig_action.c
+index e7167891..b06d02f3 100644
+--- a/lib/sig/sig_action.c
++++ b/lib/sig/sig_action.c
+@@ -14,7 +14,8 @@ sig_action(int sig, struct sigaction const* new, struct sigaction* old) {
+   sanew.sa_handler = new->sa_handler;
+   sanew.sa_flags = (new->sa_flags & SA_NOCLDSTOP) ? SA_NOCLDSTOP : 0;
+ #ifndef FLAG_PREFERSELECT
+-  sanew.sa_flags |= SA_RESTART;
++  if(!(new->sa_flags & SA_NORESTART))
++    sanew.sa_flags |= SA_RESTART;
+ #endif
+ 
+   if(sigaction(sig, &sanew, &saold) < 0)
+diff --git a/lib/sig/sig_push.c b/lib/sig/sig_push.c
+index 06f6c026..1cd1b620 100644
+--- a/lib/sig/sig_push.c
++++ b/lib/sig/sig_push.c
+@@ -18,7 +18,11 @@ sig_push(int sig, sighandler_t_ref f) {
+      128-byte struct) and, regardless of ABI, leaves the real
+      sa_flags field uninitialized (sig-push-sigset-cast, fixes/76). */
+   ssa.sa_handler = f;
+-  ssa.sa_flags = SA_MASKALL | SA_NOCLDSTOP;
++  /* SA_NORESTART: sig_push() is only ever used to install a real-signal
++     trap ("trap CMD INT"), where the whole point is to interrupt
++     whatever blocking syscall is in progress -- see lib/sig.h's own
++     comment. */
++  ssa.sa_flags = SA_MASKALL | SA_NOCLDSTOP | SA_NORESTART;
+ 
+   return sig_pusha(sig, &ssa);
+ #endif
+diff --git a/lib/wait/waitpid_nointr.c b/lib/wait/waitpid_nointr.c
+index 1b37dd32..77a645d6 100644
+--- a/lib/wait/waitpid_nointr.c
++++ b/lib/wait/waitpid_nointr.c
+@@ -7,6 +7,14 @@
+ #endif
+ 
+ #include <errno.h>
++#include <signal.h>
++
++/* set by builtin_trap.c's trap_relay() (the real, async-signal-safe
++ * OS handler for a real-signal trap) whenever a trapped signal fires;
++ * cleared once trap_run_pending() has dispatched everything pending.
++ * Checked below so an EINTR caused by a genuine trap signal doesn't
++ * just get silently retried -- see waitpid_nointr()'s own comment. */
++extern volatile sig_atomic_t trap_signaled;
+ 
+ int
+ waitpid_nointr(int pid, int* wstat, int flags) {
+@@ -44,7 +52,7 @@ waitpid_nointr(int pid, int* wstat, int flags) {
+ 
+   do {
+     r = waitpid(pid, wstat, flags);
+-  } while((r == (int)-1) && (errno == EINTR));
++  } while((r == (int)-1) && (errno == EINTR) && !trap_signaled);
+ 
+   return r;
+ #endif
+diff --git a/src/builtin/builtin_trap.c b/src/builtin/builtin_trap.c
+index 8dcb7fb3..41c9d343 100644
+--- a/src/builtin/builtin_trap.c
++++ b/src/builtin/builtin_trap.c
+@@ -8,9 +8,12 @@
+ #include "../exec.h"
+ #include "../fdtable.h"
+ #include "../expand.h"
++#include "../job.h"
+ #include "../../lib/sig.h"
+ #include "../../lib/scan.h"
+ #include <assert.h>
++#include <signal.h>
++#include <unistd.h>
+ 
+ typedef struct trap_s {
+   unsigned char sig;
+@@ -75,10 +78,24 @@ trap_print(trap* tr) {
+   buffer_putnlflush(fd_out->w);
+ }
+ 
++/* set by trap_relay() (the real OS signal handler, installed via
++ * sig_push() below) for whichever real signal just fired; drained by
++ * trap_run_pending(), which does the actual, unsafe-to-do-in-a-
++ * handler work (see its own comment). volatile sig_atomic_t is the
++ * one type POSIX guarantees is safe to read/write from both a signal
++ * handler and ordinary code without a data race. Indexed by raw
++ * signal number -- the pseudo-signals TRAP_EXIT (0)/TRAP_DEBUG (254)/
++ * TRAP_RETURN (255) are never real OS signals, so trap_relay() (only
++ * ever invoked by the kernel for a real one) never touches those
++ * slots. */
++static volatile sig_atomic_t trap_pending[256];
++volatile sig_atomic_t trap_signaled = 0;
++
+ static void
+ trap_handler(int sig) {
+   trap* tr;
+   struct eval e;
++  int was_async;
+ 
+ #if defined(DEBUG_OUTPUT) && defined(DEBUG_BUILTIN)
+   debug_to(buffer_2);
+@@ -93,9 +110,89 @@ trap_handler(int sig) {
+     return;
+   }
+ 
++  /* a real-signal trap (sig > 0; this function also handles the
++     EXIT/DEBUG/RETURN pseudo-signals via trap_debug()/trap_return()/
++     trap_exit() below, which call it directly rather than through
++     trap_run_pending()) fires asynchronously -- interrupting whatever
++     the script happened to be doing, possibly deep inside an
++     in-process subshell. An "exit" in its body must terminate the
++     whole process regardless of that; see sh_async_exit's own comment
++     (sh.h) and eval_subshell.c's use of it. The EXIT/DEBUG/RETURN
++     pseudo-traps are always invoked synchronously instead -- a
++     natural, in-order consequence of normal control flow (a function
++     returning, a subshell ending) -- where "exit" inside them
++     legitimately stays scoped to whatever subshell it's naturally
++     nested in, same as an ordinary synchronous "exit" would be, so
++     they must NOT set this. */
++  was_async = sh_async_exit;
++
++  if((char)sig > 0)
++    sh_async_exit = 1;
++
+   eval_push(&e, 0);
+   eval_tree(&e, tr->tree, 0);
+   eval_pop(&e);
++
++  /* only reached if the trap body didn't itself exit -- an exit that
++     did already terminated the process by the time anything gets
++     back here (see eval_subshell.c), so there's nothing stale left to
++     restore in that case. */
++  sh_async_exit = was_async;
++}
++
++/* the real OS-level signal handler installed by trap_install() for a
++ * real signal (via sig_push()) -- kept to the bare minimum of async-
++ * signal-safe work (a plain memory write, same as sh_onsig()'s own
++ * SIGCHLD handler; see BUGS: sh-onsig-async-unsafe, fixes/87) instead
++ * of running the trap body here directly. The trap body used to run
++ * straight from this handler, via eval_tree() -- allocation-heavy,
++ * definitely not async-signal-safe, and, worse, whatever syscall this
++ * interrupted (typically job_wait()'s blocking wait_pid()) would just
++ * transparently resume once this handler returned (SA_RESTART), so a
++ * trap that itself called "exit" never got a chance to run until
++ * ordinary control flow happened to reach a dispatch point on its
++ * own -- observed as a real repro: SIGINT during a "gcc" invocation
++ * killed gcc (its own, unrelated default disposition) but shish
++ * itself just continued to the next command as if nothing happened.
++ * sig_push() now installs with SA_NORESTART for exactly this reason:
++ * the interrupted syscall needs to actually return (EINTR) so
++ * trap_run_pending() gets a chance to run promptly (see
++ * waitpid_nointr()'s matching change). The byte written to
++ * job_sigfd[1] wakes term_read()'s select() loop the same way
++ * sh_onsig() already does for SIGCHLD. */
++static void
++trap_relay(int sig) {
++  trap_pending[(unsigned char)sig] = 1;
++  trap_signaled = 1;
++
++  if(job_sigfd[1] >= 0) {
++    char b = 0;
++    write(job_sigfd[1], &b, 1);
++  }
++}
++
++/* runs every trap whose signal fired since the last call, from
++ * ordinary (non-signal-handler) context -- see trap_relay() above.
++ * Called from sh_loop()'s main loop, term_read()'s select() wakeup,
++ * and job_wait()'s own retry loop, so a trap fires promptly even
++ * while blocked waiting on a long-running external command, not just
++ * between top-level statements.
++ * ----------------------------------------------------------------------- */
++void
++trap_run_pending(void) {
++  int sig;
++
++  if(!trap_signaled)
++    return;
++
++  trap_signaled = 0;
++
++  for(sig = 1; sig < 254; sig++) {
++    if(trap_pending[sig]) {
++      trap_pending[sig] = 0;
++      trap_handler(sig);
++    }
++  }
+ }
+ 
+ void
+@@ -171,9 +268,29 @@ trap_uninstall(int sig) {
+ 
+   for(ptr = &traps; (t = *ptr); ptr = &(*ptr)->next) {
+     if(t->sig == (unsigned char)sig) {
+-      if((char)t->sig > 0)
++      if((char)t->sig > 0) {
+         sig_pop(sig);
+ 
++        /* discard any not-yet-dispatched occurrence of this signal:
++           trap_relay() may have already set trap_pending[sig] (the
++           signal was delivered) without trap_run_pending() having
++           had a chance to drain it yet (e.g. it fired while still
++           inside a subshell that's now exiting and uninstalling its
++           own trap for this signal right here). Left set, the next
++           trap_run_pending() call would dispatch it against whatever
++           trap (if any) is *now* installed instead -- if that's
++           none, trap_handler() hits its "no trap found" fallback and
++           calls sh_exit(1), silently killing the whole process for
++           what looks like a completely untrapped signal. Confirmed
++           via a real repro: "( trap 'echo x' TERM; kill -TERM $$ )"
++           with nothing after the kill -- the subshell's own
++           trap_snapshot_restore() (which also hits this same path)
++           uninstalls the TERM trap before the pending signal from
++           the kill is ever drained, and the shell exits(1) instead
++           of continuing past the subshell. */
++        trap_pending[(unsigned char)sig] = 0;
++      }
++
+       *ptr = t->next;
+ 
+       /* while a subshell is evaluating, the parent shell's
+@@ -226,11 +343,14 @@ trap_install(int sig, union node* tree) {
+ 
+     /* sig_push() (lib/sig) saves whatever disposition the signal
+        already had (SIG_DFL, for a signal never trapped before) on a
+-       per-signal stack, installing trap_handler with SA_MASKALL so
+-       another signal can't re-enter it while a trap action is
+-       already running -- trap_uninstall()'s matching sig_pop() above
+-       restores exactly what was there before, not just SIG_DFL. */
+-    sig_push(sig, &trap_handler);
++       per-signal stack, installing trap_relay (not trap_handler
++       itself -- see its own comment for why) with SA_MASKALL so
++       another signal can't re-enter it while it runs, and
++       SA_NORESTART so a blocking syscall this interrupts actually
++       returns instead of transparently resuming -- trap_uninstall()'s
++       matching sig_pop() above restores exactly what was there
++       before, not just SIG_DFL. */
++    sig_push(sig, &trap_relay);
+ 
+   } else if((unsigned char)sig == TRAP_DEBUG) {
+     e = eval_find(E_ROOT);
+@@ -313,9 +433,17 @@ trap_snapshot_restore(void* handle) {
+     }
+ 
+     if(!keep) {
+-      if((char)t->sig > 0)
++      if((char)t->sig > 0) {
+         sig_pop(t->sig);
+ 
++        /* same reasoning as trap_uninstall()'s matching fix: a
++           subshell's own trap for this signal is about to stop
++           existing, so any not-yet-dispatched occurrence of it must
++           not be left to fire later against whatever (if anything)
++           is installed once we're back in the parent. */
++        trap_pending[(unsigned char)t->sig] = 0;
++      }
++
+       tree_free(t->tree);
+       alloc_free(t);
+     }
+diff --git a/src/eval/eval_subshell.c b/src/eval/eval_subshell.c
+index e4ec7c31..33d21809 100644
+--- a/src/eval/eval_subshell.c
++++ b/src/eval/eval_subshell.c
+@@ -80,5 +80,27 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
+ 
+   sh->exitcode = ret;
+ 
++  /* an "exit" triggered by a real-signal trap (sh_async_exit, see
++     sh.h) landed here via eval_exit()'s longjmp same as any other
++     "exit" inside a subshell would -- but unlike an *ordinary*
++     synchronous "exit" written directly in the script (which is
++     correctly done at this point: bash's own subshells are separate
++     processes, so "exit" inside one only ever kills that process),
++     this one needs to keep going. shish's "(...)" runs in-process
++     rather than forking, so terminating "just this subshell" here
++     means nothing more than returning normally and letting the rest
++     of the script carry on completely unaffected by the signal --
++     exactly the "Ctrl-C doesn't stop ./configure" bug this fixes.
++     Every other bit of this subshell's own state is already correctly
++     unwound above (funcs/traps/env/vartab/fdstack) at this point, so
++     it's safe to just ask again from here: sh_exit() re-runs
++     eval_exit(), which finds the *next* enclosing subshell (if any)
++     and repeats this same cleanup-then-recheck one level up, or -- if
++     there's no further subshell above us -- falls through to its own
++     real exit() call, actually terminating the process. Either way
++     this call never returns. */
++  if((jmpret & 1) && sh_async_exit)
++    sh_exit(ret);
++
+   return ret;
+ }
+diff --git a/src/job/job_wait.c b/src/job/job_wait.c
+index 2eec4ded..dc0225e1 100644
+--- a/src/job/job_wait.c
++++ b/src/job/job_wait.c
+@@ -12,6 +12,11 @@
+ #include "../term.h"
+ #include "../../lib/wait.h"
+ #include <signal.h>
++#include "builtin_config.h"
++
++#if BUILTIN_TRAP
++void trap_run_pending(void);
++#endif
+ 
+ /* waits for a job to terminate
+  * ----------------------------------------------------------------------- */
+@@ -31,6 +36,20 @@ job_wait(struct job* j, pid_t pid, int* status) {
+       size_t remaining = 0;
+       int stopped = 0;
+ 
++#if BUILTIN_TRAP
++      /* check on every pass, not just after a failed/interrupted
++         wait_pid() below -- a trap's signal can just as easily have
++         already been delivered (and trap_relay() already run) before
++         this loop ever got here at all, e.g. a synchronous "kill -TERM
++         $$" immediately followed by a command that blocks here: the
++         subsequent wait_pid() call has nothing to interrupt in that
++         case (the signal was already fully handled), so it just
++         blocks normally until the child exits and returns success on
++         its very first call, without ever reaching the "nothing
++         found" branch this same dispatch call also lives in below. */
++      trap_run_pending();
++#endif
++
+       /* the SIGCHLD handler (sh_onsig() -> wait_nohang() ->
+          job_signal()) can race ahead of us and reap a process on its
+          own -- a real race for a child that exits fast, e.g. "cmd &"
+@@ -104,6 +123,20 @@ job_wait(struct job* j, pid_t pid, int* status) {
+             job_printstatus(ret, s);
+         }
+       } else {
++#if BUILTIN_TRAP
++        /* wait_pid()/wait_pid_untraced() returning here with nothing
++           reaped is also exactly how a real-signal trap (SIGINT,
++           etc.) shows up: trap_relay()'s SA_NORESTART means the
++           underlying wait4() actually returns (EINTR) instead of
++           transparently resuming, specifically so this dispatch can
++           happen promptly -- without it, a trap installed while
++           blocked waiting on a long-running external command (e.g.
++           gettext-tools' configure, whose autoconf-generated "trap
++           ... INT" waits on real gcc invocations) wouldn't run until
++           the next top-level statement, if ever. */
++        trap_run_pending();
++#endif
++
+         /* wait_pid()/wait_pid_untraced() found nothing left to reap
+            itself -- either the SIGCHLD handler beat us to everything
+            (loop back around; the scan above will pick up what it
+diff --git a/src/sh.h b/src/sh.h
+index a35760d1..7b39ffa2 100644
+--- a/src/sh.h
++++ b/src/sh.h
+@@ -90,6 +90,17 @@ extern const char* sh_name;
+ extern char* sh_argv0;
+ extern int sh_child;
+ 
++/* set while a real-signal trap's body is running (trap_handler(),
++ * builtin_trap.c) and it calls "exit" -- see eval_subshell.c's own
++ * comment for why. A trap fires asynchronously, possibly while deep
++ * inside an in-process subshell ("(...)" doesn't fork here), and its
++ * "exit" must terminate the whole process regardless of that, not
++ * just whatever subshell/eval happened to be active at the exact
++ * moment the signal arrived -- unlike an *ordinary*, synchronous
++ * "exit" naturally written inside a "(...)" in the script itself,
++ * which correctly stays scoped to just that subshell. */
++extern int sh_async_exit;
++
+ extern struct env* sh;
+ 
+ extern struct env sh_root;
+diff --git a/src/sh/sh_exit.c b/src/sh/sh_exit.c
+index bd3e02c0..4c0ff1f5 100644
+--- a/src/sh/sh_exit.c
++++ b/src/sh/sh_exit.c
+@@ -5,6 +5,8 @@
+ 
+ int trap_exit(int);
+ 
++int sh_async_exit = 0;
++
+ /* exits current subshell, never returns!
+  * ----------------------------------------------------------------------- */
+ void
+diff --git a/src/sh/sh_loop.c b/src/sh/sh_loop.c
+index 1445cf81..2a11370f 100644
+--- a/src/sh/sh_loop.c
++++ b/src/sh/sh_loop.c
+@@ -9,6 +9,11 @@
+ #include "../tree.h"
+ #include "../var.h"
+ #include "../job.h"
++#include "builtin_config.h"
++
++#if BUILTIN_TRAP
++void trap_run_pending(void);
++#endif
+ 
+ /* main loop, parse lines into trees and execute them
+  * ----------------------------------------------------------------------- */
+@@ -98,6 +103,14 @@ sh_loop(void) {
+ 
+     job_update();
+ 
++#if BUILTIN_TRAP
++    /* the common, low-latency dispatch point for a real-signal trap
++       whose signal fired while shish itself was busy (not blocked in
++       job_wait(), which has its own matching call) doing ordinary,
++       uninterruptible work between statements. */
++    trap_run_pending();
++#endif
++
+     /* reset prompt */
+     prompt_reset();
+   }
+diff --git a/src/term/term_read.c b/src/term/term_read.c
+index 608f7786..d6c5d5bf 100644
+--- a/src/term/term_read.c
++++ b/src/term/term_read.c
+@@ -3,7 +3,12 @@
+ #include "../prompt.h"
+ #include "../term.h"
+ #include "../debug.h"
++#include "builtin_config.h"
+ #include "../../lib/windoze.h"
++
++#if BUILTIN_TRAP
++void trap_run_pending(void);
++#endif
+ #if !WINDOWS_NATIVE && !defined(__MINGW64__)
+ #include <termios.h>
+ #endif
+@@ -33,6 +38,14 @@ term_jobnotify(void) {
+      from signal context) recorded since the last call */
+   job_update();
+ 
++#if BUILTIN_TRAP
++  /* a real-signal trap firing while shish is blocked here waiting for
++     terminal input (interactive mode) wakes this select() loop the
++     same way SIGCHLD does -- see trap_relay()'s own comment for why
++     that byte gets written at all. */
++  trap_run_pending();
++#endif
++
+   if(term_output && term_reading) {
+     term_attr(term_input.fd, 1, &term_tcattr);
+     prompt_number--;

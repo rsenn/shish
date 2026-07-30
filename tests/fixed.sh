@@ -2056,4 +2056,60 @@ assert_equal "$X103_SHISH_PGID" "$X103_BG_PGID" "a backgrounded external command
 X104_ERR=$(i=0; while [ $i -lt 30 ]; do : & i=$((i + 1)); done; wait 2>&1 1>/dev/null)
 assert_nomatch "$X104_ERR" "Done" "a non-interactive script must never print a job-done banner, even when a job is reaped asynchronously by the SIGCHLD handler ahead of job_wait()"
 
+## fixes/105 (trap-handler-runs-unsafely-in-signal-context): a real-
+## signal trap ("trap CMD INT/TERM/...") used to run its whole body,
+## including allocation-heavy eval_tree() and potentially "exit",
+## directly from inside the raw OS signal handler -- the same class of
+## bug already fixed once for SIGCHLD's own handler (fixes/87) but
+## never applied to user traps. Redesigned the same way: a minimal,
+## async-signal-safe relay (trap_relay()) just records that a signal
+## fired; the actual dispatch (trap_run_pending()) happens from
+## ordinary context -- sh_loop()'s main loop, term_read()'s select()
+## wakeup, and job_wait()'s own retry loop, so it also fires promptly
+## while blocked on a long-running external command (confirmed against
+## the real gettext-tools configure script: a real SIGINT sent while
+## blocked on an actual "gcc" invocation, matching autoconf's own
+## standard "trap ... INT" cleanup boilerplate, now reliably kills
+## both gcc and shish itself with no leftover processes, instead of
+## shish surviving and continuing to the next command).
+##
+## This redesign surfaced (and fixes) a real, concrete bug: a trap
+## signal can be delivered (trap_relay() sets its pending flag) before
+## trap_run_pending() gets a chance to drain it -- e.g. while still
+## inside a subshell that's now exiting and, as part of its own normal
+## cleanup, uninstalling the very trap that signal was meant to fire
+## (trap_snapshot_restore(), same as "trap - SIG"/re-trapping at the
+## top level via trap_uninstall()). Left set, the next dispatch ran it
+## against whatever's *now* installed for that signal -- if that's
+## nothing, trap_handler()'s "no trap found" fallback called
+## sh_exit(1), silently killing the whole shell for what looked like a
+## completely untrapped signal. Both places that uninstall a real-
+## signal trap now also discard any not-yet-dispatched pending
+## occurrence of it.
+X105B=$( (trap 'echo caught' TERM; kill -TERM $$); echo "outer: $?" )
+assert_equal "outer: 0" "$X105B" "a signal trap uninstalled by its own subshell's exit before it's dispatched must not later kill the whole process as if it were untrapped"
+
+## the trap's own output must land correctly (deferred dispatch runs
+## from whatever context happened to trigger it, same fdstack as an
+## ordinary command at that point -- see fixes/80's analogous concern
+## for EXIT traps)
+X105C=$( (trap 'echo caught-term' TERM; kill -TERM $$; sleep 0.2; echo after-term); echo "outer: $?" )
+assert_equal "$(printf 'caught-term\nafter-term\nouter: 0')" "$X105C" "a signal trap's own output must not get lost when its dispatch is deferred to a later, safe point"
+
+## The other half of fixes/105 -- an exit triggered by a real-signal
+## trap must propagate through every enclosing in-process subshell and
+## actually terminate the whole shish process, not stop at the first
+## subshell boundary it happens to land in (sh_async_exit, sh.h /
+## eval_subshell.c) -- can't be expressed as a same-process assertion
+## here (the property under test *is* "the process running this test
+## exits"), and there's no portable, non-fragile way from within this
+## script to spawn+signal+observe a second shish instance without
+## knowing this binary's own path ($0 is this test script, not the
+## interpreter). Verified manually instead, extensively, against both
+## a minimal repro and the real gettext-tools configure script (a real
+## SIGINT while blocked inside "( eval "$ac_link" )", autoconf's own
+## idiom -- confirmed shish now reliably terminates, with gcc, across
+## repeated trials at different timings, both via a direct pty-based
+## harness and the real controlling-terminal Ctrl-C path).
+
 summary

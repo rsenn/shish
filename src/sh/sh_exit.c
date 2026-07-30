@@ -5,6 +5,8 @@
 
 int trap_exit(int);
 
+int sh_async_exit = 0;
+
 /* exits current subshell, never returns!
  * ----------------------------------------------------------------------- */
 void

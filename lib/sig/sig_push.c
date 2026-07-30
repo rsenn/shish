@@ -18,7 +18,11 @@ sig_push(int sig, sighandler_t_ref f) {
      128-byte struct) and, regardless of ABI, leaves the real
      sa_flags field uninitialized (sig-push-sigset-cast, fixes/76). */
   ssa.sa_handler = f;
-  ssa.sa_flags = SA_MASKALL | SA_NOCLDSTOP;
+  /* SA_NORESTART: sig_push() is only ever used to install a real-signal
+     trap ("trap CMD INT"), where the whole point is to interrupt
+     whatever blocking syscall is in progress -- see lib/sig.h's own
+     comment. */
+  ssa.sa_flags = SA_MASKALL | SA_NOCLDSTOP | SA_NORESTART;
 
   return sig_pusha(sig, &ssa);
 #endif

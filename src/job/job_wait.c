@@ -12,6 +12,11 @@
 #include "../term.h"
 #include "../../lib/wait.h"
 #include <signal.h>
+#include "builtin_config.h"
+
+#if BUILTIN_TRAP
+void trap_run_pending(void);
+#endif
 
 /* waits for a job to terminate
  * ----------------------------------------------------------------------- */
@@ -30,6 +35,20 @@ job_wait(struct job* j, pid_t pid, int* status) {
     for(;;) {
       size_t remaining = 0;
       int stopped = 0;
+
+#if BUILTIN_TRAP
+      /* check on every pass, not just after a failed/interrupted
+         wait_pid() below -- a trap's signal can just as easily have
+         already been delivered (and trap_relay() already run) before
+         this loop ever got here at all, e.g. a synchronous "kill -TERM
+         $$" immediately followed by a command that blocks here: the
+         subsequent wait_pid() call has nothing to interrupt in that
+         case (the signal was already fully handled), so it just
+         blocks normally until the child exits and returns success on
+         its very first call, without ever reaching the "nothing
+         found" branch this same dispatch call also lives in below. */
+      trap_run_pending();
+#endif
 
       /* the SIGCHLD handler (sh_onsig() -> wait_nohang() ->
          job_signal()) can race ahead of us and reap a process on its
@@ -104,6 +123,20 @@ job_wait(struct job* j, pid_t pid, int* status) {
             job_printstatus(ret, s);
         }
       } else {
+#if BUILTIN_TRAP
+        /* wait_pid()/wait_pid_untraced() returning here with nothing
+           reaped is also exactly how a real-signal trap (SIGINT,
+           etc.) shows up: trap_relay()'s SA_NORESTART means the
+           underlying wait4() actually returns (EINTR) instead of
+           transparently resuming, specifically so this dispatch can
+           happen promptly -- without it, a trap installed while
+           blocked waiting on a long-running external command (e.g.
+           gettext-tools' configure, whose autoconf-generated "trap
+           ... INT" waits on real gcc invocations) wouldn't run until
+           the next top-level statement, if ever. */
+        trap_run_pending();
+#endif
+
         /* wait_pid()/wait_pid_untraced() found nothing left to reap
            itself -- either the SIGCHLD handler beat us to everything
            (loop back around; the scan above will pick up what it

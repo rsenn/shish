@@ -90,6 +90,17 @@ extern const char* sh_name;
 extern char* sh_argv0;
 extern int sh_child;
 
+/* set while a real-signal trap's body is running (trap_handler(),
+ * builtin_trap.c) and it calls "exit" -- see eval_subshell.c's own
+ * comment for why. A trap fires asynchronously, possibly while deep
+ * inside an in-process subshell ("(...)" doesn't fork here), and its
+ * "exit" must terminate the whole process regardless of that, not
+ * just whatever subshell/eval happened to be active at the exact
+ * moment the signal arrived -- unlike an *ordinary*, synchronous
+ * "exit" naturally written inside a "(...)" in the script itself,
+ * which correctly stays scoped to just that subshell. */
+extern int sh_async_exit;
+
 extern struct env* sh;
 
 extern struct env sh_root;

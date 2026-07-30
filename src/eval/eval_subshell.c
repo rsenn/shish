@@ -80,5 +80,27 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
 
   sh->exitcode = ret;
 
+  /* an "exit" triggered by a real-signal trap (sh_async_exit, see
+     sh.h) landed here via eval_exit()'s longjmp same as any other
+     "exit" inside a subshell would -- but unlike an *ordinary*
+     synchronous "exit" written directly in the script (which is
+     correctly done at this point: bash's own subshells are separate
+     processes, so "exit" inside one only ever kills that process),
+     this one needs to keep going. shish's "(...)" runs in-process
+     rather than forking, so terminating "just this subshell" here
+     means nothing more than returning normally and letting the rest
+     of the script carry on completely unaffected by the signal --
+     exactly the "Ctrl-C doesn't stop ./configure" bug this fixes.
+     Every other bit of this subshell's own state is already correctly
+     unwound above (funcs/traps/env/vartab/fdstack) at this point, so
+     it's safe to just ask again from here: sh_exit() re-runs
+     eval_exit(), which finds the *next* enclosing subshell (if any)
+     and repeats this same cleanup-then-recheck one level up, or -- if
+     there's no further subshell above us -- falls through to its own
+     real exit() call, actually terminating the process. Either way
+     this call never returns. */
+  if((jmpret & 1) && sh_async_exit)
+    sh_exit(ret);
+
   return ret;
 }

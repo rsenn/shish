@@ -7,6 +7,14 @@
 #endif
 
 #include <errno.h>
+#include <signal.h>
+
+/* set by builtin_trap.c's trap_relay() (the real, async-signal-safe
+ * OS handler for a real-signal trap) whenever a trapped signal fires;
+ * cleared once trap_run_pending() has dispatched everything pending.
+ * Checked below so an EINTR caused by a genuine trap signal doesn't
+ * just get silently retried -- see waitpid_nointr()'s own comment. */
+extern volatile sig_atomic_t trap_signaled;
 
 int
 waitpid_nointr(int pid, int* wstat, int flags) {
@@ -44,7 +52,7 @@ waitpid_nointr(int pid, int* wstat, int flags) {
 
   do {
     r = waitpid(pid, wstat, flags);
-  } while((r == (int)-1) && (errno == EINTR));
+  } while((r == (int)-1) && (errno == EINTR) && !trap_signaled);
 
   return r;
 #endif

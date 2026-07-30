@@ -9,6 +9,11 @@
 #include "../tree.h"
 #include "../var.h"
 #include "../job.h"
+#include "builtin_config.h"
+
+#if BUILTIN_TRAP
+void trap_run_pending(void);
+#endif
 
 /* main loop, parse lines into trees and execute them
  * ----------------------------------------------------------------------- */
@@ -97,6 +102,14 @@ sh_loop(void) {
       p.pushback = 0;
 
     job_update();
+
+#if BUILTIN_TRAP
+    /* the common, low-latency dispatch point for a real-signal trap
+       whose signal fired while shish itself was busy (not blocked in
+       job_wait(), which has its own matching call) doing ordinary,
+       uninterruptible work between statements. */
+    trap_run_pending();
+#endif
 
     /* reset prompt */
     prompt_reset();

@@ -84,6 +84,16 @@ typedef unsigned long sigset_type;
 #ifndef SA_NOCLDSTOP
 #define SA_NOCLDSTOP ((unsigned long)0x02)
 #endif
+/* sig_action() otherwise always adds the real SA_RESTART flag
+ * (see its own comment) -- pass this to opt a specific handler out.
+ * Needed for a real-signal trap ("trap CMD INT"): the whole point of
+ * catching the signal is to interrupt whatever blocking syscall the
+ * shell is in the middle of (typically job_wait()'s wait_pid()) so
+ * the trap body can actually run promptly, not have the kernel
+ * silently resume that syscall as if nothing happened. */
+#ifndef SA_NORESTART
+#define SA_NORESTART ((unsigned long)0x04)
+#endif
 
 #define SIGSTACKSIZE 16
 

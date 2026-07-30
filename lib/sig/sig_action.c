@@ -14,7 +14,8 @@ sig_action(int sig, struct sigaction const* new, struct sigaction* old) {
   sanew.sa_handler = new->sa_handler;
   sanew.sa_flags = (new->sa_flags & SA_NOCLDSTOP) ? SA_NOCLDSTOP : 0;
 #ifndef FLAG_PREFERSELECT
-  sanew.sa_flags |= SA_RESTART;
+  if(!(new->sa_flags & SA_NORESTART))
+    sanew.sa_flags |= SA_RESTART;
 #endif
 
   if(sigaction(sig, &sanew, &saold) < 0)

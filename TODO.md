@@ -62,21 +62,58 @@ before `term_init()` ever set `FD_TERM`) — fixed the same day
 (`fixes/104`), restoring real interactive job control (`fg`, resuming a
 Ctrl-Z-stopped job).
 
-Despite both fixes, Ctrl-C against a real `./configure` run still isn't
-fully reliable — narrowed down (not yet fixed) to
-`BUGS: trap-handler-runs-unsafely-in-signal-context`: autoconf-generated
-scripts (including gettext-tools') install a real `trap ... INT` for
-cleanup, and shish's `trap_handler()` runs the entire trap body —
-allocation-heavy `eval_tree()`, potentially including `exit` — directly
-from asynchronous signal-handler context, the same category of bug
-already fixed for `SIGCHLD`'s own handler (`fixes/87`) but never applied
-to user traps. Confirmed via a real repro: SIGINT during a `gcc`
-invocation kills `gcc` (its own, unrelated default disposition) but
-shish itself does not reliably terminate, instead continuing to the next
-`checking for ...` line — consistent with `SA_RESTART` silently resuming
-the interrupted `wait_pid()` once the unsafe handler returns without
-having actually unwound anything. Needs the same self-pipe/deferred-
-dispatch treatment `fixes/87` gave `sh_onsig()`.
+Despite both fixes, Ctrl-C against a real `./configure` run still wasn't
+fully reliable — root-caused and fixed the same day (`fixes/105`).
+autoconf-generated scripts (including gettext-tools') install a real
+`trap ... INT` for cleanup, and shish's `trap_handler()` used to run the
+entire trap body — allocation-heavy `eval_tree()`, potentially including
+`exit` — directly from asynchronous signal-handler context, the same
+category of bug already fixed for `SIGCHLD`'s own handler (`fixes/87`)
+but never applied to user traps. That alone had two consequences, both
+fixed together: (1) an `exit` inside such a trap only ever unwound to
+the nearest in-process subshell boundary rather than actually
+terminating the process (correct for an *ordinary* synchronous "exit"
+inside a script's own `(...)`, wrong for one triggered asynchronously by
+a signal — shish's subshells don't fork, so "just this subshell" means
+the rest of the script keeps running); (2) whatever syscall the
+interrupted handler was in the middle of (typically `job_wait()`'s
+blocking `wait_pid()`) would just transparently resume once the unsafe
+handler returned, via `SA_RESTART` — so a trap that itself called `exit`
+often never got a real chance to run until ordinary control flow reached
+a dispatch point on its own, if ever.
+
+Fixed with the same self-pipe/deferred-dispatch redesign `fixes/87` gave
+`sh_onsig()`: the real OS signal handler (`trap_relay()`) now only does
+async-signal-safe work (record which signal fired, wake a self-pipe),
+with the actual trap body evaluation (`trap_run_pending()`) deferred to
+ordinary context — `sh_loop()`'s main loop, `term_read()`'s `select()`
+wakeup, and (critically, since this is where a real Ctrl-C typically
+lands) `job_wait()`'s own retry loop, checked both before *and* after
+each `wait_pid()` call so it fires whether the signal arrived before or
+during the block. `sig_push()` now installs with the new `SA_NORESTART`
+flag (`lib/sig.h`) so the interrupted syscall actually returns instead
+of silently resuming. A new `sh_async_exit` flag (`sh.h`) marks an
+`exit` triggered this way so `eval_subshell.c` propagates through every
+enclosing in-process subshell level instead of stopping at the first
+one, ultimately reaching real process termination.
+
+Deferring dispatch also surfaced its own real race, fixed in the same
+change: a signal can be delivered (and recorded as pending) before it's
+drained, e.g. while inside a subshell that's exiting and, as part of its
+own normal cleanup, uninstalling the very trap that signal was meant to
+fire — left set, the next dispatch ran against whatever's now installed
+for that signal (nothing), and `trap_handler()`'s "no trap found"
+fallback silently killed the whole shell via `sh_exit(1)`. Both places
+that uninstall a real-signal trap (`trap_uninstall()`,
+`trap_snapshot_restore()`) now also discard any not-yet-dispatched
+pending occurrence of it.
+
+Verified against the real gettext-tools `configure` script: a real
+SIGINT sent while blocked on an actual `gcc` invocation (matching
+autoconf's own `trap ... INT` boilerplate, itself inside the
+`{ (eval "$ac_link") ...; }` idiom autoconf wraps every compile probe
+in) now reliably kills both `gcc` and shish, with no leftover processes,
+across repeated trials at different points in the run.
 
 What's left is whatever the next triage pass over these suites turns up,
 plus `BUGS: yash-random-y-tst-hangs`, found and narrowed (not yet fixed)
