@@ -1839,4 +1839,20 @@ X96=$(. "$F96")
 rm -f "$F96"
 assert_equal "HEREDOCCONTENT" "$X96" "a here-doc whose closing delimiter is the last thing in the source, with no trailing newline, must still work"
 
+## fixes/97 (eval-return-frame-skip-leak): eval_return() searched only
+## for the nearest E_FUNCTION eval frame, so a "return" inside a
+## subshell (E_ROOT, not E_FUNCTION -- eval_subshell.c) longjmped
+## straight past the subshell's own boundary into the *enclosing*
+## function, instead of just ending the subshell like "exit" would.
+## Its fdstack/varstack unwind code (mirroring eval_jump()'s for
+## break/continue) was also present but commented out, so every frame
+## skipped this way leaked its env/vartab/fdstack state permanently --
+## confirmed via RSS growing linearly without bound under a tight loop
+## of the minimal case. Fixed by (a) searching for the nearest
+## E_FUNCTION *or* E_ROOT frame, matching eval_exit()'s existing
+## E_ROOT search for the analogous "exit inside a subshell" case, and
+## (b) uncommenting/fixing the unwind to match eval_jump().
+X97=$(f() { ( return 5 ); echo "after: $?"; }; f; echo "f returned: $?")
+assert_equal "$(printf 'after: 5\nf returned: 0')" "$X97" "return inside a subshell must only end the subshell, not propagate out through the enclosing function"
+
 summary
