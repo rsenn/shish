@@ -159,3 +159,54 @@
   `p->quot == Q_SQUOTED` -- these primitives are shared by every
   quoting mode and by unquoted parsing, so the fix has to be more
   careful than the narrowly-scoped one in fixes/93.
+
+- unpaired-bracket-triggers-real-glob-every-time: `parse_unquoted.c`'s
+  glob-flag heuristic sets `S_GLOB` on a word the instant it sees
+  *any* unquoted character in `parse_isesc()`'s class (`* ? [ ] \`),
+  with no check for whether those characters actually form a
+  syntactically plausible pattern:
+
+      /* if it is a character subject to globbing then set S_GLOB flag */
+      else if(parse_isesc(c)) {
+        flags |= S_GLOB;
+      }
+
+  A lone `[` with no matching `]` in the same word can never validly
+  match anything as a bracket expression, but `S_GLOB` gets set for it
+  anyway, so `expand_glob()` (`src/expand/expand_glob.c`) calls the
+  real libc `glob(3)` on it at expansion time regardless -- which,
+  because glob() can't take the "no metacharacters, just stat() it"
+  fast path once it *sees* a `[`, falls through to actually opening
+  and reading the current directory (`getdents64`) and stat()ing
+  candidate entries against the pattern, every single time, before
+  giving up and falling back to the literal text. `[` is of course the
+  POSIX `test`/`[ ]` conditional syntax -- one of the single most
+  common tokens in any real script -- so this cost is paid on every
+  `[ ... ]` use anywhere.
+
+  Confirmed directly: `while [ $i -lt 500 ]; do i=$((i+1)); done`
+  (500 iterations) makes 1002 `getdents64` + 514 `openat` (9 failing)
+  syscalls; the byte-for-byte equivalent `while test $i -lt 500; do
+  i=$((i+1)); done` makes zero `getdents64` calls (`test` contains no
+  glob-class character, so `S_GLOB` never gets set). A broader
+  20000-iteration builtin-only microbenchmark (`x="value$i"`; a `case`
+  with a `value*` pattern; `test -n "$x"`; loop condition using `[`)
+  runs in 1.080s under shish (sys time 0.824s -- the syscalls above
+  dominate the whole run) versus bash's 0.161s (sys time 0.002s,
+  effectively zero) for the identical script -- a ~6.7x gap driven
+  almost entirely by this one bug, not by any general parsing/eval
+  slowness. This is very likely the single largest contributor to
+  shish's overall "slower than bash" gap on real-world,
+  builtin/conditional-heavy scripts like autoconf-generated
+  `configure` (POSIX shell test syntax uses `[ ]`, not `test`,
+  essentially everywhere).
+
+  A correct fix has to stop treating "contains a glob-class character"
+  as "is a glob pattern" -- at minimum, a `[` needs a matching `]`
+  later in the same word before `S_GLOB` is warranted (mirroring what
+  `bre_atom_len()`/`path_fnmatch.c`'s own bracket-expression handling
+  already has to do correctly elsewhere in this codebase); a real,
+  more thorough fix would defer the decision to expansion time and
+  check whether the accumulated pattern is even glob-syntax-plausible
+  before ever calling `glob(3)`, rather than deciding once, eagerly,
+  from a single raw character seen during parsing.
