@@ -97,3 +97,44 @@
 
     set - a b c; echo "$1 $2 $3"
     # prints "- a b", should print "a b c"
+
+- shopt-flags-never-enforced: of the 9 bits in `struct shopt` (`src/sh.h`),
+  only 4 actually change any behavior once set: `monitor` (`src/job/`),
+  `unset` (`src/expand/expand_param.c`), `xtrace` (`src/eval/eval_push.c`,
+  `src/parse/parse_gettok.c`, `src/parse/parse_simple_command.c`,
+  `src/fd/fd_setfd.c`) and `noclobber` (`src/redir/redir_open.c`). The
+  other 5 are settable via `set -X`/`set +X`, get reflected back
+  correctly in `$-` (`src/sh/sh_fmtflags.c` reads every bit), but
+  nothing else in the codebase ever reads them -- so setting them is a
+  complete no-op beyond `$-`'s own text:
+
+    -e errexit     never checked anywhere in src/eval/ or src/sh/
+                   sh_loop.c -- a failing command never aborts the
+                   script, no matter how `set -e` is documented in
+                   help_set (`src/builtin/builtin_set.c`)
+
+        set -e; false; echo "still ran"
+        # prints "still ran" -- should exit before reaching echo
+
+    -f noglob      never checked in src/expand/expand_glob.c (or
+                   anywhere else) -- pathname expansion always runs
+                   regardless
+
+        set -f; echo *.c
+        # still expands *.c -- should print the literal "*.c"
+
+    -h hashall     never checked in src/exec/ -- command locations are
+                   always remembered on first lookup regardless of
+                   this flag (default is even "on" -- see
+                   src/sh/sh_root.c -- so "off" can't be observed at
+                   all)
+
+    -B braceexpand never checked in src/parse/parse_param.c or
+                   src/parse/parse_unquoted.c (where brace expansion
+                   is actually parsed) -- behavior is identical with
+                   the flag on or off
+
+    -H histexpand  never checked anywhere; more fundamentally, there
+                   is no history-expansion ('!') implementation at all
+                   under src/history/ or src/term/ for this flag to
+                   gate -- it's a placeholder with nothing behind it
