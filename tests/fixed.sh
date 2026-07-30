@@ -1990,4 +1990,48 @@ assert_equal "call 5" "$X102" "a function defined inside a loop must not crash o
 X102B=$(i=0; while [ $i -lt 500 ]; do (g() { :; }; g); i=$((i + 1)); done; echo "$i")
 assert_equal "500" "$X102B" "a function defined and called inside an in-process subshell, repeated many times, must not crash"
 
+## fixes/103 (external-commands-fragmented-into-orphan-process-groups):
+## exec_program.c/job_fork.c unconditionally setpgid()'d every external
+## command (single or pipeline member, foreground or background) into
+## its own separate process group, regardless of whether job control
+## was actually active (interactive, "set -m") -- real bash never does
+## this for a non-interactive script (confirmed directly: every child,
+## piped or backgrounded, stays in bash's own pgid). Since nothing then
+## ever moves the *terminal's* actual foreground process group to
+## match (that only happens for a genuinely interactive session), a
+## non-interactive shish's children ended up in a process group the
+## controlling terminal never designated as foreground -- so pressing
+## Ctrl-C at the terminal only ever delivered SIGINT to shish's own
+## process group, never to whatever external command/pipeline was
+## currently running. shish itself would die, but the command it had
+## just started (e.g. "gcc" mid-compile during a real ./configure run)
+## was left running, orphaned, completely unaffected -- looking like
+## "Ctrl-C doesn't work", or needing many presses to eventually land at
+## a moment nothing was running. Confirmed via a real repro: send
+## SIGINT to a non-interactive shish mid-"sleep 5", or mid-"gcc" during
+## gettext-tools' actual configure -- the external process kept running
+## after shish itself was gone. Fixed by gating every setpgid()/
+## tcsetpgrp() call behind sh->opts.monitor, and by making job_wait()
+## fall back to waiting for any child (not just the pipeline's first
+## member) when a job has no real process group of its own to wait on.
+##
+## These checks can't reproduce the SIGINT delivery/orphaning itself
+## (that needs a real controlling terminal and signal delivery, not
+## just process substitution) -- they check the underlying, directly
+## testable condition that causes it: a non-interactive shish's
+## external children (single command, pipeline member, and background
+## job alike) must share its own process group, not get a separate one.
+X103_SHISH_PGID=$(ps -o pgid= -p $$ | tr -d ' ')
+X103_FG_PGID=$(/bin/sh -c 'ps -o pgid= -p $$' | tr -d ' ')
+assert_equal "$X103_SHISH_PGID" "$X103_FG_PGID" "a foreground external command run by a non-interactive script must share the script's own process group, not get a separate one"
+
+X103_PIPE_PGID=$(/bin/sh -c 'ps -o pgid= -p $$' | tr -d ' \n')
+assert_equal "$X103_SHISH_PGID" "$X103_PIPE_PGID" "a pipeline member run by a non-interactive script must share the script's own process group, not get a separate one"
+
+sleep 0.3 &
+X103_BGPID=$!
+X103_BG_PGID=$(ps -o pgid= -p "$X103_BGPID" | tr -d ' ')
+wait
+assert_equal "$X103_SHISH_PGID" "$X103_BG_PGID" "a backgrounded external command run by a non-interactive script must share the script's own process group, not get a separate one"
+
 summary

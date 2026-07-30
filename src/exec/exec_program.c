@@ -94,9 +94,24 @@ exec_program(char* path, char** argv, enum execflag flag) {
          its own: job->pgrp below records 'pid' as if it were one, but
          killpg(job->pgrp, ...) (fg/bg's SIGCONT) and job_wait()'s own
          wait_pid(-job->pgrp, ...) both then target a process group
-         that doesn't exist (ESRCH), silently doing nothing */
+         that doesn't exist (ESRCH), silently doing nothing.
+
+         Only do this when job control is actually active (interactive,
+         "set -m") -- see job_fork.c's matching gate for the full
+         reasoning. Without it, every external command run by a plain
+         non-interactive script ended up in a process group of its own
+         regardless of mode, and since nothing then ever moves the
+         *terminal's* actual foreground process group to match (that
+         only happens for a genuinely interactive session), the child
+         simply never receives a terminal-generated SIGINT/SIGQUIT:
+         only shish's own, still-foreground process group does.
+         Confirmed via a real repro: run a non-interactive shish on a
+         script that "sleep 5"s, send SIGINT from the controlling
+         terminal -- shish itself dies, but "sleep 5" (setpgid()'d into
+         its own group here) is left running, orphaned. */
 #if !WINDOWS_NATIVE
-      setpgid(pid, pid);
+      if(sh->opts.monitor)
+        setpgid(pid, pid);
 #endif
 
       /* this will close child ends of the pipes and read data from the parent
@@ -114,7 +129,14 @@ exec_program(char* path, char** argv, enum execflag flag) {
 
         job->procs[0].pid = pid;
         job->procs[0].status = -1;
-        job->pgrp = pid;
+        /* only a real process group when the setpgid() above actually
+           ran (sh->opts.monitor) -- left at 0 (job_new()'s default)
+           otherwise, so job_wait()/builtin_kill.c's "j->pgrp ?
+           killpg(...) : kill(procs[i].pid, ...)" fallbacks correctly
+           target this job's specific pid instead of a process group
+           that was never created. */
+        if(sh->opts.monitor)
+          job->pgrp = pid;
         job->bgnd = 1;
 
         /* "$!" -- this backgrounds via its own raw fork() above
@@ -133,7 +155,9 @@ exec_program(char* path, char** argv, enum execflag flag) {
 
         job->procs[0].pid = pid;
         job->procs[0].status = -1;
-        job->pgrp = pid;
+        /* see the matching comment in the X_NOWAIT branch above */
+        if(sh->opts.monitor)
+          job->pgrp = pid;
         job->bgnd = 0;
 
         /* unlike a job_fork()-based backgrounded command, nothing
@@ -178,7 +202,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
            job_fork()-based path (i.e. one that started out
            backgrounded) ever created a struct job, so a foreground
            command's stop was never recorded anywhere to resume. */
-        if(pid != job_pgrp) {
+        if(sh->opts.monitor && pid != job_pgrp) {
 #if !WINDOWS_NATIVE
           if(fd_ok(job_terminal))
             tcsetpgrp(job_terminal, pid);
@@ -205,14 +229,16 @@ exec_program(char* path, char** argv, enum execflag flag) {
 
 #if !WINDOWS_NATIVE
     /* see the matching setpgid() call in the parent branch above */
-    setpgid(sh_pid, sh_pid);
+    if(sh->opts.monitor) {
+      setpgid(sh_pid, sh_pid);
 
-    /* a foreground external command should own the terminal while it
-       runs, same as job_fork() already arranges for the job_fork()-
-       based path -- a backgrounded one (X_NOWAIT) must not, it isn't
-       supposed to be fighting the shell for input */
-    if(!(flag & X_NOWAIT) && fd_ok(job_terminal))
-      tcsetpgrp(job_terminal, sh_pid);
+      /* a foreground external command should own the terminal while it
+         runs, same as job_fork() already arranges for the job_fork()-
+         based path -- a backgrounded one (X_NOWAIT) must not, it isn't
+         supposed to be fighting the shell for input */
+      if(!(flag & X_NOWAIT) && fd_ok(job_terminal))
+        tcsetpgrp(job_terminal, sh_pid);
+    }
 #endif
 
     /* the blocked mask set above survives exec(); the program we're

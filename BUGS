@@ -1,3 +1,27 @@
+- job-terminal-never-initialized: `job_init()` (`src/job/job_init.c`)
+  decides whether to enable terminal handoff (`job_terminal`, used by
+  every `tcsetpgrp()` call in `exec_program.c`/`job_fork.c`/`job_wait.c`)
+  by checking `fd_err->mode & FD_TERM` -- but that flag is only ever set
+  by `term_init()` (`src/term/term_init.c:46`), and `sh_main.c` calls
+  `sh_init()` (which calls `job_init()`) at line 199, strictly *before*
+  its own `term_init()` call at line 203. `job_terminal` is therefore
+  always -1, for every session, interactive or not -- `fd_ok(job_terminal)`
+  is false everywhere it's checked, so shish never actually hands the
+  controlling terminal's foreground process group to a running job/pipeline,
+  even when genuinely interactive. Found investigating
+  `external-commands-fragmented-into-orphan-process-groups`
+  (`fixes/103`) -- fixing *that* bug (gating process-group creation on
+  `sh->opts.monitor`) happens to sidestep this one for the common
+  non-interactive-script case (no process-group fragmentation happens
+  in the first place, so there's nothing for a working terminal handoff
+  to matter for), but interactive job control (`fg`, resuming a
+  Ctrl-Z-stopped job, or anything else that depends on the terminal
+  actually following the current foreground job around) is still
+  broken as a result of this ordering bug on its own. Fix is presumably
+  either reordering the two calls, or moving the `FD_TERM` check out of
+  `job_init()` into a small re-checkable helper called again after
+  `term_init()` runs.
+
 - confdefs-h-duplication: running gettext-tools' `configure` (a large,
   real-world, gnulib-heavy autoconf script) end-to-end under shish, later
   probes misdetect features that earlier probes already correctly found

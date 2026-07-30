@@ -67,8 +67,21 @@ job_wait(struct job* j, pid_t pid, int* status) {
          job-control mode -- a script isn't going to fg/bg anything, so
          there's no reason to make its wait() sensitive to a stop it
          has no way to act on */
-      ret = (sh->opts.monitor ? wait_pid_untraced : wait_pid)(j->pgrp ? -j->pgrp : j->procs[0].pid,
-                                                              &s);
+      /* j->pgrp is only a real process group when job control actually
+         put this job's members into one of their own (job_fork.c,
+         gated on sh->opts.monitor) -- left at 0 otherwise, since a
+         non-interactive script keeps every job's members in shish's
+         own process group instead (matching bash; see job_fork.c).
+         Falling back to just j->procs[0].pid here would only ever
+         reap the pipeline's *first* member, leaving every other
+         member's status stuck at -1 forever for a 2+-process job with
+         no real group to wait on -- fall back to "any child" instead,
+         same as the SIGCHLD handler's own wait_nohang() already does;
+         job_signal() below records whichever pid actually came back
+         against the matching job regardless of which job_wait() call
+         happened to reap it, so this is safe even with other
+         background jobs concurrently outstanding. */
+      ret = (sh->opts.monitor ? wait_pid_untraced : wait_pid)(j->pgrp ? -j->pgrp : -1, &s);
 
       if(ret > 0) {
         job_signal(ret, s);

@@ -42,6 +42,26 @@ helper (`fixes/102`). The script now stops instead on a real
 `configure`-level detection failure (`socklen_t`), which traces back to
 `BUGS: confdefs-h-duplication`, still open.
 
+Separately, reported and fixed the same day: Ctrl-C at the controlling
+terminal not reliably stopping a running `./configure`, "only after many
+presses". Root cause was `exec_program.c`/`job_fork.c` unconditionally
+`setpgid()`-ing every external command (single, pipeline member,
+foreground or background) into its own process group regardless of
+whether job control was actually active — real bash never does this for
+a non-interactive script, and confirmed by direct repro: a terminal
+SIGINT killed shish itself but left the external command it had just
+started (a real `gcc` invocation, mid-compile, during an actual
+gettext-tools `configure` run) orphaned and running. Fixed (`fixes/103`)
+by gating all of this behind `sh->opts.monitor`, plus making
+`job_wait()` fall back to waiting for any child instead of just a
+pipeline's first member when a job has no real process group of its own.
+Chasing this also turned up a related, still-open, independent bug:
+`BUGS: job-terminal-never-initialized` — `job_terminal` is always -1
+(terminal handoff to a running job/pipeline never happens at all,
+interactive or not) due to an init-order bug, which `fixes/103`
+sidesteps for the non-interactive case but leaves broken for real
+interactive job control (`fg`, resuming a Ctrl-Z-stopped job).
+
 What's left is whatever the next triage pass over these suites turns up,
 plus `BUGS: yash-random-y-tst-hangs`, found and narrowed (not yet fixed)
 while doing exactly that on 2026-07-29 — now points at the file's own
