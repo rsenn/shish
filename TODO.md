@@ -18,6 +18,30 @@ hangs and only terminates via its own 120s `TIMEOUT`, `BUGS:
 yash-random-y-tst-hangs`, which otherwise dominates a default `ctest`
 run's wall time).
 
+A separate, much larger real-world stress test — gettext-tools'
+`configure` (autoconf-generated, gnulib-heavy, ~30k lines) — now also
+runs to completion (~2.5 min, no hang/crash/core dump) as of 2026-07-30,
+after fixing three bugs found chasing a reported hang in `sh_forked.c`'s
+`for(sh = sh->parent; sh; sh = next)` loop: `eval_exit()` ("exit" inside
+a function/subshell) had the same commented-out fdstack/varstack/source
+unwind bug already fixed for `eval_return`/`eval_jump` (`fixes/97`,
+`fixes/99`), plus its own extra wrinkle — it deliberately walks past any
+number of `E_FUNCTION` frames to reach the nearest subshell/root, so it
+also had to pop each skipped function call's `sh_push()`ed `struct env`,
+or that env dangles and corrupts `sh->parent` the moment its stack slot
+is reused (`fixes/101`). A second, unrelated bug in the same fix: a bogus
+`if(e == sh->parent->eval) return` early-out silently turned `exit` into
+a no-op whenever it was called two or more function calls deep in the
+same process. Chasing the crash further surfaced a third, independent
+bug in `eval_function()`, which stole (moved, then nulled) a function
+definition's name/body pointers out of its AST node — safe only if that
+node is evaluated once, so it segfaulted the moment the same node was
+evaluated again (a function defined inside a loop, or inside one of
+shish's in-process `(...)` subshells); fixed via a new `tree_copy()`
+helper (`fixes/102`). The script now stops instead on a real
+`configure`-level detection failure (`socklen_t`), which traces back to
+`BUGS: confdefs-h-duplication`, still open.
+
 What's left is whatever the next triage pass over these suites turns up,
 plus `BUGS: yash-random-y-tst-hangs`, found and narrowed (not yet fixed)
 while doing exactly that on 2026-07-29 — now points at the file's own
@@ -86,11 +110,21 @@ Design decisions already worked out (full reasoning in git history —
   trap bodies, since both must outlive the statement that defines them.
   Trap bodies already parse through their own independent `parse_init()`
   call, so they can just get their own dedicated, never-reset arena.
-  Function bodies parse inline as part of the defining statement
-  (`eval_function.c` already does a manual "steal the body pointer, null
-  the original" trick to keep them alive past their own tree) — this
-  needs either a deep-copy into long-lived storage at adoption time, or
-  the parser switching allocators while inside a function body.
+  Function bodies parse inline as part of the defining statement;
+  `eval_function.c` used to keep them alive past their own tree with a
+  manual "steal the body pointer, null the original" trick, but that
+  broke (segfault) the moment the same definition node was evaluated
+  more than once — a function defined inside a loop, or inside one of
+  shish's in-process `(...)` subshells — since the second visit found
+  the pointers already nulled from the first (fixed 2026-07-30,
+  `fixes/102`). It now does the "deep-copy into long-lived storage at
+  adoption time" option this bullet already anticipated, via a new
+  generic `tree_copy()` (`src/tree/tree_copy.c`) that mirrors
+  `tree_free()`'s per-kind switch. Once the arena lands, `tree_copy()`
+  is exactly the function that needs to switch from allocating loose
+  nodes to bump-allocating into a function's own dedicated arena instead
+  — the "parser switching allocators while inside a function body"
+  alternative is no longer needed now that a working copy path exists.
 - **`stralloc` doesn't fit an arena** — it grows via `realloc()`, which
   can't work once other data has been bump-allocated after it. A new,
   immutable type covers the tree's own write-once-at-parse-time strings:

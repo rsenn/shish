@@ -1,3 +1,26 @@
+- confdefs-h-duplication: running gettext-tools' `configure` (a large,
+  real-world, gnulib-heavy autoconf script) end-to-end under shish, later
+  probes misdetect features that earlier probes already correctly found
+  (e.g. `checking for sys/socket.h... no` after gnulib's own earlier
+  probes depend on it existing), and `conftest.c` compiles fail with
+  "undefined reference to main" / duplicate `#define`s reported by gcc.
+  Points at `confdefs.h` (the accumulating header of `#define HAVE_*`
+  lines autoconf's probes append to and `#include` on every subsequent
+  probe) ending up with duplicated or corrupted content as the run
+  progresses, rather than a single clean append per probe. Investigated
+  in depth on 2026-07-30 without being root-caused; not yet isolated to
+  a specific `AC_DEFINE`/`cat >>confdefs.h` call site or shell construct.
+  Confirmed still blocking the same script after fixing the separate
+  `eval_exit`/`eval_function` crash bugs (`fixes/101`, `fixes/102`) that
+  previously masked it: the run now gets much further before stopping on
+  `checking for socklen_t equivalent... configure: error: Cannot find a
+  type to use in place of socklen_t`, itself presumably another symptom
+  of the same underlying `confdefs.h` corruption (this type detection
+  loop also greps/rewrites `confdefs.h` between attempts). Next step is
+  probably diffing `confdefs.h`'s actual accumulated content against a
+  bash run of the same script at a matched checkpoint, rather than
+  guessing further.
+
 - yash-random-y-tst-hangs: `tests/yash/random-y.tst` hangs (bounded by
   CTest's 120s per-file TIMEOUT). The rest of the suite is fine.
   `$RANDOM` itself varies correctly when checked directly, so the
