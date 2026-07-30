@@ -2510,4 +2510,33 @@ X118D=$(. "$F118B/script2.sh")
 assert_equal "one" "$X118D" "a later set +n in the same noexec script never runs either, so noexec sticks for the rest of it"
 rm -rf "$F118B"
 
+## fixes/119 (set-o-longopts-unimplemented): "-o name"/"+o name" (set/
+## query an option by its POSIX/bash long name instead of a letter)
+## and bare "set -o"/"set +o" (print every option's current state)
+## didn't exist. Since struct shopt's members are 1-bit bitfields --
+## which C doesn't allow taking the address of -- this is a
+## name-to-letter table in builtin_set.c rather than one pointer per
+## name, dispatched through the same set_apply()/set_get() helpers the
+## ordinary letter options now also go through. "-o" has no colon in
+## the optstring (its own argument is read by hand, one argv element
+## at a time, not through shell_getopt_r) -- confirmed while writing
+## this that shell_getopt_r() only advances past an option's whole
+## argv element when the option takes an argument via ":", so
+## opt.ind needed an explicit extra advance past "-o"/"+o" itself
+## before reading the word after it.
+X119A=$(set -o allexport; echo $-)
+assert_equal "ahB" "$X119A" "set -o NAME turns an option on by its long name"
+
+X119B=$(set -a; set +o allexport; echo $-)
+assert_equal "hB" "$X119B" "set +o NAME turns it back off"
+
+X119C=$(set -o | grep -c '^allexport ')
+assert_equal "1" "$X119C" "bare set -o lists every option's current state, one per line"
+
+X119D=$(set +o | grep -c '^set [-+]o allexport$')
+assert_equal "1" "$X119D" "bare set +o lists every option as a reusable \"set -o\"/\"set +o\" line"
+
+X119E_STATUS=$(set -o this_is_not_a_real_option >/dev/null 2>&1; echo $?)
+assert_equal "1" "$X119E_STATUS" "set -o with an unknown name is an error, not silently ignored"
+
 summary

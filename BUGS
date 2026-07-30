@@ -97,18 +97,6 @@
   of this group precisely because nothing else needs "raw source
   text" as such a unit today.
 
-- set-o-longopts-unimplemented: POSIX `-o option-name`/`+o option-name`
-  (set/query options by long name instead of a letter -- required at
-  least for names matching every letter option above) doesn't exist;
-  neither does bare `set -o`/`set +o` (print every current option's
-  on/off state). Purely a `src/builtin/builtin_set.c` change (a
-  name-to-`struct shopt`-bit table plus the printing loop), but it
-  depends on `-b`/`-v`/`-p` above actually existing first (`-a` and
-  `-n` are now implemented, see `fixes/117`/`fixes/118`) to have
-  something real to expose under their long names -- also the
-  natural place to expose bash-only long-name-only options with no
-  letter equivalent at all (e.g. `pipefail`), if that's ever wanted.
-
 - set-privileged-unimplemented: POSIX `-p` (privileged mode: don't
   process `$ENV`; if real and effective uid/gid differ at startup,
   behave as if `-p` had been given until explicitly turned off) is
@@ -132,6 +120,22 @@
 
     set - a b c; echo "$1 $2 $3"
     # prints "- a b", should print "a b c"
+
+- set-dashdash-with-no-operands-prints-everything: found while adding
+  regression tests for `fixes/119` (`set -o`), unrelated to it --
+  `builtin_set()` (`src/builtin/builtin_set.c`) falls into its "print
+  every variable and function" branch (`vartab_print()` + printing
+  `functions`) whenever `got_opt` is still 0, which a bare `set --`
+  (no operands after it) never sets, since `--` itself isn't a
+  recognized option letter. Real bash/dash both just clear the
+  positional parameters silently and print nothing:
+
+    set --; echo "$#"
+    # prints the shell's entire environment, then "0" --
+    # bash/dash print only "0"
+
+  `--` needs to be distinguished from "no arguments were given at
+  all" before deciding whether to print anything.
 
 - set-histexpand-unimplemented: `struct shopt`'s `histexpand` bit
   (`src/sh.h`, `-H`) is set correctly by `set -H`/`set +H` and
