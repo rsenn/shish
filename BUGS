@@ -110,33 +110,6 @@
   auto-enable `-p`, and only then wiring the flag itself into
   `struct shopt`/`builtin_set.c`.
 
-- set-bare-dash-not-consumed: found while surveying the options above,
-  unrelated to any specific one of them -- `set -` (a bare `-`,
-  intended to end option processing the same as `--` while also
-  turning off `-x`/`-v`) leaves the `-` itself as the new `$1` instead
-  of being consumed, because `shell_getopt_r()`
-  (`lib/shell/shell_getopt.c`) returns -1 for a bare "-" argument
-  without advancing `optind` past it:
-
-    set - a b c; echo "$1 $2 $3"
-    # prints "- a b", should print "a b c"
-
-- set-dashdash-with-no-operands-prints-everything: found while adding
-  regression tests for `fixes/119` (`set -o`), unrelated to it --
-  `builtin_set()` (`src/builtin/builtin_set.c`) falls into its "print
-  every variable and function" branch (`vartab_print()` + printing
-  `functions`) whenever `got_opt` is still 0, which a bare `set --`
-  (no operands after it) never sets, since `--` itself isn't a
-  recognized option letter. Real bash/dash both just clear the
-  positional parameters silently and print nothing:
-
-    set --; echo "$#"
-    # prints the shell's entire environment, then "0" --
-    # bash/dash print only "0"
-
-  `--` needs to be distinguished from "no arguments were given at
-  all" before deciding whether to print anything.
-
 - set-histexpand-unimplemented: `struct shopt`'s `histexpand` bit
   (`src/sh.h`, `-H`) is set correctly by `set -H`/`set +H` and
   reflected back correctly in `$-`, but nothing checks it either --

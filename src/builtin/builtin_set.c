@@ -118,15 +118,13 @@ set_print_all(const struct shopt* opts, int reusable) {
 
 int
 builtin_set(int argc, char* argv[]) {
-  int c, got_opt = 0;
+  int c;
   struct shopt opts = sh->opts;
   struct optstate opt = {"+-", 0, 0, 0, 0, 0};
 
   /* check options */
   while((c = shell_getopt_r(&opt, argc, argv, "+aefhmnouxBCH")) > 0) {
     int on = opt.prefix == '-';
-
-    got_opt = 1;
 
     if(c == 'o') {
       char* name;
@@ -177,11 +175,46 @@ builtin_set(int argc, char* argv[]) {
     }
   }
 
+  /* did shell_getopt_r() just consume an explicit "--"? It advances
+     past the "--" element itself before returning -1 for it, so by
+     now opt.ind points one past it -- checking the *previous* argv
+     element is the only way left to tell. Needed for two separate
+     things below: an explicit "--" is what makes "set --" (no
+     operands at all) still mean "yes, replace $@, with nothing"
+     rather than "no operands were given, leave $@ alone", and it's
+     also what stops a literal "-" appearing right after it (e.g.
+     "set -- - -- baz") from being mistaken for the bare-"-" form
+     below, which only applies when "-" is genuinely the very first
+     operand reached. */
+  int saw_dashdash = opt.ind > 0 && argv[opt.ind - 1] && str_equal(argv[opt.ind - 1], "--");
+
+  /* POSIX: a bare "-" (unlike "--") ends option processing the same
+     way, but is also specific to "set" -- turning off -x (and -v,
+     once implemented) -- so it can't be handled once and for all
+     inside the shared shell_getopt_r() the way "--" is: other
+     builtins built on the same routine (e.g. "cat -") need a lone
+     "-" left alone as a literal operand, not silently consumed as an
+     end-of-options marker. */
+  if(!saw_dashdash && argv[opt.ind] && str_equal(argv[opt.ind], "-")) {
+    opts.xtrace = 0;
+    opt.ind++;
+  }
+
   sh->opts = opts;
 
-  if(argv[opt.ind])
+  if(argv[opt.ind] || saw_dashdash) {
+    /* &argv[opt.ind] is a valid pointer to a NULL entry when there
+       are zero operands (e.g. "set --" alone) -- sh_setargs()
+       correctly treats that as "replace $@ with zero arguments",
+       distinct from passing it a NULL pointer outright (which means
+       "leave $@ as it is", used elsewhere for unshifting). */
     sh_setargs(&argv[opt.ind], 1);
-  else if(!got_opt) {
+  }
+  /* print only for a truly bare "set" (argc == 1, just argv[0]) --
+     "set --" is handled above regardless of operand count, and
+     "set -e" (a real option, no operands, no "--") must silently
+     leave $@ untouched and print nothing either. */
+  else if(argc <= 1) {
     union node* n;
 
     vartab_print(V_DEFAULT);

@@ -2539,4 +2539,35 @@ assert_equal "1" "$X119D" "bare set +o lists every option as a reusable \"set -o
 X119E_STATUS=$(set -o this_is_not_a_real_option >/dev/null 2>&1; echo $?)
 assert_equal "1" "$X119E_STATUS" "set -o with an unknown name is an error, not silently ignored"
 
+## fixes/120 (set-dashdash-with-no-operands-prints-everything,
+## set-bare-dash-not-consumed): two small, unrelated builtin_set.c
+## bugs found while surveying POSIX's missing set options.
+##
+## "set --" with no operands fell into the "print every variable and
+## function" branch, since that was gated on "no real option was ever
+## recognized" (got_opt) rather than "no arguments were given at all"
+## -- "--" itself is consumed by shell_getopt_r() without ever being
+## returned as a recognized option character, so it never set
+## got_opt either. Now gated on "argc <= 1" (a truly bare "set")
+## instead; "got_opt" itself is gone, nothing else used it.
+X120A=$(set --; echo "$#")
+assert_equal "0" "$X120A" "set -- with no operands must just clear the positional parameters, not print every variable"
+
+X120B=$(set -a 2>&1)
+assert_equal "" "$X120B" "a real option with no operands must still print nothing (not a regression from the -- fix above)"
+
+## "set -" (a bare "-", intended to end option processing the same as
+## "--" while also turning off -x) left the "-" itself as the new $1
+## instead of being consumed. Fixed in builtin_set.c specifically (not
+## the shared shell_getopt_r(), which other builtins -- "cat -" reads
+## stdin -- rely on leaving a lone "-" alone as a literal operand).
+X120C=$(set - a b c; echo "$1 $2 $3")
+assert_equal "a b c" "$X120C" "a bare set - is consumed as an end-of-options marker, not left as \$1"
+
+X120D=$(set -x; set -; echo $-)
+assert_equal "hB" "$X120D" "set - also turns -x back off, per POSIX"
+
+X120E=$(set -- - -- baz; bracket() { for a; do printf '[%s]' "$a"; done; }; bracket "$@")
+assert_equal "[-][--][baz]" "$X120E" "a literal '-' appearing *after* an explicit -- must stay a plain operand, not be re-treated as the special bare-dash form"
+
 summary
