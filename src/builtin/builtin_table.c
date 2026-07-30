@@ -166,7 +166,7 @@ struct builtin_cmd builtin_table[] = {
     {"alias", &builtin_alias, B_DEFAULT, "[-p] [name[=value] ...]", help_alias},
 #endif
 #if BUILTIN_BASENAME
-    {"basename", &builtin_basename, B_DEFAULT, "path", help_basename},
+    {"basename", &builtin_basename, B_DEFAULT, "path [suffix]", help_basename},
 #endif
 #if BUILTIN_JOBS
     {"bg", &builtin_bg, B_DEFAULT, "[job...]", help_bg},
