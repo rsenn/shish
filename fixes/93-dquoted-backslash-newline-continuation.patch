@@ -1,0 +1,40 @@
+diff --git a/src/parse/parse_dquoted.c b/src/parse/parse_dquoted.c
+index 420195d0..796bf9f8 100644
+--- a/src/parse/parse_dquoted.c
++++ b/src/parse/parse_dquoted.c
+@@ -21,10 +21,35 @@ parse_dquoted(struct parser* p) {
+     /* only ", $ and ` must be escaped */
+     if(c == '\\') {
+       char nextc;
++      unsigned int lineno = source->position.line;
+ 
+       if(source_next(&nextc) <= 0)
+         return -1;
+ 
++      /* source_skip()/source_peekn() silently remove a backslash
++         immediately followed by a newline wherever they see one --
++         that swallow is unconditional, applied before any
++         quoting-mode code ever gets to inspect the raw bytes, so by
++         the time source_next() returns here, 'nextc' is already
++         whatever came *after* the continuation, not the newline
++         itself. A bumped source line number is the only remaining
++         trace that a continuation was actually swallowed just now
++         (as opposed to 'nextc' genuinely being some other,
++         non-continuation character). POSIX requires the exact same
++         backslash-newline removal inside double quotes as outside
++         them, so this round must produce nothing at all -- not even
++         the literal backslash the code below would otherwise keep,
++         since nothing this branch has seen so far actually matched a
++         recognized double-quote escape target ($, `, ", \). Without
++         this, "...\<newline>..." inside a double-quoted string kept
++         the backslash as a literal character while still dropping
++         the newline, corrupting the string (confirmed via autoconf's
++         generated `configure`, which relies on exactly this
++         construct and silently mis-evaluated a shell-compatibility
++         probe as a result). */
++      if(source->position.line != lineno)
++        continue;
++
+       if(parse_isdesc(nextc) || nextc == '\\') {
+         c = nextc;
+         source_skip();

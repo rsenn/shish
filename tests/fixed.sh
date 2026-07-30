@@ -1757,4 +1757,26 @@ X92=$(. "$F92")
 rm -f "$F92"
 assert_equal "$(printf 'line1\n2')" "$X92" "\$LINENO inside an eval'd string must count from the eval call's own line, not always report 1"
 
+## fixes/93 (dquoted-backslash-newline-continuation): a backslash
+## immediately followed by a newline is always silently removed by
+## source_skip()/source_peekn() before any quoting-mode code ever sees
+## the raw bytes (line-continuation, same as outside quotes) -- but
+## parse_dquoted.c only recognized a backslash as *itself* removable
+## when it was escaping one of $, `, ", \; for any other following
+## character (including a newline that had, by the time it asked, already
+## vanished) it fell back to keeping the backslash as a literal
+## character. So a backslash-newline inside a double-quoted string kept
+## the backslash while still losing the newline, corrupting the string
+## instead of joining the two lines with nothing in between. Found via
+## autoconf's generated `configure` (gettext-tools), whose generated
+## as_suggested shell-compatibility probe uses exactly this construct
+## and, when it silently mis-evaluated under shish, made configure
+## conclude the running shell wasn't good enough and go hunting for
+## (and re-exec into) another one.
+F93=$(mktemp)
+printf 'X="ab\\\ncd"\necho "$X"\n' >"$F93"
+X93=$(. "$F93")
+rm -f "$F93"
+assert_equal "abcd" "$X93" "a backslash-newline inside a double-quoted string must be removed entirely, not leave a stray backslash behind"
+
 summary

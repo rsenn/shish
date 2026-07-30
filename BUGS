@@ -136,3 +136,26 @@
   more fundamentally, there is no history-expansion ('!') feature
   implemented at all under `src/history/` or `src/term/` for this
   flag to gate. It's a placeholder with nothing behind it.
+
+- squoted-backslash-newline-swallowed: `source_skip()`/`source_peekn()`
+  (`src/source/source_skip.c`, `src/source/source_peekn.c`) treat a
+  backslash immediately followed by a newline as a line continuation
+  and silently remove both bytes, unconditionally, before any
+  quoting-mode parser ever sees the raw bytes. That's correct outside
+  quotes and inside double quotes (see fixes/93), but POSIX requires
+  single quotes to preserve *every* character literally, with no
+  exceptions -- a backslash-newline inside `'...'` must stay exactly
+  as written, not vanish. `parse_squoted.c` reads through `source_get()`,
+  which goes through the same swallowing primitives, so it inherits
+  this bug too:
+
+    printf "%s\n" "X='a\\" 'b'"'" > /tmp/t.sh   # X='a\<newline>b'
+    . /tmp/t.sh; printf '%s' "$X" | od -c
+    # prints "a b" (2 bytes) -- should print "a\<newline>b" (4 bytes:
+    # 'a', '\', newline, 'b')
+
+  Fixing this properly means teaching `source_peek()`/`source_skip()`
+  (or their callers) to skip the continuation-removal step while
+  `p->quot == Q_SQUOTED` -- these primitives are shared by every
+  quoting mode and by unquoted parsing, so the fix has to be more
+  careful than the narrowly-scoped one in fixes/93.
