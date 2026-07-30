@@ -1,26 +1,42 @@
-- job-terminal-never-initialized: `job_init()` (`src/job/job_init.c`)
-  decides whether to enable terminal handoff (`job_terminal`, used by
-  every `tcsetpgrp()` call in `exec_program.c`/`job_fork.c`/`job_wait.c`)
-  by checking `fd_err->mode & FD_TERM` -- but that flag is only ever set
-  by `term_init()` (`src/term/term_init.c:46`), and `sh_main.c` calls
-  `sh_init()` (which calls `job_init()`) at line 199, strictly *before*
-  its own `term_init()` call at line 203. `job_terminal` is therefore
-  always -1, for every session, interactive or not -- `fd_ok(job_terminal)`
-  is false everywhere it's checked, so shish never actually hands the
-  controlling terminal's foreground process group to a running job/pipeline,
-  even when genuinely interactive. Found investigating
-  `external-commands-fragmented-into-orphan-process-groups`
-  (`fixes/103`) -- fixing *that* bug (gating process-group creation on
-  `sh->opts.monitor`) happens to sidestep this one for the common
-  non-interactive-script case (no process-group fragmentation happens
-  in the first place, so there's nothing for a working terminal handoff
-  to matter for), but interactive job control (`fg`, resuming a
-  Ctrl-Z-stopped job, or anything else that depends on the terminal
-  actually following the current foreground job around) is still
-  broken as a result of this ordering bug on its own. Fix is presumably
-  either reordering the two calls, or moving the `FD_TERM` check out of
-  `job_init()` into a small re-checkable helper called again after
-  `term_init()` runs.
+- trap-handler-runs-unsafely-in-signal-context: `trap_install()`
+  (`src/builtin/builtin_trap.c`) installs `trap_handler()` as the real
+  OS-level `sigaction()` handler (via `sig_push()`) for any real-signal
+  trap (`trap 'CMD' INT`, etc.), and `trap_handler()` itself directly
+  calls `eval_tree(&e, tr->tree, 0)` -- i.e. it runs the *entire trap
+  command*, including arbitrary parsing-free but allocation-heavy
+  evaluation (variable assignment, builtin dispatch, and possibly
+  `exit`/`eval_exit()`) straight from asynchronous signal-handler
+  context, with `SA_MASKALL` blocking every other signal (including
+  `SIGCHLD`) for as long as it runs, and `SA_RESTART` set on the
+  underlying `sigaction()` (`lib/sig/sig_action.c`) so whatever syscall
+  the handler interrupted (typically `job_wait()`'s blocking
+  `wait_pid()`) transparently resumes once the handler returns. This is
+  the same category of bug already found and fixed for `SIGCHLD`'s own
+  handler (`sh-onsig-async-unsafe`, `fixes/87`) but was never applied to
+  user-defined traps.
+
+  Confirmed as the real remaining cause of "Ctrl-C doesn't stop
+  ./configure": autoconf-generated `configure` scripts install exactly
+  this pattern (`trap 'ac_signal='$ac_signal'; as_fn_exit 1' $ac_signal`,
+  gettext-tools' `configure:5815`, and `trap 'as_fn_exit 1' 1 2 13 15`
+  at `configure:108697`) -- once that trap is installed, sending SIGINT
+  while shish is blocked in `job_wait()` invokes `trap_handler()`,
+  which runs `as_fn_exit 1` (ultimately `eval_exit()`) from inside the
+  handler; the currently-running external command (e.g. `gcc`) still
+  dies normally (its own, separate, default SIGINT disposition), but
+  shish itself does not reliably terminate -- observed continuing to
+  the next `checking for ...` line as if nothing happened, with the
+  interrupted `wait_pid()` silently resuming via `SA_RESTART`. Not yet
+  root-caused to the exact single failure point inside that call chain
+  (candidates: `eval_exit()`'s search finding no jump-enabled frame to
+  target since the top-level script has none, so control simply falls
+  back into the interrupted syscall; or a `malloc()`/heap-lock
+  reentrancy hazard if the signal happens to land while the main
+  program was itself mid-allocation) -- needs the same treatment
+  `fixes/87` gave `sh_onsig()`: the real signal handler should do only
+  async-signal-safe work (record that this signal fired, wake a
+  self-pipe/select() loop), with the actual trap body evaluation
+  deferred to run from ordinary, non-signal-handler context.
 
 - confdefs-h-duplication: running gettext-tools' `configure` (a large,
   real-world, gnulib-heavy autoconf script) end-to-end under shish, later

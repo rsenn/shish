@@ -2034,4 +2034,26 @@ X103_BG_PGID=$(ps -o pgid= -p "$X103_BGPID" | tr -d ' ')
 wait
 assert_equal "$X103_SHISH_PGID" "$X103_BG_PGID" "a backgrounded external command run by a non-interactive script must share the script's own process group, not get a separate one"
 
+## fixes/104 (job-terminal-never-initialized): job_init() decided
+## whether to enable terminal handoff (job_terminal, used by every
+## tcsetpgrp() call) by checking fd_err->mode & FD_TERM -- but that
+## flag is only ever set by term_init(), which sh_main.c always calls
+## *after* job_init() (via sh_init()). job_terminal was therefore
+## always -1, for every session, interactive or not. Fixed by moving
+## the job_terminal/job_pgrp setup into a new job_terminal_init(),
+## called only once term_init() has actually run. The interactive
+## terminal-handoff behavior this restores can't be exercised from a
+## non-interactive tests/fixed.sh run (no controlling terminal to hand
+## off in the first place) -- what's directly testable here is the
+## companion bug found investigating it: job_clean()'s "[N]+ Done ..."
+## banner (job_update(), called every sh_loop() iteration) printed
+## unconditionally instead of being gated on sh->opts.monitor like
+## job_wait()'s own equivalent banner already was, so a job reaped
+## asynchronously by the SIGCHLD handler before job_wait() got to it
+## could leak a stray "Done" line into a non-interactive script's
+## stderr. Run enough quick background jobs in a row to make that race
+## likely, then check stderr for any such line.
+X104_ERR=$(i=0; while [ $i -lt 30 ]; do : & i=$((i + 1)); done; wait 2>&1 1>/dev/null)
+assert_nomatch "$X104_ERR" "Done" "a non-interactive script must never print a job-done banner, even when a job is reaped asynchronously by the SIGCHLD handler ahead of job_wait()"
+
 summary

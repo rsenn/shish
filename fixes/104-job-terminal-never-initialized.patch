@@ -1,0 +1,96 @@
+diff --git a/src/job.h b/src/job.h
+index fa32155c..463cd649 100644
+--- a/src/job.h
++++ b/src/job.h
+@@ -118,6 +118,7 @@ void job_print(struct job*, buffer* out);
+ void job_clean(bool);
+ void job_dump(buffer*);
+ void job_init(void);
++void job_terminal_init(void);
+ void job_printstatus(pid_t, int status);
+ void job_update(void);
+ 
+diff --git a/src/job/job_clean.c b/src/job/job_clean.c
+index 9ec9fefb..d4aa0066 100644
+--- a/src/job/job_clean.c
++++ b/src/job/job_clean.c
+@@ -12,7 +12,22 @@ job_clean(bool print) {
+     next = j->next;
+ 
+     if(job_done(j)) {
+-      if(print) {
++      /* the "Done"/"Stopped"/etc. banner job_print() -> job_banner()
++         prints is for interactive use only -- job_wait()'s own
++         equivalent JOB_DONE banner is explicitly gated on
++         sh->opts.monitor for exactly that reason ("so configure's
++         stderr stays clean"), but this path (job_update(), called
++         unconditionally every sh_loop() iteration whenever the async
++         SIGCHLD handler beat job_wait() to reaping a job) printed it
++         regardless of mode. A foreground job whose process gets
++         reaped asynchronously before job_wait()'s own synchronous
++         wait_pid() loop gets to it (a real race, not just
++         theoretical -- e.g. a child killed by a signal while shish
++         itself is between event-loop iterations) could have this path
++         announce it before job_wait() ever runs its own gating, i.e. a
++         stray "[1]+ Done ..." line in a plain non-interactive script's
++         stderr. */
++      if(print && sh->opts.monitor) {
+         /* whatever's on the current line (a prompt, in-progress
+            typing) isn't ours to print over -- clear it and move to
+            column 1 before the first banner, matching what
+diff --git a/src/job/job_init.c b/src/job/job_init.c
+index 72b1f1a8..591fa6d4 100644
+--- a/src/job/job_init.c
++++ b/src/job/job_init.c
+@@ -13,10 +13,18 @@
+ int job_terminal = -1;
+ int job_sigfd[2] = {-1, -1};
+ 
+-/* initializes job control
++/* sets up job_terminal/job_pgrp once it's known whether stderr is
++ * really a terminal -- split out of job_init() (see its call site in
++ * sh_main.c) because that flag (FD_TERM) isn't set until term_init()
++ * runs, which happens *after* job_init() does; calling this from
++ * job_init() itself always saw a not-yet-updated fd_err->mode and left
++ * job_terminal permanently at -1, silently disabling every
++ * tcsetpgrp()-based terminal handoff in exec_program.c/job_fork.c/
++ * job_wait.c even for a genuinely interactive session (BUGS:
++ * job-terminal-never-initialized).
+  * ----------------------------------------------------------------------- */
+ void
+-job_init(void) {
++job_terminal_init(void) {
+   struct fd* d;
+ 
+   /* find a filedescriptor which is a terminal */
+@@ -35,7 +43,12 @@ job_init(void) {
+     job_pgrp = tcgetpgrp(job_terminal);
+ #endif
+   }
++}
+ 
++/* initializes job control
++ * ----------------------------------------------------------------------- */
++void
++job_init(void) {
+ #if !WINDOWS_NATIVE
+   /* see job_sigfd's declaration in job.h -- sh_onsig() writes one
+      byte per SIGCHLD, term_read() wakes on it via select() */
+diff --git a/src/sh/sh_main.c b/src/sh/sh_main.c
+index aa8a7469..8caa29ac 100644
+--- a/src/sh/sh_main.c
++++ b/src/sh/sh_main.c
+@@ -205,6 +205,13 @@ main(int argc, char** argv, char** envp) {
+ 
+     sh->opts.monitor = 1;
+     sh->opts.histexpand = 1;
++
++    /* only now does fd_err->mode & FD_TERM actually reflect reality --
++       term_init() above is what sets it. See job_terminal_init()'s own
++       comment (BUGS: job-terminal-never-initialized) for why this
++       can't just happen inside job_init() (called earlier, from
++       sh_init()). */
++    job_terminal_init();
+   } else
+     src.mode &= ~SOURCE_IACTIVE;
+ 

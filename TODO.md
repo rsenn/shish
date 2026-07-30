@@ -55,12 +55,28 @@ gettext-tools `configure` run) orphaned and running. Fixed (`fixes/103`)
 by gating all of this behind `sh->opts.monitor`, plus making
 `job_wait()` fall back to waiting for any child instead of just a
 pipeline's first member when a job has no real process group of its own.
-Chasing this also turned up a related, still-open, independent bug:
-`BUGS: job-terminal-never-initialized` — `job_terminal` is always -1
-(terminal handoff to a running job/pipeline never happens at all,
-interactive or not) due to an init-order bug, which `fixes/103`
-sidesteps for the non-interactive case but leaves broken for real
-interactive job control (`fg`, resuming a Ctrl-Z-stopped job).
+Chasing this also turned up a related, independent bug — `job_terminal`
+was always -1 (terminal handoff to a running job/pipeline never happened
+at all, interactive or not) due to an init-order bug (`job_init()` ran
+before `term_init()` ever set `FD_TERM`) — fixed the same day
+(`fixes/104`), restoring real interactive job control (`fg`, resuming a
+Ctrl-Z-stopped job).
+
+Despite both fixes, Ctrl-C against a real `./configure` run still isn't
+fully reliable — narrowed down (not yet fixed) to
+`BUGS: trap-handler-runs-unsafely-in-signal-context`: autoconf-generated
+scripts (including gettext-tools') install a real `trap ... INT` for
+cleanup, and shish's `trap_handler()` runs the entire trap body —
+allocation-heavy `eval_tree()`, potentially including `exit` — directly
+from asynchronous signal-handler context, the same category of bug
+already fixed for `SIGCHLD`'s own handler (`fixes/87`) but never applied
+to user traps. Confirmed via a real repro: SIGINT during a `gcc`
+invocation kills `gcc` (its own, unrelated default disposition) but
+shish itself does not reliably terminate, instead continuing to the next
+`checking for ...` line — consistent with `SA_RESTART` silently resuming
+the interrupted `wait_pid()` once the unsafe handler returns without
+having actually unwound anything. Needs the same self-pipe/deferred-
+dispatch treatment `fixes/87` gave `sh_onsig()`.
 
 What's left is whatever the next triage pass over these suites turns up,
 plus `BUGS: yash-random-y-tst-hangs`, found and narrowed (not yet fixed)
