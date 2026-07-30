@@ -45,42 +45,93 @@
     }
     f
 
-- set-missing-posix-options: `builtin_set()` (`src/builtin/builtin_set.c`)
-  only recognizes `-efhmuxBCH` (`-B`/`-H` are bash extensions; the rest
-  are POSIX). Missing, all silently rejected as "invalid option":
+- set-notify-unimplemented: POSIX `-b` (report a background job's
+  completion as soon as it happens, instead of waiting until just
+  before the next prompt) is missing the same way -- no `struct
+  shopt` bit, not recognized by `builtin_set()`. Belongs in `src/job/`:
+  `job_wait.c`/`sh_onsig()`'s SIGCHLD path and `job_clean.c` are where
+  a finished background job is currently *noticed*, but
+  `job_clean.c`'s own banner-printing comments already describe the
+  existing race between the async SIGCHLD path and the synchronous
+  `job_wait()` path around exactly this "print immediately vs. defer"
+  distinction (a stray banner interrupting a running foreground
+  command's own output mid-line is the whole reason it's deferred by
+  default) -- so this is more than flipping a condition, it's adding
+  a real "OK to interrupt terminal output right now" toggle to logic
+  that currently assumes deferral is always correct.
 
-    -a  allexport   (export every variable assignment, not just those
-                     explicitly `export`ed)
-    -b  notify      (report background job completion immediately,
-                     not just before the next prompt)
-    -n  noexec      (read commands but don't execute them; used by
-                     e.g. `sh -n script` syntax checks)
-    -v  verbose     (echo each input line as it's read, before any
-                     expansion -- distinct from -x, which echoes after
-                     expansion)
-    -o option-name  (set/query options by long name instead of a
-                     letter -- POSIX requires at least the long names
-                     matching the letter options above; bash also
-                     exposes options with no letter equivalent at all,
-                     e.g. `pipefail`. There's also no bare `set -o` /
-                     `set +o` to print current option states.)
+- source-syntax-error-kills-whole-process-not-just-subshell: found
+  while adding regression tests for `fixes/118` (`set -n`) --
+  completely unrelated to `-n` itself, reproduces identically with an
+  ordinary command in place of the sourced file. A syntax error in a
+  file read via `.`/`source` always terminates the *entire* top-level
+  process, even when the `.` is wrapped in a real subshell or
+  `$(...)`, which should isolate it:
 
-  Also POSIX requires `-p` (privileged: don't process `$ENV`, etc. --
-  relevant here since `V_EXPORT`/environment import already exist);
-  not implemented either. `struct shopt` (`src/sh.h`) has no bit for
-  any of these, so implementing them is more than wiring up
-  `shell_getopt_r`'s optstring.
+    printf 'echo before\nif [ 1 = 1 ]\n' >/tmp/bad.sh
+    shish -c '(. /tmp/bad.sh); echo AFTER_SUBSHELL'
+    # prints "before" and the syntax error, then exits -- "AFTER_SUBSHELL"
+    # is never reached, even though it's outside the subshell entirely
 
-  Separately, but found while checking this: `set -` (bare `-`,
+  `builtin_source.c` calls `sh_loop()` recursively for the sourced
+  file; `sh_loop()`'s own parse-error branch calls `sh_exit()`
+  directly based only on `source->mode & SOURCE_IACTIVE`, with no
+  apparent interaction with whatever mechanism `eval_exit()`/`sh_exit()`
+  normally use to detect "there's a subshell frame to jump back to
+  instead of actually exiting the process" for other fatal-error
+  paths -- worth checking whether that detection just isn't reachable
+  from this nested-`sh_loop()` call at all, or is reachable but wired
+  wrong.
+
+- set-verbose-unimplemented: POSIX `-v` (echo each input line to
+  stderr as it's read, before any parsing/expansion touches it --
+  distinct from `-x`, which echoes *after* expansion, from
+  `src/eval/`'s `E_PRINT` path) is missing the same way. There is
+  currently no hook point that sees "a raw input line" as a unit
+  separate from `src/source.h`'s character-at-a-time
+  `source_peek()`/`source_next()` interface the parser reads through
+  -- implementing this needs either a small line-buffering layer at
+  that level (echo-and-flush whenever a newline is consumed) or some
+  other way to reconstruct "the line just parsed" from `struct
+  source`'s position tracking. This is the most structurally invasive
+  of this group precisely because nothing else needs "raw source
+  text" as such a unit today.
+
+- set-o-longopts-unimplemented: POSIX `-o option-name`/`+o option-name`
+  (set/query options by long name instead of a letter -- required at
+  least for names matching every letter option above) doesn't exist;
+  neither does bare `set -o`/`set +o` (print every current option's
+  on/off state). Purely a `src/builtin/builtin_set.c` change (a
+  name-to-`struct shopt`-bit table plus the printing loop), but it
+  depends on `-b`/`-v`/`-p` above actually existing first (`-a` and
+  `-n` are now implemented, see `fixes/117`/`fixes/118`) to have
+  something real to expose under their long names -- also the
+  natural place to expose bash-only long-name-only options with no
+  letter equivalent at all (e.g. `pipefail`), if that's ever wanted.
+
+- set-privileged-unimplemented: POSIX `-p` (privileged mode: don't
+  process `$ENV`; if real and effective uid/gid differ at startup,
+  behave as if `-p` had been given until explicitly turned off) is
+  missing the same way, but blocked on more than itself: `src/sh/sh_main.c`
+  doesn't process `$ENV` (or any profile-type startup file) *at all*
+  currently, checked directly -- there's nothing yet for `-p` to
+  actually suppress. Implementing `-p` for real means adding that
+  `$ENV`-sourcing startup behavior first (`src/sh/sh_main.c`, gated
+  appropriately), an actual uid/gid check there (`geteuid()`/`getuid()`/
+  `getegid()`/`getgid()`, none of which this file currently calls) to
+  auto-enable `-p`, and only then wiring the flag itself into
+  `struct shopt`/`builtin_set.c`.
+
+- set-bare-dash-not-consumed: found while surveying the options above,
+  unrelated to any specific one of them -- `set -` (a bare `-`,
   intended to end option processing the same as `--` while also
   turning off `-x`/`-v`) leaves the `-` itself as the new `$1` instead
-  of being consumed, because `shell_getopt_r()` (`lib/shell/shell_getopt.c`)
-  returns -1 for a bare "-" argument without advancing `optind` past
-  it:
+  of being consumed, because `shell_getopt_r()`
+  (`lib/shell/shell_getopt.c`) returns -1 for a bare "-" argument
+  without advancing `optind` past it:
 
     set - a b c; echo "$1 $2 $3"
     # prints "- a b", should print "a b c"
-
 
 - set-histexpand-unimplemented: `struct shopt`'s `histexpand` bit
   (`src/sh.h`, `-H`) is set correctly by `set -H`/`set +H` and

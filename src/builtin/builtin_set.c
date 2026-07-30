@@ -13,10 +13,12 @@ extern union node* functions;
 const char help_set[] =
     "    Set shell options and/or positional parameters.\n"
     "\n"
+    "    -a              export every variable assignment\n"
     "    -e              exit if a simple command fails\n"
     "    -f              disable pathname expansion (globbing)\n"
     "    -h              remember command locations as they're looked up\n"
     "    -m              enable job control (monitor mode)\n"
+    "    -n              read commands but don't execute them\n"
     "    -u              treat unset variables as an error on expansion\n"
     "    -x              print each command before running it\n"
     "    -B              enable brace expansion\n"
@@ -34,16 +36,18 @@ builtin_set(int argc, char* argv[]) {
   struct optstate opt = {"+-", 0, 0, 0, 0, 0};
 
   /* check options */
-  while((c = shell_getopt_r(&opt, argc, argv, "+efhmuxBCH")) > 0) {
+  while((c = shell_getopt_r(&opt, argc, argv, "+aefhmnuxBCH")) > 0) {
     int on = opt.prefix == '-';
 
     got_opt = 1;
 
     switch(c) {
+      case 'a': opts.allexport = on; break;
       case 'e': opts.errexit = on; break;
       case 'f': opts.noglob = on; break;
       case 'h': opts.hashall = on; break;
       case 'm': opts.monitor = on; break;
+      case 'n': opts.noexec = on; break;
       case 'u': opts.unset = on; break;
       case 'x': opts.xtrace = on; break;
       case 'B': opts.braceexpand = on; break;

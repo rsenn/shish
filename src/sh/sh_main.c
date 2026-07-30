@@ -136,11 +136,12 @@ main(int argc, char** argv, char** envp) {
     var_import(envp[c], V_EXPORT, &envvars[c]);
 
   /* parse command line arguments */
-  while((c = shell_getopt(argc, argv, "c:xe")) > 0)
+  while((c = shell_getopt(argc, argv, "c:xen")) > 0)
     switch(c) {
       case 'c': cmds = shell_optarg; break;
       case 'x': sh->opts.xtrace = 1; break;
       case 'e': sh->opts.errexit = 1; break;
+      case 'n': sh->opts.noexec = 1; break;
 
 #ifdef _DEBUG
       case 'I': no_interactive = 1; break;

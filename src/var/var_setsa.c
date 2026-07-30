@@ -37,6 +37,11 @@ var_setsa(stralloc* sa, int flags) {
     var_random_assign(sa->len > var->len ? sa->s + var->len + 1 : "",
                        sa->len > var->len ? sa->len - var->len - 1 : 0);
 
+  /* set -a: every assignment gets the export attribute, not just ones
+     explicitly passed to "export" */
+  if(sh->opts.allexport)
+    flags |= V_EXPORT;
+
   /* now check how we set the value, there are 4 possibilities */
   if(var->flags & V_FREESTR) {
     /* if both, old and new variable should be freed

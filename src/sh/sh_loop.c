@@ -70,13 +70,23 @@ sh_loop(void) {
       if(is_interactive)
         history_add(cmd.s, cmd.len);
 
-      eval_push(&e, E_JCTL);
-      status = eval_tree(&e, list, E_ROOT | E_LIST);
+      /* set -n: read (and, above, fully parse -- so a syntax error
+         later in the script is still caught and reported) every
+         command, but never actually run any of them. POSIX requires
+         interactive shells to ignore this option, hence !is_interactive
+         here rather than gating inside eval_tree() itself, which has
+         no notion of "interactive" to begin with. */
+      if(sh->opts.noexec && !is_interactive) {
+        sh->exitcode = 0;
+      } else {
+        eval_push(&e, E_JCTL);
+        status = eval_tree(&e, list, E_ROOT | E_LIST);
 
-      // eval_pop(&e);
-      // while(sh->eval != &e) eval_pop(sh->eval);
+        // eval_pop(&e);
+        // while(sh->eval != &e) eval_pop(sh->eval);
 
-      sh->exitcode = eval_pop(&e);
+        sh->exitcode = eval_pop(&e);
+      }
 
       tree_free(list);
     }

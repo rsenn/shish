@@ -46,10 +46,12 @@ struct arg {
 /*union shopt {
   unsigned flags : 5;*/
 struct shopt {
+  unsigned allexport : 1;   /* -a */
   unsigned errexit : 1;     /* -e */
   unsigned noglob : 1;      /* -f */
   unsigned hashall : 1;     /* -h */
   unsigned monitor : 1;     /* -m */
+  unsigned noexec : 1;      /* -n */
   unsigned unset : 1;       /* -u */
   unsigned xtrace : 1;      /* -x */
   unsigned braceexpand : 1; /* -B */

@@ -1,0 +1,109 @@
+diff --git a/src/builtin/builtin_set.c b/src/builtin/builtin_set.c
+index 288e8884..27156ee9 100644
+--- a/src/builtin/builtin_set.c
++++ b/src/builtin/builtin_set.c
+@@ -13,6 +13,7 @@ extern union node* functions;
+ const char help_set[] =
+     "    Set shell options and/or positional parameters.\n"
+     "\n"
++    "    -a              export every variable assignment\n"
+     "    -e              exit if a simple command fails\n"
+     "    -f              disable pathname expansion (globbing)\n"
+     "    -h              remember command locations as they're looked up\n"
+@@ -34,12 +35,13 @@ builtin_set(int argc, char* argv[]) {
+   struct optstate opt = {"+-", 0, 0, 0, 0, 0};
+ 
+   /* check options */
+-  while((c = shell_getopt_r(&opt, argc, argv, "+efhmuxBCH")) > 0) {
++  while((c = shell_getopt_r(&opt, argc, argv, "+aefhmuxBCH")) > 0) {
+     int on = opt.prefix == '-';
+ 
+     got_opt = 1;
+ 
+     switch(c) {
++      case 'a': opts.allexport = on; break;
+       case 'e': opts.errexit = on; break;
+       case 'f': opts.noglob = on; break;
+       case 'h': opts.hashall = on; break;
+diff --git a/src/sh.h b/src/sh.h
+index 7b39ffa2..b94b2eae 100644
+--- a/src/sh.h
++++ b/src/sh.h
+@@ -46,6 +46,7 @@ struct arg {
+ /*union shopt {
+   unsigned flags : 5;*/
+ struct shopt {
++  unsigned allexport : 1;   /* -a */
+   unsigned errexit : 1;     /* -e */
+   unsigned noglob : 1;      /* -f */
+   unsigned hashall : 1;     /* -h */
+diff --git a/src/sh/sh_fmtflags.c b/src/sh/sh_fmtflags.c
+index aa2e0600..bcdfba3f 100644
+--- a/src/sh/sh_fmtflags.c
++++ b/src/sh/sh_fmtflags.c
+@@ -4,6 +4,9 @@ size_t
+ sh_fmtflags(char* dest, const struct shopt* opts) {
+   size_t i = 0;
+ 
++  if(opts->allexport)
++    dest[i++] = 'a';
++
+   if(opts->errexit)
+     dest[i++] = 'e';
+ 
+diff --git a/src/sh/sh_root.c b/src/sh/sh_root.c
+index 830c9cd0..7dcadcdb 100644
+--- a/src/sh/sh_root.c
++++ b/src/sh/sh_root.c
+@@ -9,17 +9,24 @@ struct env sh_root = {/* .parent = */ NULL,
+                       /* .exitcode = */ 0,
+                       /* .cmdsubst_ran = */ 0,
+                       /* .opts = */
+-                      {/*.errexit =*/0,
+-                       /*.noglob =*/0,
+-                       /*.hashall =*/1,
+-                       /*.monitor =*/0,
+-                       /*.unset =*/0,
+-                       /*.xtrace =*/0,
+-                       /*.braceexpand =*/1,
+-                       /*.noclobber =*/0,
+-                       /*.histexpand =*/0
+-
+-                      },
++                      /* real designated initializers here, not the
++                         plain-positional-with-comments style the rest
++                         of this struct uses -- struct shopt just
++                         silently mis-assigned every single default
++                         (hashall's "1" landed on noglob, braceexpand's
++                         "1" landed on xtrace, ...) the moment
++                         "allexport" was added as its new first field,
++                         with nothing to catch it at compile time. */
++                      {.allexport = 0,
++                       .errexit = 0,
++                       .noglob = 0,
++                       .hashall = 1,
++                       .monitor = 0,
++                       .unset = 0,
++                       .xtrace = 0,
++                       .braceexpand = 1,
++                       .noclobber = 0,
++                       .histexpand = 0},
+                       /* .fdstack = */ &fdstack_root,
+                       /* .varstack = */ &vartab_root,
+                       /* .arg = */ {0},
+diff --git a/src/var/var_setsa.c b/src/var/var_setsa.c
+index e7683e0c..caa70a28 100644
+--- a/src/var/var_setsa.c
++++ b/src/var/var_setsa.c
+@@ -37,6 +37,11 @@ var_setsa(stralloc* sa, int flags) {
+     var_random_assign(sa->len > var->len ? sa->s + var->len + 1 : "",
+                        sa->len > var->len ? sa->len - var->len - 1 : 0);
+ 
++  /* set -a: every assignment gets the export attribute, not just ones
++     explicitly passed to "export" */
++  if(sh->opts.allexport)
++    flags |= V_EXPORT;
++
+   /* now check how we set the value, there are 4 possibilities */
+   if(var->flags & V_FREESTR) {
+     /* if both, old and new variable should be freed

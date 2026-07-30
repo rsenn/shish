@@ -4,6 +4,9 @@ size_t
 sh_fmtflags(char* dest, const struct shopt* opts) {
   size_t i = 0;
 
+  if(opts->allexport)
+    dest[i++] = 'a';
+
   if(opts->errexit)
     dest[i++] = 'e';
 
@@ -15,6 +18,9 @@ sh_fmtflags(char* dest, const struct shopt* opts) {
 
   if(opts->monitor)
     dest[i++] = 'm';
+
+  if(opts->noexec)
+    dest[i++] = 'n';
 
   if(opts->unset)
     dest[i++] = 'u';

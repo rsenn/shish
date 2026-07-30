@@ -1,0 +1,114 @@
+diff --git a/src/builtin/builtin_set.c b/src/builtin/builtin_set.c
+index 27156ee9..3a1c6a41 100644
+--- a/src/builtin/builtin_set.c
++++ b/src/builtin/builtin_set.c
+@@ -17,6 +17,7 @@ const char help_set[] =
+     "    -f              disable pathname expansion (globbing)\n"
+     "    -h              remember command locations as they're looked up\n"
+     "    -m              enable job control (monitor mode)\n"
++    "    -n              read commands but don't execute them\n"
+     "    -u              treat unset variables as an error on expansion\n"
+     "    -x              print each command before running it\n"
+     "    -B              enable brace expansion\n"
+@@ -32,7 +33,7 @@ builtin_set(int argc, char* argv[]) {
+   struct optstate opt = {"+-", 0, 0, 0, 0, 0};
+
+   /* check options */
+-  while((c = shell_getopt_r(&opt, argc, argv, "+aefhmuxBCH")) > 0) {
++  while((c = shell_getopt_r(&opt, argc, argv, "+aefhmnuxBCH")) > 0) {
+     int on = opt.prefix == '-';
+
+     got_opt = 1;
+@@ -43,6 +44,7 @@ builtin_set(int argc, char* argv[]) {
+       case 'f': opts.noglob = on; break;
+       case 'h': opts.hashall = on; break;
+       case 'm': opts.monitor = on; break;
++      case 'n': opts.noexec = on; break;
+       case 'u': opts.unset = on; break;
+       case 'x': opts.xtrace = on; break;
+       case 'B': opts.braceexpand = on; break;
+diff --git a/src/sh.h b/src/sh.h
+index b94b2eae..1c9a3d84 100644
+--- a/src/sh.h
++++ b/src/sh.h
+@@ -50,6 +50,7 @@ struct shopt {
+   unsigned noglob : 1;      /* -f */
+   unsigned hashall : 1;     /* -h */
+   unsigned monitor : 1;     /* -m */
++  unsigned noexec : 1;      /* -n */
+   unsigned unset : 1;       /* -u */
+   unsigned xtrace : 1;      /* -x */
+   unsigned braceexpand : 1; /* -B */
+diff --git a/src/sh/sh_fmtflags.c b/src/sh/sh_fmtflags.c
+index bcdfba3f..8f6a7a12 100644
+--- a/src/sh/sh_fmtflags.c
++++ b/src/sh/sh_fmtflags.c
+@@ -13,6 +13,9 @@ sh_fmtflags(char* dest, const struct shopt* opts) {
+   if(opts->monitor)
+     dest[i++] = 'm';
+
++  if(opts->noexec)
++    dest[i++] = 'n';
++
+   if(opts->unset)
+     dest[i++] = 'u';
+
+diff --git a/src/sh/sh_loop.c b/src/sh/sh_loop.c
+index 7d40c825..9c1a1e77 100644
+--- a/src/sh/sh_loop.c
++++ b/src/sh/sh_loop.c
+@@ -70,13 +70,20 @@ sh_loop(void) {
+       if(is_interactive)
+         history_add(cmd.s, cmd.len);
+
+-      eval_push(&e, E_JCTL);
+-      status = eval_tree(&e, list, E_ROOT | E_LIST);
++      /* set -n: read (and, above, fully parse -- so a syntax error
++         later in the script is still caught and reported) every
++         command, but never actually run any of them. POSIX requires
++         interactive shells to ignore this option, hence !is_interactive
++         here rather than gating inside eval_tree() itself, which has
++         no notion of "interactive" to begin with. */
++      if(sh->opts.noexec && !is_interactive) {
++        sh->exitcode = 0;
++      } else {
++        eval_push(&e, E_JCTL);
++        status = eval_tree(&e, list, E_ROOT | E_LIST);
+
+-      // eval_pop(&e);
+-      // while(sh->eval != &e) eval_pop(sh->eval);
+-
+-      sh->exitcode = eval_pop(&e);
++        sh->exitcode = eval_pop(&e);
++      }
+
+       tree_free(list);
+diff --git a/src/sh/sh_main.c b/src/sh/sh_main.c
+index 11e3e6b2..b3ea5e19 100644
+--- a/src/sh/sh_main.c
++++ b/src/sh/sh_main.c
+@@ -136,10 +136,11 @@ main(int argc, char* argv[], char* envp[]) {
+     var_import(envp[c], V_EXPORT, &envvars[c]);
+
+   /* parse command line arguments */
+-  while((c = shell_getopt(argc, argv, "c:xe")) > 0)
++  while((c = shell_getopt(argc, argv, "c:xen")) > 0)
+     switch(c) {
+       case 'c': cmds = shell_optarg; break;
+       case 'x': sh->opts.xtrace = 1; break;
+       case 'e': sh->opts.errexit = 1; break;
++      case 'n': sh->opts.noexec = 1; break;
+
+ #ifdef _DEBUG
+diff --git a/src/sh/sh_root.c b/src/sh/sh_root.c
+index 7dcadcdb..b1e639c2 100644
+--- a/src/sh/sh_root.c
++++ b/src/sh/sh_root.c
+@@ -21,6 +21,7 @@ struct env sh_root = {/* .parent = */ NULL,
+                        .noglob = 0,
+                        .hashall = 1,
+                        .monitor = 0,
++                       .noexec = 0,
+                        .unset = 0,
+                        .xtrace = 0,
+                        .braceexpand = 1,

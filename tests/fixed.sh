@@ -2429,4 +2429,85 @@ done
 assert_equal "$HOME/x1 $HOME/x2.$HOME/x1 $HOME/x2.$HOME/x1 $HOME/x2." "$X116" \
   "tilde and brace expansion both re-run fresh on every loop iteration, never mutating the parsed command tree"
 
+## fixes/117 (set-allexport-unimplemented, plus a much more dangerous
+## bug found while adding it): "set -a"/"+a" (export every assignment)
+## was entirely missing, so this adds struct shopt's "allexport" bit
+## and hooks it into var_setsa.c (every "name=word" assignment),
+## mirroring how var_random.c's RANDOM= handling is wired into the
+## same function.
+##
+## Adding that bit as struct shopt's *first* field revealed
+## sh_root.c's default struct env was built with plain positional
+## initializers dressed up with "/* .field = */" comments -- not real
+## C designated initializers -- so inserting a field at the front
+## silently shifted every single default one slot down: hashall's "1"
+## landed on noglob (turning pathname-hashing off and glob-disabling
+## on by default), braceexpand's "1" landed on xtrace (turning on a
+## trace of every command by default). Nothing caught this at compile
+## time; only actually running the shell and noticing "$-" now read
+## "afx" *by default* (nothing had even run "set -x") gave it away.
+## Fixed by converting sh_root.c's struct shopt initializer to real
+## ".field = value" designated initializers, which can't silently
+## misalign like this again regardless of future field reordering.
+X117A=$(echo $-)
+assert_equal "hB" "$X117A" "the shell's own default option flags must be exactly hashall+braceexpand, nothing else -- regression guard for the sh_root.c positional-initializer bug"
+
+X117B=$(set -a; X117VAR=exported; sh -c 'echo $X117VAR')
+assert_equal "exported" "$X117B" "set -a exports every subsequent assignment automatically"
+
+X117C=$(X117VAR2=notexported; sh -c 'echo [$X117VAR2]')
+assert_equal "[]" "$X117C" "without set -a, a plain assignment is not exported"
+
+X117D=$(set -a; set +a; X117VAR3=notexported; sh -c 'echo [$X117VAR3]')
+assert_equal "[]" "$X117D" "set +a turns allexport back off for later assignments"
+
+## fixes/118 (set-noexec-unimplemented): "set -n"/"-n" (read and fully
+## parse commands -- so a later syntax error is still caught -- but
+## never execute any of them; ignored for interactive shells) was
+## entirely missing. Hooked into sh_loop.c's main loop: skips the
+## eval_tree() call for each top-level list (but not the parse_list()
+## call just above it) whenever noexec is on and the shell isn't
+## interactive. "." /"source" reuses this same loop (see
+## builtin_source.c), so a noexec shell sourcing another file is
+## covered for free.
+F118=$(mktemp -d)
+printf 'echo should-not-run\ntouch "%s/marker"\n' "$F118" >"$F118/script.sh"
+X118A=$(set -n; . "$F118/script.sh")
+assert_equal "" "$X118A" "a noexec shell sourcing a file runs nothing -- no output"
+X118A_MARKER=$(test -e "$F118/marker"; echo $?)
+assert_equal "1" "$X118A_MARKER" "...and no side effects (the touch never ran) either"
+rm -rf "$F118"
+
+## "set -n" still catching a later syntax error (sh_loop.c's noexec
+## check only skips eval_tree(), never parse_list()) was confirmed
+## manually ("shish -n bad.sh" reports the error and exits 1) rather
+## than here: sourcing a file with a syntax error turned out to
+## always kill the whole top-level process, even from inside a real
+## subshell or $(...) -- completely unrelated to noexec (reproduces
+## identically with an ordinary, unrelated command in the subshell
+## too) but unsafe to trigger from inside this suite, since it would
+## abort the rest of fixed.sh's own tests along with it. Logged
+## separately as BUGS: source-syntax-error-kills-whole-process-not-
+## just-subshell.
+
+## "set -n" only takes effect from sh_loop.c's *next* top-level parse
+## iteration onward -- it can't retroactively stop a list already
+## mid-evaluation, so this needs "set -n" and "echo two" to be
+## genuinely separate top-level commands (separate lines sourced from
+## a file), not joined by ';' into one already-committed list.
+F118B=$(mktemp -d)
+printf 'echo one\nset -n\necho two\n' >"$F118B/script.sh"
+X118C=$(. "$F118B/script.sh")
+assert_equal "one" "$X118C" "set -n mid-script stops running any later top-level command"
+
+## once noexec takes effect in a non-interactive script, nothing after
+## it runs at all -- not even a later "set +n" itself, since that's
+## just another command that never gets executed either. Confirmed
+## this is real bash/dash behavior too, not just an implementation
+## quirk: both print only "one" for this exact script.
+printf 'echo one\nset -n\nset +n\necho three\n' >"$F118B/script2.sh"
+X118D=$(. "$F118B/script2.sh")
+assert_equal "one" "$X118D" "a later set +n in the same noexec script never runs either, so noexec sticks for the rest of it"
+rm -rf "$F118B"
+
 summary

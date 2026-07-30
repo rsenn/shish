@@ -9,17 +9,25 @@ struct env sh_root = {/* .parent = */ NULL,
                       /* .exitcode = */ 0,
                       /* .cmdsubst_ran = */ 0,
                       /* .opts = */
-                      {/*.errexit =*/0,
-                       /*.noglob =*/0,
-                       /*.hashall =*/1,
-                       /*.monitor =*/0,
-                       /*.unset =*/0,
-                       /*.xtrace =*/0,
-                       /*.braceexpand =*/1,
-                       /*.noclobber =*/0,
-                       /*.histexpand =*/0
-
-                      },
+                      /* real designated initializers here, not the
+                         plain-positional-with-comments style the rest
+                         of this struct uses -- struct shopt just
+                         silently mis-assigned every single default
+                         (hashall's "1" landed on noglob, braceexpand's
+                         "1" landed on xtrace, ...) the moment
+                         "allexport" was added as its new first field,
+                         with nothing to catch it at compile time. */
+                      {.allexport = 0,
+                       .errexit = 0,
+                       .noglob = 0,
+                       .hashall = 1,
+                       .monitor = 0,
+                       .noexec = 0,
+                       .unset = 0,
+                       .xtrace = 0,
+                       .braceexpand = 1,
+                       .noclobber = 0,
+                       .histexpand = 0},
                       /* .fdstack = */ &fdstack_root,
                       /* .varstack = */ &vartab_root,
                       /* .arg = */ {0},
