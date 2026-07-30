@@ -1779,4 +1779,23 @@ X93=$(. "$F93")
 rm -f "$F93"
 assert_equal "abcd" "$X93" "a backslash-newline inside a double-quoted string must be removed entirely, not leave a stray backslash behind"
 
+## fixes/94 (mmap-read-empty-file-fails): mmap_read() (lib/mmap/mmap_read.c)
+## treated a genuinely empty (0-byte) file the same as a real open()
+## failure -- lseek() returning 0 hit an early "return 0" (failure)
+## before ever reaching the "else map = \"\";" branch below it that was
+## clearly meant to handle exactly this case. builtin_cat (and anything
+## else going through buffer_mmapread()) then reported whatever errno
+## happened to be lying around from some earlier, unrelated syscall
+## (e.g. a stale ECHILD from job control reaping a background
+## pipeline) as if it were a real error reading the file. Found via
+## gettext's generated configure, whose libtool boilerplate routinely
+## `cat`s a compiler-warnings file that's legitimately empty when the
+## compiler produced no warnings.
+F94=$(mktemp)
+X94=$(cat "$F94" 2>&1)
+STATUS94=$?
+rm -f "$F94"
+assert_equal "0" "$STATUS94" "cat on a genuinely empty file must succeed, not report a spurious error"
+assert_equal "" "$X94" "cat on a genuinely empty file must produce no output and no error message"
+
 summary
