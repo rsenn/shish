@@ -61,3 +61,39 @@
       eval 'echo $LINENO'   # prints 5 (f's call site), should print 3
     }
     f
+
+- set-missing-posix-options: `builtin_set()` (`src/builtin/builtin_set.c`)
+  only recognizes `-efhmuxBCH` (`-B`/`-H` are bash extensions; the rest
+  are POSIX). Missing, all silently rejected as "invalid option":
+
+    -a  allexport   (export every variable assignment, not just those
+                     explicitly `export`ed)
+    -b  notify      (report background job completion immediately,
+                     not just before the next prompt)
+    -n  noexec      (read commands but don't execute them; used by
+                     e.g. `sh -n script` syntax checks)
+    -v  verbose     (echo each input line as it's read, before any
+                     expansion -- distinct from -x, which echoes after
+                     expansion)
+    -o option-name  (set/query options by long name instead of a
+                     letter -- POSIX requires at least the long names
+                     matching the letter options above; bash also
+                     exposes options with no letter equivalent at all,
+                     e.g. `pipefail`. There's also no bare `set -o` /
+                     `set +o` to print current option states.)
+
+  Also POSIX requires `-p` (privileged: don't process `$ENV`, etc. --
+  relevant here since `V_EXPORT`/environment import already exist);
+  not implemented either. `struct shopt` (`src/sh.h`) has no bit for
+  any of these, so implementing them is more than wiring up
+  `shell_getopt_r`'s optstring.
+
+  Separately, but found while checking this: `set -` (bare `-`,
+  intended to end option processing the same as `--` while also
+  turning off `-x`/`-v`) leaves the `-` itself as the new `$1` instead
+  of being consumed, because `shell_getopt_r()` (`lib/shell/shell_getopt.c`)
+  returns -1 for a bare "-" argument without advancing `optind` past
+  it:
+
+    set - a b c; echo "$1 $2 $3"
+    # prints "- a b", should print "a b c"
