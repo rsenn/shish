@@ -1,5 +1,7 @@
 #include "../source.h"
 
+int source_squoted = 0;
+
 /* ----------------------------------------------------------------------- */
 int
 source_skip(void) {
@@ -15,7 +17,7 @@ source_skip(void) {
 
     b->p++;
 
-    if(c == '\\') 
+    if(c == '\\' && !source_squoted)
       if(source_peek(&c) > 0 && c == '\n')
         b->p++;
 

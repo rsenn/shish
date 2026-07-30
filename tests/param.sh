@@ -93,6 +93,13 @@ echo XXX: "${1#A}"
 assert_equal "$1" 1
 assert_equal "$9" RG9
 
+## "set -e" (turned on above, at line 62, for the "${Y?msg}" check and
+## left on since nothing since has needed it off) is now actually
+## enforced (fixes/107) -- the tests below deliberately run a bare
+## "false" to check "$?" reporting, which "set -e" would otherwise
+## correctly (and fatally, for this whole script) treat as a real
+## failure. Turn it back off first.
+set +e
 
 ## Expands to the decimal exit status of the most recent pipeline
 true

@@ -1,0 +1,104 @@
+diff --git a/src/parse/parse_squoted.c b/src/parse/parse_squoted.c
+index a19f118c..44d60b41 100644
+--- a/src/parse/parse_squoted.c
++++ b/src/parse/parse_squoted.c
+@@ -11,8 +11,23 @@ parse_squoted(struct parser* p) {
+ 
+   p->quot = Q_SQUOTED;
+ 
++  /* source_get()/source_skip() read through source_peekn(), which
++     otherwise unconditionally treats a backslash-newline as a line
++     continuation and silently drops both bytes -- correct outside
++     quotes and inside double quotes, but POSIX requires single quotes
++     (and, the same way, a heredoc with a quoted delimiter, which
++     reuses this same function -- P_HERE below) to preserve every
++     character completely literally. Cleared on every exit path below,
++     not just the normal one: source_squoted is a single shared flag,
++     not scoped to this call, so leaving it set on an early return
++     would wrongly suppress continuation handling for everything read
++     afterward. squoted-backslash-newline-swallowed, fixes/108. */
++  source_squoted = 1;
++
+   for(;;) {
+     if(source_get(&c) <= 0) {
++      source_squoted = 0;
++
+       /* same "end of input inside a here-doc must act like a
+          trailing newline" fix as parse_dquoted.c -- see its comment
+          for why. This is the nosubst (quoted-delimiter, e.g.
+@@ -26,6 +41,7 @@ parse_squoted(struct parser* p) {
+     }
+ 
+     if(!(p->flags & P_HERE) && c == '\'') {
++      source_squoted = 0;
+       parse_string(p, 0);
+       p->quot = Q_UNQUOTED;
+       break;
+@@ -36,8 +52,10 @@ parse_squoted(struct parser* p) {
+ 
+     stralloc_catc(&p->sa, c);
+ 
+-    if((p->flags & P_HERE) && c == '\n')
++    if((p->flags & P_HERE) && c == '\n') {
++      source_squoted = 0;
+       return 0;
++    }
+   }
+ 
+   parse_string(p, 0);
+diff --git a/src/source.h b/src/source.h
+index 5d95addb..eb408324 100644
+--- a/src/source.h
++++ b/src/source.h
+@@ -33,6 +33,17 @@ struct source {
+ extern struct source* source;
+ extern int source_psn;
+ 
++/* set (and cleared) by parse_squoted.c around its own read loop --
++ * source_skip.c/source_peekn.c unconditionally treat a backslash
++ * immediately followed by a newline as a line continuation and
++ * silently remove both bytes, correct outside quotes and inside
++ * double quotes, but POSIX requires single quotes to preserve every
++ * character literally with no exceptions. These primitives sit below
++ * the parser (no access to struct parser/its quoting state), so this
++ * flag is how parse_squoted.c tells them "don't, right now" --
++ * squoted-backslash-newline-swallowed, fixes/108. */
++extern int source_squoted;
++
+ void source_buffer(struct source*, struct fd*, const char* x, size_t n);
+ void source_pop(void);
+ void source_popfd(struct fd*);
+diff --git a/src/source/source_peekn.c b/src/source/source_peekn.c
+index f9b809ab..4af2a7fd 100644
+--- a/src/source/source_peekn.c
++++ b/src/source/source_peekn.c
+@@ -32,7 +32,7 @@ source_peekn(char* c, unsigned n) {
+     y = buffer_END(b);
+     j = y - x;
+ 
+-    for(i = 0; i < lookahead + 1; i++) {
++    for(i = 0; !source_squoted && i < lookahead + 1; i++) {
+ 
+       if(x[i] == '\\') {
+         if(i + 1 >= j) {
+diff --git a/src/source/source_skip.c b/src/source/source_skip.c
+index fbb47eae..7bf0d934 100644
+--- a/src/source/source_skip.c
++++ b/src/source/source_skip.c
+@@ -1,5 +1,7 @@
+ #include "../source.h"
+ 
++int source_squoted = 0;
++
+ /* ----------------------------------------------------------------------- */
+ int
+ source_skip(void) {
+@@ -15,7 +17,7 @@ source_skip(void) {
+ 
+     b->p++;
+ 
+-    if(c == '\\') 
++    if(c == '\\' && !source_squoted)
+       if(source_peek(&c) > 0 && c == '\n')
+         b->p++;
+ 

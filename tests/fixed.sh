@@ -2112,4 +2112,167 @@ assert_equal "$(printf 'caught-term\nafter-term\nouter: 0')" "$X105C" "a signal 
 ## repeated trials at different timings, both via a direct pty-based
 ## harness and the real controlling-terminal Ctrl-C path).
 
+## fixes/106 (ln-trailing-slash-on-plain-destination): builtin_ln()
+## unconditionally appended a "/" to the destination operand before
+## ever checking whether it names an existing directory, so
+## "ln -s target name" (name not an existing directory, the common
+## case) always ended up calling symlink(target, "name/"), which
+## fails with ENOTDIR/ENOENT since a trailing-slash path requires the
+## component before it to already be a directory. Only appended it
+## when dst is actually a directory to link *into* now, and rejects
+## (rather than silently mis-linking) more than one source without an
+## existing directory destination.
+F106=$(mktemp -d)
+D106=$(mktemp -d)
+(
+  cd "$F106"
+  ln -s /etc/hostname mylink
+) >/dev/null 2>&1
+X106=$(readlink "$F106/mylink" 2>/dev/null)
+assert_equal "/etc/hostname" "$X106" "ln -s target name (name not an existing directory) must create the symlink, not fail with ENOTDIR"
+
+X106B=$(ln -s a.txt b.txt "$D106/notadir-child" >/dev/null 2>&1; echo "status:$?")
+assert_equal "status:1" "$X106B" "ln with more than one source and a destination that isn't an existing directory must fail cleanly, not silently link only the last source"
+rm -rf "$F106" "$D106"
+
+## fixes/107 (set-errexit-not-enforced): "set -e"'s errexit bit was
+## correctly set/reflected in "$-" but nothing ever actually checked
+## it -- a failing command never aborted the script. Enforced now in
+## the two places a sequential list of commands is actually walked
+## (eval_tree.c, for a compound body/loop body/etc.; eval_cmdlist.c,
+## for ";"/newline-separated commands sharing one N_LIST node), each
+## calling sh_exit() the same way an explicit "exit" would (so it
+## correctly unwinds just one subshell/function level, or the whole
+## process at the top level) -- with POSIX's specific exemptions: the
+## controlling list of if/while/until, a "!"-negated command, and any
+## AND-OR list member other than the one that actually determined its
+## overall result (which requires *not* re-checking an AND-OR node's
+## own return value at the outer sequential-list level at all, only
+## trusting eval_and_or()'s own inner check on its right operand --
+## see eval_tree.c's comment for why re-checking there breaks
+## short-circuited cases like "false && true").
+X107=$(set -e; false; echo bad)
+assert_equal "" "$X107" "set -e must abort the script right after a failing command, not let it continue"
+
+X107B=$(set -e; if false; then echo bad; else echo ok; fi; echo after)
+assert_equal "$(printf 'ok\nafter')" "$X107B" "set -e must not fire for the controlling list of an if/while/until"
+
+X107C=$(set -e; f() { false; echo bad; }; f; echo after)
+assert_equal "" "$X107C" "set -e must fire for a failing command inside a function body, not just at the top level"
+
+X107D=$(set -e; false && true; echo after)
+assert_equal "after" "$X107D" "set -e must not fire when an AND-OR list short-circuits on its non-last (exempt) operand, even though the list's own inherited result is nonzero"
+
+X107E=$(set -e; true && false; echo after)
+assert_equal "" "$X107E" "set -e must fire when an AND-OR list's actually-evaluated last operand fails"
+
+X107F=$(set -e; ! true; echo after)
+assert_equal "after" "$X107F" "set -e must not fire for a \"!\"-negated command, regardless of its negated result"
+
+## The AND-OR/compound-construct exemption rules above only look one
+## node deep unless the exemption itself propagates through nested
+## calls (function bodies, subshells) too -- confirmed against real
+## bash's own actual behavior (not just POSIX's text) and against
+## tests/posix/errexit-p.tst (yash's own errexit conformance suite,
+## 53 cases -- went from 7/53 to 49/53 passing after these fixes, the
+## remaining 4 being unrelated, separately-filed bugs: BUGS:
+## redirect-failure-does-not-block-execution-or-set-status and
+## grouping-piped-loses-output-after-internal-failure).
+X107G=$(set -e; false || false || true; echo after)
+assert_equal "after" "$X107G" "set -e must not fire on a 3+-operand OR chain's un-exempted middle operand -- only the chain's true last operand matters"
+
+X107H=$(set -e; f() { false; echo unreached; }; f && true; echo after)
+assert_equal "$(printf 'unreached\nafter')" "$X107H" "set -e's exemption for an AND-OR list's non-last operand must survive into a function call reached while evaluating it"
+
+X107I=$(set -e; { false && true; }; echo reached)
+assert_equal "reached" "$X107I" "an AND-OR list's own exemption must survive being wrapped in a grouping -- confirmed against real bash"
+
+## "set -e" firing inside a command substitution correctly terminates
+## that substitution itself (matching sh_exit()'s usual "kill the
+## innermost subshell/function" behavior -- a command substitution is
+## one, see fixes/109), so the outer command substitution's own capture
+## ends up empty: nothing after the "{ false; }"/"( false && true )"
+## ever runs to produce output. Checking the *outer* shell's own exit
+## status (from directly running these, not via a substitution) is
+## what actually distinguishes "did -e fire in there or not".
+X107J=$(set -e; { false; }; echo not_reached)
+X107J_STATUS=$?
+assert_equal "" "$X107J" "a grouping must not shield a genuinely non-exempt failure inside it, only an already-exempt one"
+assert_greater "$X107J_STATUS" 0 "and that failure must be reported as a nonzero exit status"
+
+X107K=$(set -e; ( false && true ); echo not_reached)
+X107K_STATUS=$?
+assert_equal "" "$X107K" "unlike a grouping, a subshell's own returned status is opaque/independent and must still be checked normally at the outer level, even if the failure inside it was itself exempt"
+assert_greater "$X107K_STATUS" 0 "and that failure must be reported as a nonzero exit status"
+
+X107L=$(set -e; if true; then false && true; fi; echo reached)
+assert_equal "reached" "$X107L" "an AND-OR list's own exemption must survive being the last statement of an if-body"
+
+X107M=$(set -e; for i in 1 2; do echo "a$i"; false && true; echo "b$i"; done; echo reached)
+assert_equal "$(printf 'a1\nb1\na2\nb2\nreached')" "$X107M" "an AND-OR list's own exemption must survive being inside a for-loop body"
+
+## fixes/108 (squoted-backslash-newline-swallowed): source_skip()/
+## source_peekn() treated a backslash immediately followed by a
+## newline as a line continuation and silently removed both bytes,
+## unconditionally -- correct outside quotes and inside double quotes
+## (fixes/93), but POSIX requires single quotes to preserve every
+## character literally, no exceptions. A new source_squoted flag
+## (source.h), set by parse_squoted.c around its own read loop, is how
+## these primitives -- which sit below the parser, with no access to
+## its quoting state -- know to skip the continuation-removal step.
+X108_SCRIPT=$(mktemp)
+printf "%s\n" "X='a\\" "b'" > "$X108_SCRIPT"
+. "$X108_SCRIPT"
+rm -f "$X108_SCRIPT"
+X108=$(printf '%s' "$X" | od -An -c | tr -s ' ')
+assert_equal " a \\ \n b" "$X108" "a backslash-newline inside single quotes must be preserved literally, not silently removed"
+
+## the same primitives are shared by a heredoc with a quoted delimiter
+## (parse_squoted.c's P_HERE path) -- its body must be equally literal
+X108B=$(cat <<'EOF'
+a\
+b
+EOF
+)
+assert_equal "$(printf 'a\\\nb')" "$X108B" "a heredoc with a quoted delimiter must preserve a backslash-newline in its body literally too, matching bash"
+
+## fixes/109 (cmdsubst-does-not-isolate-shell-state): found while
+## writing fixes/107's own regression tests above, all "$(set -e;
+## ...)" style -- expand_command.c (command substitution, "$(...)"/
+## backquotes) never called sh_push(), unlike eval_subshell.c's
+## "(...)" -- even though POSIX defines command substitution as a
+## subshell (2.6.3) too. "set -e"/any other "set" option, "cd",
+## "umask", etc. run inside "$(...)" permanently changed the *calling*
+## shell's own state once the substitution finished, instead of only
+## affecting the substitution's own, discarded-afterward environment.
+X109=$(x=$(set -e; true); echo "leaked:$-")
+assert_nomatch "$X109" "leaked:.*e" "\"set -e\" run inside a command substitution must not leak into the calling shell once it's done"
+
+BEFORE109=$(pwd)
+X109B=$(cd /; pwd)
+AFTER109=$(pwd)
+assert_equal "/" "$X109B" "a cd done inside a command substitution must still apply to that substitution's own execution"
+assert_equal "$BEFORE109" "$AFTER109" "a cd done inside a command substitution must not change the calling shell's own cwd once it's done"
+
+## fixes/110 (test-ne-misdetected-as-nt): found triaging
+## tests/posix/errexit-p.tst against fixes/107 above -- "-ne" (numeric
+## not-equal) and "-nt" (file mtime, newer-than) both have "n" as
+## their second character, and builtin_test.c's binary-operator
+## dispatch only checked that second character to decide "this is a
+## file-mtime comparison", so "test 1 -ne 2" silently ran as
+## filetime("1") > filetime("2") between two (usually nonexistent)
+## files named "1" and "2" instead of the numeric comparison it's
+## supposed to be. Now also checks the third character ("t" vs "e"),
+## which is what actually distinguishes them.
+assert_equal "0" "$(test 1 -ne 2; echo $?)" "test 1 -ne 2 must be a numeric not-equal comparison (true), not a file mtime one"
+assert_equal "1" "$(test 1 -eq 2; echo $?)" "test 1 -eq 2 must still correctly report false"
+
+F110=$(mktemp -d)
+touch "$F110/old"
+sleep 1.1
+touch "$F110/new"
+assert_equal "0" "$(test "$F110/new" -nt "$F110/old"; echo $?)" "test -nt must still correctly compare file mtimes, unaffected by the -ne/-nt disambiguation fix"
+assert_equal "0" "$(test "$F110/old" -ot "$F110/new"; echo $?)" "test -ot must still correctly compare file mtimes too"
+rm -rf "$F110"
+
 summary

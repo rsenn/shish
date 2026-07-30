@@ -1,25 +1,44 @@
-- confdefs-h-duplication: running gettext-tools' `configure` (a large,
-  real-world, gnulib-heavy autoconf script) end-to-end under shish, later
-  probes misdetect features that earlier probes already correctly found
-  (e.g. `checking for sys/socket.h... no` after gnulib's own earlier
-  probes depend on it existing), and `conftest.c` compiles fail with
-  "undefined reference to main" / duplicate `#define`s reported by gcc.
-  Points at `confdefs.h` (the accumulating header of `#define HAVE_*`
-  lines autoconf's probes append to and `#include` on every subsequent
-  probe) ending up with duplicated or corrupted content as the run
-  progresses, rather than a single clean append per probe. Investigated
-  in depth on 2026-07-30 without being root-caused; not yet isolated to
-  a specific `AC_DEFINE`/`cat >>confdefs.h` call site or shell construct.
-  Confirmed still blocking the same script after fixing the separate
-  `eval_exit`/`eval_function` crash bugs (`fixes/101`, `fixes/102`) that
-  previously masked it: the run now gets much further before stopping on
-  `checking for socklen_t equivalent... configure: error: Cannot find a
-  type to use in place of socklen_t`, itself presumably another symptom
-  of the same underlying `confdefs.h` corruption (this type detection
-  loop also greps/rewrites `confdefs.h` between attempts). Next step is
-  probably diffing `confdefs.h`'s actual accumulated content against a
-  bash run of the same script at a matched checkpoint, rather than
-  guessing further.
+- redirect-failure-does-not-block-execution-or-set-status: a simple
+  command whose own redirection fails (target file doesn't exist, etc.)
+  still runs, using whatever fd it had before, and still reports exit
+  status 0 -- POSIX requires the command not execute at all and the
+  shell to treat it as a failure:
+
+    echo not printed <_no_such_file_; echo "status: $?"
+    # prints "not printed" then "status: 0" -- should print nothing
+    # and report a nonzero status
+
+  eval_simple_command.c *does* have a "return if a redirection failed"
+  check (`if(redir_eval(...)) { status = 1; goto end; }`), but it
+  doesn't fire for this case -- consistent with `CLAUDE.md`'s own note
+  that "the fdtable lazily resolves redirections... this is the source
+  of several known issues": the actual open() this depends on is
+  deferred past this check, so the failure surfaces too late (as a
+  bare error message with no effect on control flow) instead of here.
+  Found triaging `tests/posix/errexit-p.tst` after implementing
+  `set -e` enforcement (`fixes/107`) -- 3 of its 53 cases are exactly
+  this ("errexit: independent redirection error", "errexit"/"noerrexit:
+  redirection error on simple command"), unfixable without addressing
+  this first.
+
+- grouping-piped-loses-output-after-internal-failure: a `{ ...; }`
+  grouping's output is truncated after the first command inside it
+  that returns nonzero, when the whole grouping is itself piped into
+  another command -- completely independent of `set -e` (reproduces
+  with it off):
+
+    { echo reached1; false; echo reached2; } | cat
+    # prints only "reached1" -- should print both "reached1" and
+    # "reached2" ("false" failing doesn't end the grouping, there's no
+    # "&&"/"set -e" here to make it stop)
+
+  Confirmed pre-existing (reproduces identically on a from-scratch
+  checkout of `924b1f0e`, before any of the same day's other fixes).
+  Found via the same `errexit-p.tst` triage above ("noerrexit:
+  grouping"). Not yet root-caused -- likely something about how a
+  piped grouping's stdout buffering/fd interacts with a member
+  command's nonzero exit, since the *unpiped* case (`{ ...; }`
+  standalone) does not lose output this way.
 
 - yash-random-y-tst-hangs: `tests/yash/random-y.tst` hangs (bounded by
   CTest's 120s per-file TIMEOUT). The rest of the suite is fine.
@@ -48,25 +67,6 @@
   a debug build (`cfg -DCMAKE_BUILD_TYPE=Debug`) under a debugger to
   catch exactly which loop is spinning and why the two `$RANDOM` reads
   it compares aren't diverging.
-
-- ln-trailing-slash-on-plain-destination: `builtin_ln()`
-  (`src/builtin/builtin_ln.c`) unconditionally appends a `/` to the
-  destination operand while building the link path, before ever
-  checking whether that destination is a directory (`is_dir`) -- so
-  `ln -s target name` (destination `name` not an existing directory)
-  always ends up calling `symlink(target, "name/")`, which fails with
-  `ENOTDIR`/`ENOENT` since a trailing-slash path requires the
-  component before it to already be a directory. Only
-  `ln -s target existing-dir/` (or a bare existing directory as
-  destination) happens to work, because that path's `is_dir` branch
-  overwrites `path` with `dst/basename(target)` before the trailing
-  slash matters. Found while writing `tests/builtin-rm.sh` (worked
-  around there via `/bin/ln`, not fixed here -- unrelated to that
-  change).
-
-    ln -s /etc/hostname mylink
-    # symlink: mylink/: No such file or directory -- should silently
-    # create ./mylink -> /etc/hostname
 
 - eval-lineno-imprecise-inside-function: `$LINENO` read from within an
   `eval`'d string now counts from the invoking statement's line
@@ -121,16 +121,6 @@
     set - a b c; echo "$1 $2 $3"
     # prints "- a b", should print "a b c"
 
-- set-errexit-not-enforced: `struct shopt`'s `errexit` bit (`src/sh.h`,
-  `-e`) is set correctly by `set -e`/`set +e` and reflected back
-  correctly in `$-` (`src/sh/sh_fmtflags.c`), but nothing else in the
-  codebase ever reads it -- not `src/eval/`, not `src/sh/sh_loop.c`.
-  A failing command never aborts the script, no matter how `set -e`
-  is documented in `help_set` (`src/builtin/builtin_set.c`):
-
-    set -e; false; echo "still ran"
-    # prints "still ran" -- should exit before reaching echo
-
 - set-noglob-not-enforced: `struct shopt`'s `noglob` bit (`src/sh.h`,
   `-f`) is set correctly by `set -f`/`set +f` and reflected back
   correctly in `$-`, but `src/expand/expand_glob.c` (and everything
@@ -159,26 +149,3 @@
   more fundamentally, there is no history-expansion ('!') feature
   implemented at all under `src/history/` or `src/term/` for this
   flag to gate. It's a placeholder with nothing behind it.
-
-- squoted-backslash-newline-swallowed: `source_skip()`/`source_peekn()`
-  (`src/source/source_skip.c`, `src/source/source_peekn.c`) treat a
-  backslash immediately followed by a newline as a line continuation
-  and silently remove both bytes, unconditionally, before any
-  quoting-mode parser ever sees the raw bytes. That's correct outside
-  quotes and inside double quotes (see fixes/93), but POSIX requires
-  single quotes to preserve *every* character literally, with no
-  exceptions -- a backslash-newline inside `'...'` must stay exactly
-  as written, not vanish. `parse_squoted.c` reads through `source_get()`,
-  which goes through the same swallowing primitives, so it inherits
-  this bug too:
-
-    printf "%s\n" "X='a\\" 'b'"'" > /tmp/t.sh   # X='a\<newline>b'
-    . /tmp/t.sh; printf '%s' "$X" | od -c
-    # prints "a b" (2 bytes) -- should print "a\<newline>b" (4 bytes:
-    # 'a', '\', newline, 'b')
-
-  Fixing this properly means teaching `source_peek()`/`source_skip()`
-  (or their callers) to skip the continuation-removal step while
-  `p->quot == Q_SQUOTED` -- these primitives are shared by every
-  quoting mode and by unquoted parsing, so the fix has to be more
-  careful than the narrowly-scoped one in fixes/93.

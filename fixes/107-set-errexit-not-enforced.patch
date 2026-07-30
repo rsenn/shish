@@ -1,0 +1,216 @@
+diff --git a/src/eval.h b/src/eval.h
+index ad1a60d8..e9f05bcd 100644
+--- a/src/eval.h
++++ b/src/eval.h
+@@ -13,6 +13,23 @@ enum {
+   E_DEBUG = (1 << 8)
+ };
+ 
++/* "set -e" is suppressed (nonzero) for exactly the duration of
++ * evaluating something POSIX exempts it for: the controlling list of
++ * an if/while/until, or a non-last member of an AND-OR list (POSIX:
++ * "-e shall be ignored when executing the compound list following the
++ * while, until, or if... or any command of an AND-OR list other than
++ * the last"). A plain counter, not a per-eval-frame flag: confirmed
++ * directly against bash that the suppression has to survive *into* a
++ * function call or subshell reached while evaluating an exempt
++ * expression (e.g. "f() { false; }; set -e; f && true" does not abort
++ * inside f, even though f's own body would fail -e's check on its
++ * own merits if f were called normally) -- a flag scoped to one
++ * struct eval can't express that, since a function call gets a
++ * brand-new one (exec_command.c's H_FUNCTION case), but every one of
++ * them still shares this same global for as long as the outer
++ * suppression is in effect. */
++extern int errexit_suppress;
++
+ #include "tree.h"
+ #include <setjmp.h>
+ #include <stdlib.h>
+diff --git a/src/eval/eval_and_or.c b/src/eval/eval_and_or.c
+index 4ee217a3..5e86cb7f 100644
+--- a/src/eval/eval_and_or.c
++++ b/src/eval/eval_and_or.c
+@@ -7,7 +7,27 @@ int
+ eval_and_or(struct eval* e, struct nandor* nandor) {
+   int ret;
+ 
++  /* the left operand of an AND-OR list ("cmd1" in "cmd1 && cmd2" /
++     "cmd1 || cmd2") -- and, since eval_and_or() computes N_NOT's own
++     value by negating just this same call's result, a "!"-negated
++     command's single operand too -- is exempt from "set -e" even if
++     it fails; see errexit_suppress's own comment (eval.h). Only the
++     right operand (the one case within an AND-OR list that's actually
++     checked, when reached) is left at the ambient suppression level:
++     if this whole and-or is itself just one operand of some *outer*
++     and-or/condition -- e.g. the left "(false || false)" of "false ||
++     false || true", which parses as "(false || false) || true" --
++     errexit_suppress is already nonzero on entry here (the outer
++     eval_and_or()'s own increment below is still in effect while its
++     left operand, i.e. this whole call, runs), so leaving it alone
++     (not resetting to 0) naturally propagates that exemption to both
++     of *my* operands too, without this function needing to know or
++     care that it's nested. Confirmed directly against bash: "set -e;
++     false || false || true; echo reached" prints "reached" (the
++     un-exempted middle "false" must not fire on its own). */
++  errexit_suppress++;
+   ret = eval_tree(e, nandor->left, 0);
++  errexit_suppress--;
+ 
+   if((nandor->id == N_AND && !ret) || (nandor->id == N_OR && ret))
+     ret = eval_tree(e, nandor->right, 0);
+diff --git a/src/eval/eval_cmdlist.c b/src/eval/eval_cmdlist.c
+index 081e50b1..02532713 100644
+--- a/src/eval/eval_cmdlist.c
++++ b/src/eval/eval_cmdlist.c
+@@ -1,5 +1,6 @@
+ #include "../tree.h"
+ #include "../eval.h"
++#include "../sh.h"
+ 
+ /* ----------------------------------------------------------------------- */
+ int
+@@ -15,6 +16,30 @@ eval_cmdlist(struct eval* e, struct ngrp* grp) {
+      eval_node_bgnd()'s comment for the full reasoning */
+   for(cmd = grp->cmds; cmd; cmd = cmd->next) {
+     ret = eval_node_bgnd(e, cmd);
++
++    /* "set -e": every ";"/newline-separated command on the same input
++       line as this one is represented as an N_LIST wrapper around this
++       loop rather than eval_tree()'s own per-node chain -- without a
++       matching check here, "set -e; false; echo bad" (all one line,
++       one N_LIST node) never noticed "false" failing at all, only
++       "set -e; false" on separate lines (each its own top-level
++       eval_tree() call) did. See eval_tree.c's matching check (and
++       errexit_suppress's own comment, eval.h) for the full reasoning
++       behind every one of these exclusions -- it's word for word the
++       same list, for word for word the same reasons. Note this whole
++       list is naturally exempt in its own right, with no special
++       handling needed here beyond checking errexit_suppress like
++       everyone else: an if/while/until condition list ("if false;
++       true; then") reaches here with errexit_suppress already
++       incremented by eval_if.c/eval_loop.c around the *entire*
++       eval_tree() call that dispatched to this eval_cmdlist(), so
++       every member of this loop sees it suppressed, not just the
++       first one that happens to be N_LIST-wrapped. */
++    if(sh->opts.errexit && ret != 0 && !errexit_suppress && cmd->id != N_NOT &&
++       cmd->id != N_AND && cmd->id != N_OR && cmd->id != N_BRACEGROUP && cmd->id != N_IF &&
++       cmd->id != N_FOR && cmd->id != N_CASE && cmd->id != N_WHILE && cmd->id != N_UNTIL &&
++       cmd->id != N_LIST)
++      sh_exit(ret);
+   }
+ 
+   return ret;
+diff --git a/src/eval/eval_if.c b/src/eval/eval_if.c
+index 6e420a63..4378034f 100644
+--- a/src/eval/eval_if.c
++++ b/src/eval/eval_if.c
+@@ -11,7 +11,11 @@ eval_if(struct eval* e, struct nif* nif) {
+   union node* branch;
+ 
+ elif:
++  /* the controlling list of an if/elif is exempt from "set -e" in its
++     entirety -- see errexit_suppress's own comment (eval.h). */
++  errexit_suppress++;
+   ret = eval_tree(e, nif->test, E_LIST);
++  errexit_suppress--;
+ 
+   /* do not recurse for elifs */
+   if(ret && nif->cmd1) {
+diff --git a/src/eval/eval_loop.c b/src/eval/eval_loop.c
+index a02f42a8..4bae7e0c 100644
+--- a/src/eval/eval_loop.c
++++ b/src/eval/eval_loop.c
+@@ -19,7 +19,16 @@ eval_loop(struct eval* e, struct nloop* nloop) {
+     return ret;
+   }
+ 
+-  while((ret = eval_tree(e, nloop->test, E_LIST) == retcode)) {
++  for(;;) {
++    /* the controlling list of a while/until is exempt from "set -e"
++       in its entirety -- see errexit_suppress's own comment (eval.h). */
++    errexit_suppress++;
++    ret = eval_tree(e, nloop->test, E_LIST);
++    errexit_suppress--;
++
++    if(ret != retcode)
++      break;
++
+     /* evaluate loop body */
+     eval_tree(e, nloop->cmds, E_LIST);
+   }
+diff --git a/src/eval/eval_tree.c b/src/eval/eval_tree.c
+index a108e327..d2d3ebfb 100644
+--- a/src/eval/eval_tree.c
++++ b/src/eval/eval_tree.c
+@@ -5,6 +5,8 @@
+ 
+ /* evaluate a tree node(-list maybe)
+  * ----------------------------------------------------------------------- */
++int errexit_suppress = 0;
++
+ int
+ eval_tree(struct eval* e, union node* node, int tempflags) {
+   int ret = 0;
+@@ -38,6 +40,44 @@ eval_tree(struct eval* e, union node* node, int tempflags) {
+     ret = eval_node_bgnd(e, node);
+     e->exitcode = ret;
+ 
++    /* "set -e": a failing command triggers it, with POSIX's specific
++       exemptions -- errexit_suppress (eval.h) covers a "!"-negated
++       pipeline/command (eval_and_or.c computes N_NOT's exit status by
++       negating its single operand, so the *un*negated failure that
++       made that negation meaningful must not itself be treated as
++       this list's own failure) and an AND-OR list member other than
++       the one that actually determined its result. Separately,
++       N_AND/N_OR/N_NOT are *also* skipped here even when not
++       suppressed, for a sharper reason than double-checking:
++       eval_and_or() already applies this same check, correctly, to
++       whichever operand actually ran last; re-checking its *returned*
++       value here breaks the moment the list short-circuits, e.g.
++       "false && true" -- confirmed directly against bash. The same
++       reasoning extends to every other transparent compound construct
++       that doesn't produce its own independent, opaque status
++       (grouping, if/elif/else, for, case, while/until bodies, and a
++       ";"-separated N_LIST sub-list) -- all of these already ran
++       their own contents through this exact check (or
++       eval_cmdlist()'s matching one) on the way here, so if nothing
++       fired, either nothing failed, or what failed was itself exempt;
++       re-checking the compound construct's own bubbled-up return
++       value at this level would wrongly re-trigger on the latter case
++       (confirmed directly against bash: "set -e; { false && true; };
++       echo reached" prints "reached", but "set -e; (false && true);
++       echo reached" does not -- a subshell's own status *is*
++       independent/opaque and must still be checked normally, same as
++       a simple command or pipeline).
++
++       Ends the shell/subshell/function this eval frame belongs to,
++       the same way an explicit "exit" would (sh_exit() already knows
++       how to unwind exactly one level: the whole process at the top
++       level, or just the innermost subshell/function otherwise). */
++    if(sh->opts.errexit && ret != 0 && !errexit_suppress && node->id != N_NOT &&
++       node->id != N_AND && node->id != N_OR && node->id != N_BRACEGROUP && node->id != N_IF &&
++       node->id != N_FOR && node->id != N_CASE && node->id != N_WHILE && node->id != N_UNTIL &&
++       node->id != N_LIST)
++      sh_exit(ret);
++
+     if(!list)
+       break;
+ 
+diff --git a/tests/param.sh b/tests/param.sh
+index d376b5eb..8509574c 100644
+--- a/tests/param.sh
++++ b/tests/param.sh
+@@ -93,6 +93,13 @@ echo XXX: "${1#A}"
+ assert_equal "$1" 1
+ assert_equal "$9" RG9
+ 
++## "set -e" (turned on above, at line 62, for the "${Y?msg}" check and
++## left on since nothing since has needed it off) is now actually
++## enforced (fixes/107) -- the tests below deliberately run a bare
++## "false" to check "$?" reporting, which "set -e" would otherwise
++## correctly (and fatally, for this whole script) treat as a real
++## failure. Turn it back off first.
++set +e
+ 
+ ## Expands to the decimal exit status of the most recent pipeline
+ true

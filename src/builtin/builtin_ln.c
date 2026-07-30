@@ -56,9 +56,31 @@ builtin_ln(int argc, char* argv[]) {
     }
   }
 
+  /* more than one source requires an existing directory to link them
+     all into (POSIX: "If the number of source_files operands is not
+     one, ... target_dir shall be an existing directory") -- without
+     this check the loop below just kept overwriting the same "dst"
+     path on every iteration, silently succeeding with only the last
+     source actually linked. */
+  if(c > 2 && !is_dir) {
+    builtin_errmsg(argv, dst, "not a directory");
+    return 1;
+  }
+
   stralloc_init(&path);
-  stralloc_copys(&path, dst);
-  stralloc_catc(&path, '/');
+
+  /* only append a trailing "/" + each source's basename when dst is
+     actually an existing directory to link *into* -- unconditionally
+     appending "/" here (the previous code) turned "ln -s target name"
+     (name not an existing directory, the common case) into
+     symlink(target, "name/"), which always fails with ENOTDIR/ENOENT
+     since a trailing-slash path requires the component before it to
+     already be a directory. When dst is the literal link path itself,
+     just use it as-is. */
+  if(is_dir) {
+    stralloc_copys(&path, dst);
+    stralloc_catc(&path, '/');
+  }
 
   len = path.len;
 
@@ -66,8 +88,11 @@ builtin_ln(int argc, char* argv[]) {
     if(is_dir) {
       path.len = len;
       stralloc_cats(&path, basename(src));
-      stralloc_nul(&path);
+    } else {
+      stralloc_copys(&path, dst);
     }
+
+    stralloc_nul(&path);
 
     unlink(path.s);
     ret = (symbolic ? symlink : link)(src, path.s);

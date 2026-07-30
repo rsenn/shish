@@ -1,0 +1,52 @@
+diff --git a/src/expand/expand_command.c b/src/expand/expand_command.c
+index e62d9d6e..223c33dc 100644
+--- a/src/expand/expand_command.c
++++ b/src/expand/expand_command.c
+@@ -22,8 +22,10 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
+   struct vartab vars;
+   struct fd fd;
+   struct fdstack fdst;
++  struct env she;
+   struct eval en;
+   int jmpret;
++  int ret;
+   stralloc sa;
+   struct func_snapshot funcs;
+   stralloc_init(&sa);
+@@ -37,6 +39,18 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
+ 
+   /* evaluate the command tree in a subshell */
+   vartab_push(&vars, 0);
++
++  /* command substitution is a subshell (POSIX 2.6.3), same as "(...)"
++     -- eval_subshell.c pushes its own struct env for exactly this
++     reason: without it, "set -e"/"set -f"/any other "set" option, or
++     "cd"/"umask" run inside "$(...)", permanently changed the *calling*
++     shell's own state once the substitution finished, instead of only
++     affecting the substitution's own, discarded-afterward environment.
++     Confirmed via a real regression: "$(set -e; true)" (an otherwise
++     harmless, common idiom for probing something without letting a
++     failure abort the *caller*) left errexit permanently enabled
++     afterward -- fixes/109. */
++  sh_push(&she);
+   exec_functions_save(&funcs);
+ 
+   eval_push(&en, E_ROOT);
+@@ -52,12 +66,15 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
+     eval_tree(&en, cmd->list, E_LIST);
+   }
+ 
+-  sh->exitcode = eval_pop(&en);
+-  sh->cmdsubst_ran = 1;
++  ret = eval_pop(&en);
+ 
+   exec_functions_restore(&funcs);
++  sh_pop(&she);
+   vartab_pop(&vars);
+ 
++  sh->exitcode = ret;
++  sh->cmdsubst_ran = 1;
++
+   fdstack_pop(&fdst);
+ 
+   /* split trailing newlines */

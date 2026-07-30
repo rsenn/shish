@@ -115,6 +115,109 @@ autoconf's own `trap ... INT` boilerplate, itself inside the
 in) now reliably kills both `gcc` and shish, with no leftover processes,
 across repeated trials at different points in the run.
 
+`BUGS: confdefs-h-duplication` — the one thing still stopping the real
+gettext-tools `configure` from running to genuine completion — turned out
+to already be fixed, as an unplanned side effect of `fixes/109` (below).
+Re-running the exact same script after that fix landed: it now runs all
+the way through, including the nested `examples/configure` sub-run,
+producing a complete `config.h`/`config.status`/`Makefile` with no
+duplicate `#define`s and no "undefined reference to main" — the
+`confdefs.h`-corruption symptoms this entry was tracking are gone.
+Whatever intermediate state `$(...)` expressions used throughout
+`confdefs.h`-adjacent code (`ac_ext` computation, etc.) were computing
+was getting corrupted by exactly the state-leak `fixes/109` fixed; never
+independently root-caused beyond that, but the script's own completion
+is about as strong a confirmation as this gets.
+
+Also fixed the same day, on request, three smaller and one bonus bug,
+each with its own regression test in `tests/fixed.sh`:
+
+- `BUGS: ln-trailing-slash-on-plain-destination` (`fixes/106`) —
+  `builtin_ln()` unconditionally appended a `/` to the destination
+  before ever checking whether it's a directory, so `ln -s target name`
+  (the common case) always failed with ENOTDIR. Also rejects (rather
+  than silently mis-linking only the last one) more than one source
+  without an existing directory destination.
+- `BUGS: set-errexit-not-enforced` (`fixes/107`) — `set -e`'s bit was
+  tracked but nothing read it. Enforced in both places a sequential
+  command list is actually walked (`eval_tree.c`'s own per-node loop,
+  and `eval_cmdlist.c`'s separate one for `;`/newline-separated
+  commands sharing one `N_LIST` node — a real gap: `"set -e; false;
+  echo bad"` all on one line went through only the latter), each
+  calling `sh_exit()` the same way an explicit `exit` would.
+
+  Implementing POSIX's specific exemptions correctly took three
+  iterations, validated the whole way against `tests/posix/errexit-p.tst`
+  (yash's own errexit conformance suite, 53 cases — not wired into the
+  default `ctest` run, gated the same as the rest of `tests/posix` — run
+  manually via `sh tests/run-tst.sh <absolute-path-to-shish>
+  tests/posix errexit-p.tst`; a *relative* testee path breaks since the
+  harness `cd`s into the test dir first, same footgun as `fixes/89`'s
+  own investigation hit): first pass (exempt an AND-OR list's non-last
+  operand, a `!`-negated command, an if/while/until condition) got
+  7/53. The exemption turned out to need to propagate much further than
+  one node deep — confirmed directly against real bash's actual
+  behavior, not just POSIX's text: (1) a 3+-operand chain like `"false
+  || false || true"` must not trip on its un-exempted *middle* operand,
+  only the chain's true last one matters; (2) the exemption survives
+  into a function call or subshell reached while evaluating an exempt
+  expression (`"f() { false; }; f && true"` doesn't abort inside `f`);
+  (3) it also survives being wrapped in any construct that doesn't
+  produce its own independent, opaque exit status — grouping,
+  if/elif/else, for, case, while/until bodies — but *not* a subshell,
+  whose own returned status is independent and must still be checked
+  normally at the outer level (`"{ false && true; }; echo x"` prints
+  `x`, but `"( false && true ); echo x"` does not — confirmed directly
+  against bash). Implemented via a single global `errexit_suppress`
+  counter (`eval.h`) incremented/decremented around exactly the
+  durations POSIX exempts, rather than a per-`struct eval` flag — a
+  flag scoped to one eval frame can't express point (2), since a
+  function call gets a brand-new one. Final result: 49/53. The
+  remaining 4 are unrelated, separately-filed bugs (below), not gaps in
+  this fix.
+
+  Also found and fixed in the same triage pass, real but unrelated to
+  errexit itself: `test`/`[`'s `-ne` (numeric not-equal) and `-nt`
+  (file mtime newer-than) share the same second character (`n`), and
+  `builtin_test.c`'s binary-operator dispatch only checked that one
+  character to decide "this is a file-mtime comparison" — so `test 1
+  -ne 2` silently ran as a file-mtime comparison between two
+  (nonexistent) files named `1` and `2` instead of the numeric
+  comparison it's supposed to be (`fixes/110`; this is what was
+  actually breaking `errexit-p.tst`'s own `for`-loop-body case, not the
+  errexit logic itself — `test $i -ne 2` inside the loop was always
+  evaluating wrong). Now also checks the third character (`t` vs `e`),
+  which is what actually distinguishes them.
+
+  Two genuinely separate, real bugs surfaced by the same conformance
+  run and left open, not fixed here: `BUGS:
+  redirect-failure-does-not-block-execution-or-set-status` (a failing
+  redirection on a simple command doesn't stop it from running or
+  affect its reported exit status — traces back to the fdtable's lazy
+  redirection resolution already flagged as a known issue source
+  elsewhere in this file) and `BUGS:
+  grouping-piped-loses-output-after-internal-failure` (`{ a; false; b;
+  } | cat` loses `b`'s output — confirmed completely independent of
+  `set -e`, reproduces with it off, and pre-existing on `924b1f0e`
+  before any of this day's other fixes).
+- `BUGS: squoted-backslash-newline-swallowed` (`fixes/108`) —
+  `source_skip()`/`source_peekn()` always treated a backslash-newline as
+  a line continuation, even inside single quotes (and a heredoc with a
+  quoted delimiter, which shares the same code path — POSIX requires
+  both to be completely literal). A new `source_squoted` flag
+  (`source.h`), set by `parse_squoted.c` around its own read loop, is
+  how these primitives — which sit below the parser, with no access to
+  its quoting state — know to skip continuation-removal.
+- `cmdsubst-does-not-isolate-shell-state` (`fixes/109`, found while
+  writing `fixes/107`'s own regression tests, all `"$(set -e; ...)"`
+  style) — `expand_command.c` (command substitution, `"$(...)"`/
+  backquotes) never called `sh_push()`, unlike `eval_subshell.c`'s
+  `"(...)"`, even though POSIX defines command substitution as a
+  subshell too (2.6.3). `set -e`/any other `set` option, `cd`, `umask`,
+  etc. run inside `"$(...)"` permanently changed the *calling* shell's
+  own state once the substitution finished. This is very plausibly what
+  was actually behind `confdefs-h-duplication` above.
+
 What's left is whatever the next triage pass over these suites turns up,
 plus `BUGS: yash-random-y-tst-hangs`, found and narrowed (not yet fixed)
 while doing exactly that on 2026-07-29 — now points at the file's own

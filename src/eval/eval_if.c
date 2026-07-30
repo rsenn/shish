@@ -11,7 +11,11 @@ eval_if(struct eval* e, struct nif* nif) {
   union node* branch;
 
 elif:
+  /* the controlling list of an if/elif is exempt from "set -e" in its
+     entirety -- see errexit_suppress's own comment (eval.h). */
+  errexit_suppress++;
   ret = eval_tree(e, nif->test, E_LIST);
+  errexit_suppress--;
 
   /* do not recurse for elifs */
   if(ret && nif->cmd1) {

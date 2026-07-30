@@ -1,0 +1,20 @@
+diff --git a/src/builtin/builtin_test.c b/src/builtin/builtin_test.c
+index 6537209c..10b35c81 100644
+--- a/src/builtin/builtin_test.c
++++ b/src/builtin/builtin_test.c
+@@ -118,7 +118,14 @@ test_binary(int argc, char** argv) {
+   right = next(argv);
+ 
+   if(op[0] == '-') {
+-    if(contains("no", op[1])) {
++    /* "-nt"/"-ot" (file mtime comparison) vs. "-ne"/"-eq" etc (numeric
++       comparison, below) collide on this first check if it only looks
++       at op[1] ('n' is the second character of both "-nt" and "-ne")
++       -- op[2] ('t' vs 'e') is what actually distinguishes them.
++       Confirmed: "test 1 -ne 2" silently ran as a file "newer than"
++       comparison between two nonexistent files named "1" and "2"
++       instead of the numeric "not equal" it's supposed to be. */
++    if(str_len(op) == 3 && contains("no", op[1]) && op[2] == 't') {
+       switch(op[1]) {
+         case 'n': return filetime(left) > filetime(right);
+         case 'o': return filetime(left) < filetime(right);

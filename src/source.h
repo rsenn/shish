@@ -33,6 +33,17 @@ struct source {
 extern struct source* source;
 extern int source_psn;
 
+/* set (and cleared) by parse_squoted.c around its own read loop --
+ * source_skip.c/source_peekn.c unconditionally treat a backslash
+ * immediately followed by a newline as a line continuation and
+ * silently remove both bytes, correct outside quotes and inside
+ * double quotes, but POSIX requires single quotes to preserve every
+ * character literally with no exceptions. These primitives sit below
+ * the parser (no access to struct parser/its quoting state), so this
+ * flag is how parse_squoted.c tells them "don't, right now" --
+ * squoted-backslash-newline-swallowed, fixes/108. */
+extern int source_squoted;
+
 void source_buffer(struct source*, struct fd*, const char* x, size_t n);
 void source_pop(void);
 void source_popfd(struct fd*);
