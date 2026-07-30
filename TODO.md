@@ -190,16 +190,42 @@ each with its own regression test in `tests/fixed.sh`:
   which is what actually distinguishes them.
 
   Two genuinely separate, real bugs surfaced by the same conformance
-  run and left open, not fixed here: `BUGS:
-  redirect-failure-does-not-block-execution-or-set-status` (a failing
-  redirection on a simple command doesn't stop it from running or
-  affect its reported exit status — traces back to the fdtable's lazy
-  redirection resolution already flagged as a known issue source
-  elsewhere in this file) and `BUGS:
-  grouping-piped-loses-output-after-internal-failure` (`{ a; false; b;
-  } | cat` loses `b`'s output — confirmed completely independent of
-  `set -e`, reproduces with it off, and pre-existing on `924b1f0e`
-  before any of this day's other fixes).
+  run were found and fixed the same day too, bringing `errexit-p.tst`
+  to a clean 53/53 (and improving, never regressing, every other
+  `tests/posix/*.tst` file spot-checked against the same fix):
+
+  - `grouping-piped-loses-output-after-internal-failure` (`fixes/111`)
+    — `{ a; false; b; } | cat` lost `b`'s output entirely, and turned
+    out to have nothing to do with the internal failure (reproduced
+    identically with a `true` in its place) or `set -e` (reproduces
+    with it off, and pre-existing on `924b1f0e` before any of this
+    day's other fixes). Root cause: `eval_pipeline.c` forks each
+    pipeline stage and sets `E_EXIT` on the shared `e->flags` to tell
+    the *last* command in that stage to `exec()` directly instead of
+    returning — `eval_tree.c`'s own per-node loop correctly restricts
+    that to just the last node of whatever it's walking, but a `{...}`
+    grouping (or a bare `;`-separated `N_LIST`) used as a pipeline
+    stage dispatches straight to `eval_cmdlist()` instead, which never
+    touched `e->flags`'s `E_EXIT` bit at all — so it stayed set,
+    inherited from the fork, for *every* member of the group's body,
+    not just its last one. The group's first member got treated as the
+    tail call: it ran, then the forked pipeline stage exited
+    immediately. `eval_cmdlist()` now scopes `E_EXIT` to its own last
+    member, matching `eval_tree()`.
+  - `redirect-failure-does-not-block-execution-or-set-status`
+    (`fixes/112`) — a failing redirection on a simple command didn't
+    stop it from running or affect its reported exit status, traced
+    back to two separate gaps in the fdtable's lazy redirection
+    resolution (already flagged as a known issue source elsewhere in
+    this file): `exec_command.c` resolves a builtin's pending fd
+    0/1/2 redirection right before running it (the real `open()` is
+    deferred that far) but never checked whether that resolution
+    actually succeeded, so it ran the builtin regardless; and a bare
+    redirection with no command at all (`<_no_such_file_` alone) never
+    got resolved at all, since nothing beyond `exec_command.c` (which
+    that case never reaches) forces it — `eval_simple_command.c` now
+    forces immediate, not lazy, resolution specifically when there's
+    no command to hand the pending fd off to.
 - `BUGS: squoted-backslash-newline-swallowed` (`fixes/108`) —
   `source_skip()`/`source_peekn()` always treated a backslash-newline as
   a line continuation, even inside single quotes (and a heredoc with a

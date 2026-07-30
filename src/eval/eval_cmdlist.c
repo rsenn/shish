@@ -8,6 +8,31 @@ eval_cmdlist(struct eval* e, struct ngrp* grp) {
   int ret = 0;
   union node* cmd;
 
+  /* "exec the tail command directly instead of forking" (E_EXIT,
+     eval_tree.c) must only ever apply to the *last* member of this
+     list, exactly like eval_tree()'s own per-node loop already gets
+     right -- but unlike eval_tree(), this function used to never
+     touch e->flags's E_EXIT bit at all, so whatever the *caller* left
+     it at (e.g. eval_pipeline.c's "exit(eval_tree(e, node, E_EXIT))",
+     forking each pipeline stage and telling the last command in it to
+     exec-and-never-return) stayed set for every single member of this
+     loop, not just the last one. eval_simple_command.c reads it
+     directly to decide whether to pass X_EXEC to exec_command() --
+     so "{ echo reached1; false; echo reached2; } | cat" had "echo
+     reached1" (the *first* member, not the last) treated as the tail
+     call: it ran, then the forked pipeline child exited immediately,
+     losing "false" and "echo reached2" entirely (confirmed as the
+     actual bug behind BUGS:
+     grouping-piped-loses-output-after-internal-failure -- and, since
+     it reproduces with a "true" in place of "false" too, was never
+     really about the internal failure at all). N_LIST (a plain
+     ";"-separated sequence, also dispatched straight to this function
+     by eval_node.c, not through eval_tree()) had the exact same
+     exposure. */
+  int ex = (e->flags & E_EXIT) != 0;
+
+  e->flags &= ~E_EXIT;
+
   /* eval_node_bgnd() (not a bare eval_node()) so a backgrounded
      compound command sharing this list with other commands
      ("{ cmd; } & echo after" -- more than one and-or-list on the same
@@ -15,7 +40,11 @@ eval_cmdlist(struct eval* e, struct ngrp* grp) {
      forks and returns immediately instead of running in-process; see
      eval_node_bgnd()'s comment for the full reasoning */
   for(cmd = grp->cmds; cmd; cmd = cmd->next) {
+    if(ex && cmd->next == NULL)
+      e->flags |= E_EXIT;
+
     ret = eval_node_bgnd(e, cmd);
+    e->flags &= ~E_EXIT;
 
     /* "set -e": every ";"/newline-separated command on the same input
        line as this one is represented as an N_LIST wrapper around this
@@ -41,6 +70,19 @@ eval_cmdlist(struct eval* e, struct ngrp* grp) {
        cmd->id != N_LIST)
       sh_exit(ret);
   }
+
+  /* mirrors eval_tree()'s own trailing "if(ex) sh_exit(ret);" -- needed
+     for the same reason: E_EXIT's caller (currently only
+     eval_pipeline.c, wrapping its own eval_tree() call in an explicit
+     exit()) may be relying on *something* along this call chain to
+     actually terminate the process once the tail command's own
+     exec_command() call returns normally instead of exec()ing (e.g.
+     because it dispatched to a builtin, not an external program).
+     Redundant with eval_pipeline.c's own wrapper today, but keeps this
+     function's own contract for E_EXIT consistent with eval_tree()'s
+     regardless of who ends up calling it. */
+  if(ex)
+    sh_exit(ret);
 
   return ret;
 }

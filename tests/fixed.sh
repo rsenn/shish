@@ -2275,4 +2275,54 @@ assert_equal "0" "$(test "$F110/new" -nt "$F110/old"; echo $?)" "test -nt must s
 assert_equal "0" "$(test "$F110/old" -ot "$F110/new"; echo $?)" "test -ot must still correctly compare file mtimes too"
 rm -rf "$F110"
 
+## fixes/111 (grouping-piped-loses-output-after-internal-failure):
+## eval_pipeline.c forks each pipeline stage and tells the *last*
+## command in it to exec() directly instead of returning (E_EXIT,
+## eval_tree.c's own "exec the tail command instead of forking"
+## optimization) by setting it on the shared e->flags before
+## dispatching that stage's whole node. eval_tree()'s own per-node loop
+## correctly restricts E_EXIT to just the last node of a list it's
+## walking -- but a "{ ...; }" grouping (or a bare ";"-separated N_LIST)
+## used as a pipeline stage dispatches straight to eval_cmdlist()
+## instead, which never touched e->flags's E_EXIT bit at all, so it
+## stayed set (inherited from the pipeline fork) for *every* member of
+## the group's body, not just its last one -- eval_simple_command.c
+## reads that bit directly to decide whether to exec() a command in
+## place. The group's first member got treated as the tail call: it
+## ran, then the forked pipeline stage exited immediately, silently
+## losing everything after it. Confirmed independent of any failure
+## inside the group (reproduced identically with "true" in place of
+## "false") -- eval_cmdlist() now scopes E_EXIT to its own last member,
+## matching eval_tree().
+X111=$({ echo reached1; false; echo reached2; } | cat)
+assert_equal "$(printf 'reached1\nreached2')" "$X111" "a grouping's own later commands must still run when the whole grouping is piped into another command"
+
+X111B=$({ echo a; echo b; echo c; } | cat)
+assert_equal "$(printf 'a\nb\nc')" "$X111B" "same as above, with no failing command inside the grouping at all -- this was never really about the failure"
+
+## fixes/112 (redirect-failure-does-not-block-execution-or-set-status):
+## a simple command whose own redirection fails (target file doesn't
+## exist, etc.) still ran, using whatever fd it had before, and still
+## reported exit status 0 -- POSIX requires the command not execute at
+## all and the shell to treat it as a failure. Two separate gaps, both
+## fixed: (1) exec_command.c resolves a builtin's pending fd 0/1/2
+## redirection right before running it (the real open() is deferred
+## that far), but never checked whether that resolution actually
+## succeeded, so it ran the builtin regardless; (2) a redirection with
+## no command at all ("<_no_such_file_" alone) never got resolved
+## *at all* -- nothing forces that beyond exec_command.c, which this
+## case never reaches -- so eval_simple_command.c now forces immediate
+## (not the usual lazy) resolution specifically when there's no
+## command to hand the pending fd off to.
+X112=$(echo not_printed <_no_such_file_ 2>/dev/null; echo "status:$?")
+assert_equal "status:1" "$X112" "a command whose own redirection fails must not run at all, and must report a nonzero exit status"
+
+X112B=$(<_no_such_file_ 2>/dev/null; echo "status:$?")
+assert_equal "status:1" "$X112B" "a bare redirection with no command at all must still be attempted and its failure reported"
+
+F112=$(mktemp -d)
+X112C=$(echo printed > "$F112/out"; cat "$F112/out"; echo "status:$?")
+assert_equal "$(printf 'printed\nstatus:0')" "$X112C" "an ordinary, successful redirection on a real command must still work"
+rm -rf "$F112"
+
 summary

@@ -66,28 +66,49 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
          source's own) -- so opening the source here is sufficient,
          with no need to also resolve fd_in itself.
          (redir-fd-chain-resolves-to-invalid-fd, fixes/89) */
+      /* none of these fdtable_open() results used to be checked at
+         all, so a builtin whose own redirection failed here (its real
+         open() is deferred all the way to this point -- see the
+         comment above) still ran anyway, using whatever fd it already
+         had, and still reported whatever exit status *it* felt like
+         returning: "echo foo <_no_such_file_" printed "foo" and
+         reported "$?" as 0. POSIX requires the command not execute at
+         all, and the shell to treat it as a failure
+         (redirect-failure-does-not-block-execution-or-set-status).
+         sh_error_errno() (inside fdtable_open() itself, on the
+         FDTABLE_ERROR path) already prints the actual error message;
+         this only adds the missing "so don't run it, and say so"
+         half. */
+      int redir_failed = 0;
+
       if(fd_in) {
         if((fd_in->mode & FD_DUP) && fd_in->dup)
-          fdtable_open(fd_in->dup, FDTABLE_MOVE);
+          if(fdtable_open(fd_in->dup, FDTABLE_MOVE) == FDTABLE_ERROR)
+            redir_failed = 1;
 
-        fdtable_open(fd_in, FDTABLE_MOVE);
+        if(fdtable_open(fd_in, FDTABLE_MOVE) == FDTABLE_ERROR)
+          redir_failed = 1;
       }
 
       if(fd_out) {
         if((fd_out->mode & FD_DUP) && fd_out->dup)
-          fdtable_open(fd_out->dup, FDTABLE_MOVE);
+          if(fdtable_open(fd_out->dup, FDTABLE_MOVE) == FDTABLE_ERROR)
+            redir_failed = 1;
 
-        fdtable_open(fd_out, FDTABLE_MOVE);
+        if(fdtable_open(fd_out, FDTABLE_MOVE) == FDTABLE_ERROR)
+          redir_failed = 1;
       }
 
       if(fd_err) {
         if((fd_err->mode & FD_DUP) && fd_err->dup)
-          fdtable_open(fd_err->dup, FDTABLE_MOVE);
+          if(fdtable_open(fd_err->dup, FDTABLE_MOVE) == FDTABLE_ERROR)
+            redir_failed = 1;
 
-        fdtable_open(fd_err, FDTABLE_MOVE);
+        if(fdtable_open(fd_err, FDTABLE_MOVE) == FDTABLE_ERROR)
+          redir_failed = 1;
       }
 
-      ret = cmd->builtin->fn(argc, argv);
+      ret = redir_failed ? 1 : cmd->builtin->fn(argc, argv);
       break;
     }
 

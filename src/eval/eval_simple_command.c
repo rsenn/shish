@@ -151,8 +151,17 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 #endif
     }
 
-    /* return if a redirection failed */
-    if(redir_eval(&r->nredir, fd, (cmd.id == H_EXEC ? R_NOW : 0))) {
+    /* return if a redirection failed. Force immediate resolution
+       (R_NOW) rather than the usual lazy one when there's no command
+       to run at all ("args == NULL" -- e.g. a bare "<_no_such_file_"):
+       exec_command.c is what forces (and checks) lazy resolution for
+       an actual command's fd 0/1/2 right before running it, but that
+       code never runs here, so nothing would ever open()/notice the
+       failure at all otherwise (redirect-failure-does-not-block-
+       execution-or-set-status -- this is the "no command" half of it;
+       exec_command.c's own fdtable_open() result checks are the
+       other). */
+    if(redir_eval(&r->nredir, fd, (cmd.id == H_EXEC || args == NULL ? R_NOW : 0))) {
       status = 1;
       goto end;
     }

@@ -1,0 +1,85 @@
+diff --git a/src/eval/eval_simple_command.c b/src/eval/eval_simple_command.c
+index 6f71f8ef..cf62f965 100644
+--- a/src/eval/eval_simple_command.c
++++ b/src/eval/eval_simple_command.c
+@@ -151,8 +151,17 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+ #endif
+     }
+ 
+-    /* return if a redirection failed */
+-    if(redir_eval(&r->nredir, fd, (cmd.id == H_EXEC ? R_NOW : 0))) {
++    /* return if a redirection failed. Force immediate resolution
++       (R_NOW) rather than the usual lazy one when there's no command
++       to run at all ("args == NULL" -- e.g. a bare "<_no_such_file_"):
++       exec_command.c is what forces (and checks) lazy resolution for
++       an actual command's fd 0/1/2 right before running it, but that
++       code never runs here, so nothing would ever open()/notice the
++       failure at all otherwise (redirect-failure-does-not-block-
++       execution-or-set-status -- this is the "no command" half of it;
++       exec_command.c's own fdtable_open() result checks are the
++       other). */
++    if(redir_eval(&r->nredir, fd, (cmd.id == H_EXEC || args == NULL ? R_NOW : 0))) {
+       status = 1;
+       goto end;
+     }
+diff --git a/src/exec/exec_command.c b/src/exec/exec_command.c
+index c7638550..646fc394 100644
+--- a/src/exec/exec_command.c
++++ b/src/exec/exec_command.c
+@@ -66,28 +66,49 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
+          source's own) -- so opening the source here is sufficient,
+          with no need to also resolve fd_in itself.
+          (redir-fd-chain-resolves-to-invalid-fd, fixes/89) */
++      /* none of these fdtable_open() results used to be checked at
++         all, so a builtin whose own redirection failed here (its real
++         open() is deferred all the way to this point -- see the
++         comment above) still ran anyway, using whatever fd it already
++         had, and still reported whatever exit status *it* felt like
++         returning: "echo foo <_no_such_file_" printed "foo" and
++         reported "$?" as 0. POSIX requires the command not execute at
++         all, and the shell to treat it as a failure
++         (redirect-failure-does-not-block-execution-or-set-status).
++         sh_error_errno() (inside fdtable_open() itself, on the
++         FDTABLE_ERROR path) already prints the actual error message;
++         this only adds the missing "so don't run it, and say so"
++         half. */
++      int redir_failed = 0;
++
+       if(fd_in) {
+         if((fd_in->mode & FD_DUP) && fd_in->dup)
+-          fdtable_open(fd_in->dup, FDTABLE_MOVE);
++          if(fdtable_open(fd_in->dup, FDTABLE_MOVE) == FDTABLE_ERROR)
++            redir_failed = 1;
+ 
+-        fdtable_open(fd_in, FDTABLE_MOVE);
++        if(fdtable_open(fd_in, FDTABLE_MOVE) == FDTABLE_ERROR)
++          redir_failed = 1;
+       }
+ 
+       if(fd_out) {
+         if((fd_out->mode & FD_DUP) && fd_out->dup)
+-          fdtable_open(fd_out->dup, FDTABLE_MOVE);
++          if(fdtable_open(fd_out->dup, FDTABLE_MOVE) == FDTABLE_ERROR)
++            redir_failed = 1;
+ 
+-        fdtable_open(fd_out, FDTABLE_MOVE);
++        if(fdtable_open(fd_out, FDTABLE_MOVE) == FDTABLE_ERROR)
++          redir_failed = 1;
+       }
+ 
+       if(fd_err) {
+         if((fd_err->mode & FD_DUP) && fd_err->dup)
+-          fdtable_open(fd_err->dup, FDTABLE_MOVE);
++          if(fdtable_open(fd_err->dup, FDTABLE_MOVE) == FDTABLE_ERROR)
++            redir_failed = 1;
+ 
+-        fdtable_open(fd_err, FDTABLE_MOVE);
++        if(fdtable_open(fd_err, FDTABLE_MOVE) == FDTABLE_ERROR)
++          redir_failed = 1;
+       }
+ 
+-      ret = cmd->builtin->fn(argc, argv);
++      ret = redir_failed ? 1 : cmd->builtin->fn(argc, argv);
+       break;
+     }
+ 
