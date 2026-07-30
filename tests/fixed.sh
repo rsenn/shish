@@ -1905,4 +1905,28 @@ assert_equal "$(printf 'iter 1\niter 2\niter 3\ndone')" "$X99B" "break inside a 
 X99C=$(for i in 1 2 3; do for j in a b c; do if [ $j = b ]; then break 2; fi; echo "i=$i j=$j"; done; done; echo after)
 assert_equal "$(printf 'i=1 j=a\nafter')" "$X99C" "break N must still cross ordinary nested loops with no function/subshell boundary in between"
 
+## fixes/100 (umask-not-restored-after-subshell): a subshell's own
+## "umask NNN" correctly updated sh->umask for the subshell's own
+## struct env (so "$(umask)" read back inside, and after popping back
+## out, both reported the right values), but nothing ever called the
+## real umask() syscall to restore the *process-wide* mask when the
+## subshell exited -- only builtin_umask.c ever calls umask(), and
+## only when it itself runs. Every file/directory actually created
+## after such a subshell kept silently getting the subshell's more
+## restrictive mode for the rest of the process's life. autoconf/
+## gnulib's "(umask 077 && mkdir ...)" private-tmpdir idiom hits this
+## constantly; found while investigating a real "conftest.c: Permission
+## denied" / "C compiler cannot create executables" failure running
+## gettext-tools' configure.
+F100=$(mktemp -d)
+cd "$F100"
+touch control.txt
+(umask 077)
+touch after.txt
+CONTROL100=$(ls -la control.txt | cut -c1-10)
+AFTER100=$(ls -la after.txt | cut -c1-10)
+cd - >/dev/null
+rm -rf "$F100"
+assert_equal "$CONTROL100" "$AFTER100" "a subshell's umask change must not leak into files created after the subshell exits, regardless of this machine's ambient umask"
+
 summary

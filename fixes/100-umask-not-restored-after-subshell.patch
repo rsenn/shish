@@ -1,0 +1,38 @@
+diff --git a/src/sh/sh_pop.c b/src/sh/sh_pop.c
+index 40edb61f..3f2a6e3a 100644
+--- a/src/sh/sh_pop.c
++++ b/src/sh/sh_pop.c
+@@ -7,6 +7,8 @@
+ #include <io.h>
+ #else
+ #include <unistd.h>
++#include <sys/types.h>
++#include <sys/stat.h>
+ #endif
+ 
+ /* destroys current shell environment and pops previous
+@@ -28,6 +30,24 @@ sh_pop(struct env* env) {
+       sh_errorn_errno(parent->cwd.s, parent->cwd.len);
+   }
+ 
++  /* same idea as the cwd restore above, for the process umask: a
++     subshell's "umask NNN" (e.g. autoconf/gnulib's routine
++     "(umask 077 && mkdir ...)" idiom for a private tmpdir) correctly
++     updates sh->umask for the subshell's own struct env, but that
++     alone doesn't touch the real, process-wide umask() the kernel
++     actually applies to every open()/mkdir() -- only builtin_umask.c
++     calls the real umask() syscall, and only when *it* runs, not
++     here. Without this, "$(umask)" lies (it just reads the correctly-
++     popped-back sh->umask field) while every file/directory actually
++     created afterward -- e.g. configure's own conftest.c -- silently
++     keeps getting created with the subshell's more restrictive mode
++     for the rest of the process's life, eventually manifesting as
++     "conftest.c: Permission denied"/"C compiler cannot create
++     executables" once something later needs to read or rewrite one
++     of them and can't. */
++  if(sh->umask != parent->umask)
++    umask(parent->umask);
++
+   /* free arguments */
+   sh_setargs(NULL, 0);
+ 
