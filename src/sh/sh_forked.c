@@ -34,6 +34,23 @@ sh_forked(void) {
   byte_copy(sh, sizeof(struct env), e);
   sh->parent = NULL;
 
+  /* sh->eval was just copied verbatim from whatever env was active at
+     fork time -- if that was a shell function call (exec_command.c's
+     H_FUNCTION case sets sh->eval = &e with E_FUNCTION on entry), the
+     copy carries E_FUNCTION along with it. sh_exit()'s "unwind past
+     every E_FUNCTION frame to find the real root" loop then walks
+     sh->parent looking for a frame that isn't E_FUNCTION-flagged, but
+     sh->parent is NULL (we *are* the root now, per the flattening
+     above) -- so it steps onto a NULL sh and crashes. There's no
+     function call left to unwind out of in a freshly forked process
+     either way (we're never going back to whatever called it), so
+     clear the flag here too. Confirmed without this: any pipeline
+     member that's a builtin, forked from inside a shell function via
+     a command substitution (e.g. "f() { x=$(echo hi | cat); }; f"),
+     segfaulted in sh_exit() as soon as the forked builtin finished. */
+  if(sh->eval)
+    sh->eval->flags &= ~E_FUNCTION;
+
   /* the global `eval` chain (virtual subshell/cmdsubst nesting, each
      frame possibly jump-enabled via setjmp) is inherited as-is across
      fork() -- its jumpbufs are still physically valid stack addresses

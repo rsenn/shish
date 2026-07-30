@@ -1798,4 +1798,27 @@ rm -f "$F94"
 assert_equal "0" "$STATUS94" "cat on a genuinely empty file must succeed, not report a spurious error"
 assert_equal "" "$X94" "cat on a genuinely empty file must produce no output and no error message"
 
+## fixes/95 (forked-child-stale-efunction-crash): sh_forked() (the
+## per-process cleanup run right after fork(), in src/sh/sh_forked.c)
+## flattens the whole struct env chain down to a single sh_root, but
+## copied sh->eval verbatim from whatever was active at fork time --
+## if that was a shell function call (exec_command.c's H_FUNCTION case
+## sets sh->eval = &e with E_FUNCTION), the copy kept E_FUNCTION set on
+## the now-parentless sh_root. sh_exit()'s "unwind past every
+## E_FUNCTION frame to find the real root" loop then walked sh->parent
+## (NULL, since sh_root has no parent) straight into a NULL
+## dereference. Any pipeline whose builtin stage is forked from inside
+## a function via a command substitution segfaulted as soon as that
+## builtin finished -- confirmed while investigating excessive/crashing
+## forks running gettext-tools' generated configure under shish.
+F95script='f() { x=$(echo hi | cat); echo "$x"; }
+f'
+F95=$(mktemp)
+printf '%s\n' "$F95script" >"$F95"
+X95=$(. "$F95" 2>/tmp/fixed95.err)
+STDERR95=$(cat /tmp/fixed95.err)
+rm -f "$F95" /tmp/fixed95.err
+assert_equal "hi" "$X95" "a pipeline's builtin stage, forked from inside a function via a command substitution, must still produce the right output"
+assert_equal "" "$STDERR95" "the same construct must not crash the forked builtin's own process on exit"
+
 summary
