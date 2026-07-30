@@ -1881,4 +1881,28 @@ T98_1=$(date +%s)
 ELAPSED98=$((T98_1 - T98_0))
 assert_less "$ELAPSED98" "5" "50000 iterations of a bare '[ ]' loop condition must not trigger a real glob(3) call per iteration"
 
+## fixes/99 (eval-jump-frame-skip-leak): eval_jump() (break/continue)
+## had the exact same class of bug as eval_return.c's (fixes/97):
+## searching only for the nearest E_LOOP eval frame let a subshell
+## (E_ROOT) or function call (E_FUNCTION) boundary be skipped right
+## over instead of blocking the search, so "break"/"continue" inside
+## a subshell or function escaped all the way out to whatever loop
+## happened to enclose *that*, instead of erroring like bash does
+## ("break: only meaningful in a `for'/`while'/`until' loop") -- and,
+## since the longjmp bypassed every skipped frame's own cleanup,
+## leaked its env/vartab/fdstack state permanently, same as fixes/97.
+## This one is what was actually crashing real, long-running scripts:
+## a leaked struct env is stack-allocated, so once its own C stack
+## frame is reused by later calls, sh_forked()'s later walk over
+## sh->parent reads whatever now occupies that memory and corrupts
+## the heap (or segfaults outright) forking the next external command.
+X99=$(for i in 1 2 3; do ( break ); echo "iter $i"; done; echo done)
+assert_equal "$(printf 'iter 1\niter 2\niter 3\ndone')" "$X99" "break inside a subshell must not escape to a loop outside it"
+
+X99B=$(f() { break; }; for i in 1 2 3; do f; echo "iter $i"; done; echo done)
+assert_equal "$(printf 'iter 1\niter 2\niter 3\ndone')" "$X99B" "break inside a function must not escape to a loop the function isn't lexically inside"
+
+X99C=$(for i in 1 2 3; do for j in a b c; do if [ $j = b ]; then break 2; fi; echo "i=$i j=$j"; done; done; echo after)
+assert_equal "$(printf 'i=1 j=a\nafter')" "$X99C" "break N must still cross ordinary nested loops with no function/subshell boundary in between"
+
 summary

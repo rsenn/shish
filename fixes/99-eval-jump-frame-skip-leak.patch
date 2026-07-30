@@ -1,0 +1,35 @@
+diff --git a/src/eval/eval_jump.c b/src/eval/eval_jump.c
+index e7c0ca6c..87c32790 100644
+--- a/src/eval/eval_jump.c
++++ b/src/eval/eval_jump.c
+@@ -14,6 +14,30 @@ eval_jump(int levels, int cont) {
+     if(levels <= 0)
+       break;
+ 
++    /* a function call or subshell boundary blocks break/continue from
++       reaching a loop outside it -- matching bash ("break: only
++       meaningful in a `for', `while', or `until' loop", reported and
++       otherwise ignored) rather than silently escaping through a
++       function/subshell to whatever loop happens to enclose *that*,
++       which the break/continue site doesn't actually lexically nest
++       inside. Without this, every such escape also skipped every
++       frame between the jump site and the (wrong, too-distant)
++       target loop, since the same-shaped unwind loop below never got
++       a chance to run for them -- leaking each one's env/vartab/
++       fdstack state permanently, the same bug fixed for "return" in
++       eval_return.c. Confirmed via a real crash: a long-running
++       script whose subshells/functions do this enough times
++       eventually corrupts sh->parent (a leaked struct env is stack-
++       allocated -- once its own C stack frame is reused by later,
++       unrelated calls, sh_forked()'s later walk over it reads
++       whatever now occupies that memory) and crashes forking the
++       next external command with a heap "double free or corruption"
++       or straight SIGSEGV. */
++    if(e->flags & (E_FUNCTION | E_ROOT)) {
++      j = NULL;
++      break;
++    }
++
+     if(e->jump && (e->flags & E_LOOP)) {
+       j = e;
+       levels--;
