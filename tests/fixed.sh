@@ -2570,4 +2570,85 @@ assert_equal "hB" "$X120D" "set - also turns -x back off, per POSIX"
 X120E=$(set -- - -- baz; bracket() { for a; do printf '[%s]' "$a"; done; }; bracket "$@")
 assert_equal "[-][--][baz]" "$X120E" "a literal '-' appearing *after* an explicit -- must stay a plain operand, not be re-treated as the special bare-dash form"
 
+## fixes/121 (source-syntax-error-kills-whole-process-not-just-subshell):
+## found while adding regression tests for fixes/118 ("set -n"),
+## unrelated to it. parse_error.c called a raw exit(1) directly for
+## any syntax error while parsing a real (mmap'd) script file -- which
+## a "."/"source" of one is -- completely bypassing sh_exit()'s
+## subshell-aware unwind (the same longjmp-based mechanism eval_exit()
+## uses for every other fatal error, and that sh_loop.c's own,
+## now-unreachable-for-this-case, "if(!interactive) sh_exit(...)" call
+## right after already relies on). Since shish's "(...)" subshells run
+## in-process (setjmp/longjmp, not fork -- see eval_subshell.c), a raw
+## exit(1) here always killed the whole process outright instead of
+## unwinding back to the nearest enclosing subshell/$(...) frame.
+F121=$(mktemp -d)
+printf 'echo before\nif [ 1 = 1 ]\n' >"$F121/bad.sh"
+
+X121A=$( (. "$F121/bad.sh") >/dev/null 2>&1; echo AFTER_SUBSHELL)
+assert_equal "AFTER_SUBSHELL" "$X121A" "a syntax error sourced inside a real (...) subshell must not kill the rest of the script"
+
+X121B_STATUS=$(X=$(. "$F121/bad.sh" 2>/dev/null); echo "$?")
+assert_equal "1" "$X121B_STATUS" "...and \$(...) around it must still report the failure's own nonzero status"
+rm -rf "$F121"
+
+## fixes/122 (set-privileged-unimplemented, plus a scary global-state
+## leak found while adding it): "-p"/"set -p" (privileged mode: don't
+## process $ENV) was entirely missing, along with $ENV-sourcing itself
+## (there was nothing yet for -p to suppress) and every "set"-letter
+## option working identically as a shish command-line startup flag
+## (only -c/-x/-e/-n existed there before).
+##
+## Wiring the new startup option loop through sh_main.c's *existing*
+## shell_getopt() -- the process-global, non-reentrant one -- with a
+## leading '+' in its optstring (needed for "+p" etc.) turned out to
+## leak: nothing in this codebase ever resets shell_optind to 0
+## between *unrelated* builtins' own shell_getopt() calls, so the
+## global "+-" vs. "-"-only prefix set chosen once at shell startup
+## silently persisted for the rest of the process, making
+## "chmod +x file" (builtin_chmod.c's own, completely unrelated,
+## shell_getopt() call) misparse "+x" as an invalid *option* instead
+## of chmod's own mode-string operand. Fixed by giving sh_main.c's own
+## parsing loop a *local* struct optstate + shell_getopt_r(), exactly
+## matching how builtin_set.c's identical loop already avoided this
+## same trap.
+X122A=$(chmod +x "$0" 2>&1; echo done)
+assert_match "$X122A" "*done" "chmod +x must still parse its own operand correctly (regression guard for the shell_getopt global-state leak)"
+
+X122B=$(set -p; echo $-)
+assert_equal "hpB" "$X122B" "set -p turns privileged mode on"
+
+X122C=$(set -p; set +p; echo $-)
+assert_equal "hB" "$X122C" "set +p turns it back off"
+
+X122D=$(set -o | grep -c '^privileged ')
+assert_equal "1" "$X122D" "privileged is exposed as an -o long-option name like every other letter option"
+
+## the rest need a genuinely separate process invoked with real
+## command-line flags/environment -- "readlink /proc/\$\$/exe" (not
+## /proc/self/exe, which would resolve to the forked readlink itself)
+## finds this running shish's own binary to re-invoke.
+SHISH_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
+
+if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+  X122E=$("$SHISH_SELF" -p -c 'echo $-')
+  assert_equal "hpB" "$X122E" "-p on the command line turns privileged mode on at startup"
+
+  X122F=$("$SHISH_SELF" -o noexec -c 'echo should-not-run')
+  assert_equal "" "$X122F" "-o name works as a startup flag too, not just via the set builtin"
+
+  X122G=$(printf 'echo "$1 $2"\n' | "$SHISH_SELF" -s foo bar)
+  assert_equal "foo bar" "$X122G" "-s reads commands from stdin and leaves the remaining args as positional parameters"
+
+  F122=$(mktemp -d)
+  printf 'echo ENV_WAS_SOURCED\n' >"$F122/rc.sh"
+  X122H=$(script -qec "ENV=\"$F122/rc.sh\" \"$SHISH_SELF\" -c 'exit' </dev/null" /dev/null 2>/dev/null)
+  case $X122H in
+    *ENV_WAS_SOURCED*) X122H_MATCHED=yes ;;
+    *) X122H_MATCHED=no ;;
+  esac
+  assert_equal "no" "$X122H_MATCHED" "\$ENV must NOT be sourced for a non-interactive -c invocation"
+  rm -rf "$F122"
+fi
+
 summary

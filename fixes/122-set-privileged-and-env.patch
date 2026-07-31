@@ -1,0 +1,510 @@
+diff --git a/src/builtin/builtin_set.c b/src/builtin/builtin_set.c
+index b45dc8ca..3d128c3c 100644
+--- a/src/builtin/builtin_set.c
++++ b/src/builtin/builtin_set.c
+@@ -5,8 +5,13 @@
+ #include "../tree.h"
+ #include "../../lib/shell.h"
+ #include "../../lib/str.h"
++#include "../../lib/windoze.h"
+ #include "../vartab.h"
+ 
++#if !WINDOWS_NATIVE
++#include <unistd.h>
++#endif
++
+ extern union node* functions;
+ 
+ /* set arguments of flags
+@@ -20,6 +25,7 @@ const char help_set[] =
+     "    -h              remember command locations as they're looked up\n"
+     "    -m              enable job control (monitor mode)\n"
+     "    -n              read commands but don't execute them\n"
++    "    -p              privileged mode: don't process $ENV\n"
+     "    -u              treat unset variables as an error on expansion\n"
+     "    -x              print each command before running it\n"
+     "    -B              enable brace expansion\n"
+@@ -38,19 +44,23 @@ const char help_set[] =
+  * doesn't allow taking the address of. Declared alphabetically so
+  * "set -o"'s listing comes out sorted for free. "unset" is spelled
+  * "nounset" here on purpose: that's the POSIX/bash "-o" name for it
+- * (matching "-u"), even though the C struct field is just "unset". */
+-static const struct {
+-  const char* name;
+-  char letter;
+-} set_longopts[] = {
+-    {"allexport", 'a'},  {"braceexpand", 'B'}, {"errexit", 'e'},  {"hashall", 'h'},
+-    {"histexpand", 'H'}, {"monitor", 'm'},     {"noclobber", 'C'}, {"noexec", 'n'},
+-    {"noglob", 'f'},     {"nounset", 'u'},     {"xtrace", 'x'},
++ * (matching "-u"), even though the C struct field is just "unset").
++ *
++ * Not static: sh_main.c reuses this same table (and set_apply()/
++ * set_get() below) to give the shell's own command-line startup
++ * options the exact same letter/name set "set" supports, instead of
++ * duplicating (and inevitably drifting from) this list a second time. */
++const struct set_longopt set_longopts[] = {
++    {"allexport", 'a'},   {"braceexpand", 'B'}, {"errexit", 'e'},   {"hashall", 'h'},
++    {"histexpand", 'H'},  {"monitor", 'm'},     {"noclobber", 'C'}, {"noexec", 'n'},
++    {"noglob", 'f'},      {"nounset", 'u'},     {"privileged", 'p'}, {"xtrace", 'x'},
+ };
+ 
+-#define SET_LONGOPTS_N (sizeof(set_longopts) / sizeof(set_longopts[0]))
++const size_t set_longopts_n = sizeof(set_longopts) / sizeof(set_longopts[0]);
++
++#define SET_LONGOPTS_N set_longopts_n
+ 
+-static int
++int
+ set_apply(struct shopt* opts, int letter, int on) {
+   switch(letter) {
+     case 'a': opts->allexport = on; return 1;
+@@ -59,6 +69,24 @@ set_apply(struct shopt* opts, int letter, int on) {
+     case 'h': opts->hashall = on; return 1;
+     case 'm': opts->monitor = on; return 1;
+     case 'n': opts->noexec = on; return 1;
++
++    case 'p':
++      opts->privileged = on;
++#if !WINDOWS_NATIVE
++      /* POSIX/bash: turning privileged mode *off* also drops any real
++         privilege the process still has, by setting the effective
++         uid/gid back to the real ones -- gid first, since dropping
++         uid first could leave us without permission to still change
++         gid afterward. A no-op (same call, same result) when they
++         already match, so this is safe to run unconditionally on
++         every "+p", not just ones that actually had elevated ids. */
++      if(!on) {
++        setgid(getgid());
++        setuid(getuid());
++      }
++#endif
++      return 1;
++
+     case 'u': opts->unset = on; return 1;
+     case 'x': opts->xtrace = on; return 1;
+     case 'B': opts->braceexpand = on; return 1;
+@@ -68,7 +96,7 @@ set_apply(struct shopt* opts, int letter, int on) {
+   }
+ }
+ 
+-static int
++int
+ set_get(const struct shopt* opts, int letter) {
+   switch(letter) {
+     case 'a': return opts->allexport;
+@@ -77,6 +105,7 @@ set_get(const struct shopt* opts, int letter) {
+     case 'h': return opts->hashall;
+     case 'm': return opts->monitor;
+     case 'n': return opts->noexec;
++    case 'p': return opts->privileged;
+     case 'u': return opts->unset;
+     case 'x': return opts->xtrace;
+     case 'B': return opts->braceexpand;
+@@ -123,7 +152,7 @@ builtin_set(int argc, char* argv[]) {
+   struct optstate opt = {"+-", 0, 0, 0, 0, 0};
+ 
+   /* check options */
+-  while((c = shell_getopt_r(&opt, argc, argv, "+aefhmnouxBCH")) > 0) {
++  while((c = shell_getopt_r(&opt, argc, argv, "+aefhmnopuxBCH")) > 0) {
+     int on = opt.prefix == '-';
+ 
+     if(c == 'o') {
+diff --git a/src/sh.h b/src/sh.h
+index 8709765f..f0252939 100644
+--- a/src/sh.h
++++ b/src/sh.h
+@@ -52,12 +52,30 @@ struct shopt {
+   unsigned hashall : 1;     /* -h */
+   unsigned monitor : 1;     /* -m */
+   unsigned noexec : 1;      /* -n */
++  unsigned privileged : 1;  /* -p */
+   unsigned unset : 1;       /* -u */
+   unsigned xtrace : 1;      /* -x */
+   unsigned braceexpand : 1; /* -B */
+   unsigned noclobber : 1;   /* -C */
+   unsigned histexpand : 1;  /* -H */
+ };
++
++/* name->letter table for every "set"-supported option, and the
++ * apply/get dispatch built on it -- see builtin_set.c, which owns the
++ * actual table contents/switch bodies; declared here so sh_main.c can
++ * give the shell's own command-line startup options the identical
++ * letter/name set without duplicating (and risking drifting from)
++ * that list a second time. */
++struct set_longopt {
++  const char* name;
++  char letter;
++};
++
++extern const struct set_longopt set_longopts[];
++extern const size_t set_longopts_n;
++
++int set_apply(struct shopt* opts, int letter, int on);
++int set_get(const struct shopt* opts, int letter);
+ /*};*/
+ 
+ typedef void handler_fn(void);
+diff --git a/src/sh/sh_fmtflags.c b/src/sh/sh_fmtflags.c
+index ecc0b981..6cc05ecb 100644
+--- a/src/sh/sh_fmtflags.c
++++ b/src/sh/sh_fmtflags.c
+@@ -22,6 +22,9 @@ sh_fmtflags(char* dest, const struct shopt* opts) {
+   if(opts->noexec)
+     dest[i++] = 'n';
+ 
++  if(opts->privileged)
++    dest[i++] = 'p';
++
+   if(opts->unset)
+     dest[i++] = 'u';
+ 
+diff --git a/src/sh/sh_main.c b/src/sh/sh_main.c
+index aacc61ce..1fa7b493 100644
+--- a/src/sh/sh_main.c
++++ b/src/sh/sh_main.c
+@@ -4,8 +4,10 @@
+ #ifdef HAVE_ALLOCA
+ #include <alloca.h>
+ #endif
++#include "../expand.h"
+ #include "../fd.h"
+ #include "../fdtable.h"
++#include "../parse.h"
+ #include "../sh.h"
+ #include "../source.h"
+ #include "../var.h"
+@@ -73,6 +75,63 @@ sh_onsig(int signum) {
+   }
+ }
+ 
++/* a deliberately partial expansion of $ENV's value: POSIX technically
++ * requires full parameter/command/arithmetic substitution, but that's
++ * far more than a startup-file *pathname* is worth pulling the whole
++ * parser/expander pipeline in for. Tilde expansion (reusing
++ * expand_tilde_lookup(), see src/expand/expand_tilde.c) plus simple
++ * "$NAME"/"${NAME}" parameter substitution (falling back to "" for an
++ * unset/malformed one, same as real expansion would with -u off)
++ * covers the overwhelming majority of real ENV values in the wild
++ * ("$HOME/.shishrc", "~/.shishrc") -- anything fancier is a known,
++ * accepted gap.
++ * ----------------------------------------------------------------------- */
++static void
++sh_expand_simple(const char* in, stralloc* out) {
++  size_t i = 0, len = str_len(in);
++  stralloc home;
++  size_t prefixlen;
++
++  stralloc_init(&home);
++
++  if(expand_tilde_lookup(in, len, 0, &home, &prefixlen)) {
++    stralloc_cat(out, &home);
++    i = prefixlen;
++  }
++
++  stralloc_free(&home);
++
++  for(; i < len; i++) {
++    if(in[i] == '$' && i + 1 < len) {
++      int braced = in[i + 1] == '{';
++      size_t start = i + 1 + (braced ? 1 : 0);
++      size_t end = start;
++
++      while(end < len && parse_isname(in[end], end - start))
++        end++;
++
++      if(end > start) {
++        stralloc name;
++        const char* value;
++        size_t vlen;
++
++        stralloc_init(&name);
++        stralloc_catb(&name, in + start, end - start);
++        stralloc_nul(&name);
++
++        value = var_vdefault(name.s, "", &vlen);
++        stralloc_catb(out, value, vlen);
++        stralloc_free(&name);
++
++        i = (braced && end < len && in[end] == '}') ? end : end - 1;
++        continue;
++      }
++    }
++
++    stralloc_catc(out, in[i]);
++  }
++}
++
+ /* main routine
+  * ----------------------------------------------------------------------- */
+ int
+@@ -84,6 +143,8 @@ main(int argc, char** argv, char** envp) {
+   char* cmds = NULL;
+   struct var* envvars;
+   int no_interactive = 0;
++  int force_interactive = 0;
++  int read_stdin = 0;
+ 
+   fd_expected = STDERR_FILENO + 1;
+ 
+@@ -135,25 +196,102 @@ main(int argc, char** argv, char** envp) {
+   for(c = 0; envp[c]; c++)
+     var_import(envp[c], V_EXPORT, &envvars[c]);
+ 
+-  /* parse command line arguments */
+-  while((c = shell_getopt(argc, argv, "c:xen")) > 0)
+-    switch(c) {
+-      case 'c': cmds = shell_optarg; break;
+-      case 'x': sh->opts.xtrace = 1; break;
+-      case 'e': sh->opts.errexit = 1; break;
+-      case 'n': sh->opts.noexec = 1; break;
++  /* POSIX: privileged mode turns on automatically, before any
++     command-line option is even looked at, whenever the real and
++     effective uid or gid differ (e.g. a setuid/setgid shish binary,
++     or invoked via one) -- an explicit "-p"/"+p" below still takes
++     the final word either way, same as every other option's default
++     being overridable on the command line. */
++#if !WINDOWS_NATIVE
++  if(geteuid() != getuid() || getegid() != getgid())
++    sh->opts.privileged = 1;
++#endif
++
++  /* parse command line arguments -- every letter "set" supports
++     (src/builtin/builtin_set.c's set_apply()/set_longopts, shared
++     from there rather than duplicated here) works identically as a
++     startup flag, including "-o name"/"+o name" by long name; "-c"
++     belongs here specifically (command_string only makes sense at
++     startup); "-i"/"-s" are startup-only, meaningless as "set"
++     options.
++
++     A *local* struct optstate, not the process-global shell_getopt()/
++     shell_opt -- exactly like builtin_set.c's own identical loop, and
++     for the identical reason: shell_optind is never reset to 0
++     between unrelated builtins' own shell_getopt() calls (confirmed
++     -- nothing in this codebase does that), so whatever "+-" vs. "-"
++     prefixes a leading '+' in *this* optstring left in the *shared*
++     global state would otherwise silently leak into every later
++     builtin built on that same global (e.g. builtin_chmod.c's own
++     "v"), making "chmod +x file" misparse "+x" as an (invalid)
++     option instead of chmod's own plain mode-string operand. */
++  {
++    struct optstate opt = {"+-", 0, 0, 0, 0, 0};
++
++    while((c = shell_getopt_r(&opt, argc, argv, "+c:isoaefhmnpuxBCH")) > 0) {
++      int on = opt.prefix == '-';
++
++      switch(c) {
++        case 'c': cmds = opt.arg; break;
++        case 'i': force_interactive = 1; break;
++        case 's': read_stdin = 1; break;
++
++        case 'o': {
++          char* name;
++
++          /* shell_getopt_r() only advances past the *whole* current
++             argv element for an option that takes an argument via
++             ":" -- "o" has none (its own argument is read by hand
++             here, same as builtin_set.c's identical handling), so
++             opt.ind is still pointing at "-o"/"+o" itself here. */
++          opt.ind++;
++          opt.ofs = 0;
++          name = argv[opt.ind];
++
++          if(name) {
++            size_t i;
++            int letter = 0;
++
++            for(i = 0; i < set_longopts_n; i++) {
++              if(str_equal(set_longopts[i].name, name)) {
++                letter = set_longopts[i].letter;
++                break;
++              }
++            }
++
++            if(!letter) {
++              sh_usage();
++              sh_exit(1);
++            }
++
++            set_apply(&sh->opts, letter, on);
++            opt.ind++;
++          }
++
++          break;
++        }
+ 
+ #ifdef _DEBUG
+-      case 'I': no_interactive = 1; break;
++        case 'I': no_interactive = 1; break;
+ 
+ #endif
+ 
+-      default:
+-        sh_usage();
+-        sh_exit(1);
+-        break;
++        default:
++          if(!set_apply(&sh->opts, c, on)) {
++            sh_usage();
++            sh_exit(1);
++          }
++
++          break;
++      }
+     }
+ 
++    /* the rest of this function still reads shell_optind (the
++       process-global one) below, same as it always has -- only the
++       parsing loop itself needed to move off the shared state. */
++    shell_optind = opt.ind;
++  }
++
+     /* set up the source fd (where the shell reads from) */
+ #ifdef HAVE_ALLOCA
+   fd = fd_alloc();
+@@ -179,8 +317,11 @@ main(int argc, char** argv, char** envp) {
+       sh_argv0 = argv[shell_optind++];
+   }
+ 
+-  /* if there is an argument we open it as input file */
+-  else if(argv[shell_optind]) {
++  /* if there is an argument we open it as input file -- unless "-s"
++     said to read from stdin regardless, in which case every remaining
++     argument (this one included) is left alone to become a plain
++     positional parameter instead of being consumed as a script $0. */
++  else if(!read_stdin && argv[shell_optind]) {
+     fd_mmap(fd_src, argv[shell_optind]);
+ 
+     sh_argv0 = argv[shell_optind++];
+@@ -201,20 +342,60 @@ main(int argc, char** argv, char** envp) {
+ 
+   source_push(&src);
+ 
+-  if((fd_src->mode & FD_CHAR) && !no_interactive && term_init(fd_src, fd_err)) {
+-    src.mode |= SOURCE_IACTIVE;
++  {
++    /* "-i" forces interactive behavior (prompting, job control,
++       history) on even without a real terminal to back it -- but
++       term_init() itself (the line-editing/job-control-signal setup)
++       still only succeeds against an actual char-device fd, so
++       job_terminal_init() below is gated on that succeeding
++       regardless of how we got here. */
++    int have_term =
++        (fd_src->mode & FD_CHAR) && !no_interactive && term_init(fd_src, fd_err);
++
++    if(have_term || (force_interactive && !no_interactive)) {
++      src.mode |= SOURCE_IACTIVE;
++
++      sh->opts.monitor = 1;
++      sh->opts.histexpand = 1;
++
++      /* only now does fd_err->mode & FD_TERM actually reflect reality
++         -- term_init() above is what sets it. See
++         job_terminal_init()'s own comment (BUGS:
++         job-terminal-never-initialized) for why this can't just
++         happen inside job_init() (called earlier, from sh_init()). */
++      if(have_term)
++        job_terminal_init();
++    } else
++      src.mode &= ~SOURCE_IACTIVE;
++  }
++
++  /* POSIX: an interactive, non-privileged shell sources the file
++     named by $ENV (after expansion) once at startup, if it names an
++     existing, readable file -- silently skipped otherwise (a missing
++     $ENV file is not an error), matching real shells. */
++  if((src.mode & SOURCE_IACTIVE) && !sh->opts.privileged) {
++    const char* envval = var_vdefault("ENV", NULL, NULL);
++
++    if(envval && *envval) {
++      stralloc envpath;
++      struct fd envfd;
++      struct source envsrc;
+ 
+-    sh->opts.monitor = 1;
+-    sh->opts.histexpand = 1;
++      stralloc_init(&envpath);
++      sh_expand_simple(envval, &envpath);
++      stralloc_nul(&envpath);
+ 
+-    /* only now does fd_err->mode & FD_TERM actually reflect reality --
+-       term_init() above is what sets it. See job_terminal_init()'s own
+-       comment (BUGS: job-terminal-never-initialized) for why this
+-       can't just happen inside job_init() (called earlier, from
+-       sh_init()). */
+-    job_terminal_init();
+-  } else
+-    src.mode &= ~SOURCE_IACTIVE;
++      fd_push(&envfd, STDSRC_FILENO, FD_READ);
++      source_push(&envsrc);
++      envsrc.fd = &envfd;
++
++      if(!fd_mmap(&envfd, envpath.s))
++        sh_loop();
++
++      source_popfd(&envfd);
++      stralloc_free(&envpath);
++    }
++  }
+ 
+   sig_catch(SIGCHLD, sh_onsig);
+ 
+diff --git a/src/sh/sh_root.c b/src/sh/sh_root.c
+index 5bdc2c05..d725429e 100644
+--- a/src/sh/sh_root.c
++++ b/src/sh/sh_root.c
+@@ -23,6 +23,7 @@ struct env sh_root = {/* .parent = */ NULL,
+                        .hashall = 1,
+                        .monitor = 0,
+                        .noexec = 0,
++                       .privileged = 0,
+                        .unset = 0,
+                        .xtrace = 0,
+                        .braceexpand = 1,
+diff --git a/src/sh/sh_usage.c b/src/sh/sh_usage.c
+index 044d76dc..479f743e 100644
+--- a/src/sh/sh_usage.c
++++ b/src/sh/sh_usage.c
+@@ -2,11 +2,42 @@
+ #include "../sh.h"
+ 
+ /* output help
++ *
++ * every letter here also works identically via the "set" builtin at
++ * runtime (src/builtin/builtin_set.c owns the actual behavior behind
++ * each one, and "-o name"/"+o name" reuses its set_longopts table
++ * directly, so the two can't drift apart on *names*) -- "-c"/"-i"/"-s"
++ * are startup-only and don't exist as "set" options at all.
+  * ----------------------------------------------------------------------- */
+ void
+ sh_usage(void) {
+   buffer_puts(fd_err->w, "usage: ");
+   buffer_puts(fd_err->w, sh_name);
+-  buffer_puts(fd_err->w, " [options] [-] [script] [args]\n");
++  buffer_puts(fd_err->w, " [options] [-c command_string [command_name [arg ...]]]\n");
++  buffer_puts(fd_err->w, "       ");
++  buffer_puts(fd_err->w, sh_name);
++  buffer_puts(fd_err->w, " [options] [-s] [script] [arg ...]\n");
++  buffer_puts(fd_err->w,
++              "\n"
++              "    -c command_string   run command_string instead of a script/stdin\n"
++              "    -i                  force interactive mode, even without a terminal\n"
++              "    -s                  read commands from standard input\n"
++              "                        (implied if no script and no -c is given)\n"
++              "    -a                  export every variable assignment\n"
++              "    -e                  exit if a simple command fails\n"
++              "    -f                  disable pathname expansion (globbing)\n"
++              "    -h                  remember command locations as they're looked up\n"
++              "    -m                  enable job control (monitor mode)\n"
++              "    -n                  read commands but don't execute them\n"
++              "    -p                  privileged mode: don't process $ENV\n"
++              "    -u                  treat unset variables as an error on expansion\n"
++              "    -x                  print each command before running it\n"
++              "    -B                  enable brace expansion\n"
++              "    -C                  don't let '>' clobber an existing file\n"
++              "    -H                  enable history expansion ('!')\n"
++              "    -o name / +o name   same as the matching letter option above, by name\n"
++              "    +option             turn a letter option off instead of on\n"
++              "    -                   end options (also turns -x off)\n"
++              "    --                  end options\n");
+   buffer_flush(fd_err->w);
+ }

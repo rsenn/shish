@@ -4,8 +4,10 @@
 #ifdef HAVE_ALLOCA
 #include <alloca.h>
 #endif
+#include "../expand.h"
 #include "../fd.h"
 #include "../fdtable.h"
+#include "../parse.h"
 #include "../sh.h"
 #include "../source.h"
 #include "../var.h"
@@ -73,6 +75,63 @@ sh_onsig(int signum) {
   }
 }
 
+/* a deliberately partial expansion of $ENV's value: POSIX technically
+ * requires full parameter/command/arithmetic substitution, but that's
+ * far more than a startup-file *pathname* is worth pulling the whole
+ * parser/expander pipeline in for. Tilde expansion (reusing
+ * expand_tilde_lookup(), see src/expand/expand_tilde.c) plus simple
+ * "$NAME"/"${NAME}" parameter substitution (falling back to "" for an
+ * unset/malformed one, same as real expansion would with -u off)
+ * covers the overwhelming majority of real ENV values in the wild
+ * ("$HOME/.shishrc", "~/.shishrc") -- anything fancier is a known,
+ * accepted gap.
+ * ----------------------------------------------------------------------- */
+static void
+sh_expand_simple(const char* in, stralloc* out) {
+  size_t i = 0, len = str_len(in);
+  stralloc home;
+  size_t prefixlen;
+
+  stralloc_init(&home);
+
+  if(expand_tilde_lookup(in, len, 0, &home, &prefixlen)) {
+    stralloc_cat(out, &home);
+    i = prefixlen;
+  }
+
+  stralloc_free(&home);
+
+  for(; i < len; i++) {
+    if(in[i] == '$' && i + 1 < len) {
+      int braced = in[i + 1] == '{';
+      size_t start = i + 1 + (braced ? 1 : 0);
+      size_t end = start;
+
+      while(end < len && parse_isname(in[end], end - start))
+        end++;
+
+      if(end > start) {
+        stralloc name;
+        const char* value;
+        size_t vlen;
+
+        stralloc_init(&name);
+        stralloc_catb(&name, in + start, end - start);
+        stralloc_nul(&name);
+
+        value = var_vdefault(name.s, "", &vlen);
+        stralloc_catb(out, value, vlen);
+        stralloc_free(&name);
+
+        i = (braced && end < len && in[end] == '}') ? end : end - 1;
+        continue;
+      }
+    }
+
+    stralloc_catc(out, in[i]);
+  }
+}
+
 /* main routine
  * ----------------------------------------------------------------------- */
 int
@@ -84,6 +143,8 @@ main(int argc, char** argv, char** envp) {
   char* cmds = NULL;
   struct var* envvars;
   int no_interactive = 0;
+  int force_interactive = 0;
+  int read_stdin = 0;
 
   fd_expected = STDERR_FILENO + 1;
 
@@ -135,24 +196,101 @@ main(int argc, char** argv, char** envp) {
   for(c = 0; envp[c]; c++)
     var_import(envp[c], V_EXPORT, &envvars[c]);
 
-  /* parse command line arguments */
-  while((c = shell_getopt(argc, argv, "c:xen")) > 0)
-    switch(c) {
-      case 'c': cmds = shell_optarg; break;
-      case 'x': sh->opts.xtrace = 1; break;
-      case 'e': sh->opts.errexit = 1; break;
-      case 'n': sh->opts.noexec = 1; break;
+  /* POSIX: privileged mode turns on automatically, before any
+     command-line option is even looked at, whenever the real and
+     effective uid or gid differ (e.g. a setuid/setgid shish binary,
+     or invoked via one) -- an explicit "-p"/"+p" below still takes
+     the final word either way, same as every other option's default
+     being overridable on the command line. */
+#if !WINDOWS_NATIVE
+  if(geteuid() != getuid() || getegid() != getgid())
+    sh->opts.privileged = 1;
+#endif
+
+  /* parse command line arguments -- every letter "set" supports
+     (src/builtin/builtin_set.c's set_apply()/set_longopts, shared
+     from there rather than duplicated here) works identically as a
+     startup flag, including "-o name"/"+o name" by long name; "-c"
+     belongs here specifically (command_string only makes sense at
+     startup); "-i"/"-s" are startup-only, meaningless as "set"
+     options.
+
+     A *local* struct optstate, not the process-global shell_getopt()/
+     shell_opt -- exactly like builtin_set.c's own identical loop, and
+     for the identical reason: shell_optind is never reset to 0
+     between unrelated builtins' own shell_getopt() calls (confirmed
+     -- nothing in this codebase does that), so whatever "+-" vs. "-"
+     prefixes a leading '+' in *this* optstring left in the *shared*
+     global state would otherwise silently leak into every later
+     builtin built on that same global (e.g. builtin_chmod.c's own
+     "v"), making "chmod +x file" misparse "+x" as an (invalid)
+     option instead of chmod's own plain mode-string operand. */
+  {
+    struct optstate opt = {"+-", 0, 0, 0, 0, 0};
+
+    while((c = shell_getopt_r(&opt, argc, argv, "+c:isoaefhmnpuxBCH")) > 0) {
+      int on = opt.prefix == '-';
+
+      switch(c) {
+        case 'c': cmds = opt.arg; break;
+        case 'i': force_interactive = 1; break;
+        case 's': read_stdin = 1; break;
+
+        case 'o': {
+          char* name;
+
+          /* shell_getopt_r() only advances past the *whole* current
+             argv element for an option that takes an argument via
+             ":" -- "o" has none (its own argument is read by hand
+             here, same as builtin_set.c's identical handling), so
+             opt.ind is still pointing at "-o"/"+o" itself here. */
+          opt.ind++;
+          opt.ofs = 0;
+          name = argv[opt.ind];
+
+          if(name) {
+            size_t i;
+            int letter = 0;
+
+            for(i = 0; i < set_longopts_n; i++) {
+              if(str_equal(set_longopts[i].name, name)) {
+                letter = set_longopts[i].letter;
+                break;
+              }
+            }
+
+            if(!letter) {
+              sh_usage();
+              sh_exit(1);
+            }
+
+            set_apply(&sh->opts, letter, on);
+            opt.ind++;
+          }
+
+          break;
+        }
 
 #ifdef _DEBUG
-      case 'I': no_interactive = 1; break;
+        case 'I': no_interactive = 1; break;
 
 #endif
 
-      default:
-        sh_usage();
-        sh_exit(1);
-        break;
+        default:
+          if(!set_apply(&sh->opts, c, on)) {
+            sh_usage();
+            sh_exit(1);
+          }
+
+          break;
+      }
     }
+
+    /* the rest of this function still reads shell_optind (the
+       process-global one) below, same as it always has -- only the
+       parsing loop itself needed to move off the shared state. */
+    shell_optind = opt.ind;
+  }
 
     /* set up the source fd (where the shell reads from) */
 #ifdef HAVE_ALLOCA
@@ -179,8 +317,11 @@ main(int argc, char** argv, char** envp) {
       sh_argv0 = argv[shell_optind++];
   }
 
-  /* if there is an argument we open it as input file */
-  else if(argv[shell_optind]) {
+  /* if there is an argument we open it as input file -- unless "-s"
+     said to read from stdin regardless, in which case every remaining
+     argument (this one included) is left alone to become a plain
+     positional parameter instead of being consumed as a script $0. */
+  else if(!read_stdin && argv[shell_optind]) {
     fd_mmap(fd_src, argv[shell_optind]);
 
     sh_argv0 = argv[shell_optind++];
@@ -201,20 +342,60 @@ main(int argc, char** argv, char** envp) {
 
   source_push(&src);
 
-  if((fd_src->mode & FD_CHAR) && !no_interactive && term_init(fd_src, fd_err)) {
-    src.mode |= SOURCE_IACTIVE;
+  {
+    /* "-i" forces interactive behavior (prompting, job control,
+       history) on even without a real terminal to back it -- but
+       term_init() itself (the line-editing/job-control-signal setup)
+       still only succeeds against an actual char-device fd, so
+       job_terminal_init() below is gated on that succeeding
+       regardless of how we got here. */
+    int have_term =
+        (fd_src->mode & FD_CHAR) && !no_interactive && term_init(fd_src, fd_err);
 
-    sh->opts.monitor = 1;
-    sh->opts.histexpand = 1;
+    if(have_term || (force_interactive && !no_interactive)) {
+      src.mode |= SOURCE_IACTIVE;
 
-    /* only now does fd_err->mode & FD_TERM actually reflect reality --
-       term_init() above is what sets it. See job_terminal_init()'s own
-       comment (BUGS: job-terminal-never-initialized) for why this
-       can't just happen inside job_init() (called earlier, from
-       sh_init()). */
-    job_terminal_init();
-  } else
-    src.mode &= ~SOURCE_IACTIVE;
+      sh->opts.monitor = 1;
+      sh->opts.histexpand = 1;
+
+      /* only now does fd_err->mode & FD_TERM actually reflect reality
+         -- term_init() above is what sets it. See
+         job_terminal_init()'s own comment (BUGS:
+         job-terminal-never-initialized) for why this can't just
+         happen inside job_init() (called earlier, from sh_init()). */
+      if(have_term)
+        job_terminal_init();
+    } else
+      src.mode &= ~SOURCE_IACTIVE;
+  }
+
+  /* POSIX: an interactive, non-privileged shell sources the file
+     named by $ENV (after expansion) once at startup, if it names an
+     existing, readable file -- silently skipped otherwise (a missing
+     $ENV file is not an error), matching real shells. */
+  if((src.mode & SOURCE_IACTIVE) && !sh->opts.privileged) {
+    const char* envval = var_vdefault("ENV", NULL, NULL);
+
+    if(envval && *envval) {
+      stralloc envpath;
+      struct fd envfd;
+      struct source envsrc;
+
+      stralloc_init(&envpath);
+      sh_expand_simple(envval, &envpath);
+      stralloc_nul(&envpath);
+
+      fd_push(&envfd, STDSRC_FILENO, FD_READ);
+      source_push(&envsrc);
+      envsrc.fd = &envfd;
+
+      if(!fd_mmap(&envfd, envpath.s))
+        sh_loop();
+
+      source_popfd(&envfd);
+      stralloc_free(&envpath);
+    }
+  }
 
   sig_catch(SIGCHLD, sh_onsig);
 

@@ -60,29 +60,6 @@
   a real "OK to interrupt terminal output right now" toggle to logic
   that currently assumes deferral is always correct.
 
-- source-syntax-error-kills-whole-process-not-just-subshell: found
-  while adding regression tests for `fixes/118` (`set -n`) --
-  completely unrelated to `-n` itself, reproduces identically with an
-  ordinary command in place of the sourced file. A syntax error in a
-  file read via `.`/`source` always terminates the *entire* top-level
-  process, even when the `.` is wrapped in a real subshell or
-  `$(...)`, which should isolate it:
-
-    printf 'echo before\nif [ 1 = 1 ]\n' >/tmp/bad.sh
-    shish -c '(. /tmp/bad.sh); echo AFTER_SUBSHELL'
-    # prints "before" and the syntax error, then exits -- "AFTER_SUBSHELL"
-    # is never reached, even though it's outside the subshell entirely
-
-  `builtin_source.c` calls `sh_loop()` recursively for the sourced
-  file; `sh_loop()`'s own parse-error branch calls `sh_exit()`
-  directly based only on `source->mode & SOURCE_IACTIVE`, with no
-  apparent interaction with whatever mechanism `eval_exit()`/`sh_exit()`
-  normally use to detect "there's a subshell frame to jump back to
-  instead of actually exiting the process" for other fatal-error
-  paths -- worth checking whether that detection just isn't reachable
-  from this nested-`sh_loop()` call at all, or is reachable but wired
-  wrong.
-
 - set-verbose-unimplemented: POSIX `-v` (echo each input line to
   stderr as it's read, before any parsing/expansion touches it --
   distinct from `-x`, which echoes *after* expansion, from
@@ -96,19 +73,6 @@
   source`'s position tracking. This is the most structurally invasive
   of this group precisely because nothing else needs "raw source
   text" as such a unit today.
-
-- set-privileged-unimplemented: POSIX `-p` (privileged mode: don't
-  process `$ENV`; if real and effective uid/gid differ at startup,
-  behave as if `-p` had been given until explicitly turned off) is
-  missing the same way, but blocked on more than itself: `src/sh/sh_main.c`
-  doesn't process `$ENV` (or any profile-type startup file) *at all*
-  currently, checked directly -- there's nothing yet for `-p` to
-  actually suppress. Implementing `-p` for real means adding that
-  `$ENV`-sourcing startup behavior first (`src/sh/sh_main.c`, gated
-  appropriately), an actual uid/gid check there (`geteuid()`/`getuid()`/
-  `getegid()`/`getgid()`, none of which this file currently calls) to
-  auto-enable `-p`, and only then wiring the flag itself into
-  `struct shopt`/`builtin_set.c`.
 
 - set-histexpand-unimplemented: `struct shopt`'s `histexpand` bit
   (`src/sh.h`, `-H`) is set correctly by `set -H`/`set +H` and

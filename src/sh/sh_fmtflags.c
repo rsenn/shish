@@ -22,6 +22,9 @@ sh_fmtflags(char* dest, const struct shopt* opts) {
   if(opts->noexec)
     dest[i++] = 'n';
 
+  if(opts->privileged)
+    dest[i++] = 'p';
+
   if(opts->unset)
     dest[i++] = 'u';
 

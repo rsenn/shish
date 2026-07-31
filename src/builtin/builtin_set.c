@@ -5,7 +5,12 @@
 #include "../tree.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
+#include "../../lib/windoze.h"
 #include "../vartab.h"
+
+#if !WINDOWS_NATIVE
+#include <unistd.h>
+#endif
 
 extern union node* functions;
 
@@ -20,6 +25,7 @@ const char help_set[] =
     "    -h              remember command locations as they're looked up\n"
     "    -m              enable job control (monitor mode)\n"
     "    -n              read commands but don't execute them\n"
+    "    -p              privileged mode: don't process $ENV\n"
     "    -u              treat unset variables as an error on expansion\n"
     "    -x              print each command before running it\n"
     "    -B              enable brace expansion\n"
@@ -38,19 +44,23 @@ const char help_set[] =
  * doesn't allow taking the address of. Declared alphabetically so
  * "set -o"'s listing comes out sorted for free. "unset" is spelled
  * "nounset" here on purpose: that's the POSIX/bash "-o" name for it
- * (matching "-u"), even though the C struct field is just "unset". */
-static const struct {
-  const char* name;
-  char letter;
-} set_longopts[] = {
-    {"allexport", 'a'},  {"braceexpand", 'B'}, {"errexit", 'e'},  {"hashall", 'h'},
-    {"histexpand", 'H'}, {"monitor", 'm'},     {"noclobber", 'C'}, {"noexec", 'n'},
-    {"noglob", 'f'},     {"nounset", 'u'},     {"xtrace", 'x'},
+ * (matching "-u"), even though the C struct field is just "unset").
+ *
+ * Not static: sh_main.c reuses this same table (and set_apply()/
+ * set_get() below) to give the shell's own command-line startup
+ * options the exact same letter/name set "set" supports, instead of
+ * duplicating (and inevitably drifting from) this list a second time. */
+const struct set_longopt set_longopts[] = {
+    {"allexport", 'a'},   {"braceexpand", 'B'}, {"errexit", 'e'},   {"hashall", 'h'},
+    {"histexpand", 'H'},  {"monitor", 'm'},     {"noclobber", 'C'}, {"noexec", 'n'},
+    {"noglob", 'f'},      {"nounset", 'u'},     {"privileged", 'p'}, {"xtrace", 'x'},
 };
 
-#define SET_LONGOPTS_N (sizeof(set_longopts) / sizeof(set_longopts[0]))
+const size_t set_longopts_n = sizeof(set_longopts) / sizeof(set_longopts[0]);
 
-static int
+#define SET_LONGOPTS_N set_longopts_n
+
+int
 set_apply(struct shopt* opts, int letter, int on) {
   switch(letter) {
     case 'a': opts->allexport = on; return 1;
@@ -59,6 +69,24 @@ set_apply(struct shopt* opts, int letter, int on) {
     case 'h': opts->hashall = on; return 1;
     case 'm': opts->monitor = on; return 1;
     case 'n': opts->noexec = on; return 1;
+
+    case 'p':
+      opts->privileged = on;
+#if !WINDOWS_NATIVE
+      /* POSIX/bash: turning privileged mode *off* also drops any real
+         privilege the process still has, by setting the effective
+         uid/gid back to the real ones -- gid first, since dropping
+         uid first could leave us without permission to still change
+         gid afterward. A no-op (same call, same result) when they
+         already match, so this is safe to run unconditionally on
+         every "+p", not just ones that actually had elevated ids. */
+      if(!on) {
+        setgid(getgid());
+        setuid(getuid());
+      }
+#endif
+      return 1;
+
     case 'u': opts->unset = on; return 1;
     case 'x': opts->xtrace = on; return 1;
     case 'B': opts->braceexpand = on; return 1;
@@ -68,7 +96,7 @@ set_apply(struct shopt* opts, int letter, int on) {
   }
 }
 
-static int
+int
 set_get(const struct shopt* opts, int letter) {
   switch(letter) {
     case 'a': return opts->allexport;
@@ -77,6 +105,7 @@ set_get(const struct shopt* opts, int letter) {
     case 'h': return opts->hashall;
     case 'm': return opts->monitor;
     case 'n': return opts->noexec;
+    case 'p': return opts->privileged;
     case 'u': return opts->unset;
     case 'x': return opts->xtrace;
     case 'B': return opts->braceexpand;
@@ -123,7 +152,7 @@ builtin_set(int argc, char* argv[]) {
   struct optstate opt = {"+-", 0, 0, 0, 0, 0};
 
   /* check options */
-  while((c = shell_getopt_r(&opt, argc, argv, "+aefhmnouxBCH")) > 0) {
+  while((c = shell_getopt_r(&opt, argc, argv, "+aefhmnopuxBCH")) > 0) {
     int on = opt.prefix == '-';
 
     if(c == 'o') {

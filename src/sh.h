@@ -52,12 +52,30 @@ struct shopt {
   unsigned hashall : 1;     /* -h */
   unsigned monitor : 1;     /* -m */
   unsigned noexec : 1;      /* -n */
+  unsigned privileged : 1;  /* -p */
   unsigned unset : 1;       /* -u */
   unsigned xtrace : 1;      /* -x */
   unsigned braceexpand : 1; /* -B */
   unsigned noclobber : 1;   /* -C */
   unsigned histexpand : 1;  /* -H */
 };
+
+/* name->letter table for every "set"-supported option, and the
+ * apply/get dispatch built on it -- see builtin_set.c, which owns the
+ * actual table contents/switch bodies; declared here so sh_main.c can
+ * give the shell's own command-line startup options the identical
+ * letter/name set without duplicating (and risking drifting from)
+ * that list a second time. */
+struct set_longopt {
+  const char* name;
+  char letter;
+};
+
+extern const struct set_longopt set_longopts[];
+extern const size_t set_longopts_n;
+
+int set_apply(struct shopt* opts, int letter, int on);
+int set_get(const struct shopt* opts, int letter);
 /*};*/
 
 typedef void handler_fn(void);
