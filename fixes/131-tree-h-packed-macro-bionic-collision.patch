@@ -1,0 +1,200 @@
+diff --git a/src/tree.h b/src/tree.h
+index aca99167..b2c6c562 100644
+--- a/src/tree.h
++++ b/src/tree.h
+@@ -7,8 +7,8 @@
+ #include "../lib/uint64.h"
+ #include <stdlib.h>
+ 
+-#ifndef __packed
+-#define __packed /*__attribute__((packed))*/
++#ifndef SHISH_TREE_PACKED
++#define SHISH_TREE_PACKED /*__attribute__((packed))*/
+ #endif
+ 
+ /* the section numbers refer to the IEEE P1003.2 Draft D11.2 */
+@@ -99,7 +99,7 @@ struct ncmd {
+   union node* rdir; /* redirections */
+   union node* vars; /* cmd-local variable assigns */
+   union node* args; /* arguments */
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ /* 3.9.2 - pipeline
+  * ----------------------------------------------------------------------- */
+@@ -109,14 +109,14 @@ struct npipe {
+   union node* next;
+   unsigned ncmd;
+   union node* cmds;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ struct nnot {
+   enum kind id;
+   unsigned dummy : 1;
+   union node* next;
+   union node* pipeline;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ /* 3.9.3 - lists
+  * ----------------------------------------------------------------------- */
+@@ -128,7 +128,7 @@ struct nandor {
+   union node* next;
+   union node* left;
+   union node* right;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ /* the compound list is simply done with node->next, because we don't
+    need any further information */
+@@ -141,7 +141,7 @@ struct ngrp {
+   union node* next;
+   union node* rdir; /* redirections */
+   union node* cmds;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ /* 3.9.4.2 - for loop
+  * ----------------------------------------------------------------------- */
+@@ -153,7 +153,7 @@ struct nfor {
+   union node* cmds;
+   union node* args;
+   char* varn;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ /* 3.9.4.3 - case conditional
+  * ----------------------------------------------------------------------- */
+@@ -164,7 +164,7 @@ struct ncase {
+   union node* rdir; /* redirections */
+   union node* list;
+   union node* word;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ struct ncasenode {
+   enum kind id;
+@@ -172,7 +172,7 @@ struct ncasenode {
+   union node* next;
+   union node* pats;
+   union node* cmds;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ /* 3.9.4.4 - if conditional
+  * ----------------------------------------------------------------------- */
+@@ -184,7 +184,7 @@ struct nif {
+   union node* cmd0;
+   union node* cmd1;
+   union node* test;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ /* 3.9.4.5 while loop
+  * 3.9.4.6 until loop
+@@ -196,7 +196,7 @@ struct nloop {
+   union node* rdir; /* redirections */
+   union node* cmds;
+   union node* test;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ /* 3.9.5 function definition
+  * ----------------------------------------------------------------------- */
+@@ -207,7 +207,7 @@ struct nfunc {
+   char* name;
+   union node* body;
+   struct location loc;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ /* command list
+  * ----------------------------------------------------------------------- */
+@@ -217,7 +217,7 @@ struct nlist {
+   union node* next;
+   union node* rdir;
+   union node* cmds;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ /* word nodes
+  *
+@@ -229,7 +229,7 @@ struct narg {
+   union node* next;
+   stralloc stra;
+   union node* list;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ /* [fd]<operator><file> */
+ struct nredir {
+@@ -240,7 +240,7 @@ struct nredir {
+   union node* data; /* next here-doc or expansion */
+   int fdes;
+   struct fd* fd;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ /* argument (word) subnodes
+  * ----------------------------------------------------------------------- */
+@@ -256,7 +256,7 @@ struct nargstr {
+     };
+   };
+   struct location loc;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ struct nargparam {
+   enum kind id;
+@@ -266,21 +266,21 @@ struct nargparam {
+   union node* word;
+   long numb;
+   struct location loc;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ struct nargcmd {
+   enum kind id;
+   unsigned flag;
+   union node* next;
+   union node* list;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ struct nargarith {
+   enum kind id;
+   unsigned flag;
+   union node* next;
+   union node* tree;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ struct narithnum {
+   enum kind id;
+@@ -288,14 +288,14 @@ struct narithnum {
+   union node* next;
+   int64 num;
+   unsigned base;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ struct narithunary {
+   enum kind id;
+   unsigned dummy : 1;
+   union node* next;
+   union node* node;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ struct narithbinary {
+   enum kind id;
+@@ -303,7 +303,7 @@ struct narithbinary {
+   union node* next;
+   union node* left;
+   union node* right;
+-} __packed;
++} SHISH_TREE_PACKED;
+ 
+ /* ----------------------------------------------------------------------- */
+ union node {

@@ -36,12 +36,22 @@ tolerance had ever surfaced before): a shift-by-64 in
 null pointer" bugs (`exec_search()`'s empty-function-list walk,
 `redir_source()`'s here-doc-list walk), and a `memcpy()`-with-null-src
 issue at two `stralloc` call sites when copying an empty/unset buffer
-— fixed as `fixes/123`-`125`, `127` respectively (see `BUGS` for the
-two sanitizer findings from the same sweep that were *not* fixed,
-`ubsan-packed-node-misalignment` and
-`ubsan-buffer-op-proto-function-type-mismatch`, both real but
-deliberate/pervasive tradeoffs already discussed elsewhere in this
-file and in CLAUDE.md). The `tests/posix`
+— fixed as `fixes/123`-`125`, `127` respectively. A later, separate
+sanitizer finding from the same investigation initially looked like
+more of the same "real but pervasive, not worth fixing" kind, but
+turned out to be the actual Termux crash's own root cause once pushed
+on further: `src/tree.h`'s `__packed` macro (deliberately a no-op —
+the real `__attribute__((packed))` is commented out) collides by name
+with Android Bionic's `<sys/cdefs.h>`, which already defines `__packed`
+for real — silently, unintentionally packing every `union node` field
+on that platform only, corrupting reads since different node kinds
+don't all pack to the same offsets. Fixed (`fixes/131`) by renaming
+shish's own macro to `SHISH_TREE_PACKED`; see `BUGS`'s corrected entry
+for the full trail, including why the earlier "reproduces on Linux,
+harmless" writeup was wrong. `BUGS:
+ubsan-buffer-op-proto-function-type-mismatch` from the same sweep is
+still a real, deliberate, not-worth-fixing tradeoff, unrelated to this
+one. The `tests/posix`
 conformance suite (120 files) is wired into `ctest` and runs by default.
 `tests/yash` (119 more files) is wired in the same way but gated behind
 its own `-DDO_YASH_TESTS=ON` (off by default — several files hang and

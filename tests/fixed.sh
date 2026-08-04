@@ -2826,4 +2826,24 @@ assert_equal "one
 two
 three" "$X130" "ordinary simple commands (parse_simple_command's alias-lookup path) must still parse and run correctly (see comment above)"
 
+## fixes/131 (src/tree.h): the real Termux segfault that kicked off
+## this whole investigation, previously mis-blamed on packed-node
+## alignment being merely "cosmetic UB, tolerated everywhere" (see
+## BUGS's corrected entry for the full story) -- root cause was
+## src/tree.h's own `__packed` macro colliding by name with Android
+## Bionic's <sys/cdefs.h>, which already defines `__packed` for real,
+## silently overriding shish's own deliberately-a-no-op definition and
+## corrupting every union node field access on that one platform only.
+## Per the "Writing a test" exception in CLAUDE.md for a fix that only
+## triggers on a platform this repo isn't developed on (no Termux/
+## Bionic build here to run a real regression case against), this is
+## comment-only -- verified instead by reproducing the exact collision
+## locally on a Linux ASan/UBSan build via
+## -D__packed=__attribute__\(\(packed\)\), which crashed reliably
+## (tree_cat.c:34, a corrupted near-null node pointer) before this fix
+## and ran this repo's own full "./configure" clean afterward, with
+## the same forcing flag still active -- i.e. the fix was confirmed to
+## neutralize the exact condition Bionic creates, not just observed to
+## "currently" not crash.
+
 summary

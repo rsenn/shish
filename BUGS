@@ -81,30 +81,55 @@
   implemented at all under `src/history/` or `src/term/` for this
   flag to gate. It's a placeholder with nothing behind it.
 
-- ubsan-packed-node-misalignment: found chasing a Termux (Android/
-  bionic) segfault report in `shish configure`, reproduced under a
-  Linux `-fsanitize=address,undefined` build (`cfg()` with
-  `-DCMAKE_C_FLAGS="-fsanitize=address,undefined -g -O0"`, see
-  `cfg-cmake.sh`). Any load/store of a `union node*` field inside the
-  `__packed` node structs (`src/tree.h`) that ends up at a non-8-byte-
-  aligned offset trips UBSan's alignment check, e.g.:
+- (FIXED, fixes/131) tree-h-packed-macro-collides-with-bionic: this
+  entry previously claimed the Termux segfault chasing this whole
+  investigation was "reproduced under Linux" and merely cosmetic --
+  both wrong, corrected here. `src/tree.h` defines its own `__packed`
+  macro specifically to be a deliberate no-op:
 
-    src/parse/parse_command.c:104:11: runtime error: load of misaligned
-    address ... for type 'union node *', which requires 8 byte alignment
-    src/parse/parse_grouping.c:48:7: runtime error: store to misaligned
-    address ... for type 'union node *', which requires 8 byte alignment
+    #ifndef __packed
+    #define __packed /*__attribute__((packed))*/
+    #endif
 
-  This is a direct, known consequence of the nodes being deliberately
-  `__packed` (see `TODO.md`'s arena-allocator section, which already
-  flags packing as load-bearing for a planned string-adjacent-to-node
-  layout) -- not a new defect, and not something to fix piecemeal by
-  un-packing individual fields, since x86/ARM both tolerate unaligned
-  loads/stores at the hardware level (this has never been the cause of
-  an observed crash on either). Documented here so a future ASan/UBSan
-  run doesn't waste time re-discovering it as "new". Real fix, if ever
-  wanted, is the arena redesign already planned in `TODO.md` (alignment
-  becomes moot once nodes are bump-allocated with explicit padding
-  control) -- not worth doing just to silence UBSan.
+  i.e. every `union node` member struct's `} __packed;` was *meant* to
+  compile as an ordinary, naturally-aligned struct -- the real
+  `__attribute__((packed))` is commented out. On Android/Termux,
+  though, Bionic's own `<sys/cdefs.h>` (transitively included well
+  before `tree.h`) already `#define`s `__packed` to the real packed
+  attribute -- a completely unrelated, platform-specific macro that
+  just happens to share this exact name. `#ifndef __packed` then sees
+  Bionic's definition and skips shish's own, so every node struct
+  silently *does* end up genuinely packed on that one platform, never
+  intentionally, never tested. Different node kinds have different-
+  sized fields ahead of their pointer members (some a 1-bit bitfield,
+  some a full `unsigned`), so packed offsets don't line up consistently
+  across `union node`'s different same-memory views -- a real,
+  platform-specific memory-corruption bug, not just pedantic alignment
+  UB, though it took a while to tell those apart:
+
+  Never actually reproduced under a plain Linux ASan/UBSan build,
+  contrary to what this entry used to claim (the earlier "confirmed
+  under Linux" note was never actually checked against this repo's own
+  Linux repro logs -- an unforced documentation error, not a real
+  cross-platform repro). Verified for real once suspected, by forcing
+  the same collision locally via `-D__packed=__attribute__((packed))`
+  on a Linux ASan build: this repo's own `./configure` run completed
+  clean *without* the forced flag, but crashed reliably *with* it --
+  `src/tree/tree_cat.c:34`'s `switch(node->id)` dereferencing a
+  corrupted, near-null `node` pointer (`0x72`), reached via exactly the
+  packed-layout offset mismatch described above. Confirms the Termux
+  crash was this bug the whole time, on Linux the whole time it was
+  possible to test for, just never actually tested until asked to look
+  again.
+
+  Fixed (`fixes/131`) by renaming shish's own macro from `__packed` to
+  `SHISH_TREE_PACKED` throughout `src/tree.h`, so it can no longer
+  collide with Bionic's (or any other platform's) same-named macro --
+  confirmed clean (zero misalignment reports, zero crash) on a Linux
+  ASan/UBSan `./configure` run even with the collision forced via
+  `-D__packed=__attribute__((packed))`, i.e. this fix neutralizes the
+  exact condition that broke Termux regardless of what that platform's
+  own headers define `__packed` to.
 
 - ubsan-buffer-op-proto-function-type-mismatch: same sanitizer sweep as
   the entry above. `lib/buffer.h`'s `buffer_op_proto` is declared as
