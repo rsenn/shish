@@ -9,6 +9,16 @@ stralloc_trunc(stralloc* sa, size_t n) {
   if((sa->s = alloc_re(sa->s, n + 1))) {
     sa->s[n] = '\0';
     sa->len = n;
+    /* alloc_re() may (re)allocate a new buffer here -- "a" (the
+     * allocated capacity stralloc_free()/stralloc_ready() rely on to
+     * know whether "s" actually owns real heap storage) has to track
+     * that new size, or a caller that later stralloc_free()s this
+     * stralloc sees a stale "a" (commonly still 0, from an
+     * stralloc_init() right before this call) and skips freeing a
+     * real, live buffer -- a genuine leak, found in var_setvsa()
+     * (called once per for-loop iteration, so it leaked once per
+     * iteration) via ASan leak reports on a full "./configure" run. */
+    sa->a = n + 1;
     return 1;
   }
   return 0;

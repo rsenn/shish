@@ -2795,4 +2795,35 @@ assert_equal "prefixsuffix" "$X127B" "text glued around an empty command substit
 X128=$(echo "$(echo nested)")
 assert_equal "nested" "$X128" "command substitution (stralloc_write's own call path) must still work correctly (see comment above)"
 
+## fixes/129, fixes/130: two real memory leaks found chasing ASan leak
+## reports on a full "./configure" run (BUGS:
+## asan-leak-residue-not-fully-triaged). Both are pure resource-usage
+## bugs -- a leaked buffer doesn't change any command's output -- so,
+## like fixes/123-125/127 above, no assertion here can distinguish
+## pre/post-fix behavior; verified instead by running the reproducers
+## below directly under the ASan/UBSan build and confirming their
+## leak reports are gone (they still run correctly here, just without
+## anything to check the leak itself against).
+##
+## fixes/129 (lib/stralloc/stralloc_trunc.c): never updated the
+## stralloc's allocated-capacity field after growing the buffer, so a
+## stralloc freshly stralloc_init()'d (capacity 0) and then grown via
+## stralloc_trunc() looked "unallocated" to a later stralloc_free() on
+## it -- silently leaking the real buffer instead of freeing it.
+## var_setvsa() hits this exact sequence once per for-loop iteration
+## for the loop variable, so every for-loop leaked (once per
+## iteration) before this fix.
+X129=$(for x in a b c d e f g h i j; do :; done; echo "$x")
+assert_equal "j" "$X129" "a for-loop must still set its loop variable correctly across many iterations (see comment above)"
+
+## fixes/130 (src/parse/parse_simple_command.c): a local scratch
+## stralloc used only to pass a nul/length-safe string to
+## parse_findalias() was never freed, leaking on every simple command
+## whose first word is a literal string -- i.e. most commands in most
+## scripts.
+X130=$(echo one; echo two; echo three)
+assert_equal "one
+two
+three" "$X130" "ordinary simple commands (parse_simple_command's alias-lookup path) must still parse and run correctly (see comment above)"
+
 summary
