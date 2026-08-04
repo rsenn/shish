@@ -104,11 +104,21 @@ term_jobwait(void) {
 #endif
 
 /* ----------------------------------------------------------------------- */
-int
-term_read(int fd, char* buf, unsigned int len) {
+ssize_t
+term_read(int fd, void* vbuf, size_t len, void* arg) {
+  /* the signature above matches buffer_op_proto (lib/buffer.h) exactly
+   * -- this function is only ever used as a buffer's read callback
+   * (term_init.c), assigned to a buffer_op_proto* field, so unlike an
+   * incompatible-signature cast (the previous "int(int,char*,
+   * unsigned int)"), calling through that pointer is fully defined
+   * rather than UB (found via -fsanitize=function). "arg" is unused,
+   * same as it always was under its old, differently-named parameter
+   * list -- buffer's read callbacks just don't get one here. */
+  char* buf = vbuf;
   char c;
-  int ret;
+  ssize_t ret;
   static unsigned long remain;
+  (void)arg;
 
   if(remain) {
   check_remain:

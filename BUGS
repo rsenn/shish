@@ -108,29 +108,47 @@
 
 - ubsan-buffer-op-proto-function-type-mismatch: same sanitizer sweep as
   the entry above. `lib/buffer.h`'s `buffer_op_proto` is declared as
-  `ssize_t(int, void*, size_t, void*)`, but every real callback stored
-  through it -- `read`/`write` (`int(int, void*, size_t)`),
-  `stralloc_write` (`int(int, const char*, size_t, buffer*)`), etc. --
-  has an incompatible signature (different return type and/or
-  parameter types), cast at the call site with `(buffer_op_proto*)`.
-  Calling through the mismatched pointer type is UB per the C
-  standard, flagged by `-fsanitize=function`:
+  `ssize_t(int, void*, size_t, void*)`. Both callbacks shish itself
+  actually calls through it at runtime -- `stralloc_write()` (was
+  `int(int, const char*, size_t, buffer*)`) and `term_read()` (was
+  `int(int, char*, unsigned int)`) -- had incompatible signatures,
+  flagged by `-fsanitize=function`:
 
     lib/buffer/buffer_stubborn.c:19:13: runtime error: call to function
     stralloc_write through pointer to incorrect function type
     'long (*)(int, void *, unsigned long, void *)'
+    lib/buffer/buffer_stubborn2.c:18:13: runtime error: call to function
+    term_read through pointer to incorrect function type
+    'long (*)(int, void *, unsigned long, void *)'
 
-  This is libowfat's own generic-callback idiom (`lib/` is an in-tree
-  copy of upstream libowfat, see CLAUDE.md), used uniformly throughout
-  `lib/buffer/*` and every `buffer_init()`/`buffer_default()` call
-  site under `src/`; every real target ABI this project builds for
-  passes these arguments identically regardless of the declared
-  signature, so it has never caused a real miscompile or crash. Fixing
-  it for real means giving every callback a matching wrapper with the
-  exact `buffer_op_proto` signature (a mechanical but wide-reaching
-  change across all of `lib/buffer/`, `src/fd/`, `src/fdtable/`,
-  `src/history/`, and the builtins that call `buffer_init()` directly)
-  -- not attempted here. Documented so it isn't mistaken for a new bug
-  by a future ASan/UBSan run; `-fsanitize=function` (part of the
-  `undefined` group) would need to be dropped from the sanitizer flags
-  to silence it without doing that rewrite.
+  Fixed by changing both functions' own signatures to match
+  `buffer_op_proto` exactly (casting the generic `void*`/`size_t`
+  parameters back to their real types inside the function body
+  instead of casting the function pointer at the call site) -- this
+  removes every `(buffer_op_proto*)(void*)&...` cast that fed either
+  of them, confirmed clean (zero `-fsanitize=function` reports) across
+  a full `./configure` run under the ASan/UBSan build.
+
+  `read`/`write` (external libc, `int(int,void*,size_t)`) are also
+  cast to `buffer_op_proto*` throughout `src/fd/`, `src/fdtable/`,
+  `src/history/`, and `src/sh/`, but never trigger this check:
+  `-fsanitize=function` embeds its type-descriptor comparison only in
+  functions the sanitizer itself compiled, and libc's `read`/`write`
+  weren't -- so calling through the mismatched pointer type is still
+  UB by the letter of the standard, just not one this tooling can ever
+  actually observe. Not touched, since "fix" here would mean wrapping
+  two libc functions everywhere they're used for a change with no
+  observable effect under any sanitizer or real ABI this project
+  targets.
+
+  Two more real mismatches remain, in `lib/buffer/buffer_tosa.c`
+  (`strallocwrite`, `char*` where `buffer_op_proto` wants `void*`) and
+  `lib/buffer/buffer_frombuf.c` (`buffer_dummyreadbuf`, `fd_t` where
+  it wants `int` -- identical on every platform this project builds
+  for, but not the same declared type) -- both dead code from shish's
+  own perspective (`buffer_tosa()`/`buffer_frombuf()`, the functions
+  that would ever install them as a callback, are never called
+  anywhere under `src/`; they only exist because `lib/`'s whole-
+  directory glob build compiles every libowfat source file, used or
+  not). Left alone rather than "fixed" per this repo's own standing
+  preference for not touching unused `lib/` code unasked.

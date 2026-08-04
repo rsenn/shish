@@ -2772,4 +2772,27 @@ second" "$X127A" "more than one here-doc in the same command must still all be r
 X127B=$(echo "prefix$(true)suffix")
 assert_equal "prefixsuffix" "$X127B" "text glued around an empty command substitution must still concatenate correctly (see comment above)"
 
+## fixes/128: reported directly (not found via the ASan sweep above,
+## but the same bug class as the already-documented, not-fixed
+## BUGS: ubsan-buffer-op-proto-function-type-mismatch): lib/buffer.h's
+## generic buffer_op_proto callback type is "ssize_t(int,void*,size_t,
+## void*)", but stralloc_write() and term_read() (the only two of
+## shish's own functions actually called through it at runtime -- the
+## rest of that BUGS entry's cast sites are either external libc
+## read()/write(), which -fsanitize=function can't flag at all, or
+## dead code) each declared a different, incompatible signature and
+## got cast at the call site instead. Calling through a mismatched
+## function pointer type is UB regardless of whether the real ABI
+## tolerates it (which it does here, on every platform this project
+## targets -- hence no assertion here can distinguish pre/post-fix
+## output, same situation as fixes/123-125's entry above). Fixed by
+## changing both functions' own signatures to match buffer_op_proto
+## exactly, verified the same way: a full ./configure run under
+## -fsanitize=address,undefined with zero runtime-error reports left
+## (stralloc_write's path is exercised by any command substitution,
+## e.g. the case below; term_read's is interactive-terminal-only, not
+## reachable from a non-interactive test file at all).
+X128=$(echo "$(echo nested)")
+assert_equal "nested" "$X128" "command substitution (stralloc_write's own call path) must still work correctly (see comment above)"
+
 summary

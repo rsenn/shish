@@ -37,7 +37,7 @@ extern struct winsize term_size;
 int term_init(struct fd* input, struct fd* output);
 void term_restore(int fd, const struct termios*);
 int term_attr(int fd, int set, struct termios*);
-int term_read(int fd, char* buf, unsigned int len);
+ssize_t term_read(int fd, void* buf, size_t len, void* arg);
 
 void term_winsize(void);
 

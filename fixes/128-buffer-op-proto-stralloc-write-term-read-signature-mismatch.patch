@@ -1,0 +1,117 @@
+diff --git a/lib/stralloc.h b/lib/stralloc.h
+index 445a7f97..003d24db 100644
+--- a/lib/stralloc.h
++++ b/lib/stralloc.h
+@@ -162,7 +162,7 @@ int buffer_get_new_token_sa_pred(buffer* b, stralloc* sa, sa_predicate p, void*)
+  * Do not change the stralloc after this! */
+ void buffer_fromsa(buffer* b, const stralloc* sa);
+ 
+-int stralloc_write(int, const char*, size_t, buffer*);
++ssize_t stralloc_write(int, void*, size_t, void*);
+ #endif
+ 
+ #ifdef __BORLANDC__
+diff --git a/lib/stralloc/stralloc_write.c b/lib/stralloc/stralloc_write.c
+index 3bf5ab15..325961dc 100644
+--- a/lib/stralloc/stralloc_write.c
++++ b/lib/stralloc/stralloc_write.c
+@@ -7,8 +7,17 @@
+  * returns len. If sa is unallocated, stralloc_catb is the same as
+  * stralloc_copyb. If it runs out of memory, stralloc_catb leaves sa
+  * alone and returns 0. */
+-int
+-stralloc_write(int fd, const char* buf, size_t len, buffer* b) {
++/* the signature below matches buffer_op_proto (../buffer.h) exactly --
++ * this function is only ever used as a buffer's write callback
++ * (buffer_init(), fd_subst.c), assigned to a buffer_op_proto* field,
++ * so unlike an incompatible-signature cast (the previous
++ * "int(int,const char*,size_t,buffer*)"), calling through that
++ * pointer is fully defined rather than UB (found via
++ * -fsanitize=function). */
++ssize_t
++stralloc_write(int fd, void* vbuf, size_t len, void* arg) {
++  const char* buf = vbuf;
++  buffer* b = arg;
+   stralloc* sa = (stralloc*)b->cookie;
+ 
+   if(stralloc_readyplus(sa, len)) {
+diff --git a/src/builtin/builtin_cat.c b/src/builtin/builtin_cat.c
+index 6093769f..fcda3842 100644
+--- a/src/builtin/builtin_cat.c
++++ b/src/builtin/builtin_cat.c
+@@ -57,7 +57,7 @@ builtin_cat(int argc, char* argv[]) {
+       ret = buffer_get_until(in, buf, sizeof(buf), "\r\n", 2);
+ 
+       if(ret == 0) {
+-        if(in->op == (buffer_op_proto*)(void*)&term_read) {
++        if(in->op == &term_read) {
+           buffer_puts(fd_err->w, "EOF");
+           buffer_putnlflush(fd_err->w);
+         }
+diff --git a/src/fd/fd_subst.c b/src/fd/fd_subst.c
+index 2e76e0c2..c7c55c25 100644
+--- a/src/fd/fd_subst.c
++++ b/src/fd/fd_subst.c
+@@ -8,6 +8,6 @@ fd_subst(struct fd* d, stralloc* sa) {
+   d->name = "<subst>";
+   d->mode = (d->mode & FD_FREE) | FD_SUBST;
+ 
+-  buffer_init(d->w, (buffer_op_proto*)(void*)&stralloc_write, -1, NULL, 0);
++  buffer_init(d->w, &stralloc_write, -1, NULL, 0);
+   d->w->cookie = sa;
+ }
+diff --git a/src/term.h b/src/term.h
+index 83533cda..476f05f5 100644
+--- a/src/term.h
++++ b/src/term.h
+@@ -37,7 +37,7 @@ extern struct winsize term_size;
+ int term_init(struct fd* input, struct fd* output);
+ void term_restore(int fd, const struct termios*);
+ int term_attr(int fd, int set, struct termios*);
+-int term_read(int fd, char* buf, unsigned int len);
++ssize_t term_read(int fd, void* buf, size_t len, void* arg);
+ 
+ void term_winsize(void);
+ 
+diff --git a/src/term/term_init.c b/src/term/term_init.c
+index 66ab3e8d..17e776e8 100644
+--- a/src/term/term_init.c
++++ b/src/term/term_init.c
+@@ -56,7 +56,7 @@ term_init(struct fd* input, struct fd* output) {
+   buffer_init(&term_input, input->r->op, input->r->fd, term_buffer, sizeof(term_buffer));
+   // term_output = output->w;
+ 
+-  input->r->op = (ssize_t (*)())(void*)&term_read;
++  input->r->op = &term_read;
+ 
+   /* get window size */
+   term_winsize();
+diff --git a/src/term/term_read.c b/src/term/term_read.c
+index d6c5d5bf..890cc4d2 100644
+--- a/src/term/term_read.c
++++ b/src/term/term_read.c
+@@ -104,11 +104,21 @@ term_jobwait(void) {
+ #endif
+ 
+ /* ----------------------------------------------------------------------- */
+-int
+-term_read(int fd, char* buf, unsigned int len) {
++ssize_t
++term_read(int fd, void* vbuf, size_t len, void* arg) {
++  /* the signature above matches buffer_op_proto (lib/buffer.h) exactly
++   * -- this function is only ever used as a buffer's read callback
++   * (term_init.c), assigned to a buffer_op_proto* field, so unlike an
++   * incompatible-signature cast (the previous "int(int,char*,
++   * unsigned int)"), calling through that pointer is fully defined
++   * rather than UB (found via -fsanitize=function). "arg" is unused,
++   * same as it always was under its old, differently-named parameter
++   * list -- buffer's read callbacks just don't get one here. */
++  char* buf = vbuf;
+   char c;
+-  int ret;
++  ssize_t ret;
+   static unsigned long remain;
++  (void)arg;
+ 
+   if(remain) {
+   check_remain:

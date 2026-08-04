@@ -162,7 +162,7 @@ int buffer_get_new_token_sa_pred(buffer* b, stralloc* sa, sa_predicate p, void*)
  * Do not change the stralloc after this! */
 void buffer_fromsa(buffer* b, const stralloc* sa);
 
-int stralloc_write(int, const char*, size_t, buffer*);
+ssize_t stralloc_write(int, void*, size_t, void*);
 #endif
 
 #ifdef __BORLANDC__
