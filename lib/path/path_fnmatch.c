@@ -95,7 +95,30 @@ path_fnmatch(
   buffer_putspace(buffer_2);
   buffer_put(buffer_2, string, slen);
   buffer_putnlflush(buffer_2);*/
-/* label to jump back instead of recursion */
+
+  /* backtrack bookmark for the most recently seen '*': whenever
+   * matching fails below (any "goto fail"), if this is set we retry
+   * by letting that '*' consume one more character of string and
+   * resuming the match from right after it, instead of failing
+   * outright -- the standard iterative technique for wildcard
+   * matching (see e.g. the well-known "wildcard matching" two-pointer
+   * algorithm). Only the single most recent '*' ever needs
+   * remembering, even with several '*'s in one pattern: whatever
+   * extending an earlier '*' further could recover, extending the
+   * nearer one instead recovers equally well, since the nearer one
+   * can simply absorb the same characters. This replaces both real
+   * recursion and the previous per-candidate retry loop, neither of
+   * which is needed anymore -- a stack-overflow segfault chasing a
+   * Termux report (confirmed to reproduce identically under Linux, so
+   * not platform-specific) traced back to the recursive version of
+   * this function recursing once per character of a long string. */
+  int have_star = 0;
+  const char* star_pattern = NULL;
+  unsigned int star_plen = 0;
+  const char* star_string = NULL;
+  unsigned int star_slen = 0;
+
+/* label to jump back to instead of recursing */
 start:
   /* when string is empty, only a pattern consisting of asteriks matches */
   if(slen == 0) {
@@ -105,11 +128,13 @@ start:
       plen--;
     }
     /* if there are chars left we don't have a match (which returns 1) */
-    return (plen ? PATH_FNM_NOMATCH : 0);
+    if(plen)
+      goto fail;
+    return 0;
   }
   /* there is still some string left but pattern ended */
   if(plen == 0)
-    return PATH_FNM_NOMATCH;
+    goto fail;
   /* if PATH_FNM_PERIOD is set, a leading period in string has to be
    * matched  exactly by a period in pattern.  A period is considered
    * to be leading if it is the first character in string, or if both
@@ -118,11 +143,11 @@ start:
   if(*string == '.' && *pattern != '.' && (flags & PATH_FNM_PERIOD)) {
     /* don't match if PATH_FNM_PERIOD and this is the first char */
     if(!(flags & NOTFIRST))
-      return PATH_FNM_NOMATCH;
+      goto fail;
     /* don't match if PATH_FNM_PERIOD and PATH_FNM_PATHNAME and previous was '/'
      */
     if((flags & PATH_FNM_PATHNAME) && string[-1] == '/')
-      return PATH_FNM_NOMATCH;
+      goto fail;
   }
   flags |= NOTFIRST;
 
@@ -135,7 +160,7 @@ start:
       /* unterminated character class because in a pathname the '/' is a
          separator and can't be matched. this means we have a mismatch */
       if(*string == '/' && (flags & PATH_FNM_PATHNAME))
-        return PATH_FNM_NOMATCH;
+        goto fail;
       /* exclamation mark negates the class */
       neg = (*pattern == '!');
       pattern += neg;
@@ -279,14 +304,27 @@ start:
         goto match;
     } break;
     case '*': {
-      /* this is the only situation where we really need to recurse */
-      if((*string == '/' && (flags & PATH_FNM_PATHNAME)) ||
-         path_fnmatch(pattern, plen, string + 1, slen - 1, flags)) {
+      /* collapse a run of consecutive '*'s into one, then just record
+       * this as the current backtrack bookmark (see the comment at
+       * the top of the function) and continue matching the rest of
+       * the pattern as if the '*' had consumed nothing yet -- if that
+       * eventually fails, "fail:" below retries with this '*'
+       * consuming one more character, until either something matches
+       * or there's no more string left to give it. */
+      pattern++;
+      plen--;
+
+      while(plen && *pattern == '*') {
         pattern++;
         plen--;
-        goto start;
       }
-      return 0;
+
+      have_star = 1;
+      star_pattern = pattern;
+      star_plen = plen;
+      star_string = string;
+      star_slen = slen;
+      goto start;
     }
     case '?': {
       /* it can't match a / when we're matching a pathname */
@@ -310,5 +348,21 @@ start:
       }
     } break;
   }
+
+fail:
+  /* backtrack: let the most recently seen '*' consume one more
+   * character and retry from right after it -- unless there's no
+   * more string left to give it, or the next character is a '/' that
+   * PATH_FNM_PATHNAME forbids a '*' from ever crossing. */
+  if(have_star && star_slen && !(*star_string == '/' && (flags & PATH_FNM_PATHNAME))) {
+    star_string++;
+    star_slen--;
+    pattern = star_pattern;
+    plen = star_plen;
+    string = star_string;
+    slen = star_slen;
+    goto start;
+  }
+
   return PATH_FNM_NOMATCH;
 }

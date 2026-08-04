@@ -85,7 +85,7 @@ exec_search(char* name, int mask) {
     struct nfunc* fn;
     cmd.id = H_FUNCTION;
 
-    for(fn = &functions->nfunc; fn; fn = fn->next) {
+    for(fn = functions ? &functions->nfunc : NULL; fn; fn = fn->next) {
       if(!str_diff(name, fn->name))
         break;
     }

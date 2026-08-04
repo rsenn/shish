@@ -101,7 +101,9 @@ tree_copy(union node* node) {
            a fresh one, leaving both copies pointing at the same buffer
            -> double free once either side is torn down. */
         byte_zero(&copy->narg.stra, sizeof(copy->narg.stra));
-        stralloc_copy(&copy->narg.stra, &node->narg.stra);
+
+        if(node->narg.stra.s)
+          stralloc_copy(&copy->narg.stra, &node->narg.stra);
         break;
 
       case N_REDIR:

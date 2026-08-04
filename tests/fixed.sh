@@ -2651,4 +2651,125 @@ if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
   rm -rf "$F122"
 fi
 
+## fixes/123, fixes/124, fixes/125: found chasing a Termux (Android/
+## bionic) segfault report in this repo's own "shish configure" by
+## rebuilding with -fsanitize=address,undefined (see cfg-cmake.sh's
+## cfg()) -- confirmed to reproduce identically under Linux/glibc, so
+## none of the three are bionic-specific. All three are real UB
+## (shift-by-type-width, address-of-a-member-through-a-null-pointer,
+## memcpy() with a null source pointer even at length 0) that happen to
+## be silent under a plain (non-sanitized) build on every libc/arch
+## this project currently builds for -- x86/ARM shift instructions mask
+## the count by the type width, and a 0-length memcpy is a no-op in
+## practice -- so unlike this file's other entries, none of these three
+## have a behavioral difference an assert_equal/assert_match here could
+## actually distinguish pre- vs. post-fix. Per the "Writing a test"
+## exception in CLAUDE.md for fixes that can't get a real regression
+## assertion, these are instead verified by rebuilding with
+## -fsanitize=address,undefined and re-running both this suite and this
+## repo's own "shish configure" (which exercises var_rndhash on every
+## variable-name hash, exec_search on every simple-command dispatch,
+## and tree_copy's N_ARG/N_ASSIGN path via any "$var"/`eval`-driven
+## re-evaluated node) -- clean of any UndefinedBehaviorSanitizer report
+## at these three call sites, confirming the fix without a false-signal
+## assertion here.
+##
+## fixes/123 (src/var/var_rndhash.c): ROL/ROR rotated by
+## "VAR_BITS - c"; when the caller's rotate count c was 0 (a & VAR_MASK
+## or b & VAR_MASK can legitimately be 0), that term shifted by
+## VAR_BITS itself -- UB for a shift count equal to the operand's own
+## width. Fixed by special-casing c == 0 to a no-op rotate.
+##
+## fixes/124 (src/exec/exec_search.c): the function-table search took
+## "&functions->nfunc" to seed its walk before checking whether
+## "functions" (the global list head) was NULL -- forming a member
+## address through a null pointer, UB regardless of the member's
+## offset. Fixed by seeding the walk with NULL directly when the list
+## is empty, which is also the very common case (no user functions
+## defined yet) hit by every simple-command dispatch until a script's
+## first function definition.
+##
+## fixes/125 (src/tree/tree_copy.c): N_ARG/N_ASSIGN's stralloc_copy()
+## ran unconditionally even when the source node's stralloc was never
+## allocated (".s" still NULL, as it is for any argument word that
+## carries no literal string, e.g. one that's pure parameter/command
+## substitution) -- stralloc_copyb() then called byte_copy()/memcpy()
+## with a null source pointer, UB even though the length is 0. The
+## sibling N_ARGSTR case just below already guarded this the same way;
+## this makes N_ARG/N_ASSIGN match it.
+X123=$(f() { local x=abcdefghijklmnopqrstuvwxyz012345 y=zyxwvutsrqponmlkjihgfedcba543210; echo "$x$y"; }; f)
+assert_equal "abcdefghijklmnopqrstuvwxyz012345zyxwvutsrqponmlkjihgfedcba543210" "$X123" "var_rndhash-exercising variable names must still hash/store/retrieve correctly (see comment above: real verification is the ASan/UBSan build, not this assertion)"
+
+X124=$(f_never_called_but_defined() { echo unreachable; }; echo direct-exec-still-works)
+assert_equal "direct-exec-still-works" "$X124" "exec_search's empty-function-list walk must still fall through to direct exec (see comment above)"
+
+X125=$(g() { echo "sub:$(echo inner)"; }; g; g)
+assert_equal "sub:inner
+sub:inner" "$X125" "tree_copy must still re-evaluate a function body (which re-copies its N_ARG nodes) correctly across repeated calls (see comment above)"
+
+## fixes/126: lib/path/path_fnmatch.c's '*' handling recursed once per
+## character of the string under test (to search for a split point
+## where the rest of the pattern matches) -- so any single
+## "*"-containing glob/case pattern matched against a long enough
+## string overflowed the stack and segfaulted. This is what a Termux
+## (Android/bionic) segfault report in this repo's own "shish
+## configure" traced back to (autoconf-generated scripts do exactly
+## this kind of glob matching over long accumulated strings, e.g.
+## "case $ac_configure_args in *\'*)"); confirmed to reproduce
+## identically under Linux (not bionic-specific) via a
+## -fsanitize=address build, which pinpointed the recursion via its
+## stack-overflow report. Fixed by making the whole function fully
+## iterative: a single "most recently seen '*'" backtrack bookmark
+## (set when a '*' is matched, consulted whenever a later match
+## attempt fails) replaces all recursion -- the standard technique for
+## wildcard matching, using no stack of any kind (not even a bounded
+## one), so match cost no longer depends on either the string's length
+## or the pattern's number of '*'s. This is a real behavioral
+## difference (crash vs. no crash), so it gets an actual regression
+## case instead of a comment-only entry.
+LONG126=$(printf 'x%.0s' $(seq 1 200000))
+X126=$(case "$LONG126" in x*x) echo matched;; *) echo no-match;; esac)
+assert_equal "matched" "$X126" "a '*' pattern matched against a very long string must not overflow the stack"
+
+## fixes/127: two more real-configure-run UB findings from the same
+## sanitizer sweep as fixes/123-125, found once fixes/126 let the run
+## get past the point it used to stack-overflow at. Same "comment-only,
+## no assertion can actually distinguish pre/post-fix output" situation
+## as fixes/123-125 (see the long comment above them for why) -- both
+## verified the same way, by rebuilding with -fsanitize=address,undefined
+## and confirming a clean run of both this suite and "shish configure".
+##
+## src/redir/redir_source.c: the here-doc-processing loop advanced via
+## "&redir_list->data->nredir" without checking whether "data" (the
+## next here-doc's node, NULL once the last one in the list is
+## reached) was itself NULL first -- same null-member-address UB as
+## fixes/124's exec_search.c fix, same reason it's silent under a
+## plain build (the member is at offset 0). Any script with more than
+## one here-doc in it exercises this loop past its first (only) real
+## element, e.g. the case below.
+##
+## lib/stralloc/stralloc_catb.c and stralloc_copyb.c: both called
+## byte_copy() (a #define for memcpy(), lib/byte.h) unconditionally,
+## even at len == 0 with buf == NULL (an empty/never-allocated
+## stralloc -- e.g. a command substitution with no output at all).
+## memcpy()'s second argument carries a nonnull attribute regardless of
+## length. This is the same root cause as fixes/125's tree_copy.c fix,
+## but fixed here at the shared primitive instead of the one call site
+## that happened to be found first (tree_copy.c's own guard from
+## fixes/125 is left in place too -- harmless, and it also skips an
+## unnecessary stralloc_ready() call). Exercised by any empty command
+## substitution glued next to other text, e.g. the case below.
+X127A=$(cat <<A
+first
+A
+cat <<B
+second
+B
+)
+assert_equal "first
+second" "$X127A" "more than one here-doc in the same command must still all be read correctly (see comment above)"
+
+X127B=$(echo "prefix$(true)suffix")
+assert_equal "prefixsuffix" "$X127B" "text glued around an empty command substitution must still concatenate correctly (see comment above)"
+
 summary

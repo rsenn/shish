@@ -2,6 +2,72 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
+
+**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+
+## 1. Think Before Coding
+
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
+
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+## 2. Simplicity First
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+## 3. Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+The test: Every changed line should trace directly to the user's request.
+
+## 4. Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+```
+
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+---
+
+**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+---
+
 ## Project
 
 `shish` is a small POSIX-ish shell written in C. It targets the IEEE P1003.2
@@ -133,76 +199,6 @@ actually building for that platform (`cfg-mingw64`/`cfg-mingw32` etc., see
 `. "$(dirname "$0")/common.sh"`. A test "fails" by calling `failure` which
 prints `FAILURE` and `exit 1`s.
 
-## Code architecture
-
-The shell follows the classic source → parser → tree → evaluator pipeline.
-The whole shell lives under `src/`, with one subdirectory per subsystem and
-matching `<subsystem>.h` at `src/`'s root.
-
-- `src/source/` + `src/source.h` — input layer. `struct source` wraps an `fd`
-  (file, mmap, string, or stdin/terminal) and feeds the parser. `source_push`
-  stacks sources (e.g. `.` / `source` builtin, here-docs).
-- `src/parse/` + `src/parse.h` — recursive-descent parser. Token character
-  classification is table-driven via `parse_chartable[]` (see
-  `parse_chartable.c`) with `parse_is{space,name,ctrl,esc,…}` inline macros in
-  `parse.h`. Each grammar production (`parse_if`, `parse_for`, `parse_case`,
-  `parse_pipeline`, `parse_simple_command`, `parse_arith_*`, etc.) has its own
-  file. Nodes are allocated via `parse_newnode.c`.
-- `src/tree/` + `src/tree.h` — the AST. `enum kind` (N_SIMPLECMD, N_PIPELINE,
-  N_AND/OR/NOT, N_LIST, N_SUBSHELL, N_BRACEGROUP, N_FOR, N_CASE, N_IF, N_WHILE,
-  N_UNTIL, N_FUNCTION, N_ARG*, N_ASSIGN, N_REDIR, plus an `A_*` arithmetic
-  sub-tree) drives a tagged `union node`. All node structs are `__packed`.
-  `tree_print.c`/`tree_printlist.c` exist for debug/history dumping and can be
-  stripped via `NO_TREE_PRINT`.
-- `src/eval/` + `src/eval.h` — tree walker. Entry is `eval_tree` /
-  `eval_node` / `eval_command`. There's one `eval_<construct>.c` per node
-  kind. Control-flow constructs (`break`/`continue`/`return`/`exit`) use a
-  `jmp_buf` on each `struct eval` and `eval_jump` to unwind. Loops, function
-  bodies and subshells push/pop `struct eval` frames via `eval_push`/`eval_pop`.
-- `src/expand/` + `src/expand.h` — word expansion (parameter, command,
-  arithmetic, tilde, splitting, glob) applied to `N_ARG*` nodes before
-  execution.
-- `src/exec/`, `src/fork.c` — process spawn, PATH search, exec.
-- `src/redir/`, `src/fd/`, `src/fdstack/`, `src/fdtable/` — redirection. The
-  fdtable lazily resolves redirections; per BUGS/TODO this is the source of
-  several known issues.
-- `src/var/`, `src/vartab/` — variable storage with a stack of `struct vartab`
-  per env frame; `var_import` populates from `envp` at startup.
-- `src/builtin/` — one C file per builtin (`builtin_<name>.c`).
-  `src/builtin/builtin_table.c` is compiled with
-  `-DBUILTIN_<NAME>=1` flags derived from `build/.../src/builtin_config.h` so
-  the dispatch table only references compiled-in builtins. `builtin_search.c`
-  does the name lookup. Two builtin classes: `B_SPECIAL` (POSIX special
-  builtins, e.g. `exec`, `exit`, `set`) and default.
-- `src/job/` — job control (`SIGCHLD` handler in `sh_main.c`,
-  `job_signal`/`wait_nohang`).
-- `src/term/`, `src/prompt/`, `src/history/` — interactive terminal layer.
-  `term_init` is what flips the shell into interactive mode if `fd_src` is a
-  character device.
-- `src/sh/` + `src/sh.h` — top-level glue. `struct env` (the per-frame state:
-  `cwd`, `umask`, `shopt`, `fdstack`, `varstack`, `arg`, parser, eval, finalizers)
-  is the central data structure; the active frame is `sh`. `sh_main.c` does
-  argv parsing, env import, source/term setup, then `sh_loop()`.
-
-External dependency `libowfat` lives in-tree at `lib/` and is built as a
-static `libowfat.a` by `cmake/libowfat.cmake` (only if no system libowfat is
-detected). `libshell.a` is the rest of the shell as a static lib, which both
-`shish` and `shformat` link.
-
-## Code style
-
-- C99. Indentation 2 spaces, no tabs, K&R-ish braces (`BreakBeforeBraces: Attach`,
-  `AlwaysBreakAfterDefinitionReturnType: TopLevel`). See `.clang-format`.
-- Reformat with `cmake --build build/<dir> --target clang-format` or
-  `cmake --build build/<dir> --target cmake-format`.
-- Headers are guarded with `#ifndef <SUBSYS>_H` and `<subsys>.h` lives at
-  `src/`'s root, while implementations live in `src/<subsys>/<subsys>_<verb>.c`.
-- Avoid `stdio.h` — use `lib/buffer/`, `lib/fmt/`, `lib/scan/`, `lib/stralloc/`
-  helpers from libowfat instead. The shell currently includes `<stdlib.h>` but
-  not `<stdio.h>` deliberately.
-- `HAVE_CONFIG_H` is always defined; gate platform-conditional code on the
-  `HAVE_*` macros emitted into `config.h` (CMake) or `config.h.in` (autotools).
-
 ## Tracking bugs and roadmap
 
 This repo tracks known defects and the work plan in two plain files at the
@@ -236,60 +232,3 @@ Update both files as part of the change that makes them true, not as a
 follow-up — a stale `BUGS`/`TODO.md` is worse than a stale comment, since
 the entire point of these files is to be trusted at a glance without
 re-deriving the state of the project from scratch.
-
-## Current focus
-
-Recent and ongoing work, roughly newest-first (see `BUGS`/`TODO.md` and
-git log for full detail — this is a pointer into them, not a replacement):
-
-- Rewrote every `tests/*.sh` file to make its checks go through
-  `tests/common.sh`'s `assert_*` helpers (see "Tests" above) instead of
-  ad-hoc `echo`s nothing was checking against, and disabled the
-  `tests/posix`/`tests/yash` CTest registration (still hangs on
-  `fnmatch-p.tst`) so plain `ctest` only runs `tests/*.sh` and always
-  terminates. Doing this surfaced a run of real, previously-undocumented
-  bugs now in `BUGS`: arithmetic expansion rejecting single-character
-  variable names (fixed, `fixes/24`), `read -d` leaving the delimiter in
-  the captured value (fixed, `fixes/23`), quoted `"$(cmd)"` not
-  suppressing field splitting, nested backquotes not working, a quoted
-  here-doc delimiter not suppressing expansion, `printf` not supporting
-  field widths, and a subshell-bodied function (`f() ( ... )`) not
-  actually isolating its variables into a subshell.
-- The "command not found"/"not executable" messages added alongside
-  the exec-failure-status fixes ignored active redirections on fd 2
-  (and fd 0/1): `eval_simple_command.c` prints them before ever calling
-  `exec_command()`, which is the only place that resolves a command's
-  still-pending (`open()`/`dup2()` deferred) redirections. Fixed by
-  resolving `fd_in`/`fd_out`/`fd_err` right before the message. Found
-  while writing `tests/fixed.sh`; while testing the fix, also found and
-  logged a separate, unrelated bug: quoted command substitution
-  (`"$(cmd)"`) doesn't suppress field splitting.
-- `break`/`continue` jumping out of `eval`/`.`/`source` left dangling
-  `source`/`fd` state behind (a `longjmp` bypassing `eval_pop()`-style
-  cleanup), causing a hang or a crash depending on what ran next. Fixed.
-- Wired `tests/posix/*.tst` and `tests/yash/*.tst` (yash's own POSIX/self
-  conformance suite, 239 files) into `ctest`/`make test` via
-  `tests/run-tst.sh`. This now gives a real, concrete POSIX-compliance
-  failure list instead of no signal at all — triaging that list is
-  unstarted and is the natural next step for POSIX-compliance work.
-- Fixed several bugs specifically blocking this repo's own `./configure`
-  from running under `shish` (stray errno text on unrelated error
-  messages, SIGCHLD/SIGINT staying blocked across fork+exec, a stack-
-  use-after-scope in `exec_program()`). `./configure` still doesn't
-  complete — duplicated output, a segfault, and a `fdstack_push()`
-  consistency-assertion failure are all still open in `BUGS`. This is
-  ongoing; the next step is bisecting `configure` itself to narrow down
-  which construct triggers it, rather than guessing further.
-- Found and fixed a batch of `src/fd*` bugs: fd numbers indexing
-  `fdtable[]`/`fd_list[]` with no bounds check (segfault on `exec
-  3<&99999`), `<>` truncating a file it should be opening in place,
-  `struct fd` leaks from an inconsistent mode-field-overwrite pattern,
-  and some dead code.
-- Rewrote `src/history/` to lazily `mmap()` + scan the history file
-  backward from the end, instead of reading and parsing it fully at
-  startup — startup time is now independent of history file size.
-- `lib/sig`/`src/job` (job control: `fg`/`bg`, SIGCHLD handling,
-  `WAIT_EXITSTATUS`) were surveyed in depth but the fixes haven't been
-  applied yet (see `BUGS`) — `fg` in particular has a confirmed stack
-  out-of-bounds crash on the plain no-argument invocation, and `bg` is
-  an unimplemented stub. Good next target if picking up fresh work here.

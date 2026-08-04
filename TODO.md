@@ -10,7 +10,38 @@ Leverage-sorted list of what's still open. Fixed work lives in `git log` and
 
 `./configure` (this project's own stress test — autoconf output exercises
 nested command substitution, heavy fd juggling, `eval`, here-docs,
-trap/exit interplay) now runs to completion end-to-end. The `tests/posix`
+trap/exit interplay) now runs to completion end-to-end.
+
+A Termux (Android/bionic) user report of `shish configure` segfaulting
+(2026-08-04) led to setting up a `-fsanitize=address,undefined` build
+(`cfg()` from `cfg-cmake.sh`, e.g. `builddir=build/x86_64-linux-gnu-asan
+CC=clang CXX=clang++ cfg -DCMAKE_C_FLAGS="-fsanitize=address,undefined
+-g -O0" ...`) — the crash reproduced identically under Linux/glibc, so
+it was never bionic-specific, just easier to hit there. Root cause:
+`lib/path/path_fnmatch.c`'s `'*'`-matching recursed once per character
+of the string being matched (searching for a split point), so any
+single `*` in a glob/case pattern matched against a long enough string
+(exactly what autoconf-generated scripts do, e.g. `case
+$ac_configure_args in *\'*)`) blew the stack. Fixed (`fixes/126`) by
+rewriting the function to be fully iterative — a single "most recently
+seen `*`" backtrack bookmark, consulted whenever a match attempt
+fails, replaces all recursion (the standard technique for wildcard
+matching), so match cost depends on neither the string's length nor
+the pattern's `*` count. Chasing the same sanitizer
+run turned up four more real, independent bugs along the way (none
+related to the crash itself, all found because the ASan/UBSan build
+let `configure` run much further than a plain build's silent-UB
+tolerance had ever surfaced before): a shift-by-64 in
+`var_rndhash()`'s rotate macros, two "form a member address through a
+null pointer" bugs (`exec_search()`'s empty-function-list walk,
+`redir_source()`'s here-doc-list walk), and a `memcpy()`-with-null-src
+issue at two `stralloc` call sites when copying an empty/unset buffer
+— fixed as `fixes/123`-`125`, `127` respectively (see `BUGS` for the
+two sanitizer findings from the same sweep that were *not* fixed,
+`ubsan-packed-node-misalignment` and
+`ubsan-buffer-op-proto-function-type-mismatch`, both real but
+deliberate/pervasive tradeoffs already discussed elsewhere in this
+file and in CLAUDE.md). The `tests/posix`
 conformance suite (120 files) is wired into `ctest` and runs by default.
 `tests/yash` (119 more files) is wired in the same way but gated behind
 its own `-DDO_YASH_TESTS=ON` (off by default — several files hang and

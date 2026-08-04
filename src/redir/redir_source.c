@@ -40,7 +40,7 @@ redir_source(void) {
 
   stralloc_init(&delim);
 
-  for(; redir_list; redir_list = &redir_list->data->nredir) {
+  for(; redir_list; redir_list = redir_list->data ? &redir_list->data->nredir : NULL) {
     /* expand the delimiter */
     stralloc_init(&delim);
     expand_str(redir_list->word, &delim, 0);

@@ -21,8 +21,11 @@ static uint32 seeds[] = {
     0x6bfb5d73,
 };
 
-#define ROR(v, c) v = (((v) >> c) | (v) << (VAR_BITS - c))
-#define ROL(v, c) v = (((v) << c) | (v) >> (VAR_BITS - c))
+/* c is always masked to 0..VAR_BITS-1 by callers (a/b & VAR_MASK), but a
+ * rotate by 0 would still shift by VAR_BITS in the other term, which is
+ * UB for a shift count equal to the type's width -- guard it explicitly. */
+#define ROR(v, c) v = ((c) ? (((v) >> (c)) | ((v) << (VAR_BITS - (c)))) : (v))
+#define ROL(v, c) v = ((c) ? (((v) << (c)) | ((v) >> (VAR_BITS - (c)))) : (v))
 
 /* in contratry to the var_hash() function this hash
  * function tries to destroy any literal entropy
