@@ -43,8 +43,16 @@ parse_case(struct parser* p) {
     *cptr = tree_newnode(N_CASENODE);
     tree_init((*cptr)->ncasenode.pats, pptr);
 
-    /* parse the pattern list */
-    while(parse_gettok(p, P_SKIPNL) & (T_WORD | T_NAME | T_ASSIGN | T_LP)) {
+    /* parse the pattern list -- P_NOKEYWD: a case pattern is not a
+       keyword-recognition position (POSIX 2.10.2's reserved-word
+       rule only applies where a keyword is grammatically expected),
+       so a pattern alternative that happens to spell a reserved word
+       verbatim (e.g. libtool's "finish|finis|fini|fin|fi|f)") must
+       still parse as a plain word, not the token that ends an
+       enclosing "if" (case-pattern-word-treated-as-keyword). Same
+       fix already applied to a "for ... in word-list" list's own
+       words, see parse_for.c. */
+    while(parse_gettok(p, P_SKIPNL | P_NOKEYWD) & (T_WORD | T_NAME | T_ASSIGN | T_LP)) {
       if(p->tok == T_LP)
         continue;
 
