@@ -2862,4 +2862,71 @@ if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
   assert_equal "$SHISH_SELF" "$X132" "\$SHELL must be overwritten with shish's own argv[0], not inherited from the environment (see comment above)"
 fi
 
+## fixes/133 (src/redir/redir_eval.c, src/redir/redir_dup.c): the
+## local "stralloc sa" redir_eval() builds for every redirection's
+## target word (via expand_copysa()) was never freed for a plain
+## "> file"/"< file" redirection (redir_open() only ever str_dup()'d
+## it) and only freed on 2 of redir_dup()'s 3 return paths (missed on
+## "[n]<&[n]" self-referring-duplicate) -- a pure resource-usage bug
+## like fixes/129/130/132 above, so no assertion here can distinguish
+## pre/post-fix behavior; verified instead by running the reproducers
+## below directly under the ASan/UBSan build and confirming their
+## leak reports (previously present on every one of these forms) are
+## gone. Still checked here for ordinary correctness, since freeing
+## the wrong thing (or double-freeing redir_dup()'s now-caller-owned
+## sa) would break every one of these redirection forms outright.
+F133=$(mktemp -d)
+: < /dev/null
+assert_equal "0" "$?" "a plain input redirection must still succeed (see comment above)"
+
+echo hi > "$F133/a" 2>"$F133/b"
+X133A=$(cat "$F133/a")
+assert_equal "hi" "$X133A" "output/error redirection (redir_open's R_OPEN path) must still work correctly"
+
+exec 3>&1
+exec 3>&-
+X133B=$?
+assert_equal "0" "$X133B" "fd-duplicating redirection (redir_dup's non-error path) must still work correctly"
+
+(exec 3<&3) >/dev/null 2>&1
+X133C=$?
+assert_equal "1" "$X133C" "a self-referring duplicate redirection must still be rejected (redir_dup's early-return path)"
+
+X133D=$(cat <<EOF
+hello
+EOF
+)
+assert_equal "hello" "$X133D" "a here-document (redir_here's sa-ownership-transfer path) must still work correctly"
+
+rm -rf "$F133"
+
+## fixes/134 (src/parse/parse_pipeline.c): a pipeline ending in a
+## dangling "|" (nothing after it, e.g. "echo hi |") made
+## parse_pipeline()'s post-"|" loop hand a NULL "node" (parse_command()
+## found nothing left to parse) straight to the tree_link() macro,
+## which unconditionally computes "&(node)->next" -- a null-pointer
+## member access, UB, caught by UBSan (pipeline-trailing-pipe-null-deref
+## in BUGS). Release builds didn't crash (the bogus "address" was never
+## actually dereferenced), so the truncated pipeline was just silently
+## accepted and run as if the trailing "|" wasn't there. Now reports a
+## proper syntax error and refuses to run it instead, matching how
+## every other malformed construct in this parser already behaves.
+## Run via $SHISH_SELF -c rather than inline here: a syntax error while
+## parsing *this* test file itself (read via mmap, not "-c") takes
+## parse_error()'s immediate sh_exit(1) path (see its own comment,
+## BUGS: source-syntax-error-kills-whole-process-not-just-subshell's
+## fix), which would kill this whole test run rather than just the
+## intended nested reproducer.
+if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+  X134A=$("$SHISH_SELF" -c 'echo before; echo hi |' 2>&1)
+  case $X134A in
+    *"unexpected token"*) X134A_MATCHED=yes ;;
+    *) X134A_MATCHED=no ;;
+  esac
+  assert_equal "yes" "$X134A_MATCHED" "a pipeline ending in a dangling '|' must be reported as a syntax error, not silently accepted"
+
+  X134B=$("$SHISH_SELF" -c 'echo hi | cat' 2>&1)
+  assert_equal "hi" "$X134B" "an ordinary, complete pipeline must still work correctly"
+fi
+
 summary

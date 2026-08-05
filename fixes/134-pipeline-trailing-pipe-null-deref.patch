@@ -1,0 +1,28 @@
+diff --git a/src/parse/parse_pipeline.c b/src/parse/parse_pipeline.c
+index 8a58da7a..de67f6c3 100644
+--- a/src/parse/parse_pipeline.c
++++ b/src/parse/parse_pipeline.c
+@@ -34,6 +34,23 @@ parse_pipeline(struct parser* p) {
+        as long as there are pipe tokens */
+     do {
+       node = parse_command(p, P_SKIPNL);
++
++      /* a "|" must be followed by another command -- parse_command()
++         returning NULL here means there wasn't one (e.g. a trailing
++         "|" at the end of input/before a ";"/"&"). Report it right
++         here rather than just propagating NULL: the generic
++         "unexpected token" fallback in sh_loop() deliberately treats
++         a bare T_EOF as *not* an error (a "-c" command_string with no
++         trailing newline is the common, legitimate case of that), so
++         silently returning NULL let a truncated pipeline through
++         un-flagged instead of erroring the way every other malformed
++         construct does (pipeline-trailing-pipe-null-deref). */
++      if(node == NULL) {
++        parse_error(p, T_NAME | T_WORD);
++        tree_free(pipeline);
++        return NULL;
++      }
++
+       tree_link(node, cmdptr);
+       // tree_unshift(node, cmdptr);
+       pipeline->npipe.ncmd++;

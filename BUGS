@@ -222,14 +222,30 @@
   - `sh_loop()`'s own `cmd`/`p.sa` scratch stralloc's (reused, not
     freed, once per process for the same reason) are the same
     category.
-  - Smaller, not-yet-investigated groups remain via
-    `redir_parse.c:108`, `expand_cat.c:77`, `expand_args.c:67`, and
-    `eval_function.c:57` (each `tree_newnode()`/`alloc()`-backed,
-    roughly 20-25 objects per full run) -- plausibly real per-node
-    leaks in the same family as the two fixed above (something built
-    during parsing/expansion never reachable from the tree that
-    eventually gets `tree_free()`'d), but not yet root-caused to a
-    specific missing free the way the two fixed ones were. Good next
-    target if picking this up again: reproduce each with a minimal
-    script the way the `for`-loop leak above was isolated, rather than
-    working from the full `./configure` run's noise.
+  `src/redir/redir_eval.c` (`fixes/133`): the `expand_cat.c:77` group
+  above (line numbers had shifted to `expand_cat.c:52` by the time
+  this was picked back up, due to `fixes/70`'s comment additions in
+  between) turned out not to be `expand_cat.c`'s fault at all --
+  `redir_eval()`'s local `stralloc sa` (built by `expand_copysa()` for
+  every redirection's target word) was simply never freed for the
+  `R_OPEN` action (`redir_open()` only ever `str_dup()`'d it, never
+  took ownership) and only freed on 2 of `redir_dup()`'s 3 return
+  paths (missed on `[n]<&[n]` self-referring-duplicate). Minimal
+  repro: `: < /dev/null` leaked 40 bytes every single invocation.
+  Ownership is now centralized in `redir_eval.c` -- it frees `sa`
+  itself after every action except `R_HERE`, which still hands `sa->s`
+  off to `fd_here()` (freed only when that fd is later closed, per its
+  own comment); `redir_dup.c`'s two internal frees were removed to
+  avoid double-freeing.
+
+  `redir_parse.c:108`, `expand_args.c:67`, and `eval_function.c:57`
+  remain not yet investigated -- reproduced several other redirection
+  shapes (append, dup, self-dup, here-doc, a bare trailing redirect
+  operator) hunting for a leak whose backtrace actually passes through
+  `redir_parse.c` and found none, so whatever line `redir_parse.c:108`
+  referred to may have been the same `expand_cat.c` misattribution
+  above rather than a distinct leak -- not confirmed either way. Good
+  next target if picking this up again: reproduce `expand_args.c:67`/
+  `eval_function.c:57` each with a minimal script the way the ones
+  above were isolated, rather than working from the full `./configure`
+  run's noise.

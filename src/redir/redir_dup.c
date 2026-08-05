@@ -5,6 +5,8 @@
 #include "../../lib/scan.h"
 
 /* do a dup-redirection
+ *
+ * caller (redir_eval.c) owns sa and frees it once this returns
  * ----------------------------------------------------------------------- */
 int
 redir_dup(struct nredir* nredir, stralloc* sa) {
@@ -20,7 +22,6 @@ redir_dup(struct nredir* nredir, stralloc* sa) {
        fdtable[fd] lookup unchecked */
     if(fd < 0 || fd >= FD_MAX) {
       fd_error(fd, "bad file descriptor");
-      stralloc_free(sa);
       return 1;
     }
 
@@ -37,6 +38,5 @@ redir_dup(struct nredir* nredir, stralloc* sa) {
   /*  if(nredir->flag & R_NOW)
       fdtable_dup(nredir->fd, FDTABLE_MOVE);*/
 
-  stralloc_free(sa);
   return ret;
 }

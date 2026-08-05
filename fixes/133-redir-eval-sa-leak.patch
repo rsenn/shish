@@ -1,0 +1,54 @@
+diff --git a/src/redir/redir_dup.c b/src/redir/redir_dup.c
+index 492d144a..92af39bc 100644
+--- a/src/redir/redir_dup.c
++++ b/src/redir/redir_dup.c
+@@ -5,6 +5,8 @@
+ #include "../../lib/scan.h"
+ 
+ /* do a dup-redirection
++ *
++ * caller (redir_eval.c) owns sa and frees it once this returns
+  * ----------------------------------------------------------------------- */
+ int
+ redir_dup(struct nredir* nredir, stralloc* sa) {
+@@ -20,7 +22,6 @@ redir_dup(struct nredir* nredir, stralloc* sa) {
+        fdtable[fd] lookup unchecked */
+     if(fd < 0 || fd >= FD_MAX) {
+       fd_error(fd, "bad file descriptor");
+-      stralloc_free(sa);
+       return 1;
+     }
+ 
+@@ -37,6 +38,5 @@ redir_dup(struct nredir* nredir, stralloc* sa) {
+   /*  if(nredir->flag & R_NOW)
+       fdtable_dup(nredir->fd, FDTABLE_MOVE);*/
+ 
+-  stralloc_free(sa);
+   return ret;
+ }
+diff --git a/src/redir/redir_eval.c b/src/redir/redir_eval.c
+index 38f805db..597a4fd1 100644
+--- a/src/redir/redir_eval.c
++++ b/src/redir/redir_eval.c
+@@ -34,11 +34,18 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
+   /* setup up a new d for the redirection */
+   nredir->fd = !d ? fd_new(nredir->fdes, mode) : fd_push(d, nredir->fdes, mode);
+ 
+-  /* do the appropriate redirection */
++  /* do the appropriate redirection -- redir_here() hands sa->s off to
++     fd_here() (which reads straight from that buffer, freeing it only
++     when the fd itself is later closed), so sa must not be touched
++     again after that call; every other action is done with it once
++     the switch returns, so free it here rather than relying on each
++     callee to free its own copy (redir_open() never did, leaking sa->s
++     on every plain "> file"/"< file" redirection -- confirmed leak,
++     see fixes/133's regression test in tests/fixed.sh). */
+   switch(nredir->flag & R_ACT) {
+-    case R_OPEN: r = redir_open(nredir, &sa); break;
++    case R_OPEN: r = redir_open(nredir, &sa); stralloc_free(&sa); break;
+     case R_HERE: r = redir_here(nredir, &sa); break;
+-    default: r = redir_dup(nredir, &sa); break;
++    default: r = redir_dup(nredir, &sa); stralloc_free(&sa); break;
+   }
+ 
+   /*  if(nredir->flag & R_NOW)
