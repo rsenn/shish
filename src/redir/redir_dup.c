@@ -25,7 +25,13 @@ redir_dup(struct nredir* nredir, stralloc* sa) {
       return 1;
     }
 
-    /* dup only if the filedescriptors are different */
+    /* dup only if the filedescriptors are different -- redir_eval()
+       already special-cases every self-referencing duplicate it can
+       safely turn into the POSIX-defined no-op; reaching this point
+       with fdes == fd means it couldn't (the fd directly owned a real
+       resource that a persistent "exec" redirection just destroyed
+       in-place reusing the same slot), so there is nothing left to
+       duplicate from and this has to stay an error. */
     if(nredir->fdes == fd) {
       fd_error(fd, "self-referring duplicate");
       return 1;

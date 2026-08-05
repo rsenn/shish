@@ -21,8 +21,16 @@ stralloc_ready(stralloc* sa, size_t len) {
     if(!(tmp = alloc(wanted)))
       return 0;
 
+    /* sa->a == 0 with sa->s already non-NULL means sa->s aliases a
+       buffer stralloc doesn't own (e.g. var_set() pointing var->sa.s
+       straight at an environment string) -- only sa->len bytes of it
+       are actually ours to preserve. Copying `len` (the *new*,
+       larger target capacity) instead read past wherever that
+       aliased buffer's real allocation ends, into whatever memory
+       happens to follow it (stralloc-ready-copies-past-aliased-
+       buffer-end). */
     if(sa->s)
-      byte_copy(tmp, len, sa->s);
+      byte_copy(tmp, sa->len, sa->s);
     else
       byte_zero(tmp, wanted);
   } else {

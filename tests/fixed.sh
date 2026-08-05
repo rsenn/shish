@@ -2875,6 +2875,9 @@ fi
 ## gone. Still checked here for ordinary correctness, since freeing
 ## the wrong thing (or double-freeing redir_dup()'s now-caller-owned
 ## sa) would break every one of these redirection forms outright.
+## (X133C below now asserts a "0" exit status rather than the "1" this
+## comment's era actually produced -- self-referring duplicates are no
+## longer rejected outright, see fixes/137.)
 F133=$(mktemp -d)
 : < /dev/null
 assert_equal "0" "$?" "a plain input redirection must still succeed (see comment above)"
@@ -2890,7 +2893,7 @@ assert_equal "0" "$X133B" "fd-duplicating redirection (redir_dup's non-error pat
 
 (exec 3<&3) >/dev/null 2>&1
 X133C=$?
-assert_equal "1" "$X133C" "a self-referring duplicate redirection must still be rejected (redir_dup's early-return path)"
+assert_equal "0" "$X133C" "a self-referring duplicate redirection on a never-opened fd must be the no-op POSIX defines, not an error (see fixes/137 -- this case used to be (wrongly) rejected here too)"
 
 X133D=$(cat <<EOF
 hello
@@ -2957,6 +2960,118 @@ if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
     *) X135D_MATCHED=no ;;
   esac
   assert_equal "yes" "$X135D_MATCHED" "the job-start banner must still print when monitor mode is actually on (-m)"
+fi
+
+## fixes/136 (src/expand/expand_param.c): "${a=$x} ${b=$x} ${c=$x}" inside
+## a single double-quoted word assigned each later variable the *whole*
+## accumulated text of the word so far (literal text plus every earlier
+## substitution), not just its own default expansion -- S_ASGNDEF handed
+## var_setvsa the shared accumulator node's entire stralloc instead of
+## only the bytes appended by this substitution. Found via a real
+## autoconf `configure` (gettext-runtime): its bare-positional-arg
+## fallback `: "${build_alias=$ac_option} ${host_alias=$ac_option}
+## ${target_alias=$ac_option}"` left host_alias/target_alias holding
+## stray leading spaces, which made "checking host system type" invoke
+## config.sub with no argument at all.
+unset X136A X136B X136C
+: "${X136A=} ${X136B=} ${X136C=}"
+assert_equal "" "$X136A" "first default-assign in a quoted word must not pick up trailing text from later substitutions"
+assert_equal "" "$X136B" "second default-assign in a quoted word must not inherit the literal space preceding it"
+assert_equal "" "$X136C" "third default-assign in a quoted word must not inherit accumulated text from the first two"
+
+## fixes/137 (src/redir/redir_eval.c, src/redir/redir_dup.c): "[n]<&n"/
+## "[n]>&n" (duplicating a descriptor onto itself) was unconditionally
+## rejected as an error, but POSIX defines dup2(fd, fd) as a no-op that
+## succeeds trivially -- and the *unprefixed* form of this ("cmd >&1",
+## which just defaults its source fd to 1) is an extremely common,
+## totally unremarkable idiom, e.g. inside a "{ ...; } > file" group.
+## autoconf's own generated `config.status` emits exactly that pattern
+## while writing config.h, so building real projects (gettext) failed
+## outright with "config.sub: missing argument" / "1: self-referring
+## duplicate" (self-referring-duplicate-rejected-config-status, BUGS).
+## The fix has to special-case this in redir_eval(), before fd_new()/
+## fd_push() overwrite (or, for a persistent "exec" reusing the same fd
+## number, destructively fd_reinit()/fd_close()) whatever currently
+## occupies that fd slot -- by the time redir_dup() used to see it,
+## the original binding was already gone, so there is no correct point
+## afterward to special-case it from. See tests/fixed.sh's X133C above
+## for the companion case (a self-dup of an fd that was never opened
+## at all) that this same fix also corrected.
+X137A=$(: >&1; echo done)
+assert_equal "done" "$X137A" "a bare self-referencing '>&1' inside a command must be a no-op, not an error"
+
+X137B=$(exec 3>&1; exec 3>&3; echo hi >&3)
+assert_equal "hi" "$X137B" "self-dup of an fd that is itself already a dup of another fd must still leave it usable afterward"
+
+if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+  X137C=$("$SHISH_SELF" -c 'exec 3>&1; (exec 3<&3); echo "exit=$?"')
+  assert_equal "exit=0" "$X137C" "self-dup must not fail just because the requested direction (read) differs from how the fd was originally opened (write) -- dup2(fd,fd) never checks direction"
+fi
+
+## fixes/138 (src/expand/expand_cat.c): unquoted field-splitting planted a
+## spurious empty argument in front of the first real field whenever a
+## word's own value started with IFS whitespace *and* it wasn't the first
+## word in the list -- expand_args.c pre-creates an empty placeholder node
+## ahead of each subsequent word (so a later word that turns out genuinely
+## empty, e.g. an unquoted expansion of "", still contributes an empty
+## argument instead of vanishing); expand_cat()'s split loop couldn't tell
+## that placeholder apart from a node that already held a real, finished
+## field, so it "finalized" the (empty) placeholder as its own argument
+## before starting the next one. Found via a real autoconf `configure`
+## (gettext-runtime): its subdir-recursion loop, `for ac_dir in :
+## $subdirs`, builds $subdirs by repeated `subdirs="$subdirs name"`
+## starting from empty, leaving a leading space -- the bogus empty
+## $ac_dir this produced made every subdirectory's own ./configure get
+## invoked recursively with an empty argument instead of a real path.
+X138A=$(v=" b c"; for x in a $v; do echo "[$x]"; done)
+X138A_EXPECT="[a]
+[b]
+[c]"
+assert_equal "$X138A_EXPECT" "$X138A" "a later word's own leading IFS whitespace must not plant a spurious empty argument ahead of it"
+
+X138B=$(for x in a "" b; do echo "[$x]"; done)
+X138B_EXPECT="[a]
+[]
+[b]"
+assert_equal "$X138B_EXPECT" "$X138B" "a genuinely empty (quoted) word must still contribute its own empty argument, unlike X138A's case"
+
+X138C=$(v=""; v="$v intl"; v="$v libasprintf"; for x in : $v; do echo "[$x]"; done)
+X138C_EXPECT="[:]
+[intl]
+[libasprintf]"
+assert_equal "$X138C_EXPECT" "$X138C" "a variable built up piecewise from empty (leaving a leading space) must not produce a spurious leading empty field when split (the exact autoconf subdirs pattern above)"
+
+## fixes/139 (src/builtin/builtin_trap.c, lib/stralloc/stralloc_ready.c,
+## src/sh/sh_forked.c): "trap CODE SIG1 SIG2 ..." parses CODE once and
+## shared that single parsed tree, unowned, across a separate trap-list
+## entry for every listed signal -- uninstalling those traps one at a
+## time (e.g. "trap - 1 2 15", exactly what libtool's generated cleanup
+## code does) tree_free()d the same shared tree again for the second and
+## third signal, corrupting the heap every time. The corruption itself
+## went unnoticed until some later, unrelated allocation finally walked
+## into it, surfacing as a delayed, hard-to-place glibc
+## "malloc_consolidate(): unaligned fastbin chunk detected" abort --
+## confirmed root-caused (not just worked around) via valgrind directly
+## on a real `config.status` run: zero errors before this fix, exactly
+## one clean double-free report (via trap_uninstall -> tree_free) after
+## isolating this fix alone, zero again with it applied. Also picked up
+## and fixed two related, smaller issues found chasing this down along
+## the way: sh_forked() (after a real fork()) unconditionally freed
+## every ancestor env frame's positional-parameter array, even one the
+## surviving frame still shared a pointer to (non-owning frames just
+## copy arg.v verbatim, see sh_pushargs()) -- a real heap-use-after-free
+## once that surviving frame's own $1/$2/... was expanded again,
+## confirmed via ASan. And stralloc_ready() copied the *new, target*
+## length from an old, aliased-but-unowned buffer (a==0, s!=NULL: e.g.
+## var_set() pointing straight at an environment string) instead of the
+## buffer's own real length, reading past wherever that buffer's actual
+## allocation ends.
+X139=$(trap "echo hi" 1 2 15; trap - 1 2 15; echo survived)
+assert_equal "survived" "$X139" "uninstalling a trap that was installed for multiple signals at once (sharing one parsed command tree) must not corrupt the heap on the second/third signal"
+
+if command -v valgrind >/dev/null 2>&1 && [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+  X139_VG=$(valgrind --error-exitcode=17 -q "$SHISH_SELF" -c 'trap "echo hi" 1 2 15; trap - 1 2 15; echo ok' 2>&1)
+  assert_equal "ok" "$X139_VG" "the same multi-signal trap uninstall must also be clean under valgrind (no invalid free/write reported)"
 fi
 
 summary

@@ -17,12 +17,27 @@ int
 sh_forked(void) {
   struct env* e = sh;
   struct env* next;
+  char** keep_argv = e->arg.v;
 
   /* if we're not in the root environment we clean up any shell env */
   for(sh = sh->parent; sh; sh = next) {
     next = sh->parent;
 
-    sh_setargs(NULL, 0);
+    /* an ancestor's positional-parameter array is only safe to free
+       here if (e) -- flattened onto sh_root just below, and kept
+       exactly as it was from here on -- doesn't still reference that
+       very same array. sh_pushargs() has every *non-owning* nested
+       env frame just copy its parent's arg.v pointer verbatim
+       (arg.a == 0 marks "don't free this, someone further up the
+       chain owns it"), so (e)'s own arg.v can easily still be the
+       same array as one of these ancestors' even though (e) itself
+       never allocated it. Freeing that ancestor unconditionally
+       destroyed memory (e) goes on using afterward -- confirmed via
+       a forked pipeline member whose own command substitution read
+       $1 right after (heap-use-after-free in expand_param.c, hit by a
+       real autoconf `configure`/`config.status` run). */
+    if(sh->arg.v != keep_argv)
+      sh_setargs(NULL, 0);
 
     if(sh->cwd.a)
       stralloc_free(&sh->cwd);

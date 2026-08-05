@@ -1,0 +1,73 @@
+diff --git a/src/expand/expand_cat.c b/src/expand/expand_cat.c
+index 6c6c239f..1b70891f 100644
+--- a/src/expand/expand_cat.c
++++ b/src/expand/expand_cat.c
+@@ -79,8 +79,24 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
+       stralloc_init(&n->narg.stra);
+     }
+     /* if there were separators delimit the current field by creating a new node
+-     */
+-    else if(x) {
++     *
++     * ...but only if (n) already holds a real, previously-written field:
++     * expand_args.c pre-creates a placeholder node ahead of the *next*
++     * shell word (so a later word that turns out genuinely empty, e.g.
++     * an unquoted expansion of "", still contributes an empty argument
++     * rather than vanishing) -- that placeholder is indistinguishable
++     * from a freshly-created one here (non-NULL, zero-length) except
++     * for this check. Splitting on it anyway planted a spurious empty
++     * argument in front of the first real field whenever that next
++     * word's own value happened to start with IFS whitespace (e.g. a
++     * variable built via "v=\"$v word\"" from empty, which leaves a
++     * leading space) -- autoconf's config.status subdir-recursion loop
++     * ("for ac_dir in : $subdirs") does exactly this and choked on the
++     * resulting bogus empty $ac_dir, invoking every subdirectory's own
++     * ./configure recursively with an empty argument. See fixes/138
++     * (leading-ifs-whitespace-in-split-produces-empty-field-after-
++     * preallocated-node). */
++    else if(x && n->narg.stra.len) {
+       stralloc_nul(&n->narg.stra);
+ 
+       if(flags & X_GLOB) {
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 8241a24a..a1b2c3d4 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -3008,4 +3008,37 @@
+   assert_equal "exit=0" "$X137C" "self-dup must not fail just because the requested direction (read) differs from how the fd was originally opened (write) -- dup2(fd,fd) never checks direction"
+ fi
+ 
++## fixes/138 (src/expand/expand_cat.c): unquoted field-splitting planted a
++## spurious empty argument in front of the first real field whenever a
++## word's own value started with IFS whitespace *and* it wasn't the first
++## word in the list -- expand_args.c pre-creates an empty placeholder node
++## ahead of each subsequent word (so a later word that turns out genuinely
++## empty, e.g. an unquoted expansion of "", still contributes an empty
++## argument instead of vanishing); expand_cat()'s split loop couldn't tell
++## that placeholder apart from a node that already held a real, finished
++## field, so it "finalized" the (empty) placeholder as its own argument
++## before starting the next one. Found via a real autoconf `configure`
++## (gettext-runtime): its subdir-recursion loop, `for ac_dir in :
++## $subdirs`, builds $subdirs by repeated `subdirs="$subdirs name"`
++## starting from empty, leaving a leading space -- the bogus empty
++## $ac_dir this produced made every subdirectory's own ./configure get
++## invoked recursively with an empty argument instead of a real path.
++X138A=$(v=" b c"; for x in a $v; do echo "[$x]"; done)
++X138A_EXPECT="[a]
++[b]
++[c]"
++assert_equal "$X138A_EXPECT" "$X138A" "a later word's own leading IFS whitespace must not plant a spurious empty argument ahead of it"
++
++X138B=$(for x in a "" b; do echo "[$x]"; done)
++X138B_EXPECT="[a]
++[]
++[b]"
++assert_equal "$X138B_EXPECT" "$X138B" "a genuinely empty (quoted) word must still contribute its own empty argument, unlike X138A's case"
++
++X138C=$(v=""; v="$v intl"; v="$v libasprintf"; for x in : $v; do echo "[$x]"; done)
++X138C_EXPECT="[:]
++[intl]
++[libasprintf]"
++assert_equal "$X138C_EXPECT" "$X138C" "a variable built up piecewise from empty (leaving a leading space) must not produce a spurious leading empty field when split (the exact autoconf subdirs pattern above)"
++
+ summary

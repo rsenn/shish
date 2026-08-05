@@ -79,8 +79,24 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
       stralloc_init(&n->narg.stra);
     }
     /* if there were separators delimit the current field by creating a new node
-     */
-    else if(x) {
+     *
+     * ...but only if (n) already holds a real, previously-written field:
+     * expand_args.c pre-creates a placeholder node ahead of the *next*
+     * shell word (so a later word that turns out genuinely empty, e.g.
+     * an unquoted expansion of "", still contributes an empty argument
+     * rather than vanishing) -- that placeholder is indistinguishable
+     * from a freshly-created one here (non-NULL, zero-length) except
+     * for this check. Splitting on it anyway planted a spurious empty
+     * argument in front of the first real field whenever that next
+     * word's own value happened to start with IFS whitespace (e.g. a
+     * variable built via "v=\"$v word\"" from empty, which leaves a
+     * leading space) -- autoconf's config.status subdir-recursion loop
+     * ("for ac_dir in : $subdirs") does exactly this and choked on the
+     * resulting bogus empty $ac_dir, invoking every subdirectory's own
+     * ./configure recursively with an empty argument. See fixes/138
+     * (leading-ifs-whitespace-in-split-produces-empty-field-after-
+     * preallocated-node). */
+    else if(x && n->narg.stra.len) {
       stralloc_nul(&n->narg.stra);
 
       if(flags & X_GLOB) {

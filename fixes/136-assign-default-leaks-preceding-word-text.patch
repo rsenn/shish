@@ -1,0 +1,50 @@
+diff --git a/src/expand/expand_param.c b/src/expand/expand_param.c
+index 8da2d4f4..f11e7583 100644
+--- a/src/expand/expand_param.c
++++ b/src/expand/expand_param.c
+@@ -276,8 +276,18 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+       if(v)
+         n = expand_cat(v, vlen, nptr, flags);
+       else {
++        /* nptr's node may already hold text from earlier pieces of the
++           surrounding word (e.g. literal text before this substitution,
++           or a prior substitution sharing the same quoted argument) --
++           expand_arg() below appends the default's expansion onto that
++           same node, so only the bytes *after* this snapshot are the
++           actual value to assign; taking the whole stralloc assigned
++           everything accumulated so far too (assign-default-leaks-
++           preceding-word-text). */
++        size_t before = n ? n->narg.stra.len : 0;
++
+         n = expand_arg(param->word, nptr, flags | X_NOSPLIT);
+-        var_setvsa(param->name, /* BUG */ &n->narg.stra, V_DEFAULT);
++        var_setv(param->name, n->narg.stra.s + before, n->narg.stra.len - before, V_DEFAULT);
+       }
+ 
+       break;
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index ba34debd..6ce1c3cf 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -2959,4 +2959,21 @@ if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+   assert_equal "yes" "$X135D_MATCHED" "the job-start banner must still print when monitor mode is actually on (-m)"
+ fi
+ 
++## fixes/136 (src/expand/expand_param.c): "${a=$x} ${b=$x} ${c=$x}" inside
++## a single double-quoted word assigned each later variable the *whole*
++## accumulated text of the word so far (literal text plus every earlier
++## substitution), not just its own default expansion -- S_ASGNDEF handed
++## var_setvsa the shared accumulator node's entire stralloc instead of
++## only the bytes appended by this substitution. Found via a real
++## autoconf `configure` (gettext-runtime): its bare-positional-arg
++## fallback `: "${build_alias=$ac_option} ${host_alias=$ac_option}
++## ${target_alias=$ac_option}"` left host_alias/target_alias holding
++## stray leading spaces, which made "checking host system type" invoke
++## config.sub with no argument at all.
++unset X136A X136B X136C
++: "${X136A=} ${X136B=} ${X136C=}"
++assert_equal "" "$X136A" "first default-assign in a quoted word must not pick up trailing text from later substitutions"
++assert_equal "" "$X136B" "second default-assign in a quoted word must not inherit the literal space preceding it"
++assert_equal "" "$X136C" "third default-assign in a quoted word must not inherit accumulated text from the first two"
++
+ summary

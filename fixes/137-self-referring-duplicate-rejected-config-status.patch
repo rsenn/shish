@@ -1,0 +1,143 @@
+diff --git a/src/redir/redir_dup.c b/src/redir/redir_dup.c
+index 92af39bc..f3daec24 100644
+--- a/src/redir/redir_dup.c
++++ b/src/redir/redir_dup.c
+@@ -25,7 +25,13 @@ redir_dup(struct nredir* nredir, stralloc* sa) {
+       return 1;
+     }
+ 
+-    /* dup only if the filedescriptors are different */
++    /* dup only if the filedescriptors are different -- redir_eval()
++       already special-cases every self-referencing duplicate it can
++       safely turn into the POSIX-defined no-op; reaching this point
++       with fdes == fd means it couldn't (the fd directly owned a real
++       resource that a persistent "exec" redirection just destroyed
++       in-place reusing the same slot), so there is nothing left to
++       duplicate from and this has to stay an error. */
+     if(nredir->fdes == fd) {
+       fd_error(fd, "self-referring duplicate");
+       return 1;
+diff --git a/src/redir/redir_eval.c b/src/redir/redir_eval.c
+index 597a4fd1..98a6973b 100644
+--- a/src/redir/redir_eval.c
++++ b/src/redir/redir_eval.c
+@@ -31,8 +31,60 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
+   /* additional redirection mode */
+   nredir->flag |= rfl;
+ 
+-  /* setup up a new d for the redirection */
+-  nredir->fd = !d ? fd_new(nredir->fdes, mode) : fd_push(d, nredir->fdes, mode);
++  /* "[n]<&n"/"[n]>&n" (source and target the same descriptor) is a
++     defined POSIX no-op: dup2(fd, fd) succeeds trivially, without even
++     requiring fd to already be open, whenever both arguments are equal.
++     This is a common, harmless idiom in real scripts -- a bare ">&1"
++     (fdes defaults to 1, target word is "1") inside a "{ ...; } > file"
++     group, exactly what autoconf's own config.status emits -- so
++     rejecting it broke configure scripts outright
++     (self-referring-duplicate-rejected-config-status, BUGS).
++
++     fd_new()/fd_push() below are about to overwrite fdtable[nredir->fdes]
++     -- for a persistent "exec" redirection reusing the same fd number
++     this is destructive (fd_reinit() closes whatever real resource the
++     slot owned directly), so the snapshot has to happen before that
++     call, and only stays usable afterward if it's itself a dup of some
++     *other*, distinct fd number's entry (chased via ->dup): that other
++     entry is untouched by this fd's own reinitialization, whereas a
++     directly-owned resource is not recoverable once destroyed. */
++  {
++    struct fd* selfdup_src = NULL;
++    int selfdup = 0;
++
++    if((nredir->flag & R_DUP) && !(nredir->flag & R_OPEN) &&
++        (sa.len != 1 || sa.s[0] != '-')) {
++      int selffd = 0;
++
++      scan_uint(sa.s, (unsigned int*)&selffd);
++
++      if(selffd == nredir->fdes) {
++        selfdup = 1;
++        selfdup_src = fdtable_ok(selffd) ? fdtable[selffd] : NULL;
++
++        while(selfdup_src && selfdup_src->dup)
++          selfdup_src = selfdup_src->dup;
++      }
++    }
++
++    /* setup up a new d for the redirection */
++    nredir->fd = !d ? fd_new(nredir->fdes, mode) : fd_push(d, nredir->fdes, mode);
++
++    if(selfdup && selfdup_src != nredir->fd) {
++      if(selfdup_src) {
++        nredir->fd->r = selfdup_src->r;
++        nredir->fd->w = selfdup_src->w;
++        nredir->fd->name = selfdup_src->name;
++        nredir->fd->dup = selfdup_src;
++        nredir->fd->e = selfdup_src->e;
++        nredir->fd->mode |= (selfdup_src->mode & FD_TYPE) | FD_DUP;
++        nredir->fd->dev = selfdup_src->dev;
++      }
++
++      stralloc_free(&sa);
++      return 0;
++    }
++  }
+ 
+   /* do the appropriate redirection -- redir_here() hands sa->s off to
+      fd_here() (which reads straight from that buffer, freeing it only
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 3059dc0d..8241a24a 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -2875,6 +2875,9 @@
+ ## gone. Still checked here for ordinary correctness, since freeing
+ ## the wrong thing (or double-freeing redir_dup()'s now-caller-owned
+ ## sa) would break every one of these redirection forms outright.
++## (X133C below now asserts a "0" exit status rather than the "1" this
++## comment's era actually produced -- self-referring duplicates are no
++## longer rejected outright, see fixes/137.)
+ F133=$(mktemp -d)
+ : < /dev/null
+ assert_equal "0" "$?" "a plain input redirection must still succeed (see comment above)"
+@@ -2890,7 +2893,7 @@
+ 
+ (exec 3<&3) >/dev/null 2>&1
+ X133C=$?
+-assert_equal "1" "$X133C" "a self-referring duplicate redirection must still be rejected (redir_dup's early-return path)"
++assert_equal "0" "$X133C" "a self-referring duplicate redirection on a never-opened fd must be the no-op POSIX defines, not an error (see fixes/137 -- this case used to be (wrongly) rejected here too)"
+ 
+ X133D=$(cat <<EOF
+ hello
+@@ -2976,4 +2979,33 @@
+ assert_equal "" "$X136B" "second default-assign in a quoted word must not inherit the literal space preceding it"
+ assert_equal "" "$X136C" "third default-assign in a quoted word must not inherit accumulated text from the first two"
+ 
++## fixes/137 (src/redir/redir_eval.c, src/redir/redir_dup.c): "[n]<&n"/
++## "[n]>&n" (duplicating a descriptor onto itself) was unconditionally
++## rejected as an error, but POSIX defines dup2(fd, fd) as a no-op that
++## succeeds trivially -- and the *unprefixed* form of this ("cmd >&1",
++## which just defaults its source fd to 1) is an extremely common,
++## totally unremarkable idiom, e.g. inside a "{ ...; } > file" group.
++## autoconf's own generated `config.status` emits exactly that pattern
++## while writing config.h, so building real projects (gettext) failed
++## outright with "config.sub: missing argument" / "1: self-referring
++## duplicate" (self-referring-duplicate-rejected-config-status, BUGS).
++## The fix has to special-case this in redir_eval(), before fd_new()/
++## fd_push() overwrite (or, for a persistent "exec" reusing the same fd
++## number, destructively fd_reinit()/fd_close()) whatever currently
++## occupies that fd slot -- by the time redir_dup() used to see it,
++## the original binding was already gone, so there is no correct point
++## afterward to special-case it from. See tests/fixed.sh's X133C above
++## for the companion case (a self-dup of an fd that was never opened
++## at all) that this same fix also corrected.
++X137A=$(: >&1; echo done)
++assert_equal "done" "$X137A" "a bare self-referencing '>&1' inside a command must be a no-op, not an error"
++
++X137B=$(exec 3>&1; exec 3>&3; echo hi >&3)
++assert_equal "hi" "$X137B" "self-dup of an fd that is itself already a dup of another fd must still leave it usable afterward"
++
++if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
++  X137C=$("$SHISH_SELF" -c 'exec 3>&1; (exec 3<&3); echo "exit=$?"')
++  assert_equal "exit=0" "$X137C" "self-dup must not fail just because the requested direction (read) differs from how the fd was originally opened (write) -- dup2(fd,fd) never checks direction"
++fi
++
+ summary

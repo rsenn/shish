@@ -1,0 +1,133 @@
+diff --git a/lib/stralloc/stralloc_ready.c b/lib/stralloc/stralloc_ready.c
+index 47ad0634..fdc6147d 100644
+--- a/lib/stralloc/stralloc_ready.c
++++ b/lib/stralloc/stralloc_ready.c
+@@ -21,8 +21,16 @@ stralloc_ready(stralloc* sa, size_t len) {
+     if(!(tmp = alloc(wanted)))
+       return 0;
+ 
++    /* sa->a == 0 with sa->s already non-NULL means sa->s aliases a
++       buffer stralloc doesn't own (e.g. var_set() pointing var->sa.s
++       straight at an environment string) -- only sa->len bytes of it
++       are actually ours to preserve. Copying `len` (the *new*,
++       larger target capacity) instead read past wherever that
++       aliased buffer's real allocation ends, into whatever memory
++       happens to follow it (stralloc-ready-copies-past-aliased-
++       buffer-end). */
+     if(sa->s)
+-      byte_copy(tmp, len, sa->s);
++      byte_copy(tmp, sa->len, sa->s);
+     else
+       byte_zero(tmp, wanted);
+   } else {
+diff --git a/src/builtin/builtin_trap.c b/src/builtin/builtin_trap.c
+index 41c9d343..afbef142 100644
+--- a/src/builtin/builtin_trap.c
++++ b/src/builtin/builtin_trap.c
+@@ -584,12 +584,30 @@ builtin_trap(int argc, char* argv[]) {
+     if(signum != 1) {
+       ret = 0;
+ 
++      /* "trap CODE SIG1 SIG2 ..." parses CODE only once (cmds, above)
++         but installs it against every listed signal -- each one needs
++         its own independent tree, not a shared pointer: trap_install()
++         (via trap_uninstall()) tree_free()s whatever tree the signal
++         it's replacing/removing owned, and two trap entries sharing
++         the same tree pointer means the second free operates on
++         already-freed memory. Confirmed via a real autoconf-generated
++         script: libtool's generated cleanup traps ("trap 'rm -f
++         "libtoolT"; exit 1' 1 2 15", later removed with "trap - 1 2
++         15") corrupted the heap this way on the second and third
++         signal every single time, eventually crashing on some later,
++         unrelated allocation ("malloc_consolidate(): unaligned
++         fastbin chunk detected") once the corruption was finally
++         noticed (trap-install-shares-one-tree-across-multiple-
++         signals, BUGS). */
+       if(cmds)
+-        trap_install(signum, cmds);
++        trap_install(signum, tree_copy(cmds));
+       else
+         ret = trap_uninstall(signum);
+     }
+   }
+ 
++  if(cmds)
++    tree_free(cmds);
++
+   return ret;
+ }
+diff --git a/src/sh/sh_forked.c b/src/sh/sh_forked.c
+index a9e2d51d..c24d5123 100644
+--- a/src/sh/sh_forked.c
++++ b/src/sh/sh_forked.c
+@@ -17,12 +17,27 @@ int
+ sh_forked(void) {
+   struct env* e = sh;
+   struct env* next;
++  char** keep_argv = e->arg.v;
+ 
+   /* if we're not in the root environment we clean up any shell env */
+   for(sh = sh->parent; sh; sh = next) {
+     next = sh->parent;
+ 
+-    sh_setargs(NULL, 0);
++    /* an ancestor's positional-parameter array is only safe to free
++       here if (e) -- flattened onto sh_root just below, and kept
++       exactly as it was from here on -- doesn't still reference that
++       very same array. sh_pushargs() has every *non-owning* nested
++       env frame just copy its parent's arg.v pointer verbatim
++       (arg.a == 0 marks "don't free this, someone further up the
++       chain owns it"), so (e)'s own arg.v can easily still be the
++       same array as one of these ancestors' even though (e) itself
++       never allocated it. Freeing that ancestor unconditionally
++       destroyed memory (e) goes on using afterward -- confirmed via
++       a forked pipeline member whose own command substitution read
++       $1 right after (heap-use-after-free in expand_param.c, hit by a
++       real autoconf `configure`/`config.status` run). */
++    if(sh->arg.v != keep_argv)
++      sh_setargs(NULL, 0);
+ 
+     if(sh->cwd.a)
+       stralloc_free(&sh->cwd);
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index a1b2c3d4..f5e6a7b8 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -3041,4 +3041,37 @@
+ [libasprintf]"
+ assert_equal "$X138C_EXPECT" "$X138C" "a variable built up piecewise from empty (leaving a leading space) must not produce a spurious leading empty field when split (the exact autoconf subdirs pattern above)"
+ 
++## fixes/139 (src/builtin/builtin_trap.c, lib/stralloc/stralloc_ready.c,
++## src/sh/sh_forked.c): "trap CODE SIG1 SIG2 ..." parses CODE once and
++## shared that single parsed tree, unowned, across a separate trap-list
++## entry for every listed signal -- uninstalling those traps one at a
++## time (e.g. "trap - 1 2 15", exactly what libtool's generated cleanup
++## code does) tree_free()d the same shared tree again for the second and
++## third signal, corrupting the heap every time. The corruption itself
++## went unnoticed until some later, unrelated allocation finally walked
++## into it, surfacing as a delayed, hard-to-place glibc
++## "malloc_consolidate(): unaligned fastbin chunk detected" abort --
++## confirmed root-caused (not just worked around) via valgrind directly
++## on a real `config.status` run: zero errors before this fix, exactly
++## one clean double-free report (via trap_uninstall -> tree_free) after
++## isolating this fix alone, zero again with it applied. Also picked up
++## and fixed two related, smaller issues found chasing this down along
++## the way: sh_forked() (after a real fork()) unconditionally freed
++## every ancestor env frame's positional-parameter array, even one the
++## surviving frame still shared a pointer to (non-owning frames just
++## copy arg.v verbatim, see sh_pushargs()) -- a real heap-use-after-free
++## once that surviving frame's own $1/$2/... was expanded again,
++## confirmed via ASan. And stralloc_ready() copied the *new, target*
++## length from an old, aliased-but-unowned buffer (a==0, s!=NULL: e.g.
++## var_set() pointing straight at an environment string) instead of the
++## buffer's own real length, reading past wherever that buffer's actual
++## allocation ends.
++X139=$(trap "echo hi" 1 2 15; trap - 1 2 15; echo survived)
++assert_equal "survived" "$X139" "uninstalling a trap that was installed for multiple signals at once (sharing one parsed command tree) must not corrupt the heap on the second/third signal"
++
++if command -v valgrind >/dev/null 2>&1 && [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
++  X139_VG=$(valgrind --error-exitcode=17 -q "$SHISH_SELF" -c 'trap "echo hi" 1 2 15; trap - 1 2 15; echo ok' 2>&1)
++  assert_equal "ok" "$X139_VG" "the same multi-signal trap uninstall must also be clean under valgrind (no invalid free/write reported)"
++fi
++
+ summary

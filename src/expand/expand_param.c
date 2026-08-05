@@ -276,8 +276,18 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       if(v)
         n = expand_cat(v, vlen, nptr, flags);
       else {
+        /* nptr's node may already hold text from earlier pieces of the
+           surrounding word (e.g. literal text before this substitution,
+           or a prior substitution sharing the same quoted argument) --
+           expand_arg() below appends the default's expansion onto that
+           same node, so only the bytes *after* this snapshot are the
+           actual value to assign; taking the whole stralloc assigned
+           everything accumulated so far too (assign-default-leaks-
+           preceding-word-text). */
+        size_t before = n ? n->narg.stra.len : 0;
+
         n = expand_arg(param->word, nptr, flags | X_NOSPLIT);
-        var_setvsa(param->name, /* BUG */ &n->narg.stra, V_DEFAULT);
+        var_setv(param->name, n->narg.stra.s + before, n->narg.stra.len - before, V_DEFAULT);
       }
 
       break;

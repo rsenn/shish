@@ -584,12 +584,30 @@ builtin_trap(int argc, char* argv[]) {
     if(signum != 1) {
       ret = 0;
 
+      /* "trap CODE SIG1 SIG2 ..." parses CODE only once (cmds, above)
+         but installs it against every listed signal -- each one needs
+         its own independent tree, not a shared pointer: trap_install()
+         (via trap_uninstall()) tree_free()s whatever tree the signal
+         it's replacing/removing owned, and two trap entries sharing
+         the same tree pointer means the second free operates on
+         already-freed memory. Confirmed via a real autoconf-generated
+         script: libtool's generated cleanup traps ("trap 'rm -f
+         "libtoolT"; exit 1' 1 2 15", later removed with "trap - 1 2
+         15") corrupted the heap this way on the second and third
+         signal every single time, eventually crashing on some later,
+         unrelated allocation ("malloc_consolidate(): unaligned
+         fastbin chunk detected") once the corruption was finally
+         noticed (trap-install-shares-one-tree-across-multiple-
+         signals, BUGS). */
       if(cmds)
-        trap_install(signum, cmds);
+        trap_install(signum, tree_copy(cmds));
       else
         ret = trap_uninstall(signum);
     }
   }
+
+  if(cmds)
+    tree_free(cmds);
 
   return ret;
 }
