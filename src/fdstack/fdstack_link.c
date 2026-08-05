@@ -8,6 +8,7 @@ fdstack_link(struct fdstack* st, struct fd* fd) {
   struct fd **link, *next;
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK) && !defined(SHPARSE2AST)
+  debug_open();
   buffer_puts(debug_output, "fdstack_link n=");
   buffer_putlong(debug_output, fd->n);
   buffer_putnlflush(debug_output);
