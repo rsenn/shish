@@ -46,9 +46,8 @@ with Android Bionic's `<sys/cdefs.h>`, which already defines `__packed`
 for real — silently, unintentionally packing every `union node` field
 on that platform only, corrupting reads since different node kinds
 don't all pack to the same offsets. Fixed (`fixes/131`) by renaming
-shish's own macro to `SHISH_TREE_PACKED`; see `BUGS`'s corrected entry
-for the full trail, including why the earlier "reproduces on Linux,
-harmless" writeup was wrong. `BUGS:
+shish's own macro to `SHISH_TREE_PACKED` (now fixed, no longer listed
+in `BUGS`). `BUGS:
 ubsan-buffer-op-proto-function-type-mismatch` from the same sweep is
 still a real, deliberate, not-worth-fixing tradeoff, unrelated to this
 one. The `tests/posix`
