@@ -2846,4 +2846,20 @@ three" "$X130" "ordinary simple commands (parse_simple_command's alias-lookup pa
 ## neutralize the exact condition Bionic creates, not just observed to
 ## "currently" not crash.
 
+## fixes/132 (src/sh/sh_main.c): $SHELL was left untouched at startup,
+## so it still held whatever shell the environment inherited it from
+## (e.g. "/bin/bash" from a login shell) even while running under
+## shish -- any script or program that consults $SHELL to find "the
+## current shell" got a wrong answer. sh_main() now overwrites it with
+## argv[0] (shish's own invocation path) right after importing the
+## rest of the environment, the same way real shells set it to
+## themselves. Reuses the same "readlink /proc/$$/exe to re-invoke
+## this running shish" idiom as fixes/122 above (see $SHISH_SELF
+## there), since this also needs a genuinely separate process invoked
+## with a known argv[0].
+if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+  X132=$(SHELL=/nonexistent/not-shish "$SHISH_SELF" -c 'echo "$SHELL"')
+  assert_equal "$SHISH_SELF" "$X132" "\$SHELL must be overwritten with shish's own argv[0], not inherited from the environment (see comment above)"
+fi
+
 summary

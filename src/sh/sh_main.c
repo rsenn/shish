@@ -196,6 +196,11 @@ main(int argc, char** argv, char** envp) {
   for(c = 0; envp[c]; c++)
     var_import(envp[c], V_EXPORT, &envvars[c]);
 
+  /* $SHELL should point at this shell, not whatever shell was running
+     before shish exec'd -- override whatever var_import() above just
+     pulled in from the environment with our own invocation path. */
+  var_setv("SHELL", argv[0], str_len(argv[0]), V_EXPORT);
+
   /* POSIX: privileged mode turns on automatically, before any
      command-line option is even looked at, whenever the real and
      effective uid or gid differ (e.g. a setuid/setgid shish binary,
