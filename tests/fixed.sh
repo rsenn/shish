@@ -2929,4 +2929,34 @@ if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
   assert_equal "hi" "$X134B" "an ordinary, complete pipeline must still work correctly"
 fi
 
+## fixes/135 (src/eval/eval_node_bgnd.c, src/exec/exec_command.c,
+## src/exec/exec_program.c): backgrounding anything ("cmd &") printed
+## the "[id] pid" job-start banner unconditionally, even in a plain
+## non-interactive script -- job_wait.c's matching Done/Stopped
+## banners were already correctly gated behind "sh->opts.monitor" (its
+## own comment: "for interactive use only; suppress it in scripts so
+## configure's stderr stays clean"), but the start banner at all three
+## places a job gets created was missed. Confirmed against a real
+## autoconf-generated `configure` (job-start-banner-printed-
+## noninteractively): a stray "[1] 12345" line on stderr in the middle
+## of an otherwise clean configure run. All three call sites now check
+## the same "sh->opts.monitor" flag.
+X135A=$(sleep 0.1 & wait; echo done)
+assert_equal "done" "$X135A" "backgrounding a simple command must not print a job-start banner in a non-interactive shell"
+
+X135B=$({ sleep 0.1; } & wait; echo done)
+assert_equal "done" "$X135B" "backgrounding a compound command must not print a job-start banner in a non-interactive shell (eval_node_bgnd's path)"
+
+X135C=$(true & wait; echo done)
+assert_equal "done" "$X135C" "backgrounding an external program must not print a job-start banner in a non-interactive shell (exec_program's path)"
+
+if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+  X135D=$("$SHISH_SELF" -mc 'sleep 0.1 & wait' 2>&1)
+  case $X135D in
+    "[1] "*) X135D_MATCHED=yes ;;
+    *) X135D_MATCHED=no ;;
+  esac
+  assert_equal "yes" "$X135D_MATCHED" "the job-start banner must still print when monitor mode is actually on (-m)"
+fi
+
 summary

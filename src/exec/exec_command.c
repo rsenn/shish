@@ -37,7 +37,10 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
       exit(exec_command(cmd, argc, argv, flag));
     }
 
-    job_banner(job, fd_err->w, JOB_START);
+    /* interactive-use-only, see eval_node_bgnd.c's matching comment
+       (job-start-banner-printed-noninteractively) */
+    if(sh->opts.monitor)
+      job_banner(job, fd_err->w, JOB_START);
 
     return 0;
   }

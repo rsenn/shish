@@ -126,3 +126,12 @@
     again: reproduce `expand_args.c:67`/`eval_function.c:57` each with
     a minimal script the way `fixes/129`/`130`/`133` were isolated,
     rather than working from the full `./configure` run's noise.
+  - `src/tree/tree_string.c` (via `tree_cat()`/`tree_catlist_n()`)
+    leaks 36 bytes every time a plain simple command is backgrounded
+    (`eval_simple_command.c:261`, building `job->command` -- the text
+    `job_banner()`/`jobs` display for that job). Minimal repro:
+    `sleep 0.1 & wait` leaks on every invocation, confirmed both
+    before and after `fixes/135` (unrelated to that fix, which only
+    changed whether the resulting banner gets *printed*, not whether
+    `job->command` gets built). Not yet root-caused to a specific
+    missing free.

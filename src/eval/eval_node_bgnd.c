@@ -33,7 +33,13 @@ eval_node_bgnd(struct eval* e, union node* node) {
     exit(ret);
   }
 
-  job_banner(job, fd_err->w, JOB_START);
+  /* the "[id] pid" banner is interactive-use-only, same as job_wait.c's
+     Done/Stopped banners (see its own comment) -- printing it
+     unconditionally polluted the stderr of any non-interactive script
+     that backgrounds anything, e.g. autoconf-generated configure
+     scripts (job-start-banner-printed-noninteractively). */
+  if(sh->opts.monitor)
+    job_banner(job, fd_err->w, JOB_START);
 
   return 0;
 }

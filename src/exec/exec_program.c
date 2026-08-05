@@ -144,7 +144,10 @@ exec_program(char* path, char** argv, enum execflag flag) {
            so it needs to be set here as well */
         job_bgpid = pid;
 
-        job_banner(job, fd_err->w, JOB_START);
+        /* interactive-use-only, see eval_node_bgnd.c's matching comment
+           (job-start-banner-printed-noninteractively) */
+        if(sh->opts.monitor)
+          job_banner(job, fd_err->w, JOB_START);
 
 #if !WINDOWS_NATIVE
         sig_unblock(SIGCHLD);
