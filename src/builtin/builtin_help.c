@@ -1,7 +1,8 @@
 #include "../builtin.h"
 #include "../fdtable.h"
-#include "../../lib/str.h"
 #include "../var.h"
+#include "../term.h"
+#include "../../lib/str.h"
 #include "../../lib/scan.h"
 
 static void
@@ -13,10 +14,9 @@ output_synopsis(struct builtin_cmd* b) {
 
 /* help built-in
  * ----------------------------------------------------------------------- */
-const char help_help[] =
-    "    Show a synopsis of every builtin, or the full help for one.\n"
-    "\n"
-    "    command         builtin to show detailed help for\n";
+const char help_help[] = "    Show a synopsis of every builtin, or the full help for one.\n"
+                         "\n"
+                         "    command         builtin to show detailed help for\n";
 
 int
 builtin_help(int argc, char* argv[]) {
@@ -56,11 +56,9 @@ builtin_help(int argc, char* argv[]) {
       maxlen = len;
   }
 
+  term_winsize();
+  maxlen = (term_size.ws_col / 2) - 1;
   rows = (i + 1) >> 1;
-
-  if((vcols = var_get("COLUMNS", &offset)))
-    if(scan_uint(&vcols[offset], &cols))
-      maxlen = (cols / 2) - 1;
 
   for(i = 0; i < rows; i++) {
     struct builtin_cmd* b = &builtin_table[i];

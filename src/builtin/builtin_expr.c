@@ -354,16 +354,15 @@ expr_match(const char* str, const char* pat, stralloc* out) {
 
 /* parse and expruate arguments
  * ----------------------------------------------------------------------- */
-const char help_expr[] =
-    "    Evaluate an expression and print the result.\n"
-    "\n"
-    "    string : pattern     match string against a leading BRE pattern;\n"
-    "                         prints the first \\(...\\) group, or the\n"
-    "                         match length if the pattern has no group\n"
-    "    length string        print the length of string\n"
-    "    index string chars   print the first position in string of any\n"
-    "                         character in chars, 0 if none is found\n"
-    "    expression            evaluate an arithmetic/logical expression\n";
+const char help_expr[] = "    Evaluate an expression and print the result.\n"
+                         "\n"
+                         "    string : pattern     match string against a leading BRE pattern;\n"
+                         "                         prints the first \\(...\\) group, or the\n"
+                         "                         match length if the pattern has no group\n"
+                         "    length string        print the length of string\n"
+                         "    index string chars   print the first position in string of any\n"
+                         "                         character in chars, 0 if none is found\n"
+                         "    expression            evaluate an arithmetic/logical expression\n";
 
 int
 builtin_expr(int argc, char* argv[]) {

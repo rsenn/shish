@@ -16,27 +16,26 @@ extern union node* functions;
 
 /* set arguments of flags
  * ----------------------------------------------------------------------- */
-const char help_set[] =
-    "    Set shell options and/or positional parameters.\n"
-    "\n"
-    "    -a              export every variable assignment\n"
-    "    -e              exit if a simple command fails\n"
-    "    -f              disable pathname expansion (globbing)\n"
-    "    -h              remember command locations as they're looked up\n"
-    "    -m              enable job control (monitor mode)\n"
-    "    -n              read commands but don't execute them\n"
-    "    -p              privileged mode: don't process $ENV\n"
-    "    -u              treat unset variables as an error on expansion\n"
-    "    -x              print each command before running it\n"
-    "    -B              enable brace expansion\n"
-    "    -C              don't let '>' clobber an existing file\n"
-    "    -H              enable history expansion ('!')\n"
-    "    -o name         same as the matching letter option above, by name\n"
-    "    -o              (no name) print every option's current state\n"
-    "    +option         turn the option off instead of on\n"
-    "    arg             new positional parameters ($1, $2, ...)\n"
-    "\n"
-    "    With no options or arguments, print every variable and function.\n";
+const char help_set[] = "    Set shell options and/or positional parameters.\n"
+                        "\n"
+                        "    -a              export every variable assignment\n"
+                        "    -e              exit if a simple command fails\n"
+                        "    -f              disable pathname expansion (globbing)\n"
+                        "    -h              remember command locations as they're looked up\n"
+                        "    -m              enable job control (monitor mode)\n"
+                        "    -n              read commands but don't execute them\n"
+                        "    -p              privileged mode: don't process $ENV\n"
+                        "    -u              treat unset variables as an error on expansion\n"
+                        "    -x              print each command before running it\n"
+                        "    -B              enable brace expansion\n"
+                        "    -C              don't let '>' clobber an existing file\n"
+                        "    -H              enable history expansion ('!')\n"
+                        "    -o name         same as the matching letter option above, by name\n"
+                        "    -o              (no name) print every option's current state\n"
+                        "    +option         turn the option off instead of on\n"
+                        "    arg             new positional parameters ($1, $2, ...)\n"
+                        "\n"
+                        "    With no options or arguments, print every variable and function.\n";
 
 /* every letter option also reachable via "-o name"/"+o name" -- kept
  * as a name->letter table rather than one bitfield pointer per name
@@ -51,9 +50,18 @@ const char help_set[] =
  * options the exact same letter/name set "set" supports, instead of
  * duplicating (and inevitably drifting from) this list a second time. */
 const struct set_longopt set_longopts[] = {
-    {"allexport", 'a'},   {"braceexpand", 'B'}, {"errexit", 'e'},   {"hashall", 'h'},
-    {"histexpand", 'H'},  {"monitor", 'm'},     {"noclobber", 'C'}, {"noexec", 'n'},
-    {"noglob", 'f'},      {"nounset", 'u'},     {"privileged", 'p'}, {"xtrace", 'x'},
+    {"allexport", 'a'},
+    {"braceexpand", 'B'},
+    {"errexit", 'e'},
+    {"hashall", 'h'},
+    {"histexpand", 'H'},
+    {"monitor", 'm'},
+    {"noclobber", 'C'},
+    {"noexec", 'n'},
+    {"noglob", 'f'},
+    {"nounset", 'u'},
+    {"privileged", 'p'},
+    {"xtrace", 'x'},
 };
 
 const size_t set_longopts_n = sizeof(set_longopts) / sizeof(set_longopts[0]);
@@ -70,8 +78,7 @@ set_apply(struct shopt* opts, int letter, int on) {
     case 'm': opts->monitor = on; return 1;
     case 'n': opts->noexec = on; return 1;
 
-    case 'p':
-      opts->privileged = on;
+    case 'p': opts->privileged = on;
 #if !WINDOWS_NATIVE
       /* POSIX/bash: turning privileged mode *off* also drops any real
          privilege the process still has, by setting the effective

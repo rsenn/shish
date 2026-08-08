@@ -4,15 +4,14 @@
 
 /* type built-in
  * ----------------------------------------------------------------------- */
-const char help_type[] =
-    "    Show how a name would be interpreted if run as a command.\n"
-    "\n"
-    "    -a              print every matching location, not just the first\n"
-    "    -f              suppress function matches\n"
-    "    -P              force a PATH search, even for a builtin/function\n"
-    "    -p              print the path only, if name resolves to a file\n"
-    "    -t              print just the type (alias/function/builtin/file)\n"
-    "    name            name to look up\n";
+const char help_type[] = "    Show how a name would be interpreted if run as a command.\n"
+                         "\n"
+                         "    -a              print every matching location, not just the first\n"
+                         "    -f              suppress function matches\n"
+                         "    -P              force a PATH search, even for a builtin/function\n"
+                         "    -p              print the path only, if name resolves to a file\n"
+                         "    -t              print just the type (alias/function/builtin/file)\n"
+                         "    name            name to look up\n";
 
 int
 builtin_type(int argc, char* argv[]) {

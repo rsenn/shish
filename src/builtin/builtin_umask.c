@@ -96,14 +96,13 @@ scan_umask(char* in, uint16* umask) {
 
 /* umask built-in
  * ----------------------------------------------------------------------- */
-const char help_umask[] =
-    "    Print or set the file mode creation mask.\n"
-    "\n"
-    "    -p              prefix the printed mask with 'umask ', reusable\n"
-    "                    as input\n"
-    "    -S              print/parse the mask symbolically (u=,g=,o=)\n"
-    "                    instead of as an octal number\n"
-    "    mode            new mask, octal or symbolic (see chmod)\n";
+const char help_umask[] = "    Print or set the file mode creation mask.\n"
+                          "\n"
+                          "    -p              prefix the printed mask with 'umask ', reusable\n"
+                          "                    as input\n"
+                          "    -S              print/parse the mask symbolically (u=,g=,o=)\n"
+                          "                    instead of as an octal number\n"
+                          "    mode            new mask, octal or symbolic (see chmod)\n";
 
 int
 builtin_umask(int argc, char* argv[]) {

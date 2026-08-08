@@ -64,10 +64,9 @@ eval_cmdlist(struct eval* e, struct ngrp* grp) {
        eval_tree() call that dispatched to this eval_cmdlist(), so
        every member of this loop sees it suppressed, not just the
        first one that happens to be N_LIST-wrapped. */
-    if(sh->opts.errexit && ret != 0 && !errexit_suppress && cmd->id != N_NOT &&
-       cmd->id != N_AND && cmd->id != N_OR && cmd->id != N_BRACEGROUP && cmd->id != N_IF &&
-       cmd->id != N_FOR && cmd->id != N_CASE && cmd->id != N_WHILE && cmd->id != N_UNTIL &&
-       cmd->id != N_LIST)
+    if(sh->opts.errexit && ret != 0 && !errexit_suppress && cmd->id != N_NOT && cmd->id != N_AND &&
+       cmd->id != N_OR && cmd->id != N_BRACEGROUP && cmd->id != N_IF && cmd->id != N_FOR &&
+       cmd->id != N_CASE && cmd->id != N_WHILE && cmd->id != N_UNTIL && cmd->id != N_LIST)
       sh_exit(ret);
   }
 

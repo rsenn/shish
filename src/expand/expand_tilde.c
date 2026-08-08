@@ -38,8 +38,8 @@
  * expand_glob.c's own "no match -> literal" fallback.
  * ----------------------------------------------------------------------- */
 int
-expand_tilde_lookup(const char* text, size_t len, int stop_at_colon, stralloc* home,
-                     size_t* prefixlen) {
+expand_tilde_lookup(
+    const char* text, size_t len, int stop_at_colon, stralloc* home, size_t* prefixlen) {
   size_t namelen;
 
   if(!len || text[0] != '~')
@@ -108,7 +108,8 @@ expand_tilde_splice(union node* n, stralloc* home, size_t prefixlen) {
   union node* rest = tree_newnode(N_ARGSTR);
 
   stralloc_init(&rest->nargstr.stra);
-  stralloc_catb(&rest->nargstr.stra, n->nargstr.stra.s + prefixlen,
+  stralloc_catb(&rest->nargstr.stra,
+                n->nargstr.stra.s + prefixlen,
                 n->nargstr.stra.len - prefixlen);
   stralloc_nul(&rest->nargstr.stra);
   rest->nargstr.flag = n->nargstr.flag;
@@ -194,8 +195,8 @@ expand_tilde_assign(union node* var) {
 
         stralloc_init(&home);
 
-        if(expand_tilde_lookup(n->nargstr.stra.s + eq, n->nargstr.stra.len - eq, 1, &home,
-                                &prefixlen)) {
+        if(expand_tilde_lookup(
+               n->nargstr.stra.s + eq, n->nargstr.stra.len - eq, 1, &home, &prefixlen)) {
           /* splice into just the tail starting at eq, then keep
              scanning right after the replacement -- the chunk's
              length/content just changed under us */
@@ -204,7 +205,8 @@ expand_tilde_assign(union node* var) {
           stralloc_init(&tail);
           stralloc_catb(&tail, n->nargstr.stra.s, eq);
           stralloc_cat(&tail, &home);
-          stralloc_catb(&tail, n->nargstr.stra.s + eq + prefixlen,
+          stralloc_catb(&tail,
+                        n->nargstr.stra.s + eq + prefixlen,
                         n->nargstr.stra.len - eq - prefixlen);
           stralloc_nul(&tail);
 

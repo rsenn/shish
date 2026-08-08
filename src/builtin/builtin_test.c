@@ -354,22 +354,21 @@ test_boolean(int argc, char* argv[]) {
 
 /* test for expression
  * ----------------------------------------------------------------------- */
-const char help_test[] =
-    "    Evaluate a conditional expression (exit status 0 = true).\n"
-    "\n"
-    "    -e file         file exists\n"
-    "    -f file         file exists and is a regular file\n"
-    "    -d file         file exists and is a directory\n"
-    "    -r/-w/-x file   file is readable/writable/executable\n"
-    "    -s file         file exists and is non-empty\n"
-    "    -z string       string has zero length\n"
-    "    -n string       string has non-zero length\n"
-    "    s1 = s2         strings are equal (!= for not equal)\n"
-    "    n1 -eq n2       integers are equal (-ne/-lt/-le/-gt/-ge likewise)\n"
-    "    expr -a expr    both expressions are true (-o for either)\n"
-    "    ! expr          expr is false\n"
-    "\n"
-    "    '[' requires a matching trailing ']' argument.\n";
+const char help_test[] = "    Evaluate a conditional expression (exit status 0 = true).\n"
+                         "\n"
+                         "    -e file         file exists\n"
+                         "    -f file         file exists and is a regular file\n"
+                         "    -d file         file exists and is a directory\n"
+                         "    -r/-w/-x file   file is readable/writable/executable\n"
+                         "    -s file         file exists and is non-empty\n"
+                         "    -z string       string has zero length\n"
+                         "    -n string       string has non-zero length\n"
+                         "    s1 = s2         strings are equal (!= for not equal)\n"
+                         "    n1 -eq n2       integers are equal (-ne/-lt/-le/-gt/-ge likewise)\n"
+                         "    expr -a expr    both expressions are true (-o for either)\n"
+                         "    ! expr          expr is false\n"
+                         "\n"
+                         "    '[' requires a matching trailing ']' argument.\n";
 
 int
 builtin_test(int argc, char* argv[]) {

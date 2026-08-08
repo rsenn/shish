@@ -3,10 +3,9 @@
 #include "../sh.h"
 
 /* ----------------------------------------------------------------------- */
-const char help_shift[] =
-    "    Shift positional parameters to the left.\n"
-    "\n"
-    "    n               number of positions to shift by (default 1)\n";
+const char help_shift[] = "    Shift positional parameters to the left.\n"
+                          "\n"
+                          "    n               number of positions to shift by (default 1)\n";
 
 int
 builtin_shift(int argc, char* argv[]) {

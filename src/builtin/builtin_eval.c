@@ -10,11 +10,10 @@
 
 /* parse and evaluate arguments
  * ----------------------------------------------------------------------- */
-const char help_eval[] =
-    "    Build and run a command from arguments.\n"
-    "\n"
-    "    args            joined with spaces, parsed and run as shell\n"
-    "                    input in the current shell environment\n";
+const char help_eval[] = "    Build and run a command from arguments.\n"
+                         "\n"
+                         "    args            joined with spaces, parsed and run as shell\n"
+                         "                    input in the current shell environment\n";
 
 int
 builtin_eval(int argc, char* argv[]) {

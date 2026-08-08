@@ -35,7 +35,7 @@ var_setsa(stralloc* sa, int flags) {
 
   if(var->len == 6 && byte_equal(sa->s, 6, "RANDOM"))
     var_random_assign(sa->len > var->len ? sa->s + var->len + 1 : "",
-                       sa->len > var->len ? sa->len - var->len - 1 : 0);
+                      sa->len > var->len ? sa->len - var->len - 1 : 0);
 
   /* set -a: every assignment gets the export attribute, not just ones
      explicitly passed to "export" */

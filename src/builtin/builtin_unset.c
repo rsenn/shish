@@ -23,13 +23,12 @@ find_function(const char* name) {
 /* unset built-in
  *
  * ----------------------------------------------------------------------- */
-const char help_unset[] =
-    "    Unset variables or functions.\n"
-    "\n"
-    "    -f              treat each name as a function\n"
-    "    -v              treat each name as a variable\n"
-    "    name            variable or function to unset (function first,\n"
-    "                    if neither -f nor -v is given and both exist)\n";
+const char help_unset[] = "    Unset variables or functions.\n"
+                          "\n"
+                          "    -f              treat each name as a function\n"
+                          "    -v              treat each name as a variable\n"
+                          "    name            variable or function to unset (function first,\n"
+                          "                    if neither -f nor -v is given and both exist)\n";
 
 int
 builtin_unset(int argc, char* argv[]) {

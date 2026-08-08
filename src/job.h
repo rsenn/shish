@@ -46,12 +46,12 @@ struct job {
   pid_t pgrp;
   char* command;
   uint8_t nproc;
-  uint8_t bgnd; /* was this job actually backgrounded ("cmd &")? job_wait()'s
-                   "[N]+ Done ..." banner is only for these -- a foreground
-                   pipeline (including one run internally to capture a
-                   command substitution's output) isn't something the user
-                   is waiting to be notified about; they're already watching
-                   it (or, for a substitution, it was never visible at all). */
+  uint8_t bgnd;      /* was this job actually backgrounded ("cmd &")? job_wait()'s
+                        "[N]+ Done ..." banner is only for these -- a foreground
+                        pipeline (including one run internally to capture a
+                        command substitution's output) isn't something the user
+                        is waiting to be notified about; they're already watching
+                        it (or, for a substitution, it was never visible at all). */
   uint8_t announced; /* has a "Stopped" banner already been printed for the
                          job's *current* stop? job_clean() (see job_clean.c)
                          announces a background job stopping on its own, and

@@ -52,8 +52,7 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
     struct fd* selfdup_src = NULL;
     int selfdup = 0;
 
-    if((nredir->flag & R_DUP) && !(nredir->flag & R_OPEN) &&
-        (sa.len != 1 || sa.s[0] != '-')) {
+    if((nredir->flag & R_DUP) && !(nredir->flag & R_OPEN) && (sa.len != 1 || sa.s[0] != '-')) {
       int selffd = 0;
 
       scan_uint(sa.s, (unsigned int*)&selffd);
@@ -95,9 +94,15 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
      on every plain "> file"/"< file" redirection -- confirmed leak,
      see fixes/133's regression test in tests/fixed.sh). */
   switch(nredir->flag & R_ACT) {
-    case R_OPEN: r = redir_open(nredir, &sa); stralloc_free(&sa); break;
+    case R_OPEN:
+      r = redir_open(nredir, &sa);
+      stralloc_free(&sa);
+      break;
     case R_HERE: r = redir_here(nredir, &sa); break;
-    default: r = redir_dup(nredir, &sa); stralloc_free(&sa); break;
+    default:
+      r = redir_dup(nredir, &sa);
+      stralloc_free(&sa);
+      break;
   }
 
   /*  if(nredir->flag & R_NOW)

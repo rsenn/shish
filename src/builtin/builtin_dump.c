@@ -13,16 +13,15 @@ enum { VARTAB_ROOT, VARTAB_LOCAL, FDTABLE, FDSTACK, FDLIST, FUNCTIONS, JOBS };
 extern union node* functions;
 
 /* ----------------------------------------------------------------------- */
-const char help_dump[] =
-    "    Debug builtin: dump internal shell state.\n"
-    "\n"
-    "    -v              dump the root variable table\n"
-    "    -l              dump the innermost local variable table\n"
-    "    -F              dump every defined function\n"
-    "    -u fd           write the dump to fd (default stderr)\n"
-    "\n"
-    "    Debug builds also support -t (fd table), -s (fd stack), -f\n"
-    "    (fd list), -j (jobs).\n";
+const char help_dump[] = "    Debug builtin: dump internal shell state.\n"
+                         "\n"
+                         "    -v              dump the root variable table\n"
+                         "    -l              dump the innermost local variable table\n"
+                         "    -F              dump every defined function\n"
+                         "    -u fd           write the dump to fd (default stderr)\n"
+                         "\n"
+                         "    Debug builds also support -t (fd table), -s (fd stack), -f\n"
+                         "    (fd list), -j (jobs).\n";
 
 int
 builtin_dump(int argc, char* argv[]) {

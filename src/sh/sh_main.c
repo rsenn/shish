@@ -297,7 +297,7 @@ main(int argc, char** argv, char** envp) {
     shell_optind = opt.ind;
   }
 
-    /* set up the source fd (where the shell reads from) */
+  /* set up the source fd (where the shell reads from) */
 #ifdef HAVE_ALLOCA
   fd = fd_alloc();
   fd_push(fd, STDSRC_FILENO, FD_READ);
@@ -354,8 +354,7 @@ main(int argc, char** argv, char** envp) {
        still only succeeds against an actual char-device fd, so
        job_terminal_init() below is gated on that succeeding
        regardless of how we got here. */
-    int have_term =
-        (fd_src->mode & FD_CHAR) && !no_interactive && term_init(fd_src, fd_err);
+    int have_term = (fd_src->mode & FD_CHAR) && !no_interactive && term_init(fd_src, fd_err);
 
     if(have_term || (force_interactive && !no_interactive)) {
       src.mode |= SOURCE_IACTIVE;

@@ -12,15 +12,14 @@
 
 /* output stuff
  * ----------------------------------------------------------------------- */
-const char help_mktemp[] =
-    "    Create a uniquely-named temporary file or directory.\n"
-    "\n"
-    "    -d              create a directory instead of a file\n"
-    "    -q              suppress error messages on failure\n"
-    "    -t              generate under a temporary base directory\n"
-    "    -p dir          use dir as the temporary base directory\n"
-    "    -u              only print the name; don't create anything\n"
-    "    template        name template; a run of X's is randomized\n";
+const char help_mktemp[] = "    Create a uniquely-named temporary file or directory.\n"
+                           "\n"
+                           "    -d              create a directory instead of a file\n"
+                           "    -q              suppress error messages on failure\n"
+                           "    -t              generate under a temporary base directory\n"
+                           "    -p dir          use dir as the temporary base directory\n"
+                           "    -u              only print the name; don't create anything\n"
+                           "    template        name template; a run of X's is randomized\n";
 
 int
 builtin_mktemp(int argc, char* argv[]) {

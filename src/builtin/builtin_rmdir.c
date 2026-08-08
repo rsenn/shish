@@ -50,13 +50,12 @@ rmdir_parents(char* argv[], stralloc* sa, int verbose, int force) {
 
 /* output stuff
  * ----------------------------------------------------------------------- */
-const char help_rmdir[] =
-    "    Remove empty directories.\n"
-    "\n"
-    "    -p              also remove now-empty ancestor directories\n"
-    "    -f              ignore errors, keep going\n"
-    "    -v              print each directory removed\n"
-    "    directory       empty directory (or directories) to remove\n";
+const char help_rmdir[] = "    Remove empty directories.\n"
+                          "\n"
+                          "    -p              also remove now-empty ancestor directories\n"
+                          "    -f              ignore errors, keep going\n"
+                          "    -v              print each directory removed\n"
+                          "    directory       empty directory (or directories) to remove\n";
 
 int
 builtin_rmdir(int argc, char* argv[]) {

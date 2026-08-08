@@ -7,12 +7,11 @@
 /* readonly built-in
  *
  * ----------------------------------------------------------------------- */
-const char help_readonly[] =
-    "    Mark variables so they cannot be changed or unset.\n"
-    "\n"
-    "    -p              print every readonly variable as 'NAME=VALUE'\n"
-    "    name            variable to make readonly\n"
-    "    name=value      assign then make the variable readonly\n";
+const char help_readonly[] = "    Mark variables so they cannot be changed or unset.\n"
+                             "\n"
+                             "    -p              print every readonly variable as 'NAME=VALUE'\n"
+                             "    name            variable to make readonly\n"
+                             "    name=value      assign then make the variable readonly\n";
 
 int
 builtin_readonly(int argc, char* argv[]) {

@@ -4,10 +4,9 @@
 
 /* manage command history
  * ----------------------------------------------------------------------- */
-const char help_history[] =
-    "    Print or clear the command history.\n"
-    "\n"
-    "    -c              clear the history instead of printing it\n";
+const char help_history[] = "    Print or clear the command history.\n"
+                            "\n"
+                            "    -c              clear the history instead of printing it\n";
 
 int
 builtin_history(int argc, char* argv[]) {

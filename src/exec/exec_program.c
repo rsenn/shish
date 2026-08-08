@@ -77,7 +77,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
        have it handled -> job_signal() -> job_bypid() finding nothing)
        before job_new() below has even registered the job. */
 #if !WINDOWS_NATIVE
-    //sig_block(SIGINT);
+    // sig_block(SIGINT);
     sig_block(SIGCHLD);
 #endif
 

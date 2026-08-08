@@ -70,6 +70,6 @@ source_peeknc(unsigned pos) {
 
   if(source_peekn(&c, pos) <= 0)
     return -1;
-  
+
   return (unsigned int)(unsigned char)c;
 }

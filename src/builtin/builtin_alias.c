@@ -66,18 +66,16 @@ alias_search(const char* str) {
 /* alias built-in
  *
  * ----------------------------------------------------------------------- */
-const char help_alias[] =
-    "    Define or print shell aliases.\n"
-    "\n"
-    "    -p              print every alias as 'alias NAME=VALUE'\n"
-    "    name=value      define or redefine an alias\n"
-    "    name            print that one alias's definition\n";
+const char help_alias[] = "    Define or print shell aliases.\n"
+                          "\n"
+                          "    -p              print every alias as 'alias NAME=VALUE'\n"
+                          "    name=value      define or redefine an alias\n"
+                          "    name            print that one alias's definition\n";
 
-const char help_unalias[] =
-    "    Remove shell aliases.\n"
-    "\n"
-    "    -a              remove every defined alias\n"
-    "    name            remove the named alias\n";
+const char help_unalias[] = "    Remove shell aliases.\n"
+                            "\n"
+                            "    -a              remove every defined alias\n"
+                            "    name            remove the named alias\n";
 
 int
 builtin_alias(int argc, char* argv[]) {

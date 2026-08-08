@@ -142,16 +142,15 @@ hash_set(char* name, char* pathname) {
  *
  * usage: hash [-lr] [-p pathname name] [-d name ...] [name ...]
  * ----------------------------------------------------------------------- */
-const char help_hash[] =
-    "    Remember (or forget) resolved command locations.\n"
-    "\n"
-    "    -r              forget every remembered command location\n"
-    "    -l              print remembered locations, reusable as input\n"
-    "    -d name         forget one remembered command location\n"
-    "    -p pathname name    remember name as located at pathname\n"
-    "    name            look up and remember name's location\n"
-    "\n"
-    "    With no options or names, print the \"hits  command\" table.\n";
+const char help_hash[] = "    Remember (or forget) resolved command locations.\n"
+                         "\n"
+                         "    -r              forget every remembered command location\n"
+                         "    -l              print remembered locations, reusable as input\n"
+                         "    -d name         forget one remembered command location\n"
+                         "    -p pathname name    remember name as located at pathname\n"
+                         "    name            look up and remember name's location\n"
+                         "\n"
+                         "    With no options or names, print the \"hits  command\" table.\n";
 
 int
 builtin_hash(int argc, char* argv[]) {

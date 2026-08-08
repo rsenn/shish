@@ -6,11 +6,10 @@
 /* wait built-in
  *
  * ----------------------------------------------------------------------- */
-const char help_wait[] =
-    "    Wait for background jobs to finish.\n"
-    "\n"
-    "    pid             job/process to wait for; default is every job\n"
-    "                    the shell currently knows about\n";
+const char help_wait[] = "    Wait for background jobs to finish.\n"
+                         "\n"
+                         "    pid             job/process to wait for; default is every job\n"
+                         "                    the shell currently knows about\n";
 
 int
 builtin_wait(int argc, char* argv[]) {

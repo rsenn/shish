@@ -3,11 +3,10 @@
 #include "../../lib/str.h"
 
 /* ----------------------------------------------------------------------- */
-const char help_dirname[] =
-    "    Strip the last component from a path.\n"
-    "\n"
-    "    path            print PATH with its last component removed\n"
-    "                    (or '.' if PATH has no '/')\n";
+const char help_dirname[] = "    Strip the last component from a path.\n"
+                            "\n"
+                            "    path            print PATH with its last component removed\n"
+                            "                    (or '.' if PATH has no '/')\n";
 
 int
 builtin_dirname(int argc, char* argv[]) {

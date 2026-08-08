@@ -59,12 +59,11 @@ mkdir_parents(char* argv[], stralloc* dir, int verbose) {
 
 /* output stuff
  * ----------------------------------------------------------------------- */
-const char help_mkdir[] =
-    "    Create directories.\n"
-    "\n"
-    "    -p              create missing parent directories as needed\n"
-    "    -v              print each directory created\n"
-    "    directory       directory (or directories) to create\n";
+const char help_mkdir[] = "    Create directories.\n"
+                          "\n"
+                          "    -p              create missing parent directories as needed\n"
+                          "    -v              print each directory created\n"
+                          "    directory       directory (or directories) to create\n";
 
 int
 builtin_mkdir(int argc, char* argv[]) {

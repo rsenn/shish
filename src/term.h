@@ -5,6 +5,9 @@
 #include "../lib/stralloc.h"
 #include "../lib/windoze.h"
 
+#include <termios.h>
+#include <sys/ioctl.h>
+
 #if WINDOWS_NATIVE
 __attribute__((packed)) struct termios {
   int c_iflag, c_oflag, c_cflag, c_lflag;

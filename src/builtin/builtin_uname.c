@@ -8,18 +8,17 @@
 
 /* output stuff
  * ----------------------------------------------------------------------- */
-const char help_uname[] =
-    "    Print system information.\n"
-    "\n"
-    "    -s              kernel/OS name (default)\n"
-    "    -n              network hostname\n"
-    "    -r              kernel release\n"
-    "    -v              kernel version\n"
-    "    -m              machine hardware name\n"
-    "    -p              processor type\n"
-    "    -i              hardware platform\n"
-    "    -o              operating system name\n"
-    "    -a              print all of the above\n";
+const char help_uname[] = "    Print system information.\n"
+                          "\n"
+                          "    -s              kernel/OS name (default)\n"
+                          "    -n              network hostname\n"
+                          "    -r              kernel release\n"
+                          "    -v              kernel version\n"
+                          "    -m              machine hardware name\n"
+                          "    -p              processor type\n"
+                          "    -i              hardware platform\n"
+                          "    -o              operating system name\n"
+                          "    -a              print all of the above\n";
 
 int
 builtin_uname(int argc, char* argv[]) {

@@ -467,14 +467,13 @@ trap_snapshot_restore(void* handle) {
 
 /* output stuff
  * ----------------------------------------------------------------------- */
-const char help_trap[] =
-    "    Run a command when the shell receives a signal.\n"
-    "\n"
-    "    -l              list signal names and numbers\n"
-    "    -p              print traps currently set for signal_spec (or all)\n"
-    "    arg             command to run when signal_spec is received;\n"
-    "                    '-' restores the signal's default action\n"
-    "    signal_spec     signal name/number, or EXIT/DEBUG/RETURN\n";
+const char help_trap[] = "    Run a command when the shell receives a signal.\n"
+                         "\n"
+                         "    -l              list signal names and numbers\n"
+                         "    -p              print traps currently set for signal_spec (or all)\n"
+                         "    arg             command to run when signal_spec is received;\n"
+                         "                    '-' restores the signal's default action\n"
+                         "    signal_spec     signal name/number, or EXIT/DEBUG/RETURN\n";
 
 int
 builtin_trap(int argc, char* argv[]) {

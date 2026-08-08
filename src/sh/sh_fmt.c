@@ -139,7 +139,7 @@ main(int argc, char** argv, char** envp) {
 
     sh_argv0 = argv[shell_optind++];
 
-    if(inplace) 
+    if(inplace)
       out_fd = open_temp(&tmpl);
   }
 
@@ -152,7 +152,7 @@ main(int argc, char** argv, char** envp) {
   /* set our basename for the \v prompt escape seq and maybe other stuff*/
   sh_name = path_basename(sh_argv0);
 
-  if(*sh_name == '-') 
+  if(*sh_name == '-')
     sh_name++;
 
   /* set global shell argument vector */
@@ -213,7 +213,7 @@ main(int argc, char** argv, char** envp) {
 
     unlink(out_file.s);
 
-    if(rename(in_file, out_file.s) != -1) 
+    if(rename(in_file, out_file.s) != -1)
       rename(tmpl, in_file);
   }
 

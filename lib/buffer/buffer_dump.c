@@ -8,7 +8,6 @@
 #include <unistd.h>
 #endif
 
-extern ssize_t buffer_dummyreadmmap();
 extern unsigned long stralloc_write();
 
 void

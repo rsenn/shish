@@ -16,7 +16,7 @@ sh_errorn_errno(const char* s, unsigned int len) {
   if(errno) {
     if(s)
       buffer_puts(fd_err->w, ": ");
-    
+
     buffer_puts(fd_err->w, strerror(errno));
   }
 

@@ -58,12 +58,11 @@ kill_job(char* argv[], const char* spec, int sig) {
  *
  * usage: kill [-signal|-number] pid|%job ...
  * ----------------------------------------------------------------------- */
-const char help_kill[] =
-    "    Send a signal to processes or jobs.\n"
-    "\n"
-    "    -signal         signal name or number to send (default TERM)\n"
-    "    pid             process ID to signal\n"
-    "    %job            job to signal (every process in its group)\n";
+const char help_kill[] = "    Send a signal to processes or jobs.\n"
+                         "\n"
+                         "    -signal         signal name or number to send (default TERM)\n"
+                         "    pid             process ID to signal\n"
+                         "    %job            job to signal (every process in its group)\n";
 
 int
 builtin_kill(int argc, char* argv[]) {

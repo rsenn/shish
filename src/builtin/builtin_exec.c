@@ -7,15 +7,14 @@
 /* exec built-in
  *
  * ----------------------------------------------------------------------- */
-const char help_exec[] =
-    "    Replace the shell process with a command.\n"
-    "\n"
-    "    -a name         set argv[0] to name instead of cmd\n"
-    "    cmd             command to replace the shell process with\n"
-    "    args            arguments passed to cmd\n"
-    "\n"
-    "    With no cmd, does nothing (any redirections given still apply,\n"
-    "    persisting in the current shell).\n";
+const char help_exec[] = "    Replace the shell process with a command.\n"
+                         "\n"
+                         "    -a name         set argv[0] to name instead of cmd\n"
+                         "    cmd             command to replace the shell process with\n"
+                         "    args            arguments passed to cmd\n"
+                         "\n"
+                         "    With no cmd, does nothing (any redirections given still apply,\n"
+                         "    persisting in the current shell).\n";
 
 int
 builtin_exec(int argc, char* argv[]) {

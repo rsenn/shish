@@ -35,8 +35,8 @@ fd_reinit(struct fd* d, int mode) {
   d->r = &d->rb;
   d->w = &d->wb;
 
-  buffer_default(&d->rb, (buffer_op_proto*)(void*)&read);
-  buffer_default(&d->wb, (buffer_op_proto*)(void*)&write);
+  buffer_default(&d->rb, (buffer_op_fn*)(void*)&read);
+  buffer_default(&d->wb, (buffer_op_fn*)(void*)&write);
 
   return d;
 }
