@@ -336,7 +336,7 @@ struct builtin_cmd builtin_table[] = {
     {"type", &builtin_type, B_DEFAULT, "name ...", help_type},
 #endif
 #if BUILTIN_ALIAS
-    {"unalias", &builtin_alias, B_DEFAULT, "[-a] [name ...]", help_alias},
+    {"unalias", &builtin_unalias, B_DEFAULT, "[-a] [name ...]", help_unalias},
 #endif
 #if BUILTIN_UNAME
     {"uname", &builtin_uname, B_DEFAULT, "[-amnrspvio]", help_uname},

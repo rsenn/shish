@@ -148,6 +148,7 @@ struct ngrp {
 struct nfor {
   enum kind id;
   unsigned bgnd : 1; /* run in background */
+  unsigned has_in : 1; /* "for x in ...": true even when the list is empty */
   union node* next;
   union node* rdir; /* redirections */
   union node* cmds;

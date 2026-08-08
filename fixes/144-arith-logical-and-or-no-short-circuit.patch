@@ -1,0 +1,35 @@
+diff --git a/src/expand/expand_arith_binary.c b/src/expand/expand_arith_binary.c
+index 807e9e05..ce485648 100644
+--- a/src/expand/expand_arith_binary.c
++++ b/src/expand/expand_arith_binary.c
+@@ -8,9 +8,28 @@
+  * ----------------------------------------------------------------------- */
+ int
+ expand_arith_binary(struct narithbinary* expr, int64* r) {
+-  int64 left, right;
++  int64 left, right = 0;
+ 
+-  if(expand_arith_expr(expr->left, &left) || expand_arith_expr(expr->right, &right))
++  if(expand_arith_expr(expr->left, &left))
++    return 1;
++
++  /* POSIX: "&&" and "||" only evaluate their right operand when the
++     left one doesn't already decide the result -- required since the
++     right operand can have side effects (e.g. an assignment). Without
++     this, the right side was always evaluated up front alongside the
++     left one below, so e.g. "0 && (a = 5)" wrongly ran the assignment
++     even though the left operand's falseness should have skipped it. */
++  if(expr->id == A_AND && !left) {
++    *r = 0;
++    return 0;
++  }
++
++  if(expr->id == A_OR && left) {
++    *r = 1;
++    return 0;
++  }
++
++  if(expand_arith_expr(expr->right, &right))
+     return 1;
+ 
+   switch(expr->id) {

@@ -125,5 +125,22 @@ parse_arith_value(struct parser* p) {
     }
   }
 
+  /* legacy backquoted command substitution ("`cmd`") is a valid
+     arithmetic operand too, same as "$(cmd)" above -- only the "$"
+     form was recognized here, so "$((1+`echo 1`))" failed to parse
+     at all even though "$((1+$(echo 1)))" worked. parse_bquoted()
+     itself tells "`...`" from "$(...)" by peeking the current
+     character (only reaching here for the bare backquote case) and
+     leaves its result in p->tree/p->node exactly like parse_subst()
+     does for "$(cmd)". */
+  if(c == '`') {
+    if(parse_bquoted(p))
+      return NULL;
+
+    node = p->tree;
+    p->node = p->tree = NULL;
+    return node;
+  }
+
   return NULL;
 }

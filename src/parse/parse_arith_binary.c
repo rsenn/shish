@@ -61,12 +61,20 @@ parse_arith_binary(struct parser* p, int precedence) {
 
     } else if(precedence <= 5) {
 
-      if(a == '>') {
+      /* "<<"/">>" belong to the tighter shift level below and must
+         not be mistaken for a chained "<"/">" here -- same class of
+         bug as the "&"/"&&" one above: a second, still-unconsumed
+         shift operator (e.g. the trailing "<<1" of "1<<2<<1", once
+         the first "1<<2" has already been parsed as the shift level's
+         own node and returned up as this frame's "left") otherwise
+         got read as a bare "<"/">" comparison instead of being left
+         for the shift level to have handled via its own chaining. */
+      if(a == '>' && b != '>') {
         op = b == '=' ? A_GE : A_GT;
 
         if(b == '=')
           parse_skip(p);
-      } else if(a == '<') {
+      } else if(a == '<' && b != '<') {
         op = b == '=' ? A_LE : A_LT;
 
         if(b == '=')
@@ -80,7 +88,14 @@ parse_arith_binary(struct parser* p, int precedence) {
         parse_skip(p);
       }
     } else if(precedence <= 7) {
-      if(b != '=')
+      /* "&&"/"||" belong to the next (looser) precedence level below --
+         without excluding b == a here, a bitwise "&"/"|" check run
+         against the *first* character of "&&"/"||" matched too (b was
+         only checked against '=', never against a repeat of a itself),
+         so "3&&-5" got mis-split into a one-character bitwise-AND
+         ("3&") plus a dangling "&-5" instead of ever reaching the
+         logical-AND branch below. */
+      if(b != '=' && !((a == '&' || a == '|') && b == a))
         switch(a) {
           case '&': op = A_BITAND; break;
           case '|': op = A_BITOR; break;
@@ -92,6 +107,18 @@ parse_arith_binary(struct parser* p, int precedence) {
         parse_skip(p);
       }
     }
+
+    /* stop *before* decrementing once a match is found -- otherwise
+       "precedence" (used just below to bound the right operand's own
+       recursion) ends up one level looser than the level that was
+       actually matched, e.g. "+" matching immediately at its own
+       precedence=3 still fell through to "--precedence" first, so the
+       right operand recursed at precedence 1 (exponent only) instead
+       of 2 (multiplicative) and never picked up a trailing "*3" --
+       left for an ancestor frame to instead re-group as
+       "(1+2)*3" instead of "1+(2*3)". */
+    if(op != -1)
+      break;
 
     --precedence;
   } while(op == -1);

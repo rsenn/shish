@@ -22,6 +22,8 @@ parse_for(struct parser* p) {
 
   /* next token can be 'in' */
   if(parse_gettok(p, P_DEFAULT) & T_IN) {
+    node->nfor.has_in = 1;
+
     /* now parse the arguments and build a list of them */
     while(parse_gettok(p, P_NOKEYWD) & (T_WORD | T_NAME | T_ASSIGN)) {
       *nptr = parse_getarg(p);

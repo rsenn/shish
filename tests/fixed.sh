@@ -3074,4 +3074,176 @@ if command -v valgrind >/dev/null 2>&1 && [ -n "$SHISH_SELF" ] && [ -x "$SHISH_S
   assert_equal "ok" "$X139_VG" "the same multi-signal trap uninstall must also be clean under valgrind (no invalid free/write reported)"
 fi
 
+## 140: "unalias" was registered as a bare alias of builtin_alias(),
+## which has no removal logic at all and no "-a" option -- so
+## "unalias name" silently left the alias in place (falling into
+## builtin_alias's "define" path instead) and "unalias -a" just
+## errored out with "invalid option", even though both were
+## documented as working in help_alias's own text.
+X140=$(alias foo=bar; unalias foo; alias)
+assert_equal "" "$X140" "unalias NAME must actually remove the alias"
+
+X140_ALL=$(alias foo=bar; alias baz=qux; unalias -a; alias)
+assert_equal "" "$X140_ALL" "unalias -a must remove every defined alias"
+
+X140_ERR=$(unalias nosuchalias 2>&1 1>/dev/null)
+assert_match "$X140_ERR" "*no such alias*" "unalias on an undefined name must report an error instead of silently succeeding"
+
+## 141: parse_arith_unary()'s operand fallback called parse_arith_value()
+## (primaries only) instead of recursing back into parse_arith_unary(),
+## so a *chained* unary operator ("-+-2": minus of (plus of (minus of
+## 2))) left the outer unary node's operand NULL once the inner '+'/'-'
+## was reached -- expand_arith_expr() then dereferenced that NULL node,
+## segfaulting the whole shell instead of just failing to evaluate the
+## one expression.
+X141=$(echo $((-+-2)) $((~-2)) $((!!5)))
+assert_equal "2 1 1" "$X141" "chained unary arithmetic operators (sign/bitwise-not/logical-not) must not segfault"
+
+## 142: an unset (or empty) variable used directly in arithmetic
+## context ("$((x))") is required by POSIX to evaluate as 0, but
+## N_ARGPARAM's "scanned zero digits" case in expand_arith_expr()
+## returned failure (ret = 1) even for this intentional "value is
+## empty, default to 0" path -- expand_arith() treats any nonzero
+## return as "expansion failed" and produces no output at all, rather
+## than substituting the 0 it had already computed into *r.
+X142=$(unset x; echo $((x)))
+assert_equal "0" "$X142" "an unset variable in arithmetic context must expand to 0, not silently produce no output"
+
+## 143: several precedence/tokenizing bugs in parse_arith_binary(),
+## all found chasing down the same "operator precedence" test group:
+## (a) the bitwise "&"/"|"/"^" check only excluded a following '=', so
+## it also matched the *first* character of "&&"/"||", misparsing e.g.
+## "3&&-5" as one-character bitwise-AND "3&" plus a dangling "&-5";
+## (b) the same collision existed between relational "<"/">" and shift
+## "<<"/">>", breaking chained shifts like "1<<2<<1"; (c) the do-while
+## that searches downward for the matching precedence level kept
+## decrementing its "precedence" variable even after finding a match on
+## the very first check, so the right operand's own recursion bound
+## itself one level too loose and a later, tighter operator (e.g. the
+## "*3" in "1+2*3") got left for an ancestor frame to wrongly re-group
+## as "(1+2)*3" instead of "1+(2*3)".
+X143=$(echo $((3&&-5)) $((3||-5)) $((1<<2<<1)) $((1+2*3)) $((9-2*3)))
+assert_equal "1 1 8 7 3" "$X143" "&&/|| vs &/|, <</>> vs <//>, and cross-precedence grouping must all parse correctly"
+
+## 144: expand_arith_binary() evaluated both operands of "&&"/"||"
+## unconditionally before even looking at which operator it was, so
+## the right operand's side effects (e.g. an assignment) always ran
+## even when the left operand already decided the result and POSIX
+## requires short-circuiting -- "0 && (a=5)" wrongly still set a to 5.
+X144=$(a=0; : $((0&&(a=5))); echo $a)
+assert_equal "0" "$X144" "arithmetic && must not evaluate its right operand once the left one is already false"
+
+X144_OR=$(a=0; : $((1||(a=5))); echo $a)
+assert_equal "0" "$X144_OR" "arithmetic || must not evaluate its right operand once the left one is already true"
+
+## 145: parse_arith_value() only recognized "$(...)"/"$((...))" as a
+## command-substitution-shaped operand, never a bare "\`cmd\`" -- so
+## "$((1+\`echo 10\`))" failed to parse at all even though the
+## "$(...)" equivalent worked fine.
+X145=$(echo $((1+`echo 10`)))
+assert_equal "11" "$X145" "legacy backquoted command substitution must be usable as an arithmetic operand"
+
+## 146: eval_for() pushes its own "en" eval frame (so break/continue
+## can target this loop specifically) but runs the loop body against
+## the *caller's* "e" instead, needed so the body's commands update
+## the same $?/errexit state the rest of the script sees -- yet it
+## returned eval_pop(&en)'s "en.exitcode", a field nothing ever wrote,
+## always 0 regardless of the body. This was invisible whenever a
+## later command in the *same* top-level list (e.g. "for ...; done;
+## echo $?" all on one line) read "$?" before sh_loop() next synced
+## its own status global from a *different* top-level list's result --
+## but a for loop sitting on its own lines (the common, idiomatic
+## case) immediately clobbered "$?" to 0 right after finishing, no
+## matter what its body actually exited with.
+X146=$(for i in 1; do
+  false
+done
+echo $?)
+assert_equal "1" "$X146" "a for-loop on its own must report its body's real exit status, not always 0"
+
+X146_EMPTY=$(true; for i in ; do false; done; echo $?)
+assert_equal "0" "$X146_EMPTY" "a for-loop whose item list is empty (body never runs) must report exit status 0"
+
+X146_BREAK=$(for i in 1 2; do false; break; done; echo $?)
+assert_equal "0" "$X146_BREAK" "a for-loop ended by 'break' must report break's own exit status (0), not stale state"
+
+## 147: the same bug as 146, in eval_loop() (while/until), plus a
+## second one specific to it: even after tracking the body's own
+## exitcode, the *next* iteration's test re-run (needed to decide
+## whether to keep looping) executes against the same shared "e" and
+## overwrites it before the loop exits -- so the loop's reported
+## status came out as that of its final, loop-ending *test* instead of
+## its last real *body* command. Needed a snapshot taken immediately
+## after each body run, not a read of "e" after the surrounding
+## for(;;) in eval_loop() has already moved on.
+X147=$(i=0
+while [ "$i" -lt 1 ]; do
+  i=1
+  false
+done
+echo $?)
+assert_equal "1" "$X147" "a while-loop on its own must report its last body command's real exit status, not the loop-ending test's"
+
+X147_UNTIL=$(i=0
+until [ "$i" -ge 1 ]; do
+  i=1
+  false
+done
+echo $?)
+assert_equal "1" "$X147_UNTIL" "same as above, for until"
+
+X147_NEVER=$(true; while false; do echo nope; done; echo $?)
+assert_equal "0" "$X147_NEVER" "a while-loop whose test fails immediately (body never runs) must report exit status 0"
+
+## 148: eval_for() distinguished "for x in <list>" from a bare
+## "for x; do" (which POSIX says must fall back to iterating the
+## positional parameters) purely by checking whether nfor->args was
+## non-NULL -- but an *explicit*, merely empty "in" list ("for x in ;
+## do") leaves nfor->args NULL exactly the same way as never having an
+## "in" clause at all, so it wrongly fell into the positional-param
+## fallback and iterated $1, $2, ... instead of zero times. In a
+## command-substitution subshell context where sh->arg.c/sh->arg.v can
+## disagree about how many args are actually live, that same wrong
+## fallback also dereferenced a bogus pointer and segfaulted the whole
+## shell instead of just running the loop zero times.
+set -- pos1 pos2
+X148=$(for i in ; do echo "got:$i"; done; echo done)
+assert_equal "done" "$X148" "'for x in ;' (explicit, empty list) must iterate zero times, not fall back to \$1 \$2 ..."
+
+X148_BARE=$(for i; do echo "got:$i"; done)
+assert_equal "got:pos1
+got:pos2" "$X148_BARE" "a bare 'for x;' (no 'in' clause at all) must still fall back to the positional parameters"
+
+X148_SUBSHELL=$(true; for i in ; do false; done; echo marker=$?)
+assert_equal "marker=0" "$X148_SUBSHELL" "'for x in ;' inside a command substitution must not crash and must report exit status 0"
+
+## 149: eval_jump() (break/continue) discarded a *successfully* matched
+## enclosing loop ("j") the moment it walked as far as a function/
+## subshell/top-level (E_ROOT) boundary with leftover, unsatisfied
+## "levels" -- conflating "break N asked for more levels than there
+## are enclosing loops here" (bash: not an error, just targets the
+## outermost loop reachable without crossing the boundary) with "no
+## loop was found *at all* before hitting the boundary" (a real
+## escape attempt, correctly a no-op). A top-level script's own eval
+## frame also carries E_ROOT (see sh_loop.c's "E_ROOT | E_LIST"
+## tempflags), so even an ordinary "break 2" from a single enclosing
+## loop at the top of a plain script silently failed to break
+## anything at all instead of breaking that one loop.
+X149=$(for i in 1; do
+  break 2
+  echo not_reached
+done
+echo after)
+assert_equal "after" "$X149" "'break N' with N greater than the actual nesting depth must still break the outermost enclosing loop"
+
+X149_DEEP=$(for i in 1; do
+  for j in a; do
+    break 3
+    echo not_reached_1
+  done
+  echo not_reached_2
+done
+echo after)
+assert_equal "after" "$X149_DEEP" "'break N' exceeding nesting depth by more than one level must still break all enclosing loops"
+
 summary

@@ -1,0 +1,23 @@
+diff --git a/src/parse/parse_arith_unary.c b/src/parse/parse_arith_unary.c
+index 2099fe82..fabc267b 100644
+--- a/src/parse/parse_arith_unary.c
++++ b/src/parse/parse_arith_unary.c
+@@ -48,7 +48,17 @@ parse_arith_unary(struct parser* p) {
+   parse_skipspace(p);
+ 
+   unary = tree_newnode(n);
+-  unary->narithunary.node = node ? node : parse_arith_value(p);
++
++  /* the operand of a sign/logical/bitwise unary op can itself be
++     another unary expression ("-+-2", "!!x") and must be parsed
++     recursively -- but prefix ++/-- need an assignable lvalue, which
++     is exactly what parse_arith_value() alone parses. Using
++     parse_arith_value() for the general case left it returning NULL
++     on a leading '+'/'-'/'~'/'!' (that function only parses primaries),
++     so a chained unary op's node ended up NULL and later evaluation
++     (expand_arith_expr() on that NULL node) segfaulted. */
++  unary->narithunary.node =
++      (n == A_PREINCR || n == A_PREDECR) ? parse_arith_value(p) : parse_arith_unary(p);
+ 
+   return unary;
+ }

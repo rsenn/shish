@@ -302,6 +302,90 @@ spinning instead of erroring on the resulting bad fd).
 `until-y.tst`, `while-y.tst`) that still hang, none yet isolated to a
 specific case; see `BUGS: yash-suite-other-hangs`.
 
+A 2026-08-08 pass specifically triaged `tests/posix` failures (not the
+`tests/yash` suite above), starting from `arith-p.tst` (17/65 passing)
+and finding seven independent, real arithmetic-expansion bugs chased
+down together (`fixes/141`-`145`): a segfault on any *chained* unary
+operator (`$((-+-2))`, `parse_arith_unary.c` recursed into
+`parse_arith_value()`, primaries-only, instead of back into itself);
+an unset/empty variable in arithmetic context producing no output
+instead of the POSIX-mandated `0`; `&&`/`||` silently misparsed as
+one-character `&`/`|` (the bitwise branch in `parse_arith_binary.c`
+only excluded a following `=`, never a repeat of the same character);
+`&&`/`||` never actually short-circuiting (`expand_arith_binary.c`
+evaluated both operands unconditionally, so `0 && (a=5)` still ran the
+assignment); the same "&"-repeat blind spot for `<`/`<<` and `>`/`>>`,
+breaking chained shifts (`1<<2<<1`); the operator-precedence search
+loop decrementing its level variable even after already matching on
+the very first check, so a later, tighter operator got left for an
+ancestor frame to wrongly re-group at a looser precedence
+(`1+2*3` → `(1+2)*3`); and legacy backquoted command substitution
+never being recognized as a valid arithmetic operand at all. Brought
+`arith-p.tst` to 32/43 (remaining gaps — `?:` unimplemented, `&`/`^`/`|`
+and `&&`/`||` each flattened into one shared precedence level instead
+of the distinct ones C/POSIX specify, and arithmetic assignment not
+rejecting a readonly target — filed individually in `BUGS`, not yet
+fixed).
+
+The same pass then found a much higher-leverage bug while chasing an
+unrelated `break`-argument test: `eval_for()`/`eval_loop()` (`for`/
+`while`/`until`) run their loop body against the *caller's* eval frame
+(needed so `break`/`continue`/`$?`/`errexit` state inside the body stay
+visible to the rest of the script) but push their own, separate frame
+purely so a jump has something to target — and then returned *that*
+frame's own `exitcode` field, which nothing had ever written, instead
+of copying over what the body actually left the shared frame at.
+Confirmed via `gdb` watchpoint on `sh->exitcode`: it flipped from a
+body command's real status back to a hardcoded `0` the instant the
+loop's own frame got popped. This was invisible whenever a *later*
+command in the exact same top-level list (`for ...; done; echo $?` all
+on one line) happened to read `$?` first, which is why it went
+unnoticed this long — but a loop sitting on its own lines, the
+ordinary way real scripts are written, silently clobbered `$?` to `0`
+right after every single `for`/`while`/`until`, regardless of how the
+loop's body actually exited. Fixed (`fixes/146`, `147`) by tracking the
+body's real last-run status (for `while`/`until`, snapshotted
+immediately after each body run, since the *next* iteration's own test
+re-run otherwise overwrites it first) and syncing it back to both the
+loop's own pushed frame and the global `sh->exitcode` directly — the
+same pattern `eval_subshell()` already used for `(...)`, just never
+applied here.
+
+Chasing a segfault this surfaced (`for i in ; do ... done` inside a
+command substitution) found a second, independent bug in the same
+function: `eval_for()` distinguished a real `for x in <words>` from a
+bare `for x; do` (which POSIX says must fall back to iterating the
+positional parameters) purely by whether the parsed argument list was
+non-`NULL` — indistinguishable from an *explicit*, merely empty `in`
+list (`for x in ; do`), which also parses to `NULL`. Fixed (`fixes/148`)
+by adding a real `has_in` flag to `struct nfor`, set at parse time.
+
+Finally, `break N`/`continue N` with `N` greater than the actual
+enclosing-loop nesting depth (POSIX/bash: not an error, just targets
+the outermost loop reachable) turned out to always silently do
+nothing instead, even for a single ordinary loop at the very top of a
+plain script. `eval_jump()`'s search discarded an already-matched loop
+the instant it walked as far as a function/subshell/root boundary with
+leftover, unsatisfied levels — conflating "asked for more levels than
+exist here" with the real escape case the check exists to prevent (no
+loop matched *at all* yet). A plain top-level script's own eval frame
+carries the same `E_ROOT` flag a real subshell boundary does (via
+`sh_loop()`'s own `E_ROOT | E_LIST` tempflags), which is what made this
+bite even the most ordinary case. Fixed (`fixes/149`) by stopping the
+search at the boundary without nulling an already-found match. One
+related, deliberately unfixed case remains open (`break`/`continue`
+run via `eval` inside a loop still no-ops, since `eval`'s own internal
+frame reuses the same `E_ROOT` flag for an unrelated purpose) — see
+`BUGS: break-continue-inside-eval-no-op`.
+
+Net effect on the specific files touched: `arith-p.tst` 17/65 → 32/43,
+`for-p.tst` → 19/20, `while-p.tst`/`until-p.tst` → 14/16 each,
+`break-p.tst` → 31/32. The full `tests/posix` suite (144 files) still
+has real failures in many other, unrelated areas — see `BUGS` for the
+ternary/precedence/readonly arithmetic gaps and the `sigcont`/`sighup`/
+`sigint`/`sigquit`/`sigterm`/`sigurg` trap-disposition family (24 files,
+one shared but not yet root-caused cause) filed the same day.
+
 ---
 
 ## Goal 2 — `src/job` cleanup

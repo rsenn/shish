@@ -1,0 +1,31 @@
+diff --git a/src/eval/eval_jump.c b/src/eval/eval_jump.c
+index 87c32790..b8821371 100644
+--- a/src/eval/eval_jump.c
++++ b/src/eval/eval_jump.c
+@@ -33,10 +33,23 @@ eval_jump(int levels, int cont) {
+        whatever now occupies that memory) and crashes forking the
+        next external command with a heap "double free or corruption"
+        or straight SIGSEGV. */
+-    if(e->flags & (E_FUNCTION | E_ROOT)) {
+-      j = NULL;
++    /* stop the search at the boundary, but don't discard a loop
++       already matched *within* the current function/subshell/top-level
++       scope -- POSIX/bash: "break N"/"continue N" with N greater than
++       the actual nesting depth simply targets the outermost enclosing
++       loop reachable without crossing such a boundary, it is not an
++       error and does not silently no-op. Nulling "j" unconditionally
++       here conflated that ordinary "N is too large" case (a valid "j"
++       already found, just fewer than N loops available) with the real
++       escape case this check exists to prevent (no loop matched *yet*
++       when the boundary is hit, e.g. "break" called directly inside a
++       function or subshell with no loop of its own) -- so "break 2"
++       from a single enclosing loop at the very top of a script (whose
++       own eval frame also carries E_ROOT, see sh_loop.c's E_ROOT
++       tempflag) silently failed to break at all instead of breaking
++       that one loop, exactly the way bash does. */
++    if(e->flags & (E_FUNCTION | E_ROOT))
+       break;
+-    }
+ 
+     if(e->jump && (e->flags & E_LOOP)) {
+       j = e;

@@ -1,0 +1,65 @@
+diff --git a/src/eval/eval_for.c b/src/eval/eval_for.c
+index 97f4c3f9..9ae29da5 100644
+--- a/src/eval/eval_for.c
++++ b/src/eval/eval_for.c
+@@ -11,9 +11,22 @@ int
+ eval_for(struct eval* e, struct nfor* nfor) {
+   struct eval en;
+   union node *node, *args = NULL;
++  int ran = 0;
+ 
+-  if(nfor->args) {
+-    expand_args(nfor->args, &args, 0);
++  /* POSIX 3.9.4.2: "for x in ...; do" iterates over exactly the (maybe
++     empty) word list following "in" -- only a bare "for x; do", with
++     no "in" clause at all, falls back to the positional parameters.
++     Checking "nfor->args" alone can't tell those apart: an explicit,
++     empty "in" list ("for x in ; do") leaves it NULL exactly the same
++     as never having an "in" clause to begin with, so it wrongly fell
++     into the sh->arg.c fallback below instead of iterating zero times.
++     In a context where sh->arg.c/sh->arg.v disagree about how many
++     args are actually live (confirmed via a command-substitution
++     subshell), that fallback also dereferenced a bogus sh->arg.v[i]
++     and segfaulted instead of just leaving the loop body unrun. */
++  if(nfor->has_in) {
++    if(nfor->args)
++      expand_args(nfor->args, &args, 0);
+   } else {
+     union node** nptr = &args;
+ 
+@@ -54,10 +67,34 @@ eval_for(struct eval* e, struct nfor* nfor) {
+ 
+     /* evaluate loop body */
+     eval_tree(e, nfor->cmds, E_LIST);
++    ran = 1;
+   }
+ 
+   if(args)
+     tree_free(args);
+ 
+-  return eval_pop(&en);
++  /* POSIX 2.9.4: a for-loop's own exit status is that of the last
++     command run in its body (0 if the body never ran at all, e.g. an
++     empty item list) -- "en" is a fresh eval frame pushed just for
++     this loop (so break/continue can target it) and its "exitcode"
++     field is never otherwise touched, since the body itself runs
++     against the *caller's* "e" (needed so eval_jump() can reach an
++     enclosing loop through this frame). Without copying e's value
++     here, eval_pop(&en) below always returned 0 regardless of what
++     the body actually did. This stayed invisible whenever another
++     command in the same top-level list happened to read "$?" before
++     sh_loop() next synced its own exit-status global from this
++     return value -- but a for/while/until loop sitting on its own
++     (the common case for real scripts) immediately clobbered "$?" to
++     0 right after finishing, no matter how its body actually exited. */
++  if(ran)
++    en.exitcode = e->exitcode;
++
++  /* also sync the global right away, exactly like eval_subshell() does
++     for "(...)" -- otherwise a "$?" expanded by a *later* command
++     still sharing this same top-level list (e.g. "for ...; done;
++     echo $?" all on one line) read whatever the body's last command
++     had left sh->exitcode at directly, rather than this compound
++     command's own, just-computed aggregate result. */
++  return sh->exitcode = eval_pop(&en);
+ }

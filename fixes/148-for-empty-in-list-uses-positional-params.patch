@@ -1,0 +1,25 @@
+diff --git a/src/parse/parse_for.c b/src/parse/parse_for.c
+index d799d35c..7b368372 100644
+--- a/src/parse/parse_for.c
++++ b/src/parse/parse_for.c
+@@ -22,6 +22,8 @@ parse_for(struct parser* p) {
+ 
+   /* next token can be 'in' */
+   if(parse_gettok(p, P_DEFAULT) & T_IN) {
++    node->nfor.has_in = 1;
++
+     /* now parse the arguments and build a list of them */
+     while(parse_gettok(p, P_NOKEYWD) & (T_WORD | T_NAME | T_ASSIGN)) {
+       *nptr = parse_getarg(p);
+diff --git a/src/tree.h b/src/tree.h
+index b2c6c562..fc993b59 100644
+--- a/src/tree.h
++++ b/src/tree.h
+@@ -148,6 +148,7 @@ struct ngrp {
+ struct nfor {
+   enum kind id;
+   unsigned bgnd : 1; /* run in background */
++  unsigned has_in : 1; /* "for x in ...": true even when the list is empty */
+   union node* next;
+   union node* rdir; /* redirections */
+   union node* cmds;

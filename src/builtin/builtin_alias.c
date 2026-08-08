@@ -71,9 +71,11 @@ const char help_alias[] =
     "\n"
     "    -p              print every alias as 'alias NAME=VALUE'\n"
     "    name=value      define or redefine an alias\n"
-    "    name            print that one alias's definition\n"
+    "    name            print that one alias's definition\n";
+
+const char help_unalias[] =
+    "    Remove shell aliases.\n"
     "\n"
-    "    unalias uses the same implementation:\n"
     "    -a              remove every defined alias\n"
     "    name            remove the named alias\n";
 
@@ -125,4 +127,40 @@ builtin_alias(int argc, char* argv[]) {
   }
 
   return 0;
+}
+
+/* unalias built-in
+ * ----------------------------------------------------------------------- */
+int
+builtin_unalias(int argc, char* argv[]) {
+  int c, ret = 0, all = 0;
+  char** argp;
+
+  while((c = shell_getopt(argc, argv, "a")) > 0) {
+    switch(c) {
+      case 'a': all = 1; break;
+      default: builtin_invopt(argv); return 1;
+    }
+  }
+
+  if(all) {
+    while(parse_aliases)
+      alias_remove(&parse_aliases);
+
+    return 0;
+  }
+
+  for(argp = &argv[shell_optind]; *argp; argp++) {
+    struct alias** aptr = alias_search(*argp);
+
+    if(!*aptr) {
+      builtin_errmsg(argv, *argp, "no such alias");
+      ret = 1;
+      continue;
+    }
+
+    alias_remove(aptr);
+  }
+
+  return ret;
 }
