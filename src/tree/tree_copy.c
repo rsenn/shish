@@ -132,6 +132,15 @@ tree_copy(union node* node) {
 
       case A_NUM: break;
 
+      case A_TERNARY:
+        copy->narithternary.cond =
+            node->narithternary.cond ? tree_copy(node->narithternary.cond) : NULL;
+        copy->narithternary.ontrue =
+            node->narithternary.ontrue ? tree_copy(node->narithternary.ontrue) : NULL;
+        copy->narithternary.onfalse =
+            node->narithternary.onfalse ? tree_copy(node->narithternary.onfalse) : NULL;
+        break;
+
       case A_OR:
       case A_AND:
       case A_BITOR:
@@ -177,8 +186,7 @@ tree_copy(union node* node) {
       case A_PREDECR:
       case A_POSTINCR:
       case A_POSTDECR:
-        copy->narithunary.node =
-            node->narithunary.node ? tree_copy(node->narithunary.node) : NULL;
+        copy->narithunary.node = node->narithunary.node ? tree_copy(node->narithunary.node) : NULL;
         break;
 
       case N_FUNCTION:

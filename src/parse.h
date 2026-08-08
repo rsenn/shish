@@ -317,9 +317,16 @@ union node* parse_loop(struct parser* p);
 union node* parse_pipeline(struct parser* p);
 union node* parse_simple_command(struct parser* p);
 
+/* loosest level parse_arith_binary() understands ("||"); the single
+   source of truth for where the non-assignment operator chain starts,
+   so parse_arith_ternary()/parse_arith_binary() can't drift out of sync
+   the way the old duplicated "9" literals did. */
+#define ARITH_PREC_TOP 11
+
 union node* parse_arith_binary(struct parser* p, int precedence);
 union node* parse_arith_expr(struct parser* p);
 union node* parse_arith_paren(struct parser* p);
+union node* parse_arith_ternary(struct parser* p);
 union node* parse_arith_unary(struct parser* p);
 union node* parse_arith_value(struct parser* p);
 union node* parse_arith_assign(struct parser*, union node*);

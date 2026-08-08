@@ -44,6 +44,7 @@ enum kind {
 
   A_NUM,
   A_PAREN,
+  A_TERNARY, // cond ? ontrue : onfalse
   // binary
   A_OR,
   A_AND,
@@ -147,7 +148,7 @@ struct ngrp {
  * ----------------------------------------------------------------------- */
 struct nfor {
   enum kind id;
-  unsigned bgnd : 1; /* run in background */
+  unsigned bgnd : 1;   /* run in background */
   unsigned has_in : 1; /* "for x in ...": true even when the list is empty */
   union node* next;
   union node* rdir; /* redirections */
@@ -306,6 +307,15 @@ struct narithbinary {
   union node* right;
 } SHISH_TREE_PACKED;
 
+struct narithternary {
+  enum kind id;
+  unsigned dummy : 1;
+  union node* next;
+  union node* cond;
+  union node* ontrue;
+  union node* onfalse;
+} SHISH_TREE_PACKED;
+
 /* ----------------------------------------------------------------------- */
 union node {
   struct {
@@ -334,6 +344,7 @@ union node {
   struct narithnum narithnum;
   struct narithunary narithunary;
   struct narithbinary narithbinary;
+  struct narithternary narithternary;
 };
 
 typedef union node node_t;

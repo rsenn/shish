@@ -1,0 +1,73 @@
+diff --git a/src/parse/parse_arith_binary.c b/src/parse/parse_arith_binary.c
+index e5197bcb..294ec0a3 100644
+--- a/src/parse/parse_arith_binary.c
++++ b/src/parse/parse_arith_binary.c
+@@ -22,11 +22,17 @@ parse_arith_binary(struct parser* p, int precedence) {
+     return left;
+   }
+ 
++  /* precedence runs from 1 (tightest, "**") through ARITH_PREC_TOP
++     (loosest, "||"); each branch below matches exactly one operator
++     level, walked in decreasing order starting at this frame's entry
++     precedence. The first match wins and stops the walk (see the
++     "op != -1" break below), which keeps the matched operator's level
++     in sync with how tightly its right-hand side is allowed to bind. */
+   do {
+     if(precedence <= 0)
+       break;
+ 
+-    if(precedence <= 9) {
++    if(precedence <= ARITH_PREC_TOP) {
+       if((a == '-' || a == '+') && b == a)
+         return NULL;
+     }
+@@ -88,22 +94,34 @@ parse_arith_binary(struct parser* p, int precedence) {
+         parse_skip(p);
+       }
+     } else if(precedence <= 7) {
+-      /* "&&"/"||" belong to the next (looser) precedence level below --
+-         without excluding b == a here, a bitwise "&"/"|" check run
+-         against the *first* character of "&&"/"||" matched too (b was
+-         only checked against '=', never against a repeat of a itself),
+-         so "3&&-5" got mis-split into a one-character bitwise-AND
+-         ("3&") plus a dangling "&-5" instead of ever reaching the
+-         logical-AND branch below. */
+-      if(b != '=' && !((a == '&' || a == '|') && b == a))
+-        switch(a) {
+-          case '&': op = A_BITAND; break;
+-          case '|': op = A_BITOR; break;
+-          case '^': op = A_BITXOR; break;
+-        }
++      /* bitwise AND binds tightest of "&"/"^"/"|" (C/POSIX order), and
++         must not be mistaken for the leading '&' of "&&" -- same class
++         of bug as the shift-vs-relational one above: without excluding
++         b == '&' here, "3&&-5" got mis-split into a one-character
++         bitwise-AND ("3&") plus a dangling "&-5" instead of ever
++         reaching the logical-AND level. */
++      if(a == '&' && b != '&' && b != '=')
++        op = A_BITAND;
+     } else if(precedence <= 8) {
+-      if((a == '&' || a == '|') && a == b) {
+-        op = a == '&' ? A_AND : A_OR;
++      /* "^" sits between "&" and "|"; no "^^" operator exists, so
++         there's no chained-operator case to guard against here. */
++      if(a == '^' && b != '=')
++        op = A_BITXOR;
++    } else if(precedence <= 9) {
++      /* loosest of the three bitwise levels; same "||" exclusion as
++         the bitwise-AND level above, mirrored for '|'. */
++      if(a == '|' && b != '|' && b != '=')
++        op = A_BITOR;
++    } else if(precedence <= 10) {
++      if(a == '&' && b == '&') {
++        op = A_AND;
++        parse_skip(p);
++      }
++    } else if(precedence <= 11) {
++      /* loosest binary level: logical OR binds looser than logical
++         AND, same as the C/POSIX table this whole ladder follows. */
++      if(a == '|' && b == '|') {
++        op = A_OR;
+         parse_skip(p);
+       }
+     }

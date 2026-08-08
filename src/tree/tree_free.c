@@ -133,6 +133,17 @@ tree_free(union node* node) {
 
         // case A_VAR: alloc_free(node->narithvar.var); break;
 
+      case A_TERNARY:
+        if(node->narithternary.cond)
+          tree_free(node->narithternary.cond);
+
+        if(node->narithternary.ontrue)
+          tree_free(node->narithternary.ontrue);
+
+        if(node->narithternary.onfalse)
+          tree_free(node->narithternary.onfalse);
+        break;
+
       case A_OR:
       case A_AND:
       case A_BITOR:

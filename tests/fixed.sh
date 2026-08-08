@@ -3246,4 +3246,30 @@ done
 echo after)
 assert_equal "after" "$X149_DEEP" "'break N' exceeding nesting depth by more than one level must still break all enclosing loops"
 
+## 150: $((cond ? a : b)) had no parser support at all -- parse_arith_binary.c
+## stopped at the binary operators, with no precedence level or node kind
+## for "?:". Added parse_arith_ternary.c as its own level above the binary
+## chain: right-associative (chained "a?b:c?d:e" groups as "a?b:(c?d:e)")
+## and short-circuiting (only the taken branch's side effects run).
+X150=$(echo $((1?2:3)) $((0?2:3)))
+assert_equal "2 3" "$X150" "\$((cond ? a : b)) must parse and evaluate to the taken branch"
+
+X150_CHAIN=$(echo $((0?1:0?2:3)))
+assert_equal "3" "$X150_CHAIN" "chained '?:' must associate right-to-left"
+
+a=0 b=0
+: $((1?(a=5):(b=-5)))
+assert_equal "5 0" "$a $b" "only the taken branch of '?:' may run its side effects"
+
+## 151: "&", "^", "|" were all handled by a single combined precedence
+## level in parse_arith_binary.c instead of three distinct, increasingly
+## looser C/POSIX levels ("&" tightest), and likewise "&&"/"||" shared one
+## level instead of "&&" binding tighter than "||". Split each into its
+## own level (renumbering everything above accordingly).
+X151_BIT=$(echo $((1^0&0)))
+assert_equal "1" "$X151_BIT" "'&' must bind tighter than '^' (1^(0&0), not (1^0)&0)"
+
+X151_LOG=$(echo $((1||0&&0)))
+assert_equal "1" "$X151_LOG" "'&&' must bind tighter than '||' (1||(0&&0), not (1||0)&&0)"
+
 summary

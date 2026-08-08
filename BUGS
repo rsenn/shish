@@ -136,35 +136,6 @@
     `job->command` gets built). Not yet root-caused to a specific
     missing free.
 
-- arith-ternary-not-implemented: `$((cond ? a : b))` doesn't parse at
-  all (`unexpected token WORD, expecting ')'`) -- `parse_arith_binary.c`
-  has no precedence level or node kind for `?:`, only the binary/unary
-  operators. Confirmed: `echo $((1?2:3))` errors instead of printing
-  `2`. Affects `tests/posix/arith-p.tst` cases `conditional evaluation
-  of ?: operator operand`, `operator precedence: conditionals` and
-  several others chained through it (`logical or and conditional`,
-  `assignments in conditionals`, `conditionals and assignments`,
-  `parentheses`).
-
-- arith-bitwise-and-xor-or-one-precedence-level: `&`, `^`, and `|` in
-  arithmetic expressions are all handled by the single `precedence<=7`
-  branch in `parse_arith_binary.c`, instead of the three distinct,
-  increasingly looser C/POSIX precedence levels (`&` tightest, then
-  `^`, then `|`). Confirmed: `echo $((1^0&0))` gives `0`
-  ((1^0)&0, wrong) instead of the correct `1` (1^(0&0), `&` binds
-  first). Needs splitting `parse_arith_binary.c`'s single bitwise
-  branch into three, and renumbering every precedence level above it
-  (and the "9" top-precedence literal in `parse_arith_assign.c` x2 and
-  `parse_arith_expr.c`) accordingly.
-
-- arith-logical-and-or-one-precedence-level: same class of bug as the
-  bitwise one above, one level up -- `&&` and `||` are both handled by
-  the single `precedence<=8` branch, instead of `&&` binding tighter
-  than `||` per C/POSIX. Confirmed: `echo $((1||0&&0))` gives `0`
-  ((1||0)&&0, wrong) instead of the correct `1` (1||(0&&0)). Same fix
-  shape as the bitwise entry above (split the branch, renumber above
-  it).
-
 - arith-assign-readonly-not-rejected: `$((a=5))` against a variable
   made readonly via the `readonly` builtin silently succeeds (and
   actually reassigns it) instead of erroring the way plain `a=5` does.

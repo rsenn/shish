@@ -327,6 +327,15 @@ of the distinct ones C/POSIX specify, and arithmetic assignment not
 rejecting a readonly target — filed individually in `BUGS`, not yet
 fixed).
 
+A later pass (`fixes/150`, `fixes/151`) closed the `?:` and
+precedence-flattening gaps: added `parse_arith_ternary.c` as its own
+right-associative, short-circuiting precedence level above the binary
+operator chain, and split `parse_arith_binary.c`'s single combined
+bitwise (`&`/`^`/`|`) and logical (`&&`/`||`) branches into their
+correct distinct C/POSIX levels. Brought `arith-p.tst` to 42/43 — the
+only case left is the readonly-assignment one, still open as
+`BUGS: arith-assign-readonly-not-rejected`.
+
 The same pass then found a much higher-leverage bug while chasing an
 unrelated `break`-argument test: `eval_for()`/`eval_loop()` (`for`/
 `while`/`until`) run their loop body against the *caller's* eval frame

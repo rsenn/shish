@@ -1,0 +1,443 @@
+diff --git a/src/debug/debug_node.c b/src/debug/debug_node.c
+index 4581b348..cc0a2711 100644
+--- a/src/debug/debug_node.c
++++ b/src/debug/debug_node.c
+@@ -14,17 +14,17 @@ extern int sh_no_position;
+ /* debugs a tree node!
+  * ----------------------------------------------------------------------- */
+ const char* debug_nodes[] = {
+-    "N_SIMPLECMD", "N_PIPELINE",   "N_AND",       "N_OR",       "N_NOT",      "N_LIST",
+-    "N_SUBSHELL",  "N_BRACEGROUP", "N_FOR",       "N_CASE",     "N_CASENODE", "N_IF",
+-    "N_WHILE",     "N_UNTIL",      "N_FUNCTION",  "N_ARG",      "N_ASSIGN",   "N_REDIR",
+-    "N_ARGSTR",    "N_ARGCMD",     "N_ARGPARAM",  "N_ARGARITH", "A_NUM",      "A_PAREN",
+-    "A_OR",        "A_AND",        "A_BITOR",     "A_BITXOR",   "A_BITAND",   "A_EQ",
+-    "A_NE",        "A_LT",         "A_GT",        "A_GE",       "A_LE",       "A_SHL",
+-    "A_SHR",       "A_ADD",        "A_SUB",       "A_MUL",      "A_DIV",      "A_MOD",
+-    "A_EXP",       "A_UNARYMINUS", "A_UNARYPLUS", "A_NOT",      "A_BNOT",     "A_PREDECR",
+-    "A_PREINCR",   "A_POSTDECR",   "A_POSTINCR",  "A_VASSIGN",  "A_VADD",     "A_VSUB",
+-    "A_VMUL",      "A_VDIV",       "A_VMOD",      "A_VSHL",     "A_VSHR",     "A_VBITAND",
+-    "A_VBITXOR",   "A_VBITOR",
++    "N_SIMPLECMD", "N_PIPELINE",   "N_AND",        "N_OR",        "N_NOT",      "N_LIST",
++    "N_SUBSHELL",  "N_BRACEGROUP", "N_FOR",        "N_CASE",      "N_CASENODE", "N_IF",
++    "N_WHILE",     "N_UNTIL",      "N_FUNCTION",   "N_ARG",       "N_ASSIGN",   "N_REDIR",
++    "N_ARGSTR",    "N_ARGCMD",     "N_ARGPARAM",   "N_ARGARITH",  "A_NUM",      "A_PAREN",
++    "A_TERNARY",   "A_OR",         "A_AND",        "A_BITOR",     "A_BITXOR",   "A_BITAND",
++    "A_EQ",        "A_NE",         "A_LT",         "A_GT",        "A_GE",       "A_LE",
++    "A_SHL",       "A_SHR",        "A_ADD",        "A_SUB",       "A_MUL",      "A_DIV",
++    "A_MOD",       "A_EXP",        "A_UNARYMINUS", "A_UNARYPLUS", "A_NOT",      "A_BNOT",
++    "A_PREDECR",   "A_PREINCR",    "A_POSTDECR",   "A_POSTINCR",  "A_VASSIGN",  "A_VADD",
++    "A_VSUB",      "A_VMUL",       "A_VDIV",       "A_VMOD",      "A_VSHL",     "A_VSHR",
++    "A_VBITAND",   "A_VBITXOR",    "A_VBITOR",
+ };
+ 
+ void
+@@ -258,6 +258,12 @@ if(node->nargparam.numb > 0) {
+ 
+     case A_PAREN: debug_subnode(", tree", node->nargarith.tree, depth); break;
+ 
++    case A_TERNARY:
++      debug_subnode(", cond", node->narithternary.cond, depth);
++      debug_subnode(", ontrue", node->narithternary.ontrue, depth);
++      debug_subnode(", onfalse", node->narithternary.onfalse, depth);
++      break;
++
+     case A_NOT:
+     case A_BNOT:
+     case A_UNARYMINUS:
+diff --git a/src/expand.h b/src/expand.h
+index 13736be5..c541853e 100644
+--- a/src/expand.h
++++ b/src/expand.h
+@@ -125,6 +125,7 @@ int expand_arith_expr(union node* expr, int64* r);
+ int expand_arith_assign(struct narithbinary*, int64*);
+ union node* expand_arith(struct nargarith* arith, union node** nptr);
+ int expand_arith_unary(struct narithunary* expr, int64* r);
++int expand_arith_ternary(struct narithternary* expr, int64* r);
+ union node* expand_brace_args(union node* args);
+ union node** expand_break(union node** out);
+ union node* expand_cat(const char* b, unsigned int len, union node** nptr, int flags);
+@@ -133,8 +134,8 @@ union node* expand_command(struct nargcmd* cmd, union node** nptr, int flags);
+ void expand_copysa(union node* node, stralloc* sa, int flags);
+ union node* expand_getorcreate(union node** out);
+ union node* expand_glob(union node** nptr, int flags);
+-int expand_tilde_lookup(const char* text, size_t len, int stop_at_colon, stralloc* home,
+-                         size_t* prefixlen);
++int expand_tilde_lookup(
++    const char* text, size_t len, int stop_at_colon, stralloc* home, size_t* prefixlen);
+ void expand_tilde_word(union node* arg);
+ void expand_tilde_assign(union node* var);
+ union node* expand_param(struct nargparam* param, union node** nptr, int flags);
+diff --git a/src/expand/expand_arith_expr.c b/src/expand/expand_arith_expr.c
+index 609e9c5b..44fdbce2 100644
+--- a/src/expand/expand_arith_expr.c
++++ b/src/expand/expand_arith_expr.c
+@@ -50,6 +50,8 @@ expand_arith_expr(union node* expr, int64* r) {
+ 
+     case A_PAREN: ret = expand_arith_expr(((struct narithunary*)expr)->node, r); break;
+ 
++    case A_TERNARY: ret = expand_arith_ternary(&expr->narithternary, r); break;
++
+     case A_UNARYMINUS:
+     case A_UNARYPLUS:
+     case A_NOT:
+diff --git a/src/parse.h b/src/parse.h
+index 36d8f0e3..f0f58ba6 100644
+--- a/src/parse.h
++++ b/src/parse.h
+@@ -317,9 +317,16 @@ union node* parse_loop(struct parser* p);
+ union node* parse_pipeline(struct parser* p);
+ union node* parse_simple_command(struct parser* p);
+ 
++/* loosest level parse_arith_binary() understands ("||"); the single
++   source of truth for where the non-assignment operator chain starts,
++   so parse_arith_ternary()/parse_arith_binary() can't drift out of sync
++   the way the old duplicated "9" literals did. */
++#define ARITH_PREC_TOP 11
++
+ union node* parse_arith_binary(struct parser* p, int precedence);
+ union node* parse_arith_expr(struct parser* p);
+ union node* parse_arith_paren(struct parser* p);
++union node* parse_arith_ternary(struct parser* p);
+ union node* parse_arith_unary(struct parser* p);
+ union node* parse_arith_value(struct parser* p);
+ union node* parse_arith_assign(struct parser*, union node*);
+diff --git a/src/parse/parse_arith_assign.c b/src/parse/parse_arith_assign.c
+index a4b3628d..0f050bf8 100644
+--- a/src/parse/parse_arith_assign.c
++++ b/src/parse/parse_arith_assign.c
+@@ -19,7 +19,7 @@ parse_arith_assign(struct parser* p, union node* left) {
+ 
+   for(nptr = &node;; left = 0) {
+ 
+-    if(((*nptr) = parse_arith_binary(p, 9)) == 0)
++    if(((*nptr) = parse_arith_ternary(p)) == 0)
+       break;
+ 
+     if((*nptr)->id != N_ARGPARAM)
+diff --git a/src/tree.h b/src/tree.h
+index fc993b59..6eb3dd44 100644
+--- a/src/tree.h
++++ b/src/tree.h
+@@ -44,6 +44,7 @@ enum kind {
+ 
+   A_NUM,
+   A_PAREN,
++  A_TERNARY, // cond ? ontrue : onfalse
+   // binary
+   A_OR,
+   A_AND,
+@@ -147,7 +148,7 @@ struct ngrp {
+  * ----------------------------------------------------------------------- */
+ struct nfor {
+   enum kind id;
+-  unsigned bgnd : 1; /* run in background */
++  unsigned bgnd : 1;   /* run in background */
+   unsigned has_in : 1; /* "for x in ...": true even when the list is empty */
+   union node* next;
+   union node* rdir; /* redirections */
+@@ -306,6 +307,15 @@ struct narithbinary {
+   union node* right;
+ } SHISH_TREE_PACKED;
+ 
++struct narithternary {
++  enum kind id;
++  unsigned dummy : 1;
++  union node* next;
++  union node* cond;
++  union node* ontrue;
++  union node* onfalse;
++} SHISH_TREE_PACKED;
++
+ /* ----------------------------------------------------------------------- */
+ union node {
+   struct {
+@@ -334,6 +344,7 @@ union node {
+   struct narithnum narithnum;
+   struct narithunary narithunary;
+   struct narithbinary narithbinary;
++  struct narithternary narithternary;
+ };
+ 
+ typedef union node node_t;
+diff --git a/src/tree/tree_cat.c b/src/tree/tree_cat.c
+index 7d2b21c5..9e471af0 100644
+--- a/src/tree/tree_cat.c
++++ b/src/tree/tree_cat.c
+@@ -541,6 +541,15 @@ again:
+       stralloc_catc(sa, ')');
+       break;
+ 
++    case A_TERNARY:
++
++      tree_cat(node->narithternary.cond, sa);
++      stralloc_cats(sa, " ? ");
++      tree_cat(node->narithternary.ontrue, sa);
++      stralloc_cats(sa, " : ");
++      tree_cat(node->narithternary.onfalse, sa);
++      break;
++
+     case A_NOT:
+     case A_BNOT:
+     case A_UNARYMINUS:
+diff --git a/src/tree/tree_copy.c b/src/tree/tree_copy.c
+index 2baadb95..092e13d4 100644
+--- a/src/tree/tree_copy.c
++++ b/src/tree/tree_copy.c
+@@ -132,6 +132,15 @@ tree_copy(union node* node) {
+ 
+       case A_NUM: break;
+ 
++      case A_TERNARY:
++        copy->narithternary.cond =
++            node->narithternary.cond ? tree_copy(node->narithternary.cond) : NULL;
++        copy->narithternary.ontrue =
++            node->narithternary.ontrue ? tree_copy(node->narithternary.ontrue) : NULL;
++        copy->narithternary.onfalse =
++            node->narithternary.onfalse ? tree_copy(node->narithternary.onfalse) : NULL;
++        break;
++
+       case A_OR:
+       case A_AND:
+       case A_BITOR:
+@@ -177,8 +186,7 @@ tree_copy(union node* node) {
+       case A_PREDECR:
+       case A_POSTINCR:
+       case A_POSTDECR:
+-        copy->narithunary.node =
+-            node->narithunary.node ? tree_copy(node->narithunary.node) : NULL;
++        copy->narithunary.node = node->narithunary.node ? tree_copy(node->narithunary.node) : NULL;
+         break;
+ 
+       case N_FUNCTION:
+diff --git a/src/tree/tree_free.c b/src/tree/tree_free.c
+index 8a7c3282..b50d3d58 100644
+--- a/src/tree/tree_free.c
++++ b/src/tree/tree_free.c
+@@ -133,6 +133,17 @@ tree_free(union node* node) {
+ 
+         // case A_VAR: alloc_free(node->narithvar.var); break;
+ 
++      case A_TERNARY:
++        if(node->narithternary.cond)
++          tree_free(node->narithternary.cond);
++
++        if(node->narithternary.ontrue)
++          tree_free(node->narithternary.ontrue);
++
++        if(node->narithternary.onfalse)
++          tree_free(node->narithternary.onfalse);
++        break;
++
+       case A_OR:
+       case A_AND:
+       case A_BITOR:
+diff --git a/src/tree/tree_nodesizes.c b/src/tree/tree_nodesizes.c
+index 53acb78d..a0d179c2 100644
+--- a/src/tree/tree_nodesizes.c
++++ b/src/tree/tree_nodesizes.c
+@@ -1,66 +1,67 @@
+ #include "../tree.h"
+ 
+ const int tree_nodesizes[] = {
+-    sizeof(struct ncmd),         /* N_SIMPLECMD */
+-    sizeof(struct npipe),        /* N_PIPELINE */
+-    sizeof(struct nandor),       /* N_AND */
+-    sizeof(struct nandor),       /* N_OR */
+-    sizeof(struct nnot),         /* N_NOT */
+-    sizeof(struct nlist),        /* N_LIST */
+-    sizeof(struct ngrp),         /* N_SUBSHELL */
+-    sizeof(struct ngrp),         /* N_BRACEGROUP */
+-    sizeof(struct nfor),         /* N_FOR */
+-    sizeof(struct ncase),        /* N_CASE */
+-    sizeof(struct ncasenode),    /* N_CASENODE */
+-    sizeof(struct nif),          /* N_IF */
+-    sizeof(struct nloop),        /* N_WHILE */
+-    sizeof(struct nloop),        /* N_UNTIL */
+-    sizeof(struct nfunc),        /* N_FUNCTION */
+-    sizeof(struct narg),         /* N_ARG */
+-    sizeof(struct narg),         /* N_ASSIGN */
+-    sizeof(struct nredir),       /* N_REDIR */
+-    sizeof(struct nargstr),      /* N_ARGSTR */
+-    sizeof(struct nargcmd),      /* N_ARGCMD */
+-    sizeof(struct nargparam),    /* N_ARGPARAM */
+-    sizeof(struct nargarith),    /* N_ARGARITH */
+-    sizeof(struct narithnum),    /* A_NUM */
+-    sizeof(struct nargarith),    /* A_PAREN */
+-    sizeof(struct narithbinary), /* A_OR */
+-    sizeof(struct narithbinary), /* A_AND */
+-    sizeof(struct narithbinary), /* A_BITOR */
+-    sizeof(struct narithbinary), /* A_BITXOR */
+-    sizeof(struct narithbinary), /* A_BITAND */
+-    sizeof(struct narithbinary), /* A_EQ */
+-    sizeof(struct narithbinary), /* A_NE */
+-    sizeof(struct narithbinary), /* A_LT */
+-    sizeof(struct narithbinary), /* A_GT */
+-    sizeof(struct narithbinary), /* A_GE */
+-    sizeof(struct narithbinary), /* A_LE */
+-    sizeof(struct narithbinary), /* A_SHL */
+-    sizeof(struct narithbinary), /* A_SHR */
+-    sizeof(struct narithbinary), /* A_ADD */
+-    sizeof(struct narithbinary), /* A_SUB */
+-    sizeof(struct narithbinary), /* A_MUL */
+-    sizeof(struct narithbinary), /* A_DIV */
+-    sizeof(struct narithbinary), /* A_MOD */
+-    sizeof(struct narithbinary), /* A_EXP */
+-    sizeof(struct narithunary),  /* A_UNARYMINUS */
+-    sizeof(struct narithunary),  /* A_UNARYPLUS */
+-    sizeof(struct narithunary),  /* A_NOT */
+-    sizeof(struct narithunary),  /* A_BNOT */
+-    sizeof(struct narithunary),  /* A_PREDECR */
+-    sizeof(struct narithunary),  /* A_PREINCR */
+-    sizeof(struct narithunary),  /* A_POSTDECR */
+-    sizeof(struct narithunary),  /* A_POSTINCR */
+-    sizeof(struct narithbinary), /* A_VASSIGN */
+-    sizeof(struct narithbinary), /* A_VADD */
+-    sizeof(struct narithbinary), /* A_VSUB */
+-    sizeof(struct narithbinary), /* A_VMUL */
+-    sizeof(struct narithbinary), /* A_VDIV */
+-    sizeof(struct narithbinary), /* A_VMOD */
+-    sizeof(struct narithbinary), /* A_VSHL */
+-    sizeof(struct narithbinary), /* A_VSHR */
+-    sizeof(struct narithbinary), /* A_VBITAND */
+-    sizeof(struct narithbinary), /* A_VBITXOR */
+-    sizeof(struct narithbinary)  /* A_VBITOR */
++    sizeof(struct ncmd),          /* N_SIMPLECMD */
++    sizeof(struct npipe),         /* N_PIPELINE */
++    sizeof(struct nandor),        /* N_AND */
++    sizeof(struct nandor),        /* N_OR */
++    sizeof(struct nnot),          /* N_NOT */
++    sizeof(struct nlist),         /* N_LIST */
++    sizeof(struct ngrp),          /* N_SUBSHELL */
++    sizeof(struct ngrp),          /* N_BRACEGROUP */
++    sizeof(struct nfor),          /* N_FOR */
++    sizeof(struct ncase),         /* N_CASE */
++    sizeof(struct ncasenode),     /* N_CASENODE */
++    sizeof(struct nif),           /* N_IF */
++    sizeof(struct nloop),         /* N_WHILE */
++    sizeof(struct nloop),         /* N_UNTIL */
++    sizeof(struct nfunc),         /* N_FUNCTION */
++    sizeof(struct narg),          /* N_ARG */
++    sizeof(struct narg),          /* N_ASSIGN */
++    sizeof(struct nredir),        /* N_REDIR */
++    sizeof(struct nargstr),       /* N_ARGSTR */
++    sizeof(struct nargcmd),       /* N_ARGCMD */
++    sizeof(struct nargparam),     /* N_ARGPARAM */
++    sizeof(struct nargarith),     /* N_ARGARITH */
++    sizeof(struct narithnum),     /* A_NUM */
++    sizeof(struct nargarith),     /* A_PAREN */
++    sizeof(struct narithternary), /* A_TERNARY */
++    sizeof(struct narithbinary),  /* A_OR */
++    sizeof(struct narithbinary),  /* A_AND */
++    sizeof(struct narithbinary),  /* A_BITOR */
++    sizeof(struct narithbinary),  /* A_BITXOR */
++    sizeof(struct narithbinary),  /* A_BITAND */
++    sizeof(struct narithbinary),  /* A_EQ */
++    sizeof(struct narithbinary),  /* A_NE */
++    sizeof(struct narithbinary),  /* A_LT */
++    sizeof(struct narithbinary),  /* A_GT */
++    sizeof(struct narithbinary),  /* A_GE */
++    sizeof(struct narithbinary),  /* A_LE */
++    sizeof(struct narithbinary),  /* A_SHL */
++    sizeof(struct narithbinary),  /* A_SHR */
++    sizeof(struct narithbinary),  /* A_ADD */
++    sizeof(struct narithbinary),  /* A_SUB */
++    sizeof(struct narithbinary),  /* A_MUL */
++    sizeof(struct narithbinary),  /* A_DIV */
++    sizeof(struct narithbinary),  /* A_MOD */
++    sizeof(struct narithbinary),  /* A_EXP */
++    sizeof(struct narithunary),   /* A_UNARYMINUS */
++    sizeof(struct narithunary),   /* A_UNARYPLUS */
++    sizeof(struct narithunary),   /* A_NOT */
++    sizeof(struct narithunary),   /* A_BNOT */
++    sizeof(struct narithunary),   /* A_PREDECR */
++    sizeof(struct narithunary),   /* A_PREINCR */
++    sizeof(struct narithunary),   /* A_POSTDECR */
++    sizeof(struct narithunary),   /* A_POSTINCR */
++    sizeof(struct narithbinary),  /* A_VASSIGN */
++    sizeof(struct narithbinary),  /* A_VADD */
++    sizeof(struct narithbinary),  /* A_VSUB */
++    sizeof(struct narithbinary),  /* A_VMUL */
++    sizeof(struct narithbinary),  /* A_VDIV */
++    sizeof(struct narithbinary),  /* A_VMOD */
++    sizeof(struct narithbinary),  /* A_VSHL */
++    sizeof(struct narithbinary),  /* A_VSHR */
++    sizeof(struct narithbinary),  /* A_VBITAND */
++    sizeof(struct narithbinary),  /* A_VBITXOR */
++    sizeof(struct narithbinary)   /* A_VBITOR */
+ };
+diff --git a/src/expand/expand_arith_ternary.c b/src/expand/expand_arith_ternary.c
+new file mode 100644
+index 00000000..7342f195
+--- /dev/null
++++ b/src/expand/expand_arith_ternary.c
+@@ -0,0 +1,17 @@
++#include "../expand.h"
++#include "../tree.h"
++
++/* expand a ternary ("?:") expression
++ * ----------------------------------------------------------------------- */
++int
++expand_arith_ternary(struct narithternary* expr, int64* r) {
++  int64 cond;
++
++  if(expand_arith_expr(expr->cond, &cond))
++    return 1;
++
++  /* only the taken branch is evaluated -- the other one can have side
++     effects (assignments) that must not run, same rule as "&&"/"||"
++     in expand_arith_binary.c. */
++  return expand_arith_expr(cond ? expr->ontrue : expr->onfalse, r);
++}
+diff --git a/src/parse/parse_arith_ternary.c b/src/parse/parse_arith_ternary.c
+new file mode 100644
+index 00000000..01114a32
+--- /dev/null
++++ b/src/parse/parse_arith_ternary.c
+@@ -0,0 +1,47 @@
++#include "../parse.h"
++#include "../source.h"
++#include "../tree.h"
++
++/* parse arithmetic conditional ("?:") expression
++ * ----------------------------------------------------------------------- */
++union node*
++parse_arith_ternary(struct parser* p) {
++  union node *cond, *ontrue, *onfalse, *node;
++  char c;
++
++  if((cond = parse_arith_binary(p, ARITH_PREC_TOP)) == NULL)
++    return NULL;
++
++  parse_skipspace(p);
++
++  if(source_peek(&c) <= 0 || c != '?')
++    return cond;
++
++  parse_skip(p);
++  parse_skipspace(p);
++
++  /* the true-branch is a full expression (POSIX grammar allows
++     assignments in it, e.g. "1 ? a = 2 : 3"), while the false-branch
++     recurses back into parse_arith_ternary() itself so chained
++     conditionals ("a?b:c?d:e") associate right-to-left like C. */
++  if((ontrue = parse_arith_expr(p)) == NULL)
++    return NULL;
++
++  parse_skipspace(p);
++
++  if(source_peek(&c) <= 0 || c != ':')
++    return NULL;
++
++  parse_skip(p);
++  parse_skipspace(p);
++
++  if((onfalse = parse_arith_ternary(p)) == NULL)
++    return NULL;
++
++  node = tree_newnode(A_TERNARY);
++  node->narithternary.cond = cond;
++  node->narithternary.ontrue = ontrue;
++  node->narithternary.onfalse = onfalse;
++
++  return node;
++}

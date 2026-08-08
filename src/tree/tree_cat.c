@@ -541,6 +541,15 @@ again:
       stralloc_catc(sa, ')');
       break;
 
+    case A_TERNARY:
+
+      tree_cat(node->narithternary.cond, sa);
+      stralloc_cats(sa, " ? ");
+      tree_cat(node->narithternary.ontrue, sa);
+      stralloc_cats(sa, " : ");
+      tree_cat(node->narithternary.onfalse, sa);
+      break;
+
     case A_NOT:
     case A_BNOT:
     case A_UNARYMINUS:

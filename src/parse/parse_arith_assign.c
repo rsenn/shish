@@ -19,7 +19,7 @@ parse_arith_assign(struct parser* p, union node* left) {
 
   for(nptr = &node;; left = 0) {
 
-    if(((*nptr) = parse_arith_binary(p, 9)) == 0)
+    if(((*nptr) = parse_arith_ternary(p)) == 0)
       break;
 
     if((*nptr)->id != N_ARGPARAM)

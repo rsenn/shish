@@ -125,6 +125,7 @@ int expand_arith_expr(union node* expr, int64* r);
 int expand_arith_assign(struct narithbinary*, int64*);
 union node* expand_arith(struct nargarith* arith, union node** nptr);
 int expand_arith_unary(struct narithunary* expr, int64* r);
+int expand_arith_ternary(struct narithternary* expr, int64* r);
 union node* expand_brace_args(union node* args);
 union node** expand_break(union node** out);
 union node* expand_cat(const char* b, unsigned int len, union node** nptr, int flags);
@@ -133,8 +134,8 @@ union node* expand_command(struct nargcmd* cmd, union node** nptr, int flags);
 void expand_copysa(union node* node, stralloc* sa, int flags);
 union node* expand_getorcreate(union node** out);
 union node* expand_glob(union node** nptr, int flags);
-int expand_tilde_lookup(const char* text, size_t len, int stop_at_colon, stralloc* home,
-                         size_t* prefixlen);
+int expand_tilde_lookup(
+    const char* text, size_t len, int stop_at_colon, stralloc* home, size_t* prefixlen);
 void expand_tilde_word(union node* arg);
 void expand_tilde_assign(union node* var);
 union node* expand_param(struct nargparam* param, union node** nptr, int flags);
