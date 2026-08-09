@@ -213,6 +213,134 @@ endfunction(
   OUTPUT_VAR
   FILE)
 
+##
+## var2define <NAME> [DEFINED_VALUE] [VAR_NAME]
+##
+function(VAR2DEFINE NAME)
+  if("${ARGC}" GREATER 2)
+    list(GET ARGN 1 VAR_NAME)
+  else("${ARGC}" GREATER 2)
+    set(VAR_NAME "${NAME}")
+  endif("${ARGC}" GREATER 2)
+
+  set(VALUE "${${VAR_NAME}}")
+
+  if("${ARGC}" LESS_EQUAL 1)
+    if("${VALUE}")
+      add_definitions(-D${NAME}=1)
+    else("${VALUE}")
+      add_definitions(-D${NAME}=0)
+    endif("${VALUE}")
+  else("${ARGC}" LESS_EQUAL 1)
+    if("${VALUE}")
+      list(GET ARGN 0 DEFINED_VALUE)
+      add_definitions(-D${NAME}=${DEFINED_VALUE})
+    endif("${VALUE}")
+  endif("${ARGC}" LESS_EQUAL 1)
+endfunction(VAR2DEFINE NAME)
+
+##
+## check_include_def <INCLUDE> [RESULT VARIABLE] [PREPROC_DEF]
+##
+macro(CHECK_INCLUDE_DEF INC)
+  if(ARGC GREATER_EQUAL 2)
+    set(RESULT_VAR "${ARGV1}")
+    set(PREPROC_DEF "${ARGV2}")
+  else(ARGC GREATER_EQUAL 2)
+    clean_name("${INC}" INC_D)
+    string(TOUPPER "HAVE_${INC_D}" RESULT_VAR)
+    string(TOUPPER "HAVE_${INC_D}" PREPROC_DEF)
+  endif(ARGC GREATER_EQUAL 2)
+
+  check_include_file("${INC}" "${RESULT_VAR}")
+
+  if(${${RESULT_VAR}})
+    set("${RESULT_VAR}" TRUE
+        CACHE INTERNAL "Define this if you have the '${INC}' header file")
+
+    if(NOT "${PREPROC_DEF}" STREQUAL "")
+      var2define("${PREPROC_DEF}" 1)
+    endif(NOT "${PREPROC_DEF}" STREQUAL "")
+  endif(${${RESULT_VAR}})
+
+  list(APPEND CHECKED_INCLUDES "${INC}")
+endmacro(CHECK_INCLUDE_DEF INC)
+
+##
+## check_includes <INCLUDE FILES...>
+##
+macro(CHECK_INCLUDES)
+  foreach(INC ${ARGN})
+    clean_name("HAVE_${INC}" RESULT_VAR)
+    check_include_def("${INC}" "${RESULT_VAR}")
+  endforeach(INC ${ARGN})
+endmacro(CHECK_INCLUDES)
+
+##
+## check_includes_def <INCLUDE FILES...>
+##
+macro(CHECK_INCLUDES_DEF)
+  foreach(INC ${ARGN})
+    check_include_def("${INC}")
+  endforeach(INC ${ARGN})
+endmacro(CHECK_INCLUDES_DEF)
+
+
+##
+## clean_name <STRING> <OUTPUT VAR>
+##
+function(CLEAN_NAME STR OUTPUT_VAR)
+  string(TOUPPER "${STR}" STR)
+  string(REGEX REPLACE "[^A-Za-z0-9_]" "_" STR "${STR}")
+  set("${OUTPUT_VAR}" "${STR}" PARENT_SCOPE)
+endfunction(CLEAN_NAME STR OUTPUT_VAR)
+
+##
+## check_include_def <INCLUDE> [RESULT VARIABLE] [PREPROC_DEF]
+##
+macro(CHECK_INCLUDE_DEF INC)
+  if(ARGC GREATER_EQUAL 2)
+    set(RESULT_VAR "${ARGV1}")
+    set(PREPROC_DEF "${ARGV2}")
+  else(ARGC GREATER_EQUAL 2)
+    clean_name("${INC}" INC_D)
+    string(TOUPPER "HAVE_${INC_D}" RESULT_VAR)
+    string(TOUPPER "HAVE_${INC_D}" PREPROC_DEF)
+  endif(ARGC GREATER_EQUAL 2)
+
+  check_include_file("${INC}" "${RESULT_VAR}")
+
+  if(${${RESULT_VAR}})
+    set("${RESULT_VAR}" TRUE
+        CACHE INTERNAL "Define this if you have the '${INC}' header file")
+
+    if(NOT "${PREPROC_DEF}" STREQUAL "")
+      var2define("${PREPROC_DEF}" 1)
+    endif(NOT "${PREPROC_DEF}" STREQUAL "")
+  endif(${${RESULT_VAR}})
+
+  list(APPEND CHECKED_INCLUDES "${INC}")
+endmacro(CHECK_INCLUDE_DEF INC)
+
+##
+## check_includes <INCLUDE FILES...>
+##
+macro(CHECK_INCLUDES)
+  foreach(INC ${ARGN})
+    clean_name("HAVE_${INC}" RESULT_VAR)
+    check_include_def("${INC}" "${RESULT_VAR}")
+  endforeach(INC ${ARGN})
+endmacro(CHECK_INCLUDES)
+
+##
+## check_includes_def <INCLUDE FILES...>
+##
+macro(CHECK_INCLUDES_DEF)
+  foreach(INC ${ARGN})
+    check_include_def("${INC}")
+  endforeach(INC ${ARGN})
+endmacro(CHECK_INCLUDES_DEF)
+
 macro(CHECK_FUNCTION_DEF FUNC)
   if(ARGC GREATER_EQUAL 2)
     set(RESULT_VAR "${ARGV1}")
@@ -255,3 +383,18 @@ endmacro(
   DEBUG_FLAG
   NAME
   DESC)
+
+##
+## check_function_and_include <FUNCTION> <INCLUDE>
+##
+macro(CHECK_FUNCTION_AND_INCLUDE FUNC INC)
+  clean_name("HAVE_${INC}" INC_RESULT)
+  clean_name("HAVE_${FUNC}" FUNC_RESULT)
+
+  check_include_def("${INC}" "${INC_RESULT}" "${INC_RESULT}")
+
+  if(${${INC_RESULT}})
+    check_function_def("${FUNC}" "${FUNC_RESULT}" "${FUNC_RESULT}")
+  endif(${${INC_RESULT}})
+endmacro(CHECK_FUNCTION_AND_INCLUDE FUNC INC)
+

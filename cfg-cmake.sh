@@ -129,6 +129,7 @@ cfg-diet() {
     -DCMAKE_SYSTEM_LIBRARY_PATH="$prefix/lib-${host%%-*}" \
     -D{CMAKE_INSTALL_LIBDIR=,INSTALL_LIB_DIR=$prefix/}"lib-${host%%-*}" \
       ${launcher:+-DCMAKE_C_COMPILER_LAUNCHER="$launcher"} \
+      ${launcher:+-DCMAKE_C_LINKER_LAUNCHER="$launcher"} \
   -DPKG_CONFIG_EXECUTABLE="$PKG_CONFIG" \
     "$@")
 }
@@ -161,9 +162,9 @@ cfg-diet32() {
     CC="diet32-gcc"
     export CC
   else
-    CC="gcc"
-    launcher="/opt/diet/bin-i386/diet"
-    CFLAGS="-m32"
+    : ${CC="gcc"}
+    launcher="/usr/lib/i386-linux-gnu/diet/bin/diet"
+    : ${CFLAGS="-m32"}
     export CC launcher CFLAGS
   fi
   
@@ -276,9 +277,8 @@ cfg-musl32() {
 
   : ${builddir=build/$host}
 
-  CFLAGS="-m32" \
   cfg-musl \
-  -DCMAKE_C_COMPILER="musl-gcc" \
+  -DCMAKE_C_COMPILER="i386-linux-musl-gcc" \
   "$@")
 }
 

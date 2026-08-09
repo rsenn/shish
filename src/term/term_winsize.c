@@ -1,9 +1,6 @@
 #include "../term.h"
-#include "../../lib/windoze.h"
-#if !WINDOWS_NATIVE && !defined(__MINGW64__)
-#include <sys/ioctl.h>
-#include <termios.h>
 
+#ifdef HAVE_WINSIZE
 struct winsize term_size;
 #endif
 
@@ -11,7 +8,7 @@ struct winsize term_size;
  * ----------------------------------------------------------------------- */
 void
 term_winsize(void) {
-#ifdef TIOCGWINSZ
+#ifdef HAVE_WINSIZE
   struct winsize sz;
 
   if(ioctl(term_input.fd, TIOCGWINSZ, &sz) == 0)

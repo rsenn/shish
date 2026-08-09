@@ -93,7 +93,16 @@ include(cmake/Builtins.cmake)
 check_functions(
   sigaction
   # sigaddset sigdelset sigemptyset sigfillset
-  sigismember signal sigprocmask sigsuspend)
+   sigismember signal sigprocmask sigsuspend)
+
+check_includes_def(termios.h sys/ioctl.h)
+
+if(HAVE_SYS_IOCTL_H)
+  check_compile(HAVE_WINSIZE "#include <sys/ioctl.h>\n\nint main(int argc, char* argv[]) {\n  struct winsize sz;\n\n  if(ioctl(0, TIOCGWINSZ, &sz) == 0)\n    return 0;\n\n  return 1;\n}\n")
+  if(HAVE_WINSIZE)
+    add_definitions(-DHAVE_WINSIZE=1)
+  endif(HAVE_WINSIZE)
+endif(HAVE_SYS_IOCTL_H)
 
 option(NO_TREE_PRINT "Disable tree_print for history" OFF)
 
