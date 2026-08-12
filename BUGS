@@ -236,3 +236,211 @@
   likely enters an infinite loop trying to find the inner heredoc
   delimiter while still inside the outer one's body. Not yet
   root-caused to a specific line in the parser. `cmdsub-p.tst:139`.
+
+- alias-printing-and-substitution-broken: `alias` printing, alias
+  substitution (including to blank, reserved words, line continuations,
+  operators), subshell alias inheritance, recursive aliases, and
+  aliases in command substitution are all broken. 48 failures in
+  `alias-p.tst` (17/65 passing). Root cause not yet isolated —
+  `builtin_alias.c` and the parser's alias-expansion path in
+  `src/parse/` need a full audit.
+
+- async-list-behavior-broken: asynchronous lists (`cmd &`) don't
+  properly separate by `&`, don't run in a subshell, don't redirect
+  stdin to /dev/null (POSIX requires this without job control), and
+  report wrong exit status. 6 failures in `async-p.tst` (3/9).
+  `async-p.tst:18,38,48,57,72,82`.
+
+- command-v-V-missing-reserved-words-and-format: `command -v`/`-V`
+  doesn't recognize reserved words (`if`, `for`, `case`, etc.) as
+  commands — it tries to exec them as external programs and prints
+  "No such file or directory". Also, the output format for
+  builtins and external commands doesn't match POSIX requirements.
+  30 failures in `command-p.tst` (19/49). `builtin_command.c`.
+  `command-p.tst:70-160,188-280`.
+
+- kill-l-with-number-doesnt-translate: `kill -l 15` lists all 31
+  signal names instead of printing just `TERM`. POSIX requires
+  `kill -l <exit_status>` to translate an exit status (128+N) or
+  signal number to its name. Also, `kill` sending by `-NAME` form
+  fails for many signals (kill2-p.tst: 2/28 passing — 26 failures).
+  The kill2-p.tst failures include both `-s NAME` and `-NAME` forms
+  for ABRT, ALRM, BUS, FPE, HUP, ILL, KILL, QUIT, SEGV, TERM, USR1,
+  USR2 — confirmed that `kill -HUP $$` doesn't work while
+  `kill -1 $$` does, suggesting `kill_signum()` or the signal-name
+  lookup has a separate bug beyond the `-s` parsing. `kill1-p.tst`
+  (0/17) and `kill2-p.tst` (2/28).
+
+- function-body-only-accepts-braces-or-parens: function definitions
+  `f() for ... done` or `f() case ... esac` or `f() if ... fi` or
+  `f() while ... done` fail with "unexpected token" — the parser
+  only accepts `{...}` or `(...)` as the function body. POSIX allows
+  any compound command as the body. 6 failures in `function-p.tst`
+  (13/19). `parse_function.c` or the compound-command dispatch.
+  `function-p.tst:24,31,38,46,53,86`.
+
+- special-builtin-errors-not-fatal: POSIX requires that errors
+  (assignment errors, redirection errors) on special built-in
+  utilities (`:`, `.`, `break`, `continue`, `eval`, `exec`, `exit`,
+  `export`, `readonly`, `return`, `set`, `shift`, `times`, `trap`,
+  `unset`) kill the non-interactive shell. shish prints an error
+  message but continues executing. 137 assignment-error failures +
+  ~30 redirection-error failures in `error-p.tst` (75/212 passing).
+  This is a broad POSIX conformance gap — the dispatch path in
+  `exec_command.c` / `eval_simple_command.c` needs to check whether
+  the command is a special builtin and call `sh_exit()` on error.
+  `error-p.tst:10-272,316-359`.
+
+- unset-f-doesnt-remove-functions: `unset -f funcname` doesn't
+  remove the function — subsequent calls to the function name try
+  to exec it as an external command ("No such file or directory")
+  instead of either finding it (if not removed) or reporting it as
+  not found via `type`. `builtin_unset.c` likely doesn't implement
+  the `-f` flag at all (only `-v` for variables). 4 failures in
+  `unset-p.tst:37,63,74,84`. Also overlaps with
+  `unset-on-readonly-variable-silently-succeeds` for the 2 readonly
+  failures.
+
+- shift-operand-handling-broken: `shift` with operand 0, with no
+  operand (default 1), and with an operand larger than `$#` all
+  behave incorrectly. 9 failures in `shift-p.tst` (5/14). The test
+  expects `shift 0` to succeed and leave `$#` unchanged, `shift`
+  (default) to shift by 1, and `shift N` where N > `$#` to fail
+  with exit >0 and leave `$#` unchanged. `builtin_shift.c`.
+  `shift-p.tst:7,19,37,49,53,57,61,65,75`.
+
+- getopts-many-failures: `getopts` has failures in OPTARG setting,
+  operand variable update, option grouping after single hyphen,
+  double hyphen separation, OPTIND tracking, and error messages.
+  18 failures in `getopts-p.tst` (13/31). The basic single-option
+  parsing works, but multi-option and edge cases are broken.
+  `builtin_getopts.c`. `getopts-p.tst:19-238`.
+
+- cd-cdpath-and-error-handling-broken: `cd` doesn't search `CDPATH`
+  correctly (or at all), doesn't set `OLDPWD`, doesn't canonicalize
+  pathnames, and doesn't properly report errors for non-directory
+  or non-existing path components. 22 failures in `cd-p.tst`
+  (17/39). `builtin_cd.c`. `cd-p.tst:65-414`.
+
+- fsplit-field-splitting-broken: field splitting of unquoted
+  expansion results is broken — default IFS not applied correctly,
+  non-whitespace IFS handling wrong, backslash-in-IFS not handled,
+  empty field removal missing. 12 failures in `fsplit-p.tst`
+  (4/16). `src/expand/expand_vars.c` or the field-splitting code
+  in `src/expand/`. `fsplit-p.tst:16-241`.
+
+- read-field-splitting-and-options-broken: `read` builtin's field
+  splitting is broken (doesn't split on IFS correctly, doesn't
+  handle backslash, doesn't respect raw mode `-r`), line
+  continuation handling is wrong, and readonly variable check
+  missing. 22 failures in `read-p.tst` (6/28). `builtin_read.c`.
+  `read-p.tst:15-269`.
+
+- dot-source-builtin-errors: `.` (source/dot) builtin doesn't handle
+  empty scripts, doesn't find scripts in `$PATH`, and doesn't
+  handle relative paths correctly. 3 failures in `dot-p.tst`
+  (11/14). `builtin_source.c`. `dot-p.tst:20,52,84`.
+
+- comment-handling-in-compound-commands: comments ending with
+  backslash, comments after async/sync lists, and comments inside
+  `for` loops and `case` statements are mishandled. 4 failures in
+  `comment-p.tst` (11/15). Parser comment-skipping logic.
+  `comment-p.tst:16,57,80,92`.
+
+- compound-commands-ending-with-async-broken: `if`, `for`, `while`,
+  and `until` bodies ending with an asynchronous command (`cmd &`)
+  misbehave. 8 failures across `if-p.tst:329,335,342`,
+  `for-p.tst:91`, `while-p.tst:94,100`, `until-p.tst:94,100`.
+  Likely related to `async-list-behavior-broken` above.
+
+- param-expansion-pattern-removal-broken: `${var#pattern}`,
+  `${var##pattern}`, `${var%pattern}`, `${var%%pattern}` are broken
+  when the pattern contains expansions (tilde, parameter, command
+  substitution, arithmetic). 4 failures in `param-p.tst:280,291,
+  302,313`. Also: `${var#~pattern}` (tilde in pattern, `:324`),
+  `$@`/`$*` quoting with custom IFS (`:517,539,570,622,653`),
+  special parameters `$` and `!` (`:446,452`), positional parameter
+  existence test (`:395`), `${1+"$@"}` (`:653`). 22 total failures
+  in `param-p.tst` (32/54).
+
+- quote-backslash-escaping-broken: backslash escaping of non-special
+  characters, line continuation (`\` + newline) in reserved words,
+  operators, parameter/arithmetic/command substitution, and function
+  definitions is broken. 19 failures in `quote-p.tst` (16/35).
+  `src/parse/` quote-handling code. `quote-p.tst:7-596`.
+
+- exit-status-in-trap-and-subshell-broken: exit status handling
+  inside traps (default status, explicit status, status from
+  previous command) and subshells is wrong. 6 failures in
+  `exit-p.tst` (8/14). `exit-p.tst:32,50,55,60,66,76`.
+
+- exec-redirection-and-error-broken: `exec` with redirections
+  doesn't preserve them, and executing non-existing commands
+  reports wrong errors. 3 failures in `exec-p.tst` (7/10).
+  `exec_command.c` / `builtin_exec.c`. `exec-p.tst:15,56,61`.
+
+- export-allows-readonly-reassignment: `export x=newvalue` on a
+  readonly variable doesn't reject the operation. 1 failure in
+  `export-p.tst:44`. Related to `readonly-builtin-reassignment-
+  not-fatal`.
+
+- pipeline-compound-commands-broken: compound commands used as
+  pipeline stages don't preserve stdin/stdout correctly. 2 failures
+  in `pipeline-p.tst` (7/9). `pipeline-p.tst:46,61`.
+
+- ppid-not-set-to-parent-pid: `$PPID` doesn't report the parent
+  process ID. 1 failure in `ppid-p.tst` (1/2). `ppid-p.tst:11`.
+
+- return-from-dot-script-broken: `return` from a dot-sourced script
+  (unnested, nested in another dot script, nested in a function)
+  doesn't work correctly — wrong exit status, doesn't actually
+  return. 7 failures in `return-p.tst` (18/25). `return-p.tst:73-146`.
+
+- input-not-read-line-wise: the shell reads more input than needed
+  (not line-wise), consuming data meant for subsequent commands.
+  3 failures in `input-p.tst` (8/11). `input-p.tst:9,89,94`.
+
+- redir-tilde-expansion-and-heredoc-broken: tilde expansion missing
+  in redirection operands, heredocs with non-default fd, backslash
+  handling in unquoted heredoc delimiters, multiple heredocs on a
+  single command, and long heredocs. 10 failures in `redir-p.tst`
+  (51/61). `redir-p.tst:13,47,90,133,138,302,318,360,478,543`.
+
+- reserved-words-as-case-patterns: reserved words (`!`, `{`, `}`,
+  `case`, `do`, `done`, `elif`, `else`, `fi`, `for`, `if`, `in`,
+  `then`, `until`, `while`, `esac`) are not accepted as case
+  patterns. 20 failures in `case-p.tst:315-336`. Parser rejects
+  them before pattern matching. Also: case exit status of unmatched
+  empty case (`:178`), linebreak after word (`:220`), `&` before
+  `;;` (`:258`). 23 total failures in `case-p.tst` (29/52).
+
+- special-builtins-not-protected-from-function-override: functions
+  named after special builtins (`break`, `continue`, `times`,
+  `trap`) should not be able to override them. 11 failures in
+  `builtins-p.tst` (70/81). Also: assignment on special builtins
+  not persistent, and special builtins not invocable without
+  `$PATH`. `builtins-p.tst:23-302`.
+
+- builtins-special-builtin-times-not-invocable: the `times` special
+  builtin can't be invoked without `$PATH` being set (it's not
+  registered as a builtin that bypasses PATH search). 2 failures
+  in `builtins-p.tst:298,302`.
+
+- set-hashondef-broken: `set -h` (hash each command as it's
+  defined/located) has no effect. 1 failure in `option-p.tst:121`.
+
+- lineno-after-expansions-wrong: `$LINENO` reports wrong value
+  after parameter/command/arithmetic expansions. 1 failure in
+  `lineno-p.tst:28`. Distinct from the
+  `eval-lineno-imprecise-inside-function` bug already filed.
+
+- fnmatch-quotation-of-quotations: pattern matching with nested
+  quotation marks produces wrong results. 1 failure in
+  `fnmatch-p.tst:49` (6/7). `fnmatch-p.tst:49`.
+
+- grouping-p-tst-hangs: `grouping-p.tst` times out at test 34
+  ("subshell ending with asynchronous list"), which exercises
+  `(echo foo >fifo1&)` — an asynchronous list inside a subshell
+  with output redirection. The shell hangs waiting for the
+  background process. Related to `async-list-behavior-broken`.
+  `grouping-p.tst:34`.
