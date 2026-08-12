@@ -18,6 +18,13 @@
   debug build + debugger, or bisecting each file's test cases
   individually via a copy with cases removed.
 
+  **Repro:**
+  ```sh
+  # Run one of the hanging tests with a short timeout
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/yash arith-y.tst
+  # This will hang for 10s (the per-test TIMEOUT) and then be killed
+  ```
+
 - eval-lineno-imprecise-inside-function: `$LINENO` read from within an
   `eval`'d string now counts from the invoking statement's line
   (fixed, see fixes/92) rather than always reporting 1, but the value
@@ -29,11 +36,16 @@
   `$LINENO` reference, which reads the parse-time `loc` stamped
   individually on its own `N_ARGPARAM` node). Confirmed:
 
-    f() {
-      echo $LINENO   # correctly prints 2
-      eval 'echo $LINENO'   # prints 5 (f's call site), should print 3
-    }
-    f
+  **Repro:**
+  ```sh
+  cat <<'EOF' | shish
+  f() {
+    echo $LINENO   # correctly prints 2
+    eval 'echo $LINENO'   # prints 5 (f's call site), should print 3
+  }
+  f
+  EOF
+  ```
 
 - set-notify-unimplemented: POSIX `-b` (report a background job's
   completion as soon as it happens, instead of waiting until just
@@ -50,6 +62,13 @@
   a real "OK to interrupt terminal output right now" toggle to logic
   that currently assumes deferral is always correct.
 
+  **Repro:**
+  ```sh
+  echo 'set -b' | shish 2>&1
+  # shish prints nothing (option not recognized)
+  # bash/dash accept -b without error
+  ```
+
 - set-verbose-unimplemented: POSIX `-v` (echo each input line to
   stderr as it's read, before any parsing/expansion touches it --
   distinct from `-x`, which echoes *after* expansion, from
@@ -64,12 +83,26 @@
   of this group precisely because nothing else needs "raw source
   text" as such a unit today.
 
+  **Repro:**
+  ```sh
+  echo 'set -v; echo hello' | shish 2>&1
+  # shish prints nothing about -v
+  # bash/dash echo each input line to stderr before parsing
+  ```
+
 - set-histexpand-unimplemented: `struct shopt`'s `histexpand` bit
   (`src/sh.h`, `-H`) is set correctly by `set -H`/`set +H` and
   reflected back correctly in `$-`, but nothing checks it either --
   more fundamentally, there is no history-expansion ('!') feature
   implemented at all under `src/history/` or `src/term/` for this
   flag to gate. It's a placeholder with nothing behind it.
+
+  **Repro:**
+  ```sh
+  echo 'set -H; echo $-' | shish
+  # shish accepts -H and sets the bit, but ! expansion doesn't work
+  # (no history expansion feature exists yet)
+  ```
 
 - ubsan-buffer-op-proto-function-type-mismatch: `lib/buffer.h`'s
   `buffer_op_proto` is declared as `ssize_t(int, void*, size_t,
@@ -94,6 +127,17 @@
   directory glob build compiles every libowfat source file, used or
   not). Left alone rather than "fixed" per this repo's own standing
   preference for not touching unused `lib/` code unasked.
+
+  **Repro:**
+  ```sh
+  # This is a latent UB issue, not a runtime-visible bug.
+  # Build with -fsanitize=function and run any shish command:
+  cmake -B build/debug -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_C_FLAGS="-fsanitize=function,undefined"
+  cmake --build build/debug
+  ./build/debug/shish -c 'echo hello'
+  # No error reported (function sanitizer doesn't catch libc mismatches)
+  ```
 
 - asan-leak-residue-not-fully-triaged: requested directly (fix ASan
   leak reports from a full `./configure` run under the same
@@ -136,6 +180,18 @@
     `job->command` gets built). Not yet root-caused to a specific
     missing free.
 
+  **Repro:**
+  ```sh
+  # Build with ASan
+  cmake -B build/asan -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_C_FLAGS="-fsanitize=address,undefined"
+  cmake --build build/asan
+  
+  # Run and check for leaks
+  ./build/asan/shish -c 'sleep 0.1 & wait'
+  # ASan reports 36 bytes leaked from tree_cat/tree_catlist_n
+  ```
+
 - break-continue-inside-eval-no-op: `break`/`continue` run via `eval`
   (e.g. `eval break`) inside an enclosing loop reports "not meaningful"
   and does not break the loop, unlike bash/dash (POSIX leaves this
@@ -151,6 +207,19 @@
   way. Fixing this needs `eval`'s frame to signal "don't block search,
   but do stop return/exit here" separately from a genuine subshell
   boundary, rather than reusing `E_ROOT` for both meanings.
+
+  **Repro:**
+  ```sh
+  cat <<'EOF' | shish
+  for i in 1 2 3; do
+    eval break
+    echo "should not print"
+  done
+  echo "after loop"
+  EOF
+  # shish prints "should not print" 3 times, then "after loop"
+  # bash/dash print only "after loop" (break actually exits the loop)
+  ```
 
 - posix-sigcont-etc-trap-disposition-many-failures: the
   `tests/posix/sigcont1-p.tst`, `sigcont2-p.tst`, `sigcont5-p.tst`,
@@ -170,6 +239,21 @@
   so isolating the exact commands it runs is the first step) and
   compare `trap -p`'s reported state against dash/bash at each step.
 
+  **Repro:**
+  ```sh
+  # Run one of the failing signal tests
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix sigcont1-p.tst
+  # Many cases fail (roughly half of the ~7000 test cases)
+  
+  # Isolate one failing case (from sigcont1-p.tst:7004):
+  cat <<'EOF' | shish
+  trap 'echo caught' CONT
+  kill -CONT $$
+  trap -p CONT
+  EOF
+  # Compare output with dash/bash to see the difference
+  ```
+
 - param-hash-name-vs-length-ambiguity: FIXED (fixes/154). `${#-""}`
   should treat `#` as a variable name (since `-` follows, making it
   a default-value expansion for the variable `#`), not the `${#var}`
@@ -183,6 +267,13 @@
   valid variable-name-only expansion modifier (`-`, `+`, `=`, `?`,
   `:`, or a bare `}` with no following operator). `param-p.tst:268`.
 
+  **Repro:**
+  ```sh
+  echo 'echo ${#-""}' | shish
+  # shish prints 2 (length of empty string)
+  # bash/dash print nothing (empty default value)
+  ```
+
 - tilde-expansion-missing-in-case-word: `case ~/foo in /home/foo)`
   fails to match because the case word is not subject to tilde
   expansion. POSIX requires it (2.9.4.2: "The word shall be
@@ -190,6 +281,19 @@
   echo matched;; esac` prints nothing. Same issue likely applies to
   the case pattern (`case-p.tst:62`) and to other expansion contexts
   the parser may miss. `case-p.tst:5`.
+
+  **Repro:**
+  ```sh
+  cat <<'EOF' | shish
+  HOME=/home
+  case ~/foo in
+    /home/foo) echo matched;;
+    *) echo "no match";;
+  esac
+  EOF
+  # shish prints "no match"
+  # bash/dash print "matched"
+  ```
 
 - umask-symbolic-mode-not-implemented: `umask u+r` is treated as
   octal `0` instead of parsing the symbolic mode. Confirmed: `umask
@@ -199,6 +303,13 @@
   description specifies the grammar). `umask-p.tst:69-84` (all 56
   symbolic-mode cases fail).
 
+  **Repro:**
+  ```sh
+  echo 'umask u+r; umask' | shish
+  # shish prints 0000
+  # bash prints 0002
+  ```
+
 - test-g-p-u-not-implemented: `test -g` (set-group-ID), `test -p`
   (FIFO/named pipe), and `test -u` (set-user-ID) are not recognized
   by `builtin_test.c`'s unary-operator dispatch — they fall through
@@ -206,6 +317,13 @@
   -g /tmp` prints "test: invalid expression: /tmp" and returns 2.
   POSIX requires all three (2.9.2.8). `test-p.tst:136-223` (33
   failures across these three operators).
+
+  **Repro:**
+  ```sh
+  echo 'test -g /tmp; echo "g=$?"; test -p /tmp; echo "p=$?"; test -u /tmp; echo "u=$?"' | shish
+  # shish prints "test: invalid expression: /tmp" for each and returns 2
+  # bash/dash return 1 (false) without error
+  ```
 
 - readonly-builtin-reassignment-not-fatal: `readonly a=1; readonly
   a=2` succeeds silently instead of killing the non-interactive
@@ -220,6 +338,13 @@
   returns non-zero — it doesn't call `sh_exit()` for the
   special-built-in-error-must-kill-shell case. `readonly-p.tst:26`.
 
+  **Repro:**
+  ```sh
+  echo 'readonly a=1; readonly a=2; echo "not reached"' | shish
+  # shish prints "not reached" and exits 0
+  # bash/dash die before reaching echo (special builtin error)
+  ```
+
 - unset-on-readonly-variable-silently-succeeds: `readonly a=1;
   unset a` silently removes the variable instead of rejecting the
   operation. Confirmed: `readonly a=1; unset a; echo "a=$a"` prints
@@ -227,6 +352,13 @@
   variable" + "a=1" in bash. `builtin_unset.c` never checks the
   `V_READONLY` flag before calling `var_unset()`. POSIX requires
   unset to fail on readonly variables (2.9.1.43). `unset-p.tst:112,118`.
+
+  **Repro:**
+  ```sh
+  echo 'readonly a=1; unset a; echo "a=$a"' | shish
+  # shish prints "a=" (variable was unset)
+  # bash prints "bash: unset: a: cannot unset: readonly variable" then "a=1"
+  ```
 
 - cmdsub-p-tst-hangs: `cmdsub-p.tst` times out at test 139
   ("command substitution between here-document operator and body"),
@@ -237,6 +369,19 @@
   delimiter while still inside the outer one's body. Not yet
   root-caused to a specific line in the parser. `cmdsub-p.tst:139`.
 
+  **Repro:**
+  ```sh
+  # This will hang (infinite loop in parser)
+  cat <<'EOF' | timeout 2 shish
+  cat <<\OUTER
+  $(cat <<\INNER
+  inner
+  INNER
+  )
+  OUTER
+  EOF
+  ```
+
 - alias-printing-and-substitution-broken: `alias` printing, alias
   substitution (including to blank, reserved words, line continuations,
   operators), subshell alias inheritance, recursive aliases, and
@@ -245,11 +390,36 @@
   `builtin_alias.c` and the parser's alias-expansion path in
   `src/parse/` need a full audit.
 
+  **Repro:**
+  ```sh
+  cat <<'EOF' | shish
+  alias ll='ls -l'
+  alias
+  ll /tmp 2>&1 | head -1
+  EOF
+  # shish prints the alias but doesn't expand it correctly in all contexts
+  # Run: sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix alias-p.tst
+  ```
+
 - async-list-behavior-broken: asynchronous lists (`cmd &`) don't
   properly separate by `&`, don't run in a subshell, don't redirect
   stdin to /dev/null (POSIX requires this without job control), and
   report wrong exit status. 6 failures in `async-p.tst` (3/9).
   `async-p.tst:18,38,48,57,72,82`.
+
+  **Repro:**
+  ```sh
+  cat <<'EOF' | shish
+  echo start
+  sleep 0.1 &
+  echo middle
+  wait
+  echo end
+  EOF
+  # shish doesn't run the background command in a subshell
+  # and doesn't redirect its stdin to /dev/null
+  # Run: sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix async-p.tst
+  ```
 
 - command-v-V-missing-reserved-words-and-format: `command -v`/`-V`
   doesn't recognize reserved words (`if`, `for`, `case`, etc.) as
@@ -258,6 +428,13 @@
   builtins and external commands doesn't match POSIX requirements.
   30 failures in `command-p.tst` (19/49). `builtin_command.c`.
   `command-p.tst:70-160,188-280`.
+
+  **Repro:**
+  ```sh
+  echo 'command -v if; command -v echo' | shish
+  # shish prints "if: No such file or directory" for 'if'
+  # bash/dash print "if" (it's a reserved word)
+  ```
 
 - kill-l-with-number-doesnt-translate: `kill -l 15` lists all 31
   signal names instead of printing just `TERM`. POSIX requires
@@ -271,6 +448,13 @@
   lookup has a separate bug beyond the `-s` parsing. `kill1-p.tst`
   (0/17) and `kill2-p.tst` (2/28).
 
+  **Repro:**
+  ```sh
+  echo 'kill -l 15' | shish
+  # shish prints "kill: -l: invalid signal specification"
+  # bash/dash print "TERM"
+  ```
+
 - function-body-only-accepts-braces-or-parens: function definitions
   `f() for ... done` or `f() case ... esac` or `f() if ... fi` or
   `f() while ... done` fail with "unexpected token" — the parser
@@ -278,6 +462,16 @@
   any compound command as the body. 6 failures in `function-p.tst`
   (13/19). `parse_function.c` or the compound-command dispatch.
   `function-p.tst:24,31,38,46,53,86`.
+
+  **Repro:**
+  ```sh
+  cat <<'EOF' | shish
+  f() for i in 1; do echo $i; done
+  f
+  EOF
+  # shish prints "unexpected token for, expecting '(,{'"
+  # bash/dash accept this syntax
+  ```
 
 - special-builtin-errors-not-fatal: FIXED (fixes/155). POSIX requires
   that errors (assignment errors, redirection errors) on special built-in
@@ -291,6 +485,18 @@
   the command is a special builtin and call `sh_exit()` on error.
   `error-p.tst:10-272,316-359`.
 
+  **Repro:**
+  ```sh
+  # Assignment error on special builtin (export)
+  cat <<'EOF' | shish
+  readonly x=old
+  export x=new
+  echo "should not reach here"
+  EOF
+  # shish prints error but continues to "should not reach here"
+  # POSIX: special builtin error must kill non-interactive shell
+  ```
+
 - unset-f-doesnt-remove-functions: `unset -f funcname` doesn't
   remove the function — subsequent calls to the function name try
   to exec it as an external command ("No such file or directory")
@@ -301,6 +507,18 @@
   `unset-on-readonly-variable-silently-succeeds` for the 2 readonly
   failures.
 
+  **Repro:**
+  ```sh
+  cat <<'EOF' | shish
+  foo() { echo hi; }
+  unset -f foo
+  foo
+  echo "exit=$?"
+  EOF
+  # shish tries to exec 'foo' as external command: "foo: No such file or directory"
+  # bash/dash: unset -f removes the function, then 'foo' not found
+  ```
+
 - shift-operand-handling-broken: `shift` with operand 0, with no
   operand (default 1), and with an operand larger than `$#` all
   behave incorrectly. 9 failures in `shift-p.tst` (5/14). The test
@@ -309,6 +527,19 @@
   with exit >0 and leave `$#` unchanged. `builtin_shift.c`.
   `shift-p.tst:7,19,37,49,53,57,61,65,75`.
 
+  **Repro:**
+  ```sh
+  cat <<'EOF' | shish
+  set -- a b c
+  shift 0
+  echo "after shift 0: $#=$#"
+  shift
+  echo "after shift: $#=$#"
+  EOF
+  # shish prints "after shift 0: 3=3" (wrong format, should be "#=3")
+  # and other incorrect behavior
+  ```
+
 - getopts-many-failures: `getopts` has failures in OPTARG setting,
   operand variable update, option grouping after single hyphen,
   double hyphen separation, OPTIND tracking, and error messages.
@@ -316,11 +547,31 @@
   parsing works, but multi-option and edge cases are broken.
   `builtin_getopts.c`. `getopts-p.tst:19-238`.
 
+  **Repro:**
+  ```sh
+  # Run the getopts conformance test
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix getopts-p.tst
+  # 18 failures in multi-option and edge cases
+  ```
+
 - cd-cdpath-and-error-handling-broken: `cd` doesn't search `CDPATH`
   correctly (or at all), doesn't set `OLDPWD`, doesn't canonicalize
   pathnames, and doesn't properly report errors for non-directory
   or non-existing path components. 22 failures in `cd-p.tst`
   (17/39). `builtin_cd.c`. `cd-p.tst:65-414`.
+
+  **Repro:**
+  ```sh
+  cat <<'EOF' | shish
+  cd /tmp
+  echo "OLDPWD=$OLDPWD"
+  CDPATH=/usr
+  cd bin
+  echo "PWD=$PWD"
+  EOF
+  # shish doesn't set OLDPWD or search CDPATH correctly
+  # Run: sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix cd-p.tst
+  ```
 
 - fsplit-field-splitting-broken: field splitting of unquoted
   expansion results is broken — default IFS not applied correctly,
@@ -329,6 +580,13 @@
   (4/16). `src/expand/expand_vars.c` or the field-splitting code
   in `src/expand/`. `fsplit-p.tst:16-241`.
 
+  **Repro:**
+  ```sh
+  # Run the field splitting conformance test
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix fsplit-p.tst
+  # 12 failures in IFS handling and field splitting
+  ```
+
 - read-field-splitting-and-options-broken: `read` builtin's field
   splitting is broken (doesn't split on IFS correctly, doesn't
   handle backslash, doesn't respect raw mode `-r`), line
@@ -336,10 +594,24 @@
   missing. 22 failures in `read-p.tst` (6/28). `builtin_read.c`.
   `read-p.tst:15-269`.
 
+  **Repro:**
+  ```sh
+  # Run the read conformance test
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix read-p.tst
+  # 22 failures in field splitting and option handling
+  ```
+
 - dot-source-builtin-errors: `.` (source/dot) builtin doesn't handle
   empty scripts, doesn't find scripts in `$PATH`, and doesn't
   handle relative paths correctly. 3 failures in `dot-p.tst`
   (11/14). `builtin_source.c`. `dot-p.tst:20,52,84`.
+
+  **Repro:**
+  ```sh
+  # Run the dot/source conformance test
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix dot-p.tst
+  # 3 failures in empty scripts, PATH search, and relative paths
+  ```
 
 - comment-handling-in-compound-commands: comments ending with
   backslash, comments after async/sync lists, and comments inside
@@ -347,11 +619,26 @@
   `comment-p.tst` (11/15). Parser comment-skipping logic.
   `comment-p.tst:16,57,80,92`.
 
+  **Repro:**
+  ```sh
+  # Run the comment conformance test
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix comment-p.tst
+  # 4 failures in comments with backslash, after async lists, in loops/case
+  ```
+
 - compound-commands-ending-with-async-broken: `if`, `for`, `while`,
   and `until` bodies ending with an asynchronous command (`cmd &`)
   misbehave. 8 failures across `if-p.tst:329,335,342`,
   `for-p.tst:91`, `while-p.tst:94,100`, `until-p.tst:94,100`.
   Likely related to `async-list-behavior-broken` above.
+
+  **Repro:**
+  ```sh
+  # Run the if/for/while/until tests and check async cases
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix if-p.tst
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix for-p.tst
+  # Failures in tests where compound command ends with 'cmd &'
+  ```
 
 - param-expansion-pattern-removal-broken: `${var#pattern}`,
   `${var##pattern}`, `${var%pattern}`, `${var%%pattern}` are broken
@@ -363,48 +650,118 @@
   existence test (`:395`), `${1+"$@"}` (`:653`). 22 total failures
   in `param-p.tst` (32/54).
 
+  **Repro:**
+  ```sh
+  # Run the parameter expansion conformance test
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix param-p.tst
+  # 22 failures in pattern removal, $@/$* quoting, special parameters
+  ```
+
 - quote-backslash-escaping-broken: backslash escaping of non-special
   characters, line continuation (`\` + newline) in reserved words,
   operators, parameter/arithmetic/command substitution, and function
   definitions is broken. 19 failures in `quote-p.tst` (16/35).
   `src/parse/` quote-handling code. `quote-p.tst:7-596`.
 
+  **Repro:**
+  ```sh
+  # Run the quote conformance test
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix quote-p.tst
+  # 19 failures in backslash escaping and line continuation
+  ```
+
 - exit-status-in-trap-and-subshell-broken: exit status handling
   inside traps (default status, explicit status, status from
   previous command) and subshells is wrong. 6 failures in
   `exit-p.tst` (8/14). `exit-p.tst:32,50,55,60,66,76`.
+
+  **Repro:**
+  ```sh
+  # Run the exit status conformance test
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix exit-p.tst
+  # 6 failures in trap and subshell exit status handling
+  ```
 
 - exec-redirection-and-error-broken: `exec` with redirections
   doesn't preserve them, and executing non-existing commands
   reports wrong errors. 3 failures in `exec-p.tst` (7/10).
   `exec_command.c` / `builtin_exec.c`. `exec-p.tst:15,56,61`.
 
+  **Repro:**
+  ```sh
+  # Run the exec conformance test
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix exec-p.tst
+  # 3 failures in redirection preservation and error reporting
+  ```
+
 - export-allows-readonly-reassignment: `export x=newvalue` on a
   readonly variable doesn't reject the operation. 1 failure in
   `export-p.tst:44`. Related to `readonly-builtin-reassignment-
   not-fatal`.
 
+  **Repro:**
+  ```sh
+  echo 'readonly x=old; export x=new; echo "x=$x"' | shish
+  # shish prints "x=new" (export succeeded on readonly variable)
+  # bash/dash reject the export with an error
+  ```
+
 - pipeline-compound-commands-broken: compound commands used as
   pipeline stages don't preserve stdin/stdout correctly. 2 failures
   in `pipeline-p.tst` (7/9). `pipeline-p.tst:46,61`.
 
+  **Repro:**
+  ```sh
+  # Run the pipeline conformance test
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix pipeline-p.tst
+  # 2 failures in compound commands as pipeline stages
+  ```
+
 - ppid-not-set-to-parent-pid: `$PPID` doesn't report the parent
   process ID. 1 failure in `ppid-p.tst` (1/2). `ppid-p.tst:11`.
+
+  **Repro:**
+  ```sh
+  echo 'echo "PPID=$PPID myppid=$$"' | shish
+  # shish prints "PPID=" (empty) instead of the parent PID
+  # bash/dash print the actual parent process ID
+  ```
 
 - return-from-dot-script-broken: `return` from a dot-sourced script
   (unnested, nested in another dot script, nested in a function)
   doesn't work correctly — wrong exit status, doesn't actually
   return. 7 failures in `return-p.tst` (18/25). `return-p.tst:73-146`.
 
+  **Repro:**
+  ```sh
+  # Run the return conformance test
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix return-p.tst
+  # 7 failures in return from dot-sourced scripts
+  ```
+
 - input-not-read-line-wise: the shell reads more input than needed
   (not line-wise), consuming data meant for subsequent commands.
   3 failures in `input-p.tst` (8/11). `input-p.tst:9,89,94`.
+
+  **Repro:**
+  ```sh
+  # Run the input conformance test
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix input-p.tst
+  # 3 failures where shell reads ahead and consumes input meant for later commands
+  ```
 
 - redir-tilde-expansion-and-heredoc-broken: tilde expansion missing
   in redirection operands, heredocs with non-default fd, backslash
   handling in unquoted heredoc delimiters, multiple heredocs on a
   single command, and long heredocs. 10 failures in `redir-p.tst`
   (51/61). `redir-p.tst:13,47,90,133,138,302,318,360,478,543`.
+
+  **Repro:**
+  ```sh
+  # Run the redirection conformance test
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix redir-p.tst
+  # 10 failures in tilde expansion, heredocs, and multiple redirections
+  ```
 
 - reserved-words-as-case-patterns: reserved words (`!`, `{`, `}`,
   `case`, `do`, `done`, `elif`, `else`, `fi`, `for`, `if`, `in`,
@@ -414,6 +771,18 @@
   empty case (`:178`), linebreak after word (`:220`), `&` before
   `;;` (`:258`). 23 total failures in `case-p.tst` (29/52).
 
+  **Repro:**
+  ```sh
+  cat <<'EOF' | shish
+  x=if
+  case $x in
+    if) echo "matched if";;
+  esac
+  EOF
+  # shish rejects 'if' as a case pattern
+  # bash/dash accept reserved words as case patterns
+  ```
+
 - special-builtins-not-protected-from-function-override: functions
   named after special builtins (`break`, `continue`, `times`,
   `trap`) should not be able to override them. 11 failures in
@@ -421,22 +790,67 @@
   not persistent, and special builtins not invocable without
   `$PATH`. `builtins-p.tst:23-302`.
 
+  **Repro:**
+  ```sh
+  cat <<'EOF' | shish
+  break() { echo "function break"; }
+  for i in 1; do
+    break
+  done
+  EOF
+  # shish allows function to override 'break' special builtin
+  # POSIX: special builtins cannot be overridden by functions
+  ```
+
 - builtins-special-builtin-times-not-invocable: the `times` special
   builtin can't be invoked without `$PATH` being set (it's not
   registered as a builtin that bypasses PATH search). 2 failures
   in `builtins-p.tst:298,302`.
 
+  **Repro:**
+  ```sh
+  echo 'unset PATH; times' | shish
+  # shish can't find 'times' without PATH
+  # bash/dash invoke 'times' as builtin regardless of PATH
+  ```
+
 - set-hashondef-broken: `set -h` (hash each command as it's
   defined/located) has no effect. 1 failure in `option-p.tst:121`.
+
+  **Repro:**
+  ```sh
+  # Run the option conformance test
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix option-p.tst
+  # 1 failure in set -h (hash on define)
+  ```
 
 - lineno-after-expansions-wrong: `$LINENO` reports wrong value
   after parameter/command/arithmetic expansions. 1 failure in
   `lineno-p.tst:28`. Distinct from the
   `eval-lineno-imprecise-inside-function` bug already filed.
 
+  **Repro:**
+  ```sh
+  cat <<'EOF' | shish
+  x=1
+  echo $LINENO
+  y=$(echo $x)
+  echo $LINENO
+  EOF
+  # shish prints wrong line number after command substitution
+  # Run: sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix lineno-p.tst
+  ```
+
 - fnmatch-quotation-of-quotations: pattern matching with nested
   quotation marks produces wrong results. 1 failure in
   `fnmatch-p.tst:49` (6/7). `fnmatch-p.tst:49`.
+
+  **Repro:**
+  ```sh
+  # Run the fnmatch conformance test
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix fnmatch-p.tst
+  # 1 failure in pattern matching with nested quotation marks
+  ```
 
 - grouping-p-tst-hangs: `grouping-p.tst` times out at test 34
   ("subshell ending with asynchronous list"), which exercises
@@ -444,3 +858,13 @@
   with output redirection. The shell hangs waiting for the
   background process. Related to `async-list-behavior-broken`.
   `grouping-p.tst:34`.
+
+  **Repro:**
+  ```sh
+  # This will hang (shell waits for background process in subshell)
+  cat <<'EOF' | timeout 2 shish
+  (echo foo >tmpfile&)
+  echo "after subshell"
+  EOF
+  # shish hangs waiting for the background process
+  ```
