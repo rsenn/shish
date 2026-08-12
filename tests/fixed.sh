@@ -3285,4 +3285,15 @@ assert_equal "3" "$a152" "readonly variable must not be reassigned by \$(())"
 OUT152_PLUS=$( (echo $((a152+=5))) 2>/dev/null)
 assert_equal "" "$OUT152_PLUS" "\$((a+=5)) must not print when a is readonly"
 
+## 153: kill -s was not recognized — only the -signal operand form
+## was parsed, so "kill -s USR1 $$" failed with "invalid signal
+## specification". Added -s signal_name option parsing and -l to
+## list signal names.
+OUT153_L=$(kill -l)
+assert_match "$OUT153_L" "*HUP*" "kill -l must list signal names including HUP"
+assert_match "$OUT153_L" "*TERM*" "kill -l must list signal names including TERM"
+
+OUT153_BOGUS=$(kill -s BOGUS 0 2>&1)
+assert_match "$OUT153_BOGUS" "*invalid signal*" "kill -s BOGUS must report invalid signal"
+
 summary

@@ -191,14 +191,6 @@
   the case pattern (`case-p.tst:62`) and to other expansion contexts
   the parser may miss. `case-p.tst:5`.
 
-- kill-builtin-missing-s-option: `kill -s USR1 $$` fails with
-  "invalid signal specification" instead of sending SIGUSR1. The
-  builtin (`src/builtin/builtin_kill.c`) doesn't parse `-s` at all.
-  POSIX requires it (2.9.1: "The `-s` option shall be equivalent to
-  `-signal_name`"). Many `trap-p.tst` failures cascade from this
-  (the test harness uses `kill -s` to deliver signals). `trap-p.tst`
-  has 25 failures, most traceable to this.
-
 - umask-symbolic-mode-not-implemented: `umask u+r` is treated as
   octal `0` instead of parsing the symbolic mode. Confirmed: `umask
   u+r; umask` prints `0000` in shish vs `0002` in bash. The builtin

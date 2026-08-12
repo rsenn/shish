@@ -1,8 +1,10 @@
 #include "../builtin.h"
 #include "../job.h"
+#include "../fdtable.h"
 #include "../../lib/scan.h"
 #include "../../lib/str.h"
 #include "../../lib/sig.h"
+#include "../../lib/buffer.h"
 #include <signal.h>
 
 /* parse a "-signal" operand: either numeric ("-9") or a name
@@ -61,8 +63,29 @@ kill_job(char* argv[], const char* spec, int sig) {
 const char help_kill[] = "    Send a signal to processes or jobs.\n"
                          "\n"
                          "    -signal         signal name or number to send (default TERM)\n"
+                         "    -s signal       signal name or number to send\n"
+                         "    -l              list signal names\n"
                          "    pid             process ID to signal\n"
                          "    %job            job to signal (every process in its group)\n";
+
+/* list signal names to stdout
+ * ----------------------------------------------------------------------- */
+static int
+kill_list(void) {
+  int i;
+
+  for(i = 1; i <= 31; i++) {
+    const char* name = sig_name(i);
+
+    if(name) {
+      if(i > 1)
+        buffer_putspace(fd_out->w);
+      buffer_puts(fd_out->w, name);
+    }
+  }
+  buffer_putnlflush(fd_out->w);
+  return 0;
+}
 
 int
 builtin_kill(int argc, char* argv[]) {
@@ -71,10 +94,20 @@ builtin_kill(int argc, char* argv[]) {
   int ret = 0;
 
   if(argc > 1 && argv[1][0] == '-' && argv[1][1]) {
-    if((sig = kill_signum(&argv[1][1])) < 0)
-      return builtin_errmsg(argv, argv[1], "invalid signal specification");
+    if(argv[1][1] == 'l' && !argv[1][2])
+      return kill_list();
 
-    i = 2;
+    if(argv[1][1] == 's' && !argv[1][2]) {
+      if(argc < 3)
+        return builtin_errmsg(argv, "-s", "option requires an argument");
+      if((sig = kill_signum(argv[2])) < 0)
+        return builtin_errmsg(argv, argv[2], "invalid signal specification");
+      i = 3;
+    } else {
+      if((sig = kill_signum(&argv[1][1])) < 0)
+        return builtin_errmsg(argv, argv[1], "invalid signal specification");
+      i = 2;
+    }
   }
 
   if(i >= argc)
