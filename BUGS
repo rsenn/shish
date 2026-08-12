@@ -136,14 +136,6 @@
     `job->command` gets built). Not yet root-caused to a specific
     missing free.
 
-- arith-assign-readonly-not-rejected: `$((a=5))` against a variable
-  made readonly via the `readonly` builtin silently succeeds (and
-  actually reassigns it) instead of erroring the way plain `a=5` does.
-  Confirmed: `readonly a=3; echo $((a=5)); echo $a` prints `5` `5`
-  instead of an error plus `3`. `expand_arith_assign.c` never checks
-  the variable's readonly flag before calling `var_setvint()`
-  (contrast `var_set()`'s own plain-assignment path, which does).
-
 - break-continue-inside-eval-no-op: `break`/`continue` run via `eval`
   (e.g. `eval break`) inside an enclosing loop reports "not meaningful"
   and does not break the loop, unlike bash/dash (POSIX leaves this

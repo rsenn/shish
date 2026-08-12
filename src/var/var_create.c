@@ -51,6 +51,7 @@ var_create(const char* s, int flags) {
 
     newv->sa = v->sa;
     newv->sa.a = 0;
+    newv->flags |= v->flags & V_READONLY;
   }
 
   /* finally add it to the bucket and to the global list */

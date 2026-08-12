@@ -332,9 +332,11 @@ precedence-flattening gaps: added `parse_arith_ternary.c` as its own
 right-associative, short-circuiting precedence level above the binary
 operator chain, and split `parse_arith_binary.c`'s single combined
 bitwise (`&`/`^`/`|`) and logical (`&&`/`||`) branches into their
-correct distinct C/POSIX levels. Brought `arith-p.tst` to 42/43 — the
-only case left is the readonly-assignment one, still open as
-`BUGS: arith-assign-readonly-not-rejected`.
+correct distinct C/POSIX levels. Brought `arith-p.tst` to 42/43. The
+readonly-assignment case was later fixed (`fixes/152`) by adding a
+readonly check to `var_setv()` and `var_setvint()` and propagating
+`V_READONLY` from parent to child variables in `var_create()`,
+bringing `arith-p.tst` to 43/43.
 
 The same pass then found a much higher-leverage bug while chasing an
 unrelated `break`-argument test: `eval_for()`/`eval_loop()` (`for`/

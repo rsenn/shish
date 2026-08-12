@@ -3272,4 +3272,17 @@ assert_equal "1" "$X151_BIT" "'&' must bind tighter than '^' (1^(0&0), not (1^0)
 X151_LOG=$(echo $((1||0&&0)))
 assert_equal "1" "$X151_LOG" "'&&' must bind tighter than '||' (1||(0&&0), not (1||0)&&0)"
 
+## 152: $((a=5)) and $((a++)) against a readonly variable silently
+## succeeded (and actually reassigned it) instead of erroring.
+## var_setv() and var_setvint() now check V_READONLY the same way
+## var_set() already did; arithmetic callers sh_exit(1) on failure.
+readonly a152=3
+OUT152=$( (echo $((a152=5))) 2>/dev/null)
+assert_equal "" "$OUT152" "\$((a=5)) must not print when a is readonly"
+
+assert_equal "3" "$a152" "readonly variable must not be reassigned by \$(())"
+
+OUT152_PLUS=$( (echo $((a152+=5))) 2>/dev/null)
+assert_equal "" "$OUT152_PLUS" "\$((a+=5)) must not print when a is readonly"
+
 summary

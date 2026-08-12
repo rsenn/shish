@@ -2,6 +2,7 @@
 #include "../tree.h"
 #include "../../lib/uint64.h"
 #include "../var.h"
+#include "../sh.h"
 #include <math.h>
 
 /* expand a unary expression
@@ -34,7 +35,8 @@ expand_arith_unary(struct narithunary* expr, int64* r) {
 
   if(pre_post) {
     if(param && param->name)
-      var_setvint(param->name, value, 0);
+      if(!var_setvint(param->name, value, 0))
+        sh_exit(1);
   }
 
   return 0;

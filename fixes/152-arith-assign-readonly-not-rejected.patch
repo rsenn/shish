@@ -1,0 +1,12 @@
+diff --git a/src/var/var_create.c b/src/var/var_create.c
+index 462c5f4a..df62a3d9 100644
+--- a/src/var/var_create.c
++++ b/src/var/var_create.c
+@@ -51,6 +51,7 @@ var_create(const char* s, int flags) {
+ 
+     newv->sa = v->sa;
+     newv->sa.a = 0;
++    newv->flags |= v->flags & V_READONLY;
+   }
+ 
+   /* finally add it to the bucket and to the global list */

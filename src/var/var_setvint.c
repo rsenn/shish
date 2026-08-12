@@ -1,4 +1,6 @@
 #include "../var.h"
+#include "../sh.h"
+#include "../fdtable.h"
 #include <stdlib.h>
 
 /* set a variable value
@@ -8,6 +10,12 @@ var_setvint(const char* v, int i, int flags) {
   struct var* var;
 
   var = var_create(v, flags);
+
+  if(var->flags & V_READONLY) {
+    sh_msgn(var->sa.s, var->len);
+    buffer_putsflush(fd_err->w, ": readonly variable\n");
+    return 0;
+  }
 
   var->flags |= flags;
 

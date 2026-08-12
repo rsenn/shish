@@ -1,6 +1,7 @@
 #include "../expand.h"
 #include "../tree.h"
 #include "../var.h"
+#include "../sh.h"
 #include "../../lib/uint64.h"
 #include "../../lib/scan.h"
 #include <assert.h>
@@ -38,7 +39,8 @@ expand_arith_assign(struct narithbinary* assign, int64* r) {
     default: return 1;
   }
 
-  var_setv(name, buf, fmt_longlong(buf, left), V_DEFAULT);
+  if(!var_setv(name, buf, fmt_longlong(buf, left), V_DEFAULT))
+    sh_exit(1);
 
   *r = left;
   return 0;

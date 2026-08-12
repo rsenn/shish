@@ -1,5 +1,7 @@
 #include "../../lib/byte.h"
 #include "../var.h"
+#include "../sh.h"
+#include "../fdtable.h"
 #include <assert.h>
 
 /* set a variable value
@@ -10,6 +12,12 @@ var_setv(const char* name, const char* value, size_t vlen, int flags) {
 
   /* find/create new variable on top vartab */
   var = var_create(name, flags);
+
+  if(var->flags & V_READONLY) {
+    sh_msgn(var->sa.s, var->len);
+    buffer_putsflush(fd_err->w, ": readonly variable\n");
+    return 0;
+  }
 
   /* variable currently has no controlable stralloc.. . */
   if(var->sa.a == 0) {
