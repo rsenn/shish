@@ -169,3 +169,78 @@
   repro (the file uses a shared harness function, not inline script,
   so isolating the exact commands it runs is the first step) and
   compare `trap -p`'s reported state against dash/bash at each step.
+
+- param-hash-name-vs-length-ambiguity: `${#-""}` should treat `#` as
+  a variable name (since `-` follows, making it a default-value
+  expansion for the variable `#`), not the `${#var}` length
+  operator. Confirmed: `echo ${#-""}` prints nothing (the empty
+  default) in bash/dash, but `2` in shish (length of the empty
+  string that `$#` evaluates to inside double quotes). Same bug for
+  `${#?X}` (should be value of variable `#` with `?` suffix, prints
+  `1` instead of `0`), `${#+""}`, `${#=""}`, `${#:+}`. The parser
+  in `src/parse/parse_param.c` always treats `#` as the length
+  operator without checking whether the character after it is a
+  valid variable-name-only expansion modifier (`-`, `+`, `=`, `?`,
+  `:`, or a bare `}` with no following operator). `param-p.tst:268`.
+
+- tilde-expansion-missing-in-case-word: `case ~/foo in /home/foo)`
+  fails to match because the case word is not subject to tilde
+  expansion. POSIX requires it (2.9.4.2: "The word shall be
+  expanded"). Confirmed: `HOME=/home; case ~/foo in /home/foo)
+  echo matched;; esac` prints nothing. Same issue likely applies to
+  the case pattern (`case-p.tst:62`) and to other expansion contexts
+  the parser may miss. `case-p.tst:5`.
+
+- kill-builtin-missing-s-option: `kill -s USR1 $$` fails with
+  "invalid signal specification" instead of sending SIGUSR1. The
+  builtin (`src/builtin/builtin_kill.c`) doesn't parse `-s` at all.
+  POSIX requires it (2.9.1: "The `-s` option shall be equivalent to
+  `-signal_name`"). Many `trap-p.tst` failures cascade from this
+  (the test harness uses `kill -s` to deliver signals). `trap-p.tst`
+  has 25 failures, most traceable to this.
+
+- umask-symbolic-mode-not-implemented: `umask u+r` is treated as
+  octal `0` instead of parsing the symbolic mode. Confirmed: `umask
+  u+r; umask` prints `0000` in shish vs `0002` in bash. The builtin
+  (`src/builtin/builtin_umask.c`) only handles octal arguments.
+  POSIX requires symbolic mode support (the `umask` utility
+  description specifies the grammar). `umask-p.tst:69-84` (all 56
+  symbolic-mode cases fail).
+
+- test-g-p-u-not-implemented: `test -g` (set-group-ID), `test -p`
+  (FIFO/named pipe), and `test -u` (set-user-ID) are not recognized
+  by `builtin_test.c`'s unary-operator dispatch — they fall through
+  to the default "invalid expression" error path. Confirmed: `test
+  -g /tmp` prints "test: invalid expression: /tmp" and returns 2.
+  POSIX requires all three (2.9.2.8). `test-p.tst:136-223` (33
+  failures across these three operators).
+
+- readonly-builtin-reassignment-not-fatal: `readonly a=1; readonly
+  a=2` succeeds silently instead of killing the non-interactive
+  shell. POSIX classifies `readonly` as a special built-in utility,
+  so any error in its execution (including attempting to set a
+  readonly variable) must cause the shell to abort when
+  non-interactive. Confirmed: `readonly a=1; readonly a=2; echo
+  "not reached"` prints "not reached" with exit 0 (should die
+  before reaching `echo`). The builtin (`builtin_readonly.c`)
+  calls `var_copys()`/`var_chflg()` which check readonly via
+  `var_set()`, but the error path only prints a message and
+  returns non-zero — it doesn't call `sh_exit()` for the
+  special-built-in-error-must-kill-shell case. `readonly-p.tst:26`.
+
+- unset-on-readonly-variable-silently-succeeds: `readonly a=1;
+  unset a` silently removes the variable instead of rejecting the
+  operation. Confirmed: `readonly a=1; unset a; echo "a=$a"` prints
+  "a=" in shish vs "bash: unset: a: cannot unset: readonly
+  variable" + "a=1" in bash. `builtin_unset.c` never checks the
+  `V_READONLY` flag before calling `var_unset()`. POSIX requires
+  unset to fail on readonly variables (2.9.1.43). `unset-p.tst:112,118`.
+
+- cmdsub-p-tst-hangs: `cmdsub-p.tst` times out at test 139
+  ("command substitution between here-document operator and body"),
+  which exercises a heredoc nested inside a command substitution
+  that itself appears between a heredoc operator and its body:
+  `cat <<\OUTER; echoraw "$(cat <<\INNER ...")"` — the parser/lexer
+  likely enters an infinite loop trying to find the inner heredoc
+  delimiter while still inside the outer one's body. Not yet
+  root-caused to a specific line in the parser. `cmdsub-p.tst:139`.
