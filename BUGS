@@ -310,20 +310,6 @@
   # bash prints 0002
   ```
 
-- test-g-p-u-not-implemented: `test -g` (set-group-ID), `test -p`
-  (FIFO/named pipe), and `test -u` (set-user-ID) are not recognized
-  by `builtin_test.c`'s unary-operator dispatch — they fall through
-  to the default "invalid expression" error path. Confirmed: `test
-  -g /tmp` prints "test: invalid expression: /tmp" and returns 2.
-  POSIX requires all three (2.9.2.8). `test-p.tst:136-223` (33
-  failures across these three operators).
-
-  **Repro:**
-  ```sh
-  echo 'test -g /tmp; echo "g=$?"; test -p /tmp; echo "p=$?"; test -u /tmp; echo "u=$?"' | shish
-  # shish prints "test: invalid expression: /tmp" for each and returns 2
-  # bash/dash return 1 (false) without error
-  ```
 
 - readonly-builtin-reassignment-not-fatal: `readonly a=1; readonly
   a=2` succeeds silently instead of killing the non-interactive
@@ -345,20 +331,6 @@
   # bash/dash die before reaching echo (special builtin error)
   ```
 
-- unset-on-readonly-variable-silently-succeeds: `readonly a=1;
-  unset a` silently removes the variable instead of rejecting the
-  operation. Confirmed: `readonly a=1; unset a; echo "a=$a"` prints
-  "a=" in shish vs "bash: unset: a: cannot unset: readonly
-  variable" + "a=1" in bash. `builtin_unset.c` never checks the
-  `V_READONLY` flag before calling `var_unset()`. POSIX requires
-  unset to fail on readonly variables (2.9.1.43). `unset-p.tst:112,118`.
-
-  **Repro:**
-  ```sh
-  echo 'readonly a=1; unset a; echo "a=$a"' | shish
-  # shish prints "a=" (variable was unset)
-  # bash prints "bash: unset: a: cannot unset: readonly variable" then "a=1"
-  ```
 
 - cmdsub-p-tst-hangs: `cmdsub-p.tst` times out at test 139
   ("command substitution between here-document operator and body"),
@@ -717,16 +689,6 @@
   # 2 failures in compound commands as pipeline stages
   ```
 
-- ppid-not-set-to-parent-pid: `$PPID` doesn't report the parent
-  process ID. 1 failure in `ppid-p.tst` (1/2). `ppid-p.tst:11`.
-
-  **Repro:**
-  ```sh
-  echo 'echo "PPID=$PPID myppid=$$"' | shish
-  # shish prints "PPID=" (empty) instead of the parent PID
-  # bash/dash print the actual parent process ID
-  ```
-
 - return-from-dot-script-broken: `return` from a dot-sourced script
   (unnested, nested in another dot script, nested in a function)
   doesn't work correctly — wrong exit status, doesn't actually
@@ -802,16 +764,22 @@
   # POSIX: special builtins cannot be overridden by functions
   ```
 
-- builtins-special-builtin-times-not-invocable: the `times` special
-  builtin can't be invoked without `$PATH` being set (it's not
-  registered as a builtin that bypasses PATH search). 2 failures
-  in `builtins-p.tst:298,302`.
+- times-builtin-not-implemented: the `times` special builtin (POSIX
+  required, reports cumulative user and system times for the shell
+  and its children) is not implemented at all — no `builtin_times()`
+  exists under `src/builtin/`. The 2 failures in
+  `builtins-p.tst:298,302` (can't invoke `times` without `$PATH`)
+  are a symptom of this: there's no builtin to find even when PATH
+  is set. Needs `times(2)` wrapper (or `wait4`/`getrusage`), a new
+  `builtin_times.c`, registration in `builtin_table.c`, and a
+  `H_SBUILTIN` dispatch entry so it bypasses PATH search like the
+  other special builtins.
 
   **Repro:**
   ```sh
-  echo 'unset PATH; times' | shish
-  # shish can't find 'times' without PATH
-  # bash/dash invoke 'times' as builtin regardless of PATH
+  echo 'times' | shish
+  # shish: "times: No such file or directory" (tries PATH lookup)
+  # bash/dash print user/system times for shell and children
   ```
 
 - set-hashondef-broken: `set -h` (hash each command as it's
