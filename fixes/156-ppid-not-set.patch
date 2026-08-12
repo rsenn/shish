@@ -1,0 +1,14 @@
+diff --git a/src/sh/sh_init.c b/src/sh/sh_init.c
+index 243e78d5..a3c10be9 100644
+--- a/src/sh/sh_init.c
++++ b/src/sh/sh_init.c
+@@ -41,6 +41,9 @@ sh_init(void) {
+ 
+   uint32_seed(&sh_pid, sizeof(sh_pid));
+ 
++  /* set PPID to parent process id */
++  var_setvint("PPID", getppid(), 0);
++
+   /* initialize variables if they're not set */
+   var_import("PS1=\\s-\\v:\\w \\$ ", V_INIT, &sh_ps1);
+   var_import("PS2=> ", V_INIT, &sh_ps2);

@@ -182,7 +182,7 @@ test_unary(int argc, char** argv) {
   }
 
   /* check options */
-  if((c = shell_getopt(argc, argv, "a:n:z:f:d:b:c:h:L:S:e:s:r:w:x:")) > 0) {
+  if((c = shell_getopt(argc, argv, "a:n:z:f:d:b:c:h:L:S:e:s:r:w:x:g:p:u:")) > 0) {
     struct stat st;
     const char* arg = shell_optarg;
 
@@ -230,6 +230,12 @@ test_unary(int argc, char** argv) {
       case 'w': return access(arg, W_OK) == 0;
       /* return true if executable */
       case 'x': return access(arg, X_OK) == 0;
+
+      /* return true if argument has set-group-ID bit set */
+      case 'g': return stat(arg, &st) == 0 && (st.st_mode & S_ISGID);
+
+      /* return true if argument has set-user-ID bit set */
+      case 'u': return stat(arg, &st) == 0 && (st.st_mode & S_ISUID);
 
       case ':': {
         if(shell_optopt == 'z')

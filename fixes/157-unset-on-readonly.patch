@@ -1,0 +1,19 @@
+diff --git a/src/builtin/builtin_unset.c b/src/builtin/builtin_unset.c
+index 44b42974..433b6f89 100644
+--- a/src/builtin/builtin_unset.c
++++ b/src/builtin/builtin_unset.c
+@@ -71,6 +71,14 @@ builtin_unset(int argc, char* argv[]) {
+     }
+ 
+     if(!fun) {
++      struct var* v;
++
++      /* check if variable exists and is readonly */
++      if((v = var_search(*argp, NULL)) != NULL && (v->flags & V_READONLY)) {
++        builtin_errmsg(argv, *argp, "readonly variable");
++        continue;
++      }
++
+       if(var_unset(*argp))
+         continue;
+     }

@@ -3325,4 +3325,52 @@ assert_equal "reached" "$OUT155_READONLY" "readonly error in subshell must not k
 OUT155_ASSIGN=$( (readonly x=1; x=2 :) 2>/dev/null )
 assert_equal "" "$OUT155_ASSIGN" "assignment error to readonly on special builtin must kill subshell"
 
+## 156: PPID was not set to parent process ID. The shell never called
+## getppid() to initialize $PPID. Fixed by adding var_setvint("PPID",
+## getppid(), 0) in sh_init.c after setting sh_pid.
+PPID_VAL=$PPID
+assert_match "$PPID_VAL" "[0-9]*" "\$PPID must be set to a numeric value"
+
+## 157: unset on a readonly variable silently succeeded instead of
+## rejecting the operation. POSIX requires unset to fail on readonly
+## variables (2.9.1.43). Fixed by checking V_READONLY flag in
+## builtin_unset() before calling var_unset().
+readonly UNSET157=readonlyval
+unset UNSET157 2>/dev/null
+assert_equal "readonlyval" "$UNSET157" "unset must not remove a readonly variable"
+
+## 158: test -g, -p, -u were not implemented. The unary operators for
+## set-group-ID, named pipe (FIFO), and set-user-ID were missing from
+## builtin_test.c's getopt string and switch statement. Fixed by adding
+## g:u: to getopt and cases for 'g' and 'u' in the switch (p was already
+## present but not in getopt string).
+TESTFIFO=/tmp/shish-test-fifo-158
+mkfifo "$TESTFIFO" 2>/dev/null
+test -p "$TESTFIFO"
+assert_equal "0" "$?" "test -p must return true for a FIFO"
+rm -f "$TESTFIFO"
+
+TESTGID=/tmp/shish-test-gid-158
+touch "$TESTGID"
+/bin/chmod g+s "$TESTGID" 2>/dev/null
+test -g "$TESTGID"
+assert_equal "0" "$?" "test -g must return true for set-group-ID file"
+rm -f "$TESTGID"
+
+TESTUID=/tmp/shish-test-uid-158
+touch "$TESTUID"
+/bin/chmod u+s "$TESTUID" 2>/dev/null
+test -u "$TESTUID"
+assert_equal "0" "$?" "test -u must return true for set-user-ID file"
+rm -f "$TESTUID"
+
+# Negative tests: ensure these return false when bits are not set
+TESTPLAIN=/tmp/shish-test-plain-158
+touch "$TESTPLAIN"
+test -g "$TESTPLAIN"
+assert_equal "1" "$?" "test -g must return false for file without set-group-ID"
+test -u "$TESTPLAIN"
+assert_equal "1" "$?" "test -u must return false for file without set-user-ID"
+rm -f "$TESTPLAIN"
+
 summary

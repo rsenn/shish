@@ -1,0 +1,26 @@
+diff --git a/src/builtin/builtin_test.c b/src/builtin/builtin_test.c
+index f21645e0..a494add1 100644
+--- a/src/builtin/builtin_test.c
++++ b/src/builtin/builtin_test.c
+@@ -182,7 +182,7 @@ test_unary(int argc, char** argv) {
+   }
+ 
+   /* check options */
+-  if((c = shell_getopt(argc, argv, "a:n:z:f:d:b:c:h:L:S:e:s:r:w:x:")) > 0) {
++  if((c = shell_getopt(argc, argv, "a:n:z:f:d:b:c:h:L:S:e:s:r:w:x:g:p:u:")) > 0) {
+     struct stat st;
+     const char* arg = shell_optarg;
+ 
+@@ -231,6 +231,12 @@ test_unary(int argc, char** argv) {
+       /* return true if executable */
+       case 'x': return access(arg, X_OK) == 0;
+ 
++      /* return true if argument has set-group-ID bit set */
++      case 'g': return stat(arg, &st) == 0 && (st.st_mode & S_ISGID);
++
++      /* return true if argument has set-user-ID bit set */
++      case 'u': return stat(arg, &st) == 0 && (st.st_mode & S_ISUID);
++
+       case ':': {
+         if(shell_optopt == 'z')
+           return 1;

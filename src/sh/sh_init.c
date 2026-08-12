@@ -41,6 +41,9 @@ sh_init(void) {
 
   uint32_seed(&sh_pid, sizeof(sh_pid));
 
+  /* set PPID to parent process id */
+  var_setvint("PPID", getppid(), 0);
+
   /* initialize variables if they're not set */
   var_import("PS1=\\s-\\v:\\w \\$ ", V_INIT, &sh_ps1);
   var_import("PS2=> ", V_INIT, &sh_ps2);

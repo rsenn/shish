@@ -71,6 +71,14 @@ builtin_unset(int argc, char* argv[]) {
     }
 
     if(!fun) {
+      struct var* v;
+
+      /* check if variable exists and is readonly */
+      if((v = var_search(*argp, NULL)) != NULL && (v->flags & V_READONLY)) {
+        builtin_errmsg(argv, *argp, "readonly variable");
+        continue;
+      }
+
       if(var_unset(*argp))
         continue;
     }
