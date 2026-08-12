@@ -14,6 +14,7 @@
 #include "../job.h"
 #include "../parse.h"
 #include "../redir.h"
+#include "../source.h"
 #include "../tree.h"
 #include "../vartab.h"
 #include "../job.h"
@@ -283,6 +284,11 @@ end:
   }
 
   sh->exitcode = status;
+
+  /* POSIX requires special builtins to kill the shell on error in non-interactive mode */
+  if(cmd.id == H_SBUILTIN && status != 0 && !(source->mode & SOURCE_IACTIVE)) {
+    sh_exit(status);
+  }
 
   return status;
 }

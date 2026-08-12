@@ -5,6 +5,7 @@
 #include "../fdtable.h"
 #include "../job.h"
 #include "../sh.h"
+#include "../source.h"
 #include "../../lib/shell.h"
 #include "../tree.h"
 #include "../vartab.h"
@@ -170,6 +171,11 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
       ret = exec_program(cmd->path, argv, flag);
       break;
     }
+  }
+
+  /* POSIX requires special builtins to kill the shell on error in non-interactive mode */
+  if(cmd->id == H_SBUILTIN && ret != 0 && !(source->mode & SOURCE_IACTIVE)) {
+    sh_exit(ret);
   }
 
   /* if exec is set we never return! */

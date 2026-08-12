@@ -170,10 +170,10 @@
   so isolating the exact commands it runs is the first step) and
   compare `trap -p`'s reported state against dash/bash at each step.
 
-- param-hash-name-vs-length-ambiguity: `${#-""}` should treat `#` as
-  a variable name (since `-` follows, making it a default-value
-  expansion for the variable `#`), not the `${#var}` length
-  operator. Confirmed: `echo ${#-""}` prints nothing (the empty
+- param-hash-name-vs-length-ambiguity: FIXED (fixes/154). `${#-""}`
+  should treat `#` as a variable name (since `-` follows, making it
+  a default-value expansion for the variable `#`), not the `${#var}`
+  length operator. Confirmed: `echo ${#-""}` prints nothing (the empty
   default) in bash/dash, but `2` in shish (length of the empty
   string that `$#` evaluates to inside double quotes). Same bug for
   `${#?X}` (should be value of variable `#` with `?` suffix, prints
@@ -279,8 +279,8 @@
   (13/19). `parse_function.c` or the compound-command dispatch.
   `function-p.tst:24,31,38,46,53,86`.
 
-- special-builtin-errors-not-fatal: POSIX requires that errors
-  (assignment errors, redirection errors) on special built-in
+- special-builtin-errors-not-fatal: FIXED (fixes/155). POSIX requires
+  that errors (assignment errors, redirection errors) on special built-in
   utilities (`:`, `.`, `break`, `continue`, `eval`, `exec`, `exit`,
   `export`, `readonly`, `return`, `set`, `shift`, `times`, `trap`,
   `unset`) kill the non-interactive shell. shish prints an error

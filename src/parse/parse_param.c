@@ -41,11 +41,17 @@ parse_param(struct parser* p) {
 
   /* if we have # as first char in substitution and we're inside a ${}
      then check if the next char is a valid parameter char. if so then
-     it's a string length subst */
+     it's a string length subst.
+     
+     But: if the next char is an expansion modifier (-, +, =, ?, :),
+     then # is the parameter name (e.g., ${#-default}), not the length
+     operator. POSIX requires this disambiguation. */
   if(c == '#' && braces) {
     char nextc;
 
-    if(source_peek(&nextc) > 0 && parse_isparam(nextc)) {
+    if(source_peek(&nextc) > 0 && parse_isparam(nextc) && 
+       nextc != '-' && nextc != '+' && nextc != '=' && 
+       nextc != '?' && nextc != ':') {
       param->flag |= S_STRLEN;
       source_get(&c);
     }

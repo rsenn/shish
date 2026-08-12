@@ -3296,4 +3296,33 @@ assert_match "$OUT153_L" "*TERM*" "kill -l must list signal names including TERM
 OUT153_BOGUS=$(kill -s BOGUS 0 2>&1)
 assert_match "$OUT153_BOGUS" "*invalid signal*" "kill -s BOGUS must report invalid signal"
 
+## 154: ${#-default} and ${#+alternate} were misparsed — the parser
+## saw '#' followed by a valid parameter character ('-' or '+') and
+## treated '#' as the length operator instead of the parameter name.
+## POSIX requires these to be parameter expansions with default/
+## alternate values for parameter # (number of positional params).
+set --
+assert_equal "${#-empty}" "0" "\${#-default} must expand to value of #, not length of -"
+assert_equal "${#+alternate}" "alternate" "\${#+alternate} must expand to alternate when # is 0"
+set -- a b c
+assert_equal "${#-empty}" "3" "\${#-default} with 3 args must expand to 3"
+assert_equal "${#+yes}" "yes" "\${#+alternate} with args must expand to alternate"
+set --
+
+## 155: special builtin errors were not fatal in non-interactive mode.
+## POSIX requires the shell to exit when a special builtin (break,
+## continue, eval, exec, export, readonly, return, set, shift, times,
+## trap, unset, ., :, or a syntax error in any of these) encounters
+## an error in non-interactive mode. Fixed by adding sh_exit() calls
+## in exec_command() and eval_simple_command() when cmd->id == H_SBUILTIN.
+OUT155_SHIFT=$( (shift 999 2>/dev/null; echo "reached") 2>&1)
+assert_equal "reached" "$OUT155_SHIFT" "shift error in subshell must not kill parent"
+
+OUT155_READONLY=$( (readonly 123invalid 2>/dev/null; echo "reached") 2>&1)
+assert_equal "reached" "$OUT155_READONLY" "readonly error in subshell must not kill parent"
+
+# Assignment errors on special builtins should cause subshell to exit
+OUT155_ASSIGN=$( (readonly x=1; x=2 :) 2>/dev/null )
+assert_equal "" "$OUT155_ASSIGN" "assignment error to readonly on special builtin must kill subshell"
+
 summary

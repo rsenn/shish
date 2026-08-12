@@ -1,0 +1,47 @@
+diff --git a/src/eval/eval_simple_command.c b/src/eval/eval_simple_command.c
+index cf62f965..90931532 100644
+--- a/src/eval/eval_simple_command.c
++++ b/src/eval/eval_simple_command.c
+@@ -14,6 +14,7 @@
+ #include "../job.h"
+ #include "../parse.h"
+ #include "../redir.h"
++#include "../source.h"
+ #include "../tree.h"
+ #include "../vartab.h"
+ #include "../job.h"
+@@ -284,5 +285,10 @@ end:
+ 
+   sh->exitcode = status;
+ 
++  /* POSIX requires special builtins to kill the shell on error in non-interactive mode */
++  if(cmd.id == H_SBUILTIN && status != 0 && !(source->mode & SOURCE_IACTIVE)) {
++    sh_exit(status);
++  }
++
+   return status;
+ }
+diff --git a/src/exec/exec_command.c b/src/exec/exec_command.c
+index 156b8ea9..291a700a 100644
+--- a/src/exec/exec_command.c
++++ b/src/exec/exec_command.c
+@@ -5,6 +5,7 @@
+ #include "../fdtable.h"
+ #include "../job.h"
+ #include "../sh.h"
++#include "../source.h"
+ #include "../../lib/shell.h"
+ #include "../tree.h"
+ #include "../vartab.h"
+@@ -172,6 +173,11 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
+     }
+   }
+ 
++  /* POSIX requires special builtins to kill the shell on error in non-interactive mode */
++  if(cmd->id == H_SBUILTIN && ret != 0 && !(source->mode & SOURCE_IACTIVE)) {
++    sh_exit(ret);
++  }
++
+   /* if exec is set we never return! */
+   if(flag & X_EXEC)
+     sh_exit(ret);
