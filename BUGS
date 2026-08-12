@@ -764,24 +764,6 @@
   # POSIX: special builtins cannot be overridden by functions
   ```
 
-- times-builtin-not-implemented: the `times` special builtin (POSIX
-  required, reports cumulative user and system times for the shell
-  and its children) is not implemented at all — no `builtin_times()`
-  exists under `src/builtin/`. The 2 failures in
-  `builtins-p.tst:298,302` (can't invoke `times` without `$PATH`)
-  are a symptom of this: there's no builtin to find even when PATH
-  is set. Needs `times(2)` wrapper (or `wait4`/`getrusage`), a new
-  `builtin_times.c`, registration in `builtin_table.c`, and a
-  `H_SBUILTIN` dispatch entry so it bypasses PATH search like the
-  other special builtins.
-
-  **Repro:**
-  ```sh
-  echo 'times' | shish
-  # shish: "times: No such file or directory" (tries PATH lookup)
-  # bash/dash print user/system times for shell and children
-  ```
-
 - set-hashondef-broken: `set -h` (hash each command as it's
   defined/located) has no effect. 1 failure in `option-p.tst:121`.
 

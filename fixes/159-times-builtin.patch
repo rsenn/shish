@@ -1,0 +1,216 @@
+diff --git a/src/builtin/builtin_times.c b/src/builtin/builtin_times.c
+new file mode 100644
+index 00000000..8c95dbb5
+--- /dev/null
++++ b/src/builtin/builtin_times.c
+@@ -0,0 +1,75 @@
++#include "../builtin.h"
++#include "../fdtable.h"
++#include "../../lib/buffer.h"
++#include "../../lib/fmt.h"
++#include <sys/times.h>
++#include <unistd.h>
++
++/* print a time value in XmY.YYYYYYs format (minutes, seconds with 6 decimal places)
++ * using buffer functions, no printf */
++static void
++print_time(clock_t ticks) {
++  long clk_tck = sysconf(_SC_CLK_TCK);
++  unsigned long total_microsecs;
++  unsigned long minutes, seconds, microsecs;
++  char buf[FMT_ULONG];
++  size_t n, i;
++
++  /* Convert ticks to microseconds */
++  total_microsecs = (ticks * 1000000UL) / clk_tck;
++
++  /* Extract minutes, seconds, microseconds */
++  minutes = total_microsecs / 60000000UL;
++  total_microsecs %= 60000000UL;
++  seconds = total_microsecs / 1000000UL;
++  microsecs = total_microsecs % 1000000UL;
++
++  /* Print: minutes "m" seconds "." microsecs "s" */
++  buffer_putulong(fd_out->w, minutes);
++  buffer_puts(fd_out->w, "m");
++  buffer_putulong(fd_out->w, seconds);
++  buffer_puts(fd_out->w, ".");
++
++  /* Print microsecs with leading zeros (always 6 digits) */
++  n = fmt_ulong(buf, microsecs);
++  for(i = n; i < 6; i++)
++    buffer_putc(fd_out->w, '0');
++  buffer_put(fd_out->w, buf, n);
++  buffer_puts(fd_out->w, "s");
++}
++
++/* times built-in
++ *
++ * ----------------------------------------------------------------------- */
++const char help_times[] = "    Write accumulated user and system times to stdout.\n"
++                          "\n"
++                          "    The output format is:\n"
++                          "        <user time> <system time>\n"
++                          "        <user time for children> <system time for children>\n"
++                          "\n"
++                          "    Each time is printed as XmY.YYs (minutes, seconds with 2 decimal places).\n";
++
++int
++builtin_times(int argc, char* argv[]) {
++  struct tms buf;
++
++  (void)argc;
++  (void)argv;
++
++  if(times(&buf) == (clock_t)-1)
++    return 1;
++
++  /* Line 1: shell user and system times */
++  print_time(buf.tms_utime);
++  buffer_putspace(fd_out->w);
++  print_time(buf.tms_stime);
++  buffer_putnlflush(fd_out->w);
++
++  /* Line 2: children user and system times */
++  print_time(buf.tms_cutime);
++  buffer_putspace(fd_out->w);
++  print_time(buf.tms_cstime);
++  buffer_putnlflush(fd_out->w);
++
++  return 0;
++}
+diff --git a/BUGS b/BUGS
+index ea11ba7a..1773ae60 100644
+--- a/BUGS
++++ b/BUGS
+@@ -764,24 +764,6 @@
+   # POSIX: special builtins cannot be overridden by functions
+   ```
+ 
+-- times-builtin-not-implemented: the `times` special builtin (POSIX
+-  required, reports cumulative user and system times for the shell
+-  and its children) is not implemented at all — no `builtin_times()`
+-  exists under `src/builtin/`. The 2 failures in
+-  `builtins-p.tst:298,302` (can't invoke `times` without `$PATH`)
+-  are a symptom of this: there's no builtin to find even when PATH
+-  is set. Needs `times(2)` wrapper (or `wait4`/`getrusage`), a new
+-  `builtin_times.c`, registration in `builtin_table.c`, and a
+-  `H_SBUILTIN` dispatch entry so it bypasses PATH search like the
+-  other special builtins.
+-
+-  **Repro:**
+-  ```sh
+-  echo 'times' | shish
+-  # shish: "times: No such file or directory" (tries PATH lookup)
+-  # bash/dash print user/system times for shell and children
+-  ```
+-
+ - set-hashondef-broken: `set -h` (hash each command as it's
+   defined/located) has no effect. 1 failure in `option-p.tst:121`.
+ 
+diff --git a/cmake/Builtins.cmake b/cmake/Builtins.cmake
+index 7f424147..5b736dd0 100644
+--- a/cmake/Builtins.cmake
++++ b/cmake/Builtins.cmake
+@@ -25,6 +25,7 @@ list(
+   shift
+   source
+   test
++  times
+   trap
+   type
+   umask
+@@ -87,6 +88,7 @@ list(
+   shift
+   source
+   test
++  times
+   true
+   type
+   unset)
+diff --git a/src/builtin.h b/src/builtin.h
+index 3fca2943..12eab5e0 100644
+--- a/src/builtin.h
++++ b/src/builtin.h
+@@ -71,6 +71,7 @@ int builtin_rmdir(int argc, char* argv[]);
+ int builtin_set(int argc, char* argv[]);
+ int builtin_shift(int argc, char* argv[]);
+ int builtin_test(int argc, char* argv[]);
++int builtin_times(int argc, char* argv[]);
+ int builtin_trap(int argc, char* argv[]);
+ int builtin_type(int argc, char* argv[]);
+ int builtin_umask(int argc, char* argv[]);
+@@ -125,6 +126,7 @@ extern const char help_set[];
+ extern const char help_shift[];
+ extern const char help_source[];
+ extern const char help_test[];
++extern const char help_times[];
+ extern const char help_trap[];
+ extern const char help_true[];
+ extern const char help_type[];
+diff --git a/src/builtin/Makefile.in b/src/builtin/Makefile.in
+index 6a046a63..3fdc8626 100644
+--- a/src/builtin/Makefile.in
++++ b/src/builtin/Makefile.in
+@@ -19,7 +19,7 @@ include $(top_builddir)/config.mk
+ # ---------------------------------------------------------------------------
+ ARCHIVE = builtin.a
+ MODULES = \
+-builtin_alias builtin_basename builtin_break builtin_cat builtin_cd builtin_chmod builtin_command builtin_dirname builtin_dump builtin_echo builtin_error builtin_eval builtin_exec builtin_exit builtin_export builtin_expr builtin_false builtin_fdtable builtin_getopts builtin_hash builtin_help builtin_history builtin_hostname builtin_jobs builtin_kill builtin_ln builtin_local builtin_mkdir builtin_mktemp builtin_printf builtin_pwd builtin_read builtin_readonly builtin_return builtin_rm builtin_rmdir builtin_search builtin_set builtin_shift builtin_source builtin_table builtin_test builtin_trap builtin_true builtin_type builtin_umask builtin_uname builtin_unset builtin_wait builtin_which
++builtin_alias builtin_basename builtin_break builtin_cat builtin_cd builtin_chmod builtin_command builtin_dirname builtin_dump builtin_echo builtin_error builtin_eval builtin_exec builtin_exit builtin_export builtin_expr builtin_false builtin_fdtable builtin_getopts builtin_hash builtin_help builtin_history builtin_hostname builtin_jobs builtin_kill builtin_ln builtin_local builtin_mkdir builtin_mktemp builtin_printf builtin_pwd builtin_read builtin_readonly builtin_return builtin_rm builtin_rmdir builtin_search builtin_set builtin_shift builtin_source builtin_table builtin_test builtin_times builtin_trap builtin_true builtin_type builtin_umask builtin_uname builtin_unset builtin_wait builtin_which
+ 
+ SOURCES = $(MODULES:%=%.c)
+ OBJECTS = $(MODULES:%=%.o)
+diff --git a/src/builtin/builtin_table.c b/src/builtin/builtin_table.c
+index 3142fbe6..9b82ac26 100644
+--- a/src/builtin/builtin_table.c
++++ b/src/builtin/builtin_table.c
+@@ -101,6 +101,9 @@
+ #ifndef BUILTIN_TEST
+ #define BUILTIN_TEST 1
+ #endif
++#ifndef BUILTIN_TIMES
++#define BUILTIN_TIMES 1
++#endif
+ #ifndef BUILTIN_TRAP
+ #define BUILTIN_TRAP 1
+ #endif
+@@ -314,6 +317,9 @@ struct builtin_cmd builtin_table[] = {
+ #if BUILTIN_TEST
+     {"test", &builtin_test, B_DEFAULT, "[expr]", help_test},
+ #endif
++#if BUILTIN_TIMES
++    {"times", &builtin_times, B_SPECIAL, "", help_times},
++#endif
+ #if BUILTIN_TRUE
+     {"true", &builtin_true, B_DEFAULT, "", help_true},
+ #endif
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 838717e4..dd362212 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -3373,4 +3373,24 @@ test -u "$TESTPLAIN"
+ assert_equal "1" "$?" "test -u must return false for file without set-user-ID"
+ rm -f "$TESTPLAIN"
+ 
++## 159: the times builtin was not implemented at all. POSIX requires
++## it to print accumulated user and system times for the shell and
++## its children in XmY.YYYYYYs format (6 decimal places). Fixed by
++## adding builtin_times.c using times(2) and buffer/fmt functions.
++TIMES_OUT=$(times)
++TIMES_LINES=$(echo "$TIMES_OUT" | wc -l)
++assert_equal "2" "$TIMES_LINES" "times must produce exactly 2 lines of output"
++echo "$TIMES_OUT" | head -1 | grep -qE '^[0-9]+m[0-9]+\.[0-9]{6}s [0-9]+m[0-9]+\.[0-9]{6}s$'
++assert_equal "0" "$?" "times line 1 must match XmY.YYYYYYs XmY.YYYYYYs format"
++echo "$TIMES_OUT" | tail -1 | grep -qE '^[0-9]+m[0-9]+\.[0-9]{6}s [0-9]+m[0-9]+\.[0-9]{6}s$'
++assert_equal "0" "$?" "times line 2 must match XmY.YYYYYYs XmY.YYYYYYs format"
++
++# Verify times is a special builtin (can be invoked without PATH)
++OLDPATH="$PATH"
++PATH=""
++times >/dev/null 2>&1
++TIMES_STATUS=$?
++PATH="$OLDPATH"
++assert_equal "0" "$TIMES_STATUS" "times must be invocable without PATH (special builtin)"
++
+ summary

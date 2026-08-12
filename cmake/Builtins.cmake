@@ -25,6 +25,7 @@ list(
   shift
   source
   test
+  times
   trap
   type
   umask
@@ -87,6 +88,7 @@ list(
   shift
   source
   test
+  times
   true
   type
   unset)

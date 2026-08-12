@@ -3373,4 +3373,24 @@ test -u "$TESTPLAIN"
 assert_equal "1" "$?" "test -u must return false for file without set-user-ID"
 rm -f "$TESTPLAIN"
 
+## 159: the times builtin was not implemented at all. POSIX requires
+## it to print accumulated user and system times for the shell and
+## its children in XmY.YYYYYYs format (6 decimal places). Fixed by
+## adding builtin_times.c using times(2) and buffer/fmt functions.
+TIMES_OUT=$(times)
+TIMES_LINES=$(echo "$TIMES_OUT" | wc -l)
+assert_equal "2" "$TIMES_LINES" "times must produce exactly 2 lines of output"
+echo "$TIMES_OUT" | head -1 | grep -qE '^[0-9]+m[0-9]+\.[0-9]{6}s [0-9]+m[0-9]+\.[0-9]{6}s$'
+assert_equal "0" "$?" "times line 1 must match XmY.YYYYYYs XmY.YYYYYYs format"
+echo "$TIMES_OUT" | tail -1 | grep -qE '^[0-9]+m[0-9]+\.[0-9]{6}s [0-9]+m[0-9]+\.[0-9]{6}s$'
+assert_equal "0" "$?" "times line 2 must match XmY.YYYYYYs XmY.YYYYYYs format"
+
+# Verify times is a special builtin (can be invoked without PATH)
+OLDPATH="$PATH"
+PATH=""
+times >/dev/null 2>&1
+TIMES_STATUS=$?
+PATH="$OLDPATH"
+assert_equal "0" "$TIMES_STATUS" "times must be invocable without PATH (special builtin)"
+
 summary

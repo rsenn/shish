@@ -101,6 +101,9 @@
 #ifndef BUILTIN_TEST
 #define BUILTIN_TEST 1
 #endif
+#ifndef BUILTIN_TIMES
+#define BUILTIN_TIMES 1
+#endif
 #ifndef BUILTIN_TRAP
 #define BUILTIN_TRAP 1
 #endif
@@ -313,6 +316,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_TEST
     {"test", &builtin_test, B_DEFAULT, "[expr]", help_test},
+#endif
+#if BUILTIN_TIMES
+    {"times", &builtin_times, B_SPECIAL, "", help_times},
 #endif
 #if BUILTIN_TRUE
     {"true", &builtin_true, B_DEFAULT, "", help_true},
