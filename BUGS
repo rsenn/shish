@@ -254,26 +254,6 @@
   # Compare output with dash/bash to see the difference
   ```
 
-- param-hash-name-vs-length-ambiguity: FIXED (fixes/154). `${#-""}`
-  should treat `#` as a variable name (since `-` follows, making it
-  a default-value expansion for the variable `#`), not the `${#var}`
-  length operator. Confirmed: `echo ${#-""}` prints nothing (the empty
-  default) in bash/dash, but `2` in shish (length of the empty
-  string that `$#` evaluates to inside double quotes). Same bug for
-  `${#?X}` (should be value of variable `#` with `?` suffix, prints
-  `1` instead of `0`), `${#+""}`, `${#=""}`, `${#:+}`. The parser
-  in `src/parse/parse_param.c` always treats `#` as the length
-  operator without checking whether the character after it is a
-  valid variable-name-only expansion modifier (`-`, `+`, `=`, `?`,
-  `:`, or a bare `}` with no following operator). `param-p.tst:268`.
-
-  **Repro:**
-  ```sh
-  echo 'echo ${#-""}' | shish
-  # shish prints 2 (length of empty string)
-  # bash/dash print nothing (empty default value)
-  ```
-
 - tilde-expansion-missing-in-case-word: `case ~/foo in /home/foo)`
   fails to match because the case word is not subject to tilde
   expansion. POSIX requires it (2.9.4.2: "The word shall be
@@ -421,30 +401,6 @@
   EOF
   # shish prints "unexpected token for, expecting '(,{'"
   # bash/dash accept this syntax
-  ```
-
-- special-builtin-errors-not-fatal: FIXED (fixes/155). POSIX requires
-  that errors (assignment errors, redirection errors) on special built-in
-  utilities (`:`, `.`, `break`, `continue`, `eval`, `exec`, `exit`,
-  `export`, `readonly`, `return`, `set`, `shift`, `times`, `trap`,
-  `unset`) kill the non-interactive shell. shish prints an error
-  message but continues executing. 137 assignment-error failures +
-  ~30 redirection-error failures in `error-p.tst` (75/212 passing).
-  This is a broad POSIX conformance gap — the dispatch path in
-  `exec_command.c` / `eval_simple_command.c` needs to check whether
-  the command is a special builtin and call `sh_exit()` on error.
-  `error-p.tst:10-272,316-359`.
-
-  **Repro:**
-  ```sh
-  # Assignment error on special builtin (export)
-  cat <<'EOF' | shish
-  readonly x=old
-  export x=new
-  echo "should not reach here"
-  EOF
-  # shish prints error but continues to "should not reach here"
-  # POSIX: special builtin error must kill non-interactive shell
   ```
 
 - shift-operand-handling-broken: `shift` with operand 0, with no
