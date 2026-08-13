@@ -94,8 +94,28 @@ builtin_kill(int argc, char* argv[]) {
   int ret = 0;
 
   if(argc > 1 && argv[1][0] == '-' && argv[1][1]) {
-    if(argv[1][1] == 'l' && !argv[1][2])
-      return kill_list();
+    if(argv[1][1] == 'l' && !argv[1][2]) {
+      /* -l with optional argument */
+      if(argc == 2) {
+        /* No argument: list all signals */
+        return kill_list();
+      }
+      /* Has argument: translate exit status or signal number to name */
+      int n;
+      if(!scan_int(argv[2], &n) || n < 0 || n > 128 + 31) {
+        return builtin_errmsg(argv, argv[2], "invalid signal specification");
+      }
+      /* If n > 128, it's an exit status (128 + signal_number) */
+      if(n > 128)
+        n -= 128;
+      const char* name = sig_name(n);
+      if(!name) {
+        return builtin_errmsg(argv, argv[2], "invalid signal specification");
+      }
+      buffer_puts(fd_out->w, name);
+      buffer_putnlflush(fd_out->w);
+      return 0;
+    }
 
     if(argv[1][1] == 's' && !argv[1][2]) {
       if(argc < 3)

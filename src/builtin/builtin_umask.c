@@ -57,40 +57,87 @@ scan_rwx(char* in, uint16* bits) {
 
 size_t
 scan_umask(char* in, uint16* umask) {
-  char *src, c, op;
+  char *src, op;
+  int who_mask, shift, all_classes;
 
-  for(src = in; *src; src++) {
-    uint16_t bits = 0, shift = 0;
+  for(src = in; *src;) {
+    uint16 bits = 0;
     size_t n;
-    c = *src++;
-    op = *src++;
 
+    /* Parse who: u, g, o, a, or default to 'a' */
+    who_mask = 0;
+    shift = 0;
+    all_classes = 0;
+    while(*src && str_chr("ugoa", *src) < 4) {
+      switch(*src) {
+        case 'u': who_mask |= 0700; shift = 6; break;
+        case 'g': who_mask |= 0070; shift = 3; break;
+        case 'o': who_mask |= 0007; shift = 0; break;
+        case 'a': all_classes = 1; break;
+      }
+      src++;
+    }
+    if(all_classes || who_mask == 0) {
+      who_mask = 0777;
+      shift = 0;  /* Will apply to all classes */
+    }
+
+    /* Parse operator: +, -, = */
+    op = *src;
     if(str_chr("=+-", op) == 3)
       return 0;
+    src++;
 
+    /* Parse permissions: r, w, x */
     n = scan_rwx(src, &bits);
+    src += n;
 
-    switch(c) {
-      case 'u': shift = 6; break;
-      case 'g': shift = 3; break;
-      case 'o': shift = 0; break;
-      default: return 0;
+    /* Apply operation */
+    if(all_classes || who_mask == 0777) {
+      /* Apply to all classes */
+      uint16 all_bits = (bits << 6) | (bits << 3) | bits;
+      switch(op) {
+        case '+':
+          /* Add permissions = clear bits from mask */
+          *umask &= ~all_bits;
+          break;
+        case '-':
+          /* Remove permissions = set bits in mask */
+          *umask |= all_bits;
+          break;
+        case '=':
+          /* Set exactly = clear all bits, then set complementary bits */
+          *umask = 0;
+          *umask |= (~all_bits & 0777);
+          break;
+      }
+    } else {
+      /* Apply to specific class */
+      uint16 shifted_bits = bits << shift;
+      switch(op) {
+        case '+':
+          /* Add permissions = clear bits from mask */
+          *umask &= ~shifted_bits;
+          break;
+        case '-':
+          /* Remove permissions = set bits in mask */
+          *umask |= shifted_bits;
+          break;
+        case '=':
+          /* Set exactly = clear all bits for class, then set complementary bits */
+          *umask &= ~who_mask;
+          *umask |= (who_mask ^ shifted_bits);
+          break;
+      }
     }
 
-    switch(op) {
-      case '=':
-        *umask |= (0x7 << shift);
-        *umask &= ~(bits << shift);
-        break;
-      case '+': *umask &= ~(bits << shift); break;
-      case '-': *umask |= (bits << shift); break;
-    }
-
-    if(*(src += n) != ',')
+    /* Check for comma separator */
+    if(*src == ',')
+      src++;
+    else if(*src)
       break;
   }
 
-  //*umask ^= 0777;
   return src - in;
 }
 
@@ -118,10 +165,15 @@ builtin_umask(int argc, char* argv[]) {
   }
 
   if(shell_optind < argc) {
-    uint16 num, prev = sh->umask;
+    uint16 num = sh->umask, prev = sh->umask;
 
-    if(scan_8short(argv[shell_optind], &num) || scan_umask(argv[shell_optind], &num))
+    if(scan_8short(argv[shell_optind], &num))
       sh->umask = num;
+    else {
+      num = sh->umask;
+      if(scan_umask(argv[shell_optind], &num))
+        sh->umask = num;
+    }
 
     if(sh->umask != prev)
       umask(sh->umask);

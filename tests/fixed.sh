@@ -3415,4 +3415,37 @@ readonly RO162=oldval
 export RO162=newval 2>/dev/null
 assert_equal "oldval" "$RO162" "export must not reassign a readonly variable"
 
+## 163: kill -l with a signal number should translate it to a signal name,
+## not list all signals. POSIX requires kill -l <exit_status> to translate
+## an exit status (128+N) or signal number to its name. Fixed by adding
+## argument handling to the -l option in builtin_kill.c.
+KILL_L_15=$(kill -l 15)
+assert_equal "TERM" "$KILL_L_15" "kill -l 15 must print TERM"
+KILL_L_143=$(kill -l 143)
+assert_equal "TERM" "$KILL_L_143" "kill -l 143 (128+15) must print TERM"
+KILL_L_9=$(kill -l 9)
+assert_equal "KILL" "$KILL_L_9" "kill -l 9 must print KILL"
+
+## 164: . (source/dot) builtin did not search PATH for scripts without
+## slashes. POSIX requires that if the filename does not contain a slash,
+## the shell shall search PATH. Fixed by adding source_search_path() that
+## searches PATH for readable (not executable) files.
+echo 'echo "hello from PATH"' > /tmp/test164.sh
+export OLD_PATH="$PATH"
+export PATH=/tmp
+DOT_OUT=$(. test164.sh)
+export PATH="$OLD_PATH"
+rm -f /tmp/test164.sh
+assert_equal "hello from PATH" "$DOT_OUT" "dot must search PATH for scripts without slashes"
+
+## 165: command -v did not recognize reserved words (if, for, while, etc.)
+## as commands. Fixed by checking if the name is a keyword before attempting
+## PATH lookup in builtin_command.c.
+CMD_V_IF=$(command -v if)
+assert_equal "if" "$CMD_V_IF" "command -v must recognize reserved word 'if'"
+CMD_V_FOR=$(command -v for)
+assert_equal "for" "$CMD_V_FOR" "command -v must recognize reserved word 'for'"
+CMD_V_WHILE=$(command -v while)
+assert_equal "while" "$CMD_V_WHILE" "command -v must recognize reserved word 'while'"
+
 summary

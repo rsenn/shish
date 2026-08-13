@@ -351,40 +351,6 @@
   # Run: sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix async-p.tst
   ```
 
-- command-v-V-missing-reserved-words-and-format: `command -v`/`-V`
-  doesn't recognize reserved words (`if`, `for`, `case`, etc.) as
-  commands — it tries to exec them as external programs and prints
-  "No such file or directory". Also, the output format for
-  builtins and external commands doesn't match POSIX requirements.
-  30 failures in `command-p.tst` (19/49). `builtin_command.c`.
-  `command-p.tst:70-160,188-280`.
-
-  **Repro:**
-  ```sh
-  echo 'command -v if; command -v echo' | shish
-  # shish prints "if: No such file or directory" for 'if'
-  # bash/dash print "if" (it's a reserved word)
-  ```
-
-- kill-l-with-number-doesnt-translate: `kill -l 15` lists all 31
-  signal names instead of printing just `TERM`. POSIX requires
-  `kill -l <exit_status>` to translate an exit status (128+N) or
-  signal number to its name. Also, `kill` sending by `-NAME` form
-  fails for many signals (kill2-p.tst: 2/28 passing — 26 failures).
-  The kill2-p.tst failures include both `-s NAME` and `-NAME` forms
-  for ABRT, ALRM, BUS, FPE, HUP, ILL, KILL, QUIT, SEGV, TERM, USR1,
-  USR2 — confirmed that `kill -HUP $$` doesn't work while
-  `kill -1 $$` does, suggesting `kill_signum()` or the signal-name
-  lookup has a separate bug beyond the `-s` parsing. `kill1-p.tst`
-  (0/17) and `kill2-p.tst` (2/28).
-
-  **Repro:**
-  ```sh
-  echo 'kill -l 15' | shish
-  # shish prints "kill: -l: invalid signal specification"
-  # bash/dash print "TERM"
-  ```
-
 - function-body-only-accepts-braces-or-parens: function definitions
   `f() for ... done` or `f() case ... esac` or `f() if ... fi` or
   `f() while ... done` fail with "unexpected token" — the parser
@@ -483,18 +449,6 @@
   # Run the read conformance test
   sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix read-p.tst
   # 22 failures in field splitting and option handling
-  ```
-
-- dot-source-builtin-errors: `.` (source/dot) builtin doesn't handle
-  empty scripts, doesn't find scripts in `$PATH`, and doesn't
-  handle relative paths correctly. 3 failures in `dot-p.tst`
-  (11/14). `builtin_source.c`. `dot-p.tst:20,52,84`.
-
-  **Repro:**
-  ```sh
-  # Run the dot/source conformance test
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix dot-p.tst
-  # 3 failures in empty scripts, PATH search, and relative paths
   ```
 
 - comment-handling-in-compound-commands: comments ending with

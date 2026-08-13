@@ -1,0 +1,42 @@
+diff --git a/src/builtin/builtin_command.c b/src/builtin/builtin_command.c
+index 81cb7ff6..70c70279 100644
+--- a/src/builtin/builtin_command.c
++++ b/src/builtin/builtin_command.c
+@@ -2,7 +2,20 @@
+ #include "../sh.h"
+ #include "../builtin.h"
+ #include "../exec.h"
++#include "../parse.h"
+ #include "../../lib/shell.h"
++#include "../../lib/str.h"
++
++/* Helper function to check if a name is a shell keyword */
++static inline int
++is_keyword(const char* str) {
++  int i;
++
++  for(i = TI_NOT; i <= TI_END; i++)
++    if(str_equal(parse_tokens[i].name, str))
++      return 1;
++  return 0;
++}
+ 
+ /* command built-in
+  *
+@@ -40,6 +53,16 @@ builtin_command(int argc, char* argv[]) {
+   if(!(name = argv[shell_optind]))
+     return 0;
+ 
++  /* Check if it's a keyword first (for -v and -V) */
++  if((print_desc || print_verbose) && is_keyword(name)) {
++    if(print_verbose)
++      buffer_putm_internal(fd_out->w, name, " is a shell keyword", NULL);
++    else
++      buffer_puts(fd_out->w, name);
++    buffer_putnlflush(fd_out->w);
++    return 0;
++  }
++
+   if(print_verbose && !print_desc)
+     return exec_type(name, H_FUNCTION, 0, 1);
+ 

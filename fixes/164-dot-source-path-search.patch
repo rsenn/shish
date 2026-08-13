@@ -1,0 +1,111 @@
+diff --git a/src/builtin/builtin_source.c b/src/builtin/builtin_source.c
+index 65c2385a..30c1aa43 100644
+--- a/src/builtin/builtin_source.c
++++ b/src/builtin/builtin_source.c
+@@ -5,6 +5,64 @@
+ #include "../../lib/shell.h"
+ #include "../source.h"
+ #include "../exec.h"
++#include "../../lib/alloc.h"
++#include "../../lib/str.h"
++#include "../var.h"
++#include "../../lib/windoze.h"
++#if WINDOWS_NATIVE
++#include <io.h>
++#else
++#include <unistd.h>
++#include <limits.h>
++#endif
++
++#ifndef PATH_MAX
++#define PATH_MAX 4096
++#endif
++
++/* Search PATH for a readable file (for dot/source builtin).
++ * Unlike exec_path, this checks for R_OK not X_OK.
++ * Returns allocated path or NULL. */
++static char*
++source_search_path(const char* name) {
++  const char* vpath;
++  static char path[PATH_MAX];
++  unsigned long si = 0, pi = 0;
++  vpath = var_value("PATH", NULL);
++
++  if(!vpath)
++    return NULL;
++
++  do {
++    unsigned long ni;
++
++    if(vpath[si] == ':')
++      si++;
++
++    ni = str_chr(&vpath[si], ':');
++
++    if(ni >= PATH_MAX) {
++      si += ni;
++      continue;
++    }
++
++    pi = str_copyn(path, &vpath[si], ni);
++
++    if(pi && pi < PATH_MAX - 1)
++      if(path[pi - 1] != '/')
++        path[pi++] = '/';
++
++    str_copyn(&path[pi], name, PATH_MAX - pi - 1);
++
++    /* Check if file is readable (not executable like exec_path) */
++    if(access(path, R_OK) == 0)
++      return str_dup(path);
++
++    si += ni;
++  } while(vpath[si]);
++
++  return NULL;
++}
+ 
+ /* source shell script
+  * ----------------------------------------------------------------------- */
+@@ -17,6 +75,8 @@ const char help_source[] =
+ int
+ builtin_source(int argc, char* argv[]) {
+   const char* fname;
++  const char* path_to_open;
++  char* searched_path = NULL;
+   struct fd src;
+   struct source in;
+   struct arg oldarg;
+@@ -27,11 +87,22 @@ builtin_source(int argc, char* argv[]) {
+     return EXIT_ERROR;
+   }
+ 
++  /* If filename contains no slash, search PATH (POSIX requirement) */
++  if(str_chr(fname, '/') >= str_len(fname)) {
++    searched_path = source_search_path(fname);
++    if(searched_path)
++      path_to_open = searched_path;
++    else
++      path_to_open = fname;  /* Will fail with "not found" */
++  } else {
++    path_to_open = fname;
++  }
++
+   fd_push(&src, STDSRC_FILENO, FD_READ);
+   source_push(&in);
+   in.fd = &src;
+ 
+-  if(!fd_mmap(&src, argv[shell_optind])) {
++  if(!fd_mmap(&src, path_to_open)) {
+     sh_pushargs(&oldarg);
+     sh_setargs(&argv[++shell_optind], 0);
+     sh_loop();
+@@ -43,5 +114,8 @@ builtin_source(int argc, char* argv[]) {
+ 
+   source_popfd(&src);
+ 
++  if(searched_path)
++    alloc_free(searched_path);
++
+   return ret;
+ }
