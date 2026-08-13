@@ -17,8 +17,13 @@ eval_case(struct eval* e, struct ncase* ncase) {
   stralloc_init(&word);
   stralloc_init(&pattern);
 
-  if(ncase->word)
-    expand_catsa(ncase->word, &word, X_NOSPLIT);
+  if(ncase->word) {
+    /* Apply tilde expansion to case word (POSIX 2.9.4.2 requires it) */
+    union node* word_copy = tree_copy(ncase->word);
+    expand_tilde_word(word_copy);
+    expand_catsa(word_copy, &word, X_NOSPLIT);
+    tree_free(word_copy);
+  }
 
   stralloc_nul(&word);
 

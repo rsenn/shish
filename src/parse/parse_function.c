@@ -7,6 +7,15 @@
 #include "../../lib/stralloc.h"
 
 /* 3.9.5 - parse function definition
+ *
+ * POSIX allows any compound command as the function body:
+ * f() { ...; }      - brace group
+ * f() ( ... )       - subshell
+ * f() for ... done  - for loop
+ * f() while ... done - while loop
+ * f() until ... done - until loop
+ * f() if ... fi     - if statement
+ * f() case ... esac - case statement
  * ----------------------------------------------------------------------- */
 union node*
 parse_function(struct parser* p) {
@@ -32,16 +41,27 @@ parse_function(struct parser* p) {
   } while(tok == T_NL || tok == T_NAME);
 
   p->pushback++;
-  /*
-    if((tok = parse_gettok(p, 0)) != T_BEGIN) {
+  
+  /* POSIX: function body can be any compound command, not just {...} or (...) */
+  tok = parse_gettok(p, P_SKIPNL);
+  
+  if(tok == T_BEGIN || tok == T_LP) {
+    /* Traditional brace group or subshell - push back and call parse_grouping */
+    p->pushback++;
+    node->nfunc.body = parse_grouping(p, P_SKIPNL);
+  } else {
+    /* Any other compound command (for, while, until, if, case) */
+    /* Push back the token and call parse_command to handle it */
+    p->pushback++;
+    node->nfunc.body = parse_command(p, 0);
+    
+    if(!node->nfunc.body) {
+      /* parse_command failed */
       tree_free(node);
       return NULL;
-    }*/
-  if(!parse_expect(p, P_SKIPNL, T_BEGIN | T_LP, node))
-    return NULL;
-
-  p->pushback++;
-  node->nfunc.body = parse_grouping(p, P_SKIPNL);
+    }
+  }
+  
   node->nfunc.loc = loc;
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHPARSE2AST)

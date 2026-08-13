@@ -3,6 +3,7 @@
 #include "../tree.h"
 #include "../eval.h"
 #include "../exec.h"
+#include "../sh.h"
 
 extern union node* functions;
 
@@ -20,11 +21,100 @@ find_function(const char* name) {
   return 0;
 }
 
+/* Walk a node tree and hash all command names when hashall (-h) is enabled.
+ * This implements the "hash on define" behavior required by POSIX.
+ */
+static void
+hash_commands_in_node(union node* node) {
+  if(!node || !sh->opts.hashall)
+    return;
+
+  switch(node->id) {
+    case N_SIMPLECMD:
+      /* Simple command - hash the first argument (command name) */
+      if(node->ncmd.args) {
+        union node* arg = node->ncmd.args;
+        if(arg->id == N_ARG && arg->narg.list && arg->narg.list->id == N_ARGSTR) {
+          char* name = arg->narg.list->nargstr.stra.s;
+          if(name && name[0] && !str_chr(name, '/')) {
+            /* Only hash if it's a simple name (not a path) */
+            exec_hash(name, 0);
+          }
+        }
+      }
+      /* Recurse into redirections and other arguments */
+      hash_commands_in_node(node->ncmd.rdir);
+      break;
+
+    case N_PIPELINE:
+      /* Pipeline - hash each command in the pipeline */
+      {
+        union node* cmd;
+        for(cmd = node->npipe.cmds; cmd; cmd = cmd->next)
+          hash_commands_in_node(cmd);
+      }
+      break;
+
+    case N_AND:
+    case N_OR:
+      hash_commands_in_node(node->nandor.left);
+      hash_commands_in_node(node->nandor.right);
+      break;
+
+    case N_LIST:
+      hash_commands_in_node(node->nlist.cmds);
+      hash_commands_in_node(node->nlist.rdir);
+      break;
+
+    case N_SUBSHELL:
+    case N_BRACEGROUP:
+      hash_commands_in_node(node->ngrp.cmds);
+      hash_commands_in_node(node->ngrp.rdir);
+      break;
+
+    case N_FOR:
+      hash_commands_in_node(node->nfor.cmds);
+      break;
+
+    case N_CASE:
+      {
+        union node* pat;
+        for(pat = node->ncase.list; pat; pat = pat->next)
+          hash_commands_in_node(pat->ncasenode.cmds);
+      }
+      break;
+
+    case N_IF:
+      hash_commands_in_node(node->nif.test);
+      hash_commands_in_node(node->nif.cmd0);
+      hash_commands_in_node(node->nif.cmd1);
+      break;
+
+    case N_WHILE:
+    case N_UNTIL:
+      hash_commands_in_node(node->nloop.test);
+      hash_commands_in_node(node->nloop.cmds);
+      break;
+
+    default:
+      break;
+  }
+
+  /* Walk the next pointer for lists */
+  if(node->id != N_PIPELINE && node->id != N_CASE)
+    hash_commands_in_node(node->next);
+}
+
 /* ----------------------------------------------------------------------- */
 int
 eval_function(struct eval* e, struct nfunc* func) {
   int ret = 0;
   union node *fn, **nptr;
+
+  /* When hashall (-h) is enabled, hash commands in the function body
+   * at definition time (POSIX "hash on define" behavior) */
+  if(sh->opts.hashall && func->body)
+    hash_commands_in_node(func->body);
 
   if((nptr = find_function(func->name))) {
     fn = *nptr;
