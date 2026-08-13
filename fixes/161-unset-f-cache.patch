@@ -1,0 +1,37 @@
+diff --git a/src/builtin/builtin_unset.c b/src/builtin/builtin_unset.c
+index 433b6f89..21faa3f9 100644
+--- a/src/builtin/builtin_unset.c
++++ b/src/builtin/builtin_unset.c
+@@ -1,9 +1,11 @@
+ #include "../builtin.h"
+ #include "../../lib/shell.h"
+ #include "../../lib/str.h"
++#include "../../lib/uint32.h"
+ #include "../parse.h"
+ #include "../var.h"
+ #include "../tree.h"
++#include "../exec.h"
+ extern union node* functions;
+ 
+ static inline union node**
+@@ -63,9 +65,20 @@ builtin_unset(int argc, char* argv[]) {
+ 
+       if((nptr = find_function(*argp))) {
+         union node* fn = *nptr;
++        uint32 h;
++        struct exechash* e;
++        
+         *nptr = fn->next;
+         fn->next = 0;
+         tree_free(fn);
++        
++        /* Invalidate exec_hash cache for this function name.
++           Without this, type/eval will still find the stale cached
++           entry pointing at the freed function body. */
++        e = exec_lookup(*argp, &h);
++        if(e)
++          e->mask = -1;
++        
+         continue;
+       }
+     }

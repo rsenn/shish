@@ -3393,4 +3393,26 @@ TIMES_STATUS=$?
 PATH="$OLDPATH"
 assert_equal "0" "$TIMES_STATUS" "times must be invocable without PATH (special builtin)"
 
+## 160: readonly builtin reassignment was not fatal in non-interactive mode.
+## POSIX requires special builtins to exit the shell on error in
+## non-interactive mode. readonly a=1; readonly a=2 should kill the shell.
+OUT160=$( (readonly a=1; readonly a=2; echo "reached") 2>/dev/null)
+assert_nomatch "$OUT160" "reached" "readonly reassignment must kill non-interactive shell before reaching echo"
+
+## 161: unset -f did not remove functions from the exec_hash cache.
+## After unset -f, type and command lookup still found the stale cached
+## function entry. Fixed by invalidating exec_hash entry after freeing
+## the function node (same as eval_function.c does on redefinition).
+f161() { echo "f161 called"; }
+unset -f f161
+f161_OUT=$(f161 2>&1)
+assert_match "$f161_OUT" "*No such file*" "unset -f must remove function so subsequent calls fail"
+
+## 162: export on a readonly variable silently succeeded instead of
+## rejecting the assignment. Fixed by checking V_READONLY before
+## calling var_copys in builtin_export.c.
+readonly RO162=oldval
+export RO162=newval 2>/dev/null
+assert_equal "oldval" "$RO162" "export must not reassign a readonly variable"
+
 summary

@@ -44,8 +44,19 @@ builtin_export(int argc, char* argv[]) {
     }
 
     /* if there is a = we assign the variable first */
-    if((*argp)[str_chr(*argp, '=')])
+    if((*argp)[str_chr(*argp, '=')]) {
+      struct var* v;
+
+      /* Check if variable exists and is readonly. Reject the assignment
+         but don't kill the shell — export readonly errors are not fatal
+         even though export is a special builtin (matches bash/dash). */
+      if((v = var_search(*argp, NULL)) != NULL && (v->flags & V_READONLY)) {
+        builtin_errmsg(argv, *argp, "readonly variable");
+        continue;
+      }
+      
       var_copys(*argp, V_EXPORT);
+    }
 
     /* and now apply the export flag change */
     var_chflg(*argp, V_EXPORT, !clear);

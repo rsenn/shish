@@ -310,28 +310,6 @@
   # bash prints 0002
   ```
 
-
-- readonly-builtin-reassignment-not-fatal: `readonly a=1; readonly
-  a=2` succeeds silently instead of killing the non-interactive
-  shell. POSIX classifies `readonly` as a special built-in utility,
-  so any error in its execution (including attempting to set a
-  readonly variable) must cause the shell to abort when
-  non-interactive. Confirmed: `readonly a=1; readonly a=2; echo
-  "not reached"` prints "not reached" with exit 0 (should die
-  before reaching `echo`). The builtin (`builtin_readonly.c`)
-  calls `var_copys()`/`var_chflg()` which check readonly via
-  `var_set()`, but the error path only prints a message and
-  returns non-zero — it doesn't call `sh_exit()` for the
-  special-built-in-error-must-kill-shell case. `readonly-p.tst:26`.
-
-  **Repro:**
-  ```sh
-  echo 'readonly a=1; readonly a=2; echo "not reached"' | shish
-  # shish prints "not reached" and exits 0
-  # bash/dash die before reaching echo (special builtin error)
-  ```
-
-
 - cmdsub-p-tst-hangs: `cmdsub-p.tst` times out at test 139
   ("command substitution between here-document operator and body"),
   which exercises a heredoc nested inside a command substitution
@@ -467,28 +445,6 @@
   EOF
   # shish prints error but continues to "should not reach here"
   # POSIX: special builtin error must kill non-interactive shell
-  ```
-
-- unset-f-doesnt-remove-functions: `unset -f funcname` doesn't
-  remove the function — subsequent calls to the function name try
-  to exec it as an external command ("No such file or directory")
-  instead of either finding it (if not removed) or reporting it as
-  not found via `type`. `builtin_unset.c` likely doesn't implement
-  the `-f` flag at all (only `-v` for variables). 4 failures in
-  `unset-p.tst:37,63,74,84`. Also overlaps with
-  `unset-on-readonly-variable-silently-succeeds` for the 2 readonly
-  failures.
-
-  **Repro:**
-  ```sh
-  cat <<'EOF' | shish
-  foo() { echo hi; }
-  unset -f foo
-  foo
-  echo "exit=$?"
-  EOF
-  # shish tries to exec 'foo' as external command: "foo: No such file or directory"
-  # bash/dash: unset -f removes the function, then 'foo' not found
   ```
 
 - shift-operand-handling-broken: `shift` with operand 0, with no
@@ -664,18 +620,6 @@
   # Run the exec conformance test
   sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix exec-p.tst
   # 3 failures in redirection preservation and error reporting
-  ```
-
-- export-allows-readonly-reassignment: `export x=newvalue` on a
-  readonly variable doesn't reject the operation. 1 failure in
-  `export-p.tst:44`. Related to `readonly-builtin-reassignment-
-  not-fatal`.
-
-  **Repro:**
-  ```sh
-  echo 'readonly x=old; export x=new; echo "x=$x"' | shish
-  # shish prints "x=new" (export succeeded on readonly variable)
-  # bash/dash reject the export with an error
   ```
 
 - pipeline-compound-commands-broken: compound commands used as

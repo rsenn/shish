@@ -1,0 +1,35 @@
+diff --git a/src/builtin/builtin_readonly.c b/src/builtin/builtin_readonly.c
+index 051c6bc4..a191ac17 100644
+--- a/src/builtin/builtin_readonly.c
++++ b/src/builtin/builtin_readonly.c
+@@ -3,6 +3,8 @@
+ #include "../../lib/str.h"
+ #include "../var.h"
+ #include "../vartab.h"
++#include "../source.h"
++#include "../sh.h"
+ 
+ /* readonly built-in
+  *
+@@ -42,8 +44,20 @@ builtin_readonly(int argc, char* argv[]) {
+     }
+ 
+     /* if there is a = we assign the variable first */
+-    if((*argp)[str_chr(*argp, '=')])
++    if((*argp)[str_chr(*argp, '=')]) {
++      struct var* v;
++
++      /* Check if variable exists and is readonly. POSIX requires special
++         builtins to exit the shell on error in non-interactive mode. */
++      if((v = var_search(*argp, NULL)) != NULL && (v->flags & V_READONLY)) {
++        builtin_errmsg(argv, *argp, "readonly variable");
++        if(!(source->mode & SOURCE_IACTIVE))
++          sh_exit(1);
++        return 1;
++      }
++      
+       var_copys(*argp, V_READONLY);
++    }
+ 
+     /* and now apply the readonly flag change */
+     var_chflg(*argp, V_READONLY, 1);
