@@ -293,27 +293,6 @@
   # Run: sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix async-p.tst
   ```
 
-- shift-operand-handling-broken: `shift` with operand 0, with no
-  operand (default 1), and with an operand larger than `$#` all
-  behave incorrectly. 9 failures in `shift-p.tst` (5/14). The test
-  expects `shift 0` to succeed and leave `$#` unchanged, `shift`
-  (default) to shift by 1, and `shift N` where N > `$#` to fail
-  with exit >0 and leave `$#` unchanged. `builtin_shift.c`.
-  `shift-p.tst:7,19,37,49,53,57,61,65,75`.
-
-  **Repro:**
-  ```sh
-  cat <<'EOF' | shish
-  set -- a b c
-  shift 0
-  echo "after shift 0: $#=$#"
-  shift
-  echo "after shift: $#=$#"
-  EOF
-  # shish prints "after shift 0: 3=3" (wrong format, should be "#=3")
-  # and other incorrect behavior
-  ```
-
 - getopts-many-failures: `getopts` has failures in OPTARG setting,
   operand variable update, option grouping after single hyphen,
   double hyphen separation, OPTIND tracking, and error messages.
@@ -373,19 +352,6 @@
   # Run the read conformance test
   sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix read-p.tst
   # 22 failures in field splitting and option handling
-  ```
-
-- comment-handling-in-compound-commands: comments ending with
-  backslash, comments after async/sync lists, and comments inside
-  `for` loops and `case` statements are mishandled. 4 failures in
-  `comment-p.tst` (11/15). Parser comment-skipping logic.
-  `comment-p.tst:16,57,80,92`.
-
-  **Repro:**
-  ```sh
-  # Run the comment conformance test
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix comment-p.tst
-  # 4 failures in comments with backslash, after async lists, in loops/case
   ```
 
 - compound-commands-ending-with-async-broken: `if`, `for`, `while`,
@@ -521,52 +487,6 @@
   EOF
   # shish rejects 'if' as a case pattern
   # bash/dash accept reserved words as case patterns
-  ```
-
-- special-builtins-not-protected-from-function-override: functions
-  named after special builtins (`break`, `continue`, `times`,
-  `trap`) should not be able to override them. 11 failures in
-  `builtins-p.tst` (70/81). Also: assignment on special builtins
-  not persistent, and special builtins not invocable without
-  `$PATH`. `builtins-p.tst:23-302`.
-
-  **Repro:**
-  ```sh
-  cat <<'EOF' | shish
-  break() { echo "function break"; }
-  for i in 1; do
-    break
-  done
-  EOF
-  # shish allows function to override 'break' special builtin
-  # POSIX: special builtins cannot be overridden by functions
-  ```
-
-- set-hashondef-broken: `set -h` (hash each command as it's
-  defined/located) has no effect. 1 failure in `option-p.tst:121`.
-
-  **Repro:**
-  ```sh
-  # Run the option conformance test
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix option-p.tst
-  # 1 failure in set -h (hash on define)
-  ```
-
-- lineno-after-expansions-wrong: `$LINENO` reports wrong value
-  after parameter/command/arithmetic expansions. 1 failure in
-  `lineno-p.tst:28`. Distinct from the
-  `eval-lineno-imprecise-inside-function` bug already filed.
-
-  **Repro:**
-  ```sh
-  cat <<'EOF' | shish
-  x=1
-  echo $LINENO
-  y=$(echo $x)
-  echo $LINENO
-  EOF
-  # shish prints wrong line number after command substitution
-  # Run: sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix lineno-p.tst
   ```
 
 - fnmatch-quotation-of-quotations: pattern matching with nested
