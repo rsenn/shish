@@ -175,7 +175,7 @@ struct builtin_cmd builtin_table[] = {
     {"bg", &builtin_bg, B_DEFAULT, "[job...]", help_bg},
 #endif
 #if BUILTIN_BREAK
-    {"break", &builtin_break, B_DEFAULT, "[n]", help_break},
+    {"break", &builtin_break, B_SPECIAL, "[n]", help_break},
 #endif
 #if BUILTIN_CAT
     {"cat", &builtin_cat, B_DEFAULT, "[-nb] [FILE]...", help_cat},
@@ -190,7 +190,7 @@ struct builtin_cmd builtin_table[] = {
     {"command", &builtin_command, B_DEFAULT, "[-pVv] command [arg ...]", help_command},
 #endif
 #if BUILTIN_CONTINUE
-    {"continue", &builtin_break, B_DEFAULT, "[n]", help_break},
+    {"continue", &builtin_break, B_SPECIAL, "[n]", help_break},
 #endif
 #if BUILTIN_DIRNAME
     {"dirname", &builtin_dirname, B_DEFAULT, "path", help_dirname},
@@ -289,7 +289,7 @@ struct builtin_cmd builtin_table[] = {
     {"set", &builtin_set, B_SPECIAL, "[arguments]", help_set},
 #endif
 #if BUILTIN_SHIFT
-    {"shift", &builtin_shift, B_DEFAULT, "[n]", help_shift},
+    {"shift", &builtin_shift, B_SPECIAL, "[n]", help_shift},
 #endif
 #if BUILTIN_READ
     {"read",
@@ -312,7 +312,7 @@ struct builtin_cmd builtin_table[] = {
     {"rmdir", &builtin_rmdir, B_DEFAULT, "[-p] [directory]...", help_rmdir},
 #endif
 #if BUILTIN_SOURCE
-    {"source", &builtin_source, B_DEFAULT, "file [arguments]", help_source},
+    {"source", &builtin_source, B_SPECIAL, "file [arguments]", help_source},
 #endif
 #if BUILTIN_TEST
     {"test", &builtin_test, B_DEFAULT, "[expr]", help_test},
@@ -336,7 +336,7 @@ struct builtin_cmd builtin_table[] = {
     {"[", &builtin_test, B_DEFAULT, "expr ]", help_test},
 #endif
 #if BUILTIN_TRAP
-    {"trap", &builtin_trap, B_DEFAULT, "[-lp] [[arg] signal_spec ...]", help_trap},
+    {"trap", &builtin_trap, B_SPECIAL, "[-lp] [[arg] signal_spec ...]", help_trap},
 #endif
 #if BUILTIN_TYPE
     {"type", &builtin_type, B_DEFAULT, "name ...", help_type},

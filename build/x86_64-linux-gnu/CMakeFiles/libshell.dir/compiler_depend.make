@@ -1574,7 +1574,6 @@ CMakeFiles/libshell.dir/src/builtin/builtin_exec.c.o: /home/roman/Projects/shish
   /usr/include/signal.h \
   /usr/include/stdc-predef.h \
   /usr/include/stdint.h \
-  /usr/include/stdio.h \
   /usr/include/stdlib.h \
   /usr/include/time.h \
   /usr/include/unistd.h \
@@ -1624,9 +1623,6 @@ CMakeFiles/libshell.dir/src/builtin/builtin_exec.c.o: /home/roman/Projects/shish
   /usr/include/x86_64-linux-gnu/bits/stdint-intn.h \
   /usr/include/x86_64-linux-gnu/bits/stdint-least.h \
   /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
-  /usr/include/x86_64-linux-gnu/bits/stdio2-decl.h \
-  /usr/include/x86_64-linux-gnu/bits/stdio2.h \
-  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
   /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
   /usr/include/x86_64-linux-gnu/bits/stdlib.h \
   /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
@@ -1638,17 +1634,11 @@ CMakeFiles/libshell.dir/src/builtin/builtin_exec.c.o: /home/roman/Projects/shish
   /usr/include/x86_64-linux-gnu/bits/timesize.h \
   /usr/include/x86_64-linux-gnu/bits/timex.h \
   /usr/include/x86_64-linux-gnu/bits/types.h \
-  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
-  /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
-  /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h \
-  /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
-  /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__sigval_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/clock_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/clockid_t.h \
-  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/error_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/idtype_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
@@ -1658,7 +1648,6 @@ CMakeFiles/libshell.dir/src/builtin/builtin_exec.c.o: /home/roman/Projects/shish
   /usr/include/x86_64-linux-gnu/bits/types/sigset_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/sigval_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/stack_t.h \
-  /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct___jmp_buf_tag.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_iovec.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_itimerspec.h \
@@ -1687,7 +1676,6 @@ CMakeFiles/libshell.dir/src/builtin/builtin_exec.c.o: /home/roman/Projects/shish
   /usr/include/x86_64-linux-gnu/sys/ucontext.h \
   /usr/include/x86_64-linux-gnu/sys/wait.h \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/limits.h \
-  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/stdbool.h \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h \
@@ -11181,7 +11169,6 @@ CMakeFiles/libshell.dir/src/exec/exec_error.c.o: /home/roman/Projects/shish/src/
   /usr/include/linux/errno.h \
   /usr/include/stdc-predef.h \
   /usr/include/stdint.h \
-  /usr/include/stdio.h \
   /usr/include/stdlib.h \
   /usr/include/x86_64-linux-gnu/asm/errno.h \
   /usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h \
@@ -11201,9 +11188,6 @@ CMakeFiles/libshell.dir/src/exec/exec_error.c.o: /home/roman/Projects/shish/src/
   /usr/include/x86_64-linux-gnu/bits/stdint-intn.h \
   /usr/include/x86_64-linux-gnu/bits/stdint-least.h \
   /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
-  /usr/include/x86_64-linux-gnu/bits/stdio2-decl.h \
-  /usr/include/x86_64-linux-gnu/bits/stdio2.h \
-  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
   /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
   /usr/include/x86_64-linux-gnu/bits/stdlib.h \
   /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
@@ -11212,20 +11196,13 @@ CMakeFiles/libshell.dir/src/exec/exec_error.c.o: /home/roman/Projects/shish/src/
   /usr/include/x86_64-linux-gnu/bits/time64.h \
   /usr/include/x86_64-linux-gnu/bits/timesize.h \
   /usr/include/x86_64-linux-gnu/bits/types.h \
-  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
-  /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
-  /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h \
-  /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
-  /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/clock_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/clockid_t.h \
-  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/error_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/sigset_t.h \
-  /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
   /usr/include/x86_64-linux-gnu/bits/types/time_t.h \
@@ -11241,7 +11218,6 @@ CMakeFiles/libshell.dir/src/exec/exec_error.c.o: /home/roman/Projects/shish/src/
   /usr/include/x86_64-linux-gnu/sys/cdefs.h \
   /usr/include/x86_64-linux-gnu/sys/select.h \
   /usr/include/x86_64-linux-gnu/sys/types.h \
-  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h
 
@@ -39797,6 +39773,8 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 
 /home/roman/Projects/shish/src/tree/tree_string.c:
 
+/home/roman/Projects/shish/src/tree/tree_remove.c:
+
 /home/roman/Projects/shish/src/var/var_lexhash.c:
 
 /home/roman/Projects/shish/src/tree/tree_printlist.c:
@@ -39953,6 +39931,8 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 
 /home/roman/Projects/shish/src/parse/parse_arith_binary.c:
 
+/home/roman/Projects/shish/src/parse/parse_arith_assign.c:
+
 /home/roman/Projects/shish/src/tree/tree_show.c:
 
 /home/roman/Projects/shish/src/parse/parse_and_or.c:
@@ -40006,6 +39986,8 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 /home/roman/Projects/shish/src/fdtable/fdtable_table.c:
 
 /home/roman/Projects/shish/src/fdtable/fdtable_open.c:
+
+/home/roman/Projects/shish/src/fdtable/fdtable_newfd.c:
 
 /home/roman/Projects/shish/src/var/var_rndhash.c:
 
@@ -40083,6 +40065,8 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 
 /home/roman/Projects/shish/src/expand/expand_tosa.c:
 
+/usr/include/x86_64-linux-gnu/bits/types/FILE.h:
+
 /usr/include/pwd.h:
 
 /home/roman/Projects/shish/src/expand/expand_str.c:
@@ -40096,20 +40080,6 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 /home/roman/Projects/shish/src/expand/expand_copysa.c:
 
 /home/roman/Projects/shish/src/expand/expand_command.c:
-
-/home/roman/Projects/shish/src/expand/expand_catsa.c:
-
-/home/roman/Projects/shish/src/tree/tree_catseparator.c:
-
-/home/roman/Projects/shish/src/expand/expand_break.c:
-
-/home/roman/Projects/shish/src/expand/expand_arith_unary.c:
-
-/home/roman/Projects/shish/src/expand/expand_arith_expr.c:
-
-/usr/include/x86_64-linux-gnu/bits/mathcalls-narrow.h:
-
-/usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h:
 
 /home/roman/Projects/shish/src/history/history_decode.c:
 
@@ -40138,12 +40108,6 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 /usr/include/x86_64-linux-gnu/bits/signal_ext.h:
 
 /home/roman/Projects/shish/src/builtin/builtin_uname.c:
-
-/home/roman/Projects/shish/src/expand/expand_arith_ternary.c:
-
-/usr/include/fcntl.h:
-
-/usr/include/x86_64-linux-gnu/bits/unistd_ext.h:
 
 /home/roman/Projects/shish/src/eval/eval_cmdlist.c:
 
@@ -40200,8 +40164,6 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 /home/roman/Projects/shish/src/sh.h:
 
 /home/roman/Projects/shish/lib/sig.h:
-
-/usr/include/x86_64-linux-gnu/bits/stdio2-decl.h:
 
 /home/roman/Projects/shish/lib/path.h:
 
@@ -40277,12 +40239,6 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 
 /usr/include/x86_64-linux-gnu/bits/types/struct_tm.h:
 
-/home/roman/Projects/shish/src/history/history_print.c:
-
-/usr/include/x86_64-linux-gnu/bits/mathcalls.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/struct_iovec.h:
-
 /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h:
 
 /home/roman/Projects/shish/src/debug/debug_subnode.c:
@@ -40309,11 +40265,17 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 
 /usr/include/x86_64-linux-gnu/bits/timesize.h:
 
+/home/roman/Projects/shish/src/source/source_peek.c:
+
+/usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h:
+
 /home/roman/Projects/shish/src/tree/tree_cat.c:
 
 /usr/include/linux/errno.h:
 
 /usr/include/asm-generic/int-ll64.h:
+
+/home/roman/Projects/shish/src/expand/expand_arith_unary.c:
 
 /usr/include/linux/falloc.h:
 
@@ -40356,10 +40318,6 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 /home/roman/Projects/shish/lib/uint64.h:
 
 /usr/include/x86_64-linux-gnu/bits/long-double.h:
-
-/home/roman/Projects/shish/src/fdtable/fdtable_newfd.c:
-
-/usr/include/x86_64-linux-gnu/bits/stdio_lim.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/timer_t.h:
 
@@ -40493,8 +40451,6 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 
 /usr/include/x86_64-linux-gnu/bits/signum-arch.h:
 
-/usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h:
-
 /home/roman/Projects/shish/src/builtin/builtin_true.c:
 
 /home/roman/Projects/shish/src/parse/parse_word.c:
@@ -40510,6 +40466,8 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 /usr/include/x86_64-linux-gnu/bits/siginfo-consts-arch.h:
 
 /usr/include/x86_64-linux-gnu/bits/select.h:
+
+/usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h:
 
 /home/roman/Projects/shish/lib/typedefs.h:
 
@@ -40540,6 +40498,8 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 /home/roman/Projects/shish/lib/windoze.h:
 
 /home/roman/Projects/shish/src/builtin/builtin_wait.c:
+
+/usr/include/x86_64-linux-gnu/bits/mathcalls-narrow.h:
 
 /usr/include/x86_64-linux-gnu/bits/sigstksz.h:
 
@@ -40573,8 +40533,6 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 
 /usr/include/x86_64-linux-gnu/bits/pthread_stack_min-dynamic.h:
 
-/usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h:
-
 /home/roman/Projects/shish/lib/stralloc.h:
 
 /home/roman/Projects/shish/src/source/fmt_loc.c:
@@ -40593,10 +40551,6 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 
 /home/roman/Projects/shish/src/fd.h:
 
-/home/roman/Projects/shish/src/tree/tree_remove.c:
-
-/usr/include/stdio.h:
-
 /home/roman/Projects/shish/src/parse/parse_subst.c:
 
 /usr/include/x86_64-linux-gnu/bits/fp-fast.h:
@@ -40604,12 +40558,6 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 /usr/include/string.h:
 
 /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h:
-
-/home/roman/Projects/shish/src/source/source_get.c:
-
-/usr/include/x86_64-linux-gnu/bits/mathcalls-helper-functions.h:
-
-/home/roman/Projects/shish/src/builtin/builtin_alias.c:
 
 /home/roman/Projects/shish/src/fdtable/fdtable_link.c:
 
@@ -40633,9 +40581,13 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 
 /usr/include/x86_64-linux-gnu/bits/stat.h:
 
-/usr/include/x86_64-linux-gnu/bits/types/FILE.h:
-
 /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h:
+
+/home/roman/Projects/shish/src/history/history_print.c:
+
+/usr/include/x86_64-linux-gnu/bits/types/struct_iovec.h:
+
+/usr/include/x86_64-linux-gnu/bits/mathcalls.h:
 
 /home/roman/Projects/shish/src/var/var_import.c:
 
@@ -40685,8 +40637,6 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 
 /home/roman/Projects/shish/src/debug/debug_unquoted.c:
 
-/usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h:
-
 /usr/include/x86_64-linux-gnu/bits/termios-c_lflag.h:
 
 /home/roman/Projects/shish/src/eval/eval_case.c:
@@ -40702,6 +40652,12 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 /usr/include/x86_64-linux-gnu/bits/types/struct_itimerspec.h:
 
 /home/roman/Projects/shish/src/expand/expand_args.c:
+
+/home/roman/Projects/shish/src/source/source_get.c:
+
+/home/roman/Projects/shish/src/builtin/builtin_alias.c:
+
+/usr/include/x86_64-linux-gnu/bits/mathcalls-helper-functions.h:
 
 /home/roman/Projects/shish/src/fd/fd_reinit.c:
 
@@ -40761,9 +40717,9 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 
 /home/roman/Projects/shish/src/builtin/builtin_dirname.c:
 
-/usr/include/x86_64-linux-gnu/bits/math-vector.h:
-
 /usr/include/features-time64.h:
+
+/usr/include/x86_64-linux-gnu/bits/math-vector.h:
 
 /home/roman/Projects/shish/src/builtin/builtin_dump.c:
 
@@ -40773,28 +40729,6 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 
 /home/roman/Projects/shish/src/builtin/builtin_source.c:
 
-/usr/include/x86_64-linux-gnu/bits/stdio2.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/__FILE.h:
-
-/home/roman/Projects/shish/src/fdtable/fdtable_unlink.c:
-
-/home/roman/Projects/shish/src/builtin/builtin_getopts.c:
-
-/home/roman/Projects/shish/src/parse/parse_arith_assign.c:
-
-/usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h:
-
-/usr/include/x86_64-linux-gnu/bits/utsname.h:
-
-/home/roman/Projects/shish/src/source/source_peek.c:
-
-/usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h:
-
 /home/roman/Projects/shish/src/builtin/builtin_export.c:
 
 /home/roman/Projects/shish/src/var/var_valid.c:
@@ -40802,6 +40736,10 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 /home/roman/Projects/shish/src/expand.h:
 
 /home/roman/Projects/shish/src/builtin/builtin_fdtable.c:
+
+/home/roman/Projects/shish/src/fdtable/fdtable_unlink.c:
+
+/home/roman/Projects/shish/src/builtin/builtin_getopts.c:
 
 /home/roman/Projects/shish/src/builtin/builtin_help.c:
 
@@ -40838,6 +40776,8 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 src/builtin_config.h:
 
 /home/roman/Projects/shish/src/builtin/builtin_times.c:
+
+/usr/include/x86_64-linux-gnu/bits/utsname.h:
 
 /usr/include/x86_64-linux-gnu/sys/utsname.h:
 
@@ -40931,6 +40871,8 @@ src/builtin_config.h:
 
 /home/roman/Projects/shish/src/eval/eval_pipeline.c:
 
+/home/roman/Projects/shish/src/expand/expand_catsa.c:
+
 /home/roman/Projects/shish/src/fdstack/fdstack_update.c:
 
 /home/roman/Projects/shish/src/fd/fd_error.c:
@@ -40944,14 +40886,6 @@ src/builtin_config.h:
 /home/roman/Projects/shish/src/fdstack/fdstack_link.c:
 
 /home/roman/Projects/shish/src/eval/eval_simple_command.c:
-
-/home/roman/Projects/shish/src/tree/tree_free.c:
-
-/home/roman/Projects/shish/src/expand/expand_brace.c:
-
-/usr/include/x86_64-linux-gnu/asm/errno.h:
-
-/home/roman/Projects/shish/src/eval/eval_subshell.c:
 
 /home/roman/Projects/shish/src/exec/exec_command.c:
 
@@ -40992,3 +40926,23 @@ config.h:
 /usr/include/x86_64-linux-gnu/bits/fp-logb.h:
 
 /usr/include/x86_64-linux-gnu/bits/iscanonical.h:
+
+/home/roman/Projects/shish/src/expand/expand_arith_expr.c:
+
+/usr/include/fcntl.h:
+
+/usr/include/x86_64-linux-gnu/bits/unistd_ext.h:
+
+/home/roman/Projects/shish/src/expand/expand_arith_ternary.c:
+
+/home/roman/Projects/shish/src/tree/tree_free.c:
+
+/usr/include/x86_64-linux-gnu/asm/errno.h:
+
+/home/roman/Projects/shish/src/eval/eval_subshell.c:
+
+/home/roman/Projects/shish/src/expand/expand_brace.c:
+
+/home/roman/Projects/shish/src/tree/tree_catseparator.c:
+
+/home/roman/Projects/shish/src/expand/expand_break.c:
