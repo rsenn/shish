@@ -254,64 +254,6 @@
   # Compare output with dash/bash to see the difference
   ```
 
-- tilde-expansion-missing-in-case-word: `case ~/foo in /home/foo)`
-  fails to match because the case word is not subject to tilde
-  expansion. POSIX requires it (2.9.4.2: "The word shall be
-  expanded"). Confirmed: `HOME=/home; case ~/foo in /home/foo)
-  echo matched;; esac` prints nothing. Same issue likely applies to
-  the case pattern (`case-p.tst:62`) and to other expansion contexts
-  the parser may miss. `case-p.tst:5`.
-
-  **Repro:**
-  ```sh
-  cat <<'EOF' | shish
-  HOME=/home
-  case ~/foo in
-    /home/foo) echo matched;;
-    *) echo "no match";;
-  esac
-  EOF
-  # shish prints "no match"
-  # bash/dash print "matched"
-  ```
-
-- umask-symbolic-mode-not-implemented: `umask u+r` is treated as
-  octal `0` instead of parsing the symbolic mode. Confirmed: `umask
-  u+r; umask` prints `0000` in shish vs `0002` in bash. The builtin
-  (`src/builtin/builtin_umask.c`) only handles octal arguments.
-  POSIX requires symbolic mode support (the `umask` utility
-  description specifies the grammar). `umask-p.tst:69-84` (all 56
-  symbolic-mode cases fail).
-
-  **Repro:**
-  ```sh
-  echo 'umask u+r; umask' | shish
-  # shish prints 0000
-  # bash prints 0002
-  ```
-
-- cmdsub-p-tst-hangs: `cmdsub-p.tst` times out at test 139
-  ("command substitution between here-document operator and body"),
-  which exercises a heredoc nested inside a command substitution
-  that itself appears between a heredoc operator and its body:
-  `cat <<\OUTER; echoraw "$(cat <<\INNER ...")"` — the parser/lexer
-  likely enters an infinite loop trying to find the inner heredoc
-  delimiter while still inside the outer one's body. Not yet
-  root-caused to a specific line in the parser. `cmdsub-p.tst:139`.
-
-  **Repro:**
-  ```sh
-  # This will hang (infinite loop in parser)
-  cat <<'EOF' | timeout 2 shish
-  cat <<\OUTER
-  $(cat <<\INNER
-  inner
-  INNER
-  )
-  OUTER
-  EOF
-  ```
-
 - alias-printing-and-substitution-broken: `alias` printing, alias
   substitution (including to blank, reserved words, line continuations,
   operators), subshell alias inheritance, recursive aliases, and
@@ -349,24 +291,6 @@
   # shish doesn't run the background command in a subshell
   # and doesn't redirect its stdin to /dev/null
   # Run: sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix async-p.tst
-  ```
-
-- function-body-only-accepts-braces-or-parens: function definitions
-  `f() for ... done` or `f() case ... esac` or `f() if ... fi` or
-  `f() while ... done` fail with "unexpected token" — the parser
-  only accepts `{...}` or `(...)` as the function body. POSIX allows
-  any compound command as the body. 6 failures in `function-p.tst`
-  (13/19). `parse_function.c` or the compound-command dispatch.
-  `function-p.tst:24,31,38,46,53,86`.
-
-  **Repro:**
-  ```sh
-  cat <<'EOF' | shish
-  f() for i in 1; do echo $i; done
-  f
-  EOF
-  # shish prints "unexpected token for, expecting '(,{'"
-  # bash/dash accept this syntax
   ```
 
 - shift-operand-handling-broken: `shift` with operand 0, with no
