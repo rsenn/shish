@@ -43,6 +43,7 @@ extern int source_psn;
  * flag is how parse_squoted.c tells them "don't, right now" --
  * squoted-backslash-newline-swallowed, fixes/108. */
 extern int source_squoted;
+extern int source_comment;
 
 void source_buffer(struct source*, struct fd*, const char* x, size_t n);
 void source_pop(void);

@@ -36,6 +36,7 @@ parse_simpletok(struct parser* p) {
     switch(c) {
       /* skip comments */
       case '#':
+        source_comment = 1;
         for(;;) {
           if(c == '\n') {
             if(source_peeknc(1) != '#')
@@ -48,6 +49,7 @@ parse_simpletok(struct parser* p) {
           if(source_next(&c) <= 0)
             return T_EOF;
         }
+        source_comment = 0;
 
         if(p->flags & P_COMMENT)
           return -2;

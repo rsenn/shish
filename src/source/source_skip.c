@@ -1,6 +1,7 @@
 #include "../source.h"
 
 int source_squoted = 0;
+int source_comment = 0;
 
 /* ----------------------------------------------------------------------- */
 int
@@ -17,9 +18,10 @@ source_skip(void) {
 
     b->p++;
 
-    if(c == '\\' && !source_squoted)
+    if(c == '\\' && !source_squoted && !source_comment) {
       if(source_peek(&c) > 0 && c == '\n')
         b->p++;
+    }
 
     if(c == '\n') {
       source_newline();

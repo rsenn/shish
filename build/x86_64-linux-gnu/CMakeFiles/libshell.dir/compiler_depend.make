@@ -26868,6 +26868,7 @@ CMakeFiles/libshell.dir/src/parse/parse_simpletok.c.o: /home/roman/Projects/shis
   /usr/include/linux/limits.h \
   /usr/include/stdc-predef.h \
   /usr/include/stdint.h \
+  /usr/include/stdio.h \
   /usr/include/stdlib.h \
   /usr/include/time.h \
   /usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h \
@@ -26890,6 +26891,9 @@ CMakeFiles/libshell.dir/src/parse/parse_simpletok.c.o: /home/roman/Projects/shis
   /usr/include/x86_64-linux-gnu/bits/stdint-intn.h \
   /usr/include/x86_64-linux-gnu/bits/stdint-least.h \
   /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio2-decl.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio2.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
   /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
   /usr/include/x86_64-linux-gnu/bits/stdlib.h \
   /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
@@ -26900,12 +26904,19 @@ CMakeFiles/libshell.dir/src/parse/parse_simpletok.c.o: /home/roman/Projects/shis
   /usr/include/x86_64-linux-gnu/bits/timesize.h \
   /usr/include/x86_64-linux-gnu/bits/timex.h \
   /usr/include/x86_64-linux-gnu/bits/types.h \
+  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
+  /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
+  /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h \
+  /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
+  /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/clock_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/clockid_t.h \
+  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/sigset_t.h \
+  /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_itimerspec.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
@@ -26926,6 +26937,7 @@ CMakeFiles/libshell.dir/src/parse/parse_simpletok.c.o: /home/roman/Projects/shis
   /usr/include/x86_64-linux-gnu/sys/select.h \
   /usr/include/x86_64-linux-gnu/sys/types.h \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/limits.h \
+  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/syslimits.h
@@ -32894,6 +32906,7 @@ CMakeFiles/libshell.dir/src/source/source_skip.c.o: /home/roman/Projects/shish/s
   /usr/include/linux/limits.h \
   /usr/include/stdc-predef.h \
   /usr/include/stdint.h \
+  /usr/include/stdio.h \
   /usr/include/stdlib.h \
   /usr/include/time.h \
   /usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h \
@@ -32916,6 +32929,9 @@ CMakeFiles/libshell.dir/src/source/source_skip.c.o: /home/roman/Projects/shish/s
   /usr/include/x86_64-linux-gnu/bits/stdint-intn.h \
   /usr/include/x86_64-linux-gnu/bits/stdint-least.h \
   /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio2-decl.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio2.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
   /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
   /usr/include/x86_64-linux-gnu/bits/stdlib.h \
   /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
@@ -32926,12 +32942,19 @@ CMakeFiles/libshell.dir/src/source/source_skip.c.o: /home/roman/Projects/shish/s
   /usr/include/x86_64-linux-gnu/bits/timesize.h \
   /usr/include/x86_64-linux-gnu/bits/timex.h \
   /usr/include/x86_64-linux-gnu/bits/types.h \
+  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
+  /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
+  /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h \
+  /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
+  /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/clock_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/clockid_t.h \
+  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/sigset_t.h \
+  /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_itimerspec.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
@@ -32952,6 +32975,7 @@ CMakeFiles/libshell.dir/src/source/source_skip.c.o: /home/roman/Projects/shish/s
   /usr/include/x86_64-linux-gnu/sys/select.h \
   /usr/include/x86_64-linux-gnu/sys/types.h \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/limits.h \
+  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/syslimits.h
@@ -39773,8 +39797,6 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 
 /home/roman/Projects/shish/src/tree/tree_string.c:
 
-/home/roman/Projects/shish/src/tree/tree_remove.c:
-
 /home/roman/Projects/shish/src/var/var_lexhash.c:
 
 /home/roman/Projects/shish/src/tree/tree_printlist.c:
@@ -39875,6 +39897,22 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 
 /home/roman/Projects/shish/src/parse/parse_skipspace.c:
 
+/usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/__FILE.h:
+
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:
+
+/usr/include/x86_64-linux-gnu/bits/stdio2-decl.h:
+
+/home/roman/Projects/shish/src/tree/tree_remove.c:
+
+/usr/include/stdio.h:
+
 /home/roman/Projects/shish/src/parse/parse_loop.c:
 
 /home/roman/Projects/shish/src/parse/parse_list.c:
@@ -39931,6 +39969,8 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 
 /home/roman/Projects/shish/src/parse/parse_arith_binary.c:
 
+/usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h:
+
 /home/roman/Projects/shish/src/parse/parse_arith_assign.c:
 
 /home/roman/Projects/shish/src/tree/tree_show.c:
@@ -39986,6 +40026,8 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 /home/roman/Projects/shish/src/fdtable/fdtable_table.c:
 
 /home/roman/Projects/shish/src/fdtable/fdtable_open.c:
+
+/usr/include/x86_64-linux-gnu/bits/stdio_lim.h:
 
 /home/roman/Projects/shish/src/fdtable/fdtable_newfd.c:
 
@@ -40266,6 +40308,8 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 /usr/include/x86_64-linux-gnu/bits/timesize.h:
 
 /home/roman/Projects/shish/src/source/source_peek.c:
+
+/usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h:
 
@@ -40636,6 +40680,8 @@ CMakeFiles/libshell.dir/src/vartab/vartab_search.c.o: /home/roman/Projects/shish
 /home/roman/Projects/shish/lib/byte.h:
 
 /home/roman/Projects/shish/src/debug/debug_unquoted.c:
+
+/usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h:
 
 /usr/include/x86_64-linux-gnu/bits/termios-c_lflag.h:
 

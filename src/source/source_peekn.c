@@ -32,7 +32,7 @@ source_peekn(char* c, unsigned n) {
     y = buffer_END(b);
     j = y - x;
 
-    for(i = 0; !source_squoted && i < lookahead + 1; i++) {
+    for(i = 0; !source_squoted && !source_comment && i < lookahead + 1; i++) {
 
       if(x[i] == '\\') {
         if(i + 1 >= j) {
