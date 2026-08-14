@@ -1,0 +1,29 @@
+CMakeFiles/libshell.dir/src/fdtable/fdtable_lazy.c.o: \
+ /home/roman/Projects/shish/src/fdtable/fdtable_lazy.c \
+ /home/roman/Projects/shish/src/fdtable/../fd.h \
+ /usr/include/x86_64-linux-musl/fcntl.h \
+ /usr/include/x86_64-linux-musl/features.h \
+ /usr/include/x86_64-linux-musl/bits/alltypes.h \
+ /usr/include/x86_64-linux-musl/bits/fcntl.h \
+ /usr/include/x86_64-linux-musl/sys/types.h \
+ /usr/include/x86_64-linux-musl/endian.h \
+ /usr/include/x86_64-linux-musl/sys/select.h \
+ /home/roman/Projects/shish/src/fdtable/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/fdtable/../../lib/typedefs.h \
+ /usr/include/x86_64-linux-musl/time.h \
+ /home/roman/Projects/shish/src/fdtable/../../lib/shell.h \
+ /home/roman/Projects/shish/src/fdtable/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/fdtable/../../lib/stralloc.h \
+ /usr/include/x86_64-linux-musl/stdlib.h \
+ /usr/include/x86_64-linux-musl/alloca.h \
+ /usr/include/x86_64-linux-musl/limits.h \
+ /usr/include/x86_64-linux-musl/bits/limits.h \
+ /home/roman/Projects/shish/src/fdtable/../../lib/stralloc.h \
+ /home/roman/Projects/shish/src/fdtable/../../lib/windoze.h \
+ /home/roman/Projects/shish/src/fdtable/../../lib/alloc.h \
+ /home/roman/Projects/shish/build/x86_64-linux-musl/config.h \
+ /home/roman/Projects/shish/src/fdtable/../fdtable.h \
+ /home/roman/Projects/shish/src/fdtable/../fd.h \
+ /home/roman/Projects/shish/src/fdtable/../../lib/windoze.h \
+ /usr/include/x86_64-linux-musl/unistd.h \
+ /usr/include/x86_64-linux-musl/bits/posix.h

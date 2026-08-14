@@ -1,0 +1,747 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeLite_Project Name="shish" InternalType="">
+	<VirtualDirectory Name="src">
+		<VirtualDirectory Name="lib">
+			<VirtualDirectory Name="alloc">
+				<File Name="../../lib/alloc/alloc.c"/>
+				<File Name="../../lib/alloc/alloc_re.c"/>
+				<File Name="../../lib/alloc/alloc_zero.c"/>
+				<File Name="../../lib/alloc/str_dup.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="buffer">
+				<File Name="../../lib/buffer/buffer_1.c"/>
+				<File Name="../../lib/buffer/buffer_2.c"/>
+				<File Name="../../lib/buffer/buffer_close.c"/>
+				<File Name="../../lib/buffer/buffer_default.c"/>
+				<File Name="../../lib/buffer/buffer_dummyreadmmap.c"/>
+				<File Name="../../lib/buffer/buffer_dump.c"/>
+				<File Name="../../lib/buffer/buffer_feed.c"/>
+				<File Name="../../lib/buffer/buffer_flush.c"/>
+				<File Name="../../lib/buffer/buffer_free.c"/>
+				<File Name="../../lib/buffer/buffer_frombuf.c"/>
+				<File Name="../../lib/buffer/buffer_fromsa.c"/>
+				<File Name="../../lib/buffer/buffer_fromstr.c"/>
+				<File Name="../../lib/buffer/buffer_get_new_token_sa_pred.c"/>
+				<File Name="../../lib/buffer/buffer_get_token.c"/>
+				<File Name="../../lib/buffer/buffer_get_token_sa_pred.c"/>
+				<File Name="../../lib/buffer/buffer_get_until.c"/>
+				<File Name="../../lib/buffer/buffer_getc.c"/>
+				<File Name="../../lib/buffer/buffer_getline.c"/>
+				<File Name="../../lib/buffer/buffer_init.c"/>
+				<File Name="../../lib/buffer/buffer_mmapread.c"/>
+				<File Name="../../lib/buffer/buffer_mmapread_fd.c"/>
+				<File Name="../../lib/buffer/buffer_munmap.c"/>
+				<File Name="../../lib/buffer/buffer_prefetch.c"/>
+				<File Name="../../lib/buffer/buffer_put.c"/>
+				<File Name="../../lib/buffer/buffer_putc.c"/>
+				<File Name="../../lib/buffer/buffer_putflush.c"/>
+				<File Name="../../lib/buffer/buffer_putlong.c"/>
+				<File Name="../../lib/buffer/buffer_putlong0.c"/>
+				<File Name="../../lib/buffer/buffer_putlonglong.c"/>
+				<File Name="../../lib/buffer/buffer_putm_internal.c"/>
+				<File Name="../../lib/buffer/buffer_putnc.c"/>
+				<File Name="../../lib/buffer/buffer_putnlflush.c"/>
+				<File Name="../../lib/buffer/buffer_putns.c"/>
+				<File Name="../../lib/buffer/buffer_putnspace.c"/>
+				<File Name="../../lib/buffer/buffer_putptr.c"/>
+				<File Name="../../lib/buffer/buffer_puts.c"/>
+				<File Name="../../lib/buffer/buffer_putsa.c"/>
+				<File Name="../../lib/buffer/buffer_putsflush.c"/>
+				<File Name="../../lib/buffer/buffer_putspace.c"/>
+				<File Name="../../lib/buffer/buffer_putspad.c"/>
+				<File Name="../../lib/buffer/buffer_putulong.c"/>
+				<File Name="../../lib/buffer/buffer_putulong0.c"/>
+				<File Name="../../lib/buffer/buffer_putulonglong.c"/>
+				<File Name="../../lib/buffer/buffer_putxlonglong.c"/>
+				<File Name="../../lib/buffer/buffer_putxlonglong0.c"/>
+				<File Name="../../lib/buffer/buffer_skip_until.c"/>
+				<File Name="../../lib/buffer/buffer_stubborn.c"/>
+				<File Name="../../lib/buffer/buffer_stubborn2.c"/>
+				<File Name="../../lib/buffer/buffer_tosa.c"/>
+				<File Name="../../lib/buffer/buffer_truncfile.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="byte">
+				<File Name="../../lib/byte/byte_ccopy.c"/>
+				<File Name="../../lib/byte/byte_chr.c"/>
+				<File Name="../../lib/byte/byte_copy.c"/>
+				<File Name="../../lib/byte/byte_copyr.c"/>
+				<File Name="../../lib/byte/byte_count.c"/>
+				<File Name="../../lib/byte/byte_diff.c"/>
+				<File Name="../../lib/byte/byte_equal.c"/>
+				<File Name="../../lib/byte/byte_fill.c"/>
+				<File Name="../../lib/byte/byte_replace.c"/>
+				<File Name="../../lib/byte/byte_trimr.c"/>
+				<File Name="../../lib/byte/byte_zero.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="fmt">
+				<File Name="../../lib/fmt/fmt_8long.c"/>
+				<File Name="../../lib/fmt/fmt_8longlong.c"/>
+				<File Name="../../lib/fmt/fmt_escapecharc.c"/>
+				<File Name="../../lib/fmt/fmt_long.c"/>
+				<File Name="../../lib/fmt/fmt_longlong.c"/>
+				<File Name="../../lib/fmt/fmt_minus.c"/>
+				<File Name="../../lib/fmt/fmt_ulong.c"/>
+				<File Name="../../lib/fmt/fmt_ulong0.c"/>
+				<File Name="../../lib/fmt/fmt_ulonglong.c"/>
+				<File Name="../../lib/fmt/fmt_xlonglong.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="mmap">
+				<File Name="../../lib/mmap/mmap_read.c"/>
+				<File Name="../../lib/mmap/mmap_read_fd.c"/>
+				<File Name="../../lib/mmap/mmap_unmap.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="open">
+				<File Name="../../lib/open/open_append.c"/>
+				<File Name="../../lib/open/open_excl.c"/>
+				<File Name="../../lib/open/open_read.c"/>
+				<File Name="../../lib/open/open_temp.c"/>
+				<File Name="../../lib/open/open_trunc.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="path">
+				<File Name="../../lib/path/path_basename.c"/>
+				<File Name="../../lib/path/path_canonical.c"/>
+				<File Name="../../lib/path/path_canonical_sa.c"/>
+				<File Name="../../lib/path/path_canonicalize.c"/>
+				<File Name="../../lib/path/path_collapse.c"/>
+				<File Name="../../lib/path/path_fnmatch.c"/>
+				<File Name="../../lib/path/path_getcwd.c"/>
+				<File Name="../../lib/path/path_gethome.c"/>
+				<File Name="../../lib/path/path_getsep.c"/>
+				<File Name="../../lib/path/path_is_absolute.c"/>
+				<File Name="../../lib/path/path_is_absolute_b.c"/>
+				<File Name="../../lib/path/path_len_s.c"/>
+				<File Name="../../lib/path/path_readlink.c"/>
+				<File Name="../../lib/path/path_realpath.c"/>
+				<File Name="../../lib/path/path_right.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="scan">
+				<File Name="../../lib/scan/scan_8int.c"/>
+				<File Name="../../lib/scan/scan_8long.c"/>
+				<File Name="../../lib/scan/scan_8longlong.c"/>
+				<File Name="../../lib/scan/scan_8longlongn.c"/>
+				<File Name="../../lib/scan/scan_8longn.c"/>
+				<File Name="../../lib/scan/scan_8short.c"/>
+				<File Name="../../lib/scan/scan_charsetnskip.c"/>
+				<File Name="../../lib/scan/scan_fromhex.c"/>
+				<File Name="../../lib/scan/scan_int.c"/>
+				<File Name="../../lib/scan/scan_longlong.c"/>
+				<File Name="../../lib/scan/scan_noncharsetnskip.c"/>
+				<File Name="../../lib/scan/scan_nonwhitenskip.c"/>
+				<File Name="../../lib/scan/scan_uint.c"/>
+				<File Name="../../lib/scan/scan_ulong.c"/>
+				<File Name="../../lib/scan/scan_ulonglong.c"/>
+				<File Name="../../lib/scan/scan_ulongn.c"/>
+				<File Name="../../lib/scan/scan_whitenskip.c"/>
+				<File Name="../../lib/scan/scan_xchar.c"/>
+				<File Name="../../lib/scan/scan_xlonglong.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="shell">
+				<File Name="../../lib/shell/shell_error.c"/>
+				<File Name="../../lib/shell/shell_errorn.c"/>
+				<File Name="../../lib/shell/shell_gethostname.c"/>
+				<File Name="../../lib/shell/shell_getopt.c"/>
+				<File Name="../../lib/shell/shell_init.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="sig">
+				<File Name="../../lib/sig/sig_action.c"/>
+				<File Name="../../lib/sig/sig_block.c"/>
+				<File Name="../../lib/sig/sig_blocknone.c"/>
+				<File Name="../../lib/sig/sig_byname.c"/>
+				<File Name="../../lib/sig/sig_catch.c"/>
+				<File Name="../../lib/sig/sig_name.c"/>
+				<File Name="../../lib/sig/sig_number.c"/>
+				<File Name="../../lib/sig/sig_push.c"/>
+				<File Name="../../lib/sig/sig_stack.c"/>
+				<File Name="../../lib/sig/sig_table.c"/>
+				<File Name="../../lib/sig/sig_unblock.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="str">
+				<File Name="../../lib/str/str_case_diff.c"/>
+				<File Name="../../lib/str/str_case_diffn.c"/>
+				<File Name="../../lib/str/str_chr.c"/>
+				<File Name="../../lib/str/str_copy.c"/>
+				<File Name="../../lib/str/str_copyn.c"/>
+				<File Name="../../lib/str/str_diff.c"/>
+				<File Name="../../lib/str/str_diffn.c"/>
+				<File Name="../../lib/str/str_len.c"/>
+				<File Name="../../lib/str/str_rchr.c"/>
+				<File Name="../../lib/str/str_rchrs.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="stralloc">
+				<File Name="../../lib/stralloc/mmap_filename.c"/>
+				<File Name="../../lib/stralloc/stralloc_append.c"/>
+				<File Name="../../lib/stralloc/stralloc_cat.c"/>
+				<File Name="../../lib/stralloc/stralloc_catb.c"/>
+				<File Name="../../lib/stralloc/stralloc_catc.c"/>
+				<File Name="../../lib/stralloc/stralloc_catlong0.c"/>
+				<File Name="../../lib/stralloc/stralloc_catm_internal.c"/>
+				<File Name="../../lib/stralloc/stralloc_cats.c"/>
+				<File Name="../../lib/stralloc/stralloc_catulong.c"/>
+				<File Name="../../lib/stralloc/stralloc_catulong0.c"/>
+				<File Name="../../lib/stralloc/stralloc_copy.c"/>
+				<File Name="../../lib/stralloc/stralloc_copyb.c"/>
+				<File Name="../../lib/stralloc/stralloc_copys.c"/>
+				<File Name="../../lib/stralloc/stralloc_diffs.c"/>
+				<File Name="../../lib/stralloc/stralloc_dump.c"/>
+				<File Name="../../lib/stralloc/stralloc_free.c"/>
+				<File Name="../../lib/stralloc/stralloc_init.c"/>
+				<File Name="../../lib/stralloc/stralloc_insertb.c"/>
+				<File Name="../../lib/stralloc/stralloc_move.c"/>
+				<File Name="../../lib/stralloc/stralloc_nul.c"/>
+				<File Name="../../lib/stralloc/stralloc_ready.c"/>
+				<File Name="../../lib/stralloc/stralloc_readyplus.c"/>
+				<File Name="../../lib/stralloc/stralloc_remove.c"/>
+				<File Name="../../lib/stralloc/stralloc_replacec.c"/>
+				<File Name="../../lib/stralloc/stralloc_starts.c"/>
+				<File Name="../../lib/stralloc/stralloc_trimr.c"/>
+				<File Name="../../lib/stralloc/stralloc_trunc.c"/>
+				<File Name="../../lib/stralloc/stralloc_write.c"/>
+				<File Name="../../lib/stralloc/stralloc_zero.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="uint32">
+				<File Name="../../lib/uint32/uint32_prng.c"/>
+				<File Name="../../lib/uint32/uint32_random.c"/>
+				<File Name="../../lib/uint32/uint32_seed.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="unix">
+				<File Name="../../lib/unix/glob.c"/>
+				<File Name="../../lib/unix/readlink.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="utf8">
+				<File Name="../../lib/utf8/u8len.c"/>
+				<File Name="../../lib/utf8/u8stowcs.c"/>
+				<File Name="../../lib/utf8/u8swcslen.c"/>
+				<File Name="../../lib/utf8/u8towc.c"/>
+				<File Name="../../lib/utf8/wcstou8s.c"/>
+				<File Name="../../lib/utf8/wcsu8slen.c"/>
+				<File Name="../../lib/utf8/wctou8.c"/>
+				<File Name="../../lib/utf8/wcu8len.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="wait">
+				<File Name="../../lib/wait/wait_nohang.c"/>
+				<File Name="../../lib/wait/wait_nohang_untraced.c"/>
+				<File Name="../../lib/wait/wait_pid.c"/>
+				<File Name="../../lib/wait/wait_pid_nohang.c"/>
+				<File Name="../../lib/wait/wait_pid_untraced.c"/>
+				<File Name="../../lib/wait/wait_pids_nohang.c"/>
+				<File Name="../../lib/wait/wait_track.c"/>
+				<File Name="../../lib/wait/waitpid_nointr.c"/>
+			</VirtualDirectory>
+		</VirtualDirectory>
+		<VirtualDirectory Name="src">
+			<VirtualDirectory Name="builtin">
+				<File Name="../../src/builtin/builtin_alias.c"/>
+				<File Name="../../src/builtin/builtin_basename.c"/>
+				<File Name="../../src/builtin/builtin_break.c"/>
+				<File Name="../../src/builtin/builtin_cat.c"/>
+				<File Name="../../src/builtin/builtin_cd.c"/>
+				<File Name="../../src/builtin/builtin_chmod.c"/>
+				<File Name="../../src/builtin/builtin_command.c"/>
+				<File Name="../../src/builtin/builtin_dirname.c"/>
+				<File Name="../../src/builtin/builtin_dump.c"/>
+				<File Name="../../src/builtin/builtin_echo.c"/>
+				<File Name="../../src/builtin/builtin_error.c"/>
+				<File Name="../../src/builtin/builtin_eval.c"/>
+				<File Name="../../src/builtin/builtin_exec.c"/>
+				<File Name="../../src/builtin/builtin_exit.c"/>
+				<File Name="../../src/builtin/builtin_export.c"/>
+				<File Name="../../src/builtin/builtin_expr.c"/>
+				<File Name="../../src/builtin/builtin_false.c"/>
+				<File Name="../../src/builtin/builtin_fdtable.c"/>
+				<File Name="../../src/builtin/builtin_getopts.c"/>
+				<File Name="../../src/builtin/builtin_hash.c"/>
+				<File Name="../../src/builtin/builtin_help.c"/>
+				<File Name="../../src/builtin/builtin_history.c"/>
+				<File Name="../../src/builtin/builtin_hostname.c"/>
+				<File Name="../../src/builtin/builtin_jobs.c"/>
+				<File Name="../../src/builtin/builtin_kill.c"/>
+				<File Name="../../src/builtin/builtin_ln.c"/>
+				<File Name="../../src/builtin/builtin_local.c"/>
+				<File Name="../../src/builtin/builtin_mkdir.c"/>
+				<File Name="../../src/builtin/builtin_mktemp.c"/>
+				<File Name="../../src/builtin/builtin_printf.c"/>
+				<File Name="../../src/builtin/builtin_pwd.c"/>
+				<File Name="../../src/builtin/builtin_read.c"/>
+				<File Name="../../src/builtin/builtin_readonly.c"/>
+				<File Name="../../src/builtin/builtin_return.c"/>
+				<File Name="../../src/builtin/builtin_rm.c"/>
+				<File Name="../../src/builtin/builtin_rmdir.c"/>
+				<File Name="../../src/builtin/builtin_search.c"/>
+				<File Name="../../src/builtin/builtin_set.c"/>
+				<File Name="../../src/builtin/builtin_shift.c"/>
+				<File Name="../../src/builtin/builtin_source.c"/>
+				<File Name="../../src/builtin/builtin_table.c"/>
+				<File Name="../../src/builtin/builtin_test.c"/>
+				<File Name="../../src/builtin/builtin_trap.c"/>
+				<File Name="../../src/builtin/builtin_true.c"/>
+				<File Name="../../src/builtin/builtin_type.c"/>
+				<File Name="../../src/builtin/builtin_umask.c"/>
+				<File Name="../../src/builtin/builtin_uname.c"/>
+				<File Name="../../src/builtin/builtin_unset.c"/>
+				<File Name="../../src/builtin/builtin_wait.c"/>
+				<File Name="../../src/builtin/builtin_which.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="debug">
+				<File Name="../../src/debug/debug_argv.c"/>
+				<File Name="../../src/debug/debug_begin.c"/>
+				<File Name="../../src/debug/debug_char.c"/>
+				<File Name="../../src/debug/debug_end.c"/>
+				<File Name="../../src/debug/debug_list.c"/>
+				<File Name="../../src/debug/debug_node.c"/>
+				<File Name="../../src/debug/debug_position.c"/>
+				<File Name="../../src/debug/debug_ptr.c"/>
+				<File Name="../../src/debug/debug_redir.c"/>
+				<File Name="../../src/debug/debug_space.c"/>
+				<File Name="../../src/debug/debug_squoted.c"/>
+				<File Name="../../src/debug/debug_str.c"/>
+				<File Name="../../src/debug/debug_stralloc.c"/>
+				<File Name="../../src/debug/debug_sublist.c"/>
+				<File Name="../../src/debug/debug_subnode.c"/>
+				<File Name="../../src/debug/debug_subst.c"/>
+				<File Name="../../src/debug/debug_ulong.c"/>
+				<File Name="../../src/debug/debug_unquoted.c"/>
+				<File Name="../../src/debug/debug_xlong.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="eval">
+				<File Name="../../src/eval/eval_and_or.c"/>
+				<File Name="../../src/eval/eval_case.c"/>
+				<File Name="../../src/eval/eval_cmdlist.c"/>
+				<File Name="../../src/eval/eval_command.c"/>
+				<File Name="../../src/eval/eval_exit.c"/>
+				<File Name="../../src/eval/eval_for.c"/>
+				<File Name="../../src/eval/eval_function.c"/>
+				<File Name="../../src/eval/eval_if.c"/>
+				<File Name="../../src/eval/eval_jump.c"/>
+				<File Name="../../src/eval/eval_loop.c"/>
+				<File Name="../../src/eval/eval_node.c"/>
+				<File Name="../../src/eval/eval_node_bgnd.c"/>
+				<File Name="../../src/eval/eval_pipeline.c"/>
+				<File Name="../../src/eval/eval_pop.c"/>
+				<File Name="../../src/eval/eval_push.c"/>
+				<File Name="../../src/eval/eval_return.c"/>
+				<File Name="../../src/eval/eval_simple_command.c"/>
+				<File Name="../../src/eval/eval_subshell.c"/>
+				<File Name="../../src/eval/eval_tree.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="exec">
+				<File Name="../../src/exec/exec_check.c"/>
+				<File Name="../../src/exec/exec_command.c"/>
+				<File Name="../../src/exec/exec_create.c"/>
+				<File Name="../../src/exec/exec_error.c"/>
+				<File Name="../../src/exec/exec_hash.c"/>
+				<File Name="../../src/exec/exec_hashstr.c"/>
+				<File Name="../../src/exec/exec_lookup.c"/>
+				<File Name="../../src/exec/exec_path.c"/>
+				<File Name="../../src/exec/exec_program.c"/>
+				<File Name="../../src/exec/exec_search.c"/>
+				<File Name="../../src/exec/exec_type.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="expand">
+				<File Name="../../src/expand/expand_arg.c"/>
+				<File Name="../../src/expand/expand_args.c"/>
+				<File Name="../../src/expand/expand_argv.c"/>
+				<File Name="../../src/expand/expand_arith.c"/>
+				<File Name="../../src/expand/expand_arith_assign.c"/>
+				<File Name="../../src/expand/expand_arith_binary.c"/>
+				<File Name="../../src/expand/expand_arith_expr.c"/>
+				<File Name="../../src/expand/expand_arith_ternary.c"/>
+				<File Name="../../src/expand/expand_arith_unary.c"/>
+				<File Name="../../src/expand/expand_brace.c"/>
+				<File Name="../../src/expand/expand_break.c"/>
+				<File Name="../../src/expand/expand_cat.c"/>
+				<File Name="../../src/expand/expand_catsa.c"/>
+				<File Name="../../src/expand/expand_command.c"/>
+				<File Name="../../src/expand/expand_copysa.c"/>
+				<File Name="../../src/expand/expand_getorcreate.c"/>
+				<File Name="../../src/expand/expand_glob.c"/>
+				<File Name="../../src/expand/expand_param.c"/>
+				<File Name="../../src/expand/expand_str.c"/>
+				<File Name="../../src/expand/expand_tilde.c"/>
+				<File Name="../../src/expand/expand_tosa.c"/>
+				<File Name="../../src/expand/expand_tostr.c"/>
+				<File Name="../../src/expand/expand_unescape.c"/>
+				<File Name="../../src/expand/expand_vars.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="expr">
+				<File Name="../../src/expr/expr_tokens.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="fd">
+				<File Name="../../src/fd/fd_allocbuf.c"/>
+				<File Name="../../src/fd/fd_close.c"/>
+				<File Name="../../src/fd/fd_dump.c"/>
+				<File Name="../../src/fd/fd_dumplist.c"/>
+				<File Name="../../src/fd/fd_dup.c"/>
+				<File Name="../../src/fd/fd_error.c"/>
+				<File Name="../../src/fd/fd_free.c"/>
+				<File Name="../../src/fd/fd_getname.c"/>
+				<File Name="../../src/fd/fd_here.c"/>
+				<File Name="../../src/fd/fd_init.c"/>
+				<File Name="../../src/fd/fd_list.c"/>
+				<File Name="../../src/fd/fd_mmap.c"/>
+				<File Name="../../src/fd/fd_needbuf.c"/>
+				<File Name="../../src/fd/fd_new.c"/>
+				<File Name="../../src/fd/fd_null.c"/>
+				<File Name="../../src/fd/fd_open.c"/>
+				<File Name="../../src/fd/fd_pipe.c"/>
+				<File Name="../../src/fd/fd_pop.c"/>
+				<File Name="../../src/fd/fd_print.c"/>
+				<File Name="../../src/fd/fd_push.c"/>
+				<File Name="../../src/fd/fd_reinit.c"/>
+				<File Name="../../src/fd/fd_setbuf.c"/>
+				<File Name="../../src/fd/fd_setfd.c"/>
+				<File Name="../../src/fd/fd_stat.c"/>
+				<File Name="../../src/fd/fd_string.c"/>
+				<File Name="../../src/fd/fd_subst.c"/>
+				<File Name="../../src/fd/fd_tempfile.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="fdstack">
+				<File Name="../../src/fdstack/fdstack_data.c"/>
+				<File Name="../../src/fdstack/fdstack_dump.c"/>
+				<File Name="../../src/fdstack/fdstack_flatten.c"/>
+				<File Name="../../src/fdstack/fdstack_fork.c"/>
+				<File Name="../../src/fdstack/fdstack_link.c"/>
+				<File Name="../../src/fdstack/fdstack_npipes.c"/>
+				<File Name="../../src/fdstack/fdstack_pipe.c"/>
+				<File Name="../../src/fdstack/fdstack_pop.c"/>
+				<File Name="../../src/fdstack/fdstack_push.c"/>
+				<File Name="../../src/fdstack/fdstack_root.c"/>
+				<File Name="../../src/fdstack/fdstack_search.c"/>
+				<File Name="../../src/fdstack/fdstack_unlink.c"/>
+				<File Name="../../src/fdstack/fdstack_unref.c"/>
+				<File Name="../../src/fdstack/fdstack_update.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="fdtable">
+				<File Name="../../src/fdtable/fdtable_check.c"/>
+				<File Name="../../src/fdtable/fdtable_close.c"/>
+				<File Name="../../src/fdtable/fdtable_dump.c"/>
+				<File Name="../../src/fdtable/fdtable_dup.c"/>
+				<File Name="../../src/fdtable/fdtable_exec.c"/>
+				<File Name="../../src/fdtable/fdtable_gap.c"/>
+				<File Name="../../src/fdtable/fdtable_here.c"/>
+				<File Name="../../src/fdtable/fdtable_lazy.c"/>
+				<File Name="../../src/fdtable/fdtable_link.c"/>
+				<File Name="../../src/fdtable/fdtable_newfd.c"/>
+				<File Name="../../src/fdtable/fdtable_open.c"/>
+				<File Name="../../src/fdtable/fdtable_resolve.c"/>
+				<File Name="../../src/fdtable/fdtable_table.c"/>
+				<File Name="../../src/fdtable/fdtable_track.c"/>
+				<File Name="../../src/fdtable/fdtable_unexpected.c"/>
+				<File Name="../../src/fdtable/fdtable_unlink.c"/>
+				<File Name="../../src/fdtable/fdtable_untrack.c"/>
+				<File Name="../../src/fdtable/fdtable_up.c"/>
+				<File Name="../../src/fdtable/fdtable_wish.c"/>
+			</VirtualDirectory>
+			<File Name="../../src/fork.c"/>
+			<VirtualDirectory Name="history">
+				<File Name="../../src/history/history_add.c"/>
+				<File Name="../../src/history/history_clear.c"/>
+				<File Name="../../src/history/history_decode.c"/>
+				<File Name="../../src/history/history_encode.c"/>
+				<File Name="../../src/history/history_file_entry.c"/>
+				<File Name="../../src/history/history_file_next.c"/>
+				<File Name="../../src/history/history_init.c"/>
+				<File Name="../../src/history/history_next.c"/>
+				<File Name="../../src/history/history_prev.c"/>
+				<File Name="../../src/history/history_print.c"/>
+				<File Name="../../src/history/history_session_resize.c"/>
+				<File Name="../../src/history/history_show.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="job">
+				<File Name="../../src/job/job_banner.c"/>
+				<File Name="../../src/job/job_bypid.c"/>
+				<File Name="../../src/job/job_clean.c"/>
+				<File Name="../../src/job/job_dump.c"/>
+				<File Name="../../src/job/job_find.c"/>
+				<File Name="../../src/job/job_foreground.c"/>
+				<File Name="../../src/job/job_fork.c"/>
+				<File Name="../../src/job/job_free.c"/>
+				<File Name="../../src/job/job_get.c"/>
+				<File Name="../../src/job/job_init.c"/>
+				<File Name="../../src/job/job_new.c"/>
+				<File Name="../../src/job/job_print.c"/>
+				<File Name="../../src/job/job_printstatus.c"/>
+				<File Name="../../src/job/job_signal.c"/>
+				<File Name="../../src/job/job_update.c"/>
+				<File Name="../../src/job/job_wait.c"/>
+				<File Name="../../src/job/job_x.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="parse">
+				<File Name="../../src/parse/parse_and_or.c"/>
+				<File Name="../../src/parse/parse_arith.c"/>
+				<File Name="../../src/parse/parse_arith_assign.c"/>
+				<File Name="../../src/parse/parse_arith_binary.c"/>
+				<File Name="../../src/parse/parse_arith_expr.c"/>
+				<File Name="../../src/parse/parse_arith_paren.c"/>
+				<File Name="../../src/parse/parse_arith_ternary.c"/>
+				<File Name="../../src/parse/parse_arith_unary.c"/>
+				<File Name="../../src/parse/parse_arith_value.c"/>
+				<File Name="../../src/parse/parse_bquoted.c"/>
+				<File Name="../../src/parse/parse_case.c"/>
+				<File Name="../../src/parse/parse_chartable.c"/>
+				<File Name="../../src/parse/parse_command.c"/>
+				<File Name="../../src/parse/parse_compound_list.c"/>
+				<File Name="../../src/parse/parse_dquoted.c"/>
+				<File Name="../../src/parse/parse_dump.c"/>
+				<File Name="../../src/parse/parse_error.c"/>
+				<File Name="../../src/parse/parse_expect.c"/>
+				<File Name="../../src/parse/parse_findalias.c"/>
+				<File Name="../../src/parse/parse_for.c"/>
+				<File Name="../../src/parse/parse_function.c"/>
+				<File Name="../../src/parse/parse_getarg.c"/>
+				<File Name="../../src/parse/parse_gettok.c"/>
+				<File Name="../../src/parse/parse_grouping.c"/>
+				<File Name="../../src/parse/parse_here.c"/>
+				<File Name="../../src/parse/parse_if.c"/>
+				<File Name="../../src/parse/parse_init.c"/>
+				<File Name="../../src/parse/parse_keyword.c"/>
+				<File Name="../../src/parse/parse_list.c"/>
+				<File Name="../../src/parse/parse_loop.c"/>
+				<File Name="../../src/parse/parse_newnode.c"/>
+				<File Name="../../src/parse/parse_param.c"/>
+				<File Name="../../src/parse/parse_pipeline.c"/>
+				<File Name="../../src/parse/parse_simple_command.c"/>
+				<File Name="../../src/parse/parse_simpletok.c"/>
+				<File Name="../../src/parse/parse_skipspace.c"/>
+				<File Name="../../src/parse/parse_squoted.c"/>
+				<File Name="../../src/parse/parse_string.c"/>
+				<File Name="../../src/parse/parse_subst.c"/>
+				<File Name="../../src/parse/parse_tokens.c"/>
+				<File Name="../../src/parse/parse_tokname.c"/>
+				<File Name="../../src/parse/parse_unquoted.c"/>
+				<File Name="../../src/parse/parse_validname.c"/>
+				<File Name="../../src/parse/parse_word.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="prompt">
+				<File Name="../../src/prompt/prompt_escape.c"/>
+				<File Name="../../src/prompt/prompt_expand.c"/>
+				<File Name="../../src/prompt/prompt_nextline.c"/>
+				<File Name="../../src/prompt/prompt_parse.c"/>
+				<File Name="../../src/prompt/prompt_reset.c"/>
+				<File Name="../../src/prompt/prompt_show.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="redir">
+				<File Name="../../src/redir/redir_addhere.c"/>
+				<File Name="../../src/redir/redir_dup.c"/>
+				<File Name="../../src/redir/redir_eval.c"/>
+				<File Name="../../src/redir/redir_here.c"/>
+				<File Name="../../src/redir/redir_open.c"/>
+				<File Name="../../src/redir/redir_parse.c"/>
+				<File Name="../../src/redir/redir_source.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="sh">
+				<File Name="../../src/sh/sh_error.c"/>
+				<File Name="../../src/sh/sh_error_errno.c"/>
+				<File Name="../../src/sh/sh_errorn.c"/>
+				<File Name="../../src/sh/sh_errorn_errno.c"/>
+				<File Name="../../src/sh/sh_exit.c"/>
+				<File Name="../../src/sh/sh_fmt.c"/>
+				<File Name="../../src/sh/sh_fmtflags.c"/>
+				<File Name="../../src/sh/sh_forked.c"/>
+				<File Name="../../src/sh/sh_getcwd.c"/>
+				<File Name="../../src/sh/sh_gethome.c"/>
+				<File Name="../../src/sh/sh_init.c"/>
+				<File Name="../../src/sh/sh_loop.c"/>
+				<File Name="../../src/sh/sh_main.c"/>
+				<File Name="../../src/sh/sh_msg.c"/>
+				<File Name="../../src/sh/sh_pop.c"/>
+				<File Name="../../src/sh/sh_popargs.c"/>
+				<File Name="../../src/sh/sh_push.c"/>
+				<File Name="../../src/sh/sh_pushargs.c"/>
+				<File Name="../../src/sh/sh_root.c"/>
+				<File Name="../../src/sh/sh_setargs.c"/>
+				<File Name="../../src/sh/sh_usage.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="source">
+				<File Name="../../src/source/fmt_loc.c"/>
+				<File Name="../../src/source/location2str.c"/>
+				<File Name="../../src/source/source_buffer.c"/>
+				<File Name="../../src/source/source_flush.c"/>
+				<File Name="../../src/source/source_get.c"/>
+				<File Name="../../src/source/source_msg.c"/>
+				<File Name="../../src/source/source_newline.c"/>
+				<File Name="../../src/source/source_next.c"/>
+				<File Name="../../src/source/source_peek.c"/>
+				<File Name="../../src/source/source_peekn.c"/>
+				<File Name="../../src/source/source_pop.c"/>
+				<File Name="../../src/source/source_popfd.c"/>
+				<File Name="../../src/source/source_push.c"/>
+				<File Name="../../src/source/source_skip.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="term">
+				<File Name="../../src/term/term_ansi.c"/>
+				<File Name="../../src/term/term_attr.c"/>
+				<File Name="../../src/term/term_backspace.c"/>
+				<File Name="../../src/term/term_complete.c"/>
+				<File Name="../../src/term/term_delete.c"/>
+				<File Name="../../src/term/term_end.c"/>
+				<File Name="../../src/term/term_erase.c"/>
+				<File Name="../../src/term/term_escape.c"/>
+				<File Name="../../src/term/term_getline.c"/>
+				<File Name="../../src/term/term_home.c"/>
+				<File Name="../../src/term/term_init.c"/>
+				<File Name="../../src/term/term_insertc.c"/>
+				<File Name="../../src/term/term_left.c"/>
+				<File Name="../../src/term/term_newline.c"/>
+				<File Name="../../src/term/term_overwritec.c"/>
+				<File Name="../../src/term/term_read.c"/>
+				<File Name="../../src/term/term_restore.c"/>
+				<File Name="../../src/term/term_right.c"/>
+				<File Name="../../src/term/term_setline.c"/>
+				<File Name="../../src/term/term_winsize.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="tree">
+				<File Name="../../src/tree/node2str.c"/>
+				<File Name="../../src/tree/tree_append.c"/>
+				<File Name="../../src/tree/tree_cat.c"/>
+				<File Name="../../src/tree/tree_catlist.c"/>
+				<File Name="../../src/tree/tree_catseparator.c"/>
+				<File Name="../../src/tree/tree_copy.c"/>
+				<File Name="../../src/tree/tree_count.c"/>
+				<File Name="../../src/tree/tree_free.c"/>
+				<File Name="../../src/tree/tree_location.c"/>
+				<File Name="../../src/tree/tree_newlink.c"/>
+				<File Name="../../src/tree/tree_newnode.c"/>
+				<File Name="../../src/tree/tree_nodesizes.c"/>
+				<File Name="../../src/tree/tree_print.c"/>
+				<File Name="../../src/tree/tree_printlist.c"/>
+				<File Name="../../src/tree/tree_remove.c"/>
+				<File Name="../../src/tree/tree_show.c"/>
+				<File Name="../../src/tree/tree_string.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="var">
+				<File Name="../../src/var/var_bsearch.c"/>
+				<File Name="../../src/var/var_chflg.c"/>
+				<File Name="../../src/var/var_cleanup.c"/>
+				<File Name="../../src/var/var_copys.c"/>
+				<File Name="../../src/var/var_count.c"/>
+				<File Name="../../src/var/var_create.c"/>
+				<File Name="../../src/var/var_dump.c"/>
+				<File Name="../../src/var/var_export.c"/>
+				<File Name="../../src/var/var_get.c"/>
+				<File Name="../../src/var/var_hsearch.c"/>
+				<File Name="../../src/var/var_import.c"/>
+				<File Name="../../src/var/var_init.c"/>
+				<File Name="../../src/var/var_len.c"/>
+				<File Name="../../src/var/var_lexhash.c"/>
+				<File Name="../../src/var/var_print.c"/>
+				<File Name="../../src/var/var_random.c"/>
+				<File Name="../../src/var/var_rndhash.c"/>
+				<File Name="../../src/var/var_search.c"/>
+				<File Name="../../src/var/var_set.c"/>
+				<File Name="../../src/var/var_setsa.c"/>
+				<File Name="../../src/var/var_setv.c"/>
+				<File Name="../../src/var/var_setvint.c"/>
+				<File Name="../../src/var/var_setvsa.c"/>
+				<File Name="../../src/var/var_unset.c"/>
+				<File Name="../../src/var/var_valid.c"/>
+				<File Name="../../src/var/var_value.c"/>
+				<File Name="../../src/var/var_vdefault.c"/>
+				<File Name="../../src/var/var_vlen.c"/>
+			</VirtualDirectory>
+			<VirtualDirectory Name="vartab">
+				<File Name="../../src/vartab/vartab_add.c"/>
+				<File Name="../../src/vartab/vartab_cleanup.c"/>
+				<File Name="../../src/vartab/vartab_dump.c"/>
+				<File Name="../../src/vartab/vartab_hash.c"/>
+				<File Name="../../src/vartab/vartab_pop.c"/>
+				<File Name="../../src/vartab/vartab_print.c"/>
+				<File Name="../../src/vartab/vartab_push.c"/>
+				<File Name="../../src/vartab/vartab_root.c"/>
+				<File Name="../../src/vartab/vartab_search.c"/>
+			</VirtualDirectory>
+		</VirtualDirectory>
+	</VirtualDirectory>
+	<VirtualDirectory Name="include">
+		<VirtualDirectory Name="src">
+			<File Name="src/builtin_config.h"/>
+		</VirtualDirectory>
+		<VirtualDirectory Name="lib">
+			<File Name="../../lib/alloc.h"/>
+			<File Name="../../lib/arena.h"/>
+			<File Name="../../lib/buffer.h"/>
+			<File Name="../../lib/byte.h"/>
+			<File Name="../../lib/fmt.h"/>
+			<File Name="../../lib/glob.h"/>
+			<File Name="../../lib/ioctlcmd.h"/>
+			<File Name="../../lib/mmap.h"/>
+			<File Name="../../lib/open.h"/>
+			<File Name="../../lib/path.h"/>
+			<File Name="../../lib/path_internal.h"/>
+			<File Name="../../lib/scan.h"/>
+			<File Name="../../lib/shell.h"/>
+			<File Name="../../lib/sig.h"/>
+			<File Name="../../lib/sig_internal.h"/>
+			<File Name="../../lib/str.h"/>
+			<File Name="../../lib/stralloc.h"/>
+			<File Name="../../lib/typedefs.h"/>
+			<File Name="../../lib/uint16.h"/>
+			<File Name="../../lib/uint32.h"/>
+			<File Name="../../lib/uint64.h"/>
+			<File Name="../../lib/uint8.h"/>
+			<File Name="../../lib/unix.h"/>
+			<File Name="../../lib/utf8.h"/>
+			<File Name="../../lib/wait.h"/>
+			<File Name="../../lib/windoze.h"/>
+		</VirtualDirectory>
+		<VirtualDirectory Name="src">
+			<File Name="../../src/builtin.h"/>
+			<File Name="../../src/debug.h"/>
+			<File Name="../../src/eval.h"/>
+			<File Name="../../src/exec.h"/>
+			<File Name="../../src/expand.h"/>
+			<File Name="../../src/expr.h"/>
+			<File Name="../../src/fd.h"/>
+			<File Name="../../src/fdstack.h"/>
+			<File Name="../../src/fdtable.h"/>
+			<File Name="../../src/features.h"/>
+			<File Name="../../src/history.h"/>
+			<File Name="../../src/job.h"/>
+			<File Name="../../src/parse.h"/>
+			<File Name="../../src/prompt.h"/>
+			<File Name="../../src/redir.h"/>
+			<File Name="../../src/sh.h"/>
+			<File Name="../../src/source.h"/>
+			<File Name="../../src/term.h"/>
+			<File Name="../../src/tree.h"/>
+			<File Name="../../src/var.h"/>
+			<File Name="../../src/vartab.h"/>
+		</VirtualDirectory>
+	</VirtualDirectory>
+	<Settings Type="">
+		<Configuration Name="Debug" CompilerType="gnu g++" DebuggerType="GNU gdb debugger" Type="" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+			<Compiler Options="-g" Required="yes" PreCompiledHeader="">
+				<IncludePath Value="."/>
+			</Compiler>
+			<Linker Options="" Required="yes"/>
+			<ResourceCompiler Options="" Required="no"/>
+			<General OutputFile="/$(ProjectName)" IntermediateDirectory="./" Command="./$(ProjectName)" CommandArguments="" WorkingDirectory="" PauseExecWhenProcTerminates="yes"/>
+			<Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="">
+				<PostConnectCommands/>
+				<StartupCommands/>
+			</Debugger>
+			<PreBuild/>
+			<PostBuild/>
+			<CustomBuild Enabled="yes">
+				<RebuildCommand>/usr/local/bin/gmake -f$(ProjectPath)/Makefile -j 32 clean &amp;&amp; /usr/local/bin/gmake -f$(ProjectPath)/Makefile -j 32</RebuildCommand>
+				<CleanCommand>/usr/local/bin/gmake -f$(ProjectPath)/Makefile -j 32 clean</CleanCommand>
+				<BuildCommand>/usr/local/bin/gmake -f$(ProjectPath)/Makefile -j 32</BuildCommand>
+				<SingleFileCommand>/usr/local/bin/gmake -f$(ProjectPath)/Makefile -B $(CurrentFileFullName).o</SingleFileCommand>
+				<PreprocessFileCommand/>
+				<WorkingDirectory>$(WorkspacePath)</WorkingDirectory>
+			</CustomBuild>
+			<AdditionalRules>
+				<CustomPostBuild/>
+				<CustomPreBuild/>
+			</AdditionalRules>
+		</Configuration>
+		<GlobalSettings>
+			<Compiler Options="">
+				<IncludePath Value="."/>
+			</Compiler>
+			<Linker Options="">
+				<LibraryPath Value="."/>
+			</Linker>
+			<ResourceCompiler Options=""/>
+		</GlobalSettings>
+	</Settings>
+</CodeLite_Project>

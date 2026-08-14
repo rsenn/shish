@@ -1,0 +1,1 @@
+/usr/bin/diet-gcc  -O0 -ggdb CMakeFiles/shish.dir/src/sh/sh_init.c.o CMakeFiles/shish.dir/src/sh/sh_main.c.o -o shish   -L/home/roman/Projects/shish/build/x86_64-linux-diet/lib  -Wl,-rpath,/home/roman/Projects/shish/build/x86_64-linux-diet/lib libshell.a libowfat.a -lm

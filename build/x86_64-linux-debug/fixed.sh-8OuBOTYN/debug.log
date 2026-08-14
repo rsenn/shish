@@ -1,0 +1,507 @@
+fdstack_link n=0
+fdstack_link n=1
+fdstack_link n=2
+fdstack_link n=-1
+parse_getarg trap
+parse_getarg "echo hi"
+parse_getarg 1
+parse_getarg 2
+parse_getarg 15
+parse_command command = {
+  "kind": "N_SIMPLECMD",
+  "bngd": 0,
+  "args": [
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "<string>:1:1",
+          "stra": "trap"
+        }
+      ]
+    },
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x1",
+          "loc": "<string>:1:6",
+          "stra": "echo\\ hi"
+        }
+      ]
+    },
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "<string>:1:16",
+          "stra": "1"
+        }
+      ]
+    },
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "<string>:1:18",
+          "stra": "2"
+        }
+      ]
+    },
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "<string>:1:20",
+          "stra": "15"
+        }
+      ]
+    }
+  ]
+}
+parse_getarg trap
+parse_getarg -
+parse_getarg 1
+parse_getarg 2
+parse_getarg 15
+parse_command command = {
+  "kind": "N_SIMPLECMD",
+  "bngd": 0,
+  "args": [
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "<string>:1:24",
+          "stra": "trap"
+        }
+      ]
+    },
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "<string>:1:29",
+          "stra": "-"
+        }
+      ]
+    },
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "<string>:1:31",
+          "stra": "1"
+        }
+      ]
+    },
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "<string>:1:33",
+          "stra": "2"
+        }
+      ]
+    },
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "<string>:1:35",
+          "stra": "15"
+        }
+      ]
+    }
+  ]
+}
+parse_getarg echo
+parse_getarg ok
+parse_command command = {
+  "kind": "N_SIMPLECMD",
+  "bngd": 0,
+  "args": [
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "<string>:1:39",
+          "stra": "echo"
+        }
+      ]
+    },
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "<string>:1:44",
+          "stra": "ok"
+        }
+      ]
+    }
+  ]
+}
+parse_list [3] cmds = [
+  {
+    "kind": "N_SIMPLECMD",
+    "bngd": 0,
+    "args": [
+      {
+        "kind": "N_ARG",
+        "list": [
+          {
+            "kind": "N_ARGSTR",
+            "flag": "0x0",
+            "loc": "<string>:1:1",
+            "stra": "trap"
+          }
+        ]
+      },
+      {
+        "kind": "N_ARG",
+        "list": [
+          {
+            "kind": "N_ARGSTR",
+            "flag": "0x1",
+            "loc": "<string>:1:6",
+            "stra": "echo\\ hi"
+          }
+        ]
+      },
+      {
+        "kind": "N_ARG",
+        "list": [
+          {
+            "kind": "N_ARGSTR",
+            "flag": "0x0",
+            "loc": "<string>:1:16",
+            "stra": "1"
+          }
+        ]
+      },
+      {
+        "kind": "N_ARG",
+        "list": [
+          {
+            "kind": "N_ARGSTR",
+            "flag": "0x0",
+            "loc": "<string>:1:18",
+            "stra": "2"
+          }
+        ]
+      },
+      {
+        "kind": "N_ARG",
+        "list": [
+          {
+            "kind": "N_ARGSTR",
+            "flag": "0x0",
+            "loc": "<string>:1:20",
+            "stra": "15"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "N_SIMPLECMD",
+    "bngd": 0,
+    "args": [
+      {
+        "kind": "N_ARG",
+        "list": [
+          {
+            "kind": "N_ARGSTR",
+            "flag": "0x0",
+            "loc": "<string>:1:24",
+            "stra": "trap"
+          }
+        ]
+      },
+      {
+        "kind": "N_ARG",
+        "list": [
+          {
+            "kind": "N_ARGSTR",
+            "flag": "0x0",
+            "loc": "<string>:1:29",
+            "stra": "-"
+          }
+        ]
+      },
+      {
+        "kind": "N_ARG",
+        "list": [
+          {
+            "kind": "N_ARGSTR",
+            "flag": "0x0",
+            "loc": "<string>:1:31",
+            "stra": "1"
+          }
+        ]
+      },
+      {
+        "kind": "N_ARG",
+        "list": [
+          {
+            "kind": "N_ARGSTR",
+            "flag": "0x0",
+            "loc": "<string>:1:33",
+            "stra": "2"
+          }
+        ]
+      },
+      {
+        "kind": "N_ARG",
+        "list": [
+          {
+            "kind": "N_ARGSTR",
+            "flag": "0x0",
+            "loc": "<string>:1:35",
+            "stra": "15"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "N_SIMPLECMD",
+    "bngd": 0,
+    "args": [
+      {
+        "kind": "N_ARG",
+        "list": [
+          {
+            "kind": "N_ARGSTR",
+            "flag": "0x0",
+            "loc": "<string>:1:39",
+            "stra": "echo"
+          }
+        ]
+      },
+      {
+        "kind": "N_ARG",
+        "list": [
+          {
+            "kind": "N_ARGSTR",
+            "flag": "0x0",
+            "loc": "<string>:1:44",
+            "stra": "ok"
+          }
+        ]
+      }
+    ]
+  }
+]
+sh_loop list = [
+  {
+    "kind": "N_LIST",
+    "cmds": [
+      {
+        "kind": "N_SIMPLECMD",
+        "bngd": 0,
+        "args": [
+          {
+            "kind": "N_ARG",
+            "list": [
+              {
+                "kind": "N_ARGSTR",
+                "flag": "0x0",
+                "loc": "<string>:1:1",
+                "stra": "trap"
+              }
+            ]
+          },
+          {
+            "kind": "N_ARG",
+            "list": [
+              {
+                "kind": "N_ARGSTR",
+                "flag": "0x1",
+                "loc": "<string>:1:6",
+                "stra": "echo\\ hi"
+              }
+            ]
+          },
+          {
+            "kind": "N_ARG",
+            "list": [
+              {
+                "kind": "N_ARGSTR",
+                "flag": "0x0",
+                "loc": "<string>:1:16",
+                "stra": "1"
+              }
+            ]
+          },
+          {
+            "kind": "N_ARG",
+            "list": [
+              {
+                "kind": "N_ARGSTR",
+                "flag": "0x0",
+                "loc": "<string>:1:18",
+                "stra": "2"
+              }
+            ]
+          },
+          {
+            "kind": "N_ARG",
+            "list": [
+              {
+                "kind": "N_ARGSTR",
+                "flag": "0x0",
+                "loc": "<string>:1:20",
+                "stra": "15"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "N_SIMPLECMD",
+        "bngd": 0,
+        "args": [
+          {
+            "kind": "N_ARG",
+            "list": [
+              {
+                "kind": "N_ARGSTR",
+                "flag": "0x0",
+                "loc": "<string>:1:24",
+                "stra": "trap"
+              }
+            ]
+          },
+          {
+            "kind": "N_ARG",
+            "list": [
+              {
+                "kind": "N_ARGSTR",
+                "flag": "0x0",
+                "loc": "<string>:1:29",
+                "stra": "-"
+              }
+            ]
+          },
+          {
+            "kind": "N_ARG",
+            "list": [
+              {
+                "kind": "N_ARGSTR",
+                "flag": "0x0",
+                "loc": "<string>:1:31",
+                "stra": "1"
+              }
+            ]
+          },
+          {
+            "kind": "N_ARG",
+            "list": [
+              {
+                "kind": "N_ARGSTR",
+                "flag": "0x0",
+                "loc": "<string>:1:33",
+                "stra": "2"
+              }
+            ]
+          },
+          {
+            "kind": "N_ARG",
+            "list": [
+              {
+                "kind": "N_ARGSTR",
+                "flag": "0x0",
+                "loc": "<string>:1:35",
+                "stra": "15"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "N_SIMPLECMD",
+        "bngd": 0,
+        "args": [
+          {
+            "kind": "N_ARG",
+            "list": [
+              {
+                "kind": "N_ARGSTR",
+                "flag": "0x0",
+                "loc": "<string>:1:39",
+                "stra": "echo"
+              }
+            ]
+          },
+          {
+            "kind": "N_ARG",
+            "list": [
+              {
+                "kind": "N_ARGSTR",
+                "flag": "0x0",
+                "loc": "<string>:1:44",
+                "stra": "ok"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
+fdstack_link n=-1
+parse_getarg echo
+parse_getarg hi
+parse_command command = {
+  "kind": "N_SIMPLECMD",
+  "bngd": 0,
+  "args": [
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "<string>:1:1",
+          "stra": "echo"
+        }
+      ]
+    },
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "<string>:1:6",
+          "stra": "hi"
+        }
+      ]
+    }
+  ]
+}
+fd_pop 0x0000001ffeff96a0

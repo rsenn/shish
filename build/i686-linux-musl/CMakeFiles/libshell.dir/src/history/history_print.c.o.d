@@ -1,0 +1,35 @@
+CMakeFiles/libshell.dir/src/history/history_print.c.o: \
+ /home/roman/Projects/shish/src/history/history_print.c \
+ /home/roman/Projects/shish/src/history/../../lib/fmt.h \
+ /home/roman/Projects/shish/src/history/../../lib/typedefs.h \
+ /usr/include/i386-linux-musl/sys/types.h \
+ /usr/include/i386-linux-musl/features.h \
+ /usr/include/i386-linux-musl/bits/alltypes.h \
+ /usr/include/i386-linux-musl/endian.h \
+ /usr/include/i386-linux-musl/sys/select.h \
+ /usr/include/i386-linux-musl/time.h \
+ /home/roman/Projects/shish/src/history/../../lib/uint32.h \
+ /usr/include/i386-linux-musl/stdint.h \
+ /usr/include/i386-linux-musl/bits/stdint.h \
+ /home/roman/Projects/shish/src/history/../../lib/uint64.h \
+ /home/roman/Projects/shish/src/history/../../lib/str.h \
+ /usr/include/i386-linux-musl/string.h \
+ /usr/include/i386-linux-musl/strings.h \
+ /home/roman/Projects/shish/src/history/../fdtable.h \
+ /home/roman/Projects/shish/src/history/../fd.h \
+ /usr/include/i386-linux-musl/fcntl.h \
+ /usr/include/i386-linux-musl/bits/fcntl.h \
+ /home/roman/Projects/shish/src/history/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/history/../../lib/shell.h \
+ /home/roman/Projects/shish/src/history/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/history/../../lib/stralloc.h \
+ /usr/include/i386-linux-musl/stdlib.h \
+ /usr/include/i386-linux-musl/alloca.h \
+ /usr/include/i386-linux-musl/limits.h \
+ /usr/include/i386-linux-musl/bits/limits.h \
+ /home/roman/Projects/shish/src/history/../../lib/stralloc.h \
+ /home/roman/Projects/shish/src/history/../../lib/windoze.h \
+ /home/roman/Projects/shish/src/history/../../lib/alloc.h \
+ /home/roman/Projects/shish/build/i686-linux-musl/config.h \
+ /home/roman/Projects/shish/src/history/../history.h \
+ /home/roman/Projects/shish/src/history/../../lib/typedefs.h

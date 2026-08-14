@@ -1,0 +1,20 @@
+CMakeFiles/libowfat.dir/lib/shell/shell_errorn.c.o: \
+ /home/roman/Projects/shish/lib/shell/shell_errorn.c \
+ /home/roman/Projects/shish/lib/shell/../shell.h \
+ /home/roman/Projects/shish/lib/shell/../buffer.h \
+ /home/roman/Projects/shish/lib/shell/../typedefs.h \
+ /usr/include/i386-linux-musl/sys/types.h \
+ /usr/include/i386-linux-musl/features.h \
+ /usr/include/i386-linux-musl/bits/alltypes.h \
+ /usr/include/i386-linux-musl/endian.h \
+ /usr/include/i386-linux-musl/sys/select.h \
+ /usr/include/i386-linux-musl/time.h \
+ /home/roman/Projects/shish/lib/shell/../stralloc.h \
+ /usr/include/i386-linux-musl/stdlib.h \
+ /usr/include/i386-linux-musl/alloca.h \
+ /usr/include/i386-linux-musl/limits.h \
+ /usr/include/i386-linux-musl/bits/limits.h \
+ /usr/include/i386-linux-musl/errno.h \
+ /usr/include/i386-linux-musl/bits/errno.h \
+ /usr/include/i386-linux-musl/string.h \
+ /usr/include/i386-linux-musl/strings.h

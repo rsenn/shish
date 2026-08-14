@@ -1,0 +1,32 @@
+CMakeFiles/libshell.dir/src/builtin/builtin_ln.c.o: \
+ /home/roman/Projects/shish/src/builtin/builtin_ln.c \
+ /home/roman/Projects/shish/src/builtin/../builtin.h \
+ /usr/include/i386-linux-musl/stdlib.h \
+ /usr/include/i386-linux-musl/features.h \
+ /usr/include/i386-linux-musl/bits/alltypes.h \
+ /usr/include/i386-linux-musl/alloca.h \
+ /home/roman/Projects/shish/src/builtin/../fdtable.h \
+ /home/roman/Projects/shish/src/builtin/../fd.h \
+ /usr/include/i386-linux-musl/fcntl.h \
+ /usr/include/i386-linux-musl/bits/fcntl.h \
+ /usr/include/i386-linux-musl/sys/types.h \
+ /usr/include/i386-linux-musl/endian.h \
+ /usr/include/i386-linux-musl/sys/select.h \
+ /home/roman/Projects/shish/src/builtin/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/builtin/../../lib/typedefs.h \
+ /usr/include/i386-linux-musl/time.h \
+ /home/roman/Projects/shish/src/builtin/../../lib/shell.h \
+ /home/roman/Projects/shish/src/builtin/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/builtin/../../lib/stralloc.h \
+ /usr/include/i386-linux-musl/limits.h \
+ /usr/include/i386-linux-musl/bits/limits.h \
+ /home/roman/Projects/shish/src/builtin/../../lib/stralloc.h \
+ /home/roman/Projects/shish/src/builtin/../../lib/windoze.h \
+ /home/roman/Projects/shish/src/builtin/../../lib/alloc.h \
+ /home/roman/Projects/shish/build/i686-linux-musl/config.h \
+ /home/roman/Projects/shish/src/builtin/../../lib/shell.h \
+ /usr/include/i386-linux-musl/sys/stat.h \
+ /usr/include/i386-linux-musl/bits/stat.h \
+ /usr/include/i386-linux-musl/unistd.h \
+ /usr/include/i386-linux-musl/bits/posix.h \
+ /usr/include/i386-linux-musl/libgen.h

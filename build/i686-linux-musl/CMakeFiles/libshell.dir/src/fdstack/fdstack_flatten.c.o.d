@@ -1,0 +1,27 @@
+CMakeFiles/libshell.dir/src/fdstack/fdstack_flatten.c.o: \
+ /home/roman/Projects/shish/src/fdstack/fdstack_flatten.c \
+ /home/roman/Projects/shish/src/fdstack/../fd.h \
+ /usr/include/i386-linux-musl/fcntl.h \
+ /usr/include/i386-linux-musl/features.h \
+ /usr/include/i386-linux-musl/bits/alltypes.h \
+ /usr/include/i386-linux-musl/bits/fcntl.h \
+ /usr/include/i386-linux-musl/sys/types.h \
+ /usr/include/i386-linux-musl/endian.h \
+ /usr/include/i386-linux-musl/sys/select.h \
+ /home/roman/Projects/shish/src/fdstack/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/fdstack/../../lib/typedefs.h \
+ /usr/include/i386-linux-musl/time.h \
+ /home/roman/Projects/shish/src/fdstack/../../lib/shell.h \
+ /home/roman/Projects/shish/src/fdstack/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/fdstack/../../lib/stralloc.h \
+ /usr/include/i386-linux-musl/stdlib.h \
+ /usr/include/i386-linux-musl/alloca.h \
+ /usr/include/i386-linux-musl/limits.h \
+ /usr/include/i386-linux-musl/bits/limits.h \
+ /home/roman/Projects/shish/src/fdstack/../../lib/stralloc.h \
+ /home/roman/Projects/shish/src/fdstack/../../lib/windoze.h \
+ /home/roman/Projects/shish/src/fdstack/../../lib/alloc.h \
+ /home/roman/Projects/shish/build/i686-linux-musl/config.h \
+ /home/roman/Projects/shish/src/fdstack/../fdtable.h \
+ /home/roman/Projects/shish/src/fdstack/../fd.h \
+ /home/roman/Projects/shish/src/fdstack/../fdstack.h

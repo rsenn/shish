@@ -1,0 +1,3 @@
+/tmp/bin/shformat
+/tmp/bin/shparse2ast
+/tmp/bin/shish

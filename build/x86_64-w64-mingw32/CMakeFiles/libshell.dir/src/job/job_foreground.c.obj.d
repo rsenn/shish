@@ -1,0 +1,42 @@
+CMakeFiles/libshell.dir/src/job/job_foreground.c.obj: \
+ /home/roman/Projects/shish/src/job/job_foreground.c \
+ /home/roman/Projects/shish/src/job/../job.h \
+ /usr/share/mingw-w64/include/signal.h \
+ /usr/share/mingw-w64/include/crtdefs.h \
+ /usr/share/mingw-w64/include/corecrt.h \
+ /usr/share/mingw-w64/include/_mingw.h \
+ /usr/share/mingw-w64/include/_mingw_mac.h \
+ /usr/share/mingw-w64/include/_mingw_secapi.h \
+ /usr/share/mingw-w64/include/vadefs.h \
+ /usr/share/mingw-w64/include/sdks/_mingw_ddk.h \
+ /usr/share/mingw-w64/include/pthread_signal.h \
+ /usr/lib/gcc/x86_64-w64-mingw32/13-win32/include/stdbool.h \
+ /usr/lib/gcc/x86_64-w64-mingw32/13-win32/include/stdint.h \
+ /usr/share/mingw-w64/include/stdint.h \
+ /usr/lib/gcc/x86_64-w64-mingw32/13-win32/include/stddef.h \
+ /usr/share/mingw-w64/include/stddef.h \
+ /usr/share/mingw-w64/include/sys/types.h \
+ /usr/share/mingw-w64/include/_mingw_off_t.h \
+ /home/roman/Projects/shish/src/job/../../lib/windoze.h \
+ /usr/share/mingw-w64/include/io.h /usr/share/mingw-w64/include/string.h \
+ /usr/share/mingw-w64/include/sec_api/string_s.h \
+ /usr/share/mingw-w64/include/direct.h \
+ /home/roman/Projects/shish/src/job/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/job/../../lib/typedefs.h \
+ /usr/share/mingw-w64/include/time.h \
+ /usr/share/mingw-w64/include/sys/timeb.h \
+ /usr/share/mingw-w64/include/sec_api/sys/timeb_s.h \
+ /usr/share/mingw-w64/include/_timeval.h \
+ /usr/share/mingw-w64/include/pthread_time.h \
+ /home/roman/Projects/shish/src/job/../../lib/sig.h \
+ /home/roman/Projects/shish/src/job/../../lib/windoze.h \
+ /usr/share/mingw-w64/include/errno.h \
+ /home/roman/Projects/shish/src/job/../term.h \
+ /home/roman/Projects/shish/src/job/../../lib/stralloc.h \
+ /home/roman/Projects/shish/src/job/../../lib/sig.h \
+ /usr/share/mingw-w64/include/unistd.h \
+ /usr/share/mingw-w64/include/process.h \
+ /usr/share/mingw-w64/include/corecrt_startup.h \
+ /usr/share/mingw-w64/include/getopt.h \
+ /usr/share/mingw-w64/include/pthread_unistd.h \
+ /usr/share/mingw-w64/include/assert.h

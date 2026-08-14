@@ -1,0 +1,34 @@
+CMakeFiles/libshell.dir/src/var/var_lexhash.c.o: \
+ /home/roman/Projects/shish/src/var/var_lexhash.c \
+ /home/roman/Projects/shish/src/var/../fd.h \
+ /usr/include/x86_64-linux-musl/fcntl.h \
+ /usr/include/x86_64-linux-musl/features.h \
+ /usr/include/x86_64-linux-musl/bits/alltypes.h \
+ /usr/include/x86_64-linux-musl/bits/fcntl.h \
+ /usr/include/x86_64-linux-musl/sys/types.h \
+ /usr/include/x86_64-linux-musl/endian.h \
+ /usr/include/x86_64-linux-musl/sys/select.h \
+ /home/roman/Projects/shish/src/var/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/var/../../lib/typedefs.h \
+ /usr/include/x86_64-linux-musl/time.h \
+ /home/roman/Projects/shish/src/var/../../lib/shell.h \
+ /home/roman/Projects/shish/src/var/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/var/../../lib/stralloc.h \
+ /usr/include/x86_64-linux-musl/stdlib.h \
+ /usr/include/x86_64-linux-musl/alloca.h \
+ /usr/include/x86_64-linux-musl/limits.h \
+ /usr/include/x86_64-linux-musl/bits/limits.h \
+ /home/roman/Projects/shish/src/var/../../lib/stralloc.h \
+ /home/roman/Projects/shish/src/var/../../lib/windoze.h \
+ /home/roman/Projects/shish/src/var/../../lib/alloc.h \
+ /home/roman/Projects/shish/build/x86_64-linux-musl/config.h \
+ /home/roman/Projects/shish/src/var/../../lib/fmt.h \
+ /home/roman/Projects/shish/src/var/../../lib/uint32.h \
+ /usr/include/x86_64-linux-musl/stdint.h \
+ /usr/include/x86_64-linux-musl/bits/stdint.h \
+ /home/roman/Projects/shish/src/var/../../lib/uint64.h \
+ /home/roman/Projects/shish/src/var/../var.h \
+ /home/roman/Projects/shish/src/var/../../lib/uint16.h \
+ /home/roman/Projects/shish/src/var/../../lib/uint64.h \
+ /home/roman/Projects/shish/src/var/../vartab.h \
+ /home/roman/Projects/shish/src/var/../var.h

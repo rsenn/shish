@@ -1,0 +1,14 @@
+CMakeFiles/libowfat.dir/lib/fmt/fmt_xlonglong.c.o: \
+ /home/roman/Projects/shish/lib/fmt/fmt_xlonglong.c \
+ /home/roman/Projects/shish/lib/fmt/../fmt.h \
+ /home/roman/Projects/shish/lib/fmt/../typedefs.h \
+ /usr/include/i386-linux-musl/sys/types.h \
+ /usr/include/i386-linux-musl/features.h \
+ /usr/include/i386-linux-musl/bits/alltypes.h \
+ /usr/include/i386-linux-musl/endian.h \
+ /usr/include/i386-linux-musl/sys/select.h \
+ /usr/include/i386-linux-musl/time.h \
+ /home/roman/Projects/shish/lib/fmt/../uint32.h \
+ /usr/include/i386-linux-musl/stdint.h \
+ /usr/include/i386-linux-musl/bits/stdint.h \
+ /home/roman/Projects/shish/lib/fmt/../uint64.h

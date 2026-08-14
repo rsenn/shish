@@ -1,0 +1,1345 @@
+Start testing: Jul 30 22:33 CEST
+----------------------------------------------------------
+1/141 Testing: bourne-compat.sh
+1/141 Test: bourne-compat.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/bourne-compat.sh"
+Directory: /mnt/data/Projects/shish
+"bourne-compat.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+a function calling (exit N) in a subshell, then checked with &&, must report success for N=0: [32mOK[0m
+a function calling (exit N) in a subshell, then checked with ||, must report failure for N=1: [32mOK[0m
+a function using a plain 'return 0' must report success: [32mOK[0m
+a function using a plain 'return 1' must report failure: [32mOK[0m
+'set x' inside a subshell run from an if-condition must make $1 visible to a following && test in that same subshell: [32mOK[0m
+nested $(...) command substitution must not eat or duplicate any output: [32mOK[0m
+'test -x /' must report the root directory as executable (searchable): [32mOK[0m
+the concatenated as_bourne_compatible+as_required script must exit 0: [32mOK[0m
+the concatenated as_bourne_compatible+as_required script must print no failure diagnostics: [32mOK[0m
+Tests succeeded: 9
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"bourne-compat.sh" end time: Jul 30 22:33 CEST
+"bourne-compat.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/141 Testing: bquote.sh
+2/141 Test: bquote.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/bquote.sh"
+Directory: /mnt/data/Projects/shish
+"bquote.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+backquote expansion must capture the command's output: [32mOK[0m
+backquote expansion assigned straight to a variable must not be field-split (embedded newline preserved): [32mOK[0m
+backquote expansion of a silent command must be empty: [32mOK[0m
+Tests succeeded: 3
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"bquote.sh" end time: Jul 30 22:33 CEST
+"bquote.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/141 Testing: builtin-basename.sh
+3/141 Test: builtin-basename.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/builtin-basename.sh"
+Directory: /mnt/data/Projects/shish
+"builtin-basename.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+a plain path strips everything up to the final '/': [32mOK[0m
+a trailing slash on the path doesn't change the result: [32mOK[0m
+a bare name with no '/' at all is returned unchanged: [32mOK[0m
+a bare '/' is returned unchanged: [32mOK[0m
+a matching SUFFIX is stripped after the directory components: [32mOK[0m
+SUFFIX stripping works for single-character extensions too: [32mOK[0m
+a non-matching SUFFIX is left alone, not stripped: [32mOK[0m
+SUFFIX is not stripped when it equals the entire resulting name: [32mOK[0m
+SUFFIX stripping still applies after a trailing slash on the path: [32mOK[0m
+an empty SUFFIX operand strips nothing: [32mOK[0m
+Tests succeeded: 10
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-basename.sh" end time: Jul 30 22:33 CEST
+"builtin-basename.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/141 Testing: builtin-expr.sh
+4/141 Test: builtin-expr.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/builtin-expr.sh"
+Directory: /mnt/data/Projects/shish
+"builtin-expr.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+expr STRING : PATTERN strips a file extension via a capture group: [32mOK[0m
+expr STRING : PATTERN works for a different extension: [32mOK[0m
+expr STRING : PATTERN with no capture group reports the match length: [32mOK[0m
+expr STRING : PATTERN matches a literal prefix and reports its length: [32mOK[0m
+expr STRING : PATTERN honors a leading ^ anchor: [32mOK[0m
+expr STRING : PATTERN honors a trailing $ anchor on a full match: [32mOK[0m
+expr STRING : PATTERN's trailing $ anchor correctly rejects a non-full match: [32mOK[0m
+expr STRING : PATTERN matches a bracket-expression range: [32mOK[0m
+expr STRING : PATTERN combines a bracket range with a following capture group: [32mOK[0m
+expr STRING : PATTERN honors bracket-expression negation (^): [32mOK[0m
+expr STRING : PATTERN matches a POSIX [:alpha:] character class: [32mOK[0m
+expr STRING : PATTERN with multiple groups reports only the first: [32mOK[0m
+expr STRING : PATTERN's \* still matches a literal star: [32mOK[0m
+expr STRING : PATTERN: a bare leading * in the pattern is literal, so it doesn't match a string without one: [32mOK[0m
+expr STRING : PATTERN with no match and no group reports 0: [32mOK[0m
+expr STRING : PATTERN with no match exits 1: [32mOK[0m
+expr STRING : PATTERN with no match (bracket expression, no group) also reports 0: [32mOK[0m
+Tests succeeded: 17
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-expr.sh" end time: Jul 30 22:33 CEST
+"builtin-expr.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/141 Testing: builtin-hash.sh
+5/141 Test: builtin-hash.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/builtin-hash.sh"
+Directory: /mnt/data/Projects/shish
+"builtin-hash.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+running a builtin once hashes it, and it shows up in the plain table: [32mOK[0m
+hash -d forgets exactly the named entry: [32mOK[0m
+tests/builtin-hash.sh:18:1: hash: this-name-was-never-hashed: not found
+hash -d on an unknown name fails with a non-zero exit status: [32mOK[0m
+sanity: the table has true and false entries before hash -r: [32mOK[0m
+hash -r forgets every remembered entry, including true and false: [32mOK[0m
+hash -p pathname name makes that name runnable via the given pathname: [32mOK[0m
+hash -l reprints a hashed pathname entry as a reusable "hash -p ..." line: [32mOK[0m
+sanity: true is not hashed right after hash -r: [32mOK[0m
+a bare "hash name" (no options) hashes that name without running it: [32mOK[0m
+Tests succeeded: 9
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-hash.sh" end time: Jul 30 22:33 CEST
+"builtin-hash.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/141 Testing: builtin-kill.sh
+6/141 Test: builtin-kill.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/builtin-kill.sh"
+Directory: /mnt/data/Projects/shish
+"builtin-kill.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+[1] 2693769
+kill -0 on a live pid reports success: [32mOK[0m
+tests/builtin-kill.sh:23:1: kill: 2693769: No such process
+kill -TERM actually terminates the process, confirmed via a following kill -0: [32mOK[0m
+[1] 2693772
+tests/builtin-kill.sh:30:1: kill: 2693772: No such process
+kill -9 (numeric signal) terminates the process: [32mOK[0m
+[1] 2693811
+tests/builtin-kill.sh:37:1: kill: 2693811: No such process
+kill -KILL (bare name) terminates the process: [32mOK[0m
+[1] 2693835
+process 2693835 signaled: KILL
+tests/builtin-kill.sh:44:1: kill: 2693835: No such process
+kill -SIGKILL (SIG-prefixed name, case-insensitive) terminates the process: [32mOK[0m
+[1] 2693925
+tests/builtin-kill.sh:51:1: kill: 2693925: No such process
+kill %job-spec resolves the job and terminates it: [32mOK[0m
+tests/builtin-kill.sh:54:1: kill: -FOOBAR: invalid signal specification
+an unrecognized signal name fails with a non-zero exit status: [32mOK[0m
+tests/builtin-kill.sh:57:1: kill: too few arguments
+kill with no operands fails with a non-zero exit status: [32mOK[0m
+tests/builtin-kill.sh:60:1: kill: 999999: No such process
+kill -0 on a pid that doesn't exist fails with a non-zero exit status: [32mOK[0m
+kill -0 on the shell's own pid succeeds: [32mOK[0m
+Tests succeeded: 10
+Tests failed: 0
+Success
+<end of output>
+Test time =   1.53 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-kill.sh" end time: Jul 30 22:33 CEST
+"builtin-kill.sh" time elapsed: 00:00:01
+----------------------------------------------------------
+
+7/141 Testing: builtin-local.sh
+7/141 Test: builtin-local.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/builtin-local.sh"
+Directory: /mnt/data/Projects/shish
+"builtin-local.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+declared-without-value local starts unset: [32mOK[0m
+declared-with-value local gets its initializer: [32mOK[0m
+local var reflects an assignment made inside its function: [32mOK[0m
+local var must not leak out of the function that declared it: [32mOK[0m
+local var must not leak out of the function that declared it: [32mOK[0m
+a plain (non-local) assignment inside a function must leak to the global scope: [32mOK[0m
+Tests succeeded: 6
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-local.sh" end time: Jul 30 22:33 CEST
+"builtin-local.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/141 Testing: builtin-mkdir.sh
+8/141 Test: builtin-mkdir.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/builtin-mkdir.sh"
+Directory: /mnt/data/Projects/shish
+"builtin-mkdir.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+a plain mkdir on a not-yet-existing directory succeeds: [32mOK[0m
+the directory actually exists afterward: [32mOK[0m
+a plain mkdir refuses to create a directory whose parent is missing: [32mOK[0m
+mkdir -p on a relative multi-component path succeeds: [32mOK[0m
+every component in the relative chain was actually created: [32mOK[0m
+mkdir -p on an absolute multi-component path succeeds: [32mOK[0m
+every component in the absolute chain was actually created, including right after the leading /: [32mOK[0m
+mkdir -p tolerates repeated slashes between components: [32mOK[0m
+the directory chain exists despite the repeated slashes in the operand: [32mOK[0m
+mkdir -p tolerates a trailing slash on the operand: [32mOK[0m
+the directory chain exists despite the trailing slash: [32mOK[0m
+mkdir -p on an already-fully-existing path succeeds rather than erroring: [32mOK[0m
+Tests succeeded: 12
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-mkdir.sh" end time: Jul 30 22:33 CEST
+"builtin-mkdir.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/141 Testing: builtin-read.sh
+9/141 Test: builtin-read.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/builtin-read.sh"
+Directory: /mnt/data/Projects/shish
+"builtin-read.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+read must capture a single-word line: [32mOK[0m
+read splits into the 1st variable: [32mOK[0m
+read splits into the 2nd variable: [32mOK[0m
+read splits into the 3rd variable: [32mOK[0m
+read splits into the 4th variable: [32mOK[0m
+read puts every remaining field into the last variable: [32mOK[0m
+read -r must leave backslashes untouched: [32mOK[0m
+read -n N must stop after N characters: [32mOK[0m
+read -d must split on the given delimiter instead of newline: [32mOK[0m
+read -u must read the 1st line from the given fd: [32mOK[0m
+read -u must read the 2nd line from the same fd on the next call: [32mOK[0m
+Tests succeeded: 11
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-read.sh" end time: Jul 30 22:33 CEST
+"builtin-read.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/141 Testing: builtin-rm.sh
+10/141 Test: builtin-rm.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/builtin-rm.sh"
+Directory: /mnt/data/Projects/shish
+"builtin-rm.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+a plain rm on a single existing file succeeds: [32mOK[0m
+the file is actually gone afterward: [32mOK[0m
+a plain rm refuses to remove a directory without -r: [32mOK[0m
+rm -r on a populated directory tree succeeds: [32mOK[0m
+the whole tree is gone afterward, including the top-level directory itself: [32mOK[0m
+rm -r on a symlink-to-directory succeeds: [32mOK[0m
+the symlink itself is gone: [32mOK[0m
+the real directory's contents survive -- rm -r must not follow the symlink into it: [32mOK[0m
+rm -rf on a nonexistent path succeeds silently: [32mOK[0m
+rm -r without -f on a nonexistent path fails: [32mOK[0m
+rm -rv reports one "removed" line per file and per directory removed (f, sub/, vtree/ itself): [32mOK[0m
+rm -R (capital) works the same as rm -r: [32mOK[0m
+Tests succeeded: 12
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-rm.sh" end time: Jul 30 22:33 CEST
+"builtin-rm.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/141 Testing: builtin-rmdir.sh
+11/141 Test: builtin-rmdir.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/builtin-rmdir.sh"
+Directory: /mnt/data/Projects/shish
+"builtin-rmdir.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+a plain rmdir on an empty directory succeeds: [32mOK[0m
+the directory is actually gone afterward: [32mOK[0m
+a plain rmdir refuses to remove a non-empty directory: [32mOK[0m
+rmdir -p on a/b/c succeeds: [32mOK[0m
+a/b/c, a/b, and a are all gone -- the whole chain was climbed: [32mOK[0m
+rmdir -p reports failure once an ancestor isn't empty: [32mOK[0m
+the non-empty ancestor itself survives: [32mOK[0m
+the originally-named (now-empty) directory was still removed before the climb stopped: [32mOK[0m
+rmdir -p accepts a trailing slash on the operand: [32mOK[0m
+the trailing slash doesn't stop the ancestor climb from working: [32mOK[0m
+rmdir -p on a bare, slash-free name behaves like a plain rmdir: [32mOK[0m
+and it actually removed it: [32mOK[0m
+rmdir -pv reports one line for the named directory and one per ancestor climbed: [32mOK[0m
+Tests succeeded: 13
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-rmdir.sh" end time: Jul 30 22:33 CEST
+"builtin-rmdir.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/141 Testing: builtin-test.sh
+12/141 Test: builtin-test.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/builtin-test.sh"
+Directory: /mnt/data/Projects/shish
+"builtin-test.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+3 -lt 10: [32mOK[0m
+! ( 3 -lt 10 ): [32mOK[0m
+( 3 -lt 10 ) -a ( 10 -gt 1 ): [32mOK[0m
+( 10 -gt 3 ) -a ( 1 -lt 10 ): [32mOK[0m
+( 10 -gt 3 ) -a ! ( 1 -gt 10 ): [32mOK[0m
+( 3 -lt 10 -a 10 -gt 1 ): [32mOK[0m
+1 -gt 0: [32mOK[0m
+0 -gt 0: [32mOK[0m
+negative-lhs -gt comparison: [32mOK[0m
+test -e on this test script itself: [32mOK[0m
+test -e CMakeLists.txt: [32mOK[0m
+test -c /dev/null is a char device: [32mOK[0m
+test -c CMakeLists.txt is not a char device: [32mOK[0m
+test -d .: [32mOK[0m
+test -d CMakeLists.txt is not a directory: [32mOK[0m
+test -f CMakeLists.txt: [32mOK[0m
+test -f . is not a regular file: [32mOK[0m
+a non-empty single-arg string test: [32mOK[0m
+an empty single-arg string test: [32mOK[0m
+test -n on a non-empty string: [32mOK[0m
+test -n on an empty string: [32mOK[0m
+test -z on an empty string: [32mOK[0m
+test -z on a non-empty string: [32mOK[0m
+negated test -n on a non-empty string: [32mOK[0m
+negated test -n on an empty string: [32mOK[0m
+Tests succeeded: 25
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-test.sh" end time: Jul 30 22:33 CEST
+"builtin-test.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+13/141 Testing: builtin-trap.sh
+13/141 Test: builtin-trap.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/builtin-trap.sh"
+Directory: /mnt/data/Projects/shish
+"builtin-trap.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+builtin_trap 15 
+"code": echo caught-term
+trap_uninstall 15
+trap handler 15
+a trap on TERM runs when TERM is delivered, and execution continues afterward: [32mOK[0m
+builtin_trap 10 
+"code": echo first
+trap_uninstall 10
+builtin_trap 10 
+"code": echo second
+trap handler 10
+retrapping the same signal replaces the handler -- only the newest one fires, not both: [32mOK[0m
+builtin_trap 12 
+"code": echo iter-0
+trap_uninstall 12
+builtin_trap 12 
+"code": echo iter-1
+builtin_trap 12 
+"code": echo iter-2
+builtin_trap 12 
+"code": echo iter-3
+builtin_trap 12 
+"code": echo iter-4
+builtin_trap 12 
+"code": echo iter-5
+builtin_trap 12 
+"code": echo iter-6
+builtin_trap 12 
+"code": echo iter-7
+builtin_trap 12 
+"code": echo iter-8
+builtin_trap 12 
+"code": echo iter-9
+builtin_trap 12 
+"code": echo iter-10
+builtin_trap 12 
+"code": echo iter-11
+builtin_trap 12 
+"code": echo iter-12
+builtin_trap 12 
+"code": echo iter-13
+builtin_trap 12 
+"code": echo iter-14
+builtin_trap 12 
+"code": echo iter-15
+builtin_trap 12 
+"code": echo iter-16
+builtin_trap 12 
+"code": echo iter-17
+builtin_trap 12 
+"code": echo iter-18
+builtin_trap 12 
+"code": echo iter-19
+builtin_trap 12 
+"code": echo iter-20
+builtin_trap 12 
+"code": echo iter-21
+builtin_trap 12 
+"code": echo iter-22
+builtin_trap 12 
+"code": echo iter-23
+builtin_trap 12 
+"code": echo iter-24
+builtin_trap 12 
+"code": echo iter-25
+builtin_trap 12 
+"code": echo iter-26
+builtin_trap 12 
+"code": echo iter-27
+builtin_trap 12 
+"code": echo iter-28
+builtin_trap 12 
+"code": echo iter-29
+trap handler 12
+retrapping a signal 30 times (past sig_push()'s 16-deep stack) still works, and only the last trap fires: [32mOK[0m
+builtin_trap 15 
+"code": echo should-not-print
+trap_uninstall 15
+builtin_trap 15 
+"code": -
+trap - SIG resets to default and trap -p SIG then prints nothing for it: [32mOK[0m
+builtin_trap 15 
+"code": echo t1
+trap_uninstall 15
+builtin_trap 2 
+"code": echo t2
+trap_uninstall 2
+trap -p with no operand lists every installed trap: [32mOK[0m
+builtin_trap 0 
+"code": echo should-show-in-listing
+trap_uninstall 0
+builtin_trap 0 
+"code": -
+an EXIT trap can be installed and shows up in trap -p's listing: [32mOK[0m
+builtin_trap 0 
+"code": echo trap-ran
+trap_uninstall 0
+trap handler 0
+a subshell's own EXIT trap fires -- into the subshell's own capture -- when its body falls off the end: [32mOK[0m
+builtin_trap 0 
+"code": echo trap-ran
+trap_uninstall 0
+trap handler 0
+a subshell's own EXIT trap fires exactly once (not twice) when the subshell exits via an explicit 'exit': [32mOK[0m
+builtin_trap 0 
+"code": echo inner-trap
+trap_uninstall 0
+trap handler 0
+inner-trap
+an EXIT trap set inside a subshell must not leak into the parent shell's trap list: [32mOK[0m
+builtin_trap 0 
+"code": echo outer-trap
+trap_uninstall 0
+builtin_trap 0 
+"code": echo inner-trap
+trap handler 0
+trap handler 0
+an outer EXIT trap still fires at the right time, unaffected by a same-named trap set and already run inside a nested subshell: [32mOK[0m
+Tests succeeded: 10
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.65 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-trap.sh" end time: Jul 30 22:33 CEST
+"builtin-trap.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+14/141 Testing: cmd-subst.sh
+14/141 Test: cmd-subst.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/cmd-subst.sh"
+Directory: /mnt/data/Projects/shish
+"cmd-subst.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+$(...) must capture a simple command's stdout: [32mOK[0m
+a here-doc with an unquoted delimiter must expand parameters in its body: [32mOK[0m
+backquote command substitution must capture printf's output: [32mOK[0m
+$(...) must nest without needing to escape the inner one: [32mOK[0m
+$(...) must see variables assigned earlier in the same script: [32mOK[0m
+Tests succeeded: 5
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"cmd-subst.sh" end time: Jul 30 22:33 CEST
+"cmd-subst.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+15/141 Testing: debug.sh
+15/141 Test: debug.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/debug.sh"
+Directory: /mnt/data/Projects/shish
+"debug.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+type must identify cd as a shell builtin: [32mOK[0m
+type must identify set as a shell builtin: [32mOK[0m
++++ true
++++ false
++++ :
++++ echo ok
++ RESULT='ok'
++ set +x
+set -x must not change what a command list actually does: [32mOK[0m
+a function's own "set --" changes its own $#: [32mOK[0m
+a function's own "set --" changes its own $1: [32mOK[0m
+the caller's $# must survive a callee's "set --": [32mOK[0m
+the caller's $1 must survive a callee's "set --": [32mOK[0m
+a function's own "set --" changes its own $#: [32mOK[0m
+a function's own "set --" changes its own $1: [32mOK[0m
+a brace group must not leak a called function's positional params either: [32mOK[0m
+Tests succeeded: 10
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"debug.sh" end time: Jul 30 22:33 CEST
+"debug.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+16/141 Testing: fixed.sh
+16/141 Test: fixed.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/fixed.sh"
+Directory: /mnt/data/Projects/shish
+"fixed.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+subshell-pipeline must not duplicate following commands: [32mOK[0m
+a directory on PATH must not shadow a real executable further down PATH: [32mOK[0m
+invoking a directory via a direct path must fail, not succeed: [32mOK[0m
+command not found on PATH must exit 127: [32mOK[0m
+tests/fixed.sh:72:1: chmod: -x: invalid option
+command found but not executable must exit 126: [32mOK[0m
+an unexecutable file (ENOEXEC) must exit 126, not crash or exit 0: [32mOK[0m
+command-not-found message must go through its own redirection, not the shell's original stderr: [32mOK[0m
+read -d must not leave the delimiter in the captured value: [32mOK[0m
+arithmetic expansion must accept a single-character bare variable name: [32mOK[0m
+[1] 2693979
+backgrounding a simple builtin followed by more on the same line must not crash or duplicate: [32mOK[0m
+[1] 2693981
+backgrounding a compound command followed by more on the same line must not fail to parse or duplicate: [32mOK[0m
+export -p after exporting an unset variable must not crash: [32mOK[0m
+export -p must list a declared-but-unassigned variable with no ='value': [32mOK[0m
+an exported-but-unassigned variable must not itself appear in a child's environment: [32mOK[0m
+an exported-but-unassigned variable must not truncate the rest of a child's environment: [32mOK[0m
+tests/fixed.sh:192:1: READONLYVAR: readonly variable
+assigning to a readonly variable via a redirected command must report failure, not crash: [32mOK[0m
+a rejected readonly assignment must not change the variable's value: [32mOK[0m
+command substitution of a 2-stage pipeline must capture its output: [32mOK[0m
+command substitution of a pipeline must still work when input is multi-line: [32mOK[0m
+command substitution of a 3-stage pipeline must capture the last stage's output: [32mOK[0m
+a command substitution with its own pipeline, nested inside another command substitution, must not steal the outer one's output: [32mOK[0m
+command substitution of a plain (non-piped) simple command must still work: [32mOK[0m
+a 2-stage pipeline must still produce the right output: [32mOK[0m
+a 3-stage pipeline must still produce the right output: [32mOK[0m
+several 2-stage pipelines in a row must not corrupt job tracking badly enough to break the loop: [32mOK[0m
+[1] 2694012
+[2] 2694013
+the remaining job must be promoted to current ("+") once the previous current job is cleaned up: [32mOK[0m
+wait with no operands must report the exit status of the backgrounded job it waited for: [32mOK[0m
+[1] 2694021
+"$!" must expand to the backgrounded command's pid, not stay empty: [32mOK[0m
+[hi]
+a command substitution's internal pipeline must not print a job-completion banner: [32mOK[0m
+echo must print a dash-led word it doesn't recognize as an option, not error out: [32mOK[0m
+echo -n must still be recognized as an option: [32mOK[0m
+"set" with no args must dump variables even after a shopt flag was turned on: [32mOK[0m
+"set" with no args must also dump defined functions: [32mOK[0m
+[1] 2694027
+[1]+  Done                    sleep 0.5
+kill -STOP on a backgrounded job must be detected and reported as Stopped: [32mOK[0m
+"bg" (not "fg" via the mis-wired dispatch table) must actually resume the stopped job so "wait" sees it exit cleanly: [32mOK[0m
+a resumed-then-waited-for job must be fully reaped, not left listed by "jobs": [32mOK[0m
+[1] 2694037
+"fg" on a stopped job must resume it (no stack OOB crash on the bare no-operand form) and wait for it to finish: [32mOK[0m
+a job brought to the foreground and waited out must be fully reaped, not left listed by "jobs": [32mOK[0m
+"bg" on a job that was never stopped must report an error, not silently succeed: [32mOK[0m
+[2] 2694078
+job_print() must still format a running job's status line correctly after routing through job_banner(): [32mOK[0m
+"$?" right after a 2-stage pipeline (builtin | builtin) on the same line must be the last stage's status: [32mOK[0m
+"$?" right after a pipeline must be the LAST stage's status, not the first: [32mOK[0m
+"$?" after a 3-stage pipeline must still be the last stage's status: [32mOK[0m
+"$?" after a 3-stage pipeline ending in success must be 0: [32mOK[0m
+[1] 2694094
+backgrounding a pipeline ("cmd1 | cmd2 &") must itself report success as "$?", independent of what it later exits with: [32mOK[0m
+a command must resolve against PATH as it was at the time it's first run: [32mOK[0m
+the same command name run again after PATH changes must re-resolve, not reuse the stale cached path: [32mOK[0m
+plain foreground external/builtin commands must still work normally now that they get a real struct job: [32mOK[0m
+a quoted "$(cmd)" producing space-separated output must stay one word: [32mOK[0m
+an UNQUOTED $(cmd) must still field-split on IFS as before: [32mOK[0m
+a quoted "$(cmd)" assigned to a variable must keep its internal spaces: [32mOK[0m
+a quoted backquoted command substitution must also stay one word, not just "$(...)": [32mOK[0m
+"IFS=x read ..."'s prefix assignment must not persist past the command: [32mOK[0m
+"read"'s own prefix-scoped IFS must still take effect during the read itself: [32mOK[0m
+a function called with a prefix assignment must keep its own plain (non-local) global assignment, and the prefix assignment must not leak: [32mOK[0m
+"local" inside a function called with a prefix assignment must still shadow correctly: [32mOK[0m
+a single-quoted heredoc delimiter must suppress expansion in the body: [32mOK[0m
+a double-quoted heredoc delimiter must suppress expansion in the body: [32mOK[0m
+a backslash-escaped heredoc delimiter must suppress expansion in the body: [32mOK[0m
+an UNQUOTED heredoc delimiter must still expand its body as before: [32mOK[0m
+a heredoc delimiter with only PART of it quoted must still suppress expansion: [32mOK[0m
+printf %08x must zero-pad a hex conversion to the given width: [32mOK[0m
+printf %X must print uppercase hex digits: [32mOK[0m
+printf %5d must space-pad a decimal conversion to the given width: [32mOK[0m
+printf %-5d must left-justify within the given width: [32mOK[0m
+printf %+d must force a sign on a positive value: [32mOK[0m
+printf %.3d must zero-extend a decimal conversion to the given precision: [32mOK[0m
+printf %-8s must left-justify a string within the given width: [32mOK[0m
+printf %05d must keep the sign before zero-padding a negative value: [32mOK[0m
+a prefix assignment on "getopts" must not leak past the command: [32mOK[0m
+a prefix assignment on "alias" must not leak past the command: [32mOK[0m
+a prefix assignment on "unalias" must not leak past the command: [32mOK[0m
+a prefix assignment on "umask" must not leak past the command: [32mOK[0m
+a prefix assignment on "local" must not leak past the command: [32mOK[0m
+a quoted "$@" must expand an empty positional parameter to its own (empty) word: [32mOK[0m
+a for-loop over a quoted "$@" must iterate an empty positional parameter as its own (empty) word: [32mOK[0m
+a for-loop over an unquoted $@ with an empty positional parameter in the middle must not crash, and must still drop the empty word via field splitting: [32mOK[0m
+tests/fixed.sh:858:1: 9: not opened for writing
+"echo >&9" after "exec 9>&-" must fail instead of silently succeeding: [32mOK[0m
+tests/fixed.sh:862:1: 9: not opened for writing
+"echo >&9" after "exec 9>&-" must not produce any output: [32mOK[0m
+tests/fixed.sh:867:1: 9: not opened for reading
+"read <&9" after "exec 9<&-" must fail instead of silently succeeding: [32mOK[0m
+tests/fixed.sh:873:1: 9: not opened for writing
+a temporary (non-"exec") ">&-" on one command must not close the fd for commands after it: [32mOK[0m
+a "for" loop whose closing "done" lands exactly at end-of-input must still parse: [32mOK[0m
+an "if" whose closing "fi" lands exactly at end-of-input must still parse: [32mOK[0m
+sourcing a file whose last command (no trailing newline) fails must propagate that status: [32mOK[0m
+sanity: $(false) itself still produces no output: [32mOK[0m
+a plain assignment with no command substitution must reset status to 0, not carry over the previous command's: [32mOK[0m
+"X=$(cmd)" with no command name must reflect the substitution's own (successful) status: [32mOK[0m
+"X=$(cmd)" with no command name must reflect the substitution's own (failing) status: [32mOK[0m
+"X=$?" must still capture the PRECEDING command's status, not be treated as a substitution: [32mOK[0m
+tests/fixed.sh:970:1: 4: not opened for writing
+a nested subshell closing a fd an ancestor scope already had open must actually fail the redirection, not silently succeed: [32mOK[0m
+the ancestor scope's own fd must keep working after the nested scope's close/pop, with nothing leaked in between: [31mFAIL[0m
+a backquote substitution nested inside another (backslash-escaped) must actually run, not be left as literal text: [32mOK[0m
+a nested backquote substitution's own multiple commands/words must all run and field-split normally: [32mOK[0m
+a "$( )" substitution nested inside a backquoted one (no escaping needed for "$( )") must still work: [32mOK[0m
+a backquoted substitution nested inside a "$( )" one must still work (this direction never needed escaping and worked already): [32mOK[0m
+"\$" and "\\" inside a backquoted substitution must still unescape to "$"/"\" as POSIX 2.6.3 requires, alongside the new "\`" handling: [32mOK[0m
+a plain (non-nested) backquote substitution must still work exactly as before: [32mOK[0m
+an unquoted backquote substitution used directly as an argument must field-split on IFS, like "$( )" and a variable already did: [32mOK[0m
+a QUOTED backquote substitution used directly as an argument must still NOT field-split: [32mOK[0m
+reprinting a nested backquote substitution must re-emit it as "$( )" so the result still parses back to the same thing: [32mOK[0m
+reprinting a plain (non-nested) backquote substitution must still keep its original backquote syntax: [32mOK[0m
+a function whose body is "(...)" must isolate its own assignments from the caller, exactly like a bare "(...)" subshell: [32mOK[0m
+a subshell-bodied function's own exit status must still propagate to its caller: [32mOK[0m
+a subshell-bodied function must still see its own call arguments: [32mOK[0m
+an external command's "2>&1" inside a command substitution must actually be captured, not leak to the shell's real stderr: [32mOK[0m
+sanity: without "2>&1", an external command's stderr must still NOT be captured: [32mOK[0m
+the "[" test builtin (itself a glob-special character, see fixes/65) must still work correctly: [32mOK[0m
+sanity: "[" must still correctly report a false comparison: [32mOK[0m
+a bare wildcard as a command argument must actually glob-expand, even as the very last thing before end-of-input: [32mOK[0m
+a bare wildcard followed by more words must still glob-expand: [32mOK[0m
+a wildcard in a "for" loop's word list must glob-expand into separate words: [32mOK[0m
+a wildcard with no matches must fall back to the literal pattern text: [32mOK[0m
+a backslash-escaped wildcard must stay a literal, not glob-expand: [32mOK[0m
+a bracket-expression wildcard must glob-expand without leftover garbage appended to the first match: [32mOK[0m
+a POSIX bracket character class must actually match, not hang forever: [32mOK[0m
+a POSIX bracket character class must correctly NOT match a character outside the class: [32mOK[0m
+a different POSIX bracket character class (:digit:) must also match correctly: [32mOK[0m
+a bracket-expression collating symbol ([.x.]) must degrade to matching its single enclosed character: [32mOK[0m
+a bracket-expression equivalence class ([=x=]) must degrade to matching its single enclosed character: [32mOK[0m
+an unterminated/malformed bracket class must fall back to a literal '[' member instead of hanging: [32mOK[0m
+"$$" inside a command substitution must match the top-level shell's pid: [32mOK[0m
+"$$" inside a pipeline member (its own forked child) must still match the top-level shell's pid: [32mOK[0m
+"$$" inside a subshell must still match the top-level shell's pid: [32mOK[0m
+a variable holding literal backslashes must survive being re-substituted (quoted) as a command argument: [32mOK[0m
+a variable holding literal backslashes must survive being re-substituted (unquoted) as a command argument: [32mOK[0m
+sourcing a file via a command-substitution-built path must not corrupt an unrelated later substitution's buffer: [32mOK[0m
+an assignment mixing a literal prefix/suffix with a substituted value containing a real backslash must not lose that backslash: [32mOK[0m
+a plain fully-quoted command argument containing a real backslash must still match itself: [32mOK[0m
+a quoted-delimiter here-document body must preserve a real backslash verbatim: [32mOK[0m
+an unquoted-delimiter here-document body must still expand parameters and collapse an escaped backslash to one, matching double-quote rules: [32mOK[0m
+test with a single argument that looks like an unrecognized unary operator must just check non-emptiness: [32mOK[0m
+test with a single argument that looks like a real unary operator (missing its operand) must also just check non-emptiness: [32mOK[0m
+test -f with an actual operand must still perform the real file test, unaffected by the single-argument fix above: [32mOK[0m
+a multi-hop fd-alias rotation (3<&0, 4<&3, 3<&4) must still read from the original stdin: [32mOK[0m
+the classic 3>&1 1>&2 2>&3 3>&- stdout/stderr swap must land the right text on stdout: [32mOK[0m
+the classic 3>&1 1>&2 2>&3 3>&- stdout/stderr swap must land the right text on stderr: [32mOK[0m
+a bare-digit redirection after a -N-shaped argument and a quoted word must still be parsed as a redirection: [32mOK[0m
+same bare-digit-redirection case with a different -N digit: [32mOK[0m
+a plain (non-dash) preceding argument must still parse the following redirection correctly (no regression): [32mOK[0m
+case's universal * pattern must match a scrutinee value that starts with a literal dot: [32mOK[0m
+a bracket expression explicitly containing a literal dot must match a leading-dot scrutinee: [32mOK[0m
+a bracket expression with a quoted dot inside it must match a leading-dot scrutinee (the original BUGS repro): [32mOK[0m
+a fully-quoted bracket-expression-shaped case pattern is a literal string, not a live bracket expression: [32mOK[0m
+a fully-quoted bracket-expression-shaped case pattern must still match its own literal text: [32mOK[0m
+a backslash-escaped ] inside an unquoted bracket expression must still match a literal ] (no regression): [32mOK[0m
+a bracket expression with just the closing ] quoted inside it must still match a literal ] (no regression): [32mOK[0m
+${var#pattern} must match a leading dot with a single-char ? pattern: [32mOK[0m
+${var##pattern} must also match a leading dot with a single-char ? pattern: [32mOK[0m
+${var#pattern} with a leading * must still match through a leading dot: [32mOK[0m
+${var%pattern} smallest-suffix removal is unaffected by the fix (no regression): [32mOK[0m
+${var##pattern} largest-prefix removal is unaffected by the fix (no regression): [32mOK[0m
+a range between two [.symbol.] collating-symbol endpoints must match a value inside it: [32mOK[0m
+a [.symbol.]-[.symbol.] range must match its own start endpoint: [32mOK[0m
+a [.symbol.]-[.symbol.] range must match its own end endpoint: [32mOK[0m
+a [.symbol.]-[.symbol.] range must not match a value outside it: [32mOK[0m
+a range with one plain-char endpoint and one [.symbol.] endpoint must also fuse correctly: [32mOK[0m
+a standalone [.symbol.] (no following range) still matches its single character (no regression): [32mOK[0m
+an ordinary bare-character range is unaffected by the fix (no regression): [32mOK[0m
+a trailing dash right before the closing ] is still a literal member, not a range (no regression): [32mOK[0m
+<<- must strip leading tabs even on a line whose tabs are followed by an expansion: [32mOK[0m
+the later of two here-docs redirected to the same fd must fully win, with no leftover from the first: [32mOK[0m
+the same holds with three here-docs queued on one command line: [32mOK[0m
+[1] 2694115
+[2] 2694116
+backgrounding two jobs and waiting on both must still succeed: [32mOK[0m
+cat reading from a closed/invalid fd must report an error and stop, not spin forever: [32mOK[0m
+an 8-deep <& dup chain off a freshly-opened fd must still read the right data, not fail/hang on an unresolved fd: [32mOK[0m
+the same dup chain must also work for a forked external command, not just a builtin: [32mOK[0m
+a builtin reading stdin as a non-first pipeline member must see the actual piped data, not immediate EOF: [32mOK[0m
+the same holds for a pipeline that actually pushes multiple lines through the builtin: [32mOK[0m
+$LINENO inside an eval'd string must count from the eval call's own line, not always report 1: [32mOK[0m
+a backslash-newline inside a double-quoted string must be removed entirely, not leave a stray backslash behind: [32mOK[0m
+cat on a genuinely empty file must succeed, not report a spurious error: [32mOK[0m
+cat on a genuinely empty file must produce no output and no error message: [32mOK[0m
+a pipeline's builtin stage, forked from inside a function via a command substitution, must still produce the right output: [32mOK[0m
+the same construct must not crash the forked builtin's own process on exit: [32mOK[0m
+a here-doc whose closing delimiter is the last thing in the source, with no trailing newline, must still work: [32mOK[0m
+return inside a subshell must only end the subshell, not propagate out through the enclosing function: [32mOK[0m
+50000 iterations of a bare '[ ]' loop condition must not trigger a real glob(3) call per iteration: [32mOK[0m
+break inside a subshell must not escape to a loop outside it: [32mOK[0m
+break inside a function must not escape to a loop the function isn't lexically inside: [32mOK[0m
+break N must still cross ordinary nested loops with no function/subshell boundary in between: [32mOK[0m
+tests/fixed.sh:1929:1: cd: /mnt/data/Projects/shish/fixed.sh-ymyGwtei/-: No such file or directory
+a subshell's umask change must not leak into files created after the subshell exits, regardless of this machine's ambient umask: [32mOK[0m
+exit inside a function called from another function inside a subshell must terminate the subshell, not silently no-op: [32mOK[0m
+2000 iterations of exit-inside-a-function-inside-a-subshell must not crash or hang: [32mOK[0m
+a function defined inside a loop must not crash on the loop's second+ visit: [32mOK[0m
+a function defined and called inside an in-process subshell, repeated many times, must not crash: [32mOK[0m
+a foreground external command run by a non-interactive script must share the script's own process group, not get a separate one: [32mOK[0m
+a pipeline member run by a non-interactive script must share the script's own process group, not get a separate one: [32mOK[0m
+[1] 2694177
+a backgrounded external command run by a non-interactive script must share the script's own process group, not get a separate one: [32mOK[0m
+[1] 2694183
+[2] 2694184
+[3] 2694185
+[4] 2694186
+[5] 2694187
+[6] 2694188
+[7] 2694189
+[8] 2694190
+[9] 2694191
+[10] 2694192
+[11] 2694193
+[12] 2694194
+[13] 2694195
+[14] 2694196
+[15] 2694197
+[16] 2694198
+[17] 2694199
+[18] 2694200
+[19] 2694201
+[20] 2694202
+[21] 2694203
+[22] 2694204
+[23] 2694205
+[24] 2694206
+[25] 2694207
+[26] 2694208
+[27] 2694209
+[28] 2694210
+[29] 2694211
+[30] 2694212
+a non-interactive script must never print a job-done banner, even when a job is reaped asynchronously by the SIGCHLD handler ahead of job_wait(): [32mOK[0m
+builtin_trap 15 
+"code": echo caught
+trap_uninstall 15
+a signal trap uninstalled by its own subshell's exit before it's dispatched must not later kill the whole process as if it were untrapped: [32mOK[0m
+builtin_trap 15 
+"code": echo caught-term
+trap_uninstall 15
+trap handler 15
+a signal trap's own output must not get lost when its dispatch is deferred to a later, safe point: [32mOK[0m
+ln -s target name (name not an existing directory) must create the symlink, not fail with ENOTDIR: [32mOK[0m
+ln with more than one source and a destination that isn't an existing directory must fail cleanly, not silently link only the last source: [32mOK[0m
+set -e must abort the script right after a failing command, not let it continue: [32mOK[0m
+set -e must not fire for the controlling list of an if/while/until: [32mOK[0m
+set -e must fire for a failing command inside a function body, not just at the top level: [32mOK[0m
+set -e must not fire when an AND-OR list short-circuits on its non-last (exempt) operand, even though the list's own inherited result is nonzero: [32mOK[0m
+set -e must fire when an AND-OR list's actually-evaluated last operand fails: [32mOK[0m
+set -e must not fire for a "!"-negated command, regardless of its negated result: [32mOK[0m
+set -e must not fire on a 3+-operand OR chain's un-exempted middle operand -- only the chain's true last operand matters: [32mOK[0m
+set -e's exemption for an AND-OR list's non-last operand must survive into a function call reached while evaluating it: [32mOK[0m
+an AND-OR list's own exemption must survive being wrapped in a grouping -- confirmed against real bash: [32mOK[0m
+a grouping must not shield a genuinely non-exempt failure inside it, only an already-exempt one: [32mOK[0m
+and that failure must be reported as a nonzero exit status: [32mOK[0m
+unlike a grouping, a subshell's own returned status is opaque/independent and must still be checked normally at the outer level, even if the failure inside it was itself exempt: [32mOK[0m
+and that failure must be reported as a nonzero exit status: [32mOK[0m
+an AND-OR list's own exemption must survive being the last statement of an if-body: [32mOK[0m
+an AND-OR list's own exemption must survive being inside a for-loop body: [32mOK[0m
+a backslash-newline inside single quotes must be preserved literally, not silently removed: [32mOK[0m
+a heredoc with a quoted delimiter must preserve a backslash-newline in its body literally too, matching bash: [32mOK[0m
+"set -e" run inside a command substitution must not leak into the calling shell once it's done: [32mOK[0m
+a cd done inside a command substitution must still apply to that substitution's own execution: [32mOK[0m
+a cd done inside a command substitution must not change the calling shell's own cwd once it's done: [32mOK[0m
+test 1 -ne 2 must be a numeric not-equal comparison (true), not a file mtime one: [32mOK[0m
+test 1 -eq 2 must still correctly report false: [32mOK[0m
+test -nt must still correctly compare file mtimes, unaffected by the -ne/-nt disambiguation fix: [32mOK[0m
+test -ot must still correctly compare file mtimes too: [32mOK[0m
+a grouping's own later commands must still run when the whole grouping is piped into another command: [32mOK[0m
+same as above, with no failing command inside the grouping at all -- this was never really about the failure: [32mOK[0m
+a command whose own redirection fails must not run at all, and must report a nonzero exit status: [32mOK[0m
+tests/fixed.sh:2321:1: _no_such_file_: No such file or directory
+a bare redirection with no command at all must still be attempted and its failure reported: [32mOK[0m
+an ordinary, successful redirection on a real command must still work: [32mOK[0m
+seeding RANDOM with the same integer twice must produce the same sequence both times: [32mOK[0m
+assigning a non-integer (including empty) to RANDOM must turn off its magic and leave it holding that literal value: [32mOK[0m
+unset RANDOM must permanently disable its magic -- it stays an ordinary variable even after being reassigned: [32mOK[0m
+Tests succeeded: 221
+Tests failed: 1
+Fail: 1
+<end of output>
+Test time =   6.68 sec
+----------------------------------------------------------
+Test Failed.
+"fixed.sh" end time: Jul 30 22:33 CEST
+"fixed.sh" time elapsed: 00:00:06
+----------------------------------------------------------
+
+17/141 Testing: functions.sh
+17/141 Test: functions.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/functions.sh"
+Directory: /mnt/data/Projects/shish
+"functions.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+a function's explicit "return 0" must be its exit status: [32mOK[0m
+a function ending on a successful command must exit 0: [32mOK[0m
+a function's explicit "return N" must be its exit status: [32mOK[0m
+functions must run in the order they're called, each seeing the caller's variables, except a subshell-bodied one whose own assignments must stay isolated: [32mOK[0m
+a function's $# reflects the arguments it was called with: [32mOK[0m
+a function's positional params are its call arguments, in order: [32mOK[0m
+len() case-matched branch for a 1-char string: [32mOK[0m
+len() case-matched branch for a 3-char string: [32mOK[0m
+len() ${#1} fallback branch for a string longer than the matched cases: [32mOK[0m
+a recursive function must compute the right result (5! = 120): [32mOK[0m
+Tests succeeded: 10
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"functions.sh" end time: Jul 30 22:33 CEST
+"functions.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+18/141 Testing: here-doc.sh
+18/141 Test: here-doc.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/here-doc.sh"
+Directory: /mnt/data/Projects/shish
+"here-doc.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+unquoted delimiter expands parameters: [32mOK[0m
+unquoted delimiter expands arithmetic: [32mOK[0m
+unquoted delimiter expands command substitution: [32mOK[0m
+backslash-newline in an unquoted here-doc body is a line continuation: [32mOK[0m
+backslash-escaped $ in an unquoted here-doc body suppresses expansion: [32mOK[0m
+single-quoted delimiter suppresses expansion: [32mOK[0m
+double-quoted delimiter suppresses expansion: [32mOK[0m
+backslash-escaped delimiter suppresses expansion: [32mOK[0m
+delimiter mixing quoted and unquoted parts suppresses expansion: [32mOK[0m
+a quoted-delimiter here-doc body preserves a real backslash verbatim: [32mOK[0m
+<<- strips leading tabs from body and the closing delimiter line: [32mOK[0m
+<<- still expands parameters when the delimiter is unquoted: [32mOK[0m
+<<- combined with a quoted delimiter both strips tabs and suppresses expansion: [32mOK[0m
+<<- does not strip leading spaces, only tabs: [32mOK[0m
+a here-doc with an empty body produces empty output: [32mOK[0m
+the later of two here-docs redirected to the same fd wins: [32mOK[0m
+with three here-docs on the same fd, the last one still wins cleanly: [32mOK[0m
+two here-docs on separate simple commands are each read in source order: [32mOK[0m
+a here-doc attaches to its command before the pipeline runs: [32mOK[0m
+a here-doc coexists with an unrelated output redirection on the same command: [32mOK[0m
+a here-doc inside a command substitution works: [32mOK[0m
+a here-doc can be attached to a compound command (while loop): [32mOK[0m
+here-doc body is treated as data, not parsed as shell syntax: [32mOK[0m
+Tests succeeded: 23
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.16 sec
+----------------------------------------------------------
+Test Passed.
+"here-doc.sh" end time: Jul 30 22:33 CEST
+"here-doc.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+19/141 Testing: if.sh
+19/141 Test: if.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/if.sh"
+Directory: /mnt/data/Projects/shish
+"if.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+if true must take the then branch: [32mOK[0m
+if false must take the else branch: [32mOK[0m
+if false / elif true must take the elif branch: [32mOK[0m
+if false / elif false must take the else branch: [32mOK[0m
+the if condition's command substitution output must be visible after the if: [32mOK[0m
+an if with no matching branch and no else must still exit 0: [32mOK[0m
+Tests succeeded: 6
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.09 sec
+----------------------------------------------------------
+Test Passed.
+"if.sh" end time: Jul 30 22:33 CEST
+"if.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+20/141 Testing: loop-while.sh
+20/141 Test: loop-while.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/loop-while.sh"
+Directory: /mnt/data/Projects/shish
+"loop-while.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+while loop must iterate over every positional param: [32mOK[0m
+a while loop whose condition starts false must never run its body: [32mOK[0m
+break must exit the loop before running anything after it in the body: [32mOK[0m
+break must still let the body run once before exiting: [32mOK[0m
+continue must skip the rest of the body for that iteration only (1+2+4+5): [32mOK[0m
+until loop must run until its condition becomes true: [32mOK[0m
+an until loop whose condition starts true must never run its body: [32mOK[0m
+Tests succeeded: 7
+Tests failed: 0
+Success
+<end of output>
+Test time =   1.32 sec
+----------------------------------------------------------
+Test Passed.
+"loop-while.sh" end time: Jul 30 22:33 CEST
+"loop-while.sh" time elapsed: 00:00:01
+----------------------------------------------------------
+
+21/141 Testing: param.sh
+21/141 Test: param.sh
+Command: "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/param.sh"
+Directory: /mnt/data/Projects/shish
+"param.sh" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+XXX: 1
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+[1] 2694265
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+: [32mOK[0m
+Tests succeeded: 37
+Tests failed: 0
+Success
+<end of output>
+Test time =   1.03 sec
+----------------------------------------------------------
+Test Passed.
+"param.sh" end time: Jul 30 22:33 CEST
+"param.sh" time elapsed: 00:00:01
+----------------------------------------------------------
+
+22/141 Testing: posix/alias-p.tst
+22/141 Test: posix/alias-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/posix" "alias-p.tst"
+Directory: /mnt/data/Projects/shish
+"posix/alias-p.tst" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+alias-p.tst: 14/65 passed, 0 skipped
+%%% FAILED: alias-p.tst:50: removing multiple aliases - removal
+%%% FAILED: alias-p.tst:59: removing all aliases - exit status
+%%% FAILED: alias-p.tst:64: removing all aliases - removal
+%%% FAILED: alias-p.tst:70: printing specific alias
+%%% FAILED: alias-p.tst:74: reusing printed alias (simple)
+%%% FAILED: alias-p.tst:83: reusing printed alias (complex quotation)
+%%% FAILED: alias-p.tst:93: printing all aliases
+%%% FAILED: alias-p.tst:104: subshell inherits aliases
+%%% FAILED: alias-p.tst:108: subshell cannot affect main shell
+%%% FAILED: alias-p.tst:120: removing undefined alias is error
+%%% FAILED: alias-p.tst:133: using alias after assignment (complex)
+%%% FAILED: alias-p.tst:146: using alias after redirection (complex)
+%%% FAILED: alias-p.tst:158: using alias in pipeline (complex)
+%%% FAILED: alias-p.tst:166: using aliases in compound commands
+%%% FAILED: alias-p.tst:176: alias substitution to blank before if
+%%% FAILED: alias-p.tst:182: alias substitution to blank should not change exit status
+%%% FAILED: alias-p.tst:188: alias substitution to blank before newline
+%%% FAILED: alias-p.tst:199: alias substitution to assignment
+%%% FAILED: alias-p.tst:214: alias substitution to here-document
+%%% FAILED: alias-p.tst:223: alias substitution to here-document operand
+%%% FAILED: alias-p.tst:232: alias substitution to !
+%%% FAILED: alias-p.tst:240: alias substitution to parenthesis
+%%% FAILED: alias-p.tst:254: alias substitution to if/then/elif/else/fi keywords
+%%% FAILED: alias-p.tst:272: alias substitution to while/until/do/done keywords
+%%% FAILED: alias-p.tst:281: alias substitution to for
+%%% FAILED: alias-p.tst:289: alias substitution to word (for)
+%%% FAILED: alias-p.tst:296: alias substitution to in (for)
+%%% FAILED: alias-p.tst:309: alias substitution to do/done (for with in)
+%%% FAILED: alias-p.tst:320: alias substitution to do/done (for w/o in)
+%%% FAILED: alias-p.tst:342: inapplicable alias substitution of do (for)
+%%% FAILED: alias-p.tst:350: alias substitution to case/esac keywords
+%%% FAILED: alias-p.tst:361: alias substitution to in (case)
+%%% FAILED: alias-p.tst:371: alias substitution to case pattern
+%%% FAILED: alias-p.tst:386: alias substitution to ( (case)
+%%% FAILED: alias-p.tst:395: alias substitution to | (case)
+%%% FAILED: alias-p.tst:402: alias substitution to ) (case)
+%%% FAILED: alias-p.tst:409: alias substitution to ;;
+%%% FAILED: alias-p.tst:421: alias substitution to function definition
+%%% FAILED: alias-p.tst:430: alias substitution to parentheses in function definition
+%%% FAILED: alias-p.tst:444: alias substitution to command in function definition
+%%% FAILED: alias-p.tst:453: IO_NUMBER cannot be aliased
+%%% FAILED: alias-p.tst:462: alias starting with blank
+%%% FAILED: alias-p.tst:471: alias ending with blank
+%%% FAILED: alias-p.tst:487: alias substitution can be part of an operator
+%%% FAILED: alias-p.tst:502: quoted aliases are not substituted
+%%% FAILED: alias-p.tst:528: line continuation between alias names (1)
+%%% FAILED: alias-p.tst:540: line continuation between alias names (2)
+%%% FAILED: alias-p.tst:548: alias substitution to line continuation
+%%% FAILED: alias-p.tst:559: characters allowed in alias name
+%%% FAILED: alias-p.tst:566: recursive alias
+%%% FAILED: alias-p.tst:576: alias in command substitution
+(see tests/posix/alias-p.trs for full diffs)
+<end of output>
+Test time =   0.57 sec
+----------------------------------------------------------
+Test Failed.
+"posix/alias-p.tst" end time: Jul 30 22:33 CEST
+"posix/alias-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+23/141 Testing: posix/andor-p.tst
+23/141 Test: posix/andor-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/posix" "andor-p.tst"
+Directory: /mnt/data/Projects/shish
+"posix/andor-p.tst" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+andor-p.tst: 14/14 passed, 0 skipped
+<end of output>
+Test time =   0.12 sec
+----------------------------------------------------------
+Test Passed.
+"posix/andor-p.tst" end time: Jul 30 22:33 CEST
+"posix/andor-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+24/141 Testing: posix/arith-p.tst
+24/141 Test: posix/arith-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/posix" "arith-p.tst"
+Directory: /mnt/data/Projects/shish
+"posix/arith-p.tst" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+arith-p.tst: 16/43 passed, 0 skipped
+%%% FAILED: arith-p.tst:22: unset variable is considered 0 (direct)
+%%% FAILED: arith-p.tst:29: unary sign operators
+%%% FAILED: arith-p.tst:35: unary negation operators
+%%% FAILED: arith-p.tst:109: logical operators
+%%% FAILED: arith-p.tst:119: conditional evaluation of && operator operand
+%%% FAILED: arith-p.tst:130: conditional evaluation of || operator operand
+%%% FAILED: arith-p.tst:141: conditional evaluation of ?: operator operand
+%%% FAILED: arith-p.tst:155: assignment operators
+%%% FAILED: arith-p.tst:165: assigning to read-only variable
+%%% FAILED: arith-p.tst:179: operator precedence: unary and multiplicatives
+%%% FAILED: arith-p.tst:195: operator precedence: multiplicatives and additives
+%%% FAILED: arith-p.tst:209: operator precedence: additives and shifts
+%%% FAILED: arith-p.tst:217: operator precedence: shifts
+%%% FAILED: arith-p.tst:223: operator precedence: shifts and relationals
+%%% FAILED: arith-p.tst:243: operator precedence: relationals and equalities
+%%% FAILED: arith-p.tst:261: operator precedence: equalities and bitwise and
+%%% FAILED: arith-p.tst:267: operator precedence: bitwise and and xor
+%%% FAILED: arith-p.tst:273: operator precedence: bitwise xor and or
+%%% FAILED: arith-p.tst:279: operator precedence: bitwise or and logical and
+%%% FAILED: arith-p.tst:285: operator precedence: logical and and or
+%%% FAILED: arith-p.tst:291: operator precedence: logical or and conditional
+%%% FAILED: arith-p.tst:297: operator precedence: conditionals
+%%% FAILED: arith-p.tst:303: operator precedence: assignments in conditionals
+%%% FAILED: arith-p.tst:314: operator precedence: conditionals and assignments
+%%% FAILED: arith-p.tst:325: operator precedence: assignments
+%%% FAILED: arith-p.tst:334: parentheses
+%%% FAILED: arith-p.tst:347: command substitution in arithmetic expansion
+(see tests/posix/arith-p.trs for full diffs)
+<end of output>
+Test time =   4.95 sec
+----------------------------------------------------------
+Test Failed.
+"posix/arith-p.tst" end time: Jul 30 22:33 CEST
+"posix/arith-p.tst" time elapsed: 00:00:04
+----------------------------------------------------------
+
+25/141 Testing: posix/async-p.tst
+25/141 Test: posix/async-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/posix" "async-p.tst"
+Directory: /mnt/data/Projects/shish
+"posix/async-p.tst" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+async-p.tst: 1/9 passed, 0 skipped
+%%% FAILED: async-p.tst:18: asynchronous lists separated by ampersands
+%%% FAILED: async-p.tst:27: asynchronous commands run asynchronously
+%%% FAILED: async-p.tst:38: asynchronous command runs in subshell
+%%% FAILED: async-p.tst:48: stdin of asynchronous list is null without job control
+%%% FAILED: async-p.tst:57: stdin of asynchronous list is null even if already redirected
+%%% FAILED: async-p.tst:65: stdin of asynchronous list is null for first command only
+%%% FAILED: async-p.tst:72: exit status of asynchronous list
+%%% FAILED: async-p.tst:82: asynchronous and-or lists
+(see tests/posix/async-p.trs for full diffs)
+<end of output>
+Test time =   1.23 sec
+----------------------------------------------------------
+Test Failed.
+"posix/async-p.tst" end time: Jul 30 22:33 CEST
+"posix/async-p.tst" time elapsed: 00:00:01
+----------------------------------------------------------
+
+26/141 Testing: posix/bg-p.tst
+26/141 Test: posix/bg-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/posix" "bg-p.tst"
+Directory: /mnt/data/Projects/shish
+"posix/bg-p.tst" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+bg-p.tst: 0/11 passed, 11 skipped
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Passed.
+"posix/bg-p.tst" end time: Jul 30 22:33 CEST
+"posix/bg-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+27/141 Testing: posix/break-p.tst
+27/141 Test: posix/break-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/posix" "break-p.tst"
+Directory: /mnt/data/Projects/shish
+"posix/break-p.tst" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+break-p.tst: 22/32 passed, 0 skipped
+%%% FAILED: break-p.tst:29: breaking one until loop, unnested
+%%% FAILED: break-p.tst:91: breaking one while loop, nested in while loop
+%%% FAILED: break-p.tst:117: breaking one while loop, nested in until loop
+%%% FAILED: break-p.tst:143: breaking one until loop, nested in until loop
+%%% FAILED: break-p.tst:251: breaking while and until loops, outermost
+%%% FAILED: break-p.tst:354: zero operand
+%%% FAILED: break-p.tst:360: breaking one more than actual nest level one
+%%% FAILED: break-p.tst:367: breaking one more than actual nest level two
+%%% FAILED: break-p.tst:377: breaking much more than actual nest level one
+%%% FAILED: break-p.tst:386: breaking out of eval
+(see tests/posix/break-p.trs for full diffs)
+<end of output>
+Test time =   4.05 sec
+----------------------------------------------------------
+Test Failed.
+"posix/break-p.tst" end time: Jul 30 22:33 CEST
+"posix/break-p.tst" time elapsed: 00:00:04
+----------------------------------------------------------
+
+28/141 Testing: posix/builtins-p.tst
+28/141 Test: posix/builtins-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/posix" "builtins-p.tst"
+Directory: /mnt/data/Projects/shish
+"posix/builtins-p.tst" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+builtins-p.tst: 69/81 passed, 0 skipped
+%%% FAILED: builtins-p.tst:23: assignment on special built-in break is persistent
+%%% FAILED: builtins-p.tst:33: assignment on special built-in continue is persistent
+%%% FAILED: builtins-p.tst:51: assignment on special built-in exec is persistent
+%%% FAILED: builtins-p.tst:110: assignment on special built-in trap is persistent
+%%% FAILED: builtins-p.tst:136: function cannot override special built-in break
+%%% FAILED: builtins-p.tst:143: function cannot override special built-in continue
+%%% FAILED: builtins-p.tst:191: function cannot override special built-in times
+%%% FAILED: builtins-p.tst:196: function cannot override special built-in trap
+%%% FAILED: builtins-p.tst:298: special built-in times can be invoked without $PATH
+%%% FAILED: builtins-p.tst:302: special built-in trap can be invoked without $PATH
+%%% FAILED: builtins-p.tst:340: intrinsic built-in getopts can be invoked without $PATH
+%%% FAILED: builtins-p.tst:383: intrinsic built-in unalias can be invoked without $PATH
+(see tests/posix/builtins-p.trs for full diffs)
+<end of output>
+Test time =   1.44 sec
+----------------------------------------------------------
+Test Failed.
+"posix/builtins-p.tst" end time: Jul 30 22:33 CEST
+"posix/builtins-p.tst" time elapsed: 00:00:01
+----------------------------------------------------------
+
+29/141 Testing: posix/case-p.tst
+29/141 Test: posix/case-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/posix" "case-p.tst"
+Directory: /mnt/data/Projects/shish
+"posix/case-p.tst" start time: Jul 30 22:33 CEST
+Output:
+----------------------------------------------------------
+case-p.tst: 29/52 passed, 0 skipped
+%%% FAILED: case-p.tst:5: case word is subject to tilde expansion
+%%% FAILED: case-p.tst:62: case pattern is subject to tilde expansion
+%%% FAILED: case-p.tst:105: backslashes arising from expansion in case pattern
+%%% FAILED: case-p.tst:178: exit status of case command (unmatched, empty)
+%%% FAILED: case-p.tst:220: linebreak after word
+%%% FAILED: case-p.tst:258: & before ;;
+%%% FAILED: case-p.tst:315: reserved word ! as pattern
+%%% FAILED: case-p.tst:316: reserved word { as pattern
+%%% FAILED: case-p.tst:317: reserved word } as pattern
+%%% FAILED: case-p.tst:318: reserved word [[ as pattern
+%%% FAILED: case-p.tst:320: reserved word case as pattern
+%%% FAILED: case-p.tst:321: reserved word do as pattern
+%%% FAILED: case-p.tst:322: reserved word done as pattern
+%%% FAILED: case-p.tst:323: reserved word elif as pattern
+%%% FAILED: case-p.tst:324: reserved word else as pattern
+%%% FAILED: case-p.tst:326: reserved word fi as pattern
+%%% FAILED: case-p.tst:327: reserved word for as pattern
+%%% FAILED: case-p.tst:329: reserved word if as pattern
+%%% FAILED: case-p.tst:330: reserved word in as pattern
+%%% FAILED: case-p.tst:332: reserved word then as pattern
+%%% FAILED: case-p.tst:333: reserved word until as pattern
+%%% FAILED: case-p.tst:334: reserved word while as pattern
+%%% FAILED: case-p.tst:336: reserved word esac as (non-first) pattern
+(see tests/posix/case-p.trs for full diffs)
+<end of output>
+Test time =  22.63 sec
+----------------------------------------------------------
+Test Failed.
+"posix/case-p.tst" end time: Jul 30 22:34 CEST
+"posix/case-p.tst" time elapsed: 00:00:22
+----------------------------------------------------------
+
+30/141 Testing: posix/cd-p.tst
+30/141 Test: posix/cd-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-debug/shish" "tests/posix" "cd-p.tst"
+Directory: /mnt/data/Projects/shish
+"posix/cd-p.tst" start time: Jul 30 22:34 CEST
+Output:
+----------------------------------------------------------
+cd-p.tst: 17/39 passed, 0 skipped
+%%% FAILED: cd-p.tst:65: found in last cd path (-L)
+%%% FAILED: cd-p.tst:77: found in last cd path (-P)
+%%% FAILED: cd-p.tst:89: found in empty cd path (-L)
+%%% FAILED: cd-p.tst:100: found in empty cd path (-P)
+%%% FAILED: cd-p.tst:111: found in dot cd path (-L)
+%%% FAILED: cd-p.tst:123: found in dot cd path (-P)
+%%% FAILED: cd-p.tst:157: found not in any cd path, but in PWD (-L)
+%%% FAILED: cd-p.tst:168: found not in any cd path, but in PWD (-P)
+%%% FAILED: cd-p.tst:199: cd paths are ignored for operand starting with dot (-L)
+%%% FAILED: cd-p.tst:210: cd paths are ignored for operand starting with dot (-P)
+%%% FAILED: cd-p.tst:221: cd paths are ignored for operand starting with dot-dot (-L)
+%%% FAILED: cd-p.tst:234: cd paths are ignored for operand starting with dot-dot (-P)
+%%% FAILED: cd-p.tst:293: non-directory file in operand component (-L)
+%%% FAILED: cd-p.tst:297: non-directory file in operand component (-P)
+%%% FAILED: cd-p.tst:301: non-existing file in operand component (-L)
+%%% FAILED: cd-p.tst:305: non-existing file in operand component (-P)
+%%% FAILED: cd-p.tst:309: target pathname is canonicalized (-L)
+%%% FAILED: cd-p.tst:343: default option is -L
+%%% FAILED: cd-p.tst:354: the last option wins (-L)
+%%% FAILED: cd-p.tst:392: hyphen operand means OLDPWD (-L)
+%%% FAILED: cd-p.tst:403: hyphen operand means OLDPWD (-P)
+%%% FAILED: cd-p.tst:414: OLDPWD is set to old PWD (-L)
+(see tests/posix/cd-p.trs for full diffs)
+<end of output>
+Test time =   0.33 sec
+----------------------------------------------------------
+Test Failed.
+"posix/cd-p.tst" end time: Jul 30 22:34 CEST
+"posix/cd-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+

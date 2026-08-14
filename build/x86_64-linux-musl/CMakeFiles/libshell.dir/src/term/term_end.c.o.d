@@ -1,0 +1,18 @@
+CMakeFiles/libshell.dir/src/term/term_end.c.o: \
+ /home/roman/Projects/shish/src/term/term_end.c \
+ /home/roman/Projects/shish/src/term/../term.h \
+ /home/roman/Projects/shish/src/term/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/term/../../lib/typedefs.h \
+ /usr/include/x86_64-linux-musl/sys/types.h \
+ /usr/include/x86_64-linux-musl/features.h \
+ /usr/include/x86_64-linux-musl/bits/alltypes.h \
+ /usr/include/x86_64-linux-musl/endian.h \
+ /usr/include/x86_64-linux-musl/sys/select.h \
+ /usr/include/x86_64-linux-musl/time.h \
+ /home/roman/Projects/shish/src/term/../../lib/stralloc.h \
+ /home/roman/Projects/shish/src/term/../../lib/windoze.h \
+ /usr/include/x86_64-linux-musl/termios.h \
+ /usr/include/x86_64-linux-musl/bits/termios.h \
+ /usr/include/x86_64-linux-musl/sys/ioctl.h \
+ /usr/include/x86_64-linux-musl/bits/ioctl.h \
+ /usr/include/x86_64-linux-musl/bits/ioctl_fix.h

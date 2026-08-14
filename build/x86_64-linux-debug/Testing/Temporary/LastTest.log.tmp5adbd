@@ -1,0 +1,228 @@
+Start testing: Jul 24 09:51 CEST
+----------------------------------------------------------
+1/135 Testing: bquote.sh
+1/135 Test: bquote.sh
+Command: "/mnt/data/Projects/shish/build/x86_64-linux-debug/shish" "tests/bquote.sh"
+Directory: /mnt/data/Projects/shish
+"bquote.sh" start time: Jul 24 09:51 CEST
+Output:
+----------------------------------------------------------
+backquote expansion must capture the command's output: [32mOK[0m
+backquote expansion assigned straight to a variable must not be field-split (embedded newline preserved): [32mOK[0m
+backquote expansion of a silent command must be empty: [32mOK[0m
+Tests succeeded: 3
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"bquote.sh" end time: Jul 24 09:51 CEST
+"bquote.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/135 Testing: builtin-expr.sh
+2/135 Test: builtin-expr.sh
+Command: "/mnt/data/Projects/shish/build/x86_64-linux-debug/shish" "tests/builtin-expr.sh"
+Directory: /mnt/data/Projects/shish
+"builtin-expr.sh" start time: Jul 24 09:51 CEST
+Output:
+----------------------------------------------------------
+expr STRING : PATTERN strips a file extension via a capture group: [32mOK[0m
+expr STRING : PATTERN works for a different extension: [32mOK[0m
+expr STRING : PATTERN with no capture group reports the match length: [32mOK[0m
+expr STRING : PATTERN matches a literal prefix and reports its length: [32mOK[0m
+expr STRING : PATTERN honors a leading ^ anchor: [32mOK[0m
+expr STRING : PATTERN honors a trailing $ anchor on a full match: [32mOK[0m
+expr STRING : PATTERN's trailing $ anchor correctly rejects a non-full match: [32mOK[0m
+expr STRING : PATTERN matches a bracket-expression range: [32mOK[0m
+expr STRING : PATTERN combines a bracket range with a following capture group: [32mOK[0m
+expr STRING : PATTERN honors bracket-expression negation (^): [32mOK[0m
+expr STRING : PATTERN matches a POSIX [:alpha:] character class: [32mOK[0m
+expr STRING : PATTERN with multiple groups reports only the first: [32mOK[0m
+expr STRING : PATTERN's \* still matches a literal star: [32mOK[0m
+expr STRING : PATTERN: a bare leading * in the pattern is literal, so it doesn't match a string without one: [32mOK[0m
+expr STRING : PATTERN with no match and no group reports 0: [32mOK[0m
+expr STRING : PATTERN with no match exits 1: [32mOK[0m
+expr STRING : PATTERN with no match (bracket expression, no group) also reports 0: [32mOK[0m
+Tests succeeded: 17
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-expr.sh" end time: Jul 24 09:51 CEST
+"builtin-expr.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/135 Testing: builtin-hash.sh
+3/135 Test: builtin-hash.sh
+Command: "/mnt/data/Projects/shish/build/x86_64-linux-debug/shish" "tests/builtin-hash.sh"
+Directory: /mnt/data/Projects/shish
+"builtin-hash.sh" start time: Jul 24 09:51 CEST
+Output:
+----------------------------------------------------------
+running a builtin once hashes it, and it shows up in the plain table: [32mOK[0m
+hash -d forgets exactly the named entry: [32mOK[0m
+tests/builtin-hash.sh:18:1: hash: this-name-was-never-hashed: not found
+hash -d on an unknown name fails with a non-zero exit status: [32mOK[0m
+sanity: the table has true and false entries before hash -r: [32mOK[0m
+hash -r forgets every remembered entry, including true and false: [32mOK[0m
+hash -p pathname name makes that name runnable via the given pathname: [32mOK[0m
+hash -l reprints a hashed pathname entry as a reusable "hash -p ..." line: [32mOK[0m
+sanity: true is not hashed right after hash -r: [32mOK[0m
+a bare "hash name" (no options) hashes that name without running it: [32mOK[0m
+Tests succeeded: 9
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-hash.sh" end time: Jul 24 09:51 CEST
+"builtin-hash.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/135 Testing: builtin-kill.sh
+4/135 Test: builtin-kill.sh
+Command: "/mnt/data/Projects/shish/build/x86_64-linux-debug/shish" "tests/builtin-kill.sh"
+Directory: /mnt/data/Projects/shish
+"builtin-kill.sh" start time: Jul 24 09:51 CEST
+Output:
+----------------------------------------------------------
+[1] 3600460
+kill -0 on a live pid reports success: [32mOK[0m
+[1]+  Done                    sleep 5
+tests/builtin-kill.sh:23:1: kill: 3600460: No such process
+kill -TERM actually terminates the process, confirmed via a following kill -0: [32mOK[0m
+[1] 3600464
+[1]+  Done                    sleep 5
+tests/builtin-kill.sh:30:1: kill: 3600464: No such process
+kill -9 (numeric signal) terminates the process: [32mOK[0m
+[1] 3600472
+[1]+  Done                    sleep 5
+tests/builtin-kill.sh:37:1: kill: 3600472: No such process
+kill -KILL (bare name) terminates the process: [32mOK[0m
+[1] 3600543
+[1]+  Done                    sleep 5
+tests/builtin-kill.sh:44:1: kill: 3600543: No such process
+kill -SIGKILL (SIG-prefixed name, case-insensitive) terminates the process: [32mOK[0m
+[1] 3600588
+[1]+  Done                    sleep 5
+tests/builtin-kill.sh:51:1: kill: 3600588: No such process
+kill %job-spec resolves the job and terminates it: [32mOK[0m
+tests/builtin-kill.sh:54:1: kill: -FOOBAR: invalid signal specification
+an unrecognized signal name fails with a non-zero exit status: [32mOK[0m
+tests/builtin-kill.sh:57:1: kill: too few arguments
+kill with no operands fails with a non-zero exit status: [32mOK[0m
+tests/builtin-kill.sh:60:1: kill: 999999: No such process
+kill -0 on a pid that doesn't exist fails with a non-zero exit status: [32mOK[0m
+kill -0 on the shell's own pid succeeds: [32mOK[0m
+Tests succeeded: 10
+Tests failed: 0
+Success
+<end of output>
+Test time =   1.53 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-kill.sh" end time: Jul 24 09:51 CEST
+"builtin-kill.sh" time elapsed: 00:00:01
+----------------------------------------------------------
+
+5/135 Testing: builtin-local.sh
+5/135 Test: builtin-local.sh
+Command: "/mnt/data/Projects/shish/build/x86_64-linux-debug/shish" "tests/builtin-local.sh"
+Directory: /mnt/data/Projects/shish
+"builtin-local.sh" start time: Jul 24 09:51 CEST
+Output:
+----------------------------------------------------------
+declared-without-value local starts unset: [32mOK[0m
+declared-with-value local gets its initializer: [32mOK[0m
+local var reflects an assignment made inside its function: [32mOK[0m
+local var must not leak out of the function that declared it: [32mOK[0m
+local var must not leak out of the function that declared it: [32mOK[0m
+a plain (non-local) assignment inside a function must leak to the global scope: [32mOK[0m
+Tests succeeded: 6
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-local.sh" end time: Jul 24 09:51 CEST
+"builtin-local.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/135 Testing: builtin-read.sh
+6/135 Test: builtin-read.sh
+Command: "/mnt/data/Projects/shish/build/x86_64-linux-debug/shish" "tests/builtin-read.sh"
+Directory: /mnt/data/Projects/shish
+"builtin-read.sh" start time: Jul 24 09:51 CEST
+Output:
+----------------------------------------------------------
+read must capture a single-word line: [32mOK[0m
+read splits into the 1st variable: [32mOK[0m
+read splits into the 2nd variable: [32mOK[0m
+read splits into the 3rd variable: [32mOK[0m
+read splits into the 4th variable: [32mOK[0m
+read puts every remaining field into the last variable: [32mOK[0m
+read -r must leave backslashes untouched: [32mOK[0m
+read -n N must stop after N characters: [32mOK[0m
+read -d must split on the given delimiter instead of newline: [32mOK[0m
+read -u must read the 1st line from the given fd: [32mOK[0m
+read -u must read the 2nd line from the same fd on the next call: [32mOK[0m
+Tests succeeded: 11
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-read.sh" end time: Jul 24 09:51 CEST
+"builtin-read.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/135 Testing: builtin-test.sh
+7/135 Test: builtin-test.sh
+Command: "/mnt/data/Projects/shish/build/x86_64-linux-debug/shish" "tests/builtin-test.sh"
+Directory: /mnt/data/Projects/shish
+"builtin-test.sh" start time: Jul 24 09:51 CEST
+Output:
+----------------------------------------------------------
+3 -lt 10: [32mOK[0m
+! ( 3 -lt 10 ): [32mOK[0m
+( 3 -lt 10 ) -a ( 10 -gt 1 ): [32mOK[0m
+( 10 -gt 3 ) -a ( 1 -lt 10 ): [32mOK[0m
+( 10 -gt 3 ) -a ! ( 1 -gt 10 ): [32mOK[0m
+( 3 -lt 10 -a 10 -gt 1 ): [32mOK[0m
+1 -gt 0: [32mOK[0m
+0 -gt 0: [32mOK[0m
+negative-lhs -gt comparison: [32mOK[0m
+test -e on this test script itself: [32mOK[0m
+test -e CMakeLists.txt: [32mOK[0m
+test -c /dev/null is a char device: [32mOK[0m
+test -c CMakeLists.txt is not a char device: [32mOK[0m
+test -d .: [32mOK[0m
+test -d CMakeLists.txt is not a directory: [32mOK[0m
+test -f CMakeLists.txt: [32mOK[0m
+test -f . is not a regular file: [32mOK[0m
+a non-empty single-arg string test: [32mOK[0m
+an empty single-arg string test: [32mOK[0m
+test -n on a non-empty string: [32mOK[0m
+test -n on an empty string: [32mOK[0m
+test -z on an empty string: [32mOK[0m
+test -z on a non-empty string: [32mOK[0m
+negated test -n on a non-empty string: [32mOK[0m
+negated test -n on an empty string: [32mOK[0m
+Tests succeeded: 25
+Tests failed: 0
+Success
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-test.sh" end time: Jul 24 09:51 CEST
+"builtin-test.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+

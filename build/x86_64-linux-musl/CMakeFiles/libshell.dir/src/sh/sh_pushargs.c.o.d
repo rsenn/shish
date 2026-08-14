@@ -1,0 +1,33 @@
+CMakeFiles/libshell.dir/src/sh/sh_pushargs.c.o: \
+ /home/roman/Projects/shish/src/sh/sh_pushargs.c \
+ /home/roman/Projects/shish/src/sh/../sh.h \
+ /home/roman/Projects/shish/build/x86_64-linux-musl/config.h \
+ /home/roman/Projects/shish/src/sh/../job.h \
+ /usr/include/x86_64-linux-musl/signal.h \
+ /usr/include/x86_64-linux-musl/features.h \
+ /usr/include/x86_64-linux-musl/bits/alltypes.h \
+ /usr/include/x86_64-linux-musl/bits/signal.h \
+ /usr/include/x86_64-linux-musl/stdbool.h \
+ /usr/include/x86_64-linux-musl/stdint.h \
+ /usr/include/x86_64-linux-musl/bits/stdint.h \
+ /usr/include/x86_64-linux-musl/sys/types.h \
+ /usr/include/x86_64-linux-musl/endian.h \
+ /usr/include/x86_64-linux-musl/sys/select.h \
+ /usr/include/x86_64-linux-musl/sys/wait.h \
+ /usr/include/x86_64-linux-musl/sys/resource.h \
+ /usr/include/x86_64-linux-musl/sys/time.h \
+ /usr/include/x86_64-linux-musl/bits/resource.h \
+ /home/roman/Projects/shish/src/sh/../../lib/windoze.h \
+ /home/roman/Projects/shish/src/sh/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/sh/../../lib/typedefs.h \
+ /usr/include/x86_64-linux-musl/time.h \
+ /home/roman/Projects/shish/src/sh/../../lib/sig.h \
+ /home/roman/Projects/shish/src/sh/../../lib/windoze.h \
+ /usr/include/x86_64-linux-musl/errno.h \
+ /usr/include/x86_64-linux-musl/bits/errno.h \
+ /home/roman/Projects/shish/src/sh/../../lib/uint16.h \
+ /home/roman/Projects/shish/src/sh/../../lib/stralloc.h \
+ /usr/include/x86_64-linux-musl/setjmp.h \
+ /usr/include/x86_64-linux-musl/bits/setjmp.h \
+ /usr/include/x86_64-linux-musl/stdlib.h \
+ /usr/include/x86_64-linux-musl/alloca.h

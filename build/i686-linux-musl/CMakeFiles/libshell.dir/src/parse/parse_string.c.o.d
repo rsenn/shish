@@ -1,0 +1,33 @@
+CMakeFiles/libshell.dir/src/parse/parse_string.c.o: \
+ /home/roman/Projects/shish/src/parse/parse_string.c \
+ /home/roman/Projects/shish/src/parse/../expand.h \
+ /home/roman/Projects/shish/src/parse/../../lib/stralloc.h \
+ /home/roman/Projects/shish/src/parse/../../lib/typedefs.h \
+ /usr/include/i386-linux-musl/sys/types.h \
+ /usr/include/i386-linux-musl/features.h \
+ /usr/include/i386-linux-musl/bits/alltypes.h \
+ /usr/include/i386-linux-musl/endian.h \
+ /usr/include/i386-linux-musl/sys/select.h \
+ /usr/include/i386-linux-musl/time.h \
+ /home/roman/Projects/shish/src/parse/../features.h \
+ /home/roman/Projects/shish/src/parse/../tree.h \
+ /home/roman/Projects/shish/src/parse/../source.h \
+ /home/roman/Projects/shish/src/parse/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/parse/../../lib/fmt.h \
+ /home/roman/Projects/shish/src/parse/../../lib/uint32.h \
+ /usr/include/i386-linux-musl/stdint.h \
+ /usr/include/i386-linux-musl/bits/stdint.h \
+ /home/roman/Projects/shish/src/parse/../../lib/uint64.h \
+ /home/roman/Projects/shish/src/parse/../../lib/shell.h \
+ /home/roman/Projects/shish/src/parse/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/parse/../../lib/stralloc.h \
+ /usr/include/i386-linux-musl/stdlib.h \
+ /usr/include/i386-linux-musl/alloca.h \
+ /usr/include/i386-linux-musl/limits.h \
+ /usr/include/i386-linux-musl/bits/limits.h \
+ /home/roman/Projects/shish/src/parse/../../lib/uint8.h \
+ /home/roman/Projects/shish/src/parse/../../lib/uint64.h \
+ /home/roman/Projects/shish/src/parse/../parse.h \
+ /home/roman/Projects/shish/src/parse/.././source.h \
+ /home/roman/Projects/shish/src/parse/../tree.h \
+ /usr/include/i386-linux-musl/assert.h

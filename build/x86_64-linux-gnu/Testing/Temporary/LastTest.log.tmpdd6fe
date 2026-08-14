@@ -1,0 +1,865 @@
+Start testing: Aug 13 06:58 CEST
+----------------------------------------------------------
+24/262 Testing: posix/alias-p.tst
+24/262 Test: posix/alias-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "alias-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/alias-p.tst" start time: Aug 13 06:58 CEST
+Output:
+----------------------------------------------------------
+alias-p.tst: 17/65 passed, 0 skipped
+%%% FAILED: alias-p.tst:70: printing specific alias
+%%% FAILED: alias-p.tst:74: reusing printed alias (simple)
+%%% FAILED: alias-p.tst:83: reusing printed alias (complex quotation)
+%%% FAILED: alias-p.tst:93: printing all aliases
+%%% FAILED: alias-p.tst:104: subshell inherits aliases
+%%% FAILED: alias-p.tst:108: subshell cannot affect main shell
+%%% FAILED: alias-p.tst:115: printing undefined alias is error
+%%% FAILED: alias-p.tst:133: using alias after assignment (complex)
+%%% FAILED: alias-p.tst:146: using alias after redirection (complex)
+%%% FAILED: alias-p.tst:158: using alias in pipeline (complex)
+%%% FAILED: alias-p.tst:166: using aliases in compound commands
+%%% FAILED: alias-p.tst:176: alias substitution to blank before if
+%%% FAILED: alias-p.tst:182: alias substitution to blank should not change exit status
+%%% FAILED: alias-p.tst:188: alias substitution to blank before newline
+%%% FAILED: alias-p.tst:199: alias substitution to assignment
+%%% FAILED: alias-p.tst:214: alias substitution to here-document
+%%% FAILED: alias-p.tst:223: alias substitution to here-document operand
+%%% FAILED: alias-p.tst:232: alias substitution to !
+%%% FAILED: alias-p.tst:240: alias substitution to parenthesis
+%%% FAILED: alias-p.tst:254: alias substitution to if/then/elif/else/fi keywords
+%%% FAILED: alias-p.tst:272: alias substitution to while/until/do/done keywords
+%%% FAILED: alias-p.tst:281: alias substitution to for
+%%% FAILED: alias-p.tst:289: alias substitution to word (for)
+%%% FAILED: alias-p.tst:296: alias substitution to in (for)
+%%% FAILED: alias-p.tst:309: alias substitution to do/done (for with in)
+%%% FAILED: alias-p.tst:320: alias substitution to do/done (for w/o in)
+%%% FAILED: alias-p.tst:342: inapplicable alias substitution of do (for)
+%%% FAILED: alias-p.tst:350: alias substitution to case/esac keywords
+%%% FAILED: alias-p.tst:361: alias substitution to in (case)
+%%% FAILED: alias-p.tst:371: alias substitution to case pattern
+%%% FAILED: alias-p.tst:386: alias substitution to ( (case)
+%%% FAILED: alias-p.tst:395: alias substitution to | (case)
+%%% FAILED: alias-p.tst:402: alias substitution to ) (case)
+%%% FAILED: alias-p.tst:409: alias substitution to ;;
+%%% FAILED: alias-p.tst:421: alias substitution to function definition
+%%% FAILED: alias-p.tst:430: alias substitution to parentheses in function definition
+%%% FAILED: alias-p.tst:444: alias substitution to command in function definition
+%%% FAILED: alias-p.tst:453: IO_NUMBER cannot be aliased
+%%% FAILED: alias-p.tst:462: alias starting with blank
+%%% FAILED: alias-p.tst:471: alias ending with blank
+%%% FAILED: alias-p.tst:487: alias substitution can be part of an operator
+%%% FAILED: alias-p.tst:502: quoted aliases are not substituted
+%%% FAILED: alias-p.tst:528: line continuation between alias names (1)
+%%% FAILED: alias-p.tst:540: line continuation between alias names (2)
+%%% FAILED: alias-p.tst:548: alias substitution to line continuation
+%%% FAILED: alias-p.tst:559: characters allowed in alias name
+%%% FAILED: alias-p.tst:566: recursive alias
+%%% FAILED: alias-p.tst:576: alias in command substitution
+(see tests/posix/alias-p.trs for full diffs)
+<end of output>
+Test time =   0.60 sec
+----------------------------------------------------------
+Test Failed.
+"posix/alias-p.tst" end time: Aug 13 06:58 CEST
+"posix/alias-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+25/262 Testing: posix/andor-p.tst
+25/262 Test: posix/andor-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "andor-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/andor-p.tst" start time: Aug 13 06:58 CEST
+Output:
+----------------------------------------------------------
+andor-p.tst: 14/14 passed, 0 skipped
+<end of output>
+Test time =   0.14 sec
+----------------------------------------------------------
+Test Passed.
+"posix/andor-p.tst" end time: Aug 13 06:58 CEST
+"posix/andor-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+26/262 Testing: posix/arith-p.tst
+26/262 Test: posix/arith-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "arith-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/arith-p.tst" start time: Aug 13 06:58 CEST
+Output:
+----------------------------------------------------------
+arith-p.tst: 43/43 passed, 0 skipped
+<end of output>
+Test time =   1.52 sec
+----------------------------------------------------------
+Test Passed.
+"posix/arith-p.tst" end time: Aug 13 06:59 CEST
+"posix/arith-p.tst" time elapsed: 00:00:01
+----------------------------------------------------------
+
+27/262 Testing: posix/async-p.tst
+27/262 Test: posix/async-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "async-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/async-p.tst" start time: Aug 13 06:59 CEST
+Output:
+----------------------------------------------------------
+async-p.tst: 1/9 passed, 0 skipped
+%%% FAILED: async-p.tst:18: asynchronous lists separated by ampersands
+%%% FAILED: async-p.tst:27: asynchronous commands run asynchronously
+%%% FAILED: async-p.tst:38: asynchronous command runs in subshell
+%%% FAILED: async-p.tst:48: stdin of asynchronous list is null without job control
+%%% FAILED: async-p.tst:57: stdin of asynchronous list is null even if already redirected
+%%% FAILED: async-p.tst:65: stdin of asynchronous list is null for first command only
+%%% FAILED: async-p.tst:72: exit status of asynchronous list
+%%% FAILED: async-p.tst:82: asynchronous and-or lists
+(see tests/posix/async-p.trs for full diffs)
+<end of output>
+Test time =   0.09 sec
+----------------------------------------------------------
+Test Failed.
+"posix/async-p.tst" end time: Aug 13 06:59 CEST
+"posix/async-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+28/262 Testing: posix/bg-p.tst
+28/262 Test: posix/bg-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "bg-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/bg-p.tst" start time: Aug 13 06:59 CEST
+Output:
+----------------------------------------------------------
+bg-p.tst: 0/11 passed, 11 skipped
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Passed.
+"posix/bg-p.tst" end time: Aug 13 06:59 CEST
+"posix/bg-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+29/262 Testing: posix/break-p.tst
+29/262 Test: posix/break-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "break-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/break-p.tst" start time: Aug 13 06:59 CEST
+Output:
+----------------------------------------------------------
+break-p.tst: 31/32 passed, 0 skipped
+%%% FAILED: break-p.tst:386: breaking out of eval
+(see tests/posix/break-p.trs for full diffs)
+<end of output>
+Test time =   0.29 sec
+----------------------------------------------------------
+Test Failed.
+"posix/break-p.tst" end time: Aug 13 06:59 CEST
+"posix/break-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+30/262 Testing: posix/builtins-p.tst
+30/262 Test: posix/builtins-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "builtins-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/builtins-p.tst" start time: Aug 13 06:59 CEST
+Output:
+----------------------------------------------------------
+builtins-p.tst: 72/81 passed, 0 skipped
+%%% FAILED: builtins-p.tst:23: assignment on special built-in break is persistent
+%%% FAILED: builtins-p.tst:33: assignment on special built-in continue is persistent
+%%% FAILED: builtins-p.tst:51: assignment on special built-in exec is persistent
+%%% FAILED: builtins-p.tst:110: assignment on special built-in trap is persistent
+%%% FAILED: builtins-p.tst:136: function cannot override special built-in break
+%%% FAILED: builtins-p.tst:143: function cannot override special built-in continue
+%%% FAILED: builtins-p.tst:196: function cannot override special built-in trap
+%%% FAILED: builtins-p.tst:302: special built-in trap can be invoked without $PATH
+%%% FAILED: builtins-p.tst:340: intrinsic built-in getopts can be invoked without $PATH
+(see tests/posix/builtins-p.trs for full diffs)
+<end of output>
+Test time =   0.62 sec
+----------------------------------------------------------
+Test Failed.
+"posix/builtins-p.tst" end time: Aug 13 06:59 CEST
+"posix/builtins-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+31/262 Testing: posix/case-p.tst
+31/262 Test: posix/case-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "case-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/case-p.tst" start time: Aug 13 06:59 CEST
+Output:
+----------------------------------------------------------
+case-p.tst: 30/52 passed, 0 skipped
+%%% FAILED: case-p.tst:62: case pattern is subject to tilde expansion
+%%% FAILED: case-p.tst:105: backslashes arising from expansion in case pattern
+%%% FAILED: case-p.tst:178: exit status of case command (unmatched, empty)
+%%% FAILED: case-p.tst:220: linebreak after word
+%%% FAILED: case-p.tst:258: & before ;;
+%%% FAILED: case-p.tst:315: reserved word ! as pattern
+%%% FAILED: case-p.tst:316: reserved word { as pattern
+%%% FAILED: case-p.tst:317: reserved word } as pattern
+%%% FAILED: case-p.tst:318: reserved word [[ as pattern
+%%% FAILED: case-p.tst:320: reserved word case as pattern
+%%% FAILED: case-p.tst:321: reserved word do as pattern
+%%% FAILED: case-p.tst:322: reserved word done as pattern
+%%% FAILED: case-p.tst:323: reserved word elif as pattern
+%%% FAILED: case-p.tst:324: reserved word else as pattern
+%%% FAILED: case-p.tst:326: reserved word fi as pattern
+%%% FAILED: case-p.tst:327: reserved word for as pattern
+%%% FAILED: case-p.tst:329: reserved word if as pattern
+%%% FAILED: case-p.tst:330: reserved word in as pattern
+%%% FAILED: case-p.tst:332: reserved word then as pattern
+%%% FAILED: case-p.tst:333: reserved word until as pattern
+%%% FAILED: case-p.tst:334: reserved word while as pattern
+%%% FAILED: case-p.tst:336: reserved word esac as (non-first) pattern
+(see tests/posix/case-p.trs for full diffs)
+<end of output>
+Test time =   1.56 sec
+----------------------------------------------------------
+Test Failed.
+"posix/case-p.tst" end time: Aug 13 06:59 CEST
+"posix/case-p.tst" time elapsed: 00:00:01
+----------------------------------------------------------
+
+32/262 Testing: posix/cd-p.tst
+32/262 Test: posix/cd-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "cd-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/cd-p.tst" start time: Aug 13 06:59 CEST
+Output:
+----------------------------------------------------------
+cd-p.tst: 17/39 passed, 0 skipped
+%%% FAILED: cd-p.tst:65: found in last cd path (-L)
+%%% FAILED: cd-p.tst:77: found in last cd path (-P)
+%%% FAILED: cd-p.tst:89: found in empty cd path (-L)
+%%% FAILED: cd-p.tst:100: found in empty cd path (-P)
+%%% FAILED: cd-p.tst:111: found in dot cd path (-L)
+%%% FAILED: cd-p.tst:123: found in dot cd path (-P)
+%%% FAILED: cd-p.tst:157: found not in any cd path, but in PWD (-L)
+%%% FAILED: cd-p.tst:168: found not in any cd path, but in PWD (-P)
+%%% FAILED: cd-p.tst:199: cd paths are ignored for operand starting with dot (-L)
+%%% FAILED: cd-p.tst:210: cd paths are ignored for operand starting with dot (-P)
+%%% FAILED: cd-p.tst:221: cd paths are ignored for operand starting with dot-dot (-L)
+%%% FAILED: cd-p.tst:234: cd paths are ignored for operand starting with dot-dot (-P)
+%%% FAILED: cd-p.tst:293: non-directory file in operand component (-L)
+%%% FAILED: cd-p.tst:297: non-directory file in operand component (-P)
+%%% FAILED: cd-p.tst:301: non-existing file in operand component (-L)
+%%% FAILED: cd-p.tst:305: non-existing file in operand component (-P)
+%%% FAILED: cd-p.tst:309: target pathname is canonicalized (-L)
+%%% FAILED: cd-p.tst:343: default option is -L
+%%% FAILED: cd-p.tst:354: the last option wins (-L)
+%%% FAILED: cd-p.tst:392: hyphen operand means OLDPWD (-L)
+%%% FAILED: cd-p.tst:403: hyphen operand means OLDPWD (-P)
+%%% FAILED: cd-p.tst:414: OLDPWD is set to old PWD (-L)
+(see tests/posix/cd-p.trs for full diffs)
+<end of output>
+Test time =   0.35 sec
+----------------------------------------------------------
+Test Failed.
+"posix/cd-p.tst" end time: Aug 13 06:59 CEST
+"posix/cd-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+33/262 Testing: posix/cmdsub-p.tst
+33/262 Test: posix/cmdsub-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "cmdsub-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/cmdsub-p.tst" start time: Aug 13 06:59 CEST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time = 120.15 sec
+----------------------------------------------------------
+Test Failed.
+"posix/cmdsub-p.tst" end time: Aug 13 07:01 CEST
+"posix/cmdsub-p.tst" time elapsed: 00:02:00
+----------------------------------------------------------
+
+34/262 Testing: posix/command-p.tst
+34/262 Test: posix/command-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "command-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/command-p.tst" start time: Aug 13 07:01 CEST
+Output:
+----------------------------------------------------------
+command-p.tst: 21/49 passed, 0 skipped
+%%% FAILED: command-p.tst:12: dot script not found does not kill shell
+%%% FAILED: command-p.tst:42: command exec retains redirection
+%%% FAILED: command-p.tst:70: describing reserved word ! (-v)
+%%% FAILED: command-p.tst:76: describing reserved word { (-v)
+%%% FAILED: command-p.tst:82: describing reserved word } (-v)
+%%% FAILED: command-p.tst:88: describing reserved word case (-v)
+%%% FAILED: command-p.tst:94: describing reserved word do (-v)
+%%% FAILED: command-p.tst:100: describing reserved word done (-v)
+%%% FAILED: command-p.tst:106: describing reserved word elif (-v)
+%%% FAILED: command-p.tst:112: describing reserved word else (-v)
+%%% FAILED: command-p.tst:118: describing reserved word esac (-v)
+%%% FAILED: command-p.tst:124: describing reserved word fi (-v)
+%%% FAILED: command-p.tst:130: describing reserved word for (-v)
+%%% FAILED: command-p.tst:136: describing reserved word if (-v)
+%%% FAILED: command-p.tst:142: describing reserved word in (-v)
+%%% FAILED: command-p.tst:148: describing reserved word then (-v)
+%%% FAILED: command-p.tst:154: describing reserved word until (-v)
+%%% FAILED: command-p.tst:160: describing reserved word while (-v)
+%%% FAILED: command-p.tst:188: output of describing regular built-in (-v)
+%%% FAILED: command-p.tst:192: output of describing regular built-in (-V)
+%%% FAILED: command-p.tst:204: output of describing external command (-v, no slash)
+%%% FAILED: command-p.tst:208: output of describing external command (-V, no slash)
+%%% FAILED: command-p.tst:223: output of describing external command (-v, with slash)
+%%% FAILED: command-p.tst:227: output of describing external command (-V, with slash)
+%%% FAILED: command-p.tst:243: describing alias (-v)
+%%% FAILED: command-p.tst:253: describing alias (-V)
+%%% FAILED: command-p.tst:265: describing non-existent command (-v)
+%%% FAILED: command-p.tst:287: executing non-existent command
+(see tests/posix/command-p.trs for full diffs)
+<end of output>
+Test time =   0.47 sec
+----------------------------------------------------------
+Test Failed.
+"posix/command-p.tst" end time: Aug 13 07:01 CEST
+"posix/command-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+35/262 Testing: posix/comment-p.tst
+35/262 Test: posix/comment-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "comment-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/comment-p.tst" start time: Aug 13 07:01 CEST
+Output:
+----------------------------------------------------------
+comment-p.tst: 11/15 passed, 0 skipped
+%%% FAILED: comment-p.tst:16: comment ending with backslash
+%%% FAILED: comment-p.tst:57: comment after (a)synchronous list
+%%% FAILED: comment-p.tst:80: comment in for loop
+%%% FAILED: comment-p.tst:92: comment in case statement
+(see tests/posix/comment-p.trs for full diffs)
+<end of output>
+Test time =   0.15 sec
+----------------------------------------------------------
+Test Failed.
+"posix/comment-p.tst" end time: Aug 13 07:01 CEST
+"posix/comment-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+36/262 Testing: posix/continue-p.tst
+36/262 Test: posix/continue-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "continue-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/continue-p.tst" start time: Aug 13 07:01 CEST
+Output:
+----------------------------------------------------------
+continue-p.tst: 30/31 passed, 0 skipped
+%%% FAILED: continue-p.tst:440: continuing out of eval
+(see tests/posix/continue-p.trs for full diffs)
+<end of output>
+Test time =   0.28 sec
+----------------------------------------------------------
+Test Failed.
+"posix/continue-p.tst" end time: Aug 13 07:01 CEST
+"posix/continue-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+37/262 Testing: posix/dot-p.tst
+37/262 Test: posix/dot-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "dot-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/dot-p.tst" start time: Aug 13 07:01 CEST
+Output:
+----------------------------------------------------------
+dot-p.tst: 12/14 passed, 0 skipped
+%%% FAILED: dot-p.tst:20: empty dot script
+%%% FAILED: dot-p.tst:32: recursive dot script
+(see tests/posix/dot-p.trs for full diffs)
+<end of output>
+Test time =   0.13 sec
+----------------------------------------------------------
+Test Failed.
+"posix/dot-p.tst" end time: Aug 13 07:01 CEST
+"posix/dot-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+38/262 Testing: posix/errexit-p.tst
+38/262 Test: posix/errexit-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "errexit-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/errexit-p.tst" start time: Aug 13 07:01 CEST
+Output:
+----------------------------------------------------------
+errexit-p.tst: 53/53 passed, 0 skipped
+<end of output>
+Test time =   0.44 sec
+----------------------------------------------------------
+Test Passed.
+"posix/errexit-p.tst" end time: Aug 13 07:01 CEST
+"posix/errexit-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+39/262 Testing: posix/error-p.tst
+39/262 Test: posix/error-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "error-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/error-p.tst" start time: Aug 13 07:01 CEST
+Output:
+----------------------------------------------------------
+error-p.tst: 119/212 passed, 0 skipped
+%%% FAILED: error-p.tst:10: syntax error in eval kills non-interactive shell
+%%% FAILED: error-p.tst:15: syntax error in subshell
+%%% FAILED: error-p.tst:23: syntax error spares interactive shell
+%%% FAILED: error-p.tst:45: expansion error spares interactive shell
+%%% FAILED: error-p.tst:60: assignment error without command kills non-interactive shell
+%%% FAILED: error-p.tst:66: assignment error without command in subshell
+%%% FAILED: error-p.tst:130: assignment error on command [ kills non-interactive shell
+%%% FAILED: error-p.tst:131: assignment error on command [ in subshell
+%%% FAILED: error-p.tst:133: assignment error on command alias kills non-interactive shell
+%%% FAILED: error-p.tst:134: assignment error on command alias in subshell
+%%% FAILED: error-p.tst:136: assignment error on command array kills non-interactive shell
+%%% FAILED: error-p.tst:137: assignment error on command array in subshell
+%%% FAILED: error-p.tst:139: assignment error on command bg kills non-interactive shell
+%%% FAILED: error-p.tst:140: assignment error on command bg in subshell
+%%% FAILED: error-p.tst:142: assignment error on command bindkey kills non-interactive shell
+%%% FAILED: error-p.tst:143: assignment error on command bindkey in subshell
+%%% FAILED: error-p.tst:145: assignment error on command break kills non-interactive shell
+%%% FAILED: error-p.tst:146: assignment error on command break in subshell
+%%% FAILED: error-p.tst:148: assignment error on command cat kills non-interactive shell
+%%% FAILED: error-p.tst:149: assignment error on command cat in subshell
+%%% FAILED: error-p.tst:151: assignment error on command cd kills non-interactive shell
+%%% FAILED: error-p.tst:152: assignment error on command cd in subshell
+%%% FAILED: error-p.tst:154: assignment error on command command kills non-interactive shell
+%%% FAILED: error-p.tst:155: assignment error on command command in subshell
+%%% FAILED: error-p.tst:157: assignment error on command complete kills non-interactive shell
+%%% FAILED: error-p.tst:158: assignment error on command complete in subshell
+%%% FAILED: error-p.tst:160: assignment error on command continue kills non-interactive shell
+%%% FAILED: error-p.tst:161: assignment error on command continue in subshell
+%%% FAILED: error-p.tst:163: assignment error on command dirs kills non-interactive shell
+%%% FAILED: error-p.tst:164: assignment error on command dirs in subshell
+%%% FAILED: error-p.tst:166: assignment error on command disown kills non-interactive shell
+%%% FAILED: error-p.tst:167: assignment error on command disown in subshell
+%%% FAILED: error-p.tst:169: assignment error on command echo kills non-interactive shell
+%%% FAILED: error-p.tst:170: assignment error on command echo in subshell
+%%% FAILED: error-p.tst:175: assignment error on command exec kills non-interactive shell
+%%% FAILED: error-p.tst:176: assignment error on command exec in subshell
+%%% FAILED: error-p.tst:184: assignment error on command false kills non-interactive shell
+%%% FAILED: error-p.tst:185: assignment error on command false in subshell
+%%% FAILED: error-p.tst:187: assignment error on command fc kills non-interactive shell
+%%% FAILED: error-p.tst:188: assignment error on command fc in subshell
+%%% FAILED: error-p.tst:190: assignment error on command fg kills non-interactive shell
+%%% FAILED: error-p.tst:191: assignment error on command fg in subshell
+%%% FAILED: error-p.tst:193: assignment error on command getopts kills non-interactive shell
+%%% FAILED: error-p.tst:194: assignment error on command getopts in subshell
+%%% FAILED: error-p.tst:196: assignment error on command hash kills non-interactive shell
+%%% FAILED: error-p.tst:197: assignment error on command hash in subshell
+%%% FAILED: error-p.tst:199: assignment error on command help kills non-interactive shell
+%%% FAILED: error-p.tst:200: assignment error on command help in subshell
+%%% FAILED: error-p.tst:202: assignment error on command history kills non-interactive shell
+%%% FAILED: error-p.tst:203: assignment error on command history in subshell
+%%% FAILED: error-p.tst:205: assignment error on command jobs kills non-interactive shell
+%%% FAILED: error-p.tst:206: assignment error on command jobs in subshell
+%%% FAILED: error-p.tst:208: assignment error on command kill kills non-interactive shell
+%%% FAILED: error-p.tst:209: assignment error on command kill in subshell
+%%% FAILED: error-p.tst:211: assignment error on command popd kills non-interactive shell
+%%% FAILED: error-p.tst:212: assignment error on command popd in subshell
+%%% FAILED: error-p.tst:214: assignment error on command printf kills non-interactive shell
+%%% FAILED: error-p.tst:215: assignment error on command printf in subshell
+%%% FAILED: error-p.tst:217: assignment error on command pushd kills non-interactive shell
+%%% FAILED: error-p.tst:218: assignment error on command pushd in subshell
+%%% FAILED: error-p.tst:220: assignment error on command pwd kills non-interactive shell
+%%% FAILED: error-p.tst:221: assignment error on command pwd in subshell
+%%% FAILED: error-p.tst:223: assignment error on command read kills non-interactive shell
+%%% FAILED: error-p.tst:224: assignment error on command read in subshell
+%%% FAILED: error-p.tst:238: assignment error on command suspend kills non-interactive shell
+%%% FAILED: error-p.tst:239: assignment error on command suspend in subshell
+%%% FAILED: error-p.tst:241: assignment error on command test kills non-interactive shell
+%%% FAILED: error-p.tst:242: assignment error on command test in subshell
+%%% FAILED: error-p.tst:247: assignment error on command trap kills non-interactive shell
+%%% FAILED: error-p.tst:248: assignment error on command trap in subshell
+%%% FAILED: error-p.tst:250: assignment error on command true kills non-interactive shell
+%%% FAILED: error-p.tst:251: assignment error on command true in subshell
+%%% FAILED: error-p.tst:253: assignment error on command type kills non-interactive shell
+%%% FAILED: error-p.tst:254: assignment error on command type in subshell
+%%% FAILED: error-p.tst:256: assignment error on command typeset kills non-interactive shell
+%%% FAILED: error-p.tst:257: assignment error on command typeset in subshell
+%%% FAILED: error-p.tst:259: assignment error on command ulimit kills non-interactive shell
+%%% FAILED: error-p.tst:260: assignment error on command ulimit in subshell
+%%% FAILED: error-p.tst:262: assignment error on command umask kills non-interactive shell
+%%% FAILED: error-p.tst:263: assignment error on command umask in subshell
+%%% FAILED: error-p.tst:265: assignment error on command unalias kills non-interactive shell
+%%% FAILED: error-p.tst:266: assignment error on command unalias in subshell
+%%% FAILED: error-p.tst:271: assignment error on command wait kills non-interactive shell
+%%% FAILED: error-p.tst:272: assignment error on command wait in subshell
+%%% FAILED: error-p.tst:274: assignment error on command ./_no_such_command_ kills non-interactive shell
+%%% FAILED: error-p.tst:275: assignment error on command ./_no_such_command_ in subshell
+%%% FAILED: error-p.tst:322: redirection error on special built-in break kills non-interactive shell
+%%% FAILED: error-p.tst:323: redirection error on special built-in break in subshell
+%%% FAILED: error-p.tst:325: redirection error on special built-in continue kills non-interactive shell
+%%% FAILED: error-p.tst:326: redirection error on special built-in continue in subshell
+%%% FAILED: error-p.tst:333: redirection error on special built-in exec spares interactive shell
+%%% FAILED: error-p.tst:355: redirection error on special built-in trap kills non-interactive shell
+%%% FAILED: error-p.tst:356: redirection error on special built-in trap in subshell
+(see tests/posix/error-p.trs for full diffs)
+<end of output>
+Test time =   1.82 sec
+----------------------------------------------------------
+Test Failed.
+"posix/error-p.tst" end time: Aug 13 07:01 CEST
+"posix/error-p.tst" time elapsed: 00:00:01
+----------------------------------------------------------
+
+40/262 Testing: posix/eval-p.tst
+40/262 Test: posix/eval-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "eval-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/eval-p.tst" start time: Aug 13 07:01 CEST
+Output:
+----------------------------------------------------------
+eval-p.tst: 6/6 passed, 0 skipped
+<end of output>
+Test time =   0.08 sec
+----------------------------------------------------------
+Test Passed.
+"posix/eval-p.tst" end time: Aug 13 07:01 CEST
+"posix/eval-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+41/262 Testing: posix/exec-p.tst
+41/262 Test: posix/exec-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "exec-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/exec-p.tst" start time: Aug 13 07:01 CEST
+Output:
+----------------------------------------------------------
+exec-p.tst: 6/10 passed, 0 skipped
+%%% FAILED: exec-p.tst:15: exec with redirections
+%%% FAILED: exec-p.tst:40: executing external command with option
+%%% FAILED: exec-p.tst:56: executing non-existing command (relative)
+%%% FAILED: exec-p.tst:61: executing non-existing command (empty path)
+(see tests/posix/exec-p.trs for full diffs)
+<end of output>
+Test time =   0.10 sec
+----------------------------------------------------------
+Test Failed.
+"posix/exec-p.tst" end time: Aug 13 07:01 CEST
+"posix/exec-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+42/262 Testing: posix/exit-p.tst
+42/262 Test: posix/exit-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "exit-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/exit-p.tst" start time: Aug 13 07:01 CEST
+Output:
+----------------------------------------------------------
+exit-p.tst: 8/14 passed, 0 skipped
+%%% FAILED: exit-p.tst:32: default exit status in subshell
+%%% FAILED: exit-p.tst:50: exiting from trap with 0
+%%% FAILED: exit-p.tst:55: exiting from trap with 7
+%%% FAILED: exit-p.tst:60: default exit status in trap in exiting with default
+%%% FAILED: exit-p.tst:66: default exit status with previous command in trap in exiting with default
+%%% FAILED: exit-p.tst:76: default exit status in trap in exiting with 1
+(see tests/posix/exit-p.trs for full diffs)
+<end of output>
+Test time =   6.32 sec
+----------------------------------------------------------
+Test Failed.
+"posix/exit-p.tst" end time: Aug 13 07:01 CEST
+"posix/exit-p.tst" time elapsed: 00:00:06
+----------------------------------------------------------
+
+43/262 Testing: posix/export-p.tst
+43/262 Test: posix/export-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "export-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/export-p.tst" start time: Aug 13 07:01 CEST
+Output:
+----------------------------------------------------------
+export-p.tst: 4/5 passed, 0 skipped
+%%% FAILED: export-p.tst:44: read-only variable cannot be re-assigned
+(see tests/posix/export-p.trs for full diffs)
+<end of output>
+Test time =   0.08 sec
+----------------------------------------------------------
+Test Failed.
+"posix/export-p.tst" end time: Aug 13 07:01 CEST
+"posix/export-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+44/262 Testing: posix/fg-p.tst
+44/262 Test: posix/fg-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "fg-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/fg-p.tst" start time: Aug 13 07:01 CEST
+Output:
+----------------------------------------------------------
+fg-p.tst: 0/8 passed, 8 skipped
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Passed.
+"posix/fg-p.tst" end time: Aug 13 07:01 CEST
+"posix/fg-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+45/262 Testing: posix/fnmatch-p.tst
+45/262 Test: posix/fnmatch-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "fnmatch-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/fnmatch-p.tst" start time: Aug 13 07:01 CEST
+Output:
+----------------------------------------------------------
+fnmatch-p.tst: 6/7 passed, 0 skipped
+%%% FAILED: fnmatch-p.tst:49: quotations of quotations
+(see tests/posix/fnmatch-p.trs for full diffs)
+<end of output>
+Test time =   0.09 sec
+----------------------------------------------------------
+Test Failed.
+"posix/fnmatch-p.tst" end time: Aug 13 07:01 CEST
+"posix/fnmatch-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+46/262 Testing: posix/for-p.tst
+46/262 Test: posix/for-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "for-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/for-p.tst" start time: Aug 13 07:01 CEST
+Output:
+----------------------------------------------------------
+for-p.tst: 19/20 passed, 0 skipped
+%%% FAILED: for-p.tst:91: commands ending with an asynchronous command
+(see tests/posix/for-p.trs for full diffs)
+<end of output>
+Test time =   0.20 sec
+----------------------------------------------------------
+Test Failed.
+"posix/for-p.tst" end time: Aug 13 07:01 CEST
+"posix/for-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+47/262 Testing: posix/fsplit-p.tst
+47/262 Test: posix/fsplit-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "fsplit-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/fsplit-p.tst" start time: Aug 13 07:01 CEST
+Output:
+----------------------------------------------------------
+fsplit-p.tst: 4/16 passed, 0 skipped
+%%% FAILED: fsplit-p.tst:16: default IFS (overriding environment variable)
+%%% FAILED: fsplit-p.tst:25: field splitting applies to results of expansions
+%%% FAILED: fsplit-p.tst:36: field splitting does not apply to quoted expansions
+%%% FAILED: fsplit-p.tst:53: field splitting does not apply to non-expansions
+%%% FAILED: fsplit-p.tst:94: field splitting with non-whitespace IFS
+%%% FAILED: fsplit-p.tst:104: complex field splitting with nonsuccessive non-whitespace IFS
+%%% FAILED: fsplit-p.tst:118: complex field splitting with successive non-whitespace IFS
+%%% FAILED: fsplit-p.tst:132: backslash not in IFS
+%%% FAILED: fsplit-p.tst:150: backslash in IFS
+%%% FAILED: fsplit-p.tst:172: empty field removal
+%%% FAILED: fsplit-p.tst:206: empty last field is ignored (non-backslash IFS)
+%%% FAILED: fsplit-p.tst:241: empty last field is ignored (backslash IFS)
+(see tests/posix/fsplit-p.trs for full diffs)
+<end of output>
+Test time =   0.17 sec
+----------------------------------------------------------
+Test Failed.
+"posix/fsplit-p.tst" end time: Aug 13 07:01 CEST
+"posix/fsplit-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+48/262 Testing: posix/function-p.tst
+48/262 Test: posix/function-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "function-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/function-p.tst" start time: Aug 13 07:01 CEST
+Output:
+----------------------------------------------------------
+function-p.tst: 15/19 passed, 0 skipped
+%%% FAILED: function-p.tst:24: for loop as function body
+%%% FAILED: function-p.tst:31: case statement as function body
+%%% FAILED: function-p.tst:38: if statement as function body
+%%% FAILED: function-p.tst:86: redirections apply to function body
+(see tests/posix/function-p.trs for full diffs)
+<end of output>
+Test time =   0.20 sec
+----------------------------------------------------------
+Test Failed.
+"posix/function-p.tst" end time: Aug 13 07:01 CEST
+"posix/function-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+49/262 Testing: posix/getopts-p.tst
+49/262 Test: posix/getopts-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "getopts-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/getopts-p.tst" start time: Aug 13 07:01 CEST
+Output:
+----------------------------------------------------------
+getopts-p.tst: 13/31 passed, 0 skipped
+%%% FAILED: getopts-p.tst:19: operand variable is updated to parsed option on each invocation
+%%% FAILED: getopts-p.tst:32: exit status is zero after option is parsed
+%%% FAILED: getopts-p.tst:52: OPTARG is set when option argument is parsed: non-empty separate
+%%% FAILED: getopts-p.tst:59: OPTARG is set when option argument is parsed: non-empty adjoined
+%%% FAILED: getopts-p.tst:73: operand variable is set to "?" on unknown option
+%%% FAILED: getopts-p.tst:80: OPTARG is set to the option on unknown option (with :)
+%%% FAILED: getopts-p.tst:98: error message is printed on unknown option (without :)
+%%% FAILED: getopts-p.tst:102: operand variable is set to ":" on missing option argument (with :)
+%%% FAILED: getopts-p.tst:109: OPTARG is set to the option on missing option argument (with :)
+%%% FAILED: getopts-p.tst:116: operand variable is set to "?" on missing option argument (without :)
+%%% FAILED: getopts-p.tst:130: error message is printed on missing option argument (without :)
+%%% FAILED: getopts-p.tst:134: operand variable is set to "?" after parsing all options
+%%% FAILED: getopts-p.tst:150: options can be grouped after single hyphen
+%%% FAILED: getopts-p.tst:170: double hyphen separates options and operands
+%%% FAILED: getopts-p.tst:194: OPTIND is first operand index after parsing all options: no operand, with --
+%%% FAILED: getopts-p.tst:201: OPTIND is first operand index after parsing all options: one operand, with --
+%%% FAILED: getopts-p.tst:208: resetting OPTIND to parse another arguments
+%%% FAILED: getopts-p.tst:238: option characters are alphanumeric
+(see tests/posix/getopts-p.trs for full diffs)
+<end of output>
+Test time =   0.38 sec
+----------------------------------------------------------
+Test Failed.
+"posix/getopts-p.tst" end time: Aug 13 07:01 CEST
+"posix/getopts-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+50/262 Testing: posix/grouping-p.tst
+50/262 Test: posix/grouping-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "grouping-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/grouping-p.tst" start time: Aug 13 07:01 CEST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time = 120.14 sec
+----------------------------------------------------------
+Test Failed.
+"posix/grouping-p.tst" end time: Aug 13 07:03 CEST
+"posix/grouping-p.tst" time elapsed: 00:02:00
+----------------------------------------------------------
+
+51/262 Testing: posix/if-p.tst
+51/262 Test: posix/if-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "if-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/if-p.tst" start time: Aug 13 07:03 CEST
+Output:
+----------------------------------------------------------
+if-p.tst: 57/60 passed, 0 skipped
+%%% FAILED: if-p.tst:329: command ending with asynchronous command (after if)
+%%% FAILED: if-p.tst:335: command ending with asynchronous command (after then)
+%%% FAILED: if-p.tst:342: command ending with asynchronous command (after elif)
+(see tests/posix/if-p.trs for full diffs)
+<end of output>
+Test time =   0.49 sec
+----------------------------------------------------------
+Test Failed.
+"posix/if-p.tst" end time: Aug 13 07:03 CEST
+"posix/if-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+52/262 Testing: posix/input-p.tst
+52/262 Test: posix/input-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "input-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/input-p.tst" start time: Aug 13 07:03 CEST
+Output:
+----------------------------------------------------------
+input-p.tst: 8/11 passed, 0 skipped
+%%% FAILED: input-p.tst:9: no input more than needed is read
+%%% FAILED: input-p.tst:89: shell input is line-wise (command substitution)
+%%% FAILED: input-p.tst:94: shell input is line-wise (eval)
+(see tests/posix/input-p.trs for full diffs)
+<end of output>
+Test time =   0.11 sec
+----------------------------------------------------------
+Test Failed.
+"posix/input-p.tst" end time: Aug 13 07:03 CEST
+"posix/input-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+53/262 Testing: posix/job-p.tst
+53/262 Test: posix/job-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "job-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/job-p.tst" start time: Aug 13 07:03 CEST
+Output:
+----------------------------------------------------------
+job-p.tst: 0/2 passed, 2 skipped
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"posix/job-p.tst" end time: Aug 13 07:03 CEST
+"posix/job-p.tst" time elapsed: 00:00:00
+----------------------------------------------------------
+
+54/262 Testing: posix/kill1-p.tst
+54/262 Test: posix/kill1-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "kill1-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/kill1-p.tst" start time: Aug 13 07:03 CEST
+Output:
+----------------------------------------------------------
+kill1-p.tst: 2/17 passed, 0 skipped
+%%% FAILED: kill1-p.tst:19: printing signal name HUP from number
+%%% FAILED: kill1-p.tst:20: printing signal name INT from number
+%%% FAILED: kill1-p.tst:21: printing signal name QUIT from number
+%%% FAILED: kill1-p.tst:22: printing signal name ABRT from number
+%%% FAILED: kill1-p.tst:23: printing signal name KILL from number
+%%% FAILED: kill1-p.tst:24: printing signal name ALRM from number
+%%% FAILED: kill1-p.tst:25: printing signal name TERM from number
+%%% FAILED: kill1-p.tst:41: printing signal name HUP from exit status
+%%% FAILED: kill1-p.tst:42: printing signal name INT from exit status
+%%% FAILED: kill1-p.tst:43: printing signal name QUIT from exit status
+%%% FAILED: kill1-p.tst:44: printing signal name ABRT from exit status
+%%% FAILED: kill1-p.tst:45: printing signal name KILL from exit status
+%%% FAILED: kill1-p.tst:46: printing signal name ALRM from exit status
+%%% FAILED: kill1-p.tst:47: printing signal name TERM from exit status
+%%% FAILED: kill1-p.tst:49: sending default signal TERM
+(see tests/posix/kill1-p.trs for full diffs)
+<end of output>
+Test time =   2.81 sec
+----------------------------------------------------------
+Test Failed.
+"posix/kill1-p.tst" end time: Aug 13 07:03 CEST
+"posix/kill1-p.tst" time elapsed: 00:00:02
+----------------------------------------------------------
+
+55/262 Testing: posix/kill2-p.tst
+55/262 Test: posix/kill2-p.tst
+Command: "/usr/bin/sh" "tests/run-tst.sh" "/home/roman/Projects/shish/build/x86_64-linux-gnu/shish" "tests/posix" "kill2-p.tst"
+Directory: /home/roman/Projects/shish
+"posix/kill2-p.tst" start time: Aug 13 07:03 CEST
+Output:
+----------------------------------------------------------
+kill2-p.tst: 4/28 passed, 0 skipped
+%%% FAILED: kill2-p.tst:13: sending signal: -s ABRT
+%%% FAILED: kill2-p.tst:14: sending signal: -s ALRM
+%%% FAILED: kill2-p.tst:15: sending signal: -s BUS
+%%% FAILED: kill2-p.tst:16: sending signal: -s FPE
+%%% FAILED: kill2-p.tst:17: sending signal: -s HUP
+%%% FAILED: kill2-p.tst:18: sending signal: -s ILL
+%%% FAILED: kill2-p.tst:20: sending signal: -s KILL
+%%% FAILED: kill2-p.tst:22: sending signal: -s QUIT
+%%% FAILED: kill2-p.tst:23: sending signal: -s SEGV
+%%% FAILED: kill2-p.tst:24: sending signal: -s TERM
+%%% FAILED: kill2-p.tst:25: sending signal: -s USR1
+%%% FAILED: kill2-p.tst:26: sending signal: -s USR2
+%%% FAILED: kill2-p.tst:28: sending signal: -ABRT
+%%% FAILED: kill2-p.tst:29: sending signal: -ALRM
+%%% FAILED: kill2-p.tst:30: sending signal: -BUS
+%%% FAILED: kill2-p.tst:31: sending signal: -FPE
+%%% FAILED: kill2-p.tst:32: sending signal: -HUP
+%%% FAILED: kill2-p.tst:33: sending signal: -ILL
+%%% FAILED: kill2-p.tst:35: sending signal: -KILL
+%%% FAILED: kill2-p.tst:37: sending signal: -QUIT
+%%% FAILED: kill2-p.tst:38: sending signal: -SEGV
+%%% FAILED: kill2-p.tst:39: sending signal: -TERM
+%%% FAILED: kill2-p.tst:40: sending signal: -USR1
+%%% FAILED: kill2-p.tst:41: sending signal: -USR2
+(see tests/posix/kill2-p.trs for full diffs)
+<end of output>
+Test time =  12.19 sec
+----------------------------------------------------------
+Test Failed.
+"posix/kill2-p.tst" end time: Aug 13 07:03 CEST
+"posix/kill2-p.tst" time elapsed: 00:00:12
+----------------------------------------------------------
+

@@ -1,0 +1,2526 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeDetermineSystem.cmake:205 (message)"
+      - "CMakeLists.txt:8 (project)"
+    message: |
+      The system is: Linux - 6.14.0-33-generic - x86_64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:8 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler: /bin/clang-20 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+      
+      The C compiler identification is Clang, found in:
+        /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/3.31.6/CompilerIdC/a.out
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:8 (project)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-BmMvE0"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-BmMvE0"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-BmMvE0'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_65f83/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_65f83.dir/build.make CMakeFiles/cmTC_65f83.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-BmMvE0'
+        Building C object CMakeFiles/cmTC_65f83.dir/CMakeCCompilerABI.c.o
+        /bin/clang-20   -v -MD -MT CMakeFiles/cmTC_65f83.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_65f83.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_65f83.dir/CMakeCCompilerABI.c.o -c /mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeCCompilerABI.c
+        Ubuntu clang version 20.1.2 (0ubuntu1~24.04.2)
+        Target: x86_64-pc-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/lib/llvm-20/bin
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Candidate multilib: x32;@mx32
+        Selected multilib: .;@m64
+         (in-process)
+         "/usr/lib/llvm-20/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-BmMvE0 -v -fcoverage-compilation-dir=/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-BmMvE0 -resource-dir /usr/lib/llvm-20/lib/clang/20 -dependency-file CMakeFiles/cmTC_65f83.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_65f83.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/llvm-20/lib/clang/20/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_65f83.dir/CMakeCCompilerABI.c.o -x c /mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeCCompilerABI.c
+        clang -cc1 version 20.1.2 based upon LLVM 20.1.2 default target x86_64-pc-linux-gnu
+        ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include"
+        ignoring nonexistent directory "/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /usr/lib/llvm-20/lib/clang/20/include
+         /usr/local/include
+         /usr/include/x86_64-linux-gnu
+         /usr/include
+        End of search list.
+        Linking C executable cmTC_65f83
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_65f83.dir/link.txt --verbose=1
+        Ubuntu clang version 20.1.2 (0ubuntu1~24.04.2)
+        Target: x86_64-pc-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/lib/llvm-20/bin
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Candidate multilib: x32;@mx32
+        Selected multilib: .;@m64
+         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -export-dynamic -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_65f83 /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/14 -L/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_65f83.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o /lib/x86_64-linux-gnu/crtn.o
+        GNU ld (GNU Binutils for Ubuntu) 2.42
+        /bin/clang-20  -v -Wl,-v -rdynamic CMakeFiles/cmTC_65f83.dir/CMakeCCompilerABI.c.o -o cmTC_65f83
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-BmMvE0'
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:182 (message)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:8 (project)"
+    message: |
+      Parsed C implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/usr/lib/llvm-20/lib/clang/20/include]
+          add: [/usr/local/include]
+          add: [/usr/include/x86_64-linux-gnu]
+          add: [/usr/include]
+        end of search list found
+        collapse include dir [/usr/lib/llvm-20/lib/clang/20/include] ==> [/usr/lib/llvm-20/lib/clang/20/include]
+        collapse include dir [/usr/local/include] ==> [/usr/local/include]
+        collapse include dir [/usr/include/x86_64-linux-gnu] ==> [/usr/include/x86_64-linux-gnu]
+        collapse include dir [/usr/include] ==> [/usr/include]
+        implicit include dirs: [/usr/lib/llvm-20/lib/clang/20/include;/usr/local/include;/usr/include/x86_64-linux-gnu;/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:8 (project)"
+    message: |
+      Parsed C implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
+        ignore line: [Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-BmMvE0']
+        ignore line: []
+        ignore line: [Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_65f83/fast]
+        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_65f83.dir/build.make CMakeFiles/cmTC_65f83.dir/build]
+        ignore line: [gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-BmMvE0']
+        ignore line: [Building C object CMakeFiles/cmTC_65f83.dir/CMakeCCompilerABI.c.o]
+        ignore line: [/bin/clang-20   -v -MD -MT CMakeFiles/cmTC_65f83.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_65f83.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_65f83.dir/CMakeCCompilerABI.c.o -c /mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeCCompilerABI.c]
+        ignore line: [Ubuntu clang version 20.1.2 (0ubuntu1~24.04.2)]
+        ignore line: [Target: x86_64-pc-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/lib/llvm-20/bin]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Candidate multilib: x32]
+        ignore line: [@mx32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        ignore line: [ (in-process)]
+        ignore line: [ "/usr/lib/llvm-20/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-BmMvE0 -v -fcoverage-compilation-dir=/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-BmMvE0 -resource-dir /usr/lib/llvm-20/lib/clang/20 -dependency-file CMakeFiles/cmTC_65f83.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_65f83.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/llvm-20/lib/clang/20/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_65f83.dir/CMakeCCompilerABI.c.o -x c /mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeCCompilerABI.c]
+        ignore line: [clang -cc1 version 20.1.2 based upon LLVM 20.1.2 default target x86_64-pc-linux-gnu]
+        ignore line: [ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include"]
+        ignore line: [ignoring nonexistent directory "/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /usr/lib/llvm-20/lib/clang/20/include]
+        ignore line: [ /usr/local/include]
+        ignore line: [ /usr/include/x86_64-linux-gnu]
+        ignore line: [ /usr/include]
+        ignore line: [End of search list.]
+        ignore line: [Linking C executable cmTC_65f83]
+        ignore line: [/mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_65f83.dir/link.txt --verbose=1]
+        ignore line: [Ubuntu clang version 20.1.2 (0ubuntu1~24.04.2)]
+        ignore line: [Target: x86_64-pc-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/lib/llvm-20/bin]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Candidate multilib: x32]
+        ignore line: [@mx32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -export-dynamic -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_65f83 /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/14 -L/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_65f83.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o /lib/x86_64-linux-gnu/crtn.o]
+          arg [/usr/bin/ld] ==> ignore
+          arg [--hash-style=gnu] ==> ignore
+          arg [--build-id] ==> ignore
+          arg [--eh-frame-hdr] ==> ignore
+          arg [-m] ==> ignore
+          arg [elf_x86_64] ==> ignore
+          arg [-export-dynamic] ==> ignore
+          arg [-pie] ==> ignore
+          arg [-dynamic-linker] ==> ignore
+          arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_65f83] ==> ignore
+          arg [/lib/x86_64-linux-gnu/Scrt1.o] ==> obj [/lib/x86_64-linux-gnu/Scrt1.o]
+          arg [/lib/x86_64-linux-gnu/crti.o] ==> obj [/lib/x86_64-linux-gnu/crti.o]
+          arg [/usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/14] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/14]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64]
+          arg [-L/lib/x86_64-linux-gnu] ==> dir [/lib/x86_64-linux-gnu]
+          arg [-L/lib/../lib64] ==> dir [/lib/../lib64]
+          arg [-L/usr/lib/x86_64-linux-gnu] ==> dir [/usr/lib/x86_64-linux-gnu]
+          arg [-L/usr/lib/../lib64] ==> dir [/usr/lib/../lib64]
+          arg [-L/lib] ==> dir [/lib]
+          arg [-L/usr/lib] ==> dir [/usr/lib]
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_65f83.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [-lgcc] ==> lib [gcc]
+          arg [--as-needed] ==> ignore
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [--no-as-needed] ==> ignore
+          arg [-lc] ==> lib [c]
+          arg [-lgcc] ==> lib [gcc]
+          arg [--as-needed] ==> ignore
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [--no-as-needed] ==> ignore
+          arg [/usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o]
+          arg [/lib/x86_64-linux-gnu/crtn.o] ==> obj [/lib/x86_64-linux-gnu/crtn.o]
+        linker tool for 'C': /usr/bin/ld
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/14] ==> [/usr/lib/gcc/x86_64-linux-gnu/14]
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64] ==> [/usr/lib64]
+        collapse library dir [/lib/x86_64-linux-gnu] ==> [/lib/x86_64-linux-gnu]
+        collapse library dir [/lib/../lib64] ==> [/lib64]
+        collapse library dir [/usr/lib/x86_64-linux-gnu] ==> [/usr/lib/x86_64-linux-gnu]
+        collapse library dir [/usr/lib/../lib64] ==> [/usr/lib64]
+        collapse library dir [/lib] ==> [/lib]
+        collapse library dir [/usr/lib] ==> [/usr/lib]
+        implicit libs: [gcc;gcc_s;c;gcc;gcc_s]
+        implicit objs: [/lib/x86_64-linux-gnu/Scrt1.o;/lib/x86_64-linux-gnu/crti.o;/usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o;/usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o;/lib/x86_64-linux-gnu/crtn.o]
+        implicit dirs: [/usr/lib/gcc/x86_64-linux-gnu/14;/usr/lib64;/lib/x86_64-linux-gnu;/lib64;/usr/lib/x86_64-linux-gnu;/lib;/usr/lib]
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:8 (project)"
+    message: |
+      Running the C compiler's linker: "/usr/bin/ld" "-v"
+      GNU ld (GNU Binutils for Ubuntu) 2.42
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckSymbolExists.cmake:163 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckSymbolExists.cmake:68 (__CHECK_SYMBOL_EXISTS_IMPL)"
+      - "cmake/Checks.cmake:4 (check_symbol_exists)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for sys_siglist"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-joSNW6"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-joSNW6"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SYS_SIGLIST_DECLARATION"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-joSNW6'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_fd028/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_fd028.dir/build.make CMakeFiles/cmTC_fd028.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-joSNW6'
+        Building C object CMakeFiles/cmTC_fd028.dir/CheckSymbolExists.c.o
+        /bin/clang-20    -MD -MT CMakeFiles/cmTC_fd028.dir/CheckSymbolExists.c.o -MF CMakeFiles/cmTC_fd028.dir/CheckSymbolExists.c.o.d -o CMakeFiles/cmTC_fd028.dir/CheckSymbolExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-joSNW6/CheckSymbolExists.c
+        /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-joSNW6/CheckSymbolExists.c:8:19: error: use of undeclared identifier 'sys_siglist'
+            8 |   return ((int*)(&sys_siglist))[argc];
+              |                   ^
+        1 error generated.
+        gmake[1]: *** [CMakeFiles/cmTC_fd028.dir/build.make:82: CMakeFiles/cmTC_fd028.dir/CheckSymbolExists.c.o] Error 1
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-joSNW6'
+        gmake: *** [Makefile:134: cmTC_fd028/fast] Error 2
+        
+      exitCode: 2
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake:108 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckCCompilerFlag.cmake:56 (cmake_check_compiler_flag)"
+      - "cmake/Checks.cmake:9 (check_c_compiler_flag)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Performing Test WARN_ALL"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fOCaQX"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fOCaQX"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "WARN_ALL"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fOCaQX'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_76b3a/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_76b3a.dir/build.make CMakeFiles/cmTC_76b3a.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fOCaQX'
+        Building C object CMakeFiles/cmTC_76b3a.dir/src.c.o
+        /bin/clang-20 -DWARN_ALL  -Wall -MD -MT CMakeFiles/cmTC_76b3a.dir/src.c.o -MF CMakeFiles/cmTC_76b3a.dir/src.c.o.d -o CMakeFiles/cmTC_76b3a.dir/src.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fOCaQX/src.c
+        Linking C executable cmTC_76b3a
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_76b3a.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_76b3a.dir/src.c.o -o cmTC_76b3a
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fOCaQX'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake:108 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckCCompilerFlag.cmake:56 (cmake_check_compiler_flag)"
+      - "cmake/Checks.cmake:14 (check_c_compiler_flag)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Performing Test WARN_NO_UNUSED_VARIABLE"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ml8IaY"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ml8IaY"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "WARN_NO_UNUSED_VARIABLE"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ml8IaY'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_f744b/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_f744b.dir/build.make CMakeFiles/cmTC_f744b.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ml8IaY'
+        Building C object CMakeFiles/cmTC_f744b.dir/src.c.o
+        /bin/clang-20 -DWARN_NO_UNUSED_VARIABLE  -Wno-unused-variable -MD -MT CMakeFiles/cmTC_f744b.dir/src.c.o -MF CMakeFiles/cmTC_f744b.dir/src.c.o.d -o CMakeFiles/cmTC_f744b.dir/src.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ml8IaY/src.c
+        Linking C executable cmTC_f744b
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f744b.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_f744b.dir/src.c.o -o cmTC_f744b
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ml8IaY'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake:108 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckCCompilerFlag.cmake:56 (cmake_check_compiler_flag)"
+      - "cmake/Checks.cmake:18 (check_c_compiler_flag)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Performing Test WARN_NO_UNUSED_FUNCTION"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-H6Y2Kl"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-H6Y2Kl"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "WARN_NO_UNUSED_FUNCTION"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-H6Y2Kl'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_59bed/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_59bed.dir/build.make CMakeFiles/cmTC_59bed.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-H6Y2Kl'
+        Building C object CMakeFiles/cmTC_59bed.dir/src.c.o
+        /bin/clang-20 -DWARN_NO_UNUSED_FUNCTION  -Wno-unused-function -MD -MT CMakeFiles/cmTC_59bed.dir/src.c.o -MF CMakeFiles/cmTC_59bed.dir/src.c.o.d -o CMakeFiles/cmTC_59bed.dir/src.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-H6Y2Kl/src.c
+        Linking C executable cmTC_59bed
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_59bed.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_59bed.dir/src.c.o -o cmTC_59bed
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-H6Y2Kl'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake:108 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckCSourceCompiles.cmake:58 (cmake_check_source_compiles)"
+      - "cmake/Functions.cmake:60 (check_c_source_compiles)"
+      - "cmake/Checks.cmake:56 (check_inline)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Performing Test HAVE___inline__"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-HViDXg"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-HViDXg"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE___inline__"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-HViDXg'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_b97a9/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_b97a9.dir/build.make CMakeFiles/cmTC_b97a9.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-HViDXg'
+        Building C object CMakeFiles/cmTC_b97a9.dir/src.c.o
+        /bin/clang-20 -DHAVE___inline__ -DTESTKEYWORD=__inline__   -MD -MT CMakeFiles/cmTC_b97a9.dir/src.c.o -MF CMakeFiles/cmTC_b97a9.dir/src.c.o.d -o CMakeFiles/cmTC_b97a9.dir/src.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-HViDXg/src.c
+        Linking C executable cmTC_b97a9
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_b97a9.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_b97a9.dir/src.c.o -o cmTC_b97a9
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-HViDXg'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckLibraryExists.cmake:78 (try_compile)"
+      - "cmake/Checks.cmake:91 (check_library_exists)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for buffer_init in owfat_debug"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-IOtwr3"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-IOtwr3"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_LIBOWFAT"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-IOtwr3'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_6cbbc/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_6cbbc.dir/build.make CMakeFiles/cmTC_6cbbc.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-IOtwr3'
+        Building C object CMakeFiles/cmTC_6cbbc.dir/CheckFunctionExists.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__  -DCHECK_FUNCTION_EXISTS=buffer_init -MD -MT CMakeFiles/cmTC_6cbbc.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_6cbbc.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_6cbbc.dir/CheckFunctionExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-IOtwr3/CheckFunctionExists.c
+        Linking C executable cmTC_6cbbc
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6cbbc.dir/link.txt --verbose=1
+        /usr/bin/ld: cannot find -lowfat_debug: No such file or directory
+        clang-20: error: linker command failed with exit code 1 (use -v to see invocation)
+        /bin/clang-20  -DCHECK_FUNCTION_EXISTS=buffer_init -rdynamic CMakeFiles/cmTC_6cbbc.dir/CheckFunctionExists.c.o -o cmTC_6cbbc  -lowfat_debug
+        gmake[1]: *** [CMakeFiles/cmTC_6cbbc.dir/build.make:103: cmTC_6cbbc] Error 1
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-IOtwr3'
+        gmake: *** [Makefile:134: cmTC_6cbbc/fast] Error 2
+        
+      exitCode: 2
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckIncludeFile.cmake:99 (try_compile)"
+      - "cmake/Checks.cmake:104 (check_include_file)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for alloca.h"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-sJ5RKJ"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-sJ5RKJ"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_ALLOCA_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-sJ5RKJ'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_68cf5/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_68cf5.dir/build.make CMakeFiles/cmTC_68cf5.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-sJ5RKJ'
+        Building C object CMakeFiles/cmTC_68cf5.dir/CheckIncludeFile.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__   -MD -MT CMakeFiles/cmTC_68cf5.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_68cf5.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_68cf5.dir/CheckIncludeFile.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-sJ5RKJ/CheckIncludeFile.c
+        Linking C executable cmTC_68cf5
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_68cf5.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_68cf5.dir/CheckIncludeFile.c.o -o cmTC_68cf5
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-sJ5RKJ'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckIncludeFile.cmake:99 (try_compile)"
+      - "cmake/Checks.cmake:105 (check_include_file)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for stdint.h"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LHc1Yf"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LHc1Yf"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_STDINT_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LHc1Yf'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_49e0f/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_49e0f.dir/build.make CMakeFiles/cmTC_49e0f.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LHc1Yf'
+        Building C object CMakeFiles/cmTC_49e0f.dir/CheckIncludeFile.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__   -MD -MT CMakeFiles/cmTC_49e0f.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_49e0f.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_49e0f.dir/CheckIncludeFile.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LHc1Yf/CheckIncludeFile.c
+        Linking C executable cmTC_49e0f
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_49e0f.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_49e0f.dir/CheckIncludeFile.c.o -o cmTC_49e0f
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LHc1Yf'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckIncludeFile.cmake:99 (try_compile)"
+      - "cmake/Checks.cmake:106 (check_include_file)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for inttypes.h"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wV4jQm"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wV4jQm"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_INTTYPES_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wV4jQm'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_b5d3c/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_b5d3c.dir/build.make CMakeFiles/cmTC_b5d3c.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wV4jQm'
+        Building C object CMakeFiles/cmTC_b5d3c.dir/CheckIncludeFile.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__   -MD -MT CMakeFiles/cmTC_b5d3c.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_b5d3c.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_b5d3c.dir/CheckIncludeFile.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wV4jQm/CheckIncludeFile.c
+        Linking C executable cmTC_b5d3c
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_b5d3c.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_b5d3c.dir/CheckIncludeFile.c.o -o cmTC_b5d3c
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wV4jQm'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckIncludeFile.cmake:99 (try_compile)"
+      - "cmake/Checks.cmake:107 (check_include_file)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for sys/types.h"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-UpkX5w"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-UpkX5w"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SYS_TYPES_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-UpkX5w'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_dfbc6/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_dfbc6.dir/build.make CMakeFiles/cmTC_dfbc6.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-UpkX5w'
+        Building C object CMakeFiles/cmTC_dfbc6.dir/CheckIncludeFile.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__   -MD -MT CMakeFiles/cmTC_dfbc6.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_dfbc6.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_dfbc6.dir/CheckIncludeFile.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-UpkX5w/CheckIncludeFile.c
+        Linking C executable cmTC_dfbc6
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_dfbc6.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_dfbc6.dir/CheckIncludeFile.c.o -o cmTC_dfbc6
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-UpkX5w'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckIncludeFile.cmake:99 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckTypeSize.cmake:264 (check_include_file)"
+      - "cmake/Checks.cmake:122 (check_type_size)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Checking for pointer size"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xEtiv3"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xEtiv3"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_STDDEF_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xEtiv3'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_dc896/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_dc896.dir/build.make CMakeFiles/cmTC_dc896.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xEtiv3'
+        Building C object CMakeFiles/cmTC_dc896.dir/CheckIncludeFile.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xEtiv3/sys/types.h  -MD -MT CMakeFiles/cmTC_dc896.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_dc896.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_dc896.dir/CheckIncludeFile.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xEtiv3/CheckIncludeFile.c
+        Linking C executable cmTC_dc896
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_dc896.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_dc896.dir/CheckIncludeFile.c.o -o cmTC_dc896
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xEtiv3'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckTypeSize.cmake:156 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckTypeSize.cmake:283 (__check_type_size_impl)"
+      - "cmake/Checks.cmake:122 (check_type_size)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Checking for pointer size"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NhtE0H"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NhtE0H"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SIZEOF_POINTER"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NhtE0H'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_1ae4c/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_1ae4c.dir/build.make CMakeFiles/cmTC_1ae4c.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NhtE0H'
+        Building C object CMakeFiles/cmTC_1ae4c.dir/SIZEOF_POINTER.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NhtE0H/sys/types.h  -MD -MT CMakeFiles/cmTC_1ae4c.dir/SIZEOF_POINTER.c.o -MF CMakeFiles/cmTC_1ae4c.dir/SIZEOF_POINTER.c.o.d -o CMakeFiles/cmTC_1ae4c.dir/SIZEOF_POINTER.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NhtE0H/SIZEOF_POINTER.c
+        Linking C executable cmTC_1ae4c
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_1ae4c.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_1ae4c.dir/SIZEOF_POINTER.c.o -o cmTC_1ae4c
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NhtE0H'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckTypeSize.cmake:156 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckTypeSize.cmake:283 (__check_type_size_impl)"
+      - "cmake/Checks.cmake:134 (check_type_size)"
+      - "CMakeLists.txt:28 (include)"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-vEQKYD"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-vEQKYD"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SIZEOF_SSIZE_T"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-vEQKYD'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_04bcd/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_04bcd.dir/build.make CMakeFiles/cmTC_04bcd.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-vEQKYD'
+        Building C object CMakeFiles/cmTC_04bcd.dir/SIZEOF_SSIZE_T.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-vEQKYD/sys/types.h  -MD -MT CMakeFiles/cmTC_04bcd.dir/SIZEOF_SSIZE_T.c.o -MF CMakeFiles/cmTC_04bcd.dir/SIZEOF_SSIZE_T.c.o.d -o CMakeFiles/cmTC_04bcd.dir/SIZEOF_SSIZE_T.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-vEQKYD/SIZEOF_SSIZE_T.c
+        Linking C executable cmTC_04bcd
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_04bcd.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_04bcd.dir/SIZEOF_SSIZE_T.c.o -o cmTC_04bcd
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-vEQKYD'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckTypeSize.cmake:156 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckTypeSize.cmake:283 (__check_type_size_impl)"
+      - "cmake/Checks.cmake:140 (check_type_size)"
+      - "CMakeLists.txt:28 (include)"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-XBILs8"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-XBILs8"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SIZEOF_SIGSET_T"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-XBILs8'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_00914/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_00914.dir/build.make CMakeFiles/cmTC_00914.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-XBILs8'
+        Building C object CMakeFiles/cmTC_00914.dir/SIZEOF_SIGSET_T.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-XBILs8/sys/types.h  -MD -MT CMakeFiles/cmTC_00914.dir/SIZEOF_SIGSET_T.c.o -MF CMakeFiles/cmTC_00914.dir/SIZEOF_SIGSET_T.c.o.d -o CMakeFiles/cmTC_00914.dir/SIZEOF_SIGSET_T.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-XBILs8/SIZEOF_SIGSET_T.c
+        Linking C executable cmTC_00914
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_00914.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_00914.dir/SIZEOF_SIGSET_T.c.o -o cmTC_00914
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-XBILs8'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckTypeSize.cmake:156 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckTypeSize.cmake:283 (__check_type_size_impl)"
+      - "cmake/Checks.cmake:145 (check_type_size)"
+      - "CMakeLists.txt:28 (include)"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-OueCJx"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-OueCJx"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SIZEOF_PID_T"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-OueCJx'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_31c9b/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_31c9b.dir/build.make CMakeFiles/cmTC_31c9b.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-OueCJx'
+        Building C object CMakeFiles/cmTC_31c9b.dir/SIZEOF_PID_T.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-OueCJx/sys/types.h  -MD -MT CMakeFiles/cmTC_31c9b.dir/SIZEOF_PID_T.c.o -MF CMakeFiles/cmTC_31c9b.dir/SIZEOF_PID_T.c.o.d -o CMakeFiles/cmTC_31c9b.dir/SIZEOF_PID_T.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-OueCJx/SIZEOF_PID_T.c
+        Linking C executable cmTC_31c9b
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_31c9b.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_31c9b.dir/SIZEOF_PID_T.c.o -o cmTC_31c9b
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-OueCJx'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckTypeSize.cmake:156 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckTypeSize.cmake:283 (__check_type_size_impl)"
+      - "cmake/Checks.cmake:150 (check_type_size)"
+      - "CMakeLists.txt:28 (include)"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wN23F4"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wN23F4"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SIZEOF_UID_T"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wN23F4'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_94703/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_94703.dir/build.make CMakeFiles/cmTC_94703.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wN23F4'
+        Building C object CMakeFiles/cmTC_94703.dir/SIZEOF_UID_T.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wN23F4/sys/types.h  -MD -MT CMakeFiles/cmTC_94703.dir/SIZEOF_UID_T.c.o -MF CMakeFiles/cmTC_94703.dir/SIZEOF_UID_T.c.o.d -o CMakeFiles/cmTC_94703.dir/SIZEOF_UID_T.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wN23F4/SIZEOF_UID_T.c
+        Linking C executable cmTC_94703
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_94703.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_94703.dir/SIZEOF_UID_T.c.o -o cmTC_94703
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wN23F4'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckSymbolExists.cmake:163 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckSymbolExists.cmake:68 (__CHECK_SYMBOL_EXISTS_IMPL)"
+      - "cmake/Checks.cmake:160 (check_symbol_exists)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for alloca"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ui7YB2"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ui7YB2"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_ALLOCA_SYMBOL"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ui7YB2'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_ebe1a/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_ebe1a.dir/build.make CMakeFiles/cmTC_ebe1a.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ui7YB2'
+        Building C object CMakeFiles/cmTC_ebe1a.dir/CheckSymbolExists.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ui7YB2/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ui7YB2/alloca.h  -MD -MT CMakeFiles/cmTC_ebe1a.dir/CheckSymbolExists.c.o -MF CMakeFiles/cmTC_ebe1a.dir/CheckSymbolExists.c.o.d -o CMakeFiles/cmTC_ebe1a.dir/CheckSymbolExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ui7YB2/CheckSymbolExists.c
+        Linking C executable cmTC_ebe1a
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ebe1a.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_ebe1a.dir/CheckSymbolExists.c.o -o cmTC_ebe1a
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ui7YB2'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "cmake/Functions.cmake:116 (try_compile)"
+      - "cmake/Checks.cmake:163 (check_compile)"
+      - "CMakeLists.txt:28 (include)"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeTmp"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "COMPILE_RESULT"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_ad316/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_ad316.dir/build.make CMakeFiles/cmTC_ad316.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeTmp'
+        Building C object CMakeFiles/cmTC_ad316.dir/try-have-alloca-alloca-h.c.o
+        /bin/clang-20    -MD -MT CMakeFiles/cmTC_ad316.dir/try-have-alloca-alloca-h.c.o -MF CMakeFiles/cmTC_ad316.dir/try-have-alloca-alloca-h.c.o.d -o CMakeFiles/cmTC_ad316.dir/try-have-alloca-alloca-h.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/try-have-alloca-alloca-h.c
+        Linking C executable cmTC_ad316
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ad316.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic "CMakeFiles/cmTC_ad316.dir/try-have-alloca-alloca-h.c.o" -o cmTC_ad316
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeTmp'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckIncludeFile.cmake:99 (try_compile)"
+      - "cmake/Checks.cmake:193 (check_include_file)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for sys/wait.h"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LhFrSX"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LhFrSX"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SYS_WAIT_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LhFrSX'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_4b6fe/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_4b6fe.dir/build.make CMakeFiles/cmTC_4b6fe.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LhFrSX'
+        Building C object CMakeFiles/cmTC_4b6fe.dir/CheckIncludeFile.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LhFrSX/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LhFrSX/alloca.h  -MD -MT CMakeFiles/cmTC_4b6fe.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_4b6fe.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_4b6fe.dir/CheckIncludeFile.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LhFrSX/CheckIncludeFile.c
+        Linking C executable cmTC_4b6fe
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_4b6fe.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_4b6fe.dir/CheckIncludeFile.c.o -o cmTC_4b6fe
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LhFrSX'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckIncludeFile.cmake:99 (try_compile)"
+      - "cmake/Checks.cmake:195 (check_include_file)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for unistd.h"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NyukeM"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NyukeM"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_UNISTD_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NyukeM'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_8288c/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_8288c.dir/build.make CMakeFiles/cmTC_8288c.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NyukeM'
+        Building C object CMakeFiles/cmTC_8288c.dir/CheckIncludeFile.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NyukeM/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NyukeM/alloca.h  -MD -MT CMakeFiles/cmTC_8288c.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_8288c.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_8288c.dir/CheckIncludeFile.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NyukeM/CheckIncludeFile.c
+        Linking C executable cmTC_8288c
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_8288c.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_8288c.dir/CheckIncludeFile.c.o -o cmTC_8288c
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NyukeM'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckFunctionExists.cmake:93 (try_compile)"
+      - "cmake/Checks.cmake:201 (check_function_exists)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for sethostname"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-95dKAy"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-95dKAy"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SETHOSTNAME"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-95dKAy'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_3e078/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_3e078.dir/build.make CMakeFiles/cmTC_3e078.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-95dKAy'
+        Building C object CMakeFiles/cmTC_3e078.dir/CheckFunctionExists.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-95dKAy/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-95dKAy/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-95dKAy/unistd.h -DCHECK_FUNCTION_EXISTS=sethostname -MD -MT CMakeFiles/cmTC_3e078.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_3e078.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_3e078.dir/CheckFunctionExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-95dKAy/CheckFunctionExists.c
+        Linking C executable cmTC_3e078
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_3e078.dir/link.txt --verbose=1
+        /bin/clang-20  -DCHECK_FUNCTION_EXISTS=sethostname -rdynamic CMakeFiles/cmTC_3e078.dir/CheckFunctionExists.c.o -o cmTC_3e078
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-95dKAy'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckFunctionExists.cmake:93 (try_compile)"
+      - "cmake/Checks.cmake:202 (check_function_exists)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for readlink"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Un4beD"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Un4beD"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_READLINK"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Un4beD'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_30cad/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_30cad.dir/build.make CMakeFiles/cmTC_30cad.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Un4beD'
+        Building C object CMakeFiles/cmTC_30cad.dir/CheckFunctionExists.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Un4beD/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Un4beD/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Un4beD/unistd.h -DCHECK_FUNCTION_EXISTS=readlink -MD -MT CMakeFiles/cmTC_30cad.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_30cad.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_30cad.dir/CheckFunctionExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Un4beD/CheckFunctionExists.c
+        Linking C executable cmTC_30cad
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_30cad.dir/link.txt --verbose=1
+        /bin/clang-20  -DCHECK_FUNCTION_EXISTS=readlink -rdynamic CMakeFiles/cmTC_30cad.dir/CheckFunctionExists.c.o -o cmTC_30cad
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Un4beD'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckIncludeFile.cmake:99 (try_compile)"
+      - "cmake/Checks.cmake:204 (check_include_file)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for fcntl.h"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LIszrn"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LIszrn"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_FCNTL_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LIszrn'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_f65b2/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_f65b2.dir/build.make CMakeFiles/cmTC_f65b2.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LIszrn'
+        Building C object CMakeFiles/cmTC_f65b2.dir/CheckIncludeFile.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LIszrn/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LIszrn/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LIszrn/unistd.h  -MD -MT CMakeFiles/cmTC_f65b2.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_f65b2.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_f65b2.dir/CheckIncludeFile.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LIszrn/CheckIncludeFile.c
+        Linking C executable cmTC_f65b2
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f65b2.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_f65b2.dir/CheckIncludeFile.c.o -o cmTC_f65b2
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-LIszrn'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckFunctionExists.cmake:93 (try_compile)"
+      - "cmake/Checks.cmake:209 (check_function_exists)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for fcntl"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-U24p3O"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-U24p3O"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_FCNTL"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-U24p3O'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_50e66/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_50e66.dir/build.make CMakeFiles/cmTC_50e66.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-U24p3O'
+        Building C object CMakeFiles/cmTC_50e66.dir/CheckFunctionExists.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-U24p3O/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-U24p3O/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-U24p3O/unistd.h -DCHECK_FUNCTION_EXISTS=fcntl -MD -MT CMakeFiles/cmTC_50e66.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_50e66.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_50e66.dir/CheckFunctionExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-U24p3O/CheckFunctionExists.c
+        Linking C executable cmTC_50e66
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_50e66.dir/link.txt --verbose=1
+        /bin/clang-20  -DCHECK_FUNCTION_EXISTS=fcntl -rdynamic CMakeFiles/cmTC_50e66.dir/CheckFunctionExists.c.o -o cmTC_50e66
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-U24p3O'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckIncludeFile.cmake:99 (try_compile)"
+      - "cmake/Checks.cmake:216 (check_include_file)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for sys/stat.h"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xMES2g"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xMES2g"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SYS_STAT_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xMES2g'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_f1198/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_f1198.dir/build.make CMakeFiles/cmTC_f1198.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xMES2g'
+        Building C object CMakeFiles/cmTC_f1198.dir/CheckIncludeFile.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xMES2g/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xMES2g/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xMES2g/unistd.h  -MD -MT CMakeFiles/cmTC_f1198.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_f1198.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_f1198.dir/CheckIncludeFile.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xMES2g/CheckIncludeFile.c
+        Linking C executable cmTC_f1198
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f1198.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_f1198.dir/CheckIncludeFile.c.o -o cmTC_f1198
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xMES2g'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckFunctionExists.cmake:93 (try_compile)"
+      - "cmake/Checks.cmake:221 (check_function_exists)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for lstat"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ILYQT7"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ILYQT7"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_LSTAT"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ILYQT7'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_5b5cf/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_5b5cf.dir/build.make CMakeFiles/cmTC_5b5cf.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ILYQT7'
+        Building C object CMakeFiles/cmTC_5b5cf.dir/CheckFunctionExists.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ILYQT7/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ILYQT7/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ILYQT7/unistd.h -DCHECK_FUNCTION_EXISTS=lstat -MD -MT CMakeFiles/cmTC_5b5cf.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_5b5cf.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_5b5cf.dir/CheckFunctionExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ILYQT7/CheckFunctionExists.c
+        Linking C executable cmTC_5b5cf
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_5b5cf.dir/link.txt --verbose=1
+        /bin/clang-20  -DCHECK_FUNCTION_EXISTS=lstat -rdynamic CMakeFiles/cmTC_5b5cf.dir/CheckFunctionExists.c.o -o cmTC_5b5cf
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ILYQT7'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckFunctionExists.cmake:93 (try_compile)"
+      - "cmake/Checks.cmake:222 (check_function_exists)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for symlink"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Rw5ul7"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Rw5ul7"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SYMLINK"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Rw5ul7'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_f7375/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_f7375.dir/build.make CMakeFiles/cmTC_f7375.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Rw5ul7'
+        Building C object CMakeFiles/cmTC_f7375.dir/CheckFunctionExists.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Rw5ul7/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Rw5ul7/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Rw5ul7/unistd.h -DCHECK_FUNCTION_EXISTS=symlink -MD -MT CMakeFiles/cmTC_f7375.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_f7375.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_f7375.dir/CheckFunctionExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Rw5ul7/CheckFunctionExists.c
+        Linking C executable cmTC_f7375
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f7375.dir/link.txt --verbose=1
+        /bin/clang-20  -DCHECK_FUNCTION_EXISTS=symlink -rdynamic CMakeFiles/cmTC_f7375.dir/CheckFunctionExists.c.o -o cmTC_f7375
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Rw5ul7'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckFunctionExists.cmake:93 (try_compile)"
+      - "cmake/Checks.cmake:223 (check_function_exists)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for link"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-77Urqf"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-77Urqf"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_LINK"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-77Urqf'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_25267/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_25267.dir/build.make CMakeFiles/cmTC_25267.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-77Urqf'
+        Building C object CMakeFiles/cmTC_25267.dir/CheckFunctionExists.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-77Urqf/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-77Urqf/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-77Urqf/unistd.h -DCHECK_FUNCTION_EXISTS=link -MD -MT CMakeFiles/cmTC_25267.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_25267.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_25267.dir/CheckFunctionExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-77Urqf/CheckFunctionExists.c
+        Linking C executable cmTC_25267
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_25267.dir/link.txt --verbose=1
+        /bin/clang-20  -DCHECK_FUNCTION_EXISTS=link -rdynamic CMakeFiles/cmTC_25267.dir/CheckFunctionExists.c.o -o cmTC_25267
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-77Urqf'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckIncludeFile.cmake:99 (try_compile)"
+      - "cmake/Checks.cmake:225 (check_include_file)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for signal.h"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-c9EEPC"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-c9EEPC"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SIGNAL_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-c9EEPC'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_afea0/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_afea0.dir/build.make CMakeFiles/cmTC_afea0.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-c9EEPC'
+        Building C object CMakeFiles/cmTC_afea0.dir/CheckIncludeFile.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-c9EEPC/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-c9EEPC/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-c9EEPC/unistd.h  -MD -MT CMakeFiles/cmTC_afea0.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_afea0.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_afea0.dir/CheckIncludeFile.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-c9EEPC/CheckIncludeFile.c
+        Linking C executable cmTC_afea0
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_afea0.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_afea0.dir/CheckIncludeFile.c.o -o cmTC_afea0
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-c9EEPC'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckFunctionExists.cmake:93 (try_compile)"
+      - "cmake/Checks.cmake:231 (check_function_exists)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for sigprocmask"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xTUAn0"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xTUAn0"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SIGPROCMASK"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xTUAn0'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_0c2a7/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_0c2a7.dir/build.make CMakeFiles/cmTC_0c2a7.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xTUAn0'
+        Building C object CMakeFiles/cmTC_0c2a7.dir/CheckFunctionExists.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xTUAn0/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xTUAn0/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xTUAn0/unistd.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xTUAn0/signal.h -DCHECK_FUNCTION_EXISTS=sigprocmask -MD -MT CMakeFiles/cmTC_0c2a7.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_0c2a7.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_0c2a7.dir/CheckFunctionExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xTUAn0/CheckFunctionExists.c
+        Linking C executable cmTC_0c2a7
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_0c2a7.dir/link.txt --verbose=1
+        /bin/clang-20  -DCHECK_FUNCTION_EXISTS=sigprocmask -rdynamic CMakeFiles/cmTC_0c2a7.dir/CheckFunctionExists.c.o -o cmTC_0c2a7
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-xTUAn0'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckFunctionExists.cmake:93 (try_compile)"
+      - "cmake/Checks.cmake:239 (check_function_exists)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for sigaction"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fOcwnK"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fOcwnK"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SIGACTION"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fOcwnK'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_6ace5/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_6ace5.dir/build.make CMakeFiles/cmTC_6ace5.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fOcwnK'
+        Building C object CMakeFiles/cmTC_6ace5.dir/CheckFunctionExists.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fOcwnK/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fOcwnK/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fOcwnK/unistd.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fOcwnK/signal.h -DCHECK_FUNCTION_EXISTS=sigaction -MD -MT CMakeFiles/cmTC_6ace5.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_6ace5.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_6ace5.dir/CheckFunctionExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fOcwnK/CheckFunctionExists.c
+        Linking C executable cmTC_6ace5
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6ace5.dir/link.txt --verbose=1
+        /bin/clang-20  -DCHECK_FUNCTION_EXISTS=sigaction -rdynamic CMakeFiles/cmTC_6ace5.dir/CheckFunctionExists.c.o -o cmTC_6ace5
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fOcwnK'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckFunctionExists.cmake:93 (try_compile)"
+      - "cmake/Checks.cmake:240 (check_function_exists)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for setpgid"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tz4a4j"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tz4a4j"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SETPGID"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tz4a4j'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_62be7/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_62be7.dir/build.make CMakeFiles/cmTC_62be7.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tz4a4j'
+        Building C object CMakeFiles/cmTC_62be7.dir/CheckFunctionExists.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tz4a4j/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tz4a4j/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tz4a4j/unistd.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tz4a4j/signal.h -DCHECK_FUNCTION_EXISTS=setpgid -MD -MT CMakeFiles/cmTC_62be7.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_62be7.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_62be7.dir/CheckFunctionExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tz4a4j/CheckFunctionExists.c
+        Linking C executable cmTC_62be7
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_62be7.dir/link.txt --verbose=1
+        /bin/clang-20  -DCHECK_FUNCTION_EXISTS=setpgid -rdynamic CMakeFiles/cmTC_62be7.dir/CheckFunctionExists.c.o -o cmTC_62be7
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tz4a4j'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckIncludeFile.cmake:99 (try_compile)"
+      - "cmake/Checks.cmake:242 (check_include_file)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for sys/utsname.h"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wNxWVx"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wNxWVx"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SYS_UTSNAME_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wNxWVx'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_e0481/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_e0481.dir/build.make CMakeFiles/cmTC_e0481.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wNxWVx'
+        Building C object CMakeFiles/cmTC_e0481.dir/CheckIncludeFile.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wNxWVx/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wNxWVx/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wNxWVx/unistd.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wNxWVx/signal.h  -MD -MT CMakeFiles/cmTC_e0481.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_e0481.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_e0481.dir/CheckIncludeFile.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wNxWVx/CheckIncludeFile.c
+        Linking C executable cmTC_e0481
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e0481.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_e0481.dir/CheckIncludeFile.c.o -o cmTC_e0481
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wNxWVx'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckIncludeFile.cmake:99 (try_compile)"
+      - "cmake/Checks.cmake:244 (check_include_file)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for glob.h"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-MxltH5"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-MxltH5"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_GLOB_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-MxltH5'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_d660f/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_d660f.dir/build.make CMakeFiles/cmTC_d660f.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-MxltH5'
+        Building C object CMakeFiles/cmTC_d660f.dir/CheckIncludeFile.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-MxltH5/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-MxltH5/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-MxltH5/unistd.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-MxltH5/signal.h  -MD -MT CMakeFiles/cmTC_d660f.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_d660f.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_d660f.dir/CheckIncludeFile.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-MxltH5/CheckIncludeFile.c
+        Linking C executable cmTC_d660f
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d660f.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_d660f.dir/CheckIncludeFile.c.o -o cmTC_d660f
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-MxltH5'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckFunctionExists.cmake:93 (try_compile)"
+      - "cmake/Checks.cmake:249 (check_function_exists)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for glob"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-HOPJZm"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-HOPJZm"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_GLOB"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-HOPJZm'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_ea89f/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_ea89f.dir/build.make CMakeFiles/cmTC_ea89f.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-HOPJZm'
+        Building C object CMakeFiles/cmTC_ea89f.dir/CheckFunctionExists.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-HOPJZm/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-HOPJZm/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-HOPJZm/unistd.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-HOPJZm/signal.h -DCHECK_FUNCTION_EXISTS=glob -MD -MT CMakeFiles/cmTC_ea89f.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_ea89f.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_ea89f.dir/CheckFunctionExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-HOPJZm/CheckFunctionExists.c
+        Linking C executable cmTC_ea89f
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ea89f.dir/link.txt --verbose=1
+        /bin/clang-20  -DCHECK_FUNCTION_EXISTS=glob -rdynamic CMakeFiles/cmTC_ea89f.dir/CheckFunctionExists.c.o -o cmTC_ea89f
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-HOPJZm'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckFunctionExists.cmake:93 (try_compile)"
+      - "cmake/Checks.cmake:261 (check_function_exists)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for sys_siglist"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fHiYBB"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fHiYBB"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SYS_SIGLIST"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fHiYBB'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_a1d49/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_a1d49.dir/build.make CMakeFiles/cmTC_a1d49.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fHiYBB'
+        Building C object CMakeFiles/cmTC_a1d49.dir/CheckFunctionExists.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fHiYBB/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fHiYBB/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fHiYBB/unistd.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fHiYBB/signal.h -DCHECK_FUNCTION_EXISTS=sys_siglist -MD -MT CMakeFiles/cmTC_a1d49.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_a1d49.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_a1d49.dir/CheckFunctionExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fHiYBB/CheckFunctionExists.c
+        Linking C executable cmTC_a1d49
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a1d49.dir/link.txt --verbose=1
+        /usr/bin/ld: CMakeFiles/cmTC_a1d49.dir/CheckFunctionExists.c.o: in function `main':
+        CheckFunctionExists.c:(.text+0x17): undefined reference to `sys_siglist'
+        clang-20: error: linker command failed with exit code 1 (use -v to see invocation)
+        /bin/clang-20  -DCHECK_FUNCTION_EXISTS=sys_siglist -rdynamic CMakeFiles/cmTC_a1d49.dir/CheckFunctionExists.c.o -o cmTC_a1d49
+        gmake[1]: *** [CMakeFiles/cmTC_a1d49.dir/build.make:103: cmTC_a1d49] Error 1
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-fHiYBB'
+        gmake: *** [Makefile:134: cmTC_a1d49/fast] Error 2
+        
+      exitCode: 2
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake:108 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckCCompilerFlag.cmake:56 (cmake_check_compiler_flag)"
+      - "cmake/Functions.cmake:28 (check_c_compiler_flag)"
+      - "cmake/Checks.cmake:264 (check_cflag)"
+      - "CMakeLists.txt:28 (include)"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-J5b3y8"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-J5b3y8"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "F_OPT_NONE"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-J5b3y8'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_49817/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_49817.dir/build.make CMakeFiles/cmTC_49817.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-J5b3y8'
+        Building C object CMakeFiles/cmTC_49817.dir/src.c.o
+        /bin/clang-20 -DF_OPT_NONE -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-J5b3y8/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-J5b3y8/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-J5b3y8/unistd.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-J5b3y8/signal.h -O0 -MD -MT CMakeFiles/cmTC_49817.dir/src.c.o -MF CMakeFiles/cmTC_49817.dir/src.c.o.d -o CMakeFiles/cmTC_49817.dir/src.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-J5b3y8/src.c
+        Linking C executable cmTC_49817
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_49817.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_49817.dir/src.c.o -o cmTC_49817
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-J5b3y8'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake:108 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckCCompilerFlag.cmake:56 (cmake_check_compiler_flag)"
+      - "cmake/Functions.cmake:28 (check_c_compiler_flag)"
+      - "cmake/Checks.cmake:265 (check_cflag)"
+      - "CMakeLists.txt:28 (include)"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-iTw37Q"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-iTw37Q"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "F_G_GDB"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-iTw37Q'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_7939f/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_7939f.dir/build.make CMakeFiles/cmTC_7939f.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-iTw37Q'
+        Building C object CMakeFiles/cmTC_7939f.dir/src.c.o
+        /bin/clang-20 -DF_G_GDB -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-iTw37Q/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-iTw37Q/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-iTw37Q/unistd.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-iTw37Q/signal.h -ggdb -MD -MT CMakeFiles/cmTC_7939f.dir/src.c.o -MF CMakeFiles/cmTC_7939f.dir/src.c.o.d -o CMakeFiles/cmTC_7939f.dir/src.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-iTw37Q/src.c
+        Linking C executable cmTC_7939f
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_7939f.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_7939f.dir/src.c.o -o cmTC_7939f
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-iTw37Q'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckLibraryExists.cmake:78 (try_compile)"
+      - "cmake/Checks.cmake:285 (check_library_exists)"
+      - "CMakeLists.txt:28 (include)"
+    checks:
+      - "Looking for pow in m"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-XYFn97"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-XYFn97"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "HAVE_LIBM"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-XYFn97'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_ab110/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_ab110.dir/build.make CMakeFiles/cmTC_ab110.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-XYFn97'
+        Building C object CMakeFiles/cmTC_ab110.dir/CheckFunctionExists.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__  -DCHECK_FUNCTION_EXISTS=pow -MD -MT CMakeFiles/cmTC_ab110.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_ab110.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_ab110.dir/CheckFunctionExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-XYFn97/CheckFunctionExists.c
+        /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-XYFn97/CheckFunctionExists.c:7:3: warning: incompatible redeclaration of library function 'pow' [-Wincompatible-library-redeclaration]
+            7 |   CHECK_FUNCTION_EXISTS(void);
+              |   ^
+        <command line>:2:31: note: expanded from macro 'CHECK_FUNCTION_EXISTS'
+            2 | #define CHECK_FUNCTION_EXISTS pow
+              |                               ^
+        /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-XYFn97/CheckFunctionExists.c:7:3: note: 'pow' is a builtin with type 'double (double, double)'
+        <command line>:2:31: note: expanded from macro 'CHECK_FUNCTION_EXISTS'
+            2 | #define CHECK_FUNCTION_EXISTS pow
+              |                               ^
+        1 warning generated.
+        Linking C executable cmTC_ab110
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ab110.dir/link.txt --verbose=1
+        /bin/clang-20  -DCHECK_FUNCTION_EXISTS=pow -rdynamic CMakeFiles/cmTC_ab110.dir/CheckFunctionExists.c.o -o cmTC_ab110  -lm
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-XYFn97'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake:108 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckCCompilerFlag.cmake:56 (cmake_check_compiler_flag)"
+      - "cmake/Debug.cmake:3 (check_c_compiler_flag)"
+      - "CMakeLists.txt:30 (include)"
+    checks:
+      - "Performing Test OPT_C_OPT_NONE"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NKHVgh"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NKHVgh"
+    cmakeVariables:
+      CMAKE_C_FLAGS: " "
+    buildResult:
+      variable: "OPT_C_OPT_NONE"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NKHVgh'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_63a65/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_63a65.dir/build.make CMakeFiles/cmTC_63a65.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NKHVgh'
+        Building C object CMakeFiles/cmTC_63a65.dir/src.c.o
+        /bin/clang-20 -DOPT_C_OPT_NONE -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NKHVgh/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NKHVgh/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NKHVgh/unistd.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NKHVgh/signal.h -O0 -MD -MT CMakeFiles/cmTC_63a65.dir/src.c.o -MF CMakeFiles/cmTC_63a65.dir/src.c.o.d -o CMakeFiles/cmTC_63a65.dir/src.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NKHVgh/src.c
+        Linking C executable cmTC_63a65
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_63a65.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_63a65.dir/src.c.o -o cmTC_63a65
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-NKHVgh'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake:108 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckCCompilerFlag.cmake:56 (cmake_check_compiler_flag)"
+      - "cmake/Debug.cmake:12 (check_c_compiler_flag)"
+      - "CMakeLists.txt:30 (include)"
+    checks:
+      - "Performing Test OPT_C_G_GDB"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wmT2w6"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wmT2w6"
+    cmakeVariables:
+      CMAKE_C_FLAGS: " "
+    buildResult:
+      variable: "OPT_C_G_GDB"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wmT2w6'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_57423/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_57423.dir/build.make CMakeFiles/cmTC_57423.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wmT2w6'
+        Building C object CMakeFiles/cmTC_57423.dir/src.c.o
+        /bin/clang-20 -DOPT_C_G_GDB -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wmT2w6/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wmT2w6/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wmT2w6/unistd.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wmT2w6/signal.h -ggdb -MD -MT CMakeFiles/cmTC_57423.dir/src.c.o -MF CMakeFiles/cmTC_57423.dir/src.c.o.d -o CMakeFiles/cmTC_57423.dir/src.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wmT2w6/src.c
+        Linking C executable cmTC_57423
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_57423.dir/link.txt --verbose=1
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_57423.dir/src.c.o -o cmTC_57423
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-wmT2w6'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckLibraryExists.cmake:78 (try_compile)"
+      - "CMakeLists.txt:57 (check_library_exists)"
+    checks:
+      - "Looking for malloc in efence"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-iPjtaQ"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-iPjtaQ"
+    cmakeVariables:
+      CMAKE_C_FLAGS: " "
+    buildResult:
+      variable: "HAVE_EFENCE"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-iPjtaQ'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_52646/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_52646.dir/build.make CMakeFiles/cmTC_52646.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-iPjtaQ'
+        Building C object CMakeFiles/cmTC_52646.dir/CheckFunctionExists.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__  -DCHECK_FUNCTION_EXISTS=malloc -MD -MT CMakeFiles/cmTC_52646.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_52646.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_52646.dir/CheckFunctionExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-iPjtaQ/CheckFunctionExists.c
+        /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-iPjtaQ/CheckFunctionExists.c:7:3: warning: incompatible redeclaration of library function 'malloc' [-Wincompatible-library-redeclaration]
+            7 |   CHECK_FUNCTION_EXISTS(void);
+              |   ^
+        <command line>:2:31: note: expanded from macro 'CHECK_FUNCTION_EXISTS'
+            2 | #define CHECK_FUNCTION_EXISTS malloc
+              |                               ^
+        /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-iPjtaQ/CheckFunctionExists.c:7:3: note: 'malloc' is a builtin with type 'void *(unsigned long)'
+        <command line>:2:31: note: expanded from macro 'CHECK_FUNCTION_EXISTS'
+            2 | #define CHECK_FUNCTION_EXISTS malloc
+              |                               ^
+        1 warning generated.
+        Linking C executable cmTC_52646
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_52646.dir/link.txt --verbose=1
+        /bin/clang-20   -DCHECK_FUNCTION_EXISTS=malloc -rdynamic CMakeFiles/cmTC_52646.dir/CheckFunctionExists.c.o -o cmTC_52646  -lefence
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-iPjtaQ'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake:108 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckCCompilerFlag.cmake:56 (cmake_check_compiler_flag)"
+      - "CMakeLists.txt:80 (check_c_compiler_flag)"
+    checks:
+      - "Performing Test F_LTO"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-IqZZ7z"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-IqZZ7z"
+    cmakeVariables:
+      CMAKE_C_FLAGS: " "
+    buildResult:
+      variable: "F_LTO"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-IqZZ7z'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_6b031/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_6b031.dir/build.make CMakeFiles/cmTC_6b031.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-IqZZ7z'
+        Building C object CMakeFiles/cmTC_6b031.dir/src.c.o
+        /bin/clang-20 -DF_LTO -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-IqZZ7z/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-IqZZ7z/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-IqZZ7z/unistd.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-IqZZ7z/signal.h -flto -MD -MT CMakeFiles/cmTC_6b031.dir/src.c.o -MF CMakeFiles/cmTC_6b031.dir/src.c.o.d -o CMakeFiles/cmTC_6b031.dir/src.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-IqZZ7z/src.c
+        Linking C executable cmTC_6b031
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6b031.dir/link.txt --verbose=1
+        CMakeFiles/cmTC_6b031.dir/src.c.o: file not recognized: file format not recognized
+        clang-20: error: linker command failed with exit code 1 (use -v to see invocation)
+        /bin/clang-20 -rdynamic CMakeFiles/cmTC_6b031.dir/src.c.o -o cmTC_6b031
+        gmake[1]: *** [CMakeFiles/cmTC_6b031.dir/build.make:103: cmTC_6b031] Error 1
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-IqZZ7z'
+        gmake: *** [Makefile:134: cmTC_6b031/fast] Error 2
+        
+      exitCode: 2
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckFunctionExists.cmake:93 (try_compile)"
+      - "cmake/Functions.cmake:179 (check_function_exists)"
+      - "cmake/Functions.cmake:193 (check_function_def)"
+      - "CMakeLists.txt:88 (check_functions)"
+    checks:
+      - "Looking for sigismember"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZchgC9"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZchgC9"
+    cmakeVariables:
+      CMAKE_C_FLAGS: " "
+    buildResult:
+      variable: "HAVE_SIGISMEMBER"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZchgC9'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_b0c8b/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_b0c8b.dir/build.make CMakeFiles/cmTC_b0c8b.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZchgC9'
+        Building C object CMakeFiles/cmTC_b0c8b.dir/CheckFunctionExists.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZchgC9/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZchgC9/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZchgC9/unistd.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZchgC9/signal.h -DCHECK_FUNCTION_EXISTS=sigismember -MD -MT CMakeFiles/cmTC_b0c8b.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_b0c8b.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_b0c8b.dir/CheckFunctionExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZchgC9/CheckFunctionExists.c
+        Linking C executable cmTC_b0c8b
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_b0c8b.dir/link.txt --verbose=1
+        /bin/clang-20   -DCHECK_FUNCTION_EXISTS=sigismember -rdynamic CMakeFiles/cmTC_b0c8b.dir/CheckFunctionExists.c.o -o cmTC_b0c8b
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZchgC9'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckFunctionExists.cmake:93 (try_compile)"
+      - "cmake/Functions.cmake:179 (check_function_exists)"
+      - "cmake/Functions.cmake:193 (check_function_def)"
+      - "CMakeLists.txt:88 (check_functions)"
+    checks:
+      - "Looking for signal"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZECQqr"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZECQqr"
+    cmakeVariables:
+      CMAKE_C_FLAGS: " "
+    buildResult:
+      variable: "HAVE_SIGNAL"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZECQqr'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_fab93/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_fab93.dir/build.make CMakeFiles/cmTC_fab93.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZECQqr'
+        Building C object CMakeFiles/cmTC_fab93.dir/CheckFunctionExists.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZECQqr/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZECQqr/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZECQqr/unistd.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZECQqr/signal.h -DCHECK_FUNCTION_EXISTS=signal -MD -MT CMakeFiles/cmTC_fab93.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_fab93.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_fab93.dir/CheckFunctionExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZECQqr/CheckFunctionExists.c
+        Linking C executable cmTC_fab93
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_fab93.dir/link.txt --verbose=1
+        /bin/clang-20   -DCHECK_FUNCTION_EXISTS=signal -rdynamic CMakeFiles/cmTC_fab93.dir/CheckFunctionExists.c.o -o cmTC_fab93
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-ZECQqr'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CheckFunctionExists.cmake:93 (try_compile)"
+      - "cmake/Functions.cmake:179 (check_function_exists)"
+      - "cmake/Functions.cmake:193 (check_function_def)"
+      - "CMakeLists.txt:88 (check_functions)"
+    checks:
+      - "Looking for sigsuspend"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-imFriG"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-imFriG"
+    cmakeVariables:
+      CMAKE_C_FLAGS: " "
+    buildResult:
+      variable: "HAVE_SIGSUSPEND"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-imFriG'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_6255b/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_6255b.dir/build.make CMakeFiles/cmTC_6255b.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-imFriG'
+        Building C object CMakeFiles/cmTC_6255b.dir/CheckFunctionExists.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-imFriG/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-imFriG/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-imFriG/unistd.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-imFriG/signal.h -DCHECK_FUNCTION_EXISTS=sigsuspend -MD -MT CMakeFiles/cmTC_6255b.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_6255b.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_6255b.dir/CheckFunctionExists.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-imFriG/CheckFunctionExists.c
+        Linking C executable cmTC_6255b
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6255b.dir/link.txt --verbose=1
+        /bin/clang-20   -DCHECK_FUNCTION_EXISTS=sigsuspend -rdynamic CMakeFiles/cmTC_6255b.dir/CheckFunctionExists.c.o -o cmTC_6255b
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-imFriG'
+        
+      exitCode: 0
+...
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:1 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler: /bin/clang++-20 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
+      
+      The CXX compiler identification is Clang, found in:
+        /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/3.31.6/CompilerIdCXX/a.out
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:1 (project)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-kVQe4T"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-kVQe4T"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/bin/clang-scan-deps-20"
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-kVQe4T'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_03c12/fast
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-kVQe4T'
+        /usr/bin/gmake  -f CMakeFiles/cmTC_03c12.dir/build.make CMakeFiles/cmTC_03c12.dir/build
+        gmake[2]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-kVQe4T'
+        Building CXX object CMakeFiles/cmTC_03c12.dir/CMakeCXXCompilerABI.cpp.o
+        /bin/clang++-20   -v -MD -MT CMakeFiles/cmTC_03c12.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_03c12.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_03c12.dir/CMakeCXXCompilerABI.cpp.o -c /mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeCXXCompilerABI.cpp
+        Ubuntu clang version 20.1.2 (0ubuntu1~24.04.2)
+        Target: x86_64-pc-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/lib/llvm-20/bin
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Candidate multilib: x32;@mx32
+        Selected multilib: .;@m64
+         (in-process)
+         "/usr/lib/llvm-20/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-kVQe4T -v -fcoverage-compilation-dir=/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-kVQe4T -resource-dir /usr/lib/llvm-20/lib/clang/20 -dependency-file CMakeFiles/cmTC_03c12.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_03c12.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/x86_64-linux-gnu/c++/14 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/backward -internal-isystem /usr/lib/llvm-20/lib/clang/20/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_03c12.dir/CMakeCXXCompilerABI.cpp.o -x c++ /mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeCXXCompilerABI.cpp
+        clang -cc1 version 20.1.2 based upon LLVM 20.1.2 default target x86_64-pc-linux-gnu
+        ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include"
+        ignoring nonexistent directory "/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14
+         /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/x86_64-linux-gnu/c++/14
+         /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/backward
+         /usr/lib/llvm-20/lib/clang/20/include
+         /usr/local/include
+         /usr/include/x86_64-linux-gnu
+         /usr/include
+        End of search list.
+        Linking CXX executable cmTC_03c12
+        /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_03c12.dir/link.txt --verbose=1
+        Ubuntu clang version 20.1.2 (0ubuntu1~24.04.2)
+        Target: x86_64-pc-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/lib/llvm-20/bin
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Candidate multilib: x32;@mx32
+        Selected multilib: .;@m64
+         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -export-dynamic -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_03c12 /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/14 -L/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_03c12.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o /lib/x86_64-linux-gnu/crtn.o
+        GNU ld (GNU Binutils for Ubuntu) 2.42
+        /bin/clang++-20  -v -Wl,-v -rdynamic CMakeFiles/cmTC_03c12.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_03c12
+        gmake[2]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-kVQe4T'
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-kVQe4T'
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:182 (message)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:1 (project)"
+    message: |
+      Parsed CXX implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14]
+          add: [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/x86_64-linux-gnu/c++/14]
+          add: [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/backward]
+          add: [/usr/lib/llvm-20/lib/clang/20/include]
+          add: [/usr/local/include]
+          add: [/usr/include/x86_64-linux-gnu]
+          add: [/usr/include]
+        end of search list found
+        collapse include dir [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14] ==> [/usr/include/c++/14]
+        collapse include dir [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/x86_64-linux-gnu/c++/14] ==> [/usr/include/x86_64-linux-gnu/c++/14]
+        collapse include dir [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/backward] ==> [/usr/include/c++/14/backward]
+        collapse include dir [/usr/lib/llvm-20/lib/clang/20/include] ==> [/usr/lib/llvm-20/lib/clang/20/include]
+        collapse include dir [/usr/local/include] ==> [/usr/local/include]
+        collapse include dir [/usr/include/x86_64-linux-gnu] ==> [/usr/include/x86_64-linux-gnu]
+        collapse include dir [/usr/include] ==> [/usr/include]
+        implicit include dirs: [/usr/include/c++/14;/usr/include/x86_64-linux-gnu/c++/14;/usr/include/c++/14/backward;/usr/lib/llvm-20/lib/clang/20/include;/usr/local/include;/usr/include/x86_64-linux-gnu;/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:1 (project)"
+    message: |
+      Parsed CXX implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
+        ignore line: [Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-kVQe4T']
+        ignore line: []
+        ignore line: [Run Build Command(s): /mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_03c12/fast]
+        ignore line: [gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-kVQe4T']
+        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_03c12.dir/build.make CMakeFiles/cmTC_03c12.dir/build]
+        ignore line: [gmake[2]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-kVQe4T']
+        ignore line: [Building CXX object CMakeFiles/cmTC_03c12.dir/CMakeCXXCompilerABI.cpp.o]
+        ignore line: [/bin/clang++-20   -v -MD -MT CMakeFiles/cmTC_03c12.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_03c12.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_03c12.dir/CMakeCXXCompilerABI.cpp.o -c /mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Ubuntu clang version 20.1.2 (0ubuntu1~24.04.2)]
+        ignore line: [Target: x86_64-pc-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/lib/llvm-20/bin]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Candidate multilib: x32]
+        ignore line: [@mx32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        ignore line: [ (in-process)]
+        ignore line: [ "/usr/lib/llvm-20/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-kVQe4T -v -fcoverage-compilation-dir=/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-kVQe4T -resource-dir /usr/lib/llvm-20/lib/clang/20 -dependency-file CMakeFiles/cmTC_03c12.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_03c12.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/x86_64-linux-gnu/c++/14 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/backward -internal-isystem /usr/lib/llvm-20/lib/clang/20/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_03c12.dir/CMakeCXXCompilerABI.cpp.o -x c++ /mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [clang -cc1 version 20.1.2 based upon LLVM 20.1.2 default target x86_64-pc-linux-gnu]
+        ignore line: [ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include"]
+        ignore line: [ignoring nonexistent directory "/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14]
+        ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/x86_64-linux-gnu/c++/14]
+        ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/backward]
+        ignore line: [ /usr/lib/llvm-20/lib/clang/20/include]
+        ignore line: [ /usr/local/include]
+        ignore line: [ /usr/include/x86_64-linux-gnu]
+        ignore line: [ /usr/include]
+        ignore line: [End of search list.]
+        ignore line: [Linking CXX executable cmTC_03c12]
+        ignore line: [/mnt/data/opt/cmake-3.31.6-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_03c12.dir/link.txt --verbose=1]
+        ignore line: [Ubuntu clang version 20.1.2 (0ubuntu1~24.04.2)]
+        ignore line: [Target: x86_64-pc-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/lib/llvm-20/bin]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Candidate multilib: x32]
+        ignore line: [@mx32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -export-dynamic -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_03c12 /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/14 -L/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_03c12.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o /lib/x86_64-linux-gnu/crtn.o]
+          arg [/usr/bin/ld] ==> ignore
+          arg [--hash-style=gnu] ==> ignore
+          arg [--build-id] ==> ignore
+          arg [--eh-frame-hdr] ==> ignore
+          arg [-m] ==> ignore
+          arg [elf_x86_64] ==> ignore
+          arg [-export-dynamic] ==> ignore
+          arg [-pie] ==> ignore
+          arg [-dynamic-linker] ==> ignore
+          arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_03c12] ==> ignore
+          arg [/lib/x86_64-linux-gnu/Scrt1.o] ==> obj [/lib/x86_64-linux-gnu/Scrt1.o]
+          arg [/lib/x86_64-linux-gnu/crti.o] ==> obj [/lib/x86_64-linux-gnu/crti.o]
+          arg [/usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/14] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/14]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64]
+          arg [-L/lib/x86_64-linux-gnu] ==> dir [/lib/x86_64-linux-gnu]
+          arg [-L/lib/../lib64] ==> dir [/lib/../lib64]
+          arg [-L/usr/lib/x86_64-linux-gnu] ==> dir [/usr/lib/x86_64-linux-gnu]
+          arg [-L/usr/lib/../lib64] ==> dir [/usr/lib/../lib64]
+          arg [-L/lib] ==> dir [/lib]
+          arg [-L/usr/lib] ==> dir [/usr/lib]
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_03c12.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [-lstdc++] ==> lib [stdc++]
+          arg [-lm] ==> lib [m]
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [-lgcc] ==> lib [gcc]
+          arg [-lc] ==> lib [c]
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [-lgcc] ==> lib [gcc]
+          arg [/usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o]
+          arg [/lib/x86_64-linux-gnu/crtn.o] ==> obj [/lib/x86_64-linux-gnu/crtn.o]
+        linker tool for 'CXX': /usr/bin/ld
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/14] ==> [/usr/lib/gcc/x86_64-linux-gnu/14]
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64] ==> [/usr/lib64]
+        collapse library dir [/lib/x86_64-linux-gnu] ==> [/lib/x86_64-linux-gnu]
+        collapse library dir [/lib/../lib64] ==> [/lib64]
+        collapse library dir [/usr/lib/x86_64-linux-gnu] ==> [/usr/lib/x86_64-linux-gnu]
+        collapse library dir [/usr/lib/../lib64] ==> [/usr/lib64]
+        collapse library dir [/lib] ==> [/lib]
+        collapse library dir [/usr/lib] ==> [/usr/lib]
+        implicit libs: [stdc++;m;gcc_s;gcc;c;gcc_s;gcc]
+        implicit objs: [/lib/x86_64-linux-gnu/Scrt1.o;/lib/x86_64-linux-gnu/crti.o;/usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o;/usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o;/lib/x86_64-linux-gnu/crtn.o]
+        implicit dirs: [/usr/lib/gcc/x86_64-linux-gnu/14;/usr/lib64;/lib/x86_64-linux-gnu;/lib64;/usr/lib/x86_64-linux-gnu;/lib;/usr/lib]
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
+      - "/mnt/data/opt/cmake-3.31.6-linux-x86_64/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:1 (project)"
+    message: |
+      Running the CXX compiler's linker: "/usr/bin/ld" "-v"
+      GNU ld (GNU Binutils for Ubuntu) 2.42
+...
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeDetermineSystem.cmake:205 (message)"
+      - "CMakeLists.txt:1 (project)"
+    message: |
+      The system is: Linux - 6.14.0-37-generic - x86_64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:1 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler: /bin/clang-20 
+      Build flags: -Wall;-pg
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+      
+      The C compiler identification is Clang, found in:
+        /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/4.0.0/CompilerIdC/a.out
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:1 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler: /bin/clang++-20 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
+      
+      The CXX compiler identification is Clang, found in:
+        /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/4.0.0/CompilerIdCXX/a.out
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeDetermineCompilerABI.cmake:83 (try_compile)"
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:1 (project)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-7VOrDa"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-7VOrDa"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/bin/clang-scan-deps-20"
+      CMAKE_C_FLAGS: "-Wall -pg"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-7VOrDa'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-4.0.0-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_3b577/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_3b577.dir/build.make CMakeFiles/cmTC_3b577.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-7VOrDa'
+        Building C object CMakeFiles/cmTC_3b577.dir/CMakeCCompilerABI.c.o
+        /bin/clang-20   -Wall -pg  -fcolor-diagnostics   -v -MD -MT CMakeFiles/cmTC_3b577.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_3b577.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_3b577.dir/CMakeCCompilerABI.c.o -c /mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeCCompilerABI.c
+        Ubuntu clang version 20.1.2 (0ubuntu1~24.04.2)
+        Target: x86_64-pc-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/lib/llvm-20/bin
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Candidate multilib: x32;@mx32
+        Selected multilib: .;@m64
+         (in-process)
+         "/usr/lib/llvm-20/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-7VOrDa -v -fcoverage-compilation-dir=/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-7VOrDa -resource-dir /usr/lib/llvm-20/lib/clang/20 -dependency-file CMakeFiles/cmTC_3b577.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_3b577.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/llvm-20/lib/clang/20/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -Wall -ferror-limit 19 -pg -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_3b577.dir/CMakeCCompilerABI.c.o -x c /mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeCCompilerABI.c
+        clang -cc1 version 20.1.2 based upon LLVM 20.1.2 default target x86_64-pc-linux-gnu
+        ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include"
+        ignoring nonexistent directory "/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /usr/lib/llvm-20/lib/clang/20/include
+         /usr/local/include
+         /usr/include/x86_64-linux-gnu
+         /usr/include
+        End of search list.
+        Linking C executable cmTC_3b577
+        /mnt/data/opt/cmake-4.0.0-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_3b577.dir/link.txt --verbose=1
+        Ubuntu clang version 20.1.2 (0ubuntu1~24.04.2)
+        Target: x86_64-pc-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/lib/llvm-20/bin
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Candidate multilib: x32;@mx32
+        Selected multilib: .;@m64
+         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_3b577 /lib/x86_64-linux-gnu/gcrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/14 -L/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_3b577.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o /lib/x86_64-linux-gnu/crtn.o
+        GNU ld (GNU Binutils for Ubuntu) 2.42
+        /bin/clang-20 -Wall -pg   -v -Wl,-v CMakeFiles/cmTC_3b577.dir/CMakeCCompilerABI.c.o -o cmTC_3b577
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-7VOrDa'
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeDetermineCompilerABI.cmake:191 (message)"
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:1 (project)"
+    message: |
+      Parsed C implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/usr/lib/llvm-20/lib/clang/20/include]
+          add: [/usr/local/include]
+          add: [/usr/include/x86_64-linux-gnu]
+          add: [/usr/include]
+        end of search list found
+        collapse include dir [/usr/lib/llvm-20/lib/clang/20/include] ==> [/usr/lib/llvm-20/lib/clang/20/include]
+        collapse include dir [/usr/local/include] ==> [/usr/local/include]
+        collapse include dir [/usr/include/x86_64-linux-gnu] ==> [/usr/include/x86_64-linux-gnu]
+        collapse include dir [/usr/include] ==> [/usr/include]
+        implicit include dirs: [/usr/lib/llvm-20/lib/clang/20/include;/usr/local/include;/usr/include/x86_64-linux-gnu;/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeDetermineCompilerABI.cmake:227 (message)"
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:1 (project)"
+    message: |
+      Parsed C implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)))("|,| |$)]
+        ignore line: [Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-7VOrDa']
+        ignore line: []
+        ignore line: [Run Build Command(s): /mnt/data/opt/cmake-4.0.0-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_3b577/fast]
+        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_3b577.dir/build.make CMakeFiles/cmTC_3b577.dir/build]
+        ignore line: [gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-7VOrDa']
+        ignore line: [Building C object CMakeFiles/cmTC_3b577.dir/CMakeCCompilerABI.c.o]
+        ignore line: [/bin/clang-20   -Wall -pg  -fcolor-diagnostics   -v -MD -MT CMakeFiles/cmTC_3b577.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_3b577.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_3b577.dir/CMakeCCompilerABI.c.o -c /mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeCCompilerABI.c]
+        ignore line: [Ubuntu clang version 20.1.2 (0ubuntu1~24.04.2)]
+        ignore line: [Target: x86_64-pc-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/lib/llvm-20/bin]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Candidate multilib: x32]
+        ignore line: [@mx32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        ignore line: [ (in-process)]
+        ignore line: [ "/usr/lib/llvm-20/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-7VOrDa -v -fcoverage-compilation-dir=/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-7VOrDa -resource-dir /usr/lib/llvm-20/lib/clang/20 -dependency-file CMakeFiles/cmTC_3b577.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_3b577.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/llvm-20/lib/clang/20/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -Wall -ferror-limit 19 -pg -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_3b577.dir/CMakeCCompilerABI.c.o -x c /mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeCCompilerABI.c]
+        ignore line: [clang -cc1 version 20.1.2 based upon LLVM 20.1.2 default target x86_64-pc-linux-gnu]
+        ignore line: [ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include"]
+        ignore line: [ignoring nonexistent directory "/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /usr/lib/llvm-20/lib/clang/20/include]
+        ignore line: [ /usr/local/include]
+        ignore line: [ /usr/include/x86_64-linux-gnu]
+        ignore line: [ /usr/include]
+        ignore line: [End of search list.]
+        ignore line: [Linking C executable cmTC_3b577]
+        ignore line: [/mnt/data/opt/cmake-4.0.0-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_3b577.dir/link.txt --verbose=1]
+        ignore line: [Ubuntu clang version 20.1.2 (0ubuntu1~24.04.2)]
+        ignore line: [Target: x86_64-pc-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/lib/llvm-20/bin]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Candidate multilib: x32]
+        ignore line: [@mx32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_3b577 /lib/x86_64-linux-gnu/gcrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/14 -L/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_3b577.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o /lib/x86_64-linux-gnu/crtn.o]
+          arg [/usr/bin/ld] ==> ignore
+          arg [--hash-style=gnu] ==> ignore
+          arg [--build-id] ==> ignore
+          arg [--eh-frame-hdr] ==> ignore
+          arg [-m] ==> ignore
+          arg [elf_x86_64] ==> ignore
+          arg [-pie] ==> ignore
+          arg [-dynamic-linker] ==> ignore
+          arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_3b577] ==> ignore
+          arg [/lib/x86_64-linux-gnu/gcrt1.o] ==> obj [/lib/x86_64-linux-gnu/gcrt1.o]
+          arg [/lib/x86_64-linux-gnu/crti.o] ==> obj [/lib/x86_64-linux-gnu/crti.o]
+          arg [/usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/14] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/14]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64]
+          arg [-L/lib/x86_64-linux-gnu] ==> dir [/lib/x86_64-linux-gnu]
+          arg [-L/lib/../lib64] ==> dir [/lib/../lib64]
+          arg [-L/usr/lib/x86_64-linux-gnu] ==> dir [/usr/lib/x86_64-linux-gnu]
+          arg [-L/usr/lib/../lib64] ==> dir [/usr/lib/../lib64]
+          arg [-L/lib] ==> dir [/lib]
+          arg [-L/usr/lib] ==> dir [/usr/lib]
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_3b577.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [-lgcc] ==> lib [gcc]
+          arg [--as-needed] ==> ignore
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [--no-as-needed] ==> ignore
+          arg [-lc] ==> lib [c]
+          arg [-lgcc] ==> lib [gcc]
+          arg [--as-needed] ==> ignore
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [--no-as-needed] ==> ignore
+          arg [/usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o]
+          arg [/lib/x86_64-linux-gnu/crtn.o] ==> obj [/lib/x86_64-linux-gnu/crtn.o]
+        linker tool for 'C': /usr/bin/ld
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/14] ==> [/usr/lib/gcc/x86_64-linux-gnu/14]
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64] ==> [/usr/lib64]
+        collapse library dir [/lib/x86_64-linux-gnu] ==> [/lib/x86_64-linux-gnu]
+        collapse library dir [/lib/../lib64] ==> [/lib64]
+        collapse library dir [/usr/lib/x86_64-linux-gnu] ==> [/usr/lib/x86_64-linux-gnu]
+        collapse library dir [/usr/lib/../lib64] ==> [/usr/lib64]
+        collapse library dir [/lib] ==> [/lib]
+        collapse library dir [/usr/lib] ==> [/usr/lib]
+        implicit libs: [gcc;gcc_s;c;gcc;gcc_s]
+        implicit objs: [/lib/x86_64-linux-gnu/gcrt1.o;/lib/x86_64-linux-gnu/crti.o;/usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o;/usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o;/lib/x86_64-linux-gnu/crtn.o]
+        implicit dirs: [/usr/lib/gcc/x86_64-linux-gnu/14;/usr/lib64;/lib/x86_64-linux-gnu;/lib64;/usr/lib/x86_64-linux-gnu;/lib;/usr/lib]
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/Internal/CMakeDetermineLinkerId.cmake:36 (message)"
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeDetermineCompilerABI.cmake:264 (cmake_determine_linker_id)"
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:1 (project)"
+    message: |
+      Running the C compiler's linker: "/usr/bin/ld" "-v"
+      GNU ld (GNU Binutils for Ubuntu) 2.42
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeDetermineCompilerABI.cmake:83 (try_compile)"
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:1 (project)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tu4SWb"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tu4SWb"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/bin/clang-scan-deps-20"
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tu4SWb'
+        
+        Run Build Command(s): /mnt/data/opt/cmake-4.0.0-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_d926b/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_d926b.dir/build.make CMakeFiles/cmTC_d926b.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tu4SWb'
+        Building CXX object CMakeFiles/cmTC_d926b.dir/CMakeCXXCompilerABI.cpp.o
+        /bin/clang++-20   -fcolor-diagnostics   -v -MD -MT CMakeFiles/cmTC_d926b.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_d926b.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_d926b.dir/CMakeCXXCompilerABI.cpp.o -c /mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeCXXCompilerABI.cpp
+        Ubuntu clang version 20.1.2 (0ubuntu1~24.04.2)
+        Target: x86_64-pc-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/lib/llvm-20/bin
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Candidate multilib: x32;@mx32
+        Selected multilib: .;@m64
+         (in-process)
+         "/usr/lib/llvm-20/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tu4SWb -v -fcoverage-compilation-dir=/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tu4SWb -resource-dir /usr/lib/llvm-20/lib/clang/20 -dependency-file CMakeFiles/cmTC_d926b.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_d926b.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/x86_64-linux-gnu/c++/14 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/backward -internal-isystem /usr/lib/llvm-20/lib/clang/20/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_d926b.dir/CMakeCXXCompilerABI.cpp.o -x c++ /mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeCXXCompilerABI.cpp
+        clang -cc1 version 20.1.2 based upon LLVM 20.1.2 default target x86_64-pc-linux-gnu
+        ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include"
+        ignoring nonexistent directory "/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14
+         /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/x86_64-linux-gnu/c++/14
+         /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/backward
+         /usr/lib/llvm-20/lib/clang/20/include
+         /usr/local/include
+         /usr/include/x86_64-linux-gnu
+         /usr/include
+        End of search list.
+        Linking CXX executable cmTC_d926b
+        /mnt/data/opt/cmake-4.0.0-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d926b.dir/link.txt --verbose=1
+        Ubuntu clang version 20.1.2 (0ubuntu1~24.04.2)
+        Target: x86_64-pc-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/lib/llvm-20/bin
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Candidate multilib: x32;@mx32
+        Selected multilib: .;@m64
+         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_d926b /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/14 -L/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_d926b.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o /lib/x86_64-linux-gnu/crtn.o
+        GNU ld (GNU Binutils for Ubuntu) 2.42
+        /bin/clang++-20  -v -Wl,-v CMakeFiles/cmTC_d926b.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_d926b
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tu4SWb'
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeDetermineCompilerABI.cmake:191 (message)"
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:1 (project)"
+    message: |
+      Parsed CXX implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14]
+          add: [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/x86_64-linux-gnu/c++/14]
+          add: [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/backward]
+          add: [/usr/lib/llvm-20/lib/clang/20/include]
+          add: [/usr/local/include]
+          add: [/usr/include/x86_64-linux-gnu]
+          add: [/usr/include]
+        end of search list found
+        collapse include dir [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14] ==> [/usr/include/c++/14]
+        collapse include dir [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/x86_64-linux-gnu/c++/14] ==> [/usr/include/x86_64-linux-gnu/c++/14]
+        collapse include dir [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/backward] ==> [/usr/include/c++/14/backward]
+        collapse include dir [/usr/lib/llvm-20/lib/clang/20/include] ==> [/usr/lib/llvm-20/lib/clang/20/include]
+        collapse include dir [/usr/local/include] ==> [/usr/local/include]
+        collapse include dir [/usr/include/x86_64-linux-gnu] ==> [/usr/include/x86_64-linux-gnu]
+        collapse include dir [/usr/include] ==> [/usr/include]
+        implicit include dirs: [/usr/include/c++/14;/usr/include/x86_64-linux-gnu/c++/14;/usr/include/c++/14/backward;/usr/lib/llvm-20/lib/clang/20/include;/usr/local/include;/usr/include/x86_64-linux-gnu;/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeDetermineCompilerABI.cmake:227 (message)"
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:1 (project)"
+    message: |
+      Parsed CXX implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)))("|,| |$)]
+        ignore line: [Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tu4SWb']
+        ignore line: []
+        ignore line: [Run Build Command(s): /mnt/data/opt/cmake-4.0.0-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_d926b/fast]
+        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_d926b.dir/build.make CMakeFiles/cmTC_d926b.dir/build]
+        ignore line: [gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tu4SWb']
+        ignore line: [Building CXX object CMakeFiles/cmTC_d926b.dir/CMakeCXXCompilerABI.cpp.o]
+        ignore line: [/bin/clang++-20   -fcolor-diagnostics   -v -MD -MT CMakeFiles/cmTC_d926b.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_d926b.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_d926b.dir/CMakeCXXCompilerABI.cpp.o -c /mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Ubuntu clang version 20.1.2 (0ubuntu1~24.04.2)]
+        ignore line: [Target: x86_64-pc-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/lib/llvm-20/bin]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Candidate multilib: x32]
+        ignore line: [@mx32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        ignore line: [ (in-process)]
+        ignore line: [ "/usr/lib/llvm-20/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tu4SWb -v -fcoverage-compilation-dir=/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-Tu4SWb -resource-dir /usr/lib/llvm-20/lib/clang/20 -dependency-file CMakeFiles/cmTC_d926b.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_d926b.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/x86_64-linux-gnu/c++/14 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/backward -internal-isystem /usr/lib/llvm-20/lib/clang/20/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_d926b.dir/CMakeCXXCompilerABI.cpp.o -x c++ /mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [clang -cc1 version 20.1.2 based upon LLVM 20.1.2 default target x86_64-pc-linux-gnu]
+        ignore line: [ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include"]
+        ignore line: [ignoring nonexistent directory "/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14]
+        ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/x86_64-linux-gnu/c++/14]
+        ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/backward]
+        ignore line: [ /usr/lib/llvm-20/lib/clang/20/include]
+        ignore line: [ /usr/local/include]
+        ignore line: [ /usr/include/x86_64-linux-gnu]
+        ignore line: [ /usr/include]
+        ignore line: [End of search list.]
+        ignore line: [Linking CXX executable cmTC_d926b]
+        ignore line: [/mnt/data/opt/cmake-4.0.0-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d926b.dir/link.txt --verbose=1]
+        ignore line: [Ubuntu clang version 20.1.2 (0ubuntu1~24.04.2)]
+        ignore line: [Target: x86_64-pc-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/lib/llvm-20/bin]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Candidate multilib: x32]
+        ignore line: [@mx32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_d926b /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/14 -L/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_d926b.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o /lib/x86_64-linux-gnu/crtn.o]
+          arg [/usr/bin/ld] ==> ignore
+          arg [--hash-style=gnu] ==> ignore
+          arg [--build-id] ==> ignore
+          arg [--eh-frame-hdr] ==> ignore
+          arg [-m] ==> ignore
+          arg [elf_x86_64] ==> ignore
+          arg [-pie] ==> ignore
+          arg [-dynamic-linker] ==> ignore
+          arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_d926b] ==> ignore
+          arg [/lib/x86_64-linux-gnu/Scrt1.o] ==> obj [/lib/x86_64-linux-gnu/Scrt1.o]
+          arg [/lib/x86_64-linux-gnu/crti.o] ==> obj [/lib/x86_64-linux-gnu/crti.o]
+          arg [/usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/14] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/14]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64]
+          arg [-L/lib/x86_64-linux-gnu] ==> dir [/lib/x86_64-linux-gnu]
+          arg [-L/lib/../lib64] ==> dir [/lib/../lib64]
+          arg [-L/usr/lib/x86_64-linux-gnu] ==> dir [/usr/lib/x86_64-linux-gnu]
+          arg [-L/usr/lib/../lib64] ==> dir [/usr/lib/../lib64]
+          arg [-L/lib] ==> dir [/lib]
+          arg [-L/usr/lib] ==> dir [/usr/lib]
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_d926b.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [-lstdc++] ==> lib [stdc++]
+          arg [-lm] ==> lib [m]
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [-lgcc] ==> lib [gcc]
+          arg [-lc] ==> lib [c]
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [-lgcc] ==> lib [gcc]
+          arg [/usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o]
+          arg [/lib/x86_64-linux-gnu/crtn.o] ==> obj [/lib/x86_64-linux-gnu/crtn.o]
+        linker tool for 'CXX': /usr/bin/ld
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/14] ==> [/usr/lib/gcc/x86_64-linux-gnu/14]
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64] ==> [/usr/lib64]
+        collapse library dir [/lib/x86_64-linux-gnu] ==> [/lib/x86_64-linux-gnu]
+        collapse library dir [/lib/../lib64] ==> [/lib64]
+        collapse library dir [/usr/lib/x86_64-linux-gnu] ==> [/usr/lib/x86_64-linux-gnu]
+        collapse library dir [/usr/lib/../lib64] ==> [/usr/lib64]
+        collapse library dir [/lib] ==> [/lib]
+        collapse library dir [/usr/lib] ==> [/usr/lib]
+        implicit libs: [stdc++;m;gcc_s;gcc;c;gcc_s;gcc]
+        implicit objs: [/lib/x86_64-linux-gnu/Scrt1.o;/lib/x86_64-linux-gnu/crti.o;/usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o;/usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o;/lib/x86_64-linux-gnu/crtn.o]
+        implicit dirs: [/usr/lib/gcc/x86_64-linux-gnu/14;/usr/lib64;/lib/x86_64-linux-gnu;/lib64;/usr/lib/x86_64-linux-gnu;/lib;/usr/lib]
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/Internal/CMakeDetermineLinkerId.cmake:36 (message)"
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeDetermineCompilerABI.cmake:264 (cmake_determine_linker_id)"
+      - "/mnt/data/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:1 (project)"
+    message: |
+      Running the CXX compiler's linker: "/usr/bin/ld" "-v"
+      GNU ld (GNU Binutils for Ubuntu) 2.42
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CheckIncludeFile.cmake:99 (try_compile)"
+      - "cmake/Functions.cmake:285 (check_include_file)"
+      - "cmake/Functions.cmake:314 (check_include_def)"
+      - "CMakeLists.txt:98 (check_includes_def)"
+    checks:
+      - "Looking for termios.h"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-AJtOha"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-AJtOha"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/bin/clang-scan-deps-20"
+      CMAKE_C_FLAGS: "-Wall -pg "
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_TERMIOS_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-AJtOha'
+        
+        Run Build Command(s): /opt/cmake-4.0.0-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_4d386/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_4d386.dir/build.make CMakeFiles/cmTC_4d386.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-AJtOha'
+        Building C object CMakeFiles/cmTC_4d386.dir/CheckIncludeFile.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-AJtOha/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-AJtOha/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-AJtOha/unistd.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-AJtOha/signal.h -Wall -pg   -MD -MT CMakeFiles/cmTC_4d386.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_4d386.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_4d386.dir/CheckIncludeFile.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-AJtOha/CheckIncludeFile.c
+        Linking C executable cmTC_4d386
+        /opt/cmake-4.0.0-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_4d386.dir/link.txt --verbose=1
+        /bin/clang-20 -Wall -pg   CMakeFiles/cmTC_4d386.dir/CheckIncludeFile.c.o -o cmTC_4d386
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-AJtOha'
+        
+      exitCode: 0
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/opt/cmake-4.0.0-linux-x86_64/share/cmake-4.0/Modules/CheckIncludeFile.cmake:99 (try_compile)"
+      - "cmake/Functions.cmake:311 (check_include_file)"
+      - "cmake/Functions.cmake:340 (check_include_def)"
+      - "CMakeLists.txt:98 (check_includes_def)"
+    checks:
+      - "Looking for sys/ioctl.h"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-EtXGwV"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-EtXGwV"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/bin/clang-scan-deps-20"
+      CMAKE_C_FLAGS: "-Wall -pg "
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "HAVE_SYS_IOCTL_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-EtXGwV'
+        
+        Run Build Command(s): /opt/cmake-4.0.0-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_71d83/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_71d83.dir/build.make CMakeFiles/cmTC_71d83.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-EtXGwV'
+        Building C object CMakeFiles/cmTC_71d83.dir/CheckIncludeFile.c.o
+        /bin/clang-20 -DTESTKEYWORD=__inline__ -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-EtXGwV/sys/types.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-EtXGwV/alloca.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-EtXGwV/unistd.h -I/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-EtXGwV/signal.h -Wall -pg   -MD -MT CMakeFiles/cmTC_71d83.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_71d83.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_71d83.dir/CheckIncludeFile.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-EtXGwV/CheckIncludeFile.c
+        Linking C executable cmTC_71d83
+        /opt/cmake-4.0.0-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_71d83.dir/link.txt --verbose=1
+        /bin/clang-20 -Wall -pg   CMakeFiles/cmTC_71d83.dir/CheckIncludeFile.c.o -o cmTC_71d83
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeScratch/TryCompile-EtXGwV'
+        
+      exitCode: 0
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "cmake/Functions.cmake:118 (try_compile)"
+      - "CMakeLists.txt:101 (check_compile)"
+    directories:
+      source: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeTmp"
+      binary: "/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/bin/clang-scan-deps-20"
+      CMAKE_C_FLAGS: "-Wall -pg "
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "COMPILE_RESULT"
+      cached: true
+      stdout: |
+        Change Dir: '/home/roman/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /opt/cmake-4.0.0-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_99053/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_99053.dir/build.make CMakeFiles/cmTC_99053.dir/build
+        gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeTmp'
+        Building C object CMakeFiles/cmTC_99053.dir/try-have-winsize.c.o
+        /bin/clang-20   -Wall -pg   -MD -MT CMakeFiles/cmTC_99053.dir/try-have-winsize.c.o -MF CMakeFiles/cmTC_99053.dir/try-have-winsize.c.o.d -o CMakeFiles/cmTC_99053.dir/try-have-winsize.c.o -c /home/roman/Projects/shish/build/x86_64-linux-clang/try-have-winsize.c
+        Linking C executable cmTC_99053
+        /opt/cmake-4.0.0-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_99053.dir/link.txt --verbose=1
+        /bin/clang-20 -Wall -pg   "CMakeFiles/cmTC_99053.dir/try-have-winsize.c.o" -o cmTC_99053
+        gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-clang/CMakeFiles/CMakeTmp'
+        
+      exitCode: 0
+...

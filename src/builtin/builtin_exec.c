@@ -3,6 +3,7 @@
 #include "../builtin.h"
 #include "../exec.h"
 #include "../../lib/shell.h"
+#include <errno.h>
 
 /* exec built-in
  *
@@ -52,7 +53,17 @@ builtin_exec(int argc, char* argv[]) {
     exec_command(&cmd, argc - shell_optind, &argv[shell_optind], 1);
   }
 
-  /* at this point the exec stuff failed */
-  sh_error_errno(argv[shell_optind]);
-  return exec_error();
+  /* at this point the exec stuff failed - POSIX requires exec to exit
+     the shell with the appropriate error code when it fails to execute
+     a command (not a redirection error, which is handled elsewhere) */
+  {
+    int saved_errno = exec_lasterrno;
+    errno = saved_errno;
+    sh_error_errno(argv[shell_optind]);
+    errno = saved_errno;
+    sh_exit(exec_error());
+  }
+  
+  /* should not reach here */
+  return 1;
 }

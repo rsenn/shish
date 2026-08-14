@@ -150,9 +150,37 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
            on the body's node kind the same way eval_command.c does
            for a standalone grouping, instead of always going through
            eval_cmdlist(), which runs in the current environment with
-           no isolation at all. */
-        ret = (cmd->fn->id == N_SUBSHELL) ? eval_subshell(&e, &cmd->fn->ngrp)
-                                          : eval_cmdlist(&e, &cmd->fn->ngrp);
+           no isolation at all.
+           
+           POSIX allows any compound command as a function body, not just
+           {...} or (...). For loops, while/until loops, if statements,
+           and case statements should be evaluated directly. */
+        switch(cmd->fn->id) {
+          case N_SUBSHELL:
+            ret = eval_subshell(&e, &cmd->fn->ngrp);
+            break;
+          case N_BRACEGROUP:
+          case N_LIST:
+            ret = eval_cmdlist(&e, &cmd->fn->ngrp);
+            break;
+          case N_FOR:
+            ret = eval_for(&e, &cmd->fn->nfor);
+            break;
+          case N_WHILE:
+          case N_UNTIL:
+            ret = eval_loop(&e, &cmd->fn->nloop);
+            break;
+          case N_IF:
+            ret = eval_if(&e, &cmd->fn->nif);
+            break;
+          case N_CASE:
+            ret = eval_case(&e, &cmd->fn->ncase);
+            break;
+          default:
+            /* Fallback: try eval_cmdlist for other node types */
+            ret = eval_cmdlist(&e, &cmd->fn->ngrp);
+            break;
+        }
         e.exitcode = ret;
 
         eval_pop(&e);

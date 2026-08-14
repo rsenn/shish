@@ -1,0 +1,1 @@
+/bin/clang-20 -Wall -pg  -g -O0 -ggdb -Xlinker --dependency-file=CMakeFiles/shish.dir/link.d CMakeFiles/shish.dir/src/sh/sh_init.c.o CMakeFiles/shish.dir/src/sh/sh_main.c.o -o shish   -L/home/roman/Projects/shish/build/x86_64-linux-clang/lib  -Wl,-rpath,/home/roman/Projects/shish/build/x86_64-linux-clang/lib: libshell.a libowfat.a -lm

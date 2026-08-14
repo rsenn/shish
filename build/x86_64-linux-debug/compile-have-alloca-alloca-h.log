@@ -1,0 +1,12 @@
+Change Dir: '/mnt/data/Projects/shish/build/x86_64-linux-debug/CMakeFiles/CMakeTmp'
+
+Run Build Command(s): /opt/cmake-4.0.0-linux-x86_64/bin/cmake -E env VERBOSE=1 /usr/local/bin/gmake -f Makefile cmTC_bacc2/fast
+/usr/local/bin/gmake  -f CMakeFiles/cmTC_bacc2.dir/build.make CMakeFiles/cmTC_bacc2.dir/build
+gmake[1]: Entering directory '/mnt/data/Projects/shish/build/x86_64-linux-debug/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_bacc2.dir/try-have-alloca-alloca-h.c.o
+/usr/bin/cc   -falign-functions=1 -falign-jumps=1 -falign-labels=1 -falign-loops=1  -o CMakeFiles/cmTC_bacc2.dir/try-have-alloca-alloca-h.c.o -c /mnt/data/Projects/shish/build/x86_64-linux-debug/try-have-alloca-alloca-h.c
+Linking C executable cmTC_bacc2
+/opt/cmake-4.0.0-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_bacc2.dir/link.txt --verbose=1
+/usr/bin/cc  -falign-functions=1 -falign-jumps=1 -falign-labels=1 -falign-loops=1  "CMakeFiles/cmTC_bacc2.dir/try-have-alloca-alloca-h.c.o" -o cmTC_bacc2
+gmake[1]: Leaving directory '/mnt/data/Projects/shish/build/x86_64-linux-debug/CMakeFiles/CMakeTmp'
+

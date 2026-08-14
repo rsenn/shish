@@ -44,7 +44,7 @@ parse_function(struct parser* p) {
   
   /* POSIX: function body can be any compound command, not just {...} or (...) */
   tok = parse_gettok(p, P_SKIPNL);
-  
+
   if(tok == T_BEGIN || tok == T_LP) {
     /* Traditional brace group or subshell - push back and call parse_grouping */
     p->pushback++;
@@ -54,7 +54,7 @@ parse_function(struct parser* p) {
     /* Push back the token and call parse_command to handle it */
     p->pushback++;
     node->nfunc.body = parse_command(p, 0);
-    
+
     if(!node->nfunc.body) {
       /* parse_command failed */
       tree_free(node);

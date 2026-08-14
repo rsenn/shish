@@ -1,0 +1,278 @@
+-- The C compiler identification is GNU 16.0.1
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/gcc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Looking for sys_siglist
+-- Looking for sys_siglist - not found
+-- Performing Test WARN_ALL
+-- Performing Test WARN_ALL - Success
+-- Performing Test WARN_NO_UNUSED_VARIABLE
+-- Performing Test WARN_NO_UNUSED_VARIABLE - Success
+-- Performing Test WARN_NO_UNUSED_FUNCTION
+-- Performing Test WARN_NO_UNUSED_FUNCTION - Success
+-- Performing Test F_ALIGN_FUNCTIONS
+-- Performing Test F_ALIGN_FUNCTIONS - Success
+-- Performing Test F_ALIGN_JUMPS
+-- Performing Test F_ALIGN_JUMPS - Success
+-- Performing Test F_ALIGN_LABELS
+-- Performing Test F_ALIGN_LABELS - Success
+-- Performing Test F_ALIGN_LOOPS
+-- Performing Test F_ALIGN_LOOPS - Success
+-- Performing Test HAVE___inline__
+-- Performing Test HAVE___inline__ - Success
+-- inline keyword: __inline__
+-- Looking for buffer_init in owfat_debug
+-- Looking for buffer_init in owfat_debug - not found
+-- Looking for alloca.h
+-- Looking for alloca.h - found
+-- Looking for stdint.h
+-- Looking for stdint.h - found
+-- Looking for inttypes.h
+-- Looking for inttypes.h - found
+-- Looking for sys/types.h
+-- Looking for sys/types.h - found
+-- Checking for pointer size
+-- Checking for pointer size - 32bit
+-- Looking for alloca
+-- Looking for alloca - found
+-- Trying to compile try-have-alloca-alloca-h.c ... 
+-- fail: /home/roman/Projects/shish/build/i686-linux-gnu/compile-have-alloca-alloca-h.log
+-- Looking for sys/wait.h
+-- Looking for sys/wait.h - found
+-- Looking for unistd.h
+-- Looking for unistd.h - found
+-- Looking for sethostname
+-- Looking for sethostname - found
+-- Looking for readlink
+-- Looking for readlink - found
+-- Looking for fcntl.h
+-- Looking for fcntl.h - found
+-- Looking for fcntl
+-- Looking for fcntl - found
+-- Looking for sys/stat.h
+-- Looking for sys/stat.h - found
+-- Looking for lstat
+-- Looking for lstat - found
+-- Looking for symlink
+-- Looking for symlink - found
+-- Looking for link
+-- Looking for link - found
+-- Looking for signal.h
+-- Looking for signal.h - found
+-- Looking for sigprocmask
+-- Looking for sigprocmask - found
+-- Looking for sigaction
+-- Looking for sigaction - found
+-- Looking for setpgid
+-- Looking for setpgid - found
+-- Looking for sys/utsname.h
+-- Looking for sys/utsname.h - found
+-- Looking for glob.h
+-- Looking for glob.h - found
+-- Looking for glob
+-- Looking for glob - found
+-- Looking for sys_siglist
+-- Looking for sys_siglist - not found
+-- Performing Test F_NOWARN
+-- Performing Test F_NOWARN - Success
+-- Looking for pow in m
+-- Looking for pow in m - found
+-- Performing Test OPT_C_OPT_NONE
+-- Performing Test OPT_C_OPT_NONE - Success
+-- Performing Test OPT_C_G_GDB
+-- Performing Test OPT_C_G_GDB - Success
+-- Performing Test F_LTO
+-- Performing Test F_LTO - Success
+
+
+Variable dump of: BUILTINS_ENABLED
+
+	BUILTINS_ENABLED = alias
+break
+cd
+command
+echo
+eval
+exec
+exit
+export
+expr
+false
+fdtable
+getopts
+hash
+help
+history
+jobs
+kill
+local
+printf
+pwd
+read
+readonly
+return
+set
+shift
+source
+test
+trap
+true
+type
+umask
+unset
+wait
+
+
+
+
+Variable dump of: BUILTIN_FLAGS
+
+	BUILTIN_FLAGS =  -DBUILTIN_ALIAS=1 -DBUILTIN_BREAK=1 -DBUILTIN_CD=1 -DBUILTIN_COMMAND=1 -DBUILTIN_ECHO=1 -DBUILTIN_EVAL=1 -DBUILTIN_EXEC=1 -DBUILTIN_EXIT=1 -DBUILTIN_EXPORT=1 -DBUILTIN_EXPR=1 -DBUILTIN_FALSE=1 -DBUILTIN_FDTABLE=1 -DBUILTIN_GETOPTS=1 -DBUILTIN_HASH=1 -DBUILTIN_HELP=1 -DBUILTIN_HISTORY=1 -DBUILTIN_JOBS=1 -DBUILTIN_KILL=1 -DBUILTIN_LOCAL=1 -DBUILTIN_PRINTF=1 -DBUILTIN_PWD=1 -DBUILTIN_READ=1 -DBUILTIN_READONLY=1 -DBUILTIN_RETURN=1 -DBUILTIN_SET=1 -DBUILTIN_SHIFT=1 -DBUILTIN_SOURCE=1 -DBUILTIN_TEST=1 -DBUILTIN_TRAP=1 -DBUILTIN_TRUE=1 -DBUILTIN_TYPE=1 -DBUILTIN_UMASK=1 -DBUILTIN_UNSET=1 -DBUILTIN_WAIT=1
+
+
+-- Enabled builtins: 
+--   alias break cd command echo eval exec exit export expr false fdtable getopts
+--   hash help history jobs kill local printf pwd read readonly return set shift
+--   source test trap true type umask unset wait
+-- Disabled builtins: basename cat chmod dirname dump hostname ln mkdir mktemp rm rmdir uname which
+-- Looking for sigismember
+-- Looking for sigismember - found
+-- Looking for signal
+-- Looking for signal - found
+-- Looking for sigsuspend
+-- Looking for sigsuspend - found
+SHISH_PATH: /home/roman/Projects/shish/build/i686-linux-gnu/shish
+TESTS: tests/bourne-compat.sh;tests/bquote.sh;tests/builtin-basename.sh;tests/builtin-expr.sh;tests/builtin-hash.sh;tests/builtin-kill.sh;tests/builtin-local.sh;tests/builtin-mkdir.sh;tests/builtin-read.sh;tests/builtin-rm.sh;tests/builtin-rmdir.sh;tests/builtin-test.sh;tests/builtin-trap.sh;tests/cmd-subst.sh;tests/debug.sh;tests/expand-brace.sh;tests/expand-tilde.sh;tests/fixed.sh;tests/functions.sh;tests/here-doc.sh;tests/if.sh;tests/loop-while.sh;tests/param.sh
+-- Configuring done (14.4s)
+-- Generating done (0.5s)
+-- Build files have been written to: /home/roman/Projects/shish/build/i686-linux-gnu
+-- Cache values
+ALLOCA_HEADER:STRING=alloca.h
+BUILD_DEBUG:BOOL=OFF
+BUILD_SHFORMAT:BOOL=ON
+BUILD_SHPARSE2AST:BOOL=OFF
+BUILD_TESTING:BOOL=ON
+BUILTIN_ALIAS:BOOL=ON
+BUILTIN_BASENAME:BOOL=OFF
+BUILTIN_BREAK:BOOL=ON
+BUILTIN_CAT:BOOL=OFF
+BUILTIN_CD:BOOL=ON
+BUILTIN_CHMOD:BOOL=OFF
+BUILTIN_COMMAND:BOOL=ON
+BUILTIN_DIRNAME:BOOL=OFF
+BUILTIN_DUMP:BOOL=OFF
+BUILTIN_ECHO:BOOL=ON
+BUILTIN_EVAL:BOOL=ON
+BUILTIN_EXEC:BOOL=ON
+BUILTIN_EXIT:BOOL=ON
+BUILTIN_EXPORT:BOOL=ON
+BUILTIN_EXPR:BOOL=ON
+BUILTIN_FALSE:BOOL=ON
+BUILTIN_FDTABLE:BOOL=ON
+BUILTIN_GETOPTS:BOOL=ON
+BUILTIN_HASH:BOOL=ON
+BUILTIN_HELP:BOOL=ON
+BUILTIN_HISTORY:BOOL=ON
+BUILTIN_HOSTNAME:BOOL=OFF
+BUILTIN_JOBS:BOOL=ON
+BUILTIN_KILL:BOOL=ON
+BUILTIN_LN:BOOL=OFF
+BUILTIN_LOCAL:BOOL=ON
+BUILTIN_MKDIR:BOOL=OFF
+BUILTIN_MKTEMP:BOOL=OFF
+BUILTIN_PRINTF:BOOL=ON
+BUILTIN_PWD:BOOL=ON
+BUILTIN_READ:BOOL=ON
+BUILTIN_READONLY:BOOL=ON
+BUILTIN_RETURN:BOOL=ON
+BUILTIN_RM:BOOL=OFF
+BUILTIN_RMDIR:BOOL=OFF
+BUILTIN_SET:BOOL=ON
+BUILTIN_SHIFT:BOOL=ON
+BUILTIN_SOURCE:BOOL=ON
+BUILTIN_TEST:BOOL=ON
+BUILTIN_TRAP:BOOL=ON
+BUILTIN_TRUE:BOOL=ON
+BUILTIN_TYPE:BOOL=ON
+BUILTIN_UMASK:BOOL=ON
+BUILTIN_UNAME:BOOL=OFF
+BUILTIN_UNSET:BOOL=ON
+BUILTIN_WAIT:BOOL=ON
+BUILTIN_WHICH:BOOL=OFF
+CMAKE_ADDR2LINE:FILEPATH=/usr/bin/addr2line
+CMAKE_AR:FILEPATH=/usr/bin/ar
+CMAKE_BUILD_TYPE:STRING=Release
+CMAKE_COLOR_MAKEFILE:BOOL=ON
+CMAKE_C_COMPILER:STRING=/usr/bin/gcc
+CMAKE_C_COMPILER_AR:FILEPATH=/usr/bin/gcc-ar-16
+CMAKE_C_COMPILER_RANLIB:FILEPATH=/usr/bin/gcc-ranlib-16
+CMAKE_C_FLAGS:STRING=-m32 -w
+CMAKE_C_FLAGS_DEBUG:STRING=-g -O0 -ggdb
+CMAKE_C_FLAGS_MINSIZEREL:STRING=-Os -DNDEBUG
+CMAKE_C_FLAGS_RELEASE:STRING=-O3 -DNDEBUG
+CMAKE_C_FLAGS_RELWITHDEBINFO:STRING=-O2 -g -DNDEBUG
+CMAKE_DLLTOOL:FILEPATH=CMAKE_DLLTOOL-NOTFOUND
+CMAKE_EXE_LINKER_FLAGS:STRING=
+CMAKE_EXE_LINKER_FLAGS_DEBUG:STRING=
+CMAKE_EXE_LINKER_FLAGS_MINSIZEREL:STRING=
+CMAKE_EXE_LINKER_FLAGS_RELEASE:STRING=
+CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO:STRING=
+CMAKE_INSTALL_PREFIX:PATH=/usr/local
+CMAKE_LINKER:FILEPATH=/usr/bin/ld
+CMAKE_MAKE_PROGRAM:FILEPATH=/usr/local/bin/gmake
+CMAKE_MODULE_LINKER_FLAGS:STRING=
+CMAKE_MODULE_LINKER_FLAGS_DEBUG:STRING=
+CMAKE_MODULE_LINKER_FLAGS_MINSIZEREL:STRING=
+CMAKE_MODULE_LINKER_FLAGS_RELEASE:STRING=
+CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO:STRING=
+CMAKE_NM:FILEPATH=/usr/bin/nm
+CMAKE_OBJCOPY:FILEPATH=/usr/bin/objcopy
+CMAKE_OBJDUMP:FILEPATH=/usr/bin/objdump
+CMAKE_RANLIB:FILEPATH=/usr/bin/ranlib
+CMAKE_READELF:FILEPATH=/usr/bin/readelf
+CMAKE_SHARED_LINKER_FLAGS:STRING=
+CMAKE_SHARED_LINKER_FLAGS_DEBUG:STRING=
+CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL:STRING=
+CMAKE_SHARED_LINKER_FLAGS_RELEASE:STRING=
+CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO:STRING=
+CMAKE_SKIP_INSTALL_RPATH:BOOL=NO
+CMAKE_SKIP_RPATH:BOOL=NO
+CMAKE_STATIC_LINKER_FLAGS:STRING=
+CMAKE_STATIC_LINKER_FLAGS_DEBUG:STRING=
+CMAKE_STATIC_LINKER_FLAGS_MINSIZEREL:STRING=
+CMAKE_STATIC_LINKER_FLAGS_RELEASE:STRING=
+CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO:STRING=
+CMAKE_STRIP:FILEPATH=/usr/bin/strip
+CMAKE_TAPI:FILEPATH=CMAKE_TAPI-NOTFOUND
+CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
+COVERAGE_COMMAND:FILEPATH=/usr/bin/gcov
+COVERAGE_EXTRA_FLAGS:STRING=-l
+CTEST_SUBMIT_RETRY_COUNT:STRING=3
+CTEST_SUBMIT_RETRY_DELAY:STRING=5
+DART_TESTING_TIMEOUT:STRING=1500
+DEBUG_ALLOC:BOOL=OFF
+DEBUG_BUILTIN:BOOL=OFF
+DEBUG_COLOR:BOOL=OFF
+DEBUG_FD:BOOL=OFF
+DEBUG_FDSTACK:BOOL=OFF
+DEBUG_FDTABLE:BOOL=OFF
+DEBUG_JOB:BOOL=OFF
+DEBUG_OUTPUT:BOOL=OFF
+DEBUG_PARSE:BOOL=OFF
+DO_CONFORMANCE_TESTS:BOOL=ON
+DO_TESTS:BOOL=ON
+DO_YASH_TESTS:BOOL=OFF
+ENABLE_LTO:BOOL=OFF
+GITCOMMAND:FILEPATH=/usr/bin/git
+HAVE_ALLOCA_ALLOCA_H:BOOL=TRUE
+LIBOWFAT_LIBDIR:STRING=/home/roman/Projects/shish/build/i686-linux-gnu
+LIBOWFAT_LIBRARY:STRING=libowfat
+LINK_STATIC:BOOL=OFF
+MAKECOMMAND:STRING=/opt/cmake-4.0.0-linux-x86_64/bin/cmake --build . --config "${CTEST_CONFIGURATION_TYPE}"
+MEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind
+MEMORYCHECK_SUPPRESSIONS_FILE:FILEPATH=
+NO_TREE_PRINT:BOOL=OFF
+SITE:STRING=gniltag
+WARN_WERROR:BOOL=OFF

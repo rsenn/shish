@@ -1,0 +1,35 @@
+CMakeFiles/libshell.dir/src/prompt/prompt_reset.c.o: \
+ /home/roman/Projects/shish/src/prompt/prompt_reset.c \
+ /home/roman/Projects/shish/src/prompt/../prompt.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/stralloc.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/typedefs.h \
+ /usr/include/i386-linux-musl/sys/types.h \
+ /usr/include/i386-linux-musl/features.h \
+ /usr/include/i386-linux-musl/bits/alltypes.h \
+ /usr/include/i386-linux-musl/endian.h \
+ /usr/include/i386-linux-musl/sys/select.h \
+ /usr/include/i386-linux-musl/time.h \
+ /home/roman/Projects/shish/src/prompt/../debug.h \
+ /home/roman/Projects/shish/build/i686-linux-musl/config.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/uint64.h \
+ /usr/include/i386-linux-musl/stdint.h \
+ /usr/include/i386-linux-musl/bits/stdint.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/str.h \
+ /usr/include/i386-linux-musl/string.h \
+ /usr/include/i386-linux-musl/strings.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/open.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/windoze.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/uint64.h \
+ /home/roman/Projects/shish/src/prompt/../fd.h \
+ /usr/include/i386-linux-musl/fcntl.h \
+ /usr/include/i386-linux-musl/bits/fcntl.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/shell.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/stralloc.h \
+ /usr/include/i386-linux-musl/stdlib.h \
+ /usr/include/i386-linux-musl/alloca.h \
+ /usr/include/i386-linux-musl/limits.h \
+ /usr/include/i386-linux-musl/bits/limits.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/windoze.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/alloc.h

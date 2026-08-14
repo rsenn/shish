@@ -1,0 +1,26 @@
+CMakeFiles/libowfat.dir/lib/stralloc/mmap_filename.c.o: \
+ /home/roman/Projects/shish/lib/stralloc/mmap_filename.c \
+ /home/roman/Projects/shish/lib/stralloc/../buffer.h \
+ /home/roman/Projects/shish/lib/stralloc/../typedefs.h \
+ /usr/include/x86_64-linux-musl/sys/types.h \
+ /usr/include/x86_64-linux-musl/features.h \
+ /usr/include/x86_64-linux-musl/bits/alltypes.h \
+ /usr/include/x86_64-linux-musl/endian.h \
+ /usr/include/x86_64-linux-musl/sys/select.h \
+ /usr/include/x86_64-linux-musl/time.h \
+ /home/roman/Projects/shish/lib/stralloc/../scan.h \
+ /home/roman/Projects/shish/lib/stralloc/../uint32.h \
+ /usr/include/x86_64-linux-musl/stdint.h \
+ /usr/include/x86_64-linux-musl/bits/stdint.h \
+ /home/roman/Projects/shish/lib/stralloc/../uint64.h \
+ /home/roman/Projects/shish/lib/stralloc/../stralloc.h \
+ /home/roman/Projects/shish/lib/stralloc/../windoze.h \
+ /home/roman/Projects/shish/lib/stralloc/../str.h \
+ /usr/include/x86_64-linux-musl/string.h \
+ /usr/include/x86_64-linux-musl/strings.h \
+ /usr/include/x86_64-linux-musl/limits.h \
+ /usr/include/x86_64-linux-musl/bits/limits.h \
+ /usr/include/x86_64-linux-musl/unistd.h \
+ /usr/include/x86_64-linux-musl/bits/posix.h \
+ /usr/include/x86_64-linux-musl/fcntl.h \
+ /usr/include/x86_64-linux-musl/bits/fcntl.h

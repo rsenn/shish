@@ -1,0 +1,12 @@
+bquote.sh 2 0.00165786
+builtin-local.sh 2 0.00131717
+builtin-read.sh 2 0.00159867
+builtin-test.sh 2 0.00162947
+cmd-subst.sh 2 0.00168956
+debug.sh 2 0.0035371
+functions.sh 2 0.0012401
+if.sh 2 0.00135229
+loop-while.sh 2 0.00215193
+param.sh 0 0
+---
+param.sh

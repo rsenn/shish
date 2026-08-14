@@ -1,0 +1,37 @@
+CMakeFiles/libshell.dir/src/fd/fd_pop.c.o: \
+ /home/roman/Projects/shish/src/fd/fd_pop.c \
+ /home/roman/Projects/shish/src/fd/../fd.h \
+ /usr/include/x86_64-linux-musl/fcntl.h \
+ /usr/include/x86_64-linux-musl/features.h \
+ /usr/include/x86_64-linux-musl/bits/alltypes.h \
+ /usr/include/x86_64-linux-musl/bits/fcntl.h \
+ /usr/include/x86_64-linux-musl/sys/types.h \
+ /usr/include/x86_64-linux-musl/endian.h \
+ /usr/include/x86_64-linux-musl/sys/select.h \
+ /home/roman/Projects/shish/src/fd/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/fd/../../lib/typedefs.h \
+ /usr/include/x86_64-linux-musl/time.h \
+ /home/roman/Projects/shish/src/fd/../../lib/shell.h \
+ /home/roman/Projects/shish/src/fd/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/fd/../../lib/stralloc.h \
+ /usr/include/x86_64-linux-musl/stdlib.h \
+ /usr/include/x86_64-linux-musl/alloca.h \
+ /usr/include/x86_64-linux-musl/limits.h \
+ /usr/include/x86_64-linux-musl/bits/limits.h \
+ /home/roman/Projects/shish/src/fd/../../lib/stralloc.h \
+ /home/roman/Projects/shish/src/fd/../../lib/windoze.h \
+ /home/roman/Projects/shish/src/fd/../../lib/alloc.h \
+ /home/roman/Projects/shish/build/x86_64-linux-musl/config.h \
+ /home/roman/Projects/shish/src/fd/../fdstack.h \
+ /home/roman/Projects/shish/src/fd/../fd.h \
+ /home/roman/Projects/shish/src/fd/../fdtable.h \
+ /home/roman/Projects/shish/src/fd/../debug.h \
+ /home/roman/Projects/shish/src/fd/../../lib/uint64.h \
+ /usr/include/x86_64-linux-musl/stdint.h \
+ /usr/include/x86_64-linux-musl/bits/stdint.h \
+ /home/roman/Projects/shish/src/fd/../../lib/str.h \
+ /usr/include/x86_64-linux-musl/string.h \
+ /usr/include/x86_64-linux-musl/strings.h \
+ /home/roman/Projects/shish/src/fd/../../lib/open.h \
+ /home/roman/Projects/shish/src/fd/../../lib/windoze.h \
+ /home/roman/Projects/shish/src/fd/../../lib/uint64.h

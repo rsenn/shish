@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/roman/Projects/shish/build/termux/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

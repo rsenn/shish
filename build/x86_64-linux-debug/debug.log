@@ -1,0 +1,252 @@
+fdstack_link n=0
+fdstack_link n=1
+fdstack_link n=2
+fdstack_link n=-1
+fdstack_link n=3
+parse_getarg 1
+parse_getarg break
+parse_getarg 2
+parse_command command = {
+  "kind": "N_SIMPLECMD",
+  "bngd": 0,
+  "args": [
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "/tmp/break2.sh:2:3",
+          "stra": "break"
+        }
+      ]
+    },
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "/tmp/break2.sh:2:9",
+          "stra": "2"
+        }
+      ]
+    }
+  ]
+}
+parse_getarg echo
+parse_getarg not
+parse_getarg reached
+parse_command command = {
+  "kind": "N_SIMPLECMD",
+  "bngd": 0,
+  "args": [
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "/tmp/break2.sh:3:3",
+          "stra": "echo"
+        }
+      ]
+    },
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "/tmp/break2.sh:3:8",
+          "stra": "not"
+        }
+      ]
+    },
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "/tmp/break2.sh:3:12",
+          "stra": "reached"
+        }
+      ]
+    }
+  ]
+}
+parse_command command = {
+  "kind": "N_FOR",
+  "varn": "i",
+  "cmds": [
+    {
+      "kind": "N_SIMPLECMD",
+      "bngd": 0,
+      "args": [
+        {
+          "kind": "N_ARG",
+          "list": [
+            {
+              "kind": "N_ARGSTR",
+              "flag": "0x0",
+              "loc": "/tmp/break2.sh:2:3",
+              "stra": "break"
+            }
+          ]
+        },
+        {
+          "kind": "N_ARG",
+          "list": [
+            {
+              "kind": "N_ARGSTR",
+              "flag": "0x0",
+              "loc": "/tmp/break2.sh:2:9",
+              "stra": "2"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "N_SIMPLECMD",
+      "bngd": 0,
+      "args": [
+        {
+          "kind": "N_ARG",
+          "list": [
+            {
+              "kind": "N_ARGSTR",
+              "flag": "0x0",
+              "loc": "/tmp/break2.sh:3:3",
+              "stra": "echo"
+            }
+          ]
+        },
+        {
+          "kind": "N_ARG",
+          "list": [
+            {
+              "kind": "N_ARGSTR",
+              "flag": "0x0",
+              "loc": "/tmp/break2.sh:3:8",
+              "stra": "not"
+            }
+          ]
+        },
+        {
+          "kind": "N_ARG",
+          "list": [
+            {
+              "kind": "N_ARGSTR",
+              "flag": "0x0",
+              "loc": "/tmp/break2.sh:3:12",
+              "stra": "reached"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "args": [
+    {
+      "kind": "N_ARG",
+      "list": [
+        {
+          "kind": "N_ARGSTR",
+          "flag": "0x0",
+          "loc": "/tmp/break2.sh:1:10",
+          "stra": "1"
+        }
+      ]
+    }
+  ]
+}
+sh_loop list = [
+  {
+    "kind": "N_FOR",
+    "varn": "i",
+    "cmds": [
+      {
+        "kind": "N_SIMPLECMD",
+        "bngd": 0,
+        "args": [
+          {
+            "kind": "N_ARG",
+            "list": [
+              {
+                "kind": "N_ARGSTR",
+                "flag": "0x0",
+                "loc": "/tmp/break2.sh:2:3",
+                "stra": "break"
+              }
+            ]
+          },
+          {
+            "kind": "N_ARG",
+            "list": [
+              {
+                "kind": "N_ARGSTR",
+                "flag": "0x0",
+                "loc": "/tmp/break2.sh:2:9",
+                "stra": "2"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "N_SIMPLECMD",
+        "bngd": 0,
+        "args": [
+          {
+            "kind": "N_ARG",
+            "list": [
+              {
+                "kind": "N_ARGSTR",
+                "flag": "0x0",
+                "loc": "/tmp/break2.sh:3:3",
+                "stra": "echo"
+              }
+            ]
+          },
+          {
+            "kind": "N_ARG",
+            "list": [
+              {
+                "kind": "N_ARGSTR",
+                "flag": "0x0",
+                "loc": "/tmp/break2.sh:3:8",
+                "stra": "not"
+              }
+            ]
+          },
+          {
+            "kind": "N_ARG",
+            "list": [
+              {
+                "kind": "N_ARGSTR",
+                "flag": "0x0",
+                "loc": "/tmp/break2.sh:3:12",
+                "stra": "reached"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "args": [
+      {
+        "kind": "N_ARG",
+        "list": [
+          {
+            "kind": "N_ARGSTR",
+            "flag": "0x0",
+            "loc": "/tmp/break2.sh:1:10",
+            "stra": "1"
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,27 @@
+CMakeFiles/libshell.dir/src/tree/tree_append.c.o: \
+ /home/roman/Projects/shish/src/tree/tree_append.c \
+ /home/roman/Projects/shish/src/tree/../tree.h \
+ /home/roman/Projects/shish/src/tree/../source.h \
+ /home/roman/Projects/shish/src/tree/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/tree/../../lib/typedefs.h \
+ /usr/include/i386-linux-musl/sys/types.h \
+ /usr/include/i386-linux-musl/features.h \
+ /usr/include/i386-linux-musl/bits/alltypes.h \
+ /usr/include/i386-linux-musl/endian.h \
+ /usr/include/i386-linux-musl/sys/select.h \
+ /usr/include/i386-linux-musl/time.h \
+ /home/roman/Projects/shish/src/tree/../../lib/fmt.h \
+ /home/roman/Projects/shish/src/tree/../../lib/uint32.h \
+ /usr/include/i386-linux-musl/stdint.h \
+ /usr/include/i386-linux-musl/bits/stdint.h \
+ /home/roman/Projects/shish/src/tree/../../lib/uint64.h \
+ /home/roman/Projects/shish/src/tree/../../lib/shell.h \
+ /home/roman/Projects/shish/src/tree/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/tree/../../lib/stralloc.h \
+ /usr/include/i386-linux-musl/stdlib.h \
+ /usr/include/i386-linux-musl/alloca.h \
+ /usr/include/i386-linux-musl/limits.h \
+ /usr/include/i386-linux-musl/bits/limits.h \
+ /home/roman/Projects/shish/src/tree/../../lib/stralloc.h \
+ /home/roman/Projects/shish/src/tree/../../lib/uint8.h \
+ /home/roman/Projects/shish/src/tree/../../lib/uint64.h

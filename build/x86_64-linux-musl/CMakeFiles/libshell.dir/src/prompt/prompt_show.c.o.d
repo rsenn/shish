@@ -1,0 +1,28 @@
+CMakeFiles/libshell.dir/src/prompt/prompt_show.c.o: \
+ /home/roman/Projects/shish/src/prompt/prompt_show.c \
+ /home/roman/Projects/shish/src/prompt/../prompt.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/stralloc.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/typedefs.h \
+ /usr/include/x86_64-linux-musl/sys/types.h \
+ /usr/include/x86_64-linux-musl/features.h \
+ /usr/include/x86_64-linux-musl/bits/alltypes.h \
+ /usr/include/x86_64-linux-musl/endian.h \
+ /usr/include/x86_64-linux-musl/sys/select.h \
+ /usr/include/x86_64-linux-musl/time.h \
+ /home/roman/Projects/shish/src/prompt/../term.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/windoze.h \
+ /usr/include/x86_64-linux-musl/termios.h \
+ /usr/include/x86_64-linux-musl/bits/termios.h \
+ /usr/include/x86_64-linux-musl/sys/ioctl.h \
+ /usr/include/x86_64-linux-musl/bits/ioctl.h \
+ /usr/include/x86_64-linux-musl/bits/ioctl_fix.h \
+ /home/roman/Projects/shish/src/prompt/../var.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/uint16.h \
+ /usr/include/x86_64-linux-musl/stdint.h \
+ /usr/include/x86_64-linux-musl/bits/stdint.h \
+ /home/roman/Projects/shish/src/prompt/../../lib/uint64.h \
+ /usr/include/x86_64-linux-musl/stdlib.h \
+ /usr/include/x86_64-linux-musl/alloca.h \
+ /home/roman/Projects/shish/src/prompt/../vartab.h \
+ /home/roman/Projects/shish/src/prompt/../var.h

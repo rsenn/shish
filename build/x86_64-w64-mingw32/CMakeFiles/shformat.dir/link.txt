@@ -1,0 +1,3 @@
+/opt/cmake-4.0.0-linux-x86_64/bin/cmake -E rm -f CMakeFiles/shformat.dir/objects.a
+/usr/bin/x86_64-w64-mingw32-ar qc CMakeFiles/shformat.dir/objects.a @CMakeFiles/shformat.dir/objects1.rsp
+/usr/bin/x86_64-w64-mingw32-gcc -g -O0 -ggdb -Wl,--whole-archive CMakeFiles/shformat.dir/objects.a -Wl,--no-whole-archive -o shformat.exe -Wl,--out-implib,libshformat.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles/shformat.dir/linkLibs.rsp

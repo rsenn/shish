@@ -1,0 +1,1 @@
+/usr/bin/musl-gcc  -O0 -ggdb CMakeFiles/shish.dir/src/sh/sh_init.c.o CMakeFiles/shish.dir/src/sh/sh_main.c.o -o CMakeFiles/CMakeRelink.dir/shish   -L/home/roman/Projects/shish/build/x86_64-linux-musl/lib  libshell.a libowfat.a -lm

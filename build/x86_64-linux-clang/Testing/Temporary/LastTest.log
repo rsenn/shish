@@ -1,0 +1,301 @@
+Start testing: Jul 21 20:17 CEST
+----------------------------------------------------------
+1/249 Testing: bquote.sh
+1/249 Test: bquote.sh
+Command: "/mnt/data/Projects/shish/build/x86_64-linux-clang/shish" "tests/bquote.sh"
+Directory: /home/roman/Projects/shish
+"bquote.sh" start time: Jul 21 20:17 CEST
+Output:
+----------------------------------------------------------
+'BLAH' = 'BLAH'
+Tests succeeded: 1
+Tests failure: 0
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"bquote.sh" end time: Jul 21 20:17 CEST
+"bquote.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/249 Testing: builtin-local.sh
+2/249 Test: builtin-local.sh
+Command: "/mnt/data/Projects/shish/build/x86_64-linux-clang/shish" "tests/builtin-local.sh"
+Directory: /home/roman/Projects/shish
+"builtin-local.sh" start time: Jul 21 20:17 CEST
+Output:
+----------------------------------------------------------
+NAME              VALUE[34GNLEN OFFS VLEN LEV BUCK     LEXHASH          RNDHASH[92GFLAGS
+--- level 1 --------------------------------------------------------------------------------------
+LYYYYYY         [19G"b" [32G    7   8     9   1  31 [58G3238e38e38c00000 [75Gbad6474b24b9b45f [92GFREE|LOCAL
+LXXXXXX         [19G"" [32G    7   8     8   1  38 [58G3228a28a28800000 [75G3871455cb6de4ea6 [92GFREE|LOCAL
+--- level 0 --------------------------------------------------------------------------------------
+
+NAME              VALUE[34GNLEN OFFS VLEN LEV BUCK     LEXHASH          RNDHASH[92GFLAGS
+--- level 1 --------------------------------------------------------------------------------------
+LYYYYYY         [19G"b" [32G    7   8     9   1  31 [58G3238e38e38c00000 [75Gbad6474b24b9b45f [92GFREE|LOCAL
+LXXXXXX         [19G"a" [32G    7   8     9   1  38 [58G3228a28a28800000 [75G3871455cb6de4ea6 [92GFREE|LOCAL
+--- level 0 --------------------------------------------------------------------------------------
+GWWWWWW         [19G"c" [32G    7   8     9   0  33 [58G1e18618618400000 [75Ge5ffe962c6b07621 [92GFREE
+
+NAME              VALUE[34GNLEN OFFS VLEN LEV BUCK     LEXHASH          RNDHASH[92GFLAGS
+--- level 0 --------------------------------------------------------------------------------------
+GWWWWWW         [19G"c" [32G    7   8     9   0  33 [58G1e18618618400000 [75Ge5ffe962c6b07621 [92GFREE
+
+LXXXXXX=unset
+LYYYYYY=unset
+GWWWWWW=c
+Tests succeeded: 0
+Tests failure: 0
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-local.sh" end time: Jul 21 20:17 CEST
+"builtin-local.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/249 Testing: builtin-read.sh
+3/249 Test: builtin-read.sh
+Command: "/mnt/data/Projects/shish/build/x86_64-linux-clang/shish" "tests/builtin-read.sh"
+Directory: /home/roman/Projects/shish
+"builtin-read.sh" start time: Jul 21 20:17 CEST
+Output:
+----------------------------------------------------------
+Device: UUID=55d5cea4-a9ad-4afe-8746-e7f605f29ca2
+Type: ext4
+Mount point: /
+Mount options: errors=remount-ro
+
+Device: UUID=D690-6E70
+Type: vfat
+Mount point: /boot/efi
+Mount options: umask=0077
+
+Device: /swapfile
+Type: swap
+Mount point: none
+Mount options: sw
+
+Device: UUID=1e8dada9-da18-4b1b-99d3-643f9a115a3e
+Type: auto
+Mount point: /mnt/data
+Mount options: nosuid,nodev,nofail,x-gvfs-show,x-gvfs-name=dat%20a,x-gvfs-icon=data
+
+Device: /mnt/data/snap
+Type: none
+Mount point: /var/snap
+Mount options: defaults,bind
+
+Test: TEST=\BL\nAH
+TEST2=\Line\n2
+ABCD='ABCDEFGHIJ'
+Tests succeeded: 0
+Tests failure: 0
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-read.sh" end time: Jul 21 20:17 CEST
+"builtin-read.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/249 Testing: builtin-test.sh
+4/249 Test: builtin-test.sh
+Command: "/mnt/data/Projects/shish/build/x86_64-linux-clang/shish" "tests/builtin-test.sh"
+Directory: /home/roman/Projects/shish
+"builtin-test.sh" start time: Jul 21 20:17 CEST
+Output:
+----------------------------------------------------------
+$0=tests/builtin-test.sh
+$DIR=tests
+test ( 3 -lt 10 ) = 0
+test ! ( 3 -lt 10 ) = 1
+test ( 3 -lt 10 ) -a ( 10 -gt 1 ) = 0
+test ( 10 -gt 3 ) -a ( 1 -lt 10 ) = 0
+test ( 10 -gt 3 ) -a ! ( 1 -gt 10 ) = 0
+test ( 3 -lt 10 -a 10 -gt 1 ) = 0
+test 1 -gt 0 = 0
+test 0 -gt 0 = 1
+test -1 -gt 0 = 1
+test_or_fail 0 -e tests/builtin-test.sh[1;36m =[1;35m 0[0m
+test_or_fail 0 -e CMakeLists.txt[1;36m =[1;35m 0[0m
+test_or_fail 0 -c /dev/null[1;36m =[1;35m 0[0m
+test_or_fail 1 -c CMakeLists.txt[1;36m =[1;35m 1[0m
+test_or_fail 0 -d .[1;36m =[1;35m 0[0m
+test_or_fail 1 -d CMakeLists.txt[1;36m =[1;35m 1[0m
+test_or_fail 0 -f CMakeLists.txt[1;36m =[1;35m 0[0m
+test_or_fail 1 -f .[1;36m =[1;35m 1[0m
+test_or_fail 0 BLAH[1;36m =[1;35m 0[0m
+test_or_fail 1[1;36m =[1;35m 1[0m
+test_or_fail 0 -n BLAH[1;36m =[1;35m 0[0m
+test_or_fail 1 -n[1;36m =[1;35m 1[0m
+test_or_fail 0 -z[1;36m =[1;35m 0[0m
+test_or_fail 1 -z BLAH[1;36m =[1;35m 1[0m
+test_or_fail 1 ! -n BLAH[1;36m =[1;35m 1[0m
+test_or_fail 0 ! -n[1;36m =[1;35m 0[0m
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"builtin-test.sh" end time: Jul 21 20:17 CEST
+"builtin-test.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/249 Testing: cmd-subst.sh
+5/249 Test: cmd-subst.sh
+Command: "/mnt/data/Projects/shish/build/x86_64-linux-clang/shish" "tests/cmd-subst.sh"
+Directory: /home/roman/Projects/shish
+"cmd-subst.sh" start time: Jul 21 20:17 CEST
+Output:
+----------------------------------------------------------
+tests/cmd-subst.sh:20:1: dump: -t: invalid option
+tests/cmd-subst.sh:20:1: dump: -s: invalid option
+HERE='Here doc content 1337'
+OUTPUT='This is output from an 'echo' command'
+FORMATTED='0x%08X'
+Tests succeeded: 0
+Tests failure: 0
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"cmd-subst.sh" end time: Jul 21 20:17 CEST
+"cmd-subst.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/249 Testing: debug.sh
+6/249 Test: debug.sh
+Command: "/mnt/data/Projects/shish/build/x86_64-linux-clang/shish" "tests/debug.sh"
+Directory: /home/roman/Projects/shish
+"debug.sh" start time: Jul 21 20:17 CEST
+Output:
+----------------------------------------------------------
++ ls -la
++ type -f cd
+cd is a shell builtin
++ type -f set
+set is a shell builtin
++ type -f column
+column is /usr/bin/column
++ fn blah
+++ true
+++ false
+++ :
+++ set -- a
+++ print_stats
++++ echo 'Tests succeeded: 0'
+Tests succeeded: 0
++++ echo 'Tests failure: 0'
+Tests failure: 0
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"debug.sh" end time: Jul 21 20:17 CEST
+"debug.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/249 Testing: functions.sh
+7/249 Test: functions.sh
+Command: "/mnt/data/Projects/shish/build/x86_64-linux-clang/shish" "tests/functions.sh"
+Directory: /home/roman/Projects/shish
+"functions.sh" start time: Jul 21 20:17 CEST
+Output:
+----------------------------------------------------------
+define func2
+define func3
+called func1
+called func2
+called func3
+3
+6
+Tests succeeded: 0
+Tests failure: 0
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"functions.sh" end time: Jul 21 20:17 CEST
+"functions.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/249 Testing: if.sh
+8/249 Test: if.sh
+Command: "/mnt/data/Projects/shish/build/x86_64-linux-clang/shish" "tests/if.sh"
+Directory: /home/roman/Projects/shish
+"if.sh" start time: Jul 21 20:17 CEST
+Output:
+----------------------------------------------------------
+Tests succeeded: 0
+Tests failure: 0
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"if.sh" end time: Jul 21 20:17 CEST
+"if.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/249 Testing: loop-while.sh
+9/249 Test: loop-while.sh
+Command: "/mnt/data/Projects/shish/build/x86_64-linux-clang/shish" "tests/loop-while.sh"
+Directory: /home/roman/Projects/shish
+"loop-while.sh" start time: Jul 21 20:17 CEST
+Output:
+----------------------------------------------------------
+'HGFEDCBA' = 'HGFEDCBA'
+'0' = '0'
+'0' = '0'
+'1' = '1'
+Tests succeeded: 4
+Tests failure: 0
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"loop-while.sh" end time: Jul 21 20:17 CEST
+"loop-while.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/249 Testing: param.sh
+10/249 Test: param.sh
+Command: "/mnt/data/Projects/shish/build/x86_64-linux-clang/shish" "tests/param.sh"
+Directory: /home/roman/Projects/shish
+"param.sh" start time: Jul 21 20:17 CEST
+Output:
+----------------------------------------------------------
+'AB' = 'AB'
+'CD' = 'CD'
+'A' = 'A'
+'D' = 'D'
+'AAAAAAAAAAAAAAAA' = 'AAAAAAAAAAAAAAAA'
+'DDDDDDDDDDDDDDDD' = 'DDDDDDDDDDDDDDDD'
+'unset' = 'unset'
+'' = ''
+'' = ''
+'empty' = 'empty'
+'set' = 'set'
+'' = ''
+'...' = '...'
+'...' = '...'
+'set' = 'set'
+'nonempty' = 'nonempty'
+'init' = 'init'
+'if-zero' = 'if-zero'
+'if-zero' = 'if-zero'
+'...' = '...'
+'...' = '...'
+'0' = 'Y is unset'
+FAILURE
+Tests succeeded: 21
+Tests failure: 1
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Failed.
+"param.sh" end time: Jul 21 20:17 CEST
+"param.sh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jul 21 20:17 CEST

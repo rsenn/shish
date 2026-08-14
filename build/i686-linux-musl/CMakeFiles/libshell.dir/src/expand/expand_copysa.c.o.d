@@ -1,0 +1,33 @@
+CMakeFiles/libshell.dir/src/expand/expand_copysa.c.o: \
+ /home/roman/Projects/shish/src/expand/expand_copysa.c \
+ /home/roman/Projects/shish/src/expand/../../lib/byte.h \
+ /home/roman/Projects/shish/src/expand/../../lib/typedefs.h \
+ /usr/include/i386-linux-musl/sys/types.h \
+ /usr/include/i386-linux-musl/features.h \
+ /usr/include/i386-linux-musl/bits/alltypes.h \
+ /usr/include/i386-linux-musl/endian.h \
+ /usr/include/i386-linux-musl/sys/select.h \
+ /usr/include/i386-linux-musl/time.h \
+ /usr/include/i386-linux-musl/stdint.h \
+ /usr/include/i386-linux-musl/bits/stdint.h \
+ /usr/include/i386-linux-musl/string.h \
+ /usr/include/i386-linux-musl/strings.h \
+ /home/roman/Projects/shish/src/expand/../expand.h \
+ /home/roman/Projects/shish/src/expand/../../lib/stralloc.h \
+ /home/roman/Projects/shish/src/expand/../features.h \
+ /home/roman/Projects/shish/src/expand/../tree.h \
+ /home/roman/Projects/shish/src/expand/../source.h \
+ /home/roman/Projects/shish/src/expand/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/expand/../../lib/fmt.h \
+ /home/roman/Projects/shish/src/expand/../../lib/uint32.h \
+ /home/roman/Projects/shish/src/expand/../../lib/uint64.h \
+ /home/roman/Projects/shish/src/expand/../../lib/shell.h \
+ /home/roman/Projects/shish/src/expand/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/expand/../../lib/stralloc.h \
+ /usr/include/i386-linux-musl/stdlib.h \
+ /usr/include/i386-linux-musl/alloca.h \
+ /usr/include/i386-linux-musl/limits.h \
+ /usr/include/i386-linux-musl/bits/limits.h \
+ /home/roman/Projects/shish/src/expand/../../lib/uint8.h \
+ /home/roman/Projects/shish/src/expand/../../lib/uint64.h \
+ /home/roman/Projects/shish/src/expand/../tree.h

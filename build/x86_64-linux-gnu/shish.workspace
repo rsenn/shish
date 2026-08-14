@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeLite_Workspace Name="shish">
+	<Project Name="shish" Path="shish.project" Active="No"/>
+	<BuildMatrix>
+		<WorkspaceConfiguration Name="Release" Selected="yes">
+			<Project Name="shish" ConfigName="Release"/>
+		</WorkspaceConfiguration>
+	</BuildMatrix>
+</CodeLite_Workspace>

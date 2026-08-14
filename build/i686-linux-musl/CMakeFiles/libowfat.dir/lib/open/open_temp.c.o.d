@@ -1,0 +1,27 @@
+CMakeFiles/libowfat.dir/lib/open/open_temp.c.o: \
+ /home/roman/Projects/shish/lib/open/open_temp.c \
+ /home/roman/Projects/shish/lib/open/../windoze.h \
+ /home/roman/Projects/shish/lib/open/../open.h \
+ /home/roman/Projects/shish/lib/open/../typedefs.h \
+ /usr/include/i386-linux-musl/sys/types.h \
+ /usr/include/i386-linux-musl/features.h \
+ /usr/include/i386-linux-musl/bits/alltypes.h \
+ /usr/include/i386-linux-musl/endian.h \
+ /usr/include/i386-linux-musl/sys/select.h \
+ /usr/include/i386-linux-musl/time.h \
+ /home/roman/Projects/shish/lib/open/../windoze.h \
+ /home/roman/Projects/shish/lib/open/../uint64.h \
+ /usr/include/i386-linux-musl/stdint.h \
+ /usr/include/i386-linux-musl/bits/stdint.h \
+ /home/roman/Projects/shish/lib/open/../str.h \
+ /usr/include/i386-linux-musl/string.h \
+ /usr/include/i386-linux-musl/strings.h \
+ /home/roman/Projects/shish/lib/open/../uint32.h \
+ /usr/include/i386-linux-musl/unistd.h \
+ /usr/include/i386-linux-musl/bits/posix.h \
+ /usr/include/i386-linux-musl/errno.h \
+ /usr/include/i386-linux-musl/bits/errno.h \
+ /usr/include/i386-linux-musl/fcntl.h \
+ /usr/include/i386-linux-musl/bits/fcntl.h \
+ /usr/include/i386-linux-musl/limits.h \
+ /usr/include/i386-linux-musl/bits/limits.h

@@ -1,0 +1,41 @@
+CMakeFiles/libshell.dir/src/exec/exec_type.c.o: \
+ /home/roman/Projects/shish/src/exec/exec_type.c \
+ /usr/include/stdc-predef.h /home/roman/Projects/shish/src/exec/../exec.h \
+ /home/roman/Projects/shish/src/exec/../../lib/uint32.h \
+ /usr/include/diet/stdint.h /usr/include/diet/inttypes.h \
+ /usr/include/diet/sys/cdefs.h /usr/include/diet/endian.h \
+ /usr/include/diet/stddef.h /usr/include/diet/stdlib.h \
+ /usr/include/diet/sys/types.h /usr/include/diet/alloca.h \
+ /home/roman/Projects/shish/src/exec/../fdtable.h \
+ /home/roman/Projects/shish/src/exec/../fd.h /usr/include/diet/fcntl.h \
+ /usr/include/diet/unistd.h /usr/include/diet/sys/fsuid.h \
+ /usr/include/diet/sys/select.h /usr/include/diet/string.h \
+ /usr/include/diet/signal.h /usr/include/diet/sys/time.h \
+ /usr/include/diet/sys/ucontext.h /usr/include/diet/asm/sigcontext.h \
+ /usr/include/diet/asm/x86_64-sigcontext.h /usr/include/diet/asm/types.h \
+ /usr/include/diet/sys/stat.h /usr/include/diet/sys/uio.h \
+ /usr/include/diet/sys/socket.h \
+ /home/roman/Projects/shish/src/exec/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/exec/../../lib/typedefs.h \
+ /usr/include/diet/time.h \
+ /home/roman/Projects/shish/src/exec/../../lib/shell.h \
+ /home/roman/Projects/shish/src/exec/../../lib/buffer.h \
+ /home/roman/Projects/shish/src/exec/../../lib/stralloc.h \
+ /usr/include/diet/limits.h \
+ /home/roman/Projects/shish/src/exec/../../lib/stralloc.h \
+ /home/roman/Projects/shish/src/exec/../../lib/windoze.h \
+ /home/roman/Projects/shish/src/exec/../../lib/alloc.h \
+ /home/roman/Projects/shish/build/x86_64-linux-diet/config.h \
+ /home/roman/Projects/shish/src/exec/../parse.h \
+ /home/roman/Projects/shish/src/exec/../../lib/uint64.h \
+ /home/roman/Projects/shish/src/exec/.././source.h \
+ /home/roman/Projects/shish/src/exec/.././../lib/buffer.h \
+ /home/roman/Projects/shish/src/exec/.././../lib/fmt.h \
+ /home/roman/Projects/shish/src/exec/.././../lib/typedefs.h \
+ /home/roman/Projects/shish/src/exec/.././../lib/uint32.h \
+ /home/roman/Projects/shish/src/exec/.././../lib/uint64.h \
+ /home/roman/Projects/shish/src/exec/.././../lib/shell.h \
+ /home/roman/Projects/shish/src/exec/../tree.h \
+ /home/roman/Projects/shish/src/exec/../source.h \
+ /home/roman/Projects/shish/src/exec/../../lib/uint8.h \
+ /home/roman/Projects/shish/src/exec/../../lib/str.h

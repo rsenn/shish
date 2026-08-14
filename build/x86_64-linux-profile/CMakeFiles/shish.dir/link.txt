@@ -1,0 +1,1 @@
+/usr/bin/gcc -g3 -ggdb -w -pg -Os  -DNDEBUG -pg -Wl,--dependency-file=CMakeFiles/shish.dir/link.d CMakeFiles/shish.dir/src/sh/sh_init.c.o CMakeFiles/shish.dir/src/sh/sh_main.c.o -o shish   -L/home/roman/Projects/shish/build/x86_64-linux-profile/lib  -Wl,-rpath,/home/roman/Projects/shish/build/x86_64-linux-profile/lib: libshell.a libowfat.a -lm
