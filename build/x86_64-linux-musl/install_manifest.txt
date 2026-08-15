@@ -1,2 +1,0 @@
-/opt/musl/bin/shformat
-/opt/musl/bin/shish

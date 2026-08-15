@@ -1,3 +1,0 @@
-/usr/local/bin/shformat
-/usr/local/bin/shparse2ast
-/usr/local/bin/shish

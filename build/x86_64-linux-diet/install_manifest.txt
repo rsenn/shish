@@ -1,2 +1,0 @@
-/opt/diet/bin/shformat
-/opt/diet/bin/shish

@@ -59,13 +59,13 @@ parse_case(struct parser* p) {
       *pptr = parse_getarg(p);
       pptr = tree_next(pptr);
 
-      if(!(parse_gettok(p, P_DEFAULT) & T_PIPE))
+      if(!(parse_gettok(p, P_NOKEYWD) & T_PIPE))
         break;
     }
 
     p->pushback++;
 
-    if(!parse_expect(p, P_DEFAULT, T_RP | T_PIPE, node))
+    if(!parse_expect(p, P_NOKEYWD, T_RP | T_PIPE, node))
       return NULL;
 
     /* parse the compound list */

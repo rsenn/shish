@@ -8,7 +8,9 @@
 #include "../../lib/alloc.h"
 #include "../../lib/str.h"
 #include "../var.h"
+#include "../eval.h"
 #include "../../lib/windoze.h"
+#include <stdio.h>
 #if WINDOWS_NATIVE
 #include <io.h>
 #else
@@ -80,7 +82,9 @@ builtin_source(int argc, char* argv[]) {
   struct fd src;
   struct source in;
   struct arg oldarg;
+  struct eval e;
   int ret;
+  int jmpret;
 
   if((fname = argv[shell_optind]) == NULL) {
     builtin_errmsg(argv, "filename argument required", NULL);
@@ -103,11 +107,30 @@ builtin_source(int argc, char* argv[]) {
   in.fd = &src;
 
   if(!fd_mmap(&src, path_to_open)) {
-    sh_pushargs(&oldarg);
-    sh_setargs(&argv[++shell_optind], 0);
-    sh_loop();
-    sh_popargs(&oldarg);
-    ret = sh->exitcode;
+    /* Set up an eval frame with a jump buffer so that return/break/continue
+       from the sourced script can unwind back to this point */
+    eval_push(&e, E_ROOT);
+    e.jump = 1;
+    
+    jmpret = setjmp(e.jumpbuf);
+    if(jmpret == 0) {
+      /* Normal execution path */
+      sh_pushargs(&oldarg);
+      sh_setargs(&argv[++shell_optind], 0);
+      sh_loop();
+      sh_popargs(&oldarg);
+      ret = sh->exitcode;
+    } else {
+      /* Longjmp from return/break/continue - jmpret is (value << 1) | 1
+         for return, or just 1 for break/continue */
+      ret = jmpret >> 1;
+      sh->exitcode = ret;
+      fprintf(stderr, "DEBUG builtin_source: longjmp returned, ret=%d, sh->exitcode=%d\n", 
+              ret, sh->exitcode);
+      sh_popargs(&oldarg);
+    }
+    
+    eval_pop(&e);
   } else {
     ret = 1;
   }

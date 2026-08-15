@@ -1,1 +1,0 @@
-#define HAVE_SYS_TYPES_H 1

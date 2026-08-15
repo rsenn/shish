@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<CodeLite_Workspace Name="C">
-	<Project Name="C" Path="C.project" Active="No"/>
-	<BuildMatrix>
-		<WorkspaceConfiguration Name="RelWithDebInfo" Selected="yes">
-			<Project Name="C" ConfigName="RelWithDebInfo"/>
-		</WorkspaceConfiguration>
-	</BuildMatrix>
-</CodeLite_Workspace>

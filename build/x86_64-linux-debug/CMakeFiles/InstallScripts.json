@@ -1,7 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/home/roman/Projects/shish/build/x86_64-linux-debug/cmake_install.cmake"
-	],
-	"Parallel" : false
-}
