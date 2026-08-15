@@ -1,1 +1,0 @@
-/usr/lib/i386-linux-gnu/diet/bin/diet /usr/bin/i686-linux-gnu-gcc -m32  -g -O0 -ggdb -Wl,--dependency-file=CMakeFiles/shish.dir/link.d CMakeFiles/shish.dir/src/sh/sh_init.c.o CMakeFiles/shish.dir/src/sh/sh_main.c.o -o shish   -L/home/roman/Projects/shish/build/i686-linux-diet/lib  -Wl,-rpath,/home/roman/Projects/shish/build/i686-linux-diet/lib: libshell.a libowfat.a -lm

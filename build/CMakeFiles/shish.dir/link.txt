@@ -1,1 +1,0 @@
-/usr/bin/cc  -falign-functions=1 -falign-jumps=1 -falign-labels=1 -falign-loops=1 -w  -Os -DNDEBUG -Wl,--dependency-file=CMakeFiles/shish.dir/link.d CMakeFiles/shish.dir/src/sh/sh_init.c.o CMakeFiles/shish.dir/src/sh/sh_main.c.o -o shish   -L/home/roman/Projects/shish/build/lib  -Wl,-rpath,/home/roman/Projects/shish/build/lib: libshell.a libowfat.a -lm
