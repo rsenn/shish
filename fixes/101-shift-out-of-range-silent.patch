@@ -1,0 +1,22 @@
+diff --git a/src/builtin/builtin_shift.c b/src/builtin/builtin_shift.c
+index 5dc11b3d..93a63ecc 100644
+--- a/src/builtin/builtin_shift.c
++++ b/src/builtin/builtin_shift.c
+@@ -22,13 +22,11 @@ builtin_shift(int argc, char* argv[]) {
+     }
+   }
+ 
+-  /* POSIX: if n > $#, exit > 0 and leave $# unchanged */
+-  if(n > sh->arg.c) {
+-    sh_msg(argv[0]);
+-    buffer_putm_internal(fd_err->w, ": can't shift that many", NULL);
+-    buffer_putnlflush(fd_err->w);
++  /* POSIX: if n > $#, exit > 0 and leave $# unchanged (silently --
++     this is not an error, just shift's normal way of reporting that
++     it didn't shift) */
++  if(n > sh->arg.c)
+     return 1;
+-  }
+ 
+   /* Perform the shift */
+   while(n--) {

@@ -3475,4 +3475,18 @@ assert_equal "while" "$CMD_V_WHILE" "command -v must recognize reserved word 'wh
 ## given directly as a file operand (not found via recursion) still
 ## fails with "No such file or directory", matching GNU chmod.
 
+## fixes/101: shift printed a "can't shift that many" diagnostic to
+## stderr whenever n > $#. POSIX only specifies the exit status for
+## this case ("> 0 if n>$#; otherwise, it is zero") and leaves any
+## diagnostic message unspecified/implementation-defined; shift should
+## report failure through its exit status alone and otherwise stay
+## silent. Fixed by dropping the message from builtin_shift.c (the
+## n > $# check now just returns 1).
+SHIFT101_ERR=$( (set -- a b; shift 5) 2>&1 >/dev/null)
+assert_equal "" "$SHIFT101_ERR" "shift with n > \$# must not print anything to stderr"
+(set -- a b; shift 5)
+assert_equal "1" "$?" "shift with n > \$# must still exit with status 1"
+SHIFT101_ARGS=$(set -- a b; shift 5 2>/dev/null; echo "$#:$*")
+assert_equal "2:a b" "$SHIFT101_ARGS" "shift with n > \$# must leave the positional parameters unchanged"
+
 summary

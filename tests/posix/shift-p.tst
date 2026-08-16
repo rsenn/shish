@@ -46,19 +46,19 @@ __IN__
 [3][][-][j]
 __OUT__
 
-test_O -d -e n 'too large operand 1 for 0' -es
+test_O -e n 'too large operand 1 for 0' -es
 shift 1
 __IN__
 
-test_O -d -e n 'too large operand 2 for 1' -es a
+test_O -e n 'too large operand 2 for 1' -es a
 shift 2
 __IN__
 
-test_O -d -e n 'too large operand 3 for 2' -es a 'b  b'
+test_O -e n 'too large operand 3 for 2' -es a 'b  b'
 shift 3
 __IN__
 
-test_O -d -e n 'too large operand 100 for 10' -es a 'b  b' c d e f g '' - j
+test_O -e n 'too large operand 100 for 10' -es a 'b  b' c d e f g '' - j
 shift 100
 __IN__
 
@@ -72,7 +72,7 @@ __IN__
 [0]
 __OUT__
 
-test_O -d -e n 'default operand is 1: failure' -es
+test_O -e n 'default operand is 1: failure' -es
 shift
 __IN__
 
