@@ -15,7 +15,7 @@ builtin_dirname(int argc, char* argv[]) {
     return 1;
   }
 
-  for(int i = 0; i < argc; i++) {
+  for(int i = shell_optind; i < argc; i++) {
     char* path = argv[i];
 
     if(str_equal(path, "--"))

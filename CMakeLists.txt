@@ -275,7 +275,7 @@ add_custom_target(
   SOURCES ${ALL_SOURCES})
 
 file(GLOB TESTS tests/*.sh)
-list(FILTER TESTS EXCLUDE REGEX "common.sh|run-tst.sh")
+list(FILTER TESTS EXCLUDE REGEX "bourne-compat.sh|common.sh|run-tst.sh")
 
 relative_path(TESTS "${CMAKE_CURRENT_SOURCE_DIR}" ${TESTS})
 
