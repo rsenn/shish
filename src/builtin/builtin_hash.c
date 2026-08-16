@@ -61,11 +61,9 @@ hash_print_reusable(void) {
 }
 
 /* -r: forget every remembered command location. Unlike
- * exec_hash_invalidate_all() (exec_hash.c, private to that file --
- * used internally to force a re-search after PATH changes, keeping
- * each entry's slot around for reuse), this actually frees every
- * entry, matching "forget", not just "distrust", every remembered
- * location.
+ * exec_hash_invalidate_all() (which forces a re-search after PATH
+ * changes but keeps each slot for reuse), this actually frees every
+ * entry.
  * ----------------------------------------------------------------------- */
 static void
 hash_forget_all(void) {
@@ -111,19 +109,15 @@ hash_forget(char* name) {
 }
 
 /* -p pathname name: remember 'name' as located at 'pathname', without
- * searching PATH for it at all -- same as bash's "-p", this is taken
- * on faith; a wrong pathname just fails the next time 'name' actually
- * runs. Overwrites any existing entry for 'name' (of any kind, not
- * just a previous H_PROGRAM one).
+ * searching PATH for it -- taken on faith, same as bash's "-p"; a
+ * wrong pathname just fails the next time 'name' runs. Overwrites any
+ * existing entry for 'name', of any kind.
  * ----------------------------------------------------------------------- */
 static void
 hash_set(char* name, char* pathname) {
   /* exec_lookup() only writes back through its hashptr param on a
-     cache *hit* -- on a miss (the common case here, hashing a name
-     for the first time) it leaves it untouched, so it has to be
-     pre-computed here rather than left for exec_lookup() to maybe
-     fill in, or exec_create() below ends up hashing/bucketing the new
-     entry by a garbage value nothing will ever look up correctly. */
+     cache hit -- pre-compute it here, or exec_create() below hashes
+     the new entry by a garbage value nothing will look up correctly. */
   uint32 hash = exec_hashstr(name);
   struct exechash* entry = exec_lookup(name, &hash);
 

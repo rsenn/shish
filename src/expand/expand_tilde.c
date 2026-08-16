@@ -9,33 +9,21 @@
 #include <unistd.h>
 #endif
 
-/* Known, accepted gap (see tests/posix/tilde-p.tst for the exact
- * cases): POSIX also requires a tilde-prefix to stay completely
- * literal if *any* character within it (the '~', the name, or the
- * terminating '/') was quoted or escaped -- e.g. "\~", "~\foo",
- * "~'foo'", or a name that came from `~$var` expansion. Distinguishing
- * that requires per-byte quote-tracking within a chunk (or adding
- * '~' to parse_isesc's protected set, mirroring how '*'/'?'/'['
- * already survive escaping through to expand time); this module only
- * checks a whole chunk's own S_TABLE quoting state, so an escaped '~'
- * that reduces to a plain, indistinguishable '~' byte before this
- * ever runs is (incorrectly) still expanded. Quoting the '~' itself
- * ("~"/'~') still works correctly, since that already puts it in a
- * differently-flagged (non-S_UNQUOTED) chunk this code never touches.
+/* Known gap: this module only checks a chunk's own S_TABLE quoting
+ * state, not per-byte escaping within it, so an escaped '~' ("\~")
+ * that reduces to a plain '~' byte still gets expanded. Quoting the
+ * '~' itself ("~"/'~') works correctly, since that puts it in a
+ * differently-flagged chunk this code never touches.
  * ----------------------------------------------------------------------- */
 
 /* resolve a tilde-prefix ("~" or "~name") at the very start of
- * [text,len) -- POSIX 2.6.1. An empty name resolves via $HOME (falling
- * back to the current user's passwd entry if HOME is unset); a
- * non-empty name is looked up via getpwnam(). On success, *home is
- * filled with the resolved (nul-terminated) directory and prefixlen
- * is set to how many bytes of the input the "~name" prefix itself
- * occupied (never including a trailing '/', which stays for the
- * caller to keep). Returns 0 (leaving home and prefixlen untouched)
- * for anything that isn't a resolvable tilde-prefix at all -- text not
- * starting with '~', or an unknown user -- so the caller's convention
- * is always "0 means leave the original text alone", matching
- * expand_glob.c's own "no match -> literal" fallback.
+ * [text,len) -- POSIX 2.6.1.
+ * - empty name: resolves via $HOME, falling back to the passwd entry
+ * - non-empty name: looked up via getpwnam()
+ * On success, *home gets the resolved directory and prefixlen the
+ * byte length of the "~name" prefix (excluding any trailing '/').
+ * Returns 0, leaving both untouched, for anything not a resolvable
+ * tilde-prefix -- caller's convention: "0 means leave text alone".
  * ----------------------------------------------------------------------- */
 int
 expand_tilde_lookup(
@@ -95,14 +83,11 @@ expand_tilde_lookup(
   return 1;
 }
 
-/* splits a chunk in two right at "prefixlen": the front becomes the
- * resolved home directory, marked S_DQUOTED so it's exempt from field
- * splitting like any other expansion result the shell itself produced
- * (POSIX: a tilde-expansion's result is not subject to field
- * splitting or pathname expansion) -- a new sibling chunk holds
- * whatever text followed the prefix, keeping the original chunk's own
- * flags (S_UNQUOTED, plus S_GLOB if it had it) so *that* part still
- * behaves exactly as if the tilde-prefix had never been there. */
+/* splits a chunk in two at "prefixlen": the front becomes the resolved
+ * home directory, marked S_DQUOTED so it's exempt from field
+ * splitting/globbing (POSIX). A new sibling chunk holds whatever text
+ * followed the prefix, keeping the original flags so it behaves as if
+ * the tilde-prefix had never been there. */
 static void
 expand_tilde_splice(union node* n, stralloc* home, size_t prefixlen) {
   union node* rest = tree_newnode(N_ARGSTR);
@@ -148,16 +133,11 @@ expand_tilde_word(union node* arg) {
   stralloc_free(&home);
 }
 
-/* same idea for an assignment word ("NAME=value..."): the name and its
- * '=' are always literal, unquoted text at the very start of the first
- * chunk (assignment grammar guarantees this), so the value begins
- * right after that '='. From there, walks the remaining chunk list as
- * a small state machine tracking "am I at a ':'-or-value-start
- * boundary" -- true at the start of the value and immediately after
- * any unquoted literal ':', false after anything else (including any
- * substitution chunk or quoted text: a boundary must be a real
- * unquoted ':' in the source, never inferred from an expansion's
- * eventual result) -- resolving+splicing a tilde-prefix at each one.
+/* same idea for an assignment word ("NAME=value..."): the value begins
+ * right after the always-literal "NAME=". From there, walks the chunk
+ * list as a state machine tracking a ":"-or-value-start boundary (true
+ * at the value's start and after any unquoted literal ':', false
+ * otherwise), resolving+splicing a tilde-prefix at each one.
  * ----------------------------------------------------------------------- */
 void
 expand_tilde_assign(union node* var) {

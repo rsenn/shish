@@ -10,14 +10,11 @@ var_init(const char* v, struct var* var, struct search* context) {
   stralloc_init(&var->sa);
   var->offset = var->len = context->len;
 
-  /* var->sa.s must never be NULL: var_bsearch() (var lookup) and
-     var_print()/var_export() all read var->len bytes from it
-     unconditionally, with no separate place to keep the name if it
-     isn't in there. A variable can go through var_chflg() (e.g.
-     "export FOO") with no value ever assigned -- store its name now
-     and mark it V_UNSET, so it behaves like a real (if valueless)
-     variable everywhere else instead of leaving sa.s dangling until
-     whatever the first real assignment turns out to be. */
+  /* var->sa.s must never be NULL: var_bsearch(), var_print(), and
+     var_export() all read var->len bytes from it unconditionally.
+     Store the name now and mark V_UNSET so a variable that only ever
+     went through var_chflg() (e.g. "export FOO") still behaves like a
+     real, if valueless, variable. */
   stralloc_copyb(&var->sa, v, context->len);
   stralloc_nul(&var->sa);
   var->flags = V_UNSET;

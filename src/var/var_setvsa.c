@@ -2,13 +2,11 @@
 #include "../var.h"
 
 /* set a variable value from a stralloc in the format: word
- *
- * if you specify the V_FREE flag the var table will take control over
- * the whole stralloc, leaving you with a freshly initialized one.
- * otherwise the contents of the stralloc are copied.
- *
- * IMPORTANT: the name must be a valid posix shell variable name, or it will
- *            fuck up the whole var table!
+ * - V_FREE: the var table takes control of the whole stralloc,
+ *   leaving you with a freshly initialized one.
+ * - otherwise: the stralloc's contents are copied.
+ * name must be a valid POSIX shell variable name, or it corrupts the
+ * whole var table.
  * ----------------------------------------------------------------------- */
 const char*
 var_setvsa(const char* name, stralloc* sa, int flags) {

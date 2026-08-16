@@ -40,16 +40,10 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
   /* evaluate the command tree in a subshell */
   vartab_push(&vars, 0);
 
-  /* command substitution is a subshell (POSIX 2.6.3), same as "(...)"
-     -- eval_subshell.c pushes its own struct env for exactly this
-     reason: without it, "set -e"/"set -f"/any other "set" option, or
-     "cd"/"umask" run inside "$(...)", permanently changed the *calling*
-     shell's own state once the substitution finished, instead of only
-     affecting the substitution's own, discarded-afterward environment.
-     Confirmed via a real regression: "$(set -e; true)" (an otherwise
-     harmless, common idiom for probing something without letting a
-     failure abort the *caller*) left errexit permanently enabled
-     afterward -- fixes/109. */
+  /* command substitution is a subshell (POSIX 2.6.3), same as "(...)":
+     push a fresh struct env so "set -e"/"cd"/"umask" etc. run inside
+     "$(...)" only affect the substitution's own, discarded-afterward
+     environment, not the calling shell's state. */
   sh_push(&she);
   exec_functions_save(&funcs);
 

@@ -32,11 +32,8 @@ fd_close(struct fd* fd) {
     fd->wb.fd = -1;
 
   /* the buffers may sit on kernel fds of their own that never became
-     the fd's effective descriptor (fd->e stays -1), e.g. the pipe read
-     end a command substitution's stralloc-fd reads the child's output
-     from. buffer_close() below really close()s those, so tell the
-     fdtable -- otherwise fd_expected stays stale forever and every
-     dup() bet in fdtable_dup() misses from then on. */
+     the fd's effective descriptor (fd->e stays -1). buffer_close()
+     below really close()s those, so untrack them in the fdtable too. */
   if(fd->rb.fd != fd->wb.fd && fd->rb.fd > 2)
     fdtable_untrack(fd->rb.fd);
 

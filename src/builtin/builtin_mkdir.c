@@ -8,19 +8,11 @@
 #include <sys/types.h>
 
 /* -p: create 'dir' one path component at a time, leftmost first, so
- * every ancestor exists by the time a deeper mkdir() needs it.
- * path_len_s() (lib/path/) gives the length of the *next* component
- * starting at 'p' -- zero if 'p' is already sitting on a separator,
- * which is exactly the case right after an absolute path's leading
- * "/" (or a run of repeated "/"s anywhere in the operand): skipping
- * every separator first, before ever measuring a component, is what
- * makes this loop never hand mkdir() an empty ("") path the way the
- * old byte-by-byte '/' -> '\0' rewrite did for any leading slash
- * (mkdir-p-absolute-path-leading-slash, fixes/91). A component is
- * created by temporarily NUL-terminating 'dir' right after it --
- * mkdir(dir.s, ...) then sees the whole prefix built so far, leading
- * separator included, since nothing before that point is ever
- * touched.
+ * every ancestor exists by the time a deeper mkdir() needs it. Every
+ * separator is skipped before measuring the next component, so this
+ * never hands mkdir() an empty path for a leading/repeated "/". A
+ * component is created by temporarily NUL-terminating 'dir' right
+ * after it, so mkdir() sees the whole prefix built so far.
  * ----------------------------------------------------------------------- */
 static int
 mkdir_parents(char* argv[], stralloc* dir, int verbose) {

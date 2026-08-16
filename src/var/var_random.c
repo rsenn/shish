@@ -4,15 +4,11 @@
 #include "../../lib/uint32.h"
 
 /* $RANDOM: bash/yash-compatible special-variable behavior.
- *
- * Active (the default): every read of $RANDOM produces the next value of
- * a pseudo-random sequence instead of an ordinary variable lookup.
- * Assigning an integer to RANDOM reseeds that sequence deterministically
- * (two shells seeded with the same integer must produce the same
- * sequence); assigning anything else (including empty) permanently turns
- * the magic off, at which point RANDOM behaves like any other variable --
- * `unset RANDOM` also permanently turns it off, per bash's documented
- * quirk that RANDOM never regains its special behavior once unset.
+ * - active (default): every read produces the next value of a
+ *   pseudo-random sequence instead of an ordinary lookup.
+ * - assigning an integer reseeds the sequence deterministically.
+ * - assigning anything else, or `unset RANDOM`, permanently turns the
+ *   magic off; it never comes back once unset (a bash quirk).
  * ----------------------------------------------------------------------- */
 
 int var_random_active = 1;

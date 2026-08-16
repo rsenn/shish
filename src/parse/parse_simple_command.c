@@ -83,12 +83,8 @@ parse_simple_command(struct parser* p) {
               source_popfd(&fd);
             }
 
-            /* sa is only ever scratch space for the parse_findalias()
-               lookup above -- nothing keeps a reference to it past
-               this point either way, so it must be freed here rather
-               than leaked on every simple command whose first word is
-               a literal string (memory-leak, found chasing ASan leak
-               reports on a full "./configure" run). */
+            /* sa is only scratch space for the parse_findalias()
+               lookup above; nothing keeps a reference to it. */
             stralloc_free(&sa);
           }
         }

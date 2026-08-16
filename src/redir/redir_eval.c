@@ -32,22 +32,18 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
   nredir->flag |= rfl;
 
   /* "[n]<&n"/"[n]>&n" (source and target the same descriptor) is a
-     defined POSIX no-op: dup2(fd, fd) succeeds trivially, without even
-     requiring fd to already be open, whenever both arguments are equal.
-     This is a common, harmless idiom in real scripts -- a bare ">&1"
-     (fdes defaults to 1, target word is "1") inside a "{ ...; } > file"
-     group, exactly what autoconf's own config.status emits -- so
-     rejecting it broke configure scripts outright
-     (self-referring-duplicate-rejected-config-status, BUGS).
-
-     fd_new()/fd_push() below are about to overwrite fdtable[nredir->fdes]
-     -- for a persistent "exec" redirection reusing the same fd number
-     this is destructive (fd_reinit() closes whatever real resource the
-     slot owned directly), so the snapshot has to happen before that
-     call, and only stays usable afterward if it's itself a dup of some
-     *other*, distinct fd number's entry (chased via ->dup): that other
-     entry is untouched by this fd's own reinitialization, whereas a
-     directly-owned resource is not recoverable once destroyed. */
+   * defined POSIX no-op: dup2(fd, fd) succeeds trivially whenever both
+   * arguments are equal, without requiring fd to already be open. A
+   * common idiom -- a bare ">&1" inside "{ ...; } > file", which
+   * autoconf's config.status emits.
+   *
+   * fd_new()/fd_push() below are about to overwrite
+   * fdtable[nredir->fdes], which is destructive for a persistent
+   * "exec" redirection reusing the same fd number. So the snapshot
+   * must happen before that call, and only stays usable afterward if
+   * it's a dup of some *other*, distinct fd number's entry (chased via
+   * ->dup) -- a directly-owned resource is not recoverable once
+   * destroyed. */
   {
     struct fd* selfdup_src = NULL;
     int selfdup = 0;
@@ -85,14 +81,12 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
     }
   }
 
-  /* do the appropriate redirection -- redir_here() hands sa->s off to
-     fd_here() (which reads straight from that buffer, freeing it only
-     when the fd itself is later closed), so sa must not be touched
-     again after that call; every other action is done with it once
-     the switch returns, so free it here rather than relying on each
-     callee to free its own copy (redir_open() never did, leaking sa->s
-     on every plain "> file"/"< file" redirection -- confirmed leak,
-     see fixes/133's regression test in tests/fixed.sh). */
+  /* do the appropriate redirection. redir_here() hands sa->s off to
+   * fd_here() (which reads straight from that buffer, freeing it only
+   * when the fd is later closed), so sa must not be touched again
+   * after that call. Every other action is done with sa once the
+   * switch returns, so free it here rather than relying on each
+   * callee to free its own copy. */
   switch(nredir->flag & R_ACT) {
     case R_OPEN:
       r = redir_open(nredir, &sa);

@@ -23,10 +23,8 @@ builtin_echo(int argc, char* argv[]) {
 
   /* echo doesn't have real options in the getopt sense: any word
      starting with "-" that isn't made up entirely of n/e/E letters
-     ends option parsing right there and is itself the first operand,
-     printed as-is -- there's no such thing as an "invalid option" to
-     echo (POSIX/dash/bash agree; "echo ---marker---" must print
-     "---marker---", not error out) */
+     ends option parsing and is itself the first operand, printed
+     as-is -- there's no such thing as an "invalid option" to echo. */
   for(; optind < argc; optind++) {
     const char* arg = argv[optind];
     size_t j;

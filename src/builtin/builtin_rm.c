@@ -10,12 +10,10 @@
 #include <sys/types.h>
 
 /* removes a single path, recursing into it first if it's a directory
- * (and not itself a symlink -- lstat(), not stat(), so "rm -r
- * symlink-to-dir" removes just the symlink, matching every other
- * shell's rm). Returns 0 on success, 1 on failure (having already
- * reported it via builtin_error()); with 'force' set, a missing path
- * is not an error, matching the non-recursive loop below's own
- * "unlink failure + force = silently skip" behavior.
+ * and not itself a symlink (lstat(), not stat(), so "rm -r
+ * symlink-to-dir" removes just the symlink). Returns 0 on success, 1
+ * on failure (already reported via builtin_error()); with 'force'
+ * set, a missing path is not an error.
  * ----------------------------------------------------------------------- */
 static int
 rm_recursive(char* argv[], stralloc* path, int force, int verbose) {

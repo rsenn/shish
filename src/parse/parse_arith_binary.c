@@ -22,12 +22,9 @@ parse_arith_binary(struct parser* p, int precedence) {
     return left;
   }
 
-  /* precedence runs from 1 (tightest, "**") through ARITH_PREC_TOP
-     (loosest, "||"); each branch below matches exactly one operator
-     level, walked in decreasing order starting at this frame's entry
-     precedence. The first match wins and stops the walk (see the
-     "op != -1" break below), which keeps the matched operator's level
-     in sync with how tightly its right-hand side is allowed to bind. */
+  /* precedence runs from 1 (tightest, "**") to ARITH_PREC_TOP (loosest,
+     "||"); each branch matches one operator level, walked in
+     decreasing order. First match wins (see "op != -1" break below). */
   do {
     if(precedence <= 0)
       break;
@@ -68,13 +65,8 @@ parse_arith_binary(struct parser* p, int precedence) {
     } else if(precedence <= 5) {
 
       /* "<<"/">>" belong to the tighter shift level below and must
-         not be mistaken for a chained "<"/">" here -- same class of
-         bug as the "&"/"&&" one above: a second, still-unconsumed
-         shift operator (e.g. the trailing "<<1" of "1<<2<<1", once
-         the first "1<<2" has already been parsed as the shift level's
-         own node and returned up as this frame's "left") otherwise
-         got read as a bare "<"/">" comparison instead of being left
-         for the shift level to have handled via its own chaining. */
+         not be mistaken for a chained "<"/">" comparison here (e.g.
+         the trailing "<<1" of "1<<2<<1"). */
       if(a == '>' && b != '>') {
         op = b == '=' ? A_GE : A_GT;
 
@@ -94,12 +86,8 @@ parse_arith_binary(struct parser* p, int precedence) {
         parse_skip(p);
       }
     } else if(precedence <= 7) {
-      /* bitwise AND binds tightest of "&"/"^"/"|" (C/POSIX order), and
-         must not be mistaken for the leading '&' of "&&" -- same class
-         of bug as the shift-vs-relational one above: without excluding
-         b == '&' here, "3&&-5" got mis-split into a one-character
-         bitwise-AND ("3&") plus a dangling "&-5" instead of ever
-         reaching the logical-AND level. */
+      /* bitwise AND binds tightest of "&"/"^"/"|" (C/POSIX order) and
+         must not be mistaken for the leading '&' of "&&". */
       if(a == '&' && b != '&' && b != '=')
         op = A_BITAND;
     } else if(precedence <= 8) {
@@ -126,15 +114,10 @@ parse_arith_binary(struct parser* p, int precedence) {
       }
     }
 
-    /* stop *before* decrementing once a match is found -- otherwise
-       "precedence" (used just below to bound the right operand's own
-       recursion) ends up one level looser than the level that was
-       actually matched, e.g. "+" matching immediately at its own
-       precedence=3 still fell through to "--precedence" first, so the
-       right operand recursed at precedence 1 (exponent only) instead
-       of 2 (multiplicative) and never picked up a trailing "*3" --
-       left for an ancestor frame to instead re-group as
-       "(1+2)*3" instead of "1+(2*3)". */
+    /* stop *before* decrementing once matched -- otherwise
+       "precedence" (bounding the right operand's own recursion) ends
+       up one level looser than the operator actually matched, e.g.
+       "1+2*3" would wrongly group as "(1+2)*3". */
     if(op != -1)
       break;
 

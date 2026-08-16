@@ -46,20 +46,11 @@ struct job {
   pid_t pgrp;
   char* command;
   uint8_t nproc;
-  uint8_t bgnd;      /* was this job actually backgrounded ("cmd &")? job_wait()'s
-                        "[N]+ Done ..." banner is only for these -- a foreground
-                        pipeline (including one run internally to capture a
-                        command substitution's output) isn't something the user
-                        is waiting to be notified about; they're already watching
-                        it (or, for a substitution, it was never visible at all). */
-  uint8_t announced; /* has a "Stopped" banner already been printed for the
-                         job's *current* stop? job_clean() (see job_clean.c)
-                         announces a background job stopping on its own, and
-                         is called on every job_update() (i.e. after every
-                         statement while the job stays stopped) -- without
-                         this it would reprint the banner every time instead
-                         of once per stop. job_resume() clears it again so a
-                         later stop gets announced too. */
+  uint8_t bgnd;      /* was this job backgrounded ("cmd &")? controls whether
+                        job_wait() prints a "[N]+ Done ..." banner for it. */
+  uint8_t announced; /* has a "Stopped" banner been printed for this stop
+                        yet? cleared by job_resume() so the next stop is
+                        announced again. */
   struct proc procs[];
 };
 
@@ -68,23 +59,15 @@ extern volatile bool job_signaled;
 extern struct job *job_list, **job_pointer;
 extern pid_t job_bgpid; /* "$!": pid of the most recently backgrounded command */
 
-/* self-pipe (see sh_onsig() in sh_main.c and term_read.c): the SIGCHLD
-   handler itself only does async-signal-safe work (wait_nohang()/
-   job_signal(), both plain memory writes) and then writes one byte
-   here -- write() is async-signal-safe, unlike the term_erase()/
-   term_restore()/prompt_show()/buffer_* calls the handler used to make
-   directly. term_read()'s select() loop wakes on job_sigfd[0] and does
-   that I/O from ordinary (non-signal) context instead. POSIX only --
-   job_sigfd[0]/[1] stay -1 on WINDOWS_NATIVE and nothing reads/writes
-   them there. */
+/* self-pipe: the SIGCHLD handler does only async-signal-safe work then
+   writes one byte here; term_read()'s select() loop wakes on
+   job_sigfd[0] and handles the rest from ordinary context. POSIX
+   only -- stays -1/-1 on WINDOWS_NATIVE. */
 extern int job_sigfd[2];
 
 #define job_current() (job_pointer && *job_pointer ? *job_pointer : 0)
-/* "done" means fully reaped -- a job with a stopped (Ctrl-Z'd) process
-   isn't running (job_running() only looks for status == -1, unset)
-   but isn't done either; without excluding job_stopped() here, a job
-   that just stopped would look "done" and get job_free()'d instead of
-   staying in job_list for a later "fg"/"bg" to resume */
+/* "done" means fully reaped: not running, and not merely stopped
+   (Ctrl-Z'd) either. */
 #define job_done(j) (!job_running(j) && !job_stopped(j))
 
 struct job* job_bypid(pid_t);
@@ -99,11 +82,9 @@ int job_wait(struct job*, pid_t pid, int* status);
 void job_foreground(struct job*);
 void job_free(struct job*);
 
-/* every user-visible "the shell is telling you something about a job"
-   line shares one formatter, job_banner() -- see src/job/job_banner.c
-   for the rationale. job_print() (used by the "jobs" builtin and
-   job_clean()'s listing) is just JOB_RUNNING/JOB_DONE/JOB_STOPPED
-   auto-selected from the job's current state. */
+/* every user-visible job status line goes through job_banner().
+   job_print() (used by the "jobs" builtin and job_clean()) picks
+   JOB_RUNNING/JOB_DONE/JOB_STOPPED from the job's current state. */
 enum job_banner_kind {
   JOB_START,   /* "[id] pid" -- a job was just forked/backgrounded */
   JOB_RUNNING, /* "[id]+  Running   command" */

@@ -7,21 +7,13 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-/* -p: having just removed 'sa' (already NUL-terminated, trailing
- * separators and all), keep climbing to its parent, its parent's
- * parent, and so on, rmdir()'ing each in turn for as long as they're
- * empty. path_right() (lib/path/) gives the length of the portion of
- * a path before its last component, skipping any trailing separators
- * first -- so repeatedly truncating 'sa' to that length and
- * re-running it walks the pathname up one component at a time, same
- * as GNU rmdir -p's own "a/b/c" -> "a/b" -> "a" walk. It returns a
- * value >= the input length (SIZE_MAX, via unsigned wraparound) once
- * there's no separator left at all (a bare "a" or "."), and 0 for a
- * path whose only remaining component is the root ("/foo" -> "") --
- * both mean "nothing left above this to remove", so both stop the
- * climb rather than attempting rmdir("") or rmdir("/"). Returns 0 if
- * the climb ran out of ancestors on its own, 1 if it stopped because
- * an rmdir() call failed (not force'd away).
+/* -p: having just removed 'sa', keep climbing to its parent, its
+ * parent's parent, and so on, rmdir()'ing each as long as they're
+ * empty (GNU rmdir -p's "a/b/c" -> "a/b" -> "a" walk). path_right()
+ * gives the length before the last component; a value >= sa->len (no
+ * separator left) or 0 (root-only path) both mean "nothing left above
+ * this", stopping the climb before rmdir("")/rmdir("/"). Returns 0 if
+ * the climb ran out of ancestors on its own, 1 on a failed rmdir().
  * ----------------------------------------------------------------------- */
 static int
 rmdir_parents(char* argv[], stralloc* sa, int verbose, int force) {

@@ -4,14 +4,9 @@
 
 struct nredir* redir_list = NULL;
 
-/* add a here-doc
- *
- * Maintains the pending here-doc list. Previously this used a static tail
- * pointer (rptr) that survived across calls; if redir_source consumed
- * entries between two add calls (which happens with multiple here-docs
- * per command, e.g. `cat <<A <<B`) the static rptr aliased a freed slot
- * and corruption followed. Re-derive the tail each time -- the list is
- * always short, and the simplicity beats keeping cross-call state in sync.
+/* add a here-doc to the pending list, re-deriving the tail each call
+ * rather than caching it -- redir_source() may consume entries between
+ * two add calls (e.g. `cat <<A <<B`), and the list is always short.
  * ----------------------------------------------------------------------- */
 void
 redir_addhere(struct nredir* nredir) {

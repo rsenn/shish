@@ -1,13 +1,8 @@
 #include "../fdtable.h"
 #include "../sh.h"
 
-/* output help
- *
- * every letter here also works identically via the "set" builtin at
- * runtime (src/builtin/builtin_set.c owns the actual behavior behind
- * each one, and "-o name"/"+o name" reuses its set_longopts table
- * directly, so the two can't drift apart on *names*) -- "-c"/"-i"/"-s"
- * are startup-only and don't exist as "set" options at all.
+/* output help. Every letter here also works via the "set" builtin at
+ * runtime, except "-c"/"-i"/"-s", which are startup-only.
  * ----------------------------------------------------------------------- */
 void
 sh_usage(void) {

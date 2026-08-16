@@ -6,13 +6,66 @@
 
 #include <stdlib.h>
 
+static int
+ifs_is_ifs(const char* ifs, size_t ifslen, char c) {
+  return ifslen && str_chr(ifs, c) < ifslen;
+}
+
+static int
+ifs_is_ws(const char* ifs, size_t ifslen, char c) {
+  return (c == ' ' || c == '\t' || c == '\n') && ifs_is_ifs(ifs, ifslen, c);
+}
+
+/* finalize field node *np: nul-terminate it and run whatever
+ * glob/unescape pass its flags call for. Does NOT mark X_SPLIT -- a
+ * field only becomes part of a split once a second field is linked
+ * after it, see expand_cat_sibling() below.
+ * ----------------------------------------------------------------------- */
+static void
+expand_cat_finish(union node** np, int flags) {
+  union node* n = *np;
+
+  stralloc_nul(&n->narg.stra);
+
+  if(flags & X_GLOB) {
+    union node* g = expand_glob(np, flags & ~X_GLOB);
+
+    if(g)
+      n = *np = g;
+  } else if(flags & X_LITERAL) {
+    expand_unescape(&n->narg.stra, parse_isesc);
+    n->narg.flag &= ~X_GLOB;
+  }
+
+  n->narg.flag |= X_CATCLOSED;
+}
+
+/* link a fresh, empty field after the already-closed field *np, mark
+ * both of them X_SPLIT (this word now genuinely has 2+ fields, so
+ * neither may be dropped later even if it turns out empty -- see
+ * X_SPLIT's own comment in expand.h), and move *np to the new node.
+ * ----------------------------------------------------------------------- */
+static void
+expand_cat_sibling(union node** np) {
+  union node* n = *np;
+
+  n->narg.flag |= X_SPLIT;
+  n->next = tree_newnode(N_ARG);
+  n = n->next;
+  stralloc_init(&n->narg.stra);
+  n->narg.flag |= X_SPLIT;
+  *np = n;
+}
+
 /* concatenate <len> bytes from <b> to the argument list pointed to by <nptr>
  * ----------------------------------------------------------------------- */
 union node*
 expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
   union node* n = *nptr;
   const char* ifs = NULL;
-  unsigned int i, x;
+  size_t ifslen;
+  unsigned int i, start;
+  int have_field;
 
   /* if we're not splitting create a new node if there isn't any, even if
      the stralloc has zero length, and concatenate the stralloc as a whole */
@@ -24,26 +77,16 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
 
     n->narg.flag |= flags /*& (~(X_QUOTED))*/;
 
-    /* this branch never splits into fields and never globs, so unlike
-       the loop below there's no later point where a deferred,
-       whole-buffer expand_unescape() pass could tell a literal
-       source-text chunk (parser-doubled, needs unescaping) apart from
-       an already-real parameter/command-substitution chunk sharing
-       this same node (e.g. an assignment's own "NAME=" prefix next to
-       a "$(...)" value) -- the two get concatenated right here and
-       any later pass over the combined bytes can only get one of them
-       right. Unescaping each chunk immediately, before it ever touches
-       the accumulator, keeps the two kinds of bytes from ever being
-       confused (assign-cmdsubst-value-loses-escaping, fixes/70).
-
-       X_UNESCAPED is only set when this chunk actually was literal:
-       a plain substitution chunk that happens to route through this
-       same branch (e.g. quoted "$x") contributes nothing that needs
-       correcting, and marking the node anyway would wrongly tell a
-       *later*, still-unprocessed chunk sharing this node (e.g. an
-       unquoted "\*" tail glued onto "$x" with no separator, still
-       headed for the split loop below on its own call) that it's
-       already been handled when it hasn't. */
+    /* This branch never splits or globs, so a literal chunk (parser-
+     * doubled, needs unescaping) and an already-real substitution
+     * chunk sharing this node (e.g. "NAME=" next to a "$(...)" value)
+     * must each be unescaped immediately, before touching the shared
+     * accumulator -- a later whole-buffer pass couldn't tell them
+     * apart once concatenated.
+     *
+     * X_UNESCAPED marks only chunks that were actually literal, so a
+     * later chunk sharing this node isn't wrongly treated as already
+     * handled. */
     if((flags & X_LITERAL) && !(flags & X_PATTERN)) {
       stralloc tmp;
       stralloc_init(&tmp);
@@ -59,83 +102,137 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
     return n;
   }
 
+  /* A word's own literal text is never subject to field splitting
+   * (POSIX 2.6.5: splitting applies only to expansion results).
+   * X_SUBWORD excludes this: literal text inside a
+   * "${parameter+word}"-style operator's nested word isn't its own
+   * word, so it splits along with the rest of the operator's result. */
+  if((flags & X_LITERAL) && !(flags & X_SUBWORD)) {
+    if(n == NULL || (n->narg.flag & X_CATCLOSED)) {
+      if(n == NULL) {
+        *nptr = n = tree_newnode(N_ARG);
+        stralloc_init(&n->narg.stra);
+        nptr = &n;
+      } else {
+        expand_cat_sibling(&n);
+      }
+    }
+
+    n->narg.flag |= flags;
+    stralloc_catb(&n->narg.stra, b, len);
+    return n;
+  }
+
   ifs = var_vdefault("IFS", IFS_DEFAULT, NULL);
+  ifslen = str_len(ifs);
 
-  for(i = 0;;) {
-    /* skip field separators */
-    for(x = 0; i < len; i++, x++) {
-      if(ifs[str_chr(ifs, b[i])] == '\0')
-        break;
-    }
+  if(len == 0)
+    return n;
 
-    /* finished */
-    if(i == len)
-      break;
+  /* POSIX 2.6.5 field splitting: a maximal run of IFS characters is a
+   * "delimiter".
+   * - A pure-whitespace run closes the open field and opens no field
+   *   of its own ("a  b" -> "a","b"), unless it's leading/trailing,
+   *   where it contributes nothing at all.
+   * - A run with k >= 1 non-whitespace IFS chars produces k
+   *   boundaries: each closes the field before it (even if empty) and
+   *   opens a new one after, except the last char consumed in the
+   *   whole string, which never opens a trailing field.
+   * - A resulting empty field is not dropped here -- X_SPLIT marks it
+   *   so expand_argv.c can tell "one of several real fields" apart
+   *   from "the word's sole, empty result".
+   *
+   * (have_field, start) track a field being accumulated into `n`.
+   * have_field requires n to be non-NULL, not X_CATCLOSED, and
+   * nonempty -- excluding both a closed field and a virgin,
+   * zero-length placeholder node expand_args.c may have pre-created
+   * for the next word. That keeps a leading delimiter run in this
+   * word's own value from being misread as closing an already-open
+   * field (which would insert a spurious empty field between two
+   * words). Either way, `n` stays reusable in place the moment real
+   * content or a delimiter is found. */
+  have_field = (n != NULL) && !(n->narg.flag & X_CATCLOSED) && n->narg.stra.len > 0;
+  start = 0;
+  i = 0;
 
-    /* if there isn't already a node create one now! */
-    if(n == NULL) {
-      *nptr = n = tree_newnode(N_ARG);
-      nptr = &n;
-      stralloc_init(&n->narg.stra);
-    }
-    /* if there were separators delimit the current field by creating a new node
-     *
-     * ...but only if (n) already holds a real, previously-written field:
-     * expand_args.c pre-creates a placeholder node ahead of the *next*
-     * shell word (so a later word that turns out genuinely empty, e.g.
-     * an unquoted expansion of "", still contributes an empty argument
-     * rather than vanishing) -- that placeholder is indistinguishable
-     * from a freshly-created one here (non-NULL, zero-length) except
-     * for this check. Splitting on it anyway planted a spurious empty
-     * argument in front of the first real field whenever that next
-     * word's own value happened to start with IFS whitespace (e.g. a
-     * variable built via "v=\"$v word\"" from empty, which leaves a
-     * leading space) -- autoconf's config.status subdir-recursion loop
-     * ("for ac_dir in : $subdirs") does exactly this and choked on the
-     * resulting bogus empty $ac_dir, invoking every subdirectory's own
-     * ./configure recursively with an empty argument. See fixes/138
-     * (leading-ifs-whitespace-in-split-produces-empty-field-after-
-     * preallocated-node). */
-    else if(x && n->narg.stra.len) {
-      stralloc_nul(&n->narg.stra);
-
-      if(flags & X_GLOB) {
-        if((n = expand_glob(nptr, flags & ~X_GLOB)))
+  for(;;) {
+    while(i < len && !ifs_is_ifs(ifs, ifslen, b[i])) {
+      if(!have_field) {
+        if(n == NULL) {
+          *nptr = n = tree_newnode(N_ARG);
+          stralloc_init(&n->narg.stra);
           nptr = &n;
-      } else if(flags & X_LITERAL) {
-        expand_unescape(&n->narg.stra, parse_isesc);
-        n->narg.flag &= ~X_GLOB;
+        } else if(n->narg.flag & X_CATCLOSED) {
+          expand_cat_sibling(&n);
+        }
+        /* else: n is a virgin, reusable node -- use it directly */
+
+        have_field = 1;
+        start = i;
       }
 
-      n->next = tree_newnode(N_ARG);
-      n = n->next;
-      stralloc_init(&n->narg.stra);
+      i++;
     }
 
-    /* skip non-separators */
-    for(x = 0; i < len; i++, x++)
-      if(ifs[str_chr(ifs, b[i])])
-        break;
+    if(have_field && i > start) {
+      /* plain copy, not expand_escape(): the raw text already has
+         exactly the right shape for glob(3) to interpret */
+      n->narg.flag |= flags;
+      stralloc_catb(&n->narg.stra, &b[start], i - start);
+    }
 
-    /* there were non-separators: fill the stralloc of the current argument node
-     *
-     * plain copy, not expand_escape(): the raw text here already has
-     * exactly the right shape for glob(3) to interpret -- an
-     * unescaped "*"/"?"/"[" is a real wildcard the user wrote bare,
-     * and a "\*"/"\?"/"\[" the user backslash-escaped is *already*
-     * glob(3)'s own escape syntax for a literal char, preserved
-     * as-is by parse_unquoted.c's own backslash handling (it only
-     * strips the backslash for non-glob-special chars). Blanket
-     * re-escaping every occurrence here (as expand_escape() does)
-     * turned every bare wildcard into an escaped literal, so no glob
-     * pattern was ever actually reachable from a plain command
-     * argument (glob-not-triggered-for-plain-arguments, fixes/66). */
-    n->narg.flag |= flags;
-    stralloc_catb(&n->narg.stra, &b[i - x], x);
-
-    /* finished */
     if(i == len)
       break;
+
+    {
+      unsigned int j = i;
+      unsigned int nws_count = 0, k;
+
+      while(j < len && ifs_is_ifs(ifs, ifslen, b[j])) {
+        if(!ifs_is_ws(ifs, ifslen, b[j]))
+          nws_count++;
+
+        j++;
+      }
+
+      if(nws_count == 0) {
+        /* pure-whitespace run: closes whatever field is open (nothing
+           to close at the start/end of the string), never opens a
+           field of its own. */
+        if(have_field) {
+          expand_cat_finish(&n, flags);
+          have_field = 0;
+        }
+      } else {
+        /* first non-whitespace IFS char closes whatever's open (real
+           or empty); each additional one closes an empty field of its
+           own. */
+        if(have_field) {
+          expand_cat_finish(&n, flags);
+        } else if(n != NULL && (n->narg.flag & X_CATCLOSED)) {
+          expand_cat_sibling(&n);
+          expand_cat_finish(&n, flags);
+        } else if(n != NULL) {
+          /* virgin, reusable node: it becomes this word's own empty
+             leading field directly, no sibling needed */
+          expand_cat_finish(&n, flags);
+        } else {
+          *nptr = n = tree_newnode(N_ARG);
+          stralloc_init(&n->narg.stra);
+          nptr = &n;
+          expand_cat_finish(&n, flags);
+        }
+
+        have_field = 0;
+
+        for(k = 1; k < nws_count; k++) {
+          expand_cat_sibling(&n);
+          expand_cat_finish(&n, flags);
+        }
+      }
+
+      i = j;
+    }
   }
 
   return n;

@@ -57,12 +57,10 @@ term_jobnotify(void) {
 }
 
 /* blocks until term_input.fd has data to read, servicing job_sigfd
- * wakeups (one per SIGCHLD) along the way instead of depending on
- * EINTR -- every signal here installs via sig_action() with
- * SA_RESTART unconditionally set, so a bare blocking read() would
- * never even notice the signal arrived. Only called when term_input's
- * buffer is actually empty, i.e. right before buffer_getc() would
- * otherwise block in read() itself. */
+ * wakeups along the way instead of depending on EINTR -- every signal
+ * here installs with SA_RESTART, so a bare blocking read() would
+ * never notice it arrived. Only called when term_input's buffer is
+ * empty. */
 static void
 term_jobwait(void) {
   for(;;) {
@@ -106,14 +104,9 @@ term_jobwait(void) {
 /* ----------------------------------------------------------------------- */
 ssize_t
 term_read(int fd, void* vbuf, size_t len, void* arg) {
-  /* the signature above matches buffer_op_proto (lib/buffer.h) exactly
-   * -- this function is only ever used as a buffer's read callback
-   * (term_init.c), assigned to a buffer_op_proto* field, so unlike an
-   * incompatible-signature cast (the previous "int(int,char*,
-   * unsigned int)"), calling through that pointer is fully defined
-   * rather than UB (found via -fsanitize=function). "arg" is unused,
-   * same as it always was under its old, differently-named parameter
-   * list -- buffer's read callbacks just don't get one here. */
+  /* signature matches buffer_op_proto (lib/buffer.h) exactly -- only
+   * ever used as a buffer's read callback (term_init.c). "arg" is
+   * unused; buffer's read callbacks just don't get one here. */
   char* buf = vbuf;
   char c;
   ssize_t ret;

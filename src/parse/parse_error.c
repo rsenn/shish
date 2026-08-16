@@ -47,14 +47,10 @@ if(len > 100)
     }
 #endif
 
-    /* a raw exit(1) here bypassed sh_exit()'s subshell-aware unwind
-       entirely -- fatal from the top-level script is fine either way
-       (sh_exit() falls through to exit() there too), but a syntax
-       error while parsing a *sourced* file from inside a real
-       subshell/$(...) killed the whole process instead of just
-       unwinding back to the nearest enclosing subshell frame the way
-       every other fatal error correctly does (BUGS:
-       source-syntax-error-kills-whole-process-not-just-subshell). */
+    /* sh_exit() unwinds subshell frames properly, unlike a raw
+       exit(1) -- needed so a syntax error while parsing a sourced
+       file from inside a subshell/$(...) unwinds to the nearest
+       enclosing subshell instead of killing the whole process. */
     if(source->b->op == &buffer_dummyreadmmap) {
       sh_exit(1);
     }

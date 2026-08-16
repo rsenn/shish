@@ -2,18 +2,10 @@
 #include "config.h"
 #endif
 
-/* lib/unix/glob.c -- the project's own glob()/globfree() -- only
- * actually compiles in on Windows (its whole body is guarded by "#if
- * WINDOWS_NATIVE"); everywhere else HAVE_GLOB means the platform's
- * real libc glob() gets linked instead. glob_t's layout has to come
- * from whichever one that is: the system <glob.h> struct is
- * considerably larger than lib/glob.h's own (glibc's, for instance,
- * adds several GLOB_ALTDIRFUNC callback members) -- unconditionally
- * using the small lib/glob.h struct here while HAVE_GLOB silently
- * links the *system*'s glob() made it write past the end of a
- * too-small on-stack glob_t on every normal (non-Windows) build,
- * corrupting the stack on any command using a glob pattern
- * (confirmed via AddressSanitizer, expand-glob-stack-overflow). */
+/* glob_t's layout must come from whichever glob() actually links:
+ * lib/unix/glob.c only compiles in on Windows: elsewhere HAVE_GLOB
+ * means the platform's real, larger libc glob_t is used instead of
+ * lib/glob.h's smaller one. */
 #ifdef HAVE_GLOB
 #include <glob.h>
 #else
@@ -76,18 +68,10 @@ expand_glob(union node** nptr, int flags) {
     for(i = 0; i < glb.gl_pathc;) {
       stralloc_cats(&n->narg.stra, glb.gl_pathv[i]);
 
-      /* the *first* match's node is "n" as handed in by the caller,
-         reused via stralloc_zero() above rather than freshly
-         allocated -- that only resets .len, leaving the original
-         pattern text physically sitting in the buffer past the new
-         (usually shorter) match. Nothing else in this loop
-         NUL-terminates at the new, correct length, so anything
-         downstream that reads ->stra.s as a plain C string (instead
-         of using ->stra.len) reads straight through into that
-         leftover tail. Every subsequent node is stralloc_init()'d
-         fresh below and wouldn't have stale bytes to leak, but
-         terminating unconditionally here is cheap and keeps this
-         from depending on that. */
+      /* the first match reuses "n"'s buffer via stralloc_zero() above,
+         which only resets .len -- the original pattern text is still
+         sitting past the new match, so nul-terminate at the correct
+         length before anything reads ->stra.s as a C string. */
       stralloc_nul(&n->narg.stra);
 
       /* if there is another path then delimit the current one */

@@ -65,11 +65,11 @@ parse_arith_value(struct parser* p) {
               cclass = C_OCTAL;
               base = 8;
               break;
-              /*default:
-                buffer_puts(fd_err->w, "ERROR: expecting x|b|o, got ");
-                buffer_putulong(fd_err->w, c);
-                buffer_putnlflush(fd_err->w);
-                return NULL;*/
+            /*default:
+              buffer_puts(fd_err->w, "ERROR: expecting x|b|o, got ");
+              buffer_putulong(fd_err->w, c);
+              buffer_putnlflush(fd_err->w);
+              return NULL;*/
           }
 
           if((classes & (C_UPPER | C_LOWER))) {
@@ -98,15 +98,9 @@ parse_arith_value(struct parser* p) {
 
   if(parse_isalpha(c) || c == '_' || c == '$') {
     /* a bare identifier ("i", "prev", ...) is always a valid
-       arithmetic operand on its own and needs no lookahead -- only
-       "$" needs disambiguating, since it can start "$var"/"${var}" as
-       well as "$(cmd)"/"$((expr))". Without this, a single-character
-       bare identifier ("i") had nothing left to look at after itself,
-       so peeking one character past it landed on whatever follows in
-       the expression (an operator, a space, ")") -- none of which are
-       a valid param char or "(" / "{", so the check below rejected
-       it. A multi-character identifier ("prev") happened to still
-       pass, because its own second character is a valid param char. */
+       arithmetic operand and needs no lookahead -- only "$" needs
+       disambiguating, since it can start "$var"/"${var}" as well as
+       "$(cmd)"/"$((expr))". */
     int ok = c != '$';
 
     if(!ok) {
@@ -126,13 +120,8 @@ parse_arith_value(struct parser* p) {
   }
 
   /* legacy backquoted command substitution ("`cmd`") is a valid
-     arithmetic operand too, same as "$(cmd)" above -- only the "$"
-     form was recognized here, so "$((1+`echo 1`))" failed to parse
-     at all even though "$((1+$(echo 1)))" worked. parse_bquoted()
-     itself tells "`...`" from "$(...)" by peeking the current
-     character (only reaching here for the bare backquote case) and
-     leaves its result in p->tree/p->node exactly like parse_subst()
-     does for "$(cmd)". */
+     arithmetic operand too, same as "$(cmd)" above. parse_bquoted()
+     leaves its result in p->tree/p->node, same as parse_subst(). */
   if(c == '`') {
     if(parse_bquoted(p))
       return NULL;

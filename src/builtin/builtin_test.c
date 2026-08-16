@@ -119,12 +119,9 @@ test_binary(int argc, char** argv) {
 
   if(op[0] == '-') {
     /* "-nt"/"-ot" (file mtime comparison) vs. "-ne"/"-eq" etc (numeric
-       comparison, below) collide on this first check if it only looks
-       at op[1] ('n' is the second character of both "-nt" and "-ne")
-       -- op[2] ('t' vs 'e') is what actually distinguishes them.
-       Confirmed: "test 1 -ne 2" silently ran as a file "newer than"
-       comparison between two nonexistent files named "1" and "2"
-       instead of the numeric "not equal" it's supposed to be. */
+       comparison, below) collide on op[1] alone ('n' is the second
+       character of both "-nt" and "-ne") -- op[2] ('t' vs 'e') is
+       what actually distinguishes them. */
     if(str_len(op) == 3 && contains("no", op[1]) && op[2] == 't') {
       switch(op[1]) {
         case 'n': return filetime(left) > filetime(right);
@@ -166,16 +163,10 @@ test_unary(int argc, char** argv) {
   int c;
   const char* arg = current(argv);
 
-  /* POSIX's argument-count table only ever treats a leading "-X" as a
-     real unary operator when it has an operand following it (the
-     2-argument case, "UNARY_OP STRING"). With exactly one argument
-     left, the rule is unconditionally "is $1 non-null" -- even if it
-     looks like an operator, recognized or not. Configure scripts rely
-     on exactly this: `test "$LIBS"` with LIBS=-lm is a single-argument
-     invocation, and "-lm" isn't one of the recognized unary letters
-     below, so this used to fall through to "invalid expression"
-     instead of just being a non-empty string
-     (configure-summary-test-invalid-expression, fixes/72). */
+  /* POSIX's argument-count table only treats a leading "-X" as a real
+     unary operator when an operand follows it (the 2-argument case).
+     With exactly one argument left, the rule is unconditionally "is
+     $1 non-null", even if it looks like an operator. */
   if(arg[0] != '-' || num_args(argc) < 2) {
     shell_optind++;
     return !!*arg;
@@ -391,13 +382,7 @@ builtin_test(int argc, char* argv[]) {
     }
   }
 
-  /* POSIX: `test` and `[ ]` with no expression are false. autoconf's
-     `if test ${ac_cv_prog_CC+y}; then : (cached); else lookup; fi`
-     relies on this — when the variable is unset, the expansion is empty,
-     so the if-test runs `test` with no args. shish previously fell through
-     to test_boolean which initialized result=1 (true) and returned 0
-     (success), so autoconf took the cached path with an empty CC and
-     reported "no acceptable C compiler". */
+  /* POSIX: `test` and `[ ]` with no expression are false. */
   if(argc <= 1)
     return 1;
 

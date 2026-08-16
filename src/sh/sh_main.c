@@ -34,17 +34,11 @@ const char* sh_name;
 int sh_login = 0;
 int sh_no_position = 0;
 
-/* SIGCHLD handler -- kept to only async-signal-safe work (plain memory
- * writes: wait_nohang()/wait_nohang_untraced() + job_signal(), and a
- * write() to the job_sigfd self-pipe). It used to also call
- * term_erase()/term_restore()/prompt_show()/buffer_*() directly from
- * signal-handler context, none of which is async-signal-safe (see
- * BUGS: sh-onsig-async-unsafe, fixed as fixes/87) -- that work now
- * happens in term_read()'s select() loop (src/term/term_read.c),
- * which wakes on job_sigfd[0] instead of relying on this handler to
- * do it inline. job_clean() (src/job/job_clean.c) has grown the
- * "announce a background job that just stopped" banner this handler
- * used to print itself, for the same reason.
+/* SIGCHLD handler -- kept to only async-signal-safe work: plain memory
+ * writes (wait_nohang()/wait_nohang_untraced() + job_signal()) and a
+ * write() to the job_sigfd self-pipe. Anything needing buffered I/O
+ * (banners, terminal output) happens later in term_read()'s select()
+ * loop, which wakes on job_sigfd[0] instead.
  * ----------------------------------------------------------------------- */
 static void
 sh_onsig(int signum) {
@@ -77,14 +71,10 @@ sh_onsig(int signum) {
 
 /* a deliberately partial expansion of $ENV's value: POSIX technically
  * requires full parameter/command/arithmetic substitution, but that's
- * far more than a startup-file *pathname* is worth pulling the whole
- * parser/expander pipeline in for. Tilde expansion (reusing
- * expand_tilde_lookup(), see src/expand/expand_tilde.c) plus simple
- * "$NAME"/"${NAME}" parameter substitution (falling back to "" for an
- * unset/malformed one, same as real expansion would with -u off)
- * covers the overwhelming majority of real ENV values in the wild
- * ("$HOME/.shishrc", "~/.shishrc") -- anything fancier is a known,
- * accepted gap.
+ * too much to pull the whole parser/expander pipeline in for just a
+ * startup-file pathname. Tilde expansion plus simple "$NAME"/"${NAME}"
+ * substitution (falling back to "" if unset) covers the common cases
+ * ("$HOME/.shishrc", "~/.shishrc").
  * ----------------------------------------------------------------------- */
 static void
 sh_expand_simple(const char* in, stralloc* out) {
@@ -201,35 +191,24 @@ main(int argc, char** argv, char** envp) {
      pulled in from the environment with our own invocation path. */
   var_setv("SHELL", argv[0], str_len(argv[0]), V_EXPORT);
 
-  /* POSIX: privileged mode turns on automatically, before any
-     command-line option is even looked at, whenever the real and
-     effective uid or gid differ (e.g. a setuid/setgid shish binary,
-     or invoked via one) -- an explicit "-p"/"+p" below still takes
-     the final word either way, same as every other option's default
-     being overridable on the command line. */
+  /* POSIX: privileged mode turns on automatically, before any option
+     is looked at, whenever real and effective uid/gid differ; an
+     explicit "-p"/"+p" below still overrides it. */
 #if !WINDOWS_NATIVE
   if(geteuid() != getuid() || getegid() != getgid())
     sh->opts.privileged = 1;
 #endif
 
-  /* parse command line arguments -- every letter "set" supports
-     (src/builtin/builtin_set.c's set_apply()/set_longopts, shared
-     from there rather than duplicated here) works identically as a
-     startup flag, including "-o name"/"+o name" by long name; "-c"
-     belongs here specifically (command_string only makes sense at
-     startup); "-i"/"-s" are startup-only, meaningless as "set"
-     options.
-
-     A *local* struct optstate, not the process-global shell_getopt()/
-     shell_opt -- exactly like builtin_set.c's own identical loop, and
-     for the identical reason: shell_optind is never reset to 0
-     between unrelated builtins' own shell_getopt() calls (confirmed
-     -- nothing in this codebase does that), so whatever "+-" vs. "-"
-     prefixes a leading '+' in *this* optstring left in the *shared*
-     global state would otherwise silently leak into every later
-     builtin built on that same global (e.g. builtin_chmod.c's own
-     "v"), making "chmod +x file" misparse "+x" as an (invalid)
-     option instead of chmod's own plain mode-string operand. */
+  /* parse command line arguments. Every letter "set" supports
+   * (src/builtin/builtin_set.c's set_apply()/set_longopts) works
+   * identically as a startup flag, including "-o name"/"+o name" by
+   * long name. "-c"/"-i"/"-s" are startup-only.
+   *
+   * A *local* struct optstate, not the process-global shell_getopt(),
+   * is used for the same reason as builtin_set.c's identical loop:
+   * shell_optind is never reset between unrelated builtins' own
+   * shell_getopt() calls, so state would otherwise leak into a later
+   * builtin sharing the same global. */
   {
     struct optstate opt = {"+-", 0, 0, 0, 0, 0};
 
@@ -306,15 +285,10 @@ main(int argc, char** argv, char** envp) {
   fd_push(fd, STDSRC_FILENO, FD_READ | FD_FREE);
 #endif
 
-  /* if there were cmds supplied with the option
-     -c then read input from this string. POSIX: "sh -c command_string
-     [command_name [argument...]]" -- command_name, if present, becomes
-     $0 (and is consumed here so it doesn't also leak into $1 as an
-     extra positional parameter below); the remaining arguments become
-     $1, $2, ... Without this, $0 stayed the shish binary's own path
-     and every real argument was off by one, with command_name itself
-     showing up as $1 instead of being consumed as $0
-     (dash-c-argv0-not-consumed, fixes/77). */
+  /* if -c supplied a command string, read input from it. POSIX: "sh -c
+     command_string [command_name [argument...]]" -- command_name, if
+     present, becomes $0 (consumed here so it doesn't leak into $1);
+     the remaining arguments become $1, $2, ... */
   if(cmds) {
     fd_string(fd_src, cmds, str_len(cmds));
 
@@ -348,12 +322,10 @@ main(int argc, char** argv, char** envp) {
   source_push(&src);
 
   {
-    /* "-i" forces interactive behavior (prompting, job control,
-       history) on even without a real terminal to back it -- but
-       term_init() itself (the line-editing/job-control-signal setup)
-       still only succeeds against an actual char-device fd, so
-       job_terminal_init() below is gated on that succeeding
-       regardless of how we got here. */
+    /* "-i" forces interactive behavior on even without a real
+       terminal, but term_init() still only succeeds against an actual
+       char-device fd, so job_terminal_init() below stays gated on
+       that succeeding regardless. */
     int have_term = (fd_src->mode & FD_CHAR) && !no_interactive && term_init(fd_src, fd_err);
 
     if(have_term || (force_interactive && !no_interactive)) {
@@ -362,11 +334,8 @@ main(int argc, char** argv, char** envp) {
       sh->opts.monitor = 1;
       sh->opts.histexpand = 1;
 
-      /* only now does fd_err->mode & FD_TERM actually reflect reality
-         -- term_init() above is what sets it. See
-         job_terminal_init()'s own comment (BUGS:
-         job-terminal-never-initialized) for why this can't just
-         happen inside job_init() (called earlier, from sh_init()). */
+      /* only now does fd_err->mode & FD_TERM reflect reality --
+         term_init() above is what sets it. */
       if(have_term)
         job_terminal_init();
     } else

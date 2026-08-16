@@ -26,19 +26,12 @@ fdtable_exec(void) {
   while(fdtable[STDSRC_FILENO])
     fd_pop(fdtable[STDSRC_FILENO]);
 
-  /* open every still-pending real file first, before resolving
-     anything else. A plain command's redirections are only ever
-     *recorded* as parsed, with the real open()/dup2() deferred to
-     here -- so a "N<&M" dup (FD_DUP mode) can easily still have its
-     source (fd_dup() already flattens ->dup straight to it) sitting
-     unopened (FD_OPEN mode) at this point, e.g. "cmd 9<in0 8<&9 ...
-     0<&3". Resolving fd 0 before fd 9 ever got a chance to open would
-     just fail outright (fdtable_dup() dup()'ing the still-unresolved
-     -1 snapshotted at setup time) -- resolving every real open() up
-     front first means every dup below finds its source already
-     correct, however many of them share it and whatever fd number
-     order they happen to occupy.
-     (redir-fd-chain-resolves-to-invalid-fd, fixes/89) */
+  /* open every still-pending real file first, before resolving any
+   * dups. A "N<&M" dup can still have its source unopened at this
+   * point (e.g. "cmd 9<in0 8<&9 0<&3") -- resolving 0 before 9 got a
+   * chance to open would just fail against the source's unresolved -1.
+   * Opening all real files up front means every dup below finds its
+   * source already correct. */
   fdtable_foreach(i) {
     if((fdtable[i]->mode & FD_OPEN) && fdtable_open(fdtable[i], FDTABLE_MOVE) == FDTABLE_ERROR)
       return -1;

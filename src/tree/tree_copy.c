@@ -7,23 +7,17 @@ copy_str(const char* s) {
   return s ? str_dup(s) : NULL;
 }
 
-/* deep-copy a node chain (following ->next, like tree_free walks it)
+/* deep-copy a node chain (following ->next, like tree_free walks it).
  *
- * used by eval_function to give a function definition its own private
- * copy of the body instead of stealing (moving, then NULLing) the
- * pointers straight out of the defining AST node -- stealing only
- * works if that AST node is evaluated exactly once before its enclosing
- * statement is freed (sh_loop.c frees each top-level statement right
- * after running it), which breaks the moment the same node is
- * evaluated again, e.g. a function defined inside a loop or a
- * repeatedly-invoked subshell: the second visit finds name/body
- * already NULLed out and crashes. Mirrors tree_free.c's per-kind
- * switch field-for-field: any pointer tree_free() recurses into here
- * gets recursively copied, any string tree_free() alloc_free()s here
- * gets str_dup()'d, everything else is carried over by the initial
- * byte_copy() (which also makes shared/unowned fields, like
- * nredir.data, aliased in the copy exactly as tree_free leaves them
- * aliased in the original -- consistent with it never freeing them).
+ * Used by eval_function to give a function definition its own private
+ * copy of the body, since stealing the pointers directly only works
+ * if the defining AST node is evaluated exactly once (breaks for a
+ * function defined inside a loop or repeatedly-invoked subshell).
+ *
+ * Mirrors tree_free.c's per-kind switch field-for-field: any pointer
+ * tree_free() recurses into gets recursively copied here, any string
+ * it alloc_free()s gets str_dup()'d here, everything else is carried
+ * over by the initial byte_copy().
  * ----------------------------------------------------------------------- */
 union node*
 tree_copy(union node* node) {
@@ -94,12 +88,10 @@ tree_copy(union node* node) {
       case N_ARG:
       case N_ASSIGN:
         copy->narg.list = node->narg.list ? tree_copy(node->narg.list) : NULL;
-        /* the initial byte_copy() above aliased copy->narg.stra.s onto
-           node->narg.stra.s; without zeroing it first, stralloc_ready()
-           (called by stralloc_copy() below) sees a buffer that already
-           looks big enough and reuses it in place instead of allocating
-           a fresh one, leaving both copies pointing at the same buffer
-           -> double free once either side is torn down. */
+        /* byte_copy() above aliased copy->narg.stra.s onto
+           node->narg.stra.s; zero it first or stralloc_copy() below
+           reuses that buffer in place instead of allocating a fresh
+           one, leaving both copies pointing at the same memory. */
         byte_zero(&copy->narg.stra, sizeof(copy->narg.stra));
 
         if(node->narg.stra.s)

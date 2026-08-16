@@ -9,14 +9,9 @@
 #include <stdlib.h>
 
 /* how many enclosing N_ARGCMD substitutions currently being printed
- * are themselves using backquote syntax ("`...`", as opposed to
- * "$(...)"). A command substitution nested inside one needs to be
- * printed as "$(...)" regardless of its own S_BQUOTE flag: a raw
- * "`" would prematurely close the enclosing backquote pair once
- * reparsed, and POSIX 2.6.3's backslash-escaping for a nested
- * backquote pair isn't reproduced here. Safe as file-scope state
- * since printing a tree is always a single synchronous recursive
- * walk with no concurrent/interleaved callers. */
+ * use backquote syntax ("`...`" vs "$(...)"). A substitution nested
+ * inside one must print as "$(...)" regardless of its own S_BQUOTE
+ * flag, since a raw "`" would prematurely close the enclosing pair. */
 static int tree_cat_bqdepth;
 
 void

@@ -65,14 +65,10 @@ builtin_getopts(int argc, char* argv[]) {
     }
 
     /* $OPTIND, not our persistent parser state, is the authoritative
-       next-argument index: POSIX lets a script reset it to 1 to
-       restart option parsing (over the same or new arguments), and
-       real-world scripts also reposition it to arbitrary values to
-       skip parsing ahead. Re-sync our state to it whenever it no
-       longer matches what we wrote back after the previous call --
-       setting it back to 0 (rather than 1) for a restart lets
-       shell_getopt_r() run its own first-call initialization
-       (prefix/optstring setup) instead of us half-repeating it here. */
+       next-argument index -- POSIX lets a script reset or reposition
+       it. Re-sync whenever it no longer matches what we last wrote,
+       resetting to 0 (not 1) so shell_getopt_r() runs its own
+       first-call init instead of us half-repeating it here. */
     {
       const char* v;
       size_t offset;
@@ -88,29 +84,19 @@ builtin_getopts(int argc, char* argv[]) {
     }
 
     {
-      /* shell_getopt_r()'s ind==0 sentinel always becomes 1 during
-         its own first-call init (see the resync block above, which
-         already relies on that same convention), before it even
-         looks at an option -- predict that so the "did this call
-         actually advance past its argv element" check below isn't
-         fooled by the init bump on a getopts call that's the very
-         first one ever made */
+      /* shell_getopt_r()'s ind==0 sentinel always becomes 1 during its
+         own first-call init, before it even looks at an option --
+         predict that so the "did optind advance" check below isn't
+         fooled by the init bump on the very first getopts call. */
       int ind_before = optind == 0 ? 1 : optind;
 
       c = shell_getopt_r(&builtin_getopts_state, ac + 1, av - 1, optstring);
 
       /* shell_getopt_r() defers advancing past a plain boolean flag's
-         argv element (no ':' in optstring) in case more flags follow
-         in the same "-vf"-style cluster; optind not moving at all
-         during the call above is exactly that case. If nothing is
-         left in that element either, finish the advance ourselves
-         right now (both are otherwise-untouched updates -- ofs=0,
-         ind+1 -- shell_getopt_r would apply lazily on the *next*
-         call's "end of argument" check anyway, so doing it here
-         changes nothing about how parsing continues) so $OPTIND
-         already names the next element to process by the time this
-         call returns, matching bash/dash, instead of lagging by one
-         call. */
+         argv element in case more flags follow in the same "-vf"
+         cluster. If nothing's left in that element either, finish
+         the advance ourselves so $OPTIND already names the next
+         element by the time this call returns, matching bash/dash. */
       if(c > 0 && optind == ind_before) {
         char* cur = av[optind - 1];
 

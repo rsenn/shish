@@ -11,17 +11,11 @@ parse_squoted(struct parser* p) {
 
   p->quot = Q_SQUOTED;
 
-  /* source_get()/source_skip() read through source_peekn(), which
-     otherwise unconditionally treats a backslash-newline as a line
-     continuation and silently drops both bytes -- correct outside
-     quotes and inside double quotes, but POSIX requires single quotes
-     (and, the same way, a heredoc with a quoted delimiter, which
-     reuses this same function -- P_HERE below) to preserve every
-     character completely literally. Cleared on every exit path below,
-     not just the normal one: source_squoted is a single shared flag,
-     not scoped to this call, so leaving it set on an early return
-     would wrongly suppress continuation handling for everything read
-     afterward. squoted-backslash-newline-swallowed, fixes/108. */
+  /* source_squoted suppresses source_peekn()'s usual backslash-newline
+     continuation handling, since POSIX requires single quotes (and a
+     heredoc with a quoted delimiter, P_HERE below) to preserve every
+     character literally. It's a single shared flag, not scoped to
+     this call, so every exit path below must clear it. */
   source_squoted = 1;
 
   for(;;) {

@@ -37,18 +37,15 @@ const char help_set[] = "    Set shell options and/or positional parameters.\n"
                         "\n"
                         "    With no options or arguments, print every variable and function.\n";
 
-/* every letter option also reachable via "-o name"/"+o name" -- kept
- * as a name->letter table rather than one bitfield pointer per name
- * because struct shopt's members are 1-bit bitfields, which C simply
- * doesn't allow taking the address of. Declared alphabetically so
- * "set -o"'s listing comes out sorted for free. "unset" is spelled
- * "nounset" here on purpose: that's the POSIX/bash "-o" name for it
- * (matching "-u"), even though the C struct field is just "unset").
+/* every letter option also reachable via "-o name"/"+o name" -- a
+ * name->letter table rather than one bitfield pointer per name,
+ * since struct shopt's members are 1-bit bitfields (can't take their
+ * address). Declared alphabetically so "set -o"'s listing comes out
+ * sorted for free.
  *
- * Not static: sh_main.c reuses this same table (and set_apply()/
- * set_get() below) to give the shell's own command-line startup
- * options the exact same letter/name set "set" supports, instead of
- * duplicating (and inevitably drifting from) this list a second time. */
+ * Not static: sh_main.c reuses this table (and set_apply()/
+ * set_get() below) to give the shell's own startup options the same
+ * letter/name set "set" supports. */
 const struct set_longopt set_longopts[] = {
     {"allexport", 'a'},
     {"braceexpand", 'B'},
@@ -80,13 +77,9 @@ set_apply(struct shopt* opts, int letter, int on) {
 
     case 'p': opts->privileged = on;
 #if !WINDOWS_NATIVE
-      /* POSIX/bash: turning privileged mode *off* also drops any real
-         privilege the process still has, by setting the effective
-         uid/gid back to the real ones -- gid first, since dropping
-         uid first could leave us without permission to still change
-         gid afterward. A no-op (same call, same result) when they
-         already match, so this is safe to run unconditionally on
-         every "+p", not just ones that actually had elevated ids. */
+      /* POSIX/bash: turning privileged mode off also drops any real
+         privilege by resetting effective uid/gid to the real ones --
+         gid first, or dropping uid first could block changing gid. */
       if(!on) {
         setgid(getgid());
         setuid(getuid());
@@ -165,21 +158,16 @@ builtin_set(int argc, char* argv[]) {
     if(c == 'o') {
       char* name;
 
-      /* shell_getopt_r() only advances past the *whole* current argv
-         element for an option that takes an argument (optstring's
-         ":") -- "o" has none (it's parsed like any other boolean
-         flag, since its own argument is read by hand here, not by
-         shell_getopt_r), so opt.ind is still pointing at "-o"/"+o"
-         itself at this point, not the word after it. */
+      /* "o" has no ":" in optstring, so shell_getopt_r() didn't
+         advance past "-o"/"+o" itself; its own argument is read by
+         hand here instead. */
       opt.ind++;
       opt.ofs = 0;
       name = argv[opt.ind];
 
-      /* "-o"/"+o" always claims the very next word as its option
-         name if there is one at all -- POSIX doesn't leave room for
-         it to instead be read as a new positional parameter, even if
-         it turns out not to match any known name (that's just an
-         error, same as bash's "set: bogus: invalid option name"). */
+      /* "-o"/"+o" always claims the next word as its option name if
+         there is one -- an unrecognized name is just an error, not a
+         positional parameter. */
       if(!name) {
         set_print_all(&opts, !on);
       } else {
@@ -212,25 +200,17 @@ builtin_set(int argc, char* argv[]) {
   }
 
   /* did shell_getopt_r() just consume an explicit "--"? It advances
-     past the "--" element itself before returning -1 for it, so by
-     now opt.ind points one past it -- checking the *previous* argv
-     element is the only way left to tell. Needed for two separate
-     things below: an explicit "--" is what makes "set --" (no
-     operands at all) still mean "yes, replace $@, with nothing"
-     rather than "no operands were given, leave $@ alone", and it's
-     also what stops a literal "-" appearing right after it (e.g.
-     "set -- - -- baz") from being mistaken for the bare-"-" form
-     below, which only applies when "-" is genuinely the very first
-     operand reached. */
+     past "--" before returning -1, so opt.ind now points one past it
+     -- checking the previous argv element is the only way to tell.
+     Distinguishes "set --" (replace $@ with nothing) from no operands
+     at all, and stops a "-" right after "--" (e.g. "set -- - -- baz")
+     from being mistaken for the bare-"-" form below. */
   int saw_dashdash = opt.ind > 0 && argv[opt.ind - 1] && str_equal(argv[opt.ind - 1], "--");
 
-  /* POSIX: a bare "-" (unlike "--") ends option processing the same
-     way, but is also specific to "set" -- turning off -x (and -v,
-     once implemented) -- so it can't be handled once and for all
-     inside the shared shell_getopt_r() the way "--" is: other
-     builtins built on the same routine (e.g. "cat -") need a lone
-     "-" left alone as a literal operand, not silently consumed as an
-     end-of-options marker. */
+  /* POSIX: a bare "-" ends option processing like "--" does, but is
+     also "set"-specific (turns off -x) -- so it's handled here rather
+     than inside shell_getopt_r(), which other builtins (e.g. "cat -")
+     need to leave a lone "-" alone as a literal operand. */
   if(!saw_dashdash && argv[opt.ind] && str_equal(argv[opt.ind], "-")) {
     opts.xtrace = 0;
     opt.ind++;
@@ -239,11 +219,9 @@ builtin_set(int argc, char* argv[]) {
   sh->opts = opts;
 
   if(argv[opt.ind] || saw_dashdash) {
-    /* &argv[opt.ind] is a valid pointer to a NULL entry when there
-       are zero operands (e.g. "set --" alone) -- sh_setargs()
-       correctly treats that as "replace $@ with zero arguments",
-       distinct from passing it a NULL pointer outright (which means
-       "leave $@ as it is", used elsewhere for unshifting). */
+    /* &argv[opt.ind] is a valid pointer to a NULL entry with zero
+       operands (e.g. "set --"): sh_setargs() treats that as "replace
+       $@ with nothing", distinct from a NULL pointer ("leave as-is"). */
     sh_setargs(&argv[opt.ind], 1);
   }
   /* print only for a truly bare "set" (argc == 1, just argv[0]) --

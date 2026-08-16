@@ -31,20 +31,9 @@ sh_pop(struct env* env) {
   }
 
   /* same idea as the cwd restore above, for the process umask: a
-     subshell's "umask NNN" (e.g. autoconf/gnulib's routine
-     "(umask 077 && mkdir ...)" idiom for a private tmpdir) correctly
-     updates sh->umask for the subshell's own struct env, but that
-     alone doesn't touch the real, process-wide umask() the kernel
-     actually applies to every open()/mkdir() -- only builtin_umask.c
-     calls the real umask() syscall, and only when *it* runs, not
-     here. Without this, "$(umask)" lies (it just reads the correctly-
-     popped-back sh->umask field) while every file/directory actually
-     created afterward -- e.g. configure's own conftest.c -- silently
-     keeps getting created with the subshell's more restrictive mode
-     for the rest of the process's life, eventually manifesting as
-     "conftest.c: Permission denied"/"C compiler cannot create
-     executables" once something later needs to read or rewrite one
-     of them and can't. */
+     subshell's "umask NNN" updates sh->umask for its own struct env,
+     but only builtin_umask.c calls the real umask() syscall -- so the
+     process-wide umask must be explicitly restored here too. */
   if(sh->umask != parent->umask)
     umask(parent->umask);
 

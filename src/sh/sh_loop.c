@@ -70,12 +70,8 @@ sh_loop(void) {
       if(is_interactive)
         history_add(cmd.s, cmd.len);
 
-      /* set -n: read (and, above, fully parse -- so a syntax error
-         later in the script is still caught and reported) every
-         command, but never actually run any of them. POSIX requires
-         interactive shells to ignore this option, hence !is_interactive
-         here rather than gating inside eval_tree() itself, which has
-         no notion of "interactive" to begin with. */
+      /* set -n: fully parse every command but never run any of them.
+         POSIX requires interactive shells to ignore this option. */
       if(sh->opts.noexec && !is_interactive) {
         sh->exitcode = 0;
       } else {

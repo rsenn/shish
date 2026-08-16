@@ -17,13 +17,8 @@ struct source {
   unsigned mode;
   struct source* parent;
   struct location position;
-  /* the fd this source frame owns and must fd_pop() when popped (set by
-     source_buffer(), NULL for sources -- like the top-level script/-c
-     source -- that don't own a temporary fd). Recorded here, rather than
-     only known to the pusher's local variable, so code that has to pop
-     several source frames it didn't itself push (e.g. break/continue
-     unwinding past an "eval"/"." /trap that's still mid-evaluation) can
-     still fd_pop() the right fd for each one instead of just leaking it. */
+  /* fd this source frame owns and must fd_pop() when popped; NULL for
+     sources (e.g. the top-level script/-c source) with no owned fd. */
   struct fd* fd;
 };
 
@@ -33,15 +28,10 @@ struct source {
 extern struct source* source;
 extern int source_psn;
 
-/* set (and cleared) by parse_squoted.c around its own read loop --
- * source_skip.c/source_peekn.c unconditionally treat a backslash
- * immediately followed by a newline as a line continuation and
- * silently remove both bytes, correct outside quotes and inside
- * double quotes, but POSIX requires single quotes to preserve every
- * character literally with no exceptions. These primitives sit below
- * the parser (no access to struct parser/its quoting state), so this
- * flag is how parse_squoted.c tells them "don't, right now" --
- * squoted-backslash-newline-swallowed, fixes/108. */
+/* set (and cleared) by parse_squoted.c: tells source_skip.c/
+ * source_peekn.c to stop treating "\<newline>" as a line continuation
+ * to remove, since single quotes must preserve every character
+ * literally. */
 extern int source_squoted;
 extern int source_comment;
 

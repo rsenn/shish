@@ -43,22 +43,11 @@ parse_case(struct parser* p) {
   while(!(parse_gettok(p, P_SKIPNL) & T_ESAC)) {
     /* patterns may be introduced with '(' */
     if(!(p->tok & T_LP)) {
-      /* the token just fetched above has to be tokenized without
-         P_NOKEYWD (it needs to recognize "esac" to know when to stop
-         the loop), so if it spells some *other* reserved word
-         verbatim -- e.g. a pattern like "if)" -- it's already been
-         resolved to that keyword's own token bit by the time we get
-         here, before the pattern-word loop below (which does request
-         P_NOKEYWD) ever gets a chance to ask for it as a plain word
-         instead: parse_gettok() only re-tokenizes when !p->pushback,
-         so pushing back an already-keyword-resolved token doesn't
-         retroactively un-resolve it. parse_keyword() never touches
-         p->sa (the raw text backing this token), only p->tok, so
-         downgrading it back to T_NAME here -- now that we know for
-         certain this position wants a word, not a keyword -- recovers
-         a plain word from that same text instead of leaving a stale
-         keyword token for the loop below to choke on
-         (reserved-words-as-case-patterns). */
+      /* the token just fetched recognizes keywords (needed for
+         "esac"), so a pattern spelling some *other* reserved word
+         verbatim (e.g. "if)") is already resolved to that keyword.
+         Downgrade it back to T_NAME -- parse_keyword() never touches
+         p->sa, only p->tok, so the raw text is still intact. */
       if(p->tok != T_WORD && p->tok != T_NAME && p->tok != T_ASSIGN)
         p->tok = T_NAME;
 
@@ -69,14 +58,9 @@ parse_case(struct parser* p) {
     tree_init((*cptr)->ncasenode.pats, pptr);
 
     /* parse the pattern list -- P_NOKEYWD: a case pattern is not a
-       keyword-recognition position (POSIX 2.10.2's reserved-word
-       rule only applies where a keyword is grammatically expected),
-       so a pattern alternative that happens to spell a reserved word
-       verbatim (e.g. libtool's "finish|finis|fini|fin|fi|f)") must
-       still parse as a plain word, not the token that ends an
-       enclosing "if" (case-pattern-word-treated-as-keyword). Same
-       fix already applied to a "for ... in word-list" list's own
-       words, see parse_for.c. */
+       keyword-recognition position, so an alternative that happens to
+       spell a reserved word verbatim (e.g. "finish|finis|fin|fi|f)")
+       still parses as a plain word, same as parse_for.c's list. */
     while(parse_gettok(p, P_SKIPNL | P_NOKEYWD) & (T_WORD | T_NAME | T_ASSIGN | T_LP)) {
       if(p->tok == T_LP)
         continue;

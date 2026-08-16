@@ -4,16 +4,11 @@
 #include "../tree.h"
 #include <stdlib.h>
 
-/* POSIX 2.7.4: "if any part of word is quoted, the delimiter shall be
- * formed by performing quote removal on word, and the here-document
- * lines shall not be expanded" -- word can be a single node (a plain
- * delimiter like "EOF", or one entirely inside one pair of quotes
- * like 'EOF') or an N_ARG wrapping a list of sub-parts (a delimiter
- * mixing quoted and unquoted characters, e.g. E"O"F or EO\F). Either
- * way, quoting anywhere in it -- single/double quotes (the S_TABLE
- * bits) or a lone backslash escape (S_ESCAPED) -- must suppress
- * expansion in the body, so every sub-part needs checking, not just
- * whichever flags happen to be readable off the top node.
+/* POSIX 2.7.4: any quoting in the delimiter word suppresses expansion
+ * in the here-doc body. word can be a single node or an N_ARG wrapping
+ * a mixed list (e.g. E"O"F or EO\F), so every sub-part needs checking
+ * for quotes (S_TABLE) or a backslash escape (S_ESCAPED), not just the
+ * top node.
  * ----------------------------------------------------------------------- */
 static int
 redir_here_quoted(union node* word) {

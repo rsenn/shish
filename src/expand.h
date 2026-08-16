@@ -44,71 +44,59 @@ enum subst_type {
   /* a char within here-doc delim is escaped */
   S_GLOB = 0x10000,
   S_ARITH = 0x20000,
-  /* was inside the S_TABLE-masked nibble (as 0x04) alongside the
-     quoting states above, which it isn't one of: it marks the syntax
-     ("`...`" vs "$(...)") a command substitution was written with,
-     purely for tree_cat()'s own re-printing, and is unrelated to
-     whether the substitution's *result* is quoted. Sharing that
-     nibble made an unquoted backquote substitution's flags OR in as
-     nonzero under the S_TABLE mask, so expand_arg() mistook it for
-     quoted and suppressed its field splitting -- fixes/60 */
+  /* a command substitution written as "`...`" rather than "$(...)" --
+     purely for tree_cat()'s re-printing, unrelated to whether the
+     substitution's result is quoted. Kept outside the S_TABLE-masked
+     quoting nibble so it can't be mistaken for a quoting state. */
   S_BQUOTE = 0x40000,
-  /* set on every N_ARGSTR chunk of a here-document body (parse_here.c).
-     parse_squoted.c/parse_dquoted.c both skip their usual parse_isesc
-     doubling for P_HERE content -- a heredoc body never undergoes
-     pathname expansion, so there's nothing to protect a glob-special
-     char from -- meaning a heredoc chunk's bytes are already final and
-     must not go through the expand_unescape() pass literal chunks
-     elsewhere need to undo that doubling. Without this, that pass ran
-     anyway (indistinguishable from a real quoted/unquoted literal
-     chunk once stored) and quietly collapsed a genuine "\\" in the
-     body down to one backslash (heredoc-body-loses-escaping,
-     fixes/71). */
+  /* a chunk of a here-document body: never went through the parser's
+     glob-special-char doubling that other literal chunks get (a
+     heredoc body never undergoes pathname expansion), so it must skip
+     the expand_unescape() pass that undoes that doubling -- its bytes
+     are already final. */
   S_HEREDOC = 0x80000
 };
 
 /* expansion modes */
 #define X_DEFAULT 0x00000000
 #define X_NOSPLIT 0x01000000
-/* set only on chunks that came straight from source text (N_ARGSTR),
-   where parse_squoted/parse_dquoted/parse_unquoted doubled every
-   glob-special char (parse_isesc) to protect it through this pipeline.
-   Those chunks need exactly one expand_unescape(parse_isesc) pass to
-   reveal the real literal text. Parameter/command/arithmetic
-   substitution results (expand_param.c et al) never went through that
-   doubling -- they're already real bytes -- so unescaping them again
-   corrupts any backslash the substituted value genuinely contains
-   (dollar-pid-changes-across-fork's sibling bug, fixes/69). */
+/* set on chunks straight from source text (N_ARGSTR), whose
+   glob-special chars the parser doubled to protect them -- these need
+   exactly one expand_unescape(parse_isesc) pass. Substitution results
+   never went through that doubling, so they must not be marked with
+   this (unescaping them again would corrupt a genuine backslash in
+   the value, fixes/69). */
 #define X_LITERAL 0x02000000
 #define X_GLOB 0x04000000
 #define X_QUOTED 0x08000000
-/* set by expand_cat()'s non-splitting (X_NOSPLIT|X_QUOTED) branch on
-   every chunk it appends, literal or not: that branch now unescapes a
-   literal chunk itself, immediately, before it ever reaches the
-   shared accumulator (fixes/70), so by the time expand_args() etc.
-   look at the finished node there's nothing left for their own
-   whole-buffer expand_unescape() pass to do -- running it anyway would
-   unescape already-final bytes a second time. Marks "don't bother",
-   not "was literal": a node built entirely from quoted/no-split chunks
-   carries this even if none of them needed unescaping. A node that
-   mixes a quoted chunk with a still-unprocessed unquoted one (e.g.
-   trailing off a splittable word) is a narrower, pre-existing case
-   this doesn't fully resolve either way -- see assign-cmdsubst-value-
-   loses-escaping in BUGS. */
+/* result is already fully processed (unescaped, if needed) by
+   expand_cat()'s non-splitting branch -- skip any later whole-buffer
+   expand_unescape() pass over it. */
 #define X_UNESCAPED 0x10000000
-/* the result feeds path_fnmatch() (case patterns, ${var%pattern} and
-   friends) rather than being used as a plain string value -- keep the
-   parser's protective backslash-doubling (parse_isesc) intact instead
-   of running expand_cat()'s usual expand_unescape() pass on it, since
-   that doubling *is* path_fnmatch()'s own escape syntax for "this
-   char is literal, not a wildcard". Without this, a quoted glob-
-   special char that's meant to end up literal for matching purposes
-   (e.g. the fully-quoted case pattern "[.]", parsed as "\[.\]" to mark
-   both brackets literal) had its escaping stripped down to a plain
-   "[.]" before ever reaching path_fnmatch(), which then read it back
-   as a live bracket expression instead of a 3-character literal
-   (case-quoted-bracket-not-literal, fixes/82). */
+/* result feeds path_fnmatch() (case patterns, ${var%pattern} etc.)
+   instead of being used as a plain string -- keep the parser's
+   protective backslash-doubling intact instead of unescaping it, since
+   that doubling is path_fnmatch()'s own "literal, not a wildcard"
+   escape syntax. */
 #define X_PATTERN 0x20000000
+/* set around the recursive expand_arg(param->word, ...) call for a
+   "${parameter+word}"/"${parameter-word}" construct's word -- makes
+   expand_cat() treat word's own literal text as splittable, same as
+   any other expansion result, instead of exempting it the way a
+   top-level command word's literal text is exempt. */
+#define X_SUBWORD 0x00100000
+/* set on every field of an unquoted word that field-splitting split
+   into 2+ fields (including the first, retroactively). Tells
+   expand_argv() to keep an empty field that's one of several real
+   fields, while still dropping a word's sole, entirely-empty result. */
+#define X_SPLIT 0x40000000
+/* internal to expand_cat.c: marks a field already closed (finalized)
+   by an earlier expand_cat() call for the same word, so a later call
+   continuing that word starts a new field instead of appending to it.
+   Absence (flag 0) means "open/reusable", matching a virgin node's
+   natural zero-flag state -- so a placeholder node expand_args.c
+   pre-creates ahead of the next word reads as directly reusable. */
+#define X_CATCLOSED 0x80000000
 
 extern char expand_ifs[4];
 

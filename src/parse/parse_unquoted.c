@@ -18,21 +18,11 @@ parse_unquoted(struct parser* p) {
     /* get the next char */
     if(source_peek(&c) <= 0) {
       /* true end-of-input, not just "no delimiter yet": mirror the
-         delimiter branch below exactly -- try a keyword match first
-         (fixes/56's dash-c-for-loop-parse-error fix relies on p->sa
-         still holding the raw word when parse_word() checks it,
-         which requires NOT flushing here if this turns out to be a
-         keyword), and only if that fails, flush what's accumulated
-         so far *with* the locally-tracked flags (S_GLOB in
-         particular) -- "flags" only lives in this function's own
-         stack frame, so once we return without persisting it here,
-         it's gone for good. Without this second part, a word ending
-         exactly at EOF (no trailing whitespace/newline, e.g.
-         "-c 'echo *.txt'", which unlike a script file has no
-         trailing newline) fell through to parse_word()'s own final
-         parse_string(p, 0) call, losing S_GLOB and leaving the
-         pattern completely unexpanded
-         (glob-not-triggered-for-plain-arguments, fixes/66). */
+         delimiter branch below -- try a keyword match first (don't
+         flush if this turns out to be one), and only then flush with
+         the locally-tracked flags (S_GLOB in particular), which live
+         only in this stack frame and would otherwise be lost for a
+         word ending exactly at EOF. */
       if((p->flags & P_NOKEYWD) || p->tree || p->sa.s == NULL || !parse_keyword(p))
         parse_string(p, flags);
       return -1;
@@ -113,27 +103,16 @@ parse_unquoted(struct parser* p) {
     else if((p->flags & P_NOREDIR) == 0 && (c == '<' || c == '>')) {
       int fd = (c == '<' ? 0 : 1);
 
-      /* scan_uint() reads a plain C string, stopping at the first
-         non-digit -- it has no idea p->sa is only supposed to hold
-         p->sa.len bytes. p->sa is a reused scratch buffer (each
-         finished token resets .len to 0 but never touches the
-         underlying bytes), so without nul-terminating it here first,
-         a short numeric prefix like "2" sitting in a buffer that
-         previously held a longer token ending in a digit (e.g. "-0",
-         "-9" -- exactly the shape a signal number given to "kill"
-         takes) reads straight through into that leftover trailing
-         digit. scan_uint("2" followed by a stale '0') returns 2, which
-         then can't equal p->sa.len (1), so this check spuriously
-         concludes "2" isn't a bare fd-number prefix after all and
-         never calls redir_parse() -- the whole redirection is missed
-         and "2>word" is left to be parsed as an ordinary trailing
-         argument instead (kill-arg-redirect-parse, fixes/79). */
+      /* scan_uint() reads a plain C string and has no idea p->sa is
+         only supposed to hold p->sa.len bytes; p->sa is reused
+         scratch space that never clears its old bytes on reset, so it
+         must be nul-terminated here first or a short digit prefix can
+         read through into a stale trailing digit. */
       stralloc_nul(&p->sa);
 
       /* an out-of-range [n] prefix (e.g. "99999<&1") must not reach
          fd_push()/fdtable_link(), which index fdtable[n] unchecked --
-         fall through to ordinary word parsing instead, same as any
-         other malformed prefix (non-digit chars mixed with the digits) */
+         fall through to ordinary word parsing instead. */
       if(p->sa.len == 0 ||
          (scan_uint(p->sa.s, (unsigned int*)&fd) == p->sa.len && fd >= 0 && fd < FD_MAX))
         return redir_parse(p, (c == '<' ? R_IN : R_OUT), fd);
@@ -160,17 +139,9 @@ parse_unquoted(struct parser* p) {
       return 1;
     }
     /* '[' only makes a word worth handing to glob(3) if it's later
-       matched by a ']' in the same word -- an unpaired '[' can never
-       be a valid bracket expression, so it's always used literally
-       regardless. Flagging S_GLOB for it anyway used to send every
-       such word through a real glob(3) call, which (unlike a
-       metacharacter-free pattern) can't take glob(3)'s own "just
-       stat() it" fast path once it's seen a '[', so it actually reads
-       the current directory (getdents64) and stat()s candidate
-       entries against the pattern before giving up -- paid on every
-       single use of the POSIX "[ ... ]" test syntax, one of the most
-       common constructs in any real script
-       (unpaired-bracket-triggers-real-glob-every-time). */
+       matched by a ']' in the same word -- an unpaired '[' is never a
+       valid bracket expression, so it stays literal and skips the
+       real glob(3) directory scan a stray S_GLOB flag would trigger. */
     else if(c == '[') {
       in_bracket = 1;
     } else if(c == ']') {

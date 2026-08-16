@@ -60,15 +60,10 @@ job_setcurrent(struct job* j) {
 }
 
 /* send SIGCONT to a job's process group and un-stick job_wait()'s
- * bookkeeping for it. job_signal() recorded a WIFSTOPPED status for
- * whichever proc(s) actually stopped, and nothing clears that on its
- * own; job_wait()'s stopped/remaining scan reads procs[].status
- * directly, so without resetting a stopped entry back to -1 here, a
- * job we just resumed would still look stopped to it (fg would
- * immediately "finish" waiting without the job having done anything,
- * and bg would leave job_stopped() reporting true forever). Only
- * touches entries that were actually WIFSTOPPED -- a proc that had
- * already exited must keep its real exit status.
+ * bookkeeping for it: reset each WIFSTOPPED proc's status back to -1
+ * (running), since job_wait() reads procs[].status directly and
+ * nothing else clears a recorded stop. A proc that already exited
+ * keeps its real exit status.
  * ----------------------------------------------------------------------- */
 static void
 job_resume(struct job* j) {

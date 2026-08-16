@@ -61,23 +61,14 @@ expand_arg(union node* node, union node** nptr, int flags) {
       case N_ARGSTR: {
         assert(subarg->nargstr.stra.s);
 
-        /* an empty literal chunk contributes zero bytes, but the
-           X_LITERAL flag OR's cumulatively onto the shared argument
-           node (expand_cat() keeps appending into the same node
-           across subarg parts) -- setting it here regardless would
-           taint an adjacent, still-to-come parameter/command
-           substitution chunk that never went through the doubling
-           expand_unescape() is meant to undo. Parser code routinely
-           emits exactly such an empty N_ARGSTR immediately before a
-           substitution (e.g. "$x" opens with a zero-length literal
-           flush), so this isn't a rare edge case.
-
-           A here-document body chunk (S_HEREDOC) is the same story
-           for a different reason: parse_here.c's underlying
-           parse_squoted()/parse_dquoted() calls skip the doubling
-           entirely for P_HERE content, so it's already final too, and
-           X_LITERAL must stay off for it as well (heredoc-body-loses-
-           escaping, fixes/71). */
+        /* X_LITERAL must stay off for two cases, since it ORs
+           cumulatively onto the shared argument node and would taint
+           an adjacent chunk that doesn't need unescaping:
+           - an empty literal chunk (parser routinely emits one right
+             before a substitution, e.g. "$x" opens with one)
+           - a here-document body chunk (S_HEREDOC): its underlying
+             parse_squoted()/parse_dquoted() calls skip the doubling
+             expand_unescape() would otherwise undo */
         n = expand_cat(subarg->nargstr.stra.s,
                        subarg->nargstr.stra.len,
                        nptr,

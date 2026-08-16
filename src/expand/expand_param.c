@@ -126,12 +126,9 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
           n = expand_param(&arg, nptr, flags);
           i++;
 
-          /* n is NULL when this index contributed no node at all (an
-             empty positional parameter, unquoted, dropped by field
-             splitting) -- nptr must stay put so the next index writes
-             into that same still-empty slot, instead of computing a
-             bogus "&NULL->next" that corrupts the chain for every
-             following iteration */
+          /* n is NULL when this index contributed no node (an empty
+             positional parameter dropped by field splitting) -- keep
+             nptr as-is instead of computing a bogus "&NULL->next". */
           if(n && i < sh->arg.c)
             nptr = &n->next;
         }
@@ -202,12 +199,9 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       v = tmpbuf;
       vlen = fmt_ulong(tmpbuf, random);
 
-      /* $LINENO: source line of the $LINENO reference itself, captured
-         at parse time in param->loc. This is what autoconf's "is the
-         shell tracking LINENO?" probe depends on -- without it, every
-         $LINENO returns 1 and configure goes into the .lineno rewrite
-         path on every shell. Using a static buffer is safe because v
-         is consumed by the immediately-following expand_cat below. */
+      /* $LINENO: source line of the reference itself, captured at
+         parse time in param->loc. Static buffer is safe since v is
+         consumed by the immediately-following expand_cat below. */
     } else if(str_equal(param->name, "LINENO")) {
       static char linebuf[FMT_ULONG];
       vlen = fmt_ulong(linebuf, param->loc.line);
@@ -225,27 +219,18 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         v = &v[offset];
         vlen = str_len(v);
       }
-      /* POSIX exempts "${parameter:-word}" (and the "=", "?", "+"
-         forms, colon or not) from nounset entirely -- each already
-         has its own defined behavior for an unset parameter (supply
-         a default, assign one, raise its own custom message, or
-         substitute nothing), handled below by the switch on
-         param->flag & S_VAR once v is left NULL here. Only a truly
-         bare ${parameter}/$parameter (S_DEFAULT with no word at all)
-         is the "must be already set" case nounset actually guards. */
+      /* POSIX exempts "${parameter:-word}" and friends ("=", "?", "+")
+         from nounset -- each has its own defined behavior for unset,
+         handled below once v is left NULL here. Only a bare
+         ${parameter}/$parameter is what nounset actually guards. */
     } else if(sh->opts.unset && (param->flag & S_VAR) == S_DEFAULT && !param->word) {
       sh_msg(param->name);
       buffer_putsflush(fd_err->w, ": unbound variable\n");
 
       /* POSIX: a non-interactive shell must exit outright here, not
-         just fail this one word -- sh_exit() never returns. Doing
-         this ourselves also sidesteps the alternative entirely: `n`
-         is a placeholder node owned by (already linked into) the
-         caller's argument list, e.g. expand_args.c's own
-         `n->next = tree_newnode(...)` -- freeing it here without
-         unlinking it left that list's own `->next` dangling, a
-         use-after-free the next simple command's tree_count() (or
-         anything else walking the list) would immediately hit. */
+         just fail this one word. Avoids having to free/unlink `n`,
+         which is a placeholder already linked into the caller's
+         argument list. */
       if(!(source->mode & SOURCE_IACTIVE))
         sh_exit(1);
 
@@ -271,7 +256,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         n = expand_cat(v, vlen, nptr, flags);
       /* unset, substitute */
       else if(param->word)
-        n = expand_arg(param->word, nptr, flags);
+        n = expand_arg(param->word, nptr, flags | X_SUBWORD);
 
       break;
     }
@@ -280,14 +265,10 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       if(v)
         n = expand_cat(v, vlen, nptr, flags);
       else {
-        /* nptr's node may already hold text from earlier pieces of the
-           surrounding word (e.g. literal text before this substitution,
-           or a prior substitution sharing the same quoted argument) --
-           expand_arg() below appends the default's expansion onto that
-           same node, so only the bytes *after* this snapshot are the
-           actual value to assign; taking the whole stralloc assigned
-           everything accumulated so far too (assign-default-leaks-
-           preceding-word-text). */
+        /* nptr's node may already hold text from earlier pieces of
+           the surrounding word; expand_arg() below appends onto that
+           same node, so only the bytes after this snapshot are the
+           value to assign. */
         size_t before = n ? n->narg.stra.len : 0;
 
         n = expand_arg(param->word, nptr, flags | X_NOSPLIT);
@@ -317,7 +298,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
     /* if parameter unset (or null) then substitute null, otherwise substitute word */
     case S_ALTERNAT: {
       if(v)
-        n = expand_arg(param->word, nptr, flags);
+        n = expand_arg(param->word, nptr, flags | X_SUBWORD);
       break;
     }
 
@@ -327,13 +308,9 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       stralloc sa;
 
       /* ${var#pattern}/${var%pattern} and friends aren't pathname
-         expansion either (POSIX 2.6.2 gives this notation no
-         "leading dot must be matched explicitly" rule), so passing
-         SH_FNM_PERIOD here made a "?"/"*"/bracket expression in the
-         pattern refuse to match a leading "." in the parameter's
-         value -- same mistake already fixed for case statements, see
-         eval_case.c and fixes/82 (expand-param-pattern-leading-dot,
-         BUGS). */
+         expansion (POSIX 2.6.2 has no "leading dot must be matched
+         explicitly" rule for this notation), so SH_FNM_PERIOD must
+         not be passed here. */
       if(v && vlen) {
         expand_copysa(param->word, &sa, 0);
 

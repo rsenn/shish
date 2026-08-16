@@ -35,16 +35,9 @@ parse_pipeline(struct parser* p) {
     do {
       node = parse_command(p, P_SKIPNL);
 
-      /* a "|" must be followed by another command -- parse_command()
-         returning NULL here means there wasn't one (e.g. a trailing
-         "|" at the end of input/before a ";"/"&"). Report it right
-         here rather than just propagating NULL: the generic
-         "unexpected token" fallback in sh_loop() deliberately treats
-         a bare T_EOF as *not* an error (a "-c" command_string with no
-         trailing newline is the common, legitimate case of that), so
-         silently returning NULL let a truncated pipeline through
-         un-flagged instead of erroring the way every other malformed
-         construct does (pipeline-trailing-pipe-null-deref). */
+      /* a "|" must be followed by another command -- report it here
+         rather than just propagating NULL, since sh_loop()'s generic
+         fallback treats a bare T_EOF as not an error. */
       if(node == NULL) {
         parse_error(p, T_NAME | T_WORD);
         tree_free(pipeline);

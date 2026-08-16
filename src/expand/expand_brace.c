@@ -7,14 +7,10 @@
 /* Brace expansion ("{a,b,c}" -> "a" "b" "c", combined across multiple
  * groups in the same word -- "{a,b}{1,2}" -> "a1" "a2" "b1" "b2").
  *
- * v1 scope (see the implementation plan): only fires on a raw argument
- * word that is *entirely one unquoted literal chunk* -- no $var/`cmd`/
- * quoting mixed in ("{a,$X}" stays literal). Known, accepted gap: an
- * escaped brace/comma ("\{", "\,") isn't distinguished from a real one
- * here, since '{'/','/'}' were never added to parse_isesc's protected
- * set (there was nothing to protect them from before this) -- only
- * *quoting* ("{" or similar) reliably suppresses expansion in v1, by
- * way of the single-unquoted-chunk restriction above.
+ * Only fires on a word that is entirely one unquoted literal chunk --
+ * no $var/`cmd`/quoting mixed in ("{a,$X}" stays literal). An escaped
+ * brace/comma ("\{", "\,") isn't distinguished from a real one; only
+ * quoting suppresses expansion.
  * ----------------------------------------------------------------------- */
 
 struct brace_list {
@@ -55,13 +51,11 @@ brace_list_free(struct brace_list* bl) {
   alloc_free(bl->v);
 }
 
-/* finds the first "{...}" in [text,len) that is balanced (every nested
- * '{' has a matching '}') *and* contains at least one top-level comma
- * -- a "{foo}" with no comma at all isn't a valid group (matches
- * bash's "malformed/non-list braces are left unchanged"), so scanning
- * continues past it looking for a later one instead of giving up
- * immediately. An unmatched '{' stops the search for good: everything
- * from there on is treated as plain literal text, same as bash.
+/* finds the first "{...}" in [text,len) that is balanced and contains
+ * at least one top-level comma:
+ * - a "{foo}" with no comma isn't a valid group -- scanning continues
+ *   past it, looking for a later one (matches bash).
+ * - an unmatched '{' stops the search for good; the rest is literal.
  * ----------------------------------------------------------------------- */
 static int
 find_valid_group(const char* text, size_t len, size_t* gopen, size_t* gclose) {
@@ -219,15 +213,11 @@ expand_brace_word(union node* arg) {
 
 /* top-level entry point: rewrites `args` in place so that any
  * brace-eligible word becomes its N generated sibling words, returning
- * the (possibly different -- replacing the very first arg changes the
- * list's own head) resulting list.
+ * the (possibly different) resulting list.
  *
- * `args` must already be a private, disposable copy the caller owns
- * outright -- never the permanent parsed command tree (ncmd->args is
- * reused on every execution of that command node, e.g. inside a loop,
- * so mutating/freeing pieces of it here would corrupt it for next
- * time). expand_args.c is responsible for tree_copy()-ing before
- * calling this, and tree_free()-ing the result once done with it.
+ * `args` must be a private, disposable copy the caller owns outright,
+ * never the permanent parsed command tree -- expand_args.c
+ * tree_copy()'s before calling this and tree_free()'s the result.
  * ----------------------------------------------------------------------- */
 union node*
 expand_brace_args(union node* args) {

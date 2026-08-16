@@ -39,21 +39,10 @@ parse_command(struct parser* p, int tempflags) {
     case T_UNTIL: command = parse_loop(p); break;
 
     /* T_LP/T_BEGIN start a grouping compound. Backgrounding a compound
-       command is handled uniformly for every node kind by parse_list()
-       (it just sets ->ngrp.bgnd on whatever and-or-list it got back),
-       so this used to duplicate that with a broken shortcut: peeking
-       p->tok directly (bypassing the normal push-back-and-re-read
-       protocol) and then calling parse_gettok(p, 0) to "consume" it.
-       Since parse_grouping() leaves the '&' pending via pushback (not
-       yet re-read), that call didn't advance to a new token -- it just
-       returned the still-cached '&' and cleared pushback. With
-       pushback now clear, the redirection-lookahead loop right below
-       genuinely read the *next* token (the start of the following
-       command) as its lookahead and left it pushed back instead,
-       which parse_list() then saw in place of the '&' it needed,
-       terminating the list early and leaking that command's first
-       token as bogus leftover state. Repro: "{ true; } & echo after"
-       ("unexpected token NAME" right after the "}"). */
+       command is handled uniformly for every node kind by
+       parse_list(), which sets ->ngrp.bgnd on whatever and-or-list it
+       got back -- push the token back rather than consuming it here,
+       so a trailing '&' stays pending for parse_list() to see. */
     case T_LP:
     case T_BEGIN:
       p->pushback++;

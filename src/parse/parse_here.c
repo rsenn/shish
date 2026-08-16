@@ -18,15 +18,10 @@ parse_here(struct parser* p, stralloc* delim, int nosubst, int strip) {
   p->tree = NULL;
   p->node = NULL;
 
-  /* when redir_source() has more than one here-doc queued for the
-     same command line (e.g. `cmd <<A <<B`), it reuses this same
-     struct parser across calls -- one per queued here-doc. The loop
-     below breaks out as soon as a line matches the delimiter without
-     ever flushing/clearing p->sa (the only path that clears it is the
-     parse_string() call later in the loop, which a delimiter match
-     skips), so the previous here-doc's matched delimiter line was
-     left sitting in p->sa and got prepended onto the very first line
-     the next here-doc read. */
+  /* redir_source() reuses this same struct parser across calls when
+     several here-docs are queued on one command line (e.g. `cmd <<A
+     <<B`); clear leftover text from the previous here-doc's matched
+     delimiter line, which the loop below never flushes into p->sa. */
   stralloc_zero(&p->sa);
 
   /* set the here-doc flag on the source so we won't start
@@ -35,13 +30,10 @@ parse_here(struct parser* p, stralloc* delim, int nosubst, int strip) {
 
   for(;;) {
     /* <<- strips leading tabs from every body line, including the
-       line containing the closing delimiter (POSIX 2.7.4). This has
-       to happen on the raw source before parse_squoted/parse_dquoted
-       ever sees the line: those parsers flush p->sa into a tree node
-       as soon as they hit a '$'/'`' (see parse_dquoted.c), which is
-       before control ever returns here, so a post-hoc strip of p->sa
-       below would miss a line's leading tabs whenever an expansion
-       appeared anywhere on that line. */
+       closing delimiter's own line (POSIX 2.7.4). Must happen on the
+       raw source before parse_squoted/parse_dquoted sees it -- they
+       flush p->sa into a tree node as soon as they hit a '$'/'`',
+       before control returns here. */
     if(strip) {
       char c;
 

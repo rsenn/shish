@@ -10,16 +10,13 @@
 #include <fcntl.h>
 #endif
 
-/* handles pending duplicating of a dup-(fd) initialized using fd_dup()
+/* handles pending duplication of a dup-fd initialized via fd_dup();
+ * clears FD_OPEN on success.
  *
- * it resets the FD_OPEN flag of the (fd) if the operation
- * was successfully done
- *
- * values for flags:
- *
- *  FDTABLE_LAZY  do not flags
- *  FDTABLE_MOVE  flags dup()ing the file
- *  FDTABLE_FORCEPOS flags dup()ing the file to the specified fd
+ * flags:
+ *  FDTABLE_LAZY      do not flags
+ *  FDTABLE_MOVE      flags dup()ing the file
+ *  FDTABLE_FORCEPOS  flags dup()ing the file to the specified fd
  *
  * returns -2 if still pending, -1 if failed, fd otherwise
  * ----------------------------------------------------------------------- */
@@ -44,18 +41,10 @@ fdtable_dup(struct fd* d, int flags) {
     return FDTABLE_DONE;
 
 retry:
-  /* if the wish was satisfied or we should change the
-     effective d then dup() the file descriptor.
-
-     the dup() here is a bet that the kernel's lowest free fd equals
-     fd_expected (== d->n), so dup() lands exactly on the target.
-     fd_expected is only the shell's guess, though -- if a kernel fd
-     is still open at that slot the bet is lost, and it stays lost on
-     every subsequent attempt (each dup() only raises the lowest free
-     fd further). so the bet may be tried at most once: on the forced
-     retry below we go straight to dup2(), which cannot miss. without
-     this, a stale fd_expected made the retry loop dup() its own
-     result forever, leaking one fd per iteration until EMFILE. */
+  /* dup() is a bet that the kernel's lowest free fd equals fd_expected
+   * (== d->n), landing exactly on the target. That bet can only be
+   * tried once: a miss only raises the lowest free fd further, so a
+   * forced retry goes straight to dup2() below, which cannot miss. */
   if(!retried && ((d->n == fd_expected) || (state == FDTABLE_DONE) || (flags & FDTABLE_MOVE)))
     e = dup(o);
 
@@ -86,12 +75,10 @@ retry:
   if(e <= fd_expected)
     fdtable_track(e, flags);
 
-  /* if theres an d in effective d list at this position we
-     have to remove it carefully by using fd_setfd first so
-     it will not close the d 'e'. Capture the pointer first:
-     fd_setfd now clears fd_list[old_e] when it points at the struct
-     being moved (the fd_list invariant fix), so re-reading fd_list[e]
-     after fd_setfd would yield NULL and fd_pop would deref it. */
+  /* remove any fd already occupying slot e: fd_setfd first, so it
+     won't close 'e'. Capture the pointer before calling fd_setfd,
+     since fd_setfd clears fd_list[e] when it points at the struct
+     being moved. */
   {
     struct fd* victim = fd_list[e];
     if(victim) {
@@ -104,15 +91,9 @@ retry:
   if(fd_ok(e))
     fd_setfd(d, e);
 
-  /* we didn't get the expected file descriptor and we're forcing, retry!
-     the missed dup() above created a stepping-stone fd we own
-     exclusively: close it right away and retry with dup2() from the
-     original o, so the ownership contract of the return value below
-     stays intact. shifting o to the stepping stone instead (as this
-     used to) meant nobody ever closed the original kernel fd -- the
-     leaked fd then occupied a slot the table considers free, which is
-     what made fd_expected go stale (and leaked fds into exec'd
-     programs, since only the stepping stone is marked cloexec). */
+  /* didn't get the expected fd and we're forcing: the missed dup()
+   * above left a stepping-stone fd we own exclusively. Close it and
+   * retry with dup2() from the original o. */
   if(d->e != d->n && (flags & FDTABLE_FORCE)) {
     if(e >= 0 && e != o) {
       if(fd_ok(e) && fd_list[e] == d)

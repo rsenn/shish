@@ -68,6 +68,33 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ---
 
+## Comments
+
+Keep comments short and readable, not a running log of debugging history.
+
+- Struct-member comments: 1-2 lines, right on the member.
+- Any other comment explaining behavior: 4 lines max. If the full
+  rationale genuinely needs more, restructure it — a one-line summary
+  followed by a short bulleted list (one point per fact) beats one long
+  paragraph. Pull apart anything that reads as a wall of text.
+- Never reference `fixes/NN`, `BUGS` entries, issue names, or "confirmed
+  via repro X" in a comment — that history belongs in the commit message
+  and the `fixes/` patch, not in the source. State the current rule and
+  its reason, not how it was discovered or what broke before it existed.
+- If a comment describes a function's parameters, include the argument
+  list under it, indented 2 spaces, names padded into a column so the
+  descriptions line up:
+  ```
+  /* one-line summary of what the function does.
+   *
+   *   argname       what this argument controls
+   *   longer_name   what this argument controls
+   * ----------------------------------------------------------------------- */
+  ```
+- Say what the code does and why, in the fewest words that stay precise.
+  Drop hedge words, repeated context already obvious from the code, and
+  "used to X / now Y" framing — just state the current behavior.
+
 ## Project
 
 `shish` is a small POSIX-ish shell written in C. It targets the IEEE P1003.2

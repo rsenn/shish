@@ -16,13 +16,9 @@ expand_args(union node* args, union node** nptr, int flags) {
 
   *nptr = NULL;
 
-  /* args is ncmd->args, the permanent parsed command tree -- reused on
-     every execution of this command node (e.g. inside a loop), so
-     brace/tilde expansion (both of which rewrite word text/structure)
-     must only ever touch a private, disposable copy of it, never the
-     original. Freed again below, once this call's own output (built
-     fresh into *nptr by expand_arg()/expand_glob() as it goes) no
-     longer needs it. */
+  /* args is the permanent parsed command tree, reused on every
+     execution -- brace/tilde expansion rewrite word text/structure,
+     so they must only touch a private, disposable copy. */
   owned = tree_copy(args);
   owned = expand_brace_args(owned);
 
@@ -52,14 +48,9 @@ expand_args(union node* args, union node** nptr, int flags) {
       expand_unescape(&n->narg.stra, parse_isesc);
       n->narg.flag &= ~X_GLOB;
     } else {
-      /* expand_unescape() nul-terminates as a side effect -- skipping
-         it here (whether because there was no literal chunk at all,
-         or because expand_cat() already unescaped every literal chunk
-         itself -- X_UNESCAPED, fixes/70) must not also skip that, or
-         ->stra.s stops being a valid C string and anything reading it
-         as one (e.g. the "." builtin building a path from a command
-         substitution result) walks off the end into whatever memory
-         happens to follow the allocation. */
+      /* expand_unescape() nul-terminates as a side effect; skipping it
+         here must not also skip that, or ->stra.s stops being a valid
+         C string for anything that reads it as one. */
       stralloc_nul(&n->narg.stra);
     }
 

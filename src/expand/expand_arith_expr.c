@@ -98,12 +98,7 @@ expand_arith_expr(union node* expr, int64* r) {
       assert(value);
 
       /* POSIX: an unset or empty variable is 0 in arithmetic context,
-         not an error -- without this, N_ARGPARAM's "no digits scanned"
-         case (len == 0, e.g. from a genuinely empty value->s) fell
-         through to the same ret = 1 as a real parse failure, which
-         expand_arith() treats as "expansion failed" and silently
-         produces no output at all instead of substituting the 0 this
-         is actually supposed to be. */
+         not a parse failure. */
       if(!value->s || value->len == 0) {
         *r = 0;
         ret = 0;

@@ -9,14 +9,10 @@ struct env sh_root = {/* .parent = */ NULL,
                       /* .exitcode = */ 0,
                       /* .cmdsubst_ran = */ 0,
                       /* .opts = */
-                      /* real designated initializers here, not the
-                         plain-positional-with-comments style the rest
-                         of this struct uses -- struct shopt just
-                         silently mis-assigned every single default
-                         (hashall's "1" landed on noglob, braceexpand's
-                         "1" landed on xtrace, ...) the moment
-                         "allexport" was added as its new first field,
-                         with nothing to catch it at compile time. */
+                      /* real designated initializers here, unlike the
+                         rest of this struct -- positional init of
+                         struct shopt would silently mis-assign every
+                         default if a field is ever added/reordered. */
                       {.allexport = 0,
                        .errexit = 0,
                        .noglob = 0,

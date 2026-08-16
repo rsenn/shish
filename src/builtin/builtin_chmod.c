@@ -11,17 +11,16 @@
 #include <sys/types.h>
 
 /* apply a comma-separated symbolic mode spec ("[augo]*[+-=][rwxX]*",
-   repeated, comma-separated -- e.g. "u+rwx,go-w") on top of an
-   existing mode. Returns 1 on success, 0 if spec doesn't parse as a
-   symbolic mode at all. A simplified subset of POSIX symbolic mode:
-   no "s"/"t" perm bits and no copying another class's bits
-   ("g=u"), and an omitted who defaults to "a" unconditionally rather
-   than being masked by umask. 'is_dir' and the *mode passed in (the
-   file's unmodified current mode) decide whether "X" applies, per
-   POSIX: it represents execute/search if the file is a directory or
-   already has any execute bit set, and is otherwise ignored -- based
-   on the mode the file had before this spec started, not on bits set
-   by an earlier comma-separated clause within the same spec. */
+ * e.g. "u+rwx,go-w") on top of an existing mode. A simplified subset
+ * of POSIX symbolic mode: no "s"/"t" bits, no copying another class's
+ * bits ("g=u"), and an omitted who defaults to "a" unconditionally
+ * rather than being masked by umask. Returns 1 on success, 0 if spec
+ * doesn't parse as symbolic mode at all.
+ *
+ *   spec   comma-separated symbolic clauses to apply
+ *   mode   in/out: mode to modify; "X" reads its incoming value
+ *   is_dir whether the target is a directory, for "X" handling
+ * ----------------------------------------------------------------------- */
 static int
 chmod_symbolic(const char* spec, unsigned int* mode, int is_dir) {
   const char* p = spec;
@@ -83,26 +82,31 @@ chmod_symbolic(const char* spec, unsigned int* mode, int is_dir) {
 }
 
 /* apply mode (octal, or symbolic relative to each path's own current
-   mode) to a single path, recursing into directories first if
-   'recursive' is set. lstat() decides whether to recurse (so a
-   symlink to a directory is changed but not traversed into,
-   matching builtin_rm's loop-avoidance), while stat() supplies the
-   dereferenced current mode that a symbolic spec is applied on top
-   of, matching what chmod(2) itself operates on. With 'force' set,
-   errors are not reported (but still counted in the return value),
-   and processing continues into sibling entries either way -- only
-   the caller's per-argument loop stops early without force.
-
-   'toplevel' distinguishes a file operand given directly on the
-   command line from an entry found while recursing into a directory.
-   A symlink that is merely encountered during recursion is left
-   untouched entirely (chmod(2) has no way to change a symlink's own
-   mode, and there's no reason to affect -- or fail on -- whatever it
-   points to just because it happened to be sitting in a directory
-   being recursed through); this also sidesteps a dangling symlink
-   found that way, matching GNU chmod. A symlink named directly as a
-   file operand is still dereferenced and chmoded as before, so a
-   dangling symlink given explicitly is still reported as an error. */
+ * mode) to a single path, recursing into directories first if
+ * 'recursive' is set.
+ * - lstat() decides whether to recurse, so a symlink to a directory
+ *   is changed but not traversed into (matching builtin_rm's
+ *   loop-avoidance).
+ * - stat() supplies the dereferenced current mode a symbolic spec
+ *   applies on top of, matching chmod(2) itself.
+ * - with 'force' set, errors are not reported (but still counted),
+ *   and sibling entries are still processed.
+ * - 'toplevel' distinguishes a command-line operand from an entry
+ *   found while recursing: a symlink merely encountered during
+ *   recursion is left untouched entirely (matching GNU chmod), while
+ *   one named directly is still dereferenced and chmoded.
+ *
+ *   argv         argv, for error reporting
+ *   path         path to chmod; reused as scratch space when recursing
+ *   spec         octal or symbolic mode spec
+ *   symbolic     whether spec is symbolic (vs. plain octal)
+ *   octal_mode   parsed octal mode, when !symbolic
+ *   recursive    recurse into directories
+ *   force        suppress errors, keep processing siblings
+ *   verbose      print a line for every file processed
+ *   changes      print a line only for files whose mode changed
+ *   toplevel     path is a command-line operand, not found by recursion
+ * ----------------------------------------------------------------------- */
 static int
 chmod_path(char* argv[], stralloc* path, char* spec, int symbolic,
            unsigned int octal_mode, int recursive, int force, int verbose,

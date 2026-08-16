@@ -6,16 +6,10 @@
 void
 fdstack_push(struct fdstack* st) {
   /* catch pushing the same frame that's already the current top
-     (mirrors vartab_push()'s "vartab != varstack" check) -- this used
-     to instead compare raw addresses ("st < fdstack"), assuming
-     normal downward stack growth so a callee's (deeper) frame always
-     sits below its caller's. That's not a portable invariant: under
-     AddressSanitizer's stack-use-after-return detection in particular,
-     "escaping" locals like this one get allocated on a separate fake
-     stack, in no particular order relative to each other, so the
-     comparison fired as a false positive for any redirection at all
-     inside a command substitution (fdstack-push-assertion-cmdsubst-
-     redir) despite nothing actually being wrong. */
+     (mirrors vartab_push()'s "vartab != varstack" check). Compares by
+     identity, not by stack address: relative address order between
+     frames isn't portable (e.g. ASan's stack-use-after-return puts
+     "escaping" locals on a separate fake stack). */
   assert(st != fdstack);
 
   /* set up the new i/o table */

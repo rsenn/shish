@@ -3,13 +3,17 @@
 #include "../tree.h"
 #include <stdlib.h>
 
-/* expand argument vector
+/* expand argument vector.
  *
  * POSIX field-splitting: an unquoted parameter expansion that produces
- * an empty value contributes NO field. Without this, `exec $CONFIG_SHELL
- * $as_opts "$as_myself"` in autoconf's re-exec passes argv[1] = "" to
- * the new shell, which then complains "/bin/bash: : No such file or
- * directory". Keep empty fields when they came from quoted ("") text.
+ * an empty value contributes no field. Drop such empty fields, but
+ * keep an empty field when:
+ * - it came from quoted ("") text, or
+ * - it's one of 2+ real fields splitting produced from one word
+ *   (X_SPLIT, see expand.h), e.g. IFS="=" on "a==" giving two
+ *   genuinely distinct "" fields, rather than a word's sole result
+ *   collapsing to nothing.
+ *
  * Returns the number of slots written (not counting the terminating
  * NULL); pair with expand_args's return as the canonical argc.
  * ----------------------------------------------------------------------- */
@@ -19,7 +23,7 @@ expand_argv(union node* args, char** argv) {
   for(; args; args = args->next) {
     if(!args->narg.stra.s)
       continue;
-    if(args->narg.stra.len == 0 && !(args->narg.flag & (X_QUOTED | X_NOSPLIT)))
+    if(args->narg.stra.len == 0 && !(args->narg.flag & (X_QUOTED | X_NOSPLIT | X_SPLIT)))
       continue;
     *argv++ = args->narg.stra.s;
     n++;

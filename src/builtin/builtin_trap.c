@@ -78,16 +78,13 @@ trap_print(trap* tr) {
   buffer_putnlflush(fd_out->w);
 }
 
-/* set by trap_relay() (the real OS signal handler, installed via
- * sig_push() below) for whichever real signal just fired; drained by
- * trap_run_pending(), which does the actual, unsafe-to-do-in-a-
- * handler work (see its own comment). volatile sig_atomic_t is the
- * one type POSIX guarantees is safe to read/write from both a signal
- * handler and ordinary code without a data race. Indexed by raw
- * signal number -- the pseudo-signals TRAP_EXIT (0)/TRAP_DEBUG (254)/
- * TRAP_RETURN (255) are never real OS signals, so trap_relay() (only
- * ever invoked by the kernel for a real one) never touches those
- * slots. */
+/* set by trap_relay() (the real OS signal handler) for whichever
+ * signal just fired; drained by trap_run_pending(), which does the
+ * actual, unsafe-to-do-in-a-handler work. volatile sig_atomic_t is
+ * the one type POSIX guarantees safe across a signal handler.
+ * Indexed by raw signal number -- the pseudo-signals TRAP_EXIT (0)/
+ * TRAP_DEBUG (254)/TRAP_RETURN (255) are never real OS signals, so
+ * trap_relay() never touches those slots. */
 static volatile sig_atomic_t trap_pending[256];
 volatile sig_atomic_t trap_signaled = 0;
 
@@ -110,20 +107,13 @@ trap_handler(int sig) {
     return;
   }
 
-  /* a real-signal trap (sig > 0; this function also handles the
-     EXIT/DEBUG/RETURN pseudo-signals via trap_debug()/trap_return()/
-     trap_exit() below, which call it directly rather than through
-     trap_run_pending()) fires asynchronously -- interrupting whatever
-     the script happened to be doing, possibly deep inside an
-     in-process subshell. An "exit" in its body must terminate the
-     whole process regardless of that; see sh_async_exit's own comment
-     (sh.h) and eval_subshell.c's use of it. The EXIT/DEBUG/RETURN
-     pseudo-traps are always invoked synchronously instead -- a
-     natural, in-order consequence of normal control flow (a function
-     returning, a subshell ending) -- where "exit" inside them
-     legitimately stays scoped to whatever subshell it's naturally
-     nested in, same as an ordinary synchronous "exit" would be, so
-     they must NOT set this. */
+  /* a real-signal trap (sig > 0) fires asynchronously, interrupting
+     the script possibly deep inside an in-process subshell -- an
+     "exit" in its body must terminate the whole process regardless
+     (see sh_async_exit in sh.h). The EXIT/DEBUG/RETURN pseudo-traps
+     are always invoked synchronously instead, so "exit" inside them
+     legitimately stays scoped to their natural subshell and must NOT
+     set this. */
   was_async = sh_async_exit;
 
   if((char)sig > 0)
@@ -141,25 +131,16 @@ trap_handler(int sig) {
 }
 
 /* the real OS-level signal handler installed by trap_install() for a
- * real signal (via sig_push()) -- kept to the bare minimum of async-
- * signal-safe work (a plain memory write, same as sh_onsig()'s own
- * SIGCHLD handler; see BUGS: sh-onsig-async-unsafe, fixes/87) instead
- * of running the trap body here directly. The trap body used to run
- * straight from this handler, via eval_tree() -- allocation-heavy,
- * definitely not async-signal-safe, and, worse, whatever syscall this
- * interrupted (typically job_wait()'s blocking wait_pid()) would just
- * transparently resume once this handler returned (SA_RESTART), so a
- * trap that itself called "exit" never got a chance to run until
- * ordinary control flow happened to reach a dispatch point on its
- * own -- observed as a real repro: SIGINT during a "gcc" invocation
- * killed gcc (its own, unrelated default disposition) but shish
- * itself just continued to the next command as if nothing happened.
- * sig_push() now installs with SA_NORESTART for exactly this reason:
- * the interrupted syscall needs to actually return (EINTR) so
- * trap_run_pending() gets a chance to run promptly (see
- * waitpid_nointr()'s matching change). The byte written to
- * job_sigfd[1] wakes term_read()'s select() loop the same way
- * sh_onsig() already does for SIGCHLD. */
+ * real signal, kept to the bare minimum of async-signal-safe work (a
+ * plain memory write) instead of running the trap body here directly
+ * via eval_tree(), which is allocation-heavy and not async-signal-safe.
+ *
+ * sig_push() installs with SA_NORESTART, so whatever syscall this
+ * interrupted (typically job_wait()'s blocking wait_pid()) actually
+ * returns (EINTR) instead of transparently resuming, letting
+ * trap_run_pending() dispatch the trap promptly. The byte written to
+ * job_sigfd[1] wakes term_read()'s select() loop, same as sh_onsig()
+ * does for SIGCHLD. */
 static void
 trap_relay(int sig) {
   trap_pending[(unsigned char)sig] = 1;
@@ -173,10 +154,9 @@ trap_relay(int sig) {
 
 /* runs every trap whose signal fired since the last call, from
  * ordinary (non-signal-handler) context -- see trap_relay() above.
- * Called from sh_loop()'s main loop, term_read()'s select() wakeup,
- * and job_wait()'s own retry loop, so a trap fires promptly even
- * while blocked waiting on a long-running external command, not just
- * between top-level statements.
+ * Called from sh_loop(), term_read()'s select() wakeup, and
+ * job_wait()'s retry loop, so a trap fires promptly even while
+ * blocked on a long-running external command.
  * ----------------------------------------------------------------------- */
 void
 trap_run_pending(void) {
@@ -251,16 +231,11 @@ trap_exit(int exitcode) {
 }
 
 /* remove any existing trap for exactly this signal/pseudo-signal --
- * used both by the "trap - SIG" builtin syntax and, before installing
- * a new one, by trap_install() itself. Every real-signal trap has a
- * matching sig_push() (below); popping it here is what keeps a
- * "trap CMD SIG" run twice for the same SIG from leaking the old tree
- * and list node forever (the previous, un-deduplicated code did, and
- * every trap_install() call added another list entry that trap_find()
- * could never see again, since it always stops at the first --
- * newest -- match) and, more importantly, from exhausting
- * sig_push()'s small fixed-size per-signal stack (SIGSTACKSIZE, 16)
- * after a handful of retraps.
+ * used both by "trap - SIG" and, before installing a new one, by
+ * trap_install() itself. Every real-signal trap has a matching
+ * sig_push(); popping it here keeps a re-trapped signal from leaking
+ * the old tree/list node and from exhausting sig_push()'s small
+ * fixed-size per-signal stack (SIGSTACKSIZE, 16).
  * ----------------------------------------------------------------------- */
 static int
 trap_uninstall(int sig) {
@@ -272,22 +247,12 @@ trap_uninstall(int sig) {
         sig_pop(sig);
 
         /* discard any not-yet-dispatched occurrence of this signal:
-           trap_relay() may have already set trap_pending[sig] (the
-           signal was delivered) without trap_run_pending() having
-           had a chance to drain it yet (e.g. it fired while still
-           inside a subshell that's now exiting and uninstalling its
-           own trap for this signal right here). Left set, the next
-           trap_run_pending() call would dispatch it against whatever
-           trap (if any) is *now* installed instead -- if that's
-           none, trap_handler() hits its "no trap found" fallback and
-           calls sh_exit(1), silently killing the whole process for
-           what looks like a completely untrapped signal. Confirmed
-           via a real repro: "( trap 'echo x' TERM; kill -TERM $$ )"
-           with nothing after the kill -- the subshell's own
-           trap_snapshot_restore() (which also hits this same path)
-           uninstalls the TERM trap before the pending signal from
-           the kill is ever drained, and the shell exits(1) instead
-           of continuing past the subshell. */
+           trap_relay() may have already set trap_pending[sig] without
+           trap_run_pending() having drained it yet. Left set, the
+           next trap_run_pending() call would dispatch it against
+           whatever trap is now installed -- if none, trap_handler()
+           falls back to sh_exit(1), killing the process for what
+           looks like a completely untrapped signal. */
         trap_pending[(unsigned char)sig] = 0;
       }
 
@@ -341,15 +306,11 @@ trap_install(int sig, union node* tree) {
 
   if((char)sig > 0) {
 
-    /* sig_push() (lib/sig) saves whatever disposition the signal
-       already had (SIG_DFL, for a signal never trapped before) on a
+    /* sig_push() saves the signal's current disposition on a
        per-signal stack, installing trap_relay (not trap_handler
-       itself -- see its own comment for why) with SA_MASKALL so
-       another signal can't re-enter it while it runs, and
-       SA_NORESTART so a blocking syscall this interrupts actually
-       returns instead of transparently resuming -- trap_uninstall()'s
-       matching sig_pop() above restores exactly what was there
-       before, not just SIG_DFL. */
+       itself) with SA_MASKALL (no re-entry) and SA_NORESTART (an
+       interrupted syscall actually returns). trap_uninstall()'s
+       matching sig_pop() restores exactly what was there before. */
     sig_push(sig, &trap_relay);
 
   } else if((unsigned char)sig == TRAP_DEBUG) {
@@ -371,14 +332,11 @@ trap_install(int sig, union node* tree) {
 
 /* snapshot/restore the global trap list around a subshell (see
  * eval_subshell.c), the same way exec_functions_save/restore isolates
- * function definitions -- without this, any "trap CMD SIG" run inside
- * "( ... )" (including its own implicit EXIT trap) stayed installed
- * after the subshell "returned" (eval_subshell doesn't fork; it's the
- * same process, so nothing else would ever remove it), and fired
- * later on the *parent's* next exit with the parent's own fdstack/
- * stdout in effect (subshell-exit-trap-output-misdirected). The saved
- * array is NULL-terminated rather than paired with a count, since a
- * live trap node pointer is never itself NULL.
+ * function definitions -- eval_subshell() doesn't fork, so without
+ * this a "trap CMD SIG" run inside "( ... )" would stay installed and
+ * fire later in the parent. The saved array is NULL-terminated rather
+ * than paired with a count, since a live trap node pointer is never
+ * itself NULL.
  * ----------------------------------------------------------------------- */
 void*
 trap_snapshot_save(void) {
@@ -412,15 +370,12 @@ trap_snapshot_restore(void* handle) {
     while(nodes[n])
       n++;
 
-  /* undo anything installed fresh during the subshell: a node not
-     present in the saved array didn't exist when the subshell
-     started, so free it and, for a real signal, sig_pop() to revert
-     the OS-level handler trap_install() gave it. A node that DOES
-     appear in the saved array survived because trap_uninstall()'s
-     exec_subshell_depth guard skipped freeing it even if the
-     subshell removed or replaced it -- relinking the saved array
-     below restores the parent's exact list regardless of whatever
-     surgery happened to it in the meantime. */
+  /* undo anything installed fresh during the subshell: a node not in
+     the saved array didn't exist when the subshell started, so free
+     it and sig_pop() to revert its OS-level handler. A node that does
+     appear survived trap_uninstall()'s exec_subshell_depth guard;
+     relinking the saved array below restores the parent's exact list
+     regardless of any surgery done to it meanwhile. */
   while(t) {
     trap* next = t->next;
     int keep = 0;
@@ -436,11 +391,8 @@ trap_snapshot_restore(void* handle) {
       if((char)t->sig > 0) {
         sig_pop(t->sig);
 
-        /* same reasoning as trap_uninstall()'s matching fix: a
-           subshell's own trap for this signal is about to stop
-           existing, so any not-yet-dispatched occurrence of it must
-           not be left to fire later against whatever (if anything)
-           is installed once we're back in the parent. */
+        /* same as trap_uninstall(): don't leave a not-yet-dispatched
+           occurrence to fire later against whatever's now installed. */
         trap_pending[(unsigned char)t->sig] = 0;
       }
 
@@ -584,20 +536,10 @@ builtin_trap(int argc, char* argv[]) {
       ret = 0;
 
       /* "trap CODE SIG1 SIG2 ..." parses CODE only once (cmds, above)
-         but installs it against every listed signal -- each one needs
-         its own independent tree, not a shared pointer: trap_install()
-         (via trap_uninstall()) tree_free()s whatever tree the signal
-         it's replacing/removing owned, and two trap entries sharing
-         the same tree pointer means the second free operates on
-         already-freed memory. Confirmed via a real autoconf-generated
-         script: libtool's generated cleanup traps ("trap 'rm -f
-         "libtoolT"; exit 1' 1 2 15", later removed with "trap - 1 2
-         15") corrupted the heap this way on the second and third
-         signal every single time, eventually crashing on some later,
-         unrelated allocation ("malloc_consolidate(): unaligned
-         fastbin chunk detected") once the corruption was finally
-         noticed (trap-install-shares-one-tree-across-multiple-
-         signals, BUGS). */
+         but installs it against every listed signal -- each needs its
+         own independent tree, not a shared pointer, since
+         trap_install()/trap_uninstall() tree_free()s the tree a
+         replaced/removed signal owned. */
       if(cmds)
         trap_install(signum, tree_copy(cmds));
       else

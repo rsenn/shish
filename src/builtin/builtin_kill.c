@@ -7,12 +7,9 @@
 #include "../../lib/buffer.h"
 #include <signal.h>
 
-/* parse a "-signal" operand: either numeric ("-9") or a name
- * ("-TERM"/"-SIGTERM", case-insensitive, with or without the "SIG"
- * prefix -- sig_number() itself doesn't strip that, so it's stripped
- * here the same way sig_byname() does it internally). Returns the
- * signal number, or -1 if spec is neither a full number nor a
- * recognized name.
+/* parse a "-signal" operand: numeric ("-9") or a name ("-TERM"/
+ * "-SIGTERM", case-insensitive, with or without "SIG"). Returns the
+ * signal number, or -1 if spec is neither.
  * ----------------------------------------------------------------------- */
 static int
 kill_signum(const char* spec) {

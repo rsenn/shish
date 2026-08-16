@@ -15,25 +15,17 @@
 #include <ctype.h>
 
 /* "expr STRING : PATTERN" -- POSIX Basic Regular Expression matcher.
- *
- * Deliberately self-contained rather than linking libc <regex.h>: this
- * project avoids libc facilities generally (see CLAUDE.md), and several
- * of its cross-build targets (dietlibc, some Windows/embedded configs)
- * either lack POSIX regex entirely or only have a stripped-down one.
+ * Self-contained rather than linking libc <regex.h>, since several
+ * cross-build targets lack POSIX regex or only have a stripped-down
+ * one.
  *
  * Scope: literals, "." (any char), "*" (zero-or-more of the preceding
- * atom, literal if it has no preceding atom -- i.e. at the very start
- * of the pattern or right after "\("), bracket expressions ("[...]",
- * ranges, "^" negation, "[:class:]" -- collating symbols/equivalence
- * classes are not supported, unlike lib/path/path_fnmatch.c's glob
- * matcher), "^"/"$" anchors, and "\( \)" capture groups (up to 9,
- * though POSIX "expr" only ever reports the first). Matching is
- * anchored to the start of the string (expr's own semantics, not a
- * grep-style search) and greedy-backtracking, which gives the POSIX-
- * required leftmost-longest result for any pattern without "true"
- * alternation -- BRE proper doesn't have alternation at all (that's
- * an ERE/GNU "\|" extension), so this covers BRE as actually
- * specified.
+ * atom), bracket expressions ("[...]", ranges, "^" negation,
+ * "[:class:]" -- no collating symbols/equivalence classes), "^"/"$"
+ * anchors, and "\( \)" capture groups (up to 9, though "expr" only
+ * ever reports the first). Matching is anchored to the start of the
+ * string and greedy-backtracking, giving the POSIX-required
+ * leftmost-longest result -- BRE has no alternation to complicate that.
  * ----------------------------------------------------------------------- */
 #define BRE_MAXGROUPS 9
 
@@ -47,10 +39,8 @@ struct bre_ctx {
 };
 
 /* one pass over the pattern to statically pair up "\(" with its "\)"
- * and assign group numbers by textual order -- matching() then just
- * looks up "which group does the \( / \) at this pattern position
- * belong to" instead of maintaining a runtime stack that would need
- * careful unwinding on every backtrack.
+ * and assign group numbers by textual order, so matching() can just
+ * look up group membership instead of maintaining a runtime stack.
  * ----------------------------------------------------------------------- */
 static void
 bre_prepass(struct bre_ctx* ctx, const char* pat) {
@@ -104,13 +94,10 @@ bre_group_by_close(struct bre_ctx* ctx, const char* pat) {
   return -1;
 }
 
-/* POSIX 2.13.1 bracket character class, e.g. the "lower" in
- * "[:lower:]" -- collating symbols ("[.x.]") and equivalence classes
- * ("[=x=]") are not implemented; a bracket expression containing one
- * degrades to matching nothing for that member (same policy
- * lib/path/path_fnmatch.c used before it grew real support -- not
- * duplicated here since "expr" patterns using those are vanishingly
- * rare in practice, unlike glob patterns).
+/* POSIX 2.13.1 bracket character class, e.g. "lower" in "[:lower:]".
+ * Collating symbols ("[.x.]") and equivalence classes ("[=x=]") are
+ * not implemented; a bracket expression containing one degrades to
+ * matching nothing for that member.
  * ----------------------------------------------------------------------- */
 static int
 bre_class_match(const char* name, size_t namelen, int c) {
@@ -242,11 +229,9 @@ bre_atom_matches(const char* pat, size_t alen, int c) {
 
 static const char* bre_match(struct bre_ctx* ctx, const char* pat, const char* s);
 
-/* "*": try consuming the longest possible run of the preceding atom
- * first, then back off one character at a time until the rest of the
- * pattern also matches -- for a BRE (no alternation), greedy-longest-
- * first backtracking is exactly POSIX's required leftmost-longest
- * result.
+/* "*": consume the longest possible run of the preceding atom first,
+ * then back off one character at a time until the rest matches too --
+ * exactly POSIX's required leftmost-longest result for a BRE.
  * ----------------------------------------------------------------------- */
 static const char*
 bre_match_star(
@@ -309,11 +294,14 @@ bre_match(struct bre_ctx* ctx, const char* pat, const char* s) {
   }
 }
 
-/* run "str : pat", filling *out with what POSIX says to print (the
- * first capture group's text, or the match length if the pattern has
- * no group; the empty string or "0" on no match, respectively) --
- * returns the exit status expr itself should report for this result
- * (0 if it's neither null nor "0", 1 otherwise).
+/* run "str : pat", filling *out with what POSIX says to print (first
+ * capture group's text, or match length if no group; "" or "0" on no
+ * match). Returns expr's exit status for the result: 0 unless it's
+ * empty or "0".
+ *
+ *   str   subject string
+ *   pat   BRE pattern
+ *   out   receives the printed result
  * ----------------------------------------------------------------------- */
 static int
 expr_match(const char* str, const char* pat, stralloc* out) {

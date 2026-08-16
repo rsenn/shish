@@ -13,12 +13,9 @@ expand_arith_binary(struct narithbinary* expr, int64* r) {
   if(expand_arith_expr(expr->left, &left))
     return 1;
 
-  /* POSIX: "&&" and "||" only evaluate their right operand when the
-     left one doesn't already decide the result -- required since the
-     right operand can have side effects (e.g. an assignment). Without
-     this, the right side was always evaluated up front alongside the
-     left one below, so e.g. "0 && (a = 5)" wrongly ran the assignment
-     even though the left operand's falseness should have skipped it. */
+  /* POSIX: "&&"/"||" short-circuit -- the right operand, which may
+     have side effects (e.g. an assignment), is only evaluated when
+     the left one doesn't already decide the result. */
   if(expr->id == A_AND && !left) {
     *r = 0;
     return 0;

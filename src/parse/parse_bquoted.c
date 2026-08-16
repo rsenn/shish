@@ -5,11 +5,9 @@
 #include "../tree.h"
 
 /* collect a backquoted command substitution's raw source text and
- * consume its closing (unescaped) backquote, honoring POSIX 2.6.3's
- * escaping rule: a backslash keeps its literal meaning inside
- * backquotes except before '$', '`', or '\\', which it un-escapes.
- * Anything else survives verbatim (including a "$(" or another
- * backslash) for the reparse below to make sense of on its own.
+ * consume its closing (unescaped) backquote, honoring POSIX 2.6.3: a
+ * backslash keeps its literal meaning inside backquotes except before
+ * '$', '`', or '\\', which it un-escapes.
  * ----------------------------------------------------------------------- */
 static int
 parse_bquoted_raw(struct parser* p, stralloc* raw) {
@@ -70,15 +68,11 @@ parse_bquoted(struct parser* p) {
     if((cmds = parse_compound_list(&subp, T_RP)) == NULL)
       return -1;
   } else {
-    /* a backquoted substitution can't be recursively parsed straight
-       off the live source the way "$( )" above is: the same
-       character ('`') both opens and closes it, so a *nested*
-       backquoted substitution inside it is only distinguishable via
-       backslash-escaping (POSIX 2.6.3) -- e.g. `echo \`echo inner\``
-       -- which means the whole body has to be collected and
-       unescaped first, then reparsed as its own independent script,
-       exactly the way this same body would be if it had arrived as a
-       top-level "-c" argument or ". "'d file instead. */
+    /* a backquoted substitution can't be recursively parsed off the
+       live source like "$( )" above: '`' both opens and closes it, so
+       a nested one (e.g. `echo \`echo inner\``) is only distinguished
+       via escaping. Collect and unescape the whole body first, then
+       reparse it as its own independent script. */
     stralloc raw;
     struct source src;
     struct fd fd;

@@ -111,26 +111,17 @@ builtin_cd(int argc, char* argv[]) {
       /* copy the argument and canonicalize */
       str_copy(&path[n], arg);
 
-      /* path_canonicalize() only follows symlinks to resolve them
-         (in -P mode); it never verifies that each component actually
-         exists and is a directory, so a fully-formed "ok" result
-         alone can't tell a real CDPATH hit from a nonexistent one, or
-         reject a candidate that runs through a non-directory
-         component (e.g. "file/../dev") -- confirm against the real
-         filesystem with stat() on the *raw*, uncanonicalized
-         candidate first, so an invalid intermediate component is
-         caught the same way a real chdir() would catch it
-         (cd-cdpath-only-tries-first-component,
-         cd-accepts-non-directory-path-component) */
+      /* path_canonicalize() only resolves symlinks (in -P mode); it
+         never verifies each component exists and is a directory. So
+         confirm against the real filesystem with stat() on the raw,
+         uncanonicalized candidate first, catching an invalid
+         intermediate component the way a real chdir() would. */
       {
         struct stat st;
 
         if(stat(path, &st) == 0 && S_ISDIR(st.st_mode)) {
-          /* newcwd must be cleared before each attempt --
-             path_realpath() only prepends the shell's cwd when
-             sa->len is still zero, so a previous failed candidate's
-             leftover contents would otherwise suppress that prepend
-             on the next component and corrupt it */
+          /* clear before each attempt: path_realpath() only prepends
+             the cwd when sa->len is still zero. */
           stralloc_zero(&newcwd);
           ok = path_realpath(path, &newcwd, symbolic, &sh->cwd);
         } else {

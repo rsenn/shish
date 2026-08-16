@@ -7,11 +7,8 @@
  * ----------------------------------------------------------------------- */
 void
 fd_pop(struct fd* fd) {
-  /* eval_simple_command.c's cleanup path walks every redirection
-     parsed for a command and pops each one's ->nredir.fd, even if it
-     bailed out (e.g. a readonly-variable assignment failing) before
-     ever reaching the loop that actually allocates/assigns those --
-     nothing to pop yet for those, unlike a real (fd) that was pushed */
+  /* cleanup paths may pop a redirection that never got as far as
+     allocating its fd -- nothing to do then. */
   if(!fd)
     return;
 
