@@ -16,6 +16,15 @@ void
 tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth) {
   size_t i = 0;
   stralloc next;
+
+  /* an empty case statement ("case x in esac") has a NULL
+     ncase.list -- N_CASE's own tree_cat_n() branch passes it
+     straight through with no NULL check of its own, so this list
+     ends up genuinely empty rather than a caller bug
+     (case-with-empty-body-crashes-tree-stringifier) */
+  if(!node)
+    return;
+
   stralloc_init(&next);
 
   do {

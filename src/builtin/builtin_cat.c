@@ -4,6 +4,8 @@
 #include "../../lib/shell.h"
 #include "../../lib/fmt.h"
 #include "../../lib/str.h"
+#include "../../lib/open.h"
+#include <unistd.h>
 
 /* output stuff
  * ----------------------------------------------------------------------- */
@@ -37,6 +39,7 @@ builtin_cat(int argc, char* argv[]) {
 
   while((arg = argv[shell_optind])) {
     char buf[1024];
+    char rbuf[1024];
     /*   buffer_putm_internal(fd_err->w, "File: '", arg, "'\n", 0);
        buffer_flush(fd_err->w);
    */
@@ -46,9 +49,22 @@ builtin_cat(int argc, char* argv[]) {
       in = &inb;
 
       if(buffer_mmapread(in, arg)) {
-        builtin_error(argv, arg);
-        ret = 1;
-        break;
+        /* mmap() fails (ESPIPE, "Illegal seek") for anything that
+           isn't a regular file -- a FIFO/pipe or character device
+           given directly as an operand, both completely ordinary
+           things to hand "cat", neither actually an error. Fall back
+           to a plain read(2)-based buffer over the same path instead
+           of giving up (lib/buffer.h's own comment on buffer_init()
+           documents this exact fallback). */
+        int rfd = open_read(arg);
+
+        if(rfd == -1) {
+          builtin_error(argv, arg);
+          ret = 1;
+          break;
+        }
+
+        buffer_init(in, (buffer_op_proto*)(void*)&read, rfd, rbuf, sizeof(rbuf));
       }
     }
 

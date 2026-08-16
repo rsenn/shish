@@ -137,8 +137,40 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   }
 
   /* do redirections if present */
-  if(ncmd->rdir && cmd.id != H_SBUILTIN && cmd.id != H_EXEC)
+  if((ncmd->rdir || (ncmd->bgnd && !sh->opts.monitor)) && cmd.id != H_SBUILTIN &&
+     cmd.id != H_EXEC)
     fdstack_push(&io);
+
+  /* POSIX 2.9.3.1 (Asynchronous Lists): "the standard input for an
+     asynchronous list, before any explicit redirections are
+     performed, shall be considered to be assigned to a file that has
+     the same properties as /dev/null" -- except when job control is
+     enabled, when this redirection does not occur. Pushed first,
+     exactly like a real "< /dev/null" would be (fd_push()+fd_open(),
+     the same two calls redir_eval()/redir_open() make for a plain
+     "<file"), so this command's own real redirections -- the loop
+     right below, if it has any -- naturally override it by pushing
+     their own fd 0 entry on top, the same last-one-wins semantics any
+     two of the command's own redirections targeting the same fd
+     already have. Doing this here, before that loop, rather than
+     after forking for the background (as a raw dup2() on fd 0 would
+     have to), is what makes it correctly precede a redirection that
+     is itself relative to "the current fd 0" (e.g. "cmd <&0 &") --
+     that dup must see this null default already in place, not
+     whatever fd 0 happened to mean before this command ran. */
+  if(ncmd->bgnd && !sh->opts.monitor && cmd.id != H_SBUILTIN && cmd.id != H_EXEC) {
+    struct fd* nullfd;
+#ifdef HAVE_ALLOCA
+    nullfd = fd_alloc();
+#else
+    nullfd = fd_malloc();
+#endif
+    nullfd = fd_push(nullfd, STDIN_FILENO, FD_READ);
+    fd_open(nullfd, "/dev/null", 0);
+
+    if(fd_needbuf(nullfd))
+      fd_setbuf(nullfd, buf, FD_BUFSIZE);
+  }
 
   for(r = ncmd->rdir; r; r = r->next) {
     struct fd* fd = NULL;

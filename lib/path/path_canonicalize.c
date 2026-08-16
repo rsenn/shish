@@ -154,8 +154,12 @@ start:
     /* now stat() the thing to verify it */
     byte_zero(&st, sizeof(st));
 
-    /* is it a symbolic link? */
-    if(stat_fn(sa->s, &st) != -1 && is_link(sa->s)) {
+    /* is it a symbolic link? per this function's own doc comment,
+       symbolic != 0 means "keep symlinks" (-L, logical) and must NOT
+       resolve them -- only physical mode (symbolic == 0, -P) walks
+       through a symlink to its target (path-canonicalize-l-resolves-
+       symlinks-like-p) */
+    if(!symbolic && stat_fn(sa->s, &st) != -1 && is_link(sa->s)) {
       ret++;
       /* read the link, return if failed and then nul-terminate the buffer */
       if((ssize_t)(n = readlink(sa->s, buf, PATH_MAX)) == (ssize_t)-1)

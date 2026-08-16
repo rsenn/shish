@@ -3561,4 +3561,149 @@ GETOPTS102_OPTIND_ADV=$(set -- -a -b
   getopts ab o >/dev/null; printf ':%s' "$OPTIND")
 assert_equal "2:3" "$GETOPTS102_OPTIND_ADV" "OPTIND must already point past a fully-consumed option by the time getopts returns"
 
+## fixes/177: asynchronous lists ("cmd &") were broken in three
+## independent ways:
+## - the lexer's character-class table classified '&' as C_ARITHOP
+##   only, not C_CTRL, so "true&echo ok" (no space before '&') was
+##   tokenized as a single word "true&echo" instead of three tokens --
+##   real shells accept '&' immediately after a word with no
+##   whitespace, same as ';' or '|'.
+## - POSIX 2.9.3.1 requires an asynchronous list's stdin to default to
+##   /dev/null (before its own explicit redirections, if any) unless
+##   job control is enabled; shish never did this, so a backgrounded
+##   command with no redirection of its own read whatever fd 0
+##   happened to mean in the shell (e.g. the running script itself).
+## - fd_in and fd_src share the same underlying buffer object (see
+##   sh_main.c) -- fork() copies that buffer's already-read-ahead
+##   bytes into the child, so even after adding the /dev/null default
+##   above, a backgrounded command reading via fd_in->r could still
+##   see stale, already-buffered script bytes before its first real
+##   read(2) ever reached the new fd.
+## Fixed across src/parse/parse_chartable.c (the lexer table),
+## src/eval/eval_simple_command.c (the /dev/null default, applied
+## before a command's own redirections so it's still correctly
+## overridden by e.g. "cmd <&0 &"), and src/job/job_fork.c (discarding
+## the stale read-ahead buffer in the child). A matching fix was also
+## added to exec_program.c and later removed again once confirmed
+## redundant: H_PROGRAM commands always reach exec_program() via
+## eval_simple_command.c, which the eval_simple_command.c fix above
+## already covers.
+if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+  ASYNC177_LEX=$("$SHISH_SELF" -c 'true&echo ok; wait' 2>&1)
+  assert_equal "ok" "$ASYNC177_LEX" "'&' must end a command even with no preceding whitespace"
+
+  ASYNC177_STDIN=$(printf '' | timeout 5 "$SHISH_SELF" -c 'cat & wait; echo done')
+  assert_equal "done" "$ASYNC177_STDIN" "an unredirected background command's stdin must default to /dev/null, not hang reading the shell's own input"
+
+  ASYNC177_BUFFER=$(printf 'cat& wait\necho hello\n' | timeout 5 "$SHISH_SELF")
+  assert_equal "hello" "$ASYNC177_BUFFER" "a background command must not see script bytes the parent had already buffered ahead of it"
+fi
+
+## fixes/178: a case pattern (or the case word itself) that spells a
+## reserved word verbatim, e.g. "case if in if) ...; esac", failed to
+## parse. parse_case.c already requested P_NOKEYWD for pattern words,
+## but parse_gettok()'s pushback mechanism only re-tokenizes when
+## !p->pushback -- the token immediately after "in" (fetched by the
+## loop's own P_SKIPNL-only, non-P_NOKEYWD parse_gettok() call, needed
+## so it can still recognize "esac") had therefore already been
+## resolved to its keyword's token bit before the P_NOKEYWD-requesting
+## pattern-word loop ever got a chance to ask for it as a plain word.
+## Fixed by downgrading that already-resolved keyword token back to
+## T_NAME before pushing it back, since parse_keyword() never mutates
+## the raw text backing it. Also gave the case word itself (between
+## "case" and "in") P_NOKEYWD, for the same "case if in ..." reason.
+if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+  CASE178_PATTERN=$("$SHISH_SELF" -c 'case if in if) echo matched;; esac')
+  assert_equal "matched" "$CASE178_PATTERN" "a case pattern spelling a reserved word verbatim must still match as a plain word"
+
+  CASE178_WORD=$("$SHISH_SELF" -c 'case if in *) echo matched;; esac')
+  assert_equal "matched" "$CASE178_WORD" "the case word itself may spell a reserved word verbatim"
+fi
+
+## also part of fixes/178: a linebreak between the case word and the
+## "in" keyword ("case foo\nin foo) ...; esac", grammatically valid
+## per 3.9.4.3's own <linebreak>) failed to parse, since parse_case.c
+## asked for T_IN without P_SKIPNL. Fixed by adding it, same as
+## parse_for.c's own linebreak before "do".
+if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+  CASE178_LINEBREAK=$(printf 'case foo\n\nin foo) echo matched;; esac\n' | "$SHISH_SELF")
+  assert_equal "matched" "$CASE178_LINEBREAK" "a linebreak between the case word and 'in' must be allowed"
+fi
+
+## also part of fixes/178: an empty case body ("case x in esac", no
+## patterns at all -- syntactically valid, POSIX-unspecified exit
+## status aside) crashed the shell. tree_cat_n()'s N_CASE branch
+## passes ncase.list (NULL for an empty case) straight to
+## tree_catlist_n() with no NULL check, and tree_catlist_n() itself
+## dereferenced it unconditionally in its do/while loop --
+## unreachable through eval_case.c (which does check), but sh_loop()
+## unconditionally stringifies every parsed command via tree_catlist()
+## for history, regardless of whether the shell is interactive. Fixed
+## by making tree_catlist_n() a no-op on a NULL node, the actual crash
+## site, so every other (already correctly NULL-checking) caller stays
+## unaffected.
+if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+  CASE178_EMPTY=$("$SHISH_SELF" -c 'case x in esac; echo ok')
+  assert_equal "ok" "$CASE178_EMPTY" "an empty case body must not crash the shell"
+fi
+
+## fixes/179: cd/CDPATH had several bugs:
+## - path_canonicalize() never verified that the final path component
+##   actually existed (its S_ISDIR check was #if 0'd out), so
+##   path_realpath() always "succeeded" syntactically regardless of
+##   whether the target existed. builtin_cd.c's CDPATH search loop
+##   relied on that success/failure to know when to stop, so it always
+##   stopped after the *first* CDPATH component, real or not, instead
+##   of trying the rest of $CDPATH.
+## - newcwd (the stralloc receiving each candidate) was never cleared
+##   between attempts, and path_realpath() only prepends the shell's
+##   cwd when its target's length is still zero, so a second attempt
+##   after a first failure would silently corrupt further.
+## - the operand's raw, uncanonicalized candidate is now stat()'d
+##   directly (not the canonicalized result) before accepting it, so a
+##   candidate that runs through a non-directory component (e.g.
+##   "file/../dev") is correctly rejected the same way a real chdir()
+##   would reject it, instead of "succeeding" once ".." is collapsed
+##   away textually.
+## - CDPATH was consulted even when the operand began with "." or
+##   "..", which POSIX excludes; and once every CDPATH component
+##   failed, cd gave up instead of falling back to the operand
+##   relative to the current directory (POSIX's final fallback step).
+## - OLDPWD was never set, and "cd -" (change to $OLDPWD, print the
+##   new directory) was not implemented at all.
+## - separately, lib/path/path_canonicalize.c resolved symlinks
+##   unconditionally, even when told to keep them (the "symbolic"
+##   parameter, i.e. cd's default -L mode) -- only -P (the "symbolic
+##   == 0" / physical case) is supposed to walk through a symlink to
+##   its target.
+## All fixed in src/builtin/builtin_cd.c and
+## lib/path/path_canonicalize.c.
+if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+  CD179_DIR=$(mktemp -d)
+  CD179_DIR=$(cd "$CD179_DIR" && pwd)
+  mkdir -p "$CD179_DIR/cdpath1" "$CD179_DIR/cdpath2/foo" "$CD179_DIR/dev"
+  ln -s cdpath2/foo "$CD179_DIR/link"
+  >"$CD179_DIR/file"
+
+  CD179_MULTI=$(cd "$CD179_DIR" && CDPATH=cdpath1:cdpath2 "$SHISH_SELF" -c 'cd foo >/dev/null && pwd')
+  assert_equal "$CD179_DIR/cdpath2/foo" "$CD179_MULTI" "CDPATH search must try every component, not just the first"
+
+  CD179_OLDPWD=$(cd "$CD179_DIR" && "$SHISH_SELF" -c 'cd cdpath1 >/dev/null; cd - >/dev/null; pwd')
+  assert_equal "$CD179_DIR" "$CD179_OLDPWD" "cd - must change to \$OLDPWD"
+
+  CD179_DOT=$(cd "$CD179_DIR" && CDPATH=cdpath2 "$SHISH_SELF" -c 'cd ./dev && pwd')
+  assert_equal "$CD179_DIR/dev" "$CD179_DOT" "an operand starting with './' must ignore CDPATH"
+
+  CD179_NOTDIR=$(cd "$CD179_DIR" && "$SHISH_SELF" -c 'cd ./file/../dev' 2>/dev/null; echo "$?")
+  assert_equal "1" "$CD179_NOTDIR" "cd must fail when a non-final path component is not a directory"
+
+  CD179_FALLBACK=$(cd "$CD179_DIR" && CDPATH=cdpath1:cdpath2 "$SHISH_SELF" -c 'cd cdpath1 && pwd')
+  assert_equal "$CD179_DIR/cdpath1" "$CD179_FALLBACK" "cd must fall back to the plain operand relative to the current directory once CDPATH is exhausted"
+
+  CD179_LOGICAL=$(cd "$CD179_DIR" && "$SHISH_SELF" -c 'cd -L link && pwd')
+  assert_equal "$CD179_DIR/link" "$CD179_LOGICAL" "cd -L must keep the operand's own symlink component unresolved"
+
+  rm -rf "$CD179_DIR"
+fi
+
 summary

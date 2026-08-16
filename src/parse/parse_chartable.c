@@ -46,7 +46,7 @@ const unsigned short parse_chartable[CHAR_RANGE] = {
     C_SPCL,             /* # */
     C_SPCL | C_DESC,    /* $ */
     C_ARITHOP,          /* % */
-    C_ARITHOP,          /* & */
+    C_ARITHOP | C_CTRL, /* & */
     C_QUOT,             /* ' */
     /* 0x28 */
     C_CTRL,                        /* ( */

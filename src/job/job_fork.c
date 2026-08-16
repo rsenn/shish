@@ -1,4 +1,5 @@
 #include "../fd.h"
+#include "../fdtable.h"
 #include "../job.h"
 #include "../sh.h"
 #include "../../lib/sig.h"
@@ -6,6 +7,7 @@
 #include <assert.h>
 
 #if !WINDOWS_NATIVE
+#include <fcntl.h>
 #include <unistd.h>
 #endif
 
@@ -59,6 +61,49 @@ job_fork(struct job* j, union node* node, int bgnd) {
   /* in the child, set the process group and return */
   if(pid == 0) {
     sh_forked();
+
+#if !WINDOWS_NATIVE
+    /* POSIX 2.9.3.1 (Asynchronous Lists): "the standard input for an
+       asynchronous list, before any explicit redirections are
+       performed, shall be considered to be assigned to a file that
+       has the same properties as /dev/null" -- except when job
+       control is enabled, when this redirection does not occur.
+       Done here, immediately after fork() and before returning to
+       the caller, so it runs strictly before that command's own
+       pending fd 0 redirection (a pipe stage's inter-process pipe
+       included) gets resolved -- letting a real explicit redirection
+       still correctly override this default via its own later dup2()
+       the same way it would override a literal "< /dev/null". */
+    if(bgnd && !sh->opts.monitor) {
+      int devnull = open("/dev/null", O_RDONLY);
+
+      if(devnull >= 0) {
+        dup2(devnull, 0);
+
+        if(devnull != 0)
+          close(devnull);
+      }
+
+      /* the dup2() above only affects *future* read(2) syscalls --
+         fd_in's own read buffer (shared, via fd_dup(), with fd_src,
+         the running script's own source when read from stdin -- see
+         sh_main.c) can already hold bytes read ahead of whatever
+         point the parser had actually reached lexing this command,
+         which fork() just gave this child its own copy of. Left
+         alone, an unredirected background command reading via
+         fd_in->r (e.g. builtin_cat.c) would still see those stale,
+         pre-buffered bytes first, before its first real syscall ever
+         reaches the now-/dev/null fd. Discarding them (not flushing
+         -- nothing here should be written back) is safe precisely
+         because this is the child: the parent kept its own copy of
+         this buffer, untouched, to keep parsing the rest of the
+         script with. */
+      if(fd_in && fd_in->r) {
+        fd_in->r->p = 0;
+        fd_in->r->n = 0;
+      }
+    }
+#endif
 
     pgrp = index > 0 ? j->procs[0].pid : sh_pid;
 

@@ -1,3 +1,22 @@
+- mktemp-default-template-ignores-tmp: `mktemp` (no `-t`/`-p`, no
+  explicit template) creates its file/directory relative to the
+  current directory instead of under `/tmp` (or `$TMPDIR`) the way
+  GNU/BSD `mktemp` does by default -- `temp` (the flag that decides
+  whether `base` gets prepended to the generated name) is only ever
+  set by `-t`/`-p`, never implied by the no-template case.
+  `src/builtin/builtin_mktemp.c:55-58`. Found while writing a
+  `tests/fixed.sh` regression test for `fixes/105` (cd/CDPATH) that
+  assumed `mktemp -d` returns an absolute path; worked around there
+  by resolving it via `cd "$dir" && pwd` immediately after creation
+  rather than fixed here (out of scope for that change).
+
+  **Repro:**
+  ```sh
+  cd /tmp && mkdir -p mktemp-repro && cd mktemp-repro
+  build/x86_64-linux-gnu/shish -c 'mktemp -d'
+  # prints a bare "shish-XXXXXXXX", created under ./ (cwd), not /tmp/
+  ```
+
 - yash-suite-other-hangs: a full sweep of all 119 `tests/yash/*.tst`
   files (each run individually with a 10s timeout via `run-tst.sh`,
   same as CTest's own per-file `TIMEOUT` but much shorter to survey
@@ -273,45 +292,6 @@
   # Run: sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix alias-p.tst
   ```
 
-- async-list-behavior-broken: asynchronous lists (`cmd &`) don't
-  properly separate by `&`, don't run in a subshell, don't redirect
-  stdin to /dev/null (POSIX requires this without job control), and
-  report wrong exit status. 6 failures in `async-p.tst` (3/9).
-  `async-p.tst:18,38,48,57,72,82`.
-
-  **Repro:**
-  ```sh
-  cat <<'EOF' | shish
-  echo start
-  sleep 0.1 &
-  echo middle
-  wait
-  echo end
-  EOF
-  # shish doesn't run the background command in a subshell
-  # and doesn't redirect its stdin to /dev/null
-  # Run: sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix async-p.tst
-  ```
-
-- cd-cdpath-and-error-handling-broken: `cd` doesn't search `CDPATH`
-  correctly (or at all), doesn't set `OLDPWD`, doesn't canonicalize
-  pathnames, and doesn't properly report errors for non-directory
-  or non-existing path components. 22 failures in `cd-p.tst`
-  (17/39). `builtin_cd.c`. `cd-p.tst:65-414`.
-
-  **Repro:**
-  ```sh
-  cat <<'EOF' | shish
-  cd /tmp
-  echo "OLDPWD=$OLDPWD"
-  CDPATH=/usr
-  cd bin
-  echo "PWD=$PWD"
-  EOF
-  # shish doesn't set OLDPWD or search CDPATH correctly
-  # Run: sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix cd-p.tst
-  ```
-
 - fsplit-field-splitting-broken: field splitting of unquoted
   expansion results is broken — default IFS not applied correctly,
   non-whitespace IFS handling wrong, backslash-in-IFS not handled,
@@ -338,20 +318,6 @@
   # Run the read conformance test
   sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix read-p.tst
   # 22 failures in field splitting and option handling
-  ```
-
-- compound-commands-ending-with-async-broken: `if`, `for`, `while`,
-  and `until` bodies ending with an asynchronous command (`cmd &`)
-  misbehave. 8 failures across `if-p.tst:329,335,342`,
-  `for-p.tst:91`, `while-p.tst:94,100`, `until-p.tst:94,100`.
-  Likely related to `async-list-behavior-broken` above.
-
-  **Repro:**
-  ```sh
-  # Run the if/for/while/until tests and check async cases
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix if-p.tst
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix for-p.tst
-  # Failures in tests where compound command ends with 'cmd &'
   ```
 
 - param-expansion-pattern-removal-broken: `${var#pattern}`,
@@ -466,24 +432,34 @@
   # 10 failures in tilde expansion, heredocs, and multiple redirections
   ```
 
-- reserved-words-as-case-patterns: reserved words (`!`, `{`, `}`,
-  `case`, `do`, `done`, `elif`, `else`, `fi`, `for`, `if`, `in`,
-  `then`, `until`, `while`, `esac`) are not accepted as case
-  patterns. 20 failures in `case-p.tst:315-336`. Parser rejects
-  them before pattern matching. Also: case exit status of unmatched
-  empty case (`:178`), linebreak after word (`:220`), `&` before
-  `;;` (`:258`). 23 total failures in `case-p.tst` (29/52).
+- case-pattern-expansion-broken: a case pattern is supposed to
+  undergo the same tilde/backslash-preserving expansion as any other
+  word (POSIX 2.13.1), but doesn't -- tilde expansion in a pattern
+  and backslashes newly introduced by expanding a pattern (as
+  opposed to ones written literally in the pattern) are both handled
+  wrong. 2 failures in `case-p.tst` (`:62`, `:105`).
 
   **Repro:**
   ```sh
-  cat <<'EOF' | shish
-  x=if
-  case $x in
-    if) echo "matched if";;
-  esac
-  EOF
-  # shish rejects 'if' as a case pattern
-  # bash/dash accept reserved words as case patterns
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix case-p.tst
+  # case-p.tst:62 "case pattern is subject to tilde expansion"
+  # case-p.tst:105 "backslashes arising from expansion in case pattern"
+  ```
+
+- case-pattern-bracket-quote-stripping: `[[` used as a case pattern
+  (a literal two-character glob-bracket-looking word, not a `[[
+  ... ]]` test expression -- shish/POSIX sh doesn't have those) is
+  not matched as its own literal text. 1 failure in `case-p.tst:318`
+  ("reserved word `[[` as pattern") -- despite the "reserved word"
+  framing this is an `fnmatch`/glob edge case (how `[[` is matched by
+  path_fnmatch()), not a case-parser issue; the other 21 reserved-
+  word-as-pattern cases in the same test (`:315-317,319-334,336`) all
+  pass.
+
+  **Repro:**
+  ```sh
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix case-p.tst
+  # case-p.tst:318 "reserved word [[ as pattern"
   ```
 
 - fnmatch-quotation-of-quotations: pattern matching with nested
@@ -497,19 +473,18 @@
   # 1 failure in pattern matching with nested quotation marks
   ```
 
-- grouping-p-tst-hangs: `grouping-p.tst` times out at test 34
-  ("subshell ending with asynchronous list"), which exercises
-  `(echo foo >fifo1&)` — an asynchronous list inside a subshell
-  with output redirection. The shell hangs waiting for the
-  background process. Related to `async-list-behavior-broken`.
-  `grouping-p.tst:34`.
+- grouping-p-tst-flaky: `grouping-p.tst:34` ("subshell ending with
+  asynchronous list", `(echo foo >fifo1&); cat fifo1`) used to hang
+  outright (fixed alongside `fixes/103`, the general async-list fix
+  -- this was the same missing-/dev/null-default bug, just reached
+  through a subshell's own backgrounded list instead of a top-level
+  one). It now passes most runs, but still intermittently fails
+  (roughly 1 run in 5, `grouping-p.tst: 11/12 passed`) -- some
+  remaining race between the subshell's background writer and the
+  FIFO read that follows it, not yet root-caused.
 
   **Repro:**
   ```sh
-  # This will hang (shell waits for background process in subshell)
-  cat <<'EOF' | timeout 2 shish
-  (echo foo >tmpfile&)
-  echo "after subshell"
-  EOF
-  # shish hangs waiting for the background process
+  # run several times; fails intermittently, not on every run
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix grouping-p.tst
   ```

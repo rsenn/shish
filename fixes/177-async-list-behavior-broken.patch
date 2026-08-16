@@ -1,0 +1,175 @@
+diff --git a/src/builtin/builtin_cat.c b/src/builtin/builtin_cat.c
+index fc8890b4..11133310 100644
+--- a/src/builtin/builtin_cat.c
++++ b/src/builtin/builtin_cat.c
+@@ -4,6 +4,8 @@
+ #include "../../lib/shell.h"
+ #include "../../lib/fmt.h"
+ #include "../../lib/str.h"
++#include "../../lib/open.h"
++#include <unistd.h>
+ 
+ /* output stuff
+  * ----------------------------------------------------------------------- */
+@@ -37,6 +39,7 @@ builtin_cat(int argc, char* argv[]) {
+ 
+   while((arg = argv[shell_optind])) {
+     char buf[1024];
++    char rbuf[1024];
+     /*   buffer_putm_internal(fd_err->w, "File: '", arg, "'\n", 0);
+        buffer_flush(fd_err->w);
+    */
+@@ -46,9 +49,22 @@ builtin_cat(int argc, char* argv[]) {
+       in = &inb;
+ 
+       if(buffer_mmapread(in, arg)) {
+-        builtin_error(argv, arg);
+-        ret = 1;
+-        break;
++        /* mmap() fails (ESPIPE, "Illegal seek") for anything that
++           isn't a regular file -- a FIFO/pipe or character device
++           given directly as an operand, both completely ordinary
++           things to hand "cat", neither actually an error. Fall back
++           to a plain read(2)-based buffer over the same path instead
++           of giving up (lib/buffer.h's own comment on buffer_init()
++           documents this exact fallback). */
++        int rfd = open_read(arg);
++
++        if(rfd == -1) {
++          builtin_error(argv, arg);
++          ret = 1;
++          break;
++        }
++
++        buffer_init(in, (buffer_op_proto*)(void*)&read, rfd, rbuf, sizeof(rbuf));
+       }
+     }
+ 
+diff --git a/src/eval/eval_simple_command.c b/src/eval/eval_simple_command.c
+index 90931532..5729988f 100644
+--- a/src/eval/eval_simple_command.c
++++ b/src/eval/eval_simple_command.c
+@@ -137,9 +137,41 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+   }
+ 
+   /* do redirections if present */
+-  if(ncmd->rdir && cmd.id != H_SBUILTIN && cmd.id != H_EXEC)
++  if((ncmd->rdir || (ncmd->bgnd && !sh->opts.monitor)) && cmd.id != H_SBUILTIN &&
++     cmd.id != H_EXEC)
+     fdstack_push(&io);
+ 
++  /* POSIX 2.9.3.1 (Asynchronous Lists): "the standard input for an
++     asynchronous list, before any explicit redirections are
++     performed, shall be considered to be assigned to a file that has
++     the same properties as /dev/null" -- except when job control is
++     enabled, when this redirection does not occur. Pushed first,
++     exactly like a real "< /dev/null" would be (fd_push()+fd_open(),
++     the same two calls redir_eval()/redir_open() make for a plain
++     "<file"), so this command's own real redirections -- the loop
++     right below, if it has any -- naturally override it by pushing
++     their own fd 0 entry on top, the same last-one-wins semantics any
++     two of the command's own redirections targeting the same fd
++     already have. Doing this here, before that loop, rather than
++     after forking for the background (as a raw dup2() on fd 0 would
++     have to), is what makes it correctly precede a redirection that
++     is itself relative to "the current fd 0" (e.g. "cmd <&0 &") --
++     that dup must see this null default already in place, not
++     whatever fd 0 happened to mean before this command ran. */
++  if(ncmd->bgnd && !sh->opts.monitor && cmd.id != H_SBUILTIN && cmd.id != H_EXEC) {
++    struct fd* nullfd;
++#ifdef HAVE_ALLOCA
++    nullfd = fd_alloc();
++#else
++    nullfd = fd_malloc();
++#endif
++    nullfd = fd_push(nullfd, STDIN_FILENO, FD_READ);
++    fd_open(nullfd, "/dev/null", 0);
++
++    if(fd_needbuf(nullfd))
++      fd_setbuf(nullfd, buf, FD_BUFSIZE);
++  }
++
+   for(r = ncmd->rdir; r; r = r->next) {
+     struct fd* fd = NULL;
+ 
+diff --git a/src/job/job_fork.c b/src/job/job_fork.c
+index b0e73172..c029ce73 100644
+--- a/src/job/job_fork.c
++++ b/src/job/job_fork.c
+@@ -1,4 +1,5 @@
+ #include "../fd.h"
++#include "../fdtable.h"
+ #include "../job.h"
+ #include "../sh.h"
+ #include "../../lib/sig.h"
+@@ -6,6 +7,7 @@
+ #include <assert.h>
+ 
+ #if !WINDOWS_NATIVE
++#include <fcntl.h>
+ #include <unistd.h>
+ #endif
+ 
+@@ -60,6 +62,49 @@ job_fork(struct job* j, union node* node, int bgnd) {
+   if(pid == 0) {
+     sh_forked();
+ 
++#if !WINDOWS_NATIVE
++    /* POSIX 2.9.3.1 (Asynchronous Lists): "the standard input for an
++       asynchronous list, before any explicit redirections are
++       performed, shall be considered to be assigned to a file that
++       has the same properties as /dev/null" -- except when job
++       control is enabled, when this redirection does not occur.
++       Done here, immediately after fork() and before returning to
++       the caller, so it runs strictly before that command's own
++       pending fd 0 redirection (a pipe stage's inter-process pipe
++       included) gets resolved -- letting a real explicit redirection
++       still correctly override this default via its own later dup2()
++       the same way it would override a literal "< /dev/null". */
++    if(bgnd && !sh->opts.monitor) {
++      int devnull = open("/dev/null", O_RDONLY);
++
++      if(devnull >= 0) {
++        dup2(devnull, 0);
++
++        if(devnull != 0)
++          close(devnull);
++      }
++
++      /* the dup2() above only affects *future* read(2) syscalls --
++         fd_in's own read buffer (shared, via fd_dup(), with fd_src,
++         the running script's own source when read from stdin -- see
++         sh_main.c) can already hold bytes read ahead of whatever
++         point the parser had actually reached lexing this command,
++         which fork() just gave this child its own copy of. Left
++         alone, an unredirected background command reading via
++         fd_in->r (e.g. builtin_cat.c) would still see those stale,
++         pre-buffered bytes first, before its first real syscall ever
++         reaches the now-/dev/null fd. Discarding them (not flushing
++         -- nothing here should be written back) is safe precisely
++         because this is the child: the parent kept its own copy of
++         this buffer, untouched, to keep parsing the rest of the
++         script with. */
++      if(fd_in && fd_in->r) {
++        fd_in->r->p = 0;
++        fd_in->r->n = 0;
++      }
++    }
++#endif
++
+     pgrp = index > 0 ? j->procs[0].pid : sh_pid;
+ 
+ #if !WINDOWS_NATIVE
+diff --git a/src/parse/parse_chartable.c b/src/parse/parse_chartable.c
+index 2f50ca3e..d1e2d401 100644
+--- a/src/parse/parse_chartable.c
++++ b/src/parse/parse_chartable.c
+@@ -46,7 +46,7 @@ const unsigned short parse_chartable[CHAR_RANGE] = {
+     C_SPCL,             /* # */
+     C_SPCL | C_DESC,    /* $ */
+     C_ARITHOP,          /* % */
+-    C_ARITHOP,          /* & */
++    C_ARITHOP | C_CTRL, /* & */
+     C_QUOT,             /* ' */
+     /* 0x28 */
+     C_CTRL,                        /* ( */
