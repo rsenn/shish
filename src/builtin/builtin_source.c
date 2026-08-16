@@ -97,7 +97,7 @@ builtin_source(int argc, char* argv[]) {
     if(searched_path)
       path_to_open = searched_path;
     else
-      path_to_open = fname;  /* Will fail with "not found" */
+      path_to_open = fname; /* Will fail with "not found" */
   } else {
     path_to_open = fname;
   }
@@ -111,7 +111,7 @@ builtin_source(int argc, char* argv[]) {
        from the sourced script can unwind back to this point */
     eval_push(&e, E_ROOT);
     e.jump = 1;
-    
+
     jmpret = setjmp(e.jumpbuf);
     if(jmpret == 0) {
       /* Normal execution path */
@@ -125,11 +125,13 @@ builtin_source(int argc, char* argv[]) {
          for return, or just 1 for break/continue */
       ret = jmpret >> 1;
       sh->exitcode = ret;
-      fprintf(stderr, "DEBUG builtin_source: longjmp returned, ret=%d, sh->exitcode=%d\n", 
-              ret, sh->exitcode);
+      fprintf(stderr,
+              "DEBUG builtin_source: longjmp returned, ret=%d, sh->exitcode=%d\n",
+              ret,
+              sh->exitcode);
       sh_popargs(&oldarg);
     }
-    
+
     eval_pop(&e);
   } else {
     ret = 1;

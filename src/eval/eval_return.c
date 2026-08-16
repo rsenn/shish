@@ -26,8 +26,11 @@ eval_return(int value) {
      never running, and f's own exit status coming out as 5 instead
      of whatever ran after the subshell. */
   for(e = eval; e; e = e->parent) {
-    fprintf(stderr, "DEBUG eval_return: checking frame %p, flags=%d, jump=%d\n", 
-            (void*)e, e->flags, e->jump);
+    fprintf(stderr,
+            "DEBUG eval_return: checking frame %p, flags=%d, jump=%d\n",
+            (void*)e,
+            e->flags,
+            e->jump);
     if(e->jump && (e->flags & (E_FUNCTION | E_ROOT))) {
       f = e;
       fprintf(stderr, "DEBUG eval_return: found target frame %p\n", (void*)f);
@@ -36,8 +39,7 @@ eval_return(int value) {
   }
 
   if(f) {
-    fprintf(stderr, "DEBUG eval_return: jumping to frame %p with value %d\n", 
-            (void*)f, value);
+    fprintf(stderr, "DEBUG eval_return: jumping to frame %p with value %d\n", (void*)f, value);
     if(f->destructor)
       value = f->destructor(value);
 

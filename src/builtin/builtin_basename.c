@@ -21,6 +21,8 @@ builtin_basename(int argc, char* argv[]) {
     builtin_errmsg(argv, "too few arguments", NULL);
     return 1;
   }
+  if(str_equal(argv[shell_optind], "--")) 
+    shell_optind++;
 
   base = path_basename(argv[shell_optind]);
   suffix = argv[shell_optind + 1];

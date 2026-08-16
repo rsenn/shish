@@ -66,6 +66,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
   stralloc value;
   const char* v = NULL;
   size_t vlen = 0;
+  bool is_set = true;
 
   stralloc_init(&value);
 
@@ -84,7 +85,6 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         const char* ifs = var_vdefault("IFS", IFS_DEFAULT, NULL);
 
         for(i = 0; i < sh->arg.c; i++) {
-
           if(i > 0)
             stralloc_catc(&value, ifs[0]);
 
@@ -147,7 +147,6 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
       /* $- substitution */
       case S_FLAGS:
-
         stralloc_ready(&value, 16);
         value.len = sh_fmtflags(value.s, &sh->opts);
         break;
@@ -157,6 +156,8 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       case S_BGEXCODE:
         if(job_bgpid)
           stralloc_catulong0(&value, job_bgpid, 0);
+        else
+          is_set = false;
         break;
 
         /* $[0-9] arg subst */
@@ -165,6 +166,8 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
           stralloc_cats(&value, sh_argv0);
         else if((unsigned)(param->numb - 1) < sh->arg.c)
           stralloc_cats(&value, (sh->arg.v /* + sh->arg.s*/)[param->numb - 1]);
+        else
+          is_set = false;
 
         break;
       }
@@ -181,9 +184,11 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
        must still produce an (empty) word, not be treated as unset and
        dropped entirely by the S_DEFAULT case below */
     stralloc_nul(&value);
-    v = value.s;
 
-    vlen = value.len;
+    if(is_set) {
+      v = value.s;
+      vlen = value.len;
+    }
   }
 
   /* ..and variable substitutions */
@@ -254,9 +259,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
     char lstr[FMT_ULONG];
 
     n = expand_cat(lstr, fmt_ulong(lstr, vlen), nptr, flags);
-
     stralloc_free(&value);
-
     return n;
   }
 
@@ -269,6 +272,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       /* unset, substitute */
       else if(param->word)
         n = expand_arg(param->word, nptr, flags);
+
       break;
     }
     /* if parameter unset (or null) then expand word to it and substitute paramter */
