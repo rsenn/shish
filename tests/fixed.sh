@@ -2536,8 +2536,16 @@ assert_equal "1" "$X119C" "bare set -o lists every option's current state, one p
 X119D=$(set +o | grep -c '^set [-+]o allexport$')
 assert_equal "1" "$X119D" "bare set +o lists every option as a reusable \"set -o\"/\"set +o\" line"
 
-X119E_STATUS=$(set -o this_is_not_a_real_option >/dev/null 2>&1; echo $?)
-assert_equal "1" "$X119E_STATUS" "set -o with an unknown name is an error, not silently ignored"
+## "set -o badname" is a special-built-in utility error, which POSIX
+## requires to kill a non-interactive shell outright (2.8.1,
+## "Consequences of Shell Errors": "Special built-in utility error"
+## -> shell shall exit); dash matches this exactly. That means the
+## subshell below dies right at the "set" line -- no later command in
+## it, including a trailing "echo $?", ever runs -- so the only way to
+## observe the failure is the subshell's own exit status, not
+## something it prints afterward.
+X119E_STATUS=$( (set -o this_is_not_a_real_option >/dev/null 2>&1); echo $? )
+assert_match "$X119E_STATUS" "[1-9]*" "set -o with an unknown name is an error, not silently ignored"
 
 ## fixes/120 (set-dashdash-with-no-operands-prints-everything,
 ## set-bare-dash-not-consumed): two small, unrelated builtin_set.c
