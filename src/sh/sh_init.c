@@ -7,6 +7,7 @@
 #include "../var.h"
 #include "../debug.h"
 #include "../../lib/windoze.h"
+#include "builtin_config.h"
 
 #if !WINDOWS_NATIVE
 #include <unistd.h>
@@ -43,6 +44,11 @@ sh_init(void) {
 
   /* set PPID to parent process id */
   var_setvint("PPID", getppid(), 0);
+
+#ifdef BUILTIN_GETOPTS
+  /* POSIX: "Whenever the shell is invoked, OPTIND shall be initialized to 1." */
+  var_setvint("OPTIND", 1, 0);
+#endif
 
   /* initialize variables if they're not set */
   var_import("PS1=\\s-\\v:\\w \\$ ", V_INIT, &sh_ps1);

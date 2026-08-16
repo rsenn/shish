@@ -3489,4 +3489,68 @@ assert_equal "1" "$?" "shift with n > \$# must still exit with status 1"
 SHIFT101_ARGS=$(set -- a b; shift 5 2>/dev/null; echo "$#:$*")
 assert_equal "2:a b" "$SHIFT101_ARGS" "shift with n > \$# must leave the positional parameters unchanged"
 
+## fixes/102: getopts diverged from POSIX in several ways:
+## - $OPTIND was never initialized at shell startup (POSIX: "Whenever
+##   the shell is invoked, OPTIND shall be initialized to 1"), so a
+##   script reading it before the first getopts call saw it unset.
+## - the "arg..." form ("getopts optstring name arg...", parsing the
+##   given operands instead of $1..) was off by one: it included the
+##   'name' operand itself as the first argument to parse, so this
+##   form never actually worked.
+## - getopts' own persistent parser state ignored $OPTIND entirely
+##   once set: manually resetting OPTIND=1 (the POSIX-documented way
+##   to restart parsing) had no effect, since only the internal
+##   struct optstate, never re-synced from the variable, drove
+##   parsing.
+## - a leading ':' in optstring (silent error reporting) wasn't
+##   implemented at all: OPTARG was never set to the offending option
+##   character, and diagnostics couldn't be suppressed.
+## - exit status was wrong (2, not 0) whenever an unknown option was
+##   returned -- POSIX only wants a non-zero exit once the end of
+##   options is reached -- and 'name' was set to the offending option
+##   letter instead of '?'/':' on errors, or left unset (instead of
+##   '?') once options were exhausted.
+## - $OPTIND lagged by one call: it kept pointing at the argument just
+##   consumed instead of the next one to process, once that argument
+##   had no characters left in it (shell_getopt_r() only advanced past
+##   a fully-consumed argv element on the *following* call).
+## Fixed across src/sh/sh_init.c, src/builtin/builtin_getopts.c, and
+## lib/shell/shell_getopt.c (the last one is shared by every other
+## builtin using shell_getopt(), but they only ever check the final
+## post-loop position, never an intermediate value, so advancing
+## eagerly doesn't affect them).
+if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+  GETOPTS102_OPTIND=$("$SHISH_SELF" -c 'echo $OPTIND')
+  assert_equal "1" "$GETOPTS102_OPTIND" "OPTIND must be initialized to 1 when the shell is invoked"
+
+  GETOPTS102_EXPORTED=$("$SHISH_SELF" -c 'getopts a: o -a arg; export -p' | grep -c OPTIND)
+  assert_equal "0" "$GETOPTS102_EXPORTED" "OPTIND must not be exported by default"
+fi
+
+GETOPTS102_ARGFORM=$(getopts ab:c o -a -b arg -c && printf '1[%s]' "$o"
+  getopts ab:c o -a -b arg -c && printf '2[%s]' "$o"
+  getopts ab:c o -a -b arg -c && printf '3[%s]' "$o")
+assert_equal "1[a]2[b]3[c]" "$GETOPTS102_ARGFORM" "getopts must parse its own \"arg...\" operands, not the name operand"
+
+GETOPTS102_RESET=$(set -- -a -b
+  getopts ab o >/dev/null
+  getopts ab o >/dev/null
+  OPTIND=1
+  getopts ab o && printf '%s' "$o")
+assert_equal "a" "$GETOPTS102_RESET" "setting OPTIND=1 must restart option parsing"
+
+GETOPTS102_UNKNOWN_STATUS=$(getopts '' o -a 2>/dev/null; echo "$?:$o")
+assert_equal "0:?" "$GETOPTS102_UNKNOWN_STATUS" "exit status must be 0 and name '?' when an unknown option is found"
+
+GETOPTS102_SILENT=$(getopts :a: v -a; printf '%s|%s' "$v" "$OPTARG")
+assert_equal ":|a" "$GETOPTS102_SILENT" "a leading ':' in optstring must report a missing argument via name=':' and OPTARG=<opt>"
+
+GETOPTS102_END=$(getopts a x -a >/dev/null; getopts a x -a; printf '%s' "$x")
+assert_equal "?" "$GETOPTS102_END" "name must be set to '?', not left unset, once options are exhausted"
+
+GETOPTS102_OPTIND_ADV=$(set -- -a -b
+  getopts ab o >/dev/null; printf '%s' "$OPTIND"
+  getopts ab o >/dev/null; printf ':%s' "$OPTIND")
+assert_equal "2:3" "$GETOPTS102_OPTIND_ADV" "OPTIND must already point past a fully-consumed option by the time getopts returns"
+
 summary

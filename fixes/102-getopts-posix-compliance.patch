@@ -1,0 +1,160 @@
+diff --git a/src/builtin/builtin_getopts.c b/src/builtin/builtin_getopts.c
+index 3d46834f..a9221d6f 100644
+--- a/src/builtin/builtin_getopts.c
++++ b/src/builtin/builtin_getopts.c
+@@ -3,6 +3,7 @@
+ #include "../var.h"
+ #include "../exec.h"
+ #include "../../lib/str.h"
++#include "../../lib/scan.h"
+ #include "../../lib/shell.h"
+ 
+ struct optstate builtin_getopts_state = {0};
+@@ -49,22 +50,105 @@ builtin_getopts(int argc, char* argv[]) {
+     char** av;
+     int c;
+     int ret = 0;
++    /* a leading ':' in optstring is getopts' own convention (distinct
++       from shell_getopt_r's ':'-means-optional-argument one) asking
++       for silent error reporting: no diagnostics on stderr, and
++       OPTARG/name carry the offending option character instead */
++    int silent = optstring[0] == ':';
+ 
+     if(argc > 3) {
+-      ac = argc - 2;
+-      av = argv + 2;
++      ac = argc - 3;
++      av = argv + 3;
+     } else {
+       ac = sh->arg.c;
+       av = sh->arg.v;
+     }
+ 
+-    c = shell_getopt_r(&builtin_getopts_state, ac + 1, av - 1, optstring);
++    /* $OPTIND, not our persistent parser state, is the authoritative
++       next-argument index: POSIX lets a script reset it to 1 to
++       restart option parsing (over the same or new arguments), and
++       real-world scripts also reposition it to arbitrary values to
++       skip parsing ahead. Re-sync our state to it whenever it no
++       longer matches what we wrote back after the previous call --
++       setting it back to 0 (rather than 1) for a restart lets
++       shell_getopt_r() run its own first-call initialization
++       (prefix/optstring setup) instead of us half-repeating it here. */
++    {
++      const char* v;
++      size_t offset;
++      unsigned int cur_optind;
++
++      if((v = var_get("OPTIND", &offset)) && scan_uint(&v[offset], &cur_optind) &&
++         cur_optind != (unsigned int)optind) {
++        optind = cur_optind <= 1 ? 0 : (int)cur_optind;
++        optofs = 0;
++        optopt = 0;
++        optarg = 0;
++      }
++    }
++
++    {
++      /* shell_getopt_r()'s ind==0 sentinel always becomes 1 during
++         its own first-call init (see the resync block above, which
++         already relies on that same convention), before it even
++         looks at an option -- predict that so the "did this call
++         actually advance past its argv element" check below isn't
++         fooled by the init bump on a getopts call that's the very
++         first one ever made */
++      int ind_before = optind == 0 ? 1 : optind;
++
++      c = shell_getopt_r(&builtin_getopts_state, ac + 1, av - 1, optstring);
++
++      /* shell_getopt_r() defers advancing past a plain boolean flag's
++         argv element (no ':' in optstring) in case more flags follow
++         in the same "-vf"-style cluster; optind not moving at all
++         during the call above is exactly that case. If nothing is
++         left in that element either, finish the advance ourselves
++         right now (both are otherwise-untouched updates -- ofs=0,
++         ind+1 -- shell_getopt_r would apply lazily on the *next*
++         call's "end of argument" check anyway, so doing it here
++         changes nothing about how parsing continues) so $OPTIND
++         already names the next element to process by the time this
++         call returns, matching bash/dash, instead of lagging by one
++         call. */
++      if(c > 0 && optind == ind_before) {
++        char* cur = av[optind - 1];
++
++        if(cur && cur[optofs + 1] == '\0') {
++          optind++;
++          optofs = 0;
++        }
++      }
++    }
++
+     var_unset("OPTARG");
+ 
+     switch(c) {
+-      case '?': ret = 2; break;
+       case -1: ret = 1; break;
+ 
++      case '?':
++        if(silent) {
++          char ch = optopt;
++          var_setv("OPTARG", &ch, 1, V_LOCAL);
++        } else {
++          char optchars[2] = {'-', (char)optopt};
++          builtin_errmsgn(argv, optchars, 2, "illegal option");
++        }
++        break;
++
++      case ':':
++        if(silent) {
++          char ch = optopt;
++          var_setv("OPTARG", &ch, 1, V_LOCAL);
++        } else {
++          char optchars[2] = {'-', (char)optopt};
++          builtin_errmsgn(argv, optchars, 2, "option requires an argument");
++          /* non-silent mode reports a missing argument the same way
++             as an unknown option: name='?', no OPTARG */
++          c = '?';
++        }
++        break;
++
+       default:
+         if(optarg)
+           var_setv("OPTARG", optarg, str_len(optarg), V_LOCAL);
+@@ -72,11 +156,9 @@ builtin_getopts(int argc, char* argv[]) {
+         break;
+     }
+ 
+-    if(c != -1) {
+-      char ch = optopt;
++    {
++      char ch = c == -1 ? '?' : c;
+       var_setv(name, &ch, 1, V_LOCAL);
+-    } else {
+-      var_unset(name);
+     }
+ 
+     var_setvint("OPTIND", optind, V_LOCAL);
+diff --git a/src/sh/sh_init.c b/src/sh/sh_init.c
+index a3c10be9..56648b03 100644
+--- a/src/sh/sh_init.c
++++ b/src/sh/sh_init.c
+@@ -7,6 +7,7 @@
+ #include "../var.h"
+ #include "../debug.h"
+ #include "../../lib/windoze.h"
++#include "builtin_config.h"
+ 
+ #if !WINDOWS_NATIVE
+ #include <unistd.h>
+@@ -44,6 +45,11 @@ sh_init(void) {
+   /* set PPID to parent process id */
+   var_setvint("PPID", getppid(), 0);
+ 
++#ifdef BUILTIN_GETOPTS
++  /* POSIX: "Whenever the shell is invoked, OPTIND shall be initialized to 1." */
++  var_setvint("OPTIND", 1, 0);
++#endif
++
+   /* initialize variables if they're not set */
+   var_import("PS1=\\s-\\v:\\w \\$ ", V_INIT, &sh_ps1);
+   var_import("PS2=> ", V_INIT, &sh_ps2);

@@ -293,20 +293,6 @@
   # Run: sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix async-p.tst
   ```
 
-- getopts-many-failures: `getopts` has failures in OPTARG setting,
-  operand variable update, option grouping after single hyphen,
-  double hyphen separation, OPTIND tracking, and error messages.
-  18 failures in `getopts-p.tst` (13/31). The basic single-option
-  parsing works, but multi-option and edge cases are broken.
-  `builtin_getopts.c`. `getopts-p.tst:19-238`.
-
-  **Repro:**
-  ```sh
-  # Run the getopts conformance test
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix getopts-p.tst
-  # 18 failures in multi-option and edge cases
-  ```
-
 - cd-cdpath-and-error-handling-broken: `cd` doesn't search `CDPATH`
   correctly (or at all), doesn't set `OLDPWD`, doesn't canonicalize
   pathnames, and doesn't properly report errors for non-directory
