@@ -27,7 +27,7 @@
 # The exit status is zero unless a critical error occurs. Failure of test cases
 # does not cause the script to return non-zero.
 
-set -Ceu
+set -C #eu
 umask u+rwx
 
 ##### Some utility functions and aliases

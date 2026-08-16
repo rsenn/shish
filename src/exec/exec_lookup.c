@@ -13,6 +13,7 @@ exec_lookup(char* name, uint32* hashptr) {
       if(!str_diff(entry->name, name)) {
         if(hashptr)
           *hashptr = hash;
+        
         return entry;
       }
     }

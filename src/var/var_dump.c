@@ -11,15 +11,8 @@ void
 var_dump(struct var* var) {
   char numbuf[FMT_XLONG * 2];
   size_t n;
-
   static const int width = 16;
-  /* var struct address */
-  /*n = fmt_xlonglong(numbuf, (size_t)var);
-  buffer_putnc(fd_out->w, '0', sizeof(var) * 2 - n);
-  buffer_put(fd_out->w, numbuf, n);
-  buffer_putspace(fd_out->w);
 
-  buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(19));*/
   /* variable name */
   if(var->len > width) {
     buffer_put(fd_out->w, var->sa.s, (width - 3));

@@ -16,5 +16,6 @@ var_valid(const char* v) {
     if(!parse_isname(v[i], i))
       return 0;
   }
+  
   return 1;
 }

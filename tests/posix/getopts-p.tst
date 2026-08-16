@@ -29,7 +29,7 @@ __IN__
 3[c]
 __OUT__
 
-test_x -e 0 'exit status is zero after option is parsed' -e
+test_x -e 0 'exit status is zero after option is parsed'
 getopts ab:c o -a -b arg -c
 getopts ab:c o -a -b arg -c
 getopts ab:c o -a -b arg -c
@@ -84,7 +84,7 @@ __IN__
 [a]
 __OUT__
 
-test_E 'no error message on unknown option (with :)'
+test_x 'no error message on unknown option (with :)'
 getopts : o -a
 __IN__
 
