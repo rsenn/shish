@@ -1,0 +1,61 @@
+diff --git a/src/builtin/builtin_chmod.c b/src/builtin/builtin_chmod.c
+index a12dd663..70f217ab 100644
+--- a/src/builtin/builtin_chmod.c
++++ b/src/builtin/builtin_chmod.c
+@@ -92,11 +92,21 @@ chmod_symbolic(const char* spec, unsigned int* mode, int is_dir) {
+    errors are not reported (but still counted in the return value),
+    and processing continues into sibling entries either way -- only
+    the caller's per-argument loop stops early without force.
+- * ----------------------------------------------------------------------- */
++
++   'toplevel' distinguishes a file operand given directly on the
++   command line from an entry found while recursing into a directory.
++   A symlink that is merely encountered during recursion is left
++   untouched entirely (chmod(2) has no way to change a symlink's own
++   mode, and there's no reason to affect -- or fail on -- whatever it
++   points to just because it happened to be sitting in a directory
++   being recursed through); this also sidesteps a dangling symlink
++   found that way, matching GNU chmod. A symlink named directly as a
++   file operand is still dereferenced and chmoded as before, so a
++   dangling symlink given explicitly is still reported as an error. */
+ static int
+ chmod_path(char* argv[], stralloc* path, char* spec, int symbolic,
+            unsigned int octal_mode, int recursive, int force, int verbose,
+-           int changes) {
++           int changes, int toplevel) {
+   struct stat lst, st;
+   unsigned int old_mode, mode;
+   int ret = 0;
+@@ -107,6 +117,14 @@ chmod_path(char* argv[], stralloc* path, char* spec, int symbolic,
+     return 1;
+   }
+ 
++  if(!toplevel && S_ISLNK(lst.st_mode)) {
++    if(verbose) {
++      buffer_putm_internal(fd_out->w, "neither symbolic link '", path->s, "' nor referent has been changed", 0);
++      buffer_putnlflush(fd_out->w);
++    }
++    return 0;
++  }
++
+   if(stat(path->s, &st) == -1) {
+     if(!force)
+       builtin_error(argv, path->s);
+@@ -151,7 +169,7 @@ chmod_path(char* argv[], stralloc* path, char* spec, int symbolic,
+       stralloc_cats(path, de->d_name);
+       stralloc_nul(path);
+ 
+-      if(chmod_path(argv, path, spec, symbolic, octal_mode, recursive, force, verbose, changes))
++      if(chmod_path(argv, path, spec, symbolic, octal_mode, recursive, force, verbose, changes, 0))
+         ret = 1;
+     }
+ 
+@@ -215,7 +233,7 @@ builtin_chmod(int argc, char* argv[]) {
+     stralloc_copys(&path, p);
+     stralloc_nul(&path);
+ 
+-    if(chmod_path(argv, &path, spec, symbolic, octal_mode, recursive, force, verbose, changes)) {
++    if(chmod_path(argv, &path, spec, symbolic, octal_mode, recursive, force, verbose, changes, 1)) {
+       failed = 1;
+ 
+       if(!force) {

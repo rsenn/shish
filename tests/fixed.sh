@@ -3448,4 +3448,31 @@ assert_equal "for" "$CMD_V_FOR" "command -v must recognize reserved word 'for'"
 CMD_V_WHILE=$(command -v while)
 assert_equal "while" "$CMD_V_WHILE" "command -v must recognize reserved word 'while'"
 
+## fixes/100: chmod -R aborted the whole operation with "No such file or
+## directory" as soon as it hit a symlink encountered while recursing
+## into a directory -- it stat()ed (dereferencing) and chmod()ed every
+## entry unconditionally, so a dangling symlink (or even a valid one,
+## once the dangling case was fixed to not stat() at all) made the
+## traversal fail instead of being left untouched, unlike GNU chmod
+## ("neither symbolic link 'x' nor referent has been changed"). Fixed
+## by adding a 'toplevel' flag to chmod_path(): a symlink found via
+## readdir() during recursion is now skipped entirely (no stat()/
+## chmod() attempted), while a symlink named directly as a file
+## operand is still dereferenced and chmoded as before, so an
+## explicitly-given dangling symlink is still reported as an error.
+##
+## Not exercisable through this default ctest build: chmod is an
+## EXTRA_BUILTINS entry, off by default (BUILTIN_CHMOD=0), so "chmod"
+## here resolves to the system PATH binary, which doesn't have this
+## bug in the first place -- a test running against it would pass
+## whether or not the fix is present, so it wouldn't actually be
+## testing anything (same situation as fixes/40). Verified instead by
+## building a separate tree with -DENABLE_CHMOD=ON and confirming:
+## "chmod -R -v a+rX dir" over a directory containing a dangling
+## symlink now succeeds (exit 0), prints "neither symbolic link 'dir/x'
+## nor referent has been changed" for it while still applying the mode
+## to real files/directories alongside it, and a dangling symlink
+## given directly as a file operand (not found via recursion) still
+## fails with "No such file or directory", matching GNU chmod.
+
 summary
