@@ -1,0 +1,418 @@
+diff --git a/BUGS b/BUGS
+index f67108e1..045c1bb1 100644
+--- a/BUGS
++++ b/BUGS
+@@ -486,36 +486,26 @@
+   # prints "." forever instead of once; ^C to stop
+   ```
+ 
+-- wasm-buffer-op-signature-mismatch: on the Emscripten/WASM build,
+-  any buffer whose op is the real read()/write() (not a mmap or
+-  string-backed buffer) traps at runtime with "RuntimeError: function
+-  signature mismatch" the first time it's actually invoked.
+-  `lib/buffer.h` declares `buffer_op_proto` as a 4-arg function type
+-  (`ssize_t(int fd, void* buf, size_t len, void* arg)`), but every
+-  call site installing the real `read()`/`write()` (3-arg) as that op
+-  -- `fd_init.c`, `fd_setfd.c`, and others -- does
+-  `(buffer_op_proto*)(void*)&read`, a function-pointer cast across a
+-  mismatched signature. `lib/buffer/buffer_stubborn2.c:18` then calls
+-  it as `(*op)(fd, buf, len, ptr)`, passing all 4 args. Native
+-  platforms silently tolerate the extra argument (the C ABI just
+-  ignores it); WebAssembly's `call_indirect` enforces an exact type
+-  match on every indirect call and traps otherwise. Found while
+-  testing the `cfg-emscripten` build with `-DUSE_MMAP=OFF` (the first
+-  build to exercise a plain read()-based buffer for script-loading on
+-  that target), but not caused by `USE_MMAP` -- the same trap almost
+-  certainly also hits `USE_MMAP=ON` the moment anything writes to
+-  stdout (`write` is cast the same way), which matches the "memory
+-  access out of bounds"/similar runtime errors seen when first
+-  loading `shish.html` in a browser.
++- wasm-mmap-memory-access-out-of-bounds: on the Emscripten/WASM build
++  with `USE_MMAP=ON` (the default), running any script traps at
++  runtime with "RuntimeError: memory access out of bounds" -- distinct
++  from, and not fixed by, the buffer_op_proto signature-mismatch fix
++  in fixes/182 (confirmed separately: the same script runs cleanly
++  under a `USE_MMAP=OFF` build of the same commit). Not yet
++  root-caused; likely something in the mmap-emulation path
++  (`lib/mmap/*.c` / `lib/buffer/buffer_mmapread*.c`) that assumes real
++  kernel mmap semantics Emscripten's emulated `mmap()` doesn't provide.
++  `-DUSE_MMAP=OFF` is the current workaround for running shish in a
++  browser.
+ 
+   **Repro:**
+   ```sh
+   . ./cfg-cmake.sh
+   export EMSCRIPTEN="$EMSDK/upstream/emscripten"
+   export PATH="$EMSCRIPTEN:$PATH"
+-  cfg-emscripten -DUSE_MMAP=OFF
++  cfg-emscripten
+   cmake --build build/emscripten
+   # serve build/emscripten/shish.{html,js,wasm} over http://, open in
+   # a browser, run any script (e.g. "echo hi") -- traps with
+-  # "RuntimeError: function signature mismatch" instead of running
++  # "RuntimeError: memory access out of bounds" instead of running
+   ```
+diff --git a/lib/buffer.h b/lib/buffer.h
+index 530da63d..08cb3cfd 100644
+--- a/lib/buffer.h
++++ b/lib/buffer.h
+@@ -32,6 +32,13 @@ typedef struct buffer {
+ #define BUFFER_INSIZE 65535
+ #define BUFFER_OUTSIZE 32768
+ 
++/* buffer_op_proto-conforming wrappers around read(2)/write(2) -- use
++ * these instead of casting &read/&write directly, since that cast is
++ * across a mismatched signature (buffer_op_sys has 3 args, not 4) and
++ * traps under WebAssembly's call_indirect. */
++ssize_t buffer_op_read(int fd, void* buf, size_t len, void* arg);
++ssize_t buffer_op_write(int fd, void* buf, size_t len, void* arg);
++
+ void buffer_init(buffer*, buffer_op_proto*, int fd, char* y, size_t ylen);
+ void buffer_free(buffer* buf);
+ void buffer_munmap(buffer* buf);
+diff --git a/lib/buffer/buffer_dump.c b/lib/buffer/buffer_dump.c
+index 48a51b35..4883ae26 100644
+--- a/lib/buffer/buffer_dump.c
++++ b/lib/buffer/buffer_dump.c
+@@ -2,12 +2,6 @@
+ #include "../buffer.h"
+ #include "../fmt.h"
+ 
+-#ifdef _WIN32
+-#include <io.h>
+-#else
+-#include <unistd.h>
+-#endif
+-
+ extern unsigned long stralloc_write();
+ 
+ void
+@@ -62,9 +56,9 @@ buffer_dump(buffer* out, buffer* b) {
+   buffer_puts(out, ", op=");
+   /* buffer_putspace(out); */
+ 
+-  if((void*)b->op == (void*)&read)
++  if((void*)b->op == (void*)&buffer_op_read)
+     buffer_puts(out, "<read>");
+-  else if((void*)b->op == (void*)&write)
++  else if((void*)b->op == (void*)&buffer_op_write)
+     buffer_puts(out, "<write>");
+   else if((void*)b->op == (void*)&buffer_dummyreadmmap)
+     buffer_puts(out, "<mmap>");
+diff --git a/lib/buffer/buffer_putflush.c b/lib/buffer/buffer_putflush.c
+index 01536096..b71c9ce5 100644
+--- a/lib/buffer/buffer_putflush.c
++++ b/lib/buffer/buffer_putflush.c
+@@ -29,7 +29,7 @@ buffer_putflush(buffer* b, const char* x, size_t len) {
+   if(!b->p) /* if the buffer is empty, just call buffer_stubborn directly */
+     return buffer_stubborn(b->op, b->fd, x, len, b);
+ #if !defined(_DEBUG) && !WINDOWS_NATIVE && defined(HAVE_WRITEV)
+-  if(b->op == (buffer_op_proto*)&write) {
++  if(b->op == &buffer_op_write) {
+     struct iovec v[2];
+     ssize_t w;
+     size_t cl = b->p + len;
+diff --git a/lib/buffer/buffer_truncfile.c b/lib/buffer/buffer_truncfile.c
+index 4990e130..b540d211 100644
+--- a/lib/buffer/buffer_truncfile.c
++++ b/lib/buffer/buffer_truncfile.c
+@@ -27,7 +27,7 @@ buffer_truncfile(buffer* b, const char* fn) {
+   b->n = 0;
+   b->a = BUFFER_OUTSIZE;
+   b->x = alloc(b->a);
+-  b->op = (buffer_op_proto*)(void*)&write;
++  b->op = &buffer_op_write;
+   b->deinit = buffer_free;
+   return 0;
+ }
+diff --git a/src/builtin/builtin_cat.c b/src/builtin/builtin_cat.c
+index 11133310..57a8d980 100644
+--- a/src/builtin/builtin_cat.c
++++ b/src/builtin/builtin_cat.c
+@@ -5,7 +5,6 @@
+ #include "../../lib/fmt.h"
+ #include "../../lib/str.h"
+ #include "../../lib/open.h"
+-#include <unistd.h>
+ 
+ /* output stuff
+  * ----------------------------------------------------------------------- */
+@@ -64,7 +63,7 @@ builtin_cat(int argc, char* argv[]) {
+           break;
+         }
+ 
+-        buffer_init(in, (buffer_op_proto*)(void*)&read, rfd, rbuf, sizeof(rbuf));
++        buffer_init(in, &buffer_op_read, rfd, rbuf, sizeof(rbuf));
+       }
+     }
+ 
+diff --git a/src/debug/debug_begin.c b/src/debug/debug_begin.c
+index 927b21d8..be73d010 100644
+--- a/src/debug/debug_begin.c
++++ b/src/debug/debug_begin.c
+@@ -1,13 +1,8 @@
+ #define DEBUG_NOCOLOR 1
+ #include "../debug.h"
+-#if WINDOWS_NATIVE
+-#include <io.h>
+-#else
+-#include <unistd.h>
+-#endif
+ 
+ char debug_b[1024];
+-buffer debug_buffer = BUFFER_INIT(&write, -1, debug_b, sizeof(debug_b));
++buffer debug_buffer = BUFFER_INIT(&buffer_op_write, -1, debug_b, sizeof(debug_b));
+ buffer* debug_output = &debug_buffer;
+ 
+ #if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
+diff --git a/src/fd/fd_init.c b/src/fd/fd_init.c
+index 2988cfe7..bac48529 100644
+--- a/src/fd/fd_init.c
++++ b/src/fd/fd_init.c
+@@ -1,12 +1,6 @@
+ #include "../fd.h"
+ #include "../fdtable.h"
+ #include "../sh.h"
+-#include "../../lib/windoze.h"
+-#if WINDOWS_NATIVE
+-#include <io.h>
+-#else
+-#include <unistd.h>
+-#endif
+ 
+ /* initialize an (fd) struct by setting the defaults to all members
+  *
+@@ -26,6 +20,6 @@ fd_init(struct fd* d, int n, int mode) {
+   d->r = &d->rb;
+   d->w = &d->wb;
+ 
+-  buffer_init(d->r, (buffer_op_proto*)(void*)&read, d->e, NULL, 0);
+-  buffer_init(d->w, (buffer_op_proto*)(void*)&write, d->e, NULL, 0);
++  buffer_init(d->r, &buffer_op_read, d->e, NULL, 0);
++  buffer_init(d->w, &buffer_op_write, d->e, NULL, 0);
+ }
+diff --git a/src/fd/fd_reinit.c b/src/fd/fd_reinit.c
+index 7216e877..e5ec571b 100644
+--- a/src/fd/fd_reinit.c
++++ b/src/fd/fd_reinit.c
+@@ -1,12 +1,6 @@
+ #include "../fd.h"
+ #include "../../lib/buffer.h"
+ #include "../../lib/shell.h"
+-#include "../../lib/windoze.h"
+-#if WINDOWS_NATIVE
+-#include <io.h>
+-#else
+-#include <unistd.h>
+-#endif
+ 
+ /* reinitialize an (fd) struct
+  *
+@@ -35,8 +29,8 @@ fd_reinit(struct fd* d, int mode) {
+   d->r = &d->rb;
+   d->w = &d->wb;
+ 
+-  buffer_default(&d->rb, (buffer_op_fn*)(void*)&read);
+-  buffer_default(&d->wb, (buffer_op_fn*)(void*)&write);
++  buffer_default(&d->rb, (buffer_op_fn*)&buffer_op_read);
++  buffer_default(&d->wb, (buffer_op_fn*)&buffer_op_write);
+ 
+   return d;
+ }
+diff --git a/src/fd/fd_setfd.c b/src/fd/fd_setfd.c
+index 33c748c9..3a4d9781 100644
+--- a/src/fd/fd_setfd.c
++++ b/src/fd/fd_setfd.c
+@@ -4,12 +4,6 @@
+ #include "../../lib/buffer.h"
+ #include "../fdstack.h"
+ #include <assert.h>
+-#include "../../lib/windoze.h"
+-#if WINDOWS_NATIVE
+-#include <io.h>
+-#else
+-#include <unistd.h>
+-#endif
+ 
+ /* initialize (fd) from file descriptor
+  * ----------------------------------------------------------------------- */
+@@ -20,13 +14,13 @@ fd_setfd(struct fd* d, int e) {
+ 
+   /* set the file descriptors on the buffers */
+   if(FD_ISRD(d)) {
+-    buffer_default(&d->rb, (buffer_op_fn*)(void*)&read);
++    buffer_default(&d->rb, (buffer_op_fn*)&buffer_op_read);
+     d->rb.fd = e;
+     d->r = &d->rb;
+   }
+ 
+   if(FD_ISWR(d)) {
+-    buffer_default(&d->wb, (buffer_op_fn*)(void*)&write);
++    buffer_default(&d->wb, (buffer_op_fn*)&buffer_op_write);
+     d->wb.fd = e;
+     d->w = &d->wb;
+   }
+diff --git a/src/fdstack/fdstack_pipe.c b/src/fdstack/fdstack_pipe.c
+index cdc13cae..9d956fa9 100644
+--- a/src/fdstack/fdstack_pipe.c
++++ b/src/fdstack/fdstack_pipe.c
+@@ -1,13 +1,7 @@
+ #include "../../lib/uint64.h"
+ #include "../../lib/buffer.h"
+-#include "../../lib/windoze.h"
+ #include "../fdstack.h"
+ #include "../debug.h"
+-#if WINDOWS_NATIVE
+-#include <io.h>
+-#else
+-#include <unistd.h>
+-#endif
+ 
+ /* establishs pipes across parent/child for stralloc fds
+  * ----------------------------------------------------------------------- */
+@@ -42,7 +36,7 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
+         /* wire the read end back to "fd" itself, the struct our scan
+            matched -- not "fds->parent", which may be an unrelated fd
+            already shadowing this slot. */
+-        buffer_init(&fd->rb, (buffer_op_proto*)(void*)&read, e, NULL, 0);
++        buffer_init(&fd->rb, &buffer_op_read, e, NULL, 0);
+ 
+         /* fd->r stays pointed at &fd->rb: fdstack_data() reads via
+            fd->rb.fd directly (bypassing buffer_get()), but
+diff --git a/src/fdtable/fdtable_here.c b/src/fdtable/fdtable_here.c
+index de2b2561..9c645567 100644
+--- a/src/fdtable/fdtable_here.c
++++ b/src/fdtable/fdtable_here.c
+@@ -61,8 +61,8 @@ fdtable_here(struct fd* d, int flags) {
+ 
+   /* initialize the read buffer so we can read from
+      the tempfile and destroy the write buffer */
+-  buffer_init(&d->rb, (buffer_op_proto*)(void*)&read, e, NULL, 0);
+-  buffer_init(&d->wb, (buffer_op_proto*)(void*)&write, -1, NULL, 0);
++  buffer_init(&d->rb, &buffer_op_read, e, NULL, 0);
++  buffer_init(&d->wb, &buffer_op_write, -1, NULL, 0);
+ 
+   /* its now not longer a stralloc :) */
+   d->mode = (d->mode & FD_FREE) | FD_READ;
+diff --git a/src/history/history_add.c b/src/history/history_add.c
+index b4f211a2..48dce57c 100644
+--- a/src/history/history_add.c
++++ b/src/history/history_add.c
+@@ -26,7 +26,7 @@ history_file_append(const stralloc* line) {
+   b.p = b.n = 0;
+   b.a = 0;
+   b.x = NULL;
+-  b.op = (buffer_op_proto*)(void*)&write;
++  b.op = &buffer_op_write;
+   b.deinit = NULL;
+   b.cookie = NULL;
+ 
+diff --git a/src/sh/sh_fmt.c b/src/sh/sh_fmt.c
+index 7615d375..e3501deb 100644
+--- a/src/sh/sh_fmt.c
++++ b/src/sh/sh_fmt.c
+@@ -165,7 +165,7 @@ main(int argc, char** argv, char** envp) {
+ 
+   parse_init(&p, P_COMMENT);
+ 
+-  buffer_init(&out_buf, (buffer_op_proto*)(void*)&write, out_fd, alloca(1024), 1024);
++  buffer_init(&out_buf, &buffer_op_write, out_fd, alloca(1024), 1024);
+ 
+   while(!(((tok = parse_gettok(&p, P_DEFAULT)) & T_EOF))) {
+     union node* list;
+diff --git a/src/sh/sh_parse2ast.c b/src/sh/sh_parse2ast.c
+index 79c9adbf..5bae0e6d 100644
+--- a/src/sh/sh_parse2ast.c
++++ b/src/sh/sh_parse2ast.c
+@@ -169,7 +169,7 @@ main(int argc, char** argv, char** envp) {
+ 
+   parse_init(&p, P_DEFAULT);
+ 
+-  buffer_init(&out_buf, (buffer_op_proto*)(void*)&write, out_fd, alloca(1024), 1024);
++  buffer_init(&out_buf, &buffer_op_write, out_fd, alloca(1024), 1024);
+   {
+     int n;
+     union node *script = 0, **nptr;
+diff --git a/src/term/term_init.c b/src/term/term_init.c
+index 17e776e8..c7079fb4 100644
+--- a/src/term/term_init.c
++++ b/src/term/term_init.c
+@@ -19,7 +19,7 @@ unsigned long term_pos;
+ int term_insert = 1;
+ int term_dumb = 1;
+ char term_obuf[128];
+-static buffer term_default_output = BUFFER_INIT(&write, 1, term_obuf, sizeof(term_obuf));
++static buffer term_default_output = BUFFER_INIT(&buffer_op_write, 1, term_obuf, sizeof(term_obuf));
+ 
+ buffer* term_output = 0; //&term_default_output;
+ 
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index d89ca094..214ac5e6 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -3770,4 +3770,17 @@ if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+   rm -rf "$MT181_DIR" "$MT181_CWD"
+ fi
+ 
++## fixes/182 (wasm-buffer-op-signature-mismatch): lib/buffer.h's
++## buffer_op_proto is a 4-arg function type, but every call site
++## installing the real read()/write() (3-arg) as a buffer's op cast
++## across that mismatch instead of going through a same-signature
++## wrapper. Native platforms tolerate the extra argument; WebAssembly's
++## call_indirect enforces an exact type match and traps. This only
++## reproduces under an Emscripten/WASM build, a target not built or run
++## natively by this test suite, so there's no assertion to add here --
++## verified instead by building with "cfg-emscripten -DUSE_MMAP=OFF",
++## serving the resulting shish.{html,js,wasm}, and confirming
++## "echo hi" no longer traps with "RuntimeError: function signature
++## mismatch" in-browser.
++
+ summary
+diff --git a/lib/buffer/buffer_op_read.c b/lib/buffer/buffer_op_read.c
+new file mode 100644
+index 00000000..48b33eea
+--- /dev/null
++++ b/lib/buffer/buffer_op_read.c
+@@ -0,0 +1,18 @@
++#include "../windoze.h"
++#include "../buffer.h"
++
++#if WINDOWS_NATIVE
++#include <io.h>
++#else
++#include <unistd.h>
++#endif
++
++/* wraps read(2) (3 args) to match buffer_op_proto (4 args) exactly --
++ * unlike a raw (buffer_op_proto*)&read cast, calling through this
++ * pointer is well-defined C rather than UB, and WebAssembly's
++ * call_indirect (which enforces an exact signature match) accepts it. */
++ssize_t
++buffer_op_read(int fd, void* buf, size_t len, void* arg) {
++  (void)arg;
++  return read(fd, buf, len);
++}
+diff --git a/lib/buffer/buffer_op_write.c b/lib/buffer/buffer_op_write.c
+new file mode 100644
+index 00000000..905c20ac
+--- /dev/null
++++ b/lib/buffer/buffer_op_write.c
+@@ -0,0 +1,18 @@
++#include "../windoze.h"
++#include "../buffer.h"
++
++#if WINDOWS_NATIVE
++#include <io.h>
++#else
++#include <unistd.h>
++#endif
++
++/* wraps write(2) (3 args) to match buffer_op_proto (4 args) exactly --
++ * unlike a raw (buffer_op_proto*)&write cast, calling through this
++ * pointer is well-defined C rather than UB, and WebAssembly's
++ * call_indirect (which enforces an exact signature match) accepts it. */
++ssize_t
++buffer_op_write(int fd, void* buf, size_t len, void* arg) {
++  (void)arg;
++  return write(fd, buf, len);
++}

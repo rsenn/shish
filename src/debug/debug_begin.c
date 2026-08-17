@@ -1,13 +1,8 @@
 #define DEBUG_NOCOLOR 1
 #include "../debug.h"
-#if WINDOWS_NATIVE
-#include <io.h>
-#else
-#include <unistd.h>
-#endif
 
 char debug_b[1024];
-buffer debug_buffer = BUFFER_INIT(&write, -1, debug_b, sizeof(debug_b));
+buffer debug_buffer = BUFFER_INIT(&buffer_op_write, -1, debug_b, sizeof(debug_b));
 buffer* debug_output = &debug_buffer;
 
 #if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)

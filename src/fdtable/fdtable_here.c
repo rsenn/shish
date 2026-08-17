@@ -61,8 +61,8 @@ fdtable_here(struct fd* d, int flags) {
 
   /* initialize the read buffer so we can read from
      the tempfile and destroy the write buffer */
-  buffer_init(&d->rb, (buffer_op_proto*)(void*)&read, e, NULL, 0);
-  buffer_init(&d->wb, (buffer_op_proto*)(void*)&write, -1, NULL, 0);
+  buffer_init(&d->rb, &buffer_op_read, e, NULL, 0);
+  buffer_init(&d->wb, &buffer_op_write, -1, NULL, 0);
 
   /* its now not longer a stralloc :) */
   d->mode = (d->mode & FD_FREE) | FD_READ;

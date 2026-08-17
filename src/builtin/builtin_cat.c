@@ -5,7 +5,6 @@
 #include "../../lib/fmt.h"
 #include "../../lib/str.h"
 #include "../../lib/open.h"
-#include <unistd.h>
 
 /* output stuff
  * ----------------------------------------------------------------------- */
@@ -64,7 +63,7 @@ builtin_cat(int argc, char* argv[]) {
           break;
         }
 
-        buffer_init(in, (buffer_op_proto*)(void*)&read, rfd, rbuf, sizeof(rbuf));
+        buffer_init(in, &buffer_op_read, rfd, rbuf, sizeof(rbuf));
       }
     }
 

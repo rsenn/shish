@@ -32,6 +32,13 @@ typedef struct buffer {
 #define BUFFER_INSIZE 65535
 #define BUFFER_OUTSIZE 32768
 
+/* buffer_op_proto-conforming wrappers around read(2)/write(2) -- use
+ * these instead of casting &read/&write directly, since that cast is
+ * across a mismatched signature (buffer_op_sys has 3 args, not 4) and
+ * traps under WebAssembly's call_indirect. */
+ssize_t buffer_op_read(int fd, void* buf, size_t len, void* arg);
+ssize_t buffer_op_write(int fd, void* buf, size_t len, void* arg);
+
 void buffer_init(buffer*, buffer_op_proto*, int fd, char* y, size_t ylen);
 void buffer_free(buffer* buf);
 void buffer_munmap(buffer* buf);

@@ -26,7 +26,7 @@ history_file_append(const stralloc* line) {
   b.p = b.n = 0;
   b.a = 0;
   b.x = NULL;
-  b.op = (buffer_op_proto*)(void*)&write;
+  b.op = &buffer_op_write;
   b.deinit = NULL;
   b.cookie = NULL;
 

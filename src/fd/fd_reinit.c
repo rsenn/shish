@@ -1,12 +1,6 @@
 #include "../fd.h"
 #include "../../lib/buffer.h"
 #include "../../lib/shell.h"
-#include "../../lib/windoze.h"
-#if WINDOWS_NATIVE
-#include <io.h>
-#else
-#include <unistd.h>
-#endif
 
 /* reinitialize an (fd) struct
  *
@@ -35,8 +29,8 @@ fd_reinit(struct fd* d, int mode) {
   d->r = &d->rb;
   d->w = &d->wb;
 
-  buffer_default(&d->rb, (buffer_op_fn*)(void*)&read);
-  buffer_default(&d->wb, (buffer_op_fn*)(void*)&write);
+  buffer_default(&d->rb, (buffer_op_fn*)&buffer_op_read);
+  buffer_default(&d->wb, (buffer_op_fn*)&buffer_op_write);
 
   return d;
 }

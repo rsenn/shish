@@ -2,12 +2,6 @@
 #include "../buffer.h"
 #include "../fmt.h"
 
-#ifdef _WIN32
-#include <io.h>
-#else
-#include <unistd.h>
-#endif
-
 extern unsigned long stralloc_write();
 
 void
@@ -62,9 +56,9 @@ buffer_dump(buffer* out, buffer* b) {
   buffer_puts(out, ", op=");
   /* buffer_putspace(out); */
 
-  if((void*)b->op == (void*)&read)
+  if((void*)b->op == (void*)&buffer_op_read)
     buffer_puts(out, "<read>");
-  else if((void*)b->op == (void*)&write)
+  else if((void*)b->op == (void*)&buffer_op_write)
     buffer_puts(out, "<write>");
   else if((void*)b->op == (void*)&buffer_dummyreadmmap)
     buffer_puts(out, "<mmap>");

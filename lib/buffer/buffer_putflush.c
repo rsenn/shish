@@ -29,7 +29,7 @@ buffer_putflush(buffer* b, const char* x, size_t len) {
   if(!b->p) /* if the buffer is empty, just call buffer_stubborn directly */
     return buffer_stubborn(b->op, b->fd, x, len, b);
 #if !defined(_DEBUG) && !WINDOWS_NATIVE && defined(HAVE_WRITEV)
-  if(b->op == (buffer_op_proto*)&write) {
+  if(b->op == &buffer_op_write) {
     struct iovec v[2];
     ssize_t w;
     size_t cl = b->p + len;

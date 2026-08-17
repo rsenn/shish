@@ -1,12 +1,6 @@
 #include "../fd.h"
 #include "../fdtable.h"
 #include "../sh.h"
-#include "../../lib/windoze.h"
-#if WINDOWS_NATIVE
-#include <io.h>
-#else
-#include <unistd.h>
-#endif
 
 /* initialize an (fd) struct by setting the defaults to all members
  *
@@ -26,6 +20,6 @@ fd_init(struct fd* d, int n, int mode) {
   d->r = &d->rb;
   d->w = &d->wb;
 
-  buffer_init(d->r, (buffer_op_proto*)(void*)&read, d->e, NULL, 0);
-  buffer_init(d->w, (buffer_op_proto*)(void*)&write, d->e, NULL, 0);
+  buffer_init(d->r, &buffer_op_read, d->e, NULL, 0);
+  buffer_init(d->w, &buffer_op_write, d->e, NULL, 0);
 }

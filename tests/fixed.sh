@@ -3770,4 +3770,17 @@ if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
   rm -rf "$MT181_DIR" "$MT181_CWD"
 fi
 
+## fixes/182 (wasm-buffer-op-signature-mismatch): lib/buffer.h's
+## buffer_op_proto is a 4-arg function type, but every call site
+## installing the real read()/write() (3-arg) as a buffer's op cast
+## across that mismatch instead of going through a same-signature
+## wrapper. Native platforms tolerate the extra argument; WebAssembly's
+## call_indirect enforces an exact type match and traps. This only
+## reproduces under an Emscripten/WASM build, a target not built or run
+## natively by this test suite, so there's no assertion to add here --
+## verified instead by building with "cfg-emscripten -DUSE_MMAP=OFF",
+## serving the resulting shish.{html,js,wasm}, and confirming
+## "echo hi" no longer traps with "RuntimeError: function signature
+## mismatch" in-browser.
+
 summary

@@ -1,13 +1,7 @@
 #include "../../lib/uint64.h"
 #include "../../lib/buffer.h"
-#include "../../lib/windoze.h"
 #include "../fdstack.h"
 #include "../debug.h"
-#if WINDOWS_NATIVE
-#include <io.h>
-#else
-#include <unistd.h>
-#endif
 
 /* establishs pipes across parent/child for stralloc fds
  * ----------------------------------------------------------------------- */
@@ -42,7 +36,7 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
         /* wire the read end back to "fd" itself, the struct our scan
            matched -- not "fds->parent", which may be an unrelated fd
            already shadowing this slot. */
-        buffer_init(&fd->rb, (buffer_op_proto*)(void*)&read, e, NULL, 0);
+        buffer_init(&fd->rb, &buffer_op_read, e, NULL, 0);
 
         /* fd->r stays pointed at &fd->rb: fdstack_data() reads via
            fd->rb.fd directly (bypassing buffer_get()), but

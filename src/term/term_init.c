@@ -19,7 +19,7 @@ unsigned long term_pos;
 int term_insert = 1;
 int term_dumb = 1;
 char term_obuf[128];
-static buffer term_default_output = BUFFER_INIT(&write, 1, term_obuf, sizeof(term_obuf));
+static buffer term_default_output = BUFFER_INIT(&buffer_op_write, 1, term_obuf, sizeof(term_obuf));
 
 buffer* term_output = 0; //&term_default_output;
 

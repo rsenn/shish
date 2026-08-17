@@ -486,36 +486,26 @@
   # prints "." forever instead of once; ^C to stop
   ```
 
-- wasm-buffer-op-signature-mismatch: on the Emscripten/WASM build,
-  any buffer whose op is the real read()/write() (not a mmap or
-  string-backed buffer) traps at runtime with "RuntimeError: function
-  signature mismatch" the first time it's actually invoked.
-  `lib/buffer.h` declares `buffer_op_proto` as a 4-arg function type
-  (`ssize_t(int fd, void* buf, size_t len, void* arg)`), but every
-  call site installing the real `read()`/`write()` (3-arg) as that op
-  -- `fd_init.c`, `fd_setfd.c`, and others -- does
-  `(buffer_op_proto*)(void*)&read`, a function-pointer cast across a
-  mismatched signature. `lib/buffer/buffer_stubborn2.c:18` then calls
-  it as `(*op)(fd, buf, len, ptr)`, passing all 4 args. Native
-  platforms silently tolerate the extra argument (the C ABI just
-  ignores it); WebAssembly's `call_indirect` enforces an exact type
-  match on every indirect call and traps otherwise. Found while
-  testing the `cfg-emscripten` build with `-DUSE_MMAP=OFF` (the first
-  build to exercise a plain read()-based buffer for script-loading on
-  that target), but not caused by `USE_MMAP` -- the same trap almost
-  certainly also hits `USE_MMAP=ON` the moment anything writes to
-  stdout (`write` is cast the same way), which matches the "memory
-  access out of bounds"/similar runtime errors seen when first
-  loading `shish.html` in a browser.
+- wasm-mmap-memory-access-out-of-bounds: on the Emscripten/WASM build
+  with `USE_MMAP=ON` (the default), running any script traps at
+  runtime with "RuntimeError: memory access out of bounds" -- distinct
+  from, and not fixed by, the buffer_op_proto signature-mismatch fix
+  in fixes/182 (confirmed separately: the same script runs cleanly
+  under a `USE_MMAP=OFF` build of the same commit). Not yet
+  root-caused; likely something in the mmap-emulation path
+  (`lib/mmap/*.c` / `lib/buffer/buffer_mmapread*.c`) that assumes real
+  kernel mmap semantics Emscripten's emulated `mmap()` doesn't provide.
+  `-DUSE_MMAP=OFF` is the current workaround for running shish in a
+  browser.
 
   **Repro:**
   ```sh
   . ./cfg-cmake.sh
   export EMSCRIPTEN="$EMSDK/upstream/emscripten"
   export PATH="$EMSCRIPTEN:$PATH"
-  cfg-emscripten -DUSE_MMAP=OFF
+  cfg-emscripten
   cmake --build build/emscripten
   # serve build/emscripten/shish.{html,js,wasm} over http://, open in
   # a browser, run any script (e.g. "echo hi") -- traps with
-  # "RuntimeError: function signature mismatch" instead of running
+  # "RuntimeError: memory access out of bounds" instead of running
   ```
