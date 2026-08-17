@@ -1,0 +1,65 @@
+diff --git a/BUGS b/BUGS
+index 76f0a62a..31e17783 100644
+--- a/BUGS
++++ b/BUGS
+@@ -273,19 +273,6 @@
+   # Run: sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix alias-p.tst
+   ```
+ 
+-- ifs-not-reset-from-environment: a non-interactive shell must use
+-  the default IFS (space/tab/newline) even when an `IFS` environment
+-  variable is inherited from its caller, unless the script itself
+-  sets `IFS`. shish keeps the inherited value instead. 1 failure in
+-  `fsplit-p.tst` (15/16). `fsplit-p.tst:16`.
+-
+-  **Repro:**
+-  ```sh
+-  # Run the field splitting conformance test
+-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix fsplit-p.tst
+-  # 1 failure: "default IFS (overriding environment variable)"
+-  ```
+-
+ - read-field-splitting-and-options-broken: `read` builtin's field
+   splitting is broken (doesn't split on IFS correctly, doesn't
+   handle backslash, doesn't respect raw mode `-r`), line
+diff --git a/src/sh/sh_init.c b/src/sh/sh_init.c
+index 56648b03..8854f2c6 100644
+--- a/src/sh/sh_init.c
++++ b/src/sh/sh_init.c
+@@ -55,7 +55,13 @@ sh_init(void) {
+   var_import("PS2=> ", V_INIT, &sh_ps2);
+   var_import("PS3=~ ", V_INIT, &sh_ps3);
+   var_import("PATH=/bin:/usr/bin", V_INIT, &sh_path);
+-  var_import("IFS= \t\n", V_INIT, &sh_ifs);
++
++  /* unlike PS1/PS2/PS3/PATH above, IFS must always start at the
++     POSIX default, even if a different value was inherited via the
++     environment -- so this is a plain var_import(), not V_INIT
++     ("only set when unset"), letting it overwrite an inherited
++     value instead of deferring to it. */
++  var_import("IFS= \t\n", 0, &sh_ifs);
+ 
+   /* initialize the shell environment */
+   sh_getcwd(sh);
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 264d5412..f2bc33a9 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -3799,4 +3799,17 @@ fi
+ ## "echo hello from shish; for i in 1 2 3; do echo \"i=\$i\"; done"
+ ## now runs and exits 0 in-browser instead of trapping.
+ 
++## fixes/184 (ifs-not-reset-from-environment): a new shell must start
++## with the default IFS (space/tab/newline) even if a different value
++## was inherited via the environment, unless the script itself
++## assigns IFS -- sh_init.c's var_import("IFS=...", V_INIT, ...) only
++## sets IFS when unset, so an inherited environment value silently
++## overrode the POSIX default. Fixed by dropping V_INIT for this one
++## call, letting it unconditionally overwrite whatever the plain
++## environ-import loop just set.
++if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
++  IFS184_OUT=$(IFS=X "$SHISH_SELF" -c 'printf "%d:" "${#IFS}"; IFS=,; X="a,b"; set -- $X; printf "%s\n" "$#"')
++  assert_equal "3:2" "$IFS184_OUT" "a new shell must reset IFS (length 3: space/tab/newline) to the default even when IFS is inherited from the environment, and a later script-set IFS must still take effect"
++fi
++
+ summary

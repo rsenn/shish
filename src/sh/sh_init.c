@@ -55,7 +55,13 @@ sh_init(void) {
   var_import("PS2=> ", V_INIT, &sh_ps2);
   var_import("PS3=~ ", V_INIT, &sh_ps3);
   var_import("PATH=/bin:/usr/bin", V_INIT, &sh_path);
-  var_import("IFS= \t\n", V_INIT, &sh_ifs);
+
+  /* unlike PS1/PS2/PS3/PATH above, IFS must always start at the
+     POSIX default, even if a different value was inherited via the
+     environment -- so this is a plain var_import(), not V_INIT
+     ("only set when unset"), letting it overwrite an inherited
+     value instead of deferring to it. */
+  var_import("IFS= \t\n", 0, &sh_ifs);
 
   /* initialize the shell environment */
   sh_getcwd(sh);

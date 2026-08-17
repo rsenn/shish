@@ -273,19 +273,6 @@
   # Run: sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix alias-p.tst
   ```
 
-- ifs-not-reset-from-environment: a non-interactive shell must use
-  the default IFS (space/tab/newline) even when an `IFS` environment
-  variable is inherited from its caller, unless the script itself
-  sets `IFS`. shish keeps the inherited value instead. 1 failure in
-  `fsplit-p.tst` (15/16). `fsplit-p.tst:16`.
-
-  **Repro:**
-  ```sh
-  # Run the field splitting conformance test
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix fsplit-p.tst
-  # 1 failure: "default IFS (overriding environment variable)"
-  ```
-
 - read-field-splitting-and-options-broken: `read` builtin's field
   splitting is broken (doesn't split on IFS correctly, doesn't
   handle backslash, doesn't respect raw mode `-r`), line

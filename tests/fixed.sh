@@ -3799,4 +3799,17 @@ fi
 ## "echo hello from shish; for i in 1 2 3; do echo \"i=\$i\"; done"
 ## now runs and exits 0 in-browser instead of trapping.
 
+## fixes/184 (ifs-not-reset-from-environment): a new shell must start
+## with the default IFS (space/tab/newline) even if a different value
+## was inherited via the environment, unless the script itself
+## assigns IFS -- sh_init.c's var_import("IFS=...", V_INIT, ...) only
+## sets IFS when unset, so an inherited environment value silently
+## overrode the POSIX default. Fixed by dropping V_INIT for this one
+## call, letting it unconditionally overwrite whatever the plain
+## environ-import loop just set.
+if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+  IFS184_OUT=$(IFS=X "$SHISH_SELF" -c 'printf "%d:" "${#IFS}"; IFS=,; X="a,b"; set -- $X; printf "%s\n" "$#"')
+  assert_equal "3:2" "$IFS184_OUT" "a new shell must reset IFS (length 3: space/tab/newline) to the default even when IFS is inherited from the environment, and a later script-set IFS must still take effect"
+fi
+
 summary
