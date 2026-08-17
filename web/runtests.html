@@ -1,0 +1,120 @@
+<title>shish (wasm) test suite</title>
+<h1>shish test suite (in-browser, WASM)</h1>
+<p>Runs the same tests/*.sh files CTest runs natively, against the Emscripten build.
+Each test runs in its own Worker with a timeout, so a hang (no real signals/process
+control exist under WASM) can't freeze this page.</p>
+<button id="run">run all</button>
+<pre id="output">(not run yet)</pre>
+<script>
+var TESTS = [
+  "bquote.sh", "builtin-basename.sh", "builtin-expr.sh", "builtin-hash.sh",
+  "builtin-kill.sh", "builtin-local.sh", "builtin-mkdir.sh", "builtin-read.sh",
+  "builtin-rm.sh", "builtin-rmdir.sh", "builtin-test.sh", "builtin-trap.sh",
+  "cmd-subst.sh", "debug.sh", "expand-brace.sh", "expand-tilde.sh", "fixed.sh",
+  "functions.sh", "here-doc.sh", "if.sh", "loop-while.sh", "param.sh"
+];
+var TIMEOUT_MS = 8000;
+
+function loadTestFiles() {
+  var fetches = TESTS.map(function(name) {
+    return fetch("tests/" + name).then(function(r) { return r.text(); }).then(function(text) {
+      return { name: name, text: text };
+    });
+  });
+  fetches.push(
+    fetch("tests/common.sh").then(function(r) { return r.text(); }).then(function(text) {
+      return { name: "common.sh", text: text };
+    })
+  );
+  return Promise.all(fetches);
+}
+
+function runOne(name, files) {
+  return new Promise(function(resolve) {
+    var worker = new Worker("testworker.js");
+    var done = false;
+    var timer = setTimeout(function() {
+      if (done) return;
+      done = true;
+      worker.terminate();
+      resolve({ name: name, exitCode: null, text: "", timedOut: true });
+    }, TIMEOUT_MS);
+
+    worker.onmessage = function(ev) {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      worker.terminate();
+      resolve({ name: ev.data.name, exitCode: ev.data.exitCode, text: ev.data.text, timedOut: false });
+    };
+    worker.onerror = function(err) {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      worker.terminate();
+      resolve({ name: name, exitCode: -1, text: "[worker error] " + err.message, timedOut: false });
+    };
+
+    worker.postMessage({ name: name, files: files });
+  });
+}
+
+document.getElementById("run").addEventListener("click", function() {
+  var outEl = document.getElementById("output");
+  outEl.textContent = "loading test files...\n";
+
+  loadTestFiles().then(function(files) {
+    outEl.textContent += "running " + TESTS.length + " test files (one Worker each, " +
+      (TIMEOUT_MS / 1000) + "s timeout)...\n\n";
+
+    var results = [];
+    function next(i) {
+      if (i >= TESTS.length) {
+        report(results);
+        return;
+      }
+      outEl.textContent += "[" + (i + 1) + "/" + TESTS.length + "] " + TESTS[i] + " ...\n";
+      runOne(TESTS[i], files).then(function(r) {
+        results.push(r);
+        next(i + 1);
+      });
+    }
+    next(0);
+
+    function report(results) {
+      var lines = [];
+      var totalSucc = 0, totalFail = 0, filesPassed = 0, timedOut = 0;
+      results.forEach(function(r) {
+        var succ = (r.text.match(/Tests succeeded: (\d+)/) || [])[1];
+        var fail = (r.text.match(/Tests failed: (\d+)/) || [])[1];
+        r.succ = succ;
+        r.fail = fail;
+        if (r.timedOut) {
+          timedOut++;
+        } else {
+          if (r.exitCode === 0) filesPassed++;
+          if (succ) totalSucc += parseInt(succ, 10);
+          if (fail) totalFail += parseInt(fail, 10);
+        }
+        var status = r.timedOut ? "TIMEOUT" : (r.exitCode === 0 ? "PASS" : "FAIL");
+        lines.push(
+          status + "  " + r.name +
+          (r.timedOut ? "" : "  (exit=" + r.exitCode +
+            (succ !== undefined ? ", succ=" + succ + " fail=" + fail : "") + ")")
+        );
+      });
+      lines.push("");
+      lines.push("files: " + filesPassed + "/" + TESTS.length + " passed, " + timedOut + " timed out");
+      lines.push("assertions: " + totalSucc + " succeeded, " + totalFail + " failed");
+      lines.push("");
+      lines.push("--- per-file detail ---");
+      results.forEach(function(r) {
+        lines.push("\n=== " + r.name + " ===");
+        lines.push(r.timedOut ? "(timed out after " + (TIMEOUT_MS / 1000) + "s)" : r.text);
+      });
+
+      outEl.textContent = lines.join("\n");
+    }
+  });
+});
+</script>
