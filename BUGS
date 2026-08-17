@@ -343,28 +343,6 @@
   # 3 failures in redirection preservation and error reporting
   ```
 
-- pipeline-compound-commands-broken: compound commands (if, while)
-  used as pipeline stages don't preserve stdin/stdout correctly when
-  they are the only command in the stage. `if` and `while` loops in
-  pipelines produce no output when they are the sole command in a
-  pipeline stage, but work correctly when wrapped in a subshell `()`
-  or when other commands precede them in the same brace group `{}`.
-  `for` loops and `case` statements work correctly. 2 failures in
-  `pipeline-p.tst` (7/9). `pipeline-p.tst:46,61`.
-
-  **Repro:**
-  ```sh
-  echo "test" | if true; then cat; fi
-  # shish produces no output
-  # bash/dash print "test"
-  
-  echo "test" | (if true; then cat; fi)
-  # shish prints "test" (works with subshell)
-  
-  echo "test" | { echo "before"; if true; then cat; fi; echo "after"; }
-  # shish prints "before", "test", "after" (works with other commands)
-  ```
-
 - return-from-dot-script-broken: `return` from a dot-sourced script
   (unnested, nested in another dot script, nested in a function)
   doesn't work correctly — wrong exit status, doesn't actually

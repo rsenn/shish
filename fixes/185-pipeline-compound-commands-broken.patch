@@ -1,0 +1,131 @@
+diff --git a/BUGS b/BUGS
+index 31e17783..3503478b 100644
+--- a/BUGS
++++ b/BUGS
+@@ -343,28 +343,6 @@
+   # 3 failures in redirection preservation and error reporting
+   ```
+ 
+-- pipeline-compound-commands-broken: compound commands (if, while)
+-  used as pipeline stages don't preserve stdin/stdout correctly when
+-  they are the only command in the stage. `if` and `while` loops in
+-  pipelines produce no output when they are the sole command in a
+-  pipeline stage, but work correctly when wrapped in a subshell `()`
+-  or when other commands precede them in the same brace group `{}`.
+-  `for` loops and `case` statements work correctly. 2 failures in
+-  `pipeline-p.tst` (7/9). `pipeline-p.tst:46,61`.
+-
+-  **Repro:**
+-  ```sh
+-  echo "test" | if true; then cat; fi
+-  # shish produces no output
+-  # bash/dash print "test"
+-  
+-  echo "test" | (if true; then cat; fi)
+-  # shish prints "test" (works with subshell)
+-  
+-  echo "test" | { echo "before"; if true; then cat; fi; echo "after"; }
+-  # shish prints "before", "test", "after" (works with other commands)
+-  ```
+-
+ - return-from-dot-script-broken: `return` from a dot-sourced script
+   (unnested, nested in another dot script, nested in a function)
+   doesn't work correctly — wrong exit status, doesn't actually
+diff --git a/src/eval/eval_if.c b/src/eval/eval_if.c
+index 4378034f..bd060847 100644
+--- a/src/eval/eval_if.c
++++ b/src/eval/eval_if.c
+@@ -10,10 +10,23 @@ eval_if(struct eval* e, struct nif* nif) {
+   int ret;
+   union node* branch;
+ 
++  /* E_EXIT ("tail command, exec instead of forking, see eval_tree.c")
++     bled down from our own caller applies to the branch actually
++     taken, once chosen -- never to the test, which isn't in tail
++     position no matter what runs after this if-statement. Without
++     masking it off first, eval_tree(e, nif->test, ...)'s own copy of
++     this same "ex" logic saw it too and exited the whole process
++     right after the test ran, before the branch below ever got a
++     chance to (pipeline-compound-commands-broken: "echo x | if
++     true; then cat; fi" produced no output, since eval_pipeline.c
++     forks each stage and hands its own eval_tree() call E_EXIT). */
++  int ex = (e->flags & E_EXIT) != 0;
++
+ elif:
+   /* the controlling list of an if/elif is exempt from "set -e" in its
+      entirety -- see errexit_suppress's own comment (eval.h). */
+   errexit_suppress++;
++  e->flags &= ~E_EXIT;
+   ret = eval_tree(e, nif->test, E_LIST);
+   errexit_suppress--;
+ 
+@@ -28,8 +41,12 @@ elif:
+   /* take the branch */
+   branch = ret ? nif->cmd1 : nif->cmd0;
+ 
+-  if(branch)
++  if(branch) {
++    if(ex)
++      e->flags |= E_EXIT;
++
+     return eval_tree(e, branch, E_LIST);
++  }
+ 
+   return 0;
+ }
+diff --git a/src/eval/eval_loop.c b/src/eval/eval_loop.c
+index 88b34419..6bd67d3c 100644
+--- a/src/eval/eval_loop.c
++++ b/src/eval/eval_loop.c
+@@ -34,6 +34,20 @@ eval_loop(struct eval* e, struct nloop* nloop) {
+     return sh->exitcode = e->exitcode;
+   }
+ 
++  /* E_EXIT ("tail command, exec instead of forking, see eval_tree.c")
++     bled down from our own caller must never reach the test or the
++     body: unlike eval_if()'s branch (taken at most once, genuinely
++     terminal), no single iteration here is guaranteed to be the
++     loop's last -- exec()ing out of an early iteration would replace
++     the process before the test or a later iteration ever ran again
++     (pipeline-compound-commands-broken: same root cause as eval_if.c,
++     "echo x | while ...; do cat; done" produced no output). Masking
++     it off for every iteration is safe: eval_tree()'s own copy of
++     this same "ex" logic, in whichever caller dispatched to
++     eval_loop() in the first place, still fires sh_exit() once this
++     whole loop returns below. */
++  e->flags &= ~E_EXIT;
++
+   for(;;) {
+     /* the controlling list of a while/until is exempt from "set -e"
+        in its entirety -- see errexit_suppress's own comment (eval.h). */
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index f2bc33a9..e61f0be4 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -3812,4 +3812,26 @@ if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+   assert_equal "3:2" "$IFS184_OUT" "a new shell must reset IFS (length 3: space/tab/newline) to the default even when IFS is inherited from the environment, and a later script-set IFS must still take effect"
+ fi
+ 
++## fixes/185 (pipeline-compound-commands-broken): eval_tree() propagates
++## E_EXIT ("this is the tail command, exec instead of forking") down
++## into whatever node it dispatches -- correct for a plain simple
++## command, but eval_if.c/eval_loop.c never masked it off before their
++## own *internal* eval_tree() calls for the if/while test, so the
++## test's nested eval_tree() saw the stale E_EXIT and exited the whole
++## process right after the test ran, before the branch/body ever got a
++## chance to. Only reachable when the if/while is itself forked
++## directly as a pipeline stage (eval_pipeline.c forks each stage and
++## hands its own eval_tree() call E_EXIT) -- wrapping it in "(...)" or
++## letting another command precede it in the same "{...}" avoided the
++## bug by construction, not by coincidence: eval_subshell.c/
++## eval_cmdlist.c both already mask E_EXIT the same way this fixes for
++## eval_if.c/eval_loop.c.
++X185=$(echo "test" | if true; then cat; fi)
++assert_equal "test" "$X185" "an if-statement used as the sole/last command in a pipeline stage must still run its branch, not exit after the test"
++
++X185B=$(printf 'a\nb\nc\n' | while read -r line185; do echo "got:$line185"; done)
++assert_equal "got:a
++got:b
++got:c" "$X185B" "a while-loop used as the sole/last command in a pipeline stage must run every iteration, not exit after the first"
++
+ summary

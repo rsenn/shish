@@ -3812,4 +3812,26 @@ if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
   assert_equal "3:2" "$IFS184_OUT" "a new shell must reset IFS (length 3: space/tab/newline) to the default even when IFS is inherited from the environment, and a later script-set IFS must still take effect"
 fi
 
+## fixes/185 (pipeline-compound-commands-broken): eval_tree() propagates
+## E_EXIT ("this is the tail command, exec instead of forking") down
+## into whatever node it dispatches -- correct for a plain simple
+## command, but eval_if.c/eval_loop.c never masked it off before their
+## own *internal* eval_tree() calls for the if/while test, so the
+## test's nested eval_tree() saw the stale E_EXIT and exited the whole
+## process right after the test ran, before the branch/body ever got a
+## chance to. Only reachable when the if/while is itself forked
+## directly as a pipeline stage (eval_pipeline.c forks each stage and
+## hands its own eval_tree() call E_EXIT) -- wrapping it in "(...)" or
+## letting another command precede it in the same "{...}" avoided the
+## bug by construction, not by coincidence: eval_subshell.c/
+## eval_cmdlist.c both already mask E_EXIT the same way this fixes for
+## eval_if.c/eval_loop.c.
+X185=$(echo "test" | if true; then cat; fi)
+assert_equal "test" "$X185" "an if-statement used as the sole/last command in a pipeline stage must still run its branch, not exit after the test"
+
+X185B=$(printf 'a\nb\nc\n' | while read -r line185; do echo "got:$line185"; done)
+assert_equal "got:a
+got:b
+got:c" "$X185B" "a while-loop used as the sole/last command in a pipeline stage must run every iteration, not exit after the first"
+
 summary

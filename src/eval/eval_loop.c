@@ -34,6 +34,20 @@ eval_loop(struct eval* e, struct nloop* nloop) {
     return sh->exitcode = e->exitcode;
   }
 
+  /* E_EXIT ("tail command, exec instead of forking, see eval_tree.c")
+     bled down from our own caller must never reach the test or the
+     body: unlike eval_if()'s branch (taken at most once, genuinely
+     terminal), no single iteration here is guaranteed to be the
+     loop's last -- exec()ing out of an early iteration would replace
+     the process before the test or a later iteration ever ran again
+     (pipeline-compound-commands-broken: same root cause as eval_if.c,
+     "echo x | while ...; do cat; done" produced no output). Masking
+     it off for every iteration is safe: eval_tree()'s own copy of
+     this same "ex" logic, in whichever caller dispatched to
+     eval_loop() in the first place, still fires sh_exit() once this
+     whole loop returns below. */
+  e->flags &= ~E_EXIT;
+
   for(;;) {
     /* the controlling list of a while/until is exempt from "set -e"
        in its entirety -- see errexit_suppress's own comment (eval.h). */
