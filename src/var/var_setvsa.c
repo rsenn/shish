@@ -7,6 +7,10 @@
  * - otherwise: the stralloc's contents are copied.
  * name must be a valid POSIX shell variable name, or it corrupts the
  * whole var table.
+ *
+ *   const char*  name    variable name; must satisfy var_valid(name)
+ *   stralloc*    sa      value to assign; see V_FREE above
+ *   int          flags   V_FREE, V_ZEROSA, and the usual V_* var flags
  * ----------------------------------------------------------------------- */
 const char*
 var_setvsa(const char* name, stralloc* sa, int flags) {

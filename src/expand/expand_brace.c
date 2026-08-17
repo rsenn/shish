@@ -56,6 +56,11 @@ brace_list_free(struct brace_list* bl) {
  * - a "{foo}" with no comma isn't a valid group -- scanning continues
  *   past it, looking for a later one (matches bash).
  * - an unmatched '{' stops the search for good; the rest is literal.
+ *
+ *   const char*  text     word text to scan
+ *   size_t       len      length of text
+ *   size_t*      gopen    out: offset of the matched group's '{'
+ *   size_t*      gclose   out: offset of the matched group's '}'
  * ----------------------------------------------------------------------- */
 static int
 find_valid_group(const char* text, size_t len, size_t* gopen, size_t* gclose) {

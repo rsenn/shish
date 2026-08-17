@@ -299,9 +299,9 @@ bre_match(struct bre_ctx* ctx, const char* pat, const char* s) {
  * match). Returns expr's exit status for the result: 0 unless it's
  * empty or "0".
  *
- *   str   subject string
- *   pat   BRE pattern
- *   out   receives the printed result
+ *   const char*  str   subject string
+ *   const char*  pat   BRE pattern
+ *   stralloc*    out   receives the printed result
  * ----------------------------------------------------------------------- */
 static int
 expr_match(const char* str, const char* pat, stralloc* out) {

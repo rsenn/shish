@@ -70,30 +70,40 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Comments
 
-Keep comments short and readable, not a running log of debugging history.
+These rules govern every comment you write or rewrite in this repo, from
+here on. Keep comments short and readable, not a running log of debugging
+history — and not a packed block of prose either. A comment should be
+something the reader's eye takes in as a shape, the way a table or a
+diagram is, not something they have to read start to end to parse.
 
 - Struct-member comments: 1-2 lines, right on the member.
 - Any other comment explaining behavior: 4 lines max. If the full
-  rationale genuinely needs more, restructure it — a one-line summary
-  followed by a short bulleted list (one point per fact) beats one long
-  paragraph. Pull apart anything that reads as a wall of text.
+  rationale genuinely needs more room, don't write a longer paragraph —
+  restructure: a one-line summary, then a short list (one point per
+  fact), or the argument table below. Never let a comment become an
+  unbroken block of sentences; break it into pieces the eye can scan.
 - Never reference `fixes/NN`, `BUGS` entries, issue names, or "confirmed
   via repro X" in a comment — that history belongs in the commit message
   and the `fixes/` patch, not in the source. State the current rule and
   its reason, not how it was discovered or what broke before it existed.
-- If a comment describes a function's parameters, include the argument
-  list under it, indented 2 spaces, names padded into a column so the
-  descriptions line up:
+- Prefer showing over telling: when a C expression, a literal value, or
+  a short before/after pair makes the point, put that in the comment
+  instead of describing it in words. `flags & X_SPLIT` or `"a=="  ->
+  "a", ""` says more, faster, than a sentence explaining the same fact.
+- If a comment describes a function's parameters, give each one its own
+  line: 2-space indent, then type, name, and description as aligned
+  columns (pad names so the descriptions all start at the same column):
   ```
   /* one-line summary of what the function does.
    *
-   *   argname       what this argument controls
-   *   longer_name   what this argument controls
+   *   const char*  name   what this argument is / controls
+   *   size_t       len    what this argument is / controls
    * ----------------------------------------------------------------------- */
   ```
-- Say what the code does and why, in the fewest words that stay precise.
-  Drop hedge words, repeated context already obvious from the code, and
-  "used to X / now Y" framing — just state the current behavior.
+- Write sentences a reader can take in on one pass: subject, verb,
+  concrete fact, in that order. No hedging, no throat-clearing, no
+  "used to X / now Y" history — state the current behavior and, if it's
+  not obvious, the one reason it has to be that way.
 
 ## Project
 

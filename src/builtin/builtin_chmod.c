@@ -17,9 +17,9 @@
  * rather than being masked by umask. Returns 1 on success, 0 if spec
  * doesn't parse as symbolic mode at all.
  *
- *   spec   comma-separated symbolic clauses to apply
- *   mode   in/out: mode to modify; "X" reads its incoming value
- *   is_dir whether the target is a directory, for "X" handling
+ *   const char*    spec    comma-separated symbolic clauses to apply
+ *   unsigned int*  mode    in/out: mode to modify; "X" reads its incoming value
+ *   int            is_dir  whether the target is a directory, for "X" handling
  * ----------------------------------------------------------------------- */
 static int
 chmod_symbolic(const char* spec, unsigned int* mode, int is_dir) {
@@ -96,16 +96,16 @@ chmod_symbolic(const char* spec, unsigned int* mode, int is_dir) {
  *   recursion is left untouched entirely (matching GNU chmod), while
  *   one named directly is still dereferenced and chmoded.
  *
- *   argv         argv, for error reporting
- *   path         path to chmod; reused as scratch space when recursing
- *   spec         octal or symbolic mode spec
- *   symbolic     whether spec is symbolic (vs. plain octal)
- *   octal_mode   parsed octal mode, when !symbolic
- *   recursive    recurse into directories
- *   force        suppress errors, keep processing siblings
- *   verbose      print a line for every file processed
- *   changes      print a line only for files whose mode changed
- *   toplevel     path is a command-line operand, not found by recursion
+ *   char*[]        argv         argv, for error reporting
+ *   stralloc*      path         path to chmod; reused as scratch space when recursing
+ *   char*          spec         octal or symbolic mode spec
+ *   int            symbolic     whether spec is symbolic (vs. plain octal)
+ *   unsigned int   octal_mode   parsed octal mode, when !symbolic
+ *   int            recursive    recurse into directories
+ *   int            force        suppress errors, keep processing siblings
+ *   int            verbose      print a line for every file processed
+ *   int            changes      print a line only for files whose mode changed
+ *   int            toplevel     path is a command-line operand, not found by recursion
  * ----------------------------------------------------------------------- */
 static int
 chmod_path(char* argv[], stralloc* path, char* spec, int symbolic,

@@ -16,6 +16,9 @@
  *
  * Returns the number of slots written (not counting the terminating
  * NULL); pair with expand_args's return as the canonical argc.
+ *
+ *   union node*  args   expanded N_ARG chain to flatten
+ *   char**       argv   destination array, NULL-terminated on return
  * ----------------------------------------------------------------------- */
 int
 expand_argv(union node* args, char** argv) {
