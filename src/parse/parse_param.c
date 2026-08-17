@@ -26,8 +26,13 @@ parse_param(struct parser* p) {
   if(source_get(&c) <= 0)
     return -1;
 
-  /* link in a new node */
-  if(p->node && p->node->id == N_ARGSTR && p->node->nargstr.stra.len == 0)
+  /* link in a new node: reuse an empty N_ARGSTR node in place instead of
+     allocating a fresh one, but only when it's the parser's own
+     unquoted "nothing here yet" placeholder -- a quoted empty node
+     (e.g. '' right before "$a") carries real quoting state that must
+     not be discarded by overwriting it. */
+  if(p->node && p->node->id == N_ARGSTR && p->node->nargstr.stra.len == 0 &&
+     !(p->node->nargstr.flag & S_TABLE))
     p->node->id = N_ARGPARAM;
   else
     parse_newnode(p, N_ARGPARAM);

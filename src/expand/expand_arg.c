@@ -41,7 +41,7 @@ expand_arg(union node* node, union node** nptr, int flags) {
     switch(subarg->id) {
       /* arithmetic substitution */
       case N_ARGARITH: {
-        n = expand_arith(&subarg->nargarith, nptr);
+        n = expand_arith(&subarg->nargarith, nptr, lflags);
         break;
       }
 

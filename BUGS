@@ -292,18 +292,17 @@
   # Run: sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix alias-p.tst
   ```
 
-- fsplit-field-splitting-broken: field splitting of unquoted
-  expansion results is broken — default IFS not applied correctly,
-  non-whitespace IFS handling wrong, backslash-in-IFS not handled,
-  empty field removal missing. 12 failures in `fsplit-p.tst`
-  (4/16). `src/expand/expand_vars.c` or the field-splitting code
-  in `src/expand/`. `fsplit-p.tst:16-241`.
+- ifs-not-reset-from-environment: a non-interactive shell must use
+  the default IFS (space/tab/newline) even when an `IFS` environment
+  variable is inherited from its caller, unless the script itself
+  sets `IFS`. shish keeps the inherited value instead. 1 failure in
+  `fsplit-p.tst` (15/16). `fsplit-p.tst:16`.
 
   **Repro:**
   ```sh
   # Run the field splitting conformance test
   sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix fsplit-p.tst
-  # 12 failures in IFS handling and field splitting
+  # 1 failure: "default IFS (overriding environment variable)"
   ```
 
 - read-field-splitting-and-options-broken: `read` builtin's field
@@ -325,10 +324,12 @@
   when the pattern contains expansions (tilde, parameter, command
   substitution, arithmetic). 4 failures in `param-p.tst:280,291,
   302,313`. Also: `${var#~pattern}` (tilde in pattern, `:324`),
-  `$@`/`$*` quoting with custom IFS (`:517,539,570,622,653`),
-  special parameters `$` and `!` (`:446,452`), positional parameter
-  existence test (`:395`), `${1+"$@"}` (`:653`). 22 total failures
-  in `param-p.tst` (32/54).
+  `$@`/`$*` quoting with custom IFS (`:517,539,570`), special
+  parameters `$` and `!` (`:446,452`), tilde/parameter/command/
+  arithmetic expansion in embedded patterns (`:82,337,359,372`),
+  assigning to readonly/positional/special parameters
+  (`:193,198,202`), length of valid variables (`:236`). 18 total
+  failures in `param-p.tst` (36/54).
 
   **Repro:**
   ```sh

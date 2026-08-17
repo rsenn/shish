@@ -1,0 +1,122 @@
+diff --git a/src/expand.h b/src/expand.h
+index e4fd5f3f..364e2dfe 100644
+--- a/src/expand.h
++++ b/src/expand.h
+@@ -111,7 +111,7 @@ int expand_argv(union node* args, char** argv);
+ int expand_arith_binary(struct narithbinary* expr, int64* r);
+ int expand_arith_expr(union node* expr, int64* r);
+ int expand_arith_assign(struct narithbinary*, int64*);
+-union node* expand_arith(struct nargarith* arith, union node** nptr);
++union node* expand_arith(struct nargarith* arith, union node** nptr, int flags);
+ int expand_arith_unary(struct narithunary* expr, int64* r);
+ int expand_arith_ternary(struct narithternary* expr, int64* r);
+ union node* expand_brace_args(union node* args);
+diff --git a/src/expand/expand_arg.c b/src/expand/expand_arg.c
+index 38b04b9f..9b224fd4 100644
+--- a/src/expand/expand_arg.c
++++ b/src/expand/expand_arg.c
+@@ -41,7 +41,7 @@ expand_arg(union node* node, union node** nptr, int flags) {
+     switch(subarg->id) {
+       /* arithmetic substitution */
+       case N_ARGARITH: {
+-        n = expand_arith(&subarg->nargarith, nptr);
++        n = expand_arith(&subarg->nargarith, nptr, lflags);
+         break;
+       }
+ 
+diff --git a/src/expand/expand_arith.c b/src/expand/expand_arith.c
+index d634620c..cbe797c0 100644
+--- a/src/expand/expand_arith.c
++++ b/src/expand/expand_arith.c
+@@ -5,7 +5,7 @@
+ /* expand an arithmetic expression
+  * ----------------------------------------------------------------------- */
+ union node*
+-expand_arith(struct nargarith* arith, union node** nptr) {
++expand_arith(struct nargarith* arith, union node** nptr, int flags) {
+   union node *expr = arith->tree, *n = *nptr;
+   int64 ret = -1;
+   size_t len;
+@@ -13,8 +13,7 @@ expand_arith(struct nargarith* arith, union node** nptr) {
+ 
+   if(!expand_arith_expr(expr, &ret)) {
+     len = fmt_longlong(buf, ret);
+-    // stralloc_zero(&n->narg.stra);
+-    n = expand_cat(buf, len, &n, 0);
++    n = expand_cat(buf, len, &n, flags);
+   }
+ 
+   return n;
+diff --git a/src/expand/expand_cat.c b/src/expand/expand_cat.c
+index cb95b439..39f2caa3 100644
+--- a/src/expand/expand_cat.c
++++ b/src/expand/expand_cat.c
+@@ -68,11 +68,18 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
+   int have_field;
+ 
+   /* if we're not splitting create a new node if there isn't any, even if
+-     the stralloc has zero length, and concatenate the stralloc as a whole */
++     the stralloc has zero length, and concatenate the stralloc as a whole.
++     A closed field (X_CATCLOSED) must not be appended onto: it was closed
++     by an earlier unquoted chunk's own splitting within the same word
++     (e.g. the literal space between two quoted strings inside a
++     "${parameter+word}" operator's word), so this quoted chunk needs a
++     fresh sibling field instead of silently merging back into it. */
+   if(flags & (X_NOSPLIT | X_QUOTED)) {
+     if(n == NULL) {
+       n = *nptr = tree_newnode(N_ARG);
+       stralloc_zero(&n->narg.stra);
++    } else if(n->narg.flag & X_CATCLOSED) {
++      expand_cat_sibling(&n);
+     }
+ 
+     n->narg.flag |= flags /*& (~(X_QUOTED))*/;
+@@ -198,8 +205,14 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
+       if(nws_count == 0) {
+         /* pure-whitespace run: closes whatever field is open (nothing
+            to close at the start/end of the string), never opens a
+-           field of its own. */
+-        if(have_field) {
++           field of its own. A field also counts as open when it's
++           empty but already carries X_QUOTED/X_NOSPLIT from an
++           earlier chunk of this same word (e.g. the '' in "''$b"):
++           such a field is a real, deliberately-empty field, not an
++           unused virgin placeholder, and must not be left open for
++           a later chunk to silently merge into. */
++        if(have_field || (n != NULL && !(n->narg.flag & X_CATCLOSED) &&
++                           (n->narg.flag & (X_QUOTED | X_NOSPLIT)))) {
+           expand_cat_finish(&n, flags);
+           have_field = 0;
+         }
+diff --git a/src/parse/parse_arith.c b/src/parse/parse_arith.c
+index 243ddbab..2f54a8a5 100644
+--- a/src/parse/parse_arith.c
++++ b/src/parse/parse_arith.c
+@@ -33,6 +33,7 @@ parse_arith(struct parser* p) {
+ 
+     parse_newnode(p, N_ARGARITH);
+     p->node->nargarith.tree = tree;
++    p->node->nargarith.flag = p->quot;
+ 
+     return 0;
+   }
+diff --git a/src/parse/parse_param.c b/src/parse/parse_param.c
+index 30115053..d10c6779 100644
+--- a/src/parse/parse_param.c
++++ b/src/parse/parse_param.c
+@@ -26,8 +26,13 @@ parse_param(struct parser* p) {
+   if(source_get(&c) <= 0)
+     return -1;
+ 
+-  /* link in a new node */
+-  if(p->node && p->node->id == N_ARGSTR && p->node->nargstr.stra.len == 0)
++  /* link in a new node: reuse an empty N_ARGSTR node in place instead of
++     allocating a fresh one, but only when it's the parser's own
++     unquoted "nothing here yet" placeholder -- a quoted empty node
++     (e.g. '' right before "$a") carries real quoting state that must
++     not be discarded by overwriting it. */
++  if(p->node && p->node->id == N_ARGSTR && p->node->nargstr.stra.len == 0 &&
++     !(p->node->nargstr.flag & S_TABLE))
+     p->node->id = N_ARGPARAM;
+   else
+     parse_newnode(p, N_ARGPARAM);

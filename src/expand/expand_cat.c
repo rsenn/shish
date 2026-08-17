@@ -68,11 +68,18 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
   int have_field;
 
   /* if we're not splitting create a new node if there isn't any, even if
-     the stralloc has zero length, and concatenate the stralloc as a whole */
+     the stralloc has zero length, and concatenate the stralloc as a whole.
+     A closed field (X_CATCLOSED) must not be appended onto: it was closed
+     by an earlier unquoted chunk's own splitting within the same word
+     (e.g. the literal space between two quoted strings inside a
+     "${parameter+word}" operator's word), so this quoted chunk needs a
+     fresh sibling field instead of silently merging back into it. */
   if(flags & (X_NOSPLIT | X_QUOTED)) {
     if(n == NULL) {
       n = *nptr = tree_newnode(N_ARG);
       stralloc_zero(&n->narg.stra);
+    } else if(n->narg.flag & X_CATCLOSED) {
+      expand_cat_sibling(&n);
     }
 
     n->narg.flag |= flags /*& (~(X_QUOTED))*/;
@@ -198,8 +205,14 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
       if(nws_count == 0) {
         /* pure-whitespace run: closes whatever field is open (nothing
            to close at the start/end of the string), never opens a
-           field of its own. */
-        if(have_field) {
+           field of its own. A field also counts as open when it's
+           empty but already carries X_QUOTED/X_NOSPLIT from an
+           earlier chunk of this same word (e.g. the '' in "''$b"):
+           such a field is a real, deliberately-empty field, not an
+           unused virgin placeholder, and must not be left open for
+           a later chunk to silently merge into. */
+        if(have_field || (n != NULL && !(n->narg.flag & X_CATCLOSED) &&
+                           (n->narg.flag & (X_QUOTED | X_NOSPLIT)))) {
           expand_cat_finish(&n, flags);
           have_field = 0;
         }

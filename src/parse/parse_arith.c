@@ -33,6 +33,7 @@ parse_arith(struct parser* p) {
 
     parse_newnode(p, N_ARGARITH);
     p->node->nargarith.tree = tree;
+    p->node->nargarith.flag = p->quot;
 
     return 0;
   }

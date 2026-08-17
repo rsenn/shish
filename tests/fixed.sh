@@ -3706,4 +3706,42 @@ if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
   rm -rf "$CD179_DIR"
 fi
 
+## fixes/180: field splitting had four separate bugs:
+## - expand_arith() never received the caller's quoting flags, so a
+##   quoted "$((...))" was still split on IFS characters that happen
+##   to match a digit in its result.
+## - expand_cat()'s quoted/nosplit branch reused an already-closed
+##   field instead of opening a sibling, merging adjacent quoted
+##   chunks of one word together.
+## - parse_param.c recycled an empty N_ARGSTR placeholder node into
+##   the new N_ARGPARAM node without checking whether it was quoted,
+##   discarding a preceding quoted-empty string's flag (e.g. the ''
+##   in "''$a"), losing it as an empty field.
+## - expand_cat() failed to close a field that was empty but already
+##   quoted (as opposed to a never-touched virgin placeholder), so
+##   IFS whitespace between two quoted-empty fragments of one word
+##   merged them into a single field instead of splitting them.
+## All fixed in src/parse/parse_arith.c, src/parse/parse_param.c,
+## src/expand.h, src/expand/expand_arg.c, src/expand/expand_arith.c,
+## and src/expand/expand_cat.c.
+IFS=' 0'
+set -- "-$((708))-"
+assert_equal "1" "$#" "quoted arithmetic substitution must not be field-split (count)"
+assert_equal "-708-" "$1" "quoted arithmetic substitution must not be field-split (value)"
+unset IFS
+
+a='1 2'
+set -- ${a+"-${a}-" "-3 4-"}
+assert_equal "2" "$#" "adjacent quoted chunks inside \${a+...} must not merge (count)"
+assert_equal "-1 2-" "$1" "adjacent quoted chunks inside \${a+...} must not merge (first field)"
+assert_equal "-3 4-" "$2" "adjacent quoted chunks inside \${a+...} must not merge (second field)"
+
+a=
+set -- ''$a
+assert_equal "1" "$#" "'' before an empty unquoted expansion must survive as an empty field"
+
+b=' '
+set -- ''$b'' ""$b""
+assert_equal "4" "$#" "IFS whitespace between two quoted-empty fragments of one word must split them"
+
 summary
