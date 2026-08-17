@@ -1,0 +1,111 @@
+diff --git a/BUGS b/BUGS
+index 045c1bb1..76f0a62a 100644
+--- a/BUGS
++++ b/BUGS
+@@ -485,27 +485,3 @@
+   dirname "$X"
+   # prints "." forever instead of once; ^C to stop
+   ```
+-
+-- wasm-mmap-memory-access-out-of-bounds: on the Emscripten/WASM build
+-  with `USE_MMAP=ON` (the default), running any script traps at
+-  runtime with "RuntimeError: memory access out of bounds" -- distinct
+-  from, and not fixed by, the buffer_op_proto signature-mismatch fix
+-  in fixes/182 (confirmed separately: the same script runs cleanly
+-  under a `USE_MMAP=OFF` build of the same commit). Not yet
+-  root-caused; likely something in the mmap-emulation path
+-  (`lib/mmap/*.c` / `lib/buffer/buffer_mmapread*.c`) that assumes real
+-  kernel mmap semantics Emscripten's emulated `mmap()` doesn't provide.
+-  `-DUSE_MMAP=OFF` is the current workaround for running shish in a
+-  browser.
+-
+-  **Repro:**
+-  ```sh
+-  . ./cfg-cmake.sh
+-  export EMSCRIPTEN="$EMSDK/upstream/emscripten"
+-  export PATH="$EMSCRIPTEN:$PATH"
+-  cfg-emscripten
+-  cmake --build build/emscripten
+-  # serve build/emscripten/shish.{html,js,wasm} over http://, open in
+-  # a browser, run any script (e.g. "echo hi") -- traps with
+-  # "RuntimeError: memory access out of bounds" instead of running
+-  ```
+diff --git a/src/sh/sh_main.c b/src/sh/sh_main.c
+index a010f528..62e1abc8 100644
+--- a/src/sh/sh_main.c
++++ b/src/sh/sh_main.c
+@@ -28,6 +28,20 @@
+ #include <unistd.h>
+ #endif
+ 
++/* envp isn't a portable third main() parameter -- POSIX only
++ * guarantees it's populated when main() is actually invoked with 3
++ * args, which Emscripten's callMain() never does (always calls
++ * _main(argc, argv), leaving a 3rd param as 0/NULL and crashing the
++ * envp[c] walk below). environ is the portable way to reach the
++ * environment; every libc here (glibc/musl/dietlibc/mingw) populates
++ * it regardless of how main() was called. */
++#if WINDOWS_NATIVE
++extern char** _environ;
++#define environ _environ
++#else
++extern char** environ;
++#endif
++
+ int sh_argc;
+ char** sh_argv;
+ const char* sh_name;
+@@ -125,7 +139,7 @@ sh_expand_simple(const char* in, stralloc* out) {
+ /* main routine
+  * ----------------------------------------------------------------------- */
+ int
+-main(int argc, char** argv, char** envp) {
++main(int argc, char** argv) {
+   int c, e, v;
+   int flags;
+   struct fd* fd;
+@@ -175,7 +189,7 @@ main(int argc, char** argv, char** envp) {
+   }
+ 
+   /* import environment variables to the root vartab */
+-  for(c = 0; envp[c]; c++)
++  for(c = 0; environ[c]; c++)
+     ;
+ 
+ #ifdef HAVE_ALLOCA
+@@ -183,8 +197,8 @@ main(int argc, char** argv, char** envp) {
+ #endif
+     envvars = alloc(sizeof(struct var) * c);
+ 
+-  for(c = 0; envp[c]; c++)
+-    var_import(envp[c], V_EXPORT, &envvars[c]);
++  for(c = 0; environ[c]; c++)
++    var_import(environ[c], V_EXPORT, &envvars[c]);
+ 
+   /* $SHELL should point at this shell, not whatever shell was running
+      before shish exec'd -- override whatever var_import() above just
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 214ac5e6..264d5412 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -3783,4 +3783,20 @@ fi
+ ## "echo hi" no longer traps with "RuntimeError: function signature
+ ## mismatch" in-browser.
+ 
++## fixes/183 (wasm-mmap-memory-access-out-of-bounds, misdiagnosed --
++## turned out to have nothing to do with mmap): sh_main.c's main()
++## took a non-portable 3rd "envp" parameter and walked it to import
++## the environment. Emscripten's callMain() only ever calls
++## _main(argc, argv) -- envp arrives as 0, and envp[c] traps with
++## "RuntimeError: memory access out of bounds" on the very first
++## script run, before mmap is ever touched (this is what the
++## USE_MMAP=ON build's crash was actually hitting all along).
++## Switched to the portable "extern char** environ" instead, which
++## every libc here populates regardless of how main() was called.
++## Only reproduces under Emscripten, so there's no native assertion to
++## add -- verified by building with plain "cfg-emscripten" (USE_MMAP=ON,
++## the default), serving the result, and confirming
++## "echo hello from shish; for i in 1 2 3; do echo \"i=\$i\"; done"
++## now runs and exits 0 in-browser instead of trapping.
++
+ summary

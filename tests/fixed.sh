@@ -3783,4 +3783,20 @@ fi
 ## "echo hi" no longer traps with "RuntimeError: function signature
 ## mismatch" in-browser.
 
+## fixes/183 (wasm-mmap-memory-access-out-of-bounds, misdiagnosed --
+## turned out to have nothing to do with mmap): sh_main.c's main()
+## took a non-portable 3rd "envp" parameter and walked it to import
+## the environment. Emscripten's callMain() only ever calls
+## _main(argc, argv) -- envp arrives as 0, and envp[c] traps with
+## "RuntimeError: memory access out of bounds" on the very first
+## script run, before mmap is ever touched (this is what the
+## USE_MMAP=ON build's crash was actually hitting all along).
+## Switched to the portable "extern char** environ" instead, which
+## every libc here populates regardless of how main() was called.
+## Only reproduces under Emscripten, so there's no native assertion to
+## add -- verified by building with plain "cfg-emscripten" (USE_MMAP=ON,
+## the default), serving the result, and confirming
+## "echo hello from shish; for i in 1 2 3; do echo \"i=\$i\"; done"
+## now runs and exits 0 in-browser instead of trapping.
+
 summary

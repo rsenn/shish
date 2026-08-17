@@ -28,6 +28,20 @@
 #include <unistd.h>
 #endif
 
+/* envp isn't a portable third main() parameter -- POSIX only
+ * guarantees it's populated when main() is actually invoked with 3
+ * args, which Emscripten's callMain() never does (always calls
+ * _main(argc, argv), leaving a 3rd param as 0/NULL and crashing the
+ * envp[c] walk below). environ is the portable way to reach the
+ * environment; every libc here (glibc/musl/dietlibc/mingw) populates
+ * it regardless of how main() was called. */
+#if WINDOWS_NATIVE
+extern char** _environ;
+#define environ _environ
+#else
+extern char** environ;
+#endif
+
 int sh_argc;
 char** sh_argv;
 const char* sh_name;
@@ -125,7 +139,7 @@ sh_expand_simple(const char* in, stralloc* out) {
 /* main routine
  * ----------------------------------------------------------------------- */
 int
-main(int argc, char** argv, char** envp) {
+main(int argc, char** argv) {
   int c, e, v;
   int flags;
   struct fd* fd;
@@ -175,7 +189,7 @@ main(int argc, char** argv, char** envp) {
   }
 
   /* import environment variables to the root vartab */
-  for(c = 0; envp[c]; c++)
+  for(c = 0; environ[c]; c++)
     ;
 
 #ifdef HAVE_ALLOCA
@@ -183,8 +197,8 @@ main(int argc, char** argv, char** envp) {
 #endif
     envvars = alloc(sizeof(struct var) * c);
 
-  for(c = 0; envp[c]; c++)
-    var_import(envp[c], V_EXPORT, &envvars[c]);
+  for(c = 0; environ[c]; c++)
+    var_import(environ[c], V_EXPORT, &envvars[c]);
 
   /* $SHELL should point at this shell, not whatever shell was running
      before shish exec'd -- override whatever var_import() above just

@@ -485,27 +485,3 @@
   dirname "$X"
   # prints "." forever instead of once; ^C to stop
   ```
-
-- wasm-mmap-memory-access-out-of-bounds: on the Emscripten/WASM build
-  with `USE_MMAP=ON` (the default), running any script traps at
-  runtime with "RuntimeError: memory access out of bounds" -- distinct
-  from, and not fixed by, the buffer_op_proto signature-mismatch fix
-  in fixes/182 (confirmed separately: the same script runs cleanly
-  under a `USE_MMAP=OFF` build of the same commit). Not yet
-  root-caused; likely something in the mmap-emulation path
-  (`lib/mmap/*.c` / `lib/buffer/buffer_mmapread*.c`) that assumes real
-  kernel mmap semantics Emscripten's emulated `mmap()` doesn't provide.
-  `-DUSE_MMAP=OFF` is the current workaround for running shish in a
-  browser.
-
-  **Repro:**
-  ```sh
-  . ./cfg-cmake.sh
-  export EMSCRIPTEN="$EMSDK/upstream/emscripten"
-  export PATH="$EMSCRIPTEN:$PATH"
-  cfg-emscripten
-  cmake --build build/emscripten
-  # serve build/emscripten/shish.{html,js,wasm} over http://, open in
-  # a browser, run any script (e.g. "echo hi") -- traps with
-  # "RuntimeError: memory access out of bounds" instead of running
-  ```
