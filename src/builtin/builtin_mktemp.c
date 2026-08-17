@@ -44,7 +44,7 @@ builtin_mktemp(int argc, char* argv[]) {
       case 'u': printonly = 1; break;
       case 'p':
         temp = 1;
-        base = argv[shell_optind];
+        base = shell_optarg;
         break;
 
       default: builtin_invopt(argv); return 1;
