@@ -1,6 +1,7 @@
 #include "../builtin.h"
 #include "../sh.h"
 #include "../fdtable.h"
+#include "../var.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
 #include "../../lib/uint32.h"
@@ -24,7 +25,7 @@ const char help_mktemp[] = "    Create a uniquely-named temporary file or direct
 int
 builtin_mktemp(int argc, char* argv[]) {
   int c, directory = 0, quiet = 0, temp = 0, printonly = 0;
-  const char* base = "/tmp";
+  const char* base = NULL;
   stralloc name;
   size_t i;
   static const char alphabet[] = {
@@ -52,7 +53,15 @@ builtin_mktemp(int argc, char* argv[]) {
 
   stralloc_init(&name);
 
+  /* no TEMPLATE operand: use the default template under a tmpdir,
+     same as GNU/BSD mktemp's implied --tmpdir. */
+  if(!argv[shell_optind])
+    temp = 1;
+
   if(temp) {
+    if(!base)
+      base = var_vdefault("TMPDIR", "/tmp", NULL);
+
     stralloc_cats(&name, base);
     stralloc_catc(&name, '/');
   }

@@ -1,22 +1,3 @@
-- mktemp-default-template-ignores-tmp: `mktemp` (no `-t`/`-p`, no
-  explicit template) creates its file/directory relative to the
-  current directory instead of under `/tmp` (or `$TMPDIR`) the way
-  GNU/BSD `mktemp` does by default -- `temp` (the flag that decides
-  whether `base` gets prepended to the generated name) is only ever
-  set by `-t`/`-p`, never implied by the no-template case.
-  `src/builtin/builtin_mktemp.c:55-58`. Found while writing a
-  `tests/fixed.sh` regression test for `fixes/105` (cd/CDPATH) that
-  assumed `mktemp -d` returns an absolute path; worked around there
-  by resolving it via `cd "$dir" && pwd` immediately after creation
-  rather than fixed here (out of scope for that change).
-
-  **Repro:**
-  ```sh
-  cd /tmp && mkdir -p mktemp-repro && cd mktemp-repro
-  build/x86_64-linux-gnu/shish -c 'mktemp -d'
-  # prints a bare "shish-XXXXXXXX", created under ./ (cwd), not /tmp/
-  ```
-
 - yash-suite-other-hangs: a full sweep of all 119 `tests/yash/*.tst`
   files (each run individually with a 10s timeout via `run-tst.sh`,
   same as CTest's own per-file `TIMEOUT` but much shorter to survey
@@ -488,4 +469,19 @@
   ```sh
   # run several times; fails intermittently, not on every run
   sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix grouping-p.tst
+  ```
+
+- external-command-relative-arg-infinite-loop: an external command
+  invoked with a slash-less relative-path argument, right after a
+  command-substitution assignment, loops forever instead of running
+  once -- e.g. `dirname` re-executes and reprints its output
+  indefinitely. Not yet root-caused past this repro (found while
+  testing `mktemp`, unrelated to it).
+
+  **Repro:**
+  ```sh
+  unset IFS
+  X=$(mktemp foo.XXXXXX)
+  dirname "$X"
+  # prints "." forever instead of once; ^C to stop
   ```

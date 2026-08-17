@@ -3744,4 +3744,30 @@ b=' '
 set -- ''$b'' ""$b""
 assert_equal "4" "$#" "IFS whitespace between two quoted-empty fragments of one word must split them"
 
+## fixes/181: mktemp with no TEMPLATE operand created its file/directory
+## relative to the current directory instead of under $TMPDIR (or /tmp),
+## since the "temp" flag deciding whether to prepend a base directory
+## was only ever set by -t/-p, never implied by the no-template case.
+if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+  MT181_DIR=$(mktemp -d)
+  MT181_CWD=$(mktemp -d)
+
+  MT181_FILE=$(cd "$MT181_CWD" && TMPDIR="$MT181_DIR" "$SHISH_SELF" -c 'mktemp')
+  case "$MT181_FILE" in
+    "$MT181_DIR"/*) MT181_UNDER_TMPDIR=yes ;;
+    *) MT181_UNDER_TMPDIR=no ;;
+  esac
+  assert_equal "yes" "$MT181_UNDER_TMPDIR" "mktemp with no TEMPLATE must create under \$TMPDIR, not cwd"
+
+  MT181_REL=$(cd "$MT181_CWD" && "$SHISH_SELF" -c 'mktemp foo.XXXXXX')
+  case "$MT181_REL" in
+    */*) MT181_STAYED_RELATIVE=no ;;
+    *) MT181_STAYED_RELATIVE=yes ;;
+  esac
+  assert_equal "yes" "$MT181_STAYED_RELATIVE" "mktemp with an explicit relative TEMPLATE must stay relative to cwd"
+
+  rm -f "$MT181_FILE" "$MT181_CWD/$MT181_REL"
+  rm -rf "$MT181_DIR" "$MT181_CWD"
+fi
+
 summary
