@@ -250,6 +250,35 @@ endif(HAVE_GLOB_H)
 
 check_function_exists(glob HAVE_GLOB)
 
+check_include_file(sys/mman.h HAVE_SYS_MMAN_H)
+if(HAVE_SYS_MMAN_H)
+  set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} sys/mman.h)
+  list(APPEND CMAKE_REQUIRED_INCLUDES sys/mman.h)
+endif(HAVE_SYS_MMAN_H)
+
+check_function_exists(mmap HAVE_MMAP_FUNC)
+check_function_exists(munmap HAVE_MUNMAP)
+check_function_exists(mremap HAVE_MREMAP)
+
+# whether the platform can support mmap(2)/munmap(2) at all -- sys/mman.h
+# present and both functions found. USE_MMAP (an option(), see
+# CMakeLists.txt) may only be ON when this is true; HAVE_MMAP (the
+# compiler define lib/mmap/ and its callers actually check) tracks
+# USE_MMAP's final, validated value, not raw platform capability.
+if(HAVE_SYS_MMAN_H AND HAVE_MMAP_FUNC AND HAVE_MUNMAP)
+  set(HAVE_MMAP_SUPPORT TRUE)
+endif()
+
+if(USE_MMAP AND NOT HAVE_MMAP_SUPPORT)
+  message(WARNING "USE_MMAP requested, but mmap()/munmap() aren't available "
+                   "on this platform -- disabling")
+  set(USE_MMAP
+      OFF
+      CACHE BOOL "Use mmap() for memory-mapped file I/O" FORCE)
+endif()
+
+set(HAVE_MMAP ${USE_MMAP})
+
 check_type_size(pid_t PID_T)
 if(PID_T GREATER 0)
   set(HAVE_PID_T TRUE)

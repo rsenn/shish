@@ -22,6 +22,8 @@ set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release MinSizeRel
 option(WARN_WERROR "Halt the compilation with an error on compiler warnings."
        OFF)
 
+option(USE_MMAP "Use mmap() for memory-mapped file I/O" ON)
+
 include(CheckLibraryExists)
 include(CheckIncludeFile)
 include(CheckTypeSize)

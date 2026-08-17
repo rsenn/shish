@@ -96,4 +96,14 @@
 /* Define this if you have the link() function */
 #cmakedefine HAVE_LINK 1
 
+/* Define this if you have the munmap() function */
+#cmakedefine HAVE_MUNMAP 1
+
+/* Define this if you have the mremap() function */
+#cmakedefine HAVE_MREMAP 1
+
+/* Define this to use mmap()/munmap() for memory-mapped file I/O
+   (tracks the USE_MMAP cmake option; see cmake/Checks.cmake) */
+#cmakedefine HAVE_MMAP 1
+
 

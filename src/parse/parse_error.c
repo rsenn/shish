@@ -50,8 +50,12 @@ if(len > 100)
     /* sh_exit() unwinds subshell frames properly, unlike a raw
        exit(1) -- needed so a syntax error while parsing a sourced
        file from inside a subshell/$(...) unwinds to the nearest
-       enclosing subshell instead of killing the whole process. */
-    if(source->b->op == &buffer_dummyreadmmap) {
+       enclosing subshell instead of killing the whole process.
+       op == &buffer_dummyreadmmap catches the mmap'd case; FD_FILE
+       on the owning fd catches the same case when HAVE_MMAP is off
+       and the file is read(2)-backed instead. */
+    if(source->b->op == &buffer_dummyreadmmap ||
+       (source->fd && (source->fd->mode & FD_FILE))) {
       sh_exit(1);
     }
   }
