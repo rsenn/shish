@@ -6,14 +6,20 @@ control exist under WASM) can't freeze this page.</p>
 <button id="run">run all</button>
 <pre id="output">(not run yet)</pre>
 <script>
+// builtin-kill.sh/builtin-trap.sh/fixed.sh (signal/process control) and
+// builtin-hash.sh/builtin-rm.sh (both exec a real external binary via an
+// absolute path, e.g. "hash -p /bin/echo ..." / "/bin/ln -s ...") are
+// excluded: all five genuinely hang under WASM, which has no real
+// fork/exec, confirmed individually with generous (15s) timeouts. Run
+// those natively instead.
 var TESTS = [
-  "bquote.sh", "builtin-basename.sh", "builtin-expr.sh", "builtin-hash.sh",
-  "builtin-kill.sh", "builtin-local.sh", "builtin-mkdir.sh", "builtin-read.sh",
-  "builtin-rm.sh", "builtin-rmdir.sh", "builtin-test.sh", "builtin-trap.sh",
-  "cmd-subst.sh", "debug.sh", "expand-brace.sh", "expand-tilde.sh", "fixed.sh",
+  "bquote.sh", "builtin-basename.sh", "builtin-expr.sh",
+  "builtin-local.sh", "builtin-mkdir.sh", "builtin-read.sh",
+  "builtin-rmdir.sh", "builtin-test.sh",
+  "cmd-subst.sh", "debug.sh", "expand-brace.sh", "expand-tilde.sh",
   "functions.sh", "here-doc.sh", "if.sh", "loop-while.sh", "param.sh"
 ];
-var TIMEOUT_MS = 8000;
+var TIMEOUT_MS = 12000;
 
 function loadTestFiles() {
   var fetches = TESTS.map(function(name) {

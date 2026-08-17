@@ -204,22 +204,18 @@ cfg-mingw64() {
 }
 
 cfg-emscripten() {
- (build=$(${CC:-emcc} -dumpmachine | sed 's|-pc-|-|g')
-  host=${build/-gnu/-emscriptenlibc}
-  : ${builddir=build/${host%-*}-emscripten}
-  
-  prefix=`which emcc | sed 's|/emcc$|/system|'` 
-  libdir=$prefix/lib
-  bindir=$prefix/bin
-
-  CC="emcc" \
-  PKG_CONFIG="PKG_CONFIG_PATH=$libdir/pkgconfig pkg-config" \
+  (CC="emcc" CXX="em++" \
+  LDFLAGS="-sWASM=1 -sLLD_REPORT_UNDEFINED" \
+  CFLAGS="-sUSE_PTHREADS=0 -DEMSCRIPTEN=1" \
+  CXXFLAGS="-sUSE_PTHREADS=0 -DEMSCRIPTEN=1" \
+  TOOLCHAIN="${EMSCRIPTEN}/cmake/Modules/Platform/Emscripten.cmake" \
+  builddir=build/emscripten \
   cfg \
-    -DCMAKE_INSTALL_PREFIX="$prefix" \
+    -DCMAKE_EXE_LINKER_FLAGS="-s WASM=1 -sEXPORTED_RUNTIME_METHODS=['callMain'] -sINVOKE_RUN=0" \
+    -DCMAKE_EXECUTABLE_SUFFIX=".html" \
     -DENABLE_SHARED=OFF \
-    -DENABLE_STATIC=ON \
-    -DSHARED_LIBS=OFF \
     -DBUILD_SHARED_LIBS=OFF \
+    -DENABLE_PIC=FALSE \
     "$@")
 }
 
@@ -335,27 +331,6 @@ cfg-termux()
    "$@"
     )
 }
-cfg-wasm() {
-  export VERBOSE
- (EMCC=$(which emcc)
-  EMSCRIPTEN=$(dirname "$EMCC");
-  EMSCRIPTEN=${EMSCRIPTEN%%/bin*};
-  test -f /opt/cmake-toolchains/generic/Emscripten-wasm.cmake && TOOLCHAIN=/opt/cmake-toolchains/generic/Emscripten-wasm.cmake
-  test '!' -f "$TOOLCHAIN" && TOOLCHAIN=$(find "$EMSCRIPTEN" -iname emscripten.cmake);
-  test -f "$TOOLCHAIN" || unset TOOLCHAIN;
-  : ${prefix:="$EMSCRIPTEN"}
-  : ${builddir=build/emscripten-wasm}
-
-  CC="$EMCC" \
-  cfg \
-    -DEMSCRIPTEN_PREFIX="$EMSCRIPTEN" \
-    ${TOOLCHAIN:+-DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN"} \
-    -DCMAKE_EXE_LINKER_FLAGS="-s WASM=1" \
-    -DCMAKE_EXECUTABLE_SUFFIX=".html" \
-    -DCMAKE_EXECUTABLE_SUFFIX_INIT=".html" \
-    -DUSE_{ZLIB,BZIP,LZMA,SSL}=OFF \
-  "$@")
-}
 
 cfg-tcc() {
  (build=$(cc -dumpmachine | sed 's|-pc-|-|g')
@@ -377,34 +352,6 @@ cfg-android64 ()
     cfg -DCMAKE_INSTALL_PREFIX=/opt/aarch64-linux-android64eabi/sysroot/usr -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN:-/opt/android64-cmake/android64.cmake} -DANDROID_NATIVE_API_LEVEL=21 -DPKG_CONFIG_EXECUTABLE=aarch64-linux-android64eabi-pkg-config -DCMAKE_PREFIX_PATH=/opt/aarch64-linux-android64eabi/sysroot/usr -DCMAKE_MAKE_PROGRAM=/usr/bin/make -DCMAKE_MODULE_PATH="/opt/OpenCV-3.4.1-android64-sdk/sdk/native/jni/abi-armeabi-v7a" -DOpenCV_DIR="/opt/OpenCV-3.4.1-android64-sdk/sdk/native/jni/abi-armeabi-v7a" "$@" )
 }
 
-cfg-emscripten() {
-  (build=$(cc -dumpmachine | sed 's|-pc-|-|g')
-  host=$(emcc -dumpmachine)
-  : ${builddir=build/${host%-*}-emscripten}
-  : ${prefix=$EMSCRIPTEN/system}
-  : ${libdir=$prefix/lib}
-  : ${bindir=$prefix/bin}
-  : ${EMSCRIPTEN=$EMSDK/upstream/emscripten}
-  export TOOLCHAIN="${EMSCRIPTEN}/cmake/Modules/Platform/Emscripten.cmake"
-
-PREFIX_PATH=$(set -- /opt/*-wasm;  IFS=";"; echo "$*") 
-LIBRARY_PATH=$(set -- /opt/*-wasm/lib ;  IFS=";"; echo "$*") 
-  PKG_CONFIG_PATH=$(set -- /opt/*-wasm/lib/pkgconfig; IFS=":"; echo "$*") #${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}
-  PKG_CONFIG_PATH="${PKG_CONFIG_PATH:+$PKG_CONFIG_PATH:}${EMSCRIPTEN}/system/lib/pkgconfig"
-  export PKG_CONFIG_PATH
-  echo PKG_CONFIG_PATH="${PKG_CONFIG_PATH}"
-  CC="emcc" CXX="em++" TYPE="Release" \
-    CFLAGS="'-sWASM=1 -sUSE_PTHREADS=0 -sLLD_REPORT_UNDEFINED'" \
-    CXXFLAGS="'-sWASM=1 -sUSE_PTHREADS=0 -sLLD_REPORT_UNDEFINED'" \
-    CMAKE_WRAPPER="emcmake" \
-    prefix=/opt/${PWD##*/}-wasm \
-    cfg \
-    -DCMAKE_PREFIX_PATH="$PREFIX_PATH" \
-    -DCMAKE_LIBRARY_PATH="$LIBRARY_PATH" \
-    -DENABLE_PIC=FALSE \
-    "$@")
-}
-
 cfg-aarch64() {
  (: ${build=$(cc -dumpmachine | sed 's|-pc-|-|g')}
   : ${host=aarch64-${build#*-}}
@@ -417,4 +364,54 @@ cfg-aarch64() {
 
   PKG_CONFIG=$(which ${host}-pkg-config) \
   cfg "$@")
+}
+
+cfg-emscripten() {
+ (CC="emcc" CXX="em++" \
+  LDFLAGS="-sWASM=1 -sLLD_REPORT_UNDEFINED" \
+  CFLAGS="-sUSE_PTHREADS=0 -DEMSCRIPTEN=1" \
+  CXXFLAGS="-sUSE_PTHREADS=0 -DEMSCRIPTEN=1" \
+  TOOLCHAIN="${EMSCRIPTEN:=dirname $(which emcc)}/cmake/Modules/Platform/Emscripten.cmake" \
+  builddir=build/emscripten \
+  cfg \
+    -DCMAKE_EXE_LINKER_FLAGS="-s WASM=1 -sEXPORTED_RUNTIME_METHODS=['callMain'] -sINVOKE_RUN=0" \
+    -DCMAKE_EXECUTABLE_SUFFIX=".html" \
+    -DENABLE_SHARED=OFF \
+    -DBUILD_SHARED_LIBS=OFF \
+    -DENABLE_PIC=FALSE \
+    "$@")
+}
+
+cfg-wasm() {
+ (builddir=build/wasm32-clang
+  CC="clang" CXX="clang++" \
+  CFLAGS="--target=wasm32" \
+  CXXFLAGS="--target=wasm32" \
+  LDFLAGS="--target=wasm32" \
+  cfg \
+    -DCMAKE_SYSTEM_NAME=Generic \
+    -DCMAKE_SYSTEM_PROCESSOR=wasm32 \
+    -DENABLE_SHARED=OFF \
+    -DBUILD_SHARED_LIBS=OFF \
+    -DENABLE_PIC=FALSE \
+    "$@")
+}
+
+cfg-wasi() {
+ (: ${WASI_SDK_PREFIX:=/opt/wasi-sdk}
+  builddir=build/wasi
+  CC="${WASI_SDK_PREFIX}/bin/clang"
+  CXX="${WASI_SDK_PREFIX}/bin/clang++"
+  CFLAGS="-D_WASI_EMULATED_SIGNAL" 
+  CXXFLAGS="-D_WASI_EMULATED_SIGNAL" 
+  LDFLAGS="-lwasi-emulated-signal"
+  export CC CXX CFLAGS CXXFLAGS LDFLAGS
+  cfg \
+    -DCMAKE_SYSTEM_NAME=WASI \
+    -DCMAKE_SYSTEM_PROCESSOR=wasm32 \
+    -DCMAKE_SYSROOT="${WASI_SDK_PREFIX}/share/wasi-sysroot" \
+    -DENABLE_SHARED=OFF \
+    -DBUILD_SHARED_LIBS=OFF \
+    -DENABLE_PIC=FALSE \
+    "$@")
 }
