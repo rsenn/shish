@@ -3,6 +3,7 @@
 #include "../fdtable.h"
 #include "../debug.h"
 #include <unistd.h>
+#include <fcntl.h>
 
 /* flush and close buffers and free the associated ressources
  * ----------------------------------------------------------------------- */
@@ -39,6 +40,20 @@ fd_close(struct fd* fd) {
 
   if(fd->wb.fd > 2)
     fdtable_untrack(fd->wb.fd);
+
+  /* a real kernel fd is only fd's to close if fd_list[] still shows fd
+     as its registered owner. A shadowed struct being reaped here can
+     carry a real fd number (via rb.fd/wb.fd, independent of fd->e --
+     see the FD_DUP case above and the here-doc/subst case below) that
+     a newer struct has since claimed for real; closing it again here
+     would sever that struct's own descriptor instead of fd's. Neuter
+     fd's own copy first so the buffer_close() calls below become
+     no-ops for it. */
+  if(fd_ok(fd->rb.fd) && fd_list[fd->rb.fd] && fd_list[fd->rb.fd] != fd)
+    fd->rb.fd = -1;
+
+  if(fd_ok(fd->wb.fd) && fd_list[fd->wb.fd] && fd_list[fd->wb.fd] != fd)
+    fd->wb.fd = -1;
 
   /* if the buffers belong to this (fd) we close them
      don't close twice if we also have a writing buf */

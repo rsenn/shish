@@ -1,0 +1,709 @@
+diff --git a/BUGS b/BUGS
+index 3503478b..f789a362 100644
+--- a/BUGS
++++ b/BUGS
+@@ -331,16 +331,93 @@
+   # 6 failures in trap and subshell exit status handling
+   ```
+ 
+-- exec-redirection-and-error-broken: `exec` with redirections
+-  doesn't preserve them, and executing non-existing commands
+-  reports wrong errors. 3 failures in `exec-p.tst` (7/10).
+-  `exec_command.c` / `builtin_exec.c`. `exec-p.tst:15,56,61`.
++- exec-redirection-and-error-broken: narrowed down to one failure in
++  `exec-p.tst` (9/10, not 7/10 as previously logged here — the other
++  two entries this bullet used to cite were fixed as a side effect of
++  an unrelated change earlier in the same session that produced
++  fixes/184/185). The remaining failure is `exec-p.tst:15`, "exec
++  with redirections":
++
++  ```sh
++  exec >&2 2>/dev/null
++  echo reached
++  ```
++
++  must send "reached" to stderr (fd 1 was dup'd from fd 2 *before* fd
++  2 got retargeted to /dev/null); shish sends it to the original
++  stdout instead.
+ 
+   **Repro:**
+   ```sh
+-  # Run the exec conformance test
+   sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix exec-p.tst
+-  # 3 failures in redirection preservation and error reporting
++  # 1 failure: exec-p.tst:15
++  ```
++
++  **Root cause (confirmed):** `fd_dup()` (`src/fd/fd_dup.c`), used for
++  every `[n]>&m` redirection including persistent ("exec") ones, does
++  NOT take an independent copy of the source fd's state — it copies
++  *pointers* into the source struct's own embedded buffer storage
++  (`d->r = dupe->r; d->w = dupe->w; d->dup = dupe;`) and leaves the
++  real kernel dup2() to happen lazily later (`fdtable_dup()`,
++  triggered by `fdtable_exec()`/`fdtable_lazy()`). For `exec >&2
++  2>/dev/null`, by the time that lazy resolution actually runs, the
++  *second* redirection has already run `fd_new(2,...)` ->
++  `fdtable_newfd(2,...)` -> `fd_reinit()`, which reuses/reinitializes
++  the exact same `struct fd` that fd 1's still-pending dup is chasing
++  via `->dup`. The pending dup then resolves against the *new*
++  (/dev/null) occupant instead of the original fd-2 target.
++
++  **What I tried (session ending 2026-08-17), and why it's reverted:**
++  Tried forcing the real dup2() to happen eagerly, inside
++  `redir_dup()`, right after `fd_dup()` sets up the pending dup, so it
++  captures the source before any later redirection in the same list
++  can reinit its struct. Needed `fdtable_dup(nredir->fd,
++  FDTABLE_FORCE | FDTABLE_CLOSE)` specifically (plain
++  `fdtable_resolve()`/`FDTABLE_MOVE` alone hits a self-referential
++  "redirection cycle detected" error, because the fd being resolved
++  is already linked into its own fdtable slot, and going through
++  `fdtable_wish()`/`fdtable_gap()` has it try to relocate itself out
++  of its own way; `FDTABLE_CLOSE` skips that. `FDTABLE_FORCE` is
++  needed too because fds 0-2 used to never actually get `close()`d
++  when torn down — see the fd≤2-guard writeup below, fixes/186 — so
++  fdtable's bookkeeping believed slot 1 was free while the kernel fd
++  was still open, and only `FDTABLE_FORCE`'s dup2()-retry path could
++  actually reclaim it).
++
++  This made `exec-p.tst:15` and the simple repro above pass. **But it
++  introduced a reliably reproducible segfault** on a previously-working
++  pattern (the classic stdout/stderr swap idiom, `tests/fixed.sh`
++  fixes/187's test). That crash is now understood and fixed
++  separately (fixes/187, `fd_state_save()`/`fd_state_restore()` around
++  `eval_subshell.c`'s existing `fdstack_push()`/`fdstack_pop()` pair) —
++  see "TODO.md, Goal 4" for the full writeup. So the segfault is no
++  longer a reason not to retry the eager-dup2() approach above; it
++  should just also carry the `fd_state_save`/`fd_state_restore` fix
++  (or run after it, since that fix is already in the tree).
++
++  All three changed files (`src/redir.h`, `src/redir/redir_eval.c`,
++  `src/redir/redir_dup.c`) were reverted back to their original state
++  before ending the session — the tree currently has NO changes
++  related to this specific bug (`src/redir/redir_dup.c`'s original
++  signature is `int redir_dup(struct nredir* nredir, stralloc* sa)`,
++  2 params, no `persistent` flag). What *did* land this session,
++  discovered while chasing the segfault above: the fd≤2 `close()`
++  guard that was masking a family of real fd-table bookkeeping bugs
++  got removed for good (fixes/186), and the subshell fd-bookkeeping
++  scoping gap that caused the segfault got fixed (fixes/187) — both
++  documented in `TODO.md`'s Goal 4 section. Retrying the eager-dup2()
++  fix for *this* bug now starts from firmer ground.
++
++  **Repro for the (now-fixed) crash**, kept here since it's still a
++  useful regression check for whoever retries the eager-dup2() fix:
++  ```sh
++  build/x86_64-linux-gnu/shish -c '
++  X=$(mktemp); Y=$(mktemp)
++  ( exec 3>&1 1>&2 2>&3 3>&-; echo a; echo b >&2 ) > "$X" 2> "$Y"
++  echo "exit=$?"; cat "$X"; cat "$Y"
++  rm -f "$X" "$Y"
++  '
++  # must not crash; must print exit=0 / a on stderr's file / b on stdout's file
+   ```
+ 
+ - return-from-dot-script-broken: `return` from a dot-sourced script
+diff --git a/TODO.md b/TODO.md
+index 567844c6..de40e1d3 100644
+--- a/TODO.md
++++ b/TODO.md
+@@ -491,6 +491,379 @@ Design decisions already worked out (full reasoning in git history —
+ 
+ ---
+ 
++## Goal 4 — `fd`/`fdtable`/`fdstack`/`redir`: the fd≤2 protection is load-bearing, not incidental
++
++Grew out of chasing `BUGS: exec-redirection-and-error-broken` (`exec >&2
++2>/dev/null; echo reached` sending "reached" to the wrong stream). Two
++fix attempts (2026-08-17) each got the original bug's repro passing, and
++each broke something bigger — a segfault in one case, all external-command
++pipelines in the other. Both were reverted at the time; the sections
++below are the writeup of *why*, plus (see "Progress") two of the
++suggested refactorings that were since implemented and verified
++regression-clean on their own. The original bug itself is still open.
++
++### Where the guard actually came from, and what leans on it
++
++`lib/buffer/buffer_close()` is a plain `libowfat` primitive, shared by
++code that has nothing to do with shish's fd table (`lib/path/path_gethome.c`,
++`lib/stralloc/mmap_filename.c`). Its `if(b->fd > 2) close(b->fd);` guard
++is upstream `libowfat`, not shish-specific — but `src/fd/fd_close.c`
++(shish's only fd-table-aware caller) was written *assuming* that guard is
++there. `fd_close()` is called every time any `struct fd` is torn down —
++every temporary redirection's fdstack level pop, every persistent
++(`exec`) redirection's `fdtable_newfd()`-driven reinit, all of it — and it
++unconditionally calls `buffer_close(&fd->rb)`/`buffer_close(&fd->wb)`. As
++long as `buffer_close()` refuses to actually `close()` fd 0/1/2, every one
++of those teardown call sites gets a free pass: it doesn't matter whether
++the particular `struct fd` genuinely owns its low-numbered real
++descriptor or is just shadowing/aliasing it, the guard makes the mistake
++harmless. Nothing in `src/fd/`, `src/fdtable/`, or `src/fdstack/` states
++this invariant anywhere — it's implicit, and it is why `exec`'s own
++persistent redirections of fd 0/1/2 can never really free/reclaim them
++for reuse (the actual mechanism behind the original bug this was chasing).
++
++### What happens when the guard is removed
++
++Removing it (`if(b->fd >= 0) close(b->fd);`) does not break anything by
++itself in isolation — `echo hi | sed 1q` and `exec >&2 2>/dev/null; echo
++reached` both still worked run standalone. It only broke once exercised
++inside the full `tests/fixed.sh` run (hundreds of commands deep), where
++external-command pipelines inside command substitutions started failing
++with `Bad file descriptor` on the child's stdin (`sed`, `grep`, `tr` all
++affected). That it doesn't reproduce from a 5-line isolated repro, only
++after dozens of preceding tests, is itself informative: this is bookkeeping
++*drift*, not an immediate crash — some earlier command leaves
++`fd_expected`/`fd_list[]` quietly inconsistent with reality, and a much
++later, syntactically unrelated command is the one that visibly trips over
++it (its `pipe()`/`open()` call lands on a real fd number that's secretly
++still in use, and closing/using that fd is what fails).
++
++The concrete unsafe path: `fdtable_gap()` (`src/fdtable/fdtable_gap.c`)
++has two branches for evicting whatever currently sits in the way of a
++`FDTABLE_FORCE`d fd:
++
++```c
++if(flags & FDTABLE_NOCLOSE) {
++  fd_setfd(gap, -1);   /* neuter gap->rb.fd/wb.fd to -1 first */
++  fd_pop(gap);          /* now safe regardless of what fd_close() does */
++  return e;
++}
++fd_pop(gap);             /* <-- no fd_setfd(gap, -1) first! */
++return FDTABLE_DONE;
++```
++
++The first branch is careful — `fd_setfd(gap, -1)` deliberately runs before
++`fd_pop()`/`fd_close()`/`buffer_close()`, so whatever `close()` policy
++`buffer_close()` has doesn't matter; `gap` never really owned the number
++by the time it's torn down. The second branch has no such guard: it
++`fd_pop()`s `gap` — real `struct fd`, real `rb.fd`/`wb.fd` still pointing
++at the live low-numbered descriptor — directly. With the old
++`buffer_close()`, that was harmless (the close silently no-op'd for
++fd ≤ 2). With the guard removed, it's a real `close()` of a descriptor
++that something else — a shadowed struct one fdstack level down, a pipe
++endpoint about to be `dup2()`'d in a forked child, `fd_list[]`'s own
++bookkeeping for that number — still expected to be alive.
++
++`FDTABLE_NOCLOSE` is only added automatically by `fdtable_dup()`'s own
++call into `fdtable_wish()`. Every *other* path into `fdtable_gap()` goes
++through `fdtable_wish()` via `fdtable_open()` or `fdtable_here()`,
++carrying whatever flags *their* caller happened to pass — and several
++callers pass `FDTABLE_MOVE`/`FDTABLE_FORCE` alone, no `NOCLOSE`:
++
++- `src/redir/redir_open.c:28` — `fdtable_open(nredir->fd, FDTABLE_MOVE)`,
++  called directly (not through `fdtable_resolve()`) for every `R_NOW`
++  redirection, which includes ordinary *temporary* redirections on a
++  command with no argv at all (`READONLYVAR=changed 2>/dev/null` —
++  `args == NULL` forces `R_NOW` in `eval_simple_command.c`, unrelated to
++  `exec`). This is the exact command sitting immediately before the first
++  pipeline that failed in the `tests/fixed.sh` run.
++- `src/fdtable/fdtable_exec.c:41` — `fdtable_resolve(fdtable[i],
++  FDTABLE_FORCE)`, run over *every* live fd right before every `execve()`
++  (so also for a plain, redirection-free `sed`/`grep`/`tr` in a pipeline).
++
++Neither of those is `exec`-specific or unusual — they're on the hot path
++for practically every external command shish runs. That's why removing
++the guard has such a broad blast radius: the unsafe `fdtable_gap()` branch
++was always reachable during perfectly ordinary command execution, it just
++never had a live low fd to damage before, because `buffer_close()` was
++quietly eating every attempt to actually close one.
++
++### The stdout/stderr-swap subshell crash: a related but distinct failure
++
++The other fix attempt (forcing `redir_dup()` to eagerly resolve a
++persistent dup via `fdtable_dup(nredir->fd, FDTABLE_FORCE | FDTABLE_CLOSE)`,
++*without* touching `buffer_close()` at all) crashed reliably — but only
++from inside a subshell, and only in code that runs *after* the subshell
++returns:
++
++```sh
++X=$(mktemp); Y=$(mktemp)
++( exec 3>&1 1>&2 2>&3 3>&-; echo a; echo b >&2 ) > "$X" 2> "$Y"
++echo "exit=$?"; cat "$X"; cat "$Y"
++```
++
++Struct-`fd` lifecycle for this, traced end to end:
++
++1. `eval_command()` sees the `( ... ) > "$X" 2> "$Y"` compound command has
++   redirections → `fdstack_push()`s a new level **L1**. For each of
++   `> "$X"`/`2> "$Y"`: `d = fd_alloc()` (a *temporary*, C-stack-allocated
++   struct) → `fd_push(d, ...)` links it at L1, shadowing whatever was at
++   the slot before (the shell's real, permanent, level-**L0** fd 1/2
++   structs — the ones wrapping the process's actual inherited stdout/
++   stderr). `redir_open()` really `open()`s `$X`/`$Y`, landing on some
++   real fd (say 5 and 6) via `fd_setfd()`.
++2. `eval_subshell()` runs. Because shish subshells never `fork()`
++   (`eval_subshell.c` runs the body in-process via `fdstack_push()`/
++   `setjmp()`), everything from here on shares the *same* process, the
++   *same* global `fdtable[]`/`fd_list[]`/`fd_expected`. It pushes another
++   level, **L2**.
++3. `exec 3>&1 1>&2 2>&3 3>&-` runs. `exec`'s redirections are always
++   *persistent* (`d == NULL`), so each goes through `fd_new()` →
++   `fdtable_newfd()`. `fdstack_search()` only reuses a struct already on
++   the *exact current* level, and L2 has nothing yet for slots 1/2/3, so
++   three brand-new structs get allocated at L2 (call them S₃, S₁, S₂ for
++   the order they're created in) rather than reusing L1's or L0's. Each
++   is a lazy alias (`fd_dup()`'s pointer copy, `d->r = dupe->r` etc.) of
++   whatever currently tops that slot: S₃ aliases L1's `$X` struct, S₁
++   aliases L1's `$Y` struct, S₂ aliases **S₃** (which itself only
++   resolves down to `$X` once *its* alias is chased) — a live, is
++   multi-hop alias chain, entirely within L2, never actually `dup2()`d
++   for real anywhere in this sequence under the *original*, unmodified
++   code (that's precisely the bug being chased — it stays lazy).
++4. `echo a`/`echo b >&2` write straight through those alias pointers —
++   correctly, in the unmodified code, since nothing has torn any of the
++   aliased-*from* structs down yet.
++5. `eval_subshell()` returns: pops L2. `fd_pop()`/`fd_close()` runs on
++   S₃/S₁/S₂ — harmless, since none of them own a real descriptor of their
++   own (pure pointer aliases, `rb.fd`/`wb.fd` were never set).
++6. `eval_command()` finishes: pops L1. *Now* the real, fd-owning structs
++   for `$X` (5) and `$Y` (6) get `fd_close()`d for real — correctly, since
++   the whole compound command is done with them.
++
++That sequence is self-consistent in the original code, matching the
++observed-correct output. The crash-inducing change was forcing step 3's
++aliases to resolve *eagerly*, via `fdtable_dup(..., FDTABLE_FORCE)`, the
++moment each `exec` redirection runs — which mutates the *global*
++`fd_expected`/`fd_list[]`, not anything scoped to L2. Because there's no
++`fork()` bounding "the subshell" at the OS level, that mutation isn't
++undone by L2's pop in step 5 the way the *rest* of the subshell's state
++(vartab, functions, traps, the fdstack level itself) already is — it
++leaks into step 6 and beyond, corrupting bookkeeping the *parent* script
++relies on for whatever runs after the subshell returns. Same underlying
++gap as the pipeline breakage above (code that assumes "this is safe,
++nobody else needs this fd number" without actually checking), just
++triggered through eager resolution instead of through the buffer_close
++guard removal — either path reaches the same kind of unscoped, global
++mutation.
++
++### Suspected problems (ranked, most load-bearing first)
++
++1. **No fdstack-scoped ownership tracking.** `fd_expected`, `fd_list[]`,
++   `fd_top`/`fd_lo`/`fd_hi` are all single global variables, but a
++   persistent redirection's "this fd is free now" is only actually true
++   for *however long the current process lives* — which is unbounded
++   inside a non-forking subshell, since "the current process" outlives
++   the subshell scope that logically owns the mutation.
++2. ~~**`fdtable_gap()`'s unsafe branch has no invariant documented, let
++   alone enforced**~~ — **fixed 2026-08-17**, see "Progress" below.
++3. **Persistent (`exec`) redirections and eval_subshell's in-process
++   model are fundamentally in tension.** `fd_new()`/`fdtable_newfd()`'s
++   docs/comments talk about "persistent" as if it always means
++   "for the rest of the process" — true at the real top level, false
++   inside a non-forking subshell, and nothing in the code distinguishes
++   the two cases.
++4. **The fd ≤ 2 protection is a blanket workaround, not a fix**, for the
++   fact that fds 0/1/2 are simultaneously (a) real OS resources that can
++   legitimately need closing/reopening (what `exec` wants) and (b)
++   implicitly assumed-immortal by a large fraction of `src/fd*` written
++   before/without that in mind.
++
++### Suggested refactorings
++
++- ~~**Scope `fd_expected`/`fd_list[]` mutations to the fdstack level that
++  caused them**~~ — **done 2026-08-17** for `eval_subshell()`, see
++  "Progress" below. Confirmed *necessary but not sufficient* — problem 3
++  turned out not to be subshell-exclusive (see "Progress").
++- **Give persistent redirections real subshell-awareness.** Either (a)
++  make `eval_subshell()` genuinely fork when it contains a persistent
++  (`exec`) redirection anywhere in its body — expensive to detect
++  up-front, but sidesteps the whole shared-global-state problem by
++  construction — or (b) teach `fdtable_newfd()`/`fd_close()` that a
++  "persistent" redirection created inside a pushed-for-a-subshell
++  fdstack level is only persistent *for that level's lifetime*, and
++  should behave like a temporary one for teardown purposes.
++- **Make `fdtable_gap()`'s eviction safe unconditionally**: always
++  `fd_setfd(gap, -1)` before `fd_pop(gap)` regardless of `NOCLOSE`, and
++  have the caller's later `dup2()`/`open()` re-establish the number.
++  This turns "was this call site given NOCLOSE" from a load-bearing
++  correctness requirement into a pure optimization hint, closing off
++  the whole class of bug problem 2 describes.
++- **State the fd ≤ 2 invariant explicitly, in code, not just in
++  `buffer_close()`'s behavior.** A `fd_is_owned(struct fd*)`-style check
++  (real ownership, per `fd_list[e] == fd`, not just "is the number ≤ 2")
++  at the point `fd_close()` decides whether to actually close, so the
++  policy lives next to the fd table that understands ownership, not in a
++  generic `libowfat` buffer primitive shared with unrelated code that
++  has no such table to consult.
++- **Once ownership is real, drop the blanket fd ≤ 2 guard from
++  `buffer_close()` entirely** (restoring it to plain upstream
++  `libowfat` behavior) — `fd_close()` itself is where the "should this
++  actually close" decision belongs; the low-level buffer primitive
++  shouldn't be the one enforcing a shish-specific policy that doesn't
++  apply to its other callers (`path_gethome.c`, `mmap_filename.c`).
++
++The `buffer_close()`/`fd_close()`/`redir_dup.c` trio from the original
++two fix attempts was NOT implemented — reverted in full each time it was
++retried below too. `BUGS: exec-redirection-and-error-broken` still has
++its own writeup of the narrower, original symptom and repro steps.
++
++### Progress (2026-08-17, second pass)
++
++Two of the refactorings above are now actually implemented and merged
++into the working tree, landed independently of the still-unsafe
++`buffer_close()` change:
++
++- **`fdtable_gap()`'s eviction is now unconditionally safe**
++  (`src/fdtable/fdtable_gap.c`): `fd_setfd(gap, -1)` always runs before
++  `fd_pop(gap)`, not just under `FDTABLE_NOCLOSE`; only the return value
++  (`e` vs. `FDTABLE_DONE`) still varies by that flag. Verified against
++  `tests/fixed.sh` (385/388, identical to baseline — the 3 failures are
++  pre-existing and unrelated), the full `ctest` suite, and
++  `exec-p.tst`/`redir-p.tst`/`pipeline-p.tst` (byte-identical pass/fail
++  counts to baseline across repeated runs). Safe and neutral on its own,
++  as expected — it only matters once something can actually reach real
++  fd ≤ 2 through the branch it fixes, which the current `buffer_close()`
++  still prevents.
++- **`fd_expected`/`fd_top`/`fd_lo`/`fd_hi`/`fd_list[]` are now
++  snapshotted and restored around `eval_subshell()`**, mirroring
++  `vartab_push()`/`vartab_pop()` exactly: `struct fd_state`
++  (`src/fd.h`) plus `fd_state_save()`/`fd_state_restore()`
++  (`src/fd/fd_state_save.c`/`fd_state_restore.c`), called immediately
++  after `fdstack_push(&io)` and immediately after `fdstack_pop(&io)` in
++  `eval_subshell.c`. Also verified regression-clean the same way as
++  above. **What this does not fix, by design** (stated up front in
++  `fd_state_restore()`'s own comment): it undoes shish's *bookkeeping*
++  about which real fds are free, not any actual `dup2()`/`close()`
++  syscall a persistent redirection inside the subshell already issued
++  against a real, still-live descriptor — a real kernel fd, once
++  changed, stays changed no matter what the bookkeeping says afterward.
++
++**Re-tested the original two experimental changes (`buffer_close()`'s
++guard removed, plus eager `fdtable_dup()` resolution in
++`redir_dup.c`) together with both fixes above in place** to see how much
++of the original blast radius they close off. Result: the segfault
++repro (the stdout/stderr-swap subshell) is gone — 10/10 clean runs,
++where it was reliably reproducible before. But **the pipeline breakage
++is not fixed, and turned out not to be subshell-related at all**:
++`X=$(echo hi | sed 1q)` (no subshell anywhere) still fails with `Bad
++file descriptor` once enough state has accumulated earlier in a long
++script. Given this, all three of the original experimental changes
++were reverted again for that pass — see below for what actually closed
++this off.
++
++### Progress (2026-08-18, third pass — root-caused and fixed)
++
++Picked the pipeline-breakage thread back up using `strace -f -e
++trace=fork,clone,dup,dup2,close,pipe2,execve` against the real
++(non-debug) binary instead of shish's own `DEBUG_FDTABLE` trace — the
++shell's own bookkeeping agreed with itself right up to the actual
++`close()` syscall, so the bug was only visible by watching the real
++syscalls a forked child issues immediately before its own `execve()`.
++That showed a pipeline's later stage (e.g. `sed`/`rev` in
++`echo x | sed 1q`) getting its own, just-established real stdin
++`close()`d again, right before `execve()`, in the *same* child process
++— `fd 0` simply missing from `/proc/<pid>/fd` by the time the program
++ran, so it either hung (spinning on `read()`+`EBADF` in a program that
++doesn't check for it — a `rev` process was found already stuck like
++this from an earlier run, 300+ CPU-minutes in) or printed "Bad file
++descriptor" directly.
++
++Root cause: `fdstack_flatten()` (`src/fdstack/fdstack_flatten.c`,
++called in every forked child right before `execve()` to reap any
++struct that's `!= fdtable[fd->n]`, i.e. shadowed) calls `fd_pop()`
++unconditionally on what it finds shadowed — including a struct whose
++real fd number (`->e`, or independently `rb.fd`/`wb.fd` — see below)
++has, by that point, been silently reused by a *different*, currently-
++active struct after an earlier eviction elsewhere failed to relocate
++it (the same failure mode fixed for `fdtable_gap()` in the previous
++pass, just reached through two more call paths). Confirmed by
++instrumenting `fdstack_flatten()` to dump both the victim and
++`fdtable[fd->n]` (the "top" struct) via `fd_dump()`: the victim (the
++process's own inherited stdin struct, `"char device"`) and the
++top/active struct (the pipeline's own `"pipe"` struct) both showed
++`e=0` — two distinct `struct fd*` objects both claiming to own the
++same real kernel fd 0.
++
++Two more instances of the same "unconditionally destroy, don't check
++who else might already own this real fd" bug, beyond the
++`fdtable_gap()` one fixed last pass:
++
++- **`fdtable_dup()`'s `dup2()` landing branch**
++  (`src/fdtable/fdtable_dup.c`): when `flags & FDTABLE_CLOSE` is set,
++  `fdtable_wish()` (and so `fdtable_gap()`) is deliberately skipped —
++  see its own comment, "if we can close the destination there's no
++  need to wish" — and `dup2(o, d->n)` runs straight over whatever
++  currently occupies real fd `d->n`. `dup2()` closes that atomically
++  in the kernel *before* this function ever gets a chance to look at
++  it, so unlike `fdtable_gap()`'s case, there is no "undo the close"
++  option here — the occupant has to be relocated via a fresh `dup()`
++  *before* the `dup2()` call, not after. Fixed by checking
++  `fd_list[d->n]` immediately before the `dup2()` call and relocating
++  a merely-shadowed occupant there, mirroring `fdtable_gap()`'s
++  already-fixed branch.
++- **`fd_close()`'s real `close()` calls** (`src/fd/fd_close.c`): the
++  actual bug hit by `fdstack_flatten()` above. The existing
++  `fd_list[fd->e] == fd` check only guarded the *bookkeeping* clear
++  (`fd_list[fd->e] = 0`) — it never gated whether `buffer_close()`
++  actually got called. Worse, that check is keyed on `fd->e`, which
++  can be `-1` (a struct whose buffer sits on its own real fd —
++  stralloc/here-doc temp files — independently of ever becoming the
++  struct's own "effective" descriptor; see the existing comment right
++  above it) while `rb.fd`/`wb.fd` still hold a live real number. Fixed
++  by checking `fd_list[]` against `rb.fd`/`wb.fd` directly,
++  unconditionally (not gated on `fd->e` or `FD_DUP` mode), right
++  before the `buffer_close()` calls: if some other struct is already
++  the registered owner, neuter this struct's copy (`= -1`) instead of
++  closing it for real.
++
++With both of these plus last pass's `fdtable_gap()` fix in place,
++`buffer_close()`'s guard was narrowed for good (`fd >= 0`, not `fd >
++2`) — the fd≤2 special case is gone from `lib/buffer/buffer_close.c`
++entirely, restoring it to a plain, policy-free primitive as suggested
++in "Suggested refactorings" above. Verified:
++
++- The `Bad file descriptor`/hung-`rev` repro (`echo hi | sed 1q` after
++  enough `mktemp`/`mkdir`/heredoc churn) is clean 10/10 runs, confirmed
++  both minimally and via a truncated `tests/fixed.sh` prefix.
++- The stdout/stderr-swap subshell repro from last pass is still clean
++  10/10 (no regression from this pass's changes).
++- `tests/fixed.sh` in full: same 3 pre-existing, unrelated failures as
++  baseline (`main`, no session changes) — `the same holds for a
++  pipeline that actually pushes multiple lines through the builtin`
++  and the two `set +h` cases — confirmed by literally stashing this
++  session's fd/fdtable changes, rebuilding, and diffing the failure
++  list.
++- Full `ctest` (including `tests/posix/*.tst`): 61/142 failed on both
++  this session's tree and a stashed-back baseline tree, byte-identical
++  failure list (`diff` of the two sorted `(Failed)`/`(Timeout)` lines
++  was empty). The signal-related failures (`sigcont*`/`sighup*`/
++  `sigint*`/`sigquit*`/`sigterm*`/`sigurg*`) are a property of running
++  without a controlling terminal in this environment, not a regression.
++- Regression tests added to `tests/fixed.sh` (fixes/186, fixes/187);
++  patches in `fixes/186-fd-table-bookkeeping-vs-real-close-desync.patch`
++  and `fixes/187-subshell-fd-table-not-scoped.patch`.
++
++**Still open, and now unblocked**: `BUGS: exec-redirection-and-error-
++broken`'s original, narrower symptom (`exec >&2 2>/dev/null; echo
++reached` going to the wrong stream). The eager-`fdtable_dup()`-in-
++`redir_dup.c` approach that fixed it last time (before hitting the
++now-fixed segfault) can be retried on firmer ground — both bugs that
++made it unsafe (the segfault, and the fd≤2-masked corruption this pass
++root-caused) are fixed now. See `BUGS`'s own entry for the exact
++approach and where it left off.
++
++---
++
+ ## Also open
+ 
+ - **Line-editing/terminal-abstraction/key-bindings rewrite** — a
+diff --git a/lib/buffer/buffer_close.c b/lib/buffer/buffer_close.c
+index 3d82bea2..06501138 100644
+--- a/lib/buffer/buffer_close.c
++++ b/lib/buffer/buffer_close.c
+@@ -17,6 +17,6 @@ buffer_close(buffer* b) {
+   if(b->deinit)
+     ((deinit_fn_t*)b->deinit)(b);
+ 
+-  if(b->fd > 2)
++  if(b->fd >= 0)
+     close(b->fd);
+ }
+diff --git a/src/fd/fd_close.c b/src/fd/fd_close.c
+index 16072981..f3dc3069 100644
+--- a/src/fd/fd_close.c
++++ b/src/fd/fd_close.c
+@@ -3,6 +3,7 @@
+ #include "../fdtable.h"
+ #include "../debug.h"
+ #include <unistd.h>
++#include <fcntl.h>
+ 
+ /* flush and close buffers and free the associated ressources
+  * ----------------------------------------------------------------------- */
+@@ -40,6 +41,20 @@ fd_close(struct fd* fd) {
+   if(fd->wb.fd > 2)
+     fdtable_untrack(fd->wb.fd);
+ 
++  /* a real kernel fd is only fd's to close if fd_list[] still shows fd
++     as its registered owner. A shadowed struct being reaped here can
++     carry a real fd number (via rb.fd/wb.fd, independent of fd->e --
++     see the FD_DUP case above and the here-doc/subst case below) that
++     a newer struct has since claimed for real; closing it again here
++     would sever that struct's own descriptor instead of fd's. Neuter
++     fd's own copy first so the buffer_close() calls below become
++     no-ops for it. */
++  if(fd_ok(fd->rb.fd) && fd_list[fd->rb.fd] && fd_list[fd->rb.fd] != fd)
++    fd->rb.fd = -1;
++
++  if(fd_ok(fd->wb.fd) && fd_list[fd->wb.fd] && fd_list[fd->wb.fd] != fd)
++    fd->wb.fd = -1;
++
+   /* if the buffers belong to this (fd) we close them
+      don't close twice if we also have a writing buf */
+   if(fd->rb.fd != fd->wb.fd) {
+diff --git a/src/fdtable/fdtable_dup.c b/src/fdtable/fdtable_dup.c
+index 51854901..c1db9fee 100644
+--- a/src/fdtable/fdtable_dup.c
++++ b/src/fdtable/fdtable_dup.c
+@@ -49,8 +49,27 @@ retry:
+     e = dup(o);
+ 
+   /* position forced or destination d can be closed */
+-  else if((state == d->n) || (flags & FDTABLE_FORCE))
++  else if((state == d->n) || (flags & FDTABLE_FORCE)) {
++    /* dup2() below atomically closes whatever real fd d->n currently
++       holds, in the kernel, before this function ever sees it. If
++       that occupant is merely *shadowed* (fdtable_gap()'s FORCE
++       branch would relocate rather than destroy it), it needs the
++       same relocation here, first -- fdtable_wish() above skips
++       fdtable_gap() whenever FDTABLE_CLOSE is set, so this is the
++       only chance to save it. */
++    struct fd* occupant = fd_list[d->n];
++
++    if(occupant && occupant != d && !(occupant->mode & FD_CLOSE) && occupant != fdtable[occupant->n]) {
++      int newfd = dup(occupant->e);
++
++      if(newfd == -1)
++        return FDTABLE_ERROR;
++
++      fd_setfd(occupant, newfd);
++    }
++
+     e = dup2(o, d->n);
++  }
+ 
+   if(e == -1)
+     return FDTABLE_ERROR;
+diff --git a/src/fdtable/fdtable_gap.c b/src/fdtable/fdtable_gap.c
+index 5b533b25..6400314b 100644
+--- a/src/fdtable/fdtable_gap.c
++++ b/src/fdtable/fdtable_gap.c
+@@ -1,6 +1,15 @@
+ #include "../fd.h"
+ #include "../fdstack.h"
+ #include "../fdtable.h"
++#include "../../lib/windoze.h"
++#include <errno.h>
++#include <fcntl.h>
++#if WINDOWS_NATIVE
++#include <io.h>
++#define dup _dup
++#else
++#include <unistd.h>
++#endif
+ 
+ /* request a gap below fd_expected, a gap can be created if the fd
+  * is owned by an fd not on top. a gap can also be forced through
+@@ -18,18 +27,52 @@ fdtable_gap(int e, int flags) {
+   if((gap = fd_list[e]) == NULL)
+     return FDTABLE_DONE;
+ 
+-  /* if we can close the gap fd then delete it */
+-  if((gap->mode & FD_CLOSE) || ((flags & FDTABLE_FORCE) && gap != fdtable[gap->n])) {
+-    /* set fd to -1 so it isn't closed in fd_close()
+-       because we'll maybe handle this later by dup2() */
+-    if(flags & FDTABLE_NOCLOSE) {
+-      fd_setfd(gap, -1);
+-      fd_pop(gap);
+-      return e;
+-    }
+-
++  /* gap is explicitly due to be closed (e.g. a resolved temp-file
++     redirect, FD_CLOSE) -- nothing will ever need it again, so it's
++     genuinely safe to destroy for real. Neuter its real fd first so
++     fd_close() -> buffer_close() has nothing left to close() -- the
++     caller may still need this exact kernel fd number a moment
++     longer (e.g. a pipe endpoint about to be dup2()'d in a forked
++     child), and will re-establish it via dup2()/open() landing back
++     on "e". */
++  if(gap->mode & FD_CLOSE) {
++    fd_setfd(gap, -1);
+     fd_pop(gap);
+-    return FDTABLE_DONE;
++
++    return (flags & FDTABLE_NOCLOSE) ? e : FDTABLE_DONE;
++  }
++
++  /* gap is merely *shadowed*: some other, newer struct is already the
++     active virtual owner of gap's own slot (gap != fdtable[gap->n]),
++     but gap itself is still linked into an outer fdstack level,
++     waiting to become active again once that shadow pops -- e.g. the
++     process's own top-level fd 0/1/2 struct, shadowed for the
++     duration of one command's redirection. Destroying gap here (the
++     original behavior, unconditionally) left nothing for that pop to
++     re-expose: fdtable[gap->n] would go from "shadow" straight to
++     empty instead of back to gap, permanently losing shish's own
++     connection to whatever real resource gap represented (confirmed
++     via a heredoc-fed external command: "cat >file <<EOF" borrows
++     real fd 0 for its heredoc's temp file, evicting the shell's own
++     inherited stdin struct this way -- once "cat" finishes and its
++     redirection scope pops, virtual fd 0 should revert to that
++     inherited stdin, but the struct destroy above had already freed
++     it, so every pipe()/open() afterward was free to reuse real fd 0
++     for something unrelated, silently colliding with whatever next
++     assumed it still meant "the process's real stdin").
++     Relocating gap's real backing to a fresh fd (a genuine dup(),
++     independent of "e") frees "e" up exactly the same as destroying
++     gap did, but keeps gap's struct/fdstack identity intact so the
++     eventual pop still finds it. */
++  if((flags & FDTABLE_FORCE) && gap != fdtable[gap->n]) {
++    int newfd = dup(gap->e);
++
++    if(newfd == -1)
++      return FDTABLE_ERROR;
++
++    fd_setfd(gap, newfd);
++
++    return (flags & FDTABLE_NOCLOSE) ? e : FDTABLE_DONE;
+   }
+ 
+   if(flags & FDTABLE_FORCE) {
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index e61f0be4..5d276d69 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -3834,4 +3834,54 @@ assert_equal "got:a
+ got:b
+ got:c" "$X185B" "a while-loop used as the sole/last command in a pipeline stage must run every iteration, not exit after the first"
+ 
++## fixes/186 (fd-table-bookkeeping-vs-real-close-desync): lib/buffer's
++## buffer_close() used to guard "if(b->fd > 2) close(b->fd)", silently
++## no-opping any close() of fd 0/1/2 -- which papered over several
++## places in src/fd*/src/fdtable* that destroy a struct's bookkeeping
++## (fd_setfd(x,-1)/fd_pop()) without checking whether some *other*,
++## currently-active struct has since claimed that same real fd number.
++## With the guard narrowed to "fd>=0" (matching what a real close()
++## should do), those desyncs became live bugs: fdstack_flatten() (run
++## in a forked child right before execve()) or fd_close() would close
++## a real fd that a sibling struct -- reached via a different, later
++## dup()/dup2() bet landing on the same number -- was still actively
++## using, so a later pipeline stage's stdin/stdout vanished out from
++## under it ("Bad file descriptor", or fd 0 missing from the child's
++## fd table entirely, at other times causing rev(1)/etc. to busy-loop
++## reading a closed stdin instead of exiting). Root-caused via `strace
++## -f` on the accumulated real fork()/dup2()/close() sequence, not the
++## shell's own bookkeeping (which agreed with itself right up to the
++## real close() call). Fixed in three places: fdtable_gap()'s
++## FORCE-eviction branch and fdtable_dup()'s dup2-landing branch now
++## *relocate* a merely-shadowed occupant via a fresh dup() instead of
++## destroying it outright, and fd_close() now checks fd_list[] before
++## actually close()ing rb.fd/wb.fd, neutering instead of closing when
++## some other struct is already the registered owner.
++X186DIR=$(mktemp -d)
++mkdir "$X186DIR/real"
++cat >"$X186DIR/real/mycmd" <<'EOF'
++#!/bin/sh
++echo real-command-ran
++EOF
++X186=$(echo hi | sed 1q)
++assert_equal "hi" "$X186" "a pipeline running after enough prior mktemp/mkdir/heredoc fd churn must not lose its real stdin/stdout to an unrelated struct's stale close()"
++
++## fixes/187 (subshell-fd-table-not-scoped): "(...)" subshells run
++## in-process (no fork()) via fdstack_push()/setjmp()/vartab_push()/
++## sh_push(), mirroring the variable stack -- but nothing analogous
++## restored the *global* real-fd bookkeeping (fd_expected/fd_list[]/
++## fd_top/fd_lo/fd_hi in src/fd.h) on the way back out. A persistent
++## ("exec") redirection inside the subshell (e.g. swapping stdout/
++## stderr) left that global state mutated after the subshell returned,
++## corrupting whatever real fd resolution ran next -- reproduced as a
++## build-specific (default -Os only, not under gdb/ASan/-O0) segfault.
++## Fixed by adding struct fd_state + fd_state_save()/fd_state_restore()
++## (src/fd/fd_state_save.c, src/fd/fd_state_restore.c) and calling them
++## around eval_subshell.c's existing fdstack_push()/fdstack_pop() pair.
++X187DIR=$(mktemp -d)
++( exec 3>&1 1>&2 2>&3 3>&-; echo a187; echo b187 >&2 ) >"$X187DIR/out" 2>"$X187DIR/err"
++assert_equal "b187" "$(cat "$X187DIR/out")" "a subshell that swaps stdout/stderr via persistent redirections must not corrupt fd bookkeeping for what follows (stdout side)"
++assert_equal "a187" "$(cat "$X187DIR/err")" "a subshell that swaps stdout/stderr via persistent redirections must not corrupt fd bookkeeping for what follows (stderr side)"
++rm -rf "$X187DIR"
++
+ summary

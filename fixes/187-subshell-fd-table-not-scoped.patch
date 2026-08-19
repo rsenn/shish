@@ -1,0 +1,79 @@
+diff --git a/src/eval/eval_subshell.c b/src/eval/eval_subshell.c
+index 33d21809..dd684c47 100644
+--- a/src/eval/eval_subshell.c
++++ b/src/eval/eval_subshell.c
+@@ -20,6 +20,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
+   struct eval en;
+   struct env she;
+   struct fdstack io;
++  struct fd_state fdst;
+   struct vartab vars;
+   struct func_snapshot funcs;
+ #if BUILTIN_TRAP
+@@ -27,6 +28,16 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
+ #endif
+ 
+   fdstack_push(&io);
++  /* fdstack_push()/fdstack_pop() already scope the struct fd entries
++     themselves, but not the real-kernel-fd bookkeeping (fd_expected,
++     fd_list[], ...) a *persistent* ("exec") redirection inside this
++     subshell mutates -- shish never fork()s for "(...)", so nothing
++     else bounds that mutation to the subshell's own lifetime the way
++     it would in a real forked child. Save/restore it here, the same
++     way vartab_push()/vartab_pop() right below already do for
++     variables. See TODO.md, Goal 4, for what this does and does not
++     fix. */
++  fd_state_save(&fdst);
+   vartab_push(&vars, 0);
+   sh_push(&she);
+   /* function definitions are stored in a process-global list rather than
+@@ -77,6 +88,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
+   sh_pop(&she);
+   vartab_pop(&vars);
+   fdstack_pop(&io);
++  fd_state_restore(&fdst);
+ 
+   sh->exitcode = ret;
+ 
+diff --git a/src/fd.h b/src/fd.h
+index 3abd0049..8f7dc86f 100644
+--- a/src/fd.h
++++ b/src/fd.h
+@@ -143,6 +143,15 @@ enum {
+ extern struct fd* fd_list[FD_MAX];
+ extern int fd_expected, fd_top, fd_lo, fd_hi;
+ 
++/* snapshot of the real-kernel-fd bookkeeping globals above (fd_list[]
++ * and friends), for scopes that share a process (no fork()) but still
++ * need their fd-table effects undone on exit -- see fd_state_save().
++ */
++struct fd_state {
++  int expected, top, lo, hi;
++  struct fd* list[FD_MAX];
++};
++
+ int fd_dup(struct fd*, int dfd);
+ int fd_error(int n, const char* msg);
+ int fd_getname(struct fd*);
+@@ -167,6 +176,8 @@ void fd_open(struct fd*, const char* fname, long mode);
+ void fd_pop(struct fd*);
+ void fd_print(struct fd*, buffer* b);
+ void fd_setbuf(struct fd*, void* buf, size_t n);
++void fd_state_restore(const struct fd_state*);
++void fd_state_save(struct fd_state*);
+ void fd_string(struct fd*, const char* s, size_t len);
+ void fd_subst(struct fd*, stralloc* sa);
+ 
+diff --git a/src/fd/Makefile.in b/src/fd/Makefile.in
+index b2999942..e920b992 100644
+--- a/src/fd/Makefile.in
++++ b/src/fd/Makefile.in
+@@ -18,7 +18,7 @@ include $(top_builddir)/config.mk
+ # configuration for this directory
+ # ---------------------------------------------------------------------------
+ ARCHIVE = fd.a
+-MODULES = fd_allocbuf fd_close fd_dump fd_dumplist fd_dup fd_error fd_free fd_getname fd_here fd_init fd_list fd_mmap fd_needbuf fd_new fd_null fd_open fd_pipe fd_pop fd_print fd_push fd_reinit fd_setbuf fd_setfd fd_stat fd_string fd_subst fd_tempfile
++MODULES = fd_allocbuf fd_close fd_dump fd_dumplist fd_dup fd_error fd_free fd_getname fd_here fd_init fd_list fd_mmap fd_needbuf fd_new fd_null fd_open fd_pipe fd_pop fd_print fd_push fd_reinit fd_setbuf fd_setfd fd_stat fd_state_restore fd_state_save fd_string fd_subst fd_tempfile
+ 
+ SOURCES = $(MODULES:%=%.c)
+ OBJECTS = $(MODULES:%=%.o)

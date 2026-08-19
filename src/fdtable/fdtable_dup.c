@@ -49,8 +49,27 @@ retry:
     e = dup(o);
 
   /* position forced or destination d can be closed */
-  else if((state == d->n) || (flags & FDTABLE_FORCE))
+  else if((state == d->n) || (flags & FDTABLE_FORCE)) {
+    /* dup2() below atomically closes whatever real fd d->n currently
+       holds, in the kernel, before this function ever sees it. If
+       that occupant is merely *shadowed* (fdtable_gap()'s FORCE
+       branch would relocate rather than destroy it), it needs the
+       same relocation here, first -- fdtable_wish() above skips
+       fdtable_gap() whenever FDTABLE_CLOSE is set, so this is the
+       only chance to save it. */
+    struct fd* occupant = fd_list[d->n];
+
+    if(occupant && occupant != d && !(occupant->mode & FD_CLOSE) && occupant != fdtable[occupant->n]) {
+      int newfd = dup(occupant->e);
+
+      if(newfd == -1)
+        return FDTABLE_ERROR;
+
+      fd_setfd(occupant, newfd);
+    }
+
     e = dup2(o, d->n);
+  }
 
   if(e == -1)
     return FDTABLE_ERROR;

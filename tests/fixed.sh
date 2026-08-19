@@ -3834,4 +3834,54 @@ assert_equal "got:a
 got:b
 got:c" "$X185B" "a while-loop used as the sole/last command in a pipeline stage must run every iteration, not exit after the first"
 
+## fixes/186 (fd-table-bookkeeping-vs-real-close-desync): lib/buffer's
+## buffer_close() used to guard "if(b->fd > 2) close(b->fd)", silently
+## no-opping any close() of fd 0/1/2 -- which papered over several
+## places in src/fd*/src/fdtable* that destroy a struct's bookkeeping
+## (fd_setfd(x,-1)/fd_pop()) without checking whether some *other*,
+## currently-active struct has since claimed that same real fd number.
+## With the guard narrowed to "fd>=0" (matching what a real close()
+## should do), those desyncs became live bugs: fdstack_flatten() (run
+## in a forked child right before execve()) or fd_close() would close
+## a real fd that a sibling struct -- reached via a different, later
+## dup()/dup2() bet landing on the same number -- was still actively
+## using, so a later pipeline stage's stdin/stdout vanished out from
+## under it ("Bad file descriptor", or fd 0 missing from the child's
+## fd table entirely, at other times causing rev(1)/etc. to busy-loop
+## reading a closed stdin instead of exiting). Root-caused via `strace
+## -f` on the accumulated real fork()/dup2()/close() sequence, not the
+## shell's own bookkeeping (which agreed with itself right up to the
+## real close() call). Fixed in three places: fdtable_gap()'s
+## FORCE-eviction branch and fdtable_dup()'s dup2-landing branch now
+## *relocate* a merely-shadowed occupant via a fresh dup() instead of
+## destroying it outright, and fd_close() now checks fd_list[] before
+## actually close()ing rb.fd/wb.fd, neutering instead of closing when
+## some other struct is already the registered owner.
+X186DIR=$(mktemp -d)
+mkdir "$X186DIR/real"
+cat >"$X186DIR/real/mycmd" <<'EOF'
+#!/bin/sh
+echo real-command-ran
+EOF
+X186=$(echo hi | sed 1q)
+assert_equal "hi" "$X186" "a pipeline running after enough prior mktemp/mkdir/heredoc fd churn must not lose its real stdin/stdout to an unrelated struct's stale close()"
+
+## fixes/187 (subshell-fd-table-not-scoped): "(...)" subshells run
+## in-process (no fork()) via fdstack_push()/setjmp()/vartab_push()/
+## sh_push(), mirroring the variable stack -- but nothing analogous
+## restored the *global* real-fd bookkeeping (fd_expected/fd_list[]/
+## fd_top/fd_lo/fd_hi in src/fd.h) on the way back out. A persistent
+## ("exec") redirection inside the subshell (e.g. swapping stdout/
+## stderr) left that global state mutated after the subshell returned,
+## corrupting whatever real fd resolution ran next -- reproduced as a
+## build-specific (default -Os only, not under gdb/ASan/-O0) segfault.
+## Fixed by adding struct fd_state + fd_state_save()/fd_state_restore()
+## (src/fd/fd_state_save.c, src/fd/fd_state_restore.c) and calling them
+## around eval_subshell.c's existing fdstack_push()/fdstack_pop() pair.
+X187DIR=$(mktemp -d)
+( exec 3>&1 1>&2 2>&3 3>&-; echo a187; echo b187 >&2 ) >"$X187DIR/out" 2>"$X187DIR/err"
+assert_equal "b187" "$(cat "$X187DIR/out")" "a subshell that swaps stdout/stderr via persistent redirections must not corrupt fd bookkeeping for what follows (stdout side)"
+assert_equal "a187" "$(cat "$X187DIR/err")" "a subshell that swaps stdout/stderr via persistent redirections must not corrupt fd bookkeeping for what follows (stderr side)"
+rm -rf "$X187DIR"
+
 summary

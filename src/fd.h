@@ -143,6 +143,15 @@ enum {
 extern struct fd* fd_list[FD_MAX];
 extern int fd_expected, fd_top, fd_lo, fd_hi;
 
+/* snapshot of the real-kernel-fd bookkeeping globals above (fd_list[]
+ * and friends), for scopes that share a process (no fork()) but still
+ * need their fd-table effects undone on exit -- see fd_state_save().
+ */
+struct fd_state {
+  int expected, top, lo, hi;
+  struct fd* list[FD_MAX];
+};
+
 int fd_dup(struct fd*, int dfd);
 int fd_error(int n, const char* msg);
 int fd_getname(struct fd*);
@@ -167,6 +176,8 @@ void fd_open(struct fd*, const char* fname, long mode);
 void fd_pop(struct fd*);
 void fd_print(struct fd*, buffer* b);
 void fd_setbuf(struct fd*, void* buf, size_t n);
+void fd_state_restore(const struct fd_state*);
+void fd_state_save(struct fd_state*);
 void fd_string(struct fd*, const char* s, size_t len);
 void fd_subst(struct fd*, stralloc* sa);
 
