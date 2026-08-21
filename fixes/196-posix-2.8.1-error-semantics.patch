@@ -1,0 +1,580 @@
+diff --git a/src/builtin/builtin_eval.c b/src/builtin/builtin_eval.c
+index ea28f4ab..c8ca2378 100644
+--- a/src/builtin/builtin_eval.c
++++ b/src/builtin/builtin_eval.c
+@@ -48,6 +48,17 @@ builtin_eval(int argc, char* argv[]) {
+     tree_free(cmds);
+   }
+ 
++  /* a syntax error in the argument string is a shell language syntax
++     error, so it has to be reported and fail. "eval" is a special
++     builtin, so returning nonzero is also what ends a non-interactive
++     shell (exec_command.c). A NULL tree alone does not mean an error
++     -- "eval ''" parses fine and does nothing -- the stopping token
++     is what tells them apart. */
++  if(!(p.tok & (T_EOF | T_NL | T_SEMI | T_BGND))) {
++    parse_error(&p, 0);
++    ret = 1;
++  }
++
+   source_popfd(&fd);
+ 
+   return ret;
+diff --git a/src/builtin/builtin_table.c b/src/builtin/builtin_table.c
+index 80361761..df27f09c 100644
+--- a/src/builtin/builtin_table.c
++++ b/src/builtin/builtin_table.c
+@@ -289,7 +289,7 @@ struct builtin_cmd builtin_table[] = {
+     {"set", &builtin_set, B_SPECIAL, "[arguments]", help_set},
+ #endif
+ #if BUILTIN_SHIFT
+-    {"shift", &builtin_shift, B_DEFAULT, "[n]", help_shift},
++    {"shift", &builtin_shift, B_SPECIAL, "[n]", help_shift},
+ #endif
+ #if BUILTIN_READ
+     {"read",
+diff --git a/src/eval/eval_simple_command.c b/src/eval/eval_simple_command.c
+index 5729988f..f6ae053c 100644
+--- a/src/eval/eval_simple_command.c
++++ b/src/eval/eval_simple_command.c
+@@ -36,7 +36,7 @@
+  * ----------------------------------------------------------------------- */
+ int
+ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+-  int argc, status = 0;
++  int argc, status = 0, assign_error = 0, redir_error = 0;
+   char** argv;
+   union node *node, *args = 0, *assigns = 0, *r, *redir = ncmd->rdir;
+   struct command cmd = {H_BUILTIN, {0}};
+@@ -46,11 +46,22 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+ 
+   /* expand arguments,
+      if there are arguments we start a hashed search for the command */
++  expand_error = 0;
++
+   if(expand_args(ncmd->args, &args, 0)) {
+     stralloc_nul(&args->narg.stra);
+     cmd = exec_hash(args->narg.stra.s, 0);
+   }
+ 
++  /* POSIX 2.8.1: an expansion error means this command does not run at
++     all, and its status is nonzero. A non-interactive shell never gets
++     here -- expand_param() has already exited it. */
++  if(expand_error) {
++    expand_error = 0;
++    status = 1;
++    goto end;
++  }
++
+   /*if(sh->exitcode) {
+     tree_free(args);
+     eval_exit(sh->exitcode);
+@@ -126,6 +137,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+       if(!var_setsa(&node->narg.stra,
+                     (cmd.ptr ? V_EXPORT : V_DEFAULT) | (temp_scope ? V_LOCAL : 0))) {
+         status = 1;
++        assign_error = 1;
+         break;
+       }
+     }
+@@ -195,6 +207,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+        exec_command.c's own fdtable_open() result checks are the
+        other). */
+     if(redir_eval(&r->nredir, fd, (cmd.id == H_EXEC || args == NULL ? R_NOW : 0))) {
++      redir_error = 1;
+       status = 1;
+       goto end;
+     }
+@@ -283,11 +296,14 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+   }
+ 
+   /* execute the command, this may or may not return, depending on E_EXIT */
++  exec_redir_error = 0;
+   status = exec_command(&cmd,
+                         argc,
+                         argv,
+                         ((e->flags & E_EXIT) ? X_EXEC : 0) | (ncmd->bgnd ? X_NOWAIT : 0));
+ 
++  redir_error |= exec_redir_error;
++
+   if(ncmd->bgnd) {
+     struct job* j = *job_pointer;
+ 
+@@ -317,8 +333,12 @@ end:
+ 
+   sh->exitcode = status;
+ 
+-  /* POSIX requires special builtins to kill the shell on error in non-interactive mode */
+-  if(cmd.id == H_SBUILTIN && status != 0 && !(source->mode & SOURCE_IACTIVE)) {
++  /* POSIX 2.8.1: a non-interactive shell exits on either of these.
++       assignment error    any command, or none:  "readonly a=a; a=b"
++       redirection error   special builtins only: "shift <_no_such_file_"
++     The same redirection error on a plain utility is not fatal. */
++  if((assign_error || (redir_error && (cmd.id == H_SBUILTIN || cmd.id == H_EXEC))) &&
++     !(source->mode & SOURCE_IACTIVE)) {
+     sh_exit(status);
+   }
+ 
+diff --git a/src/exec.h b/src/exec.h
+index 83d48370..c90c50d4 100644
+--- a/src/exec.h
++++ b/src/exec.h
+@@ -51,6 +51,13 @@ extern struct exechash* exec_hashtbl[EXEC_HASHSIZE];
+    other syscalls run in between and routinely clobber it. */
+ extern int exec_lasterrno;
+ 
++/* set when a redirection of the command exec_command() was about to
++   run could not be performed. The redirections are resolved as late
++   as possible, so this is the only place the failure is visible; the
++   caller needs it because POSIX 2.8.1 makes a redirection error fatal
++   to a non-interactive shell when the command is a special builtin. */
++extern int exec_redir_error;
++
+ char* exec_check(char* path);
+ char* exec_path(char* name);
+ int exec_command(struct command* cmd, int argc, char** argv, enum execflag);
+diff --git a/src/exec/exec_command.c b/src/exec/exec_command.c
+index ac042173..85f7613b 100644
+--- a/src/exec/exec_command.c
++++ b/src/exec/exec_command.c
+@@ -112,6 +112,7 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
+           redir_failed = 1;
+       }
+ 
++      exec_redir_error = redir_failed;
+       ret = redir_failed ? 1 : cmd->builtin->fn(argc, argv);
+       break;
+     }
+diff --git a/src/exec/exec_path.c b/src/exec/exec_path.c
+index 634d2a61..e96791bd 100644
+--- a/src/exec/exec_path.c
++++ b/src/exec/exec_path.c
+@@ -19,6 +19,7 @@
+ #endif
+ 
+ int exec_lasterrno;
++int exec_redir_error;
+ 
+ /* searches for relative path <name> within PATH and returns absolute
+  * path if found
+diff --git a/src/expand.h b/src/expand.h
+index 364e2dfe..6df67940 100644
+--- a/src/expand.h
++++ b/src/expand.h
+@@ -106,6 +106,13 @@ struct narg;
+ #include "tree.h"
+ 
+ union node* expand_arg(union node* narg, union node** nptr, int flags);
++/* set when a word expansion failed in a way POSIX calls an expansion
++ * error ("${x?}", "$x" under "set -u"): the command that word belongs
++ * to must not run, and its status is nonzero. A non-interactive shell
++ * has already exited by the time anyone reads this.
++ */
++extern int expand_error;
++
+ int expand_args(union node* args, union node** nptr, int flags);
+ int expand_argv(union node* args, char** argv);
+ int expand_arith_binary(struct narithbinary* expr, int64* r);
+diff --git a/src/expand/expand_args.c b/src/expand/expand_args.c
+index 1f01ffcc..058f3f9f 100644
+--- a/src/expand/expand_args.c
++++ b/src/expand/expand_args.c
+@@ -7,6 +7,8 @@
+ /* expand all arguments of an argument list
+  * returns count of argument nodes
+  * ----------------------------------------------------------------------- */
++int expand_error = 0;
++
+ int
+ expand_args(union node* args, union node** nptr, int flags) {
+   union node* arg;
+diff --git a/src/expand/expand_param.c b/src/expand/expand_param.c
+index 9b0eea36..46e1284e 100644
+--- a/src/expand/expand_param.c
++++ b/src/expand/expand_param.c
+@@ -234,6 +234,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+       if(!(source->mode & SOURCE_IACTIVE))
+         sh_exit(1);
+ 
++      expand_error = 1;
+       n = 0;
+       goto fail;
+     }
+@@ -289,7 +290,15 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+           expand_copysa(param->word, &msg, flags);
+         sh_error(param->word ? msg.s : "parameter null or not set");
+         stralloc_free(&msg);
+-        sh_exit(1);
++
++        /* POSIX 2.8.1: an expansion error ends a non-interactive
++           shell; an interactive one just fails this command. */
++        if(!(source->mode & SOURCE_IACTIVE))
++          sh_exit(1);
++
++        expand_error = 1;
++        n = 0;
++        goto fail;
+       }
+ 
+       break;
+diff --git a/src/fdtable.h b/src/fdtable.h
+index 58d60ed7..37cd3b75 100644
+--- a/src/fdtable.h
++++ b/src/fdtable.h
+@@ -50,6 +50,7 @@ int fdtable_gap(int e, int force);
+ int fdtable_here(struct fd*, int flags);
+ int fdtable_lazy(int e, int flags);
+ int fdtable_open(struct fd*, int force);
++int fdtable_openfd(struct fd*, int e, int force);
+ int fdtable_resolve(struct fd*, int force);
+ int fdtable_wish(int e, int flags);
+ struct fd* fdtable_newfd(int n, struct fdstack* st, int mode);
+diff --git a/src/fdtable/fdtable_openfd.c b/src/fdtable/fdtable_openfd.c
+new file mode 100644
+index 00000000..757851dd
+--- /dev/null
++++ b/src/fdtable/fdtable_openfd.c
+@@ -0,0 +1,62 @@
++#include "../fd.h"
++#include "../fdtable.h"
++#include "../sh.h"
++#include "../../lib/windoze.h"
++#if WINDOWS_NATIVE
++#include <io.h>
++#else
++#include <unistd.h>
++#endif
++
++/* put an already open()ed kernel fd in place of a pending fd entry
++ *
++ * same as fdtable_open(), minus the open() itself: the file was
++ * opened before the entry that owns it came into existence, so that a
++ * failure could not destroy what the entry replaces.
++ *   "exec <_no_such_file_"  ->  the shell keeps its stdin
++ *
++ *   struct fd*  d      the entry to install the descriptor on
++ *   int         e      the open kernel fd to hand over
++ *   int         flags  as for fdtable_open()
++ *
++ * no fdtable_wish() here: dup2() puts the descriptor exactly where
++ * it belongs, so there is nothing to wish for -- and a wish can
++ * close/relocate fds, including the one just opened.
++ *
++ * returns FDTABLE_DONE, or FDTABLE_ERROR if e could not be moved
++ * ----------------------------------------------------------------------- */
++int
++fdtable_openfd(struct fd* d, int e, int flags) {
++  /* the file was opened while d->n was still taken, so e is never
++     d->n itself: dup2() it into place, after saving whatever entry
++     merely *shadowed* by d still holds that descriptor -- dup2()
++     closes it in the kernel before anything here could react */
++  if(e != d->n) {
++    struct fd* occupant = fd_list[d->n];
++
++    if(occupant && occupant != d && !(occupant->mode & FD_CLOSE) && occupant != fdtable[occupant->n]) {
++      int newfd = dup(occupant->e);
++
++      if(fd_ok(newfd))
++        fd_setfd(occupant, newfd);
++    }
++
++    if(dup2(e, d->n) == -1) {
++      sh_error_errno(d->name);
++      close(e);
++      return FDTABLE_ERROR;
++    }
++
++    close(e);
++    fdtable_untrack(e);
++    e = d->n;
++  }
++
++  /* track new bottom file descriptor and set the new d */
++  fdtable_track(e, flags);
++  fd_setfd(d, e);
++
++  d->mode &= ~FD_OPEN;
++
++  return FDTABLE_DONE;
++}
+diff --git a/src/redir.h b/src/redir.h
+index b9d7e7bc..d9f77a3f 100644
+--- a/src/redir.h
++++ b/src/redir.h
+@@ -40,7 +40,8 @@ struct parser;
+ int redir_dup(struct nredir* nredir, stralloc* sa, int persistent);
+ int redir_eval(struct nredir* nredir, struct fd*, int rfl);
+ int redir_here(struct nredir* nredir, stralloc* sa);
+-int redir_open(struct nredir* nredir, stralloc* sa);
++int redir_open(struct nredir* nredir, stralloc* sa, int preopen);
++int redir_preopen(struct nredir* nredir, stralloc* sa);
+ int redir_parse(struct parser* p, int rf, int fd);
+ void redir_addhere(struct nredir* nredir);
+ void redir_source(void);
+diff --git a/src/redir/redir_eval.c b/src/redir/redir_eval.c
+index c0ae590c..87a4e100 100644
+--- a/src/redir/redir_eval.c
++++ b/src/redir/redir_eval.c
+@@ -3,6 +3,7 @@
+ #include "../fdtable.h"
+ #include "../redir.h"
+ #include "../../lib/scan.h"
++#include "../sh.h"
+ #include "../tree.h"
+ #include "../../lib/windoze.h"
+ #if WINDOWS_NATIVE
+@@ -18,7 +19,7 @@
+  * ----------------------------------------------------------------------- */
+ int
+ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
+-  int mode, r;
++  int mode, r, preopen = -1;
+   stralloc sa;
+ 
+   stralloc_init(&sa);
+@@ -31,6 +32,21 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
+   /* additional redirection mode */
+   nredir->flag |= rfl;
+ 
++  /* a persistent "exec <file" replaces fdtable[n] destructively:
++     fd_new() below closes the descriptor the old entry owned, so an
++     open() failing after that would cost the shell that fd for good.
++       "exec <_no_such_file_"  ->  an interactive shell keeps its stdin
++     open first, hand the descriptor over in redir_open(). */
++  if(d == NULL && (nredir->flag & R_ACT) == R_OPEN) {
++    preopen = redir_preopen(nredir, &sa);
++
++    if(!fd_ok(preopen)) {
++      sh_error_errno(sa.s);
++      stralloc_free(&sa);
++      return 1;
++    }
++  }
++
+   /* "[n]<&n"/"[n]>&n" (source and target the same descriptor) is a
+    * defined POSIX no-op: dup2(fd, fd) succeeds trivially whenever both
+    * arguments are equal, without requiring fd to already be open. A
+@@ -89,7 +105,7 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
+    * callee to free its own copy. */
+   switch(nredir->flag & R_ACT) {
+     case R_OPEN:
+-      r = redir_open(nredir, &sa);
++      r = redir_open(nredir, &sa, preopen);
+       stralloc_free(&sa);
+       break;
+     case R_HERE: r = redir_here(nredir, &sa); break;
+diff --git a/src/redir/redir_open.c b/src/redir/redir_open.c
+index b9f001b4..911d9b72 100644
+--- a/src/redir/redir_open.c
++++ b/src/redir/redir_open.c
+@@ -7,9 +7,14 @@
+ #include "../sh.h"
+ 
+ /* open a file for redirection
++ *
++ *   struct nredir*  nredir   the redirection
++ *   stralloc*       sa       the expanded file name (NUL terminated)
++ *   int             preopen  an already open descriptor for that file
++ *                            (redir_preopen()), or -1 to open it here
+  * ----------------------------------------------------------------------- */
+ int
+-redir_open(struct nredir* nredir, stralloc* sa) {
++redir_open(struct nredir* nredir, stralloc* sa, int preopen) {
+   int mode = FD_FREENAME;
+ 
+   /* prepare flags */
+@@ -24,6 +29,11 @@ redir_open(struct nredir* nredir, stralloc* sa) {
+   /* MISSING: no-clobbering (with O_EXCL?) */
+   fd_open(nredir->fd, str_dup(sa->s), mode);
+ 
++  /* the file is already open (redir_preopen()): just hand the
++     descriptor over instead of opening it a second time */
++  if(fd_ok(preopen))
++    return (fdtable_openfd(nredir->fd, preopen, FDTABLE_MOVE) == FDTABLE_ERROR);
++
+   if(nredir->flag & R_NOW)
+     return (fdtable_open(nredir->fd, FDTABLE_MOVE) == FDTABLE_ERROR);
+ 
+diff --git a/src/redir/redir_preopen.c b/src/redir/redir_preopen.c
+new file mode 100644
+index 00000000..d3b4822c
+--- /dev/null
++++ b/src/redir/redir_preopen.c
+@@ -0,0 +1,55 @@
++#include "../fd.h"
++#include "../fdtable.h"
++#include "../redir.h"
++#include "../tree.h"
++#include "../sh.h"
++#include "../../lib/windoze.h"
++#if WINDOWS_NATIVE
++#include <io.h>
++#else
++#include <unistd.h>
++#endif
++
++/* open the file of a persistent ("exec") "<file"/">file" redirection
++ * before the fd entry it is going to replace is destroyed.
++ *
++ * the flags are worked out on a throwaway entry, exactly as
++ * redir_open()/fd_open() would work them out on the real one.
++ *
++ *   struct nredir*  nredir  the redirection
++ *   stralloc*       sa      the expanded file name (NUL terminated)
++ *
++ * returns the new kernel fd, or -1 with errno set
++ * ----------------------------------------------------------------------- */
++int
++redir_preopen(struct nredir* nredir, stralloc* sa) {
++  struct fd probe;
++  int mode = 0, e;
++
++  if(nredir->flag & R_OUT) {
++    if(nredir->flag & R_APPEND)
++      mode |= FD_APPEND;
++    else if(sh->opts.noclobber)
++      mode |= FD_EXCL;
++  }
++
++  fd_init(&probe, nredir->fdes, nredir->flag & (R_IN | R_OUT));
++  fd_open(&probe, sa->s, mode);
++
++  e = open(probe.name, probe.fl, (0666 & ~sh->umask));
++
++  /* the fd number being replaced can be free at the kernel level
++     while the shell still lists an entry for it, and open() then
++     lands right on it -- where the fd_close() inside fd_new() would
++     destroy what was just opened. Move it out of that slot. */
++  if(e == nredir->fdes) {
++    int moved = dup(e);
++
++    if(fd_ok(moved)) {
++      close(e);
++      e = moved;
++    }
++  }
++
++  return e;
++}
+diff --git a/src/source/source_flush.c b/src/source/source_flush.c
+index e2fa47ce..d3c0d1ea 100644
+--- a/src/source/source_flush.c
++++ b/src/source/source_flush.c
+@@ -1,10 +1,24 @@
+ #include "../fd.h"
+ #include "../source.h"
+ 
+-/* ----------------------------------------------------------------------- */
++/* discard the rest of the line the parser gave up on, so the next
++ * command can still be read. Dropping the whole read-ahead buffer
++ * instead only looks right for a terminal, where it holds just the
++ * line being typed: with input from a file (an interactive shell
++ * reading a redirected script) it swallows every command after the
++ * bad one too.
++ * ----------------------------------------------------------------------- */
+ void
+ source_flush(void) {
+   buffer* b = source->b;
++  size_t i;
++
++  for(i = b->p; i < b->n; i++) {
++    if(b->x[i] == '\n') {
++      b->p = i + 1;
++      return;
++    }
++  }
+ 
+   b->p = 0;
+   b->n = 0;
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index e857ecd1..c7f58a64 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -187,8 +187,11 @@ rm -f "$COUNTFILE"
+ ## unconditionally fd_pop()s every parsed redirection regardless of
+ ## whether it actually got that far, and fd_close() dereferenced the
+ ## still-NULL fd.
++## (run in a subshell: since fixes/196 a variable assignment error ends
++## a non-interactive shell, POSIX 2.8.1, so doing this inline would now
++## take the rest of this file with it.)
+ readonly READONLYVAR=original 2>/dev/null
+-READONLYVAR=changed 2>/dev/null
++(READONLYVAR=changed 2>/dev/null)
+ STATUS=$?
+ assert_equal "1" "$STATUS" "assigning to a readonly variable via a redirected command must report failure, not crash"
+ assert_equal "original" "$READONLYVAR" "a rejected readonly assignment must not change the variable's value"
+@@ -3323,8 +3326,8 @@ set --
+ ## trap, unset, ., :, or a syntax error in any of these) encounters
+ ## an error in non-interactive mode. Fixed by adding sh_exit() calls
+ ## in exec_command() and eval_simple_command() when cmd->id == H_SBUILTIN.
+-OUT155_SHIFT=$( (shift 999 2>/dev/null; echo "reached") 2>&1)
+-assert_equal "reached" "$OUT155_SHIFT" "shift error in subshell must not kill parent"
++OUT155_SHIFT=$( (shift 999 2>/dev/null; echo "not reached") 2>&1; echo "parent alive")
++assert_equal "parent alive" "$OUT155_SHIFT" "a special builtin's error ends the subshell it happened in, not the parent"
+ 
+ OUT155_READONLY=$( (readonly 123invalid 2>/dev/null; echo "reached") 2>&1)
+ assert_equal "reached" "$OUT155_READONLY" "readonly error in subshell must not kill parent"
+@@ -3494,8 +3497,12 @@ SHIFT101_ERR=$( (set -- a b; shift 5) 2>&1 >/dev/null)
+ assert_equal "" "$SHIFT101_ERR" "shift with n > \$# must not print anything to stderr"
+ (set -- a b; shift 5)
+ assert_equal "1" "$?" "shift with n > \$# must still exit with status 1"
+-SHIFT101_ARGS=$(set -- a b; shift 5 2>/dev/null; echo "$#:$*")
+-assert_equal "2:a b" "$SHIFT101_ARGS" "shift with n > \$# must leave the positional parameters unchanged"
++## "shift 5" with $# = 2 is an operand error, and an operand error in a
++## special builtin ends a non-interactive shell, so nothing running in
++## that same shell afterwards can look at the positional parameters --
++## the silence and the status above are what is left to check here.
++SHIFT101_ARGS=$( (set -- a b; shift 5 2>/dev/null; echo "$#:$*") 2>&1)
++assert_equal "" "$SHIFT101_ARGS" "shift with n > \$# must run nothing further in that shell"
+ 
+ ## fixes/102: getopts diverged from POSIX in several ways:
+ ## - $OPTIND was never initialized at shell startup (POSIX: "Whenever
+@@ -4012,4 +4019,48 @@ assert_equal "" "$X194B" "a trap set inside \$(...) must not stay installed in t
+ ## default build is byte-identical, and "dump -t" prints the fd table
+ ## in a build configured with -DDEBUG_FDTABLE=ON.
+ 
++## fixes/196 (posix-2.8.1-error-semantics): POSIX 2.8.1 lists which
++## failures a non-interactive shell must not survive. shish printed a
++## message (or, for a syntax error inside "eval", nothing at all) and
++## carried on regardless:
++##   - an expansion error ("$x" under "set -u", "${x?}")
++##   - a variable assignment error ("readonly r=1; r=2")
++##   - a redirection error on a special builtin ("shift <_no_such_file_")
++##   - a shell syntax error in the string "eval" was given
++## An interactive shell, and any of these on a plain utility, must
++## still carry on -- the last case below.
++X196A=$( (eval fi; echo "not reached") 2>/dev/null; echo "st=$?")
++assert_equal "st=1" "$X196A" "a syntax error inside eval must end that (non-interactive) shell"
++X196B=$( (eval fi) 2>&1 >/dev/null)
++assert_nomatch "" "$X196B" "a syntax error inside eval must be reported"
++X196C=$(eval 'echo ok'; eval '')
++assert_equal "ok" "$X196C" "eval of a valid list, and of an empty one, are unaffected"
++X196D=$( (set -u; echo "$NOSUCH196"; echo "not reached") 2>/dev/null; echo "st=$?")
++assert_equal "st=1" "$X196D" "an unset variable under set -u must end that shell"
++X196E=$( (echo "${NOSUCH196?nope}"; echo "not reached") 2>/dev/null; echo "st=$?")
++assert_equal "st=1" "$X196E" "a \${x?} expansion error must end that shell"
++X196F=$( (readonly RO196=1; RO196=2; echo "not reached") 2>/dev/null; echo "st=$?")
++assert_equal "st=1" "$X196F" "an assignment to a readonly variable must end that shell"
++X196G=$( (shift <_no_such_file_; echo "not reached") 2>/dev/null; echo "st=$?")
++assert_equal "st=1" "$X196G" "a redirection error on a special builtin must end that shell"
++X196H=$(echo one <_no_such_file_ 2>/dev/null; echo "reached st=$?")
++assert_equal "reached st=1" "$X196H" "the same redirection error on a plain utility must not"
++
++## fixes/196, second half: "exec <file" replaced fdtable[n] -- closing
++## the descriptor the old entry owned -- and only then open()ed the
++## file, so a failure cost the shell that fd for good ("exec
++## <_no_such_file_" left an interactive shell with no stdin at all).
++## The file is opened first now and the descriptor handed over, which
++## also has to keep working when the fd is one "exec" already owns.
++F196A=$(mktemp)
++F196B=$(mktemp)
++exec 4>"$F196A"
++echo first >&4
++exec 4>"$F196B"
++echo second >&4
++exec 4>&-
++assert_equal "first" "$(cat "$F196A")" "exec 4>file writes to that file"
++assert_equal "second" "$(cat "$F196B")" "a second exec on the same fd must retarget it, not lose it"
++rm -f "$F196A" "$F196B"
++
+ summary

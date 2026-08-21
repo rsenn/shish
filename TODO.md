@@ -12,30 +12,31 @@ The measurable target is `tests/posix` (yash's POSIX suite, 123 files).
 Everything below is derived from full runs on 2026-08-20, at
 `9bfd1f9f` plus `fixes/188`-`192`.
 
-### Scoreboard (2026-08-21, after Phase 1 + `fixes/193`)
+### Scoreboard (2026-08-21, after Phase 2 + `fixes/196`)
 
 ```
-cases 12195   passed 5181   failed 911   skipped 6103
-   failures:  sig*-p family 567  |  everything else 344
+cases 12195   passed 5270   failed 822   skipped 6103
+   failures:  sig*-p family 567  |  everything else 255
 ```
 
 Where this came from: 3952 passed / 2140 failed before `fixes/190`-`192`
-(Phase 1), 4863 / 1229 after. The rest of the gap to 5181 is not a
-third fix — it is measurement noise in the signal files, see the
-warning below. The 6103 skips are not passes — see Phase 6.
+(Phase 1), 4863 / 1229 after, 5181 / 911 before Phase 2. Part of the
+movement in those numbers is not a fix at all — it is measurement noise
+in the signal files, see the warning below. The 6103 skips are not
+passes — see Phase 6.
 
 Per-file failure counts, everything except the `sig*` family:
 
 ```
-85 error-p 127/212   15 command-p  34/49     4 tilde-p   25/29   1 lineno-p   2/3
-48 alias-p  17/65    10 simple-p   24/34     4 shift-p   10/14   1 function-p 18/19
-24 kill2-p   4/28     9 umask-p    74/83     3 return-p  22/25   1 fnmatch-p  6/7
-22 read-p    6/28     9 trap-p     28/37     3 input-p   8/11    1 export-p   4/5
-18 quote-p  17/35     9 redir-p    52/61     3 case-p    49/52   1 continue-p 30/31
-18 param-p  36/54     8 set-p      37/45     3 builtins  78/81   1 comment-p  14/15
-16 test-p  220/236    8 kill1-p     9/17     2 dot-p     12/14   1 break-p    31/32
-                      6 unset-p     6/12     2 cmdsub-p  12/14   1 async-p    8/9
-                      6 exit-p      8/14
+48 alias-p  17/65    9 redir-p    52/61     4 shift-p   10/14   1 lineno-p   2/3
+24 kill2-p   4/28     8 simple-p   26/34     3 return-p  22/25   1 function-p 18/19
+22 read-p    6/28     8 set-p      37/45     3 input-p   8/11    1 fnmatch-p  6/7
+18 quote-p  17/35     8 kill1-p     9/17     3 case-p    49/52   1 export-p   4/5
+18 param-p  36/54     6 unset-p     6/12     2 dot-p     12/14   1 continue-p 30/31
+16 test-p  220/236    6 exit-p      8/14     2 cmdsub-p  12/14   1 comment-p  14/15
+15 command-p 34/49    4 tilde-p    25/29     1 builtins  80/81   1 break-p    31/32
+ 9 umask-p  74/83                            1 pipeline-p 8/9    1 async-p    8/9
+ 9 trap-p   28/37
 ```
 
 The `sig*` family splits cleanly in two — the `*2-p`/`*6-p` files (the
@@ -129,32 +130,38 @@ What is left, in order:
    already at 164-177/180, so what is left there is a handful of
    individual cases, not a family-wide cause.
 
-### Phase 2 — error semantics: which failures must exit the shell (85)
+### Phase 2 — error semantics: which failures must exit the shell (0)
 
-`error-p` (127/212) is one coherent subject: POSIX 2.8.1 says exactly
-which errors kill a non-interactive shell (syntax errors, expansion
-errors, redirection errors on special builtins, assignment errors,
-special-builtin errors) and which only set a status. shish gets it
-wrong in *both* directions — Phase 1.2 above is a case of exiting when
-it must not.
+Done, `fixes/196`: `error-p` is 212/212, from 127/212. POSIX 2.8.1 says
+exactly which errors kill a non-interactive shell; the decision now
+lives in one place, at the end of `eval_simple_command()`:
 
-1. Write down the POSIX table as a comment next to whatever enforces
-   it, then make one place enforce it — currently the decision is
-   scattered across the builtin dispatch and the eval loop.
-2. Syntax error inside `eval`, inside a dot script, and inside `(...)`
-   must terminate the shell (`error-p.tst:10` and neighbours; shish
-   prints nothing and continues, "not reached" is reached).
-3. Expansion errors (`${x?msg}`), assignment errors (readonly target)
-   and special-builtin errors, each in and out of a subshell.
-4. Non-special builtins and external commands must *not* exit.
+- an expansion error (`${x?msg}`, `$x` under `set -u`) exits a
+  non-interactive shell and fails only the command in an interactive one
+- an assignment error (`readonly r=1; r=2`) exits, for any command
+- a redirection error exits only for a special builtin or `exec`; on a
+  plain utility the command does not run and the shell carries on
+- a syntax error in the string `eval` was given is reported and fails
+  (`eval` is a special builtin, so that exits too) — it used to print
+  nothing at all
+- `shift` was `B_DEFAULT`, so none of the special-builtin rules applied
+  to it. It is `B_SPECIAL` now, which also means `shift 5` with `$# = 2`
+  ends a non-interactive shell, as in dash
 
-Diagnostic format is part of this file's failures too: shish prints
+Two fd bugs had to be fixed to get there: `source_flush()` dropped the
+whole read-ahead buffer after a syntax error (swallowing every later
+command when input came from a file, not a terminal), and `exec <file`
+destroyed `fdtable[n]` — closing its descriptor — *before* opening the
+file, so `exec <_no_such_file_` left an interactive shell with no stdin.
+The file is opened first now (`redir_preopen()`) and handed over
+(`fdtable_openfd()`).
+
+What is left of this subject is diagnostics only: shish prints
 `file:LINE:COL: msg` where the line number is one too high (the parser
-has already advanced), and omits the offending name. `echo ${x?boom}`
-on line 2 reports `:3:1: boom`; bash reports `line 2: x: boom`.
-`$LINENO` itself is correct — this is diagnostics only. Fix with, and
-verify against, `lineno-p.tst` (2/3) and `BUGS:
-eval-lineno-imprecise-inside-function`.
+has already advanced) and omits the offending name. `echo ${x?boom}` on
+line 2 reports `:3:1: boom`; bash reports `line 2: x: boom`. `$LINENO`
+itself is correct. Fix with, and verify against, `lineno-p.tst` (2/3)
+and `BUGS: error-message-line-number-off-by-one`.
 
 ---
 
@@ -185,7 +192,7 @@ Sorted by failures per unit of work.
    must not kill the shell.
 6. **`unset` (6)** — `-f` (functions) does not delete; readonly
    variables must not be deletable.
-7. **`umask` (9)**, **`set` (8)**, **`shift` (4)**, **`export` (1)`**.
+7. **`umask` (9)**, **`set` (8)**, **`shift` (4)**, **`export` (1)**.
    `set -o` is missing the POSIX names `ignoreeof`, `nolog`,
    `notify`, `verbose`, `vi` (it lists the bash extras
    `braceexpand`/`hashall`/`histexpand`/`privileged` instead) —
@@ -206,7 +213,7 @@ Sorted by failures per unit of work.
 3. `redir-p` (52/61) — tilde expansion in redirection operands,
    heredocs on a non-default fd, several heredocs per command, long
    heredocs. `BUGS: redir-tilde-expansion-and-heredoc-broken`.
-4. `simple-p` (24/34) — redirections must precede assignments for a
+4. `simple-p` (26/34) — redirections must precede assignments for a
    non-special builtin; PATH search rules; command name with a slash.
 5. `tilde-p` (4), `case-p` (3), `fnmatch-p` (1), `cmdsub-p` (2),
    `comment-p` (1) — small, individually filed in `BUGS`.

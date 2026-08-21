@@ -501,3 +501,29 @@
   printf 'cat <<\\OUTER; echo "$(cat <<\\INNER\ninner\nINNER\n)"\nouter\nOUTER\n' > h.sh
   timeout 5 build/x86_64-linux-gnu/shish h.sh; echo $?   # 124 = hung
   ```
+
+- debug-build-asserts-on-source-after-external-cmdsubst: a build with
+  `-DCMAKE_BUILD_TYPE=Debug` (the only one where `assert()` is live)
+  aborts in `fd_setfd()` when a script sources a file whose path came
+  from a command substitution that ran an *external* command. A
+  substitution running only builtins (`$(echo ...)`) is fine, so the
+  fd left over from the forked child is what reaches `fd_setfd()`
+  without `FD_READ`/`FD_WRITE` set. Every `tests/*.sh` file starts
+  with exactly this pattern, so no test can run under a debug build.
+
+  **Repro:**
+  ```sh
+  cmake -S . -B b -DCMAKE_BUILD_TYPE=Debug && cmake --build b -j
+  echo 'echo sourced' > /tmp/s.sh
+  printf 'D=$(dirname /tmp/x)\n. "$D/s.sh"\n' > /tmp/t.sh && ./b/shish /tmp/t.sh
+  # shish: src/fd/fd_setfd.c:13: fd_setfd: Assertion `d->mode & FD_READWRITE' failed.
+  ```
+
+- exit-trap-loses-positional-parameters: an `EXIT` trap body sees `$#`
+  as 0 and `$*` as empty, whatever the shell's positional parameters
+  were. dash prints them unchanged.
+
+  **Repro:**
+  ```sh
+  shish -c '( trap "echo \"\$#:\$*\"" EXIT; set -- a b )'   # 0:   (dash: 2:a b)
+  ```

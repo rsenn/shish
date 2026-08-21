@@ -48,6 +48,17 @@ builtin_eval(int argc, char* argv[]) {
     tree_free(cmds);
   }
 
+  /* a syntax error in the argument string is a shell language syntax
+     error, so it has to be reported and fail. "eval" is a special
+     builtin, so returning nonzero is also what ends a non-interactive
+     shell (exec_command.c). A NULL tree alone does not mean an error
+     -- "eval ''" parses fine and does nothing -- the stopping token
+     is what tells them apart. */
+  if(!(p.tok & (T_EOF | T_NL | T_SEMI | T_BGND))) {
+    parse_error(&p, 0);
+    ret = 1;
+  }
+
   source_popfd(&fd);
 
   return ret;

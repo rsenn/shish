@@ -187,8 +187,11 @@ rm -f "$COUNTFILE"
 ## unconditionally fd_pop()s every parsed redirection regardless of
 ## whether it actually got that far, and fd_close() dereferenced the
 ## still-NULL fd.
+## (run in a subshell: since fixes/196 a variable assignment error ends
+## a non-interactive shell, POSIX 2.8.1, so doing this inline would now
+## take the rest of this file with it.)
 readonly READONLYVAR=original 2>/dev/null
-READONLYVAR=changed 2>/dev/null
+(READONLYVAR=changed 2>/dev/null)
 STATUS=$?
 assert_equal "1" "$STATUS" "assigning to a readonly variable via a redirected command must report failure, not crash"
 assert_equal "original" "$READONLYVAR" "a rejected readonly assignment must not change the variable's value"
@@ -3323,8 +3326,8 @@ set --
 ## trap, unset, ., :, or a syntax error in any of these) encounters
 ## an error in non-interactive mode. Fixed by adding sh_exit() calls
 ## in exec_command() and eval_simple_command() when cmd->id == H_SBUILTIN.
-OUT155_SHIFT=$( (shift 999 2>/dev/null; echo "reached") 2>&1)
-assert_equal "reached" "$OUT155_SHIFT" "shift error in subshell must not kill parent"
+OUT155_SHIFT=$( (shift 999 2>/dev/null; echo "not reached") 2>&1; echo "parent alive")
+assert_equal "parent alive" "$OUT155_SHIFT" "a special builtin's error ends the subshell it happened in, not the parent"
 
 OUT155_READONLY=$( (readonly 123invalid 2>/dev/null; echo "reached") 2>&1)
 assert_equal "reached" "$OUT155_READONLY" "readonly error in subshell must not kill parent"
@@ -3494,8 +3497,12 @@ SHIFT101_ERR=$( (set -- a b; shift 5) 2>&1 >/dev/null)
 assert_equal "" "$SHIFT101_ERR" "shift with n > \$# must not print anything to stderr"
 (set -- a b; shift 5)
 assert_equal "1" "$?" "shift with n > \$# must still exit with status 1"
-SHIFT101_ARGS=$(set -- a b; shift 5 2>/dev/null; echo "$#:$*")
-assert_equal "2:a b" "$SHIFT101_ARGS" "shift with n > \$# must leave the positional parameters unchanged"
+## "shift 5" with $# = 2 is an operand error, and an operand error in a
+## special builtin ends a non-interactive shell, so nothing running in
+## that same shell afterwards can look at the positional parameters --
+## the silence and the status above are what is left to check here.
+SHIFT101_ARGS=$( (set -- a b; shift 5 2>/dev/null; echo "$#:$*") 2>&1)
+assert_equal "" "$SHIFT101_ARGS" "shift with n > \$# must run nothing further in that shell"
 
 ## fixes/102: getopts diverged from POSIX in several ways:
 ## - $OPTIND was never initialized at shell startup (POSIX: "Whenever
@@ -4011,5 +4018,49 @@ assert_equal "" "$X194B" "a trap set inside \$(...) must not stay installed in t
 ## in <builddir>/src/builtin_config.h (all four produced 0 before), the
 ## default build is byte-identical, and "dump -t" prints the fd table
 ## in a build configured with -DDEBUG_FDTABLE=ON.
+
+## fixes/196 (posix-2.8.1-error-semantics): POSIX 2.8.1 lists which
+## failures a non-interactive shell must not survive. shish printed a
+## message (or, for a syntax error inside "eval", nothing at all) and
+## carried on regardless:
+##   - an expansion error ("$x" under "set -u", "${x?}")
+##   - a variable assignment error ("readonly r=1; r=2")
+##   - a redirection error on a special builtin ("shift <_no_such_file_")
+##   - a shell syntax error in the string "eval" was given
+## An interactive shell, and any of these on a plain utility, must
+## still carry on -- the last case below.
+X196A=$( (eval fi; echo "not reached") 2>/dev/null; echo "st=$?")
+assert_equal "st=1" "$X196A" "a syntax error inside eval must end that (non-interactive) shell"
+X196B=$( (eval fi) 2>&1 >/dev/null)
+assert_nomatch "" "$X196B" "a syntax error inside eval must be reported"
+X196C=$(eval 'echo ok'; eval '')
+assert_equal "ok" "$X196C" "eval of a valid list, and of an empty one, are unaffected"
+X196D=$( (set -u; echo "$NOSUCH196"; echo "not reached") 2>/dev/null; echo "st=$?")
+assert_equal "st=1" "$X196D" "an unset variable under set -u must end that shell"
+X196E=$( (echo "${NOSUCH196?nope}"; echo "not reached") 2>/dev/null; echo "st=$?")
+assert_equal "st=1" "$X196E" "a \${x?} expansion error must end that shell"
+X196F=$( (readonly RO196=1; RO196=2; echo "not reached") 2>/dev/null; echo "st=$?")
+assert_equal "st=1" "$X196F" "an assignment to a readonly variable must end that shell"
+X196G=$( (shift <_no_such_file_; echo "not reached") 2>/dev/null; echo "st=$?")
+assert_equal "st=1" "$X196G" "a redirection error on a special builtin must end that shell"
+X196H=$(echo one <_no_such_file_ 2>/dev/null; echo "reached st=$?")
+assert_equal "reached st=1" "$X196H" "the same redirection error on a plain utility must not"
+
+## fixes/196, second half: "exec <file" replaced fdtable[n] -- closing
+## the descriptor the old entry owned -- and only then open()ed the
+## file, so a failure cost the shell that fd for good ("exec
+## <_no_such_file_" left an interactive shell with no stdin at all).
+## The file is opened first now and the descriptor handed over, which
+## also has to keep working when the fd is one "exec" already owns.
+F196A=$(mktemp)
+F196B=$(mktemp)
+exec 4>"$F196A"
+echo first >&4
+exec 4>"$F196B"
+echo second >&4
+exec 4>&-
+assert_equal "first" "$(cat "$F196A")" "exec 4>file writes to that file"
+assert_equal "second" "$(cat "$F196B")" "a second exec on the same fd must retarget it, not lose it"
+rm -f "$F196A" "$F196B"
 
 summary

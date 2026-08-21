@@ -19,6 +19,7 @@
 #endif
 
 int exec_lasterrno;
+int exec_redir_error;
 
 /* searches for relative path <name> within PATH and returns absolute
  * path if found

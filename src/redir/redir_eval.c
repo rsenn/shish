@@ -3,6 +3,7 @@
 #include "../fdtable.h"
 #include "../redir.h"
 #include "../../lib/scan.h"
+#include "../sh.h"
 #include "../tree.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
@@ -18,7 +19,7 @@
  * ----------------------------------------------------------------------- */
 int
 redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
-  int mode, r;
+  int mode, r, preopen = -1;
   stralloc sa;
 
   stralloc_init(&sa);
@@ -30,6 +31,21 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
 
   /* additional redirection mode */
   nredir->flag |= rfl;
+
+  /* a persistent "exec <file" replaces fdtable[n] destructively:
+     fd_new() below closes the descriptor the old entry owned, so an
+     open() failing after that would cost the shell that fd for good.
+       "exec <_no_such_file_"  ->  an interactive shell keeps its stdin
+     open first, hand the descriptor over in redir_open(). */
+  if(d == NULL && (nredir->flag & R_ACT) == R_OPEN) {
+    preopen = redir_preopen(nredir, &sa);
+
+    if(!fd_ok(preopen)) {
+      sh_error_errno(sa.s);
+      stralloc_free(&sa);
+      return 1;
+    }
+  }
 
   /* "[n]<&n"/"[n]>&n" (source and target the same descriptor) is a
    * defined POSIX no-op: dup2(fd, fd) succeeds trivially whenever both
@@ -89,7 +105,7 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
    * callee to free its own copy. */
   switch(nredir->flag & R_ACT) {
     case R_OPEN:
-      r = redir_open(nredir, &sa);
+      r = redir_open(nredir, &sa, preopen);
       stralloc_free(&sa);
       break;
     case R_HERE: r = redir_here(nredir, &sa); break;

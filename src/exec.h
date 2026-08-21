@@ -51,6 +51,13 @@ extern struct exechash* exec_hashtbl[EXEC_HASHSIZE];
    other syscalls run in between and routinely clobber it. */
 extern int exec_lasterrno;
 
+/* set when a redirection of the command exec_command() was about to
+   run could not be performed. The redirections are resolved as late
+   as possible, so this is the only place the failure is visible; the
+   caller needs it because POSIX 2.8.1 makes a redirection error fatal
+   to a non-interactive shell when the command is a special builtin. */
+extern int exec_redir_error;
+
 char* exec_check(char* path);
 char* exec_path(char* name);
 int exec_command(struct command* cmd, int argc, char** argv, enum execflag);

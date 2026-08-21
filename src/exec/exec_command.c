@@ -112,6 +112,7 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
           redir_failed = 1;
       }
 
+      exec_redir_error = redir_failed;
       ret = redir_failed ? 1 : cmd->builtin->fn(argc, argv);
       break;
     }

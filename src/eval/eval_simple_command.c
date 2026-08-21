@@ -36,7 +36,7 @@
  * ----------------------------------------------------------------------- */
 int
 eval_simple_command(struct eval* e, struct ncmd* ncmd) {
-  int argc, status = 0;
+  int argc, status = 0, assign_error = 0, redir_error = 0;
   char** argv;
   union node *node, *args = 0, *assigns = 0, *r, *redir = ncmd->rdir;
   struct command cmd = {H_BUILTIN, {0}};
@@ -46,9 +46,20 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
   /* expand arguments,
      if there are arguments we start a hashed search for the command */
+  expand_error = 0;
+
   if(expand_args(ncmd->args, &args, 0)) {
     stralloc_nul(&args->narg.stra);
     cmd = exec_hash(args->narg.stra.s, 0);
+  }
+
+  /* POSIX 2.8.1: an expansion error means this command does not run at
+     all, and its status is nonzero. A non-interactive shell never gets
+     here -- expand_param() has already exited it. */
+  if(expand_error) {
+    expand_error = 0;
+    status = 1;
+    goto end;
   }
 
   /*if(sh->exitcode) {
@@ -126,6 +137,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
       if(!var_setsa(&node->narg.stra,
                     (cmd.ptr ? V_EXPORT : V_DEFAULT) | (temp_scope ? V_LOCAL : 0))) {
         status = 1;
+        assign_error = 1;
         break;
       }
     }
@@ -195,6 +207,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
        exec_command.c's own fdtable_open() result checks are the
        other). */
     if(redir_eval(&r->nredir, fd, (cmd.id == H_EXEC || args == NULL ? R_NOW : 0))) {
+      redir_error = 1;
       status = 1;
       goto end;
     }
@@ -283,10 +296,13 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   }
 
   /* execute the command, this may or may not return, depending on E_EXIT */
+  exec_redir_error = 0;
   status = exec_command(&cmd,
                         argc,
                         argv,
                         ((e->flags & E_EXIT) ? X_EXEC : 0) | (ncmd->bgnd ? X_NOWAIT : 0));
+
+  redir_error |= exec_redir_error;
 
   if(ncmd->bgnd) {
     struct job* j = *job_pointer;
@@ -317,8 +333,12 @@ end:
 
   sh->exitcode = status;
 
-  /* POSIX requires special builtins to kill the shell on error in non-interactive mode */
-  if(cmd.id == H_SBUILTIN && status != 0 && !(source->mode & SOURCE_IACTIVE)) {
+  /* POSIX 2.8.1: a non-interactive shell exits on either of these.
+       assignment error    any command, or none:  "readonly a=a; a=b"
+       redirection error   special builtins only: "shift <_no_such_file_"
+     The same redirection error on a plain utility is not fatal. */
+  if((assign_error || (redir_error && (cmd.id == H_SBUILTIN || cmd.id == H_EXEC))) &&
+     !(source->mode & SOURCE_IACTIVE)) {
     sh_exit(status);
   }
 

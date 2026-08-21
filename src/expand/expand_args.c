@@ -7,6 +7,8 @@
 /* expand all arguments of an argument list
  * returns count of argument nodes
  * ----------------------------------------------------------------------- */
+int expand_error = 0;
+
 int
 expand_args(union node* args, union node** nptr, int flags) {
   union node* arg;
