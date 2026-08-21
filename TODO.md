@@ -414,16 +414,23 @@ implemented and verified regression-clean.
    (`!exec_subshell_depth`), see problem 3 below. `exec-p.tst` 9/10 ->
    10/10, full `ctest` and `tests/fixed.sh` otherwise unchanged.
 
-2. **No general fdstack-scoped ownership tracking** (problem 1 below,
-   unstruck). `fd_expected`/`fd_list[]`/`fd_top`/`fd_lo`/`fd_hi` are
-   still bare process-global variables everywhere except the one call
-   site (`eval_subshell()`) that now explicitly saves/restores them.
-   Any *other* code path that pushes a temporary fdstack level and
-   expects the real-fd bookkeeping to be clean on the way back out —
-   there is currently no reason to believe there are none — could hit
-   the identical class of bug in a different call site. No such case
-   is currently known/reproduced; this is a standing architectural
-   risk, not a confirmed live bug.
+2. ~~**No general fdstack-scoped ownership tracking**~~ — narrowed and
+   closed for every call site that actually has the exposure
+   (2026-08-21, `fixes/194`). The scoping unit is not the fdstack
+   level: a brace group hosting an `exec` (`{ exec 4>&3; } 3>&2`) must
+   keep its effects when its own level pops, so saving/restoring the
+   globals per level would be wrong. The unit is the *subshell
+   environment* — an in-process scope that does `sh_push()`. There are
+   exactly two: `eval_subshell()`, which already had
+   `fd_state_save()`/`fd_state_restore()`, and `expand_command()`
+   (`$(...)`, a subshell per POSIX 2.6.3), which had neither that nor
+   the trap snapshot. The missing trap snapshot was a live bug, not a
+   risk: `X=$(trap 'echo T' TERM; echo x)` left that trap installed in
+   the calling shell. Both are covered now; what remains is a
+   convention, not a gap — a new in-process subshell scope has to
+   repeat the same six saves (fdstack, fd_state, vartab, env,
+   functions, traps).
+
 3. **Persistent (`exec`) redirections vs. the non-forking subshell
    model are still fundamentally in tension** (problem 3 below,
    unstruck). `eval_subshell()` still runs `(...)` in-process, and
@@ -438,7 +445,8 @@ implemented and verified regression-clean.
    "Suggested refactorings" below for the two concrete options (make
    subshells fork when they contain a persistent redirection, or teach
    the fd-table to scope "persistent" to the enclosing fdstack level).
-   **There is now a concrete demonstration** (2026-08-21): drop the
+   **Attempted 2026-08-21, not fixed — read this before trying
+   again.** There is now a concrete demonstration: drop the
    `!exec_subshell_depth` guard `fixes/193` added to `redir_dup()`,
    and
 
@@ -453,11 +461,28 @@ implemented and verified regression-clean.
    case). At the point of the error `fdtable[1]` has `n=1, e=4` while
    the real fd 1 is held by another struct that also wants slot 1, so
    `fdtable_gap()` recurses into resolving it and trips the cycle
-   check. That is the whole gap in one picture: the subshell's real
-   `dup2()`s outlived it, `fd_state_restore()` put the bookkeeping
-   back, and the two now disagree. Anything that makes persistent
-   redirections resolve eagerly — the natural direction for the rest
-   of this Goal — needs this fixed first.
+   check.
+
+   The obvious reading of that — "the subshell's real `dup2()`s
+   outlived it while `fd_state_restore()` put the bookkeeping back" —
+   is **not the whole story, and fixing only that is not enough.**
+   Tried and rejected: a per-scope pre-image list (`fd_scope_park()`
+   called just before `fdtable_dup()`'s `dup2(o, d->n)`, parking the
+   old descriptor with `fcntl(F_DUPFD, 64)`, restored with the owning
+   `fdtable[]` entry on scope exit). It does fire where you would
+   expect — 4 parks for the swap repro above — and it is harmless with
+   the guard in place, but with the guard removed the cycle error is
+   *unchanged* and heap corruption follows. So the leftover state that
+   trips `fdtable_gap()` is in the fd table's own entries and
+   `fd_list[]`, not merely in the kernel descriptors. Two notes for
+   whoever picks this up: an early attempt that parked *every* open fd
+   at scope entry (rather than lazily, per overwritten number)
+   deadlocked the suite — an extra copy of a pipe's write end keeps
+   its reader from ever seeing EOF. And before doing any of this,
+   fix the two tooling gaps that made this pass much slower than it
+   should have been: `BUGS: dump-builtin-cannot-be-enabled` and
+   `BUGS: fd-fdtable-debug-tracing-unreachable`. There is a whole
+   fd-table tracing facility in the source that no build can turn on.
 
 The rest of this section (below) is the original, in-order investigation
 writeup — root cause, call-site inventory, the full struct-lifecycle

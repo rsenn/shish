@@ -3987,4 +3987,19 @@ echo after' 2>&1)
   assert_equal "after" "$X193C" "a persistent redirection inside a subshell must leave the fd table usable for the next external command"
 fi
 
+## fixes/194 (cmdsubst-does-not-scope-traps-or-fd-bookkeeping): POSIX
+## 2.6.3 makes command substitution a subshell environment, and
+## expand_command() does run it in one -- fdstack_push(), vartab_push(),
+## sh_push(), exec_functions_save() -- but it was missing the two
+## process-global lists those calls do not cover: the trap list (so a
+## "trap" inside "$(...)" stayed installed in the calling shell) and
+## the real-kernel-fd bookkeeping fd_state_save()/fd_state_restore()
+## scope for "(...)". eval_subshell() had both already; this is the
+## other in-process subshell (TODO.md Goal 4, problem 2 -- the "some
+## other call site has the same exposure" one).
+X194=$(trap "echo T194" TERM; echo x)
+assert_equal "x" "$X194" "a trap set inside \$(...) still lets the substitution produce its own output"
+X194B=$(trap)
+assert_equal "" "$X194B" "a trap set inside \$(...) must not stay installed in the calling shell"
+
 summary
