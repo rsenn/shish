@@ -4002,4 +4002,14 @@ assert_equal "x" "$X194" "a trap set inside \$(...) still lets the substitution 
 X194B=$(trap)
 assert_equal "" "$X194B" "a trap set inside \$(...) must not stay installed in the calling shell"
 
+## fixes/195 (cmake/Builtins.cmake) has no assertion here, deliberately:
+## it is a build-configuration fix, and this file runs *inside* an
+## already-built shish, so it cannot observe which builtins a different
+## configure run would enable. Verified by configuring instead --
+## -DCMAKE_BUILD_TYPE=Debug, -DBUILD_DEBUG=ON, -DENABLE_DUMP=ON and
+## -DENABLE_ALL_BUILTINS=ON each now produce "#define BUILTIN_DUMP 1"
+## in <builddir>/src/builtin_config.h (all four produced 0 before), the
+## default build is byte-identical, and "dump -t" prints the fd table
+## in a build configured with -DDEBUG_FDTABLE=ON.
+
 summary

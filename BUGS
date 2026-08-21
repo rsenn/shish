@@ -501,30 +501,3 @@
   printf 'cat <<\\OUTER; echo "$(cat <<\\INNER\ninner\nINNER\n)"\nouter\nOUTER\n' > h.sh
   timeout 5 build/x86_64-linux-gnu/shish h.sh; echo $?   # 124 = hung
   ```
-
-- dump-builtin-cannot-be-enabled: `cmake/Builtins.cmake:160` runs
-  `isin(ENABLE_DUMP dump ${BUILTINS_ENABLED})` *before* line 171 is
-  what first appends anything to `BUILTINS_ENABLED`, so `ENABLE_DUMP`
-  is always false and `BUILTIN_DUMP` always 0 -- including under
-  `-DENABLE_ALL_BUILTINS=ON` and `BUILD_DEBUG`, both of which are
-  clearly meant to turn it on (see the commented-out
-  `list(APPEND BUILTINS_ENABLED dump)` at line 157). The `dump`
-  builtin, the intended way to inspect the fd table while debugging
-  it, is therefore unreachable from any build.
-
-  **Repro:**
-  ```sh
-  cmake -S . -B /tmp/b -DENABLE_ALL_BUILTINS=ON >/dev/null
-  grep BUILTIN_DUMP /tmp/b/src/builtin_config.h    # #define BUILTIN_DUMP 0
-  ```
-
-- fd-fdtable-debug-tracing-unreachable: `src/fd/*.c` and
-  `src/fdtable/*.c` carry `#if defined(DEBUG_OUTPUT) &&
-  defined(DEBUG_FDTABLE)` (and `DEBUG_FD`) tracing blocks, but
-  `CMakeLists.txt` only registers `debug_flag(PARSE)`,
-  `debug_flag(JOB)` and `debug_flag(BUILTIN)` -- there is no
-  `DEBUG_FD`/`DEBUG_FDTABLE` option, so none of that tracing can be
-  switched on without hand-editing `CMAKE_C_FLAGS`. The fd table is
-  the subsystem with the most open, hardest-to-reason-about bugs
-  (TODO.md Goal 4); its tracing should be reachable.
-

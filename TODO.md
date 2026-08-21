@@ -474,15 +474,18 @@ implemented and verified regression-clean.
    the guard in place, but with the guard removed the cycle error is
    *unchanged* and heap corruption follows. So the leftover state that
    trips `fdtable_gap()` is in the fd table's own entries and
-   `fd_list[]`, not merely in the kernel descriptors. Two notes for
-   whoever picks this up: an early attempt that parked *every* open fd
+   `fd_list[]`, not merely in the kernel descriptors. One more note:
+   an early attempt that parked *every* open fd
    at scope entry (rather than lazily, per overwritten number)
    deadlocked the suite — an extra copy of a pipe's write end keeps
-   its reader from ever seeing EOF. And before doing any of this,
-   fix the two tooling gaps that made this pass much slower than it
-   should have been: `BUGS: dump-builtin-cannot-be-enabled` and
-   `BUGS: fd-fdtable-debug-tracing-unreachable`. There is a whole
-   fd-table tracing facility in the source that no build can turn on.
+   its reader from ever seeing EOF. Do it with the fd table in front
+   of you this time (`fixes/195` made that possible again):
+
+   ```sh
+   cmake -S . -B build/dbg -DCMAKE_BUILD_TYPE=Debug \
+         -DDEBUG_FDTABLE=ON -DDEBUG_FD=ON -DDEBUG_FDSTACK=ON
+   build/dbg/shish -c 'exec 3>&1; dump -t'   # -t table, -s stack, -f list
+   ```
 
 The rest of this section (below) is the original, in-order investigation
 writeup — root cause, call-site inventory, the full struct-lifecycle
