@@ -2,6 +2,8 @@
 #include "../eval.h"
 #include "../sh.h"
 
+void trap_run_pending(void);
+
 /* ----------------------------------------------------------------------- */
 int
 eval_cmdlist(struct eval* e, struct ngrp* grp) {
@@ -40,6 +42,12 @@ eval_cmdlist(struct eval* e, struct ngrp* grp) {
      forks and returns immediately instead of running in-process; see
      eval_node_bgnd()'s comment for the full reasoning */
   for(cmd = grp->cmds; cmd; cmd = cmd->next) {
+    /* a signal that arrived while the previous command ran is only
+       recorded by trap_relay(); dispatch it here so a trap fires
+       between two commands of the same list, not just at the line
+       boundaries sh_loop()/term_read()/job_wait() cover. */
+    trap_run_pending();
+
     if(ex && cmd->next == NULL)
       e->flags |= E_EXIT;
 

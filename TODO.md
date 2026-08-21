@@ -8,394 +8,246 @@ Leverage-sorted list of what's still open. Fixed work lives in `git log` and
 
 ## Goal 1 — POSIX conformance
 
-`./configure` (this project's own stress test — autoconf output exercises
-nested command substitution, heavy fd juggling, `eval`, here-docs,
-trap/exit interplay) now runs to completion end-to-end.
+The measurable target is `tests/posix` (yash's POSIX suite, 123 files).
+Everything below is derived from full runs on 2026-08-20, at
+`9bfd1f9f` plus `fixes/188`-`192`.
 
-A Termux (Android/bionic) user report of `shish configure` segfaulting
-(2026-08-04) led to setting up a `-fsanitize=address,undefined` build
-(`cfg()` from `cfg-cmake.sh`, e.g. `builddir=build/x86_64-linux-gnu-asan
-CC=clang CXX=clang++ cfg -DCMAKE_C_FLAGS="-fsanitize=address,undefined
--g -O0" ...`) — the crash reproduced identically under Linux/glibc, so
-it was never bionic-specific, just easier to hit there. Root cause:
-`lib/path/path_fnmatch.c`'s `'*'`-matching recursed once per character
-of the string being matched (searching for a split point), so any
-single `*` in a glob/case pattern matched against a long enough string
-(exactly what autoconf-generated scripts do, e.g. `case
-$ac_configure_args in *\'*)`) blew the stack. Fixed (`fixes/126`) by
-rewriting the function to be fully iterative — a single "most recently
-seen `*`" backtrack bookmark, consulted whenever a match attempt
-fails, replaces all recursion (the standard technique for wildcard
-matching), so match cost depends on neither the string's length nor
-the pattern's `*` count. Chasing the same sanitizer
-run turned up four more real, independent bugs along the way (none
-related to the crash itself, all found because the ASan/UBSan build
-let `configure` run much further than a plain build's silent-UB
-tolerance had ever surfaced before): a shift-by-64 in
-`var_rndhash()`'s rotate macros, two "form a member address through a
-null pointer" bugs (`exec_search()`'s empty-function-list walk,
-`redir_source()`'s here-doc-list walk), and a `memcpy()`-with-null-src
-issue at two `stralloc` call sites when copying an empty/unset buffer
-— fixed as `fixes/123`-`125`, `127` respectively. A later, separate
-sanitizer finding from the same investigation initially looked like
-more of the same "real but pervasive, not worth fixing" kind, but
-turned out to be the actual Termux crash's own root cause once pushed
-on further: `src/tree.h`'s `__packed` macro (deliberately a no-op —
-the real `__attribute__((packed))` is commented out) collides by name
-with Android Bionic's `<sys/cdefs.h>`, which already defines `__packed`
-for real — silently, unintentionally packing every `union node` field
-on that platform only, corrupting reads since different node kinds
-don't all pack to the same offsets. Fixed (`fixes/131`) by renaming
-shish's own macro to `SHISH_TREE_PACKED` (now fixed, no longer listed
-in `BUGS`). `BUGS:
-ubsan-buffer-op-proto-function-type-mismatch` from the same sweep is
-still a real, deliberate, not-worth-fixing tradeoff, unrelated to this
-one. The `tests/posix`
-conformance suite (120 files) is wired into `ctest` and runs by default.
-`tests/yash` (119 more files) is wired in the same way but gated behind
-its own `-DDO_YASH_TESTS=ON` (off by default — several files hang and
-only terminate via their own 120s `TIMEOUT`, `BUGS:
-yash-suite-other-hangs`, which otherwise dominates a default `ctest`
-run's wall time).
+### Scoreboard (2026-08-20, after Phase 1)
 
-A separate, much larger real-world stress test — gettext-tools'
-`configure` (autoconf-generated, gnulib-heavy, ~30k lines) — now also
-runs to completion (~2.5 min, no hang/crash/core dump) as of 2026-07-30,
-after fixing three bugs found chasing a reported hang in `sh_forked.c`'s
-`for(sh = sh->parent; sh; sh = next)` loop: `eval_exit()` ("exit" inside
-a function/subshell) had the same commented-out fdstack/varstack/source
-unwind bug already fixed for `eval_return`/`eval_jump` (`fixes/97`,
-`fixes/99`), plus its own extra wrinkle — it deliberately walks past any
-number of `E_FUNCTION` frames to reach the nearest subshell/root, so it
-also had to pop each skipped function call's `sh_push()`ed `struct env`,
-or that env dangles and corrupts `sh->parent` the moment its stack slot
-is reused (`fixes/101`). A second, unrelated bug in the same fix: a bogus
-`if(e == sh->parent->eval) return` early-out silently turned `exit` into
-a no-op whenever it was called two or more function calls deep in the
-same process. Chasing the crash further surfaced a third, independent
-bug in `eval_function()`, which stole (moved, then nulled) a function
-definition's name/body pointers out of its AST node — safe only if that
-node is evaluated once, so it segfaulted the moment the same node was
-evaluated again (a function defined inside a loop, or inside one of
-shish's in-process `(...)` subshells); fixed via a new `tree_copy()`
-helper (`fixes/102`). The script now stops instead on a real
-`configure`-level detection failure (`socklen_t`), which traces back to
-`BUGS: confdefs-h-duplication`, still open.
+```
+cases 12195   passed 4863   failed 1229   skipped 6103
+   failures:  sig*-p family 884  |  everything else 345
+```
 
-Separately, reported and fixed the same day: Ctrl-C at the controlling
-terminal not reliably stopping a running `./configure`, "only after many
-presses". Root cause was `exec_program.c`/`job_fork.c` unconditionally
-`setpgid()`-ing every external command (single, pipeline member,
-foreground or background) into its own process group regardless of
-whether job control was actually active — real bash never does this for
-a non-interactive script, and confirmed by direct repro: a terminal
-SIGINT killed shish itself but left the external command it had just
-started (a real `gcc` invocation, mid-compile, during an actual
-gettext-tools `configure` run) orphaned and running. Fixed (`fixes/103`)
-by gating all of this behind `sh->opts.monitor`, plus making
-`job_wait()` fall back to waiting for any child instead of just a
-pipeline's first member when a job has no real process group of its own.
-Chasing this also turned up a related, independent bug — `job_terminal`
-was always -1 (terminal handoff to a running job/pipeline never happened
-at all, interactive or not) due to an init-order bug (`job_init()` ran
-before `term_init()` ever set `FD_TERM`) — fixed the same day
-(`fixes/104`), restoring real interactive job control (`fg`, resuming a
-Ctrl-Z-stopped job).
+Phase 1 moved this from 3952 passed / 2140 failed (the same run before
+`fixes/190`-`192`); the sig* family alone went 1790 -> 884 failures.
+The 6103 skips are not passes — see Phase 6.
 
-Despite both fixes, Ctrl-C against a real `./configure` run still wasn't
-fully reliable — root-caused and fixed the same day (`fixes/105`).
-autoconf-generated scripts (including gettext-tools') install a real
-`trap ... INT` for cleanup, and shish's `trap_handler()` used to run the
-entire trap body — allocation-heavy `eval_tree()`, potentially including
-`exit` — directly from asynchronous signal-handler context, the same
-category of bug already fixed for `SIGCHLD`'s own handler (`fixes/87`)
-but never applied to user traps. That alone had two consequences, both
-fixed together: (1) an `exit` inside such a trap only ever unwound to
-the nearest in-process subshell boundary rather than actually
-terminating the process (correct for an *ordinary* synchronous "exit"
-inside a script's own `(...)`, wrong for one triggered asynchronously by
-a signal — shish's subshells don't fork, so "just this subshell" means
-the rest of the script keeps running); (2) whatever syscall the
-interrupted handler was in the middle of (typically `job_wait()`'s
-blocking `wait_pid()`) would just transparently resume once the unsafe
-handler returned, via `SA_RESTART` — so a trap that itself called `exit`
-often never got a real chance to run until ordinary control flow reached
-a dispatch point on its own, if ever.
+Per-file failure counts, everything except the `sig*` family:
 
-Fixed with the same self-pipe/deferred-dispatch redesign `fixes/87` gave
-`sh_onsig()`: the real OS signal handler (`trap_relay()`) now only does
-async-signal-safe work (record which signal fired, wake a self-pipe),
-with the actual trap body evaluation (`trap_run_pending()`) deferred to
-ordinary context — `sh_loop()`'s main loop, `term_read()`'s `select()`
-wakeup, and (critically, since this is where a real Ctrl-C typically
-lands) `job_wait()`'s own retry loop, checked both before *and* after
-each `wait_pid()` call so it fires whether the signal arrived before or
-during the block. `sig_push()` now installs with the new `SA_NORESTART`
-flag (`lib/sig.h`) so the interrupted syscall actually returns instead
-of silently resuming. A new `sh_async_exit` flag (`sh.h`) marks an
-`exit` triggered this way so `eval_subshell.c` propagates through every
-enclosing in-process subshell level instead of stopping at the first
-one, ultimately reaching real process termination.
+```
+85 error-p 127/212   15 command-p  34/49     4 tilde-p   25/29   1 lineno-p   2/3
+48 alias-p  17/65    10 simple-p   24/34     4 shift-p   10/14   1 function-p 18/19
+24 kill2-p   4/28     9 umask-p    74/83     3 return-p  22/25   1 fnmatch-p  6/7
+22 read-p    6/28     9 trap-p     28/37     3 input-p   8/11    1 export-p   4/5
+18 quote-p  17/35     9 redir-p    52/61     3 case-p    49/52   1 exec-p     9/10
+18 param-p  36/54     8 set-p      37/45     3 builtins  78/81   1 continue-p 30/31
+16 test-p  220/236    8 kill1-p     9/17     2 dot-p     12/14   1 comment-p  14/15
+                      6 unset-p     6/12     2 cmdsub-p  12/14   1 break-p    31/32
+                      6 exit-p      8/14                         1 async-p    8/9
+```
 
-Deferring dispatch also surfaced its own real race, fixed in the same
-change: a signal can be delivered (and recorded as pending) before it's
-drained, e.g. while inside a subshell that's exiting and, as part of its
-own normal cleanup, uninstalling the very trap that signal was meant to
-fire — left set, the next dispatch ran against whatever's now installed
-for that signal (nothing), and `trap_handler()`'s "no trap found"
-fallback silently killed the whole shell via `sh_exit(1)`. Both places
-that uninstall a real-signal trap (`trap_uninstall()`,
-`trap_snapshot_restore()`) now also discard any not-yet-dispatched
-pending occurrence of it.
+The `sig*` family, worst first — the shape of what is left is uniform:
 
-Verified against the real gettext-tools `configure` script: a real
-SIGINT sent while blocked on an actual `gcc` invocation (matching
-autoconf's own `trap ... INT` boilerplate, itself inside the
-`{ (eval "$ac_link") ...; }` idiom autoconf wraps every compile probe
-in) now reliably kills both `gcc` and shish, with no leftover processes,
-across repeated trials at different points in the run.
+```
+146 sigterm5   34/180 *   56 sigterm2 124/180   16 sigcont2 164/180   3 sigurg6  177/180
+144 sigterm1   36/180 *   56 sigquit2 124/180   11 sigquit1 169/180   3 sigurg5  177/180
+ 91 sigterm6   89/180     56 sigint2  124/180   11 sigint1  169/180   3 sighup5  177/180
+ 59 sighup6   121/180     56 sighup2  124/180    5 sigurg1  175/180   3 sighup1  177/180
+ 54 sigquit6  126/180     16 sigurg2  164/180    3 sigcont6 177/180   3 sigcont5 177/180
+ 54 sigint6   126/180     16 sigquit5 164/180                         3 sigcont1 177/180
+                          16 sigint5  164/180
+```
 
-`BUGS: confdefs-h-duplication` — the one thing still stopping the real
-gettext-tools `configure` from running to genuine completion — turned out
-to already be fixed, as an unplanned side effect of `fixes/109` (below).
-Re-running the exact same script after that fix landed: it now runs all
-the way through, including the nested `examples/configure` sub-run,
-producing a complete `config.h`/`config.status`/`Makefile` with no
-duplicate `#define`s and no "undefined reference to main" — the
-`confdefs.h`-corruption symptoms this entry was tracking are gone.
-Whatever intermediate state `$(...)` expressions used throughout
-`confdefs.h`-adjacent code (`ac_ext` computation, etc.) were computing
-was getting corrupted by exactly the state-leak `fixes/109` fixed; never
-independently root-caused beyond that, but the script's own completion
-is about as strong a confirmation as this gets.
+`*` `sigterm1-p`/`sigterm5-p` score 177/180 and 172/180 when run on
+their own — only under `ctest` do they collapse to 36/34. Something in
+how `ctest` starts a test (process group, or an inherited SIGTERM
+disposition) changes the result; the numbers above are the `ctest`
+ones. Worth an hour before trusting any SIGTERM measurement:
+`BUGS: sigterm-tests-differ-under-ctest`.
 
-Also fixed the same day, on request, three smaller and one bonus bug,
-each with its own regression test in `tests/fixed.sh`:
+Clean: `andor arith cd errexit eval for fsplit getopts grouping if
+kill4 nop option path ppid readonly until while`. `kill3-p` is neither
+— it times out (`BUGS: kill-stop-self-in-subshell-deadlock`).
 
-- `BUGS: ln-trailing-slash-on-plain-destination` (`fixes/106`) —
-  `builtin_ln()` unconditionally appended a `/` to the destination
-  before ever checking whether it's a directory, so `ln -s target name`
-  (the common case) always failed with ENOTDIR. Also rejects (rather
-  than silently mis-linking only the last one) more than one source
-  without an existing directory destination.
-- `BUGS: set-errexit-not-enforced` (`fixes/107`) — `set -e`'s bit was
-  tracked but nothing read it. Enforced in both places a sequential
-  command list is actually walked (`eval_tree.c`'s own per-node loop,
-  and `eval_cmdlist.c`'s separate one for `;`/newline-separated
-  commands sharing one `N_LIST` node — a real gap: `"set -e; false;
-  echo bad"` all on one line went through only the latter), each
-  calling `sh_exit()` the same way an explicit `exit` would.
+### How to measure
 
-  Implementing POSIX's specific exemptions correctly took three
-  iterations, validated the whole way against `tests/posix/errexit-p.tst`
-  (yash's own errexit conformance suite, 53 cases — not wired into the
-  default `ctest` run, gated the same as the rest of `tests/posix` — run
-  manually via `sh tests/run-tst.sh <absolute-path-to-shish>
-  tests/posix errexit-p.tst`; a *relative* testee path breaks since the
-  harness `cd`s into the test dir first, same footgun as `fixes/89`'s
-  own investigation hit): first pass (exempt an AND-OR list's non-last
-  operand, a `!`-negated command, an if/while/until condition) got
-  7/53. The exemption turned out to need to propagate much further than
-  one node deep — confirmed directly against real bash's actual
-  behavior, not just POSIX's text: (1) a 3+-operand chain like `"false
-  || false || true"` must not trip on its un-exempted *middle* operand,
-  only the chain's true last one matters; (2) the exemption survives
-  into a function call or subshell reached while evaluating an exempt
-  expression (`"f() { false; }; f && true"` doesn't abort inside `f`);
-  (3) it also survives being wrapped in any construct that doesn't
-  produce its own independent, opaque exit status — grouping,
-  if/elif/else, for, case, while/until bodies — but *not* a subshell,
-  whose own returned status is independent and must still be checked
-  normally at the outer level (`"{ false && true; }; echo x"` prints
-  `x`, but `"( false && true ); echo x"` does not — confirmed directly
-  against bash). Implemented via a single global `errexit_suppress`
-  counter (`eval.h`) incremented/decremented around exactly the
-  durations POSIX exempts, rather than a per-`struct eval` flag — a
-  flag scoped to one eval frame can't express point (2), since a
-  function call gets a brand-new one. Final result: 49/53. The
-  remaining 4 are unrelated, separately-filed bugs (below), not gaps in
-  this fix.
+```sh
+# one file (testee path MUST be absolute)
+sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix exec-p.tst
 
-  Also found and fixed in the same triage pass, real but unrelated to
-  errexit itself: `test`/`[`'s `-ne` (numeric not-equal) and `-nt`
-  (file mtime newer-than) share the same second character (`n`), and
-  `builtin_test.c`'s binary-operator dispatch only checked that one
-  character to decide "this is a file-mtime comparison" — so `test 1
-  -ne 2` silently ran as a file-mtime comparison between two
-  (nonexistent) files named `1` and `2` instead of the numeric
-  comparison it's supposed to be (`fixes/110`; this is what was
-  actually breaking `errexit-p.tst`'s own `for`-loop-body case, not the
-  errexit logic itself — `test $i -ne 2` inside the loop was always
-  evaluating wrong). Now also checks the third character (`t` vs `e`),
-  which is what actually distinguishes them.
+# whole suite
+(cd build/x86_64-linux-gnu && ctest)
 
-  Two genuinely separate, real bugs surfaced by the same conformance
-  run were found and fixed the same day too, bringing `errexit-p.tst`
-  to a clean 53/53 (and improving, never regressing, every other
-  `tests/posix/*.tst` file spot-checked against the same fix):
+# scoreboard from the .trs files the run leaves behind
+cd tests/posix && for f in *.trs; do
+  t=$(grep -Ec '^%%+ (PASSED|FAILED|SKIPPED):' "$f")
+  x=$(grep -Ec '^%%+ FAILED:' "$f"); s=$(grep -Ec '^%%+ SKIPPED:' "$f")
+  [ "$x" -gt 0 ] && printf '%4d %-14s %d/%d\n' "$x" "${f%.trs}" "$((t-x))" "$t"
+done | sort -rn
 
-  - `grouping-piped-loses-output-after-internal-failure` (`fixes/111`)
-    — `{ a; false; b; } | cat` lost `b`'s output entirely, and turned
-    out to have nothing to do with the internal failure (reproduced
-    identically with a `true` in its place) or `set -e` (reproduces
-    with it off, and pre-existing on `924b1f0e` before any of this
-    day's other fixes). Root cause: `eval_pipeline.c` forks each
-    pipeline stage and sets `E_EXIT` on the shared `e->flags` to tell
-    the *last* command in that stage to `exec()` directly instead of
-    returning — `eval_tree.c`'s own per-node loop correctly restricts
-    that to just the last node of whatever it's walking, but a `{...}`
-    grouping (or a bare `;`-separated `N_LIST`) used as a pipeline
-    stage dispatches straight to `eval_cmdlist()` instead, which never
-    touched `e->flags`'s `E_EXIT` bit at all — so it stayed set,
-    inherited from the fork, for *every* member of the group's body,
-    not just its last one. The group's first member got treated as the
-    tail call: it ran, then the forked pipeline stage exited
-    immediately. `eval_cmdlist()` now scopes `E_EXIT` to its own last
-    member, matching `eval_tree()`.
-  - `redirect-failure-does-not-block-execution-or-set-status`
-    (`fixes/112`) — a failing redirection on a simple command didn't
-    stop it from running or affect its reported exit status, traced
-    back to two separate gaps in the fdtable's lazy redirection
-    resolution (already flagged as a known issue source elsewhere in
-    this file): `exec_command.c` resolves a builtin's pending fd
-    0/1/2 redirection right before running it (the real `open()` is
-    deferred that far) but never checked whether that resolution
-    actually succeeded, so it ran the builtin regardless; and a bare
-    redirection with no command at all (`<_no_such_file_` alone) never
-    got resolved at all, since nothing beyond `exec_command.c` (which
-    that case never reaches) forces it — `eval_simple_command.c` now
-    forces immediate, not lazy, resolution specifically when there's
-    no command to hand the pending fd off to.
-- `BUGS: squoted-backslash-newline-swallowed` (`fixes/108`) —
-  `source_skip()`/`source_peekn()` always treated a backslash-newline as
-  a line continuation, even inside single quotes (and a heredoc with a
-  quoted delimiter, which shares the same code path — POSIX requires
-  both to be completely literal). A new `source_squoted` flag
-  (`source.h`), set by `parse_squoted.c` around its own read loop, is
-  how these primitives — which sit below the parser, with no access to
-  its quoting state — know to skip continuation-removal.
-- `cmdsubst-does-not-isolate-shell-state` (`fixes/109`, found while
-  writing `fixes/107`'s own regression tests, all `"$(set -e; ...)"`
-  style) — `expand_command.c` (command substitution, `"$(...)"`/
-  backquotes) never called `sh_push()`, unlike `eval_subshell.c`'s
-  `"(...)"`, even though POSIX defines command substitution as a
-  subshell too (2.6.3). `set -e`/any other `set` option, `cd`, `umask`,
-  etc. run inside `"$(...)"` permanently changed the *calling* shell's
-  own state once the substitution finished. This is very plausibly what
-  was actually behind `confdefs-h-duplication` above.
+# what a family is actually failing on
+grep -h -E '^%%+ FAILED' tests/posix/sig*.trs | sed -E 's/.*: SIG[A-Z]+ //; s/ \(.*//' \
+  | sort | uniq -c | sort -rn
+```
 
-What's left is whatever the next triage pass over these suites turns up.
-`tests/yash/random-y.tst` itself (formerly `BUGS: yash-random-y-tst-hangs`)
-turned out to already be fixed as a side effect of unrelated 2026-07-30
-work by the time it was next checked — running it for real (instead of
-timing out) turned up three genuine `$RANDOM` bugs, fixed as `fixes/113`.
-A related-looking `redir-p.tst` hang found on 2026-07-29 turned out to be
-a real, deterministic bug once properly isolated (an 8-deep `<&` dup
-chain off a freshly-opened fd resolved before its source ever got a
-chance to open) — fixed as `fixes/89` (fd-resolution ordering, both the
-builtin and forked-external-command paths) plus `fixes/88` (`builtin_cat()`
-spinning instead of erroring on the resulting bad fd).
+Every phase below ends the same way: rerun the named files, record the
+new count here, remove the closed `BUGS` entry, add `fixes/NN` + a case
+in `tests/fixed.sh`.
 
-`DO_YASH_TESTS` stays off by default regardless — a full sweep of all 119
-`tests/yash/*.tst` files (2026-07-30) found several *other* files
-(`arith-y.tst`, `cmdprint-y.tst`, `pipeline-y.tst`, `redir-y.tst`,
-`until-y.tst`, `while-y.tst`) that still hang, none yet isolated to a
-specific case; see `BUGS: yash-suite-other-hangs`.
+---
 
-A 2026-08-08 pass specifically triaged `tests/posix` failures (not the
-`tests/yash` suite above), starting from `arith-p.tst` (17/65 passing)
-and finding seven independent, real arithmetic-expansion bugs chased
-down together (`fixes/141`-`145`): a segfault on any *chained* unary
-operator (`$((-+-2))`, `parse_arith_unary.c` recursed into
-`parse_arith_value()`, primaries-only, instead of back into itself);
-an unset/empty variable in arithmetic context producing no output
-instead of the POSIX-mandated `0`; `&&`/`||` silently misparsed as
-one-character `&`/`|` (the bitwise branch in `parse_arith_binary.c`
-only excluded a following `=`, never a repeat of the same character);
-`&&`/`||` never actually short-circuiting (`expand_arith_binary.c`
-evaluated both operands unconditionally, so `0 && (a=5)` still ran the
-assignment); the same "&"-repeat blind spot for `<`/`<<` and `>`/`>>`,
-breaking chained shifts (`1<<2<<1`); the operator-precedence search
-loop decrementing its level variable even after already matching on
-the very first check, so a later, tighter operator got left for an
-ancestor frame to wrongly re-group at a looser precedence
-(`1+2*3` → `(1+2)*3`); and legacy backquoted command substitution
-never being recognized as a valid arithmetic operand at all. Brought
-`arith-p.tst` to 32/43 (remaining gaps — `?:` unimplemented, `&`/`^`/`|`
-and `&&`/`||` each flattened into one shared precedence level instead
-of the distinct ones C/POSIX specify, and arithmetic assignment not
-rejecting a readonly target — filed individually in `BUGS`, not yet
-fixed).
+### Phase 1 — signal disposition (884 left, was 1790)
 
-A later pass (`fixes/150`, `fixes/151`) closed the `?:` and
-precedence-flattening gaps: added `parse_arith_ternary.c` as its own
-right-associative, short-circuiting precedence level above the binary
-operator chain, and split `parse_arith_binary.c`'s single combined
-bitwise (`&`/`^`/`|`) and logical (`&&`/`||`) branches into their
-correct distinct C/POSIX levels. Brought `arith-p.tst` to 42/43. The
-readonly-assignment case was later fixed (`fixes/152`) by adding a
-readonly check to `var_setv()` and `var_setvint()` and propagating
-`V_READONLY` from parent to child variables in `var_create()`,
-bringing `arith-p.tst` to 43/43.
+Done, `fixes/190`-`192`: `trap '' SIG` now ignores instead of
+resetting to the default; `trap - SIG` for an untrapped signal is a
+no-op success instead of a special-builtin error that exits the shell;
+SIGHUP is trappable (`if(signum != 1)` skipped it); a trap fires
+between `;`-separated commands, not only at line boundaries; a trap
+body may uninstall its own trap without freeing the tree it runs from;
+and a signal-killed child sets `$?` to 128+N instead of 0.
 
-The same pass then found a much higher-leverage bug while chasing an
-unrelated `break`-argument test: `eval_for()`/`eval_loop()` (`for`/
-`while`/`until`) run their loop body against the *caller's* eval frame
-(needed so `break`/`continue`/`$?`/`errexit` state inside the body stay
-visible to the rest of the script) but push their own, separate frame
-purely so a jump has something to target — and then returned *that*
-frame's own `exitcode` field, which nothing had ever written, instead
-of copying over what the body actually left the shared frame at.
-Confirmed via `gdb` watchpoint on `sh->exitcode`: it flipped from a
-body command's real status back to a hardcoded `0` the instant the
-loop's own frame got popped. This was invisible whenever a *later*
-command in the exact same top-level list (`for ...; done; echo $?` all
-on one line) happened to read `$?` first, which is why it went
-unnoticed this long — but a loop sitting on its own lines, the
-ordinary way real scripts are written, silently clobbered `$?` to `0`
-right after every single `for`/`while`/`until`, regardless of how the
-loop's body actually exited. Fixed (`fixes/146`, `147`) by tracking the
-body's real last-run status (for `while`/`until`, snapshotted
-immediately after each body run, since the *next* iteration's own test
-re-run otherwise overwrites it first) and syncing it back to both the
-loop's own pushed frame and the global `sh->exitcode` directly — the
-same pattern `eval_subshell()` already used for `(...)`, just never
-applied here.
+What is left, in order:
 
-Chasing a segfault this surfaced (`for i in ; do ... done` inside a
-command substitution) found a second, independent bug in the same
-function: `eval_for()` distinguished a real `for x in <words>` from a
-bare `for x; do` (which POSIX says must fall back to iterating the
-positional parameters) purely by whether the parsed argument list was
-non-`NULL` — indistinguishable from an *explicit*, merely empty `in`
-list (`for x in ; do`), which also parses to `NULL`. Fixed (`fixes/148`)
-by adding a real `has_in` flag to `struct nfor`, set at parse time.
+1. **A signal ignored on entry cannot be trapped or reset** (POSIX
+   2.11). This is now the whole story for the four `*2-p` files and
+   most of the `*6-p` ones — every one of their remaining failures is
+   an `initially ignored` combo (`sigint2-p`: 20 "spares execed
+   process", 20 "spares child process", 16 "spares shell", all of them
+   `initially ignored, X -> command/clear`). shish installs the trap
+   anyway, so the signal stops being ignored and the shell or its
+   child dies.
+   → Record each signal's disposition once at startup (`sh_init()`),
+   and make `trap_install()`/`trap_uninstall()` a silent no-op for a
+   signal that was already `SIG_IGN` then.
+   → verify: `sigint2-p`, `sighup2-p`, `sigquit2-p`, `sigterm2-p`
+   (124/180 each), `sigint6-p`/`sigquit6-p` (126/180), `sighup6-p`
+   (121/180).
 
-Finally, `break N`/`continue N` with `N` greater than the actual
-enclosing-loop nesting depth (POSIX/bash: not an error, just targets
-the outermost loop reachable) turned out to always silently do
-nothing instead, even for a single ordinary loop at the very top of a
-plain script. `eval_jump()`'s search discarded an already-matched loop
-the instant it walked as far as a function/subshell/root boundary with
-leftover, unsatisfied levels — conflating "asked for more levels than
-exist here" with the real escape case the check exists to prevent (no
-loop matched *at all* yet). A plain top-level script's own eval frame
-carries the same `E_ROOT` flag a real subshell boundary does (via
-`sh_loop()`'s own `E_ROOT | E_LIST` tempflags), which is what made this
-bite even the most ordinary case. Fixed (`fixes/149`) by stopping the
-search at the boundary without nulling an already-found match. One
-related, deliberately unfixed case remains open (`break`/`continue`
-run via `eval` inside a loop still no-ops, since `eval`'s own internal
-frame reuses the same `E_ROOT` flag for an unrelated purpose) — see
-`BUGS: break-continue-inside-eval-no-op`.
+2. **Disposition across fork and exec.** POSIX: a signal the shell
+   ignores stays ignored in the child; one it traps to a command is
+   reset to the default there. `job_fork.c`/`exec_program.c` do
+   neither systematically. Overlaps step 1 — do it after, and
+   re-count before assuming it is still worth its own pass.
 
-Net effect on the specific files touched: `arith-p.tst` 17/65 → 32/43,
-`for-p.tst` → 19/20, `while-p.tst`/`until-p.tst` → 14/16 each,
-`break-p.tst` → 31/32. The full `tests/posix` suite (144 files) still
-has real failures in many other, unrelated areas — see `BUGS` for the
-ternary/precedence/readonly arithmetic gaps and the `sigcont`/`sighup`/
-`sigint`/`sigquit`/`sigterm`/`sigurg` trap-disposition family (24 files,
-one shared but not yet root-caused cause) filed the same day.
+3. Re-triage the remainder. Every file that is not a `*2-p`/`*6-p` is
+   already at 164-177/180, so what is left there is a handful of
+   individual cases, not a family-wide cause.
+
+### Phase 2 — error semantics: which failures must exit the shell (85)
+
+`error-p` (127/212) is one coherent subject: POSIX 2.8.1 says exactly
+which errors kill a non-interactive shell (syntax errors, expansion
+errors, redirection errors on special builtins, assignment errors,
+special-builtin errors) and which only set a status. shish gets it
+wrong in *both* directions — Phase 1.2 above is a case of exiting when
+it must not.
+
+1. Write down the POSIX table as a comment next to whatever enforces
+   it, then make one place enforce it — currently the decision is
+   scattered across the builtin dispatch and the eval loop.
+2. Syntax error inside `eval`, inside a dot script, and inside `(...)`
+   must terminate the shell (`error-p.tst:10` and neighbours; shish
+   prints nothing and continues, "not reached" is reached).
+3. Expansion errors (`${x?msg}`), assignment errors (readonly target)
+   and special-builtin errors, each in and out of a subshell.
+4. Non-special builtins and external commands must *not* exit.
+
+Diagnostic format is part of this file's failures too: shish prints
+`file:LINE:COL: msg` where the line number is one too high (the parser
+has already advanced), and omits the offending name. `echo ${x?boom}`
+on line 2 reports `:3:1: boom`; bash reports `line 2: x: boom`.
+`$LINENO` itself is correct — this is diagnostics only. Fix with, and
+verify against, `lineno-p.tst` (2/3) and `BUGS:
+eval-lineno-imprecise-inside-function`.
+
+---
+
+### Phase 3 — builtins (≈100 failures, each step independent)
+
+Sorted by failures per unit of work.
+
+1. **`test`/`[` segfaults on `test 1 -a 1`** (also `-o`, also with
+   empty operands; `test -n x -a -n y` is fine). Not in `BUGS` yet —
+   file it. The fix is to implement POSIX's argument-count algorithm
+   (1/2/3/4-argument forms decided by count first, operator second)
+   rather than dispatching on operator position.
+   → `test-p.tst` 220/236, plus `test ! = !`, `test ( = )`.
+2. **`alias` (17/65).** Bare `alias` prints nothing at all; `alias
+   name` prints correctly. Printing must be reusable as input, and
+   subshells must inherit aliases. `BUGS:
+   alias-printing-and-substitution-broken`.
+3. **`kill` (24 + 8).** `kill -s NAME` fails for most names
+   (`ABRT ALRM BUS FPE HUP ILL KILL QUIT ...`), though `kill -l`
+   prints them; and `kill -s HUP 0` does not work. Likely one
+   name→number lookup path.
+4. **`read` (22).** IFS whitespace vs non-whitespace splitting,
+   backslash continuation, reading no more than one line.
+   `BUGS: read-field-splitting-and-options-broken`.
+5. **`command` (15)** — `-v`/`-V` output formats for builtins,
+   externals with and without a slash; and a not-found dot script
+   must not kill the shell.
+6. **`unset` (6)** — `-f` (functions) does not delete; readonly
+   variables must not be deletable.
+7. **`umask` (9)**, **`set` (8)**, **`shift` (4)**, **`export` (1)`**.
+   `set -o` is missing the POSIX names `ignoreeof`, `nolog`,
+   `notify`, `verbose`, `vi` (it lists the bash extras
+   `braceexpand`/`hashall`/`histexpand`/`privileged` instead) —
+   folds in `BUGS: set-notify-unimplemented`,
+   `set-verbose-unimplemented`, `set-histexpand-unimplemented`.
+
+---
+
+### Phase 4 — expansion and parsing (≈60)
+
+1. `quote-p` (17/35) — backslash and line continuation inside
+   reserved words, operators, parameter expansions.
+   `BUGS: quote-backslash-escaping-broken`.
+2. `param-p` (36/54) — assignment to readonly/positional/special
+   parameters, `${#...}` edge cases, pattern removal edge cases (the
+   basic forms all work, so this entry is narrower than
+   `BUGS: param-expansion-pattern-removal-broken` claims).
+3. `redir-p` (52/61) — tilde expansion in redirection operands,
+   heredocs on a non-default fd, several heredocs per command, long
+   heredocs. `BUGS: redir-tilde-expansion-and-heredoc-broken`.
+4. `simple-p` (24/34) — redirections must precede assignments for a
+   non-special builtin; PATH search rules; command name with a slash.
+5. `tilde-p` (4), `case-p` (3), `fnmatch-p` (1), `cmdsub-p` (2),
+   `comment-p` (1) — small, individually filed in `BUGS`.
+
+---
+
+### Phase 5 — control flow and exit status (≈15)
+
+1. `exit-p` (8/14) — default exit status in a subshell and inside a
+   trap; `exit N` from a trap. `BUGS:
+   exit-status-in-trap-and-subshell-broken`.
+2. `trap-p` (28/37) — trap printing (`trap`, `trap -p`), numeric
+   signal operands, and what a trap sees of the redirections in
+   effect when it was set.
+3. `return-p` (22/25, was 0/25 before the debug prints came out) —
+   only "default exit status of returning from function/dot script"
+   is left; `BUGS: return-from-dot-script-broken` should be narrowed
+   to that.
+4. `break`/`continue` inside `eval` still no-ops
+   (`BUGS: break-continue-inside-eval-no-op`) — `eval`'s frame reuses
+   `E_ROOT` for an unrelated purpose; give it its own flag.
+5. `input-p` (3) — the shell reads ahead past the current line.
+6. `dot-p` (2), `function-p` (1), `pipeline-p` (1), `async-p` (1),
+   `break-p` (1), `continue-p` (1), `export-p` (1).
+
+---
+
+### Phase 6 — what is not being measured at all
+
+1. **6103 of 12195 cases are skipped**, i.e. half the suite is unrun.
+   The whole `sigttin`/`sigttou`/`sigtstp` set (12 files × 132) and
+   `testtty-p` skip for want of a controlling terminal; `wait-p`
+   skips all 16. Run the suite under a pty to find out what they
+   actually say before assuming they pass.
+2. **`tests/yash` (119 files) is off by default** — several files
+   (`arith-y`, `cmdprint-y`, `pipeline-y`, `redir-y`, `until-y`,
+   `while-y`) hang, none isolated. `BUGS: yash-suite-other-hangs`.
+   Isolate one hang per session; each is likely its own bug.
+3. `grouping-p.tst:34` is flaky (~1 run in 5) — a real race between a
+   subshell's background writer and the FIFO read after it.
+   `BUGS: grouping-p-tst-flaky`.
+4. The harness leaves `tests/posix/tmp.NNNNN/` behind on every hard
+   failure (97 accumulated). Clean them up and make the harness
+   remove its own.
+5. `tests/fixed.sh` fails 3 of its own assertions on a default build:
+   they assume the optional `cat`/`rm` builtins are compiled in.
+   `BUGS: fixed-sh-assumes-optional-builtins`.
 
 ---
 

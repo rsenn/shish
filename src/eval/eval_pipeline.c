@@ -10,6 +10,7 @@
 #include "../job.h"
 #include "../tree.h"
 #include "../debug.h"
+#include "../../lib/wait.h"
 #include "../../lib/windoze.h"
 #if !WINDOWS_NATIVE
 #include <sys/wait.h>
@@ -174,7 +175,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
      late for "cmd1 | cmd2; echo $?" sitting on one line together.
      Without this, "$?" after a pipeline kept reporting whatever it
      was *before* the pipeline ran. */
-  sh->exitcode = WEXITSTATUS(status);
+  sh->exitcode = WAIT_STATUS(status);
 
   return sh->exitcode;
 }

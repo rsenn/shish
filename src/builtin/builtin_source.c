@@ -10,7 +10,6 @@
 #include "../var.h"
 #include "../eval.h"
 #include "../../lib/windoze.h"
-#include <stdio.h>
 #if WINDOWS_NATIVE
 #include <io.h>
 #else
@@ -125,10 +124,6 @@ builtin_source(int argc, char* argv[]) {
          for return, or just 1 for break/continue */
       ret = jmpret >> 1;
       sh->exitcode = ret;
-      fprintf(stderr,
-              "DEBUG builtin_source: longjmp returned, ret=%d, sh->exitcode=%d\n",
-              ret,
-              sh->exitcode);
       sh_popargs(&oldarg);
     }
 

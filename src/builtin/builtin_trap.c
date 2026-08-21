@@ -17,9 +17,14 @@
 
 typedef struct trap_s {
   unsigned char sig;
+  /* the trap body, or NULL for "trap '' SIG" (ignore the signal:
+     SIG_IGN is installed instead of trap_relay) */
   union node* tree;
   struct trap_s* next;
   struct env* sh;
+  /* body currently running / uninstalled while it ran, so whoever
+     finishes running it owns the free */
+  unsigned char running, orphan;
 } trap;
 
 trap* traps = 0;
@@ -73,7 +78,9 @@ trap_find(int sig) {
 static void
 trap_print(trap* tr) {
   buffer_puts(fd_out->w, "trap '");
-  tree_print(tr->tree, fd_out->w);
+
+  if(tr->tree)
+    tree_print(tr->tree, fd_out->w);
   buffer_putm_internal(fd_out->w, "' ", trap_name(tr->sig), 0);
   buffer_putnlflush(fd_out->w);
 }
@@ -92,7 +99,7 @@ static void
 trap_handler(int sig) {
   trap* tr;
   struct eval e;
-  int was_async;
+  int was_async, was_exitcode;
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_BUILTIN)
   debug_to(buffer_2);
@@ -107,6 +114,11 @@ trap_handler(int sig) {
     return;
   }
 
+  /* an ignored signal has SIG_IGN installed, so this is only reached
+     for the synchronous EXIT/DEBUG/RETURN pseudo-traps */
+  if(!tr->tree)
+    return;
+
   /* a real-signal trap (sig > 0) fires asynchronously, interrupting
      the script possibly deep inside an in-process subshell -- an
      "exit" in its body must terminate the whole process regardless
@@ -119,9 +131,31 @@ trap_handler(int sig) {
   if((char)sig > 0)
     sh_async_exit = 1;
 
+  /* POSIX: the trap body sees the interrupted command's "$?", and
+     "$?" is what it was again once the body has run. Only for a real
+     signal -- EXIT/RETURN/DEBUG deliberately let the body's own
+     status through (an "exit" in an EXIT trap never gets here). */
+  was_exitcode = sh->exitcode;
+
+  /* the body can uninstall its own trap ("trap 'echo x; trap - INT'
+     INT"), which would otherwise tree_free() the very tree eval_tree()
+     is walking; trap_uninstall() only unlinks it while this flag is
+     set and leaves the free to us. */
+  tr->running = 1;
+
   eval_push(&e, 0);
   eval_tree(&e, tr->tree, 0);
   eval_pop(&e);
+
+  tr->running = 0;
+
+  if(tr->orphan) {
+    tree_free(tr->tree);
+    alloc_free(tr);
+  }
+
+  if((char)sig > 0)
+    sh->exitcode = was_exitcode;
 
   /* only reached if the trap body didn't itself exit -- an exit that
      did already terminated the process by the time anything gets
@@ -265,8 +299,14 @@ trap_uninstall(int sig) {
          functions via the same exec_subshell_depth counter);
          trap_snapshot_restore() frees anything left over once the
          subshell that's actually responsible for it exits. */
-      if(!exec_subshell_depth) {
-        tree_free(t->tree);
+      if(t->running)
+        /* trap_handler() is inside this very tree right now; it frees
+           the node once the body returns */
+        t->orphan = 1;
+      else if(!exec_subshell_depth) {
+        if(t->tree)
+          tree_free(t->tree);
+
         alloc_free(t);
       }
 
@@ -300,6 +340,8 @@ trap_install(int sig, union node* tree) {
 
   tr->sig = sig;
   tr->tree = tree;
+  tr->running = 0;
+  tr->orphan = 0;
   tr->next = traps;
   tr->sh = sh;
   traps = tr;
@@ -310,8 +352,10 @@ trap_install(int sig, union node* tree) {
        per-signal stack, installing trap_relay (not trap_handler
        itself) with SA_MASKALL (no re-entry) and SA_NORESTART (an
        interrupted syscall actually returns). trap_uninstall()'s
-       matching sig_pop() restores exactly what was there before. */
-    sig_push(sig, &trap_relay);
+       matching sig_pop() restores exactly what was there before.
+       A NULL tree is "trap '' SIG": the kernel ignores the signal
+       outright, which is also what a child process must inherit. */
+    sig_push(sig, tree ? &trap_relay : SIG_IGN);
 
   } else if((unsigned char)sig == TRAP_DEBUG) {
     e = eval_find(E_ROOT);
@@ -396,8 +440,14 @@ trap_snapshot_restore(void* handle) {
         trap_pending[(unsigned char)t->sig] = 0;
       }
 
-      tree_free(t->tree);
-      alloc_free(t);
+      if(t->running)
+        t->orphan = 1;
+      else {
+        if(t->tree)
+          tree_free(t->tree);
+
+        alloc_free(t);
+      }
     }
 
     t = next;
@@ -431,7 +481,7 @@ int
 builtin_trap(int argc, char* argv[]) {
   union node* cmds = 0;
   const char* code;
-  int c, ret = 1, list = 0, print = 0, signum;
+  int c, ret = 0, list = 0, print = 0, ignore = 0, signum;
 
   /* check options, -l for list, -p for output */
   while((c = shell_getopt(argc, argv, "lp")) > 0) {
@@ -497,7 +547,14 @@ builtin_trap(int argc, char* argv[]) {
 
   code = argv[shell_optind++];
 
-  if(str_diff(code, "-")) {
+  /* POSIX has three dispositions, not two:
+       "trap - SIG"     reset to the default action
+       "trap '' SIG"    ignore the signal
+       "trap CODE SIG"  run CODE
+     Only a genuinely empty operand means ignore. */
+  ignore = (code[0] == '\0');
+
+  if(!ignore && str_diff(code, "-")) {
     struct fd fd;
     struct source src;
     struct parser p;
@@ -532,19 +589,20 @@ builtin_trap(int argc, char* argv[]) {
     debug_to(&debug_buffer);
 #endif
 
-    if(signum != 1) {
-      ret = 0;
-
-      /* "trap CODE SIG1 SIG2 ..." parses CODE only once (cmds, above)
-         but installs it against every listed signal -- each needs its
-         own independent tree, not a shared pointer, since
-         trap_install()/trap_uninstall() tree_free()s the tree a
-         replaced/removed signal owned. */
-      if(cmds)
-        trap_install(signum, tree_copy(cmds));
-      else
-        ret = trap_uninstall(signum);
-    }
+    /* "trap CODE SIG1 SIG2 ..." parses CODE only once (cmds, above)
+       but installs it against every listed signal -- each needs its
+       own independent tree, not a shared pointer, since
+       trap_install()/trap_uninstall() tree_free()s the tree a
+       replaced/removed signal owned. */
+    if(cmds)
+      trap_install(signum, tree_copy(cmds));
+    else if(ignore)
+      trap_install(signum, NULL);
+    else
+      /* removing a trap that isn't there is a no-op, not an error:
+         "trap" is a special builtin, so a nonzero return here would
+         exit a non-interactive shell. */
+      trap_uninstall(signum);
   }
 
   if(cmds)

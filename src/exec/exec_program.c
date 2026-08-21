@@ -215,7 +215,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
 
         job_wait(job, 0, &status);
 
-        ret = WEXITSTATUS(status);
+        ret = WAIT_STATUS(status);
 
         sig_blocknone();
       }

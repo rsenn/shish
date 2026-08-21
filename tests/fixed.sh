@@ -3884,4 +3884,71 @@ assert_equal "b187" "$(cat "$X187DIR/out")" "a subshell that swaps stdout/stderr
 assert_equal "a187" "$(cat "$X187DIR/err")" "a subshell that swaps stdout/stderr via persistent redirections must not corrupt fd bookkeeping for what follows (stderr side)"
 rm -rf "$X187DIR"
 
+## fixes/189 (debug-fprintf-left-in-eval_return-and-builtin_source):
+## eval_return() and builtin_source() carried committed
+## fprintf(stderr, "DEBUG ...") calls (plus the <stdio.h> this
+## codebase otherwise avoids), so every function return and every
+## dot-script return wrote four lines of pointer/flag noise to
+## stderr. return-p.tst scored 0/25 purely because of it.
+X189=$(f189() { return 3; }; f189 2>&1)
+assert_equal "" "$X189" "returning from a function must write nothing to stderr"
+X189DIR=$(mktemp -d)
+printf 'return 4\n' > "$X189DIR/s189"
+X189B=$(. "$X189DIR/s189" 2>&1)
+assert_equal "" "$X189B" "returning from a dot-sourced script must write nothing to stderr"
+rm -rf "$X189DIR"
+
+## fixes/190 (trap-empty-arg-does-not-ignore, trap-clear-with-no-trap-
+## kills-shell, trap-hup-silently-skipped, plus a use-after-free found
+## fixing them): POSIX has three dispositions, shish tracked two --
+## "trap '' SIG" (ignore) was handled exactly like "trap - SIG"
+## (default). Clearing a trap that was never set returned 1, which for
+## a *special* builtin exits a non-interactive shell. builtin_trap()'s
+## "if(signum != 1)" skipped SIGHUP outright. And a trap body that
+## uninstalls its own trap ("trap 'echo x; trap - INT' INT") had
+## trap_uninstall() tree_free() the tree eval_tree() was still walking.
+##
+## fixes/191 (trap-not-dispatched-between-commands-on-one-line):
+## trap_run_pending() only ran from sh_loop()/term_read()/job_wait(),
+## i.e. at line and blocking-call boundaries, so a trap never fired
+## between two ";"-separated commands of the same list. eval_tree() and
+## eval_cmdlist() now drain pending traps per node. trap_handler()
+## restores "$?" around a real-signal body (POSIX: the body sees the
+## interrupted command's status, and it is restored afterwards).
+##
+## fixes/192 (signal-killed-child-exit-status): a child killed by a
+## signal reported "$?" as 0 -- WEXITSTATUS() of a status word that
+## never carried one. POSIX/bash report 128 + the signal number.
+##
+## All of these need a real separate shish process (a signal has to be
+## delivered to a shell that is not this one), so they reuse
+## $SHISH_SELF from fixes/122 above.
+if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+  X190A=$("$SHISH_SELF" -c 'trap "" INT; kill -s INT $$; echo ok' 2>&1)
+  assert_equal "ok" "$X190A" "trap '' SIG must ignore the signal, not reset it to the default action"
+
+  X190B=$("$SHISH_SELF" -c 'trap - INT; echo ok' 2>&1)
+  assert_equal "ok" "$X190B" "trap - SIG for a signal with no trap set is a no-op success, not an error that exits the shell"
+
+  X190C=$("$SHISH_SELF" -c 'trap "echo t" HUP; echo ok' 2>&1)
+  assert_equal "ok" "$X190C" "SIGHUP is trappable like every other signal"
+
+  X190D=$("$SHISH_SELF" -c 'trap "echo trapped; trap - TERM" TERM
+kill -s TERM $$
+echo ok' 2>&1)
+  assert_equal "$(printf 'trapped\nok')" "$X190D" "a trap body that uninstalls its own trap must not free the tree it is running from"
+
+  X191=$("$SHISH_SELF" -c 'trap "echo t" TERM; kill -s TERM $$; echo after' 2>&1)
+  assert_equal "$(printf 't\nafter')" "$X191" "a trap fires between two commands on the same line, not only at line boundaries"
+
+  X191B=$("$SHISH_SELF" -c 'trap "false" TERM; kill -s TERM $$; echo $?' 2>&1)
+  assert_equal "0" "$X191B" "a signal trap body's own exit status does not leak into \$? (bash prints 0 here too)"
+
+  X192=$("$SHISH_SELF" -c '"$SHISH_SELF" -c "kill -s INT \$\$"; echo $?' 2>/dev/null)
+  assert_equal "130" "$X192" "a command killed by SIGINT sets \$? to 130 (128 + 2), not 0"
+
+  X192B=$("$SHISH_SELF" -c '"$SHISH_SELF" -c "kill -s TERM \$\$"; echo $?' 2>/dev/null)
+  assert_equal "143" "$X192B" "a command killed by SIGTERM sets \$? to 143 (128 + 15)"
+fi
+
 summary

@@ -128,7 +128,7 @@ builtin_fg(int argc, char* argv[]) {
 
   job_wait(j, 0, &status);
 
-  return WAIT_IF_EXITED(status) ? WAIT_EXITSTATUS(status) : 0;
+  return WAIT_STATUS(status);
 }
 
 /* bg builtin: resume one or more *stopped* jobs, left running in the

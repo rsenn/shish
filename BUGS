@@ -221,37 +221,60 @@
   # bash/dash print only "after loop" (break actually exits the loop)
   ```
 
-- posix-sigcont-etc-trap-disposition-many-failures: the
-  `tests/posix/sigcont1-p.tst`, `sigcont2-p.tst`, `sigcont5-p.tst`,
-  `sigcont6-p.tst` (and the same four-file pattern for `sighup`,
-  `sigint`, `sigquit`, `sigterm`, `sigurg` -- 24 files total) all fail
-  roughly half their cases, all under the same heading shape ("SIGxxx
-  is/spares shell (main/subshell/cmdsub, self/other, +i +m, initially
-  ..., X -> Y)"), e.g. `sigcont1-p.tst:7004` ("SIGCONT is handled by
-  shell (main, self, +i +m, initially defaulted, clear -> command)")
-  expects a trap installed after a signal disposition transition to
-  actually run and prints nothing. This looks like one shared root
-  cause in how trap disposition is tracked/restored across
-  subshells/`fork`+`exec`/interactive+monitor-mode combinations, but
-  not yet root-caused to a specific line -- next step: reduce one
-  failing case out of `sigcont1-p.tst:7004` to a minimal standalone
-  repro (the file uses a shared harness function, not inline script,
-  so isolating the exact commands it runs is the first step) and
-  compare `trap -p`'s reported state against dash/bash at each step.
+- posix-signal-ignored-on-entry-can-be-trapped: POSIX 2.11 -- a signal
+  that was already ignored when the shell started cannot be trapped or
+  reset; `trap` must silently do nothing for it. shish installs the
+  trap anyway, so the signal stops being ignored and the shell (or a
+  child it starts) dies from it. This is what every remaining failure
+  in the `sig*-p` "initially ignored" files is: `sigint2-p`,
+  `sighup2-p`, `sigquit2-p`, `sigterm2-p` (124/180 each),
+  `sigint6-p`/`sigquit6-p` (126/180), `sighup6-p` (121/180) -- 20
+  "spares execed process" + 20 "spares child process" + 16 "spares
+  shell" in `sigint2-p` alone, all of them `initially ignored, X ->
+  command` or `-> clear` combos. Fix: snapshot each signal's
+  disposition at startup, then no-op `trap_install()`/
+  `trap_uninstall()` for the ones that were `SIG_IGN`.
+
+  Supersedes the old `posix-sigcont-etc-trap-disposition-many-failures`
+  entry, which covered this plus four separate, now-fixed defects
+  (`fixes/190`-`192`).
 
   **Repro:**
   ```sh
-  # Run one of the failing signal tests
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix sigcont1-p.tst
-  # Many cases fail (roughly half of the ~7000 test cases)
-  
-  # Isolate one failing case (from sigcont1-p.tst:7004):
-  cat <<'EOF' | shish
-  trap 'echo caught' CONT
-  kill -CONT $$
-  trap -p CONT
-  EOF
-  # Compare output with dash/bash to see the difference
+  sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix sigint2-p.tst
+  # 56 failures, every one an "initially ignored" combo
+  ```
+
+- kill-stop-self-in-subshell-deadlock: `kill -s STOP $$` inside a
+  `(...)` subshell hangs the shell forever, so `kill3-p.tst` never
+  finishes (`ctest` reports Timeout after 120s; confirmed identical
+  before and after `fixes/190`-`192`, so it is not new). shish runs
+  `(...)` in-process, so `$$` is this very process: SIGSTOP stops it
+  before the `kill -s CONT $$` on the next line can ever run. A real
+  shell forks the subshell, so the stopped process is the parent and
+  the still-running subshell continues it. Another instance of the
+  non-forking-subshell design gap (TODO.md, Goal 4).
+
+  **Repro:**
+  ```sh
+  echo '(kill -s STOP $$; status=$?; kill -s CONT $$; exit $status)' \
+    | timeout 5 build/x86_64-linux-gnu/shish; echo $?   # 124 = hung
+  ```
+
+- sigterm-tests-differ-under-ctest: `sigterm1-p.tst` and
+  `sigterm5-p.tst` score 177/180 and 172/180 when run directly, but
+  36/180 and 34/180 under `ctest` -- same binary, same test file, ~140
+  extra failures each. No other `sig*` file behaves this way. Whatever
+  `ctest` does differently (its own process group, or a SIGTERM
+  disposition the test process inherits) has to be understood before
+  any SIGTERM number from either method can be trusted.
+
+  **Repro:**
+  ```sh
+  sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix sigterm1-p.tst
+  # 177/180
+  (cd build/x86_64-linux-gnu && ctest -R sigterm1-p)
+  # 36/180
   ```
 
 - alias-printing-and-substitution-broken: `alias` printing, alias
@@ -309,7 +332,7 @@
 - quote-backslash-escaping-broken: backslash escaping of non-special
   characters, line continuation (`\` + newline) in reserved words,
   operators, parameter/arithmetic/command substitution, and function
-  definitions is broken. 19 failures in `quote-p.tst` (16/35).
+  definitions is broken. 19 failures in `quote-p.tst` (17/35).
   `src/parse/` quote-handling code. `quote-p.tst:7-596`.
 
   **Repro:**
@@ -420,16 +443,20 @@
   # must not crash; must print exit=0 / a on stderr's file / b on stdout's file
   ```
 
-- return-from-dot-script-broken: `return` from a dot-sourced script
-  (unnested, nested in another dot script, nested in a function)
-  doesn't work correctly — wrong exit status, doesn't actually
-  return. 7 failures in `return-p.tst` (18/25). `return-p.tst:73-146`.
+- return-default-exit-status-wrong: `return` with no operand must
+  return the exit status of the last command run in the function/dot
+  script; shish returns something else. 3 failures in `return-p.tst`
+  (22/25), all named "default exit status of returning from ...".
+  The rest of this file's cases (returning from a function unnested,
+  nested in other functions, nested in or through a dot script) pass
+  -- they only ever failed because of stderr debug output, since
+  removed.
 
   **Repro:**
   ```sh
-  # Run the return conformance test
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix return-p.tst
-  # 7 failures in return from dot-sourced scripts
+  # testee path must be absolute
+  sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix return-p.tst
+  # 3 failures, all "default exit status of returning from ..."
   ```
 
 - input-not-read-line-wise: the shell reads more input than needed
@@ -447,7 +474,7 @@
   in redirection operands, heredocs with non-default fd, backslash
   handling in unquoted heredoc delimiters, multiple heredocs on a
   single command, and long heredocs. 10 failures in `redir-p.tst`
-  (51/61). `redir-p.tst:13,47,90,133,138,302,318,360,478,543`.
+  (52/61). `redir-p.tst:13,47,90,133,138,302,318,360,478,543`.
 
   **Repro:**
   ```sh
@@ -513,17 +540,39 @@
   sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix grouping-p.tst
   ```
 
-- external-command-relative-arg-infinite-loop: an external command
-  invoked with a slash-less relative-path argument, right after a
-  command-substitution assignment, loops forever instead of running
-  once -- e.g. `dirname` re-executes and reprints its output
-  indefinitely. Not yet root-caused past this repro (found while
-  testing `mktemp`, unrelated to it).
+- test-binary-and-or-segfault: `test`/`[` segfaults on the 3-argument
+  form when the middle argument is `-a`/`-o` and the operands are
+  plain strings. `test -n x -a -n y` (5 arguments) is fine, so the
+  crash is in how the 3-argument form is dispatched -- the fix is
+  POSIX's argument-*count*-first algorithm (XCU 4.62), not more
+  operator sniffing.
 
   **Repro:**
   ```sh
-  unset IFS
-  X=$(mktemp foo.XXXXXX)
-  dirname "$X"
-  # prints "." forever instead of once; ^C to stop
+  echo 'test 1 -a 1' > t.sh && shish t.sh; echo $?   # 139 (SIGSEGV)
+  # same for: test 1 -o 1 / test "" -a ""
+  ```
+
+- error-message-line-number-off-by-one: diagnostics report the line
+  the parser has advanced to, not the line of the command that
+  failed, and omit the offending name. `$LINENO` itself is correct,
+  so this is the message only.
+
+  **Repro:**
+  ```sh
+  printf 'echo one\necho ${x?boom}\n' > e.sh && shish e.sh
+  # shish: e.sh:3:1: boom      (bash: e.sh: line 2: x: boom)
+  ```
+
+- fixed-sh-assumes-optional-builtins: `tests/fixed.sh` fails 3
+  assertions on a default build because it assumes the optional `cat`
+  and `rm` builtins are compiled in (`BUILTIN_CAT`/`BUILTIN_RM` are 0
+  by default): the `cat -n` case compares against shish's own
+  builtin's column format, and two `set +h` cases run `rm` with a
+  PATH that only contains the test's own directories. Either gate
+  those cases on the builtin being present or stop depending on it.
+
+  **Repro:**
+  ```sh
+  ./build/x86_64-linux-gnu/shish tests/fixed.sh | grep FAIL
   ```

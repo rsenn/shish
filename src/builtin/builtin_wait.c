@@ -2,6 +2,7 @@
 #include "../exec.h"
 #include "../job.h"
 #include "../../lib/typedefs.h"
+#include "../../lib/wait.h"
 
 /* wait built-in
  *
@@ -30,7 +31,7 @@ builtin_wait(int argc, char* argv[]) {
       int status = 0;
 
       job_wait(job_list, 0, &status);
-      ret = WEXITSTATUS(status);
+      ret = WAIT_STATUS(status);
     }
 
     return ret;
@@ -52,7 +53,7 @@ builtin_wait(int argc, char* argv[]) {
       int status = 0;
 
       job_wait(jobs[i], 0, &status);
-      ret = WEXITSTATUS(status);
+      ret = WAIT_STATUS(status);
     }
   }
 

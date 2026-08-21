@@ -1,0 +1,94 @@
+diff --git a/lib/wait.h b/lib/wait.h
+index 581b9b91..f5cbed9e 100644
+--- a/lib/wait.h
++++ b/lib/wait.h
+@@ -14,6 +14,12 @@
+ #define WAIT_EXITSTATUS(status) (((status) >> 8) & 0xff)
+ #endif
+ 
++/* what a finished child contributes to "$?": POSIX/bash report
++   128 + N for a child a signal killed ("kill -s INT" -> 130), its own
++   exit status otherwise. */
++#define WAIT_STATUS(status) \
++  (WAIT_IF_SIGNALED(status) ? 128 + WAIT_TERMSIG(status) : WAIT_EXITSTATUS(status))
++
+ #define WAIT_IF_EXITED(status) (WTERMSIG(status) == 0)
+ #define WAIT_IF_STOPPED(status) (((status) & 0xff) == 0x7f)
+ 
+diff --git a/src/builtin/builtin_jobs.c b/src/builtin/builtin_jobs.c
+index adb6ad96..f2a4e00c 100644
+--- a/src/builtin/builtin_jobs.c
++++ b/src/builtin/builtin_jobs.c
+@@ -128,7 +128,7 @@ builtin_fg(int argc, char* argv[]) {
+ 
+   job_wait(j, 0, &status);
+ 
+-  return WAIT_IF_EXITED(status) ? WAIT_EXITSTATUS(status) : 0;
++  return WAIT_STATUS(status);
+ }
+ 
+ /* bg builtin: resume one or more *stopped* jobs, left running in the
+diff --git a/src/builtin/builtin_wait.c b/src/builtin/builtin_wait.c
+index a0212317..2a21ba9f 100644
+--- a/src/builtin/builtin_wait.c
++++ b/src/builtin/builtin_wait.c
+@@ -2,6 +2,7 @@
+ #include "../exec.h"
+ #include "../job.h"
+ #include "../../lib/typedefs.h"
++#include "../../lib/wait.h"
+ 
+ /* wait built-in
+  *
+@@ -30,7 +31,7 @@ builtin_wait(int argc, char* argv[]) {
+       int status = 0;
+ 
+       job_wait(job_list, 0, &status);
+-      ret = WEXITSTATUS(status);
++      ret = WAIT_STATUS(status);
+     }
+ 
+     return ret;
+@@ -52,7 +53,7 @@ builtin_wait(int argc, char* argv[]) {
+       int status = 0;
+ 
+       job_wait(jobs[i], 0, &status);
+-      ret = WEXITSTATUS(status);
++      ret = WAIT_STATUS(status);
+     }
+   }
+ 
+diff --git a/src/eval/eval_pipeline.c b/src/eval/eval_pipeline.c
+index 8780b816..3862271f 100644
+--- a/src/eval/eval_pipeline.c
++++ b/src/eval/eval_pipeline.c
+@@ -10,6 +10,7 @@
+ #include "../job.h"
+ #include "../tree.h"
+ #include "../debug.h"
++#include "../../lib/wait.h"
+ #include "../../lib/windoze.h"
+ #if !WINDOWS_NATIVE
+ #include <sys/wait.h>
+@@ -174,7 +175,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
+      late for "cmd1 | cmd2; echo $?" sitting on one line together.
+      Without this, "$?" after a pipeline kept reporting whatever it
+      was *before* the pipeline ran. */
+-  sh->exitcode = WEXITSTATUS(status);
++  sh->exitcode = WAIT_STATUS(status);
+ 
+   return sh->exitcode;
+ }
+diff --git a/src/exec/exec_program.c b/src/exec/exec_program.c
+index 84504cfe..e2c8ec9a 100644
+--- a/src/exec/exec_program.c
++++ b/src/exec/exec_program.c
+@@ -215,7 +215,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
+ 
+         job_wait(job, 0, &status);
+ 
+-        ret = WEXITSTATUS(status);
++        ret = WAIT_STATUS(status);
+ 
+         sig_blocknone();
+       }
