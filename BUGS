@@ -261,20 +261,22 @@
     | timeout 5 build/x86_64-linux-gnu/shish; echo $?   # 124 = hung
   ```
 
-- sigterm-tests-differ-under-ctest: `sigterm1-p.tst` and
-  `sigterm5-p.tst` score 177/180 and 172/180 when run directly, but
-  36/180 and 34/180 under `ctest` -- same binary, same test file, ~140
-  extra failures each. No other `sig*` file behaves this way. Whatever
-  `ctest` does differently (its own process group, or a SIGTERM
-  disposition the test process inherits) has to be understood before
-  any SIGTERM number from either method can be trusted.
+- signal-tests-vary-with-machine-load: the `sig*-p` files are timing
+  sensitive enough that the same binary produces wildly different
+  scores from one run to the next. `sigterm1-p.tst` scored 36/180 in
+  one `ctest` run and 177/180 in the next; `sigterm6-p.tst` 89 then
+  125; `sigcont1-p.tst` 148 then 177. The low scores all came from
+  runs made while the machine was busy (parallel builds, other test
+  runs); the high ones from an otherwise idle machine. Standalone runs
+  agree with the idle `ctest` numbers. Until this is understood, any
+  `sig*` measurement needs an idle machine and a second run to
+  confirm. Probably the tests' own `kill`-then-observe races rather
+  than a shell bug, but that is an assumption, not a finding.
 
   **Repro:**
   ```sh
+  # run this twice, once while a "cmake --build -j8" is running
   sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix sigterm1-p.tst
-  # 177/180
-  (cd build/x86_64-linux-gnu && ctest -R sigterm1-p)
-  # 36/180
   ```
 
 - alias-printing-and-substitution-broken: `alias` printing, alias
@@ -352,95 +354,6 @@
   # Run the exit status conformance test
   sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix exit-p.tst
   # 6 failures in trap and subshell exit status handling
-  ```
-
-- exec-redirection-and-error-broken: narrowed down to one failure in
-  `exec-p.tst` (9/10, not 7/10 as previously logged here — the other
-  two entries this bullet used to cite were fixed as a side effect of
-  an unrelated change earlier in the same session that produced
-  fixes/184/185). The remaining failure is `exec-p.tst:15`, "exec
-  with redirections":
-
-  ```sh
-  exec >&2 2>/dev/null
-  echo reached
-  ```
-
-  must send "reached" to stderr (fd 1 was dup'd from fd 2 *before* fd
-  2 got retargeted to /dev/null); shish sends it to the original
-  stdout instead.
-
-  **Repro:**
-  ```sh
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix exec-p.tst
-  # 1 failure: exec-p.tst:15
-  ```
-
-  **Root cause (confirmed):** `fd_dup()` (`src/fd/fd_dup.c`), used for
-  every `[n]>&m` redirection including persistent ("exec") ones, does
-  NOT take an independent copy of the source fd's state — it copies
-  *pointers* into the source struct's own embedded buffer storage
-  (`d->r = dupe->r; d->w = dupe->w; d->dup = dupe;`) and leaves the
-  real kernel dup2() to happen lazily later (`fdtable_dup()`,
-  triggered by `fdtable_exec()`/`fdtable_lazy()`). For `exec >&2
-  2>/dev/null`, by the time that lazy resolution actually runs, the
-  *second* redirection has already run `fd_new(2,...)` ->
-  `fdtable_newfd(2,...)` -> `fd_reinit()`, which reuses/reinitializes
-  the exact same `struct fd` that fd 1's still-pending dup is chasing
-  via `->dup`. The pending dup then resolves against the *new*
-  (/dev/null) occupant instead of the original fd-2 target.
-
-  **What I tried (session ending 2026-08-17), and why it's reverted:**
-  Tried forcing the real dup2() to happen eagerly, inside
-  `redir_dup()`, right after `fd_dup()` sets up the pending dup, so it
-  captures the source before any later redirection in the same list
-  can reinit its struct. Needed `fdtable_dup(nredir->fd,
-  FDTABLE_FORCE | FDTABLE_CLOSE)` specifically (plain
-  `fdtable_resolve()`/`FDTABLE_MOVE` alone hits a self-referential
-  "redirection cycle detected" error, because the fd being resolved
-  is already linked into its own fdtable slot, and going through
-  `fdtable_wish()`/`fdtable_gap()` has it try to relocate itself out
-  of its own way; `FDTABLE_CLOSE` skips that. `FDTABLE_FORCE` is
-  needed too because fds 0-2 used to never actually get `close()`d
-  when torn down — see the fd≤2-guard writeup below, fixes/186 — so
-  fdtable's bookkeeping believed slot 1 was free while the kernel fd
-  was still open, and only `FDTABLE_FORCE`'s dup2()-retry path could
-  actually reclaim it).
-
-  This made `exec-p.tst:15` and the simple repro above pass. **But it
-  introduced a reliably reproducible segfault** on a previously-working
-  pattern (the classic stdout/stderr swap idiom, `tests/fixed.sh`
-  fixes/187's test). That crash is now understood and fixed
-  separately (fixes/187, `fd_state_save()`/`fd_state_restore()` around
-  `eval_subshell.c`'s existing `fdstack_push()`/`fdstack_pop()` pair) —
-  see "TODO.md, Goal 4" for the full writeup. So the segfault is no
-  longer a reason not to retry the eager-dup2() approach above; it
-  should just also carry the `fd_state_save`/`fd_state_restore` fix
-  (or run after it, since that fix is already in the tree).
-
-  All three changed files (`src/redir.h`, `src/redir/redir_eval.c`,
-  `src/redir/redir_dup.c`) were reverted back to their original state
-  before ending the session — the tree currently has NO changes
-  related to this specific bug (`src/redir/redir_dup.c`'s original
-  signature is `int redir_dup(struct nredir* nredir, stralloc* sa)`,
-  2 params, no `persistent` flag). What *did* land this session,
-  discovered while chasing the segfault above: the fd≤2 `close()`
-  guard that was masking a family of real fd-table bookkeeping bugs
-  got removed for good (fixes/186), and the subshell fd-bookkeeping
-  scoping gap that caused the segfault got fixed (fixes/187) — both
-  documented in `TODO.md`'s Goal 4 section. Retrying the eager-dup2()
-  fix for *this* bug now starts from firmer ground.
-
-  **Repro for the (now-fixed) crash**, kept here since it's still a
-  useful regression check for whoever retries the eager-dup2() fix:
-  ```sh
-  build/x86_64-linux-gnu/shish -c '
-  X=$(mktemp); Y=$(mktemp)
-  ( exec 3>&1 1>&2 2>&3 3>&-; echo a; echo b >&2 ) > "$X" 2> "$Y"
-  echo "exit=$?"; cat "$X"; cat "$Y"
-  rm -f "$X" "$Y"
-  '
-  # must not crash; must print exit=0 / a on stderr's file / b on stdout's file
   ```
 
 - return-default-exit-status-wrong: `return` with no operand must

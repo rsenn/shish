@@ -12,16 +12,17 @@ The measurable target is `tests/posix` (yash's POSIX suite, 123 files).
 Everything below is derived from full runs on 2026-08-20, at
 `9bfd1f9f` plus `fixes/188`-`192`.
 
-### Scoreboard (2026-08-20, after Phase 1)
+### Scoreboard (2026-08-21, after Phase 1 + `fixes/193`)
 
 ```
-cases 12195   passed 4863   failed 1229   skipped 6103
-   failures:  sig*-p family 884  |  everything else 345
+cases 12195   passed 5181   failed 911   skipped 6103
+   failures:  sig*-p family 567  |  everything else 344
 ```
 
-Phase 1 moved this from 3952 passed / 2140 failed (the same run before
-`fixes/190`-`192`); the sig* family alone went 1790 -> 884 failures.
-The 6103 skips are not passes — see Phase 6.
+Where this came from: 3952 passed / 2140 failed before `fixes/190`-`192`
+(Phase 1), 4863 / 1229 after. The rest of the gap to 5181 is not a
+third fix — it is measurement noise in the signal files, see the
+warning below. The 6103 skips are not passes — see Phase 6.
 
 Per-file failure counts, everything except the `sig*` family:
 
@@ -30,35 +31,39 @@ Per-file failure counts, everything except the `sig*` family:
 48 alias-p  17/65    10 simple-p   24/34     4 shift-p   10/14   1 function-p 18/19
 24 kill2-p   4/28     9 umask-p    74/83     3 return-p  22/25   1 fnmatch-p  6/7
 22 read-p    6/28     9 trap-p     28/37     3 input-p   8/11    1 export-p   4/5
-18 quote-p  17/35     9 redir-p    52/61     3 case-p    49/52   1 exec-p     9/10
-18 param-p  36/54     8 set-p      37/45     3 builtins  78/81   1 continue-p 30/31
-16 test-p  220/236    8 kill1-p     9/17     2 dot-p     12/14   1 comment-p  14/15
-                      6 unset-p     6/12     2 cmdsub-p  12/14   1 break-p    31/32
-                      6 exit-p      8/14                         1 async-p    8/9
+18 quote-p  17/35     9 redir-p    52/61     3 case-p    49/52   1 continue-p 30/31
+18 param-p  36/54     8 set-p      37/45     3 builtins  78/81   1 comment-p  14/15
+16 test-p  220/236    8 kill1-p     9/17     2 dot-p     12/14   1 break-p    31/32
+                      6 unset-p     6/12     2 cmdsub-p  12/14   1 async-p    8/9
+                      6 exit-p      8/14
 ```
 
-The `sig*` family, worst first — the shape of what is left is uniform:
+The `sig*` family splits cleanly in two — the `*2-p`/`*6-p` files (the
+"initially ignored" ones, 500 of the 567 failures) and everything else,
+which is down to a handful of cases each:
 
 ```
-146 sigterm5   34/180 *   56 sigterm2 124/180   16 sigcont2 164/180   3 sigurg6  177/180
-144 sigterm1   36/180 *   56 sigquit2 124/180   11 sigquit1 169/180   3 sigurg5  177/180
- 91 sigterm6   89/180     56 sigint2  124/180   11 sigint1  169/180   3 sighup5  177/180
- 59 sighup6   121/180     56 sighup2  124/180    5 sigurg1  175/180   3 sighup1  177/180
- 54 sigquit6  126/180     16 sigurg2  164/180    3 sigcont6 177/180   3 sigcont5 177/180
- 54 sigint6   126/180     16 sigquit5 164/180                         3 sigcont1 177/180
-                          16 sigint5  164/180
+59 sighup6  121/180   56 sigint2  124/180   16 sigurg2  164/180    3 sigurg6  177/180
+56 sigterm2 124/180   55 sigterm6 125/180   16 sigquit5 164/180    3 sigurg5  177/180
+56 sigquit2 124/180   54 sigquit6 126/180   16 sigint5  164/180    3 sigurg1  177/180
+56 sighup2  124/180   54 sigint6  126/180   16 sigcont2 164/180    3 sigterm1 177/180
+                                            11 sigquit1 169/180    3 sighup5  177/180
+                                            11 sigint1  169/180    3 sighup1  177/180
+                                             8 sigterm5 172/180    3 sigcont6 177/180
+                                                                   3 sigcont5 177/180
+                                                                   3 sigcont1 177/180
 ```
 
-`*` `sigterm1-p`/`sigterm5-p` score 177/180 and 172/180 when run on
-their own — only under `ctest` do they collapse to 36/34. Something in
-how `ctest` starts a test (process group, or an inherited SIGTERM
-disposition) changes the result; the numbers above are the `ctest`
-ones. Worth an hour before trusting any SIGTERM measurement:
-`BUGS: sigterm-tests-differ-under-ctest`.
+**Do not trust a signal-file number from a busy machine.** The same
+binary scored `sigterm1-p` 36/180 in one `ctest` run and 177/180 in the
+next, and `sigterm6-p` 89 then 125 — the difference tracks what else
+was running at the time, not the code. Measure the `sig*` files on an
+otherwise idle machine, and re-measure before concluding anything from
+a change in them (`BUGS: signal-tests-vary-with-machine-load`).
 
-Clean: `andor arith cd errexit eval for fsplit getopts grouping if
-kill4 nop option path ppid readonly until while`. `kill3-p` is neither
-— it times out (`BUGS: kill-stop-self-in-subshell-deadlock`).
+Clean: `andor arith cd errexit eval exec for fsplit getopts grouping
+if kill4 nop option path ppid readonly until while`. `kill3-p` is
+neither — it times out (`BUGS: kill-stop-self-in-subshell-deadlock`).
 
 ### How to measure
 
@@ -87,7 +92,7 @@ in `tests/fixed.sh`.
 
 ---
 
-### Phase 1 — signal disposition (884 left, was 1790)
+### Phase 1 — signal disposition (567 left, was 1790)
 
 Done, `fixes/190`-`192`: `trap '' SIG` now ignores instead of
 resetting to the default; `trap - SIG` for an untrapped signal is a
@@ -110,9 +115,9 @@ What is left, in order:
    → Record each signal's disposition once at startup (`sh_init()`),
    and make `trap_install()`/`trap_uninstall()` a silent no-op for a
    signal that was already `SIG_IGN` then.
-   → verify: `sigint2-p`, `sighup2-p`, `sigquit2-p`, `sigterm2-p`
-   (124/180 each), `sigint6-p`/`sigquit6-p` (126/180), `sighup6-p`
-   (121/180).
+   → verify: `sigint2-p`/`sighup2-p`/`sigquit2-p`/`sigterm2-p`
+   (124/180 each), `sigint6-p`/`sigquit6-p` (126/180), `sigterm6-p`
+   (125/180), `sighup6-p` (121/180) — 500 of the 567 failures left.
 
 2. **Disposition across fork and exec.** POSIX: a signal the shell
    ignores stays ignored in the child; one it traps to a command is
@@ -158,8 +163,9 @@ eval-lineno-imprecise-inside-function`.
 Sorted by failures per unit of work.
 
 1. **`test`/`[` segfaults on `test 1 -a 1`** (also `-o`, also with
-   empty operands; `test -n x -a -n y` is fine). Not in `BUGS` yet —
-   file it. The fix is to implement POSIX's argument-count algorithm
+   empty operands; `test -n x -a -n y` is fine).
+   `BUGS: test-binary-and-or-segfault`. The fix is POSIX's own
+   argument-count algorithm
    (1/2/3/4-argument forms decided by count first, operator second)
    rather than dispatching on operator position.
    → `test-p.tst` 220/236, plus `test ! = !`, `test ( = )`.
@@ -217,8 +223,7 @@ Sorted by failures per unit of work.
    effect when it was set.
 3. `return-p` (22/25, was 0/25 before the debug prints came out) —
    only "default exit status of returning from function/dot script"
-   is left; `BUGS: return-from-dot-script-broken` should be narrowed
-   to that.
+   is left. `BUGS: return-default-exit-status-wrong`.
 4. `break`/`continue` inside `eval` still no-ops
    (`BUGS: break-continue-inside-eval-no-op`) — `eval`'s frame reuses
    `E_ROOT` for an unrelated purpose; give it its own flag.
@@ -345,8 +350,8 @@ Design decisions already worked out (full reasoning in git history —
 
 ## Goal 4 — `fd`/`fdtable`/`fdstack`/`redir`: the fd≤2 protection is load-bearing, not incidental
 
-Grew out of chasing `BUGS: exec-redirection-and-error-broken` (`exec >&2
-2>/dev/null; echo reached` sending "reached" to the wrong stream). Two
+Grew out of chasing `exec >&2 2>/dev/null; echo reached` sending
+"reached" to the wrong stream (fixed 2026-08-21, `fixes/193`). Two
 fix attempts (2026-08-17) each got the original bug's repro passing, and
 each broke something bigger — a segfault in one case, all external-command
 pipelines in the other. Both were reverted at the time; the sections
@@ -399,20 +404,16 @@ implemented and verified regression-clean.
 
 **Still open — this is where a fresh pass should start:**
 
-1. **The original `BUGS: exec-redirection-and-error-broken` symptom
-   itself is still unfixed** (`exec >&2 2>/dev/null; echo reached`
-   sends "reached" to the wrong stream — see `BUGS` for the full
-   root-cause writeup, already done). The fix that worked for this
-   specific symptom last time — forcing `redir_dup()` to eagerly
-   resolve via `fdtable_dup(nredir->fd, FDTABLE_FORCE | FDTABLE_CLOSE)`
-   right after `fd_dup()` sets up the pending dup, in
-   `src/redir/redir_dup.c` — was reverted twice, both times because of
-   bugs that are now fixed (the segfault, and the fd≤2-masked
-   corruption). **It has not been retried since those fixes landed.**
-   That's the single highest-leverage next step: reapply that one-line
-   change (see `BUGS` for the exact diff/flags) and run the same
-   stash-and-diff regression comparison described above. If it's
-   clean, this closes the original bug this whole Goal grew out of.
+1. ~~**The original `exec >&2 2>/dev/null` symptom**~~ — fixed
+   2026-08-21 (`fixes/193`), on the third attempt, exactly as this
+   entry predicted: `redir_dup()` resolves a persistent dup eagerly
+   via `fdtable_dup(nredir->fd, FDTABLE_FORCE | FDTABLE_CLOSE)` right
+   after `fd_dup()`. The two earlier attempts failed on bugs that
+   `fixes/186`/`fixes/187` had since fixed; what was still needed on
+   top was one guard — **do it only outside a subshell**
+   (`!exec_subshell_depth`), see problem 3 below. `exec-p.tst` 9/10 ->
+   10/10, full `ctest` and `tests/fixed.sh` otherwise unchanged.
+
 2. **No general fdstack-scoped ownership tracking** (problem 1 below,
    unstruck). `fd_expected`/`fd_list[]`/`fd_top`/`fd_lo`/`fd_hi` are
    still bare process-global variables everywhere except the one call
@@ -437,9 +438,26 @@ implemented and verified regression-clean.
    "Suggested refactorings" below for the two concrete options (make
    subshells fork when they contain a persistent redirection, or teach
    the fd-table to scope "persistent" to the enclosing fdstack level).
-   No known live repro currently demonstrates a *wrong output* (as
-   opposed to the now-fixed crash) from this gap — finding or ruling
-   out one would be a good first step before attempting the refactor.
+   **There is now a concrete demonstration** (2026-08-21): drop the
+   `!exec_subshell_depth` guard `fixes/193` added to `redir_dup()`,
+   and
+
+   ```sh
+   ( exec 3>&1 1>&2 2>&3 3>&- ; echo hi ) >/dev/null 2>&1
+   /bin/true
+   ```
+
+   prints `fdtable: redirection cycle detected` from the forked child
+   at `fdtable_exec()` time, and segfaults outright deeper into a
+   longer script (`tests/fixed.sh` dies at its own `fixes/73` swap
+   case). At the point of the error `fdtable[1]` has `n=1, e=4` while
+   the real fd 1 is held by another struct that also wants slot 1, so
+   `fdtable_gap()` recurses into resolving it and trips the cycle
+   check. That is the whole gap in one picture: the subshell's real
+   `dup2()`s outlived it, `fd_state_restore()` put the bookkeeping
+   back, and the two now disagree. Anything that makes persistent
+   redirections resolve eagerly — the natural direction for the rest
+   of this Goal — needs this fixed first.
 
 The rest of this section (below) is the original, in-order investigation
 writeup — root cause, call-site inventory, the full struct-lifecycle
@@ -673,10 +691,9 @@ no longer true now: at that point the `buffer_close()`/`fd_close()`
 side had been reverted every time it was tried, and `redir_dup.c`'s
 eager-dup2() change had never been kept either. As of 2026-08-18, the
 `buffer_close()`/`fd_close()` side above **is** implemented and kept —
-see "Current status". `redir_dup.c`'s eager-dup2() change is still
-reverted/not retried — that remains the actual next step, also per
-"Current status".)* `BUGS: exec-redirection-and-error-broken` still has
-its own writeup of the narrower, original symptom and repro steps.
+see "Current status". `redir_dup.c`'s eager-dup2() change landed on
+2026-08-21 as `fixes/193`; what follows was written while it was still
+reverted/not retried, per "Current status".)*
 
 ### Progress (2026-08-17, second pass)
 
@@ -814,14 +831,11 @@ in "Suggested refactorings" above. Verified:
   patches in `fixes/186-fd-table-bookkeeping-vs-real-close-desync.patch`
   and `fixes/187-subshell-fd-table-not-scoped.patch`.
 
-**Still open, and now unblocked**: `BUGS: exec-redirection-and-error-
-broken`'s original, narrower symptom (`exec >&2 2>/dev/null; echo
-reached` going to the wrong stream). The eager-`fdtable_dup()`-in-
-`redir_dup.c` approach that fixed it last time (before hitting the
-now-fixed segfault) can be retried on firmer ground — both bugs that
-made it unsafe (the segfault, and the fd≤2-masked corruption this pass
-root-caused) are fixed now. See `BUGS`'s own entry for the exact
-approach and where it left off.
+**Done 2026-08-21** (`fixes/193`): the eager-`fdtable_dup()`-in-
+`redir_dup.c` approach was retried on this firmer ground and kept,
+with one addition — it is skipped inside a subshell
+(`!exec_subshell_depth`), because that is where it still breaks; see
+problem 3 above, which now has a concrete repro because of it.
 
 ---
 

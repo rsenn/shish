@@ -1,3 +1,4 @@
+#include "../exec.h"
 #include "../expand.h"
 #include "../fd.h"
 #include "../fdtable.h"
@@ -6,10 +7,12 @@
 
 /* do a dup-redirection
  *
- * caller (redir_eval.c) owns sa and frees it once this returns
+ *   struct nredir*  nredir      the redirection being evaluated
+ *   stralloc*       sa          the source operand; caller owns and frees it
+ *   int             persistent  nonzero for an "exec" redirection
  * ----------------------------------------------------------------------- */
 int
-redir_dup(struct nredir* nredir, stralloc* sa) {
+redir_dup(struct nredir* nredir, stralloc* sa, int persistent) {
   int ret;
 
   /* [n]>&- means closing a file descriptor */
@@ -34,6 +37,21 @@ redir_dup(struct nredir* nredir, stralloc* sa) {
     }
 
     ret = fd_dup(nredir->fd, fd);
+
+    /* resolve a persistent dup now, not lazily: a later redirection
+       in the same list can reinit the struct this pending dup chases.
+         "exec >&2 2>/dev/null"  ->  fd 1 would resolve to /dev/null
+       - FDTABLE_CLOSE skips fdtable_wish()/fdtable_gap(), which would
+         try to relocate this fd out of its own slot
+       - not inside "(...)": it never forks, so a real dup2()/close()
+         here outlives the subshell while fdtable[] is restored around
+         it, leaving a slot whose ->e names someone else's real fd */
+    if(ret == 0 && persistent && !exec_subshell_depth) {
+      if(fdtable_dup(nredir->fd, FDTABLE_FORCE | FDTABLE_CLOSE) == FDTABLE_ERROR) {
+        fd_error(fd, "cannot duplicate");
+        ret = 1;
+      }
+    }
   } else
     ret = fd_null(nredir->fd);
 

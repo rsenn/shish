@@ -3951,4 +3951,40 @@ echo ok' 2>&1)
   assert_equal "143" "$X192B" "a command killed by SIGTERM sets \$? to 143 (128 + 15)"
 fi
 
+## fixes/193 (exec-redirection-and-error-broken): fd_dup() only sets up
+## a *pending* dup -- it copies pointers into the source struct and
+## leaves the real dup2() to a later fdtable_dup(). For a persistent
+## ("exec") redirection that is too late: the next redirection in the
+## same list runs fd_new() -> fdtable_newfd() -> fd_reinit() on the
+## very struct the pending dup chases via ->dup, so
+##   exec >&2 2>/dev/null
+## resolved fd 1 against the *new* /dev/null occupant instead of the
+## original fd 2, and "reached" went to the original stdout.
+## redir_dup() now resolves a persistent dup eagerly, via
+## fdtable_dup(FDTABLE_FORCE | FDTABLE_CLOSE) -- but only outside a
+## subshell, since "(...)" does not fork and the real dup2()/close()
+## would outlive it (see TODO.md Goal 4, problem 3).
+if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+  O193=$(mktemp)
+  E193=$(mktemp)
+  "$SHISH_SELF" <<'X193IN' >"$O193" 2>"$E193"
+exec >&2 2>/dev/null
+echo reached
+./_no_such_command_
+X193IN
+  assert_equal "" "$(cat "$O193")" "exec >&2 2>/dev/null must leave nothing on the original stdout"
+  assert_equal "reached" "$(cat "$E193")" "exec >&2 2>/dev/null sends later output to the stream fd 2 named *before* fd 2 was retargeted"
+  rm -f "$O193" "$E193"
+
+  ## the eager resolution must stay out of a subshell's way: a real
+  ## dup2()/close() there outlives the subshell, and the fd table then
+  ## claims a real fd something else holds -- which showed up as
+  ## "fdtable: redirection cycle detected" from the next external
+  ## command, and as a segfault deeper into a script.
+  X193C=$("$SHISH_SELF" -c '( exec 3>&1 1>&2 2>&3 3>&- ; echo hi ) >/dev/null 2>&1
+/bin/true
+echo after' 2>&1)
+  assert_equal "after" "$X193C" "a persistent redirection inside a subshell must leave the fd table usable for the next external command"
+fi
+
 summary

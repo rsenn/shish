@@ -94,7 +94,7 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
       break;
     case R_HERE: r = redir_here(nredir, &sa); break;
     default:
-      r = redir_dup(nredir, &sa);
+      r = redir_dup(nredir, &sa, d == NULL);
       stralloc_free(&sa);
       break;
   }
