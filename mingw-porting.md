@@ -41,31 +41,39 @@ if(NOT HAVE_MMAP_SUPPORT)
 endif(NOT HAVE_MMAP_SUPPORT)
 ```
 
-`HAVE_MMAP_SUPPORT` (`cmake/Checks.cmake:302-308`) is a POSIX-only
-probe (`<sys/mman.h>` + `mmap()` + `munmap()` found), so it's false on
-mingw and the filter removes the very files whose `#if WINDOWS_NATIVE`
-branch was written for this target -- 7 files gone:
-`mmap_read.c`, `mmap_read_fd.c`, `mmap_unmap.c`, `mmap_filename.c`
-(`lib/stralloc/`), `buffer_mmapread.c`, `buffer_mmapread_fd.c`,
-`buffer_munmap.c`.
+`HAVE_MMAP_SUPPORT` (`cmake/Checks.cmake:301-308`, before this fix) was
+a POSIX-only probe (`<sys/mman.h>` + `mmap()` + `munmap()` found), so
+it was false on mingw. That did two things at once: it removed the
+very files whose `#if WINDOWS_NATIVE` branch was written for this
+target from `cmake/libowfat.cmake:8-10`'s `list(FILTER ...)` -- 7 files
+gone (`mmap_read.c`, `mmap_read_fd.c`, `mmap_unmap.c`,
+`mmap_filename.c` in `lib/stralloc/`, `buffer_mmapread.c`,
+`buffer_mmapread_fd.c`, `buffer_munmap.c`) -- *and* it force-disabled
+`USE_MMAP`/`HAVE_MMAP` (`cmake/Checks.cmake:310-318`), silently routing
+every mmap consumer (e.g. `src/fd/fd_mmap.c`) through the non-mmap
+fallback even on a rebuild where the filter above was fixed.
 
-**Fix:** stop filtering them out on a Windows target, the same way
-`cmake/Checks.cmake:102-105` already special-cases
-`WIN32 OR WIN64 OR MINGW OR WINDOWS` for socket-library detection:
+**Fixed (`fixes/202`):** the real issue was the probe asking only
+about POSIX mmap. `HAVE_MMAP_SUPPORT` now also becomes true when
+targeting `WIN32 OR WIN64 OR MINGW OR WINDOWS` (the same platform test
+`cmake/Checks.cmake:102-105` already uses for socket-library
+detection), since Windows' `CreateFileMapping`-based code in
+`lib/mmap/`/`lib/buffer/` *is* this platform's mmap support, not an
+absence of it. That one change fixes both symptoms: the filter no
+longer strips the 7 files (its condition was always just
+`NOT HAVE_MMAP_SUPPORT`), and `USE_MMAP`/`HAVE_MMAP` now stay on, so
+`fd_mmap.c` actually takes the mmap path on mingw instead of silently
+falling back. No `libowfat.cmake` change needed in the end, and no C
+changes. `path_gethome.c` reads `/etc/passwd` via this path, which
+doesn't exist on Windows -- it fails open and returns `NULL`, which
+`src/sh/sh_gethome.c:16` already treats as a safe fallback (`$HOME` is
+checked first anyway).
 
-```cmake
-if(NOT HAVE_MMAP_SUPPORT AND NOT (WIN32 OR WIN64 OR MINGW OR WINDOWS))
-   list(FILTER LIBOWFAT_SOURCES EXCLUDE REGEX "lib.*([^d]mmap|munmap)")
-endif()
-```
-
-No C changes needed. `path_gethome.c` reads `/etc/passwd` via this
-path, which doesn't exist on Windows -- once compiled, it fails open
-and returns `NULL`, which `src/sh/sh_gethome.c:16` already treats as a
-safe fallback (`$HOME` is checked first anyway).
-
-**Tier: trivial. Do this first** -- it clears 4 of 9 symbols for a
-one-line CMake change, no runtime risk.
+**Tier: trivial. Done** -- cleared 4 of 9 symbols and turned on the
+mmap I/O path on mingw for real, for a doc-comment-sized `cmake/Checks.cmake`
+change, no runtime risk (verified: glibc `tests/*.sh`/`tests/fixed.sh`
+unchanged, mingw compiles clean, `config.h` shows `HAVE_MMAP 1` with no
+warning).
 
 ---
 
@@ -208,8 +216,9 @@ and don't attempt a partial shim.
 
 ## Priority order
 
-1. **mmap/buffer_mmap family** (§1) -- CMake-only, zero risk, clears 4
-   of 9 symbols immediately. Do this first.
+1. **mmap/buffer_mmap family** (§1) -- **done**, `fixes/202`. CMake-only,
+   cleared 4 of 9 symbols and turned on the mmap I/O path on mingw for
+   real.
 2. **`getppid`** (§2) -- trivial, isolated, cosmetic.
 3. **`sig_action`** (§3) -- hard, but everything downstream (traps,
    `kill`'s signal set) depends on some version of it existing first.

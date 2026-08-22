@@ -298,12 +298,20 @@ check_function_exists(mmap HAVE_MMAP_FUNC)
 check_function_exists(munmap HAVE_MUNMAP)
 check_function_exists(mremap HAVE_MREMAP)
 
-# whether the platform can support mmap(2)/munmap(2) at all -- sys/mman.h
-# present and both functions found. USE_MMAP (an option(), see
-# CMakeLists.txt) may only be ON when this is true; HAVE_MMAP (the
-# compiler define lib/mmap/ and its callers actually check) tracks
-# USE_MMAP's final, validated value, not raw platform capability.
+# whether the platform can support memory-mapped file I/O at all --
+# either POSIX mmap(2)/munmap(2) (sys/mman.h present and both
+# functions found), or Windows' CreateFileMapping/MapViewOfFile, which
+# lib/mmap/ and lib/buffer/'s WINDOWS_NATIVE branches implement mmap(2)
+# in terms of. USE_MMAP (an option(), see CMakeLists.txt) may only be
+# ON when this is true; HAVE_MMAP (the compiler define lib/mmap/ and
+# its callers actually check) tracks USE_MMAP's final, validated
+# value, not raw platform capability.
 if(HAVE_SYS_MMAN_H AND HAVE_MMAP_FUNC AND HAVE_MUNMAP)
+  set(HAVE_MMAP_SUPPORT TRUE)
+elseif(WIN32
+       OR WIN64
+       OR MINGW
+       OR WINDOWS)
   set(HAVE_MMAP_SUPPORT TRUE)
 endif()
 

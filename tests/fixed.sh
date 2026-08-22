@@ -4150,27 +4150,31 @@ assert_match "$X197" "*st=2*" "an incomplete expression is an error (status 2), 
 ## error: sys/times.h: No such file or directory", now compiles clean
 ## with no warnings).
 
-## fixes/202 (cmake/libowfat.cmake): lib/mmap/mmap_read.c,
+## fixes/202 (cmake/Checks.cmake): lib/mmap/mmap_read.c,
 ## mmap_read_fd.c, mmap_unmap.c, lib/buffer/buffer_mmapread.c,
 ## buffer_mmapread_fd.c, buffer_munmap.c and lib/stralloc/mmap_filename.c
 ## already had working WINDOWS_NATIVE/_WIN32 implementations
 ## (CreateFileMapping/MapViewOfFile/UnmapViewOfFile), but
-## libowfat.cmake filtered every file matching "mmap|munmap" out of
-## the build whenever HAVE_MMAP_SUPPORT was false -- a POSIX-only
-## probe (<sys/mman.h> + mmap() + munmap()) that is always false on
-## mingw, so those seven files' own Windows code was never compiled
-## in the first place. Not a porting gap, a build-system bug: added
-## "AND NOT (WIN32 OR WIN64 OR MINGW OR WINDOWS)" to the filter
-## condition, the same platform test cmake/Checks.cmake already uses
-## for socket-library detection. Per the "Writing a test" exception in
-## CLAUDE.md for a fix that only compiles/runs on a platform this repo
-## isn't being developed on, this is comment-only: verified by
-## reconfiguring and rebuilding under cfg-mingw64 (previously
-## "undefined reference to `mmap_read'"/`mmap_unmap'`/
-## `buffer_mmapread'`/`buffer_munmap'", now all seven files compile
-## clean and those four symbols are gone from the link error list),
-## and by confirming tests/*.sh and tests/fixed.sh on glibc are
-## unchanged (HAVE_MMAP_SUPPORT is true there, so the added condition
-## is never reached).
+## HAVE_MMAP_SUPPORT was a POSIX-only probe (<sys/mman.h> + mmap() +
+## munmap()), always false on mingw -- which both filtered those seven
+## files out of the build in libowfat.cmake (breaking the link) *and*
+## force-disabled USE_MMAP/HAVE_MMAP (silently routing every mmap
+## consumer, e.g. src/fd/fd_mmap.c, through the non-mmap fallback
+## instead). Not a porting gap, a probe that only asked about POSIX:
+## HAVE_MMAP_SUPPORT is now also set when targeting
+## WIN32/WIN64/MINGW/WINDOWS, the same platform test cmake/Checks.cmake
+## already uses for socket-library detection, since Windows'
+## CreateFileMapping-based code *is* this platform's mmap support, not
+## an absence of it. Per the "Writing a test" exception in CLAUDE.md
+## for a fix that only compiles/runs on a platform this repo isn't
+## being developed on, this is comment-only: verified by reconfiguring
+## and rebuilding under cfg-mingw64 (previously "undefined reference to
+## `mmap_read'"/`mmap_unmap'`/`buffer_mmapread'`/`buffer_munmap'", and
+## USE_MMAP force-disabled with a warning; now all seven files compile
+## clean, those four symbols are gone from the link error list, and
+## config.h shows HAVE_MMAP 1 with no warning), and by confirming
+## tests/*.sh and tests/fixed.sh on glibc are unchanged (glibc takes
+## the original HAVE_SYS_MMAN_H branch, so the new elseif is never
+## reached there).
 
 summary
