@@ -4063,4 +4063,36 @@ assert_equal "first" "$(cat "$F196A")" "exec 4>file writes to that file"
 assert_equal "second" "$(cat "$F196B")" "a second exec on the same fd must retarget it, not lose it"
 rm -f "$F196A" "$F196B"
 
+## fixes/197 (test-binary-and-or-segfault): "test 1 -a 1" segfaulted,
+## and several POSIX forms were read as the wrong thing, because the
+## expression was dispatched on where an operator sat rather than on
+## how many arguments there were. POSIX XCU decides by argument count
+## first (1: non-null string; 2: "!" or a unary primary; 3: binary
+## primary, then "!", then "( x )"; 4: "!", then "( x y )"), and only
+## what that table does not cover is parsed as a "!"/-a/-o/parenthesis
+## grammar -- which is also where the 3- and 4-argument "-a"/"-o"
+## forms POSIX leaves unspecified are handled.
+test 1 -a 1
+assert_equal "0" "$?" "test 1 -a 1 must be true, not a segfault"
+test "" -a 1
+assert_equal "1" "$?" "test with an empty operand on the left of -a is false"
+test 1 -o ""
+assert_equal "0" "$?" "-o is true when either side is"
+test "" -a 1 -o 1
+assert_equal "0" "$?" "-a binds tighter than -o"
+test ! = !
+assert_equal "0" "$?" "3 arguments: a binary primary wins over a leading !"
+test "(" = ")"
+assert_equal "1" "$?" "3 arguments: a binary primary wins over parentheses too"
+test !
+assert_equal "0" "$?" "1 argument: ! is a non-null string, not an operator"
+test ! "" -a ""
+assert_equal "0" "$?" "4 arguments: ! negates the whole 3-argument reading"
+test "(" ! a = a ")"
+assert_equal "1" "$?" "parentheses group an expression"
+test 5 -gt 3 -a 2 -lt 1
+assert_equal "1" "$?" "a false -a operand makes the whole expression false"
+X197=$(test 1 -a 2>&1; echo "st=$?")
+assert_match "$X197" "*st=2*" "an incomplete expression is an error (status 2), not a crash"
+
 summary
