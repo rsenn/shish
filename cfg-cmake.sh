@@ -77,6 +77,32 @@ cfg() {
  ) 2>&1 |tee "${builddir##*/}.log"
 }
 
+cfg-linux32() {
+ (build=$(gcc -dumpmachine | sed 's|-pc-|-|g')
+  host=${build%%-*}-linux-gnu
+  host=i686-${host#*-}
+  
+  if type i686-linux-gnu-gcc 2>/dev/null >/dev/null; then
+    CC=i686-linux-gnu-gcc
+    export CC
+  elif type i686-pc-linux-gnu-gcc 2>/dev/null >/dev/null; then
+    CC=i686-pc-linux-gnu-gcc
+    export CC
+  else
+    : ${CC="gcc"}
+    CFLAGS="${CFLAGS:+$CFLAGS }-m32"
+    export CC CFLAGS
+  fi
+  
+  export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
+
+  : ${builddir=build/$host}
+  cfg \
+    -DCMAKE_SYSTEM_LIBRARY_PATH=/usr/lib/i386-linux-gnu \
+    "$@")
+}
+
+
 cfg-android ()
 {
   (: ${builddir=build/android}
