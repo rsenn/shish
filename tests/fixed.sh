@@ -4131,4 +4131,23 @@ assert_match "$X197" "*st=2*" "an incomplete expression is an error (status 2), 
 ## (`builtin-rmdir.sh` and this file's own 5 pre-existing failures,
 ## same as on `main`).
 
+## fixes/201 (src/builtin/builtin_times.c): the file included
+## <sys/times.h> and called times()/struct tms unconditionally, but
+## mingw has neither, so a mingw cross build failed to compile it.
+## The minute/second/microsecond formatting was pulled out into a
+## shared print_microsecs(), which both a POSIX branch (unchanged:
+## times() ticks converted via sysconf(_SC_CLK_TCK)) and a new
+## WINDOWS_NATIVE branch feed -- the latter reads
+## GetProcessTimes(GetCurrentProcess(), ...)'s user/kernel FILETIMEs
+## (100ns units, converted straight to microseconds) and reports zero
+## for the children line, since Windows has no cumulative-child-CPU-
+## time equivalent without shish tracking every child itself, which it
+## does not. The refactor's POSIX path is covered by the existing
+## fixes/159 assertions above (still passing). Per the "Writing a
+## test" exception in CLAUDE.md for the WINDOWS_NATIVE half
+## specifically, that part is comment-only: verified by compiling
+## src/builtin/builtin_times.c under `cfg-mingw64` (previously "fatal
+## error: sys/times.h: No such file or directory", now compiles clean
+## with no warnings).
+
 summary

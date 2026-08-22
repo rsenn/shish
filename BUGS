@@ -538,19 +538,23 @@
   shish -c help | head -3
   ```
 
-- mingw-builtin-times-missing-sys-times-h: `builtin_times.c` includes
-  `<sys/times.h>` unconditionally, which mingw does not have, so a
-  mingw cross build fails to compile it (found immediately after
-  fixing `mingw-test-builtin-missing-s-isgid-isuid`, the previous
-  blocker on the same target -- `builtin_test.c` now compiles clean).
-  Needs a `WINDOWS_NATIVE` alternative to `times()`/`struct tms`, or
-  the `times` builtin gated out of mingw builds entirely.
+- mingw-link-missing-posix-shims: with `builtin_test.c` and
+  `builtin_times.c` fixed, a mingw cross build now compiles fully but
+  fails to *link*: `getppid` (`sh_init.c`), `killpg`/`kill`
+  (`builtin_jobs.c`, `builtin_kill.c`), `tcsetpgrp` (`job_foreground.c`),
+  `mmap_read`/`mmap_unmap`/`buffer_mmapread`/`buffer_munmap`
+  (`history_init.c`, `path_gethome.c`, `buffer_prefetch.c`), and
+  `sig_action` (`lib/sig/sig_stack.c`) are all undefined references.
+  `src/fork.c` already carries a `WINDOWS_NATIVE` process-spawning
+  shim, but job control, mmap-backed history/buffer I/O, and the
+  `lib/sig/` layer have none -- this is a substantially bigger job
+  than any single missing header, and is not attempted here.
 
   **Repro:**
   ```sh
   . ./cfg.sh && cfg-mingw64 -DDO_TESTS=OFF
   cmake --build build/x86_64-w64-mingw32
-  # fatal error: sys/times.h: No such file or directory
+  # undefined reference to `getppid' (and the others listed above)
   ```
 
 - no-tree-print-option-is-a-noop: `-DNO_TREE_PRINT=ON` changes nothing.
