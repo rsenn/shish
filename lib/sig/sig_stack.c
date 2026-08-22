@@ -3,13 +3,13 @@
 #include <errno.h>
 #include <signal.h>
 
-#ifdef NSIG
-static struct sigaction sig_stack[NSIG - 1][SIGSTACKSIZE];
-static unsigned int sigsp[NSIG - 1];
+#ifdef SHISH_NSIG
+static struct sigaction sig_stack[SHISH_NSIG - 1][SIGSTACKSIZE];
+static unsigned int sigsp[SHISH_NSIG - 1];
 
 int
 sig_pusha(int sig, struct sigaction const* ssa) {
-  if((sig <= 0) || (sig >= NSIG))
+  if((sig <= 0) || (sig >= SHISH_NSIG))
     return (errno = EINVAL, -1);
 
   if(sigsp[sig - 1] >= SIGSTACKSIZE)
@@ -23,7 +23,7 @@ sig_pusha(int sig, struct sigaction const* ssa) {
 
 int
 sig_pop(int sig) {
-  if((sig <= 0) || (sig >= NSIG))
+  if((sig <= 0) || (sig >= SHISH_NSIG))
     return (errno = EINVAL, -1);
 
   if(!sigsp[sig - 1])

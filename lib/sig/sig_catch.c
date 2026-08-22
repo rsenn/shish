@@ -13,5 +13,7 @@ sig_catch(int sig, sighandler_t_ref f) {
   };
 
   return sig_catcha(sig, &ssa);
+#else
+  return 0;
 #endif
 }
