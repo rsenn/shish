@@ -55,6 +55,44 @@ if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" OR CMAKE_BUILD_TYPE STREQUAL
   endif(F_ALIGN_STRINGOPS)
 endif()
 
+# MinSizeRel means bytes over everything else: every flag below is probed
+# before use, and each one trades speed, hardening or diagnostics for size.
+#
+#   -f*-unwind-tables    .eh_frame is 15% of an untuned binary; nothing unwinds
+#   -fno-jump-tables     switch tables become compare chains
+#   -f*-sections         only pays off together with --gc-sections
+if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+  foreach(
+    FLAG
+    -fno-asynchronous-unwind-tables
+    -fno-unwind-tables
+    -fno-stack-protector
+    -fno-jump-tables
+    -fno-plt
+    -fno-ident
+    -fmerge-all-constants
+    -ffunction-sections
+    -fdata-sections)
+    string(MAKE_C_IDENTIFIER "F${FLAG}" FLAG_VAR)
+    check_c_compiler_flag("${FLAG}" ${FLAG_VAR})
+    if(${FLAG_VAR})
+      add_cflags("${FLAG}")
+    endif(${FLAG_VAR})
+  endforeach(FLAG)
+
+  foreach(
+    FLAG
+    "-Wl,--gc-sections"
+    "-Wl,--as-needed"
+    "-Wl,--build-id=none"
+    "-Wl,-z,norelro"
+    "-Wl,-z,noseparate-code"
+    "-Wl,--hash-style=gnu")
+    string(MAKE_C_IDENTIFIER "LD${FLAG}" FLAG_VAR)
+    check_ldflag("${FLAG}" ${FLAG_VAR})
+  endforeach(FLAG)
+endif()
+
 check_inline()
 
 if(NOT "${INLINE_KEYWORD}" MATCHES "^inline$")

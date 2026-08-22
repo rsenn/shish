@@ -1,6 +1,6 @@
-project(shish C)
+cmake_minimum_required(VERSION 3.10..4.0)
 
-cmake_minimum_required(VERSION 3.5)
+project(shish C)
 
 set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 
@@ -213,12 +213,40 @@ set_target_properties(libshell PROPERTIES OUTPUT_NAME shell)
 set(SHISH_SOURCES src/sh/sh_init.c src/sh/sh_main.c)
 list(APPEND ALL_SOURCES ${SHISH_SOURCES})
 
+option(MINSIZE_STRIP "Strip unneeded sections from a MinSizeRel build" ON)
+
+# Strip a MinSizeRel executable harder than an install-strip would: -s drops
+# the symbol table, -R drops whole sections nothing reads back.
+#
+#   .eh_frame/.eh_frame_hdr  unwind data -- 15% of an untuned binary
+#   .comment/.note*          toolchain provenance
+#
+# strip ignores a -R for a section that is not there, so one list serves
+# every target format.
+macro(strip_minsize TARGET)
+  if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel"
+     AND MINSIZE_STRIP
+     AND CMAKE_STRIP
+     AND NOT EMSCRIPTEN)
+    add_custom_command(
+      TARGET ${TARGET}
+      POST_BUILD
+      COMMAND
+        ${CMAKE_STRIP} -s -R .comment -R .note -R .note.ABI-tag -R
+        .note.gnu.build-id -R .note.gnu.property -R .eh_frame -R .eh_frame_hdr
+        $<TARGET_FILE:${TARGET}>
+      COMMENT "Stripping ${TARGET}")
+  endif()
+endmacro(strip_minsize)
+
 add_executable(shish ${SHISH_SOURCES})
 target_link_libraries(shish PRIVATE libshell ${LIBOWFAT_LIBRARY}
                                     ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 if(EMSCRIPTEN)
   set_target_properties(shish PROPERTIES SUFFIX ".${EMSCRIPTEN_EXE_SUFFIX}")
 endif(EMSCRIPTEN)
+
+strip_minsize(shish)
 
 option(BUILD_SHFORMAT "Build shformat program" ON)
 
@@ -234,6 +262,7 @@ if(BUILD_SHFORMAT)
                      ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shformat PUBLIC SHFORMAT=1)
+  strip_minsize(shformat)
   install(TARGETS shformat DESTINATION bin)
 
 endif(BUILD_SHFORMAT)
@@ -252,6 +281,7 @@ if(BUILD_SHPARSE2AST)
                         ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shparse2ast PUBLIC SHPARSE2AST=1 DEBUG_OUTPUT=1)
+  strip_minsize(shparse2ast)
   install(TARGETS shparse2ast DESTINATION bin)
 
 endif(BUILD_SHPARSE2AST)

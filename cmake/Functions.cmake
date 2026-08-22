@@ -45,6 +45,27 @@ endfunction(
   FLAG
   VAR)
 
+# Append FLAG to CMAKE_EXE_LINKER_FLAGS if a test executable links with it.
+# A macro, not a function, so the result reaches the calling scope.
+#
+#   FLAG  the linker flag, driver-style ("-Wl,--gc-sections")
+#   VAR   cache variable the probe result is stored in
+# -----------------------------------------------------------------------
+macro(check_ldflag FLAG VAR)
+  set(CHECK_LDFLAG_SAVED "${CMAKE_EXE_LINKER_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${FLAG}")
+  set(CMAKE_REQUIRED_QUIET TRUE)
+  check_c_source_compiles("int main(void) { return 0; }" ${VAR})
+  set(CMAKE_REQUIRED_QUIET FALSE)
+  set(CMAKE_EXE_LINKER_FLAGS "${CHECK_LDFLAG_SAVED}")
+  if(${VAR})
+    message(STATUS "Linker flag ${FLAG} ... supported")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${FLAG}")
+  else(${VAR})
+    message(STATUS "Linker flag ${FLAG} ... not supported")
+  endif(${VAR})
+endmacro(check_ldflag)
+
 function(DUMP VAR)
   message("\n\nVariable dump of: " ${ARGV} "\n")
   foreach(VAR ${ARGV})

@@ -453,19 +453,6 @@
   sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix grouping-p.tst
   ```
 
-- test-binary-and-or-segfault: `test`/`[` segfaults on the 3-argument
-  form when the middle argument is `-a`/`-o` and the operands are
-  plain strings. `test -n x -a -n y` (5 arguments) is fine, so the
-  crash is in how the 3-argument form is dispatched -- the fix is
-  POSIX's argument-*count*-first algorithm (XCU 4.62), not more
-  operator sniffing.
-
-  **Repro:**
-  ```sh
-  echo 'test 1 -a 1' > t.sh && shish t.sh; echo $?   # 139 (SIGSEGV)
-  # same for: test 1 -o 1 / test "" -a ""
-  ```
-
 - error-message-line-number-off-by-one: diagnostics report the line
   the parser has advanced to, not the line of the command that
   failed, and omit the offending name. `$LINENO` itself is correct,
@@ -528,6 +515,29 @@
   shish -c '( trap "echo \"\$#:\$*\"" EXIT; set -- a b )'   # 0:   (dash: 2:a b)
   ```
 
+- syntax-error-in-c-string-exits-zero: a shell syntax error in a `-c`
+  command string is reported but the shell still exits 0. POSIX requires
+  a non-interactive shell to exit >0 on a syntax error (bash exits 2),
+  and it does so for the same script in a file -- only the `-c` path
+  loses the status.
+
+  **Repro:**
+  ```sh
+  shish -c 'if [ 1 = 1 ]; then'; echo $?   # message, then 0 (bash: 2)
+  echo 'if [ 1 = 1 ]; then' > s.sh
+  shish s.sh; echo $?                      # message, then 1
+  ```
+
+- help-builtin-columns-overlap: `help` with no argument prints its
+  two-column listing without a separator, so the left column's longer
+  entries run straight into the right one
+  (`hash [-lr] ... [name ...]type name ...`).
+
+  **Repro:**
+  ```sh
+  shish -c help | head -3
+  ```
+
 - winsize-probe-misses-termios-breaks-diet-build: the `HAVE_WINSIZE`
   probe (`CMakeLists.txt:103`) includes only `<sys/ioctl.h>`, but
   dietlibc declares `struct winsize` in `<termios.h>`, so the probe
@@ -538,6 +548,9 @@
   `#include <termios.h>` to the probe makes the whole dietlibc target
   build and run. Any other configuration where the probe fails breaks
   the same way -- the users need a guard too, not just a better probe.
+  mingw is the other one: it has no `struct winsize` at all, so the
+  cross build dies at `builtin_help.c:60` before it ever reaches the
+  link.
 
   **Repro:**
   ```sh

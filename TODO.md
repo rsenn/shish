@@ -881,17 +881,19 @@ The pitch on the site is "a 185 KB shell". Every number below is
 2026-08-22 at `c44eab01`, gcc 16 / musl-gcc / diet-gcc on x86_64.
 
 ```
-                        as configured today   with the flag set below
-glibc, dynamic (default)      189312                  136152   -28%
-musl, static                  237472                  191936   -19%
-dietlibc, static           does not build             149088
+                         before 5.1   MinSizeRel today   hand-tuned ceiling
+glibc, dynamic (default)     189312         142264            136152
+musl, static                 237472         195160            191936
+dietlibc, static          does not build    152072            149088
 ```
 
-The dietlibc column is not a typo: a *static* diet build undercuts
-today's *dynamic* glibc one. It needs one probe fixed first
-(`BUGS: winsize-probe-misses-termios-breaks-diet-build`).
+The middle column is what a plain `-DCMAKE_BUILD_TYPE=MinSizeRel` now
+produces (5.1, done); the right one adds LTO, `--icf=all` and `-no-pie`,
+which are still opt-in. The dietlibc row is not a typo -- a *static*
+diet build undercuts the old *dynamic* glibc one -- but it needs one
+probe fixed first (`BUGS: winsize-probe-misses-termios-breaks-diet-build`).
 
-### 5.1 Free wins: build flags, no source change
+### 5.1 Free wins: build flags, no source change -- **done 2026-08-22**
 
 Stacked, in order of what each one buys on the glibc dynamic build:
 
@@ -921,6 +923,26 @@ Notes from measuring:
   with gcc; lld only with clang.
 - The tuned build passes the same `tests/*.sh` as the untuned one
   (21/23; `builtin-rmdir.sh` and `fixed.sh` fail identically on both).
+
+**What landed.** `MinSizeRel` now probes and applies every flag it can
+(`cmake/Checks.cmake`, new `check_ldflag()` in `cmake/Functions.cmake`):
+`-fno-asynchronous-unwind-tables -fno-unwind-tables -fno-stack-protector
+-fno-jump-tables -fno-plt -fno-ident -fmerge-all-constants
+-ffunction-sections -fdata-sections`, and `-Wl,--gc-sections
+--as-needed --build-id=none -z norelro -z noseparate-code
+--hash-style=gnu`. Each is probed before use, so a toolchain that lacks
+one just skips it. On top, `strip_minsize()` (`CMakeLists.txt`) runs
+`strip -s -R` over `.comment`, `.note*`, `.eh_frame` and `.eh_frame_hdr`
+after each MinSizeRel link -- worth 29240 bytes on its own, even with
+no flag changes at all. `-DMINSIZE_STRIP=OFF` turns that off.
+
+Verified: `tests/*.sh` gives the same 21/23 as before on glibc and on
+musl-static (`builtin-rmdir.sh` and `fixed.sh` already fail on `main`);
+`Debug` and `Release` binaries are byte-for-byte what they were.
+
+Still opt-in, and not in the numbers above: LTO (`-DENABLE_LTO=ON`,
+worth ~8%), `--icf=all` (needs gold or lld), and `-no-pie` (drops
+`.rela.dyn`, at the cost of ASLR for the executable).
 
 ### 5.2 Help and usage text: ~13 KB of a 136 KB binary
 
