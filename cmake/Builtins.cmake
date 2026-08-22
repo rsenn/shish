@@ -120,45 +120,46 @@ endfunction(
 
 # variable_watch(ENABLE_ALL_BUILTINS ON_ENABLE_ALL_BUILTINS)
 
-# the loop below recomputes every ENABLE_<NAME> from DEFAULT_BUILTINS,
-# so record what was asked for on the command line first.
+# ENABLE_DUMP doubles as "the user asked for dump" and, further down,
+# as "dump is being built", so record the request before the loop below
+# starts writing to it.
 if(BUILD_DEBUG OR ENABLE_DUMP)
   set(WANT_DUMP ON)
 endif(BUILD_DEBUG OR ENABLE_DUMP)
 
+# Decide each builtin once. -DENABLE_<NAME>=ON/OFF on the command line
+# wins over both -DENABLE_ALL_BUILTINS and the default set, so
+# "everything except this one" is expressible:
+#
+#   -DENABLE_ALL_BUILTINS=ON -DENABLE_HOSTNAME=OFF
+#
+# The test is "DEFINED ENABLE_${NAME}", not "DEFINED ${ENABLE_${NAME}}"
+# -- the latter asks whether the *value* (ON) names a variable, which it
+# does not, so every -DENABLE_<NAME> was silently discarded here.
 foreach(BUILTIN ${ALL_BUILTINS})
   string(TOUPPER ${BUILTIN} NAME)
-  if(NOT DEFINED ${ENABLE_${NAME}})
-    isin("ENABLE_${NAME}" ${BUILTIN} ${DEFAULT_BUILTINS})
-  endif(NOT DEFINED ${ENABLE_${NAME}})
 
-  if(ENABLE_ALL_BUILTINS)
-    option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" ON)
-    set(BUILTIN_${NAME}
-        ON
-        CACHE BOOL "Enable ${BUILTIN} builtin" FORCE)
-  else(ENABLE_ALL_BUILTINS)
+  if(DEFINED ENABLE_${NAME})
+    set(WANT_BUILTIN ${ENABLE_${NAME}})
+  elseif(ENABLE_ALL_BUILTINS)
+    set(WANT_BUILTIN ON)
+  else()
+    isin(WANT_BUILTIN ${BUILTIN} ${DEFAULT_BUILTINS})
+  endif()
 
-    if(DEFINED ENABLE_${NAME})
-      option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" "${ENABLE_${NAME}}")
-    else(DEFINED ENABLE_${NAME})
-      option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" OFF)
-    endif(DEFINED ENABLE_${NAME})
-  endif(ENABLE_ALL_BUILTINS)
+  # BUILTIN_<NAME> is the cached answer; ENABLE_<NAME> stays uncached, so
+  # it means "asked for on this command line" and nothing else. Caching
+  # it would make a one-off -DENABLE_DUMP=ON stick to the build
+  # directory, and with it the DEBUG_OUTPUT default dump drags along.
+  #
+  # FORCE: option()/set() without it keep whatever an earlier configure
+  # of the same build directory cached, so -DENABLE_<NAME> would only
+  # ever take effect in a fresh one.
+  set(BUILTIN_${NAME}
+      ${WANT_BUILTIN}
+      CACHE BOOL "Enable ${BUILTIN} builtin" FORCE)
 endforeach(BUILTIN ${ALL_BUILTINS})
 
-if(ENABLE_ALL_BUILTINS)
-  message(STATUS "Enable all builtins")
-  foreach(BUILTIN ${ALL_BUILTINS})
-    string(TOUPPER ${BUILTIN} NAME)
-    set(ENABLE_${NAME} ON)
-    set(BUILTIN_${NAME} ON)
-  endforeach(BUILTIN ${ALL_BUILTINS})
-endif(ENABLE_ALL_BUILTINS)
-
-# clear it only once every loop that reads it has run -- unsetting it
-# inside the first one left every builtin after the first taking the
-# "not all" branch, so -DENABLE_ALL_BUILTINS=ON enabled exactly one.
 unset(ENABLE_ALL_BUILTINS)
 unset(ENABLE_ALL_BUILTINS CACHE)
 
@@ -175,11 +176,14 @@ endif(WANT_DUMP)
 
 foreach(BUILTIN ${ALL_BUILTINS})
   string(TOUPPER ${BUILTIN} NAME)
-  if(${BUILTIN_${NAME}} STREQUAL ON OR ENABLE_ALL_BUILTINS)
+
+  # a plain truth test: isin() answers TRUE/FALSE and an option()
+  # answers ON/OFF, and "TRUE STREQUAL ON" is false
+  if(BUILTIN_${NAME})
     list(APPEND BUILTINS_ENABLED ${BUILTIN})
-  else(${BUILTIN_${NAME}} STREQUAL ON OR ENABLE_ALL_BUILTINS)
+  else(BUILTIN_${NAME})
     list(APPEND BUILTINS_DISABLED ${BUILTIN})
-  endif(${BUILTIN_${NAME}} STREQUAL ON OR ENABLE_ALL_BUILTINS)
+  endif(BUILTIN_${NAME})
 endforeach(BUILTIN ${ALL_BUILTINS})
 
 # now that BUILTINS_ENABLED is populated, "is dump being built" is a
