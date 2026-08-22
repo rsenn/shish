@@ -1,0 +1,150 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 186b6997..ce5b3ac5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -95,7 +95,7 @@ include(cmake/Builtins.cmake)
+ check_functions(
+   sigaction
+   # sigaddset sigdelset sigemptyset sigfillset
+-   sigismember signal sigprocmask sigsuspend)
++   sigismember signal sigprocmask sigsuspend getppid)
+ 
+ check_includes_def(termios.h sys/ioctl.h)
+ 
+diff --git a/lib/unix.h b/lib/unix.h
+index 472fa0d2..da53d6dc 100644
+--- a/lib/unix.h
++++ b/lib/unix.h
+@@ -15,8 +15,11 @@ char is_junction(const char* LinkPath);
+ int is_symlink(const char* LinkPath);
+ 
+ #if WINDOWS_NATIVE
++#include <sys/types.h>
++
+ ssize_t readlink(const char* LinkPath, char* buf, size_t maxlen);
+ size_t getpagesize();
++pid_t getppid(void);
+ #endif
+ 
+ #endif /* defined(UNIX_H) */
+diff --git a/lib/unix/Makefile.in b/lib/unix/Makefile.in
+index 25dd8555..8a52160b 100644
+--- a/lib/unix/Makefile.in
++++ b/lib/unix/Makefile.in
+@@ -19,7 +19,7 @@ include $(top_builddir)/config.mk
+ # ---------------------------------------------------------------------------
+ LIB = ../libowfat.a
+ ARCHIVE = unix.a
+-MODULES = glob readlink
++MODULES = glob readlink getppid
+ 
+ SOURCES = $(MODULES:%=%.c)
+ OBJECTS = $(MODULES:%=%.o)
+diff --git a/src/sh/sh_init.c b/src/sh/sh_init.c
+index 8854f2c6..4d5d9522 100644
+--- a/src/sh/sh_init.c
++++ b/src/sh/sh_init.c
+@@ -15,6 +15,10 @@
+ #include <sys/stat.h>
+ #endif
+ 
++#if WINDOWS_NATIVE && !defined(HAVE_GETPPID)
++#include "../../lib/unix.h"
++#endif
++
+ static struct var sh_ps1;
+ static struct var sh_ps2;
+ static struct var sh_ps3;
+@@ -43,7 +47,11 @@ sh_init(void) {
+   uint32_seed(&sh_pid, sizeof(sh_pid));
+ 
+   /* set PPID to parent process id */
++#if defined(HAVE_GETPPID) || WINDOWS_NATIVE
+   var_setvint("PPID", getppid(), 0);
++#else
++  var_setvint("PPID", 0, 0);
++#endif
+ 
+ #ifdef BUILTIN_GETOPTS
+   /* POSIX: "Whenever the shell is invoked, OPTIND shall be initialized to 1." */
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 8a5384eb..7dcde28f 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -4177,4 +4177,33 @@ assert_match "$X197" "*st=2*" "an incomplete expression is an error (status 2),
+ ## the original HAVE_SYS_MMAN_H branch, so the new elseif is never
+ ## reached there).
+ 
++## fixes/203 (CMakeLists.txt, src/sh/sh_init.c, lib/unix/getppid.c,
++## lib/unix.h): sh_init.c called getppid() unconditionally to seed
++## $PPID, but mingw has no such function, so a mingw cross build
++## failed to link. getppid is now probed via CMakeLists.txt's existing
++## check_functions(...) call (HAVE_GETPPID, the same mechanism already
++## used for sigaction/signal/etc.) instead of assumed present, and
++## lib/unix/getppid.c supplies a real getppid() -- returning pid_t,
++## via CreateToolhelp32Snapshot/Process32First/Process32Next, falling
++## back to 0 if the snapshot lookup fails -- #if WINDOWS_NATIVE only,
++## named and declared (lib/unix.h) exactly like lib/unix/readlink.c's
++## own WINDOWS_NATIVE-only readlink(), so sh_init.c has one call site
++## (`#if defined(HAVE_GETPPID) || WINDOWS_NATIVE` / getppid()) with no
++## platform-specific function name leaking into src/. Per the "Writing
++## a test" exception in CLAUDE.md for the WINDOWS_NATIVE half
++## specifically, that part is comment-only: verified by rebuilding
++## under cfg-mingw64 (previously "undefined reference to `getppid'",
++## now compiles and links clean, getppid gone from the
++## undefined-reference list, leaving only kill/killpg, tcsetpgrp and
++## sig_action -- see mingw-porting.md). The HAVE_GETPPID/POSIX path is
++## exercised for real below and by fixes/159's PPID-adjacent output;
++## rebuilt on glibc and dietlibc, $PPID still reports the real parent
++## pid on both, and tests/*.sh/tests/fixed.sh are unchanged.
++X203_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
++
++if [ -n "$X203_SELF" ] && [ -x "$X203_SELF" ]; then
++  X203=$("$X203_SELF" -c 'echo $PPID')
++  assert_equal "$$" "$X203" "\$PPID in a freshly spawned shish reports this script's own pid, its real parent"
++fi
++
+ summary
+diff --git a/lib/unix/getppid.c b/lib/unix/getppid.c
+new file mode 100644
+index 00000000..4181711704d3a7ae1862172a5a6c6942a216290d
+--- /dev/null
++++ b/lib/unix/getppid.c
+@@ -0,0 +1,37 @@
++#include "../windoze.h"
++
++#if WINDOWS_NATIVE
++#define WIN32_LEAN_AND_MEAN
++#include <windows.h>
++#include <tlhelp32.h>
++#include <sys/types.h>
++
++/* mingw has no getppid(): find our own entry in a process snapshot
++ * and read its parent PID back out of it */
++pid_t
++getppid(void) {
++  HANDLE snap;
++  PROCESSENTRY32 pe;
++  DWORD pid = GetCurrentProcessId();
++  pid_t ppid = 0;
++
++  snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
++
++  if(snap == INVALID_HANDLE_VALUE)
++    return 0;
++
++  pe.dwSize = sizeof(pe);
++
++  if(Process32First(snap, &pe)) {
++    do {
++      if(pe.th32ProcessID == pid) {
++        ppid = (pid_t)pe.th32ParentProcessID;
++        break;
++      }
++    } while(Process32Next(snap, &pe));
++  }
++
++  CloseHandle(snap);
++  return ppid;
++}
++#endif /* WINDOWS_NATIVE */

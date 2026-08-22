@@ -79,11 +79,11 @@ warning).
 
 ## 2. `getppid`
 
-`src/sh/sh_init.c:46`: `var_setvint("PPID", getppid(), 0)`, unconditional
--- unlike `getuid()` two lines above it, which already has a
-`#if WINDOWS_NATIVE` guard (`sh_init.c:35-38`).
+`src/sh/sh_init.c:46` (before this fix): `var_setvint("PPID",
+getppid(), 0)`, unconditional -- unlike `getuid()` two lines above it,
+which already has a `#if WINDOWS_NATIVE` guard (`sh_init.c:35-38`).
 
-No CRT/mingw equivalent exists. Two options:
+No CRT/mingw equivalent exists. Two options were considered:
 
 - `CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS)` +
   `Process32First`/`Process32Next`, scanning for
@@ -95,12 +95,35 @@ No CRT/mingw equivalent exists. Two options:
   `RtlCloneUserProcess` the same way for its `WINDOWS_NATIVE` fork
   shim.
 
-**Recommendation:** the Toolhelp32 route. `$PPID` is read-only shell
-state nothing else depends on for correctness, so prefer the
-documented API over another undocumented-ntdll dependency; fall back
-to `var_setvint("PPID", 0, 0)` if the snapshot lookup fails.
+**Fixed (`fixes/203`):** took the Toolhelp32 route -- `$PPID` is
+read-only shell state nothing else depends on for correctness, so the
+documented API won over another undocumented-ntdll dependency. Landed
+as two pieces:
 
-**Tier: trivial.** ~15-20 lines, isolated, cosmetic blast radius.
+- `getppid` added to `CMakeLists.txt`'s existing `check_functions(...)`
+  call, so `HAVE_GETPPID` is now probed the same way `sigaction`,
+  `signal`, etc. already are, instead of assumed.
+- `lib/unix/getppid.c` provides a real `getppid()` (returning `pid_t`,
+  falling back to 0 if the snapshot lookup fails), `#if WINDOWS_NATIVE`
+  only -- named and shaped exactly like `lib/unix/readlink.c`'s own
+  `WINDOWS_NATIVE`-only `readlink()`, so callers don't need to know
+  which platform provided the symbol. `lib/unix.h` declares it under
+  the same guard.
+
+`sh_init.c` now just says
+`#if defined(HAVE_GETPPID) || WINDOWS_NATIVE` /
+`var_setvint("PPID", getppid(), 0)` -- one call site, no
+platform-specific function name leaking into `src/`.
+
+**Tier: trivial. Done.** ~35 lines total, isolated, cosmetic blast
+radius. Verified: mingw links clean (`getppid` gone from the
+undefined-reference list, leaving only `kill`/`killpg`, `tcsetpgrp`,
+`sig_action`); glibc/dietlibc `$PPID` still reports the real parent
+pid, `tests/*.sh`/`tests/fixed.sh` unchanged. Also surfaced, not
+fixed: `sh_init.c:44`'s unconditional `getpid()` call triggers an
+implicit-declaration *warning* (not a link failure) on mingw, since
+`<unistd.h>` is only pulled in `#if !WINDOWS_NATIVE` -- logged as
+`BUGS: mingw-getpid-implicit-declaration`.
 
 ---
 
@@ -219,7 +242,8 @@ and don't attempt a partial shim.
 1. **mmap/buffer_mmap family** (§1) -- **done**, `fixes/202`. CMake-only,
    cleared 4 of 9 symbols and turned on the mmap I/O path on mingw for
    real.
-2. **`getppid`** (§2) -- trivial, isolated, cosmetic.
+2. **`getppid`** (§2) -- **done**, `fixes/203`. Trivial, isolated,
+   cosmetic.
 3. **`sig_action`** (§3) -- hard, but everything downstream (traps,
    `kill`'s signal set) depends on some version of it existing first.
 4. **`kill`/`killpg`** (§4) -- hard, partial coverage only; needs §3

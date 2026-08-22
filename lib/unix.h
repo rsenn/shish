@@ -15,8 +15,11 @@ char is_junction(const char* LinkPath);
 int is_symlink(const char* LinkPath);
 
 #if WINDOWS_NATIVE
+#include <sys/types.h>
+
 ssize_t readlink(const char* LinkPath, char* buf, size_t maxlen);
 size_t getpagesize();
+pid_t getppid(void);
 #endif
 
 #endif /* defined(UNIX_H) */

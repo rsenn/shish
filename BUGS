@@ -538,16 +538,22 @@
   shish -c help | head -3
   ```
 
-- mingw-missing-getppid: `src/sh/sh_init.c:46` calls `getppid()`
-  unconditionally to seed `$PPID`, but mingw has no such function, so
-  a mingw cross build fails to link. See `mingw-porting.md` section 2
-  for the proposed `CreateToolhelp32Snapshot`-based shim.
+- mingw-getpid-implicit-declaration: `src/sh/sh_init.c:44` calls
+  `getpid()` unconditionally, but `<unistd.h>` (where its declaration
+  would come from) is only included `#if !WINDOWS_NATIVE`
+  (`sh_init.c:12-16`), so a mingw cross build compiles it as an
+  implicit `int`-returning declaration -- a warning, not a link
+  failure (mingw's CRT exports a real `getpid()`, from `<process.h>`
+  or its own `<unistd.h>`, either of which would fix the warning if
+  included on this platform too). Found while fixing
+  `mingw-missing-getppid`; not fixed here since it doesn't block the
+  build.
 
   **Repro:**
   ```sh
   . ./cfg.sh && cfg-mingw64 -DDO_TESTS=OFF
   cmake --build build/x86_64-w64-mingw32
-  # undefined reference to `getppid'
+  # warning: implicit declaration of function 'getpid'
   ```
 
 - mingw-missing-sig-action: `lib/sig/sig_action.c`'s entire body is

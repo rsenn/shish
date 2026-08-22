@@ -4177,4 +4177,33 @@ assert_match "$X197" "*st=2*" "an incomplete expression is an error (status 2), 
 ## the original HAVE_SYS_MMAN_H branch, so the new elseif is never
 ## reached there).
 
+## fixes/203 (CMakeLists.txt, src/sh/sh_init.c, lib/unix/getppid.c,
+## lib/unix.h): sh_init.c called getppid() unconditionally to seed
+## $PPID, but mingw has no such function, so a mingw cross build
+## failed to link. getppid is now probed via CMakeLists.txt's existing
+## check_functions(...) call (HAVE_GETPPID, the same mechanism already
+## used for sigaction/signal/etc.) instead of assumed present, and
+## lib/unix/getppid.c supplies a real getppid() -- returning pid_t,
+## via CreateToolhelp32Snapshot/Process32First/Process32Next, falling
+## back to 0 if the snapshot lookup fails -- #if WINDOWS_NATIVE only,
+## named and declared (lib/unix.h) exactly like lib/unix/readlink.c's
+## own WINDOWS_NATIVE-only readlink(), so sh_init.c has one call site
+## (`#if defined(HAVE_GETPPID) || WINDOWS_NATIVE` / getppid()) with no
+## platform-specific function name leaking into src/. Per the "Writing
+## a test" exception in CLAUDE.md for the WINDOWS_NATIVE half
+## specifically, that part is comment-only: verified by rebuilding
+## under cfg-mingw64 (previously "undefined reference to `getppid'",
+## now compiles and links clean, getppid gone from the
+## undefined-reference list, leaving only kill/killpg, tcsetpgrp and
+## sig_action -- see mingw-porting.md). The HAVE_GETPPID/POSIX path is
+## exercised for real below and by fixes/159's PPID-adjacent output;
+## rebuilt on glibc and dietlibc, $PPID still reports the real parent
+## pid on both, and tests/*.sh/tests/fixed.sh are unchanged.
+X203_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
+
+if [ -n "$X203_SELF" ] && [ -x "$X203_SELF" ]; then
+  X203=$("$X203_SELF" -c 'echo $PPID')
+  assert_equal "$$" "$X203" "\$PPID in a freshly spawned shish reports this script's own pid, its real parent"
+fi
+
 summary

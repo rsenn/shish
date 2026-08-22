@@ -95,7 +95,7 @@ include(cmake/Builtins.cmake)
 check_functions(
   sigaction
   # sigaddset sigdelset sigemptyset sigfillset
-   sigismember signal sigprocmask sigsuspend)
+   sigismember signal sigprocmask sigsuspend getppid)
 
 check_includes_def(termios.h sys/ioctl.h)
 

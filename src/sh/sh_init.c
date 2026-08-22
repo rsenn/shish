@@ -15,6 +15,10 @@
 #include <sys/stat.h>
 #endif
 
+#if WINDOWS_NATIVE && !defined(HAVE_GETPPID)
+#include "../../lib/unix.h"
+#endif
+
 static struct var sh_ps1;
 static struct var sh_ps2;
 static struct var sh_ps3;
@@ -43,7 +47,11 @@ sh_init(void) {
   uint32_seed(&sh_pid, sizeof(sh_pid));
 
   /* set PPID to parent process id */
+#if defined(HAVE_GETPPID) || WINDOWS_NATIVE
   var_setvint("PPID", getppid(), 0);
+#else
+  var_setvint("PPID", 0, 0);
+#endif
 
 #ifdef BUILTIN_GETOPTS
   /* POSIX: "Whenever the shell is invoked, OPTIND shall be initialized to 1." */

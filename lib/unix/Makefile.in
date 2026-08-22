@@ -19,7 +19,7 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 LIB = ../libowfat.a
 ARCHIVE = unix.a
-MODULES = glob readlink
+MODULES = glob readlink getppid
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
