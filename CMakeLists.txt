@@ -100,7 +100,7 @@ check_functions(
 check_includes_def(termios.h sys/ioctl.h)
 
 if(HAVE_SYS_IOCTL_H)
-  check_compile(HAVE_WINSIZE "#include <sys/ioctl.h>\n\nint main(int argc, char* argv[]) {\n  struct winsize sz;\n\n  if(ioctl(0, TIOCGWINSZ, &sz) == 0)\n    return 0;\n\n  return 1;\n}\n")
+  check_compile(HAVE_WINSIZE "#include <termios.h>\n#include <sys/ioctl.h>\n\nint main(int argc, char* argv[]) {\n  struct winsize sz;\n\n  if(ioctl(0, TIOCGWINSZ, &sz) == 0)\n    return 0;\n\n  return 1;\n}\n")
   if(HAVE_WINSIZE)
     add_definitions(-DHAVE_WINSIZE=1)
   endif(HAVE_WINSIZE)
