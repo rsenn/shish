@@ -8,13 +8,14 @@
 
 sigtable_t const sigtable[] = {
     {0, "EXIT"},
-#if !WINDOWS_NATIVE
     {SIGHUP, "HUP"},       /* 1 */
     {SIGINT, "INT"},       /* 2 */
     {SIGQUIT, "QUIT"},     /* 3 */
     {SIGILL, "ILL"},       /* 4 */
     {SIGTRAP, "TRAP"},     /* 5 */
-    {SIGABRT, "ABRT"},     /* 6 */
+#if !WINDOWS_NATIVE
+    {SIGABRT, "ABRT"},     /* 6 -- lib/sig.h defines no SIGABRT for WINDOWS_NATIVE */
+#endif
     {SIGBUS, "BUS"},       /* 7 */
     {SIGFPE, "FPE"},       /* 8 */
     {SIGKILL, "KILL"},     /* 9 */
@@ -40,6 +41,5 @@ sigtable_t const sigtable[] = {
     {SIGIO, "IO"},         /* 29 */
     {SIGPWR, "PWR"},       /* 30 */
     {SIGSYS, "SYS"},       /* 31 */
-#endif
     {0, 0},
 };

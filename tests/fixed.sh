@@ -4206,4 +4206,48 @@ if [ -n "$X203_SELF" ] && [ -x "$X203_SELF" ]; then
   assert_equal "$$" "$X203" "\$PPID in a freshly spawned shish reports this script's own pid, its real parent"
 fi
 
+## fixes/204 (signal-refactor.md Phase 1 -- lib/sig/sig_table.c,
+## sig_stack.c, sig.h, sig_catch.c, sig_push.c, sig_block.c,
+## sig_unblock.c, sig_number.c removed, src/builtin/builtin_kill.c,
+## src/exec/exec_program.c, src/job/job_fork.c, src/sh/sh_init.c):
+## seven mechanical cleanups with no intended behavior change on any
+## platform this repo already worked on -- populated sig_table.c's
+## Windows signal-name table (previously empty, #if !WINDOWS_NATIVE
+## around the whole thing, despite sig.h defining real Windows signal
+## numbers one file over); introduced SHISH_NSIG (sig.h) so
+## sig_stack.c bounds-checks against sig.h's own SIGHUP..SIGSYS range
+## on WINDOWS_NATIVE instead of the host's NSIG (23 on mingw, vs. 31 --
+## SIGURG..SIGSYS were being silently rejected); merged sig_byname()/
+## sig_number() into one resolver (sig_number.c deleted, kill_signum()
+## in builtin_kill.c now calls sig_byname() directly, dropping its own
+## redundant "SIG"-prefix stripping and the 0-vs-EXIT disambiguation
+## sig_number()'s ambiguous return forced); added explicit `return`s
+## to sig_catch()/sig_push()'s excluded-platform branches (previously
+## UB, an int function falling off the end); deleted four dead-code
+## spots (a discarded sigemptyset() in sig_block.c, an abandoned #if 0
+## block in sig_unblock.c, a commented-out sig_block(SIGINT) in
+## exec_program.c, a commented-out signal(SIGTTOU/SIGTTIN) pair in
+## sh_init.c); dropped redundant #if !WINDOWS_NATIVE guards around
+## sig_block()/sig_unblock()/sig_blocknone() call sites in
+## exec_program.c and job_fork.c (the callee already no-ops safely --
+## the guard added nothing and hid the calls, e.g. setpgid/tcsetpgrp,
+## that do matter); walked sigtable[] to its terminator in
+## builtin_kill.c's kill_list() instead of a hardcoded 31. See
+## signal-refactor.md for the full investigation and rationale.
+##
+## The glibc/dietlibc-visible half of this (the sig_byname merge,
+## kill_list()'s rewrite) is exercised for real by this file's own
+## existing fixes/153/163/190/191/192 assertions above and by
+## tests/builtin-kill.sh/tests/builtin-trap.sh, all of which already
+## round-trip through kill_signum()/kill_list() -- confirmed
+## byte-identical pass/fail results before and after (423 passed, the
+## same 5 pre-existing failures as main). Per the "Writing a test"
+## exception in CLAUDE.md for the platform-specific half (the Windows
+## sig_table.c population, the SHISH_NSIG mingw fix), that part is
+## comment-only: verified by preprocessing lib/sig/sig_stack.c under
+## cfg-mingw64 (SHISH_NSIG resolves to 32, not the host's NSIG 23) and
+## by rebuilding under cfg-mingw64 (undefined-reference list unchanged
+## at exactly sig_action/kill/killpg/tcsetpgrp -- sig_number and the
+## old empty-table gap no longer appear, confirming neither regressed).
+
 summary

@@ -1,0 +1,377 @@
+diff --git a/lib/sig.h b/lib/sig.h
+index 9e2c94e9..421e52c2 100644
+--- a/lib/sig.h
++++ b/lib/sig.h
+@@ -36,6 +36,15 @@
+ #define SIGIO 29
+ #define SIGPWR 30
+ #define SIGSYS 31
++
++/* the host's own NSIG (a real signal-number ceiling from <signal.h>)
++ * has nothing to do with the SIGHUP..SIGSYS range defined just above
++ * -- e.g. mingw's own NSIG is 23, three short of SIGSYS. Anything
++ * that bounds-checks a signal number against "how many signals does
++ * this platform have" (sig_stack.c) must use this, not NSIG. */
++#define SHISH_NSIG (SIGSYS + 1)
++#elif defined(NSIG)
++#define SHISH_NSIG NSIG
+ #endif
+ 
+ #ifndef SIG_BLOCK
+@@ -107,7 +116,6 @@ void sig_blocknone(void);
+ int sig_catch(int, sighandler_t_ref);
+ const char* sig_name(int);
+ int sig_byname(const char* name);
+-int sig_number(const char*);
+ int sig_push(int, sighandler_t_ref);
+ int sig_pusha(int sig, struct sigaction const* ssa);
+ int sig_pop(int sig);
+diff --git a/lib/sig/Makefile.in b/lib/sig/Makefile.in
+index f218c38e..62ed8e76 100644
+--- a/lib/sig/Makefile.in
++++ b/lib/sig/Makefile.in
+@@ -20,7 +20,7 @@ include $(top_builddir)/config.mk
+ LIB = ../libowfat.a
+ ARCHIVE = sig.a
+ MODULES = \
+-sig_action sig_block sig_blocknone sig_byname sig_catch sig_name sig_number sig_push sig_stack sig_table sig_unblock
++sig_action sig_block sig_blocknone sig_byname sig_catch sig_name sig_push sig_stack sig_table sig_unblock
+ 
+ SOURCES = $(MODULES:%=%.c)
+ OBJECTS = $(MODULES:%=%.o)
+diff --git a/lib/sig/sig_block.c b/lib/sig/sig_block.c
+index 1bf52246..b47d774d 100644
+--- a/lib/sig/sig_block.c
++++ b/lib/sig/sig_block.c
+@@ -8,7 +8,6 @@ sig_block(int signum) {
+ #if !WINDOWS_NATIVE
+   sigset_t ss;
+ 
+-  sigemptyset(&ss);
+   sigprocmask(SIG_SETMASK, 0, &ss);
+ 
+   sigaddset(&ss, signum);
+diff --git a/lib/sig/sig_catch.c b/lib/sig/sig_catch.c
+index f2ca0d1d..36b6dd63 100644
+--- a/lib/sig/sig_catch.c
++++ b/lib/sig/sig_catch.c
+@@ -13,5 +13,7 @@ sig_catch(int sig, sighandler_t_ref f) {
+   };
+ 
+   return sig_catcha(sig, &ssa);
++#else
++  return 0;
+ #endif
+ }
+diff --git a/lib/sig/sig_push.c b/lib/sig/sig_push.c
+index 1cd1b620..42940e94 100644
+--- a/lib/sig/sig_push.c
++++ b/lib/sig/sig_push.c
+@@ -25,5 +25,7 @@ sig_push(int sig, sighandler_t_ref f) {
+   ssa.sa_flags = SA_MASKALL | SA_NOCLDSTOP | SA_NORESTART;
+ 
+   return sig_pusha(sig, &ssa);
++#else
++  return 0;
+ #endif
+ }
+diff --git a/lib/sig/sig_stack.c b/lib/sig/sig_stack.c
+index b3e13320..ecd54857 100644
+--- a/lib/sig/sig_stack.c
++++ b/lib/sig/sig_stack.c
+@@ -3,13 +3,13 @@
+ #include <errno.h>
+ #include <signal.h>
+ 
+-#ifdef NSIG
+-static struct sigaction sig_stack[NSIG - 1][SIGSTACKSIZE];
+-static unsigned int sigsp[NSIG - 1];
++#ifdef SHISH_NSIG
++static struct sigaction sig_stack[SHISH_NSIG - 1][SIGSTACKSIZE];
++static unsigned int sigsp[SHISH_NSIG - 1];
+ 
+ int
+ sig_pusha(int sig, struct sigaction const* ssa) {
+-  if((sig <= 0) || (sig >= NSIG))
++  if((sig <= 0) || (sig >= SHISH_NSIG))
+     return (errno = EINVAL, -1);
+ 
+   if(sigsp[sig - 1] >= SIGSTACKSIZE)
+@@ -23,7 +23,7 @@ sig_pusha(int sig, struct sigaction const* ssa) {
+ 
+ int
+ sig_pop(int sig) {
+-  if((sig <= 0) || (sig >= NSIG))
++  if((sig <= 0) || (sig >= SHISH_NSIG))
+     return (errno = EINVAL, -1);
+ 
+   if(!sigsp[sig - 1])
+diff --git a/lib/sig/sig_table.c b/lib/sig/sig_table.c
+index 32acc7ea..c711182f 100644
+--- a/lib/sig/sig_table.c
++++ b/lib/sig/sig_table.c
+@@ -8,13 +8,14 @@
+ 
+ sigtable_t const sigtable[] = {
+     {0, "EXIT"},
+-#if !WINDOWS_NATIVE
+     {SIGHUP, "HUP"},       /* 1 */
+     {SIGINT, "INT"},       /* 2 */
+     {SIGQUIT, "QUIT"},     /* 3 */
+     {SIGILL, "ILL"},       /* 4 */
+     {SIGTRAP, "TRAP"},     /* 5 */
+-    {SIGABRT, "ABRT"},     /* 6 */
++#if !WINDOWS_NATIVE
++    {SIGABRT, "ABRT"},     /* 6 -- lib/sig.h defines no SIGABRT for WINDOWS_NATIVE */
++#endif
+     {SIGBUS, "BUS"},       /* 7 */
+     {SIGFPE, "FPE"},       /* 8 */
+     {SIGKILL, "KILL"},     /* 9 */
+@@ -40,6 +41,5 @@ sigtable_t const sigtable[] = {
+     {SIGIO, "IO"},         /* 29 */
+     {SIGPWR, "PWR"},       /* 30 */
+     {SIGSYS, "SYS"},       /* 31 */
+-#endif
+     {0, 0},
+ };
+diff --git a/lib/sig/sig_unblock.c b/lib/sig/sig_unblock.c
+index 6d321c2d..1f330e0d 100644
+--- a/lib/sig/sig_unblock.c
++++ b/lib/sig/sig_unblock.c
+@@ -12,13 +12,4 @@ sig_unblock(int signum) {
+   sigaddset(&ss, signum);
+   sigprocmask(SIG_UNBLOCK, &ss, 0);
+ #endif
+-  /*#if 0 && !WINDOWS_NATIVE
+-    sigset_t ss;
+-
+-    sigemptyset(&ss);
+-    sigprocmask(SIG_SETMASK, 0, &ss);
+-
+-    sigdelset(&ss, signum);
+-    sigprocmask(SIG_BLOCK, &ss, 0);
+-  #endif*/
+ }
+diff --git a/src/builtin/builtin_kill.c b/src/builtin/builtin_kill.c
+index 45fd831f..e4fe64af 100644
+--- a/src/builtin/builtin_kill.c
++++ b/src/builtin/builtin_kill.c
+@@ -4,6 +4,7 @@
+ #include "../../lib/scan.h"
+ #include "../../lib/str.h"
+ #include "../../lib/sig.h"
++#include "../../lib/sig_internal.h"
+ #include "../../lib/buffer.h"
+ #include <signal.h>
+ 
+@@ -18,19 +19,7 @@ kill_signum(const char* spec) {
+   if(spec[0] && scan_int(spec, &n) == str_len(spec))
+     return n;
+ 
+-  if(!str_case_diffn(spec, "SIG", 3))
+-    spec += 3;
+-
+-  /* sig_number() returns 0 both for the real "EXIT" pseudo-signal and
+-     for a name it doesn't recognize -- disambiguate the two here so
+-     an unknown name is reported instead of silently acting like
+-     "kill -EXIT" (i.e. signal 0, "is this pid still alive?"). */
+-  n = sig_number(spec);
+-
+-  if(n == 0 && str_case_diff(spec, "EXIT"))
+-    return -1;
+-
+-  return n;
++  return sig_byname(spec);
+ }
+ 
+ /* send 'sig' to every process of a job resolved from a "%..." operand
+@@ -69,16 +58,14 @@ const char help_kill[] = "    Send a signal to processes or jobs.\n"
+  * ----------------------------------------------------------------------- */
+ static int
+ kill_list(void) {
+-  int i;
+-
+-  for(i = 1; i <= 31; i++) {
+-    const char* name = sig_name(i);
+-
+-    if(name) {
+-      if(i > 1)
+-        buffer_putspace(fd_out->w);
+-      buffer_puts(fd_out->w, name);
+-    }
++  const sigtable_t* p;
++
++  /* skip sigtable[0], the "EXIT" pseudo-signal -- kill -l lists real
++     signals only */
++  for(p = sigtable + 1; p->name; p++) {
++    if(p > sigtable + 1)
++      buffer_putspace(fd_out->w);
++    buffer_puts(fd_out->w, p->name);
+   }
+   buffer_putnlflush(fd_out->w);
+   return 0;
+diff --git a/src/exec/exec_program.c b/src/exec/exec_program.c
+index e2c8ec9a..28f6ddcd 100644
+--- a/src/exec/exec_program.c
++++ b/src/exec/exec_program.c
+@@ -76,10 +76,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
+        before fork(): otherwise a fast-exiting child can deliver it (and
+        have it handled -> job_signal() -> job_bypid() finding nothing)
+        before job_new() below has even registered the job. */
+-#if !WINDOWS_NATIVE
+-    // sig_block(SIGINT);
+     sig_block(SIGCHLD);
+-#endif
+ 
+     /* in the parent wait for the child to finish and then return
+        or exit, according to the 'exec' argument */
+@@ -149,9 +146,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
+         if(sh->opts.monitor)
+           job_banner(job, fd_err->w, JOB_START);
+ 
+-#if !WINDOWS_NATIVE
+         sig_unblock(SIGCHLD);
+-#endif
+         ret = 0;
+       } else {
+         struct job* job = job_new(1);
+@@ -247,9 +242,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
+     /* the blocked mask set above survives exec(); the program we're
+        about to run (or exit() out of) must not inherit SIGINT/SIGCHLD
+        blocked */
+-#if !WINDOWS_NATIVE
+     sig_blocknone();
+-#endif
+   }
+ 
+   fdtable_exec();
+diff --git a/src/job/job_fork.c b/src/job/job_fork.c
+index c029ce73..e9517a2f 100644
+--- a/src/job/job_fork.c
++++ b/src/job/job_fork.c
+@@ -45,15 +45,11 @@ job_fork(struct job* j, union node* node, int bgnd) {
+     assert(index >= 0);
+   }
+ 
+-#if !WINDOWS_NATIVE
+   sig_block(SIGCHLD);
+-#endif
+ 
+   /* fork the process */
+   if((pid = fork()) == -1) {
+-#if !WINDOWS_NATIVE
+     sig_unblock(SIGCHLD);
+-#endif
+     sh_error_errno("fork failed");
+     return -1;
+   }
+@@ -137,12 +133,12 @@ job_fork(struct job* j, union node* node, int bgnd) {
+         if(!bgnd)
+           tcsetpgrp(job_terminal, pgrp);
+     }
++#endif
+ 
+     /* the blocked mask survives exec(), so a program this child later
+        execs (or a builtin/subshell it runs in-process) would otherwise
+        inherit SIGCHLD blocked forever */
+     sig_unblock(SIGCHLD);
+-#endif
+     return pid;
+   }
+ 
+@@ -185,8 +181,8 @@ job_fork(struct job* j, union node* node, int bgnd) {
+ #if !WINDOWS_NATIVE
+   if(sh->opts.monitor)
+     setpgid(pid, pgrp);
++#endif
+ 
+   sig_unblock(SIGCHLD);
+-#endif
+   return pid;
+ }
+diff --git a/src/sh/sh_init.c b/src/sh/sh_init.c
+index 4d5d9522..328c3fdf 100644
+--- a/src/sh/sh_init.c
++++ b/src/sh/sh_init.c
+@@ -86,8 +86,4 @@ sh_init(void) {
+ 
+   sh->umask = umask(sh->umask);
+   umask(sh->umask);
+-
+-  /* set up signal handling */
+-  /*  signal(SIGTTOU, SIG_IGN);
+-    signal(SIGTTIN, SIG_IGN);*/
+ }
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 7dcde28f..5d2ab868 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -4206,4 +4206,48 @@ if [ -n "$X203_SELF" ] && [ -x "$X203_SELF" ]; then
+   assert_equal "$$" "$X203" "\$PPID in a freshly spawned shish reports this script's own pid, its real parent"
+ fi
+ 
++## fixes/204 (signal-refactor.md Phase 1 -- lib/sig/sig_table.c,
++## sig_stack.c, sig.h, sig_catch.c, sig_push.c, sig_block.c,
++## sig_unblock.c, sig_number.c removed, src/builtin/builtin_kill.c,
++## src/exec/exec_program.c, src/job/job_fork.c, src/sh/sh_init.c):
++## seven mechanical cleanups with no intended behavior change on any
++## platform this repo already worked on -- populated sig_table.c's
++## Windows signal-name table (previously empty, #if !WINDOWS_NATIVE
++## around the whole thing, despite sig.h defining real Windows signal
++## numbers one file over); introduced SHISH_NSIG (sig.h) so
++## sig_stack.c bounds-checks against sig.h's own SIGHUP..SIGSYS range
++## on WINDOWS_NATIVE instead of the host's NSIG (23 on mingw, vs. 31 --
++## SIGURG..SIGSYS were being silently rejected); merged sig_byname()/
++## sig_number() into one resolver (sig_number.c deleted, kill_signum()
++## in builtin_kill.c now calls sig_byname() directly, dropping its own
++## redundant "SIG"-prefix stripping and the 0-vs-EXIT disambiguation
++## sig_number()'s ambiguous return forced); added explicit `return`s
++## to sig_catch()/sig_push()'s excluded-platform branches (previously
++## UB, an int function falling off the end); deleted four dead-code
++## spots (a discarded sigemptyset() in sig_block.c, an abandoned #if 0
++## block in sig_unblock.c, a commented-out sig_block(SIGINT) in
++## exec_program.c, a commented-out signal(SIGTTOU/SIGTTIN) pair in
++## sh_init.c); dropped redundant #if !WINDOWS_NATIVE guards around
++## sig_block()/sig_unblock()/sig_blocknone() call sites in
++## exec_program.c and job_fork.c (the callee already no-ops safely --
++## the guard added nothing and hid the calls, e.g. setpgid/tcsetpgrp,
++## that do matter); walked sigtable[] to its terminator in
++## builtin_kill.c's kill_list() instead of a hardcoded 31. See
++## signal-refactor.md for the full investigation and rationale.
++##
++## The glibc/dietlibc-visible half of this (the sig_byname merge,
++## kill_list()'s rewrite) is exercised for real by this file's own
++## existing fixes/153/163/190/191/192 assertions above and by
++## tests/builtin-kill.sh/tests/builtin-trap.sh, all of which already
++## round-trip through kill_signum()/kill_list() -- confirmed
++## byte-identical pass/fail results before and after (423 passed, the
++## same 5 pre-existing failures as main). Per the "Writing a test"
++## exception in CLAUDE.md for the platform-specific half (the Windows
++## sig_table.c population, the SHISH_NSIG mingw fix), that part is
++## comment-only: verified by preprocessing lib/sig/sig_stack.c under
++## cfg-mingw64 (SHISH_NSIG resolves to 32, not the host's NSIG 23) and
++## by rebuilding under cfg-mingw64 (undefined-reference list unchanged
++## at exactly sig_action/kill/killpg/tcsetpgrp -- sig_number and the
++## old empty-table gap no longer appear, confirming neither regressed).
++
+ summary
+diff --git a/lib/sig/sig_number.c b/lib/sig/sig_number.c
+deleted file mode 100644
+index 004240f5a5e44f48abde6aae2491ca83a774d5d7..0000000000
+--- a/lib/sig/sig_number.c
++++ /dev/null
+@@ -1,14 +0,0 @@
+-#include "../sig_internal.h"
+-
+-#include <strings.h>
+-
+-int
+-sig_number(const char* name) {
+-  sigtable_t const* p = sigtable;
+-
+-  for(; p->name; p++)
+-    if(!strcasecmp(name, p->name))
+-      break;
+-
+-  return p->number;
+-}

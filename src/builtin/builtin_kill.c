@@ -4,6 +4,7 @@
 #include "../../lib/scan.h"
 #include "../../lib/str.h"
 #include "../../lib/sig.h"
+#include "../../lib/sig_internal.h"
 #include "../../lib/buffer.h"
 #include <signal.h>
 
@@ -18,19 +19,7 @@ kill_signum(const char* spec) {
   if(spec[0] && scan_int(spec, &n) == str_len(spec))
     return n;
 
-  if(!str_case_diffn(spec, "SIG", 3))
-    spec += 3;
-
-  /* sig_number() returns 0 both for the real "EXIT" pseudo-signal and
-     for a name it doesn't recognize -- disambiguate the two here so
-     an unknown name is reported instead of silently acting like
-     "kill -EXIT" (i.e. signal 0, "is this pid still alive?"). */
-  n = sig_number(spec);
-
-  if(n == 0 && str_case_diff(spec, "EXIT"))
-    return -1;
-
-  return n;
+  return sig_byname(spec);
 }
 
 /* send 'sig' to every process of a job resolved from a "%..." operand
@@ -69,16 +58,14 @@ const char help_kill[] = "    Send a signal to processes or jobs.\n"
  * ----------------------------------------------------------------------- */
 static int
 kill_list(void) {
-  int i;
+  const sigtable_t* p;
 
-  for(i = 1; i <= 31; i++) {
-    const char* name = sig_name(i);
-
-    if(name) {
-      if(i > 1)
-        buffer_putspace(fd_out->w);
-      buffer_puts(fd_out->w, name);
-    }
+  /* skip sigtable[0], the "EXIT" pseudo-signal -- kill -l lists real
+     signals only */
+  for(p = sigtable + 1; p->name; p++) {
+    if(p > sigtable + 1)
+      buffer_putspace(fd_out->w);
+    buffer_puts(fd_out->w, p->name);
   }
   buffer_putnlflush(fd_out->w);
   return 0;

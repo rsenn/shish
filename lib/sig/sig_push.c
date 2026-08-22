@@ -25,5 +25,7 @@ sig_push(int sig, sighandler_t_ref f) {
   ssa.sa_flags = SA_MASKALL | SA_NOCLDSTOP | SA_NORESTART;
 
   return sig_pusha(sig, &ssa);
+#else
+  return 0;
 #endif
 }

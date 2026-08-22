@@ -76,10 +76,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
        before fork(): otherwise a fast-exiting child can deliver it (and
        have it handled -> job_signal() -> job_bypid() finding nothing)
        before job_new() below has even registered the job. */
-#if !WINDOWS_NATIVE
-    // sig_block(SIGINT);
     sig_block(SIGCHLD);
-#endif
 
     /* in the parent wait for the child to finish and then return
        or exit, according to the 'exec' argument */
@@ -149,9 +146,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
         if(sh->opts.monitor)
           job_banner(job, fd_err->w, JOB_START);
 
-#if !WINDOWS_NATIVE
         sig_unblock(SIGCHLD);
-#endif
         ret = 0;
       } else {
         struct job* job = job_new(1);
@@ -247,9 +242,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
     /* the blocked mask set above survives exec(); the program we're
        about to run (or exit() out of) must not inherit SIGINT/SIGCHLD
        blocked */
-#if !WINDOWS_NATIVE
     sig_blocknone();
-#endif
   }
 
   fdtable_exec();

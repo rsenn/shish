@@ -36,6 +36,15 @@
 #define SIGIO 29
 #define SIGPWR 30
 #define SIGSYS 31
+
+/* the host's own NSIG (a real signal-number ceiling from <signal.h>)
+ * has nothing to do with the SIGHUP..SIGSYS range defined just above
+ * -- e.g. mingw's own NSIG is 23, three short of SIGSYS. Anything
+ * that bounds-checks a signal number against "how many signals does
+ * this platform have" (sig_stack.c) must use this, not NSIG. */
+#define SHISH_NSIG (SIGSYS + 1)
+#elif defined(NSIG)
+#define SHISH_NSIG NSIG
 #endif
 
 #ifndef SIG_BLOCK
@@ -107,7 +116,6 @@ void sig_blocknone(void);
 int sig_catch(int, sighandler_t_ref);
 const char* sig_name(int);
 int sig_byname(const char* name);
-int sig_number(const char*);
 int sig_push(int, sighandler_t_ref);
 int sig_pusha(int sig, struct sigaction const* ssa);
 int sig_pop(int sig);

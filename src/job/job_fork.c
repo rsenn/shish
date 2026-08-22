@@ -45,15 +45,11 @@ job_fork(struct job* j, union node* node, int bgnd) {
     assert(index >= 0);
   }
 
-#if !WINDOWS_NATIVE
   sig_block(SIGCHLD);
-#endif
 
   /* fork the process */
   if((pid = fork()) == -1) {
-#if !WINDOWS_NATIVE
     sig_unblock(SIGCHLD);
-#endif
     sh_error_errno("fork failed");
     return -1;
   }
@@ -137,12 +133,12 @@ job_fork(struct job* j, union node* node, int bgnd) {
         if(!bgnd)
           tcsetpgrp(job_terminal, pgrp);
     }
+#endif
 
     /* the blocked mask survives exec(), so a program this child later
        execs (or a builtin/subshell it runs in-process) would otherwise
        inherit SIGCHLD blocked forever */
     sig_unblock(SIGCHLD);
-#endif
     return pid;
   }
 
@@ -185,8 +181,8 @@ job_fork(struct job* j, union node* node, int bgnd) {
 #if !WINDOWS_NATIVE
   if(sh->opts.monitor)
     setpgid(pid, pgrp);
+#endif
 
   sig_unblock(SIGCHLD);
-#endif
   return pid;
 }
