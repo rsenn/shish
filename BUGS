@@ -527,3 +527,39 @@
   ```sh
   shish -c '( trap "echo \"\$#:\$*\"" EXIT; set -- a b )'   # 0:   (dash: 2:a b)
   ```
+
+- winsize-probe-misses-termios-breaks-diet-build: the `HAVE_WINSIZE`
+  probe (`CMakeLists.txt:103`) includes only `<sys/ioctl.h>`, but
+  dietlibc declares `struct winsize` in `<termios.h>`, so the probe
+  fails there and `term_size` is never defined
+  (`src/term/term_winsize.c:4` guards it with `#ifdef HAVE_WINSIZE`).
+  Its two users do not guard, so the link fails:
+  `term_complete.c:70` and `builtin_help.c:60`. Adding
+  `#include <termios.h>` to the probe makes the whole dietlibc target
+  build and run. Any other configuration where the probe fails breaks
+  the same way -- the users need a guard too, not just a better probe.
+
+  **Repro:**
+  ```sh
+  CC=diet-gcc cmake -S . -B /tmp/d -DLINK_STATIC=ON && cmake --build /tmp/d
+  # undefined reference to `term_size'
+  CC=diet-gcc cmake -S . -B /tmp/d -DLINK_STATIC=ON -DHAVE_WINSIZE:BOOL=TRUE
+  cmake --build /tmp/d   # links, runs, 192672 bytes stripped
+  ```
+
+- no-tree-print-option-is-a-noop: `-DNO_TREE_PRINT=ON` changes nothing.
+  `LIBSHELL_SOURCES` comes from `file(GLOB ...)` (`CMakeLists.txt:167`),
+  so it holds absolute paths, and the two `list(REMOVE_ITEM ...)` calls
+  at `CMakeLists.txt:198`-`199` pass relative ones -- they match nothing
+  and silently do nothing. `-DNO_TREE_PRINT=1` reaches the compiler but
+  no source tests it, so both `tree_print.c` and `tree_printlist.c` are
+  still compiled and linked.
+
+  **Repro:**
+  ```sh
+  cmake -S . -B /tmp/a -DCMAKE_BUILD_TYPE=MinSizeRel
+  cmake -S . -B /tmp/b -DCMAKE_BUILD_TYPE=MinSizeRel -DNO_TREE_PRINT=ON
+  cmake --build /tmp/a -j8; cmake --build /tmp/b -j8
+  strip /tmp/a/shish /tmp/b/shish; stat -c%s /tmp/a/shish /tmp/b/shish
+  # 189312 189312 -- byte-identical, and /tmp/b/.../tree_print.c.o exists
+  ```

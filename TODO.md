@@ -874,6 +874,142 @@ problem 3 above, which now has a concrete repro because of it.
 
 ---
 
+## Goal 5 — make the binary smaller (musl and dietlibc are the targets)
+
+The pitch on the site is "a 185 KB shell". Every number below is
+`stat -c%s` on a **stripped** binary, `MinSizeRel` (`-Os`), measured
+2026-08-22 at `c44eab01`, gcc 16 / musl-gcc / diet-gcc on x86_64.
+
+```
+                        as configured today   with the flag set below
+glibc, dynamic (default)      189312                  136152   -28%
+musl, static                  237472                  191936   -19%
+dietlibc, static           does not build             149088
+```
+
+The dietlibc column is not a typo: a *static* diet build undercuts
+today's *dynamic* glibc one. It needs one probe fixed first
+(`BUGS: winsize-probe-misses-termios-breaks-diet-build`).
+
+### 5.1 Free wins: build flags, no source change
+
+Stacked, in order of what each one buys on the glibc dynamic build:
+
+```
+baseline                                              189312
+-fno-asynchronous-unwind-tables -fno-unwind-tables    152448   -19%
+  -fno-stack-protector -fno-ident
++ -no-pie -fno-pie                                    144744
++ LTO                                                  140256
++ -ffunction-sections -fdata-sections --gc-sections    136152   -28%
+  -Wl,--icf=all -Wl,--build-id=none
+```
+
+`.eh_frame` + `.eh_frame_hdr` alone are 28452 of the 189312 baseline
+bytes -- 15% of the binary, for a shell that never unwinds. That is the
+single biggest item on this list and it costs one flag.
+
+Notes from measuring:
+
+- LTO alone: 189312 -> 172392. `-ffunction-sections`/`--gc-sections`
+  alone: 189312 -> 185216 (little dead code to collect; the builtin
+  table references every builtin, so nothing there is collectable).
+- `--icf=all` needs gold or lld. **gcc `-flto` + `ld.lld` is broken**
+  (lld cannot read GCC bitcode: `undefined symbol: main`), and it fails
+  *at configure time*, so every `check_include_file` silently reports
+  "not found" and the build then dies somewhere unrelated. Use gold
+  with gcc; lld only with clang.
+- The tuned build passes the same `tests/*.sh` as the untuned one
+  (21/23; `builtin-rmdir.sh` and `fixed.sh` fail identically on both).
+
+### 5.2 Help and usage text: ~13 KB of a 136 KB binary
+
+`.rodata` is 18662 bytes, and the 38 `help_*` strings are 10234 of
+them -- 55%. On top: 848 bytes of usage strings and a 1760-byte
+`builtin_table` in `.data.rel`. Roughly 10% of a tuned binary is text
+that only `help` and usage errors ever print.
+
+Wanted: `-DENABLE_HELP_TEXT=OFF` that nulls the `help`/usage fields of
+`struct builtin`. Disabling the `help` *builtin* does not help today --
+`builtin_table.c` names every `help_*` symbol, so they all link anyway.
+
+Related, smaller: packing the two `char*` fields into offsets in one
+string blob removes 56 relocations from `.data.rel.ro`.
+
+### 5.3 Stop dragging libc subsystems in for one caller each
+
+Measured in the musl static build:
+
+| symbol pulled in | bytes | why | replacement |
+|---|---|---|---|
+| `pow` (+ libm) | 1916 | `A_EXP` in `expand_arith_binary.c:51` | integer `**` loop -- shell arithmetic is integer, so `pow()` is also a correctness hazard |
+| `glob` + `do_glob` + `fnmatch_internal` | ~5200 | `expand_glob.c:61` | the shell already has `path_fnmatch` (1564 bytes); glob = readdir + that |
+| `__qsort_r` | 991 | `term_complete.c:60`, sorting completions | insertion sort over a handful of names |
+
+`lib/unix/glob.c` exists but is `#if WINDOWS_NATIVE` only, so every
+Unix build takes libc's.
+
+### 5.4 Re-decide the `LINK_STATIC` mem-routine switch per libc
+
+`lib/byte.h:60` maps `byte_copy`/`byte_zero`/... to `memcpy`/`memset`/...
+when linking dynamically, and uses the in-tree loops in `lib/byte/` when
+linking statically -- to avoid pulling glibc's enormous `memcpy` into a
+static binary. Measured on musl, that trade is a wash and slightly
+backwards:
+
+```
+musl static, in-tree byte_* (today)   text 222589
+musl static, libc mem*                text 222069
+```
+
+`memcpy`/`memset`/`memcmp`/`strlen` are linked **either way** -- the
+compiler emits calls to them for struct copies and initializers, so the
+`#if` never actually keeps them out; it just adds a second, slower copy
+of each. glibc-static is the only case the switch was right about
+(1181200 bytes, dominated by libc). So: condition it on the libc, not on
+the link mode, and keep the fast libc routines everywhere except
+glibc-static.
+
+### 5.5 Builtin set
+
+`-DENABLE_ALL_BUILTINS=ON` costs 26 KB over the default set
+(215232 vs 189312 stripped). The `EXTRA_BUILTINS` group (`cat`, `chmod`,
+`ln`, `rm`, `mkdir`, `mktemp`, `uname`, ...) is what the container and
+agent-sandbox pitch is built on, so it is not obviously droppable -- but
+a documented "what does each builtin cost" table would let a distroless
+image pick. Largest single builtins, text+data of the object:
+`trap` 3987, `test` 3824, `printf` 3778, `expr` 3216, `set` 3120.
+
+### 5.6 Not binary size, but on the same pitch: 262 KB of `.bss`
+
+`sig_stack` 155648, `term_inbuf` 65535, `fdtable_table` 8200, `fd_list`
+8192. It costs no file bytes and no RSS until touched, but a shell that
+advertises itself for sandboxes should not reserve 155 KB of signal
+stack. Worth a look after the above.
+
+### Blockers found while measuring
+
+- `BUGS: winsize-probe-misses-termios-breaks-diet-build` -- the whole
+  dietlibc target, which the numbers above say is the smallest one.
+- `BUGS: no-tree-print-option-is-a-noop` -- an existing size knob that
+  does nothing.
+
+### How to measure
+
+```sh
+cmake -S . -B /tmp/sz -DCMAKE_BUILD_TYPE=MinSizeRel -DDO_TESTS=OFF \
+      -DBUILD_SHFORMAT=OFF <options>
+cmake --build /tmp/sz -j8 && strip /tmp/sz/shish && stat -c%s /tmp/sz/shish
+size -A /tmp/sz/shish          # per-section, spots .eh_frame-style bloat
+nm --size-sort -S -td /tmp/sz/shish | tail -30
+```
+
+Always compare stripped sizes, and always re-run `tests/*.sh` with the
+result -- `builtin-rmdir.sh` and `fixed.sh` already fail on `main`, so
+match against a baseline rather than expecting green.
+
+---
+
 ## Also open
 
 - **Line-editing/terminal-abstraction/key-bindings rewrite** — a
