@@ -4095,4 +4095,24 @@ assert_equal "1" "$?" "a false -a operand makes the whole expression false"
 X197=$(test 1 -a 2>&1; echo "st=$?")
 assert_match "$X197" "*st=2*" "an incomplete expression is an error (status 2), not a crash"
 
+## fixes/199 (CMakeLists.txt, src/term/term_complete.c,
+## src/builtin/builtin_help.c): the HAVE_WINSIZE compile probe only
+## included <sys/ioctl.h>, but dietlibc declares struct winsize in
+## <termios.h>, so the probe failed there and the whole dietlibc
+## target refused to link ("undefined reference to `term_size'").
+## Fixed by including <termios.h> in the probe, and by guarding the
+## two term_size.ws_col readers with #ifdef HAVE_WINSIZE (falling back
+## to an assumed 80-column terminal) so a target where the probe
+## legitimately stays unset -- mingw has no struct winsize at all --
+## still compiles instead of failing on an incomplete-type member
+## access. Per the "Writing a test" exception in CLAUDE.md for a fix
+## that only compiles/runs on a platform this repo isn't being
+## developed on, this is comment-only: verified instead by building
+## for real with `. ./cfg.sh && cfg-diet` (previously "undefined
+## reference to `term_size'", now links and runs, 152072 bytes
+## stripped) and by compiling src/builtin/builtin_help.c and
+## src/term/term_complete.c under `cfg-mingw64` (previously failed to
+## parse `term_size.ws_col` against an incomplete struct winsize, now
+## compiles clean).
+
 summary

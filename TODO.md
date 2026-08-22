@@ -890,8 +890,9 @@ dietlibc, static          does not build    152072            149088
 The middle column is what a plain `-DCMAKE_BUILD_TYPE=MinSizeRel` now
 produces (5.1, done); the right one adds LTO, `--icf=all` and `-no-pie`,
 which are still opt-in. The dietlibc row is not a typo -- a *static*
-diet build undercuts the old *dynamic* glibc one -- but it needs one
-probe fixed first (`BUGS: winsize-probe-misses-termios-breaks-diet-build`).
+diet build undercuts the old *dynamic* glibc one. It was blocked on
+the `HAVE_WINSIZE` probe missing `<termios.h>`; fixed 2026-08-22
+(`fixes/199`), and the 152072 figure above is the confirmed result.
 
 ### 5.1 Free wins: build flags, no source change -- **done 2026-08-22**
 
@@ -1011,8 +1012,6 @@ stack. Worth a look after the above.
 
 ### Blockers found while measuring
 
-- `BUGS: winsize-probe-misses-termios-breaks-diet-build` -- the whole
-  dietlibc target, which the numbers above say is the smallest one.
 - `BUGS: no-tree-print-option-is-a-noop` -- an existing size knob that
   does nothing.
 

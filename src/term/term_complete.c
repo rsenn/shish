@@ -67,7 +67,11 @@ term_complete_list(char** names, unsigned int nmatch) {
   }
 
   colwidth = maxlen + 2;
+#ifdef HAVE_WINSIZE
   ncols = term_size.ws_col / colwidth;
+#else
+  ncols = 80 / colwidth; /* no TIOCGWINSZ: assume a stock 80-column terminal */
+#endif
 
   if(ncols < 1)
     ncols = 1;

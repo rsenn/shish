@@ -57,7 +57,11 @@ builtin_help(int argc, char* argv[]) {
   }
 
   term_winsize();
+#ifdef HAVE_WINSIZE
   maxlen = (term_size.ws_col / 2) - 1;
+#else
+  maxlen = (80 / 2) - 1; /* no TIOCGWINSZ: assume a stock 80-column terminal */
+#endif
   rows = (i + 1) >> 1;
 
   for(i = 0; i < rows; i++) {

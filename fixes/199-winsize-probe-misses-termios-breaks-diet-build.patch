@@ -1,0 +1,74 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 00fe4a28..186b6997 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -100,7 +100,7 @@ check_functions(
+ check_includes_def(termios.h sys/ioctl.h)
+ 
+ if(HAVE_SYS_IOCTL_H)
+-  check_compile(HAVE_WINSIZE "#include <sys/ioctl.h>\n\nint main(int argc, char* argv[]) {\n  struct winsize sz;\n\n  if(ioctl(0, TIOCGWINSZ, &sz) == 0)\n    return 0;\n\n  return 1;\n}\n")
++  check_compile(HAVE_WINSIZE "#include <termios.h>\n#include <sys/ioctl.h>\n\nint main(int argc, char* argv[]) {\n  struct winsize sz;\n\n  if(ioctl(0, TIOCGWINSZ, &sz) == 0)\n    return 0;\n\n  return 1;\n}\n")
+   if(HAVE_WINSIZE)
+     add_definitions(-DHAVE_WINSIZE=1)
+   endif(HAVE_WINSIZE)
+diff --git a/src/builtin/builtin_help.c b/src/builtin/builtin_help.c
+index b217a057..780ff716 100644
+--- a/src/builtin/builtin_help.c
++++ b/src/builtin/builtin_help.c
+@@ -57,7 +57,11 @@ builtin_help(int argc, char* argv[]) {
+   }
+ 
+   term_winsize();
++#ifdef HAVE_WINSIZE
+   maxlen = (term_size.ws_col / 2) - 1;
++#else
++  maxlen = (80 / 2) - 1; /* no TIOCGWINSZ: assume a stock 80-column terminal */
++#endif
+   rows = (i + 1) >> 1;
+ 
+   for(i = 0; i < rows; i++) {
+diff --git a/src/term/term_complete.c b/src/term/term_complete.c
+index 6efe0006..51aeee3e 100644
+--- a/src/term/term_complete.c
++++ b/src/term/term_complete.c
+@@ -67,7 +67,11 @@ term_complete_list(char** names, unsigned int nmatch) {
+   }
+ 
+   colwidth = maxlen + 2;
++#ifdef HAVE_WINSIZE
+   ncols = term_size.ws_col / colwidth;
++#else
++  ncols = 80 / colwidth; /* no TIOCGWINSZ: assume a stock 80-column terminal */
++#endif
+ 
+   if(ncols < 1)
+     ncols = 1;
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 8b443ff3..2ac57e73 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -4095,4 +4095,24 @@ assert_equal "1" "$?" "a false -a operand makes the whole expression false"
+ X197=$(test 1 -a 2>&1; echo "st=$?")
+ assert_match "$X197" "*st=2*" "an incomplete expression is an error (status 2), not a crash"
+ 
++## fixes/199 (CMakeLists.txt, src/term/term_complete.c,
++## src/builtin/builtin_help.c): the HAVE_WINSIZE compile probe only
++## included <sys/ioctl.h>, but dietlibc declares struct winsize in
++## <termios.h>, so the probe failed there and the whole dietlibc
++## target refused to link ("undefined reference to `term_size'").
++## Fixed by including <termios.h> in the probe, and by guarding the
++## two term_size.ws_col readers with #ifdef HAVE_WINSIZE (falling back
++## to an assumed 80-column terminal) so a target where the probe
++## legitimately stays unset -- mingw has no struct winsize at all --
++## still compiles instead of failing on an incomplete-type member
++## access. Per the "Writing a test" exception in CLAUDE.md for a fix
++## that only compiles/runs on a platform this repo isn't being
++## developed on, this is comment-only: verified instead by building
++## for real with `. ./cfg.sh && cfg-diet` (previously "undefined
++## reference to `term_size'", now links and runs, 152072 bytes
++## stripped) and by compiling src/builtin/builtin_help.c and
++## src/term/term_complete.c under `cfg-mingw64` (previously failed to
++## parse `term_size.ws_col` against an incomplete struct winsize, now
++## compiles clean).
++
+ summary
