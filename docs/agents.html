@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>shish in agent sandboxes — shish</title>
+<meta name="description" content="shish — a small POSIX-ish shell in C. 139 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body class="has-sidebar">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="mark">$_</span> shish</a>
+  <nav class="topnav">
+    <a href="../getting-started.html">Get started</a>
+    <a href="../docs/containers.html">Containers</a>
+    <a href="../docs/wasm.html">WASM</a>
+    <a href="../play.html">Playground</a>
+    <a href="https://github.com/rsenn/shish" target="_blank" rel="noopener">GitHub</a>
+  </nav>
+  <button class="themetoggle" type="button" aria-label="Toggle colour scheme">◐</button>
+</header>
+<div class="layout">
+<aside class="sidebar"><div class="navgroup"><h3>Start here</h3><ul><li><a href="../getting-started.html">Getting started</a></li><li><a href="building.html">Building</a></li><li><a href="builtins.html">Builtins</a></li></ul></div><div class="navgroup"><h3>Where it runs</h3><ul><li><a href="containers.html">Containers</a></li><li><a href="agents.html" class="here">Agent sandboxes</a></li><li><a href="wasm.html">WebAssembly</a></li></ul></div><div class="navgroup"><h3>Reference</h3><ul><li><a href="conformance.html">Conformance</a></li></ul></div></aside>
+<main class="doc">
+<article><h1 id="shish-in-agent-sandboxes"><a class="anchor" href="#shish-in-agent-sandboxes" aria-hidden="true">#</a>shish in agent sandboxes</h1>
+<p>An AI coding agent runs shell commands — usually a lot of them, usually
+inside a sandbox someone has to reason about. The shell in that sandbox is
+part of the security boundary and part of the reproducibility story, and
+<code>bash</code> is a strange choice for both: 1.4 MB, a startup-file search path,
+history, aliases, a job-control layer, <code>$BASH_ENV</code>, and a language that
+nobody can fully enumerate.</p>
+<p>shish is 139 KB of C that you can read.</p>
+<h2 id="what-matters-for-a-harness"><a class="anchor" href="#what-matters-for-a-harness" aria-hidden="true">#</a>What matters for a harness</h2>
+<p><strong>A small, enumerable surface.</strong> ~26 k lines, one function per file, no
+dynamic runtime, no plugins. When a sandbox review asks "what can the
+shell do", the answer fits in a <code>src/builtin/</code> listing.</p>
+<p><strong>No implicit state.</strong> shish reads no startup file of its own. <code>$ENV</code> is
+the only hook, and <code>-p</code> makes the shell ignore even that:</p>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">shish</span> <span class="t-op">-p</span> <span class="t-op">-c</span> <span class="t-str">"$COMMAND"</span>      <span class="t-cm"># nothing sourced, nothing inherited but the environment</span></code></pre></div>
+<p>There is no history file to write, no <code>~/.shishrc</code> to plant, and no alias
+expansion unless the script itself defines one.</p>
+<p><strong>Determinism across environments.</strong> The same static binary is the shell
+in the container, on the CI runner, and in the developer's checkout, so a
+command that works in one works in the others. Cross-builds for musl,
+dietlibc, aarch64, Android/Termux, Windows and WebAssembly all come from
+one tree — see <a href="building.html">Building</a>.</p>
+<p><strong>Cheap.</strong> Startup is ~1.3 ms per <code>shish -c true</code> on a warm cache, against
+~1.8 ms for bash. An agent that runs thousands of short commands per
+session notices.</p>
+<p><strong>Parse before you run.</strong> <code>shish -n script</code> parses and reports syntax
+errors without executing anything — a cheap validity check on a command an
+agent just generated:</p>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh">$ <span class="t-id">shish</span> <span class="t-op">-n</span> <span class="t-id">script.sh</span>; <span class="t-id">echo</span> $?
+<span class="t-id">script.sh</span>:<span class="t-num">2</span>:<span class="t-num">1</span>: <span class="t-id">unexpected</span> <span class="t-id">token</span> <span class="t-id">EOF</span>, <span class="t-id">expecting</span> <span class="t-str">'fi'</span>
+<span class="t-num">1</span></code></pre></div>
+<p>(With <code>-c</code> instead of a file the message is printed but the status is
+still 0 — see <a href="https://github.com/rsenn/shish/blob/main/BUGS" target="_blank" rel="noopener">undefined</a>: <code>syntax-error-in-c-string-exits-zero</code>.)</p>
+<h2 id="running-untrusted-commands"><a class="anchor" href="#running-untrusted-commands" aria-hidden="true">#</a>Running untrusted commands</h2>
+<p>shish is a shell, not a sandbox: it executes what it is told to. Keep the
+kernel-level boundary you already have — namespaces, seccomp, a read-only
+root, a network policy. What shish changes is how much <em>else</em> is inside
+that boundary:</p>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cfg-musl</span> <span class="t-op">-DLINK_STATIC</span>=<span class="t-id">ON</span> <span class="t-op">-DENABLE_ALL_BUILTINS</span>=<span class="t-id">ON</span></code></pre></div>
+<p>gives you a sandbox whose entire userland can be one file, with <code>PATH=</code>
+set to nothing — see <a href="containers.html">Containers</a>. An agent can still
+<code>mkdir</code>, <code>cat</code>, <code>rm</code> and loop; it cannot reach a binary that is not there.</p>
+<h2 id="in-the-browser"><a class="anchor" href="#in-the-browser" aria-hidden="true">#</a>In the browser</h2>
+<p>The same shell compiles to 184 KB of WebAssembly, which means an agent
+UI can run its shell commands client-side, in a tab, with no server and
+no container at all. See <a href="wasm.html">WebAssembly</a> and the
+<a href="../play.html">playground</a>.</p>
+<h2 id="caveat"><a class="anchor" href="#caveat" aria-hidden="true">#</a>Caveat</h2>
+<p>shish is alpha. It passes 5270 cases of yash's POSIX suite and fails 822
+of them (<a href="conformance.html">Conformance</a>); the known defects are listed in
+<a href="https://github.com/rsenn/shish/blob/main/BUGS" target="_blank" rel="noopener">undefined</a>. Pin a commit, run your own command corpus through it,
+and report what breaks.</p></article>
+<p class="editlink"><a href="https://github.com/rsenn/shish/blob/main/doc/agents.md">Edit this page on GitHub →</a></p>
+</main>
+<nav class="toc"><h3>On this page</h3><ul><li class="lvl2"><a href="#what-matters-for-a-harness">What matters for a harness</a></li><li class="lvl2"><a href="#running-untrusted-commands">Running untrusted commands</a></li><li class="lvl2"><a href="#in-the-browser">In the browser</a></li><li class="lvl2"><a href="#caveat">Caveat</a></li></ul></nav>
+</div>
+<footer class="sitefoot">
+  <p>shish — GPL v2. Built from the repo's own markdown by
+     <a href="https://github.com/rsenn/shish/blob/main/tools/site/build.js">tools/site/build.js</a>, running on qjsm.</p>
+</footer>
+<script>
+document.querySelector('.themetoggle').addEventListener('click', function () {
+  var d = document.documentElement;
+  var dark = d.dataset.theme ? d.dataset.theme === 'dark'
+    : matchMedia('(prefers-color-scheme: dark)').matches;
+  d.dataset.theme = dark ? 'light' : 'dark';
+  try { localStorage.setItem('theme', d.dataset.theme); } catch (e) {}
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Builtins — shish</title>
+<meta name="description" content="shish — a small POSIX-ish shell in C. 139 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body class="has-sidebar">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="mark">$_</span> shish</a>
+  <nav class="topnav">
+    <a href="../getting-started.html">Get started</a>
+    <a href="../docs/containers.html">Containers</a>
+    <a href="../docs/wasm.html">WASM</a>
+    <a href="../play.html">Playground</a>
+    <a href="https://github.com/rsenn/shish" target="_blank" rel="noopener">GitHub</a>
+  </nav>
+  <button class="themetoggle" type="button" aria-label="Toggle colour scheme">◐</button>
+</header>
+<div class="layout">
+<aside class="sidebar"><div class="navgroup"><h3>Start here</h3><ul><li><a href="../getting-started.html">Getting started</a></li><li><a href="building.html">Building</a></li><li><a href="builtins.html" class="here">Builtins</a></li></ul></div><div class="navgroup"><h3>Where it runs</h3><ul><li><a href="containers.html">Containers</a></li><li><a href="agents.html">Agent sandboxes</a></li><li><a href="wasm.html">WebAssembly</a></li></ul></div><div class="navgroup"><h3>Reference</h3><ul><li><a href="conformance.html">Conformance</a></li></ul></div></aside>
+<main class="doc">
+<article><h1 id="builtins"><a class="anchor" href="#builtins" aria-hidden="true">#</a>Builtins</h1>
+<p>Every builtin is a compile-time choice. The shell you ship contains the
+ones you asked for and nothing else — which is what makes both the
+<a href="containers.html">container</a> and the <a href="wasm.html">WebAssembly</a> story work: the
+utilities a script needs are inside the binary, not on a <code>PATH</code>.</p>
+<h2 id="the-three-sets"><a class="anchor" href="#the-three-sets" aria-hidden="true">#</a>The three sets</h2>
+<p><code>cmake/Builtins.cmake</code> defines them.</p>
+<p><strong>Minimal</strong> — the shell language itself, plus what POSIX requires a shell
+to provide:</p>
+<div class="codeblock"><pre><code>. : alias break cd command eval exec exit export expr getopts hash
+history jobs kill local printf pwd read readonly return set shift
+source test times trap type umask unset wait</code></pre></div>
+<p><strong>Default</strong> — the minimal set plus <code>echo</code>, <code>true</code>, <code>false</code>, <code>help</code>,
+<code>type</code> and <code>fdtable</code>. This is what a plain <code>cfg</code> build gives you.</p>
+<p><strong>Extra</strong> — the reason a shish container image can be a single file:</p>
+<div class="codeblock"><pre><code>basename cat chmod dirname hostname ln mkdir mktemp rm rmdir uname which</code></pre></div>
+<p>These are off by default. Turn them on and a script stops needing
+coreutils:</p>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh">$ <span class="t-id">shish</span> <span class="t-op">-c</span> <span class="t-str">'PATH=; mkdir -p a/b; echo hi &gt; a/b/f; cat a/b/f; rm -r a'</span>
+<span class="t-id">hi</span></code></pre></div>
+<h2 id="choosing"><a class="anchor" href="#choosing" aria-hidden="true">#</a>Choosing</h2>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cfg</span> <span class="t-op">-DENABLE_ALL_BUILTINS</span>=<span class="t-id">ON</span>              <span class="t-cm"># everything</span>
+<span class="t-id">cfg</span> <span class="t-op">-DENABLE_CAT</span>=<span class="t-id">ON</span> <span class="t-op">-DENABLE_MKDIR</span>=<span class="t-id">ON</span>     <span class="t-cm"># just these two on top of the default set</span>
+<span class="t-id">cfg</span> <span class="t-op">-DENABLE_HISTORY</span>=<span class="t-id">OFF</span>                  <span class="t-cm"># and this one off</span></code></pre></div>
+<p>The configure step writes <code>&lt;builddir&gt;/src/builtin_config.h</code>, which is
+what <code>src/builtin/builtin_table.c</code> is compiled against. Nothing you left
+out is linked in.</p>
+<p>With autotools, the same choice is
+<code>./configure --enable-builtins="cat mkdir rm"</code>.</p>
+<h2 id="what-a-builtin-costs"><a class="anchor" href="#what-a-builtin-costs" aria-hidden="true">#</a>What a builtin costs</h2>
+<p>Not much. A default dynamic build is 139 KB stripped (132 KB of text);
+the same build with <code>-DENABLE_ALL_BUILTINS=ON</code> is 164 KB (154 KB of
+text) — 25 KB for the whole extra set. Static against glibc, with
+everything on, it is 1.05 MB.</p>
+<h2 id="precedence"><a class="anchor" href="#precedence" aria-hidden="true">#</a>Precedence</h2>
+<p>A builtin is found before <code>PATH</code> is searched, as POSIX requires for the
+special builtins and permits for the rest. To reach the real binary
+anyway, call it by path:</p>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh">/<span class="t-id">bin</span>/<span class="t-id">cat</span> <span class="t-id">file</span>        <span class="t-cm"># the coreutils one</span>
+<span class="t-id">command</span> <span class="t-op">-p</span> <span class="t-id">cat</span> <span class="t-id">file</span>  <span class="t-cm"># the standard utility, via the default PATH</span></code></pre></div>
+<p><code>type name</code> says which one you would get.</p></article>
+<p class="editlink"><a href="https://github.com/rsenn/shish/blob/main/doc/builtins.md">Edit this page on GitHub →</a></p>
+</main>
+<nav class="toc"><h3>On this page</h3><ul><li class="lvl2"><a href="#the-three-sets">The three sets</a></li><li class="lvl2"><a href="#choosing">Choosing</a></li><li class="lvl2"><a href="#what-a-builtin-costs">What a builtin costs</a></li><li class="lvl2"><a href="#precedence">Precedence</a></li></ul></nav>
+</div>
+<footer class="sitefoot">
+  <p>shish — GPL v2. Built from the repo's own markdown by
+     <a href="https://github.com/rsenn/shish/blob/main/tools/site/build.js">tools/site/build.js</a>, running on qjsm.</p>
+</footer>
+<script>
+document.querySelector('.themetoggle').addEventListener('click', function () {
+  var d = document.documentElement;
+  var dark = d.dataset.theme ? d.dataset.theme === 'dark'
+    : matchMedia('(prefers-color-scheme: dark)').matches;
+  d.dataset.theme = dark ? 'light' : 'dark';
+  try { localStorage.setItem('theme', d.dataset.theme); } catch (e) {}
+});
+</script>
+</body>
+</html>

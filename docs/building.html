@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Building — shish</title>
+<meta name="description" content="shish — a small POSIX-ish shell in C. 139 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body class="has-sidebar">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="mark">$_</span> shish</a>
+  <nav class="topnav">
+    <a href="../getting-started.html">Get started</a>
+    <a href="../docs/containers.html">Containers</a>
+    <a href="../docs/wasm.html">WASM</a>
+    <a href="../play.html">Playground</a>
+    <a href="https://github.com/rsenn/shish" target="_blank" rel="noopener">GitHub</a>
+  </nav>
+  <button class="themetoggle" type="button" aria-label="Toggle colour scheme">◐</button>
+</header>
+<div class="layout">
+<aside class="sidebar"><div class="navgroup"><h3>Start here</h3><ul><li><a href="../getting-started.html">Getting started</a></li><li><a href="building.html" class="here">Building</a></li><li><a href="builtins.html">Builtins</a></li></ul></div><div class="navgroup"><h3>Where it runs</h3><ul><li><a href="containers.html">Containers</a></li><li><a href="agents.html">Agent sandboxes</a></li><li><a href="wasm.html">WebAssembly</a></li></ul></div><div class="navgroup"><h3>Reference</h3><ul><li><a href="conformance.html">Conformance</a></li></ul></div></aside>
+<main class="doc">
+<article><h1 id="building"><a class="anchor" href="#building" aria-hidden="true">#</a>Building</h1>
+<p>shish builds with CMake (the primary path) or autotools. Both produce the
+same two programs:</p>
+<ul>
+<li><code>shish</code> — the shell</li>
+<li><code>shformat</code> — a pretty-printer that reuses the shell's own parser</li>
+</ul>
+<h2 id="cmake"><a class="anchor" href="#cmake" aria-hidden="true">#</a>CMake</h2>
+<p><code>cfg.sh</code> sources a set of helper functions that configure into
+<code>build/&lt;host-triple&gt;/</code>, one directory per toolchain.</p>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh">. ./<span class="t-id">cfg.sh</span>                          <span class="t-cm"># bring the cfg-* functions into the shell</span>
+<span class="t-id">cfg</span>                                 <span class="t-cm"># native build</span>
+<span class="t-id">cmake</span> <span class="t-op">--build</span> <span class="t-id">build</span>/<span class="t-id">x86_64-linux-gnu</span> <span class="t-op">-j</span></code></pre></div>
+<p><code>cfg</code> passes any extra arguments straight through to <code>cmake</code>, so</p>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cfg</span> <span class="t-op">-DCMAKE_BUILD_TYPE</span>=<span class="t-id">Release</span> <span class="t-op">-DLINK_STATIC</span>=<span class="t-id">ON</span> <span class="t-op">-DENABLE_LTO</span>=<span class="t-id">ON</span></code></pre></div>
+<p>configures a static, link-time-optimised build in the same layout.</p>
+<h3 id="cross-compiling"><a class="anchor" href="#cross-compiling" aria-hidden="true">#</a>Cross-compiling</h3>
+<p>Each helper writes to its own build directory and pins its own toolchain
+file where one is needed:</p>
+<div class="tablewrap"><table><thead><tr><th>helper</th><th>target</th></tr></thead><tbody><tr><td><code>cfg-musl</code>, <code>cfg-musl32</code>, <code>cfg-musl64</code></td><td>musl libc</td></tr><tr><td><code>cfg-diet</code>, <code>cfg-diet32</code>, <code>cfg-diet64</code></td><td>dietlibc</td></tr><tr><td><code>cfg-mingw32</code>, <code>cfg-mingw64</code></td><td>Windows</td></tr><tr><td><code>cfg-msys</code></td><td>MSYS2</td></tr><tr><td><code>cfg-aarch64</code></td><td>ARM64 Linux</td></tr><tr><td><code>cfg-android</code>, <code>cfg-termux</code></td><td>Android / Termux</td></tr><tr><td><code>cfg-emscripten</code></td><td>WebAssembly + JS glue</td></tr><tr><td><code>cfg-wasm</code></td><td>freestanding <code>wasm32</code></td></tr><tr><td><code>cfg-tcc</code></td><td>tcc</td></tr></tbody></table></div>
+<p>See <a href="wasm.html">WebAssembly</a> for what to do with the last two.</p>
+<h3 id="options"><a class="anchor" href="#options" aria-hidden="true">#</a>Options</h3>
+<div class="tablewrap"><table><thead><tr><th>option</th><th>default</th><th>effect</th></tr></thead><tbody><tr><td><code>CMAKE_BUILD_TYPE</code></td><td><code>MinSizeRel</code></td><td>any <code>*Deb*</code> value also sets <code>BUILD_DEBUG=ON</code></td></tr><tr><td><code>LINK_STATIC</code></td><td><code>OFF</code></td><td>static-link both programs</td></tr><tr><td><code>ENABLE_LTO</code></td><td><code>OFF</code></td><td>link-time optimisation</td></tr><tr><td><code>WARN_WERROR</code></td><td><code>OFF</code></td><td>warnings are errors</td></tr><tr><td><code>USE_EFENCE</code></td><td><code>OFF</code></td><td>link Electric Fence (debug builds)</td></tr><tr><td><code>BUILD_SHFORMAT</code></td><td><code>ON</code></td><td>build the pretty-printer</td></tr><tr><td><code>BUILD_SHPARSE2AST</code></td><td><code>OFF</code></td><td>build the AST dumper</td></tr><tr><td><code>DO_CONFORMANCE_TESTS</code></td><td><code>ON</code></td><td>register <code>tests/posix/*.tst</code> with CTest</td></tr><tr><td><code>DO_YASH_TESTS</code></td><td><code>OFF</code></td><td>register <code>tests/yash/*.tst</code> too</td></tr><tr><td><code>DEBUG_OUTPUT</code>, <code>DEBUG_COLOR</code></td><td><code>OFF</code></td><td>verbose instrumentation</td></tr><tr><td><code>DEBUG_PARSE</code>, <code>DEBUG_JOB</code>, <code>DEBUG_BUILTIN</code>, <code>DEBUG_FD</code>, <code>DEBUG_FDTABLE</code>, <code>DEBUG_FDSTACK</code>, <code>DEBUG_ALLOC</code></td><td><code>OFF</code></td><td>per-subsystem tracing</td></tr></tbody></table></div>
+<p>Builtins are selected at configure time — see <a href="builtins.html">Builtins</a>.</p>
+<h2 id="autotools"><a class="anchor" href="#autotools" aria-hidden="true">#</a>Autotools</h2>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh">./<span class="t-id">autogen.sh</span>        <span class="t-cm"># only from a VCS checkout</span>
+./<span class="t-id">configure</span>
+<span class="t-id">make</span>
+<span class="t-id">make</span> <span class="t-id">install</span></code></pre></div>
+<p><code>configure</code> looks for dietlibc under <code>/opt/diet</code> and <code>/usr/diet</code> and uses
+it when it finds it. <code>configure --enable-builtins="..."</code> selects the
+builtin set; <code>configure.ac</code> holds the master list.</p>
+<h2 id="tests"><a class="anchor" href="#tests" aria-hidden="true">#</a>Tests</h2>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cd</span> <span class="t-id">build</span>/<span class="t-id">x86_64-linux-gnu</span>
+<span class="t-id">ctest</span>                       <span class="t-cm"># everything</span>
+<span class="t-id">ctest</span> <span class="t-op">-R</span> <span class="t-kw">if</span>.<span class="t-id">sh</span> <span class="t-op">-V</span>           <span class="t-cm"># one file, verbose</span></code></pre></div>
+<p>CTest runs every <code>tests/*.sh</code> through the freshly built shell, plus the
+POSIX conformance suite. <a href="conformance.html">Conformance</a> explains the two
+<code>.tst</code> suites and how to run a single file without a rebuild.</p></article>
+<p class="editlink"><a href="https://github.com/rsenn/shish/blob/main/doc/building.md">Edit this page on GitHub →</a></p>
+</main>
+<nav class="toc"><h3>On this page</h3><ul><li class="lvl2"><a href="#cmake">CMake</a></li><li class="lvl3"><a href="#cross-compiling">Cross-compiling</a></li><li class="lvl3"><a href="#options">Options</a></li><li class="lvl2"><a href="#autotools">Autotools</a></li><li class="lvl2"><a href="#tests">Tests</a></li></ul></nav>
+</div>
+<footer class="sitefoot">
+  <p>shish — GPL v2. Built from the repo's own markdown by
+     <a href="https://github.com/rsenn/shish/blob/main/tools/site/build.js">tools/site/build.js</a>, running on qjsm.</p>
+</footer>
+<script>
+document.querySelector('.themetoggle').addEventListener('click', function () {
+  var d = document.documentElement;
+  var dark = d.dataset.theme ? d.dataset.theme === 'dark'
+    : matchMedia('(prefers-color-scheme: dark)').matches;
+  d.dataset.theme = dark ? 'light' : 'dark';
+  try { localStorage.setItem('theme', d.dataset.theme); } catch (e) {}
+});
+</script>
+</body>
+</html>

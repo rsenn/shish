@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>shish on WebAssembly — shish</title>
+<meta name="description" content="shish — a small POSIX-ish shell in C. 139 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body class="has-sidebar">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="mark">$_</span> shish</a>
+  <nav class="topnav">
+    <a href="../getting-started.html">Get started</a>
+    <a href="../docs/containers.html">Containers</a>
+    <a href="../docs/wasm.html">WASM</a>
+    <a href="../play.html">Playground</a>
+    <a href="https://github.com/rsenn/shish" target="_blank" rel="noopener">GitHub</a>
+  </nav>
+  <button class="themetoggle" type="button" aria-label="Toggle colour scheme">◐</button>
+</header>
+<div class="layout">
+<aside class="sidebar"><div class="navgroup"><h3>Start here</h3><ul><li><a href="../getting-started.html">Getting started</a></li><li><a href="building.html">Building</a></li><li><a href="builtins.html">Builtins</a></li></ul></div><div class="navgroup"><h3>Where it runs</h3><ul><li><a href="containers.html">Containers</a></li><li><a href="agents.html">Agent sandboxes</a></li><li><a href="wasm.html" class="here">WebAssembly</a></li></ul></div><div class="navgroup"><h3>Reference</h3><ul><li><a href="conformance.html">Conformance</a></li></ul></div></aside>
+<main class="doc">
+<article><h1 id="shish-on-webassembly"><a class="anchor" href="#shish-on-webassembly" aria-hidden="true">#</a>shish on WebAssembly</h1>
+<p>shish compiles to a 184 KB <code>.wasm</code> module. That is a whole POSIX-ish
+shell — pipelines, functions, parameter expansion, arithmetic,
+redirections — running in a browser tab, a serverless worker, or any
+WASI runtime, with no process and no container underneath it.</p>
+<p>Try it in the <a href="../play.html">playground</a>.</p>
+<h2 id="emscripten-browser-with-js-glue"><a class="anchor" href="#emscripten-browser-with-js-glue" aria-hidden="true">#</a>Emscripten (browser, with JS glue)</h2>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh">. ./<span class="t-id">cfg.sh</span>
+<span class="t-id">cfg-emscripten</span>
+<span class="t-id">cmake</span> <span class="t-op">--build</span> <span class="t-id">build</span>/<span class="t-id">emscripten</span> <span class="t-op">-j</span></code></pre></div>
+<p>That produces <code>build/emscripten/shish.js</code> and <code>shish.wasm</code>. The helper
+already passes what the glue needs:</p>
+<div class="codeblock"><pre><code>-sEXPORTED_RUNTIME_METHODS=['callMain'] -sINVOKE_RUN=0</code></pre></div>
+<p>so the module loads without running anything, and each script is one
+<code>callMain()</code>:</p>
+<div class="codeblock" data-lang="html"><pre><code class="language-html">&lt;script&gt;
+  var Module = {
+    print: function (line) { output(line); },
+    printErr: function (line) { output(line); },
+    onRuntimeInitialized: function () { ready(); },
+  };
+&lt;/script&gt;
+&lt;script src="shish.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  function run(script) {
+    try {
+      Module.callMain(['-c', script]);
+    } catch (e) {
+      // exit() unwinds the wasm stack by throwing; that is not an error
+      if (!(e &amp;&amp; e.name === 'ExitStatus')) throw e;
+    }
+  }
+&lt;/script&gt;</code></pre></div>
+<p><code>web/index.html</code> in the repo is exactly this, in 60 lines.</p>
+<h3 id="what-works-and-what-does-not"><a class="anchor" href="#what-works-and-what-does-not" aria-hidden="true">#</a>What works, and what does not</h3>
+<p>Everything that does not need a process does. Expansion, arithmetic,
+control flow, functions, here-documents, variables, the file-utility
+builtins against Emscripten's in-memory filesystem.</p>
+<p>What cannot work in the browser is anything that forks: pipelines between
+two external commands, background jobs, <code>$(...)</code> that runs a program.
+There are no processes to fork. Compile the utilities you need in as
+<a href="builtins.html">builtins</a> and they run in-process instead.</p>
+<h2 id="wasi-server-side-runtimes"><a class="anchor" href="#wasi-server-side-runtimes" aria-hidden="true">#</a>WASI (server-side runtimes)</h2>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cfg-wasm</span>                          <span class="t-cm"># freestanding wasm32</span>
+<span class="t-id">cmake</span> <span class="t-op">--build</span> <span class="t-id">build</span>/<span class="t-id">wasm32-clang</span> <span class="t-op">-j</span></code></pre></div>
+<p>This targets a plain <code>wasm32</code> module rather than Emscripten's JS
+environment — for wasmtime, wasmer, or an embedder that provides its own
+WASI imports. The same fork restriction applies.</p>
+<h2 id="why-put-a-shell-in-webassembly"><a class="anchor" href="#why-put-a-shell-in-webassembly" aria-hidden="true">#</a>Why put a shell in WebAssembly</h2>
+<ul>
+<li><strong>Documentation and tutorials that actually run.</strong> A shell prompt on a
+docs page, doing real work, with no backend to keep alive.</li>
+<li><strong>Agent UIs.</strong> A browser-side coding assistant can run its shell
+commands in the tab, against a virtual filesystem, without a container
+per session — see <a href="agents.html">Agent sandboxes</a>.</li>
+<li><strong>Edge and serverless.</strong> A 184 KB module is a plausible unit of
+deployment where a container image is not.</li>
+<li><strong>Teaching and testing.</strong> The same shell binary in CI, in the
+container, and in the browser means one behaviour to learn.</li>
+</ul></article>
+<p class="editlink"><a href="https://github.com/rsenn/shish/blob/main/doc/wasm.md">Edit this page on GitHub →</a></p>
+</main>
+<nav class="toc"><h3>On this page</h3><ul><li class="lvl2"><a href="#emscripten-browser-with-js-glue">Emscripten (browser, with JS glue)</a></li><li class="lvl3"><a href="#what-works-and-what-does-not">What works, and what does not</a></li><li class="lvl2"><a href="#wasi-server-side-runtimes">WASI (server-side runtimes)</a></li><li class="lvl2"><a href="#why-put-a-shell-in-webassembly">Why put a shell in WebAssembly</a></li></ul></nav>
+</div>
+<footer class="sitefoot">
+  <p>shish — GPL v2. Built from the repo's own markdown by
+     <a href="https://github.com/rsenn/shish/blob/main/tools/site/build.js">tools/site/build.js</a>, running on qjsm.</p>
+</footer>
+<script>
+document.querySelector('.themetoggle').addEventListener('click', function () {
+  var d = document.documentElement;
+  var dark = d.dataset.theme ? d.dataset.theme === 'dark'
+    : matchMedia('(prefers-color-scheme: dark)').matches;
+  d.dataset.theme = dark ? 'light' : 'dark';
+  try { localStorage.setItem('theme', d.dataset.theme); } catch (e) {}
+});
+</script>
+</body>
+</html>
