@@ -1,0 +1,54 @@
+diff --git a/src/builtin/builtin_test.c b/src/builtin/builtin_test.c
+index 4339bbfd..f2ab4c61 100644
+--- a/src/builtin/builtin_test.c
++++ b/src/builtin/builtin_test.c
+@@ -125,9 +125,11 @@ test_unary(const char* op, const char* arg) {
+     case 'b': return stat(arg, &st) == 0 && (st.st_mode & S_IFMT) == S_IFBLK;
+     case 'p': return stat(arg, &st) == 0 && S_ISFIFO(st.st_mode);
+ 
++#ifdef S_ISLNK
+     /* a symbolic link is the one thing not to follow */
+     case 'h':
+     case 'L': return lstat(arg, &st) == 0 && S_ISLNK(st.st_mode);
++#endif
+ 
+ #ifdef S_ISSOCK
+     case 'S': return stat(arg, &st) == 0 && S_ISSOCK(st.st_mode);
+@@ -141,8 +143,12 @@ test_unary(const char* op, const char* arg) {
+     case 'x': return access(arg, X_OK) == 0;
+ 
+     /* set-group-ID / set-user-ID bit */
++#ifdef S_ISGID
+     case 'g': return stat(arg, &st) == 0 && !!(st.st_mode & S_ISGID);
++#endif
++#ifdef S_ISUID
+     case 'u': return stat(arg, &st) == 0 && !!(st.st_mode & S_ISUID);
++#endif
+ 
+     /* the fd is a terminal */
+     case 't': {
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 2ac57e73..832c8b08 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -4115,4 +4115,20 @@ assert_match "$X197" "*st=2*" "an incomplete expression is an error (status 2),
+ ## parse `term_size.ws_col` against an incomplete struct winsize, now
+ ## compiles clean).
+ 
++## fixes/200 (src/builtin/builtin_test.c): S_ISGID, S_ISUID and
++## S_ISLNK (test -g/-u/-h/-L) are not defined by mingw's headers, so a
++## mingw cross build failed to compile builtin_test.c at all. Each
++## primary is now guarded by #ifdef on its own macro, falling through
++## to test's normal "unsupported primary" error path (status 2) on a
++## platform that lacks it, the same way the file already handles
++## S_ISSOCK. Per the "Writing a test" exception in CLAUDE.md for a fix
++## that only compiles/runs on a platform this repo isn't being
++## developed on, this is comment-only: verified by compiling
++## src/builtin/builtin_test.c under `cfg-mingw64` (previously "'S_ISGID'
++## undeclared" / "'S_ISUID' undeclared", now compiles clean with no
++## warnings), and by confirming glibc's `tests/*.sh` and `tests/fixed.sh`
++## (this file) still pass/fail exactly as they did before this change
++## (`builtin-rmdir.sh` and this file's own 5 pre-existing failures,
++## same as on `main`).
++
+ summary

@@ -125,9 +125,11 @@ test_unary(const char* op, const char* arg) {
     case 'b': return stat(arg, &st) == 0 && (st.st_mode & S_IFMT) == S_IFBLK;
     case 'p': return stat(arg, &st) == 0 && S_ISFIFO(st.st_mode);
 
+#ifdef S_ISLNK
     /* a symbolic link is the one thing not to follow */
     case 'h':
     case 'L': return lstat(arg, &st) == 0 && S_ISLNK(st.st_mode);
+#endif
 
 #ifdef S_ISSOCK
     case 'S': return stat(arg, &st) == 0 && S_ISSOCK(st.st_mode);
@@ -141,8 +143,12 @@ test_unary(const char* op, const char* arg) {
     case 'x': return access(arg, X_OK) == 0;
 
     /* set-group-ID / set-user-ID bit */
+#ifdef S_ISGID
     case 'g': return stat(arg, &st) == 0 && !!(st.st_mode & S_ISGID);
+#endif
+#ifdef S_ISUID
     case 'u': return stat(arg, &st) == 0 && !!(st.st_mode & S_ISUID);
+#endif
 
     /* the fd is a terminal */
     case 't': {

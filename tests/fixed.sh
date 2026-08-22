@@ -4115,4 +4115,20 @@ assert_match "$X197" "*st=2*" "an incomplete expression is an error (status 2), 
 ## parse `term_size.ws_col` against an incomplete struct winsize, now
 ## compiles clean).
 
+## fixes/200 (src/builtin/builtin_test.c): S_ISGID, S_ISUID and
+## S_ISLNK (test -g/-u/-h/-L) are not defined by mingw's headers, so a
+## mingw cross build failed to compile builtin_test.c at all. Each
+## primary is now guarded by #ifdef on its own macro, falling through
+## to test's normal "unsupported primary" error path (status 2) on a
+## platform that lacks it, the same way the file already handles
+## S_ISSOCK. Per the "Writing a test" exception in CLAUDE.md for a fix
+## that only compiles/runs on a platform this repo isn't being
+## developed on, this is comment-only: verified by compiling
+## src/builtin/builtin_test.c under `cfg-mingw64` (previously "'S_ISGID'
+## undeclared" / "'S_ISUID' undeclared", now compiles clean with no
+## warnings), and by confirming glibc's `tests/*.sh` and `tests/fixed.sh`
+## (this file) still pass/fail exactly as they did before this change
+## (`builtin-rmdir.sh` and this file's own 5 pre-existing failures,
+## same as on `main`).
+
 summary

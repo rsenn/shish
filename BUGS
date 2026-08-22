@@ -538,20 +538,19 @@
   shish -c help | head -3
   ```
 
-- mingw-test-builtin-missing-s-isgid-isuid: `builtin_test.c` uses
-  `S_ISGID`/`S_ISUID`/`S_ISLNK` (`test -g`/`-u`/`-L`), which mingw's
-  headers do not define, so a mingw cross build fails to compile
-  `builtin_test.c` (found while fixing
-  `winsize-probe-misses-termios-breaks-diet-build`, which was the
-  older blocker on the same target). Needs either mingw-specific
-  fallback definitions or guarding those `test` operators out on
-  `WINDOWS_NATIVE`.
+- mingw-builtin-times-missing-sys-times-h: `builtin_times.c` includes
+  `<sys/times.h>` unconditionally, which mingw does not have, so a
+  mingw cross build fails to compile it (found immediately after
+  fixing `mingw-test-builtin-missing-s-isgid-isuid`, the previous
+  blocker on the same target -- `builtin_test.c` now compiles clean).
+  Needs a `WINDOWS_NATIVE` alternative to `times()`/`struct tms`, or
+  the `times` builtin gated out of mingw builds entirely.
 
   **Repro:**
   ```sh
   . ./cfg.sh && cfg-mingw64 -DDO_TESTS=OFF
   cmake --build build/x86_64-w64-mingw32
-  # error: 'S_ISGID' undeclared (also S_ISUID; S_ISLNK is only a warning)
+  # fatal error: sys/times.h: No such file or directory
   ```
 
 - no-tree-print-option-is-a-noop: `-DNO_TREE_PRINT=ON` changes nothing.
