@@ -1,0 +1,112 @@
+<section class="hero">
+  <h1>shish</h1>
+  <p class="tagline">A small POSIX-ish shell in C. One file, no <code>stdio</code>,
+     no dialect of its own — and it compiles to WebAssembly.</p>
+  <div class="cta">
+    <a class="btn primary" href="getting-started.html">Get started</a>
+    <a class="btn" href="play.html">Run it in your browser</a>
+    <a class="btn ghost" href="{{GITHUB}}" target="_blank" rel="noopener">GitHub</a>
+  </div>
+  <ul class="badges">
+    <li><b>185 KB</b> stripped</li>
+    <li><b>184 KB</b> of WebAssembly</li>
+    <li><b>26 k</b> lines of C</li>
+    <li><b>0</b> runtime dependencies</li>
+  </ul>
+</section>
+
+<section class="pitch">
+  <h2>Three places a 185 KB shell changes the maths</h2>
+  <div class="cards">
+    <article class="card">
+      <h3>Containers</h3>
+      <p>A distroless image with a shell in it usually means a libc, a loader
+         and a pile of coreutils binaries, just so the entrypoint can run
+         <code>mkdir -p</code> and a <code>for</code> loop.</p>
+      <p>shish has <code>cat</code>, <code>rm</code>, <code>mkdir</code>,
+         <code>mktemp</code>, <code>ln</code>, <code>chmod</code>,
+         <code>uname</code> and friends compiled in. The entrypoint runs with
+         <code>PATH=</code> empty and nothing else in the image.</p>
+      <a class="more" href="docs/containers.html">Containers →</a>
+    </article>
+    <article class="card">
+      <h3>Agent sandboxes</h3>
+      <p>An AI harness runs thousands of shell commands inside a boundary
+         somebody has to review. bash is 1.4 MB, a startup-file search path,
+         a history file and <code>$BASH_ENV</code>.</p>
+      <p>shish reads no startup file of its own, writes no history,
+         starts in ~1.3 ms, and <code>-n</code> parses a generated command
+         without running it.</p>
+      <a class="more" href="docs/agents.html">Agent sandboxes →</a>
+    </article>
+    <article class="card">
+      <h3>WebAssembly</h3>
+      <p>184 KB of <code>.wasm</code>: a real shell in a browser tab, a
+         worker, or a WASI runtime — with no process and no container
+         underneath it.</p>
+      <p>Subshells and command substitution are in-process, so
+         <code>$(...)</code> and <code>( ... )</code> work even where
+         <code>fork()</code> does not exist.</p>
+      <a class="more" href="play.html">Playground →</a>
+    </article>
+  </div>
+</section>
+
+<section class="demo">
+  <h2>A shell that does not need a <code>/bin</code></h2>
+  <pre class="sample"><code><span class="t-comment">$</span> shish -c <span class="t-string">'PATH=; mkdir -p a/b; echo hi &gt; a/b/f; cat a/b/f; rm -r a'</span>
+hi</code></pre>
+  <p>Every utility in that line is inside the binary. Nothing is looked up,
+     so nothing can be planted on a <code>PATH</code> — see
+     <a href="docs/builtins.html">Builtins</a> for the full set and how to
+     choose it at compile time.</p>
+
+  <table class="sizes">
+    <thead><tr><th>shell</th><th>size</th><th>needs coreutils</th></tr></thead>
+    <tbody>
+      <tr class="me"><td>shish</td><td>185 KB</td><td>no (builtins)</td></tr>
+      <tr><td>dash</td><td>126 KB</td><td>yes</td></tr>
+      <tr><td>bash</td><td>1.4 MB</td><td>yes</td></tr>
+      <tr><td>busybox (sh + ~400 applets)</td><td>2.0 MB</td><td>no</td></tr>
+    </tbody>
+  </table>
+  <p class="fineprint">Stripped x86-64 binaries on the same machine, dynamically
+     linked. shish is ~1.15 MB static with every builtin compiled in.</p>
+</section>
+
+<section class="promise">
+  <h2>No dialect of its own</h2>
+  <p>shish will never introduce a language construct that is not already in
+     POSIX or in another shell. Everything it accepts beyond the standard —
+     <code>local</code>, <code>source</code>, brace expansion, history
+     expansion — is spelled the way bash, ksh or dash already spells it, and
+     is an option rather than the default.</p>
+  <p><b>A script written for shish keeps running under <code>sh</code>.</b>
+     That is the whole point: the small shell is a deployment choice, not a
+     language you have to learn or a lock-in you have to migrate off.</p>
+</section>
+
+<section class="start">
+  <h2>Build it</h2>
+  <pre class="sample"><code><span class="t-comment">$</span> git clone {{GITHUB}}.git &amp;&amp; cd shish
+<span class="t-comment">$</span> . ./cfg.sh <span class="t-comment"># the cfg-* helpers</span>
+<span class="t-comment">$</span> cfg &amp;&amp; cmake --build build/x86_64-linux-gnu -j</code></pre>
+  <p>Cross-build presets for musl, dietlibc, mingw32/64, MSYS, aarch64,
+     Android, Termux, Emscripten and WASI all come from the same tree —
+     see <a href="docs/building.html">Building</a>.</p>
+</section>
+
+<section class="status">
+  <h2>Status: alpha, and honest about it</h2>
+  <p>shish runs the shell language — pipelines, redirections, functions,
+     <code>case</code>, loops, parameter expansion, arithmetic, job control,
+     traps — and passes <b>5270</b> cases of yash's POSIX conformance suite.
+     It also still fails <b>822</b>, mostly in signal disposition,
+     <code>alias</code> and <code>read</code>.</p>
+  <p>It is <b>not</b> a drop-in <code>/bin/sh</code> yet: do not point
+     <code>init</code> at it. Every known defect has a repro in
+     <a href="{{GITHUB}}/blob/main/BUGS">BUGS</a>, the work plan is in
+     <a href="{{GITHUB}}/blob/main/TODO.md">TODO.md</a>, and every fix ships
+     with a regression test. See <a href="docs/conformance.html">Conformance</a>
+     for the numbers behind that.</p>
+</section>

@@ -1,0 +1,97 @@
+<section class="playhead">
+  <h1>Playground</h1>
+  <p>This is shish itself, compiled to WebAssembly (<b>188 KB</b>), running in
+     your browser. Nothing is sent anywhere — the shell, its in-memory
+     filesystem and your commands never leave the tab.</p>
+</section>
+
+<div class="playgrid">
+  <div class="playcol">
+    <label for="script">script</label>
+    <textarea id="script" spellcheck="false" autocapitalize="off" autocorrect="off">for f in one two three; do
+  echo "hello $f"
+done
+
+mkdir -p /work
+echo "written in the browser" > /work/note.txt
+cat /work/note.txt
+
+echo "2 + 3 * 4 = $((2 + 3 * 4))"
+uname -s</textarea>
+    <div class="playbar">
+      <button id="run" class="btn primary" disabled>loading shish.wasm…</button>
+      <span class="examples">
+        try:
+        <a href="#" data-example="loops">loops</a>
+        <a href="#" data-example="files">files</a>
+        <a href="#" data-example="funcs">functions</a>
+        <a href="#" data-example="expand">expansion</a>
+      </span>
+    </div>
+  </div>
+  <div class="playcol">
+    <label for="output">output</label>
+    <pre id="output" class="term"></pre>
+    <p class="fineprint">Each run is one <code>shish -c &lt;script&gt;</code>. The
+       filesystem persists between runs on this page; reloading resets it.
+       There are no processes in a browser, so pipelines between two external
+       commands and background jobs cannot work — everything that runs
+       in-process does. See <a href="docs/wasm.html">WebAssembly</a>.</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  var out = document.getElementById('output');
+  var btn = document.getElementById('run');
+  var box = document.getElementById('script');
+
+  var EXAMPLES = {
+    loops: 'i=0\nwhile [ $i -lt 5 ]; do\n  echo "i=$i"\n  i=$((i + 1))\ndone\n\nfor x in a b c; do\n  case $x in\n    a) echo "$x: first";;\n    *) echo "$x: rest";;\n  esac\ndone',
+    files: 'mkdir -p /demo/sub\nfor n in 1 2 3; do\n  echo "line $n" > /demo/sub/file$n.txt\ndone\ncat /demo/sub/file2.txt\nfor f in /demo/sub/*.txt; do\n  echo "$(basename "$f"): $(cat "$f")"\ndone\nrm -r /demo\necho gone',
+    funcs: 'greet() {\n  echo "hello, ${1:-world}"\n}\n\ngreet\ngreet shish\n\ncount() {\n  n=$1\n  while [ "$n" -gt 0 ]; do\n    printf "%s " "$n"\n    n=$((n - 1))\n  done\n  echo liftoff\n}\ncount 5',
+    expand: 'path=/usr/local/lib/libshish.a\necho "dir:  ${path%/*}"\necho "file: ${path##*/}"\necho "stem: ${path##*/}" "->" "$(basename "$path" .a)"\n\nunset nope\necho "default: ${nope:-fallback}"\nset -- alpha beta gamma\necho "args: $# -> $*"\nshift\necho "after shift: $*"',
+  };
+
+  document.querySelectorAll('[data-example]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      box.value = EXAMPLES[a.dataset.example];
+    });
+  });
+
+  function append(text) {
+    out.textContent += text + '\n';
+    out.scrollTop = out.scrollHeight;
+  }
+
+  /* read by assets/shish.js as it loads */
+  window.Module = {
+    noInitialRun: true,
+    print: append,
+    printErr: append,
+    locateFile: function (p) { return 'assets/' + p; },
+    onRuntimeInitialized: function () {
+      btn.disabled = false;
+      btn.textContent = 'run';
+    },
+  };
+
+  btn.addEventListener('click', function () {
+    out.textContent = '';
+    var t0 = performance.now();
+    var status = 0;
+    try {
+      Module.callMain(['-c', box.value]);
+    } catch (e) {
+      /* exit() unwinds the wasm stack by throwing; that is not an error */
+      if (e && e.name === 'ExitStatus') status = e.status;
+      else { append('[js error] ' + e); return; }
+    }
+    var ms = Math.round((performance.now() - t0) * 10) / 10;
+    out.insertAdjacentHTML('beforeend',
+      '<span class="exit' + (status ? ' bad' : '') + '">exit ' + status + ' · ' + ms + ' ms</span>');
+  });
+})();
+</script>
+<script src="assets/shish.js"></script>

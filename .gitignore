@@ -8,3 +8,6 @@ tests/posix/tmp.*/
 tests/yash/*.trs
 tests/yash/*.trs.stderr
 tests/yash/tmp.*/
+
+# generated site (tools/site/build.js); published to the gh-pages branch
+/docs/
