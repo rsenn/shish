@@ -41,7 +41,6 @@ cfg() {
 
   case "$STATIC:$TYPE" in
     YES:*|yes:*|y:*|1:*|ON:*|on:* | *:*[Ss]tatic*) set -- "$@" \
-      -DBUILD_SHARED_LIBS=OFF \
       -DENABLE_PIC=OFF ;;
   esac
 
@@ -63,7 +62,6 @@ cfg() {
     ${VERBOSE:+-DCMAKE_VERBOSE_MAKEFILE=${VERBOSE:-OFF}} \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
     -DCMAKE_BUILD_TYPE="${TYPE:-Debug}" \
-    -DBUILD_SHARED_LIBS=ON \
     ${CC:+-DCMAKE_C_COMPILER="$CC"} \
     ${CXX:+-DCMAKE_CXX_COMPILER="$CXX"} \
     ${PKG_CONFIG:+-DPKG_CONFIG_EXECUTABLE="$PKG_CONFIG"} \
@@ -126,8 +124,7 @@ cfg-diet() {
   : ${prefix=/opt/diet}
   : ${libdir=/opt/diet/lib-${host%%-*}}
   : ${bindir=/opt/diet/bin-${host%%-*}}
-
-  : ${CC="diet-gcc"}
+  : ${CC=gcc}
 
   export CC
 
@@ -140,20 +137,14 @@ cfg-diet() {
   : ${PKG_CONFIG_PATH="$libdir/pkgconfig"}; export PKG_CONFIG_PATH
   
   : ${builddir=build/${host%-*}-diet}
-  prefix=/opt/diet
+  : ${prefix=/opt/diet}
 
   export builddir prefix
   cfg \
     -DCMAKE_INSTALL_PREFIX="$prefix" \
-    -DBUILD_SSL=OFF \
-    -DBUILD_SHARED_LIBS=OFF \
     -DENABLE_SHARED=OFF \
-    -DENABLE_STATIC=ON \
-    -DSHARED_LIBS=OFF \
-    -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_FIND_ROOT_PATH="$prefix" \
     -DCMAKE_SYSTEM_LIBRARY_PATH="$prefix/lib-${host%%-*}" \
-    -D{CMAKE_INSTALL_LIBDIR=,INSTALL_LIB_DIR=$prefix/}"lib-${host%%-*}" \
       ${launcher:+-DCMAKE_C_COMPILER_LAUNCHER="$launcher"} \
       ${launcher:+-DCMAKE_C_LINKER_LAUNCHER="$launcher"} \
   -DPKG_CONFIG_EXECUTABLE="$PKG_CONFIG" \
@@ -165,12 +156,12 @@ cfg-diet64() {
   host=${build%%-*}-linux-diet
   host=x86_64-${host#*-}
 
-  export prefix=/opt/diet
-
-  export PKG_CONFIG_PATH=/opt/diet/lib-x86_64/pkgconfig
-
+  PKG_CONFIG_PATH=/opt/diet/lib-x86_64/pkgconfig
+  launcher="diet"
   : ${builddir=build/$host}
-  CC="diet-gcc" \
+  
+  export CFLAGS PKG_CONFIG_PATH launcher builddir
+
   cfg-diet \
     -DCMAKE_SYSTEM_LIBRARY_PATH=/opt/diet/lib-x86_64 \
   "$@")
@@ -180,23 +171,20 @@ cfg-diet32() {
  (build=$(gcc -dumpmachine | sed 's|-pc-|-|g')
   host=${build%%-*}-linux-diet
   host=i686-${host#*-}
-  
-  if type diet32-clang 2>/dev/null >/dev/null; then
-    CC="diet32-clang"
-    export CC
-  elif type diet32-gcc 2>/dev/null >/dev/null; then
-    CC="diet32-gcc"
-    export CC
+ 
+  if type ${host%-diet}-gnu-gcc >/dev/null; then
+    : ${CC=${host%-diet}-gnu-gcc}
   else
-    : ${CC="gcc"}
-    launcher="/usr/lib/i386-linux-gnu/diet/bin/diet"
-    : ${CFLAGS="-m32"}
-    export CC launcher CFLAGS
+    CFLAGS="${CFLAGS:+$CFLAGS }-m32"
   fi
-  
-  export PKG_CONFIG_PATH=/opt/diet/lib-i386/pkgconfig
+
+  PKG_CONFIG_PATH=/opt/diet/lib-i386/pkgconfig
+  launcher="diet"
 
   : ${builddir=build/$host}
+
+  export CC CFLAGS PKG_CONFIG_PATH launcher builddir
+
   cfg-diet \
     -DCMAKE_SYSTEM_LIBRARY_PATH=/opt/diet/lib-i386 \
     "$@")
@@ -240,7 +228,6 @@ cfg-emscripten() {
     -DCMAKE_EXE_LINKER_FLAGS="-s WASM=1 -sEXPORTED_RUNTIME_METHODS=['callMain'] -sINVOKE_RUN=0" \
     -DCMAKE_EXECUTABLE_SUFFIX=".html" \
     -DENABLE_SHARED=OFF \
-    -DBUILD_SHARED_LIBS=OFF \
     -DENABLE_PIC=FALSE \
     "$@")
 }
@@ -273,9 +260,6 @@ cfg-musl() {
   PKG_CONFIG=musl-pkg-config \
   cfg \
     -DENABLE_SHARED=OFF \
-    -DENABLE_STATIC=ON \
-    -DSHARED_LIBS=OFF \
-    -DBUILD_SHARED_LIBS=OFF \
     "$@")
 }
 
@@ -287,9 +271,8 @@ cfg-musl64() {
 
   : ${builddir=build/$host}
   
-  CFLAGS="-m64" \
+  CC="musl-gcc" \
   cfg-musl \
-  -DCMAKE_C_COMPILER="musl-gcc" \
   "$@")
 }
 
@@ -299,8 +282,9 @@ cfg-musl32() {
 
   : ${builddir=build/$host}
 
+  CC="musl-gcc" \
+  CFLAGS="${CFLAGS:+$CFLAGS }-m32" \
   cfg-musl \
-  -DCMAKE_C_COMPILER="i386-linux-musl-gcc" \
   "$@")
 }
 
@@ -403,7 +387,6 @@ cfg-emscripten() {
     -DCMAKE_EXE_LINKER_FLAGS="-s WASM=1 -sEXPORTED_RUNTIME_METHODS=['callMain'] -sINVOKE_RUN=0" \
     -DCMAKE_EXECUTABLE_SUFFIX=".html" \
     -DENABLE_SHARED=OFF \
-    -DBUILD_SHARED_LIBS=OFF \
     -DENABLE_PIC=FALSE \
     "$@")
 }
@@ -418,7 +401,6 @@ cfg-wasm() {
     -DCMAKE_SYSTEM_NAME=Generic \
     -DCMAKE_SYSTEM_PROCESSOR=wasm32 \
     -DENABLE_SHARED=OFF \
-    -DBUILD_SHARED_LIBS=OFF \
     -DENABLE_PIC=FALSE \
     "$@")
 }
@@ -437,7 +419,6 @@ cfg-wasi() {
     -DCMAKE_SYSTEM_PROCESSOR=wasm32 \
     -DCMAKE_SYSROOT="${WASI_SDK_PREFIX}/share/wasi-sysroot" \
     -DENABLE_SHARED=OFF \
-    -DBUILD_SHARED_LIBS=OFF \
     -DENABLE_PIC=FALSE \
     "$@")
 }
