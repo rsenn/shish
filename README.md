@@ -1,14 +1,14 @@
 # shish
 
 A small POSIX-ish shell in C. One static binary, no `stdio`, no `printf` —
-around 185 KB stripped, and it compiles to 184 KB of WebAssembly that runs
+around 139 KB stripped, and it compiles to 184 KB of WebAssembly that runs
 in a browser tab.
 
 ```sh
 shish -c 'for f in *.c; do echo "${f%.c}"; done'
 ```
 
-- **Small.** 185 KB stripped on x86-64 (dash 126 KB, bash 1.4 MB,
+- **Small.** 139 KB stripped on x86-64 (dash 126 KB, bash 1.4 MB,
   busybox 2.0 MB), built against an in-tree copy of
   Felix von Leitner's libowfat (`lib/`) instead of the C library's
   formatted I/O.

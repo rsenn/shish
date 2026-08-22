@@ -45,7 +45,7 @@ exec /app/server
 - **`PATH=` is a real defence.** If a script never needs an external
   program, an empty `PATH` costs nothing and removes a whole class of
   binary-planting and PATH-injection tricks.
-- **Smaller layers, faster pulls.** 185 KB dynamic, ~1.15 MB static with
+- **Smaller layers, faster pulls.** 139 KB dynamic, ~1.05 MB static with
   every builtin compiled in. bash is 1.4 MB before its libc, busybox is
   2.0 MB.
 - **Reproducible.** No startup file is read unless you point `$ENV` at

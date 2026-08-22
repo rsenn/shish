@@ -52,10 +52,10 @@ With autotools, the same choice is
 
 ## What a builtin costs
 
-Not much. A default dynamic build is 185 KB stripped (168 KB of text);
-the same build with `-DENABLE_ALL_BUILTINS=ON` is 210 KB (193 KB of
-text) — 26 KB for the whole extra set. Static against glibc, with
-everything on, it is 1.15 MB.
+Not much. A default dynamic build is 139 KB stripped (132 KB of text);
+the same build with `-DENABLE_ALL_BUILTINS=ON` is 164 KB (154 KB of
+text) — 25 KB for the whole extra set. Static against glibc, with
+everything on, it is 1.05 MB.
 
 ## Precedence
 

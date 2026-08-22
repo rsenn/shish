@@ -177,7 +177,7 @@ function shell({ title, root, body, cls, head }) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escAttr(title)}</title>
-<meta name="description" content="shish — ${escAttr(TAGLINE)}. 185 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
+<meta name="description" content="shish — ${escAttr(TAGLINE)}. 139 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
 <link rel="stylesheet" href="${root}assets/style.css">
 <link rel="icon" href="${root}assets/favicon.svg" type="image/svg+xml">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>

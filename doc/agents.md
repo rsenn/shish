@@ -7,7 +7,7 @@ part of the security boundary and part of the reproducibility story, and
 history, aliases, a job-control layer, `$BASH_ENV`, and a language that
 nobody can fully enumerate.
 
-shish is 185 KB of C that you can read.
+shish is 139 KB of C that you can read.
 
 ## What matters for a harness
 
