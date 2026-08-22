@@ -1,0 +1,89 @@
+diff --git a/cmake/Builtins.cmake b/cmake/Builtins.cmake
+index 773b6fd2..ae23c1c6 100644
+--- a/cmake/Builtins.cmake
++++ b/cmake/Builtins.cmake
+@@ -127,11 +127,24 @@ if(BUILD_DEBUG OR ENABLE_DUMP)
+   set(WANT_DUMP ON)
+ endif(BUILD_DEBUG OR ENABLE_DUMP)
+ 
+-# Decide each builtin once. -DENABLE_<NAME>=ON/OFF on the command line
+-# wins over both -DENABLE_ALL_BUILTINS and the default set, so
+-# "everything except this one" is expressible:
++# -DENABLE_ALL_BUILTINS=ON means all of them, so start from a clean
++# slate: drop every cached BUILTIN_<NAME>, including stale ones for
++# builtins no longer in ALL_BUILTINS, before the loop writes the new
++# answers.
++if(ENABLE_ALL_BUILTINS)
++  get_cmake_property(CACHED_VARIABLES CACHE_VARIABLES)
++  foreach(VAR ${CACHED_VARIABLES})
++    if(VAR MATCHES "^BUILTIN_")
++      unset(${VAR} CACHE)
++    endif(VAR MATCHES "^BUILTIN_")
++  endforeach(VAR)
++endif(ENABLE_ALL_BUILTINS)
++
++# Decide each builtin once, most specific answer first:
+ #
+-#   -DENABLE_ALL_BUILTINS=ON -DENABLE_HOSTNAME=OFF
++#   -DENABLE_ALL_BUILTINS=ON   every builtin, no exceptions
++#   -DENABLE_<NAME>=ON/OFF     that one builtin
++#   otherwise                  DEFAULT_BUILTINS
+ #
+ # The test is "DEFINED ENABLE_${NAME}", not "DEFINED ${ENABLE_${NAME}}"
+ # -- the latter asks whether the *value* (ON) names a variable, which it
+@@ -139,10 +152,10 @@ endif(BUILD_DEBUG OR ENABLE_DUMP)
+ foreach(BUILTIN ${ALL_BUILTINS})
+   string(TOUPPER ${BUILTIN} NAME)
+ 
+-  if(DEFINED ENABLE_${NAME})
+-    set(WANT_BUILTIN ${ENABLE_${NAME}})
+-  elseif(ENABLE_ALL_BUILTINS)
++  if(ENABLE_ALL_BUILTINS)
+     set(WANT_BUILTIN ON)
++  elseif(DEFINED ENABLE_${NAME})
++    set(WANT_BUILTIN ${ENABLE_${NAME}})
+   else()
+     isin(WANT_BUILTIN ${BUILTIN} ${DEFAULT_BUILTINS})
+   endif()
+@@ -160,9 +173,18 @@ foreach(BUILTIN ${ALL_BUILTINS})
+       CACHE BOOL "Enable ${BUILTIN} builtin" FORCE)
+ endforeach(BUILTIN ${ALL_BUILTINS})
+ 
++# BUILTIN_<NAME> is the state; ENABLE_* is only ever a request made on
++# one command line. -D puts them in the cache, so drop them again --
++# otherwise a single -DENABLE_PRINTF=OFF sticks to the build directory
++# and no later configure can undo it.
+ unset(ENABLE_ALL_BUILTINS)
+ unset(ENABLE_ALL_BUILTINS CACHE)
+ 
++foreach(BUILTIN ${ALL_BUILTINS})
++  string(TOUPPER ${BUILTIN} NAME)
++  unset(ENABLE_${NAME} CACHE)
++endforeach(BUILTIN ${ALL_BUILTINS})
++
+ # "dump" only exists to inspect shell state while debugging, so a debug
+ # build gets it whether or not it was named in the builtin list.
+ # ENABLE_DUMP is also set by cmake/Debug.cmake for CMAKE_BUILD_TYPE=Debug,
+@@ -201,15 +223,16 @@ foreach(BUILTIN ${BUILTINS_ENABLED})
+   list(APPEND SOURCES src/builtin/builtin_${BUILTIN}.c)
+ endforeach(BUILTIN ${BUILTINS_ENABLED})
+ 
++# NAME has to come from ${DISABLED}: without it the loop reuses whatever
++# NAME the previous foreach left behind, so a builtin that was enabled in
++# an earlier configure of this build directory kept its cached
++# BUILD_BUILTIN_<NAME>=1 and stayed in builtin_config.h.
+ foreach(DISABLED ${BUILTINS_DISABLED})
+-  set(SRC "src/builtin/builtin_${DISABLED}.c")
+-  list(LENGTH SOURCES N)
+-  list(REMOVE_ITEM SOURCES "${SRC}")
+-  list(LENGTH SOURCES N2)
+-  unset(BUILTIN_${NAME})
++  string(TOUPPER "${DISABLED}" NAME)
++  list(REMOVE_ITEM SOURCES "src/builtin/builtin_${DISABLED}.c")
+   set(BUILD_BUILTIN_${NAME}
+       "0"
+-      CACHE INTERNAL "Build the ${ENABLED} builtin")
++      CACHE INTERNAL "Build the ${DISABLED} builtin")
+ endforeach(DISABLED ${BUILTINS_DISABLED})
+ 
+ foreach(ENABLED ${BUILTINS_ENABLED})
