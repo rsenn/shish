@@ -4150,4 +4150,27 @@ assert_match "$X197" "*st=2*" "an incomplete expression is an error (status 2), 
 ## error: sys/times.h: No such file or directory", now compiles clean
 ## with no warnings).
 
+## fixes/202 (cmake/libowfat.cmake): lib/mmap/mmap_read.c,
+## mmap_read_fd.c, mmap_unmap.c, lib/buffer/buffer_mmapread.c,
+## buffer_mmapread_fd.c, buffer_munmap.c and lib/stralloc/mmap_filename.c
+## already had working WINDOWS_NATIVE/_WIN32 implementations
+## (CreateFileMapping/MapViewOfFile/UnmapViewOfFile), but
+## libowfat.cmake filtered every file matching "mmap|munmap" out of
+## the build whenever HAVE_MMAP_SUPPORT was false -- a POSIX-only
+## probe (<sys/mman.h> + mmap() + munmap()) that is always false on
+## mingw, so those seven files' own Windows code was never compiled
+## in the first place. Not a porting gap, a build-system bug: added
+## "AND NOT (WIN32 OR WIN64 OR MINGW OR WINDOWS)" to the filter
+## condition, the same platform test cmake/Checks.cmake already uses
+## for socket-library detection. Per the "Writing a test" exception in
+## CLAUDE.md for a fix that only compiles/runs on a platform this repo
+## isn't being developed on, this is comment-only: verified by
+## reconfiguring and rebuilding under cfg-mingw64 (previously
+## "undefined reference to `mmap_read'"/`mmap_unmap'`/
+## `buffer_mmapread'`/`buffer_munmap'", now all seven files compile
+## clean and those four symbols are gone from the link error list),
+## and by confirming tests/*.sh and tests/fixed.sh on glibc are
+## unchanged (HAVE_MMAP_SUPPORT is true there, so the added condition
+## is never reached).
+
 summary

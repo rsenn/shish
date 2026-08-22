@@ -538,23 +538,66 @@
   shish -c help | head -3
   ```
 
-- mingw-link-missing-posix-shims: with `builtin_test.c` and
-  `builtin_times.c` fixed, a mingw cross build now compiles fully but
-  fails to *link*: `getppid` (`sh_init.c`), `killpg`/`kill`
-  (`builtin_jobs.c`, `builtin_kill.c`), `tcsetpgrp` (`job_foreground.c`),
-  `mmap_read`/`mmap_unmap`/`buffer_mmapread`/`buffer_munmap`
-  (`history_init.c`, `path_gethome.c`, `buffer_prefetch.c`), and
-  `sig_action` (`lib/sig/sig_stack.c`) are all undefined references.
-  `src/fork.c` already carries a `WINDOWS_NATIVE` process-spawning
-  shim, but job control, mmap-backed history/buffer I/O, and the
-  `lib/sig/` layer have none -- this is a substantially bigger job
-  than any single missing header, and is not attempted here.
+- mingw-missing-getppid: `src/sh/sh_init.c:46` calls `getppid()`
+  unconditionally to seed `$PPID`, but mingw has no such function, so
+  a mingw cross build fails to link. See `mingw-porting.md` section 2
+  for the proposed `CreateToolhelp32Snapshot`-based shim.
 
   **Repro:**
   ```sh
   . ./cfg.sh && cfg-mingw64 -DDO_TESTS=OFF
   cmake --build build/x86_64-w64-mingw32
-  # undefined reference to `getppid' (and the others listed above)
+  # undefined reference to `getppid'
+  ```
+
+- mingw-missing-sig-action: `lib/sig/sig_action.c`'s entire body is
+  `#ifdef SA_RESTART`, and mingw's `<signal.h>` defines no
+  `sigaction`/mask API at all (7 signal names, nothing else), so the
+  file compiles to nothing and `sig_action` is undefined at link time.
+  It underlies all of `lib/sig/` (`sig_stack.c`, `sig_push.c`,
+  `sig_catch.c`) plus direct `struct sigaction` use in `sh_main.c` and
+  `builtin_trap.c` -- shish's whole trap/signal-disposition
+  architecture. See `mingw-porting.md` section 3 for the proposed
+  `signal()`-based shim and what it has to give up (masking,
+  `SA_RESTART`, everything outside the 7-signal set).
+
+  **Repro:**
+  ```sh
+  . ./cfg.sh && cfg-mingw64 -DDO_TESTS=OFF
+  cmake --build build/x86_64-w64-mingw32
+  # undefined reference to `sig_action'
+  ```
+
+- mingw-missing-kill-killpg: `builtin_jobs.c:73` and
+  `builtin_kill.c:47,51,155` call `kill()`/`killpg()`, neither of
+  which mingw provides, and neither has a general Windows equivalent
+  (`TerminateProcess` only approximates `SIGKILL`, and only via a
+  process handle, not a pid; `GenerateConsoleCtrlEvent` only
+  approximates `SIGINT` to a console process group created with
+  `CREATE_NEW_PROCESS_GROUP`). See `mingw-porting.md` section 4 for
+  the per-signal decision table this needs before any shim is written.
+
+  **Repro:**
+  ```sh
+  . ./cfg.sh && cfg-mingw64 -DDO_TESTS=OFF
+  cmake --build build/x86_64-w64-mingw32
+  # undefined reference to `killpg' (and `kill')
+  ```
+
+- mingw-missing-tcsetpgrp: `job_foreground.c:13` calls `tcsetpgrp()`
+  to hand the controlling terminal to a job's process group; mingw has
+  it and its siblings `tcgetpgrp()` (`job_init.c:43`) and `setpgid()`
+  (`job_fork.c:126,133,187`, `job_wait.c:196`) nowhere, and Windows'
+  console model has no controlling-terminal/foreground-process-group
+  concept to map any of them onto. See `mingw-porting.md` section 5:
+  the fix is compiling interactive job control out under
+  `WINDOWS_NATIVE`, not shimming.
+
+  **Repro:**
+  ```sh
+  . ./cfg.sh && cfg-mingw64 -DDO_TESTS=OFF
+  cmake --build build/x86_64-w64-mingw32
+  # undefined reference to `tcsetpgrp'
   ```
 
 - no-tree-print-option-is-a-noop: `-DNO_TREE_PRINT=ON` changes nothing.
