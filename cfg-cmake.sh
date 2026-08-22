@@ -157,8 +157,13 @@ cfg-diet64() {
   host=x86_64-${host#*-}
 
   PKG_CONFIG_PATH=/opt/diet/lib-x86_64/pkgconfig
-  launcher="diet"
   : ${builddir=build/$host}
+
+  if test -e /usr/lib/x86_64-linux-gnu/diet/bin/diet; then
+    launcher=/usr/lib/x86_64-linux-gnu/diet/bin/diet
+  else
+    launcher=diet
+  fi
   
   export CFLAGS PKG_CONFIG_PATH launcher builddir
 
@@ -179,7 +184,12 @@ cfg-diet32() {
   fi
 
   PKG_CONFIG_PATH=/opt/diet/lib-i386/pkgconfig
-  launcher="diet"
+
+  if test -e /usr/lib/i386-linux-gnu/diet/bin/diet; then
+    launcher=/usr/lib/i386-linux-gnu/diet/bin/diet
+  else
+    launcher=diet
+  fi
 
   : ${builddir=build/$host}
 
