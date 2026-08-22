@@ -28,6 +28,13 @@ fi
 # only tests/posix/ carries the harness itself; tests/yash/ shares it
 harness="$(cd "$(dirname "$0")/posix" && pwd)/run-test.sh"
 
+# the harness symlinks $testee into its own temp dir, so a relative path
+# would dangle once we cd into $test_dir: absolutize it here.
+case $testee in
+  /*) ;;
+  *) [ -e "$testee" ] && testee="$(cd "$(dirname "$testee")" && pwd)/$(basename "$testee")" ;;
+esac
+
 cd "$test_dir" || exit 1
 
 trs="${test_file%.*}.trs"

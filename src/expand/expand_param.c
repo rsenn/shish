@@ -234,6 +234,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       if(!(source->mode & SOURCE_IACTIVE))
         sh_exit(1);
 
+      expand_error = 1;
       n = 0;
       goto fail;
     }
@@ -289,7 +290,15 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
           expand_copysa(param->word, &msg, flags);
         sh_error(param->word ? msg.s : "parameter null or not set");
         stralloc_free(&msg);
-        sh_exit(1);
+
+        /* POSIX 2.8.1: an expansion error ends a non-interactive
+           shell; an interactive one just fails this command. */
+        if(!(source->mode & SOURCE_IACTIVE))
+          sh_exit(1);
+
+        expand_error = 1;
+        n = 0;
+        goto fail;
       }
 
       break;

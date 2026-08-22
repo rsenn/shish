@@ -187,8 +187,11 @@ rm -f "$COUNTFILE"
 ## unconditionally fd_pop()s every parsed redirection regardless of
 ## whether it actually got that far, and fd_close() dereferenced the
 ## still-NULL fd.
+## (run in a subshell: since fixes/196 a variable assignment error ends
+## a non-interactive shell, POSIX 2.8.1, so doing this inline would now
+## take the rest of this file with it.)
 readonly READONLYVAR=original 2>/dev/null
-READONLYVAR=changed 2>/dev/null
+(READONLYVAR=changed 2>/dev/null)
 STATUS=$?
 assert_equal "1" "$STATUS" "assigning to a readonly variable via a redirected command must report failure, not crash"
 assert_equal "original" "$READONLYVAR" "a rejected readonly assignment must not change the variable's value"
@@ -3323,8 +3326,8 @@ set --
 ## trap, unset, ., :, or a syntax error in any of these) encounters
 ## an error in non-interactive mode. Fixed by adding sh_exit() calls
 ## in exec_command() and eval_simple_command() when cmd->id == H_SBUILTIN.
-OUT155_SHIFT=$( (shift 999 2>/dev/null; echo "reached") 2>&1)
-assert_equal "reached" "$OUT155_SHIFT" "shift error in subshell must not kill parent"
+OUT155_SHIFT=$( (shift 999 2>/dev/null; echo "not reached") 2>&1; echo "parent alive")
+assert_equal "parent alive" "$OUT155_SHIFT" "a special builtin's error ends the subshell it happened in, not the parent"
 
 OUT155_READONLY=$( (readonly 123invalid 2>/dev/null; echo "reached") 2>&1)
 assert_equal "reached" "$OUT155_READONLY" "readonly error in subshell must not kill parent"
@@ -3494,8 +3497,12 @@ SHIFT101_ERR=$( (set -- a b; shift 5) 2>&1 >/dev/null)
 assert_equal "" "$SHIFT101_ERR" "shift with n > \$# must not print anything to stderr"
 (set -- a b; shift 5)
 assert_equal "1" "$?" "shift with n > \$# must still exit with status 1"
-SHIFT101_ARGS=$(set -- a b; shift 5 2>/dev/null; echo "$#:$*")
-assert_equal "2:a b" "$SHIFT101_ARGS" "shift with n > \$# must leave the positional parameters unchanged"
+## "shift 5" with $# = 2 is an operand error, and an operand error in a
+## special builtin ends a non-interactive shell, so nothing running in
+## that same shell afterwards can look at the positional parameters --
+## the silence and the status above are what is left to check here.
+SHIFT101_ARGS=$( (set -- a b; shift 5 2>/dev/null; echo "$#:$*") 2>&1)
+assert_equal "" "$SHIFT101_ARGS" "shift with n > \$# must run nothing further in that shell"
 
 ## fixes/102: getopts diverged from POSIX in several ways:
 ## - $OPTIND was never initialized at shell startup (POSIX: "Whenever
@@ -3883,5 +3890,209 @@ X187DIR=$(mktemp -d)
 assert_equal "b187" "$(cat "$X187DIR/out")" "a subshell that swaps stdout/stderr via persistent redirections must not corrupt fd bookkeeping for what follows (stdout side)"
 assert_equal "a187" "$(cat "$X187DIR/err")" "a subshell that swaps stdout/stderr via persistent redirections must not corrupt fd bookkeeping for what follows (stderr side)"
 rm -rf "$X187DIR"
+
+## fixes/189 (debug-fprintf-left-in-eval_return-and-builtin_source):
+## eval_return() and builtin_source() carried committed
+## fprintf(stderr, "DEBUG ...") calls (plus the <stdio.h> this
+## codebase otherwise avoids), so every function return and every
+## dot-script return wrote four lines of pointer/flag noise to
+## stderr. return-p.tst scored 0/25 purely because of it.
+X189=$(f189() { return 3; }; f189 2>&1)
+assert_equal "" "$X189" "returning from a function must write nothing to stderr"
+X189DIR=$(mktemp -d)
+printf 'return 4\n' > "$X189DIR/s189"
+X189B=$(. "$X189DIR/s189" 2>&1)
+assert_equal "" "$X189B" "returning from a dot-sourced script must write nothing to stderr"
+rm -rf "$X189DIR"
+
+## fixes/190 (trap-empty-arg-does-not-ignore, trap-clear-with-no-trap-
+## kills-shell, trap-hup-silently-skipped, plus a use-after-free found
+## fixing them): POSIX has three dispositions, shish tracked two --
+## "trap '' SIG" (ignore) was handled exactly like "trap - SIG"
+## (default). Clearing a trap that was never set returned 1, which for
+## a *special* builtin exits a non-interactive shell. builtin_trap()'s
+## "if(signum != 1)" skipped SIGHUP outright. And a trap body that
+## uninstalls its own trap ("trap 'echo x; trap - INT' INT") had
+## trap_uninstall() tree_free() the tree eval_tree() was still walking.
+##
+## fixes/191 (trap-not-dispatched-between-commands-on-one-line):
+## trap_run_pending() only ran from sh_loop()/term_read()/job_wait(),
+## i.e. at line and blocking-call boundaries, so a trap never fired
+## between two ";"-separated commands of the same list. eval_tree() and
+## eval_cmdlist() now drain pending traps per node. trap_handler()
+## restores "$?" around a real-signal body (POSIX: the body sees the
+## interrupted command's status, and it is restored afterwards).
+##
+## fixes/192 (signal-killed-child-exit-status): a child killed by a
+## signal reported "$?" as 0 -- WEXITSTATUS() of a status word that
+## never carried one. POSIX/bash report 128 + the signal number.
+##
+## All of these need a real separate shish process (a signal has to be
+## delivered to a shell that is not this one), so they reuse
+## $SHISH_SELF from fixes/122 above.
+if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+  X190A=$("$SHISH_SELF" -c 'trap "" INT; kill -s INT $$; echo ok' 2>&1)
+  assert_equal "ok" "$X190A" "trap '' SIG must ignore the signal, not reset it to the default action"
+
+  X190B=$("$SHISH_SELF" -c 'trap - INT; echo ok' 2>&1)
+  assert_equal "ok" "$X190B" "trap - SIG for a signal with no trap set is a no-op success, not an error that exits the shell"
+
+  X190C=$("$SHISH_SELF" -c 'trap "echo t" HUP; echo ok' 2>&1)
+  assert_equal "ok" "$X190C" "SIGHUP is trappable like every other signal"
+
+  X190D=$("$SHISH_SELF" -c 'trap "echo trapped; trap - TERM" TERM
+kill -s TERM $$
+echo ok' 2>&1)
+  assert_equal "$(printf 'trapped\nok')" "$X190D" "a trap body that uninstalls its own trap must not free the tree it is running from"
+
+  X191=$("$SHISH_SELF" -c 'trap "echo t" TERM; kill -s TERM $$; echo after' 2>&1)
+  assert_equal "$(printf 't\nafter')" "$X191" "a trap fires between two commands on the same line, not only at line boundaries"
+
+  X191B=$("$SHISH_SELF" -c 'trap "false" TERM; kill -s TERM $$; echo $?' 2>&1)
+  assert_equal "0" "$X191B" "a signal trap body's own exit status does not leak into \$? (bash prints 0 here too)"
+
+  X192=$("$SHISH_SELF" -c '"$SHISH_SELF" -c "kill -s INT \$\$"; echo $?' 2>/dev/null)
+  assert_equal "130" "$X192" "a command killed by SIGINT sets \$? to 130 (128 + 2), not 0"
+
+  X192B=$("$SHISH_SELF" -c '"$SHISH_SELF" -c "kill -s TERM \$\$"; echo $?' 2>/dev/null)
+  assert_equal "143" "$X192B" "a command killed by SIGTERM sets \$? to 143 (128 + 15)"
+fi
+
+## fixes/193 (exec-redirection-and-error-broken): fd_dup() only sets up
+## a *pending* dup -- it copies pointers into the source struct and
+## leaves the real dup2() to a later fdtable_dup(). For a persistent
+## ("exec") redirection that is too late: the next redirection in the
+## same list runs fd_new() -> fdtable_newfd() -> fd_reinit() on the
+## very struct the pending dup chases via ->dup, so
+##   exec >&2 2>/dev/null
+## resolved fd 1 against the *new* /dev/null occupant instead of the
+## original fd 2, and "reached" went to the original stdout.
+## redir_dup() now resolves a persistent dup eagerly, via
+## fdtable_dup(FDTABLE_FORCE | FDTABLE_CLOSE) -- but only outside a
+## subshell, since "(...)" does not fork and the real dup2()/close()
+## would outlive it (see TODO.md Goal 4, problem 3).
+if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
+  O193=$(mktemp)
+  E193=$(mktemp)
+  "$SHISH_SELF" <<'X193IN' >"$O193" 2>"$E193"
+exec >&2 2>/dev/null
+echo reached
+./_no_such_command_
+X193IN
+  assert_equal "" "$(cat "$O193")" "exec >&2 2>/dev/null must leave nothing on the original stdout"
+  assert_equal "reached" "$(cat "$E193")" "exec >&2 2>/dev/null sends later output to the stream fd 2 named *before* fd 2 was retargeted"
+  rm -f "$O193" "$E193"
+
+  ## the eager resolution must stay out of a subshell's way: a real
+  ## dup2()/close() there outlives the subshell, and the fd table then
+  ## claims a real fd something else holds -- which showed up as
+  ## "fdtable: redirection cycle detected" from the next external
+  ## command, and as a segfault deeper into a script.
+  X193C=$("$SHISH_SELF" -c '( exec 3>&1 1>&2 2>&3 3>&- ; echo hi ) >/dev/null 2>&1
+/bin/true
+echo after' 2>&1)
+  assert_equal "after" "$X193C" "a persistent redirection inside a subshell must leave the fd table usable for the next external command"
+fi
+
+## fixes/194 (cmdsubst-does-not-scope-traps-or-fd-bookkeeping): POSIX
+## 2.6.3 makes command substitution a subshell environment, and
+## expand_command() does run it in one -- fdstack_push(), vartab_push(),
+## sh_push(), exec_functions_save() -- but it was missing the two
+## process-global lists those calls do not cover: the trap list (so a
+## "trap" inside "$(...)" stayed installed in the calling shell) and
+## the real-kernel-fd bookkeeping fd_state_save()/fd_state_restore()
+## scope for "(...)". eval_subshell() had both already; this is the
+## other in-process subshell (TODO.md Goal 4, problem 2 -- the "some
+## other call site has the same exposure" one).
+X194=$(trap "echo T194" TERM; echo x)
+assert_equal "x" "$X194" "a trap set inside \$(...) still lets the substitution produce its own output"
+X194B=$(trap)
+assert_equal "" "$X194B" "a trap set inside \$(...) must not stay installed in the calling shell"
+
+## fixes/195 (cmake/Builtins.cmake) has no assertion here, deliberately:
+## it is a build-configuration fix, and this file runs *inside* an
+## already-built shish, so it cannot observe which builtins a different
+## configure run would enable. Verified by configuring instead --
+## -DCMAKE_BUILD_TYPE=Debug, -DBUILD_DEBUG=ON, -DENABLE_DUMP=ON and
+## -DENABLE_ALL_BUILTINS=ON each now produce "#define BUILTIN_DUMP 1"
+## in <builddir>/src/builtin_config.h (all four produced 0 before), the
+## default build is byte-identical, and "dump -t" prints the fd table
+## in a build configured with -DDEBUG_FDTABLE=ON.
+
+## fixes/196 (posix-2.8.1-error-semantics): POSIX 2.8.1 lists which
+## failures a non-interactive shell must not survive. shish printed a
+## message (or, for a syntax error inside "eval", nothing at all) and
+## carried on regardless:
+##   - an expansion error ("$x" under "set -u", "${x?}")
+##   - a variable assignment error ("readonly r=1; r=2")
+##   - a redirection error on a special builtin ("shift <_no_such_file_")
+##   - a shell syntax error in the string "eval" was given
+## An interactive shell, and any of these on a plain utility, must
+## still carry on -- the last case below.
+X196A=$( (eval fi; echo "not reached") 2>/dev/null; echo "st=$?")
+assert_equal "st=1" "$X196A" "a syntax error inside eval must end that (non-interactive) shell"
+X196B=$( (eval fi) 2>&1 >/dev/null)
+assert_nomatch "" "$X196B" "a syntax error inside eval must be reported"
+X196C=$(eval 'echo ok'; eval '')
+assert_equal "ok" "$X196C" "eval of a valid list, and of an empty one, are unaffected"
+X196D=$( (set -u; echo "$NOSUCH196"; echo "not reached") 2>/dev/null; echo "st=$?")
+assert_equal "st=1" "$X196D" "an unset variable under set -u must end that shell"
+X196E=$( (echo "${NOSUCH196?nope}"; echo "not reached") 2>/dev/null; echo "st=$?")
+assert_equal "st=1" "$X196E" "a \${x?} expansion error must end that shell"
+X196F=$( (readonly RO196=1; RO196=2; echo "not reached") 2>/dev/null; echo "st=$?")
+assert_equal "st=1" "$X196F" "an assignment to a readonly variable must end that shell"
+X196G=$( (shift <_no_such_file_; echo "not reached") 2>/dev/null; echo "st=$?")
+assert_equal "st=1" "$X196G" "a redirection error on a special builtin must end that shell"
+X196H=$(echo one <_no_such_file_ 2>/dev/null; echo "reached st=$?")
+assert_equal "reached st=1" "$X196H" "the same redirection error on a plain utility must not"
+
+## fixes/196, second half: "exec <file" replaced fdtable[n] -- closing
+## the descriptor the old entry owned -- and only then open()ed the
+## file, so a failure cost the shell that fd for good ("exec
+## <_no_such_file_" left an interactive shell with no stdin at all).
+## The file is opened first now and the descriptor handed over, which
+## also has to keep working when the fd is one "exec" already owns.
+F196A=$(mktemp)
+F196B=$(mktemp)
+exec 4>"$F196A"
+echo first >&4
+exec 4>"$F196B"
+echo second >&4
+exec 4>&-
+assert_equal "first" "$(cat "$F196A")" "exec 4>file writes to that file"
+assert_equal "second" "$(cat "$F196B")" "a second exec on the same fd must retarget it, not lose it"
+rm -f "$F196A" "$F196B"
+
+## fixes/197 (test-binary-and-or-segfault): "test 1 -a 1" segfaulted,
+## and several POSIX forms were read as the wrong thing, because the
+## expression was dispatched on where an operator sat rather than on
+## how many arguments there were. POSIX XCU decides by argument count
+## first (1: non-null string; 2: "!" or a unary primary; 3: binary
+## primary, then "!", then "( x )"; 4: "!", then "( x y )"), and only
+## what that table does not cover is parsed as a "!"/-a/-o/parenthesis
+## grammar -- which is also where the 3- and 4-argument "-a"/"-o"
+## forms POSIX leaves unspecified are handled.
+test 1 -a 1
+assert_equal "0" "$?" "test 1 -a 1 must be true, not a segfault"
+test "" -a 1
+assert_equal "1" "$?" "test with an empty operand on the left of -a is false"
+test 1 -o ""
+assert_equal "0" "$?" "-o is true when either side is"
+test "" -a 1 -o 1
+assert_equal "0" "$?" "-a binds tighter than -o"
+test ! = !
+assert_equal "0" "$?" "3 arguments: a binary primary wins over a leading !"
+test "(" = ")"
+assert_equal "1" "$?" "3 arguments: a binary primary wins over parentheses too"
+test !
+assert_equal "0" "$?" "1 argument: ! is a non-null string, not an operator"
+test ! "" -a ""
+assert_equal "0" "$?" "4 arguments: ! negates the whole 3-argument reading"
+test "(" ! a = a ")"
+assert_equal "1" "$?" "parentheses group an expression"
+test 5 -gt 3 -a 2 -lt 1
+assert_equal "1" "$?" "a false -a operand makes the whole expression false"
+X197=$(test 1 -a 2>&1; echo "st=$?")
+assert_match "$X197" "*st=2*" "an incomplete expression is an error (status 2), not a crash"
 
 summary

@@ -106,6 +106,13 @@ struct narg;
 #include "tree.h"
 
 union node* expand_arg(union node* narg, union node** nptr, int flags);
+/* set when a word expansion failed in a way POSIX calls an expansion
+ * error ("${x?}", "$x" under "set -u"): the command that word belongs
+ * to must not run, and its status is nonzero. A non-interactive shell
+ * has already exited by the time anyone reads this.
+ */
+extern int expand_error;
+
 int expand_args(union node* args, union node** nptr, int flags);
 int expand_argv(union node* args, char** argv);
 int expand_arith_binary(struct narithbinary* expr, int64* r);

@@ -1,0 +1,551 @@
+diff --git a/src/builtin/builtin_test.c b/src/builtin/builtin_test.c
+index e9d8e588..4339bbfd 100644
+--- a/src/builtin/builtin_test.c
++++ b/src/builtin/builtin_test.c
+@@ -40,21 +40,31 @@
+ #endif
+ #endif
+ 
+-typedef enum { OP_EQ, OP_NE, OP_LT, OP_LE, OP_GT, OP_GE } binary_op;
++/* POSIX XCU "test": the *number* of arguments decides how they are
++ * read, before any operator is looked at.
++ *   1  true if $1 is non-null                  "test !"      -> true
++ *   2  "!" negates, otherwise a unary primary
++ *   3  binary primary first, then "!", then "( x )"
++ *                                              "test ( = )"  -> "(" = ")"
++ *   4  "!" negates the 3-argument reading, then "( x y )"
++ * Anything else POSIX leaves unspecified, and so are the "-a"/"-o"
++ * forms of 3 and 4 arguments: the grammar below takes those, the way
++ * every other shell does.
++ * ----------------------------------------------------------------------- */
++
++static const char unary_ops[] = "nzafdbchLSesrwxgput";
++
++static int test_expr(void);
+ 
+-static int test_boolean(int, char**);
++/* the words of the expression, and how far the grammar has read */
++static char** test_v;
++static int test_n, test_i, test_err;
+ 
+ static inline int
+ contains(const char* str, char ch) {
+   return str[str_chr(str, ch)];
+ }
+ 
+-/* get number of arguments */
+-static inline int
+-num_args(int argc) {
+-  return argc - shell_optind;
+-}
+-
+ /* get modification time */
+ static int64
+ filetime(const char* arg) {
+@@ -66,12 +76,6 @@ filetime(const char* arg) {
+   return st.st_mtime;
+ }
+ 
+-/* get current argument string */
+-static inline const char*
+-current(char** v) {
+-  return v[shell_optind];
+-}
+-
+ /* string arg to int64 */
+ static int64
+ intarg(const char* arg) {
+@@ -81,68 +85,83 @@ intarg(const char* arg) {
+   return num;
+ }
+ 
+-/* get current argument, then advance to next */
+-static const char*
+-next(char** v) {
+-  const char* ret = current(v);
+-
+-  shell_optind++;
+-
+-  return ret;
++/* "-X", one letter, X one of the unary primaries */
++static int
++is_unary(const char* op) {
++  return op[0] == '-' && op[1] && op[2] == '\0' && contains(unary_ops, op[1]);
+ }
+ 
+-static binary_op
+-binary(const char* op) {
+-  switch(op[1]) {
+-    case 'l': return op[2] == 'e' ? OP_LE : OP_LT;
+-    case 'g': return op[2] == 'e' ? OP_GE : OP_GT;
+-    case 'e': return OP_EQ;
+-    case 'n': return OP_NE;
+-  }
++static int
++is_binary(const char* op) {
++  static const char* const ops[] = {
++      "=", "!=", "<", ">", "-eq", "-ne", "-lt", "-le", "-gt", "-ge", "-nt", "-ot", 0};
++  const char* const* p;
+ 
+-  return -1;
++  for(p = ops; *p; p++)
++    if(str_equal(*p, op))
++      return 1;
++
++  return 0;
+ }
+ 
+-/* evaluate binary expression
++/* evaluate a unary primary ("-X arg")
+  * ----------------------------------------------------------------------- */
+ static int
+-test_binary(int argc, char** argv) {
+-  const char *left, *right, *op;
++test_unary(const char* op, const char* arg) {
++  struct stat st;
+ 
+-  /* if we have 3 arguments it should be something like STRING1 EXPR STRING2 */
+-  if(num_args(argc) < 3)
+-    return -1;
++  switch(op[1]) {
++    /* string is non-empty / empty */
++    case 'n': return *arg != '\0';
++    case 'z': return *arg == '\0';
+ 
+-  left = next(argv);
+-  op = next(argv);
+-  right = next(argv);
+-
+-  if(op[0] == '-') {
+-    /* "-nt"/"-ot" (file mtime comparison) vs. "-ne"/"-eq" etc (numeric
+-       comparison, below) collide on op[1] alone ('n' is the second
+-       character of both "-nt" and "-ne") -- op[2] ('t' vs 'e') is
+-       what actually distinguishes them. */
+-    if(str_len(op) == 3 && contains("no", op[1]) && op[2] == 't') {
+-      switch(op[1]) {
+-        case 'n': return filetime(left) > filetime(right);
+-        case 'o': return filetime(left) < filetime(right);
+-      }
+-    }
++    /* file exists */
++    case 'a':
++    case 'e': return stat(arg, &st) == 0;
++
++    case 'f': return stat(arg, &st) == 0 && S_ISREG(st.st_mode);
++    case 'd': return stat(arg, &st) == 0 && S_ISDIR(st.st_mode);
++    case 'c': return stat(arg, &st) == 0 && S_ISCHR(st.st_mode);
++    case 'b': return stat(arg, &st) == 0 && (st.st_mode & S_IFMT) == S_IFBLK;
++    case 'p': return stat(arg, &st) == 0 && S_ISFIFO(st.st_mode);
++
++    /* a symbolic link is the one thing not to follow */
++    case 'h':
++    case 'L': return lstat(arg, &st) == 0 && S_ISLNK(st.st_mode);
+ 
+-    if(str_len(op) == 3 && contains("egln", op[1]) && contains("eqt", op[2])) {
+-      switch(binary(op)) {
+-        case OP_LE: return intarg(left) <= intarg(right);
+-        case OP_LT: return intarg(left) < intarg(right);
+-        case OP_GE: return intarg(left) >= intarg(right);
+-        case OP_GT: return intarg(left) > intarg(right);
+-        case OP_EQ: return intarg(left) == intarg(right);
+-        case OP_NE: return intarg(left) != intarg(right);
+-      }
++#ifdef S_ISSOCK
++    case 'S': return stat(arg, &st) == 0 && S_ISSOCK(st.st_mode);
++#endif
++
++    /* exists and is not empty */
++    case 's': return stat(arg, &st) == 0 && st.st_size > 0;
++
++    case 'r': return access(arg, R_OK) == 0;
++    case 'w': return access(arg, W_OK) == 0;
++    case 'x': return access(arg, X_OK) == 0;
++
++    /* set-group-ID / set-user-ID bit */
++    case 'g': return stat(arg, &st) == 0 && !!(st.st_mode & S_ISGID);
++    case 'u': return stat(arg, &st) == 0 && !!(st.st_mode & S_ISUID);
++
++    /* the fd is a terminal */
++    case 't': {
++      unsigned int fd = 1;
++
++      scan_uint(arg, &fd);
++      return isatty(fd);
+     }
++  }
+ 
+-    /* if operator doesn't start with '-' then its surely a string comparision
+-     */
+-  } else {
++  test_err = 1;
++  return 0;
++}
++
++/* evaluate a binary primary ("arg OP arg")
++ * ----------------------------------------------------------------------- */
++static int
++test_binary(const char* left, const char* op, const char* right) {
++  if(op[0] != '-') {
+     int r = str_diff(left, right);
+ 
+     switch(op[0]) {
+@@ -151,202 +170,167 @@ test_binary(int argc, char** argv) {
+       case '<': return op[1] == '=' ? r <= 0 : r < 0;
+       case '>': return op[1] == '=' ? r >= 0 : r > 0;
+     }
++  } else {
++    int64 l = intarg(left), r = intarg(right);
++
++    /* "-nt"/"-ot" (mtime) and "-ne"/"-eq" (numbers) share op[1], so
++       op[2] is what tells them apart: "-nt" vs "-ne" */
++    switch(op[1]) {
++      case 'n': return op[2] == 't' ? filetime(left) > filetime(right) : l != r;
++      case 'o': return filetime(left) < filetime(right);
++      case 'e': return l == r;
++      case 'l': return op[2] == 'e' ? l <= r : l < r;
++      case 'g': return op[2] == 'e' ? l >= r : l > r;
++    }
+   }
+ 
+-  return -1;
++  test_err = 1;
++  return 0;
+ }
+ 
+-/* evaluate unary expression
++/* "( expr )", a primary, or a bare string
+  * ----------------------------------------------------------------------- */
+ static int
+-test_unary(int argc, char** argv) {
+-  int c;
+-  const char* arg = current(argv);
+-
+-  /* POSIX's argument-count table only treats a leading "-X" as a real
+-     unary operator when an operand follows it (the 2-argument case).
+-     With exactly one argument left, the rule is unconditionally "is
+-     $1 non-null", even if it looks like an operator. */
+-  if(arg[0] != '-' || num_args(argc) < 2) {
+-    shell_optind++;
+-    return !!*arg;
+-  }
+-
+-  /* check options */
+-  if((c = shell_getopt(argc, argv, "a:n:z:f:d:b:c:h:L:S:e:s:r:w:x:g:p:u:")) > 0) {
+-    struct stat st;
+-    const char* arg = shell_optarg;
+-
+-    switch(c) {
+-      /* return true if argument is non-zero */
+-      case 'n': return arg && *arg;
+-
+-      /* return true if argument is zero */
+-      case 'z': return !arg || *arg == '\0';
+-
+-      /* return true if argument exists */
+-      case 'a': return stat(arg, &st) == 0;
+-
+-      /* return true if argument is a regular file */
+-      case 'f': return stat(arg, &st) == 0 && S_ISREG(st.st_mode);
+-      /* return true if argument is a directory */
+-      case 'd': return stat(arg, &st) == 0 && S_ISDIR(st.st_mode);
+-      /* return true if argument is a character device */
+-      case 'c':
+-        return stat(arg, &st) == 0 && S_ISCHR(st.st_mode);
+-
+-        /* return true if argument is a block device */
+-      case 'b': return stat(arg, &st) == 0 && (st.st_mode & S_IFMT) == S_IFBLK;
+-      /* return true if argument is a fifo */
+-      case 'p': return stat(arg, &st) == 0 && S_ISFIFO(st.st_mode);
+-      /* return true if argument is a symbolic link */
+-      case 'h':
+-#ifdef S_ISLNK
+-      case 'L': return lstat(arg, &st) == 0 && S_ISLNK(st.st_mode);
+-#endif
++test_primary(void) {
++  const char* arg;
+ 
+-#ifdef S_ISSOCK
+-      /* return true if argument is a socket */
+-      case 'S': return stat(arg, &st) == 0 && S_ISSOCK(st.st_mode);
+-#endif
++  if(test_i >= test_n) {
++    test_err = 1;
++    return 0;
++  }
+ 
+-      /* return true if argument exists */
+-      case 'e': return stat(arg, &st) == 0;
+-      /* return true if argument exists and is not empty */
+-      case 's': return stat(arg, &st) == 0 && st.st_size;
++  arg = test_v[test_i];
+ 
+-      /* return true if readable */
+-      case 'r': return access(arg, R_OK) == 0;
+-      /* return true if writeable */
+-      case 'w': return access(arg, W_OK) == 0;
+-      /* return true if executable */
+-      case 'x': return access(arg, X_OK) == 0;
++  if(str_equal(arg, "(")) {
++    int r;
+ 
+-      /* return true if argument has set-group-ID bit set */
+-      case 'g': return stat(arg, &st) == 0 && (st.st_mode & S_ISGID);
++    test_i++;
++    r = test_expr();
+ 
+-      /* return true if argument has set-user-ID bit set */
+-      case 'u': return stat(arg, &st) == 0 && (st.st_mode & S_ISUID);
++    if(test_i >= test_n || !str_equal(test_v[test_i], ")")) {
++      test_err = 1;
++      return 0;
++    }
+ 
+-      case ':': {
+-        if(shell_optopt == 'z')
+-          return 1;
++    test_i++;
++    return r;
++  }
+ 
+-        if(shell_optopt == 'n')
+-          return 0;
++  /* an operator is only an operator where an operand can follow it:
++     "test = = =" compares "=" with "=" */
++  if(test_i + 2 < test_n && is_binary(test_v[test_i + 1])) {
++    test_i += 3;
++    return test_binary(test_v[test_i - 3], test_v[test_i - 2], test_v[test_i - 1]);
++  }
+ 
+-        builtin_errmsg(argv, argv[shell_optind - 1], "expecting argument");
+-        return -2;
+-      }
+-    }
++  if(test_i + 1 < test_n && is_unary(arg)) {
++    test_i += 2;
++    return test_unary(arg, test_v[test_i - 1]);
+   }
+ 
+-  return -1;
++  test_i++;
++  return *arg != '\0';
+ }
+ 
+-/* evaluate boolean expressions (-a & -o)
++/* "! expr"
+  * ----------------------------------------------------------------------- */
+ static int
+-test_expr(int argc, char** argv) {
+-  int index;
+-  const char* arg;
+-  int i, parens = 1;
+-
+-  /*if(shell_optind == argc)
+-     return -1;*/
++test_not(void) {
++  int neg = 0;
+ 
+-  if(!str_equal((arg = current(argv)), "("))
+-    return -1;
++  while(test_i < test_n && str_equal(test_v[test_i], "!")) {
++    /* the last word is an operand, not an operator: "test x -a !" */
++    if(test_i + 1 >= test_n)
++      break;
+ 
+-  index = shell_optind;
+-  shell_optind++;
++    neg = !neg;
++    test_i++;
++  }
+ 
+-  for(i = shell_optind; i < argc; i++) {
+-    const char* arg = argv[/*shell_optind +*/ i];
++  return neg ^ test_primary();
++}
+ 
+-    if(str_len(arg) == 1 && contains("()", arg[0]))
+-      parens += arg[0] == '(' ? 1 : -1;
++/* "expr -a expr", binding tighter than "-o"
++ * ----------------------------------------------------------------------- */
++static int
++test_and(void) {
++  int r = test_not();
+ 
+-    if(parens == 0)
+-      break;
++  while(test_i < test_n && str_equal(test_v[test_i], "-a")) {
++    test_i++;
++    r = test_not() && r;
+   }
+ 
+-  if(/*shell_optind + */ i < argc) {
+-    int result;
++  return r;
++}
+ 
+-    if((result = test_boolean(/*shell_optind +*/ i, argv)) != -1) {
+-      shell_optind++ /* += i*/;
+-      return result;
+-    }
++/* "expr -o expr"
++ * ----------------------------------------------------------------------- */
++static int
++test_expr(void) {
++  int r = test_and();
++
++  while(test_i < test_n && str_equal(test_v[test_i], "-o")) {
++    test_i++;
++    r = test_and() || r;
+   }
+ 
+-  shell_optind = index;
+-  return -1;
++  return r;
+ }
+ 
+-/* evaluate condition (! negates)
++/* evaluate n words by POSIX's argument-count table, falling back to
++ * the grammar above for everything it does not cover
+  * ----------------------------------------------------------------------- */
+ static int
+-test_cond(int argc, char** argv) {
+-  int result = -1, neg = 0;
++test_count(int n, char** v) {
++  switch(n) {
++    case 0: return 0;
+ 
+-  /* every condition can be negated by a leading ! */
+-  while(shell_optind < argc && str_equal(current(argv), "!")) {
+-    neg = !neg;
+-    shell_optind++;
+-  }
++    case 1: return *v[0] != '\0';
+ 
+-  if(shell_optind == argc)
+-    return -1;
++    case 2:
++      if(str_equal(v[0], "!"))
++        return !test_count(1, v + 1);
+ 
+-  if(str_equal(current(argv), "("))
+-    result = test_expr(argc, argv);
++      if(is_unary(v[0]))
++        return test_unary(v[0], v[1]);
+ 
+-  if(result == -1)
+-    result = test_binary(argc, argv);
++      break;
+ 
+-  if(result == -1)
+-    result = test_unary(argc, argv);
++    case 3:
++      if(is_binary(v[1]))
++        return test_binary(v[0], v[1], v[2]);
+ 
+-  // if(result == -1)
+-  result = neg ^ result;
++      if(str_equal(v[0], "!"))
++        return !test_count(2, v + 1);
+ 
+-  return result;
+-}
++      if(str_equal(v[0], "(") && str_equal(v[2], ")"))
++        return test_count(1, v + 1);
+ 
+-/* evaluate boolean expressions (-a & -o)
+- * ----------------------------------------------------------------------- */
+-static int
+-test_boolean(int argc, char* argv[]) {
+-  int result = 1, prev;
+-  enum { TEST_AND = 1, TEST_OR = 2 } and_or = 0;
+-  const char* arg;
++      break;
+ 
+-  while(num_args(argc) > 0 && (result = test_cond(argc, argv)) != -1) {
++    case 4:
++      if(str_equal(v[0], "!"))
++        return !test_count(3, v + 1);
+ 
+-    if(and_or) {
+-      switch(and_or) {
+-        case TEST_AND: result = prev && result; break;
+-        case TEST_OR: result = prev || result; break;
+-      }
++      if(str_equal(v[0], "(") && str_equal(v[3], ")"))
++        return test_count(2, v + 1);
+ 
+-      and_or = 0;
+-    }
++      break;
++  }
+ 
+-    if(num_args(argc) > 1 && (arg = next(argv))[0] == '-' && contains("ao", arg[1])) {
+-      switch(arg[1]) {
+-        case 'a': and_or = TEST_AND; break;
+-        case 'o': and_or = TEST_OR; break;
+-      }
+-    }
++  test_v = v;
++  test_n = n;
++  test_i = 0;
+ 
+-    if(and_or == 0)
+-      break;
++  {
++    int r = test_expr();
+ 
+-    prev = result;
+-  }
++    if(test_i != test_n)
++      test_err = 1;
+ 
+-  return result;
++    return r;
++  }
+ }
+ 
+ /* test for expression
+@@ -369,7 +353,7 @@ const char help_test[] = "    Evaluate a conditional expression (exit status 0 =
+ 
+ int
+ builtin_test(int argc, char* argv[]) {
+-  int result, ret = 1;
++  int result;
+   int brackets = 0;
+ 
+   if(argv[0][0] == '[') {
+@@ -386,26 +370,15 @@ builtin_test(int argc, char* argv[]) {
+   if(argc <= 1)
+     return 1;
+ 
+-  /* TODO:*/
+-  //(void)brackets;
+-  result = test_boolean(argc, argv);
+-
+-  if(result < 0) {
+-    if(result == -1)
+-      builtin_errmsg(argv, "invalid expression", argv[shell_optind]);
+-    ret = 2;
+-  } else if(num_args(argc) > 0) {
+-    builtin_errmsg(argv, "extra arguments", argv[shell_optind]);
+-    ret = 3;
+-  }
++  (void)brackets;
+ 
+-  if(ret <= 1)
+-    ret = !result;
++  test_err = 0;
++  result = test_count(argc - 1, argv + 1);
+ 
+-#ifdef DEBUG_OUTPUT_
+-  buffer_puts(fd_err->w, "test return value: ");
+-  buffer_putulong(fd_err->w, ret);
+-  buffer_putnlflush(fd_err->w);
+-#endif
+-  return ret;
++  if(test_err) {
++    builtin_errmsg(argv, "invalid expression", NULL);
++    return EXIT_ERROR;
++  }
++
++  return !result;
+ }

@@ -289,7 +289,7 @@ struct builtin_cmd builtin_table[] = {
     {"set", &builtin_set, B_SPECIAL, "[arguments]", help_set},
 #endif
 #if BUILTIN_SHIFT
-    {"shift", &builtin_shift, B_DEFAULT, "[n]", help_shift},
+    {"shift", &builtin_shift, B_SPECIAL, "[n]", help_shift},
 #endif
 #if BUILTIN_READ
     {"read",

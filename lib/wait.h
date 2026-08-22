@@ -14,6 +14,12 @@
 #define WAIT_EXITSTATUS(status) (((status) >> 8) & 0xff)
 #endif
 
+/* what a finished child contributes to "$?": POSIX/bash report
+   128 + N for a child a signal killed ("kill -s INT" -> 130), its own
+   exit status otherwise. */
+#define WAIT_STATUS(status) \
+  (WAIT_IF_SIGNALED(status) ? 128 + WAIT_TERMSIG(status) : WAIT_EXITSTATUS(status))
+
 #define WAIT_IF_EXITED(status) (WTERMSIG(status) == 0)
 #define WAIT_IF_STOPPED(status) (((status) & 0xff) == 0x7f)
 

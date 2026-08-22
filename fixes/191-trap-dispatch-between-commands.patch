@@ -1,0 +1,52 @@
+diff --git a/src/eval/eval_cmdlist.c b/src/eval/eval_cmdlist.c
+index 38f8ccaf..5165021c 100644
+--- a/src/eval/eval_cmdlist.c
++++ b/src/eval/eval_cmdlist.c
+@@ -2,6 +2,8 @@
+ #include "../eval.h"
+ #include "../sh.h"
+ 
++void trap_run_pending(void);
++
+ /* ----------------------------------------------------------------------- */
+ int
+ eval_cmdlist(struct eval* e, struct ngrp* grp) {
+@@ -40,6 +42,12 @@ eval_cmdlist(struct eval* e, struct ngrp* grp) {
+      forks and returns immediately instead of running in-process; see
+      eval_node_bgnd()'s comment for the full reasoning */
+   for(cmd = grp->cmds; cmd; cmd = cmd->next) {
++    /* a signal that arrived while the previous command ran is only
++       recorded by trap_relay(); dispatch it here so a trap fires
++       between two commands of the same list, not just at the line
++       boundaries sh_loop()/term_read()/job_wait() cover. */
++    trap_run_pending();
++
+     if(ex && cmd->next == NULL)
+       e->flags |= E_EXIT;
+ 
+diff --git a/src/eval/eval_tree.c b/src/eval/eval_tree.c
+index d2d3ebfb..592a9e22 100644
+--- a/src/eval/eval_tree.c
++++ b/src/eval/eval_tree.c
+@@ -3,6 +3,8 @@
+ #include "../tree.h"
+ #include "../sh.h"
+ 
++void trap_run_pending(void);
++
+ /* evaluate a tree node(-list maybe)
+  * ----------------------------------------------------------------------- */
+ int errexit_suppress = 0;
+@@ -29,6 +31,12 @@ eval_tree(struct eval* e, union node* node, int tempflags) {
+   e->flags |= tempflags;
+ 
+   while(node) {
++    /* a signal that arrived while the previous command ran is only
++       recorded by trap_relay(); dispatch it here so a trap fires
++       between two commands of the same list, not just at the line
++       boundaries sh_loop()/term_read()/job_wait() cover. */
++    trap_run_pending();
++
+     /* not the last node, disable E_EXIT for now */
+     if(ex && (!list || node->next == NULL))
+       e->flags |= E_EXIT;

@@ -1,0 +1,87 @@
+diff --git a/cmake/Builtins.cmake b/cmake/Builtins.cmake
+index 5b736dd0..642f5720 100644
+--- a/cmake/Builtins.cmake
++++ b/cmake/Builtins.cmake
+@@ -120,6 +120,12 @@ endfunction(
+ 
+ # variable_watch(ENABLE_ALL_BUILTINS ON_ENABLE_ALL_BUILTINS)
+ 
++# the loop below recomputes every ENABLE_<NAME> from DEFAULT_BUILTINS,
++# so record what was asked for on the command line first.
++if(BUILD_DEBUG OR ENABLE_DUMP)
++  set(WANT_DUMP ON)
++endif(BUILD_DEBUG OR ENABLE_DUMP)
++
+ foreach(BUILTIN ${ALL_BUILTINS})
+   string(TOUPPER ${BUILTIN} NAME)
+   if(NOT DEFINED ${ENABLE_${NAME}})
+@@ -129,7 +135,7 @@ foreach(BUILTIN ${ALL_BUILTINS})
+   if(ENABLE_ALL_BUILTINS)
+     option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" ON)
+     set(BUILTIN_${NAME}
+-        TRUE
++        ON
+         CACHE BOOL "Enable ${BUILTIN} builtin" FORCE)
+   else(ENABLE_ALL_BUILTINS)
+ 
+@@ -139,8 +145,6 @@ foreach(BUILTIN ${ALL_BUILTINS})
+       option(BUILTIN_${NAME} "Enable ${BUILTIN} builtin" OFF)
+     endif(DEFINED ENABLE_${NAME})
+   endif(ENABLE_ALL_BUILTINS)
+-  unset(ENABLE_ALL_BUILTINS)
+-  unset(ENABLE_ALL_BUILTINS CACHE)
+ endforeach(BUILTIN ${ALL_BUILTINS})
+ 
+ if(ENABLE_ALL_BUILTINS)
+@@ -152,18 +156,22 @@ if(ENABLE_ALL_BUILTINS)
+   endforeach(BUILTIN ${ALL_BUILTINS})
+ endif(ENABLE_ALL_BUILTINS)
+ 
+-if(BUILD_DEBUG)
+-  set(ENABLE_DUMP TRUE)
+-  # list(APPEND BUILTINS_ENABLED dump)
+-endif(BUILD_DEBUG)
+-
+-isin(ENABLE_DUMP dump ${BUILTINS_ENABLED})
+-
+-set(DEBUG_OUTPUT_DEFAULT OFF)
++# clear it only once every loop that reads it has run -- unsetting it
++# inside the first one left every builtin after the first taking the
++# "not all" branch, so -DENABLE_ALL_BUILTINS=ON enabled exactly one.
++unset(ENABLE_ALL_BUILTINS)
++unset(ENABLE_ALL_BUILTINS CACHE)
+ 
+-if(ENABLE_DUMP)
+-  set(DEBUG_OUTPUT_DEFAULT ON)
+-endif(ENABLE_DUMP)
++# "dump" only exists to inspect shell state while debugging, so a debug
++# build gets it whether or not it was named in the builtin list.
++# ENABLE_DUMP is also set by cmake/Debug.cmake for CMAKE_BUILD_TYPE=Debug,
++# and can be passed directly (-DENABLE_DUMP=ON). Has to run before the
++# loop below, which is what reads BUILTIN_* to decide what gets built.
++if(WANT_DUMP)
++  set(BUILTIN_DUMP
++      ON
++      CACHE BOOL "Enable dump builtin" FORCE)
++endif(WANT_DUMP)
+ 
+ foreach(BUILTIN ${ALL_BUILTINS})
+   string(TOUPPER ${BUILTIN} NAME)
+@@ -174,6 +182,17 @@ foreach(BUILTIN ${ALL_BUILTINS})
+   endif(${BUILTIN_${NAME}} STREQUAL ON OR ENABLE_ALL_BUILTINS)
+ endforeach(BUILTIN ${ALL_BUILTINS})
+ 
++# now that BUILTINS_ENABLED is populated, "is dump being built" is a
++# real answer -- and dump's output goes through the debug buffer, so
++# building it turns DEBUG_OUTPUT on by default (CMakeLists.txt).
++isin(ENABLE_DUMP dump ${BUILTINS_ENABLED})
++
++set(DEBUG_OUTPUT_DEFAULT OFF)
++
++if(ENABLE_DUMP)
++  set(DEBUG_OUTPUT_DEFAULT ON)
++endif(ENABLE_DUMP)
++
+ foreach(BUILTIN ${BUILTINS_ENABLED})
+   list(APPEND SOURCES src/builtin/builtin_${BUILTIN}.c)
+ endforeach(BUILTIN ${BUILTINS_ENABLED})

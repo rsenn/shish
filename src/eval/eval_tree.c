@@ -3,6 +3,8 @@
 #include "../tree.h"
 #include "../sh.h"
 
+void trap_run_pending(void);
+
 /* evaluate a tree node(-list maybe)
  * ----------------------------------------------------------------------- */
 int errexit_suppress = 0;
@@ -29,6 +31,12 @@ eval_tree(struct eval* e, union node* node, int tempflags) {
   e->flags |= tempflags;
 
   while(node) {
+    /* a signal that arrived while the previous command ran is only
+       recorded by trap_relay(); dispatch it here so a trap fires
+       between two commands of the same list, not just at the line
+       boundaries sh_loop()/term_read()/job_wait() cover. */
+    trap_run_pending();
+
     /* not the last node, disable E_EXIT for now */
     if(ex && (!list || node->next == NULL))
       e->flags |= E_EXIT;
