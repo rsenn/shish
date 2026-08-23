@@ -56,13 +56,17 @@ builtin_help(int argc, char* argv[]) {
       maxlen = len;
   }
 
-  term_winsize();
 #ifdef HAVE_WINSIZE
-  maxlen = (term_size.ws_col / 2) - 1;
+  term_winsize();
+
+  if(term_size.ws_col)
+    maxlen = (term_size.ws_col / 2) - 1;
+  else
 #else
   maxlen = (80 / 2) - 1; /* no TIOCGWINSZ: assume a stock 80-column terminal */
 #endif
-  rows = (i + 1) >> 1;
+
+    rows = (i + 1) >> 1;
 
   for(i = 0; i < rows; i++) {
     struct builtin_cmd* b = &builtin_table[i];
