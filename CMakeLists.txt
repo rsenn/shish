@@ -169,9 +169,6 @@ file(GLOB LIBSHELL_SOURCES src/*.h src/*/*.c)
 list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX
      "(sh_fmt\\.c|sh_parse2ast\\.c|sh_init\\.c|sh_main\\.c)")
 
-# string(REGEX REPLACE ";" "\n" SHELL_SOURCES "${LIBSHELL_SOURCES}")
-# message("LIBSHELL_SOURCES: ${SHELL_SOURCES}")
-
 if(DEBUG_OUTPUT)
   list(
     APPEND
@@ -315,8 +312,6 @@ if(NOT SHISH_SUFFIX)
 endif(NOT SHISH_SUFFIX)
 set(SHISH_PATH "${CMAKE_CURRENT_BINARY_DIR}/shish${SHISH_SUFFIX}")
 
-message("SHISH_PATH: ${SHISH_PATH}")
-
 option(DO_CONFORMANCE_TESTS "Also run the tests/posix conformance suite" ON)
 option(DO_YASH_TESTS
        "Also run the tests/yash conformance suite (off by default -- tests/yash/random-y.tst hangs and eats a 120s TIMEOUT on every run, see BUGS)"
@@ -380,4 +375,3 @@ if(DO_TESTS)
     endforeach(TEST ${CONFORMANCE_TESTS})
   endforeach(SUITE ${CONFORMANCE_SUITES})
 endif(DO_TESTS)
-message("TESTS: ${TESTS}")
