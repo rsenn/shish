@@ -236,13 +236,26 @@ problem it's actually about (no real `sigaction(2)`/mask API to
 translate onto), not rediscover these two once it starts being
 exercised for real.
 
-Phase 1 does not make the mingw `sig_action` implementation itself any
-smaller -- that's still a `signal()`-based shim with documented
-semantics loss (no real masking, no `SA_RESTART` distinction), as
-already scoped in `mingw-porting.md`. What it does is make sure that
-shim, once written, actually works end to end instead of working for
-`sig_action` in isolation while three files upstream and downstream of
-it are silently broken on the same platform.
+**Phase 3 -- resolved: no mingw `sig_action` shim.** After comparing
+against the equivalent module in the sibling `c-utils` project,
+decided *not* to build the `signal()`-based shim `mingw-porting.md`
+section 3 originally proposed. `sig_action()` now compiles
+unconditionally and returns `-1` honestly on `WINDOWS_NATIVE`
+(documented at its declaration in `lib/sig.h`), matching `c-utils`'s
+own stance: no real signal disposition on Windows, rather than a
+lossy partial emulation of one. `sig_push()`/`sig_catch()` -- which
+previously short-circuited to `return 0` on that platform, silently
+claiming success while doing nothing -- now call through and let that
+`-1` propagate for real. Phase 1's `sig_table.c`/`sig_stack.c` fixes
+are unaffected: name/number lookup (`sig_name`, `sig_byname`,
+`kill -l`) still works on `WINDOWS_NATIVE` independent of this: it's
+disposition changes specifically that never take effect there. Also
+fixed in the same change: `sig_catch.c`'s guard wrongly excluded MSYS
+too (MSYS has a real `sigaction`, it isn't `WINDOWS_NATIVE`), so
+msys64 was silently getting the same fake-success no-op -- and its
+`.sa_restorer` designated-initializer field doesn't even exist outside
+glibc, so the file had never actually compiled on that target before.
+Landed as `fixes/207`.
 
 ## Not attempted here
 

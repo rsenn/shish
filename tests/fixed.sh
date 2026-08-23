@@ -4288,4 +4288,38 @@ fi
 ## full `ctest` run has the identical set of failing tests with and
 ## without this change (same pre-existing failures, byte-for-byte).
 
+## fixes/207 (lib/sig.h, lib/sig/sig_action.c, sig_push.c, sig_catch.c):
+## sig_action()'s entire body was `#ifdef SA_RESTART`, absent on
+## mingw (no sigaction/mask API at all there), so `sig_action` was
+## undefined at link time -- the `mingw-missing-sig-action` BUGS entry.
+## Decided, after comparing against the equivalent module in the
+## sibling c-utils project (see mingw-porting.md section 3): don't
+## build the signal()-based shim this was heading toward -- sig_action
+## now compiles unconditionally and returns -1 honestly on
+## WINDOWS_NATIVE, and sig_push()/sig_catch() (which used to
+## short-circuit to `return 0` there, claiming success while doing
+## nothing) now call through and let that -1 propagate for real.
+## Also fixed in the same change: sig_catch.c's guard was
+## `#if !(defined(_WIN32) || defined(__MSYS__))`, wrongly treating
+## MSYS the same as WINDOWS_NATIVE (MSYS has a real sigaction) --
+## msys64 builds were silently getting the same fake-success no-op,
+## and its designated initializer's `.sa_restorer = 0` doesn't compile
+## there at all (that field is Linux/glibc-specific, not standard
+## POSIX). Per the "Writing a test" exception in CLAUDE.md for the
+## WINDOWS_NATIVE half (sig_action's honest -1 can't be exercised on
+## this dev machine's targets), that part is comment-only: verified by
+## rebuilding under cfg-mingw64 (previously "undefined reference to
+## `sig_action'"; now `sig_action` is gone from the link-error list
+## entirely, leaving only the separate, already-tracked
+## `mingw-missing-kill-killpg`/`mingw-missing-tcsetpgrp` symbols). The
+## MSYS half is exercised for real: cfg-msys64 previously failed to
+## *compile* sig_catch.c ("has no member named 'sa_restorer'"; that
+## file was never even reached on this target before, since the old
+## guard excluded it), now compiles and links shish.exe/shformat.exe
+## clean, and msys64's sig_catch genuinely installs a real handler
+## instead of the old no-op stub. Native glibc's sig_catch/sig_push/
+## sig_action behavior is unchanged by this refactor -- confirmed via
+## a full `ctest` run with the identical set of pre-existing failures
+## before and after.
+
 summary

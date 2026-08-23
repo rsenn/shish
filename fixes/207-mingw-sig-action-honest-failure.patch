@@ -1,0 +1,94 @@
+diff --git a/lib/sig.h b/lib/sig.h
+index 421e52c2..b0bf9263 100644
+--- a/lib/sig.h
++++ b/lib/sig.h
+@@ -109,6 +109,13 @@ typedef unsigned long sigset_type;
+ /* used internally by sig_catch.c */
+ #define sig_catcha(sig, ac) sig_action(sig, (ac), 0)
+ 
++/* On WINDOWS_NATIVE, mingw's <signal.h> has no sigaction/mask API at
++ * all: sig_action() (and everything built on it -- sig_push/sig_pop/
++ * sig_catch) always returns -1 there, an honest failure rather than
++ * a partial signal()-based shim. Name/number lookup (sig_name,
++ * sig_byname, kill -l) still works on that platform independent of
++ * this -- it's disposition changes specifically that never take
++ * effect. */
+ int sig_action(int sig, struct sigaction const* new, struct sigaction* old);
+ void sig_block(int);
+ void sig_unblock(int);
+diff --git a/lib/sig/sig_action.c b/lib/sig/sig_action.c
+index b06d02f3..d56c1bfc 100644
+--- a/lib/sig/sig_action.c
++++ b/lib/sig/sig_action.c
+@@ -1,10 +1,11 @@
++#include "../windoze.h"
+ #include "../sig.h"
+ 
+ #include <signal.h>
+ 
+-#ifdef SA_RESTART
+ int
+ sig_action(int sig, struct sigaction const* new, struct sigaction* old) {
++#if !WINDOWS_NATIVE
+   struct sigaction sanew, saold;
+ 
+   if(((new->sa_flags & SA_MASKALL) ? sigfillset(&sanew.sa_mask) : sigemptyset(&sanew.sa_mask)) ==
+@@ -39,5 +40,12 @@ sig_action(int sig, struct sigaction const* new, struct sigaction* old) {
+   }
+ 
+   return 0;
+-}
++#else
++  /* mingw's <signal.h> has no sigaction/mask API at all -- fail
++   * honestly instead of leaving this symbol undefined at link time. */
++  (void)sig;
++  (void)new;
++  (void)old;
++  return -1;
+ #endif
++}
+diff --git a/lib/sig/sig_catch.c b/lib/sig/sig_catch.c
+index 36b6dd63..c6b540c5 100644
+--- a/lib/sig/sig_catch.c
++++ b/lib/sig/sig_catch.c
+@@ -4,16 +4,11 @@
+ 
+ int
+ sig_catch(int sig, sighandler_t_ref f) {
+-#if !(defined(_WIN32) || defined(__MSYS__))
+   struct sigaction ssa = {
+       .sa_handler = f,
+       .sa_mask = 0,
+       .sa_flags = SA_MASKALL | SA_NOCLDSTOP,
+-      .sa_restorer = 0,
+   };
+ 
+   return sig_catcha(sig, &ssa);
+-#else
+-  return 0;
+-#endif
+ }
+diff --git a/lib/sig/sig_push.c b/lib/sig/sig_push.c
+index 42940e94..2f301a2d 100644
+--- a/lib/sig/sig_push.c
++++ b/lib/sig/sig_push.c
+@@ -1,11 +1,9 @@
+-#include "../windoze.h"
+ #include "../sig.h"
+ 
+ /* MT-unsafe */
+ 
+ int
+ sig_push(int sig, sighandler_t_ref f) {
+-#if !WINDOWS_NATIVE
+   struct sigaction ssa = {0};
+ 
+   /* sig_action() (called via sig_pusha() below) never reads ssa.sa_mask
+@@ -25,7 +23,4 @@ sig_push(int sig, sighandler_t_ref f) {
+   ssa.sa_flags = SA_MASKALL | SA_NOCLDSTOP | SA_NORESTART;
+ 
+   return sig_pusha(sig, &ssa);
+-#else
+-  return 0;
+-#endif
+ }

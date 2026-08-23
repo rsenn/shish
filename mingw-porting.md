@@ -127,45 +127,36 @@ implicit-declaration *warning* (not a link failure) on mingw, since
 
 ---
 
-## 3. `sig_action` and the rest of `lib/sig/`
+## 3. `sig_action` and the rest of `lib/sig/` -- resolved
 
-`lib/sig/sig_action.c`'s entire body is `#ifdef SA_RESTART`. mingw's
-`<signal.h>` defines none of `SA_RESTART`, `struct sigaction`,
+Was: `lib/sig/sig_action.c`'s entire body was `#ifdef SA_RESTART`, and
+mingw's `<signal.h>` defines none of `SA_RESTART`, `struct sigaction`,
 `sigaction()`, `sigemptyset()`/`sigfillset()`/`sigismember()` -- so the
-file compiles to nothing, and `sig_action` is genuinely absent, not
-merely filtered out like case 1. (`/usr/x86_64-w64-mingw32/include/signal.h`
-defines exactly 7 signals: `SIGINT SIGILL SIGABRT_COMPAT SIGFPE
-SIGSEGV SIGTERM SIGBREAK SIGABRT` -- no mask/action API at all.)
+file compiled to nothing, and `sig_action` was undefined at link time.
+(`/usr/x86_64-w64-mingw32/include/signal.h` defines exactly 7 signals:
+`SIGINT SIGILL SIGABRT_COMPAT SIGFPE SIGSEGV SIGTERM SIGBREAK SIGABRT`
+-- no mask/action API at all.)
 
-This is not a leaf call: `sig_action` underlies `sig_stack.c`
-(push/pop), `sig_push.c`, `sig_catch.c` -- all of `lib/sig/` -- plus
-direct `struct sigaction` use in `src/sh/sh_main.c` and
-`src/builtin/builtin_trap.c`. It's shish's entire trap/signal-
-disposition architecture (7 files), and there is no way to give it
-real POSIX semantics on Windows: no masking, no `SA_RESTART`, no
-reliable multi-signal delivery, and the target signal set is 7 names
-instead of ~30.
+Decision, after comparing against the equivalent module in the
+sibling `c-utils` project: don't build the `signal()`-based shim this
+section used to propose. `sig_action()` now compiles unconditionally
+and returns `-1` honestly on `WINDOWS_NATIVE` (`lib/sig.h`'s own
+comment above its declaration) -- matching `c-utils/lib/sig`'s stance
+of giving up on real signal disposition on Windows rather than
+half-emulating it. `sig_push`/`sig_pop`/`sig_catch` all propagate that
+`-1` through the same call chain instead of pretending success (they
+previously short-circuited to `return 0` on this platform, which was
+worse: silent no-op). `sig_name`/`sig_byname` (name/number lookup,
+`kill -l`) are unaffected -- already fixed in `signal-refactor.md`
+Phase 1 and independent of whether `sig_action` can actually install
+anything. Landed as `fixes/207`.
 
-**Two-tier plan, in order:**
-
-1. A minimal `sig_action` shim mapped onto plain `signal()` for the
-   ~7 signals mingw's headers define. Explicitly drop mask,
-   `SA_RESTART`, and `SA_NOCLDSTOP` semantics -- document in the shim
-   itself, and in `BUGS`, exactly what `trap` behavior degrades as a
-   result (no signal blocking during a trap handler, no restart-vs-
-   interrupt distinction, nothing outside the 7-signal set is
-   trappable at all).
-2. Longer-term, real Ctrl-C/Ctrl-Break handling should go through
-   `SetConsoleCtrlHandler`, not a POSIX-signal pretense. That's a
-   separate, larger redesign of the console-input path, not a shim,
-   and is out of scope until (1) exists and the size of the remaining
-   gap is clearer.
-
-**Tier: hard, but foundational** -- nothing about traps or signal
-disposition works right on mingw until some version of this exists,
-even a lossy one. Do this before item 4, since `kill`'s signal-number
-semantics inherit the same "which of shish's signals even exist here"
-question.
+Also fixed in the same change: `sig_catch.c` was additionally guarded
+`#if !(defined(_WIN32) || defined(__MSYS__))`, wrongly treating MSYS
+the same as `WINDOWS_NATIVE` even though MSYS has a real `sigaction`
+(it's not `WINDOWS_NATIVE`, see `lib/windoze.h`) -- msys64 builds were
+silently getting the same fake-success no-op as native Windows. Now
+uses real `sig_action` like every other non-`WINDOWS_NATIVE` target.
 
 ---
 
@@ -244,10 +235,12 @@ and don't attempt a partial shim.
    real.
 2. **`getppid`** (§2) -- **done**, `fixes/203`. Trivial, isolated,
    cosmetic.
-3. **`sig_action`** (§3) -- hard, but everything downstream (traps,
-   `kill`'s signal set) depends on some version of it existing first.
-4. **`kill`/`killpg`** (§4) -- hard, partial coverage only; needs §3
-   settled first.
+3. **`sig_action`** (§3) -- **done**, `fixes/207`. Resolved as "fail
+   honestly, no shim" rather than implemented as originally planned;
+   unblocks §4's `kill`/`killpg` on the "which signals exist" question.
+4. **`kill`/`killpg`** (§4) -- hard, partial coverage only; §3's
+   resolution means dispatch on whatever mingw's own headers define
+   (the 7-signal set), not a shish-invented range.
 5. **`tcsetpgrp`/`tcgetpgrp`/`setpgid`** (§5) -- not portable; scope as
    disabling interactive job control under `WINDOWS_NATIVE`, last,
    since it's the most disruptive change and the least deferrable

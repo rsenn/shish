@@ -556,24 +556,6 @@
   # warning: implicit declaration of function 'getpid'
   ```
 
-- mingw-missing-sig-action: `lib/sig/sig_action.c`'s entire body is
-  `#ifdef SA_RESTART`, and mingw's `<signal.h>` defines no
-  `sigaction`/mask API at all (7 signal names, nothing else), so the
-  file compiles to nothing and `sig_action` is undefined at link time.
-  It underlies all of `lib/sig/` (`sig_stack.c`, `sig_push.c`,
-  `sig_catch.c`) plus direct `struct sigaction` use in `sh_main.c` and
-  `builtin_trap.c` -- shish's whole trap/signal-disposition
-  architecture. See `mingw-porting.md` section 3 for the proposed
-  `signal()`-based shim and what it has to give up (masking,
-  `SA_RESTART`, everything outside the 7-signal set).
-
-  **Repro:**
-  ```sh
-  . ./cfg.sh && cfg-mingw64 -DDO_TESTS=OFF
-  cmake --build build/x86_64-w64-mingw32
-  # undefined reference to `sig_action'
-  ```
-
 - mingw-missing-kill-killpg: `builtin_jobs.c:73` and
   `builtin_kill.c:47,51,155` call `kill()`/`killpg()`, neither of
   which mingw provides, and neither has a general Windows equivalent

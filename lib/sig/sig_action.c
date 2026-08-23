@@ -1,10 +1,11 @@
+#include "../windoze.h"
 #include "../sig.h"
 
 #include <signal.h>
 
-#ifdef SA_RESTART
 int
 sig_action(int sig, struct sigaction const* new, struct sigaction* old) {
+#if !WINDOWS_NATIVE
   struct sigaction sanew, saold;
 
   if(((new->sa_flags & SA_MASKALL) ? sigfillset(&sanew.sa_mask) : sigemptyset(&sanew.sa_mask)) ==
@@ -39,5 +40,12 @@ sig_action(int sig, struct sigaction const* new, struct sigaction* old) {
   }
 
   return 0;
-}
+#else
+  /* mingw's <signal.h> has no sigaction/mask API at all -- fail
+   * honestly instead of leaving this symbol undefined at link time. */
+  (void)sig;
+  (void)new;
+  (void)old;
+  return -1;
 #endif
+}

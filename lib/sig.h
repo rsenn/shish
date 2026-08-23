@@ -109,6 +109,13 @@ typedef unsigned long sigset_type;
 /* used internally by sig_catch.c */
 #define sig_catcha(sig, ac) sig_action(sig, (ac), 0)
 
+/* On WINDOWS_NATIVE, mingw's <signal.h> has no sigaction/mask API at
+ * all: sig_action() (and everything built on it -- sig_push/sig_pop/
+ * sig_catch) always returns -1 there, an honest failure rather than
+ * a partial signal()-based shim. Name/number lookup (sig_name,
+ * sig_byname, kill -l) still works on that platform independent of
+ * this -- it's disposition changes specifically that never take
+ * effect. */
 int sig_action(int sig, struct sigaction const* new, struct sigaction* old);
 void sig_block(int);
 void sig_unblock(int);

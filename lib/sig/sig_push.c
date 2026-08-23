@@ -1,11 +1,9 @@
-#include "../windoze.h"
 #include "../sig.h"
 
 /* MT-unsafe */
 
 int
 sig_push(int sig, sighandler_t_ref f) {
-#if !WINDOWS_NATIVE
   struct sigaction ssa = {0};
 
   /* sig_action() (called via sig_pusha() below) never reads ssa.sa_mask
@@ -25,7 +23,4 @@ sig_push(int sig, sighandler_t_ref f) {
   ssa.sa_flags = SA_MASKALL | SA_NOCLDSTOP | SA_NORESTART;
 
   return sig_pusha(sig, &ssa);
-#else
-  return 0;
-#endif
 }
