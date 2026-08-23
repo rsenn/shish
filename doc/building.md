@@ -44,6 +44,15 @@ file where one is needed:
 
 See [WebAssembly](wasm.md) for what to do with the last two.
 
+### Windows (mingw)
+
+mingw's `<signal.h>` defines no `sigaction`/mask API at all, so real
+signal disposition changes (`trap CMD INT`, and anything else that
+goes through `sig_action()`) always fail there -- honestly, not
+silently: `sig_action()`/`sig_push()`/`sig_catch()` all return failure
+rather than pretending to succeed. Signal *name*/*number* lookup
+(`sig_name`, `kill -l`) is unaffected and works normally.
+
 ### Options
 
 | option | default | effect |
