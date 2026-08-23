@@ -1,8 +1,6 @@
 #ifndef BUILTIN_H
 #define BUILTIN_H
 
-#include <stdlib.h>
-
 typedef enum { B_DEFAULT = 0x00, B_SPECIAL = 0x01, B_EXEC = 0x02 } builtin_flag;
 
 typedef int(builtin_func)(int argc, char* argv[]);
