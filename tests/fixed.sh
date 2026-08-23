@@ -4322,4 +4322,28 @@ fi
 ## a full `ctest` run with the identical set of pre-existing failures
 ## before and after.
 
+## fixes/208 (lib/unix/kill.c, lib/unix/killpg.c, lib/unix.h,
+## lib/unix/Makefile.in, builtin_kill.c, builtin_jobs.c): neither
+## kill() nor killpg() exists on mingw, so both builtin_kill.c and
+## builtin_jobs.c's job_resume() were undefined at link time -- the
+## `mingw-missing-kill-killpg` BUGS entry. Implemented per the
+## decision table mingw-porting.md section 4 proposed: kill() maps
+## SIGKILL/SIGTERM to OpenProcess+TerminateProcess, SIGINT to
+## GenerateConsoleCtrlEvent (only actually fires for a real console
+## process group, which shish doesn't create yet -- fails honestly for
+## an ordinary pid, same as every other signal number, which gets
+## ENOSYS rather than a faked success). killpg() delegates to kill()
+## outright, since section 5's setpgid() is still unimplemented and
+## job->pgrp is therefore never a real process group -- just the
+## leading process's own pid. Per the "Writing a test" exception in
+## CLAUDE.md for a fix that only compiles/links on a platform this
+## repo isn't being developed on, this is comment-only: verified by
+## rebuilding under cfg-mingw64 (previously "undefined reference to
+## `killpg' (and `kill')"; now both symbols are gone from the
+## link-error list, leaving only the separate, already-tracked
+## `mingw-missing-tcsetpgrp`), and by confirming native glibc and
+## msys64 (where these two new WINDOWS_NATIVE-gated files compile to
+## nothing) build clean and glibc's full `ctest` run is unchanged (same
+## 79 pre-existing failures before and after).
+
 summary

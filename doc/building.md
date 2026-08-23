@@ -53,6 +53,13 @@ silently: `sig_action()`/`sig_push()`/`sig_catch()` all return failure
 rather than pretending to succeed. Signal *name*/*number* lookup
 (`sig_name`, `kill -l`) is unaffected and works normally.
 
+The `kill` builtin can still actually terminate a process: `kill`/
+`kill -9`/`kill -TERM` go through `TerminateProcess`. Any other
+signal name/number fails honestly instead of pretending to deliver
+it -- there's no Windows equivalent for `SIGSTOP`/`SIGCONT`/etc.
+`kill %job` only ever reaches a job's leading process, not its whole
+process group (no real process groups exist on this platform yet).
+
 ### Options
 
 | option | default | effect |

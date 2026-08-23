@@ -6,6 +6,7 @@
 #include "../../lib/sig.h"
 #include "../../lib/sig_internal.h"
 #include "../../lib/buffer.h"
+#include "../../lib/unix.h"
 #include <signal.h>
 
 /* parse a "-signal" operand: numeric ("-9") or a name ("-TERM"/

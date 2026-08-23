@@ -2,6 +2,7 @@
 #include "../job.h"
 #include "../fdtable.h"
 #include "../../lib/wait.h"
+#include "../../lib/unix.h"
 #include <signal.h>
 
 /* jobs builtin: list every job the shell is currently tracking

@@ -160,39 +160,32 @@ uses real `sig_action` like every other non-`WINDOWS_NATIVE` target.
 
 ---
 
-## 4. `kill` / `killpg`
+## 4. `kill` / `killpg` -- resolved
 
-`builtin_jobs.c:73` (`job_resume()`) sends `SIGCONT` to a job's whole
-process group via `killpg(j->pgrp, SIGCONT)`; `builtin_kill.c:47,51,155`
-does the same for `kill %job`/`kill pid` from the `kill` builtin,
-falling back to per-pid `kill()` when there's no process group.
+Was: `builtin_jobs.c:73` (`job_resume()`) sends `SIGCONT` to a job's
+whole process group via `killpg(j->pgrp, SIGCONT)`; `builtin_kill.c`
+does the same for `kill %job`/`kill pid`, falling back to per-pid
+`kill()` when there's no process group. Neither had a shish wrapper --
+both were raw libc calls mingw doesn't provide, undefined at link
+time.
 
-No shish wrapper exists for either -- they're raw libc calls, and
-there's no general Windows equivalent:
-
-- `TerminateProcess(handle, code)` approximates `SIGKILL` only: it's
-  ungraceful and handle-based (needs `OpenProcess` first), not
-  pid-based.
-- `GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, pgid)` can approximate
-  signaling a *console process group*, but only if the target was
-  created with `CREATE_NEW_PROCESS_GROUP`, and only delivers a
-  Ctrl-C/Ctrl-Break equivalent -- `SIGSTOP`, `SIGCONT`, `SIGHUP`, and
-  everything else in POSIX's signal set has no Windows analog at all.
-
-**Fix is a decision table, not a drop-in function.** Before writing
-any shim, decide per signal number what `kill -N` actually does on
-Windows:
+Implemented per the decision table this section used to propose, in
+`lib/unix/kill.c` and `lib/unix/killpg.c` (same
+one-function-per-file/`WINDOWS_NATIVE`-gated convention as
+`lib/unix/getppid.c`):
 
 | signal | Windows action |
 |---|---|
 | `SIGKILL`, `SIGTERM` | `OpenProcess` + `TerminateProcess` |
-| `SIGINT` (to a console process group) | `GenerateConsoleCtrlEvent(CTRL_C_EVENT, ...)` |
-| `SIGCONT`, `SIGSTOP`, `SIGTSTP`, `SIGHUP`, ... | no-op or error -- document as unsupported, do not fake success |
+| `SIGINT` | `GenerateConsoleCtrlEvent(CTRL_C_EVENT, pid)` -- only works if `pid` is a real console process-group id (`CREATE_NEW_PROCESS_GROUP`); shish doesn't create children that way yet, so this currently just fails honestly for ordinary pids, same as the next row |
+| `0` | existence check only (`OpenProcess` + close), no signal sent |
+| everything else | `ENOSYS` -- no Windows analog, fails rather than faking success |
 
-**Tier: hard, partial coverage only ever possible.** Implement the
-table above as `kill()`/`killpg()` shims once item 3 settles which
-signal numbers exist to dispatch on; document the loss in `BUGS`
-rather than presenting job control as working when most of it isn't.
+`killpg()` delegates straight to `kill()`: §5 (`setpgid`) is still
+unimplemented, so `job->pgrp` is never a real Windows process group,
+only ever the leader's own pid (`job_fork.c`) -- signaling just that
+one process is the best available approximation until §5 exists.
+Landed as `fixes/208`.
 
 ---
 
@@ -238,9 +231,9 @@ and don't attempt a partial shim.
 3. **`sig_action`** (§3) -- **done**, `fixes/207`. Resolved as "fail
    honestly, no shim" rather than implemented as originally planned;
    unblocks §4's `kill`/`killpg` on the "which signals exist" question.
-4. **`kill`/`killpg`** (§4) -- hard, partial coverage only; §3's
-   resolution means dispatch on whatever mingw's own headers define
-   (the 7-signal set), not a shish-invented range.
+4. **`kill`/`killpg`** (§4) -- **done**, `fixes/208`. Partial coverage
+   only, as scoped: `SIGKILL`/`SIGTERM` via `TerminateProcess`,
+   everything else fails honestly.
 5. **`tcsetpgrp`/`tcgetpgrp`/`setpgid`** (§5) -- not portable; scope as
    disabling interactive job control under `WINDOWS_NATIVE`, last,
    since it's the most disruptive change and the least deferrable

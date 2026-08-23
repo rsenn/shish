@@ -1,0 +1,137 @@
+diff --git a/lib/unix.h b/lib/unix.h
+index da53d6dc..79f5d527 100644
+--- a/lib/unix.h
++++ b/lib/unix.h
+@@ -20,6 +20,8 @@ int is_symlink(const char* LinkPath);
+ ssize_t readlink(const char* LinkPath, char* buf, size_t maxlen);
+ size_t getpagesize();
+ pid_t getppid(void);
++int kill(pid_t pid, int sig);
++int killpg(pid_t pgrp, int sig);
+ #endif
+ 
+ #endif /* defined(UNIX_H) */
+diff --git a/lib/unix/Makefile.in b/lib/unix/Makefile.in
+index 8a52160b..2e00c4a7 100644
+--- a/lib/unix/Makefile.in
++++ b/lib/unix/Makefile.in
+@@ -19,7 +19,7 @@ include $(top_builddir)/config.mk
+ # ---------------------------------------------------------------------------
+ LIB = ../libowfat.a
+ ARCHIVE = unix.a
+-MODULES = glob readlink getppid
++MODULES = glob readlink getppid kill killpg
+ 
+ SOURCES = $(MODULES:%=%.c)
+ OBJECTS = $(MODULES:%=%.o)
+diff --git a/lib/unix/kill.c b/lib/unix/kill.c
+new file mode 100644
+index 00000000..3ee92f01
+--- /dev/null
++++ b/lib/unix/kill.c
+@@ -0,0 +1,58 @@
++#include "../windoze.h"
++
++#if WINDOWS_NATIVE
++#define WIN32_LEAN_AND_MEAN
++#include <windows.h>
++#include <sys/types.h>
++#include <errno.h>
++#include "../sig.h"
++
++/* Windows has no per-signal disposition to deliver to, so kill() can
++ * only approximate a handful of POSIX signals by their closest real
++ * effect -- and must fail honestly (ESRCH/ENOSYS), not fake success,
++ * for everything else. See doc/building.md's Windows section.
++ *
++ *   SIGKILL, SIGTERM   OpenProcess + TerminateProcess (ungraceful)
++ *   SIGINT             GenerateConsoleCtrlEvent(CTRL_C_EVENT, pid) --
++ *                       only works if 'pid' is a real console process
++ *                       group id (CREATE_NEW_PROCESS_GROUP); shish
++ *                       doesn't create children that way yet, so this
++ *                       currently just fails for ordinary pids
++ *   0                  existence check only, no signal sent
++ *   anything else      ENOSYS -- no Windows analog exists */
++int
++kill(pid_t pid, int sig) {
++  HANDLE h;
++
++  switch(sig) {
++  case SIGKILL:
++  case SIGTERM:
++    if(!(h = OpenProcess(PROCESS_TERMINATE, FALSE, (DWORD)pid)))
++      return (errno = ESRCH, -1);
++
++    if(!TerminateProcess(h, 128 + sig)) {
++      CloseHandle(h);
++      return (errno = EPERM, -1);
++    }
++
++    CloseHandle(h);
++    return 0;
++
++  case SIGINT:
++    if(!GenerateConsoleCtrlEvent(CTRL_C_EVENT, (DWORD)pid))
++      return (errno = ESRCH, -1);
++
++    return 0;
++
++  case 0:
++    if(!(h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, (DWORD)pid)))
++      return (errno = ESRCH, -1);
++
++    CloseHandle(h);
++    return 0;
++
++  default:
++    return (errno = ENOSYS, -1);
++  }
++}
++#endif
+diff --git a/lib/unix/killpg.c b/lib/unix/killpg.c
+new file mode 100644
+index 00000000..be3e2df9
+--- /dev/null
++++ b/lib/unix/killpg.c
+@@ -0,0 +1,17 @@
++#include "../windoze.h"
++
++#if WINDOWS_NATIVE
++#include <sys/types.h>
++
++int kill(pid_t pid, int sig);
++
++/* No real process groups exist on Windows yet (job control's own
++ * setpgid()/tcsetpgrp() are unimplemented there -- see
++ * BUGS:mingw-missing-tcsetpgrp) -- 'pgrp' is only ever the group
++ * leader's own pid (job->pgrp in job_fork.c), so the best available
++ * approximation is signaling that one process, not the whole group. */
++int
++killpg(pid_t pgrp, int sig) {
++  return kill(pgrp, sig);
++}
++#endif
+diff --git a/src/builtin/builtin_jobs.c b/src/builtin/builtin_jobs.c
+index f2a4e00c..340133e4 100644
+--- a/src/builtin/builtin_jobs.c
++++ b/src/builtin/builtin_jobs.c
+@@ -2,6 +2,7 @@
+ #include "../job.h"
+ #include "../fdtable.h"
+ #include "../../lib/wait.h"
++#include "../../lib/unix.h"
+ #include <signal.h>
+ 
+ /* jobs builtin: list every job the shell is currently tracking
+diff --git a/src/builtin/builtin_kill.c b/src/builtin/builtin_kill.c
+index e4fe64af..42c17d00 100644
+--- a/src/builtin/builtin_kill.c
++++ b/src/builtin/builtin_kill.c
+@@ -6,6 +6,7 @@
+ #include "../../lib/sig.h"
+ #include "../../lib/sig_internal.h"
+ #include "../../lib/buffer.h"
++#include "../../lib/unix.h"
+ #include <signal.h>
+ 
+ /* parse a "-signal" operand: numeric ("-9") or a name ("-TERM"/

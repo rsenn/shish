@@ -556,22 +556,6 @@
   # warning: implicit declaration of function 'getpid'
   ```
 
-- mingw-missing-kill-killpg: `builtin_jobs.c:73` and
-  `builtin_kill.c:47,51,155` call `kill()`/`killpg()`, neither of
-  which mingw provides, and neither has a general Windows equivalent
-  (`TerminateProcess` only approximates `SIGKILL`, and only via a
-  process handle, not a pid; `GenerateConsoleCtrlEvent` only
-  approximates `SIGINT` to a console process group created with
-  `CREATE_NEW_PROCESS_GROUP`). See `mingw-porting.md` section 4 for
-  the per-signal decision table this needs before any shim is written.
-
-  **Repro:**
-  ```sh
-  . ./cfg.sh && cfg-mingw64 -DDO_TESTS=OFF
-  cmake --build build/x86_64-w64-mingw32
-  # undefined reference to `killpg' (and `kill')
-  ```
-
 - mingw-missing-tcsetpgrp: `job_foreground.c:13` calls `tcsetpgrp()`
   to hand the controlling terminal to a job's process group; mingw has
   it and its siblings `tcgetpgrp()` (`job_init.c:43`) and `setpgid()`

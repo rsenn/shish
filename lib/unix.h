@@ -20,6 +20,8 @@ int is_symlink(const char* LinkPath);
 ssize_t readlink(const char* LinkPath, char* buf, size_t maxlen);
 size_t getpagesize();
 pid_t getppid(void);
+int kill(pid_t pid, int sig);
+int killpg(pid_t pgrp, int sig);
 #endif
 
 #endif /* defined(UNIX_H) */
