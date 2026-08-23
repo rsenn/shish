@@ -3,7 +3,7 @@
 
 #if WINDOWS_NATIVE
 
-/* pids of children spawned via src/fork.c's Windows fork() emulation
+/* pids of children spawned via lib/unix/fork.c's Windows fork() emulation
  * that haven't been reaped yet -- see the comment in ../wait.h. Fixed
  * size, matching this codebase's other simple static-table limits
  * (e.g. FD_MAX); a shell realistically never has anywhere near this

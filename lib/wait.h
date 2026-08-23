@@ -34,7 +34,7 @@ int wait_pids_nohang(int const* pids, unsigned int len, int* wstat);
 #if WINDOWS_NATIVE
 /* Windows has no equivalent of POSIX's "wait for any child of this
  * process" (the kernel doesn't track a parent/child relationship the
- * way it does on unix) -- fork() in src/fork.c is the sole producer
+ * way it does on unix) -- fork() in lib/unix/fork.c is the sole producer
  * of child processes here, and registers each one's pid via
  * wait_track_add() right after creating it, so wait_nohang() has
  * something to enumerate.
