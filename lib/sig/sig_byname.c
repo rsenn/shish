@@ -11,5 +11,6 @@ sig_byname(const char* name) {
   for(p = sigtable; p->name; p++)
     if(!str_case_diff(p->name, name))
       return p->number;
+    
   return -1;
 }

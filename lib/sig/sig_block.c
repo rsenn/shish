@@ -9,7 +9,6 @@ sig_block(int signum) {
   sigset_t ss;
 
   sigprocmask(SIG_SETMASK, 0, &ss);
-
   sigaddset(&ss, signum);
   sigprocmask(SIG_BLOCK, &ss, 0);
 #endif
