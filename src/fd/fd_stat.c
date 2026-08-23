@@ -4,8 +4,10 @@
 
 #if WINDOWS_NATIVE
 #include <io.h>
-#define stat _stat
-#define fstat _fstat
+/* <sys/stat.h> already maps stat()/fstat() onto _stat64/_fstat64
+ * for _FILE_OFFSET_BITS=64 (set project-wide) -- redefining them to
+ * plain _stat/_fstat here would truncate file times/sizes back to
+ * the deprecated 32-bit-time_t struct instead of just being redundant. */
 #ifndef S_IFMT
 #define S_IFMT 0xf000
 #endif

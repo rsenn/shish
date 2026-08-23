@@ -187,10 +187,6 @@ endif(DEBUG_OUTPUT)
 list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c
      src/builtin/builtin_search.c src/builtin/builtin_table.c)
 
-if(FORK_SOURCE)
-  list(APPEND LIBSHELL_SOURCES ${FORK_SOURCE})
-endif(FORK_SOURCE)
-
 string(REPLACE " " ";" LIBSHELL_SOURCES "${LIBSHELL_SOURCES}")
 
 if(NO_TREE_PRINT)

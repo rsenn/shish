@@ -29,7 +29,7 @@ buffer_prefetch(buffer* b, size_t n) {
        real content. */
     if((buffer_op_proto*)b->op == (buffer_op_proto*)(void*)&buffer_dummyreadmmap ||
        (buffer_op_proto*)b->op == (buffer_op_proto*)(void*)&buffer_dummyread_fromstr ||
-       b->deinit == (void (*)())&buffer_munmap)
+       b->deinit == (void (*)(struct buffer*))&buffer_munmap)
       return b->n - b->p;
     byte_copy(b->x, b->n - b->p, &b->x[b->p]);
     b->n -= b->p;

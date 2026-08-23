@@ -8,6 +8,7 @@
 #include "../../lib/shell.h"
 #include "../../lib/scan.h"
 #include "../../lib/str.h"
+#include "../../lib/unix.h"
 #include <sys/stat.h>
 #include <stdint.h>
 #include "../../lib/windoze.h"

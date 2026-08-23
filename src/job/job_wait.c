@@ -4,8 +4,8 @@
 #include "../../lib/windoze.h"
 #if !WINDOWS_NATIVE
 #include <termios.h>
-#include <unistd.h>
 #endif
+#include <unistd.h>
 #include "../job.h"
 #include "../fdtable.h"
 #include "../sh.h"

@@ -11,7 +11,9 @@
 #ifndef X_OK
 #define X_OK 1
 #endif
+#ifndef PATH_MAX
 #define PATH_MAX MAX_PATH
+#endif
 #else
 #include <unistd.h>
 #include <limits.h>

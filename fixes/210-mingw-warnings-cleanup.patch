@@ -1,0 +1,361 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ce5b3ac5..087730a7 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -187,10 +187,6 @@ endif(DEBUG_OUTPUT)
+ list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c
+      src/builtin/builtin_search.c src/builtin/builtin_table.c)
+ 
+-if(FORK_SOURCE)
+-  list(APPEND LIBSHELL_SOURCES ${FORK_SOURCE})
+-endif(FORK_SOURCE)
+-
+ string(REPLACE " " ";" LIBSHELL_SOURCES "${LIBSHELL_SOURCES}")
+ 
+ if(NO_TREE_PRINT)
+diff --git a/cmake/Checks.cmake b/cmake/Checks.cmake
+index 261c4926..90845af4 100644
+--- a/cmake/Checks.cmake
++++ b/cmake/Checks.cmake
+@@ -109,12 +109,6 @@ if(WIN32
+     check_library_exists(wsock32 gethostname /usr/lib HAVE_WSOCK32)
+   endif(NOT HAVE_WS2_32)
+ 
+-  check_function_exists(fork HAVE_FORK)
+-
+-  if(NOT HAVE_FORK)
+-    set(FORK_SOURCE "src/fork.c")
+-  endif(NOT HAVE_FORK)
+-
+ endif(
+   WIN32
+   OR WIN64
+diff --git a/lib/buffer/buffer_frombuf.c b/lib/buffer/buffer_frombuf.c
+index 35c9b620..e51247b0 100644
+--- a/lib/buffer/buffer_frombuf.c
++++ b/lib/buffer/buffer_frombuf.c
+@@ -15,6 +15,6 @@ buffer_frombuf(buffer* b, const char* x, size_t l) {
+   b->n = l;
+   b->a = l;
+   b->fd = 0;
+-  b->op = &buffer_dummyreadbuf;
++  b->op = (buffer_op_proto*)(void*)&buffer_dummyreadbuf;
+   b->deinit = 0;
+ }
+diff --git a/lib/buffer/buffer_prefetch.c b/lib/buffer/buffer_prefetch.c
+index 8a1903f4..c371dec1 100644
+--- a/lib/buffer/buffer_prefetch.c
++++ b/lib/buffer/buffer_prefetch.c
+@@ -29,7 +29,7 @@ buffer_prefetch(buffer* b, size_t n) {
+        real content. */
+     if((buffer_op_proto*)b->op == (buffer_op_proto*)(void*)&buffer_dummyreadmmap ||
+        (buffer_op_proto*)b->op == (buffer_op_proto*)(void*)&buffer_dummyread_fromstr ||
+-       b->deinit == (void (*)())&buffer_munmap)
++       b->deinit == (void (*)(struct buffer*))&buffer_munmap)
+       return b->n - b->p;
+     byte_copy(b->x, b->n - b->p, &b->x[b->p]);
+     b->n -= b->p;
+diff --git a/lib/buffer/buffer_putptr.c b/lib/buffer/buffer_putptr.c
+index 0612a5c8..806a0160 100644
+--- a/lib/buffer/buffer_putptr.c
++++ b/lib/buffer/buffer_putptr.c
+@@ -11,7 +11,7 @@ buffer_putptr(buffer* b, void* ptr) {
+   if(ptr == NULL)
+     return buffer_puts(b, "(null)");
+ 
+-  n = fmt_xlonglong(buf, (uint64)(intptr_t)ptr);
++  n = fmt_xlonglong(buf, (uint64)(size_t)ptr);
+   buf[n] = '\0';
+   // buffer_put(b, "0x", 2);
+ 
+diff --git a/lib/path/path_canonicalize.c b/lib/path/path_canonicalize.c
+index 6ad3321e..5d392c58 100644
+--- a/lib/path/path_canonicalize.c
++++ b/lib/path/path_canonicalize.c
+@@ -2,6 +2,7 @@
+ 
+ #include "../windoze.h"
+ #include "../path_internal.h"
++#include "../unix.h"
+ 
+ #ifndef _XOPEN_SOURCE
+ #define _XOPEN_SOURCE 1
+@@ -35,9 +36,6 @@
+ #define lstat stat
+ #endif
+ 
+-#ifndef _stat
+-#define _stat stat
+-#endif
+ #ifdef __LCC__
+ extern int stat(const char*, struct stat*);
+ #endif
+@@ -92,11 +90,11 @@ is_link(const char* path) {
+ int
+ path_canonicalize(const char* path, stralloc* sa, int symbolic) {
+   size_t n;
+-  struct _stat st;
++  struct stat st;
+   int ret = 1;
+   char buf[PATH_MAX + 1];
+   char sep;
+-  int (*stat_fn)(const char*, struct _stat*) = stat;
++  int (*stat_fn)(const char*, struct stat*) = stat;
+ #ifdef HAVE_LSTAT
+ #if !WINDOWS_NATIVE
+   if(symbolic)
+diff --git a/lib/unix.h b/lib/unix.h
+index 79f5d527..d5da7c31 100644
+--- a/lib/unix.h
++++ b/lib/unix.h
+@@ -16,12 +16,26 @@ int is_symlink(const char* LinkPath);
+ 
+ #if WINDOWS_NATIVE
+ #include <sys/types.h>
++#include <sys/stat.h>
+ 
+ ssize_t readlink(const char* LinkPath, char* buf, size_t maxlen);
+ size_t getpagesize();
+ pid_t getppid(void);
+ int kill(pid_t pid, int sig);
+ int killpg(pid_t pgrp, int sig);
++int fork(void);
++#include <process.h> /* declares execve() (deprecated but real) */
++
++/* mingw's <sys/stat.h> has no symlink bit at all -- is_symlink()
++ * already detects one via its reparse-point tag, so give it a real
++ * S_IFLNK/S_ISLNK/lstat() instead of leaving them undeclared. */
++#ifndef S_IFLNK
++#define S_IFLNK 0xA000
++#endif
++#ifndef S_ISLNK
++#define S_ISLNK(m) (((m)&S_IFMT) == S_IFLNK)
++#endif
++int lstat(const char* path, struct stat* buf);
+ #endif
+ 
+ #endif /* defined(UNIX_H) */
+diff --git a/lib/unix/Makefile.in b/lib/unix/Makefile.in
+index 2e00c4a7..f4660029 100644
+--- a/lib/unix/Makefile.in
++++ b/lib/unix/Makefile.in
+@@ -19,7 +19,7 @@ include $(top_builddir)/config.mk
+ # ---------------------------------------------------------------------------
+ LIB = ../libowfat.a
+ ARCHIVE = unix.a
+-MODULES = glob readlink getppid kill killpg
++MODULES = glob readlink getppid kill killpg lstat fork
+ 
+ SOURCES = $(MODULES:%=%.c)
+ OBJECTS = $(MODULES:%=%.o)
+diff --git a/src/fork.c b/lib/unix/fork.c
+similarity index 100%
+rename from src/fork.c
+rename to lib/unix/fork.c
+diff --git a/lib/unix/lstat.c b/lib/unix/lstat.c
+new file mode 100644
+index 00000000..03cf19a4
+--- /dev/null
++++ b/lib/unix/lstat.c
+@@ -0,0 +1,19 @@
++#include "../windoze.h"
++
++#if WINDOWS_NATIVE
++#include <sys/stat.h>
++#include "../unix.h"
++
++/* stat(), then patch st_mode's type bits to S_IFLNK if the path is a
++ * reparse-point symlink -- stat() itself always follows the link, so
++ * without this, callers see the link's target and never the link. */
++int
++lstat(const char* path, struct stat* buf) {
++  int ret = stat(path, buf);
++
++  if(ret == 0 && is_symlink(path))
++    buf->st_mode = (buf->st_mode & ~S_IFMT) | S_IFLNK;
++
++  return ret;
++}
++#endif
+diff --git a/src/builtin/builtin_chmod.c b/src/builtin/builtin_chmod.c
+index 208487a2..392401b6 100644
+--- a/src/builtin/builtin_chmod.c
++++ b/src/builtin/builtin_chmod.c
+@@ -4,6 +4,7 @@
+ #include "../../lib/scan.h"
+ #include "../../lib/str.h"
+ #include "../../lib/stralloc.h"
++#include "../../lib/unix.h"
+ #include <unistd.h>
+ #include <errno.h>
+ #include <dirent.h>
+diff --git a/src/builtin/builtin_rm.c b/src/builtin/builtin_rm.c
+index 911de279..d7e99449 100644
+--- a/src/builtin/builtin_rm.c
++++ b/src/builtin/builtin_rm.c
+@@ -3,6 +3,7 @@
+ #include "../../lib/shell.h"
+ #include "../../lib/stralloc.h"
+ #include "../../lib/str.h"
++#include "../../lib/unix.h"
+ #include <unistd.h>
+ #include <errno.h>
+ #include <dirent.h>
+diff --git a/src/builtin/builtin_test.c b/src/builtin/builtin_test.c
+index f2ab4c61..c0efb499 100644
+--- a/src/builtin/builtin_test.c
++++ b/src/builtin/builtin_test.c
+@@ -8,6 +8,7 @@
+ #include "../../lib/shell.h"
+ #include "../../lib/scan.h"
+ #include "../../lib/str.h"
++#include "../../lib/unix.h"
+ #include <sys/stat.h>
+ #include <stdint.h>
+ #include "../../lib/windoze.h"
+diff --git a/src/exec/exec_path.c b/src/exec/exec_path.c
+index e96791bd..3fbcf5f2 100644
+--- a/src/exec/exec_path.c
++++ b/src/exec/exec_path.c
+@@ -11,7 +11,9 @@
+ #ifndef X_OK
+ #define X_OK 1
+ #endif
++#ifndef PATH_MAX
+ #define PATH_MAX MAX_PATH
++#endif
+ #else
+ #include <unistd.h>
+ #include <limits.h>
+diff --git a/src/exec/exec_program.c b/src/exec/exec_program.c
+index 28f6ddcd..87474ad4 100644
+--- a/src/exec/exec_program.c
++++ b/src/exec/exec_program.c
+@@ -23,10 +23,9 @@
+ #include "../../lib/sig.h"
+ #include "../../lib/wait.h"
+ #include "../../lib/stralloc.h"
++#include "../../lib/unix.h"
+ 
+-#if WINDOWS_NATIVE
+-pid_t fork(void);
+-#else
++#if !WINDOWS_NATIVE
+ #include <unistd.h>
+ #endif
+ 
+diff --git a/src/fd/fd_close.c b/src/fd/fd_close.c
+index f3dc3069..2987870b 100644
+--- a/src/fd/fd_close.c
++++ b/src/fd/fd_close.c
+@@ -29,7 +29,7 @@ fd_close(struct fd* fd) {
+   /* set the filedescriptor (which is in fact a stralloc *) on
+      stralloc redirections to -1 so they aren't accidentally passed
+      to close() */
+-  if(fd->wb.op == (ssize_t (*)())(void*)&stralloc_write)
++  if(fd->wb.op == (buffer_op_proto*)&stralloc_write)
+     fd->wb.fd = -1;
+ 
+   /* the buffers may sit on kernel fds of their own that never became
+diff --git a/src/fd/fd_stat.c b/src/fd/fd_stat.c
+index 40c2b55f..026fe6c7 100644
+--- a/src/fd/fd_stat.c
++++ b/src/fd/fd_stat.c
+@@ -4,8 +4,10 @@
+ 
+ #if WINDOWS_NATIVE
+ #include <io.h>
+-#define stat _stat
+-#define fstat _fstat
++/* <sys/stat.h> already maps stat()/fstat() onto _stat64/_fstat64
++ * for _FILE_OFFSET_BITS=64 (set project-wide) -- redefining them to
++ * plain _stat/_fstat here would truncate file times/sizes back to
++ * the deprecated 32-bit-time_t struct instead of just being redundant. */
+ #ifndef S_IFMT
+ #define S_IFMT 0xf000
+ #endif
+diff --git a/src/history/history_init.c b/src/history/history_init.c
+index 9d99fd14..d7f22e60 100644
+--- a/src/history/history_init.c
++++ b/src/history/history_init.c
+@@ -7,7 +7,9 @@
+ #include <sys/stat.h>
+ #if WINDOWS_NATIVE
+ #include <windows.h>
++#ifndef PATH_MAX
+ #define PATH_MAX MAX_PATH
++#endif
+ #else
+ #include <limits.h>
+ #endif
+diff --git a/src/job/job_fork.c b/src/job/job_fork.c
+index e9517a2f..336f8368 100644
+--- a/src/job/job_fork.c
++++ b/src/job/job_fork.c
+@@ -4,6 +4,7 @@
+ #include "../sh.h"
+ #include "../../lib/sig.h"
+ #include "../../lib/windoze.h"
++#include "../../lib/unix.h"
+ #include <assert.h>
+ 
+ #if !WINDOWS_NATIVE
+diff --git a/src/job/job_wait.c b/src/job/job_wait.c
+index dc0225e1..e2ec801c 100644
+--- a/src/job/job_wait.c
++++ b/src/job/job_wait.c
+@@ -4,8 +4,8 @@
+ #include "../../lib/windoze.h"
+ #if !WINDOWS_NATIVE
+ #include <termios.h>
+-#include <unistd.h>
+ #endif
++#include <unistd.h>
+ #include "../job.h"
+ #include "../fdtable.h"
+ #include "../sh.h"
+diff --git a/src/sh/sh_forked.c b/src/sh/sh_forked.c
+index d51aad16..6dbed1fa 100644
+--- a/src/sh/sh_forked.c
++++ b/src/sh/sh_forked.c
+@@ -5,9 +5,8 @@
+ #include "../../lib/windoze.h"
+ #if WINDOWS_NATIVE
+ #include <io.h>
+-#else
+-#include <unistd.h>
+ #endif
++#include <unistd.h>
+ 
+ int sh_child = 0;
+ 
+diff --git a/src/sh/sh_getcwd.c b/src/sh/sh_getcwd.c
+index 98bcf25d..8517f65c 100644
+--- a/src/sh/sh_getcwd.c
++++ b/src/sh/sh_getcwd.c
+@@ -4,7 +4,9 @@
+ #include "../../lib/windoze.h"
+ #if WINDOWS_NATIVE
+ #include <windows.h>
++#ifndef PATH_MAX
+ #define PATH_MAX MAX_PATH
++#endif
+ #else
+ #include <unistd.h>
+ #include <limits.h>
+diff --git a/src/sh/sh_init.c b/src/sh/sh_init.c
+index 328c3fdf..ef736af7 100644
+--- a/src/sh/sh_init.c
++++ b/src/sh/sh_init.c
+@@ -10,10 +10,10 @@
+ #include "builtin_config.h"
+ 
+ #if !WINDOWS_NATIVE
+-#include <unistd.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #endif
++#include <unistd.h>
+ 
+ #if WINDOWS_NATIVE && !defined(HAVE_GETPPID)
+ #include "../../lib/unix.h"

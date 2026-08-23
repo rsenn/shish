@@ -4,6 +4,7 @@
 #include "../sh.h"
 #include "../../lib/sig.h"
 #include "../../lib/windoze.h"
+#include "../../lib/unix.h"
 #include <assert.h>
 
 #if !WINDOWS_NATIVE

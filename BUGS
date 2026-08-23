@@ -538,17 +538,6 @@
   shish -c help | head -3
   ```
 
-- mingw-getpid-implicit-declaration: `src/sh/sh_init.c:44` calls
-  `getpid()` unconditionally, but `<unistd.h>` (where its declaration
-  would come from) is only included `#if !WINDOWS_NATIVE`
-  (`sh_init.c:12-16`), so a mingw cross build compiles it as an
-  implicit `int`-returning declaration -- a warning, not a link
-  failure (mingw's CRT exports a real `getpid()`, from `<process.h>`
-  or its own `<unistd.h>`, either of which would fix the warning if
-  included on this platform too). Found while fixing
-  `mingw-missing-getppid`; not fixed here since it doesn't block the
-  build.
-
   **Repro:**
   ```sh
   . ./cfg.sh && cfg-mingw64 -DDO_TESTS=OFF

@@ -5,9 +5,8 @@
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>
-#else
-#include <unistd.h>
 #endif
+#include <unistd.h>
 
 int sh_child = 0;
 

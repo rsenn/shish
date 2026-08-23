@@ -23,10 +23,9 @@
 #include "../../lib/sig.h"
 #include "../../lib/wait.h"
 #include "../../lib/stralloc.h"
+#include "../../lib/unix.h"
 
-#if WINDOWS_NATIVE
-pid_t fork(void);
-#else
+#if !WINDOWS_NATIVE
 #include <unistd.h>
 #endif
 

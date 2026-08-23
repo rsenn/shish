@@ -4,6 +4,7 @@
 #include "../../lib/scan.h"
 #include "../../lib/str.h"
 #include "../../lib/stralloc.h"
+#include "../../lib/unix.h"
 #include <unistd.h>
 #include <errno.h>
 #include <dirent.h>

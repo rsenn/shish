@@ -10,10 +10,10 @@
 #include "builtin_config.h"
 
 #if !WINDOWS_NATIVE
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #endif
+#include <unistd.h>
 
 #if WINDOWS_NATIVE && !defined(HAVE_GETPPID)
 #include "../../lib/unix.h"

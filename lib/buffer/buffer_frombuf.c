@@ -15,6 +15,6 @@ buffer_frombuf(buffer* b, const char* x, size_t l) {
   b->n = l;
   b->a = l;
   b->fd = 0;
-  b->op = &buffer_dummyreadbuf;
+  b->op = (buffer_op_proto*)(void*)&buffer_dummyreadbuf;
   b->deinit = 0;
 }

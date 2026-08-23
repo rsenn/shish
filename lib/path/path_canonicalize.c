@@ -2,6 +2,7 @@
 
 #include "../windoze.h"
 #include "../path_internal.h"
+#include "../unix.h"
 
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 1
@@ -35,9 +36,6 @@
 #define lstat stat
 #endif
 
-#ifndef _stat
-#define _stat stat
-#endif
 #ifdef __LCC__
 extern int stat(const char*, struct stat*);
 #endif
@@ -92,11 +90,11 @@ is_link(const char* path) {
 int
 path_canonicalize(const char* path, stralloc* sa, int symbolic) {
   size_t n;
-  struct _stat st;
+  struct stat st;
   int ret = 1;
   char buf[PATH_MAX + 1];
   char sep;
-  int (*stat_fn)(const char*, struct _stat*) = stat;
+  int (*stat_fn)(const char*, struct stat*) = stat;
 #ifdef HAVE_LSTAT
 #if !WINDOWS_NATIVE
   if(symbolic)

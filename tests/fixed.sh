@@ -4373,4 +4373,75 @@ fi
 ## pre-existing failures before and after; `set -m`'s glibc branch is
 ## untouched by the `#if WINDOWS_NATIVE` addition).
 
+## fixes/210: cleared all 20 mingw build warnings (cfg-mingw64/
+## cfg-mingw32, both now build with zero warnings). Grouped by cause:
+## - "PATH_MAX redefined" (exec_path.c, history_init.c, sh_getcwd.c):
+##   each unconditionally #define's PATH_MAX after mingw's own headers
+##   already have; wrapped in #ifndef.
+## - fd_stat.c's own `#define stat _stat`/`#define fstat _fstat`
+##   shadowed <sys/stat.h>'s own _FILE_OFFSET_BITS=64-aware mapping
+##   (stat/fstat -> _stat64/_fstat64) with the older, deprecated
+##   32-bit-time_t variant -- a real correctness bug, not just a
+##   warning (silently truncated file times/sizes on mingw). Removed;
+##   mingw's own macros are already right for this project's flags.
+## - lib/path/path_canonicalize.c's `struct _stat`/`_stat` function
+##   pointer used mingw's *other* stat alias (_stat64i32, 32-bit time_t)
+##   while `stat` itself resolves to _stat64 -- an actual type mismatch
+##   this project's own `#ifndef _stat #define _stat stat #endif` shim
+##   couldn't paper over once mingw started predefining `_stat` itself.
+##   Switched to plain `struct stat`/`stat` (what every other stat call
+##   site in the tree already uses), dropped the now-dead shim.
+## - lstat()/S_IFLNK/S_ISLNK didn't exist on mingw at all (no symlink
+##   bit in its <sys/stat.h>) -- builtin_chmod.c/builtin_rm.c/
+##   builtin_test.c (`test -L`) all need them for real, not just to
+##   silence a warning. New lib/unix/lstat.c: stat() then patches
+##   st_mode to S_IFLNK if is_symlink() (already implemented via
+##   reparse-point detection) says so.
+## - fork()/execve() implicit-declaration and conflicting-types
+##   warnings (exec_program.c, job_fork.c): both functions link fine on
+##   mingw already (fork() via src/fork.c's RtlCloneUserProcess shim,
+##   execve() via mingw-w64's oldnames compat layer) but had no shared,
+##   correctly-typed prototype -- exec_program.c's own local `pid_t
+##   fork(void)` didn't even match src/fork.c's real `int fork(void)`.
+##   Centralized both in lib/unix.h (execve() via <process.h>, which
+##   already declares it -- a hand-written prototype collided with its
+##   dllimport attribute) alongside kill()/killpg()/getppid()/lstat().
+## - usleep()/getpid() (job_wait.c, sh_forked.c, sh_init.c -- the
+##   latter closes the `mingw-getpid-implicit-declaration` BUGS entry):
+##   mingw's own <unistd.h> declares both; the project's `#if
+##   !WINDOWS_NATIVE #include <unistd.h> #endif` guards were wider than
+##   they needed to be (only the POSIX-only <termios.h>/<io.h> half of
+##   those blocks actually needs the platform split).
+## - buffer_frombuf.c's `b->op = &buffer_dummyreadbuf` and
+##   buffer_prefetch.c/fd_close.c's raw `(void(*)())`/`(ssize_t(*)())`
+##   comparisons against buffer_op_proto-typed fields: buffer_op_proto
+##   hardcodes `int fd`, but WINDOWS_NATIVE's `fd_t` is `intptr_t` (a
+##   real size difference, x86_64) -- cast through
+##   `(buffer_op_proto*)(void*)` like every other `op` assignment
+##   already does (BUFFER_INIT macros).
+## - fork.c's FARPROC-to-typed-function-pointer assignments
+##   (GetProcAddress() results) needed the explicit casts idiomatic
+##   Win32 code always uses; its unconditional `#define _WIN32_WINNT
+##   0x0600` redefined a value mingw's own headers already default to
+##   0xA00 -- wrapped in #ifndef.
+## - buffer_putptr.c (found separately, building under cfg-msys64):
+##   `(uint64)(uintptr_t)ptr` depended on `uintptr_t` being declared;
+##   this project's own typedefs.h only pulls <stdint.h> for
+##   __MINGW32__/__MINGW64__, not plain MSYS. Switched to `(uint64)
+##   (size_t)ptr` -- size_t is reliably pointer-width everywhere this
+##   project builds, unlike this codebase's own uintptr_t availability.
+## Also moved src/fork.c to lib/unix/fork.c (matching the
+## one-function-per-file/self-#if-WINDOWS_NATIVE-gated convention
+## already used by getppid.c/kill.c/killpg.c/lstat.c) and dropped the
+## HAVE_FORK/FORK_SOURCE CMake special-casing it needed at its old
+## location -- lib/*/*.c is already glob-picked-up unconditionally.
+## Per the "Writing a test" exception in CLAUDE.md for changes whose
+## effect is mingw/msys-build-only, this is comment-only: verified via
+## a full clean rebuild of cfg-mingw64, cfg-mingw32, and cfg-msys64
+## (previously 20 warnings between the two mingw targets, 1 on msys64;
+## all now build with zero warnings and zero errors, shish.exe/
+## shformat.exe still link), and by confirming native glibc still
+## builds clean and this same `ctest` run is unchanged (same 79
+## pre-existing failures before and after).
+
 summary

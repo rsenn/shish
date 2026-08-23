@@ -109,12 +109,6 @@ if(WIN32
     check_library_exists(wsock32 gethostname /usr/lib HAVE_WSOCK32)
   endif(NOT HAVE_WS2_32)
 
-  check_function_exists(fork HAVE_FORK)
-
-  if(NOT HAVE_FORK)
-    set(FORK_SOURCE "src/fork.c")
-  endif(NOT HAVE_FORK)
-
 endif(
   WIN32
   OR WIN64
