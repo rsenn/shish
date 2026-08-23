@@ -206,8 +206,9 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
          Static buffer is safe since v is consumed by the immediately-
          following expand_cat below. */
-    } else if(str_equal(param->name, "LINENO") || str_equal(param->name, "LINES") ||
-              str_equal(param->name, "COLUMNS")) {
+    } else if(str_equal(param->name, "LINENO") ||
+              (str_equal(param->name, "LINES") && term_size.ws_row) ||
+              (str_equal(param->name, "COLUMNS") && term_size.ws_col)) {
       unsigned long n;
 
       switch(param->name[4]) {
