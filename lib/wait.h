@@ -9,7 +9,7 @@
 #define WAIT_TERMSIG(status) ((status) & 0)
 #define WAIT_EXITSTATUS(status) (((status) >> 8) & 0xff)
 #else
-#define WAIT_IF_SIGNALED(status) WIFSIGNALED(status)
+#define WAIT_IF_SIGNALED(status) (!WAIT_IF_STOPPED(status) && !WAIT_IF_EXITED(status))
 #define WAIT_TERMSIG(status) WTERMSIG(status)
 #define WAIT_EXITSTATUS(status) (((status) >> 8) & 0xff)
 #endif
