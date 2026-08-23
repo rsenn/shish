@@ -145,9 +145,10 @@ full logic and its comments) and `config.h.cmake`. One more wrinkle
 surfaced while verifying this against every build tree already in
 this repo's own `build/`: `CMAKE_SYSTEM_NAME` isn't a reliable signal
 for either Emscripten or MSYS in practice here, because `cfg-cmake.sh`
-never actually gets their real CMake toolchain file wired in (see the
-new `BUGS` entries `cfg-emscripten-toolchain-file-never-resolves` and
-the existing `cfg-cmake-mingw-silently-builds-native`) -- so the
+never actually gets their real CMake toolchain file wired in (the
+Emscripten half was fixed directly in `cfg-cmake.sh` shortly after
+this was found; see the existing `cfg-cmake-mingw-silently-builds-native`
+entry for the still-open mingw/android half) -- so the
 `Checks.cmake` logic detects both by compiler name/path instead,
 matching what `CMakeLists.txt`'s own `EMSCRIPTEN` variable already has
 to do for the same reason. Verified against every `build/<triple>`
@@ -387,10 +388,13 @@ mechanical swap to the flattened-array form once that refactor lands.
    pipeline errors loudly. The `eval_node_bgnd()` caveat above was
    found during this verification.
 4. ~~`BUGS` -- add an entry for the silent-failure bug described above
-   (mishandled `fork() == -1` in `eval_pipeline()`)~~ **Done**
-   (`eval-pipeline-silent-on-fork-failure`), independent of whether
-   this plan is implemented -- it's a real defect on its own. Also
-   added `cfg-emscripten-toolchain-file-never-resolves`, found while
+   (mishandled `fork() == -1` in `eval_pipeline()`)~~ **Done and fixed**
+   -- `eval-pipeline-silent-on-fork-failure` is resolved by this same
+   change (`eval_pipeline_sequential()` never calls `job_fork()`) and
+   removed from `BUGS`; its sibling at a different call site is now
+   tracked as `eval-node-bgnd-silent-on-fork-failure` (see "What this
+   does not fix" above). Also found (and, separately, fixed upstream)
+   the Emscripten toolchain-resolution bug in `cfg-cmake.sh` while
    verifying step 1 against this repo's own `build/emscripten`.
 
 ## Testing

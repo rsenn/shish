@@ -647,36 +647,3 @@
   sed -n '19,45p' src/eval/eval_node_bgnd.c
   ```
 
-- cfg-emscripten-toolchain-file-never-resolves: `cfg-cmake.sh`'s
-  `cfg-emscripten` sets `TOOLCHAIN="${EMSCRIPTEN:=dirname $(which
-  emcc)}/cmake/Modules/Platform/Emscripten.cmake"` -- but
-  `${EMSCRIPTEN:=dirname $(which emcc)}` is missing a `$()` around
-  `dirname`, so when `$EMSCRIPTEN` is unset this doesn't run `dirname`
-  at all: it assigns `$EMSCRIPTEN` (and therefore the front half of
-  `$TOOLCHAIN`) the literal, unevaluated string `"dirname
-  /path/to/emcc"` (with `$(which emcc)` still substituted). The
-  resulting `$TOOLCHAIN` path can never exist, so `cfg()`'s own `if [
-  -e "$TOOLCHAIN" ]` guard (`cfg-cmake.sh` line ~24) silently fails
-  and `-DCMAKE_TOOLCHAIN_FILE=...` never gets passed to `cmake` at
-  all. The build still succeeds (`CC=emcc` alone is enough to produce
-  a working `.wasm`), but it's not a real CMake cross-compile: no
-  `CMAKE_TOOLCHAIN_FILE`, no `CMAKE_SYSTEM_NAME=Emscripten`, no
-  `CMAKE_CROSSCOMPILING=TRUE` end up in `CMakeCache.txt` -- every
-  `CMAKE_CROSSCOMPILING`-gated code path in `Checks.cmake` (e.g. the
-  `if(NOT CMAKE_CROSSCOMPILING) check_type_size(...)` blocks around
-  line 167) silently runs its *native* branch for an Emscripten build
-  instead, and any future check gated on `CMAKE_SYSTEM_NAME STREQUAL
-  "Emscripten"` (as opposed to the compiler-basename match
-  `CMakeLists.txt`'s own `EMSCRIPTEN` variable already has to use
-  instead, for this exact reason) will silently misdetect the
-  platform. Confirmed directly against this repo's own
-  `build/emscripten`: `CMakeCache.txt` has no `CMAKE_TOOLCHAIN_FILE`
-  or `CMAKE_SYSTEM_NAME` entry at all, only `CMAKE_C_COMPILER` set to
-  `emcc`.
-
-  **Repro:**
-  ```sh
-  . ./cfg.sh && cfg-emscripten
-  grep -iE 'TOOLCHAIN|SYSTEM_NAME' build/emscripten/CMakeCache.txt
-  # (nothing -- both are expected to be set for a real cross-compile)
-  ```

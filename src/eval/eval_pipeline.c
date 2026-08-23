@@ -170,22 +170,16 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
 #if !defined(HAVE_FORK)
   return eval_pipeline_sequential(e, npipe);
 #else
-  struct job* job;
   union node* node;
   struct fdstack st;
   struct fd* pipes = 0;
   unsigned int n;
-  int pid = 0;
-  int prevfd = -1;
-  int status = -1;
+  int pid = 0, prevfd = -1, status = -1;
+  struct job* job;
 
-  /*  job = (e->flags & E_JCTL) ? job_new(npipe->ncmd) : NULL;*/
-  job = job_new(npipe->ncmd);
-
-  if(job)
+  if((job = job_new(npipe->ncmd))) {
     job->bgnd = npipe->bgnd;
-
-  if(job == NULL) {
+  } else {
     buffer_puts(fd_err->w, "no job control");
     buffer_putnlflush(fd_err->w);
   }
@@ -233,9 +227,8 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
       in = fd_malloc();
       fd_push(out, STDOUT_FILENO, FD_WRITE | FD_PIPE | FD_FREE);
 #endif
-      prevfd = fd_pipe(out);
 
-      if(prevfd == -1) {
+      if((prevfd = fd_pipe(out)) == -1) {
         /* prevfd is already -1 here; close(-1) is a no-op that only
            risks clobbering errno (with EBADF) before it's reported */
         sh_error_errno("pipe creation failed");
@@ -258,11 +251,11 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
       fdstack_pipe(n, pipes);
     }
 
-    pid = job_fork(job, node, npipe->bgnd);
+    ;
 
-    if(!pid) {
+    if(!(pid = job_fork(job, node, npipe->bgnd))) {
       /* no job control for commands inside pipe */
-      /*      e->mode &= E_JCTL;*/
+      /*e->mode &= E_JCTL;*/
 
       /* exit after evaluating this subtree */
       exit(eval_tree(e, node, E_EXIT));
