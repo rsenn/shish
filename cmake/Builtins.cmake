@@ -119,13 +119,7 @@ function(ON_ENABLE_ALL_BUILTINS VAR ACCESS VALUE CURRENT_LIST_FILE STACK)
     message("STACK = ${STACK}")
   endif(NOT "${ACCESS}" STREQUAL "READ_ACCESS")
 
-endfunction(
-  ON_ENABLE_ALL_BUILTINS
-  VAR
-  ACCESS
-  VALUE
-  CURRENT_LIST_FILE
-  STACK)
+endfunction()
 
 # variable_watch(ENABLE_ALL_BUILTINS ON_ENABLE_ALL_BUILTINS)
 
@@ -190,8 +184,8 @@ unset(ENABLE_ALL_BUILTINS)
 unset(ENABLE_ALL_BUILTINS CACHE)
 
 foreach(BUILTIN ${ALL_BUILTINS})
-  string(TOUPPER ${BUILTIN} NAME)
-  unset(ENABLE_${NAME} CACHE)
+   string(TOUPPER ${BUILTIN} NAME)
+ #unset(ENABLE_${NAME} CACHE)
 endforeach(BUILTIN ${ALL_BUILTINS})
 
 # "dump" only exists to inspect shell state while debugging, so a debug
@@ -277,6 +271,9 @@ list(SORT BUILTINS_DISABLED)
 
 string(REPLACE ";" " " BUILTINS_ENABLED "${BUILTINS_ENABLED}")
 string(REPLACE ";" " " BUILTINS_DISABLED "${BUILTINS_DISABLED}")
+
+
+dump(BUILTINS_DISABLED)
 
 function(make_list OUTPUT_VAR MAX_LINE_LEN)
   set(${OUTPUT_VAR}

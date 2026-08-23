@@ -227,21 +227,6 @@ cfg-mingw64() {
   host=x86_64-w64-mingw32 cfg-mingw "$@"
 }
 
-cfg-emscripten() {
-  (CC="emcc" CXX="em++" \
-  LDFLAGS="-sWASM=1 -sLLD_REPORT_UNDEFINED" \
-  CFLAGS="-sUSE_PTHREADS=0 -DEMSCRIPTEN=1" \
-  CXXFLAGS="-sUSE_PTHREADS=0 -DEMSCRIPTEN=1" \
-  TOOLCHAIN="${EMSCRIPTEN}/cmake/Modules/Platform/Emscripten.cmake" \
-  builddir=build/emscripten \
-  cfg \
-    -DCMAKE_EXE_LINKER_FLAGS="-s WASM=1 -sEXPORTED_RUNTIME_METHODS=['callMain'] -sINVOKE_RUN=0" \
-    -DCMAKE_EXECUTABLE_SUFFIX=".html" \
-    -DENABLE_SHARED=OFF \
-    -DENABLE_PIC=FALSE \
-    "$@")
-}
-
 cfg-tcc() {
  (build=$(cc -dumpmachine | sed 's|-pc-|-|g')
   host=${build/-gnu/-tcc}
@@ -387,12 +372,12 @@ cfg-aarch64() {
 }
 
 cfg-emscripten() {
- (CC="emcc" CXX="em++" \
+ (: ${builddir=build/emscripten}
+  CC="emcc" CXX="em++" \
   LDFLAGS="-sWASM=1 -sLLD_REPORT_UNDEFINED" \
   CFLAGS="-sUSE_PTHREADS=0 -DEMSCRIPTEN=1" \
   CXXFLAGS="-sUSE_PTHREADS=0 -DEMSCRIPTEN=1" \
   TOOLCHAIN="${EMSCRIPTEN:=dirname $(which emcc)}/cmake/Modules/Platform/Emscripten.cmake" \
-  builddir=build/emscripten \
   cfg \
     -DCMAKE_EXE_LINKER_FLAGS="-s WASM=1 -sEXPORTED_RUNTIME_METHODS=['callMain'] -sINVOKE_RUN=0" \
     -DCMAKE_EXECUTABLE_SUFFIX=".html" \

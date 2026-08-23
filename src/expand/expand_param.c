@@ -6,6 +6,7 @@
 #include "../tree.h"
 #include "../fdtable.h"
 #include "../var.h"
+#include "../term.h"
 
 #include "../../lib/uint16.h"
 #include "../../lib/uint32.h"
@@ -199,12 +200,19 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       v = tmpbuf;
       vlen = fmt_ulong(tmpbuf, random);
 
-      /* $LINENO: source line of the reference itself, captured at
-         parse time in param->loc. Static buffer is safe since v is
-         consumed by the immediately-following expand_cat below. */
-    } else if(str_equal(param->name, "LINENO")) {
+      /* $LINENO:  source line of the reference, captured at parse time.
+         $LINES:   terminal rows
+         $COLUMNS: terminal columns
+
+         Static buffer is safe since v is consumed by the immediately-
+         following expand_cat below. */
+    } else if(str_equal(param->name, "LINENO") || str_equal(param->name, "LINES") ||
+              str_equal(param->name, "COLUMNS")) {
       static char linebuf[FMT_ULONG];
-      vlen = fmt_ulong(linebuf, param->loc.line);
+      vlen = fmt_ulong(linebuf,
+                       param->name[4] == 'N'   ? param->loc.line
+                       : param->name[4] == 'S' ? term_size.ws_row
+                                               : term_size.ws_col);
       linebuf[vlen] = '\0';
       v = linebuf;
 
