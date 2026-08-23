@@ -545,6 +545,28 @@
   # warning: implicit declaration of function 'getpid'
   ```
 
+- builtin-fork-races-sh-onsig-sigchld: any builtin that forks a child
+  directly (not via `job_fork()`/the job table, e.g. to run and wait on
+  an external command itself) races `sh_onsig()` -- the shell's own
+  `SIGCHLD` handler, installed for job control, calls the same global
+  `wait_nohang()`/`waitpid(-1, ..., WNOHANG)` reaper for *any* reaped
+  child. Since an untracked child isn't in the job table,
+  `job_signal()`/`job_bypid()` finds nothing to record it against and
+  silently discards its exit status before the builtin's own
+  `wait_pid_nohang()` loop ever sees it -- the builtin then either
+  hangs or misreports failure. `builtin_timeout.c` hit this and now
+  wraps its fork+wait in `sig_block(SIGCHLD)`/`sig_unblock(SIGCHLD)`
+  (matching `job_fork()`'s own pattern), but nothing enforces this on
+  future direct-fork builtins; it has to be remembered by hand each
+  time.
+
+  **Repro:**
+  ```sh
+  # revert the sig_block/sig_unblock pair in builtin_timeout.c, then:
+  timeout 2 true; echo $?
+  # without the SIGCHLD block: intermittently 125 (race lost) instead of 0
+  ```
+
 - no-tree-print-option-is-a-noop: `-DNO_TREE_PRINT=ON` changes nothing.
   `LIBSHELL_SOURCES` comes from `file(GLOB ...)` (`CMakeLists.txt:167`),
   so it holds absolute paths, and the two `list(REMOVE_ITEM ...)` calls

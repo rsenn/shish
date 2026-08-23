@@ -68,8 +68,14 @@
 #ifndef BUILTIN_LOCAL
 #define BUILTIN_LOCAL 1
 #endif
+#ifndef BUILTIN_LINK
+#define BUILTIN_LINK 0
+#endif
 #ifndef BUILTIN_LN
 #define BUILTIN_LN 0
+#endif
+#ifndef BUILTIN_LS
+#define BUILTIN_LS 0
 #endif
 #ifndef BUILTIN_MKDIR
 #define BUILTIN_MKDIR 0
@@ -98,11 +104,20 @@
 #ifndef BUILTIN_PRINTF
 #define BUILTIN_PRINTF 1
 #endif
+#ifndef BUILTIN_TEE
+#define BUILTIN_TEE 0
+#endif
 #ifndef BUILTIN_TEST
 #define BUILTIN_TEST 1
 #endif
 #ifndef BUILTIN_TIMES
 #define BUILTIN_TIMES 1
+#endif
+#ifndef BUILTIN_TIMEOUT
+#define BUILTIN_TIMEOUT 0
+#endif
+#ifndef BUILTIN_TOUCH
+#define BUILTIN_TOUCH 0
 #endif
 #ifndef BUILTIN_TRAP
 #define BUILTIN_TRAP 1
@@ -116,8 +131,14 @@
 #ifndef BUILTIN_READ
 #define BUILTIN_READ 1
 #endif
+#ifndef BUILTIN_READLINK
+#define BUILTIN_READLINK 0
+#endif
 #ifndef BUILTIN_READONLY
 #define BUILTIN_READONLY 1
+#endif
+#ifndef BUILTIN_REALPATH
+#define BUILTIN_REALPATH 0
 #endif
 #ifndef BUILTIN_RETURN
 #define BUILTIN_RETURN 1
@@ -130,6 +151,9 @@
 #endif
 #ifndef BUILTIN_SHIFT
 #define BUILTIN_SHIFT 1
+#endif
+#ifndef BUILTIN_SLEEP
+#define BUILTIN_SLEEP 0
 #endif
 #ifndef BUILTIN_SOURCE
 #define BUILTIN_SOURCE 1
@@ -151,6 +175,9 @@
 #endif
 #ifndef BUILTIN_WAIT
 #define BUILTIN_WAIT 1
+#endif
+#ifndef BUILTIN_WC
+#define BUILTIN_WC 0
 #endif
 #ifndef BUILTIN_WHICH
 #define BUILTIN_WHICH 0
@@ -267,11 +294,17 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_KILL
     {"kill", &builtin_kill, B_DEFAULT, "[-signal|-number] pid|%job ...", help_kill},
 #endif
+#if BUILTIN_LINK
+    {"link", &builtin_link, B_DEFAULT, "file1 file2", help_link},
+#endif
 #if BUILTIN_LN
     {"ln", &builtin_ln, B_DEFAULT, "[-sfv]", help_ln},
 #endif
 #if BUILTIN_LOCAL
     {"local", &builtin_local, B_DEFAULT, "[option] name[=value] ...", help_local},
+#endif
+#if BUILTIN_LS
+    {"ls", &builtin_ls, B_DEFAULT, "[-adl1] [file...]", help_ls},
 #endif
 #if BUILTIN_MKDIR
     {"mkdir", &builtin_mkdir, B_DEFAULT, "[-p]", help_mkdir},
@@ -291,6 +324,9 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_SHIFT
     {"shift", &builtin_shift, B_SPECIAL, "[n]", help_shift},
 #endif
+#if BUILTIN_SLEEP
+    {"sleep", &builtin_sleep, B_DEFAULT, "seconds", help_sleep},
+#endif
 #if BUILTIN_READ
     {"read",
      &builtin_read,
@@ -299,8 +335,14 @@ struct builtin_cmd builtin_table[] = {
      "...]",
      help_read},
 #endif
+#if BUILTIN_READLINK
+    {"readlink", &builtin_readlink, B_DEFAULT, "file...", help_readlink},
+#endif
 #if BUILTIN_READONLY
     {"readonly", &builtin_readonly, B_SPECIAL, "[-p] [name[=value] ...]", help_readonly},
+#endif
+#if BUILTIN_REALPATH
+    {"realpath", &builtin_realpath, B_DEFAULT, "[-s] file...", help_realpath},
 #endif
 #if BUILTIN_RETURN
     {"return", &builtin_return, B_SPECIAL, "[n]", help_return},
@@ -314,11 +356,28 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_SOURCE
     {"source", &builtin_source, B_SPECIAL, "file [arguments]", help_source},
 #endif
+#if BUILTIN_TEE
+    {"tee", &builtin_tee, B_DEFAULT, "[-ai] [file...]", help_tee},
+#endif
 #if BUILTIN_TEST
     {"test", &builtin_test, B_DEFAULT, "[expr]", help_test},
 #endif
 #if BUILTIN_TIMES
     {"times", &builtin_times, B_SPECIAL, "", help_times},
+#endif
+#if BUILTIN_TIMEOUT
+    {"timeout",
+     &builtin_timeout,
+     B_DEFAULT,
+     "[-v] [-k DURATION] [-s SIGNAL] DURATION COMMAND [ARG]...",
+     help_timeout},
+#endif
+#if BUILTIN_TOUCH
+    {"touch",
+     &builtin_touch,
+     B_DEFAULT,
+     "[-amf] [-d DATE|-t STAMP|-r FILE] [--time=WORD] file...",
+     help_touch},
 #endif
 #if BUILTIN_TRUE
     {"true", &builtin_true, B_DEFAULT, "", help_true},
@@ -349,6 +408,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_WAIT
     {"wait", &builtin_wait, B_DEFAULT, "[pid...]", help_wait},
+#endif
+#if BUILTIN_WC
+    {"wc", &builtin_wc, B_DEFAULT, "[-cmlLw] [file...]", help_wc},
 #endif
 #if BUILTIN_WHICH
     {"which", &builtin_which, B_DEFAULT, "[-a] filename ...", help_which},

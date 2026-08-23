@@ -39,10 +39,19 @@ list(
   chmod
   dirname
   hostname
+  link
   ln
+  ls
   mkdir
+  readlink
+  realpath
   rm
   rmdir
+  sleep
+  tee
+  timeout
+  touch
+  wc
   which
   mktemp
   uname)
@@ -243,8 +252,8 @@ foreach(ENABLED ${BUILTINS_ENABLED})
       CACHE INTERNAL "Build the ${ENABLED} builtin")
 endforeach(ENABLED ${BUILTINS_ENABLED})
 
-dump(BUILTINS_ENABLED)
-dump(BUILTIN_FLAGS)
+#dump(BUILTINS_ENABLED)
+#dump(BUILTIN_FLAGS)
 
 set(BUILTIN_CONFIG "")
 foreach(BUILTIN ${ALL_BUILTINS})

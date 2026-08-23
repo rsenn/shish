@@ -256,6 +256,13 @@ check_function_exists(lstat HAVE_LSTAT)
 check_function_exists(symlink HAVE_SYMLINK)
 check_function_exists(link HAVE_LINK)
 
+check_include_file(pwd.h HAVE_PWD_H)
+check_include_file(grp.h HAVE_GRP_H)
+check_function_exists(getpwuid_r HAVE_GETPWUID_R)
+check_function_exists(getpwuid HAVE_GETPWUID)
+check_function_exists(getgrgid_r HAVE_GETGRGID_R)
+check_function_exists(getgrgid HAVE_GETGRGID)
+
 check_include_file(signal.h HAVE_SIGNAL_H)
 if(HAVE_SIGNAL_H)
   set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} signal.h)

@@ -4444,4 +4444,19 @@ fi
 ## builds clean and this same `ctest` run is unchanged (same 79
 ## pre-existing failures before and after).
 
+## fixes/211: lib/byte/byte_copyr.c's LINK_STATIC fallback (used
+## instead of the memmove() macro on statically-linked builds) always
+## copied back-to-front, which only overlap-safe for a *rightward*
+## shift (out > in). A leftward shift (out < in, e.g. removing an
+## argv slot by shifting the tail down) got corrupted: each element
+## was overwritten by its neighbor before being read, collapsing the
+## whole shifted range to a copy of its last element. Fixed by
+## picking the copy direction from out vs. in, like memmove() does.
+## This is exercised through the "touch" builtin's long-option
+## extraction (removing "--time=WORD" from argv left-shifts every
+## argument after it) rather than here, since "touch" is an opt-in
+## EXTRA_BUILTIN not enabled in this file's default build -- see
+## "-t/-d survive a preceding removed --time=WORD" in
+## tests/builtin-touch.sh.
+
 summary

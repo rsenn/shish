@@ -96,6 +96,24 @@
 /* Define this if you have the link() function */
 #cmakedefine HAVE_LINK 1
 
+/* Define this if you have pwd.h */
+#cmakedefine HAVE_PWD_H 1
+
+/* Define this if you have grp.h */
+#cmakedefine HAVE_GRP_H 1
+
+/* Define this if you have the reentrant getpwuid_r() function */
+#cmakedefine HAVE_GETPWUID_R 1
+
+/* Define this if you have the getpwuid() function */
+#cmakedefine HAVE_GETPWUID 1
+
+/* Define this if you have the reentrant getgrgid_r() function */
+#cmakedefine HAVE_GETGRGID_R 1
+
+/* Define this if you have the getgrgid() function */
+#cmakedefine HAVE_GETGRGID 1
+
 /* Define this if you have the munmap() function */
 #cmakedefine HAVE_MUNMAP 1
 
