@@ -1,6 +1,20 @@
 #ifndef _SIG_H
 #define _SIG_H
 
+/* Two tiers for touching a signal's disposition -- pick by what you're
+ * doing, not by habit:
+ *
+ *   sig_catch()/sig_push()  real traps ("trap CMD INT"): full mask
+ *                            semantics, SA_RESTART control, undoable
+ *                            via sig_pop().
+ *   plain signal()          terminal-driver ignore/reset only
+ *                            (SIGTTIN/SIGTTOU/SIGWINCH in term_init.c/
+ *                            term_restore.c): one-shot, no mask/restart
+ *                            semantics to express. Never use this for
+ *                            anything the `trap` builtin can observe --
+ *                            it bypasses sig_stack.c's save/restore
+ *                            entirely. */
+
 #include <sys/types.h>
 #include <signal.h>
 #include "windoze.h"

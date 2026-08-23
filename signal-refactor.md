@@ -204,20 +204,19 @@ confirming the merge and the Windows table didn't regress anything);
 `tests/*.sh`/`tests/fixed.sh` on glibc unchanged (423 passed, same 5
 pre-existing failures as `main`). Landed as `fixes/204`.
 
-**Phase 2 -- the one real design decision, not mechanical:**
-
-Decide, explicitly and in writing (a comment in `lib/sig.h`, not just
-this file), whether `term_init.c`/`term_restore.c`'s raw `signal()`
-usage is a deliberate lighter-weight tier or should be folded into the
-`sig_action` path. Recommendation: keep it as a **documented** second
-tier -- these are one-shot ignore/reset cases with no mask/restart
+**Phase 2 -- done.** The one real design decision, not mechanical:
+whether `term_init.c`/`term_restore.c`'s raw `signal()` usage is a
+deliberate lighter-weight tier or should be folded into the
+`sig_action` path. Decided to keep it as a **documented** second tier
+-- these are one-shot ignore/reset cases with no mask/restart
 semantics to express, and forcing them through the full
 `SA_MASKALL`/stack apparatus would add machinery without adding
-correctness. Write the rule down (a short comment block at the top of
-`lib/sig.h`: "`sig_catch`/`sig_push` for real traps with mask
-semantics; plain `signal()` only for terminal-driver ignore/reset,
-never for anything `trap` can observe") so the next call site has
-something to follow instead of picking a style ad hoc.
+correctness. The rule is now written down at the top of `lib/sig.h`:
+`sig_catch`/`sig_push` for real traps with mask semantics; plain
+`signal()` only for terminal-driver ignore/reset, never for anything
+`trap` can observe -- so the next call site has something to follow
+instead of picking a style ad hoc. No behavior change; verified via a
+clean rebuild.
 
 **Relationship to the mingw `sig_action` work
 (`mingw-porting.md` section 3):**
