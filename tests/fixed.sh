@@ -4250,4 +4250,22 @@ fi
 ## at exactly sig_action/kill/killpg/tcsetpgrp -- sig_number and the
 ## old empty-table gap no longer appear, confirming neither regressed).
 
+## fixes/205 (cmake/Checks.cmake): the two HAVE_ALLOCA_ALLOCA_H/
+## HAVE_ALLOCA_MALLOC_H probes use check_run(), which calls try_run() --
+## and try_run() hard-errors the whole configure ("try_run() invoked in
+## cross-compiling mode") when cross-compiling without a
+## CMAKE_CROSSCOMPILING_EMULATOR, which none of this project's
+## toolchain files set. `cfg-msys64` hit this and failed to configure
+## at all. Both check_run() calls are now skipped when
+## CMAKE_CROSSCOMPILING is set, same as the SIZEOF_SSIZE_T/SIGSET_T/
+## PID_T/UID_T checks just above them in the same file. Per the
+## "Writing a test" exception in CLAUDE.md for a configure-time issue
+## that only reproduces while cross-compiling, this is comment-only:
+## verified by reconfiguring under cfg-msys64 (previously "Configuring
+## incomplete, errors occurred!", now configures and builds shish.exe/
+## shformat.exe clean) and cfg-mingw64 (still configures clean,
+## unaffected), and by confirming the native glibc build reconfigures,
+## rebuilds, and passes this same tests/fixed.sh unchanged (glibc is
+## never cross-compiling, so the new guard is never taken there).
+
 summary

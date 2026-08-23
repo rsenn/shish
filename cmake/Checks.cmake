@@ -200,15 +200,20 @@ if(HAVE_ALLOCA_H)
   check_symbol_exists(alloca alloca.h HAVE_ALLOCA_SYMBOL)
 endif()
 
-check_run(
-  HAVE_ALLOCA_ALLOCA_H
-  "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}"
-)
-if(NOT HAVE_ALLOCA_ALLOCA_H)
+# check_run() needs try_run(), which errors out the whole configure
+# when cross-compiling without a CMAKE_CROSSCOMPILING_EMULATOR. Skip
+# it cross-compiling, same as SIZEOF_SSIZE_T/SIGSET_T/PID_T/UID_T above.
+if(NOT CMAKE_CROSSCOMPILING)
   check_run(
-    HAVE_ALLOCA_MALLOC_H
+    HAVE_ALLOCA_ALLOCA_H
     "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}"
   )
+  if(NOT HAVE_ALLOCA_ALLOCA_H)
+    check_run(
+      HAVE_ALLOCA_MALLOC_H
+      "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}"
+    )
+  endif()
 endif()
 
 if(HAVE_ALLOCA_ALLOCA_H OR HAVE_ALLOCA_MALLOC_H)
