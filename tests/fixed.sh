@@ -4268,4 +4268,24 @@ fi
 ## rebuilds, and passes this same tests/fixed.sh unchanged (glibc is
 ## never cross-compiling, so the new guard is never taken there).
 
+## fixes/206 (cmake/Checks.cmake): fixes/205 made the alloca probes
+## skip cross-compiling, leaving HAVE_ALLOCA unset (assumed absent)
+## on every cross target rather than actually testing for it. Both
+## probes now use check_compile() (already used elsewhere in this
+## file, e.g. HAVE_WINSIZE in CMakeLists.txt) instead of check_run():
+## try_compile() alone answers "does `alloca(23)` compile", which
+## needs no CMAKE_CROSSCOMPILING_EMULATOR and is a real per-target
+## result instead of a blanket skip. Per the "Writing a test"
+## exception in CLAUDE.md for a configure-time change that only
+## differs under cross-compiling, this is comment-only: verified by
+## reconfiguring under cfg-msys64 (now genuinely determines
+## HAVE_ALLOCA_ALLOCA_H=TRUE instead of leaving it unset, and still
+## builds shish.exe/shformat.exe clean) and cfg-mingw64 (correctly
+## finds no <alloca.h> there, same HAVE_ALLOCA=FALSE result as
+## before -- mingw's link failure past that point is the pre-existing,
+## unrelated `mingw-missing-sig-action` BUGS entry), and by confirming
+## the native glibc build's HAVE_ALLOCA_ALLOCA_H is still TRUE and a
+## full `ctest` run has the identical set of failing tests with and
+## without this change (same pre-existing failures, byte-for-byte).
+
 summary
