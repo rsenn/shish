@@ -4346,4 +4346,31 @@ fi
 ## nothing) build clean and glibc's full `ctest` run is unchanged (same
 ## 79 pre-existing failures before and after).
 
+## fixes/209 (src/sh/sh_main.c, src/builtin/builtin_set.c,
+## src/job/job_foreground.c): mingw's `tcsetpgrp'/`tcgetpgrp'/
+## `setpgid' (`mingw-missing-tcsetpgrp`). `tcgetpgrp'/`setpgid' were
+## already `#if !WINDOWS_NATIVE`-gated from earlier, untracked work;
+## `job_foreground.c`'s `tcsetpgrp` gains the same guard here -- no
+## longer an actual link failure once all three are gated. What was
+## still live: `sh->opts.monitor` got set to 1 for any interactive session
+## (`sh_main.c`) and was settable via `set -m` (`builtin_set.c`) on
+## every platform including `WINDOWS_NATIVE`, so job-control
+## bookkeeping gated on it (stop/resume announcements,
+## `wait_pid_untraced` selection, ...) kept running even though the
+## `setpgid`/`tcsetpgrp` primitives underneath it never execute there.
+## Both now force `monitor` to stay 0 under `WINDOWS_NATIVE`,
+## completing mingw-porting.md section 5's "compile interactive job
+## control out entirely" fix at the bookkeeping layer, not just the
+## syscall layer. Per the "Writing a test" exception in CLAUDE.md for
+## a fix that only changes behavior on a platform this repo isn't
+## being developed on, this is comment-only: verified by rebuilding
+## under cfg-mingw64 -- `cfg-mingw64`/`cmake --build` now completes
+## with zero undefined references (previously `tcsetpgrp`; combined
+## with fixes/207/208, every symbol in mingw-porting.md's original
+## nine-undefined-reference list is now resolved, shish.exe/shformat.exe
+## link and run) -- and by confirming native glibc and msys64 build
+## clean and glibc's full `ctest` run is unchanged (same 79
+## pre-existing failures before and after; `set -m`'s glibc branch is
+## untouched by the `#if WINDOWS_NATIVE` addition).
+
 summary

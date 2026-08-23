@@ -72,7 +72,16 @@ set_apply(struct shopt* opts, int letter, int on) {
     case 'e': opts->errexit = on; return 1;
     case 'f': opts->noglob = on; return 1;
     case 'h': opts->hashall = on; return 1;
-    case 'm': opts->monitor = on; return 1;
+    case 'm':
+#if WINDOWS_NATIVE
+      /* no controlling-terminal/foreground-process-group concept on
+       * Windows -- keep every job synchronous/foreground-only
+       * regardless of what's requested (see doc/building.md). */
+      opts->monitor = 0;
+#else
+      opts->monitor = on;
+#endif
+      return 1;
     case 'n': opts->noexec = on; return 1;
 
     case 'p': opts->privileged = on;

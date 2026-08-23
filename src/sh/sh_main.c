@@ -345,7 +345,16 @@ main(int argc, char** argv) {
     if(have_term || (force_interactive && !no_interactive)) {
       src.mode |= SOURCE_IACTIVE;
 
+#if !WINDOWS_NATIVE
+      /* monitor mode drives setpgid()/tcsetpgrp() (job_fork.c,
+       * job_wait.c, job_foreground.c) -- none of which have a
+       * Windows target (no controlling-terminal/foreground-process-
+       * group concept, see doc/building.md). Leaving it off keeps
+       * every job synchronous/foreground-only there instead of
+       * running job-control bookkeeping for primitives that never
+       * actually execute. */
       sh->opts.monitor = 1;
+#endif
       sh->opts.histexpand = 1;
 
       /* only now does fd_err->mode & FD_TERM reflect reality --

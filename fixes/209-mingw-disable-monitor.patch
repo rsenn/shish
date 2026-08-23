@@ -1,0 +1,59 @@
+diff --git a/src/builtin/builtin_set.c b/src/builtin/builtin_set.c
+index 31f22cde..323d0870 100644
+--- a/src/builtin/builtin_set.c
++++ b/src/builtin/builtin_set.c
+@@ -72,7 +72,16 @@ set_apply(struct shopt* opts, int letter, int on) {
+     case 'e': opts->errexit = on; return 1;
+     case 'f': opts->noglob = on; return 1;
+     case 'h': opts->hashall = on; return 1;
+-    case 'm': opts->monitor = on; return 1;
++    case 'm':
++#if WINDOWS_NATIVE
++      /* no controlling-terminal/foreground-process-group concept on
++       * Windows -- keep every job synchronous/foreground-only
++       * regardless of what's requested (see doc/building.md). */
++      opts->monitor = 0;
++#else
++      opts->monitor = on;
++#endif
++      return 1;
+     case 'n': opts->noexec = on; return 1;
+ 
+     case 'p': opts->privileged = on;
+diff --git a/src/job/job_foreground.c b/src/job/job_foreground.c
+index f07b5e31..97b84adc 100644
+--- a/src/job/job_foreground.c
++++ b/src/job/job_foreground.c
+@@ -8,9 +8,11 @@ void
+ job_foreground(struct job* job) {
+   assert(job->pgrp > 0);
+ 
++#if !WINDOWS_NATIVE
+   sig_block(SIGTTOU);
+ 
+   tcsetpgrp(term_input.fd, job->pgrp);
+ 
+   sig_unblock(SIGTTOU);
++#endif
+ }
+diff --git a/src/sh/sh_main.c b/src/sh/sh_main.c
+index 62e1abc8..f6626afb 100644
+--- a/src/sh/sh_main.c
++++ b/src/sh/sh_main.c
+@@ -345,7 +345,16 @@ main(int argc, char** argv) {
+     if(have_term || (force_interactive && !no_interactive)) {
+       src.mode |= SOURCE_IACTIVE;
+ 
++#if !WINDOWS_NATIVE
++      /* monitor mode drives setpgid()/tcsetpgrp() (job_fork.c,
++       * job_wait.c, job_foreground.c) -- none of which have a
++       * Windows target (no controlling-terminal/foreground-process-
++       * group concept, see doc/building.md). Leaving it off keeps
++       * every job synchronous/foreground-only there instead of
++       * running job-control bookkeeping for primitives that never
++       * actually execute. */
+       sh->opts.monitor = 1;
++#endif
+       sh->opts.histexpand = 1;
+ 
+       /* only now does fd_err->mode & FD_TERM reflect reality --

@@ -189,35 +189,31 @@ Landed as `fixes/208`.
 
 ---
 
-## 5. `tcsetpgrp` (and its untracked siblings)
+## 5. `tcsetpgrp` (and its untracked siblings) -- resolved
 
-`src/job/job_foreground.c:13`: `tcsetpgrp(term_input.fd, job->pgrp)`,
-bracketed by `sig_block(SIGTTOU)`/`sig_unblock(SIGTTOU)` -- hands the
-controlling terminal to a job's process group so it becomes the
-foreground job.
+Was: `src/job/job_foreground.c:13`'s `tcsetpgrp(term_input.fd,
+job->pgrp)`, `job_init.c:43`'s `tcgetpgrp`, and `setpgid`
+(`job_fork.c:126,133,187`, `job_wait.c:196`) -- undefined at link time
+on mingw. Windows' console model has **no controlling-terminal or
+foreground-process-group concept at all**, so there was nothing to map
+any of them onto.
 
-**Not in the original undefined-ref list, but the same subsystem and
-will surface the moment this is touched:** `tcgetpgrp`
-(`src/job/job_init.c:43`) and `setpgid`
-(`src/job/job_fork.c:126,133,187`, `src/job/job_wait.c:196`).
-
-Windows' console model has **no controlling-terminal or foreground-
-process-group concept at all** -- console input goes to whichever
-process owns or has attached the console, full stop. There is nothing
-to map `tcsetpgrp`/`tcgetpgrp`/`setpgid` onto.
-
-**Fix: compile interactive job control out entirely under
-`WINDOWS_NATIVE`**, not shim functions with no target concept to
-implement. Every job becomes synchronous/foreground-only, which is
-also the honest description of what a pty-less environment can
-actually support. `job_foreground.c`, the `setpgid` call sites in
-`job_fork.c`/`job_wait.c`, and `job_init.c:43`'s `tcgetpgrp` all need
-this guard together, as one change -- they're one coherent feature,
-not four independent bugs.
-
-**Tier: not portable.** Scope this as "disable a feature on this
-platform," write it into `doc/building.md`'s mingw section once done,
-and don't attempt a partial shim.
+`job_init.c`'s `tcgetpgrp` and `job_fork.c`/`job_wait.c`'s `setpgid`
+were already `#if !WINDOWS_NATIVE`-gated from earlier, untracked work;
+`job_foreground.c`'s `tcsetpgrp` gained the same guard as part of this
+change. None of the three symbols are an actual link failure once all
+three are gated. What
+*was* still live on `WINDOWS_NATIVE`: `sh->opts.monitor` itself, set
+unconditionally for any interactive session
+(`sh_main.c`) and settable via `set -m`
+(`builtin_set.c`) -- meaning job-control bookkeeping gated on
+`sh->opts.monitor` (stop/resume announcements, `wait_pid_untraced`
+selection, ...) still ran even though the `setpgid`/`tcsetpgrp`
+primitives it depends on never actually execute there. Both now force
+`monitor` to stay `0` under `WINDOWS_NATIVE`, completing the "compile
+interactive job control out entirely" fix this section originally
+called for: every job is synchronous/foreground-only on that platform,
+consistently, not just at the syscall layer. Landed as `fixes/209`.
 
 ---
 
@@ -234,10 +230,12 @@ and don't attempt a partial shim.
 4. **`kill`/`killpg`** (§4) -- **done**, `fixes/208`. Partial coverage
    only, as scoped: `SIGKILL`/`SIGTERM` via `TerminateProcess`,
    everything else fails honestly.
-5. **`tcsetpgrp`/`tcgetpgrp`/`setpgid`** (§5) -- not portable; scope as
-   disabling interactive job control under `WINDOWS_NATIVE`, last,
-   since it's the most disruptive change and the least deferrable
-   once decided.
+5. **`tcsetpgrp`/`tcgetpgrp`/`setpgid`** (§5) -- **done**, `fixes/209`.
+   The three syscalls were already gated; the real fix was forcing
+   `sh->opts.monitor` to stay off under `WINDOWS_NATIVE` so job-control
+   bookkeeping doesn't run ahead of primitives that never execute
+   there. `cfg-mingw64` now links clean end to end -- every symbol in
+   this file's original undefined-reference list is resolved.
 
 Each item should land as its own `BUGS` entry before it's fixed and
 its own `fixes/NNN` patch afterward, per this repo's normal workflow

@@ -60,6 +60,12 @@ it -- there's no Windows equivalent for `SIGSTOP`/`SIGCONT`/etc.
 `kill %job` only ever reaches a job's leading process, not its whole
 process group (no real process groups exist on this platform yet).
 
+Interactive job control (background/foreground job tracking, `Ctrl-Z`
+suspend/resume, `fg`/`bg`) is off on this platform: Windows' console
+model has no controlling-terminal or foreground-process-group concept
+to build it on. Every job runs synchronously in the foreground instead
+-- `set -m` is a no-op there.
+
 ### Options
 
 | option | default | effect |

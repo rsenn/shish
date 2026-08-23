@@ -8,9 +8,11 @@ void
 job_foreground(struct job* job) {
   assert(job->pgrp > 0);
 
+#if !WINDOWS_NATIVE
   sig_block(SIGTTOU);
 
   tcsetpgrp(term_input.fd, job->pgrp);
 
   sig_unblock(SIGTTOU);
+#endif
 }

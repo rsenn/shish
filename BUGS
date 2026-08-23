@@ -556,22 +556,6 @@
   # warning: implicit declaration of function 'getpid'
   ```
 
-- mingw-missing-tcsetpgrp: `job_foreground.c:13` calls `tcsetpgrp()`
-  to hand the controlling terminal to a job's process group; mingw has
-  it and its siblings `tcgetpgrp()` (`job_init.c:43`) and `setpgid()`
-  (`job_fork.c:126,133,187`, `job_wait.c:196`) nowhere, and Windows'
-  console model has no controlling-terminal/foreground-process-group
-  concept to map any of them onto. See `mingw-porting.md` section 5:
-  the fix is compiling interactive job control out under
-  `WINDOWS_NATIVE`, not shimming.
-
-  **Repro:**
-  ```sh
-  . ./cfg.sh && cfg-mingw64 -DDO_TESTS=OFF
-  cmake --build build/x86_64-w64-mingw32
-  # undefined reference to `tcsetpgrp'
-  ```
-
 - no-tree-print-option-is-a-noop: `-DNO_TREE_PRINT=ON` changes nothing.
   `LIBSHELL_SOURCES` comes from `file(GLOB ...)` (`CMakeLists.txt:167`),
   so it holds absolute paths, and the two `list(REMOVE_ITEM ...)` calls
