@@ -67,18 +67,18 @@ builtin_unset(int argc, char* argv[]) {
         union node* fn = *nptr;
         uint32 h;
         struct exechash* e;
-        
+
         *nptr = fn->next;
         fn->next = 0;
         tree_free(fn);
-        
+
         /* Invalidate exec_hash cache for this function name.
            Without this, type/eval will still find the stale cached
            entry pointing at the freed function body. */
         e = exec_lookup(*argp, &h);
         if(e)
           e->mask = -1;
-        
+
         continue;
       }
     }

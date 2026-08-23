@@ -13,15 +13,13 @@ const char help_local[] = "    Declare variables local to the current function.\
 
 int
 builtin_local(int argc, char* argv[]) {
-  char** argp;
-
-  argp = &argv[1 /*shell_optind*/];
+  char** argp = &argv[1 /*shell_optind*/];
 
   /* print all local variables, suitable for re-input */
-  /*  if(*argp == NULL || print) {
-      vartab_print(V_READONLY);
-      return 0;
-    }*/
+  /*if(*argp == NULL || print) {
+    vartab_print(V_READONLY);
+    return 0;
+  }*/
 
   /* set each argument */
   for(; *argp; argp++) {
@@ -31,8 +29,10 @@ builtin_local(int argc, char* argv[]) {
       builtin_errmsg(argv, *argp, "not a valid identifier");
       continue;
     }
+
     namelen = str_chr(*argp, '=');
     valuelen = str_len(*argp) - (namelen + 1);
+
     /* if there is a = we assign the variable first */
     if((*argp)[namelen] == '\0')
       (*argp)[namelen] = '=';

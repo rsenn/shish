@@ -45,9 +45,8 @@ builtin_hostname(int argc, char* argv[]) {
     if(!force && n == prompt_hostname.len && !byte_diff(prompt_hostname.s, n, argv[shell_optind]))
       return 0;
 
-#if defined(HAVE_SETHOSTNAME) || !WINDOWS_NATIVE
+#ifdef HAVE_SETHOSTNAME
     /* set the supplied hostname */
-#if !WINDOWS_NATIVE
     if(sethostname(argv[shell_optind], n))
 #else
     errno = ENOSYS;
@@ -57,7 +56,6 @@ builtin_hostname(int argc, char* argv[]) {
       builtin_error(argv, "sethostname");
       return 1;
     }
-#endif
 
     /* on success update internal hostname */
     stralloc_copyb(&prompt_hostname, argv[shell_optind], n);

@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <libgen.h>
 
-#if (defined(HAVE_SYMLINK) && defined(HAVE_LINK)) || WINDOWS_NATIVE
+#if(defined(HAVE_SYMLINK) && defined(HAVE_LINK)) || WINDOWS_NATIVE
 
 #ifndef HAVE_LSTAT
 #define lstat stat
@@ -52,9 +52,8 @@ builtin_ln(int argc, char* argv[]) {
   if(c >= 1) {
     struct stat st;
 
-    if(lstat(dst, &st) == 0) {
+    if(lstat(dst, &st) == 0)
       is_dir = S_ISDIR(st.st_mode);
-    }
   }
 
   /* POSIX: more than one source requires an existing directory to
@@ -88,9 +87,8 @@ builtin_ln(int argc, char* argv[]) {
     stralloc_nul(&path);
 
     unlink(path.s);
-    ret = (symbolic ? symlink : link)(src, path.s);
 
-    if(ret == -1) {
+    if((ret = (symbolic ? symlink : link)(src, path.s)) == -1) {
       builtin_error(argv, path.s);
 
       if(!force)
@@ -102,6 +100,7 @@ builtin_ln(int argc, char* argv[]) {
       buffer_putnlflush(fd_out->w);
     }
   }
+
   return 0;
 }
 #endif

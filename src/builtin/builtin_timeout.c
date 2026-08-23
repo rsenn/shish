@@ -89,10 +89,22 @@ timeout_parse_duration(const char* s, unsigned long* usec_total) {
 
   switch(*s) {
     case '\0': mult = 1.0; break;
-    case 's': mult = 1.0; s++; break;
-    case 'm': mult = 60.0; s++; break;
-    case 'h': mult = 3600.0; s++; break;
-    case 'd': mult = 86400.0; s++; break;
+    case 's':
+      mult = 1.0;
+      s++;
+      break;
+    case 'm':
+      mult = 60.0;
+      s++;
+      break;
+    case 'h':
+      mult = 3600.0;
+      s++;
+      break;
+    case 'd':
+      mult = 86400.0;
+      s++;
+      break;
     default: return -1;
   }
 
@@ -126,8 +138,7 @@ builtin_timeout(int argc, char* argv[]) {
   int c, verbose = 0, ret;
   char *kill_after_arg = NULL, *signal_arg = NULL, *path, **cmdargv;
   unsigned long duration_usec = 0, kill_after_usec = 0;
-  int sig = SIGTERM;
-  int pid;
+  int pid, sig = SIGTERM;
 
   kill_after_arg = extract_longopt(argv, &argc, "--kill-after");
   signal_arg = extract_longopt(argv, &argc, "--signal");

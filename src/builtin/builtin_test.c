@@ -141,9 +141,10 @@ test_unary(const char* op, const char* arg) {
 
     case 'r': return access(arg, R_OK) == 0;
     case 'w': return access(arg, W_OK) == 0;
-    case 'x': return access(arg, X_OK) == 0;
+    case 'x':
+      return access(arg, X_OK) == 0;
 
-    /* set-group-ID / set-user-ID bit */
+      /* set-group-ID / set-user-ID bit */
 #ifdef S_ISGID
     case 'g': return stat(arg, &st) == 0 && !!(st.st_mode & S_ISGID);
 #endif

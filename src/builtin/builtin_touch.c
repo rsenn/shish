@@ -10,20 +10,19 @@
 #include <utime.h>
 #include <unistd.h>
 
-const char help_touch[] =
-    "    Change file access and modification times, creating the file\n"
-    "    if it doesn't already exist.\n"
-    "\n"
-    "    -a                     change only the access time\n"
-    "    -m                     change only the modification time\n"
-    "    -d, --date=DATE        use DATE instead of now ('@EPOCH',\n"
-    "                           'YYYY-MM-DD', or 'YYYY-MM-DD hh:mm[:ss]')\n"
-    "    -f                     ignored (compatibility)\n"
-    "    -r, --reference=FILE   use FILE's times instead of now\n"
-    "    -t STAMP               use [[CC]YY]MMDDhhmm[.ss] instead of now\n"
-    "    --time=WORD            with -d/-t/-r: WORD 'access'/'atime'/'use'\n"
-    "                           means -a, 'modify'/'mtime' means -m\n"
-    "    file                   file(s) to touch\n";
+const char help_touch[] = "    Change file access and modification times, creating the file\n"
+                          "    if it doesn't already exist.\n"
+                          "\n"
+                          "    -a                     change only the access time\n"
+                          "    -m                     change only the modification time\n"
+                          "    -d, --date=DATE        use DATE instead of now ('@EPOCH',\n"
+                          "                           'YYYY-MM-DD', or 'YYYY-MM-DD hh:mm[:ss]')\n"
+                          "    -f                     ignored (compatibility)\n"
+                          "    -r, --reference=FILE   use FILE's times instead of now\n"
+                          "    -t STAMP               use [[CC]YY]MMDDhhmm[.ss] instead of now\n"
+                          "    --time=WORD            with -d/-t/-r: WORD 'access'/'atime'/'use'\n"
+                          "                           means -a, 'modify'/'mtime' means -m\n"
+                          "    file                   file(s) to touch\n";
 
 /* removes 'n' argv slots starting at 'i', shifting the rest down;
  * 'argc' is adjusted in place.
@@ -237,8 +236,7 @@ builtin_touch(int argc, char* argv[]) {
   }
 
   if(time_arg) {
-    if(str_equal(time_arg, "atime") || str_equal(time_arg, "access") ||
-       str_equal(time_arg, "use"))
+    if(str_equal(time_arg, "atime") || str_equal(time_arg, "access") || str_equal(time_arg, "use"))
       opt_a = 1;
     else if(str_equal(time_arg, "mtime") || str_equal(time_arg, "modify"))
       opt_m = 1;

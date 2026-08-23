@@ -24,13 +24,13 @@ path_realpath(const char* path, stralloc* sa, int symbolic, stralloc* cwd) {
   if(!path_is_absolute(path) && sa->len == 0) {
     char buf[PATH_MAX + 1];
     /* check whether the name fits */
-    size_t n;
-    n = str_len(path);
+    size_t n = str_len(path);
 
     if(cwd->len + n + 1 > PATH_MAX) {
       errno = ENAMETOOLONG;
       return 0;
     }
+
     /* copy current dir */
     byte_copy(buf, cwd->len, cwd->s);
     buf[cwd->len] = PATHSEP_C;
@@ -38,5 +38,6 @@ path_realpath(const char* path, stralloc* sa, int symbolic, stralloc* cwd) {
     /* run canonicalize with the concatenated path */
     return path_canonicalize(buf, sa, symbolic);
   }
+
   return path_canonicalize(path, sa, symbolic);
 }

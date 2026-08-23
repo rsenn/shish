@@ -113,10 +113,8 @@ relative_to(stralloc* out, const char* base, const char* target) {
 int
 builtin_realpath(int argc, char* argv[]) {
   int c, symbolic = 0, ret = 0, i;
-  char* relto;
   stralloc sa, base, rel;
-
-  relto = extract_relative_to(argv, &argc);
+  char* relto = extract_relative_to(argv, &argc);
 
   if(relto == (char*)-1) {
     builtin_errmsg(argv, "--relative-to", "option requires an argument");

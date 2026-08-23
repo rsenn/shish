@@ -66,37 +66,40 @@ kill_list(void) {
   for(p = sigtable + 1; p->name; p++) {
     if(p > sigtable + 1)
       buffer_putspace(fd_out->w);
+
     buffer_puts(fd_out->w, p->name);
   }
+
   buffer_putnlflush(fd_out->w);
   return 0;
 }
 
 int
 builtin_kill(int argc, char* argv[]) {
-  int sig = SIGTERM;
-  int i = 1;
-  int ret = 0;
+  int sig = SIGTERM, i = 1, ret = 0;
 
   if(argc > 1 && argv[1][0] == '-' && argv[1][1]) {
     if(argv[1][1] == 'l' && !argv[1][2]) {
       /* -l with optional argument */
-      if(argc == 2) {
+      if(argc == 2)
         /* No argument: list all signals */
         return kill_list();
-      }
+
       /* Has argument: translate exit status or signal number to name */
       int n;
-      if(!scan_int(argv[2], &n) || n < 0 || n > 128 + 31) {
+
+      if(!scan_int(argv[2], &n) || n < 0 || n > 128 + 31)
         return builtin_errmsg(argv, argv[2], "invalid signal specification");
-      }
+
       /* If n > 128, it's an exit status (128 + signal_number) */
       if(n > 128)
         n -= 128;
-      const char* name = sig_name(n);
-      if(!name) {
+
+      const char* name;
+
+      if(!(name = sig_name(n)))
         return builtin_errmsg(argv, argv[2], "invalid signal specification");
-      }
+
       buffer_puts(fd_out->w, name);
       buffer_putnlflush(fd_out->w);
       return 0;
@@ -105,12 +108,15 @@ builtin_kill(int argc, char* argv[]) {
     if(argv[1][1] == 's' && !argv[1][2]) {
       if(argc < 3)
         return builtin_errmsg(argv, "-s", "option requires an argument");
+
       if((sig = kill_signum(argv[2])) < 0)
         return builtin_errmsg(argv, argv[2], "invalid signal specification");
+
       i = 3;
     } else {
       if((sig = kill_signum(&argv[1][1])) < 0)
         return builtin_errmsg(argv, argv[1], "invalid signal specification");
+
       i = 2;
     }
   }

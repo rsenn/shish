@@ -54,6 +54,7 @@ ls_put_mode(buffer* b, unsigned int mode) {
 #endif
     default: type = '?'; break;
   }
+
   buffer_putc(b, type);
 
   for(i = 0; i < 9; i++)
@@ -153,11 +154,11 @@ ls_print(char* argv[], const char* path, const char* name, int long_fmt) {
   return 0;
 }
 
-/* lists a directory's sorted contents (skipping dotfiles unless
- * 'all'), each printed via ls_print() against "path/name".
+/* lists a directory's sorted contents (skipping dotfiles unless 'all')
+ * each printed via ls_print() against "path/name".
  * ----------------------------------------------------------------------- */
 static int
-ls_dir(char* argv[], const char* path, int all, int long_fmt) {
+ls_dir(char* argv[], const char* path, int all, int unsorted, int long_fmt) {
   DIR* dp;
   struct dirent* de;
   char** names = NULL;
@@ -184,7 +185,9 @@ ls_dir(char* argv[], const char* path, int all, int long_fmt) {
   }
 
   closedir(dp);
-  qsort(names, n, sizeof(char*), ls_name_cmp);
+
+  if(!unsorted)
+    qsort(names, n, sizeof(char*), ls_name_cmp);
 
   stralloc_init(&full);
 
@@ -212,21 +215,23 @@ const char help_ls[] = "    List directory contents.\n"
                        "\n"
                        "    -a              include entries starting with '.'\n"
                        "    -d              list directories themselves, not their contents\n"
+                       "    -f              list all entries in directory order\n"
                        "    -l              long format: mode, links, owner, group, size\n"
                        "    -1              one entry per line (default)\n"
                        "    file            file or directory to list; defaults to '.'\n";
 
 int
 builtin_ls(int argc, char* argv[]) {
-  int c, all = 0, dirs_only = 0, long_fmt = 0, ret = 0;
+  int c, all = 0, dirs_only = 0, unsorted = 0, long_fmt = 0, ret = 0;
   char* single_dot[] = {".", NULL};
   char** args;
   int nargs, i;
 
-  while((c = shell_getopt(argc, argv, "adl1")) > 0) {
+  while((c = shell_getopt(argc, argv, "adfl1")) > 0) {
     switch(c) {
       case 'a': all = 1; break;
       case 'd': dirs_only = 1; break;
+      case 'f': unsorted = 1; break;
       case 'l': long_fmt = 1; break;
       case '1': break;
       default: builtin_invopt(argv); return 1;
@@ -252,7 +257,7 @@ builtin_ls(int argc, char* argv[]) {
         buffer_putnlflush(fd_out->w);
       }
 
-      if(ls_dir(argv, path, all, long_fmt))
+      if(ls_dir(argv, path, all, unsorted, long_fmt))
         ret = 1;
 
       if(nargs > 1 && i + 1 < nargs)

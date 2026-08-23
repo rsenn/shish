@@ -33,10 +33,22 @@ sleep_parse(const char* s, unsigned long* whole, unsigned int* usec) {
 
   switch(*s) {
     case '\0': mult = 1.0; break;
-    case 's': mult = 1.0; s++; break;
-    case 'm': mult = 60.0; s++; break;
-    case 'h': mult = 3600.0; s++; break;
-    case 'd': mult = 86400.0; s++; break;
+    case 's':
+      mult = 1.0;
+      s++;
+      break;
+    case 'm':
+      mult = 60.0;
+      s++;
+      break;
+    case 'h':
+      mult = 3600.0;
+      s++;
+      break;
+    case 'd':
+      mult = 86400.0;
+      s++;
+      break;
     default: return -1;
   }
 

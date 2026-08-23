@@ -86,6 +86,7 @@ builtin_readlink(int argc, char* argv[]) {
     if(mode) {
       if(readlink_canonicalize(argv, argv[i], mode))
         ret = 1;
+
       continue;
     }
 

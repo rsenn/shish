@@ -143,6 +143,7 @@ builtin_rm(int argc, char* argv[]) {
         builtin_error(argv, p);
         return 1;
       }
+
       continue;
     }
 
@@ -151,5 +152,6 @@ builtin_rm(int argc, char* argv[]) {
       buffer_putnlflush(fd_out->w);
     }
   }
+
   return 0;
 }

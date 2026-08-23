@@ -65,11 +65,14 @@ printf_esc(const char* p, char* out, int* stop) {
 static const char*
 printf_emit_literal(const char* fmt, int* stop) {
   char buf[1];
+
   while(*fmt && *fmt != '%') {
     if(*fmt == '\\') {
       unsigned n = printf_esc(fmt, buf, stop);
+
       if(*stop)
         return fmt + n;
+
       buffer_put(fd_out->w, buf, 1);
       fmt += n;
     } else {
@@ -77,6 +80,7 @@ printf_emit_literal(const char* fmt, int* stop) {
       fmt++;
     }
   }
+
   return fmt;
 }
 
@@ -85,11 +89,14 @@ printf_emit_literal(const char* fmt, int* stop) {
 static void
 printf_emit_bstring(const char* s, int* stop) {
   char buf[1];
+
   while(*s) {
     if(*s == '\\') {
       unsigned n = printf_esc(s, buf, stop);
+
       if(*stop)
         return;
+
       buffer_put(fd_out->w, buf, 1);
       s += n;
     } else {
@@ -104,6 +111,7 @@ static const char*
 printf_arg(int argc, char* argv[], int* idx) {
   if(*idx >= argc)
     return "";
+
   return argv[(*idx)++];
 }
 
@@ -111,11 +119,12 @@ static int64
 printf_arg_long(int argc, char* argv[], int* idx) {
   const char* s = printf_arg(argc, argv, idx);
   int64 v = 0;
-  if(s[0] == '\'' || s[0] == '"') {
+
+  if(s[0] == '\'' || s[0] == '"')
     /* per POSIX: a leading single or double quote means the value
        is the numeric value of the character that follows */
     return (int64)(unsigned char)s[1];
-  }
+
   scan_longlong(s, &v);
   return v;
 }
@@ -124,8 +133,10 @@ static uint64
 printf_arg_ulong(int argc, char* argv[], int* idx) {
   const char* s = printf_arg(argc, argv, idx);
   uint64 v = 0;
+
   if(s[0] == '\'' || s[0] == '"')
     return (uint64)(unsigned char)s[1];
+
   scan_ulonglong(s, &v);
   return v;
 }
@@ -149,6 +160,7 @@ printf_parse_flags(const char* f, printf_spec* sp) {
       case '#': sp->alt = 1; break;
       default: return f;
     }
+
     f++;
   }
 }
@@ -165,27 +177,33 @@ printf_parse_spec(const char* f, printf_spec* sp, int argc, char* argv[], int* i
   f = printf_parse_flags(f, sp);
 
   if(*f == '*') {
-    int64 w = printf_arg_long(argc, argv, idx);
-    if(w < 0) {
+    int64 w;
+
+    if((w = printf_arg_long(argc, argv, idx)) < 0) {
       sp->left = 1;
       w = -w;
     }
+
     sp->width = (int)w;
     f++;
   } else if(*f >= '0' && *f <= '9') {
     unsigned int w = 0;
+
     f += scan_uint(f, &w);
     sp->width = (int)w;
   }
 
   if(*f == '.') {
     f++;
+
     if(*f == '*') {
       int64 p = printf_arg_long(argc, argv, idx);
+
       sp->prec = p < 0 ? -1 : (int)p;
       f++;
     } else {
       unsigned int p = 0;
+
       f += scan_uint(f, &p);
       sp->prec = (int)p;
     }
@@ -200,8 +218,7 @@ static void
 printf_emit_numeric(
     const printf_spec* sp, char sign, const char* prefix, const char* digits, size_t dlen) {
   size_t plen = prefix ? str_len(prefix) : 0;
-  size_t prec_pad = 0;
-  size_t body, width, pad;
+  size_t prec_pad = 0, body, width, pad;
   int zero_pad;
 
   if(sp->prec == 0 && dlen == 1 && digits[0] == '0')
@@ -268,10 +285,14 @@ builtin_printf(int argc, char* argv[]) {
 
     while(*f && !stop) {
       f = printf_emit_literal(f, &stop);
+
       if(stop || !*f)
         break;
+
       /* *f == '%' */
+
       f++;
+
       if(*f == '%') {
         buffer_put(fd_out->w, "%", 1);
         f++;
@@ -286,25 +307,31 @@ builtin_printf(int argc, char* argv[]) {
         switch(*f) {
           case 's': {
             const char* s = printf_arg(argc, argv, &idx);
-            size_t slen = str_len(s);
-            size_t width, pad;
+            size_t width, pad, slen = str_len(s);
+
             if(sp.prec >= 0 && (size_t)sp.prec < slen)
               slen = (size_t)sp.prec;
+
             width = sp.width > 0 ? (size_t)sp.width : 0;
             pad = width > slen ? width - slen : 0;
+
             if(!sp.left)
               while(pad--)
                 buffer_put(fd_out->w, " ", 1);
+
             if(slen)
               buffer_put(fd_out->w, s, slen);
+
             if(sp.left)
               while(pad--)
                 buffer_put(fd_out->w, " ", 1);
+
             did_arg = 1;
             break;
           }
           case 'b': {
             const char* s = printf_arg(argc, argv, &idx);
+
             printf_emit_bstring(s, &stop);
             did_arg = 1;
             break;
@@ -314,14 +341,18 @@ builtin_printf(int argc, char* argv[]) {
             size_t clen = s[0] ? 1 : 0;
             size_t width = sp.width > 0 ? (size_t)sp.width : 0;
             size_t pad = width > clen ? width - clen : 0;
+
             if(!sp.left)
               while(pad--)
                 buffer_put(fd_out->w, " ", 1);
+
             if(clen)
               buffer_put(fd_out->w, s, 1);
+
             if(sp.left)
               while(pad--)
                 buffer_put(fd_out->w, " ", 1);
+
             did_arg = 1;
             break;
           }
@@ -331,16 +362,19 @@ builtin_printf(int argc, char* argv[]) {
             uint64 uv;
             char sign = 0;
             size_t n;
+
             if(v < 0) {
               sign = '-';
               uv = (uint64)(-(v + 1)) + 1;
             } else {
               uv = (uint64)v;
+
               if(sp.plus)
                 sign = '+';
               else if(sp.space)
                 sign = ' ';
             }
+
             n = fmt_ulonglong(numbuf, uv);
             printf_emit_numeric(&sp, sign, NULL, numbuf, n);
             did_arg = 1;
@@ -349,6 +383,7 @@ builtin_printf(int argc, char* argv[]) {
           case 'u': {
             uint64 v = printf_arg_ulong(argc, argv, &idx);
             size_t n = fmt_ulonglong(numbuf, v);
+
             printf_emit_numeric(&sp, 0, NULL, numbuf, n);
             did_arg = 1;
             break;
@@ -356,8 +391,10 @@ builtin_printf(int argc, char* argv[]) {
           case 'o': {
             uint64 v = printf_arg_ulong(argc, argv, &idx);
             size_t n = fmt_8longlong(numbuf, v);
+
             if(sp.alt && (n == 0 || numbuf[0] != '0') && sp.prec <= (int)n)
               sp.prec = (int)n + 1;
+
             printf_emit_numeric(&sp, 0, NULL, numbuf, n);
             did_arg = 1;
             break;
@@ -367,14 +404,18 @@ builtin_printf(int argc, char* argv[]) {
             uint64 v = printf_arg_ulong(argc, argv, &idx);
             size_t n = fmt_xlonglong(numbuf, v);
             const char* prefix = NULL;
+
             if(*f == 'X') {
               size_t i;
+
               for(i = 0; i < n; i++)
                 if(numbuf[i] >= 'a' && numbuf[i] <= 'f')
                   numbuf[i] = (char)(numbuf[i] - ('a' - 'A'));
             }
+
             if(sp.alt && v != 0)
               prefix = (*f == 'X') ? "0X" : "0x";
+
             printf_emit_numeric(&sp, 0, prefix, numbuf, n);
             did_arg = 1;
             break;
@@ -385,11 +426,14 @@ builtin_printf(int argc, char* argv[]) {
                sometimes pass through user-provided format strings */
             buffer_put(fd_out->w, "%", 1);
             buffer_put(fd_out->w, spec_start, (size_t)(f - spec_start));
+
             if(*f)
               buffer_put(fd_out->w, f, 1);
+
             break;
         }
       }
+
       if(*f)
         f++;
     }

@@ -82,8 +82,7 @@ builtin_source(int argc, char* argv[]) {
   struct source in;
   struct arg oldarg;
   struct eval e;
-  int ret;
-  int jmpret;
+  int ret, jmpret;
 
   if((fname = argv[shell_optind]) == NULL) {
     builtin_errmsg(argv, "filename argument required", NULL);
@@ -92,8 +91,7 @@ builtin_source(int argc, char* argv[]) {
 
   /* If filename contains no slash, search PATH (POSIX requirement) */
   if(str_chr(fname, '/') >= str_len(fname)) {
-    searched_path = source_search_path(fname);
-    if(searched_path)
+    if((searched_path = source_search_path(fname)))
       path_to_open = searched_path;
     else
       path_to_open = fname; /* Will fail with "not found" */
@@ -111,8 +109,7 @@ builtin_source(int argc, char* argv[]) {
     eval_push(&e, E_ROOT);
     e.jump = 1;
 
-    jmpret = setjmp(e.jumpbuf);
-    if(jmpret == 0) {
+    if((jmpret = setjmp(e.jumpbuf)) == 0) {
       /* Normal execution path */
       sh_pushargs(&oldarg);
       sh_setargs(&argv[++shell_optind], 0);

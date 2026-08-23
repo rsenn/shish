@@ -167,8 +167,7 @@ static int
 bre_bracket_matches(const char* pat, size_t alen, int c) {
   const char* p = pat + 1;
   const char* end = pat + alen - 1; /* points at the closing ']' */
-  int neg = 0;
-  int matched = 0;
+  int neg = 0, matched = 0;
 
   if(*p == '^') {
     neg = 1;
@@ -236,16 +235,15 @@ static const char* bre_match(struct bre_ctx* ctx, const char* pat, const char* s
 static const char*
 bre_match_star(
     struct bre_ctx* ctx, const char* atom, size_t alen, const char* rest, const char* s) {
-  size_t maxrun = 0;
-  size_t k;
+  size_t k, maxrun = 0;
 
   while(s[maxrun] && bre_atom_matches(atom, alen, (unsigned char)s[maxrun]))
     maxrun++;
 
   for(k = maxrun + 1; k-- > 0;) {
-    const char* r = bre_match(ctx, rest, s + k);
+    const char* r;
 
-    if(r)
+    if((r = bre_match(ctx, rest, s + k)))
       return r;
   }
 

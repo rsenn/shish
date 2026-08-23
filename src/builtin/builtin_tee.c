@@ -70,13 +70,12 @@ builtin_tee(int argc, char* argv[]) {
     buffer_put(fd_out->w, buf, n);
     buffer_flush(fd_out->w);
 
-    for(i = 0; i < nfiles; i++) {
+    for(i = 0; i < nfiles; i++)
       if(fds[i] != -1 && full_write(fds[i], buf, n) == -1) {
         builtin_error(argv, argv[shell_optind + i]);
         ret = 1;
         fds[i] = -1;
       }
-    }
   }
 
   if(n < 0) {
@@ -87,10 +86,9 @@ builtin_tee(int argc, char* argv[]) {
   if(ignore_int)
     signal(SIGINT, old_int);
 
-  for(i = 0; i < nfiles; i++) {
+  for(i = 0; i < nfiles; i++)
     if(fds[i] != -1)
       close(fds[i]);
-  }
 
   alloc_free(fds);
   return ret;

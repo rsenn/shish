@@ -51,11 +51,13 @@ builtin_readonly(int argc, char* argv[]) {
          builtins to exit the shell on error in non-interactive mode. */
       if((v = var_search(*argp, NULL)) != NULL && (v->flags & V_READONLY)) {
         builtin_errmsg(argv, *argp, "readonly variable");
+
         if(!(source->mode & SOURCE_IACTIVE))
           sh_exit(1);
+
         return 1;
       }
-      
+
       var_copys(*argp, V_READONLY);
     }
 

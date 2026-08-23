@@ -147,6 +147,7 @@ builtin_read(int argc, char* argv[]) {
 
       var_set(argp[index], 0);
     }
+
     return status;
   }
 }

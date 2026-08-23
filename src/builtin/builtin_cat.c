@@ -16,12 +16,11 @@ const char help_cat[] = "    Concatenate files to standard output.\n"
 
 int
 builtin_cat(int argc, char* argv[]) {
-  int c, ret = 0;
-  int number_lines = 0, number_nonempty = 0;
+  int c, ret = 0, number_lines = 0, number_nonempty = 0;
   char* arg;
   ssize_t n, line = 1;
-  buffer inb;
-  buffer* in;
+  buffer inb, *in;
+
   /* check options */
   while((c = shell_getopt(argc, argv, "nb")) > 0) {
     switch(c) {
@@ -37,11 +36,11 @@ builtin_cat(int argc, char* argv[]) {
   }
 
   while((arg = argv[shell_optind])) {
-    char buf[1024];
-    char rbuf[1024];
-    /*   buffer_putm_internal(fd_err->w, "File: '", arg, "'\n", 0);
-       buffer_flush(fd_err->w);
-   */
+    char buf[1024], rbuf[1024];
+
+    /*buffer_putm_internal(fd_err->w, "File: '", arg, "'\n", 0);
+    buffer_flush(fd_err->w);*/
+
     if(!str_diff(arg, "-")) {
       in = fd_in->r;
     } else {
@@ -68,13 +67,12 @@ builtin_cat(int argc, char* argv[]) {
     }
 
     for(;;) {
-      ret = buffer_get_until(in, buf, sizeof(buf), "\r\n", 2);
-
-      if(ret == 0) {
+      if((ret = buffer_get_until(in, buf, sizeof(buf), "\r\n", 2)) == 0) {
         if(in->op == &term_read) {
           buffer_puts(fd_err->w, "EOF");
           buffer_putnlflush(fd_err->w);
         }
+
         goto next;
       }
 
@@ -94,10 +92,10 @@ builtin_cat(int argc, char* argv[]) {
 
         if(number_lines || (number_nonempty && ret > 1)) {
           char buf[FMT_ULONG];
-          n = fmt_ulong(buf, line);
 
-          if(n < 5)
+          if((n = fmt_ulong(buf, line)) < 5)
             buffer_putnspace(fd_out->w, 5 - n);
+
           buffer_put(fd_out->w, buf, n);
           buffer_putspace(fd_out->w);
         }
@@ -113,5 +111,6 @@ builtin_cat(int argc, char* argv[]) {
     if(++shell_optind == argc)
       break;
   }
+
   return ret;
 }
