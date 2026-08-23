@@ -149,9 +149,46 @@ index 2e00c4a7..f4660029 100644
  SOURCES = $(MODULES:%=%.c)
  OBJECTS = $(MODULES:%=%.o)
 diff --git a/src/fork.c b/lib/unix/fork.c
-similarity index 100%
+similarity index 93%
 rename from src/fork.c
 rename to lib/unix/fork.c
+index b10c2f16..aaf08efe 100644
+--- a/src/fork.c
++++ b/lib/unix/fork.c
+@@ -14,11 +14,13 @@
+  * from the use of this software.
+  */
+ 
+-#include "../lib/windoze.h"
+-#include "../lib/wait.h"
++#include "../windoze.h"
++#include "../wait.h"
+ 
+ #if WINDOWS_NATIVE
++#ifndef _WIN32_WINNT
+ #define _WIN32_WINNT 0x0600
++#endif
+ #define WIN32_LEAN_AND_MEAN
+ #include <stdio.h>
+ #include <errno.h>
+@@ -82,7 +84,7 @@ fork(void) {
+   if(!mod)
+     return -ENOSYS;
+ 
+-  clone_p = GetProcAddress(mod, "RtlCloneUserProcess");
++  clone_p = (RtlCloneUserProcess_f)GetProcAddress(mod, "RtlCloneUserProcess");
+ 
+   if(clone_p == NULL)
+     return -ENOSYS;
+@@ -104,7 +106,7 @@ fork(void) {
+     if((kern32 = GetModuleHandle("kernel32.dll")) == NULL)
+       return -ENOSYS;
+ 
+-    if((get_process_id = GetProcAddress(kern32, "GetProcessId")) == NULL)
++    if((get_process_id = (get_process_id_function*)GetProcAddress(kern32, "GetProcessId")) == NULL)
+       return -ENOSYS;
+ 
+     child_pid = get_process_id(process_info.Process);
 diff --git a/lib/unix/lstat.c b/lib/unix/lstat.c
 new file mode 100644
 index 00000000..03cf19a4

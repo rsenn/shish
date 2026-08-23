@@ -14,11 +14,13 @@
  * from the use of this software.
  */
 
-#include "../lib/windoze.h"
-#include "../lib/wait.h"
+#include "../windoze.h"
+#include "../wait.h"
 
 #if WINDOWS_NATIVE
+#ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0600
+#endif
 #define WIN32_LEAN_AND_MEAN
 #include <stdio.h>
 #include <errno.h>
@@ -82,7 +84,7 @@ fork(void) {
   if(!mod)
     return -ENOSYS;
 
-  clone_p = GetProcAddress(mod, "RtlCloneUserProcess");
+  clone_p = (RtlCloneUserProcess_f)GetProcAddress(mod, "RtlCloneUserProcess");
 
   if(clone_p == NULL)
     return -ENOSYS;
@@ -104,7 +106,7 @@ fork(void) {
     if((kern32 = GetModuleHandle("kernel32.dll")) == NULL)
       return -ENOSYS;
 
-    if((get_process_id = GetProcAddress(kern32, "GetProcessId")) == NULL)
+    if((get_process_id = (get_process_id_function*)GetProcAddress(kern32, "GetProcessId")) == NULL)
       return -ENOSYS;
 
     child_pid = get_process_id(process_info.Process);
