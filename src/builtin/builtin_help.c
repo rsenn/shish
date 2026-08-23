@@ -20,7 +20,7 @@ const char help_help[] = "    Show a synopsis of every builtin, or the full help
 
 int
 builtin_help(int argc, char* argv[]) {
-  size_t i, maxlen = 0, rows, offset;
+  size_t i, maxlen[2] = {0, 0};
   unsigned int cols;
   const char* vcols;
 
@@ -50,35 +50,55 @@ builtin_help(int argc, char* argv[]) {
   }
 
   for(i = 0; builtin_table[i].name; i++) {
-    size_t len = str_len(builtin_table[i].name) + 1 + str_len(builtin_table[i].args);
+    /*size_t len = str_len(builtin_table[i].name) + 1 + str_len(builtin_table[i].args);
 
     if(maxlen < len)
-      maxlen = len;
+      maxlen = len;*/
   }
 
 #ifdef HAVE_WINSIZE
   term_winsize();
 
   if(term_size.ws_col)
-    maxlen = (term_size.ws_col / 2) - 1;
+    cols = term_size.ws_col;
   else
-#else
-  maxlen = (80 / 2) - 1; /* no TIOCGWINSZ: assume a stock 80-column terminal */
 #endif
+    cols = 80; /* no TIOCGWINSZ: assume a stock 80-column terminal */
 
-    rows = (i + 1) >> 1;
+  unsigned n_entries = i;
+  unsigned rows = (n_entries + 1) >> 1;
+
+  for(i = 0; builtin_table[i].name; i++) {
+    size_t len = str_len(builtin_table[i].name) + 1 + str_len(builtin_table[i].args);
+
+    size_t* ml = &maxlen[i < rows ? 0 : 1];
+
+    if(*ml < len)
+      *ml = len;
+  }
+
+  if(maxlen[0] + maxlen[1] >= cols) {
+    rows = n_entries;
+  } else {
+    unsigned pad = (cols - (maxlen[0] + maxlen[1])) >> 1;
+
+    maxlen[0] += pad > 20 ? 20 : pad;
+  }
 
   for(i = 0; i < rows; i++) {
     struct builtin_cmd* b = &builtin_table[i];
     size_t len = str_len(b->name) + 1 + str_len(b->args);
 
     output_synopsis(b);
-    buffer_putnspace(fd_out->w, maxlen + 1 - len);
 
-    b += rows;
+    if(rows < n_entries) {
+      buffer_putnspace(fd_out->w, maxlen[0] + 1 - len);
 
-    if(b->name)
-      output_synopsis(b);
+      b += rows;
+
+      if(b->name)
+        output_synopsis(b);
+    }
 
     buffer_putnlflush(fd_out->w);
   }
