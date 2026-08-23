@@ -4459,4 +4459,31 @@ fi
 ## "-t/-d survive a preceding removed --time=WORD" in
 ## tests/builtin-touch.sh.
 
+## fixes/212: eval_pipeline() had no non-forking execution path, so on
+## a platform without a working fork() (see
+## eval-pipeline-silent-on-fork-failure, now fixed) every pipeline
+## silently produced no output instead of erroring or running. Added
+## eval_pipeline_sequential(), used instead of the normal job_fork()
+## path whenever HAVE_FORK is undefined (see cmake/Checks.cmake,
+## configure.ac): each stage runs fully in-process, a non-last stage's
+## stdout captured via fd_subst() and fed to the next stage's stdin
+## via fd_here(), matching "$(...)"/heredoc plumbing already used
+## elsewhere. This is comment-only, not a real assertion: HAVE_FORK is
+## a compile-time choice (cmake/Checks.cmake forces it TRUE on every
+## platform this repo is developed/tested on -- native Linux has a
+## real fork(), so eval_pipeline_sequential() isn't even compiled into
+## this file's shish binary), and the codebase isn't otherwise built
+## against a real forkless target (Emscripten/WASI) in this test
+## harness. Verified instead by configuring a throwaway native build
+## with CMAKE_C_COMPILER pointed at a wrapper script whose basename
+## matches cmake/Checks.cmake's Emscripten detection (forcing
+## HAVE_FORK=FALSE while still linking/running as real native code),
+## confirming: "echo hi | cat" and multi-stage builtin pipelines
+## produce identical output to the normal fork() path, exit status
+## propagates ("true | false; echo $?" -> 1), each stage's variables
+## stay isolated from the caller's (POSIX 2.9.2 subshell-environment
+## semantics), and "cmd1 | cmd2 &" errors loudly ("background
+## pipelines are not supported without a working fork()") instead of
+## silently doing nothing.
+
 summary

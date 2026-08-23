@@ -116,6 +116,38 @@ AC_CHECK_FUNC([gethostname],[],[dnl
 		
 ])
 AC_CHECK_FUNCS([sethostname sys_siglist lstat readlink getpwuid_r getpwuid getgrgid_r getgrgid])
+
+dnl fork() needs a hardcoded result on two platform families, the same
+dnl as the CMake build (see cmake/Checks.cmake for the full
+dnl reasoning): native Windows has no libc fork() for AC_CHECK_FUNC to
+dnl find, but lib/unix/fork.c supplies one (via RtlCloneUserProcess);
+dnl Emscripten/WASI's musl libc provides a real, linkable fork()
+dnl symbol that AC_CHECK_FUNC would happily find, but the underlying
+dnl syscall has no implementation in a single-threaded wasm module and
+dnl fails at runtime (ENOSYS). Cygwin and MSYS both provide a real
+dnl POSIX fork() of their own, so they fall through to the plain check
+dnl below like every other POSIX target.
+AC_EGREP_CPP([shish_yes_windows_native],[
+#if (defined(_WIN32) || defined(_WIN64) || defined(__MINGW32__) || \
+     defined(__MINGW64__) || defined(MSVC)) && \
+    !defined(__CYGWIN__) && !defined(__MSYS__)
+shish_yes_windows_native
+#endif
+],[shish_windows_native=yes],[shish_windows_native=no])
+
+AC_EGREP_CPP([shish_yes_forkless_wasm],[
+#if defined(__EMSCRIPTEN__) || defined(__wasi__)
+shish_yes_forkless_wasm
+#endif
+],[shish_forkless_wasm=yes],[shish_forkless_wasm=no])
+
+if test "x$shish_windows_native" = xyes; then
+	AC_DEFINE_UNQUOTED([HAVE_FORK],[1],[Define this if you have a working fork() -- see cmake/Checks.cmake for why this isn't a plain existence check on every platform])
+elif test "x$shish_forkless_wasm" = xyes; then
+	: dnl leave HAVE_FORK undefined
+else
+	AC_CHECK_FUNC([fork],AC_DEFINE_UNQUOTED([HAVE_FORK],[1],[Define this if you have a working fork() -- see cmake/Checks.cmake for why this isn't a plain existence check on every platform]))
+fi
 AC_CHECK_TYPE([ssize_t],AC_DEFINE_UNQUOTED([HAVE_SSIZE_T],[1],[Define this if you have the 'ssize_t' type]),[],[
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

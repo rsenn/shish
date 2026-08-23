@@ -66,6 +66,10 @@
 /* Define this if you have the glob() function */
 #cmakedefine HAVE_SETPGID 1
 
+/* Define this if you have a working fork() -- see cmake/Checks.cmake
+   for why this isn't a plain existence check on every platform */
+#cmakedefine HAVE_FORK 1
+
 /* Define this if you have the setpgid() function */
 #cmakedefine HAVE_GLOB 1
 

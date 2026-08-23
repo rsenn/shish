@@ -5,22 +5,171 @@
 #include "../fd.h"
 #include "../sh.h"
 #include "../eval.h"
+#include "../exec.h"
 #include "../fdstack.h"
 #include "../fdtable.h"
 #include "../job.h"
 #include "../tree.h"
+#include "../var.h"
 #include "../debug.h"
 #include "../../lib/wait.h"
 #include "../../lib/windoze.h"
+#include "builtin_config.h"
 #if !WINDOWS_NATIVE
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
 
+#if BUILTIN_TRAP
+void* trap_snapshot_save(void);
+void trap_snapshot_restore(void*);
+#endif
+
+#if !defined(HAVE_FORK)
+/* evaluate a pipeline without fork() (3.9.2) -- see
+ * notes/pipeline-sequential.md for the full design. Each stage runs
+ * to completion, fully in-process, before the next one starts: no
+ * pipe(2), no concurrency, no streaming between stages, just the same
+ * non-forking "run this subtree as its own isolated subshell
+ * environment" machinery eval_subshell.c already uses for "(...)" --
+ * POSIX already specifies every pipeline component as running in its
+ * own subshell environment (2.9.2), so this isn't an approximation of
+ * that isolation, it's the same isolation. A non-last stage's stdout
+ * is captured into an in-memory buffer via fd_subst() (the same
+ * mechanism "$(...)" uses); the next stage reads that buffer as its
+ * stdin via fd_here() (the same mechanism here-documents use).
+ * Inherits the same known gap eval_subshell.c already documents for
+ * persistent redirections across a non-forking subshell boundary --
+ * see TODO.md, Goal 4.
+ * ----------------------------------------------------------------------- */
+static int
+eval_pipeline_sequential(struct eval* e, struct npipe* npipe) {
+  union node* node;
+  char* prev_s = NULL;
+  size_t prev_len = 0;
+  int have_prev = 0;
+  int last_ret = 0;
+
+  (void)e;
+
+  if(npipe->bgnd) {
+    /* nothing to background a pipeline *onto* when nothing can
+       fork() -- running it synchronously anyway would silently hide
+       that "&" did nothing, so this errors loudly instead. Loud over
+       silent, matching the entire reason this path exists (see
+       eval-pipeline-silent-on-fork-failure in BUGS). */
+    sh->exitcode = sh_error("background pipelines are not supported without a working fork()");
+    return sh->exitcode;
+  }
+
+  for(node = npipe->cmds; node; node = node->next) {
+    int is_last = (node->next == NULL);
+    stralloc captured;
+    struct fdstack io;
+    struct fd_state fdst;
+    struct fd out_fd, in_fd;
+    struct vartab vars;
+    struct env she;
+    struct func_snapshot funcs;
+#if BUILTIN_TRAP
+    void* traps_snap;
+#endif
+    struct eval en;
+    int jmpret, ret;
+
+    stralloc_init(&captured);
+
+    fdstack_push(&io);
+    fd_state_save(&fdst);
+
+    if(!is_last)
+      fd_subst(fd_push(&out_fd, STDOUT_FILENO, FD_WRITE), &captured);
+
+    if(have_prev) {
+      stralloc from_prev;
+
+      from_prev.s = prev_s;
+      from_prev.len = prev_len;
+      fd_here(fd_push(&in_fd, STDIN_FILENO, FD_READ), &from_prev);
+    }
+
+    vartab_push(&vars, 0);
+    sh_push(&she);
+    exec_functions_save(&funcs);
+#if BUILTIN_TRAP
+    traps_snap = trap_snapshot_save();
+#endif
+
+    eval_push(&en, E_ROOT);
+
+    /* set up a long jump so we can exit this stage and end up just
+       after the setjmp call, which will return nonzero in this case */
+    en.jump = 1;
+    jmpret = setjmp(en.jumpbuf);
+
+    if(jmpret) {
+      en.exitcode = (jmpret >> 1);
+    } else {
+      /* neither E_LIST nor E_EXIT: node->next here is the *next
+         pipeline stage*, not more of this one, so this must evaluate
+         node alone -- E_LIST would make eval_tree() walk straight
+         into the next stage as if it were part of this one's own
+         list. E_EXIT means "safe to execve() this disposable
+         process" (see eval_cmdlist.c); there is no disposable
+         process here, only the one real, ongoing shell. */
+      eval_tree(&en, node, 0);
+
+      if(en.destructor)
+        en.exitcode = en.destructor(en.exitcode);
+    }
+
+    ret = eval_pop(&en);
+
+#if BUILTIN_TRAP
+    trap_snapshot_restore(traps_snap);
+#endif
+    exec_functions_restore(&funcs);
+    sh_pop(&she);
+    vartab_pop(&vars);
+
+    if(have_prev)
+      fd_pop(&in_fd); /* frees prev_s, via fd_here()'s deinit */
+
+    if(!is_last)
+      fd_pop(&out_fd); /* does not free captured.s -- fd_subst() sets
+                           no deinit; ownership passes to the next
+                           stage's fd_here() call below instead */
+
+    fdstack_pop(&io);
+    fd_state_restore(&fdst);
+
+    /* a real-signal-triggered "exit" (sh_async_exit) needs to keep
+       propagating past this stage, same as eval_subshell.c's
+       identical block -- this call never returns when it fires */
+    if((jmpret & 1) && sh_async_exit)
+      sh_exit(ret);
+
+    last_ret = ret;
+
+    if(!is_last) {
+      prev_s = captured.s;
+      prev_len = captured.len;
+      have_prev = 1;
+    }
+  }
+
+  sh->exitcode = last_ret;
+  return sh->exitcode;
+}
+#endif /* !defined(HAVE_FORK) */
+
 /* evaluate a pipeline (3.9.2)
  * ----------------------------------------------------------------------- */
 int
 eval_pipeline(struct eval* e, struct npipe* npipe) {
+#if !defined(HAVE_FORK)
+  return eval_pipeline_sequential(e, npipe);
+#else
   struct job* job;
   union node* node;
   struct fdstack st;
@@ -178,4 +327,5 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   sh->exitcode = WAIT_STATUS(status);
 
   return sh->exitcode;
+#endif /* !defined(HAVE_FORK) */
 }

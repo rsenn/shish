@@ -1,0 +1,302 @@
+diff --git a/cmake/Checks.cmake b/cmake/Checks.cmake
+index 9bd23a0e..eceb84d0 100644
+--- a/cmake/Checks.cmake
++++ b/cmake/Checks.cmake
+@@ -280,6 +280,57 @@ endif(NOT HAVE_SIGPROCMASK)
+ check_function_exists(sigaction HAVE_SIGACTION)
+ check_function_exists(setpgid HAVE_SETPGID)
+ 
++# check_function_exists(fork ...) alone isn't trustworthy on either of
++# the two platform families below -- both need the result hardcoded
++# instead of trusting the check:
++#
++#   native Windows (WIN32/WIN64/MSVC/MINGW/WINDOWS, but *not* Cygwin or
++#   MSYS -- both of those provide a real POSIX fork() from their own C
++#   library and go through the normal check like any other POSIX
++#   target) has no libc-provided fork() for the check to find, but
++#   lib/unix/fork.c supplies one (via RtlCloneUserProcess) that
++#   job_fork() already links against on this platform -- so the
++#   correct result here is TRUE despite what the check would say.
++#
++#   Emscripten/WASI is the opposite kind of false result: musl's libc
++#   ships a real, linkable fork() symbol, so the check finds it (see
++#   "Looking for fork - found" from `emcmake cmake`), but the
++#   underlying syscall has no implementation in a single-threaded wasm
++#   module and fails at runtime (ENOSYS) -- so the correct result here
++#   is FALSE despite what the check would say. Detected the same way
++#   CMakeLists.txt's own EMSCRIPTEN variable is (compiler basename
++#   matching "em*", not CMAKE_SYSTEM_NAME) -- this file is include()'d
++#   before that variable is set, and cfg-emscripten's own toolchain
++#   file (cfg-cmake.sh's cfg-emscripten, which would otherwise make
++#   CMAKE_SYSTEM_NAME reliable) never actually resolves due to an
++#   unrelated bug there (${EMSCRIPTEN:=dirname $(which emcc)} is
++#   missing a $() around dirname, so it evaluates to the literal
++#   string "dirname /path/to/emcc" instead of running it), so
++#   CMAKE_SYSTEM_NAME isn't set to "Emscripten" in practice either.
++#   CMAKE_SYSTEM_NAME=WASI (cfg-wasi) doesn't have that problem --
++#   it's passed directly as a cmake argument, not behind a toolchain
++#   file's existence check -- so it's checked normally below.
++#
++#   MSYS has the identical CMAKE_SYSTEM_NAME problem as Emscripten
++#   above, for the same reason (cfg-msys's own TOOLCHAIN, msys64.cmake/
++#   msys32.cmake, is an external file this repo doesn't control) --
++#   cross-checked against the compiler path too (cfg-msys's own
++#   x86_64-pc-msys-gcc/i686-pc-msys-gcc), not just CMAKE_SYSTEM_NAME.
++string(REGEX REPLACE ".*/" "" HAVE_FORK_COMPILER_NAME "${CMAKE_C_COMPILER}")
++
++if((WIN32 OR WIN64 OR MSVC OR MINGW OR WINDOWS)
++   AND NOT CYGWIN
++   AND NOT CMAKE_SYSTEM_NAME MATCHES "MSYS"
++   AND NOT HAVE_FORK_COMPILER_NAME MATCHES "msys")
++  set(HAVE_FORK TRUE)
++elseif(HAVE_FORK_COMPILER_NAME MATCHES "^em" OR CMAKE_SYSTEM_NAME STREQUAL "WASI")
++  set(HAVE_FORK FALSE)
++else()
++  check_function_exists(fork HAVE_FORK)
++endif()
++
++unset(HAVE_FORK_COMPILER_NAME)
++
+ check_include_file(sys/utsname.h HAVE_SYS_UTSNAME_H)
+ 
+ check_include_file(glob.h HAVE_GLOB_H)
+diff --git a/config.h.cmake b/config.h.cmake
+index 15ae70bd..c6ab0f81 100644
+--- a/config.h.cmake
++++ b/config.h.cmake
+@@ -66,6 +66,10 @@
+ /* Define this if you have the glob() function */
+ #cmakedefine HAVE_SETPGID 1
+ 
++/* Define this if you have a working fork() -- see cmake/Checks.cmake
++   for why this isn't a plain existence check on every platform */
++#cmakedefine HAVE_FORK 1
++
+ /* Define this if you have the setpgid() function */
+ #cmakedefine HAVE_GLOB 1
+ 
+diff --git a/configure.ac b/configure.ac
+index 75750975..baa03530 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -116,6 +116,38 @@ AC_CHECK_FUNC([gethostname],[],[dnl
+ 		
+ ])
+ AC_CHECK_FUNCS([sethostname sys_siglist lstat readlink getpwuid_r getpwuid getgrgid_r getgrgid])
++
++dnl fork() needs a hardcoded result on two platform families, the same
++dnl as the CMake build (see cmake/Checks.cmake for the full
++dnl reasoning): native Windows has no libc fork() for AC_CHECK_FUNC to
++dnl find, but lib/unix/fork.c supplies one (via RtlCloneUserProcess);
++dnl Emscripten/WASI's musl libc provides a real, linkable fork()
++dnl symbol that AC_CHECK_FUNC would happily find, but the underlying
++dnl syscall has no implementation in a single-threaded wasm module and
++dnl fails at runtime (ENOSYS). Cygwin and MSYS both provide a real
++dnl POSIX fork() of their own, so they fall through to the plain check
++dnl below like every other POSIX target.
++AC_EGREP_CPP([shish_yes_windows_native],[
++#if (defined(_WIN32) || defined(_WIN64) || defined(__MINGW32__) || \
++     defined(__MINGW64__) || defined(MSVC)) && \
++    !defined(__CYGWIN__) && !defined(__MSYS__)
++shish_yes_windows_native
++#endif
++],[shish_windows_native=yes],[shish_windows_native=no])
++
++AC_EGREP_CPP([shish_yes_forkless_wasm],[
++#if defined(__EMSCRIPTEN__) || defined(__wasi__)
++shish_yes_forkless_wasm
++#endif
++],[shish_forkless_wasm=yes],[shish_forkless_wasm=no])
++
++if test "x$shish_windows_native" = xyes; then
++	AC_DEFINE_UNQUOTED([HAVE_FORK],[1],[Define this if you have a working fork() -- see cmake/Checks.cmake for why this isn't a plain existence check on every platform])
++elif test "x$shish_forkless_wasm" = xyes; then
++	: dnl leave HAVE_FORK undefined
++else
++	AC_CHECK_FUNC([fork],AC_DEFINE_UNQUOTED([HAVE_FORK],[1],[Define this if you have a working fork() -- see cmake/Checks.cmake for why this isn't a plain existence check on every platform]))
++fi
+ AC_CHECK_TYPE([ssize_t],AC_DEFINE_UNQUOTED([HAVE_SSIZE_T],[1],[Define this if you have the 'ssize_t' type]),[],[
+ #ifdef HAVE_UNISTD_H
+ #include <unistd.h>
+diff --git a/src/eval/eval_pipeline.c b/src/eval/eval_pipeline.c
+index 3862271f..0822ed80 100644
+--- a/src/eval/eval_pipeline.c
++++ b/src/eval/eval_pipeline.c
+@@ -5,22 +5,171 @@
+ #include "../fd.h"
+ #include "../sh.h"
+ #include "../eval.h"
++#include "../exec.h"
+ #include "../fdstack.h"
+ #include "../fdtable.h"
+ #include "../job.h"
+ #include "../tree.h"
++#include "../var.h"
+ #include "../debug.h"
+ #include "../../lib/wait.h"
+ #include "../../lib/windoze.h"
++#include "builtin_config.h"
+ #if !WINDOWS_NATIVE
+ #include <sys/wait.h>
+ #include <unistd.h>
+ #endif
+ 
++#if BUILTIN_TRAP
++void* trap_snapshot_save(void);
++void trap_snapshot_restore(void*);
++#endif
++
++#if !defined(HAVE_FORK)
++/* evaluate a pipeline without fork() (3.9.2) -- see
++ * notes/pipeline-sequential.md for the full design. Each stage runs
++ * to completion, fully in-process, before the next one starts: no
++ * pipe(2), no concurrency, no streaming between stages, just the same
++ * non-forking "run this subtree as its own isolated subshell
++ * environment" machinery eval_subshell.c already uses for "(...)" --
++ * POSIX already specifies every pipeline component as running in its
++ * own subshell environment (2.9.2), so this isn't an approximation of
++ * that isolation, it's the same isolation. A non-last stage's stdout
++ * is captured into an in-memory buffer via fd_subst() (the same
++ * mechanism "$(...)" uses); the next stage reads that buffer as its
++ * stdin via fd_here() (the same mechanism here-documents use).
++ * Inherits the same known gap eval_subshell.c already documents for
++ * persistent redirections across a non-forking subshell boundary --
++ * see TODO.md, Goal 4.
++ * ----------------------------------------------------------------------- */
++static int
++eval_pipeline_sequential(struct eval* e, struct npipe* npipe) {
++  union node* node;
++  char* prev_s = NULL;
++  size_t prev_len = 0;
++  int have_prev = 0;
++  int last_ret = 0;
++
++  (void)e;
++
++  if(npipe->bgnd) {
++    /* nothing to background a pipeline *onto* when nothing can
++       fork() -- running it synchronously anyway would silently hide
++       that "&" did nothing, so this errors loudly instead. Loud over
++       silent, matching the entire reason this path exists (see
++       eval-pipeline-silent-on-fork-failure in BUGS). */
++    sh->exitcode = sh_error("background pipelines are not supported without a working fork()");
++    return sh->exitcode;
++  }
++
++  for(node = npipe->cmds; node; node = node->next) {
++    int is_last = (node->next == NULL);
++    stralloc captured;
++    struct fdstack io;
++    struct fd_state fdst;
++    struct fd out_fd, in_fd;
++    struct vartab vars;
++    struct env she;
++    struct func_snapshot funcs;
++#if BUILTIN_TRAP
++    void* traps_snap;
++#endif
++    struct eval en;
++    int jmpret, ret;
++
++    stralloc_init(&captured);
++
++    fdstack_push(&io);
++    fd_state_save(&fdst);
++
++    if(!is_last)
++      fd_subst(fd_push(&out_fd, STDOUT_FILENO, FD_WRITE), &captured);
++
++    if(have_prev) {
++      stralloc from_prev;
++
++      from_prev.s = prev_s;
++      from_prev.len = prev_len;
++      fd_here(fd_push(&in_fd, STDIN_FILENO, FD_READ), &from_prev);
++    }
++
++    vartab_push(&vars, 0);
++    sh_push(&she);
++    exec_functions_save(&funcs);
++#if BUILTIN_TRAP
++    traps_snap = trap_snapshot_save();
++#endif
++
++    eval_push(&en, E_ROOT);
++
++    /* set up a long jump so we can exit this stage and end up just
++       after the setjmp call, which will return nonzero in this case */
++    en.jump = 1;
++    jmpret = setjmp(en.jumpbuf);
++
++    if(jmpret) {
++      en.exitcode = (jmpret >> 1);
++    } else {
++      /* neither E_LIST nor E_EXIT: node->next here is the *next
++         pipeline stage*, not more of this one, so this must evaluate
++         node alone -- E_LIST would make eval_tree() walk straight
++         into the next stage as if it were part of this one's own
++         list. E_EXIT means "safe to execve() this disposable
++         process" (see eval_cmdlist.c); there is no disposable
++         process here, only the one real, ongoing shell. */
++      eval_tree(&en, node, 0);
++
++      if(en.destructor)
++        en.exitcode = en.destructor(en.exitcode);
++    }
++
++    ret = eval_pop(&en);
++
++#if BUILTIN_TRAP
++    trap_snapshot_restore(traps_snap);
++#endif
++    exec_functions_restore(&funcs);
++    sh_pop(&she);
++    vartab_pop(&vars);
++
++    if(have_prev)
++      fd_pop(&in_fd); /* frees prev_s, via fd_here()'s deinit */
++
++    if(!is_last)
++      fd_pop(&out_fd); /* does not free captured.s -- fd_subst() sets
++                           no deinit; ownership passes to the next
++                           stage's fd_here() call below instead */
++
++    fdstack_pop(&io);
++    fd_state_restore(&fdst);
++
++    /* a real-signal-triggered "exit" (sh_async_exit) needs to keep
++       propagating past this stage, same as eval_subshell.c's
++       identical block -- this call never returns when it fires */
++    if((jmpret & 1) && sh_async_exit)
++      sh_exit(ret);
++
++    last_ret = ret;
++
++    if(!is_last) {
++      prev_s = captured.s;
++      prev_len = captured.len;
++      have_prev = 1;
++    }
++  }
++
++  sh->exitcode = last_ret;
++  return sh->exitcode;
++}
++#endif /* !defined(HAVE_FORK) */
++
+ /* evaluate a pipeline (3.9.2)
+  * ----------------------------------------------------------------------- */
+ int
+ eval_pipeline(struct eval* e, struct npipe* npipe) {
++#if !defined(HAVE_FORK)
++  return eval_pipeline_sequential(e, npipe);
++#else
+   struct job* job;
+   union node* node;
+   struct fdstack st;
+@@ -178,4 +327,5 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
+   sh->exitcode = WAIT_STATUS(status);
+ 
+   return sh->exitcode;
++#endif /* !defined(HAVE_FORK) */
+ }

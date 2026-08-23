@@ -280,6 +280,57 @@ endif(NOT HAVE_SIGPROCMASK)
 check_function_exists(sigaction HAVE_SIGACTION)
 check_function_exists(setpgid HAVE_SETPGID)
 
+# check_function_exists(fork ...) alone isn't trustworthy on either of
+# the two platform families below -- both need the result hardcoded
+# instead of trusting the check:
+#
+#   native Windows (WIN32/WIN64/MSVC/MINGW/WINDOWS, but *not* Cygwin or
+#   MSYS -- both of those provide a real POSIX fork() from their own C
+#   library and go through the normal check like any other POSIX
+#   target) has no libc-provided fork() for the check to find, but
+#   lib/unix/fork.c supplies one (via RtlCloneUserProcess) that
+#   job_fork() already links against on this platform -- so the
+#   correct result here is TRUE despite what the check would say.
+#
+#   Emscripten/WASI is the opposite kind of false result: musl's libc
+#   ships a real, linkable fork() symbol, so the check finds it (see
+#   "Looking for fork - found" from `emcmake cmake`), but the
+#   underlying syscall has no implementation in a single-threaded wasm
+#   module and fails at runtime (ENOSYS) -- so the correct result here
+#   is FALSE despite what the check would say. Detected the same way
+#   CMakeLists.txt's own EMSCRIPTEN variable is (compiler basename
+#   matching "em*", not CMAKE_SYSTEM_NAME) -- this file is include()'d
+#   before that variable is set, and cfg-emscripten's own toolchain
+#   file (cfg-cmake.sh's cfg-emscripten, which would otherwise make
+#   CMAKE_SYSTEM_NAME reliable) never actually resolves due to an
+#   unrelated bug there (${EMSCRIPTEN:=dirname $(which emcc)} is
+#   missing a $() around dirname, so it evaluates to the literal
+#   string "dirname /path/to/emcc" instead of running it), so
+#   CMAKE_SYSTEM_NAME isn't set to "Emscripten" in practice either.
+#   CMAKE_SYSTEM_NAME=WASI (cfg-wasi) doesn't have that problem --
+#   it's passed directly as a cmake argument, not behind a toolchain
+#   file's existence check -- so it's checked normally below.
+#
+#   MSYS has the identical CMAKE_SYSTEM_NAME problem as Emscripten
+#   above, for the same reason (cfg-msys's own TOOLCHAIN, msys64.cmake/
+#   msys32.cmake, is an external file this repo doesn't control) --
+#   cross-checked against the compiler path too (cfg-msys's own
+#   x86_64-pc-msys-gcc/i686-pc-msys-gcc), not just CMAKE_SYSTEM_NAME.
+string(REGEX REPLACE ".*/" "" HAVE_FORK_COMPILER_NAME "${CMAKE_C_COMPILER}")
+
+if((WIN32 OR WIN64 OR MSVC OR MINGW OR WINDOWS)
+   AND NOT CYGWIN
+   AND NOT CMAKE_SYSTEM_NAME MATCHES "MSYS"
+   AND NOT HAVE_FORK_COMPILER_NAME MATCHES "msys")
+  set(HAVE_FORK TRUE)
+elseif(HAVE_FORK_COMPILER_NAME MATCHES "^em" OR CMAKE_SYSTEM_NAME STREQUAL "WASI")
+  set(HAVE_FORK FALSE)
+else()
+  check_function_exists(fork HAVE_FORK)
+endif()
+
+unset(HAVE_FORK_COMPILER_NAME)
+
 check_include_file(sys/utsname.h HAVE_SYS_UTSNAME_H)
 
 check_include_file(glob.h HAVE_GLOB_H)
