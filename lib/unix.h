@@ -35,7 +35,7 @@ int fork(void);
 #define S_IFLNK 0xA000
 #endif
 #ifndef S_ISLNK
-#define S_ISLNK(m) (((m)&S_IFMT) == S_IFLNK)
+#define S_ISLNK(m) (((m) & S_IFMT) == S_IFLNK)
 #endif
 int lstat(const char* path, struct stat* buf);
 #endif

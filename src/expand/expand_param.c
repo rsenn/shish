@@ -192,9 +192,9 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
   /* ..and variable substitutions */
   else {
     size_t offset;
+    char tmpbuf[FMT_ULONG];
 
     if(var_random_active && str_equal(param->name, "RANDOM")) {
-      char tmpbuf[FMT_ULONG];
       uint16 random = var_random_next();
 
       v = tmpbuf;
@@ -208,13 +208,17 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
          following expand_cat below. */
     } else if(str_equal(param->name, "LINENO") || str_equal(param->name, "LINES") ||
               str_equal(param->name, "COLUMNS")) {
-      static char linebuf[FMT_ULONG];
-      vlen = fmt_ulong(linebuf,
-                       param->name[4] == 'N'   ? param->loc.line
-                       : param->name[4] == 'S' ? term_size.ws_row
-                                               : term_size.ws_col);
-      linebuf[vlen] = '\0';
-      v = linebuf;
+      unsigned long n;
+
+      switch(param->name[4]) {
+        case 'S': n = term_size.ws_row; break;
+        case 'M': n = term_size.ws_col; break;
+        default: n = param->loc.line; break;
+      }
+
+      vlen = fmt_ulong(tmpbuf, n);
+      tmpbuf[vlen] = '\0';
+      v = tmpbuf;
 
       /* look for the variable.
          if the S_NULL flag is set and we have a var which is null
