@@ -583,3 +583,34 @@
   strip /tmp/a/shish /tmp/b/shish; stat -c%s /tmp/a/shish /tmp/b/shish
   # 189312 189312 -- byte-identical, and /tmp/b/.../tree_print.c.o exists
   ```
+
+- cfg-cmake-mingw-silently-builds-native: `cfg-mingw`/`cfg-mingw32`/
+  `cfg-mingw64` (`cfg-cmake.sh`) never set `CC`, relying on the
+  `TOOLCHAIN` file's own `set(CMAKE_C_COMPILER x86_64-w64-mingw32-gcc)`
+  to pick the cross compiler. But `cfg()`'s very first line runs
+  `: ${CC:=gcc}` whenever plain `gcc` is on `PATH`, and later passes
+  `-DCMAKE_C_COMPILER="$CC"` on the `cmake` command line -- a cache
+  variable that wins over the toolchain file's `set()`. The result:
+  `CMAKE_SYSTEM_NAME=Windows`/`CMAKE_CROSSCOMPILING=TRUE` (so all the
+  `check_function_exists` results look like a real mingw target) while
+  every file actually gets compiled with the *native* `/usr/bin/gcc`,
+  producing a native ELF `shish` sitting in a `build/x86_64-w64-mingw32`
+  directory -- not the PE `shish.exe` the directory name implies. Every
+  `WINDOWS_NATIVE`-gated code path in the tree has therefore never
+  actually been compiled by `cfg-mingw64`/`cfg-mingw32`; the same bug
+  hits `cfg-android`, which also never sets `CC`.
+
+  **Repro:**
+  ```sh
+  . ./cfg-cmake.sh && cfg-mingw64
+  file build/x86_64-w64-mingw32/shish   # ELF, not PE32+
+  grep CMAKE_C_COMPILER: build/x86_64-w64-mingw32/CMakeCache.txt
+  # CMAKE_C_COMPILER:STRING=/usr/bin/gcc  -- should be x86_64-w64-mingw32-gcc
+  ```
+
+  Workaround used to actually cross-compile and test mingw output:
+  configure by hand with `CC` forced, bypassing `cfg-mingw64`:
+  ```sh
+  cmake -DCMAKE_TOOLCHAIN_FILE=/opt/cmake-toolchains/mingw64.cmake \
+        -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc -B build/mingw64-real
+  ```

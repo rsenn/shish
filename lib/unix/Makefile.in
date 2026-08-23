@@ -19,7 +19,7 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 LIB = ../libowfat.a
 ARCHIVE = unix.a
-MODULES = glob readlink getppid kill killpg lstat fork
+MODULES = glob readlink getppid kill killpg lstat fork symlink uname
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

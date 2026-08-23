@@ -19,6 +19,8 @@ int is_symlink(const char* LinkPath);
 #include <sys/stat.h>
 
 ssize_t readlink(const char* LinkPath, char* buf, size_t maxlen);
+int link(const char* oldpath, const char* newpath);
+int symlink(const char* oldpath, const char* newpath);
 size_t getpagesize();
 pid_t getppid(void);
 int kill(pid_t pid, int sig);
@@ -36,6 +38,20 @@ int fork(void);
 #define S_ISLNK(m) (((m)&S_IFMT) == S_IFLNK)
 #endif
 int lstat(const char* path, struct stat* buf);
+#endif
+
+/* platforms without a real uname(2)/<sys/utsname.h>: Windows, and
+ * Emscripten/WASI/bare-wasm targets, which have no host to introspect. */
+#if WINDOWS_NATIVE || defined(__EMSCRIPTEN__) || defined(__wasm__) || defined(__wasi__)
+struct utsname {
+  char sysname[65];
+  char nodename[65];
+  char release[65];
+  char version[65];
+  char machine[65];
+};
+
+int uname(struct utsname* buf);
 #endif
 
 #endif /* defined(UNIX_H) */

@@ -1,9 +1,10 @@
 #include "../builtin.h"
 #include "../fdtable.h"
+#include "../../lib/windoze.h"
 #include "config.h"
 #include <unistd.h>
 
-#if defined(HAVE_LINK)
+#if defined(HAVE_LINK) || WINDOWS_NATIVE
 
 const char help_link[] = "    Create a hard link, calling link(2) directly.\n"
                          "\n"

@@ -2,9 +2,17 @@
 #include "../sh.h"
 #include "../fdtable.h"
 #include "config.h"
+#include "../../lib/windoze.h"
 
-#ifdef HAVE_SYS_UTSNAME_H
+#if defined(HAVE_SYS_UTSNAME_H)
 #include <sys/utsname.h>
+#define BUILTIN_UNAME_AVAILABLE 1
+#elif WINDOWS_NATIVE || defined(__EMSCRIPTEN__) || defined(__wasm__) || defined(__wasi__)
+#include "../../lib/unix.h"
+#define BUILTIN_UNAME_AVAILABLE 1
+#endif
+
+#ifdef BUILTIN_UNAME_AVAILABLE
 
 /* output stuff
  * ----------------------------------------------------------------------- */
@@ -15,10 +23,7 @@ const char help_uname[] = "    Print system information.\n"
                           "    -r              kernel release\n"
                           "    -v              kernel version\n"
                           "    -m              machine hardware name\n"
-                          "    -p              processor type\n"
-                          "    -i              hardware platform\n"
-                          "    -o              operating system name\n"
-                          "    -a              print all of the above\n";
+                          "    -i              hardware platform\n";
 
 int
 builtin_uname(int argc, char* argv[]) {
