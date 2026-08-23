@@ -54,11 +54,20 @@ tree_location(union node* node, struct location* loc) {
 
     switch(node->id) {
       case N_PIPELINE:
+        if(tree_location(node->npipe.cmds, loc))
+          return 1;
+        break;
       case N_BRACEGROUP:
       case N_SUBSHELL:
+        if(tree_location(node->ngrp.cmds, loc))
+          return 1;
+        break;
       case N_FOR:
+        if(tree_location(node->nfor.cmds, loc))
+          return 1;
+        break;
       case N_CASENODE:
-        if(tree_location(node->npipe.cmds, loc))
+        if(tree_location(node->ncasenode.cmds, loc))
           return 1;
         break;
       default: break;
