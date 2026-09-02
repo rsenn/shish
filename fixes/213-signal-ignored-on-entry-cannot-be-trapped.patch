@@ -1,0 +1,179 @@
+diff --git a/lib/sig.h b/lib/sig.h
+index 423c5f2d..c87ecb5a 100644
+--- a/lib/sig.h
++++ b/lib/sig.h
+@@ -140,5 +140,7 @@ int sig_byname(const char* name);
+ int sig_push(int, sighandler_t_ref);
+ int sig_pusha(int sig, struct sigaction const* ssa);
+ int sig_pop(int sig);
++void sig_snapshot(void);
++int sig_was_ignored(int sig);
+ 
+ #endif
+diff --git a/src/builtin/builtin_trap.c b/src/builtin/builtin_trap.c
+index 4851b99c..f2879a29 100644
+--- a/src/builtin/builtin_trap.c
++++ b/src/builtin/builtin_trap.c
+@@ -275,6 +275,13 @@ static int
+ trap_uninstall(int sig) {
+   trap **ptr, *t;
+ 
++  /* POSIX 2.11: a signal already ignored on entry to a non-interactive
++     shell cannot be trapped or reset -- "trap - SIG" is a silent
++     no-op for it there, same as trap_install() below. An interactive
++     shell has no such restriction. */
++  if((char)sig > 0 && sig_was_ignored(sig) && !(source->mode & SOURCE_IACTIVE))
++    return 0;
++
+   for(ptr = &traps; (t = *ptr); ptr = &(*ptr)->next) {
+     if(t->sig == (unsigned char)sig) {
+       if((char)t->sig > 0) {
+@@ -330,6 +337,18 @@ trap_install(int sig, union node* tree) {
+   struct eval* e;
+   trap* tr;
+ 
++  /* POSIX 2.11: a signal already ignored on entry to a non-interactive
++     shell stays ignored -- the trap is accepted syntactically but
++     never actually installed, and the signal's real disposition
++     (still whatever it was at startup) is left untouched, so a
++     forked/exec'd child inherits the same ignore for free. An
++     interactive shell may still trap or reset it. */
++  if((char)sig > 0 && sig_was_ignored(sig) && !(source->mode & SOURCE_IACTIVE)) {
++    if(tree)
++      tree_free(tree);
++    return;
++  }
++
+   /* replace, don't stack, any trap already installed for this exact
+      signal -- see trap_uninstall()'s comment */
+   trap_uninstall(sig);
+diff --git a/src/sh/sh_init.c b/src/sh/sh_init.c
+index ef736af7..61ed9fb8 100644
+--- a/src/sh/sh_init.c
++++ b/src/sh/sh_init.c
+@@ -3,6 +3,7 @@
+ #include "../job.h"
+ #include "../sh.h"
+ #include "../../lib/shell.h"
++#include "../../lib/sig.h"
+ #include "../../lib/uint32.h"
+ #include "../var.h"
+ #include "../debug.h"
+@@ -33,6 +34,11 @@ sh_init(void) {
+   debug_open();
+ #endif
+ 
++  /* must run before anything else touches a signal's disposition
++     (job_init() doesn't, but sig_catch(SIGCHLD, ...)/term_init() do,
++     later in sh_main.c) -- see sig_snapshot()'s own comment. */
++  sig_snapshot();
++
+   job_init();
+ 
+   /* get current uid and pid */
+diff --git a/src/sh/sh_main.c b/src/sh/sh_main.c
+index f6626afb..cccbfd46 100644
+--- a/src/sh/sh_main.c
++++ b/src/sh/sh_main.c
+@@ -231,7 +231,7 @@ main(int argc, char** argv) {
+ 
+       switch(c) {
+         case 'c': cmds = opt.arg; break;
+-        case 'i': force_interactive = 1; break;
++        case 'i': force_interactive = on; break;
+         case 's': read_stdin = 1; break;
+ 
+         case 'o': {
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index ff30db95..1eb8feb4 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -4486,4 +4486,37 @@ fi
+ ## pipelines are not supported without a working fork()") instead of
+ ## silently doing nothing.
+ 
++## fixes/213 (posix-signal-ignored-on-entry-can-be-trapped): POSIX
++## 2.11 -- a signal already SIG_IGN when a non-interactive shell
++## starts must stay ignored; "trap CMD SIG"/"trap - SIG" for it are
++## silent no-ops, and a forked/exec'd child inherits the same ignore.
++## sh_init() now snapshots each signal's disposition once
++## (sig_snapshot()/sig_was_ignored(), lib/sig/sig_snapshot.c) before
++## anything else touches one, and trap_install()/trap_uninstall()
++## (src/builtin/builtin_trap.c) no-op for a signal that was already
++## ignored, but only when source->mode lacks SOURCE_IACTIVE -- an
++## interactive shell has no such restriction (confirmed against
++## tests/posix/signal.sh's own "final_trap=ignore" rule, which fires
++## exactly when parent_action=ignored and the shell is
++## non-interactive). Also fixed in the same pass, since it was
++## silently defeating the "-i"/"+i" distinction the *-p.tst files
++## depend on to select interactive vs. non-interactive: sh_main.c's
++## own "-i"/"+i" option parsing ignored the +/- prefix entirely
++## ("case 'i': force_interactive = 1"), so both forced interactive
++## regardless of which was given.
++##
++## Like fixes/105 above, "a signal was already ignored before this
++## process even started" isn't expressible as a same-process
++## assertion here (there is no portable, non-fragile way to spawn a
++## second shish with a chosen signal pre-ignored without knowing this
++## binary's own path -- $0 is this test script, not the interpreter).
++## Verified instead against tests/posix, which drives exactly this via
++## an external system shell pre-ignoring the signal before exec'ing
++## the testee: sigint2-p/sighup2-p/sigquit2-p/sigterm2-p.tst went from
++## 124/180 each to 180/180, sigurg2-p/sigcont2-p from 164-177/180 to
++## 180/180, with sigint6-p/sigquit6-p/sigterm6-p/sighup6-p (the
++## interactive combo, correctly unaffected by this fix) and the full
++## tests/fixed.sh + ctest suite unchanged against a stashed-back
++## baseline.
++
+ summary
+diff --git a/lib/sig/sig_snapshot.c b/lib/sig/sig_snapshot.c
+new file mode 100644
+index 00000000..989fe9a1
+--- /dev/null
++++ b/lib/sig/sig_snapshot.c
+@@ -0,0 +1,45 @@
++#include "../sig.h"
++
++#include <signal.h>
++
++/* POSIX 2.11: a signal that is already being ignored when the shell
++ * starts must stay ignored -- trap/reset requests for it are silently
++ * rejected. Snapshotting once here, before sig_push()/sig_catch() ever
++ * runs, lets trap_install()/trap_uninstall() (src/builtin/builtin_trap.c)
++ * check "was this ignored on entry" without disturbing the disposition
++ * itself: sigaction(sig, 0, &old) only reads, never installs.
++ * ----------------------------------------------------------------------- */
++#ifdef SHISH_NSIG
++static unsigned char sig_ignored[SHISH_NSIG - 1];
++
++void
++sig_snapshot(void) {
++#if !WINDOWS_NATIVE
++  int sig;
++  struct sigaction sa;
++
++  for(sig = 1; sig < SHISH_NSIG; sig++) {
++    if(sigaction(sig, 0, &sa) == 0 && sa.sa_handler == SIG_IGN)
++      sig_ignored[sig - 1] = 1;
++  }
++#endif
++}
++
++int
++sig_was_ignored(int sig) {
++  if((sig <= 0) || (sig >= SHISH_NSIG))
++    return 0;
++
++  return sig_ignored[sig - 1];
++}
++#else
++void
++sig_snapshot(void) {
++}
++
++int
++sig_was_ignored(int sig) {
++  (void)sig;
++  return 0;
++}
++#endif

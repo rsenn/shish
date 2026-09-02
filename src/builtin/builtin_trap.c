@@ -275,6 +275,13 @@ static int
 trap_uninstall(int sig) {
   trap **ptr, *t;
 
+  /* POSIX 2.11: a signal already ignored on entry to a non-interactive
+     shell cannot be trapped or reset -- "trap - SIG" is a silent
+     no-op for it there, same as trap_install() below. An interactive
+     shell has no such restriction. */
+  if((char)sig > 0 && sig_was_ignored(sig) && !(source->mode & SOURCE_IACTIVE))
+    return 0;
+
   for(ptr = &traps; (t = *ptr); ptr = &(*ptr)->next) {
     if(t->sig == (unsigned char)sig) {
       if((char)t->sig > 0) {
@@ -329,6 +336,18 @@ static void
 trap_install(int sig, union node* tree) {
   struct eval* e;
   trap* tr;
+
+  /* POSIX 2.11: a signal already ignored on entry to a non-interactive
+     shell stays ignored -- the trap is accepted syntactically but
+     never actually installed, and the signal's real disposition
+     (still whatever it was at startup) is left untouched, so a
+     forked/exec'd child inherits the same ignore for free. An
+     interactive shell may still trap or reset it. */
+  if((char)sig > 0 && sig_was_ignored(sig) && !(source->mode & SOURCE_IACTIVE)) {
+    if(tree)
+      tree_free(tree);
+    return;
+  }
 
   /* replace, don't stack, any trap already installed for this exact
      signal -- see trap_uninstall()'s comment */

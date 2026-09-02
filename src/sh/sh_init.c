@@ -3,6 +3,7 @@
 #include "../job.h"
 #include "../sh.h"
 #include "../../lib/shell.h"
+#include "../../lib/sig.h"
 #include "../../lib/uint32.h"
 #include "../var.h"
 #include "../debug.h"
@@ -32,6 +33,11 @@ sh_init(void) {
 #ifdef DEBUG_OUTPUT
   debug_open();
 #endif
+
+  /* must run before anything else touches a signal's disposition
+     (job_init() doesn't, but sig_catch(SIGCHLD, ...)/term_init() do,
+     later in sh_main.c) -- see sig_snapshot()'s own comment. */
+  sig_snapshot();
 
   job_init();
 

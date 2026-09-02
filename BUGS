@@ -221,30 +221,6 @@
   # bash/dash print only "after loop" (break actually exits the loop)
   ```
 
-- posix-signal-ignored-on-entry-can-be-trapped: POSIX 2.11 -- a signal
-  that was already ignored when the shell started cannot be trapped or
-  reset; `trap` must silently do nothing for it. shish installs the
-  trap anyway, so the signal stops being ignored and the shell (or a
-  child it starts) dies from it. This is what every remaining failure
-  in the `sig*-p` "initially ignored" files is: `sigint2-p`,
-  `sighup2-p`, `sigquit2-p`, `sigterm2-p` (124/180 each),
-  `sigint6-p`/`sigquit6-p` (126/180), `sighup6-p` (121/180) -- 20
-  "spares execed process" + 20 "spares child process" + 16 "spares
-  shell" in `sigint2-p` alone, all of them `initially ignored, X ->
-  command` or `-> clear` combos. Fix: snapshot each signal's
-  disposition at startup, then no-op `trap_install()`/
-  `trap_uninstall()` for the ones that were `SIG_IGN`.
-
-  Supersedes the old `posix-sigcont-etc-trap-disposition-many-failures`
-  entry, which covered this plus four separate, now-fixed defects
-  (`fixes/190`-`192`).
-
-  **Repro:**
-  ```sh
-  sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix sigint2-p.tst
-  # 56 failures, every one an "initially ignored" combo
-  ```
-
 - kill-stop-self-in-subshell-deadlock: `kill -s STOP $$` inside a
   `(...)` subshell hangs the shell forever, so `kill3-p.tst` never
   finishes (`ctest` reports Timeout after 120s; confirmed identical

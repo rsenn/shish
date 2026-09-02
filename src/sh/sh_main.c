@@ -231,7 +231,7 @@ main(int argc, char** argv) {
 
       switch(c) {
         case 'c': cmds = opt.arg; break;
-        case 'i': force_interactive = 1; break;
+        case 'i': force_interactive = on; break;
         case 's': read_stdin = 1; break;
 
         case 'o': {

@@ -6,9 +6,36 @@ Leverage-sorted list of what's still open. Fixed work lives in `git log` and
 
 ---
 
-## Goal 1 — POSIX conformance
+## MAIN QUEST — POSIX conformance and memory safety
 
-The measurable target is `tests/posix` (yash's POSIX suite, 123 files).
+Everything else in this file is secondary to this until it's done. The
+site's own pitch (`docs/conformance.html`) already says shish is
+"proof-of-concept quality" and targets POSIX "and nothing else" — the
+job here is closing the gap between that claim and `tests/posix`'s
+actual numbers, without introducing memory corruption while doing it.
+Two stages, done in order, plus one requirement that runs continuously
+underneath both:
+
+1. **Stage 1 — the shell language itself.** Everything `tests/posix`
+   measures that is not a builtin: signal disposition, which errors
+   must exit the shell, expansion/quoting/parsing, control flow and
+   exit status. This is Phases 1, 2, 4, 5 below (≈740 of the ≈822
+   non-skip failures once the `sig*` family is fixed). Land this
+   first — several builtin failures (e.g. `set -o` option names,
+   `trap` printing) are thin wrappers over language-level state that
+   Stage 1 fixes anyway.
+2. **Stage 2 — utilities/builtins.** `test`, `alias`, `kill`, `read`,
+   `command`, `unset`, `umask`, `set`, `shift`, `export` and the rest —
+   Phase 3 below. Independent, per-builtin fixes; start once Stage 1's
+   language-level failures stop shadowing them.
+3. **Ongoing, throughout both stages — memory safety.** A frequent
+   ASan+UBSan build is a gate, not a one-off cleanup pass: every change
+   in Stage 1/2 must be re-verified under
+   `-fsanitize=address,undefined` before being counted as done, the
+   same way `tests/fixed.sh`/`ctest` already are. See "Memory safety"
+   below for what is open there and how to run it.
+
+The measurable target for Stages 1-2 is `tests/posix` (yash's POSIX suite, 123 files).
 Everything below is derived from full runs on 2026-08-20, at
 `9bfd1f9f` plus `fixes/188`-`192`.
 
@@ -18,6 +45,13 @@ Everything below is derived from full runs on 2026-08-20, at
 cases 12195   passed 5270   failed 822   skipped 6103
    failures:  sig*-p family 567  |  everything else 255
 ```
+
+**Stale as of `fixes/213` (2026-09-02):** the `sig*-p` family is down
+~500, to ≈67 — `sigint2-p`/`sighup2-p`/`sigquit2-p`/`sigterm2-p` are now
+180/180 (were 124/180 each), `sigurg2-p`/`sigcont2-p` also 180/180. Full
+scoreboard not yet re-run from a clean `ctest`; the per-file numbers
+below (and the `sig*` breakdown after them) still reflect the pre-213
+state except where a "Done, `fixes/213`" note says otherwise.
 
 Where this came from: 3952 passed / 2140 failed before `fixes/190`-`192`
 (Phase 1), 4863 / 1229 after, 5181 / 911 before Phase 2. Part of the
@@ -93,7 +127,7 @@ in `tests/fixed.sh`.
 
 ---
 
-### Phase 1 — signal disposition (567 left, was 1790)
+### Phase 1 [Stage 1: language] — signal disposition (≈67 left, was 1790)
 
 Done, `fixes/190`-`192`: `trap '' SIG` now ignores instead of
 resetting to the default; `trap - SIG` for an untrapped signal is a
@@ -103,34 +137,41 @@ between `;`-separated commands, not only at line boundaries; a trap
 body may uninstall its own trap without freeing the tree it runs from;
 and a signal-killed child sets `$?` to 128+N instead of 0.
 
+Done, `fixes/213`: **a signal ignored on entry to a non-interactive
+shell cannot be trapped or reset** (POSIX 2.11) — this was the whole
+story for the four `*2-p` files (`sigint2-p`/`sighup2-p`/`sigquit2-p`/
+`sigterm2-p`, 124/180 each) plus part of `sigurg2-p`/`sigcont2-p`.
+`sh_init()` now snapshots each signal's disposition once
+(`sig_snapshot()`/`sig_was_ignored()`, `lib/sig/sig_snapshot.c`) before
+anything else touches one, and `trap_install()`/`trap_uninstall()`
+no-op for a signal that was already `SIG_IGN`, gated on
+`!(source->mode & SOURCE_IACTIVE)` — an interactive shell has no such
+restriction, confirmed against `tests/posix/signal.sh`'s own
+`final_trap=ignore` rule. A second, independent bug was hiding behind
+this one and had to be fixed in the same pass: `sh_main.c`'s `-i`/`+i`
+startup-option parsing ignored the `+`/`-` prefix entirely, so both
+forced interactive regardless of which was given — meaning `*2-p`
+(`+i`, non-interactive) and `*6-p` (`-i`, interactive) were both
+actually running interactively, which is why fixing only the trap
+logic first sent `*6-p` backwards (126→68/180) until this was also
+fixed. All four `*2-p` files, plus `sigurg2-p`/`sigcont2-p`, are now
+180/180; `*6-p`/`*1-p`/`*5-p` (the genuinely-interactive and
+default-disposition combos) are unchanged, confirmed via a full
+`ctest` diff against a stashed-back baseline.
+
 What is left, in order:
 
-1. **A signal ignored on entry cannot be trapped or reset** (POSIX
-   2.11). This is now the whole story for the four `*2-p` files and
-   most of the `*6-p` ones — every one of their remaining failures is
-   an `initially ignored` combo (`sigint2-p`: 20 "spares execed
-   process", 20 "spares child process", 16 "spares shell", all of them
-   `initially ignored, X -> command/clear`). shish installs the trap
-   anyway, so the signal stops being ignored and the shell or its
-   child dies.
-   → Record each signal's disposition once at startup (`sh_init()`),
-   and make `trap_install()`/`trap_uninstall()` a silent no-op for a
-   signal that was already `SIG_IGN` then.
-   → verify: `sigint2-p`/`sighup2-p`/`sigquit2-p`/`sigterm2-p`
-   (124/180 each), `sigint6-p`/`sigquit6-p` (126/180), `sigterm6-p`
-   (125/180), `sighup6-p` (121/180) — 500 of the 567 failures left.
+1. **Disposition across fork and exec.** POSIX: a signal the shell
+   traps to a command is reset to the default in a forked/exec'd
+   child (an ignored one already stays ignored for free now, since
+   `fixes/213` never touches its real disposition at all).
+   `job_fork.c`/`exec_program.c` do not do this systematically yet.
+2. Re-triage the remainder — every `sig*-p` file is now at 164-180/180,
+   so what is left is a handful of individual cases per file, not a
+   family-wide cause. Re-run the scoreboard commands below first;
+   the per-file counts above this section predate `fixes/213`.
 
-2. **Disposition across fork and exec.** POSIX: a signal the shell
-   ignores stays ignored in the child; one it traps to a command is
-   reset to the default there. `job_fork.c`/`exec_program.c` do
-   neither systematically. Overlaps step 1 — do it after, and
-   re-count before assuming it is still worth its own pass.
-
-3. Re-triage the remainder. Every file that is not a `*2-p`/`*6-p` is
-   already at 164-177/180, so what is left there is a handful of
-   individual cases, not a family-wide cause.
-
-### Phase 2 — error semantics: which failures must exit the shell (0)
+### Phase 2 [Stage 1: language] — error semantics: which failures must exit the shell (0)
 
 Done, `fixes/196`: `error-p` is 212/212, from 127/212. POSIX 2.8.1 says
 exactly which errors kill a non-interactive shell; the decision now
@@ -165,7 +206,7 @@ and `BUGS: error-message-line-number-off-by-one`.
 
 ---
 
-### Phase 3 — builtins (≈100 failures, each step independent)
+### Phase 3 [Stage 2: builtins/utilities] (≈100 failures, each step independent)
 
 Sorted by failures per unit of work.
 
@@ -201,7 +242,7 @@ Sorted by failures per unit of work.
 
 ---
 
-### Phase 4 — expansion and parsing (≈60)
+### Phase 4 [Stage 1: language] — expansion and parsing (≈60)
 
 1. `quote-p` (17/35) — backslash and line continuation inside
    reserved words, operators, parameter expansions.
@@ -220,7 +261,7 @@ Sorted by failures per unit of work.
 
 ---
 
-### Phase 5 — control flow and exit status (≈15)
+### Phase 5 [Stage 1: language] — control flow and exit status (≈15)
 
 1. `exit-p` (8/14) — default exit status in a subshell and inside a
    trap; `exit N` from a trap. `BUGS:
@@ -240,7 +281,7 @@ Sorted by failures per unit of work.
 
 ---
 
-### Phase 6 — what is not being measured at all
+### Phase 6 [Stage 1+2] — what is not being measured at all
 
 1. **6103 of 12195 cases are skipped**, i.e. half the suite is unrun.
    The whole `sigttin`/`sigttou`/`sigtstp` set (12 files × 132) and
@@ -263,7 +304,93 @@ Sorted by failures per unit of work.
 
 ---
 
-## Goal 2 — `src/job` cleanup
+### `BUGS` ↔ conformance-gap map
+
+`BUGS` currently holds 34 entries. Sorted by whether they explain part
+of the `tests/posix` gap above, or are unrelated maintenance items:
+
+**Directly explains a scoreboard number (fix these as part of Stages 1-2):**
+
+- `posix-signal-ignored-on-entry-can-be-trapped`, `signal-tests-vary-with-machine-load`,
+  `kill-stop-self-in-subshell-deadlock` → Phase 1 (`sig*-p`, `kill3-p`).
+- `error-message-line-number-off-by-one` → Phase 2 (`lineno-p`).
+- `alias-printing-and-substitution-broken`, `read-field-splitting-and-options-broken`,
+  `set-notify-unimplemented`, `set-verbose-unimplemented`,
+  `set-histexpand-unimplemented` → Phase 3 (`alias-p`, `read-p`, `set-p`).
+- `quote-backslash-escaping-broken`, `param-expansion-pattern-removal-broken`,
+  `redir-tilde-expansion-and-heredoc-broken`, `case-pattern-expansion-broken`,
+  `case-pattern-bracket-quote-stripping`, `fnmatch-quotation-of-quotations` →
+  Phase 4 (`quote-p`, `param-p`, `redir-p`, `case-p`, `fnmatch-p`).
+- `exit-status-in-trap-and-subshell-broken`, `return-default-exit-status-wrong`,
+  `break-continue-inside-eval-no-op`, `input-not-read-line-wise` → Phase 5
+  (`exit-p`, `return-p`, `break-p`/`continue-p`, `input-p`).
+- `yash-suite-other-hangs`, `grouping-p-tst-flaky`, `fixed-sh-assumes-optional-builtins` →
+  Phase 6 (what the scoreboard doesn't even measure yet).
+
+**Real bugs, but not counted in the `tests/posix` scoreboard at all** (fix
+opportunistically, not blocked on Stage 1/2, don't expect the score to move):
+
+- `eval-lineno-imprecise-inside-function`, `nested-heredoc-in-cmdsub-hangs`,
+  `exit-trap-loses-positional-parameters`, `syntax-error-in-c-string-exits-zero`,
+  `help-builtin-columns-overlap`, `no-tree-print-option-is-a-noop`,
+  `cfg-cmake-mingw-silently-builds-native`, `eval-node-bgnd-silent-on-fork-failure`.
+
+**Memory safety, not conformance** — tracked under "Memory safety" below
+instead: `asan-leak-residue-not-fully-triaged`,
+`ubsan-buffer-op-proto-function-type-mismatch`,
+`debug-build-asserts-on-source-after-external-cmdsubst`,
+`builtin-fork-races-sh-onsig-sigchld`.
+
+### Memory safety [ongoing, both stages] — ASan+UBSan as a recurring gate
+
+Not a phase with an end state — a build that has to be run frequently
+(every fix in Stages 1-2, not just periodically) so a language/builtin
+fix doesn't trade a conformance failure for a corruption bug:
+
+```sh
+cmake -B build/asan -DCMAKE_BUILD_TYPE=Debug \
+      -DCMAKE_C_FLAGS="-fsanitize=address,undefined"
+cmake --build build/asan
+(cd build/asan && ctest)         # ASan/UBSan abort = immediate hard failure
+```
+
+What's currently open under this build, from `BUGS`:
+
+1. `asan-leak-residue-not-fully-triaged` — most leaks fixed
+   (`fixes/129`, `130`, `133`); three call sites still untriaged
+   (`redir_parse.c:108`, `expand_args.c:67`, `eval_function.c:57`) plus
+   one root-caused-but-unfixed 36-byte leak per backgrounded command
+   (`tree_cat()` building `job->command`, `eval_simple_command.c:261`).
+   `struct var` and `sh_loop()`'s scratch stralloc's are permanent,
+   process-lifetime state and are not bugs.
+2. `ubsan-buffer-op-proto-function-type-mismatch` — `lib/buffer.h`'s
+   `buffer_op_proto` cast onto libc `read`/`write` is UB by the letter
+   of the standard but not fixable without wrapping two libc functions
+   everywhere for no observable effect; not planned to change. The two
+   real mismatches in unused `lib/buffer/` glob-compiled dead code are
+   also left alone per this repo's "don't touch unused `lib/` code
+   unasked" standard.
+3. `debug-build-asserts-on-source-after-external-cmdsubst` — an
+   assertion firing only under `BUILD_DEBUG`/ASan builds, not release;
+   needs triage before Stage 1 work can trust debug-build test runs.
+4. `builtin-fork-races-sh-onsig-sigchld` — a real fork/signal race
+   (not just a sanitizer artifact); most likely to surface as a
+   flaky, hard-to-reproduce ASan failure during Stage 1/2 work rather
+   than its own dedicated session, so flag it here rather than let it
+   get blamed on whatever fix was running at the time.
+5. **Goal 4** below (fd/fdtable/redir vs. non-forking subshells) is
+   also a memory-safety item, not just a conformance one — its "Still
+   open" problem 3 has a confirmed heap-corruption repro. See that
+   section for the full writeup; it's kept separate because of its
+   length, not its priority.
+
+---
+
+## Everything below this line is lower priority than the MAIN QUEST above.
+
+---
+
+## Goal 2 (secondary) — `src/job` cleanup
 
 Small, isolated, low-risk items left over from a full audit of
 `lib/sig`/`lib/wait`/`src/job` (most of that audit's findings are already
@@ -276,7 +403,7 @@ fixed — see `fixes/41` through `fixes/76`):
 
 ---
 
-## Goal 3 — arena allocator for the AST (planned, not started)
+## Goal 3 (secondary) — arena allocator for the AST (planned, not started)
 
 `src/tree.h`'s AST is a graph of individually `malloc()`'d nodes
 (`tree_newnode()`) plus separately `malloc()`'d string buffers hanging off
@@ -355,7 +482,7 @@ Design decisions already worked out (full reasoning in git history —
 
 ---
 
-## Goal 4 — `fd`/`fdtable`/`fdstack`/`redir`: the fd≤2 protection is load-bearing, not incidental
+## Goal 4 (secondary, but overlaps MAIN QUEST memory safety) — `fd`/`fdtable`/`fdstack`/`redir`: the fd≤2 protection is load-bearing, not incidental
 
 Grew out of chasing `exec >&2 2>/dev/null; echo reached` sending
 "reached" to the wrong stream (fixed 2026-08-21, `fixes/193`). Two
@@ -874,7 +1001,7 @@ problem 3 above, which now has a concrete repro because of it.
 
 ---
 
-## Goal 5 — make the binary smaller (musl and dietlibc are the targets)
+## Goal 5 (secondary) — make the binary smaller (musl and dietlibc are the targets)
 
 The pitch on the site is "a 185 KB shell". Every number below is
 `stat -c%s` on a **stripped** binary, `MinSizeRel` (`-Os`), measured
@@ -1031,7 +1158,7 @@ match against a baseline rather than expecting green.
 
 ---
 
-## Also open
+## Also open (secondary)
 
 - **Line-editing/terminal-abstraction/key-bindings rewrite** — a
   design-sized project inherited from the old `TODO` file, not a fixable

@@ -4486,4 +4486,37 @@ fi
 ## pipelines are not supported without a working fork()") instead of
 ## silently doing nothing.
 
+## fixes/213 (posix-signal-ignored-on-entry-can-be-trapped): POSIX
+## 2.11 -- a signal already SIG_IGN when a non-interactive shell
+## starts must stay ignored; "trap CMD SIG"/"trap - SIG" for it are
+## silent no-ops, and a forked/exec'd child inherits the same ignore.
+## sh_init() now snapshots each signal's disposition once
+## (sig_snapshot()/sig_was_ignored(), lib/sig/sig_snapshot.c) before
+## anything else touches one, and trap_install()/trap_uninstall()
+## (src/builtin/builtin_trap.c) no-op for a signal that was already
+## ignored, but only when source->mode lacks SOURCE_IACTIVE -- an
+## interactive shell has no such restriction (confirmed against
+## tests/posix/signal.sh's own "final_trap=ignore" rule, which fires
+## exactly when parent_action=ignored and the shell is
+## non-interactive). Also fixed in the same pass, since it was
+## silently defeating the "-i"/"+i" distinction the *-p.tst files
+## depend on to select interactive vs. non-interactive: sh_main.c's
+## own "-i"/"+i" option parsing ignored the +/- prefix entirely
+## ("case 'i': force_interactive = 1"), so both forced interactive
+## regardless of which was given.
+##
+## Like fixes/105 above, "a signal was already ignored before this
+## process even started" isn't expressible as a same-process
+## assertion here (there is no portable, non-fragile way to spawn a
+## second shish with a chosen signal pre-ignored without knowing this
+## binary's own path -- $0 is this test script, not the interpreter).
+## Verified instead against tests/posix, which drives exactly this via
+## an external system shell pre-ignoring the signal before exec'ing
+## the testee: sigint2-p/sighup2-p/sigquit2-p/sigterm2-p.tst went from
+## 124/180 each to 180/180, sigurg2-p/sigcont2-p from 164-177/180 to
+## 180/180, with sigint6-p/sigquit6-p/sigterm6-p/sighup6-p (the
+## interactive combo, correctly unaffected by this fix) and the full
+## tests/fixed.sh + ctest suite unchanged against a stashed-back
+## baseline.
+
 summary

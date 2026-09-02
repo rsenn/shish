@@ -140,5 +140,7 @@ int sig_byname(const char* name);
 int sig_push(int, sighandler_t_ref);
 int sig_pusha(int sig, struct sigaction const* ssa);
 int sig_pop(int sig);
+void sig_snapshot(void);
+int sig_was_ignored(int sig);
 
 #endif
