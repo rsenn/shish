@@ -89,9 +89,9 @@ hi</code></pre>
 <section class="start">
   <h2>Build it</h2>
   <pre class="sample"><code><span class="t-comment">$</span> git clone {{GITHUB}}.git &amp;&amp; cd shish
-<span class="t-comment">$</span> . ./cfg.sh <span class="t-comment"># the cfg-* helpers</span>
-<span class="t-comment">$</span> cfg &amp;&amp; cmake --build build/x86_64-linux-gnu -j</code></pre>
-  <p>Cross-build presets for musl, dietlibc, mingw32/64, MSYS, aarch64,
+<span class="t-comment">$</span> cmake -S . -B build/x86_64-linux-gnu
+<span class="t-comment">$</span> cmake --build build/x86_64-linux-gnu -j</code></pre>
+  <p>Cross-builds for musl, dietlibc, mingw32/64, MSYS, aarch64,
      Android, Termux, Emscripten and WASI all come from the same tree —
      see <a href="docs/building.html">Building</a>.</p>
 </section>
@@ -100,9 +100,9 @@ hi</code></pre>
   <h2>Status: alpha, and honest about it</h2>
   <p>shish runs the shell language — pipelines, redirections, functions,
      <code>case</code>, loops, parameter expansion, arithmetic, job control,
-     traps — and passes <b>5270</b> cases of yash's POSIX conformance suite.
-     It also still fails <b>822</b>, mostly in signal disposition,
-     <code>alias</code> and <code>read</code>.</p>
+     traps — and passes <b>5541</b> cases of yash's POSIX conformance suite.
+     It also still fails <b>551</b>, mostly in signal disposition,
+     <code>alias</code> and quoting/parameter expansion.</p>
   <p>It is <b>not</b> a drop-in <code>/bin/sh</code> yet: do not point
      <code>init</code> at it. Every known defect has a repro in
      <a href="{{GITHUB}}/blob/main/BUGS">BUGS</a>, the work plan is in

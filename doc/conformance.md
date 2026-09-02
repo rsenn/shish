@@ -12,10 +12,10 @@ that runs under shish is meant to keep running under `sh`.
 ## Where it stands
 
 The measurable target is yash's POSIX conformance suite, which ships in
-`tests/posix` (123 files, 12195 cases).
+`tests/posix` (120 files, 12195 cases).
 
 ```
-cases 12195   passed 5270   failed 822   skipped 6103
+cases 12195   passed 5541   failed 551   skipped 6103
 ```
 
 The 6103 skips are not passes: most of them need a controlling terminal
@@ -23,19 +23,20 @@ The 6103 skips are not passes: most of them need a controlling terminal
 are not run in a normal CI environment.
 
 Clean files, as of this writing: `andor arith cd errexit error eval exec
-for fsplit getopts grouping if kill4 nop option path ppid readonly test
-until while`.
+for fsplit getopts grouping if kill3 nop option path ppid readonly test
+until while`, plus six of the low-numbered `sig*-p` files
+(`sigcont2 sighup2 sigint2 sigquit2 sigterm2 sigurg2`).
 
 Where the remaining failures are:
 
 | area | state |
 |---|---|
-| signal disposition (`sig*-p`) | 567 failures, nearly all "a signal ignored on entry must stay ignored" |
-| `alias` | printing and subshell inheritance are broken |
-| `read` | IFS splitting rules, `-r`, one-line-only reads |
-| `kill` | `kill -s NAME` fails for most names |
-| quoting / parameter expansion | backslash edge cases, some `${...}` forms |
-| `command`, `unset`, `umask`, `set -o` names | option handling gaps |
+| signal disposition (`sig*-p`) | 311 failures, mostly the `sig*6-p` files (child process disposition after fork) |
+| `alias` | 48 failures — printing and subshell inheritance are broken |
+| `kill` | 32 failures — `kill -s NAME` fails for most names |
+| quoting / parameter expansion | 36 failures — backslash edge cases, some `${...}` forms |
+| `read` | 22 failures — IFS splitting rules, `-r`, one-line-only reads |
+| `command`, `unset`, `set`, `umask`, `trap`, `redir`, `simple` | 64 failures — assorted option-handling and edge-case gaps |
 
 `BUGS` lists every confirmed defect with a repro; `TODO.md` is the
 work plan, phase by phase, with the evidence for why each item is where

@@ -10,13 +10,15 @@ Try it in the [playground](../play.html).
 ## Emscripten (browser, with JS glue)
 
 ```sh
-. ./cfg.sh
-cfg-emscripten
+CC=emcc CXX=em++ cmake -S . -B build/emscripten \
+  -DCMAKE_TOOLCHAIN_FILE="$(dirname "$(which emcc)")/cmake/Modules/Platform/Emscripten.cmake" \
+  -DCMAKE_EXE_LINKER_FLAGS="-s WASM=1 -sEXPORTED_RUNTIME_METHODS=['callMain'] -sINVOKE_RUN=0" \
+  -DCMAKE_EXECUTABLE_SUFFIX=".html" -DENABLE_SHARED=OFF -DENABLE_PIC=FALSE
 cmake --build build/emscripten -j
 ```
 
-That produces `build/emscripten/shish.js` and `shish.wasm`. The helper
-already passes what the glue needs:
+That produces `build/emscripten/shish.js` and `shish.wasm`. The linker
+flags above already pass what the glue needs:
 
 ```
 -sEXPORTED_RUNTIME_METHODS=['callMain'] -sINVOKE_RUN=0
@@ -62,7 +64,10 @@ There are no processes to fork. Compile the utilities you need in as
 ## WASI (server-side runtimes)
 
 ```sh
-cfg-wasm                          # freestanding wasm32
+CC=clang CXX=clang++ CFLAGS=--target=wasm32 CXXFLAGS=--target=wasm32 LDFLAGS=--target=wasm32 \
+  cmake -S . -B build/wasm32-clang \
+  -DCMAKE_SYSTEM_NAME=Generic -DCMAKE_SYSTEM_PROCESSOR=wasm32 \
+  -DENABLE_SHARED=OFF -DENABLE_PIC=FALSE
 cmake --build build/wasm32-clang -j
 ```
 

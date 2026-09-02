@@ -24,8 +24,8 @@ shish -c 'for f in *.c; do echo "${f%.c}"; done'
 
 shish is **alpha, and not a drop-in `/bin/sh`**. It runs the shell
 language — pipelines, redirections, functions, `case`, loops, parameter
-expansion, arithmetic, job control, traps — and it passes 5270 cases of
-yash's POSIX conformance suite, but there are 822 it still fails and a
+expansion, arithmetic, job control, traps — and it passes 5541 cases of
+yash's POSIX conformance suite, but there are 551 it still fails and a
 list of known defects in [`BUGS`](BUGS). Do not put it under `init` yet.
 
 See [Conformance](doc/conformance.md) for what actually works today, and
@@ -34,8 +34,7 @@ See [Conformance](doc/conformance.md) for what actually works today, and
 ## Build
 
 ```sh
-. ./cfg.sh                          # source the cfg-* helper functions
-cfg                                 # configure into build/<host-triple>/
+cmake -S . -B build/x86_64-linux-gnu
 cmake --build build/x86_64-linux-gnu -j
 ```
 

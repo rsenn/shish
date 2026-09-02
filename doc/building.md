@@ -8,41 +8,45 @@ same two programs:
 
 ## CMake
 
-`cfg.sh` sources a set of helper functions that configure into
-`build/<host-triple>/`, one directory per toolchain.
+There is no top-level out-of-tree convention beyond `build/<host-triple>/`,
+one directory per toolchain:
 
 ```sh
-. ./cfg.sh                          # bring the cfg-* functions into the shell
-cfg                                 # native build
+cmake -S . -B build/x86_64-linux-gnu
 cmake --build build/x86_64-linux-gnu -j
 ```
 
-`cfg` passes any extra arguments straight through to `cmake`, so
+Extra `-D` flags on the `cmake -S`/`-B` line configure the same layout:
 
 ```sh
-cfg -DCMAKE_BUILD_TYPE=Release -DLINK_STATIC=ON -DENABLE_LTO=ON
+cmake -S . -B build/x86_64-linux-gnu -DCMAKE_BUILD_TYPE=Release -DLINK_STATIC=ON -DENABLE_LTO=ON
+cmake --build build/x86_64-linux-gnu -j
 ```
-
-configures a static, link-time-optimised build in the same layout.
 
 ### Cross-compiling
 
-Each helper writes to its own build directory and pins its own toolchain
-file where one is needed:
+Each target below is a plain CMake configure against a different
+compiler, into its own build directory. musl, dietlibc and tcc need only
+a `CC` override:
 
-| helper | target |
+```sh
+CC=musl-gcc cmake -S . -B build/x86_64-linux-musl -DENABLE_SHARED=OFF
+cmake --build build/x86_64-linux-musl -j
+```
+
+WebAssembly needs a toolchain file that ships with the compiler itself
+(see [WebAssembly](wasm.md) for the full flag set, both Emscripten and
+freestanding `wasm32`). Windows (mingw), MSYS2, ARM64 Linux and Android
+need a `-DCMAKE_TOOLCHAIN_FILE=...` pointing at a toolchain file this
+repo does not ship (it depends on where the target sysroot lives on the
+machine doing the cross-build) -- `cfg-cmake.sh` in the repo root is the
+authoritative reference for the exact flags each of these targets needs.
+
+| target | needs |
 |---|---|
-| `cfg-musl`, `cfg-musl32`, `cfg-musl64` | musl libc |
-| `cfg-diet`, `cfg-diet32`, `cfg-diet64` | dietlibc |
-| `cfg-mingw32`, `cfg-mingw64` | Windows |
-| `cfg-msys` | MSYS2 |
-| `cfg-aarch64` | ARM64 Linux |
-| `cfg-android`, `cfg-termux` | Android / Termux |
-| `cfg-emscripten` | WebAssembly + JS glue |
-| `cfg-wasm` | freestanding `wasm32` |
-| `cfg-tcc` | tcc |
-
-See [WebAssembly](wasm.md) for what to do with the last two.
+| musl, dietlibc, tcc | `CC` override only |
+| Windows (mingw), MSYS2, ARM64 Linux, Android/Termux | a `-DCMAKE_TOOLCHAIN_FILE` |
+| WebAssembly (Emscripten or freestanding `wasm32`) | the compiler's own toolchain file |
 
 ### Windows (mingw)
 

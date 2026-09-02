@@ -45,8 +45,8 @@ script.sh:2:1: unexpected token EOF, expecting 'fi'
 1
 ```
 
-(With `-c` instead of a file the message is printed but the status is
-still 0 — see [`BUGS`](../BUGS): `syntax-error-in-c-string-exits-zero`.)
+The same check works with `-c` too: `shish -n -c "$COMMAND"` reports a
+nonzero status for a syntax error there as well.
 
 ## Running untrusted commands
 
@@ -56,7 +56,7 @@ root, a network policy. What shish changes is how much *else* is inside
 that boundary:
 
 ```sh
-cfg-musl -DLINK_STATIC=ON -DENABLE_ALL_BUILTINS=ON
+CC=musl-gcc cmake -S . -B build/x86_64-linux-musl -DENABLE_SHARED=OFF -DLINK_STATIC=ON -DENABLE_ALL_BUILTINS=ON
 ```
 
 gives you a sandbox whose entire userland can be one file, with `PATH=`
@@ -72,7 +72,7 @@ no container at all. See [WebAssembly](wasm.md) and the
 
 ## Caveat
 
-shish is alpha. It passes 5270 cases of yash's POSIX suite and fails 822
+shish is alpha. It passes 5541 cases of yash's POSIX suite and fails 551
 of them ([Conformance](conformance.md)); the known defects are listed in
 [`BUGS`](../BUGS). Pin a commit, run your own command corpus through it,
 and report what breaks.

@@ -10,8 +10,7 @@ shish collapses that to one file.
 ## A shell layer that is one file
 
 ```sh
-. ./cfg.sh
-cfg-musl -DLINK_STATIC=ON -DENABLE_ALL_BUILTINS=ON
+CC=musl-gcc cmake -S . -B build/x86_64-linux-musl -DENABLE_SHARED=OFF -DLINK_STATIC=ON -DENABLE_ALL_BUILTINS=ON
 cmake --build build/x86_64-linux-musl -j
 strip build/x86_64-linux-musl/shish
 ```
@@ -62,7 +61,7 @@ pipes through `awk`, use busybox — or use both, and let shish be the
 ## Caveat
 
 shish is alpha (see [Conformance](conformance.md)). It runs its own test
-suite and 5270 cases of yash's POSIX suite, not your distribution's
+suite and 5541 cases of yash's POSIX suite, not your distribution's
 `/etc/init.d`. Test your entrypoint against it before you ship it —
 `shish -n script.sh` parses without executing, which is a cheap first
 check.
