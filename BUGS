@@ -623,3 +623,50 @@
   sed -n '19,45p' src/eval/eval_node_bgnd.c
   ```
 
+- wait-interrupted-by-trap-hangs: the `wait` builtin does not get
+  interrupted by an arriving trapped signal the way POSIX requires --
+  it should re-check/return so the trap body's effect (e.g. setting a
+  flag the caller's loop condition reads) is actually observed, not
+  block until the waited-for job itself exits regardless. Found via
+  `tests/pty-run` + `tests/posix/wait-p.tst`, one of the 44 files
+  previously always skipped for lack of a controlling terminal
+  (`DO_PTY_TESTS=ON`, `CMakeLists.txt`, fixes/214's `checkfg`
+  restoration) -- the "trap interrupts wait" case hangs the full 60s
+  test timeout instead of completing.
+
+  **Repro:**
+  ```sh
+  cmake -S . -B build/x86_64-linux-gnu -DDO_PTY_TESTS=ON
+  cmake --build build/x86_64-linux-gnu -j
+  build/x86_64-linux-gnu/pty-run -t 10 -- \
+    build/x86_64-linux-gnu/shish -c '
+    interrupted=false
+    trap "interrupted=true" USR1
+    ( set +m; trap "exit" USR2; while kill -s USR1 $$; do sleep 1; done ) &
+    wait $!
+    echo "interrupted=$interrupted"
+  '
+  # never reaches the echo -- pty-run kills it at the 10s alarm instead
+  ```
+
+- job-control-real-terminal-hangs-vs-kill-driven-ok: with a real pty
+  (`tests/pty-run`, `DO_PTY_TESTS=ON`), the `*3-p`/`*7-p`/`*8-p` combo
+  files for `sigtstp`/`sigttin`/`sigttou`/`sigstop`, plus `kill4-p`,
+  hang the full 60s test timeout, while their `*4-p` siblings (same
+  signals, sent via `kill` rather than through real terminal-driven
+  job control) pass in 1-2s -- rules out the pty harness itself as the
+  cause; something in shish's job-control code doesn't handle a
+  background process group's real SIGTTIN/SIGTTOU/SIGTSTP delivery
+  correctly. Not yet isolated to a specific file/case per signal --
+  `wait-interrupted-by-trap-hangs` above is the one case traced so
+  far; the rest need the same per-case bisection.
+
+  **Repro:**
+  ```sh
+  cmake -S . -B build/x86_64-linux-gnu -DDO_PTY_TESTS=ON
+  cmake --build build/x86_64-linux-gnu -j
+  cd build/x86_64-linux-gnu
+  ctest -R 'posix/sigttin3-p\.tst$' --timeout 90
+  # hits the 60s tests/pty-run alarm every time
+  ```
+

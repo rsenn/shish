@@ -4519,4 +4519,38 @@ fi
 ## tests/fixed.sh + ctest suite unchanged against a stashed-back
 ## baseline.
 
+## fixes/214: 44 tests/posix/*.tst files (the "%REQUIRETTY%" ones --
+## sigtstp/sigttin/sigttou/sigstop's *3-p/*7-p/*8-p combos, kill4-p,
+## bg-p/fg-p/job-p, testtty-p, wait-p) gate themselves on
+## "../checkfg" and had always been silently skipping via a
+## "command not found" error, not a real "no controlling terminal"
+## check: tests/checkfg.c (a tiny helper that reports whether the
+## calling process is in its controlling terminal's foreground
+## process group) existed in this repo's git history but had gone
+## missing from the tree. Restored, and wired into CMakeLists.txt
+## (built automatically whenever DO_CONFORMANCE_TESTS is on, landing
+## at tests/posix/checkfg where the *.tst files' own relative
+## reference expects it) so the self-skip check is real either way.
+##
+## Also added tests/pty-run.c, a small single-file POSIX-pty wrapper
+## (posix_openpt/grantpt/unlockpt/TIOCSCTTY -- no libc convenience
+## forkpty()) that gives a wrapped command a genuine controlling
+## terminal and session, and a new DO_PTY_TESTS CMake option (off by
+## default) that wraps just the 44 "%REQUIRETTY%" files in it instead
+## of letting them self-skip.
+##
+## Like fixes/105/213 above, "does this process have a real
+## controlling terminal" isn't expressible as a same-process assertion
+## here (this script's own testee already IS the thing under test, and
+## spawning a second nested pty-run'd shish from inside it to check
+## its own foreground status would test pty-run's fork correctness,
+## not shish). Verified instead by building with -DDO_PTY_TESTS=ON and
+## running the full 44-file set directly (see BUGS:
+## wait-interrupted-by-trap-hangs and BUGS:
+## job-control-real-terminal-hangs-vs-kill-driven-ok for what it found,
+## and TODO.md's Phase 6 for the pass/fail breakdown): checkfg reports
+## "foreground" (exit 0) under pty-run and "not foreground" (exit 1)
+## without it, and 10 of the 44 files now pass cleanly end to end where
+## every one of them previously reported 0 cases run.
+
 summary

@@ -5,6 +5,11 @@
 tests/posix/*.trs
 tests/posix/*.trs.stderr
 tests/posix/tmp.*/
+
+# checkfg (tests/checkfg.c) is built straight into tests/posix -- see
+# CMakeLists.txt's DO_CONFORMANCE_TESTS block -- since that's where
+# the *.tst files' own "../checkfg" reference expects to find it
+tests/posix/checkfg
 tests/yash/*.trs
 tests/yash/*.trs.stderr
 tests/yash/tmp.*/

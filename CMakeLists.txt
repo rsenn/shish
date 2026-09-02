@@ -362,15 +362,67 @@ if(DO_TESTS)
     list(APPEND CONFORMANCE_SUITES yash)
   endif(DO_YASH_TESTS)
 
+  # tests/posix/*.tst files marked "%REQUIRETTY%" gate themselves on
+  # "../checkfg" (tests/checkfg.c -- restored from git history,
+  # fixes/213's follow-up: it existed as of commit caa1ea28 but had
+  # gone missing from the tree, silently turning every one of these
+  # 44 files into an unconditional skip via "command not found"
+  # rather than a real "no controlling terminal" check) and self-skip
+  # without a real controlling terminal. DO_PTY_TESTS (off by
+  # default -- Linux/POSIX pty ioctls, and it changes timing/behavior
+  # for a job-control-sensitive slice of the suite) wraps just those
+  # files in tests/pty-run (tests/pty-run.c), which gives the testee
+  # a real pty-backed session/controlling terminal instead of letting
+  # them opt out. checkfg itself is always built when conformance
+  # tests are on, on any POSIX platform, so the self-skip check is a
+  # real check rather than a missing-binary error either way.
+  if(DO_CONFORMANCE_TESTS AND NOT WINDOWS_NATIVE)
+    add_executable(checkfg tests/checkfg.c)
+
+    # tests/posix/run-test.sh's *.tst files reference "../checkfg"
+    # from inside a per-run tests/posix/tmp.$$ work directory it
+    # creates itself, so the binary has to live at tests/posix/checkfg
+    # in the source tree -- same place run-test.sh already leaves its
+    # own tmp.NNNNN/.trs artifacts (BUGS: harness-leaves-tmp-dirs).
+    set_target_properties(
+      checkfg PROPERTIES RUNTIME_OUTPUT_DIRECTORY
+                         "${CMAKE_CURRENT_SOURCE_DIR}/tests/posix")
+
+    option(
+      DO_PTY_TESTS
+      "Run the tests/posix/*.tst files gated on a real controlling terminal (%REQUIRETTY%) under tests/pty-run instead of letting them self-skip"
+      OFF)
+
+    if(DO_PTY_TESTS)
+      add_executable(pty-run tests/pty-run.c)
+    endif(DO_PTY_TESTS)
+  endif(DO_CONFORMANCE_TESTS AND NOT WINDOWS_NATIVE)
+
   foreach(SUITE ${CONFORMANCE_SUITES})
     file(GLOB CONFORMANCE_TESTS "tests/${SUITE}/*.tst")
 
     foreach(TEST ${CONFORMANCE_TESTS})
       basename(NAME "${TEST}")
-      add_test(
-        NAME "${SUITE}/${NAME}"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        COMMAND sh "tests/run-tst.sh" "${SHISH_PATH}" "tests/${SUITE}" "${NAME}")
+
+      set(REQUIRETTY_MARK)
+
+      if(SUITE STREQUAL "posix" AND DO_PTY_TESTS AND NOT WINDOWS_NATIVE)
+        file(STRINGS "${TEST}" REQUIRETTY_MARK REGEX "%REQUIRETTY%")
+      endif()
+
+      if(REQUIRETTY_MARK)
+        add_test(
+          NAME "${SUITE}/${NAME}"
+          WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+          COMMAND "$<TARGET_FILE:pty-run>" -t 60 -- sh "tests/run-tst.sh"
+                  "${SHISH_PATH}" "tests/${SUITE}" "${NAME}")
+      else()
+        add_test(
+          NAME "${SUITE}/${NAME}"
+          WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+          COMMAND sh "tests/run-tst.sh" "${SHISH_PATH}" "tests/${SUITE}" "${NAME}")
+      endif()
+
       set_tests_properties("${SUITE}/${NAME}" PROPERTIES TIMEOUT 120)
     endforeach(TEST ${CONFORMANCE_TESTS})
   endforeach(SUITE ${CONFORMANCE_SUITES})

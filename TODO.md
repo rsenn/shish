@@ -35,6 +35,13 @@ underneath both:
    same way `tests/fixed.sh`/`ctest` already are. See "Memory safety"
    below for what is open there and how to run it.
 
+**Non-goal, decided 2026-09-02:** bash's `var+=value` append-assignment
+(not in POSIX; confirmed unimplemented -- `x=a; x+=b` parses `x+=b` as
+a command name and fails). This is the reason libtool's `ltmain.sh`
+can't run under shish, but libtool/libtool-generated scripts are not a
+target -- don't add `+=` (as an opt-in flag, the same way `-B`/`-H`
+gate brace/history expansion, or otherwise) unless that changes.
+
 The measurable target for Stages 1-2 is `tests/posix` (yash's POSIX suite, 123 files).
 Everything below is derived from full runs on 2026-08-20, at
 `9bfd1f9f` plus `fixes/188`-`192`.
@@ -283,11 +290,37 @@ Sorted by failures per unit of work.
 
 ### Phase 6 [Stage 1+2] — what is not being measured at all
 
-1. **6103 of 12195 cases are skipped**, i.e. half the suite is unrun.
-   The whole `sigttin`/`sigttou`/`sigtstp` set (12 files × 132) and
-   `testtty-p` skip for want of a controlling terminal; `wait-p`
-   skips all 16. Run the suite under a pty to find out what they
-   actually say before assuming they pass.
+1. ~~**6103 of 12195 cases are skipped**~~ — **done, 2026-09-02**: the
+   44 `%REQUIRETTY%` files (the `sigttin`/`sigttou`/`sigtstp`/`sigstop`
+   `*3-p`/`*7-p`/`*8-p` combos, `kill4-p`, `bg-p`/`fg-p`/`job-p`,
+   `testtty-p`, `wait-p`) skip themselves via `../checkfg`
+   (`tests/checkfg.c`, restored from git history — it had gone missing
+   from the tree, silently turning every one of these into an
+   unconditional "command not found" skip rather than a real check) —
+   they don't need a pty simulator so much as a real one.
+   `tests/pty-run.c` (a single-file POSIX-`pty` wrapper: `posix_openpt`/
+   `TIOCSCTTY`, no libc convenience `forkpty()`) gives the testee a
+   genuine controlling terminal and session; `-DDO_PTY_TESTS=ON` wires
+   it into `CMakeLists.txt` for every `%REQUIRETTY%` file. First real
+   run: **10/44 pass** (`testtty-p` and the `kill`-driven `*4-p`
+   combos), 34 fail — some are ordinary conformance gaps (e.g.
+   `sigcont3-p`'s 3 real output mismatches, same shape as everything
+   else in this file), but most of the `*3-p`/`*7-p`/`*8-p` combos
+   plus `wait-p`/`kill4-p` hang the full 60s `pty-run` alarm instead of
+   completing — a real job-control defect, since their `kill`-driven
+   `*4-p` siblings pass in 1-2s. One case is already traced:
+   `BUGS: wait-interrupted-by-trap-hangs` (`wait` doesn't get
+   interrupted by an arriving trapped signal). The rest need the same
+   per-case bisection — `BUGS:
+   job-control-real-terminal-hangs-vs-kill-driven-ok`. Re-run via:
+   ```sh
+   cmake -S . -B build/x86_64-linux-gnu -DDO_PTY_TESTS=ON
+   cmake --build build/x86_64-linux-gnu -j
+   cd build/x86_64-linux-gnu
+   NAMES=$(grep -l '%REQUIRETTY%' ../../tests/posix/*.tst \
+           | xargs -n1 basename | sed 's/\.tst$//' | tr '\n' '|' | sed 's/|$//')
+   ctest -R "posix/(${NAMES})\.tst\$" -j4
+   ```
 2. **`tests/yash` (119 files) is off by default** — several files
    (`arith-y`, `cmdprint-y`, `pipeline-y`, `redir-y`, `until-y`,
    `while-y`) hang, none isolated. `BUGS: yash-suite-other-hangs`.
