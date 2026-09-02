@@ -42,7 +42,7 @@ debug_node(union node* node, int depth) {
   switch(node->id) {
     case N_SIMPLECMD:
 
-      debug_ulong(", bngd", node->ncmd.bgnd, depth);
+      debug_ulong(", bgnd", node->ncmd.bgnd, depth);
 
       if(node->ncmd.vars)
         debug_sublist(", vars", node->ncmd.vars, depth);
