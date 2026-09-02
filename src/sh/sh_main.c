@@ -216,7 +216,7 @@ main(int argc, char** argv) {
   /* parse command line arguments. Every letter "set" supports
    * (src/builtin/builtin_set.c's set_apply()/set_longopts) works
    * identically as a startup flag, including "-o name"/"+o name" by
-   * long name. "-c"/"-i"/"-s" are startup-only.
+   * long name. "-c"/"-i"/"-l"/"-s" are startup-only.
    *
    * A *local* struct optstate, not the process-global shell_getopt(),
    * is used for the same reason as builtin_set.c's identical loop:
@@ -226,13 +226,14 @@ main(int argc, char** argv) {
   {
     struct optstate opt = {"+-", 0, 0, 0, 0, 0};
 
-    while((c = shell_getopt_r(&opt, argc, argv, "+c:isoaefhmnpuxBCH")) > 0) {
+    while((c = shell_getopt_r(&opt, argc, argv, "+c:isloaefhmnpuxBCH")) > 0) {
       int on = opt.prefix == '-';
 
       switch(c) {
         case 'c': cmds = opt.arg; break;
         case 'i': force_interactive = on; break;
         case 's': read_stdin = 1; break;
+        case 'l': sh_login = on; break;
 
         case 'o': {
           char* name;

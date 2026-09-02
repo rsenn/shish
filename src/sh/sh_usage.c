@@ -2,7 +2,7 @@
 #include "../sh.h"
 
 /* output help. Every letter here also works via the "set" builtin at
- * runtime, except "-c"/"-i"/"-s", which are startup-only.
+ * runtime, except "-c"/"-i"/"-l"/"-s", which are startup-only.
  * ----------------------------------------------------------------------- */
 void
 sh_usage(void) {
@@ -18,6 +18,7 @@ sh_usage(void) {
               "    -i                  force interactive mode, even without a terminal\n"
               "    -s                  read commands from standard input\n"
               "                        (implied if no script and no -c is given)\n"
+              "    -l                  act as a login shell\n"
               "    -a                  export every variable assignment\n"
               "    -e                  exit if a simple command fails\n"
               "    -f                  disable pathname expansion (globbing)\n"
