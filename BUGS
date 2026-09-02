@@ -491,19 +491,6 @@
   shish -c '( trap "echo \"\$#:\$*\"" EXIT; set -- a b )'   # 0:   (dash: 2:a b)
   ```
 
-- syntax-error-in-c-string-exits-zero: a shell syntax error in a `-c`
-  command string is reported but the shell still exits 0. POSIX requires
-  a non-interactive shell to exit >0 on a syntax error (bash exits 2),
-  and it does so for the same script in a file -- only the `-c` path
-  loses the status.
-
-  **Repro:**
-  ```sh
-  shish -c 'if [ 1 = 1 ]; then'; echo $?   # message, then 0 (bash: 2)
-  echo 'if [ 1 = 1 ]; then' > s.sh
-  shish s.sh; echo $?                      # message, then 1
-  ```
-
 - help-builtin-columns-overlap: `help` with no argument prints its
   two-column listing without a separator, so the left column's longer
   entries run straight into the right one

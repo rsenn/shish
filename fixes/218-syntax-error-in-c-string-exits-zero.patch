@@ -1,0 +1,107 @@
+diff --git a/BUGS b/BUGS
+index 99ab19d6..c3c0d5df 100644
+--- a/BUGS
++++ b/BUGS
+@@ -491,19 +491,6 @@
+   shish -c '( trap "echo \"\$#:\$*\"" EXIT; set -- a b )'   # 0:   (dash: 2:a b)
+   ```
+ 
+-- syntax-error-in-c-string-exits-zero: a shell syntax error in a `-c`
+-  command string is reported but the shell still exits 0. POSIX requires
+-  a non-interactive shell to exit >0 on a syntax error (bash exits 2),
+-  and it does so for the same script in a file -- only the `-c` path
+-  loses the status.
+-
+-  **Repro:**
+-  ```sh
+-  shish -c 'if [ 1 = 1 ]; then'; echo $?   # message, then 0 (bash: 2)
+-  echo 'if [ 1 = 1 ]; then' > s.sh
+-  shish s.sh; echo $?                      # message, then 1
+-  ```
+-
+ - help-builtin-columns-overlap: `help` with no argument prints its
+   two-column listing without a separator, so the left column's longer
+   entries run straight into the right one
+diff --git a/TODO.md b/TODO.md
+index a0b326b5..20d1b3cd 100644
+--- a/TODO.md
++++ b/TODO.md
+@@ -364,7 +364,7 @@ of the `tests/posix` gap above, or are unrelated maintenance items:
+ opportunistically, not blocked on Stage 1/2, don't expect the score to move):
+ 
+ - `eval-lineno-imprecise-inside-function`, `nested-heredoc-in-cmdsub-hangs`,
+-  `exit-trap-loses-positional-parameters`, `syntax-error-in-c-string-exits-zero`,
++  `exit-trap-loses-positional-parameters`,
+   `help-builtin-columns-overlap`, `no-tree-print-option-is-a-noop`,
+   `cfg-cmake-mingw-silently-builds-native`, `eval-node-bgnd-silent-on-fork-failure`.
+ 
+diff --git a/src/parse/parse_error.c b/src/parse/parse_error.c
+index 1e2e23ad..b07926eb 100644
+--- a/src/parse/parse_error.c
++++ b/src/parse/parse_error.c
+@@ -47,17 +47,24 @@ parse_error(struct parser* p, enum tok_flag toks) {
+     }
+ #endif
+ 
+-    /* sh_exit() unwinds subshell frames properly, unlike a raw
++    /* POSIX: a non-interactive shell exits on a syntax error --
++       sh_interactive (sh.h), the whole session's own interactive-
++       ness, not the source's own type. This used to be gated on
++       "is the source a file" (mmap'd, or FD_FILE-backed when
++       HAVE_MMAP is off) instead, which wrongly left a "-c" command
++       string's syntax error unpunished (falling through to
++       sh_loop()'s own post-list check, which can't tell "genuine
++       syntax error" apart from "clean EOF right after the last
++       command" once both collapse to the same T_EOF token) while
++       also wrongly killing an interactive shell outright for a
++       syntax error in a `.`-sourced file.
++       sh_exit() unwinds subshell frames properly, unlike a raw
+        exit(1) -- needed so a syntax error while parsing a sourced
+-       file from inside a subshell/$(...) unwinds to the nearest
+-       enclosing subshell instead of killing the whole process.
+-       op == &buffer_dummyreadmmap catches the mmap'd case; FD_FILE
+-       on the owning fd catches the same case when HAVE_MMAP is off
+-       and the file is read(2)-backed instead. */
+-    if(source->b->op == &buffer_dummyreadmmap ||
+-       (source->fd && (source->fd->mode & FD_FILE))) {
++       file from inside a subshell/$(...)/`.` unwinds to the nearest
++       enclosing subshell/source instead of killing the whole
++       process. */
++    if(!sh_interactive)
+       sh_exit(1);
+-    }
+   }
+ 
+   return NULL;
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index c3b242db..27390de4 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -4620,4 +4620,27 @@ if [ -n "$X217_SELF" ] && [ -x "$X217_SELF" ]; then
+   rm -f "$X217_SRC"
+ fi
+ 
++## fixes/218 (BUGS: syntax-error-in-c-string-exits-zero): a shell
++## syntax error in a "-c" command string was reported but the shell
++## still exited 0 -- parse_error()'s own "exit on syntax error" call
++## was gated on the source being a file (mmap'd, or FD_FILE-backed),
++## which a "-c" string never is, so it fell through to sh_loop()'s
++## own post-list check instead. That check can't tell "a genuine
++## syntax error whose own diagnostic happens to be about EOF" apart
++## from "input cleanly ended right after the last command, no error
++## at all" -- both leave p.tok == T_EOF -- so it picked
++## sh->exitcode (still 0, nothing had run yet) instead of 1. Now
++## gated on sh_interactive (sh.h) instead of source type, matching
++## every other POSIX non-interactive-shell-exits-on-this-error rule
++## ([[fixes/217]]): fixes the "-c" case, and also stops a syntax
++## error in a `.`-sourced file from killing an otherwise-interactive
++## shell outright (sh_exit() unwinds to the sourcing `.`'s own frame
++## instead).
++X218_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
++
++if [ -n "$X218_SELF" ] && [ -x "$X218_SELF" ]; then
++  "$X218_SELF" -c 'if [ 1 = 1 ]; then' 2>/dev/null
++  assert_equal "1" "$?" "a syntax error in a -c command string must exit nonzero, not 0"
++fi
++
+ summary

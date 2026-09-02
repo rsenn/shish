@@ -4620,4 +4620,27 @@ if [ -n "$X217_SELF" ] && [ -x "$X217_SELF" ]; then
   rm -f "$X217_SRC"
 fi
 
+## fixes/218 (BUGS: syntax-error-in-c-string-exits-zero): a shell
+## syntax error in a "-c" command string was reported but the shell
+## still exited 0 -- parse_error()'s own "exit on syntax error" call
+## was gated on the source being a file (mmap'd, or FD_FILE-backed),
+## which a "-c" string never is, so it fell through to sh_loop()'s
+## own post-list check instead. That check can't tell "a genuine
+## syntax error whose own diagnostic happens to be about EOF" apart
+## from "input cleanly ended right after the last command, no error
+## at all" -- both leave p.tok == T_EOF -- so it picked
+## sh->exitcode (still 0, nothing had run yet) instead of 1. Now
+## gated on sh_interactive (sh.h) instead of source type, matching
+## every other POSIX non-interactive-shell-exits-on-this-error rule
+## ([[fixes/217]]): fixes the "-c" case, and also stops a syntax
+## error in a `.`-sourced file from killing an otherwise-interactive
+## shell outright (sh_exit() unwinds to the sourcing `.`'s own frame
+## instead).
+X218_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
+
+if [ -n "$X218_SELF" ] && [ -x "$X218_SELF" ]; then
+  "$X218_SELF" -c 'if [ 1 = 1 ]; then' 2>/dev/null
+  assert_equal "1" "$?" "a syntax error in a -c command string must exit nonzero, not 0"
+fi
+
 summary

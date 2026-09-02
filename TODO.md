@@ -364,7 +364,7 @@ of the `tests/posix` gap above, or are unrelated maintenance items:
 opportunistically, not blocked on Stage 1/2, don't expect the score to move):
 
 - `eval-lineno-imprecise-inside-function`, `nested-heredoc-in-cmdsub-hangs`,
-  `exit-trap-loses-positional-parameters`, `syntax-error-in-c-string-exits-zero`,
+  `exit-trap-loses-positional-parameters`,
   `help-builtin-columns-overlap`, `no-tree-print-option-is-a-noop`,
   `cfg-cmake-mingw-silently-builds-native`, `eval-node-bgnd-silent-on-fork-failure`.
 

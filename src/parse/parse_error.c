@@ -47,17 +47,24 @@ parse_error(struct parser* p, enum tok_flag toks) {
     }
 #endif
 
-    /* sh_exit() unwinds subshell frames properly, unlike a raw
+    /* POSIX: a non-interactive shell exits on a syntax error --
+       sh_interactive (sh.h), the whole session's own interactive-
+       ness, not the source's own type. This used to be gated on
+       "is the source a file" (mmap'd, or FD_FILE-backed when
+       HAVE_MMAP is off) instead, which wrongly left a "-c" command
+       string's syntax error unpunished (falling through to
+       sh_loop()'s own post-list check, which can't tell "genuine
+       syntax error" apart from "clean EOF right after the last
+       command" once both collapse to the same T_EOF token) while
+       also wrongly killing an interactive shell outright for a
+       syntax error in a `.`-sourced file.
+       sh_exit() unwinds subshell frames properly, unlike a raw
        exit(1) -- needed so a syntax error while parsing a sourced
-       file from inside a subshell/$(...) unwinds to the nearest
-       enclosing subshell instead of killing the whole process.
-       op == &buffer_dummyreadmmap catches the mmap'd case; FD_FILE
-       on the owning fd catches the same case when HAVE_MMAP is off
-       and the file is read(2)-backed instead. */
-    if(source->b->op == &buffer_dummyreadmmap ||
-       (source->fd && (source->fd->mode & FD_FILE))) {
+       file from inside a subshell/$(...)/`.` unwinds to the nearest
+       enclosing subshell/source instead of killing the whole
+       process. */
+    if(!sh_interactive)
       sh_exit(1);
-    }
   }
 
   return NULL;
