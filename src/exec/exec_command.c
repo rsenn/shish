@@ -202,8 +202,13 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
     }
   }
 
-  /* POSIX requires special builtins to kill the shell on error in non-interactive mode */
-  if(cmd->id == H_SBUILTIN && ret != 0 && !(source->mode & SOURCE_IACTIVE)) {
+  /* POSIX requires special builtins to kill the shell on error in
+     non-interactive mode -- sh_interactive (sh.h), the whole
+     session's own interactive-ness, not source->mode's per-buffer
+     SOURCE_IACTIVE bit, which source_push() resets for every nested
+     source and would otherwise make this fire inside any `.`-sourced
+     file even when the real session is interactive. */
+  if(cmd->id == H_SBUILTIN && ret != 0 && !sh_interactive) {
     sh_exit(ret);
   }
 

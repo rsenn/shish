@@ -29,6 +29,13 @@ parse_subst(struct parser* p) {
     return parse_param(p);
   }
 
+  /* $'...' (ANSI-C quoting) is only special outside of double quotes:
+     "$'...'" is literal text there. */
+  if(c[0] == '\'' && p->quot != Q_DQUOTED) {
+    source_skip();
+    return parse_ansiquoted(p);
+  }
+
   stralloc_catc(&p->sa, '$');
   return ret;
 }

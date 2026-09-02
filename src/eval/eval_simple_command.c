@@ -336,9 +336,14 @@ end:
   /* POSIX 2.8.1: a non-interactive shell exits on either of these.
        assignment error    any command, or none:  "readonly a=a; a=b"
        redirection error   special builtins only: "shift <_no_such_file_"
-     The same redirection error on a plain utility is not fatal. */
+     The same redirection error on a plain utility is not fatal.
+     sh_interactive (the whole session's own interactive-ness, sh.h)
+     is what gates this, not source->mode's SOURCE_IACTIVE bit -- the
+     latter is reset for every nested source (a `.`-sourced file), so
+     checking it here would kill an interactive shell the moment one
+     of these fails one level into any sourced file. */
   if((assign_error || (redir_error && (cmd.id == H_SBUILTIN || cmd.id == H_EXEC))) &&
-     !(source->mode & SOURCE_IACTIVE)) {
+     !sh_interactive) {
     sh_exit(status);
   }
 

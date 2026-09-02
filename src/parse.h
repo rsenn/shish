@@ -288,6 +288,7 @@ enum tok_flag parse_gettok(struct parser* p, int tempflags);
 
 #define parse_skip(p) source_skip()
 
+int parse_ansiquoted(struct parser* p);
 int parse_arith(struct parser* p);
 int parse_bquoted(struct parser* p);
 int parse_dquoted(struct parser* p);

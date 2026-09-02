@@ -48,11 +48,15 @@ builtin_readonly(int argc, char* argv[]) {
       struct var* v;
 
       /* Check if variable exists and is readonly. POSIX requires special
-         builtins to exit the shell on error in non-interactive mode. */
+         builtins to exit the shell on error in non-interactive mode
+         -- sh_interactive (sh.h), the whole session's own
+         interactive-ness, not source->mode's per-buffer
+         SOURCE_IACTIVE, which would wrongly fire inside any
+         `.`-sourced file even in an interactive session. */
       if((v = var_search(*argp, NULL)) != NULL && (v->flags & V_READONLY)) {
         builtin_errmsg(argv, *argp, "readonly variable");
 
-        if(!(source->mode & SOURCE_IACTIVE))
+        if(!sh_interactive)
           sh_exit(1);
 
         return 1;

@@ -37,6 +37,7 @@ int out_fd = 1;
 buffer out_buf;
 
 int sh_no_position = 0;
+int sh_interactive = 0;
 
 /* main routine
  * ----------------------------------------------------------------------- */
@@ -190,7 +191,7 @@ main(int argc, char** argv, char** envp) {
           parse_error(&p, 0);
 
         /* exit if not interactive */
-        if(!(source->mode & SOURCE_IACTIVE))
+        if(!sh_interactive)
           exit(1);
 
         /* ..otherwise discard the input buffer */

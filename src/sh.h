@@ -110,6 +110,20 @@ extern const char* sh_name;
 extern char* sh_argv0;
 extern int sh_child;
 
+/* whether this shell session is interactive, decided once at startup
+   (sh_main.c) -- distinct from a `struct source`'s own
+   SOURCE_IACTIVE bit (source.h), which source_push() resets to 0 for
+   every nested source (a `.`-sourced file, a here-doc, ...) and which
+   correctly gates per-buffer things like prompting/history. POSIX's
+   "a non-interactive shell exits on this error" rules (2.8.1's
+   assignment/redirection/special-builtin errors, 2.6.1's unset-
+   parameter error, 2.11's signal-ignored-on-entry) are a property of
+   the whole session, not of whichever buffer happens to be open right
+   now -- checking SOURCE_IACTIVE for these would wrongly make a
+   plain command failing inside a `.`-sourced file kill an otherwise
+   interactive shell the moment it's one level into any sourced file. */
+extern int sh_interactive;
+
 /* set while a real-signal trap's body is running (trap_handler(),
  * builtin_trap.c) and it calls "exit" -- see eval_subshell.c's own
  * comment for why. A trap fires asynchronously, possibly while deep
@@ -157,6 +171,8 @@ void sh_popargs(struct arg* arg);
 void sh_push(struct env* env);
 void sh_pushargs(struct arg* arg);
 void sh_setargs(char** argv, int dup);
+void sh_source(const char* path);
+size_t sh_unescape(const char* src, size_t len, char* dst);
 void sh_usage(void);
 
 #endif /* SH_H */

@@ -278,8 +278,12 @@ trap_uninstall(int sig) {
   /* POSIX 2.11: a signal already ignored on entry to a non-interactive
      shell cannot be trapped or reset -- "trap - SIG" is a silent
      no-op for it there, same as trap_install() below. An interactive
-     shell has no such restriction. */
-  if((char)sig > 0 && sig_was_ignored(sig) && !(source->mode & SOURCE_IACTIVE))
+     shell has no such restriction. "non-interactive" here means the
+     whole session (sh_interactive, sh.h, decided once at startup),
+     not source->mode's per-buffer SOURCE_IACTIVE -- a `.`-sourced
+     file must not regain this restriction just because it's a nested
+     source in an otherwise-interactive shell. */
+  if((char)sig > 0 && sig_was_ignored(sig) && !sh_interactive)
     return 0;
 
   for(ptr = &traps; (t = *ptr); ptr = &(*ptr)->next) {
@@ -342,8 +346,10 @@ trap_install(int sig, union node* tree) {
      never actually installed, and the signal's real disposition
      (still whatever it was at startup) is left untouched, so a
      forked/exec'd child inherits the same ignore for free. An
-     interactive shell may still trap or reset it. */
-  if((char)sig > 0 && sig_was_ignored(sig) && !(source->mode & SOURCE_IACTIVE)) {
+     interactive shell may still trap or reset it. See
+     trap_uninstall()'s matching check for why this is sh_interactive
+     rather than source->mode's SOURCE_IACTIVE. */
+  if((char)sig > 0 && sig_was_ignored(sig) && !sh_interactive) {
     if(tree)
       tree_free(tree);
     return;

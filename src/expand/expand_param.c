@@ -248,8 +248,11 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       /* POSIX: a non-interactive shell must exit outright here, not
          just fail this one word. Avoids having to free/unlink `n`,
          which is a placeholder already linked into the caller's
-         argument list. */
-      if(!(source->mode & SOURCE_IACTIVE))
+         argument list. Checks sh_interactive (sh.h), the whole
+         session's own interactive-ness -- not source->mode's
+         per-buffer SOURCE_IACTIVE, which would wrongly fire inside
+         any `.`-sourced file even in an interactive session. */
+      if(!sh_interactive)
         sh_exit(1);
 
       expand_error = 1;
@@ -310,8 +313,12 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         stralloc_free(&msg);
 
         /* POSIX 2.8.1: an expansion error ends a non-interactive
-           shell; an interactive one just fails this command. */
-        if(!(source->mode & SOURCE_IACTIVE))
+           shell; an interactive one just fails this command.
+           sh_interactive (sh.h) is the whole session's own
+           interactive-ness -- see the matching check above for why
+           source->mode's SOURCE_IACTIVE bit is the wrong thing to
+           check here. */
+        if(!sh_interactive)
           sh_exit(1);
 
         expand_error = 1;

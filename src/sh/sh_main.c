@@ -24,7 +24,9 @@
 
 #include <errno.h>
 #include <stdlib.h>
-#if !WINDOWS_NATIVE
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
 #include <unistd.h>
 #endif
 
@@ -47,6 +49,7 @@ char** sh_argv;
 const char* sh_name;
 int sh_login = 0;
 int sh_no_position = 0;
+int sh_interactive = 0;
 
 /* SIGCHLD handler -- kept to only async-signal-safe work: plain memory
  * writes (wait_nohang()/wait_nohang_untraced() + job_signal()) and a
@@ -345,6 +348,7 @@ main(int argc, char** argv) {
 
     if(have_term || (force_interactive && !no_interactive)) {
       src.mode |= SOURCE_IACTIVE;
+      sh_interactive = 1;
 
 #if !WINDOWS_NATIVE
       /* monitor mode drives setpgid()/tcsetpgrp() (job_fork.c,
@@ -366,6 +370,32 @@ main(int argc, char** argv) {
       src.mode &= ~SOURCE_IACTIVE;
   }
 
+  /* dash/ash: a login shell unconditionally reads /etc/profile, then
+     $HOME/.profile -- silently skipping either that doesn't exist,
+     regardless of interactivity or privileged mode (neither file's
+     path is attacker-influenced the way $ENV's value is, so there's
+     no analogous privilege-escalation reason to gate this on -p).
+     Runs before the $ENV read below since a .profile commonly sets
+     ENV itself (dash(1)'s own documented idiom: "ENV=$HOME/.shinit;
+     export ENV" inside .profile), and that must take effect for the
+     ENV read that follows. */
+  if(sh_login) {
+    const char* home = var_vdefault("HOME", NULL, NULL);
+
+    sh_source("/etc/profile");
+
+    if(home && *home) {
+      stralloc homepath;
+
+      stralloc_init(&homepath);
+      stralloc_cats(&homepath, home);
+      stralloc_cats(&homepath, "/.profile");
+      stralloc_nul(&homepath);
+      sh_source(homepath.s);
+      stralloc_free(&homepath);
+    }
+  }
+
   /* POSIX: an interactive, non-privileged shell sources the file
      named by $ENV (after expansion) once at startup, if it names an
      existing, readable file -- silently skipped otherwise (a missing
@@ -375,21 +405,11 @@ main(int argc, char** argv) {
 
     if(envval && *envval) {
       stralloc envpath;
-      struct fd envfd;
-      struct source envsrc;
 
       stralloc_init(&envpath);
       sh_expand_simple(envval, &envpath);
       stralloc_nul(&envpath);
-
-      fd_push(&envfd, STDSRC_FILENO, FD_READ);
-      source_push(&envsrc);
-      envsrc.fd = &envfd;
-
-      if(!fd_mmap(&envfd, envpath.s))
-        sh_loop();
-
-      source_popfd(&envfd);
+      sh_source(envpath.s);
       stralloc_free(&envpath);
     }
   }

@@ -95,8 +95,12 @@ sh_loop(void) {
       /* exit if not interactive -- a clean T_EOF right after the last
          command (no trailing newline/semicolon, as with a "-c"
          argument) is not itself an error, so it must exit with that
-         command's own status rather than a hardcoded 0 */
-      if(!(source->mode & SOURCE_IACTIVE))
+         command's own status rather than a hardcoded 0.
+         sh_interactive (the whole session's), not source->mode's
+         per-buffer SOURCE_IACTIVE -- otherwise a `.`-sourced file
+         missing its own trailing newline would end the entire
+         session instead of just returning to its caller. */
+      if(!sh_interactive)
         sh_exit(p.tok != T_EOF ? 1 : sh->exitcode);
 
       /* ..otherwise discard the input buffer */

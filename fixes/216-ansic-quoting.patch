@@ -1,0 +1,250 @@
+diff --git a/src/builtin/builtin_echo.c b/src/builtin/builtin_echo.c
+index 4cb02eb6..bdb965f4 100644
+--- a/src/builtin/builtin_echo.c
++++ b/src/builtin/builtin_echo.c
+@@ -1,7 +1,7 @@
+ #include "../builtin.h"
+ #include "../fdtable.h"
++#include "../sh.h"
+ #include "../../lib/str.h"
+-#include "../../lib/scan.h"
+ #include "../../lib/alloc.h"
+ 
+ /* output stuff
+@@ -53,47 +53,8 @@ builtin_echo(int argc, char* argv[]) {
+     size_t len = str_len(arg);
+     char* s = eval ? alloc(len) : str_dup(arg);
+ 
+-    if(eval) {
+-      size_t k = 0, j;
+-
+-      for(j = 0; j < len; j++) {
+-        int ch = arg[j];
+-
+-        if(ch == '\\') {
+-          size_t n = 1;
+-
+-          switch(arg[j + 1]) {
+-            case 'x':
+-              if((n = scan_xchar(&arg[j + 2], (unsigned char*)&ch)) > 0)
+-                ++n;
+-              break;
+-
+-            case '0': n = scan_8int(&arg[j + 1], &ch); break;
+-
+-            case 'E':
+-            case 'e': ch = '\033'; break;
+-            case 'f': ch = '\014'; break;
+-            case 'n': ch = '\n'; break;
+-            case 'r': ch = '\r'; break;
+-            case 't': ch = '\t'; break;
+-            case 'v': ch = '\v'; break;
+-            case 'b': ch = '\010'; break;
+-            case '\\': ch = '\\'; break;
+-            default: n = 0; break;
+-          }
+-
+-          if(n > 0) {
+-            s[k++] = ch;
+-            j += n;
+-            continue;
+-          }
+-        }
+-
+-        s[k++] = ch;
+-      }
+-
+-      len = k;
+-    }
++    if(eval)
++      len = sh_unescape(arg, len, s);
+ 
+     buffer_put(fd_out->w, s, len);
+ 
+diff --git a/src/parse.h b/src/parse.h
+index f0f58ba6..d24902f0 100644
+--- a/src/parse.h
++++ b/src/parse.h
+@@ -288,6 +288,7 @@ enum tok_flag parse_gettok(struct parser* p, int tempflags);
+ 
+ #define parse_skip(p) source_skip()
+ 
++int parse_ansiquoted(struct parser* p);
+ int parse_arith(struct parser* p);
+ int parse_bquoted(struct parser* p);
+ int parse_dquoted(struct parser* p);
+diff --git a/src/parse/parse_ansiquoted.c b/src/parse/parse_ansiquoted.c
+new file mode 100644
+index 00000000..2ac9b04b
+--- /dev/null
++++ b/src/parse/parse_ansiquoted.c
+@@ -0,0 +1,76 @@
++#include "../parse.h"
++#include "../sh.h"
++#include "../source.h"
++#include "../tree.h"
++#include "../../lib/alloc.h"
++
++/* $'...' (ANSI-C quoting): decode the same backslash escapes as
++ * `echo -e` (sh_unescape()) and splice the result in as literal,
++ * single-quoted text. parse_subst() only calls this outside of
++ * double quotes -- "$'...'" is plain literal text there, not this
++ * syntax (bash and ksh agree on this).
++ *
++ * \' is handled here rather than in sh_unescape(), since it must
++ * close the quote everywhere else but here, and `echo -e` has no
++ * such rule to share.
++ * ----------------------------------------------------------------------- */
++int
++parse_ansiquoted(struct parser* p) {
++  stralloc raw;
++  char* dec;
++  size_t declen, i;
++  char c;
++
++  stralloc_init(&raw);
++
++  for(;;) {
++    if(source_get(&c) <= 0) {
++      stralloc_free(&raw);
++      return -1;
++    }
++
++    if(c == '\\') {
++      char nextc;
++
++      if(source_get(&nextc) <= 0) {
++        stralloc_free(&raw);
++        return -1;
++      }
++
++      if(nextc == '\'') {
++        stralloc_catc(&raw, '\'');
++      } else {
++        stralloc_catc(&raw, c);
++        stralloc_catc(&raw, nextc);
++      }
++
++      continue;
++    }
++
++    if(c == '\'')
++      break;
++
++    stralloc_catc(&raw, c);
++  }
++
++  stralloc_nul(&raw);
++  dec = alloc(raw.len ? raw.len : 1);
++  declen = sh_unescape(raw.s, raw.len, dec);
++
++  parse_string(p, 0);
++  p->quot = Q_SQUOTED;
++
++  for(i = 0; i < declen; i++) {
++    if(parse_isesc(dec[i]))
++      stralloc_catc(&p->sa, '\\');
++
++    stralloc_catc(&p->sa, dec[i]);
++  }
++
++  parse_string(p, 0);
++  p->quot = Q_UNQUOTED;
++
++  alloc_free(dec);
++  stralloc_free(&raw);
++  return 0;
++}
+diff --git a/src/parse/parse_subst.c b/src/parse/parse_subst.c
+index d8b720d3..7d237287 100644
+--- a/src/parse/parse_subst.c
++++ b/src/parse/parse_subst.c
+@@ -29,6 +29,13 @@ parse_subst(struct parser* p) {
+     return parse_param(p);
+   }
+ 
++  /* $'...' (ANSI-C quoting) is only special outside of double quotes:
++     "$'...'" is literal text there. */
++  if(c[0] == '\'' && p->quot != Q_DQUOTED) {
++    source_skip();
++    return parse_ansiquoted(p);
++  }
++
+   stralloc_catc(&p->sa, '$');
+   return ret;
+ }
+diff --git a/src/sh.h b/src/sh.h
+index f0252939..77186586 100644
+--- a/src/sh.h
++++ b/src/sh.h
+@@ -157,6 +157,7 @@ void sh_popargs(struct arg* arg);
+ void sh_push(struct env* env);
+ void sh_pushargs(struct arg* arg);
+ void sh_setargs(char** argv, int dup);
++size_t sh_unescape(const char* src, size_t len, char* dst);
+ void sh_usage(void);
+ 
+ #endif /* SH_H */
+diff --git a/src/sh/sh_unescape.c b/src/sh/sh_unescape.c
+new file mode 100644
+index 00000000..b37e4ca2
+--- /dev/null
++++ b/src/sh/sh_unescape.c
+@@ -0,0 +1,57 @@
++#include "../sh.h"
++#include "../../lib/scan.h"
++
++/* decode backslash escapes (as understood by `echo -e` and ANSI-C
++ * ($'...') quoting) from src[0..len) into dst, returning the decoded
++ * length. dst must be at least len bytes; decoding never grows the
++ * string. src[len] must be readable (a NUL terminator satisfies
++ * this) since a trailing '\' peeks one byte past len to decide it
++ * has no escape to complete.
++ *
++ *   \n \r \t \v \b \f \e \\   single-char escapes
++ *   \0NNN                     octal (scan_8int)
++ *   \xHH                      hex (scan_xchar)
++ *   anything else             '\' kept literal, next byte untouched
++ * ----------------------------------------------------------------------- */
++size_t
++sh_unescape(const char* src, size_t len, char* dst) {
++  size_t k = 0, j;
++
++  for(j = 0; j < len; j++) {
++    int ch = (unsigned char)src[j];
++
++    if(ch == '\\') {
++      size_t n = 1;
++
++      switch(src[j + 1]) {
++        case 'x':
++          if((n = scan_xchar(&src[j + 2], (unsigned char*)&ch)) > 0)
++            ++n;
++          break;
++
++        case '0': n = scan_8int(&src[j + 1], (unsigned int*)&ch); break;
++
++        case 'E':
++        case 'e': ch = '\033'; break;
++        case 'f': ch = '\014'; break;
++        case 'n': ch = '\n'; break;
++        case 'r': ch = '\r'; break;
++        case 't': ch = '\t'; break;
++        case 'v': ch = '\v'; break;
++        case 'b': ch = '\010'; break;
++        case '\\': ch = '\\'; break;
++        default: n = 0; break;
++      }
++
++      if(n > 0) {
++        dst[k++] = ch;
++        j += n;
++        continue;
++      }
++    }
++
++    dst[k++] = ch;
++  }
++
++  return k;
++}

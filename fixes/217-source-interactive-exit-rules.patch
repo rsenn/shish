@@ -1,0 +1,412 @@
+diff --git a/src/builtin/builtin_readonly.c b/src/builtin/builtin_readonly.c
+index e2dc3af2..5cc67caa 100644
+--- a/src/builtin/builtin_readonly.c
++++ b/src/builtin/builtin_readonly.c
+@@ -48,11 +48,15 @@ builtin_readonly(int argc, char* argv[]) {
+       struct var* v;
+ 
+       /* Check if variable exists and is readonly. POSIX requires special
+-         builtins to exit the shell on error in non-interactive mode. */
++         builtins to exit the shell on error in non-interactive mode
++         -- sh_interactive (sh.h), the whole session's own
++         interactive-ness, not source->mode's per-buffer
++         SOURCE_IACTIVE, which would wrongly fire inside any
++         `.`-sourced file even in an interactive session. */
+       if((v = var_search(*argp, NULL)) != NULL && (v->flags & V_READONLY)) {
+         builtin_errmsg(argv, *argp, "readonly variable");
+ 
+-        if(!(source->mode & SOURCE_IACTIVE))
++        if(!sh_interactive)
+           sh_exit(1);
+ 
+         return 1;
+diff --git a/src/builtin/builtin_trap.c b/src/builtin/builtin_trap.c
+index f2879a29..a2146ba3 100644
+--- a/src/builtin/builtin_trap.c
++++ b/src/builtin/builtin_trap.c
+@@ -278,8 +278,12 @@ trap_uninstall(int sig) {
+   /* POSIX 2.11: a signal already ignored on entry to a non-interactive
+      shell cannot be trapped or reset -- "trap - SIG" is a silent
+      no-op for it there, same as trap_install() below. An interactive
+-     shell has no such restriction. */
+-  if((char)sig > 0 && sig_was_ignored(sig) && !(source->mode & SOURCE_IACTIVE))
++     shell has no such restriction. "non-interactive" here means the
++     whole session (sh_interactive, sh.h, decided once at startup),
++     not source->mode's per-buffer SOURCE_IACTIVE -- a `.`-sourced
++     file must not regain this restriction just because it's a nested
++     source in an otherwise-interactive shell. */
++  if((char)sig > 0 && sig_was_ignored(sig) && !sh_interactive)
+     return 0;
+ 
+   for(ptr = &traps; (t = *ptr); ptr = &(*ptr)->next) {
+@@ -342,8 +346,10 @@ trap_install(int sig, union node* tree) {
+      never actually installed, and the signal's real disposition
+      (still whatever it was at startup) is left untouched, so a
+      forked/exec'd child inherits the same ignore for free. An
+-     interactive shell may still trap or reset it. */
+-  if((char)sig > 0 && sig_was_ignored(sig) && !(source->mode & SOURCE_IACTIVE)) {
++     interactive shell may still trap or reset it. See
++     trap_uninstall()'s matching check for why this is sh_interactive
++     rather than source->mode's SOURCE_IACTIVE. */
++  if((char)sig > 0 && sig_was_ignored(sig) && !sh_interactive) {
+     if(tree)
+       tree_free(tree);
+     return;
+diff --git a/src/eval/eval_simple_command.c b/src/eval/eval_simple_command.c
+index f6ae053c..ea2f6154 100644
+--- a/src/eval/eval_simple_command.c
++++ b/src/eval/eval_simple_command.c
+@@ -336,9 +336,14 @@ end:
+   /* POSIX 2.8.1: a non-interactive shell exits on either of these.
+        assignment error    any command, or none:  "readonly a=a; a=b"
+        redirection error   special builtins only: "shift <_no_such_file_"
+-     The same redirection error on a plain utility is not fatal. */
++     The same redirection error on a plain utility is not fatal.
++     sh_interactive (the whole session's own interactive-ness, sh.h)
++     is what gates this, not source->mode's SOURCE_IACTIVE bit -- the
++     latter is reset for every nested source (a `.`-sourced file), so
++     checking it here would kill an interactive shell the moment one
++     of these fails one level into any sourced file. */
+   if((assign_error || (redir_error && (cmd.id == H_SBUILTIN || cmd.id == H_EXEC))) &&
+-     !(source->mode & SOURCE_IACTIVE)) {
++     !sh_interactive) {
+     sh_exit(status);
+   }
+ 
+diff --git a/src/exec/exec_command.c b/src/exec/exec_command.c
+index 85f7613b..751b1662 100644
+--- a/src/exec/exec_command.c
++++ b/src/exec/exec_command.c
+@@ -202,8 +202,13 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
+     }
+   }
+ 
+-  /* POSIX requires special builtins to kill the shell on error in non-interactive mode */
+-  if(cmd->id == H_SBUILTIN && ret != 0 && !(source->mode & SOURCE_IACTIVE)) {
++  /* POSIX requires special builtins to kill the shell on error in
++     non-interactive mode -- sh_interactive (sh.h), the whole
++     session's own interactive-ness, not source->mode's per-buffer
++     SOURCE_IACTIVE bit, which source_push() resets for every nested
++     source and would otherwise make this fire inside any `.`-sourced
++     file even when the real session is interactive. */
++  if(cmd->id == H_SBUILTIN && ret != 0 && !sh_interactive) {
+     sh_exit(ret);
+   }
+ 
+diff --git a/src/expand/expand_param.c b/src/expand/expand_param.c
+index ba05412d..f87ca5fc 100644
+--- a/src/expand/expand_param.c
++++ b/src/expand/expand_param.c
+@@ -248,8 +248,11 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+       /* POSIX: a non-interactive shell must exit outright here, not
+          just fail this one word. Avoids having to free/unlink `n`,
+          which is a placeholder already linked into the caller's
+-         argument list. */
+-      if(!(source->mode & SOURCE_IACTIVE))
++         argument list. Checks sh_interactive (sh.h), the whole
++         session's own interactive-ness -- not source->mode's
++         per-buffer SOURCE_IACTIVE, which would wrongly fire inside
++         any `.`-sourced file even in an interactive session. */
++      if(!sh_interactive)
+         sh_exit(1);
+ 
+       expand_error = 1;
+@@ -310,8 +313,12 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+         stralloc_free(&msg);
+ 
+         /* POSIX 2.8.1: an expansion error ends a non-interactive
+-           shell; an interactive one just fails this command. */
+-        if(!(source->mode & SOURCE_IACTIVE))
++           shell; an interactive one just fails this command.
++           sh_interactive (sh.h) is the whole session's own
++           interactive-ness -- see the matching check above for why
++           source->mode's SOURCE_IACTIVE bit is the wrong thing to
++           check here. */
++        if(!sh_interactive)
+           sh_exit(1);
+ 
+         expand_error = 1;
+diff --git a/src/sh.h b/src/sh.h
+index f0252939..d8d70528 100644
+--- a/src/sh.h
++++ b/src/sh.h
+@@ -110,6 +110,20 @@ extern const char* sh_name;
+ extern char* sh_argv0;
+ extern int sh_child;
+ 
++/* whether this shell session is interactive, decided once at startup
++   (sh_main.c) -- distinct from a `struct source`'s own
++   SOURCE_IACTIVE bit (source.h), which source_push() resets to 0 for
++   every nested source (a `.`-sourced file, a here-doc, ...) and which
++   correctly gates per-buffer things like prompting/history. POSIX's
++   "a non-interactive shell exits on this error" rules (2.8.1's
++   assignment/redirection/special-builtin errors, 2.6.1's unset-
++   parameter error, 2.11's signal-ignored-on-entry) are a property of
++   the whole session, not of whichever buffer happens to be open right
++   now -- checking SOURCE_IACTIVE for these would wrongly make a
++   plain command failing inside a `.`-sourced file kill an otherwise
++   interactive shell the moment it's one level into any sourced file. */
++extern int sh_interactive;
++
+ /* set while a real-signal trap's body is running (trap_handler(),
+  * builtin_trap.c) and it calls "exit" -- see eval_subshell.c's own
+  * comment for why. A trap fires asynchronously, possibly while deep
+@@ -157,6 +171,8 @@ void sh_popargs(struct arg* arg);
+ void sh_push(struct env* env);
+ void sh_pushargs(struct arg* arg);
+ void sh_setargs(char** argv, int dup);
++void sh_source(const char* path);
++size_t sh_unescape(const char* src, size_t len, char* dst);
+ void sh_usage(void);
+ 
+ #endif /* SH_H */
+diff --git a/src/sh/sh_fmt.c b/src/sh/sh_fmt.c
+index e3501deb..bd397732 100644
+--- a/src/sh/sh_fmt.c
++++ b/src/sh/sh_fmt.c
+@@ -37,6 +37,7 @@ int out_fd = 1;
+ buffer out_buf;
+ 
+ int sh_no_position = 0;
++int sh_interactive = 0;
+ 
+ /* main routine
+  * ----------------------------------------------------------------------- */
+@@ -190,7 +191,7 @@ main(int argc, char** argv, char** envp) {
+           parse_error(&p, 0);
+ 
+         /* exit if not interactive */
+-        if(!(source->mode & SOURCE_IACTIVE))
++        if(!sh_interactive)
+           exit(1);
+ 
+         /* ..otherwise discard the input buffer */
+diff --git a/src/sh/sh_loop.c b/src/sh/sh_loop.c
+index 10b6efcb..9b726a90 100644
+--- a/src/sh/sh_loop.c
++++ b/src/sh/sh_loop.c
+@@ -95,8 +95,12 @@ sh_loop(void) {
+       /* exit if not interactive -- a clean T_EOF right after the last
+          command (no trailing newline/semicolon, as with a "-c"
+          argument) is not itself an error, so it must exit with that
+-         command's own status rather than a hardcoded 0 */
+-      if(!(source->mode & SOURCE_IACTIVE))
++         command's own status rather than a hardcoded 0.
++         sh_interactive (the whole session's), not source->mode's
++         per-buffer SOURCE_IACTIVE -- otherwise a `.`-sourced file
++         missing its own trailing newline would end the entire
++         session instead of just returning to its caller. */
++      if(!sh_interactive)
+         sh_exit(p.tok != T_EOF ? 1 : sh->exitcode);
+ 
+       /* ..otherwise discard the input buffer */
+diff --git a/src/sh/sh_main.c b/src/sh/sh_main.c
+index f368ee04..8ba928b1 100644
+--- a/src/sh/sh_main.c
++++ b/src/sh/sh_main.c
+@@ -24,7 +24,9 @@
+ 
+ #include <errno.h>
+ #include <stdlib.h>
+-#if !WINDOWS_NATIVE
++#if WINDOWS_NATIVE
++#include <io.h>
++#else
+ #include <unistd.h>
+ #endif
+ 
+@@ -47,6 +49,7 @@ char** sh_argv;
+ const char* sh_name;
+ int sh_login = 0;
+ int sh_no_position = 0;
++int sh_interactive = 0;
+ 
+ /* SIGCHLD handler -- kept to only async-signal-safe work: plain memory
+  * writes (wait_nohang()/wait_nohang_untraced() + job_signal()) and a
+@@ -345,6 +348,7 @@ main(int argc, char** argv) {
+ 
+     if(have_term || (force_interactive && !no_interactive)) {
+       src.mode |= SOURCE_IACTIVE;
++      sh_interactive = 1;
+ 
+ #if !WINDOWS_NATIVE
+       /* monitor mode drives setpgid()/tcsetpgrp() (job_fork.c,
+@@ -366,6 +370,32 @@ main(int argc, char** argv) {
+       src.mode &= ~SOURCE_IACTIVE;
+   }
+ 
++  /* dash/ash: a login shell unconditionally reads /etc/profile, then
++     $HOME/.profile -- silently skipping either that doesn't exist,
++     regardless of interactivity or privileged mode (neither file's
++     path is attacker-influenced the way $ENV's value is, so there's
++     no analogous privilege-escalation reason to gate this on -p).
++     Runs before the $ENV read below since a .profile commonly sets
++     ENV itself (dash(1)'s own documented idiom: "ENV=$HOME/.shinit;
++     export ENV" inside .profile), and that must take effect for the
++     ENV read that follows. */
++  if(sh_login) {
++    const char* home = var_vdefault("HOME", NULL, NULL);
++
++    sh_source("/etc/profile");
++
++    if(home && *home) {
++      stralloc homepath;
++
++      stralloc_init(&homepath);
++      stralloc_cats(&homepath, home);
++      stralloc_cats(&homepath, "/.profile");
++      stralloc_nul(&homepath);
++      sh_source(homepath.s);
++      stralloc_free(&homepath);
++    }
++  }
++
+   /* POSIX: an interactive, non-privileged shell sources the file
+      named by $ENV (after expansion) once at startup, if it names an
+      existing, readable file -- silently skipped otherwise (a missing
+@@ -375,21 +405,11 @@ main(int argc, char** argv) {
+ 
+     if(envval && *envval) {
+       stralloc envpath;
+-      struct fd envfd;
+-      struct source envsrc;
+ 
+       stralloc_init(&envpath);
+       sh_expand_simple(envval, &envpath);
+       stralloc_nul(&envpath);
+-
+-      fd_push(&envfd, STDSRC_FILENO, FD_READ);
+-      source_push(&envsrc);
+-      envsrc.fd = &envfd;
+-
+-      if(!fd_mmap(&envfd, envpath.s))
+-        sh_loop();
+-
+-      source_popfd(&envfd);
++      sh_source(envpath.s);
+       stralloc_free(&envpath);
+     }
+   }
+diff --git a/src/sh/sh_source.c b/src/sh/sh_source.c
+new file mode 100644
+index 00000000..ed8a6f5c
+--- /dev/null
++++ b/src/sh/sh_source.c
+@@ -0,0 +1,41 @@
++#ifdef HAVE_CONFIG_H
++#include "config.h"
++#endif
++#include "../fd.h"
++#include "../fdtable.h"
++#include "../sh.h"
++#include "../source.h"
++#include "../../lib/windoze.h"
++#if WINDOWS_NATIVE
++#include <io.h>
++#else
++#include <unistd.h>
++#endif
++
++/* source a file named by an absolute path, silently doing nothing if
++ * it doesn't exist/isn't readable -- shared by the $ENV and login-
++ * shell (/etc/profile, $HOME/.profile) startup file reads in
++ * sh_main.c, neither of which treat a missing file as an error. The
++ * access() check has to happen here, before fd_mmap() ever runs:
++ * fd_mmap() itself unconditionally reports a failed open() via
++ * sh_error_errno(), which is exactly right for every other caller
++ * (a real source/exec target that's supposed to exist) but wrong for
++ * these two, deliberately-optional files.
++ * ----------------------------------------------------------------------- */
++void
++sh_source(const char* path) {
++  struct fd fd;
++  struct source src;
++
++  if(access(path, R_OK) != 0)
++    return;
++
++  fd_push(&fd, STDSRC_FILENO, FD_READ);
++  source_push(&src);
++  src.fd = &fd;
++
++  if(!fd_mmap(&fd, path))
++    sh_loop();
++
++  source_popfd(&fd);
++}
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 6943bce8..c3b242db 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -4553,4 +4553,71 @@ fi
+ ## without it, and 10 of the 44 files now pass cleanly end to end where
+ ## every one of them previously reported 0 cases run.
+ 
++## fixes/215: "-l" (sh_main.c, added alongside sh_login's existing
++## argv[0][0]=='-' detection) now actually does something -- a login
++## shell unconditionally reads /etc/profile then $HOME/.profile
++## (sh_source_file(), silently skipping either that doesn't exist or
++## isn't readable), matching dash(1)/ash's own documented behavior
++## exactly (verified against the real dash(1) man page installed on
++## this system: it documents "-l" itself, and states the two files,
++## in that order, independent of interactivity -- no bash-style
++## ~/.bash_profile/~/.bash_login fallback chain, no ~/.bash_logout on
++## exit). Runs before the existing $ENV read so a .profile setting
++## ENV (dash's own documented idiom) takes effect for it, matching
++## dash's stated order. sh_source_file() also fixes a real, if minor,
++## pre-existing bug in the $ENV path it now shares: fd_mmap() always
++## reports a failed open() via sh_error_errno(), so a missing $ENV
++## file was never actually "silently skipped" as the surrounding
++## comment already claimed -- an access(path, R_OK) check up front
++## now makes both paths genuinely silent on a missing file.
++##
++## Like fixes/105/213/214 above, this needs a *second* shish process
++## invoked with specific flags and a controlled $HOME to exercise --
++## not expressible as a same-process assertion here for the same
++## reason those were (no portable way to learn this binary's own path
++## from inside a script it's running). Verified manually instead:
++## "HOME=<dir-without-.profile> shish -l -c true" runs cleanly with no
++## diagnostic (missing-file case, silent as intended); a real
++## $HOME/.profile that sets and exports ENV=<file> is picked up by
++## the interactive-shell $ENV read that follows (ordering case); and
++## plain "shish -c true" (no -l) with the same $HOME touches neither
++## file (opt-in case, sh_login unset).
++
++## fixes/216: unquoted $'...' (ANSI-C quoting) was accepted by the
++## parser but never evaluated -- "echo $'\x41'" printed the literal
++## text instead of decoding the same backslash escapes echo -e does
++## (sh_unescape(), shared with builtin_echo.c). "$'...'" inside double
++## quotes must stay literal -- it's just "$" followed by a normal
++## double-quoted string there, not this syntax.
++RESULT=$(echo $'A\x42\n\t')
++assert_equal "$(printf 'AB\n\t')" "$RESULT" "unquoted \$'...' decodes echo -e-style escapes"
++
++RESULT=$(echo "$'\x41'")
++EXPECT="\$'\\x41'"
++assert_equal "$EXPECT" "$RESULT" "\$'...' inside double quotes is left literal"
++
++## fixes/217: POSIX's "a non-interactive shell exits on this error"
++## rules (2.8.1 assignment/redirection/special-builtin errors, 2.6.1
++## unset-parameter error, 2.11 signal-ignored-on-entry) all checked
++## source->mode's SOURCE_IACTIVE bit -- reset to 0 by source_push()
++## for every nested source, including a `.`-sourced file's -- instead
++## of the whole session's own interactive-ness. A special builtin
++## (e.g. "false" is not one, but "shift" with no positional params
++## is) failing as the last statement of a `.`-sourced file silently
++## killed the *entire, genuinely interactive* shell process instead
++## of just returning control to whatever called `.`. New
++## sh_interactive (sh.h), set once at startup, is what these checks
++## use now; source->mode's SOURCE_IACTIVE keeps its original job of
++## gating per-buffer prompting/history.
++X217_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
++
++if [ -n "$X217_SELF" ] && [ -x "$X217_SELF" ]; then
++  X217_SRC=$(mktemp)
++  printf 'echo reached\nshift\n' >"$X217_SRC"
++  X217=$("$X217_SELF" -i -c ". $X217_SRC; echo after" 2>/dev/null)
++  assert_equal "$(printf 'reached\nafter')" "$X217" \
++    "a special builtin failing inside a \`.\`-sourced file must not kill an interactive shell"
++  rm -f "$X217_SRC"
++fi
++
+ summary

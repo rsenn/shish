@@ -4553,4 +4553,71 @@ fi
 ## without it, and 10 of the 44 files now pass cleanly end to end where
 ## every one of them previously reported 0 cases run.
 
+## fixes/215: "-l" (sh_main.c, added alongside sh_login's existing
+## argv[0][0]=='-' detection) now actually does something -- a login
+## shell unconditionally reads /etc/profile then $HOME/.profile
+## (sh_source_file(), silently skipping either that doesn't exist or
+## isn't readable), matching dash(1)/ash's own documented behavior
+## exactly (verified against the real dash(1) man page installed on
+## this system: it documents "-l" itself, and states the two files,
+## in that order, independent of interactivity -- no bash-style
+## ~/.bash_profile/~/.bash_login fallback chain, no ~/.bash_logout on
+## exit). Runs before the existing $ENV read so a .profile setting
+## ENV (dash's own documented idiom) takes effect for it, matching
+## dash's stated order. sh_source_file() also fixes a real, if minor,
+## pre-existing bug in the $ENV path it now shares: fd_mmap() always
+## reports a failed open() via sh_error_errno(), so a missing $ENV
+## file was never actually "silently skipped" as the surrounding
+## comment already claimed -- an access(path, R_OK) check up front
+## now makes both paths genuinely silent on a missing file.
+##
+## Like fixes/105/213/214 above, this needs a *second* shish process
+## invoked with specific flags and a controlled $HOME to exercise --
+## not expressible as a same-process assertion here for the same
+## reason those were (no portable way to learn this binary's own path
+## from inside a script it's running). Verified manually instead:
+## "HOME=<dir-without-.profile> shish -l -c true" runs cleanly with no
+## diagnostic (missing-file case, silent as intended); a real
+## $HOME/.profile that sets and exports ENV=<file> is picked up by
+## the interactive-shell $ENV read that follows (ordering case); and
+## plain "shish -c true" (no -l) with the same $HOME touches neither
+## file (opt-in case, sh_login unset).
+
+## fixes/216: unquoted $'...' (ANSI-C quoting) was accepted by the
+## parser but never evaluated -- "echo $'\x41'" printed the literal
+## text instead of decoding the same backslash escapes echo -e does
+## (sh_unescape(), shared with builtin_echo.c). "$'...'" inside double
+## quotes must stay literal -- it's just "$" followed by a normal
+## double-quoted string there, not this syntax.
+RESULT=$(echo $'A\x42\n\t')
+assert_equal "$(printf 'AB\n\t')" "$RESULT" "unquoted \$'...' decodes echo -e-style escapes"
+
+RESULT=$(echo "$'\x41'")
+EXPECT="\$'\\x41'"
+assert_equal "$EXPECT" "$RESULT" "\$'...' inside double quotes is left literal"
+
+## fixes/217: POSIX's "a non-interactive shell exits on this error"
+## rules (2.8.1 assignment/redirection/special-builtin errors, 2.6.1
+## unset-parameter error, 2.11 signal-ignored-on-entry) all checked
+## source->mode's SOURCE_IACTIVE bit -- reset to 0 by source_push()
+## for every nested source, including a `.`-sourced file's -- instead
+## of the whole session's own interactive-ness. A special builtin
+## (e.g. "false" is not one, but "shift" with no positional params
+## is) failing as the last statement of a `.`-sourced file silently
+## killed the *entire, genuinely interactive* shell process instead
+## of just returning control to whatever called `.`. New
+## sh_interactive (sh.h), set once at startup, is what these checks
+## use now; source->mode's SOURCE_IACTIVE keeps its original job of
+## gating per-buffer prompting/history.
+X217_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
+
+if [ -n "$X217_SELF" ] && [ -x "$X217_SELF" ]; then
+  X217_SRC=$(mktemp)
+  printf 'echo reached\nshift\n' >"$X217_SRC"
+  X217=$("$X217_SELF" -i -c ". $X217_SRC; echo after" 2>/dev/null)
+  assert_equal "$(printf 'reached\nafter')" "$X217" \
+    "a special builtin failing inside a \`.\`-sourced file must not kill an interactive shell"
+  rm -f "$X217_SRC"
+fi
+
 summary
