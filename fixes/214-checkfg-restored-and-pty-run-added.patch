@@ -1,0 +1,486 @@
+diff --git a/.gitignore b/.gitignore
+index 47c404ca..1e0bebea 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -5,6 +5,11 @@
+ tests/posix/*.trs
+ tests/posix/*.trs.stderr
+ tests/posix/tmp.*/
++
++# checkfg (tests/checkfg.c) is built straight into tests/posix -- see
++# CMakeLists.txt's DO_CONFORMANCE_TESTS block -- since that's where
++# the *.tst files' own "../checkfg" reference expects to find it
++tests/posix/checkfg
+ tests/yash/*.trs
+ tests/yash/*.trs.stderr
+ tests/yash/tmp.*/
+diff --git a/BUGS b/BUGS
+index bd47e8d8..99ab19d6 100644
+--- a/BUGS
++++ b/BUGS
+@@ -623,3 +623,50 @@
+   sed -n '19,45p' src/eval/eval_node_bgnd.c
+   ```
+ 
++- wait-interrupted-by-trap-hangs: the `wait` builtin does not get
++  interrupted by an arriving trapped signal the way POSIX requires --
++  it should re-check/return so the trap body's effect (e.g. setting a
++  flag the caller's loop condition reads) is actually observed, not
++  block until the waited-for job itself exits regardless. Found via
++  `tests/pty-run` + `tests/posix/wait-p.tst`, one of the 44 files
++  previously always skipped for lack of a controlling terminal
++  (`DO_PTY_TESTS=ON`, `CMakeLists.txt`, fixes/214's `checkfg`
++  restoration) -- the "trap interrupts wait" case hangs the full 60s
++  test timeout instead of completing.
++
++  **Repro:**
++  ```sh
++  cmake -S . -B build/x86_64-linux-gnu -DDO_PTY_TESTS=ON
++  cmake --build build/x86_64-linux-gnu -j
++  build/x86_64-linux-gnu/pty-run -t 10 -- \
++    build/x86_64-linux-gnu/shish -c '
++    interrupted=false
++    trap "interrupted=true" USR1
++    ( set +m; trap "exit" USR2; while kill -s USR1 $$; do sleep 1; done ) &
++    wait $!
++    echo "interrupted=$interrupted"
++  '
++  # never reaches the echo -- pty-run kills it at the 10s alarm instead
++  ```
++
++- job-control-real-terminal-hangs-vs-kill-driven-ok: with a real pty
++  (`tests/pty-run`, `DO_PTY_TESTS=ON`), the `*3-p`/`*7-p`/`*8-p` combo
++  files for `sigtstp`/`sigttin`/`sigttou`/`sigstop`, plus `kill4-p`,
++  hang the full 60s test timeout, while their `*4-p` siblings (same
++  signals, sent via `kill` rather than through real terminal-driven
++  job control) pass in 1-2s -- rules out the pty harness itself as the
++  cause; something in shish's job-control code doesn't handle a
++  background process group's real SIGTTIN/SIGTTOU/SIGTSTP delivery
++  correctly. Not yet isolated to a specific file/case per signal --
++  `wait-interrupted-by-trap-hangs` above is the one case traced so
++  far; the rest need the same per-case bisection.
++
++  **Repro:**
++  ```sh
++  cmake -S . -B build/x86_64-linux-gnu -DDO_PTY_TESTS=ON
++  cmake --build build/x86_64-linux-gnu -j
++  cd build/x86_64-linux-gnu
++  ctest -R 'posix/sigttin3-p\.tst$' --timeout 90
++  # hits the 60s tests/pty-run alarm every time
++  ```
++
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 558090b0..75387d37 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -362,15 +362,67 @@ if(DO_TESTS)
+     list(APPEND CONFORMANCE_SUITES yash)
+   endif(DO_YASH_TESTS)
+ 
++  # tests/posix/*.tst files marked "%REQUIRETTY%" gate themselves on
++  # "../checkfg" (tests/checkfg.c -- restored from git history,
++  # fixes/213's follow-up: it existed as of commit caa1ea28 but had
++  # gone missing from the tree, silently turning every one of these
++  # 44 files into an unconditional skip via "command not found"
++  # rather than a real "no controlling terminal" check) and self-skip
++  # without a real controlling terminal. DO_PTY_TESTS (off by
++  # default -- Linux/POSIX pty ioctls, and it changes timing/behavior
++  # for a job-control-sensitive slice of the suite) wraps just those
++  # files in tests/pty-run (tests/pty-run.c), which gives the testee
++  # a real pty-backed session/controlling terminal instead of letting
++  # them opt out. checkfg itself is always built when conformance
++  # tests are on, on any POSIX platform, so the self-skip check is a
++  # real check rather than a missing-binary error either way.
++  if(DO_CONFORMANCE_TESTS AND NOT WINDOWS_NATIVE)
++    add_executable(checkfg tests/checkfg.c)
++
++    # tests/posix/run-test.sh's *.tst files reference "../checkfg"
++    # from inside a per-run tests/posix/tmp.$$ work directory it
++    # creates itself, so the binary has to live at tests/posix/checkfg
++    # in the source tree -- same place run-test.sh already leaves its
++    # own tmp.NNNNN/.trs artifacts (BUGS: harness-leaves-tmp-dirs).
++    set_target_properties(
++      checkfg PROPERTIES RUNTIME_OUTPUT_DIRECTORY
++                         "${CMAKE_CURRENT_SOURCE_DIR}/tests/posix")
++
++    option(
++      DO_PTY_TESTS
++      "Run the tests/posix/*.tst files gated on a real controlling terminal (%REQUIRETTY%) under tests/pty-run instead of letting them self-skip"
++      OFF)
++
++    if(DO_PTY_TESTS)
++      add_executable(pty-run tests/pty-run.c)
++    endif(DO_PTY_TESTS)
++  endif(DO_CONFORMANCE_TESTS AND NOT WINDOWS_NATIVE)
++
+   foreach(SUITE ${CONFORMANCE_SUITES})
+     file(GLOB CONFORMANCE_TESTS "tests/${SUITE}/*.tst")
+ 
+     foreach(TEST ${CONFORMANCE_TESTS})
+       basename(NAME "${TEST}")
+-      add_test(
+-        NAME "${SUITE}/${NAME}"
+-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+-        COMMAND sh "tests/run-tst.sh" "${SHISH_PATH}" "tests/${SUITE}" "${NAME}")
++
++      set(REQUIRETTY_MARK)
++
++      if(SUITE STREQUAL "posix" AND DO_PTY_TESTS AND NOT WINDOWS_NATIVE)
++        file(STRINGS "${TEST}" REQUIRETTY_MARK REGEX "%REQUIRETTY%")
++      endif()
++
++      if(REQUIRETTY_MARK)
++        add_test(
++          NAME "${SUITE}/${NAME}"
++          WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
++          COMMAND "$<TARGET_FILE:pty-run>" -t 60 -- sh "tests/run-tst.sh"
++                  "${SHISH_PATH}" "tests/${SUITE}" "${NAME}")
++      else()
++        add_test(
++          NAME "${SUITE}/${NAME}"
++          WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
++          COMMAND sh "tests/run-tst.sh" "${SHISH_PATH}" "tests/${SUITE}" "${NAME}")
++      endif()
++
+       set_tests_properties("${SUITE}/${NAME}" PROPERTIES TIMEOUT 120)
+     endforeach(TEST ${CONFORMANCE_TESTS})
+   endforeach(SUITE ${CONFORMANCE_SUITES})
+diff --git a/TODO.md b/TODO.md
+index c4d2eb7f..a0b326b5 100644
+--- a/TODO.md
++++ b/TODO.md
+@@ -35,6 +35,13 @@ underneath both:
+    same way `tests/fixed.sh`/`ctest` already are. See "Memory safety"
+    below for what is open there and how to run it.
+ 
++**Non-goal, decided 2026-09-02:** bash's `var+=value` append-assignment
++(not in POSIX; confirmed unimplemented -- `x=a; x+=b` parses `x+=b` as
++a command name and fails). This is the reason libtool's `ltmain.sh`
++can't run under shish, but libtool/libtool-generated scripts are not a
++target -- don't add `+=` (as an opt-in flag, the same way `-B`/`-H`
++gate brace/history expansion, or otherwise) unless that changes.
++
+ The measurable target for Stages 1-2 is `tests/posix` (yash's POSIX suite, 123 files).
+ Everything below is derived from full runs on 2026-08-20, at
+ `9bfd1f9f` plus `fixes/188`-`192`.
+@@ -283,11 +290,37 @@ Sorted by failures per unit of work.
+ 
+ ### Phase 6 [Stage 1+2] — what is not being measured at all
+ 
+-1. **6103 of 12195 cases are skipped**, i.e. half the suite is unrun.
+-   The whole `sigttin`/`sigttou`/`sigtstp` set (12 files × 132) and
+-   `testtty-p` skip for want of a controlling terminal; `wait-p`
+-   skips all 16. Run the suite under a pty to find out what they
+-   actually say before assuming they pass.
++1. ~~**6103 of 12195 cases are skipped**~~ — **done, 2026-09-02**: the
++   44 `%REQUIRETTY%` files (the `sigttin`/`sigttou`/`sigtstp`/`sigstop`
++   `*3-p`/`*7-p`/`*8-p` combos, `kill4-p`, `bg-p`/`fg-p`/`job-p`,
++   `testtty-p`, `wait-p`) skip themselves via `../checkfg`
++   (`tests/checkfg.c`, restored from git history — it had gone missing
++   from the tree, silently turning every one of these into an
++   unconditional "command not found" skip rather than a real check) —
++   they don't need a pty simulator so much as a real one.
++   `tests/pty-run.c` (a single-file POSIX-`pty` wrapper: `posix_openpt`/
++   `TIOCSCTTY`, no libc convenience `forkpty()`) gives the testee a
++   genuine controlling terminal and session; `-DDO_PTY_TESTS=ON` wires
++   it into `CMakeLists.txt` for every `%REQUIRETTY%` file. First real
++   run: **10/44 pass** (`testtty-p` and the `kill`-driven `*4-p`
++   combos), 34 fail — some are ordinary conformance gaps (e.g.
++   `sigcont3-p`'s 3 real output mismatches, same shape as everything
++   else in this file), but most of the `*3-p`/`*7-p`/`*8-p` combos
++   plus `wait-p`/`kill4-p` hang the full 60s `pty-run` alarm instead of
++   completing — a real job-control defect, since their `kill`-driven
++   `*4-p` siblings pass in 1-2s. One case is already traced:
++   `BUGS: wait-interrupted-by-trap-hangs` (`wait` doesn't get
++   interrupted by an arriving trapped signal). The rest need the same
++   per-case bisection — `BUGS:
++   job-control-real-terminal-hangs-vs-kill-driven-ok`. Re-run via:
++   ```sh
++   cmake -S . -B build/x86_64-linux-gnu -DDO_PTY_TESTS=ON
++   cmake --build build/x86_64-linux-gnu -j
++   cd build/x86_64-linux-gnu
++   NAMES=$(grep -l '%REQUIRETTY%' ../../tests/posix/*.tst \
++           | xargs -n1 basename | sed 's/\.tst$//' | tr '\n' '|' | sed 's/|$//')
++   ctest -R "posix/(${NAMES})\.tst\$" -j4
++   ```
+ 2. **`tests/yash` (119 files) is off by default** — several files
+    (`arith-y`, `cmdprint-y`, `pipeline-y`, `redir-y`, `until-y`,
+    `while-y`) hang, none isolated. `BUGS: yash-suite-other-hangs`.
+diff --git a/tests/checkfg.c b/tests/checkfg.c
+new file mode 100644
+index 00000000..1dd81539
+--- /dev/null
++++ b/tests/checkfg.c
+@@ -0,0 +1,37 @@
++/* checkfg.c: checks if the current process is in the foreground */
++/* (C) 2011 magicant */
++
++/* This program is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation, either version 2 of the License, or
++ * (at your option) any later version.
++ * 
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ * 
++ * You should have received a copy of the GNU General Public License
++ * along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
++
++#define _POSIX_C_SOURCE 200112L
++#include <fcntl.h>
++#include <stdlib.h>
++#include <unistd.h>
++
++int main(void)
++{
++    int ttyfd = open("/dev/tty", O_RDWR | O_NOCTTY | O_NONBLOCK);
++    if (ttyfd < 0)
++	return EXIT_FAILURE;
++
++    pid_t tpgid = tcgetpgrp(ttyfd);
++    if (tpgid < 0)
++	return EXIT_FAILURE;
++
++    pid_t pgid = getpgrp();
++
++    return tpgid == pgid ? EXIT_SUCCESS : EXIT_FAILURE;
++}
++
++/* vim: set ts=8 sts=4 sw=4 noet tw=80: */
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 1eb8feb4..6943bce8 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -4519,4 +4519,38 @@ fi
+ ## tests/fixed.sh + ctest suite unchanged against a stashed-back
+ ## baseline.
+ 
++## fixes/214: 44 tests/posix/*.tst files (the "%REQUIRETTY%" ones --
++## sigtstp/sigttin/sigttou/sigstop's *3-p/*7-p/*8-p combos, kill4-p,
++## bg-p/fg-p/job-p, testtty-p, wait-p) gate themselves on
++## "../checkfg" and had always been silently skipping via a
++## "command not found" error, not a real "no controlling terminal"
++## check: tests/checkfg.c (a tiny helper that reports whether the
++## calling process is in its controlling terminal's foreground
++## process group) existed in this repo's git history but had gone
++## missing from the tree. Restored, and wired into CMakeLists.txt
++## (built automatically whenever DO_CONFORMANCE_TESTS is on, landing
++## at tests/posix/checkfg where the *.tst files' own relative
++## reference expects it) so the self-skip check is real either way.
++##
++## Also added tests/pty-run.c, a small single-file POSIX-pty wrapper
++## (posix_openpt/grantpt/unlockpt/TIOCSCTTY -- no libc convenience
++## forkpty()) that gives a wrapped command a genuine controlling
++## terminal and session, and a new DO_PTY_TESTS CMake option (off by
++## default) that wraps just the 44 "%REQUIRETTY%" files in it instead
++## of letting them self-skip.
++##
++## Like fixes/105/213 above, "does this process have a real
++## controlling terminal" isn't expressible as a same-process assertion
++## here (this script's own testee already IS the thing under test, and
++## spawning a second nested pty-run'd shish from inside it to check
++## its own foreground status would test pty-run's fork correctness,
++## not shish). Verified instead by building with -DDO_PTY_TESTS=ON and
++## running the full 44-file set directly (see BUGS:
++## wait-interrupted-by-trap-hangs and BUGS:
++## job-control-real-terminal-hangs-vs-kill-driven-ok for what it found,
++## and TODO.md's Phase 6 for the pass/fail breakdown): checkfg reports
++## "foreground" (exit 0) under pty-run and "not foreground" (exit 1)
++## without it, and 10 of the 44 files now pass cleanly end to end where
++## every one of them previously reported 0 cases run.
++
+ summary
+diff --git a/tests/pty-run.c b/tests/pty-run.c
+new file mode 100644
+index 00000000..0a815561
+--- /dev/null
++++ b/tests/pty-run.c
+@@ -0,0 +1,186 @@
++/* pty-run.c: run a command under a real pty-backed controlling
++ * terminal, for the tests/posix .tst cases gated on "../checkfg"
++ * (job control, sigttin/sigttou/sigtstp, testtty-p, wait-p) that
++ * ctest currently skips outright for lack of one.
++ *
++ * Usage: pty-run [-t seconds] -- command [args...]
++ *
++ * The child becomes a session leader with the new pty's slave side
++ * as its controlling terminal (fd 0 and 1; fd 2 is left alone, so a
++ * caller redirecting stdout/stderr separately -- as
++ * tests/posix/run-test.sh does -- still gets them apart). Everything
++ * this process itself reads from its own stdin is relayed verbatim
++ * to the pty master, and everything the pty produces is relayed to
++ * this process's own stdout -- so no special "send a signal" API is
++ * needed: a literal ^Z/^C/^\ byte already flowing through as part of
++ * a test's normal stdin reaches the slave's line discipline exactly
++ * as if a user had typed it, and the kernel raises the matching
++ * SIGTSTP/SIGINT/SIGQUIT for the pty's foreground process group on
++ * its own. SIGTTIN/SIGTTOU need no simulation at all: any background
++ * process group that reads/writes the terminal triggers them from
++ * the kernel side the moment there's a real session+pty to enforce
++ * that against.
++ * ----------------------------------------------------------------------- */
++#define _XOPEN_SOURCE 600
++#include <errno.h>
++#include <fcntl.h>
++#include <signal.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/ioctl.h>
++#include <sys/select.h>
++#include <sys/wait.h>
++#include <termios.h>
++#include <unistd.h>
++
++static pid_t child_pid = -1;
++
++static void
++on_alarm(int sig) {
++  (void)sig;
++
++  if(child_pid > 0)
++    kill(-child_pid, SIGKILL);
++}
++
++static int
++relay(int master) {
++  char buf[4096];
++  int in_open = 1;
++
++  for(;;) {
++    fd_set rfds;
++    int maxfd = master;
++    ssize_t n;
++
++    FD_ZERO(&rfds);
++    FD_SET(master, &rfds);
++
++    if(in_open) {
++      FD_SET(STDIN_FILENO, &rfds);
++
++      if(STDIN_FILENO > maxfd)
++        maxfd = STDIN_FILENO;
++    }
++
++    if(select(maxfd + 1, &rfds, 0, 0, 0) < 0) {
++      if(errno == EINTR)
++        continue;
++
++      return -1;
++    }
++
++    if(in_open && FD_ISSET(STDIN_FILENO, &rfds)) {
++      n = read(STDIN_FILENO, buf, sizeof(buf));
++
++      if(n > 0)
++        (void)!write(master, buf, (size_t)n);
++      else
++        in_open = 0; /* EOF/error on our own stdin: stop forwarding it,
++                        keep draining the child's output below */
++    }
++
++    if(FD_ISSET(master, &rfds)) {
++      n = read(master, buf, sizeof(buf));
++
++      if(n > 0) {
++        (void)!write(STDOUT_FILENO, buf, (size_t)n);
++      } else {
++        /* EOF: the slave side has no more openers (child exited and
++           closed its copy) -- normal end of relay */
++        return 0;
++      }
++    }
++  }
++}
++
++int
++main(int argc, char* argv[]) {
++  int master, slave, status, timeout = 0, i = 1;
++  char* slavename;
++  pid_t w;
++
++  if(argc > 2 && !strcmp(argv[1], "-t")) {
++    timeout = atoi(argv[2]);
++    i = 3;
++  }
++
++  if(i < argc && !strcmp(argv[i], "--"))
++    i++;
++
++  if(i >= argc) {
++    fprintf(stderr, "usage: pty-run [-t seconds] -- command [args...]\n");
++    return 2;
++  }
++
++  if((master = posix_openpt(O_RDWR | O_NOCTTY)) < 0) {
++    perror("posix_openpt");
++    return 1;
++  }
++
++  if(grantpt(master) < 0 || unlockpt(master) < 0 || !(slavename = ptsname(master))) {
++    perror("grantpt/unlockpt/ptsname");
++    return 1;
++  }
++
++  /* a plausible interactive default; test scripts that care set their
++     own size explicitly */
++  {
++    struct winsize ws = {24, 80, 0, 0};
++    ioctl(master, TIOCSWINSZ, &ws);
++  }
++
++  if((child_pid = fork()) < 0) {
++    perror("fork");
++    return 1;
++  }
++
++  if(child_pid == 0) {
++    close(master);
++
++    if(setsid() < 0)
++      _exit(126);
++
++    if((slave = open(slavename, O_RDWR)) < 0)
++      _exit(126);
++
++#ifdef TIOCSCTTY
++    if(ioctl(slave, TIOCSCTTY, 0) < 0)
++      _exit(126);
++#endif
++
++    if(dup2(slave, STDIN_FILENO) < 0 || dup2(slave, STDOUT_FILENO) < 0)
++      _exit(126);
++
++    if(slave > STDERR_FILENO)
++      close(slave);
++
++    execvp(argv[i], &argv[i]);
++    _exit(127);
++  }
++
++  /* parent: never touch the slave by name again -- only the child
++     needs it, and opening it here too would make us a second session
++     member with our own reference to the same controlling terminal */
++  if(timeout > 0) {
++    signal(SIGALRM, on_alarm);
++    alarm((unsigned)timeout);
++  }
++
++  relay(master);
++  close(master);
++
++  w = waitpid(child_pid, &status, 0);
++
++  if(w < 0)
++    return 1;
++
++  if(WIFEXITED(status))
++    return WEXITSTATUS(status);
++
++  if(WIFSIGNALED(status))
++    return 128 + WTERMSIG(status);
++
++  return 1;
++}
