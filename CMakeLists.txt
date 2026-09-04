@@ -279,6 +279,43 @@ if(BUILD_SHPARSE2AST)
 
 endif(BUILD_SHPARSE2AST)
 
+option(BUILD_SHUTIL_WASM
+       "Build shutil, a WASM-only library module (format + AST dump, no CLI, no main loop)"
+       OFF)
+
+if(BUILD_SHUTIL_WASM)
+  if(NOT EMSCRIPTEN)
+    message(FATAL_ERROR "BUILD_SHUTIL_WASM requires an Emscripten toolchain")
+  endif(NOT EMSCRIPTEN)
+
+  file(GLOB SHUTIL_SOURCES src/*.h src/debug/*.c src/sh/sh_util_wasm.c)
+  list(FILTER SHUTIL_SOURCES EXCLUDE REGEX "dump")
+  list(APPEND ALL_SOURCES ${SHUTIL_SOURCES})
+
+  add_executable(shutil ${SHUTIL_SOURCES})
+  target_link_libraries(shutil PRIVATE libshell ${LIBOWFAT_LIBRARY}
+                                       ${MATH_LIBRARY})
+
+  # SHPARSE2AST=1 gates the JSON debug-tree code in src/debug/*.c on;
+  # SHFORMAT=1 keeps parse_simpletok.c's PS2-prompt call site (still
+  # dead here regardless, via parse_prompt_hook -- see fixes/219)
+  # consistent with the other parser-only tools.
+  target_compile_definitions(shutil PUBLIC SHFORMAT=1 SHPARSE2AST=1
+                                            DEBUG_OUTPUT=1)
+
+  set_target_properties(shutil PROPERTIES SUFFIX ".js")
+  target_link_options(
+    shutil
+    PRIVATE
+    "-sMODULARIZE=1"
+    "-sEXPORT_NAME=createShutil"
+    "-sEXPORTED_FUNCTIONS=['_shutil_format','_shutil_parse_ast','_shutil_free','_malloc','_free']"
+    "-sEXPORTED_RUNTIME_METHODS=['cwrap','UTF8ToString','stringToUTF8','lengthBytesUTF8']"
+    "-sINVOKE_RUN=0")
+
+  strip_minsize(shutil)
+endif(BUILD_SHUTIL_WASM)
+
 set_source_files_properties(src/builtin/builtin_table.c
                             PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}")
 
