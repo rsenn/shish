@@ -1,7 +1,8 @@
 /**
  * Static-site generator for the shish GitHub Pages site.
  *
- *   qjsm tools/site/build.js [outdir]      (default outdir: docs)
+ *   qjsm tools/site/build.js [outdir] [wasm_dir]      (default outdir: docs)
+ *   node tools/site/build.js [outdir] [wasm_dir]      (also works)
  *
  * Renders the repo's own markdown (README.md, doc/*.md) into a
  * self-contained HTML site: a hand-written landing page, a WebAssembly
@@ -15,8 +16,7 @@
  * https://rsenn.github.io/shish/ and from a local file:// checkout.
  */
 
-import * as std from 'std';
-import * as os from 'os';
+import * as fs from 'fs';
 import { render } from './markdown.js';
 import { highlight } from './highlight.js';
 
@@ -83,39 +83,23 @@ function mkdirp(path) {
   for (const part of path.split('/')) {
     if (!part) continue;
     cur += (cur ? '/' : '') + part;
-    os.mkdir(cur, 0o755);
+    if (!fs.existsSync(cur)) fs.mkdirSync(cur, 0o755);
   }
 }
 
 function read(path) {
-  const text = std.loadFile(path);
-  if (text === null) throw new Error('cannot read ' + path);
-  return text;
+  return fs.readFileSync(path, 'utf8');
 }
 
 function write(path, text) {
   mkdirp(dirname(path));
-  const f = std.open(path, 'w');
-  if (!f) throw new Error('cannot write ' + path);
-  f.puts(text);
-  f.close();
+  fs.writeFileSync(path, text);
 }
 
 /** Byte-for-byte copy, for the wasm module and its glue. */
 function copy(from, to) {
   mkdirp(dirname(to));
-  const src = std.open(from, 'rb');
-  if (!src) throw new Error('cannot read ' + from);
-  const dst = std.open(to, 'wb');
-  if (!dst) throw new Error('cannot write ' + to);
-  const buf = new Uint8Array(65536);
-  for (;;) {
-    const n = src.read(buf.buffer, 0, buf.length);
-    if (n <= 0) break;
-    dst.write(buf.buffer, 0, n);
-  }
-  src.close();
-  dst.close();
+  fs.copyFileSync(from, to);
 }
 
 /* --------------------------------------------------------- link rewriting */
@@ -263,11 +247,13 @@ function buildPlayground() {
 
   copy(WASM_DIR + '/shish.js', OUT + '/assets/shish.js');
   copy(WASM_DIR + '/shish.wasm', OUT + '/assets/shish.wasm');
+  copy(WASM_DIR + '/shutil.js', OUT + '/assets/shutil.js');
+  copy(WASM_DIR + '/shutil.wasm', OUT + '/assets/shutil.wasm');
 }
 
 const SELF = dirname(import.meta.url.replace(/^file:\/\//, '')) || '.';
-const OUT = scriptArgs[1] || 'docs';
-const WASM_DIR = scriptArgs[2] || 'build/emscripten-all';
+const OUT = process.argv[2] || 'docs';
+const WASM_DIR = process.argv[3] || 'build/emscripten-all';
 
 buildLanding();
 buildPlayground();

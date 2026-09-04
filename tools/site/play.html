@@ -5,10 +5,15 @@
      filesystem and your commands never leave the tab.</p>
 </section>
 
-<div class="playgrid">
+<div class="playtabs">
+  <button class="playtab active" data-panel="run">Run</button>
+  <button class="playtab" data-panel="format">Format</button>
+</div>
+
+<div class="playgrid" id="panel-run">
   <div class="playcol">
     <label for="script">script</label>
-    <textarea id="script" spellcheck="false" autocapitalize="off" autocorrect="off">for f in one two three; do
+    <textarea id="script" class="playsrc" spellcheck="false" autocapitalize="off" autocorrect="off">for f in one two three; do
   echo "hello $f"
 done
 
@@ -37,6 +42,45 @@ uname -s</textarea>
        There are no processes in a browser, so pipelines between two external
        commands and background jobs cannot work — everything that runs
        in-process does. See <a href="docs/wasm.html">WebAssembly</a>.</p>
+  </div>
+</div>
+
+<div class="playgrid" id="panel-format" hidden>
+  <div class="playcol">
+    <label for="fmt-in">script</label>
+    <textarea id="fmt-in" class="playsrc" spellcheck="false" autocapitalize="off" autocorrect="off">deploy(){
+        env=$1;    if [   -z "$env"    ]
+then
+echo "no env" >&2;exit 1
+    fi
+  for svc in api worker cron;do
+case "$svc" in
+      api)   port=8080;;
+worker) port=8081   ;;
+        *) port=0;;
+    esac
+        echo "starting $svc on $port in $env"
+  done
+}
+deploy   production</textarea>
+    <div class="playbar">
+      <button id="fmt-run" class="btn primary" disabled>loading shutil.wasm…</button>
+      <span class="examples">
+        try:
+        <a href="#" data-fmt-example="funcs">function + case</a>
+        <a href="#" data-fmt-example="oneline">chained pipeline</a>
+        <a href="#" data-fmt-example="heredoc">heredoc + loop</a>
+      </span>
+    </div>
+  </div>
+  <div class="playcol">
+    <label for="fmt-out">formatted</label>
+    <textarea id="fmt-out" class="playsrc term" readonly spellcheck="false"></textarea>
+    <p class="fineprint" id="fmt-status">This is <code>shformat</code> (the same parser as
+       <code>shish</code>, reused for pretty-printing) in a separate,
+       ~70 KB WASM module with no interpreter in it at all — it only
+       parses and re-prints. A syntax error is reported here instead of
+       reformatted output.</p>
   </div>
 </div>
 
@@ -92,6 +136,73 @@ uname -s</textarea>
     out.insertAdjacentHTML('beforeend',
       '<span class="exit' + (status ? ' bad' : '') + '">exit ' + status + ' · ' + ms + ' ms</span>');
   });
+
+  /* -- tab switching -- */
+  var panels = { run: document.getElementById('panel-run'), format: document.getElementById('panel-format') };
+  var tabsLoaded = { format: false };
+
+  document.querySelectorAll('.playtab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.playtab').forEach(function (t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      Object.keys(panels).forEach(function (name) { panels[name].hidden = name !== tab.dataset.panel; });
+      if (tab.dataset.panel === 'format' && !tabsLoaded.format) {
+        tabsLoaded.format = true;
+        loadShutil();
+      }
+    });
+  });
+
+  /* -- Format tab: lazy-loads assets/shutil.js only on first visit -- */
+  var fmtIn = document.getElementById('fmt-in');
+  var fmtOut = document.getElementById('fmt-out');
+  var fmtBtn = document.getElementById('fmt-run');
+  var fmtStatusText = document.getElementById('fmt-status').textContent;
+
+  var FMT_EXAMPLES = {
+    funcs: 'deploy(){\n        env=$1;    if [   -z "$env"    ]\nthen\necho "no env" >&2;exit 1\n    fi\n  for svc in api worker cron;do\ncase "$svc" in\n      api)   port=8080;;\nworker) port=8081   ;;\n        *) port=0;;\n    esac\n        echo "starting $svc on $port in $env"\n  done\n}\ndeploy   production',
+    oneline: 'ls -la /etc|grep -i conf|sort|uniq -c|while read n f;do echo "$n:$f";done&&echo ok||echo failed;exit 0',
+    heredoc: 'i=0\nwhile [   $i -lt 3   ];do\ncat <<EOF\niteration $i squared is $((i*i))\nEOF\n    i=$((i+1))\n        done\nif [ "$i"    -eq    3 ];then   echo \'all done\'   ;else echo "??";fi',
+  };
+
+  document.querySelectorAll('[data-fmt-example]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      fmtIn.value = FMT_EXAMPLES[a.dataset.fmtExample];
+    });
+  });
+
+  function loadShutil() {
+    var stderrBuf = '';
+    var script = document.createElement('script');
+    script.src = 'assets/shutil.js';
+    script.onload = function () {
+      createShutil({ printErr: function (m) { stderrBuf += m + '\n'; } }).then(function (Module) {
+        var format = Module.cwrap('shutil_format', 'number', ['string']);
+        var free = Module.cwrap('shutil_free', null, ['number']);
+        var UTF8ToString = Module.UTF8ToString;
+
+        fmtBtn.disabled = false;
+        fmtBtn.textContent = 'format';
+
+        fmtBtn.addEventListener('click', function () {
+          stderrBuf = '';
+          var ptr = format(fmtIn.value);
+          if (ptr === 0) {
+            fmtOut.value = '';
+            fmtOut.classList.add('bad');
+            document.getElementById('fmt-status').textContent = stderrBuf.trim() || 'syntax error';
+          } else {
+            fmtOut.value = UTF8ToString(ptr);
+            fmtOut.classList.remove('bad');
+            document.getElementById('fmt-status').textContent = fmtStatusText;
+            free(ptr);
+          }
+        });
+      });
+    };
+    document.body.appendChild(script);
+  }
 })();
 </script>
 <script src="assets/shish.js"></script>
