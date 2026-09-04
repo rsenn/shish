@@ -4701,4 +4701,19 @@ if [ -n "$X221_SELF" ] && [ -x "$X221_SELF" ]; then
     "a command-not-found error on a \$var-held command name must point at the START of the variable name, not its second character"
 fi
 
+## fixes/222: shformat and shparse2ast accepted (and silently ignored)
+## interpreter-only flags -- -x/-e do nothing since neither tool executes
+## a command, and shparse2ast's -l consumed an argument for a
+## tree_columnwrap variable it never used. Their "-h"/bad-flag usage text
+## also called the shared sh_usage(), printing shish's full interpreter
+## option list (-a/-f/-m/-n/-u/-B/-C/-H/-s/-p/-h/...) instead of anything
+## relevant to a non-executing parser/formatter. Both tools now have their
+## own scoped getopt string (shformat: "c:iw:l:", shparse2ast:
+## "c:o:q:w:Pr:") and their own usage() function. Like fixes/219/220
+## above, this can only be exercised through the separate shformat/
+## shparse2ast binaries, so it's verified by direct invocation instead:
+##   shformat -x           # now rejected (was silently accepted)
+##   shparse2ast -e        # now rejected (was silently accepted)
+##   shformat -h           # prints only shformat's own options, not shish's
+
 summary

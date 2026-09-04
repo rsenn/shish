@@ -24,6 +24,24 @@
 extern const char* tree_separator;
 extern unsigned int tree_columnwrap;
 
+/* usage text, scoped to the options this tool actually accepts --
+ * shformat never executes anything, so it has no use for shish's
+ * xtrace/errexit/job-control/etc. interpreter flags.
+ * ----------------------------------------------------------------------- */
+static void
+fmt_usage(void) {
+  buffer_puts(fd_err->w, "usage: ");
+  buffer_puts(fd_err->w, sh_name);
+  buffer_puts(fd_err->w,
+              " [-c command_string] [-i] [-w NUM] [-l COLS] [script]\n"
+              "\n"
+              "    -c command_string   format command_string instead of a script/stdin\n"
+              "    -i                  rewrite the input file in place\n"
+              "    -w NUM              indent width, in spaces (default 2)\n"
+              "    -l COLS             wrap long lines at COLS columns\n");
+  buffer_flush(fd_err->w);
+}
+
 int sh_argc;
 char** sh_argv;
 const char* sh_name;
@@ -89,25 +107,13 @@ main(int argc, char** argv, char** envp) {
   shell_init(buffer_2, sh_name);
 
   /* parse command line arguments */
-  while((c = shell_getopt(argc, argv, "c:xeiw:l:")) > 0)
+  while((c = shell_getopt(argc, argv, "c:iw:l:")) > 0)
     switch(c) {
       case 'c': cmds = shell_optarg; break;
-      case 'x': sh->opts.xtrace = 1; break;
-      case 'e': sh->opts.errexit = 1; break;
       case 'i': inplace = 1; break;
       case 'w': scan_uint(shell_optarg, &indent_width); break;
       case 'l': scan_uint(shell_optarg, &tree_columnwrap); break;
-      default:
-        sh_usage();
-
-        buffer_puts(fd_err->w,
-                    "\n"
-                    "  -i          Inplace\n"
-                    "  -w NUM      Indent num spaces\n"
-                    "  -l COLS     Line width\n");
-
-        buffer_flush(fd_err->w);
-        return 1;
+      default: fmt_usage(); return 1;
     }
 
 #ifdef DEBUG_OUTPUT

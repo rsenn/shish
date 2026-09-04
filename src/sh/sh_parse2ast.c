@@ -24,6 +24,26 @@
 extern const char* tree_separator;
 extern unsigned int tree_columnwrap;
 
+/* usage text, scoped to the options this tool actually accepts --
+ * shparse2ast never executes anything, so it has no use for shish's
+ * xtrace/errexit/job-control/etc. interpreter flags.
+ * ----------------------------------------------------------------------- */
+static void
+ast_usage(void) {
+  buffer_puts(fd_err->w, "usage: ");
+  buffer_puts(fd_err->w, sh_name);
+  buffer_puts(fd_err->w,
+              " [-c command_string] [-P] [-o FILE] [-w NUM] [-q CHAR] [-r MODE] [script]\n"
+              "\n"
+              "    -c command_string   parse command_string instead of a script/stdin\n"
+              "    -P                  suppress position information\n"
+              "    -o FILE             write JSON output to FILE instead of stdout\n"
+              "    -w NUM              indent width, in spaces\n"
+              "    -q CHAR             quote character used for strings in output\n"
+              "    -r MODE             position field(s): loc, range, or both (default loc)\n");
+  buffer_flush(fd_err->w);
+}
+
 int sh_argc;
 char** sh_argv;
 const char* sh_name;
@@ -95,11 +115,9 @@ main(int argc, char** argv, char** envp) {
   sh_no_position = 0;
 
   /* parse command line arguments */
-  while((c = shell_getopt(argc, argv, "c:xeo:q:w:l:Pr:")) > 0)
+  while((c = shell_getopt(argc, argv, "c:o:q:w:Pr:")) > 0)
     switch(c) {
       case 'c': cmds = shell_optarg; break;
-      case 'x': sh->opts.xtrace = 1; break;
-      case 'e': sh->opts.errexit = 1; break;
       case 'P': sh_no_position = 1; break;
       case 'o': debug_buffer.fd = open_trunc(shell_optarg); break;
       case 'w': scan_int(shell_optarg, &debug_nindent); break;
@@ -110,22 +128,7 @@ main(int argc, char** argv, char** envp) {
         debug_emit_loc = str_diff(shell_optarg, "range") != 0;
         debug_emit_range = str_diff(shell_optarg, "loc") != 0;
         break;
-      default:
-        sh_usage();
-
-        buffer_puts(fd_err->w,
-                    "\n"
-                    "  -c CMDS     Read the commands from the first arg\n"
-                    "  -e          Exit on error\n"
-                    "  -x          Debug\n"
-                    "  -P          Suppress position information\n"
-                    "  -o FILE     Output file\n"
-                    "  -w NUM      Indent num spaces\n"
-                    "  -q CHAR     Quote char\n"
-                    "  -r MODE     Position field(s): loc, range, or both (default loc)\n");
-
-        buffer_flush(fd_err->w);
-        return 1;
+      default: ast_usage(); return 1;
     }
 
   for(i = 0; i < indent_width; i++)
