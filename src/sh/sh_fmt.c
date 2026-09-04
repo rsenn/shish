@@ -185,10 +185,11 @@ main(int argc, char** argv, char** envp) {
       if(list)
         tree_cat(list, &cmd);
 
-      if(!(p.tok & (T_NL | T_SEMI | T_BGND))) {
-        /* we have a parse error */
-        if(p.tok != T_EOF)
-          parse_error(&p, 0);
+      if(!(p.tok & (T_NL | T_SEMI | T_BGND)) && p.tok != T_EOF) {
+        /* a genuine syntax error -- a clean T_EOF right after the
+           last command (no trailing separator) is not one, and
+           falls through to be formatted like any other line. */
+        parse_error(&p, 0);
 
         /* exit if not interactive */
         if(!sh_interactive)

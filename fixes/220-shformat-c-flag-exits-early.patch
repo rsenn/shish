@@ -1,0 +1,46 @@
+diff --git a/src/sh/sh_fmt.c b/src/sh/sh_fmt.c
+index bd397732..e10c8462 100644
+--- a/src/sh/sh_fmt.c
++++ b/src/sh/sh_fmt.c
+@@ -185,10 +185,11 @@ main(int argc, char** argv, char** envp) {
+       if(list)
+         tree_cat(list, &cmd);
+ 
+-      if(!(p.tok & (T_NL | T_SEMI | T_BGND))) {
+-        /* we have a parse error */
+-        if(p.tok != T_EOF)
+-          parse_error(&p, 0);
++      if(!(p.tok & (T_NL | T_SEMI | T_BGND)) && p.tok != T_EOF) {
++        /* a genuine syntax error -- a clean T_EOF right after the
++           last command (no trailing separator) is not one, and
++           falls through to be formatted like any other line. */
++        parse_error(&p, 0);
+ 
+         /* exit if not interactive */
+         if(!sh_interactive)
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 3269262c..dca4038f 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -4664,4 +4664,21 @@ fi
+ ## redir_source, which the parser genuinely needs to build redirect
+ ## nodes); stripped text size dropped from ~261 KB to ~76 KB.
+ 
++## fixes/220: `shformat -c 'script'` printed nothing and exited 1 for
++## any syntactically valid script, while the equivalent file input
++## worked -- the same "genuine syntax error" vs. "clean EOF right
++## after the last command" conflation fixes/218 fixed in sh_loop.c
++## (both leave p.tok == T_EOF) was still present, unfixed, in
++## sh_fmt.c's own copy of this check. A "-c" string with no trailing
++## newline/semicolon always ends this way, so it always hit the
++## non-interactive exit(1) path before ever reaching the
++## buffer_putsa() that would have printed the formatted output. Now
++## gated on p.tok != T_EOF like sh_loop.c, so a clean end-of-input
++## falls through and is formatted normally. Like fixes/219 above,
++## this can only be exercised through the separate shformat binary
++## (see fixes/61's own note above on why tests/fixed.sh doesn't do
++## that), so it's verified by direct invocation instead:
++##   shformat -c 'echo hello'            # now prints "echo hello", exit 0
++##   shformat -c 'if [ 1 = 1 ]; then'    # still reports the syntax error, exit 1
++
+ summary

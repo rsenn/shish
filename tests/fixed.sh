@@ -4664,4 +4664,21 @@ fi
 ## redir_source, which the parser genuinely needs to build redirect
 ## nodes); stripped text size dropped from ~261 KB to ~76 KB.
 
+## fixes/220: `shformat -c 'script'` printed nothing and exited 1 for
+## any syntactically valid script, while the equivalent file input
+## worked -- the same "genuine syntax error" vs. "clean EOF right
+## after the last command" conflation fixes/218 fixed in sh_loop.c
+## (both leave p.tok == T_EOF) was still present, unfixed, in
+## sh_fmt.c's own copy of this check. A "-c" string with no trailing
+## newline/semicolon always ends this way, so it always hit the
+## non-interactive exit(1) path before ever reaching the
+## buffer_putsa() that would have printed the formatted output. Now
+## gated on p.tok != T_EOF like sh_loop.c, so a clean end-of-input
+## falls through and is formatted normally. Like fixes/219 above,
+## this can only be exercised through the separate shformat binary
+## (see fixes/61's own note above on why tests/fixed.sh doesn't do
+## that), so it's verified by direct invocation instead:
+##   shformat -c 'echo hello'            # now prints "echo hello", exit 0
+##   shformat -c 'if [ 1 = 1 ]; then'    # still reports the syntax error, exit 1
+
 summary
