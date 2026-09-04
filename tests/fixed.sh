@@ -4643,4 +4643,25 @@ if [ -n "$X218_SELF" ] && [ -x "$X218_SELF" ]; then
   assert_equal "1" "$?" "a syntax error in a -c command string must exit nonzero, not 0"
 fi
 
+## fixes/219: shformat and shparse2ast (parser/formatter-only tools that
+## never execute a command) statically linked the *entire* interpreter --
+## eval/exec/builtin/job/redir, ~522 symbols -- because parse_simpletok.c
+## called prompt_show() directly (pulling in term_*/job_*/builtin_trap.c.o
+## -> eval_tree.c.o -> exec_*/builtin_table) and parse_error.c called
+## sh_exit() directly (pulling in the same chain via trap_exit/eval_exit).
+## Both are now indirect calls through parse_prompt_hook/parse_exit_hook
+## function pointers (src/parse/parse_hooks.c, src/parse.h), left unset by
+## shformat/shparse2ast and set by sh_main.c for the real shell -- so the
+## linker no longer has a reason to pull the interpreter into either tool.
+## This has no user-visible effect on `shish` itself (already covered by
+## the interactive PS2-prompt path and by fixes/217/218's own assertions
+## above, which exercise parse_exit_hook indirectly) and is not something
+## a tests/*.sh script can assert -- ctest only runs scripts through the
+## `shish` binary, never through `shformat`/`shparse2ast` (see CMakeLists
+## test registration). Verified instead by build + `nm`/`size`:
+##   nm shformat | grep " T " | grep -icE "exec_|eval_|builtin_|job_|redir_"
+## dropped from 100 to 3 (the 3 remaining are redir_parse/redir_addhere/
+## redir_source, which the parser genuinely needs to build redirect
+## nodes); stripped text size dropped from ~261 KB to ~76 KB.
+
 summary

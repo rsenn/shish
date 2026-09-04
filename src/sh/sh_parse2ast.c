@@ -37,6 +37,7 @@ int out_fd = 1;
 buffer out_buf;
 
 int sh_no_position = 0;
+int sh_interactive = 0;
 
 /* main routine
  * ----------------------------------------------------------------------- */

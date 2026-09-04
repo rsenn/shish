@@ -11,20 +11,28 @@ int debug_nindent = 2;
 
 extern int sh_no_position;
 
-/* debugs a tree node!
- * ----------------------------------------------------------------------- */
+/* JSON "kind" names, one per union node/arithmetic-op enum value (tree.h).
+ * Command-tree nodes are named after POSIX Shell Command Language (2.10)
+ * grammar rules; arithmetic-expression nodes (which POSIX defers to C's
+ * grammar for) get plain descriptive lower_snake_case names instead. */
 const char* debug_nodes[] = {
-    "N_SIMPLECMD", "N_PIPELINE",   "N_AND",        "N_OR",        "N_NOT",      "N_LIST",
-    "N_SUBSHELL",  "N_BRACEGROUP", "N_FOR",        "N_CASE",      "N_CASENODE", "N_IF",
-    "N_WHILE",     "N_UNTIL",      "N_FUNCTION",   "N_ARG",       "N_ASSIGN",   "N_REDIR",
-    "N_ARGSTR",    "N_ARGCMD",     "N_ARGPARAM",   "N_ARGARITH",  "A_NUM",      "A_PAREN",
-    "A_TERNARY",   "A_OR",         "A_AND",        "A_BITOR",     "A_BITXOR",   "A_BITAND",
-    "A_EQ",        "A_NE",         "A_LT",         "A_GT",        "A_GE",       "A_LE",
-    "A_SHL",       "A_SHR",        "A_ADD",        "A_SUB",       "A_MUL",      "A_DIV",
-    "A_MOD",       "A_EXP",        "A_UNARYMINUS", "A_UNARYPLUS", "A_NOT",      "A_BNOT",
-    "A_PREDECR",   "A_PREINCR",    "A_POSTDECR",   "A_POSTINCR",  "A_VASSIGN",  "A_VADD",
-    "A_VSUB",      "A_VMUL",       "A_VDIV",       "A_VMOD",      "A_VSHL",     "A_VSHR",
-    "A_VBITAND",   "A_VBITXOR",    "A_VBITOR",
+    "simple_command",       "pipeline",       "and",                   "or",
+    "not",                  "list",           "subshell",              "brace_group",
+    "for_clause",           "case_clause",    "case_item",             "if_clause",
+    "while_clause",         "until_clause",   "function_definition",   "word",
+    "assignment",           "redirect",       "string",                "command_substitution",
+    "parameter_expansion",  "arithmetic_expansion",
+    "number",               "paren_expr",     "conditional_expr",      "logical_or",
+    "logical_and",          "bitwise_or",     "bitwise_xor",           "bitwise_and",
+    "equal",                "not_equal",      "less_than",             "greater_than",
+    "greater_equal",        "less_equal",     "shift_left",            "shift_right",
+    "add",                  "subtract",       "multiply",              "divide",
+    "modulo",               "exponent",       "unary_minus",           "unary_plus",
+    "logical_not",          "bitwise_not",    "pre_decrement",         "pre_increment",
+    "post_decrement",       "post_increment", "assign",                "add_assign",
+    "sub_assign",           "mul_assign",     "div_assign",            "mod_assign",
+    "shl_assign",           "shr_assign",     "and_assign",            "xor_assign",
+    "or_assign",
 };
 
 void

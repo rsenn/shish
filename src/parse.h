@@ -274,6 +274,20 @@ extern struct alias* parse_aliases;
 extern unsigned int parse_lineno;
 extern struct token parse_tokens[];
 
+/* PS2 continuation-prompt callback, or 0 for none.
+ * Set by an interactive shell entry point (sh_main.c) to prompt_show();
+ * left unset by parser-only tools (shformat, shparse2ast) so the parser
+ * carries no link-time dependency on the terminal/prompt subsystem. */
+extern void (*parse_prompt_hook)(void);
+
+/* Syntax-error exit callback, or 0 to fall back to a plain exit(1).
+ * Set by an interactive shell entry point (sh_main.c) to sh_exit(), which
+ * unwinds subshell/source frames instead of killing the process outright.
+ * Left unset by parser-only tools (shformat, shparse2ast), which have no
+ * such frames and no need to link the eval/exec/trap machinery sh_exit()
+ * pulls in. */
+extern void (*parse_exit_hook)(int);
+
 static inline char*
 alias_code(struct alias* a, size_t* len) {
   if(len)

@@ -1,0 +1,207 @@
+diff --git a/src/debug/debug_node.c b/src/debug/debug_node.c
+index 545add52..cdab0464 100644
+--- a/src/debug/debug_node.c
++++ b/src/debug/debug_node.c
+@@ -11,20 +11,28 @@ int debug_nindent = 2;
+ 
+ extern int sh_no_position;
+ 
+-/* debugs a tree node!
+- * ----------------------------------------------------------------------- */
++/* JSON "kind" names, one per union node/arithmetic-op enum value (tree.h).
++ * Command-tree nodes are named after POSIX Shell Command Language (2.10)
++ * grammar rules; arithmetic-expression nodes (which POSIX defers to C's
++ * grammar for) get plain descriptive lower_snake_case names instead. */
+ const char* debug_nodes[] = {
+-    "N_SIMPLECMD", "N_PIPELINE",   "N_AND",        "N_OR",        "N_NOT",      "N_LIST",
+-    "N_SUBSHELL",  "N_BRACEGROUP", "N_FOR",        "N_CASE",      "N_CASENODE", "N_IF",
+-    "N_WHILE",     "N_UNTIL",      "N_FUNCTION",   "N_ARG",       "N_ASSIGN",   "N_REDIR",
+-    "N_ARGSTR",    "N_ARGCMD",     "N_ARGPARAM",   "N_ARGARITH",  "A_NUM",      "A_PAREN",
+-    "A_TERNARY",   "A_OR",         "A_AND",        "A_BITOR",     "A_BITXOR",   "A_BITAND",
+-    "A_EQ",        "A_NE",         "A_LT",         "A_GT",        "A_GE",       "A_LE",
+-    "A_SHL",       "A_SHR",        "A_ADD",        "A_SUB",       "A_MUL",      "A_DIV",
+-    "A_MOD",       "A_EXP",        "A_UNARYMINUS", "A_UNARYPLUS", "A_NOT",      "A_BNOT",
+-    "A_PREDECR",   "A_PREINCR",    "A_POSTDECR",   "A_POSTINCR",  "A_VASSIGN",  "A_VADD",
+-    "A_VSUB",      "A_VMUL",       "A_VDIV",       "A_VMOD",      "A_VSHL",     "A_VSHR",
+-    "A_VBITAND",   "A_VBITXOR",    "A_VBITOR",
++    "simple_command",       "pipeline",       "and",                   "or",
++    "not",                  "list",           "subshell",              "brace_group",
++    "for_clause",           "case_clause",    "case_item",             "if_clause",
++    "while_clause",         "until_clause",   "function_definition",   "word",
++    "assignment",           "redirect",       "string",                "command_substitution",
++    "parameter_expansion",  "arithmetic_expansion",
++    "number",               "paren_expr",     "conditional_expr",      "logical_or",
++    "logical_and",          "bitwise_or",     "bitwise_xor",           "bitwise_and",
++    "equal",                "not_equal",      "less_than",             "greater_than",
++    "greater_equal",        "less_equal",     "shift_left",            "shift_right",
++    "add",                  "subtract",       "multiply",              "divide",
++    "modulo",               "exponent",       "unary_minus",           "unary_plus",
++    "logical_not",          "bitwise_not",    "pre_decrement",         "pre_increment",
++    "post_decrement",       "post_increment", "assign",                "add_assign",
++    "sub_assign",           "mul_assign",     "div_assign",            "mod_assign",
++    "shl_assign",           "shr_assign",     "and_assign",            "xor_assign",
++    "or_assign",
+ };
+ 
+ void
+diff --git a/src/parse.h b/src/parse.h
+index d24902f0..53dd9d69 100644
+--- a/src/parse.h
++++ b/src/parse.h
+@@ -274,6 +274,20 @@ extern struct alias* parse_aliases;
+ extern unsigned int parse_lineno;
+ extern struct token parse_tokens[];
+ 
++/* PS2 continuation-prompt callback, or 0 for none.
++ * Set by an interactive shell entry point (sh_main.c) to prompt_show();
++ * left unset by parser-only tools (shformat, shparse2ast) so the parser
++ * carries no link-time dependency on the terminal/prompt subsystem. */
++extern void (*parse_prompt_hook)(void);
++
++/* Syntax-error exit callback, or 0 to fall back to a plain exit(1).
++ * Set by an interactive shell entry point (sh_main.c) to sh_exit(), which
++ * unwinds subshell/source frames instead of killing the process outright.
++ * Left unset by parser-only tools (shformat, shparse2ast), which have no
++ * such frames and no need to link the eval/exec/trap machinery sh_exit()
++ * pulls in. */
++extern void (*parse_exit_hook)(int);
++
+ static inline char*
+ alias_code(struct alias* a, size_t* len) {
+   if(len)
+diff --git a/src/parse/parse_error.c b/src/parse/parse_error.c
+index b07926eb..f398e2d5 100644
+--- a/src/parse/parse_error.c
++++ b/src/parse/parse_error.c
+@@ -5,6 +5,7 @@
+ #include "../source.h"
+ #include "../tree.h"
+ #include "../debug.h"
++#include <stdlib.h>
+ 
+ /* parse error message
+  * ----------------------------------------------------------------------- */
+@@ -58,13 +59,18 @@ parse_error(struct parser* p, enum tok_flag toks) {
+        command" once both collapse to the same T_EOF token) while
+        also wrongly killing an interactive shell outright for a
+        syntax error in a `.`-sourced file.
+-       sh_exit() unwinds subshell frames properly, unlike a raw
+-       exit(1) -- needed so a syntax error while parsing a sourced
+-       file from inside a subshell/$(...)/`.` unwinds to the nearest
+-       enclosing subshell/source instead of killing the whole
+-       process. */
+-    if(!sh_interactive)
+-      sh_exit(1);
++       parse_exit_hook (sh_exit() in a real shell) unwinds subshell
++       frames properly, unlike a raw exit(1) -- needed so a syntax
++       error while parsing a sourced file from inside a
++       subshell/$(...)/`.` unwinds to the nearest enclosing
++       subshell/source instead of killing the whole process. A
++       parser-only tool (shformat, shparse2ast) leaves the hook unset
++       and gets the plain exit(1) fallback instead. */
++    if(!sh_interactive) {
++      if(parse_exit_hook)
++        parse_exit_hook(1);
++      exit(1);
++    }
+   }
+ 
+   return NULL;
+diff --git a/src/parse/parse_hooks.c b/src/parse/parse_hooks.c
+new file mode 100644
+index 00000000..68e42f77
+--- /dev/null
++++ b/src/parse/parse_hooks.c
+@@ -0,0 +1,4 @@
++#include "../parse.h"
++
++void (*parse_prompt_hook)(void) = 0;
++void (*parse_exit_hook)(int) = 0;
+diff --git a/src/parse/parse_simpletok.c b/src/parse/parse_simpletok.c
+index 171635c8..0bb19039 100644
+--- a/src/parse/parse_simpletok.c
++++ b/src/parse/parse_simpletok.c
+@@ -1,5 +1,4 @@
+ #include "../parse.h"
+-#include "../prompt.h"
+ #include "../source.h"
+ #include "../tree.h"
+ 
+@@ -70,9 +69,8 @@ parse_simpletok(struct parser* p) {
+           if(c == '\n')
+             parse_skip(p);
+           source_skip();
+-#if !defined(SHFORMAT) && !defined(SHPARSE2AST)
+-          prompt_show();
+-#endif
++          if(parse_prompt_hook)
++            parse_prompt_hook();
+           continue;
+         }
+ 
+diff --git a/src/sh/sh_main.c b/src/sh/sh_main.c
+index 8ba928b1..5abe812e 100644
+--- a/src/sh/sh_main.c
++++ b/src/sh/sh_main.c
+@@ -339,6 +339,11 @@ main(int argc, char** argv) {
+ 
+   source_push(&src);
+ 
++  /* a syntax error must unwind subshell/source frames via sh_exit()
++     regardless of interactivity -- only the PS2 prompt below is
++     interactivity-specific. */
++  parse_exit_hook = sh_exit;
++
+   {
+     /* "-i" forces interactive behavior on even without a real
+        terminal, but term_init() still only succeeds against an actual
+@@ -349,6 +354,7 @@ main(int argc, char** argv) {
+     if(have_term || (force_interactive && !no_interactive)) {
+       src.mode |= SOURCE_IACTIVE;
+       sh_interactive = 1;
++      parse_prompt_hook = prompt_show;
+ 
+ #if !WINDOWS_NATIVE
+       /* monitor mode drives setpgid()/tcsetpgrp() (job_fork.c,
+diff --git a/src/sh/sh_parse2ast.c b/src/sh/sh_parse2ast.c
+index 5bae0e6d..c7b314ba 100644
+--- a/src/sh/sh_parse2ast.c
++++ b/src/sh/sh_parse2ast.c
+@@ -37,6 +37,7 @@ int out_fd = 1;
+ buffer out_buf;
+ 
+ int sh_no_position = 0;
++int sh_interactive = 0;
+ 
+ /* main routine
+  * ----------------------------------------------------------------------- */
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 27390de4..3269262c 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -4643,4 +4643,25 @@ if [ -n "$X218_SELF" ] && [ -x "$X218_SELF" ]; then
+   assert_equal "1" "$?" "a syntax error in a -c command string must exit nonzero, not 0"
+ fi
+ 
++## fixes/219: shformat and shparse2ast (parser/formatter-only tools that
++## never execute a command) statically linked the *entire* interpreter --
++## eval/exec/builtin/job/redir, ~522 symbols -- because parse_simpletok.c
++## called prompt_show() directly (pulling in term_*/job_*/builtin_trap.c.o
++## -> eval_tree.c.o -> exec_*/builtin_table) and parse_error.c called
++## sh_exit() directly (pulling in the same chain via trap_exit/eval_exit).
++## Both are now indirect calls through parse_prompt_hook/parse_exit_hook
++## function pointers (src/parse/parse_hooks.c, src/parse.h), left unset by
++## shformat/shparse2ast and set by sh_main.c for the real shell -- so the
++## linker no longer has a reason to pull the interpreter into either tool.
++## This has no user-visible effect on `shish` itself (already covered by
++## the interactive PS2-prompt path and by fixes/217/218's own assertions
++## above, which exercise parse_exit_hook indirectly) and is not something
++## a tests/*.sh script can assert -- ctest only runs scripts through the
++## `shish` binary, never through `shformat`/`shparse2ast` (see CMakeLists
++## test registration). Verified instead by build + `nm`/`size`:
++##   nm shformat | grep " T " | grep -icE "exec_|eval_|builtin_|job_|redir_"
++## dropped from 100 to 3 (the 3 remaining are redir_parse/redir_addhere/
++## redir_source, which the parser genuinely needs to build redirect
++## nodes); stripped text size dropped from ~261 KB to ~76 KB.
++
+ summary

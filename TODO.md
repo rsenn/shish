@@ -1170,6 +1170,19 @@ image pick. Largest single builtins, text+data of the object:
 advertises itself for sandboxes should not reserve 155 KB of signal
 stack. Worth a look after the above.
 
+### 5.7 `shformat`/`shparse2ast` linked the entire interpreter -- **done ([[fixes/219]])**
+
+Neither tool ever executes a command, but both statically linked
+eval/exec/builtin/job/redir anyway (~522 unwanted symbols) because
+`parse_simpletok.c` called `prompt_show()` and `parse_error.c` called
+`sh_exit()` directly. Both are now indirect calls through
+`parse_prompt_hook`/`parse_exit_hook` function pointers
+(`src/parse/parse_hooks.c`), left unset by `shformat`/`shparse2ast` and
+set by `sh_main.c` for the real shell. Stripped text size:
+`shformat` 261 KB -> 76 KB, `shparse2ast` 277 KB -> 82 KB. This is the
+prerequisite for shipping either as a small WASM module -- see
+`doc/wasm-playground-plan.md`.
+
 ### Blockers found while measuring
 
 - `BUGS: no-tree-print-option-is-a-noop` -- an existing size knob that

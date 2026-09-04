@@ -339,6 +339,11 @@ main(int argc, char** argv) {
 
   source_push(&src);
 
+  /* a syntax error must unwind subshell/source frames via sh_exit()
+     regardless of interactivity -- only the PS2 prompt below is
+     interactivity-specific. */
+  parse_exit_hook = sh_exit;
+
   {
     /* "-i" forces interactive behavior on even without a real
        terminal, but term_init() still only succeeds against an actual
@@ -349,6 +354,7 @@ main(int argc, char** argv) {
     if(have_term || (force_interactive && !no_interactive)) {
       src.mode |= SOURCE_IACTIVE;
       sh_interactive = 1;
+      parse_prompt_hook = prompt_show;
 
 #if !WINDOWS_NATIVE
       /* monitor mode drives setpgid()/tcsetpgrp() (job_fork.c,

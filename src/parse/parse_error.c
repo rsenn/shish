@@ -5,6 +5,7 @@
 #include "../source.h"
 #include "../tree.h"
 #include "../debug.h"
+#include <stdlib.h>
 
 /* parse error message
  * ----------------------------------------------------------------------- */
@@ -58,13 +59,18 @@ parse_error(struct parser* p, enum tok_flag toks) {
        command" once both collapse to the same T_EOF token) while
        also wrongly killing an interactive shell outright for a
        syntax error in a `.`-sourced file.
-       sh_exit() unwinds subshell frames properly, unlike a raw
-       exit(1) -- needed so a syntax error while parsing a sourced
-       file from inside a subshell/$(...)/`.` unwinds to the nearest
-       enclosing subshell/source instead of killing the whole
-       process. */
-    if(!sh_interactive)
-      sh_exit(1);
+       parse_exit_hook (sh_exit() in a real shell) unwinds subshell
+       frames properly, unlike a raw exit(1) -- needed so a syntax
+       error while parsing a sourced file from inside a
+       subshell/$(...)/`.` unwinds to the nearest enclosing
+       subshell/source instead of killing the whole process. A
+       parser-only tool (shformat, shparse2ast) leaves the hook unset
+       and gets the plain exit(1) fallback instead. */
+    if(!sh_interactive) {
+      if(parse_exit_hook)
+        parse_exit_hook(1);
+      exit(1);
+    }
   }
 
   return NULL;

@@ -1,5 +1,4 @@
 #include "../parse.h"
-#include "../prompt.h"
 #include "../source.h"
 #include "../tree.h"
 
@@ -70,9 +69,8 @@ parse_simpletok(struct parser* p) {
           if(c == '\n')
             parse_skip(p);
           source_skip();
-#if !defined(SHFORMAT) && !defined(SHPARSE2AST)
-          prompt_show();
-#endif
+          if(parse_prompt_hook)
+            parse_prompt_hook();
           continue;
         }
 
