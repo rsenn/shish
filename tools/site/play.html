@@ -107,6 +107,22 @@ echo "average: $avg"</textarea>
       <button id="ast-rename-btn" class="btn" disabled>rename</button>
     </div>
     <textarea id="ast-renamed" class="playsrc term" readonly spellcheck="false" hidden></textarea>
+
+    <label for="ast-visitor">custom visitor</label>
+    <textarea id="ast-visitor" class="playsrc" spellcheck="false" autocapitalize="off" autocorrect="off">/* function(ast, source, ShutilClient) -- called on the script parsed above.
+   Return either a new source string, or an array of
+   {offset, length, text} edits (applied via ShutilClient.spliceEdits). */
+var edits = [];
+ShutilClient.walk(ast, function (node) {
+  if (node.kind === 'parameter_expansion' && Array.isArray(node.range))
+    edits.push({ offset: node.range[0], length: node.name.length, text: node.name + '_x' });
+});
+return edits;</textarea>
+    <div class="playbar">
+      <button id="ast-visitor-run" class="btn">run visitor</button>
+      <span id="ast-visitor-status" class="fineprint"></span>
+    </div>
+    <textarea id="ast-visitor-out" class="playsrc term" readonly spellcheck="false" hidden></textarea>
   </div>
   <div class="playcol">
     <label for="ast-tree">AST (click a node to collapse it)</label>
@@ -266,6 +282,10 @@ echo "average: $avg"</textarea>
   var astOldName = document.getElementById('ast-rename-old');
   var astNewName = document.getElementById('ast-rename-new');
   var astRenameBtn = document.getElementById('ast-rename-btn');
+  var astVisitorCode = document.getElementById('ast-visitor');
+  var astVisitorBtn = document.getElementById('ast-visitor-run');
+  var astVisitorStatus = document.getElementById('ast-visitor-status');
+  var astVisitorOut = document.getElementById('ast-visitor-out');
   var astState = { source: '', ast: null };
 
   function renderAstNode(node) {
@@ -285,10 +305,21 @@ echo "average: $avg"</textarea>
     details.open = true;
 
     var summary = document.createElement('summary');
-    var label = node.kind || '(node)';
-    if (typeof node.name === 'string') label += ' ' + node.name;
-    if (typeof node.stra === 'string') label += ' ' + JSON.stringify(node.stra);
-    summary.textContent = label;
+    summary.appendChild(document.createTextNode(node.kind || '(node)'));
+    if (typeof node.name === 'string') {
+      summary.appendChild(document.createTextNode(' '));
+      var nameEl = document.createElement('span');
+      nameEl.className = 't-var';
+      nameEl.textContent = node.name;
+      summary.appendChild(nameEl);
+    }
+    if (typeof node.stra === 'string') {
+      summary.appendChild(document.createTextNode(' '));
+      var strEl = document.createElement('span');
+      strEl.className = 't-string';
+      strEl.textContent = JSON.stringify(node.stra);
+      summary.appendChild(strEl);
+    }
     details.appendChild(summary);
 
     var body = document.createElement('div');
@@ -356,6 +387,41 @@ echo "average: $avg"</textarea>
         astStatus.textContent = check.result.ok
           ? 'renamed "' + oldName + '" -> "' + newName + '" (re-parses OK)'
           : 'renamed script no longer parses: ' + (check.stderr || 'syntax error');
+      });
+
+      astVisitorBtn.addEventListener('click', function () {
+        if (!astState.ast) {
+          astVisitorStatus.textContent = 'parse a script first';
+          return;
+        }
+
+        var source = astState.source, ast = astState.ast, result;
+        try {
+          var visit = new Function('ast', 'source', 'ShutilClient', astVisitorCode.value);
+          result = visit(ast, source, ShutilClient);
+        } catch (e) {
+          astVisitorOut.hidden = true;
+          astVisitorStatus.textContent = 'visitor threw: ' + e.message;
+          return;
+        }
+
+        var text = typeof result === 'string' ? result
+          : Array.isArray(result) ? ShutilClient.spliceEdits(source, result)
+          : null;
+
+        if (text === null) {
+          astVisitorOut.hidden = true;
+          astVisitorStatus.textContent = 'visitor must return a string or an array of edits';
+          return;
+        }
+
+        var check = withShutil(shutil, function (s) { return s.format(text); });
+        astVisitorOut.hidden = false;
+        astVisitorOut.value = text;
+        astVisitorOut.classList.toggle('bad', !check.result.ok);
+        astVisitorStatus.textContent = check.result.ok
+          ? 'ok (output re-parses)'
+          : 'output no longer parses: ' + (check.stderr || 'syntax error');
       });
     });
   }

@@ -119,13 +119,17 @@ window.ShutilClient = (function () {
     return edits;
   }
 
-  /** Applies {offset, length} edits to `source`, highest offset first. */
+  /** Applies {offset, length, text} edits to `source`, highest offset first.
+   * An edit without its own `text` falls back to the `text` argument, so a
+   * single-replacement caller (renameVar below) can still pass one string
+   * for every edit instead of repeating it on each edit object. */
   function spliceEdits(source, edits, text) {
     var sorted = edits.slice().sort(function (a, b) { return b.offset - a.offset; });
     var out = source;
     for (var i = 0; i < sorted.length; i++) {
       var e = sorted[i];
-      out = out.slice(0, e.offset) + text + out.slice(e.offset + e.length);
+      var repl = e.text !== undefined ? e.text : text;
+      out = out.slice(0, e.offset) + repl + out.slice(e.offset + e.length);
     }
     return out;
   }
