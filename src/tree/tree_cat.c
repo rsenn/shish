@@ -338,7 +338,7 @@ again:
     }
 
     case N_LIST: {
-      tree_catlist(node->nlist.cmds, sa, node->nlist.bgnd ? " & " : "; ");
+      tree_catlist_n(node->nlist.cmds, sa, node->nlist.bgnd ? " & " : "; ", depth);
       break;
     }
 

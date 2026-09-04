@@ -4716,4 +4716,28 @@ fi
 ##   shparse2ast -e        # now rejected (was silently accepted)
 ##   shformat -h           # prints only shformat's own options, not shish's
 
+## fixes/223: tree_cat.c's N_LIST case (a ";"-joined command sequence,
+## e.g. "x=1; if ...; fi") printed its members through tree_catlist(),
+## which always starts at depth 0, instead of tree_catlist_n() with the
+## depth it was itself called at. Any ";"-joined sequence nested below
+## depth 0 (a function body, a loop/if/case body, ...) therefore had its
+## own nested compounds re-indented as if they were back at the top
+## level: a "then"/"do"/"case" body one indent level too shallow, and the
+## closing "fi"/"done"/"esac" at column 0 regardless of actual nesting.
+## Reproducible through plain "shish" (not just shformat) via any code
+## path that reconstructs source from the parsed tree, e.g. a bare "set"
+## printing a defined function's body.
+X223_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
+
+if [ -n "$X223_SELF" ] && [ -x "$X223_SELF" ]; then
+  X223=$("$X223_SELF" -c 'f() { x=1; if [ "$x" = 1 ]; then echo yes; fi; }; set' | sed -n '/^f() {/,/^}/p')
+  X223_EXPECT='f() {
+  x=1; if [ "$x" = 1 ]; then
+    echo yes
+  fi;
+}'
+  assert_equal "$X223_EXPECT" "$X223" \
+    "a ;-joined sequence nested inside a function body must keep its own compound's body/closing-keyword indented at the function's depth, not reset to column 0"
+fi
+
 summary
