@@ -333,6 +333,27 @@ pre code { background: none; border: 0; padding: 0; font-size: 0.875rem; }
 .playtab:hover { color: var(--fg); border-color: var(--accent); }
 .playtab.active { color: #fff; background: var(--accent); border-color: var(--accent); }
 
+.rename-label { font-size: 0.8rem; color: var(--fg-faint); }
+.playbar input[type="text"] {
+  font: 0.85rem var(--mono);
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-code);
+  color: var(--fg);
+}
+
+.asttree {
+  overflow: auto;
+  font-size: 0.8rem;
+  padding: 0.75rem;
+}
+.asttree summary { cursor: pointer; color: var(--accent); }
+.asttree .astbody { margin-left: 1.1rem; border-left: 1px dashed var(--line); padding-left: 0.6rem; }
+.asttree .astrow { margin: 0.15rem 0; }
+.asttree .astkey { color: var(--fg-faint); margin-right: 0.3rem; }
+.asttree .astleaf { color: var(--fg-soft); }
+
 /* ------------------------------------------------------------ highlighting */
 
 .t-comment { color: var(--fg-faint); font-style: italic; }

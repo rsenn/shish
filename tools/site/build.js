@@ -249,6 +249,7 @@ function buildPlayground() {
   copy(WASM_DIR + '/shish.wasm', OUT + '/assets/shish.wasm');
   copy(WASM_DIR + '/shutil.js', OUT + '/assets/shutil.js');
   copy(WASM_DIR + '/shutil.wasm', OUT + '/assets/shutil.wasm');
+  copy(SELF + '/shutil-client.js', OUT + '/assets/shutil-client.js');
 }
 
 const SELF = dirname(import.meta.url.replace(/^file:\/\//, '')) || '.';

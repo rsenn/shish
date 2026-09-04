@@ -8,6 +8,7 @@
 <div class="playtabs">
   <button class="playtab active" data-panel="run">Run</button>
   <button class="playtab" data-panel="format">Format</button>
+  <button class="playtab" data-panel="ast">AST</button>
 </div>
 
 <div class="playgrid" id="panel-run">
@@ -84,6 +85,44 @@ deploy   production</textarea>
   </div>
 </div>
 
+<div class="playgrid" id="panel-ast" hidden>
+  <div class="playcol">
+    <label for="ast-in">script</label>
+    <textarea id="ast-in" class="playsrc" spellcheck="false" autocapitalize="off" autocorrect="off">total=0
+for n in 10 20 30; do
+  total=$((total + n))
+done
+echo "total: ${total}"
+avg=$((total / 3))
+echo "average: $avg"</textarea>
+    <div class="playbar">
+      <button id="ast-run" class="btn primary" disabled>loading shutil.wasm…</button>
+      <span id="ast-status" class="fineprint"></span>
+    </div>
+    <div class="playbar">
+      <label for="ast-rename-old" class="rename-label">rename</label>
+      <input id="ast-rename-old" type="text" size="10" placeholder="old name">
+      <span>→</span>
+      <input id="ast-rename-new" type="text" size="10" placeholder="new name">
+      <button id="ast-rename-btn" class="btn" disabled>rename</button>
+    </div>
+    <textarea id="ast-renamed" class="playsrc term" readonly spellcheck="false" hidden></textarea>
+  </div>
+  <div class="playcol">
+    <label for="ast-tree">AST (click a node to collapse it)</label>
+    <div id="ast-tree" class="term asttree"></div>
+    <p class="fineprint">This is <code>shparse2ast</code>'s JSON tree — node
+       names are POSIX Shell Command Language grammar rules, not shish's
+       internal C enum names. "rename" is a visitor over this same JSON:
+       it finds the declaring assignment and every <code>$name</code>/
+       <code>${name}</code> reference (using each node's <code>loc</code>),
+       then splices the new name into the <b>original source text</b> —
+       nothing is re-generated from the tree, so formatting outside the
+       renamed spans is untouched.</p>
+  </div>
+</div>
+
+<script src="assets/shutil-client.js"></script>
 <script>
 (function () {
   var out = document.getElementById('output');
@@ -137,23 +176,49 @@ deploy   production</textarea>
       '<span class="exit' + (status ? ' bad' : '') + '">exit ' + status + ' · ' + ms + ' ms</span>');
   });
 
+  /* -- shared shutil.wasm instance for the Format and AST tabs -- */
+  var shutilPromise = null;
+  var shutilStderr = '';
+
+  function getShutil() {
+    if (!shutilPromise) {
+      shutilPromise = ShutilClient.loadShutil(function (m) { shutilStderr += m + '\n'; });
+    }
+    return shutilPromise;
+  }
+
+  /* runs `fn(shutil)`, capturing whatever it prints to stderr into
+   * `shutilStderr` for the duration of the call (calls are synchronous,
+   * so nothing else can interleave). */
+  function withShutil(shutil, fn) {
+    shutilStderr = '';
+    var result = fn(shutil);
+    return { result: result, stderr: shutilStderr.trim() };
+  }
+
   /* -- tab switching -- */
-  var panels = { run: document.getElementById('panel-run'), format: document.getElementById('panel-format') };
-  var tabsLoaded = { format: false };
+  var panels = {
+    run: document.getElementById('panel-run'),
+    format: document.getElementById('panel-format'),
+    ast: document.getElementById('panel-ast'),
+  };
+  var tabsLoaded = { format: false, ast: false };
 
   document.querySelectorAll('.playtab').forEach(function (tab) {
     tab.addEventListener('click', function () {
       document.querySelectorAll('.playtab').forEach(function (t) { t.classList.remove('active'); });
       tab.classList.add('active');
       Object.keys(panels).forEach(function (name) { panels[name].hidden = name !== tab.dataset.panel; });
-      if (tab.dataset.panel === 'format' && !tabsLoaded.format) {
-        tabsLoaded.format = true;
-        loadShutil();
+      var name = tab.dataset.panel;
+      if ((name === 'format' || name === 'ast') && !tabsLoaded[name]) {
+        tabsLoaded[name] = true;
+        if (name === 'format') initFormatTab();
+        else initAstTab();
       }
     });
   });
 
-  /* -- Format tab: lazy-loads assets/shutil.js only on first visit -- */
+  /* -- Format tab -- */
   var fmtIn = document.getElementById('fmt-in');
   var fmtOut = document.getElementById('fmt-out');
   var fmtBtn = document.getElementById('fmt-run');
@@ -172,36 +237,127 @@ deploy   production</textarea>
     });
   });
 
-  function loadShutil() {
-    var stderrBuf = '';
-    var script = document.createElement('script');
-    script.src = 'assets/shutil.js';
-    script.onload = function () {
-      createShutil({ printErr: function (m) { stderrBuf += m + '\n'; } }).then(function (Module) {
-        var format = Module.cwrap('shutil_format', 'number', ['string']);
-        var free = Module.cwrap('shutil_free', null, ['number']);
-        var UTF8ToString = Module.UTF8ToString;
+  function initFormatTab() {
+    getShutil().then(function (shutil) {
+      fmtBtn.disabled = false;
+      fmtBtn.textContent = 'format';
 
-        fmtBtn.disabled = false;
-        fmtBtn.textContent = 'format';
-
-        fmtBtn.addEventListener('click', function () {
-          stderrBuf = '';
-          var ptr = format(fmtIn.value);
-          if (ptr === 0) {
-            fmtOut.value = '';
-            fmtOut.classList.add('bad');
-            document.getElementById('fmt-status').textContent = stderrBuf.trim() || 'syntax error';
-          } else {
-            fmtOut.value = UTF8ToString(ptr);
-            fmtOut.classList.remove('bad');
-            document.getElementById('fmt-status').textContent = fmtStatusText;
-            free(ptr);
-          }
-        });
+      fmtBtn.addEventListener('click', function () {
+        var r = withShutil(shutil, function (s) { return s.format(fmtIn.value); });
+        if (!r.result.ok) {
+          fmtOut.value = '';
+          fmtOut.classList.add('bad');
+          document.getElementById('fmt-status').textContent = r.stderr || 'syntax error';
+        } else {
+          fmtOut.value = r.result.text;
+          fmtOut.classList.remove('bad');
+          document.getElementById('fmt-status').textContent = fmtStatusText;
+        }
       });
-    };
-    document.body.appendChild(script);
+    });
+  }
+
+  /* -- AST tab: collapsible tree explorer + variable-rename demo -- */
+  var astIn = document.getElementById('ast-in');
+  var astTree = document.getElementById('ast-tree');
+  var astStatus = document.getElementById('ast-status');
+  var astBtn = document.getElementById('ast-run');
+  var astRenamed = document.getElementById('ast-renamed');
+  var astOldName = document.getElementById('ast-rename-old');
+  var astNewName = document.getElementById('ast-rename-new');
+  var astRenameBtn = document.getElementById('ast-rename-btn');
+  var astState = { source: '', ast: null };
+
+  function renderAstNode(node) {
+    if (Array.isArray(node)) {
+      var wrap = document.createElement('div');
+      node.forEach(function (n) { wrap.appendChild(renderAstNode(n)); });
+      return wrap;
+    }
+    if (!node || typeof node !== 'object') {
+      var leaf = document.createElement('span');
+      leaf.className = 'astleaf';
+      leaf.textContent = JSON.stringify(node);
+      return leaf;
+    }
+
+    var details = document.createElement('details');
+    details.open = true;
+
+    var summary = document.createElement('summary');
+    var label = node.kind || '(node)';
+    if (typeof node.name === 'string') label += ' ' + node.name;
+    if (typeof node.stra === 'string') label += ' ' + JSON.stringify(node.stra);
+    summary.textContent = label;
+    details.appendChild(summary);
+
+    var body = document.createElement('div');
+    body.className = 'astbody';
+
+    Object.keys(node).forEach(function (k) {
+      if (k === 'kind' || k === 'name' || k === 'stra') return;
+      var row = document.createElement('div');
+      row.className = 'astrow';
+      if (node[k] && typeof node[k] === 'object') {
+        var keyEl = document.createElement('span');
+        keyEl.className = 'astkey';
+        keyEl.textContent = k + ':';
+        row.appendChild(keyEl);
+        row.appendChild(renderAstNode(node[k]));
+      } else {
+        row.textContent = k + ': ' + JSON.stringify(node[k]);
+      }
+      body.appendChild(row);
+    });
+
+    details.appendChild(body);
+    return details;
+  }
+
+  function initAstTab() {
+    getShutil().then(function (shutil) {
+      astBtn.disabled = false;
+      astBtn.textContent = 'parse';
+
+      function doParse() {
+        var source = astIn.value;
+        var r = withShutil(shutil, function (s) { return s.parse(source, 'both'); });
+        astRenamed.hidden = true;
+        if (!r.result.ok) {
+          astTree.textContent = '';
+          astStatus.textContent = r.stderr || 'syntax error';
+          astRenameBtn.disabled = true;
+          astState.ast = null;
+          return;
+        }
+        astState.source = source;
+        astState.ast = r.result.ast;
+        astStatus.textContent = '';
+        astTree.textContent = '';
+        astTree.appendChild(renderAstNode(r.result.ast));
+        astRenameBtn.disabled = false;
+      }
+
+      astBtn.addEventListener('click', doParse);
+      doParse();
+
+      astRenameBtn.addEventListener('click', function () {
+        if (!astState.ast) return;
+        var oldName = astOldName.value.trim();
+        var newName = astNewName.value.trim();
+        if (!oldName || !newName) return;
+
+        var edited = ShutilClient.renameVar(astState.source, astState.ast, oldName, newName);
+        var check = withShutil(shutil, function (s) { return s.format(edited); });
+
+        astRenamed.hidden = false;
+        astRenamed.value = edited;
+        astRenamed.classList.toggle('bad', !check.result.ok);
+        astStatus.textContent = check.result.ok
+          ? 'renamed "' + oldName + '" -> "' + newName + '" (re-parses OK)'
+          : 'renamed script no longer parses: ' + (check.stderr || 'syntax error');
+      });
+    });
   }
 })();
 </script>
