@@ -95,7 +95,7 @@ main(int argc, char** argv, char** envp) {
   sh_no_position = 0;
 
   /* parse command line arguments */
-  while((c = shell_getopt(argc, argv, "c:xeo:q:w:l:P")) > 0)
+  while((c = shell_getopt(argc, argv, "c:xeo:q:w:l:Pr:")) > 0)
     switch(c) {
       case 'c': cmds = shell_optarg; break;
       case 'x': sh->opts.xtrace = 1; break;
@@ -104,6 +104,12 @@ main(int argc, char** argv, char** envp) {
       case 'o': debug_buffer.fd = open_trunc(shell_optarg); break;
       case 'w': scan_int(shell_optarg, &debug_nindent); break;
       case 'q': debug_quote = *optarg; break;
+      case 'r':
+        /* -r loc|range|both: which position field(s) to emit per node
+         * (default: loc only). -P still overrides both to none. */
+        debug_emit_loc = str_diff(shell_optarg, "range") != 0;
+        debug_emit_range = str_diff(shell_optarg, "loc") != 0;
+        break;
       default:
         sh_usage();
 
@@ -115,7 +121,8 @@ main(int argc, char** argv, char** envp) {
                     "  -P          Suppress position information\n"
                     "  -o FILE     Output file\n"
                     "  -w NUM      Indent num spaces\n"
-                    "  -q CHAR     Quote char\n");
+                    "  -q CHAR     Quote char\n"
+                    "  -r MODE     Position field(s): loc, range, or both (default loc)\n");
 
         buffer_flush(fd_err->w);
         return 1;

@@ -23,9 +23,6 @@ parse_param(struct parser* p) {
     parse_skip(p);
   }
 
-  if(source_get(&c) <= 0)
-    return -1;
-
   /* link in a new node: reuse an empty N_ARGSTR node in place instead of
      allocating a fresh one, but only when it's the parser's own
      unquoted "nothing here yet" placeholder -- a quoted empty node
@@ -42,7 +39,13 @@ parse_param(struct parser* p) {
   param->flag = p->quot;
   param->name = NULL;
   param->word = NULL;
+
+  /* captured here, before source_get() below consumes the name's first
+     character -- start of the name, not one character into it. */
   param->loc = source->position;
+
+  if(source_get(&c) <= 0)
+    return -1;
 
   /* '#' as the first char inside ${} is the string-length operator
      only if followed by a valid parameter char; if it's instead an

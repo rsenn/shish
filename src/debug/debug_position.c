@@ -6,6 +6,26 @@
 
 #if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 
+int debug_emit_loc = 1;
+int debug_emit_range = 0;
+
+/* a [start, end) byte-offset pair into the whole script -- no line/col,
+ * no filename, just the two numbers -- for tooling that wants to slice
+ * the original source text directly instead of re-deriving an offset
+ * from a "file:line:col" string.
+ * ----------------------------------------------------------------------- */
+void
+debug_range(const char* msg, size_t start, size_t end, int depth) {
+  if(msg)
+    debug_field(msg, depth);
+  debug_c('[');
+  debug_n(start);
+  debug_c(',');
+  debug_n(end);
+  debug_c(']');
+  debug_fl();
+}
+
 /* ----------------------------------------------------------------------- */
 void
 debug_position(const char* msg, const struct location* pos, int depth) {

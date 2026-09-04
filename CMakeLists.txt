@@ -167,7 +167,7 @@ link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
 file(GLOB LIBSHELL_SOURCES src/*.h src/*/*.c)
 
 list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX
-     "(sh_fmt\\.c|sh_parse2ast\\.c|sh_init\\.c|sh_main\\.c)")
+     "(sh_fmt\\.c|sh_parse2ast\\.c|sh_init\\.c|sh_main\\.c|sh_util_wasm\\.c)")
 
 if(DEBUG_OUTPUT)
   list(

@@ -1,0 +1,259 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index f09c50ea..3728523e 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -167,7 +167,7 @@ link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
+ file(GLOB LIBSHELL_SOURCES src/*.h src/*/*.c)
+ 
+ list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX
+-     "(sh_fmt\\.c|sh_parse2ast\\.c|sh_init\\.c|sh_main\\.c)")
++     "(sh_fmt\\.c|sh_parse2ast\\.c|sh_init\\.c|sh_main\\.c|sh_util_wasm\\.c)")
+ 
+ if(DEBUG_OUTPUT)
+   list(
+diff --git a/src/debug.h b/src/debug.h
+index 204ed661..5402a950 100644
+--- a/src/debug.h
++++ b/src/debug.h
+@@ -17,6 +17,12 @@ extern buffer debug_buffer, *debug_output;
+ extern int debug_nindent;
+ extern char debug_quote;
+ 
++/* which position info debug_node.c emits per node, independent of each
++ * other (both may be on at once) -- sh_no_position (sh.h) is a hard
++ * override that suppresses both regardless of these. */
++extern int debug_emit_loc;   /* "loc": "file:line:col" (default on) */
++extern int debug_emit_range; /* "range": [start, end] byte offsets, no filename (default off) */
++
+ /* some ansi colors
+  * ----------------------------------------------------------------------- */
+ #ifndef COLOR_DEBUG
+@@ -86,6 +92,7 @@ void debug_redir(const char* msg, int flags, int depth);
+ void debug_subst(const char* msg, int flags);
+ void debug_position(const char* msg, const struct location* pos, int depth);
+ void debug_location(const char* msg, const struct location* pos, int depth);
++void debug_range(const char* msg, size_t start, size_t end, int depth);
+ 
+ size_t debug_argv(char** argv, buffer* out);
+ void debug_squoted(const char*, size_t n, buffer* out);
+diff --git a/src/debug/debug_node.c b/src/debug/debug_node.c
+index cdab0464..33d5f86f 100644
+--- a/src/debug/debug_node.c
++++ b/src/debug/debug_node.c
+@@ -139,7 +139,11 @@ debug_node(union node* node, int depth) {
+     case N_FUNCTION:
+       debug_str(", name", node->nfunc.name, depth, debug_quote);
+ 
+-      debug_location(", loc", &node->nfunc.loc, depth);
++      if(debug_emit_loc)
++        debug_location(", loc", &node->nfunc.loc, depth);
++      if(debug_emit_range)
++        debug_range(", range", node->nfunc.loc.offset,
++                    node->nfunc.loc.offset + str_len(node->nfunc.name), depth);
+       debug_sublist(", body", node->nfunc.body, depth);
+       break;
+ 
+@@ -165,11 +169,16 @@ debug_node(union node* node, int depth) {
+ 
+       debug_xlong(", flag", node->nargstr.flag /*& 0x7*/, depth);
+ 
+-      if(!sh_no_position)
+-        debug_location(", loc",
+-                       &node->nargstr.loc,
+-                       depth); // node->nargstr.flag & S_DQUOTED ? '"' :
+-                               // node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
++      if(!sh_no_position) {
++        if(debug_emit_loc)
++          debug_location(", loc",
++                         &node->nargstr.loc,
++                         depth); // node->nargstr.flag & S_DQUOTED ? '"' :
++                                 // node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
++        if(debug_emit_range)
++          debug_range(", range", node->nargstr.loc.offset,
++                      node->nargstr.loc.offset + node->nargstr.stra.len, depth);
++      }
+       debug_stralloc(", stra",
+                      &node->nargstr.stra,
+                      depth,
+@@ -207,8 +216,13 @@ if(node->nargparam.numb > 0) {
+       if((node->nargparam.flag & S_SPECIAL) == S_ARG)
+         debug_ulong(", numb", node->nargparam.numb, depth);
+ 
+-      if(!sh_no_position)
+-        debug_location(", loc", &node->nargparam.loc, depth);
++      if(!sh_no_position) {
++        if(debug_emit_loc)
++          debug_location(", loc", &node->nargparam.loc, depth);
++        if(debug_emit_range)
++          debug_range(", range", node->nargparam.loc.offset,
++                      node->nargparam.loc.offset + str_len(node->nargparam.name), depth);
++      }
+ 
+       break;
+     }
+diff --git a/src/debug/debug_position.c b/src/debug/debug_position.c
+index 12083a1a..51ada8d6 100644
+--- a/src/debug/debug_position.c
++++ b/src/debug/debug_position.c
+@@ -6,6 +6,26 @@
+ 
+ #if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
+ 
++int debug_emit_loc = 1;
++int debug_emit_range = 0;
++
++/* a [start, end) byte-offset pair into the whole script -- no line/col,
++ * no filename, just the two numbers -- for tooling that wants to slice
++ * the original source text directly instead of re-deriving an offset
++ * from a "file:line:col" string.
++ * ----------------------------------------------------------------------- */
++void
++debug_range(const char* msg, size_t start, size_t end, int depth) {
++  if(msg)
++    debug_field(msg, depth);
++  debug_c('[');
++  debug_n(start);
++  debug_c(',');
++  debug_n(end);
++  debug_c(']');
++  debug_fl();
++}
++
+ /* ----------------------------------------------------------------------- */
+ void
+ debug_position(const char* msg, const struct location* pos, int depth) {
+diff --git a/src/parse/parse_param.c b/src/parse/parse_param.c
+index d10c6779..91c27bce 100644
+--- a/src/parse/parse_param.c
++++ b/src/parse/parse_param.c
+@@ -23,9 +23,6 @@ parse_param(struct parser* p) {
+     parse_skip(p);
+   }
+ 
+-  if(source_get(&c) <= 0)
+-    return -1;
+-
+   /* link in a new node: reuse an empty N_ARGSTR node in place instead of
+      allocating a fresh one, but only when it's the parser's own
+      unquoted "nothing here yet" placeholder -- a quoted empty node
+@@ -42,8 +39,14 @@ parse_param(struct parser* p) {
+   param->flag = p->quot;
+   param->name = NULL;
+   param->word = NULL;
++
++  /* captured here, before source_get() below consumes the name's first
++     character -- start of the name, not one character into it. */
+   param->loc = source->position;
+ 
++  if(source_get(&c) <= 0)
++    return -1;
++
+   /* '#' as the first char inside ${} is the string-length operator
+      only if followed by a valid parameter char; if it's instead an
+      expansion modifier (-, +, =, ?, :), '#' is the parameter name
+diff --git a/src/sh/sh_parse2ast.c b/src/sh/sh_parse2ast.c
+index c7b314ba..e72d88eb 100644
+--- a/src/sh/sh_parse2ast.c
++++ b/src/sh/sh_parse2ast.c
+@@ -95,7 +95,7 @@ main(int argc, char** argv, char** envp) {
+   sh_no_position = 0;
+ 
+   /* parse command line arguments */
+-  while((c = shell_getopt(argc, argv, "c:xeo:q:w:l:P")) > 0)
++  while((c = shell_getopt(argc, argv, "c:xeo:q:w:l:Pr:")) > 0)
+     switch(c) {
+       case 'c': cmds = shell_optarg; break;
+       case 'x': sh->opts.xtrace = 1; break;
+@@ -104,6 +104,12 @@ main(int argc, char** argv, char** envp) {
+       case 'o': debug_buffer.fd = open_trunc(shell_optarg); break;
+       case 'w': scan_int(shell_optarg, &debug_nindent); break;
+       case 'q': debug_quote = *optarg; break;
++      case 'r':
++        /* -r loc|range|both: which position field(s) to emit per node
++         * (default: loc only). -P still overrides both to none. */
++        debug_emit_loc = str_diff(shell_optarg, "range") != 0;
++        debug_emit_range = str_diff(shell_optarg, "loc") != 0;
++        break;
+       default:
+         sh_usage();
+ 
+@@ -115,7 +121,8 @@ main(int argc, char** argv, char** envp) {
+                     "  -P          Suppress position information\n"
+                     "  -o FILE     Output file\n"
+                     "  -w NUM      Indent num spaces\n"
+-                    "  -q CHAR     Quote char\n");
++                    "  -q CHAR     Quote char\n"
++                    "  -r MODE     Position field(s): loc, range, or both (default loc)\n");
+ 
+         buffer_flush(fd_err->w);
+         return 1;
+diff --git a/src/sh/sh_util_wasm.c b/src/sh/sh_util_wasm.c
+index cdb87d6c..f20fff9f 100644
+--- a/src/sh/sh_util_wasm.c
++++ b/src/sh/sh_util_wasm.c
+@@ -24,7 +24,7 @@ extern const char* tree_separator;
+ int sh_argc;
+ char** sh_argv;
+ const char* sh_name = "shutil";
+-int sh_no_position = 1;
++int sh_no_position = 0;
+ int sh_interactive = 0;
+ 
+ /* parse_exit_hook target: a syntax error must unwind back to the
+@@ -181,10 +181,15 @@ shutil_format(const char* src) {
+ /* parses shell source text into the debug/JSON AST (see debug_node.c),
+  * returning the JSON text, or 0 on a genuine syntax error. debug_list()
+  * writes through the fd-bound debug_buffer, so it's pointed at a MEMFS
+- * temp file for the duration of the call and read back afterwards. */
++ * temp file for the duration of the call and read back afterwards.
++ *
++ *   loc_mode: 0 = "loc" (file:line:col string) only [default]
++ *             1 = "range" ([start, end) byte offsets) only
++ *             2 = both
++ */
+ EMSCRIPTEN_KEEPALIVE
+ char*
+-shutil_parse_ast(const char* src) {
++shutil_parse_ast(const char* src, int loc_mode) {
+   struct fd fd;
+   struct source srcbuf;
+   struct parser p;
+@@ -196,6 +201,9 @@ shutil_parse_ast(const char* src) {
+ 
+   wasm_init();
+ 
++  debug_emit_loc = loc_mode != 1;
++  debug_emit_range = loc_mode != 0;
++
+   fd_push(&fd, STDSRC_FILENO, FD_READ);
+   source_push(&srcbuf);
+   fd_string(&fd, src, len);
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index dca4038f..82c140fe 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -4681,4 +4681,24 @@ fi
+ ##   shformat -c 'echo hello'            # now prints "echo hello", exit 0
+ ##   shformat -c 'if [ 1 = 1 ]; then'    # still reports the syntax error, exit 1
+ 
++## fixes/221: a parameter expansion's own AST/error-reporting location
++## (N_ARGPARAM's loc, parse_param.c) pointed one character INTO the
++## name instead of at its start -- source->position was captured after
++## source_get() had already consumed the name's first character. For a
++## single-char name ($x) this is invisible (start and "one past the
++## first char" coincide with the position right before the second,
++## nonexistent, char only by looking similar in the common single-char
++## case); for anything longer it's visibly wrong. User-visible via any
++## runtime error whose message location comes from a parameter
++## expansion, e.g. "command not found" on a command name held in a
++## variable: the diagnostic's column pointed at the name's second
++## character instead of its first.
++X221_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
++
++if [ -n "$X221_SELF" ] && [ -x "$X221_SELF" ]; then
++  X221=$("$X221_SELF" -c 'foocmd=doesnotexist; $foocmd' 2>&1)
++  assert_equal "<string>:1:23: doesnotexist: No such file or directory" "$X221" \
++    "a command-not-found error on a \$var-held command name must point at the START of the variable name, not its second character"
++fi
++
+ summary

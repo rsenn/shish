@@ -17,6 +17,12 @@ extern buffer debug_buffer, *debug_output;
 extern int debug_nindent;
 extern char debug_quote;
 
+/* which position info debug_node.c emits per node, independent of each
+ * other (both may be on at once) -- sh_no_position (sh.h) is a hard
+ * override that suppresses both regardless of these. */
+extern int debug_emit_loc;   /* "loc": "file:line:col" (default on) */
+extern int debug_emit_range; /* "range": [start, end] byte offsets, no filename (default off) */
+
 /* some ansi colors
  * ----------------------------------------------------------------------- */
 #ifndef COLOR_DEBUG
@@ -86,6 +92,7 @@ void debug_redir(const char* msg, int flags, int depth);
 void debug_subst(const char* msg, int flags);
 void debug_position(const char* msg, const struct location* pos, int depth);
 void debug_location(const char* msg, const struct location* pos, int depth);
+void debug_range(const char* msg, size_t start, size_t end, int depth);
 
 size_t debug_argv(char** argv, buffer* out);
 void debug_squoted(const char*, size_t n, buffer* out);

@@ -139,7 +139,11 @@ debug_node(union node* node, int depth) {
     case N_FUNCTION:
       debug_str(", name", node->nfunc.name, depth, debug_quote);
 
-      debug_location(", loc", &node->nfunc.loc, depth);
+      if(debug_emit_loc)
+        debug_location(", loc", &node->nfunc.loc, depth);
+      if(debug_emit_range)
+        debug_range(", range", node->nfunc.loc.offset,
+                    node->nfunc.loc.offset + str_len(node->nfunc.name), depth);
       debug_sublist(", body", node->nfunc.body, depth);
       break;
 
@@ -165,11 +169,16 @@ debug_node(union node* node, int depth) {
 
       debug_xlong(", flag", node->nargstr.flag /*& 0x7*/, depth);
 
-      if(!sh_no_position)
-        debug_location(", loc",
-                       &node->nargstr.loc,
-                       depth); // node->nargstr.flag & S_DQUOTED ? '"' :
-                               // node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
+      if(!sh_no_position) {
+        if(debug_emit_loc)
+          debug_location(", loc",
+                         &node->nargstr.loc,
+                         depth); // node->nargstr.flag & S_DQUOTED ? '"' :
+                                 // node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
+        if(debug_emit_range)
+          debug_range(", range", node->nargstr.loc.offset,
+                      node->nargstr.loc.offset + node->nargstr.stra.len, depth);
+      }
       debug_stralloc(", stra",
                      &node->nargstr.stra,
                      depth,
@@ -207,8 +216,13 @@ if(node->nargparam.numb > 0) {
       if((node->nargparam.flag & S_SPECIAL) == S_ARG)
         debug_ulong(", numb", node->nargparam.numb, depth);
 
-      if(!sh_no_position)
-        debug_location(", loc", &node->nargparam.loc, depth);
+      if(!sh_no_position) {
+        if(debug_emit_loc)
+          debug_location(", loc", &node->nargparam.loc, depth);
+        if(debug_emit_range)
+          debug_range(", range", node->nargparam.loc.offset,
+                      node->nargparam.loc.offset + str_len(node->nargparam.name), depth);
+      }
 
       break;
     }

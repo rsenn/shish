@@ -4681,4 +4681,24 @@ fi
 ##   shformat -c 'echo hello'            # now prints "echo hello", exit 0
 ##   shformat -c 'if [ 1 = 1 ]; then'    # still reports the syntax error, exit 1
 
+## fixes/221: a parameter expansion's own AST/error-reporting location
+## (N_ARGPARAM's loc, parse_param.c) pointed one character INTO the
+## name instead of at its start -- source->position was captured after
+## source_get() had already consumed the name's first character. For a
+## single-char name ($x) this is invisible (start and "one past the
+## first char" coincide with the position right before the second,
+## nonexistent, char only by looking similar in the common single-char
+## case); for anything longer it's visibly wrong. User-visible via any
+## runtime error whose message location comes from a parameter
+## expansion, e.g. "command not found" on a command name held in a
+## variable: the diagnostic's column pointed at the name's second
+## character instead of its first.
+X221_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
+
+if [ -n "$X221_SELF" ] && [ -x "$X221_SELF" ]; then
+  X221=$("$X221_SELF" -c 'foocmd=doesnotexist; $foocmd' 2>&1)
+  assert_equal "<string>:1:23: doesnotexist: No such file or directory" "$X221" \
+    "a command-not-found error on a \$var-held command name must point at the START of the variable name, not its second character"
+fi
+
 summary

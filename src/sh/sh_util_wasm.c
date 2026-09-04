@@ -24,7 +24,7 @@ extern const char* tree_separator;
 int sh_argc;
 char** sh_argv;
 const char* sh_name = "shutil";
-int sh_no_position = 1;
+int sh_no_position = 0;
 int sh_interactive = 0;
 
 /* parse_exit_hook target: a syntax error must unwind back to the
@@ -181,10 +181,15 @@ shutil_format(const char* src) {
 /* parses shell source text into the debug/JSON AST (see debug_node.c),
  * returning the JSON text, or 0 on a genuine syntax error. debug_list()
  * writes through the fd-bound debug_buffer, so it's pointed at a MEMFS
- * temp file for the duration of the call and read back afterwards. */
+ * temp file for the duration of the call and read back afterwards.
+ *
+ *   loc_mode: 0 = "loc" (file:line:col string) only [default]
+ *             1 = "range" ([start, end) byte offsets) only
+ *             2 = both
+ */
 EMSCRIPTEN_KEEPALIVE
 char*
-shutil_parse_ast(const char* src) {
+shutil_parse_ast(const char* src, int loc_mode) {
   struct fd fd;
   struct source srcbuf;
   struct parser p;
@@ -195,6 +200,9 @@ shutil_parse_ast(const char* src) {
   char* result;
 
   wasm_init();
+
+  debug_emit_loc = loc_mode != 1;
+  debug_emit_range = loc_mode != 0;
 
   fd_push(&fd, STDSRC_FILENO, FD_READ);
   source_push(&srcbuf);
