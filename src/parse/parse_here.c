@@ -65,6 +65,19 @@ parse_here(struct parser* p, stralloc* delim, int nosubst, int strip) {
 
     if(r)
       break;
+
+    /* parse_squoted()/parse_dquoted() treat true end-of-input while
+       reading a heredoc body as an implicit trailing newline (so the
+       body's last, unterminated line isn't silently dropped) instead
+       of signalling it through "r" -- without this check, once really
+       at EOF this loop just keeps synthesizing empty lines forever,
+       since none of them will ever match a nonempty delimiter. */
+    {
+      char eofc;
+
+      if(source_peek(&eofc) <= 0)
+        break;
+    }
   }
 
   source->mode &= ~SOURCE_HERE;

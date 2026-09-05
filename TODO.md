@@ -363,7 +363,9 @@ of the `tests/posix` gap above, or are unrelated maintenance items:
 **Real bugs, but not counted in the `tests/posix` scoreboard at all** (fix
 opportunistically, not blocked on Stage 1/2, don't expect the score to move):
 
-- `eval-lineno-imprecise-inside-function`, `nested-heredoc-in-cmdsub-hangs`,
+- `eval-lineno-imprecise-inside-function`,
+  `heredoc-in-cmdsub-read-in-wrong-order` (the hang this used to cause
+  is fixed, `fixes/225`; the wrong read order itself is not),
   `exit-trap-loses-positional-parameters`,
   `help-builtin-columns-overlap`, `no-tree-print-option-is-a-noop`,
   `cfg-cmake-mingw-silently-builds-native`, `eval-node-bgnd-silent-on-fork-failure`.

@@ -4765,4 +4765,30 @@ if [ -n "$X224_SELF" ] && [ -x "$X224_SELF" ]; then
     "sourcing a file whose path came from an external command's command substitution must not crash a debug build and must actually run the sourced file"
 fi
 
+## fixes/225: a here-document whose body contains a command
+## substitution that itself opens a here-document hung the shell
+## outright. parse_squoted()/parse_dquoted() treat genuine end-of-input
+## while reading a heredoc body as an implicit trailing newline (so an
+## unterminated heredoc's last line isn't silently dropped) by
+## returning as if a normal line had just been read, rather than
+## signalling real EOF -- parse_here()'s loop had no other way to
+## notice this and just kept synthesizing empty lines forever once
+## truly at EOF, since none of them would ever match a nonempty
+## delimiter. Now breaks out once source_peek() confirms EOF.
+## This fixes the hang only -- nested heredocs are still read in the
+## wrong order (the outer heredoc's body, read too early, swallows the
+## inner one's delimiter line), a separate, still-open bug (see BUGS:
+## heredoc-in-cmdsub-read-in-wrong-order).
+X225_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
+
+if [ -n "$X225_SELF" ] && [ -x "$X225_SELF" ]; then
+  X225_SCRIPT=$(mktemp)
+  printf 'cat <<\\OUTER; echo "$(cat <<\\INNER\ninner\nINNER\n)"\nouter\nOUTER\n' > "$X225_SCRIPT"
+  "$X225_SELF" "$X225_SCRIPT" >/dev/null 2>&1
+  X225_STATUS=$?
+  rm -f "$X225_SCRIPT"
+  assert_equal "0" "$X225_STATUS" \
+    "a here-document containing a command substitution that itself opens a here-document must not hang the shell"
+fi
+
 summary

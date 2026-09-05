@@ -1,0 +1,117 @@
+diff --git a/BUGS b/BUGS
+index 9829dc75..28a4f677 100644
+--- a/BUGS
++++ b/BUGS
+@@ -453,16 +453,32 @@
+   ./build/x86_64-linux-gnu/shish tests/fixed.sh | grep FAIL
+   ```
+ 
+-- nested-heredoc-in-cmdsub-hangs: a here-document whose body contains a
+-  command substitution that itself opens a here-document hangs the
+-  shell outright. Pre-existing (reproduces on `9bfd1f9f` with no local
+-  changes); it is why `cmdsub-p.tst` takes minutes -- the case only
+-  ends via the harness's own 120s per-case `TIMEOUT`.
++- heredoc-in-cmdsub-read-in-wrong-order: a here-document whose body
++  contains a command substitution that itself opens a here-document
++  reads the two heredoc bodies in the wrong order (`fixes/225` fixed
++  the resulting hang, not this). `redir_list` (`src/redir/
++  redir_addhere.c`) is one flat, global, FIFO-ordered queue of pending
++  heredocs, and `source_newline()` drains it entirely as soon as it
++  sees a newline outside a heredoc -- but the newline right after
++  "cat <<\INNER" (ending the *outer* command's own first line) fires
++  with *both* the outer and the inner heredoc already queued, and
++  drains them in queue order (outer, then inner) rather than the
++  nesting order the source actually has to be read in (inner's body
++  comes first in the file, between the outer command's opening line
++  and its own closing delimiter). The outer heredoc's read then starts
++  too early and swallows everything up to and including the outer
++  delimiter -- the inner heredoc's own delimiter line included --
++  leaving the inner one to find only genuine EOF, silently reading as
++  empty (`fixes/225` is what keeps that from hanging).
+ 
+   **Repro:**
+   ```sh
+   printf 'cat <<\\OUTER; echo "$(cat <<\\INNER\ninner\nINNER\n)"\nouter\nOUTER\n' > h.sh
+-  timeout 5 build/x86_64-linux-gnu/shish h.sh; echo $?   # 124 = hung
++  build/x86_64-linux-gnu/shish h.sh
++  # shish prints the outer heredoc's (mis-scoped) body verbatim --
++  # "inner", "INNER", ")\"", "outer" -- followed by a blank line for
++  # echo's empty (nothing left for the inner heredoc) argument
++  # bash/dash print "outer" then "inner"
+   ```
+ 
+ - debug-build-asserts-on-fd9-redirect-in-subshell-after-cmdsubst: a
+diff --git a/TODO.md b/TODO.md
+index 9b9c9c4d..aeb9f9ea 100644
+--- a/TODO.md
++++ b/TODO.md
+@@ -363,7 +363,9 @@ of the `tests/posix` gap above, or are unrelated maintenance items:
+ **Real bugs, but not counted in the `tests/posix` scoreboard at all** (fix
+ opportunistically, not blocked on Stage 1/2, don't expect the score to move):
+ 
+-- `eval-lineno-imprecise-inside-function`, `nested-heredoc-in-cmdsub-hangs`,
++- `eval-lineno-imprecise-inside-function`,
++  `heredoc-in-cmdsub-read-in-wrong-order` (the hang this used to cause
++  is fixed, `fixes/225`; the wrong read order itself is not),
+   `exit-trap-loses-positional-parameters`,
+   `help-builtin-columns-overlap`, `no-tree-print-option-is-a-noop`,
+   `cfg-cmake-mingw-silently-builds-native`, `eval-node-bgnd-silent-on-fork-failure`.
+diff --git a/src/parse/parse_here.c b/src/parse/parse_here.c
+index eb0f35e4..beeef08d 100644
+--- a/src/parse/parse_here.c
++++ b/src/parse/parse_here.c
+@@ -65,6 +65,19 @@ parse_here(struct parser* p, stralloc* delim, int nosubst, int strip) {
+ 
+     if(r)
+       break;
++
++    /* parse_squoted()/parse_dquoted() treat true end-of-input while
++       reading a heredoc body as an implicit trailing newline (so the
++       body's last, unterminated line isn't silently dropped) instead
++       of signalling it through "r" -- without this check, once really
++       at EOF this loop just keeps synthesizing empty lines forever,
++       since none of them will ever match a nonempty delimiter. */
++    {
++      char eofc;
++
++      if(source_peek(&eofc) <= 0)
++        break;
++    }
+   }
+ 
+   source->mode &= ~SOURCE_HERE;
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 1b9b12d0..2f367308 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -4765,4 +4765,30 @@ if [ -n "$X224_SELF" ] && [ -x "$X224_SELF" ]; then
+     "sourcing a file whose path came from an external command's command substitution must not crash a debug build and must actually run the sourced file"
+ fi
+ 
++## fixes/225: a here-document whose body contains a command
++## substitution that itself opens a here-document hung the shell
++## outright. parse_squoted()/parse_dquoted() treat genuine end-of-input
++## while reading a heredoc body as an implicit trailing newline (so an
++## unterminated heredoc's last line isn't silently dropped) by
++## returning as if a normal line had just been read, rather than
++## signalling real EOF -- parse_here()'s loop had no other way to
++## notice this and just kept synthesizing empty lines forever once
++## truly at EOF, since none of them would ever match a nonempty
++## delimiter. Now breaks out once source_peek() confirms EOF.
++## This fixes the hang only -- nested heredocs are still read in the
++## wrong order (the outer heredoc's body, read too early, swallows the
++## inner one's delimiter line), a separate, still-open bug (see BUGS:
++## heredoc-in-cmdsub-read-in-wrong-order).
++X225_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
++
++if [ -n "$X225_SELF" ] && [ -x "$X225_SELF" ]; then
++  X225_SCRIPT=$(mktemp)
++  printf 'cat <<\\OUTER; echo "$(cat <<\\INNER\ninner\nINNER\n)"\nouter\nOUTER\n' > "$X225_SCRIPT"
++  "$X225_SELF" "$X225_SCRIPT" >/dev/null 2>&1
++  X225_STATUS=$?
++  rm -f "$X225_SCRIPT"
++  assert_equal "0" "$X225_STATUS" \
++    "a here-document containing a command substitution that itself opens a here-document must not hang the shell"
++fi
++
+ summary

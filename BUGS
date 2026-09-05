@@ -453,16 +453,32 @@
   ./build/x86_64-linux-gnu/shish tests/fixed.sh | grep FAIL
   ```
 
-- nested-heredoc-in-cmdsub-hangs: a here-document whose body contains a
-  command substitution that itself opens a here-document hangs the
-  shell outright. Pre-existing (reproduces on `9bfd1f9f` with no local
-  changes); it is why `cmdsub-p.tst` takes minutes -- the case only
-  ends via the harness's own 120s per-case `TIMEOUT`.
+- heredoc-in-cmdsub-read-in-wrong-order: a here-document whose body
+  contains a command substitution that itself opens a here-document
+  reads the two heredoc bodies in the wrong order (`fixes/225` fixed
+  the resulting hang, not this). `redir_list` (`src/redir/
+  redir_addhere.c`) is one flat, global, FIFO-ordered queue of pending
+  heredocs, and `source_newline()` drains it entirely as soon as it
+  sees a newline outside a heredoc -- but the newline right after
+  "cat <<\INNER" (ending the *outer* command's own first line) fires
+  with *both* the outer and the inner heredoc already queued, and
+  drains them in queue order (outer, then inner) rather than the
+  nesting order the source actually has to be read in (inner's body
+  comes first in the file, between the outer command's opening line
+  and its own closing delimiter). The outer heredoc's read then starts
+  too early and swallows everything up to and including the outer
+  delimiter -- the inner heredoc's own delimiter line included --
+  leaving the inner one to find only genuine EOF, silently reading as
+  empty (`fixes/225` is what keeps that from hanging).
 
   **Repro:**
   ```sh
   printf 'cat <<\\OUTER; echo "$(cat <<\\INNER\ninner\nINNER\n)"\nouter\nOUTER\n' > h.sh
-  timeout 5 build/x86_64-linux-gnu/shish h.sh; echo $?   # 124 = hung
+  build/x86_64-linux-gnu/shish h.sh
+  # shish prints the outer heredoc's (mis-scoped) body verbatim --
+  # "inner", "INNER", ")\"", "outer" -- followed by a blank line for
+  # echo's empty (nothing left for the inner heredoc) argument
+  # bash/dash print "outer" then "inner"
   ```
 
 - debug-build-asserts-on-fd9-redirect-in-subshell-after-cmdsubst: a
