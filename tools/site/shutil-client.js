@@ -5,11 +5,10 @@
  * local file:// checkout, where module imports are blocked by CORS.
  *
  * loc fields in the JSON AST are "file:line:col" (1-indexed line/col),
- * and always point one-past-the-end of the token they annotate --
- * this holds for both a bare $name (end lands on the char after the
- * name) and a braced ${name} (end lands exactly on the '}', which is
- * numerically the same "one past the name" position). Assignment
- * strings ("name=value") point at the start of the string instead.
+ * and always point at the START of the token they annotate -- this
+ * holds for a bare $name, a braced ${name} (both point at the 'n' of
+ * the name, not the '$' or '{'), and an assignment string
+ * ("name=value", which points at its own first character).
  */
 window.shish = (function () {
   function loadShutil(onStderr, baseUrl) {
