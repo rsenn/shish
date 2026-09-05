@@ -333,6 +333,19 @@ pre code { background: none; border: 0; padding: 0; font-size: 0.875rem; }
 .playtab:hover { color: var(--fg); border-color: var(--accent); }
 .playtab.active { color: #fff; background: var(--accent); border-color: var(--accent); }
 
+.astmodetabs { display: flex; gap: 0.4rem; margin: 0.8rem 0 0.6rem; }
+.astmodetab {
+  font: 500 0.8rem var(--mono);
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: none;
+  color: var(--fg-soft);
+  cursor: pointer;
+}
+.astmodetab:hover { color: var(--fg); border-color: var(--accent); }
+.astmodetab.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+
 .rename-label { font-size: 0.8rem; color: var(--fg-faint); }
 .playbar input[type="text"] {
   font: 0.85rem var(--mono);

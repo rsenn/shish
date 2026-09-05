@@ -99,17 +99,34 @@ echo "average: $avg"</textarea>
       <button id="ast-run" class="btn primary" disabled>loading shutil.wasm…</button>
       <span id="ast-status" class="fineprint"></span>
     </div>
-    <div class="playbar">
-      <label for="ast-rename-old" class="rename-label">rename</label>
-      <input id="ast-rename-old" type="text" size="10" placeholder="old name">
-      <span>→</span>
-      <input id="ast-rename-new" type="text" size="10" placeholder="new name">
-      <button id="ast-rename-btn" class="btn" disabled>rename</button>
+    <div class="astmodetabs">
+      <button class="astmodetab active" data-astmode="explore">Explore</button>
+      <button class="astmodetab" data-astmode="visitor">Write your own visitor</button>
     </div>
-    <textarea id="ast-renamed" class="playsrc term" readonly spellcheck="false" hidden></textarea>
 
-    <label for="ast-visitor">custom visitor</label>
-    <textarea id="ast-visitor" class="playsrc" spellcheck="false" autocapitalize="off" autocorrect="off">/* function(ast, source, ShutilClient) -- called on the script parsed above.
+    <div id="astmode-explore">
+      <div class="playbar">
+        <label for="ast-rename-old" class="rename-label">rename</label>
+        <input id="ast-rename-old" type="text" size="10" placeholder="old name">
+        <span>→</span>
+        <input id="ast-rename-new" type="text" size="10" placeholder="new name">
+        <button id="ast-rename-btn" class="btn" disabled>rename</button>
+      </div>
+      <textarea id="ast-renamed" class="playsrc term" readonly spellcheck="false" hidden></textarea>
+    </div>
+
+    <div id="astmode-visitor" hidden>
+      <p class="fineprint">
+        A visitor is a plain JS function <code>(ast, source, ShutilClient)</code>
+        run against the script parsed above: <code>ast</code> is its JSON tree
+        (same shape as the explorer on the right), <code>source</code> is the
+        original text, and <code>ShutilClient</code> exposes <code>walk</code>
+        (visits every node with a <code>kind</code>) and <code>spliceEdits</code>.
+        Return either a whole new source string, or an array of
+        <code>{offset, length, text}</code> edits into the original text --
+        either way the result is re-parsed to check it's still valid shell.
+      </p>
+      <textarea id="ast-visitor" class="playsrc" spellcheck="false" autocapitalize="off" autocorrect="off">/* function(ast, source, ShutilClient) -- called on the script parsed above.
    Return either a new source string, or an array of
    {offset, length, text} edits (applied via ShutilClient.spliceEdits). */
 var edits = [];
@@ -118,11 +135,12 @@ ShutilClient.walk(ast, function (node) {
     edits.push({ offset: node.range[0], length: node.name.length, text: node.name + '_x' });
 });
 return edits;</textarea>
-    <div class="playbar">
-      <button id="ast-visitor-run" class="btn">run visitor</button>
-      <span id="ast-visitor-status" class="fineprint"></span>
+      <div class="playbar">
+        <button id="ast-visitor-run" class="btn">run visitor</button>
+        <span id="ast-visitor-status" class="fineprint"></span>
+      </div>
+      <textarea id="ast-visitor-out" class="playsrc term" readonly spellcheck="false" hidden></textarea>
     </div>
-    <textarea id="ast-visitor-out" class="playsrc term" readonly spellcheck="false" hidden></textarea>
   </div>
   <div class="playcol">
     <label for="ast-tree">AST (click a node to collapse it)</label>
@@ -231,6 +249,20 @@ return edits;</textarea>
         if (name === 'format') initFormatTab();
         else initAstTab();
       }
+    });
+  });
+
+  /* -- AST tab: Explore <-> Write your own visitor sub-mode switch -- */
+  var astModes = {
+    explore: document.getElementById('astmode-explore'),
+    visitor: document.getElementById('astmode-visitor'),
+  };
+
+  document.querySelectorAll('.astmodetab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.astmodetab').forEach(function (t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      Object.keys(astModes).forEach(function (name) { astModes[name].hidden = name !== tab.dataset.astmode; });
     });
   });
 
