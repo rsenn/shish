@@ -11,7 +11,7 @@
  * numerically the same "one past the name" position). Assignment
  * strings ("name=value") point at the start of the string instead.
  */
-window.ShutilClient = (function () {
+window.shish = (function () {
   function loadShutil(onStderr, baseUrl) {
     baseUrl = baseUrl || 'assets/';
     return new Promise(function (resolve, reject) {

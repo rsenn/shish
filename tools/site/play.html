@@ -114,33 +114,6 @@ echo "average: $avg"</textarea>
       </div>
       <textarea id="ast-renamed" class="playsrc term" readonly spellcheck="false" hidden></textarea>
     </div>
-
-    <div id="astmode-visitor" hidden>
-      <p class="fineprint">
-        A visitor is a plain JS function <code>(ast, source, ShutilClient)</code>
-        run against the script parsed above: <code>ast</code> is its JSON tree
-        (same shape as the explorer on the right), <code>source</code> is the
-        original text, and <code>ShutilClient</code> exposes <code>walk</code>
-        (visits every node with a <code>kind</code>) and <code>spliceEdits</code>.
-        Return either a whole new source string, or an array of
-        <code>{offset, length, text}</code> edits into the original text --
-        either way the result is re-parsed to check it's still valid shell.
-      </p>
-      <textarea id="ast-visitor" class="playsrc" spellcheck="false" autocapitalize="off" autocorrect="off">/* function(ast, source, ShutilClient) -- called on the script parsed above.
-   Return either a new source string, or an array of
-   {offset, length, text} edits (applied via ShutilClient.spliceEdits). */
-var edits = [];
-ShutilClient.walk(ast, function (node) {
-  if (node.kind === 'parameter_expansion' && Array.isArray(node.range))
-    edits.push({ offset: node.range[0], length: node.name.length, text: node.name + '_x' });
-});
-return edits;</textarea>
-      <div class="playbar">
-        <button id="ast-visitor-run" class="btn">run visitor</button>
-        <span id="ast-visitor-status" class="fineprint"></span>
-      </div>
-      <textarea id="ast-visitor-out" class="playsrc term" readonly spellcheck="false" hidden></textarea>
-    </div>
   </div>
   <div class="playcol">
     <label for="ast-tree">AST (click a node to collapse it)</label>
@@ -153,6 +126,33 @@ return edits;</textarea>
        then splices the new name into the <b>original source text</b> —
        nothing is re-generated from the tree, so formatting outside the
        renamed spans is untouched.</p>
+  </div>
+
+  <div id="astmode-visitor" class="playfull" hidden>
+    <p class="fineprint">
+      A visitor is a plain JS function <code>(ast, source, shish)</code>
+      run against the script parsed above: <code>ast</code> is its JSON tree
+      (same shape as the explorer above), <code>source</code> is the
+      original text, and <code>shish</code> exposes <code>walk</code>
+      (visits every node with a <code>kind</code>) and <code>spliceEdits</code>.
+      Return either a whole new source string, or an array of
+      <code>{offset, length, text}</code> edits into the original text --
+      either way the result is re-parsed to check it's still valid shell.
+    </p>
+    <textarea id="ast-visitor" class="playsrc wide" spellcheck="false" autocapitalize="off" autocorrect="off">/* function(ast, source, shish) -- called on the script parsed above.
+   Return either a new source string, or an array of
+   {offset, length, text} edits (applied via shish.spliceEdits). */
+var edits = [];
+shish.walk(ast, function (node) {
+  if (node.kind === 'parameter_expansion' && Array.isArray(node.range))
+    edits.push({ offset: node.range[0], length: node.name.length, text: node.name + '_x' });
+});
+return edits;</textarea>
+    <div class="playbar">
+      <button id="ast-visitor-run" class="btn">run visitor</button>
+      <span id="ast-visitor-status" class="fineprint"></span>
+    </div>
+    <textarea id="ast-visitor-out" class="playsrc term wide" readonly spellcheck="false" hidden></textarea>
   </div>
 </div>
 
@@ -216,7 +216,7 @@ return edits;</textarea>
 
   function getShutil() {
     if (!shutilPromise) {
-      shutilPromise = ShutilClient.loadShutil(function (m) { shutilStderr += m + '\n'; });
+      shutilPromise = shish.loadShutil(function (m) { shutilStderr += m + '\n'; });
     }
     return shutilPromise;
   }
@@ -410,7 +410,7 @@ return edits;</textarea>
         var newName = astNewName.value.trim();
         if (!oldName || !newName) return;
 
-        var edited = ShutilClient.renameVar(astState.source, astState.ast, oldName, newName);
+        var edited = shish.renameVar(astState.source, astState.ast, oldName, newName);
         var check = withShutil(shutil, function (s) { return s.format(edited); });
 
         astRenamed.hidden = false;
@@ -429,8 +429,8 @@ return edits;</textarea>
 
         var source = astState.source, ast = astState.ast, result;
         try {
-          var visit = new Function('ast', 'source', 'ShutilClient', astVisitorCode.value);
-          result = visit(ast, source, ShutilClient);
+          var visit = new Function('ast', 'source', 'shish', astVisitorCode.value);
+          result = visit(ast, source, shish);
         } catch (e) {
           astVisitorOut.hidden = true;
           astVisitorStatus.textContent = 'visitor threw: ' + e.message;
@@ -438,7 +438,7 @@ return edits;</textarea>
         }
 
         var text = typeof result === 'string' ? result
-          : Array.isArray(result) ? ShutilClient.spliceEdits(source, result)
+          : Array.isArray(result) ? shish.spliceEdits(source, result)
           : null;
 
         if (text === null) {
