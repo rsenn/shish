@@ -97,14 +97,23 @@ avg=$((total / 3))
 echo "average: $avg"</textarea>
     <div class="playbar">
       <button id="ast-run" class="btn primary" disabled>loading shutil.wasm…</button>
+      <span class="examples">
+        try:
+        <a href="#" data-ast-example="vars">accumulator</a>
+        <a href="#" data-ast-example="conditionals">conditionals</a>
+        <a href="#" data-ast-example="functions">functions</a>
+        <a href="#" data-ast-example="expansions">expansions</a>
+      </span>
+    </div>
+    <div class="playbar">
       <span id="ast-status" class="fineprint"></span>
     </div>
     <div class="astmodetabs">
-      <button class="astmodetab active" data-astmode="explore">Explore</button>
+      <button class="astmodetab active" data-astmode="rename">Rename a variable</button>
       <button class="astmodetab" data-astmode="visitor">Write your own visitor</button>
     </div>
 
-    <div id="astmode-explore">
+    <div id="astmode-rename">
       <div class="playbar">
         <label for="ast-rename-old" class="rename-label">rename</label>
         <input id="ast-rename-old" type="text" size="10" placeholder="old name">
@@ -252,9 +261,9 @@ return edits;</textarea>
     });
   });
 
-  /* -- AST tab: Explore <-> Write your own visitor sub-mode switch -- */
+  /* -- AST tab: Rename <-> Write your own visitor sub-mode switch -- */
   var astModes = {
-    explore: document.getElementById('astmode-explore'),
+    rename: document.getElementById('astmode-rename'),
     visitor: document.getElementById('astmode-visitor'),
   };
 
@@ -319,6 +328,20 @@ return edits;</textarea>
   var astVisitorStatus = document.getElementById('ast-visitor-status');
   var astVisitorOut = document.getElementById('ast-visitor-out');
   var astState = { source: '', ast: null };
+
+  var AST_EXAMPLES = {
+    vars: 'total=0\nfor n in 10 20 30; do\n  total=$((total + n))\ndone\necho "total: ${total}"\navg=$((total / 3))\necho "average: $avg"',
+    conditionals: 'check() {\n  n=$1\n  if [ "$n" -lt 0 ]; then\n    echo "negative"\n  elif [ "$n" -eq 0 ]; then\n    echo "zero"\n  else\n    echo "positive"\n  fi\n}\nfor v in -3 0 7; do\n  case $v in\n    -*) echo "$v: has a sign" ;;\n    0) echo "$v: exactly zero" ;;\n    *) echo "$v: plain" ;;\n  esac\n  check "$v"\ndone',
+    functions: 'double() {\n  echo $(($1 * 2))\n}\napply() {\n  fn=$1\n  shift\n  for x in "$@"; do\n    "$fn" "$x"\n  done\n}\napply double 1 2 3',
+    expansions: 'path=/usr/local/lib/libshish.a\necho "dir:  ${path%/*}"\necho "file: ${path##*/}"\necho "stem: $(basename "$path" .a)"\nunset nope\necho "default: ${nope:-fallback}"\ncount=$((2 + 3 * 4))\necho "count=$count"',
+  };
+
+  document.querySelectorAll('[data-ast-example]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      astIn.value = AST_EXAMPLES[a.dataset.astExample];
+    });
+  });
 
   function renderAstNode(node) {
     if (Array.isArray(node)) {
