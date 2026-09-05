@@ -26,7 +26,6 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
          resolves via its ->dup chain once the real owner is wired up. */
       if(!(fd->mode & FD_DUP) && (fd->mode & FD_SUBST) == FD_SUBST) {
         int e;
-        /*      fd->mode |= FD_READ;*/
 
         fd_push(fds, fd->n, FD_WRITE | FD_FLUSH);
         fd_setbuf(fds, b, FD_BUFSIZE / 2);
@@ -37,6 +36,31 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
            matched -- not "fds->parent", which may be an unrelated fd
            already shadowing this slot. */
         buffer_init(&fd->rb, &buffer_op_read, e, NULL, 0);
+
+        /* fd_pipe(fds) above only registers fd_list[]/fd_hi/fd_lo for
+           its own end (fds, via fd_setfd()) -- "e" (the other end,
+           just wired to "fd" above) never goes through fd_setfd(), so
+           fd_list[e] is left NULL. Left that way, a later real fd
+           allocation that lands above "e" sees a gap and backfills it
+           with a synthetic placeholder (fdtable_unexpected()), and
+           fd_close() then finds fd_list[e] pointing at that unrelated
+           placeholder instead of "fd" -- it neuters fd->rb.fd to -1
+           to avoid double-closing what it thinks is someone else's fd,
+           so the real pipe-read end never actually gets close()d
+           (fd-subst-read-end-fd-leaks-and-corrupts-later-fd_setfd).
+           Register it here the same way fd_setfd() would, without
+           calling fd_setfd() itself: fd's write side (fd->wb) is a
+           stralloc, not this real fd, and fd_setfd() would clobber
+           fd->wb.fd with "e" since fd->mode still carries FD_WRITE
+           from FD_SUBST. */
+        fd->mode |= FD_READ;
+        fd_list[e] = fd;
+
+        if(fd_hi <= e)
+          fd_hi = e + 1;
+
+        if(fd_lo > e)
+          fd_lo = e;
 
         /* fd->r stays pointed at &fd->rb: fdstack_data() reads via
            fd->rb.fd directly (bypassing buffer_get()), but

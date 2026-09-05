@@ -371,7 +371,7 @@ opportunistically, not blocked on Stage 1/2, don't expect the score to move):
 **Memory safety, not conformance** — tracked under "Memory safety" below
 instead: `asan-leak-residue-not-fully-triaged`,
 `ubsan-buffer-op-proto-function-type-mismatch`,
-`debug-build-asserts-on-source-after-external-cmdsubst`,
+`debug-build-asserts-on-fd9-redirect-in-subshell-after-cmdsubst`,
 `builtin-fork-races-sh-onsig-sigchld`.
 
 ### Memory safety [ongoing, both stages] — ASan+UBSan as a recurring gate
@@ -403,9 +403,13 @@ What's currently open under this build, from `BUGS`:
    real mismatches in unused `lib/buffer/` glob-compiled dead code are
    also left alone per this repo's "don't touch unused `lib/` code
    unasked" standard.
-3. `debug-build-asserts-on-source-after-external-cmdsubst` — an
-   assertion firing only under `BUILD_DEBUG`/ASan builds, not release;
-   needs triage before Stage 1 work can trust debug-build test runs.
+3. `debug-build-asserts-on-fd9-redirect-in-subshell-after-cmdsubst` —
+   an assertion firing only under `BUILD_DEBUG`/ASan builds, not
+   release; needs triage before Stage 1 work can trust debug-build
+   test runs. A narrower, more common instance of the same "phantom
+   fd_list[] gap" class of bug (any command substitution running an
+   external command, immediately followed by sourcing a file) is
+   already fixed (`fixes/224`) — this is what's left.
 4. `builtin-fork-races-sh-onsig-sigchld` — a real fork/signal race
    (not just a sanitizer artifact); most likely to surface as a
    flaky, hard-to-reproduce ASan failure during Stage 1/2 work rather

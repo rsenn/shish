@@ -4740,4 +4740,29 @@ if [ -n "$X223_SELF" ] && [ -x "$X223_SELF" ]; then
     "a ;-joined sequence nested inside a function body must keep its own compound's body/closing-keyword indented at the function's depth, not reset to column 0"
 fi
 
+## fixes/224: sourcing a file whose path came from a command
+## substitution that ran an external command crashed a Debug build
+## (fd_setfd's "d->mode & FD_READWRITE" assertion). fdstack_pipe.c wired
+## a substitution's real pipe read-end fd directly via buffer_init(),
+## bypassing fd_setfd() -- so fd_list[] never recorded that fd as
+## belonging to the substitution's own struct. A later, unrelated fd
+## allocation landing above it then saw an apparent gap and backfilled
+## it with a synthetic placeholder, and fd_close() -- unable to tell
+## the placeholder from the real owner -- refused to close() the real
+## pipe fd to avoid a double-close, corrupting fd_list[] for whatever
+## came next. Only crashes under a Debug build (assert() is a no-op
+## otherwise); this still runs the repro under any build to confirm the
+## shell completes and actually runs the sourced file.
+X224_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
+
+if [ -n "$X224_SELF" ] && [ -x "$X224_SELF" ]; then
+  X224_TMP=$(mktemp -d)
+  echo 'echo sourced' > "$X224_TMP/s.sh"
+  printf 'D=$(dirname %s)\n. "$D/s.sh"\n' "$X224_TMP/x" > "$X224_TMP/t.sh"
+  X224=$("$X224_SELF" "$X224_TMP/t.sh" 2>&1)
+  rm -rf "$X224_TMP"
+  assert_equal "sourced" "$X224" \
+    "sourcing a file whose path came from an external command's command substitution must not crash a debug build and must actually run the sourced file"
+fi
+
 summary

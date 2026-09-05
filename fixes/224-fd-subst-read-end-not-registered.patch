@@ -1,0 +1,154 @@
+diff --git a/BUGS b/BUGS
+index c3c0d5df..9829dc75 100644
+--- a/BUGS
++++ b/BUGS
+@@ -465,20 +465,31 @@
+   timeout 5 build/x86_64-linux-gnu/shish h.sh; echo $?   # 124 = hung
+   ```
+ 
+-- debug-build-asserts-on-source-after-external-cmdsubst: a build with
+-  `-DCMAKE_BUILD_TYPE=Debug` (the only one where `assert()` is live)
+-  aborts in `fd_setfd()` when a script sources a file whose path came
+-  from a command substitution that ran an *external* command. A
+-  substitution running only builtins (`$(echo ...)`) is fine, so the
+-  fd left over from the forked child is what reaches `fd_setfd()`
+-  without `FD_READ`/`FD_WRITE` set. Every `tests/*.sh` file starts
+-  with exactly this pattern, so no test can run under a debug build.
++- debug-build-asserts-on-fd9-redirect-in-subshell-after-cmdsubst: a
++  build with `-DCMAKE_BUILD_TYPE=Debug` (the only one where `assert()`
++  is live) aborts in `fd_setfd()` when a subshell opens an explicit
++  high-numbered fd (`exec 9>file`) after an earlier command
++  substitution has run. `redir_open()` -> `fdtable_openfd()` ->
++  `fdtable_track(..., FDTABLE_FORCE)` backfills every untracked fd
++  number between the shell's own bookkeeping and the newly-opened one
++  with synthetic placeholder structs (`fdtable_unexpected()`), and one
++  of those backfilled numbers turns out not to be a real, currently-
++  open fd (`fdtable_check()` returns 0), so the placeholder's `mode`
++  ends up empty. A different, narrower instance of this same "phantom
++  fd_list[] gap" class of bug (fd-subst-read-end-never-registered-in-
++  fd_list, `fixes/224`) is already fixed; this is a separate trigger
++  through explicit numbered-fd redirection rather than a substitution's
++  own bridging pipe, not yet root-caused.
+ 
+   **Repro:**
+   ```sh
+   cmake -S . -B b -DCMAKE_BUILD_TYPE=Debug && cmake --build b -j
+-  echo 'echo sourced' > /tmp/s.sh
+-  printf 'D=$(dirname /tmp/x)\n. "$D/s.sh"\n' > /tmp/t.sh && ./b/shish /tmp/t.sh
++  cat <<'EOF' > /tmp/fd9.sh
++  TMPFILE=$(mktemp)
++  (exec 9>"$TMPFILE"
++  echo before >&9)
++  EOF
++  ./b/shish /tmp/fd9.sh
+   # shish: src/fd/fd_setfd.c:13: fd_setfd: Assertion `d->mode & FD_READWRITE' failed.
+   ```
+ 
+diff --git a/TODO.md b/TODO.md
+index 9dd5cad5..9b9c9c4d 100644
+--- a/TODO.md
++++ b/TODO.md
+@@ -371,7 +371,7 @@ opportunistically, not blocked on Stage 1/2, don't expect the score to move):
+ **Memory safety, not conformance** — tracked under "Memory safety" below
+ instead: `asan-leak-residue-not-fully-triaged`,
+ `ubsan-buffer-op-proto-function-type-mismatch`,
+-`debug-build-asserts-on-source-after-external-cmdsubst`,
++`debug-build-asserts-on-fd9-redirect-in-subshell-after-cmdsubst`,
+ `builtin-fork-races-sh-onsig-sigchld`.
+ 
+ ### Memory safety [ongoing, both stages] — ASan+UBSan as a recurring gate
+@@ -403,9 +403,13 @@ What's currently open under this build, from `BUGS`:
+    real mismatches in unused `lib/buffer/` glob-compiled dead code are
+    also left alone per this repo's "don't touch unused `lib/` code
+    unasked" standard.
+-3. `debug-build-asserts-on-source-after-external-cmdsubst` — an
+-   assertion firing only under `BUILD_DEBUG`/ASan builds, not release;
+-   needs triage before Stage 1 work can trust debug-build test runs.
++3. `debug-build-asserts-on-fd9-redirect-in-subshell-after-cmdsubst` —
++   an assertion firing only under `BUILD_DEBUG`/ASan builds, not
++   release; needs triage before Stage 1 work can trust debug-build
++   test runs. A narrower, more common instance of the same "phantom
++   fd_list[] gap" class of bug (any command substitution running an
++   external command, immediately followed by sourcing a file) is
++   already fixed (`fixes/224`) — this is what's left.
+ 4. `builtin-fork-races-sh-onsig-sigchld` — a real fork/signal race
+    (not just a sanitizer artifact); most likely to surface as a
+    flaky, hard-to-reproduce ASan failure during Stage 1/2 work rather
+diff --git a/src/fdstack/fdstack_pipe.c b/src/fdstack/fdstack_pipe.c
+index 9d956fa9..88eb5bf9 100644
+--- a/src/fdstack/fdstack_pipe.c
++++ b/src/fdstack/fdstack_pipe.c
+@@ -26,7 +26,6 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
+          resolves via its ->dup chain once the real owner is wired up. */
+       if(!(fd->mode & FD_DUP) && (fd->mode & FD_SUBST) == FD_SUBST) {
+         int e;
+-        /*      fd->mode |= FD_READ;*/
+ 
+         fd_push(fds, fd->n, FD_WRITE | FD_FLUSH);
+         fd_setbuf(fds, b, FD_BUFSIZE / 2);
+@@ -38,6 +37,31 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
+            already shadowing this slot. */
+         buffer_init(&fd->rb, &buffer_op_read, e, NULL, 0);
+ 
++        /* fd_pipe(fds) above only registers fd_list[]/fd_hi/fd_lo for
++           its own end (fds, via fd_setfd()) -- "e" (the other end,
++           just wired to "fd" above) never goes through fd_setfd(), so
++           fd_list[e] is left NULL. Left that way, a later real fd
++           allocation that lands above "e" sees a gap and backfills it
++           with a synthetic placeholder (fdtable_unexpected()), and
++           fd_close() then finds fd_list[e] pointing at that unrelated
++           placeholder instead of "fd" -- it neuters fd->rb.fd to -1
++           to avoid double-closing what it thinks is someone else's fd,
++           so the real pipe-read end never actually gets close()d
++           (fd-subst-read-end-fd-leaks-and-corrupts-later-fd_setfd).
++           Register it here the same way fd_setfd() would, without
++           calling fd_setfd() itself: fd's write side (fd->wb) is a
++           stralloc, not this real fd, and fd_setfd() would clobber
++           fd->wb.fd with "e" since fd->mode still carries FD_WRITE
++           from FD_SUBST. */
++        fd->mode |= FD_READ;
++        fd_list[e] = fd;
++
++        if(fd_hi <= e)
++          fd_hi = e + 1;
++
++        if(fd_lo > e)
++          fd_lo = e;
++
+         /* fd->r stays pointed at &fd->rb: fdstack_data() reads via
+            fd->rb.fd directly (bypassing buffer_get()), but
+            fdstack_unref() later copies *fd->r into a surviving
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 3a15cb4d..1b9b12d0 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -4740,4 +4740,29 @@ if [ -n "$X223_SELF" ] && [ -x "$X223_SELF" ]; then
+     "a ;-joined sequence nested inside a function body must keep its own compound's body/closing-keyword indented at the function's depth, not reset to column 0"
+ fi
+ 
++## fixes/224: sourcing a file whose path came from a command
++## substitution that ran an external command crashed a Debug build
++## (fd_setfd's "d->mode & FD_READWRITE" assertion). fdstack_pipe.c wired
++## a substitution's real pipe read-end fd directly via buffer_init(),
++## bypassing fd_setfd() -- so fd_list[] never recorded that fd as
++## belonging to the substitution's own struct. A later, unrelated fd
++## allocation landing above it then saw an apparent gap and backfilled
++## it with a synthetic placeholder, and fd_close() -- unable to tell
++## the placeholder from the real owner -- refused to close() the real
++## pipe fd to avoid a double-close, corrupting fd_list[] for whatever
++## came next. Only crashes under a Debug build (assert() is a no-op
++## otherwise); this still runs the repro under any build to confirm the
++## shell completes and actually runs the sourced file.
++X224_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
++
++if [ -n "$X224_SELF" ] && [ -x "$X224_SELF" ]; then
++  X224_TMP=$(mktemp -d)
++  echo 'echo sourced' > "$X224_TMP/s.sh"
++  printf 'D=$(dirname %s)\n. "$D/s.sh"\n' "$X224_TMP/x" > "$X224_TMP/t.sh"
++  X224=$("$X224_SELF" "$X224_TMP/t.sh" 2>&1)
++  rm -rf "$X224_TMP"
++  assert_equal "sourced" "$X224" \
++    "sourcing a file whose path came from an external command's command substitution must not crash a debug build and must actually run the sourced file"
++fi
++
+ summary
