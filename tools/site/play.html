@@ -148,13 +148,18 @@ echo "average: $avg"</textarea>
       <code>{offset, length, text}</code> edits into the original text --
       either way the result is re-parsed to check it's still valid shell.
     </p>
-    <textarea id="ast-visitor" class="playsrc wide" spellcheck="false" autocapitalize="off" autocorrect="off">/* function(ast, source, shish) -- called on the script parsed above.
-   Return either a new source string, or an array of
-   {offset, length, text} edits (applied via shish.spliceEdits). */
+    <textarea id="ast-visitor" class="playsrc wide" spellcheck="false" autocapitalize="off" autocorrect="off">/* Trace every for-loop iteration: insert an echo as the first
+   statement of each for_clause's body, naming the loop variable. */
 var edits = [];
 shish.walk(ast, function (node) {
-  if (node.kind === 'parameter_expansion' && Array.isArray(node.range))
-    edits.push({ offset: node.range[0], length: node.name.length, text: node.name + '_x' });
+  if (node.kind !== 'for_clause') return;
+  var span = shish.nodeSpan(node.cmds);
+  if (!span) return;
+  edits.push({
+    offset: span[0],
+    length: 0,
+    text: 'echo "  ' + node.varn + '=$' + node.varn + '"\n  ',
+  });
 });
 return edits;</textarea>
     <div class="playbar">
@@ -331,15 +336,105 @@ return edits;</textarea>
 
   var AST_EXAMPLES = {
     vars: 'total=0\nfor n in 10 20 30; do\n  total=$((total + n))\ndone\necho "total: ${total}"\navg=$((total / 3))\necho "average: $avg"',
-    conditionals: 'check() {\n  n=$1\n  if [ "$n" -lt 0 ]; then\n    echo "negative"\n  elif [ "$n" -eq 0 ]; then\n    echo "zero"\n  else\n    echo "positive"\n  fi\n}\nfor v in -3 0 7; do\n  case $v in\n    -*) echo "$v: has a sign" ;;\n    0) echo "$v: exactly zero" ;;\n    *) echo "$v: plain" ;;\n  esac\n  check "$v"\ndone',
+    conditionals: 'check() {\n  n=$1\n  if [ "$n" -lt 0 ]; then\n    echo "negative"\n  elif [ "$n" -eq 0 ]; then\n    echo "zero"\n  else\n    echo "positive"\n  fi\n}\nfor v in -3 0 7; do\n  case $v in\n    -3) echo "minus three" ;;\n    0) echo "exactly zero" ;;\n  esac\n  check "$v"\ndone',
     functions: 'double() {\n  echo $(($1 * 2))\n}\napply() {\n  fn=$1\n  shift\n  for x in "$@"; do\n    "$fn" "$x"\n  done\n}\napply double 1 2 3',
     expansions: 'path=/usr/local/lib/libshish.a\necho "dir:  ${path%/*}"\necho "file: ${path##*/}"\necho "stem: $(basename "$path" .a)"\nunset nope\necho "default: ${nope:-fallback}"\ncount=$((2 + 3 * 4))\necho "count=$count"',
+  };
+
+  /* one visitor per example above, chosen to show a different kind of
+   * structural edit -- inserting a new statement at a body's start
+   * (vars, functions), synthesizing a whole new branch from sibling
+   * nodes (conditionals), and a targeted per-node syntax rewrite driven
+   * by a node's flags rather than its identity (expansions). */
+  var AST_VISITORS = {
+    vars:
+      '/* Trace every for-loop iteration: insert an echo as the first\n' +
+      '   statement of each for_clause\'s body, naming the loop variable. */\n' +
+      'var edits = [];\n' +
+      'shish.walk(ast, function (node) {\n' +
+      '  if (node.kind !== \'for_clause\') return;\n' +
+      '  var span = shish.nodeSpan(node.cmds);\n' +
+      '  if (!span) return;\n' +
+      '  edits.push({\n' +
+      '    offset: span[0],\n' +
+      '    length: 0,\n' +
+      '    text: \'echo "  \' + node.varn + \'=$\' + node.varn + \'"\\n  \',\n' +
+      '  });\n' +
+      '});\n' +
+      'return edits;',
+    conditionals:
+      '/* Add a missing default branch to every case-statement: walk every\n' +
+      '   case_clause, and if none of its patterns is a bare "*", splice a\n' +
+      '   new "*) echo ...;;" branch in just before "esac". The new branch\n' +
+      '   text is synthesized, not copied from a template -- it reads the\n' +
+      '   case\'s own discriminant word straight out of the source. */\n' +
+      'var edits = [];\n' +
+      'shish.walk(ast, function (node) {\n' +
+      '  if (node.kind !== \'case_clause\') return;\n' +
+      '\n' +
+      '  var hasDefault = node.list.some(function (item) {\n' +
+      '    return item.pats.some(function (p) {\n' +
+      '      return p.list.length === 1 && p.list[0].kind === \'string\' && p.list[0].stra === \'*\';\n' +
+      '    });\n' +
+      '  });\n' +
+      '  if (hasDefault) return;\n' +
+      '\n' +
+      '  var bodySpan = shish.nodeSpan(node.list);\n' +
+      '  var wordSpan = shish.nodeSpan(node.word);\n' +
+      '  if (!bodySpan || !wordSpan) return;\n' +
+      '\n' +
+      '  var discriminant = source.slice(wordSpan[0], wordSpan[1]);\n' +
+      '  edits.push({\n' +
+      '    offset: bodySpan[1],\n' +
+      '    length: 0,\n' +
+      '    text: \'\\n    *) echo "unhandled: \' + discriminant + \'" ;;\',\n' +
+      '  });\n' +
+      '});\n' +
+      'return edits;',
+    functions:
+      '/* Instrument every function definition with an entry trace: insert\n' +
+      '   an echo naming the function as the first statement of its body. */\n' +
+      'var edits = [];\n' +
+      'shish.walk(ast, function (node) {\n' +
+      '  if (node.kind !== \'function_definition\') return;\n' +
+      '  var braceGroup = node.body && node.body[0];\n' +
+      '  if (!braceGroup || !braceGroup.cmds) return;\n' +
+      '\n' +
+      '  var span = shish.nodeSpan(braceGroup.cmds);\n' +
+      '  if (!span) return;\n' +
+      '\n' +
+      '  edits.push({\n' +
+      '    offset: span[0],\n' +
+      '    length: 0,\n' +
+      '    text: \'echo "-> \' + node.name + \'"\\n  \',\n' +
+      '  });\n' +
+      '});\n' +
+      'return edits;',
+    expansions:
+      '/* Style normalization: rewrite every bare $name reference (no\n' +
+      '   ${...} modifier, so no braces are needed) into explicit ${name}\n' +
+      '   form -- a per-node rewrite driven by the node\'s own flags,\n' +
+      '   not by matching a particular variable name like rename does. */\n' +
+      'var edits = [];\n' +
+      'shish.walk(ast, function (node) {\n' +
+      '  if (node.kind !== \'parameter_expansion\') return;\n' +
+      '  if (node.word !== null) return;                    // has a modifier -> already braced\n' +
+      '  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(node.name)) return; // skip $1, $#, $@, ...\n' +
+      '  if (!Array.isArray(node.range)) return;\n' +
+      '\n' +
+      '  var start = node.range[0], end = node.range[1];\n' +
+      '  if (source[start - 1] === \'{\') return;             // already explicitly braced\n' +
+      '\n' +
+      '  edits.push({ offset: start, length: end - start, text: \'{\' + node.name + \'}\' });\n' +
+      '});\n' +
+      'return edits;',
   };
 
   document.querySelectorAll('[data-ast-example]').forEach(function (a) {
     a.addEventListener('click', function (e) {
       e.preventDefault();
       astIn.value = AST_EXAMPLES[a.dataset.astExample];
+      astVisitorCode.value = AST_VISITORS[a.dataset.astExample];
     });
   });
 

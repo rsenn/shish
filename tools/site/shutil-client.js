@@ -90,6 +90,28 @@ window.shish = (function () {
     return -1;
   }
 
+  /** Byte span [start, end) covered by every "range" found anywhere in
+   * `node` (which may itself be an array, e.g. a "cmds"/"list" field) --
+   * for a compound node with no "range" of its own, this is how a
+   * visitor finds where its body starts/ends to insert new code around
+   * it. Returns null if nothing under `node` carries a range (only
+   * possible in loc-only mode, or an empty compound). */
+  function nodeSpan(node) {
+    var start = Infinity, end = -Infinity;
+
+    (function scan(n) {
+      if (Array.isArray(n)) { n.forEach(scan); return; }
+      if (!n || typeof n !== 'object') return;
+      if (Array.isArray(n.range)) {
+        if (n.range[0] < start) start = n.range[0];
+        if (n.range[1] > end) end = n.range[1];
+      }
+      for (var k in n) if (k !== 'range') scan(n[k]);
+    })(node);
+
+    return start <= end ? [start, end] : null;
+  }
+
   /**
    * Finds every occurrence of shell variable `name` in `ast` -- each
    * assignment ("name=...") and every $name/${name} parameter expansion
@@ -142,6 +164,7 @@ window.shish = (function () {
     loadShutil: loadShutil,
     locToOffset: locToOffset,
     walk: walk,
+    nodeSpan: nodeSpan,
     findVarOccurrences: findVarOccurrences,
     spliceEdits: spliceEdits,
     renameVar: renameVar,
