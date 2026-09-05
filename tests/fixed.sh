@@ -4821,4 +4821,16 @@ if [ -n "$X226_SELF" ] && [ -x "$X226_SELF" ]; then
     "the explicit numbered-fd redirect must actually deliver the write to the target file"
 fi
 
+## fixes/227: debug_list() (shared by "dump"/BUILD_DEBUG and shparse2ast's
+## JSON AST) printed an empty N_ARGSTR chunk that the parser inserts
+## around every substitution inside quotes (e.g. "$x") purely to carry
+## quoting state -- pure noise once a sibling node already shows that
+## same bit. Like fixes/222 above, only shparse2ast's own JSON output
+## shows this, so it's verified by direct invocation instead:
+##   cmake -DBUILD_SHPARSE2AST=ON ...
+##   printf 'host="$host"\n' | shparse2ast /dev/stdin
+##   # before: two extra {"kind":"string","stra":""} chunks bracketing
+##   #         the parameter_expansion node
+##   # after:  only the "host=" string chunk and the parameter_expansion
+
 summary
