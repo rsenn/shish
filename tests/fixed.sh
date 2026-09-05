@@ -4791,4 +4791,34 @@ if [ -n "$X225_SELF" ] && [ -x "$X225_SELF" ]; then
     "a here-document containing a command substitution that itself opens a here-document must not hang the shell"
 fi
 
+## fixes/226: an explicit high-numbered fd redirect (`exec 9>file`) done
+## inside a subshell, after an earlier command substitution has run,
+## used to abort a debug build in fd_setfd(). fdtable_unexpected()'s
+## backfill loop checked fdtable_check(fd_expected) -- the same, wrong
+## fd number on every iteration -- instead of fdtable_check(e), and
+## called fd_setfd() even when that check reported the fd wasn't open
+## (mode 0), which fd_setfd() then rejects. Fixed to check the right
+## fd and to leave fd_list[e] NULL instead of registering a placeholder
+## for an fd that was never actually open.
+X226_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
+
+if [ -n "$X226_SELF" ] && [ -x "$X226_SELF" ]; then
+  X226_SCRIPT=$(mktemp)
+  X226_OUT=$(mktemp)
+  printf '%s\n' \
+    'TMPFILE=$(mktemp)' \
+    '(exec 9>"$TMPFILE"' \
+    'echo before >&9)' \
+    'cat "$TMPFILE"' \
+    'rm -f "$TMPFILE"' > "$X226_SCRIPT"
+  "$X226_SELF" "$X226_SCRIPT" >"$X226_OUT" 2>/dev/null
+  X226_STATUS=$?
+  X226_CONTENT=$(cat "$X226_OUT")
+  rm -f "$X226_SCRIPT" "$X226_OUT"
+  assert_equal "0" "$X226_STATUS" \
+    "an explicit numbered-fd redirect in a subshell after a command substitution must not abort the shell"
+  assert_equal "before" "$X226_CONTENT" \
+    "the explicit numbered-fd redirect must actually deliver the write to the target file"
+fi
+
 summary
