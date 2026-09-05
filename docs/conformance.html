@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conformance — shish</title>
+<meta name="description" content="shish — a small POSIX-ish shell in C. 139 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body class="has-sidebar">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="mark">$_</span> shish</a>
+  <nav class="topnav">
+    <a href="../getting-started.html">Get started</a>
+    <a href="../docs/containers.html">Containers</a>
+    <a href="../docs/wasm.html">WASM</a>
+    <a href="../play.html">Playground</a>
+    <a href="https://github.com/rsenn/shish" target="_blank" rel="noopener">GitHub</a>
+  </nav>
+  <button class="themetoggle" type="button" aria-label="Toggle colour scheme">◐</button>
+</header>
+<div class="layout">
+<aside class="sidebar"><div class="navgroup"><h3>Start here</h3><ul><li><a href="../getting-started.html">Getting started</a></li><li><a href="building.html">Building</a></li><li><a href="builtins.html">Builtins</a></li></ul></div><div class="navgroup"><h3>Where it runs</h3><ul><li><a href="containers.html">Containers</a></li><li><a href="agents.html">Agent sandboxes</a></li><li><a href="wasm.html">WebAssembly</a></li></ul></div><div class="navgroup"><h3>Reference</h3><ul><li><a href="conformance.html" class="here">Conformance</a></li></ul></div></aside>
+<main class="doc">
+<article><h1 id="conformance"><a class="anchor" href="#conformance" aria-hidden="true">#</a>Conformance</h1>
+<p>shish targets the shell language as POSIX defines it, and nothing else.
+<strong>No construct is invented here</strong>: if it is not in POSIX, or already in
+another shell, it does not go in. Anything shish accepts beyond the
+standard — <code>local</code>, <code>source</code>, brace expansion, history expansion — is
+spelled the way bash, ksh or dash already spell it, and is a compile-time
+or run-time option rather than the default (<code>-B</code> for brace expansion,
+<code>-H</code> for history expansion). A script
+that runs under shish is meant to keep running under <code>sh</code>.</p>
+<h2 id="where-it-stands"><a class="anchor" href="#where-it-stands" aria-hidden="true">#</a>Where it stands</h2>
+<p>The measurable target is yash's POSIX conformance suite, which ships in
+<code>tests/posix</code> (120 files, 12195 cases).</p>
+<div class="codeblock"><pre><code>cases 12195   passed 5541   failed 551   skipped 6103</code></pre></div>
+<p>The 6103 skips are not passes: most of them need a controlling terminal
+(the <code>sigttin</code>/<code>sigttou</code>/<code>sigtstp</code> families, <code>testtty-p</code>, <code>wait-p</code>) and
+are not run in a normal CI environment.</p>
+<p>Clean files, as of this writing: `andor arith cd errexit error eval exec
+for fsplit getopts grouping if kill3 nop option path ppid readonly test
+until while<code>, plus six of the low-numbered </code>sig*-p` files
+(<code>sigcont2 sighup2 sigint2 sigquit2 sigterm2 sigurg2</code>).</p>
+<p>Where the remaining failures are:</p>
+<div class="tablewrap"><table><thead><tr><th>area</th><th>state</th></tr></thead><tbody><tr><td>signal disposition (<code>sig*-p</code>)</td><td>311 failures, mostly the <code>sig*6-p</code> files (child process disposition after fork)</td></tr><tr><td><code>alias</code></td><td>48 failures — printing and subshell inheritance are broken</td></tr><tr><td><code>kill</code></td><td>32 failures — <code>kill -s NAME</code> fails for most names</td></tr><tr><td>quoting / parameter expansion</td><td>36 failures — backslash edge cases, some <code>${...}</code> forms</td></tr><tr><td><code>read</code></td><td>22 failures — IFS splitting rules, <code>-r</code>, one-line-only reads</td></tr><tr><td><code>command</code>, <code>unset</code>, <code>set</code>, <code>umask</code>, <code>trap</code>, <code>redir</code>, <code>simple</code></td><td>64 failures — assorted option-handling and edge-case gaps</td></tr></tbody></table></div>
+<p><code>BUGS</code> lists every confirmed defect with a repro; <code>TODO.md</code> is the
+work plan, phase by phase, with the evidence for why each item is where
+it is in the queue.</p>
+<h2 id="running-the-suites"><a class="anchor" href="#running-the-suites" aria-hidden="true">#</a>Running the suites</h2>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cd</span> <span class="t-id">build</span>/<span class="t-id">x86_64-linux-gnu</span>
+<span class="t-id">ctest</span>                       <span class="t-cm"># tests/*.sh + tests/posix/*.tst</span>
+<span class="t-id">ctest</span> <span class="t-op">-R</span> <span class="t-kw">if</span>.<span class="t-id">sh</span> <span class="t-op">-V</span>           <span class="t-cm"># one file</span></code></pre></div>
+<p>A single conformance file, without a rebuild — the testee path must be
+absolute:</p>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">sh</span> <span class="t-id">tests</span>/<span class="t-id">run-tst.sh</span> <span class="t-str">"$PWD/build/x86_64-linux-gnu/shish"</span> <span class="t-id">tests</span>/<span class="t-id">posix</span> <span class="t-id">exec-p.tst</span></code></pre></div>
+<p><code>tests/yash</code> (yash's own suite, 119 more files) is registered too but off
+by default; <code>-DDO_YASH_TESTS=ON</code> includes it.</p>
+<h3 id="the-scoreboard"><a class="anchor" href="#the-scoreboard" aria-hidden="true">#</a>The scoreboard</h3>
+<p>Every run leaves <code>.trs</code> files behind:</p>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cd</span> <span class="t-id">tests</span>/<span class="t-id">posix</span> &amp;&amp; <span class="t-kw">for</span> <span class="t-id">f</span> <span class="t-kw">in</span> *.<span class="t-id">trs</span>; <span class="t-kw">do</span>
+  <span class="t-id">t</span>=$(<span class="t-id">grep</span> <span class="t-op">-Ec</span> <span class="t-str">'^%%+ (PASSED|FAILED|SKIPPED):'</span> <span class="t-str">"$f"</span>)
+  <span class="t-id">x</span>=$(<span class="t-id">grep</span> <span class="t-op">-Ec</span> <span class="t-str">'^%%+ FAILED:'</span> <span class="t-str">"$f"</span>)
+  [ <span class="t-str">"$x"</span> <span class="t-op">-gt</span> <span class="t-num">0</span> ] &amp;&amp; <span class="t-id">printf</span> <span class="t-str">'%4d %-14s %d/%d\n'</span> <span class="t-str">"$x"</span> <span class="t-str">"${f%.trs}"</span> <span class="t-str">"$((t-x))"</span> <span class="t-str">"$t"</span>
+<span class="t-kw">done</span> | <span class="t-id">sort</span> <span class="t-op">-rn</span></code></pre></div>
+<h2 id="the-projects-own-tests"><a class="anchor" href="#the-projects-own-tests" aria-hidden="true">#</a>The project's own tests</h2>
+<p><code>tests/*.sh</code> are plain shell scripts run through the freshly built shell.
+<code>tests/fixed.sh</code> is the regression file: every fix in <code>fixes/</code> has a case
+there that fails without it. It is 430 assertions long and is the first
+thing to run after a change.</p>
+<h2 id="a-note-on-measurement"><a class="anchor" href="#a-note-on-measurement" aria-hidden="true">#</a>A note on measurement</h2>
+<p>The <code>sig*</code> files are timing-sensitive and their scores move with machine
+load — the same binary has scored <code>sigterm1-p</code> 36/180 and 177/180 in
+consecutive runs on a busy machine. Measure signals on an idle one, and
+re-measure before concluding anything from a change.</p></article>
+<p class="editlink"><a href="https://github.com/rsenn/shish/blob/main/doc/conformance.md">Edit this page on GitHub →</a></p>
+</main>
+<nav class="toc"><h3>On this page</h3><ul><li class="lvl2"><a href="#where-it-stands">Where it stands</a></li><li class="lvl2"><a href="#running-the-suites">Running the suites</a></li><li class="lvl3"><a href="#the-scoreboard">The scoreboard</a></li><li class="lvl2"><a href="#the-projects-own-tests">The project's own tests</a></li><li class="lvl2"><a href="#a-note-on-measurement">A note on measurement</a></li></ul></nav>
+</div>
+<footer class="sitefoot">
+  <p>shish — GPL v2. Built from the repo's own markdown by
+     <a href="https://github.com/rsenn/shish/blob/main/tools/site/build.js">tools/site/build.js</a>, running on qjsm.</p>
+</footer>
+<script>
+document.querySelector('.themetoggle').addEventListener('click', function () {
+  var d = document.documentElement;
+  var dark = d.dataset.theme ? d.dataset.theme === 'dark'
+    : matchMedia('(prefers-color-scheme: dark)').matches;
+  d.dataset.theme = dark ? 'light' : 'dark';
+  try { localStorage.setItem('theme', d.dataset.theme); } catch (e) {}
+});
+</script>
+</body>
+</html>

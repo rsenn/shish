@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>shish — shish</title>
+<meta name="description" content="shish — a small POSIX-ish shell in C. 139 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body class="has-sidebar">
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="mark">$_</span> shish</a>
+  <nav class="topnav">
+    <a href="getting-started.html">Get started</a>
+    <a href="docs/containers.html">Containers</a>
+    <a href="docs/wasm.html">WASM</a>
+    <a href="play.html">Playground</a>
+    <a href="https://github.com/rsenn/shish" target="_blank" rel="noopener">GitHub</a>
+  </nav>
+  <button class="themetoggle" type="button" aria-label="Toggle colour scheme">◐</button>
+</header>
+<div class="layout">
+<aside class="sidebar"><div class="navgroup"><h3>Start here</h3><ul><li><a href="getting-started.html" class="here">Getting started</a></li><li><a href="docs/building.html">Building</a></li><li><a href="docs/builtins.html">Builtins</a></li></ul></div><div class="navgroup"><h3>Where it runs</h3><ul><li><a href="docs/containers.html">Containers</a></li><li><a href="docs/agents.html">Agent sandboxes</a></li><li><a href="docs/wasm.html">WebAssembly</a></li></ul></div><div class="navgroup"><h3>Reference</h3><ul><li><a href="docs/conformance.html">Conformance</a></li></ul></div></aside>
+<main class="doc">
+<article><h1 id="shish"><a class="anchor" href="#shish" aria-hidden="true">#</a>shish</h1>
+<p>A small POSIX-ish shell in C. One static binary, no <code>stdio</code>, no <code>printf</code> —
+around 139 KB stripped, and it compiles to 184 KB of WebAssembly that runs
+in a browser tab.</p>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">shish</span> <span class="t-op">-c</span> <span class="t-str">'for f in *.c; do echo "${f%.c}"; done'</span></code></pre></div>
+<ul>
+<li><strong>Small.</strong> 139 KB stripped on x86-64 (dash 126 KB, bash 1.4 MB,
+busybox 2.0 MB), built against an in-tree copy of
+Felix von Leitner's libowfat (<code>lib/</code>) instead of the C library's
+formatted I/O.</li>
+<li><strong>Self-contained.</strong> <code>cat</code>, <code>rm</code>, <code>mkdir</code>, <code>mktemp</code>, <code>ln</code>, <code>chmod</code>,
+<code>basename</code>, <code>dirname</code>, <code>uname</code>, <code>which</code> and friends are compile-time
+builtins. A script can run with <code>PATH=</code> empty and no <code>/bin</code> at all.</li>
+<li><strong>Portable.</strong> CMake cross-build presets for glibc, musl, dietlibc,
+mingw32/64, MSYS, Android, Termux, aarch64, Emscripten and WASI.</li>
+<li><strong>Auditable.</strong> ~26 k lines of C, one function per file, no dynamic
+language runtime, no history file, no startup file it did not ask for.</li>
+</ul>
+<h2 id="status"><a class="anchor" href="#status" aria-hidden="true">#</a>Status</h2>
+<p>shish is <strong>alpha, and not a drop-in <code>/bin/sh</code></strong>. It runs the shell
+language — pipelines, redirections, functions, <code>case</code>, loops, parameter
+expansion, arithmetic, job control, traps — and it passes 5541 cases of
+yash's POSIX conformance suite, but there are 551 it still fails and a
+list of known defects in <a href="https://github.com/rsenn/shish/blob/main/BUGS" target="_blank" rel="noopener">undefined</a>. Do not put it under <code>init</code> yet.</p>
+<p>See <a href="docs/conformance.html">Conformance</a> for what actually works today, and
+<a href="https://github.com/rsenn/shish/blob/main/TODO.md" target="_blank" rel="noopener">undefined</a> for what is being fixed next.</p>
+<h2 id="build"><a class="anchor" href="#build" aria-hidden="true">#</a>Build</h2>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cmake</span> <span class="t-op">-S</span> . <span class="t-op">-B</span> <span class="t-id">build</span>/<span class="t-id">x86_64-linux-gnu</span>
+<span class="t-id">cmake</span> <span class="t-op">--build</span> <span class="t-id">build</span>/<span class="t-id">x86_64-linux-gnu</span> <span class="t-op">-j</span></code></pre></div>
+<p>That produces <code>shish</code> (the shell) and <code>shformat</code> (a pretty-printer that
+reuses the parser). See <a href="docs/building.html">Building</a> for cross-compiling,
+static linking, and picking which builtins get compiled in.</p>
+<h2 id="documentation"><a class="anchor" href="#documentation" aria-hidden="true">#</a>Documentation</h2>
+<div class="tablewrap"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td><a href="docs/building.html">Building</a></td><td>toolchains, options, cross-compilation</td></tr><tr><td><a href="docs/builtins.html">Builtins</a></td><td>what is built in, and how to choose</td></tr><tr><td><a href="docs/containers.html">Containers</a></td><td>a shell layer that is one file</td></tr><tr><td><a href="docs/agents.html">Agent sandboxes</a></td><td>shish as an AI harness's <code>/bin/sh</code></td></tr><tr><td><a href="docs/wasm.html">WebAssembly</a></td><td>emscripten and WASI builds</td></tr><tr><td><a href="docs/conformance.html">Conformance</a></td><td>test suites and current scores</td></tr></tbody></table></div>
+<h2 id="name"><a class="anchor" href="#name" aria-hidden="true">#</a>Name</h2>
+<p><code>sh-ish</code>, because it is derived from <code>sh</code>; <code>shisha</code>, the water pipe, since
+shells and pipes are related topics; and shish kebab, which is a nice
+Turkish meal.</p>
+<h2 id="licence"><a class="anchor" href="#licence" aria-hidden="true">#</a>Licence</h2>
+<p>GPL v2 — see <a href="https://github.com/rsenn/shish/blob/main/COPYING" target="_blank" rel="noopener">undefined</a>. <code>lib/</code> is a copy of Felix von
+Leitner's libowfat, under its own terms.</p></article>
+<p class="editlink"><a href="https://github.com/rsenn/shish/blob/main/README.md">Edit this page on GitHub →</a></p>
+</main>
+<nav class="toc"><h3>On this page</h3><ul><li class="lvl2"><a href="#status">Status</a></li><li class="lvl2"><a href="#build">Build</a></li><li class="lvl2"><a href="#documentation">Documentation</a></li><li class="lvl2"><a href="#name">Name</a></li><li class="lvl2"><a href="#licence">Licence</a></li></ul></nav>
+</div>
+<footer class="sitefoot">
+  <p>shish — GPL v2. Built from the repo's own markdown by
+     <a href="https://github.com/rsenn/shish/blob/main/tools/site/build.js">tools/site/build.js</a>, running on qjsm.</p>
+</footer>
+<script>
+document.querySelector('.themetoggle').addEventListener('click', function () {
+  var d = document.documentElement;
+  var dark = d.dataset.theme ? d.dataset.theme === 'dark'
+    : matchMedia('(prefers-color-scheme: dark)').matches;
+  d.dataset.theme = dark ? 'light' : 'dark';
+  try { localStorage.setItem('theme', d.dataset.theme); } catch (e) {}
+});
+</script>
+</body>
+</html>
