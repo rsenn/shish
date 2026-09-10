@@ -37,8 +37,13 @@ export function slugify(text) {
 
 /* ---------------------------------------------------------------- inline */
 
-function inline(text, ctx) {
-  const slots = [];
+function inline(text, ctx, slots) {
+  /* shared across recursive calls (see the link-label case below): a
+     label containing a code span was already slotted into *this*
+     array by the outer call before the link regex ever ran, so a
+     fresh, empty array here would resolve that slot reference to
+     undefined instead of the code span's HTML. */
+  slots = slots || [];
   const put = html => NUL + (slots.push(html) - 1) + NUL;
 
   // 1. code spans, before anything else gets a chance to look inside them
@@ -54,7 +59,7 @@ function inline(text, ctx) {
       const url = ctx.link ? ctx.link(href) : href;
       const t = title ? ' title="' + escAttr(title) + '"' : '';
       const ext = /^[a-z][a-z0-9+.-]*:/i.test(url) ? ' target="_blank" rel="noopener"' : '';
-      return put('<a href="' + escAttr(url) + '"' + t + ext + '>' + inline(label, ctx) + '</a>');
+      return put('<a href="' + escAttr(url) + '"' + t + ext + '>' + inline(label, ctx, slots) + '</a>');
     });
 
   // 4. bare URLs
