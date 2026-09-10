@@ -1,3 +1,156 @@
+- exit-trap-fires-per-forked-pipeline-stage: an `EXIT` trap fires once
+  for every forked-off job/pipeline-stage child that runs `eval_tree()`
+  with `E_EXIT` set, not just once at the real top-level shell exit --
+  confirmed with gdb (`break trap_exit`; the extra firing happens in a
+  child gdb doesn't follow by default, so its own `trap_exit` call
+  never hits the breakpoint, but its stdout output still lands in the
+  script's output stream). `sh_forked()` (`src/sh/sh_forked.c`) already
+  sets a global `sh_child = 1` flag for exactly this "I'm a disposable
+  forked-off worker, not the real shell" case, but nothing ever reads
+  it -- `sh_exit()` (`src/sh/sh_exit.c:13`) unconditionally calls
+  `trap_exit(retcode)` whenever `eval_exit()` has nothing to longjmp
+  back to, with no check for `sh_child`.
+
+  **Repro:**
+  ```sh
+  cat <<'EOF' > /tmp/t.sh
+  #!/bin/sh
+  cleanup() { echo "CLEANUP CALLED"; }
+  trap cleanup EXIT
+  echo "before pipe"
+  echo hi | cat
+  echo "after pipe"
+  EOF
+  shish /tmp/t.sh
+  # before pipe / hi / CLEANUP CALLED / after pipe / CLEANUP CALLED
+  # dash: before pipe / hi / after pipe / CLEANUP CALLED (once, at real exit)
+  ```
+
+  Reproduces the same way with `HAVE_FORK` defined (a normal native
+  build) -- not specific to the `!HAVE_FORK` sequential-pipeline
+  fallback: `eval_pipeline()`'s "lastpipe" optimization always runs a
+  pipeline's *last* member unforked in the current shell regardless of
+  `HAVE_FORK`, but an *external* command still needs `exec_program()`'s
+  own real `fork()` to actually run, and every *non*-last member is
+  forked directly via `job_fork()` (`eval_pipeline.c`'s
+  `exit(eval_tree(e, node, E_EXIT))` branch) -- either fork target hits
+  this. In the repro, `cat` is `BUILTIN_CAT`'s in-process builtin and
+  runs via the lastpipe path so it isn't itself where the trap fires;
+  it's `echo`'s `job_fork()`-forked child (the non-last pipeline
+  member) whose `eval_tree(e, node, E_EXIT)` call sets `ex=1` and hits
+  `eval_tree.c`'s own trailing `if(ex) sh_exit(ret);` before returning
+  to the `exit()` wrapping it.
+
+- fd-src-live-script-fd-stolen-by-user-redirection: any redirection
+  (an `exec N>file`, a backgrounded command's own `<file`/`>file`, a
+  pipe, ...) whose *kernel* fd allocation happens to land on the same
+  low fd number the interpreter's own running-script reader is using
+  (fd 3 in the repro -- simply "next available" after stdin/stdout/
+  stderr, on a build without `HAVE_MMAP`, where `fd_mmap()`
+  (`src/fd/fd_mmap.c`) falls back to a real `open()` + buffered
+  `read(2)` instead of mmap'ing the whole file up front) silently
+  clobbers that fd via `dup2()`, corrupting whatever the parser is
+  mid-read through. Confirmed with strace + gdb against a script that
+  does `exec 3>fifo; exec 4<fifo; ...; cat >"$READER" <<'EOF' ... EOF`:
+  the heredoc body gets truncated mid-word (`"#!/bin/sh\nwhi\n"` instead
+  of the real ~20-line body) and fed to `cat` as its stdin, because
+  `source_get()` starts reading from the wrong (or now-closed) kernel
+  fd 3 once the parser's read-ahead buffer runs dry. Depending on
+  script shape this also surfaces as a bogus `cat: '>': No such file or
+  directory` (the redirection token itself gets corrupted/lost) or a
+  parse error well past the real problem site.
+
+  Root cause, pinned down via gdb (`break dup2 if $rsi==3`):
+  `fdtable_openfd()` (`src/fdtable/fdtable_openfd.c:34-53`) is the
+  function that `dup2()`s a freshly-opened kernel fd onto the slot a
+  redirection actually wants. Before doing that dup2, it's supposed to
+  rescue whatever `struct fd` currently occupies that kernel fd number
+  by giving it a fresh one via `dup()` first (`occupant != d &&
+  ... occupant != fdtable[occupant->n]`, i.e. "occupant is still the
+  live virtual owner of its slot, still needed"). But the script's own
+  source-reading `struct fd` (`fd_src`, `#define fd_src
+  fdtable[STDSRC_FILENO]`, `src/fdtable.h`) uses the negative sentinel
+  `STDSRC_FILENO == -1` (`src/fd.h`) as its virtual fd number `n`, on
+  purpose, precisely so ordinary user fd numbers (0..`FD_MAX`) can
+  never collide with it *virtually*. That backfires here:
+  `fdtable[occupant->n]` for `fd_src` is `fdtable[-1]`, which is
+  `fd_src` itself -- so `occupant != fdtable[occupant->n]` is always
+  false for it, the "still needed, rescue it" branch never fires, and
+  `fd_src`'s live kernel fd gets `dup2()`'d over (and `close()`'d, see
+  `fdtable_openfd.c:50`) with nothing to notice or relocate it.
+  Everything downstream (`fd_list[e]` bookkeeping, `fdtable_gap()`) is
+  fine; the bug is specifically this one shadow-detection condition
+  treating "always the active owner of a slot no one else can address"
+  (true of any negative-`n` sentinel fd) the same as "definitely safe
+  to steal my kernel fd out from under".
+
+  **Repro:**
+  ```sh
+  printf '%s\n' \
+    '#!/bin/sh' 'set -u' \
+    'TMPDIR=$(mktemp -d)' \
+    'mkfifo "$TMPDIR/in" "$TMPDIR/out"' \
+    'sleep 30 <"$TMPDIR/in" >"$TMPDIR/out" 2>"$TMPDIR/log" &' \
+    'CONN_PID=$!' \
+    'exec 3>"$TMPDIR/in"' \
+    'exec 4<"$TMPDIR/out"' \
+    'sleep 0.5' \
+    'cat >"$TMPDIR/reader.sh" <<'"'"'EOF'"'"'' \
+    '#!/bin/sh' \
+    'while IFS= read -r line; do' \
+    '  line=$(printf "%s" "$line" | tr -d "\r")' \
+    '  printf "IN:%s\n" "$line"' \
+    'done' \
+    'exit 1' \
+    'EOF' \
+    'echo "AFTER HEREDOC ($(wc -c <"$TMPDIR/reader.sh") bytes)"' \
+    'kill "$CONN_PID" 2>/dev/null; rm -rf "$TMPDIR"' \
+    > /tmp/t2.sh
+  # needs a build without HAVE_MMAP (e.g. cfg's Debug preset on this
+  # host) -- fd_mmap()'s HAVE_MMAP branch closes the raw open() fd
+  # right after mmap'ing, so there is no live low-numbered fd left to
+  # steal
+  shish /tmp/t2.sh
+  # shish: "AFTER HEREDOC (14 bytes)" instead of the real ~90+ byte body
+  # dash:  "AFTER HEREDOC (91 bytes)"
+  ```
+
+- fixed-sh-truncates-under-non-mmap-build: running `tests/fixed.sh`
+  itself through a build without `HAVE_MMAP` (e.g. this host's Debug
+  preset) stops producing output partway through -- consistently at
+  the same point, right after the fixes/133 redirection block's last
+  assertion (`tests/fixed.sh:2898`), with no error printed and exit
+  code 0 -- instead of continuing through the rest of the file and
+  reaching the final `summary` call. Confirmed identical before and
+  after the `fd-src-live-script-fd-stolen-by-user-redirection` fix
+  above (same cutoff point on unmodified `main`), so it predates that
+  work and isn't a side effect of it. The very next block
+  (`tests/fixed.sh:2928`, fixes/134) has a standing comment describing
+  exactly this failure mode: "a syntax error while parsing *this* test
+  file itself (read via mmap, not `-c`) takes `parse_error()`'s
+  immediate `sh_exit(1)` path ... which would kill this whole test
+  run" -- on a non-`HAVE_MMAP` build the file isn't read via mmap at
+  all (see `fd-src-live-script-fd-stolen-by-user-redirection` above),
+  so that's a plausible trigger, but not confirmed: the two lines
+  immediately before the cutoff (`tests/fixed.sh:2899-2900`, `exec
+  3>&1` then `exec 3>&-`) also touch fd 3 the same way the fixed bug's
+  repro did, so a related-but-distinct gap in the same fd-rescue
+  machinery (`exec 3>&-`'s close path goes through `fd_null()`, not
+  `fdtable_openfd()`/`fdtable_gap()`) is at least as plausible. Not yet
+  isolated to either.
+
+  **Repro:**
+  ```sh
+  # needs a build without HAVE_MMAP (e.g. this host's Debug preset)
+  cmake -S . -B build/debug -DCMAKE_BUILD_TYPE=Debug
+  cmake --build build/debug -j
+  build/debug/shish tests/fixed.sh | tail -5
+  # stops right after "...redir_open's R_OPEN path) must still work
+  # correctly: OK" -- no summary line, no error, exit 0
+  # a build with HAVE_MMAP (e.g. this host's default MinSizeRel preset)
+  # runs the whole file and prints "Tests succeeded: NNN" at the end
+  ```
+
 - yash-suite-other-hangs: a full sweep of all 119 `tests/yash/*.tst`
   files (each run individually with a 10s timeout via `run-tst.sh`,
   same as CTest's own per-file `TIMEOUT` but much shorter to survey

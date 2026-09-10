@@ -63,14 +63,41 @@ fdtable_gap(int e, int flags) {
      Relocating gap's real backing to a fresh fd (a genuine dup(),
      independent of "e") frees "e" up exactly the same as destroying
      gap did, but keeps gap's struct/fdstack identity intact so the
-     eventual pop still finds it. */
-  if((flags & FDTABLE_FORCE) && gap != fdtable[gap->n]) {
+     eventual pop still finds it.
+
+     gap->n < 0 (e.g. fd_src, STDSRC_FILENO) is the same case as the
+     shadow check above in fdtable_openfd.c: a negative virtual fd is
+     a sentinel slot nothing else can ever address, so
+     "fdtable[gap->n]" is always gap itself -- always reads as "not
+     shadowed", even though it's still very much needed. Route it
+     through this same relocate-via-dup() path instead of falling
+     through to fdtable_resolve(), which has no sensible way to
+     "move" a struct to a negative slot. */
+  if((flags & FDTABLE_FORCE) && (gap->n < 0 || gap != fdtable[gap->n])) {
     int newfd = dup(gap->e);
 
     if(newfd == -1)
       return FDTABLE_ERROR;
 
-    fd_setfd(gap, newfd);
+    /* fd_setfd() -> buffer_default() zeroes rb/wb's "p"/"n" (read
+       position / fill count) on the assumption there is nothing
+       buffered yet on the fresh kernel fd -- not true for a sentinel
+       like fd_src, which is routinely mid-read with real, already-
+       buffered-but-not-yet-consumed bytes still sitting in its
+       buffer. See the matching comment in fdtable_openfd.c for why
+       that data has to survive the relocation, not just the struct
+       identity. */
+    {
+      size_t rp = gap->rb.p, rn = gap->rb.n;
+      size_t wp = gap->wb.p, wn = gap->wb.n;
+
+      fd_setfd(gap, newfd);
+
+      gap->rb.p = rp;
+      gap->rb.n = rn;
+      gap->wb.p = wp;
+      gap->wb.n = wn;
+    }
 
     return (flags & FDTABLE_NOCLOSE) ? e : FDTABLE_DONE;
   }

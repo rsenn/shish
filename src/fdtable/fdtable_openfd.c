@@ -34,11 +34,43 @@ fdtable_openfd(struct fd* d, int e, int flags) {
   if(e != d->n) {
     struct fd* occupant = fd_list[d->n];
 
-    if(occupant && occupant != d && !(occupant->mode & FD_CLOSE) && occupant != fdtable[occupant->n]) {
+    /* occupant->n < 0 (e.g. fd_src, STDSRC_FILENO): a negative
+       virtual fd is a sentinel slot no ordinary redirection can ever
+       address, so fdtable[occupant->n] is always occupant itself --
+       "still the live owner of its own slot" can never tell that case
+       apart from "already replaced". Treat a negative n as always
+       still needed, instead of falling through to steal its kernel fd
+       out from under it. */
+    if(occupant && occupant != d && !(occupant->mode & FD_CLOSE) &&
+       (occupant->n < 0 || occupant != fdtable[occupant->n])) {
       int newfd = dup(occupant->e);
 
-      if(fd_ok(newfd))
+      if(fd_ok(newfd)) {
+        /* fd_setfd() -> buffer_default() zeroes rb/wb's "p"/"n" (read
+           position / fill count), on the assumption that relocating a
+           struct fd means installing it onto a fresh kernel fd with
+           nothing buffered yet. Not true here: occupant may be
+           actively read from with real, already-buffered-but-not-
+           yet-consumed bytes sitting in its buffer memory (fd_src,
+           the interpreter's own running-script reader, always is --
+           a whole small script is typically read in one buffered
+           read(2) call). dup() shares the underlying file offset with
+           the original fd, so once that offset reaches EOF (as it
+           does the moment the whole script fits in one buffered
+           read), any *new* read through the relocated fd returns 0
+           immediately -- silently truncating the script right there
+           if the buffer's real unconsumed content gets discarded
+           along with it. Save and restore it around the call. */
+        size_t rp = occupant->rb.p, rn = occupant->rb.n;
+        size_t wp = occupant->wb.p, wn = occupant->wb.n;
+
         fd_setfd(occupant, newfd);
+
+        occupant->rb.p = rp;
+        occupant->rb.n = rn;
+        occupant->wb.p = wp;
+        occupant->wb.n = wn;
+      }
     }
 
     if(dup2(e, d->n) == -1) {

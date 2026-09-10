@@ -21,7 +21,13 @@ sh_exit(int retcode) {
   eval_exit(retcode);
 
 #if BUILTIN_TRAP
-  trap_exit(retcode);
+  /* sh_child (sh_forked.c) marks a process that was fork()'d off to
+     run one job/pipeline-stage and will simply _exit() once this
+     call returns -- not the real shell exiting, so the parent's EXIT
+     trap must not run here too (it still runs, once, in the actual
+     top-level shell when its own sh_exit() call reaches this point). */
+  if(!sh_child)
+    trap_exit(retcode);
 #endif
 
   while(s->eval && s->eval->flags & E_FUNCTION)

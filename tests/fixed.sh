@@ -4833,4 +4833,65 @@ fi
 ##   #         the parameter_expansion node
 ##   # after:  only the "host=" string chunk and the parameter_expansion
 
+## fixes/228: an EXIT trap fired once per forked-off job/pipeline-stage
+## child that ran eval_tree() with E_EXIT set, not just once at the real
+## top-level shell exit -- sh_forked() already set a global sh_child flag
+## for exactly this "disposable forked worker, not the real shell" case,
+## but sh_exit() never checked it before calling trap_exit(). A
+## non-last pipeline member (job_fork()'d directly) or an external
+## command run via exec_program()'s own fork() both hit this.
+X228_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
+
+if [ -n "$X228_SELF" ] && [ -x "$X228_SELF" ]; then
+  X228_SCRIPT=$(mktemp)
+  printf '%s\n' \
+    'cleanup() { echo CLEANUP; }' \
+    'trap cleanup EXIT' \
+    'echo hi | cat' \
+    'echo after' > "$X228_SCRIPT"
+  X228_OUT=$("$X228_SELF" "$X228_SCRIPT" 2>/dev/null)
+  X228_COUNT=$(printf '%s\n' "$X228_OUT" | grep -c '^CLEANUP$')
+  X228_LAST=$(printf '%s\n' "$X228_OUT" | tail -n1)
+  rm -f "$X228_SCRIPT"
+  assert_equal "1" "$X228_COUNT" \
+    "an EXIT trap must fire exactly once, not once per forked pipeline stage"
+  assert_equal "CLEANUP" "$X228_LAST" \
+    "an EXIT trap must fire after the rest of the script, at real shell exit"
+fi
+
+## fixes/229: fdtable_openfd()/fdtable_gap() only rescued an fd about to
+## be dup2()'d over when its occupant was "shadowed" (occupant !=
+## fdtable[occupant->n]) -- true for an ordinary virtual fd, but never
+## true for the interpreter's own running-script reader (fd_src, whose
+## virtual fd is the negative sentinel STDSRC_FILENO, so
+## fdtable[occupant->n] is always occupant itself). On a build without
+## HAVE_MMAP (fd_mmap() then keeps a real, buffered kernel fd open for
+## the script instead of mmap'ing it up front), any redirection whose
+## kernel fd allocation happened to land on the same low fd number
+## fd_src was already using (worst case: simply "next available") got
+## dup2()'d straight over it with no rescue, corrupting whatever the
+## parser was mid-read through. The first fix (checking occupant->n < 0
+## too) then exposed a second bug: the rescue's fd_setfd() call zeroes
+## the relocated struct's buffered-but-unconsumed read position/count,
+## and since dup() shares the file offset with the fd being relocated
+## from, a read through the *new* fd landed on EOF immediately if the
+## whole script had already been slurped into one buffered read(2) --
+## silently truncating the script right there. Both are fixed: fd_src
+## is now rescued, and its buffer's real position/count are preserved
+## across the relocation instead of getting reset to empty.
+X229_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
+
+if [ -n "$X229_SELF" ] && [ -x "$X229_SELF" ]; then
+  X229_SCRIPT=$(mktemp)
+  X229_TARGET=$(mktemp)
+  printf '%s\n' \
+    'exec 3>'"$X229_TARGET"'' \
+    'echo reached A' \
+    'echo reached B' > "$X229_SCRIPT"
+  X229_OUT=$("$X229_SELF" "$X229_SCRIPT" 2>/dev/null)
+  rm -f "$X229_SCRIPT" "$X229_TARGET"
+  assert_equal "$(printf 'reached A\nreached B')" "$X229_OUT" \
+    "exec onto a low fd number must not truncate the rest of the running script"
+fi
+
 summary
