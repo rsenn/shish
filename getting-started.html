@@ -45,14 +45,13 @@ language runtime, no history file, no startup file it did not ask for.</li>
 <h2 id="status"><a class="anchor" href="#status" aria-hidden="true">#</a>Status</h2>
 <p>shish is <strong>alpha, and not a drop-in <code>/bin/sh</code></strong>. It runs the shell
 language — pipelines, redirections, functions, <code>case</code>, loops, parameter
-expansion, arithmetic, job control, traps — and it passes 5270 cases of
-yash's POSIX conformance suite, but there are 822 it still fails and a
-list of known defects in <a href="https://github.com/rsenn/shish/blob/main/BUGS" target="_blank" rel="noopener">undefined</a>. Do not put it under <code>init</code> yet.</p>
+expansion, arithmetic, job control, traps — and it passes 5541 cases of
+yash's POSIX conformance suite, but there are 551 it still fails and a
+list of known defects in <a href="https://github.com/rsenn/shish/blob/main/BUGS" target="_blank" rel="noopener"><code>BUGS</code></a>. Do not put it under <code>init</code> yet.</p>
 <p>See <a href="docs/conformance.html">Conformance</a> for what actually works today, and
-<a href="https://github.com/rsenn/shish/blob/main/TODO.md" target="_blank" rel="noopener">undefined</a> for what is being fixed next.</p>
+<a href="https://github.com/rsenn/shish/blob/main/TODO.md" target="_blank" rel="noopener"><code>TODO.md</code></a> for what is being fixed next.</p>
 <h2 id="build"><a class="anchor" href="#build" aria-hidden="true">#</a>Build</h2>
-<div class="codeblock" data-lang="sh"><pre><code class="language-sh">. ./<span class="t-id">cfg.sh</span>                          <span class="t-cm"># source the cfg-* helper functions</span>
-<span class="t-id">cfg</span>                                 <span class="t-cm"># configure into build/&lt;host-triple&gt;/</span>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cmake</span> <span class="t-op">-S</span> . <span class="t-op">-B</span> <span class="t-id">build</span>/<span class="t-id">x86_64-linux-gnu</span>
 <span class="t-id">cmake</span> <span class="t-op">--build</span> <span class="t-id">build</span>/<span class="t-id">x86_64-linux-gnu</span> <span class="t-op">-j</span></code></pre></div>
 <p>That produces <code>shish</code> (the shell) and <code>shformat</code> (a pretty-printer that
 reuses the parser). See <a href="docs/building.html">Building</a> for cross-compiling,
@@ -64,7 +63,7 @@ static linking, and picking which builtins get compiled in.</p>
 shells and pipes are related topics; and shish kebab, which is a nice
 Turkish meal.</p>
 <h2 id="licence"><a class="anchor" href="#licence" aria-hidden="true">#</a>Licence</h2>
-<p>GPL v2 — see <a href="https://github.com/rsenn/shish/blob/main/COPYING" target="_blank" rel="noopener">undefined</a>. <code>lib/</code> is a copy of Felix von
+<p>GPL v2 — see <a href="https://github.com/rsenn/shish/blob/main/COPYING" target="_blank" rel="noopener"><code>COPYING</code></a>. <code>lib/</code> is a copy of Felix von
 Leitner's libowfat, under its own terms.</p></article>
 <p class="editlink"><a href="https://github.com/rsenn/shish/blob/main/README.md">Edit this page on GitHub →</a></p>
 </main>

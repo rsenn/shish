@@ -31,8 +31,7 @@ script calls. That is a few megabytes and a few hundred files of attack
 surface for the sake of <code>mkdir -p</code>, <code>cat</code> and a <code>for</code> loop.</p>
 <p>shish collapses that to one file.</p>
 <h2 id="a-shell-layer-that-is-one-file"><a class="anchor" href="#a-shell-layer-that-is-one-file" aria-hidden="true">#</a>A shell layer that is one file</h2>
-<div class="codeblock" data-lang="sh"><pre><code class="language-sh">. ./<span class="t-id">cfg.sh</span>
-<span class="t-id">cfg-musl</span> <span class="t-op">-DLINK_STATIC</span>=<span class="t-id">ON</span> <span class="t-op">-DENABLE_ALL_BUILTINS</span>=<span class="t-id">ON</span>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">CC</span>=<span class="t-id">musl-gcc</span> <span class="t-id">cmake</span> <span class="t-op">-S</span> . <span class="t-op">-B</span> <span class="t-id">build</span>/<span class="t-id">x86_64-linux-musl</span> <span class="t-op">-DENABLE_SHARED</span>=<span class="t-id">OFF</span> <span class="t-op">-DLINK_STATIC</span>=<span class="t-id">ON</span> <span class="t-op">-DENABLE_ALL_BUILTINS</span>=<span class="t-id">ON</span>
 <span class="t-id">cmake</span> <span class="t-op">--build</span> <span class="t-id">build</span>/<span class="t-id">x86_64-linux-musl</span> <span class="t-op">-j</span>
 <span class="t-id">strip</span> <span class="t-id">build</span>/<span class="t-id">x86_64-linux-musl</span>/<span class="t-id">shish</span></code></pre></div>
 <div class="codeblock" data-lang="dockerfile"><pre><code class="language-dockerfile">FROM scratch
@@ -70,7 +69,7 @@ pipes through <code>awk</code>, use busybox — or use both, and let shish be th
 <code>/bin/sh</code> that busybox's <code>ash</code> would otherwise be.</p>
 <h2 id="caveat"><a class="anchor" href="#caveat" aria-hidden="true">#</a>Caveat</h2>
 <p>shish is alpha (see <a href="conformance.html">Conformance</a>). It runs its own test
-suite and 5270 cases of yash's POSIX suite, not your distribution's
+suite and 5541 cases of yash's POSIX suite, not your distribution's
 <code>/etc/init.d</code>. Test your entrypoint against it before you ship it —
 <code>shish -n script.sh</code> parses without executing, which is a cheap first
 check.</p></article>

@@ -35,16 +35,17 @@ or run-time option rather than the default (<code>-B</code> for brace expansion,
 that runs under shish is meant to keep running under <code>sh</code>.</p>
 <h2 id="where-it-stands"><a class="anchor" href="#where-it-stands" aria-hidden="true">#</a>Where it stands</h2>
 <p>The measurable target is yash's POSIX conformance suite, which ships in
-<code>tests/posix</code> (123 files, 12195 cases).</p>
-<div class="codeblock"><pre><code>cases 12195   passed 5270   failed 822   skipped 6103</code></pre></div>
+<code>tests/posix</code> (120 files, 12195 cases).</p>
+<div class="codeblock"><pre><code>cases 12195   passed 5541   failed 551   skipped 6103</code></pre></div>
 <p>The 6103 skips are not passes: most of them need a controlling terminal
 (the <code>sigttin</code>/<code>sigttou</code>/<code>sigtstp</code> families, <code>testtty-p</code>, <code>wait-p</code>) and
 are not run in a normal CI environment.</p>
 <p>Clean files, as of this writing: `andor arith cd errexit error eval exec
-for fsplit getopts grouping if kill4 nop option path ppid readonly test
-until while`.</p>
+for fsplit getopts grouping if kill3 nop option path ppid readonly test
+until while<code>, plus six of the low-numbered </code>sig*-p` files
+(<code>sigcont2 sighup2 sigint2 sigquit2 sigterm2 sigurg2</code>).</p>
 <p>Where the remaining failures are:</p>
-<div class="tablewrap"><table><thead><tr><th>area</th><th>state</th></tr></thead><tbody><tr><td>signal disposition (<code>sig*-p</code>)</td><td>567 failures, nearly all "a signal ignored on entry must stay ignored"</td></tr><tr><td><code>alias</code></td><td>printing and subshell inheritance are broken</td></tr><tr><td><code>read</code></td><td>IFS splitting rules, <code>-r</code>, one-line-only reads</td></tr><tr><td><code>kill</code></td><td><code>kill -s NAME</code> fails for most names</td></tr><tr><td>quoting / parameter expansion</td><td>backslash edge cases, some <code>${...}</code> forms</td></tr><tr><td><code>command</code>, <code>unset</code>, <code>umask</code>, <code>set -o</code> names</td><td>option handling gaps</td></tr></tbody></table></div>
+<div class="tablewrap"><table><thead><tr><th>area</th><th>state</th></tr></thead><tbody><tr><td>signal disposition (<code>sig*-p</code>)</td><td>311 failures, mostly the <code>sig*6-p</code> files (child process disposition after fork)</td></tr><tr><td><code>alias</code></td><td>48 failures — printing and subshell inheritance are broken</td></tr><tr><td><code>kill</code></td><td>32 failures — <code>kill -s NAME</code> fails for most names</td></tr><tr><td>quoting / parameter expansion</td><td>36 failures — backslash edge cases, some <code>${...}</code> forms</td></tr><tr><td><code>read</code></td><td>22 failures — IFS splitting rules, <code>-r</code>, one-line-only reads</td></tr><tr><td><code>command</code>, <code>unset</code>, <code>set</code>, <code>umask</code>, <code>trap</code>, <code>redir</code>, <code>simple</code></td><td>64 failures — assorted option-handling and edge-case gaps</td></tr></tbody></table></div>
 <p><code>BUGS</code> lists every confirmed defect with a repro; <code>TODO.md</code> is the
 work plan, phase by phase, with the evidence for why each item is where
 it is in the queue.</p>
