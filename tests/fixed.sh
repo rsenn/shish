@@ -4894,4 +4894,23 @@ if [ -n "$X229_SELF" ] && [ -x "$X229_SELF" ]; then
     "exec onto a low fd number must not truncate the rest of the running script"
 fi
 
+## fnmatch-bracket-member-before-class-fails: after a member matched, the
+## rest of the bracket is skipped by scanning for "]", which must not stop
+## at the "]" that closes a "[:class:]" member.
+case b in [a-c[:upper:]]) X232_A=match ;; *) X232_A=NOMATCH ;; esac
+assert_equal match "$X232_A" \
+  "a range member before a [:class:] member matches (case b in [a-c[:upper:]])"
+
+case a in [ac[:digit:]]) X232_B=match ;; *) X232_B=NOMATCH ;; esac
+assert_equal match "$X232_B" \
+  "a literal member before a [:class:] member matches (case a in [ac[:digit:]])"
+
+case ab in [a[:alpha:]]b) X232_C=match ;; *) X232_C=NOMATCH ;; esac
+assert_equal match "$X232_C" \
+  "the pattern after a bracket holding a [:class:] still matches (case ab in [a[:alpha:]]b)"
+
+X232_V=xb
+assert_equal x "${X232_V%[b[:digit:]]}" \
+  "\${var%[b[:digit:]]} removes a char matching the literal member before the class"
+
 summary

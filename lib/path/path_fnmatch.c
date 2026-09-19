@@ -274,6 +274,17 @@ start:
               pattern++;
               plen--;
             }
+            /* "[:class:]"/"[.x.]"/"[=x=]" contains its own "]" */
+            else if(*pattern == '[' && plen > 1 &&
+                    (pattern[1] == ':' || pattern[1] == '.' || pattern[1] == '=')) {
+              unsigned int sublen = path_fnmatch_subexpr_len(pattern, plen, pattern[1]);
+
+              if(sublen) {
+                pattern += sublen;
+                plen -= sublen;
+                continue;
+              }
+            }
 
             pattern++;
             plen--;
