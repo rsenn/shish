@@ -1,0 +1,64 @@
+# ===========================================================================
+#
+# GNU Makefile for shish/text
+#
+# relative directories
+# ---------------------------------------------------------------------------
+srcdir       = @srcdir@
+top_srcdir   = @top_srcdir@
+builddir     = @builddir@
+top_builddir = @top_builddir@
+thisdir      = text/
+
+# include global make configuration
+# ---------------------------------------------------------------------------
+include $(top_builddir)/config.mk
+
+#############################################################################
+#                                    ########################################
+#  ROOT & RECURSIVE CONFIGURATION    ########################################
+#                                    ########################################
+#############################################################################
+
+# redirect to recursive targets
+# ---------------------------------------------------------------------------
+all:              makefiles all-recursive
+clean:            makefiles clean-recursive
+distclean:        makefiles distclean-recursive
+maintainer-clean: makefiles maintainer-clean-recursive
+install:          makefiles install-recursive
+dep:              makefiles dep-recursive
+
+RM    = rm -f
+CHMOD = chmod
+
+# directory configuration
+# ---------------------------------------------------------------------------
+SUBDIRS              = dfa
+ROOT                 = 0
+RECURSIVE            = 1
+
+#############################################################################
+#                                    ########################################
+#  LOCAL DIRECTORY CONFIGURATION     ########################################
+#                                    ########################################
+#############################################################################
+
+# targets
+# ---------------------------------------------------------------------------
+all-local:
+install-local:
+dep-local:
+
+# files that go into distribution tarballs
+# ---------------------------------------------------------------------------
+FILES                = Makefile.in dfa.h
+
+# files to be cleaned
+# ---------------------------------------------------------------------------
+CLEANFILES           = *~
+DISTCLEANFILES       = Makefile $(DEPS)
+
+# include build.mk (makefile helper)
+# ---------------------------------------------------------------------------
+include $(top_builddir)/build.mk
