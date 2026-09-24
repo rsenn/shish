@@ -21,7 +21,8 @@ That produces `build/emscripten/shish.js` and `shish.wasm`. Add
 `-DENABLE_ALL_BUILTINS=ON` (see [Builtins](builtins.md)) to also get
 `cat`/`mkdir`/`grep`/`sed`/etc. as in-process builtins instead of just the
 minimal/default set — this is what the [playground](../play.html) itself
-is built with (`build/emscripten-all/`, 253 KB vs. 184 KB minimal); the
+is built with (`build/emscripten-all/`: 184 KB core + 63 KB of extra
+builtins = 247 KB); the
 [site's `files` config](https://github.com/rsenn/rsenn/blob/main/sites/shish/site.config.js)
 copies straight from that directory, so rebuild it there before publishing.
 The linker flags above already pass what the glue needs:
