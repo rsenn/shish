@@ -24,24 +24,37 @@ source test times trap type umask unset wait
 **Extra** — the reason a shish container image can be a single file:
 
 ```
-basename cat chmod dirname hostname ln mkdir mktemp rm rmdir uname which
+basename cat chmod digest dirname find grep hostname link ln ls mkdir
+mktemp readlink realpath rm rmdir sed sleep tee timeout touch uname wc which
 ```
 
 These are off by default. Turn them on and a script stops needing
-coreutils:
+coreutils (or `grep`/`sed`):
 
 ```sh
 $ shish -c 'PATH=; mkdir -p a/b; echo hi > a/b/f; cat a/b/f; rm -r a'
 hi
+$ shish -c 'PATH=; printf "a\nb\nc\n" | grep b | sed s/b/B/'
+B
 ```
+
+`src/builtin/extra/` is where these live in the tree (as opposed to
+`src/builtin/` for the language's own required builtins); a builtin goes
+there when it stands in for an external program rather than implementing
+shell syntax. `find`, `grep` and `sed` are the larger ones and get their
+own subsystem under `text/` (see "Regex backend" below) instead of living
+entirely in one `builtin_*.c` file.
 
 ## Choosing
 
 ```sh
 cfg -DENABLE_ALL_BUILTINS=ON              # everything
-cfg -DENABLE_CAT=ON -DENABLE_MKDIR=ON     # just these two on top of the default set
-cfg -DENABLE_HISTORY=OFF                  # and this one off
+cfg -DBUILTIN_CAT=ON -DBUILTIN_MKDIR=ON   # just these two on top of the default set
+cfg -DBUILTIN_HISTORY=OFF                 # and this one off
 ```
+
+(`-DENABLE_<NAME>=ON/OFF` also works, as the older spelling of
+`-DBUILTIN_<NAME>`.)
 
 The configure step writes `<builddir>/src/builtin_config.h`, which is
 what `src/builtin/builtin_table.c` is compiled against. Nothing you left
@@ -49,6 +62,27 @@ out is linked in.
 
 With autotools, the same choice is
 `./configure --enable-builtins="cat mkdir rm"`.
+
+## Regex backend: `text/dfa` or `regex.h`
+
+`expr` and `sed` always match via `text/dfa` (an in-tree, from-scratch
+POSIX BRE/ERE engine, `text/dfa.h`) — no libc dependency, so both work
+the same way on a static/musl/dietlibc/WASM build as anywhere else. `sed`
+additionally needs `s///`'s substitution machinery (`dfa_replace()`),
+which has no `<regex.h>` equivalent, so it has no backend switch at all.
+
+`grep` can go either way:
+
+```sh
+cfg -DGREP_USE_SYSTEM_REGEX=ON   # link the system's <regex.h> instead
+```
+
+Off (the default) is what makes `grep` work on a target with no libc
+regex implementation at all (WASI's libc has none); on is smaller where
+glibc/musl's `regex.h` is already being linked in for other reasons, and
+picks up the host's own conformance/locale behavior instead of `text/dfa`'s.
+Either way `grep`'s matching results should agree — see `tests/dev/dfa-diff.c`
+for the differential test between the two.
 
 ## What a builtin costs
 
