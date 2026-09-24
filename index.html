@@ -3,15 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>shish — a small POSIX-ish shell in C</title>
-<meta name="description" content="shish — a small POSIX-ish shell in C. 139 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
-<link rel="stylesheet" href="assets/style.css">
+<title>shish | a small POSIX-ish shell in C</title>
+<meta name="description" content="shish | a small POSIX-ish shell in C. 139 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
+<link rel="stylesheet" href="assets/base.css">
+<link rel="stylesheet" href="assets/theme.css">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 </head>
-<body class="landing">
+<body class="landing" data-site="shish" data-root="">
 <header class="topbar">
-  <a class="brand" href="index.html"><span class="mark">$_</span> shish</a>
+  <a class="brand" href="index.html"><span class="mark">$_</span> <span class="brand-name">shish</span></a>
   <nav class="topnav">
     <a href="getting-started.html">Get started</a>
     <a href="docs/containers.html">Containers</a>
@@ -21,20 +22,23 @@
   </nav>
   <button class="themetoggle" type="button" aria-label="Toggle colour scheme">◐</button>
 </header>
-<section class="hero">
-  <h1>shish</h1>
+<section class="hero hero-center">
+  <h1><span class="word">shish</span></h1>
   <p class="tagline">A small POSIX-ish shell in C. One file, no <code>stdio</code>,
-     no dialect of its own — and it compiles to WebAssembly.</p>
+     no dialect of its own. It compiles to WebAssembly.</p>
   <div class="cta">
     <a class="btn primary" href="getting-started.html">Get started</a>
     <a class="btn" href="play.html">Run it in your browser</a>
     <a class="btn ghost" href="https://github.com/rsenn/shish" target="_blank" rel="noopener">GitHub</a>
   </div>
+</section>
+
+<section class="stats">
   <ul class="badges">
-    <li><b>139 KB</b> stripped</li>
-    <li><b>184 KB</b> of WebAssembly</li>
-    <li><b>26 k</b> lines of C</li>
-    <li><b>0</b> runtime dependencies</li>
+    <li><b>139 KB</b><span>stripped</span></li>
+    <li><b>184 KB</b><span>of WebAssembly</span></li>
+    <li><b>26 k</b><span>lines of C</span></li>
+    <li><b>0</b><span>runtime dependencies</span></li>
   </ul>
 </section>
 
@@ -65,7 +69,7 @@
     <article class="card">
       <h3>WebAssembly</h3>
       <p>184 KB of <code>.wasm</code>: a real shell in a browser tab, a
-         worker, or a WASI runtime — with no process and no container
+         worker, or a WASI runtime, with no process and no container
          underneath it.</p>
       <p>Subshells and command substitution are in-process, so
          <code>$(...)</code> and <code>( ... )</code> work even where
@@ -80,7 +84,7 @@
   <pre class="sample"><code><span class="t-comment">$</span> shish -c <span class="t-string">'PATH=; mkdir -p a/b; echo hi &gt; a/b/f; cat a/b/f; rm -r a'</span>
 hi</code></pre>
   <p>Every utility in that line is inside the binary. Nothing is looked up,
-     so nothing can be planted on a <code>PATH</code> — see
+     so nothing can be planted on a <code>PATH</code>. See
      <a href="docs/builtins.html">Builtins</a> for the full set and how to
      choose it at compile time.</p>
 
@@ -100,9 +104,9 @@ hi</code></pre>
 <section class="promise">
   <h2>No dialect of its own</h2>
   <p>shish will never introduce a language construct that is not already in
-     POSIX or in another shell. Everything it accepts beyond the standard —
-     <code>local</code>, <code>source</code>, brace expansion, history
-     expansion — is spelled the way bash, ksh or dash already spells it, and
+     POSIX or in another shell. Everything it accepts beyond the standard
+     (<code>local</code>, <code>source</code>, brace expansion, history
+     expansion) is spelled the way bash, ksh or dash already spells it, and
      is an option rather than the default.</p>
   <p><b>A script written for shish keeps running under <code>sh</code>.</b>
      That is the whole point: the small shell is a deployment choice, not a
@@ -115,15 +119,15 @@ hi</code></pre>
 <span class="t-comment">$</span> cmake -S . -B build/x86_64-linux-gnu
 <span class="t-comment">$</span> cmake --build build/x86_64-linux-gnu -j</code></pre>
   <p>Cross-builds for musl, dietlibc, mingw32/64, MSYS, aarch64,
-     Android, Termux, Emscripten and WASI all come from the same tree —
-     see <a href="docs/building.html">Building</a>.</p>
+     Android, Termux, Emscripten and WASI all come from the same tree.
+     See <a href="docs/building.html">Building</a>.</p>
 </section>
 
 <section class="status">
   <h2>Status: alpha, and honest about it</h2>
-  <p>shish runs the shell language — pipelines, redirections, functions,
+  <p>shish runs the shell language: pipelines, redirections, functions,
      <code>case</code>, loops, parameter expansion, arithmetic, job control,
-     traps — and passes <b>5541</b> cases of yash's POSIX conformance suite.
+     traps. It passes <b>5541</b> cases of yash's POSIX conformance suite.
      It also still fails <b>551</b>, mostly in signal disposition,
      <code>alias</code> and quoting/parameter expansion.</p>
   <p>It is <b>not</b> a drop-in <code>/bin/sh</code> yet: do not point
@@ -135,8 +139,8 @@ hi</code></pre>
 </section>
 
 <footer class="sitefoot">
-  <p>shish — GPL v2. Built from the repo's own markdown by
-     <a href="https://github.com/rsenn/shish/blob/main/tools/site/build.js">tools/site/build.js</a>, running on qjsm.</p>
+  <p>shish | GPL v2. Built from the repo's own markdown by
+     <a href="https://github.com/rsenn/rsenn/tree/main/tools/site">rsenn/rsenn tools/site</a>.</p>
 </footer>
 <script>
 document.querySelector('.themetoggle').addEventListener('click', function () {
