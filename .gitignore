@@ -10,9 +10,28 @@ tests/posix/tmp.*/
 # CMakeLists.txt's DO_CONFORMANCE_TESTS block -- since that's where
 # the *.tst files' own "../checkfg" reference expects to find it
 tests/posix/checkfg
+tests/posix/checkfg.exe
+tests/posix/checkfg.js
+tests/posix/checkfg.wasm
 tests/yash/*.trs
 tests/yash/*.trs.stderr
 tests/yash/tmp.*/
 
 # generated site (tools/site/build.js); published to the gh-pages branch
 /docs/
+
+# fetched at configure time by cmake/Digest.cmake (-DENABLE_DIGEST=ON)
+/third_party/
+
+# out-of-tree CMake builds (see cfg-cmake.sh: build/<host-triple>/)
+/build/
+/CMakeCache.txt
+/CMakeFiles/
+
+# autotools output (regenerate with ./autogen.sh && ./configure)
+/aclocal.m4
+/autom4te.cache/
+/config.h.in
+/config.h.in~
+/configure
+/configure~

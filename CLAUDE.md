@@ -119,6 +119,16 @@ Two build executables are produced:
 - `shformat` — pretty-printer that reuses the parser (`src/sh/sh_fmt.c`)
 - `shparse2ast` — optional AST dumper (off by default; `BUILD_SHPARSE2AST=ON`)
 
+`text/` holds larger, self-contained text-processing engines (`text/dfa` is
+the first: a POSIX BRE/ERE matcher) meant to back builtins like `expr`/
+`grep`/`sed`/`awk`. It is neither `lib/` (generic, portable primitives with
+no shell dependency) nor `src/` (the shell's own execution engine) — a
+subsystem too large and single-purpose to belong in either, built from
+`lib/` primitives and consumed by a thin `src/builtin/` wrapper, never a
+standalone binary. Everything under `text/` uses `lib/*.h` (`byte.h`,
+`alloc.h`, `str.h`, ...) instead of libc `<string.h>`/`<stdlib.h>`, same
+rule as `src/` and `lib/` itself.
+
 ## Build
 
 The repo supports both CMake and autotools, but CMake is the primary path.
@@ -154,10 +164,19 @@ to `cmake`):
 - `BUILD_SHFORMAT=ON` (default), `BUILD_SHPARSE2AST=OFF`.
 - `NO_TREE_PRINT=ON` — strip tree-printing helpers from history.
 - Builtins are individually toggleable. `cmake/Builtins.cmake` enumerates
-  `MINIMAL_BUILTINS`, `DEFAULT_BUILTINS`, `EXTRA_BUILTINS`; pass
-  `-DENABLE_ALL_BUILTINS=ON` for everything, or `-DENABLE_<NAME>=ON/OFF`
-  per builtin. The generated `build/.../src/builtin_config.h` is what
+  `MINIMAL_BUILTINS`, `DEFAULT_BUILTINS`, `EXTRA_BUILTINS`. `-DBUILTIN_<NAME>=ON/OFF`
+  sets one builtin and is permanent (it stays in the cache); `-DENABLE_ALL_BUILTINS=ON`
+  turns on every builtin that has no `BUILTIN_<NAME>` of its own, also permanent
+  (`=OFF` undoes it); `-DENABLE_<NAME>=ON/OFF` is the older spelling of `BUILTIN_<NAME>`.
+  The generated `build/.../src/builtin_config.h` is what
   `src/builtin/builtin_table.c` is compiled against.
+  Builtins that are normally a coreutils (or other package) program live in
+  `src/builtin/extra/`: `basename cat chmod digest dirname expr hostname link
+  ln ls mkdir mktemp readlink realpath rm rmdir sleep tee timeout touch uname
+  wc which`. Shell/POSIX-special builtins stay in `src/builtin/`.
+  `cmake/Builtins.cmake` (`builtin_source()`) finds a builtin's file in either;
+  a new one goes in `extra/` if it replaces an external program, and is only
+  compiled when enabled.
 
 ### Autotools (alternative)
 
@@ -235,6 +254,25 @@ actually building for that platform (`cfg-mingw64`/`cfg-mingw32` etc., see
 `failure`, `summary` helpers; each test sources it via
 `. "$(dirname "$0")/common.sh"`. A test "fails" by calling `failure` which
 prints `FAILURE` and `exit 1`s.
+
+## Design specification for builtin utilities
+
+The POSIX.1-2024 utilities volume
+(<https://pubs.opengroup.org/onlinepubs/9799919799/utilities/>, one page per
+utility) is the **design specification for every builtin that names a POSIX
+utility** (`cat`, `ls`, `sed`, `awk`, `expr`, `test`, ...), and the Shell
+Command Language chapter is the one for the special/regular shell builtins.
+
+- Options, operands, stdin/stdout/stderr use, exit status, and
+  "unspecified"/"undefined" points are judged against that page.
+- Builtins with no POSIX page (`dump`, `digest`, `hostname`, `timeout`,
+  `which`, `mktemp`, ...) follow the closest coreutils behaviour and say so in
+  their `help_*` text.
+- Utilities that are deliberately not implemented (`lex`, `yacc`, `c99`, ...)
+  are out of scope; a builtin that omits an *option* of a utility it does
+  implement is a discrepancy and belongs in `BUGS` unless listed as a
+  documented omission in its `help_*` text.
+- Every discrepancy found goes into `BUGS` with a concrete repro command.
 
 ## Tracking bugs and roadmap
 
