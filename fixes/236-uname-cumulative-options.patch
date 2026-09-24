@@ -1,0 +1,79 @@
+diff --git a/src/builtin/builtin_uname.c b/src/builtin/builtin_uname.c
+index 7f6ba9c0..606d83f2 100644
+--- a/src/builtin/builtin_uname.c
++++ b/src/builtin/builtin_uname.c
+@@ -18,6 +18,7 @@
+  * ----------------------------------------------------------------------- */
+ const char help_uname[] = "    Print system information.\n"
+                           "\n"
++                          "    -a              -s -n -r -v -m\n"
+                           "    -s              kernel/OS name (default)\n"
+                           "    -n              network hostname\n"
+                           "    -r              kernel release\n"
+@@ -29,7 +30,6 @@ int
+ builtin_uname(int argc, char* argv[]) {
+   int c, all = 0, machine = 0, nodename = 0, kern_release = 0, kern_name = 0, processor = 0,
+          kern_version = 0, hw_platform = 0, os_name = 0;
+-  char* out;
+   struct utsname unbuf;
+ 
+   /* check options */
+@@ -49,25 +49,45 @@ builtin_uname(int argc, char* argv[]) {
+     }
+   }
+ 
++  if(argc > shell_optind) {
++    builtin_errmsg(argv, argv[shell_optind], "extra operand");
++    return 1;
++  }
++
+   if(uname(&unbuf) == -1) {
+     builtin_error(argv, 0);
+     return 1;
+   }
+ 
+-  if(kern_release)
+-    out = unbuf.release;
+-  else if(kern_version)
+-    out = unbuf.version;
+-  else if(machine)
+-    out = unbuf.machine;
+-  else if(nodename)
+-    out = unbuf.nodename;
+-  else if(hw_platform)
+-    out = "unknown";
+-  else
+-    out = unbuf.sysname;
++  /* fixed order s n r v m; "-a" or no option selects the default set */
++  {
++    const struct {
++      int on;
++      const char* s;
++    } f[] = {
++        {kern_name || all, unbuf.sysname},
++        {nodename || all, unbuf.nodename},
++        {kern_release || all, unbuf.release},
++        {kern_version || all, unbuf.version},
++        {machine || all, unbuf.machine},
++        {hw_platform, "unknown"},
++        {processor, "unknown"},
++        {os_name, unbuf.sysname},
++    };
++    int i, n = 0, any = all || kern_name || nodename || kern_release || kern_version || machine ||
++                        hw_platform || processor || os_name;
++
++    for(i = 0; i < (int)(sizeof(f) / sizeof(f[0])); i++) {
++      if(!(f[i].on || (!any && i == 0)))
++        continue;
++
++      if(n++)
++        buffer_putc(fd_out->w, ' ');
++
++      buffer_puts(fd_out->w, f[i].s);
++    }
++  }
+ 
+-  buffer_puts(fd_out->w, out);
+   buffer_putnlflush(fd_out->w);
+ 
+   return 0;

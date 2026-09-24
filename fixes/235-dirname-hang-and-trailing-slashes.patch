@@ -1,0 +1,62 @@
+diff --git a/src/builtin/builtin_dirname.c b/src/builtin/builtin_dirname.c
+index 623b8110..87a1e361 100644
+--- a/src/builtin/builtin_dirname.c
++++ b/src/builtin/builtin_dirname.c
+@@ -10,34 +10,34 @@ const char help_dirname[] = "    Strip the last component from a path.\n"
+ 
+ int
+ builtin_dirname(int argc, char* argv[]) {
+-  if(argc < 2) {
+-    builtin_errmsg(argv, "too few arguments", NULL);
+-    return 1;
+-  }
++  int i = 1;
++  const char* path;
++  size_t n;
+ 
+-  for(int i = shell_optind; i < argc; i++) {
+-    char* path = argv[i];
++  if(argc > 1 && !str_diff(argv[1], "--"))
++    i++;
+ 
+-    if(str_equal(path, "--"))
+-      continue;
++  if(argc - i != 1) {
++    builtin_errmsg(argv, argc - i < 1 ? "too few arguments" : "too many arguments", NULL);
++    return 1;
++  }
+ 
+-    if(path) {
+-      for(i = str_len(path) - 1; i >= 0; i--) {
+-        if(path[i] == '/') {
+-          path[i] = '\0';
+-          break;
+-        }
+-      }
++  path = argv[i];
++  n = str_len(path);
+ 
+-      if(i < 0) {
+-        path[0] = '.';
+-        path[1] = '\0';
+-      }
+-    }
++  /* "a/b//" -> "a/b/" -> "a/" -> "a" */
++  while(n > 1 && path[n - 1] == '/')
++    n--;
++  while(n > 0 && path[n - 1] != '/')
++    n--;
++  while(n > 1 && path[n - 1] == '/')
++    n--;
+ 
+-    buffer_puts(fd_out->w, path);
+-    buffer_putnlflush(fd_out->w);
+-  }
++  if(n == 0)
++    buffer_puts(fd_out->w, ".");
++  else
++    buffer_put(fd_out->w, path, n);
+ 
++  buffer_putnlflush(fd_out->w);
+   return 0;
+ }

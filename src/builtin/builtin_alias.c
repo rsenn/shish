@@ -51,6 +51,43 @@ alias_insert(struct alias** aptr, struct alias* a) {
   *aptr = a;
 }
 
+/* print one alias, safe to feed back to the shell even if VALUE itself
+ * contains a single quote ("'" -> "'\''"). "-p" writes the full
+ * 'alias NAME=VALUE' command; printing a specific name (or every alias
+ * with no operand at all) writes bare 'NAME=VALUE', since that form is
+ * what round-trips through "eval alias $(alias name)" and through
+ * "alias -- $(alias)" split on newlines -- a leading "alias " word
+ * there would be read back as an operand of its own.
+ * ----------------------------------------------------------------------- */
+static void
+alias_print(struct alias* a, int prefix) {
+  size_t codelen;
+  const char* code = alias_code(a, &codelen);
+
+  if(prefix)
+    buffer_puts(fd_out->w, "alias ");
+
+  buffer_put(fd_out->w, a->def, a->namelen);
+  buffer_puts(fd_out->w, "='");
+
+  while(codelen) {
+    size_t i = byte_chr(code, codelen, '\'');
+
+    buffer_put(fd_out->w, code, i);
+
+    if(i < codelen) {
+      buffer_puts(fd_out->w, "'\\''");
+      i++;
+    }
+
+    code += i;
+    codelen -= i;
+  }
+
+  buffer_putc(fd_out->w, '\'');
+  buffer_putnlflush(fd_out->w);
+}
+
 static struct alias**
 alias_search(const char* str) {
   size_t len = str_chr(str, '=');
@@ -77,9 +114,17 @@ const char help_unalias[] = "    Remove shell aliases.\n"
                             "    -a              remove every defined alias\n"
                             "    name            remove the named alias\n";
 
+static void
+alias_print_all(int prefix) {
+  struct alias* alias;
+
+  for(alias = parse_aliases; alias; alias = alias->next)
+    alias_print(alias, prefix);
+}
+
 int
 builtin_alias(int argc, char* argv[]) {
-  int c, print = 0;
+  int c, print = 0, ret = 0;
   char** argp;
 
   while((c = shell_getopt(argc, argv, "p")) > 0) {
@@ -91,29 +136,31 @@ builtin_alias(int argc, char* argv[]) {
 
   argp = &argv[shell_optind];
 
-  /* print all aliases, suitable for re-input */
-  if(*argp == NULL || print) {
-    struct alias* alias;
-
-    for(alias = parse_aliases; alias; alias = alias->next) {
-      buffer_puts(fd_out->w, "alias ");
-      buffer_put(fd_out->w, alias->def, alias->namelen);
-      buffer_puts(fd_out->w, "='");
-      buffer_puts(fd_out->w, alias->def + alias->namelen + 1);
-      buffer_putc(fd_out->w, '\'');
-
-      buffer_putnlflush(fd_out->w);
-    }
-
+  /* "-p", or no operands at all: print every alias */
+  if(print || *argp == NULL) {
+    alias_print_all(print);
     return 0;
   }
 
-  /* add each alias */
+  /* add, or print, each named alias */
   for(; *argp; argp++) {
     struct alias **aptr, *alias;
 
     if(!alias_valid(*argp)) {
       builtin_errmsg(argv, *argp, "not a valid alias name");
+      ret = 1;
+      continue;
+    }
+
+    /* a bare name (no "=") prints that one alias's definition */
+    if(!(*argp)[str_chr(*argp, '=')]) {
+      if(!(alias = *alias_search(*argp))) {
+        builtin_errmsg(argv, *argp, "no such alias");
+        ret = 1;
+      } else {
+        alias_print(alias, 0);
+      }
+
       continue;
     }
 
@@ -124,7 +171,7 @@ builtin_alias(int argc, char* argv[]) {
       alias_insert(aptr, alias);
   }
 
-  return 0;
+  return ret;
 }
 
 /* unalias built-in

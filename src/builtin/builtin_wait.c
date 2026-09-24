@@ -42,15 +42,18 @@ builtin_wait(int argc, char* argv[]) {
   {
     struct job* jobs[njobs];
 
-    for(i = 0; i < njobs; i++) {
-      if(!(jobs[i] = job_find(argv[i + 1]))) {
+    for(i = 0; i < njobs; i++)
+      if(!(jobs[i] = job_find(argv[i + 1])))
         builtin_errmsg(argv, argv[i + 1], "no such job");
-        return 1;
-      }
-    }
 
+    /* status is that of the last operand; an unknown one counts as 127 */
     for(i = 0; i < njobs; i++) {
       int status = 0;
+
+      if(!jobs[i]) {
+        ret = 127;
+        continue;
+      }
 
       job_wait(jobs[i], 0, &status);
       ret = WAIT_STATUS(status);

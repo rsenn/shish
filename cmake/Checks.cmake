@@ -253,8 +253,7 @@ if(HAVE_SYS_STAT_H)
 endif(HAVE_SYS_STAT_H)
 
 check_function_exists(lstat HAVE_LSTAT)
-check_function_exists(symlink HAVE_SYMLINK)
-check_function_exists(link HAVE_LINK)
+check_function_exists(getppid HAVE_GETPPID)
 
 check_include_file(pwd.h HAVE_PWD_H)
 check_include_file(grp.h HAVE_GRP_H)
@@ -331,8 +330,6 @@ endif()
 
 unset(HAVE_FORK_COMPILER_NAME)
 
-check_include_file(sys/utsname.h HAVE_SYS_UTSNAME_H)
-
 check_include_file(glob.h HAVE_GLOB_H)
 if(HAVE_GLOB_H)
   set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES} glob.h)
@@ -363,7 +360,8 @@ if(HAVE_SYS_MMAN_H AND HAVE_MMAP_FUNC AND HAVE_MUNMAP)
 elseif(WIN32
        OR WIN64
        OR MINGW
-       OR WINDOWS)
+       OR WINDOWS
+       OR CMAKE_SYSTEM_NAME STREQUAL "WASI") # WASI: -lwasi-emulated-mman
   set(HAVE_MMAP_SUPPORT TRUE)
 endif()
 

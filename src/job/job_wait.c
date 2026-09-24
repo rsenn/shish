@@ -114,11 +114,14 @@ job_wait(struct job* j, pid_t pid, int* status) {
         /* Non-interactive shells (scripts like ./configure) parse
            stderr to detect command behavior; the kernel often
            delivers SIGPIPE to the left side of a pipeline when the
-           right side exits early, which is not an error worth
-           printing. Keep the message in interactive (job control)
-           mode and for signals other than SIGPIPE. */
+           right side exits early, and SIGINT is how a foreground
+           command is meant to end when the user hits ^C -- neither is
+           an error worth printing (matching bash, which is silent for
+           both even in a non-interactive script). Keep the message in
+           interactive (job control) mode and for every other signal. */
         if(!WAIT_IF_EXITED(s)) {
-          int squelch = !sh->opts.monitor && WAIT_IF_SIGNALED(s) && WAIT_TERMSIG(s) == SIGPIPE;
+          int squelch = !sh->opts.monitor && WAIT_IF_SIGNALED(s) &&
+                        (WAIT_TERMSIG(s) == SIGPIPE || WAIT_TERMSIG(s) == SIGINT);
           if(!squelch)
             job_printstatus(ret, s);
         }

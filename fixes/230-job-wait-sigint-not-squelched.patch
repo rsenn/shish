@@ -1,0 +1,47 @@
+diff --git a/src/job/job_wait.c b/src/job/job_wait.c
+index e2ec801c..aba66750 100644
+--- a/src/job/job_wait.c
++++ b/src/job/job_wait.c
+@@ -114,11 +114,14 @@ job_wait(struct job* j, pid_t pid, int* status) {
+         /* Non-interactive shells (scripts like ./configure) parse
+            stderr to detect command behavior; the kernel often
+            delivers SIGPIPE to the left side of a pipeline when the
+-           right side exits early, which is not an error worth
+-           printing. Keep the message in interactive (job control)
+-           mode and for signals other than SIGPIPE. */
++           right side exits early, and SIGINT is how a foreground
++           command is meant to end when the user hits ^C -- neither is
++           an error worth printing (matching bash, which is silent for
++           both even in a non-interactive script). Keep the message in
++           interactive (job control) mode and for every other signal. */
+         if(!WAIT_IF_EXITED(s)) {
+-          int squelch = !sh->opts.monitor && WAIT_IF_SIGNALED(s) && WAIT_TERMSIG(s) == SIGPIPE;
++          int squelch = !sh->opts.monitor && WAIT_IF_SIGNALED(s) &&
++                        (WAIT_TERMSIG(s) == SIGPIPE || WAIT_TERMSIG(s) == SIGINT);
+           if(!squelch)
+             job_printstatus(ret, s);
+         }
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 1f3f196a..1b8f308b 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -4894,4 +4894,19 @@ if [ -n "$X229_SELF" ] && [ -x "$X229_SELF" ]; then
+     "exec onto a low fd number must not truncate the rest of the running script"
+ fi
+ 
++## fixes/230: a foreground external command killed by SIGINT is how a
++## script's own "^C-equivalent" ends -- job_wait()'s non-interactive
++## squelch already suppressed job_printstatus()'s "process N signaled:
++## NAME" diagnostic for SIGPIPE (a pipeline's left side dying when the
++## right side exits early) but not for SIGINT, so every command a
++## script killed with SIGINT printed that diagnostic to stderr even
++## though bash stays silent for both signals in the same situation.
++X230_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
++
++if [ -n "$X230_SELF" ] && [ -x "$X230_SELF" ]; then
++  X230=$("$X230_SELF" -c "\"$X230_SELF\" -c 'kill -s INT \$\$'" 2>&1 >/dev/null)
++  assert_equal "" "$X230" \
++    "a foreground command killed by SIGINT prints no 'process N signaled' diagnostic in a script"
++fi
++
+ summary

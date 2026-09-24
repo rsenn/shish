@@ -420,7 +420,18 @@ main(int argc, char** argv) {
     }
   }
 
-  sig_catch(SIGCHLD, sh_onsig);
+  /* not sig_catch(): it always adds SA_NOCLDSTOP, which is right for
+     a user "trap CMD CHLD" (they asked to be told about exits, not
+     every stop) but wrong here -- job control (jobs/fg/bg/wait) needs
+     this handler to fire on a stop too, or a stopped job's status
+     never gets updated until it happens to also exit. */
+  {
+    struct sigaction sa = {0};
+
+    sa.sa_handler = sh_onsig;
+    sa.sa_flags = SA_MASKALL;
+    sig_action(SIGCHLD, &sa, 0);
+  }
 
   /*  if(fd_expected != fd_top && (flags = fdtable_check(e)))
     {

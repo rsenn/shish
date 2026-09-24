@@ -79,7 +79,27 @@ exec_program(char* path, char** argv, enum execflag flag) {
 
     /* in the parent wait for the child to finish and then return
        or exit, according to the 'exec' argument */
-    if((pid = fork())) {
+    if((pid = fork()) == -1) {
+      /* no child: report it and undo the setup above */
+      int saved_errno = errno;
+
+      sh_error_errno(argv[0]);
+      sig_unblock(SIGCHLD);
+      fdstack_pop(&io);
+
+      if(pipes)
+        alloc_free(pipes);
+
+      errno = saved_errno;
+      ret = exec_error();
+
+      if((flag & X_EXEC))
+        sh_exit(ret);
+
+      return ret;
+    }
+
+    if(pid) {
       int status = 1;
 
       /* give the child its own process group (same double-setpgid-in-

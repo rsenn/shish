@@ -1,0 +1,44 @@
+diff --git a/lib/sig.h b/lib/sig.h
+index c87ecb5a..28242245 100644
+--- a/lib/sig.h
++++ b/lib/sig.h
+@@ -101,8 +101,14 @@ struct sigaction {
+ 
+ typedef unsigned long sigset_type;
+ 
++/* SA_MASKALL has no real-system counterpart (sig_action() only ever
++   tests it against sa_flags words this file itself builds) -- its
++   value must stay clear of any real SA_* bit though, since callers
++   OR it together with SA_NOCLDSTOP/SA_NORESTART, which do reuse the
++   real values when the system already defines them (0x01/0x04 on
++   Linux): 0x01 would silently double as the real SA_NOCLDSTOP. */
+ #ifndef SA_MASKALL
+-#define SA_MASKALL ((unsigned long)0x01)
++#define SA_MASKALL ((unsigned long)0x10000)
+ #endif
+ #ifndef SA_NOCLDSTOP
+ #define SA_NOCLDSTOP ((unsigned long)0x02)
+diff --git a/src/sh/sh_main.c b/src/sh/sh_main.c
+index 5abe812e..2a930440 100644
+--- a/src/sh/sh_main.c
++++ b/src/sh/sh_main.c
+@@ -420,7 +420,18 @@ main(int argc, char** argv) {
+     }
+   }
+ 
+-  sig_catch(SIGCHLD, sh_onsig);
++  /* not sig_catch(): it always adds SA_NOCLDSTOP, which is right for
++     a user "trap CMD CHLD" (they asked to be told about exits, not
++     every stop) but wrong here -- job control (jobs/fg/bg/wait) needs
++     this handler to fire on a stop too, or a stopped job's status
++     never gets updated until it happens to also exit. */
++  {
++    struct sigaction sa = {0};
++
++    sa.sa_handler = sh_onsig;
++    sa.sa_flags = SA_MASKALL;
++    sig_action(SIGCHLD, &sa, 0);
++  }
+ 
+   /*  if(fd_expected != fd_top && (flags = fdtable_check(e)))
+     {

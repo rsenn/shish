@@ -305,9 +305,11 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   redir_error |= exec_redir_error;
 
   if(ncmd->bgnd) {
-    struct job* j = *job_pointer;
+    struct job* j = job_current();
 
-    j->command = tree_string((union node*)ncmd);
+    /* no job when the background start failed (fork error) */
+    if(j && !j->command)
+      j->command = tree_string((union node*)ncmd);
   }
 
 #ifndef HAVE_ALLOCA

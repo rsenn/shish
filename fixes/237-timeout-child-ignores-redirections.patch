@@ -1,0 +1,23 @@
+diff --git a/src/builtin/builtin_timeout.c b/src/builtin/builtin_timeout.c
+index bec90a7a..b371d673 100644
+--- a/src/builtin/builtin_timeout.c
++++ b/src/builtin/builtin_timeout.c
+@@ -1,5 +1,6 @@
+ #include "../builtin.h"
+ #include "../fdtable.h"
++#include "../fdstack.h"
+ #include "../exec.h"
+ #include "../var.h"
+ #include "../../lib/shell.h"
+@@ -216,6 +217,11 @@ builtin_timeout(int argc, char* argv[]) {
+     char** envp = var_export(alloc(envn * sizeof(char*)));
+ 
+     sig_unblock(SIGCHLD);
++
++    /* apply the shell's pending redirections/pipes to the real fds */
++    fdtable_exec();
++    fdstack_flatten();
++
+     execve(path, cmdargv, envp);
+     _exit(126);
+   }

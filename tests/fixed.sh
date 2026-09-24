@@ -4894,6 +4894,62 @@ if [ -n "$X229_SELF" ] && [ -x "$X229_SELF" ]; then
     "exec onto a low fd number must not truncate the rest of the running script"
 fi
 
+## fixes/230: a foreground external command killed by SIGINT is how a
+## script's own "^C-equivalent" ends -- job_wait()'s non-interactive
+## squelch already suppressed job_printstatus()'s "process N signaled:
+## NAME" diagnostic for SIGPIPE (a pipeline's left side dying when the
+## right side exits early) but not for SIGINT, so every command a
+## script killed with SIGINT printed that diagnostic to stderr even
+## though bash stays silent for both signals in the same situation.
+X230_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
+
+if [ -n "$X230_SELF" ] && [ -x "$X230_SELF" ]; then
+  X230=$("$X230_SELF" -c "\"$X230_SELF\" -c 'kill -s INT \$\$'" 2>&1 >/dev/null)
+  assert_equal "" "$X230" \
+    "a foreground command killed by SIGINT prints no 'process N signaled' diagnostic in a script"
+fi
+
+## fixes/231: "alias NAME" (a bare name, no "=") is documented
+## (help_alias) to print that one alias's definition, but the add-loop
+## in builtin_alias.c had no such case -- it always treated every
+## operand as a definition, so "alias NAME" built a bogus alias whose
+## codelen underflowed (str_len(str) - (namelen + 1) with namelen ==
+## str_len(str)) instead of printing anything. The print path (both
+## the bare-name case and the pre-existing "print everything" case)
+## also single-quoted the value verbatim, breaking on a value
+## containing its own "'", and used an "alias NAME=VALUE" prefix that
+## does not round-trip through "eval alias $(alias name)" (the
+## "alias" word itself gets re-read as a second, bogus operand) --
+## dash and bash agree the reusable form for a specific/no-operand
+## print is bare "NAME=VALUE", reserving the "alias "-prefixed form
+## for "-p" alone.
+X231_OUT=$(alias xa231='echo A'; alias xa231)
+assert_equal "xa231='echo A'" "$X231_OUT" \
+  "'alias NAME' (bare, no =) prints that one alias's definition"
+
+X231_SQ="'"
+alias xb231="echo it${X231_SQ}s"
+X231_SAVE=$(alias xb231)
+X231_EXPECT="xb231=${X231_SQ}echo it${X231_SQ}\\${X231_SQ}${X231_SQ}s${X231_SQ}"
+assert_equal "$X231_EXPECT" "$X231_SAVE" \
+  "printing an alias whose value contains a single quote escapes it for reuse"
+
+unalias xb231
+eval alias "$X231_SAVE"
+X231_REDEFINED=$(alias xb231)
+assert_equal "$X231_SAVE" "$X231_REDEFINED" \
+  "an alias value containing a single quote survives 'eval alias \$(alias name)'"
+
+unalias -a
+X231_ERR=$(alias xc231 2>&1 >/dev/null)
+X231_STATUS=$?
+case $X231_ERR in
+  *xc231*) X231_ERR_MENTIONS_NAME=yes ;;
+  *) X231_ERR_MENTIONS_NAME=no ;;
+esac
+assert_equal "1 yes" "$X231_STATUS $X231_ERR_MENTIONS_NAME" \
+  "printing an undefined alias fails and names the alias in its diagnostic"
+
 ## fnmatch-bracket-member-before-class-fails: after a member matched, the
 ## rest of the bracket is skipped by scanning for "]", which must not stop
 ## at the "]" that closes a "[:class:]" member.
@@ -4912,5 +4968,119 @@ assert_equal match "$X232_C" \
 X232_V=xb
 assert_equal x "${X232_V%[b[:digit:]]}" \
   "\${var%[b[:digit:]]} removes a char matching the literal member before the class"
+
+## exec-program-fork-failure-silent: exec_program() treated fork() == -1 as
+## "in the parent" and waited on a bogus pid, so a failed fork gave status
+## 129 and no message. RLIMIT_NPROC=1 makes every fork fail for a non-root user.
+X233_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
+
+X233_BASH=$(command -v bash)
+
+if [ -n "$X233_SELF" ] && [ -x "$X233_SELF" ] && [ -n "$X233_BASH" ] && [ -x "$(command -v timeout)" ] && [ "$(id -u)" != 0 ]; then
+  X233_OUT=$("$X233_BASH" -c 'ulimit -u 1 || exit 77; exec "$0" -c "/bin/true; echo status=\$?"' "$X233_SELF" 2>&1)
+  X233_RC=$?
+
+  if [ "$X233_RC" != 77 ]; then
+    case $X233_OUT in
+      */bin/true:*status=1) X233_RES=reported ;;
+      *) X233_RES=$X233_OUT ;;
+    esac
+    assert_equal reported "$X233_RES" \
+      "a failed fork() of an external command prints an error and gives status 1"
+
+    ## a failed background start must not crash or leave a job behind
+    ## (without the fix "wait" blocks forever on the phantom job)
+    X233_OUT=$(timeout 10 "$X233_BASH" -c 'ulimit -u 1; exec "$0" -c "/bin/true & echo A; echo x & jobs; wait; echo done"' "$X233_SELF" 2>&1)
+    case $X233_OUT in
+      *Running*) X233_RES="phantom job: $X233_OUT" ;;
+      *A*done) X233_RES=clean ;;
+      *) X233_RES=$X233_OUT ;;
+    esac
+    assert_equal clean "$X233_RES" \
+      "a failed background fork() leaves no job (no crash, 'jobs' empty, 'wait' returns)"
+  fi
+fi
+
+## wait on a pid that is not a child returns 127 (was 1, and skipped the
+## remaining operands); the status is that of the last operand
+X234_OUT=$(wait 99999 2>/dev/null; echo $?)
+assert_equal 127 "$X234_OUT" "wait on an unknown pid returns 127"
+X234_OUT=$(sleep 0 & wait $! 99999 2>/dev/null; echo $?)
+assert_equal 127 "$X234_OUT" "wait: an unknown last operand gives 127"
+X234_OUT=$(sleep 0 & wait 99999 $! 2>/dev/null; echo $?)
+assert_equal 0 "$X234_OUT" "wait: the status is the last operand's, the unknown one earlier is not fatal"
+
+## dirname (optional builtin): the operand index was reused as the scan index
+## (endless loop without a slash), trailing slashes were ignored, "/a" gave ""
+case $(type dirname 2>&1) in
+  *builtin*)
+    if [ -n "$(command -v timeout)" ]; then
+      X235_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
+      for X235 in 'usr:.' ':.' '/a:/' '//:/' '/:/' 'a/b//:a' 'a//b:a' '/usr/lib:/usr' '/usr/:/' 'a/:.'; do
+        X235_OUT=$(timeout 5 "${X235_SELF:-$0}" -c "dirname -- '${X235%%:*}'" 2>&1 | head -n1)
+        assert_equal "${X235#*:}" "$X235_OUT" "dirname '${X235%%:*}' prints '${X235#*:}'"
+      done
+      timeout 5 "${X235_SELF:-$0}" -c 'dirname a b >/dev/null 2>&1; echo $?' > "${TMPDIR:-/tmp}/x235.$$"
+      assert_equal 1 "$(cat "${TMPDIR:-/tmp}/x235.$$")" "dirname with two operands is a usage error"
+      rm -f "${TMPDIR:-/tmp}/x235.$$"
+    fi
+    ;;
+esac
+
+## uname (optional builtin): options are cumulative, printed in the order
+## s n r v m; -a is -s -n -r -v -m; extra operands are an error
+case $(type uname 2>&1) in
+  *builtin*)
+    X236_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
+    X236_S=$(uname -s); X236_M=$(uname -m)
+    X236_OUT=$("${X236_SELF:-$0}" -c 'uname -s -m')
+    assert_equal "$X236_S $X236_M" "$X236_OUT" "uname -s -m prints both fields"
+    X236_OUT=$("${X236_SELF:-$0}" -c 'uname -ms')
+    assert_equal "$X236_S $X236_M" "$X236_OUT" "uname -ms prints in the fixed order, sysname first"
+    X236_OUT=$("${X236_SELF:-$0}" -c 'uname -a')
+    assert_equal "$X236_S $(uname -n) $(uname -r) $(uname -v) $X236_M" "$X236_OUT" "uname -a is -s -n -r -v -m"
+    X236_OUT=$("${X236_SELF:-$0}" -c 'uname foo >/dev/null 2>&1; echo $?')
+    assert_equal 1 "$X236_OUT" "uname with an operand is an error"
+    ;;
+esac
+
+## timeout (optional builtin): the child it forks must get the shell's
+## file redirections (they were dropped, so its output went to the terminal)
+case $(type timeout 2>&1) in
+  *builtin*)
+    X237_F=${TMPDIR:-/tmp}/x237.$$
+    echo indata > "$X237_F.in"
+    timeout 5 /bin/echo redir > "$X237_F"
+    assert_equal redir "$(cat "$X237_F")" "timeout's command honors a > redirection"
+    timeout 5 /bin/cat < "$X237_F.in" > "$X237_F"
+    assert_equal indata "$(cat "$X237_F")" "timeout's command honors < and > redirections together"
+    rm -f "$X237_F" "$X237_F.in"
+    ;;
+esac
+
+## grep (optional builtin): -c was entirely missing (POSIX grep option),
+## and the "no file operand -> read stdin" fallback overwrote argv's NUL
+## terminator without extending the array, so multiple_files' peek at
+## argv[optind+1] read past the end -- "cmd | grep -c pat" (single
+## implicit "-" operand) could read whatever happened to follow and
+## misdetect multiple files, printing "-:N" instead of just "N".
+case $(type grep 2>&1) in
+  *builtin*)
+    X238_OUT=$(printf 'a\nb\na\n' | grep -c a)
+    assert_equal 2 "$X238_OUT" "grep -c counts matching lines instead of printing them"
+    X238_OUT=$(printf 'a\nb\n' | grep -c z)
+    assert_equal 0 "$X238_OUT" "grep -c on no matches prints 0"
+    ;;
+esac
+
+## SIGCHLD's real handler always carried the real SA_NOCLDSTOP flag,
+## because sig_action() ORs together caller-supplied SA_MASKALL/
+## SA_NOCLDSTOP/SA_NORESTART bits and shish's own SA_MASKALL (0x01)
+## numerically collided with the real system SA_NOCLDSTOP (also 1 on
+## Linux) -- so the kernel never even delivered SIGCHLD for a stopped
+## child, and jobs/bg/wait all saw permanently stale "Running" state
+## for a job that was actually stopped. Covered above already (the
+## "kill -STOP"/"bg"/"fg" block a few hundred lines up, which exercises
+## this same jobs/job_wait() path) -- no separate case needed here.
 
 summary

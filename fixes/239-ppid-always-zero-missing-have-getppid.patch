@@ -1,0 +1,53 @@
+diff --git a/cmake/Checks.cmake b/cmake/Checks.cmake
+index eceb84d0..8a490fd3 100644
+--- a/cmake/Checks.cmake
++++ b/cmake/Checks.cmake
+@@ -253,6 +253,7 @@ if(HAVE_SYS_STAT_H)
+ endif(HAVE_SYS_STAT_H)
+
+ check_function_exists(lstat HAVE_LSTAT)
++check_function_exists(getppid HAVE_GETPPID)
+
+ check_include_file(pwd.h HAVE_PWD_H)
+ check_include_file(grp.h HAVE_GRP_H)
+diff --git a/config.h.cmake b/config.h.cmake
+index c6ab0f81..519a20b4 100644
+--- a/config.h.cmake
++++ b/config.h.cmake
+@@ -45,6 +45,9 @@
+ /* Define this if you have the lstat() function */
+ #cmakedefine HAVE_LSTAT 1
+
++/* Define this if you have the getppid() function */
++#cmakedefine HAVE_GETPPID 1
++
+ /* Define this if you have the fcntl() function */
+ #cmakedefine HAVE_FCNTL 1
+
+diff --git a/config.h.in b/config.h.in
+index 111111111..222222222 100644
+--- a/config.h.in
++++ b/config.h.in
+@@ -233,6 +233,9 @@
+ /* Define to 1 if you have the `getpwuid_r' function. */
+ #undef HAVE_GETPWUID_R
+
++/* Define to 1 if you have the `getppid' function. */
++#undef HAVE_GETPPID
++
+ /* Define to 1 if you have the `lstat' function. */
+ #undef HAVE_LSTAT
+
+diff --git a/configure.ac b/configure.ac
+index baa03530..1532be88 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -115,7 +115,7 @@ AC_CHECK_FUNC([gethostname],[],[dnl
+ 		])
+
+ ])
+-AC_CHECK_FUNCS([sethostname sys_siglist lstat readlink getpwuid_r getpwuid getgrgid_r getgrgid])
++AC_CHECK_FUNCS([sethostname sys_siglist lstat readlink getpwuid_r getpwuid getgrgid_r getgrgid getppid])
+
+ dnl fork() needs a hardcoded result on two platform families, the same
+ dnl as the CMake build (see cmake/Checks.cmake for the full

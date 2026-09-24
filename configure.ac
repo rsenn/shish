@@ -33,6 +33,20 @@ AC_CONFIG_SRCDIR([src/sh/sh_main.c])
 AC_DIETLIBC([/opt/diet /usr/diet])
 AC_PROG_CC([cc gcc])
 AC_PROG_CC_C99
+
+# quote-only include path for src/ (its features.h must not shadow
+# <features.h>): -iquote (gcc, clang), else only the build dir's src/
+# (tcc; builtin_config.h lives there, the rest is included relatively)
+# ---------------------------------------------------------------------------
+AC_MSG_CHECKING([whether $CC supports -iquote])
+ac_save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -iquote ."
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])],
+  [IQUOTE_SRC='-iquote $(top_srcdir)/src -iquote $(top_builddir)/src'; ac_iquote_ok=yes],
+  [IQUOTE_SRC='-I$(top_builddir)/src'; ac_iquote_ok=no])
+CFLAGS="$ac_save_CFLAGS"
+AC_MSG_RESULT([$ac_iquote_ok])
+AC_SUBST(IQUOTE_SRC)
 AC_PROG_AR
 AC_PROG_RANLIB
 AC_PROG_INSTALL
@@ -115,7 +129,7 @@ AC_CHECK_FUNC([gethostname],[],[dnl
 		])
 		
 ])
-AC_CHECK_FUNCS([sethostname sys_siglist lstat readlink getpwuid_r getpwuid getgrgid_r getgrgid])
+AC_CHECK_FUNCS([sethostname sys_siglist lstat readlink getpwuid_r getpwuid getgrgid_r getgrgid getppid])
 
 dnl fork() needs a hardcoded result on two platform families, the same
 dnl as the CMake build (see cmake/Checks.cmake for the full
@@ -212,32 +226,70 @@ AC_SUBST([WIN32_TRUE],[#])
 # check for needed types
 # ---------------------------------------------------------------------------
 
-m4_define([ALL_BUILTINS],[basename, break, cd, dirname, dump, echo, eval, exec, exit, export, false, fdtable, hash, history, hostname, pwd, set, shift, source, test, type, true, unset])
+dnl ALL_BUILTINS: every BUILTIN_<name> the table in builtin_table.c is
+dnl gated by, lowercased (space separated). EXTRA_BUILTINS: the ones whose
+dnl source is in src/builtin/extra/. Both are read when this file is turned
+dnl into ./configure, so re-run autogen.sh after adding a builtin.
+m4_define([ALL_BUILTINS],
+  m4_normalize(m4_esyscmd([sed '/#if BUILTIN_/ { N; /{"/ { s,.*BUILTIN_,, ; s,\n.*,,; p } }' -n src/builtin/builtin_table.c | sort -u | tr A-Z a-z | tr '\n' ' '])))
+
+m4_define([EXTRA_BUILTINS],
+  m4_normalize(m4_esyscmd([ls src/builtin/extra | sed 's,^builtin_,,; s,\.c$,,' | tr '\n' ' '])))
+
+dnl default set: every builtin that is not in src/builtin/extra/
+m4_define([DEFAULT_BUILTINS],
+  m4_normalize(m4_foreach_w([BUILTIN], m4_defn([ALL_BUILTINS]),
+    [m4_if(m4_index([ ]m4_defn([EXTRA_BUILTINS])[ ], [ ]BUILTIN[ ]), [-1], [BUILTIN ])])))
+
+dnl "all" leaves out digest: it needs third_party/Hash-Algorithms, which
+dnl only the CMake build (cmake/Digest.cmake) fetches and compiles.
+m4_define([ALL_BUILTINS_NO_DIGEST],
+  m4_normalize(m4_foreach_w([BUILTIN], m4_defn([ALL_BUILTINS]),
+    [m4_if(BUILTIN, [digest], [], [BUILTIN ])])))
 
 if test -z "${enabled_builtins}"; then
-  enabled_builtins="break cd eval exec exit export hash history pwd set shift source unset"
+  enabled_builtins="m4_defn([DEFAULT_BUILTINS])"
 fi
 AC_MSG_CHECKING([for builtins])
-AC_ARG_ENABLE([builtins],[AC_HELP_STRING([--enable-builtins=LIST], [enable specified builtins])],[case "${enabled_builtins}" in
- *" $enableval" | "$enableval "* | *" $enableval "*) ;;
- *) enabled_builtins="$enabled_builtins $enableval" ;;
-esac])
+AC_ARG_ENABLE([builtins],[AC_HELP_STRING([--enable-builtins=LIST], [also enable these builtins (space or comma separated; "all" or "*" = every builtin)])],[
+  for b in `echo "$enableval" | tr ',' ' '`; do
+    case "$b" in
+      all|'*') enabled_builtins="m4_defn([ALL_BUILTINS_NO_DIGEST])" ;;
+      yes|no) ;;
+      *) case " $enabled_builtins " in
+           *" $b "*) ;;
+           *) enabled_builtins="$enabled_builtins $b" ;;
+         esac ;;
+    esac
+  done])
 if test -n "${enabled_builtins}"; then
   enabled_builtins=`set -- ${enabled_builtins}; IFS=" "; echo "$*"`
 fi
 AC_MSG_RESULT([${enabled_builtins}])
 
-uc_builtins=`echo "$enabled_builtins" | tr  '[:lower:]' '[:upper:]'`
-
-m4_foreach([BUILTIN],[ALL_BUILTINS],[
-case "${enabled_builtins}" in
- *" BUILTIN" | "BUILTIN "* | *" BUILTIN "*)
+m4_foreach_w([BUILTIN], m4_defn([ALL_BUILTINS]), [
+case " ${enabled_builtins} " in
+ *" BUILTIN "*)
 AC_DEFINE_UNQUOTED([BUILTIN_]m4_toupper(BUILTIN),[1],[Build the ]BUILTIN[ builtin])
-  ;;
- *)
   ;;
 esac
 ])
+
+AC_DEFINE([HAVE_BUILTIN_CONFIG_H],[1],[builtin_table.c includes src/builtin_config.h])
+
+dnl src/builtin_config.h: BUILTIN_<NAME> 1 or 0 for every builtin, what
+dnl builtin_table.c and the eval/job/sh/term sources are compiled against
+dnl (the CMake build writes the same file, see cmake/Builtins.cmake).
+AC_CONFIG_COMMANDS([src/builtin_config.h],
+[for b in $all_builtins; do
+   ub=`echo $b | tr a-z A-Z`
+   case " $enabled_builtins " in
+     *" $b "*) echo "#define BUILTIN_$ub 1" ;;
+     *) echo "#define BUILTIN_$ub 0" ;;
+   esac
+ done > src/builtin_config.h],
+[all_builtins="m4_defn([ALL_BUILTINS])"
+enabled_builtins="$enabled_builtins"])
 
 AC_SUBST([BUILTINS],[$enabled_builtins])
 
@@ -255,6 +307,7 @@ doc/posix/Makefile
 doc/man/Makefile
 lib/Makefile
 lib/alloc/Makefile
+lib/arena/Makefile
 lib/buffer/Makefile
 lib/byte/Makefile
 lib/fmt/Makefile
@@ -271,9 +324,12 @@ lib/uint64/Makefile
 lib/unix/Makefile
 lib/utf8/Makefile
 lib/wait/Makefile
+text/Makefile
+text/dfa/Makefile
 scripts/Makefile
 src/Makefile
 src/builtin/Makefile
+src/builtin/extra/Makefile
 src/debug/Makefile
 src/eval/Makefile
 src/exec/Makefile

@@ -101,8 +101,14 @@ struct sigaction {
 
 typedef unsigned long sigset_type;
 
+/* SA_MASKALL has no real-system counterpart (sig_action() only ever
+   tests it against sa_flags words this file itself builds) -- its
+   value must stay clear of any real SA_* bit though, since callers
+   OR it together with SA_NOCLDSTOP/SA_NORESTART, which do reuse the
+   real values when the system already defines them (0x01/0x04 on
+   Linux): 0x01 would silently double as the real SA_NOCLDSTOP. */
 #ifndef SA_MASKALL
-#define SA_MASKALL ((unsigned long)0x01)
+#define SA_MASKALL ((unsigned long)0x10000)
 #endif
 #ifndef SA_NOCLDSTOP
 #define SA_NOCLDSTOP ((unsigned long)0x02)

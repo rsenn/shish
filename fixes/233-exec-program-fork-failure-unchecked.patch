@@ -1,0 +1,68 @@
+diff --git a/src/eval/eval_simple_command.c b/src/eval/eval_simple_command.c
+index ea2f6154..b3402743 100644
+--- a/src/eval/eval_simple_command.c
++++ b/src/eval/eval_simple_command.c
+@@ -305,9 +305,11 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+   redir_error |= exec_redir_error;
+ 
+   if(ncmd->bgnd) {
+-    struct job* j = *job_pointer;
++    struct job* j = job_current();
+ 
+-    j->command = tree_string((union node*)ncmd);
++    /* no job when the background start failed (fork error) */
++    if(j && !j->command)
++      j->command = tree_string((union node*)ncmd);
+   }
+ 
+ #ifndef HAVE_ALLOCA
+diff --git a/src/exec/exec_command.c b/src/exec/exec_command.c
+index 751b1662..b15bfbb0 100644
+--- a/src/exec/exec_command.c
++++ b/src/exec/exec_command.c
+@@ -33,6 +33,12 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
+     job->bgnd = 1;
+     pid = job_fork(job, 0, 1);
+ 
++    /* fork failed: job_fork() reported it; drop the childless job */
++    if(pid == -1) {
++      job_free(job);
++      return 1;
++    }
++
+     if(!pid) {
+       flag &= ~X_NOWAIT;
+       exit(exec_command(cmd, argc, argv, flag));
+diff --git a/src/exec/exec_program.c b/src/exec/exec_program.c
+index 87474ad4..dfc7c0b6 100644
+--- a/src/exec/exec_program.c
++++ b/src/exec/exec_program.c
+@@ -79,7 +79,27 @@ exec_program(char* path, char** argv, enum execflag flag) {
+ 
+     /* in the parent wait for the child to finish and then return
+        or exit, according to the 'exec' argument */
+-    if((pid = fork())) {
++    if((pid = fork()) == -1) {
++      /* no child: report it and undo the setup above */
++      int saved_errno = errno;
++
++      sh_error_errno(argv[0]);
++      sig_unblock(SIGCHLD);
++      fdstack_pop(&io);
++
++      if(pipes)
++        alloc_free(pipes);
++
++      errno = saved_errno;
++      ret = exec_error();
++
++      if((flag & X_EXEC))
++        sh_exit(ret);
++
++      return ret;
++    }
++
++    if(pid) {
+       int status = 1;
+ 
+       /* give the child its own process group (same double-setpgid-in-

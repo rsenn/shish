@@ -1,0 +1,188 @@
+diff --git a/src/builtin/builtin_alias.c b/src/builtin/builtin_alias.c
+index 6afa3bbd..75a9072c 100644
+--- a/src/builtin/builtin_alias.c
++++ b/src/builtin/builtin_alias.c
+@@ -51,6 +51,43 @@ alias_insert(struct alias** aptr, struct alias* a) {
+   *aptr = a;
+ }
+ 
++/* print one alias, safe to feed back to the shell even if VALUE itself
++ * contains a single quote ("'" -> "'\''"). "-p" writes the full
++ * 'alias NAME=VALUE' command; printing a specific name (or every alias
++ * with no operand at all) writes bare 'NAME=VALUE', since that form is
++ * what round-trips through "eval alias $(alias name)" and through
++ * "alias -- $(alias)" split on newlines -- a leading "alias " word
++ * there would be read back as an operand of its own.
++ * ----------------------------------------------------------------------- */
++static void
++alias_print(struct alias* a, int prefix) {
++  size_t codelen;
++  const char* code = alias_code(a, &codelen);
++
++  if(prefix)
++    buffer_puts(fd_out->w, "alias ");
++
++  buffer_put(fd_out->w, a->def, a->namelen);
++  buffer_puts(fd_out->w, "='");
++
++  while(codelen) {
++    size_t i = byte_chr(code, codelen, '\'');
++
++    buffer_put(fd_out->w, code, i);
++
++    if(i < codelen) {
++      buffer_puts(fd_out->w, "'\\''");
++      i++;
++    }
++
++    code += i;
++    codelen -= i;
++  }
++
++  buffer_putc(fd_out->w, '\'');
++  buffer_putnlflush(fd_out->w);
++}
++
+ static struct alias**
+ alias_search(const char* str) {
+   size_t len = str_chr(str, '=');
+@@ -77,9 +114,17 @@ const char help_unalias[] = "    Remove shell aliases.\n"
+                             "    -a              remove every defined alias\n"
+                             "    name            remove the named alias\n";
+ 
++static void
++alias_print_all(int prefix) {
++  struct alias* alias;
++
++  for(alias = parse_aliases; alias; alias = alias->next)
++    alias_print(alias, prefix);
++}
++
+ int
+ builtin_alias(int argc, char* argv[]) {
+-  int c, print = 0;
++  int c, print = 0, ret = 0;
+   char** argp;
+ 
+   while((c = shell_getopt(argc, argv, "p")) > 0) {
+@@ -91,29 +136,31 @@ builtin_alias(int argc, char* argv[]) {
+ 
+   argp = &argv[shell_optind];
+ 
+-  /* print all aliases, suitable for re-input */
+-  if(*argp == NULL || print) {
+-    struct alias* alias;
+-
+-    for(alias = parse_aliases; alias; alias = alias->next) {
+-      buffer_puts(fd_out->w, "alias ");
+-      buffer_put(fd_out->w, alias->def, alias->namelen);
+-      buffer_puts(fd_out->w, "='");
+-      buffer_puts(fd_out->w, alias->def + alias->namelen + 1);
+-      buffer_putc(fd_out->w, '\'');
+-
+-      buffer_putnlflush(fd_out->w);
+-    }
+-
++  /* "-p", or no operands at all: print every alias */
++  if(print || *argp == NULL) {
++    alias_print_all(print);
+     return 0;
+   }
+ 
+-  /* add each alias */
++  /* add, or print, each named alias */
+   for(; *argp; argp++) {
+     struct alias **aptr, *alias;
+ 
+     if(!alias_valid(*argp)) {
+       builtin_errmsg(argv, *argp, "not a valid alias name");
++      ret = 1;
++      continue;
++    }
++
++    /* a bare name (no "=") prints that one alias's definition */
++    if(!(*argp)[str_chr(*argp, '=')]) {
++      if(!(alias = *alias_search(*argp))) {
++        builtin_errmsg(argv, *argp, "no such alias");
++        ret = 1;
++      } else {
++        alias_print(alias, 0);
++      }
++
+       continue;
+     }
+ 
+@@ -124,7 +171,7 @@ builtin_alias(int argc, char* argv[]) {
+       alias_insert(aptr, alias);
+   }
+ 
+-  return 0;
++  return ret;
+ }
+ 
+ /* unalias built-in
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 1f3f196a..a2291d9b 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -4894,4 +4894,60 @@ if [ -n "$X229_SELF" ] && [ -x "$X229_SELF" ]; then
+     "exec onto a low fd number must not truncate the rest of the running script"
+ fi
+ 
++## fixes/230: a foreground external command killed by SIGINT is how a
++## script's own "^C-equivalent" ends -- job_wait()'s non-interactive
++## squelch already suppressed job_printstatus()'s "process N signaled:
++## NAME" diagnostic for SIGPIPE (a pipeline's left side dying when the
++## right side exits early) but not for SIGINT, so every command a
++## script killed with SIGINT printed that diagnostic to stderr even
++## though bash stays silent for both signals in the same situation.
++X230_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
++
++if [ -n "$X230_SELF" ] && [ -x "$X230_SELF" ]; then
++  X230=$("$X230_SELF" -c "\"$X230_SELF\" -c 'kill -s INT \$\$'" 2>&1 >/dev/null)
++  assert_equal "" "$X230" \
++    "a foreground command killed by SIGINT prints no 'process N signaled' diagnostic in a script"
++fi
++
++## fixes/231: "alias NAME" (a bare name, no "=") is documented
++## (help_alias) to print that one alias's definition, but the add-loop
++## in builtin_alias.c had no such case -- it always treated every
++## operand as a definition, so "alias NAME" built a bogus alias whose
++## codelen underflowed (str_len(str) - (namelen + 1) with namelen ==
++## str_len(str)) instead of printing anything. The print path (both
++## the bare-name case and the pre-existing "print everything" case)
++## also single-quoted the value verbatim, breaking on a value
++## containing its own "'", and used an "alias NAME=VALUE" prefix that
++## does not round-trip through "eval alias $(alias name)" (the
++## "alias" word itself gets re-read as a second, bogus operand) --
++## dash and bash agree the reusable form for a specific/no-operand
++## print is bare "NAME=VALUE", reserving the "alias "-prefixed form
++## for "-p" alone.
++X231_OUT=$(alias xa231='echo A'; alias xa231)
++assert_equal "xa231='echo A'" "$X231_OUT" \
++  "'alias NAME' (bare, no =) prints that one alias's definition"
++
++X231_SQ="'"
++alias xb231="echo it${X231_SQ}s"
++X231_SAVE=$(alias xb231)
++X231_EXPECT="xb231=${X231_SQ}echo it${X231_SQ}\\${X231_SQ}${X231_SQ}s${X231_SQ}"
++assert_equal "$X231_EXPECT" "$X231_SAVE" \
++  "printing an alias whose value contains a single quote escapes it for reuse"
++
++unalias xb231
++eval alias "$X231_SAVE"
++X231_REDEFINED=$(alias xb231)
++assert_equal "$X231_SAVE" "$X231_REDEFINED" \
++  "an alias value containing a single quote survives 'eval alias \$(alias name)'"
++
++unalias -a
++X231_ERR=$(alias xc231 2>&1 >/dev/null)
++X231_STATUS=$?
++case $X231_ERR in
++  *xc231*) X231_ERR_MENTIONS_NAME=yes ;;
++  *) X231_ERR_MENTIONS_NAME=no ;;
++esac
++assert_equal "1 yes" "$X231_STATUS $X231_ERR_MENTIONS_NAME" \
++  "printing an undefined alias fails and names the alias in its diagnostic"
++
+ summary

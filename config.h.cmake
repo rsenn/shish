@@ -45,6 +45,9 @@
 /* Define this if you have the lstat() function */
 #cmakedefine HAVE_LSTAT 1
 
+/* Define this if you have the getppid() function */
+#cmakedefine HAVE_GETPPID 1
+
 /* Define this if you have the fcntl() function */
 #cmakedefine HAVE_FCNTL 1
 
@@ -90,15 +93,6 @@
 
 /* Define this if you have fcntl.h */
 #cmakedefine HAVE_FCNTL_H 1
-
-/* Define this if you have sys/utsname.h */
-#cmakedefine HAVE_SYS_UTSNAME_H 1
-
-/* Define this if you have the symlink() function */
-#cmakedefine HAVE_SYMLINK 1
-
-/* Define this if you have the link() function */
-#cmakedefine HAVE_LINK 1
 
 /* Define this if you have pwd.h */
 #cmakedefine HAVE_PWD_H 1

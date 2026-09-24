@@ -291,23 +291,59 @@
   sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix sigterm1-p.tst
   ```
 
-- alias-printing-and-substitution-broken: `alias` printing, alias
-  substitution (including to blank, reserved words, line continuations,
-  operators), subshell alias inheritance, recursive aliases, and
-  aliases in command substitution are all broken. 48 failures in
-  `alias-p.tst` (17/65 passing). Root cause not yet isolated —
-  `builtin_alias.c` and the parser's alias-expansion path in
-  `src/parse/` need a full audit.
+- alias-substitution-needs-rework-in-parse_gettok: `builtin_alias.c`'s
+  own bugs are fixed (`fixes/231`: `alias name` now prints instead of
+  corrupting the table, printing is now reusable/quote-safe, printing
+  an undefined name is an error) — what is left in `alias-p.tst` (22/65
+  passing, was 17/65) is architectural, not a `builtin_alias.c` fix.
+  shish has no separate lexer/parser split -- tokenizing and parsing
+  are interleaved in one recursive-descent pass, and `parse_keyword()`
+  (`src/parse/parse_keyword.c`) reclassifies a scanned word's token
+  type from `T_NAME` to a reserved word (`T_IF`/`T_FOR`/...) right
+  after `parse_gettok()` scans it, *before* `parse_simple_command.c`
+  ever gets to see the word and try alias substitution on it. And
+  `parse_simple_command.c` only ever alias-expands a command's *first*
+  word to begin with, by parsing the alias's whole replacement text as
+  one embedded simple command and splicing its vars/rdir/args into the
+  tree — so an alias can never expand into a reserved word, an
+  operator, a `case` pattern, or a function-definition token, and a
+  replacement ending in a blank never triggers alias-expansion of the
+  *next* scanned word the way POSIX requires. Fixing this needs alias
+  lookup moved into the word-scanning step itself (`parse_gettok`/
+  `parse_keyword`), tried before keyword/operator classification runs,
+  with its own "replacement ends in blank -> also check the next raw
+  word" chaining loop and a quoting-aware guard (a quoted alias name
+  must not expand at all -- currently not checked either). Confirmed
+  via `dash` run through the same harness (59/65) that the remaining
+  shape is achievable; not isolated further than that in this pass.
+  One separate, unrelated failure remains folded into `BUGS:
+  quote-backslash-escaping-broken`'s repro instead of here (`reusing
+  printed alias (complex quotation)` -- the alias *value* itself is
+  parsed wrong at definition time, unrelated to substitution).
+
+  Also out of scope here, already tracked as its own architectural gap:
+  `subshell cannot affect main shell` (`alias-p.tst:108`) fails because
+  `(...)` doesn't fork a real subprocess (`BUGS:
+  kill-stop-self-in-subshell-deadlock`, `TODO.md` Goal 4), so a
+  subshell's `alias`/`unalias` mutates the same in-process
+  `parse_aliases` list the parent sees.
 
   **Repro:**
   ```sh
+  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix alias-p.tst
+  # remaining failures are word-scanning-order cases, e.g.:
   cat <<'EOF' | shish
-  alias ll='ls -l'
-  alias
-  ll /tmp 2>&1 | head -1
+  alias i='if echo'
+  i if; then echo then1; fi
   EOF
-  # shish prints the alias but doesn't expand it correctly in all contexts
-  # Run: sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix alias-p.tst
+  # shish: "shish: if: No such file or directory" then "unexpected
+  # token then" -- "i" expanded to "if echo", but the parser had
+  # already classified "i" as an ordinary command word before that
+  # replacement text existed, so "if" in the replacement is just
+  # another argument to "echo", not a reserved word starting a
+  # compound command
+  # bash/dash: prints "if" then "then1" (the alias-expanded "if"
+  # really does open an if/then/fi)
   ```
 
 - read-field-splitting-and-options-broken: `read` builtin's field
@@ -692,3 +728,510 @@
   # hits the 60s tests/pty-run alarm every time
   ```
 
+
+- expr-index-wrong-result: `expr index STRING CHARS` matches CHARS as a
+  substring and stops one position short (`i < strlen(h) - strlen(n)`,
+  which also wraps when CHARS is longer than STRING), instead of what
+  its help text says (first position of *any* character of CHARS).
+
+  **Repro:**
+  ```sh
+  expr index abc c     # prints 0, should be 3
+  expr index abc xc    # prints 0, should be 3
+  ```
+
+- expr-string-comparison-numeric-only: `expr A < B` and the other
+  comparison operators go through the `$((...))` arithmetic parser, so
+  non-integer operands compare as numbers instead of by string
+  collation as POSIX requires when either operand is not an integer.
+
+  **Repro:**
+  ```sh
+  expr abc \< abd      # prints 0, should be 1
+  ```
+
+- tree-cat-drops-background-ampersand: `tree_cat()` never prints `&`
+  for a simple command or compound with `bgnd` set (only `N_LIST`'s
+  `bgnd` is honoured), so `shformat` turns a background job into a
+  foreground one, and a `{ cmd & }` group comes out as `{ cmd; ; }`.
+
+  **Repro:**
+  ```sh
+  printf 'sleep 1 & echo x\n' | build/x86_64-linux-gnu/shformat   # sleep 1; echo x
+  printf '{ sleep 1 & }\n'    | build/x86_64-linux-gnu/shformat   # { sleep 1; ; }
+  ```
+
+- tree-cat-drops-empty-for-in: `nfor.has_in` (`for x in; do ...`, an empty
+  word list) is not read by `tree_cat()`, which prints ` in ` only when
+  the list is non-empty, so `shformat` turns "iterate over nothing"
+  into "iterate over `"$@"`".
+
+  **Repro:**
+  ```sh
+  printf 'for x in; do echo hi; done\n' | build/x86_64-linux-gnu/shformat   # for x; do echo hi; done
+  ```
+
+- tree-cat-mangles-here-documents: `tree_cat()` prints an `R_HERE`
+  redirection's `word` but never `nredir.data`, so the body ends up
+  inside the delimiter word and the `EOF` line is lost.
+
+  **Repro:**
+  ```sh
+  printf 'cat <<EOF\nbody\nEOF\n' | build/x86_64-linux-gnu/shformat   # cat <<"body\n"
+  ```
+
+- expr-crashes-and-exit-status: `expr` kills the shell on two inputs and
+  gets its exit status wrong (POSIX: 0 = result neither null nor 0,
+  1 = null or 0, 2 = invalid expression, >2 = error). Checked
+  2026-09-19 against `build/x86_64-linux-gnu/shish`.
+  - `expr -- -1` dies with SIGSEGV (should print -1: `--` ends options).
+  - `expr 5 / 0` dies with SIGFPE (should be an error, status >2).
+  - `expr 0`, `expr 0 '|' 0` exit 0 (should be 1); `expr ""` prints `0`
+    (should print an empty line, exit 1).
+  - `expr 1 +` and `expr 1 '('` print `1` and exit 0 (should be a
+    syntax error, exit 2).
+
+  **Repro:**
+  ```sh
+  build/x86_64-linux-gnu/shish -c 'expr -- -1'; echo $?          # 139
+  build/x86_64-linux-gnu/shish -c 'expr 5 / 0'; echo $?          # 136
+  build/x86_64-linux-gnu/shish -c 'expr 0; echo $?'              # 0, should be 1
+  build/x86_64-linux-gnu/shish -c 'expr 1 +; echo $?'            # 1 / 0, should be 2
+  ```
+
+- star-empty-ifs-appends-nul: `"$*"` with `IFS` set to the empty string
+  joins the parameters with `ifs[0]`, which is the terminating NUL of
+  `""`, so the value holds embedded NUL bytes and every C-string
+  consumer sees only the first parameter. POSIX: a null IFS joins with
+  no separator (`abc`). Same `ifs[0]` pattern in `expand_glob.c:81`
+  (the unsplit `$*` case). Checked 2026-09-19.
+
+  **Repro:**
+  ```sh
+  build/x86_64-linux-gnu/shish -c 'IFS=; set -- a b c; printf "[%s]\n" "$*"'   # [a], should be [abc]
+  ```
+
+- term-complete-quoted-word: tab-completion splits the word under the
+  cursor at the previous blank only, with no quote or backslash
+  awareness, so a name containing a blank (or typed inside quotes) never
+  completes and inserted names are never escaped. Checked 2026-09-20.
+
+  **Repro** (interactive `shish -i`, directory holding a file `my file`):
+  ```sh
+  ls "my fi<TAB>      # nothing happens, should complete to "my file"
+  ls my\ fi<TAB>      # nothing happens, should complete to my\ file
+  ```
+  (a pty script: `python3` + `pty.fork()`, see `tests/term-complete.sh`)
+
+- ln-unlinks-existing-destination: the `ln` builtin calls `unlink()` on the
+  destination before every link, whether or not `-f` was given, so an
+  existing file is destroyed silently and the command succeeds. POSIX: with
+  no `-f`, an existing destination is a diagnostic and nothing is linked.
+  (`builtin_ln.c`: the bare `unlink(path.s);` before the `link`/`symlink`
+  call; the `-f` flag only decides whether to continue after a *failed*
+  link.) Checked 2026-09-20 on a scratch `-DENABLE_LN=ON` build.
+
+  **Repro:**
+  ```sh
+  echo A > a; echo B > b
+  ln a b; echo $?; cat b       # rc 0, prints A; should fail "File exists" and keep B
+  ```
+
+- special-builtin-nonzero-status-kills-shell: `exec_command()` ends a
+  non-interactive shell whenever a *special* builtin returns non-zero
+  (`if(cmd->id == H_SBUILTIN && ret != 0 && !sh_interactive) sh_exit(ret)`).
+  POSIX 2.8.1 only lets a special-builtin *error* (usage, syntax, redirection,
+  assignment error) end the shell; `eval`, `.` and `:`-family builtins return
+  the status of what they ran (`.`: "the value of the last command
+  executed"), so a failing command inside them must not exit the shell.
+  Checked 2026-09-20 against POSIX.1-2024 (Shell Command Language 2.8.1,
+  `dot`, `eval`).
+
+  **Repro:**
+  ```sh
+  shish -c 'eval false; echo alive'          # prints nothing; should print alive
+  echo false > f.sh; shish -c '. ./f.sh; echo alive'   # same
+  shish -c 'eval "test 1 = 2" || echo handled'         # prints nothing
+  ```
+
+- cd-dotdot-after-component-fails: `cd` cannot canonicalise a path in which
+  `..` follows an ordinary component: the `chdir()` fails and the
+  diagnostic names only the last component, for logical and `-P` mode
+  alike. POSIX `cd` steps 8-9 (delete `x/..`). Also:
+  more than one operand is accepted (`cd -L /tmp a`), `-e` is missing, and
+  the diagnostic for a missing directory prints an empty name.
+
+  **Repro:**
+  ```sh
+  cd /tmp/../tmp; echo $PWD    # "cd: tmp: No such file or directory"; should be /tmp
+  cd /usr/../tmp               # same; `cd /usr/./lib` works
+  cd -P /tmp/../tmp            # same
+  cd /nonexist                 # "cd: : No such file or directory" (empty name)
+  cd -L /tmp a; echo $?        # 0; should be an error (too many operands)
+  cd -P -e /tmp                # "-e: invalid option"
+  ```
+
+- cat-stops-after-unreadable-file: after the first operand that cannot be
+  opened `cat` reports it and stops, skipping the remaining operands; POSIX
+  requires it to continue with the rest and return >0 at the end. `-u`
+  (the only option POSIX defines) is rejected as an invalid option.
+
+  **Repro:**
+  ```sh
+  printf 'a\n' > f; cat f nonexist f; echo $?   # prints "a" once; should print it twice
+  cat -u f                                       # "cat: -u: invalid option"
+  ```
+
+- rm-recurses-into-dot-and-dotdot: `rm -r .` fails only by accident of
+  `rmdir(".")`, and `rm -r ..` recursively deletes the *parent directory's
+  contents*. POSIX: if the last component of an operand is `.` or `..`, or
+  the operand resolves to `/`, `rm` writes a diagnostic and does nothing with
+  it. (Hit for real while auditing: it emptied a scratch directory.)
+
+  **Repro:**
+  ```sh
+  mkdir -p t/w; touch t/x; cd t/w; rm -r ..; ls ..   # empties t/ (w vanishes too)
+  rm -r .          # "rm: .: Invalid argument", nothing else refused up front
+  ```
+
+- rm-missing-options-and-operand-check: `rm` has only `-v -r -f`. POSIX
+  `rm [-diRrv] file...`: `-i` (prompt) and `-d` (remove empty directories)
+  are rejected as invalid options, and `rm` with no operands and no `-f`
+  succeeds silently (must be a usage error, status >0).
+
+  **Repro:**
+  ```sh
+  rm; echo $?                       # 0; should be >0
+  rm -i x </dev/null                # "rm: -i: invalid option"
+  mkdir e; rm -d e                  # "rm: -d: invalid option"
+  ```
+
+- mkdir-m-option-missing: `mkdir -m mode` is rejected as an invalid option
+  (POSIX `mkdir [-p] [-m mode] dir...`, mode as for `chmod`, relative to an
+  assumed initial `a=rwx`). `mkdir` with no operand succeeds.
+
+  **Repro:**
+  ```sh
+  mkdir -m 700 d; echo $?    # "mkdir: -m: invalid option"; should create d as drwx------
+  mkdir; echo $?             # 0; should be >0
+  ```
+
+- missing-operand-not-an-error: several builtins return 0 when a required
+  operand is missing or extra operands are given, where POSIX requires a
+  usage error (status >0): `rmdir`, `mkdir`, `ln`, `ln -s`, `rm`,
+  `chmod 644` (mode but no file), `unalias`, `shift 1 2` (with two
+  positional parameters set), `basename a b c`, `pwd a`.
+
+  **Repro:**
+  ```sh
+  for c in 'rmdir' 'mkdir' 'ln' 'ln -s' 'chmod 644' 'unalias' \
+           'set -- a b; shift 1 2' 'basename a b c' 'pwd a'; do
+    shish -c "$c" >/dev/null 2>&1; echo "$c -> $?"   # each prints 0
+  done
+  ```
+
+- ln-single-operand-crashes-and-missing-l-p: `ln t` (one operand, no
+  destination) dumps core; POSIX `ln` needs a target. `-L` and `-P` (Issue 8)
+  are rejected as invalid options, and the diagnostic for a missing *source*
+  names the destination (`ln nosuch dst` prints `ln: dst: No such file`).
+  See also `ln-unlinks-existing-destination`.
+
+  **Repro:**
+  ```sh
+  touch t; ln t                 # core dump
+  ln -P t hl; ln -L t hl        # "-P: invalid option" / "-L: invalid option"
+  ln nosuch dst                 # "ln: dst: No such file or directory"; should name nosuch
+  ```
+
+- ls-long-format-incomplete: `ls -l` prints mode, link count, owner, group
+  and size only. POSIX requires a `total` line (blocks) for directory
+  listings, the date/time column, `name -> target` for symbolic links, and
+  `s`/`S`/`t`/`T` in the mode string for setuid/setgid/sticky files
+  (the mode itself is set correctly: `stat -c %a` shows 4755).
+
+  **Repro:**
+  ```sh
+  touch a; ln -s a s; ls -l          # no total line, no date column
+  ls -l s                            # "lrwxrwxrwx 1 u g 1 s"; no " -> a"
+  chmod 4755 a; ls -l a              # "-rwxr-xr-x"; should be "-rwsr-xr-x"
+  mkdir d; chmod 1777 d; ls -ld d    # "drwxrwxrwx"; should be "drwxrwxrwt"
+  ```
+
+- ls-missing-options: only `-a -d -l -1` (and an undocumented `-f`) exist.
+  POSIX `ls` also requires `-A -C -F -H -L -R -S -c -g -i -k -m -n -o -p -q
+  -r -s -t -u -x` (and `-f`'s "unsorted, all files" meaning). Every other
+  option is "invalid option". The ones needed most: `-R`, `-t`, `-r`, `-A`.
+
+  **Repro:**
+  ```sh
+  for o in -A -C -F -H -L -R -S -c -g -i -k -m -n -o -p -q -r -s -t -u -x; do
+    ls $o . >/dev/null 2>&1 || echo "ls $o unsupported"
+  done
+  ```
+
+- ls-a-omits-dot-and-dotdot-and-orders-operands: `ls -a` does not list `.`
+  and `..`; and with a mix of file and directory operands, the directory
+  listing is printed first, where POSIX prints all non-directory operands
+  first, then each directory (headed `dir:` when there is more than one
+  operand).
+
+  **Repro:**
+  ```sh
+  mkdir d; touch d/x f; ls -a d      # no "." / ".."
+  ls d f                             # "d:", "x", "", "f"; should print "f" first
+  ```
+
+- touch-c-option-missing: `touch -c` (do not create) is rejected as an
+  invalid option; it is one of the required `-acm`.
+
+  **Repro:**
+  ```sh
+  touch -c nofile; echo $?; ls nofile   # "touch: -c: invalid option"
+  ```
+
+- chmod-symbolic-mode-incomplete: symbolic modes accept only `rwxX` with
+  `+ - =` on `ugoa`. Unsupported per POSIX `chmod`: copy-permission
+  (`g=u`, `o+g`), `s` (setuid/setgid) and `t` (sticky), as in `u+s`, `+t`.
+  All fail with "invalid mode".
+
+  **Repro:**
+  ```sh
+  touch a; chmod g=u a; chmod u+s a; chmod +t a   # each: "invalid mode"
+  ```
+
+- printf-numeric-arguments-not-c-constants: POSIX evaluates numeric
+  arguments of `%d %i %o %u %x %X` as C constants (`0x1f` hex, `010` octal,
+  leading sign, `'c`/`"c` character value) and requires a diagnostic and
+  status >0 for an argument that is not a number or has trailing garbage.
+  `printf` treats everything as decimal, gives 0 for a hex constant, prints
+  nothing for `abc` and exits 0, wraps `%u` of a negative number to 0, and
+  silently corrupts numbers above 2^63.
+
+  **Repro:**
+  ```sh
+  printf '%d\n' 0x1f            # 0; should be 31
+  printf '%d\n' 010             # 10; should be 8
+  printf '%d\n' abc; echo $?    # 0 / rc 0; should diagnose, rc >0
+  printf '%u\n' -1              # 0; should be 18446744073709551615
+  printf '%d\n' 99999999999999999999   # 999999999999999999; should saturate/diagnose
+  ```
+
+- printf-float-conversions-missing: `%e %E %f %F %g %G %a %A` (required by
+  POSIX.1-2024) are not converted: the specification is printed literally.
+
+  **Repro:**
+  ```sh
+  printf '%e %.2f %g\n' 1 3 4    # "%e %.2f %g"; should be "1.000000e+00 3.00 4"
+  ```
+
+- printf-double-dash-not-accepted: `printf -- FORMAT ...` treats `--` as
+  the format string (utility syntax guideline 10 applies to `printf`).
+  Also, an octal escape in the format takes up to *four* digits (`\0101`
+  gives `A`); POSIX `\ddd` takes at most three, so `\0101` is `\010` then
+  `1`. (`%b` operands use `\0ddd`, which is correct.)
+
+  **Repro:**
+  ```sh
+  printf -- '%s\n' x       # prints "--"; should print x
+  printf 'a\0101b\n' | od -c   # "a A b"; should be a, \b, 1, b
+  ```
+
+- test-ef-missing-and-three-argument-and-integer-errors: `test f1 -ef f2`
+  (Issue 8, same file) is "invalid expression". With three arguments whose
+  middle one is `-a` (binary "and"), POSIX requires the binary test of `$1`
+  and `$3`; `test -n -a -n` reports an error. A non-integer operand of
+  `-eq` etc. gives status 1 instead of the required >1 (`test 1 -eq x`).
+
+  **Repro:**
+  ```sh
+  touch f; test f -ef f; echo $?     # 2 ("invalid expression"); should be 0
+  test -n -a -n; echo $?             # 2; should be 0 (both strings non-empty)
+  test 1 -eq x; echo $?              # 1; should be >1
+  ```
+
+- umask-invalid-mode-accepted: `umask 999` (not an octal number, not a
+  valid symbolic mode) is silently accepted with status 0.
+
+  **Repro:**
+  ```sh
+  umask 999; echo $?; umask     # 0; should be >0 with a diagnostic
+  ```
+
+- type-unknown-name-silent: `type nonexistent` writes nothing and returns 0.
+  POSIX: a diagnostic on stderr for names that cannot be found, and status
+  >0.
+
+  **Repro:**
+  ```sh
+  type nonexistent_cmd; echo $?     # prints nothing, 0; should print an error, >0
+  ```
+
+- command-v-functions-aliases-and-not-found: `command -v` on a shell
+  function or alias fails with "No such file or directory" (POSIX: print
+  the name, or `alias name='value'` for an alias, status 0), and for an
+  unknown name prints a diagnostic where POSIX says `-v` writes nothing and
+  returns >0.
+
+  **Repro:**
+  ```sh
+  f() { :; }; command -v f; echo $?       # "f: No such file or directory", 1; should print f, 0
+  alias ll='ls -l'; command -v ll         # same; should print alias ll='ls -l'
+  command -v nonexistent                  # prints a diagnostic; should print nothing
+  ```
+
+- export-unset-errors-not-reflected-in-status: `export 1a=b` (invalid name)
+  and `unset` of a readonly variable print a diagnostic but the builtin's
+  status is 0; POSIX 2.8.1: a special-builtin error must give status >0 (and
+  end a non-interactive shell). `readonly R=1; unset R; echo $?` prints 0;
+  `unset 1x` is accepted silently.
+
+  **Repro:**
+  ```sh
+  export 1a=b; echo $?                # "not a valid identifier"; then 0
+  readonly R=1; unset R; echo $?      # "readonly variable"; then 0
+  ```
+
+- set-pipefail-missing-and-noclobber-not-enforced: `set -o pipefail` (new in
+  POSIX.1-2024, `2.9.2`) is "invalid option name". `set -C`/`-o noclobber`
+  is accepted but `>` still overwrites (`redir_open.c` has the note
+  `MISSING: no-clobbering`; `FD_EXCL` is set but the existing file is
+  truncated anyway); `>|` is unaffected. `ignoreeof` and `nolog` (User
+  Portability options) are also "invalid option name".
+
+  **Repro:**
+  ```sh
+  set -o pipefail; false | true; echo $?    # "invalid option name"; should print 1
+  echo old > f; set -C; echo new > f; echo $?; cat f   # 0 and "new"; should fail, keep "old"
+  ```
+
+- trap-assertion-and-exit-in-exit-trap-and-n-form: three defects.
+  (1) `trap 'echo t' 999` aborts the shell: `builtin_trap.c:398:
+  trap_install: Assertion 0 failed` (core dump); an out-of-range signal must
+  be a diagnostic and status >0. (2) An `exit` inside an EXIT trap re-runs
+  the trap forever; POSIX: "in which case the shell shall exit immediately".
+  (3) `trap 0` / `trap 2` (a first operand that is an unsigned decimal
+  integer means "reset these conditions") prints the usage message. Also,
+  `trap` output uses `trap 'cmd' INT` where POSIX specifies
+  `trap -- 'cmd' INT`.
+
+  **Repro:**
+  ```sh
+  trap 'echo t' 999                          # assertion failure, core dump
+  trap 'echo a; exit 5' EXIT; exit 3         # prints "a" forever; should print "a" once, status 5
+  trap 'echo t' INT; trap 2; trap            # "usage: trap ..."; should reset INT
+  trap 'echo t' INT; trap                    # "trap 'echo t' INT"; should be "trap -- 'echo t' INT"
+  ```
+
+- kill-double-dash-rejected: `kill` rejects `--` ("invalid signal
+  specification" / "arguments must be process or job IDs") although it must
+  follow the utility syntax guidelines.
+
+  **Repro:**
+  ```sh
+  kill -s KILL -- 99999        # "--: arguments must be process or job IDs"; should treat -- as the end of options
+  kill -- -0 $$                # "--: invalid signal specification"
+  ```
+- jobs-p-and-l-formats: `jobs -p` prints the normal listing where POSIX
+  writes only the process group ID, and `jobs -l` prints the same text as
+  plain `jobs` (no process group ID / PIDs, which `-l` must add).
+
+  **Repro:**
+  ```sh
+  sleep 1 & jobs -p     # "[1]+  Running    sleep 1"; should be just the PID
+  sleep 1 & jobs -l     # no PID column
+  ```
+
+- readlink-realpath-timeout-missing-options: POSIX.1-2024 `readlink [-n]`,
+  `realpath [-E|-e]` and `timeout [-fp] [-k time] [-s signal_name] duration
+  utility [argument...]`: `readlink -n`, `realpath -E`/`-e` and
+  `timeout -f`/`-p` are rejected as invalid options (`realpath` of a missing
+  file also succeeds without any option, which POSIX leaves unspecified).
+
+  **Repro:**
+  ```sh
+  ln -s t l; readlink -n l           # "-n: invalid option"
+  realpath -e nosuch                 # "-e: invalid option"; should fail (ENOENT)
+  realpath -E nosuch/x               # "-E: invalid option"
+  timeout -f 1 true; timeout -p 1 true    # "-f"/"-p: invalid option"
+  ```
+
+- fc-and-ulimit-missing: `fc` (history editing/listing) and `ulimit` are
+  POSIX utilities that are not builtins (`fc -l` and `ulimit -a` fail with
+  "No such file or directory", status 127).
+
+  **Repro:**
+  ```sh
+  fc -l; ulimit -a; echo $?      # both: "No such file or directory"; 127
+  ```
+
+- timeout-output-not-captured-by-command-substitution: the command a
+  `timeout` builtin runs writes to the real stdout, so a command
+  substitution (which collects stdout in a `stralloc`, not a pipe) never
+  sees it. `exec_program()` handles this with `fdstack_npipes()`/
+  `fdstack_pipe()`/`fdstack_data()`; `builtin_timeout.c` forks and execs
+  without any of it. A fix has to pump the pipe from inside the timeout
+  wait loop (poll, so the time limit still fires).
+
+  **Repro:**
+  ```sh
+  o=$(timeout 5 /bin/echo hi); echo "[$o]"   # prints "hi" then "[]"; should print "[hi]"
+  echo hi | timeout 5 cat                    # ok (real pipe); but
+  o=$(echo hi | timeout 5 cat); echo "[$o]"  # "[]"
+  ```
+
+- arith-variable-reference-leaks-a-node: every variable reference inside
+  `$(( ))` leaks an `N_ARG` node plus its string, about 79 bytes each.
+  `expand_arith_expr()` (`src/expand/expand_arith_expr.c:93`) creates a
+  temporary `N_ARG` with `tree_newnode()` to receive `expand_param()`'s
+  result and never frees it.
+
+  **Repro:**
+  ```sh
+  valgrind --leak-check=full ./shish -c 'x=5; echo $((x+1))'   # "definitely lost", tree_newnode
+  ```
+
+- running-function-body-freed-by-unset-f: `unset -f f` (or redefining
+  `f`) from inside a running `f` frees the body that is still being
+  walked, so the rest of that body is a use-after-free.
+
+  **Repro:**
+  ```sh
+  valgrind ./shish -c 'f(){ echo $(unset -f f) x; }; f'   # "Invalid read of size 8", "Invalid write of size 8"
+  ```
+
+- fixed-sh-remaining-failures-after-sigchld-fix: with `fixed-sh-sigchld-
+  nocldstop-hang` and the grep bugs below fixed, `tests/fixed.sh` still
+  fails ~10 assertions, none reproducible standalone (each command
+  works correctly run alone -- only fails at its actual position deep
+  in the full script, so something earlier in the run leaves state
+  that affects it): a subshell pipeline duplicating a following
+  command, `cmd & echo after` duplicating "after" for both a simple
+  builtin and a `{ }` group, `shformat` re-emitting a backquote
+  substitution wrong (both nested-as-`$( )` and plain), `set +h`
+  trusting a stale cached command location instead of re-searching,
+  `times` producing more than 2 lines, and an unredirected background
+  command not getting `/dev/null` on stdin (plus seeing script bytes
+  the parent had already buffered). Not yet bisected to find which
+  earlier test leaves the interfering state.
+
+  **Repro:**
+  ```sh
+  ./build/x86_64-linux-gnu/shish tests/fixed.sh 2>&1 | grep FAIL
+  ```
+
+- fixed-sh-sigint-sigterm-status-test-broken: `tests/fixed.sh`'s own
+  X192/X192B cases (`"a command killed by SIGINT/SIGTERM sets $?..."`)
+  reference `$SHISH_SELF` from *inside* a nested `-c` string without
+  ever `export`ing it, so the child shish that string runs in never
+  sees it and the nested invocation silently does nothing -- not a
+  shish bug; shish's actual SIGINT/SIGTERM exit-status handling is
+  correct (128+signum) once `SHISH_SELF` is exported. Needs a test fix
+  (add `export SHISH_SELF` before X192), out of scope here.
+
+  **Repro:**
+  ```sh
+  SHISH_SELF=./shish  # NOT exported
+  "$SHISH_SELF" -c '"$SHISH_SELF" -c "kill -s INT \$\$"; echo $?'  # prints 126, not 130
+  export SHISH_SELF
+  "$SHISH_SELF" -c '"$SHISH_SELF" -c "kill -s INT \$\$"; echo $?'  # prints 130, correctly
+  ```

@@ -33,6 +33,12 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
     job->bgnd = 1;
     pid = job_fork(job, 0, 1);
 
+    /* fork failed: job_fork() reported it; drop the childless job */
+    if(pid == -1) {
+      job_free(job);
+      return 1;
+    }
+
     if(!pid) {
       flag &= ~X_NOWAIT;
       exit(exec_command(cmd, argc, argv, flag));
