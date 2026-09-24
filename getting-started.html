@@ -52,8 +52,9 @@ list of known defects in <a href="https://github.com/rsenn/shish/blob/main/BUGS"
 <p>See <a href="docs/conformance.html">Conformance</a> for what actually works today, and
 <a href="https://github.com/rsenn/shish/blob/main/TODO.md" target="_blank" rel="noopener"><code>TODO.md</code></a> for what is being fixed next.</p>
 <h2 id="build"><a class="anchor" href="#build" aria-hidden="true">#</a>Build</h2>
-<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cmake</span> <span class="t-op">-S</span> . <span class="t-op">-B</span> <span class="t-id">build</span>/<span class="t-id">x86_64-linux-gnu</span>
-<span class="t-id">cmake</span> <span class="t-op">--build</span> <span class="t-id">build</span>/<span class="t-id">x86_64-linux-gnu</span> <span class="t-op">-j</span></code></pre></div>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">triplet</span>=$(<span class="t-id">gcc</span> <span class="t-op">-dumpmachine</span>)
+<span class="t-id">cmake</span> <span class="t-op">-S</span> . <span class="t-op">-B</span> <span class="t-id">build</span>/<span class="t-var">$triplet</span>
+<span class="t-id">cmake</span> <span class="t-op">--build</span> <span class="t-id">build</span>/<span class="t-var">$triplet</span> <span class="t-op">-j</span></code></pre></div>
 <p>That produces <code>shish</code> (the shell) and <code>shformat</code> (a pretty-printer that
 reuses the parser). See <a href="docs/building.html">Building</a> for cross-compiling,
 static linking, and picking which builtins get compiled in.</p>

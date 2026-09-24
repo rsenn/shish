@@ -35,11 +35,12 @@ same two programs:</p>
 <h2 id="cmake"><a class="anchor" href="#cmake" aria-hidden="true">#</a>CMake</h2>
 <p>There is no top-level out-of-tree convention beyond <code>build/&lt;host-triple&gt;/</code>,
 one directory per toolchain:</p>
-<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cmake</span> <span class="t-op">-S</span> . <span class="t-op">-B</span> <span class="t-id">build</span>/<span class="t-id">x86_64-linux-gnu</span>
-<span class="t-id">cmake</span> <span class="t-op">--build</span> <span class="t-id">build</span>/<span class="t-id">x86_64-linux-gnu</span> <span class="t-op">-j</span></code></pre></div>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">triplet</span>=$(<span class="t-id">gcc</span> <span class="t-op">-dumpmachine</span>)
+<span class="t-id">cmake</span> <span class="t-op">-S</span> . <span class="t-op">-B</span> <span class="t-id">build</span>/<span class="t-var">$triplet</span>
+<span class="t-id">cmake</span> <span class="t-op">--build</span> <span class="t-id">build</span>/<span class="t-var">$triplet</span> <span class="t-op">-j</span></code></pre></div>
 <p>Extra <code>-D</code> flags on the <code>cmake -S</code>/<code>-B</code> line configure the same layout:</p>
-<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cmake</span> <span class="t-op">-S</span> . <span class="t-op">-B</span> <span class="t-id">build</span>/<span class="t-id">x86_64-linux-gnu</span> <span class="t-op">-DCMAKE_BUILD_TYPE</span>=<span class="t-id">Release</span> <span class="t-op">-DLINK_STATIC</span>=<span class="t-id">ON</span> <span class="t-op">-DENABLE_LTO</span>=<span class="t-id">ON</span>
-<span class="t-id">cmake</span> <span class="t-op">--build</span> <span class="t-id">build</span>/<span class="t-id">x86_64-linux-gnu</span> <span class="t-op">-j</span></code></pre></div>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cmake</span> <span class="t-op">-S</span> . <span class="t-op">-B</span> <span class="t-id">build</span>/<span class="t-var">$triplet</span> <span class="t-op">-DCMAKE_BUILD_TYPE</span>=<span class="t-id">Release</span> <span class="t-op">-DLINK_STATIC</span>=<span class="t-id">ON</span> <span class="t-op">-DENABLE_LTO</span>=<span class="t-id">ON</span>
+<span class="t-id">cmake</span> <span class="t-op">--build</span> <span class="t-id">build</span>/<span class="t-var">$triplet</span> <span class="t-op">-j</span></code></pre></div>
 <h3 id="cross-compiling"><a class="anchor" href="#cross-compiling" aria-hidden="true">#</a>Cross-compiling</h3>
 <p>Each target below is a plain CMake configure against a different
 compiler, into its own build directory. musl, dietlibc and tcc need only
@@ -84,7 +85,7 @@ to build it on. Every job runs synchronously in the foreground instead
 it when it finds it. <code>configure --enable-builtins="..."</code> selects the
 builtin set; <code>configure.ac</code> holds the master list.</p>
 <h2 id="tests"><a class="anchor" href="#tests" aria-hidden="true">#</a>Tests</h2>
-<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cd</span> <span class="t-id">build</span>/<span class="t-id">x86_64-linux-gnu</span>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cd</span> <span class="t-id">build</span>/<span class="t-var">$triplet</span>
 <span class="t-id">ctest</span>                       <span class="t-cm"># everything</span>
 <span class="t-id">ctest</span> <span class="t-op">-R</span> <span class="t-kw">if</span>.<span class="t-id">sh</span> <span class="t-op">-V</span>           <span class="t-cm"># one file, verbose</span></code></pre></div>
 <p>CTest runs every <code>tests/*.sh</code> through the freshly built shell, plus the
