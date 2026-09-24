@@ -1,4 +1,6 @@
+#include "../builtin.h"
 #include "../term.h"
+#include "../tree.h"
 #include "../prompt.h"
 #include "../var.h"
 #include "../expand.h"
@@ -46,6 +48,92 @@ term_complete_redraw(void) {
 static int
 term_complete_cmp(const void* a, const void* b) {
   return str_diff(*(char* const*)a, *(char* const*)b);
+}
+
+extern union node* functions;
+
+/* reserved words that start a construct or a command list */
+static const char* const term_complete_keywords[] = {
+    "case", "do", "elif", "else", "for", "function", "if", "then", "until", "while", NULL};
+
+/* words after which another command name follows: "if <cmd>", "{ <cmd>" */
+static const char* const term_complete_leaders[] = {
+    "{", "!", "if", "then", "elif", "else", "while", "until", "do", NULL};
+
+static int
+term_complete_is_delim(char c) {
+  return c == ' ' || c == '\t' || c == ';' || c == '&' || c == '|' || c == '(' || c == '`';
+}
+
+/* is the word starting at 'start' in command position?
+ *
+ *   "ec|"   "a; ec|"   "x | ec|"   "(ec|"   "if ec|"   "{ ec|"
+ * ----------------------------------------------------------------------- */
+static int
+term_complete_is_command(unsigned long start) {
+  const char* s = term_cmdline.s;
+  unsigned long e = start, b;
+  unsigned int i;
+
+  while(e > 0 && (s[e - 1] == ' ' || s[e - 1] == '\t'))
+    e--;
+
+  if(e == 0 || (s[e - 1] != ' ' && term_complete_is_delim(s[e - 1])))
+    return 1;
+
+  for(b = e; b > 0 && !term_complete_is_delim(s[b - 1]); b--)
+    ;
+
+  for(i = 0; term_complete_leaders[i]; i++)
+    if(str_len(term_complete_leaders[i]) == e - b && !str_diffn(term_complete_leaders[i], &s[b], e - b))
+      return 1;
+
+  return 0;
+}
+
+/* adds 'name' to the candidate list unless already there, narrowing the
+ * common prefix; a candidate that does not start with 'base' is ignored.
+ *
+ *   const char*  name    candidate
+ *   stralloc*    base    prefix typed so far
+ *   stralloc*    common  longest prefix shared by all candidates so far
+ *   char***      names   candidate array
+ *   unsigned*    nmatch  number of candidates
+ *   unsigned*    nalloc  allocated size of *names
+ * ----------------------------------------------------------------------- */
+static void
+term_complete_add(const char* name,
+                  const stralloc* base,
+                  stralloc* common,
+                  char*** names,
+                  unsigned int* nmatch,
+                  unsigned int* nalloc) {
+  unsigned long nlen = str_len(name), j;
+
+  if(nlen < base->len || str_diffn(name, base->s, base->len))
+    return;
+
+  for(j = 0; j < *nmatch; j++)
+    if(!str_diff((*names)[j], name))
+      return;
+
+  if(++*nmatch == 1) {
+    stralloc_copys(common, name);
+  } else {
+    j = 0;
+
+    while(j < common->len && j < nlen && common->s[j] == name[j])
+      j++;
+
+    common->len = j;
+  }
+
+  if(*nmatch > *nalloc) {
+    *nalloc = *nalloc ? *nalloc * 2 : 16;
+    *names = alloc_re(*names, *nalloc * sizeof(char*));
+  }
+
+  (*names)[*nmatch - 1] = str_dup(name);
 }
 
 /* prints the list of completion candidates in a multi-column layout,
@@ -108,7 +196,8 @@ term_complete_list(char** names, unsigned int nmatch) {
 }
 #endif
 
-/* minimal filename tab-completion.
+/* minimal filename tab-completion; in command position (first word of a
+ * simple command) also completes reserved words, builtins and functions.
  *
  * Finds the start of the word under the cursor (back to the previous
  * space/tab or the start of the line -- no quote/escape awareness,
@@ -134,10 +223,11 @@ term_complete(void) {
   unsigned int nmatch = 0;
   char** names = NULL;
   unsigned int nalloc = 0;
+  unsigned int nfile;
 
   start = term_pos;
 
-  while(start > 0 && term_cmdline.s[start - 1] != ' ' && term_cmdline.s[start - 1] != '\t')
+  while(start > 0 && !term_complete_is_delim(term_cmdline.s[start - 1]))
     start--;
 
   word = &term_cmdline.s[start];
@@ -191,48 +281,45 @@ term_complete(void) {
 
   stralloc_nul(&realdir);
 
-  if(!(dp = opendir(realdir.s)))
-    goto done;
+  if((dp = opendir(realdir.s))) {
+    while((de = readdir(dp))) {
+      /* only offer dotfiles once the user has actually typed a leading
+         "." -- same convention every other shell's completion uses */
+      if(!base.len && de->d_name[0] == '.')
+        continue;
 
-  while((de = readdir(dp))) {
-    unsigned long nlen = str_len(de->d_name);
-
-    /* only offer dotfiles once the user has actually typed a leading
-       "." -- same convention every other shell's completion uses */
-    if(!base.len && de->d_name[0] == '.')
-      continue;
-
-    if(nlen < base.len || str_diffn(de->d_name, base.s, base.len))
-      continue;
-
-    nmatch++;
-
-    if(nmatch == 1) {
-      stralloc_copys(&common, de->d_name);
-    } else {
-      unsigned long j = 0;
-
-      while(j < common.len && j < nlen && common.s[j] == de->d_name[j])
-        j++;
-
-      common.len = j;
+      term_complete_add(de->d_name, &base, &common, &names, &nmatch, &nalloc);
     }
 
-    if(nmatch > nalloc) {
-      nalloc = nalloc ? nalloc * 2 : 16;
-      names = alloc_re(names, nalloc * sizeof(char*));
-    }
-
-    names[nmatch - 1] = str_dup(de->d_name);
+    closedir(dp);
   }
 
-  closedir(dp);
+  nfile = nmatch;
+
+  /* first word of a command, and something typed: also offer the
+     reserved words, builtins and functions (not for a bare TAB, which
+     would list every one of them) */
+  if(!dlen && base.len && term_complete_is_command(start)) {
+    union node* f;
+    struct builtin_cmd* b;
+
+    for(i = 0; term_complete_keywords[i]; i++)
+      term_complete_add(term_complete_keywords[i], &base, &common, &names, &nmatch, &nalloc);
+
+    for(b = builtin_table; b->name; b++)
+      term_complete_add(b->name, &base, &common, &names, &nmatch, &nalloc);
+
+    for(f = functions; f; f = f->next)
+      term_complete_add(f->nfunc.name, &base, &common, &names, &nmatch, &nalloc);
+  }
 
   if(nmatch && common.len > base.len)
     for(i = base.len; i < common.len; i++)
       term_insertc(common.s[i]);
 
-  if(nmatch == 1) {
+  if(nmatch == 1 && !nfile) {
+    term_insertc(' ');
+  } else if(nmatch == 1) {
     struct stat st;
     stralloc full;
 
