@@ -92,6 +92,13 @@ debug_node(union node* node, int depth) {
 
     case N_FOR:
       debug_str(", varn", node->nfor.varn, depth, debug_quote);
+
+      if(debug_emit_loc)
+        debug_location(", loc", &node->nfor.loc, depth);
+      if(debug_emit_range)
+        debug_range(", range", node->nfor.loc.offset,
+                    node->nfor.loc.offset + str_len(node->nfor.varn), depth);
+
       debug_sublist(", cmds", node->nfor.cmds, depth);
       debug_sublist(", args", node->nfor.args, depth);
       break;

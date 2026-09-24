@@ -156,6 +156,7 @@ struct nfor {
   union node* cmds;
   union node* args;
   char* varn;
+  struct location loc; /* varn's own token position, for tooling (JSON dump) */
 } SHISH_TREE_PACKED;
 
 /* 3.9.4.3 - case conditional
