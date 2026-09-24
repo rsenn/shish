@@ -24,8 +24,11 @@
 </header>
 <section class="playhead">
   <h1>Playground</h1>
-  <p>This is shish itself, compiled to WebAssembly (<b>188 KB</b>), running in
-     your browser. Nothing is sent anywhere: the shell, its in-memory
+  <p>This is shish itself, compiled to WebAssembly (<b>184 KB</b> of shell
+     core + <b>63 KB</b> of extra builtins -- <code>cat</code>, <code>grep</code>,
+     <code>sed</code>, <code>mkdir</code>, and the rest, see
+     <a href="docs/builtins.html">Builtins</a> -- <b>247 KB</b> total), running
+     in your browser. Nothing is sent anywhere: the shell, its in-memory
      filesystem and your commands never leave the tab.</p>
 </section>
 

@@ -41,7 +41,8 @@ WASI runtime, with no process and no container underneath it.</p>
 <code>-DENABLE_ALL_BUILTINS=ON</code> (see <a href="builtins.html">Builtins</a>) to also get
 <code>cat</code>/<code>mkdir</code>/<code>grep</code>/<code>sed</code>/etc. as in-process builtins instead of just the
 minimal/default set — this is what the <a href="../play.html">playground</a> itself
-is built with (<code>build/emscripten-all/</code>, 253 KB vs. 184 KB minimal); the
+is built with (<code>build/emscripten-all/</code>: 184 KB core + 63 KB of extra
+builtins = 247 KB); the
 <a href="https://github.com/rsenn/rsenn/blob/main/sites/shish/site.config.js" target="_blank" rel="noopener">site's <code>files</code> config</a>
 copies straight from that directory, so rebuild it there before publishing.
 The linker flags above already pass what the glue needs:</p>
