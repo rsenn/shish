@@ -12,15 +12,16 @@ There is no top-level out-of-tree convention beyond `build/<host-triple>/`,
 one directory per toolchain:
 
 ```sh
-cmake -S . -B build/x86_64-linux-gnu
-cmake --build build/x86_64-linux-gnu -j
+triplet=$(gcc -dumpmachine)
+cmake -S . -B build/$triplet
+cmake --build build/$triplet -j
 ```
 
 Extra `-D` flags on the `cmake -S`/`-B` line configure the same layout:
 
 ```sh
-cmake -S . -B build/x86_64-linux-gnu -DCMAKE_BUILD_TYPE=Release -DLINK_STATIC=ON -DENABLE_LTO=ON
-cmake --build build/x86_64-linux-gnu -j
+cmake -S . -B build/$triplet -DCMAKE_BUILD_TYPE=Release -DLINK_STATIC=ON -DENABLE_LTO=ON
+cmake --build build/$triplet -j
 ```
 
 ### Cross-compiling
@@ -104,7 +105,7 @@ builtin set; `configure.ac` holds the master list.
 ## Tests
 
 ```sh
-cd build/x86_64-linux-gnu
+cd build/$triplet
 ctest                       # everything
 ctest -R if.sh -V           # one file, verbose
 ```

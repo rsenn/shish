@@ -34,8 +34,9 @@ See [Conformance](doc/conformance.md) for what actually works today, and
 ## Build
 
 ```sh
-cmake -S . -B build/x86_64-linux-gnu
-cmake --build build/x86_64-linux-gnu -j
+triplet=$(gcc -dumpmachine)
+cmake -S . -B build/$triplet
+cmake --build build/$triplet -j
 ```
 
 That produces `shish` (the shell) and `shformat` (a pretty-printer that
