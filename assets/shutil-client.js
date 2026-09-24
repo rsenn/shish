@@ -114,9 +114,10 @@ window.shish = (function () {
 
   /**
    * Finds every occurrence of shell variable `name` in `ast` -- each
-   * assignment ("name=...") and every $name/${name} parameter expansion
-   * referencing it (including inside a ${name:-word} default) -- as a
-   * list of {offset, length} spans into `source`, ready for spliceEdits().
+   * assignment ("name=..."), every $name/${name} parameter expansion
+   * referencing it (including inside a ${name:-word} default), and a
+   * "for name in ..." loop header that declares it -- as a list of
+   * {offset, length} spans into `source`, ready for spliceEdits().
    */
   function findVarOccurrences(ast, source, name) {
     var edits = [];
@@ -134,6 +135,14 @@ window.shish = (function () {
       if (node.kind === 'parameter_expansion' && node.name === name) {
         var pstart = startOf(node, source);
         if (pstart >= 0) edits.push({ offset: pstart, length: name.length });
+      }
+
+      // "for x in ...": x itself is a plain name, not a parameter_expansion,
+      // so it needs its own case -- the for_clause node's own range/loc is
+      // varn's token position (see src/parse/parse_for.c, nfor.loc).
+      if (node.kind === 'for_clause' && node.varn === name) {
+        var fstart = startOf(node, source);
+        if (fstart >= 0) edits.push({ offset: fstart, length: name.length });
       }
     });
 
