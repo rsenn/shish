@@ -14,15 +14,20 @@ expand_args(union node* args, union node** nptr, int flags) {
   union node* arg;
   union node* n;
   union node* owned;
-  int ret = 0;
+  int ret = 0, copied;
 
   *nptr = NULL;
 
   /* args is the permanent parsed command tree, reused on every
      execution -- brace/tilde expansion rewrite word text/structure,
-     so they must only touch a private, disposable copy. */
-  owned = tree_copy(args);
-  owned = expand_brace_args(owned);
+     so they must only touch a private, disposable copy. Only words
+     they might rewrite need one; expand_arg() itself never writes. */
+  for(arg = args; arg; arg = arg->next)
+    if(expand_brace_needed(arg) || expand_tilde_needed(arg))
+      break;
+
+  owned = arg ? expand_brace_args(tree_copy(args)) : args;
+  copied = arg != NULL;
 
   for(arg = owned; arg; arg = arg->next) {
 
@@ -31,7 +36,8 @@ expand_args(union node* args, union node** nptr, int flags) {
     debug_nl_fl();
 #endif
 
-    expand_tilde_word(arg);
+    if(copied)
+      expand_tilde_word(arg);
 
     if((n = expand_arg(arg->narg.list, nptr, flags))) {
       nptr = &n;
@@ -65,7 +71,7 @@ expand_args(union node* args, union node** nptr, int flags) {
     }
   }
 
-  if(owned)
+  if(copied && owned)
     tree_free(owned);
 
   return ret;

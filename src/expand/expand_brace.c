@@ -174,11 +174,8 @@ expand_brace_text(const char* text, size_t len, struct brace_list* out) {
  * eligible and contains at least one valid brace group; returns NULL
  * (word untouched) otherwise. Never mutates the passed-in `arg`. */
 static union node*
-expand_brace_word(union node* arg) {
+expand_brace_chunk(union node* arg) {
   union node* chunk;
-  struct brace_list result;
-  union node *head = NULL, **tail = &head;
-  size_t i;
 
   if(!arg || arg->id != N_ARG || !(chunk = arg->narg.list))
     return NULL;
@@ -187,6 +184,26 @@ expand_brace_word(union node* arg) {
     return NULL;
 
   if(byte_chr(chunk->nargstr.stra.s, chunk->nargstr.stra.len, '{') >= chunk->nargstr.stra.len)
+    return NULL;
+
+  return chunk;
+}
+
+/* 1 if expand_brace_args() might rewrite this word (read-only check)
+ * ----------------------------------------------------------------------- */
+int
+expand_brace_needed(union node* arg) {
+  return sh->opts.braceexpand && expand_brace_chunk(arg) != NULL;
+}
+
+static union node*
+expand_brace_word(union node* arg) {
+  union node* chunk;
+  struct brace_list result;
+  union node *head = NULL, **tail = &head;
+  size_t i;
+
+  if(!(chunk = expand_brace_chunk(arg)))
     return NULL;
 
   brace_list_init(&result);

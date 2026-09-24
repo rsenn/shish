@@ -26,7 +26,7 @@ scan_number(const char* x, int64* n, unsigned* base) {
   return scan_longlong(p, n);
 }
 
-/* expand a binary expression
+/* expand an arithmetic expression
  * ----------------------------------------------------------------------- */
 int
 expand_arith_expr(union node* expr, int64* r) {

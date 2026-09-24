@@ -93,25 +93,26 @@ again:
     case N_ARGSTR: {
       size_t i;
       struct nargstr* arg = &node->nargstr;
+      const strview* v = &arg->view;
       int table = arg->flag & S_TABLE;
 
-      for(i = 0; i < arg->len; i++) {
-        if(arg->str[i] == '\\' && table == S_SQUOTED) {
+      for(i = 0; i < v->len; i++) {
+        if(v->str[i] == '\\' && table == S_SQUOTED) {
           i++;
 
-        } else if(arg->str[i] == '\\' && table == S_DQUOTED && !parse_isdesc(arg->str[i])) {
+        } else if(v->str[i] == '\\' && table == S_DQUOTED && !parse_isdesc(v->str[i])) {
           continue;
-        } else if(!parse_isesc(arg->str[i])) {
+        } else if(!parse_isesc(v->str[i])) {
 
-          if(table == S_DQUOTED && parse_isdesc(arg->str[i]))
+          if(table == S_DQUOTED && parse_isdesc(v->str[i]))
             stralloc_catc(sa, '\\');
-        } /*else if(arg->str[i] == '\\') {
-          if(++i < arg->len)
-            stralloc_catc(sa, arg->str[i]);
+        } /*else if(v->str[i] == '\\') {
+          if(++i < v->len)
+            stralloc_catc(sa, v->str[i]);
           continue;
         }*/
 
-        stralloc_catc(sa, arg->str[i]);
+        stralloc_catc(sa, v->str[i]);
       }
 
       break;

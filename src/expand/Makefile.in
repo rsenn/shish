@@ -19,7 +19,7 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 ARCHIVE = expand.a
 MODULES = \
-expand_arg expand_args expand_argv expand_arith expand_arith_assign expand_arith_binary expand_arith_expr expand_arith_unary expand_break expand_cat expand_catsa expand_command expand_copysa expand_escape expand_getorcreate expand_glob expand_param expand_str expand_tosa expand_unescape expand_vars
+expand_arg expand_args expand_argv expand_arith expand_arith_assign expand_arith_binary expand_arith_expr expand_arith_ternary expand_arith_unary expand_brace expand_cat expand_catsa expand_command expand_copysa expand_getorcreate expand_glob expand_param expand_str expand_tilde expand_tosa expand_tostr expand_unescape expand_vars
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
@@ -41,7 +41,7 @@ install:
 # ---------------------------------------------------------------------------
 INCLUDES += -I$(top_srcdir)/lib -I$(top_builddir)
 #INCLUDES += -I$(top_builddir)/lib
-INCLUDES += -I$(top_srcdir)/src
+INCLUDES += @IQUOTE_SRC@
 #INCLUDES += -I$(top_builddir)/src
 INCLUDES += -I$(top_builddir)
 

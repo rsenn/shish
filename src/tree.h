@@ -3,6 +3,7 @@
 
 #include "source.h"
 #include "../lib/stralloc.h"
+#include "../lib/strview.h"
 #include "../lib/uint8.h"
 #include "../lib/uint64.h"
 #include <stdlib.h>
@@ -251,14 +252,17 @@ struct nargstr {
   unsigned flag;
   union node* next;
   union {
-    stralloc stra;
-    struct {
-      char* str;
-      size_t len;
-    };
+    stralloc stra; /* owned and growable: expansion-time copies */
+    strview view;  /* not owned: parse-time strings in an arena */
   };
   struct location loc;
 } SHISH_TREE_PACKED;
+
+/* nargstr overlays strview on the first two members of stralloc */
+typedef char nargstr_view_overlays_stra[(sizeof(strview) < sizeof(stralloc) &&
+                                         offsetof(strview, len) == offsetof(stralloc, len))
+                                            ? 1
+                                            : -1];
 
 struct nargparam {
   enum kind id;

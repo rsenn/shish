@@ -90,12 +90,7 @@ enum subst_type {
    expand_argv() to keep an empty field that's one of several real
    fields, while still dropping a word's sole, entirely-empty result. */
 #define X_SPLIT 0x40000000
-/* internal to expand_cat.c: marks a field already closed (finalized)
-   by an earlier expand_cat() call for the same word, so a later call
-   continuing that word starts a new field instead of appending to it.
-   Absence (flag 0) means "open/reusable", matching a virgin node's
-   natural zero-flag state -- so a placeholder node expand_args.c
-   pre-creates ahead of the next word reads as directly reusable. */
+ 
 #define X_CATCLOSED 0x80000000
 
 extern char expand_ifs[4];
@@ -105,7 +100,9 @@ struct narg;
 
 #include "tree.h"
 
-union node* expand_arg(union node* narg, union node** nptr, int flags);
+/* state: what an expansion leaves behind for its caller
+ * ----------------------------------------------------------------------- */
+
 /* set when a word expansion failed in a way POSIX calls an expansion
  * error ("${x?}", "$x" under "set -u"): the command that word belongs
  * to must not run, and its status is nonzero. A non-interactive shell
@@ -113,31 +110,53 @@ union node* expand_arg(union node* narg, union node** nptr, int flags);
  */
 extern int expand_error;
 
+/* frontend: expand parse-tree words into a list of fields
+ * ----------------------------------------------------------------------- */
 int expand_args(union node* args, union node** nptr, int flags);
+int expand_vars(union node* vars, union node** nptr);
+
+/* frontend: expand one parse-tree word, unsplit, into a caller's stralloc
+ * ----------------------------------------------------------------------- */
+void expand_str(union node*, stralloc*, int flags);
+void expand_copysa(union node* node, stralloc* sa, int flags);
+void expand_catsa(union node* node, stralloc* sa, int flags);
+
+/* extract: turn an expansion into plain C data (argv, stralloc, char*)
+ * ----------------------------------------------------------------------- */
 int expand_argv(union node* args, char** argv);
-int expand_arith_binary(struct narithbinary* expr, int64* r);
-int expand_arith_expr(union node* expr, int64* r);
-int expand_arith_assign(struct narithbinary*, int64*);
+void expand_tosa(union node* node, stralloc* sa);
+char* expand_tostr(union node* node, int flags);
+
+/* engine: expand the parts of one word (literal, $param, $(cmd), $((expr)))
+ * ----------------------------------------------------------------------- */
+union node* expand_arg(union node* narg, union node** nptr, int flags);
+union node* expand_param(struct nargparam* param, union node** nptr, int flags);
+union node* expand_command(struct nargcmd* cmd, union node** nptr, int flags);
 union node* expand_arith(struct nargarith* arith, union node** nptr, int flags);
+
+/* output: append text to the field list, split, glob and unescape it
+ * ----------------------------------------------------------------------- */
+union node* expand_cat(const char* b, unsigned int len, union node** nptr, int flags);
+union node* expand_glob(union node** nptr, int flags);
+void expand_unescape(stralloc* sa, int (*pred)(int));
+
+/* arithmetic: evaluate an arithmetic tree to an integer
+ * ----------------------------------------------------------------------- */
+int expand_arith_expr(union node* expr, int64* r);
+int expand_arith_binary(struct narithbinary* expr, int64* r);
+int expand_arith_assign(struct narithbinary*, int64*);
 int expand_arith_unary(struct narithunary* expr, int64* r);
 int expand_arith_ternary(struct narithternary* expr, int64* r);
+
+/* rewrites: brace and tilde expansion, applied to a private copy of a word
+ * ----------------------------------------------------------------------- */
 union node* expand_brace_args(union node* args);
-union node** expand_break(union node** out);
-union node* expand_cat(const char* b, unsigned int len, union node** nptr, int flags);
-void expand_catsa(union node* node, stralloc* sa, int flags);
-union node* expand_command(struct nargcmd* cmd, union node** nptr, int flags);
-void expand_copysa(union node* node, stralloc* sa, int flags);
-union node* expand_getorcreate(union node** out);
-union node* expand_glob(union node** nptr, int flags);
-int expand_tilde_lookup(
-    const char* text, size_t len, int stop_at_colon, stralloc* home, size_t* prefixlen);
+int expand_brace_needed(union node* arg);
 void expand_tilde_word(union node* arg);
 void expand_tilde_assign(union node* var);
-union node* expand_param(struct nargparam* param, union node** nptr, int flags);
-void expand_tosa(union node* node, stralloc* sa);
-void expand_unescape(stralloc* sa, int (*pred)(int));
-int expand_vars(union node* vars, union node** nptr);
-void expand_str(union node*, stralloc*, int flags);
-char* expand_tostr(union node* node, int flags);
+int expand_tilde_needed(union node* arg);
+int expand_tilde_assign_needed(union node* var);
+int expand_tilde_lookup(
+    const char* text, size_t len, int stop_at_colon, stralloc* home, size_t* prefixlen);
 
 #endif /* EXPAND_H */

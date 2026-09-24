@@ -109,6 +109,38 @@ expand_tilde_splice(union node* n, stralloc* home, size_t prefixlen) {
   n->next = rest;
 }
 
+/* 1 if expand_tilde_word() might rewrite this word (read-only check)
+ * ----------------------------------------------------------------------- */
+int
+expand_tilde_needed(union node* arg) {
+  union node* n;
+
+  return arg && arg->id == N_ARG && (n = arg->narg.list) && n->id == N_ARGSTR &&
+         (n->nargstr.flag & S_TABLE) == S_UNQUOTED && n->nargstr.stra.len &&
+         n->nargstr.stra.s[0] == '~';
+}
+
+/* 1 if expand_tilde_assign() might rewrite this word: it starts with an
+ * unquoted literal chunk and some unquoted literal chunk holds a '~'
+ * ----------------------------------------------------------------------- */
+int
+expand_tilde_assign_needed(union node* var) {
+  union node* n;
+
+  if(!var || var->id != N_ARG || !(n = var->narg.list))
+    return 0;
+
+  if(n->id != N_ARGSTR || (n->nargstr.flag & S_TABLE) != S_UNQUOTED)
+    return 0;
+
+  for(; n; n = n->next)
+    if(n->id == N_ARGSTR && (n->nargstr.flag & S_TABLE) == S_UNQUOTED &&
+       byte_chr(n->nargstr.stra.s, n->nargstr.stra.len, '~') < n->nargstr.stra.len)
+      return 1;
+
+  return 0;
+}
+
 /* rewrites a plain command-argument word in place: a tilde-prefix only
  * ever applies at the very start of the word, so only the first chunk
  * (and only if it's unquoted literal text) is ever eligible.
