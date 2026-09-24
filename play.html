@@ -207,7 +207,7 @@ return edits;</textarea>
     files: 'mkdir -p /demo/sub\nfor n in 1 2 3; do\n  echo "line $n" > /demo/sub/file$n.txt\ndone\ncat /demo/sub/file2.txt\ngrep 2 /demo/sub/*.txt\nsed \'s/line/LINE/\' /demo/sub/file1.txt\nfor f in /demo/sub/*.txt; do\n  echo "$(basename "$f"): $(cat "$f")"\ndone\nrm -r /demo\necho gone',
     funcs: 'greet() {\n  echo "hello, ${1:-world}"\n}\n\ngreet\ngreet shish\n\ncount() {\n  n=$1\n  while [ "$n" -gt 0 ]; do\n    printf "%s " "$n"\n    n=$((n - 1))\n  done\n  echo liftoff\n}\ncount 5',
     expand: 'path=/usr/local/lib/libshish.a\necho "dir:  ${path%/*}"\necho "file: ${path##*/}"\necho "stem: ${path##*/}" "->" "$(basename "$path" .a)"\n\nunset nope\necho "default: ${nope:-fallback}"\nset -- alpha beta gamma\necho "args: $# -> $*"\nshift\necho "after shift: $*"',
-    text: 'printf "%s\\n" apple banana cherry date > /demo.txt\necho "-- grep --"\ngrep a /demo.txt\necho "-- sed --"\nsed -n \'2,3p\' /demo.txt\nsed \'s/a/A/g\' /demo.txt\necho "-- expr --"\necho "6 * 7 = $(expr 6 \\* 7)"\nrm /demo.txt',
+    text: 'printf "%s\\n" apple banana100 cherry date42 > /demo.txt\necho "-- grep (BRE) --"\ngrep \'[0-9]\' /demo.txt\necho "-- grep -E (ERE alternation) --"\ngrep -E \'apple|date\' /demo.txt\necho "-- sed --"\nsed -n \'2,3p\' /demo.txt\nsed \'s/[0-9][0-9]*/#/\' /demo.txt\necho "-- expr (BRE match) --"\nexpr "banana100" : \'[a-z]*\'\nexpr "banana100" : \'[a-z]*\\([0-9]*\\)\'\nrm /demo.txt',
   };
 
   document.querySelectorAll('[data-example]').forEach(function (a) {
