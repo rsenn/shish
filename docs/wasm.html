@@ -37,8 +37,14 @@ WASI runtime, with no process and no container underneath it.</p>
   <span class="t-op">-DCMAKE_EXE_LINKER_FLAGS</span>=<span class="t-str">"-s WASM=1 -sEXPORTED_RUNTIME_METHODS=['callMain'] -sINVOKE_RUN=0"</span> \
   <span class="t-op">-DCMAKE_EXECUTABLE_SUFFIX</span>=<span class="t-str">".html"</span> <span class="t-op">-DENABLE_SHARED</span>=<span class="t-id">OFF</span> <span class="t-op">-DENABLE_PIC</span>=<span class="t-id">FALSE</span>
 <span class="t-id">cmake</span> <span class="t-op">--build</span> <span class="t-id">build</span>/<span class="t-id">emscripten</span> <span class="t-op">-j</span></code></pre></div>
-<p>That produces <code>build/emscripten/shish.js</code> and <code>shish.wasm</code>. The linker
-flags above already pass what the glue needs:</p>
+<p>That produces <code>build/emscripten/shish.js</code> and <code>shish.wasm</code>. Add
+<code>-DENABLE_ALL_BUILTINS=ON</code> (see <a href="builtins.html">Builtins</a>) to also get
+<code>cat</code>/<code>mkdir</code>/<code>grep</code>/<code>sed</code>/etc. as in-process builtins instead of just the
+minimal/default set — this is what the <a href="../play.html">playground</a> itself
+is built with (<code>build/emscripten-all/</code>, 253 KB vs. 184 KB minimal); the
+<a href="https://github.com/rsenn/rsenn/blob/main/sites/shish/site.config.js" target="_blank" rel="noopener">site's <code>files</code> config</a>
+copies straight from that directory, so rebuild it there before publishing.
+The linker flags above already pass what the glue needs:</p>
 <div class="codeblock"><pre><code>-sEXPORTED_RUNTIME_METHODS=['callMain'] -sINVOKE_RUN=0</code></pre></div>
 <p>so the module loads without running anything, and each script is one
 <code>callMain()</code>:</p>

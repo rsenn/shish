@@ -56,6 +56,7 @@ uname -s</textarea>
         <a href="#" data-example="files">files</a>
         <a href="#" data-example="funcs">functions</a>
         <a href="#" data-example="expand">expansion</a>
+        <a href="#" data-example="text">text tools</a>
       </span>
     </div>
   </div>
@@ -203,9 +204,10 @@ return edits;</textarea>
 
   var EXAMPLES = {
     loops: 'i=0\nwhile [ $i -lt 5 ]; do\n  echo "i=$i"\n  i=$((i + 1))\ndone\n\nfor x in a b c; do\n  case $x in\n    a) echo "$x: first";;\n    *) echo "$x: rest";;\n  esac\ndone',
-    files: 'mkdir -p /demo/sub\nfor n in 1 2 3; do\n  echo "line $n" > /demo/sub/file$n.txt\ndone\ncat /demo/sub/file2.txt\nfor f in /demo/sub/*.txt; do\n  echo "$(basename "$f"): $(cat "$f")"\ndone\nrm -r /demo\necho gone',
+    files: 'mkdir -p /demo/sub\nfor n in 1 2 3; do\n  echo "line $n" > /demo/sub/file$n.txt\ndone\ncat /demo/sub/file2.txt\ngrep 2 /demo/sub/*.txt\nsed \'s/line/LINE/\' /demo/sub/file1.txt\nfor f in /demo/sub/*.txt; do\n  echo "$(basename "$f"): $(cat "$f")"\ndone\nrm -r /demo\necho gone',
     funcs: 'greet() {\n  echo "hello, ${1:-world}"\n}\n\ngreet\ngreet shish\n\ncount() {\n  n=$1\n  while [ "$n" -gt 0 ]; do\n    printf "%s " "$n"\n    n=$((n - 1))\n  done\n  echo liftoff\n}\ncount 5',
     expand: 'path=/usr/local/lib/libshish.a\necho "dir:  ${path%/*}"\necho "file: ${path##*/}"\necho "stem: ${path##*/}" "->" "$(basename "$path" .a)"\n\nunset nope\necho "default: ${nope:-fallback}"\nset -- alpha beta gamma\necho "args: $# -> $*"\nshift\necho "after shift: $*"',
+    text: 'printf "%s\\n" apple banana cherry date > /demo.txt\necho "-- grep --"\ngrep a /demo.txt\necho "-- sed --"\nsed -n \'2,3p\' /demo.txt\nsed \'s/a/A/g\' /demo.txt\necho "-- expr --"\necho "6 * 7 = $(expr 6 \\* 7)"\nrm /demo.txt',
   };
 
   document.querySelectorAll('[data-example]').forEach(function (a) {

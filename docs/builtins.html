@@ -40,20 +40,45 @@ source test times trap type umask unset wait</code></pre></div>
 <p><strong>Default</strong> — the minimal set plus <code>echo</code>, <code>true</code>, <code>false</code>, <code>help</code>,
 <code>type</code> and <code>fdtable</code>. This is what a plain <code>cfg</code> build gives you.</p>
 <p><strong>Extra</strong> — the reason a shish container image can be a single file:</p>
-<div class="codeblock"><pre><code>basename cat chmod dirname hostname ln mkdir mktemp rm rmdir uname which</code></pre></div>
+<div class="codeblock"><pre><code>basename cat chmod digest dirname find grep hostname link ln ls mkdir
+mktemp readlink realpath rm rmdir sed sleep tee timeout touch uname wc which</code></pre></div>
 <p>These are off by default. Turn them on and a script stops needing
-coreutils:</p>
+coreutils (or <code>grep</code>/<code>sed</code>):</p>
 <div class="codeblock" data-lang="sh"><pre><code class="language-sh">$ <span class="t-id">shish</span> <span class="t-op">-c</span> <span class="t-str">'PATH=; mkdir -p a/b; echo hi &gt; a/b/f; cat a/b/f; rm -r a'</span>
-<span class="t-id">hi</span></code></pre></div>
+<span class="t-id">hi</span>
+$ <span class="t-id">shish</span> <span class="t-op">-c</span> <span class="t-str">'PATH=; printf "a\nb\nc\n" | grep b | sed s/b/B/'</span>
+<span class="t-id">B</span></code></pre></div>
+<p><code>src/builtin/extra/</code> is where these live in the tree (as opposed to
+<code>src/builtin/</code> for the language's own required builtins); a builtin goes
+there when it stands in for an external program rather than implementing
+shell syntax. <code>find</code>, <code>grep</code> and <code>sed</code> are the larger ones and get their
+own subsystem under <code>text/</code> (see "Regex backend" below) instead of living
+entirely in one <code>builtin_*.c</code> file.</p>
 <h2 id="choosing"><a class="anchor" href="#choosing" aria-hidden="true">#</a>Choosing</h2>
 <div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cfg</span> <span class="t-op">-DENABLE_ALL_BUILTINS</span>=<span class="t-id">ON</span>              <span class="t-cm"># everything</span>
-<span class="t-id">cfg</span> <span class="t-op">-DENABLE_CAT</span>=<span class="t-id">ON</span> <span class="t-op">-DENABLE_MKDIR</span>=<span class="t-id">ON</span>     <span class="t-cm"># just these two on top of the default set</span>
-<span class="t-id">cfg</span> <span class="t-op">-DENABLE_HISTORY</span>=<span class="t-id">OFF</span>                  <span class="t-cm"># and this one off</span></code></pre></div>
+<span class="t-id">cfg</span> <span class="t-op">-DBUILTIN_CAT</span>=<span class="t-id">ON</span> <span class="t-op">-DBUILTIN_MKDIR</span>=<span class="t-id">ON</span>   <span class="t-cm"># just these two on top of the default set</span>
+<span class="t-id">cfg</span> <span class="t-op">-DBUILTIN_HISTORY</span>=<span class="t-id">OFF</span>                 <span class="t-cm"># and this one off</span></code></pre></div>
+<p>(<code>-DENABLE_&lt;NAME&gt;=ON/OFF</code> also works, as the older spelling of
+<code>-DBUILTIN_&lt;NAME&gt;</code>.)</p>
 <p>The configure step writes <code>&lt;builddir&gt;/src/builtin_config.h</code>, which is
 what <code>src/builtin/builtin_table.c</code> is compiled against. Nothing you left
 out is linked in.</p>
 <p>With autotools, the same choice is
 <code>./configure --enable-builtins="cat mkdir rm"</code>.</p>
+<h2 id="regex-backend-textdfa-or-regexh"><a class="anchor" href="#regex-backend-textdfa-or-regexh" aria-hidden="true">#</a>Regex backend: <code>text/dfa</code> or <code>regex.h</code></h2>
+<p><code>expr</code> and <code>sed</code> always match via <code>text/dfa</code> (an in-tree, from-scratch
+POSIX BRE/ERE engine, <code>text/dfa.h</code>) — no libc dependency, so both work
+the same way on a static/musl/dietlibc/WASM build as anywhere else. <code>sed</code>
+additionally needs <code>s///</code>'s substitution machinery (<code>dfa_replace()</code>),
+which has no <code>&lt;regex.h&gt;</code> equivalent, so it has no backend switch at all.</p>
+<p><code>grep</code> can go either way:</p>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cfg</span> <span class="t-op">-DGREP_USE_SYSTEM_REGEX</span>=<span class="t-id">ON</span>   <span class="t-cm"># link the system's &lt;regex.h&gt; instead</span></code></pre></div>
+<p>Off (the default) is what makes <code>grep</code> work on a target with no libc
+regex implementation at all (WASI's libc has none); on is smaller where
+glibc/musl's <code>regex.h</code> is already being linked in for other reasons, and
+picks up the host's own conformance/locale behavior instead of <code>text/dfa</code>'s.
+Either way <code>grep</code>'s matching results should agree — see <code>tests/dev/dfa-diff.c</code>
+for the differential test between the two.</p>
 <h2 id="what-a-builtin-costs"><a class="anchor" href="#what-a-builtin-costs" aria-hidden="true">#</a>What a builtin costs</h2>
 <p>Not much. A default dynamic build is 139 KB stripped (132 KB of text);
 the same build with <code>-DENABLE_ALL_BUILTINS=ON</code> is 164 KB (154 KB of
@@ -68,7 +93,7 @@ anyway, call it by path:</p>
 <p><code>type name</code> says which one you would get.</p></article>
 <p class="editlink"><a href="https://github.com/rsenn/shish/blob/main/doc/builtins.md">Edit this page on GitHub →</a></p>
 </main>
-<nav class="toc"><h3>On this page</h3><ul><li class="lvl2"><a href="#the-three-sets">The three sets</a></li><li class="lvl2"><a href="#choosing">Choosing</a></li><li class="lvl2"><a href="#what-a-builtin-costs">What a builtin costs</a></li><li class="lvl2"><a href="#precedence">Precedence</a></li></ul></nav>
+<nav class="toc"><h3>On this page</h3><ul><li class="lvl2"><a href="#the-three-sets">The three sets</a></li><li class="lvl2"><a href="#choosing">Choosing</a></li><li class="lvl2"><a href="#regex-backend-textdfa-or-regexh">Regex backend: text/dfa or regex.h</a></li><li class="lvl2"><a href="#what-a-builtin-costs">What a builtin costs</a></li><li class="lvl2"><a href="#precedence">Precedence</a></li></ul></nav>
 </div>
 <footer class="sitefoot">
   <p>shish | GPL v2. Built from the repo's own markdown by
