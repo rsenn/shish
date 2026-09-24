@@ -1,6 +1,6 @@
-#include "../builtin.h"
-#include "../fdtable.h"
-#include "../../lib/scan.h"
+#include "../../builtin.h"
+#include "../../fdtable.h"
+#include "../../../lib/scan.h"
 #include <unistd.h>
 
 const char help_sleep[] = "    Suspend execution for a number of seconds.\n"

@@ -1,8 +1,8 @@
-#include "../builtin.h"
-#include "../fdtable.h"
-#include "../var.h"
-#include "../exec.h"
-#include "../../lib/byte.h"
+#include "../../builtin.h"
+#include "../../fdtable.h"
+#include "../../var.h"
+#include "../../exec.h"
+#include "../../../lib/byte.h"
 #include <unistd.h>
 #include <errno.h>
 

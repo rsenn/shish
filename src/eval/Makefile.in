@@ -19,7 +19,7 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 ARCHIVE = eval.a
 MODULES = \
-eval_and_or eval_case eval_cmdlist eval_command eval_exit eval_for eval_function eval_if eval_jump eval_loop eval_node eval_pipeline eval_pop eval_push eval_return eval_simple_command eval_subshell eval_tree
+eval_and_or eval_case eval_cmdlist eval_command eval_exit eval_for eval_function eval_if eval_jump eval_loop eval_node eval_node_bgnd eval_pipeline eval_pop eval_push eval_return eval_simple_command eval_subshell eval_tree
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
@@ -38,7 +38,7 @@ install:
 # ---------------------------------------------------------------------------
 INCLUDES += -I$(top_srcdir)/lib -I$(top_builddir)
 #INCLUDES += -I$(top_builddir)/lib
-INCLUDES += -I$(top_srcdir)/src
+INCLUDES += @IQUOTE_SRC@
 #INCLUDES += -I$(top_builddir)/src
 INCLUDES += -I$(top_builddir)
 INCLUDES += -include assert.h

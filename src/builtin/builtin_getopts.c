@@ -120,6 +120,7 @@ builtin_getopts(int argc, char* argv[]) {
           char optchars[2] = {'-', (char)optopt};
           builtin_errmsgn(argv, optchars, 2, "illegal option");
         }
+        
         break;
 
       case ':':

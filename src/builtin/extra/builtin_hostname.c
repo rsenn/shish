@@ -2,14 +2,14 @@
 #include "config.h"
 #endif
 
-#include "../builtin.h"
-#include "../../lib/byte.h"
-#include "../fdtable.h"
-#include "../sh.h"
-#include "../prompt.h"
-#include "../../lib/shell.h"
-#include "../../lib/str.h"
-#include "../../lib/windoze.h"
+#include "../../builtin.h"
+#include "../../../lib/byte.h"
+#include "../../fdtable.h"
+#include "../../sh.h"
+#include "../../prompt.h"
+#include "../../../lib/shell.h"
+#include "../../../lib/str.h"
+#include "../../../lib/windoze.h"
 #include <errno.h>
 #if !WINDOWS_NATIVE
 #include <unistd.h>

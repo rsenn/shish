@@ -27,6 +27,7 @@ dep:              makefiles dep-recursive
 # ---------------------------------------------------------------------------
 RECURSIVE = 1
 SUBDIRS   = builtin \
+            builtin/extra \
             debug \
             eval \
             exec \
@@ -47,8 +48,10 @@ SUBDIRS   = builtin \
             vartab
 
 PROGRAM = shish$(EXEEXT)
-LIB     = $(top_builddir)/lib/libowfat.a   
-LDADD   = builtin/builtin.a \
+LIB     = $(top_builddir)/lib/libowfat.a
+LDADD   = $(top_builddir)/text/dfa/dfa.a \
+          builtin/builtin.a \
+          builtin/extra/extra.a \
           debug/debug.a \
           eval/eval.a \
           exec/exec.a \

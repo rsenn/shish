@@ -37,7 +37,10 @@ list(
   basename
   cat
   chmod
+  digest
   dirname
+  find
+  grep
   hostname
   link
   ln
@@ -123,81 +126,74 @@ endfunction()
 
 # variable_watch(ENABLE_ALL_BUILTINS ON_ENABLE_ALL_BUILTINS)
 
-# ENABLE_DUMP doubles as "the user asked for dump" and, further down,
-# as "dump is being built", so record the request before the loop below
-# starts writing to it.
-if(BUILD_DEBUG OR ENABLE_DUMP)
-  set(WANT_DUMP ON)
-endif(BUILD_DEBUG OR ENABLE_DUMP)
+# Which builtins get built -- one switch per builtin, one for all:
+#
+#   -DBUILTIN_<NAME>=ON|OFF     that builtin; permanent (it stays in the cache)
+#   -DENABLE_ALL_BUILTINS=ON    every builtin that has no BUILTIN_<NAME> of
+#                               its own; permanent, -DENABLE_ALL_BUILTINS=OFF
+#                               undoes it
+#   neither                     DEFAULT_BUILTINS (dump: also in debug builds)
+#
+# BUILTIN_<NAME> is AUTO until somebody sets it, which is what tells an
+# answer from a default -- the computed result is kept in a plain
+# variable of the same name and never written back to the cache, so a
+# later configure (also the one cmake starts by itself when a CMake file
+# changes) reaches the same decision.
+option(ENABLE_ALL_BUILTINS "Build every builtin (BUILTIN_<NAME>=OFF still wins)" OFF)
 
-# -DENABLE_ALL_BUILTINS=ON means all of them, so start from a clean
-# slate: drop every cached BUILTIN_<NAME>, including stale ones for
-# builtins no longer in ALL_BUILTINS, before the loop writes the new
-# answers.
-if(ENABLE_ALL_BUILTINS)
+# Build directories from before this scheme cached the *computed* answer
+# in BUILTIN_<NAME>; those are not choices, so forget them once. The
+# BUILD_BUILTIN_* entries are written by every configure, old or new.
+if(NOT BUILTINS_MODEL AND DEFINED BUILD_BUILTIN_ALIAS)
   get_cmake_property(CACHED_VARIABLES CACHE_VARIABLES)
   foreach(VAR ${CACHED_VARIABLES})
     if(VAR MATCHES "^BUILTIN_")
       unset(${VAR} CACHE)
     endif(VAR MATCHES "^BUILTIN_")
   endforeach(VAR)
-endif(ENABLE_ALL_BUILTINS)
+endif(NOT BUILTINS_MODEL AND DEFINED BUILD_BUILTIN_ALIAS)
 
-# Decide each builtin once, most specific answer first:
-#
-#   -DENABLE_ALL_BUILTINS=ON   every builtin, no exceptions
-#   -DENABLE_<NAME>=ON/OFF     that one builtin
-#   otherwise                  DEFAULT_BUILTINS
-#
-# The test is "DEFINED ENABLE_${NAME}", not "DEFINED ${ENABLE_${NAME}}"
-# -- the latter asks whether the *value* (ON) names a variable, which it
-# does not, so every -DENABLE_<NAME> was silently discarded here.
 foreach(BUILTIN ${ALL_BUILTINS})
   string(TOUPPER ${BUILTIN} NAME)
 
-  if(ENABLE_ALL_BUILTINS)
+  # -DENABLE_<NAME>=ON|OFF is the older spelling of BUILTIN_<NAME>
+  get_property(LEGACY_SET CACHE ENABLE_${NAME} PROPERTY VALUE SET)
+
+  if(LEGACY_SET)
+    get_property(LEGACY CACHE ENABLE_${NAME} PROPERTY VALUE)
+    set(BUILTIN_${NAME}
+        "${LEGACY}"
+        CACHE STRING "Build the ${BUILTIN} builtin: ON, OFF or AUTO" FORCE)
+    unset(ENABLE_${NAME} CACHE)
+  endif(LEGACY_SET)
+
+  # no FORCE: an existing (or -D given) value is kept
+  set(BUILTIN_${NAME}
+      "AUTO"
+      CACHE STRING "Build the ${BUILTIN} builtin: ON, OFF or AUTO")
+  set_property(CACHE BUILTIN_${NAME} PROPERTY STRINGS AUTO ON OFF)
+
+  if(NOT "${BUILTIN_${NAME}}" STREQUAL "AUTO")
+    set(WANT_BUILTIN ${BUILTIN_${NAME}})
+  elseif(ENABLE_ALL_BUILTINS)
     set(WANT_BUILTIN ON)
-  elseif(DEFINED ENABLE_${NAME})
-    set(WANT_BUILTIN ${ENABLE_${NAME}})
+  elseif(BUILD_DEBUG AND "${BUILTIN}" STREQUAL "dump")
+    set(WANT_BUILTIN ON)
   else()
     isin(WANT_BUILTIN ${BUILTIN} ${DEFAULT_BUILTINS})
   endif()
 
-  # BUILTIN_<NAME> is the cached answer; ENABLE_<NAME> stays uncached, so
-  # it means "asked for on this command line" and nothing else. Caching
-  # it would make a one-off -DENABLE_DUMP=ON stick to the build
-  # directory, and with it the DEBUG_OUTPUT default dump drags along.
-  #
-  # FORCE: option()/set() without it keep whatever an earlier configure
-  # of the same build directory cached, so -DENABLE_<NAME> would only
-  # ever take effect in a fresh one.
-  set(BUILTIN_${NAME}
-      ${WANT_BUILTIN}
-      CACHE BOOL "Enable ${BUILTIN} builtin" FORCE)
+  # the answer, for this configure only (shadows the cache entry)
+  if(WANT_BUILTIN)
+    set(BUILTIN_${NAME} ON)
+  else(WANT_BUILTIN)
+    set(BUILTIN_${NAME} OFF)
+  endif(WANT_BUILTIN)
 endforeach(BUILTIN ${ALL_BUILTINS})
 
-# BUILTIN_<NAME> is the state; ENABLE_* is only ever a request made on
-# one command line. -D puts them in the cache, so drop them again --
-# otherwise a single -DENABLE_PRINTF=OFF sticks to the build directory
-# and no later configure can undo it.
-unset(ENABLE_ALL_BUILTINS)
-unset(ENABLE_ALL_BUILTINS CACHE)
-
-foreach(BUILTIN ${ALL_BUILTINS})
-   string(TOUPPER ${BUILTIN} NAME)
- #unset(ENABLE_${NAME} CACHE)
-endforeach(BUILTIN ${ALL_BUILTINS})
-
-# "dump" only exists to inspect shell state while debugging, so a debug
-# build gets it whether or not it was named in the builtin list.
-# ENABLE_DUMP is also set by cmake/Debug.cmake for CMAKE_BUILD_TYPE=Debug,
-# and can be passed directly (-DENABLE_DUMP=ON). Has to run before the
-# loop below, which is what reads BUILTIN_* to decide what gets built.
-if(WANT_DUMP)
-  set(BUILTIN_DUMP
-      ON
-      CACHE BOOL "Enable dump builtin" FORCE)
-endif(WANT_DUMP)
+set(BUILTINS_MODEL
+    2
+    CACHE INTERNAL "builtin switch scheme (see above)")
 
 foreach(BUILTIN ${ALL_BUILTINS})
   string(TOUPPER ${BUILTIN} NAME)
@@ -222,8 +218,19 @@ if(ENABLE_DUMP)
   set(DEBUG_OUTPUT_DEFAULT ON)
 endif(ENABLE_DUMP)
 
+# a builtin's source lives in src/builtin/extra/ when it is one of the
+# coreutils-style / third-party utilities, else in src/builtin/
+function(builtin_source OUT NAME)
+  if(EXISTS "${CMAKE_SOURCE_DIR}/src/builtin/extra/builtin_${NAME}.c")
+    set(${OUT} "src/builtin/extra/builtin_${NAME}.c" PARENT_SCOPE)
+  else()
+    set(${OUT} "src/builtin/builtin_${NAME}.c" PARENT_SCOPE)
+  endif()
+endfunction(builtin_source)
+
 foreach(BUILTIN ${BUILTINS_ENABLED})
-  list(APPEND SOURCES src/builtin/builtin_${BUILTIN}.c)
+  builtin_source(BUILTIN_FILE ${BUILTIN})
+  list(APPEND SOURCES ${BUILTIN_FILE})
 endforeach(BUILTIN ${BUILTINS_ENABLED})
 
 # NAME has to come from ${DISABLED}: without it the loop reuses whatever
@@ -232,7 +239,8 @@ endforeach(BUILTIN ${BUILTINS_ENABLED})
 # BUILD_BUILTIN_<NAME>=1 and stayed in builtin_config.h.
 foreach(DISABLED ${BUILTINS_DISABLED})
   string(TOUPPER "${DISABLED}" NAME)
-  list(REMOVE_ITEM SOURCES "src/builtin/builtin_${DISABLED}.c")
+  builtin_source(BUILTIN_FILE ${DISABLED})
+  list(REMOVE_ITEM SOURCES "${BUILTIN_FILE}")
   set(BUILD_BUILTIN_${NAME}
       "0"
       CACHE INTERNAL "Build the ${DISABLED} builtin")
@@ -254,7 +262,8 @@ foreach(BUILTIN ${ALL_BUILTINS})
   string(TOUPPER ${BUILTIN} NAME)
   if(${BUILD_BUILTIN_${NAME}})
     set(BUILTIN_CONFIG "${BUILTIN_CONFIG}\n#define BUILTIN_${NAME} 1")
-    list(APPEND BUILTIN_SOURCES "src/builtin/builtin_${BUILTIN}.c")
+    builtin_source(BUILTIN_FILE ${BUILTIN})
+    list(APPEND BUILTIN_SOURCES "${BUILTIN_FILE}")
   else(${BUILD_BUILTIN_${NAME}})
     set(BUILTIN_CONFIG "${BUILTIN_CONFIG}\n#define BUILTIN_${NAME} 0")
   endif(${BUILD_BUILTIN_${NAME}})

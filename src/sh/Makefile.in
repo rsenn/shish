@@ -19,7 +19,7 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 ARCHIVE = sh.a
 MODULES = \
-sh_error sh_error_errno sh_errorn sh_errorn_errno sh_exit sh_fmtflags sh_forked sh_getcwd sh_gethome sh_init sh_loop sh_main sh_msg sh_pop sh_popargs sh_push sh_pushargs sh_root sh_setargs sh_subshell sh_usage
+sh_error sh_error_errno sh_errorn sh_errorn_errno sh_exit sh_fmtflags sh_forked sh_getcwd sh_gethome sh_init sh_loop sh_main sh_msg sh_pop sh_popargs sh_push sh_pushargs sh_root sh_setargs sh_source sh_unescape sh_usage
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
@@ -38,7 +38,7 @@ install:
 # ---------------------------------------------------------------------------
 INCLUDES += -I$(top_srcdir)/lib -I$(top_builddir)
 #INCLUDES += -I$(top_builddir)/lib
-INCLUDES += -I$(top_srcdir)/src
+INCLUDES += @IQUOTE_SRC@
 #INCLUDES += -I$(top_builddir)/src
 INCLUDES += -I$(top_builddir)
 

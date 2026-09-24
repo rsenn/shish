@@ -1,8 +1,8 @@
-#include "../builtin.h"
-#include "../fdtable.h"
-#include "../../lib/shell.h"
-#include "../../lib/open.h"
-#include "../../lib/alloc.h"
+#include "../../builtin.h"
+#include "../../fdtable.h"
+#include "../../../lib/shell.h"
+#include "../../../lib/open.h"
+#include "../../../lib/alloc.h"
 #include <signal.h>
 #include <unistd.h>
 

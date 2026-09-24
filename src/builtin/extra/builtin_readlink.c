@@ -1,9 +1,9 @@
-#include "../builtin.h"
-#include "../fdtable.h"
-#include "../../lib/shell.h"
-#include "../../lib/unix.h"
-#include "../../lib/path.h"
-#include "../../lib/stralloc.h"
+#include "../../builtin.h"
+#include "../../fdtable.h"
+#include "../../../lib/shell.h"
+#include "../../../lib/unix.h"
+#include "../../../lib/path.h"
+#include "../../../lib/stralloc.h"
 #include <sys/stat.h>
 #include <limits.h>
 

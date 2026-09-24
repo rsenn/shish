@@ -1,8 +1,8 @@
-#include "../builtin.h"
-#include "../fdtable.h"
-#include "../../lib/shell.h"
-#include "../../lib/path.h"
-#include "../../lib/stralloc.h"
+#include "../../builtin.h"
+#include "../../fdtable.h"
+#include "../../../lib/shell.h"
+#include "../../../lib/path.h"
+#include "../../../lib/stralloc.h"
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>

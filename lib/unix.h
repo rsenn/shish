@@ -43,6 +43,7 @@ int lstat(const char* path, struct stat* buf);
 /* platforms without a real uname(2)/<sys/utsname.h>: Windows, and
  * Emscripten/WASI/bare-wasm targets, which have no host to introspect. */
 #if WINDOWS_NATIVE || defined(__EMSCRIPTEN__) || defined(__wasm__) || defined(__wasi__)
+#define UNIX_UTSNAME 1 /* struct utsname + uname() come from here */
 struct utsname {
   char sysname[65];
   char nodename[65];

@@ -1,14 +1,12 @@
-#include "../builtin.h"
-#include "../fdtable.h"
-#include "../../lib/shell.h"
-#include "../../lib/windoze.h"
-#include "../../lib/unix.h"
+#include "../../builtin.h"
+#include "../../fdtable.h"
+#include "../../../lib/shell.h"
+#include "../../../lib/windoze.h"
+#include "../../../lib/unix.h"
 #include "config.h"
 #include <sys/stat.h>
 #include <unistd.h>
 #include <libgen.h>
-
-#if(defined(HAVE_SYMLINK) && defined(HAVE_LINK)) || WINDOWS_NATIVE
 
 #ifndef HAVE_LSTAT
 #define lstat stat
@@ -103,4 +101,3 @@ builtin_ln(int argc, char* argv[]) {
 
   return 0;
 }
-#endif

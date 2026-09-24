@@ -41,6 +41,17 @@ if(COMPILER_NAME MATCHES "em.*")
   set(EMSCRIPTEN_EXE_SUFFIX "html")
 endif(COMPILER_NAME MATCHES "em.*")
 
+if(CMAKE_SYSTEM_NAME STREQUAL "WASI")
+  # wasi-libc lacks fork/wait/termios/pwd/sigaction; src/wasi/ stubs them
+  include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/src/wasi)
+  add_compile_options(-include ${CMAKE_CURRENT_SOURCE_DIR}/src/wasi/wasi_compat.h)
+  # setjmp/longjmp (subshells, pipelines, break/return) need wasm exceptions
+  add_compile_options(-mllvm -wasm-enable-sjlj -mexception-handling)
+  add_link_options(-mllvm -wasm-enable-sjlj -lsetjmp)
+  add_compile_definitions(_WASI_EMULATED_SIGNAL _WASI_EMULATED_GETPID _WASI_EMULATED_PROCESS_CLOCKS _WASI_EMULATED_MMAN)
+  add_link_options(-lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks -lwasi-emulated-mman)
+endif(CMAKE_SYSTEM_NAME STREQUAL "WASI")
+
 option(BUILD_DEBUG "Build in debug mode" OFF)
 
 if("${CMAKE_BUILD_TYPE}" MATCHES ".*Deb.*")
@@ -49,9 +60,6 @@ endif("${CMAKE_BUILD_TYPE}" MATCHES ".*Deb.*")
 
 if(BUILD_DEBUG)
   add_definitions(-D_DEBUG=1)
-  set(ENABLE_DUMP
-      TRUE
-      CACHE BOOL "Enable `dump' builtin" FORCE)
 else(BUILD_DEBUG)
   add_definitions(-DNDEBUG=1)
 endif(BUILD_DEBUG)
@@ -91,6 +99,10 @@ if(F_LTO)
 endif(F_LTO)
 
 include(cmake/Builtins.cmake)
+
+if(BUILTIN_DIGEST)
+  include(cmake/Digest.cmake)
+endif(BUILTIN_DIGEST)
 
 check_functions(
   sigaction
@@ -165,6 +177,22 @@ include(cmake/libowfat.cmake)
 link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
 
 file(GLOB LIBSHELL_SOURCES src/*.h src/*/*.c)
+
+# text/dfa backs the expr and (optionally, see GREP_USE_SYSTEM_REGEX
+# below) grep builtins' regex matching (text/dfa.h)
+file(GLOB TEXT_DFA_SOURCES text/dfa.h text/dfa/*.c)
+list(APPEND LIBSHELL_SOURCES ${TEXT_DFA_SOURCES})
+
+# grep's backend: text/dfa (in-tree, no libc regex dependency) by
+# default, or the system's <regex.h> if this is turned on.
+option(GREP_USE_SYSTEM_REGEX "Use the system's regex.h for grep instead of text/dfa" OFF)
+if(GREP_USE_SYSTEM_REGEX)
+  set_source_files_properties(src/builtin/extra/builtin_grep.c
+                               PROPERTIES COMPILE_DEFINITIONS GREP_USE_SYSTEM_REGEX=1)
+endif(GREP_USE_SYSTEM_REGEX)
+
+# needs third_party/, so only built when the digest builtin is on (BUILTIN_SOURCES)
+list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "builtin_digest\\.c")
 
 list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX
      "(sh_fmt\\.c|sh_parse2ast\\.c|sh_init\\.c|sh_main\\.c|sh_util_wasm\\.c)")
@@ -364,6 +392,11 @@ if(DO_TESTS)
       WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
       COMMAND "${SHISH_PATH}" "${TEST}")
   endforeach(TEST ${TESTS})
+
+  # lib/arena unit test (C, links against the in-tree libowfat)
+  add_executable(arena_test tests/arena_test.c)
+  target_link_libraries(arena_test PRIVATE ${LIBOWFAT_LIBRARY})
+  add_test(NAME arena_test COMMAND arena_test)
 
   # tests/posix/*.tst and tests/yash/*.tst: yash's own POSIX/self conformance
   # suite (yash's run-test.sh harness interprets each *.tst file's test_oE/

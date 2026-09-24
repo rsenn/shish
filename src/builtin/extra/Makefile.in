@@ -1,13 +1,13 @@
 # ===========================================================================
 #
-# Makefile for src/parse subdirectory
+# Makefile for src/builtin/extra subdirectory
 #
 # relative directories
 # ---------------------------------------------------------------------------
 srcdir       = @srcdir@
 top_srcdir   = @top_srcdir@
 top_builddir = @top_builddir@
-thisdir      = src/parse/
+thisdir      = src/builtin/extra/
 
 VPATH        = $(srcdir)
 
@@ -17,9 +17,10 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
-ARCHIVE = parse.a
-MODULES = \
-parse_and_or parse_ansiquoted parse_arith parse_arith_assign parse_arith_binary parse_arith_expr parse_arith_paren parse_arith_ternary parse_arith_unary parse_arith_value parse_bquoted parse_case parse_chartable parse_command parse_compound_list parse_dquoted parse_dump parse_error parse_expect parse_findalias parse_for parse_function parse_getarg parse_gettok parse_grouping parse_here parse_hooks parse_if parse_init parse_keyword parse_list parse_loop parse_newnode parse_param parse_pipeline parse_simple_command parse_simpletok parse_skipspace parse_squoted parse_string parse_subst parse_tokens parse_tokname parse_unquoted parse_validname parse_word
+ARCHIVE = extra.a
+# only the builtins picked with --enable-builtins are compiled
+BUILTINS = @BUILTINS@
+MODULES = $(filter $(BUILTINS:%=builtin_%),$(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/builtin_*.c)))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

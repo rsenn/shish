@@ -61,19 +61,60 @@ two external commands, background jobs, `$(...)` that runs a program.
 There are no processes to fork. Compile the utilities you need in as
 [builtins](builtins.md) and they run in-process instead.
 
-## WASI (server-side runtimes)
+## WASI (wasmtime, wasmer, Node, webassembly.sh)
+
+Needs [wasi-sdk](https://github.com/WebAssembly/wasi-sdk) (tested with 34,
+`/opt/wasi-sdk`; set `WASI_SDK_PREFIX` otherwise):
 
 ```sh
-CC=clang CXX=clang++ CFLAGS=--target=wasm32 CXXFLAGS=--target=wasm32 LDFLAGS=--target=wasm32 \
-  cmake -S . -B build/wasm32-clang \
-  -DCMAKE_SYSTEM_NAME=Generic -DCMAKE_SYSTEM_PROCESSOR=wasm32 \
-  -DENABLE_SHARED=OFF -DENABLE_PIC=FALSE
-cmake --build build/wasm32-clang -j
+. ./cfg-cmake.sh
+cfg-wasi                       # writes build/wasi/, MinSizeRel, all builtins
+cmake --build build/wasi -j
 ```
 
-This targets a plain `wasm32` module rather than Emscripten's JS
-environment — for wasmtime, wasmer, or an embedder that provides its own
-WASI imports. The same fork restriction applies.
+This produces `build/wasi/shish`, a 248 KB `wasm32-wasip1` module. wasi-libc
+has no `fork`, `exec`, `wait`, `termios`, `pwd` or `sigaction`, so
+`src/wasi/wasi_compat.h` (force-included on this target only) supplies
+stubs that fail the way a system without the feature does. The build also
+links wasi-libc's `-lwasi-emulated-{signal,getpid,process-clocks,mman}`.
+
+### Runtime requirement: WebAssembly exceptions
+
+`setjmp`/`longjmp` carry subshells, pipelines, functions, `break` and
+`return`, and wasi-sdk implements them with WebAssembly exception handling
+(the `exnref` form; the older opcodes are no longer emitted). The engine
+must support it:
+
+```sh
+node --experimental-wasm-exnref run.mjs build/wasi/shish -c 'echo hello'   # Node 23
+```
+
+Node 24+, recent wasmtime and browsers that ship `exnref` need no flag.
+Whether a given host supports it has to be checked per host: if it does
+not, instantiation fails before any shell code runs.
+
+### webassembly.sh
+
+Tested 2026-09-19 with Chrome 152: run `wapm upload` in the terminal,
+choose `shish.wasm` (rename `build/wasi/shish` to that), then
+`shish -c 'echo hi'`, or just `shish` for the shell itself. Functions,
+subshells, `break` and pipelines between builtins work there.
+
+### What works on WASI
+
+Everything that does not need another process: expansion, arithmetic,
+control flow, functions, here-documents, `$(...)` of builtins, pipelines
+between builtins and subshells (they run in-process), redirections, and
+the file utilities that are compiled in as builtins.
+
+### What does not
+
+- External commands (`sort`, `/bin/sh`, ...) and background jobs (`&`)
+  need `fork`: they print `<cmd>: Function not implemented` and give
+  status 1. Compile the utilities you need in as [builtins](builtins.md).
+- No job control, no terminal handling (`tcgetattr` reports "not a tty"),
+  no `/etc/passwd` (`~user` does not expand), a single anonymous user.
+- Files are visible only through the host's preopened directories.
 
 ## Why put a shell in WebAssembly
 

@@ -72,7 +72,6 @@ extern int job_sigfd[2];
 
 struct job* job_bypid(pid_t);
 struct job* job_find(const char*);
-struct job* job_get(int);
 struct job* job_new(unsigned);
 struct job* job_signal(pid_t, int status);
 
@@ -120,25 +119,6 @@ job_stopped(struct job* j) {
         return true;
 
   return false;
-}
-
-static inline struct proc*
-job_proc(struct job* j, pid_t pid) {
-  for(size_t i = 0; i < j->nproc; i++)
-    if(j->procs[i].pid == pid)
-      return &j->procs[i];
-
-  return 0;
-}
-
-static inline struct proc*
-proc_bypid(pid_t pid) {
-  struct job* j;
-
-  if((j = job_bypid(pid)))
-    return job_proc(j, pid);
-
-  return 0;
 }
 
 #endif /* _JOB_H */

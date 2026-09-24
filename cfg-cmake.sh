@@ -403,17 +403,13 @@ cfg-wasm() {
 cfg-wasi() {
  (: ${WASI_SDK_PREFIX:=/opt/wasi-sdk}
   builddir=build/wasi
-  CC="${WASI_SDK_PREFIX}/bin/clang"
-  CXX="${WASI_SDK_PREFIX}/bin/clang++"
-  CFLAGS="-D_WASI_EMULATED_SIGNAL" 
-  CXXFLAGS="-D_WASI_EMULATED_SIGNAL" 
-  LDFLAGS="-lwasi-emulated-signal"
-  export CC CXX CFLAGS CXXFLAGS LDFLAGS
+  TYPE=${TYPE:-MinSizeRel}
+  export CC="${WASI_SDK_PREFIX}/bin/clang" CXX="${WASI_SDK_PREFIX}/bin/clang++"
   cfg \
-    -DCMAKE_SYSTEM_NAME=WASI \
-    -DCMAKE_SYSTEM_PROCESSOR=wasm32 \
-    -DCMAKE_SYSROOT="${WASI_SDK_PREFIX}/share/wasi-sysroot" \
+    -DCMAKE_TOOLCHAIN_FILE="${WASI_SDK_PREFIX}/share/cmake/wasi-sdk-p1.cmake" \
     -DENABLE_SHARED=OFF \
-    -DENABLE_PIC=FALSE \
+    -DENABLE_ALL_BUILTINS=ON \
+    -DBUILD_SHFORMAT=OFF \
+    -DDO_CONFORMANCE_TESTS=OFF \
     "$@")
 }

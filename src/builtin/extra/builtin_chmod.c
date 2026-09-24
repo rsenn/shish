@@ -1,10 +1,10 @@
-#include "../builtin.h"
-#include "../fdtable.h"
-#include "../../lib/shell.h"
-#include "../../lib/scan.h"
-#include "../../lib/str.h"
-#include "../../lib/stralloc.h"
-#include "../../lib/unix.h"
+#include "../../builtin.h"
+#include "../../fdtable.h"
+#include "../../../lib/shell.h"
+#include "../../../lib/scan.h"
+#include "../../../lib/str.h"
+#include "../../../lib/stralloc.h"
+#include "../../../lib/unix.h"
 #include <unistd.h>
 #include <errno.h>
 #include <dirent.h>

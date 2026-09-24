@@ -1,7 +1,7 @@
-#include "../builtin.h"
-#include "../fdtable.h"
-#include "../../lib/shell.h"
-#include "../../lib/path.h"
+#include "../../builtin.h"
+#include "../../fdtable.h"
+#include "../../../lib/shell.h"
+#include "../../../lib/path.h"
 #include <unistd.h>
 #include <errno.h>
 #include <sys/stat.h>

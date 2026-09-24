@@ -18,7 +18,7 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = redir.a
-MODULES = redir_addhere redir_dup redir_eval redir_here redir_open redir_parse redir_source
+MODULES = redir_addhere redir_dup redir_eval redir_here redir_open redir_parse redir_preopen redir_source
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
@@ -37,7 +37,7 @@ install:
 # ---------------------------------------------------------------------------
 INCLUDES += -I$(top_srcdir)/lib -I$(top_builddir)
 #INCLUDES += -I$(top_builddir)/lib
-INCLUDES += -I$(top_srcdir)/src
+INCLUDES += @IQUOTE_SRC@
 #INCLUDES += -I$(top_builddir)/src
 
 # include build.mk (makefile helper)

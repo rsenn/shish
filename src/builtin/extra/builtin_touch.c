@@ -1,9 +1,9 @@
-#include "../builtin.h"
-#include "../fdtable.h"
-#include "../../lib/shell.h"
-#include "../../lib/scan.h"
-#include "../../lib/str.h"
-#include "../../lib/byte.h"
+#include "../../builtin.h"
+#include "../../fdtable.h"
+#include "../../../lib/shell.h"
+#include "../../../lib/scan.h"
+#include "../../../lib/str.h"
+#include "../../../lib/byte.h"
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <time.h>

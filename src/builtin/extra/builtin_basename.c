@@ -1,7 +1,7 @@
-#include "../builtin.h"
-#include "../fdtable.h"
-#include "../../lib/path.h"
-#include "../../lib/str.h"
+#include "../../builtin.h"
+#include "../../fdtable.h"
+#include "../../../lib/path.h"
+#include "../../../lib/str.h"
 
 /* ----------------------------------------------------------------------- */
 const char help_basename[] =

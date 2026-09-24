@@ -19,7 +19,7 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 ARCHIVE = job.a
 MODULES = \
-job_delete job_find job_foreground job_fork job_get job_init job_new job_print job_status job_wait
+job_banner job_bypid job_clean job_dump job_find job_foreground job_fork job_free job_init job_new job_print job_printstatus job_signal job_update job_wait
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
@@ -38,7 +38,7 @@ install:
 # ---------------------------------------------------------------------------
 INCLUDES += -I$(top_srcdir)/lib -I$(top_builddir)
 #INCLUDES += -I$(top_builddir)/lib
-INCLUDES += -I$(top_srcdir)/src
+INCLUDES += @IQUOTE_SRC@
 #INCLUDES += -I$(top_builddir)/src
 INCLUDES += -I$(top_builddir)
 

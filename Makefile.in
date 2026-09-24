@@ -36,7 +36,7 @@ bootfiles: Makefile config.mk build.mk config.h
 
 # local directory configuration
 # ---------------------------------------------------------------------------
-SUBDIRS   = lib scripts src doc
+SUBDIRS   = lib text scripts src doc
 ROOT      = 1
 RECURSIVE = 1
 

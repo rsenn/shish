@@ -1,10 +1,10 @@
-#include "../builtin.h"
-#include "../fdtable.h"
-#include "../term.h"
-#include "../../lib/shell.h"
-#include "../../lib/fmt.h"
-#include "../../lib/str.h"
-#include "../../lib/open.h"
+#include "../../builtin.h"
+#include "../../fdtable.h"
+#include "../../term.h"
+#include "../../../lib/shell.h"
+#include "../../../lib/fmt.h"
+#include "../../../lib/str.h"
+#include "../../../lib/open.h"
 
 /* output stuff
  * ----------------------------------------------------------------------- */

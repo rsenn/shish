@@ -86,6 +86,9 @@
 #ifndef BUILTIN_COMMAND
 #define BUILTIN_COMMAND 1
 #endif
+#ifndef BUILTIN_DIGEST
+#define BUILTIN_DIGEST 0
+#endif
 #ifndef BUILTIN_DIRNAME
 #define BUILTIN_DIRNAME 1
 #endif
@@ -222,7 +225,7 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_DIRNAME
     {"dirname", &builtin_dirname, B_DEFAULT, "path", help_dirname},
 #endif
-#if BUILTIN_DUMP //&& defined(DEBUG_OUTPUT)
+#if BUILTIN_DUMP
     {"dump",
      &builtin_dump,
      B_DEFAULT,
@@ -266,11 +269,17 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_FDTABLE
     {"fdtable", &builtin_fdtable, B_DEFAULT, "[-u FD]", help_fdtable},
 #endif
+#if BUILTIN_FIND
+    {"find", &builtin_find, B_DEFAULT, "[path...] [expression]", help_find},
+#endif
 #if BUILTIN_JOBS
     {"fg", &builtin_fg, B_DEFAULT, "[job...]", help_fg},
 #endif
 #if BUILTIN_GETOPTS
     {"getopts", &builtin_getopts, B_DEFAULT, "optstring name [arg ... ]", help_getopts},
+#endif
+#if BUILTIN_GREP
+    {"grep", &builtin_grep, B_DEFAULT, "[options] <pattern-list>", help_grep},
 #endif
 #if BUILTIN_HASH
     {"hash",
@@ -283,7 +292,7 @@ struct builtin_cmd builtin_table[] = {
     {"help", &builtin_help, B_DEFAULT, "[command]", help_help},
 #endif
 #if BUILTIN_HISTORY
-    {"history", builtin_history, B_DEFAULT, "[-c]", help_history},
+    {"history", &builtin_history, B_DEFAULT, "[-c]", help_history},
 #endif
 #if BUILTIN_HOSTNAME
     {"hostname", &builtin_hostname, B_DEFAULT, "[name]", help_hostname},
@@ -306,6 +315,9 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_LS
     {"ls", &builtin_ls, B_DEFAULT, "[-adl1] [file...]", help_ls},
 #endif
+#if BUILTIN_DIGEST
+    {"md5sum", &builtin_digest, B_DEFAULT, "[file...]", help_digest},
+#endif
 #if BUILTIN_MKDIR
     {"mkdir", &builtin_mkdir, B_DEFAULT, "[-p]", help_mkdir},
 #endif
@@ -320,6 +332,15 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_SET
     {"set", &builtin_set, B_SPECIAL, "[arguments]", help_set},
+#endif
+#if BUILTIN_DIGEST
+    {"sha1sum", &builtin_digest, B_DEFAULT, "[file...]", help_digest},
+    {"sha224sum", &builtin_digest, B_DEFAULT, "[file...]", help_digest},
+    {"sha256sum", &builtin_digest, B_DEFAULT, "[file...]", help_digest},
+    {"sha384sum", &builtin_digest, B_DEFAULT, "[file...]", help_digest},
+    {"sha512-224sum", &builtin_digest, B_DEFAULT, "[file...]", help_digest},
+    {"sha512-256sum", &builtin_digest, B_DEFAULT, "[file...]", help_digest},
+    {"sha512sum", &builtin_digest, B_DEFAULT, "[file...]", help_digest},
 #endif
 #if BUILTIN_SHIFT
     {"shift", &builtin_shift, B_SPECIAL, "[n]", help_shift},

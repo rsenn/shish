@@ -1,15 +1,16 @@
-#include "../builtin.h"
-#include "../fdtable.h"
-#include "../exec.h"
-#include "../var.h"
-#include "../../lib/shell.h"
-#include "../../lib/scan.h"
-#include "../../lib/str.h"
-#include "../../lib/alloc.h"
-#include "../../lib/byte.h"
-#include "../../lib/unix.h"
-#include "../../lib/wait.h"
-#include "../../lib/sig.h"
+#include "../../builtin.h"
+#include "../../fdtable.h"
+#include "../../fdstack.h"
+#include "../../exec.h"
+#include "../../var.h"
+#include "../../../lib/shell.h"
+#include "../../../lib/scan.h"
+#include "../../../lib/str.h"
+#include "../../../lib/alloc.h"
+#include "../../../lib/byte.h"
+#include "../../../lib/unix.h"
+#include "../../../lib/wait.h"
+#include "../../../lib/sig.h"
 #include <errno.h>
 #include <signal.h>
 #include <unistd.h>
@@ -216,6 +217,11 @@ builtin_timeout(int argc, char* argv[]) {
     char** envp = var_export(alloc(envn * sizeof(char*)));
 
     sig_unblock(SIGCHLD);
+
+    /* apply the shell's pending redirections/pipes to the real fds */
+    fdtable_exec();
+    fdstack_flatten();
+
     execve(path, cmdargv, envp);
     _exit(126);
   }
