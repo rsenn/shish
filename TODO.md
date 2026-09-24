@@ -3511,6 +3511,78 @@ seq 1 1000000 > /tmp/n; time /tmp/sedawk/shish -c "awk '{s+=\$1} END{print s}' /
 
 ---
 
+## Goal 12 (secondary) — more `EXTRA_BUILTINS`: POSIX utilities real scripts call most, still external
+
+**Not started; this section is the candidate list.** `grep` and `sed` (Goal 6,
+Goal 11) already moved from "external" to "builtin"; with those two done, the
+next-highest-value external commands were picked by counting real usage rather
+than guessing. Same rationale as Goal 10 (`cp`/`mv`): each is free where an
+external binary already exists (a builtin only wins the `PATH` lookup +
+`fork`+`exec`) and is a real capability where none does (WASI, a from-scratch
+container, `-DLINK_STATIC=ON` single-file image).
+
+**Evidence.** A histogram of every command word bash actually dispatched
+(builtin/external/keyword/notfound) across a large corpus of real-world shell
+scripts (`../plot-cv/shell-commands-histogram.txt`, 3545 distinct names),
+filtered to names that are also POSIX.1-2024 utilities
+(<https://pubs.opengroup.org/onlinepubs/9799919799/utilities/>) and not
+already a shish builtin:
+
+| Count | Utility | Count | Utility | Count | Utility |
+|---|---|---|---|---|---|
+| 2747 | `cp` | 400 | `uniq` | 26 | `od` |
+| 1772 | `mv` | 267 | `getconf` | 20 | `df` |
+| 1326 | `sort` | 264 | `xargs` | 19 | `comm` |
+| 927 | `tr` | 239 | `tail` | 12 | `paste` |
+| 794 | `diff` | 228 | `cmp` | 12 | `nohup` |
+| 551 | `date` | 192 | `id` | 10 | `nice` |
+| 526 | `cut` | 109 | `env` | 10 | `fold` |
+| 484 | `head` | 75 | `bc` | 8 | `tty` |
+| 412 | `tput` | 73 | `dd` | 6 | `mkfifo` |
+|  |  | 37 | `chown` | 5 | `join` |
+|  |  | 29 | `du` | 4 | `expand` |
+
+(`seq`, `install`, `dir`, `yes`, `stat`, `groups`, `arch`, `stty`, `sum`,
+`sync`, `nproc`, `truncate`, `fmt`, `base64`, `mknod` also appear at similar
+frequencies but are **not** POSIX utilities — GNU/BSD-only or shell-builtin
+duplicates — so they stay out of scope per the "design spec is POSIX" rule at
+the top of this file. `awk` (1065) is already Goal 11.)
+
+**Not a flat priority order.** Group by what they'd cost and who needs them:
+
+- **`cp`/`mv`** already have a plan (Goal 10) — by far the two highest counts,
+  do those first.
+- **Cheap, self-contained, high count**: `tr`, `cut`, `head`, `tail`, `uniq`,
+  `date`, `sort` (the last needs a comparison/key-field engine — `-k`, `-t`,
+  `-n`, `-r`, merge sort over lines held in one arena — closer in size to
+  `builtin_sed.c` than to `builtin_wc.c`). These cover the bulk of "text
+  pipeline" idioms (`... | sort | uniq -c`, `cut -d: -f1`, `date +%s`) that
+  currently force a `fork`+`exec` even in a script that otherwise runs
+  builtins-only, and are the ones that matter most for the standalone/WASI/
+  no-`PATH` goal, since scripts reach for them constantly and unconditionally.
+- **`diff`**: real value (794 uses) but by far the biggest of this batch —
+  a full line-diff needs an LCS/Myers engine, closer in scope to `text/dfa`
+  than to a single `builtin_*.c`; would want its own `text/diff/` the way
+  `sed` got `text/sed/`. Worth a Goal of its own if picked up.
+- **System/identity utilities**: `id`, `env`, `chown`, `du`, `df`, `dd`,
+  `nice`, `nohup`, `tty`, `logname`, `who` — each individually small (most
+  are one syscall plus formatting) but only pay off where `fork`+`exec` of
+  the real one is unavailable; lower priority than the text-pipeline group
+  since they're less central to typical scripts.
+- **Niche/legacy POSIX text utilities**: `getconf`, `xargs`, `cmp`, `bc`,
+  `comm`, `paste`, `fold`, `mkfifo`, `join`, `expand`/`unexpand`, `od`,
+  `pr`, `cksum`, `tsort`, `csplit`, `pathchk`, `split`, `chgrp` — real
+  POSIX utilities, all seen in the corpus, but each at low enough frequency
+  (and `xargs`/`bc` non-trivial in scope) that they're candidates, not a
+  near-term plan; no per-utility sizing has been done for these yet.
+
+No file layout, option sets, or size estimates have been worked out for any
+of these yet — that's the next step once one is picked up, following the
+Goal 6/10/11 template (POSIX page -> option table -> LOC estimate -> `BUGS`
+entries for any deliberately-omitted option).
+
+---
+
 ## Also open (secondary)
 
 - **WASI build (`cfg-wasi`, `doc/wasm.md`) — builds and runs (Node, webassembly.sh).** `build/wasi/shish` is 248 KB and runs under Node's WASI
