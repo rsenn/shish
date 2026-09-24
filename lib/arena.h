@@ -2,72 +2,95 @@
  * @defgroup   arena
  * @brief      ARENA module.
  *
- * A bump allocator: allocations are handed out from a chain of
- * growable blocks and can't be freed individually -- the whole arena
- * is reclaimed at once, either kept around for reuse (arena_reset())
- * or released back to the system (arena_free()). This matches a
- * lifetime shape that comes up repeatedly in this codebase: an AST
- * (src/tree.h) is parsed all at once, evaluated, then thrown away as
- * a whole, one malloc()/free() pair per node today
- * (src/tree/tree_newnode.c, src/tree/tree_free.c) where one region
- * create/destroy pair would do. See TODO.md's "Goal 4" for the full
- * writeup, including which call sites would own their own arena
- * (nested, strictly stack-disciplined -- shish is single-threaded and
- * synchronous, so arenas never need to overlap without nesting) and
- * which allocations (long-lived function/trap bodies, anything
- * variable-length like a stralloc buffer) deliberately stay off the
- * arena and continue through the plain lib/alloc.h heap.
- *
- * Interface only -- not implemented yet.
+ * Bump allocator: allocations are never freed one by one; a whole
+ * group is released at once with arena_rewind()/arena_reset()/arena_free().
+ * Independent of the shell; the memory source is pluggable (arena_src).
  * @{
  */
 #ifndef ARENA_H
 #define ARENA_H
 
-#include <stdlib.h>
+#include <stddef.h>
 
-struct arena_block;
+/* where chunks come from; the only part of the arena that touches the OS.
+ *
+ *   get   size in = minimum, size out = actual (>= minimum); NULL on failure
+ *   put   gives a chunk back; NULL = chunks are never returned
+ * ----------------------------------------------------------------------- */
+struct arena_src {
+  void* (*get)(size_t* size);
+  void (*put)(void* p, size_t size);
+};
 
-/* arena is a chain of arena_blocks; arena_alloc() bump-allocates from
- * the current (head) block, appending a new block once the current
- * one runs out of room. Nothing handed back by arena_alloc() can be
- * freed on its own -- see arena_reset()/arena_free() below for the
- * only two ways memory ever comes back. Zero-initialize (or use
- * arena_init()) before first use. */
+extern const struct arena_src arena_heap; /* malloc()/free() */
+extern const struct arena_src arena_mmap; /* anonymous mmap()/munmap() */
+extern const struct arena_src arena_brk;  /* sbrk(); never returned */
+
+struct arena_chunk;
+
 typedef struct arena_s {
-  struct arena_block* head;
-  size_t blocksize; /* size used for each block appended on demand */
-} arena;
+  char* beg;                        /* next free byte in the current chunk */
+  char* end;                        /* one past the current chunk */
+  char* top;                        /* start of the newest allocation, or NULL */
+  struct arena_chunk* chunk;        /* current chunk; earlier ones chain back */
+  const struct arena_src* src;      /* NULL = fixed buffer, never grows */
+  size_t csize;                     /* preferred size of a new chunk */
+} arena;                            /* all zero = empty fixed arena: every alloc fails */
 
-/* arena_init sets up an empty arena. blocksize is the size of each
- * block appended on demand as arena_alloc() runs out of room in the
- * current one; 0 selects an implementation-chosen default. No memory
- * is actually allocated until the first arena_alloc() call. */
-void arena_init(arena* a, size_t blocksize);
+/* setup and teardown
+ * ----------------------------------------------------------------------- */
 
-/* arena_alloc bump-allocates len bytes from a, appending a fresh block
- * if the current one doesn't have enough room left (an allocation
- * bigger than the arena's blocksize gets its own oversized block, so
- * there's no hard upper limit on a single arena_alloc() call). Returns
- * NULL only if the underlying system allocation fails; unlike
- * lib/alloc.h's alloc(), it does not exit(1) on its own. The returned
- * memory is valid until the next arena_reset()/arena_free() call on
- * the same arena -- there is no per-allocation free. */
-void* arena_alloc(arena* a, size_t len);
+/* empty arena that pulls chunks from src; no memory until the first alloc.
+ *
+ *   arena*                   a      arena to set up
+ *   const struct arena_src*  src    chunk source, e.g. &arena_heap
+ *   size_t                   chunk  preferred chunk size, 0 = 8192
+ * ----------------------------------------------------------------------- */
+void arena_init(arena* a, const struct arena_src* src, size_t chunk);
 
-/* arena_reset forgets every allocation made so far but keeps the
- * underlying blocks (and their capacity) around for reuse -- the next
- * arena_alloc() call reuses that capacity from the start instead of
- * asking the system for new memory. Meant for a workload that repeats
- * with a similar shape each time, e.g. one arena reset per parsed
- * statement in the interactive loop, rather than a fresh arena_init()
- * (and fresh block allocations) every time. */
-void arena_reset(arena* a);
+/* arena inside a caller-owned buffer (stack array, alloca(), .bss); it never
+ * grows, alloc returns NULL once len is used up. */
+void arena_init_fixed(arena* a, void* buf, size_t len);
 
-/* arena_free releases every block a owns back to the system. Leaves a
- * in the same state arena_init() would have, safe to reuse or to
- * simply go out of scope afterward. */
-void arena_free(arena* a);
+void arena_reset(arena* a);        /* forget all allocations, keep the first chunk */
+void arena_free(arena* a);         /* give every chunk back via src->put, arena empty */
+size_t arena_used(const arena* a); /* bytes handed out, plus slack of retired chunks */
+
+/* fixed-size objects: zeroed, NULL when full or src->get fails (never exit)
+ * ----------------------------------------------------------------------- */
+void* arena_alloc(arena* a, size_t size, size_t align);
+void* arena_allocn(arena* a, size_t size, size_t n, size_t align); /* NULL if n*size overflows */
+
+#define arena_new(a, T) ((T*)arena_alloc((a), sizeof(T), __alignof__(T)))
+#define arena_newn(a, T, n) ((T*)arena_allocn((a), sizeof(T), (n), __alignof__(T)))
+
+/* frozen variable-length blobs: alignment 1, only the copy is written
+ * ----------------------------------------------------------------------- */
+void* arena_dup(arena* a, const void* p, size_t len);
+char* arena_strndup(arena* a, const char* s, size_t len); /* appends the NUL */
+
+/* growing the newest allocation
+ * ----------------------------------------------------------------------- */
+
+/* extends p in place and returns it; the new bytes are zeroed.
+ * Returns NULL, changing nothing, unless p is the newest allocation
+ * (oldsize as allocated; a size-0 alloc occupies 1 byte) and the rest of
+ * its chunk has room for newsize. Never moves or copies: a copy would
+ * leave a hole in the arena, so the caller decides how to recover. */
+void* arena_grow(arena* a, void* p, size_t oldsize, size_t newsize);
+
+/* freeze: returns the slack of p to the arena if p is still the newest */
+void arena_trim(arena* a, void* p, size_t oldsize, size_t newsize);
+
+/* nested lifetimes, strictly stack-disciplined
+ * ----------------------------------------------------------------------- */
+typedef struct {
+  struct arena_chunk* chunk;
+  char* beg;
+} arena_pos;
+
+arena_pos arena_tell(const arena* a);
+void arena_rewind(arena* a, arena_pos pos); /* frees everything allocated since pos */
 
 #endif
 /** @} */
