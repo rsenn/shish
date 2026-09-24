@@ -326,6 +326,7 @@ lib/utf8/Makefile
 lib/wait/Makefile
 text/Makefile
 text/dfa/Makefile
+text/sed/Makefile
 scripts/Makefile
 src/Makefile
 src/builtin/Makefile

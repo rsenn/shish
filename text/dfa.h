@@ -94,6 +94,35 @@ int dfa_search(struct dfa* d, const char* s, size_t n, size_t from, struct dfa_s
 int dfa_submatch(
     struct dfa* d, const char* s, size_t n, const struct dfa_span* m, struct dfa_span* g, size_t ng);
 
+/* ---- replacement templates: shared by sed's s/// and (later) awk's
+ * sub/gsub -- compiled once per template, applied per match.
+ * ----------------------------------------------------------------------- */
+
+struct dfa_repl; /* opaque */
+
+#define DFA_REPL_BACKREF 0x01 /* allow \1-\9 and \n (sed); off = only & \& \\ */
+
+/* dfa_repl_compile: tmpl/len need not be NUL-terminated. On success
+ * *out is a new compiled template and the return is DFA_OK; on error
+ * *out is NULL and the return is DFA_ENOMEM. */
+int dfa_repl_compile(struct dfa_repl** out, const char* tmpl, size_t len, unsigned flags);
+void dfa_repl_free(struct dfa_repl* r);
+
+typedef int (*dfa_repl_out_fn)(void* ctx, const char* s, size_t n);
+
+/* dfa_replace: runs the s///[g][N] loop over s[0..n), implementing
+ * the empty-match rule (an empty match is followed by copying one
+ * literal byte before searching again, so "s,x*,-,g" on "abc" gives
+ * "-a-b-c-" instead of looping forever). nth (1-based; 0 means "1"):
+ * the first match number to replace; global: replace nth and every
+ * match after it, else only the nth. Unmatched spans of s and
+ * replacement expansions are both delivered through out(); on
+ * success (0) *nreplaced gets the number of replacements made. A
+ * nonzero out() return aborts and is passed back as -1, in which case
+ * *nreplaced is left untouched. */
+int dfa_replace(struct dfa* d, const struct dfa_repl* r, const char* s, size_t n, unsigned nth,
+                 int global, dfa_repl_out_fn out, void* ctx, unsigned* nreplaced);
+
 #ifdef __cplusplus
 }
 #endif

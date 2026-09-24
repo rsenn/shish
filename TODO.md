@@ -813,12 +813,35 @@ match against a baseline rather than expecting green.
 
 ## Goal 6 (secondary) — `lib/dfa/`: one POSIX regex engine for `expr`, `grep`, `sed`
 
-**Not started; this section is the plan.** Today `expr :` has its own
-BRE matcher (`src/builtin/extra/builtin_expr.c`, ≈255 lines, anchored only) and
-there is no `grep`/`sed`. All three need the same thing — POSIX BRE/ERE
-matching — so build it once as `lib/dfa/` (public header `lib/dfa.h`,
-prefix `dfa_`, one function per file like the rest of `lib/`), then
-write the builtins as thin clients.
+**Built, but not the way this section plans — see the discrepancy note
+below.** `expr :` and a new `grep` both landed on it; the rest of this
+section (BRE/ERE scope, conformance checklists, size estimates) is
+still an accurate read of what the engine has to do, just not of how
+its execution strategy or file layout ended up.
+
+**Discrepancy (2026-09-24):** built as `text/dfa/` (public header
+`text/dfa.h`, prefix `dfa_`), not `lib/dfa/` — `text/` didn't exist
+when this plan was written; `CLAUDE.md` later drew the line that a
+subsystem this large and shell-specific (not a generic portable
+primitive) belongs there instead of `lib/`. More importantly, the
+*execution strategy* is not the "lazy DFA with a bounded, `cbmap`-backed
+state cache" the Architecture diagram below describes: it's Pike's
+thread-based NFA simulation (`dfa_run.c`, one pass, no state caching)
+for backref-free patterns, falling back to an explicit-stack
+backtracker (`dfa_bt.c`) only when a pattern actually needs
+back-references. Both give POSIX leftmost-longest matching and safe
+bounded memory without ever caching or interning NFA-state subsets, so
+**the `cbmap` state-interning use case in the Architecture section does
+not apply to what was built** — there is no lazy-DFA/subset-construction
+mode to cache. If one gets added later purely as a speed optimization,
+that's where `cbmap` (or `hashmap`, see the Goal 11 hashmap-vs-cbmap
+decision) would actually come in; until then `cbmap` has no consumer in
+this codebase. `dfa_prefix`/`dfa_submatch`/`dfa_search` all exist and
+match this section's API sketch.
+
+**Not started (still applies): `sed`.** The rest of the original plan
+follows, describing the shared regex engine both `expr`/`grep` already
+use and `sed` still needs.
 
 Naming: `dfa_` and not `re_` because glibc's `<regex.h>` declares
 `re_search`/`re_match`/`re_compile_pattern` under `_GNU_SOURCE`. The
@@ -889,6 +912,9 @@ pattern ─▶ lex ─▶ parse ─▶ program (flat int array, Thompson NFA)
   key→id map (`cbmap`, key = the array's bytes); transitions cached per
   state; cache bounded (default 64 states, flush and restart when
   full) — never a fixed `[512][512]` table, no `.bss` (Goal 5.6).
+  **Not what got built** (see the discrepancy note at the top of this
+  goal): `text/dfa` runs Pike's thread simulation instead, with no
+  state cache and no `cbmap` involved.
 - Patterns with backrefs skip the DFA (`d->backrefs`); the public
   functions route to the backtracker, invisibly to callers.
 - Multiple patterns (grep `-e a -e b`, newline-separated lists) compile
@@ -2965,6 +2991,7 @@ Specs read 2026-09-20: POSIX.1-2024
 | **Is `lib/dfa` suited to `awk`?** | **Yes, for the regex half only, and it needs *less* of it than `sed`.** awk uses ERE, never back-references, never `\1`; `sub`/`gsub` replace with `&` (whole match) only. So awk needs `dfa_compile` + `dfa_test` (`~`, patterns) + `dfa_search` (`match`, `sub`, `gsub`, regex `FS`/`split`) and **not** `dfa_submatch` or the backtracker, which the linker then drops (`--gc-sections`). The lazy DFA is also the right engine for awk's usage pattern: the same few regexes run against every record, so the state cache built on record 1 serves the rest of the file. |
 | **Do `sed` and `awk` need recursive-descent parsing?** | **`sed`: no.** Its language is flat: `[addr[,addr]]cmd[args]` per line, nesting only through `{ }` (an explicit stack of open braces; each `{` stores the index of its `}`) and forward branch targets (labels resolved by a fix-up pass). One loop over the script, no recursion. **`awk`: yes, but little.** Statements nest (`if`/`while`/blocks/functions) so the statement parser recurses; expressions have 16 precedence levels but are parsed by **one** precedence-climbing function driven by a table, not 16 functions. No parser generator exists in-tree, and the POSIX grammar is a yacc grammar with lexical feedback (regex-vs-`/`, `getline`, newline rules); a hand-written parser is smaller than yacc tables plus a lexer that must cooperate with them. |
 | **Can they be implemented on top of `dfa`?** | `dfa` is the **regex layer** under both, nothing more: it does not parse either language and does not carry state between lines. Everything else (script/program parsing, execution cycle, values, fields, I/O) is new code. What both want from `dfa` beyond Goal 6 is one shared helper, **`dfa_replace()`** (the "find next match, copy the gap, append the replacement, advance past empty matches" loop that `s///` and `sub`/`gsub` are both made of), so that loop is written once. |
+| **`awk`: build a real AST, or compile straight to bytecode?** | **AST, tree-walking interpreter** -- same shape as the shell's own `union node` parser: one parse produces a tree, execution (`eval/`) and pretty-printing (`sh_fmt.c`/`shformat`) are two separate walks over the *same* tree, and `shparse2ast` is a third (a dumper). An `awk_node` tree gets an `awkformat`/`awkparse2ast` the same way, free of any extra parsing work. `text/dfa` went straight to bytecode instead, but for a reason that doesn't generalize: a compiled regex runs over and over with no legitimate "print the pattern back out" use case (the source pattern already *is* the readable form) -- awk programs are the opposite, short scripts worth reformatting. Bytecode-first forecloses that cheaply; AST-first doesn't foreclose bytecode -- an AST-to-bytecode compiler is a natural later stage *on top of* the tree if tree-walking ever proves too slow (unlikely at this project's stated proof-of-concept bar; the shell interpreter is itself a tree-walker despite running in loops). Recovering a formattable structure from flat bytecode after never building a tree is a decompiler, strictly harder -- not worth setting up as the starting position. |
 | **Can awk parsing share code with `src/parse/parse_arith_*.c`?** | **Not directly; at most a table-driven core later** — see "Sharing with the shell's arithmetic parser" below. Short version: the arithmetic parser is a character-level parser over the shell's global `source`, `int64` only, building shell `union node`s and evaluated against the shell variable table; awk needs a token stream, `double`+string dual values, a different operator set, and context-dependent lexing. Nothing but the *idea* (precedence climbing) transfers. |
 | **How big?** | Estimates below, in this repo's line style (≈ 40 % blank/comment/brace lines; calibration ≈ 7-10 B of code per line, Goal 6): **`sed` ≈ 850 lines / 7-9 KB** (was ≈ 1200 in Goal 6), **`awk` ≈ 2100 lines / 16-21 KB** (+ libm on dynamic-link-free builds), on top of ≈ 400 lines of shared/imported foundation. For scale: `../busybox/editors/awk.c` is 4028 lines and `sed.c` 1684 (both with GNU extensions and libc `regex`). |
 

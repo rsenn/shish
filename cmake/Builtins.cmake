@@ -50,6 +50,7 @@ list(
   realpath
   rm
   rmdir
+  sed
   sleep
   tee
   timeout

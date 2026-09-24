@@ -50,6 +50,7 @@ SUBDIRS   = builtin \
 PROGRAM = shish$(EXEEXT)
 LIB     = $(top_builddir)/lib/libowfat.a
 LDADD   = $(top_builddir)/text/dfa/dfa.a \
+          $(top_builddir)/text/sed/sed.a \
           builtin/builtin.a \
           builtin/extra/extra.a \
           debug/debug.a \

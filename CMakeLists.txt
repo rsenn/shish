@@ -183,6 +183,14 @@ file(GLOB LIBSHELL_SOURCES src/*.h src/*/*.c)
 file(GLOB TEXT_DFA_SOURCES text/dfa.h text/dfa/*.c)
 list(APPEND LIBSHELL_SOURCES ${TEXT_DFA_SOURCES})
 
+# text/sed is the sed builtin's script parser and execution engine
+# (text/sed.h); it always uses text/dfa (see GREP_USE_SYSTEM_REGEX --
+# unlike grep's, sed's regex use is threaded through dfa_replace()/
+# dfa_repl_compile(), which have no <regex.h> equivalent, so it is not
+# worth offering the same backend switch here)
+file(GLOB TEXT_SED_SOURCES text/sed.h text/sed/*.c)
+list(APPEND LIBSHELL_SOURCES ${TEXT_SED_SOURCES})
+
 # grep's backend: text/dfa (in-tree, no libc regex dependency) by
 # default, or the system's <regex.h> if this is turned on.
 option(GREP_USE_SYSTEM_REGEX "Use the system's regex.h for grep instead of text/dfa" OFF)

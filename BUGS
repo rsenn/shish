@@ -1235,3 +1235,4 @@
   export SHISH_SELF
   "$SHISH_SELF" -c '"$SHISH_SELF" -c "kill -s INT \$\$"; echo $?'  # prints 130, correctly
   ```
+

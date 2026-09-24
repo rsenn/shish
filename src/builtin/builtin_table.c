@@ -152,6 +152,9 @@
 #ifndef BUILTIN_RMDIR
 #define BUILTIN_RMDIR 0
 #endif
+#ifndef BUILTIN_SED
+#define BUILTIN_SED 0
+#endif
 #ifndef BUILTIN_SHIFT
 #define BUILTIN_SHIFT 1
 #endif
@@ -373,6 +376,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_RMDIR
     {"rmdir", &builtin_rmdir, B_DEFAULT, "[-p] [directory]...", help_rmdir},
+#endif
+#if BUILTIN_SED
+    {"sed", &builtin_sed, B_DEFAULT, "[-n] [-E|-r] {script | -e script | -f file}... [file]...", help_sed},
 #endif
 #if BUILTIN_SOURCE
     {"source", &builtin_source, B_SPECIAL, "file [arguments]", help_source},
