@@ -1,3 +1,5 @@
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Functions.cmake)
+
 list(APPEND MINIMAL_BUILTINS alias break cd command eval exec exit export expr getopts hash history jobs kill local printf pwd read readonly return set shift source test times trap type umask unset wait)
 list(APPEND EXTRA_BUILTINS awk basename cat chmod digest dirname find grep hostname link ln ls mkdir readlink realpath rm rmdir sed sleep tee timeout touch wc which mktemp uname xargs)
 list(APPEND DEFAULT_BUILTINS ${MINIMAL_BUILTINS} help type echo fdtable true false)
@@ -49,27 +51,16 @@ foreach(BUILTIN ${ALL_BUILTINS})
   string(TOUPPER ${BUILTIN} NAME)
 
   # -DENABLE_<NAME>=ON|OFF is the older spelling of BUILTIN_<NAME>
-  get_property(
-    LEGACY_SET
-    CACHE ENABLE_${NAME}
-    PROPERTY VALUE
-    SET)
+  get_property(LEGACY_SET CACHE ENABLE_${NAME} PROPERTY VALUE SET)
 
   if(LEGACY_SET)
-    get_property(
-      LEGACY
-      CACHE ENABLE_${NAME}
-      PROPERTY VALUE)
-    set(BUILTIN_${NAME}
-        "${LEGACY}"
-        CACHE STRING "Build the ${BUILTIN} builtin: ON, OFF or AUTO" FORCE)
+    get_property(LEGACY CACHE ENABLE_${NAME} PROPERTY VALUE)
+    set(BUILTIN_${NAME} "${LEGACY}" CACHE STRING "Build the ${BUILTIN} builtin: ON, OFF or AUTO" FORCE)
     unset(ENABLE_${NAME} CACHE)
   endif(LEGACY_SET)
 
   # no FORCE: an existing (or -D given) value is kept
-  set(BUILTIN_${NAME}
-      "AUTO"
-      CACHE STRING "Build the ${BUILTIN} builtin: ON, OFF or AUTO")
+  set(BUILTIN_${NAME} "AUTO" CACHE STRING "Build the ${BUILTIN} builtin: ON, OFF or AUTO")
   set_property(CACHE BUILTIN_${NAME} PROPERTY STRINGS AUTO ON OFF)
 
   if(NOT "${BUILTIN_${NAME}}" STREQUAL "AUTO")
@@ -90,9 +81,7 @@ foreach(BUILTIN ${ALL_BUILTINS})
   endif(WANT_BUILTIN)
 endforeach(BUILTIN ${ALL_BUILTINS})
 
-set(BUILTINS_MODEL
-    2
-    CACHE INTERNAL "builtin switch scheme (see above)")
+set(BUILTINS_MODEL 2 CACHE INTERNAL "builtin switch scheme (see above)")
 
 foreach(BUILTIN ${ALL_BUILTINS})
   string(TOUPPER ${BUILTIN} NAME)
@@ -117,13 +106,9 @@ endif(ENABLE_DUMP)
 # a builtin's source lives in src/builtin/extra/ when it is one of the coreutils-style / third-party utilities, else in src/builtin/
 function(builtin_source OUT NAME)
   if(EXISTS "${CMAKE_SOURCE_DIR}/src/builtin/extra/builtin_${NAME}.c")
-    set(${OUT}
-        "src/builtin/extra/builtin_${NAME}.c"
-        PARENT_SCOPE)
+    set(${OUT} "src/builtin/extra/builtin_${NAME}.c" PARENT_SCOPE)
   else()
-    set(${OUT}
-        "src/builtin/builtin_${NAME}.c"
-        PARENT_SCOPE)
+    set(${OUT} "src/builtin/builtin_${NAME}.c" PARENT_SCOPE)
   endif()
 endfunction(builtin_source)
 
@@ -138,17 +123,13 @@ foreach(DISABLED ${BUILTINS_DISABLED})
   string(TOUPPER "${DISABLED}" NAME)
   builtin_source(BUILTIN_FILE ${DISABLED})
   list(REMOVE_ITEM SOURCES "${BUILTIN_FILE}")
-  set(BUILD_BUILTIN_${NAME}
-      "0"
-      CACHE INTERNAL "Build the ${DISABLED} builtin")
+  set(BUILD_BUILTIN_${NAME} "0" CACHE INTERNAL "Build the ${DISABLED} builtin")
 endforeach(DISABLED ${BUILTINS_DISABLED})
 
 foreach(ENABLED ${BUILTINS_ENABLED})
   string(TOUPPER "${ENABLED}" NAME)
   set(BUILTIN_FLAGS "${BUILTIN_FLAGS} -DBUILTIN_${NAME}=1")
-  set(BUILD_BUILTIN_${NAME}
-      1
-      CACHE INTERNAL "Build the ${ENABLED} builtin")
+  set(BUILD_BUILTIN_${NAME} 1 CACHE INTERNAL "Build the ${ENABLED} builtin")
 endforeach(ENABLED ${BUILTINS_ENABLED})
 
 # dump(BUILTINS_ENABLED) dump(BUILTIN_FLAGS)
@@ -177,49 +158,12 @@ string(REPLACE ";" " " BUILTINS_DISABLED "${BUILTINS_DISABLED}")
 
 # dump(BUILTINS_DISABLED)
 
-function(make_list OUTPUT_VAR MAX_LINE_LEN)
-  set(${OUTPUT_VAR} "" PARENT_SCOPE)
-  string(REPLACE " " ";" ARGS "${ARGN}")
-  set(OUTPUT "${${OUTPUT_VAR}}")
-  set(LINE "")
-
-  foreach(ITEM ${ARGS})
-    string(LENGTH "${LINE} ${ITEM}" LEN)
-
-    if(LEN GREATER MAX_LINE_LEN)
-      set(OUTPUT "${OUTPUT}\n--  ${LINE}")
-      set(LINE " ${ITEM}")
-      string(LENGTH "${LINE}" LEN)
-    else(LEN GREATER MAX_LINE_LEN)
-      set(LINE "${LINE} ${ITEM}")
-    endif(LEN GREATER MAX_LINE_LEN)
-  endforeach(ITEM ${ARGN})
-
-  if(LINE)
-    set(OUTPUT "${OUTPUT}\n--  ${LINE}")
-  endif(LINE)
-
-  set("${OUTPUT_VAR}" "${OUTPUT}" PARENT_SCOPE)
-endfunction(make_list OUTPUT_VAR)
-
-set(MAX_COLUMNS "$ENV{COLUMNS}")
-
-if(MAX_COLUMNS STREQUAL "")
-  execute_process(COMMAND tput cols OUTPUT_VARIABLE TPUT_COLS)
-  if(TPUT_COLS)
-    set(MAX_COLUMNS ${TPUT_COLS})
-  else(TPUT_COLS)
-    set(MAX_COLUMNS 80)
-  endif(TPUT_COLS)
-endif(MAX_COLUMNS STREQUAL "")
-
-set(MAX_COLUMNS "${MAX_COLUMNS}" CACHE STRING "Maximum numbers of columns")
-unset(TPUT_COLS)
-unset(TPUT_COLS CACHE)
+get_columns(MAX_COLUMNS)
 
 make_list(BUILTINS_ENABLED_LIST ${MAX_COLUMNS} ${BUILTINS_ENABLED})
 
 message(STATUS "Enabled builtins: ${BUILTINS_ENABLED_LIST}")
+
 if(BUILTINS_DISABLED)
   make_list(BUILTINS_DISABLED_LIST ${MAX_COLUMNS} ${BUILTINS_DISABLED})
   message(STATUS "Disabled builtins: ${BUILTINS_DISABLED}")

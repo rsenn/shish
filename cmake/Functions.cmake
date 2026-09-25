@@ -39,10 +39,7 @@ function(check_cflag FLAG VAR)
   else(${VAR})
     message(STATUS "Compiler flag ${FLAG} ... not supported")
   endif(${VAR})
-endfunction(
-  check_cflag
-  FLAG
-  VAR)
+endfunction(check_cflag FLAG VAR)
 
 # Append FLAG to CMAKE_EXE_LINKER_FLAGS if a test executable links with it. A macro, not a function, so the result reaches the calling scope.
 #
@@ -103,9 +100,7 @@ function(isin)
   else()
     set(RET TRUE)
   endif()
-  set("${RETVAR}"
-      ${RET}
-      PARENT_SCOPE)
+  set("${RETVAR}" ${RET} PARENT_SCOPE)
   # return(${RET})
 endfunction(isin)
 
@@ -121,10 +116,7 @@ macro(check_compile RESULT_VAR SOURCE)
   set(RESULT "${${RESULT_VAR}}")
   # message("${RESULT_VAR} = ${RESULT}" )
   if(RESULT STREQUAL "")
-    string(
-      RANDOM
-      LENGTH 6
-      ALPHABET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" C_NAME)
+    string(RANDOM LENGTH 6 ALPHABET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" C_NAME)
     string(REPLACE SUPPORT_ "" NAME "${RESULT_VAR}")
     string(REPLACE _ - NAME "${NAME}")
     string(TOLOWER "${NAME}" C_NAME)
@@ -132,11 +124,7 @@ macro(check_compile RESULT_VAR SOURCE)
     string(REPLACE "\\" "\\\\" SOURCE "${SOURCE}")
     file(WRITE "${C_SOURCE}" "${SOURCE}")
     message(STATUS "Trying to compile try-${C_NAME}.c ... ")
-    try_compile(
-      COMPILE_RESULT "${CMAKE_CURRENT_BINARY_DIR}"
-      "${C_SOURCE}"
-      OUTPUT_VARIABLE "OUTPUT"
-      LINK_LIBRARIES "${ARGN}")
+    try_compile(COMPILE_RESULT "${CMAKE_CURRENT_BINARY_DIR}" "${C_SOURCE}" OUTPUT_VARIABLE "OUTPUT" LINK_LIBRARIES "${ARGN}")
     file(REMOVE "${C_SOURCE}")
 
     if(COMPILE_RESULT)
@@ -150,9 +138,7 @@ macro(check_compile RESULT_VAR SOURCE)
       list(FILTER OUTPUT INCLUDE REGEX "error")
     endif(COMPILE_RESULT)
 
-    set("${RESULT_VAR}"
-        "${COMPILE_RESULT}"
-        CACHE BOOL "Support ${NAME}")
+    set("${RESULT_VAR}" "${COMPILE_RESULT}" CACHE BOOL "Support ${NAME}")
   endif(RESULT STREQUAL "")
   show_result(${RESULT_VAR})
 endmacro()
@@ -161,10 +147,7 @@ macro(check_run RESULT_VAR SOURCE)
   set(RESULT "${${RESULT_VAR}}")
   # message("${RESULT_VAR} = ${RESULT}" )
   if(RESULT STREQUAL "")
-    string(
-      RANDOM
-      LENGTH 6
-      ALPHABET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" C_NAME)
+    string(RANDOM LENGTH 6 ALPHABET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" C_NAME)
     string(REPLACE SUPPORT_ "" NAME "${RESULT_VAR}")
     string(REPLACE _ - NAME "${NAME}")
     string(TOLOWER "${NAME}" C_NAME)
@@ -186,9 +169,7 @@ macro(check_run RESULT_VAR SOURCE)
       list(FILTER OUTPUT INCLUDE REGEX "error")
     endif(COMPILE_RESULT AND RUN_RESULT)
 
-    set("${RESULT_VAR}"
-        "${COMPILE_RESULT}"
-        CACHE BOOL "Support ${NAME}")
+    set("${RESULT_VAR}" "${COMPILE_RESULT}" CACHE BOOL "Support ${NAME}")
   endif(RESULT STREQUAL "")
   show_result(${RESULT_VAR})
 endmacro()
@@ -201,13 +182,8 @@ function(RELATIVE_PATH OUT_VAR RELATIVE_TO)
     list(APPEND LIST "${ARG}")
   endforeach(ARG ${ARGN})
 
-  set("${OUT_VAR}"
-      "${LIST}"
-      PARENT_SCOPE)
-endfunction(
-  RELATIVE_PATH
-  RELATIVE_TO
-  OUT_VAR)
+  set("${OUT_VAR}" "${LIST}" PARENT_SCOPE)
+endfunction(RELATIVE_PATH RELATIVE_TO OUT_VAR)
 
 function(BASENAME OUTPUT_VAR STR)
   string(REGEX REPLACE ".*/" "" TMP_STR "${STR}")
@@ -215,13 +191,8 @@ function(BASENAME OUTPUT_VAR STR)
     string(REGEX REPLACE "\\${ARGN}\$" "" TMP_STR "${TMP_STR}")
   endif(ARGN)
 
-  set("${OUTPUT_VAR}"
-      "${TMP_STR}"
-      PARENT_SCOPE)
-endfunction(
-  BASENAME
-  OUTPUT_VAR
-  FILE)
+  set("${OUTPUT_VAR}" "${TMP_STR}" PARENT_SCOPE)
+endfunction(BASENAME OUTPUT_VAR FILE)
 
 #
 # var2define <NAME> [DEFINED_VALUE] [VAR_NAME]
@@ -265,9 +236,7 @@ macro(CHECK_INCLUDE_DEF INC)
   check_include_file("${INC}" "${RESULT_VAR}")
 
   if(${${RESULT_VAR}})
-    set("${RESULT_VAR}"
-        TRUE
-        CACHE INTERNAL "Define this if you have the '${INC}' header file")
+    set("${RESULT_VAR}" TRUE CACHE INTERNAL "Define this if you have the '${INC}' header file")
 
     if(NOT "${PREPROC_DEF}" STREQUAL "")
       var2define("${PREPROC_DEF}" 1)
@@ -302,13 +271,8 @@ endmacro(CHECK_INCLUDES_DEF)
 function(CLEAN_NAME STR OUTPUT_VAR)
   string(TOUPPER "${STR}" STR)
   string(REGEX REPLACE "[^A-Za-z0-9_]" "_" STR "${STR}")
-  set("${OUTPUT_VAR}"
-      "${STR}"
-      PARENT_SCOPE)
-endfunction(
-  CLEAN_NAME
-  STR
-  OUTPUT_VAR)
+  set("${OUTPUT_VAR}" "${STR}" PARENT_SCOPE)
+endfunction(CLEAN_NAME STR OUTPUT_VAR)
 
 #
 # check_include_def <INCLUDE> [RESULT VARIABLE] [PREPROC_DEF]
@@ -326,9 +290,7 @@ macro(CHECK_INCLUDE_DEF INC)
   check_include_file("${INC}" "${RESULT_VAR}")
 
   if(${${RESULT_VAR}})
-    set("${RESULT_VAR}"
-        TRUE
-        CACHE INTERNAL "Define this if you have the '${INC}' header file")
+    set("${RESULT_VAR}" TRUE CACHE INTERNAL "Define this if you have the '${INC}' header file")
 
     if(NOT "${PREPROC_DEF}" STREQUAL "")
       var2define("${PREPROC_DEF}" 1)
@@ -367,9 +329,7 @@ macro(CHECK_FUNCTION_DEF FUNC)
   endif(ARGC GREATER_EQUAL 2)
   check_function_exists("${FUNC}" "${RESULT_VAR}")
   if(${${RESULT_VAR}})
-    set("${RESULT_VAR}"
-        TRUE
-        CACHE BOOL "Define this if you have the '${FUNC}' function")
+    set("${RESULT_VAR}" TRUE CACHE BOOL "Define this if you have the '${FUNC}' function")
     if(NOT "${PREPROC_DEF}" STREQUAL "")
       add_definitions(-D${PREPROC_DEF})
     endif(NOT "${PREPROC_DEF}" STREQUAL "")
@@ -395,10 +355,7 @@ macro(DEBUG_FLAG NAME DESC)
   if(DEBUG_${NAME})
     add_definitions(-DDEBUG_${NAME}=1)
   endif()
-endmacro(
-  DEBUG_FLAG
-  NAME
-  DESC)
+endmacro(DEBUG_FLAG NAME DESC)
 
 #
 # check_function_and_include <FUNCTION> <INCLUDE>
@@ -412,7 +369,46 @@ macro(CHECK_FUNCTION_AND_INCLUDE FUNC INC)
   if(${${INC_RESULT}})
     check_function_def("${FUNC}" "${FUNC_RESULT}" "${FUNC_RESULT}")
   endif(${${INC_RESULT}})
-endmacro(
-  CHECK_FUNCTION_AND_INCLUDE
-  FUNC
-  INC)
+endmacro(CHECK_FUNCTION_AND_INCLUDE FUNC INC)
+
+function(get_columns OUTPUT_VAR)
+  set(MAX_COLUMNS $ENV{COLUMNS})
+
+  if(MAX_COLUMNS STREQUAL "")
+    execute_process(COMMAND tput cols OUTPUT_VARIABLE TPUT_COLS)
+    if(TPUT_COLS)
+      set(MAX_COLUMNS ${TPUT_COLS})
+    else(TPUT_COLS)
+      set(MAX_COLUMNS 80)
+    endif(TPUT_COLS)
+  endif(MAX_COLUMNS STREQUAL "")
+
+  set(${OUTPUT_VAR} "${MAX_COLUMNS}" PARENT_SCOPE)
+  unset(TPUT_COLS)
+  unset(TPUT_COLS CACHE)
+endfunction(get_columns OUTPUT_VAR)
+
+function(make_list OUTPUT_VAR MAX_LINE_LEN)
+  set(${OUTPUT_VAR} "" PARENT_SCOPE)
+  string(REPLACE " " ";" ARGS "${ARGN}")
+  set(OUTPUT "${${OUTPUT_VAR}}")
+  set(LINE "")
+
+  foreach(ITEM ${ARGS})
+    string(LENGTH "${LINE} ${ITEM}" LEN)
+
+    if(LEN GREATER MAX_LINE_LEN)
+      set(OUTPUT "${OUTPUT}\n--  ${LINE}")
+      set(LINE " ${ITEM}")
+      string(LENGTH "${LINE}" LEN)
+    else(LEN GREATER MAX_LINE_LEN)
+      set(LINE "${LINE} ${ITEM}")
+    endif(LEN GREATER MAX_LINE_LEN)
+  endforeach(ITEM ${ARGN})
+
+  if(LINE)
+    set(OUTPUT "${OUTPUT}\n--  ${LINE}")
+  endif(LINE)
+
+  set("${OUTPUT_VAR}" "${OUTPUT}" PARENT_SCOPE)
+endfunction(make_list OUTPUT_VAR)

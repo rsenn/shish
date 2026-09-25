@@ -16,11 +16,7 @@ if(NOT HAVE_LIBOWFAT)
   add_library(libowfat STATIC ${LIBOWFAT_SOURCES} ${LIBOWFAT_HEADERS})
   set_target_properties(libowfat PROPERTIES OUTPUT_NAME owfat)
 
-  set(LIBOWFAT_LIBRARY
-      libowfat
-      CACHE STRING "-lowfat library name" FORCE)
-  set(LIBOWFAT_LIBDIR
-      "${CMAKE_CURRENT_BINARY_DIR}"
-      CACHE STRING "-lowfat library directory" FORCE)
+  set(LIBOWFAT_LIBRARY libowfat CACHE STRING "-lowfat library name" FORCE)
+  set(LIBOWFAT_LIBDIR "${CMAKE_CURRENT_BINARY_DIR}" CACHE STRING "-lowfat library directory" FORCE)
 
 endif(NOT HAVE_LIBOWFAT)

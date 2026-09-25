@@ -17,11 +17,7 @@ if(NOT EXISTS "${HASH_ALGORITHMS_DIR}/md5.c")
   # init + fetch of one commit: pins the revision without a full history
   foreach(GIT_ARGS "init|--quiet" "remote|add|origin|${HASH_ALGORITHMS_REPO}" "fetch|--quiet|--depth|1|origin|${HASH_ALGORITHMS_REV}" "checkout|--quiet|FETCH_HEAD")
     string(REPLACE "|" ";" GIT_ARGS "${GIT_ARGS}")
-    execute_process(
-      COMMAND "${GIT_EXECUTABLE}" ${GIT_ARGS}
-      WORKING_DIRECTORY "${HASH_ALGORITHMS_DIR}"
-      RESULT_VARIABLE GIT_RESULT
-      ERROR_VARIABLE GIT_ERROR)
+    execute_process(COMMAND "${GIT_EXECUTABLE}" ${GIT_ARGS} WORKING_DIRECTORY "${HASH_ALGORITHMS_DIR}" RESULT_VARIABLE GIT_RESULT ERROR_VARIABLE GIT_ERROR)
 
     if(NOT GIT_RESULT EQUAL 0)
       # leave no half-fetched directory behind for the next configure
@@ -32,16 +28,7 @@ if(NOT EXISTS "${HASH_ALGORITHMS_DIR}/md5.c")
 endif(NOT EXISTS "${HASH_ALGORITHMS_DIR}/md5.c")
 
 set(HASH_ALGORITHMS_SOURCES)
-foreach(
-  ALGO
-  md5
-  sha1
-  sha224
-  sha256
-  sha384
-  sha512-224
-  sha512-256
-  sha512)
+foreach(ALGO md5 sha1 sha224 sha256 sha384 sha512-224 sha512-256 sha512)
   list(APPEND HASH_ALGORITHMS_SOURCES "third_party/Hash-Algorithms/${ALGO}.c")
 endforeach(ALGO)
 
