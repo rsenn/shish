@@ -73,17 +73,18 @@ builtin_grep(int argc, char* argv[]) {
     argc++;
   }
 
+  /* argc (not counting from shell_optind on each iteration): must be
+     decided once, over the whole operand list, not per file -- fixed
+     at loop entry so it doesn't drop to false once only one file is
+     left to process. */
+  int multiple_files = (argc - shell_optind) > 1;
+
   while((arg = argv[shell_optind])) {
     char buf[1024], rbuf[1024];
     buffer inb, *in;
     ssize_t r;
     unsigned long lineno = 1;
     unsigned long matchcount = 0;
-    /* argc (not argv[shell_optind+1]): when no file operand was
-       given, argv[shell_optind] was just set to "-" in place of the
-       NULL terminator, so the slot after it is past the real array
-       and unsafe to read. */
-    int multiple_files = (shell_optind + 1 < argc);
 
     if(!str_diff(arg, "-")) {
       in = fd_in->r;

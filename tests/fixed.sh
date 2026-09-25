@@ -5073,6 +5073,22 @@ case $(type grep 2>&1) in
     ;;
 esac
 
+## grep (optional builtin): multiple_files was recomputed on every
+## iteration of the per-file loop as "is there another file operand
+## after this one", instead of once for the whole invocation -- so the
+## filename prefix silently vanished on the last file operand.
+case $(type grep 2>&1) in
+  *builtin*)
+    X240_D=$(mktemp -d)
+    printf 'a\n' > "$X240_D/f1"
+    printf 'a\n' > "$X240_D/f2"
+    X240_OUT=$(grep a "$X240_D/f1" "$X240_D/f2")
+    assert_equal "$X240_D/f1:a
+$X240_D/f2:a" "$X240_OUT" "grep prefixes every file's matches with its name, including the last one"
+    rm -rf "$X240_D"
+    ;;
+esac
+
 ## SIGCHLD's real handler always carried the real SA_NOCLDSTOP flag,
 ## because sig_action() ORs together caller-supplied SA_MASKALL/
 ## SA_NOCLDSTOP/SA_NORESTART bits and shish's own SA_MASKALL (0x01)
