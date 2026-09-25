@@ -35,13 +35,13 @@ static const struct kw keywords[] = {
     {"break", T_BREAK},       {"continue", T_CONTINUE}, {"next", T_NEXT},
     {"nextfile", T_NEXTFILE}, {"exit", T_EXIT},       {"return", T_RETURN},
     {"delete", T_DELETE},     {"in", T_IN},           {"print", T_PRINT},
-    {"printf", T_PRINTF},     {"getline", T_GETLINE}, {NULL, 0}};
+    {"printf", T_PRINTF},     {"getline", T_GETLINE}, {NULL, 0},};
 
 static const char* const builtins[] = {"length",  "substr", "index",   "split",  "sub",
                                         "gsub",    "match",  "sprintf", "sin",    "cos",
                                         "atan2",   "exp",    "log",     "sqrt",   "int",
                                         "rand",    "srand",  "tolower", "toupper","system",
-                                        "close",   "fflush", NULL};
+                                        "close",   "fflush", NULL,};
 
 static int
 is_builtin_name(const char* s, size_t n) {
