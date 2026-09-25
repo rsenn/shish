@@ -1,5 +1,4 @@
-# include(CheckIncludeFile) include(CheckSymbolExists)
-# include(CheckFunctionExists)
+# include(CheckIncludeFile) include(CheckSymbolExists) include(CheckFunctionExists)
 include(CheckLibraryExists)
 include(CheckCCompilerFlag)
 include(CheckCSourceCompiles)
@@ -45,11 +44,9 @@ endfunction(
   FLAG
   VAR)
 
-# Append FLAG to CMAKE_EXE_LINKER_FLAGS if a test executable links with it.
-# A macro, not a function, so the result reaches the calling scope.
+# Append FLAG to CMAKE_EXE_LINKER_FLAGS if a test executable links with it. A macro, not a function, so the result reaches the calling scope.
 #
-#   FLAG  the linker flag, driver-style ("-Wl,--gc-sections")
-#   VAR   cache variable the probe result is stored in
+# FLAG  the linker flag, driver-style ("-Wl,--gc-sections") VAR   cache variable the probe result is stored in
 # -----------------------------------------------------------------------
 macro(check_ldflag FLAG VAR)
   set(CHECK_LDFLAG_SAVED "${CMAKE_EXE_LINKER_FLAGS}")
@@ -127,8 +124,7 @@ macro(check_compile RESULT_VAR SOURCE)
     string(
       RANDOM
       LENGTH 6
-      ALPHABET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-               C_NAME)
+      ALPHABET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" C_NAME)
     string(REPLACE SUPPORT_ "" NAME "${RESULT_VAR}")
     string(REPLACE _ - NAME "${NAME}")
     string(TOLOWER "${NAME}" C_NAME)
@@ -161,7 +157,6 @@ macro(check_compile RESULT_VAR SOURCE)
   show_result(${RESULT_VAR})
 endmacro()
 
-
 macro(check_run RESULT_VAR SOURCE)
   set(RESULT "${${RESULT_VAR}}")
   # message("${RESULT_VAR} = ${RESULT}" )
@@ -169,8 +164,7 @@ macro(check_run RESULT_VAR SOURCE)
     string(
       RANDOM
       LENGTH 6
-      ALPHABET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-               C_NAME)
+      ALPHABET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" C_NAME)
     string(REPLACE SUPPORT_ "" NAME "${RESULT_VAR}")
     string(REPLACE _ - NAME "${NAME}")
     string(TOLOWER "${NAME}" C_NAME)
@@ -178,12 +172,7 @@ macro(check_run RESULT_VAR SOURCE)
     string(REPLACE "\\" "\\\\" SOURCE "${SOURCE}")
     file(WRITE "${C_SOURCE}" "${SOURCE}")
     message(STATUS "Trying to compile try-${C_NAME}.c ... ")
-    try_run(
-      RUN_RESULT 
-      COMPILE_RESULT "${CMAKE_CURRENT_BINARY_DIR}"
-      "${C_SOURCE}"
-      COMPILE_OUTPUT_VARIABLE "OUTPUT"
-      LINK_LIBRARIES "${ARGN}")
+    try_run(RUN_RESULT COMPILE_RESULT "${CMAKE_CURRENT_BINARY_DIR}" "${C_SOURCE}" COMPILE_OUTPUT_VARIABLE "OUTPUT" LINK_LIBRARIES "${ARGN}")
     file(REMOVE "${C_SOURCE}")
 
     if(COMPILE_RESULT AND RUN_RESULT)
@@ -234,9 +223,9 @@ endfunction(
   OUTPUT_VAR
   FILE)
 
-##
-## var2define <NAME> [DEFINED_VALUE] [VAR_NAME]
-##
+#
+# var2define <NAME> [DEFINED_VALUE] [VAR_NAME]
+#
 function(VAR2DEFINE NAME)
   if("${ARGC}" GREATER 2)
     list(GET ARGN 1 VAR_NAME)
@@ -260,9 +249,9 @@ function(VAR2DEFINE NAME)
   endif("${ARGC}" LESS_EQUAL 1)
 endfunction(VAR2DEFINE NAME)
 
-##
-## check_include_def <INCLUDE> [RESULT VARIABLE] [PREPROC_DEF]
-##
+#
+# check_include_def <INCLUDE> [RESULT VARIABLE] [PREPROC_DEF]
+#
 macro(CHECK_INCLUDE_DEF INC)
   if(ARGC GREATER_EQUAL 2)
     set(RESULT_VAR "${ARGV1}")
@@ -276,7 +265,8 @@ macro(CHECK_INCLUDE_DEF INC)
   check_include_file("${INC}" "${RESULT_VAR}")
 
   if(${${RESULT_VAR}})
-    set("${RESULT_VAR}" TRUE
+    set("${RESULT_VAR}"
+        TRUE
         CACHE INTERNAL "Define this if you have the '${INC}' header file")
 
     if(NOT "${PREPROC_DEF}" STREQUAL "")
@@ -287,9 +277,9 @@ macro(CHECK_INCLUDE_DEF INC)
   list(APPEND CHECKED_INCLUDES "${INC}")
 endmacro(CHECK_INCLUDE_DEF INC)
 
-##
-## check_includes <INCLUDE FILES...>
-##
+#
+# check_includes <INCLUDE FILES...>
+#
 macro(CHECK_INCLUDES)
   foreach(INC ${ARGN})
     clean_name("HAVE_${INC}" RESULT_VAR)
@@ -297,28 +287,32 @@ macro(CHECK_INCLUDES)
   endforeach(INC ${ARGN})
 endmacro(CHECK_INCLUDES)
 
-##
-## check_includes_def <INCLUDE FILES...>
-##
+#
+# check_includes_def <INCLUDE FILES...>
+#
 macro(CHECK_INCLUDES_DEF)
   foreach(INC ${ARGN})
     check_include_def("${INC}")
   endforeach(INC ${ARGN})
 endmacro(CHECK_INCLUDES_DEF)
 
-
-##
-## clean_name <STRING> <OUTPUT VAR>
-##
+#
+# clean_name <STRING> <OUTPUT VAR>
+#
 function(CLEAN_NAME STR OUTPUT_VAR)
   string(TOUPPER "${STR}" STR)
   string(REGEX REPLACE "[^A-Za-z0-9_]" "_" STR "${STR}")
-  set("${OUTPUT_VAR}" "${STR}" PARENT_SCOPE)
-endfunction(CLEAN_NAME STR OUTPUT_VAR)
+  set("${OUTPUT_VAR}"
+      "${STR}"
+      PARENT_SCOPE)
+endfunction(
+  CLEAN_NAME
+  STR
+  OUTPUT_VAR)
 
-##
-## check_include_def <INCLUDE> [RESULT VARIABLE] [PREPROC_DEF]
-##
+#
+# check_include_def <INCLUDE> [RESULT VARIABLE] [PREPROC_DEF]
+#
 macro(CHECK_INCLUDE_DEF INC)
   if(ARGC GREATER_EQUAL 2)
     set(RESULT_VAR "${ARGV1}")
@@ -332,7 +326,8 @@ macro(CHECK_INCLUDE_DEF INC)
   check_include_file("${INC}" "${RESULT_VAR}")
 
   if(${${RESULT_VAR}})
-    set("${RESULT_VAR}" TRUE
+    set("${RESULT_VAR}"
+        TRUE
         CACHE INTERNAL "Define this if you have the '${INC}' header file")
 
     if(NOT "${PREPROC_DEF}" STREQUAL "")
@@ -343,9 +338,9 @@ macro(CHECK_INCLUDE_DEF INC)
   list(APPEND CHECKED_INCLUDES "${INC}")
 endmacro(CHECK_INCLUDE_DEF INC)
 
-##
-## check_includes <INCLUDE FILES...>
-##
+#
+# check_includes <INCLUDE FILES...>
+#
 macro(CHECK_INCLUDES)
   foreach(INC ${ARGN})
     clean_name("HAVE_${INC}" RESULT_VAR)
@@ -353,9 +348,9 @@ macro(CHECK_INCLUDES)
   endforeach(INC ${ARGN})
 endmacro(CHECK_INCLUDES)
 
-##
-## check_includes_def <INCLUDE FILES...>
-##
+#
+# check_includes_def <INCLUDE FILES...>
+#
 macro(CHECK_INCLUDES_DEF)
   foreach(INC ${ARGN})
     check_include_def("${INC}")
@@ -405,9 +400,9 @@ endmacro(
   NAME
   DESC)
 
-##
-## check_function_and_include <FUNCTION> <INCLUDE>
-##
+#
+# check_function_and_include <FUNCTION> <INCLUDE>
+#
 macro(CHECK_FUNCTION_AND_INCLUDE FUNC INC)
   clean_name("HAVE_${INC}" INC_RESULT)
   clean_name("HAVE_${FUNC}" FUNC_RESULT)
@@ -417,5 +412,7 @@ macro(CHECK_FUNCTION_AND_INCLUDE FUNC INC)
   if(${${INC_RESULT}})
     check_function_def("${FUNC}" "${FUNC_RESULT}" "${FUNC_RESULT}")
   endif(${${INC_RESULT}})
-endmacro(CHECK_FUNCTION_AND_INCLUDE FUNC INC)
-
+endmacro(
+  CHECK_FUNCTION_AND_INCLUDE
+  FUNC
+  INC)

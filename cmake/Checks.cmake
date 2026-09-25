@@ -19,14 +19,12 @@ check_c_compiler_flag("-Wno-unused-function" WARN_NO_UNUSED_FUNCTION)
 if(WARN_NO_UNUSED_FUNCTION)
   set(WERROR_FLAG "${WERROR_FLAG} -Wno-unused-function")
 endif()
-check_c_compiler_flag("-Wno-error=unused-but-set-variable"
-                      WARN_NO_UNUSED_FUNCTION)
+check_c_compiler_flag("-Wno-error=unused-but-set-variable" WARN_NO_UNUSED_FUNCTION)
 if(WARN_NO_UNUSED_FUNCTION)
   set(WERROR_FLAG "${WERROR_FLAG} -Wno-error=unused-but-set-variable")
 endif()
 
-if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" OR CMAKE_BUILD_TYPE STREQUAL
-                                             "Release")
+if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" OR CMAKE_BUILD_TYPE STREQUAL "Release")
   check_c_compiler_flag("-falign-functions=1" F_ALIGN_FUNCTIONS)
   check_c_compiler_flag("-falign-jumps=1" F_ALIGN_JUMPS)
   check_c_compiler_flag("-falign-labels=1" F_ALIGN_LABELS)
@@ -55,12 +53,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" OR CMAKE_BUILD_TYPE STREQUAL
   endif(F_ALIGN_STRINGOPS)
 endif()
 
-# MinSizeRel means bytes over everything else: every flag below is probed
-# before use, and each one trades speed, hardening or diagnostics for size.
+# MinSizeRel means bytes over everything else: every flag below is probed before use, and each one trades speed, hardening or diagnostics for size.
 #
-#   -f*-unwind-tables    .eh_frame is 15% of an untuned binary; nothing unwinds
-#   -fno-jump-tables     switch tables become compare chains
-#   -f*-sections         only pays off together with --gc-sections
+# -f*-unwind-tables    .eh_frame is 15% of an untuned binary; nothing unwinds -fno-jump-tables     switch tables become compare chains -f*-sections         only pays off together with --gc-sections
 if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
   foreach(
     FLAG
@@ -80,14 +75,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
     endif(${FLAG_VAR})
   endforeach(FLAG)
 
-  foreach(
-    FLAG
-    "-Wl,--gc-sections"
-    "-Wl,--as-needed"
-    "-Wl,--build-id=none"
-    "-Wl,-z,norelro"
-    "-Wl,-z,noseparate-code"
-    "-Wl,--hash-style=gnu")
+  foreach(FLAG "-Wl,--gc-sections" "-Wl,--as-needed" "-Wl,--build-id=none" "-Wl,-z,norelro" "-Wl,-z,noseparate-code" "-Wl,--hash-style=gnu")
     string(MAKE_C_IDENTIFIER "LD${FLAG}" FLAG_VAR)
     check_ldflag("${FLAG}" ${FLAG_VAR})
   endforeach(FLAG)
@@ -194,15 +182,9 @@ if(HAVE_ALLOCA_H)
   check_symbol_exists(alloca alloca.h HAVE_ALLOCA_SYMBOL)
 endif()
 
-check_compile(
-  HAVE_ALLOCA_ALLOCA_H
-  "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}"
-)
+check_compile(HAVE_ALLOCA_ALLOCA_H "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}")
 if(NOT HAVE_ALLOCA_ALLOCA_H)
-  check_compile(
-    HAVE_ALLOCA_MALLOC_H
-    "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}"
-  )
+  check_compile(HAVE_ALLOCA_MALLOC_H "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}")
 endif()
 
 if(HAVE_ALLOCA_ALLOCA_H OR HAVE_ALLOCA_MALLOC_H)
@@ -279,45 +261,27 @@ endif(NOT HAVE_SIGPROCMASK)
 check_function_exists(sigaction HAVE_SIGACTION)
 check_function_exists(setpgid HAVE_SETPGID)
 
-# check_function_exists(fork ...) alone isn't trustworthy on either of
-# the two platform families below -- both need the result hardcoded
-# instead of trusting the check:
+# check_function_exists(fork ...) alone isn't trustworthy on either of the two platform families below -- both need the result hardcoded instead of trusting the check:
 #
-#   native Windows (WIN32/WIN64/MSVC/MINGW/WINDOWS, but *not* Cygwin or
-#   MSYS -- both of those provide a real POSIX fork() from their own C
-#   library and go through the normal check like any other POSIX
-#   target) has no libc-provided fork() for the check to find, but
-#   lib/unix/fork.c supplies one (via RtlCloneUserProcess) that
-#   job_fork() already links against on this platform -- so the
-#   correct result here is TRUE despite what the check would say.
+# native Windows (WIN32/WIN64/MSVC/MINGW/WINDOWS, but *not* Cygwin or MSYS -- both of those provide a real POSIX fork() from their own C library and go through the normal check like any other POSIX target) has no libc-provided fork() for
+# the check to find, but lib/unix/fork.c supplies one (via RtlCloneUserProcess) that job_fork() already links against on this platform -- so the correct result here is TRUE despite what the check would say.
 #
-#   Emscripten/WASI is the opposite kind of false result: musl's libc
-#   ships a real, linkable fork() symbol, so the check finds it (see
-#   "Looking for fork - found" from `emcmake cmake`), but the
-#   underlying syscall has no implementation in a single-threaded wasm
-#   module and fails at runtime (ENOSYS) -- so the correct result here
-#   is FALSE despite what the check would say. Detected the same way
-#   CMakeLists.txt's own EMSCRIPTEN variable is (compiler basename
-#   matching "em*", not CMAKE_SYSTEM_NAME) -- this file is include()'d
-#   before that variable is set, and cfg-emscripten's own toolchain
-#   file (cfg-cmake.sh's cfg-emscripten, which would otherwise make
-#   CMAKE_SYSTEM_NAME reliable) never actually resolves due to an
-#   unrelated bug there (${EMSCRIPTEN:=dirname $(which emcc)} is
-#   missing a $() around dirname, so it evaluates to the literal
-#   string "dirname /path/to/emcc" instead of running it), so
-#   CMAKE_SYSTEM_NAME isn't set to "Emscripten" in practice either.
-#   CMAKE_SYSTEM_NAME=WASI (cfg-wasi) doesn't have that problem --
-#   it's passed directly as a cmake argument, not behind a toolchain
-#   file's existence check -- so it's checked normally below.
+# Emscripten/WASI is the opposite kind of false result: musl's libc ships a real, linkable fork() symbol, so the check finds it (see "Looking for fork - found" from `emcmake cmake`), but the underlying syscall has no implementation in a
+# single-threaded wasm module and fails at runtime (ENOSYS) -- so the correct result here is FALSE despite what the check would say. Detected the same way CMakeLists.txt's own EMSCRIPTEN variable is (compiler basename matching "em*", not
+# CMAKE_SYSTEM_NAME) -- this file is include()'d before that variable is set, and cfg-emscripten's own toolchain file (cfg-cmake.sh's cfg-emscripten, which would otherwise make CMAKE_SYSTEM_NAME reliable) never actually resolves due to an
+# unrelated bug there (${EMSCRIPTEN:=dirname $(which emcc)} is missing a $() around dirname, so it evaluates to the literal string "dirname /path/to/emcc" instead of running it), so CMAKE_SYSTEM_NAME isn't set to "Emscripten" in practice
+# either. CMAKE_SYSTEM_NAME=WASI (cfg-wasi) doesn't have that problem -- it's passed directly as a cmake argument, not behind a toolchain file's existence check -- so it's checked normally below.
 #
-#   MSYS has the identical CMAKE_SYSTEM_NAME problem as Emscripten
-#   above, for the same reason (cfg-msys's own TOOLCHAIN, msys64.cmake/
-#   msys32.cmake, is an external file this repo doesn't control) --
-#   cross-checked against the compiler path too (cfg-msys's own
-#   x86_64-pc-msys-gcc/i686-pc-msys-gcc), not just CMAKE_SYSTEM_NAME.
+# MSYS has the identical CMAKE_SYSTEM_NAME problem as Emscripten above, for the same reason (cfg-msys's own TOOLCHAIN, msys64.cmake/ msys32.cmake, is an external file this repo doesn't control) -- cross-checked against the compiler path too
+# (cfg-msys's own x86_64-pc-msys-gcc/i686-pc-msys-gcc), not just CMAKE_SYSTEM_NAME.
 string(REGEX REPLACE ".*/" "" HAVE_FORK_COMPILER_NAME "${CMAKE_C_COMPILER}")
 
-if((WIN32 OR WIN64 OR MSVC OR MINGW OR WINDOWS)
+if((WIN32
+    OR WIN64
+    OR MSVC
+    OR MINGW
+    OR WINDOWS
+   )
    AND NOT CYGWIN
    AND NOT CMAKE_SYSTEM_NAME MATCHES "MSYS"
    AND NOT HAVE_FORK_COMPILER_NAME MATCHES "msys")
@@ -347,27 +311,24 @@ check_function_exists(mmap HAVE_MMAP_FUNC)
 check_function_exists(munmap HAVE_MUNMAP)
 check_function_exists(mremap HAVE_MREMAP)
 
-# whether the platform can support memory-mapped file I/O at all --
-# either POSIX mmap(2)/munmap(2) (sys/mman.h present and both
-# functions found), or Windows' CreateFileMapping/MapViewOfFile, which
-# lib/mmap/ and lib/buffer/'s WINDOWS_NATIVE branches implement mmap(2)
-# in terms of. USE_MMAP (an option(), see CMakeLists.txt) may only be
-# ON when this is true; HAVE_MMAP (the compiler define lib/mmap/ and
-# its callers actually check) tracks USE_MMAP's final, validated
-# value, not raw platform capability.
-if(HAVE_SYS_MMAN_H AND HAVE_MMAP_FUNC AND HAVE_MUNMAP)
+# whether the platform can support memory-mapped file I/O at all -- either POSIX mmap(2)/munmap(2) (sys/mman.h present and both functions found), or Windows' CreateFileMapping/MapViewOfFile, which lib/mmap/ and lib/buffer/'s WINDOWS_NATIVE
+# branches implement mmap(2) in terms of. USE_MMAP (an option(), see CMakeLists.txt) may only be ON when this is true; HAVE_MMAP (the compiler define lib/mmap/ and its callers actually check) tracks USE_MMAP's final, validated value, not
+# raw platform capability.
+if(HAVE_SYS_MMAN_H
+   AND HAVE_MMAP_FUNC
+   AND HAVE_MUNMAP)
   set(HAVE_MMAP_SUPPORT TRUE)
-elseif(WIN32
-       OR WIN64
-       OR MINGW
-       OR WINDOWS
-       OR CMAKE_SYSTEM_NAME STREQUAL "WASI") # WASI: -lwasi-emulated-mman
+elseif(
+  WIN32
+  OR WIN64
+  OR MINGW
+  OR WINDOWS
+  OR CMAKE_SYSTEM_NAME STREQUAL "WASI") # WASI: -lwasi-emulated-mman
   set(HAVE_MMAP_SUPPORT TRUE)
 endif()
 
 if(USE_MMAP AND NOT HAVE_MMAP_SUPPORT)
-  message(WARNING "USE_MMAP requested, but mmap()/munmap() aren't available "
-                   "on this platform -- disabling")
+  message(WARNING "USE_MMAP requested, but mmap()/munmap() aren't available " "on this platform -- disabling")
   set(USE_MMAP
       OFF
       CACHE BOOL "Use mmap() for memory-mapped file I/O" FORCE)
@@ -380,12 +341,9 @@ if(PID_T GREATER 0)
   set(HAVE_PID_T TRUE)
 endif(PID_T GREATER 0)
 
-# if(HAVE_SIGNAL_H) check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T)
-# check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T) check_type_size(sigset_t
-# SIZEOF_SIGSET_T)
+# if(HAVE_SIGNAL_H) check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T) check_symbol_exists(sigset_t signal.h HAVE_SIGSET_T) check_type_size(sigset_t SIZEOF_SIGSET_T)
 #
-# if(SIZEOF_SIGSET_T) set(HAVE_SIGSET_T 1) else() set(HAVE_SIGSET_T 0) endif()
-# endif()
+# if(SIZEOF_SIGSET_T) set(HAVE_SIGSET_T 1) else() set(HAVE_SIGSET_T 0) endif() endif()
 
 check_function_exists(sys_siglist HAVE_SYS_SIGLIST)
 
@@ -406,14 +364,10 @@ else()
 endif()
 
 string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_MINSIZEREL
-                     "${CMAKE_C_FLAGS_MINSIZEREL}")
-string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELEASE
-                     "${CMAKE_C_FLAGS_RELEASE}")
-string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELWITHDEBINFO
-                     "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
-string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_DEBUG
-                     "${CMAKE_C_FLAGS_DEBUG}")
+string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_MINSIZEREL "${CMAKE_C_FLAGS_MINSIZEREL}")
+string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
+string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
 
 check_library_exists(m pow "" HAVE_LIBM)
 

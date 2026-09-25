@@ -16,13 +16,13 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
       CACHE STRING "Choose the type of build." FORCE)
 endif()
 
-set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release MinSizeRel
-                                             RelWithDebInfo)
+set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release MinSizeRel RelWithDebInfo)
 
-option(WARN_WERROR "Halt the compilation with an error on compiler warnings."
-       OFF)
+option(WARN_WERROR "Halt the compilation with an error on compiler warnings." OFF)
 
 option(USE_MMAP "Use mmap() for memory-mapped file I/O" ON)
+
+option(MINSIZE_STRIP "Strip unneeded sections from a MinSizeRel build" ON)
 
 include(CheckLibraryExists)
 include(CheckIncludeFile)
@@ -107,7 +107,7 @@ endif(BUILTIN_DIGEST)
 check_functions(
   sigaction
   # sigaddset sigdelset sigemptyset sigfillset
-   sigismember signal sigprocmask sigsuspend getppid)
+  sigismember signal sigprocmask sigsuspend getppid)
 
 check_includes_def(termios.h sys/ioctl.h)
 
@@ -134,8 +134,7 @@ if(DEBUG_COLOR)
   add_definitions(-DDEBUG_COLOR=1)
 endif()
 
-configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake"
-               "${CMAKE_BINARY_DIR}/config.h")
+configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.h")
 
 set(SOURCE_DEFINITIONS)
 set(SOURCE_TYPES
@@ -161,8 +160,7 @@ if(BUILD_DEBUG)
   add_definitions(-D_DEBUG)
 endif(BUILD_DEBUG)
 
-include_directories("${CMAKE_CURRENT_BINARY_DIR}/src"
-                    "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
+include_directories("${CMAKE_CURRENT_BINARY_DIR}/src" "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # add_definitions(-DHAVE_CONFIG_H=1)
 
@@ -176,41 +174,40 @@ file(GLOB CMAKE_SOURCES CMakeLists.txt cmake/*.cmake)
 include(cmake/libowfat.cmake)
 link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
 
-file(GLOB LIBSHELL_SOURCES src/*.h src/*/*.c)
+# ------------------------------------------------------------------------------
+# Build target "libtext" for all sources in text/
+# ------------------------------------------------------------------------------
+file(GLOB TEXT_DFA_SOURCES text/dfa.h text/dfa/*.c)
+list(APPEND LIBTEXT_SOURCES ${TEXT_DFA_SOURCES})
 
-# text/dfa backs the expr and (optionally, see GREP_USE_SYSTEM_REGEX
-# below) grep builtins' regex matching (text/dfa.h)
+file(GLOB TEXT_SED_SOURCES text/sed.h text/sed/*.c)
+list(APPEND LIBTEXT_SOURCES ${TEXT_SED_SOURCES})
+
+file(GLOB TEXT_AWK_SOURCES text/awk.h text/awk/*.c)
+list(APPEND LIBTEXT_SOURCES ${TEXT_AWK_SOURCES})
+
 file(GLOB TEXT_DFA_SOURCES text/dfa.h text/dfa/*.c)
 list(APPEND LIBSHELL_SOURCES ${TEXT_DFA_SOURCES})
 
-# text/sed is the sed builtin's script parser and execution engine
-# (text/sed.h); it always uses text/dfa (see GREP_USE_SYSTEM_REGEX --
-# unlike grep's, sed's regex use is threaded through dfa_replace()/
-# dfa_repl_compile(), which have no <regex.h> equivalent, so it is not
-# worth offering the same backend switch here)
-file(GLOB TEXT_SED_SOURCES text/sed.h text/sed/*.c)
-list(APPEND LIBSHELL_SOURCES ${TEXT_SED_SOURCES})
-
-# text/awk is the awk builtin's lexer/parser/interpreter (text/awk.h);
-# like text/sed it always uses text/dfa (lib/hashmap, for awk arrays,
-# is picked up automatically by cmake/libowfat.cmake's lib/*/*.c glob).
-# BUILTIN_AWK only gates src/builtin/extra/builtin_awk.c itself.
-file(GLOB TEXT_AWK_SOURCES text/awk.h text/awk/*.c)
-list(APPEND LIBSHELL_SOURCES ${TEXT_AWK_SOURCES})
-
-# grep's backend: text/dfa (in-tree, no libc regex dependency) by
-# default, or the system's <regex.h> if this is turned on.
+# grep's backend: text/dfa (in-tree, no libc regex dependency) by default, or the system's <regex.h> if this is turned on.
 option(GREP_USE_SYSTEM_REGEX "Use the system's regex.h for grep instead of text/dfa" OFF)
 if(GREP_USE_SYSTEM_REGEX)
-  set_source_files_properties(src/builtin/extra/builtin_grep.c
-                               PROPERTIES COMPILE_DEFINITIONS GREP_USE_SYSTEM_REGEX=1)
+  set_source_files_properties(src/builtin/extra/builtin_grep.c PROPERTIES COMPILE_DEFINITIONS GREP_USE_SYSTEM_REGEX=1)
 endif(GREP_USE_SYSTEM_REGEX)
+
+add_library(libtext STATIC ${LIBTEXT_SOURCES})
+set_target_properties(libtext PROPERTIES OUTPUT_NAME text)
+target_link_libraries(libtext PRIVATE libowfat)
+
+# ------------------------------------------------------------------------------
+# Build target "libshell" for all sources in src/
+# ------------------------------------------------------------------------------
+file(GLOB LIBSHELL_SOURCES src/*.h src/*/*.c)
 
 # needs third_party/, so only built when the digest builtin is on (BUILTIN_SOURCES)
 list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "builtin_digest\\.c")
 
-list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX
-     "(sh_fmt\\.c|sh_parse2ast\\.c|sh_init\\.c|sh_main\\.c|sh_util_wasm\\.c)")
+list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "(sh_fmt\\.c|sh_parse2ast\\.c|sh_init\\.c|sh_main\\.c|sh_util_wasm\\.c)")
 
 if(DEBUG_OUTPUT)
   list(
@@ -224,8 +221,7 @@ if(DEBUG_OUTPUT)
     src/debug/debug_unquoted.c)
 endif(DEBUG_OUTPUT)
 
-list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c
-     src/builtin/builtin_search.c src/builtin/builtin_table.c)
+list(APPEND BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
 
 string(REPLACE " " ";" LIBSHELL_SOURCES "${LIBSHELL_SOURCES}")
 
@@ -235,30 +231,26 @@ if(NO_TREE_PRINT)
   list(REMOVE_ITEM LIBSHELL_SOURCES "src/tree/tree_printlist.c")
 endif(NO_TREE_PRINT)
 
-# configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake"
-# "${CMAKE_BINARY_DIR}/src/builtin_config.h" #@ONLY
+# configure_file("${CMAKE_SOURCE_DIR}/src/builtin_config.h.cmake" "${CMAKE_BINARY_DIR}/src/builtin_config.h" #@ONLY
 
 list(APPEND LIBSHELL_SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
 
 list(APPEND LIBSHELL_SOURCES ${BUILTIN_SOURCES})
 list(APPEND ALL_SOURCES ${LIBSHELL_SOURCES})
+list(APPEND ALL_SOURCES ${LIBTEXT_SOURCES})
 
 add_library(libshell STATIC ${LIBSHELL_SOURCES})
 set_target_properties(libshell PROPERTIES OUTPUT_NAME shell)
+target_link_libraries(libshell PRIVATE libtext)
 
 set(SHISH_SOURCES src/sh/sh_init.c src/sh/sh_main.c)
 list(APPEND ALL_SOURCES ${SHISH_SOURCES})
 
-option(MINSIZE_STRIP "Strip unneeded sections from a MinSizeRel build" ON)
-
-# Strip a MinSizeRel executable harder than an install-strip would: -s drops
-# the symbol table, -R drops whole sections nothing reads back.
+# Strip a MinSizeRel executable harder than an install-strip would: -s drops the symbol table, -R drops whole sections nothing reads back.
 #
-#   .eh_frame/.eh_frame_hdr  unwind data -- 15% of an untuned binary
-#   .comment/.note*          toolchain provenance
+# .eh_frame/.eh_frame_hdr  unwind data -- 15% of an untuned binary .comment/.note*          toolchain provenance
 #
-# strip ignores a -R for a section that is not there, so one list serves
-# every target format.
+# strip ignores a -R for a section that is not there, so one list serves every target format.
 macro(strip_minsize TARGET)
   if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel"
      AND MINSIZE_STRIP
@@ -267,17 +259,13 @@ macro(strip_minsize TARGET)
     add_custom_command(
       TARGET ${TARGET}
       POST_BUILD
-      COMMAND
-        ${CMAKE_STRIP} -s -R .comment -R .note -R .note.ABI-tag -R
-        .note.gnu.build-id -R .note.gnu.property -R .eh_frame -R .eh_frame_hdr
-        $<TARGET_FILE:${TARGET}>
+      COMMAND ${CMAKE_STRIP} -s -R .comment -R .note -R .note.ABI-tag -R .note.gnu.build-id -R .note.gnu.property -R .eh_frame -R .eh_frame_hdr $<TARGET_FILE:${TARGET}>
       COMMENT "Stripping ${TARGET}")
   endif()
 endmacro(strip_minsize)
 
 add_executable(shish ${SHISH_SOURCES})
-target_link_libraries(shish PRIVATE libshell ${LIBOWFAT_LIBRARY}
-                                    ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
+target_link_libraries(shish PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 if(EMSCRIPTEN)
   set_target_properties(shish PROPERTIES SUFFIX ".${EMSCRIPTEN_EXE_SUFFIX}")
 endif(EMSCRIPTEN)
@@ -293,9 +281,7 @@ if(BUILD_SHFORMAT)
   list(APPEND ALL_SOURCES ${SHFORMAT_SOURCES})
 
   add_executable(shformat ${SHFORMAT_SOURCES})
-  target_link_libraries(
-    shformat PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
-                     ${ELECTRICFENCE_LIBRARY})
+  target_link_libraries(shformat PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shformat PUBLIC SHFORMAT=1)
   strip_minsize(shformat)
@@ -312,9 +298,7 @@ if(BUILD_SHPARSE2AST)
   list(APPEND ALL_SOURCES ${SHPARSE2AST_SOURCES})
 
   add_executable(shparse2ast ${SHPARSE2AST_SOURCES})
-  target_link_libraries(
-    shparse2ast PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY}
-                        ${ELECTRICFENCE_LIBRARY})
+  target_link_libraries(shparse2ast PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shparse2ast PUBLIC SHPARSE2AST=1 DEBUG_OUTPUT=1)
   strip_minsize(shparse2ast)
@@ -322,9 +306,7 @@ if(BUILD_SHPARSE2AST)
 
 endif(BUILD_SHPARSE2AST)
 
-option(BUILD_SHUTIL_WASM
-       "Build shutil, a WASM-only library module (format + AST dump, no CLI, no main loop)"
-       OFF)
+option(BUILD_SHUTIL_WASM "Build shutil, a WASM-only library module (format + AST dump, no CLI, no main loop)" OFF)
 
 if(BUILD_SHUTIL_WASM)
   if(NOT EMSCRIPTEN)
@@ -336,15 +318,11 @@ if(BUILD_SHUTIL_WASM)
   list(APPEND ALL_SOURCES ${SHUTIL_SOURCES})
 
   add_executable(shutil ${SHUTIL_SOURCES})
-  target_link_libraries(shutil PRIVATE libshell ${LIBOWFAT_LIBRARY}
-                                       ${MATH_LIBRARY})
+  target_link_libraries(shutil PRIVATE libtext libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY})
 
-  # SHPARSE2AST=1 gates the JSON debug-tree code in src/debug/*.c on;
-  # SHFORMAT=1 keeps parse_simpletok.c's PS2-prompt call site (still
-  # dead here regardless, via parse_prompt_hook -- see fixes/219)
-  # consistent with the other parser-only tools.
-  target_compile_definitions(shutil PUBLIC SHFORMAT=1 SHPARSE2AST=1
-                                            DEBUG_OUTPUT=1)
+  # SHPARSE2AST=1 gates the JSON debug-tree code in src/debug/*.c on; SHFORMAT=1 keeps parse_simpletok.c's PS2-prompt call site (still dead here regardless, via parse_prompt_hook -- see fixes/219) consistent with the other parser-only
+  # tools.
+  target_compile_definitions(shutil PUBLIC SHFORMAT=1 SHPARSE2AST=1 DEBUG_OUTPUT=1)
 
   set_target_properties(shutil PROPERTIES SUFFIX ".js")
   target_link_options(
@@ -359,15 +337,13 @@ if(BUILD_SHUTIL_WASM)
   strip_minsize(shutil)
 endif(BUILD_SHUTIL_WASM)
 
-set_source_files_properties(src/builtin/builtin_table.c
-                            PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}")
+set_source_files_properties(src/builtin/builtin_table.c PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}")
 
 install(TARGETS shish DESTINATION bin)
 
 add_custom_target(
   cmake-format
-  COMMAND cmake-format --line-width 300 --max-pargs-hwrap 100 -i CMakeLists.txt
-          ${CMAKE_SOURCES}
+  COMMAND cmake-format --line-width 300 --max-pargs-hwrap 100 -i CMakeLists.txt ${CMAKE_SOURCES}
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
   COMMENT "Format CMake files"
   SOURCES ${CMAKE_SOURCES})
@@ -393,9 +369,7 @@ endif(NOT SHISH_SUFFIX)
 set(SHISH_PATH "${CMAKE_CURRENT_BINARY_DIR}/shish${SHISH_SUFFIX}")
 
 option(DO_CONFORMANCE_TESTS "Also run the tests/posix conformance suite" ON)
-option(DO_YASH_TESTS
-       "Also run the tests/yash conformance suite (off by default -- tests/yash/random-y.tst hangs and eats a 120s TIMEOUT on every run, see BUGS)"
-       OFF)
+option(DO_YASH_TESTS "Also run the tests/yash conformance suite (off by default -- tests/yash/random-y.tst hangs and eats a 120s TIMEOUT on every run, see BUGS)" OFF)
 
 if(DO_TESTS)
   include(CTest)
@@ -413,30 +387,16 @@ if(DO_TESTS)
   target_link_libraries(arena_test PRIVATE ${LIBOWFAT_LIBRARY})
   add_test(NAME arena_test COMMAND arena_test)
 
-  # tests/posix/*.tst and tests/yash/*.tst: yash's own POSIX/self conformance
-  # suite (yash's run-test.sh harness interprets each *.tst file's test_oE/
-  # test_x/... cases). Each file is one CTest case, wrapped by
-  # tests/run-tst.sh (which drives the harness under bash -- it needs
-  # $LINENO and alias-expansion-in-scripts, neither of which dash has, and
-  # bash needs -O expand_aliases explicitly for the latter) and translates
-  # its per-case PASSED/FAILED/SKIPPED result file into a single pass/fail
-  # for the whole test.
+  # tests/posix/*.tst and tests/yash/*.tst: yash's own POSIX/self conformance suite (yash's run-test.sh harness interprets each *.tst file's test_oE/ test_x/... cases). Each file is one CTest case, wrapped by tests/run-tst.sh (which drives
+  # the harness under bash -- it needs $LINENO and alias-expansion-in-scripts, neither of which dash has, and bash needs -O expand_aliases explicitly for the latter) and translates its per-case PASSED/FAILED/SKIPPED result file into a
+  # single pass/fail for the whole test.
   #
-  # Re-enabled (2026-07-23): this was disabled because
-  # tests/posix/fnmatch-p.tst hung the testee at 100% CPU, which made a
-  # plain `ctest`/`make test` run that included this suite never return.
-  # Fixed by path_fnmatch()'s bracket-class rewrite (fixes/67) -- confirmed
-  # the whole suite (239 files across both directories) now completes in
-  # about a minute with no hangs. Most individual files still fail (POSIX
-  # compliance triage is ongoing, see TODO.md Goal 2) -- that's expected
-  # and is what CTest is here to report, not a reason to keep this off.
+  # Re-enabled (2026-07-23): this was disabled because tests/posix/fnmatch-p.tst hung the testee at 100% CPU, which made a plain `ctest`/`make test` run that included this suite never return. Fixed by path_fnmatch()'s bracket-class rewrite
+  # (fixes/67) -- confirmed the whole suite (239 files across both directories) now completes in about a minute with no hangs. Most individual files still fail (POSIX compliance triage is ongoing, see TODO.md Goal 2) -- that's expected and
+  # is what CTest is here to report, not a reason to keep this off.
   #
-  # tests/yash split into its own DO_YASH_TESTS option, off by default
-  # (2026-07-24): unlike the rest of the corpus, tests/yash/random-y.tst
-  # hangs and only terminates via its own 120s TIMEOUT (BUGS:
-  # yash-random-y-tst-hangs), so it alone dominates a default `ctest`
-  # run's wall time. tests/posix has no such straggler and stays on by
-  # default under DO_CONFORMANCE_TESTS.
+  # tests/yash split into its own DO_YASH_TESTS option, off by default (2026-07-24): unlike the rest of the corpus, tests/yash/random-y.tst hangs and only terminates via its own 120s TIMEOUT (BUGS: yash-random-y-tst-hangs), so it alone
+  # dominates a default `ctest` run's wall time. tests/posix has no such straggler and stays on by default under DO_CONFORMANCE_TESTS.
   set(CONFORMANCE_SUITES)
 
   if(DO_CONFORMANCE_TESTS)
@@ -447,36 +407,18 @@ if(DO_TESTS)
     list(APPEND CONFORMANCE_SUITES yash)
   endif(DO_YASH_TESTS)
 
-  # tests/posix/*.tst files marked "%REQUIRETTY%" gate themselves on
-  # "../checkfg" (tests/checkfg.c -- restored from git history,
-  # fixes/213's follow-up: it existed as of commit caa1ea28 but had
-  # gone missing from the tree, silently turning every one of these
-  # 44 files into an unconditional skip via "command not found"
-  # rather than a real "no controlling terminal" check) and self-skip
-  # without a real controlling terminal. DO_PTY_TESTS (off by
-  # default -- Linux/POSIX pty ioctls, and it changes timing/behavior
-  # for a job-control-sensitive slice of the suite) wraps just those
-  # files in tests/pty-run (tests/pty-run.c), which gives the testee
-  # a real pty-backed session/controlling terminal instead of letting
-  # them opt out. checkfg itself is always built when conformance
-  # tests are on, on any POSIX platform, so the self-skip check is a
-  # real check rather than a missing-binary error either way.
+  # tests/posix/*.tst files marked "%REQUIRETTY%" gate themselves on "../checkfg" (tests/checkfg.c -- restored from git history, fixes/213's follow-up: it existed as of commit caa1ea28 but had gone missing from the tree, silently turning
+  # every one of these 44 files into an unconditional skip via "command not found" rather than a real "no controlling terminal" check) and self-skip without a real controlling terminal. DO_PTY_TESTS (off by default -- Linux/POSIX pty
+  # ioctls, and it changes timing/behavior for a job-control-sensitive slice of the suite) wraps just those files in tests/pty-run (tests/pty-run.c), which gives the testee a real pty-backed session/controlling terminal instead of letting
+  # them opt out. checkfg itself is always built when conformance tests are on, on any POSIX platform, so the self-skip check is a real check rather than a missing-binary error either way.
   if(DO_CONFORMANCE_TESTS AND NOT WINDOWS_NATIVE)
     add_executable(checkfg tests/checkfg.c)
 
-    # tests/posix/run-test.sh's *.tst files reference "../checkfg"
-    # from inside a per-run tests/posix/tmp.$$ work directory it
-    # creates itself, so the binary has to live at tests/posix/checkfg
-    # in the source tree -- same place run-test.sh already leaves its
-    # own tmp.NNNNN/.trs artifacts (BUGS: harness-leaves-tmp-dirs).
-    set_target_properties(
-      checkfg PROPERTIES RUNTIME_OUTPUT_DIRECTORY
-                         "${CMAKE_CURRENT_SOURCE_DIR}/tests/posix")
+    # tests/posix/run-test.sh's *.tst files reference "../checkfg" from inside a per-run tests/posix/tmp.$$ work directory it creates itself, so the binary has to live at tests/posix/checkfg in the source tree -- same place run-test.sh
+    # already leaves its own tmp.NNNNN/.trs artifacts (BUGS: harness-leaves-tmp-dirs).
+    set_target_properties(checkfg PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests/posix")
 
-    option(
-      DO_PTY_TESTS
-      "Run the tests/posix/*.tst files gated on a real controlling terminal (%REQUIRETTY%) under tests/pty-run instead of letting them self-skip"
-      OFF)
+    option(DO_PTY_TESTS "Run the tests/posix/*.tst files gated on a real controlling terminal (%REQUIRETTY%) under tests/pty-run instead of letting them self-skip" OFF)
 
     if(DO_PTY_TESTS)
       add_executable(pty-run tests/pty-run.c)
@@ -491,7 +433,9 @@ if(DO_TESTS)
 
       set(REQUIRETTY_MARK)
 
-      if(SUITE STREQUAL "posix" AND DO_PTY_TESTS AND NOT WINDOWS_NATIVE)
+      if(SUITE STREQUAL "posix"
+         AND DO_PTY_TESTS
+         AND NOT WINDOWS_NATIVE)
         file(STRINGS "${TEST}" REQUIRETTY_MARK REGEX "%REQUIRETTY%")
       endif()
 
@@ -499,8 +443,7 @@ if(DO_TESTS)
         add_test(
           NAME "${SUITE}/${NAME}"
           WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-          COMMAND "$<TARGET_FILE:pty-run>" -t 60 -- sh "tests/run-tst.sh"
-                  "${SHISH_PATH}" "tests/${SUITE}" "${NAME}")
+          COMMAND "$<TARGET_FILE:pty-run>" -t 60 -- sh "tests/run-tst.sh" "${SHISH_PATH}" "tests/${SUITE}" "${NAME}")
       else()
         add_test(
           NAME "${SUITE}/${NAME}"

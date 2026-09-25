@@ -1,6 +1,4 @@
-# digest builtin (md5sum, sha1sum, ...): wraps th-blitz/Hash-Algorithms,
-# cloned into third_party/ on first configure. Included when BUILTIN_DIGEST
-# is ON (-DBUILTIN_DIGEST=ON, or -DENABLE_ALL_BUILTINS=ON).
+# digest builtin (md5sum, sha1sum, ...): wraps th-blitz/Hash-Algorithms, cloned into third_party/ on first configure. Included when BUILTIN_DIGEST is ON (-DBUILTIN_DIGEST=ON, or -DENABLE_ALL_BUILTINS=ON).
 
 set(HASH_ALGORITHMS_REPO "https://github.com/th-blitz/Hash-Algorithms")
 set(HASH_ALGORITHMS_REV "953a0b6bd432e911a85fd2d015469380b5b15c42")
@@ -34,7 +32,16 @@ if(NOT EXISTS "${HASH_ALGORITHMS_DIR}/md5.c")
 endif(NOT EXISTS "${HASH_ALGORITHMS_DIR}/md5.c")
 
 set(HASH_ALGORITHMS_SOURCES)
-foreach(ALGO md5 sha1 sha224 sha256 sha384 sha512-224 sha512-256 sha512)
+foreach(
+  ALGO
+  md5
+  sha1
+  sha224
+  sha256
+  sha384
+  sha512-224
+  sha512-256
+  sha512)
   list(APPEND HASH_ALGORITHMS_SOURCES "third_party/Hash-Algorithms/${ALGO}.c")
 endforeach(ALGO)
 
