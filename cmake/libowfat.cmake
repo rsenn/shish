@@ -18,5 +18,4 @@ if(NOT HAVE_LIBOWFAT)
 
   set(LIBOWFAT_LIBRARY libowfat CACHE STRING "-lowfat library name" FORCE)
   set(LIBOWFAT_LIBDIR "${CMAKE_CURRENT_BINARY_DIR}" CACHE STRING "-lowfat library directory" FORCE)
-
 endif(NOT HAVE_LIBOWFAT)

@@ -1,8 +1,10 @@
-# include(CheckIncludeFile) include(CheckSymbolExists) include(CheckFunctionExists)
 include(CheckLibraryExists)
 include(CheckCCompilerFlag)
 include(CheckCSourceCompiles)
 
+#
+# add_cflags <ADD> [VAR_NAME]
+#
 macro(add_cflags ADD)
   if(NOT ARGN)
     set(VAR_NAME CMAKE_C_FLAGS)
@@ -13,16 +15,17 @@ macro(add_cflags ADD)
   string(REGEX REPLACE " +" ";" C_FLAGS "${C_FLAGS}")
   string(REGEX REPLACE "^;+" "" C_FLAGS "${C_FLAGS}")
   list(REMOVE_DUPLICATES C_FLAGS)
-  # message("VAR_NAME: ${VAR_NAME}") message("C_FLAGS: ${C_FLAGS}")
   list(FIND C_FLAGS "${ADD}" FOUND_AT)
-  # message("FOUND_AT: ${FOUND_AT}") if("${C_FLAGS}" MATCHES "${ADD}")
+  
   if(NOT "${FOUND_AT}" MATCHES "-1")
-
   else()
     set("${VAR_NAME}" "${${VAR_NAME}} ${ADD}")
   endif()
 endmacro(add_cflags)
 
+#
+# check_cflag <FLAG> <VAR> [VAR_NAME]
+#
 function(check_cflag FLAG VAR)
   set(CMAKE_REQUIRED_QUIET TRUE)
   check_c_compiler_flag("${FLAG}" "${VAR}")
@@ -32,7 +35,6 @@ function(check_cflag FLAG VAR)
   else(NOT ARGN)
     string(TOUPPER "CMAKE_C_FLAGS_${ARGN}" VAR_NAME)
   endif(NOT ARGN)
-  # message("VAR_NAME: ${VAR_NAME}")
   if(${VAR})
     message(STATUS "Compiler flag ${FLAG} ... supported")
     add_cflags("${FLAG}" "${VAR_NAME}")
@@ -43,7 +45,9 @@ endfunction(check_cflag FLAG VAR)
 
 # Append FLAG to CMAKE_EXE_LINKER_FLAGS if a test executable links with it. A macro, not a function, so the result reaches the calling scope.
 #
-# FLAG  the linker flag, driver-style ("-Wl,--gc-sections") VAR   cache variable the probe result is stored in
+# check_ldflags <FLAG> <VAR>
+#
+# FLAG     the linker flag, driver-style ("-Wl,--gc-sections") VAR      cache variable the probe result is stored in
 # -----------------------------------------------------------------------
 macro(check_ldflag FLAG VAR)
   set(CHECK_LDFLAG_SAVED "${CMAKE_EXE_LINKER_FLAGS}")
@@ -60,36 +64,47 @@ macro(check_ldflag FLAG VAR)
   endif(${VAR})
 endmacro(check_ldflag)
 
-function(DUMP VAR)
+#
+# dump [VAR-NAMES...]
+#
+function(dump VAR)
   message("\n\nVariable dump of: " ${ARGV} "\n")
   foreach(VAR ${ARGV})
     string(REGEX REPLACE ";" "\n" VALUE "${${VAR}}")
     message("\t${VAR} = ${VALUE}")
   endforeach(VAR ${ARGV})
   message("\n")
-endfunction(DUMP VAR)
+endfunction(dump VAR)
 
-macro(check_inline)
+#
+# check_inline [OUTPUT-VAR]
+#
+function(check_inline)
+  if(ARGN)
+    set(OUTPUT_VAR ${ARGN})
+  else(ARGN)
+    set(OUTPUT_VAR INLINE_KEYWORD)
+  endif(ARGN)
+
   foreach(KEYWORD "__inline__" "__inline" "inline")
     if(NOT INLINE_KEYWORD)
       set(CMAKE_REQUIRED_DEFINITIONS "-DTESTKEYWORD=${KEYWORD}")
-      check_c_source_compiles(
-        "typedef int foo_t;
-  static TESTKEYWORD foo_t static_foo(){return 0;}
-  foo_t foo(){return 0;}
-  int main(int argc, char *argv[]){return 0;}"
-        HAVE_${KEYWORD})
+      check_c_source_compiles("typedef int foo_t;\nstatic TESTKEYWORD foo_t static_foo(){return 0;}\nfoo_t foo(){return 0;}\nint main(int argc, char *argv[]){return 0;}\n" HAVE_${KEYWORD})
       if(HAVE_${KEYWORD})
-        set(INLINE_KEYWORD "${KEYWORD}")
+        set("${OUTPUT_VAR}" "${KEYWORD}" PARENT_SCOPE)
       endif(HAVE_${KEYWORD})
     endif(NOT INLINE_KEYWORD)
   endforeach(KEYWORD)
-  message(STATUS "inline keyword: ${INLINE_KEYWORD}")
-endmacro(check_inline)
 
+  message(STATUS "inline keyword: ${${OUTPUT_VAR}}")
+endfunction(check_inline)
+
+#
+# isin <RESULT_VAR> <ITEM> [LIST...]
+#
 function(isin)
   set(ARGUMENTS "${ARGV}")
-  list(GET ARGUMENTS 0 RETVAR)
+  list(GET ARGUMENTS 0 RESULT_VAR)
   list(GET ARGUMENTS 1 ITEM)
   list(REMOVE_AT ARGUMENTS 0 1)
   # message("ARGUMENTS: ${ARGUMENTS}")
@@ -100,10 +115,13 @@ function(isin)
   else()
     set(RET TRUE)
   endif()
-  set("${RETVAR}" ${RET} PARENT_SCOPE)
+  set("${RESULT_VAR}" ${RET} PARENT_SCOPE)
   # return(${RET})
 endfunction(isin)
 
+#
+# show_result <RESULT_VAR>
+#
 macro(show_result RESULT_VAR)
   if(${${RESULT_VAR}})
     set(RESULT_VALUE yes)
@@ -112,9 +130,12 @@ macro(show_result RESULT_VAR)
   endif(${${RESULT_VAR}})
 endmacro(show_result RESULT_VAR)
 
+#
+# check_compile <RESULT_VAR> <SOURCE>
+#
 macro(check_compile RESULT_VAR SOURCE)
   set(RESULT "${${RESULT_VAR}}")
-  # message("${RESULT_VAR} = ${RESULT}" )
+
   if(RESULT STREQUAL "")
     string(RANDOM LENGTH 6 ALPHABET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" C_NAME)
     string(REPLACE SUPPORT_ "" NAME "${RESULT_VAR}")
@@ -143,9 +164,12 @@ macro(check_compile RESULT_VAR SOURCE)
   show_result(${RESULT_VAR})
 endmacro()
 
+#
+# check_run <RESULT_VAR> <SOURCE>
+#
 macro(check_run RESULT_VAR SOURCE)
   set(RESULT "${${RESULT_VAR}}")
-  # message("${RESULT_VAR} = ${RESULT}" )
+
   if(RESULT STREQUAL "")
     string(RANDOM LENGTH 6 ALPHABET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" C_NAME)
     string(REPLACE SUPPORT_ "" NAME "${RESULT_VAR}")
@@ -174,7 +198,10 @@ macro(check_run RESULT_VAR SOURCE)
   show_result(${RESULT_VAR})
 endmacro()
 
-function(RELATIVE_PATH OUT_VAR RELATIVE_TO)
+#
+# relative_path <OUTPUT_VAR> <RELATIVE_TO> [ARGUMENTS...]
+#
+function(relative_path OUTPUT_VAR RELATIVE_TO)
   set(LIST "")
 
   foreach(ARG ${ARGN})
@@ -182,22 +209,24 @@ function(RELATIVE_PATH OUT_VAR RELATIVE_TO)
     list(APPEND LIST "${ARG}")
   endforeach(ARG ${ARGN})
 
-  set("${OUT_VAR}" "${LIST}" PARENT_SCOPE)
-endfunction(RELATIVE_PATH RELATIVE_TO OUT_VAR)
+  set("${OUTPUT_VAR}" "${LIST}" PARENT_SCOPE)
+endfunction(relative_path RELATIVE_TO OUTPUT_VAR)
 
-function(BASENAME OUTPUT_VAR STR)
+#
+# basename <OUTPUT_VAR> <STR> [EXT_NAME]
+#
+function(basename OUTPUT_VAR STR)
   string(REGEX REPLACE ".*/" "" TMP_STR "${STR}")
   if(ARGN)
     string(REGEX REPLACE "\\${ARGN}\$" "" TMP_STR "${TMP_STR}")
   endif(ARGN)
-
   set("${OUTPUT_VAR}" "${TMP_STR}" PARENT_SCOPE)
-endfunction(BASENAME OUTPUT_VAR FILE)
+endfunction(basename OUTPUT_VAR FILE)
 
 #
 # var2define <NAME> [DEFINED_VALUE] [VAR_NAME]
 #
-function(VAR2DEFINE NAME)
+function(var2define NAME)
   if("${ARGC}" GREATER 2)
     list(GET ARGN 1 VAR_NAME)
   else("${ARGC}" GREATER 2)
@@ -218,12 +247,12 @@ function(VAR2DEFINE NAME)
       add_definitions(-D${NAME}=${DEFINED_VALUE})
     endif("${VALUE}")
   endif("${ARGC}" LESS_EQUAL 1)
-endfunction(VAR2DEFINE NAME)
+endfunction(var2define NAME)
 
 #
-# check_include_def <INCLUDE> [RESULT VARIABLE] [PREPROC_DEF]
+# check_include_def <INCLUDE> [RESULT-VAR] [PREPROC_DEF]
 #
-macro(CHECK_INCLUDE_DEF INC)
+macro(check_include_def INC)
   if(ARGC GREATER_EQUAL 2)
     set(RESULT_VAR "${ARGV1}")
     set(PREPROC_DEF "${ARGV2}")
@@ -244,40 +273,40 @@ macro(CHECK_INCLUDE_DEF INC)
   endif(${${RESULT_VAR}})
 
   list(APPEND CHECKED_INCLUDES "${INC}")
-endmacro(CHECK_INCLUDE_DEF INC)
+endmacro(check_include_def INC)
 
 #
-# check_includes <INCLUDE FILES...>
+# check_includes <INCLUDE-FILES...>
 #
-macro(CHECK_INCLUDES)
+macro(check_includes)
   foreach(INC ${ARGN})
     clean_name("HAVE_${INC}" RESULT_VAR)
     check_include_def("${INC}" "${RESULT_VAR}")
   endforeach(INC ${ARGN})
-endmacro(CHECK_INCLUDES)
+endmacro(check_includes)
 
 #
-# check_includes_def <INCLUDE FILES...>
+# check_includes_def <INCLUDE-FILES...>
 #
-macro(CHECK_INCLUDES_DEF)
+macro(check_includes_def)
   foreach(INC ${ARGN})
     check_include_def("${INC}")
   endforeach(INC ${ARGN})
-endmacro(CHECK_INCLUDES_DEF)
+endmacro(check_includes_def)
 
 #
-# clean_name <STRING> <OUTPUT VAR>
+# clean_name <STRING> <OUTPUT-VAR>
 #
-function(CLEAN_NAME STR OUTPUT_VAR)
+function(clean_name STR OUTPUT_VAR)
   string(TOUPPER "${STR}" STR)
   string(REGEX REPLACE "[^A-Za-z0-9_]" "_" STR "${STR}")
   set("${OUTPUT_VAR}" "${STR}" PARENT_SCOPE)
-endfunction(CLEAN_NAME STR OUTPUT_VAR)
+endfunction(clean_name STR OUTPUT_VAR)
 
 #
-# check_include_def <INCLUDE> [RESULT VARIABLE] [PREPROC_DEF]
+# check_include_def <INCLUDE> [RESULT-VAR] [PREPROC_DEF]
 #
-macro(CHECK_INCLUDE_DEF INC)
+macro(check_include_def INC)
   if(ARGC GREATER_EQUAL 2)
     set(RESULT_VAR "${ARGV1}")
     set(PREPROC_DEF "${ARGV2}")
@@ -298,28 +327,31 @@ macro(CHECK_INCLUDE_DEF INC)
   endif(${${RESULT_VAR}})
 
   list(APPEND CHECKED_INCLUDES "${INC}")
-endmacro(CHECK_INCLUDE_DEF INC)
+endmacro(check_include_def INC)
 
 #
-# check_includes <INCLUDE FILES...>
+# check_includes <INCLUDE-FILES...>
 #
-macro(CHECK_INCLUDES)
+macro(check_includes)
   foreach(INC ${ARGN})
     clean_name("HAVE_${INC}" RESULT_VAR)
     check_include_def("${INC}" "${RESULT_VAR}")
   endforeach(INC ${ARGN})
-endmacro(CHECK_INCLUDES)
+endmacro(check_includes)
 
 #
-# check_includes_def <INCLUDE FILES...>
+# check_includes_def <INCLUDE-FILES...>
 #
-macro(CHECK_INCLUDES_DEF)
+macro(check_includes_def)
   foreach(INC ${ARGN})
     check_include_def("${INC}")
   endforeach(INC ${ARGN})
-endmacro(CHECK_INCLUDES_DEF)
+endmacro(check_includes_def)
 
-macro(CHECK_FUNCTION_DEF FUNC)
+#
+# check_function_def <FUNC> [RESULT_VAR] [PREPROC_DEF]
+#
+macro(check_function_def FUNC)
   if(ARGC GREATER_EQUAL 2)
     set(RESULT_VAR "${ARGV1}")
     set(PREPROC_DEF "${ARGV2}")
@@ -334,33 +366,42 @@ macro(CHECK_FUNCTION_DEF FUNC)
       add_definitions(-D${PREPROC_DEF})
     endif(NOT "${PREPROC_DEF}" STREQUAL "")
   endif(${${RESULT_VAR}})
-endmacro(CHECK_FUNCTION_DEF FUNC)
+endmacro(check_function_def FUNC)
 
-macro(CHECK_FUNCTIONS)
+#
+# check_functions [FUNCTION-NAMES...]
+#
+macro(check_functions)
   foreach(FUNC ${ARGN})
     string(TOUPPER "HAVE_${FUNC}" RESULT_VAR)
     check_function_def("${FUNC}" "${RESULT_VAR}")
   endforeach(FUNC ${ARGN})
-endmacro(CHECK_FUNCTIONS)
+endmacro(check_functions)
 
-macro(CHECK_FUNCTIONS_DEF)
+#
+# check_functions_def [FUNCTION-NAMES...]
+#
+macro(check_functions_def)
   foreach(FUNC ${ARGN})
     check_function_def("${FUNC}")
   endforeach(FUNC ${ARGN})
-endmacro(CHECK_FUNCTIONS_DEF)
+endmacro(check_functions_def)
 
-macro(DEBUG_FLAG NAME DESC)
+#
+# debug_flag <NAME> <DESC>
+#
+macro(debug_flag NAME DESC)
   option(DEBUG_${NAME} "${DESC}" OFF)
 
   if(DEBUG_${NAME})
     add_definitions(-DDEBUG_${NAME}=1)
   endif()
-endmacro(DEBUG_FLAG NAME DESC)
+endmacro(debug_flag NAME DESC)
 
 #
 # check_function_and_include <FUNCTION> <INCLUDE>
 #
-macro(CHECK_FUNCTION_AND_INCLUDE FUNC INC)
+macro(check_function_and_include FUNC INC)
   clean_name("HAVE_${INC}" INC_RESULT)
   clean_name("HAVE_${FUNC}" FUNC_RESULT)
 
@@ -369,25 +410,57 @@ macro(CHECK_FUNCTION_AND_INCLUDE FUNC INC)
   if(${${INC_RESULT}})
     check_function_def("${FUNC}" "${FUNC_RESULT}" "${FUNC_RESULT}")
   endif(${${INC_RESULT}})
-endmacro(CHECK_FUNCTION_AND_INCLUDE FUNC INC)
+endmacro(check_function_and_include FUNC INC)
 
+# Get number of columns the terminal supports
+#
+# get_columns <OUTPUT_VAR> [DEFAULT]
+#
 function(get_columns OUTPUT_VAR)
-  set(MAX_COLUMNS $ENV{COLUMNS})
-
-  if(MAX_COLUMNS STREQUAL "")
-    execute_process(COMMAND tput cols OUTPUT_VARIABLE TPUT_COLS)
-    if(TPUT_COLS)
-      set(MAX_COLUMNS ${TPUT_COLS})
-    else(TPUT_COLS)
-      set(MAX_COLUMNS 80)
-    endif(TPUT_COLS)
-  endif(MAX_COLUMNS STREQUAL "")
-
-  set(${OUTPUT_VAR} "${MAX_COLUMNS}" PARENT_SCOPE)
-  unset(TPUT_COLS)
-  unset(TPUT_COLS CACHE)
+  if(ARGN)
+    set(DEFAULT_VALUE ${ARGN})
+  else(ARGN)
+    set(DEFAULT_VALUE 80)
+  endif(ARGN)
+  set(VALUE "$ENV{COLUMNS}")
+  if("${VALUE}" OR NOT "${VALUE}" STREQUAL "")
+    message("Got COLUMNS (${VALUE}) from environment")
+  else("${VALUE}" OR NOT "${VALUE}" STREQUAL "")
+    execute_process(COMMAND tput cols OUTPUT_VARIABLE TPUT_COLS ERROR_QUIET ERROR_VARIABLE TPUT_ERROR)
+    set(TPUT_ERROR TRUE)
+    if(NOT TPUT_ERROR AND TPUT_COLS)
+      set(VALUE ${TPUT_COLS})
+    else(NOT TPUT_ERROR AND TPUT_COLS)
+      set(SOURCE_NAME "get-tty-size.c")
+      set(SOURCE_CODE "#include <unistd.h>\n#include <fcntl.h>\n#include <termios.h>\n#include <sys/ioctl.h>\n#include <stdio.h>\n\nint\nmain() {\n\tstruct winsize sz;\n\tint fd = isatty(0) ? dup(0) : open(\"/dev/tty\", O_RDWR);\n\n\tif(!isatty(fd)) {\n\t\tfputs(\"not a tty\\n\", stderr);\n\t\tfflush(stderr);\n\t\treturn 1;\n\t}\n\n\tif(ioctl(fd, TIOCGWINSZ, &sz) == -1) {\n\t\tperror(\"ioctl\");\n\t\treturn 1;\n\t}\n\n\tclose(fd);\n\n\tprintf(\"%u\\n\", sz.ws_col);\n\treturn 0;\n}\n")
+      try_run(RUN_RESULT COMPILE_RESULT 
+        SOURCE_FROM_CONTENT "${SOURCE_NAME}" "${SOURCE_CODE}"
+        RUN_OUTPUT_STDOUT_VARIABLE RUN_OUTPUT
+        COMPILE_OUTPUT_VARIABLE COMPILE_OUTPUT
+        NO_CACHE
+      )
+      if(NOT COMPILE_RESULT)
+        message(STATUS "${SOURCE_NAME} failed to compile:\n${COMPILE_OUTPUT}")
+      else(NOT COMPILE_RESULT)
+        if(RUN_RESULT STREQUAL 0)
+          #message(STATUS "${SOURCE_NAME} succeeded to run: ${RUN_OUTPUT}")
+          set(VALUE "${RUN_OUTPUT}")
+        else(RUN_RESULT STREQUAL 0)
+          message(STATUS "${SOURCE_NAME} failed to run:\n${RUN_OUTPUT}")
+        endif(RUN_RESULT STREQUAL 0)   
+      endif(NOT COMPILE_RESULT)
+    endif(NOT TPUT_ERROR AND TPUT_COLS)
+  endif("${VALUE}" OR NOT "${VALUE}" STREQUAL "")
+  if("${VALUE}" STREQUAL "")
+    set(VALUE "${DEFAULT_VALUE}")
+    message("Defaulting ${OUTPUT_VAR} to ${DEFAULT_VALUE}")
+  endif("${VALUE}" STREQUAL "")
+  set("${OUTPUT_VAR}" "${VALUE}" PARENT_SCOPE)
 endfunction(get_columns OUTPUT_VAR)
 
+#
+# make_list <OUTPUT_VAR> <MAX_LINE_LEN>
+#
 function(make_list OUTPUT_VAR MAX_LINE_LEN)
   set(${OUTPUT_VAR} "" PARENT_SCOPE)
   string(REPLACE " " ";" ARGS "${ARGN}")
@@ -412,3 +485,21 @@ function(make_list OUTPUT_VAR MAX_LINE_LEN)
 
   set("${OUTPUT_VAR}" "${OUTPUT}" PARENT_SCOPE)
 endfunction(make_list OUTPUT_VAR)
+
+#
+# check_source_definitions [TYPES...]
+#
+macro(check_source_definitions)
+  set(SOURCE_DEFINITIONS)
+  if(ARGN)
+    set(SOURCE_TYPES ${ARGN})
+  else(ARGN)
+    set(SOURCE_TYPES ATFILE GNU LARGEFILE LARGE_FILE LARGEFILE64 POSIX POSIX_C XOPEN XOPEN_EXTENDED)
+  endif(ARGN)
+
+  foreach(S ${SOURCE_TYPES})
+    list(APPEND SOURCE_DEFINITIONS -D_${S}_SOURCE)
+  endforeach(S ${SOURCE_TYPES})
+
+  add_definitions(${SOURCE_DEFINITIONS})
+endmacro(check_source_definitions)

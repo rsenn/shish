@@ -57,7 +57,17 @@ endif()
 #
 # -f*-unwind-tables    .eh_frame is 15% of an untuned binary; nothing unwinds -fno-jump-tables     switch tables become compare chains -f*-sections         only pays off together with --gc-sections
 if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
-  foreach(FLAG -fno-asynchronous-unwind-tables -fno-unwind-tables -fno-stack-protector -fno-jump-tables -fno-plt -fno-ident -fmerge-all-constants -ffunction-sections -fdata-sections)
+  foreach(
+    FLAG
+    -fno-asynchronous-unwind-tables
+    -fno-unwind-tables
+    -fno-stack-protector
+    -fno-jump-tables
+    -fno-plt
+    -fno-ident
+    -fmerge-all-constants
+    -ffunction-sections
+    -fdata-sections)
     string(MAKE_C_IDENTIFIER "F${FLAG}" FLAG_VAR)
     check_c_compiler_flag("${FLAG}" ${FLAG_VAR})
     if(${FLAG_VAR})
@@ -77,14 +87,21 @@ if(NOT "${INLINE_KEYWORD}" MATCHES "^inline$")
   add_definitions("-Dinline=${INLINE_KEYWORD}")
 endif(NOT "${INLINE_KEYWORD}" MATCHES "^inline$")
 
-if(WIN32 OR WIN64 OR MINGW OR WINDOWS)
+if(WIN32
+   OR WIN64
+   OR MINGW
+   OR WINDOWS)
   check_library_exists(ws2_32 gethostname /usr/lib HAVE_WS2_32)
 
   if(NOT HAVE_WS2_32)
     check_library_exists(wsock32 gethostname /usr/lib HAVE_WSOCK32)
   endif(NOT HAVE_WS2_32)
 
-endif(WIN32 OR WIN64 OR MINGW OR WINDOWS)
+endif(
+  WIN32
+  OR WIN64
+  OR MINGW
+  OR WINDOWS)
 
 if(HAVE_WSOCK32)
   set(WINSOCK2_LIBRARY wsock32)
@@ -255,7 +272,15 @@ check_function_exists(setpgid HAVE_SETPGID)
 # (cfg-msys's own x86_64-pc-msys-gcc/i686-pc-msys-gcc), not just CMAKE_SYSTEM_NAME.
 string(REGEX REPLACE ".*/" "" HAVE_FORK_COMPILER_NAME "${CMAKE_C_COMPILER}")
 
-if((WIN32 OR WIN64 OR MSVC OR MINGW OR WINDOWS ) AND NOT CYGWIN AND NOT CMAKE_SYSTEM_NAME MATCHES "MSYS" AND NOT HAVE_FORK_COMPILER_NAME MATCHES "msys")
+if((WIN32
+    OR WIN64
+    OR MSVC
+    OR MINGW
+    OR WINDOWS
+   )
+   AND NOT CYGWIN
+   AND NOT CMAKE_SYSTEM_NAME MATCHES "MSYS"
+   AND NOT HAVE_FORK_COMPILER_NAME MATCHES "msys")
   set(HAVE_FORK TRUE)
 elseif(HAVE_FORK_COMPILER_NAME MATCHES "^em" OR CMAKE_SYSTEM_NAME STREQUAL "WASI")
   set(HAVE_FORK FALSE)
@@ -289,7 +314,12 @@ if(HAVE_SYS_MMAN_H
    AND HAVE_MMAP_FUNC
    AND HAVE_MUNMAP)
   set(HAVE_MMAP_SUPPORT TRUE)
-elseif(WIN32 OR WIN64 OR MINGW OR WINDOWS OR CMAKE_SYSTEM_NAME STREQUAL "WASI") # WASI: -lwasi-emulated-mman
+elseif(
+  WIN32
+  OR WIN64
+  OR MINGW
+  OR WINDOWS
+  OR CMAKE_SYSTEM_NAME STREQUAL "WASI") # WASI: -lwasi-emulated-mman
   set(HAVE_MMAP_SUPPORT TRUE)
 endif()
 

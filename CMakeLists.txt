@@ -11,9 +11,7 @@ set(PACKAGE_TARNAME "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to 'MinSizeRel' as none was specified.")
-  set(CMAKE_BUILD_TYPE
-      MinSizeRel
-      CACHE STRING "Choose the type of build." FORCE)
+  set(CMAKE_BUILD_TYPE MinSizeRel CACHE STRING "Choose the type of build." FORCE)
 endif()
 
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release MinSizeRel RelWithDebInfo)
@@ -104,10 +102,7 @@ if(BUILTIN_DIGEST)
   include(cmake/Digest.cmake)
 endif(BUILTIN_DIGEST)
 
-check_functions(
-  sigaction
-  # sigaddset sigdelset sigemptyset sigfillset
-  sigismember signal sigprocmask sigsuspend getppid)
+check_functions(sigaction sigismember signal sigprocmask sigsuspend getppid)
 
 check_includes_def(termios.h sys/ioctl.h)
 
@@ -136,24 +131,9 @@ endif()
 
 configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.h")
 
-set(SOURCE_DEFINITIONS)
-set(SOURCE_TYPES
-    ATFILE
-    GNU
-    LARGEFILE
-    LARGE_FILE
-    LARGEFILE64
-    POSIX
-    POSIX_C
-    XOPEN
-    XOPEN_EXTENDED)
-foreach(S ${SOURCE_TYPES})
-  list(APPEND SOURCE_DEFINITIONS -D_${S}_SOURCE)
-endforeach(S ${SOURCE_TYPES})
+check_source_definitions()
 
 add_definitions(-DHAVE_CONFIG_H=1)
-add_definitions(${SOURCE_DEFINITIONS})
-
 add_definitions(-D_FILE_OFFSET_BITS=64)
 
 if(BUILD_DEBUG)
@@ -186,9 +166,6 @@ list(APPEND LIBTEXT_SOURCES ${TEXT_SED_SOURCES})
 file(GLOB TEXT_AWK_SOURCES text/awk.h text/awk/*.c)
 list(APPEND LIBTEXT_SOURCES ${TEXT_AWK_SOURCES})
 
-file(GLOB TEXT_DFA_SOURCES text/dfa.h text/dfa/*.c)
-list(APPEND LIBSHELL_SOURCES ${TEXT_DFA_SOURCES})
-
 # grep's backend: text/dfa (in-tree, no libc regex dependency) by default, or the system's <regex.h> if this is turned on.
 option(GREP_USE_SYSTEM_REGEX "Use the system's regex.h for grep instead of text/dfa" OFF)
 if(GREP_USE_SYSTEM_REGEX)
@@ -196,8 +173,7 @@ if(GREP_USE_SYSTEM_REGEX)
 endif(GREP_USE_SYSTEM_REGEX)
 
 add_library(libtext STATIC ${LIBTEXT_SOURCES})
-set_target_properties(libtext PROPERTIES OUTPUT_NAME text)
-target_link_libraries(libtext PRIVATE libowfat)
+target_link_libraries(libtext PUBLIC libowfat)
 
 # ------------------------------------------------------------------------------
 # Build target "libshell" for all sources in src/
@@ -214,7 +190,6 @@ if(DEBUG_OUTPUT)
     APPEND
     LIBSHELL_SOURCES
     src/debug/debug_char.c
-    # src/debug/debug_node.c
     src/debug/debug_ptr.c
     src/debug/debug_space.c
     src/debug/debug_subst.c
@@ -240,8 +215,7 @@ list(APPEND ALL_SOURCES ${LIBSHELL_SOURCES})
 list(APPEND ALL_SOURCES ${LIBTEXT_SOURCES})
 
 add_library(libshell STATIC ${LIBSHELL_SOURCES})
-set_target_properties(libshell PROPERTIES OUTPUT_NAME shell)
-target_link_libraries(libshell PRIVATE libtext)
+target_link_libraries(libshell PUBLIC libtext)
 
 set(SHISH_SOURCES src/sh/sh_init.c src/sh/sh_main.c)
 list(APPEND ALL_SOURCES ${SHISH_SOURCES})

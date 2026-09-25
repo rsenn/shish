@@ -1,11 +1,114 @@
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Functions.cmake)
 
-list(APPEND MINIMAL_BUILTINS alias break cd command eval exec exit export expr getopts hash history jobs kill local printf pwd read readonly return set shift source test times trap type umask unset wait)
-list(APPEND EXTRA_BUILTINS awk basename cat chmod digest dirname find grep hostname link ln ls mkdir readlink realpath rm rmdir sed sleep tee timeout touch wc which mktemp uname xargs)
-list(APPEND DEFAULT_BUILTINS ${MINIMAL_BUILTINS} help type echo fdtable true false)
+list(
+  APPEND
+  MINIMAL_BUILTINS
+  alias
+  break
+  cd
+  command
+  eval
+  exec
+  exit
+  export
+  expr
+  getopts
+  hash
+  history
+  jobs
+  kill
+  local
+  printf
+  pwd
+  read
+  readonly
+  return
+  set
+  shift
+  source
+  test
+  times
+  trap
+  type
+  umask
+  unset
+  wait)
+list(
+  APPEND
+  EXTRA_BUILTINS
+  awk
+  basename
+  cat
+  chmod
+  digest
+  dirname
+  find
+  grep
+  hostname
+  link
+  ln
+  ls
+  mkdir
+  readlink
+  realpath
+  rm
+  rmdir
+  sed
+  sleep
+  tee
+  timeout
+  touch
+  wc
+  which
+  mktemp
+  uname
+  xargs)
+list(
+  APPEND
+  DEFAULT_BUILTINS
+  ${MINIMAL_BUILTINS}
+  help
+  type
+  echo
+  fdtable
+  true
+  false)
 
 set(ALL_BUILTINS "")
-list(APPEND ALL_BUILTINS ${MINIMAL_BUILTINS} ${DEFAULT_BUILTINS} ${EXTRA_BUILTINS} basename break cd dirname dump echo eval exec exit export expr false fdtable hash help history hostname ln printf pwd set shift source test times true type unset)
+list(
+  APPEND
+  ALL_BUILTINS
+  ${MINIMAL_BUILTINS}
+  ${DEFAULT_BUILTINS}
+  ${EXTRA_BUILTINS}
+  basename
+  break
+  cd
+  dirname
+  dump
+  echo
+  eval
+  exec
+  exit
+  export
+  expr
+  false
+  fdtable
+  hash
+  help
+  history
+  hostname
+  ln
+  printf
+  pwd
+  set
+  shift
+  source
+  test
+  times
+  true
+  type
+  unset)
 list(SORT ALL_BUILTINS)
 list(REMOVE_DUPLICATES ALL_BUILTINS)
 
@@ -14,7 +117,7 @@ set(BUILTINS_DISABLED "")
 
 # option(ENABLE_ALL_BUILTINS "Enable all builtins" OFF)
 
-function(ON_ENABLE_ALL_BUILTINS VAR ACCESS VALUE CURRENT_LIST_FILE STACK)
+function(on_enable_all_builtins VAR ACCESS VALUE CURRENT_LIST_FILE STACK)
 
   if(NOT "${ACCESS}" STREQUAL "READ_ACCESS")
     message("VAR = ${VAR}")
@@ -26,7 +129,7 @@ function(ON_ENABLE_ALL_BUILTINS VAR ACCESS VALUE CURRENT_LIST_FILE STACK)
 
 endfunction()
 
-# variable_watch(ENABLE_ALL_BUILTINS ON_ENABLE_ALL_BUILTINS)
+# variable_watch(ENABLE_ALL_BUILTINS on_enable_all_builtins)
 
 # Which builtins get built -- one switch per builtin, one for all:
 #
@@ -106,9 +209,13 @@ endif(ENABLE_DUMP)
 # a builtin's source lives in src/builtin/extra/ when it is one of the coreutils-style / third-party utilities, else in src/builtin/
 function(builtin_source OUT NAME)
   if(EXISTS "${CMAKE_SOURCE_DIR}/src/builtin/extra/builtin_${NAME}.c")
-    set(${OUT} "src/builtin/extra/builtin_${NAME}.c" PARENT_SCOPE)
+    set(${OUT}
+        "src/builtin/extra/builtin_${NAME}.c"
+        PARENT_SCOPE)
   else()
-    set(${OUT} "src/builtin/builtin_${NAME}.c" PARENT_SCOPE)
+    set(${OUT}
+        "src/builtin/builtin_${NAME}.c"
+        PARENT_SCOPE)
   endif()
 endfunction(builtin_source)
 
@@ -156,9 +263,9 @@ list(SORT BUILTINS_DISABLED)
 string(REPLACE ";" " " BUILTINS_ENABLED "${BUILTINS_ENABLED}")
 string(REPLACE ";" " " BUILTINS_DISABLED "${BUILTINS_DISABLED}")
 
-# dump(BUILTINS_DISABLED)
-
 get_columns(MAX_COLUMNS)
+
+#dump(MAX_COLUMNS)
 
 make_list(BUILTINS_ENABLED_LIST ${MAX_COLUMNS} ${BUILTINS_ENABLED})
 
