@@ -214,7 +214,7 @@ struct builtin_cmd builtin_table[] = {
     {"break", &builtin_break, B_SPECIAL, "[n]", help_break},
 #endif
 #if BUILTIN_CAT
-    {"cat", &builtin_cat, B_DEFAULT, "[-nb] [FILE]...", help_cat},
+    {"cat", &builtin_cat, B_DEFAULT, "[-nb] [FILE]...", help_cat, &cat_filter},
 #endif
 #if BUILTIN_CD
     {"cd", &builtin_cd, B_DEFAULT, "[-L|-P] [directory]", help_cd},
@@ -285,7 +285,7 @@ struct builtin_cmd builtin_table[] = {
     {"getopts", &builtin_getopts, B_DEFAULT, "optstring name [arg ... ]", help_getopts},
 #endif
 #if BUILTIN_GREP
-    {"grep", &builtin_grep, B_DEFAULT, "[options] <pattern-list>", help_grep},
+    {"grep", &builtin_grep, B_DEFAULT, "[options] <pattern-list>", help_grep, &grep_filter},
 #endif
 #if BUILTIN_HASH
     {"hash",
@@ -381,7 +381,7 @@ struct builtin_cmd builtin_table[] = {
     {"rmdir", &builtin_rmdir, B_DEFAULT, "[-p] [directory]...", help_rmdir},
 #endif
 #if BUILTIN_SED
-    {"sed", &builtin_sed, B_DEFAULT, "[-n] [-E|-r] {script | -e script | -f file}... [file]...", help_sed},
+    {"sed", &builtin_sed, B_DEFAULT, "[-n] [-E|-r] {script | -e script | -f file}... [file]...", help_sed, &sed_filter},
 #endif
 #if BUILTIN_SOURCE
     {"source", &builtin_source, B_SPECIAL, "file [arguments]", help_source},

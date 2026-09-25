@@ -2987,6 +2987,15 @@ adds `awk`. Specs read 2026-09-20: POSIX.1-2024
 [`sed`](https://pubs.opengroup.org/onlinepubs/9799919799/utilities/sed.html) and
 [`awk`](https://pubs.opengroup.org/onlinepubs/9799919799/utilities/awk.html).
 
+**`sed` is done** (`text/sed/` + `src/builtin/extra/builtin_sed.c`,
+`c3ae2fa5`), including the shared foundation pieces it needed:
+`dfa_replace`/`dfa_repl` (`text/dfa/dfa_replace.c`) and `lib/arena`
+(`696bdcce`, see Goal 3). **`awk` is not started** — nothing under
+`text/awk` exists yet. The design below (originally written for both)
+still describes awk; treat every `sed`-side detail as historical record
+of what shipped, and the shared-foundation table just below as
+"already built, awk just needs to *use* it."
+
 ### Answers to the five questions
 
 | Question | Answer |
@@ -3043,10 +3052,10 @@ adds `awk`. Specs read 2026-09-20: POSIX.1-2024
 
 | Piece | Source | State | Lines | Used by |
 |---|---|---|---|---|
-| `lib/dfa`: `dfa_compile/test/prefix/search/submatch` | Goal 6 | planned | (Goal 6) | sed (all), awk (compile/test/search) |
-| **`dfa_replace()`** — global/nth substitution loop with the empty-match rule (`s/x*/-/g` on `abc` gives `-a-b-c-`) | new, `lib/dfa/dfa_replace.c` | new | ≈ 70 | sed `s`, awk `sub`/`gsub` |
-| replacement compiler: `&`, `\&`, `\\`; with `DFA_SED` also `\1`-`\9` and `\n` | new, `lib/dfa/dfa_repl.c` | new | ≈ 45 | sed, awk |
-| `arena_*` | `lib/arena.h` (interface only) | implement | ≈ 60 | sed script, awk program + temporaries |
+| `text/dfa`: `dfa_compile/test/prefix/search/submatch` | Goal 6 | **done** | (Goal 6) | sed (all), awk (compile/test/search) |
+| **`dfa_replace()`** — global/nth substitution loop with the empty-match rule (`s/x*/-/g` on `abc` gives `-a-b-c-`) | `text/dfa/dfa_replace.c` | **done**, in use by sed `s///` | ≈ 70 | sed `s`, awk `sub`/`gsub` |
+| replacement compiler: `&`, `\&`, `\\`; `DFA_REPL_BACKREF` also gives `\1`-`\9` and `\n` | `text/dfa/dfa_replace.c` (`dfa_repl_compile`, same file as `dfa_replace()`, not a separate `dfa_repl.c`) | **done**, in use by sed `s///` | ≈ 45 | sed, awk |
+| `arena_*` | `lib/arena.h` + `lib/arena/` | **done** (`696bdcce`; see Goal 3) — one caller so far, `text/dfa/dfa_run.c`'s per-search save arrays; not yet adopted by sed's own parse-scratch (label/fixup tables in `sed_parse.c`) or awk | ≈ 60 | sed script, awk program + temporaries |
 | `hashmap_*` (awk arrays, ENVIRON, output-file table) | `../c-utils/lib/hashmap/` | copy | 164 (+ ≈ 10 for a `hashmap_next` iterator) | awk |
 | `buffer_getline_sa`, `buffer_get_token_sa` | `../c-utils/lib/stralloc/` | copy | 36 | sed lines, awk records (`RS` single char) |
 | `byte_lower`/`byte_upper`, `byte_findb` | `../c-utils/lib/byte/` | copy | ≈ 30 | awk `tolower`/`toupper`/`index`, sed `I` flag helpers |
@@ -3658,6 +3667,182 @@ No file layout, option sets, or size estimates have been worked out for any
 of these yet — that's the next step once one is picked up, following the
 Goal 6/10/11 template (POSIX page -> option table -> LOC estimate -> `BUGS`
 entries for any deliberately-omitted option).
+
+---
+
+## Goal 13 (secondary) — pull-based filter chaining for pure-builtin pipeline segments
+
+**Not started; this section is the plan.** Motivating case: `grep <in.txt
+'pat' | sed 's/x/y/'` — a common idiom (select lines, then edit them) where
+both stages are already shish builtins. Today the non-last stage still pays
+a real `fork()`/`pipe()` even though nothing about a builtin actually needs
+one; the last stage already avoids it via lastpipe (see the pipeline
+discussion this goal grew out of, 2026-09-25). The idea: let adjacent
+steppable builtins hand off through an in-process buffer chain instead,
+with the last stage running exactly as it does today.
+
+### The constraint that shapes the whole design: `sed` and `grep` are optional
+
+Both are `EXTRA_BUILTINS` (`cmake/Builtins.cmake`), individually toggleable
+(`-DBUILTIN_SED=OFF` / `-DBUILTIN_GREP=OFF`, or simply absent from a
+`MINIMAL_BUILTINS`-only build), and every build without a working `fork()`
+already runs pipelines through `eval_pipeline_sequential()` instead. Two
+requirements follow, non-negotiable for any implementation of this goal:
+
+1. **Compiles clean with either or both builtins disabled.** No code
+   outside `src/builtin/extra/builtin_{sed,grep}.c` may name a
+   sed/grep-specific type (`struct sed*`, `text/sed.h`, grep's internals).
+   Generic pipeline/fdtable code gates on availability the same way
+   `#if BUILTIN_TRAP` already does throughout `src/`
+   (`eval_pipeline.c`, `job_wait.c`, `sh_loop.c`, `expand_command.c`,
+   `eval_subshell.c`, ...) — this goal adds `#if BUILTIN_SED` /
+   `#if BUILTIN_GREP` (from the already-generated `builtin_config.h`) as
+   the same kind of guard, nothing novel.
+2. **Every pipeline still runs correctly via plain `fork()`+`pipe()`,
+   unconditionally.** `H_PROGRAM` (any external command, including a real
+   `/usr/bin/sed` or `/usr/bin/grep` when the builtin is disabled or a
+   pipeline just isn't the shape this goal targets) already always forks
+   (`exec_command.c`'s `H_PROGRAM` comment) — this goal never touches that
+   path. Chaining is strictly additive and opt-in per pipeline shape: any
+   pipeline that doesn't match its narrow preconditions falls straight
+   back to today's `job_fork()`/`fd_pipe()`, unchanged. There is no new
+   failure mode here — absence of chaining is always safe, it's just the
+   status quo.
+
+### Design principle that follows from (1): no builtin-specific code above the builtin layer
+
+The fdtable/`eval_pipeline` layer can only depend on a generic,
+builtin-agnostic interface — never on `grep_step`/`sed_step` by name:
+
+```c
+/* one steppable builtin's filter interface -- lives in the builtin's own
+ * extra/builtin_*.c; eval_pipeline never has to know the builtin's name
+ * to call it. */
+struct filter_ops {
+  /* NULL return: this invocation isn't streamable (flags outside the
+   * streamable subset, e.g. grep -c/-q; bad pattern; ...) -- caller
+   * falls back to fork()+pipe(), same as if .filter were NULL at all. */
+  void* (*open)(int argc, char** argv, buffer* upstream);
+  ssize_t (*read)(void* ctx, char* buf, size_t len); /* buffer_op_proto-compatible */
+  int (*status)(void* ctx);                          /* valid once read() returns EOF */
+  void (*close)(void* ctx);
+};
+```
+
+`struct builtin_cmd` (`builtin_table.c`) gets an optional
+`const struct filter_ops* filter;` member — `NULL` for every builtin that
+isn't steppable (everything except `sed`/`grep` to start). `builtin_table.c`
+is already generated per-name from `builtin_config.h`'s `#if`s, so an
+entry whose `.filter` would reference `grep_filter_ops` sits inside
+`#if BUILTIN_GREP` and costs nothing when that's off. `eval_pipeline()`
+itself never says `"sed"`/`"grep"` anywhere — it only ever reads
+`cmd->builtin->filter`, generic across every current and future steppable
+builtin (a later `awk` slots in the same way, no new pipeline-layer code).
+
+### Pieces
+
+1. `struct filter_ops` + the `.filter` registration above. Always
+   compiled (empty/unused if nothing implements it); ≈ 30 lines, no
+   builtin-specific logic.
+2. `grep_step()`/`grep_ctx` — refactor `builtin_grep.c`'s existing
+   per-line loop into a step function reused by both standalone
+   `builtin_grep()` (loop it to EOF, identical output to today) and the
+   filter path. `#if BUILTIN_GREP` only. No cross-record state, so this
+   is close to a pure refactor.
+3. `sed_step()` — genuinely new engine work, not a refactor: `sed_run()`
+   today loops to completion (`sed_cycle.c`). A resumable step needs that
+   outer loop restructured to return once it has produced output (or
+   needs more input than upstream currently has) and pick back up from
+   the same point next call, including mid-`N` state and the pending
+   `a`/`r` append queue's flush timing. `#if BUILTIN_SED` only. This is
+   the one piece of the whole goal that isn't glue.
+4. `FD_FILTER` fd mode (`src/fd.h`, alongside `FD_HERE`/`FD_SUBST`): a
+   `struct fd` whose `r` buffer's `op` drives a `struct filter_ops`
+   instance through its `cookie`. Builtin-agnostic — references only the
+   vtable, always compiled.
+5. `fdtable_exec()` gains an `FD_FILTER` case, materializing it into a
+   temp file the same way `fdtable_here()` already does for heredocs
+   (`src/fdtable/fdtable_here.c`): drain to completion, write to a temp
+   file, swap in `buffer_op_read`. Reached whenever a real fd becomes
+   necessary — an external program downstream, or an explicit fd
+   capture. Builtin-agnostic, always compiled.
+6. `eval_pipeline()` detection: adjacent `H_BUILTIN` stages where
+   `cmd->builtin->filter != NULL` on every non-last stage skip
+   `job_fork()`/`fd_pipe()` for those stages, calling `.open()` instead
+   (which decides per actual argv whether *this* invocation streams) and
+   wiring the result as the next stage's `fd_in`. The last stage is
+   untouched — runs exactly as today's lastpipe branch (forked or not),
+   with its stdin possibly now an `FD_FILTER` fd instead of a pipe. A
+   `NULL` from `.open()` (unstreamable args, no `.filter` at all, or the
+   builtin simply not compiled in) means that stage falls straight back
+   to `job_fork()`/`fd_pipe()` — always compiled, but its actual
+   behavior collapses to "always fork" the moment neither `BUILTIN_SED`
+   nor `BUILTIN_GREP` is on, with no dead branches left dangling.
+
+### Exit status
+
+Every steppable builtin still computes its real exit status via the same
+logic it always has (`grep_ctx.status`, finalized when `read()` returns
+EOF) — filter mode changes *when* that status becomes known, never *what*
+it means:
+
+- **Chained stage is not last** (`grep | sed`): its status doesn't drive
+  `$?` today regardless (POSIX: last stage only), and shish has no
+  `pipefail`/`PIPESTATUS` yet to consume it
+  (`BUGS: set-pipefail-missing-and-noclobber-not-enforced`) — but since
+  the last stage normally drains its whole input, the upstream filter's
+  status will be correctly finalized as a side effect anyway, ready for
+  whenever `pipefail` lands, at no extra cost now.
+- **Chained stage's consumer stops early** (the last stage's own `q`/`Q`,
+  or a future `head`) before the filter reaches real EOF: its status is
+  never finalized. Same ambiguity a real forked pipe already has today
+  (early close -> SIGPIPE -> a discarded, signal-shaped exit status) —
+  leave it an explicit "unset" rather than inventing a synthetic value;
+  revisit only once `pipefail` needs a real answer.
+- **Chained stage becomes the pipeline's *last* stage instead**
+  (`sed | grep`): already works today, unmodified — lastpipe runs it to
+  completion in-process exactly as now. This goal adds nothing and
+  changes nothing on that path.
+
+### Sizing (rough; no code written yet)
+
+| Piece | Lines | Gated on |
+|---|---|---|
+| `struct filter_ops` + registration | ≈ 30 | always compiled |
+| `grep_step`/`grep_ctx` refactor | ≈ 60 (mostly moved, not new) | `BUILTIN_GREP` |
+| `sed_step` (`sed_cycle.c` restructure) | ≈ 150-200 (real new logic) | `BUILTIN_SED` |
+| `FD_FILTER` fd mode | ≈ 40 | always compiled |
+| `fdtable_exec()` materialization case | ≈ 50 (mostly reused from `fdtable_here`) | always compiled |
+| `eval_pipeline()` detection + wiring | ≈ 80 | always compiled |
+| **Total** | **≈ 410-460** | |
+
+### Open questions, ordered by how much they'd change the shape above
+
+1. **Does `.open()`'s per-call opt-out (grep `-c`/`-q`) belong in
+   `struct filter_ops`, or should those flags just never register
+   `.filter` at all and always fork?** Leaning toward per-call — it's
+   the same mechanism that already has to handle "not compiled in" and
+   "wrong builtin" uniformly, so handling "wrong flags for this specific
+   invocation" costs nothing extra.
+2. **`sed_step`'s resumability is the one piece of unproven engine
+   work.** Worth a small standalone spike — can `sed_cycle.c`'s loop be
+   restructured to pause/resume cleanly around `N` and the append-queue's
+   flush timing? — before committing to the rest of the design around it.
+3. **Three-or-more-stage chains** (`grep | sed | grep`) fall out of the
+   same per-stage `.filter != NULL` check with no new design, *if* every
+   middle stage's `.read()` cleanly implements "produce output, or signal
+   need-more-input" — worth confirming once `sed_step` exists, not
+   blocking a two-stage MVP.
+4. **`!HAVE_FORK`/WASI builds get correctness, not just speed, from
+   this.** `eval_pipeline_sequential()`'s existing per-stage
+   full-materialization fallback (`eval_pipeline.c:29-48`) hangs on an
+   infinite producer (`yes | sed ... | head` never finishes stage one).
+   A `FD_FILTER`-chained all-builtin pipeline wouldn't need that
+   fallback at all for its own stretch, since no `fork()`/`pipe()` was
+   ever required there either way. Worth deciding whether
+   `eval_pipeline_sequential()` should attempt filter-chaining first and
+   only fall back to full materialization once the chain isn't entirely
+   steppable builtins.
 
 ---
 

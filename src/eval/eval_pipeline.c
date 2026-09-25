@@ -4,7 +4,9 @@
 #endif
 #include "../fd.h"
 #include "../sh.h"
+#include "../builtin.h"
 #include "../eval.h"
+#include "../expand.h"
 #include "../exec.h"
 #include "../fdstack.h"
 #include "../fdtable.h"
@@ -12,6 +14,8 @@
 #include "../tree.h"
 #include "../var.h"
 #include "../debug.h"
+#include "../../lib/byte.h"
+#include "../../lib/str.h"
 #include "../../lib/wait.h"
 #include "../../lib/windoze.h"
 #include "builtin_config.h"
@@ -24,6 +28,146 @@
 void* trap_snapshot_save(void);
 void trap_snapshot_restore(void*);
 #endif
+
+/* filter-chain scanner (TODO.md Goal 13): finds a trailing run of
+ * adjacent pure-builtin pipeline stages that can hand off through an
+ * in-process buffer (struct filter_ops, src/builtin_filter.h) instead
+ * of a real fork()+pipe() pair. Scoped deliberately narrow -- false
+ * negatives (falling back to the always-correct fork()+pipe() path)
+ * are always safe, so every check below is conservative on purpose.
+ * ----------------------------------------------------------------------- */
+
+extern union node* functions; /* exec_search.c; see term_complete.c etc. for the same extern */
+
+/* true iff arg (an N_ARG word) is a single, bare, unquoted literal --
+ * no parameter/command/arithmetic expansion, no glob, no quoting --
+ * so reading it needs no expansion machinery, hence no question of
+ * *where* (parent vs. the stage's own subshell environment) any
+ * expansion side effect would run: there isn't one. *s/*n point at
+ * the literal's raw (not NUL-terminated) bytes. */
+static int
+pipeline_word_literal(union node* arg, const char** s, size_t* n) {
+  union node* w;
+
+  if(!arg || arg->id != N_ARG)
+    return 0;
+
+  w = arg->narg.list;
+
+  if(!w || w->next || w->id != N_ARGSTR || w->nargstr.flag != S_UNQUOTED)
+    return 0;
+
+  *s = w->nargstr.stra.s;
+  *n = w->nargstr.stra.len;
+  return 1;
+}
+
+/* resolves a literal command name to a filter-capable builtin, using
+ * exec_search()'s own precedence for the one case that matters here:
+ * a same-named function shadows the builtin at real exec time, so a
+ * shadowed name must not chain (it wouldn't be this builtin that
+ * actually runs). Special builtins and external commands can't be
+ * filter-capable (only ordinary B_DEFAULT builtins register a
+ * filter), so unlike exec_search() this never needs a PATH lookup. */
+static struct builtin_cmd*
+pipeline_filter_builtin(const char* name) {
+  struct builtin_cmd* b = builtin_search((char*)name, B_DEFAULT);
+  struct nfunc* fn;
+
+  if(!b || !b->filter || !b->filter->ops)
+    return NULL;
+
+  for(fn = functions ? &functions->nfunc : NULL; fn; fn = fn->next)
+    if(!str_diff(name, fn->name))
+      return NULL;
+
+  return b;
+}
+
+/* pipeline_filter_prepare: node chains iff it's a plain simple command
+ * (no local assignments, no redirections of its own -- both would
+ * need real fd/scope machinery this path skips) whose entire word
+ * list is bare literals (pipeline_word_literal(), above) naming a
+ * filter-capable builtin. On success returns that builtin and fills
+ * *argv_out/*argc_out with freshly copied, NUL-terminated argv
+ * strings the caller owns (pipeline_filter_argv_free()'s job).
+ * ----------------------------------------------------------------------- */
+static struct builtin_cmd*
+pipeline_filter_prepare(union node* node, char*** argv_out, int* argc_out) {
+  union node* a;
+  int argc = 0, i;
+  char** argv;
+  const char* s0;
+  size_t n0;
+  char name[64];
+  struct builtin_cmd* b;
+
+  if(!node || node->id != N_SIMPLECMD || node->ncmd.vars || node->ncmd.rdir || !node->ncmd.args)
+    return NULL;
+
+  for(a = node->ncmd.args; a; a = a->next) {
+    const char* s;
+    size_t n;
+
+    if(!pipeline_word_literal(a, &s, &n))
+      return NULL;
+
+    argc++;
+  }
+
+  pipeline_word_literal(node->ncmd.args, &s0, &n0); /* argv[0]; already validated above */
+
+  if(n0 >= sizeof(name))
+    return NULL;
+
+  byte_copy(name, n0, s0);
+  name[n0] = 0;
+
+  if(!(b = pipeline_filter_builtin(name)))
+    return NULL;
+
+  argv = alloc((size_t)(argc + 1) * sizeof(char*));
+
+  if(!argv)
+    return NULL;
+
+  for(a = node->ncmd.args, i = 0; a; a = a->next, i++) {
+    const char* s;
+    size_t n;
+
+    pipeline_word_literal(a, &s, &n);
+    argv[i] = alloc(n + 1);
+
+    if(!argv[i]) {
+      while(i > 0)
+        alloc_free(argv[--i]);
+
+      alloc_free(argv);
+      return NULL;
+    }
+
+    byte_copy(argv[i], n, s);
+    argv[i][n] = 0;
+  }
+
+  argv[argc] = NULL;
+  *argv_out = argv;
+  *argc_out = argc;
+  return b;
+}
+
+static void
+pipeline_filter_argv_free(char** argv) {
+  int i;
+
+  if(!argv)
+    return;
+
+  for(i = 0; argv[i]; i++)
+    alloc_free(argv[i]);
+
+  alloc_free(argv);
+}
 
 #if !defined(HAVE_FORK)
 /* evaluate a pipeline without fork() (3.9.2) -- see
@@ -196,6 +340,16 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   int pid = 0, prevfd = -1, status = -1;
   struct job* job;
 
+  /* filter chaining (TODO.md Goal 13) -- see the comment where chain_b
+     is populated, below. chain_ctx/chain_ops are only ever non-NULL
+     once open() has actually committed, for the one loop iteration
+     that immediately follows. */
+  struct builtin_cmd* chain_b = NULL;
+  char** chain_argv = NULL;
+  int chain_argc = 0;
+  void* chain_ctx = NULL;
+  const struct filter_ops* chain_ops = NULL;
+
   /* zsh/ksh run a foreground pipeline's *last* command in the current
      shell instead of forking it too, so e.g. "cmd | read x" sets $x
      here instead of in a throwaway subshell -- bash needs "shopt -s
@@ -213,6 +367,35 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   } else {
     buffer_puts(fd_err->w, "no job control");
     buffer_putnlflush(fd_err->w);
+  }
+
+  /* filter chaining (TODO.md Goal 13), scoped for now to exactly one
+     link: an exactly-2-stage pipeline's *first* stage, feeding
+     directly into the true last stage (already unforked via lastpipe
+     above, so there's no fd-lifetime hazard in overwriting its stdin
+     below). chain_b/argv/argc are the *candidate*; a candidate can
+     still decline at open() time for a reason the static AST check
+     below can't see (grep -c/-q, a bad pattern), in which case this
+     one stage just falls through to job_fork() exactly as if no
+     candidate had ever been found.
+
+     Deliberately NOT extended to a 3+-stage pipeline's second-to-last
+     stage yet, even though pipeline_filter_prepare() itself doesn't
+     care where in the pipeline its node sits: that stage's own
+     upstream ("in" below) would be a real, already-forked
+     predecessor's pipe, wired into an alloca()'d struct fd that is
+     only valid for *this* loop iteration (see fd_alloc()/HAVE_ALLOCA
+     above) -- but the chain's ctx stores that upstream buffer* for
+     the *true last* stage's iteration to read from, several loop
+     iterations later, after "in"'s stack space has already been
+     reused. Confirmed by testing: "grep a | sed ..." (2 stages, this
+     stage's upstream is the persistent fd_in->r) works; "cat | grep a
+     | sed ..." (grep's upstream would be a transient real "in")
+     silently produced no output. Lifting this restriction needs the
+     real fd dup()'d into a heap-owned buffer before this iteration's
+     "in" goes out of scope, not just a wider node-position check. */
+  if(lastpipe && npipe->ncmd == 2) {
+    chain_b = pipeline_filter_prepare(npipe->cmds, &chain_argv, &chain_argc);
   }
 
   fdstack_push(&st);
@@ -288,6 +471,16 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
     }
 
     if(is_last && lastpipe) {
+      if(chain_ctx) {
+        /* the chained stage committed last iteration: repurpose this
+           (already fd_push()'d) stdin to read from it instead of the
+           real pipe fd_setfd() wired above -- fd_close() first, or
+           fd_filter()'s own buffer_init() would silently orphan that
+           real fd (nothing else still points at it to close later). */
+        fd_close(in);
+        fd_filter(in, chain_ops, chain_ctx);
+      }
+
       /* run directly in the current shell instead of forking -- see
          the "lastpipe" comment above. eval_simple_command() already
          updates sh->exitcode as a side effect, so nothing further is
@@ -296,6 +489,40 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
          eval_pipeline_sequential() -- there is no disposable forked
          process to execve() into, only the one real, ongoing shell. */
       eval_tree(e, node, 0);
+    } else if(chain_b && node->next && node->next->next == NULL) {
+      /* the chain candidate found before the loop -- try it for real,
+         now that this stage's actual upstream (in ? in->r : fd_in->r,
+         exactly what job_fork() would otherwise have handed a forked
+         child) is available. shell_optind/shell_optofs must be reset
+         exactly as exec_command.c resets them before calling any
+         builtin's fn() -- open() runs shell_getopt() over chain_argv
+         too, and a stale cursor left over from an earlier command
+         indexes past this small argv array instead of parsing it. */
+      shell_optind = 1;
+      shell_optofs = 0;
+      chain_ops = chain_b->filter->ops;
+      chain_ctx = chain_ops->open(chain_argc, chain_argv, in ? in->r : fd_in->r);
+
+      if(!chain_ctx) {
+        /* declined for a reason the static check couldn't see (grep
+           -c/-q, a bad pattern, ...): in/out this iteration are the
+           same real, untouched fds job_fork() would use anyway, so
+           this is exactly as if no candidate had been found. */
+        chain_ops = NULL;
+
+        if(!(pid = job_fork(job, node, npipe->bgnd))) {
+          exit(eval_tree(e, node, E_EXIT));
+        }
+      } else {
+        /* committed: no fork, no output for this stage -- out (this
+           stage's real, now-unused outgoing pipe) is simply closed as
+           dead plumbing by the existing fd_pop(out) below, same as
+           any other unused pipe; the job this pipeline no longer
+           forks for must shrink to match, or job_wait()'s loop would
+           wait on a proc slot job_fork() never filled. */
+        if(job)
+          job->nproc--;
+      }
     } else if(!(pid = job_fork(job, node, npipe->bgnd))) {
       /* no job control for commands inside pipe */
       /*e->mode &= E_JCTL;*/
@@ -351,6 +578,9 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
 
   if(job)
     job_free(job);
+
+  if(chain_b)
+    pipeline_filter_argv_free(chain_argv);
 
   /* eval_simple_command() updates sh->exitcode directly (not just its
      return value) so "$?" sees a command's status immediately, even

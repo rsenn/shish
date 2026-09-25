@@ -1,6 +1,8 @@
 #ifndef BUILTIN_H
 #define BUILTIN_H
 
+#include "builtin_filter.h"
+
 typedef enum { B_DEFAULT = 0x00, B_SPECIAL = 0x01, B_EXEC = 0x02 } builtin_flag;
 
 typedef int(builtin_func)(int argc, char* argv[]);
@@ -11,6 +13,7 @@ struct builtin_cmd {
   builtin_flag flags;
   const char* args;
   const char* help;
+  const struct builtin_filter* filter; /* NULL: not filter-capable (the common case); see TODO.md Goal 13 */
 };
 
 extern struct builtin_cmd builtin_table[];
@@ -35,6 +38,7 @@ int builtin_basename(int argc, char* argv[]);
 int builtin_bg(int argc, char* argv[]);
 int builtin_break(int argc, char* argv[]);
 int builtin_cat(int argc, char* argv[]);
+extern const struct builtin_filter cat_filter; /* src/builtin/extra/builtin_cat.c */
 int builtin_cd(int argc, char* argv[]);
 int builtin_chmod(int argc, char* argv[]);
 int builtin_command(int argc, char* argv[]);
@@ -53,6 +57,7 @@ int builtin_fg(int argc, char* argv[]);
 int builtin_find(int argc, char* argv[]);
 int builtin_getopts(int argc, char* argv[]);
 int builtin_grep(int argc, char* argv[]);
+extern const struct builtin_filter grep_filter; /* src/builtin/extra/builtin_grep.c */
 int builtin_hash(int argc, char* argv[]);
 int builtin_help(int argc, char* argv[]);
 int builtin_history(int argc, char* argv[]);
@@ -75,6 +80,7 @@ int builtin_return(int argc, char* argv[]);
 int builtin_rm(int argc, char* argv[]);
 int builtin_rmdir(int argc, char* argv[]);
 int builtin_sed(int argc, char* argv[]);
+extern const struct builtin_filter sed_filter; /* src/builtin/extra/builtin_sed.c */
 int builtin_set(int argc, char* argv[]);
 int builtin_shift(int argc, char* argv[]);
 int builtin_sleep(int argc, char* argv[]);
