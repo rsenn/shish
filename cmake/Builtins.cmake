@@ -34,6 +34,7 @@ list(
 list(
   APPEND
   EXTRA_BUILTINS
+  awk
   basename
   cat
   chmod

@@ -201,6 +201,9 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_ALIAS
     {"alias", &builtin_alias, B_DEFAULT, "[-p] [name[=value] ...]", help_alias},
 #endif
+#if BUILTIN_AWK
+    {"awk", &builtin_awk, B_DEFAULT, "[-F sep] [-v assign]... [-f progfile | 'program'] [file...]", help_awk},
+#endif
 #if BUILTIN_BASENAME
     {"basename", &builtin_basename, B_DEFAULT, "path [suffix]", help_basename},
 #endif

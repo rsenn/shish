@@ -311,6 +311,7 @@ lib/arena/Makefile
 lib/buffer/Makefile
 lib/byte/Makefile
 lib/fmt/Makefile
+lib/hashmap/Makefile
 lib/mmap/Makefile
 lib/open/Makefile
 lib/path/Makefile
@@ -327,6 +328,7 @@ lib/wait/Makefile
 text/Makefile
 text/dfa/Makefile
 text/sed/Makefile
+text/awk/Makefile
 scripts/Makefile
 src/Makefile
 src/builtin/Makefile

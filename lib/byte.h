@@ -57,6 +57,10 @@ size_t byte_ccopy(void*, size_t count, const void* src, char c);
 
 size_t byte_count(const void*, size_t, char c);
 
+/* ASCII case folding, in place, over out[0..len) */
+void byte_lower(void* out, size_t len);
+void byte_upper(void* out, size_t len);
+
 #if !LINK_STATIC
 #include <string.h>
 

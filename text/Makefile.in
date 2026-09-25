@@ -34,7 +34,7 @@ CHMOD = chmod
 
 # directory configuration
 # ---------------------------------------------------------------------------
-SUBDIRS              = dfa sed
+SUBDIRS              = dfa sed awk
 ROOT                 = 0
 RECURSIVE            = 1
 
@@ -52,7 +52,7 @@ dep-local:
 
 # files that go into distribution tarballs
 # ---------------------------------------------------------------------------
-FILES                = Makefile.in dfa.h sed.h
+FILES                = Makefile.in dfa.h sed.h awk.h
 
 # files to be cleaned
 # ---------------------------------------------------------------------------

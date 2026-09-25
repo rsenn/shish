@@ -30,6 +30,7 @@ int builtin_source(int argc, char* argv[]);
 int builtin_true(int argc, char* argv[]);
 int builtin_alias(int argc, char* argv[]);
 int builtin_unalias(int argc, char* argv[]);
+int builtin_awk(int argc, char* argv[]);
 int builtin_basename(int argc, char* argv[]);
 int builtin_bg(int argc, char* argv[]);
 int builtin_break(int argc, char* argv[]);
@@ -97,6 +98,7 @@ int builtin_which(int argc, char* argv[]);
  * ----------------------------------------------------------------------- */
 extern const char help_alias[];
 extern const char help_unalias[];
+extern const char help_awk[];
 extern const char help_basename[];
 extern const char help_break[];
 extern const char help_cat[];

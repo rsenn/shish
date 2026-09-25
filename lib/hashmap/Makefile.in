@@ -1,13 +1,13 @@
 # ===========================================================================
 #
-# Makefile for lib/byte subdirectory
+# Makefile for lib/hashmap subdirectory
 #
 # relative directories
 # ---------------------------------------------------------------------------
 srcdir       = @srcdir@
 top_srcdir   = @top_srcdir@
 top_builddir = @top_builddir@
-thisdir      = lib/byte/
+thisdir      = lib/hashmap/
 
 VPATH        = $(srcdir)
 
@@ -18,10 +18,11 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 LIB = ../libowfat.a
-ARCHIVE = byte.a
+ARCHIVE = hashmap.a
 
 MODULES = \
-byte_ccopy byte_chr byte_copy byte_copyr byte_count byte_diff byte_equal byte_fill byte_lower byte_replace byte_trimr byte_upper byte_zero
+hashmap_init hashmap_get hashmap_get2 hashmap_get_entry hashmap_match hashmap_put hashmap_put2 \
+hashmap_delete hashmap_delete2 hashmap_rehash hashmap_next hashmap_clear
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

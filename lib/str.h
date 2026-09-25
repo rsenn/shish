@@ -33,6 +33,10 @@ int str_case_diffn(const char* a, const char* b, size_t n);
 
 size_t str_len(const char* in);
 
+/* str_ndup: a fresh alloc()'d copy of s[0..n), NUL-terminated; NULL if
+ * out of memory. */
+char* str_ndup(const char* s, size_t n);
+
 /* str_chr returns the index of the first occurance of needle or \0 in haystack
  */
 size_t str_chr(const char* haystack, char needle) __pure__;

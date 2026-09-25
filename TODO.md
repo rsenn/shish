@@ -2978,9 +2978,12 @@ dd if=/dev/urandom of=/tmp/big bs=1M count=512; time /tmp/cpmv/shish -c 'cp /tmp
 
 ## Goal 11 (secondary) — `sed` and `awk` builtins, in depth (as small as possible, maximum reuse)
 
-**Not started; this section is the plan.** It refines Goal 6 (which plans
-`lib/dfa`, `expr`, `grep` and a first `sed` estimate) and adds `awk`.
-Specs read 2026-09-20: POSIX.1-2024
+**`sed`: done (commit `c3ae2fa5`). `awk`: done (2026-09-25) — see the
+"Status" note near the end of this section for what shipped and what
+didn't; the rest of this section is still an accurate read of the
+design both were actually built from.** This section refines Goal 6
+(which plans `lib/dfa`, `expr`, `grep` and a first `sed` estimate) and
+adds `awk`. Specs read 2026-09-20: POSIX.1-2024
 [`sed`](https://pubs.opengroup.org/onlinepubs/9799919799/utilities/sed.html) and
 [`awk`](https://pubs.opengroup.org/onlinepubs/9799919799/utilities/awk.html).
 
@@ -3508,6 +3511,74 @@ cmake -S . -B /tmp/sedawk-static -DLINK_STATIC=ON -DCMAKE_BUILD_TYPE=MinSizeRel 
 # speed
 seq 1 1000000 > /tmp/n; time /tmp/sedawk/shish -c "awk '{s+=\$1} END{print s}' /tmp/n"; time awk '{s+=$1} END{print s}' /tmp/n
 ```
+
+### Status (2026-09-25): what actually shipped
+
+**Foundation**: `lib/hashmap` (ported from `../c-utils/lib/hashmap`, plus a
+new `hashmap_next`/`hashmap_clear` iterator pair not in the original) for
+awk arrays; `str_ndup`, `byte_lower`/`byte_upper` (new, small). `arena` and
+`dfa_replace`/`dfa_repl` were already done from Goal 3/Goal 6 work and
+needed no changes. The printf-formatter-refactor line item was **not**
+done — `text/awk/awk_printf.c` is awk's own, independent implementation
+(reconstructs a `snprintf` spec from parsed flags/width/precision plus one
+fixed conversion letter, never the program's format text verbatim, so
+there is no format-string-injection risk despite `CONVFMT`/`OFMT`-style
+trust elsewhere) — reusing `builtin_printf.c` would have meant touching the
+shell's own default-on `printf` path for a saving that didn't seem worth
+that risk once `awk_printf.c` turned out to be ≈250 lines on its own.
+
+**`text/awk/`**: lexer, precedence-ladder parser (one function per
+precedence level rather than a single table-driven climber — awk's `$`
+tightness, unary-vs-`^`, print's bare-`>` ambiguity, concatenation-with-
+no-token and `(i,j) in a` are each a grammar-level exception, and a ladder
+keeps each one local to the one function that needs it), tree-walking
+interpreter, values/conversions, fields/records (lazy split and lazy `$0`
+rebuild, both hooked through every path that can observe them: reading
+`$n`, reading `NF`, `NF=`, `$n=`), built-ins (`length substr index split
+sub gsub match sprintf sin cos atan2 exp log sqrt int rand srand tolower
+toupper system close fflush`), `printf`/`sprintf`, I/O (`getline` in all
+four POSIX forms, `>`/`>>`/`|` redirection, `close`/`fflush`), and the
+main driver (`BEGIN`/`END`, `ARGV`/`ARGC`/`ENVIRON`, `-v`/operand
+assignments, `-F`). `src/builtin/extra/builtin_awk.c` is the shell-facing
+client (option parsing, wiring `struct awk_io` to `fd_in`/`fd_out`/
+`fd_err` and `lib/open.h`). Registered as `EXTRA_BUILTINS` (off by
+default, like `sed`/`grep`); `text/awk/*.c` (the engine) is always
+compiled in, same as `text/sed/`.
+
+**Deviations from the design above** (each already anticipated as a risk
+or a cut-list item there, not a surprise):
+
+- **`cmd | getline`, `print | cmd`, `system()` are not wired up.** The
+  engine's own interface (`struct awk_io.run_shell`) is exactly the hook
+  the design calls for, and the interpreter already has full support for
+  all three (parses them, dispatches through `run_shell`, gives a clean
+  runtime error when it's `NULL`) — `builtin_awk.c` just leaves
+  `run_shell` unset. Wiring it to the shell's own evaluator (the
+  `$(...)`/`eval` machinery) is a distinct, self-contained follow-up.
+- **`RS=""` (paragraph mode) and a regex `RS`** are not implemented; `RS`
+  is always treated as a single byte (first character), default `"\n"`.
+- **Byte, not character, semantics** for `length`/`substr`/`index`/`match`/
+  `printf %c` — conformant in the POSIX locale, same as the rest of the
+  shell pending Goal 7.
+- **`for (k in a)` order** is hashmap bucket order (unspecified in POSIX,
+  as planned).
+- Hashmap keys/values are heap-allocated (`alloc()`/`str_ndup`) rather than
+  arena-owned, since awk arrays are mutated (`delete`, reassignment) far
+  more than the write-once, reset-in-bulk shape an arena suits; expression
+  *temporaries* do use `st->tmp`, reset once per statement, as planned.
+
+**Testing**: a standalone build against a POSIX-`read`/`write`-backed
+`struct awk_io` (not wired into the shell) was run under
+`-fsanitize=address,undefined` across ~30 programs spanning every
+built-in, arrays, recursion, field/`NF` assignment and rebuild, `getline`,
+and `printf` — zero leaks, zero sanitizer reports. Full `ctest` (both the
+default builtin set and `-DENABLE_ALL_BUILTINS=ON`, each with
+`-DBUILTIN_AWK=ON`) shows the identical pre-existing 52/157 failure set
+(all signal/job-control `posix/*-p.tst` cases plus `fixed.sh`, none of
+them awk-related) — no regressions. `tests/builtin-awk.sh` (new, gated by
+`BUILTIN_AWK`) covers fields, `NF`/`NR`, string/math built-ins, `printf`,
+arrays (`for`/`in`/`delete`), user functions (recursion, array-by-
+reference), control flow, and the numeric-string comparison rules.
 
 ---
 

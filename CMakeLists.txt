@@ -191,6 +191,13 @@ list(APPEND LIBSHELL_SOURCES ${TEXT_DFA_SOURCES})
 file(GLOB TEXT_SED_SOURCES text/sed.h text/sed/*.c)
 list(APPEND LIBSHELL_SOURCES ${TEXT_SED_SOURCES})
 
+# text/awk is the awk builtin's lexer/parser/interpreter (text/awk.h);
+# like text/sed it always uses text/dfa (lib/hashmap, for awk arrays,
+# is picked up automatically by cmake/libowfat.cmake's lib/*/*.c glob).
+# BUILTIN_AWK only gates src/builtin/extra/builtin_awk.c itself.
+file(GLOB TEXT_AWK_SOURCES text/awk.h text/awk/*.c)
+list(APPEND LIBSHELL_SOURCES ${TEXT_AWK_SOURCES})
+
 # grep's backend: text/dfa (in-tree, no libc regex dependency) by
 # default, or the system's <regex.h> if this is turned on.
 option(GREP_USE_SYSTEM_REGEX "Use the system's regex.h for grep instead of text/dfa" OFF)

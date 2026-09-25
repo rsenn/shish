@@ -1,13 +1,13 @@
 # ===========================================================================
 #
-# Makefile for lib/byte subdirectory
+# Makefile for text/awk subdirectory
 #
 # relative directories
 # ---------------------------------------------------------------------------
 srcdir       = @srcdir@
 top_srcdir   = @top_srcdir@
 top_builddir = @top_builddir@
-thisdir      = lib/byte/
+thisdir      = text/awk/
 
 VPATH        = $(srcdir)
 
@@ -17,11 +17,8 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
-LIB = ../libowfat.a
-ARCHIVE = byte.a
-
-MODULES = \
-byte_ccopy byte_chr byte_copy byte_copyr byte_count byte_diff byte_equal byte_fill byte_lower byte_replace byte_trimr byte_upper byte_zero
+ARCHIVE = awk.a
+MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
@@ -29,7 +26,7 @@ DEPS    = $(MODULES:%=%.d)
 
 # targets for this directory
 # ---------------------------------------------------------------------------
-all: Makefile .libdep $(ARCHIVE)
+all: Makefile $(ARCHIVE)
 install:
 
 # dependencies
@@ -39,7 +36,8 @@ install:
 # local build configuration
 # ---------------------------------------------------------------------------
 INCLUDES += -I$(top_srcdir)/lib -I$(top_builddir)
-#INCLUDES += -I$(top_builddir)/lib
+INCLUDES += @IQUOTE_SRC@
+INCLUDES += -I$(top_builddir)
 
 # include build.mk (makefile helper)
 # ---------------------------------------------------------------------------
