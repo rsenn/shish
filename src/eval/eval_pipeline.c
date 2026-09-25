@@ -39,12 +39,18 @@ void trap_snapshot_restore(void*);
 
 extern union node* functions; /* exec_search.c; see term_complete.c etc. for the same extern */
 
-/* true iff arg (an N_ARG word) is a single, bare, unquoted literal --
- * no parameter/command/arithmetic expansion, no glob, no quoting --
- * so reading it needs no expansion machinery, hence no question of
- * *where* (parent vs. the stage's own subshell environment) any
- * expansion side effect would run: there isn't one. *s/*n point at
- * the literal's raw (not NUL-terminated) bytes. */
+/* true iff arg (an N_ARG word) is a single bare word -- no parameter/
+ * command/arithmetic expansion (those are separate N_ARGSTR-sibling or
+ * different-id nodes, never this one) -- whose bytes are already
+ * final, needing no expansion machinery to read: unquoted, or quoted
+ * (single or double) with nothing in it that needed the parser's own
+ * glob-protection escaping (parse_isesc(), src/parse.h). That escaping
+ * inserts a literal '\\' ahead of a protected byte regardless of quote
+ * style, indistinguishable here from a "real" backslash the word
+ * actually contains -- telling those apart needs exactly the
+ * expand_unescape() pass this whole path exists to avoid, so any
+ * backslash at all declines instead. *s/*n point at the literal's raw
+ * (not NUL-terminated) bytes. */
 static int
 pipeline_word_literal(union node* arg, const char** s, size_t* n) {
   union node* w;
@@ -54,7 +60,15 @@ pipeline_word_literal(union node* arg, const char** s, size_t* n) {
 
   w = arg->narg.list;
 
-  if(!w || w->next || w->id != N_ARGSTR || w->nargstr.flag != S_UNQUOTED)
+  if(!w || w->next || w->id != N_ARGSTR)
+    return 0;
+
+  switch(w->nargstr.flag) {
+    case S_UNQUOTED: case S_SQUOTED: case S_DQUOTED: break;
+    default: return 0;
+  }
+
+  if(byte_chr(w->nargstr.stra.s, w->nargstr.stra.len, '\\') < w->nargstr.stra.len)
     return 0;
 
   *s = w->nargstr.stra.s;
@@ -167,6 +181,60 @@ pipeline_filter_argv_free(char** argv) {
     alloc_free(argv[i]);
 
   alloc_free(argv);
+}
+
+/* pipeline_filter_prepare_chain: pipeline_filter_prepare() run over
+ * every non-last stage of the pipeline at once -- the static half of
+ * "N adjacent builtin filters chain straight into the true last
+ * stage" (TODO.md Goal 13). All ncmd-1 non-last stages have to
+ * qualify or none do: one stage that doesn't falls the *whole*
+ * pipeline back to today's job_fork()/fd_pipe() path, unchanged --
+ * there's no partial chain here, only "all" or "nothing chains".
+ * Returns the stage count (ncmd-1) on success, filling *b_out/
+ * *argv_out/*argc_out (each an ncmd-1-element array the caller owns,
+ * parallel to npipe->cmds); returns 0 on failure, having freed
+ * anything it already allocated. */
+static int
+pipeline_filter_prepare_chain(struct npipe* npipe, struct builtin_cmd*** b_out, char**** argv_out, int** argc_out) {
+  int n = (int)npipe->ncmd - 1;
+  struct builtin_cmd** b;
+  char*** argv;
+  int* argc;
+  union node* node;
+  int i;
+
+  if(n <= 0)
+    return 0;
+
+  b = alloc((size_t)n * sizeof(*b));
+  argv = alloc((size_t)n * sizeof(*argv));
+  argc = alloc((size_t)n * sizeof(*argc));
+
+  if(!b || !argv || !argc) {
+    alloc_free(b);
+    alloc_free(argv);
+    alloc_free(argc);
+    return 0;
+  }
+
+  for(node = npipe->cmds, i = 0; node->next; node = node->next, i++) {
+    if(!(b[i] = pipeline_filter_prepare(node, &argv[i], &argc[i]))) {
+      while(i > 0) {
+        i--;
+        pipeline_filter_argv_free(argv[i]);
+      }
+
+      alloc_free(b);
+      alloc_free(argv);
+      alloc_free(argc);
+      return 0;
+    }
+  }
+
+  *b_out = b;
+  *argv_out = argv;
+  *argc_out = argc;
+  return n;
 }
 
 #if !defined(HAVE_FORK)
@@ -341,14 +409,23 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   struct job* job;
 
   /* filter chaining (TODO.md Goal 13) -- see the comment where chain_b
-     is populated, below. chain_ctx/chain_ops are only ever non-NULL
-     once open() has actually committed, for the one loop iteration
-     that immediately follows. */
-  struct builtin_cmd* chain_b = NULL;
-  char** chain_argv = NULL;
-  int chain_argc = 0;
-  void* chain_ctx = NULL;
-  const struct filter_ops* chain_ops = NULL;
+     is populated, below. chain_b/argv/argc (chain_n entries) are the
+     static candidates; chain_ctx/chain_ops/chain_committed reflect how
+     many of them actually opened, which can be fewer (0, on decline)
+     but never more. chain_link holds the chain_committed-1 in-process
+     buffers that feed one opened stage's output into the next one's
+     open() as "upstream" -- the true last stage never gets one of
+     these, it reads the final opened stage directly (see the
+     "is_last && lastpipe" branch below). */
+  struct builtin_cmd** chain_b = NULL;
+  char*** chain_argv = NULL;
+  int* chain_argc = NULL;
+  int chain_n = 0;
+  void** chain_ctx = NULL;
+  const struct filter_ops** chain_ops = NULL;
+  buffer* chain_link = NULL;
+  int chain_committed = 0;
+  int stage;
 
   /* zsh/ksh run a foreground pipeline's *last* command in the current
      shell instead of forking it too, so e.g. "cmd | read x" sets $x
@@ -362,78 +439,133 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
      that group while it's still the terminal's foreground group. */
   int lastpipe = !npipe->bgnd && !sh->opts.monitor;
 
-  if((job = job_new(npipe->ncmd - (lastpipe ? 1 : 0)))) {
+  /* filter chaining (TODO.md Goal 13), scoped to a pipeline's *entire*
+     non-last prefix, feeding directly into the true last stage
+     (already unforked via lastpipe above, so there's no fd-lifetime
+     hazard in overwriting its stdin below). chain_b/argv/argc are the
+     *candidates* (pipeline_filter_prepare_chain()'s static AST check,
+     above); all of them open() successfully or none of them do -- the
+     loop below never partially commits a chain, so there is no stage
+     left needing a heap-owned upstream buffer it doesn't already have:
+     the only stage that ever reads a real fd is stage 0 (fd_in->r,
+     persistent already), every later chained stage's upstream is one
+     of the in-process buffers this same pre-pass builds
+     (chain_link[], below) -- unlike a chain rooted anywhere else in
+     the pipeline, this one never needs a forked predecessor's transient
+     per-iteration pipe fd to outlive that iteration.
+
+     A candidate can still decline at open() time for a reason the
+     static check can't see (grep -c/-q, a bad pattern, ...); since
+     open() itself has no side effects before it commits (see
+     builtin_filter.h), declining stage i just means every stage before
+     it gets rolled back too (their .close() runs right here) and the
+     whole pipeline runs exactly as if no candidate had ever been
+     found. */
+  if(lastpipe)
+    chain_n = pipeline_filter_prepare_chain(npipe, &chain_b, &chain_argv, &chain_argc);
+
+  if(chain_n > 0) {
+    buffer* upstream = fd_in->r;
+
+    chain_ctx = alloc((size_t)chain_n * sizeof(*chain_ctx));
+    chain_ops = alloc((size_t)chain_n * sizeof(*chain_ops));
+
+    if(chain_n > 1)
+      chain_link = alloc((size_t)(chain_n - 1) * sizeof(*chain_link));
+
+    for(stage = 0; stage < chain_n; stage++) {
+      /* exec_command.c resets these the same way before calling any
+         builtin's fn() -- open() runs shell_getopt() over chain_argv
+         too, and a stale cursor left over from an earlier stage (or an
+         earlier command entirely) indexes past this stage's own small
+         argv array instead of parsing it. */
+      shell_optind = 1;
+      shell_optofs = 0;
+      chain_ops[stage] = chain_b[stage]->filter->ops;
+      chain_ctx[stage] = chain_ops[stage]->open(chain_argc[stage], chain_argv[stage], upstream);
+
+      if(!chain_ctx[stage]) {
+        int j;
+
+        /* all-or-nothing (see the comment above this loop): every
+           earlier stage in this attempt gets rolled back too, not
+           just left "committed" -- job_new() below sizes its proc
+           table from chain_committed, and a stage that's actually
+           going to job_fork() below needs a slot in it. */
+        for(j = 0; j < stage; j++)
+          chain_link[j].deinit(&chain_link[j]);
+
+        chain_committed = 0;
+        break;
+      }
+
+      chain_committed++;
+
+      if(stage < chain_n - 1) {
+        buffer_filter_init(&chain_link[stage], chain_ops[stage], chain_ctx[stage]);
+        upstream = &chain_link[stage];
+      }
+    }
+  }
+
+  if((job = job_new(npipe->ncmd - (lastpipe ? 1 : 0) - chain_committed))) {
     job->bgnd = npipe->bgnd;
   } else {
     buffer_puts(fd_err->w, "no job control");
     buffer_putnlflush(fd_err->w);
   }
 
-  /* filter chaining (TODO.md Goal 13), scoped for now to exactly one
-     link: an exactly-2-stage pipeline's *first* stage, feeding
-     directly into the true last stage (already unforked via lastpipe
-     above, so there's no fd-lifetime hazard in overwriting its stdin
-     below). chain_b/argv/argc are the *candidate*; a candidate can
-     still decline at open() time for a reason the static AST check
-     below can't see (grep -c/-q, a bad pattern), in which case this
-     one stage just falls through to job_fork() exactly as if no
-     candidate had ever been found.
-
-     Deliberately NOT extended to a 3+-stage pipeline's second-to-last
-     stage yet, even though pipeline_filter_prepare() itself doesn't
-     care where in the pipeline its node sits: that stage's own
-     upstream ("in" below) would be a real, already-forked
-     predecessor's pipe, wired into an alloca()'d struct fd that is
-     only valid for *this* loop iteration (see fd_alloc()/HAVE_ALLOCA
-     above) -- but the chain's ctx stores that upstream buffer* for
-     the *true last* stage's iteration to read from, several loop
-     iterations later, after "in"'s stack space has already been
-     reused. Confirmed by testing: "grep a | sed ..." (2 stages, this
-     stage's upstream is the persistent fd_in->r) works; "cat | grep a
-     | sed ..." (grep's upstream would be a transient real "in")
-     silently produced no output. Lifting this restriction needs the
-     real fd dup()'d into a heap-owned buffer before this iteration's
-     "in" goes out of scope, not just a wider node-position check. */
-  if(lastpipe && npipe->ncmd == 2) {
-    chain_b = pipeline_filter_prepare(npipe->cmds, &chain_argv, &chain_argc);
-  }
-
   fdstack_push(&st);
 
-  for(node = npipe->cmds; node; node = node->next) {
+  for(node = npipe->cmds, stage = 0; node; node = node->next, stage++) {
     struct fd *in = 0, *out = 0;
     char inbuf[FD_BUFSIZE];
     int is_last = (node->next == NULL);
+    /* this stage is one of the chain_committed opened before the loop
+       -- it never forks, never gets a real pipe, and (below) never
+       does anything at all in this loop: it already ran, on demand,
+       as whatever later stage pulled it through chain_link[]/the true
+       last stage's fd_filter() wiring. */
+    int chained = stage < chain_committed;
 
-    /* if there was a previous command we read input from pipe */
-    if(prevfd >= 0) {
+    /* if there was a previous command we read input from pipe -- or,
+       if this is the true last (lastpipe) stage right after a fully
+       committed chain, from that chain instead (prevfd is untouched
+       at -1 for the whole chain: none of its stages ever got a real
+       pipe), in which case "in" still has to exist so the "is_last &&
+       lastpipe" branch below has something to fd_close()+fd_filter(). */
+    if(prevfd >= 0 || (is_last && lastpipe && chain_committed > 0)) {
 
 #ifdef HAVE_ALLOCA
       in = fd_alloc();
-      fd_push(in, STDIN_FILENO, FD_READ | FD_PIPE);
+      fd_push(in, STDIN_FILENO, FD_READ | (prevfd >= 0 ? FD_PIPE : 0));
 #else
       in = fd_malloc();
-      fd_push(in, STDIN_FILENO, FD_READ | FD_PIPE | FD_FREE);
+      fd_push(in, STDIN_FILENO, FD_READ | (prevfd >= 0 ? FD_PIPE : 0) | FD_FREE);
 #endif
-      fd_setfd(in, prevfd);
+      if(prevfd >= 0) {
+        fd_setfd(in, prevfd);
 
-      /* fd_init() (via fd_push()) leaves ->r with a NULL, zero-length
-         buffer -- fine for a *forked external* program (it never
-         reads through this struct at all, just inherits the raw pipe
-         fd via dup2()), but a builtin runs in-process and reads
-         through fd_in->r directly. read(fd, NULL, 0) is well-defined
-         to return 0 immediately, which buffer_get_until() (and
-         everything built on it) can't tell apart from real EOF --
-         "cmd | builtin_that_reads_stdin" silently produced no output
-         at all, for every such builtin, confirmed with "echo hi | cat"
-         (redir-pipeline-builtin-stdin-unbuffered, fixes/90). */
-      if(fd_needbuf(in))
-        fd_setbuf(in, inbuf, sizeof(inbuf));
+        /* fd_init() (via fd_push()) leaves ->r with a NULL, zero-length
+           buffer -- fine for a *forked external* program (it never
+           reads through this struct at all, just inherits the raw pipe
+           fd via dup2()), but a builtin runs in-process and reads
+           through fd_in->r directly. read(fd, NULL, 0) is well-defined
+           to return 0 immediately, which buffer_get_until() (and
+           everything built on it) can't tell apart from real EOF --
+           "cmd | builtin_that_reads_stdin" silently produced no output
+           at all, for every such builtin, confirmed with "echo hi | cat"
+           (redir-pipeline-builtin-stdin-unbuffered, fixes/90). */
+        if(fd_needbuf(in))
+          fd_setbuf(in, inbuf, sizeof(inbuf));
+      }
     }
 
-    /* if it isn't the last command we have to create a pipe
-       to pass output to the next command */
-    if(node->next /* || (fd_out->mode & FD_SUBST) == FD_SUBST */) {
+    /* if it isn't the last command we have to create a pipe to pass
+       output to the next command -- unless this stage is chained: it
+       never runs for real, so it never has an "out" to feed anything
+       through a real pipe either. */
+    if(node->next && !chained /* || (fd_out->mode & FD_SUBST) == FD_SUBST */) {
 
 #ifdef HAVE_ALLOCA
       out = fd_alloc();
@@ -471,14 +603,15 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
     }
 
     if(is_last && lastpipe) {
-      if(chain_ctx) {
-        /* the chained stage committed last iteration: repurpose this
-           (already fd_push()'d) stdin to read from it instead of the
-           real pipe fd_setfd() wired above -- fd_close() first, or
-           fd_filter()'s own buffer_init() would silently orphan that
-           real fd (nothing else still points at it to close later). */
+      if(chain_committed > 0) {
+        /* the whole chain ahead of this stage already opened, before
+           the loop: repurpose this (already fd_push()'d) stdin to
+           read from its last link instead of a real pipe -- fd_close()
+           first, or fd_filter()'s own buffer_init() would silently
+           orphan the fd_push() above (nothing else still points at it
+           to close later). */
         fd_close(in);
-        fd_filter(in, chain_ops, chain_ctx);
+        fd_filter(in, chain_ops[chain_committed - 1], chain_ctx[chain_committed - 1]);
       }
 
       /* run directly in the current shell instead of forking -- see
@@ -489,40 +622,12 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
          eval_pipeline_sequential() -- there is no disposable forked
          process to execve() into, only the one real, ongoing shell. */
       eval_tree(e, node, 0);
-    } else if(chain_b && node->next && node->next->next == NULL) {
-      /* the chain candidate found before the loop -- try it for real,
-         now that this stage's actual upstream (in ? in->r : fd_in->r,
-         exactly what job_fork() would otherwise have handed a forked
-         child) is available. shell_optind/shell_optofs must be reset
-         exactly as exec_command.c resets them before calling any
-         builtin's fn() -- open() runs shell_getopt() over chain_argv
-         too, and a stale cursor left over from an earlier command
-         indexes past this small argv array instead of parsing it. */
-      shell_optind = 1;
-      shell_optofs = 0;
-      chain_ops = chain_b->filter->ops;
-      chain_ctx = chain_ops->open(chain_argc, chain_argv, in ? in->r : fd_in->r);
-
-      if(!chain_ctx) {
-        /* declined for a reason the static check couldn't see (grep
-           -c/-q, a bad pattern, ...): in/out this iteration are the
-           same real, untouched fds job_fork() would use anyway, so
-           this is exactly as if no candidate had been found. */
-        chain_ops = NULL;
-
-        if(!(pid = job_fork(job, node, npipe->bgnd))) {
-          exit(eval_tree(e, node, E_EXIT));
-        }
-      } else {
-        /* committed: no fork, no output for this stage -- out (this
-           stage's real, now-unused outgoing pipe) is simply closed as
-           dead plumbing by the existing fd_pop(out) below, same as
-           any other unused pipe; the job this pipeline no longer
-           forks for must shrink to match, or job_wait()'s loop would
-           wait on a proc slot job_fork() never filled. */
-        if(job)
-          job->nproc--;
-      }
+    } else if(chained) {
+      /* already opened in the pre-pass before this loop, and reads on
+         demand through chain_link[]/the true last stage's fd_filter()
+         wiring above -- nothing left to do for it here. job_new()
+         was already sized without this stage, so job_wait() below
+         doesn't wait on a proc slot job_fork() never filled. */
     } else if(!(pid = job_fork(job, node, npipe->bgnd))) {
       /* no job control for commands inside pipe */
       /*e->mode &= E_JCTL;*/
@@ -579,8 +684,31 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   if(job)
     job_free(job);
 
-  if(chain_b)
-    pipeline_filter_argv_free(chain_argv);
+  if(chain_b) {
+    int j;
+
+    /* chain_link[0..chain_committed-2]: the last committed stage's ctx
+       already closed above, via fd_pop(in)'s fd_filter_deinit() --
+       every earlier one only ever got wrapped in one of these, so this
+       is the one place left that closes it (buffer_filter_init() wired
+       ops->close(ctx) into (b)->deinit itself). Nothing to do here for
+       a declined chain (chain_committed == 0): the pre-pass already
+       rolled every opened stage back to this same state before the
+       loop ever ran. */
+    for(j = 0; j < chain_committed - 1; j++)
+      chain_link[j].deinit(&chain_link[j]);
+
+    alloc_free(chain_link);
+    alloc_free(chain_ctx);
+    alloc_free(chain_ops);
+
+    for(j = 0; j < chain_n; j++)
+      pipeline_filter_argv_free(chain_argv[j]);
+
+    alloc_free(chain_argv);
+    alloc_free(chain_argc);
+    alloc_free(chain_b);
+  }
 
   /* eval_simple_command() updates sh->exitcode directly (not just its
      return value) so "$?" sees a command's status immediately, even

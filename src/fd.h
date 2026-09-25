@@ -172,6 +172,7 @@ void fd_close(struct fd*);
 void fd_dump(struct fd*, buffer* b);
 void fd_dumplist(buffer* b);
 void fd_filter(struct fd*, const struct filter_ops* ops, void* ctx);
+void buffer_filter_init(buffer*, const struct filter_ops* ops, void* ctx);
 void fd_free(struct fd*);
 void fd_here(struct fd*, stralloc* sa);
 void fd_init(struct fd*, int n, int mode);

@@ -3672,14 +3672,24 @@ entries for any deliberately-omitted option).
 
 ## Goal 13 (secondary) — pull-based filter chaining for pure-builtin pipeline segments
 
-**Not started; this section is the plan.** Motivating case: `grep <in.txt
-'pat' | sed 's/x/y/'` — a common idiom (select lines, then edit them) where
-both stages are already shish builtins. Today the non-last stage still pays
-a real `fork()`/`pipe()` even though nothing about a builtin actually needs
-one; the last stage already avoids it via lastpipe (see the pipeline
-discussion this goal grew out of, 2026-09-25). The idea: let adjacent
-steppable builtins hand off through an in-process buffer chain instead,
-with the last stage running exactly as it does today.
+**MVP done (2026-09-25).** Motivating case: `grep <in.txt 'pat' | sed
+'s/x/y/'` — a common idiom (select lines, then edit them) where both stages
+are already shish builtins. Before this, every non-last stage paid a real
+`fork()`/`pipe()` even though nothing about a builtin actually needs one;
+the last stage already avoided it via lastpipe (see the pipeline discussion
+this goal grew out of, 2026-09-25). `eval_pipeline()` now lets a pipeline's
+*entire* non-last prefix (not just its first stage) chain straight into the
+true last stage through the in-process buffers below, all-or-nothing: every
+non-last stage has to be a filter-capable builtin invoked with literal
+argv (`pipeline_filter_prepare_chain()`) and actually `.open()` (a runtime
+decline, e.g. `grep -c`/`-q`, rolls the whole chain back), or the pipeline
+runs exactly as it did before this goal. `cat <file> | grep -E '(a|b)' |
+sed '...'` now runs with zero `fork()`/`pipe()` calls end to end, confirmed
+under `strace -f -e trace=clone`. Resolves open question 3, below.
+Still open: `sed_step`'s resumability was never the risk it looked like
+(sed's existing filter mode already reads incrementally); open question 4
+(`!HAVE_FORK` builds) is unaddressed — `eval_pipeline_sequential()` doesn't
+attempt chaining yet.
 
 ### The constraint that shapes the whole design: `sed` and `grep` are optional
 
@@ -3828,11 +3838,15 @@ it means:
    work.** Worth a small standalone spike — can `sed_cycle.c`'s loop be
    restructured to pause/resume cleanly around `N` and the append-queue's
    flush timing? — before committing to the rest of the design around it.
-3. **Three-or-more-stage chains** (`grep | sed | grep`) fall out of the
-   same per-stage `.filter != NULL` check with no new design, *if* every
-   middle stage's `.read()` cleanly implements "produce output, or signal
-   need-more-input" — worth confirming once `sed_step` exists, not
-   blocking a two-stage MVP.
+3. **Resolved (2026-09-25): three-or-more-stage chains** (`cat | grep |
+   sed`) needed no new design beyond scanning the pipeline's whole
+   non-last prefix at once instead of just its first stage
+   (`pipeline_filter_prepare_chain()`) — the concern this item raised
+   (a middle stage's `.read()` needing to cleanly signal
+   need-more-input) never came up because the chain is pull-based:
+   the true last stage's own `.read()` calls cascade backwards through
+   `chain_link[]` on demand, so an earlier stage is never asked to
+   produce output before its consumer wants it.
 4. **`!HAVE_FORK`/WASI builds get correctness, not just speed, from
    this.** `eval_pipeline_sequential()`'s existing per-stage
    full-materialization fallback (`eval_pipeline.c:29-48`) hangs on an
