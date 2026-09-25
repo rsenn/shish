@@ -3567,6 +3567,13 @@ or a cut-list item there, not a surprise):
   more than the write-once, reset-in-bulk shape an arena suits; expression
   *temporaries* do use `st->tmp`, reset once per statement, as planned.
 
+None of the above went into `BUGS`: the `run_shell`/`RS=""` cut is already
+a documented omission in `help_awk` (`src/builtin/extra/builtin_awk.c`),
+byte-vs-character semantics is a standing repo-wide condition with no
+precedent of its own `BUGS` entry on any other builtin, `for-in` order is
+POSIX-unspecified so not a discrepancy, and regex `RS` is a gawk extension
+POSIX never required.
+
 **Testing**: a standalone build against a POSIX-`read`/`write`-backed
 `struct awk_io` (not wired into the shell) was run under
 `-fsanitize=address,undefined` across ~30 programs spanning every
