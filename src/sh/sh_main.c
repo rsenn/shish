@@ -16,6 +16,7 @@
 #include "../../lib/str.h"
 #include "../../lib/uint32.h"
 #include "../term.h"
+#include "../trace.h"
 #include "../prompt.h"
 #include "../history.h"
 #include "../job.h"
@@ -152,6 +153,19 @@ main(int argc, char** argv) {
   int no_interactive = 0;
   int force_interactive = 0;
   int read_stdin = 0;
+  const char *input_kind = "stdin", *script = NULL;
+
+  TRACE(TRACE_SH,
+        "start",
+        trace_int("argc", argc),
+        trace_argv("argv", argv),
+#if WINDOWS_NATIVE
+        trace_int("pid", 0)
+#else
+        trace_int("pid", getpid()),
+        trace_int("ppid", getppid())
+#endif
+  );
 
   fd_expected = STDERR_FILENO + 1;
 
@@ -308,6 +322,7 @@ main(int argc, char** argv) {
      present, becomes $0 (consumed here so it doesn't leak into $1);
      the remaining arguments become $1, $2, ... */
   if(cmds) {
+    input_kind = "string";
     fd_string(fd_src, cmds, str_len(cmds));
 
     if(argv[shell_optind])
@@ -319,6 +334,8 @@ main(int argc, char** argv) {
      argument (this one included) is left alone to become a plain
      positional parameter instead of being consumed as a script $0. */
   else if(!read_stdin && argv[shell_optind]) {
+    input_kind = "file";
+    script = argv[shell_optind];
     fd_mmap(fd_src, argv[shell_optind]);
 
     sh_argv0 = argv[shell_optind++];
@@ -334,6 +351,16 @@ main(int argc, char** argv) {
   /* set global shell argument vector */
   sh_argv = &argv[shell_optind];
   sh_argc = argc - shell_optind;
+
+  TRACE(TRACE_SH,
+        "input",
+        trace_raw("kind", input_kind),
+        trace_str("script", script),
+        trace_str("command", cmds),
+        trace_str("argv0", sh_argv0),
+        trace_argv("args", sh_argv));
+  (void)input_kind;
+  (void)script;
 
   sh_init();
 
@@ -374,6 +401,14 @@ main(int argc, char** argv) {
         job_terminal_init();
     } else
       src.mode &= ~SOURCE_IACTIVE;
+
+    TRACE(TRACE_SH,
+          "mode",
+          trace_int("interactive", sh_interactive),
+          trace_int("monitor", sh->opts.monitor),
+          trace_int("term", have_term),
+          trace_int("forced", force_interactive),
+          trace_int("no_interactive", no_interactive));
   }
 
   /* dash/ash: a login shell unconditionally reads /etc/profile, then

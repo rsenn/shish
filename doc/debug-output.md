@@ -609,3 +609,17 @@ Sample `fd` struct: `{n=1, name="pipe", level=0, e=1, mode=WRITE|PIPE|TMPBUF, rf
 
 The JSON tree of a command is no longer printed by the shell. Node kinds and the source text
 of words / simple commands are; use `shparse2ast` when the full tree is needed.
+
+### 5.4 Start-up (`sh_main.c`)
+
+| event | payload |
+|---|---|
+| `sh.start` | `argc, argv` (the raw command line), `pid, ppid` |
+| `sh.input` | `kind=string\|file\|stdin`, `script` (file name), `command` (the `-c` string), `argv0`, `args` (positional parameters) |
+| `sh.mode` | `interactive, monitor, term, forced, no_interactive` |
+
+```text
+[49324:1] sh.start(argc=5, argv=[".../shish", "-c", "echo x", "zero", "p1"], pid=49324, ppid=49272)
+[49324:1] sh.input(kind=string, script=NULL, command="echo x", argv0="zero", args=["p1"])
+[49324:1] sh.mode(interactive=0, monitor=0, term=0, forced=0, no_interactive=0)
+```
