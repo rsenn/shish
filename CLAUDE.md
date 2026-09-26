@@ -158,9 +158,8 @@ to `cmake`):
   force-enables the `dump` builtin.
 - `LINK_STATIC=ON` — static-link the executables.
 - `ENABLE_LTO=ON`, `USE_EFENCE=ON` (debug builds), `WARN_WERROR=ON`.
-- `DEBUG_OUTPUT`, `DEBUG_COLOR` — verbose debug instrumentation;
-  `DEBUG_PARSE`, `DEBUG_JOB`, `DEBUG_BUILTIN` are per-subsystem (see
-  `cmake/Debug.cmake`).
+- `DEBUG_OUTPUT`, `DEBUG_COLOR` — verbose debug instrumentation; the trace
+  is selected at run time with `SHISH_TRACE` (see `doc/debug-output.md`).
 - `BUILD_SHFORMAT=ON` (default), `BUILD_SHPARSE2AST=OFF`.
 - `NO_TREE_PRINT=ON` — strip tree-printing helpers from history.
 - Builtins are individually toggleable. `cmake/Builtins.cmake` enumerates

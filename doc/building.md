@@ -85,7 +85,6 @@ to build it on. Every job runs synchronously in the foreground instead
 | `DO_CONFORMANCE_TESTS` | `ON` | register `tests/posix/*.tst` with CTest |
 | `DO_YASH_TESTS` | `OFF` | register `tests/yash/*.tst` too |
 | `DEBUG_OUTPUT`, `DEBUG_COLOR` | `OFF` | verbose instrumentation |
-| `DEBUG_PARSE`, `DEBUG_JOB`, `DEBUG_BUILTIN`, `DEBUG_FD`, `DEBUG_FDTABLE`, `DEBUG_FDSTACK`, `DEBUG_ALLOC` | `OFF` | per-subsystem tracing |
 
 Builtins are selected at configure time — see [Builtins](builtins.md).
 

@@ -36,7 +36,6 @@ detect_pedantic_flags(PEDANTIC_COMPILE_FLAGS)
 
 include(cmake/Debug.cmake)
 
-debug_module_options(ALLOC FD FDSTACK FDTABLE PARSE)
 compiler_flags_debug(CMAKE_C_FLAGS_DEBUG)
 
 include(cmake/Builtins.cmake)
@@ -150,10 +149,6 @@ option(NO_TREE_PRINT "Disable tree_print for history" OFF)
 if(BUILD_DEBUG)
   option(DEBUG_COLOR "Color debug output" OFF)
   option(DEBUG_OUTPUT "Print debug output" ${DEBUG_OUTPUT_DEFAULT})
-
-  debug_flag(PARSE "debug parser")
-  debug_flag(JOB "debug job control")
-  debug_flag(BUILTIN "debug builtins")
 
   if(DEBUG_OUTPUT)
     add_definitions(-DDEBUG_OUTPUT=1)

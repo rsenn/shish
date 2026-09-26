@@ -240,17 +240,8 @@ struct builtin_cmd builtin_table[] = {
      &builtin_dump,
      B_DEFAULT,
      "[-Fvl"
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE)
-     "t"
-#endif
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK)
-     "s"
-#endif
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_JOB)
-     "j"
-#endif
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
-     "f"
+#ifdef DEBUG_OUTPUT
+     "tsjf"
 #endif
      "] [-u FD]",
      help_dump},

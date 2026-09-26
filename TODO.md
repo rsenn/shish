@@ -2990,11 +2990,10 @@ adds `awk`. Specs read 2026-09-20: POSIX.1-2024
 **`sed` is done** (`text/sed/` + `src/builtin/extra/builtin_sed.c`,
 `c3ae2fa5`), including the shared foundation pieces it needed:
 `dfa_replace`/`dfa_repl` (`text/dfa/dfa_replace.c`) and `lib/arena`
-(`696bdcce`, see Goal 3). **`awk` is not started** — nothing under
-`text/awk` exists yet. The design below (originally written for both)
-still describes awk; treat every `sed`-side detail as historical record
-of what shipped, and the shared-foundation table just below as
-"already built, awk just needs to *use* it."
+(`696bdcce`, see Goal 3). **`awk` is done too** (`text/awk/` +
+`src/builtin/extra/builtin_awk.c`, `23998969`, 2026-09-25). The design below
+(originally written for both) is the record of what both were built from;
+treat the shared-foundation table just below as "already built and in use."
 
 ### Answers to the five questions
 
@@ -3031,8 +3030,8 @@ of what shipped, and the shared-foundation table just below as
   sink and exposing `printf_parse_spec`/`printf_emit_numeric` lets awk's
   `printf`/`sprintf` reuse ≈ 150 lines of it; awk adds `%e %E %f %F %g %G`
   by building the spec text and calling `snprintf` for just those.
-- **`lib/arena.h` exists but is interface-only** ("not implemented yet").
-  Implementing it (≈ 60 lines: `arena_init/alloc/reset/free`) serves this goal
+- **`lib/arena` is implemented** (`696bdcce`, see Goal 3; `arena_init/alloc/
+  reset/free` plus `tell/rewind/grow/trim`). It serves this goal
   and Goals 3/4: the sed script and the awk program live in one arena freed
   at exit; awk's *temporaries* (string results of expressions) live in a
   second arena reset after every statement, so the interpreter needs almost
@@ -3656,12 +3655,17 @@ the top of this file. `awk` (1065) is already Goal 11.)
   are one syscall plus formatting) but only pay off where `fork`+`exec` of
   the real one is unavailable; lower priority than the text-pipeline group
   since they're less central to typical scripts.
-- **Niche/legacy POSIX text utilities**: `getconf`, `xargs`, `cmp`, `bc`,
+- **Niche/legacy POSIX text utilities**: `getconf`, `cmp`, `bc`,
   `comm`, `paste`, `fold`, `mkfifo`, `join`, `expand`/`unexpand`, `od`,
   `pr`, `cksum`, `tsort`, `csplit`, `pathchk`, `split`, `chgrp` — real
   POSIX utilities, all seen in the corpus, but each at low enough frequency
-  (and `xargs`/`bc` non-trivial in scope) that they're candidates, not a
+  (and `bc` non-trivial in scope) that they're candidates, not a
   near-term plan; no per-utility sizing has been done for these yet.
+  (`xargs` left this list: it is now an `EXTRA_BUILTIN`,
+  `src/builtin/extra/builtin_xargs.c`, with `-0 -a -d -I -L -l -n -o -P -p -r -t`;
+  gaps: no blank/quote splitting of input lines, `-E`/`-s`/`-x` accepted but
+  ignored, empty input with a utility given runs nothing. Tests:
+  `tests/builtin-xargs.sh`.)
 
 No file layout, option sets, or size estimates have been worked out for any
 of these yet — that's the next step once one is picked up, following the
@@ -3884,3 +3888,47 @@ it means:
   only piece of this done so far; its growth path (context, `$PATH`,
   `complete`/`compgen`) is Goal 9. UTF-8-aware editing (per-character cursor and
   backspace, display columns) is milestone M5 of Goal 7.
+
+---
+
+## Goal 14 (secondary) — evaluator trace (`SHISH_TRACE`): finish the instrumentation
+
+**Steps 1-3 and the start-up trace are done (2026-09-26); the design, the event
+catalogue and the rest of the plan are in [`doc/debug-output.md`](doc/debug-output.md).**
+A uniform, parseable trace layer (`src/trace.h`, `src/trace/`) replaced the old
+`debug.log` prints: one event per line, `[pid:depth] mod.event(k=v, ...)`, one
+`write()` each, selected at run time with `SHISH_TRACE=exec,fd,...|all|-name` and
+`SHISH_TRACE_FILE=path|-` (default `trace.log`), compiled out without
+`DEBUG_OUTPUT`. Modules with events today: `exec`, `builtin`, `fd`, `fdstack`,
+`fdtable`, `eval`, `expand`, `redir`, `parse`, `sh` (start-up: `sh.start/input/mode`),
+`sig` (traps only). `debug.log` is no longer created.
+
+**Still open**
+
+- **Step 4: fd\* internals.** Entry events with parameters for `fd_push/dup/open/here`,
+  `fdstack_push/pop/fork/npipes/flatten/update/unref`, `fdtable_lazy/wish/gap/open/close`,
+  `fd_state_save/restore` (doc §4.4). `fdstack.npipes` + `fdstack.data` would have caught the
+  `$(a; b)` capture bug (`fixes/241`) on sight.
+- **Step 5: environment, signals, jobs** (doc §4.5/4.6): `var.set/unset/chflg/import/export`,
+  `vartab.push/pop`, `sh.push/pop/args/opt/cwd/forked/exit`, `sig.action/block/unblock`,
+  `trap.*`, `job.new/fork/wait/update/signal`. The `sh_onsig` SIGCHLD handler must not call
+  `TRACE()` (not async-signal-safe); needs a ring buffer flushed from `trap_run_pending()`.
+  The three trap events that exist today are already emitted from `trap_handler()`.
+- **Step 6: tooling.** `tools/trace2seq` (trace -> per-pid call tree / sequence diagram) and
+  trace-based test oracles ("this script forks N times and execve's `/bin/cat` with fd 0 = `in`").
+- **`SHISH_TRACE` is read from the process environment once**, at the first event; an
+  `export SHISH_TRACE=...` inside a running script is not seen. Reading it through `var_get`
+  would fix that but touches every event's startup path.
+- **Autotools:** works in-tree only (`./autogen.sh && ./configure --enable-debug CPPFLAGS=...`,
+  serial `make`, then `./config.status src/builtin_config.h` once — configure does not run its
+  `AC_CONFIG_COMMANDS` step, cause not found). `src/*/Makefile.in` `MODULES` lists are
+  hand-maintained and drift (`expand_getorcreate`, `fd_filter`, `trace_fd` had to be fixed by hand).
+- **`timeout`'s child output is not captured** when it is the last stage of a `$(...)`
+  (its wait loop cannot drain the substitution pipe first); `BUGS` has the
+  "redirect inside `$(...)` is ignored for forked commands" entry that shares a root cause
+  (`fdstack_pipe()` overrides whatever fd 1 was redirected to).
+- **What the trace already found:** the shell's internal pipe (fds 128/129) leaks into every
+  exec'd program (`fdtable.exec.fds` shows it); `cmdsubst_ran` was cleared after word expansion
+  (`fixes/242`); `xargs`'s uninitialised `items.c`, `-d` separator not stripped, output escaping
+  `$(...)` (`fixes/240`, `fixes/241`).
+
