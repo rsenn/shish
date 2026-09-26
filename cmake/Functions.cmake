@@ -19,8 +19,6 @@ endfunction()
 function(append_unique OUTPUT_VAR)
   set(RESULT "${${OUTPUT_VAR}}")
   foreach(ITEM ${ARGN})
-    #[[isin_var(HAVE_ITEM "${ITEM}" RESULT)
-    if(NOT HAVE_ITEM)]]
     if(NOT ITEM IN_LIST RESULT)
       list(APPEND RESULT "${ITEM}")
     endif()
@@ -31,39 +29,14 @@ function(append_unique OUTPUT_VAR)
 endfunction()
 
 #
-# add_cflags <ADD> [OUTPUT_VAR]
-#
-function(add_cflags ADD)
-  if(${ARGC} LESS 2)
-    set(OUTPUT_VAR CMAKE_C_FLAGS)
-  else()
-    set(OUTPUT_VAR "${ARGV1}")
-  endif()
-  
-  #message("add_cflags ${ADD} ${OUTPUT_VAR}")
-  named_dump("add_clfags" ADD OUTPUT_VAR)
-
-  set(RESULT "${${OUTPUT_VAR}}")
-  string(REGEX REPLACE " +" ";" FLAGS "${RESULT}")
-  string(REGEX REPLACE "^;+" "" FLAGS "${FLAGS}")
-  list(REMOVE_DUPLICATES FLAGS) 
-  if(NOT ADD IN_LIST FLAGS)
-    list(APPEND RESULT ${ADD})
-  endif()
-  if(OUTPUT_VAR)
-    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
-  endif()
-endfunction()
-
-#
 # assign_items <ITEMS> [VAR-NAMES...]
 #
 macro(assign_items ITEMS)
-  set(LIST "${ITEMS}")
-  set(INDEX 0)
-  foreach(VAR_NAME ${ARGN})
-    list(GET LIST "${INDEX}" "${VAR_NAME}")
-    math(EXPR INDEX "${INDEX} + 1")
+  set(__L "${ITEMS}")
+  set(__I 0)
+  foreach(__A ${ARGN})
+    list(GET __L "${__I}" "${__A}")
+    math(EXPR __I "${__I} + 1")
  endforeach()
 endmacro()
 
@@ -91,72 +64,29 @@ function(escape_string OUTPUT_VAR STRING)
 endfunction()
 
 #
-# assign_named [ARGS...]
+# assign_name_value [ARGS...]
 #
-macro(assign_named)
-  foreach(__A ${ARGN})
+macro(assign_name_value)
+  foreach(__A ${ARGV})
      if(NOT DEFINED __N)
       set(__N "${__A}")
      else()
       set(__V "${__A}")
      endif()
      if(DEFINED __V)
-       escape_string(__V "${__V}")
-       set("${__N}" "${__V}")
+       escape_string("${__N}" "${__V}")
        unset(__N)
        unset(__V)
      endif()
   endforeach()
 endmacro()
 
-set(DUMP_FORMAT INDENT " " START " {" END " }" PROP ": " QUOTE "'" COMMA "," NEWLINE "\n")
-
 #
-# dump [VAR-NAMES...]
+# assign_name_value_var <VAR_NAME>
 #
-function(named_dump MSG)
-  assign_named(${DUMP_FORMAT})
-  set(INDEX 0)
-  math(EXPR LAST "${ARGC} - 2")
-  set(OUTPUT "${MSG}${START}")
-  foreach(ARG ${ARGN})
-    set(VALUE "${${ARG}}")
-    string(REGEX REPLACE "\\\\" "\\\\\\\\" VALUE "${VALUE}")
-    string(REGEX REPLACE ";" "\\\\n" VALUE "${VALUE}")
-    set(LINE "${INDENT}${ARG}${PROP}${QUOTE}${VALUE}${QUOTE}")
-    if(INDEX LESS LAST)
-      set(LINE "${LINE}${COMMA}")
-    endif()
-    #message("${LINE}")
-    set(OUTPUT "${OUTPUT}${NEWLINE}${LINE}")
-    math(EXPR INDEX "${INDEX} + 1")
-  endforeach()
-  if(NOT END STREQUAL "")
-    set(OUTPUT "${OUTPUT}${NEWLINE}${END}")
-  endif()
-  message("${OUTPUT}")
-endfunction()
-
-#
-# dump [VAR-NAMES...]
-#
-function(dump VAR)
-  named_dump("Variable dump:")
-endfunction()
-
-#
-# dump_list [VAR-NAMES...]
-#
-function(dump_list VARIABLE_NAME)
-  message("List dump of ${VARIABLE_NAME}:")
-  list(LENGTH "${VARIABLE_NAME}" NUM_ITEMS)
-  set(INDEX 0)
-  while(${INDEX} LESS ${NUM_ITEMS})
-    list(GET "${VARIABLE_NAME}" "${INDEX}" ITEM)
-    message("${DUMP_INDENT}${INDEX}: ${ITEM}")
-    math(EXPR INDEX "${INDEX} + 1")
-  endwhile()
-endfunction()
+macro(assign_name_value_var VAR_NAME)
+  assign_name_value(${${VAR_NAME}})
+endmacro()
 
 #
 # isin_var <OUTPUT-VAR> <ITEM> <VAR-NAME>
@@ -177,14 +107,7 @@ endfunction()
 #
 function(isin_list OUTPUT_VAR ITEM)
   set(LIST "${ARGN}")
-  if(ITEM IN_LIST LIST)
-    set(RESULT TRUE)
-  else()
-    set(RESULT FALSE)
-  endif()
-  if(OUTPUT_VAR)
-    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
-  endif()
+  isin_var("${OUTPUT_VAR}" "${ITEM}" LIST)
 endfunction()
 
 #
@@ -192,14 +115,13 @@ endfunction()
 #
 macro(show_result RESULT_VAR)
   if(RESULT_VAR)
-    set(VALUE "${${RESULT_VAR}}")
-    if(VALUE)
-      set(RESULT yes)
+    if(${${RESULT_VAR}})
+      set(__R yes)
     else()
-      set(RESULT no)
+      set(__R no)
     endif()
   endif()
-  message("${RESULT_VAR} = ${RESULT}")
+  message("${RESULT_VAR} = ${__R}")
 endmacro()
 
 #
@@ -330,6 +252,31 @@ function(var2define NAME)
 endfunction()
 
 #
+# add_cflags <ADD> [OUTPUT_VAR]
+#
+function(add_cflags ADD)
+  if(${ARGC} LESS 2)
+    set(OUTPUT_VAR CMAKE_C_FLAGS)
+  else()
+    set(OUTPUT_VAR "${ARGV1}")
+  endif()
+  
+  #message("add_cflags ${ADD} ${OUTPUT_VAR}")
+  named_dump("add_clfags" ADD OUTPUT_VAR)
+
+  set(RESULT "${${OUTPUT_VAR}}")
+  string(REGEX REPLACE " +" ";" FLAGS "${RESULT}")
+  string(REGEX REPLACE "^;+" "" FLAGS "${FLAGS}")
+  list(REMOVE_DUPLICATES FLAGS) 
+  if(NOT ADD IN_LIST FLAGS)
+    list(APPEND RESULT ${ADD})
+  endif()
+  if(OUTPUT_VAR)
+    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+#
 # debug_flag <NAME> <DESC>
 #
 macro(debug_flag NAME DESC)
@@ -400,6 +347,54 @@ set(LIST_INDENT "    ")
 set(LIST_SEP " ")
 
 #
+# dump [VAR-NAMES...]
+#
+function(named_dump MSG)
+  assign_name_value_var(DUMP_FORMAT)
+  set(INDEX 0)
+  math(EXPR LAST "${ARGC} - 2")
+  set(OUTPUT "${MSG}${START}")
+  foreach(ARG ${ARGN})
+    set(VALUE "${${ARG}}")
+    string(REGEX REPLACE "\\\\" "\\\\\\\\" VALUE "${VALUE}")
+    string(REGEX REPLACE ";" "\\\\n" VALUE "${VALUE}")
+    set(LINE "${INDENT}${ARG}${PROP}${QUOTE}${VALUE}${QUOTE}")
+    if(INDEX LESS LAST)
+      set(LINE "${LINE}${COMMA}")
+    endif()
+    set(OUTPUT "${OUTPUT}${NEWLINE}${LINE}")
+    math(EXPR INDEX "${INDEX} + 1")
+  endforeach()
+  if(NOT END STREQUAL "")
+    set(OUTPUT "${OUTPUT}${NEWLINE}${END}")
+  endif()
+  message("${OUTPUT}")
+endfunction()
+
+set(DUMP_FORMAT INDENT " " START " {" END " }" PROP ": " QUOTE "'" COMMA "," NEWLINE "\n")
+
+#
+# dump [VAR-NAMES...]
+#
+function(dump VAR)
+  named_dump("Variable dump:")
+endfunction()
+
+#
+# dump_list [VAR-NAMES...]
+#
+function(dump_list VARIABLE_NAME)
+  message("List dump of ${VARIABLE_NAME}:")
+  list(LENGTH "${VARIABLE_NAME}" NUM_ITEMS)
+  set(INDEX 0)
+  while(${INDEX} LESS ${NUM_ITEMS})
+    list(GET "${VARIABLE_NAME}" "${INDEX}" ITEM)
+    message("${DUMP_INDENT}${INDEX}: ${ITEM}")
+    math(EXPR INDEX "${INDEX} + 1")
+  endwhile()
+endfunction()
+
+#
 # make_list <OUTPUT-VAR> <MAX_LINE_LEN>
 #
 function(make_list OUTPUT_VAR MAX_LINE_LEN)
@@ -462,9 +457,7 @@ macro(strip_minsize TARGET)
   if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" AND MINSIZE_STRIP AND CMAKE_STRIP AND NOT EMSCRIPTEN)
     add_custom_command(TARGET ${TARGET} POST_BUILD
       COMMAND
-        ${CMAKE_STRIP} -s -R .comment -R .note -R .note.ABI-tag -R
-        .note.gnu.build-id -R .note.gnu.property -R .eh_frame -R .eh_frame_hdr
-        $<TARGET_FILE:${TARGET}>
+        ${CMAKE_STRIP} -s -R .comment -R .note -R .note.ABI-tag -R .note.gnu.build-id -R .note.gnu.property -R .eh_frame -R .eh_frame_hdr $<TARGET_FILE:${TARGET}>
       COMMENT "Stripping ${TARGET}")
   endif()
 endmacro()
