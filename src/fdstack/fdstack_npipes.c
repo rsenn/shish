@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fdstack.h"
 
 /* returns how many pipes we have to establish from fdstack to fdstack->parent
@@ -36,6 +37,8 @@ fdstack_npipes(int mode) {
     if(here)
       break;
   }
+
+  TRACE_RET(TRACE_FDSTACK, "npipes", trace_hex("mode", mode), trace_int("n", ret));
 
   return ret;
 }

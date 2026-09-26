@@ -1,6 +1,7 @@
 #include "../../lib/byte.h"
 #include "../eval.h"
 #include "../sh.h"
+#include "../trace.h"
 #include "../../lib/shell.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
@@ -17,6 +18,7 @@ sh_forked(void) {
   struct env* e = sh;
   struct env* next;
   char** keep_argv = e->arg.v;
+  int old_pid = sh_pid;
 
   /* if we're not in the root environment we clean up any shell env */
   for(sh = sh->parent; sh; sh = next) {
@@ -71,6 +73,8 @@ sh_forked(void) {
      job_fork()'s child branch uses it to setpgid() itself into the
      right process group, and "$$" relies on it too. */
   sh_pid = getpid();
+
+  TRACE(TRACE_SH, "forked", trace_int("old", old_pid), trace_int("new", sh_pid));
 
   return sh_pid;
 }

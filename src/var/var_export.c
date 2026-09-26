@@ -1,6 +1,7 @@
 #include "../../lib/byte.h"
 #include "../var.h"
 #include <stdlib.h>
+#include "../trace.h"
 
 /* export variables for execve()
  * ----------------------------------------------------------------------- */
@@ -17,6 +18,8 @@ var_export(char** dest) {
       dest[n++] = var->sa.s;
 
   dest[n] = NULL;
+
+  TRACE(TRACE_VAR, "export", trace_int("count", n));
 
   return dest;
 }

@@ -21,7 +21,7 @@
  * term_left() needs term_pos to already reflect where the cursor
  * visually is, which a raw buffer_put() of the line text does not
  * update itself. */
-static void
+void
 term_complete_redraw(void) {
   const char* prompt;
   size_t plen;

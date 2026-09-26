@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fd.h"
 #include "../fdtable.h"
 #include "../sh.h"
@@ -21,6 +22,8 @@
 int
 fdtable_exec(void) {
   int i;
+
+  trace_fdtable("exec.table");
 
   /* the sources can be closed if an execve() follows */
   while(fdtable[STDSRC_FILENO])

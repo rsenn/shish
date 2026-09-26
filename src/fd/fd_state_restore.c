@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fd.h"
 #include "../../lib/byte.h"
 
@@ -16,6 +17,8 @@
  * ----------------------------------------------------------------------- */
 void
 fd_state_restore(const struct fd_state* st) {
+  TRACE(TRACE_FD, "state.restore", trace_int("expected", st->expected), trace_int("lo", st->lo), trace_int("hi", st->hi));
+
   fd_expected = st->expected;
   fd_top = st->top;
   fd_lo = st->lo;

@@ -1,5 +1,6 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#include "../trace.h"
 #endif
 #include "../../lib/windoze.h"
 #if !WINDOWS_NATIVE
@@ -24,6 +25,8 @@ int
 job_wait(struct job* j, pid_t pid, int* status) {
   int ret = 0, s;
   size_t i;
+
+  TRACE(TRACE_JOB, "wait", trace_int("id", j ? j->id : 0), trace_int("pgrp", j ? j->pgrp : 0), trace_int("pid", pid));
   /* bail-out bound for the retry loop below, in case wait_pid() and
      the async SIGCHLD handler both keep finding nothing (e.g. an
      unrelated bug loses track of a process entirely) -- 5000 * 1ms is
@@ -104,6 +107,7 @@ job_wait(struct job* j, pid_t pid, int* status) {
 
       if(ret > 0) {
         job_signal(ret, s);
+        TRACE(TRACE_JOB, "reap", trace_int("pid", ret), trace_hex("status", s));
         *status = s;
 
         if(WAIT_IF_STOPPED(s))
@@ -201,6 +205,8 @@ job_wait(struct job* j, pid_t pid, int* status) {
 #endif
     }
   }
+
+  TRACE_RET(TRACE_JOB, "wait", trace_int("pid", ret), trace_hex("status", status ? *status : 0));
 
   return ret;
 }

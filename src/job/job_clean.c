@@ -2,6 +2,7 @@
 #include "../fdtable.h"
 #include "../sh.h"
 #include "../term.h"
+#include "../trace.h"
 
 void
 job_clean(bool print) {
@@ -40,6 +41,7 @@ job_clean(bool print) {
 
         job_print(j, fd_err->w);
       }
+      TRACE(TRACE_JOB, "clean", trace_int("id", j->id), trace_int("pgrp", j->pgrp));
       job_free(j);
     } else if(print && sh->opts.monitor && job_stopped(j) && !j->announced) {
       /* a backgrounded job just stopped with nothing actively

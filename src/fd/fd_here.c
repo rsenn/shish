@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../../lib/stralloc.h"
 #include "../../lib/buffer.h"
 #include "../fd.h"
@@ -20,6 +21,8 @@ fd_freehere(buffer* b) {
  * ----------------------------------------------------------------------- */
 void
 fd_here(struct fd* d, stralloc* sa) {
+  TRACE(TRACE_FD, "here", trace_int("n", d->n), trace_int("len", sa->len));
+
   d->name = "<here>";
   d->mode = (d->mode & FD_FREE) | FD_HERE;
 

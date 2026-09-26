@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fd.h"
 #include "../fdtable.h"
 
@@ -5,6 +6,8 @@
  * ----------------------------------------------------------------------- */
 void
 fdtable_link(struct fd* fd) {
+  TRACE(TRACE_FDTABLE, "link", trace_int("n", fd->n));
+
   fd->pos = fdtable_pos;
   fd->parent = *fd->pos;
   *fd->pos = fd;

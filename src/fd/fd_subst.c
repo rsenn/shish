@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fd.h"
 #include "../../lib/stralloc.h"
 
@@ -5,6 +6,8 @@
  * ----------------------------------------------------------------------- */
 void
 fd_subst(struct fd* d, stralloc* sa) {
+  TRACE(TRACE_FD, "subst", trace_int("n", d->n));
+
   d->name = "<subst>";
   d->mode = (d->mode & FD_FREE) | FD_SUBST;
 

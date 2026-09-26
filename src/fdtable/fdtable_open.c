@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fd.h"
 #include "../fdtable.h"
 #include "../sh.h"
@@ -27,6 +28,8 @@ int
 fdtable_open(struct fd* d, int flags) {
   int e;
   int state;
+
+  TRACE(TRACE_FDTABLE, "open", trace_int("n", d->n), trace_str("file", d->name), trace_hex("flags", flags));
 
   /* not a pending open()? */
   if((d->mode & FD_OPEN) == 0)

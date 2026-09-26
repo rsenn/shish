@@ -2,6 +2,7 @@
 #include "../../lib/byte.h"
 #include "../fdstack.h"
 #include "../vartab.h"
+#include "../trace.h"
 
 /* pushes current shell environment and creates new one
  * ----------------------------------------------------------------------- */
@@ -35,4 +36,6 @@ sh_push(struct env* env) {
   env->varstack = varstack;
 
   sh = env;
+
+  TRACE(TRACE_SH, "push", trace_str("cwd", env->cwd.s ? env->cwd.s : ""), trace_int("argc", env->arg.c), trace_int("monitor", env->opts.monitor));
 }

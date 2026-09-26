@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fd.h"
 #include "../fdtable.h"
 #include "../sh.h"
@@ -27,6 +28,8 @@
  * ----------------------------------------------------------------------- */
 int
 fdtable_openfd(struct fd* d, int e, int flags) {
+  TRACE(TRACE_FDTABLE, "openfd", trace_int("n", d->n), trace_int("e", e), trace_hex("flags", flags));
+
   /* the file was opened while d->n was still taken, so e is never
      d->n itself: dup2() it into place, after saving whatever entry
      merely *shadowed* by d still holds that descriptor -- dup2()

@@ -3,6 +3,7 @@
 #include "../tree.h"
 #include "../../lib/alloc.h"
 #include "../../lib/str.h"
+#include "../trace.h"
 
 union node* functions = NULL;
 
@@ -30,6 +31,8 @@ exec_functions_save(struct func_snapshot* snap) {
     for(p = functions, i = 0; p; p = p->next, i++)
       snap->nodes[i] = p;
   }
+
+  TRACE(TRACE_EXEC, "func.snapshot", trace_int("count", snap->n), trace_int("depth", exec_subshell_depth));
 }
 
 void
@@ -39,6 +42,8 @@ exec_functions_restore(struct func_snapshot* snap) {
   size_t k;
 
   exec_subshell_depth--;
+
+  TRACE(TRACE_EXEC, "func.restore", trace_int("count", snap->n), trace_int("depth", exec_subshell_depth));
 
   /* relink the saved nodes in their original order. Anything the subshell
      prepended to functions becomes unreachable; the node memory leaks but is

@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fd.h"
 #include "../fdstack.h"
 #include "../fdtable.h"
@@ -22,6 +23,8 @@
 int
 fdtable_gap(int e, int flags) {
   struct fd* gap;
+
+  TRACE(TRACE_FDTABLE, "gap", trace_int("e", e), trace_hex("flags", flags));
 
   /* there is already a gap? */
   if((gap = fd_list[e]) == NULL)

@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fdstack.h"
 #include <assert.h>
 
@@ -13,6 +14,8 @@ fdstack_push(struct fdstack* st) {
   assert(st != fdstack);
 
   /* set up the new i/o table */
+  TRACE(TRACE_FDSTACK, "push", trace_int("level", fdstack->level + 1));
+
   st->list = NULL;
   st->parent = fdstack;
   st->level = fdstack->level + 1;

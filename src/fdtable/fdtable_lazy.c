@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fd.h"
 #include "../fdtable.h"
 #include "../../lib/windoze.h"
@@ -13,6 +14,8 @@ int
 fdtable_lazy(int e, int flags) {
   struct fd* fd;
   int r;
+
+  TRACE(TRACE_FDTABLE, "lazy", trace_int("e", e), trace_hex("flags", flags), trace_int("expected", fd_expected));
 
   while((e != fd_expected) && (fd = fdtable[fd_expected])) {
     /* try to resolve the current expected efd */

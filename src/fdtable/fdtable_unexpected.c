@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fd.h"
 #include "../fdstack.h"
 #include "../fdtable.h"
@@ -15,6 +16,8 @@ void
 fdtable_unexpected(int e, int u, int flags) {
   int mode;
   struct fd* fd;
+
+  TRACE(TRACE_FDTABLE, "unexpected", trace_int("e", e), trace_int("u", u), trace_hex("flags", flags));
 
   if(flags & FDTABLE_FORCE)
     e++;

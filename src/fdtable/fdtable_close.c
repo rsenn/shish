@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fd.h"
 #include "../fdtable.h"
 
@@ -12,6 +13,8 @@
 int
 fdtable_close(int e, int flags) {
   int state;
+
+  TRACE(TRACE_FDTABLE, "close", trace_int("e", e), trace_hex("flags", flags));
 
   /* don't waste the chance to resolve the fd above the current
      expected file descriptor, so go into a recursion */

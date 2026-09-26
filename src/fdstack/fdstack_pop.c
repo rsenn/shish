@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fdstack.h"
 #include <assert.h>
 
@@ -9,6 +10,8 @@ fdstack_pop(struct fdstack* st) {
   struct fd* next;
 
   assert(fdstack == st);
+
+  TRACE(TRACE_FDSTACK, "pop", trace_int("level", st->level));
 
   /* close all files and free filenames opened on this level */
   for(fd = st->list; fd; fd = next) {

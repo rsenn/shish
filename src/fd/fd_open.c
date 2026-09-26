@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fd.h"
 #include "../sh.h"
 #include "../../lib/windoze.h"
@@ -15,6 +16,8 @@ void
 fd_open(struct fd* d, const char* fname, long mode) {
   d->mode |= mode | FD_FILE | FD_OPEN;
   d->name = fname;
+
+  TRACE(TRACE_FD, "open", trace_int("n", d->n), trace_str("file", fname), trace_hex("mode", mode));
 
   /* set POSIX read/write mode */
   switch(d->mode & FD_READWRITE) {

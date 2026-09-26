@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../../lib/byte.h"
 #include "../fd.h"
 #include "../fdstack.h"
@@ -52,6 +53,8 @@ fdstack_unref(struct fd* olddup) {
       fd->r = newdup->r;
       fd->w = newdup->w;
     }
+
+  TRACE_RET(TRACE_FDSTACK, "unref", trace_int("n", olddup->n), trace_int("dupes", n));
 
   return n;
 }

@@ -3,6 +3,7 @@
 #include "../sh.h"
 #include "../vartab.h"
 #include "../../lib/windoze.h"
+#include "../trace.h"
 #if WINDOWS_NATIVE
 #include <io.h>
 #else
@@ -22,6 +23,8 @@ sh_pop(struct env* env) {
 
   if((parent = sh->parent) == NULL)
     return 0;
+
+  TRACE(TRACE_SH, "pop", trace_int("exitcode", sh->exitcode), trace_str("cwd", parent->cwd.s ? parent->cwd.s : ""));
 
   /* change back to prev working dir (skip if our cwd was already freed,
      e.g. by sh_exit's fall-through path) */

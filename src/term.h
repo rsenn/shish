@@ -65,5 +65,7 @@ void term_escape(buffer*, long n, char type);
 void term_setline(const char* s, unsigned long len);
 char* term_getline(void);
 void term_complete(void);
+void term_complete_redraw(void);
+void term_search(void);
 
 #endif /* TERM_H */

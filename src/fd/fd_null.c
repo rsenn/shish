@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fd.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
@@ -19,6 +20,8 @@
  * ----------------------------------------------------------------------- */
 int
 fd_null(struct fd* fd) {
+  TRACE(TRACE_FD, "null", trace_int("n", fd->n));
+
   fd->mode &= ~(FD_READ | FD_WRITE);
   fd->mode |= FD_NULL;
 

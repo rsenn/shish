@@ -466,6 +466,7 @@ main(int argc, char** argv) {
     sa.sa_handler = sh_onsig;
     sa.sa_flags = SA_MASKALL;
     sig_action(SIGCHLD, &sa, 0);
+    TRACE(TRACE_SIG, "action", trace_int("sig", SIGCHLD), trace_str("handler", "sh_onsig"), trace_hex("flags", sa.sa_flags));
   }
 
   /*  if(fd_expected != fd_top && (flags = fdtable_check(e)))

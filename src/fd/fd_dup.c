@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fd.h"
 #include "../fdtable.h"
 #include "../../lib/fmt.h"
@@ -10,6 +11,8 @@
 int
 fd_dup(struct fd* d, int n) {
   struct fd* dupe;
+
+  TRACE(TRACE_FD, "dup", trace_int("n", d->n), trace_int("src", n));
 
   if(!fdtable_ok(n))
     return fd_error(n, strerror(EBADF));
@@ -45,6 +48,8 @@ fd_dup(struct fd* d, int n) {
   d->e = dupe->e;
   d->mode |= (dupe->mode & FD_TYPE) | FD_DUP;
   d->dev = dupe->dev;
+
+  TRACE_RET(TRACE_FD, "dup", trace_int("n", d->n), trace_int("of", dupe->n), trace_str("name", d->name));
 
   return 0;
 }

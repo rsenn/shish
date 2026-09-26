@@ -370,6 +370,7 @@ trap_install(int sig, union node* tree) {
        A NULL tree is "trap '' SIG": the kernel ignores the signal
        outright, which is also what a child process must inherit. */
     sig_push(sig, tree ? &trap_relay : SIG_IGN);
+    TRACE(TRACE_SIG, "push", trace_int("sig", sig), trace_str("handler", tree ? "trap_relay" : "SIG_IGN"));
 
   } else if((unsigned char)sig == TRAP_DEBUG) {
     e = eval_find(E_ROOT);
@@ -405,6 +406,8 @@ trap_snapshot_save(void) {
   for(p = traps; p; p = p->next)
     n++;
 
+  TRACE(TRACE_SIG, "trap.snapshot", trace_int("count", n));
+
   if(!n)
     return NULL;
 
@@ -427,6 +430,8 @@ trap_snapshot_restore(void* handle) {
   if(nodes)
     while(nodes[n])
       n++;
+
+  TRACE(TRACE_SIG, "trap.restore", trace_int("count", n));
 
   /* undo anything installed fresh during the subshell: a node not in
      the saved array didn't exist when the subshell started, so free

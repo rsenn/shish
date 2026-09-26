@@ -163,6 +163,8 @@ term_read(int fd, void* vbuf, size_t len, void* arg) {
         goto check_remain;
       /* control-a is HOME */
       case 1: term_home(); break;
+      /* control-r searches the history backwards */
+      case 18: term_search(); break;
       /* control-e is END */
       case 5: term_end(); break;
       /* control-d is EOF */

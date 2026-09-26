@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fd.h"
 #include "../fdtable.h"
 
@@ -5,6 +6,8 @@
  * ----------------------------------------------------------------------- */
 int
 fdtable_wish(int e, int flags) {
+  TRACE(TRACE_FDTABLE, "wish", trace_int("e", e), trace_hex("flags", flags), trace_int("expected", fd_expected));
+
   /* if the wished position is above the bottom we can maybe get it
      by lazy resolving. */
   if(e > fd_expected)

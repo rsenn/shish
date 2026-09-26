@@ -10,6 +10,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include "../../lib/windoze.h"
+#include "../trace.h"
 
 #if WINDOWS_NATIVE
 #include <windows.h>
@@ -179,6 +180,8 @@ builtin_cd(int argc, char* argv[]) {
     /* POSIX: OLDPWD shall be set to the value of the current working
        directory before it is changed */
     var_setv("OLDPWD", sh->cwd.s, sh->cwd.len, V_DEFAULT);
+
+    TRACE(TRACE_SH, "cwd", trace_str("old", sh->cwd.s), trace_str("new", newcwd.s));
 
     /* set the path */
     stralloc_move(&sh->cwd, &newcwd);

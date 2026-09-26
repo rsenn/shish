@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fd.h"
 #include "../fdtable.h"
 #include "../fdstack.h"
@@ -8,6 +9,8 @@ void
 fdstack_flatten(void) {
   struct fdstack* st;
   struct fd *fd, *next;
+
+  TRACE(TRACE_FDSTACK, "flatten", trace_int("level", fdstack->level));
 
   for(st = fdstack; st; st = st->parent)
     for(fd = st->list; fd; fd = next) {

@@ -1,5 +1,6 @@
 #include "../eval.h"
 #include "../sh.h"
+#include "../trace.h"
 #include "../source.h"
 #include "builtin_config.h"
 
@@ -12,6 +13,8 @@ int sh_async_exit = 0;
 void
 sh_exit(int retcode) {
   struct env* s = sh;
+
+  TRACE(TRACE_SH, "exit", trace_int("code", retcode), trace_int("child", sh_child));
 
   /* if we're in a subshell, this jumps back where it was established
      and never returns -- eval_exit() already runs the subshell's own

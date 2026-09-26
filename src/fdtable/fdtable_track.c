@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fd.h"
 #include "../fdtable.h"
 
@@ -7,6 +8,8 @@
  * ----------------------------------------------------------------------- */
 void
 fdtable_track(int n, int flags) {
+  TRACE(TRACE_FDTABLE, "track", trace_int("n", n), trace_hex("flags", flags), trace_int("expected", fd_expected));
+
   if(n < fd_expected)
     fd_expected = n;
 

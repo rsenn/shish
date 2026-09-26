@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fdstack.h"
 #include "../fdtable.h"
 
@@ -5,6 +6,8 @@
 int
 fdstack_fork(unsigned int n, struct fd* fds) {
   struct fdstack* st;
+
+  TRACE(TRACE_FDSTACK, "fork", trace_int("n", n));
 
   for(st = fdstack; st; st = st->parent) {
     struct fd* fd;

@@ -1,12 +1,15 @@
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
 #include "../var.h"
+#include "../trace.h"
 
 /* unset a variable
  * ----------------------------------------------------------------------- */
 int
 var_unset(char* v) {
   struct var* var;
+
+  TRACE(TRACE_VAR, "unset", trace_str("name", v), trace_int("level", varstack->level));
 
   /* RANDOM's magic is permanently disabled by unset, even if it's never
      reassigned afterward -- matches bash, see var_random.c */

@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fd.h"
 #include "../fdstack.h"
 #include "../fdtable.h"
@@ -10,6 +11,8 @@ void
 fdtable_up(void) {
   struct fd* fd;
   struct fdstack* st;
+
+  TRACE(TRACE_FDTABLE, "up", trace_int("expected", fd_expected));
 
   if(fd_top < fd_expected)
     fd_top = fd_expected;

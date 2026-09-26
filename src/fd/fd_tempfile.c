@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../../lib/alloc.h"
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -50,6 +51,8 @@ fd_tempfile(struct fd* fd) {
 
   /* unlink the file, the fd should now be the only reference */
   unlink(fd_tempname);
+
+  TRACE(TRACE_FD, "tempfile", trace_int("n", fd->n), trace_int("e", e), trace_str("file", fd_tempname));
 
   /* make a copy of the name because the
      next call will change fd_tempname */

@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../../lib/buffer.h"
 #include "../fd.h"
 
@@ -5,6 +6,8 @@
  * ----------------------------------------------------------------------- */
 void
 fd_string(struct fd* d, const char* s, size_t len) {
+  TRACE(TRACE_FD, "string", trace_int("n", d->n), trace_int("len", len));
+
   d->mode = (d->mode & FD_FREE) | FD_STRING;
   d->name = "<string>";
 

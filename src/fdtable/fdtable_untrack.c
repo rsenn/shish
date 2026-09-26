@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../fd.h"
 #include "../fdtable.h"
 
@@ -9,6 +10,8 @@
  * ----------------------------------------------------------------------- */
 void
 fdtable_untrack(int e) {
+  TRACE(TRACE_FDTABLE, "untrack", trace_int("e", e), trace_int("expected", fd_expected));
+
   if(fd_ok(e) && e < fd_expected)
     fd_expected = e;
 }

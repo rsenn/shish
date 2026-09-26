@@ -6,6 +6,7 @@
 #include "../../lib/windoze.h"
 #include "../../lib/unix.h"
 #include <assert.h>
+#include "../trace.h"
 
 #if !WINDOWS_NATIVE
 #include <fcntl.h>
@@ -140,6 +141,7 @@ job_fork(struct job* j, union node* node, int bgnd) {
        execs (or a builtin/subshell it runs in-process) would otherwise
        inherit SIGCHLD blocked forever */
     sig_unblock(SIGCHLD);
+    TRACE(TRACE_JOB, "fork.child", trace_int("pgrp", pgrp), trace_int("bgnd", bgnd));
     return pid;
   }
 
@@ -183,6 +185,8 @@ job_fork(struct job* j, union node* node, int bgnd) {
   if(sh->opts.monitor)
     setpgid(pid, pgrp);
 #endif
+
+  TRACE(TRACE_JOB, "fork", trace_int("id", j->id), trace_int("pid", pid), trace_int("pgrp", pgrp), trace_int("bgnd", bgnd));
 
   sig_unblock(SIGCHLD);
   return pid;

@@ -1,6 +1,7 @@
 #include "../sh.h"
 #include "../vartab.h"
 #include <stdlib.h>
+#include "../trace.h"
 
 /* set the flags if a variable is found on the current level
  * otherwise create a new one
@@ -11,6 +12,8 @@ var_chflg(char* v, int flags, int set) {
 
   if(!(var = var_create(v, 0)))
     return 0;
+
+  TRACE(TRACE_VAR, "chflg", trace_str("name", v), trace_hex("before", var->flags), trace_hex("flags", flags), trace_int("set", set));
 
   /* if we found it on the current level
      then we just set the flags */

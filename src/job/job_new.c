@@ -1,6 +1,7 @@
 #include "../../lib/alloc.h"
 #include "../job.h"
 #include <stdbool.h>
+#include "../trace.h"
 
 struct job *job_list = NULL, **job_pointer = NULL;
 volatile bool job_signaled = 0;
@@ -35,6 +36,8 @@ job_new(unsigned n) {
   }
 
   job_pointer = ptr;
+
+  TRACE(TRACE_JOB, "new", trace_int("id", j ? j->id : 0), trace_int("nproc", n));
 
   return j;
 }

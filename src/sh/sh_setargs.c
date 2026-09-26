@@ -2,6 +2,7 @@
 #include "../debug.h"
 #include "../sh.h"
 #include "../../lib/shell.h"
+#include "../trace.h"
 
 /* set arguments of the current shell env
  * FIXME: do we always need to strdup() them?
@@ -43,4 +44,6 @@ sh_setargs(char** argv, int dup) {
     args->v[args->c] = NULL;
     args->a = args->c + 1;
   }
+
+  TRACE(TRACE_SH, "args", trace_int("argc", args->c), trace_argv("argv", args->v));
 }
