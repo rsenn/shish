@@ -71,6 +71,12 @@ expand_args(union node* args, union node** nptr, int flags) {
     }
   }
 
+  /* expand_arg() may hand back a chain (field splitting, "$@"); only its
+     last node was terminated above, expand_argv() needs every one */
+  for(n = *nptr; n; n = n->next)
+    if(n->narg.stra.s)
+      stralloc_nul(&n->narg.stra);
+
   if(copied && owned)
     tree_free(owned);
 

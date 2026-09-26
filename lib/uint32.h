@@ -88,7 +88,7 @@ int uint32_seed(const void*, unsigned long n);
 uint32 uint32_prng(uint32, uint32 seed);
 
 /* bit rotating macros */
-#define uint32_ror(v, c) (((uint32)(v) >> (c)) | ((uint32)(v) << (32 - (c))))
-#define uint32_rol(v, c) (((uint32)(v) << (c)) | ((uint32)(v) >> (32 - (c))))
+#define uint32_ror(v, c) (((uint32)(v) >> ((c)&31)) | ((uint32)(v) << ((32 - (c))&31)))
+#define uint32_rol(v, c) (((uint32)(v) << ((c)&31)) | ((uint32)(v) >> ((32 - (c))&31)))
 
 #endif

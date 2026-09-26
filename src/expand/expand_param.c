@@ -66,6 +66,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
   union node *start = *nptr, *n = *nptr;
   stralloc value;
   const char* v = NULL;
+  char tmpbuf[FMT_ULONG]; /* v may point here after the block that fills it */
   size_t vlen = 0;
   bool is_set = true;
 
@@ -192,7 +193,6 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
   /* ..and variable substitutions */
   else {
     size_t offset;
-    char tmpbuf[FMT_ULONG];
 
     if(var_random_active && str_equal(param->name, "RANDOM")) {
       uint16 random = var_random_next();

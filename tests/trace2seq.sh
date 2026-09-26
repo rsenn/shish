@@ -8,7 +8,7 @@ SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
 TOOL="$DIR/../tools/trace2seq"
 LOG=$(mktemp)
 
-SHISH_TRACE=exec,sh SHISH_TRACE_FILE="$LOG" "$SELF" -c 'echo hi | cat; /bin/echo a >/dev/null' 2>/dev/null
+SHISH_TRACE=exec,sh SHISH_TRACE_FILE="$LOG" "$SELF" -c 'echo hi | /bin/cat; /bin/echo a >/dev/null' 2>/dev/null
 
 if [ -z "$SELF" ] || [ ! -s "$LOG" ]; then
   echo "shish has no trace support (DEBUG_OUTPUT), skipping" 1>&2
@@ -19,7 +19,7 @@ fi
 X=$("$TOOL" -c exec.program.execve "$LOG")
 assert_equal 2 "$X" "two programs are exec'd (cat and /bin/echo)"
 
-X=$("$TOOL" "$LOG" | grep -c 'exec /usr/bin/cat\|exec /bin/cat')
+X=$("$TOOL" "$LOG" | grep -c 'exec /bin/cat')
 assert_equal 1 "$X" "the tree shows cat as an exec'd child"
 
 X=$("$TOOL" "$LOG" | grep -c '^pid ')

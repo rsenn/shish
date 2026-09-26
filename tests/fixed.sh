@@ -5116,4 +5116,32 @@ assert_equal 11 "$?" "empty command with a command substitution in its word exit
 $(exit 0) $(exit 4)
 assert_equal 4 "$?" "empty command with several substitutions exits with the last one's status"
 
+## found by an ASan+UBSan run (they abort there, plain builds pass by luck):
+## - every node of an expanded word chain must be NUL-terminated, not just
+##   the last one (a heap over-read when argv[k] was read as a C string)
+## - the RANDOM/LINENO/LINES buffer must outlive the block that fills it
+## - uint32_ror/rol by 0 must not shift by 32
+set -- "a b" c
+X243=$(/bin/echo ${@-x} ${1-y} ${LINENO} ${#1})
+assert_match "^a b c y? ?[0-9]+ 3$|^a b c a b [0-9]+ 3$" "$X243" "expansions through the parameter paths give whole, terminated words"
+X243=$(/bin/echo ${RANDOM-1} | grep -c '^[0-9][0-9]*$')
+assert_equal 1 "$X243" "\${RANDOM} expands to a number"
+
+
+## "2>&1" on a builtin inside $(...) must not hand the redirection's
+## temporary stack buffer to the substitution's own buffer (the write
+## after it dereferenced a dead stack frame)
+X244=$(echo a 2>&1; echo done)
+assert_equal "a
+done" "$X244" "a builtin with 2>&1 inside \$(...) does not corrupt the next command's output"
+
+## a special builtin that exits through eval_exit ("." of a file with a
+## syntax error) must leave no dangling redirection behind
+F245=$(mktemp -d)
+printf 'echo before\nif [ 1 = 1 ]\n' >"$F245/bad.sh"
+X245=$( (. "$F245/bad.sh") >/dev/null 2>&1; echo AFTER)
+X245B=$(X=$(. "$F245/bad.sh" 2>/dev/null); echo "$?")
+assert_equal "AFTER 1" "$X245 $X245B" "a redirection on a special builtin that exits is unwound with the substitution"
+rm -rf "$F245"
+
 summary

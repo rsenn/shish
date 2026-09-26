@@ -1,0 +1,17 @@
+diff --git a/src/expand/expand_args.c b/src/expand/expand_args.c
+index d224c3b2..5e178534 100644
+--- a/src/expand/expand_args.c
++++ b/src/expand/expand_args.c
+@@ -71,6 +71,12 @@ expand_args(union node* args, union node** nptr, int flags) {
+     }
+   }
+ 
++  /* expand_arg() may hand back a chain (field splitting, "$@"); only its
++     last node was terminated above, expand_argv() needs every one */
++  for(n = *nptr; n; n = n->next)
++    if(n->narg.stra.s)
++      stralloc_nul(&n->narg.stra);
++
+   if(copied && owned)
+     tree_free(owned);
+ 

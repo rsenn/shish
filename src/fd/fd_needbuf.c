@@ -4,6 +4,10 @@
  * ----------------------------------------------------------------------- */
 int
 fd_needbuf(struct fd* fd) {
+  /* a duplicate shares the buffers of the fd it duplicates */
+  if(fd->mode & FD_DUP)
+    return 0;
+
   if(FD_ISRD(fd) && !fd->r->x)
     return 1;
 

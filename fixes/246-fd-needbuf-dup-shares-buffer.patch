@@ -1,0 +1,15 @@
+diff --git a/src/fd/fd_needbuf.c b/src/fd/fd_needbuf.c
+index 7fbbce5a..6a075b2c 100644
+--- a/src/fd/fd_needbuf.c
++++ b/src/fd/fd_needbuf.c
+@@ -4,6 +4,10 @@
+  * ----------------------------------------------------------------------- */
+ int
+ fd_needbuf(struct fd* fd) {
++  /* a duplicate shares the buffers of the fd it duplicates */
++  if(fd->mode & FD_DUP)
++    return 0;
++
+   if(FD_ISRD(fd) && !fd->r->x)
+     return 1;
+ 
