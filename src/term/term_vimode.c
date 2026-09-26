@@ -9,7 +9,7 @@
 /* minimal vi editing. insert mode is the normal line editor; ESC enters
  * command mode, where a key is a command read by term_vimode():
  *
- *   [n]h l 0 ^ $ w b e f F t T ; ,      motions
+ *   [n]h l 0 ^ $ w b e W B E f F t T ; ,  motions
  *   [n]d c y <motion>  dd cc yy         operators (cw acts like ce)
  *   [n]x X D C s S r<c> p P             single-key edits
  *   i a I A                             back to insert mode
@@ -20,10 +20,14 @@ int term_vi_cmd;
 static stralloc vi_yank;
 static char vi_fkey, vi_fchar; /* last f/F/t/T and its target, for ; and , */
 
+/* 0 blank, 1 word char, 2 punctuation; with <big> everything non-blank is 1 */
 static int
-vi_class(char c) {
+vi_class(char c, int big) {
   if(c == ' ' || c == '\t')
     return 0;
+
+  if(big)
+    return 1;
 
   return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' ? 1 : 2;
 }
@@ -106,6 +110,7 @@ vi_motion(char m, unsigned long n, int* incl) {
   const char* s = term_cmdline.s;
   long len = term_cmdline.len, p = term_pos;
   char c;
+  int big = m == 'W' || m == 'B' || m == 'E';
 
   *incl = 0;
 
@@ -114,38 +119,41 @@ vi_motion(char m, unsigned long n, int* incl) {
     case 'l': return p + (long)n > len ? len : p + (long)n;
     case '0': return 0;
     case '^':
-      for(p = 0; p < len && vi_class(s[p]) == 0; p++)
+      for(p = 0; p < len && vi_class(s[p], 0) == 0; p++)
         ;
       return p;
     case '$': *incl = 1; return len ? len - 1 : 0;
     case 'w':
+    case 'W':
       while(n--) {
-        int k = p < len ? vi_class(s[p]) : 0;
+        int k = p < len ? vi_class(s[p], big) : 0;
 
-        while(p < len && k && vi_class(s[p]) == k)
+        while(p < len && k && vi_class(s[p], big) == k)
           p++;
-        while(p < len && vi_class(s[p]) == 0)
+        while(p < len && vi_class(s[p], big) == 0)
           p++;
       }
       return p;
     case 'b':
+    case 'B':
       while(n--) {
         if(p > 0)
           p--;
-        while(p > 0 && vi_class(s[p]) == 0)
+        while(p > 0 && vi_class(s[p], big) == 0)
           p--;
-        for(c = vi_class(s[p]); p > 0 && vi_class(s[p - 1]) == c;)
+        for(c = vi_class(s[p], big); p > 0 && vi_class(s[p - 1], big) == c;)
           p--;
       }
       return p;
     case 'e':
+    case 'E':
       *incl = 1;
       while(n--) {
         if(p + 1 < len)
           p++;
-        while(p + 1 < len && vi_class(s[p]) == 0)
+        while(p + 1 < len && vi_class(s[p], big) == 0)
           p++;
-        for(c = vi_class(s[p]); p + 1 < len && vi_class(s[p + 1]) == c;)
+        for(c = vi_class(s[p], big); p + 1 < len && vi_class(s[p + 1], big) == c;)
           p++;
       }
       return p;
@@ -263,8 +271,8 @@ term_vimode(char c) {
       return;
     }
 
-    if(op == 'c' && c == 'w' && pos < len && vi_class(term_cmdline.s[pos]))
-      c = 'e';
+    if(op == 'c' && (c == 'w' || c == 'W') && pos < len && vi_class(term_cmdline.s[pos], 0))
+      c = c == 'w' ? 'e' : 'E';
 
     if((to = vi_motion(c, cnt, &incl)) < 0)
       return;

@@ -3928,3 +3928,31 @@ A uniform, parseable trace layer (`src/trace.h`, `src/trace/`) replaced the old
   (`fixes/242`); `xargs`'s uninitialised `items.c`, `-d` separator not stripped, output escaping
   `$(...)` (`fixes/240`, `fixes/241`).
 
+
+---
+
+## Goal 15 (secondary) — vi mode (`src/term/term_vimode.c`): gaps against vim/POSIX `set -o vi`
+
+Implemented: ESC command mode; motions `h l 0 ^ $ w b e W B E f F t T ; ,` with counts;
+operators `d c y` (+ `dd cc yy`, `cw` = `ce`); `x X D C s S r p P i a I A k j /`. Tests:
+`tests/term-vi.sh`. `vi` is always on: there is no `set -o vi` / `set -o emacs` switch.
+
+**Missing, roughly by how often they are used at a shell prompt**
+
+- **Undo and repeat:** `u`, `U`, `.` (repeat last change), `Ctrl-R`-style redo (`Ctrl-r` is the history search).
+- **History:** `G` / `[n]G` (go to entry n), `n` / `N` (repeat the last search), `?` (forward search; `/` today calls the emacs-style `Ctrl-R` incremental search, not a vi `/pattern<CR>` prompt), `+` / `-` (like `j` / `k`), `#` (comment the line out and enter it).
+- **Editor hand-off:** `v` (open the line in `$VISUAL` / `$EDITOR`; POSIX requires it).
+- **Motions:** `|` (column), `%` (matching bracket), `g_`, `ge` / `gE`, `H` / `L` / `M`, `{` / `}` / `(` / `)` (irrelevant on one line, but `d}` etc. would be used in multi-line entries), `_`, `-` / `+`.
+- **Operators:** `~` (toggle case), `g~` / `gu` / `gU`, `>` / `<` (no meaning on one line), `J` (join), `!`, `=`, `gq`.
+- **Text objects:** `iw` `aw` `iW` `aW`, `i"` `a"` `i'` `a'`, `i(` `a(` `ib`, `i[` `i{` `it` — `ciw`, `di"` and `ci(` are the most missed.
+- **Registers and marks:** named registers (`"ayw`, `"ap`), the numbered delete history (`"1p`), `m{a-z}` / `'x` / `` `x ``; there is a single unnamed yank register only.
+- **Insert mode:** `o` / `O` (meaningful only for multi-line), `gi`, `Ctrl-w` (delete word), `Ctrl-u` (delete to line start), `Ctrl-v` (literal), `Ctrl-t` / `Ctrl-d` (indent), `Ctrl-[` (as ESC), `Ctrl-o` (one command), `Ctrl-h` as backspace, `Ctrl-n` / `Ctrl-p` completion (`Tab` is the only completion).
+- **Visual mode:** `v` / `V` / `Ctrl-v` and their operators; nothing exists.
+- **Search inside the line:** `*` / `#` (word under the cursor), `/` and `?` within the current line.
+- **Counts:** `0` is a motion only when not part of a count (done); missing are counts for `i a I A` (`3ix<ESC>` repeats), for `p` / `P` (`3p`), `.` and `~`.
+- **Repeat find:** `;` / `,` work, but `t` repeated with `;` does not skip past the adjacent character the way vim does when `cpo` has no `;`.
+- **Pending-state display:** no `-- INSERT --` / `-- NORMAL --` indicator, no cursor-shape change (`\e[2 q` block / `\e[6 q` bar), no display of a pending operator or count.
+- **Escape handling:** a lone ESC waits 50 ms for a following key (fixed timeout, not `ttimeoutlen`); there is no way to configure it.
+- **Multi-line entries:** history entries with embedded newlines are shown on one line; there is no line-wise `j` / `k` / `o` / `dd` inside them.
+- **Wide characters:** columns are bytes, so `l` / `x` / `w` step through a UTF-8 sequence one byte at a time.
+- **Options:** none of `set -o vi`, `EDITRC` / `inputrc`-style key rebinding, `bind`, or a `vi`-mode `KEYTIMEOUT` is honoured.

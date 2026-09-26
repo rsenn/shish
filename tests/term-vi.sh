@@ -43,6 +43,10 @@ assert_equal "aa bb XX" "$(vi 'echo aa bb cc\x1bbcwXX\x1b')" "cw changes a word 
 assert_equal "abc" "$(vi 'echo abc\x1bxp')" "x then p puts the deleted character back"
 assert_equal "ok" "$(vi 'echo foo bar\x1bddiecho ok')" "dd clears the line"
 assert_equal "hello!" "$(vi 'echo hello\x1bA!')" "A appends at the end"
+assert_equal "x c" "$(vi 'echo x a.b c\x1b0wwdW')" "dW deletes a whole blank-delimited word"
+assert_equal "x .b c" "$(vi 'echo x a.b c\x1b0wwdw')" "dw stops at punctuation"
+assert_equal "x a.b" "$(vi 'echo x a.b c\x1b0WWWdW')" "W moves over a.b in one step"
+assert_equal "y c" "$(vi 'echo a.b c\x1bBcWy\x1b')" "B and cW change a big word"
 
 cd /
 rm -rf "$TESTDIR"
