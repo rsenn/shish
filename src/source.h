@@ -42,6 +42,7 @@ void source_prompt(void);
 int source_peek(char* c);
 int source_get(char* c);
 int source_next(char* c);
+extern int source_bs; /* the last skipped char was an unescaped backslash */
 int source_peekn(char* c, unsigned int n);
 void source_flush(void);
 void source_msg(const struct location* pos);

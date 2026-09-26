@@ -11,55 +11,56 @@ int
 source_peekn(char* c, unsigned n) {
   buffer* b = source->b;
   int ret = buffer_LEN(b);
-  unsigned lookahead = n;
+  unsigned pi = 0, k = 0; /* physical index, logical index */
+  int esc = source_bs;    /* x[pi] is escaped by a backslash before it */
+
+  /* quoted/comment text has no continuations */
+  if(source_squoted || source_comment) {
+    if((unsigned)ret <= n && (ret = buffer_prefetch(b, n + 1)) <= 0)
+      return ret;
+
+    if(c)
+      *c = b->x[b->p + n];
+
+    return ret;
+  }
 
   for(;;) {
-    char *x, *y;
-    unsigned i, j;
+    char* x;
 
-    /* no data available, try to get some */
-    if((unsigned)ret <= lookahead) {
-      if((ret = buffer_prefetch(b, lookahead + 1)) <= 0)
+    /* need the char at pi, and the one after it to tell "\\\n" */
+    if((unsigned)ret <= pi + 1 && (ret = buffer_prefetch(b, pi + 2)) <= 0) {
+      if(ret < 0 || (unsigned)buffer_LEN(b) <= pi)
         return ret;
 
-#ifdef DEBUG
-      debug_ulong("source_peekn", ret, 0);
-      debug_nl_fl();
-#endif
+      ret = buffer_LEN(b);
     }
 
     x = buffer_PEEK(b);
-    y = buffer_END(b);
-    j = y - x;
 
-    for(i = 0; !source_squoted && !source_comment && i < lookahead + 1; i++) {
+    if(!esc && x[pi] == '\\' && (unsigned)buffer_LEN(b) > pi + 1 && x[pi + 1] == '\n') {
+      /* a continuation at the very front is consumed for good */
+      if(pi == 0) {
+        b->p += 2;
+        source_newline();
+        ret = buffer_LEN(b);
+      } else
+        pi += 2;
 
-      if(x[i] == '\\') {
-        if(i + 1 >= j) {
-          if((ret = buffer_prefetch(b, i + 1)) <= 0)
-            return ret;
-
-          y = buffer_END(b);
-          j = y - x;
-        }
-
-        if(x[i + 1] == '\n') {
-          if(i == 0) {
-            b->p += 2;
-            source_newline();
-          } else {
-            n += 2;
-          }
-        }
-      }
+      continue;
     }
 
-    break;
+    if(k == n)
+      break;
+
+    esc = !esc && x[pi] == '\\';
+    pi++;
+    k++;
   }
 
   /* got data, peek the char */
   if(c)
-    *c = b->x[b->p + n];
+    *c = buffer_PEEK(b)[pi];
 
   return ret;
 }

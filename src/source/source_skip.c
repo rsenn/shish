@@ -2,6 +2,7 @@
 
 int source_squoted = 0;
 int source_comment = 0;
+int source_bs = 0;
 
 /* ----------------------------------------------------------------------- */
 int
@@ -18,9 +19,17 @@ source_skip(void) {
 
     b->p++;
 
-    if(c == '\\' && !source_squoted && !source_comment) {
-      if(source_peek(&c) > 0 && c == '\n')
+    if(c == '\\' && !source_bs && !source_squoted && !source_comment) {
+      source_bs = 1;
+
+      if(source_peek(&c) > 0 && c == '\n') {
         b->p++;
+        source_bs = 0;
+      } else {
+        c = '\\';
+      }
+    } else {
+      source_bs = 0;
     }
 
     if(c == '\n') {
