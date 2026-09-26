@@ -1,0 +1,59 @@
+diff --git a/src/builtin/builtin_trap.c b/src/builtin/builtin_trap.c
+index 9536607c..b789dab0 100644
+--- a/src/builtin/builtin_trap.c
++++ b/src/builtin/builtin_trap.c
+@@ -254,16 +254,26 @@ trap_return(int result) {
+   return result;
+ }
+ 
++/* is the EXIT trap body running right now? */
++int
++trap_exit_running(void) {
++  trap* tr = trap_find(TRAP_EXIT);
++
++  return tr && tr->running;
++}
++
+ int
+ trap_exit(int exitcode) {
+   trap* tr;
+ 
+-  if((tr = trap_find(TRAP_EXIT))) {
++  /* an "exit" inside the EXIT trap ends the shell, it does not run the trap again */
++  if((tr = trap_find(TRAP_EXIT)) && !tr->running) {
+     struct env sh;
+     char* args[2] = {alloc(FMT_ULONG), 0};
+ 
+     args[0][fmt_ulong(args[0], exitcode)] = '\0';
+     sh_push(&sh);
++    sh.exitcode = exitcode; /* a bare "exit" in the trap keeps the status */
+     sh_setargs(args, 0);
+     trap_handler(TRAP_EXIT);
+     sh_pop(&sh);
+diff --git a/src/sh/sh_exit.c b/src/sh/sh_exit.c
+index db558b31..f4d4d028 100644
+--- a/src/sh/sh_exit.c
++++ b/src/sh/sh_exit.c
+@@ -5,6 +5,7 @@
+ #include "builtin_config.h"
+ 
+ int trap_exit(int);
++int trap_exit_running(void);
+ 
+ int sh_async_exit = 0;
+ 
+@@ -24,6 +25,14 @@ sh_exit(int retcode) {
+   eval_exit(retcode);
+ 
+ #if BUILTIN_TRAP
++  /* "exit N" inside the EXIT trap ends the process right here with N */
++  if(trap_exit_running()) {
++    if(source)
++      source_pop();
++
++    exit(retcode);
++  }
++
+   /* sh_child (sh_forked.c) marks a process that was fork()'d off to
+      run one job/pipeline-stage and will simply _exit() once this
+      call returns -- not the real shell exiting, so the parent's EXIT

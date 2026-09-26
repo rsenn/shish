@@ -160,7 +160,8 @@ void sh_exit(int retcode);
 size_t sh_fmtflags(char* dest, const struct shopt*);
 int sh_forked(void);
 void sh_sigignore(void);  /* interactive shell ignores INT QUIT TERM */
-void sh_sigrestore(void); /* ...children get the defaults back */
+void sh_sigrestore(void);
+void sh_sigasync(void);   /* async list without job control: ignore INT QUIT */ /* ...children get the defaults back */
 void sh_getcwd(struct env* sh);
 const char* sh_gethome(void);
 void sh_init(void);

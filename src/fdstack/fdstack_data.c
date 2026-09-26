@@ -20,7 +20,7 @@ fdstack_data(void) {
 
     for(fd = st->list; fd; fd = fd->next) {
       /* read from the child and put it into output subst buffer */
-      if((fd->mode & FD_SUBST) == FD_SUBST) {
+      if((fd->mode & FD_SUBST) == FD_SUBST && (fd->mode & FD_READ)) {
         ssize_t n;
         unsigned long total = 0;
         char buf[FD_BUFSIZE / 2];

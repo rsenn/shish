@@ -3957,8 +3957,8 @@ A uniform, parseable trace layer (`src/trace.h`, `src/trace/`) replaced the old
   builtins, functions and programs all work and "$(...)" capture comes from `exec_program()`.
   `timeout` kills via a SIGALRM handler aimed at `exec_child_pid`; a builtin with no program of
   the same name, or a function, is forked (`X_NOWAIT`) so it can be killed, and its output is
-  then not captured in "$(...)". "BUGS" still has the "redirect inside `$(...)` is ignored for
-  forked commands" entry (root cause: `fdstack_pipe()` overrides whatever fd 1 was redirected to).
+  then not captured in "$(...)". A redirection on a forked command inside "$(...)"
+  now wins over the substitution's pipe (`fixes/251`).
 - **What the trace already found:** the shell's internal pipe (fds 128/129) leaks into every
   exec'd program (`fdtable.exec.fds` shows it); `cmdsubst_ran` was cleared after word expansion
   (`fixes/242`); `xargs`'s uninitialised `items.c`, `-d` separator not stripped, output escaping

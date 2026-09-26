@@ -75,6 +75,8 @@ job_fork(struct job* j, union node* node, int bgnd) {
        still correctly override this default via its own later dup2()
        the same way it would override a literal "< /dev/null". */
     if(bgnd && !sh->opts.monitor) {
+      sh_sigasync();
+
       int devnull = open("/dev/null", O_RDONLY);
 
       if(devnull >= 0) {

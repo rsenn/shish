@@ -26,7 +26,16 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
          duplicating a substitution's fd 1) -- it's just an alias that
          resolves via its ->dup chain once the real owner is wired up. */
       if(!(fd->mode & FD_DUP) && (fd->mode & FD_SUBST) == FD_SUBST) {
+        struct fdstack* up;
+        struct fd* sh;
         int e;
+
+        /* a nearer redirection of the same fd ("$(cmd >file)") owns
+           it in the child; the substitution then reads nothing */
+        for(up = fdstack; up != st; up = up->parent)
+          for(sh = up->list; sh; sh = sh->next)
+            if(sh->n == fd->n)
+              goto shadowed;
 
         fd_push(fds, fd->n, FD_WRITE | FD_FLUSH);
         fd_setbuf(fds, b, FD_BUFSIZE / 2);
@@ -87,6 +96,7 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
         TRACE(TRACE_FDSTACK, "pipe", trace_int("n", n), trace_hex("fds", (unsigned long)fds));
         fds++;
         ret++;
+      shadowed:
         found = 1;
       }
     }

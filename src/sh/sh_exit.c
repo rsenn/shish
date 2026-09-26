@@ -5,6 +5,7 @@
 #include "builtin_config.h"
 
 int trap_exit(int);
+int trap_exit_running(void);
 
 int sh_async_exit = 0;
 
@@ -24,6 +25,14 @@ sh_exit(int retcode) {
   eval_exit(retcode);
 
 #if BUILTIN_TRAP
+  /* "exit N" inside the EXIT trap ends the process right here with N */
+  if(trap_exit_running()) {
+    if(source)
+      source_pop();
+
+    exit(retcode);
+  }
+
   /* sh_child (sh_forked.c) marks a process that was fork()'d off to
      run one job/pipeline-stage and will simply _exit() once this
      call returns -- not the real shell exiting, so the parent's EXIT

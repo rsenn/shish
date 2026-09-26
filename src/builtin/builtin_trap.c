@@ -254,16 +254,26 @@ trap_return(int result) {
   return result;
 }
 
+/* is the EXIT trap body running right now? */
+int
+trap_exit_running(void) {
+  trap* tr = trap_find(TRAP_EXIT);
+
+  return tr && tr->running;
+}
+
 int
 trap_exit(int exitcode) {
   trap* tr;
 
-  if((tr = trap_find(TRAP_EXIT))) {
+  /* an "exit" inside the EXIT trap ends the shell, it does not run the trap again */
+  if((tr = trap_find(TRAP_EXIT)) && !tr->running) {
     struct env sh;
     char* args[2] = {alloc(FMT_ULONG), 0};
 
     args[0][fmt_ulong(args[0], exitcode)] = '\0';
     sh_push(&sh);
+    sh.exitcode = exitcode; /* a bare "exit" in the trap keeps the status */
     sh_setargs(args, 0);
     trap_handler(TRAP_EXIT);
     sh_pop(&sh);

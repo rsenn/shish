@@ -47,6 +47,16 @@ sh_sigignore(void) {
 #endif
 }
 
+/* POSIX 2.11: without job control, an asynchronous list ignores INT and QUIT
+ * ----------------------------------------------------------------------- */
+void
+sh_sigasync(void) {
+#if !WINDOWS_NATIVE
+  sh_sigset(SIGINT, SIG_IGN);
+  sh_sigset(SIGQUIT, SIG_IGN);
+#endif
+}
+
 /* in a forked child, the ignore above must not be inherited: reset to
  * default unless the signal was ignored on entry or by "trap '' SIG"
  * ----------------------------------------------------------------------- */

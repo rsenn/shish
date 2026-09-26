@@ -5160,4 +5160,24 @@ assert_equal 143 "$?" "a background job is still killable by TERM after \$(...) 
 X248=$(getopts b:c o -b val -c; getopts b:c o -b val -c; echo "[$o][${OPTARG-unset}]")
 assert_equal "[c][unset]" "$X248" "getopts: a flag after an option-with-argument leaves OPTARG unset"
 
+## ASan over tests/posix: a leading-0 arithmetic constant was scanned one
+## character too far (read past the NUL of "0", and "012" lost its first digit)
+assert_equal "10 0 9 0" "$(echo $((012)) $((0)) $((010+1)) $((00)))" "octal arithmetic constants: 012 is ten, a lone 0 is zero"
+
+## "exit" inside the EXIT trap ends the shell instead of running the trap
+## again (unbounded recursion: stack overflow)
+X249=$("$SHISH_SELF" -c 'trap "echo bye; exit 7" EXIT; exit 5'; echo "st=$?")
+assert_equal "bye
+st=7" "$X249" "exit N inside the EXIT trap ends the shell with N"
+"$SHISH_SELF" -c 'trap exit EXIT; exit 1'
+assert_equal 1 "$?" "a bare exit inside the EXIT trap keeps the pending status"
+
+## a redirection on a forked command inside "$(...)" wins over the
+## substitution's own pipe: the output goes to the file, not the result
+X251=$(/bin/echo p >/dev/null)
+assert_equal "" "$X251" "\$(cmd >/dev/null) captures nothing from a forked command"
+X251=$(/bin/echo q; /bin/echo r >/dev/null; /bin/echo s)
+assert_equal "q
+s" "$X251" "only the unredirected commands of \$(...) are captured"
+
 summary

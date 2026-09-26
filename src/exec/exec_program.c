@@ -297,6 +297,10 @@ exec_program(char* path, char** argv, enum execflag flag) {
   }
 
   sh_sigrestore();
+
+  if((flag & X_NOWAIT) && !sh->opts.monitor)
+    sh_sigasync();
+
   fdtable_exec();
   fdstack_flatten();
   trace_fdmap("exec.fds");

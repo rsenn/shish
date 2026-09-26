@@ -17,12 +17,15 @@ scan_number(const char* x, int64* n, unsigned* base) {
     if(base)
       *base = 8;
 
-    if(*++p == 'x') {
+    p++;
+
+    if(*p == 'x' || *p == 'X') {
       if(base)
         *base = 16;
-      return scan_xlonglong(++p, (uint64*)n);
+      return scan_xlonglong(p + 1, (uint64*)n);
     }
-    return scan_8longlong(++p, (uint64*)n);
+
+    return scan_8longlong(p, (uint64*)n);
   }
   return scan_longlong(p, n);
 }
