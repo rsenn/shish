@@ -44,7 +44,7 @@ macro(configure_libarchive_builtin)
   set(ENABLE_UNZIP FALSE CACHE BOOL "" FORCE)
 
   # Include libarchive via subdirectory since it is a full CMake project
-  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
   set(BUILD_SHARED_LIBS OFF)
   add_subdirectory("${LIBARCHIVE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/third_party/libarchive" EXCLUDE_FROM_ALL)
 
