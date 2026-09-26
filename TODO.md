@@ -3967,78 +3967,66 @@ operators `d c y` (+ `dd cc yy`, `cw` = `ce`); `x X D C s S r p P i a I A k j /`
 
 ## Goal 16 (tertiary) — the remaining POSIX utilities as optional `EXTRA_BUILTINS`
 
-Utilities from the POSIX utilities volume that are not builtins yet, none of them needed by the
-shell itself. **Only worth doing after the main quest.** Each one is opt-in (`BUILTIN_<NAME>`,
-`cmake/Builtins.cmake`, off by default), lives in `src/builtin/extra/builtin_<name>.c`, follows its
-POSIX page as the design specification (<https://pubs.opengroup.org/onlinepubs/9799919799/utilities/>,
-one page per utility; a missing option is a `BUGS` entry with a repro), uses `lib/` instead of libc
-stdio/string, and comes with `tests/builtin-<name>.sh` and a `help_<name>` text.
-Sizes are rough, in lines of C, on top of what `lib/` and `src/` already offer.
+Utilities from the POSIX utilities volume that are not builtins yet (`sleep` already is). None is
+needed by the shell itself, so **this waits until the main quest is done.** Each one is opt-in
+(`BUILTIN_<NAME>`, `cmake/Builtins.cmake`, off by default), lives in
+`src/builtin/extra/builtin_<name>.c`, follows its POSIX page as the design specification
+(<https://pubs.opengroup.org/onlinepubs/9799919799/utilities/>; a missing option is a `BUGS` entry with
+a repro), uses `lib/` instead of libc stdio/string, and comes with `tests/builtin-<name>.sh` and a
+`help_<name>` text.
 
-`sleep` is not listed: `builtin_sleep.c` exists.
+### Schedule, simplest and smallest first
 
-### Tier A — filters (stdin to stdout, small, common in scripts) ≈ 700 lines
+Complexity: **1** one syscall or one loop, **2** a small parser or a few options, **3** real algorithm
+or state, **4** terminal / `/proc` / many output formats, **5** layout engine. Lines are C lines for
+the builtin alone, calibrated on what exists (`tee` 95, `mkdir` 105, `wc` 165, `ls` 274, `xargs` 319,
+`touch` 326 with its date parser); tests add roughly the same again. "Total" is the running sum
+without `sleep`.
 
-All of these fit the shared filter code (`src/builtin/builtin_filter.[hc]`: `filter_in` walks the
-file operands, `filter_out` buffers the output) and can join filter chains (Goal 13).
+| # | utility | cx | lines | total | what it takes |
+|---|---|---|---|---|---|
+| 1 | `sleep` | 0 | done | - | done: `builtin_sleep.c` (94 lines) |
+| 2 | `mkfifo` | 1 | ~45 | ~45 | `mkfifo(3)` plus the mode parser (`-m`) that `mkdir` already has; move the parser to `lib/` first |
+| 3 | `nice` | 1 | ~55 | ~100 | `nice(2)`, then `exec_command()`; only the increment parsing (`-n`, and the obsolescent `-10`) |
+| 4 | `head` | 1 | ~70 | ~170 | `-n N` line counter over `filter_in`; stops early, so it is the test for early exit in a chain |
+| 5 | `nohup` | 2 | ~70 | ~240 | ignore `SIGHUP`, redirect stdout/stderr to `nohup.out` if they are terminals, `exec_command()`; exit 126/127 |
+| 6 | `renice` | 2 | ~80 | ~320 | `setpriority(2)` over `-p`/`-g`/`-u` ID lists; no exec; `-n` is required in POSIX.1-2024 |
+| 7 | `env` | 2 | ~85 | ~405 | push a `vartab` with the `name=value` words (`-i` starts empty), `exec_command()`; no utility: print the environment |
+| 8 | `paste` | 2 | ~90 | ~495 | `-s`, `-d list` (with `\0` and `\\` escapes); N `filter_in`s merged line by line |
+| 9 | `pathchk` | 2 | ~90 | ~585 | `pathconf(3)` limits, `-p` portable-character check, `-P` empty/leading-hyphen check |
+| 10 | `uniq` | 2 | ~110 | ~695 | adjacent-line compare with `-c -d -u -f N -s N`; one line of look-behind state |
+| 11 | `id` | 2 | ~120 | ~815 | `getpwnam`/`getgrgid`/`getgroups`; `-G -g -u -n -r` output selection; needs NSS, no fallback |
+| 12 | `cut` | 2 | ~140 | ~955 | list parser (`1,3-5,7-`) for `-b -c -f`, `-d`, `-s`, `-n`; three field modes over one line loop |
+| 13 | `date` | 3 | ~130 | ~1085 | `localtime`/`strftime` (libc); `-u`, `+format`; setting the clock is a documented omission |
+| 14 | `tail` | 3 | ~130 | ~1215 | ring buffer of the last N lines/bytes (`-n -c`); `-f` polls with `read`+sleep and cannot chain |
+| 15 | `du` | 3 | ~140 | ~1355 | directory walk like `rm -r`; `-a -s -k -x -H -L`, hard links counted once (`st_dev`/`st_ino` set) |
+| 16 | `nl` | 3 | ~170 | ~1525 | logical pages (`\:\:\:` delimiters), per-section body/header/footer styles, `-b pstring` regex via `text/dfa` |
+| 17 | `tr` | 3 | ~200 | ~1725 | 256-entry map; ranges, `[:class:]`, `[=e=]`, `[x*n]`, `\ooo` escapes, `-c -C -d -s` are the bulk |
+| 18 | `fuser` | 4 | ~130 | ~1855 | Linux only: scan `/proc/*/fd`, `cwd`, `root`, `maps`; `-c -f -u`; not portable, no test on other systems |
+| 19 | `more` | 4 | ~220 | ~2075 | raw-terminal pager on `src/term/` (`term_init`, window size, `SIGWINCH`); commands `q space enter /pattern`; not a filter |
+| 20 | `od` | 4 | ~260 | ~2335 | `-A -j -N -t` (a c d f o u x, sizes), `-v` duplicate folding, the obsolete `-b -c -d -o -s -x` aliases, address radix |
+| 21 | `ps` | 4 | ~300 | ~2635 | Linux only: `/proc/*/stat`+`cmdline`, `-o` column formats, `-e -a -A -f -l -p -t -u -U -G -g -d`, tty name mapping |
+| 22 | `pr` | 5 | ~320 | ~2955 | pagination, headers/footers, `-column`/`-m` multi-column layout, `-e -i -n -o -w -f -F -l -h -s -t -d -r -a` |
 
-| utility | POSIX synopsis | size | notes |
-|---|---|---|---|
-| `head` | `head [-n number] [file...]` | 60 | stops reading after N lines: the natural test for early-exit in a chain |
-| `tail` | `tail [-f] [-c number\|-n number] [file]` | 150 | needs a ring of the last N lines; `-f` polls (`fstat`/`read` loop), so it cannot chain |
-| `cut` | `cut -b\|-c\|-f list [-d delim] [-s] [-n] [file...]` | 120 | list parser for `1,3-5,7-` (`-b`, `-c`, `-f`) |
-| `tr` | `tr [-c\|-C] [-s] [-d] string1 [string2]` | 200 | 256-entry map; ranges, `[:class:]`, `[=e=]`, `[x*n]`, `\ooo` escapes are the bulk |
-| `uniq` | `uniq [-c\|-d\|-u] [-f fields] [-s chars] [input [output]]` | 100 | compares adjacent lines only |
-| `paste` | `paste [-s] [-d list] file...` | 100 | merges N `filter_in`s line by line |
-| `nl` | `nl [-p] [-b type] [-d delim] [-f type] [-h type] [-i incr] [-l num] [-n format] [-s sep] [-v startnum] [-w width] [file]` | 200 | logical pages (`\:\:\:` delimiters) make it larger than it looks; regex `-b pstring` reuses `text/dfa` |
-
-### Tier B — wrappers that run another command (through `exec_command()`, like `xargs`/`timeout`) ≈ 250 lines
-
-| utility | POSIX synopsis | size | notes |
-|---|---|---|---|
-| `env` | `env [-i] [name=value]... [utility [argument...]]` | 80 | push a `vartab` with the assignments (`-i`: start empty), then `exec_command`; with no utility, print the environment |
-| `nice` | `nice [-n increment] utility [argument...]` | 50 | `nice(2)` in a forked child (or before `exec`), then `exec_command` |
-| `nohup` | `nohup utility [argument...]` | 60 | ignore `SIGHUP`, stdout to `nohup.out` if it is a terminal, then `exec_command`; exit 126/127 as specified |
-| `renice` | `renice -n increment [-g\|-p\|-u] ID...` | 60 | `setpriority(2)`; no exec |
-
-### Tier C — thin system-call wrappers ≈ 350 lines
-
-| utility | POSIX synopsis | size | notes |
-|---|---|---|---|
-| `mkfifo` | `mkfifo [-m mode] file...` | 40 | `mkfifo(3)`; mode parser already in `builtin_chmod.c` and `builtin_mkdir.c` (move to `lib/`) |
-| `id` | `id [user]`, `id -G[-n]`, `id -g[-nr]`, `id -u[-nr]` | 100 | `getpwnam`/`getgrgid`/`getgroups`; no NSS-free fallback |
-| `pathchk` | `pathchk [-p] [-P] pathname...` | 80 | `pathconf(3)` limits, portable filename character set |
-| `date` | `date [-u] [+format]` | 100 | `localtime`/`strftime`; setting the clock (`mmddhhmm[[cc]yy]`) needs privilege and is a documented omission |
-
-### Tier D — one directory walker ≈ 150 lines
-
-| utility | POSIX synopsis | size | notes |
-|---|---|---|---|
-| `du` | `du [-a\|-s] [-kx] [-H\|-L] [file...]` | 150 | reuse the recursion of `rm -r` / `find`; count hard links once (`st_dev`/`st_ino` set) |
-
-### Tier E — large, or system-specific, low value in a shell ≈ 1000+ lines
-
-Do only on request; each one is bigger than the rest of this goal combined.
-
-| utility | size | why it is expensive |
-|---|---|---|
-| `od` | 250 | many output types (`-t a c d f o u x` with sizes), `-j`/`-N`, address radix, duplicate-line folding |
-| `pr` | 300 | pagination, multi-column (`-column`, `-m`), headers/footers, `-e`/`-i` tab expansion |
-| `ps` | 300 | Linux only via `/proc`; `-o format` field list; BSD/POSIX column names differ |
-| `more` | 200 | needs raw-terminal paging on top of `src/term/`; a pager is not a filter |
-| `fuser` | 120 | `/proc/*/fd` scan; XSI option, Linux only; `-c`/`-f`/`-u` |
+**About 3,300 lines for all 22**, of which the first 12 (through `cut`) are about 1,000 and cover
+almost everything a script uses. Stop after `cut`, or after `tr`, unless a real use appears.
 
 ### Not planned
 
-- **`rmdel`** (and the other SCCS utilities `admin delta get prs sact sccs unget val what`): SCCS is
-  obsolescent and was dropped from newer POSIX editions. Out of scope, like `lex`, `yacc` and `c99`
-  (`CLAUDE.md`, "Design specification for builtin utilities").
+- **`rmdel`** and the other SCCS utilities (`admin delta get prs sact sccs unget val what`): SCCS is
+  obsolescent and dropped from newer POSIX editions. `rmdel` alone would need the whole SCCS file
+  format (`admin`, `get`, `delta`, weave parsing): **1,500+ lines** for a version-control system
+  nobody uses. Out of scope, like `lex`, `yacc` and `c99` (`CLAUDE.md`, "Design specification for
+  builtin utilities").
 
-### Suggested order
+### Shared code to extract first
 
-`head` → `uniq` → `cut` → `tr` → `paste` (each a day of work, all script staples, all chain-capable),
-then `env` → `nohup` → `nice` (they prove `exec_command()` as a wrapper API once more), then
-`mkfifo`, `id`, `du`. Everything in Tier E waits for a concrete need.
+Do these three before the utilities that need them; each removes a duplicate:
 
-**Shared code worth extracting first:** the `-N`/`-n N` line-count parser (head, tail, nl), the
-mode-string parser (chmod, mkdir, mkfifo), and a `list` parser for `cut -f1,3-5`.
+1. **mode-string parser** (`chmod`, `mkdir`, `mkfifo`): now inside `builtin_chmod.c`/`builtin_mkdir.c`, move to `lib/`.
+2. **`-N` / `-n N` line-count parser** (`head`, `tail`, `nl`): about 25 lines.
+3. **wrapper helper** for "set something up, then `exec_command()` the rest" (`env`, `nice`, `nohup`, and
+   `xargs`/`timeout` already do it by hand): about 30 lines around `exec_hash()` + `exec_command()`.
+
+Filters (`head uniq paste cut tr nl tail`) use `src/builtin/builtin_filter.[hc]` (`filter_in`,
+`filter_out`) so they can join filter chains (Goal 13); `tail -f` and `more` cannot chain.
