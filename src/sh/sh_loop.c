@@ -1,4 +1,5 @@
 #include "../debug.h"
+#include "../trace.h"
 #include "../eval.h"
 #include "../fd.h"
 #include "../history.h"
@@ -50,14 +51,7 @@ sh_loop(void) {
       int status;
       struct eval e;
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHPARSE2AST)
-      /* tree_print(list, buffer_2);
-       buffer_putnlflush(buffer_2);*/
-
-      buffer_puts(debug_output, COLOR_YELLOW "sh_loop" COLOR_NONE " list = ");
-      debug_list(list, 0);
-      debug_nl_fl();
-#endif
+      TRACE(TRACE_SH, "loop.list", trace_int("n", tree_count(list)), trace_nodes("cmds", list));
 
       tree_catlist(list, &cmd, NULL);
 

@@ -1,4 +1,5 @@
 #include "../fd.h"
+#include "../trace.h"
 #include "../fdtable.h"
 #include "../debug.h"
 #include "../sh.h"
@@ -110,17 +111,12 @@ fdtable_resolve_1(struct fd* d, int flags) {
     }
   }
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
-  debug_open();
-  buffer_puts(debug_output, COLOR_YELLOW "fdtable_resolve" COLOR_NONE "(");
-  fd_dump(d, debug_output);
-  buffer_puts(debug_output, ", ");
-  debug_flags(flags, (const char* const[]){"LAZY", "MOVE", "FORCE", "NOCLOSE", "CLOSE"});
-  buffer_puts(debug_output, ") = ");
+  {
+    static const char* const resolve_flags[] = {"LAZY", "MOVE", "FORCE", "NOCLOSE", "CLOSE"};
+    static const char* const resolve_state[] = {"0", "DONE", "ERROR", "PENDING"};
 
-  buffer_puts(debug_output, ((const char* const[]){"0", "DONE", "ERROR", "PENDING"})[-state]);
-  debug_nl_fl();
-#endif
+    TRACE(TRACE_FDTABLE, "resolve", trace_fd("fd", d), trace_flags("flags", flags, resolve_flags, 5), trace_raw("state", resolve_state[-state]));
+  }
 
   return state;
 }

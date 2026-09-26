@@ -1,4 +1,5 @@
 #include "../parse.h"
+#include "../trace.h"
 #include "../tree.h"
 #include "../debug.h"
 #include "../fd.h"
@@ -36,11 +37,7 @@ parse_grouping(struct parser* p, int tempflags) {
     return NULL;
 
   if(g) {
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE)
-    buffer_puts(debug_output, COLOR_YELLOW "parse_grouping" COLOR_NONE " grouping = ");
-    debug_node(g, 1);
-    debug_nl_fl();
-#endif
+    TRACE(TRACE_PARSE, "grouping", trace_kind("kind", g->id));
     tree_init(g->ngrp.rdir, rptr);
 
     /* now any redirections may follow */

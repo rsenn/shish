@@ -28,6 +28,7 @@ enum trace_module {
   TRACE_SH,
   TRACE_JOB,
   TRACE_SIG,
+  TRACE_PARSE,
   TRACE_NMODULES
 };
 
@@ -57,6 +58,18 @@ void trace_int(const char* key, long val);
 void trace_hex(const char* key, unsigned long val);
 void trace_raw(const char* key, const char* text);
 void trace_strn(const char* key, const char* val, unsigned long len);
+
+/* nested groups: trace_open("k", "{") ... trace_close("}") ; also "[" and "]" */
+void trace_open(const char* key, const char* bracket);
+void trace_close(const char* bracket);
+
+union node;
+struct fd;
+struct parser;
+void trace_node(const char* key, union node* node);  /* shell source text of one node */
+void trace_nodes(const char* key, union node* list); /* [ "text", ... ] for a sibling list */
+void trace_fd(const char* key, struct fd* fd);      /* {n=, name=, level=, e=, mode=, ...} */
+void trace_fdtable(const char* event);              /* one fdtable.<event> line per shadowed fd */
 
 struct location;
 void trace_loc(const char* key, const struct location* loc); /* "file:line:col" */
@@ -101,6 +114,7 @@ void trace_fdmap(const char* event);
 #define TRACE_RET(mod, ev, ...) ((void)0)
 #define TRACE_STRUCT(mod, ev, ...) ((void)0)
 #define trace_fdmap(ev) ((void)0)
+#define trace_fdtable(ev) ((void)0)
 
 #endif /* DEBUG_OUTPUT */
 

@@ -1,4 +1,5 @@
 #include "../parse.h"
+#include "../trace.h"
 #include "../tree.h"
 #include "../debug.h"
 
@@ -54,26 +55,8 @@ parse_list(struct parser* p) {
     list = cmds;
   }
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHPARSE2AST)
-  if(cmds && cmds->next) {
-    buffer_puts(debug_output, COLOR_YELLOW "parse_list" COLOR_NONE " ");
-
-    if(cmds->next) {
-      buffer_puts(debug_output, "[");
-      buffer_putulong(debug_output, tree_count(cmds));
-      buffer_puts(debug_output, "] ");
-    }
-
-    buffer_puts(debug_output, "cmds = ");
-
-    if(cmds->next)
-      debug_list(cmds, 0);
-    else
-      debug_node(cmds, 1);
-
-    debug_nl_fl();
-  }
-#endif
+  if(cmds && cmds->next)
+    TRACE(TRACE_PARSE, "list", trace_int("n", tree_count(cmds)), trace_nodes("cmds", cmds));
 
   return list;
 }

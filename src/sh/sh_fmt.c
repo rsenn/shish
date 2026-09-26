@@ -1,5 +1,6 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#include "../trace.h"
 #endif
 #ifdef HAVE_ALLOCA
 #include <alloca.h>
@@ -116,12 +117,7 @@ main(int argc, char** argv, char** envp) {
       default: fmt_usage(); return 1;
     }
 
-#ifdef DEBUG_OUTPUT
-  debug_ulong("tree_columnwrap", tree_columnwrap, 0);
-  debug_nl();
-  debug_ulong("indent_width", indent_width, 0);
-  debug_nl_fl();
-#endif
+  TRACE(TRACE_SH, "fmt.config", trace_int("columnwrap", tree_columnwrap), trace_int("indent_width", indent_width));
 
   for(i = 0; i < indent_width; i++)
     stralloc_catc(&separator, ' ');

@@ -1,4 +1,5 @@
 #include "../parse.h"
+#include "../trace.h"
 #include "../tree.h"
 #include "../fd.h"
 #include "../sh.h"
@@ -126,17 +127,7 @@ addcmd:
   simple_command->ncmd.vars = vars;
   simple_command->ncmd.rdir = rdir;
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE)
-  if(sh->opts.xtrace) {
-    buffer_putm_internal(debug_output, COLOR_YELLOW "parse_simple_command" COLOR_NONE " loc = ", 0);
-    debug_location(0, &pos, 1);
-    debug_s(" ");
-    debug_s("«");
-    tree_print(simple_command, debug_output);
-    debug_s("»");
-    debug_nl_fl();
-  }
-#endif
+  TRACE(TRACE_PARSE, "simple_command", trace_loc("loc", &pos), trace_node("text", simple_command));
 
   return simple_command;
 }

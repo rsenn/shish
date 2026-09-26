@@ -470,8 +470,7 @@ effect on the release binary.
 | `"forked": pid` | `eval.pipeline.fork(pid)` |
 | trap handler / uninstall / builtin_trap (stderr) | `sig.trap.handler(sig)`, `sig.trap.uninstall(sig)`, `builtin.trap(sig, code)` |
 
-  Not ported yet (multi-line, keep using `debug.log` and their `DEBUG_*` flags): `fdtable_resolve`,
-  `fdstack_data`, the `fdtable_dump` before a fork, all `parse_*`, `sh_loop`, `expr`, `expand_arith_expr`.
+  The remaining multi-line dumps were ported afterwards, see [5.3](#53-remaining-dumps-ported).
 
 **Exec path** (`exec_hash.c`, `exec_command.c`, `exec_program.c`, `builtin_xargs.c`, `builtin_timeout.c`)
 
@@ -575,3 +574,38 @@ Sample (`SHISH_TRACE=eval,expand,redir`, script `X=5 echo hi >/dev/null 2>&1`):
 Not done from §4.1: `eval_tree`/`eval_cmdlist` per-list summary events (the per-member
 `eval.status` covers them), `redir_addhere.c` and `redir_source.c` (nothing to say beyond
 `redir.here`), and the `pipeline.filter.enter/leave` pair for the no-fork path.
+
+### 5.3 Remaining dumps ported
+
+Every runtime print of the old layer now goes through `TRACE()`; `debug.log` is no longer
+created (`sh_init()` stopped calling `debug_open()`). The shell honours only `SHISH_TRACE` /
+`SHISH_TRACE_FILE`. What is left of `src/debug*` serves `shparse2ast` (the JSON AST dumper)
+and the `dump` builtin, which prints its tables to the terminal on request.
+
+New writers: `trace_open(key, "{"|"[")` / `trace_close(...)` for nested values,
+`trace_node(key, node)` (shell source of a node), `trace_nodes(key, list)`, `trace_fd(key, fd)`
+and `trace_fdtable(event)`. New module `parse`.
+
+| old print | new event |
+|---|---|
+| `parse_getarg <word>` | `parse.getarg(word="echo")` |
+| `parse_dump <tok>` (needed `-x`) | `parse.token(tok="NAME", flags=0x6)` |
+| `parse_simple_command loc = … «text»` (needed `-x`) | `parse.simple_command(loc, text)` |
+| `parse_command command = {JSON}` | `parse.command(kind)` |
+| `parse_list [N] cmds = [JSON]` | `parse.list(n, cmds=["…", …])` |
+| `parse_grouping grouping = {JSON}` | `parse.grouping(kind)` |
+| `parse_function node = {JSON}` | `parse.function(name)` |
+| `parse_arith tree = {JSON}` | `parse.arith(kind)` |
+| `debug_list(nfree)` in `parse_expect` | `parse.expect_failed(discarded=[…])` |
+| `sh_loop list = [JSON]` | `sh.loop.list(n, cmds=["…"])` |
+| `expr` builtin `debug_list` | `builtin.expr.tree(kind)` |
+| `expand_arith_expr <node>` | `expand.arith.unsupported(kind)` |
+| `shformat` `tree_columnwrap`/`indent_width` | `sh.fmt.config(columnwrap, indent_width)` |
+| `fdtable_resolve(<fd_dump>, FLAGS) = STATE` | `fdtable.resolve(fd={…}, flags=MOVE, state=DONE)` |
+| `fdstack_data` + `fd_dump` | `fdstack.data(fd={…}, bytes=N)` |
+| `fdtable_dump` before fork | `fdtable.exec.table(vfd, shadow, fd={…})`, one line per shadowed fd |
+
+Sample `fd` struct: `{n=1, name="pipe", level=0, e=1, mode=WRITE|PIPE|TMPBUF, rfd=-1, wfd=1, dup=…}`.
+
+The JSON tree of a command is no longer printed by the shell. Node kinds and the source text
+of words / simple commands are; use `shparse2ast` when the full tree is needed.

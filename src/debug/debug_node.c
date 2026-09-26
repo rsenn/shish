@@ -81,6 +81,8 @@ const char* debug_nodes[] = {
     "or_assign",
 };
 
+const unsigned debug_nodes_count = sizeof(debug_nodes) / sizeof(debug_nodes[0]);
+
 void
 debug_node(union node* node, int depth) {
   const char* name;

@@ -1,4 +1,5 @@
 #include "../fdstack.h"
+#include "../trace.h"
 #include "../fdtable.h"
 #include "../debug.h"
 #include "../../lib/windoze.h"
@@ -21,16 +22,16 @@ fdstack_data(void) {
       /* read from the child and put it into output subst buffer */
       if((fd->mode & FD_SUBST) == FD_SUBST) {
         ssize_t n;
+        unsigned long total = 0;
         char buf[FD_BUFSIZE / 2];
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK) && !defined(SHFORMAT) && !defined(SHPARSE2AST)
-        buffer_puts(debug_output, "fdstack_data\n");
-        fd_dump(fd, debug_output);
-        buffer_putnlflush(debug_output);
-#endif
-
-        while((n = read(fd->rb.fd, buf, sizeof(buf))) > 0)
+        while((n = read(fd->rb.fd, buf, sizeof(buf))) > 0) {
           buffer_put(fd->w, buf, n);
+          total += n;
+        }
+
+        TRACE(TRACE_FDSTACK, "data", trace_fd("fd", fd), trace_int("bytes", total));
+        (void)total;
 
         buffer_flush(fd->w);
 

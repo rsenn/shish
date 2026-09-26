@@ -22,13 +22,13 @@
 #define TRACE_FD_MIN 200
 
 static const char* const trace_names[TRACE_NMODULES] = {
-    "exec", "builtin", "fd", "fdstack", "fdtable", "eval", "expand", "redir", "var", "sh", "job", "sig",
+    "exec", "builtin", "fd", "fdstack", "fdtable", "eval", "expand", "redir", "var", "sh", "job", "sig", "parse",
 };
 
 static char trace_buf[TRACE_LINE];
 static size_t trace_len;
-static const char *trace_close, *trace_module_name;
-static int trace_first, trace_saved_errno, trace_fd = -2, trace_init_done;
+static const char *trace_tail, *trace_module_name;
+static int trace_first, trace_saved_errno, trace_out = -2, trace_init_done;
 static unsigned int trace_mask;
 
 /* "exec,fd,-job" -> bit mask; "all" selects everything */
@@ -66,7 +66,7 @@ trace_parse(const char* s) {
 }
 
 static void
-trace_open(void) {
+trace_setup(void) {
   const char *sel = getenv("SHISH_TRACE"), *file = getenv("SHISH_TRACE_FILE");
 
   trace_init_done = 1;
@@ -77,7 +77,7 @@ trace_open(void) {
   trace_parse(sel);
 
   if(file && !str_diff(file, "-")) {
-    trace_fd = 2;
+    trace_out = 2;
   } else {
     int fd = open(file && *file ? file : "trace.log", O_WRONLY | O_CREAT | O_APPEND, 0644);
 
@@ -93,7 +93,7 @@ trace_open(void) {
       }
     }
 #endif
-    trace_fd = fd;
+    trace_out = fd;
   }
 }
 
@@ -105,14 +105,14 @@ trace_begin(enum trace_module mod, const char* event, const char* open, const ch
   trace_saved_errno = errno;
 
   if(!trace_init_done)
-    trace_open();
+    trace_setup();
 
-  if(trace_fd < 0 || !(trace_mask & (1u << mod)))
+  if(trace_out < 0 || !(trace_mask & (1u << mod)))
     return 0;
 
   trace_len = 0;
   trace_first = 1;
-  trace_close = close;
+  trace_tail = close;
   trace_module_name = trace_names[mod];
 
   trace_put("[", 1);
@@ -136,7 +136,7 @@ trace_begin(enum trace_module mod, const char* event, const char* open, const ch
 
 void
 trace_end(void) {
-  trace_put(trace_close, str_len(trace_close));
+  trace_put(trace_tail, str_len(trace_tail));
 
   if(trace_len < TRACE_LINE)
     trace_buf[trace_len++] = '\n';
@@ -144,7 +144,7 @@ trace_end(void) {
     trace_buf[TRACE_LINE - 1] = '\n';
 
   {
-    ssize_t r = write(trace_fd, trace_buf, trace_len);
+    ssize_t r = write(trace_out, trace_buf, trace_len);
     (void)r;
   }
 
@@ -184,9 +184,22 @@ trace_key(const char* key) {
   }
 }
 
+void
+trace_open(const char* key, const char* bracket) {
+  trace_key(key);
+  trace_put(bracket, 1);
+  trace_first = 1;
+}
+
+void
+trace_close(const char* bracket) {
+  trace_put(bracket, 1);
+  trace_first = 0;
+}
+
 /* is `fd` the descriptor the trace itself writes to? */
 int
 trace_is_fd(int fd) {
-  return fd == trace_fd;
+  return fd == trace_out;
 }
 #endif /* DEBUG_OUTPUT */

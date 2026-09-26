@@ -3,11 +3,13 @@
 #ifdef DEBUG_OUTPUT
 
 extern const char* debug_nodes[];
+extern const unsigned debug_nodes_count;
 
 const char* const trace_eval_flags[9] = {"E_EXIT", "E_ROOT", "E_BQUOTE", "E_JCTL", "E_LIST", "E_FUNCTION", "E_LOOP", "E_PRINT", "E_DEBUG"};
 const char* const trace_redir_flags[9] = {"R_IN", "R_OUT", "R_OPEN", "R_DUP", "R_HERE", "R_STRIP", "R_APPEND", "R_CLOBBER", "R_NOW"};
 #include "../source.h"
 #include "../tree.h"
+#include "../../lib/alloc.h"
 #include "../../lib/fmt.h"
 #include "../../lib/str.h"
 
@@ -78,6 +80,30 @@ trace_strn(const char* key, const char* val, unsigned long len) {
 }
 
 void
+trace_node(const char* key, union node* node) {
+  char* s;
+
+  if(!node) {
+    trace_str(key, NULL);
+    return;
+  }
+
+  s = tree_string(node);
+  trace_str(key, s);
+  alloc_free(s);
+}
+
+void
+trace_nodes(const char* key, union node* list) {
+  trace_open(key, "[");
+
+  for(; list; list = list->next)
+    trace_node(NULL, list);
+
+  trace_close("]");
+}
+
+void
 trace_loc(const char* key, const struct location* loc) {
   char buf[FMT_LOC + 1];
 
@@ -87,7 +113,7 @@ trace_loc(const char* key, const struct location* loc) {
 
 void
 trace_kind(const char* key, int node_id) {
-  trace_raw(key, node_id >= 0 && node_id <= N_REDIR ? debug_nodes[node_id] : "?");
+  trace_raw(key, node_id >= 0 && (unsigned)node_id < debug_nodes_count ? debug_nodes[node_id] : "?");
 }
 
 void

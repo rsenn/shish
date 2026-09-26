@@ -1,4 +1,5 @@
 #include "../parse.h"
+#include "../trace.h"
 #include "../tree.h"
 #include "../expand.h"
 #include "../fd.h"
@@ -64,11 +65,7 @@ parse_function(struct parser* p) {
 
   node->nfunc.loc = loc;
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHPARSE2AST)
-  buffer_puts(debug_output, COLOR_YELLOW "parse_function" COLOR_NONE " node = ");
-  debug_node(node, 1);
-  debug_nl_fl();
-#endif
+  TRACE(TRACE_PARSE, "function", trace_str("name", node->nfunc.name));
 
   return node;
 }

@@ -75,11 +75,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
 
     TRACE(TRACE_EXEC, "program.pipes", trace_int("npipes", npipes));
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE)
-    // fdstack_dump(debug_output);
-    fdtable_dump(debug_output);
-    // fd_dumplist(debug_output);
-#endif
+    trace_fdtable("exec.table");
 
     /* block child and interrupt signal, so we won't terminate ourselves
        when the child does. SIGCHLD in particular has to be blocked

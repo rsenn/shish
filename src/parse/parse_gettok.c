@@ -1,6 +1,7 @@
 #include "../../lib/buffer.h"
 #include "../../lib/fmt.h"
 #include "../parse.h"
+#include "../trace.h"
 #include "../fd.h"
 #include "../tree.h"
 #include "../source.h"
@@ -34,12 +35,8 @@ parse_gettok(struct parser* p, int tempflags) {
     if(p->tok & T_NAME && p->node && p->node->id == N_ARGSTR && !(p->flags & P_NOKEYWD))
       parse_keyword(p);
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE)
-    if(sh->opts.xtrace) {
-      if(p->tok != -1)
-        parse_dump(p, debug_output);
-    }
-#endif
+    if(p->tok != -1)
+      TRACE(TRACE_PARSE, "token", trace_str("tok", parse_tokname(p->tok, 0)), trace_hex("flags", p->flags));
   }
 
   p->flags = oldflags;

@@ -30,10 +30,6 @@ static struct var sh_ifs;
  * ----------------------------------------------------------------------- */
 void
 sh_init(void) {
-#ifdef DEBUG_OUTPUT
-  debug_open();
-#endif
-
   /* must run before anything else touches a signal's disposition
      (job_init() doesn't, but sig_catch(SIGCHLD, ...)/term_init() do,
      later in sh_main.c) -- see sig_snapshot()'s own comment. */

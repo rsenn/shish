@@ -1,4 +1,5 @@
 #include "../../../lib/uint64.h"
+#include "../../trace.h"
 #include "../../../lib/byte.h"
 #include "../../../lib/fmt.h"
 #include "../../../lib/shell.h"
@@ -184,10 +185,7 @@ builtin_expr(int argc, char* argv[]) {
     if((expr = parse_arith_expr(&p))) {
       /*enum tok_flag tok =*/parse_gettok(&p, P_SKIPNL);
 
-#ifdef DEBUG_OUTPUT
-      debug_list(expr, 0);
-      debug_nl_fl();
-#endif /* DEBUG_OUTPUT */
+      TRACE(TRACE_BUILTIN, "expr.tree", trace_kind("kind", expr->id));
 
       if(expand_arith_expr(expr, &result)) {
         ret = 1;

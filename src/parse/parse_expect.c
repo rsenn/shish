@@ -1,4 +1,5 @@
 #include "../debug.h"
+#include "../trace.h"
 #include "../parse.h"
 #include "../tree.h"
 
@@ -10,10 +11,7 @@ parse_expect(struct parser* p, int tempflags, enum tok_flag toks, union node* nf
     parse_error(p, toks);
 
     if(nfree) {
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE)
-
-      debug_list(nfree, 0);
-#endif /* DEBUG_PARSE */
+      TRACE(TRACE_PARSE, "expect_failed", trace_nodes("discarded", nfree));
       tree_free(nfree);
     }
 
