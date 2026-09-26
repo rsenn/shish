@@ -148,5 +148,6 @@ int sig_pusha(int sig, struct sigaction const* ssa);
 int sig_pop(int sig);
 void sig_snapshot(void);
 int sig_was_ignored(int sig);
+void sig_unignore(int sig); /* forget the ignore-on-entry snapshot of sig */
 
 #endif

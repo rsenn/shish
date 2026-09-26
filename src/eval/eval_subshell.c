@@ -54,6 +54,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
 
   eval_push(&en, E_ROOT);
   TRACE(TRACE_EVAL, "subshell.enter");
+  sh_sigrestore();
 
   /* set up a long jump so we can exit the subshell and end up just
      after the setjmp call, which will return nonzero in this case */
@@ -91,6 +92,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
   vartab_pop(&vars);
   fdstack_pop(&io);
   fd_state_restore(&fdst);
+  sh_sigignore();
   TRACE(TRACE_EVAL, "subshell.leave", trace_int("status", ret));
 
   sh->exitcode = ret;

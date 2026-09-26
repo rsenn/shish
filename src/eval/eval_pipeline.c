@@ -32,7 +32,7 @@ void trap_snapshot_restore(void*);
 
 /* filter-chain scanner (TODO.md Goal 13): finds a trailing run of
  * adjacent pure-builtin pipeline stages that can hand off through an
- * in-process buffer (struct filter_ops, src/builtin_filter.h) instead
+ * in-process buffer (struct filter_ops, src/builtin/builtin_filter.h) instead
  * of a real fork()+pipe() pair. Scoped deliberately narrow -- false
  * negatives (falling back to the always-correct fork()+pipe() path)
  * are always safe, so every check below is conservative on purpose.

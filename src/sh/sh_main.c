@@ -383,6 +383,7 @@ main(int argc, char** argv) {
     if(have_term || (force_interactive && !no_interactive)) {
       src.mode |= SOURCE_IACTIVE;
       sh_interactive = 1;
+      sh_sigignore();
       parse_prompt_hook = prompt_show;
 
 #if !WINDOWS_NATIVE

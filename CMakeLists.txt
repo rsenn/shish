@@ -211,7 +211,7 @@ endif()
 
 #dump_list(LIBSHELL_SOURCES)
 
-set_add(BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
+set_add(BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_filter.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
 
 if(NO_TREE_PRINT)
   add_definitions(-DNO_TREE_PRINT=1)

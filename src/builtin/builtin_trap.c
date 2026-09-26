@@ -76,6 +76,14 @@ trap_find(int sig) {
   return 0;
 }
 
+/* does "trap '' SIG" ignore sig in this process? */
+int
+trap_ignores(int sig) {
+  trap* tr = trap_find(sig);
+
+  return tr && !tr->tree;
+}
+
 static void
 trap_print(trap* tr) {
   buffer_puts(fd_out->w, "trap '");
@@ -271,6 +279,23 @@ trap_exit(int exitcode) {
  * the old tree/list node and from exhausting sig_push()'s small
  * fixed-size per-signal stack (SIGSTACKSIZE, 16).
  * ----------------------------------------------------------------------- */
+/* an interactive shell may reset a signal that was ignored on entry:
+ * "trap - INT" then means the default action, which is what children
+ * inherit
+ * ----------------------------------------------------------------------- */
+static void
+trap_reset_entry_ignore(int sig) {
+  if((char)sig > 0 && sig_was_ignored(sig) && sh_interactive) {
+    struct sigaction sa;
+
+    sa.sa_handler = (sig == SIGINT || sig == SIGQUIT || sig == SIGTERM) ? SIG_IGN : SIG_DFL;
+    sa.sa_flags = 0;
+    sigemptyset(&sa.sa_mask);
+    sig_action(sig, &sa, NULL);
+    sig_unignore(sig);
+  }
+}
+
 static int
 trap_uninstall(int sig) {
   trap **ptr, *t;
@@ -290,6 +315,7 @@ trap_uninstall(int sig) {
     if(t->sig == (unsigned char)sig) {
       if((char)t->sig > 0) {
         sig_pop(sig);
+        trap_reset_entry_ignore(sig);
 
         /* discard any not-yet-dispatched occurrence of this signal:
            trap_relay() may have already set trap_pending[sig] without
@@ -324,6 +350,8 @@ trap_uninstall(int sig) {
       return 0;
     }
   }
+
+  trap_reset_entry_ignore(sig);
 
   TRACE(TRACE_SIG, "trap.uninstall", trace_int("sig", sig));
 

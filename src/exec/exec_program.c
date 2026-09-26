@@ -296,6 +296,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
     sig_blocknone();
   }
 
+  sh_sigrestore();
   fdtable_exec();
   fdstack_flatten();
   trace_fdmap("exec.fds");

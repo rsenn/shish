@@ -159,6 +159,8 @@ int sh_errorn_errno(const char* s, unsigned int len);
 void sh_exit(int retcode);
 size_t sh_fmtflags(char* dest, const struct shopt*);
 int sh_forked(void);
+void sh_sigignore(void);  /* interactive shell ignores INT QUIT TERM */
+void sh_sigrestore(void); /* ...children get the defaults back */
 void sh_getcwd(struct env* sh);
 const char* sh_gethome(void);
 void sh_init(void);

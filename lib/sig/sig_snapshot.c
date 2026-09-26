@@ -32,6 +32,12 @@ sig_was_ignored(int sig) {
 
   return sig_ignored[sig - 1];
 }
+
+void
+sig_unignore(int sig) {
+  if((sig > 0) && (sig < SHISH_NSIG))
+    sig_ignored[sig - 1] = 0;
+}
 #else
 void
 sig_snapshot(void) {
@@ -41,5 +47,10 @@ int
 sig_was_ignored(int sig) {
   (void)sig;
   return 0;
+}
+
+void
+sig_unignore(int sig) {
+  (void)sig;
 }
 #endif

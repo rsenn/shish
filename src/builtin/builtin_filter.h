@@ -1,7 +1,7 @@
 #ifndef BUILTIN_FILTER_H
 #define BUILTIN_FILTER_H
 
-#include "../lib/buffer.h"
+#include "../../lib/buffer.h"
 
 /* the interface a builtin exposes to act as a chained filter, wired
  * straight into a struct fd's read buffer (fd_filter(), src/fd.h) so
@@ -46,5 +46,43 @@ struct filter_ops {
 struct builtin_filter {
   const struct filter_ops* ops;
 };
+
+/* ---- helpers shared by the filter-capable builtins (cat, grep, sed, ...) ---- */
+
+/* opens path for reading into b: mmap when possible, else plain read(2)
+ * over rbuf (FIFOs and devices cannot be mapped). 0 on success, -1 on error */
+int filter_open_file(buffer* b, char* rbuf, size_t rlen, const char* path);
+
+/* feeds the whole content of path to sink(); -1 if it cannot be read */
+typedef void filter_sink_fn(void* ctx, const char* s, size_t n);
+int filter_copy(const char* path, filter_sink_fn* sink, void* ctx);
+
+/* input side: the file operands in order, or only stdin/upstream ("-")
+ * when there are none. an unreadable operand is reported and skipped. */
+struct filter_in {
+  char** files; /* operand list, NULL: only "-" */
+  int i, done_any, had_error;
+  int newfile;          /* set when an operand was just opened; the user clears it */
+  buffer* upstream;     /* what "-" reads */
+  buffer* cur;          /* NULL: no operand open */
+  buffer inb;
+  char rbuf[1024];
+  char** errargv;       /* argv for builtin_error() */
+};
+
+void filter_in_init(struct filter_in* in, char** errargv, char** files, buffer* upstream);
+const char* filter_in_name(const struct filter_in* in); /* operand being read */
+ssize_t filter_in_get(struct filter_in* in, char* buf, size_t len, const char* delims, size_t ndelims);
+void filter_in_close(struct filter_in* in);
+
+/* output side: turns "one formatted unit per step" into buffer_op_read
+ * calls of any size; the part of a unit that did not fit waits in pend. */
+struct filter_out {
+  char pend[1400];
+  size_t off, len;
+};
+
+typedef int filter_step_fn(void* ctx, const char** unit, size_t* len);
+ssize_t filter_out_read(struct filter_out* out, void* buf, size_t len, filter_step_fn* step, void* ctx);
 
 #endif

@@ -68,6 +68,7 @@ sh_forked(void) {
   }
 
   sh_child = 1;
+  sh_sigrestore();
 
   /* sh_pid must reflect this child process's own pid from here on --
      job_fork()'s child branch uses it to setpgid() itself into the
