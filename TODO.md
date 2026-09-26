@@ -3986,7 +3986,7 @@ file operands, `filter_out` buffers the output) and can join filter chains (Goal
 |---|---|---|---|
 | `head` | `head [-n number] [file...]` | 60 | stops reading after N lines: the natural test for early-exit in a chain |
 | `tail` | `tail [-f] [-c number\|-n number] [file]` | 150 | needs a ring of the last N lines; `-f` polls (`fstat`/`read` loop), so it cannot chain |
-| `cut` | `cut -b\|-c\|-f list [-d delim] [-s] [-n] [file...]` | 120 | list parser (`1,3-5,7-`) shared with `paste`/`nl`? no; keep local |
+| `cut` | `cut -b\|-c\|-f list [-d delim] [-s] [-n] [file...]` | 120 | list parser for `1,3-5,7-` (`-b`, `-c`, `-f`) |
 | `tr` | `tr [-c\|-C] [-s] [-d] string1 [string2]` | 200 | 256-entry map; ranges, `[:class:]`, `[=e=]`, `[x*n]`, `\ooo` escapes are the bulk |
 | `uniq` | `uniq [-c\|-d\|-u] [-f fields] [-s chars] [input [output]]` | 100 | compares adjacent lines only |
 | `paste` | `paste [-s] [-d list] file...` | 100 | merges N `filter_in`s line by line |
