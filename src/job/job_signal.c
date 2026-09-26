@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../job.h"
 
 /* signal job exiting
@@ -12,6 +13,8 @@ job_signal(pid_t pid, int status) {
 
       if(p->pid == pid) {
         p->status = status;
+
+        TRACE_DEFER(TRACE_JOB, "signal", "pid", pid);
 
         job_signaled = true;
         return j;

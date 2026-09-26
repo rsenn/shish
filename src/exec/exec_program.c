@@ -178,6 +178,8 @@ exec_program(char* path, char** argv, enum execflag flag) {
            so it needs to be set here as well */
         job_bgpid = pid;
 
+        TRACE(TRACE_JOB, "fork", trace_int("id", job->id), trace_int("pid", pid), trace_int("pgrp", job->pgrp), trace_int("bgnd", 1));
+
         /* interactive-use-only, see eval_node_bgnd.c's matching comment
            (job-start-banner-printed-noninteractively) */
         if(sh->opts.monitor)

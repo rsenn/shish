@@ -13,6 +13,17 @@ job_update(void) {
 
     job_clean(true);
 
+#ifdef DEBUG_OUTPUT
+    {
+      int n = 0;
+
+      for(j = job_list; j; j = j->next)
+        n++;
+
+      TRACE(TRACE_JOB, "table", trace_int("njobs", n));
+    }
+#endif
+
     job_signaled = 0;
     TRACE(TRACE_SIG, "unblock", trace_int("sig", SIGCHLD));
     sig_unblock(SIGCHLD);

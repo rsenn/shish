@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../sh.h"
 
 void
@@ -8,4 +9,6 @@ sh_pushargs(struct arg* arg) {
   arg->s = sh->arg.s;
 
   arg->a = 0;
+
+  TRACE(TRACE_SH, "pushargs", trace_int("argc", sh->arg.c));
 }

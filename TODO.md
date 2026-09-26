@@ -3910,8 +3910,8 @@ A uniform, parseable trace layer (`src/trace.h`, `src/trace/`) replaced the old
   Gaps closed 2026-09-27: `sig.block/unblock/blocknone`, `sh.opt`, `var.create`, `sh.getcwd`,
   `sig.handler`/`sig.trap.*` (queued from signal context in `src/trace/trace_defer.c`, printed by
   `trace_flush()`), `fdtable.lazy/wish/gap/open/openfd/close` results, `trace2seq -s` (Mermaid).
-  Still open: `job.fork` does not fire for an external `cmd &` (that path forks in
-  `exec_program`, see `exec.program.fork`).
+  Also done: `job.fork` for an external `cmd &`, `job.signal` (queued), `job.table`, `sh.pushargs/popargs`.
+  Not traced on purpose: `var.import` (one line per environment variable; `var.export` reports the count).
 - **`SHISH_TRACE` is read from the process environment once**, at the first event; an
   `export SHISH_TRACE=...` inside a running script is not seen. Reading it through `var_get`
   would fix that but touches every event's startup path.

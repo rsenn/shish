@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../sh.h"
 
 void
@@ -6,4 +7,6 @@ sh_popargs(struct arg* arg) {
   sh->arg.v = arg->v;
   sh->arg.a = arg->a;
   sh->arg.s = arg->s;
+
+  TRACE(TRACE_SH, "popargs", trace_int("argc", sh->arg.c));
 }
