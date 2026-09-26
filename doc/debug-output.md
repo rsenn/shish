@@ -424,7 +424,7 @@ shows *which input* produced each evaluation; `sh_loop.c:53` becomes `sh.loop.li
 
 ## 5. Rollout order
 
-Status: steps 1, 2 and 3 are implemented (see [5.1](#51-implemented) and [5.2](#52-evaluator-and-redirections-step-3)); the rest is open.
+Status: steps 1-6 are implemented (see [5.1](#51-implemented) and [5.2](#52-evaluator-and-redirections-step-3)); step 6 is `tools/trace2seq`, tested by `tests/trace2seq.sh`. Open: the gaps listed in `TODO.md` Goal 14.
 
 1. **Foundation** – fix P1 (include `uint64.h` in `lib/buffer.h`), add `src/trace.h` +
    `src/trace/*.c` (formatter, module selector, atomic writer, `trace_reopen`), port the

@@ -1,0 +1,53 @@
+#!/bin/sh
+# trace2seq - turn a SHISH_TRACE log into a process tree, or count events.
+#
+#   trace2seq [FILE]        process tree: who forked whom, what each pid
+#                           exec'd, how it exited      (FILE default: trace.log, - = stdin)
+#   trace2seq -c EVENT [FILE]   number of lines whose event is EVENT
+#                           (e.g. "sh.forked", "exec.program.execve")
+#
+# Needs SHISH_TRACE to include exec and sh (SHISH_TRACE=exec,sh,eval).
+#
+#   pid 812 shish
+#     pid 813 exec /bin/cat ["cat"] exit=0
+#     pid 814 exec /usr/bin/wc ["wc", "-l"] exit=0
+# ----------------------------------------------------------------------------
+count=
+if [ "$1" = -c ]; then count=$2; shift 2; fi
+f=${1:--}
+[ "$f" = - ] && f=/dev/stdin
+[ -z "$1" ] && [ -f trace.log ] && f=trace.log
+
+awk -v count="$count" '
+function arg(s, k,   i, r) {          # value of key=... in the argument text
+  i = index(s, k "=")
+  if(!i) return ""
+  r = substr(s, i + length(k) + 1)
+  if(substr(r, 1, 1) == "\"") { r = substr(r, 2); sub(/".*/, "", r) }
+  else if(substr(r, 1, 1) == "[") { sub(/\].*/, "]", r) }
+  else sub(/[,)].*/, "", r)
+  return r
+}
+function show(p, ind,   k, n, kids) {
+  printf "%spid %s %s%s\n", ind, p, (p in prog ? "exec " prog[p] : "shell"), (p in code ? " exit=" code[p] : "")
+  for(k = 1; k <= nk[p]; k++) show(kid[p, k], ind "  ")
+}
+/^\[[0-9]+:[0-9]+\] / {
+  pid = $1; sub(/^\[/, "", pid); sub(/:.*/, "", pid)
+  ev = $2; sub(/\(.*/, "", ev); sub(/ .*/, "", ev)
+  args = $0; sub(/^[^(]*\(/, "", args)
+  if(count != "") { if(ev == count) n++; next }
+  if(!(pid in seen)) { seen[pid] = 1; order[++np] = pid }
+  if(ev == "sh.forked") {
+    o = arg(args, "old"); w = arg(args, "new")
+    parent[w] = o; kid[o, ++nk[o]] = w
+    if(!(w in seen)) { seen[w] = 1; order[++np] = w }
+  }
+  else if(ev == "exec.program.execve") prog[pid] = arg(args, "path") " " arg(args, "argv")
+  else if(ev == "sh.exit" && !(pid in code)) code[pid] = arg(args, "code")
+  else if(ev == "exec.program.status") code[arg(args, "pid")] = arg(args, "exit")
+}
+END {
+  if(count != "") { print n + 0; exit }
+  for(i = 1; i <= np; i++) if(!(order[i] in parent)) show(order[i], "")
+}' "$f"

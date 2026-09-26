@@ -3905,17 +3905,14 @@ A uniform, parseable trace layer (`src/trace.h`, `src/trace/`) replaced the old
 
 **Still open**
 
-- **Step 4: fd\* internals.** Entry events with parameters for `fd_push/dup/open/here`,
-  `fdstack_push/pop/fork/npipes/flatten/update/unref`, `fdtable_lazy/wish/gap/open/close`,
-  `fd_state_save/restore` (doc §4.4). `fdstack.npipes` + `fdstack.data` would have caught the
-  `$(a; b)` capture bug (`fixes/241`) on sight.
-- **Step 5: environment, signals, jobs** (doc §4.5/4.6): `var.set/unset/chflg/import/export`,
-  `vartab.push/pop`, `sh.push/pop/args/opt/cwd/forked/exit`, `sig.action/block/unblock`,
-  `trap.*`, `job.new/fork/wait/update/signal`. The `sh_onsig` SIGCHLD handler must not call
-  `TRACE()` (not async-signal-safe); needs a ring buffer flushed from `trap_run_pending()`.
-  The three trap events that exist today are already emitted from `trap_handler()`.
-- **Step 6: tooling.** `tools/trace2seq` (trace -> per-pid call tree / sequence diagram) and
-  trace-based test oracles ("this script forks N times and execve's `/bin/cat` with fd 0 = `in`").
+- **Steps 4-6 are done** (2026-09-26): fd\*/fdstack/fdtable entry events, var/sh/job events,
+  and `tools/trace2seq` (process tree, `-c EVENT` counts; test: `tests/trace2seq.sh`).
+  Gaps left:
+  - not traced: `sig.block/unblock`, `sh.opt`, `trap.*`, `var.create`, `sh.getcwd`, `sh_onsig`
+    (async-signal-unsafe; needs a ring buffer flushed from `trap_run_pending()`).
+  - `fdtable.lazy/wish/gap/open/openfd/close` log the call only, not the result.
+  - `job.fork` does not fire for a plain `cmd &`.
+  - `trace2seq` has no sequence-diagram output yet, only the tree.
 - **`SHISH_TRACE` is read from the process environment once**, at the first event; an
   `export SHISH_TRACE=...` inside a running script is not seen. Reading it through `var_get`
   would fix that but touches every event's startup path.
