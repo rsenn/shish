@@ -149,8 +149,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   }
 
   /* do redirections if present */
-  if((ncmd->rdir || (ncmd->bgnd && !sh->opts.monitor)) && cmd.id != H_SBUILTIN &&
-     cmd.id != H_EXEC)
+  if((ncmd->rdir || (ncmd->bgnd && !sh->opts.monitor)) && cmd.id != H_SBUILTIN && cmd.id != H_EXEC)
     fdstack_push(&io);
 
   /* POSIX 2.9.3.1 (Asynchronous Lists): "the standard input for an

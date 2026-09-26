@@ -226,8 +226,8 @@ parse_interval_spec(struct dfa_parser* ps, long* m, long* n) {
 /* apply {m,n} given the first copy already sitting at
  * [body_start, ps->proglen), whose source is [src, srcend). */
 static void
-apply_interval(struct dfa_parser* ps, size_t body_start, const char* src, const char* srcend, long m,
-               long n) {
+apply_interval(
+    struct dfa_parser* ps, size_t body_start, const char* src, const char* srcend, long m, long n) {
   long i;
 
   if(m == 0 && n == 0) {
@@ -457,7 +457,8 @@ parse_atom(struct dfa_parser* ps) {
     return;
   }
 
-  if((ere && *ps->p == '(') || (!ere && ps->p + 1 < ps->end && ps->p[0] == '\\' && ps->p[1] == '(')) {
+  if((ere && *ps->p == '(') ||
+     (!ere && ps->p + 1 < ps->end && ps->p[0] == '\\' && ps->p[1] == '(')) {
     parse_group(ps, ere);
     return;
   }

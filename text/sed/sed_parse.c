@@ -13,8 +13,8 @@ struct sed_label {
 };
 
 struct sed_branch_fixup {
-  size_t cmd;   /* the b/t/T command's index */
-  char* name;   /* target label text (owned), NULL = branch to end of script */
+  size_t cmd; /* the b/t/T command's index */
+  char* name; /* target label text (owned), NULL = branch to end of script */
   size_t len;
 };
 
@@ -106,9 +106,14 @@ looks_like_addr(const char* p, const char* end) {
 static int
 max_addr(unsigned char letter) {
   switch(letter) {
-  case 'a': case 'i': case 'q': case 'r': case '=': return 1;
-  case ':': case '#': return 0;
-  default: return 2;
+    case 'a':
+    case 'i':
+    case 'q':
+    case 'r':
+    case '=': return 1;
+    case ':':
+    case '#': return 0;
+    default: return 2;
   }
 }
 
@@ -239,162 +244,162 @@ parse_command(struct sed_builder* b, const char** pp, const char* end) {
   c->letter = (unsigned char)*p;
 
   switch(c->letter) {
-  case '{': {
-    if(b->nbrace == SED_MAXNEST)
-      return SED_ESIZE;
+    case '{': {
+      if(b->nbrace == SED_MAXNEST)
+        return SED_ESIZE;
 
-    b->brace_stack[b->nbrace++] = b->n - 1;
-    p++;
-    break;
-  }
-
-  case '}': {
-    if(naddr || negate || b->nbrace == 0)
-      return SED_EBRACE;
-
-    b->nbrace--;
-    b->n--; /* '}' is not a real command: it only closes the matching '{' */
-    b->cmds[b->brace_stack[b->nbrace]].jump = b->n;
-    p++;
-    break;
-  }
-
-  case ':': {
-    const char* name;
-    size_t len;
-
-    if(naddr)
-      return SED_ECMD;
-
-    p = skip_blank(p + 1, end);
-    p = parse_label_word(p, end, &name, &len);
-
-    if(len == 0)
-      return SED_ELABEL;
-
-    if((rc = label_push(b, name, len, b->n - 1)) != SED_OK)
-      return rc;
-
-    break;
-  }
-
-  case 'b':
-  case 't': {
-    const char* name;
-    size_t len;
-
-    p = skip_blank(p + 1, end);
-    p = parse_label_word(p, end, &name, &len);
-
-    if((rc = fixup_push(b, b->n - 1, name, len)) != SED_OK)
-      return rc;
-
-    break;
-  }
-
-  case '=':
-  case 'd':
-  case 'D':
-  case 'g':
-  case 'G':
-  case 'h':
-  case 'H':
-  case 'n':
-  case 'N':
-  case 'p':
-  case 'P':
-  case 'x': {
-    p++;
-    break;
-  }
-
-  case 'q': {
-    unsigned long v = 0;
-
-    p = skip_blank(p + 1, end);
-
-    if(p < end && *p >= '0' && *p <= '9') {
-      size_t used = scan_ulong(p, &v);
-
-      p += used;
+      b->brace_stack[b->nbrace++] = b->n - 1;
+      p++;
+      break;
     }
 
-    c->u.qstatus = (int)v;
-    break;
-  }
+    case '}': {
+      if(naddr || negate || b->nbrace == 0)
+        return SED_EBRACE;
 
-  case 'a':
-  case 'i':
-  case 'c': {
-    p++;
+      b->nbrace--;
+      b->n--; /* '}' is not a real command: it only closes the matching '{' */
+      b->cmds[b->brace_stack[b->nbrace]].jump = b->n;
+      p++;
+      break;
+    }
 
-    if((rc = sed_text_parse(&p, end, &c->u.text)) != SED_OK)
-      return rc;
+    case ':': {
+      const char* name;
+      size_t len;
 
-    break;
-  }
+      if(naddr)
+        return SED_ECMD;
 
-  case 'r':
-  case 'w': {
-    const char* name;
+      p = skip_blank(p + 1, end);
+      p = parse_label_word(p, end, &name, &len);
 
-    p = skip_blank(p + 1, end);
-    name = p;
+      if(len == 0)
+        return SED_ELABEL;
 
-    while(p < end && *p != '\n')
+      if((rc = label_push(b, name, len, b->n - 1)) != SED_OK)
+        return rc;
+
+      break;
+    }
+
+    case 'b':
+    case 't': {
+      const char* name;
+      size_t len;
+
+      p = skip_blank(p + 1, end);
+      p = parse_label_word(p, end, &name, &len);
+
+      if((rc = fixup_push(b, b->n - 1, name, len)) != SED_OK)
+        return rc;
+
+      break;
+    }
+
+    case '=':
+    case 'd':
+    case 'D':
+    case 'g':
+    case 'G':
+    case 'h':
+    case 'H':
+    case 'n':
+    case 'N':
+    case 'p':
+    case 'P':
+    case 'x': {
+      p++;
+      break;
+    }
+
+    case 'q': {
+      unsigned long v = 0;
+
+      p = skip_blank(p + 1, end);
+
+      if(p < end && *p >= '0' && *p <= '9') {
+        size_t used = scan_ulong(p, &v);
+
+        p += used;
+      }
+
+      c->u.qstatus = (int)v;
+      break;
+    }
+
+    case 'a':
+    case 'i':
+    case 'c': {
       p++;
 
-    if(p == name)
-      return SED_EUNTERM;
+      if((rc = sed_text_parse(&p, end, &c->u.text)) != SED_OK)
+        return rc;
 
-    if(c->letter == 'r') {
-      c->u.rfile = alloc((size_t)(p - name) + 1);
-
-      if(!c->u.rfile)
-        return SED_ENOMEM;
-
-      byte_copy(c->u.rfile, (size_t)(p - name), name);
-      c->u.rfile[p - name] = 0;
-    } else {
-      int idx = sed_wfile_intern(b->prog, name, (size_t)(p - name));
-
-      if(idx < 0)
-        return SED_ENOMEM;
-
-      c->u.wfile = idx;
+      break;
     }
 
-    break;
-  }
+    case 'r':
+    case 'w': {
+      const char* name;
 
-  case 's': {
-    p++;
+      p = skip_blank(p + 1, end);
+      name = p;
 
-    if((rc = sed_subst_parse(&p, end, &c->u.s, b->flags, b->prog)) != SED_OK)
-      return rc;
+      while(p < end && *p != '\n')
+        p++;
 
-    break;
-  }
+      if(p == name)
+        return SED_EUNTERM;
 
-  case 'y': {
-    p++;
+      if(c->letter == 'r') {
+        c->u.rfile = alloc((size_t)(p - name) + 1);
 
-    if((rc = sed_y_parse(&p, end, c->u.y)) != SED_OK)
-      return rc;
+        if(!c->u.rfile)
+          return SED_ENOMEM;
 
-    break;
-  }
+        byte_copy(c->u.rfile, (size_t)(p - name), name);
+        c->u.rfile[p - name] = 0;
+      } else {
+        int idx = sed_wfile_intern(b->prog, name, (size_t)(p - name));
 
-  case 'l': {
-    p = skip_blank(p + 1, end);
+        if(idx < 0)
+          return SED_ENOMEM;
 
-    if(p < end && *p >= '0' && *p <= '9')
-      return SED_ECMD; /* GNU's line-wrap-width argument: not supported */
+        c->u.wfile = idx;
+      }
 
-    break;
-  }
+      break;
+    }
 
-  default: return SED_ECMD;
+    case 's': {
+      p++;
+
+      if((rc = sed_subst_parse(&p, end, &c->u.s, b->flags, b->prog)) != SED_OK)
+        return rc;
+
+      break;
+    }
+
+    case 'y': {
+      p++;
+
+      if((rc = sed_y_parse(&p, end, c->u.y)) != SED_OK)
+        return rc;
+
+      break;
+    }
+
+    case 'l': {
+      p = skip_blank(p + 1, end);
+
+      if(p < end && *p >= '0' && *p <= '9')
+        return SED_ECMD; /* GNU's line-wrap-width argument: not supported */
+
+      break;
+    }
+
+    default: return SED_ECMD;
   }
 
   *pp = p;
@@ -474,10 +479,12 @@ done:
       sed_addr_free(&c->a2);
 
       switch(c->letter) {
-      case 's': sed_subst_free(&c->u.s); break;
-      case 'a': case 'i': case 'c': alloc_free(c->u.text.s); break;
-      case 'r': alloc_free(c->u.rfile); break;
-      default: break;
+        case 's': sed_subst_free(&c->u.s); break;
+        case 'a':
+        case 'i':
+        case 'c': alloc_free(c->u.text.s); break;
+        case 'r': alloc_free(c->u.rfile); break;
+        default: break;
       }
     }
 

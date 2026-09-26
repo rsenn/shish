@@ -64,7 +64,9 @@ pipeline_word_literal(union node* arg, const char** s, size_t* n) {
     return 0;
 
   switch(w->nargstr.flag) {
-    case S_UNQUOTED: case S_SQUOTED: case S_DQUOTED: break;
+    case S_UNQUOTED:
+    case S_SQUOTED:
+    case S_DQUOTED: break;
     default: return 0;
   }
 
@@ -195,7 +197,10 @@ pipeline_filter_argv_free(char** argv) {
  * parallel to npipe->cmds); returns 0 on failure, having freed
  * anything it already allocated. */
 static int
-pipeline_filter_prepare_chain(struct npipe* npipe, struct builtin_cmd*** b_out, char**** argv_out, int** argc_out) {
+pipeline_filter_prepare_chain(struct npipe* npipe,
+                              struct builtin_cmd*** b_out,
+                              char**** argv_out,
+                              int** argc_out) {
   int n = (int)npipe->ncmd - 1;
   struct builtin_cmd** b;
   char*** argv;

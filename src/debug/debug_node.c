@@ -16,22 +16,68 @@ extern int sh_no_position;
  * grammar rules; arithmetic-expression nodes (which POSIX defers to C's
  * grammar for) get plain descriptive lower_snake_case names instead. */
 const char* debug_nodes[] = {
-    "simple_command",       "pipeline",       "and",                   "or",
-    "not",                  "list",           "subshell",              "brace_group",
-    "for_clause",           "case_clause",    "case_item",             "if_clause",
-    "while_clause",         "until_clause",   "function_definition",   "word",
-    "assignment",           "redirect",       "string",                "command_substitution",
-    "parameter_expansion",  "arithmetic_expansion",
-    "number",               "paren_expr",     "conditional_expr",      "logical_or",
-    "logical_and",          "bitwise_or",     "bitwise_xor",           "bitwise_and",
-    "equal",                "not_equal",      "less_than",             "greater_than",
-    "greater_equal",        "less_equal",     "shift_left",            "shift_right",
-    "add",                  "subtract",       "multiply",              "divide",
-    "modulo",               "exponent",       "unary_minus",           "unary_plus",
-    "logical_not",          "bitwise_not",    "pre_decrement",         "pre_increment",
-    "post_decrement",       "post_increment", "assign",                "add_assign",
-    "sub_assign",           "mul_assign",     "div_assign",            "mod_assign",
-    "shl_assign",           "shr_assign",     "and_assign",            "xor_assign",
+    "simple_command",
+    "pipeline",
+    "and",
+    "or",
+    "not",
+    "list",
+    "subshell",
+    "brace_group",
+    "for_clause",
+    "case_clause",
+    "case_item",
+    "if_clause",
+    "while_clause",
+    "until_clause",
+    "function_definition",
+    "word",
+    "assignment",
+    "redirect",
+    "string",
+    "command_substitution",
+    "parameter_expansion",
+    "arithmetic_expansion",
+    "number",
+    "paren_expr",
+    "conditional_expr",
+    "logical_or",
+    "logical_and",
+    "bitwise_or",
+    "bitwise_xor",
+    "bitwise_and",
+    "equal",
+    "not_equal",
+    "less_than",
+    "greater_than",
+    "greater_equal",
+    "less_equal",
+    "shift_left",
+    "shift_right",
+    "add",
+    "subtract",
+    "multiply",
+    "divide",
+    "modulo",
+    "exponent",
+    "unary_minus",
+    "unary_plus",
+    "logical_not",
+    "bitwise_not",
+    "pre_decrement",
+    "pre_increment",
+    "post_decrement",
+    "post_increment",
+    "assign",
+    "add_assign",
+    "sub_assign",
+    "mul_assign",
+    "div_assign",
+    "mod_assign",
+    "shl_assign",
+    "shr_assign",
+    "and_assign",
+    "xor_assign",
     "or_assign",
 };
 
@@ -96,8 +142,10 @@ debug_node(union node* node, int depth) {
       if(debug_emit_loc)
         debug_location(", loc", &node->nfor.loc, depth);
       if(debug_emit_range)
-        debug_range(", range", node->nfor.loc.offset,
-                    node->nfor.loc.offset + str_len(node->nfor.varn), depth);
+        debug_range(", range",
+                    node->nfor.loc.offset,
+                    node->nfor.loc.offset + str_len(node->nfor.varn),
+                    depth);
 
       debug_sublist(", cmds", node->nfor.cmds, depth);
       debug_sublist(", args", node->nfor.args, depth);
@@ -149,8 +197,10 @@ debug_node(union node* node, int depth) {
       if(debug_emit_loc)
         debug_location(", loc", &node->nfunc.loc, depth);
       if(debug_emit_range)
-        debug_range(", range", node->nfunc.loc.offset,
-                    node->nfunc.loc.offset + str_len(node->nfunc.name), depth);
+        debug_range(", range",
+                    node->nfunc.loc.offset,
+                    node->nfunc.loc.offset + str_len(node->nfunc.name),
+                    depth);
       debug_sublist(", body", node->nfunc.body, depth);
       break;
 
@@ -183,8 +233,10 @@ debug_node(union node* node, int depth) {
                          depth); // node->nargstr.flag & S_DQUOTED ? '"' :
                                  // node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
         if(debug_emit_range)
-          debug_range(", range", node->nargstr.loc.offset,
-                      node->nargstr.loc.offset + node->nargstr.stra.len, depth);
+          debug_range(", range",
+                      node->nargstr.loc.offset,
+                      node->nargstr.loc.offset + node->nargstr.stra.len,
+                      depth);
       }
       debug_stralloc(", stra",
                      &node->nargstr.stra,
@@ -227,8 +279,10 @@ if(node->nargparam.numb > 0) {
         if(debug_emit_loc)
           debug_location(", loc", &node->nargparam.loc, depth);
         if(debug_emit_range)
-          debug_range(", range", node->nargparam.loc.offset,
-                      node->nargparam.loc.offset + str_len(node->nargparam.name), depth);
+          debug_range(", range",
+                      node->nargparam.loc.offset,
+                      node->nargparam.loc.offset + str_len(node->nargparam.name),
+                      depth);
       }
 
       break;

@@ -13,8 +13,7 @@
  * must still expand to ""). */
 static int
 debug_is_empty_placeholder(union node* node) {
-  return node->id == N_ARGSTR && node->nargstr.stra.len == 0 &&
-         !(node->nargstr.flag & ~S_TABLE);
+  return node->id == N_ARGSTR && node->nargstr.stra.len == 0 && !(node->nargstr.flag & ~S_TABLE);
 }
 
 /* debug a list/tree

@@ -63,7 +63,7 @@ builtin_exec(int argc, char* argv[]) {
     errno = saved_errno;
     sh_exit(exec_error());
   }
-  
+
   /* should not reach here */
   return 1;
 }

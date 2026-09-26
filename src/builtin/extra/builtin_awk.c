@@ -10,18 +10,17 @@
 #include <stdint.h> /* intptr_t */
 #include <unistd.h> /* read/write/close for files opened directly by this builtin */
 
-const char help_awk[] =
-    "    Pattern scanning and processing language (a subset -- see doc/).\n"
-    "\n"
-    "    -F sep          set FS before BEGIN runs\n"
-    "    -v name=value   assign a variable before BEGIN runs\n"
-    "    -f progfile     read the program from progfile (repeatable)\n"
-    "    program         the program text, if -f was not given\n"
-    "    file            input file(s); '-' or omitted means stdin\n"
-    "\n"
-    "    Not implemented: cmd | getline, print | cmd, system() (all three\n"
-    "    would need the shell's own process model wired in); nextfile is\n"
-    "    supported but paragraph mode (RS=\"\") is not.\n";
+const char help_awk[] = "    Pattern scanning and processing language (a subset -- see doc/).\n"
+                        "\n"
+                        "    -F sep          set FS before BEGIN runs\n"
+                        "    -v name=value   assign a variable before BEGIN runs\n"
+                        "    -f progfile     read the program from progfile (repeatable)\n"
+                        "    program         the program text, if -f was not given\n"
+                        "    file            input file(s); '-' or omitted means stdin\n"
+                        "\n"
+                        "    Not implemented: cmd | getline, print | cmd, system() (all three\n"
+                        "    would need the shell's own process model wired in); nextfile is\n"
+                        "    supported but paragraph mode (RS=\"\") is not.\n";
 
 /* slurp_file: appends the whole of path to *out. 0 on success, -1 on
  * error (path could not be opened or read). Shared shape with
@@ -188,27 +187,27 @@ builtin_awk(int argc, char* argv[]) {
 
   while((c = shell_getopt(argc, argv, "F:v:f:")) > 0) {
     switch(c) {
-    case 'F': fs = shell_optarg; break;
+      case 'F': fs = shell_optarg; break;
 
-    case 'v':
-      if(nassigns < (int)(sizeof(assigns) / sizeof(assigns[0])) - 1)
-        assigns[nassigns++] = shell_optarg;
-      break;
+      case 'v':
+        if(nassigns < (int)(sizeof(assigns) / sizeof(assigns[0])) - 1)
+          assigns[nassigns++] = shell_optarg;
+        break;
 
-    case 'f':
-      if(have_prog)
-        stralloc_catc(&prog, '\n');
+      case 'f':
+        if(have_prog)
+          stralloc_catc(&prog, '\n');
 
-      if(slurp_file(shell_optarg, &prog) == -1) {
-        builtin_error(argv, shell_optarg);
-        stralloc_free(&prog);
-        return 2;
-      }
+        if(slurp_file(shell_optarg, &prog) == -1) {
+          builtin_error(argv, shell_optarg);
+          stralloc_free(&prog);
+          return 2;
+        }
 
-      have_prog = 1;
-      break;
+        have_prog = 1;
+        break;
 
-    default: builtin_invopt(argv); return 2;
+      default: builtin_invopt(argv); return 2;
     }
   }
 

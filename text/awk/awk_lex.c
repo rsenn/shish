@@ -9,17 +9,17 @@
 static int
 ends_operand(int tok) {
   switch(tok) {
-  case T_NAME:
-  case T_NUMBER:
-  case T_STRING:
-  case T_ERE:
-  case T_RPAREN:
-  case T_RBRACKET:
-  case T_INCR:
-  case T_DECR:
-  case T_BUILTIN:
-  case T_DOLLAR: return 1;
-  default: return 0;
+    case T_NAME:
+    case T_NUMBER:
+    case T_STRING:
+    case T_ERE:
+    case T_RPAREN:
+    case T_RBRACKET:
+    case T_INCR:
+    case T_DECR:
+    case T_BUILTIN:
+    case T_DOLLAR: return 1;
+    default: return 0;
   }
 }
 
@@ -29,19 +29,34 @@ struct kw {
 };
 
 static const struct kw keywords[] = {
-    {"BEGIN", T_BEGIN},       {"END", T_END},         {"function", T_FUNCTION},
-    {"func", T_FUNCTION},     {"if", T_IF},           {"else", T_ELSE},
-    {"while", T_WHILE},       {"for", T_FOR},         {"do", T_DO},
-    {"break", T_BREAK},       {"continue", T_CONTINUE}, {"next", T_NEXT},
-    {"nextfile", T_NEXTFILE}, {"exit", T_EXIT},       {"return", T_RETURN},
-    {"delete", T_DELETE},     {"in", T_IN},           {"print", T_PRINT},
-    {"printf", T_PRINTF},     {"getline", T_GETLINE}, {NULL, 0},};
+    {"BEGIN", T_BEGIN},
+    {"END", T_END},
+    {"function", T_FUNCTION},
+    {"func", T_FUNCTION},
+    {"if", T_IF},
+    {"else", T_ELSE},
+    {"while", T_WHILE},
+    {"for", T_FOR},
+    {"do", T_DO},
+    {"break", T_BREAK},
+    {"continue", T_CONTINUE},
+    {"next", T_NEXT},
+    {"nextfile", T_NEXTFILE},
+    {"exit", T_EXIT},
+    {"return", T_RETURN},
+    {"delete", T_DELETE},
+    {"in", T_IN},
+    {"print", T_PRINT},
+    {"printf", T_PRINTF},
+    {"getline", T_GETLINE},
+    {NULL, 0},
+};
 
-static const char* const builtins[] = {"length",  "substr", "index",   "split",  "sub",
-                                        "gsub",    "match",  "sprintf", "sin",    "cos",
-                                        "atan2",   "exp",    "log",     "sqrt",   "int",
-                                        "rand",    "srand",  "tolower", "toupper","system",
-                                        "close",   "fflush", NULL,};
+static const char* const builtins[] = {
+    "length", "substr",  "index",   "split",  "sub",   "gsub",   "match", "sprintf",
+    "sin",    "cos",     "atan2",   "exp",    "log",   "sqrt",   "int",   "rand",
+    "srand",  "tolower", "toupper", "system", "close", "fflush", NULL,
+};
 
 static int
 is_builtin_name(const char* s, size_t n) {
@@ -102,37 +117,67 @@ awk_unescape(arena* a, const char* s, size_t n, size_t* outlen) {
       unsigned char e = s[i + 1];
 
       switch(e) {
-      case '\\': out[o++] = '\\'; i += 2; break;
-      case '"': out[o++] = '"'; i += 2; break;
-      case '/': out[o++] = '/'; i += 2; break;
-      case 'a': out[o++] = '\a'; i += 2; break;
-      case 'b': out[o++] = '\b'; i += 2; break;
-      case 'f': out[o++] = '\f'; i += 2; break;
-      case 'n': out[o++] = '\n'; i += 2; break;
-      case 'r': out[o++] = '\r'; i += 2; break;
-      case 't': out[o++] = '\t'; i += 2; break;
-      case 'v': out[o++] = '\v'; i += 2; break;
-
-      default:
-        if(e >= '0' && e <= '7') {
-          unsigned val = 0;
-          size_t j = i + 1, lim = j + 3;
-
-          while(j < n && j < lim && s[j] >= '0' && s[j] <= '7') {
-            val = val * 8 + (s[j] - '0');
-            j++;
-          }
-
-          out[o++] = (char)val;
-          i = j;
-        } else {
-          /* unrecognized: keep both bytes literally, so regex
-             metacharacter escapes (\. \* \[ ...) survive for
-             dfa_compile to interpret */
+        case '\\':
           out[o++] = '\\';
-          out[o++] = e;
           i += 2;
-        }
+          break;
+        case '"':
+          out[o++] = '"';
+          i += 2;
+          break;
+        case '/':
+          out[o++] = '/';
+          i += 2;
+          break;
+        case 'a':
+          out[o++] = '\a';
+          i += 2;
+          break;
+        case 'b':
+          out[o++] = '\b';
+          i += 2;
+          break;
+        case 'f':
+          out[o++] = '\f';
+          i += 2;
+          break;
+        case 'n':
+          out[o++] = '\n';
+          i += 2;
+          break;
+        case 'r':
+          out[o++] = '\r';
+          i += 2;
+          break;
+        case 't':
+          out[o++] = '\t';
+          i += 2;
+          break;
+        case 'v':
+          out[o++] = '\v';
+          i += 2;
+          break;
+
+        default:
+          if(e >= '0' && e <= '7') {
+            unsigned val = 0;
+            size_t j = i + 1, lim = j + 3;
+
+            while(j < n && j < lim && s[j] >= '0' && s[j] <= '7') {
+              val = val * 8 + (s[j] - '0');
+              j++;
+            }
+
+            out[o++] = (char)val;
+            i = j;
+          } else {
+            /* unrecognized: keep both bytes literally, so regex
+               metacharacter escapes (\. \* \[ ...) survive for
+               dfa_compile to interpret */
+            out[o++] = '\\';
+            out[o++] = e;
+            i += 2;
+          }
       }
     }
   }
@@ -202,9 +247,8 @@ static int
 lex_name(struct awk_lexer* lx) {
   const char* start = lx->p;
 
-  while(lx->p < lx->end &&
-        (*lx->p == '_' || (*lx->p >= 'a' && *lx->p <= 'z') || (*lx->p >= 'A' && *lx->p <= 'Z') ||
-         (*lx->p >= '0' && *lx->p <= '9')))
+  while(lx->p < lx->end && (*lx->p == '_' || (*lx->p >= 'a' && *lx->p <= 'z') ||
+                            (*lx->p >= 'A' && *lx->p <= 'Z') || (*lx->p >= '0' && *lx->p <= '9')))
     lx->p++;
 
   lx->sval = start;
@@ -255,50 +299,91 @@ lex_op(struct awk_lexer* lx, int want_ere) {
   return (one_tok)
 
   switch(c) {
-  case '{': return T_LBRACE;
-  case '}': return T_RBRACE;
-  case '(': lx->paren_depth++; return T_LPAREN;
-  case ')': if(lx->paren_depth > 0) lx->paren_depth--; return T_RPAREN;
-  case '[': return T_LBRACKET;
-  case ']': return T_RBRACKET;
-  case ';': return T_SEMI;
-  case ',': return T_COMMA;
-  case '$': return T_DOLLAR;
-  case '~': return T_TILDE;
-  case '?': return T_QUESTION;
-  case ':': return T_COLON;
-  case '^': TWO('=', T_POW_ASSIGN, T_CARET);
-  case '%': TWO('=', T_MOD_ASSIGN, T_PERCENT);
-  case '=': TWO('=', T_EQ, T_ASSIGN);
-  case '!':
-    if(n == '=') { lx->p++; return T_NE; }
-    if(n == '~') { lx->p++; return T_NOMATCH; }
-    return T_NOT;
-  case '<': TWO('=', T_LE, T_LT);
-  case '>':
-    if(n == '=') { lx->p++; return T_GE; }
-    if(n == '>') { lx->p++; return T_APPEND; }
-    return T_GT;
-  case '+':
-    if(n == '+') { lx->p++; return T_INCR; }
-    if(n == '=') { lx->p++; return T_ADD_ASSIGN; }
-    return T_PLUS;
-  case '-':
-    if(n == '-') { lx->p++; return T_DECR; }
-    if(n == '=') { lx->p++; return T_SUB_ASSIGN; }
-    return T_MINUS;
-  case '*': TWO('=', T_MUL_ASSIGN, T_STAR);
-  case '&': if(n == '&') { lx->p++; return T_ANDAND; } lx->err = AWK_ESYNTAX; return T_EOF;
-  case '|': if(n == '|') { lx->p++; return T_OROR; } return T_PIPE;
-  case '/':
-    if(want_ere) {
-      lx->p--; /* lex_ere expects to consume the opening '/' itself */
-      return lex_ere(lx);
-    }
+    case '{': return T_LBRACE;
+    case '}': return T_RBRACE;
+    case '(': lx->paren_depth++; return T_LPAREN;
+    case ')':
+      if(lx->paren_depth > 0)
+        lx->paren_depth--;
+      return T_RPAREN;
+    case '[': return T_LBRACKET;
+    case ']': return T_RBRACKET;
+    case ';': return T_SEMI;
+    case ',': return T_COMMA;
+    case '$': return T_DOLLAR;
+    case '~': return T_TILDE;
+    case '?': return T_QUESTION;
+    case ':': return T_COLON;
+    case '^': TWO('=', T_POW_ASSIGN, T_CARET);
+    case '%': TWO('=', T_MOD_ASSIGN, T_PERCENT);
+    case '=': TWO('=', T_EQ, T_ASSIGN);
+    case '!':
+      if(n == '=') {
+        lx->p++;
+        return T_NE;
+      }
+      if(n == '~') {
+        lx->p++;
+        return T_NOMATCH;
+      }
+      return T_NOT;
+    case '<': TWO('=', T_LE, T_LT);
+    case '>':
+      if(n == '=') {
+        lx->p++;
+        return T_GE;
+      }
+      if(n == '>') {
+        lx->p++;
+        return T_APPEND;
+      }
+      return T_GT;
+    case '+':
+      if(n == '+') {
+        lx->p++;
+        return T_INCR;
+      }
+      if(n == '=') {
+        lx->p++;
+        return T_ADD_ASSIGN;
+      }
+      return T_PLUS;
+    case '-':
+      if(n == '-') {
+        lx->p++;
+        return T_DECR;
+      }
+      if(n == '=') {
+        lx->p++;
+        return T_SUB_ASSIGN;
+      }
+      return T_MINUS;
+    case '*': TWO('=', T_MUL_ASSIGN, T_STAR);
+    case '&':
+      if(n == '&') {
+        lx->p++;
+        return T_ANDAND;
+      }
+      lx->err = AWK_ESYNTAX;
+      return T_EOF;
+    case '|':
+      if(n == '|') {
+        lx->p++;
+        return T_OROR;
+      }
+      return T_PIPE;
+    case '/':
+      if(want_ere) {
+        lx->p--; /* lex_ere expects to consume the opening '/' itself */
+        return lex_ere(lx);
+      }
 
-    if(n == '=') { lx->p++; return T_DIV_ASSIGN; }
-    return T_SLASH;
-  default: lx->err = AWK_ESYNTAX; return T_EOF;
+      if(n == '=') {
+        lx->p++;
+        return T_DIV_ASSIGN;
+      }
+      return T_SLASH;
+    default: lx->err = AWK_ESYNTAX; return T_EOF;
   }
 #undef TWO
 }
@@ -322,8 +407,8 @@ lex_one(struct awk_lexer* lx) {
   if(*lx->p == '_' || (*lx->p >= 'a' && *lx->p <= 'z') || (*lx->p >= 'A' && *lx->p <= 'Z'))
     return lex_name(lx);
 
-  if((*lx->p >= '0' && *lx->p <= '9') || (*lx->p == '.' && lx->p + 1 < lx->end && lx->p[1] >= '0' &&
-                                          lx->p[1] <= '9'))
+  if((*lx->p >= '0' && *lx->p <= '9') ||
+     (*lx->p == '.' && lx->p + 1 < lx->end && lx->p[1] >= '0' && lx->p[1] <= '9'))
     return lex_number(lx);
 
   return lex_op(lx, !ends_operand(lx->prev));

@@ -17,7 +17,7 @@ fdstack_npipes(int mode) {
    *   (e.g. "$(cmd $(cmd | cmd))") into an outer one still further
    *   out -- that outer target is the outer substitution's own job to
    *   wire a pipe for, once it forks.
-   *   
+   *
    * - Skip FD_DUP'd entries: a plain redirection duplicating an
    *   FD_SUBST/FD_HERE fd (e.g. "2>&1" on a substitution's fd 1)
    *   copies the same mode bits without being its own target. Counting

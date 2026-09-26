@@ -30,8 +30,7 @@ typedef struct {
   size_t capacity, used;
 } hashmap;
 
-#define HASHMAP_INIT() \
-  (hashmap) { 0, 0, 0 }
+#define HASHMAP_INIT() (hashmap){0, 0, 0}
 
 void hashmap_init(hashmap*);
 void hashmap_delete2(hashmap*, const char*, size_t);

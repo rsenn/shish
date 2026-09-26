@@ -72,17 +72,13 @@ hash_commands_in_node(union node* node) {
       hash_commands_in_node(node->ngrp.rdir);
       break;
 
-    case N_FOR:
-      hash_commands_in_node(node->nfor.cmds);
-      break;
+    case N_FOR: hash_commands_in_node(node->nfor.cmds); break;
 
-    case N_CASE:
-      {
-        union node* pat;
-        for(pat = node->ncase.list; pat; pat = pat->next)
-          hash_commands_in_node(pat->ncasenode.cmds);
-      }
-      break;
+    case N_CASE: {
+      union node* pat;
+      for(pat = node->ncase.list; pat; pat = pat->next)
+        hash_commands_in_node(pat->ncasenode.cmds);
+    } break;
 
     case N_IF:
       hash_commands_in_node(node->nif.test);
@@ -96,8 +92,7 @@ hash_commands_in_node(union node* node) {
       hash_commands_in_node(node->nloop.cmds);
       break;
 
-    default:
-      break;
+    default: break;
   }
 
   /* Walk the next pointer for lists */

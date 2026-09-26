@@ -22,13 +22,14 @@ void sha384_digest(uint8_t* message, size_t message_len, uint64_t digest[], bool
 void sha512_224_digest(uint8_t* message, size_t message_len, uint64_t digest[], bool debug);
 void sha512_256_digest(uint8_t* message, size_t message_len, uint64_t digest[], bool debug);
 
-const char help_digest[] = "    Print the message digest of each file.\n"
-                           "\n"
-                           "    The algorithm is chosen by the command name: md5sum, sha1sum,\n"
-                           "    sha224sum, sha256sum, sha384sum, sha512sum, sha512-224sum or\n"
-                           "    sha512-256sum. Output is \"<hex digest>  <file>\", like coreutils.\n"
-                           "\n"
-                           "    file            file to hash; '-' or omitted means stdin\n";
+const char help_digest[] =
+    "    Print the message digest of each file.\n"
+    "\n"
+    "    The algorithm is chosen by the command name: md5sum, sha1sum,\n"
+    "    sha224sum, sha256sum, sha384sum, sha512sum, sha512-224sum or\n"
+    "    sha512-256sum. Output is \"<hex digest>  <file>\", like coreutils.\n"
+    "\n"
+    "    file            file to hash; '-' or omitted means stdin\n";
 
 /* one algorithm: command name, and a function that hashes a whole message
  * into 'out' as big-endian bytes and returns the digest size in bytes.

@@ -65,11 +65,11 @@ parse_arith_value(struct parser* p) {
               cclass = C_OCTAL;
               base = 8;
               break;
-            /*default:
-              buffer_puts(fd_err->w, "ERROR: expecting x|b|o, got ");
-              buffer_putulong(fd_err->w, c);
-              buffer_putnlflush(fd_err->w);
-              return NULL;*/
+              /*default:
+                buffer_puts(fd_err->w, "ERROR: expecting x|b|o, got ");
+                buffer_putulong(fd_err->w, c);
+                buffer_putnlflush(fd_err->w);
+                return NULL;*/
           }
 
           if((classes & (C_UPPER | C_LOWER))) {

@@ -42,7 +42,8 @@ int
 uname(struct utsname* buf) {
   RTL_OSVERSIONINFOW_ vi;
   HMODULE ntdll = GetModuleHandleA("ntdll.dll");
-  RtlGetVersionFn RtlGetVersion = ntdll ? (RtlGetVersionFn)GetProcAddress(ntdll, "RtlGetVersion") : 0;
+  RtlGetVersionFn RtlGetVersion =
+      ntdll ? (RtlGetVersionFn)GetProcAddress(ntdll, "RtlGetVersion") : 0;
   DWORD len = sizeof(buf->nodename);
   char* p;
 

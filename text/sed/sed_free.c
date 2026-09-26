@@ -15,10 +15,12 @@ sed_free(struct sed* prog) {
     sed_addr_free(&c->a2);
 
     switch(c->letter) {
-    case 's': sed_subst_free(&c->u.s); break;
-    case 'a': case 'i': case 'c': alloc_free(c->u.text.s); break;
-    case 'r': alloc_free(c->u.rfile); break;
-    default: break;
+      case 's': sed_subst_free(&c->u.s); break;
+      case 'a':
+      case 'i':
+      case 'c': alloc_free(c->u.text.s); break;
+      case 'r': alloc_free(c->u.rfile); break;
+      default: break;
     }
   }
 

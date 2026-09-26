@@ -28,10 +28,15 @@ struct dfa_undo {
 };
 
 static int
-bt_match(const struct dfa* d, const char* s, size_t n, size_t from, int notbol, size_t* end,
+bt_match(const struct dfa* d,
+         const char* s,
+         size_t n,
+         size_t from,
+         int notbol,
+         size_t* end,
          long* save) {
   const struct dfa_inst* prog = d->prog;
-  const unsigned char(*sets)[32] = d->sets;
+  const unsigned char (*sets)[32] = d->sets;
   struct dfa_choice* cs = NULL;
   size_t cs_n = 0, cs_cap = 0;
   struct dfa_undo* us = NULL;
@@ -50,117 +55,113 @@ bt_match(const struct dfa* d, const char* s, size_t n, size_t from, int notbol, 
     }
 
     switch(prog[pc].op) {
-    case DFA_CHAR:
-      if(pos < n && (unsigned char)s[pos] == prog[pc].x) {
-        pc++;
-        pos++;
-      } else {
-        backtrack = 1;
-      }
-      break;
-
-    case DFA_ANY:
-      if(pos < n) {
-        pc++;
-        pos++;
-      } else {
-        backtrack = 1;
-      }
-      break;
-
-    case DFA_SET:
-      if(pos < n && (sets[prog[pc].x][(unsigned char)s[pos] >> 3] &
-                     (unsigned char)(1u << ((unsigned char)s[pos] & 7)))) {
-        pc++;
-        pos++;
-      } else {
-        backtrack = 1;
-      }
-      break;
-
-    case DFA_JMP:
-      pc = prog[pc].x;
-      break;
-
-    case DFA_SPLIT:
-      if(cs_n == cs_cap) {
-        size_t newcap = cs_cap ? cs_cap * 2 : 64;
-        struct dfa_choice* p = alloc_re(cs, newcap * sizeof(*p));
-
-        if(!p) {
-          result = 0;
-          goto done;
-        }
-        cs = p;
-        cs_cap = newcap;
-      }
-      cs[cs_n].pc = prog[pc].y;
-      cs[cs_n].pos = pos;
-      cs[cs_n].undo_top = us_n;
-      cs_n++;
-      pc = prog[pc].x;
-      break;
-
-    case DFA_SAVE:
-      if(us_n == us_cap) {
-        size_t newcap = us_cap ? us_cap * 2 : 64;
-        struct dfa_undo* p = alloc_re(us, newcap * sizeof(*p));
-
-        if(!p) {
-          result = 0;
-          goto done;
-        }
-        us = p;
-        us_cap = newcap;
-      }
-      us[us_n].slot = prog[pc].x;
-      us[us_n].oldval = save[prog[pc].x];
-      us_n++;
-      save[prog[pc].x] = (long)pos;
-      pc++;
-      break;
-
-    case DFA_BOL:
-      if(pos == 0 && !notbol)
-        pc++;
-      else
-        backtrack = 1;
-      break;
-
-    case DFA_EOL:
-      if(pos == n)
-        pc++;
-      else
-        backtrack = 1;
-      break;
-
-    case DFA_BACKREF: {
-      int g = prog[pc].x - 1;
-      long gs = save[2 * g], ge = save[2 * g + 1];
-
-      if(gs < 0 || ge < 0) {
-        backtrack = 1;
-      } else {
-        size_t len = (size_t)(ge - gs);
-
-        if(pos + len <= n && byte_diff(s + pos, len, s + gs) == 0) {
+      case DFA_CHAR:
+        if(pos < n && (unsigned char)s[pos] == prog[pc].x) {
           pc++;
-          pos += len;
+          pos++;
         } else {
           backtrack = 1;
         }
+        break;
+
+      case DFA_ANY:
+        if(pos < n) {
+          pc++;
+          pos++;
+        } else {
+          backtrack = 1;
+        }
+        break;
+
+      case DFA_SET:
+        if(pos < n && (sets[prog[pc].x][(unsigned char)s[pos] >> 3] &
+                       (unsigned char)(1u << ((unsigned char)s[pos] & 7)))) {
+          pc++;
+          pos++;
+        } else {
+          backtrack = 1;
+        }
+        break;
+
+      case DFA_JMP: pc = prog[pc].x; break;
+
+      case DFA_SPLIT:
+        if(cs_n == cs_cap) {
+          size_t newcap = cs_cap ? cs_cap * 2 : 64;
+          struct dfa_choice* p = alloc_re(cs, newcap * sizeof(*p));
+
+          if(!p) {
+            result = 0;
+            goto done;
+          }
+          cs = p;
+          cs_cap = newcap;
+        }
+        cs[cs_n].pc = prog[pc].y;
+        cs[cs_n].pos = pos;
+        cs[cs_n].undo_top = us_n;
+        cs_n++;
+        pc = prog[pc].x;
+        break;
+
+      case DFA_SAVE:
+        if(us_n == us_cap) {
+          size_t newcap = us_cap ? us_cap * 2 : 64;
+          struct dfa_undo* p = alloc_re(us, newcap * sizeof(*p));
+
+          if(!p) {
+            result = 0;
+            goto done;
+          }
+          us = p;
+          us_cap = newcap;
+        }
+        us[us_n].slot = prog[pc].x;
+        us[us_n].oldval = save[prog[pc].x];
+        us_n++;
+        save[prog[pc].x] = (long)pos;
+        pc++;
+        break;
+
+      case DFA_BOL:
+        if(pos == 0 && !notbol)
+          pc++;
+        else
+          backtrack = 1;
+        break;
+
+      case DFA_EOL:
+        if(pos == n)
+          pc++;
+        else
+          backtrack = 1;
+        break;
+
+      case DFA_BACKREF: {
+        int g = prog[pc].x - 1;
+        long gs = save[2 * g], ge = save[2 * g + 1];
+
+        if(gs < 0 || ge < 0) {
+          backtrack = 1;
+        } else {
+          size_t len = (size_t)(ge - gs);
+
+          if(pos + len <= n && byte_diff(s + pos, len, s + gs) == 0) {
+            pc++;
+            pos += len;
+          } else {
+            backtrack = 1;
+          }
+        }
+        break;
       }
-      break;
-    }
 
-    case DFA_MATCH:
-      *end = pos;
-      result = 1;
-      goto done;
+      case DFA_MATCH:
+        *end = pos;
+        result = 1;
+        goto done;
 
-    default:
-      backtrack = 1;
-      break;
+      default: backtrack = 1; break;
     }
 
     if(backtrack) {
@@ -187,8 +188,15 @@ done:
 }
 
 int
-dfa_bt_run(const struct dfa* d, const char* s, size_t n, size_t start, int anchored, int notbol,
-           struct dfa_span* m, struct dfa_span* g, size_t ng) {
+dfa_bt_run(const struct dfa* d,
+           const char* s,
+           size_t n,
+           size_t start,
+           int anchored,
+           int notbol,
+           struct dfa_span* m,
+           struct dfa_span* g,
+           size_t ng) {
   size_t from, i;
   long* save = NULL;
 

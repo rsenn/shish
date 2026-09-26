@@ -19,11 +19,11 @@ awk_func_find(struct awk_prog* prog, const char* name, size_t len) {
 const char*
 awk_error(int code) {
   switch(code) {
-  case AWK_OK: return "no error";
-  case AWK_ENOMEM: return "out of memory";
-  case AWK_ESYNTAX: return "syntax error";
-  case AWK_EREGEX: return "invalid regular expression";
-  default: return "unknown error";
+    case AWK_OK: return "no error";
+    case AWK_ENOMEM: return "out of memory";
+    case AWK_ESYNTAX: return "syntax error";
+    case AWK_EREGEX: return "invalid regular expression";
+    default: return "unknown error";
   }
 }
 

@@ -51,8 +51,13 @@ awk_rec_setline(struct awk_state* st, const char* s, size_t n) {
 }
 
 size_t
-awk_split(struct awk_state* st, const char* s, size_t n, const char* fs, size_t fslen,
-          struct awk_span** out, size_t* outcap) {
+awk_split(struct awk_state* st,
+          const char* s,
+          size_t n,
+          const char* fs,
+          size_t fslen,
+          struct awk_span** out,
+          size_t* outcap) {
   size_t nout = 0;
 
 #define PUSH(sp, ln) \
@@ -131,7 +136,11 @@ awk_split(struct awk_state* st, const char* s, size_t n, const char* fs, size_t 
 }
 
 size_t
-awk_split_re(struct awk_state* st, const char* s, size_t n, struct dfa* re, struct awk_span** out,
+awk_split_re(struct awk_state* st,
+             const char* s,
+             size_t n,
+             struct dfa* re,
+             struct awk_span** out,
              size_t* outcap) {
   size_t nout = 0, start = 0, from = 0;
   struct dfa_span m;
@@ -173,8 +182,13 @@ awk_rec_ensure_split(struct awk_state* st) {
     return;
 
   fs = awk_global(st, SP_FS);
-  nf = awk_split(st, st->rec.line.s ? st->rec.line.s : "", st->rec.line.len,
-                 fs->str ? fs->str : " ", fs->str ? str_len(fs->str) : 1, &spans, &spancap);
+  nf = awk_split(st,
+                 st->rec.line.s ? st->rec.line.s : "",
+                 st->rec.line.len,
+                 fs->str ? fs->str : " ",
+                 fs->str ? str_len(fs->str) : 1,
+                 &spans,
+                 &spancap);
 
   rec_ensure_cap(&st->rec, nf + 1);
 

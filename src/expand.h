@@ -90,7 +90,7 @@ enum subst_type {
    expand_argv() to keep an empty field that's one of several real
    fields, while still dropping a word's sole, entirely-empty result. */
 #define X_SPLIT 0x40000000
- 
+
 #define X_CATCLOSED 0x80000000
 
 extern char expand_ifs[4];

@@ -212,7 +212,7 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
            unused virgin placeholder, and must not be left open for
            a later chunk to silently merge into. */
         if(have_field || (n != NULL && !(n->narg.flag & X_CATCLOSED) &&
-                           (n->narg.flag & (X_QUOTED | X_NOSPLIT)))) {
+                          (n->narg.flag & (X_QUOTED | X_NOSPLIT)))) {
           expand_cat_finish(&n, flags);
           have_field = 0;
         }

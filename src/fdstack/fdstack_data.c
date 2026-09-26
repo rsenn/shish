@@ -12,7 +12,7 @@
 int
 fdstack_data(void) {
   struct fdstack* st;
- 
+
   for(st = fdstack; st; st = st->parent) {
     struct fd* fd;
 

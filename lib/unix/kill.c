@@ -25,34 +25,33 @@ kill(pid_t pid, int sig) {
   HANDLE h;
 
   switch(sig) {
-  case SIGKILL:
-  case SIGTERM:
-    if(!(h = OpenProcess(PROCESS_TERMINATE, FALSE, (DWORD)pid)))
-      return (errno = ESRCH, -1);
+    case SIGKILL:
+    case SIGTERM:
+      if(!(h = OpenProcess(PROCESS_TERMINATE, FALSE, (DWORD)pid)))
+        return (errno = ESRCH, -1);
 
-    if(!TerminateProcess(h, 128 + sig)) {
+      if(!TerminateProcess(h, 128 + sig)) {
+        CloseHandle(h);
+        return (errno = EPERM, -1);
+      }
+
       CloseHandle(h);
-      return (errno = EPERM, -1);
-    }
+      return 0;
 
-    CloseHandle(h);
-    return 0;
+    case SIGINT:
+      if(!GenerateConsoleCtrlEvent(CTRL_C_EVENT, (DWORD)pid))
+        return (errno = ESRCH, -1);
 
-  case SIGINT:
-    if(!GenerateConsoleCtrlEvent(CTRL_C_EVENT, (DWORD)pid))
-      return (errno = ESRCH, -1);
+      return 0;
 
-    return 0;
+    case 0:
+      if(!(h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, (DWORD)pid)))
+        return (errno = ESRCH, -1);
 
-  case 0:
-    if(!(h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, (DWORD)pid)))
-      return (errno = ESRCH, -1);
+      CloseHandle(h);
+      return 0;
 
-    CloseHandle(h);
-    return 0;
-
-  default:
-    return (errno = ENOSYS, -1);
+    default: return (errno = ENOSYS, -1);
   }
 }
 #endif

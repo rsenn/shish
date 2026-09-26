@@ -85,7 +85,8 @@ term_complete_is_command(unsigned long start) {
     ;
 
   for(i = 0; term_complete_leaders[i]; i++)
-    if(str_len(term_complete_leaders[i]) == e - b && !str_diffn(term_complete_leaders[i], &s[b], e - b))
+    if(str_len(term_complete_leaders[i]) == e - b &&
+       !str_diffn(term_complete_leaders[i], &s[b], e - b))
       return 1;
 
   return 0;

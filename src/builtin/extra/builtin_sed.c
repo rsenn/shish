@@ -61,7 +61,7 @@ struct sed_wfile_rt {
 /* everything the callbacks (read/out/wfile/rfile) need, as one ctx
    shared by all of them -- text/sed.h hands the same pointer to each. */
 struct sed_ctx {
-  char** argv;   /* remaining file operands (argv+shell_optind), or NULL for stdin */
+  char** argv; /* remaining file operands (argv+shell_optind), or NULL for stdin */
   int i;
   int done_any;
   buffer* cur;
@@ -212,36 +212,38 @@ builtin_sed(int argc, char* argv[]) {
 
   while((c = shell_getopt(argc, argv, "nEre:f:")) > 0) {
     switch(c) {
-    case 'n': autoprint_off = 1; break;
-    case 'E': case 'r': flags |= SED_ERE; break;
+      case 'n': autoprint_off = 1; break;
+      case 'E':
+      case 'r': flags |= SED_ERE; break;
 
-    case 'e':
-      if((have_script && !stralloc_catc(&script, '\n')) || !stralloc_cats(&script, shell_optarg)) {
-        builtin_error(argv, "out of memory");
-        stralloc_free(&script);
-        return 2;
-      }
+      case 'e':
+        if((have_script && !stralloc_catc(&script, '\n')) ||
+           !stralloc_cats(&script, shell_optarg)) {
+          builtin_error(argv, "out of memory");
+          stralloc_free(&script);
+          return 2;
+        }
 
-      have_script = 1;
-      break;
+        have_script = 1;
+        break;
 
-    case 'f':
-      if(have_script && !stralloc_catc(&script, '\n')) {
-        builtin_error(argv, "out of memory");
-        stralloc_free(&script);
-        return 2;
-      }
+      case 'f':
+        if(have_script && !stralloc_catc(&script, '\n')) {
+          builtin_error(argv, "out of memory");
+          stralloc_free(&script);
+          return 2;
+        }
 
-      if(slurp_file(shell_optarg, &script) == -1) {
-        builtin_error(argv, shell_optarg);
-        stralloc_free(&script);
-        return 2;
-      }
+        if(slurp_file(shell_optarg, &script) == -1) {
+          builtin_error(argv, shell_optarg);
+          stralloc_free(&script);
+          return 2;
+        }
 
-      have_script = 1;
-      break;
+        have_script = 1;
+        break;
 
-    default: builtin_invopt(argv); return 2;
+      default: builtin_invopt(argv); return 2;
     }
   }
 
@@ -298,15 +300,18 @@ builtin_sed(int argc, char* argv[]) {
           builtin_error(argv, (char*)name);
           ret = 2;
         } else {
-          buffer_init(&ctx.wfiles[i].b, &buffer_op_write, ctx.wfiles[i].fd, ctx.wfiles[i].wbuf,
+          buffer_init(&ctx.wfiles[i].b,
+                      &buffer_op_write,
+                      ctx.wfiles[i].fd,
+                      ctx.wfiles[i].wbuf,
                       sizeof(ctx.wfiles[i].wbuf));
         }
       }
     }
   }
 
-  st = sed_state_new(prog, sed_read_line, sed_out, ctx.nwfiles ? sed_wfile_out : NULL, sed_rfile,
-                     &ctx);
+  st = sed_state_new(
+      prog, sed_read_line, sed_out, ctx.nwfiles ? sed_wfile_out : NULL, sed_rfile, &ctx);
 
   if(!st) {
     builtin_error(argv, "out of memory");
@@ -468,37 +473,37 @@ sed_filter_open(int argc, char* argv[], buffer* upstream) {
 
   while((c = shell_getopt(argc, argv, "nEre:f:")) > 0) {
     switch(c) {
-    case 'n': autoprint_off = 1; break;
-    case 'E': case 'r': flags |= SED_ERE; break;
+      case 'n': autoprint_off = 1; break;
+      case 'E':
+      case 'r': flags |= SED_ERE; break;
 
-    case 'e':
-      if((have_script && !stralloc_catc(&script, '\n')) || !stralloc_cats(&script, shell_optarg)) {
-        stralloc_free(&script);
-        return NULL;
-      }
+      case 'e':
+        if((have_script && !stralloc_catc(&script, '\n')) ||
+           !stralloc_cats(&script, shell_optarg)) {
+          stralloc_free(&script);
+          return NULL;
+        }
 
-      have_script = 1;
-      break;
+        have_script = 1;
+        break;
 
-    case 'f':
-      if(have_script && !stralloc_catc(&script, '\n')) {
-        stralloc_free(&script);
-        return NULL;
-      }
+      case 'f':
+        if(have_script && !stralloc_catc(&script, '\n')) {
+          stralloc_free(&script);
+          return NULL;
+        }
 
-      if(slurp_file(shell_optarg, &script) == -1) {
-        stralloc_free(&script);
-        return NULL;
-      }
+        if(slurp_file(shell_optarg, &script) == -1) {
+          stralloc_free(&script);
+          return NULL;
+        }
 
-      have_script = 1;
-      break;
+        have_script = 1;
+        break;
 
-    /* bad option: return NULL *without* printing -- see
-       cat_filter_open()'s identical comment in builtin_cat.c */
-    default:
-      stralloc_free(&script);
-      return NULL;
+      /* bad option: return NULL *without* printing -- see
+         cat_filter_open()'s identical comment in builtin_cat.c */
+      default: stralloc_free(&script); return NULL;
     }
   }
 
@@ -551,5 +556,8 @@ sed_filter_open(int argc, char* argv[], buffer* upstream) {
   return fc;
 }
 
-const struct filter_ops sed_ops = {sed_filter_open, sed_filter_read, sed_filter_status, sed_filter_close};
+const struct filter_ops sed_ops = {sed_filter_open,
+                                   sed_filter_read,
+                                   sed_filter_status,
+                                   sed_filter_close};
 const struct builtin_filter sed_filter = {&sed_ops};

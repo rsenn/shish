@@ -446,8 +446,11 @@ awk_getline_from(struct awk_state* st, struct anode* n, awk_cell** setvarp) {
 
     if(r == 1) {
       if(has_var)
-        awk_lvalue_set_str(st, &lv, line.s ? line.s : "", line.len,
-                            awk_looks_numeric(line.s ? line.s : "", line.len, NULL));
+        awk_lvalue_set_str(st,
+                           &lv,
+                           line.s ? line.s : "",
+                           line.len,
+                           awk_looks_numeric(line.s ? line.s : "", line.len, NULL));
       else
         awk_rec_setline(st, line.s ? line.s : "", line.len);
 
@@ -466,8 +469,11 @@ awk_getline_from(struct awk_state* st, struct anode* n, awk_cell** setvarp) {
   r = main_input_nextline(st, &line);
 
   if(r == 1)
-    awk_lvalue_set_str(st, &lv, line.s ? line.s : "", line.len,
-                        awk_looks_numeric(line.s ? line.s : "", line.len, NULL));
+    awk_lvalue_set_str(st,
+                       &lv,
+                       line.s ? line.s : "",
+                       line.len,
+                       awk_looks_numeric(line.s ? line.s : "", line.len, NULL));
 
   stralloc_free(&line);
   return r;

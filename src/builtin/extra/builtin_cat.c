@@ -345,5 +345,8 @@ cat_filter_open(int argc, char* argv[], buffer* upstream) {
   return c;
 }
 
-const struct filter_ops cat_ops = {cat_filter_open, cat_filter_read, cat_filter_status, cat_filter_close};
+const struct filter_ops cat_ops = {cat_filter_open,
+                                   cat_filter_read,
+                                   cat_filter_status,
+                                   cat_filter_close};
 const struct builtin_filter cat_filter = {&cat_ops};

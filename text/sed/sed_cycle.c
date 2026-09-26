@@ -5,8 +5,12 @@
 #include "../../lib/str.h"
 
 struct sed_state*
-sed_state_new(struct sed* prog, sed_read_fn read, sed_out_fn out, sed_wfile_fn wfile,
-              sed_rfile_fn rfile, void* ctx) {
+sed_state_new(struct sed* prog,
+              sed_read_fn read,
+              sed_out_fn out,
+              sed_wfile_fn wfile,
+              sed_rfile_fn rfile,
+              void* ctx) {
   struct sed_state* st = alloc(sizeof(*st));
 
   if(!st)
@@ -200,185 +204,209 @@ restart:
     }
 
     switch(c->letter) {
-    case '{':
-    case ':': pc++; break;
+      case '{':
+      case ':': pc++; break;
 
-    case '=': sed_out_lineno(st); pc++; break;
+      case '=':
+        sed_out_lineno(st);
+        pc++;
+        break;
 
-    case 'a': sed_pending_push(st, 0, c->u.text.s, c->u.text.len); pc++; break;
+      case 'a':
+        sed_pending_push(st, 0, c->u.text.s, c->u.text.len);
+        pc++;
+        break;
 
-    case 'i':
-      st->out(st->ctx, c->u.text.s, c->u.text.len);
-      st->out(st->ctx, "\n", 1);
-      pc++;
-      break;
-
-    case 'c': {
-      /* naddr<2: fires on every matching line. naddr==2: fires only
-         on the line that closes the range (in_range just went back
-         to 0), or on every line with '!' (which drops the concept of
-         a range's "closing" line entirely). */
-      int fire = (c->naddr < 2) || c->negate || !c->in_range;
-
-      if(fire) {
+      case 'i':
         st->out(st->ctx, c->u.text.s, c->u.text.len);
         st->out(st->ctx, "\n", 1);
-      }
+        pc++;
+        break;
 
-      stralloc_copys(&st->pattern, "");
-      st->suppress_print = 1;
-      goto end_cycle;
-    }
+      case 'c': {
+        /* naddr<2: fires on every matching line. naddr==2: fires only
+           on the line that closes the range (in_range just went back
+           to 0), or on every line with '!' (which drops the concept of
+           a range's "closing" line entirely). */
+        int fire = (c->naddr < 2) || c->negate || !c->in_range;
 
-    case 'd': st->suppress_print = 1; goto end_cycle;
+        if(fire) {
+          st->out(st->ctx, c->u.text.s, c->u.text.len);
+          st->out(st->ctx, "\n", 1);
+        }
 
-    case 'D': {
-      size_t nl = find_nl(st->pattern.s, st->pattern.len);
-
-      if(nl == st->pattern.len) {
+        stralloc_copys(&st->pattern, "");
         st->suppress_print = 1;
         goto end_cycle;
       }
 
-      {
-        size_t rest = st->pattern.len - (nl + 1);
+      case 'd': st->suppress_print = 1; goto end_cycle;
 
-        byte_copy(st->pattern.s, rest, st->pattern.s + nl + 1);
-        st->pattern.len = rest;
+      case 'D': {
+        size_t nl = find_nl(st->pattern.s, st->pattern.len);
+
+        if(nl == st->pattern.len) {
+          st->suppress_print = 1;
+          goto end_cycle;
+        }
+
+        {
+          size_t rest = st->pattern.len - (nl + 1);
+
+          byte_copy(st->pattern.s, rest, st->pattern.s + nl + 1);
+          st->pattern.len = rest;
+        }
+
+        goto restart;
       }
 
-      goto restart;
-    }
+      case 'g':
+        stralloc_copy(&st->pattern, &st->hold);
+        pc++;
+        break;
 
-    case 'g': stralloc_copy(&st->pattern, &st->hold); pc++; break;
+      case 'G':
+        stralloc_catc(&st->pattern, '\n');
+        stralloc_catb(&st->pattern, st->hold.s ? st->hold.s : "", st->hold.len);
+        pc++;
+        break;
 
-    case 'G':
-      stralloc_catc(&st->pattern, '\n');
-      stralloc_catb(&st->pattern, st->hold.s ? st->hold.s : "", st->hold.len);
-      pc++;
-      break;
+      case 'h':
+        stralloc_copy(&st->hold, &st->pattern);
+        pc++;
+        break;
 
-    case 'h': stralloc_copy(&st->hold, &st->pattern); pc++; break;
+      case 'H':
+        stralloc_catc(&st->hold, '\n');
+        stralloc_catb(&st->hold, st->pattern.s ? st->pattern.s : "", st->pattern.len);
+        pc++;
+        break;
 
-    case 'H':
-      stralloc_catc(&st->hold, '\n');
-      stralloc_catb(&st->hold, st->pattern.s ? st->pattern.s : "", st->pattern.len);
-      pc++;
-      break;
+      case 'l':
+        sed_do_list(st, st->pattern.s, st->pattern.len);
+        pc++;
+        break;
 
-    case 'l': sed_do_list(st, st->pattern.s, st->pattern.len); pc++; break;
+      case 'n': {
+        int hn, il;
 
-    case 'n': {
-      int hn, il;
-
-      if(!st->prog->autoprint_off)
-        sed_out_pattern(st);
-
-      sed_pending_flush(st);
-
-      if(!fetch_line(st, &st->pattern, &hn, &il)) {
-        st->quit = 1;
-        st->quit_status = 0;
-        st->suppress_print = 1; /* already printed above */
-        goto end_cycle;
-      }
-
-      st->lineno++;
-      st->cur_had_nl = hn;
-      st->cur_is_last = il;
-      pc++;
-      break;
-    }
-
-    case 'N': {
-      int hn, il;
-      stralloc nl;
-
-      stralloc_init(&nl);
-
-      if(!fetch_line(st, &nl, &hn, &il)) {
-        stralloc_free(&nl);
-        st->quit = 1;
-        st->quit_status = 0;
-        st->suppress_print = 1; /* POSIX: N at EOF quits without printing, unlike n */
-        goto end_cycle;
-      }
-
-      stralloc_catc(&st->pattern, '\n');
-      stralloc_catb(&st->pattern, nl.s, nl.len);
-      stralloc_free(&nl);
-      st->lineno++;
-      st->cur_had_nl = hn;
-      st->cur_is_last = il;
-      pc++;
-      break;
-    }
-
-    case 'p': sed_out_pattern(st); pc++; break;
-
-    case 'P': {
-      size_t nl = find_nl(st->pattern.s, st->pattern.len);
-
-      st->out(st->ctx, st->pattern.s, nl);
-      st->out(st->ctx, "\n", 1);
-      pc++;
-      break;
-    }
-
-    case 'q':
-      st->quit = 1;
-      st->quit_status = c->u.qstatus;
-      goto end_cycle;
-
-    case 'r': sed_pending_push(st, 1, c->u.rfile, str_len(c->u.rfile)); pc++; break;
-
-    case 's': {
-      if(sed_subst_exec(&c->u.s, st)) {
-        if(c->u.s.print)
+        if(!st->prog->autoprint_off)
           sed_out_pattern(st);
 
-        if(c->u.s.wfile >= 0)
-          sed_out_wfile_line(st, c->u.s.wfile, st->pattern.s, st->pattern.len);
-      }
+        sed_pending_flush(st);
 
-      pc++;
-      break;
-    }
+        if(!fetch_line(st, &st->pattern, &hn, &il)) {
+          st->quit = 1;
+          st->quit_status = 0;
+          st->suppress_print = 1; /* already printed above */
+          goto end_cycle;
+        }
 
-    case 't':
-      if(st->tflag) {
-        st->tflag = 0;
-        pc = c->jump;
-      } else {
+        st->lineno++;
+        st->cur_had_nl = hn;
+        st->cur_is_last = il;
         pc++;
+        break;
       }
 
-      break;
+      case 'N': {
+        int hn, il;
+        stralloc nl;
 
-    case 'w': sed_out_wfile_line(st, c->u.wfile, st->pattern.s, st->pattern.len); pc++; break;
+        stralloc_init(&nl);
 
-    case 'x': {
-      stralloc tmp = st->pattern;
+        if(!fetch_line(st, &nl, &hn, &il)) {
+          stralloc_free(&nl);
+          st->quit = 1;
+          st->quit_status = 0;
+          st->suppress_print = 1; /* POSIX: N at EOF quits without printing, unlike n */
+          goto end_cycle;
+        }
 
-      st->pattern = st->hold;
-      st->hold = tmp;
-      pc++;
-      break;
-    }
+        stralloc_catc(&st->pattern, '\n');
+        stralloc_catb(&st->pattern, nl.s, nl.len);
+        stralloc_free(&nl);
+        st->lineno++;
+        st->cur_had_nl = hn;
+        st->cur_is_last = il;
+        pc++;
+        break;
+      }
 
-    case 'y': {
-      size_t i;
+      case 'p':
+        sed_out_pattern(st);
+        pc++;
+        break;
 
-      for(i = 0; i < st->pattern.len; i++)
-        st->pattern.s[i] = (char)c->u.y[(unsigned char)st->pattern.s[i]];
+      case 'P': {
+        size_t nl = find_nl(st->pattern.s, st->pattern.len);
 
-      pc++;
-      break;
-    }
+        st->out(st->ctx, st->pattern.s, nl);
+        st->out(st->ctx, "\n", 1);
+        pc++;
+        break;
+      }
 
-    case 'b': pc = c->jump; break;
+      case 'q':
+        st->quit = 1;
+        st->quit_status = c->u.qstatus;
+        goto end_cycle;
 
-    default: pc++; break;
+      case 'r':
+        sed_pending_push(st, 1, c->u.rfile, str_len(c->u.rfile));
+        pc++;
+        break;
+
+      case 's': {
+        if(sed_subst_exec(&c->u.s, st)) {
+          if(c->u.s.print)
+            sed_out_pattern(st);
+
+          if(c->u.s.wfile >= 0)
+            sed_out_wfile_line(st, c->u.s.wfile, st->pattern.s, st->pattern.len);
+        }
+
+        pc++;
+        break;
+      }
+
+      case 't':
+        if(st->tflag) {
+          st->tflag = 0;
+          pc = c->jump;
+        } else {
+          pc++;
+        }
+
+        break;
+
+      case 'w':
+        sed_out_wfile_line(st, c->u.wfile, st->pattern.s, st->pattern.len);
+        pc++;
+        break;
+
+      case 'x': {
+        stralloc tmp = st->pattern;
+
+        st->pattern = st->hold;
+        st->hold = tmp;
+        pc++;
+        break;
+      }
+
+      case 'y': {
+        size_t i;
+
+        for(i = 0; i < st->pattern.len; i++)
+          st->pattern.s[i] = (char)c->u.y[(unsigned char)st->pattern.s[i]];
+
+        pc++;
+        break;
+      }
+
+      case 'b': pc = c->jump; break;
+
+      default: pc++; break;
     }
   }
 

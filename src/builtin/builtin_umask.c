@@ -71,18 +71,27 @@ scan_umask(char* in, uint16* umask) {
 
     while(*src && str_chr("ugoa", *src) < 4) {
       switch(*src) {
-        case 'u': who_mask |= 0700; shift = 6; break;
-        case 'g': who_mask |= 0070; shift = 3; break;
-        case 'o': who_mask |= 0007; shift = 0; break;
+        case 'u':
+          who_mask |= 0700;
+          shift = 6;
+          break;
+        case 'g':
+          who_mask |= 0070;
+          shift = 3;
+          break;
+        case 'o':
+          who_mask |= 0007;
+          shift = 0;
+          break;
         case 'a': all_classes = 1; break;
       }
 
       src++;
     }
-    
+
     if(all_classes || who_mask == 0) {
       who_mask = 0777;
-      shift = 0;  /* Will apply to all classes */
+      shift = 0; /* Will apply to all classes */
     }
 
     /* Parse operator: +, -, = */

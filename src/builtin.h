@@ -13,7 +13,8 @@ struct builtin_cmd {
   builtin_flag flags;
   const char* args;
   const char* help;
-  const struct builtin_filter* filter; /* NULL: not filter-capable (the common case); see TODO.md Goal 13 */
+  const struct builtin_filter*
+      filter; /* NULL: not filter-capable (the common case); see TODO.md Goal 13 */
 };
 
 extern struct builtin_cmd builtin_table[];

@@ -109,8 +109,11 @@ struct awk_io {
  * separator, or NULL for the default. Returns the program's exit
  * status (an explicit `exit expr`, else 0, else 2 on a runtime
  * error). */
-int awk_run(struct awk_prog* prog, const struct awk_io* io, char* const* assigns,
-            char* const* operands, const char* fs);
+int awk_run(struct awk_prog* prog,
+            const struct awk_io* io,
+            char* const* assigns,
+            char* const* operands,
+            const char* fs);
 
 #ifdef __cplusplus
 }

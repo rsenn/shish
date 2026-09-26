@@ -26,7 +26,7 @@ extern "C" {
 
 struct sed; /* opaque: a compiled script */
 
-#define SED_ERE 0x01        /* -E/-r: addresses and s/// use ERE instead of BRE */
+#define SED_ERE 0x01         /* -E/-r: addresses and s/// use ERE instead of BRE */
 #define SED_NOAUTOPRINT 0x02 /* -n: suppress the default output, same effect as a leading #n */
 
 /* sed_compile()/sed_error() codes (0 = success) */
@@ -83,8 +83,12 @@ typedef void (*sed_rfile_fn)(void* ctx, const char* name);
 
 struct sed_state;
 
-struct sed_state* sed_state_new(struct sed* prog, sed_read_fn read, sed_out_fn out,
-                                 sed_wfile_fn wfile, sed_rfile_fn rfile, void* ctx);
+struct sed_state* sed_state_new(struct sed* prog,
+                                sed_read_fn read,
+                                sed_out_fn out,
+                                sed_wfile_fn wfile,
+                                sed_rfile_fn rfile,
+                                void* ctx);
 void sed_state_free(struct sed_state* st);
 
 /* sed_run: processes the whole input to completion (sed_read_fn

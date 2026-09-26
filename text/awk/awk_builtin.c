@@ -54,8 +54,8 @@ var_cell(struct awk_state* st, struct anode* n) {
 }
 
 static int
-compile_regex_arg(struct awk_state* st, struct anode* n, struct dfa* scratch, struct dfa** out,
-                   int* dynamic) {
+compile_regex_arg(
+    struct awk_state* st, struct anode* n, struct dfa* scratch, struct dfa** out, int* dynamic) {
   if(n->op == A_REGEX) {
     *out = n->u.re;
     *dynamic = 0;
@@ -262,181 +262,196 @@ awk_call_builtin(struct awk_state* st, struct anode* n) {
   struct anode* args = n->a;
 
   switch(n->idx) {
-  case BI_LENGTH: {
-    if(!args) {
-      awk_cell f0 = *awk_rec_field(st, 0);
+    case BI_LENGTH: {
+      if(!args) {
+        awk_cell f0 = *awk_rec_field(st, 0);
 
-      return num_cell((double)str_len(f0.str ? f0.str : ""));
+        return num_cell((double)str_len(f0.str ? f0.str : ""));
+      }
+
+      if(args->op == A_VAR) {
+        awk_cell* c = var_cell(st, args);
+
+        if(c->type == CELL_ARRAY)
+          return num_cell((double)c->arr->used);
+      }
+
+      {
+        awk_cell v = awk_eval(st, args);
+        const char* s = awk_tostr(st, &v, 0);
+
+        return num_cell((double)str_len(s));
+      }
     }
 
-    if(args->op == A_VAR) {
-      awk_cell* c = var_cell(st, args);
+    case BI_SUBSTR: {
+      awk_cell sv = arg_eval(st, &args);
+      const char* s = awk_tostr(st, &sv, 0);
+      size_t len = str_len(s);
+      awk_cell mv = arg_eval(st, &args);
+      double m = floor(awk_tonum(st, &mv) + 0.5);
+      long lo = (long)m, hi;
 
-      if(c->type == CELL_ARRAY)
-        return num_cell((double)c->arr->used);
+      if(args) {
+        awk_cell nv = arg_eval(st, &args);
+        double want = floor(awk_tonum(st, &nv) + 0.5);
+
+        hi = (want > (double)(len) * 2 + 4) ? (long)len + 1 : lo + (long)want;
+      } else {
+        hi = (long)len + 1;
+      }
+
+      if(lo < 1)
+        lo = 1;
+
+      if(hi > (long)len + 1)
+        hi = (long)len + 1;
+
+      if(hi <= lo)
+        return str_cell_tmp(st, "", 0);
+
+      return str_cell_tmp(st, s + (lo - 1), (size_t)(hi - lo));
     }
 
-    {
-      awk_cell v = awk_eval(st, args);
-      const char* s = awk_tostr(st, &v, 0);
+    case BI_INDEX: {
+      awk_cell sv = arg_eval(st, &args);
+      const char* s = awk_tostr(st, &sv, 0);
+      awk_cell tv = arg_eval(st, &args);
+      const char* t = awk_tostr(st, &tv, 0);
+      size_t slen = str_len(s), tlen = str_len(t), i;
 
-      return num_cell((double)str_len(s));
-    }
-  }
+      if(tlen == 0 || tlen > slen)
+        return num_cell(0);
 
-  case BI_SUBSTR: {
-    awk_cell sv = arg_eval(st, &args);
-    const char* s = awk_tostr(st, &sv, 0);
-    size_t len = str_len(s);
-    awk_cell mv = arg_eval(st, &args);
-    double m = floor(awk_tonum(st, &mv) + 0.5);
-    long lo = (long)m, hi;
+      for(i = 0; i + tlen <= slen; i++)
+        if(!byte_diff(s + i, tlen, t))
+          return num_cell((double)(i + 1));
 
-    if(args) {
-      awk_cell nv = arg_eval(st, &args);
-      double want = floor(awk_tonum(st, &nv) + 0.5);
-
-      hi = (want > (double)(len) * 2 + 4) ? (long)len + 1 : lo + (long)want;
-    } else {
-      hi = (long)len + 1;
-    }
-
-    if(lo < 1)
-      lo = 1;
-
-    if(hi > (long)len + 1)
-      hi = (long)len + 1;
-
-    if(hi <= lo)
-      return str_cell_tmp(st, "", 0);
-
-    return str_cell_tmp(st, s + (lo - 1), (size_t)(hi - lo));
-  }
-
-  case BI_INDEX: {
-    awk_cell sv = arg_eval(st, &args);
-    const char* s = awk_tostr(st, &sv, 0);
-    awk_cell tv = arg_eval(st, &args);
-    const char* t = awk_tostr(st, &tv, 0);
-    size_t slen = str_len(s), tlen = str_len(t), i;
-
-    if(tlen == 0 || tlen > slen)
       return num_cell(0);
-
-    for(i = 0; i + tlen <= slen; i++)
-      if(!byte_diff(s + i, tlen, t))
-        return num_cell((double)(i + 1));
-
-    return num_cell(0);
-  }
-
-  case BI_SPLIT: return do_split(st, args);
-  case BI_SUB: return do_sub(st, args, 0);
-  case BI_GSUB: return do_sub(st, args, 1);
-  case BI_MATCH: return do_match(st, args);
-
-  case BI_SPRINTF: {
-    stralloc out;
-    awk_cell result;
-
-    stralloc_init(&out);
-
-    if(args) {
-      awk_cell fv = awk_eval(st, args);
-      const char* fmt = awk_tostr(st, &fv, 0);
-
-      awk_sprintf(st, &out, fmt, str_len(fmt), args->next);
     }
 
-    result = str_cell_tmp(st, out.s ? out.s : "", out.len);
-    stralloc_free(&out);
-    return result;
-  }
+    case BI_SPLIT: return do_split(st, args);
+    case BI_SUB: return do_sub(st, args, 0);
+    case BI_GSUB: return do_sub(st, args, 1);
+    case BI_MATCH: return do_match(st, args);
 
-  case BI_SIN: { awk_cell v = arg_eval(st, &args); return num_cell(sin(awk_tonum(st, &v))); }
-  case BI_COS: { awk_cell v = arg_eval(st, &args); return num_cell(cos(awk_tonum(st, &v))); }
+    case BI_SPRINTF: {
+      stralloc out;
+      awk_cell result;
 
-  case BI_ATAN2: {
-    awk_cell y = arg_eval(st, &args), x = arg_eval(st, &args);
+      stralloc_init(&out);
 
-    return num_cell(atan2(awk_tonum(st, &y), awk_tonum(st, &x)));
-  }
+      if(args) {
+        awk_cell fv = awk_eval(st, args);
+        const char* fmt = awk_tostr(st, &fv, 0);
 
-  case BI_EXP: { awk_cell v = arg_eval(st, &args); return num_cell(exp(awk_tonum(st, &v))); }
-  case BI_LOG: { awk_cell v = arg_eval(st, &args); return num_cell(log(awk_tonum(st, &v))); }
-  case BI_SQRT: { awk_cell v = arg_eval(st, &args); return num_cell(sqrt(awk_tonum(st, &v))); }
+        awk_sprintf(st, &out, fmt, str_len(fmt), args->next);
+      }
 
-  case BI_INT: {
-    awk_cell v = arg_eval(st, &args);
-    double d = awk_tonum(st, &v);
+      result = str_cell_tmp(st, out.s ? out.s : "", out.len);
+      stralloc_free(&out);
+      return result;
+    }
 
-    return num_cell(d < 0 ? ceil(d) : floor(d));
-  }
-
-  case BI_RAND: {
-    /* xorshift64*; deterministic from seed 0 unless srand() was called */
-    st->seed ^= st->seed << 13;
-    st->seed ^= st->seed >> 7;
-    st->seed ^= st->seed << 17;
-    return num_cell((double)((st->seed >> 11) & ((1ULL << 53) - 1)) / (double)(1ULL << 53));
-  }
-
-  case BI_SRAND: {
-    unsigned long prev = st->last_seed;
-
-    if(args) {
+    case BI_SIN: {
       awk_cell v = arg_eval(st, &args);
-
-      st->last_seed = (unsigned long)awk_tonum(st, &v);
-    } else {
-      st->last_seed = (unsigned long)time(NULL);
+      return num_cell(sin(awk_tonum(st, &v)));
+    }
+    case BI_COS: {
+      awk_cell v = arg_eval(st, &args);
+      return num_cell(cos(awk_tonum(st, &v)));
     }
 
-    st->seed = st->last_seed ? st->last_seed : 1; /* xorshift needs a nonzero state */
-    return num_cell((double)prev);
-  }
+    case BI_ATAN2: {
+      awk_cell y = arg_eval(st, &args), x = arg_eval(st, &args);
 
-  case BI_TOLOWER: return do_case(st, args, 0);
-  case BI_TOUPPER: return do_case(st, args, 1);
+      return num_cell(atan2(awk_tonum(st, &y), awk_tonum(st, &x)));
+    }
 
-  case BI_SYSTEM: {
-    awk_cell v = arg_eval(st, &args);
-    const char* cmd = awk_tostr(st, &v, 0);
-    int status = -1;
+    case BI_EXP: {
+      awk_cell v = arg_eval(st, &args);
+      return num_cell(exp(awk_tonum(st, &v)));
+    }
+    case BI_LOG: {
+      awk_cell v = arg_eval(st, &args);
+      return num_cell(log(awk_tonum(st, &v)));
+    }
+    case BI_SQRT: {
+      awk_cell v = arg_eval(st, &args);
+      return num_cell(sqrt(awk_tonum(st, &v)));
+    }
 
-    awk_streams_flush_all(st);
+    case BI_INT: {
+      awk_cell v = arg_eval(st, &args);
+      double d = awk_tonum(st, &v);
 
-    if(st->io->run_shell)
-      st->io->run_shell(st->io->ctx, cmd, 0, NULL, &status);
-    else
-      awk_runtime_error(st, "system() is not supported in this build");
+      return num_cell(d < 0 ? ceil(d) : floor(d));
+    }
 
-    return num_cell((double)status);
-  }
+    case BI_RAND: {
+      /* xorshift64*; deterministic from seed 0 unless srand() was called */
+      st->seed ^= st->seed << 13;
+      st->seed ^= st->seed >> 7;
+      st->seed ^= st->seed << 17;
+      return num_cell((double)((st->seed >> 11) & ((1ULL << 53) - 1)) / (double)(1ULL << 53));
+    }
 
-  case BI_CLOSE: {
-    awk_cell v = arg_eval(st, &args);
-    const char* name = awk_tostr(st, &v, 0);
+    case BI_SRAND: {
+      unsigned long prev = st->last_seed;
 
-    return num_cell(awk_stream_close(st, name) ? 0 : -1);
-  }
+      if(args) {
+        awk_cell v = arg_eval(st, &args);
 
-  case BI_FFLUSH: {
-    if(!args) {
+        st->last_seed = (unsigned long)awk_tonum(st, &v);
+      } else {
+        st->last_seed = (unsigned long)time(NULL);
+      }
+
+      st->seed = st->last_seed ? st->last_seed : 1; /* xorshift needs a nonzero state */
+      return num_cell((double)prev);
+    }
+
+    case BI_TOLOWER: return do_case(st, args, 0);
+    case BI_TOUPPER: return do_case(st, args, 1);
+
+    case BI_SYSTEM: {
+      awk_cell v = arg_eval(st, &args);
+      const char* cmd = awk_tostr(st, &v, 0);
+      int status = -1;
+
       awk_streams_flush_all(st);
-    } else {
+
+      if(st->io->run_shell)
+        st->io->run_shell(st->io->ctx, cmd, 0, NULL, &status);
+      else
+        awk_runtime_error(st, "system() is not supported in this build");
+
+      return num_cell((double)status);
+    }
+
+    case BI_CLOSE: {
       awk_cell v = arg_eval(st, &args);
       const char* name = awk_tostr(st, &v, 0);
-      size_t i;
 
-      for(i = 0; i < st->nstreams; i++)
-        if(st->streams[i].is_write && !str_diff(st->streams[i].name, name))
-          st->io->write(st->io->ctx, st->streams[i].h, "", 0);
+      return num_cell(awk_stream_close(st, name) ? 0 : -1);
     }
 
-    return num_cell(0);
-  }
+    case BI_FFLUSH: {
+      if(!args) {
+        awk_streams_flush_all(st);
+      } else {
+        awk_cell v = arg_eval(st, &args);
+        const char* name = awk_tostr(st, &v, 0);
+        size_t i;
 
-  default: return num_cell(0);
+        for(i = 0; i < st->nstreams; i++)
+          if(st->streams[i].is_write && !str_diff(st->streams[i].name, name))
+            st->io->write(st->io->ctx, st->streams[i].h, "", 0);
+      }
+
+      return num_cell(0);
+    }
+
+    default: return num_cell(0);
   }
 }

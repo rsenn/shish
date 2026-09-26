@@ -202,7 +202,11 @@ struct builtin_cmd builtin_table[] = {
     {"alias", &builtin_alias, B_DEFAULT, "[-p] [name[=value] ...]", help_alias},
 #endif
 #if BUILTIN_AWK
-    {"awk", &builtin_awk, B_DEFAULT, "[-F sep] [-v assign]... [-f progfile | 'program'] [file...]", help_awk},
+    {"awk",
+     &builtin_awk,
+     B_DEFAULT,
+     "[-F sep] [-v assign]... [-f progfile | 'program'] [file...]",
+     help_awk},
 #endif
 #if BUILTIN_BASENAME
     {"basename", &builtin_basename, B_DEFAULT, "path [suffix]", help_basename},
@@ -381,7 +385,12 @@ struct builtin_cmd builtin_table[] = {
     {"rmdir", &builtin_rmdir, B_DEFAULT, "[-p] [directory]...", help_rmdir},
 #endif
 #if BUILTIN_SED
-    {"sed", &builtin_sed, B_DEFAULT, "[-n] [-E|-r] {script | -e script | -f file}... [file]...", help_sed, &sed_filter},
+    {"sed",
+     &builtin_sed,
+     B_DEFAULT,
+     "[-n] [-E|-r] {script | -e script | -f file}... [file]...",
+     help_sed,
+     &sed_filter},
 #endif
 #if BUILTIN_SOURCE
     {"source", &builtin_source, B_SPECIAL, "file [arguments]", help_source},

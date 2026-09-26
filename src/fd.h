@@ -98,7 +98,7 @@ enum fd_mode {
   /* types */
 
   FD_TYPE = 0x0017ff00, /* widened to include FD_FILTER, below */
-  FD_FILE = 0x0100, /* a file that has been opened */
+  FD_FILE = 0x0100,     /* a file that has been opened */
   FD_DIR = 0x0200,
   FD_LINK = 0x0400,
   FD_CHAR = 0x0800,

@@ -69,8 +69,9 @@ builtin_uname(int argc, char* argv[]) {
         {processor, "unknown"},
         {os_name, unbuf.sysname},
     };
-    int i, n = 0, any = all || kern_name || nodename || kern_release || kern_version || machine ||
-                        hw_platform || processor || os_name;
+    int i, n = 0,
+           any = all || kern_name || nodename || kern_release || kern_version || machine ||
+                 hw_platform || processor || os_name;
 
     for(i = 0; i < (int)(sizeof(f) / sizeof(f[0])); i++) {
       if(!(f[i].on || (!any && i == 0)))
