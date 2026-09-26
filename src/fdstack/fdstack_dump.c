@@ -1,4 +1,4 @@
-#if defined(DEBUG_OUTPUT) //&& defined(DEBUG_FDSTACK) && defined(DEBUG_FD)
+#ifdef DEBUG_OUTPUT
 #include "../fd.h"
 #include "../fdstack.h"
 

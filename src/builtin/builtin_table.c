@@ -240,16 +240,16 @@ struct builtin_cmd builtin_table[] = {
      &builtin_dump,
      B_DEFAULT,
      "[-Fvl"
-#ifdef DEBUG_FDTABLE
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE)
      "t"
 #endif
-#ifdef DEBUG_FDSTACK
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK)
      "s"
 #endif
-#ifdef DEBUG_JOB
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_JOB)
      "j"
 #endif
-#ifdef DEBUG_FD
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
      "f"
 #endif
      "] [-u FD]",

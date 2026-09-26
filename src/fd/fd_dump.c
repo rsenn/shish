@@ -1,6 +1,6 @@
 #include "../debug.h"
 
-#if defined(DEBUG_OUTPUT) /*&& (defined(DEBUG_FDTABLE)*/
+#ifdef DEBUG_OUTPUT
 #include "../../lib/buffer.h"
 #include "../term.h"
 #include "../fd.h"

@@ -32,16 +32,16 @@ builtin_dump(int argc, char* argv[]) {
   while((c = shell_getopt(argc,
                           argv,
                           "Fvlu:"
-#ifdef DEBUG_FDTABLE
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE)
                           "t"
 #endif
-#ifdef DEBUG_FDSTACK
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK)
                           "s"
 #endif
-#ifdef DEBUG_JOB
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_JOB)
                           "j"
 #endif
-#ifdef DEBUG_FD
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
                           "f"
 #endif
                           )) > 0) {
@@ -65,13 +65,13 @@ builtin_dump(int argc, char* argv[]) {
   switch(what) {
     case VARTAB_ROOT: vartab_dump(varstack, num_args, argp); break;
     case VARTAB_LOCAL: vartab_dump(NULL, num_args, argp); break;
-#if defined(DEBUG_FDTABLE)
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE)
     case FDTABLE: fdtable_dump(out); break;
 #endif
-#if defined(DEBUG_FDSTACK)
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK)
     case FDSTACK: fdstack_dump(out); break;
 #endif
-#if defined(DEBUG_FD)
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
     case FDLIST: fd_dumplist(out); break;
 #endif
     case FUNCTIONS: {
@@ -84,7 +84,7 @@ builtin_dump(int argc, char* argv[]) {
 
       break;
     }
-#if defined(DEBUG_JOB)
+#if defined(DEBUG_OUTPUT) && defined(DEBUG_JOB)
     case JOBS: job_dump(out); break;
 #endif
   }

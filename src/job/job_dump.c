@@ -1,4 +1,4 @@
-#if defined(DEBUG_OUTPUT) && (defined(DEBUG_JOB))
+#ifdef DEBUG_OUTPUT
 #include "../../lib/buffer.h"
 #include "../debug.h"
 #include "../job.h"
