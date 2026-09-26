@@ -10,6 +10,9 @@ source_skip(void) {
   buffer* b = source->b;
   char c;
 
+  /* a continuation at the front is not a character to skip */
+  source_peekn(0, 0);
+
   if(b->p < b->n) {
     c = b->x[b->p];
 

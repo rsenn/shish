@@ -346,9 +346,9 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
          explicitly" rule for this notation), so SH_FNM_PERIOD must
          not be passed here. */
       if(v && vlen) {
-        expand_copysa(param->word, &sa, 0);
+        expand_copysa(param->word, &sa, X_PATTERN);
 
-        for(i = vlen - 1; i >= 0; i--)
+        for(i = vlen; i >= 0; i--)
           if(path_fnmatch(sa.s, sa.len, v + i, vlen - i, 0) == 0)
             break;
 
@@ -364,7 +364,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       stralloc sa;
 
       if(v && vlen) {
-        expand_copysa(param->word, &sa, 0);
+        expand_copysa(param->word, &sa, X_PATTERN);
 
         for(i = 0; i <= vlen; i++)
           if(path_fnmatch(sa.s, sa.len, v + i, vlen - i, 0) == 0)
@@ -382,9 +382,9 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       stralloc sa;
 
       if(v && vlen) {
-        expand_copysa(param->word, &sa, 0);
+        expand_copysa(param->word, &sa, X_PATTERN);
 
-        for(i = 1; i <= vlen; i++)
+        for(i = 0; i <= vlen; i++)
           if(path_fnmatch(sa.s, sa.len, v, i, 0) == 0)
             break;
 
@@ -403,14 +403,11 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       stralloc sa;
 
       if(v && vlen) {
-        expand_copysa(param->word, &sa, 0);
+        expand_copysa(param->word, &sa, X_PATTERN);
 
         for(i = vlen; i > 0; i--)
           if(path_fnmatch(sa.s, sa.len, v, i, 0) == 0)
             break;
-
-        if(i == 0)
-          i = vlen;
 
         n = expand_cat(v + i, vlen - i, nptr, flags);
       }

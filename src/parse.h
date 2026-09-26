@@ -260,7 +260,8 @@ enum parser_flag {
   P_HERE = 0x0100,     /**< parse here-doc */
   P_ARITH = 0x0200,    /**< parse arithmetic expression */
   P_ALIAS = 0x0400,    /**< parse alias */
-  P_COMMENT = 0x0800   /**< parse comments */
+  P_COMMENT = 0x0800,  /**< parse comments */
+  P_DQSUBST = 0x1000   /**< ${...} word inside double quotes: a backslash only escapes $ ` " \ */
 };
 
 struct alias {

@@ -318,6 +318,28 @@ exec_program(char* path, char** argv, enum execflag flag) {
 
     execve(path, argv, envp);
 
+#if defined(__linux__)
+    /* not a binary and no #!: run it as a script with this shell */
+    if(errno == ENOEXEC) {
+      int argc = 0, i;
+      char** sargv;
+
+      while(argv[argc])
+        argc++;
+
+      sargv = alloc((argc + 2) * sizeof(char*));
+      sargv[0] = argv[0];
+      sargv[1] = path;
+
+      for(i = 1; i < argc; i++)
+        sargv[i + 1] = argv[i];
+
+      sargv[argc + 1] = 0;
+      execve("/proc/self/exe", sargv, envp);
+      errno = ENOEXEC;
+    }
+#endif
+
     /* execve() returned so it failed. Save errno immediately: the
        buffer_puts()/write() calls inside sh_error_errno() below are
        free to leave errno changed (POSIX only guarantees it on

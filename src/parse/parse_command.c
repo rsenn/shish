@@ -55,12 +55,16 @@ parse_command(struct parser* p, int tempflags) {
 
       if(source_peek(&c) > 0 && c == '(') {
         char ch[2];
+        unsigned i = 1;
 
-        if(source_peekn(ch, 1) <= 0)
-          return NULL;
+        /* "name ( )": blanks may sit between the parentheses */
+        while(source_peekn(ch, i) > 0 && (ch[0] == ' ' || ch[0] == '\t'))
+          i++;
 
         if(ch[0] == ')') {
-          parse_skip(p);
+          while(i-- > 0)
+            parse_skip(p);
+
           parse_skip(p);
           p->pushback++;
           return parse_function(p);

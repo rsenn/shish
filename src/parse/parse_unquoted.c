@@ -40,6 +40,12 @@ parse_unquoted(struct parser* p) {
       if(source_next(&nextc) <= 0)
         return -1;
 
+      /* inside "${a+word}" the other backslashes stay literal */
+      if((p->flags & P_DQSUBST) && nextc != '$' && nextc != '`' && nextc != '"' && nextc != '\\') {
+        stralloc_catc(&p->sa, '\\');
+        stralloc_catc(&p->sa, '\\');
+      }
+
       if(parse_isesc(nextc))
         stralloc_catc(&p->sa, '\\');
 
@@ -47,6 +53,21 @@ parse_unquoted(struct parser* p) {
       flags |= S_ESCAPED;
 
       c = nextc;
+
+      /* "${a+\ x}": an escaped blank is quoted, field splitting must
+         not see it */
+      if((p->flags & (P_SUBSTW | P_DQSUBST)) == P_SUBSTW && (c == ' ' || c == '\t')) {
+        if(parse_isesc(c))
+          p->sa.len--; /* the backslash added above */
+
+        parse_string(p, flags);
+        p->quot = Q_SQUOTED;
+        stralloc_catc(&p->sa, c);
+        parse_string(p, 0);
+        p->quot = Q_UNQUOTED;
+        parse_skip(p);
+        continue;
+      }
     }
 
     /* when spotting double-quotes enter double-quotation mode */
