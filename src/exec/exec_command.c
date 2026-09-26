@@ -13,6 +13,8 @@
 
 /* execute a command
  * ----------------------------------------------------------------------- */
+int exec_via_command; /* run by "command": a special builtin's error does not exit */
+
 int
 exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
   int ret = 1;
@@ -228,7 +230,7 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
      SOURCE_IACTIVE bit, which source_push() resets for every nested
      source and would otherwise make this fire inside any `.`-sourced
      file even when the real session is interactive. */
-  if(cmd->id == H_SBUILTIN && ret != 0 && !sh_interactive) {
+  if(cmd->id == H_SBUILTIN && ret != 0 && !sh_interactive && !exec_via_command) {
     sh_exit(ret);
   }
 

@@ -346,20 +346,6 @@
   # really does open an if/then/fi)
   ```
 
-- read-field-splitting-and-options-broken: `read` builtin's field
-  splitting is broken (doesn't split on IFS correctly, doesn't
-  handle backslash, doesn't respect raw mode `-r`), line
-  continuation handling is wrong, and readonly variable check
-  missing. 22 failures in `read-p.tst` (6/28). `builtin_read.c`.
-  `read-p.tst:15-269`.
-
-  **Repro:**
-  ```sh
-  # Run the read conformance test
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix read-p.tst
-  # 22 failures in field splitting and option handling
-  ```
-
 - param-expansion-pattern-removal-broken: `${var#pattern}`,
   `${var##pattern}`, `${var%pattern}`, `${var%%pattern}` are broken
   when the pattern contains expansions (tilde, parameter, command
@@ -1066,19 +1052,6 @@
   type nonexistent_cmd; echo $?     # prints nothing, 0; should print an error, >0
   ```
 
-- command-v-functions-aliases-and-not-found: `command -v` on a shell
-  function or alias fails with "No such file or directory" (POSIX: print
-  the name, or `alias name='value'` for an alias, status 0), and for an
-  unknown name prints a diagnostic where POSIX says `-v` writes nothing and
-  returns >0.
-
-  **Repro:**
-  ```sh
-  f() { :; }; command -v f; echo $?       # "f: No such file or directory", 1; should print f, 0
-  alias ll='ls -l'; command -v ll         # same; should print alias ll='ls -l'
-  command -v nonexistent                  # prints a diagnostic; should print nothing
-  ```
-
 - export-unset-errors-not-reflected-in-status: `export 1a=b` (invalid name)
   and `unset` of a readonly variable print a diagnostic but the builtin's
   status is 0; POSIX 2.8.1: a special-builtin error must give status >0 (and
@@ -1236,4 +1209,14 @@
   "$SHISH_SELF" -c '"$SHISH_SELF" -c "kill -s INT \$\$"; echo $?'  # prints 130, correctly
   ```
 
+- command-exec-redirection-not-persistent: `command exec 3<<E ... E` applies
+  the redirection to the `command` builtin only, so it is gone afterwards
+  (POSIX leaves `command exec` open; yash keeps it). `command-p.tst:42`.
 
+  **Repro:**
+  ```sh
+  command exec 3<<E
+  here
+  E
+  cat <&3          # "3: Bad file descriptor"; should print "here"
+  ```

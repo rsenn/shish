@@ -9,11 +9,7 @@
 #include "../../lib/str.h"
 #include "../../lib/fmt.h"
 #include "../../lib/buffer.h"
-
-static int
-any(int c) {
-  return 1;
-}
+#include "../../lib/stralloc.h"
 
 struct predicate_data {
   const char* delim;
@@ -35,6 +31,116 @@ predicate_function(stralloc* sa, void* ptr) {
 
   return 0;
 }
+
+/* one input character; without -r a backslash escapes the next one
+ * ----------------------------------------------------------------------- */
+static int
+read_get(const char* s, size_t n, size_t* i, int raw, int* esc) {
+  int c = (unsigned char)s[(*i)++];
+
+  *esc = 0;
+
+  if(!raw && c == '\\' && *i < n) {
+    c = (unsigned char)s[(*i)++];
+    *esc = 1;
+  }
+
+  return c;
+}
+
+/* is the character at s[*i] an unescaped IFS char (ws: whitespace one only)? */
+static int
+read_ifs(const char* s, size_t n, size_t i, int raw, const char* ifs, int ws) {
+  int esc, c;
+
+  if(i >= n)
+    return 0;
+
+  c = read_get(s, n, &i, raw, &esc);
+
+  if(esc || !c || ifs[str_chr(ifs, c)] == 0)
+    return 0;
+
+  return ws ? (c == ' ' || c == '\t' || c == '\n') : 1;
+}
+
+static size_t
+read_skipws(const char* s, size_t n, size_t i, int raw, const char* ifs) {
+  int esc;
+
+  while(read_ifs(s, n, i, raw, ifs, 1))
+    read_get(s, n, &i, raw, &esc);
+
+  return i;
+}
+
+/* splits the line into the variables per POSIX 2.6.5; returns 0 if an
+ * assignment failed
+ * ----------------------------------------------------------------------- */
+static int
+read_assign(stralloc* line, const char* ifs, int raw, char** vars, int nvars) {
+  const char* s = line->s;
+  size_t n = line->len, i = 0;
+  int idx, ok = 1, esc;
+  stralloc f;
+
+  stralloc_init(&f);
+  i = read_skipws(s, n, i, raw, ifs);
+
+  for(idx = 0; idx < nvars; idx++) {
+    int last = idx == nvars - 1;
+    size_t start = i;
+
+    f.len = 0;
+
+    while(i < n && !read_ifs(s, n, i, raw, ifs, 0)) {
+      int c = read_get(s, n, &i, raw, &esc);
+
+      stralloc_catb(&f, (const char*)&c, 1);
+    }
+
+    /* the delimiter: ws* [nonws ws*] */
+    if(i < n) {
+      int c = read_ifs(s, n, i, raw, ifs, 1);
+
+      read_get(s, n, &i, raw, &esc);
+      i = read_skipws(s, n, i, raw, ifs);
+
+      if(c && read_ifs(s, n, i, raw, ifs, 0)) {
+        read_get(s, n, &i, raw, &esc);
+        i = read_skipws(s, n, i, raw, ifs);
+      }
+    }
+
+    /* the last variable takes the rest, minus trailing IFS whitespace */
+    if(last && i < n) {
+      size_t j = start, keep = 0;
+
+      f.len = 0;
+
+      while(j < n) {
+        int ws = read_ifs(s, n, j, raw, ifs, 1);
+        int c = read_get(s, n, &j, raw, &esc);
+
+        stralloc_catb(&f, (const char*)&c, 1);
+
+        if(!ws)
+          keep = f.len;
+      }
+
+      f.len = keep;
+    }
+
+    stralloc_nul(&f);
+
+    if(!var_setv(vars[idx], f.s, f.len, 0))
+      ok = 0;
+  }
+
+  stralloc_free(&f);
+  return ok;
+}
+
 /* read built-in
  *
  * ----------------------------------------------------------------------- */
@@ -121,32 +227,37 @@ builtin_read(int argc, char* argv[]) {
 
     ifs = var_vdefault("IFS", IFS_DEFAULT, &len);
 
-    if(!raw)
-      expand_unescape(&data, any);
+    /* backslash-newline continues the line (not with -r) */
+    while(!raw && status == 0 && data.len && data.s[data.len - 1] == '\\') {
+      size_t bs = 0;
 
-    stralloc_nul(&data);
+      while(bs < data.len && data.s[data.len - 1 - bs] == '\\')
+        bs++;
 
-    ptr = stralloc_begin(&data);
-    end = stralloc_end(&data);
+      if(bs % 2 == 0)
+        break;
 
-    for(index = 0; index < num_args; index++) {
+      data.len--;
+      {
+        stralloc more;
 
-      if(ptr < end) {
-        len = scan_charsetnskip(ptr, ifs, end - ptr);
-        ptr += len;
+        stralloc_init(&more);
 
-        len = end - ptr;
+        if(buffer_get_token_sa_pred(input, &more, predicate_function, &p) > 0) {
+          if(p.delim && p.ndelim == 1 && p.delim[0] == '\n')
+            stralloc_trimr(&more, "\r\n", 2);
+          else if(p.delim && p.ndelim > 0)
+            stralloc_trimr(&more, p.delim, p.ndelim);
+        } else
+          status = 1;
 
-        if(index < num_args - 1)
-          len = scan_noncharsetnskip(ptr, ifs, len);
-
-        var_setv(argp[index], ptr, len, 0);
-        ptr += len;
-        continue;
+        stralloc_cat(&data, &more);
+        stralloc_free(&more);
       }
-
-      var_set(argp[index], 0);
     }
+
+    if(!read_assign(&data, ifs, raw, argp, num_args))
+      status = status ? status : 2;
 
     return status;
   }

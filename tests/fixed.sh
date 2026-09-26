@@ -5195,4 +5195,44 @@ assert_equal "trapped" "$("$SHISH_SELF" -c 'trap "echo trapped" USR1; (: ); kill
 ## "-i +m" keeps job control off
 assert_equal "1" "$("$SHISH_SELF" -i +m -c 'case $- in *m*) echo 0;; *) echo 1;; esac' 2>/dev/null)" "-i +m does not turn monitor mode on"
 
+## read: POSIX field splitting (IFS whitespace vs non-whitespace, escapes,
+## line continuation, the last variable takes the rest)
+read a b c <<EOF2
+  x   y z w  
+EOF2
+assert_equal "[x][y][z w]" "[$a][$b][$c]" "read: the last variable takes the rest, trailing IFS whitespace removed"
+IFS=' -' read a b c d e <<EOF2
+-BB-C-DD-
+EOF2
+assert_equal "[][BB][C][DD][]" "[$a][$b][$c][$d][$e]" "read: a non-whitespace IFS delimiter yields empty fields"
+read a b <<'EOF2'
+A\
+A B\
+B
+EOF2
+assert_equal "[AA][BB]" "[$a][$b]" "read: backslash-newline continues the line"
+read -r a <<'EOF2'
+A\B
+EOF2
+assert_equal "[A\\B]" "[$a]" "read -r keeps backslashes"
+assert_equal "[A B]" "[$(read a <<'EOF2'; echo "$a"
+A\ B
+EOF2
+)]" "read: an escaped IFS character does not split"
+
+## command -v/-V describe aliases, functions, keywords and regular built-ins
+## with the right text; command exits 127 for an unknown command; -p
+## searches the standard PATH
+alias X252=' echo hi'
+assert_equal "alias X252=' echo hi'" "$(command -v X252)" "command -v prints an alias in re-usable form"
+unalias X252
+f252() { :; }
+assert_equal "f252" "$(command -v f252)" "command -v names a function"
+assert_equal "if" "$(command -v if)" "command -v names a keyword"
+"$SHISH_SELF" -c 'command ./_no_such_command_' 2>/dev/null
+assert_equal 127 "$?" "command of a missing program exits 127"
+"$SHISH_SELF" -c 'command . ./_no_such_file_; echo reached' >/dev/null 2>&1
+assert_equal 0 "$?" "command . of a missing file does not kill the shell"
+assert_equal "1" "$("$SHISH_SELF" -c 'PATH=; command -pv cat >/dev/null && echo 1')" "command -p finds standard utilities with an empty PATH"
+
 summary

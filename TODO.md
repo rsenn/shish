@@ -165,12 +165,9 @@ Sorted by failures per unit of work.
    job-control notice ("Aborted (core dumped)", …) to the redirected
    stderr whenever the exec'd process dies from a signal, and `dash` run
    through the same harness fails the identical set.
-2. **`read` (22).** IFS whitespace vs non-whitespace splitting,
-   backslash continuation, reading no more than one line.
-   `BUGS: read-field-splitting-and-options-broken`.
-3. **`command` (15)** — `-v`/`-V` output formats for builtins,
-   externals with and without a slash; and a not-found dot script
-   must not kill the shell.
+2. **`read`** — done (`fixes/253`, `read-p` 28/28).
+3. **`command` (2 left)** — `command exec` must keep its redirections
+   (`BUGS: command-exec-redirection-not-persistent`); the rest is done (`fixes/253`).
 4. **`unset` (6)** — `-f` (functions) does not delete; readonly
    variables must not be deletable.
 5. **`umask` (9)**, **`set` (8)**, **`shift` (4)**, **`export` (1)**.

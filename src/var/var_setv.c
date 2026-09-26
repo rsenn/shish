@@ -36,6 +36,10 @@ var_setv(const char* name, const char* value, size_t vlen, int flags) {
   stralloc_catb(&var->sa, value, vlen);
   stralloc_nul(&var->sa);
 
+  /* set -a: every assignment gets the export attribute */
+  if(sh->opts.allexport)
+    flags |= V_EXPORT;
+
   /* set flags */
   var->flags |= flags;
   var->flags &= ~V_UNSET;

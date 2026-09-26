@@ -84,6 +84,7 @@ int exec_program(char* path, char** argv, enum execflag);
 uint32 exec_hashstr(const char* s);
 struct exechash* exec_create(char* name, uint32 hash);
 struct exechash* exec_lookup(char* name, uint32* hashptr);
+extern int exec_via_command;
 struct command exec_hash(char* name, int mask);
 struct command exec_search(char* name, int mask);
 int exec_type(char* name, int mask, int force_path, int type_name);
