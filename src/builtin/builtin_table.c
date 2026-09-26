@@ -448,5 +448,8 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_XARGS
     {"xargs", &builtin_xargs, B_DEFAULT, "[-0opr] [-a FILE] [-d DELIM] [-l/-L MAX-LINES] [-n MAX-ARGS] [-P MAX-PROCS] <command> [...args]", help_xargs},
 #endif
+#if BUILTIN_ZCAT
+    {"zcat", &builtin_zcat, B_DEFAULT, "[file...]", help_zcat},
+#endif
     {NULL, NULL, 0, NULL, NULL},
 };
