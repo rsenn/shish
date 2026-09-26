@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../builtin.h"
 #include "../debug.h"
 #include "../tree.h"
@@ -101,13 +102,7 @@ trap_handler(int sig) {
   struct eval e;
   int was_async, was_exitcode;
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_BUILTIN)
-  debug_to(buffer_2);
-  debug_s("trap handler ");
-  debug_n(sig);
-  debug_nl_fl();
-  debug_to(&debug_buffer);
-#endif
+  TRACE(TRACE_SIG, "trap.handler", trace_int("sig", sig));
 
   if(!(tr = trap_find(sig))) {
     sh_exit(1);
@@ -325,13 +320,7 @@ trap_uninstall(int sig) {
     }
   }
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_BUILTIN)
-  debug_to(buffer_2);
-  debug_s("trap_uninstall ");
-  debug_n(sig);
-  debug_nl_fl();
-  debug_to(&debug_buffer);
-#endif
+  TRACE(TRACE_SIG, "trap.uninstall", trace_int("sig", sig));
 
   return 1;
 }
@@ -604,15 +593,7 @@ builtin_trap(int argc, char* argv[]) {
       return 1;
     }
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_BUILTIN)
-    debug_to(buffer_2);
-    debug_s("builtin_trap ");
-    debug_n(signum);
-    debug_c(' ');
-    debug_str("code", code, 0, 0);
-    debug_nl_fl();
-    debug_to(&debug_buffer);
-#endif
+    TRACE(TRACE_BUILTIN, "trap", trace_int("sig", signum), trace_str("code", code));
 
     /* "trap CODE SIG1 SIG2 ..." parses CODE only once (cmds, above)
        but installs it against every listed signal -- each needs its

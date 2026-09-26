@@ -8,6 +8,7 @@
 #include "../source.h"
 #include "../../lib/shell.h"
 #include "../tree.h"
+#include "../trace.h"
 #include "../vartab.h"
 
 /* execute a command
@@ -15,6 +16,16 @@
 int
 exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
   int ret = 1;
+  static const char* const execflag_names[] = {"X_EXEC", "X_NOWAIT"};
+
+  TRACE(TRACE_EXEC,
+        "command",
+        trace_raw("kind", exec_kind_name(cmd->id)),
+        trace_str("name", argv ? argv[0] : NULL),
+        trace_str("path", cmd->id == H_PROGRAM ? cmd->path : NULL),
+        trace_int("argc", argc),
+        trace_argv("argv", argv),
+        trace_flags("flag", flag, execflag_names, 2));
 
   /* H_PROGRAM handles X_NOWAIT itself below (exec_program() forks and
      registers the job); every other kind (builtin, special builtin,
@@ -38,6 +49,8 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
       job_free(job);
       return 1;
     }
+
+    TRACE(TRACE_EXEC, "command.background", trace_str("name", argv ? argv[0] : NULL), trace_int("pid", pid));
 
     if(!pid) {
       flag &= ~X_NOWAIT;
@@ -119,7 +132,17 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
       }
 
       exec_redir_error = redir_failed;
+
+      TRACE(TRACE_BUILTIN,
+            "run",
+            trace_str("name", cmd->builtin->name),
+            trace_int("argc", argc),
+            trace_argv("argv", argv),
+            trace_int("redir_failed", redir_failed));
+
       ret = redir_failed ? 1 : cmd->builtin->fn(argc, argv);
+
+      TRACE(TRACE_BUILTIN, "status", trace_str("name", cmd->builtin->name), trace_int("status", ret));
       break;
     }
 
@@ -127,6 +150,8 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
       struct env inst;
       struct eval e;
       struct vartab vars;
+
+      TRACE(TRACE_EXEC, "function.call", trace_str("name", argv ? argv[0] : NULL), trace_int("argc", argc), trace_argv("argv", argv));
 
       vartab_push(&vars, 1);
 
@@ -187,6 +212,7 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
       sh_pop(&inst);
       vartab_pop(&vars);
 
+      TRACE(TRACE_EXEC, "function.return", trace_str("name", argv ? argv[0] : NULL), trace_int("status", ret));
       break;
     }
 

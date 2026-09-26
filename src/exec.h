@@ -8,6 +8,19 @@ enum hash { H_PROGRAM = 0, H_EXEC = 1, H_SBUILTIN = 2, H_BUILTIN = 4, H_FUNCTION
 
 enum execflag { X_EXEC = 1, X_NOWAIT = 2 };
 
+static inline const char*
+exec_kind_name(enum hash id) {
+  switch(id) {
+    case H_PROGRAM: return "H_PROGRAM";
+    case H_EXEC: return "H_EXEC";
+    case H_SBUILTIN: return "H_SBUILTIN";
+    case H_BUILTIN: return "H_BUILTIN";
+    case H_FUNCTION: return "H_FUNCTION";
+  }
+
+  return "?";
+}
+
 struct command {
   enum hash id;
   union {

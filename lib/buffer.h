@@ -3,6 +3,7 @@
 #define BUFFER_H
 
 #include "typedefs.h"
+#include "uint64.h"
 
 typedef ssize_t(buffer_op_sys)(int fd, void* buf, size_t len);
 typedef ssize_t(buffer_op_proto)(int fd, void* buf, size_t len, void* arg);

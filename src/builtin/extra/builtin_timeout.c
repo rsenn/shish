@@ -1,5 +1,6 @@
 #include "../../builtin.h"
 #include "../../fdtable.h"
+#include "../../trace.h"
 #include "../../fdstack.h"
 #include "../../exec.h"
 #include "../../var.h"
@@ -221,6 +222,9 @@ builtin_timeout(int argc, char* argv[]) {
     /* apply the shell's pending redirections/pipes to the real fds */
     fdtable_exec();
     fdstack_flatten();
+    trace_fdmap("exec.fds");
+
+    TRACE(TRACE_EXEC, "timeout.execve", trace_str("path", path), trace_argv("argv", cmdargv), trace_int("nenv", envn - 1));
 
     execve(path, cmdargv, envp);
     _exit(126);

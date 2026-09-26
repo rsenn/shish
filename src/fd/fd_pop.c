@@ -2,6 +2,7 @@
 #include "../fdstack.h"
 #include "../fdtable.h"
 #include "../debug.h"
+#include "../trace.h"
 
 /* close fd, unlink from the stack and free its ressources
  * ----------------------------------------------------------------------- */
@@ -12,11 +13,7 @@ fd_pop(struct fd* fd) {
   if(!fd)
     return;
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
-  buffer_puts(debug_output, COLOR_YELLOW "fd_pop" COLOR_NONE " 0x");
-  buffer_putptr(debug_output, fd);
-  debug_nl_fl();
-#endif
+  TRACE(TRACE_FD, "pop", trace_hex("fd", (unsigned long)fd), trace_int("n", fd->n));
 
   fd_close(fd);
   fdtable_unlink(fd);

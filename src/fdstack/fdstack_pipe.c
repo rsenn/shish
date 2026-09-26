@@ -1,6 +1,7 @@
 #include "../../lib/uint64.h"
 #include "../../lib/buffer.h"
 #include "../fdstack.h"
+#include "../trace.h"
 #include "../debug.h"
 
 /* establishs pipes across parent/child for stralloc fds
@@ -83,13 +84,7 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
 
         b += FD_BUFSIZE / 2;
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDSTACK)
-        buffer_puts(debug_output, "fdstack_pipe n=");
-        buffer_putulong(debug_output, n);
-        buffer_puts(debug_output, " fds=");
-        buffer_putxlonglong(debug_output, (size_t)fds);
-        debug_nl_fl();
-#endif
+        TRACE(TRACE_FDSTACK, "pipe", trace_int("n", n), trace_hex("fds", (unsigned long)fds));
         fds++;
         ret++;
         found = 1;

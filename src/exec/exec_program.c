@@ -20,6 +20,7 @@
 #include "../tree.h"
 #include "../var.h"
 #include "../debug.h"
+#include "../trace.h"
 #include "../../lib/sig.h"
 #include "../../lib/wait.h"
 #include "../../lib/stralloc.h"
@@ -44,6 +45,14 @@ exec_program(char* path, char** argv, enum execflag flag) {
      to the "if" block let the compiler treat that as a use-after-scope
      even though the child's use was intentional. */
   struct fdstack io;
+  static const char* const execflag_names[] = {"X_EXEC", "X_NOWAIT"};
+
+  TRACE(TRACE_EXEC,
+        "program",
+        trace_str("path", path),
+        trace_argv("argv", argv),
+        trace_flags("flag", flag, execflag_names, 2),
+        trace_raw("fork", (!(flag & X_EXEC) || sh->parent) ? "yes" : "no"));
 
   /* if we're gonna execve() a program and 'exec' isn't
      set or we aren't in the root shell environment we
@@ -64,6 +73,8 @@ exec_program(char* path, char** argv, enum execflag flag) {
       fdstack_pipe(npipes, pipes);
     }
 
+    TRACE(TRACE_EXEC, "program.pipes", trace_int("npipes", npipes));
+
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE)
     // fdstack_dump(debug_output);
     fdtable_dump(debug_output);
@@ -82,6 +93,8 @@ exec_program(char* path, char** argv, enum execflag flag) {
     if((pid = fork()) == -1) {
       /* no child: report it and undo the setup above */
       int saved_errno = errno;
+
+      TRACE(TRACE_EXEC, "program.fork_failed", trace_str("path", path), trace_int("errno", saved_errno));
 
       sh_error_errno(argv[0]);
       sig_unblock(SIGCHLD);
@@ -129,6 +142,13 @@ exec_program(char* path, char** argv, enum execflag flag) {
       if(sh->opts.monitor)
         setpgid(pid, pid);
 #endif
+
+      TRACE(TRACE_EXEC,
+            "program.fork",
+            trace_str("path", path),
+            trace_int("pid", pid),
+            trace_int("monitor", sh->opts.monitor),
+            trace_int("bgnd", !!(flag & X_NOWAIT)));
 
       /* this will close child ends of the pipes and read data from the parent
        * end :) */
@@ -231,6 +251,8 @@ exec_program(char* path, char** argv, enum execflag flag) {
 
         ret = WAIT_STATUS(status);
 
+        TRACE(TRACE_EXEC, "program.status", trace_str("path", path), trace_int("pid", pid), trace_hex("wait", status), trace_int("exit", ret));
+
         sig_blocknone();
       }
 
@@ -243,6 +265,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
 
     /* ...in the child we always exit */
     sh_forked();
+    TRACE(TRACE_EXEC, "program.child", trace_str("path", path));
 
 #if !WINDOWS_NATIVE
     /* see the matching setpgid() call in the parent branch above */
@@ -266,6 +289,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
 
   fdtable_exec();
   fdstack_flatten();
+  trace_fdmap("exec.fds");
 
   /* when there is a path then we gotta execute a command,
      otherwise we exit/return immediately */
@@ -276,6 +300,8 @@ exec_program(char* path, char** argv, enum execflag flag) {
     envp = var_export(alloc(envn * sizeof(char*)));
 
     /* try to execute the program */
+    TRACE(TRACE_EXEC, "program.execve", trace_str("path", path), trace_argv("argv", argv), trace_int("nenv", envn - 1));
+
     execve(path, argv, envp);
 
     /* execve() returned so it failed. Save errno immediately: the
@@ -285,6 +311,8 @@ exec_program(char* path, char** argv, enum execflag flag) {
        copy rather than re-reading a possibly-clobbered global. */
     {
       int saved_errno = errno;
+
+      TRACE(TRACE_EXEC, "program.execve_failed", trace_str("path", path), trace_int("errno", saved_errno));
 
       /* yield an error message */
       sh_error_errno(path);

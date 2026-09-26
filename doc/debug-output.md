@@ -185,10 +185,10 @@ good candidates for the new layer (part 4).
 
 | id | problem | evidence / fix |
 |---|---|---|
-| P1 | **`DEBUG_OUTPUT` does not build.** `debug.h` uses `buffer_putlonglong` and `buffer_putxlonglong`, declared in `lib/buffer.h:153-158` only `#ifdef UINT64_H`. `src/builtin/builtin_error.c` (and 11 other files) include `buffer.h` before `uint64.h`, so the declaration is skipped: `implicit declaration of function 'buffer_putlonglong'`. | Work-around: `-include lib/uint64.h`. Real fix: `#include "uint64.h"` at the top of `lib/buffer.h`, or drop the `#ifdef`. |
+| P1 | **FIXED** (`lib/buffer.h` now includes `uint64.h`). **`DEBUG_OUTPUT` did not build.** `debug.h` uses `buffer_putlonglong` and `buffer_putxlonglong`, declared in `lib/buffer.h:153-158` only `#ifdef UINT64_H`. `src/builtin/builtin_error.c` (and 11 other files) include `buffer.h` before `uint64.h`, so the declaration is skipped: `implicit declaration of function 'buffer_putlonglong'`. | Work-around: `-include lib/uint64.h`. Real fix: `#include "uint64.h"` at the top of `lib/buffer.h`, or drop the `#ifdef`. |
 | P2 | Output is a **single file, `debug.log`, in the cwd**, truncated by whichever process calls `debug_open()` first; forked children share the fd and its offset, so pipelines/`$(…)` interleave arbitrarily. | New layer: `O_APPEND`, one `write()` per event, pid in every line. |
 | P3 | Most modules have **one** print (or none) at the *end* of a step: you see results, not causes. Nothing at all in `eval_*`, `redir_*`, `exec_command`, `var_*`, `vartab_*`, `sh_push/pop`, `job_*`, signals. | part 4 |
-| P4 | `"forked": <pid>` has no newline (`eval_pipeline.c:644`), so the next event is glued to it (`"forked": 3656924fd_pop 0x…`). | new format is line-atomic. |
+| P4 | **FIXED** (now `eval.pipeline.fork(pid=…)`). `"forked": <pid>` had no newline (`eval_pipeline.c:644`), so the next event is glued to it (`"forked": 3656924fd_pop 0x…`). | new format is line-atomic. |
 | P5 | `DEBUG_ALLOC` is a CMake option with **no consumer** anywhere; `DEBUG_JOB` and `DEBUG_BUILTIN` only guard `job_dump` and `builtin_trap.c`. | wire up or drop the flags. |
 | P6 | Three sites need a runtime `set -x` *and* the compile flag; the rest ignore `-x`. Inconsistent. | new layer: one runtime selector (below). |
 | P7 | `builtin_trap.c` prints to stderr via `debug_to(buffer_2)` then resets it to `&debug_buffer`; if `debug_buffer` had been `debug_to()`'d elsewhere the restore is wrong, and stderr output is mixed into the user's own stderr. | new layer: fixed destination, no global swap. |
@@ -271,7 +271,7 @@ available – no rebuild to look at one module:
 | variable | meaning |
 |---|---|
 | `SHISH_TRACE=eval,redir,exec,fd` | comma list of modules, `all`, or `-name` to exclude; unset = off |
-| `SHISH_TRACE_FILE=path` | default `debug.log`; opened `O_APPEND\|O_CREAT`, **not** truncated by children |
+| `SHISH_TRACE_FILE=path` | default `trace.log` (a different file from the legacy `debug.log`, which is truncated on open); opened `O_APPEND\|O_CREAT`, moved to fd >= 200 with `FD_CLOEXEC`, never truncated |
 | `SHISH_TRACE_FILE=-` | stderr |
 
 Each event is formatted into a per-process buffer and emitted with one `write()`; the
@@ -424,6 +424,8 @@ shows *which input* produced each evaluation; `sh_loop.c:53` becomes `sh.loop.li
 
 ## 5. Rollout order
 
+Status: steps 1 and 2 are implemented (see [5.1](#51-implemented)); the rest is open.
+
 1. **Foundation** – fix P1 (include `uint64.h` in `lib/buffer.h`), add `src/trace.h` +
    `src/trace/*.c` (formatter, module selector, atomic writer, `trace_reopen`), port the
    existing sites in part 1 to it and delete the old `DEBUG_<M>` flags (P5, P6, P7, P8).
@@ -439,3 +441,72 @@ shows *which input* produced each evaluation; `sh_loop.c:53` becomes `sh.loop.li
 
 Each step is independently mergeable and, being compiled out without `DEBUG_OUTPUT`, has no
 effect on the release binary.
+
+### 5.1 Implemented
+
+**Foundation** (`src/trace.h`, `src/trace/trace_begin.c`, `trace_value.c`, `trace_fdmap.c`)
+
+- `TRACE()` / `TRACE_RET()` / `TRACE_STRUCT()` as in §3.2; value writers `trace_str/int/hex/raw/argv/flags`;
+  every event is one `write()`; `errno` is preserved across an event; lines longer than 8 KiB are
+  cut with a trailing `~`.
+- Runtime selection: `SHISH_TRACE=exec,builtin,fd,...`, `all`, `-name`; `SHISH_TRACE_FILE`. Read
+  once, at the first event, from the process environment (so `export SHISH_TRACE=...` inside a
+  running shell is not seen; set it when starting shish).
+- Modules: `exec builtin fd fdstack fdtable eval redir var sh job sig` (`enum trace_module`).
+- Compiled out entirely without `DEBUG_OUTPUT`.
+- P1 fixed (`lib/buffer.h` includes `uint64.h`): `DEBUG_OUTPUT` builds without `-include`.
+- Ported the single-line legacy prints; they no longer need a `DEBUG_<MODULE>` flag and are
+  selected at runtime instead:
+
+| old | new |
+|---|---|
+| `fd_pipe n= e= ret=` | `fd.pipe(n, e, other)` |
+| `fd_setfd #n e= mode=` (needed `-x`) | `fd.setfd(n, e, mode)` |
+| `fd_pop 0xADDR` | `fd.pop(fd, n)` |
+| `fd_close #N` | `fd.close(fd, side)` |
+| `fdstack_link n=` | `fdstack.link(n)` |
+| `fdstack_pipe n= fds=` | `fdstack.pipe(n, fds)` |
+| `fdtable_dup #a = b` | `fdtable.dup(from, to)` |
+| `"forked": pid` | `eval.pipeline.fork(pid)` |
+| trap handler / uninstall / builtin_trap (stderr) | `sig.trap.handler(sig)`, `sig.trap.uninstall(sig)`, `builtin.trap(sig, code)` |
+
+  Not ported yet (multi-line, keep using `debug.log` and their `DEBUG_*` flags): `fdtable_resolve`,
+  `fdstack_data`, the `fdtable_dump` before a fork, all `parse_*`, `sh_loop`, `expr`, `expand_arith_expr`.
+
+**Exec path** (`exec_hash.c`, `exec_command.c`, `exec_program.c`, `builtin_xargs.c`, `builtin_timeout.c`)
+
+| event | payload |
+|---|---|
+| `exec.lookup` | `name, mask, cache=(hit\|miss\|path\|search), kind, path, errno` |
+| `exec.command` | `kind, name, path, argc, argv, flag` |
+| `exec.command.background` | `name, pid` (backgrounded builtin/function) |
+| `builtin.run` / `builtin.status` | `name, argc, argv, redir_failed` / `name, status` |
+| `exec.function.call` / `.return` | `name, argc, argv` / `name, status` |
+| `exec.program` | `path, argv, flag, fork` |
+| `exec.program.pipes` | `npipes` |
+| `exec.program.fork` / `.fork_failed` | `path, pid, monitor, bgnd` / `path, errno` |
+| `exec.program.child` | first line of the forked child |
+| `fdtable.exec.fds { }` | **the real fds the program will inherit**, `N="/proc/self/fd/N target"` |
+| `exec.program.execve` / `.execve_failed` | `path, argv, nenv` / `path, errno` |
+| `exec.program.status` | `path, pid, wait (raw), exit` |
+| `exec.xargs.fork` / `.execvp`, `exec.timeout.execve` | same idea for the two builtins that fork themselves |
+
+Example (`SHISH_TRACE=exec,builtin,fdtable shish -c 'echo hi | /bin/cat'`):
+
+```text
+[3673068:1] exec.lookup(name="/bin/cat", mask=0, cache=path, kind=H_PROGRAM, path="/bin/cat", errno=0)
+[3673068:1] exec.command(kind=H_PROGRAM, name="/bin/cat", path="/bin/cat", argc=1, argv=["/bin/cat"], flag=0)
+[3673068:1] exec.program(path="/bin/cat", argv=["/bin/cat"], flag=0, fork=yes)
+[3673068:1] exec.program.pipes(npipes=0)
+[3673069:1] exec.command(kind=H_BUILTIN, name="echo", path=NULL, argc=2, argv=["echo", "hi"], flag=X_EXEC)
+[3673069:1] builtin.run(name="echo", argc=2, argv=["echo", "hi"], redir_failed=0)
+[3673069:1] builtin.status(name="echo", status=0)
+[3673068:1] exec.program.fork(path="/bin/cat", pid=3673070, monitor=0, bgnd=0)
+[3673070:1] exec.program.child(path="/bin/cat")
+[3673070:1] fdtable.exec.fds { 0="pipe:[37884029]", 1="/dev/null", 2="/dev/null", 3=".../debug.log", 128="pipe:[37884028]", 129="pipe:[37884028]" }
+[3673070:1] exec.program.execve(path="/bin/cat", argv=["/bin/cat"], nenv=115)
+[3673068:1] exec.program.status(path="/bin/cat", pid=3673070, wait=0x0, exit=0)
+```
+
+The `fdtable.exec.fds` line already shows two things that were invisible before: the legacy
+`debug.log` (fd 3) and the shell's internal pipe (128/129) leak into every exec'd program.

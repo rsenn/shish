@@ -1,6 +1,7 @@
 #include "../fd.h"
 #include "../fdstack.h"
 #include "../fdtable.h"
+#include "../trace.h"
 #include "../debug.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
@@ -83,13 +84,7 @@ retry:
     fcntl(e, F_SETFD, FD_CLOEXEC);
 #endif
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FDTABLE)
-  buffer_puts(debug_output, COLOR_YELLOW "fdtable_dup" COLOR_NONE " #");
-  buffer_putulong(debug_output, o);
-  buffer_puts(debug_output, " = ");
-  buffer_putulong(debug_output, e);
-  debug_nl_fl();
-#endif
+  TRACE(TRACE_FDTABLE, "dup", trace_int("from", o), trace_int("to", e));
 
   /* track the new file descriptor if its not above fd_expected */
   if(e <= fd_expected)

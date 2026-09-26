@@ -2,6 +2,7 @@
 #include "../fdtable.h"
 #include "../sh.h"
 #include "../debug.h"
+#include "../trace.h"
 #include "../../lib/windoze.h"
 
 #if WINDOWS_NATIVE
@@ -39,15 +40,7 @@ fd_pipe(struct fd* fd) {
     e = p[1];
   }
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
-  buffer_puts(debug_output, "fd_pipe n=");
-  buffer_putlong(debug_output, fd->n);
-  buffer_puts(debug_output, " e=");
-  buffer_putlong(debug_output, fd->e);
-  buffer_puts(debug_output, " ret=");
-  buffer_putlong(debug_output, e);
-  debug_nl_fl();
-#endif
+  TRACE(TRACE_FD, "pipe", trace_int("n", fd->n), trace_int("e", fd->e), trace_int("other", e));
 
   return e;
 }

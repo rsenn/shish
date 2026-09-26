@@ -2,6 +2,7 @@
 #include "../fdstack.h"
 #include "../fdtable.h"
 #include "../debug.h"
+#include "../trace.h"
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -58,23 +59,13 @@ fd_close(struct fd* fd) {
   /* if the buffers belong to this (fd) we close them
      don't close twice if we also have a writing buf */
   if(fd->rb.fd != fd->wb.fd) {
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
-    if(fd->rb.fd != -1 && (fd->mode & FD_READ)) {
-      buffer_puts(debug_output, COLOR_YELLOW "fd_close" COLOR_NONE " #");
-      buffer_putlong(debug_output, fd->rb.fd);
-      debug_nl_fl();
-    }
-#endif
+    if(fd->rb.fd != -1 && (fd->mode & FD_READ))
+      TRACE(TRACE_FD, "close", trace_int("fd", fd->rb.fd), trace_str("side", "r"));
     buffer_close(&fd->rb);
   }
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
-  if(fd->wb.fd != -1 && (fd->mode & FD_WRITE)) {
-    buffer_puts(debug_output, COLOR_YELLOW "fd_close" COLOR_NONE " #");
-    buffer_putlong(debug_output, fd->wb.fd);
-    debug_nl_fl();
-  }
-#endif
+  if(fd->wb.fd != -1 && (fd->mode & FD_WRITE))
+    TRACE(TRACE_FD, "close", trace_int("fd", fd->wb.fd), trace_str("side", "w"));
   buffer_close(&fd->wb);
 
   /* if the buffer space was temporary then set it to NULL

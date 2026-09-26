@@ -1,6 +1,7 @@
 #include "../fd.h"
 #include "../sh.h"
 #include "../debug.h"
+#include "../trace.h"
 #include "../../lib/buffer.h"
 #include "../fdstack.h"
 #include <assert.h>
@@ -48,23 +49,11 @@ fd_setfd(struct fd* d, int e) {
       fd_lo = e;
   }
 
-#if defined(DEBUG_OUTPUT) && defined(DEBUG_FD)
-  if(sh->opts.xtrace) {
-    if(d->e != -1) {
-      buffer_puts(debug_output, COLOR_YELLOW "fd_setfd" COLOR_NONE " #");
-      buffer_putlong(debug_output, d->n);
-      buffer_puts(debug_output, " e=");
-      buffer_putlong(debug_output, d->e);
-      buffer_puts(debug_output, " mode=");
-      buffer_puts(debug_output,
-                  (d->mode & FD_READ)                        ? "FD_READ"
-                  : (d->mode & FD_WRITE)                     ? "FD_WRITE"
-                  : (d->mode & FD_READWRITE) == FD_READWRITE ? "FD_READWRITE"
-                                                             : "");
-
-      debug_nl_fl();
-    }
-  }
-#endif
+  if(d->e != -1)
+    TRACE(TRACE_FD,
+          "setfd",
+          trace_int("n", d->n),
+          trace_int("e", d->e),
+          trace_raw("mode", (d->mode & FD_READ) ? "FD_READ" : (d->mode & FD_WRITE) ? "FD_WRITE" : "0"));
   return e;
 }

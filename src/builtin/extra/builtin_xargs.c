@@ -1,6 +1,7 @@
 #include "../../builtin.h"
 #include "../../fdstack.h"
 #include "../../fdtable.h"
+#include "../../trace.h"
 #include "../../../lib/shell.h"
 #include "../../../lib/scan.h"
 #include "../../../lib/open.h"
@@ -110,6 +111,7 @@ execute_batch(struct args util, struct args items, struct xargs_opts opts) {
     /* apply the shell's pending redirections/pipes to the real fds */
     fdtable_exec();
     fdstack_flatten();
+    trace_fdmap("exec.fds");
 
     if(opts.reopen_pty) {
       int tty_fd;
@@ -122,10 +124,14 @@ execute_batch(struct args util, struct args items, struct xargs_opts opts) {
       }
     }
 
+    TRACE(TRACE_EXEC, "xargs.execvp", trace_argv("argv", argv), trace_int("argc", argc));
+
     execvp(argv[0], argv);
     exit(127);
   } else {
     int status;
+
+    TRACE(TRACE_EXEC, "xargs.fork", trace_str("path", argv[0]), trace_int("pid", pid), trace_int("npipes", npipes));
 
     /* closes the child's pipe ends, then reads what it wrote */
     fdstack_pop(&io);

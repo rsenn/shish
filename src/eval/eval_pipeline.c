@@ -6,6 +6,7 @@
 #include "../sh.h"
 #include "../builtin.h"
 #include "../eval.h"
+#include "../trace.h"
 #include "../expand.h"
 #include "../exec.h"
 #include "../fdstack.h"
@@ -640,9 +641,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
       /* exit after evaluating this subtree */
       exit(eval_tree(e, node, E_EXIT));
     } else {
-#ifdef DEBUG_OUTPUT
-      debug_ulong("forked", pid, 0);
-#endif
+      TRACE(TRACE_EVAL, "pipeline.fork", trace_int("pid", pid));
     }
 
     if(!node->next && pipes) {

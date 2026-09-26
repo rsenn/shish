@@ -1,5 +1,6 @@
 #include "../builtin.h"
 #include "../exec.h"
+#include "../trace.h"
 #include "../sh.h"
 #include "../tree.h"
 #include "../../lib/str.h"
@@ -50,6 +51,7 @@ struct command
 exec_hash(char* name, int mask) {
   struct command cmd = {0, {0}};
   const char* path = var_value("PATH", NULL);
+  const char* how = "search";
 
   if(!exec_hash_path_seen || str_diff(exec_hash_path_seen, path ? path : "")) {
     exec_hash_invalidate_all();
@@ -60,6 +62,7 @@ exec_hash(char* name, int mask) {
   /* name contains slashes, its a path */
   if(name[str_chr(name, '/')]) {
     /* do not hash this... */
+    how = "path";
     cmd.id = H_PROGRAM;
     cmd.path = name;
 
@@ -100,6 +103,8 @@ exec_hash(char* name, int mask) {
       cmd = entry->cmd;
     }
 
+    how = entry && entry->mask == mask ? "hit" : "miss";
+
     if(!entry || entry->mask != mask) {
       /* if we don't have a cache hit we're gonna search, special builtins first
        */
@@ -124,6 +129,15 @@ exec_hash(char* name, int mask) {
       entry->mask = mask;
     }
   }
+
+  TRACE(TRACE_EXEC,
+        "lookup",
+        trace_str("name", name),
+        trace_int("mask", mask),
+        trace_raw("cache", how),
+        trace_raw("kind", exec_kind_name(cmd.id)),
+        trace_str("path", cmd.id == H_PROGRAM ? cmd.path : NULL),
+        trace_int("errno", cmd.ptr ? 0 : exec_lasterrno));
 
   return cmd;
 }
