@@ -235,6 +235,18 @@ set_init(ALL_SOURCES ${SHISH_SOURCES} ${LIBSHELL_SOURCES})
 add_executable(shish ${SHISH_SOURCES})
 target_link_libraries(shish PRIVATE libshell ${LIBOWFAT_LIBRARY} ${LIBMATH} ${ELECTRICFENCE_LIBRARY})
 
+if(BUILTIN_ZCAT OR ENABLE_ALL_BUILTINS)
+  include(cmake/LibArchive.cmake)
+
+  configure_libarchive_builtin()
+
+  # Link libarchive if the feature is enabled
+  target_link_libraries(shish PRIVATE archive_static)
+    
+  # If you want to support optional compilation blocks in your source files:
+  target_compile_definitions(shish PRIVATE HAVE_LIBARCHIVE=1)
+endif()
+
 if(EMSCRIPTEN)
   set_target_properties(shish PROPERTIES SUFFIX ".${EMSCRIPTEN_EXE_SUFFIX}")
 endif()
