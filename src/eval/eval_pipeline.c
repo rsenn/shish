@@ -49,7 +49,7 @@ extern union node* functions; /* exec_search.c; see term_complete.c etc. for the
  * style, indistinguishable here from a "real" backslash the word
  * actually contains -- telling those apart needs exactly the
  * expand_unescape() pass this whole path exists to avoid, so any
- * backslash at all declines instead. *s/*n point at the literal's raw
+ * backslash at all declines instead. *s / *n point at the literal's raw
  * (not NUL-terminated) bytes. */
 static int
 pipeline_word_literal(union node* arg, const char** s, size_t* n) {
@@ -105,7 +105,7 @@ pipeline_filter_builtin(const char* name) {
  * need real fd/scope machinery this path skips) whose entire word
  * list is bare literals (pipeline_word_literal(), above) naming a
  * filter-capable builtin. On success returns that builtin and fills
- * *argv_out/*argc_out with freshly copied, NUL-terminated argv
+ * *argv_out / *argc_out with freshly copied, NUL-terminated argv
  * strings the caller owns (pipeline_filter_argv_free()'s job).
  * ----------------------------------------------------------------------- */
 static struct builtin_cmd*
@@ -192,10 +192,10 @@ pipeline_filter_argv_free(char** argv) {
  * qualify or none do: one stage that doesn't falls the *whole*
  * pipeline back to today's job_fork()/fd_pipe() path, unchanged --
  * there's no partial chain here, only "all" or "nothing chains".
- * Returns the stage count (ncmd-1) on success, filling *b_out/
- * *argv_out/*argc_out (each an ncmd-1-element array the caller owns,
- * parallel to npipe->cmds); returns 0 on failure, having freed
- * anything it already allocated. */
+ * Returns the stage count (ncmd-1) on success, filling *b_out /
+ * *argv_out / *argc_out (each an ncmd-1-element array the caller
+ * owns, parallel to npipe->cmds); returns 0 on failure, having 
+ * freed anything it already allocated. */
 static int
 pipeline_filter_prepare_chain(struct npipe* npipe,
                               struct builtin_cmd*** b_out,

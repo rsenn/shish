@@ -57,7 +57,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" OR CMAKE_BUILD_TYPE STREQUAL "Release"
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
-  check_fno_optim_flags()
+  #check_fno_optim_flags()
 endif()
 
 check_inline(INLINE_KEYWORD)
@@ -79,27 +79,9 @@ else()
   endif()
 endif()
 
-check_includes_def(
-  alloca.h
-  fcntl.h
-  glob.h
-  inttypes.h
-  signal.h
-  stdint.h
-  sys/stat.h
-  sys/types.h
-  sys/wait.h
-  unistd.h)
+check_includes_def(alloca.h fcntl.h glob.h inttypes.h signal.h stdint.h sys/stat.h sys/types.h sys/wait.h unistd.h)
 
-have_includes(
-  CMAKE_EXTRA_INCLUDE_FILES
-  fcntl.h
-  glob.h
-  signal.h
-  sys/stat.h
-  sys/types.h
-  sys/wait.h
-  unistd.h)
+have_includes(CMAKE_EXTRA_INCLUDE_FILES fcntl.h glob.h signal.h sys/stat.h sys/types.h sys/wait.h unistd.h)
 have_includes(CMAKE_REQUIRED_INCLUDES signal.h sys/types.h unistd.h)
 
 string(REGEX REPLACE ".*/" "" COMPILER_NAME "${CMAKE_C_COMPILER}")
@@ -116,6 +98,19 @@ check_alloca()
 check_functions(fcntl)
 check_functions(readlink)
 check_functions(sethostname lstat getppid glob)
+
+#add_definitions(-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64)
+set_add(CMAKE_REQUIRED_DEFINITIONS  
+  #-D_GNU_SOURCE
+ -D_FILE_OFFSET_BITS=64
+)
+
+check_compile(HAVE_GLOB 
+  "#include <stdio.h>\n#include <sys/stat.h>\n#include <glob.h>\n\nint\nmain() {\n\tglob_t g = {0};\n\tint result = glob(\"{src,lib}/{*.h,*/*.c}\", GLOB_BRACE | GLOB_TILDE, 0, &g);\n\n\tprintf(\"result = %d\\n\", result);\n\n\tint c = g.gl_pathc;\n\tchar** v = g.gl_pathv;\n\n\tfor(int i = 0; i < c; i++)\n\t\tprintf(\"entry: %s\\n\", v[i]);\n\n\treturn 0;\n}\n"
+  #COMPILE_DEFINITIONS "-D_GNU_SOURCE;-D_FILE_OFFSET_BITS=64"
+)
+
+#dump(HAVE_GLOB)
 
 # check_functions(sigaction sigismember signal sigprocmask sigsuspend)
 
@@ -173,7 +168,6 @@ configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.
 check_source_definitions()
 
 add_definitions(-DHAVE_CONFIG_H=1)
-add_definitions(-D_FILE_OFFSET_BITS=64)
 
 include_directories(
   "${CMAKE_CURRENT_BINARY_DIR}/src" 
@@ -213,12 +207,14 @@ list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "builtin_digest\\.c")
 list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "(sh_fmt\\.c|sh_parse2ast\\.c|sh_init\\.c|sh_main\\.c|sh_util_wasm\\.c)")
 
 if(DEBUG_OUTPUT)
-  #set_add(LIBSHELL_SOURCES src/debug/debug_char.c src/debug/debug_ptr.c src/debug/debug_space.c src/debug/debug_subst.c src/debug/debug_unquoted.c)
+  file(GLOB DEBUG_SOURCES src/debug.h src/debug/*.c)
+  set_add(LIBSHELL_SOURCES  ${DEBUG_SOURCES})
 else()
   list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "debug_")
+  set_add(LIBSHELL_SOURCES  src/debug/debug_squoted.c src/debug/debug_argv.c )
 endif()
 
-dump_list(LIBSHELL_SOURCES)
+#dump_list(LIBSHELL_SOURCES)
 
 set_add(BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
 

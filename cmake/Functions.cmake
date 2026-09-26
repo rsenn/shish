@@ -290,7 +290,6 @@ function(is_absolute PATH OUTPUT_VAR)
   endif()
 endfunction()
 
-
 #
 # concat <OUTPUT-VAR> <SEPARATOR> [ARGUMENTS...]
 #
@@ -334,7 +333,7 @@ function(var2define NAME)
   endif()
 
   set(VALUE "${${VAR_NAME}}")
-  if(${ARGC} LESS_EQUAL 1)
+  if(${ARGC} LESS_EQUAL 1 AND ${ARGC} GREATER_EQUAL 0)
     if(VALUE)
       add_definitions(-D${NAME}=1)
     else()
@@ -347,30 +346,24 @@ function(var2define NAME)
   endif()
 endfunction()
 
-
 # Get number of columns the terminal supports
 #
 # get_columns <OUTPUT-VAR> [DEFAULT]
 #
-function(get_columns OUTPUT_VAR)
+function(get_columns RESULT_VAR)
   if(${ARGC} GREATER_EQUAL 2)
     set(DEFAULT_VALUE ${ARGV1})
   else()
     set(DEFAULT_VALUE 80)
   endif()
 
-  set(VALUE "$ENV{COLUMNS}")
-  if("${VALUE}" OR NOT "${VALUE}" STREQUAL "")
-    # message("Got COLUMNS (${VALUE}) from environment")
+  set(RESULT "$ENV{COLUMNS}")
+  if(RESULT GREATER_EQUAL 1)
+    # message("Got COLUMNS (${RESULT}) from environment")
   else()
-    execute_process(
-      COMMAND tput cols
-      OUTPUT_VARIABLE TPUT_COLS
-      ERROR_QUIET
-      ERROR_VARIABLE TPUT_ERROR)
-    set(TPUT_ERROR TRUE)
+    execute_process(COMMAND tput cols OUTPUT_VARIABLE TPUT_COLS ERROR_QUIET ERROR_VARIABLE TPUT_ERROR)
     if(NOT TPUT_ERROR AND TPUT_COLS)
-      set(VALUE ${TPUT_COLS})
+      set(RESULT ${TPUT_COLS})
     else()
       set(SOURCE_NAME ttysize.c)
       set(SOURCE_CODE "#include <unistd.h>\n#include <fcntl.h>\n#include <termios.h>\n#include <sys/ioctl.h>\n#include <stdio.h>\n\nint\nmain() {\n\tstruct winsize sz;\n\tint fd = isatty(0) ? dup(0) : open(\"/dev/tty\", O_RDWR);\n\n\tif(!isatty(fd)) {\n\t\tfputs(\"not a tty\\n\", stderr);\n\t\tfflush(stderr);\n\t\treturn 1;\n\t}\n\n\tif(ioctl(fd, TIOCGWINSZ, &sz) == -1) {\n\t\tperror(\"ioctl\");\n\t\treturn 1;\n\t}\n\n\tclose(fd);\n\n\tprintf(\"%u\\n\", sz.ws_col);\n\treturn 0;\n}\n")
@@ -380,7 +373,8 @@ function(get_columns OUTPUT_VAR)
         message(CHECK_FAIL "failed to compile:\n${COMPILE_OUTPUT}")
       else()
         if(RUN_RESULT STREQUAL 0)
-          set(VALUE "${RUN_OUTPUT}")
+          message(CHECK_PASS "ok")
+          set(RESULT "${RUN_OUTPUT}")
         else()
           message(CHECK_FAIL "failed to run:\n${RUN_OUTPUT}")
         endif()
@@ -388,15 +382,14 @@ function(get_columns OUTPUT_VAR)
     endif()
   endif()
   
-  if("${VALUE}" STREQUAL "")
-    set(VALUE "${DEFAULT_VALUE}")
+  if(NOT RESULT GREATER_EQUAL 1)
+    set(RESULT "${DEFAULT_VALUE}")
   endif()
 
-  if(OUTPUT_VAR)
-    set("${OUTPUT_VAR}" "${VALUE}" PARENT_SCOPE)
+  if(RESULT_VAR)
+    set("${RESULT_VAR}" "${RESULT}" PARENT_SCOPE)
   endif()
 endfunction()
-
 
 #
 # named_dump <MSG> [VAR-NAMES...]

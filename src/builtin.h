@@ -98,6 +98,7 @@ int builtin_uname(int argc, char* argv[]);
 int builtin_wait(int argc, char* argv[]);
 int builtin_wc(int argc, char* argv[]);
 int builtin_which(int argc, char* argv[]);
+int builtin_xargs(int argc, char* argv[]);
 
 /* builtin help text, one string per builtin_<name>() implementation
  * (shared between every table entry that dispatches to the same
@@ -168,6 +169,7 @@ extern const char help_uname[];
 extern const char help_wait[];
 extern const char help_wc[];
 extern const char help_which[];
+extern const char help_xargs[];
 
 #else
 #warning "builtin.h included twice"

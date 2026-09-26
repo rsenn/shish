@@ -121,5 +121,3 @@
 /* Define this to use mmap()/munmap() for memory-mapped file I/O
    (tracks the USE_MMAP cmake option; see cmake/Checks.cmake) */
 #cmakedefine HAVE_MMAP 1
-
-

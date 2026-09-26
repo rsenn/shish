@@ -6,7 +6,7 @@
  * lib/unix/glob.c only compiles in on Windows: elsewhere HAVE_GLOB
  * means the platform's real, larger libc glob_t is used instead of
  * lib/glob.h's smaller one. */
-#ifdef HAVE_GLOB
+#ifdef HAVE_GLOB_H
 #include <glob.h>
 #else
 #include "../../lib/glob.h"

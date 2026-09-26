@@ -85,7 +85,9 @@ endfunction()
 #
 # check_compile <RESULT_VAR> <SOURCE>
 #
-macro(check_compile RESULT_VAR SOURCE)
+function(check_compile RESULT_VAR SOURCE)
+  assign_named_items(${ARGN})
+
   string(RANDOM LENGTH 6 ALPHABET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" C_NAME)
   string(REPLACE SUPPORT_ "" NAME "${RESULT_VAR}")
   string(REPLACE _ - NAME "${NAME}")
@@ -95,12 +97,19 @@ macro(check_compile RESULT_VAR SOURCE)
   file(WRITE "${C_SOURCE}" "${SOURCE}")
  
   message(CHECK_START "Trying to compile try-${C_NAME}.c")
-  try_compile(COMPILE_RESULT "${CMAKE_CURRENT_BINARY_DIR}" "${C_SOURCE}" OUTPUT_VARIABLE "OUTPUT" LINK_LIBRARIES "${ARGN}")
+  try_compile(COMPILE_RESULT "${CMAKE_CURRENT_BINARY_DIR}" "${C_SOURCE}" OUTPUT_VARIABLE "OUTPUT" 
+    CMAKE_FLAGS "${CMAKE_FLAGS}"
+    COMPILE_DEFINITIONS "${COMPILE_DEFINITIONS}"
+    LINK_OPTIONS "${LINK_OPTIONS}"
+    LINK_LIBRARIES "${LINK_LIBRARIES}"
+  )
   file(REMOVE "${C_SOURCE}")
   if(COMPILE_RESULT)
     message(CHECK_PASS "ok")
   else()
     set(COMPILE_LOG "${CMAKE_CURRENT_BINARY_DIR}/compile-${C_NAME}.log")
+    relative_paths(COMPILE_LOG "${CMAKE_CURRENT_SOURCE_DIR}" "${COMPILE_LOG}")
+
     message(CHECK_FAIL "fail: ${COMPILE_LOG}")
     file(WRITE "${COMPILE_LOG}" "${OUTPUT}")
     string(REPLACE "\n" ";" OUTPUT "${OUTPUT}")
@@ -108,9 +117,9 @@ macro(check_compile RESULT_VAR SOURCE)
   endif()
  
   if(RESULT_VAR)
-    set("${RESULT_VAR}" "${COMPILE_RESULT}" CACHE BOOL "Support ${NAME}")
+    set("${RESULT_VAR}" "${COMPILE_RESULT}" PARENT_SCOPE)
   endif()
-endmacro()
+endfunction()
 
 #
 # check_run <RESULT_VAR> <SOURCE>
@@ -417,11 +426,12 @@ endmacro()
 #
 # check_falign_flags
 #
-# -f*-unwind-tables    .eh_frame is 15% of an untuned binary; nothing unwinds
-# -fno-jump-tables     switch tables become compare chains -f*-sections only
-# pays off together with --gc-sections
+#   -f*-unwind-tables    .eh_frame is 15% of an untuned binary; nothing unwinds
+#   -fno-jump-tables     switch tables become compare chains -f*-sections only pays off together with --gc-sections
+#
 macro(check_fno_optim_flags)
-  set(FLAGS "-fno-asynchronous-unwind-tables;-fno-unwind-tables;-fno-stack-protector;-fno-jump-tables;-fno-plt;-fno-ident;-fmerge-all-constants;-ffunction-sections;-fdata-sections" )
+  set(FLAGS "-fno-asynchronous-unwind-tables" "-fno-unwind-tables" "-fno-stack-protector" "-fno-jump-tables" "-fno-plt" "-fno-ident" "-fmerge-all-constants" "-ffunction-sections" "-fdata-sections")
+
   foreach(FLAG ${FLAGS})
     string(MAKE_C_IDENTIFIER "F${FLAG}" FLAG_VAR)
     check_c_compiler_flag("${FLAG}" ${FLAG_VAR})
@@ -429,6 +439,7 @@ macro(check_fno_optim_flags)
       add_cflags("${FLAG}")
     endif()
   endforeach()
+
   foreach(FLAG "-Wl,--gc-sections" "-Wl,--as-needed" "-Wl,--build-id=none" "-Wl,-z,norelro" "-Wl,-z,noseparate-code" "-Wl,--hash-style=gnu")
     string(MAKE_C_IDENTIFIER "LD${FLAG}" FLAG_VAR)
     check_ldflag("${FLAG}" ${FLAG_VAR})

@@ -63,7 +63,7 @@ int sed_autoprint_off(const struct sed* prog);
 size_t sed_wfile_count(const struct sed* prog);
 const char* sed_wfile_name(const struct sed* prog, size_t i);
 
-/* sed_read_fn: fetch the next input line. On a line, fills *s/*n
+/* sed_read_fn: fetch the next input line. On a line, fills *s / *n
  * (valid until the next call; sed_run copies it out) and *had_nl
  * (did the source line actually end with '\n'?) and returns 1.
  * Returns 0 at end of input, <0 on a read error (treated as end of

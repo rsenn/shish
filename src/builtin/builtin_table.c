@@ -454,5 +454,8 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_WHICH
     {"which", &builtin_which, B_DEFAULT, "[-a] filename ...", help_which},
 #endif
+#if BUILTIN_XARGS
+    {"xargs", &builtin_xargs, B_DEFAULT, "[-0opr] [-a FILE] [-d DELIM] [-l/-L MAX-LINES] [-n MAX-ARGS] [-P MAX-PROCS] <command> [...args]", help_xargs},
+#endif
     {NULL, NULL, 0, NULL, NULL},
 };
