@@ -3,67 +3,39 @@
 #   set(WERROR_FLAG "${WERROR_FLAG} -Wno-error=unused-const-variabe")
 # endif()
 #
-# init_pedantic
+# detect_pedantic_flags
 #
-macro(init_pedantic)
+macro(detect_pedantic_flags OUTPUT_VAR)
+  if(NOT OUTPUT_VAR)
+    set(OUTPUT_VAR PEDANTIC_COMPILE_FLAGS)
+  endif()
+
   if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-    set(PEDANTIC_COMPILE_FLAGS
-        -pedantic-errors
-        -Wall
-        -Wextra
-        -pedantic
-        -Wold-style-cast
-        -Wundef
-        -Wredundant-decls
-        -Wwrite-strings
-        -Wpointer-arith
-        -Wcast-qual
-        -Wformat=2
-        -Wmissing-include-dirs
-        -Wcast-align
-        -Wnon-virtual-dtor
-        -Wctor-dtor-privacy
-        -Wdisabled-optimization
-        -Winvalid-pch
-        -Woverloaded-virtual
-        -Wconversion
-        -Wno-ctor-dtor-privacy
-        -Wno-format-nonliteral
-        -Wno-shadow)
+    set("${OUTPUT_VAR}" -pedantic-errors -Wall -Wextra -pedantic -Wold-style-cast -Wundef -Wredundant-decls -Wwrite-strings -Wpointer-arith -Wcast-qual -Wformat=2 -Wmissing-include-dirs -Wcast-align -Wnon-virtual-dtor -Wctor-dtor-privacy -Wdisabled-optimization -Winvalid-pch -Woverloaded-virtual -Wconversion -Wno-ctor-dtor-privacy -Wno-format-nonliteral -Wno-shadow)
     if(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.6)
-      set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wnoexcept
-                                 -Wno-dangling-else -Wno-unused-local-typedefs)
+      set("${OUTPUT_VAR}" ${${OUTPUT_VAR}} -Wnoexcept -Wno-dangling-else -Wno-unused-local-typedefs)
     endif()
     if(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 5.0)
-      set(PEDANTIC_COMPILE_FLAGS
-          ${PEDANTIC_COMPILE_FLAGS}
-          -Wdouble-promotion
-          -Wtrampolines
-          -Wzero-as-null-pointer-constant
-          -Wuseless-cast
-          -Wvector-operation-performance
-          -Wsized-deallocation)
+      set("${OUTPUT_VAR}" ${${OUTPUT_VAR}} -Wdouble-promotion -Wtrampolines -Wzero-as-null-pointer-constant -Wuseless-cast -Wvector-operation-performance -Wsized-deallocation)
     endif()
     if(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 6.0)
-      set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wshift-overflow=2
-                                 -Wnull-dereference -Wduplicated-cond)
+      set("${OUTPUT_VAR}" ${${OUTPUT_VAR}} -Wshift-overflow=2 -Wnull-dereference -Wduplicated-cond)
     endif()
     set(WERROR_FLAG "${WERROR_FLAG} -Werror")
   endif()
   if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-    set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -pedantic -Wconversion
-                               -Wno-sign-conversion)
+    set("${OUTPUT_VAR}" -Wall -Wextra -pedantic -Wconversion -Wno-sign-conversion)
     set(WERROR_FLAG "${WERROR_FLAG} -Werror")
   endif()
   if(MSVC)
-    set(PEDANTIC_COMPILE_FLAGS /W3)
+    set("${OUTPUT_VAR}" /W3)
     set(WERROR_FLAG /WX)
   endif()
   if(WARN_WERROR)
     set(WARN_C_COMPILER_FLAGS "-Wall ${WERROR_FLAG}")
   endif()
   if(WARN_PEDANTIC)
-    set(WARN_C_COMPILER_FLAGS "-Wall ${PEDANTIC_COMPILE_FLAGS}")
+    set(WARN_C_COMPILER_FLAGS "-Wall ${${OUTPUT_VAR}}")
   endif()
 
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WARN_C_COMPILER_FLAGS}")

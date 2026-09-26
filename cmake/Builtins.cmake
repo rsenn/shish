@@ -1,14 +1,14 @@
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Functions.cmake)
 
 #
-# init_builtins
+# configure_shish_builtins
 #
-macro(init_builtins)
-  init_list(MINIMAL_BUILTINS alias break cd command eval exec exit export expr getopts hash history jobs kill local printf pwd read readonly return set shift source test times trap type umask unset wait)
-  init_list(EXTRA_BUILTINS awk basename cat chmod digest dirname find grep hostname link ln ls mkdir readlink realpath rm rmdir sed sleep tee timeout touch wc which mktemp uname xargs)
-  init_list(DEFAULT_BUILTINS ${MINIMAL_BUILTINS} help type echo fdtable true false)
+macro(configure_shish_builtins)
+  set_init(MINIMAL_BUILTINS alias break cd command eval exec exit export expr getopts hash history jobs kill local printf pwd read readonly return set shift source test times trap type umask unset wait)
+  set_init(EXTRA_BUILTINS awk basename cat chmod digest dirname find grep hostname link ln ls mkdir readlink realpath rm rmdir sed sleep tee timeout touch wc which mktemp uname xargs)
+  set_init(DEFAULT_BUILTINS ${MINIMAL_BUILTINS} help type echo fdtable true false)
 
-  init_list(ALL_BUILTINS ${MINIMAL_BUILTINS} ${DEFAULT_BUILTINS} ${EXTRA_BUILTINS} basename break cd dirname dump echo eval exec exit export expr false fdtable hash help history hostname ln printf pwd set shift source test times true type unset)
+  set_init(ALL_BUILTINS ${MINIMAL_BUILTINS} ${DEFAULT_BUILTINS} ${EXTRA_BUILTINS} basename break cd dirname dump echo eval exec exit export expr false fdtable hash help history hostname ln printf pwd set shift source test times true type unset)
   list(SORT ALL_BUILTINS)
   list(REMOVE_DUPLICATES ALL_BUILTINS)
 
@@ -74,9 +74,9 @@ macro(init_builtins)
     # a plain truth test: isin_{list,var}() answers TRUE/FALSE and an option() answers
     # ON/OFF, and "TRUE STREQUAL ON" is false
     if(BUILTIN_${NAME})
-      add_list(BUILTINS_ENABLED ${BUILTIN})
+      set_add(BUILTINS_ENABLED ${BUILTIN})
     else()
-      add_list(BUILTINS_DISABLED ${BUILTIN})
+      set_add(BUILTINS_DISABLED ${BUILTIN})
     endif()
   endforeach()
 
@@ -104,7 +104,7 @@ macro(init_builtins)
 
   foreach(BUILTIN ${BUILTINS_ENABLED})
     builtin_source(BUILTIN_FILE ${BUILTIN})
-    add_list(SOURCES ${BUILTIN_FILE})
+    set_add(SOURCES ${BUILTIN_FILE})
   endforeach()
 
   # NAME has to come from ${DISABLED}: without it the loop reuses whatever NAME
@@ -133,7 +133,7 @@ macro(init_builtins)
     if(${BUILD_BUILTIN_${NAME}})
       set(BUILTIN_CONFIG "${BUILTIN_CONFIG}\n#define BUILTIN_${NAME} 1")
       builtin_source(BUILTIN_FILE ${BUILTIN})
-      add_list(BUILTIN_SOURCES "${BUILTIN_FILE}")
+      set_add(BUILTIN_SOURCES "${BUILTIN_FILE}")
     else()
       set(BUILTIN_CONFIG "${BUILTIN_CONFIG}\n#define BUILTIN_${NAME} 0")
     endif()

@@ -32,7 +32,7 @@ include(cmake/Functions.cmake)
 include(cmake/Checks.cmake)
 include(cmake/Pedantic.cmake)
 
-init_pedantic()
+detect_pedantic_flags(PEDANTIC_COMPILE_FLAGS)
 
 include(cmake/Debug.cmake)
 
@@ -41,7 +41,7 @@ compiler_flags_debug(CMAKE_C_FLAGS_DEBUG)
 
 include(cmake/Builtins.cmake)
 
-init_builtins()
+configure_shish_builtins()
 
 include(cmake/Digest.cmake)
 
@@ -175,31 +175,28 @@ check_source_definitions()
 add_definitions(-DHAVE_CONFIG_H=1)
 add_definitions(-D_FILE_OFFSET_BITS=64)
 
-include_directories("${CMAKE_CURRENT_BINARY_DIR}/src" "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
+include_directories(
+  "${CMAKE_CURRENT_BINARY_DIR}/src" 
+  "${CMAKE_CURRENT_BINARY_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}"
+)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+#[[set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
-set(CMAKE_MODULE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+set(CMAKE_MODULE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")]]
 
 include(cmake/libowfat.cmake)
 
-init_libowfat()
+configure_libowfat()
 
 link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
 
 # ------------------------------------------------------------------------------
 # Build target "libtext" for all sources in text/
 # ------------------------------------------------------------------------------
-file(GLOB TEXT_DFA_SOURCES text/dfa.h text/dfa/*.c)
-add_list(LIBTEXT_SOURCES ${TEXT_DFA_SOURCES})
-
-file(GLOB TEXT_SED_SOURCES text/sed.h text/sed/*.c)
-add_list(LIBTEXT_SOURCES ${TEXT_SED_SOURCES})
-
-file(GLOB TEXT_AWK_SOURCES text/awk.h text/awk/*.c)
-add_list(LIBTEXT_SOURCES ${TEXT_AWK_SOURCES})
-
+file(GLOB LIBTEXT_SOURCES text/*.h text/*/*.c)
+ 
 # grep's backend: text/dfa (in-tree, no libc regex dependency) by default, or the system's <regex.h> if this is turned on.
 option(GREP_USE_SYSTEM_REGEX "Use the system's regex.h for grep instead of text/dfa" OFF)
 if(GREP_USE_SYSTEM_REGEX)
@@ -213,16 +210,17 @@ file(GLOB LIBSHELL_SOURCES src/*.h src/*/*.c)
 
 # needs third_party/, so only built when the digest builtin is on (BUILTIN_SOURCES)
 list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "builtin_digest\\.c")
-
 list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "(sh_fmt\\.c|sh_parse2ast\\.c|sh_init\\.c|sh_main\\.c|sh_util_wasm\\.c)")
 
 if(DEBUG_OUTPUT)
-  add_list(LIBSHELL_SOURCES src/debug/debug_char.c src/debug/debug_ptr.c src/debug/debug_space.c src/debug/debug_subst.c src/debug/debug_unquoted.c)
+  #set_add(LIBSHELL_SOURCES src/debug/debug_char.c src/debug/debug_ptr.c src/debug/debug_space.c src/debug/debug_subst.c src/debug/debug_unquoted.c)
+else()
+  list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "debug_")
 endif()
 
-add_list(BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
+dump_list(LIBSHELL_SOURCES)
 
-string(REPLACE " " ";" LIBSHELL_SOURCES "${LIBSHELL_SOURCES}")
+set_add(BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
 
 if(NO_TREE_PRINT)
   add_definitions(-DNO_TREE_PRINT=1)
@@ -230,23 +228,18 @@ if(NO_TREE_PRINT)
   list(REMOVE_ITEM LIBSHELL_SOURCES "src/tree/tree_printlist.c")
 endif()
 
-add_list(LIBSHELL_SOURCES "${CMAKE_BINARY_DIR}/src/builtin_config.h")
-
-add_list(LIBSHELL_SOURCES ${BUILTIN_SOURCES})
-add_list(LIBSHELL_SOURCES ${LIBTEXT_SOURCES})
-
-absolute_paths_in(LIBSHELL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}" ${LIBSHELL_SOURCES})
-relative_paths(LIBSHELL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}" ${LIBSHELL_SOURCES})
-
-init_list(ALL_SOURCES ${LIBSHELL_SOURCES})
+set_add(LIBSHELL_SOURCES
+  "${CMAKE_BINARY_DIR}/src/builtin_config.h"
+  ${BUILTIN_SOURCES} 
+  ${LIBTEXT_SOURCES}
+) 
 
 add_library(libshell STATIC ${LIBSHELL_SOURCES})
-
 set_target_properties(libshell PROPERTIES OUTPUT_NAME shell)
 
-absolute_paths(SHISH_SOURCES src/sh/sh_init.c src/sh/sh_main.c)
+set_add(SHISH_SOURCES src/sh/sh_init.c src/sh/sh_main.c)
  
-add_list(ALL_SOURCES ${SHISH_SOURCES})
+set_init(ALL_SOURCES ${SHISH_SOURCES} ${LIBSHELL_SOURCES})
 
 add_executable(shish ${SHISH_SOURCES})
 target_link_libraries(shish PRIVATE libshell ${LIBOWFAT_LIBRARY} ${LIBMATH} ${ELECTRICFENCE_LIBRARY})
@@ -263,7 +256,7 @@ if(BUILD_SHFORMAT)
   file(GLOB SHFORMAT_SOURCES src/*.h src/debug/*.c src/sh/sh_fmt.c)
 
   list(FILTER SHFORMAT_SOURCES EXCLUDE REGEX "dump")
-  add_list(ALL_SOURCES ${SHFORMAT_SOURCES})
+  set_add(ALL_SOURCES ${SHFORMAT_SOURCES})
 
   add_executable(shformat ${SHFORMAT_SOURCES})
   target_link_libraries(shformat PRIVATE libshell ${LIBOWFAT_LIBRARY} ${ELECTRICFENCE_LIBRARY})
@@ -280,12 +273,12 @@ if(BUILD_SHPARSE2AST)
   file(GLOB SHPARSE2AST_SOURCES src/*.h src/debug/*.c src/sh/sh_parse2ast.c)
 
   list(FILTER SHPARSE2AST_SOURCES EXCLUDE REGEX "dump")
-  add_list(ALL_SOURCES ${SHPARSE2AST_SOURCES})
+  set_add(ALL_SOURCES ${SHPARSE2AST_SOURCES})
 
   add_executable(shparse2ast ${SHPARSE2AST_SOURCES})
   target_link_libraries(shparse2ast PRIVATE libshell ${LIBOWFAT_LIBRARY} ${LIBMATH} ${ELECTRICFENCE_LIBRARY})
 
-  target_compile_definitions(shparse2ast PUBLIC SHPARSE2AST=1 DEBUG_OUTPUT=1)
+  target_compile_definitions(shparse2ast PUBLIC SHPARSE2AST=1)
 
   strip_minsize(shparse2ast)
   install(TARGETS shparse2ast DESTINATION bin)
@@ -300,13 +293,14 @@ if(BUILD_SHUTIL_WASM)
 
   file(GLOB SHUTIL_SOURCES src/*.h src/debug/*.c src/sh/sh_util_wasm.c)
   list(FILTER SHUTIL_SOURCES EXCLUDE REGEX "dump")
-  add_list(ALL_SOURCES ${SHUTIL_SOURCES})
+  set_add(ALL_SOURCES ${SHUTIL_SOURCES})
 
   add_executable(shutil ${SHUTIL_SOURCES})
   target_link_libraries(shutil PRIVATE libshell ${LIBOWFAT_LIBRARY} ${LIBMATH})
 
-  # SHPARSE2AST=1 gates the JSON debug-tree code in src/debug/*.c on; SHFORMAT=1 keeps parse_simpletok.c's PS2-prompt call site (still dead here regardless, via parse_prompt_hook -- see fixes/219) consistent with the other parser-only tools.
-  target_compile_definitions(shutil PUBLIC SHFORMAT=1 SHPARSE2AST=1 DEBUG_OUTPUT=1)
+  # SHPARSE2AST=1 gates the JSON debug-tree code in src/debug/*.c on; SHFORMAT=1 keeps parse_simpletok.c's PS2-prompt call site
+  # (still dead here regardless, via parse_prompt_hook -- see fixes/219) consistent with the other parser-only tools.
+  target_compile_definitions(shutil PUBLIC SHFORMAT=1 SHPARSE2AST=1)
 
   set_target_properties(shutil PROPERTIES SUFFIX ".js")
   target_link_options(
@@ -324,8 +318,6 @@ endif()
 set_source_files_properties(src/builtin/builtin_table.c PROPERTIES COMPILE_FLAGS "${BUILTIN_FLAGS}")
 
 install(TARGETS shish DESTINATION bin)
-
-# file(GLOB CMAKE_SOURCES CMakeLists.txt cmake/*.cmake)
 
 target_cmake_format()
 target_clang_format(${ALL_SOURCES})
@@ -362,31 +354,45 @@ if(DO_TESTS)
   target_link_libraries(arena_test PRIVATE ${LIBOWFAT_LIBRARY})
   add_test(NAME arena_test COMMAND arena_test)
 
-  # tests/posix/*.tst and tests/yash/*.tst: yash's own POSIX/self conformance suite (yash's run-test.sh harness interprets each *.tst file's test_oE/ test_x/... cases). Each file is one CTest case, wrapped by tests/run-tst.sh (which drives the harness under bash -- it needs $LINENO and alias-expansion-in-scripts, neither of which dash has, and bash needs -O
-  # expand_aliases explicitly for the latter) and translates its per-case PASSED/FAILED/SKIPPED result file into a single pass/fail for the whole test.
+  # tests/posix/*.tst and tests/yash/*.tst: yash's own POSIX/self conformance suite 
+  # yash's run-test.sh harness interprets each *.tst file's test_oE/ test_x/... cases). 
+  # 
+  # Each file is one CTest case, wrapped by tests/run-tst.sh (which drives the harness under bash -- it needs $LINENO
+  # and alias-expansion-in-scripts, neither of which dash has, and bash needs -O expand_aliases explicitly for the latter)
+  # and translates its per-case PASSED/FAILED/SKIPPED result file into a single pass/fail for the whole test.
   #
-  # Re-enabled (2026-07-23): this was disabled because tests/posix/fnmatch-p.tst hung the testee at 100% CPU, which made a plain `ctest`/`make test` run that included this suite never return. Fixed by path_fnmatch()'s bracket-class rewrite (fixes/67) -- confirmed the whole suite (239 files across both directories) now completes in about a minute with no
-  # hangs. Most individual files still fail (POSIX compliance triage is ongoing, see TODO.md Goal 2) -- that's expected and is what CTest is here to report, not a reason to keep this off.
+  # Re-enabled (2026-07-23): this was disabled because tests/posix/fnmatch-p.tst hung the testee at 100% CPU, 
+  # which made a plain `ctest`/`make test` run that included this suite never return. Fixed by path_fnmatch()'s bracket-class
+  # rewrite (fixes/67) -- confirmed the whole suite (239 files across both directories) now completes in about a minute with no
+  # hangs. Most individual files still fail (POSIX compliance triage is ongoing, see TODO.md Goal 2) -- that's expected and is 
+  # what CTest is here to report, not a reason to keep this off.
   #
-  # tests/yash split into its own DO_YASH_TESTS option, off by default (2026-07-24): unlike the rest of the corpus, tests/yash/random-y.tst hangs and only terminates via its own 120s TIMEOUT (BUGS: yash-random-y-tst-hangs), so it alone dominates a default `ctest` run's wall time. tests/posix has no such straggler and stays on by default under
-  # DO_CONFORMANCE_TESTS.
+  # tests/yash split into its own DO_YASH_TESTS option, off by default (2026-07-24): unlike the rest of the corpus, 
+  # tests/yash/random-y.tst hangs and only terminates via its own 120s TIMEOUT (BUGS: yash-random-y-tst-hangs), so it alone dominates
+  # a default `ctest` run's wall time. tests/posix has no such straggler and stays on by default under DO_CONFORMANCE_TESTS.
   set(CONFORMANCE_SUITES)
 
   if(DO_CONFORMANCE_TESTS)
-    add_list(CONFORMANCE_SUITES posix)
+    set_add(CONFORMANCE_SUITES posix)
   endif()
 
   if(DO_YASH_TESTS)
-    add_list(CONFORMANCE_SUITES yash)
+    set_add(CONFORMANCE_SUITES yash)
   endif()
 
-  # tests/posix/*.tst files marked "%REQUIRETTY%" gate themselves on "../checkfg" (tests/checkfg.c -- restored from git history, fixes/213's follow-up: it existed as of commit caa1ea28 but had gone missing from the tree, silently turning every one of these 44 files into an unconditional skip via "command not found" rather than a real "no controlling
-  # terminal" check) and self-skip without a real controlling terminal. DO_PTY_TESTS (off by default -- Linux/POSIX pty ioctls, and it changes timing/behavior for a job-control-sensitive slice of the suite) wraps just those files in tests/pty-run (tests/pty-run.c), which gives the testee a real pty-backed session/controlling terminal instead of letting them
-  # opt out. checkfg itself is always built when conformance tests are on, on any POSIX platform, so the self-skip check is a real check rather than a missing-binary error either way.
+  # tests/posix/*.tst files marked "%REQUIRETTY%" gate themselves on "../checkfg" (tests/checkfg.c -- restored from git history, 
+  # fixes/213's follow-up: it existed as of commit caa1ea28 but had gone missing from the tree, silently turning every one of these 
+  # 44 files into an unconditional skip via "command not found" rather than a real "no controlling terminal" check) and self-skip
+  # without a real controlling terminal. DO_PTY_TESTS (off by default -- Linux/POSIX pty ioctls, and it changes timing/behavior for a
+  # job-control-sensitive slice of the suite) wraps just those files in tests/pty-run (tests/pty-run.c), which gives the testee a real
+  # pty-backed session/controlling terminal instead of letting them opt out. checkfg itself is always built when conformance tests are
+  # on, on any POSIX platform, so the self-skip check is a real check rather than a missing-binary error either way.
   if(DO_CONFORMANCE_TESTS AND NOT WINDOWS_NATIVE)
     add_executable(checkfg tests/checkfg.c)
 
-    # tests/posix/run-test.sh's *.tst files reference "../checkfg" from inside a per-run tests/posix/tmp.$$ work directory it creates itself, so the binary has to live at tests/posix/checkfg in the source tree -- same place run-test.sh already leaves its own tmp.NNNNN/.trs artifacts (BUGS: harness-leaves-tmp-dirs).
+    # tests/posix/run-test.sh's *.tst files reference "../checkfg" from inside a per-run tests/posix/tmp.$$ work directory it creates
+    # itself, so the binary has to live at tests/posix/checkfg in the source tree -- same place run-test.sh already leaves its own
+    # tmp.NNNNN/.trs artifacts (BUGS: harness-leaves-tmp-dirs).
     set_target_properties(checkfg PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests/posix")
 
     option(DO_PTY_TESTS "Run the tests/posix/*.tst files gated on a real controlling terminal (%REQUIRETTY%) under tests/pty-run instead of letting them self-skip" OFF)

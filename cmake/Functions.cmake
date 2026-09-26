@@ -28,20 +28,20 @@ function(add_cflags ADD)
 endfunction()
 
 #
-# init_list <OUTPUT-VAR> [ITEMS...]
+# set_init <OUTPUT-VAR> [ITEMS...]
 #
-function(init_list OUTPUT_VAR)
+function(set_init OUTPUT_VAR)
   set(RESULT "")
-  add_list(RESULT ${ARGN})
+  set_add(RESULT ${ARGN})
   if(OUTPUT_VAR)
     set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
   endif()
 endfunction()
 
 #
-# add_list <OUTPUT-VAR> [ITEMS...]
+# set_add <OUTPUT-VAR> [ITEMS...]
 #
-function(add_list OUTPUT_VAR)
+function(set_add OUTPUT_VAR)
   set(RESULT "${${OUTPUT_VAR}}")
   foreach(ITEM ${ARGN})
     if(NOT ITEM IN_LIST RESULT)
@@ -54,10 +54,10 @@ function(add_list OUTPUT_VAR)
 endfunction()
 
 #
-# escape_string <OUTPUT-VAR> <STRING>
+# escape_string <OUTPUT-VAR> <STR>
 #
-function(escape_string OUTPUT_VAR STRING)
-    string(REPLACE "\\" "\\\\" RESULT "${STRING}")
+function(escape_string OUTPUT_VAR STR)
+  string(REPLACE "\\" "\\\\" RESULT "${STR}")
 
   string(REPLACE "\n" "\\n" RESULT "${RESULT}")
   string(REPLACE "\r" "\\r" RESULT "${RESULT}")
@@ -72,10 +72,10 @@ function(escape_string OUTPUT_VAR STRING)
 endfunction()
 
 #
-# unescape_string <OUTPUT-VAR> <STRING>
+# unescape_string <OUTPUT-VAR> <STR>
 #
-function(unescape_string OUTPUT_VAR STRING)
-  string(REPLACE "\\n" "\n" RESULT "${STRING}")
+function(unescape_string OUTPUT_VAR STR)
+  string(REPLACE "\\n" "\n" RESULT "${STR}")
   string(REPLACE "\\r" "\r" RESULT "${RESULT}")
   string(REPLACE "\\t" "\t" RESULT "${RESULT}")
   string(REPLACE "\\x1b" "${ANSI_ESCAPE}" RESULT "${RESULT}")
