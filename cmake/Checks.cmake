@@ -13,11 +13,9 @@ function(check_cflag FLAG OUTPUT_VAR)
     set(VAR_NAME CMAKE_C_FLAGS)
   else()
     set(VAR_NAME ${ARGV2})
-    #string(TOUPPER "CMAKE_C_FLAGS_${ARGV2}" VAR_NAME)
   endif()
   
-  #message("check_cflag\n\tFLAG='${FLAG}'\n\tOUTPUT_VAR='${OUTPUT_VAR}'\n\tVAR_NAME='${VAR_NAME}'")
-  named_dump("check_cflag():" FLAG OUTPUT_VAR VAR_NAME)
+  message_func("check_cflag" '${FLAG}' OUTPUT_VAR=${OUTPUT_VAR} VAR_NAME=${VAR_NAME})
   
   message(CHECK_START "Compiler flag ${FLAG}")
   if(RESULT)
@@ -775,7 +773,7 @@ function(compiler_flags_debug)
     set(OUTPUT_VAR DEBUG)
   endif()
 
-message("compiler_flags_debug ${OUTPUT_VAR}")
+ message_func("compiler_flags_debug" ${OUTPUT_VAR})
 
   check_cflag("-O0" F_OPT_NONE RESULT)
   check_cflag("-ggdb" F_G_GDB RESULT)
