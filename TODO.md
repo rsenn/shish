@@ -3822,6 +3822,36 @@ it means:
   completion in-process exactly as now. This goal adds nothing and
   changes nothing on that path.
 
+### Which builtins would benefit from being a filter (2026-09-27)
+
+Filter-capable today: `cat`, `grep`, `sed`. A chain needs *every* non-last stage to be one (the last
+stage already runs in-process and reads the chained buffer), so a single non-capable builtin anywhere
+in the prefix (`echo x | awk ... | sed ...`) sends the whole pipeline back to `fork()`+`pipe()`.
+What matters is therefore position: **producers** (first stage, no stdin) and **middle stages**.
+
+| builtin | role | verdict | how |
+|---|---|---|---|
+| `echo`, `printf` | producer | **highest value**: `echo "$x" \| grep ...`, `printf '%s\n' ... \| sort` are the most common first stages of all | eager (see below), ~10 lines each |
+| `awk` | middle | **high**: `grep ... \| awk ... \| sed ...` is a standard idiom; `text/awk` already reads through `fd_in` | streaming, like `sed`'s filter (`awk_state` reads records) |
+| `tee` | middle | **high**: `cmd \| tee log \| next`; side effect (write files) plus pass-through | streaming: copy in `read()`, write the files as bytes pass |
+| `find`, `ls` | producer | medium: `find . -name '*.c' \| grep ...`, `ls \| wc -l` | eager |
+| `set`, `alias`, `export -p`, `readonly -p`, `trap`, `type`, `command -v`, `jobs`, `umask`, `pwd` | producer | medium: `set \| grep ^X`, `alias \| sed`, `jobs \| wc`; read-only views of shell state | eager |
+| `basename`, `dirname`, `realpath`, `readlink`, `which`, `uname`, `hostname`, `expr` | producer | low: normally used inside `$(...)`, not a pipeline | eager, free once the adapter exists |
+| `wc`, `digest` | sink | low as a filter: a sink emits one line at EOF, and as the *last* stage it already chains; only `x \| wc -l \| y` benefits | eager |
+| `xargs`, `timeout`, `env`/`nice`/`nohup` (planned) | runs another command | **no**: the output belongs to the executed command (real fds, forked child), nothing to hand back in-process | none |
+| `cd`, `read`, `export`, `set` (assigning forms), `.`, `eval`, `exit`, `mktemp`, `sleep`, `kill` | state / no stdout | **no**: side effects on the shell must happen in the shell, a chained stage runs lazily and possibly never | none |
+| planned (Goal 16): `head uniq cut tr paste nl tail` | middle | **yes, by design** (`head` needs early exit; `tail -f` cannot) | streaming |
+| planned: `date id du pathchk` | producer | as `find` | eager |
+
+**One adapter covers every "eager" row.** A generic `filter_eager` ops table in
+`src/builtin/builtin_filter.c` runs the builtin's normal entry point on the first `read()` with `fd_out`
+redirected into a `stralloc` (the same `FD_SUBST` mechanism `$(...)` uses) and, for a consumer, `fd_in`
+set to the upstream buffer; then `read()` hands the bytes out and `status()` returns the exit code.
+A builtin opts in with one table entry (`&filter_eager`), no per-builtin code. Trade-offs: the whole
+output is held in memory, and an eager stage does not stop early (`yes | head` would never end, so
+`yes` stays out); real streaming stays with `cat grep sed awk tee head ...`. It must decline (`open()`
+returning NULL, nothing printed) for anything that changes shell state, which is the "no" rows above.
+
 ### Sizing (rough; no code written yet)
 
 | Piece | Lines | Gated on |
