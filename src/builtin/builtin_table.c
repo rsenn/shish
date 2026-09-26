@@ -202,7 +202,11 @@ struct builtin_cmd builtin_table[] = {
     {"alias", &builtin_alias, B_DEFAULT, "[-p] [name[=value] ...]", help_alias},
 #endif
 #if BUILTIN_AWK
-    {"awk", &builtin_awk, B_DEFAULT, "[-F sep] [-v assign]... [-f progfile | 'program'] [file...]", help_awk},
+    {"awk",
+     &builtin_awk,
+     B_DEFAULT,
+     "[-F sep] [-v assign]... [-f progfile | 'program'] [file...]",
+     help_awk},
 #endif
 #if BUILTIN_BASENAME
     {"basename", &builtin_basename, B_DEFAULT, "path [suffix]", help_basename},
@@ -214,7 +218,7 @@ struct builtin_cmd builtin_table[] = {
     {"break", &builtin_break, B_SPECIAL, "[n]", help_break},
 #endif
 #if BUILTIN_CAT
-    {"cat", &builtin_cat, B_DEFAULT, "[-nb] [FILE]...", help_cat},
+    {"cat", &builtin_cat, B_DEFAULT, "[-nb] [FILE]...", help_cat, &cat_filter},
 #endif
 #if BUILTIN_CD
     {"cd", &builtin_cd, B_DEFAULT, "[-L|-P] [directory]", help_cd},
@@ -285,7 +289,7 @@ struct builtin_cmd builtin_table[] = {
     {"getopts", &builtin_getopts, B_DEFAULT, "optstring name [arg ... ]", help_getopts},
 #endif
 #if BUILTIN_GREP
-    {"grep", &builtin_grep, B_DEFAULT, "[options] <pattern-list>", help_grep},
+    {"grep", &builtin_grep, B_DEFAULT, "[options] <pattern-list>", help_grep, &grep_filter},
 #endif
 #if BUILTIN_HASH
     {"hash",
@@ -381,7 +385,12 @@ struct builtin_cmd builtin_table[] = {
     {"rmdir", &builtin_rmdir, B_DEFAULT, "[-p] [directory]...", help_rmdir},
 #endif
 #if BUILTIN_SED
-    {"sed", &builtin_sed, B_DEFAULT, "[-n] [-E|-r] {script | -e script | -f file}... [file]...", help_sed},
+    {"sed",
+     &builtin_sed,
+     B_DEFAULT,
+     "[-n] [-E|-r] {script | -e script | -f file}... [file]...",
+     help_sed,
+     &sed_filter},
 #endif
 #if BUILTIN_SOURCE
     {"source", &builtin_source, B_SPECIAL, "file [arguments]", help_source},
@@ -444,6 +453,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_WHICH
     {"which", &builtin_which, B_DEFAULT, "[-a] filename ...", help_which},
+#endif
+#if BUILTIN_XARGS
+    {"xargs", &builtin_xargs, B_DEFAULT, "[-0opr] [-a FILE] [-d DELIM] [-l/-L MAX-LINES] [-n MAX-ARGS] [-P MAX-PROCS] <command> [...args]", help_xargs},
 #endif
     {NULL, NULL, 0, NULL, NULL},
 };

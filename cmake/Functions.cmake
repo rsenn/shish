@@ -1,421 +1,556 @@
-# include(CheckIncludeFile) include(CheckSymbolExists)
-# include(CheckFunctionExists)
 include(CheckLibraryExists)
 include(CheckCCompilerFlag)
 include(CheckCSourceCompiles)
 
-macro(add_cflags ADD)
-  if(NOT ARGN)
-    set(VAR_NAME CMAKE_C_FLAGS)
-  else(NOT ARGN)
-    set(VAR_NAME "${ARGN}")
-  endif(NOT ARGN)
-  set(C_FLAGS ${CMAKE_C_FLAGS} ${${VAR_NAME}})
-  string(REGEX REPLACE " +" ";" C_FLAGS "${C_FLAGS}")
-  string(REGEX REPLACE "^;+" "" C_FLAGS "${C_FLAGS}")
-  list(REMOVE_DUPLICATES C_FLAGS)
-  # message("VAR_NAME: ${VAR_NAME}") message("C_FLAGS: ${C_FLAGS}")
-  list(FIND C_FLAGS "${ADD}" FOUND_AT)
-  # message("FOUND_AT: ${FOUND_AT}") if("${C_FLAGS}" MATCHES "${ADD}")
-  if(NOT "${FOUND_AT}" MATCHES "-1")
-
-  else()
-    set("${VAR_NAME}" "${${VAR_NAME}} ${ADD}")
-  endif()
-endmacro(add_cflags)
-
-function(check_cflag FLAG VAR)
-  set(CMAKE_REQUIRED_QUIET TRUE)
-  check_c_compiler_flag("${FLAG}" "${VAR}")
-  set(CMAKE_REQUIRED_QUIET FALSE)
-  if(NOT ARGN)
-    set(VAR_NAME CMAKE_C_FLAGS)
-  else(NOT ARGN)
-    string(TOUPPER "CMAKE_C_FLAGS_${ARGN}" VAR_NAME)
-  endif(NOT ARGN)
-  # message("VAR_NAME: ${VAR_NAME}")
-  if(${VAR})
-    message(STATUS "Compiler flag ${FLAG} ... supported")
-    add_cflags("${FLAG}" "${VAR_NAME}")
-  else(${VAR})
-    message(STATUS "Compiler flag ${FLAG} ... not supported")
-  endif(${VAR})
-endfunction(
-  check_cflag
-  FLAG
-  VAR)
-
-# Append FLAG to CMAKE_EXE_LINKER_FLAGS if a test executable links with it.
-# A macro, not a function, so the result reaches the calling scope.
 #
-#   FLAG  the linker flag, driver-style ("-Wl,--gc-sections")
-#   VAR   cache variable the probe result is stored in
-# -----------------------------------------------------------------------
-macro(check_ldflag FLAG VAR)
-  set(CHECK_LDFLAG_SAVED "${CMAKE_EXE_LINKER_FLAGS}")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${FLAG}")
-  set(CMAKE_REQUIRED_QUIET TRUE)
-  check_c_source_compiles("int main(void) { return 0; }" ${VAR})
-  set(CMAKE_REQUIRED_QUIET FALSE)
-  set(CMAKE_EXE_LINKER_FLAGS "${CHECK_LDFLAG_SAVED}")
-  if(${VAR})
-    message(STATUS "Linker flag ${FLAG} ... supported")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${FLAG}")
-  else(${VAR})
-    message(STATUS "Linker flag ${FLAG} ... not supported")
-  endif(${VAR})
-endmacro(check_ldflag)
-
-function(DUMP VAR)
-  message("\n\nVariable dump of: " ${ARGV} "\n")
-  foreach(VAR ${ARGV})
-    string(REGEX REPLACE ";" "\n" VALUE "${${VAR}}")
-    message("\t${VAR} = ${VALUE}")
-  endforeach(VAR ${ARGV})
-  message("\n")
-endfunction(DUMP VAR)
-
-macro(check_inline)
-  foreach(KEYWORD "__inline__" "__inline" "inline")
-    if(NOT INLINE_KEYWORD)
-      set(CMAKE_REQUIRED_DEFINITIONS "-DTESTKEYWORD=${KEYWORD}")
-      check_c_source_compiles(
-        "typedef int foo_t;
-  static TESTKEYWORD foo_t static_foo(){return 0;}
-  foo_t foo(){return 0;}
-  int main(int argc, char *argv[]){return 0;}"
-        HAVE_${KEYWORD})
-      if(HAVE_${KEYWORD})
-        set(INLINE_KEYWORD "${KEYWORD}")
-      endif(HAVE_${KEYWORD})
-    endif(NOT INLINE_KEYWORD)
-  endforeach(KEYWORD)
-  message(STATUS "inline keyword: ${INLINE_KEYWORD}")
-endmacro(check_inline)
-
-function(isin)
-  set(ARGUMENTS "${ARGV}")
-  list(GET ARGUMENTS 0 RETVAR)
-  list(GET ARGUMENTS 1 ITEM)
-  list(REMOVE_AT ARGUMENTS 0 1)
-  # message("ARGUMENTS: ${ARGUMENTS}")
-  list(FIND ARGUMENTS "${ITEM}" FOUND)
-
-  if(${FOUND} EQUAL -1)
-    set(RET FALSE)
+# add_cflags <ADD> [OUTPUT_VAR]
+#
+function(add_cflags ADD)
+  if(${ARGC} LESS 2)
+    set(OUTPUT_VAR CMAKE_C_FLAGS)
   else()
-    set(RET TRUE)
+    set(OUTPUT_VAR "${ARGV1}")
   endif()
-  set("${RETVAR}"
-      ${RET}
-      PARENT_SCOPE)
-  # return(${RET})
-endfunction(isin)
+  
+  #message_func("add_cflags" ${ADD} ${OUTPUT_VAR})
 
-macro(show_result RESULT_VAR)
-  if(${${RESULT_VAR}})
-    set(RESULT_VALUE yes)
-  else(${${RESULT_VAR}})
-    set(RESULT_VALUE no)
-  endif(${${RESULT_VAR}})
-endmacro(show_result RESULT_VAR)
+  set(RESULT "${${OUTPUT_VAR}}")
+  string(REGEX REPLACE " +" ";" FLAGS "${RESULT}")
+  string(REGEX REPLACE "^;+" "" FLAGS "${FLAGS}")
+  list(REMOVE_DUPLICATES FLAGS) 
+  if(NOT ADD IN_LIST FLAGS)
+    list(APPEND RESULT ${ADD})
+  endif()
 
-macro(check_compile RESULT_VAR SOURCE)
-  set(RESULT "${${RESULT_VAR}}")
-  # message("${RESULT_VAR} = ${RESULT}" )
-  if(RESULT STREQUAL "")
-    string(
-      RANDOM
-      LENGTH 6
-      ALPHABET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-               C_NAME)
-    string(REPLACE SUPPORT_ "" NAME "${RESULT_VAR}")
-    string(REPLACE _ - NAME "${NAME}")
-    string(TOLOWER "${NAME}" C_NAME)
-    set(C_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/try-${C_NAME}.c")
-    string(REPLACE "\\" "\\\\" SOURCE "${SOURCE}")
-    file(WRITE "${C_SOURCE}" "${SOURCE}")
-    message(STATUS "Trying to compile try-${C_NAME}.c ... ")
-    try_compile(
-      COMPILE_RESULT "${CMAKE_CURRENT_BINARY_DIR}"
-      "${C_SOURCE}"
-      OUTPUT_VARIABLE "OUTPUT"
-      LINK_LIBRARIES "${ARGN}")
-    file(REMOVE "${C_SOURCE}")
+  if(OUTPUT_VAR)
+    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
+  endif()
+endfunction()
 
-    if(COMPILE_RESULT)
-      message(STATUS "ok")
-      # add_definitions(-D${RESULT_VAR})
-    else(COMPILE_RESULT)
-      set(COMPILE_LOG "${CMAKE_CURRENT_BINARY_DIR}/compile-${C_NAME}.log")
-      message(STATUS "fail: ${COMPILE_LOG}")
-      file(WRITE "${COMPILE_LOG}" "${OUTPUT}")
-      string(REPLACE "\n" ";" OUTPUT "${OUTPUT}")
-      list(FILTER OUTPUT INCLUDE REGEX "error")
-    endif(COMPILE_RESULT)
+#
+# set_init <OUTPUT-VAR> [ITEMS...]
+#
+function(set_init OUTPUT_VAR)
+  set(RESULT "")
+  set_add(RESULT ${ARGN})
+  if(OUTPUT_VAR)
+    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
+  endif()
+endfunction()
 
-    set("${RESULT_VAR}"
-        "${COMPILE_RESULT}"
-        CACHE BOOL "Support ${NAME}")
-  endif(RESULT STREQUAL "")
-  show_result(${RESULT_VAR})
+#
+# set_add <OUTPUT-VAR> [ITEMS...]
+#
+function(set_add OUTPUT_VAR)
+  set(RESULT "${${OUTPUT_VAR}}")
+  foreach(ITEM ${ARGN})
+    if(NOT ITEM IN_LIST RESULT)
+      list(APPEND RESULT "${ITEM}")
+    endif()
+  endforeach()
+  if(OUTPUT_VAR)
+    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+#
+# escape_string <OUTPUT-VAR> <STR>
+#
+function(escape_string OUTPUT_VAR STR)
+  string(REPLACE "\\" "\\\\" RESULT "${STR}")
+
+  string(REPLACE "\n" "\\n" RESULT "${RESULT}")
+  string(REPLACE "\r" "\\r" RESULT "${RESULT}")
+  string(REPLACE "\t" "\\t" RESULT "${RESULT}")
+  string(REPLACE "${ANSI_ESCAPE}" "\\e" RESULT "${RESULT}")
+  string(REPLACE "" "\\v" RESULT "${RESULT}")
+  string(REPLACE "" "\\f" RESULT "${RESULT}")
+
+  if(OUTPUT_VAR)
+    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
+  endif(OUTPUT_VAR)
+endfunction()
+
+#
+# unescape_string <OUTPUT-VAR> <STR>
+#
+function(unescape_string OUTPUT_VAR STR)
+  string(REPLACE "\\n" "\n" RESULT "${STR}")
+  string(REPLACE "\\r" "\r" RESULT "${RESULT}")
+  string(REPLACE "\\t" "\t" RESULT "${RESULT}")
+  string(REPLACE "\\x1b" "${ANSI_ESCAPE}" RESULT "${RESULT}")
+  string(REPLACE "\\033" "${ANSI_ESCAPE}" RESULT "${RESULT}")
+  string(REPLACE "\\e" "${ANSI_ESCAPE}"  RESULT "${RESULT}")
+  string(REPLACE "\\v" ""  RESULT "${RESULT}")
+  string(REPLACE "\\f" ""   RESULT "${RESULT}")
+
+  string(REPLACE "\\\\" "\\" RESULT "${RESULT}")
+
+  if(OUTPUT_VAR)
+    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
+  endif(OUTPUT_VAR)
+endfunction()
+
+# ITEMS contains multiple items
+#
+# assign_items <ITEMS> [VAR0, ...]
+#
+macro(assign_items ITEMS)
+  set(__L "${ITEMS}")
+  set(__I 0)
+  foreach(__A ${ARGN})
+    list(GET __L "${__I}" "${__A}")
+    math(EXPR __I "${__I} + 1")
+ endforeach()
 endmacro()
 
-
-macro(check_run RESULT_VAR SOURCE)
-  set(RESULT "${${RESULT_VAR}}")
-  # message("${RESULT_VAR} = ${RESULT}" )
-  if(RESULT STREQUAL "")
-    string(
-      RANDOM
-      LENGTH 6
-      ALPHABET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-               C_NAME)
-    string(REPLACE SUPPORT_ "" NAME "${RESULT_VAR}")
-    string(REPLACE _ - NAME "${NAME}")
-    string(TOLOWER "${NAME}" C_NAME)
-    set(C_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/try-${C_NAME}.c")
-    string(REPLACE "\\" "\\\\" SOURCE "${SOURCE}")
-    file(WRITE "${C_SOURCE}" "${SOURCE}")
-    message(STATUS "Trying to compile try-${C_NAME}.c ... ")
-    try_run(
-      RUN_RESULT 
-      COMPILE_RESULT "${CMAKE_CURRENT_BINARY_DIR}"
-      "${C_SOURCE}"
-      COMPILE_OUTPUT_VARIABLE "OUTPUT"
-      LINK_LIBRARIES "${ARGN}")
-    file(REMOVE "${C_SOURCE}")
-
-    if(COMPILE_RESULT AND RUN_RESULT)
-      message(STATUS "ok")
-      # add_definitions(-D${RESULT_VAR})
-    else(COMPILE_RESULT AND RUN_RESULT)
-      set(COMPILE_LOG "${CMAKE_CURRENT_BINARY_DIR}/compile-${C_NAME}.log")
-      message(STATUS "fail: ${COMPILE_LOG}")
-      file(WRITE "${COMPILE_LOG}" "${OUTPUT}")
-      string(REPLACE "\n" ";" OUTPUT "${OUTPUT}")
-      list(FILTER OUTPUT INCLUDE REGEX "error")
-    endif(COMPILE_RESULT AND RUN_RESULT)
-
-    set("${RESULT_VAR}"
-        "${COMPILE_RESULT}"
-        CACHE BOOL "Support ${NAME}")
-  endif(RESULT STREQUAL "")
-  show_result(${RESULT_VAR})
+# LIST is the name of a list
+#
+# assign_list <LIST> [VAR0...]
+#
+macro(assign_list LIST)
+  assign_items("${${LIST}}" ${ARGN})
 endmacro()
 
-function(RELATIVE_PATH OUT_VAR RELATIVE_TO)
-  set(LIST "")
+#
+# eat_line <BUFFER-VAR> <RESULT-VAR>
+#
+function(eat_line BUFFER_VAR RESULT_VAR)
+  set(BUF "${${BUFFER_VAR}}")
+  string(FIND "${BUF}" "\n" NL_POS)
+  string(LENGTH "${BUF}" LEN)
+  if(${NL_POS} EQUAL -1)
+    set(NL_POS "${LEN}")
+    set(NEXT_POS "${NL_POS}")
+  else()
+    math(EXPR NEXT_POS "${NL_POS} + 1")
+  endif()
+  string(SUBSTRING "${BUF}" "0" "${NL_POS}" RESULT)
+  string(SUBSTRING "${BUF}"  "${NEXT_POS}"  -1 REST)
+  set("${RESULT_VAR}" "${RESULT}" PARENT_SCOPE)
+  set("${BUFFER_VAR}" "${REST}" PARENT_SCOPE)
+endfunction()
 
+#
+# add_prefix <OUTPUT-VAR> <PREFIX> [ARGS...]
+#
+macro(add_prefix OUTPUT_VAR PREFIX)
+  unset("${OUTPUT_VAR}" PARENT_SCOPE)
   foreach(ARG ${ARGN})
-    file(RELATIVE_PATH ARG "${RELATIVE_TO}" "${ARG}")
-    list(APPEND LIST "${ARG}")
-  endforeach(ARG ${ARGN})
+    list(APPEND "${OUTPUT_VAR}" "${PREFIX}${ARG}")
+  endforeach()
+endmacro()
 
-  set("${OUT_VAR}"
-      "${LIST}"
-      PARENT_SCOPE)
-endfunction(
-  RELATIVE_PATH
-  RELATIVE_TO
-  OUT_VAR)
+#
+# add_suffix <OUTPUT-VAR> <SUFFIX> [ARGS...]
+#
+macro(add_suffix OUTPUT_VAR SUFFIX)
+  unset("${OUTPUT_VAR}" PARENT_SCOPE)
+  foreach(ARG ${ARGN})
+    list(APPEND "${OUTPUT_VAR}" "${ARG}${SUFFIX}")
+  endforeach()
+endmacro()
 
-function(BASENAME OUTPUT_VAR STR)
-  string(REGEX REPLACE ".*/" "" TMP_STR "${STR}")
+#
+# assign_named_prefix <PREFIX> [ARGS...]
+#
+macro(assign_named_prefix PREFIX)
+  set(ARGUMENTS "${ARGN}")
+
+  while(NOT "${ARGUMENTS}" STREQUAL "")
+    eat_line(ARGUMENTS NAME)
+    eat_line(ARGUMENTS VALUE)
+
+   set("${PREFIX}${NAME}" "${VALUE}" CACHE STRING "Color value")
+  endwhile()
+endmacro()
+
+#
+# assign_named_items [ARGS...]
+#
+macro(assign_named_items)
+ unset(__N)
+  foreach(__A ${ARGN})
+     if(NOT DEFINED __N)
+      set(__N "${__A}")
+     else()
+      set(__V "${__A}")
+      endif()
+     if(DEFINED __V)
+         set("${__N}" "${__V}")
+       unset(__N)
+       unset(__V)
+     endif()
+  endforeach()
+endmacro()
+
+#
+# assign_named_var <VAR_NAME>
+#
+macro(assign_named_var VAR_NAME)
+  assign_named_items(${${VAR_NAME}})
+endmacro()
+
+#
+# isin_var <OUTPUT-VAR> <ITEM> <VAR-NAME>
+#
+function(isin_var OUTPUT_VAR ITEM VAR_NAME)
+  if(ITEM IN_LIST "${VAR_NAME}")
+    set(RESULT TRUE)
+  else()
+    set(RESULT FALSE)
+  endif()
+
+  if(OUTPUT_VAR)
+    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+#
+# isin_list <OUTPUT-VAR> <ITEM> [LIST...]
+#
+function(isin_list OUTPUT_VAR ITEM)
+  set(LIST "${ARGN}")
+  isin_var("${OUTPUT_VAR}" "${ITEM}" LIST)
+endfunction()
+
+#
+# absolute_paths <OUTPUT-VAR> [PATHS...]
+#
+function(absolute_paths OUTPUT_VAR)
+  set(RESULT "")
+  foreach(ARG ${ARGN})
+      cmake_path(ABSOLUTE_PATH ARG OUTPUT_VARIABLE VALUE)
+      list(APPEND RESULT "${VALUE}")
+  endforeach()
+
+  if(OUTPUT_VAR)
+    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+#
+# absolute_paths_in <OUTPUT-VAR> <BASE-DIRECTORY> [PATHS...]
+#
+function(absolute_paths_in OUTPUT_VAR BASE_DIRECTORY)
+  set(RESULT "")
+  foreach(ARG ${ARGN})
+      cmake_path(ABSOLUTE_PATH ARG BASE_DIRECTORY "${BASE_DIRECTORY}" OUTPUT_VARIABLE VALUE)
+      list(APPEND RESULT "${VALUE}")
+  endforeach()
+
+  if(OUTPUT_VAR)
+    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+#
+# relative_paths <OUTPUT-VAR> <BASE-DIRECTORY> [PATHS...]
+#
+function(relative_paths OUTPUT_VAR BASE_DIRECTORY)
+  set(RESULT "")
+  foreach(ARG ${ARGN})
+      cmake_path(RELATIVE_PATH ARG BASE_DIRECTORY "${BASE_DIRECTORY}" OUTPUT_VARIABLE VALUE)
+      list(APPEND RESULT "${VALUE}")
+  endforeach()
+
+  if(OUTPUT_VAR)
+    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+#
+# get_cwd <OUTPUT-VAR>
+#
+function(get_cwd OUTPUT_VAR)
+  set(ARG ".")
+  cmake_path(ABSOLUTE_PATH ARG OUTPUT_VARIABLE RESULT)
+  string(REGEX REPLACE "[/\\\\]\\.$" "" RESULT "${RESULT}")
+
+  if(OUTPUT_VAR)
+    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+#
+# is_relative <PATH> <OUTPUT-VAR>
+#
+function(is_relative PATH OUTPUT_VAR)
+  if(OUTPUT_VAR)
+    cmake_path(IS_RELATIVE PATH "${OUTPUT_VAR}")
+  endif()
+endfunction()
+
+#
+# is_absolute <PATH> <OUTPUT-VAR>
+#
+function(is_absolute PATH OUTPUT_VAR)
+  if(OUTPUT_VAR)
+    cmake_path(IS_ABSOLUTE PATH "${OUTPUT_VAR}")
+  endif()
+endfunction()
+
+#
+# concat <OUTPUT-VAR> <SEPARATOR> [ARGUMENTS...]
+#
+function(concat OUTPUT_VAR SEPARATOR)
+  set(RESULT "")
+  foreach(ARG ${ARGN})
+    if(NOT "${RESULT}" STREQUAL "")
+      set(RESULT "${RESULT}${SEPARATOR}${ARG}")
+    else()
+      set(RESULT "${ARG}")
+    endif()
+  endforeach()
+
+  if(OUTPUT_VAR)
+    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+#
+# basename <OUTPUT-VAR> <STR> [EXT_NAME]
+#
+function(basename OUTPUT_VAR STR)
+  string(REGEX REPLACE ".*/" "" RESULT "${STR}")
   if(ARGN)
-    string(REGEX REPLACE "\\${ARGN}\$" "" TMP_STR "${TMP_STR}")
-  endif(ARGN)
+    string(REGEX REPLACE "\\${ARGN}\$" "" RESULT "${RESULT}")
+  endif()
 
-  set("${OUTPUT_VAR}"
-      "${TMP_STR}"
-      PARENT_SCOPE)
-endfunction(
-  BASENAME
-  OUTPUT_VAR
-  FILE)
+  if(OUTPUT_VAR)
+    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
+  endif()
+endfunction()
 
-##
-## var2define <NAME> [DEFINED_VALUE] [VAR_NAME]
-##
-function(VAR2DEFINE NAME)
-  if("${ARGC}" GREATER 2)
-    list(GET ARGN 1 VAR_NAME)
-  else("${ARGC}" GREATER 2)
+#
+# var2define <NAME> [DEFINED_VALUE] [VAR_NAME]
+#
+function(var2define NAME)
+  if(${ARGC} GREATER_EQUAL 3)
+    set(VAR_NAME "${ARGV1}")
+  else()
     set(VAR_NAME "${NAME}")
-  endif("${ARGC}" GREATER 2)
+  endif()
 
   set(VALUE "${${VAR_NAME}}")
-
-  if("${ARGC}" LESS_EQUAL 1)
-    if("${VALUE}")
+  if(${ARGC} LESS_EQUAL 1 AND ${ARGC} GREATER_EQUAL 0)
+    if(VALUE)
       add_definitions(-D${NAME}=1)
-    else("${VALUE}")
+    else()
       add_definitions(-D${NAME}=0)
-    endif("${VALUE}")
-  else("${ARGC}" LESS_EQUAL 1)
-    if("${VALUE}")
-      list(GET ARGN 0 DEFINED_VALUE)
-      add_definitions(-D${NAME}=${DEFINED_VALUE})
-    endif("${VALUE}")
-  endif("${ARGC}" LESS_EQUAL 1)
-endfunction(VAR2DEFINE NAME)
-
-##
-## check_include_def <INCLUDE> [RESULT VARIABLE] [PREPROC_DEF]
-##
-macro(CHECK_INCLUDE_DEF INC)
-  if(ARGC GREATER_EQUAL 2)
-    set(RESULT_VAR "${ARGV1}")
-    set(PREPROC_DEF "${ARGV2}")
-  else(ARGC GREATER_EQUAL 2)
-    clean_name("${INC}" INC_D)
-    string(TOUPPER "HAVE_${INC_D}" RESULT_VAR)
-    string(TOUPPER "HAVE_${INC_D}" PREPROC_DEF)
-  endif(ARGC GREATER_EQUAL 2)
-
-  check_include_file("${INC}" "${RESULT_VAR}")
-
-  if(${${RESULT_VAR}})
-    set("${RESULT_VAR}" TRUE
-        CACHE INTERNAL "Define this if you have the '${INC}' header file")
-
-    if(NOT "${PREPROC_DEF}" STREQUAL "")
-      var2define("${PREPROC_DEF}" 1)
-    endif(NOT "${PREPROC_DEF}" STREQUAL "")
-  endif(${${RESULT_VAR}})
-
-  list(APPEND CHECKED_INCLUDES "${INC}")
-endmacro(CHECK_INCLUDE_DEF INC)
-
-##
-## check_includes <INCLUDE FILES...>
-##
-macro(CHECK_INCLUDES)
-  foreach(INC ${ARGN})
-    clean_name("HAVE_${INC}" RESULT_VAR)
-    check_include_def("${INC}" "${RESULT_VAR}")
-  endforeach(INC ${ARGN})
-endmacro(CHECK_INCLUDES)
-
-##
-## check_includes_def <INCLUDE FILES...>
-##
-macro(CHECK_INCLUDES_DEF)
-  foreach(INC ${ARGN})
-    check_include_def("${INC}")
-  endforeach(INC ${ARGN})
-endmacro(CHECK_INCLUDES_DEF)
-
-
-##
-## clean_name <STRING> <OUTPUT VAR>
-##
-function(CLEAN_NAME STR OUTPUT_VAR)
-  string(TOUPPER "${STR}" STR)
-  string(REGEX REPLACE "[^A-Za-z0-9_]" "_" STR "${STR}")
-  set("${OUTPUT_VAR}" "${STR}" PARENT_SCOPE)
-endfunction(CLEAN_NAME STR OUTPUT_VAR)
-
-##
-## check_include_def <INCLUDE> [RESULT VARIABLE] [PREPROC_DEF]
-##
-macro(CHECK_INCLUDE_DEF INC)
-  if(ARGC GREATER_EQUAL 2)
-    set(RESULT_VAR "${ARGV1}")
-    set(PREPROC_DEF "${ARGV2}")
-  else(ARGC GREATER_EQUAL 2)
-    clean_name("${INC}" INC_D)
-    string(TOUPPER "HAVE_${INC_D}" RESULT_VAR)
-    string(TOUPPER "HAVE_${INC_D}" PREPROC_DEF)
-  endif(ARGC GREATER_EQUAL 2)
-
-  check_include_file("${INC}" "${RESULT_VAR}")
-
-  if(${${RESULT_VAR}})
-    set("${RESULT_VAR}" TRUE
-        CACHE INTERNAL "Define this if you have the '${INC}' header file")
-
-    if(NOT "${PREPROC_DEF}" STREQUAL "")
-      var2define("${PREPROC_DEF}" 1)
-    endif(NOT "${PREPROC_DEF}" STREQUAL "")
-  endif(${${RESULT_VAR}})
-
-  list(APPEND CHECKED_INCLUDES "${INC}")
-endmacro(CHECK_INCLUDE_DEF INC)
-
-##
-## check_includes <INCLUDE FILES...>
-##
-macro(CHECK_INCLUDES)
-  foreach(INC ${ARGN})
-    clean_name("HAVE_${INC}" RESULT_VAR)
-    check_include_def("${INC}" "${RESULT_VAR}")
-  endforeach(INC ${ARGN})
-endmacro(CHECK_INCLUDES)
-
-##
-## check_includes_def <INCLUDE FILES...>
-##
-macro(CHECK_INCLUDES_DEF)
-  foreach(INC ${ARGN})
-    check_include_def("${INC}")
-  endforeach(INC ${ARGN})
-endmacro(CHECK_INCLUDES_DEF)
-
-macro(CHECK_FUNCTION_DEF FUNC)
-  if(ARGC GREATER_EQUAL 2)
-    set(RESULT_VAR "${ARGV1}")
-    set(PREPROC_DEF "${ARGV2}")
-  else(ARGC GREATER_EQUAL 2)
-    string(TOUPPER "HAVE_${FUNC}" RESULT_VAR)
-    string(TOUPPER "HAVE_${FUNC}" PREPROC_DEF)
-  endif(ARGC GREATER_EQUAL 2)
-  check_function_exists("${FUNC}" "${RESULT_VAR}")
-  if(${${RESULT_VAR}})
-    set("${RESULT_VAR}"
-        TRUE
-        CACHE BOOL "Define this if you have the '${FUNC}' function")
-    if(NOT "${PREPROC_DEF}" STREQUAL "")
-      add_definitions(-D${PREPROC_DEF})
-    endif(NOT "${PREPROC_DEF}" STREQUAL "")
-  endif(${${RESULT_VAR}})
-endmacro(CHECK_FUNCTION_DEF FUNC)
-
-macro(CHECK_FUNCTIONS)
-  foreach(FUNC ${ARGN})
-    string(TOUPPER "HAVE_${FUNC}" RESULT_VAR)
-    check_function_def("${FUNC}" "${RESULT_VAR}")
-  endforeach(FUNC ${ARGN})
-endmacro(CHECK_FUNCTIONS)
-
-macro(CHECK_FUNCTIONS_DEF)
-  foreach(FUNC ${ARGN})
-    check_function_def("${FUNC}")
-  endforeach(FUNC ${ARGN})
-endmacro(CHECK_FUNCTIONS_DEF)
-
-macro(DEBUG_FLAG NAME DESC)
-  option(DEBUG_${NAME} "${DESC}" OFF)
-
-  if(DEBUG_${NAME})
-    add_definitions(-DDEBUG_${NAME}=1)
+    endif()
+  else()
+    if(VALUE)
+      add_definitions(-D${NAME}=${ARGV1})
+    endif()
   endif()
-endmacro(
-  DEBUG_FLAG
-  NAME
-  DESC)
+endfunction()
 
-##
-## check_function_and_include <FUNCTION> <INCLUDE>
-##
-macro(CHECK_FUNCTION_AND_INCLUDE FUNC INC)
-  clean_name("HAVE_${INC}" INC_RESULT)
-  clean_name("HAVE_${FUNC}" FUNC_RESULT)
+# Get number of columns the terminal supports
+#
+# get_columns <OUTPUT-VAR> [DEFAULT]
+#
+function(get_columns RESULT_VAR)
+  if(${ARGC} GREATER_EQUAL 2)
+    set(DEFAULT_VALUE ${ARGV1})
+  else()
+    set(DEFAULT_VALUE 80)
+  endif()
 
-  check_include_def("${INC}" "${INC_RESULT}" "${INC_RESULT}")
+  set(RESULT "$ENV{COLUMNS}")
+  if(RESULT GREATER_EQUAL 1)
+    # message("Got COLUMNS (${RESULT}) from environment")
+  else()
+    execute_process(COMMAND tput cols OUTPUT_VARIABLE TPUT_COLS ERROR_QUIET ERROR_VARIABLE TPUT_ERROR)
+    if(NOT TPUT_ERROR AND TPUT_COLS)
+      set(RESULT ${TPUT_COLS})
+    else()
+      set(SOURCE_NAME ttysize.c)
+      set(SOURCE_CODE "#include <unistd.h>\n#include <fcntl.h>\n#include <termios.h>\n#include <sys/ioctl.h>\n#include <stdio.h>\n\nint\nmain() {\n\tstruct winsize sz;\n\tint fd = isatty(0) ? dup(0) : open(\"/dev/tty\", O_RDWR);\n\n\tif(!isatty(fd)) {\n\t\tfputs(\"not a tty\\n\", stderr);\n\t\tfflush(stderr);\n\t\treturn 1;\n\t}\n\n\tif(ioctl(fd, TIOCGWINSZ, &sz) == -1) {\n\t\tperror(\"ioctl\");\n\t\treturn 1;\n\t}\n\n\tclose(fd);\n\n\tprintf(\"%u\\n\", sz.ws_col);\n\treturn 0;\n}\n")
+      message(CHECK_START "Trying to compile ${SOURCE_NAME}")
+      try_run(RUN_RESULT COMPILE_RESULT SOURCE_FROM_CONTENT "${SOURCE_NAME}" "${SOURCE_CODE}" RUN_OUTPUT_STDOUT_VARIABLE RUN_OUTPUT COMPILE_OUTPUT_VARIABLE COMPILE_OUTPUT NO_CACHE)
+      if(NOT COMPILE_RESULT)
+        message(CHECK_FAIL "failed to compile:\n${COMPILE_OUTPUT}")
+      else()
+        if(RUN_RESULT STREQUAL 0)
+          message(CHECK_PASS "ok")
+          set(RESULT "${RUN_OUTPUT}")
+        else()
+          message(CHECK_FAIL "failed to run:\n${RUN_OUTPUT}")
+        endif()
+      endif()
+    endif()
+  endif()
+  
+  if(NOT RESULT GREATER_EQUAL 1)
+    set(RESULT "${DEFAULT_VALUE}")
+  endif()
 
-  if(${${INC_RESULT}})
-    check_function_def("${FUNC}" "${FUNC_RESULT}" "${FUNC_RESULT}")
-  endif(${${INC_RESULT}})
-endmacro(CHECK_FUNCTION_AND_INCLUDE FUNC INC)
+  if(RESULT_VAR)
+    set("${RESULT_VAR}" "${RESULT}" PARENT_SCOPE)
+  endif()
+endfunction()
 
+#
+# named_dump <MSG> [VAR-NAMES...]
+#
+function(named_dump MSG)
+  assign_named_var(DUMP_FORMAT)
+  set(INDEX 0)
+  math(EXPR LAST "${ARGC} - 2")
+  set(RESULT "${MSG}${START}")
+
+  foreach(VAR_NAME ${ARGN})
+    set(VALUE "${${VAR_NAME}}")
+    set(LINE "${INDENT}${VAR_NAME}${PROP}${QUOTE}${VALUE}${QUOTE}")
+    if(INDEX LESS LAST)
+      set(LINE "${LINE}${COMMA}")
+    endif()
+    set(RESULT "${RESULT}${NEWLINE}${LINE}")
+    math(EXPR INDEX "${INDEX} + 1")
+  endforeach()
+  if(NOT END STREQUAL "")
+    set(RESULT "${RESULT}${NEWLINE}${END}")
+  endif()
+  
+  message("${RESULT}")
+endfunction()
+
+set(DUMP_FORMAT INDENT "  " START " {" END "}" PROP ": " QUOTE "'" COMMA "," NEWLINE "\\n")
+
+#
+# dump [VAR-NAMES...]
+#
+function(dump)
+  named_dump("Variable dump" ${ARGN})
+endfunction()
+
+#
+# dump_list <VAR-NAME>
+#
+function(dump_list VAR_NAME)
+  assign_named_var(DUMP_FORMAT)
+  message("List dump of ${VAR_NAME}:")
+  list(LENGTH "${VAR_NAME}" NUM_ITEMS)
+  set(INDEX 0)
+  while(${INDEX} LESS ${NUM_ITEMS})
+    list(GET "${VAR_NAME}" "${INDEX}" ITEM)
+    message("${INDENT}${INDEX}: ${ITEM}")
+    math(EXPR INDEX "${INDEX} + 1")
+  endwhile()
+endfunction()
+
+#
+# make_list <OUTPUT-VAR> <MAX_LINE_LEN>
+#
+function(make_list OUTPUT_VAR MAX_LINE_LEN)
+  assign_named_var(LIST_FORMAT)
+  set(RESULT "")
+  set(LINE "")
+  string(REPLACE " " ";" ARGS "${ARGN}")
+  foreach(ITEM ${ARGS})
+    string(LENGTH "${LINE}${SEP}${ITEM}" LEN)
+    math(EXPR EFFECTIVE_LEN "${LEN} + 4")
+    if(EFFECTIVE_LEN GREATER MAX_LINE_LEN)
+      set(RESULT "${RESULT}\n--${INDENT}${LINE}")
+      set(LINE " ${ITEM}")
+      string(LENGTH "${LINE}" LEN)
+    else()
+      set(LINE "${LINE}${SEP}${ITEM}")
+    endif()
+  endforeach()
+  if(LINE)
+    set(RESULT "${RESULT}\n--${INDENT}${LINE}")
+  endif()
+
+  if(OUTPUT_VAR)
+    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
+  endif()
+endfunction()
+ 
+set(LIST_FORMAT INDENT "    " SEP  " ")
+
+#
+# message_unescaped [STRINGS...]
+#
+function(message_unescaped)
+  set(S "")
+  foreach(ARG ${ARGN})
+    set(S "${S}${ARG}")
+  endforeach()
+  unescape_string(S "${S}")
+  message("${S}")
+endfunction()
+
+#
+# message_func <FUNCTION-NAME> [STRINGS...]
+#
+function(message_func FUNC)
+  set(S "${COLOR_LIGHTRED}${FUNC}${COLOR_NONE}")
+  foreach(ARG ${ARGN})
+    set(S "${S} ${ARG}")
+  endforeach()
+  unescape_string(S "${S}")
+  message("${S}")
+endfunction()
+
+#
+# init_colors
+#
+macro(init_colors)
+  set(ANSI_ESCAPE "")
+  set(SEMI "╎")
+  set(COLORS
+    NONE "${ANSI_ESCAPE}[0m"
+    BLACK "${ANSI_ESCAPE}[0${SEMI}30m"
+    RED "${ANSI_ESCAPE}[0${SEMI}31m"
+    GREEN "${ANSI_ESCAPE}[0${SEMI}32m"
+    BROWN "${ANSI_ESCAPE}[0${SEMI}33m"
+    BLUE "${ANSI_ESCAPE}[0${SEMI}34m"
+    MAGENTA "${ANSI_ESCAPE}[0${SEMI}35m"
+    CYAN "${ANSI_ESCAPE}[0${SEMI}36m"
+    LIGHTGRAY "${ANSI_ESCAPE}[0${SEMI}37m"
+    DARKGRAY "${ANSI_ESCAPE}[1${SEMI}30m"
+    LIGHTRED "${ANSI_ESCAPE}[1${SEMI}31m"
+    LIGHTGREEN "${ANSI_ESCAPE}[1${SEMI}32m"
+    YELLOW "${ANSI_ESCAPE}[1${SEMI}33m"
+    LIGHTBLUE "${ANSI_ESCAPE}[1${SEMI}34m"
+    LIGHTMAGENTA "${ANSI_ESCAPE}[1${SEMI}35m"
+    LIGHTCYAN "${ANSI_ESCAPE}[1${SEMI}36m"
+    WHITE "${ANSI_ESCAPE}[1${SEMI}37m" 
+  )
+  string(REPLACE ";" "\n" CMAP "${COLORS}")
+  string(REPLACE "${SEMI}" ";" CMAP "${CMAP}")
+
+  assign_named_prefix(COLOR_ ${CMAP})
+endmacro()
+
+#
+# getenv <OUTPUT-VAR> <VAR-NAME>
+#
+function(getenv OUTPUT_VAR VAR_NAME)
+  if(OUTPUT_VAR)
+    if(DEFINED ENV{${VAR_NAME}})
+      set("${OUTPUT_VAR}" "$ENV{${VAR_NAME}}" PARENT_SCOPE)
+    else()
+      unset("${OUTPUT_VAR}" PARENT_SCOPE)
+    endif()
+  endif()
+endfunction()
+
+#
+# getenv_default <OUTPUT-VAR> <VAR-NAME> [DEFAULT-VALUE]
+#
+function(getenv_default OUTPUT_VAR VAR_NAME)
+  if(DEFINED ENV{${VAR_NAME}})
+    set(RESULT "$ENV{${VAR_NAME}}")
+  else()
+    set(RESULT "${ARGN}")
+  endif()
+  if(OUTPUT_VAR)
+    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+
+init_colors()

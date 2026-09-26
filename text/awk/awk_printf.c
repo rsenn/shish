@@ -31,7 +31,8 @@ emit(stralloc* out, const char* buf, int n) {
 }
 
 int
-awk_sprintf(struct awk_state* st, stralloc* out, const char* fmt, size_t fmtlen, struct anode* args) {
+awk_sprintf(
+    struct awk_state* st, stralloc* out, const char* fmt, size_t fmtlen, struct anode* args) {
   const char* p = fmt;
   const char* end = fmt + fmtlen;
 
@@ -59,12 +60,18 @@ awk_sprintf(struct awk_state* st, stralloc* out, const char* fmt, size_t fmtlen,
     }
 
     for(; p < end; p++) {
-      if(*p == '-') left = 1;
-      else if(*p == '+') plus = 1;
-      else if(*p == ' ') space = 1;
-      else if(*p == '0') zero = 1;
-      else if(*p == '#') alt = 1;
-      else break;
+      if(*p == '-')
+        left = 1;
+      else if(*p == '+')
+        plus = 1;
+      else if(*p == ' ')
+        space = 1;
+      else if(*p == '0')
+        zero = 1;
+      else if(*p == '#')
+        alt = 1;
+      else
+        break;
     }
 
     if(p < end && *p == '*') {
@@ -123,8 +130,10 @@ awk_sprintf(struct awk_state* st, stralloc* out, const char* fmt, size_t fmtlen,
     /* clamp: keeps both the spec buffer below and the per-conversion
        output allocation (48/64 + width/prec) from an absurd %*d
        argument turning into a multi-gigabyte alloc() */
-    if(haswidth && width > 100000) width = 100000;
-    if(hasprec && prec > 100000) prec = 100000;
+    if(haswidth && width > 100000)
+      width = 100000;
+    if(hasprec && prec > 100000)
+      prec = 100000;
 
     if(p >= end) {
       /* trailing lone '%' or an unterminated spec: emit literally */
@@ -140,11 +149,16 @@ awk_sprintf(struct awk_state* st, stralloc* out, const char* fmt, size_t fmtlen,
        program's format string contained. */
     spec[sl++] = '%';
 
-    if(left) spec[sl++] = '-';
-    if(plus) spec[sl++] = '+';
-    if(space) spec[sl++] = ' ';
-    if(zero) spec[sl++] = '0';
-    if(alt) spec[sl++] = '#';
+    if(left)
+      spec[sl++] = '-';
+    if(plus)
+      spec[sl++] = '+';
+    if(space)
+      spec[sl++] = ' ';
+    if(zero)
+      spec[sl++] = '0';
+    if(alt)
+      spec[sl++] = '#';
 
     if(haswidth)
       sl += (size_t)snprintf(spec + sl, sizeof(spec) - sl, "%ld", width);
@@ -153,95 +167,110 @@ awk_sprintf(struct awk_state* st, stralloc* out, const char* fmt, size_t fmtlen,
       sl += (size_t)snprintf(spec + sl, sizeof(spec) - sl, ".%ld", prec);
 
     switch(conv) {
-    case 'd': case 'i': case 'o': case 'x': case 'X': case 'u':
-      spec[sl++] = 'l';
-      spec[sl++] = 'l';
-      break;
-    default: break;
+      case 'd':
+      case 'i':
+      case 'o':
+      case 'x':
+      case 'X':
+      case 'u':
+        spec[sl++] = 'l';
+        spec[sl++] = 'l';
+        break;
+      default: break;
     }
 
     spec[sl++] = conv;
     spec[sl] = 0;
 
     switch(conv) {
-    case 'd': case 'i': {
-      awk_cell c = next_arg(st, &args);
-      long long v = (long long)awk_tonum(st, &c);
-      size_t cap = 48 + (haswidth && width > 0 ? (size_t)width : 0);
-      char* buf = alloc(cap);
+      case 'd':
+      case 'i': {
+        awk_cell c = next_arg(st, &args);
+        long long v = (long long)awk_tonum(st, &c);
+        size_t cap = 48 + (haswidth && width > 0 ? (size_t)width : 0);
+        char* buf = alloc(cap);
 
-      emit(out, buf, snprintf(buf, cap, spec, v));
-      alloc_free(buf);
-      break;
-    }
+        emit(out, buf, snprintf(buf, cap, spec, v));
+        alloc_free(buf);
+        break;
+      }
 
-    case 'o': case 'x': case 'X': case 'u': {
-      awk_cell c = next_arg(st, &args);
-      unsigned long long v = (unsigned long long)(long long)awk_tonum(st, &c);
-      size_t cap = 48 + (haswidth && width > 0 ? (size_t)width : 0);
-      char* buf = alloc(cap);
+      case 'o':
+      case 'x':
+      case 'X':
+      case 'u': {
+        awk_cell c = next_arg(st, &args);
+        unsigned long long v = (unsigned long long)(long long)awk_tonum(st, &c);
+        size_t cap = 48 + (haswidth && width > 0 ? (size_t)width : 0);
+        char* buf = alloc(cap);
 
-      emit(out, buf, snprintf(buf, cap, spec, v));
-      alloc_free(buf);
-      break;
-    }
+        emit(out, buf, snprintf(buf, cap, spec, v));
+        alloc_free(buf);
+        break;
+      }
 
-    case 'e': case 'E': case 'f': case 'F': case 'g': case 'G': {
-      awk_cell c = next_arg(st, &args);
-      double v = awk_tonum(st, &c);
-      size_t cap = 64 + (haswidth && width > 0 ? (size_t)width : 0) +
-                   (hasprec && prec > 0 ? (size_t)prec : 0);
-      char* buf = alloc(cap);
+      case 'e':
+      case 'E':
+      case 'f':
+      case 'F':
+      case 'g':
+      case 'G': {
+        awk_cell c = next_arg(st, &args);
+        double v = awk_tonum(st, &c);
+        size_t cap = 64 + (haswidth && width > 0 ? (size_t)width : 0) +
+                     (hasprec && prec > 0 ? (size_t)prec : 0);
+        char* buf = alloc(cap);
 
-      emit(out, buf, snprintf(buf, cap, spec, v));
-      alloc_free(buf);
-      break;
-    }
+        emit(out, buf, snprintf(buf, cap, spec, v));
+        alloc_free(buf);
+        break;
+      }
 
-    case 'c': {
-      awk_cell c = next_arg(st, &args);
-      int ch;
-      size_t cap = 32 + (haswidth && width > 0 ? (size_t)width : 0);
-      char* buf = alloc(cap);
-      char cspec[24];
-      size_t csl = 0;
+      case 'c': {
+        awk_cell c = next_arg(st, &args);
+        int ch;
+        size_t cap = 32 + (haswidth && width > 0 ? (size_t)width : 0);
+        char* buf = alloc(cap);
+        char cspec[24];
+        size_t csl = 0;
 
-      if(c.type == CELL_STR || c.type == CELL_STRNUM)
-        ch = c.str && c.str[0] ? (unsigned char)c.str[0] : 0;
-      else
-        ch = (int)awk_tonum(st, &c);
+        if(c.type == CELL_STR || c.type == CELL_STRNUM)
+          ch = c.str && c.str[0] ? (unsigned char)c.str[0] : 0;
+        else
+          ch = (int)awk_tonum(st, &c);
 
-      /* %c ignores precision */
-      cspec[csl++] = '%';
+        /* %c ignores precision */
+        cspec[csl++] = '%';
 
-      if(left) cspec[csl++] = '-';
+        if(left)
+          cspec[csl++] = '-';
 
-      if(haswidth)
-        csl += (size_t)snprintf(cspec + csl, sizeof(cspec) - csl, "%ld", width);
+        if(haswidth)
+          csl += (size_t)snprintf(cspec + csl, sizeof(cspec) - csl, "%ld", width);
 
-      cspec[csl++] = 'c';
-      cspec[csl] = 0;
+        cspec[csl++] = 'c';
+        cspec[csl] = 0;
 
-      emit(out, buf, snprintf(buf, cap, cspec, ch));
-      alloc_free(buf);
-      break;
-    }
+        emit(out, buf, snprintf(buf, cap, cspec, ch));
+        alloc_free(buf);
+        break;
+      }
 
-    case 's': {
-      awk_cell c = next_arg(st, &args);
-      const char* s = awk_tostr(st, &c, 0);
-      size_t cap = str_len(s) + 32 + (haswidth && width > 0 ? (size_t)width : 0);
-      char* buf = alloc(cap);
+      case 's': {
+        awk_cell c = next_arg(st, &args);
+        const char* s = awk_tostr(st, &c, 0);
+        size_t cap = str_len(s) + 32 + (haswidth && width > 0 ? (size_t)width : 0);
+        char* buf = alloc(cap);
 
-      emit(out, buf, snprintf(buf, cap, spec, s));
-      alloc_free(buf);
-      break;
-    }
+        emit(out, buf, snprintf(buf, cap, spec, s));
+        alloc_free(buf);
+        break;
+      }
 
-    default:
-      /* unknown conversion: emit the spec text literally, no argument consumed */
-      stralloc_catb(out, specstart, (size_t)(p - specstart));
-      break;
+      default:
+        /* unknown conversion: emit the spec text literally, no argument consumed */
+        stralloc_catb(out, specstart, (size_t)(p - specstart));
+        break;
     }
   }
 

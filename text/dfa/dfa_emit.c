@@ -51,7 +51,7 @@ dfa_addset(struct dfa_parser* ps, const unsigned char set[32]) {
 
   if(ps->nsets == ps->setscap) {
     size_t newcap = ps->setscap ? ps->setscap * 2 : 16;
-    unsigned char(*p)[32] = alloc_re(ps->sets, newcap * 32);
+    unsigned char (*p)[32] = alloc_re(ps->sets, newcap * 32);
 
     if(!p) {
       ps->err = DFA_ENOMEM;

@@ -8,12 +8,16 @@
  * every earlier call.
  * ----------------------------------------------------------------------- */
 int
-dfa_submatch(
-    struct dfa* d, const char* s, size_t n, const struct dfa_span* m, struct dfa_span* g, size_t ng) {
+dfa_submatch(struct dfa* d,
+             const char* s,
+             size_t n,
+             const struct dfa_span* m,
+             struct dfa_span* g,
+             size_t ng) {
   struct dfa_span got;
   int notbol = (d->flags & DFA_NOTBOL) != 0;
   int ok = d->has_backref ? dfa_bt_run(d, s, n, m->start, 1, notbol, &got, g, ng)
-                           : dfa_run(d, s, n, m->start, 1, notbol, &got, g, ng);
+                          : dfa_run(d, s, n, m->start, 1, notbol, &got, g, ng);
 
   return ok && got.end == m->end;
 }

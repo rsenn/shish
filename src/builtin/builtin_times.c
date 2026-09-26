@@ -60,13 +60,14 @@ print_time(clock_t ticks) {
 /* times built-in
  *
  * ----------------------------------------------------------------------- */
-const char help_times[] = "    Write accumulated user and system times to stdout.\n"
-                          "\n"
-                          "    The output format is:\n"
-                          "        <user time> <system time>\n"
-                          "        <user time for children> <system time for children>\n"
-                          "\n"
-                          "    Each time is printed as XmY.YYs (minutes, seconds with 2 decimal places).\n";
+const char help_times[] =
+    "    Write accumulated user and system times to stdout.\n"
+    "\n"
+    "    The output format is:\n"
+    "        <user time> <system time>\n"
+    "        <user time for children> <system time for children>\n"
+    "\n"
+    "    Each time is printed as XmY.YYs (minutes, seconds with 2 decimal places).\n";
 
 int
 builtin_times(int argc, char* argv[]) {

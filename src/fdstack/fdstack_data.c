@@ -1,4 +1,5 @@
 #include "../fdstack.h"
+#include "../fdtable.h"
 #include "../debug.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
@@ -12,7 +13,7 @@
 int
 fdstack_data(void) {
   struct fdstack* st;
- 
+
   for(st = fdstack; st; st = st->parent) {
     struct fd* fd;
 
@@ -32,6 +33,22 @@ fdstack_data(void) {
           buffer_put(fd->w, buf, n);
 
         buffer_flush(fd->w);
+
+        /* drop the pipe's read end and FD_READ, so a later command in the
+           same substitution ("$(a; b)") counts as an FD_SUBST target again
+           in fdstack_npipes() */
+        if(fd_ok(fd->rb.fd)) {
+          if(fd_list[fd->rb.fd] == fd)
+            fd_list[fd->rb.fd] = 0;
+
+          if(fd->rb.fd > 2)
+            fdtable_untrack(fd->rb.fd);
+
+          close(fd->rb.fd);
+        }
+
+        fd->rb.fd = -1;
+        fd->mode &= ~FD_READ;
       }
 
       /* read from the stralloc and put it to here-doc pipe */

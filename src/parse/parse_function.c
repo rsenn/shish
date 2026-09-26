@@ -41,7 +41,7 @@ parse_function(struct parser* p) {
   } while(tok == T_NL || tok == T_NAME);
 
   p->pushback++;
-  
+
   /* POSIX: function body can be any compound command, not just {...} or (...) */
   tok = parse_gettok(p, P_SKIPNL);
 
@@ -61,7 +61,7 @@ parse_function(struct parser* p) {
       return NULL;
     }
   }
-  
+
   node->nfunc.loc = loc;
 
 #if defined(DEBUG_OUTPUT) && defined(DEBUG_PARSE) && !defined(SHPARSE2AST)

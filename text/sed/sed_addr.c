@@ -61,7 +61,8 @@ sed_addr_parse(const char** pp, const char* end, struct sed_addr* a, unsigned fl
     if(*p == '\\' && p + 1 < end && (p[1] == delim || p[1] == 'n')) {
       char lit = (p[1] == delim) ? delim : '\n';
 
-      if(!stralloc_catb(&pat, start, (size_t)(p - start)) || !stralloc_catc(&pat, (unsigned char)lit)) {
+      if(!stralloc_catb(&pat, start, (size_t)(p - start)) ||
+         !stralloc_catc(&pat, (unsigned char)lit)) {
         rc = SED_ENOMEM;
         goto done;
       }
@@ -119,22 +120,22 @@ sed_addr_free(struct sed_addr* a) {
 int
 sed_addr_match(struct sed_addr* a, struct sed_state* st) {
   switch(a->type) {
-  case SA_LINE: return st->lineno == a->line;
-  case SA_LAST: return st->cur_is_last;
+    case SA_LINE: return st->lineno == a->line;
+    case SA_LAST: return st->cur_is_last;
 
-  case SA_REGEX: {
-    struct dfa* re = a->re_set ? &a->re : st->last_re;
-    int m;
+    case SA_REGEX: {
+      struct dfa* re = a->re_set ? &a->re : st->last_re;
+      int m;
 
-    if(!re)
-      return 0; /* empty // with no prior regex applied yet: never matches */
+      if(!re)
+        return 0; /* empty // with no prior regex applied yet: never matches */
 
-    m = dfa_test(re, st->pattern.s, st->pattern.len);
-    st->last_re = re;
-    return m;
-  }
+      m = dfa_test(re, st->pattern.s, st->pattern.len);
+      st->last_re = re;
+      return m;
+    }
 
-  default: return 0;
+    default: return 0;
   }
 }
 

@@ -5099,4 +5099,12 @@ esac
 ## "kill -STOP"/"bg"/"fg" block a few hundred lines up, which exercises
 ## this same jobs/job_wait() path) -- no separate case needed here.
 
+## xargs -d SEP left SEP at the end of every item ("a,b" -> "a," "b"),
+## kept `items.c` uninitialised (random SEGV / wrong batches), and its
+## child did not inherit the shell's pipe/redirect fds (output inside
+## a pipeline or $(...) leaked to the terminal).
+X240=$(printf 'a,b' | xargs -d , -n1 echo p | cat)
+assert_equal "p a
+p b" "$X240" "xargs -d strips the separator from each item and its output goes through the pipe"
+
 summary

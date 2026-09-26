@@ -118,8 +118,9 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
         if(offs < sa->len)
           offs++;
+        
         eval_print_prefix(e, fd_err->w);
-        buffer_put(fd_err->w, sa->s, offs);
+        buffer_put(fd_err->w, sa->s, offs);        
         debug_squoted(&sa->s[offs], sa->len - offs, fd_err->w);
         buffer_putnlflush(fd_err->w);
       }
@@ -149,8 +150,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   }
 
   /* do redirections if present */
-  if((ncmd->rdir || (ncmd->bgnd && !sh->opts.monitor)) && cmd.id != H_SBUILTIN &&
-     cmd.id != H_EXEC)
+  if((ncmd->rdir || (ncmd->bgnd && !sh->opts.monitor)) && cmd.id != H_SBUILTIN && cmd.id != H_EXEC)
     fdstack_push(&io);
 
   /* POSIX 2.9.3.1 (Asynchronous Lists): "the standard input for an

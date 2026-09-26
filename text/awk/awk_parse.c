@@ -314,7 +314,7 @@ parse_lvalue_opt(struct awk_parser* p) {
   }
 
   if(cur(p) == T_NAME) {
-    const char *s = p->lx.sval;
+    const char* s = p->lx.sval;
     size_t n = p->lx.slen;
     struct anode* v;
 
@@ -363,160 +363,178 @@ parse_primary(struct awk_parser* p) {
   int t = cur(p);
 
   switch(t) {
-  case T_NUMBER: {
-    struct anode* n = new_node(p, A_NUM);
+    case T_NUMBER: {
+      struct anode* n = new_node(p, A_NUM);
 
-    if(n)
-      n->u.num = p->lx.numval;
+      if(n)
+        n->u.num = p->lx.numval;
 
-    advance(p);
-    return n;
-  }
+      advance(p);
+      return n;
+    }
 
-  case T_STRING: {
-    struct anode* n = new_node(p, A_STR);
-    size_t len;
+    case T_STRING: {
+      struct anode* n = new_node(p, A_STR);
+      size_t len;
 
-    if(n)
-      n->u.str = awk_unescape(p->a, p->lx.sval, p->lx.slen, &len);
+      if(n)
+        n->u.str = awk_unescape(p->a, p->lx.sval, p->lx.slen, &len);
 
-    advance(p);
-    return n;
-  }
+      advance(p);
+      return n;
+    }
 
-  case T_ERE: {
-    struct anode* n = new_node(p, A_REGEX);
-    char* pat;
-    size_t len;
+    case T_ERE: {
+      struct anode* n = new_node(p, A_REGEX);
+      char* pat;
+      size_t len;
 
-    pat = awk_unescape(p->a, p->lx.sval, p->lx.slen, &len);
-    advance(p);
+      pat = awk_unescape(p->a, p->lx.sval, p->lx.slen, &len);
+      advance(p);
 
-    if(n) {
-      n->u.re = arena_new(p->a, struct dfa);
+      if(n) {
+        n->u.re = arena_new(p->a, struct dfa);
 
-      if(!n->u.re || dfa_compile(n->u.re, pat, len, DFA_ERE) != DFA_OK) {
-        p->err = AWK_EREGEX;
+        if(!n->u.re || dfa_compile(n->u.re, pat, len, DFA_ERE) != DFA_OK) {
+          p->err = AWK_EREGEX;
+          p->errline = p->lx.line;
+        } else {
+          if(p->nregexes == p->regexcap) {
+            p->regexcap = p->regexcap ? p->regexcap * 2 : 8;
+            p->regexes = alloc_re(p->regexes, p->regexcap * sizeof(struct dfa*));
+          }
+
+          p->regexes[p->nregexes++] = n->u.re;
+        }
+      }
+
+      return n;
+    }
+
+    case T_DOLLAR: {
+      advance(p);
+      return mk1(p, A_FIELD, parse_primary(p));
+    }
+
+    case T_INCR:
+    case T_DECR: {
+      long idx = 1 /* pre */ | (t == T_DECR ? 2 : 0);
+      struct anode *operand, *n;
+
+      advance(p);
+      operand = parse_primary(p);
+
+      if(!is_lvalue(operand) && !p->err) {
+        p->err = AWK_ESYNTAX;
         p->errline = p->lx.line;
+      }
+
+      n = mk1(p, A_INCDEC, operand);
+
+      if(n)
+        n->idx = idx;
+
+      return n;
+    }
+
+    case T_LPAREN: return parse_paren_list(p);
+
+    case T_NAME: {
+      const char* s = p->lx.sval;
+      size_t n = p->lx.slen;
+      struct anode* v;
+
+      advance(p);
+      v = mk_var(p, s, n);
+
+      if(cur(p) == T_LBRACKET)
+        return mk2(p, A_INDEX, v, parse_subscripts(p));
+
+      return v;
+    }
+
+    case T_FUNC_NAME: {
+      char* name = intern(p, p->lx.sval, p->lx.slen);
+      struct anode* n;
+
+      advance(p);
+      n = new_node(p, A_CALL);
+
+      if(n) {
+        n->u.str = name;
+        n->a = parse_call_args(p);
       } else {
-        if(p->nregexes == p->regexcap) {
-          p->regexcap = p->regexcap ? p->regexcap * 2 : 8;
-          p->regexes = alloc_re(p->regexes, p->regexcap * sizeof(struct dfa*));
+        parse_call_args(p);
+      }
+
+      return n;
+    }
+
+    case T_BUILTIN: {
+      static const struct {
+        const char* name;
+        int id;
+      } tbl[] = {{"length", BI_LENGTH},
+                 {"substr", BI_SUBSTR},
+                 {"index", BI_INDEX},
+                 {"split", BI_SPLIT},
+                 {"sub", BI_SUB},
+                 {"gsub", BI_GSUB},
+                 {"match", BI_MATCH},
+                 {"sprintf", BI_SPRINTF},
+                 {"sin", BI_SIN},
+                 {"cos", BI_COS},
+                 {"atan2", BI_ATAN2},
+                 {"exp", BI_EXP},
+                 {"log", BI_LOG},
+                 {"sqrt", BI_SQRT},
+                 {"int", BI_INT},
+                 {"rand", BI_RAND},
+                 {"srand", BI_SRAND},
+                 {"tolower", BI_TOLOWER},
+                 {"toupper", BI_TOUPPER},
+                 {"system", BI_SYSTEM},
+                 {"close", BI_CLOSE},
+                 {"fflush", BI_FFLUSH},
+                 {NULL, 0}};
+      const char* s = p->lx.sval;
+      size_t n = p->lx.slen;
+      struct anode* nd;
+      size_t i;
+      int id = -1;
+
+      for(i = 0; tbl[i].name; i++)
+        if(str_len(tbl[i].name) == n && !byte_diff(tbl[i].name, n, s)) {
+          id = tbl[i].id;
+          break;
         }
 
-        p->regexes[p->nregexes++] = n->u.re;
-      }
-    }
-
-    return n;
-  }
-
-  case T_DOLLAR: {
-    advance(p);
-    return mk1(p, A_FIELD, parse_primary(p));
-  }
-
-  case T_INCR:
-  case T_DECR: {
-    long idx = 1 /* pre */ | (t == T_DECR ? 2 : 0);
-    struct anode *operand, *n;
-
-    advance(p);
-    operand = parse_primary(p);
-
-    if(!is_lvalue(operand) && !p->err) {
-      p->err = AWK_ESYNTAX;
-      p->errline = p->lx.line;
-    }
-
-    n = mk1(p, A_INCDEC, operand);
-
-    if(n)
-      n->idx = idx;
-
-    return n;
-  }
-
-  case T_LPAREN: return parse_paren_list(p);
-
-  case T_NAME: {
-    const char *s = p->lx.sval;
-    size_t n = p->lx.slen;
-    struct anode* v;
-
-    advance(p);
-    v = mk_var(p, s, n);
-
-    if(cur(p) == T_LBRACKET)
-      return mk2(p, A_INDEX, v, parse_subscripts(p));
-
-    return v;
-  }
-
-  case T_FUNC_NAME: {
-    char* name = intern(p, p->lx.sval, p->lx.slen);
-    struct anode* n;
-
-    advance(p);
-    n = new_node(p, A_CALL);
-
-    if(n) {
-      n->u.str = name;
-      n->a = parse_call_args(p);
-    } else {
-      parse_call_args(p);
-    }
-
-    return n;
-  }
-
-  case T_BUILTIN: {
-    static const struct { const char* name; int id; } tbl[] = {
-        {"length", BI_LENGTH}, {"substr", BI_SUBSTR}, {"index", BI_INDEX},
-        {"split", BI_SPLIT}, {"sub", BI_SUB}, {"gsub", BI_GSUB}, {"match", BI_MATCH},
-        {"sprintf", BI_SPRINTF}, {"sin", BI_SIN}, {"cos", BI_COS}, {"atan2", BI_ATAN2},
-        {"exp", BI_EXP}, {"log", BI_LOG}, {"sqrt", BI_SQRT}, {"int", BI_INT},
-        {"rand", BI_RAND}, {"srand", BI_SRAND}, {"tolower", BI_TOLOWER},
-        {"toupper", BI_TOUPPER}, {"system", BI_SYSTEM}, {"close", BI_CLOSE},
-        {"fflush", BI_FFLUSH}, {NULL, 0}};
-    const char *s = p->lx.sval;
-    size_t n = p->lx.slen;
-    struct anode* nd;
-    size_t i;
-    int id = -1;
-
-    for(i = 0; tbl[i].name; i++)
-      if(str_len(tbl[i].name) == n && !byte_diff(tbl[i].name, n, s)) {
-        id = tbl[i].id;
-        break;
-      }
-
-    advance(p);
-    nd = new_node(p, A_CALLBUILTIN);
-
-    if(nd)
-      nd->idx = id;
-
-    if(cur(p) == T_LPAREN) {
-      struct anode* args = parse_call_args(p);
+      advance(p);
+      nd = new_node(p, A_CALLBUILTIN);
 
       if(nd)
-        nd->a = args;
+        nd->idx = id;
+
+      if(cur(p) == T_LPAREN) {
+        struct anode* args = parse_call_args(p);
+
+        if(nd)
+          nd->a = args;
+      }
+
+      return nd;
     }
 
-    return nd;
-  }
+    case T_GETLINE: return parse_getline(p);
 
-  case T_GETLINE: return parse_getline(p);
+    default:
+      if(!p->err) {
+        p->err = AWK_ESYNTAX;
+        p->errline = p->lx.line;
+      }
 
-  default:
-    if(!p->err) {
-      p->err = AWK_ESYNTAX;
-      p->errline = p->lx.line;
-    }
-
-    advance(p);
-    return NULL;
+      advance(p);
+      return NULL;
   }
 }
 
@@ -616,19 +634,19 @@ parse_add(struct awk_parser* p) {
 static int
 starts_concat_operand(int t) {
   switch(t) {
-  case T_NUMBER:
-  case T_STRING:
-  case T_ERE:
-  case T_NAME:
-  case T_FUNC_NAME:
-  case T_BUILTIN:
-  case T_DOLLAR:
-  case T_NOT:
-  case T_INCR:
-  case T_DECR:
-  case T_LPAREN:
-  case T_GETLINE: return 1;
-  default: return 0;
+    case T_NUMBER:
+    case T_STRING:
+    case T_ERE:
+    case T_NAME:
+    case T_FUNC_NAME:
+    case T_BUILTIN:
+    case T_DOLLAR:
+    case T_NOT:
+    case T_INCR:
+    case T_DECR:
+    case T_LPAREN:
+    case T_GETLINE: return 1;
+    default: return 0;
   }
 }
 
@@ -667,13 +685,16 @@ parse_rel(struct awk_parser* p) {
     int t = cur(p), kind = -1;
 
     switch(t) {
-    case T_LT: kind = CMP_LT; break;
-    case T_LE: kind = CMP_LE; break;
-    case T_GT: if(!p->no_gt) kind = CMP_GT; break;
-    case T_GE: kind = CMP_GE; break;
-    case T_EQ: kind = CMP_EQ; break;
-    case T_NE: kind = CMP_NE; break;
-    default: break;
+      case T_LT: kind = CMP_LT; break;
+      case T_LE: kind = CMP_LE; break;
+      case T_GT:
+        if(!p->no_gt)
+          kind = CMP_GT;
+        break;
+      case T_GE: kind = CMP_GE; break;
+      case T_EQ: kind = CMP_EQ; break;
+      case T_NE: kind = CMP_NE; break;
+      default: break;
     }
 
     if(kind >= 0) {
@@ -723,7 +744,7 @@ parse_in(struct awk_parser* p) {
 
   while(cur(p) == T_IN) {
     struct anode *arr, *sub, *n;
-    const char *s;
+    const char* s;
     size_t slen;
 
     advance(p);
@@ -802,14 +823,14 @@ parse_expr(struct awk_parser* p) {
     int t = cur(p), addop = -1;
 
     switch(t) {
-    case T_ASSIGN: addop = 0; break;
-    case T_ADD_ASSIGN: addop = ADDOP_ADD; break;
-    case T_SUB_ASSIGN: addop = ADDOP_SUB; break;
-    case T_MUL_ASSIGN: addop = ADDOP_MUL; break;
-    case T_DIV_ASSIGN: addop = ADDOP_DIV; break;
-    case T_MOD_ASSIGN: addop = ADDOP_MOD; break;
-    case T_POW_ASSIGN: addop = ADDOP_POW; break;
-    default: break;
+      case T_ASSIGN: addop = 0; break;
+      case T_ADD_ASSIGN: addop = ADDOP_ADD; break;
+      case T_SUB_ASSIGN: addop = ADDOP_SUB; break;
+      case T_MUL_ASSIGN: addop = ADDOP_MUL; break;
+      case T_DIV_ASSIGN: addop = ADDOP_DIV; break;
+      case T_MOD_ASSIGN: addop = ADDOP_MOD; break;
+      case T_POW_ASSIGN: addop = ADDOP_POW; break;
+      default: break;
     }
 
     if(addop >= 0) {
@@ -908,197 +929,197 @@ parse_stmt(struct awk_parser* p) {
   int t = cur(p);
 
   switch(t) {
-  case T_LBRACE: return parse_block(p);
+    case T_LBRACE: return parse_block(p);
 
-  case T_IF: {
-    struct anode *cond, *thenb, *elseb = NULL;
+    case T_IF: {
+      struct anode *cond, *thenb, *elseb = NULL;
 
-    advance(p);
-    expect(p, T_LPAREN);
-    cond = parse_expr(p);
-    expect(p, T_RPAREN);
-    skip_newlines(p);
-    thenb = parse_stmt(p);
-    skip_terms(p);
-
-    if(cur(p) == T_ELSE) {
       advance(p);
+      expect(p, T_LPAREN);
+      cond = parse_expr(p);
+      expect(p, T_RPAREN);
       skip_newlines(p);
-      elseb = parse_stmt(p);
-    }
+      thenb = parse_stmt(p);
+      skip_terms(p);
 
-    return mk3(p, A_IF, cond, thenb, elseb);
-  }
-
-  case T_WHILE: {
-    struct anode *cond, *body;
-
-    advance(p);
-    expect(p, T_LPAREN);
-    cond = parse_expr(p);
-    expect(p, T_RPAREN);
-    skip_newlines(p);
-    body = parse_stmt(p);
-    return mk2(p, A_WHILE, cond, body);
-  }
-
-  case T_DO: {
-    struct anode *body, *cond, *n;
-
-    advance(p);
-    skip_newlines(p);
-    body = parse_stmt(p);
-    skip_terms(p);
-    expect(p, T_WHILE);
-    expect(p, T_LPAREN);
-    cond = parse_expr(p);
-    expect(p, T_RPAREN);
-    n = mk2(p, A_DOWHILE, body, cond);
-    return n;
-  }
-
-  case T_FOR: {
-    struct awk_lexer saved;
-
-    advance(p);
-    expect(p, T_LPAREN);
-
-    if(cur(p) == T_NAME) {
-      saved = p->lx;
-
-      {
-        const char *s = p->lx.sval;
-        size_t slen = p->lx.slen;
-
+      if(cur(p) == T_ELSE) {
         advance(p);
-
-        if(cur(p) == T_IN) {
-          advance(p);
-
-          if(cur(p) == T_NAME) {
-            const char *as = p->lx.sval;
-            size_t alen = p->lx.slen;
-
-            advance(p);
-
-            if(cur(p) == T_RPAREN) {
-              struct anode *var, *arr, *body;
-
-              advance(p);
-              skip_newlines(p);
-              var = mk_var(p, s, slen);
-              arr = mk_var(p, as, alen);
-              body = parse_stmt(p);
-              return mk3(p, A_FORIN, var, arr, body);
-            }
-          }
-        }
+        skip_newlines(p);
+        elseb = parse_stmt(p);
       }
 
-      p->lx = saved; /* not a for-in: rewind and parse classic for */
+      return mk3(p, A_IF, cond, thenb, elseb);
     }
 
-    {
-      struct anode *init = NULL, *cond = NULL, *post = NULL, *body;
+    case T_WHILE: {
+      struct anode *cond, *body;
 
-      if(cur(p) != T_SEMI)
-        init = parse_stmt(p);
-
-      expect(p, T_SEMI);
-      skip_newlines(p);
-
-      if(cur(p) != T_SEMI)
-        cond = parse_expr(p);
-
-      expect(p, T_SEMI);
-      skip_newlines(p);
-
-      if(cur(p) != T_RPAREN)
-        post = parse_stmt(p);
-
+      advance(p);
+      expect(p, T_LPAREN);
+      cond = parse_expr(p);
       expect(p, T_RPAREN);
       skip_newlines(p);
       body = parse_stmt(p);
+      return mk2(p, A_WHILE, cond, body);
+    }
 
-      {
-        struct anode* n = new_node(p, A_FOR);
+    case T_DO: {
+      struct anode *body, *cond, *n;
 
-        if(n) {
-          n->a = init;
-          n->b = cond;
-          n->c = post;
-          n->d = body;
+      advance(p);
+      skip_newlines(p);
+      body = parse_stmt(p);
+      skip_terms(p);
+      expect(p, T_WHILE);
+      expect(p, T_LPAREN);
+      cond = parse_expr(p);
+      expect(p, T_RPAREN);
+      n = mk2(p, A_DOWHILE, body, cond);
+      return n;
+    }
+
+    case T_FOR: {
+      struct awk_lexer saved;
+
+      advance(p);
+      expect(p, T_LPAREN);
+
+      if(cur(p) == T_NAME) {
+        saved = p->lx;
+
+        {
+          const char* s = p->lx.sval;
+          size_t slen = p->lx.slen;
+
+          advance(p);
+
+          if(cur(p) == T_IN) {
+            advance(p);
+
+            if(cur(p) == T_NAME) {
+              const char* as = p->lx.sval;
+              size_t alen = p->lx.slen;
+
+              advance(p);
+
+              if(cur(p) == T_RPAREN) {
+                struct anode *var, *arr, *body;
+
+                advance(p);
+                skip_newlines(p);
+                var = mk_var(p, s, slen);
+                arr = mk_var(p, as, alen);
+                body = parse_stmt(p);
+                return mk3(p, A_FORIN, var, arr, body);
+              }
+            }
+          }
         }
 
-        return n;
-      }
-    }
-  }
-
-  case T_BREAK: advance(p); return new_node(p, A_BREAK);
-  case T_CONTINUE: advance(p); return new_node(p, A_CONTINUE);
-  case T_NEXT: advance(p); return new_node(p, A_NEXT);
-  case T_NEXTFILE: advance(p); return new_node(p, A_NEXTFILE);
-
-  case T_EXIT: {
-    advance(p);
-    return mk1(p, A_EXIT, at_stmt_end(p) ? NULL : parse_expr(p));
-  }
-
-  case T_RETURN: {
-    advance(p);
-    return mk1(p, A_RETURN, at_stmt_end(p) ? NULL : parse_expr(p));
-  }
-
-  case T_DELETE: {
-    struct anode *arr, *sub = NULL;
-    const char *s;
-    size_t n;
-
-    advance(p);
-
-    if(cur(p) != T_NAME) {
-      if(!p->err) {
-        p->err = AWK_ESYNTAX;
-        p->errline = p->lx.line;
+        p->lx = saved; /* not a for-in: rewind and parse classic for */
       }
 
-      return NULL;
+      {
+        struct anode *init = NULL, *cond = NULL, *post = NULL, *body;
+
+        if(cur(p) != T_SEMI)
+          init = parse_stmt(p);
+
+        expect(p, T_SEMI);
+        skip_newlines(p);
+
+        if(cur(p) != T_SEMI)
+          cond = parse_expr(p);
+
+        expect(p, T_SEMI);
+        skip_newlines(p);
+
+        if(cur(p) != T_RPAREN)
+          post = parse_stmt(p);
+
+        expect(p, T_RPAREN);
+        skip_newlines(p);
+        body = parse_stmt(p);
+
+        {
+          struct anode* n = new_node(p, A_FOR);
+
+          if(n) {
+            n->a = init;
+            n->b = cond;
+            n->c = post;
+            n->d = body;
+          }
+
+          return n;
+        }
+      }
     }
 
-    s = p->lx.sval;
-    n = p->lx.slen;
-    advance(p);
-    arr = mk_var(p, s, n);
+    case T_BREAK: advance(p); return new_node(p, A_BREAK);
+    case T_CONTINUE: advance(p); return new_node(p, A_CONTINUE);
+    case T_NEXT: advance(p); return new_node(p, A_NEXT);
+    case T_NEXTFILE: advance(p); return new_node(p, A_NEXTFILE);
 
-    if(cur(p) == T_LBRACKET)
-      sub = parse_subscripts(p);
-
-    return mk2(p, A_DELETE, arr, sub);
-  }
-
-  case T_PRINT:
-  case T_PRINTF: {
-    struct anode *args, *target, *n;
-    long kind;
-    int isprintf = (t == T_PRINTF);
-
-    advance(p);
-    args = parse_print_args(p, &target, &kind);
-    n = new_node(p, isprintf ? A_PRINTF : A_PRINT);
-
-    if(n) {
-      n->idx = kind;
-      n->a = args;
-      n->b = target;
+    case T_EXIT: {
+      advance(p);
+      return mk1(p, A_EXIT, at_stmt_end(p) ? NULL : parse_expr(p));
     }
 
-    return n;
-  }
+    case T_RETURN: {
+      advance(p);
+      return mk1(p, A_RETURN, at_stmt_end(p) ? NULL : parse_expr(p));
+    }
 
-  case T_SEMI: return NULL; /* empty statement */
+    case T_DELETE: {
+      struct anode *arr, *sub = NULL;
+      const char* s;
+      size_t n;
 
-  default: return mk1(p, A_EXPRSTMT, parse_expr(p));
+      advance(p);
+
+      if(cur(p) != T_NAME) {
+        if(!p->err) {
+          p->err = AWK_ESYNTAX;
+          p->errline = p->lx.line;
+        }
+
+        return NULL;
+      }
+
+      s = p->lx.sval;
+      n = p->lx.slen;
+      advance(p);
+      arr = mk_var(p, s, n);
+
+      if(cur(p) == T_LBRACKET)
+        sub = parse_subscripts(p);
+
+      return mk2(p, A_DELETE, arr, sub);
+    }
+
+    case T_PRINT:
+    case T_PRINTF: {
+      struct anode *args, *target, *n;
+      long kind;
+      int isprintf = (t == T_PRINTF);
+
+      advance(p);
+      args = parse_print_args(p, &target, &kind);
+      n = new_node(p, isprintf ? A_PRINTF : A_PRINT);
+
+      if(n) {
+        n->idx = kind;
+        n->a = args;
+        n->b = target;
+      }
+
+      return n;
+    }
+
+    case T_SEMI: return NULL; /* empty statement */
+
+    default: return mk1(p, A_EXPRSTMT, parse_expr(p));
   }
 }
 
@@ -1139,9 +1160,22 @@ walk_uses_input(struct anode* n) {
          walk_uses_input(n->d) || walk_uses_input(n->next);
 }
 
-static const char* const special_names[NSPECIAL] = {
-    "NF", "NR", "FNR", "FS", "OFS", "ORS", "RS", "SUBSEP", "CONVFMT", "OFMT",
-    "RSTART", "RLENGTH", "FILENAME", "ARGC", "ARGV", "ENVIRON"};
+static const char* const special_names[NSPECIAL] = {"NF",
+                                                    "NR",
+                                                    "FNR",
+                                                    "FS",
+                                                    "OFS",
+                                                    "ORS",
+                                                    "RS",
+                                                    "SUBSEP",
+                                                    "CONVFMT",
+                                                    "OFMT",
+                                                    "RSTART",
+                                                    "RLENGTH",
+                                                    "FILENAME",
+                                                    "ARGC",
+                                                    "ARGV",
+                                                    "ENVIRON"};
 
 int
 awk_parse_program(struct awk_parser* p) {
@@ -1282,7 +1316,8 @@ awk_parse_program(struct awk_parser* p) {
 
   /* materialize prog->funcs/rules before the call-fixup pass, which
      resolves A_CALL by looking functions up in prog->funcs */
-  p->prog->funcs = arena_allocn(p->a, sizeof(struct awk_func), p->nfuncs, __alignof__(struct awk_func));
+  p->prog->funcs =
+      arena_allocn(p->a, sizeof(struct awk_func), p->nfuncs, __alignof__(struct awk_func));
 
   if(p->nfuncs)
     byte_copy(p->prog->funcs, p->nfuncs * sizeof(struct awk_func), p->funcs);
@@ -1305,7 +1340,8 @@ awk_parse_program(struct awk_parser* p) {
 
   p->prog->begin = p->begin;
   p->prog->end = p->end;
-  p->prog->rules = arena_allocn(p->a, sizeof(struct awk_rule), p->nrules, __alignof__(struct awk_rule));
+  p->prog->rules =
+      arena_allocn(p->a, sizeof(struct awk_rule), p->nrules, __alignof__(struct awk_rule));
 
   if(p->nrules)
     byte_copy(p->prog->rules, p->nrules * sizeof(struct awk_rule), p->rules);
@@ -1323,8 +1359,8 @@ awk_parse_program(struct awk_parser* p) {
 
   p->prog->nregexes = p->nregexes;
 
-  p->prog->uses_main_input = !p->err && ((p->nrules > 0) || walk_uses_input(p->begin) ||
-                                          walk_uses_input(p->end));
+  p->prog->uses_main_input =
+      !p->err && ((p->nrules > 0) || walk_uses_input(p->begin) || walk_uses_input(p->end));
 
   for(i = 0; i < p->nfuncs && !p->prog->uses_main_input; i++)
     p->prog->uses_main_input = walk_uses_input(p->prog->funcs[i].body);

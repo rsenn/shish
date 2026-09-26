@@ -47,16 +47,16 @@ struct dfa_span {
 /* dfa_error() codes; dfa_compile() returns one of these (0 = success) */
 enum {
   DFA_OK = 0,
-  DFA_ENOMEM,    /* allocation failed */
-  DFA_EPAREN,    /* unbalanced \( \) or ( ) */
-  DFA_EBRACKET,  /* unterminated [ ] */
-  DFA_EBRACE,    /* bad or unclosed \{m,n\}, m > n, or m/n too large */
-  DFA_ERANGE,    /* reversed range in a bracket expression, e.g. [z-a] */
-  DFA_ECLASS,    /* unknown [:class:] name */
-  DFA_ESUBREG,   /* \N referring to a group that doesn't exist yet */
-  DFA_EBADRPT,   /* repetition operator with nothing to repeat (ERE) */
-  DFA_EESCAPE,   /* pattern ends with a trailing backslash */
-  DFA_ESIZE      /* pattern or program too large, or nesting too deep */
+  DFA_ENOMEM,   /* allocation failed */
+  DFA_EPAREN,   /* unbalanced \( \) or ( ) */
+  DFA_EBRACKET, /* unterminated [ ] */
+  DFA_EBRACE,   /* bad or unclosed \{m,n\}, m > n, or m/n too large */
+  DFA_ERANGE,   /* reversed range in a bracket expression, e.g. [z-a] */
+  DFA_ECLASS,   /* unknown [:class:] name */
+  DFA_ESUBREG,  /* \N referring to a group that doesn't exist yet */
+  DFA_EBADRPT,  /* repetition operator with nothing to repeat (ERE) */
+  DFA_EESCAPE,  /* pattern ends with a trailing backslash */
+  DFA_ESIZE     /* pattern or program too large, or nesting too deep */
 };
 
 /* dfa_compile: pat/patlen need not be NUL-terminated. *d must be
@@ -91,8 +91,12 @@ int dfa_search(struct dfa* d, const char* s, size_t n, size_t from, struct dfa_s
 /* dfa_submatch: fills g[0..ng) with \1..\N's spans inside the match m
  * that dfa_search/dfa_test/dfa_prefix already found (relative to s).
  * A group that did not participate gets {(size_t)-1, (size_t)-1}. */
-int dfa_submatch(
-    struct dfa* d, const char* s, size_t n, const struct dfa_span* m, struct dfa_span* g, size_t ng);
+int dfa_submatch(struct dfa* d,
+                 const char* s,
+                 size_t n,
+                 const struct dfa_span* m,
+                 struct dfa_span* g,
+                 size_t ng);
 
 /* ---- replacement templates: shared by sed's s/// and (later) awk's
  * sub/gsub -- compiled once per template, applied per match.
@@ -120,8 +124,15 @@ typedef int (*dfa_repl_out_fn)(void* ctx, const char* s, size_t n);
  * success (0) *nreplaced gets the number of replacements made. A
  * nonzero out() return aborts and is passed back as -1, in which case
  * *nreplaced is left untouched. */
-int dfa_replace(struct dfa* d, const struct dfa_repl* r, const char* s, size_t n, unsigned nth,
-                 int global, dfa_repl_out_fn out, void* ctx, unsigned* nreplaced);
+int dfa_replace(struct dfa* d,
+                const struct dfa_repl* r,
+                const char* s,
+                size_t n,
+                unsigned nth,
+                int global,
+                dfa_repl_out_fn out,
+                void* ctx,
+                unsigned* nreplaced);
 
 #ifdef __cplusplus
 }

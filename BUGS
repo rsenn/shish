@@ -1236,3 +1236,14 @@
   "$SHISH_SELF" -c '"$SHISH_SELF" -c "kill -s INT \$\$"; echo $?'  # prints 130, correctly
   ```
 
+
+- a redirection on a command inside `$(...)` is ignored for an external
+  command's stdout: `fdstack_pipe()` pushes the substitution's pipe over
+  fd 1 whatever the command redirected it to, so the output leaks into
+  the substitution. Same for a forking builtin (xargs).
+
+  **Repro:**
+  ```sh
+  X=$(/bin/echo p >/dev/null); echo "[$X]"   # prints [p], should print []
+  X=$(/bin/echo p 2>&1 >/dev/null); echo "[$X]"   # prints [p], should print []
+  ```

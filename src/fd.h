@@ -18,6 +18,7 @@
 #include "../lib/shell.h"
 #include "../lib/stralloc.h"
 #include "../lib/windoze.h"
+#include "builtin_filter.h"
 #include "../lib/alloc.h"
 
 #ifdef HAVE_ALLOCA
@@ -96,8 +97,8 @@ enum fd_mode {
 
   /* types */
 
-  FD_TYPE = 0x0007ff00,
-  FD_FILE = 0x0100, /* a file that has been opened */
+  FD_TYPE = 0x0017ff00, /* widened to include FD_FILTER, below */
+  FD_FILE = 0x0100,     /* a file that has been opened */
   FD_DIR = 0x0200,
   FD_LINK = 0x0400,
   FD_CHAR = 0x0800,
@@ -109,6 +110,7 @@ enum fd_mode {
   FD_DUP = 0x00020000,    /* a clone of another file descriptor */
   FD_TERM = 0x00040000,   /* is a terminal */
   FD_NULL = 0x00080000,   /* explicitly closed (">&-"/"<&-"), see fd_null() */
+  FD_FILTER = 0x00100000, /* backed by a chained filter_ops instead of a real fd, see fd_filter() */
 
   /* todo mode */
 
@@ -169,6 +171,8 @@ void fd_allocbuf(struct fd*, size_t n);
 void fd_close(struct fd*);
 void fd_dump(struct fd*, buffer* b);
 void fd_dumplist(buffer* b);
+void fd_filter(struct fd*, const struct filter_ops* ops, void* ctx);
+void buffer_filter_init(buffer*, const struct filter_ops* ops, void* ctx);
 void fd_free(struct fd*);
 void fd_here(struct fd*, stralloc* sa);
 void fd_init(struct fd*, int n, int mode);

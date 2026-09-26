@@ -64,7 +64,7 @@ path_fnmatch_subexpr_len(const char* pattern, unsigned int plen, char delim) {
  * *skip (how many pattern bytes the whole "-<endpoint>" occupies).
  * Returns 0 (not a range -- a trailing "-]", or a multi-character/
  * class endpoint this implementation can't resolve to a single
- * character) without touching *end/*skip otherwise.
+ * character) without touching *end / *skip otherwise.
  * ----------------------------------------------------------------------- */
 static int
 path_fnmatch_range_end(const char* pattern, unsigned int plen, char* end, unsigned int* skip) {

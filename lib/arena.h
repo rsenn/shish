@@ -29,13 +29,13 @@ extern const struct arena_src arena_brk;  /* sbrk(); never returned */
 struct arena_chunk;
 
 typedef struct arena_s {
-  char* beg;                        /* next free byte in the current chunk */
-  char* end;                        /* one past the current chunk */
-  char* top;                        /* start of the newest allocation, or NULL */
-  struct arena_chunk* chunk;        /* current chunk; earlier ones chain back */
-  const struct arena_src* src;      /* NULL = fixed buffer, never grows */
-  size_t csize;                     /* preferred size of a new chunk */
-} arena;                            /* all zero = empty fixed arena: every alloc fails */
+  char* beg;                   /* next free byte in the current chunk */
+  char* end;                   /* one past the current chunk */
+  char* top;                   /* start of the newest allocation, or NULL */
+  struct arena_chunk* chunk;   /* current chunk; earlier ones chain back */
+  const struct arena_src* src; /* NULL = fixed buffer, never grows */
+  size_t csize;                /* preferred size of a new chunk */
+} arena;                       /* all zero = empty fixed arena: every alloc fails */
 
 /* setup and teardown
  * ----------------------------------------------------------------------- */

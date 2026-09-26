@@ -48,8 +48,8 @@ repl_addliteral(struct dfa_repl* r, const char* s, size_t len) {
   /* coalesce with a directly-preceding literal run instead of adding
      a new item, so e.g. "\&x" (an escaped '&' followed by a plain
      'x') ends up as one literal item, not two. */
-  if(r->nitems && r->items[r->nitems - 1].group < 0
-     && r->items[r->nitems - 1].off + r->items[r->nitems - 1].len == r->litlen) {
+  if(r->nitems && r->items[r->nitems - 1].group < 0 &&
+     r->items[r->nitems - 1].off + r->items[r->nitems - 1].len == r->litlen) {
     r->items[r->nitems - 1].len += len;
   } else {
     if(r->nitems == r->cap) {
@@ -166,8 +166,13 @@ dfa_repl_free(struct dfa_repl* r) {
 }
 
 static int
-dfa_repl_apply(const struct dfa_repl* r, const char* s, const struct dfa_span* m,
-               const struct dfa_span* g, size_t ng, dfa_repl_out_fn out, void* ctx) {
+dfa_repl_apply(const struct dfa_repl* r,
+               const char* s,
+               const struct dfa_span* m,
+               const struct dfa_span* g,
+               size_t ng,
+               dfa_repl_out_fn out,
+               void* ctx) {
   size_t i;
 
   for(i = 0; i < r->nitems; i++) {
@@ -193,8 +198,15 @@ dfa_repl_apply(const struct dfa_repl* r, const char* s, const struct dfa_span* m
 }
 
 int
-dfa_replace(struct dfa* d, const struct dfa_repl* r, const char* s, size_t n, unsigned nth,
-            int global, dfa_repl_out_fn out, void* ctx, unsigned* nreplaced) {
+dfa_replace(struct dfa* d,
+            const struct dfa_repl* r,
+            const char* s,
+            size_t n,
+            unsigned nth,
+            int global,
+            dfa_repl_out_fn out,
+            void* ctx,
+            unsigned* nreplaced) {
   size_t pos = 0;
   unsigned count = 0;
   unsigned matched = 0;

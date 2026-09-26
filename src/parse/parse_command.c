@@ -22,7 +22,7 @@ parse_command(struct parser* p, int tempflags) {
         break;
       parse_skip(p);
     }*/
-  
+
   switch(tok) {
     /* T_FOR begins an iteration statement */
     case T_FOR: command = parse_for(p); break;

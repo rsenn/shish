@@ -13,8 +13,8 @@
  * is the file name).
  * ----------------------------------------------------------------------- */
 int
-sed_subst_parse(const char** pp, const char* end, struct sed_subst* s, unsigned flags,
-                 struct sed* prog) {
+sed_subst_parse(
+    const char** pp, const char* end, struct sed_subst* s, unsigned flags, struct sed* prog) {
   const char* p = *pp;
   char delim;
   stralloc pat, repl;
@@ -48,7 +48,8 @@ sed_subst_parse(const char** pp, const char* end, struct sed_subst* s, unsigned 
     if(*p == '\\' && p + 1 < end && (p[1] == delim || p[1] == '\n' || p[1] == 'n')) {
       char lit = (p[1] == delim) ? delim : '\n';
 
-      if(!stralloc_catb(&pat, start, (size_t)(p - start)) || !stralloc_catc(&pat, (unsigned char)lit)) {
+      if(!stralloc_catb(&pat, start, (size_t)(p - start)) ||
+         !stralloc_catc(&pat, (unsigned char)lit)) {
         rc = SED_ENOMEM;
         goto done;
       }
@@ -211,8 +212,15 @@ sed_subst_exec(struct sed_subst* s, struct sed_state* st) {
     return 0;
 
   stralloc_init(&result);
-  rc = dfa_replace(re, s->repl, st->pattern.s, st->pattern.len, s->nth, s->global, subst_append,
-                    &result, &nreplaced);
+  rc = dfa_replace(re,
+                   s->repl,
+                   st->pattern.s,
+                   st->pattern.len,
+                   s->nth,
+                   s->global,
+                   subst_append,
+                   &result,
+                   &nreplaced);
   st->last_re = re;
 
   if(rc || nreplaced == 0) {

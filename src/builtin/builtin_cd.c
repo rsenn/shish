@@ -81,9 +81,8 @@ builtin_cd(int argc, char* argv[]) {
 
   /* POSIX: CDPATH is not used if the operand begins with '/', or with
      a "." or ".." path component (cd-cdpath-applies-to-dot-operand) */
-  if(arg[0] != '/' && !(arg[0] == '.' &&
-                        (arg[1] == '/' || arg[1] == '\0' ||
-                         (arg[1] == '.' && (arg[2] == '/' || arg[2] == '\0'))))) {
+  if(arg[0] != '/' && !(arg[0] == '.' && (arg[1] == '/' || arg[1] == '\0' ||
+                                          (arg[1] == '.' && (arg[2] == '/' || arg[2] == '\0'))))) {
     char path[PATH_MAX + 1];
     const char* cdpath;
 

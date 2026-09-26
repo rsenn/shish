@@ -54,7 +54,7 @@ builtin_export(int argc, char* argv[]) {
         builtin_errmsg(argv, *argp, "readonly variable");
         continue;
       }
-      
+
       var_copys(*argp, V_EXPORT);
     }
 

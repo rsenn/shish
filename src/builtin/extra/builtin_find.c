@@ -17,18 +17,21 @@ struct ancestor {
   struct ancestor* next;
 };
 
-static int eval_expr(char* argv[], int* i, int end, const char* path, struct stat* st, int* has_action);
+static int
+eval_expr(char* argv[], int* i, int end, const char* path, struct stat* st, int* has_action);
 
 static int
 eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, int* has_action) {
-  if(*i >= end) return 1;
+  if(*i >= end)
+    return 1;
 
   char* arg = argv[*i];
 
   if(str_equal(arg, "(")) {
     (*i)++;
     int res = eval_expr(argv, i, end, path, st, has_action);
-    if(*i < end && str_equal(argv[*i], ")")) (*i)++;
+    if(*i < end && str_equal(argv[*i], ")"))
+      (*i)++;
     return res;
   }
 
@@ -39,18 +42,23 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
 
   if(str_equal(arg, "-type")) {
     (*i)++;
-    if(*i >= end) return 0;
+    if(*i >= end)
+      return 0;
     char* val = argv[(*i)++];
-    if(str_equal(val, "f")) return S_ISREG(st->st_mode);
-    if(str_equal(val, "d")) return S_ISDIR(st->st_mode);
-    if(str_equal(val, "l")) return S_ISLNK(st->st_mode);
+    if(str_equal(val, "f"))
+      return S_ISREG(st->st_mode);
+    if(str_equal(val, "d"))
+      return S_ISDIR(st->st_mode);
+    if(str_equal(val, "l"))
+      return S_ISLNK(st->st_mode);
     return 0;
   }
 
   if(str_equal(arg, "-name") || str_equal(arg, "-iname")) {
     int ignore_case = str_equal(arg, "-iname");
     (*i)++;
-    if(*i >= end) return 0;
+    if(*i >= end)
+      return 0;
     char* pat = argv[(*i)++];
     char* base = path_basename(path);
     (void)ignore_case;
@@ -101,7 +109,12 @@ eval_expr(char* argv[], int* i, int end, const char* path, struct stat* st, int*
 }
 
 static int
-find_recursive(char* argv[], int expr_start, int expr_end, stralloc* path, int deref_links, struct ancestor* anc) {
+find_recursive(char* argv[],
+               int expr_start,
+               int expr_end,
+               stralloc* path,
+               int deref_links,
+               struct ancestor* anc) {
   struct stat st;
   int has_action = 0;
   int i;
@@ -168,8 +181,8 @@ find_recursive(char* argv[], int expr_start, int expr_end, stralloc* path, int d
 }
 
 const char help_find[] = "    Search for files in a directory hierarchy[cite: 23].\n"
-                       "    -H              dereference command-line symbolic links\n"
-                       "    -L              dereference all symbolic links\n";
+                         "    -H              dereference command-line symbolic links\n"
+                         "    -L              dereference all symbolic links\n";
 
 int
 builtin_find(int argc, char* argv[]) {
@@ -189,8 +202,8 @@ builtin_find(int argc, char* argv[]) {
 
   expr_start = shell_optind;
 
-  while(argv[expr_start] && argv[expr_start][0] != '-' && 
-        !str_equal(argv[expr_start], "(") && !str_equal(argv[expr_start], "!")) {
+  while(argv[expr_start] && argv[expr_start][0] != '-' && !str_equal(argv[expr_start], "(") &&
+        !str_equal(argv[expr_start], "!")) {
     expr_start++;
   }
 

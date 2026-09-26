@@ -135,11 +135,11 @@ awk_is_numeric_cell(const awk_cell* c) {
 double
 awk_tonum(struct awk_state* st, awk_cell* c) {
   switch(c->type) {
-  case CELL_NUM: return c->num;
-  case CELL_STR:
-  case CELL_STRNUM: return strtod(c->str, NULL);
-  case CELL_ARRAY: awk_runtime_error(st, "can't read value of an array"); return 0;
-  default: return 0; /* CELL_UNINIT */
+    case CELL_NUM: return c->num;
+    case CELL_STR:
+    case CELL_STRNUM: return strtod(c->str, NULL);
+    case CELL_ARRAY: awk_runtime_error(st, "can't read value of an array"); return 0;
+    default: return 0; /* CELL_UNINIT */
   }
 }
 
@@ -168,8 +168,13 @@ safe_float_fmt(const char* fmt) {
   }
 
   switch(*p) {
-  case 'e': case 'E': case 'f': case 'F': case 'g': case 'G': break;
-  default: return 0;
+    case 'e':
+    case 'E':
+    case 'f':
+    case 'F':
+    case 'g':
+    case 'G': break;
+    default: return 0;
   }
 
   return p[1] == 0;
@@ -203,28 +208,28 @@ awk_num2str(struct awk_state* st, double n, const char* fmt) {
 const char*
 awk_tostr(struct awk_state* st, awk_cell* c, int output) {
   switch(c->type) {
-  case CELL_STR:
-  case CELL_STRNUM: return c->str;
+    case CELL_STR:
+    case CELL_STRNUM: return c->str;
 
-  case CELL_NUM: {
-    awk_cell* fmtcell = awk_global(st, output ? SP_OFMT : SP_CONVFMT);
+    case CELL_NUM: {
+      awk_cell* fmtcell = awk_global(st, output ? SP_OFMT : SP_CONVFMT);
 
-    return awk_num2str(st, c->num, fmtcell->str ? fmtcell->str : "%.6g");
-  }
+      return awk_num2str(st, c->num, fmtcell->str ? fmtcell->str : "%.6g");
+    }
 
-  case CELL_ARRAY: awk_runtime_error(st, "can't read value of an array"); return "";
-  default: return ""; /* CELL_UNINIT */
+    case CELL_ARRAY: awk_runtime_error(st, "can't read value of an array"); return "";
+    default: return ""; /* CELL_UNINIT */
   }
 }
 
 int
 awk_tobool(struct awk_state* st, awk_cell* c) {
   switch(c->type) {
-  case CELL_NUM: return c->num != 0;
-  case CELL_STRNUM: return strtod(c->str, NULL) != 0;
-  case CELL_STR: return c->str && c->str[0] != 0;
-  case CELL_ARRAY: awk_runtime_error(st, "can't read value of an array"); return 0;
-  default: return 0;
+    case CELL_NUM: return c->num != 0;
+    case CELL_STRNUM: return strtod(c->str, NULL) != 0;
+    case CELL_STR: return c->str && c->str[0] != 0;
+    case CELL_ARRAY: awk_runtime_error(st, "can't read value of an array"); return 0;
+    default: return 0;
   }
 }
 

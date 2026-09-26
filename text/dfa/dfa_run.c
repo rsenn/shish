@@ -19,49 +19,58 @@ struct dfa_tlist {
  * a cyclic SPLIT (`x*`) can only be entered once per step.
  * ----------------------------------------------------------------------- */
 static void
-addthread(arena* a, struct dfa_tlist* l, int* mark, int gen, const struct dfa_inst* prog, size_t ngroup,
-          int pc, long* save, size_t pos, int notbol, size_t n) {
+addthread(arena* a,
+          struct dfa_tlist* l,
+          int* mark,
+          int gen,
+          const struct dfa_inst* prog,
+          size_t ngroup,
+          int pc,
+          long* save,
+          size_t pos,
+          int notbol,
+          size_t n) {
   if(mark[pc] == gen)
     return;
 
   mark[pc] = gen;
 
   switch(prog[pc].op) {
-  case DFA_JMP:
-    addthread(a, l, mark, gen, prog, ngroup, prog[pc].x, save, pos, notbol, n);
-    return;
+    case DFA_JMP:
+      addthread(a, l, mark, gen, prog, ngroup, prog[pc].x, save, pos, notbol, n);
+      return;
 
-  case DFA_SPLIT:
-    addthread(a, l, mark, gen, prog, ngroup, prog[pc].x, save, pos, notbol, n);
-    addthread(a, l, mark, gen, prog, ngroup, prog[pc].y, save, pos, notbol, n);
-    return;
+    case DFA_SPLIT:
+      addthread(a, l, mark, gen, prog, ngroup, prog[pc].x, save, pos, notbol, n);
+      addthread(a, l, mark, gen, prog, ngroup, prog[pc].y, save, pos, notbol, n);
+      return;
 
-  case DFA_SAVE:
-    if(ngroup) {
-      long* ns = arena_dup(a, save, 2 * ngroup * sizeof(long));
+    case DFA_SAVE:
+      if(ngroup) {
+        long* ns = arena_dup(a, save, 2 * ngroup * sizeof(long));
 
-      ns[prog[pc].x] = (long)pos;
-      addthread(a, l, mark, gen, prog, ngroup, pc + 1, ns, pos, notbol, n);
-    } else {
-      addthread(a, l, mark, gen, prog, ngroup, pc + 1, save, pos, notbol, n);
-    }
-    return;
+        ns[prog[pc].x] = (long)pos;
+        addthread(a, l, mark, gen, prog, ngroup, pc + 1, ns, pos, notbol, n);
+      } else {
+        addthread(a, l, mark, gen, prog, ngroup, pc + 1, save, pos, notbol, n);
+      }
+      return;
 
-  case DFA_BOL:
-    if(pos == 0 && !notbol)
-      addthread(a, l, mark, gen, prog, ngroup, pc + 1, save, pos, notbol, n);
-    return;
+    case DFA_BOL:
+      if(pos == 0 && !notbol)
+        addthread(a, l, mark, gen, prog, ngroup, pc + 1, save, pos, notbol, n);
+      return;
 
-  case DFA_EOL:
-    if(pos == n)
-      addthread(a, l, mark, gen, prog, ngroup, pc + 1, save, pos, notbol, n);
-    return;
+    case DFA_EOL:
+      if(pos == n)
+        addthread(a, l, mark, gen, prog, ngroup, pc + 1, save, pos, notbol, n);
+      return;
 
-  default: /* CHAR/ANY/SET/BACKREF/MATCH: consumes input or ends the match */
-    l->t[l->n].pc = pc;
-    l->t[l->n].save = save;
-    l->n++;
-    return;
+    default: /* CHAR/ANY/SET/BACKREF/MATCH: consumes input or ends the match */
+      l->t[l->n].pc = pc;
+      l->t[l->n].save = save;
+      l->n++;
+      return;
   }
 }
 
@@ -72,10 +81,17 @@ addthread(arena* a, struct dfa_tlist* l, int* mark, int gen, const struct dfa_in
  * a back-reference never reaches here (see dfa_bt_run).
  * ----------------------------------------------------------------------- */
 int
-dfa_run(const struct dfa* d, const char* s, size_t n, size_t start, int anchored, int notbol,
-        struct dfa_span* m, struct dfa_span* g, size_t ng) {
+dfa_run(const struct dfa* d,
+        const char* s,
+        size_t n,
+        size_t start,
+        int anchored,
+        int notbol,
+        struct dfa_span* m,
+        struct dfa_span* g,
+        size_t ng) {
   const struct dfa_inst* prog = d->prog;
-  const unsigned char(*sets)[32] = d->sets;
+  const unsigned char (*sets)[32] = d->sets;
   size_t proglen = d->proglen;
   arena a;
   int* mark;
@@ -128,33 +144,33 @@ dfa_run(const struct dfa* d, const char* s, size_t n, size_t start, int anchored
         long* sv = clist.t[i].save;
 
         switch(prog[pc].op) {
-        case DFA_MATCH:
-          if((long)pos > best_end) {
-            best_end = (long)pos;
-            best_save = sv;
-          }
-          break;
+          case DFA_MATCH:
+            if((long)pos > best_end) {
+              best_end = (long)pos;
+              best_save = sv;
+            }
+            break;
 
-        case DFA_CHAR:
-          if(c == prog[pc].x)
-            addthread(&a, &nlist, mark, gen, prog, d->ngroup, pc + 1, sv, pos + 1, notbol, n);
-          break;
+          case DFA_CHAR:
+            if(c == prog[pc].x)
+              addthread(&a, &nlist, mark, gen, prog, d->ngroup, pc + 1, sv, pos + 1, notbol, n);
+            break;
 
-        case DFA_ANY:
-          if(c >= 0)
-            addthread(&a, &nlist, mark, gen, prog, d->ngroup, pc + 1, sv, pos + 1, notbol, n);
-          break;
+          case DFA_ANY:
+            if(c >= 0)
+              addthread(&a, &nlist, mark, gen, prog, d->ngroup, pc + 1, sv, pos + 1, notbol, n);
+            break;
 
-        case DFA_SET:
-          if(c >= 0 && (sets[prog[pc].x][c >> 3] & (unsigned char)(1u << (c & 7))))
-            addthread(&a, &nlist, mark, gen, prog, d->ngroup, pc + 1, sv, pos + 1, notbol, n);
-          break;
+          case DFA_SET:
+            if(c >= 0 && (sets[prog[pc].x][c >> 3] & (unsigned char)(1u << (c & 7))))
+              addthread(&a, &nlist, mark, gen, prog, d->ngroup, pc + 1, sv, pos + 1, notbol, n);
+            break;
 
-        default:
-          /* DFA_BACKREF: variable-length, not representable as a
-             single per-character NFA step -- d->has_backref routes
-             these patterns to dfa_bt_run instead, so unreachable. */
-          break;
+          default:
+            /* DFA_BACKREF: variable-length, not representable as a
+               single per-character NFA step -- d->has_backref routes
+               these patterns to dfa_bt_run instead, so unreachable. */
+            break;
         }
       }
 

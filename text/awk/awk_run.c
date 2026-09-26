@@ -126,8 +126,11 @@ close_current_file(struct awk_state* st) {
 }
 
 int
-awk_run(struct awk_prog* prog, const struct awk_io* io, char* const* assigns,
-        char* const* operands, const char* fs) {
+awk_run(struct awk_prog* prog,
+        const struct awk_io* io,
+        char* const* assigns,
+        char* const* operands,
+        const char* fs) {
   struct awk_state st;
   size_t i;
   int rc = CF_NORMAL;
