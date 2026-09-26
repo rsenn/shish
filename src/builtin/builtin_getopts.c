@@ -90,6 +90,10 @@ builtin_getopts(int argc, char* argv[]) {
          fooled by the init bump on the very first getopts call. */
       int ind_before = optind == 0 ? 1 : optind;
 
+      /* the previous call's argument points into words that are gone by
+         now; a flag without an argument must not report it again */
+      optarg = 0;
+
       c = shell_getopt_r(&builtin_getopts_state, ac + 1, av - 1, optstring);
 
       /* shell_getopt_r() defers advancing past a plain boolean flag's

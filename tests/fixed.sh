@@ -5155,4 +5155,9 @@ kill -TERM "$X246"
 wait "$X246"
 assert_equal 143 "$?" "a background job is still killable by TERM after \$(...) and (...) in a non-interactive shell"
 
+## getopts: a flag without an argument must not re-read the previous call's
+## OPTARG pointer (freed words; ASan reports a heap-use-after-free)
+X248=$(getopts b:c o -b val -c; getopts b:c o -b val -c; echo "[$o][${OPTARG-unset}]")
+assert_equal "[c][unset]" "$X248" "getopts: a flag after an option-with-argument leaves OPTARG unset"
+
 summary
