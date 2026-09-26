@@ -4008,8 +4008,8 @@ without `sleep`.
 | 21 | `ps` | 4 | ~300 | ~2635 | Linux only: `/proc/*/stat`+`cmdline`, `-o` column formats, `-e -a -A -f -l -p -t -u -U -G -g -d`, tty name mapping |
 | 22 | `pr` | 5 | ~320 | ~2955 | pagination, headers/footers, `-column`/`-m` multi-column layout, `-e -i -n -o -w -f -F -l -h -s -t -d -r -a` |
 
-**About 3,300 lines for all 22**, of which the first 12 (through `cut`) are about 1,000 and cover
-almost everything a script uses. Stop after `cut`, or after `tr`, unless a real use appears.
+**About 2,950 lines for the 21 utilities still to write** (about twice that with tests); the first 12
+(through `cut`) are about 950 and cover almost everything a script uses. Stop after `cut`, or after `tr`, unless a real use appears.
 
 ### Not planned
 
