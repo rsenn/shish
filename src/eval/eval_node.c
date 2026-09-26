@@ -1,4 +1,5 @@
 #include "../fd.h"
+#include "../trace.h"
 #include "../eval.h"
 #include "../sh.h"
 #include "../tree.h"
@@ -13,6 +14,8 @@ eval_node(struct eval* e, union node* node) {
     e->debug(node);
 
   tree_location(node, &e->pos);
+
+  TRACE(TRACE_EVAL, "node", trace_kind("kind", node->id), trace_loc("loc", &e->pos), trace_flags("flags", e->flags, trace_eval_flags, 9));
 
   switch(node->id) {
     case N_SIMPLECMD: {

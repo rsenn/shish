@@ -1,4 +1,5 @@
 #include "../eval.h"
+#include "../trace.h"
 #include "../tree.h"
 #include "../sh.h"
 
@@ -13,6 +14,7 @@ eval_loop(struct eval* e, struct nloop* nloop) {
   int status = 0;
 
   eval_push(&en, E_LOOP);
+  TRACE(TRACE_EVAL, "loop", trace_raw("kind", nloop->id == N_WHILE ? "while" : "until"));
 
   en.jump = 1;
 
@@ -54,6 +56,7 @@ eval_loop(struct eval* e, struct nloop* nloop) {
     errexit_suppress++;
     ret = eval_tree(e, nloop->test, E_LIST);
     errexit_suppress--;
+    TRACE(TRACE_EVAL, "loop.test", trace_int("status", ret), trace_int("continue", ret == retcode));
 
     if(ret != retcode)
       break;

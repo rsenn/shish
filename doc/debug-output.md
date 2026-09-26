@@ -424,7 +424,7 @@ shows *which input* produced each evaluation; `sh_loop.c:53` becomes `sh.loop.li
 
 ## 5. Rollout order
 
-Status: steps 1 and 2 are implemented (see [5.1](#51-implemented)); the rest is open.
+Status: steps 1, 2 and 3 are implemented (see [5.1](#51-implemented) and [5.2](#52-evaluator-and-redirections-step-3)); the rest is open.
 
 1. **Foundation** – fix P1 (include `uint64.h` in `lib/buffer.h`), add `src/trace.h` +
    `src/trace/*.c` (formatter, module selector, atomic writer, `trace_reopen`), port the
@@ -510,3 +510,68 @@ Example (`SHISH_TRACE=exec,builtin,fdtable shish -c 'echo hi | /bin/cat'`):
 
 The `fdtable.exec.fds` line already shows two things that were invisible before: the legacy
 `debug.log` (fd 3) and the shell's internal pipe (128/129) leak into every exec'd program.
+
+### 5.2 Evaluator and redirections (step 3)
+
+New module `expand` (`SHISH_TRACE=expand`), plus `eval` and `redir`. New value writers:
+`trace_loc(key, &location)` (`"file:line:col"`), `trace_kind(key, node->id)` (`simple_command`,
+`if_clause`, …), `trace_strn(key, s, len)` (stralloc contents), and flag-name tables
+`trace_eval_flags` / `trace_redir_flags` for `trace_flags()`.
+
+**Evaluator** (`src/eval/`, `src/expand/expand_command.c`)
+
+| event | payload | where |
+|---|---|---|
+| `eval.push` / `eval.pop` | `flags` (`E_ROOT E_LOOP E_FUNCTION …`) / `flags, status` | `eval_push.c`, `eval_pop.c` |
+| `eval.node` | `kind, loc, flags` | `eval_node.c`: every node the evaluator dispatches |
+| `eval.status` | `kind, status` | `eval_tree.c`, `eval_cmdlist.c`: status of each list member |
+| `eval.errexit` | `status` | `set -e` about to exit |
+| `eval.simple_command` / `.status` | `loc, nassign, nredir, bgnd` / `status` | `eval_simple_command.c` |
+| `expand.args` | `argv` (after all expansions) | `eval_simple_command.c` |
+| `eval.assign` | `var="name=value", export, temp` | one per prefix/plain assignment |
+| `eval.prefix_scope.enter/leave` | – | temporary env for `X=1 cmd` |
+| `eval.and_or` / `.status` | `op, left, run_right` / `op, status` | `&&`, `||`, `!` |
+| `eval.if.test` / `eval.if.branch` | `status` / `taken=then\|else\|none` | `eval_if.c` |
+| `eval.case.match` / `.nomatch` | `word, pattern` / `word` | `eval_case.c` |
+| `eval.loop` / `eval.loop.test` | `kind` / `status, continue` | `while`/`until` |
+| `eval.for.iter` | `var, value` | `eval_for.c` |
+| `eval.jump` / `eval.return` / `eval.exit` | `levels, cont, found` / `value, found` / `code, found` | non-local exits |
+| `eval.redir_scope.enter/leave` | `kind, nredir` / `status` | `eval_command.c`: compound command with redirections |
+| `eval.subshell.enter/leave` | – / `status` | `eval_subshell.c` |
+| `eval.subst.enter/leave` | – / `status, len` | `$(…)` in `expand_command.c` |
+| `eval.function.define/redefine` | `name` | `eval_function.c` |
+| `eval.pipeline` | `stages, bgnd, lastpipe, filter_chain` | `eval_pipeline.c`: strategy picked |
+| `eval.background` | `kind, pid` | `eval_node_bgnd.c` |
+
+**Redirections** (`src/redir/`)
+
+| event | payload |
+|---|---|
+| `redir.eval` | `fd, flag (R_IN\|R_OPEN\|R_DUP\|R_HERE\|R_NOW…), target (after expansion), preallocated` |
+| `redir.eval.status` | `fd, status` |
+| `redir.open` | `fd, path, mode=read\|trunc\|append\|noclobber, preopen, now` |
+| `redir.preopen` | `fd, path, result, errno` |
+| `redir.dup` / `redir.dup.self` | `fd, src, persistent` / `fd` |
+| `redir.here` | `fd, len` |
+
+Sample (`SHISH_TRACE=eval,expand,redir`, script `X=5 echo hi >/dev/null 2>&1`):
+
+```text
+[3946588:1] eval.node(kind=simple_command, loc="s3.sh:1:1", flags=E_ROOT|E_JCTL)
+[3946588:1] eval.simple_command(loc="s3.sh:1:1", nassign=1, nredir=2, bgnd=0)
+[3946588:1] eval.prefix_scope.enter()
+[3946588:1] eval.assign(var="X=5", export=1, temp=1)
+[3946588:1] redir.eval(fd=1, flag=R_OUT|R_OPEN, target="/dev/null", preallocated=1)
+[3946588:1] redir.open(fd=1, path="/dev/null", mode=trunc, preopen=-1, now=0)
+[3946588:1] redir.eval.status(fd=1, status=0)
+[3946588:1] redir.eval(fd=2, flag=R_OUT|R_DUP, target="1", preallocated=1)
+[3946588:1] redir.dup(fd=2, src="1", persistent=0)
+[3946588:1] redir.eval.status(fd=2, status=0)
+[3946588:1] expand.args(argv=["echo", "hi"])
+[3946588:1] eval.prefix_scope.leave()
+[3946588:1] eval.simple_command.status(status=0)
+```
+
+Not done from §4.1: `eval_tree`/`eval_cmdlist` per-list summary events (the per-member
+`eval.status` covers them), `redir_addhere.c` and `redir_source.c` (nothing to say beyond
+`redir.here`), and the `pipeline.filter.enter/leave` pair for the no-fork path.

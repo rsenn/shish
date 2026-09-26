@@ -470,6 +470,13 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   if(lastpipe)
     chain_n = pipeline_filter_prepare_chain(npipe, &chain_b, &chain_argv, &chain_argc);
 
+  TRACE(TRACE_EVAL,
+        "pipeline",
+        trace_int("stages", npipe->ncmd),
+        trace_int("bgnd", npipe->bgnd),
+        trace_int("lastpipe", lastpipe),
+        trace_int("filter_chain", chain_n));
+
   if(chain_n > 0) {
     buffer* upstream = fd_in->r;
 

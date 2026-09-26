@@ -1,4 +1,5 @@
 #include "../fd.h"
+#include "../trace.h"
 #include "../sh.h"
 #include "../eval.h"
 #include "../tree.h"
@@ -29,6 +30,7 @@ elif:
   e->flags &= ~E_EXIT;
   ret = eval_tree(e, nif->test, E_LIST);
   errexit_suppress--;
+  TRACE(TRACE_EVAL, "if.test", trace_int("status", ret));
 
   /* do not recurse for elifs */
   if(ret && nif->cmd1) {
@@ -40,6 +42,7 @@ elif:
 
   /* take the branch */
   branch = ret ? nif->cmd1 : nif->cmd0;
+  TRACE(TRACE_EVAL, "if.branch", trace_raw("taken", !branch ? "none" : ret ? "else" : "then"));
 
   if(branch) {
     if(ex)

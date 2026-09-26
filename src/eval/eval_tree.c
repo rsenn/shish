@@ -1,4 +1,5 @@
 #include "../fd.h"
+#include "../trace.h"
 #include "../eval.h"
 #include "../tree.h"
 #include "../sh.h"
@@ -47,6 +48,7 @@ eval_tree(struct eval* e, union node* node, int tempflags) {
        here */
     ret = eval_node_bgnd(e, node);
     e->exitcode = ret;
+    TRACE(TRACE_EVAL, "status", trace_kind("kind", node->id), trace_int("status", ret));
 
     /* "set -e": a failing command triggers it, with POSIX's specific
        exemptions -- errexit_suppress (eval.h) covers a "!"-negated
@@ -83,8 +85,10 @@ eval_tree(struct eval* e, union node* node, int tempflags) {
     if(sh->opts.errexit && ret != 0 && !errexit_suppress && node->id != N_NOT &&
        node->id != N_AND && node->id != N_OR && node->id != N_BRACEGROUP && node->id != N_IF &&
        node->id != N_FOR && node->id != N_CASE && node->id != N_WHILE && node->id != N_UNTIL &&
-       node->id != N_LIST)
+       node->id != N_LIST) {
+      TRACE(TRACE_EVAL, "errexit", trace_int("status", ret));
       sh_exit(ret);
+    }
 
     if(!list)
       break;

@@ -1,4 +1,5 @@
 #include "../fd.h"
+#include "../trace.h"
 #include "../sh.h"
 #include "../eval.h"
 #include "../fdstack.h"
@@ -34,6 +35,8 @@ eval_pop(struct eval* e) {
 
   // sh->exitcode = e->exitcode;
   // sh->eval = e->parent;
+  TRACE(TRACE_EVAL, "pop", trace_flags("flags", e->flags, trace_eval_flags, 9), trace_int("status", ret));
+
   eval = e->parent;
 
   return ret;

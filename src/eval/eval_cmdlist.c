@@ -1,4 +1,5 @@
 #include "../tree.h"
+#include "../trace.h"
 #include "../eval.h"
 #include "../sh.h"
 
@@ -52,6 +53,7 @@ eval_cmdlist(struct eval* e, struct ngrp* grp) {
       e->flags |= E_EXIT;
 
     ret = eval_node_bgnd(e, cmd);
+    TRACE(TRACE_EVAL, "status", trace_kind("kind", cmd->id), trace_int("status", ret));
     e->flags &= ~E_EXIT;
 
     /* "set -e": every ";"/newline-separated command on the same input
@@ -74,8 +76,10 @@ eval_cmdlist(struct eval* e, struct ngrp* grp) {
        first one that happens to be N_LIST-wrapped. */
     if(sh->opts.errexit && ret != 0 && !errexit_suppress && cmd->id != N_NOT && cmd->id != N_AND &&
        cmd->id != N_OR && cmd->id != N_BRACEGROUP && cmd->id != N_IF && cmd->id != N_FOR &&
-       cmd->id != N_CASE && cmd->id != N_WHILE && cmd->id != N_UNTIL && cmd->id != N_LIST)
+       cmd->id != N_CASE && cmd->id != N_WHILE && cmd->id != N_UNTIL && cmd->id != N_LIST) {
+      TRACE(TRACE_EVAL, "errexit", trace_int("status", ret));
       sh_exit(ret);
+    }
   }
 
   /* mirrors eval_tree()'s own trailing "if(ex) sh_exit(ret);" -- needed

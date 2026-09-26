@@ -1,4 +1,5 @@
 #include "../eval.h"
+#include "../trace.h"
 #include "../tree.h"
 
 /* evaluate a AND-OR list (3.9.3)
@@ -29,11 +30,19 @@ eval_and_or(struct eval* e, struct nandor* nandor) {
   ret = eval_tree(e, nandor->left, 0);
   errexit_suppress--;
 
+  TRACE(TRACE_EVAL,
+        "and_or",
+        trace_kind("op", nandor->id),
+        trace_int("left", ret),
+        trace_int("run_right", (nandor->id == N_AND && !ret) || (nandor->id == N_OR && ret)));
+
   if((nandor->id == N_AND && !ret) || (nandor->id == N_OR && ret))
     ret = eval_tree(e, nandor->right, 0);
 
   if(nandor->id == N_NOT)
     ret = !ret;
+
+  TRACE(TRACE_EVAL, "and_or.status", trace_kind("op", nandor->id), trace_int("status", ret));
 
   return ret;
 }

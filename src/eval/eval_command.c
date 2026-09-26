@@ -2,6 +2,7 @@
 #include "config.h"
 #endif
 #include "../fd.h"
+#include "../trace.h"
 #include "../eval.h"
 #include "../fdstack.h"
 #include "../parse.h"
@@ -29,6 +30,8 @@ eval_command(struct eval* e, union node* node, int tempflags) {
   /* do redirections if present */
   if(redir) {
     union node* r;
+
+    TRACE(TRACE_EVAL, "redir_scope.enter", trace_kind("kind", node->id), trace_int("nredir", tree_count(redir)));
 
     fdstack_push(&fdstack);
     stralloc_init(&heredoc);
@@ -72,8 +75,10 @@ fail:
   e->flags = oldflags;
 
   /* undo redirections */
-  if(redir)
+  if(redir) {
+    TRACE(TRACE_EVAL, "redir_scope.leave", trace_int("status", ret));
     fdstack_pop(&fdstack);
+  }
 
   return ret;
 }

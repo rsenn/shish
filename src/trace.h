@@ -22,6 +22,7 @@ enum trace_module {
   TRACE_FDSTACK,
   TRACE_FDTABLE,
   TRACE_EVAL,
+  TRACE_EXPAND,
   TRACE_REDIR,
   TRACE_VAR,
   TRACE_SH,
@@ -55,6 +56,15 @@ void trace_str(const char* key, const char* val);
 void trace_int(const char* key, long val);
 void trace_hex(const char* key, unsigned long val);
 void trace_raw(const char* key, const char* text);
+void trace_strn(const char* key, const char* val, unsigned long len);
+
+struct location;
+void trace_loc(const char* key, const struct location* loc); /* "file:line:col" */
+void trace_kind(const char* key, int node_id);                 /* enum kind -> "simple_command" */
+
+/* bit i -> name, for trace_flags() */
+extern const char* const trace_eval_flags[9];  /* E_EXIT .. E_DEBUG */
+extern const char* const trace_redir_flags[9]; /* R_IN .. R_NOW */
 void trace_argv(const char* key, char* const* argv);
 void trace_flags(const char* key, unsigned long bits, const char* const* names, unsigned int n);
 

@@ -1,4 +1,5 @@
 #include "../sh.h"
+#include "../trace.h"
 #include "../eval.h"
 #include "../fdstack.h"
 #include "../source.h"
@@ -58,6 +59,8 @@ eval_exit(int exitcode) {
     if(e->flags & E_FUNCTION)
       sh_pop(NULL);
   }
+
+  TRACE(TRACE_EVAL, "exit", trace_int("code", exitcode), trace_int("found", e != NULL));
 
   if(e) {
     if(e->destructor)

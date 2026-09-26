@@ -1,6 +1,7 @@
 #include "../../lib/alloc.h"
 #include "../../lib/str.h"
 #include "../tree.h"
+#include "../trace.h"
 #include "../eval.h"
 #include "../exec.h"
 #include "../sh.h"
@@ -112,6 +113,7 @@ eval_function(struct eval* e, struct nfunc* func) {
     hash_commands_in_node(func->body);
 
   if((nptr = find_function(func->name))) {
+    TRACE(TRACE_EVAL, "function.redefine", trace_str("name", func->name));
     fn = *nptr;
     *nptr = (*nptr)->next;
     /* IMPORTANT: detach fn from the rest of the list before freeing.
@@ -139,6 +141,7 @@ eval_function(struct eval* e, struct nfunc* func) {
       e->mask = -1; /* force exec_search re-run on next lookup */
   }
 
+  TRACE(TRACE_EVAL, "function.define", trace_str("name", func->name));
   fn = tree_newnode(N_FUNCTION);
 
   /* Deep-copy the name/body into the "functions" list entry instead of

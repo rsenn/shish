@@ -1,4 +1,5 @@
 #include "../expand.h"
+#include "../trace.h"
 #include "../fd.h"
 #include "../fdtable.h"
 #include "../redir.h"
@@ -31,6 +32,13 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
 
   /* additional redirection mode */
   nredir->flag |= rfl;
+
+  TRACE(TRACE_REDIR,
+        "eval",
+        trace_int("fd", nredir->fdes),
+        trace_flags("flag", nredir->flag, trace_redir_flags, 9),
+        trace_str("target", sa.s),
+        trace_int("preallocated", d != NULL));
 
   /* a persistent "exec <file" replaces fdtable[n] destructively:
      fd_new() below closes the descriptor the old entry owned, so an
@@ -93,6 +101,7 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
       }
 
       stralloc_free(&sa);
+      TRACE(TRACE_REDIR, "dup.self", trace_int("fd", nredir->fdes));
       return 0;
     }
   }
@@ -118,5 +127,6 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
   /*  if(nredir->flag & R_NOW)
       return fdtable_resolve(nredir->d, FDTABLE_MOVE);*/
 
+  TRACE(TRACE_REDIR, "eval.status", trace_int("fd", nredir->fdes), trace_int("status", r));
   return r;
 }

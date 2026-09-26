@@ -6,6 +6,7 @@
 #include <alloca.h>
 #endif
 #include "../fdtable.h"
+#include "../trace.h"
 #include "../sh.h"
 #include "../eval.h"
 #include "../exec.h"
@@ -47,6 +48,13 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   /* expand arguments,
      if there are arguments we start a hashed search for the command */
   expand_error = 0;
+
+  TRACE(TRACE_EVAL,
+        "simple_command",
+        trace_loc("loc", &e->pos),
+        trace_int("nassign", tree_count(ncmd->vars)),
+        trace_int("nredir", tree_count(ncmd->rdir)),
+        trace_int("bgnd", ncmd->bgnd));
 
   if(expand_args(ncmd->args, &args, 0)) {
     stralloc_nul(&args->narg.stra);
@@ -107,8 +115,10 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
        function=0. */
     int temp_scope = !(e->flags & E_EXIT) && cmd.ptr && cmd.id != H_SBUILTIN;
 
-    if(temp_scope)
+    if(temp_scope) {
+      TRACE(TRACE_EVAL, "prefix_scope.enter");
       vartab_push(&vars, 1);
+    }
 
     for(node = assigns; node; node = node->next) {
 
@@ -135,6 +145,12 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
          or E_EXIT), there's nothing to shadow into -- fall back to
          ordinary assignment semantics, which already correctly finds
          and updates whatever scope the variable actually lives in. */
+      TRACE(TRACE_EVAL,
+            "assign",
+            trace_strn("var", node->narg.stra.s, node->narg.stra.len),
+            trace_int("export", cmd.ptr != 0),
+            trace_int("temp", temp_scope));
+
       if(!var_setsa(&node->narg.stra,
                     (cmd.ptr ? V_EXPORT : V_DEFAULT) | (temp_scope ? V_LOCAL : 0))) {
         status = 1;
@@ -287,6 +303,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   argv = alloc((argc + 1) * sizeof(char*));
 #endif
   argc = expand_argv(args, argv);
+  TRACE(TRACE_EXPAND, "args", trace_argv("argv", argv));
 
   if(e->flags & E_PRINT) {
     eval_print_prefix(e, fd_err->w);
@@ -318,8 +335,10 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 end:
 
   /* restore variable stack */
-  if(varstack == &vars)
+  if(varstack == &vars) {
+    TRACE(TRACE_EVAL, "prefix_scope.leave");
     vartab_pop(&vars);
+  }
 
   if(args)
     tree_free(args);
@@ -334,6 +353,7 @@ end:
   }
 
   sh->exitcode = status;
+  TRACE(TRACE_EVAL, "simple_command.status", trace_int("status", status));
 
   /* POSIX 2.8.1: a non-interactive shell exits on either of these.
        assignment error    any command, or none:  "readonly a=a; a=b"

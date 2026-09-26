@@ -1,4 +1,5 @@
 #include "../fd.h"
+#include "../trace.h"
 #include "../fdtable.h"
 #include "../eval.h"
 #include "../job.h"
@@ -27,6 +28,7 @@ eval_node_bgnd(struct eval* e, union node* node) {
   job = job_new(1);
   job->bgnd = 1;
   pid = job_fork(job, 0, 1);
+  TRACE(TRACE_EVAL, "background", trace_kind("kind", node->id), trace_int("pid", pid));
 
   if(!pid) {
     ret = eval_node(e, node);

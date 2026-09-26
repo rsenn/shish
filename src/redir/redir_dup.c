@@ -1,4 +1,5 @@
 #include "../exec.h"
+#include "../trace.h"
 #include "../expand.h"
 #include "../fd.h"
 #include "../fdtable.h"
@@ -14,6 +15,8 @@
 int
 redir_dup(struct nredir* nredir, stralloc* sa, int persistent) {
   int ret;
+
+  TRACE(TRACE_REDIR, "dup", trace_int("fd", nredir->fdes), trace_str("src", sa->s), trace_int("persistent", persistent));
 
   /* [n]>&- means closing a file descriptor */
   if(sa->len != 1 || sa->s[0] != '-') {

@@ -1,4 +1,5 @@
 #include "../eval.h"
+#include "../trace.h"
 #include "../expand.h"
 #include "../tree.h"
 #include "../var.h"
@@ -64,6 +65,7 @@ eval_for(struct eval* e, struct nfor* nfor) {
 
     /* iterate the loop variable */
     var_setvsa(nfor->varn, &node->narg.stra, V_DEFAULT);
+    TRACE(TRACE_EVAL, "for.iter", trace_str("var", nfor->varn), trace_strn("value", node->narg.stra.s, node->narg.stra.len));
 
     /* evaluate loop body */
     eval_tree(e, nfor->cmds, E_LIST);

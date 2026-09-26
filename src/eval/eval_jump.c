@@ -1,4 +1,5 @@
 #include "../fd.h"
+#include "../trace.h"
 #include "../sh.h"
 #include "../eval.h"
 #include "../fdstack.h"
@@ -56,6 +57,8 @@ eval_jump(int levels, int cont) {
       levels--;
     }
   }
+
+  TRACE(TRACE_EVAL, "jump", trace_int("levels", levels), trace_int("cont", cont), trace_int("found", j != NULL));
 
   if(j) {
     eval = j;

@@ -1,5 +1,6 @@
 #include "../../lib/alloc.h"
 #include "../expand.h"
+#include "../trace.h"
 #include "../fd.h"
 #include "../fdtable.h"
 #include "../redir.h"
@@ -27,6 +28,14 @@ redir_open(struct nredir* nredir, stralloc* sa, int preopen) {
   }
 
   /* MISSING: no-clobbering (with O_EXCL?) */
+  TRACE(TRACE_REDIR,
+        "open",
+        trace_int("fd", nredir->fdes),
+        trace_str("path", sa->s),
+        trace_raw("mode", (mode & FD_APPEND) ? "append" : (mode & FD_EXCL) ? "noclobber" : (nredir->flag & R_OUT) ? "trunc" : "read"),
+        trace_int("preopen", preopen),
+        trace_int("now", !!(nredir->flag & R_NOW)));
+
   fd_open(nredir->fd, str_dup(sa->s), mode);
 
   /* the file is already open (redir_preopen()): just hand the

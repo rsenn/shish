@@ -1,5 +1,6 @@
 #include "../../lib/alloc.h"
 #include "../eval.h"
+#include "../trace.h"
 #include "../exec.h"
 #include "../expand.h"
 #include "../fd.h"
@@ -44,6 +45,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
 
   /* make the output buffer write to the stralloc */
   fdstack_push(&fdst);
+  TRACE(TRACE_EVAL, "subst.enter");
   /* the real-kernel-fd bookkeeping (fd_expected, fd_list[], ...) is
      process-global; fdstack_push()/fdstack_pop() scope the struct fd
      entries but not that. A subshell environment that runs in this
@@ -97,6 +99,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
 
   fdstack_pop(&fdst);
   fd_state_restore(&fdstate);
+  TRACE(TRACE_EVAL, "subst.leave", trace_int("status", ret), trace_int("len", sa.len));
 
   /* split trailing newlines */
   while(sa.len && sa.s[sa.len - 1] == '\n')

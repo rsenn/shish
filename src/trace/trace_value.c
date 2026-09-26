@@ -1,6 +1,13 @@
 #include "../trace.h"
 
 #ifdef DEBUG_OUTPUT
+
+extern const char* debug_nodes[];
+
+const char* const trace_eval_flags[9] = {"E_EXIT", "E_ROOT", "E_BQUOTE", "E_JCTL", "E_LIST", "E_FUNCTION", "E_LOOP", "E_PRINT", "E_DEBUG"};
+const char* const trace_redir_flags[9] = {"R_IN", "R_OUT", "R_OPEN", "R_DUP", "R_HERE", "R_STRIP", "R_APPEND", "R_CLOBBER", "R_NOW"};
+#include "../source.h"
+#include "../tree.h"
 #include "../../lib/fmt.h"
 #include "../../lib/str.h"
 
@@ -51,6 +58,36 @@ trace_str(const char* key, const char* val) {
     trace_quoted(val);
   else
     trace_put("NULL", 4);
+}
+
+/* a string that is not NUL terminated (stralloc contents) */
+void
+trace_strn(const char* key, const char* val, unsigned long len) {
+  char tmp[512];
+  unsigned long n = len < sizeof(tmp) - 1 ? len : sizeof(tmp) - 1;
+  unsigned long i;
+
+  for(i = 0; i < n; i++)
+    tmp[i] = val[i];
+
+  tmp[n] = 0;
+  trace_str(key, tmp);
+
+  if(n < len)
+    trace_put("~", 1);
+}
+
+void
+trace_loc(const char* key, const struct location* loc) {
+  char buf[FMT_LOC + 1];
+
+  buf[fmt_location(buf, *loc)] = 0;
+  trace_str(key, buf);
+}
+
+void
+trace_kind(const char* key, int node_id) {
+  trace_raw(key, node_id >= 0 && node_id <= N_REDIR ? debug_nodes[node_id] : "?");
 }
 
 void

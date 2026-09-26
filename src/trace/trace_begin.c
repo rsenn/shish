@@ -22,7 +22,7 @@
 #define TRACE_FD_MIN 200
 
 static const char* const trace_names[TRACE_NMODULES] = {
-    "exec", "builtin", "fd", "fdstack", "fdtable", "eval", "redir", "var", "sh", "job", "sig",
+    "exec", "builtin", "fd", "fdstack", "fdtable", "eval", "expand", "redir", "var", "sh", "job", "sig",
 };
 
 static char trace_buf[TRACE_LINE];

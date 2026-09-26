@@ -1,4 +1,6 @@
 #include "../fd.h"
+#include <errno.h>
+#include "../trace.h"
 #include "../fdtable.h"
 #include "../redir.h"
 #include "../tree.h"
@@ -50,6 +52,8 @@ redir_preopen(struct nredir* nredir, stralloc* sa) {
       e = moved;
     }
   }
+
+  TRACE(TRACE_REDIR, "preopen", trace_int("fd", nredir->fdes), trace_str("path", sa->s), trace_int("result", e), trace_int("errno", e < 0 ? errno : 0));
 
   return e;
 }

@@ -1,4 +1,5 @@
 #include "../eval.h"
+#include "../trace.h"
 #include "../expand.h"
 #include "../../lib/path.h"
 #include "../../lib/stralloc.h"
@@ -63,6 +64,7 @@ eval_case(struct eval* e, struct ncase* ncase) {
          same root cause: "*") never matched a leading-dot word
          either). */
       if(path_fnmatch(pattern.s, pattern.len, word.s, word.len, 0) == 0) {
+        TRACE(TRACE_EVAL, "case.match", trace_str("word", word.s), trace_str("pattern", pattern.s));
         ret = eval_tree(e, node->ncasenode.cmds, E_LIST);
         goto end;
       }
@@ -70,6 +72,8 @@ eval_case(struct eval* e, struct ncase* ncase) {
       stralloc_zero(&pattern);
     }
   }
+
+  TRACE(TRACE_EVAL, "case.nomatch", trace_str("word", word.s));
 
 end:
   stralloc_free(&pattern);

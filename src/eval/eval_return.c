@@ -1,4 +1,5 @@
 #include "../fd.h"
+#include "../trace.h"
 #include "../sh.h"
 #include "../eval.h"
 #include "../fdstack.h"
@@ -28,6 +29,8 @@ eval_return(int value) {
       break;
     }
   }
+
+  TRACE(TRACE_EVAL, "return", trace_int("value", value), trace_int("found", f != NULL));
 
   if(f) {
     if(f->destructor)
