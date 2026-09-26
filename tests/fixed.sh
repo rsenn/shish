@@ -5107,4 +5107,13 @@ X240=$(printf 'a,b' | xargs -d , -n1 echo p | cat)
 assert_equal "p a
 p b" "$X240" "xargs -d strips the separator from each item and its output goes through the pipe"
 
+## a command substitution in the command word of an otherwise empty
+## command ("$(exit 11)") gives the command the substitution's status
+## (POSIX 2.9.1): cmdsubst_ran was cleared after the words were
+## expanded, so the status was 0.
+$(exit 11)
+assert_equal 11 "$?" "empty command with a command substitution in its word exits with the substitution's status"
+$(exit 0) $(exit 4)
+assert_equal 4 "$?" "empty command with several substitutions exits with the last one's status"
+
 summary

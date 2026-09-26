@@ -1,0 +1,34 @@
+diff --git a/src/eval/eval_simple_command.c b/src/eval/eval_simple_command.c
+index 978fb544..83644d69 100644
+--- a/src/eval/eval_simple_command.c
++++ b/src/eval/eval_simple_command.c
+@@ -56,6 +56,11 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+         trace_int("nredir", tree_count(ncmd->rdir)),
+         trace_int("bgnd", ncmd->bgnd));
+ 
++  /* reset before the words are expanded, so a "$(...)" in the command
++     word ("$(exit 11)" with no command name left) counts for the
++     "no command" status below; sh->exitcode itself is untouched */
++  sh->cmdsubst_ran = 0;
++
+   if(expand_args(ncmd->args, &args, 0)) {
+     stralloc_nul(&args->narg.stra);
+     cmd = exec_hash(args->narg.stra.s, 0);
+@@ -77,13 +82,10 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+ 
+   /* expand and set the variables,
+      mark them for export if we're gonna execute a command --
+-     cmdsubst_ran is reset here (not any earlier, since "$?" within
+-     ncmd->args above must still see whatever ran before this command)
+-     so the "no command, only assignments" status handling below can
+-     tell "a command substitution in one of these assignments ran"
+-     apart from "sh->exitcode is just still holding the previous
+-     command's status" */
+-  sh->cmdsubst_ran = 0;
++     cmdsubst_ran (reset above) tells the "no command, only
++     assignments" status handling below whether a command substitution
++     ran in the words or the assignments, as opposed to "sh->exitcode
++     is just still holding the previous command's status" */
+ 
+   if(expand_vars(ncmd->vars, &assigns)) {
+ 
