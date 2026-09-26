@@ -1,27 +1,30 @@
 include(CheckCCompilerFlag)
 
-check_c_compiler_flag("-O0" OPT_C_OPT_NONE)
-if(OPT_C_OPT_NONE)
-  if(NOT "${CMAKE_C_FLAGS_DEBUG}" MATCHES "-O0")
-    set(CMAKE_C_FLAGS_DEBUG
-        "${CMAKE_C_FLAGS_DEBUG} -O0"
-        CACHE STRING "C compiler options" FORCE)
+#
+# debug_module_options <MODULE-NAMES...>
+#
+macro(debug_module_options)
+  if(${ARGC} GREATER_EQUAL 1)
+    set(LIST ${ARGN})
+  else()
+    set(LIST ALLOC FD FDSTACK FDTABLE PARSE)
   endif()
-endif()
 
-check_c_compiler_flag("-ggdb" OPT_C_G_GDB)
-if(OPT_C_G_GDB)
-  if(NOT "${CMAKE_C_FLAGS_DEBUG}" MATCHES "-ggdb")
-    set(CMAKE_C_FLAGS_DEBUG
-        "${CMAKE_C_FLAGS_DEBUG} -ggdb"
-        CACHE STRING "C compiler options" FORCE)
-  endif()
-endif()
+  foreach(M ${LIST})
+    string(TOLOWER NAME "${M}")
+    option(DEBUG_${M} "Debug ${NAME}" OFF)
+    if(DEBUG_${M})
+      add_definitions(-DDEBUG_${M})
+    endif()
+  endforeach()
+endmacro()
 
-foreach(M ALLOC FD FDSTACK FDTABLE PARSE)
-  string(TOLOWER NAME "${M}")
-  option(DEBUG_${M} "Debug ${NAME}" OFF)
-  if(DEBUG_${M})
-    add_definitions(-DDEBUG_${M})
+#
+# debug_flag <NAME> <DESC>
+#
+macro(debug_flag NAME DESC)
+  option(DEBUG_${NAME} "${DESC}" OFF)
+  if(DEBUG_${NAME})
+    add_definitions(-DDEBUG_${NAME}=1)
   endif()
-endforeach()
+endmacro()

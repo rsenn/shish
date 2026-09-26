@@ -2,25 +2,46 @@ include(CheckLibraryExists)
 include(CheckCCompilerFlag)
 include(CheckCSourceCompiles)
 
-set(ANSI_ESCAPE "")
-
-
-
 #
-# set_list <OUTPUT-VAR> [ITEMS...]
+# add_cflags <ADD> [OUTPUT_VAR]
 #
-function(set_list OUTPUT_VAR)
-  unset(RESULT)
-  append_unique(RESULT ${ARGN})
+function(add_cflags ADD)
+  if(${ARGC} LESS 2)
+    set(OUTPUT_VAR CMAKE_C_FLAGS)
+  else()
+    set(OUTPUT_VAR "${ARGV1}")
+  endif()
+  
+  #message_func("add_cflags" ${ADD} ${OUTPUT_VAR})
+
+  set(RESULT "${${OUTPUT_VAR}}")
+  string(REGEX REPLACE " +" ";" FLAGS "${RESULT}")
+  string(REGEX REPLACE "^;+" "" FLAGS "${FLAGS}")
+  list(REMOVE_DUPLICATES FLAGS) 
+  if(NOT ADD IN_LIST FLAGS)
+    list(APPEND RESULT ${ADD})
+  endif()
+
   if(OUTPUT_VAR)
     set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
   endif()
 endfunction()
 
 #
-# append_unique <OUTPUT-VAR> [ITEMS...]
+# init_list <OUTPUT-VAR> [ITEMS...]
 #
-function(append_unique OUTPUT_VAR)
+function(init_list OUTPUT_VAR)
+  set(RESULT "")
+  add_list(RESULT ${ARGN})
+  if(OUTPUT_VAR)
+    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+#
+# add_list <OUTPUT-VAR> [ITEMS...]
+#
+function(add_list OUTPUT_VAR)
   set(RESULT "${${OUTPUT_VAR}}")
   foreach(ITEM ${ARGN})
     if(NOT ITEM IN_LIST RESULT)
@@ -72,11 +93,7 @@ endfunction()
 
 # ITEMS contains multiple items
 #
-# assign item #0 to VAR-NAME 0
-# assign item #1 to VAR-NAME 1
-# ....
-#
-# assign_items <ITEMS> [VAR-NAMES...]
+# assign_items <ITEMS> [VAR0, ...]
 #
 macro(assign_items ITEMS)
   set(__L "${ITEMS}")
@@ -89,43 +106,48 @@ endmacro()
 
 # LIST is the name of a list
 #
-# assign item #0 to VAR-NAME 0
-# assign item #1 to VAR-NAME 1
-# ....
-#
-# assign_list <LIST> [VAR-NAMES...]
+# assign_list <LIST> [VAR0...]
 #
 macro(assign_list LIST)
   assign_items("${${LIST}}" ${ARGN})
 endmacro()
 
-
 #
-# eat_line <VAR>
+# eat_line <BUFFER-VAR> <RESULT-VAR>
 #
-function(eat_line VAR_NAME OUTPUT_VAR)
-  set(STR "${${VAR_NAME}}")
-  string(FIND "${STR}" "\n" NL_POS)
-  string(LENGTH "${STR}" LEN)
+function(eat_line BUFFER_VAR RESULT_VAR)
+  set(BUF "${${BUFFER_VAR}}")
+  string(FIND "${BUF}" "\n" NL_POS)
+  string(LENGTH "${BUF}" LEN)
   if(${NL_POS} EQUAL -1)
     set(NL_POS "${LEN}")
     set(NEXT_POS "${NL_POS}")
   else()
     math(EXPR NEXT_POS "${NL_POS} + 1")
   endif()
-  string(SUBSTRING "${STR}" "0" "${NL_POS}" LINE)
-  string(SUBSTRING "${STR}"  "${NEXT_POS}"  -1 REST)
-  set("${OUTPUT_VAR}" "${LINE}" PARENT_SCOPE)
-  set("${VAR_NAME}" "${REST}" PARENT_SCOPE)
+  string(SUBSTRING "${BUF}" "0" "${NL_POS}" RESULT)
+  string(SUBSTRING "${BUF}"  "${NEXT_POS}"  -1 REST)
+  set("${RESULT_VAR}" "${RESULT}" PARENT_SCOPE)
+  set("${BUFFER_VAR}" "${REST}" PARENT_SCOPE)
 endfunction()
 
 #
-# add_prefix <PREFIX> [ARGS...]
+# add_prefix <OUTPUT-VAR> <PREFIX> [ARGS...]
 #
 macro(add_prefix OUTPUT_VAR PREFIX)
   unset("${OUTPUT_VAR}" PARENT_SCOPE)
   foreach(ARG ${ARGN})
     list(APPEND "${OUTPUT_VAR}" "${PREFIX}${ARG}")
+  endforeach()
+endmacro()
+
+#
+# add_suffix <OUTPUT-VAR> <SUFFIX> [ARGS...]
+#
+macro(add_suffix OUTPUT_VAR SUFFIX)
+  unset("${OUTPUT_VAR}" PARENT_SCOPE)
+  foreach(ARG ${ARGN})
+    list(APPEND "${OUTPUT_VAR}" "${ARG}${SUFFIX}")
   endforeach()
 endmacro()
 
@@ -142,7 +164,6 @@ macro(assign_named_prefix PREFIX)
    set("${PREFIX}${NAME}" "${VALUE}" CACHE STRING "Color value")
   endwhile()
 endmacro()
-
 
 #
 # assign_named_items [ARGS...]
@@ -179,6 +200,7 @@ function(isin_var OUTPUT_VAR ITEM VAR_NAME)
   else()
     set(RESULT FALSE)
   endif()
+
   if(OUTPUT_VAR)
     set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
   endif()
@@ -193,20 +215,6 @@ function(isin_list OUTPUT_VAR ITEM)
 endfunction()
 
 #
-# show_result <RESULT_VAR>
-#
-macro(show_result RESULT_VAR)
-  if(RESULT_VAR)
-    if(${${RESULT_VAR}})
-      set(__R yes)
-    else()
-      set(__R no)
-    endif()
-  endif()
-  message("${RESULT_VAR} = ${__R}")
-endmacro()
-
-#
 # absolute_paths <OUTPUT-VAR> [PATHS...]
 #
 function(absolute_paths OUTPUT_VAR)
@@ -215,6 +223,7 @@ function(absolute_paths OUTPUT_VAR)
       cmake_path(ABSOLUTE_PATH ARG OUTPUT_VARIABLE VALUE)
       list(APPEND RESULT "${VALUE}")
   endforeach()
+
   if(OUTPUT_VAR)
     set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
   endif()
@@ -229,6 +238,7 @@ function(absolute_paths_in OUTPUT_VAR BASE_DIRECTORY)
       cmake_path(ABSOLUTE_PATH ARG BASE_DIRECTORY "${BASE_DIRECTORY}" OUTPUT_VARIABLE VALUE)
       list(APPEND RESULT "${VALUE}")
   endforeach()
+
   if(OUTPUT_VAR)
     set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
   endif()
@@ -243,6 +253,7 @@ function(relative_paths OUTPUT_VAR BASE_DIRECTORY)
       cmake_path(RELATIVE_PATH ARG BASE_DIRECTORY "${BASE_DIRECTORY}" OUTPUT_VARIABLE VALUE)
       list(APPEND RESULT "${VALUE}")
   endforeach()
+
   if(OUTPUT_VAR)
     set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
   endif()
@@ -255,24 +266,25 @@ function(get_cwd OUTPUT_VAR)
   set(ARG ".")
   cmake_path(ABSOLUTE_PATH ARG OUTPUT_VARIABLE RESULT)
   string(REGEX REPLACE "[/\\\\]\\.$" "" RESULT "${RESULT}")
+
   if(OUTPUT_VAR)
     set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
   endif()
 endfunction()
 
 #
-# is_relative <OUTPUT-VAR> <PATH>
+# is_relative <PATH> <OUTPUT-VAR>
 #
-function(is_relative OUTPUT_VAR PATH)
+function(is_relative PATH OUTPUT_VAR)
   if(OUTPUT_VAR)
     cmake_path(IS_RELATIVE PATH "${OUTPUT_VAR}")
   endif()
 endfunction()
 
 #
-# is_absolute <OUTPUT-VAR> <PATH>
+# is_absolute <PATH> <OUTPUT-VAR>
 #
-function(is_absolute OUTPUT_VAR PATH)
+function(is_absolute PATH OUTPUT_VAR)
   if(OUTPUT_VAR)
     cmake_path(IS_ABSOLUTE PATH "${OUTPUT_VAR}")
   endif()
@@ -291,6 +303,7 @@ function(concat OUTPUT_VAR SEPARATOR)
       set(RESULT "${ARG}")
     endif()
   endforeach()
+
   if(OUTPUT_VAR)
     set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
   endif()
@@ -304,6 +317,7 @@ function(basename OUTPUT_VAR STR)
   if(ARGN)
     string(REGEX REPLACE "\\${ARGN}\$" "" RESULT "${RESULT}")
   endif()
+
   if(OUTPUT_VAR)
     set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
   endif()
@@ -314,10 +328,11 @@ endfunction()
 #
 function(var2define NAME)
   if(${ARGC} GREATER_EQUAL 3)
-    list(GET ARGV 2 VAR_NAME)
+    set(VAR_NAME "${ARGV1}")
   else()
     set(VAR_NAME "${NAME}")
   endif()
+
   set(VALUE "${${VAR_NAME}}")
   if(${ARGC} LESS_EQUAL 1)
     if(VALUE)
@@ -327,8 +342,7 @@ function(var2define NAME)
     endif()
   else()
     if(VALUE)
-      list(GET ARGV 1 DEFINED_VALUE)
-      add_definitions(-D${NAME}=${DEFINED_VALUE})
+      add_definitions(-D${NAME}=${ARGV1})
     endif()
   endif()
 endfunction()
@@ -340,10 +354,11 @@ endfunction()
 #
 function(get_columns OUTPUT_VAR)
   if(${ARGC} GREATER_EQUAL 2)
-    list(GET ARGV 1 DEFAULT_VALUE)
+    set(DEFAULT_VALUE ${ARGV1})
   else()
     set(DEFAULT_VALUE 80)
   endif()
+
   set(VALUE "$ENV{COLUMNS}")
   if("${VALUE}" OR NOT "${VALUE}" STREQUAL "")
     # message("Got COLUMNS (${VALUE}) from environment")
@@ -358,19 +373,9 @@ function(get_columns OUTPUT_VAR)
       set(VALUE ${TPUT_COLS})
     else()
       set(SOURCE_NAME ttysize.c)
-      set(SOURCE_CODE
-          "#include <unistd.h>\n#include <fcntl.h>\n#include <termios.h>\n#include <sys/ioctl.h>\n#include <stdio.h>\n\nint\nmain() {\n\tstruct winsize sz;\n\tint fd = isatty(0) ? dup(0) : open(\"/dev/tty\", O_RDWR);\n\n\tif(!isatty(fd)) {\n\t\tfputs(\"not a tty\\n\", stderr);\n\t\tfflush(stderr);\n\t\treturn 1;\n\t}\n\n\tif(ioctl(fd, TIOCGWINSZ, &sz) == -1) {\n\t\tperror(\"ioctl\");\n\t\treturn 1;\n\t}\n\n\tclose(fd);\n\n\tprintf(\"%u\\n\", sz.ws_col);\n\treturn 0;\n}\n"
-      )
-           message(CHECK_START "Trying to compile ${SOURCE_NAME}")
-   try_run(
-        RUN_RESULT
-        COMPILE_RESULT
-        SOURCE_FROM_CONTENT
-        "${SOURCE_NAME}"
-        "${SOURCE_CODE}"
-        RUN_OUTPUT_STDOUT_VARIABLE
-        RUN_OUTPUT
-        COMPILE_OUTPUT_VARIABLE COMPILE_OUTPUT NO_CACHE)
+      set(SOURCE_CODE "#include <unistd.h>\n#include <fcntl.h>\n#include <termios.h>\n#include <sys/ioctl.h>\n#include <stdio.h>\n\nint\nmain() {\n\tstruct winsize sz;\n\tint fd = isatty(0) ? dup(0) : open(\"/dev/tty\", O_RDWR);\n\n\tif(!isatty(fd)) {\n\t\tfputs(\"not a tty\\n\", stderr);\n\t\tfflush(stderr);\n\t\treturn 1;\n\t}\n\n\tif(ioctl(fd, TIOCGWINSZ, &sz) == -1) {\n\t\tperror(\"ioctl\");\n\t\treturn 1;\n\t}\n\n\tclose(fd);\n\n\tprintf(\"%u\\n\", sz.ws_col);\n\treturn 0;\n}\n")
+      message(CHECK_START "Trying to compile ${SOURCE_NAME}")
+      try_run(RUN_RESULT COMPILE_RESULT SOURCE_FROM_CONTENT "${SOURCE_NAME}" "${SOURCE_CODE}" RUN_OUTPUT_STDOUT_VARIABLE RUN_OUTPUT COMPILE_OUTPUT_VARIABLE COMPILE_OUTPUT NO_CACHE)
       if(NOT COMPILE_RESULT)
         message(CHECK_FAIL "failed to compile:\n${COMPILE_OUTPUT}")
       else()
@@ -382,34 +387,29 @@ function(get_columns OUTPUT_VAR)
       endif()
     endif()
   endif()
+  
   if("${VALUE}" STREQUAL "")
     set(VALUE "${DEFAULT_VALUE}")
-    # message("Defaulting ${OUTPUT_VAR} to ${DEFAULT_VALUE}")
   endif()
+
   if(OUTPUT_VAR)
     set("${OUTPUT_VAR}" "${VALUE}" PARENT_SCOPE)
   endif()
 endfunction()
 
-set(LIST_INDENT "    ")
-set(LIST_SEP " ")
-
-
 
 #
-# dump [VAR-NAMES...]
+# named_dump <MSG> [VAR-NAMES...]
 #
 function(named_dump MSG)
   assign_named_var(DUMP_FORMAT)
   set(INDEX 0)
   math(EXPR LAST "${ARGC} - 2")
-    #set(RESULT "${MSG}${COLOR_LIGHTCYAN}${START}")
   set(RESULT "${MSG}${START}")
-  foreach(NAME ${ARGN})
-    set(VALUE "${${NAME}}")
-    #escape_string(VALUE "${VALUE}")
-    set(LINE "${INDENT}${NAME}${PROP}${QUOTE}${VALUE}${QUOTE}")
-    #set(LINE "${INDENT}${COLOR_YELLOW}${NAME}${COLOR_LIGHTCYAN}${PROP}${COLOR_LIGHTMAGENTA}${QUOTE}${VALUE}${QUOTE}${COLOR_LIGHTCYAN}")
+
+  foreach(VAR_NAME ${ARGN})
+    set(VALUE "${${VAR_NAME}}")
+    set(LINE "${INDENT}${VAR_NAME}${PROP}${QUOTE}${VALUE}${QUOTE}")
     if(INDEX LESS LAST)
       set(LINE "${LINE}${COMMA}")
     endif()
@@ -419,19 +419,11 @@ function(named_dump MSG)
   if(NOT END STREQUAL "")
     set(RESULT "${RESULT}${NEWLINE}${END}")
   endif()
-  #set(RESULT "${RESULT}${COLOR_NONE}")
+  
   message("${RESULT}")
 endfunction()
 
-set(DUMP_FORMAT 
-  INDENT "  "
-  START " {" #" \\\\033[36m{\\\\033[0m"
-  END "}"
-  PROP ": "
-  QUOTE "'"
-  COMMA ","
-  NEWLINE "\\n"
-)
+set(DUMP_FORMAT INDENT "  " START " {" END "}" PROP ": " QUOTE "'" COMMA "," NEWLINE "\\n")
 
 #
 # dump [VAR-NAMES...]
@@ -441,15 +433,15 @@ function(dump)
 endfunction()
 
 #
-# dump_list [VAR-NAMES...]
+# dump_list <VAR-NAME>
 #
-function(dump_list VARIABLE_NAME)
+function(dump_list VAR_NAME)
   assign_named_var(DUMP_FORMAT)
-  message("List dump of ${VARIABLE_NAME}:")
-  list(LENGTH "${VARIABLE_NAME}" NUM_ITEMS)
+  message("List dump of ${VAR_NAME}:")
+  list(LENGTH "${VAR_NAME}" NUM_ITEMS)
   set(INDEX 0)
   while(${INDEX} LESS ${NUM_ITEMS})
-    list(GET "${VARIABLE_NAME}" "${INDEX}" ITEM)
+    list(GET "${VAR_NAME}" "${INDEX}" ITEM)
     message("${INDENT}${INDEX}: ${ITEM}")
     math(EXPR INDEX "${INDEX} + 1")
   endwhile()
@@ -459,29 +451,31 @@ endfunction()
 # make_list <OUTPUT-VAR> <MAX_LINE_LEN>
 #
 function(make_list OUTPUT_VAR MAX_LINE_LEN)
+  assign_named_var(LIST_FORMAT)
   set(RESULT "")
   set(LINE "")
   string(REPLACE " " ";" ARGS "${ARGN}")
   foreach(ITEM ${ARGS})
-    string(LENGTH "${LINE}${LIST_SEP}${ITEM}" LEN)
+    string(LENGTH "${LINE}${SEP}${ITEM}" LEN)
     math(EXPR EFFECTIVE_LEN "${LEN} + 4")
     if(EFFECTIVE_LEN GREATER MAX_LINE_LEN)
-      set(RESULT "${RESULT}\n--${LIST_INDENT}${LINE}")
+      set(RESULT "${RESULT}\n--${INDENT}${LINE}")
       set(LINE " ${ITEM}")
       string(LENGTH "${LINE}" LEN)
     else()
-      set(LINE "${LINE}${LIST_SEP}${ITEM}")
+      set(LINE "${LINE}${SEP}${ITEM}")
     endif()
   endforeach()
   if(LINE)
-    set(RESULT "${RESULT}\n--${LIST_INDENT}${LINE}")
+    set(RESULT "${RESULT}\n--${INDENT}${LINE}")
   endif()
+
   if(OUTPUT_VAR)
     set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
   endif()
 endfunction()
-
-
+ 
+set(LIST_FORMAT INDENT "    " SEP  " ")
 
 #
 # message_unescaped [STRINGS...]
@@ -507,122 +501,44 @@ function(message_func FUNC)
   message("${S}")
 endfunction()
 
+#
+# init_colors
+#
+macro(init_colors)
+  set(ANSI_ESCAPE "")
+  set(SEMI "╎")
+  set(COLORS
+    NONE "${ANSI_ESCAPE}[0m"
+    BLACK "${ANSI_ESCAPE}[0${SEMI}30m"
+    RED "${ANSI_ESCAPE}[0${SEMI}31m"
+    GREEN "${ANSI_ESCAPE}[0${SEMI}32m"
+    BROWN "${ANSI_ESCAPE}[0${SEMI}33m"
+    BLUE "${ANSI_ESCAPE}[0${SEMI}34m"
+    MAGENTA "${ANSI_ESCAPE}[0${SEMI}35m"
+    CYAN "${ANSI_ESCAPE}[0${SEMI}36m"
+    LIGHTGRAY "${ANSI_ESCAPE}[0${SEMI}37m"
+    DARKGRAY "${ANSI_ESCAPE}[1${SEMI}30m"
+    LIGHTRED "${ANSI_ESCAPE}[1${SEMI}31m"
+    LIGHTGREEN "${ANSI_ESCAPE}[1${SEMI}32m"
+    YELLOW "${ANSI_ESCAPE}[1${SEMI}33m"
+    LIGHTBLUE "${ANSI_ESCAPE}[1${SEMI}34m"
+    LIGHTMAGENTA "${ANSI_ESCAPE}[1${SEMI}35m"
+    LIGHTCYAN "${ANSI_ESCAPE}[1${SEMI}36m"
+    WHITE "${ANSI_ESCAPE}[1${SEMI}37m" 
+  )
+  string(REPLACE ";" "\n" CMAP "${COLORS}")
+  string(REPLACE "${SEMI}" ";" CMAP "${CMAP}")
 
-set(SEMI "╎")
-set(COLORS
-  NONE "${ANSI_ESCAPE}[0m"
-  BLACK "${ANSI_ESCAPE}[0${SEMI}30m"
-  RED "${ANSI_ESCAPE}[0${SEMI}31m"
-  GREEN "${ANSI_ESCAPE}[0${SEMI}32m"
-  BROWN "${ANSI_ESCAPE}[0${SEMI}33m"
-  BLUE "${ANSI_ESCAPE}[0${SEMI}34m"
-  MAGENTA "${ANSI_ESCAPE}[0${SEMI}35m"
-  CYAN "${ANSI_ESCAPE}[0${SEMI}36m"
-  LIGHTGRAY "${ANSI_ESCAPE}[0${SEMI}37m"
-  DARKGRAY "${ANSI_ESCAPE}[1${SEMI}30m"
-  LIGHTRED "${ANSI_ESCAPE}[1${SEMI}31m"
-  LIGHTGREEN "${ANSI_ESCAPE}[1${SEMI}32m"
-  YELLOW "${ANSI_ESCAPE}[1${SEMI}33m"
-  LIGHTBLUE "${ANSI_ESCAPE}[1${SEMI}34m"
-  LIGHTMAGENTA "${ANSI_ESCAPE}[1${SEMI}35m"
-  LIGHTCYAN "${ANSI_ESCAPE}[1${SEMI}36m"
-  WHITE "${ANSI_ESCAPE}[1${SEMI}37m" 
-)
-string(REPLACE ";" "\n" CMAP "${COLORS}")
-string(REPLACE "${SEMI}" ";" CMAP "${CMAP}")
-
-assign_named_prefix(COLOR_ ${CMAP})
-
-#add_prefix(COLOR_NAMES "COLOR_" NONE BLACK RED GREEN BROWN BLUE MAGENTA CYAN LIGHTGRAY DARKGRAY LIGHTRED LIGHTGREEN YELLOW LIGHTBLUE LIGHTMAGENTA LIGHTCYAN WHITE)
-#dump(${COLOR_NAMES})
-
-#message_unescaped("COLOR_LIGHTRED: ${COLOR_LIGHTRED}blah${COLOR_NONE}")
-#message_unescaped("CSTR: ${COLOR_LIGHTRED}blah${COLOR_NONE}")
+  assign_named_prefix(COLOR_ ${CMAP})
+endmacro()
 
 #
-# add_cflags <ADD> [OUTPUT_VAR]
+# getenv <OUTPUT-VAR> <VAR-NAME>
 #
-function(add_cflags ADD)
-  if(${ARGC} LESS 2)
-    set(OUTPUT_VAR CMAKE_C_FLAGS)
-  else()
-    set(OUTPUT_VAR "${ARGV1}")
-  endif()
-  
-  message_func("add_cflags" ${ADD} ${OUTPUT_VAR})
-
-  set(RESULT "${${OUTPUT_VAR}}")
-  string(REGEX REPLACE " +" ";" FLAGS "${RESULT}")
-  string(REGEX REPLACE "^;+" "" FLAGS "${FLAGS}")
-  list(REMOVE_DUPLICATES FLAGS) 
-  if(NOT ADD IN_LIST FLAGS)
-    list(APPEND RESULT ${ADD})
-  endif()
+function(getenv OUTPUT_VAR VAR_NAME)
   if(OUTPUT_VAR)
-    set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
-  endif()
-endfunction()
-
-#
-# debug_flag <NAME> <DESC>
-#
-macro(debug_flag NAME DESC)
-  option(DEBUG_${NAME} "${DESC}" OFF)
-  if(DEBUG_${NAME})
-    add_definitions(-DDEBUG_${NAME}=1)
-  endif()
-endmacro()
-
-
-macro(check_pw_functions)
-  check_include_file(pwd.h HAVE_PWD_H)
-  check_include_file(grp.h HAVE_GRP_H)
-  check_function_exists(getpwuid_r HAVE_GETPWUID_R)
-  check_function_exists(getpwuid HAVE_GETPWUID)
-  check_function_exists(getgrgid_r HAVE_GETGRGID_R)
-  check_function_exists(getgrgid HAVE_GETGRGID)
-endmacro()
-
-macro(check_sig_functions)
-  check_function_exists(sigprocmask HAVE_SIGPROCMASK)
-
-  if(NOT HAVE_SIGPROCMASK)
-    check_function_exists(sigblock HAVE_SIGBLOCK)
-    check_function_exists(sigsetmask HAVE_SIGSETMASK)
-    check_function_exists(sigpause HAVE_SIGPAUSE)
-  endif()
-
-  check_function_exists(sigaction HAVE_SIGACTION)
-  check_function_exists(setpgid HAVE_SETPGID)
-endmacro()
-
-# Strip a MinSizeRel executable harder than an install-strip would: -s drops the
-# symbol table, -R drops whole sections nothing reads back.
-#
-# .eh_frame/.eh_frame_hdr  unwind data -- 15% of an untuned binary
-# .comment/.note* toolchain provenance
-#
-# strip ignores a -R for a section that is not there, so one list serves every
-# target format.
-#
-# strip_minsize TARGET
-#
-macro(strip_minsize TARGET)
-  if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" AND MINSIZE_STRIP AND CMAKE_STRIP AND NOT EMSCRIPTEN)
-    add_custom_command(TARGET ${TARGET} POST_BUILD
-      COMMAND
-        ${CMAKE_STRIP} -s -R .comment -R .note -R .note.ABI-tag -R .note.gnu.build-id -R .note.gnu.property -R .eh_frame -R .eh_frame_hdr $<TARGET_FILE:${TARGET}>
-      COMMENT "Stripping ${TARGET}")
-  endif()
-endmacro()
-
-#
-# getenv <OUTPUT-VAR> <ENVIRONMENT-VAR>
-#
-function(getenv OUTPUT_VAR ENVIRON_VAR)
-  if(OUTPUT_VAR)
-    if(DEFINED ENV{${ENVIRON_VAR}})
-      set("${OUTPUT_VAR}" "$ENV{${ENVIRON_VAR}}" PARENT_SCOPE)
+    if(DEFINED ENV{${VAR_NAME}})
+      set("${OUTPUT_VAR}" "$ENV{${VAR_NAME}}" PARENT_SCOPE)
     else()
       unset("${OUTPUT_VAR}" PARENT_SCOPE)
     endif()
@@ -630,11 +546,11 @@ function(getenv OUTPUT_VAR ENVIRON_VAR)
 endfunction()
 
 #
-# getenv_default <OUTPUT-VAR> <ENVIRONMENT-VAR> [DEFAULT-VALUE]
+# getenv_default <OUTPUT-VAR> <VAR-NAME> [DEFAULT-VALUE]
 #
-function(getenv_default OUTPUT_VAR ENVIRON_VAR)
-  if(DEFINED ENV{${ENVIRON_VAR}})
-    set(RESULT "$ENV{${ENVIRON_VAR}}")
+function(getenv_default OUTPUT_VAR VAR_NAME)
+  if(DEFINED ENV{${VAR_NAME}})
+    set(RESULT "$ENV{${VAR_NAME}}")
   else()
     set(RESULT "${ARGN}")
   endif()
@@ -642,3 +558,6 @@ function(getenv_default OUTPUT_VAR ENVIRON_VAR)
     set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
   endif()
 endfunction()
+
+
+init_colors()
