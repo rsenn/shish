@@ -20,30 +20,14 @@ const char help_sed[] = "    Stream editor: apply a script of editing commands t
 /* slurp_file: reads the whole of path into *out (appended). Returns 0
  * on success, -1 on error (path could not be opened or read).
  * ----------------------------------------------------------------------- */
+static void
+slurp_sink(void* out, const char* s, size_t n) {
+  stralloc_catb(out, s, n);
+}
+
 static int
 slurp_file(const char* path, stralloc* out) {
-  buffer b;
-  char rbuf[4096], chunk[4096];
-  ssize_t n;
-
-  if(buffer_mmapread(&b, path) != 0) {
-    int rfd = open_read(path);
-
-    if(rfd == -1)
-      return -1;
-
-    buffer_init(&b, &buffer_op_read, rfd, rbuf, sizeof(rbuf));
-  }
-
-  while((n = buffer_get_until(&b, chunk, sizeof(chunk), "", 0)) > 0) {
-    if(!stralloc_catb(out, chunk, (size_t)n)) {
-      buffer_close(&b);
-      return -1;
-    }
-  }
-
-  buffer_close(&b);
-  return (n < 0) ? -1 : 0;
+  return filter_copy(path, slurp_sink, out);
 }
 
 /* w/s///w files: opened/truncated once up front, closed once at the
@@ -61,98 +45,29 @@ struct sed_wfile_rt {
 /* everything the callbacks (read/out/wfile/rfile) need, as one ctx
    shared by all of them -- text/sed.h hands the same pointer to each. */
 struct sed_ctx {
-  char** argv; /* remaining file operands (argv+shell_optind), or NULL for stdin */
-  int i;
-  int done_any;
-  buffer* cur;
-  buffer curb;
-  char rbuf[4096];
+  struct filter_in in;
   char linebuf[8192];
-  char* const* errargv; /* for builtin_error() */
-  int had_error;
 
   struct sed_wfile_rt* wfiles;
   size_t nwfiles;
 };
 
 static int
-input_open_next(struct sed_ctx* c) {
-  for(;;) {
-    const char* name;
-
-    if(c->cur == &c->curb)
-      buffer_close(c->cur);
-
-    c->cur = NULL;
-
-    if(c->argv) {
-      name = c->argv[c->i];
-
-      if(!name)
-        return 0;
-
-      c->i++;
-    } else {
-      if(c->done_any)
-        return 0;
-
-      name = "-";
-    }
-
-    c->done_any = 1;
-
-    if(!str_diff(name, "-")) {
-      c->cur = fd_in->r;
-      return 1;
-    }
-
-    c->cur = &c->curb;
-
-    if(buffer_mmapread(c->cur, name) == 0)
-      return 1;
-
-    {
-      int rfd = open_read(name);
-
-      if(rfd == -1) {
-        builtin_error((char**)c->errargv, (char*)name);
-        c->had_error = 1;
-        c->cur = NULL;
-        continue;
-      }
-
-      buffer_init(c->cur, &buffer_op_read, rfd, c->rbuf, sizeof(c->rbuf));
-      return 1;
-    }
-  }
-}
-
-static int
 sed_read_line(void* ctx, const char** sp, size_t* np, int* had_nl) {
   struct sed_ctx* c = ctx;
+  ssize_t r = filter_in_get(&c->in, c->linebuf, sizeof(c->linebuf) - 1, "\n", 1);
 
-  for(;;) {
-    int r;
+  if(r <= 0)
+    return 0;
 
-    if(!c->cur && !input_open_next(c))
-      return 0;
+  *had_nl = (c->linebuf[r - 1] == '\n');
 
-    r = buffer_get_until(c->cur, c->linebuf, sizeof(c->linebuf) - 1, "\n", 1);
+  if(*had_nl)
+    r--;
 
-    if(r <= 0) {
-      c->cur = NULL;
-      continue;
-    }
-
-    *had_nl = (c->linebuf[r - 1] == '\n');
-
-    if(*had_nl)
-      r--;
-
-    *sp = c->linebuf;
-    *np = (size_t)r;
-    return 1;
-  }
+  *sp = c->linebuf;
+  *np = (size_t)r;
+  return 1;
 }
 
 static void
@@ -162,26 +77,15 @@ sed_out(void* ctx, const char* s, size_t n) {
 }
 
 static void
-sed_rfile(void* ctx, const char* name) {
-  buffer b;
-  char rbuf[4096], chunk[4096];
-  ssize_t n;
-
+rfile_sink(void* ctx, const char* s, size_t n) {
   (void)ctx;
+  buffer_put(fd_out->w, s, n);
+}
 
-  if(buffer_mmapread(&b, name) != 0) {
-    int rfd = open_read(name);
-
-    if(rfd == -1)
-      return; /* POSIX: a missing r file is silently ignored */
-
-    buffer_init(&b, &buffer_op_read, rfd, rbuf, sizeof(rbuf));
-  }
-
-  while((n = buffer_get_until(&b, chunk, sizeof(chunk), "", 0)) > 0)
-    buffer_put(fd_out->w, chunk, (size_t)n);
-
-  buffer_close(&b);
+static void
+sed_rfile(void* ctx, const char* name) {
+  (void)ctx;
+  filter_copy(name, rfile_sink, NULL); /* POSIX: a missing r file is silently ignored */
 }
 
 static void
@@ -269,8 +173,7 @@ builtin_sed(int argc, char* argv[]) {
   }
 
   byte_zero(&ctx, sizeof(ctx));
-  ctx.argv = (argv[shell_optind] != NULL) ? argv + shell_optind : NULL;
-  ctx.errargv = argv;
+  filter_in_init(&ctx.in, argv, argv[shell_optind] ? argv + shell_optind : NULL, fd_in->r);
   ctx.nwfiles = sed_wfile_count(prog);
 
   if(ctx.nwfiles) {
@@ -330,13 +233,12 @@ builtin_sed(int argc, char* argv[]) {
     }
   }
 
-  if(ctx.cur == &ctx.curb)
-    buffer_close(ctx.cur);
+  filter_in_close(&ctx.in);
 
   alloc_free(ctx.wfiles);
   sed_free(prog);
 
-  if(ctx.had_error || ret)
+  if(ctx.in.had_error || ret)
     return ret ? ret : 2;
 
   return exit_status;
@@ -396,23 +298,8 @@ sed_filter_out(void* ctx, const char* s, size_t n) {
 static void
 sed_filter_rfile(void* ctx, const char* name) {
   struct sed_filter_ctx* c = ctx;
-  buffer b;
-  char rbuf[4096], chunk[4096];
-  ssize_t n;
 
-  if(buffer_mmapread(&b, name) != 0) {
-    int rfd = open_read(name);
-
-    if(rfd == -1)
-      return; /* POSIX: a missing r file is silently ignored */
-
-    buffer_init(&b, &buffer_op_read, rfd, rbuf, sizeof(rbuf));
-  }
-
-  while((n = buffer_get_until(&b, chunk, sizeof(chunk), "", 0)) > 0)
-    stralloc_catb(&c->out, chunk, (size_t)n);
-
-  buffer_close(&b);
+  filter_copy(name, slurp_sink, &c->out); /* POSIX: a missing r file is silently ignored */
 }
 
 static ssize_t

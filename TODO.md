@@ -128,19 +128,23 @@ in `tests/fixed.sh`.
 
 ---
 
-### Phase 1 [Stage 1: language] — signal disposition (≈67 left, was 1790)
+### Phase 1 [Stage 1: language] — signal disposition (≈100 left, was 1790)
 
-What is left, in order:
+Measured 2026-09-27 on an idle machine: every `*2-p` file is 0 failures; `sighup6` 3, `sigint6`/`sigquit6`
+12, `sigint5`/`sigquit5` 15, `sigint1`/`sigquit1` 11, `sigterm5`/`sigterm6` 6, the rest 3 each.
+Done: an interactive shell ignores INT/QUIT/TERM for itself and resets them in forked children,
+`exec`, `(...)` and `$(...)` (`sh_sigignore()`/`sh_sigrestore()`); `trap - SIG` in an interactive shell
+resets a signal that was ignored on entry.
 
-1. **Disposition across fork and exec.** POSIX: a signal the shell
-   traps to a command is reset to the default in a forked/exec'd
-   child (an ignored one already stays ignored: its real disposition is
-   never touched).
-   `job_fork.c`/`exec_program.c` do not do this systematically yet.
-2. Re-triage the remainder — every `sig*-p` file is now at 164-180/180,
-   so what is left is a handful of individual cases per file, not a
-   family-wide cause. Re-run the scoreboard commands below first;
-   the per-file counts above this section are stale.
+What is left:
+
+1. **Asynchronous lists** (`cmd &` without job control): POSIX says INT and QUIT are ignored in the
+   background child. `job_fork()`/`exec_program()` do not do this; it is most of the remaining
+   "spares child/shell (async, ...)" cases.
+2. **`trap ... INT` inherited across `exec`/subshell** ("command -> keep" cases: a trap must
+   become the default in a child, an ignore stays ignored).
+3. **Interactive `kill -s INT $$` in the main shell** with an initially-ignored INT
+   (`sigint1`/`sigquit1`: 11 cases each).
 
 ### Phase 2 [Stage 1: language] — error semantics: which failures must exit the shell (0)
 

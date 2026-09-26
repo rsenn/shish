@@ -5144,4 +5144,15 @@ X245B=$(X=$(. "$F245/bad.sh" 2>/dev/null); echo "$?")
 assert_equal "AFTER 1" "$X245 $X245B" "a redirection on a special builtin that exits is unwound with the substitution"
 rm -rf "$F245"
 
+## an interactive shell ignores INT/QUIT/TERM for itself and resets them in
+## children; a non-interactive one must never end up ignoring them, not even
+## after a $(...) or (...) (both re-arm the interactive ignore on exit)
+X246=$(:)
+( : )
+sleep 5 &
+X246=$!
+kill -TERM "$X246"
+wait "$X246"
+assert_equal 143 "$?" "a background job is still killable by TERM after \$(...) and (...) in a non-interactive shell"
+
 summary
