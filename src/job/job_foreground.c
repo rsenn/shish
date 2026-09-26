@@ -12,10 +12,12 @@ job_foreground(struct job* job) {
 #if !WINDOWS_NATIVE
   TRACE(TRACE_JOB, "foreground", trace_int("id", job->id), trace_int("pgrp", job->pgrp));
 
+  TRACE(TRACE_SIG, "block", trace_int("sig", SIGTTOU));
   sig_block(SIGTTOU);
 
   tcsetpgrp(term_input.fd, job->pgrp);
 
+  TRACE(TRACE_SIG, "unblock", trace_int("sig", SIGTTOU));
   sig_unblock(SIGTTOU);
 #endif
 }

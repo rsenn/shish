@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../builtin.h"
 #include "../fd.h"
 #include "../fdtable.h"
@@ -67,6 +68,8 @@ const size_t set_longopts_n = sizeof(set_longopts) / sizeof(set_longopts[0]);
 
 int
 set_apply(struct shopt* opts, int letter, int on) {
+  TRACE(TRACE_SH, "opt", trace_int("letter", letter), trace_int("on", on));
+
   switch(letter) {
     case 'a': opts->allexport = on; return 1;
     case 'e': opts->errexit = on; return 1;

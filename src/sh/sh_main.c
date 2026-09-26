@@ -60,6 +60,8 @@ int sh_interactive = 0;
  * ----------------------------------------------------------------------- */
 static void
 sh_onsig(int signum) {
+  TRACE_DEFER(TRACE_SIG, "handler", "sig", signum);
+
   switch(signum) {
     case SIGCHLD: {
       pid_t pid;

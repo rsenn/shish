@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../../lib/alloc.h"
 #include "../sh.h"
 #include "../../lib/shell.h"
@@ -56,5 +57,7 @@ var_create(const char* s, int flags) {
 
   /* finally add it to the bucket and to the global list */
   vartab_add(tab, newv, &ctx);
+
+  TRACE(TRACE_VAR, "create", trace_str("name", s), trace_int("depth", tab->level), trace_int("shadows", v != NULL));
   return newv;
 }

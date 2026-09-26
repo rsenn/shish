@@ -26,8 +26,8 @@
  *
  * returns FDTABLE_DONE, or FDTABLE_ERROR if e could not be moved
  * ----------------------------------------------------------------------- */
-int
-fdtable_openfd(struct fd* d, int e, int flags) {
+static int
+fdtable_openfd_impl(struct fd* d, int e, int flags) {
   TRACE(TRACE_FDTABLE, "openfd", trace_int("n", d->n), trace_int("e", e), trace_hex("flags", flags));
 
   /* the file was opened while d->n was still taken, so e is never
@@ -94,4 +94,12 @@ fdtable_openfd(struct fd* d, int e, int flags) {
   d->mode &= ~FD_OPEN;
 
   return FDTABLE_DONE;
+}
+
+int
+fdtable_openfd(struct fd* d, int e, int flags) {
+  int r = fdtable_openfd_impl(d, e, flags);
+
+  TRACE_RET(TRACE_FDTABLE, "openfd", trace_int("r", r));
+  return r;
 }

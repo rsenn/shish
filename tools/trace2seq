@@ -5,6 +5,7 @@
 #                           exec'd, how it exited      (FILE default: trace.log, - = stdin)
 #   trace2seq -c EVENT [FILE]   number of lines whose event is EVENT
 #                           (e.g. "sh.forked", "exec.program.execve")
+#   trace2seq -s [FILE]     Mermaid sequenceDiagram: forks, execs and exits in log order
 #
 # Needs SHISH_TRACE to include exec and sh (SHISH_TRACE=exec,sh,eval).
 #
@@ -13,12 +14,14 @@
 #     pid 814 exec /usr/bin/wc ["wc", "-l"] exit=0
 # ----------------------------------------------------------------------------
 count=
+seq=0
 if [ "$1" = -c ]; then count=$2; shift 2; fi
+if [ "$1" = -s ]; then seq=1; shift; fi
 f=${1:--}
 [ "$f" = - ] && f=/dev/stdin
 [ -z "$1" ] && [ -f trace.log ] && f=trace.log
 
-awk -v count="$count" '
+awk -v count="$count" -v seq="$seq" '
 function arg(s, k,   i, r) {          # value of key=... in the argument text
   i = index(s, k "=")
   if(!i) return ""
@@ -41,13 +44,29 @@ function show(p, ind,   k, n, kids) {
   if(ev == "sh.forked") {
     o = arg(args, "old"); w = arg(args, "new")
     parent[w] = o; kid[o, ++nk[o]] = w
+    line[++nl] = "  p" o "->>p" w ": fork"
     if(!(w in seen)) { seen[w] = 1; order[++np] = w }
   }
-  else if(ev == "exec.program.execve") prog[pid] = arg(args, "path") " " arg(args, "argv")
-  else if(ev == "sh.exit" && !(pid in code)) code[pid] = arg(args, "code")
-  else if(ev == "exec.program.status") code[arg(args, "pid")] = arg(args, "exit")
+  else if(ev == "exec.program.execve") {
+    prog[pid] = arg(args, "path") " " arg(args, "argv")
+    line[++nl] = "  Note over p" pid ": exec " arg(args, "path")
+  }
+  else if(ev == "sh.exit" && !(pid in code)) {
+    code[pid] = arg(args, "code")
+    line[++nl] = "  Note over p" pid ": exit " code[pid]
+  }
+  else if(ev == "exec.program.status") {
+    code[arg(args, "pid")] = arg(args, "exit")
+    line[++nl] = "  Note over p" arg(args, "pid") ": exit " arg(args, "exit")
+  }
 }
 END {
   if(count != "") { print n + 0; exit }
+  if(seq) {
+    print "sequenceDiagram"
+    for(i = 1; i <= np; i++) print "  participant p" order[i] " as pid " order[i]
+    for(i = 1; i <= nl; i++) print line[i]
+    exit
+  }
   for(i = 1; i <= np; i++) if(!(order[i] in parent)) show(order[i], "")
 }' "$f"

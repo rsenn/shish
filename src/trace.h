@@ -108,8 +108,17 @@ void trace_fdmap(const char* event);
     } \
   } while(0)
 
+/* signal-handler side queue: trace_defer() is async-signal-safe, trace_flush()
+ * prints what it collected as ordinary trace lines: mod.event(key=val) */
+void trace_defer(enum trace_module mod, const char* event, const char* key, long val);
+void trace_flush(void);
+
+#define TRACE_DEFER(mod, ev, key, val) trace_defer(mod, ev, key, val)
+
 #else
 
+#define TRACE_DEFER(mod, ev, key, val) ((void)0)
+#define trace_flush() ((void)0)
 #define TRACE(mod, ev, ...) ((void)0)
 #define TRACE_RET(mod, ev, ...) ((void)0)
 #define TRACE_STRUCT(mod, ev, ...) ((void)0)

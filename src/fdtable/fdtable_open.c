@@ -24,8 +24,8 @@
  * returns fd or -2 if not yet done, -1 if failed,
  * otherwise the new effective file descriptor
  * ----------------------------------------------------------------------- */
-int
-fdtable_open(struct fd* d, int flags) {
+static int
+fdtable_open_impl(struct fd* d, int flags) {
   int e;
   int state;
 
@@ -78,4 +78,12 @@ fdtable_open(struct fd* d, int flags) {
   }
 
   return FDTABLE_DONE;
+}
+
+int
+fdtable_open(struct fd* d, int flags) {
+  int r = fdtable_open_impl(d, flags);
+
+  TRACE_RET(TRACE_FDTABLE, "open", trace_int("r", r));
+  return r;
 }

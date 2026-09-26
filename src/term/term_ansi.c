@@ -14,6 +14,9 @@ term_ansi(void) {
   /* when an ANSI code is received, then disable dumb terminal mode */
   /*  term_dumb = 0;*/
 
+  if(term_vi_escape())
+    return;
+
   if(buffer_getc(&term_input, &c) <= 0)
     return;
 

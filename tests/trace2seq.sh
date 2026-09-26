@@ -28,6 +28,12 @@ assert_equal 1 "$X" "exactly one root process"
 X=$("$TOOL" "$LOG" | grep -c '^  pid .*exit=0')
 assert_equal 3 "$X" "the builtin stage, cat and /bin/echo are children that exit 0"
 
+X=$("$TOOL" -s "$LOG" | grep -c -- '->>')
+assert_equal 3 "$X" "-s draws one fork arrow per child process"
+
+X=$("$TOOL" -s "$LOG" | head -1)
+assert_equal sequenceDiagram "$X" "-s starts a Mermaid sequenceDiagram"
+
 X=$("$TOOL" -c no.such.event "$LOG")
 assert_equal 0 "$X" "an event that never happened counts 0"
 

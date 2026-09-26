@@ -3,6 +3,7 @@
 #include "../prompt.h"
 #include "../term.h"
 #include "../debug.h"
+#include "../trace.h"
 #include "builtin_config.h"
 #include "../../lib/windoze.h"
 
@@ -36,6 +37,7 @@ term_jobnotify(void) {
 
   /* prints "Done"/"Stopped" banners for whatever job_signal() (run
      from signal context) recorded since the last call */
+  trace_flush();
   job_update();
 
 #if BUILTIN_TRAP
@@ -136,6 +138,7 @@ term_read(int fd, void* vbuf, size_t len, void* arg) {
   prompt_show();
 
   term_reading = 1;
+  term_vi_cmd = 0;
 
   for(;;) {
 #if !WINDOWS_NATIVE
@@ -153,6 +156,12 @@ term_read(int fd, void* vbuf, size_t len, void* arg) {
     debug_char("term_read.c", c);
     debug_nl();
 #endif
+    /* vi command mode: printable keys are commands, control keys stay */
+    if(term_vi_cmd && c >= 32 && c != 127) {
+      term_vimode(c);
+      continue;
+    }
+
     switch(c) {
       /* control-c discards the current line */
       case 3: stralloc_zero(&term_cmdline);

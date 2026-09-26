@@ -67,5 +67,8 @@ char* term_getline(void);
 void term_complete(void);
 void term_complete_redraw(void);
 void term_search(void);
+extern int term_vi_cmd; /* 1 in vi command mode */
+int term_vi_escape(void);
+void term_vimode(char c);
 
 #endif /* TERM_H */

@@ -4,8 +4,8 @@
 
 /* wish 'e' become the new expected fd before calling open()/dup()
  * ----------------------------------------------------------------------- */
-int
-fdtable_wish(int e, int flags) {
+static int
+fdtable_wish_impl(int e, int flags) {
   TRACE(TRACE_FDTABLE, "wish", trace_int("e", e), trace_hex("flags", flags), trace_int("expected", fd_expected));
 
   /* if the wished position is above the bottom we can maybe get it
@@ -24,4 +24,12 @@ fdtable_wish(int e, int flags) {
 
   /* e == fd_expected, so the wish is already satisfied */
   return FDTABLE_DONE;
+}
+
+int
+fdtable_wish(int e, int flags) {
+  int r = fdtable_wish_impl(e, flags);
+
+  TRACE_RET(TRACE_FDTABLE, "wish", trace_int("r", r));
+  return r;
 }

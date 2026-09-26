@@ -19,7 +19,7 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 ARCHIVE = trace.a
 MODULES = \
-trace_begin trace_fd trace_fdmap trace_value
+trace_begin trace_defer trace_fd trace_fdmap trace_value
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

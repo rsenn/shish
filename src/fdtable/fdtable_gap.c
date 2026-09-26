@@ -20,8 +20,8 @@
  *
  * return 1 if we made a gap
  * ----------------------------------------------------------------------- */
-int
-fdtable_gap(int e, int flags) {
+static int
+fdtable_gap_impl(int e, int flags) {
   struct fd* gap;
 
   TRACE(TRACE_FDTABLE, "gap", trace_int("e", e), trace_hex("flags", flags));
@@ -115,4 +115,12 @@ fdtable_gap(int e, int flags) {
   }
 
   return FDTABLE_PENDING;
+}
+
+int
+fdtable_gap(int e, int flags) {
+  int r = fdtable_gap_impl(e, flags);
+
+  TRACE_RET(TRACE_FDTABLE, "gap", trace_int("r", r));
+  return r;
 }

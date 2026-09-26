@@ -3907,12 +3907,11 @@ A uniform, parseable trace layer (`src/trace.h`, `src/trace/`) replaced the old
 
 - **Steps 4-6 are done** (2026-09-26): fd\*/fdstack/fdtable entry events, var/sh/job events,
   and `tools/trace2seq` (process tree, `-c EVENT` counts; test: `tests/trace2seq.sh`).
-  Gaps left:
-  - not traced: `sig.block/unblock`, `sh.opt`, `trap.*`, `var.create`, `sh.getcwd`, `sh_onsig`
-    (async-signal-unsafe; needs a ring buffer flushed from `trap_run_pending()`).
-  - `fdtable.lazy/wish/gap/open/openfd/close` log the call only, not the result.
-  - `job.fork` does not fire for a plain `cmd &`.
-  - `trace2seq` has no sequence-diagram output yet, only the tree.
+  Gaps closed 2026-09-27: `sig.block/unblock/blocknone`, `sh.opt`, `var.create`, `sh.getcwd`,
+  `sig.handler`/`sig.trap.*` (queued from signal context in `src/trace/trace_defer.c`, printed by
+  `trace_flush()`), `fdtable.lazy/wish/gap/open/openfd/close` results, `trace2seq -s` (Mermaid).
+  Still open: `job.fork` does not fire for an external `cmd &` (that path forks in
+  `exec_program`, see `exec.program.fork`).
 - **`SHISH_TRACE` is read from the process environment once**, at the first event; an
   `export SHISH_TRACE=...` inside a running script is not seen. Reading it through `var_get`
   would fix that but touches every event's startup path.

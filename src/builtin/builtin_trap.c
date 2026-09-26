@@ -172,6 +172,8 @@ trap_handler(int sig) {
  * does for SIGCHLD. */
 static void
 trap_relay(int sig) {
+  TRACE_DEFER(TRACE_SIG, "trap.relay", "sig", sig);
+
   trap_pending[(unsigned char)sig] = 1;
   trap_signaled = 1;
 
@@ -191,6 +193,8 @@ void
 trap_run_pending(void) {
   int sig;
 
+  trace_flush();
+
   if(!trap_signaled)
     return;
 
@@ -199,6 +203,7 @@ trap_run_pending(void) {
   for(sig = 1; sig < 254; sig++) {
     if(trap_pending[sig]) {
       trap_pending[sig] = 0;
+      TRACE(TRACE_SIG, "trap.pending", trace_int("sig", sig));
       trap_handler(sig);
     }
   }
@@ -359,6 +364,8 @@ trap_install(int sig, union node* tree) {
   tr->next = traps;
   tr->sh = sh;
   traps = tr;
+
+  TRACE(TRACE_SIG, "trap.install", trace_int("sig", sig), trace_str("name", trap_name(sig)), trace_int("ignore", !tree));
 
   if((char)sig > 0) {
 

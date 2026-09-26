@@ -47,10 +47,12 @@ job_fork(struct job* j, union node* node, int bgnd) {
     assert(index >= 0);
   }
 
+  TRACE(TRACE_SIG, "block", trace_int("sig", SIGCHLD));
   sig_block(SIGCHLD);
 
   /* fork the process */
   if((pid = fork()) == -1) {
+    TRACE(TRACE_SIG, "unblock", trace_int("sig", SIGCHLD));
     sig_unblock(SIGCHLD);
     sh_error_errno("fork failed");
     return -1;
@@ -140,6 +142,7 @@ job_fork(struct job* j, union node* node, int bgnd) {
     /* the blocked mask survives exec(), so a program this child later
        execs (or a builtin/subshell it runs in-process) would otherwise
        inherit SIGCHLD blocked forever */
+    TRACE(TRACE_SIG, "unblock", trace_int("sig", SIGCHLD));
     sig_unblock(SIGCHLD);
     TRACE(TRACE_JOB, "fork.child", trace_int("pgrp", pgrp), trace_int("bgnd", bgnd));
     return pid;
@@ -188,6 +191,7 @@ job_fork(struct job* j, union node* node, int bgnd) {
 
   TRACE(TRACE_JOB, "fork", trace_int("id", j->id), trace_int("pid", pid), trace_int("pgrp", pgrp), trace_int("bgnd", bgnd));
 
+  TRACE(TRACE_SIG, "unblock", trace_int("sig", SIGCHLD));
   sig_unblock(SIGCHLD);
   return pid;
 }

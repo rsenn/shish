@@ -1,3 +1,4 @@
+#include "../trace.h"
 #include "../sh.h"
 #include "../../lib/path.h"
 #include "../../lib/str.h"
@@ -25,4 +26,6 @@ sh_getcwd(struct env* sh) {
     path_getcwd(&sh->cwd);
   else
     sh->cwd.len = str_len(sh->cwd.s);
+
+  TRACE(TRACE_SH, "getcwd", trace_strn("cwd", sh->cwd.s, sh->cwd.len));
 }

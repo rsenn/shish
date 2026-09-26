@@ -10,8 +10,8 @@
 
 /* handles closing of fd e maybe by resolving another fd
  * ----------------------------------------------------------------------- */
-int
-fdtable_close(int e, int flags) {
+static int
+fdtable_close_impl(int e, int flags) {
   int state;
 
   TRACE(TRACE_FDTABLE, "close", trace_int("e", e), trace_hex("flags", flags));
@@ -45,4 +45,12 @@ fdtable_close(int e, int flags) {
     fd_expected = e;
 
   return FDTABLE_DONE;
+}
+
+int
+fdtable_close(int e, int flags) {
+  int r = fdtable_close_impl(e, flags);
+
+  TRACE_RET(TRACE_FDTABLE, "close", trace_int("r", r));
+  return r;
 }

@@ -82,6 +82,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
        before fork(): otherwise a fast-exiting child can deliver it (and
        have it handled -> job_signal() -> job_bypid() finding nothing)
        before job_new() below has even registered the job. */
+    TRACE(TRACE_SIG, "block", trace_int("sig", SIGCHLD));
     sig_block(SIGCHLD);
 
     /* in the parent wait for the child to finish and then return
@@ -93,6 +94,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
       TRACE(TRACE_EXEC, "program.fork_failed", trace_str("path", path), trace_int("errno", saved_errno));
 
       sh_error_errno(argv[0]);
+      TRACE(TRACE_SIG, "unblock", trace_int("sig", SIGCHLD));
       sig_unblock(SIGCHLD);
       fdstack_pop(&io);
 
@@ -181,6 +183,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
         if(sh->opts.monitor)
           job_banner(job, fd_err->w, JOB_START);
 
+        TRACE(TRACE_SIG, "unblock", trace_int("sig", SIGCHLD));
         sig_unblock(SIGCHLD);
         ret = 0;
       } else {
@@ -249,6 +252,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
 
         TRACE(TRACE_EXEC, "program.status", trace_str("path", path), trace_int("pid", pid), trace_hex("wait", status), trace_int("exit", ret));
 
+        TRACE(TRACE_SIG, "blocknone", trace_raw(NULL, ""));
         sig_blocknone();
       }
 
@@ -280,6 +284,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
     /* the blocked mask set above survives exec(); the program we're
        about to run (or exit() out of) must not inherit SIGINT/SIGCHLD
        blocked */
+    TRACE(TRACE_SIG, "blocknone", trace_raw(NULL, ""));
     sig_blocknone();
   }
 

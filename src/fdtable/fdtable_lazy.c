@@ -10,8 +10,8 @@
 
 /* try to lazy-resolve fds until the supplied fd is the bottom
  * ----------------------------------------------------------------------- */
-int
-fdtable_lazy(int e, int flags) {
+static int
+fdtable_lazy_impl(int e, int flags) {
   struct fd* fd;
   int r;
 
@@ -37,4 +37,12 @@ fdtable_lazy(int e, int flags) {
   }
 
   return (e == fd_expected ? FDTABLE_DONE : FDTABLE_PENDING);
+}
+
+int
+fdtable_lazy(int e, int flags) {
+  int r = fdtable_lazy_impl(e, flags);
+
+  TRACE_RET(TRACE_FDTABLE, "lazy", trace_int("r", r));
+  return r;
 }

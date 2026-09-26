@@ -203,11 +203,13 @@ builtin_timeout(int argc, char* argv[]) {
    * for job control) can reap this child first, since it isn't
    * registered in the job table, silently discarding its exit
    * status before wait_pid_nohang() ever gets a chance to see it. */
+  TRACE(TRACE_SIG, "block", trace_int("sig", SIGCHLD));
   sig_block(SIGCHLD);
 
   pid = fork();
 
   if(pid == -1) {
+    TRACE(TRACE_SIG, "unblock", trace_int("sig", SIGCHLD));
     sig_unblock(SIGCHLD);
     builtin_error(argv, cmdargv[0]);
     return 125;
@@ -217,6 +219,7 @@ builtin_timeout(int argc, char* argv[]) {
     unsigned long envn = var_count(V_EXPORT) + 1;
     char** envp = var_export(alloc(envn * sizeof(char*)));
 
+    TRACE(TRACE_SIG, "unblock", trace_int("sig", SIGCHLD));
     sig_unblock(SIGCHLD);
 
     /* apply the shell's pending redirections/pipes to the real fds */
@@ -283,6 +286,7 @@ builtin_timeout(int argc, char* argv[]) {
   }
 
 done:
+  TRACE(TRACE_SIG, "unblock", trace_int("sig", SIGCHLD));
   sig_unblock(SIGCHLD);
   return ret;
 }
