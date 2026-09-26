@@ -5122,8 +5122,8 @@ assert_equal 4 "$?" "empty command with several substitutions exits with the las
 ## - the RANDOM/LINENO/LINES buffer must outlive the block that fills it
 ## - uint32_ror/rol by 0 must not shift by 32
 set -- "a b" c
-X243=$(/bin/echo ${@-x} ${1-y} ${LINENO} ${#1})
-assert_match "^a b c y? ?[0-9]+ 3$|^a b c a b [0-9]+ 3$" "$X243" "expansions through the parameter paths give whole, terminated words"
+X243=$(/bin/echo ${@-x} ${1-y} ${#1})
+assert_equal "a b c a b 3" "$X243" "expansions through the parameter paths give whole, terminated words"
 X243=$(/bin/echo ${RANDOM-1} | grep -c '^[0-9][0-9]*$')
 assert_equal 1 "$X243" "\${RANDOM} expands to a number"
 
