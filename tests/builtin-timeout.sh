@@ -43,4 +43,21 @@ assert_equal "125" "$?" "timeout with no operands is a usage error"
 timeout bogus true >/dev/null 2>&1
 assert_equal "125" "$?" "an invalid duration is a usage error"
 
+## the command goes through the shell's own dispatch: a function is
+## timed and killed too, and a program's output is captured in $(...)
+case $(type timeout) in
+*builtin*)
+timeout_fn() { sleep 3; echo late; }
+timeout 0.2 timeout_fn
+assert_equal 124 "$?" "a shell function that outlives the deadline is killed, exit 124"
+
+timeout_ok() { echo fnok; }
+X=$(timeout 2 /bin/echo captured)
+assert_equal "captured" "$X" "output of the timed program is captured by \$(...)"
+
+timeout 2 timeout_ok >/dev/null
+assert_equal 0 "$?" "a function that finishes in time returns its own status"
+;;
+esac
+
 summary

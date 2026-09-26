@@ -1,9 +1,8 @@
 #include "../../builtin.h"
-#include "../../fdtable.h"
-#include "../../trace.h"
-#include "../../fdstack.h"
 #include "../../exec.h"
-#include "../../var.h"
+#include "../../fdtable.h"
+#include "../../job.h"
+#include "../../sh.h"
 #include "../../../lib/shell.h"
 #include "../../../lib/scan.h"
 #include "../../../lib/str.h"
@@ -14,6 +13,7 @@
 #include "../../../lib/sig.h"
 #include <errno.h>
 #include <signal.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 const char help_timeout[] =
@@ -25,7 +25,10 @@ const char help_timeout[] =
     "    -v, --verbose               report to stderr what signal was sent\n"
     "    DURATION                    seconds to allow, fractional, with an\n"
     "                                optional s/m/h/d suffix; 0 disables it\n"
-    "    COMMAND [ARG]...            program to run\n";
+    "    COMMAND [ARG]...            program, builtin or function to run\n"
+    "\n"
+    "    exit status: 124 on timeout, 137 if KILL was needed, 125 usage error,\n"
+    "    126/127 not executable/not found, otherwise COMMAND's status\n";
 
 /* removes 'n' argv slots starting at 'i', shifting the rest down;
  * 'argc' is adjusted in place.
@@ -135,12 +138,55 @@ timeout_signum(const char* spec) {
   return sig_byname(spec);
 }
 
+/* SIGALRM drives the two deadlines: first the signal, then KILL. only
+ * async-signal-safe calls here; exec_child_pid is the program the
+ * shell is currently waiting for.
+ * ----------------------------------------------------------------------- */
+static volatile int timeout_sig, timeout_state;
+static unsigned long timeout_kill_usec;
+
+static void
+timeout_arm(unsigned long usec) {
+  struct itimerval it;
+
+  it.it_interval.tv_sec = it.it_interval.tv_usec = 0;
+  it.it_value.tv_sec = usec / 1000000;
+  it.it_value.tv_usec = usec % 1000000;
+  setitimer(ITIMER_REAL, &it, NULL);
+}
+
+static void
+timeout_alarm(int signum) {
+  pid_t pid = exec_child_pid;
+
+  (void)signum;
+
+  job_quiet = 1;
+
+  if(timeout_state == 0) {
+    timeout_state = 1;
+
+    if(pid > 0)
+      kill(pid, timeout_sig);
+
+    if(timeout_kill_usec)
+      timeout_arm(timeout_kill_usec);
+  } else if(timeout_state == 1) {
+    timeout_state = 2;
+
+    if(pid > 0)
+      kill(pid, SIGKILL);
+  }
+}
+
 int
 builtin_timeout(int argc, char* argv[]) {
-  int c, verbose = 0, ret;
+  int c, verbose = 0, ret, cmdargc;
   char *kill_after_arg = NULL, *signal_arg = NULL, *path, **cmdargv;
   unsigned long duration_usec = 0, kill_after_usec = 0;
-  int pid, sig = SIGTERM;
+  int sig = SIGTERM;
+  struct command cmd;
+  struct sigaction sa, oldsa;
 
   kill_after_arg = extract_longopt(argv, &argc, "--kill-after");
   signal_arg = extract_longopt(argv, &argc, "--signal");
@@ -184,109 +230,73 @@ builtin_timeout(int argc, char* argv[]) {
   }
 
   cmdargv = &argv[shell_optind + 1];
-  path = cmdargv[0][str_chr(cmdargv[0], '/')] ? cmdargv[0] : exec_path(cmdargv[0]);
+  cmdargc = argc - shell_optind - 1;
+  cmd = exec_hash(cmdargv[0], 0);
 
-  if(!path) {
-    builtin_errmsg(argv, cmdargv[0], "command not found");
-    return 127;
+  /* a builtin that also exists as a program runs as the program, so the
+     deadline can kill it and its output is captured in "$(...)" */
+  if(cmd.id == H_BUILTIN && (path = exec_path(cmdargv[0]))) {
+    cmd.id = H_PROGRAM;
+    cmd.path = path;
   }
 
-  if(access(path, X_OK) == -1) {
-    int notfound = errno == ENOENT;
-
+  if(!cmd.ptr) {
+    errno = exec_lasterrno ? exec_lasterrno : ENOENT;
+    ret = exec_error();
+    errno = exec_lasterrno ? exec_lasterrno : ENOENT;
     builtin_error(argv, cmdargv[0]);
-    return notfound ? 127 : 126;
+    return ret;
   }
 
-  /* block SIGCHLD across the fork and the whole wait loop below --
-   * otherwise the shell's own SIGCHLD handler (sh_onsig(), installed
-   * for job control) can reap this child first, since it isn't
-   * registered in the job table, silently discarding its exit
-   * status before wait_pid_nohang() ever gets a chance to see it. */
-  TRACE(TRACE_SIG, "block", trace_int("sig", SIGCHLD));
-  sig_block(SIGCHLD);
+  timeout_sig = sig;
+  timeout_state = 0;
+  timeout_kill_usec = kill_after_usec;
 
-  pid = fork();
+  sa.sa_handler = timeout_alarm;
+  sa.sa_flags = 0;
+  sigemptyset(&sa.sa_mask);
+  sig_action(SIGALRM, &sa, &oldsa);
 
-  if(pid == -1) {
-    TRACE(TRACE_SIG, "unblock", trace_int("sig", SIGCHLD));
-    sig_unblock(SIGCHLD);
-    builtin_error(argv, cmdargv[0]);
-    return 125;
+  timeout_arm(duration_usec);
+
+  if(cmd.id == H_PROGRAM) {
+    ret = exec_command(&cmd, cmdargc, cmdargv, 0);
+  } else {
+    /* a builtin or function only runs in another process when
+       backgrounded: fork it, then wait for it like a program */
+    struct job* job;
+    int wstat = 0;
+
+    exec_command(&cmd, cmdargc, cmdargv, X_NOWAIT);
+    exec_child_pid = job_bgpid;
+
+    if((job = job_bypid(job_bgpid)))
+      job_wait(job, 0, &wstat);
+
+    exec_child_pid = 0;
+    ret = WAIT_STATUS(wstat);
   }
 
-  if(pid == 0) {
-    unsigned long envn = var_count(V_EXPORT) + 1;
-    char** envp = var_export(alloc(envn * sizeof(char*)));
+  timeout_arm(0);
+  sig_action(SIGALRM, &oldsa, NULL);
+  job_quiet = 0;
 
-    TRACE(TRACE_SIG, "unblock", trace_int("sig", SIGCHLD));
-    sig_unblock(SIGCHLD);
-
-    /* apply the shell's pending redirections/pipes to the real fds */
-    fdtable_exec();
-    fdstack_flatten();
-    trace_fdmap("exec.fds");
-
-    TRACE(TRACE_EXEC, "timeout.execve", trace_str("path", path), trace_argv("argv", cmdargv), trace_int("nenv", envn - 1));
-
-    execve(path, cmdargv, envp);
-    _exit(126);
+  if(verbose && timeout_state >= 1) {
+    buffer_puts(fd_err->w, "timeout: sending signal ");
+    buffer_puts(fd_err->w, sig_name(sig));
+    buffer_puts(fd_err->w, " to command '");
+    buffer_puts(fd_err->w, cmdargv[0]);
+    buffer_putsflush(fd_err->w, "'\n");
   }
 
-  {
-    int wstat = 0, r, sig_sent = 0;
-    unsigned long elapsed = 0;
-
-    for(;;) {
-      r = wait_pid_nohang(pid, &wstat);
-
-      if(r == pid)
-        break;
-
-      if(r == -1) {
-        ret = 125;
-        goto done;
-      }
-
-      usleep(1000);
-      elapsed += 1000;
-
-      if(!sig_sent && duration_usec && elapsed >= duration_usec) {
-        if(verbose) {
-          buffer_puts(fd_err->w, "timeout: sending signal ");
-          buffer_puts(fd_err->w, sig_name(sig));
-          buffer_puts(fd_err->w, " to command '");
-          buffer_puts(fd_err->w, cmdargv[0]);
-          buffer_puts(fd_err->w, "'");
-          buffer_putnlflush(fd_err->w);
-        }
-
-        kill(pid, sig);
-        sig_sent = 1;
-        elapsed = 0;
-      } else if(sig_sent == 1 && kill_after_usec && elapsed >= kill_after_usec) {
-        if(verbose) {
-          buffer_puts(fd_err->w, "timeout: sending signal KILL to command '");
-          buffer_puts(fd_err->w, cmdargv[0]);
-          buffer_puts(fd_err->w, "'");
-          buffer_putnlflush(fd_err->w);
-        }
-
-        kill(pid, SIGKILL);
-        sig_sent = 2;
-      }
-    }
-
-    if(sig_sent && WAIT_IF_SIGNALED(wstat) && WAIT_TERMSIG(wstat) == SIGKILL)
-      ret = 137;
-    else if(sig_sent)
-      ret = 124;
-    else
-      ret = WAIT_STATUS(wstat);
+  if(verbose && timeout_state == 2) {
+    buffer_puts(fd_err->w, "timeout: sending signal KILL to command '");
+    buffer_puts(fd_err->w, cmdargv[0]);
+    buffer_putsflush(fd_err->w, "'\n");
   }
 
-done:
-  TRACE(TRACE_SIG, "unblock", trace_int("sig", SIGCHLD));
-  sig_unblock(SIGCHLD);
-  return ret;
+  if(timeout_state && ret == 128 + SIGKILL)
+    return 137;
+
+  return timeout_state ? 124 : ret;
 }

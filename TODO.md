@@ -3919,10 +3919,12 @@ A uniform, parseable trace layer (`src/trace.h`, `src/trace/`) replaced the old
   serial `make`, then `./config.status src/builtin_config.h` once — configure does not run its
   `AC_CONFIG_COMMANDS` step, cause not found). `src/*/Makefile.in` `MODULES` lists are
   hand-maintained and drift (`expand_getorcreate`, `fd_filter`, `trace_fd` had to be fixed by hand).
-- **`timeout`'s child output is not captured** when it is the last stage of a `$(...)`
-  (its wait loop cannot drain the substitution pipe first); `BUGS` has the
-  "redirect inside `$(...)` is ignored for forked commands" entry that shares a root cause
-  (`fdstack_pipe()` overrides whatever fd 1 was redirected to).
+- **`xargs` and `timeout` run their command through `exec_command()`** (no private fork/execvp):
+  builtins, functions and programs all work and "$(...)" capture comes from `exec_program()`.
+  `timeout` kills via a SIGALRM handler aimed at `exec_child_pid`; a builtin with no program of
+  the same name, or a function, is forked (`X_NOWAIT`) so it can be killed, and its output is
+  then not captured in "$(...)". "BUGS" still has the "redirect inside `$(...)` is ignored for
+  forked commands" entry (root cause: `fdstack_pipe()` overrides whatever fd 1 was redirected to).
 - **What the trace already found:** the shell's internal pipe (fds 128/129) leaks into every
   exec'd program (`fdtable.exec.fds` shows it); `cmdsubst_ran` was cleared after word expansion
   (`fixes/242`); `xargs`'s uninitialised `items.c`, `-d` separator not stripped, output escaping

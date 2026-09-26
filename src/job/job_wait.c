@@ -126,7 +126,7 @@ job_wait(struct job* j, pid_t pid, int* status) {
         if(!WAIT_IF_EXITED(s)) {
           int squelch = !sh->opts.monitor && WAIT_IF_SIGNALED(s) &&
                         (WAIT_TERMSIG(s) == SIGPIPE || WAIT_TERMSIG(s) == SIGINT);
-          if(!squelch)
+          if(!squelch && !job_quiet)
             job_printstatus(ret, s);
         }
       } else {

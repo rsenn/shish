@@ -1247,3 +1247,11 @@
   X=$(/bin/echo p >/dev/null); echo "[$X]"   # prints [p], should print []
   X=$(/bin/echo p 2>&1 >/dev/null); echo "[$X]"   # prints [p], should print []
   ```
+
+- getopts reads a freed argument: under ASan, tests/fixed.sh (the
+  GETOPTS102_ARGFORM case: three `getopts ab:c o -a -b arg -c` calls in one
+  `$(...)`) aborts with heap-use-after-free in str_len(optarg) at
+  src/builtin/builtin_getopts.c:141; shell_optarg still points into the
+  argv of an earlier getopts call whose words were already freed
+  (repro: cmake -DCMAKE_C_FLAGS=-fsanitize=address,undefined, then
+  `./shish tests/fixed.sh`)

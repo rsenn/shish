@@ -5,6 +5,7 @@
 
 struct job *job_list = NULL, **job_pointer = NULL;
 volatile bool job_signaled = 0;
+volatile int job_quiet;
 
 /* creates a new job structure
  * ----------------------------------------------------------------------- */

@@ -34,6 +34,8 @@
  *
  * if the 'exec' argument is set it will never return
  * ----------------------------------------------------------------------- */
+volatile pid_t exec_child_pid;
+
 int
 exec_program(char* path, char** argv, enum execflag flag) {
   int ret = 0;
@@ -148,6 +150,8 @@ exec_program(char* path, char** argv, enum execflag flag) {
             trace_int("monitor", sh->opts.monitor),
             trace_int("bgnd", !!(flag & X_NOWAIT)));
 
+      exec_child_pid = pid;
+
       /* this will close child ends of the pipes and read data from the parent
        * end :) */
       fdstack_pop(&io);
@@ -257,6 +261,8 @@ exec_program(char* path, char** argv, enum execflag flag) {
         TRACE(TRACE_SIG, "blocknone", trace_raw(NULL, ""));
         sig_blocknone();
       }
+
+      exec_child_pid = 0;
 
       /* exit if 'exec' is set, otherwise return */
       if((flag & X_EXEC))

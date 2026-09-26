@@ -3,6 +3,7 @@
 
 #include "../lib/uint32.h"
 #include <stdlib.h>
+#include <sys/types.h>
 
 enum hash { H_PROGRAM = 0, H_EXEC = 1, H_SBUILTIN = 2, H_BUILTIN = 4, H_FUNCTION = 8 };
 
@@ -63,6 +64,10 @@ extern struct exechash* exec_hashtbl[EXEC_HASHSIZE];
    notices cmd.ptr == NULL -- redirections, variable expansion and
    other syscalls run in between and routinely clobber it. */
 extern int exec_lasterrno;
+
+/* pid of the program exec_program() is waiting for, 0 otherwise; read by
+   signal handlers (timeout) that must kill it */
+extern volatile pid_t exec_child_pid;
 
 /* set when a redirection of the command exec_command() was about to
    run could not be performed. The redirections are resolved as late

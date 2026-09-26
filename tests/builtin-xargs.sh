@@ -224,4 +224,21 @@ assert_equal "300" "$(echo $X)" "xargs -I makes 300 invocations for 300 lines"
 
 cd / && rm -rf "$TESTDIR"
 
+## the utility goes through the shell's own dispatch: functions and
+## builtins run in-process, and the utility's stdin is /dev/null
+xargs_fn() { echo "fn:$*"; }
+X=$(printf 'a\nb\n' | xargs -n1 xargs_fn)
+assert_equal "fn:a
+fn:b" "$X" "xargs runs a shell function once per item"
+
+X=$(printf 'a\nb\n' | xargs -n1 -I{} echo "<{}>")
+assert_equal "<a>
+<b>" "$X" "xargs runs the echo builtin with -I"
+
+X=$(printf 'zz\n' | xargs sh -c 'cat; echo end' sh)
+assert_equal "end" "$X" "the utility reads /dev/null, not the remaining input items"
+
+printf 'x\n' | xargs nosuch_cmd_xargs 2>/dev/null
+assert_equal 127 "$?" "a utility that is not found exits 127"
+
 summary

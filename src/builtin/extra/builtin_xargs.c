@@ -1,13 +1,14 @@
 #include "../../builtin.h"
+#include "../../exec.h"
+#include "../../fd.h"
 #include "../../fdstack.h"
 #include "../../fdtable.h"
-#include "../../trace.h"
+#include "../../sh.h"
 #include "../../../lib/shell.h"
 #include "../../../lib/scan.h"
 #include "../../../lib/open.h"
 #include "../../../lib/alloc.h"
 #include "../../../lib/str.h"
-#include <sys/wait.h>
 
 /* output stuff
  * ----------------------------------------------------------------------- */
@@ -36,15 +37,6 @@ struct args {
 struct xargs_opts {
   unsigned no_run_noargs : 1, do_prompt : 1, reopen_pty : 1, trace:1;
 };
-
-/* does writing to fd end up in a $(...) buffer? follows "2>&1"-style dups */
-static int
-writes_to_subst(struct fd* fd) {
-  while(fd && (fd->mode & FD_DUP) && fd->dup)
-    fd = fd->dup;
-
-  return fd && (fd->mode & FD_SUBST) == FD_SUBST;
-}
 
 static int
 execute_batch(struct args util, struct args items, struct xargs_opts opts) {
@@ -85,79 +77,33 @@ execute_batch(struct args util, struct args items, struct xargs_opts opts) {
     }
   }
 
-  /* a $(...) buffer can't cross fork(): if our stdout/stderr lead to one,
-     give the child real pipes and drain them after it exits, like
-     exec_program() does */
+  /* run through the shell's own dispatch, so builtins, functions and
+     programs all work and "$(...)" capture is handled by exec_program().
+     stdin is /dev/null (or the tty with -o), not the item stream. */
   struct fdstack io;
-  struct fd* pipes = 0;
-  unsigned int npipes = 0;
+  struct fd* in;
+  char buf[FD_BUFSIZE];
+  struct command cmd = exec_hash(argv[0], 0);
+  int ret;
 
   fdstack_push(&io);
+  in = fd_push(fd_alloc(), STDIN_FILENO, FD_READ);
+  fd_open(in, opts.reopen_pty ? "/dev/tty" : "/dev/null", 0);
 
-  if((writes_to_subst(fd_out) || writes_to_subst(fd_err)) && (npipes = fdstack_npipes(FD_SUBST))) {
-    pipes = alloc(FDSTACK_ALLOC_SIZE(npipes));
-    fdstack_pipe(npipes, pipes);
-  }
+  if(fd_needbuf(in))
+    fd_setbuf(in, buf, sizeof(buf));
 
-  if((pid = fork()) < 0) {
-    fdstack_pop(&io);
-    if(pipes)
-      alloc_free(pipes);
-    alloc_free(argv);
-    return 1;
-  }
-
-  if(pid == 0) {
-    /* apply the shell's pending redirections/pipes to the real fds */
-    fdtable_exec();
-    fdstack_flatten();
-    trace_fdmap("exec.fds");
-
-    if(opts.reopen_pty) {
-      int tty_fd;
-
-      if((tty_fd = open("/dev/tty", 2)) != -1) {
-        dup2(tty_fd, 0);
-
-        if(tty_fd > 2)
-          close(tty_fd);
-      }
-    }
-
-    TRACE(TRACE_EXEC, "xargs.execvp", trace_argv("argv", argv), trace_int("argc", argc));
-
-    execvp(argv[0], argv);
-    exit(127);
+  if(cmd.ptr) {
+    ret = exec_command(&cmd, argc, argv, 0);
   } else {
-    int status;
-
-    TRACE(TRACE_EXEC, "xargs.fork", trace_str("path", argv[0]), trace_int("pid", pid), trace_int("npipes", npipes));
-
-    /* closes the child's pipe ends, then reads what it wrote */
-    fdstack_pop(&io);
-
-    if(npipes)
-      fdstack_data();
-
-    if(pipes)
-      alloc_free(pipes);
-
-    waitpid(pid, &status, 0);
-    alloc_free(argv);
-
-    if(WIFEXITED(status)) {
-      int exit_code;
-
-      if((exit_code = WEXITSTATUS(status)) != 0) {
-        if(exit_code == 127)
-          return 127;
-
-        return exit_code;
-      }
-    }
+    buffer_putm_internal(fd_err->w, "xargs: ", argv[0], ": ", strerror(exec_lasterrno), 0);
+    buffer_putnlflush(fd_err->w);
+    ret = EXIT_NOTFOUND;
   }
 
-  return 0;
+  fdstack_pop(&io);
+  alloc_free(argv);
+  return ret;
 }
 
 /* runs the command once with every occurrence of replstr in the initial

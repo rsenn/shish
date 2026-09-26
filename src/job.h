@@ -56,6 +56,9 @@ struct job {
 
 extern int job_terminal, job_pgrp;
 extern volatile bool job_signaled;
+
+/* set while a signal sent by timeout kills a foreground command: no "signaled" report */
+extern volatile int job_quiet;
 extern struct job *job_list, **job_pointer;
 extern pid_t job_bgpid; /* "$!": pid of the most recently backgrounded command */
 
