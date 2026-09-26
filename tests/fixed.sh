@@ -5180,4 +5180,19 @@ X251=$(/bin/echo q; /bin/echo r >/dev/null; /bin/echo s)
 assert_equal "q
 s" "$X251" "only the unredirected commands of \$(...) are captured"
 
+## a subshell inherits $?, so a bare "exit" in it keeps the caller's status;
+## a bare "exit" in the EXIT trap uses the status pending when the trap began
+"$SHISH_SELF" -c '(exit 3); (exit)'
+assert_equal 3 "$?" "(exit) in a subshell exits with the inherited \$?"
+"$SHISH_SELF" -c "trap '(exit 1); exit' EXIT; (exit 2); exit"
+assert_equal 2 "$?" "bare exit in the EXIT trap uses the status pending at trap entry"
+
+## caught traps are reset in a subshell / command substitution: a signal
+## there has its default action, not the parent's trap
+assert_equal "" "$("$SHISH_SELF" -c 'trap "echo trapped" USR1; (kill -s USR1 $$; echo alive) 2>/dev/null; echo end' 2>/dev/null | grep trapped)" "a trap set outside is not run for a signal delivered inside a subshell"
+assert_equal "trapped" "$("$SHISH_SELF" -c 'trap "echo trapped" USR1; (: ); kill -s USR1 $$; echo x >/dev/null' 2>&1)" "the parent's trap is re-armed after the subshell ends"
+
+## "-i +m" keeps job control off
+assert_equal "1" "$("$SHISH_SELF" -i +m -c 'case $- in *m*) echo 0;; *) echo 1;; esac' 2>/dev/null)" "-i +m does not turn monitor mode on"
+
 summary

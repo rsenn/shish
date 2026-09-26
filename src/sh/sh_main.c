@@ -154,6 +154,7 @@ main(int argc, char** argv) {
   struct var* envvars;
   int no_interactive = 0;
   int force_interactive = 0;
+  int monitor_off = 0; /* "+m" given: interactive must not turn it on */
   int read_stdin = 0;
   const char *input_kind = "stdin", *script = NULL;
 
@@ -295,6 +296,9 @@ main(int argc, char** argv) {
 #endif
 
         default:
+          if(c == 'm')
+            monitor_off = !on;
+
           if(!set_apply(&sh->opts, c, on)) {
             sh_usage();
             sh_exit(1);
@@ -394,7 +398,8 @@ main(int argc, char** argv) {
        * every job synchronous/foreground-only there instead of
        * running job-control bookkeeping for primitives that never
        * actually execute. */
-      sh->opts.monitor = 1;
+      if(!monitor_off)
+        sh->opts.monitor = 1;
 #endif
       sh->opts.histexpand = 1;
 

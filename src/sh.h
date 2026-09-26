@@ -159,6 +159,8 @@ int sh_errorn_errno(const char* s, unsigned int len);
 void sh_exit(int retcode);
 size_t sh_fmtflags(char* dest, const struct shopt*);
 int sh_forked(void);
+extern int sh_async;
+extern int sh_subshell; /* nesting of in-process ( ) and $( ) */
 void sh_sigignore(void);  /* interactive shell ignores INT QUIT TERM */
 void sh_sigrestore(void);
 void sh_sigasync(void);   /* async list without job control: ignore INT QUIT */ /* ...children get the defaults back */

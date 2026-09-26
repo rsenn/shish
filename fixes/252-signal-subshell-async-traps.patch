@@ -1,0 +1,250 @@
+diff --git a/src/builtin/builtin_exit.c b/src/builtin/builtin_exit.c
+index 15861d6b..98804e84 100644
+--- a/src/builtin/builtin_exit.c
++++ b/src/builtin/builtin_exit.c
+@@ -9,6 +9,9 @@ const char help_exit[] = "    Exit the shell.\n"
+                          "\n"
+                          "    exitcode        status to exit with (default: the last command's)\n";
+ 
++int trap_exit_running(void);
++int trap_exit_pending(void);
++
+ int
+ builtin_exit(int argc, char* argv[]) {
+   int status = 0;
+@@ -16,7 +19,7 @@ builtin_exit(int argc, char* argv[]) {
+   if(argc > 1)
+     scan_int(argv[1], &status);
+   else
+-    status = sh->exitcode;
++    status = trap_exit_running() ? trap_exit_pending() : sh->exitcode;
+ 
+   status &= 0xff;
+ 
+diff --git a/src/builtin/builtin_trap.c b/src/builtin/builtin_trap.c
+index b789dab0..e77b3b2c 100644
+--- a/src/builtin/builtin_trap.c
++++ b/src/builtin/builtin_trap.c
+@@ -262,6 +262,14 @@ trap_exit_running(void) {
+   return tr && tr->running;
+ }
+ 
++/* status pending when the EXIT trap began: a bare "exit" in it uses this */
++static int trap_exit_status;
++
++int
++trap_exit_pending(void) {
++  return trap_exit_status;
++}
++
+ int
+ trap_exit(int exitcode) {
+   trap* tr;
+@@ -271,6 +279,7 @@ trap_exit(int exitcode) {
+     struct env sh;
+     char* args[2] = {alloc(FMT_ULONG), 0};
+ 
++    trap_exit_status = exitcode;
+     args[0][fmt_ulong(args[0], exitcode)] = '\0';
+     sh_push(&sh);
+     sh.exitcode = exitcode; /* a bare "exit" in the trap keeps the status */
+@@ -289,6 +298,16 @@ trap_exit(int exitcode) {
+  * the old tree/list node and from exhausting sig_push()'s small
+  * fixed-size per-signal stack (SIGSTACKSIZE, 16).
+  * ----------------------------------------------------------------------- */
++static void
++trap_set_relay(trap* t, void (*handler)(int)) {
++  struct sigaction sa;
++
++  sa.sa_handler = handler;
++  sa.sa_flags = 0;
++  sigemptyset(&sa.sa_mask);
++  sig_action(t->sig, &sa, NULL);
++}
++
+ /* an interactive shell may reset a signal that was ignored on entry:
+  * "trap - INT" then means the default action, which is what children
+  * inherit
+@@ -303,6 +322,14 @@ trap_reset_entry_ignore(int sig) {
+     sigemptyset(&sa.sa_mask);
+     sig_action(sig, &sa, NULL);
+     sig_unignore(sig);
++  } else if((char)sig > 0 && (sh_async || (sh_interactive && sh_subshell)) && (sig == SIGINT || sig == SIGQUIT || sig == SIGTERM)) {
++    /* "trap - SIG" in a subshell: default action, not the shell's own ignore */
++    struct sigaction sa;
++
++    sa.sa_handler = SIG_DFL;
++    sa.sa_flags = 0;
++    sigemptyset(&sa.sa_mask);
++    sig_action(sig, &sa, NULL);
+   }
+ }
+ 
+@@ -517,6 +544,10 @@ trap_snapshot_restore(void* handle) {
+     t = next;
+   }
+ 
++  for(k = 0; k < n; k++)
++    if((char)nodes[k]->sig > 0 && nodes[k]->tree)
++      trap_set_relay(nodes[k], trap_relay);
++
+   for(k = 0; k + 1 < n; k++)
+     nodes[k]->next = nodes[k + 1];
+ 
+@@ -531,6 +562,19 @@ trap_snapshot_restore(void* handle) {
+     alloc_free(nodes);
+ }
+ 
++/* caught traps are reset to the default action in a subshell or forked
++ * child ("trap '' SIG" ignores stay); the list itself is left alone so
++ * "trap" can still print it, and trap_snapshot_restore() re-arms them.
++ * ----------------------------------------------------------------------- */
++void
++trap_reset_caught(void) {
++  trap* t;
++
++  for(t = traps; t; t = t->next)
++    if((char)t->sig > 0 && t->tree && !(sh_async && (t->sig == SIGINT || t->sig == SIGQUIT)))
++      trap_set_relay(t, SIG_DFL);
++}
++
+ /* output stuff
+  * ----------------------------------------------------------------------- */
+ const char help_trap[] = "    Run a command when the shell receives a signal.\n"
+diff --git a/src/eval/eval_subshell.c b/src/eval/eval_subshell.c
+index 6133bfb2..e49068ab 100644
+--- a/src/eval/eval_subshell.c
++++ b/src/eval/eval_subshell.c
+@@ -41,6 +41,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
+   fd_state_save(&fdst);
+   vartab_push(&vars, 0);
+   sh_push(&she);
++  she.exitcode = she.parent->exitcode; /* $? is inherited: (exit) */
+   /* function definitions are stored in a process-global list rather than
+      scoped to env frames, so subshells leak them into the parent unless we
+      snapshot/restore around the eval. See exec_functions_save. */
+@@ -55,6 +56,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
+   eval_push(&en, E_ROOT);
+   TRACE(TRACE_EVAL, "subshell.enter");
+   sh_sigrestore();
++  sh_subshell++;
+ 
+   /* set up a long jump so we can exit the subshell and end up just
+      after the setjmp call, which will return nonzero in this case */
+@@ -92,6 +94,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
+   vartab_pop(&vars);
+   fdstack_pop(&io);
+   fd_state_restore(&fdst);
++  sh_subshell--;
+   sh_sigignore();
+   TRACE(TRACE_EVAL, "subshell.leave", trace_int("status", ret));
+ 
+diff --git a/src/expand/expand_command.c b/src/expand/expand_command.c
+index efce94bd..84b99efd 100644
+--- a/src/expand/expand_command.c
++++ b/src/expand/expand_command.c
+@@ -47,6 +47,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
+   fdstack_push(&fdst);
+   TRACE(TRACE_EVAL, "subst.enter");
+   sh_sigrestore();
++  sh_subshell++;
+   /* the real-kernel-fd bookkeeping (fd_expected, fd_list[], ...) is
+      process-global; fdstack_push()/fdstack_pop() scope the struct fd
+      entries but not that. A subshell environment that runs in this
+@@ -100,6 +101,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
+ 
+   fdstack_pop(&fdst);
+   fd_state_restore(&fdstate);
++  sh_subshell--;
+   sh_sigignore();
+   TRACE(TRACE_EVAL, "subst.leave", trace_int("status", ret), trace_int("len", sa.len));
+ 
+diff --git a/src/sh.h b/src/sh.h
+index a16a43da..912edc7b 100644
+--- a/src/sh.h
++++ b/src/sh.h
+@@ -159,6 +159,8 @@ int sh_errorn_errno(const char* s, unsigned int len);
+ void sh_exit(int retcode);
+ size_t sh_fmtflags(char* dest, const struct shopt*);
+ int sh_forked(void);
++extern int sh_async;
++extern int sh_subshell; /* nesting of in-process ( ) and $( ) */
+ void sh_sigignore(void);  /* interactive shell ignores INT QUIT TERM */
+ void sh_sigrestore(void);
+ void sh_sigasync(void);   /* async list without job control: ignore INT QUIT */ /* ...children get the defaults back */
+diff --git a/src/sh/sh_main.c b/src/sh/sh_main.c
+index 99a8c574..145825e9 100644
+--- a/src/sh/sh_main.c
++++ b/src/sh/sh_main.c
+@@ -154,6 +154,7 @@ main(int argc, char** argv) {
+   struct var* envvars;
+   int no_interactive = 0;
+   int force_interactive = 0;
++  int monitor_off = 0; /* "+m" given: interactive must not turn it on */
+   int read_stdin = 0;
+   const char *input_kind = "stdin", *script = NULL;
+ 
+@@ -295,6 +296,9 @@ main(int argc, char** argv) {
+ #endif
+ 
+         default:
++          if(c == 'm')
++            monitor_off = !on;
++
+           if(!set_apply(&sh->opts, c, on)) {
+             sh_usage();
+             sh_exit(1);
+@@ -394,7 +398,8 @@ main(int argc, char** argv) {
+        * every job synchronous/foreground-only there instead of
+        * running job-control bookkeeping for primitives that never
+        * actually execute. */
+-      sh->opts.monitor = 1;
++      if(!monitor_off)
++        sh->opts.monitor = 1;
+ #endif
+       sh->opts.histexpand = 1;
+ 
+diff --git a/src/sh/sh_sigignore.c b/src/sh/sh_sigignore.c
+index b4a157ce..41f62053 100644
+--- a/src/sh/sh_sigignore.c
++++ b/src/sh/sh_sigignore.c
+@@ -8,8 +8,12 @@
+ 
+ #if BUILTIN_TRAP
+ int trap_ignores(int sig);
++void trap_reset_caught(void);
+ #endif
+ 
++int sh_subshell;
++int sh_async; /* this process is an asynchronous list ignoring INT/QUIT */
++
+ static const int sh_sigignore_list[] = {SIGINT, SIGQUIT, SIGTERM};
+ 
+ static void
+@@ -52,6 +56,7 @@ sh_sigignore(void) {
+ void
+ sh_sigasync(void) {
+ #if !WINDOWS_NATIVE
++  sh_async = 1;
+   sh_sigset(SIGINT, SIG_IGN);
+   sh_sigset(SIGQUIT, SIG_IGN);
+ #endif
+@@ -65,13 +70,17 @@ sh_sigrestore(void) {
+ #if !WINDOWS_NATIVE
+   unsigned i;
+ 
++#if BUILTIN_TRAP
++  trap_reset_caught();
++#endif
++
+   if(!sh_interactive)
+     return;
+ 
+   for(i = 0; i < sizeof(sh_sigignore_list) / sizeof(sh_sigignore_list[0]); i++) {
+     int sig = sh_sigignore_list[i];
+ 
+-    if(sig_was_ignored(sig))
++    if(sig_was_ignored(sig) || (sh_async && sig != SIGTERM))
+       continue;
+ #if BUILTIN_TRAP
+     if(trap_ignores(sig))

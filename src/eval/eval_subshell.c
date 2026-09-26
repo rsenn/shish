@@ -41,6 +41,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
   fd_state_save(&fdst);
   vartab_push(&vars, 0);
   sh_push(&she);
+  she.exitcode = she.parent->exitcode; /* $? is inherited: (exit) */
   /* function definitions are stored in a process-global list rather than
      scoped to env frames, so subshells leak them into the parent unless we
      snapshot/restore around the eval. See exec_functions_save. */
@@ -55,6 +56,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
   eval_push(&en, E_ROOT);
   TRACE(TRACE_EVAL, "subshell.enter");
   sh_sigrestore();
+  sh_subshell++;
 
   /* set up a long jump so we can exit the subshell and end up just
      after the setjmp call, which will return nonzero in this case */
@@ -92,6 +94,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
   vartab_pop(&vars);
   fdstack_pop(&io);
   fd_state_restore(&fdst);
+  sh_subshell--;
   sh_sigignore();
   TRACE(TRACE_EVAL, "subshell.leave", trace_int("status", ret));
 

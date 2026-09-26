@@ -128,23 +128,18 @@ in `tests/fixed.sh`.
 
 ---
 
-### Phase 1 [Stage 1: language] — signal disposition (≈100 left, was 1790)
+### Phase 1 [Stage 1: language] — signal disposition (4 left, was 1790)
 
-Measured 2026-09-27 on an idle machine: every `*2-p` file is 0 failures; `sighup6` 3, `sigint6`/`sigquit6`
-12, `sigint5`/`sigquit5` 15, `sigint1`/`sigquit1` 11, `sigterm5`/`sigterm6` 6, the rest 3 each.
-Done: an interactive shell ignores INT/QUIT/TERM for itself and resets them in forked children,
-`exec`, `(...)` and `$(...)` (`sh_sigignore()`/`sh_sigrestore()`); `trap - SIG` in an interactive shell
-resets a signal that was ignored on entry.
+Measured 2026-09-27: every runnable `sig*-p` file passes 180/180 except `sigint6`/`sigquit6`
+(178: "async, other, -i +m, initially ignored, keep -> clear", child and exec targets). The
+`*3/4/7/8` files, `sigstop`, `sigtstp`, `sigttin` and `sigttou` skip themselves (they need a tty).
+Done (`fixes/249`-`252`): an interactive shell ignores INT/QUIT/TERM for itself and resets them in
+forked children, `exec`, `(...)` and `$(...)`; asynchronous lists ignore INT/QUIT; `-i +m` keeps
+monitor mode off; caught traps become the default in a subshell/forked child (ignores stay);
+`trap - SIG` in an interactive subshell or an async list gives the default action.
 
-What is left:
-
-1. **Asynchronous lists** (`cmd &` without job control): POSIX says INT and QUIT are ignored in the
-   background child. `job_fork()`/`exec_program()` do not do this; it is most of the remaining
-   "spares child/shell (async, ...)" cases.
-2. **`trap ... INT` inherited across `exec`/subshell** ("command -> keep" cases: a trap must
-   become the default in a child, an ignore stays ignored).
-3. **Interactive `kill -s INT $$` in the main shell** with an initially-ignored INT
-   (`sigint1`/`sigquit1`: 11 cases each).
+What is left: an async list's inner shell inheriting the ignored INT/QUIT must be able to reset
+it with `trap - SIG` when the outer shell was already ignoring it on entry.
 
 ### Phase 2 [Stage 1: language] — error semantics: which failures must exit the shell (0)
 

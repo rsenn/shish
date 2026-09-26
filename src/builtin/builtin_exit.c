@@ -9,6 +9,9 @@ const char help_exit[] = "    Exit the shell.\n"
                          "\n"
                          "    exitcode        status to exit with (default: the last command's)\n";
 
+int trap_exit_running(void);
+int trap_exit_pending(void);
+
 int
 builtin_exit(int argc, char* argv[]) {
   int status = 0;
@@ -16,7 +19,7 @@ builtin_exit(int argc, char* argv[]) {
   if(argc > 1)
     scan_int(argv[1], &status);
   else
-    status = sh->exitcode;
+    status = trap_exit_running() ? trap_exit_pending() : sh->exitcode;
 
   status &= 0xff;
 

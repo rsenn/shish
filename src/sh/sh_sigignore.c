@@ -8,7 +8,11 @@
 
 #if BUILTIN_TRAP
 int trap_ignores(int sig);
+void trap_reset_caught(void);
 #endif
+
+int sh_subshell;
+int sh_async; /* this process is an asynchronous list ignoring INT/QUIT */
 
 static const int sh_sigignore_list[] = {SIGINT, SIGQUIT, SIGTERM};
 
@@ -52,6 +56,7 @@ sh_sigignore(void) {
 void
 sh_sigasync(void) {
 #if !WINDOWS_NATIVE
+  sh_async = 1;
   sh_sigset(SIGINT, SIG_IGN);
   sh_sigset(SIGQUIT, SIG_IGN);
 #endif
@@ -65,13 +70,17 @@ sh_sigrestore(void) {
 #if !WINDOWS_NATIVE
   unsigned i;
 
+#if BUILTIN_TRAP
+  trap_reset_caught();
+#endif
+
   if(!sh_interactive)
     return;
 
   for(i = 0; i < sizeof(sh_sigignore_list) / sizeof(sh_sigignore_list[0]); i++) {
     int sig = sh_sigignore_list[i];
 
-    if(sig_was_ignored(sig))
+    if(sig_was_ignored(sig) || (sh_async && sig != SIGTERM))
       continue;
 #if BUILTIN_TRAP
     if(trap_ignores(sig))

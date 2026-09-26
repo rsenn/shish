@@ -262,6 +262,14 @@ trap_exit_running(void) {
   return tr && tr->running;
 }
 
+/* status pending when the EXIT trap began: a bare "exit" in it uses this */
+static int trap_exit_status;
+
+int
+trap_exit_pending(void) {
+  return trap_exit_status;
+}
+
 int
 trap_exit(int exitcode) {
   trap* tr;
@@ -271,6 +279,7 @@ trap_exit(int exitcode) {
     struct env sh;
     char* args[2] = {alloc(FMT_ULONG), 0};
 
+    trap_exit_status = exitcode;
     args[0][fmt_ulong(args[0], exitcode)] = '\0';
     sh_push(&sh);
     sh.exitcode = exitcode; /* a bare "exit" in the trap keeps the status */
@@ -289,6 +298,16 @@ trap_exit(int exitcode) {
  * the old tree/list node and from exhausting sig_push()'s small
  * fixed-size per-signal stack (SIGSTACKSIZE, 16).
  * ----------------------------------------------------------------------- */
+static void
+trap_set_relay(trap* t, void (*handler)(int)) {
+  struct sigaction sa;
+
+  sa.sa_handler = handler;
+  sa.sa_flags = 0;
+  sigemptyset(&sa.sa_mask);
+  sig_action(t->sig, &sa, NULL);
+}
+
 /* an interactive shell may reset a signal that was ignored on entry:
  * "trap - INT" then means the default action, which is what children
  * inherit
@@ -303,6 +322,14 @@ trap_reset_entry_ignore(int sig) {
     sigemptyset(&sa.sa_mask);
     sig_action(sig, &sa, NULL);
     sig_unignore(sig);
+  } else if((char)sig > 0 && (sh_async || (sh_interactive && sh_subshell)) && (sig == SIGINT || sig == SIGQUIT || sig == SIGTERM)) {
+    /* "trap - SIG" in a subshell: default action, not the shell's own ignore */
+    struct sigaction sa;
+
+    sa.sa_handler = SIG_DFL;
+    sa.sa_flags = 0;
+    sigemptyset(&sa.sa_mask);
+    sig_action(sig, &sa, NULL);
   }
 }
 
@@ -517,6 +544,10 @@ trap_snapshot_restore(void* handle) {
     t = next;
   }
 
+  for(k = 0; k < n; k++)
+    if((char)nodes[k]->sig > 0 && nodes[k]->tree)
+      trap_set_relay(nodes[k], trap_relay);
+
   for(k = 0; k + 1 < n; k++)
     nodes[k]->next = nodes[k + 1];
 
@@ -529,6 +560,19 @@ trap_snapshot_restore(void* handle) {
 
   if(nodes)
     alloc_free(nodes);
+}
+
+/* caught traps are reset to the default action in a subshell or forked
+ * child ("trap '' SIG" ignores stay); the list itself is left alone so
+ * "trap" can still print it, and trap_snapshot_restore() re-arms them.
+ * ----------------------------------------------------------------------- */
+void
+trap_reset_caught(void) {
+  trap* t;
+
+  for(t = traps; t; t = t->next)
+    if((char)t->sig > 0 && t->tree && !(sh_async && (t->sig == SIGINT || t->sig == SIGQUIT)))
+      trap_set_relay(t, SIG_DFL);
 }
 
 /* output stuff
