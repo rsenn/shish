@@ -349,6 +349,7 @@ src/redir/Makefile
 src/sh/Makefile
 src/source/Makefile
 src/term/Makefile
+src/trace/Makefile
 src/tree/Makefile
 src/var/Makefile
 src/vartab/Makefile])

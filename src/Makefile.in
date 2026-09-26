@@ -43,6 +43,7 @@ SUBDIRS   = builtin \
             sh \
             source \
             term \
+            trace \
             tree \
             var \
             vartab
@@ -71,7 +72,11 @@ LDADD   = $(top_builddir)/text/dfa/dfa.a \
           term/term.a \
           tree/tree.a \
           var/var.a \
-          vartab/vartab.a 
+          vartab/vartab.a \
+          trace/trace.a \
+          debug/debug.a \
+          source/source.a \
+          sh/sh.a
           
 HEADERS = builtin.h \
           debug.h \
@@ -90,6 +95,7 @@ HEADERS = builtin.h \
           sig.h \
           source.h \
           term.h \
+          trace.h \
           tree.h \
           var.h \
           vartab.h

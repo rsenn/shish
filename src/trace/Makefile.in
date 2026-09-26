@@ -1,13 +1,13 @@
 # ===========================================================================
 #
-# Makefile for src/expand subdirectory
+# Makefile for src/trace subdirectory
 #
 # relative directories
 # ---------------------------------------------------------------------------
 srcdir       = @srcdir@
 top_srcdir   = @top_srcdir@
 top_builddir = @top_builddir@
-thisdir      = src/expand/
+thisdir      = src/trace/
 
 VPATH        = $(srcdir)
 
@@ -17,16 +17,13 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
-ARCHIVE = expand.a
+ARCHIVE = trace.a
 MODULES = \
-expand_arg expand_args expand_argv expand_arith expand_arith_assign expand_arith_binary expand_arith_expr expand_arith_ternary expand_arith_unary expand_brace expand_cat expand_catsa expand_command expand_copysa expand_glob expand_param expand_str expand_tilde expand_tosa expand_tostr expand_unescape expand_vars
+trace_begin trace_fdmap trace_value
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
 DEPS    = $(MODULES:%=%.d)
-
-@NO_GLOB@SOURCES += $(top_srcdir)/lib/glob.c
-@NO_GLOB@OBJECTS += $(top_builddir)/lib/glob.o
 
 # targets for this directory
 # ---------------------------------------------------------------------------
@@ -44,8 +41,8 @@ INCLUDES += -I$(top_srcdir)/lib -I$(top_builddir)
 INCLUDES += @IQUOTE_SRC@
 #INCLUDES += -I$(top_builddir)/src
 INCLUDES += -I$(top_builddir)
+INCLUDES += -include assert.h
 
 # include build.mk (makefile helper)
 # ---------------------------------------------------------------------------
 include $(top_builddir)/build.mk
-
