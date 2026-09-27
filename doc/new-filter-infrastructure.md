@@ -121,8 +121,8 @@ There are no hand-written overrides: every filter goes through the same
 | `uncompress` | declarative | libarchive read side, lends the input buffer in place and reads libarchive's decode block directly; `-f` copies non-compressed input |
 | `sed` | declarative | runs the script to completion on the first `step`, then hands out its captured output as one unit; declines file operands and `w` targets |
 
-`filter_ops.status` feeds `filter_run`'s exit code; a chain ignores it (shish has no
-`pipefail`, the pipeline's status is the last stage's).
+`filter_ops.status` feeds `filter_run`'s exit code and, under `set -o pipefail`, the
+pipeline's status for chained members.
 
 ## 6. Open work
 
@@ -133,16 +133,21 @@ Done:
   (`gzip .gz`, `bzip2`/`lbzip2 .bz2`, `xz .xz`, `zstd .zst`, `lz .lz`);
 - `sed` is declarative too; the `open`/`read`/`close` overrides and `fd_filter`'s `read`
   fallback are gone, so `step` is the only data path;
-- a chain is only built when the last stage reads in-process (a builtin, a function or a
-  compound command). An external last command inherits the real fd 0 and used to read an
-  empty stream (`cat f | sort` printed nothing).
+- an external last command inherits the real fd 0, so the chain's in-process buffer is
+  invisible to it (`cat f | sort` used to print nothing). It is fed by a pump instead: the chain's last link is drained by a
+  detached child (double fork, nothing to reap) into a real pipe that becomes the
+  command's stdin (`pipeline_chain_pump`, `eval_pipeline.c`);
+- `filter_drain` flushes only when the next read would wait (the active source has
+  nothing buffered): an mmapped file goes out in full buffers, a slow pipe or a
+  terminal stays live (`cat` on 4 MB: 4 049 writes instead of one per line);
+- `set -o pipefail` (no letter): the rightmost non-zero member status, for forked and
+  chained members. `filter_ops.status` now feeds it. Not collected: members of a
+  chain that ran in a pump child, and backgrounded pipelines.
 
 In order:
 
 1. **Filters still on the TODO list** (`head uniq paste cut tr nl tail`; none exists as a
    builtin yet): each should be one `filter_ops` plus a step function.
-2. **Direct-mode I/O.** `filter_drain` flushes after every unit (a write per line for
-   `cat`); batching for non-interactive output would cut syscalls.
-3. **Chain exit status,** if `pipefail` is ever added.
-4. **External last stage.** Instead of declining the chain, pump the last link into a
-   real pipe for the external command, so `cat f | sort` could still skip the first fork.
+2. **Pump statuses.** Return the pump child's chain statuses to the parent (a pipe or the
+   exit code) so `pipefail` sees chained members feeding an external command.
+3. **`pipefail` for `cmd | cmd &`,** which reports the last member only.

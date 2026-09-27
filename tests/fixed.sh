@@ -5269,6 +5269,8 @@ rm -rf "$TESTDIR"
 TESTDIR=$(mktemp -d)
 printf 'b\na\n' >"$TESTDIR/f"
 assert_equal "a b" "$("$SHISH_SELF" -c "cat $TESTDIR/f | sort" | tr '\n' ' ' | sed 's/ $//')" "a chained builtin feeds an external last command"
+assert_equal "a b" "$("$SHISH_SELF" -c "cat $TESTDIR/f | cat | sort" | tr '\n' ' ' | sed 's/ $//')" "a two-stage chain feeds an external last command through the pump"
+assert_equal "1" "$("$SHISH_SELF" -c "cat $TESTDIR/f | cat | sort | head -1 | wc -l" | tr -d ' ')" "an external command that stops reading early does not hang the pump"
 for a in gzip:gz bzip2:bz2 xz:xz zstd:zst lz:lz; do
   n=${a%%:*}
   x=${a##*:}
