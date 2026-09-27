@@ -121,8 +121,7 @@ builtin_sed(int argc, char* argv[]) {
       case 'r': flags |= SED_ERE; break;
 
       case 'e':
-        if((have_script && !stralloc_catc(&script, '\n')) ||
-           !stralloc_cats(&script, shell_optarg)) {
+        if((have_script && !stralloc_catc(&script, '\n')) || !stralloc_cats(&script, shell_optarg)) {
           builtin_error(argv, "out of memory");
           stralloc_free(&script);
           return 2;
@@ -203,18 +202,14 @@ builtin_sed(int argc, char* argv[]) {
           builtin_error(argv, (char*)name);
           ret = 2;
         } else {
-          buffer_init(&ctx.wfiles[i].b,
-                      &buffer_op_write,
-                      ctx.wfiles[i].fd,
-                      ctx.wfiles[i].wbuf,
-                      sizeof(ctx.wfiles[i].wbuf));
+          buffer_init(
+              &ctx.wfiles[i].b, &buffer_op_write, ctx.wfiles[i].fd, ctx.wfiles[i].wbuf, sizeof(ctx.wfiles[i].wbuf));
         }
       }
     }
   }
 
-  st = sed_state_new(
-      prog, sed_read_line, sed_out, ctx.nwfiles ? sed_wfile_out : NULL, sed_rfile, &ctx);
+  st = sed_state_new(prog, sed_read_line, sed_out, ctx.nwfiles ? sed_wfile_out : NULL, sed_rfile, &ctx);
 
   if(!st) {
     builtin_error(argv, "out of memory");
@@ -407,11 +402,13 @@ sed_filter_setup(void* arg) {
   return (c->st = sed_state_new(c->prog, sed_filter_read_line, sed_filter_out, NULL, sed_filter_rfile, c)) ? 0 : 1;
 }
 
-const struct filter_ops sed_ops = {.opts = "nEre:f:",
-                                   .size = sizeof(struct sed_filter_ctx),
-                                   .option = sed_filter_option,
-                                   .setup = sed_filter_setup,
-                                   .step = sed_filter_step,
-                                   .status = sed_filter_status,
-                                   .finish = sed_filter_finish};
+const struct filter_ops sed_ops = {
+    .opts = "nEre:f:",
+    .size = sizeof(struct sed_filter_ctx),
+    .option = sed_filter_option,
+    .setup = sed_filter_setup,
+    .step = sed_filter_step,
+    .status = sed_filter_status,
+    .finish = sed_filter_finish,
+};
 const struct builtin_filter sed_filter = {&sed_ops};
