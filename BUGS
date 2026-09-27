@@ -1220,3 +1220,13 @@
   E
   cat <&3          # "3: Bad file descriptor"; should print "here"
   ```
+- grep-splits-lines-longer-than-1kib: `builtin_grep.c` reads through a
+  fixed 1 KiB `raw[]` buffer (`filter_in_get(..., "\n", 1)`), so a line
+  longer than that is matched as several separate "lines".
+  `printf '%2100s\n' | tr ' ' a | sed 's/$/b/' >long;
+  grep -c '' long` prints 3 (should be 1), and
+  `grep 'a*b$' long | wc -c` prints 56 (the line's tail only, should be
+  2102). Both the direct builtin and the chained filter do it. `cat`
+  is unaffected (it concatenates the pieces); `sed` has an 8 KiB limit
+  with the same flaw. Needs an arbitrary-length line reader
+  (doc/new-filter-infrastructure.md, section 7).
