@@ -28,8 +28,14 @@ source_peekn(char* c, unsigned n) {
   for(;;) {
     char* x;
 
-    /* need the char at pi, and the one after it to tell "\\\n" */
-    if((unsigned)ret <= pi + 1 && (ret = buffer_prefetch(b, pi + 2)) <= 0) {
+    /* need the char at pi itself; the one after it (to tell "\\\n" apart
+       from a lone "\\") is only fetched once x[pi] actually is a
+       backslash -- fetching it unconditionally here forced a blocking
+       read for one phantom byte past *every* character peeked, so an
+       interactive line's own trailing newline (nothing typed after it
+       yet) could never be classified without first blocking for more
+       input (source-peekn-forces-extra-byte-for-continuation-check). */
+    if((unsigned)ret <= pi && (ret = buffer_prefetch(b, pi + 1)) <= 0) {
       if(ret < 0 || (unsigned)buffer_LEN(b) <= pi)
         return ret;
 
@@ -38,16 +44,27 @@ source_peekn(char* c, unsigned n) {
 
     x = buffer_PEEK(b);
 
-    if(!esc && x[pi] == '\\' && (unsigned)buffer_LEN(b) > pi + 1 && x[pi + 1] == '\n') {
-      /* a continuation at the very front is consumed for good */
-      if(pi == 0) {
-        b->p += 2;
-        source_newline();
-        ret = buffer_LEN(b);
-      } else
-        pi += 2;
+    if(!esc && x[pi] == '\\') {
+      if((unsigned)ret <= pi + 1 && (ret = buffer_prefetch(b, pi + 2)) <= 0) {
+        if(ret < 0)
+          return ret;
 
-      continue;
+        ret = buffer_LEN(b);
+      }
+
+      x = buffer_PEEK(b); /* buffer_prefetch may have moved/grown it */
+
+      if((unsigned)buffer_LEN(b) > pi + 1 && x[pi + 1] == '\n') {
+        /* a continuation at the very front is consumed for good */
+        if(pi == 0) {
+          b->p += 2;
+          source_newline();
+          ret = buffer_LEN(b);
+        } else
+          pi += 2;
+
+        continue;
+      }
     }
 
     if(k == n)
