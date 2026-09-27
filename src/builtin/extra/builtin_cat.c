@@ -74,7 +74,13 @@ cat_setup(void* ctx) {
   return 0;
 }
 
-const struct filter_ops cat_ops = {.opts = "nb", .size = sizeof(struct cat), .option = cat_option, .setup = cat_setup, .step = cat_step};
+const struct filter_ops cat_ops = {
+    .opts = "nb",
+    .size = sizeof(struct cat),
+    .option = cat_option,
+    .setup = cat_setup,
+    .step = cat_step,
+};
 const struct builtin_filter cat_filter = {&cat_ops};
 
 int
