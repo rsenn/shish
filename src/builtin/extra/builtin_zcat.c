@@ -26,10 +26,10 @@ zcat_archive_reader(struct archive* a, void* client_data, const void** block) {
   ssize_t n;
 
   (void)a;
-  
-  if((n = filter_in_get(&c->in, c->raw_in, sizeof(c->raw_in), "", 0)) > 0) 
+
+  if((n = filter_in_get(&c->in, c->raw_in, sizeof(c->raw_in), "", 0)) > 0)
     *block = c->raw_in;
-  
+
   return n;
 }
 
@@ -44,7 +44,7 @@ zcat_step(void* arg, const char** unit, size_t* len) {
     c->had_error = 1;
     return 0;
   }
- 
+
   if(r == 0)
     return 0; // EOF
 
@@ -59,7 +59,7 @@ zcat_init(struct zcat_ctx* c, int argc, char* argv[], buffer* upstream) {
   struct archive_entry* entry;
 
   byte_zero(c, sizeof(*c));
-  
+
   // Skip command name, parse files or fall back to upstream/stdin
   filter_in_init(&c->in, argv, argv[1] ? argv + 1 : NULL, upstream);
 
@@ -69,7 +69,7 @@ zcat_init(struct zcat_ctx* c, int argc, char* argv[], buffer* upstream) {
 
   // Enable all compression filters (.gz, .zst, .xz, .lzma, etc.)
   archive_read_support_filter_all(c->a);
-  
+
   // Use RAW format so libarchive handles the stream as unformatted payload bytes
   archive_read_support_format_raw(c->a);
 
@@ -101,7 +101,7 @@ builtin_zcat(int argc, char* argv[]) {
   }
 
   ret = c.had_error || c.in.had_error;
-    
+
   if(c.a) {
     archive_read_close(c.a);
     archive_read_free(c.a);
@@ -128,7 +128,7 @@ zcat_filter_status(void* arg) {
 static void
 zcat_filter_close(void* arg) {
   struct zcat_ctx* c = arg;
-  
+
   if(c->a) {
     archive_read_close(c->a);
     archive_read_free(c->a);
@@ -159,10 +159,5 @@ zcat_filter_open(int argc, char* argv[], buffer* upstream) {
   return c;
 }
 
-const struct filter_ops zcat_ops = {
-  zcat_filter_open, 
-  zcat_filter_read, 
-  zcat_filter_status, 
-  zcat_filter_close
-};
-const struct builtin_filter zcat_filter = { &zcat_ops };
+const struct filter_ops zcat_ops = {zcat_filter_open, zcat_filter_read, zcat_filter_status, zcat_filter_close};
+const struct builtin_filter zcat_filter = {&zcat_ops};

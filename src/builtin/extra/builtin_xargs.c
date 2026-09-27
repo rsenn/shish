@@ -35,7 +35,7 @@ struct args {
 };
 
 struct xargs_opts {
-  unsigned no_run_noargs : 1, do_prompt : 1, reopen_pty : 1, trace:1;
+  unsigned no_run_noargs : 1, do_prompt : 1, reopen_pty : 1, trace : 1;
 };
 
 static int
@@ -166,7 +166,7 @@ builtin_xargs(int argc, char* argv[]) {
   int c, ret = 0;
   char sep = '\n', *input_file = NULL, *replstr = NULL;
   uint64 max_lines = UINT64_MAX, lines = 0;
-  unsigned int max_args = UINT_MAX ;
+  unsigned int max_args = UINT_MAX;
   struct xargs_opts opts = {0, 0, 0};
 
   /* check options */
@@ -209,8 +209,8 @@ builtin_xargs(int argc, char* argv[]) {
   }
 
   static char* echo_argv[] = {"echo", NULL};
-  struct args util = (shell_optind < argc) ? (struct args){argv + shell_optind, argc - shell_optind}
-                                            : (struct args){echo_argv, 1};
+  struct args util =
+      (shell_optind < argc) ? (struct args){argv + shell_optind, argc - shell_optind} : (struct args){echo_argv, 1};
   int args_cap = 64;
 
   if(max_args != UINT_MAX && (unsigned long)args_cap > max_args)
@@ -286,8 +286,8 @@ builtin_xargs(int argc, char* argv[]) {
     int full = max_args != UINT_MAX && items.c >= (int)max_args;
 
     /* -L: a line ending in an unescaped blank continues onto the next one */
-    if(max_lines != UINT64_MAX && !(r > 0 && (buf[r - 1] == ' ' || buf[r - 1] == '\t') && !(r > 1 && buf[r - 2] == '\\')) &&
-       ++lines >= max_lines)
+    if(max_lines != UINT64_MAX &&
+       !(r > 0 && (buf[r - 1] == ' ' || buf[r - 1] == '\t') && !(r > 1 && buf[r - 2] == '\\')) && ++lines >= max_lines)
       full = 1;
 
     if(full) {

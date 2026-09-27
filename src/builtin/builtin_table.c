@@ -448,8 +448,20 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_XARGS
     {"xargs", &builtin_xargs, B_DEFAULT, "[-0opr] [-a FILE] [-d DELIM] [-l/-L MAX-LINES] [-n MAX-ARGS] [-P MAX-PROCS] <command> [...args]", help_xargs},
 #endif
+#if BUILTIN_GZIP
+    {"gzip", &builtin_gzip, B_DEFAULT, "[file...]", help_gzip},
+    {"bzip2", &builtin_gzip, B_DEFAULT, "[file...]", help_gzip},
+    {"lbzip2", &builtin_gzip, B_DEFAULT, "[file...]", help_gzip},
+    {"lz", &builtin_gzip, B_DEFAULT, "[file...]", help_gzip},
+    {"xz", &builtin_gzip, B_DEFAULT, "[file...]", help_gzip},
+    {"zstd", &builtin_gzip, B_DEFAULT, "[file...]", help_gzip},
+#endif
 #if BUILTIN_ZCAT
     {"zcat", &builtin_zcat, B_DEFAULT, "[file...]", help_zcat},
+    {"bzcat", &builtin_zcat, B_DEFAULT, "[file...]", help_zcat},
+    {"xzcat", &builtin_zcat, B_DEFAULT, "[file...]", help_zcat},
+    {"zstdcat", &builtin_zcat, B_DEFAULT, "[file...]", help_zcat},
+    {"lbzcat", &builtin_zcat, B_DEFAULT, "[file...]", help_zcat},
 #endif
     {NULL, NULL, 0, NULL, NULL},
 };
