@@ -357,6 +357,11 @@ if(DO_TESTS)
   target_link_libraries(arena_test PRIVATE ${LIBOWFAT_LIBRARY})
   add_test(NAME arena_test COMMAND arena_test)
 
+  # lib/byteset unit test
+  add_executable(byteset_test tests/byteset_test.c)
+  target_link_libraries(byteset_test PRIVATE ${LIBOWFAT_LIBRARY})
+  add_test(NAME byteset_test COMMAND byteset_test)
+
   # tests/posix/*.tst and tests/yash/*.tst: yash's own POSIX/self conformance suite 
   # yash's run-test.sh harness interprets each *.tst file's test_oE/ test_x/... cases). 
   # 

@@ -1,0 +1,45 @@
+# ===========================================================================
+#
+# Makefile for lib/byteset subdirectory
+#
+# relative directories
+# ---------------------------------------------------------------------------
+srcdir       = @srcdir@
+top_srcdir   = @top_srcdir@
+top_builddir = @top_builddir@
+thisdir      = lib/byteset/
+
+VPATH        = $(srcdir)
+
+# include global make configuration
+# ---------------------------------------------------------------------------
+include $(top_builddir)/config.mk
+
+# configuration for this directory
+# ---------------------------------------------------------------------------
+LIB = ../libowfat.a
+ARCHIVE = byteset.a
+MODULES = \
+byteset_add byteset_class byteset_has byteset_icase byteset_invert byteset_next byteset_range byteset_zero
+
+SOURCES = $(MODULES:%=%.c)
+OBJECTS = $(MODULES:%=%.o)
+DEPS    = $(MODULES:%=%.d)
+
+# targets for this directory
+# ---------------------------------------------------------------------------
+all: Makefile .libdep $(ARCHIVE)
+install:
+
+# dependencies
+# ---------------------------------------------------------------------------
+-include $(DEPS)
+
+# local build configuration
+# ---------------------------------------------------------------------------
+INCLUDES += -I$(top_srcdir)/lib -I$(top_builddir)
+#INCLUDES += -I$(top_builddir)/lib
+
+# include build.mk (makefile helper)
+# ---------------------------------------------------------------------------
+include $(top_builddir)/build.mk
