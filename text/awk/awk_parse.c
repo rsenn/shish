@@ -1156,26 +1156,28 @@ walk_uses_input(struct anode* n) {
   if(n->op == A_GETLINE && n->idx == 0)
     return 1;
 
-  return walk_uses_input(n->a) || walk_uses_input(n->b) || walk_uses_input(n->c) ||
-         walk_uses_input(n->d) || walk_uses_input(n->next);
+  return walk_uses_input(n->a) || walk_uses_input(n->b) || walk_uses_input(n->c) || walk_uses_input(n->d) ||
+         walk_uses_input(n->next);
 }
 
-static const char* const special_names[NSPECIAL] = {"NF",
-                                                    "NR",
-                                                    "FNR",
-                                                    "FS",
-                                                    "OFS",
-                                                    "ORS",
-                                                    "RS",
-                                                    "SUBSEP",
-                                                    "CONVFMT",
-                                                    "OFMT",
-                                                    "RSTART",
-                                                    "RLENGTH",
-                                                    "FILENAME",
-                                                    "ARGC",
-                                                    "ARGV",
-                                                    "ENVIRON"};
+static const char* const special_names[NSPECIAL] = {
+    "NF",
+    "NR",
+    "FNR",
+    "FS",
+    "OFS",
+    "ORS",
+    "RS",
+    "SUBSEP",
+    "CONVFMT",
+    "OFMT",
+    "RSTART",
+    "RLENGTH",
+    "FILENAME",
+    "ARGC",
+    "ARGV",
+    "ENVIRON",
+};
 
 int
 awk_parse_program(struct awk_parser* p) {
@@ -1316,8 +1318,7 @@ awk_parse_program(struct awk_parser* p) {
 
   /* materialize prog->funcs/rules before the call-fixup pass, which
      resolves A_CALL by looking functions up in prog->funcs */
-  p->prog->funcs =
-      arena_allocn(p->a, sizeof(struct awk_func), p->nfuncs, __alignof__(struct awk_func));
+  p->prog->funcs = arena_allocn(p->a, sizeof(struct awk_func), p->nfuncs, __alignof__(struct awk_func));
 
   if(p->nfuncs)
     byte_copy(p->prog->funcs, p->nfuncs * sizeof(struct awk_func), p->funcs);
@@ -1340,8 +1341,7 @@ awk_parse_program(struct awk_parser* p) {
 
   p->prog->begin = p->begin;
   p->prog->end = p->end;
-  p->prog->rules =
-      arena_allocn(p->a, sizeof(struct awk_rule), p->nrules, __alignof__(struct awk_rule));
+  p->prog->rules = arena_allocn(p->a, sizeof(struct awk_rule), p->nrules, __alignof__(struct awk_rule));
 
   if(p->nrules)
     byte_copy(p->prog->rules, p->nrules * sizeof(struct awk_rule), p->rules);
@@ -1359,8 +1359,7 @@ awk_parse_program(struct awk_parser* p) {
 
   p->prog->nregexes = p->nregexes;
 
-  p->prog->uses_main_input =
-      !p->err && ((p->nrules > 0) || walk_uses_input(p->begin) || walk_uses_input(p->end));
+  p->prog->uses_main_input = !p->err && ((p->nrules > 0) || walk_uses_input(p->begin) || walk_uses_input(p->end));
 
   for(i = 0; i < p->nfuncs && !p->prog->uses_main_input; i++)
     p->prog->uses_main_input = walk_uses_input(p->prog->funcs[i].body);

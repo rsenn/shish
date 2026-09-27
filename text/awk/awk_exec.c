@@ -38,8 +38,7 @@ num_cell(double n) {
 
 /* joins a[0..alen) and b[0..blen) into a fresh st->tmp buffer */
 static const char*
-concat_tmp(
-    struct awk_state* st, const char* a, size_t alen, const char* b, size_t blen, size_t* outlen) {
+concat_tmp(struct awk_state* st, const char* a, size_t alen, const char* b, size_t blen, size_t* outlen) {
   char* buf = arena_alloc(&st->tmp, alen + blen + 1, 1);
 
   *outlen = alen + blen;
@@ -172,8 +171,7 @@ awk_lvalue_set_num(struct awk_state* st, struct awk_lvalue* lv, double n) {
 }
 
 void
-awk_lvalue_set_str(
-    struct awk_state* st, struct awk_lvalue* lv, const char* s, size_t len, int strnum) {
+awk_lvalue_set_str(struct awk_state* st, struct awk_lvalue* lv, const char* s, size_t len, int strnum) {
   if(lv->kind == LV_FIELD) {
     if(lv->fieldn == 0) {
       awk_rec_setline(st, s, len);
@@ -199,9 +197,7 @@ static void
 lvalue_set_cell(struct awk_state* st, struct awk_lvalue* lv, awk_cell* val) {
   switch(val->type) {
     case CELL_NUM: awk_lvalue_set_num(st, lv, val->num); break;
-    case CELL_STR:
-      awk_lvalue_set_str(st, lv, val->str ? val->str : "", val->str ? str_len(val->str) : 0, 0);
-      break;
+    case CELL_STR: awk_lvalue_set_str(st, lv, val->str ? val->str : "", val->str ? str_len(val->str) : 0, 0); break;
     case CELL_STRNUM: awk_lvalue_set_str(st, lv, val->str, str_len(val->str), 1); break;
     case CELL_ARRAY: awk_runtime_error(st, "can't assign an array to a scalar"); break;
     default: awk_lvalue_set_str(st, lv, "", 0, 0); break;
@@ -734,8 +730,7 @@ awk_exec(struct awk_state* st, struct anode* n) {
       } else {
         awk_cell tv = awk_eval(st, n->b);
         const char* target = awk_tostr(st, &tv, 0);
-        struct awk_stream* strm =
-            awk_stream_for_write(st, target, n->idx == REDIR_APPEND, n->idx == REDIR_PIPE);
+        struct awk_stream* strm = awk_stream_for_write(st, target, n->idx == REDIR_APPEND, n->idx == REDIR_PIPE);
 
         if(strm)
           st->io->write(st->io->ctx, strm->h, out.s ? out.s : "", out.len);

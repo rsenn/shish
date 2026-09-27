@@ -54,8 +54,7 @@ var_cell(struct awk_state* st, struct anode* n) {
 }
 
 static int
-compile_regex_arg(
-    struct awk_state* st, struct anode* n, struct dfa* scratch, struct dfa** out, int* dynamic) {
+compile_regex_arg(struct awk_state* st, struct anode* n, struct dfa* scratch, struct dfa** out, int* dynamic) {
   if(n->op == A_REGEX) {
     *out = n->u.re;
     *dynamic = 0;

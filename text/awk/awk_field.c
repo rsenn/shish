@@ -136,12 +136,7 @@ awk_split(struct awk_state* st,
 }
 
 size_t
-awk_split_re(struct awk_state* st,
-             const char* s,
-             size_t n,
-             struct dfa* re,
-             struct awk_span** out,
-             size_t* outcap) {
+awk_split_re(struct awk_state* st, const char* s, size_t n, struct dfa* re, struct awk_span** out, size_t* outcap) {
   size_t nout = 0, start = 0, from = 0;
   struct dfa_span m;
 

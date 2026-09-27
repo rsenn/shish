@@ -53,9 +53,8 @@ static const struct kw keywords[] = {
 };
 
 static const char* const builtins[] = {
-    "length", "substr",  "index",   "split",  "sub",   "gsub",   "match", "sprintf",
-    "sin",    "cos",     "atan2",   "exp",    "log",   "sqrt",   "int",   "rand",
-    "srand",  "tolower", "toupper", "system", "close", "fflush", NULL,
+    "length", "substr", "index", "split", "sub",   "gsub",    "match",   "sprintf", "sin",   "cos",    "atan2", "exp",
+    "log",    "sqrt",   "int",   "rand",  "srand", "tolower", "toupper", "system",  "close", "fflush", NULL,
 };
 
 static int
@@ -247,8 +246,8 @@ static int
 lex_name(struct awk_lexer* lx) {
   const char* start = lx->p;
 
-  while(lx->p < lx->end && (*lx->p == '_' || (*lx->p >= 'a' && *lx->p <= 'z') ||
-                            (*lx->p >= 'A' && *lx->p <= 'Z') || (*lx->p >= '0' && *lx->p <= '9')))
+  while(lx->p < lx->end && (*lx->p == '_' || (*lx->p >= 'a' && *lx->p <= 'z') || (*lx->p >= 'A' && *lx->p <= 'Z') ||
+                            (*lx->p >= '0' && *lx->p <= '9')))
     lx->p++;
 
   lx->sval = start;
@@ -407,8 +406,7 @@ lex_one(struct awk_lexer* lx) {
   if(*lx->p == '_' || (*lx->p >= 'a' && *lx->p <= 'z') || (*lx->p >= 'A' && *lx->p <= 'Z'))
     return lex_name(lx);
 
-  if((*lx->p >= '0' && *lx->p <= '9') ||
-     (*lx->p == '.' && lx->p + 1 < lx->end && lx->p[1] >= '0' && lx->p[1] <= '9'))
+  if((*lx->p >= '0' && *lx->p <= '9') || (*lx->p == '.' && lx->p + 1 < lx->end && lx->p[1] >= '0' && lx->p[1] <= '9'))
     return lex_number(lx);
 
   return lex_op(lx, !ends_operand(lx->prev));

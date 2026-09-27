@@ -31,8 +31,7 @@ emit(stralloc* out, const char* buf, int n) {
 }
 
 int
-awk_sprintf(
-    struct awk_state* st, stralloc* out, const char* fmt, size_t fmtlen, struct anode* args) {
+awk_sprintf(struct awk_state* st, stralloc* out, const char* fmt, size_t fmtlen, struct anode* args) {
   const char* p = fmt;
   const char* end = fmt + fmtlen;
 
@@ -217,8 +216,7 @@ awk_sprintf(
       case 'G': {
         awk_cell c = next_arg(st, &args);
         double v = awk_tonum(st, &c);
-        size_t cap = 64 + (haswidth && width > 0 ? (size_t)width : 0) +
-                     (hasprec && prec > 0 ? (size_t)prec : 0);
+        size_t cap = 64 + (haswidth && width > 0 ? (size_t)width : 0) + (hasprec && prec > 0 ? (size_t)prec : 0);
         char* buf = alloc(cap);
 
         emit(out, buf, snprintf(buf, cap, spec, v));
