@@ -16,26 +16,22 @@ fd_filter_op(int fd, void* buf, size_t len, void* arg) {
      expects. */
   buffer* b = arg;
   struct fd_filter_state* st = b->cookie;
+  const char* unit;
+  size_t n;
 
   (void)fd;
   (void)buf;
+  (void)len;
   b->x = st->own;
 
-  if(st->ops->step) {
-    const char* unit;
-    size_t n;
+  /* adopt the unit as the buffer window: consumers copy out of it once */
+  do
+    if(!st->ops->step(st->ctx, &unit, &n))
+      return 0;
+  while(!n);
 
-    /* adopt the unit as the buffer window: consumers copy out of it once */
-    do
-      if(!st->ops->step(st->ctx, &unit, &n))
-        return 0;
-    while(!n);
-
-    b->x = (char*)unit;
-    return (ssize_t)n;
-  }
-
-  return st->ops->read(-1, st->own, len, st->ctx);
+  b->x = (char*)unit;
+  return (ssize_t)n;
 }
 
 static void
@@ -61,7 +57,7 @@ fd_filter_deinit(buffer* b) {
  * up (b) alone, with no struct fd involved, so several filter-capable
  * builtins can chain straight into each other (each one's upstream is
  * just the previous one's buffer*) without a real fd for every link.
- * Same ownership rule as fd_filter(): ops->close(ctx) runs from
+ * Same ownership rule as fd_filter(): filter_close(ops, ctx) runs from
  * whatever eventually calls (b)->deinit(b).
  * ----------------------------------------------------------------------- */
 void
@@ -81,8 +77,8 @@ buffer_filter_init(buffer* b, const struct filter_ops* ops, void* ctx) {
 /* fd_filter: reconfigure (d)'s read side to pull from a chained
  * filter-capable builtin instead of a real fd -- same idea as
  * fd_here()/fd_subst(), but backed by a real read buffer since bytes
- * are produced on demand through ops->read(), not pre-filled. Takes
- * ownership of ctx: ops->close(ctx) runs from buffer_close() (via
+ * are produced on demand through ops->step(), not pre-filled. Takes
+ * ownership of ctx: filter_close(ops, ctx) runs from buffer_close() (via
  * ->deinit), same lifecycle as every other virtual fd here.
  * ----------------------------------------------------------------------- */
 void

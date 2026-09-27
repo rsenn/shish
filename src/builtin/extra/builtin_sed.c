@@ -247,8 +247,8 @@ builtin_sed(int argc, char* argv[]) {
 /* filter mode (TODO.md Goal 13). sed's own control flow (n/N, hold
  * space, branches) isn't incrementally resumable yet -- see that
  * section's open questions -- so this runs sed_run() to completion on
- * the first read() call, capturing its output into an in-memory
- * buffer that later read() calls just drain. That gives up true
+ * the first step() call, capturing its output into an in-memory
+ * buffer that later step() calls hand back. That gives up true
  * streaming (no interleaving with whatever consumes this filter's
  * output while sed itself runs) but still avoids the fork()+pipe()
  * pair, which is the win this goal actually targets -- and it's the
@@ -260,20 +260,19 @@ builtin_sed(int argc, char* argv[]) {
  * both just decline via open() returning NULL.
  * ----------------------------------------------------------------------- */
 struct sed_filter_ctx {
+  struct filter_in in;
+  stralloc script, out;
+  unsigned flags;
+  int have_script, autoprint_off, ran, sent, exit_status;
   struct sed* prog;
   struct sed_state* st;
-  buffer* upstream;
-  stralloc out;
-  size_t outpos;
-  int ran;
-  int exit_status;
   char linebuf[8192];
 };
 
 static int
 sed_filter_read_line(void* ctx, const char** sp, size_t* np, int* had_nl) {
   struct sed_filter_ctx* c = ctx;
-  int r = buffer_get_until(c->upstream, c->linebuf, sizeof(c->linebuf) - 1, "\n", 1);
+  ssize_t r = filter_in_get(&c->in, c->linebuf, sizeof(c->linebuf) - 1, "\n", 1);
 
   if(r <= 0)
     return 0;
@@ -302,12 +301,11 @@ sed_filter_rfile(void* ctx, const char* name) {
   filter_copy(name, slurp_sink, &c->out); /* POSIX: a missing r file is silently ignored */
 }
 
-static ssize_t
-sed_filter_read(int fd, void* buf, size_t len, void* arg) {
+/* runs the script to completion on the first call, then hands out the
+ * captured output as a single unit */
+static int
+sed_filter_step(void* arg, const char** unit, size_t* len) {
   struct sed_filter_ctx* c = arg;
-  size_t take;
-
-  (void)fd;
 
   if(!c->ran) {
     c->ran = 1;
@@ -316,16 +314,13 @@ sed_filter_read(int fd, void* buf, size_t len, void* arg) {
     c->st = NULL;
   }
 
-  take = c->out.len - c->outpos;
+  if(c->sent || !c->out.len)
+    return 0;
 
-  if(take > len)
-    take = len;
-
-  if(take)
-    byte_copy(buf, take, c->out.s + c->outpos);
-
-  c->outpos += take;
-  return (ssize_t)take;
+  c->sent = 1;
+  *unit = c->out.s;
+  *len = c->out.len;
+  return 1;
 }
 
 static int
@@ -336,115 +331,87 @@ sed_filter_status(void* arg) {
 }
 
 static void
-sed_filter_close(void* arg) {
+sed_filter_finish(void* arg) {
   struct sed_filter_ctx* c = arg;
 
   if(c->st)
     sed_state_free(c->st);
 
+  if(c->prog)
+    sed_free(c->prog);
+
+  stralloc_free(&c->script);
   stralloc_free(&c->out);
-  sed_free(c->prog);
-  alloc_free(c);
 }
 
-static void*
-sed_filter_open(int argc, char* argv[], buffer* upstream) {
-  int c, autoprint_off = 0, have_script = 0;
-  unsigned flags = 0;
-  stralloc script;
-  struct sed* prog;
-  int rc;
-  struct sed_filter_ctx* fc;
+static int
+sed_filter_option(void* arg, int ch) {
+  struct sed_filter_ctx* c = arg;
 
-  stralloc_init(&script);
+  switch(ch) {
+    case 'n': c->autoprint_off = 1; return 0;
+    case 'E':
+    case 'r': c->flags |= SED_ERE; return 0;
 
-  while((c = shell_getopt(argc, argv, "nEre:f:")) > 0) {
-    switch(c) {
-      case 'n': autoprint_off = 1; break;
-      case 'E':
-      case 'r': flags |= SED_ERE; break;
+    case 'e':
+      if((c->have_script && !stralloc_catc(&c->script, '\n')) || !stralloc_cats(&c->script, shell_optarg))
+        return -1;
 
-      case 'e':
-        if((have_script && !stralloc_catc(&script, '\n')) ||
-           !stralloc_cats(&script, shell_optarg)) {
-          stralloc_free(&script);
-          return NULL;
-        }
+      c->have_script = 1;
+      return 0;
 
-        have_script = 1;
-        break;
+    case 'f':
+      if(c->have_script && !stralloc_catc(&c->script, '\n'))
+        return -1;
 
-      case 'f':
-        if(have_script && !stralloc_catc(&script, '\n')) {
-          stralloc_free(&script);
-          return NULL;
-        }
+      if(slurp_file(shell_optarg, &c->script) == -1)
+        return -1;
 
-        if(slurp_file(shell_optarg, &script) == -1) {
-          stralloc_free(&script);
-          return NULL;
-        }
-
-        have_script = 1;
-        break;
-
-      /* bad option: return NULL *without* printing -- see
-         cat_filter_open()'s identical comment in builtin_cat.c */
-      default: stralloc_free(&script); return NULL;
-    }
+      c->have_script = 1;
+      return 0;
   }
 
-  if(!have_script) {
-    if(argv[shell_optind] == NULL) {
-      stralloc_free(&script);
-      return NULL; /* "no script given": let the real invocation report it */
-    }
-
-    stralloc_cats(&script, argv[shell_optind++]);
-  }
-
-  if(argv[shell_optind] != NULL) {
-    stralloc_free(&script);
-    return NULL; /* file operands: filter mode only handles the piped/stdin case */
-  }
-
-  if(autoprint_off)
-    flags |= SED_NOAUTOPRINT;
-
-  rc = sed_compile(&prog, script.s ? script.s : "", script.len, (unsigned)flags);
-  stralloc_free(&script);
-
-  if(rc != SED_OK)
-    return NULL; /* bad script: nothing printed yet, let the real invocation report it */
-
-  if(sed_wfile_count(prog)) {
-    sed_free(prog);
-    return NULL; /* w/s///w targets need real fds regardless of chaining */
-  }
-
-  if(!(fc = alloc(sizeof(*fc)))) {
-    sed_free(prog);
-    return NULL;
-  }
-
-  byte_zero(fc, sizeof(*fc));
-  fc->prog = prog;
-  fc->upstream = upstream;
-  stralloc_init(&fc->out);
-
-  fc->st = sed_state_new(prog, sed_filter_read_line, sed_filter_out, NULL, sed_filter_rfile, fc);
-
-  if(!fc->st) {
-    sed_free(prog);
-    alloc_free(fc);
-    return NULL;
-  }
-
-  return fc;
+  return -1;
 }
 
-const struct filter_ops sed_ops = {sed_filter_open,
-                                   sed_filter_read,
-                                   sed_filter_status,
-                                   sed_filter_close};
+/* everything the real invocation should report (no script, bad script)
+ * or cannot stream (file operands, w/s///w targets needing real fds) declines */
+static int
+sed_filter_setup(void* arg) {
+  struct sed_filter_ctx* c = arg;
+
+  if(!c->have_script) {
+    if(!c->in.files)
+      return 1;
+
+    stralloc_cats(&c->script, *c->in.files++);
+
+    if(!*c->in.files)
+      c->in.files = NULL;
+  }
+
+  if(c->in.files)
+    return 1;
+
+  if(c->autoprint_off)
+    c->flags |= SED_NOAUTOPRINT;
+
+  if(sed_compile(&c->prog, c->script.s ? c->script.s : "", c->script.len, c->flags) != SED_OK) {
+    c->prog = NULL;
+    return 1;
+  }
+
+  if(sed_wfile_count(c->prog))
+    return 1;
+
+  return (c->st = sed_state_new(c->prog, sed_filter_read_line, sed_filter_out, NULL, sed_filter_rfile, c)) ? 0 : 1;
+}
+
+const struct filter_ops sed_ops = {.opts = "nEre:f:",
+                                   .size = sizeof(struct sed_filter_ctx),
+                                   .option = sed_filter_option,
+                                   .setup = sed_filter_setup,
+                                   .step = sed_filter_step,
+                                   .status = sed_filter_status,
+                                   .finish = sed_filter_finish};
 const struct builtin_filter sed_filter = {&sed_ops};

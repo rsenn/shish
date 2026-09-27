@@ -32,26 +32,16 @@
  *           at the unit: no copy.
  *   status  exit status once step() has returned 0; NULL: ctx->in.had_error
  *   finish  releases what setup() / step() allocated; NULL: nothing
- *
- * hand-written half, each overrides its default when non-NULL:
- *
- *   open    replaces the generic parse+setup; returns ctx or NULL to decline
- *   read    instead of step: buffer_op_proto-shaped (fd unused), fills up to len
- *           bytes of buf, returns the count or 0 at EOF; a short return is fine
- *   close   replaces finish + filter_in_close + free
  * ----------------------------------------------------------------------- */
 typedef int filter_step_fn(void* ctx, const char** unit, size_t* len);
 
 struct filter_ops {
-  void* (*open)(int argc, char* argv[], buffer* upstream);
-  ssize_t (*read)(int fd, void* buf, size_t len, void* arg);
-  int (*status)(void* ctx);
-  void (*close)(void* ctx);
-  filter_step_fn* step;
   const char* opts;
   size_t size;
   int (*option)(void* ctx, int ch);
   int (*setup)(void* ctx);
+  filter_step_fn* step;
+  int (*status)(void* ctx);
   void (*finish)(void* ctx);
 };
 

@@ -208,9 +208,6 @@ void*
 filter_open(const struct filter_ops* ops, int argc, char* argv[], buffer* upstream) {
   void* ctx;
 
-  if(ops->open)
-    return ops->open(argc, argv, upstream);
-
   if(!(ctx = alloc(ops->size)))
     return NULL;
 
@@ -229,11 +226,6 @@ filter_status(const struct filter_ops* ops, void* ctx) {
 
 void
 filter_close(const struct filter_ops* ops, void* ctx) {
-  if(ops->close) {
-    ops->close(ctx);
-    return;
-  }
-
   if(ops->finish)
     ops->finish(ctx);
 

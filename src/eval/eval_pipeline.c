@@ -736,7 +736,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
        already closed above, via fd_pop(in)'s fd_filter_deinit() --
        every earlier one only ever got wrapped in one of these, so this
        is the one place left that closes it (buffer_filter_init() wired
-       ops->close(ctx) into (b)->deinit itself). Nothing to do here for
+       filter_close(ops, ctx) into (b)->deinit itself). Nothing to do here for
        a declined chain (chain_committed == 0): the pre-pass already
        rolled every opened stage back to this same state before the
        loop ever ran. */
