@@ -2640,6 +2640,7 @@ assert_equal "1" "$X122D" "privileged is exposed as an -o long-option name like 
 ## /proc/self/exe, which would resolve to the forked readlink itself)
 ## finds this running shish's own binary to re-invoke.
 SHISH_SELF=$(readlink "/proc/$$/exe" 2>/dev/null)
+export SHISH_SELF
 
 if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
   X122E=$("$SHISH_SELF" -p -c 'echo $-')

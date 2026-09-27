@@ -1201,23 +1201,6 @@
   ./build/x86_64-linux-gnu/shish tests/fixed.sh 2>&1 | grep FAIL
   ```
 
-- fixed-sh-sigint-sigterm-status-test-broken: `tests/fixed.sh`'s own
-  X192/X192B cases (`"a command killed by SIGINT/SIGTERM sets $?..."`)
-  reference `$SHISH_SELF` from *inside* a nested `-c` string without
-  ever `export`ing it, so the child shish that string runs in never
-  sees it and the nested invocation silently does nothing -- not a
-  shish bug; shish's actual SIGINT/SIGTERM exit-status handling is
-  correct (128+signum) once `SHISH_SELF` is exported. Needs a test fix
-  (add `export SHISH_SELF` before X192), out of scope here.
-
-  **Repro:**
-  ```sh
-  SHISH_SELF=./shish  # NOT exported
-  "$SHISH_SELF" -c '"$SHISH_SELF" -c "kill -s INT \$\$"; echo $?'  # prints 126, not 130
-  export SHISH_SELF
-  "$SHISH_SELF" -c '"$SHISH_SELF" -c "kill -s INT \$\$"; echo $?'  # prints 130, correctly
-  ```
-
 - command-exec-redirection-not-persistent: `command exec 3<<E ... E` applies
   the redirection to the `command` builtin only, so it is gone afterwards
   (POSIX leaves `command exec` open; yash keeps it). `command-p.tst:42`.
