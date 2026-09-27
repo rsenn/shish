@@ -284,7 +284,9 @@ is what they do now.
 
 1. Done: `u8decode`/`u8encode`/`u8charlen`/`u8count`/`u8skip` with a unit test.
 2. Done: `sh_utf8()` and the `text_*` wrappers; `readlink` moved off the old functions (compiled with mingw).
-3. `wc -m`, `cut -c`, `uniq -s` on the wrappers.
+3. `wc -m` and `wc -L` done (a byte-at-a-time state machine over `u8decode`, so a character
+   split across reads is still one; an invalid or cut-off byte counts as one, matching
+   `u8count`). `cut -c` and `uniq -s` follow when those builtins are written.
 4. `filter_in_peek_chars`, then `tr`.
 5. `text/dfa` step 1, then step 2.
 6. Tests: every text builtin gets one UTF-8 case through `assert_filter`, one invalid-byte case,

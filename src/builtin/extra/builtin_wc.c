@@ -1,15 +1,18 @@
 #include "../../builtin.h"
 #include "../../fdtable.h"
+#include "../../sh.h"
 #include "../../../lib/shell.h"
 #include "../../../lib/str.h"
 #include "../../../lib/fmt.h"
 #include "../../../lib/open.h"
 #include "../../../lib/byte.h"
+#include "../../../lib/utf8.h"
 
 const char help_wc[] = "    Print newline, word, and byte counts.\n"
                        "\n"
                        "    -c, --bytes            print the byte counts\n"
-                       "    -m, --chars            print the character counts\n"
+                       "    -m, --chars            print the character counts (UTF-8 when LC_ALL, LC_CTYPE or\n"
+                       "                           LANG names it, else bytes)\n"
                        "    -l, --lines            print the newline counts\n"
                        "    -L, --max-line-length  print the maximum display width\n"
                        "    -w, --words            print the word counts\n"
@@ -19,16 +22,21 @@ struct wc_counts {
   unsigned long lines, words, chars, bytes, maxlen;
 };
 
-/* counts lines/words/chars/bytes/longest-line in 'path' ("-" =
- * stdin), byte-at-a-time (no multibyte decoding: chars == bytes).
+/* counts lines/words/chars/bytes/longest-line in 'path' ("-" = stdin).
+ * With utf8 set a character is a valid UTF-8 sequence, or one byte when the
+ * bytes are not valid (the count u8count() gives); else chars == bytes.
  * Returns 0 on success, -1 on open/read failure.
+ *
+ *   int   utf8   count characters as UTF-8 sequences
  * ----------------------------------------------------------------------- */
 static int
-wc_count(const char* path, struct wc_counts* out) {
+wc_count(const char* path, int utf8, struct wc_counts* out) {
   buffer inb;
   buffer* in;
   char rbuf[4096];
-  int in_word = 0;
+  char pend[4]; /* bytes of a sequence that may still be completed */
+  size_t np = 0;
+  int in_word = 0, eof = 0;
   unsigned long curlen = 0;
   char c;
   ssize_t r;
@@ -47,26 +55,51 @@ wc_count(const char* path, struct wc_counts* out) {
     buffer_init(in, &buffer_op_read, rfd, rbuf, sizeof(rbuf));
   }
 
-  while((r = buffer_getc(in, &c)) > 0) {
-    out->bytes++;
-    out->chars++;
-
-    if(c == '\n') {
-      out->lines++;
-
-      if(curlen > out->maxlen)
-        out->maxlen = curlen;
-
-      curlen = 0;
-    } else {
-      curlen++;
+  /* one byte at a time: each byte is counted, then the character(s) it
+     completes are decided (the whole of pend at eof) */
+  for(;;) {
+    if(!eof) {
+      if((r = buffer_getc(in, &c)) <= 0)
+        eof = 1;
+      else
+        out->bytes++, pend[np++] = c;
     }
 
-    if(c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r') {
-      in_word = 0;
-    } else if(!in_word) {
-      in_word = 1;
-      out->words++;
+    if(eof && !np)
+      break;
+
+    while(np) {
+      unsigned cp;
+      int l = utf8 ? u8decode(pend, np, &cp) : 1;
+      char first = pend[0];
+
+      if(l == -2 && !eof)
+        break;
+
+      l = l > 0 ? l : 1;
+      out->chars++;
+      for(size_t k = 0; k + (size_t)l < np; k++)
+        pend[k] = pend[k + (size_t)l];
+
+      np -= (size_t)l;
+
+      if(first == '\n') {
+        out->lines++;
+
+        if(curlen > out->maxlen)
+          out->maxlen = curlen;
+
+        curlen = 0;
+      } else {
+        curlen++;
+      }
+
+      if(first == ' ' || first == '\t' || first == '\n' || first == '\v' || first == '\f' || first == '\r') {
+        in_word = 0;
+      } else if(!in_word) {
+        in_word = 1;
+        out->words++;
+      }
     }
   }
 
@@ -105,6 +138,7 @@ int
 builtin_wc(int argc, char* argv[]) {
   int c, opt_c = 0, opt_m = 0, opt_l = 0, opt_L = 0, opt_w = 0, ret = 0, i, nfiles;
   struct wc_counts total;
+  int utf8 = sh_utf8();
 
   while((c = shell_getopt(argc, argv, "cmlLw")) > 0) {
     switch(c) {
@@ -130,7 +164,7 @@ builtin_wc(int argc, char* argv[]) {
   for(i = shell_optind; i < argc; i++) {
     struct wc_counts cnt;
 
-    if(wc_count(argv[i], &cnt) == -1) {
+    if(wc_count(argv[i], utf8, &cnt) == -1) {
       builtin_error(argv, argv[i]);
       ret = 1;
       continue;

@@ -46,6 +46,42 @@ assert_equal "3 total" "$LASTLINE" "multiple files get a trailing total line"
 wc nosuch >/dev/null 2>&1
 assert_equal "1" "$?" "wc fails on a nonexistent file"
 
+## -m counts characters when the locale variables name UTF-8, else bytes
+## (LC_ALL wins over LC_CTYPE over LANG, an empty one is skipped)
+printf '\303\251\342\202\254\360\237\230\200\n' > u8
+
+X=$(LC_ALL=C.UTF-8; echo $(wc -m < u8))
+assert_equal "4" "$X" "-m counts each UTF-8 sequence once when LC_ALL names UTF-8"
+
+X=$(LC_ALL=C.UTF-8; echo $(wc -c < u8))
+assert_equal "10" "$X" "-c still counts bytes in a UTF-8 locale"
+
+X=$(LC_ALL=C; echo $(wc -m < u8))
+assert_equal "10" "$X" "-m counts bytes in the C locale"
+
+X=$(LC_ALL=; LC_CTYPE=; LANG=en_US.UTF-8; echo $(wc -m < u8))
+assert_equal "4" "$X" "empty LC_ALL and LC_CTYPE fall through to LANG"
+
+X=$(LC_ALL=C; LANG=en_US.UTF-8; echo $(wc -m < u8))
+assert_equal "10" "$X" "LC_ALL=C overrides a UTF-8 LANG"
+
+X=$(LC_ALL=C.UTF-8; echo $(wc -L < u8))
+assert_equal "3" "$X" "-L is in characters in a UTF-8 locale"
+
+printf 'a\377b\303' > bad
+X=$(LC_ALL=C.UTF-8; echo $(wc -m < bad))
+assert_equal "4" "$X" "an invalid byte and a cut-off sequence count as one character each"
+
+## a character straddling the 4 KiB read window is still one character
+awk 'BEGIN { for(i = 0; i < 5000; i++) printf "\303\251"; printf "\n" }' > big 2>/dev/null || {
+  i=0; : > big; while [ $i -lt 500 ]; do printf '\303\251\303\251\303\251\303\251\303\251\303\251\303\251\303\251\303\251\303\251' >> big; i=$((i+1)); done; echo >> big
+}
+X=$(LC_ALL=C.UTF-8; echo $(wc -m < big))
+assert_equal "5001" "$X" "characters across read windows are counted whole"
+
+X=$(LC_ALL=C.UTF-8; cat big | wc -m | tr -d ' ')
+assert_equal "5001" "$X" "the same through a pipe"
+
 cd /
 rm -rf "$TESTDIR"
 
