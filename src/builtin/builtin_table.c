@@ -449,19 +449,19 @@ struct builtin_cmd builtin_table[] = {
     {"xargs", &builtin_xargs, B_DEFAULT, "[-0opr] [-a FILE] [-d DELIM] [-l/-L MAX-LINES] [-n MAX-ARGS] [-P MAX-PROCS] <command> [...args]", help_xargs},
 #endif
 #if BUILTIN_COMPRESS
-    {"gzip", &builtin_compress, B_DEFAULT, "[file...]", help_compress},
-    {"bzip2", &builtin_compress, B_DEFAULT, "[file...]", help_compress},
-    {"lbzip2", &builtin_compress, B_DEFAULT, "[file...]", help_compress},
-    {"lz", &builtin_compress, B_DEFAULT, "[file...]", help_compress},
-    {"xz", &builtin_compress, B_DEFAULT, "[file...]", help_compress},
-    {"zstd", &builtin_compress, B_DEFAULT, "[file...]", help_compress},
+    {"gzip", &builtin_compress, B_DEFAULT, "[file...]", help_compress, &compress_filter},
+    {"bzip2", &builtin_compress, B_DEFAULT, "[file...]", help_compress, &compress_filter},
+    {"lbzip2", &builtin_compress, B_DEFAULT, "[file...]", help_compress, &compress_filter},
+    {"lz", &builtin_compress, B_DEFAULT, "[file...]", help_compress, &compress_filter},
+    {"xz", &builtin_compress, B_DEFAULT, "[file...]", help_compress, &compress_filter},
+    {"zstd", &builtin_compress, B_DEFAULT, "[file...]", help_compress, &compress_filter},
 #endif
 #if BUILTIN_UNCOMPRESS
-    {"zcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress},
-    {"bzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress},
-    {"xzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress},
-    {"zstdcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress},
-    {"lbzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress},
+    {"zcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
+    {"bzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
+    {"xzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
+    {"zstdcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
+    {"lbzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
 #endif
     {NULL, NULL, 0, NULL, NULL},
 };

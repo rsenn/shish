@@ -101,6 +101,40 @@ pipeline_filter_builtin(const char* name) {
   return b;
 }
 
+/* the true last stage reads a chain through the shell's own fd_in, which
+ * only in-process code can see: an external command would inherit the real
+ * fd 0 instead and read nothing. so a simple last command must name (as a
+ * literal) a builtin or a function; compound commands run in the shell too.
+ * ----------------------------------------------------------------------- */
+static int
+pipeline_last_reads_in_process(union node* node) {
+  const char* s;
+  size_t n;
+  char name[64];
+  struct nfunc* fn;
+
+  while(node->next)
+    node = node->next;
+
+  if(node->id != N_SIMPLECMD || !node->ncmd.args)
+    return 1;
+
+  if(!pipeline_word_literal(node->ncmd.args, &s, &n) || n >= sizeof(name))
+    return 0;
+
+  byte_copy(name, n, s);
+  name[n] = 0;
+
+  if(builtin_search(name, B_DEFAULT) || builtin_search(name, B_SPECIAL) || builtin_search(name, B_EXEC))
+    return 1;
+
+  for(fn = functions ? &functions->nfunc : NULL; fn; fn = fn->next)
+    if(!str_diff(name, fn->name))
+      return 1;
+
+  return 0;
+}
+
 /* pipeline_filter_prepare: node chains iff it's a plain simple command
  * (no local assignments, no redirections of its own -- both would
  * need real fd/scope machinery this path skips) whose entire word
@@ -467,7 +501,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
      it gets rolled back too (their .close() runs right here) and the
      whole pipeline runs exactly as if no candidate had ever been
      found. */
-  if(lastpipe)
+  if(lastpipe && pipeline_last_reads_in_process(npipe->cmds))
     chain_n = pipeline_filter_prepare_chain(npipe, &chain_b, &chain_argv, &chain_argc);
 
   TRACE(TRACE_EVAL,

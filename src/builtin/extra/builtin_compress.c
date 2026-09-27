@@ -13,7 +13,8 @@
 #include "../../../lib/alloc.h"
 #include "../../../lib/open.h"
 
-const char help_compress[] = "    Compress or decompress files in gzip format.\n"
+const char help_compress[] = "    Compress or decompress files; the format follows the command name\n"
+                         "    (gzip, bzip2, lbzip2, lz, xz, zstd; default gzip).\n"
                          "\n"
                          "    -c              write on standard output, keep original files unchanged\n"
                          "    -d              decompress\n"
@@ -65,8 +66,36 @@ raw_buf_pull(struct raw_buf* rb, const char** unit, size_t* len) {
   return 0;
 }
 
+/* one compressor: command name, file suffix, libarchive filter */
+struct compress_algo {
+  const char *name, *suffix;
+  int (*add)(struct archive*);
+};
+
+static const struct compress_algo compress_algos[] = {
+    {"gzip", ".gz", archive_write_add_filter_gzip},
+    {"bzip2", ".bz2", archive_write_add_filter_bzip2},
+    {"lbzip2", ".bz2", archive_write_add_filter_bzip2},
+    {"lz", ".lz", archive_write_add_filter_lzip},
+    {"xz", ".xz", archive_write_add_filter_xz},
+    {"zstd", ".zst", archive_write_add_filter_zstd},
+};
+
+/* by command name; anything unknown compresses as gzip */
+static const struct compress_algo*
+compress_algo_for(const char* name) {
+  size_t i;
+
+  for(i = 0; i < sizeof(compress_algos) / sizeof(compress_algos[0]); i++)
+    if(str_equal(name, compress_algos[i].name))
+      return &compress_algos[i];
+
+  return &compress_algos[0];
+}
+
 struct compress_ctx {
   struct filter_in in;
+  const struct compress_algo* algo;
   struct archive* a;
   unsigned had_error : 1, decompress : 1, to_stdout : 1, force : 1, keep : 1, started : 1, finished : 1;
   unsigned compression_level : 4;
@@ -142,16 +171,16 @@ compress_step(void* arg, const char** unit, size_t* len) {
   }
 }
 
-/* creates a raw gzip writer that hands every compressed chunk to its
- * output at once; NULL on failure */
+/* creates a raw writer for algo that hands every compressed chunk to its
+ * output at once; level 0 keeps the algorithm's default. NULL on failure */
 static struct archive*
-compress_writer_new(unsigned level) {
+compress_writer_new(const struct compress_algo* algo, unsigned level) {
   struct archive* a;
 
   if(!(a = archive_write_new()))
     return NULL;
 
-  archive_write_add_filter_gzip(a);
+  algo->add(a);
   archive_write_set_format_raw(a);
   archive_write_set_bytes_per_block(a, 0);
   archive_write_set_bytes_in_last_block(a, 1);
@@ -191,13 +220,12 @@ static int
 compress_setup(void* ctx) {
   struct compress_ctx* c = ctx;
 
+  c->algo = compress_algo_for(c->in.errargv[0]);
+
   if(c->decompress)
     return 1;
 
-  if(!c->compression_level)
-    c->compression_level = 6; /* default gzip level */
-
-  if(!(c->a = compress_writer_new(c->compression_level)))
+  if(!(c->a = compress_writer_new(c->algo, c->compression_level)))
     return -1;
 
   return archive_write_open(c->a, c, NULL, compress_archive_writer, NULL) == ARCHIVE_OK ? 0 : -1;
@@ -228,32 +256,34 @@ const struct filter_ops compress_ops = {.opts = "cdfhk123456789",
                                         .finish = compress_finish};
 const struct builtin_filter compress_filter = {&compress_ops};
 
-/* compresses src into dst.gz or, with decompress set, dst into src minus ".gz";
+/* compresses src into src + suffix or, with decompress set, src minus the suffix into dst;
  * a failed run removes the partial output and keeps the source. -1 on error */
 static int
 compress_file(struct compress_ctx* c, char* argv[], const char* src) {
   char dst[512];
-  size_t len = str_len(src);
+  size_t len = str_len(src), sl;
   buffer sb;
   char rbuf[4096];
   struct archive* a = NULL;
   int fd, err = 0;
   ssize_t n = 0;
 
+  sl = str_len(c->algo->suffix);
+
   if(c->decompress) {
-    if(len < 4 || len >= sizeof(dst) || !str_equal(src + len - 3, ".gz")) {
+    if(len <= sl || len >= sizeof(dst) || !str_equal(src + len - sl, c->algo->suffix)) {
       builtin_errmsg(argv, (char*)src, "unknown suffix -- ignored");
       return -1;
     }
 
-    byte_copy(dst, len - 3, src);
-    dst[len - 3] = '\0';
+    byte_copy(dst, len - sl, src);
+    dst[len - sl] = '\0';
   } else {
-    if(len + 3 >= sizeof(dst))
+    if(len + sl >= sizeof(dst))
       return -1;
 
     str_copy(dst, src);
-    str_copy(dst + len, ".gz");
+    str_copy(dst + len, c->algo->suffix);
   }
 
   if(!c->force && access(dst, F_OK) == 0) {
@@ -278,7 +308,7 @@ compress_file(struct compress_ctx* c, char* argv[], const char* src) {
     builtin_error(argv, (char*)src);
     err = 1;
   } else {
-    if(!(a = compress_writer_new(c->compression_level)) || archive_write_open_fd(a, fd) != ARCHIVE_OK || compress_start(a) < 0)
+    if(!(a = compress_writer_new(c->algo, c->compression_level)) || archive_write_open_fd(a, fd) != ARCHIVE_OK || compress_start(a) < 0)
       err = 1;
 
     while(!err && (n = buffer_feed(&sb)) > 0) {
@@ -322,7 +352,7 @@ compress_stdin(struct compress_ctx* c, char* argv[]) {
   byte_zero(&sc, sizeof(sc));
   filter_in_init(&sc.in, argv, NULL, fd_in->r);
 
-  if(!(sc.a = compress_writer_new(c->compression_level)) || archive_write_open(sc.a, &sc, NULL, compress_archive_writer, NULL) != ARCHIVE_OK)
+  if(!(sc.a = compress_writer_new(c->algo, c->compression_level)) || archive_write_open(sc.a, &sc, NULL, compress_archive_writer, NULL) != ARCHIVE_OK)
     return -1;
 
   filter_drain(compress_step, &sc, fd_out->w);

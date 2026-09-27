@@ -5262,4 +5262,21 @@ assert_equal "$(wc -c <"$TESTDIR/big" | tr -d ' ')" "$("$SHISH_SELF" -c "gzip < 
 assert_equal "3000" "$("$SHISH_SELF" -c "gzip < $TESTDIR/big | zcat | grep -c line")" "a chained zcat unit larger than the consumer buffer is not cut"
 rm -rf "$TESTDIR"
 
+## a builtin filter chained into an external last command (cat f | sort)
+## fed the command an empty stdin: the chain's in-process buffer is only
+## visible to the shell itself. bzip2/xz/zstd/lz ran gzip whatever their
+## name, and left a .gz suffix behind.
+TESTDIR=$(mktemp -d)
+printf 'b\na\n' >"$TESTDIR/f"
+assert_equal "a b" "$("$SHISH_SELF" -c "cat $TESTDIR/f | sort" | tr '\n' ' ' | sed 's/ $//')" "a chained builtin feeds an external last command"
+for a in gzip:gz bzip2:bz2 xz:xz zstd:zst lz:lz; do
+  n=${a%%:*}
+  x=${a##*:}
+  "$SHISH_SELF" -c "cd $TESTDIR && cp f g && $n g"
+  assert_equal "g.$x" "$(cd "$TESTDIR" && ls g.*)" "$n names its output .$x"
+  assert_equal "b a" "$("$SHISH_SELF" -c "cd $TESTDIR && $n -dc g.$x" | tr '\n' ' ' | sed 's/ $//')" "$n output decompresses again"
+  rm -f "$TESTDIR"/g "$TESTDIR"/g.*
+done
+rm -rf "$TESTDIR"
+
 summary

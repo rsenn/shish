@@ -316,3 +316,7 @@ const struct filter_ops grep_ops = {.opts = "Evnqc",
                                     .status = grep_filter_status,
                                     .finish = grep_filter_finish};
 const struct builtin_filter grep_filter = {&grep_ops};
+#else
+const struct builtin_filter grep_filter = {
+    NULL}; /* not implemented for the system regex.h backend */
+#endif /* !GREP_USE_SYSTEM_REGEX */

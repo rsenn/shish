@@ -39,6 +39,8 @@ int builtin_basename(int argc, char* argv[]);
 int builtin_bg(int argc, char* argv[]);
 int builtin_break(int argc, char* argv[]);
 int builtin_cat(int argc, char* argv[]);
+extern const struct builtin_filter compress_filter;   /* src/builtin/extra/builtin_compress.c */
+extern const struct builtin_filter uncompress_filter; /* src/builtin/extra/builtin_uncompress.c */
 extern const struct builtin_filter cat_filter; /* src/builtin/extra/builtin_cat.c */
 int builtin_cd(int argc, char* argv[]);
 int builtin_chmod(int argc, char* argv[]);

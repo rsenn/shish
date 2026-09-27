@@ -117,7 +117,7 @@ Hand-written overrides, each used instead of its default when non-NULL: `open`,
 |---|---|---|
 | `cat` | declarative | 83 lines |
 | `grep` (filter half) | declarative | `-c`/`-q`/no pattern/bad pattern decline via `setup` = 1; the direct `builtin_grep` is separate |
-| `compress` | declarative | libarchive write side; also has file mode (`f` -> `f.gz`) and `-d` delegation to `uncompress` |
+| `compress` | declarative | libarchive write side, algorithm from `argv[0]`; also has file mode (`f` -> `f.gz`/`.bz2`/...) and `-d` delegation to `uncompress` |
 | `uncompress` | declarative | libarchive read side, lends the input buffer in place and reads libarchive's decode block directly; `-f` copies non-compressed input |
 | `sed` | `open`/`read`/`close` overrides | uses its own output mechanism; candidate for `step` |
 
@@ -126,20 +126,23 @@ never consults a filter's exit status.
 
 ## 6. Open work
 
+Done:
+
+- table rows for `gzip`, `zcat` and aliases carry `&compress_filter` / `&uncompress_filter`;
+- `compress` picks the libarchive filter and file suffix from `argv[0]`
+  (`gzip .gz`, `bzip2`/`lbzip2 .bz2`, `xz .xz`, `zstd .zst`, `lz .lz`);
+- a chain is only built when the last stage reads in-process (a builtin, a function or a
+  compound command). An external last command inherits the real fd 0 and used to read an
+  empty stream (`cat f | sort` printed nothing).
+
 In order:
 
-1. **Wire the table rows.** `gzip`, `zcat` and their aliases in
-   `src/builtin/builtin_table.c` still have no `&compress_filter` /
-   `&uncompress_filter`, so those stages always fork. One field per row.
-2. **Pick the algorithm from `argv[0]`.** `bzip2`, `xz`, `zstd`, `lz`, `lbzip2` all run
-   `builtin_compress`, and `compress_writer_new()` always adds the gzip filter. Map the
-   command name to the libarchive filter (and to a suffix for file mode: `.bz2`, `.xz`,
-   `.zst`, ...); `setup` is the place, since it already sees `in.errargv[0]`. Decompress
-   aliases (`bzcat`, `xzcat`, `zstdcat`) already work through `support_filter_all`.
-3. **Convert `sed` to `step`.** Needs its pattern-space output handed out as units
+1. **Convert `sed` to `step`.** Needs its pattern-space output handed out as units
    instead of copied into a `read` buffer.
-4. **Use the chain exit status,** or drop the `status` op.
-5. **Filters still on the TODO list** (`head uniq paste cut tr nl tail`): each should be
+2. **Use the chain exit status,** or drop the `status` op.
+3. **Filters still on the TODO list** (`head uniq paste cut tr nl tail`): each should be
    one `filter_ops` plus a step function.
-6. **Direct-mode I/O.** `filter_drain` flushes after every unit; batching for
+4. **Direct-mode I/O.** `filter_drain` flushes after every unit; batching for
    non-interactive output would cut syscalls.
+5. **External last stage.** Instead of declining the chain, pump the last link into a
+   real pipe for the external command, so `cat f | sort` could still skip the first fork.
