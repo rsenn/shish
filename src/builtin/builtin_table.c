@@ -116,6 +116,15 @@
 #ifndef BUILTIN_CUT
 #define BUILTIN_CUT 0
 #endif
+#ifndef BUILTIN_NL
+#define BUILTIN_NL 0
+#endif
+#ifndef BUILTIN_TR
+#define BUILTIN_TR 0
+#endif
+#ifndef BUILTIN_PASTE
+#define BUILTIN_PASTE 0
+#endif
 #ifndef BUILTIN_TEE
 #define BUILTIN_TEE 0
 #endif
@@ -403,6 +412,15 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_CUT
     {"cut", &builtin_cut, B_DEFAULT, "-b list | -c list | -f list [-d delim] [-s] [file...]", help_cut, &cut_filter},
+#endif
+#if BUILTIN_NL
+    {"nl", &builtin_nl, B_DEFAULT, "[-p] [-b type] [-d delim] [-f type] [-h type] [-i incr] [-l num] [-n format] [-s sep] [-v start] [-w width] [file]", help_nl, &nl_filter},
+#endif
+#if BUILTIN_TR
+    {"tr", &builtin_tr, B_DEFAULT, "[-c|-C] [-s] string1 string2 | [-c|-C] -d [-s] string1 | [-c|-C] -s string1", help_tr, &tr_filter},
+#endif
+#if BUILTIN_PASTE
+    {"paste", &builtin_paste, B_DEFAULT, "[-s] [-d list] file...", help_paste, &paste_filter},
 #endif
 #if BUILTIN_TEE
     {"tee", &builtin_tee, B_DEFAULT, "[-ai] [file...]", help_tee},

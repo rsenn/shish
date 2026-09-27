@@ -1232,6 +1232,12 @@
   none (the shared input layer skips a source with nothing in it).
   `: >e; printf 'x\n' >f; head e f` prints "==> f <==" and x, without a
   header for `e` (POSIX and coreutils print both).
+- tr-is-byte-only: `tr` works on bytes even in a UTF-8 locale, so a
+  multibyte character in a string is several bytes and cannot be a range
+  end: `printf '\303\251\n' | LC_ALL=C.UTF-8 tr '\303\251' x` prints
+  `xx` (should print `x`). Needs the UTF-8 step of the plan
+  (`filter_in_peek_chars`).
+
 - cut-n-option-ignored: `cut -n` is accepted and ignored. With `-b` in a
   UTF-8 locale it should not split a multibyte character:
   `printf '\303\251\n' | LC_ALL=C.UTF-8 cut -n -b 1` prints the lone byte

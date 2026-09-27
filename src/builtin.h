@@ -92,6 +92,12 @@ extern const struct builtin_filter head_filter; /* src/builtin/extra/builtin_hea
 int builtin_uniq(int argc, char* argv[]);
 extern const struct builtin_filter uniq_filter; /* src/builtin/extra/builtin_uniq.c */
 int builtin_cut(int argc, char* argv[]);
+int builtin_nl(int argc, char* argv[]);
+extern const struct builtin_filter nl_filter; /* src/builtin/extra/builtin_nl.c */
+int builtin_tr(int argc, char* argv[]);
+extern const struct builtin_filter tr_filter; /* src/builtin/extra/builtin_tr.c */
+int builtin_paste(int argc, char* argv[]);
+extern const struct builtin_filter paste_filter; /* src/builtin/extra/builtin_paste.c */
 extern const struct builtin_filter cut_filter; /* src/builtin/extra/builtin_cut.c */
 int builtin_tee(int argc, char* argv[]);
 int builtin_test(int argc, char* argv[]);
@@ -169,6 +175,9 @@ extern const char help_source[];
 extern const char help_head[];
 extern const char help_uniq[];
 extern const char help_cut[];
+extern const char help_nl[];
+extern const char help_tr[];
+extern const char help_paste[];
 extern const char help_tee[];
 extern const char help_test[];
 extern const char help_times[];

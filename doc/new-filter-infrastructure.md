@@ -302,5 +302,7 @@ chain in-process. What the framework grew for them: `filter_in_line`, `filter_in
 `filter_opt_count`, `err_arg`/`err_msg` usage errors printed by `filter_run`, an optional
 `filter_ops.output` (the file a result goes to; a chain declines it) and the `FILTER_BUILTIN` macro
 (`builtin_<name>` and `<name>_filter` in one line). `assert_filter` in `tests/common.sh` runs a case
-from a file, from a pipe and chained. Not yet: `tail`, `paste`, `nl`, `tr`, and the `head` obsolescent
-`+N`/`-N` forms beyond `-N`. Known gaps are in `BUGS`.
+from a file, from a pipe and chained. Then `paste` (~190: an input per operand, `-` operands sharing
+one), `nl` (~300, sections and `pBRE` types via `text/dfa`) and `tr` (~290, on `lib/byteset`, byte
+oriented). `tr`'s operands are strings, so its `setup` takes them off `in.files` and reads stdin.
+Not yet: `tail`, and the `head` obsolescent `+N`/`-N` forms beyond `-N`. Known gaps are in `BUGS`.
