@@ -5319,4 +5319,21 @@ assert_equal "1" "$(cat "$SEDLONG" | sed -n '$=')" "a chained sed counts a 9000-
 assert_equal "9000" "$(sed 's/a/b/' "$SEDLONG" | tr -d '\n' | wc -c | tr -d ' ')" "sed keeps a 9000-byte line whole"
 rm -f "$SEDLONG"
 
+## filter_drain() (src/builtin/builtin_filter.c) called buffer_put() with
+## whatever a step() returned even when its length was 0, so an fd whose
+## buffer has no backing array yet (a non-last pipeline member's stdout, a
+## real pipe under eval_pipeline) passed a null destination into the
+## underlying memcpy() -- harmless in practice (0 bytes copied) but real UB,
+## caught only under -fsanitize=undefined. tr -s hits this on any input
+## chunk that squeezes away to nothing. Same category as fixes/129/130/133
+## above: a pure UB/sanitizer-only bug, so no assertion here can distinguish
+## pre/post-fix behavior; verified instead by running the reproducer below
+## directly under the ASan/UBSan build and confirming its "runtime error:
+## null pointer passed as argument 1" report is gone. Still checked here for
+## ordinary correctness.
+FDRAIN0=$(mktemp)
+printf '%200000s\n' | tr ' ' a >"$FDRAIN0"
+assert_equal "2" "$(tr -s a <"$FDRAIN0" | wc -c | tr -d ' ')" "tr -s squeezing a whole chunk to nothing inside a real pipeline must still work (see comment above)"
+rm -f "$FDRAIN0"
+
 summary

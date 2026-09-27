@@ -321,7 +321,8 @@ filter_drain(filter_step_fn* step, void* ctx, buffer* out) {
   size_t len;
 
   while(step(ctx, &unit, &len)) {
-    buffer_put(out, unit, len);
+    if(len) /* a zero-length unit needs no write; some fds' buffers have no backing array yet */
+      buffer_put(out, unit, len);
 
     if(!in->cur || !buffer_LEN(in->cur))
       buffer_flush(out);
