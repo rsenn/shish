@@ -74,6 +74,12 @@ filter_in_close(struct filter_in* in) {
     buffer_close(in->cur);
 
   in->cur = NULL;
+
+  if(!in->spilling) {
+    alloc_free(in->spill);
+    in->spill = NULL;
+    in->spill_len = in->spill_cap = 0;
+  }
 }
 
 /* open the next file operand in sequence; returns 0 when there are
@@ -164,6 +170,89 @@ filter_in_peek(struct filter_in* in, const char** p) {
 
   *p = buffer_PEEK(in->cur);
   return (ssize_t)buffer_LEN(in->cur);
+}
+
+/* appends n bytes to the spill buffer; 0 on out of memory */
+static int
+filter_in_spill(struct filter_in* in, const char* p, size_t n) {
+  if(in->spill_len + n + 1 > in->spill_cap) {
+    size_t cap = in->spill_cap ? in->spill_cap : 256;
+    char* q;
+
+    while(cap < in->spill_len + n + 1)
+      cap *= 2;
+
+    if(!(q = alloc_re(in->spill, cap)))
+      return 0;
+
+    in->spill = q;
+    in->spill_cap = cap;
+  }
+
+  byte_copy(in->spill + in->spill_len, n, p);
+  in->spill_len += n;
+  return 1;
+}
+
+/* one whole line of any length: the newline is looked for in the buffered
+ * window; a line that ends inside it is returned in place, one that does
+ * not is collected in the spill buffer until it does (or the operand ends).
+ * ----------------------------------------------------------------------- */
+ssize_t
+filter_in_line(struct filter_in* in, const char** p, int* had_nl) {
+  in->spill_len = 0;
+
+  for(;;) {
+    const char* w;
+    size_t n, i;
+
+    if(in->spill_len) {
+      /* mid-line: the operand ending (or every source ending) ends the line */
+      int before = in->i;
+
+      in->spilling = 1;
+      n = (size_t)filter_in_ready(in);
+      in->spilling = 0;
+
+      if(!n || in->i != before)
+        break;
+    } else if(!filter_in_ready(in)) {
+      return -1;
+    }
+
+    w = buffer_PEEK(in->cur);
+    n = buffer_LEN(in->cur);
+    i = byte_chr(w, n, '\n');
+
+    if(i < n) {
+      *had_nl = 1;
+      buffer_SEEK(in->cur, i + 1);
+
+      if(!in->spill_len) {
+        *p = w;
+        return (ssize_t)i;
+      }
+
+      if(!filter_in_spill(in, w, i)) {
+        in->had_error = 1;
+        return -1;
+      }
+
+      *p = in->spill;
+      return (ssize_t)in->spill_len;
+    }
+
+    if(!filter_in_spill(in, w, n)) {
+      in->had_error = 1;
+      return -1;
+    }
+
+    buffer_SEEK(in->cur, n);
+  }
+
+  *had_nl = 0;
+  *p = in->spill;
+  return (ssize_t)in->spill_len;
 }
 
 /* consume n bytes previously exposed by filter_in_peek() */

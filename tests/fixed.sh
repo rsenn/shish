@@ -5290,4 +5290,15 @@ assert_equal "late" "$(cat "$TESTDIR/out" 2>/dev/null)" "wait waits for every me
 assert_equal "9" "$("$SHISH_SELF" -c 'sh -c "exit 7" | sh -c "exit 9" & wait $!; echo $?')" "wait reports the last member's status of a backgrounded pipeline"
 rm -rf "$TESTDIR"
 
+## grep read through a fixed 1 KiB buffer, so a longer line was matched as
+## several lines (grep -c '' said 3, grep 'a*b$' printed only the tail).
+TESTDIR=$(mktemp -d)
+printf '%2100s\n' | tr ' ' a | sed 's/$/b/' >"$TESTDIR/long"
+printf 'one\ntwo\nthree' >"$TESTDIR/nonl"
+assert_equal "1" "$("$SHISH_SELF" -c "grep -c '' $TESTDIR/long")" "grep counts a 2 KiB line as one line"
+assert_equal "2102" "$("$SHISH_SELF" -c "grep 'a*b\$' $TESTDIR/long | wc -c" | tr -d ' ')" "grep prints a line longer than 1 KiB whole"
+assert_equal "2102" "$("$SHISH_SELF" -c "cat $TESTDIR/long | grep 'a*b\$' | cat | wc -c" | tr -d ' ')" "a chained grep prints a line longer than 1 KiB whole"
+assert_equal "2:two 3:three" "$("$SHISH_SELF" -c "cat $TESTDIR/nonl | grep -n t | cat" | tr '\n' ' ' | sed 's/ $//')" "grep still matches a last line without a newline"
+rm -rf "$TESTDIR"
+
 summary

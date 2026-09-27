@@ -12,6 +12,7 @@
 #include "../../../lib/open.h"
 #include "../../../lib/byte.h"
 #include "../../../lib/alloc.h"
+#include "../../../lib/stralloc.h"
 
 #if GREP_USE_SYSTEM_REGEX
 #define RE_FREE(re) regfree(re)
@@ -82,36 +83,32 @@ builtin_grep(int argc, char* argv[]) {
   int multiple_files = (argc - shell_optind) > 1;
 
   while((arg = argv[shell_optind])) {
-    char buf[1024], rbuf[1024];
-    buffer inb, *in;
+    struct filter_in in;
+    char* files[2] = {arg, NULL};
+    const char* line;
+    int had_nl;
     ssize_t r;
     unsigned long lineno = 1;
     unsigned long matchcount = 0;
 
-    if(!str_diff(arg, "-")) {
-      in = fd_in->r;
-    } else {
-      in = &inb;
-      if(filter_open_file(in, rbuf, sizeof(rbuf), arg) == -1) {
-        builtin_error(argv, arg);
-        goto next_file;
-      }
-    }
+    filter_in_init(&in, argv, files, fd_in->r);
 
-    for(;;) {
-      if((r = buffer_get_until(in, buf, sizeof(buf) - 1, "\n", 1)) <= 0)
-        break;
+    while((r = filter_in_line(&in, &line, &had_nl)) >= 0) {
+      size_t len = (size_t)r;
 
-      buf[r] = '\0';
-      if(r > 0 && buf[r - 1] == '\n')
-        buf[--r] = '\0';
-      if(r > 0 && buf[r - 1] == '\r')
-        buf[--r] = '\0';
+      if(len > 0 && line[len - 1] == '\r')
+        len--;
 
 #if GREP_USE_SYSTEM_REGEX
-      int matched = (regexec(&re, buf, 0, NULL, 0) == 0);
+      char* z = alloc(len + 1);
+      int matched;
+
+      byte_copy(z, len, line);
+      z[len] = '\0';
+      matched = (regexec(&re, z, 0, NULL, 0) == 0);
+      alloc_free(z);
 #else
-      int matched = dfa_test(&re, buf, (size_t)r);
+      int matched = dfa_test(&re, line, len);
 #endif
       if(invert)
         matched = !matched;
@@ -119,6 +116,7 @@ builtin_grep(int argc, char* argv[]) {
       if(matched) {
         ret = 0;
         if(quiet) {
+          filter_in_close(&in);
           RE_FREE(&re);
           return 0;
         }
@@ -138,7 +136,7 @@ builtin_grep(int argc, char* argv[]) {
             buffer_puts(fd_out->w, ":");
           }
 
-          buffer_puts(fd_out->w, buf);
+          buffer_put(fd_out->w, line, len);
           buffer_putnlflush(fd_out->w);
         }
       }
@@ -146,7 +144,9 @@ builtin_grep(int argc, char* argv[]) {
       lineno++;
     }
 
-    if(count_only) {
+    filter_in_close(&in);
+
+    if(count_only && !in.had_error) {
       char cbuf[32];
       size_t cn = fmt_ulong(cbuf, matchcount);
 
@@ -159,7 +159,6 @@ builtin_grep(int argc, char* argv[]) {
       buffer_putnlflush(fd_out->w);
     }
 
-  next_file:
     if(++shell_optind == argc)
       break;
   }
@@ -182,22 +181,23 @@ struct grep_filter_ctx {
   int invert, show_lineno, multiple_files, extended, aggregate, compiled;
   unsigned long lineno;
   int had_match;
-
-  char raw[1024];
-  char linebuf[1200];
+  stralloc out; /* prefixes + line, when a line cannot go out as it lies */
 };
 
 /* as builtin_grep()'s own per-file loop, but pausable -- pulls lines
- * (advancing across files) until one matches (respecting -v) and
- * formats it, with the "file:"/"N:" prefixes, into g->linebuf.
+ * (advancing across files) until one matches (respecting -v) and hands it
+ * out, with the "file:"/"N:" prefixes when asked for. A bare line that ends
+ * in a newline inside the input buffer goes out in place, newline included.
  * ----------------------------------------------------------------------- */
 static int
 grep_filter_step(void* arg, const char** sp, size_t* np) {
   struct grep_filter_ctx* g = arg;
+  const char* line;
+  int had_nl;
   ssize_t r;
 
-  while((r = filter_in_get(&g->in, g->raw, sizeof(g->raw) - 1, "\n", 1)) > 0) {
-    size_t pos = 0;
+  while((r = filter_in_line(&g->in, &line, &had_nl)) >= 0) {
+    size_t len = (size_t)r, full = len;
     int matched;
 
     if(g->in.newfile) {
@@ -205,13 +205,10 @@ grep_filter_step(void* arg, const char** sp, size_t* np) {
       g->lineno = 1;
     }
 
-    if(g->raw[r - 1] == '\n')
-      r--;
+    if(len > 0 && line[len - 1] == '\r')
+      len--;
 
-    if(r > 0 && g->raw[r - 1] == '\r')
-      r--;
-
-    matched = (dfa_test(&g->re, g->raw, (size_t)r) != 0) != (g->invert != 0);
+    matched = (dfa_test(&g->re, line, len) != 0) != (g->invert != 0);
 
     if(!matched) {
       g->lineno++;
@@ -219,32 +216,32 @@ grep_filter_step(void* arg, const char** sp, size_t* np) {
     }
 
     g->had_match = 1;
+    g->lineno++;
+
+    if(!g->multiple_files && !g->show_lineno && had_nl && len == full && line != g->in.spill) {
+      *sp = line;
+      *np = len + 1; /* the newline is right behind it */
+      return 1;
+    }
+
+    g->out.len = 0;
 
     if(g->multiple_files) {
-      const char* name = filter_in_name(&g->in);
-      size_t nl = str_len(name);
-
-      byte_copy(g->linebuf, nl, name);
-      pos = nl;
-      g->linebuf[pos++] = ':';
+      stralloc_cats(&g->out, filter_in_name(&g->in));
+      stralloc_catc(&g->out, ':');
     }
 
     if(g->show_lineno) {
       char lbuf[FMT_ULONG];
-      size_t ln = fmt_ulong(lbuf, g->lineno);
 
-      byte_copy(g->linebuf + pos, ln, lbuf);
-      pos += ln;
-      g->linebuf[pos++] = ':';
+      stralloc_catb(&g->out, lbuf, fmt_ulong(lbuf, g->lineno - 1));
+      stralloc_catc(&g->out, ':');
     }
 
-    byte_copy(g->linebuf + pos, (size_t)r, g->raw);
-    pos += (size_t)r;
-    g->linebuf[pos++] = '\n';
-
-    g->lineno++;
-    *sp = g->linebuf;
-    *np = pos;
+    stralloc_catb(&g->out, line, len);
+    stralloc_catc(&g->out, '\n');
+    *sp = g->out.s;
+    *np = g->out.len;
     return 1;
   }
 
@@ -267,6 +264,8 @@ grep_filter_finish(void* arg) {
 
   if(g->compiled)
     dfa_free(&g->re);
+
+  stralloc_free(&g->out);
 }
 
 static int

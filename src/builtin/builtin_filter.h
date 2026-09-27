@@ -67,11 +67,14 @@ struct filter_in {
   char** files; /* operand list, NULL: only "-" */
   int i;
   unsigned done_any : 1, had_error : 1, newfile : 1; /* set when an operand was just opened; the user clears it */
+  unsigned spilling : 1;                             /* filter_in_line() is mid-line: keep spill across operands */
   buffer* upstream;                                  /* what "-" reads */
   buffer* cur;                                       /* NULL: no operand open */
   buffer inb;
   char rbuf[4096];
   char** errargv; /* argv for builtin_error() */
+  char* spill;    /* filter_in_line(): a line that straddles two reads */
+  size_t spill_len, spill_cap;
 };
 
 /* initializes the input tracking structure
@@ -89,6 +92,13 @@ const char* filter_in_name(const struct filter_in* in); /* operand being read */
 /* pulls data from the active source, cycling file operands sequentially on EOF.
  * Returns the number of bytes read, 0 when all sources are done or negative on error. */
 ssize_t filter_in_get(struct filter_in* in, char* buf, size_t len, const char* delims, size_t ndelims);
+
+/* one whole line of any length, without its '\n': *p points at it (into the
+ * source's own buffer when it fits there, else into a growable copy) and
+ * stays valid until the next call; *had_nl says whether a newline ended it
+ * (a file's last line may lack one). A line never crosses two operands.
+ * Returns the length, or -1 when every source is exhausted. */
+ssize_t filter_in_line(struct filter_in* in, const char** p, int* had_nl);
 
 /* zero-copy variant of filter_in_get(): points *p at the bytes buffered in the
  * active source and returns how many (0 when all sources are done, <0 on error).
