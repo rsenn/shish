@@ -140,6 +140,31 @@ gzip_step(void* arg, const char** unit, size_t* len) {
   }
 }
 
+/* creates a raw gzip writer that hands every compressed chunk to its
+ * output at once; NULL on failure */
+static struct archive*
+gzip_writer_new(unsigned level) {
+  struct archive* a;
+
+  if(!(a = archive_write_new()))
+    return NULL;
+
+  archive_write_add_filter_gzip(a);
+  archive_write_set_format_raw(a);
+  archive_write_set_bytes_per_block(a, 0);
+  archive_write_set_bytes_in_last_block(a, 1);
+
+  if(level > 0) {
+    char opt[18 + FMT_ULONG + 1];
+    size_t n = str_copy(opt, "compression-level=");
+    n += fmt_ulong(&opt[n], level);
+    opt[n] = '\0';
+    archive_write_set_options(a, opt);
+  }
+
+  return a;
+}
+
 /* parses arguments and initializes sessions */
 static int
 gzip_init(struct gzip_ctx* c, int argc, char* argv[], buffer* upstream) {
@@ -176,22 +201,8 @@ gzip_init(struct gzip_ctx* c, int argc, char* argv[], buffer* upstream) {
     return 0;
   }
 
-  if(!(c->a = archive_write_new()))
+  if(!(c->a = gzip_writer_new(c->compression_level)))
     return -1;
-
-  archive_write_add_filter_gzip(c->a);
-  archive_write_set_format_raw(c->a);
-
-  archive_write_set_bytes_per_block(c->a, 0); /* hand every chunk to the writer at once */
-  archive_write_set_bytes_in_last_block(c->a, 1);
-
-  if(c->compression_level > 0) {
-    char opt[18 + FMT_ULONG + 1];
-    size_t n = str_copy(opt, "compression-level=");
-    n += fmt_ulong(&opt[n], c->compression_level);
-    opt[n] = '\0';
-    archive_write_set_options(c->a, opt);
-  }
 
   if(archive_write_open(c->a, c, NULL, gzip_archive_writer, NULL) != ARCHIVE_OK) {
     archive_write_free(c->a);
@@ -289,22 +300,16 @@ builtin_gzip(int argc, char* argv[]) {
       }
 
       /* Create a fresh libarchive write session for this specific output file */
-      struct archive* file_a = archive_write_new();
-      archive_write_add_filter_gzip(file_a);
-      archive_write_set_format_raw(file_a);
+      struct archive* file_a = gzip_writer_new(c.compression_level);
 
-      if(c.compression_level > 0) {
-        char opt[32];
-        size_t opt_n = str_copy(opt, "compression-level=");
-        opt_n += fmt_ulong(&opt[opt_n], c.compression_level);
-        opt[opt_n] = '\0';
-        archive_write_set_options(file_a, opt);
+      if(!file_a) {
+        buffer_close(&src_buf);
+        close(out_fd);
+        c.had_error = 1;
+        i++;
+        continue;
       }
 
-      /* Use a local wrapper or write directly to out_fd via archive writer */
-
-      archive_write_set_bytes_per_block(file_a, 0);
-      archive_write_set_bytes_in_last_block(file_a, 1);
       archive_write_open_fd(file_a, out_fd);
 
 
