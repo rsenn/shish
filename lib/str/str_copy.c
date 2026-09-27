@@ -11,5 +11,6 @@ str_copy(char* out, const char* in) {
     ++s;
     ++t;
   }
+  
   return (size_t)(s - out);
 }
