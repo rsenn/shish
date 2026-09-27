@@ -99,8 +99,9 @@ void filter_in_skip(struct filter_in* in, size_t n);
 /* frees up input tracking structure */
 void filter_in_close(struct filter_in* in);
 
-/* runs step to completion, writing and flushing every unit to out: the
- * direct (non-chained) run of a builtin that also offers a filter. */
+/* runs step to completion, writing every unit to out (flushed when the next
+ * read would wait): the direct (non-chained) run of a builtin that also
+ * offers a filter. ctx starts with a struct filter_in. */
 void filter_drain(filter_step_fn* step, void* ctx, buffer* out);
 
 /* the framework behind a filter_ops (see its comment) */

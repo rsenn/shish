@@ -58,6 +58,7 @@ struct shopt {
   unsigned braceexpand : 1; /* -B */
   unsigned noclobber : 1;   /* -C */
   unsigned histexpand : 1;  /* -H */
+  unsigned pipefail : 1;    /* -o pipefail (no letter) */
 };
 
 /* name->letter table for every "set"-supported option, and the

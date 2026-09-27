@@ -31,7 +31,9 @@ const char help_set[] = "    Set shell options and/or positional parameters.\n"
                         "    -B              enable brace expansion\n"
                         "    -C              don't let '>' clobber an existing file\n"
                         "    -H              enable history expansion ('!')\n"
-                        "    -o name         same as the matching letter option above, by name\n"
+                        "    -o name         same as the matching letter option above, by name;\n"
+                        "                    'pipefail' (no letter): a pipeline fails with its rightmost\n"
+                        "                    non-zero member status\n"
                         "    -o              (no name) print every option's current state\n"
                         "    +option         turn the option off instead of on\n"
                         "    arg             new positional parameters ($1, $2, ...)\n"
@@ -58,6 +60,7 @@ const struct set_longopt set_longopts[] = {
     {"noexec", 'n'},
     {"noglob", 'f'},
     {"nounset", 'u'},
+    {"pipefail", 'P'}, /* only via -o: 'P' is not a set flag */
     {"privileged", 'p'},
     {"xtrace", 'x'},
 };
@@ -104,6 +107,7 @@ set_apply(struct shopt* opts, int letter, int on) {
     case 'B': opts->braceexpand = on; return 1;
     case 'C': opts->noclobber = on; return 1;
     case 'H': opts->histexpand = on; return 1;
+    case 'P': opts->pipefail = on; return 1;
     default: return 0;
   }
 }
@@ -123,6 +127,7 @@ set_get(const struct shopt* opts, int letter) {
     case 'B': return opts->braceexpand;
     case 'C': return opts->noclobber;
     case 'H': return opts->histexpand;
+    case 'P': return opts->pipefail;
     default: return 0;
   }
 }

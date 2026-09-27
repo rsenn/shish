@@ -135,6 +135,63 @@ pipeline_last_reads_in_process(union node* node) {
   return 0;
 }
 
+/* feeds the chain's last link to an external last command: a detached
+ * child (double fork, so nothing is left to reap) drains it into a fresh
+ * pipe whose read end this returns, -1 on failure. either way the parent is
+ * done with ctx afterwards; the child owns its copy until it exits.
+ * ----------------------------------------------------------------------- */
+static int
+pipeline_chain_pump(const struct filter_ops* ops, void* ctx) {
+  int p[2];
+  pid_t pid;
+  buffer b;
+
+  if(pipe(p) == -1) {
+    filter_close(ops, ctx);
+    return -1;
+  }
+
+  buffer_filter_init(&b, ops, ctx);
+
+  if((pid = fork()) == -1) {
+    close(p[0]);
+    close(p[1]);
+    b.deinit(&b);
+    return -1;
+  }
+
+  if(pid == 0) {
+    ssize_t n;
+
+    if(fork() != 0)
+      _exit(0);
+
+    close(p[0]);
+
+    while((n = buffer_feed(&b)) > 0) {
+      const char* x = buffer_PEEK(&b);
+      ssize_t w;
+
+      while(n > 0 && (w = write(p[1], x, (size_t)n)) > 0) {
+        x += w;
+        n -= w;
+      }
+
+      if(n > 0)
+        break; /* the reader is gone */
+
+      b.p = b.n;
+    }
+
+    _exit(0);
+  }
+
+  close(p[1]);
+  waitpid(pid, NULL, 0);
+  b.deinit(&b);
+  return p[0];
+}
+
 /* pipeline_filter_prepare: node chains iff it's a plain simple command
  * (no local assignments, no redirections of its own -- both would
  * need real fd/scope machinery this path skips) whose entire word
@@ -465,6 +522,9 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   const struct filter_ops** chain_ops = NULL;
   buffer* chain_link = NULL;
   int chain_committed = 0;
+  int pf;
+  int chain_pumped = 0, pump_fd = -1;
+  int* chain_st = NULL; /* pipefail: each opened stage's status, read while it is still open */
   int stage;
 
   /* zsh/ksh run a foreground pipeline's *last* command in the current
@@ -501,7 +561,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
      it gets rolled back too (their .close() runs right here) and the
      whole pipeline runs exactly as if no candidate had ever been
      found. */
-  if(lastpipe && pipeline_last_reads_in_process(npipe->cmds))
+  if(lastpipe)
     chain_n = pipeline_filter_prepare_chain(npipe, &chain_b, &chain_argv, &chain_argc);
 
   TRACE(TRACE_EVAL,
@@ -516,6 +576,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
 
     chain_ctx = alloc((size_t)chain_n * sizeof(*chain_ctx));
     chain_ops = alloc((size_t)chain_n * sizeof(*chain_ops));
+    chain_st = alloc((size_t)chain_n * sizeof(*chain_st));
 
     if(chain_n > 1)
       chain_link = alloc((size_t)(chain_n - 1) * sizeof(*chain_link));
@@ -555,6 +616,13 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
     }
   }
 
+  /* an external last command cannot see the chain's in-process buffer:
+     pump the last link into a real pipe for it instead */
+  if(chain_committed > 0 && !pipeline_last_reads_in_process(npipe->cmds)) {
+    chain_pumped = 1;
+    pump_fd = pipeline_chain_pump(chain_ops[chain_committed - 1], chain_ctx[chain_committed - 1]);
+  }
+
   if((job = job_new(npipe->ncmd - (lastpipe ? 1 : 0) - chain_committed))) {
     job->bgnd = npipe->bgnd;
   } else {
@@ -581,6 +649,9 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
        at -1 for the whole chain: none of its stages ever got a real
        pipe), in which case "in" still has to exist so the "is_last &&
        lastpipe" branch below has something to fd_close()+fd_filter(). */
+    if(is_last && pump_fd >= 0)
+      prevfd = pump_fd;
+
     if(prevfd >= 0 || (is_last && lastpipe && chain_committed > 0)) {
 
 #ifdef HAVE_ALLOCA
@@ -650,7 +721,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
     }
 
     if(is_last && lastpipe) {
-      if(chain_committed > 0) {
+      if(chain_committed > 0 && !chain_pumped) {
         /* the whole chain ahead of this stage already opened, before
            the loop: repurpose this (already fd_push()'d) stdin to
            read from its last link instead of a real pipe -- fd_close()
@@ -669,6 +740,10 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
          eval_pipeline_sequential() -- there is no disposable forked
          process to execve() into, only the one real, ongoing shell. */
       eval_tree(e, node, 0);
+
+      /* a pumped chain ran in a detached child: its statuses are not ours to read */
+      for(pf = 0; pf < chain_committed; pf++)
+        chain_st[pf] = sh->opts.pipefail && !chain_pumped ? filter_status(chain_ops[pf], chain_ctx[pf]) : 0;
     } else if(chained) {
       /* already opened in the pre-pass before this loop, and reads on
          demand through chain_link[]/the true last stage's fd_filter()
@@ -726,6 +801,29 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   if(pipes)
     alloc_free(pipes);
 
+  /* pipefail: the rightmost non-zero member status wins, else the usual
+     last-member status. members left to right: chained, forked, last */
+  if(sh->opts.pipefail && !npipe->bgnd) {
+    int worst = 0;
+
+    if(!lastpipe)
+      worst = WAIT_STATUS(status);
+    else
+      worst = sh->exitcode;
+
+    for(pf = job ? job->nproc : 0; !worst && pf-- > 0;)
+      if(job->procs[pf].status != -1)
+        worst = WAIT_STATUS(job->procs[pf].status);
+
+    for(pf = chain_committed; !worst && pf-- > 0;)
+      worst = chain_st[pf];
+
+    if(lastpipe)
+      sh->exitcode = worst;
+    else
+      status = worst << 8; /* WAIT_STATUS() undone below */
+  }
+
   if(job)
     job_free(job);
 
@@ -746,6 +844,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
     alloc_free(chain_link);
     alloc_free(chain_ctx);
     alloc_free(chain_ops);
+    alloc_free(chain_st);
 
     for(j = 0; j < chain_n; j++)
       pipeline_filter_argv_free(chain_argv[j]);
