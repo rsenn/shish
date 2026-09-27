@@ -80,8 +80,7 @@ touch_parse_stamp(const char* s, struct tm* tm) {
   }
 
   if(s[len] == '.') {
-    if(s[len + 1] < '0' || s[len + 1] > '9' || s[len + 2] < '0' || s[len + 2] > '9' ||
-       s[len + 3] != '\0')
+    if(s[len + 1] < '0' || s[len + 1] > '9' || s[len + 2] < '0' || s[len + 2] > '9' || s[len + 3] != '\0')
       return -1;
 
     sec = (s[len + 1] - '0') * 10 + (s[len + 2] - '0');

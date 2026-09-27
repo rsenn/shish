@@ -22,8 +22,8 @@ struct uniq {
   struct filter_in in;
   unsigned long nfields, nchars, count;
   unsigned c : 1, d : 1, u : 1, utf8 : 1, have : 1;
-  char* files[2];  /* the operands that are input files */
-  char* outname;   /* the second operand */
+  char* files[2]; /* the operands that are input files */
+  char* outname;  /* the second operand */
   stralloc prev, out;
 };
 
@@ -180,11 +180,13 @@ uniq_finish(void* ctx) {
   stralloc_free(&q->out);
 }
 
-const struct filter_ops uniq_ops = {.opts = "cduf:s:",
-                                    .size = sizeof(struct uniq),
-                                    .option = uniq_option,
-                                    .setup = uniq_setup,
-                                    .step = uniq_step,
-                                    .finish = uniq_finish,
-                                    .output = uniq_output};
+const struct filter_ops uniq_ops = {
+    .opts = "cduf:s:",
+    .size = sizeof(struct uniq),
+    .option = uniq_option,
+    .setup = uniq_setup,
+    .step = uniq_step,
+    .finish = uniq_finish,
+    .output = uniq_output,
+};
 FILTER_BUILTIN(uniq)

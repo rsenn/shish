@@ -16,19 +16,18 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-const char help_timeout[] =
-    "    Run COMMAND, killing it if it's still running after DURATION.\n"
-    "\n"
-    "    -k, --kill-after=DURATION   also send KILL this long after the\n"
-    "                                first signal, if COMMAND is still running\n"
-    "    -s, --signal=SIGNAL         signal to send on timeout (default TERM)\n"
-    "    -v, --verbose               report to stderr what signal was sent\n"
-    "    DURATION                    seconds to allow, fractional, with an\n"
-    "                                optional s/m/h/d suffix; 0 disables it\n"
-    "    COMMAND [ARG]...            program, builtin or function to run\n"
-    "\n"
-    "    exit status: 124 on timeout, 137 if KILL was needed, 125 usage error,\n"
-    "    126/127 not executable/not found, otherwise COMMAND's status\n";
+const char help_timeout[] = "    Run COMMAND, killing it if it's still running after DURATION.\n"
+                            "\n"
+                            "    -k, --kill-after=DURATION   also send KILL this long after the\n"
+                            "                                first signal, if COMMAND is still running\n"
+                            "    -s, --signal=SIGNAL         signal to send on timeout (default TERM)\n"
+                            "    -v, --verbose               report to stderr what signal was sent\n"
+                            "    DURATION                    seconds to allow, fractional, with an\n"
+                            "                                optional s/m/h/d suffix; 0 disables it\n"
+                            "    COMMAND [ARG]...            program, builtin or function to run\n"
+                            "\n"
+                            "    exit status: 124 on timeout, 137 if KILL was needed, 125 usage error,\n"
+                            "    126/127 not executable/not found, otherwise COMMAND's status\n";
 
 /* removes 'n' argv slots starting at 'i', shifting the rest down;
  * 'argc' is adjusted in place.

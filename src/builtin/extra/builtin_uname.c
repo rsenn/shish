@@ -23,8 +23,8 @@ const char help_uname[] = "    Print system information.\n"
 
 int
 builtin_uname(int argc, char* argv[]) {
-  int c, all = 0, machine = 0, nodename = 0, kern_release = 0, kern_name = 0, processor = 0,
-         kern_version = 0, hw_platform = 0, os_name = 0;
+  int c, all = 0, machine = 0, nodename = 0, kern_release = 0, kern_name = 0, processor = 0, kern_version = 0,
+         hw_platform = 0, os_name = 0;
   struct utsname unbuf;
 
   /* check options */
@@ -70,8 +70,8 @@ builtin_uname(int argc, char* argv[]) {
         {os_name, unbuf.sysname},
     };
     int i, n = 0,
-           any = all || kern_name || nodename || kern_release || kern_version || machine ||
-                 hw_platform || processor || os_name;
+           any = all || kern_name || nodename || kern_release || kern_version || machine || hw_platform || processor ||
+                 os_name;
 
     for(i = 0; i < (int)(sizeof(f) / sizeof(f[0])); i++) {
       if(!(f[i].on || (!any && i == 0)))

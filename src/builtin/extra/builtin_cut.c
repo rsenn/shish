@@ -21,7 +21,7 @@ const char help_cut[] = "    Select parts of each line.\n"
                         "\n"
                         "    list is N, N-M, N- or -M items separated by commas, counted from 1.\n";
 
-#define CUT_MAX ((size_t)-1)
+#define CUT_MAX ((size_t) - 1)
 
 struct range {
   size_t lo, hi; /* 1-based, inclusive; hi may be CUT_MAX */
@@ -31,7 +31,7 @@ struct cut {
   struct filter_in in;
   struct range* r; /* sorted, disjoint after setup */
   size_t nr, cap;
-  char mode;       /* 'b' 'c' 'f' */
+  char mode; /* 'b' 'c' 'f' */
   char delim[4];
   size_t dlen;
   unsigned s : 1, hasd : 1, utf8 : 1;
@@ -301,10 +301,12 @@ cut_finish(void* ctx) {
   stralloc_free(&c->out);
 }
 
-const struct filter_ops cut_ops = {.opts = "b:c:f:d:sn",
-                                   .size = sizeof(struct cut),
-                                   .option = cut_option,
-                                   .setup = cut_setup,
-                                   .step = cut_step,
-                                   .finish = cut_finish};
+const struct filter_ops cut_ops = {
+    .opts = "b:c:f:d:sn",
+    .size = sizeof(struct cut),
+    .option = cut_option,
+    .setup = cut_setup,
+    .step = cut_step,
+    .finish = cut_finish,
+};
 FILTER_BUILTIN(cut)

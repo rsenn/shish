@@ -4,12 +4,11 @@
 #include "../../../lib/str.h"
 
 /* ----------------------------------------------------------------------- */
-const char help_basename[] =
-    "    Strip directory components from a path.\n"
-    "\n"
-    "    path            print PATH's last component (after the final '/')\n"
-    "    suffix          also strip this suffix, unless it's the whole of\n"
-    "                    the resulting name (e.g. \"a.txt\" \".txt\" -> \"a\")\n";
+const char help_basename[] = "    Strip directory components from a path.\n"
+                             "\n"
+                             "    path            print PATH's last component (after the final '/')\n"
+                             "    suffix          also strip this suffix, unless it's the whole of\n"
+                             "                    the resulting name (e.g. \"a.txt\" \".txt\" -> \"a\")\n";
 
 int
 builtin_basename(int argc, char* argv[]) {

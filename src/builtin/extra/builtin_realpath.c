@@ -6,14 +6,13 @@
 #include "../../../lib/str.h"
 #include "../../../lib/byte.h"
 
-const char help_realpath[] =
-    "    Print the resolved absolute pathname.\n"
-    "\n"
-    "    -L                     don't resolve symbolic links (same as -s)\n"
-    "    -P                     resolve symbolic links (default)\n"
-    "    -s                     don't resolve symbolic links (short for --strip)\n"
-    "    --relative-to=DIR      print the result relative to DIR\n"
-    "    file                   path to resolve\n";
+const char help_realpath[] = "    Print the resolved absolute pathname.\n"
+                             "\n"
+                             "    -L                     don't resolve symbolic links (same as -s)\n"
+                             "    -P                     resolve symbolic links (default)\n"
+                             "    -s                     don't resolve symbolic links (short for --strip)\n"
+                             "    --relative-to=DIR      print the result relative to DIR\n"
+                             "    file                   path to resolve\n";
 
 /* removes 'n' argv slots starting at 'i', shifting the rest (and the
  * NULL terminator) down; 'argc' is adjusted in place.

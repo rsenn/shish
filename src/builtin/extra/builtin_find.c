@@ -17,8 +17,7 @@ struct ancestor {
   struct ancestor* next;
 };
 
-static int
-eval_expr(char* argv[], int* i, int end, const char* path, struct stat* st, int* has_action);
+static int eval_expr(char* argv[], int* i, int end, const char* path, struct stat* st, int* has_action);
 
 static int
 eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, int* has_action) {
@@ -109,12 +108,7 @@ eval_expr(char* argv[], int* i, int end, const char* path, struct stat* st, int*
 }
 
 static int
-find_recursive(char* argv[],
-               int expr_start,
-               int expr_end,
-               stralloc* path,
-               int deref_links,
-               struct ancestor* anc) {
+find_recursive(char* argv[], int expr_start, int expr_end, stralloc* path, int deref_links, struct ancestor* anc) {
   struct stat st;
   int has_action = 0;
   int i;

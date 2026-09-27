@@ -131,8 +131,7 @@ chmod_path(char* argv[],
 
   if(!toplevel && S_ISLNK(lst.st_mode)) {
     if(verbose) {
-      buffer_putm_internal(
-          fd_out->w, "neither symbolic link '", path->s, "' nor referent has been changed", 0);
+      buffer_putm_internal(fd_out->w, "neither symbolic link '", path->s, "' nor referent has been changed", 0);
       buffer_putnlflush(fd_out->w);
     }
     return 0;
@@ -196,17 +195,16 @@ chmod_path(char* argv[],
 
 /* output stuff
  * ----------------------------------------------------------------------- */
-const char help_chmod[] =
-    "    Change file permissions.\n"
-    "\n"
-    "    -v              print a line for each file whose mode changed\n"
-    "    -c              like -v, but only for files whose mode actually changed\n"
-    "    -f              suppress most error messages\n"
-    "    -R              change files and directories recursively\n"
-    "    mode            octal number, or symbolic \"[ugoa]+-=[rwxX]\",\n"
-    "                    comma-separated clauses applied to each file's\n"
-    "                    current mode (e.g. \"u+rwx,go-w\")\n"
-    "    file            file(s) to change the mode of\n";
+const char help_chmod[] = "    Change file permissions.\n"
+                          "\n"
+                          "    -v              print a line for each file whose mode changed\n"
+                          "    -c              like -v, but only for files whose mode actually changed\n"
+                          "    -f              suppress most error messages\n"
+                          "    -R              change files and directories recursively\n"
+                          "    mode            octal number, or symbolic \"[ugoa]+-=[rwxX]\",\n"
+                          "                    comma-separated clauses applied to each file's\n"
+                          "                    current mode (e.g. \"u+rwx,go-w\")\n"
+                          "    file            file(s) to change the mode of\n";
 
 int
 builtin_chmod(int argc, char* argv[]) {

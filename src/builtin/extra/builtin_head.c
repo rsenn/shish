@@ -128,5 +128,12 @@ head_finish(void* ctx) {
   stralloc_free(&((struct head*)ctx)->out);
 }
 
-const struct filter_ops head_ops = {.opts = "n:c:qv0123456789", .size = sizeof(struct head), .option = head_option, .setup = head_setup, .step = head_step, .finish = head_finish};
+const struct filter_ops head_ops = {
+    .opts = "n:c:qv0123456789",
+    .size = sizeof(struct head),
+    .option = head_option,
+    .setup = head_setup,
+    .step = head_step,
+    .finish = head_finish,
+};
 FILTER_BUILTIN(head)
