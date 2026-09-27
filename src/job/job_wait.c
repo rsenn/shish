@@ -157,6 +157,15 @@ job_wait(struct job* j, pid_t pid, int* status) {
       }
     }
 
+    /* pipefail: the rightmost member that failed, not just the last one */
+    if(j->pipefail && !job_stopped(j)) {
+      for(i = j->nproc; i-- > 0;)
+        if(j->procs[i].status != -1 && WAIT_STATUS(j->procs[i].status) != 0) {
+          *status = j->procs[i].status;
+          break;
+        }
+    }
+
     if(sh->opts.monitor && job_stopped(j)) {
       /* a process in this job just stopped rather than exited -- tell
          the user and leave the job in job_list (job_done() below

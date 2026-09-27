@@ -556,7 +556,7 @@ assert_equal "1" "$X" "\"\$?\" after a 3-stage pipeline must still be the last s
 X=$(false | false | true; echo $?)
 assert_equal "0" "$X" "\"\$?\" after a 3-stage pipeline ending in success must be 0"
 
-X=$(true | false & wait; echo $?)
+X=$(true | false & echo $?; wait)
 assert_equal "0" "$X" "backgrounding a pipeline (\"cmd1 | cmd2 &\") must itself report success as \"\$?\", independent of what it later exits with"
 
 ## fixes/47: exec_hash()'s command-search cache remembered a name's
@@ -5279,6 +5279,15 @@ for a in gzip:gz bzip2:bz2 xz:xz zstd:zst lz:lz; do
   assert_equal "b a" "$("$SHISH_SELF" -c "cd $TESTDIR && $n -dc g.$x" | tr '\n' ' ' | sed 's/ $//')" "$n output decompresses again"
   rm -f "$TESTDIR"/g "$TESTDIR"/g.*
 done
+rm -rf "$TESTDIR"
+
+## a backgrounded pipeline ("a | b &") ran in a subshell that only forked the
+## members and exited: "wait" returned at once, before the members finished,
+## and their status was lost.
+TESTDIR=$(mktemp -d)
+"$SHISH_SELF" -c "sh -c 'sleep 0.3; echo late > $TESTDIR/out' | cat >/dev/null & wait"
+assert_equal "late" "$(cat "$TESTDIR/out" 2>/dev/null)" "wait waits for every member of a backgrounded pipeline"
+assert_equal "9" "$("$SHISH_SELF" -c 'sh -c "exit 7" | sh -c "exit 9" & wait $!; echo $?')" "wait reports the last member's status of a backgrounded pipeline"
 rm -rf "$TESTDIR"
 
 summary

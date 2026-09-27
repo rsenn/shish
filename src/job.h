@@ -48,6 +48,8 @@ struct job {
   uint8_t nproc;
   uint8_t bgnd;      /* was this job backgrounded ("cmd &")? controls whether
                         job_wait() prints a "[N]+ Done ..." banner for it. */
+  uint8_t pipefail;  /* set -o pipefail was on when it started: job_wait() reports
+                        the rightmost non-zero member status */
   uint8_t announced; /* has a "Stopped" banner been printed for this stop
                         yet? cleared by job_resume() so the next stop is
                         announced again. */

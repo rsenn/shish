@@ -138,55 +138,90 @@ pipeline_last_reads_in_process(union node* node) {
 /* feeds the chain's last link to an external last command: a detached
  * child (double fork, so nothing is left to reap) drains it into a fresh
  * pipe whose read end this returns, -1 on failure. either way the parent is
- * done with ctx afterwards; the child owns its copy until it exits.
+ * done with the last ctx afterwards; the child owns its copy until it exits.
+ *
+ *   const struct filter_ops** ops   the n opened stages, first to last
+ *   void**                    ctx   their contexts
+ *   int*                      stfd  pipefail only: read end of a pipe the child fills
+ *                                   with one status byte per stage before it closes
+ *                                   the data pipe (NULL: not wanted)
  * ----------------------------------------------------------------------- */
 static int
-pipeline_chain_pump(const struct filter_ops* ops, void* ctx) {
-  int p[2];
+pipeline_chain_pump(const struct filter_ops** ops, void** ctx, int n, int* stfd) {
+  int p[2], sp[2] = {-1, -1};
   pid_t pid;
   buffer b;
 
   if(pipe(p) == -1) {
-    filter_close(ops, ctx);
+    filter_close(ops[n - 1], ctx[n - 1]);
     return -1;
   }
 
-  buffer_filter_init(&b, ops, ctx);
+  if(stfd && pipe(sp) == -1)
+    sp[0] = sp[1] = -1;
+
+  buffer_filter_init(&b, ops[n - 1], ctx[n - 1]);
 
   if((pid = fork()) == -1) {
     close(p[0]);
     close(p[1]);
+
+    if(sp[0] != -1) {
+      close(sp[0]);
+      close(sp[1]);
+    }
+
     b.deinit(&b);
     return -1;
   }
 
   if(pid == 0) {
-    ssize_t n;
+    ssize_t r;
+    int i;
 
     if(fork() != 0)
       _exit(0);
 
     close(p[0]);
 
-    while((n = buffer_feed(&b)) > 0) {
+    if(sp[0] != -1)
+      close(sp[0]);
+
+    while((r = buffer_feed(&b)) > 0) {
       const char* x = buffer_PEEK(&b);
       ssize_t w;
 
-      while(n > 0 && (w = write(p[1], x, (size_t)n)) > 0) {
+      while(r > 0 && (w = write(p[1], x, (size_t)r)) > 0) {
         x += w;
-        n -= w;
+        r -= w;
       }
 
-      if(n > 0)
+      if(r > 0)
         break; /* the reader is gone */
 
       b.p = b.n;
+    }
+
+    /* statuses first: the data pipe only closes at exit, and that EOF is what
+       lets the last command (and so the parent) finish */
+    for(i = 0; sp[1] != -1 && i < n; i++) {
+      unsigned char st = (unsigned char)filter_status(ops[i], ctx[i]);
+
+      if(write(sp[1], &st, 1) != 1)
+        break;
     }
 
     _exit(0);
   }
 
   close(p[1]);
+
+  if(sp[1] != -1)
+    close(sp[1]);
+
+  if(stfd)
+    *stfd = sp[0];
+
   waitpid(pid, NULL, 0);
   b.deinit(&b);
   return p[0];
@@ -523,7 +558,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   buffer* chain_link = NULL;
   int chain_committed = 0;
   int pf;
-  int chain_pumped = 0, pump_fd = -1;
+  int chain_pumped = 0, pump_fd = -1, pump_stfd = -1;
   int* chain_st = NULL; /* pipefail: each opened stage's status, read while it is still open */
   int stage;
 
@@ -620,11 +655,12 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
      pump the last link into a real pipe for it instead */
   if(chain_committed > 0 && !pipeline_last_reads_in_process(npipe->cmds)) {
     chain_pumped = 1;
-    pump_fd = pipeline_chain_pump(chain_ops[chain_committed - 1], chain_ctx[chain_committed - 1]);
+    pump_fd = pipeline_chain_pump(chain_ops, chain_ctx, chain_committed, sh->opts.pipefail ? &pump_stfd : NULL);
   }
 
   if((job = job_new(npipe->ncmd - (lastpipe ? 1 : 0) - chain_committed))) {
     job->bgnd = npipe->bgnd;
+    job->pipefail = sh->opts.pipefail;
   } else {
     buffer_puts(fd_err->w, "no job control");
     buffer_putnlflush(fd_err->w);
@@ -741,9 +777,24 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
          process to execve() into, only the one real, ongoing shell. */
       eval_tree(e, node, 0);
 
-      /* a pumped chain ran in a detached child: its statuses are not ours to read */
-      for(pf = 0; pf < chain_committed; pf++)
-        chain_st[pf] = sh->opts.pipefail && !chain_pumped ? filter_status(chain_ops[pf], chain_ctx[pf]) : 0;
+      /* a pumped chain ran in a detached child: it sends its statuses back
+         through pump_stfd (missing ones, e.g. the last command quit early, stay 0) */
+      for(pf = 0; pf < chain_committed; pf++) {
+        unsigned char st;
+
+        chain_st[pf] = 0;
+
+        if(!sh->opts.pipefail)
+          continue;
+
+        if(!chain_pumped)
+          chain_st[pf] = filter_status(chain_ops[pf], chain_ctx[pf]);
+        else if(pump_stfd != -1 && read(pump_stfd, &st, 1) == 1)
+          chain_st[pf] = st;
+      }
+
+      if(pump_stfd != -1)
+        close(pump_stfd);
     } else if(chained) {
       /* already opened in the pre-pass before this loop, and reads on
          demand through chain_link[]/the true last stage's fd_filter()
@@ -801,27 +852,19 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   if(pipes)
     alloc_free(pipes);
 
-  /* pipefail: the rightmost non-zero member status wins, else the usual
-     last-member status. members left to right: chained, forked, last */
-  if(sh->opts.pipefail && !npipe->bgnd) {
-    int worst = 0;
+  /* pipefail: job_wait() already picked the rightmost non-zero forked member.
+     with lastpipe the true last member (sh->exitcode) is checked first, then
+     the forked ones, then the chained ones -- members from right to left */
+  if(sh->opts.pipefail && lastpipe && !npipe->bgnd) {
+    int worst = sh->exitcode;
 
-    if(!lastpipe)
+    if(!worst && job && job->nproc)
       worst = WAIT_STATUS(status);
-    else
-      worst = sh->exitcode;
-
-    for(pf = job ? job->nproc : 0; !worst && pf-- > 0;)
-      if(job->procs[pf].status != -1)
-        worst = WAIT_STATUS(job->procs[pf].status);
 
     for(pf = chain_committed; !worst && pf-- > 0;)
       worst = chain_st[pf];
 
-    if(lastpipe)
-      sh->exitcode = worst;
-    else
-      status = worst << 8; /* WAIT_STATUS() undone below */
+    sh->exitcode = worst;
   }
 
   if(job)

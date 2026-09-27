@@ -141,13 +141,12 @@ Done:
   nothing buffered): an mmapped file goes out in full buffers, a slow pipe or a
   terminal stays live (`cat` on 4 MB: 4 049 writes instead of one per line);
 - `set -o pipefail` (no letter): the rightmost non-zero member status, for forked and
-  chained members. `filter_ops.status` now feeds it. Not collected: members of a
-  chain that ran in a pump child, and backgrounded pipelines.
+  chained members, including a chain that ran in a pump child (it sends one status byte
+  per stage back through a pipe before it closes the data pipe; a last command that quits
+  early leaves them 0), and for backgrounded pipelines (`job->pipefail`, applied in
+  `job_wait()`, so `wait $!` sees it). `filter_ops.status` feeds it.
 
 In order:
 
 1. **Filters still on the TODO list** (`head uniq paste cut tr nl tail`; none exists as a
    builtin yet): each should be one `filter_ops` plus a step function.
-2. **Pump statuses.** Return the pump child's chain statuses to the parent (a pipe or the
-   exit code) so `pipefail` sees chained members feeding an external command.
-3. **`pipefail` for `cmd | cmd &`,** which reports the last member only.

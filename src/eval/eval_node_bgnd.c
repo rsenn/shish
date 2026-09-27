@@ -31,6 +31,10 @@ eval_node_bgnd(struct eval* e, union node* node) {
   TRACE(TRACE_EVAL, "background", trace_kind("kind", node->id), trace_int("pid", pid));
 
   if(!pid) {
+    /* this child is the background job: run the node as a foreground command
+       inside it, or a pipeline just forks its members and exits, orphaning
+       them ("wait" returns at once, their status is lost) */
+    node->ncmd.bgnd = 0;
     ret = eval_node(e, node);
     exit(ret);
   }
