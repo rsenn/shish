@@ -7,9 +7,9 @@
 #include "../../../lib/alloc.h"
 
 const char help_uncompress[] = "    Uncompress and concatenate files to standard output.\n"
-                         "\n"
-                         "    -f              copy input that is not compressed unchanged\n"
-                         "    file            compressed file to read; '-' or omitted means stdin\n";
+                               "\n"
+                               "    -f              copy input that is not compressed unchanged\n"
+                               "    file            compressed file to read; '-' or omitted means stdin\n";
 
 struct uncompress_ctx {
   struct filter_in in;
@@ -117,13 +117,15 @@ uncompress_finish(void* ctx) {
   }
 }
 
-const struct filter_ops uncompress_ops = {.opts = "f",
-                                          .size = sizeof(struct uncompress_ctx),
-                                          .option = uncompress_option,
-                                          .setup = uncompress_setup,
-                                          .step = uncompress_step,
-                                          .status = uncompress_status,
-                                          .finish = uncompress_finish};
+const struct filter_ops uncompress_ops = {
+    .opts = "f",
+    .size = sizeof(struct uncompress_ctx),
+    .option = uncompress_option,
+    .setup = uncompress_setup,
+    .step = uncompress_step,
+    .status = uncompress_status,
+    .finish = uncompress_finish,
+};
 const struct builtin_filter uncompress_filter = {&uncompress_ops};
 
 /* runs one uncompress over argv, writing the uncompressed data to out */

@@ -14,14 +14,14 @@
 #include "../../../lib/open.h"
 
 const char help_compress[] = "    Compress or decompress files; the format follows the command name\n"
-                         "    (gzip, bzip2, lbzip2, lz, xz, zstd; default gzip).\n"
-                         "\n"
-                         "    -c              write on standard output, keep original files unchanged\n"
-                         "    -d              decompress\n"
-                         "    -f              force overwrite of output file and compress links\n"
-                         "    -k              keep (don't delete) input files\n"
-                         "    -1..-9          compression level (1 = fastest, 9 = best)\n"
-                         "    file            file to process; '-' or omitted means stdin\n";
+                             "    (gzip, bzip2, lbzip2, lz, xz, zstd; default gzip).\n"
+                             "\n"
+                             "    -c              write on standard output, keep original files unchanged\n"
+                             "    -d              decompress\n"
+                             "    -f              force overwrite of output file and compress links\n"
+                             "    -k              keep (don't delete) input files\n"
+                             "    -1..-9          compression level (1 = fastest, 9 = best)\n"
+                             "    file            file to process; '-' or omitted means stdin\n";
 
 /* compressed bytes produced by libarchive, waiting to be pulled */
 struct raw_buf {
@@ -247,13 +247,15 @@ compress_finish(void* ctx) {
   alloc_free(c->raw.data);
 }
 
-const struct filter_ops compress_ops = {.opts = "cdfhk123456789",
-                                        .size = sizeof(struct compress_ctx),
-                                        .option = compress_option,
-                                        .setup = compress_setup,
-                                        .step = compress_step,
-                                        .status = compress_status,
-                                        .finish = compress_finish};
+const struct filter_ops compress_ops = {
+    .opts = "cdfhk123456789",
+    .size = sizeof(struct compress_ctx),
+    .option = compress_option,
+    .setup = compress_setup,
+    .step = compress_step,
+    .status = compress_status,
+    .finish = compress_finish,
+};
 const struct builtin_filter compress_filter = {&compress_ops};
 
 /* compresses src into src + suffix or, with decompress set, src minus the suffix into dst;
@@ -308,7 +310,8 @@ compress_file(struct compress_ctx* c, char* argv[], const char* src) {
     builtin_error(argv, (char*)src);
     err = 1;
   } else {
-    if(!(a = compress_writer_new(c->algo, c->compression_level)) || archive_write_open_fd(a, fd) != ARCHIVE_OK || compress_start(a) < 0)
+    if(!(a = compress_writer_new(c->algo, c->compression_level)) || archive_write_open_fd(a, fd) != ARCHIVE_OK ||
+       compress_start(a) < 0)
       err = 1;
 
     while(!err && (n = buffer_feed(&sb)) > 0) {
@@ -352,7 +355,8 @@ compress_stdin(struct compress_ctx* c, char* argv[]) {
   byte_zero(&sc, sizeof(sc));
   filter_in_init(&sc.in, argv, NULL, fd_in->r);
 
-  if(!(sc.a = compress_writer_new(c->algo, c->compression_level)) || archive_write_open(sc.a, &sc, NULL, compress_archive_writer, NULL) != ARCHIVE_OK)
+  if(!(sc.a = compress_writer_new(c->algo, c->compression_level)) ||
+     archive_write_open(sc.a, &sc, NULL, compress_archive_writer, NULL) != ARCHIVE_OK)
     return -1;
 
   filter_drain(compress_step, &sc, fd_out->w);
