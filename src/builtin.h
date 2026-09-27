@@ -100,6 +100,7 @@ int builtin_wc(int argc, char* argv[]);
 int builtin_which(int argc, char* argv[]);
 int builtin_xargs(int argc, char* argv[]);
 int builtin_zcat(int argc, char* argv[]);
+int builtin_zcat_to(int argc, char* argv[], buffer* out);
 int builtin_gzip(int argc, char* argv[]);
 
 /* builtin help text, one string per builtin_<name>() implementation

@@ -4,6 +4,7 @@
 struct fd_filter_state {
   const struct filter_ops* ops;
   void* ctx;
+  char* own; /* the buffer's real storage; b->x may point at a step unit */
 };
 
 static ssize_t
@@ -17,14 +18,34 @@ fd_filter_op(int fd, void* buf, size_t len, void* arg) {
   struct fd_filter_state* st = b->cookie;
 
   (void)fd;
-  return st->ops->read(-1, buf, len, st->ctx);
+  (void)buf;
+  b->x = st->own;
+
+  if(st->ops->step) {
+    const char* unit;
+    size_t n;
+
+    /* adopt the unit as the buffer window: consumers copy out of it once */
+    do
+      if(!st->ops->step(st->ctx, &unit, &n))
+        return 0;
+    while(!n);
+
+    b->x = (char*)unit;
+    return (ssize_t)n;
+  }
+
+  return st->ops->read(-1, st->own, len, st->ctx);
 }
 
 static void
 fd_filter_deinit(buffer* b) {
   struct fd_filter_state* st = b->cookie;
+  char* own = b->x;
 
   if(st) {
+    own = st->own;
+
     if(st->ops->close)
       st->ops->close(st->ctx);
 
@@ -32,7 +53,7 @@ fd_filter_deinit(buffer* b) {
     alloc_free(st);
   }
 
-  alloc_free(b->x);
+  alloc_free(own);
   b->x = NULL;
   b->a = 0;
 }
@@ -51,6 +72,7 @@ buffer_filter_init(buffer* b, const struct filter_ops* ops, void* ctx) {
 
   st->ops = ops;
   st->ctx = ctx;
+  st->own = buf;
 
   buffer_init(b, &fd_filter_op, -1, buf, FD_BUFSIZE);
   b->cookie = st;

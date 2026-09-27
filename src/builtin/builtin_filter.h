@@ -26,6 +26,10 @@
  *           up to len bytes of buf, returns the count, or 0 at EOF.
  *           A short return is fine -- the caller's own buffer layer
  *           already re-invokes read() as needed (lib/buffer.h).
+ *   step    optional, replaces read: yields the next unit as a pointer
+ *           that stays valid until the next step() call (see filter_step_fn).
+ *           the consumer's buffer then points straight at the unit, no
+ *           copy; leave read NULL when step is set.
  *   status  the builtin's real exit status, valid once read() has
  *           returned 0. Meaningless before that (a chain member that
  *           never reaches EOF -- e.g. its consumer stopped early --
@@ -34,11 +38,14 @@
  *           file, a compiled pattern, ...). Always called exactly
  *           once, whether or not read() ever reached EOF.
  * ----------------------------------------------------------------------- */
+typedef int filter_step_fn(void* ctx, const char** unit, size_t* len);
+
 struct filter_ops {
   void* (*open)(int argc, char* argv[], buffer* upstream);
   ssize_t (*read)(int fd, void* buf, size_t len, void* arg);
   int (*status)(void* ctx);
   void (*close)(void* ctx);
+  filter_step_fn* step;
 };
 
 /* one indirection so struct builtin_cmd doesn't have to change shape
@@ -86,20 +93,26 @@ const char* filter_in_name(const struct filter_in* in); /* operand being read */
  * Returns the number of bytes read, 0 when all sources are done or negative on error. */
 ssize_t filter_in_get(struct filter_in* in, char* buf, size_t len, const char* delims, size_t ndelims);
 
+/* zero-copy variant of filter_in_get(): points *p at the bytes buffered in the
+ * active source and returns how many (0 when all sources are done, <0 on error).
+ * They stay valid until filter_in_skip(), which consumes n of them. */
+ssize_t filter_in_peek(struct filter_in* in, const char** p);
+void filter_in_skip(struct filter_in* in, size_t n);
+
 /* frees up input tracking structure */
 void filter_in_close(struct filter_in* in);
 
 /* output side: turns "one formatted unit per step" into buffer_op_read
- * calls of any size; the part of a unit that did not fit waits in pend. */
+ * calls of any size; the part of a unit that did not fit stays in place,
+ * so a step's unit must stay valid until its next call. */
 struct filter_out {
-  char pend[1400];
-  size_t off, len;
+  const char* pend; /* unread rest of the last unit */
+  size_t len;
 };
 
 /* step function: invoked to fetch the next unit of data (line, block) from the filter context.
- * returns 1 on success with a pointer to the unit and its length, or 0 on EOF or error. */
-typedef int filter_step_fn(void* ctx, const char** unit, size_t* len);
-
+ * returns 1 on success with a pointer to the unit and its length, or 0 on EOF or error.
+ * the unit must stay valid until the next call. */
 /* reads up to len bytes into buf from the filter's output, leveraging a custom
  * step function to generate source units. overflow bytes are handled via the filter_out structure. */
 ssize_t filter_out_read(struct filter_out* out, void* buf, size_t len, filter_step_fn* step, void* ctx);

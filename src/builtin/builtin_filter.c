@@ -141,8 +141,38 @@ filter_in_get(struct filter_in* in, char* buf, size_t len, const char* delims, s
   }
 }
 
+/* zero-copy read: expose the active source's buffered bytes in place,
+ * cycling file operands on eof like filter_in_get().
+ * ----------------------------------------------------------------------- */
+ssize_t
+filter_in_peek(struct filter_in* in, const char** p) {
+  for(;;) {
+    ssize_t r;
+
+    if(!in->cur && !filter_in_next(in))
+      return 0;
+
+    if((r = buffer_feed(in->cur)) > 0) {
+      *p = buffer_PEEK(in->cur);
+      return r;
+    }
+
+    if(r < 0)
+      in->had_error = 1;
+
+    filter_in_close(in);
+  }
+}
+
+/* consume n bytes previously exposed by filter_in_peek() */
+void
+filter_in_skip(struct filter_in* in, size_t n) {
+  if(in->cur)
+    buffer_SEEK(in->cur, n);
+}
+
 /* turn "one formatted unit per step" into buffer_op_read calls of any size,
- * caching any overflow of a unit that did not fit into the pending buffer.
+ * keeping any overflow of a unit that did not fit as a view into the step's buffer.
  * ----------------------------------------------------------------------- */
 ssize_t
 filter_out_read(struct filter_out* out, void* buf, size_t len, filter_step_fn* step, void* ctx) {
@@ -152,8 +182,8 @@ filter_out_read(struct filter_out* out, void* buf, size_t len, filter_step_fn* s
   /* flush out any leftover bytes from the previous step first */
   if(out->len) {
     take = out->len < len ? out->len : len;
-    byte_copy(p, take, out->pend + out->off);
-    out->off += take;
+    byte_copy(p, take, out->pend);
+    out->pend += take;
     out->len -= take;
     n = take;
   }
@@ -172,9 +202,8 @@ filter_out_read(struct filter_out* out, void* buf, size_t len, filter_step_fn* s
 
     /* save overflow if the unit was too large to fit entirely */
     if(take < ul) {
+      out->pend = unit + take;
       out->len = ul - take;
-      out->off = 0;
-      byte_copy(out->pend, out->len, unit + take);
       break;
     }
   }

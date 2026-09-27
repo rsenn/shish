@@ -5235,4 +5235,31 @@ assert_equal 127 "$?" "command of a missing program exits 127"
 assert_equal 0 "$?" "command . of a missing file does not kill the shell"
 assert_equal "1" "$("$SHISH_SELF" -c 'PATH=; command -pv cat >/dev/null && echo 1')" "command -p finds standard utilities with an empty PATH"
 
+## gzip -d copied its input unchanged, and file mode compressed again
+## (f.gz.gz); a failed run unlinked the source although the output was
+## bad; zcat of empty input called itself an invalid option, passed
+## non-gzip input through silently; filter_out kept only 1400 bytes of a
+## unit that did not fit the consumer's buffer (overflow).
+TESTDIR=$(mktemp -d)
+assert_equal "abc" "$("$SHISH_SELF" -c 'printf abc | gzip | gzip -d')" "gzip -d decompresses stdin"
+printf 'hello\n' >"$TESTDIR/f"
+"$SHISH_SELF" -c "cd $TESTDIR && gzip f && test ! -e f && gzip -d f.gz"
+assert_equal "hello" "$(cat "$TESTDIR/f")" "gzip file then gzip -d file restores the original"
+assert_equal "1" "$(ls "$TESTDIR" | wc -l | tr -d ' ')" "gzip -d leaves no .gz behind"
+printf 'not gzip' >"$TESTDIR/bad.gz"
+"$SHISH_SELF" -c "gzip -d $TESTDIR/bad.gz" >/dev/null 2>&1
+assert_equal "1" "$?" "gzip -d of a corrupt file fails"
+assert_equal "1" "$(ls "$TESTDIR/bad.gz" "$TESTDIR/bad" 2>/dev/null | wc -l | tr -d ' ')" "a failed gzip -d keeps the source and leaves no output"
+: >"$TESTDIR/empty"
+assert_equal "0" "$("$SHISH_SELF" -c "zcat $TESTDIR/empty" 2>&1 | grep -c 'invalid option')" "zcat of empty input is a data error, not an invalid option"
+"$SHISH_SELF" -c 'echo plain | zcat' >/dev/null 2>&1
+assert_equal "1" "$?" "zcat refuses input that is not compressed"
+assert_equal "plain" "$("$SHISH_SELF" -c 'echo plain | zcat -f')" "zcat -f copies input that is not compressed"
+i=0
+: >"$TESTDIR/big"
+while [ $i -lt 3000 ]; do echo "line $i xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" >>"$TESTDIR/big"; i=$((i + 1)); done
+assert_equal "$(wc -c <"$TESTDIR/big" | tr -d ' ')" "$("$SHISH_SELF" -c "gzip < $TESTDIR/big | zcat | wc -c" | tr -d ' ')" "a chained gzip | zcat | wc keeps every byte"
+assert_equal "3000" "$("$SHISH_SELF" -c "gzip < $TESTDIR/big | zcat | grep -c line")" "a chained zcat unit larger than the consumer buffer is not cut"
+rm -rf "$TESTDIR"
+
 summary

@@ -52,15 +52,13 @@ raw_buf_push(struct raw_buf* rb, const void* buf, size_t len) {
   return 0;
 }
 
-/* hands out at most 1024 bytes: filter_out.pend only holds 1400 */
+/* hands out everything queued; stays valid until the next push */
 static int
 raw_buf_pull(struct raw_buf* rb, const char** unit, size_t* len) {
   if(rb->off < rb->len) {
-    size_t n = rb->len - rb->off;
-
     *unit = rb->data + rb->off;
-    *len = n < 1024 ? n : 1024;
-    rb->off += *len;
+    *len = rb->len - rb->off;
+    rb->off = rb->len;
     return 1;
   }
 
@@ -69,8 +67,7 @@ raw_buf_pull(struct raw_buf* rb, const char** unit, size_t* len) {
 
 struct gzip_ctx {
   struct filter_in in;
-  struct filter_out out;
-  struct archive *a, *ar;
+  struct archive* a;
   unsigned had_error : 1, decompress : 1, to_stdout : 1, force : 1, keep : 1, started : 1, finished : 1;
   unsigned compression_level : 4;
   struct raw_buf raw;
@@ -103,9 +100,9 @@ gzip_start(struct archive* a) {
 static int
 gzip_step(void* arg, const char** unit, size_t* len) {
   struct gzip_ctx* c = arg;
-  char read_buf[4096];
 
   for(;;) {
+    const char* p;
     ssize_t n;
 
     if(raw_buf_pull(&c->raw, unit, len))
@@ -123,13 +120,17 @@ gzip_step(void* arg, const char** unit, size_t* len) {
       c->started = 1;
     }
 
-    if((n = filter_in_get(&c->in, read_buf, sizeof(read_buf), "", 0)) < 0) {
+    if((n = filter_in_peek(&c->in, &p)) < 0) {
       c->had_error = 1;
       return 0;
     }
 
     if(n > 0) {
-      if(archive_write_data(c->a, read_buf, n) < 0) {
+      int w = archive_write_data(c->a, p, n);
+
+      filter_in_skip(&c->in, n);
+
+      if(w < 0) {
         c->had_error = 1;
         return 0;
       }
@@ -193,14 +194,8 @@ gzip_init(struct gzip_ctx* c, int argc, char* argv[], buffer* upstream) {
 
   filter_in_init(&c->in, argv, argv[shell_optind] ? argv + shell_optind : NULL, upstream);
 
-  if(c->decompress) {
-    if(!(c->ar = archive_read_new()))
-      return -1;
-
-    archive_read_support_filter_gzip(c->ar);
-    archive_read_support_format_raw(c->ar);
+  if(c->decompress)
     return 0;
-  }
 
   if(!(c->a = gzip_writer_new(c->compression_level)))
     return -1;
@@ -212,6 +207,117 @@ gzip_init(struct gzip_ctx* c, int argc, char* argv[], buffer* upstream) {
 
   return 0;
 }
+/* compresses src into dst.gz or, with decompress set, dst into src minus ".gz";
+ * a failed run removes the partial output and keeps the source. -1 on error */
+static int
+gzip_file(struct gzip_ctx* c, char* argv[], const char* src) {
+  char dst[512];
+  size_t len = str_len(src);
+  buffer sb;
+  char rbuf[4096];
+  struct archive* a = NULL;
+  int fd, err = 0;
+  ssize_t n = 0;
+
+  if(c->decompress) {
+    if(len < 4 || len >= sizeof(dst) || !str_equal(src + len - 3, ".gz")) {
+      builtin_errmsg(argv, (char*)src, "unknown suffix -- ignored");
+      return -1;
+    }
+
+    byte_copy(dst, len - 3, src);
+    dst[len - 3] = '\0';
+  } else {
+    if(len + 3 >= sizeof(dst))
+      return -1;
+
+    str_copy(dst, src);
+    str_copy(dst + len, ".gz");
+  }
+
+  if(!c->force && access(dst, F_OK) == 0) {
+    builtin_errmsg(argv, dst, "already exists");
+    return -1;
+  }
+
+  if((fd = open_trunc(dst)) == -1) {
+    builtin_error(argv, dst);
+    return -1;
+  }
+
+  if(c->decompress) {
+    char* zargv[3] = {argv[0], (char*)src, NULL};
+    buffer ob;
+    char obuf[4096];
+
+    buffer_init(&ob, &buffer_op_write, fd, obuf, sizeof(obuf));
+    err = builtin_zcat_to(2, zargv, &ob) != 0;
+    buffer_flush(&ob);
+  } else if(filter_open_file(&sb, rbuf, sizeof(rbuf), src) == -1) {
+    builtin_error(argv, (char*)src);
+    err = 1;
+  } else {
+    if(!(a = gzip_writer_new(c->compression_level)) || archive_write_open_fd(a, fd) != ARCHIVE_OK || gzip_start(a) < 0)
+      err = 1;
+
+    while(!err && (n = buffer_feed(&sb)) > 0) {
+      if(archive_write_data(a, buffer_PEEK(&sb), n) < 0)
+        err = 1;
+
+      buffer_SEEK(&sb, n);
+    }
+
+    if(n < 0)
+      err = 1;
+
+    if(a) {
+      if(archive_write_close(a) != ARCHIVE_OK)
+        err = 1;
+      archive_write_free(a);
+    }
+
+    buffer_close(&sb);
+  }
+
+  close(fd);
+
+  if(err) {
+    unlink(dst);
+    return -1;
+  }
+
+  if(!c->keep)
+    unlink(src);
+
+  return 0;
+}
+
+/* stdin -> stdout for a "-" operand, independent of the file operand list */
+static int
+gzip_stdin(struct gzip_ctx* c, char* argv[]) {
+  struct gzip_ctx sc;
+  size_t n;
+  const char* x;
+  int ret;
+
+  byte_zero(&sc, sizeof(sc));
+  filter_in_init(&sc.in, argv, NULL, fd_in->r);
+
+  if(!(sc.a = gzip_writer_new(c->compression_level)) || archive_write_open(sc.a, &sc, NULL, gzip_archive_writer, NULL) != ARCHIVE_OK)
+    return -1;
+
+  while(gzip_step(&sc, &x, &n)) {
+    buffer_put(fd_out->w, x, n);
+    buffer_flush(fd_out->w);
+  }
+
+  ret = sc.had_error || sc.in.had_error ? -1 : 0;
+  archive_write_free(sc.a);
+  alloc_free(sc.raw.data);
+  filter_in_close(&sc.in);
+  return ret;
+}
+
 int
 builtin_gzip(int argc, char* argv[]) {
   struct gzip_ctx c;
@@ -222,134 +328,37 @@ builtin_gzip(int argc, char* argv[]) {
     return 1;
   }
 
-  /* If writing to stdout or reading from stdin pipeline filter */
+  if(c.decompress && (c.to_stdout || !c.in.files)) {
+    char* name = argv[shell_optind - 1];
+    filter_in_close(&c.in);
+
+    /* zcat only reads argv[1..]: give it the operands after the options */
+    argv[shell_optind - 1] = argv[0];
+    ret = builtin_zcat(argc - shell_optind + 1, argv + shell_optind - 1);
+    argv[shell_optind - 1] = name;
+    return ret;
+  }
+
   if(c.to_stdout || !c.in.files) {
-    if(!c.decompress) {
-      size_t n;
-      const char* x;
+    size_t n;
+    const char* x;
 
-      while(gzip_step(&c, &x, &n)) {
-        buffer_put(fd_out->w, x, n);
-        buffer_flush(fd_out->w);
-      }
-    } else {
-      char rbuf[4096];
-      ssize_t r;
-
-      while((r = filter_in_get(&c.in, rbuf, sizeof(rbuf), "", 0)) > 0) {
-        buffer_put(fd_out->w, rbuf, r);
-        buffer_flush(fd_out->w);
-      }
+    while(gzip_step(&c, &x, &n)) {
+      buffer_put(fd_out->w, x, n);
+      buffer_flush(fd_out->w);
     }
   } else {
-    /* File-by-file processing mode: create individual .gz files for each input argument */
-    char** files = c.in.files;
-    int i = 0;
+    char** files;
 
-    while(files[i]) {
-      const char* src_name = files[i];
-      size_t len = str_len(src_name);
-
-      /* "-" processes stdin to stdout */
-      if(str_equal(src_name, "-")) {
-        if(!c.decompress) {
-          size_t n;
-          const char* x;
-
-          while(gzip_step(&c, &x, &n)) {
-            buffer_put(fd_out->w, x, n);
-            buffer_flush(fd_out->w);
-          }
-        }
-
-        i++;
-        continue;
-      }
-
-      char out_name[512];
-      if(len + 3 >= sizeof(out_name)) {
+    for(files = c.in.files; *files; files++)
+      if((str_equal(*files, "-") ? gzip_stdin(&c, argv) : gzip_file(&c, argv, *files)) < 0)
         c.had_error = 1;
-        i++;
-        continue;
-      }
-
-      str_copy(out_name, src_name);
-      str_copy(out_name + len, ".gz");
-
-      if(!c.force && access(out_name, F_OK) == 0) {
-        builtin_error(argv, (char*)out_name);
-        c.had_error = 1;
-        i++;
-        continue;
-      }
-
-      int out_fd = open_trunc(out_name);
-      if(out_fd == -1) {
-        builtin_error(argv, (char*)out_name);
-        c.had_error = 1;
-        i++;
-        continue;
-      }
-
-      /* Open individual source file buffer using shish's filter_open_file */
-      buffer src_buf;
-      char rbuf[4096];
-      
-      if(filter_open_file(&src_buf, rbuf, sizeof(rbuf), src_name) == -1) {
-        builtin_error(argv, (char*)src_name);
-        close(out_fd);
-        c.had_error = 1;
-        i++;
-        continue;
-      }
-
-      /* Create a fresh libarchive write session for this specific output file */
-      struct archive* file_a = gzip_writer_new(c.compression_level);
-
-      if(!file_a) {
-        buffer_close(&src_buf);
-        close(out_fd);
-        c.had_error = 1;
-        i++;
-        continue;
-      }
-
-      archive_write_open_fd(file_a, out_fd);
-
-      // Alternatively, pump data:
-      ssize_t bytes_read;
-      char chunk[4096];
-
-      if(gzip_start(file_a) < 0)
-        c.had_error = 1;
-      else
-        while((bytes_read = buffer_get_until(&src_buf, chunk, sizeof(chunk), "", 0)) > 0)
-          if(archive_write_data(file_a, chunk, bytes_read) < 0) {
-            c.had_error = 1;
-            break;
-          }
-
-      if(archive_write_close(file_a) != ARCHIVE_OK)
-        c.had_error = 1;
-
-      archive_write_free(file_a);
-
-      buffer_close(&src_buf);
-      close(out_fd);
-
-      if(!c.keep)
-        unlink(src_name);
-
-      i++;
-    }
   }
 
   ret = c.had_error || c.in.had_error;
 
   if(c.a)
     archive_write_free(c.a);
-  if(c.ar)
-    archive_read_free(c.ar);
 
   alloc_free(c.raw.data);
   filter_in_close(&c.in);
@@ -357,12 +366,6 @@ builtin_gzip(int argc, char* argv[]) {
 }
 
 /* ---- filter integration hooks (todo.md goal 13) ---- */
-
-static ssize_t
-gzip_filter_read(int fd, void* buf, size_t len, void* arg) {
-  (void)fd;
-  return filter_out_read(&((struct gzip_ctx*)arg)->out, buf, len, gzip_step, arg);
-}
 
 static int
 gzip_filter_status(void* arg) {
@@ -376,8 +379,6 @@ gzip_filter_close(void* arg) {
 
   if(c->a)
     archive_write_free(c->a);
-  if(c->ar)
-    archive_read_free(c->ar);
 
   alloc_free(c->raw.data);
   filter_in_close(&c->in);
@@ -391,11 +392,10 @@ gzip_filter_open(int argc, char* argv[], buffer* upstream) {
   if(!c)
     return NULL;
 
-  if(gzip_init(c, argc, argv, upstream) == -1) {
+  /* decompression is zcat's job: let the caller fork it */
+  if(gzip_init(c, argc, argv, upstream) == -1 || c->decompress) {
     if(c->a)
       archive_write_free(c->a);
-    if(c->ar)
-      archive_read_free(c->ar);
 
     alloc_free(c);
     return NULL;
@@ -404,5 +404,5 @@ gzip_filter_open(int argc, char* argv[], buffer* upstream) {
   return c;
 }
 
-const struct filter_ops gzip_ops = {gzip_filter_open, gzip_filter_read, gzip_filter_status, gzip_filter_close};
+const struct filter_ops gzip_ops = {gzip_filter_open, NULL, gzip_filter_status, gzip_filter_close, gzip_step};
 const struct builtin_filter gzip_filter = {&gzip_ops};
