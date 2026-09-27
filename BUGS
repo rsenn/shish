@@ -34,6 +34,15 @@
   # runs the whole file and prints "Tests succeeded: NNN" at the end
   ```
 
+- enable-name-builtin-spelling-removed: `-DENABLE_<NAME>=ON/OFF` (the older
+  spelling of `-DBUILTIN_<NAME>`) is gone from `cmake/Builtins.cmake`. It
+  collided with `cmake/LibArchive.cmake`'s own `ENABLE_CAT`/`ENABLE_TAR`/
+  `ENABLE_CPIO`/`ENABLE_TEST`/`ENABLE_UNZIP` (its bundled bsdtar/bsdcpio/
+  bsdcat/libarchive-test switches, forced into the cache): on any configure
+  after the first, `configure_shish_builtins()` saw the cached
+  `ENABLE_CAT=FALSE` libarchive had already written and force-disabled the
+  `cat` builtin. Only `-DBUILTIN_<NAME>` works now.
+
 - yash-suite-other-hangs: a full sweep of all 119 `tests/yash/*.tst`
   files (each run individually with a 10s timeout via `run-tst.sh`,
   same as CTest's own per-file `TIMEOUT` but much shorter to survey

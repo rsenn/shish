@@ -24,6 +24,7 @@ cmake_minimum_required(VERSION 3.10)
 project(h C)
 include($SRC/cmake/Functions.cmake)
 include($SRC/cmake/Builtins.cmake)
+configure_shish_builtins()
 EOT
 
 ## configure <builddir> [cmake args...]
@@ -76,12 +77,6 @@ configure def -DENABLE_ALL_BUILTINS=ON
 configure def -DENABLE_ALL_BUILTINS=OFF
 assert_equal "0" "$(state def CAT)" \
   "extras are off again after ALL was switched on and off"
-
-## the older spelling still works, and is converted to the new one
-configure old -DENABLE_RM=ON
-assert_equal "1" "$(state old RM)" "-DENABLE_RM=ON still enables rm"
-configure old
-assert_equal "1" "$(state old RM)" "and it is permanent now"
 
 ## a build directory written by the old scheme cached its computed answers
 ## (BUILTIN_CAT=ON here, next to the BUILD_BUILTIN_* entries every configure

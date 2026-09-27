@@ -166,7 +166,10 @@ to `cmake`):
   `MINIMAL_BUILTINS`, `DEFAULT_BUILTINS`, `EXTRA_BUILTINS`. `-DBUILTIN_<NAME>=ON/OFF`
   sets one builtin and is permanent (it stays in the cache); `-DENABLE_ALL_BUILTINS=ON`
   turns on every builtin that has no `BUILTIN_<NAME>` of its own, also permanent
-  (`=OFF` undoes it); `-DENABLE_<NAME>=ON/OFF` is the older spelling of `BUILTIN_<NAME>`.
+  (`=OFF` undoes it). The older `-DENABLE_<NAME>=ON/OFF` spelling is gone: it
+  collided with `cmake/LibArchive.cmake`'s own `ENABLE_CAT`/`ENABLE_TAR`/
+  `ENABLE_CPIO`/`ENABLE_TEST`/`ENABLE_UNZIP` switches for its bundled tools
+  (see `BUGS`). Use `-DBUILTIN_<NAME>` instead.
   The generated `build/.../src/builtin_config.h` is what
   `src/builtin/builtin_table.c` is compiled against.
   Builtins that are normally a coreutils (or other package) program live in
