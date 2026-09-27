@@ -46,8 +46,7 @@ fd_filter_deinit(buffer* b) {
   if(st) {
     own = st->own;
 
-    if(st->ops->close)
-      st->ops->close(st->ctx);
+    filter_close(st->ops, st->ctx);
 
     b->cookie = NULL;
     alloc_free(st);

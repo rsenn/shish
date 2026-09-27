@@ -178,9 +178,9 @@ builtin_grep(int argc, char* argv[]) {
  * ----------------------------------------------------------------------- */
 #if !GREP_USE_SYSTEM_REGEX
 struct grep_filter_ctx {
-  struct dfa re;
-  int invert, show_lineno, multiple_files;
   struct filter_in in;
+  struct dfa re;
+  int invert, show_lineno, multiple_files, extended, aggregate, compiled;
   unsigned long lineno;
   int had_match;
 
@@ -263,60 +263,56 @@ grep_filter_status(void* arg) {
 }
 
 static void
-grep_filter_close(void* arg) {
+grep_filter_finish(void* arg) {
   struct grep_filter_ctx* g = arg;
 
-  filter_in_close(&g->in);
-  dfa_free(&g->re);
-  alloc_free(g);
+  if(g->compiled)
+    dfa_free(&g->re);
 }
 
-static void*
-grep_filter_open(int argc, char* argv[], buffer* upstream) {
-  int c, extended = 0, invert = 0, show_lineno = 0, quiet = 0, count_only = 0;
-  char* pattern;
-  struct grep_filter_ctx* g;
+static int
+grep_filter_option(void* arg, int c) {
+  struct grep_filter_ctx* g = arg;
 
-  while((c = shell_getopt(argc, argv, "Evnqc")) > 0) {
-    switch(c) {
-      case 'E': extended = 1; break;
-      case 'v': invert = 1; break;
-      case 'n': show_lineno = 1; break;
-      case 'q': quiet = 1; break;
-      case 'c': count_only = 1; break;
-      default: return NULL; /* bad option: see cat_filter_open()'s identical comment */
-    }
+  switch(c) {
+    case 'E': g->extended = 1; return 0;
+    case 'v': g->invert = 1; return 0;
+    case 'n': g->show_lineno = 1; return 0;
+    case 'q':
+    case 'c': g->aggregate = 1; return 0; /* aggregate/short-circuit, not a streaming filter */
+    default: return -1;
   }
+}
 
-  if(quiet || count_only)
-    return NULL; /* aggregate/short-circuit, not a streaming filter */
+/* takes the pattern off the operands; anything the real invocation
+ * should report (no pattern, bad pattern) declines instead */
+static int
+grep_filter_setup(void* arg) {
+  struct grep_filter_ctx* g = arg;
+  const char* pattern;
 
-  if(argv[shell_optind] == NULL)
-    return NULL; /* "no pattern given": let the real invocation report it */
+  if(g->aggregate || !g->in.files)
+    return 1;
 
-  pattern = argv[shell_optind++];
+  pattern = *g->in.files++;
 
-  if(!(g = alloc(sizeof(*g))))
-    return NULL;
+  if(!*g->in.files)
+    g->in.files = NULL;
 
-  byte_zero(g, sizeof(*g));
-  g->invert = invert;
-  g->show_lineno = show_lineno;
+  if(dfa_compile(&g->re, pattern, str_len(pattern), g->extended ? DFA_ERE : 0) != DFA_OK)
+    return 1;
 
-  if(dfa_compile(&g->re, pattern, str_len(pattern), extended ? DFA_ERE : 0) != DFA_OK) {
-    alloc_free(g); /* bad pattern: nothing printed yet, let the real invocation report it */
-    return NULL;
-  }
-
-  filter_in_init(&g->in, argv, argv[shell_optind] ? argv + shell_optind : NULL, upstream);
+  g->compiled = 1;
   g->multiple_files = g->in.files && g->in.files[0] && g->in.files[1];
   g->lineno = 1;
-  return g;
+  return 0;
 }
 
-const struct filter_ops grep_ops = {grep_filter_open, NULL, grep_filter_status, grep_filter_close, grep_filter_step};
+const struct filter_ops grep_ops = {.opts = "Evnqc",
+                                    .size = sizeof(struct grep_filter_ctx),
+                                    .option = grep_filter_option,
+                                    .setup = grep_filter_setup,
+                                    .step = grep_filter_step,
+                                    .status = grep_filter_status,
+                                    .finish = grep_filter_finish};
 const struct builtin_filter grep_filter = {&grep_ops};
-#else
-const struct builtin_filter grep_filter = {
-    NULL}; /* not implemented for the system regex.h backend */
-#endif /* !GREP_USE_SYSTEM_REGEX */

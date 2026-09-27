@@ -1,6 +1,8 @@
 #include "../builtin.h"
 #include "../fdtable.h"
+#include "../../lib/alloc.h"
 #include "../../lib/byte.h"
+#include "../../lib/shell.h"
 #include "../../lib/open.h"
 #include "../../lib/str.h"
 
@@ -182,4 +184,79 @@ filter_drain(filter_step_fn* step, void* ctx, buffer* out) {
     buffer_put(out, unit, len);
     buffer_flush(out);
   }
+}
+
+/* ---- generic open/status/close/run behind a declarative filter_ops ---- */
+
+int
+filter_init(const struct filter_ops* ops, void* ctx, int argc, char* argv[], buffer* upstream) {
+  struct filter_in* in = ctx;
+  int ch;
+
+  byte_zero(ctx, ops->size);
+
+  if(ops->opts || ops->option)
+    while((ch = shell_getopt(argc, argv, ops->opts ? ops->opts : "")) > 0)
+      if(!ops->option || ops->option(ctx, ch) < 0)
+        return -1;
+
+  filter_in_init(in, argv, argv[shell_optind] ? argv + shell_optind : NULL, upstream);
+  return ops->setup ? ops->setup(ctx) : 0;
+}
+
+void*
+filter_open(const struct filter_ops* ops, int argc, char* argv[], buffer* upstream) {
+  void* ctx;
+
+  if(ops->open)
+    return ops->open(argc, argv, upstream);
+
+  if(!(ctx = alloc(ops->size)))
+    return NULL;
+
+  if(filter_init(ops, ctx, argc, argv, upstream) != 0) {
+    filter_close(ops, ctx);
+    return NULL;
+  }
+
+  return ctx;
+}
+
+int
+filter_status(const struct filter_ops* ops, void* ctx) {
+  return ops->status ? ops->status(ctx) : ((struct filter_in*)ctx)->had_error;
+}
+
+void
+filter_close(const struct filter_ops* ops, void* ctx) {
+  if(ops->close) {
+    ops->close(ctx);
+    return;
+  }
+
+  if(ops->finish)
+    ops->finish(ctx);
+
+  filter_in_close(ctx);
+  alloc_free(ctx);
+}
+
+int
+filter_run(const struct filter_ops* ops, int argc, char* argv[], buffer* out) {
+  void* ctx = alloc(ops->size);
+  int r, ret;
+
+  if(!ctx)
+    return 1;
+
+  if((r = filter_init(ops, ctx, argc, argv, fd_in->r)) < 0) {
+    builtin_invopt(argv);
+    filter_close(ops, ctx);
+    return 1;
+  }
+
+  filter_drain(ops->step, ctx, out);
+  ret = filter_status(ops, ctx);
+  filter_close(ops, ctx);
+  return ret;
 }

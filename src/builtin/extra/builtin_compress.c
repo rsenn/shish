@@ -167,46 +167,67 @@ compress_writer_new(unsigned level) {
   return a;
 }
 
-/* parses arguments and initializes sessions */
 static int
-compress_init(struct compress_ctx* c, int argc, char* argv[], buffer* upstream) {
-  int ch;
+compress_option(void* ctx, int ch) {
+  struct compress_ctx* c = ctx;
 
-  byte_zero(c, sizeof(*c));
-  c->compression_level = 6; /* default gzip level */
-
-  while((ch = shell_getopt(argc, argv, "cdfhk123456789")) > 0) {
-    switch(ch) {
-      case 'c': c->to_stdout = 1; break;
-      case 'd': c->decompress = 1; break;
-      case 'f': c->force = 1; break;
-      case 'k': c->keep = 1; break;
-      default: {
-        if(ch >= '1' && ch <= '9') {
-          c->compression_level = ch - '0';
-          break;
-        }
-
-        return -1;
-      }
-    }
+  switch(ch) {
+    case 'c': c->to_stdout = 1; return 0;
+    case 'd': c->decompress = 1; return 0;
+    case 'f': c->force = 1; return 0;
+    case 'k': c->keep = 1; return 0;
   }
 
-  filter_in_init(&c->in, argv, argv[shell_optind] ? argv + shell_optind : NULL, upstream);
+  if(ch < '1' || ch > '9')
+    return -1;
+
+  c->compression_level = ch - '0';
+  return 0;
+}
+
+/* opens the writer; decompression is uncompress's job, so it is valid
+ * but not streamable here (1) */
+static int
+compress_setup(void* ctx) {
+  struct compress_ctx* c = ctx;
 
   if(c->decompress)
-    return 0;
+    return 1;
+
+  if(!c->compression_level)
+    c->compression_level = 6; /* default gzip level */
 
   if(!(c->a = compress_writer_new(c->compression_level)))
     return -1;
 
-  if(archive_write_open(c->a, c, NULL, compress_archive_writer, NULL) != ARCHIVE_OK) {
-    archive_write_free(c->a);
-    return -1;
-  }
-
-  return 0;
+  return archive_write_open(c->a, c, NULL, compress_archive_writer, NULL) == ARCHIVE_OK ? 0 : -1;
 }
+
+static int
+compress_status(void* ctx) {
+  struct compress_ctx* c = ctx;
+  return c->had_error || c->in.had_error;
+}
+
+static void
+compress_finish(void* ctx) {
+  struct compress_ctx* c = ctx;
+
+  if(c->a)
+    archive_write_free(c->a);
+
+  alloc_free(c->raw.data);
+}
+
+const struct filter_ops compress_ops = {.opts = "cdfhk123456789",
+                                        .size = sizeof(struct compress_ctx),
+                                        .option = compress_option,
+                                        .setup = compress_setup,
+                                        .step = compress_step,
+                                        .status = compress_status,
+                                        .finish = compress_finish};
+const struct builtin_filter compress_filter = {&compress_ops};
+
 /* compresses src into dst.gz or, with decompress set, dst into src minus ".gz";
  * a failed run removes the partial output and keeps the source. -1 on error */
 static int
@@ -318,8 +339,9 @@ builtin_compress(int argc, char* argv[]) {
   struct compress_ctx c;
   int ret = 0;
 
-  if(compress_init(&c, argc, argv, fd_in->r) == -1) {
+  if(filter_init(&compress_ops, &c, argc, argv, fd_in->r) < 0) {
     builtin_invopt(argv);
+    compress_finish(&c);
     return 1;
   }
 
@@ -344,54 +366,8 @@ builtin_compress(int argc, char* argv[]) {
         c.had_error = 1;
   }
 
-  ret = c.had_error || c.in.had_error;
-
-  if(c.a)
-    archive_write_free(c.a);
-
-  alloc_free(c.raw.data);
+  ret = compress_status(&c);
+  compress_finish(&c);
   filter_in_close(&c.in);
   return ret;
 }
-
-/* ---- filter integration hooks (todo.md goal 13) ---- */
-
-static int
-compress_filter_status(void* arg) {
-  struct compress_ctx* c = arg;
-  return c->had_error || c->in.had_error ? 1 : 0;
-}
-
-static void
-compress_filter_close(void* arg) {
-  struct compress_ctx* c = arg;
-
-  if(c->a)
-    archive_write_free(c->a);
-
-  alloc_free(c->raw.data);
-  filter_in_close(&c->in);
-  alloc_free(c);
-}
-
-static void*
-compress_filter_open(int argc, char* argv[], buffer* upstream) {
-  struct compress_ctx* c = alloc(sizeof(*c));
-
-  if(!c)
-    return NULL;
-
-  /* decompression is uncompress's job: let the caller fork it */
-  if(compress_init(c, argc, argv, upstream) == -1 || c->decompress) {
-    if(c->a)
-      archive_write_free(c->a);
-
-    alloc_free(c);
-    return NULL;
-  }
-
-  return c;
-}
-
-const struct filter_ops compress_ops = {compress_filter_open, NULL, compress_filter_status, compress_filter_close, compress_step};
-const struct builtin_filter compress_filter = {&compress_ops};

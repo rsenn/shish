@@ -58,27 +58,24 @@ uncompress_step(void* arg, const char** unit, size_t* len) {
   return 1;
 }
 
-/* parses arguments and initializes the libarchive read session.
- * -1 only for a usage or setup error; unreadable input is reported
- * through had_error so the input is never consumed and then refused. */
 static int
-uncompress_init(struct uncompress_ctx* c, int argc, char* argv[], buffer* upstream) {
+uncompress_option(void* ctx, int ch) {
+  if(ch != 'f')
+    return -1;
+
+  ((struct uncompress_ctx*)ctx)->force = 1;
+  return 0;
+}
+
+/* opens the libarchive read session. unreadable input is reported through
+ * had_error, so the input is never consumed and then refused as a usage error. */
+static int
+uncompress_setup(void* ctx) {
+  struct uncompress_ctx* c = ctx;
   struct archive_entry* entry;
-  int ch, r;
+  int r;
 
-  byte_zero(c, sizeof(*c));
-
-  while((ch = shell_getopt(argc, argv, "f")) > 0)
-    if(ch == 'f')
-      c->force = 1;
-    else
-      return -1;
-
-  // Parse files or fall back to upstream/stdin
-  filter_in_init(&c->in, argv, argv[shell_optind] ? argv + shell_optind : NULL, upstream);
-
-  c->a = archive_read_new();
-  if(!c->a)
+  if(!(c->a = archive_read_new()))
     return -1;
 
   // Enable all compression filters (.gz, .zst, .xz, .lzma, etc.)
@@ -94,92 +91,51 @@ uncompress_init(struct uncompress_ctx* c, int argc, char* argv[], buffer* upstre
   if(r == ARCHIVE_EOF) {
     c->eof = 1;
   } else if(r != ARCHIVE_OK && r != ARCHIVE_WARN) {
-    builtin_errmsg(argv, (char*)filter_in_name(&c->in), (char*)archive_error_string(c->a));
+    builtin_errmsg(c->in.errargv, (char*)filter_in_name(&c->in), (char*)archive_error_string(c->a));
     c->had_error = c->eof = 1;
   } else if(!c->force && archive_filter_code(c->a, 0) == ARCHIVE_FILTER_NONE) {
-    builtin_errmsg(argv, (char*)filter_in_name(&c->in), "not in a compressed format");
+    builtin_errmsg(c->in.errargv, (char*)filter_in_name(&c->in), "not in a compressed format");
     c->had_error = c->eof = 1;
   }
 
   return 0;
 }
 
+static int
+uncompress_status(void* ctx) {
+  struct uncompress_ctx* c = ctx;
+  return c->had_error || c->in.had_error;
+}
+
+static void
+uncompress_finish(void* ctx) {
+  struct uncompress_ctx* c = ctx;
+
+  if(c->a) {
+    archive_read_close(c->a);
+    archive_read_free(c->a);
+  }
+}
+
+const struct filter_ops uncompress_ops = {.opts = "f",
+                                          .size = sizeof(struct uncompress_ctx),
+                                          .option = uncompress_option,
+                                          .setup = uncompress_setup,
+                                          .step = uncompress_step,
+                                          .status = uncompress_status,
+                                          .finish = uncompress_finish};
+const struct builtin_filter uncompress_filter = {&uncompress_ops};
+
 /* runs one uncompress over argv, writing the uncompressed data to out */
 int
 builtin_uncompress_to(int argc, char* argv[], buffer* out) {
-  struct uncompress_ctx c;
-  int ret;
-
   /* also called from gzip -d, after its own option parsing */
   shell_optind = 1;
   shell_optofs = 0;
-
-  if(uncompress_init(&c, argc, argv, fd_in->r) == -1) {
-    if(c.a)
-      archive_read_free(c.a);
-    builtin_invopt(argv);
-    return 1;
-  }
-
-  filter_drain(uncompress_step, &c, out);
-
-  ret = c.had_error || c.in.had_error;
-
-  if(c.a) {
-    archive_read_close(c.a);
-    archive_read_free(c.a);
-  }
-
-  filter_in_close(&c.in);
-  return ret;
+  return filter_run(&uncompress_ops, argc, argv, out);
 }
 
 int
 builtin_uncompress(int argc, char* argv[]) {
   return builtin_uncompress_to(argc, argv, fd_out->w);
 }
-
-/* ---- Filter Integration hooks (TODO.md Goal 13) ---- */
-
-static int
-uncompress_filter_status(void* arg) {
-  struct uncompress_ctx* c = arg;
-  return c->had_error || c->in.had_error ? 1 : 0;
-}
-
-static void
-uncompress_filter_close(void* arg) {
-  struct uncompress_ctx* c = arg;
-
-  if(c->a) {
-    archive_read_close(c->a);
-    archive_read_free(c->a);
-  }
-
-  filter_in_close(&c->in);
-  alloc_free(c);
-}
-
-/* open returns NULL on error, triggering shish's transparent fork+pipe fallback */
-static void*
-uncompress_filter_open(int argc, char* argv[], buffer* upstream) {
-  struct uncompress_ctx* c = alloc(sizeof(*c));
-
-  if(!c)
-    return NULL;
-
-  if(uncompress_init(c, argc, argv, upstream) == -1) {
-    if(c->a) {
-      archive_read_close(c->a);
-      archive_read_free(c->a);
-    }
-
-    alloc_free(c);
-    return NULL;
-  }
-
-  return c;
-}
-
-const struct filter_ops uncompress_ops = {uncompress_filter_open, NULL, uncompress_filter_status, uncompress_filter_close, uncompress_step};
-const struct builtin_filter uncompress_filter = {&uncompress_ops};

@@ -3,40 +3,42 @@
 
 #include "../../lib/buffer.h"
 
-/* the interface a builtin exposes to act as a chained filter, wired
- * straight into a struct fd's read buffer (fd_filter(), src/fd.h) so
- * whatever reads fd_in->r downstream never has to know it isn't a
- * real fd -- see TODO.md, Goal 13.
+/* what a builtin declares to act as a chained filter, wired straight into a
+ * struct fd's read buffer (fd_filter(), src/fd.h) so whatever reads fd_in->r
+ * downstream never has to know it isn't a real fd -- see TODO.md, Goal 13.
  *
- *   open    parses argv itself (argc/argv exactly as the builtin's
- *           own main entry point would receive them) and decides
- *           whether *this* invocation streams. Returns an opaque ctx
- *           on success. Returns NULL only for a side-effect-free
- *           reason (unsupported flags for this builtin, e.g. grep -c/
- *           -q) -- the caller then falls back to fork()+pipe() and
- *           re-runs the same argv through the builtin's normal entry
- *           point, so open() must never have printed anything or
- *           produced output before returning NULL. A genuine usage
- *           error (bad pattern, missing script, ...) is NOT reported
- *           by returning NULL: it is reported once, from here, and
- *           carried inside the returned ctx instead (read() reports
- *           immediate EOF, status() reports the real failure code) --
- *           see each builtin's *_filter_open() for the exact cutoff.
- *   step    yields the next unit as a pointer that stays valid until
- *           the next step() call (see filter_step_fn). the consumer's
- *           buffer points straight at the unit: no copy. preferred.
- *   read    only when there is no step: buffer_op_proto-shaped (fd is
- *           unused, always -1), fills up to len bytes of buf, returns the
- *           count, or 0 at EOF. A short return is fine -- the caller's own
- *           buffer layer re-invokes read() as needed (lib/buffer.h).
- *           leave NULL when step is set.
- *   status  the builtin's real exit status, valid once read() has
- *           returned 0. Meaningless before that (a chain member that
- *           never reaches EOF -- e.g. its consumer stopped early --
- *           never gets a final status; see TODO.md Goal 13).
- *   close   releases ctx and anything it still owns (an open upstream
- *           file, a compiled pattern, ...). Always called exactly
- *           once, whether or not read() ever reached EOF.
+ * A typical filter fills in only the declarative half; the framework
+ * (filter_open/filter_run/filter_close) does the rest:
+ *
+ *   struct cat { struct filter_in in; int number_lines; ... };  // in first
+ *   const struct filter_ops cat_ops = {.opts = "nb", .size = sizeof(struct cat),
+ *                                      .option = cat_option, .step = cat_step};
+ *   int builtin_cat(int argc, char* argv[]) { return filter_run(&cat_ops, argc, argv, fd_out->w); }
+ *
+ * declarative half (ctx is zeroed, `size` bytes, starting with a struct filter_in):
+ *
+ *   opts    shell_getopt() string; NULL: no options
+ *   size    sizeof(ctx)
+ *   option  one parsed option; -1 rejects it (usage error)
+ *   setup   after options and operands are known (ctx->in is initialised;
+ *           an operand it consumes, e.g. a pattern, is taken off ctx->in.files).
+ *           0 ok, 1 valid but not streamable (grep -c: filter_open declines,
+ *           filter_run still runs), -1 usage error. it must not print or read
+ *           input when it returns 1 or -1: a declining chain falls back to
+ *           fork()+pipe() and re-runs the same argv. a data error it finds
+ *           itself (unreadable input) is printed there and reported via status.
+ *   step    yields the next unit as a pointer that stays valid until the next
+ *           step() call (filter_step_fn). the consumer's buffer points straight
+ *           at the unit: no copy.
+ *   status  exit status once step() has returned 0; NULL: ctx->in.had_error
+ *   finish  releases what setup() / step() allocated; NULL: nothing
+ *
+ * hand-written half, each overrides its default when non-NULL:
+ *
+ *   open    replaces the generic parse+setup; returns ctx or NULL to decline
+ *   read    instead of step: buffer_op_proto-shaped (fd unused), fills up to len
+ *           bytes of buf, returns the count or 0 at EOF; a short return is fine
+ *   close   replaces finish + filter_in_close + free
  * ----------------------------------------------------------------------- */
 typedef int filter_step_fn(void* ctx, const char** unit, size_t* len);
 
@@ -46,6 +48,11 @@ struct filter_ops {
   int (*status)(void* ctx);
   void (*close)(void* ctx);
   filter_step_fn* step;
+  const char* opts;
+  size_t size;
+  int (*option)(void* ctx, int ch);
+  int (*setup)(void* ctx);
+  void (*finish)(void* ctx);
 };
 
 /* one indirection so struct builtin_cmd doesn't have to change shape
@@ -105,5 +112,22 @@ void filter_in_close(struct filter_in* in);
 /* runs step to completion, writing and flushing every unit to out: the
  * direct (non-chained) run of a builtin that also offers a filter. */
 void filter_drain(filter_step_fn* step, void* ctx, buffer* out);
+
+/* the framework behind a filter_ops (see its comment) */
+
+/* parses argv into a fresh ctx reading from upstream; NULL declines (bad
+ * option, setup() said not streamable, ...) without having printed anything */
+void* filter_open(const struct filter_ops* ops, int argc, char* argv[], buffer* upstream);
+
+/* like filter_open() for a ctx the caller owns (e.g. on its stack), zeroed
+ * here. 0 ok, 1 valid but not streamable, -1 usage error. */
+int filter_init(const struct filter_ops* ops, void* ctx, int argc, char* argv[], buffer* upstream);
+
+int filter_status(const struct filter_ops* ops, void* ctx);
+void filter_close(const struct filter_ops* ops, void* ctx);
+
+/* the whole builtin: init on stdin, drain step() into out, report, release.
+ * a usage error prints "invalid option" and returns 1. */
+int filter_run(const struct filter_ops* ops, int argc, char* argv[], buffer* out);
 
 #endif

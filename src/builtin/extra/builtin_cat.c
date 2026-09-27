@@ -57,66 +57,27 @@ cat_step(void* arg, const char** unit, size_t* len) {
   return 1;
 }
 
-/* parses -n/-b and sets up the run; -1 on a bad option (nothing printed) */
 static int
-cat_init(struct cat* c, int argc, char* argv[], buffer* upstream) {
-  int ch;
+cat_option(void* ctx, int ch) {
+  struct cat* c = ctx;
 
-  byte_zero(c, sizeof(*c));
-
-  while((ch = shell_getopt(argc, argv, "nb")) > 0) {
-    switch(ch) {
-      case 'n': c->number_lines = 1; break;
-      case 'b': c->number_nonempty = 1; break;
-      default: return -1;
-    }
+  switch(ch) {
+    case 'n': c->number_lines = 1; return 0;
+    case 'b': c->number_nonempty = 1; return 0;
+    default: return -1;
   }
+}
 
-  filter_in_init(&c->in, argv, argv[shell_optind] ? argv + shell_optind : NULL, upstream);
-  c->line = 1;
+static int
+cat_setup(void* ctx) {
+  ((struct cat*)ctx)->line = 1;
   return 0;
 }
 
+const struct filter_ops cat_ops = {.opts = "nb", .size = sizeof(struct cat), .option = cat_option, .setup = cat_setup, .step = cat_step};
+const struct builtin_filter cat_filter = {&cat_ops};
+
 int
 builtin_cat(int argc, char* argv[]) {
-  struct cat c;
-  int ret;
-
-  if(cat_init(&c, argc, argv, fd_in->r) == -1) {
-    builtin_invopt(argv);
-    return 1;
-  }
-
-  filter_drain(cat_step, &c, fd_out->w);
-
-  ret = c.in.had_error;
-  filter_in_close(&c.in);
-  return ret;
+  return filter_run(&cat_ops, argc, argv, fd_out->w);
 }
-
-static int
-cat_filter_status(void* arg) {
-  return ((struct cat*)arg)->in.had_error;
-}
-
-static void
-cat_filter_close(void* arg) {
-  filter_in_close(&((struct cat*)arg)->in);
-  alloc_free(arg);
-}
-
-/* a bad option returns NULL without printing: builtin_cat() reports it */
-static void*
-cat_filter_open(int argc, char* argv[], buffer* upstream) {
-  struct cat* c = alloc(sizeof(*c));
-
-  if(c && cat_init(c, argc, argv, upstream) == -1) {
-    alloc_free(c);
-    c = NULL;
-  }
-
-  return c;
-}
-
-const struct filter_ops cat_ops = {cat_filter_open, NULL, cat_filter_status, cat_filter_close, cat_step};
-const struct builtin_filter cat_filter = {&cat_ops};

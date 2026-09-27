@@ -495,7 +495,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
       shell_optind = 1;
       shell_optofs = 0;
       chain_ops[stage] = chain_b[stage]->filter->ops;
-      chain_ctx[stage] = chain_ops[stage]->open(chain_argc[stage], chain_argv[stage], upstream);
+      chain_ctx[stage] = filter_open(chain_ops[stage], chain_argc[stage], chain_argv[stage], upstream);
 
       if(!chain_ctx[stage]) {
         int j;
