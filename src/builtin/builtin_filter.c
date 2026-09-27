@@ -1,6 +1,5 @@
 #include "../builtin.h"
 #include "../fdtable.h"
-#include "../term.h"
 #include "../../lib/byte.h"
 #include "../../lib/open.h"
 #include "../../lib/str.h"
@@ -24,21 +23,22 @@ filter_open_file(buffer* b, char* rbuf, size_t rlen, const char* path) {
   return 0;
 }
 
-/* feed the whole content of path to sink() chunk-by-chunk; returns -1
- * if it cannot be read or encounters an error during copy.
+/* feed the whole content of path to sink() in place, block by block;
+ * returns -1 if it cannot be read or encounters an error during copy.
  * ----------------------------------------------------------------------- */
 int
 filter_copy(const char* path, filter_sink_fn* sink, void* ctx) {
   buffer b;
-  char rbuf[4096], chunk[4096];
+  char rbuf[4096];
   ssize_t n;
 
   if(filter_open_file(&b, rbuf, sizeof(rbuf), path) == -1)
     return -1;
 
-  /* stream content token by token into the sink callback */
-  while((n = buffer_get_until(&b, chunk, sizeof(chunk), "", 0)) > 0)
-    sink(ctx, chunk, (size_t)n);
+  while((n = buffer_feed(&b)) > 0) {
+    sink(ctx, buffer_PEEK(&b), (size_t)n);
+    buffer_SEEK(&b, (size_t)n);
+  }
 
   buffer_close(&b);
   return n < 0 ? -1 : 0;
@@ -113,55 +113,55 @@ filter_in_next(struct filter_in* in) {
   }
 }
 
-/* read data from the active input source, automatically cycling through
- * file operands sequentially upon reaching eof.
+/* make sure the active source has buffered bytes, cycling file operands
+ * on eof. returns 0 once every source is exhausted.
  * ----------------------------------------------------------------------- */
-ssize_t
-filter_in_get(struct filter_in* in, char* buf, size_t len, const char* delims, size_t ndelims) {
+static int
+filter_in_ready(struct filter_in* in) {
   for(;;) {
     ssize_t r;
 
-    /* ensure an active input buffer is open */
     if(!in->cur && !filter_in_next(in))
       return 0;
 
-    /* pull token/data chunk from current buffer */
-    if((r = buffer_get_until(in->cur, buf, len, delims, ndelims)) > 0)
-      return r;
+    if((r = buffer_feed(in->cur)) > 0)
+      return 1;
 
     if(r < 0)
       in->had_error = 1;
-    else if(in->cur->op == &term_read) {
-      buffer_puts(fd_err->w, "eof");
-      buffer_putnlflush(fd_err->w);
-    }
 
-    /* current operand exhausted; close and loop to next file */
     filter_in_close(in);
   }
 }
 
-/* zero-copy read: expose the active source's buffered bytes in place,
- * cycling file operands on eof like filter_in_get().
+/* copying read: up to len bytes, stopping after a byte from delims.
  * ----------------------------------------------------------------------- */
 ssize_t
-filter_in_peek(struct filter_in* in, const char** p) {
-  for(;;) {
-    ssize_t r;
+filter_in_get(struct filter_in* in, char* buf, size_t len, const char* delims, size_t ndelims) {
+  while(filter_in_ready(in)) {
+    ssize_t r = buffer_get_until(in->cur, buf, len, delims, ndelims);
 
-    if(!in->cur && !filter_in_next(in))
-      return 0;
-
-    if((r = buffer_feed(in->cur)) > 0) {
-      *p = buffer_PEEK(in->cur);
+    if(r > 0)
       return r;
-    }
 
     if(r < 0)
       in->had_error = 1;
 
     filter_in_close(in);
   }
+
+  return 0;
+}
+
+/* zero-copy read: expose the active source's buffered bytes in place.
+ * ----------------------------------------------------------------------- */
+ssize_t
+filter_in_peek(struct filter_in* in, const char** p) {
+  if(!filter_in_ready(in))
+    return 0;
+
+  *p = buffer_PEEK(in->cur);
+  return (ssize_t)buffer_LEN(in->cur);
 }
 
 /* consume n bytes previously exposed by filter_in_peek() */
@@ -171,42 +171,15 @@ filter_in_skip(struct filter_in* in, size_t n) {
     buffer_SEEK(in->cur, n);
 }
 
-/* turn "one formatted unit per step" into buffer_op_read calls of any size,
- * keeping any overflow of a unit that did not fit as a view into the step's buffer.
+/* run a step function to completion, writing and flushing every unit to out.
  * ----------------------------------------------------------------------- */
-ssize_t
-filter_out_read(struct filter_out* out, void* buf, size_t len, filter_step_fn* step, void* ctx) {
-  char* p = buf;
-  size_t n = 0, take;
+void
+filter_drain(filter_step_fn* step, void* ctx, buffer* out) {
+  const char* unit;
+  size_t len;
 
-  /* flush out any leftover bytes from the previous step first */
-  if(out->len) {
-    take = out->len < len ? out->len : len;
-    byte_copy(p, take, out->pend);
-    out->pend += take;
-    out->len -= take;
-    n = take;
+  while(step(ctx, &unit, &len)) {
+    buffer_put(out, unit, len);
+    buffer_flush(out);
   }
-
-  /* fetch new units via step function until target buffer is full */
-  while(n < len) {
-    const char* unit;
-    size_t ul;
-
-    if(!step(ctx, &unit, &ul))
-      break;
-
-    take = ul < len - n ? ul : len - n;
-    byte_copy(p + n, take, unit);
-    n += take;
-
-    /* save overflow if the unit was too large to fit entirely */
-    if(take < ul) {
-      out->pend = unit + take;
-      out->len = ul - take;
-      break;
-    }
-  }
-
-  return (ssize_t)n;
 }

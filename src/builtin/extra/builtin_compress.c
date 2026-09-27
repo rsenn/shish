@@ -296,8 +296,6 @@ compress_file(struct compress_ctx* c, char* argv[], const char* src) {
 static int
 compress_stdin(struct compress_ctx* c, char* argv[]) {
   struct compress_ctx sc;
-  size_t n;
-  const char* x;
   int ret;
 
   byte_zero(&sc, sizeof(sc));
@@ -306,10 +304,7 @@ compress_stdin(struct compress_ctx* c, char* argv[]) {
   if(!(sc.a = compress_writer_new(c->compression_level)) || archive_write_open(sc.a, &sc, NULL, compress_archive_writer, NULL) != ARCHIVE_OK)
     return -1;
 
-  while(compress_step(&sc, &x, &n)) {
-    buffer_put(fd_out->w, x, n);
-    buffer_flush(fd_out->w);
-  }
+  filter_drain(compress_step, &sc, fd_out->w);
 
   ret = sc.had_error || sc.in.had_error ? -1 : 0;
   archive_write_free(sc.a);
@@ -340,13 +335,7 @@ builtin_compress(int argc, char* argv[]) {
   }
 
   if(c.to_stdout || !c.in.files) {
-    size_t n;
-    const char* x;
-
-    while(compress_step(&c, &x, &n)) {
-      buffer_put(fd_out->w, x, n);
-      buffer_flush(fd_out->w);
-    }
+    filter_drain(compress_step, &c, fd_out->w);
   } else {
     char** files;
 

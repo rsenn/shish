@@ -4051,4 +4051,4 @@ Do these three before the utilities that need them; each removes a duplicate:
    `xargs`/`timeout` already do it by hand): about 30 lines around `exec_hash()` + `exec_command()`.
 
 Filters (`head uniq paste cut tr nl tail`) use `src/builtin/builtin_filter.[hc]` (`filter_in`,
-`filter_out`) so they can join filter chains (Goal 13); `tail -f` and `more` cannot chain.
+`filter_ops.step`) so they can join filter chains (Goal 13); `tail -f` and `more` cannot chain.

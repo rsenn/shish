@@ -15,7 +15,6 @@ const char help_cat[] = "    Concatenate files to standard output.\n"
  * each step reads one "\r\n"-terminated unit and formats it. */
 struct cat {
   struct filter_in in;
-  struct filter_out out;
   int number_lines, number_nonempty;
   unsigned long line;
   char raw[1024];
@@ -81,8 +80,6 @@ cat_init(struct cat* c, int argc, char* argv[], buffer* upstream) {
 int
 builtin_cat(int argc, char* argv[]) {
   struct cat c;
-  const char* unit;
-  size_t len;
   int ret;
 
   if(cat_init(&c, argc, argv, fd_in->r) == -1) {
@@ -90,20 +87,11 @@ builtin_cat(int argc, char* argv[]) {
     return 1;
   }
 
-  while(cat_step(&c, &unit, &len)) {
-    buffer_put(fd_out->w, unit, len);
-    buffer_flush(fd_out->w);
-  }
+  filter_drain(cat_step, &c, fd_out->w);
 
   ret = c.in.had_error;
   filter_in_close(&c.in);
   return ret;
-}
-
-static ssize_t
-cat_filter_read(int fd, void* buf, size_t len, void* arg) {
-  (void)fd;
-  return filter_out_read(&((struct cat*)arg)->out, buf, len, cat_step, arg);
 }
 
 static int
@@ -130,5 +118,5 @@ cat_filter_open(int argc, char* argv[], buffer* upstream) {
   return c;
 }
 
-const struct filter_ops cat_ops = {cat_filter_open, cat_filter_read, cat_filter_status, cat_filter_close};
+const struct filter_ops cat_ops = {cat_filter_open, NULL, cat_filter_status, cat_filter_close, cat_step};
 const struct builtin_filter cat_filter = {&cat_ops};

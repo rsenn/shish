@@ -181,7 +181,6 @@ struct grep_filter_ctx {
   struct dfa re;
   int invert, show_lineno, multiple_files;
   struct filter_in in;
-  struct filter_out out;
   unsigned long lineno;
   int had_match;
 
@@ -253,14 +252,6 @@ grep_filter_step(void* arg, const char** sp, size_t* np) {
   return 0;
 }
 
-static ssize_t
-grep_filter_read(int fd, void* buf, size_t len, void* arg) {
-  struct grep_filter_ctx* g = arg;
-
-  (void)fd;
-  return filter_out_read(&g->out, buf, len, grep_filter_step, g);
-}
-
 static int
 grep_filter_status(void* arg) {
   struct grep_filter_ctx* g = arg;
@@ -323,10 +314,7 @@ grep_filter_open(int argc, char* argv[], buffer* upstream) {
   return g;
 }
 
-const struct filter_ops grep_ops = {grep_filter_open,
-                                    grep_filter_read,
-                                    grep_filter_status,
-                                    grep_filter_close};
+const struct filter_ops grep_ops = {grep_filter_open, NULL, grep_filter_status, grep_filter_close, grep_filter_step};
 const struct builtin_filter grep_filter = {&grep_ops};
 #else
 const struct builtin_filter grep_filter = {

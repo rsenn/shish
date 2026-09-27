@@ -108,8 +108,6 @@ uncompress_init(struct uncompress_ctx* c, int argc, char* argv[], buffer* upstre
 int
 builtin_uncompress_to(int argc, char* argv[], buffer* out) {
   struct uncompress_ctx c;
-  const char* unit;
-  size_t len;
   int ret;
 
   /* also called from gzip -d, after its own option parsing */
@@ -123,10 +121,7 @@ builtin_uncompress_to(int argc, char* argv[], buffer* out) {
     return 1;
   }
 
-  while(uncompress_step(&c, &unit, &len)) {
-    buffer_put(out, unit, len);
-    buffer_flush(out);
-  }
+  filter_drain(uncompress_step, &c, out);
 
   ret = c.had_error || c.in.had_error;
 
