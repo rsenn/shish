@@ -61,8 +61,8 @@ int filter_copy(const char* path, filter_sink_fn* sink, void* ctx);
  * when there are none. an unreadable operand is reported and skipped. */
 struct filter_in {
   char** files; /* operand list, NULL: only "-" */
-  int i, done_any, had_error;
-  int newfile;          /* set when an operand was just opened; the user clears it */
+  int i;
+  unsigned done_any:1, had_error:1, newfile:1; /* set when an operand was just opened; the user clears it */
   buffer* upstream;     /* what "-" reads */
   buffer* cur;          /* NULL: no operand open */
   buffer inb;
@@ -70,9 +70,23 @@ struct filter_in {
   char** errargv;       /* argv for builtin_error() */
 };
 
+/* initializes the input tracking structure
+ * 
+ *  errargv      error argument vector 
+ *  files        file operands list 
+ *  upstream     default fallback input stream
+ */
 void filter_in_init(struct filter_in* in, char** errargv, char** files, buffer* upstream);
+
+/* returns the string name of the file operand currently being read,
+ * or "-" if reading from standard input/upstream. */
 const char* filter_in_name(const struct filter_in* in); /* operand being read */
+
+/* pulls data from the active source, cycling file operands sequentially on EOF. 
+ * Returns the number of bytes read, 0 when all sources are done or negative on error. */
 ssize_t filter_in_get(struct filter_in* in, char* buf, size_t len, const char* delims, size_t ndelims);
+
+/* frees up input tracking structure */
 void filter_in_close(struct filter_in* in);
 
 /* output side: turns "one formatted unit per step" into buffer_op_read
@@ -82,7 +96,11 @@ struct filter_out {
   size_t off, len;
 };
 
+/* step function: invoked to fetch the next unit of data (line, block) from the filter context.
+ * returns 1 on success with a pointer to the unit and its length, or 0 on EOF or error. */
 typedef int filter_step_fn(void* ctx, const char** unit, size_t* len);
-ssize_t filter_out_read(struct filter_out* out, void* buf, size_t len, filter_step_fn* step, void* ctx);
 
+/* reads up to len bytes into buf from the filter's output, leveraging a custom 
+ * step function to generate source units. overflow bytes are handled via the filter_out structure. */
+ssize_t filter_out_read(struct filter_out* out, void* buf, size_t len, filter_step_fn* step, void* ctx);
 #endif
