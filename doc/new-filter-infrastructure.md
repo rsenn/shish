@@ -10,6 +10,7 @@ code in `src/builtin/builtin_filter.[ch]` does for it, and what is still to do.
 - [5. Where each builtin stands](#5-where-each-builtin-stands)
 - [6. Open work](#6-open-work)
 - [7. Assessment: shared code for head, tail, uniq, cut, paste, nl, tr](#7-assessment-shared-code-for-head-tail-uniq-cut-paste-nl-tr)
+- [8. UTF-8 in the filter chain](#8-utf-8-in-the-filter-chain)
 
 ---
 
@@ -185,7 +186,7 @@ Sizes are from the TODO.md Goal 16 table (`head` ~70, `uniq` ~110, `cut` ~140, `
 | 8 | **field skipping** | uniq -f, cut -f | none | `text_skip_fields(p, n, k)` and `text_skip_chars(p, n, k)`, 10 lines each in `lib/` (also what a later `sort -k`, `join`, `comm` need) |
 | 9 | **number formatting with padding** | nl, cat -n, wc | `fmt_ulong` plus hand padding in each | `fmt_ulong_pad(dst, v, width, ' '/'0', left/right)` next to `fmt_ulong0` in `lib/fmt` |
 | 10 | **regex on a line** | nl -b pBRE, grep | `dfa_compile`/`dfa_test` open-coded in `grep` | none needed; `nl` copies the six lines. If a third user appears, add `filter_line_regex` |
-| 11 | **characters vs bytes** | cut -c, tr, uniq -s | `wc` counts bytes, `lib/utf8.h` has `u8len` | one seam: `size_t text_charlen(const char* p, size_t n)` (bytes now, `u8len` later), so every filter changes together |
+| 11 | **characters vs bytes** | cut -c, tr, uniq -s | `wc` counts bytes | done as `u8charlen`/`u8count`/`u8skip` in `lib/utf8` (section 8); filters call the `text_*` wrappers that pick bytes or UTF-8 |
 | 12 | **builtin boilerplate**: three lines in the `.c`, an `extern`, a table row, a `Builtins.cmake` entry, a help string | every new builtin | copied by hand | a `FILTER_BUILTIN(name)` macro in `builtin_filter.h` generating `builtin_<name>` and `<name>_filter` from `<name>_ops` |
 | 13 | **tests**: each utility needs a direct run and a chained run of the same case | every new builtin | one hand-written test per form | `assert_filter "cmd" "input" "expected"` in `tests/common.sh`, running `printf input | cmd`, `cmd < file`, and `cat file | cmd | cat` |
 
@@ -204,7 +205,7 @@ parser is the bulk and is `cut`'s own), `tail` ~70, `nl` ~110, `tr` ~90 (the set
 3. `filter_in` with a lazy `rbuf` (5) and `fmt_ulong_pad` (9), then `paste` and `nl`.
 4. `text_skip_*` (8), then `uniq` and `cut`.
 5. `line_ring` (6), then `tail`.
-6. `lib/byteset` (7) extracted from `text/dfa`, then `tr`.
+6. `lib/byteset` (7) extracted from `text/dfa` (done), then `tr`.
 7. `FILTER_BUILTIN` (12) and `assert_filter` (13) before the first new builtin, so all of them use them.
 
 ### Risks and decisions for you
@@ -215,3 +216,74 @@ parser is the bulk and is `cut`'s own), `tail` ~70, `nl` ~110, `tr` ~90 (the set
   back only for utilities that rewrite the line (`cut`, `paste`, `nl`, `uniq`); `head` and `tail` copy
   bytes exactly.
 - **`tail -f`, `more`** cannot chain and stay direct-run only.
+
+## 8. UTF-8 in the filter chain
+
+### Where it stands
+
+- `lib/utf8` now has strict, bounds-checked code point functions: `u8decode` (length, `-1`
+  invalid, `-2` cut off by the end of the buffer), `u8encode`, `u8charlen`, `u8count`, `u8skip`
+  (`tests/utf8_test.c`). They follow the shape of `unicode_{to,from}_utf8` in QuickJS's `cutils.c`
+  but drop its 5/6-byte forms, refuse surrogates and values above U+10FFFF, and tell truncation
+  from invalid input, which a stream needs.
+- The older `u8len`, `u8towc`, `wctou8`, `u8stowcs` (used by `lib/unix/readlink.c`) stay for now:
+  `u8len` accepts overlong forms and never checks continuation bytes, `u8towc` reads up to four
+  bytes whatever `count` says, and `wctou8` NUL-terminates (the buffer needs one byte more than
+  the character). Move their callers to the new functions, then delete them.
+- Everything else, filters included, is byte-oriented today; `text/dfa` matches bytes, so `.` and
+  `[^x]` match one byte of a multibyte character.
+
+### Where a filter meets a multibyte character
+
+| place | risk | rule |
+|---|---|---|
+| a **line** (`filter_in_line`) | none: `\n` never occurs inside a UTF-8 sequence | line-based filters (`cut -c`, `uniq -s`, `paste`, `nl`, `fold`) decode inside one contiguous line and need nothing from the input layer |
+| a **window boundary** in a byte stream (`tr`, `expand`, anything without lines) | a character can straddle two reads or two operands | `filter_in_peek_chars(in, &p)`: like `filter_in_peek` but trims an incomplete tail (`u8decode` = `-2` at the end) and holds those at most 3 bytes back for the next call; at true EOF or an operand boundary the held bytes go out as invalid bytes |
+| an **output unit** built from pieces | none if pieces are whole characters | `head -c`, `tail -c` count bytes by definition and may cut a character; POSIX says so |
+| **invalid bytes** | a filter must not lose or reject data | pass through unchanged; where a count matters each invalid byte is one character (`u8charlen`) |
+| **counting** (`wc -m`, `cut -c N`, `uniq -s N`, `expr length`, `${#var}`) | bytes and characters differ | one place: `text_charcount/text_charskip(p, n, k)`, which call `u8count`/`u8skip` or return `n`/`k` |
+
+### Locale policy
+
+One switch, decided once at startup and read through the `text_*` wrappers, so every builtin
+agrees: UTF-8 mode when the first non-empty of `LC_ALL`, `LC_CTYPE`, `LANG` names UTF-8
+(`*.UTF-8`, `*.utf8`, either case); otherwise bytes. `LC_ALL=C` keeps today's behaviour, so
+scripts and the test suite are unaffected by default. Cache the answer; changing `LC_*` at run
+time re-reads it (the shell already runs `setlocale`-like variable hooks, see `src/var`).
+
+### `text/dfa`
+
+Two steps, each optional for the filters:
+
+1. **`.` and negated brackets in UTF-8 mode** become byte-sequence automata: `.` is
+   `[\x00-\x7f] | [\xc2-\xdf][\x80-\xbf] | \xe0[\xa0-\xbf][\x80-\xbf] | ...` (the well-formed
+   UTF-8 table); a bracket with only ASCII members and no negation stays a byte set. No new
+   matching engine, only more states at compile time.
+2. **Non-ASCII members and ranges in brackets** (`[é-ü]`, `[[:alpha:]]` beyond ASCII) need a
+   range expansion into the same kind of byte sequences, and class tables for the classes.
+   Start with ranges and literals; classes stay ASCII-only until a Unicode table is worth its size.
+
+`grep`, `sed`, `expr` and `nl -b` all gain from it at once. Until then they are byte-exact, which
+is what they do now.
+
+### Per utility
+
+| utility | needs |
+|---|---|
+| `wc -m` | `text_charcount` per line window; `-c` stays bytes |
+| `cut -c` | `text_charskip` over the line for each list range; `-b` bytes, `-f` unaffected |
+| `uniq -s N` | `text_charskip` |
+| `tr` | the `byteset` grammar extended to characters: sets of code points as ranges plus a 256-entry map for the ASCII part; `filter_in_peek_chars` for the stream; invalid bytes pass through |
+| `paste`, `nl`, `head`, `tail` | nothing (lines and bytes) |
+| `expand`, `fold` (later) | display width: `wcwidth` table, a separate item |
+
+### Order
+
+1. Done: `u8decode`/`u8encode`/`u8charlen`/`u8count`/`u8skip` with a unit test.
+2. `text_utf8()` switch plus `text_charcount`/`text_charskip` wrappers; move `readlink` off the old functions.
+3. `wc -m`, `cut -c`, `uniq -s` on the wrappers.
+4. `filter_in_peek_chars`, then `tr`.
+5. `text/dfa` step 1, then step 2.
+6. Tests: every text builtin gets one UTF-8 case through `assert_filter`, one invalid-byte case,
+   and one case where a character straddles the read window (run with a 4-byte `filter_in`
+   buffer via a test-only build option so the boundary is forced, not hoped for).

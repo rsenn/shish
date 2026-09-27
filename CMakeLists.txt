@@ -362,6 +362,11 @@ if(DO_TESTS)
   target_link_libraries(byteset_test PRIVATE ${LIBOWFAT_LIBRARY})
   add_test(NAME byteset_test COMMAND byteset_test)
 
+  # lib/utf8 unit test
+  add_executable(utf8_test tests/utf8_test.c)
+  target_link_libraries(utf8_test PRIVATE ${LIBOWFAT_LIBRARY})
+  add_test(NAME utf8_test COMMAND utf8_test)
+
   # tests/posix/*.tst and tests/yash/*.tst: yash's own POSIX/self conformance suite 
   # yash's run-test.sh harness interprets each *.tst file's test_oE/ test_x/... cases). 
   # 

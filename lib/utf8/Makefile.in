@@ -20,7 +20,7 @@ include $(top_builddir)/config.mk
 LIB = ../libowfat.a
 ARCHIVE = utf8.a
 MODULES = \
-u8len u8stowcs u8swcslen u8towc wcstou8s wcsu8slen wctou8 wcu8len
+u8charlen u8count u8decode u8encode u8len u8skip u8stowcs u8swcslen u8towc wcstou8s wcsu8slen wctou8 wcu8len
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
