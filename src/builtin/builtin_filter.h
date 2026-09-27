@@ -32,6 +32,9 @@
  *           at the unit: no copy.
  *   status  exit status once step() has returned 0; NULL: ctx->in.had_error
  *   finish  releases what setup() / step() allocated; NULL: nothing
+ *   output  a file operand the result goes to instead of stdout (uniq's second
+ *           operand); non-NULL result: filter_run writes there, filter_open
+ *           declines (a chain has no such file). NULL: stdout
  * ----------------------------------------------------------------------- */
 typedef int filter_step_fn(void* ctx, const char** unit, size_t* len);
 
@@ -43,6 +46,7 @@ struct filter_ops {
   filter_step_fn* step;
   int (*status)(void* ctx);
   void (*finish)(void* ctx);
+  const char* (*output)(void* ctx);
 };
 
 /* one indirection so struct builtin_cmd doesn't have to change shape
@@ -75,6 +79,7 @@ struct filter_in {
   char** errargv; /* argv for builtin_error() */
   char* spill;    /* filter_in_line(): a line that straddles two reads */
   size_t spill_len, spill_cap;
+  const char *err_arg, *err_msg; /* option()/setup() usage error: printed by filter_run as "cmd: err_arg: err_msg" */
 };
 
 /* initializes the input tracking structure
@@ -100,6 +105,12 @@ ssize_t filter_in_get(struct filter_in* in, char* buf, size_t len, const char* d
  * Returns the length, or -1 when every source is exhausted. */
 ssize_t filter_in_line(struct filter_in* in, const char** p, int* had_nl);
 
+/* zero-copy: the longest prefix of the buffered bytes holding at most *lines
+ * newlines (ending after the last of them), for a filter that takes N lines.
+ * On return *lines is what is still wanted. Returns the length, 0 when every
+ * source is exhausted; consume it with filter_in_skip(). */
+ssize_t filter_in_peek_lines(struct filter_in* in, const char** p, unsigned long* lines);
+
 /* zero-copy variant of filter_in_get(): points *p at the bytes buffered in the
  * active source and returns how many (0 when all sources are done, <0 on error).
  * They stay valid until filter_in_skip(), which consumes n of them. */
@@ -113,6 +124,15 @@ void filter_in_close(struct filter_in* in);
  * read would wait): the direct (non-chained) run of a builtin that also
  * offers a filter. ctx starts with a struct filter_in. */
 void filter_drain(filter_step_fn* step, void* ctx, buffer* out);
+
+/* a count operand such as the N of "head -n N": decimal digits only, no overflow.
+ * 0 and *out set, or -1 */
+int filter_opt_count(const char* s, unsigned long* out);
+
+/* generates builtin_<name>() and <name>_filter from <name>_ops (needs fdtable.h) */
+#define FILTER_BUILTIN(name) \
+  const struct builtin_filter name##_filter = {&name##_ops}; \
+  int builtin_##name(int argc, char* argv[]) { return filter_run(&name##_ops, argc, argv, fd_out->w); }
 
 /* the framework behind a filter_ops (see its comment) */
 

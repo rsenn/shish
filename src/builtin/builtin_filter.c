@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "../builtin.h"
 #include "../fdtable.h"
 #include "../../lib/alloc.h"
@@ -255,6 +256,52 @@ filter_in_line(struct filter_in* in, const char** p, int* had_nl) {
   return (ssize_t)in->spill_len;
 }
 
+/* zero-copy prefix holding at most *lines newlines */
+ssize_t
+filter_in_peek_lines(struct filter_in* in, const char** p, unsigned long* lines) {
+  const char* w;
+  size_t n, i = 0;
+  ssize_t r = filter_in_peek(in, p);
+
+  if(r <= 0)
+    return r;
+
+  w = *p;
+  n = (size_t)r;
+
+  while(*lines && i < n) {
+    size_t k = byte_chr(w + i, n - i, '\n');
+
+    if(i + k >= n) {
+      i = n;
+      break;
+    }
+
+    i += k + 1;
+    (*lines)--;
+  }
+
+  return (ssize_t)i;
+}
+
+int
+filter_opt_count(const char* s, unsigned long* out) {
+  unsigned long v = 0;
+
+  if(!*s)
+    return -1;
+
+  for(; *s; s++) {
+    if(*s < '0' || *s > '9' || v > (~0UL - (unsigned long)(*s - '0')) / 10)
+      return -1;
+
+    v = v * 10 + (unsigned long)(*s - '0');
+  }
+
+  *out = v;
+  return 0;
+}
+
 /* consume n bytes previously exposed by filter_in_peek() */
 void
 filter_in_skip(struct filter_in* in, size_t n) {
@@ -288,6 +335,7 @@ filter_drain(filter_step_fn* step, void* ctx, buffer* out) {
 int
 filter_init(const struct filter_ops* ops, void* ctx, int argc, char* argv[], buffer* upstream) {
   struct filter_in* in = ctx;
+  const char *err_arg, *err_msg;
   int ch;
 
   byte_zero(ctx, ops->size);
@@ -297,8 +345,13 @@ filter_init(const struct filter_ops* ops, void* ctx, int argc, char* argv[], buf
       if(!ops->option || ops->option(ctx, ch) < 0)
         return -1;
 
+  /* an option() error message survives filter_in_init()'s zeroing */
+  err_arg = in->err_arg;
+  err_msg = in->err_msg;
   filter_in_init(in, argv, argv[shell_optind] ? argv + shell_optind : NULL, upstream);
-  return ops->setup ? ops->setup(ctx) : 0;
+  in->err_arg = err_arg;
+  in->err_msg = err_msg;
+  return err_msg ? -1 : ops->setup ? ops->setup(ctx) : 0;
 }
 
 void*
@@ -308,7 +361,7 @@ filter_open(const struct filter_ops* ops, int argc, char* argv[], buffer* upstre
   if(!(ctx = alloc(ops->size)))
     return NULL;
 
-  if(filter_init(ops, ctx, argc, argv, upstream) != 0) {
+  if(filter_init(ops, ctx, argc, argv, upstream) != 0 || (ops->output && ops->output(ctx))) {
     filter_close(ops, ctx);
     return NULL;
   }
@@ -333,19 +386,47 @@ filter_close(const struct filter_ops* ops, void* ctx) {
 int
 filter_run(const struct filter_ops* ops, int argc, char* argv[], buffer* out) {
   void* ctx = alloc(ops->size);
-  int r, ret;
+  const char* name;
+  buffer ob;
+  char obuf[4096];
+  int r, ret, fd = -1;
 
   if(!ctx)
     return 1;
 
   if((r = filter_init(ops, ctx, argc, argv, fd_in->r)) < 0) {
-    builtin_invopt(argv);
+    struct filter_in* in = ctx;
+
+    if(in->err_msg && in->err_arg && *in->err_arg)
+      builtin_errmsg(argv, (char*)in->err_arg, (char*)in->err_msg);
+    else if(in->err_msg)
+      builtin_errmsg(argv, (char*)in->err_msg, NULL);
+    else
+      builtin_invopt(argv);
+
     filter_close(ops, ctx);
     return 1;
+  }
+
+  if(ops->output && (name = ops->output(ctx))) {
+    if((fd = open_trunc(name)) == -1) {
+      builtin_error(argv, (char*)name);
+      filter_close(ops, ctx);
+      return 1;
+    }
+
+    buffer_init(&ob, &buffer_op_write, fd, obuf, sizeof(obuf));
+    out = &ob;
   }
 
   filter_drain(ops->step, ctx, out);
   ret = filter_status(ops, ctx);
   filter_close(ops, ctx);
+
+  if(out == &ob) {
+    buffer_flush(&ob);
+    close(fd);
+  }
+
   return ret;
 }

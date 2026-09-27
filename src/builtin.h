@@ -87,6 +87,12 @@ extern const struct builtin_filter sed_filter; /* src/builtin/extra/builtin_sed.
 int builtin_set(int argc, char* argv[]);
 int builtin_shift(int argc, char* argv[]);
 int builtin_sleep(int argc, char* argv[]);
+int builtin_head(int argc, char* argv[]);
+extern const struct builtin_filter head_filter; /* src/builtin/extra/builtin_head.c */
+int builtin_uniq(int argc, char* argv[]);
+extern const struct builtin_filter uniq_filter; /* src/builtin/extra/builtin_uniq.c */
+int builtin_cut(int argc, char* argv[]);
+extern const struct builtin_filter cut_filter; /* src/builtin/extra/builtin_cut.c */
 int builtin_tee(int argc, char* argv[]);
 int builtin_test(int argc, char* argv[]);
 int builtin_times(int argc, char* argv[]);
@@ -160,6 +166,9 @@ extern const char help_set[];
 extern const char help_shift[];
 extern const char help_sleep[];
 extern const char help_source[];
+extern const char help_head[];
+extern const char help_uniq[];
+extern const char help_cut[];
 extern const char help_tee[];
 extern const char help_test[];
 extern const char help_times[];

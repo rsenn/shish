@@ -107,6 +107,15 @@
 #ifndef BUILTIN_PRINTF
 #define BUILTIN_PRINTF 1
 #endif
+#ifndef BUILTIN_HEAD
+#define BUILTIN_HEAD 0
+#endif
+#ifndef BUILTIN_UNIQ
+#define BUILTIN_UNIQ 0
+#endif
+#ifndef BUILTIN_CUT
+#define BUILTIN_CUT 0
+#endif
 #ifndef BUILTIN_TEE
 #define BUILTIN_TEE 0
 #endif
@@ -385,6 +394,15 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_SOURCE
     {"source", &builtin_source, B_SPECIAL, "file [arguments]", help_source},
+#endif
+#if BUILTIN_HEAD
+    {"head", &builtin_head, B_DEFAULT, "[-n number | -c number] [-qv] [file...]", help_head, &head_filter},
+#endif
+#if BUILTIN_UNIQ
+    {"uniq", &builtin_uniq, B_DEFAULT, "[-c | -d | -u] [-f fields] [-s chars] [input [output]]", help_uniq, &uniq_filter},
+#endif
+#if BUILTIN_CUT
+    {"cut", &builtin_cut, B_DEFAULT, "-b list | -c list | -f list [-d delim] [-s] [file...]", help_cut, &cut_filter},
 #endif
 #if BUILTIN_TEE
     {"tee", &builtin_tee, B_DEFAULT, "[-ai] [file...]", help_tee},

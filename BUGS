@@ -1227,3 +1227,12 @@
   be 1). `filter_in_line()` (src/builtin/builtin_filter.c) reads a line
   of any length; the filter half can switch to it, the direct builtin
   reads through its own routine.
+- head-no-header-for-empty-file: `head` prints the "==> file <==" header
+  when the first bytes of a file arrive, so an empty file operand gets
+  none (the shared input layer skips a source with nothing in it).
+  `: >e; printf 'x\n' >f; head e f` prints "==> f <==" and x, without a
+  header for `e` (POSIX and coreutils print both).
+- cut-n-option-ignored: `cut -n` is accepted and ignored. With `-b` in a
+  UTF-8 locale it should not split a multibyte character:
+  `printf '\303\251\n' | LC_ALL=C.UTF-8 cut -n -b 1` prints the lone byte
+  \303 (should print nothing, the range starts inside the character).

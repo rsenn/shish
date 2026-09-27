@@ -292,3 +292,15 @@ is what they do now.
 6. Tests: every text builtin gets one UTF-8 case through `assert_filter`, one invalid-byte case,
    and one case where a character straddles the read window (run with a 4-byte `filter_in`
    buffer via a test-only build option so the boundary is forced, not hoped for).
+
+### Status of the text filters
+
+Written on this infrastructure: `head` (~110 lines including help and header handling), `uniq`
+(~190 with the field/character skipping and the `output_file` operand), `cut` (~260, of which the
+list parser is ~90). Each is a `filter_ops` plus a step and registers as a filter, so all three
+chain in-process. What the framework grew for them: `filter_in_line`, `filter_in_peek_lines`,
+`filter_opt_count`, `err_arg`/`err_msg` usage errors printed by `filter_run`, an optional
+`filter_ops.output` (the file a result goes to; a chain declines it) and the `FILTER_BUILTIN` macro
+(`builtin_<name>` and `<name>_filter` in one line). `assert_filter` in `tests/common.sh` runs a case
+from a file, from a pipe and chained. Not yet: `tail`, `paste`, `nl`, `tr`, and the `head` obsolescent
+`+N`/`-N` forms beyond `-N`. Known gaps are in `BUGS`.
