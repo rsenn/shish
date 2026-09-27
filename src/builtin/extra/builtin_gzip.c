@@ -22,28 +22,45 @@ const char help_gzip[] = "    Compress or decompress files in gzip format.\n"
                          "    -1..-9          compression level (1 = fastest, 9 = best)\n"
                          "    file            file to process; '-' or omitted means stdin\n";
 
+/* compressed bytes produced by libarchive, waiting to be pulled */
 struct raw_buf {
-  char buf[4096];
-  size_t pending_len, pending_off;
+  char* data;
+  size_t len, off, cap;
 };
 
-static size_t
+static int
 raw_buf_push(struct raw_buf* rb, const void* buf, size_t len) {
-  if(len > sizeof(rb->buf))
-    len = sizeof(rb->buf);
+  if(rb->off == rb->len)
+    rb->off = rb->len = 0;
 
-  byte_copy(rb->buf, len, buf);
-  rb->pending_len = len;
-  rb->pending_off = 0;
-  return len;
+  if(rb->len + len > rb->cap) {
+    size_t cap = rb->cap ? rb->cap : 4096;
+    char* p;
+
+    while(cap < rb->len + len)
+      cap *= 2;
+
+    if(!(p = alloc_re(rb->data, cap)))
+      return -1;
+
+    rb->data = p;
+    rb->cap = cap;
+  }
+
+  byte_copy(rb->data + rb->len, len, buf);
+  rb->len += len;
+  return 0;
 }
 
+/* hands out at most 1024 bytes: filter_out.pend only holds 1400 */
 static int
 raw_buf_pull(struct raw_buf* rb, const char** unit, size_t* len) {
-  if(rb->pending_len > 0) {
-    *unit = rb->buf + rb->pending_off;
-    *len = rb->pending_len;
-    rb->pending_len = 0;
+  if(rb->off < rb->len) {
+    size_t n = rb->len - rb->off;
+
+    *unit = rb->data + rb->off;
+    *len = n < 1024 ? n : 1024;
+    rb->off += *len;
     return 1;
   }
 
@@ -54,58 +71,73 @@ struct gzip_ctx {
   struct filter_in in;
   struct filter_out out;
   struct archive *a, *ar;
-  unsigned had_error : 1, decompress : 1, to_stdout : 1, force : 1, keep : 1;
+  unsigned had_error : 1, decompress : 1, to_stdout : 1, force : 1, keep : 1, started : 1, finished : 1;
   unsigned compression_level : 4;
   struct raw_buf raw;
 };
 
-/* libarchive write callback:
- * receives compressed data chunks from libarchive and stores them in buf to be pulled */
+/* libarchive write callback: queues compressed chunks for gzip_step() */
 static ssize_t
 gzip_archive_writer(struct archive* a, void* client_data, const void* buf, size_t len) {
   struct gzip_ctx* c = client_data;
   (void)a;
 
-  return (ssize_t)raw_buf_push(&c->raw, buf, len);
+  return raw_buf_push(&c->raw, buf, len) < 0 ? -1 : (ssize_t)len;
 }
 
-/* step function pulling compressed blocks from libarchive */
+/* opens the single raw entry all the input is written into */
+static int
+gzip_start(struct archive* a) {
+  struct archive_entry* entry = archive_entry_new();
+  int r;
+
+  archive_entry_set_pathname(entry, "stream");
+  archive_entry_set_filetype(entry, AE_IFREG);
+  r = archive_write_header(a, entry);
+  archive_entry_free(entry);
+  return r == ARCHIVE_OK ? 0 : -1;
+}
+
+/* step function pulling compressed blocks from libarchive:
+ * feeds input until output is queued; at EOF closes to emit the trailer */
 static int
 gzip_step(void* arg, const char** unit, size_t* len) {
   struct gzip_ctx* c = arg;
-  ssize_t n;
   char read_buf[4096];
 
-  if(raw_buf_pull(&c->raw, unit, len))
-    return 1;
+  for(;;) {
+    ssize_t n;
 
-  if((n = filter_in_get(&c->in, read_buf, sizeof(read_buf), "", 0)) < 0) {
-    c->had_error = 1;
-    return 0;
+    if(raw_buf_pull(&c->raw, unit, len))
+      return 1;
 
-  } else if(n > 0) {
-    struct archive_entry* entry = archive_entry_new();
-    archive_entry_set_pathname(entry, "stream");
-    archive_entry_set_size(entry, n);
-    archive_entry_set_filetype(entry, AE_IFREG);
+    if(c->finished || c->had_error)
+      return 0;
 
-    if(archive_write_header(c->a, entry) != ARCHIVE_OK) {
-      archive_entry_free(entry);
+    if(!c->started) {
+      if(gzip_start(c->a) < 0) {
+        c->had_error = 1;
+        return 0;
+      }
+      c->started = 1;
+    }
+
+    if((n = filter_in_get(&c->in, read_buf, sizeof(read_buf), "", 0)) < 0) {
       c->had_error = 1;
       return 0;
     }
 
-    archive_entry_free(entry);
-
-    if(archive_write_data(c->a, read_buf, n) < 0) {
-      c->had_error = 1;
-      return 0;
+    if(n > 0) {
+      if(archive_write_data(c->a, read_buf, n) < 0) {
+        c->had_error = 1;
+        return 0;
+      }
+    } else {
+      if(archive_write_close(c->a) != ARCHIVE_OK)
+        c->had_error = 1;
+      c->finished = 1;
     }
-  } else if(c->a) {
-    archive_write_close(c->a);
   }
-
-  return raw_buf_pull(&c->raw, unit, len);
 }
 
 /* parses arguments and initializes sessions */
@@ -149,6 +181,9 @@ gzip_init(struct gzip_ctx* c, int argc, char* argv[], buffer* upstream) {
 
   archive_write_add_filter_gzip(c->a);
   archive_write_set_format_raw(c->a);
+
+  archive_write_set_bytes_per_block(c->a, 0); /* hand every chunk to the writer at once */
+  archive_write_set_bytes_in_last_block(c->a, 1);
 
   if(c->compression_level > 0) {
     char opt[18 + FMT_ULONG + 1];
@@ -267,18 +302,29 @@ builtin_gzip(int argc, char* argv[]) {
       }
 
       /* Use a local wrapper or write directly to out_fd via archive writer */
-      // For simplicity, we can feed src_buf into file_a and write blocks to out_fd
+
+      archive_write_set_bytes_per_block(file_a, 0);
+      archive_write_set_bytes_in_last_block(file_a, 1);
       archive_write_open_fd(file_a, out_fd);
 
-      // archive_write_open_memory(file_a, ...); // or use a custom client block callback writing to out_fd
+
 
       // Alternatively, pump data:
       ssize_t bytes_read;
       char chunk[4096];
 
-      while((bytes_read = buffer_get_until(&src_buf, chunk, sizeof(chunk), "", 0)) > 0) {
-        // compress and write chunk to out_fd...
-      }
+      if(gzip_start(file_a) < 0)
+        c.had_error = 1;
+      else
+        while((bytes_read = buffer_get_until(&src_buf, chunk, sizeof(chunk), "", 0)) > 0)
+          if(archive_write_data(file_a, chunk, bytes_read) < 0) {
+            c.had_error = 1;
+            break;
+          }
+
+      if(archive_write_close(file_a) != ARCHIVE_OK)
+        c.had_error = 1;
+      archive_write_free(file_a);
 
       buffer_close(&src_buf);
       close(out_fd);
@@ -297,6 +343,7 @@ builtin_gzip(int argc, char* argv[]) {
   if(c.ar)
     archive_read_free(c.ar);
 
+  alloc_free(c.raw.data);
   filter_in_close(&c.in);
   return ret;
 }
@@ -324,6 +371,7 @@ gzip_filter_close(void* arg) {
   if(c->ar)
     archive_read_free(c->ar);
 
+  alloc_free(c->raw.data);
   filter_in_close(&c->in);
   alloc_free(c);
 }
