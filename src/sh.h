@@ -124,6 +124,7 @@ extern int sh_child;
    plain command failing inside a `.`-sourced file kill an otherwise
    interactive shell the moment it's one level into any sourced file. */
 extern int sh_interactive;
+int sh_utf8(void); /* do LC_ALL/LC_CTYPE/LANG ask for UTF-8 text handling? (src/sh/sh_utf8.c) */
 
 /* set while a real-signal trap's body is running (trap_handler(),
  * builtin_trap.c) and it calls "exit" -- see eval_subshell.c's own

@@ -60,5 +60,23 @@ main(void) {
   check(u8count("a\xff\xc3", 3) == 3, "each invalid or cut-off byte counts as one character");
   check(u8skip("a\xc3\xa9z", 4, 2) == 3 && u8skip("a\xc3\xa9z", 4, 9) == 4 && u8skip("abc", 3, 0) == 0, "skip k characters, clamped to the input");
 
+  {
+    static const unsigned short pair[] = {'a', 0xd83d, 0xde00, 0x20ac};
+    static const unsigned short lone[] = {'x', 0xd800, 'y'};
+    size_t used = 0;
+
+    check(u8fromu16(b, 8, pair, 4, &used) == 8 && used == 4 && !memcmp(b, "a\xf0\x9f\x98\x80\xe2\x82\xac", 8), "UTF-16 with a surrogate pair converts to UTF-8");
+    check(u8fromu16(b, 5, pair, 4, &used) == 5 && used == 3, "conversion stops before a character that does not fit");
+    check(u8fromu16(b, 8, lone, 3, &used) == 5 && !memcmp(b, "x\xef\xbf\xbdy", 5), "a lone surrogate becomes U+FFFD");
+  }
+
+  check(u8locale("en_US.UTF-8", 0, 0) == 1 && u8locale(0, "C.utf8", 0) == 1 && u8locale(0, 0, "de_DE.UTF-8@euro") == 1 && u8locale(0, 0, "en_US.utf-8") == 1, "UTF-8 codesets are recognised in any spelling");
+  check(u8locale("C", 0, "en_US.UTF-8") == 0 && u8locale("", "POSIX", "en_US.UTF-8") == 0, "the first non-empty variable decides");
+  check(u8locale("", "", "en_US.UTF-8") == 1 && u8locale(0, 0, 0) == 0 && u8locale("en_US.ISO-8859-1", 0, 0) == 0 && u8locale("C.UTF-88", 0, 0) == 0, "an empty or missing variable falls through; other codesets are not UTF-8");
+
+  check(text_charlen(0, "\xc3\xa9", 2) == 1 && text_charlen(1, "\xc3\xa9", 2) == 2, "text_charlen follows the mode");
+  check(text_charcount(0, "a\xc3\xa9", 3) == 3 && text_charcount(1, "a\xc3\xa9", 3) == 2, "text_charcount follows the mode");
+  check(text_charskip(0, "a\xc3\xa9z", 4, 2) == 2 && text_charskip(1, "a\xc3\xa9z", 4, 2) == 3 && text_charskip(0, "ab", 2, 9) == 2, "text_charskip follows the mode and clamps");
+
   return failed;
 }

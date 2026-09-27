@@ -226,10 +226,13 @@ parser is the bulk and is `cut`'s own), `tail` ~70, `nl` ~110, `tr` ~90 (the set
   (`tests/utf8_test.c`). They follow the shape of `unicode_{to,from}_utf8` in QuickJS's `cutils.c`
   but drop its 5/6-byte forms, refuse surrogates and values above U+10FFFF, and tell truncation
   from invalid input, which a stream needs.
-- The older `u8len`, `u8towc`, `wctou8`, `u8stowcs` (used by `lib/unix/readlink.c`) stay for now:
-  `u8len` accepts overlong forms and never checks continuation bytes, `u8towc` reads up to four
-  bytes whatever `count` says, and `wctou8` NUL-terminates (the buffer needs one byte more than
-  the character). Move their callers to the new functions, then delete them.
+- The old `u8len`, `u8towc`, `wctou8` and the `wcs*` functions built on them are gone (`u8len`
+  accepted overlong forms, `u8towc` read up to four bytes whatever `count` said, `wctou8` wrote a
+  terminator past the character). Their one user, `lib/unix/readlink.c` (Windows), now calls
+  `u8fromu16`, which also handles surrogate pairs and whole characters only.
+- `u8locale` decides from `LC_ALL`/`LC_CTYPE`/`LANG`; `sh_utf8()` (`src/sh/sh_utf8.c`) feeds it the
+  shell's own variables on every call, and `text_charlen`/`text_charcount`/`text_charskip` take the
+  answer as their first argument. A builtin asks once at init and keeps it in its ctx.
 - Everything else, filters included, is byte-oriented today; `text/dfa` matches bytes, so `.` and
   `[^x]` match one byte of a multibyte character.
 
@@ -245,11 +248,11 @@ parser is the bulk and is `cut`'s own), `tail` ~70, `nl` ~110, `tr` ~90 (the set
 
 ### Locale policy
 
-One switch, decided once at startup and read through the `text_*` wrappers, so every builtin
-agrees: UTF-8 mode when the first non-empty of `LC_ALL`, `LC_CTYPE`, `LANG` names UTF-8
+One switch, decided by `u8locale()` from the shell's variables (`sh_utf8()`) and passed to the
+`text_*` wrappers, so every builtin agrees: UTF-8 mode when the first non-empty of `LC_ALL`, `LC_CTYPE`, `LANG` names UTF-8
 (`*.UTF-8`, `*.utf8`, either case); otherwise bytes. `LC_ALL=C` keeps today's behaviour, so
-scripts and the test suite are unaffected by default. Cache the answer; changing `LC_*` at run
-time re-reads it (the shell already runs `setlocale`-like variable hooks, see `src/var`).
+scripts and the test suite are unaffected by default. There is no cache: `sh_utf8()` is three
+hash lookups, a builtin calls it once when it starts, so an assignment takes effect on the next command.
 
 ### `text/dfa`
 
@@ -280,7 +283,7 @@ is what they do now.
 ### Order
 
 1. Done: `u8decode`/`u8encode`/`u8charlen`/`u8count`/`u8skip` with a unit test.
-2. `text_utf8()` switch plus `text_charcount`/`text_charskip` wrappers; move `readlink` off the old functions.
+2. Done: `sh_utf8()` and the `text_*` wrappers; `readlink` moved off the old functions (compiled with mingw).
 3. `wc -m`, `cut -c`, `uniq -s` on the wrappers.
 4. `filter_in_peek_chars`, then `tr`.
 5. `text/dfa` step 1, then step 2.

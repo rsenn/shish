@@ -66,7 +66,7 @@ ssize_t
 readlink(const char* LinkPath, char* buf, size_t maxlen) {
   union REPARSE_DATA_BUFFER_UNION u;
   wchar_t* wbuf = 0;
-  unsigned int u8len, len, wlen;
+  unsigned int len, wlen;
 
   if(!get_reparse_data(LinkPath, &u)) {
     return -1;
@@ -90,24 +90,13 @@ readlink(const char* LinkPath, char* buf, size_t maxlen) {
   if(!wbuf)
     return 0;
 
-  for(len = 0; len < wlen; ++len) {
-    u8len += wcu8len(wbuf[len]);
+  if(maxlen == 0)
+    return 0;
 
-    if(u8len >= maxlen)
-      break;
-  }
-
-  if(u8len > maxlen) {
-    len--;
-  }
-
-  u8len = wcstou8s(buf, wbuf, len);
-
-  if(u8len >= maxlen)
-    u8len = maxlen - 1;
-
-  buf[u8len] = '\0';
-  return u8len;
+  /* whole characters only, leaving room for the terminator */
+  len = (unsigned int)u8fromu16(buf, maxlen - 1, (const unsigned short*)wbuf, wlen, NULL);
+  buf[len] = '\0';
+  return len;
 }
 #endif
 
