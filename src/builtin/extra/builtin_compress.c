@@ -13,7 +13,7 @@
 #include "../../../lib/alloc.h"
 #include "../../../lib/open.h"
 
-const char help_gzip[] = "    Compress or decompress files in gzip format.\n"
+const char help_compress[] = "    Compress or decompress files in gzip format.\n"
                          "\n"
                          "    -c              write on standard output, keep original files unchanged\n"
                          "    -d              decompress\n"
@@ -65,7 +65,7 @@ raw_buf_pull(struct raw_buf* rb, const char** unit, size_t* len) {
   return 0;
 }
 
-struct gzip_ctx {
+struct compress_ctx {
   struct filter_in in;
   struct archive* a;
   unsigned had_error : 1, decompress : 1, to_stdout : 1, force : 1, keep : 1, started : 1, finished : 1;
@@ -73,10 +73,10 @@ struct gzip_ctx {
   struct raw_buf raw;
 };
 
-/* libarchive write callback: queues compressed chunks for gzip_step() */
+/* libarchive write callback: queues compressed chunks for compress_step() */
 static ssize_t
-gzip_archive_writer(struct archive* a, void* client_data, const void* buf, size_t len) {
-  struct gzip_ctx* c = client_data;
+compress_archive_writer(struct archive* a, void* client_data, const void* buf, size_t len) {
+  struct compress_ctx* c = client_data;
   (void)a;
 
   return raw_buf_push(&c->raw, buf, len) < 0 ? -1 : (ssize_t)len;
@@ -84,7 +84,7 @@ gzip_archive_writer(struct archive* a, void* client_data, const void* buf, size_
 
 /* opens the single raw entry all the input is written into */
 static int
-gzip_start(struct archive* a) {
+compress_start(struct archive* a) {
   struct archive_entry* entry = archive_entry_new();
   int r;
 
@@ -98,8 +98,8 @@ gzip_start(struct archive* a) {
 /* step function pulling compressed blocks from libarchive:
  * feeds input until output is queued; at EOF closes to emit the trailer */
 static int
-gzip_step(void* arg, const char** unit, size_t* len) {
-  struct gzip_ctx* c = arg;
+compress_step(void* arg, const char** unit, size_t* len) {
+  struct compress_ctx* c = arg;
 
   for(;;) {
     const char* p;
@@ -112,7 +112,7 @@ gzip_step(void* arg, const char** unit, size_t* len) {
       return 0;
 
     if(!c->started) {
-      if(gzip_start(c->a) < 0) {
+      if(compress_start(c->a) < 0) {
         c->had_error = 1;
         return 0;
       }
@@ -145,7 +145,7 @@ gzip_step(void* arg, const char** unit, size_t* len) {
 /* creates a raw gzip writer that hands every compressed chunk to its
  * output at once; NULL on failure */
 static struct archive*
-gzip_writer_new(unsigned level) {
+compress_writer_new(unsigned level) {
   struct archive* a;
 
   if(!(a = archive_write_new()))
@@ -169,7 +169,7 @@ gzip_writer_new(unsigned level) {
 
 /* parses arguments and initializes sessions */
 static int
-gzip_init(struct gzip_ctx* c, int argc, char* argv[], buffer* upstream) {
+compress_init(struct compress_ctx* c, int argc, char* argv[], buffer* upstream) {
   int ch;
 
   byte_zero(c, sizeof(*c));
@@ -197,10 +197,10 @@ gzip_init(struct gzip_ctx* c, int argc, char* argv[], buffer* upstream) {
   if(c->decompress)
     return 0;
 
-  if(!(c->a = gzip_writer_new(c->compression_level)))
+  if(!(c->a = compress_writer_new(c->compression_level)))
     return -1;
 
-  if(archive_write_open(c->a, c, NULL, gzip_archive_writer, NULL) != ARCHIVE_OK) {
+  if(archive_write_open(c->a, c, NULL, compress_archive_writer, NULL) != ARCHIVE_OK) {
     archive_write_free(c->a);
     return -1;
   }
@@ -210,7 +210,7 @@ gzip_init(struct gzip_ctx* c, int argc, char* argv[], buffer* upstream) {
 /* compresses src into dst.gz or, with decompress set, dst into src minus ".gz";
  * a failed run removes the partial output and keeps the source. -1 on error */
 static int
-gzip_file(struct gzip_ctx* c, char* argv[], const char* src) {
+compress_file(struct compress_ctx* c, char* argv[], const char* src) {
   char dst[512];
   size_t len = str_len(src);
   buffer sb;
@@ -251,13 +251,13 @@ gzip_file(struct gzip_ctx* c, char* argv[], const char* src) {
     char obuf[4096];
 
     buffer_init(&ob, &buffer_op_write, fd, obuf, sizeof(obuf));
-    err = builtin_zcat_to(2, zargv, &ob) != 0;
+    err = builtin_uncompress_to(2, zargv, &ob) != 0;
     buffer_flush(&ob);
   } else if(filter_open_file(&sb, rbuf, sizeof(rbuf), src) == -1) {
     builtin_error(argv, (char*)src);
     err = 1;
   } else {
-    if(!(a = gzip_writer_new(c->compression_level)) || archive_write_open_fd(a, fd) != ARCHIVE_OK || gzip_start(a) < 0)
+    if(!(a = compress_writer_new(c->compression_level)) || archive_write_open_fd(a, fd) != ARCHIVE_OK || compress_start(a) < 0)
       err = 1;
 
     while(!err && (n = buffer_feed(&sb)) > 0) {
@@ -294,8 +294,8 @@ gzip_file(struct gzip_ctx* c, char* argv[], const char* src) {
 
 /* stdin -> stdout for a "-" operand, independent of the file operand list */
 static int
-gzip_stdin(struct gzip_ctx* c, char* argv[]) {
-  struct gzip_ctx sc;
+compress_stdin(struct compress_ctx* c, char* argv[]) {
+  struct compress_ctx sc;
   size_t n;
   const char* x;
   int ret;
@@ -303,10 +303,10 @@ gzip_stdin(struct gzip_ctx* c, char* argv[]) {
   byte_zero(&sc, sizeof(sc));
   filter_in_init(&sc.in, argv, NULL, fd_in->r);
 
-  if(!(sc.a = gzip_writer_new(c->compression_level)) || archive_write_open(sc.a, &sc, NULL, gzip_archive_writer, NULL) != ARCHIVE_OK)
+  if(!(sc.a = compress_writer_new(c->compression_level)) || archive_write_open(sc.a, &sc, NULL, compress_archive_writer, NULL) != ARCHIVE_OK)
     return -1;
 
-  while(gzip_step(&sc, &x, &n)) {
+  while(compress_step(&sc, &x, &n)) {
     buffer_put(fd_out->w, x, n);
     buffer_flush(fd_out->w);
   }
@@ -319,11 +319,11 @@ gzip_stdin(struct gzip_ctx* c, char* argv[]) {
 }
 
 int
-builtin_gzip(int argc, char* argv[]) {
-  struct gzip_ctx c;
+builtin_compress(int argc, char* argv[]) {
+  struct compress_ctx c;
   int ret = 0;
 
-  if(gzip_init(&c, argc, argv, fd_in->r) == -1) {
+  if(compress_init(&c, argc, argv, fd_in->r) == -1) {
     builtin_invopt(argv);
     return 1;
   }
@@ -332,9 +332,9 @@ builtin_gzip(int argc, char* argv[]) {
     char* name = argv[shell_optind - 1];
     filter_in_close(&c.in);
 
-    /* zcat only reads argv[1..]: give it the operands after the options */
+    /* uncompress only reads argv[1..]: give it the operands after the options */
     argv[shell_optind - 1] = argv[0];
-    ret = builtin_zcat(argc - shell_optind + 1, argv + shell_optind - 1);
+    ret = builtin_uncompress(argc - shell_optind + 1, argv + shell_optind - 1);
     argv[shell_optind - 1] = name;
     return ret;
   }
@@ -343,7 +343,7 @@ builtin_gzip(int argc, char* argv[]) {
     size_t n;
     const char* x;
 
-    while(gzip_step(&c, &x, &n)) {
+    while(compress_step(&c, &x, &n)) {
       buffer_put(fd_out->w, x, n);
       buffer_flush(fd_out->w);
     }
@@ -351,7 +351,7 @@ builtin_gzip(int argc, char* argv[]) {
     char** files;
 
     for(files = c.in.files; *files; files++)
-      if((str_equal(*files, "-") ? gzip_stdin(&c, argv) : gzip_file(&c, argv, *files)) < 0)
+      if((str_equal(*files, "-") ? compress_stdin(&c, argv) : compress_file(&c, argv, *files)) < 0)
         c.had_error = 1;
   }
 
@@ -368,14 +368,14 @@ builtin_gzip(int argc, char* argv[]) {
 /* ---- filter integration hooks (todo.md goal 13) ---- */
 
 static int
-gzip_filter_status(void* arg) {
-  struct gzip_ctx* c = arg;
+compress_filter_status(void* arg) {
+  struct compress_ctx* c = arg;
   return c->had_error || c->in.had_error ? 1 : 0;
 }
 
 static void
-gzip_filter_close(void* arg) {
-  struct gzip_ctx* c = arg;
+compress_filter_close(void* arg) {
+  struct compress_ctx* c = arg;
 
   if(c->a)
     archive_write_free(c->a);
@@ -386,14 +386,14 @@ gzip_filter_close(void* arg) {
 }
 
 static void*
-gzip_filter_open(int argc, char* argv[], buffer* upstream) {
-  struct gzip_ctx* c = alloc(sizeof(*c));
+compress_filter_open(int argc, char* argv[], buffer* upstream) {
+  struct compress_ctx* c = alloc(sizeof(*c));
 
   if(!c)
     return NULL;
 
-  /* decompression is zcat's job: let the caller fork it */
-  if(gzip_init(c, argc, argv, upstream) == -1 || c->decompress) {
+  /* decompression is uncompress's job: let the caller fork it */
+  if(compress_init(c, argc, argv, upstream) == -1 || c->decompress) {
     if(c->a)
       archive_write_free(c->a);
 
@@ -404,5 +404,5 @@ gzip_filter_open(int argc, char* argv[], buffer* upstream) {
   return c;
 }
 
-const struct filter_ops gzip_ops = {gzip_filter_open, NULL, gzip_filter_status, gzip_filter_close, gzip_step};
-const struct builtin_filter gzip_filter = {&gzip_ops};
+const struct filter_ops compress_ops = {compress_filter_open, NULL, compress_filter_status, compress_filter_close, compress_step};
+const struct builtin_filter compress_filter = {&compress_ops};

@@ -448,20 +448,20 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_XARGS
     {"xargs", &builtin_xargs, B_DEFAULT, "[-0opr] [-a FILE] [-d DELIM] [-l/-L MAX-LINES] [-n MAX-ARGS] [-P MAX-PROCS] <command> [...args]", help_xargs},
 #endif
-#if BUILTIN_GZIP
-    {"gzip", &builtin_gzip, B_DEFAULT, "[file...]", help_gzip},
-    {"bzip2", &builtin_gzip, B_DEFAULT, "[file...]", help_gzip},
-    {"lbzip2", &builtin_gzip, B_DEFAULT, "[file...]", help_gzip},
-    {"lz", &builtin_gzip, B_DEFAULT, "[file...]", help_gzip},
-    {"xz", &builtin_gzip, B_DEFAULT, "[file...]", help_gzip},
-    {"zstd", &builtin_gzip, B_DEFAULT, "[file...]", help_gzip},
+#if BUILTIN_COMPRESS
+    {"gzip", &builtin_compress, B_DEFAULT, "[file...]", help_compress},
+    {"bzip2", &builtin_compress, B_DEFAULT, "[file...]", help_compress},
+    {"lbzip2", &builtin_compress, B_DEFAULT, "[file...]", help_compress},
+    {"lz", &builtin_compress, B_DEFAULT, "[file...]", help_compress},
+    {"xz", &builtin_compress, B_DEFAULT, "[file...]", help_compress},
+    {"zstd", &builtin_compress, B_DEFAULT, "[file...]", help_compress},
 #endif
-#if BUILTIN_ZCAT
-    {"zcat", &builtin_zcat, B_DEFAULT, "[file...]", help_zcat},
-    {"bzcat", &builtin_zcat, B_DEFAULT, "[file...]", help_zcat},
-    {"xzcat", &builtin_zcat, B_DEFAULT, "[file...]", help_zcat},
-    {"zstdcat", &builtin_zcat, B_DEFAULT, "[file...]", help_zcat},
-    {"lbzcat", &builtin_zcat, B_DEFAULT, "[file...]", help_zcat},
+#if BUILTIN_UNCOMPRESS
+    {"zcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress},
+    {"bzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress},
+    {"xzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress},
+    {"zstdcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress},
+    {"lbzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress},
 #endif
     {NULL, NULL, 0, NULL, NULL},
 };

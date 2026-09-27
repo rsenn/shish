@@ -99,9 +99,9 @@ int builtin_wait(int argc, char* argv[]);
 int builtin_wc(int argc, char* argv[]);
 int builtin_which(int argc, char* argv[]);
 int builtin_xargs(int argc, char* argv[]);
-int builtin_zcat(int argc, char* argv[]);
-int builtin_zcat_to(int argc, char* argv[], buffer* out);
-int builtin_gzip(int argc, char* argv[]);
+int builtin_uncompress(int argc, char* argv[]);
+int builtin_uncompress_to(int argc, char* argv[], buffer* out);
+int builtin_compress(int argc, char* argv[]);
 
 /* builtin help text, one string per builtin_<name>() implementation
  * (shared between every table entry that dispatches to the same
@@ -173,8 +173,8 @@ extern const char help_wait[];
 extern const char help_wc[];
 extern const char help_which[];
 extern const char help_xargs[];
-extern const char help_gzip[];
-extern const char help_zcat[];
+extern const char help_compress[];
+extern const char help_uncompress[];
 
 #else
 #warning "builtin.h included twice"

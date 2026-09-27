@@ -1,4 +1,4 @@
-# configures libarchive builtin (zcat, extract, ...): 
+# configures libarchive builtin (uncompress, extract, ...): 
 # wraps libarchive/libarchive, cloned into third_party/ on first configure. 
 # Included when BUILTIN_LIBARCHIVE is ON (-DBUILTIN_LIBARCHIVE=ON, or -DENABLE_ALL_BUILTINS=ON).
 #

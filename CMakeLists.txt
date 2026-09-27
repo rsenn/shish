@@ -235,7 +235,7 @@ set_init(ALL_SOURCES ${SHISH_SOURCES} ${LIBSHELL_SOURCES})
 add_executable(shish ${SHISH_SOURCES})
 target_link_libraries(shish PRIVATE libshell ${LIBOWFAT_LIBRARY} ${LIBMATH} ${ELECTRICFENCE_LIBRARY})
 
-if(BUILTIN_ZCAT OR ENABLE_ALL_BUILTINS)
+if(BUILTIN_COMPRESS OR BUILTIN_UNCOMPRESS OR ENABLE_ALL_BUILTINS)
   include(cmake/LibArchive.cmake)
 
   configure_libarchive_builtin()

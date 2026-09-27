@@ -6,12 +6,12 @@
 #include "../../../lib/byte.h"
 #include "../../../lib/alloc.h"
 
-const char help_zcat[] = "    Uncompress and concatenate files to standard output.\n"
+const char help_uncompress[] = "    Uncompress and concatenate files to standard output.\n"
                          "\n"
                          "    -f              copy input that is not compressed unchanged\n"
                          "    file            compressed file to read; '-' or omitted means stdin\n";
 
-struct zcat_ctx {
+struct uncompress_ctx {
   struct filter_in in;
   struct archive* a;
   size_t held; /* input bytes lent to libarchive, consumed on its next read */
@@ -20,8 +20,8 @@ struct zcat_ctx {
 
 /* libarchive read callback: lends the input buffer in place, no copy */
 static ssize_t
-zcat_archive_reader(struct archive* a, void* client_data, const void** block) {
-  struct zcat_ctx* c = client_data;
+uncompress_archive_reader(struct archive* a, void* client_data, const void** block) {
+  struct uncompress_ctx* c = client_data;
   ssize_t n;
 
   (void)a;
@@ -37,8 +37,8 @@ zcat_archive_reader(struct archive* a, void* client_data, const void** block) {
 
 /* step function: hands out libarchive's own decode buffer, valid until the next call */
 static int
-zcat_step(void* arg, const char** unit, size_t* len) {
-  struct zcat_ctx* c = arg;
+uncompress_step(void* arg, const char** unit, size_t* len) {
+  struct uncompress_ctx* c = arg;
   la_int64_t off;
   int r;
 
@@ -62,7 +62,7 @@ zcat_step(void* arg, const char** unit, size_t* len) {
  * -1 only for a usage or setup error; unreadable input is reported
  * through had_error so the input is never consumed and then refused. */
 static int
-zcat_init(struct zcat_ctx* c, int argc, char* argv[], buffer* upstream) {
+uncompress_init(struct uncompress_ctx* c, int argc, char* argv[], buffer* upstream) {
   struct archive_entry* entry;
   int ch, r;
 
@@ -88,7 +88,7 @@ zcat_init(struct zcat_ctx* c, int argc, char* argv[], buffer* upstream) {
   archive_read_support_format_raw(c->a);
 
   // Advance past the raw stream header entry; EOF means empty input
-  if((r = archive_read_open(c->a, c, NULL, zcat_archive_reader, NULL)) == ARCHIVE_OK)
+  if((r = archive_read_open(c->a, c, NULL, uncompress_archive_reader, NULL)) == ARCHIVE_OK)
     r = archive_read_next_header(c->a, &entry);
 
   if(r == ARCHIVE_EOF) {
@@ -104,10 +104,10 @@ zcat_init(struct zcat_ctx* c, int argc, char* argv[], buffer* upstream) {
   return 0;
 }
 
-/* runs one zcat over argv, writing the uncompressed data to out */
+/* runs one uncompress over argv, writing the uncompressed data to out */
 int
-builtin_zcat_to(int argc, char* argv[], buffer* out) {
-  struct zcat_ctx c;
+builtin_uncompress_to(int argc, char* argv[], buffer* out) {
+  struct uncompress_ctx c;
   const char* unit;
   size_t len;
   int ret;
@@ -116,14 +116,14 @@ builtin_zcat_to(int argc, char* argv[], buffer* out) {
   shell_optind = 1;
   shell_optofs = 0;
 
-  if(zcat_init(&c, argc, argv, fd_in->r) == -1) {
+  if(uncompress_init(&c, argc, argv, fd_in->r) == -1) {
     if(c.a)
       archive_read_free(c.a);
     builtin_invopt(argv);
     return 1;
   }
 
-  while(zcat_step(&c, &unit, &len)) {
+  while(uncompress_step(&c, &unit, &len)) {
     buffer_put(out, unit, len);
     buffer_flush(out);
   }
@@ -140,21 +140,21 @@ builtin_zcat_to(int argc, char* argv[], buffer* out) {
 }
 
 int
-builtin_zcat(int argc, char* argv[]) {
-  return builtin_zcat_to(argc, argv, fd_out->w);
+builtin_uncompress(int argc, char* argv[]) {
+  return builtin_uncompress_to(argc, argv, fd_out->w);
 }
 
 /* ---- Filter Integration hooks (TODO.md Goal 13) ---- */
 
 static int
-zcat_filter_status(void* arg) {
-  struct zcat_ctx* c = arg;
+uncompress_filter_status(void* arg) {
+  struct uncompress_ctx* c = arg;
   return c->had_error || c->in.had_error ? 1 : 0;
 }
 
 static void
-zcat_filter_close(void* arg) {
-  struct zcat_ctx* c = arg;
+uncompress_filter_close(void* arg) {
+  struct uncompress_ctx* c = arg;
 
   if(c->a) {
     archive_read_close(c->a);
@@ -167,13 +167,13 @@ zcat_filter_close(void* arg) {
 
 /* open returns NULL on error, triggering shish's transparent fork+pipe fallback */
 static void*
-zcat_filter_open(int argc, char* argv[], buffer* upstream) {
-  struct zcat_ctx* c = alloc(sizeof(*c));
+uncompress_filter_open(int argc, char* argv[], buffer* upstream) {
+  struct uncompress_ctx* c = alloc(sizeof(*c));
 
   if(!c)
     return NULL;
 
-  if(zcat_init(c, argc, argv, upstream) == -1) {
+  if(uncompress_init(c, argc, argv, upstream) == -1) {
     if(c->a) {
       archive_read_close(c->a);
       archive_read_free(c->a);
@@ -186,5 +186,5 @@ zcat_filter_open(int argc, char* argv[], buffer* upstream) {
   return c;
 }
 
-const struct filter_ops zcat_ops = {zcat_filter_open, NULL, zcat_filter_status, zcat_filter_close, zcat_step};
-const struct builtin_filter zcat_filter = {&zcat_ops};
+const struct filter_ops uncompress_ops = {uncompress_filter_open, NULL, uncompress_filter_status, uncompress_filter_close, uncompress_step};
+const struct builtin_filter uncompress_filter = {&uncompress_ops};
