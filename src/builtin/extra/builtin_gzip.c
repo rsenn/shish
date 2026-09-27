@@ -119,6 +119,7 @@ gzip_step(void* arg, const char** unit, size_t* len) {
         c->had_error = 1;
         return 0;
       }
+      
       c->started = 1;
     }
 
@@ -312,8 +313,6 @@ builtin_gzip(int argc, char* argv[]) {
 
       archive_write_open_fd(file_a, out_fd);
 
-
-
       // Alternatively, pump data:
       ssize_t bytes_read;
       char chunk[4096];
@@ -329,6 +328,7 @@ builtin_gzip(int argc, char* argv[]) {
 
       if(archive_write_close(file_a) != ARCHIVE_OK)
         c.had_error = 1;
+
       archive_write_free(file_a);
 
       buffer_close(&src_buf);
