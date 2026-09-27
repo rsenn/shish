@@ -19,16 +19,15 @@
 #define RE_FREE(re) dfa_free(re)
 #endif
 
-const char help_grep[] =
-    "    Search files for patterns.\n"
-    "\n"
-    "    -E              use Extended Regular Expressions (ERE)\n"
-    "    -v              select non-matching lines\n"
-    "    -n              precede each line by its line number\n"
-    "    -q              quiet (exit 0 on match, no output)\n"
-    "    -c              print a count of matching lines instead of the lines\n"
-    "    pattern         regular expression pattern\n"
-    "    file            file to search; '-' or omitted means stdin\n";
+const char help_grep[] = "    Search files for patterns.\n"
+                         "\n"
+                         "    -E              use Extended Regular Expressions (ERE)\n"
+                         "    -v              select non-matching lines\n"
+                         "    -n              precede each line by its line number\n"
+                         "    -q              quiet (exit 0 on match, no output)\n"
+                         "    -c              print a count of matching lines instead of the lines\n"
+                         "    pattern         regular expression pattern\n"
+                         "    file            file to search; '-' or omitted means stdin\n";
 
 int
 builtin_grep(int argc, char* argv[]) {
@@ -308,15 +307,16 @@ grep_filter_setup(void* arg) {
   return 0;
 }
 
-const struct filter_ops grep_ops = {.opts = "Evnqc",
-                                    .size = sizeof(struct grep_filter_ctx),
-                                    .option = grep_filter_option,
-                                    .setup = grep_filter_setup,
-                                    .step = grep_filter_step,
-                                    .status = grep_filter_status,
-                                    .finish = grep_filter_finish};
+const struct filter_ops grep_ops = {
+    .opts = "Evnqc",
+    .size = sizeof(struct grep_filter_ctx),
+    .option = grep_filter_option,
+    .setup = grep_filter_setup,
+    .step = grep_filter_step,
+    .status = grep_filter_status,
+    .finish = grep_filter_finish,
+};
 const struct builtin_filter grep_filter = {&grep_ops};
 #else
-const struct builtin_filter grep_filter = {
-    NULL}; /* not implemented for the system regex.h backend */
+const struct builtin_filter grep_filter = {NULL}; /* not implemented for the system regex.h backend */
 #endif /* !GREP_USE_SYSTEM_REGEX */
