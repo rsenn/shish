@@ -119,7 +119,7 @@ gzip_step(void* arg, const char** unit, size_t* len) {
         c->had_error = 1;
         return 0;
       }
-      
+
       c->started = 1;
     }
 
@@ -255,11 +255,13 @@ builtin_gzip(int argc, char* argv[]) {
         if(!c.decompress) {
           size_t n;
           const char* x;
+
           while(gzip_step(&c, &x, &n)) {
             buffer_put(fd_out->w, x, n);
             buffer_flush(fd_out->w);
           }
         }
+
         i++;
         continue;
       }
@@ -292,6 +294,7 @@ builtin_gzip(int argc, char* argv[]) {
       /* Open individual source file buffer using shish's filter_open_file */
       buffer src_buf;
       char rbuf[4096];
+      
       if(filter_open_file(&src_buf, rbuf, sizeof(rbuf), src_name) == -1) {
         builtin_error(argv, (char*)src_name);
         close(out_fd);
