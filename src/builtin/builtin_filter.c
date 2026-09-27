@@ -361,7 +361,8 @@ filter_open(const struct filter_ops* ops, int argc, char* argv[], buffer* upstre
   if(!(ctx = alloc(ops->size)))
     return NULL;
 
-  if(filter_init(ops, ctx, argc, argv, upstream) != 0 || (ops->output && ops->output(ctx))) {
+  if(filter_init(ops, ctx, argc, argv, upstream) != 0 || ((struct filter_in*)ctx)->each ||
+     (ops->output && ops->output(ctx))) {
     filter_close(ops, ctx);
     return NULL;
   }
@@ -405,7 +406,7 @@ filter_run(const struct filter_ops* ops, int argc, char* argv[], buffer* out) {
       builtin_invopt(argv);
 
     filter_close(ops, ctx);
-    return 1;
+    return ops->err_status ? ops->err_status : 1;
   }
 
   if(ops->output && (name = ops->output(ctx))) {
@@ -419,8 +420,23 @@ filter_run(const struct filter_ops* ops, int argc, char* argv[], buffer* out) {
     out = &ob;
   }
 
-  filter_drain(ops->step, ctx, out);
-  ret = filter_status(ops, ctx);
+  ((struct filter_in*)ctx)->sink = out;
+
+  if(((struct filter_in*)ctx)->each) {
+    char** f = ((struct filter_in*)ctx)->files;
+
+    ret = 0;
+
+    if(f)
+      for(; *f; f++)
+        ret |= ops->each(ctx, *f) != 0;
+    else
+      ret = ops->each(ctx, NULL) != 0;
+  } else {
+    filter_drain(ops->step, ctx, out);
+    ret = filter_status(ops, ctx);
+  }
+
   filter_close(ops, ctx);
 
   if(out == &ob) {

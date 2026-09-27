@@ -214,16 +214,18 @@ compress_option(void* ctx, int ch) {
   return 0;
 }
 
-/* opens the writer; decompression is uncompress's job, so it is valid
- * but not streamable here (1) */
+/* decompression is uncompress's job and "file -> file.gz" is per-operand work
+ * (each()); neither streams. Otherwise opens the writer. */
 static int
 compress_setup(void* ctx) {
   struct compress_ctx* c = ctx;
 
   c->algo = compress_algo_for(c->in.errargv[0]);
 
-  if(c->decompress)
+  if(c->decompress || (c->in.files && !c->to_stdout)) {
+    c->in.each = 1;
     return 1;
+  }
 
   if(!(c->a = compress_writer_new(c->algo, c->compression_level)))
     return -1;
@@ -247,21 +249,12 @@ compress_finish(void* ctx) {
   alloc_free(c->raw.data);
 }
 
-const struct filter_ops compress_ops = {
-    .opts = "cdfhk123456789",
-    .size = sizeof(struct compress_ctx),
-    .option = compress_option,
-    .setup = compress_setup,
-    .step = compress_step,
-    .status = compress_status,
-    .finish = compress_finish,
-};
-const struct builtin_filter compress_filter = {&compress_ops};
 
 /* compresses src into src + suffix or, with decompress set, src minus the suffix into dst;
  * a failed run removes the partial output and keeps the source. -1 on error */
 static int
-compress_file(struct compress_ctx* c, char* argv[], const char* src) {
+compress_file(struct compress_ctx* c, const char* src) {
+  char** argv = c->in.errargv;
   char dst[512];
   size_t len = str_len(src), sl;
   buffer sb;
@@ -348,18 +341,18 @@ compress_file(struct compress_ctx* c, char* argv[], const char* src) {
 
 /* stdin -> stdout for a "-" operand, independent of the file operand list */
 static int
-compress_stdin(struct compress_ctx* c, char* argv[]) {
+compress_stdin(struct compress_ctx* c) {
   struct compress_ctx sc;
   int ret;
 
   byte_zero(&sc, sizeof(sc));
-  filter_in_init(&sc.in, argv, NULL, fd_in->r);
+  filter_in_init(&sc.in, c->in.errargv, NULL, c->in.upstream);
 
   if(!(sc.a = compress_writer_new(c->algo, c->compression_level)) ||
      archive_write_open(sc.a, &sc, NULL, compress_archive_writer, NULL) != ARCHIVE_OK)
     return -1;
 
-  filter_drain(compress_step, &sc, fd_out->w);
+  filter_drain(compress_step, &sc, c->in.sink);
 
   ret = sc.had_error || sc.in.had_error ? -1 : 0;
   archive_write_free(sc.a);
@@ -368,40 +361,38 @@ compress_stdin(struct compress_ctx* c, char* argv[]) {
   return ret;
 }
 
-int
-builtin_compress(int argc, char* argv[]) {
-  struct compress_ctx c;
-  int ret = 0;
+/* decompresses through uncompress: src (NULL, "-": stdin) to the sink */
+static int
+compress_uncat(struct compress_ctx* c, const char* src) {
+  char* zargv[3] = {c->in.errargv[0], (char*)src, NULL};
 
-  if(filter_init(&compress_ops, &c, argc, argv, fd_in->r) < 0) {
-    builtin_invopt(argv);
-    compress_finish(&c);
-    return 1;
-  }
-
-  if(c.decompress && (c.to_stdout || !c.in.files)) {
-    char* name = argv[shell_optind - 1];
-    filter_in_close(&c.in);
-
-    /* uncompress only reads argv[1..]: give it the operands after the options */
-    argv[shell_optind - 1] = argv[0];
-    ret = builtin_uncompress(argc - shell_optind + 1, argv + shell_optind - 1);
-    argv[shell_optind - 1] = name;
-    return ret;
-  }
-
-  if(c.to_stdout || !c.in.files) {
-    filter_drain(compress_step, &c, fd_out->w);
-  } else {
-    char** files;
-
-    for(files = c.in.files; *files; files++)
-      if((str_equal(*files, "-") ? compress_stdin(&c, argv) : compress_file(&c, argv, *files)) < 0)
-        c.had_error = 1;
-  }
-
-  ret = compress_status(&c);
-  compress_finish(&c);
-  filter_in_close(&c.in);
-  return ret;
+  return builtin_uncompress_to(src ? 2 : 1, zargv, c->in.sink);
 }
+
+/* one operand: compress it to file + suffix, decompress it, or ("-", or -c
+ * with -d) go through stdout / stdin */
+static int
+compress_each(void* ctx, const char* src) {
+  struct compress_ctx* c = ctx;
+
+  if(!src || str_equal(src, "-"))
+    return c->decompress ? compress_uncat(c, src) : compress_stdin(c);
+
+  if(c->to_stdout)
+    return compress_uncat(c, src);
+
+  return compress_file(c, src);
+}
+
+const struct filter_ops compress_ops = {
+    .opts = "cdfhk123456789",
+    .size = sizeof(struct compress_ctx),
+    .option = compress_option,
+    .setup = compress_setup,
+    .step = compress_step,
+    .status = compress_status,
+    .finish = compress_finish,
+    .each = compress_each,
+};
+
+FILTER_BUILTIN(compress)

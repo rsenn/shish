@@ -46,8 +46,12 @@ struct sed_wfile_rt {
    shared by all of them -- text/sed.h hands the same pointer to each. */
 struct sed_ctx {
   struct filter_in in;
-  char linebuf[8192];
-
+  stralloc script, out; /* out: the result, when there is no sink (a chain) */
+  unsigned flags;
+  unsigned have_script : 1, autoprint_off : 1, ran : 1, sent : 1;
+  int exit_status, ret;
+  struct sed* prog;
+  struct sed_state* st;
   struct sed_wfile_rt* wfiles;
   size_t nwfiles;
 };
@@ -55,37 +59,39 @@ struct sed_ctx {
 static int
 sed_read_line(void* ctx, const char** sp, size_t* np, int* had_nl) {
   struct sed_ctx* c = ctx;
-  ssize_t r = filter_in_get(&c->in, c->linebuf, sizeof(c->linebuf) - 1, "\n", 1);
+  ssize_t r = filter_in_line(&c->in, sp, had_nl);
 
-  if(r <= 0)
+  if(r < 0)
     return 0;
 
-  *had_nl = (c->linebuf[r - 1] == '\n');
-
-  if(*had_nl)
-    r--;
-
-  *sp = c->linebuf;
   *np = (size_t)r;
   return 1;
 }
 
+/* the result: straight to the sink, or collected for the chain */
 static void
 sed_out(void* ctx, const char* s, size_t n) {
-  (void)ctx;
-  buffer_put(fd_out->w, s, n);
+  struct sed_ctx* c = ctx;
+
+  if(c->in.sink)
+    buffer_put(c->in.sink, s, n);
+  else
+    stralloc_catb(&c->out, s, n);
 }
 
 static void
-rfile_sink(void* ctx, const char* s, size_t n) {
-  (void)ctx;
-  buffer_put(fd_out->w, s, n);
+sed_sink(void* out, const char* s, size_t n) {
+  buffer_put(out, s, n);
 }
 
 static void
 sed_rfile(void* ctx, const char* name) {
-  (void)ctx;
-  filter_copy(name, rfile_sink, NULL); /* POSIX: a missing r file is silently ignored */
+  struct sed_ctx* c = ctx;
+
+  if(c->in.sink)
+    filter_copy(name, sed_sink, c->in.sink); /* POSIX: a missing r file is silently ignored */
+  else
+    filter_copy(name, slurp_sink, &c->out);
 }
 
 static void
@@ -94,254 +100,16 @@ sed_wfile_out(void* ctx, size_t idx, const char* s, size_t n) {
   struct sed_wfile_rt* w = &c->wfiles[idx];
 
   if(w->alias == 1)
-    buffer_put(fd_out->w, s, n);
+    sed_out(c, s, n);
   else if(w->alias == 2)
     buffer_put(fd_err->w, s, n);
   else if(w->fd != -1)
     buffer_put(&w->b, s, n);
 }
 
-int
-builtin_sed(int argc, char* argv[]) {
-  int c, autoprint_off = 0, flags = 0, ret = 0, exit_status = 0;
-  int have_script = 0;
-  stralloc script;
-  struct sed* prog;
-  int rc;
-  struct sed_ctx ctx;
-  struct sed_state* st;
-  size_t i;
-
-  stralloc_init(&script);
-
-  while((c = shell_getopt(argc, argv, "nEre:f:")) > 0) {
-    switch(c) {
-      case 'n': autoprint_off = 1; break;
-      case 'E':
-      case 'r': flags |= SED_ERE; break;
-
-      case 'e':
-        if((have_script && !stralloc_catc(&script, '\n')) || !stralloc_cats(&script, shell_optarg)) {
-          builtin_error(argv, "out of memory");
-          stralloc_free(&script);
-          return 2;
-        }
-
-        have_script = 1;
-        break;
-
-      case 'f':
-        if(have_script && !stralloc_catc(&script, '\n')) {
-          builtin_error(argv, "out of memory");
-          stralloc_free(&script);
-          return 2;
-        }
-
-        if(slurp_file(shell_optarg, &script) == -1) {
-          builtin_error(argv, shell_optarg);
-          stralloc_free(&script);
-          return 2;
-        }
-
-        have_script = 1;
-        break;
-
-      default: builtin_invopt(argv); return 2;
-    }
-  }
-
-  if(!have_script) {
-    if(argv[shell_optind] == NULL) {
-      builtin_error(argv, "no script given");
-      stralloc_free(&script);
-      return 2;
-    }
-
-    stralloc_cats(&script, argv[shell_optind++]);
-  }
-
-  if(autoprint_off)
-    flags |= SED_NOAUTOPRINT;
-
-  rc = sed_compile(&prog, script.s ? script.s : "", script.len, (unsigned)flags);
-  stralloc_free(&script);
-
-  if(rc != SED_OK) {
-    builtin_errmsg(argv, "script", (char*)sed_error(rc));
-    return 2;
-  }
-
-  byte_zero(&ctx, sizeof(ctx));
-  filter_in_init(&ctx.in, argv, argv[shell_optind] ? argv + shell_optind : NULL, fd_in->r);
-  ctx.nwfiles = sed_wfile_count(prog);
-
-  if(ctx.nwfiles) {
-    ctx.wfiles = alloc(ctx.nwfiles * sizeof(*ctx.wfiles));
-
-    if(!ctx.wfiles) {
-      builtin_error(argv, "out of memory");
-      sed_free(prog);
-      return 2;
-    }
-
-    for(i = 0; i < ctx.nwfiles; i++) {
-      const char* name = sed_wfile_name(prog, i);
-
-      byte_zero(&ctx.wfiles[i], sizeof(ctx.wfiles[i]));
-
-      if(!str_diff(name, "/dev/stdout")) {
-        ctx.wfiles[i].alias = 1;
-        ctx.wfiles[i].fd = -1;
-      } else if(!str_diff(name, "/dev/stderr")) {
-        ctx.wfiles[i].alias = 2;
-        ctx.wfiles[i].fd = -1;
-      } else {
-        ctx.wfiles[i].fd = open_trunc(name);
-
-        if(ctx.wfiles[i].fd == -1) {
-          builtin_error(argv, (char*)name);
-          ret = 2;
-        } else {
-          buffer_init(
-              &ctx.wfiles[i].b, &buffer_op_write, ctx.wfiles[i].fd, ctx.wfiles[i].wbuf, sizeof(ctx.wfiles[i].wbuf));
-        }
-      }
-    }
-  }
-
-  st = sed_state_new(prog, sed_read_line, sed_out, ctx.nwfiles ? sed_wfile_out : NULL, sed_rfile, &ctx);
-
-  if(!st) {
-    builtin_error(argv, "out of memory");
-    ret = 2;
-  } else {
-    sed_run(st, &exit_status);
-    sed_state_free(st);
-  }
-
-  buffer_flush(fd_out->w);
-
-  for(i = 0; i < ctx.nwfiles; i++) {
-    if(ctx.wfiles[i].alias == 0 && ctx.wfiles[i].fd != -1) {
-      buffer_flush(&ctx.wfiles[i].b);
-      buffer_close(&ctx.wfiles[i].b);
-    }
-  }
-
-  filter_in_close(&ctx.in);
-
-  alloc_free(ctx.wfiles);
-  sed_free(prog);
-
-  if(ctx.in.had_error || ret)
-    return ret ? ret : 2;
-
-  return exit_status;
-}
-
-/* filter mode (TODO.md Goal 13). sed's own control flow (n/N, hold
- * space, branches) isn't incrementally resumable yet -- see that
- * section's open questions -- so this runs sed_run() to completion on
- * the first step() call, capturing its output into an in-memory
- * buffer that later step() calls hand back. That gives up true
- * streaming (no interleaving with whatever consumes this filter's
- * output while sed itself runs) but still avoids the fork()+pipe()
- * pair, which is the win this goal actually targets -- and it's the
- * same "run to completion, hand back the result" shape wc's own
- * filter mode uses for its aggregate output, not a special case.
- * Scoped to no file operands (only "-"/the upstream pipe) and no
- * w/s///w targets (those need real fds regardless of chaining, and
- * sed_filter_out() below only captures the pattern-space output) --
- * both just decline via open() returning NULL.
- * ----------------------------------------------------------------------- */
-struct sed_filter_ctx {
-  struct filter_in in;
-  stralloc script, out;
-  unsigned flags;
-  int have_script, autoprint_off, ran, sent, exit_status;
-  struct sed* prog;
-  struct sed_state* st;
-  char linebuf[8192];
-};
-
 static int
-sed_filter_read_line(void* ctx, const char** sp, size_t* np, int* had_nl) {
-  struct sed_filter_ctx* c = ctx;
-  ssize_t r = filter_in_get(&c->in, c->linebuf, sizeof(c->linebuf) - 1, "\n", 1);
-
-  if(r <= 0)
-    return 0;
-
-  *had_nl = (c->linebuf[r - 1] == '\n');
-
-  if(*had_nl)
-    r--;
-
-  *sp = c->linebuf;
-  *np = (size_t)r;
-  return 1;
-}
-
-static void
-sed_filter_out(void* ctx, const char* s, size_t n) {
-  struct sed_filter_ctx* c = ctx;
-
-  stralloc_catb(&c->out, s, n);
-}
-
-static void
-sed_filter_rfile(void* ctx, const char* name) {
-  struct sed_filter_ctx* c = ctx;
-
-  filter_copy(name, slurp_sink, &c->out); /* POSIX: a missing r file is silently ignored */
-}
-
-/* runs the script to completion on the first call, then hands out the
- * captured output as a single unit */
-static int
-sed_filter_step(void* arg, const char** unit, size_t* len) {
-  struct sed_filter_ctx* c = arg;
-
-  if(!c->ran) {
-    c->ran = 1;
-    sed_run(c->st, &c->exit_status);
-    sed_state_free(c->st);
-    c->st = NULL;
-  }
-
-  if(c->sent || !c->out.len)
-    return 0;
-
-  c->sent = 1;
-  *unit = c->out.s;
-  *len = c->out.len;
-  return 1;
-}
-
-static int
-sed_filter_status(void* arg) {
-  struct sed_filter_ctx* c = arg;
-
-  return c->exit_status;
-}
-
-static void
-sed_filter_finish(void* arg) {
-  struct sed_filter_ctx* c = arg;
-
-  if(c->st)
-    sed_state_free(c->st);
-
-  if(c->prog)
-    sed_free(c->prog);
-
-  stralloc_free(&c->script);
-  stralloc_free(&c->out);
-}
-
-static int
-sed_filter_option(void* arg, int ch) {
-  struct sed_filter_ctx* c = arg;
+sed_option(void* ctx, int ch) {
+  struct sed_ctx* c = ctx;
 
   switch(ch) {
     case 'n': c->autoprint_off = 1; return 0;
@@ -359,8 +127,11 @@ sed_filter_option(void* arg, int ch) {
       if(c->have_script && !stralloc_catc(&c->script, '\n'))
         return -1;
 
-      if(slurp_file(shell_optarg, &c->script) == -1)
+      if(slurp_file(shell_optarg, &c->script) == -1) {
+        c->in.err_arg = shell_optarg;
+        c->in.err_msg = "cannot read script file";
         return -1;
+      }
 
       c->have_script = 1;
       return 0;
@@ -369,15 +140,19 @@ sed_filter_option(void* arg, int ch) {
   return -1;
 }
 
-/* everything the real invocation should report (no script, bad script)
- * or cannot stream (file operands, w/s///w targets needing real fds) declines */
+/* compiles the script; file operands and w/s///w targets (real fds) are valid
+ * but not streamable (1), so a chain declines and the command runs on its own */
 static int
-sed_filter_setup(void* arg) {
-  struct sed_filter_ctx* c = arg;
+sed_setup(void* ctx) {
+  struct sed_ctx* c = ctx;
+  int rc;
 
   if(!c->have_script) {
-    if(!c->in.files)
-      return 1;
+    if(!c->in.files) {
+      c->in.err_arg = "";
+      c->in.err_msg = "no script given";
+      return -1;
+    }
 
     stralloc_cats(&c->script, *c->in.files++);
 
@@ -385,30 +160,120 @@ sed_filter_setup(void* arg) {
       c->in.files = NULL;
   }
 
-  if(c->in.files)
-    return 1;
-
   if(c->autoprint_off)
     c->flags |= SED_NOAUTOPRINT;
 
-  if(sed_compile(&c->prog, c->script.s ? c->script.s : "", c->script.len, c->flags) != SED_OK) {
+  if((rc = sed_compile(&c->prog, c->script.s ? c->script.s : "", c->script.len, c->flags)) != SED_OK) {
     c->prog = NULL;
-    return 1;
+    c->in.err_arg = "script";
+    c->in.err_msg = sed_error(rc);
+    return -1;
   }
 
-  if(sed_wfile_count(c->prog))
-    return 1;
+  c->nwfiles = sed_wfile_count(c->prog);
 
-  return (c->st = sed_state_new(c->prog, sed_filter_read_line, sed_filter_out, NULL, sed_filter_rfile, c)) ? 0 : 1;
+  if(!(c->st = sed_state_new(c->prog, sed_read_line, sed_out, c->nwfiles ? sed_wfile_out : NULL, sed_rfile, c))) {
+    c->in.err_arg = "";
+    c->in.err_msg = "out of memory";
+    return -1;
+  }
+
+  return c->in.files || c->nwfiles ? 1 : 0;
+}
+
+/* w/s///w files are created before any input is processed */
+static void
+sed_open_wfiles(struct sed_ctx* c) {
+  size_t i;
+
+  if(!c->nwfiles || !(c->wfiles = alloc(c->nwfiles * sizeof(*c->wfiles)))) {
+    c->nwfiles = 0;
+    return;
+  }
+
+  for(i = 0; i < c->nwfiles; i++) {
+    struct sed_wfile_rt* w = &c->wfiles[i];
+    const char* name = sed_wfile_name(c->prog, i);
+
+    byte_zero(w, sizeof(*w));
+    w->fd = -1;
+
+    if(!str_diff(name, "/dev/stdout"))
+      w->alias = 1;
+    else if(!str_diff(name, "/dev/stderr"))
+      w->alias = 2;
+    else if((w->fd = open_trunc(name)) == -1) {
+      builtin_error(c->in.errargv, (char*)name);
+      c->ret = 2;
+    } else
+      buffer_init(&w->b, &buffer_op_write, w->fd, w->wbuf, sizeof(w->wbuf));
+  }
+}
+
+/* runs the script to completion on the first call (sed's control flow is not
+ * resumable). With a sink the result went straight there; in a chain it is
+ * handed out as one unit. */
+static int
+sed_step(void* arg, const char** unit, size_t* len) {
+  struct sed_ctx* c = arg;
+
+  if(!c->ran) {
+    c->ran = 1;
+    sed_open_wfiles(c);
+    sed_run(c->st, &c->exit_status);
+  }
+
+  if(c->sent || !c->out.len)
+    return 0;
+
+  c->sent = 1;
+  *unit = c->out.s;
+  *len = c->out.len;
+  return 1;
+}
+
+static int
+sed_status(void* arg) {
+  struct sed_ctx* c = arg;
+
+  if(c->ret || c->in.had_error)
+    return 2;
+
+  return c->exit_status;
+}
+
+static void
+sed_finish(void* arg) {
+  struct sed_ctx* c = arg;
+  size_t i;
+
+  if(c->st)
+    sed_state_free(c->st);
+
+  for(i = 0; i < c->nwfiles && c->wfiles; i++)
+    if(c->wfiles[i].alias == 0 && c->wfiles[i].fd != -1) {
+      buffer_flush(&c->wfiles[i].b);
+      buffer_close(&c->wfiles[i].b);
+    }
+
+  alloc_free(c->wfiles);
+
+  if(c->prog)
+    sed_free(c->prog);
+
+  stralloc_free(&c->script);
+  stralloc_free(&c->out);
 }
 
 const struct filter_ops sed_ops = {
     .opts = "nEre:f:",
-    .size = sizeof(struct sed_filter_ctx),
-    .option = sed_filter_option,
-    .setup = sed_filter_setup,
-    .step = sed_filter_step,
-    .status = sed_filter_status,
-    .finish = sed_filter_finish,
+    .size = sizeof(struct sed_ctx),
+    .option = sed_option,
+    .setup = sed_setup,
+    .step = sed_step,
+    .status = sed_status,
+    .finish = sed_finish,
+    .err_status = 2,
 };
-const struct builtin_filter sed_filter = {&sed_ops};
+
+FILTER_BUILTIN(sed)

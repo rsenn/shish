@@ -90,10 +90,11 @@ There are no hand-written overrides: every filter goes through the same
 ### `setup` return values
 
 - `0`: fine.
-- `1`: the arguments are valid but this run cannot stream (`grep -c`, `grep -q`, a bad
-  pattern, no pattern, `gzip -d`). `filter_open` declines with NULL and the pipeline
+- `1`: the arguments are valid but this run cannot stream (`sed` with file operands or
+  `w` targets, `gzip -d`, `gzip file`). `filter_open` declines with NULL and the pipeline
   falls back to `fork()` + pipe, re-running the same argv through the builtin's normal
-  entry point, which reports the problem. `filter_run` treats it as success.
+  entry point. `filter_run` treats it as success. (A bad pattern or script is `-1`, a
+  usage error.)
 - `-1`: usage error. `filter_run` prints `invalid option` and returns 1.
 
 ## 4. Rules a filter must follow
@@ -118,10 +119,10 @@ There are no hand-written overrides: every filter goes through the same
 | builtin | ops | notes |
 |---|---|---|
 | `cat` | declarative | 83 lines |
-| `grep` (filter half) | declarative | `-c`/`-q`/no pattern/bad pattern decline via `setup` = 1; the direct `builtin_grep` is separate |
-| `compress` | declarative | libarchive write side, algorithm from `argv[0]`; also has file mode (`f` -> `f.gz`/`.bz2`/...) and `-d` delegation to `uncompress` |
+| `grep` | declarative | one ops for the builtin and the chain; `-c` yields a count per operand, `-q` stops at the first match; exit status 2 for usage errors via `err_status` |
+| `compress` | declarative | libarchive write side, algorithm from `argv[0]`; file mode (`f` -> `f.gz`/`.bz2`/...) and `-d` delegation to `uncompress` run through `filter_ops.each` (`in.each`), writing to `in.sink` |
 | `uncompress` | declarative | libarchive read side, lends the input buffer in place and reads libarchive's decode block directly; `-f` copies non-compressed input |
-| `sed` | declarative | runs the script to completion on the first `step`, then hands out its captured output as one unit; declines file operands and `w` targets |
+| `sed` | declarative | one ops for the builtin and the chain; runs the script to completion on the first `step`: the result goes straight to `in.sink`, or, in a chain, is handed out as one unit; lines of any length via `filter_in_line`; declines file operands and `w` targets in a chain |
 
 `filter_ops.status` feeds `filter_run`'s exit code and, under `set -o pipefail`, the
 pipeline's status for chained members.
@@ -303,6 +304,6 @@ chain in-process. What the framework grew for them: `filter_in_line`, `filter_in
 `filter_ops.output` (the file a result goes to; a chain declines it) and the `FILTER_BUILTIN` macro
 (`builtin_<name>` and `<name>_filter` in one line). `assert_filter` in `tests/common.sh` runs a case
 from a file, from a pipe and chained. Then `paste` (~190: an input per operand, `-` operands sharing
-one), `nl` (~300, sections and `pBRE` types via `text/dfa`) and `tr` (~290, on `lib/byteset`, byte
-oriented). `tr`'s operands are strings, so its `setup` takes them off `in.files` and reads stdin.
+one), `nl` (~300, sections and `pBRE` types via `text/dfa`) and `tr` (~500, on `lib/byteset`, UTF-8 aware
+above 255 through sorted `struct ent` tables). `tr`'s operands are strings, so its `setup` takes them off `in.files` and reads stdin.
 Not yet: `tail`, and the `head` obsolescent `+N`/`-N` forms beyond `-N`. Known gaps are in `BUGS`.

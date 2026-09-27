@@ -35,6 +35,10 @@
  *   output  a file operand the result goes to instead of stdout (uniq's second
  *           operand); non-NULL result: filter_run writes there, filter_open
  *           declines (a chain has no such file). NULL: stdout
+ *   each    with ctx->in.each set by setup(), filter_run does not step but calls
+ *           each() per operand (once with NULL when there are none); it writes to
+ *           ctx->in.sink. filter_open declines. (compress: file -> file.gz)
+ *   err_status  exit status for a usage error (grep, sed: 2); 0 means 1
  * ----------------------------------------------------------------------- */
 typedef int filter_step_fn(void* ctx, const char** unit, size_t* len);
 
@@ -47,6 +51,8 @@ struct filter_ops {
   int (*status)(void* ctx);
   void (*finish)(void* ctx);
   const char* (*output)(void* ctx);
+  int (*each)(void* ctx, const char* src); /* in.each: whole-operand work (src NULL: no operands); non-0 fails */
+  int err_status;                          /* exit status of a usage error (0: 1) */
 };
 
 /* one indirection so struct builtin_cmd doesn't have to change shape
@@ -72,6 +78,8 @@ struct filter_in {
   int i;
   unsigned done_any : 1, had_error : 1, newfile : 1; /* set when an operand was just opened; the user clears it */
   unsigned spilling : 1;                             /* filter_in_line() is mid-line: keep spill across operands */
+  unsigned each : 1;                                 /* setup(): filter_run calls ops->each() per operand, no step() */
+  buffer* sink;                                      /* filter_run(): where the result goes; NULL in a chain */
   buffer* upstream;                                  /* what "-" reads */
   buffer* cur;                                       /* NULL: no operand open */
   buffer inb;

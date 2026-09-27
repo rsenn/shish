@@ -1220,24 +1220,11 @@
   E
   cat <&3          # "3: Bad file descriptor"; should print "here"
   ```
-- sed-splits-lines-longer-than-8kib: `sed` reads a line through a fixed
-  8 KiB buffer, so a longer line is processed as several lines, in the
-  direct builtin and in the chained filter alike.
-  `printf '%9000s\n' | tr ' ' a >l9k; sed -n '$=' l9k` prints 2 (should
-  be 1). `filter_in_line()` (src/builtin/builtin_filter.c) reads a line
-  of any length; the filter half can switch to it, the direct builtin
-  reads through its own routine.
 - head-no-header-for-empty-file: `head` prints the "==> file <==" header
   when the first bytes of a file arrive, so an empty file operand gets
   none (the shared input layer skips a source with nothing in it).
   `: >e; printf 'x\n' >f; head e f` prints "==> f <==" and x, without a
   header for `e` (POSIX and coreutils print both).
-- tr-is-byte-only: `tr` works on bytes even in a UTF-8 locale, so a
-  multibyte character in a string is several bytes and cannot be a range
-  end: `printf '\303\251\n' | LC_ALL=C.UTF-8 tr '\303\251' x` prints
-  `xx` (should print `x`). Needs the UTF-8 step of the plan
-  (`filter_in_peek_chars`).
-
 - cut-n-option-ignored: `cut -n` is accepted and ignored. With `-b` in a
   UTF-8 locale it should not split a multibyte character:
   `printf '\303\251\n' | LC_ALL=C.UTF-8 cut -n -b 1` prints the lone byte

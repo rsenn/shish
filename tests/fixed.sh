@@ -5301,4 +5301,21 @@ assert_equal "2102" "$("$SHISH_SELF" -c "cat $TESTDIR/long | grep 'a*b\$' | cat 
 assert_equal "2:two 3:three" "$("$SHISH_SELF" -c "cat $TESTDIR/nonl | grep -n t | cat" | tr '\n' ' ' | sed 's/ $//')" "grep still matches a last line without a newline"
 rm -rf "$TESTDIR"
 
+## tr worked on bytes in a UTF-8 locale: a multibyte character in a string was
+## several bytes ("tr é x" turned each byte into x).
+TR_E=$(printf '\303\251'); TR_EU=$(printf '\342\202\254')
+assert_equal "x${TR_EU}a" "$(LC_ALL=C.UTF-8; printf "${TR_E}${TR_EU}a\n" | tr "$TR_E" x)" "tr translates a multibyte character as one"
+assert_equal "${TR_E}a" "$(LC_ALL=C.UTF-8; printf "${TR_E}${TR_EU}a\n" | tr -d "$TR_EU")" "tr -d deletes a multibyte character whole"
+assert_equal "yy" "$(LC_ALL=C.UTF-8; printf "${TR_E}${TR_EU}\n" | tr "${TR_E}-${TR_EU}" y)" "tr takes a multibyte range"
+assert_equal "${TR_EU}${TR_E}" "$(LC_ALL=C.UTF-8; printf 'ab\n' | tr ab "${TR_EU}${TR_E}")" "tr translates to multibyte characters"
+
+## sed read a line through a fixed 8 KiB buffer, so a longer line was processed
+## as several lines (sed -n '$=' said 2 for a single 9000-byte line).
+SEDLONG=$(mktemp)
+printf '%9000s\n' | tr ' ' a >"$SEDLONG"
+assert_equal "1" "$(sed -n '$=' "$SEDLONG")" "sed counts a 9000-byte line as one line"
+assert_equal "1" "$(cat "$SEDLONG" | sed -n '$=')" "a chained sed counts a 9000-byte line as one line"
+assert_equal "9000" "$(sed 's/a/b/' "$SEDLONG" | tr -d '\n' | wc -c | tr -d ' ')" "sed keeps a 9000-byte line whole"
+rm -f "$SEDLONG"
+
 summary

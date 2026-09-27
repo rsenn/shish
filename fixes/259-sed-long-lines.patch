@@ -1,0 +1,554 @@
+diff --git a/BUGS b/BUGS
+index 411e215d..fcea46fd 100644
+--- a/BUGS
++++ b/BUGS
+@@ -1220,24 +1220,11 @@
+   E
+   cat <&3          # "3: Bad file descriptor"; should print "here"
+   ```
+-- sed-splits-lines-longer-than-8kib: `sed` reads a line through a fixed
+-  8 KiB buffer, so a longer line is processed as several lines, in the
+-  direct builtin and in the chained filter alike.
+-  `printf '%9000s\n' | tr ' ' a >l9k; sed -n '$=' l9k` prints 2 (should
+-  be 1). `filter_in_line()` (src/builtin/builtin_filter.c) reads a line
+-  of any length; the filter half can switch to it, the direct builtin
+-  reads through its own routine.
+ - head-no-header-for-empty-file: `head` prints the "==> file <==" header
+   when the first bytes of a file arrive, so an empty file operand gets
+   none (the shared input layer skips a source with nothing in it).
+   `: >e; printf 'x\n' >f; head e f` prints "==> f <==" and x, without a
+   header for `e` (POSIX and coreutils print both).
+-- tr-is-byte-only: `tr` works on bytes even in a UTF-8 locale, so a
+-  multibyte character in a string is several bytes and cannot be a range
+-  end: `printf '\303\251\n' | LC_ALL=C.UTF-8 tr '\303\251' x` prints
+-  `xx` (should print `x`). Needs the UTF-8 step of the plan
+-  (`filter_in_peek_chars`).
+-
+ - cut-n-option-ignored: `cut -n` is accepted and ignored. With `-b` in a
+   UTF-8 locale it should not split a multibyte character:
+   `printf '\303\251\n' | LC_ALL=C.UTF-8 cut -n -b 1` prints the lone byte
+diff --git a/src/builtin/extra/builtin_sed.c b/src/builtin/extra/builtin_sed.c
+index a6d62d2f..1af81cd6 100644
+--- a/src/builtin/extra/builtin_sed.c
++++ b/src/builtin/extra/builtin_sed.c
+@@ -46,8 +46,12 @@ struct sed_wfile_rt {
+    shared by all of them -- text/sed.h hands the same pointer to each. */
+ struct sed_ctx {
+   struct filter_in in;
+-  char linebuf[8192];
+-
++  stralloc script, out; /* out: the result, when there is no sink (a chain) */
++  unsigned flags;
++  unsigned have_script : 1, autoprint_off : 1, ran : 1, sent : 1;
++  int exit_status, ret;
++  struct sed* prog;
++  struct sed_state* st;
+   struct sed_wfile_rt* wfiles;
+   size_t nwfiles;
+ };
+@@ -55,37 +59,39 @@ struct sed_ctx {
+ static int
+ sed_read_line(void* ctx, const char** sp, size_t* np, int* had_nl) {
+   struct sed_ctx* c = ctx;
+-  ssize_t r = filter_in_get(&c->in, c->linebuf, sizeof(c->linebuf) - 1, "\n", 1);
++  ssize_t r = filter_in_line(&c->in, sp, had_nl);
+ 
+-  if(r <= 0)
++  if(r < 0)
+     return 0;
+ 
+-  *had_nl = (c->linebuf[r - 1] == '\n');
+-
+-  if(*had_nl)
+-    r--;
+-
+-  *sp = c->linebuf;
+   *np = (size_t)r;
+   return 1;
+ }
+ 
++/* the result: straight to the sink, or collected for the chain */
+ static void
+ sed_out(void* ctx, const char* s, size_t n) {
+-  (void)ctx;
+-  buffer_put(fd_out->w, s, n);
++  struct sed_ctx* c = ctx;
++
++  if(c->in.sink)
++    buffer_put(c->in.sink, s, n);
++  else
++    stralloc_catb(&c->out, s, n);
+ }
+ 
+ static void
+-rfile_sink(void* ctx, const char* s, size_t n) {
+-  (void)ctx;
+-  buffer_put(fd_out->w, s, n);
++sed_sink(void* out, const char* s, size_t n) {
++  buffer_put(out, s, n);
+ }
+ 
+ static void
+ sed_rfile(void* ctx, const char* name) {
+-  (void)ctx;
+-  filter_copy(name, rfile_sink, NULL); /* POSIX: a missing r file is silently ignored */
++  struct sed_ctx* c = ctx;
++
++  if(c->in.sink)
++    filter_copy(name, sed_sink, c->in.sink); /* POSIX: a missing r file is silently ignored */
++  else
++    filter_copy(name, slurp_sink, &c->out);
+ }
+ 
+ static void
+@@ -94,219 +100,127 @@ sed_wfile_out(void* ctx, size_t idx, const char* s, size_t n) {
+   struct sed_wfile_rt* w = &c->wfiles[idx];
+ 
+   if(w->alias == 1)
+-    buffer_put(fd_out->w, s, n);
++    sed_out(c, s, n);
+   else if(w->alias == 2)
+     buffer_put(fd_err->w, s, n);
+   else if(w->fd != -1)
+     buffer_put(&w->b, s, n);
+ }
+ 
+-int
+-builtin_sed(int argc, char* argv[]) {
+-  int c, autoprint_off = 0, flags = 0, ret = 0, exit_status = 0;
+-  int have_script = 0;
+-  stralloc script;
+-  struct sed* prog;
+-  int rc;
+-  struct sed_ctx ctx;
+-  struct sed_state* st;
+-  size_t i;
++static int
++sed_option(void* ctx, int ch) {
++  struct sed_ctx* c = ctx;
+ 
+-  stralloc_init(&script);
+-
+-  while((c = shell_getopt(argc, argv, "nEre:f:")) > 0) {
+-    switch(c) {
+-      case 'n': autoprint_off = 1; break;
+-      case 'E':
+-      case 'r': flags |= SED_ERE; break;
+-
+-      case 'e':
+-        if((have_script && !stralloc_catc(&script, '\n')) || !stralloc_cats(&script, shell_optarg)) {
+-          builtin_error(argv, "out of memory");
+-          stralloc_free(&script);
+-          return 2;
+-        }
+-
+-        have_script = 1;
+-        break;
+-
+-      case 'f':
+-        if(have_script && !stralloc_catc(&script, '\n')) {
+-          builtin_error(argv, "out of memory");
+-          stralloc_free(&script);
+-          return 2;
+-        }
+-
+-        if(slurp_file(shell_optarg, &script) == -1) {
+-          builtin_error(argv, shell_optarg);
+-          stralloc_free(&script);
+-          return 2;
+-        }
+-
+-        have_script = 1;
+-        break;
+-
+-      default: builtin_invopt(argv); return 2;
+-    }
+-  }
++  switch(ch) {
++    case 'n': c->autoprint_off = 1; return 0;
++    case 'E':
++    case 'r': c->flags |= SED_ERE; return 0;
+ 
+-  if(!have_script) {
+-    if(argv[shell_optind] == NULL) {
+-      builtin_error(argv, "no script given");
+-      stralloc_free(&script);
+-      return 2;
+-    }
++    case 'e':
++      if((c->have_script && !stralloc_catc(&c->script, '\n')) || !stralloc_cats(&c->script, shell_optarg))
++        return -1;
+ 
+-    stralloc_cats(&script, argv[shell_optind++]);
+-  }
++      c->have_script = 1;
++      return 0;
+ 
+-  if(autoprint_off)
+-    flags |= SED_NOAUTOPRINT;
++    case 'f':
++      if(c->have_script && !stralloc_catc(&c->script, '\n'))
++        return -1;
+ 
+-  rc = sed_compile(&prog, script.s ? script.s : "", script.len, (unsigned)flags);
+-  stralloc_free(&script);
++      if(slurp_file(shell_optarg, &c->script) == -1) {
++        c->in.err_arg = shell_optarg;
++        c->in.err_msg = "cannot read script file";
++        return -1;
++      }
+ 
+-  if(rc != SED_OK) {
+-    builtin_errmsg(argv, "script", (char*)sed_error(rc));
+-    return 2;
++      c->have_script = 1;
++      return 0;
+   }
+ 
+-  byte_zero(&ctx, sizeof(ctx));
+-  filter_in_init(&ctx.in, argv, argv[shell_optind] ? argv + shell_optind : NULL, fd_in->r);
+-  ctx.nwfiles = sed_wfile_count(prog);
+-
+-  if(ctx.nwfiles) {
+-    ctx.wfiles = alloc(ctx.nwfiles * sizeof(*ctx.wfiles));
++  return -1;
++}
+ 
+-    if(!ctx.wfiles) {
+-      builtin_error(argv, "out of memory");
+-      sed_free(prog);
+-      return 2;
+-    }
++/* compiles the script; file operands and w/s///w targets (real fds) are valid
++ * but not streamable (1), so a chain declines and the command runs on its own */
++static int
++sed_setup(void* ctx) {
++  struct sed_ctx* c = ctx;
++  int rc;
+ 
+-    for(i = 0; i < ctx.nwfiles; i++) {
+-      const char* name = sed_wfile_name(prog, i);
+-
+-      byte_zero(&ctx.wfiles[i], sizeof(ctx.wfiles[i]));
+-
+-      if(!str_diff(name, "/dev/stdout")) {
+-        ctx.wfiles[i].alias = 1;
+-        ctx.wfiles[i].fd = -1;
+-      } else if(!str_diff(name, "/dev/stderr")) {
+-        ctx.wfiles[i].alias = 2;
+-        ctx.wfiles[i].fd = -1;
+-      } else {
+-        ctx.wfiles[i].fd = open_trunc(name);
+-
+-        if(ctx.wfiles[i].fd == -1) {
+-          builtin_error(argv, (char*)name);
+-          ret = 2;
+-        } else {
+-          buffer_init(
+-              &ctx.wfiles[i].b, &buffer_op_write, ctx.wfiles[i].fd, ctx.wfiles[i].wbuf, sizeof(ctx.wfiles[i].wbuf));
+-        }
+-      }
++  if(!c->have_script) {
++    if(!c->in.files) {
++      c->in.err_arg = "";
++      c->in.err_msg = "no script given";
++      return -1;
+     }
+-  }
+ 
+-  st = sed_state_new(prog, sed_read_line, sed_out, ctx.nwfiles ? sed_wfile_out : NULL, sed_rfile, &ctx);
++    stralloc_cats(&c->script, *c->in.files++);
+ 
+-  if(!st) {
+-    builtin_error(argv, "out of memory");
+-    ret = 2;
+-  } else {
+-    sed_run(st, &exit_status);
+-    sed_state_free(st);
++    if(!*c->in.files)
++      c->in.files = NULL;
+   }
+ 
+-  buffer_flush(fd_out->w);
++  if(c->autoprint_off)
++    c->flags |= SED_NOAUTOPRINT;
+ 
+-  for(i = 0; i < ctx.nwfiles; i++) {
+-    if(ctx.wfiles[i].alias == 0 && ctx.wfiles[i].fd != -1) {
+-      buffer_flush(&ctx.wfiles[i].b);
+-      buffer_close(&ctx.wfiles[i].b);
+-    }
++  if((rc = sed_compile(&c->prog, c->script.s ? c->script.s : "", c->script.len, c->flags)) != SED_OK) {
++    c->prog = NULL;
++    c->in.err_arg = "script";
++    c->in.err_msg = sed_error(rc);
++    return -1;
+   }
+ 
+-  filter_in_close(&ctx.in);
+-
+-  alloc_free(ctx.wfiles);
+-  sed_free(prog);
+-
+-  if(ctx.in.had_error || ret)
+-    return ret ? ret : 2;
+-
+-  return exit_status;
+-}
+-
+-/* filter mode (TODO.md Goal 13). sed's own control flow (n/N, hold
+- * space, branches) isn't incrementally resumable yet -- see that
+- * section's open questions -- so this runs sed_run() to completion on
+- * the first step() call, capturing its output into an in-memory
+- * buffer that later step() calls hand back. That gives up true
+- * streaming (no interleaving with whatever consumes this filter's
+- * output while sed itself runs) but still avoids the fork()+pipe()
+- * pair, which is the win this goal actually targets -- and it's the
+- * same "run to completion, hand back the result" shape wc's own
+- * filter mode uses for its aggregate output, not a special case.
+- * Scoped to no file operands (only "-"/the upstream pipe) and no
+- * w/s///w targets (those need real fds regardless of chaining, and
+- * sed_filter_out() below only captures the pattern-space output) --
+- * both just decline via open() returning NULL.
+- * ----------------------------------------------------------------------- */
+-struct sed_filter_ctx {
+-  struct filter_in in;
+-  stralloc script, out;
+-  unsigned flags;
+-  int have_script, autoprint_off, ran, sent, exit_status;
+-  struct sed* prog;
+-  struct sed_state* st;
+-  char linebuf[8192];
+-};
+-
+-static int
+-sed_filter_read_line(void* ctx, const char** sp, size_t* np, int* had_nl) {
+-  struct sed_filter_ctx* c = ctx;
+-  ssize_t r = filter_in_get(&c->in, c->linebuf, sizeof(c->linebuf) - 1, "\n", 1);
+-
+-  if(r <= 0)
+-    return 0;
+-
+-  *had_nl = (c->linebuf[r - 1] == '\n');
++  c->nwfiles = sed_wfile_count(c->prog);
+ 
+-  if(*had_nl)
+-    r--;
++  if(!(c->st = sed_state_new(c->prog, sed_read_line, sed_out, c->nwfiles ? sed_wfile_out : NULL, sed_rfile, c))) {
++    c->in.err_arg = "";
++    c->in.err_msg = "out of memory";
++    return -1;
++  }
+ 
+-  *sp = c->linebuf;
+-  *np = (size_t)r;
+-  return 1;
++  return c->in.files || c->nwfiles ? 1 : 0;
+ }
+ 
++/* w/s///w files are created before any input is processed */
+ static void
+-sed_filter_out(void* ctx, const char* s, size_t n) {
+-  struct sed_filter_ctx* c = ctx;
+-
+-  stralloc_catb(&c->out, s, n);
+-}
++sed_open_wfiles(struct sed_ctx* c) {
++  size_t i;
+ 
+-static void
+-sed_filter_rfile(void* ctx, const char* name) {
+-  struct sed_filter_ctx* c = ctx;
++  if(!c->nwfiles || !(c->wfiles = alloc(c->nwfiles * sizeof(*c->wfiles)))) {
++    c->nwfiles = 0;
++    return;
++  }
+ 
+-  filter_copy(name, slurp_sink, &c->out); /* POSIX: a missing r file is silently ignored */
++  for(i = 0; i < c->nwfiles; i++) {
++    struct sed_wfile_rt* w = &c->wfiles[i];
++    const char* name = sed_wfile_name(c->prog, i);
++
++    byte_zero(w, sizeof(*w));
++    w->fd = -1;
++
++    if(!str_diff(name, "/dev/stdout"))
++      w->alias = 1;
++    else if(!str_diff(name, "/dev/stderr"))
++      w->alias = 2;
++    else if((w->fd = open_trunc(name)) == -1) {
++      builtin_error(c->in.errargv, (char*)name);
++      c->ret = 2;
++    } else
++      buffer_init(&w->b, &buffer_op_write, w->fd, w->wbuf, sizeof(w->wbuf));
++  }
+ }
+ 
+-/* runs the script to completion on the first call, then hands out the
+- * captured output as a single unit */
++/* runs the script to completion on the first call (sed's control flow is not
++ * resumable). With a sink the result went straight there; in a chain it is
++ * handed out as one unit. */
+ static int
+-sed_filter_step(void* arg, const char** unit, size_t* len) {
+-  struct sed_filter_ctx* c = arg;
++sed_step(void* arg, const char** unit, size_t* len) {
++  struct sed_ctx* c = arg;
+ 
+   if(!c->ran) {
+     c->ran = 1;
++    sed_open_wfiles(c);
+     sed_run(c->st, &c->exit_status);
+-    sed_state_free(c->st);
+-    c->st = NULL;
+   }
+ 
+   if(c->sent || !c->out.len)
+@@ -319,19 +233,31 @@ sed_filter_step(void* arg, const char** unit, size_t* len) {
+ }
+ 
+ static int
+-sed_filter_status(void* arg) {
+-  struct sed_filter_ctx* c = arg;
++sed_status(void* arg) {
++  struct sed_ctx* c = arg;
++
++  if(c->ret || c->in.had_error)
++    return 2;
+ 
+   return c->exit_status;
+ }
+ 
+ static void
+-sed_filter_finish(void* arg) {
+-  struct sed_filter_ctx* c = arg;
++sed_finish(void* arg) {
++  struct sed_ctx* c = arg;
++  size_t i;
+ 
+   if(c->st)
+     sed_state_free(c->st);
+ 
++  for(i = 0; i < c->nwfiles && c->wfiles; i++)
++    if(c->wfiles[i].alias == 0 && c->wfiles[i].fd != -1) {
++      buffer_flush(&c->wfiles[i].b);
++      buffer_close(&c->wfiles[i].b);
++    }
++
++  alloc_free(c->wfiles);
++
+   if(c->prog)
+     sed_free(c->prog);
+ 
+@@ -339,76 +265,15 @@ sed_filter_finish(void* arg) {
+   stralloc_free(&c->out);
+ }
+ 
+-static int
+-sed_filter_option(void* arg, int ch) {
+-  struct sed_filter_ctx* c = arg;
+-
+-  switch(ch) {
+-    case 'n': c->autoprint_off = 1; return 0;
+-    case 'E':
+-    case 'r': c->flags |= SED_ERE; return 0;
+-
+-    case 'e':
+-      if((c->have_script && !stralloc_catc(&c->script, '\n')) || !stralloc_cats(&c->script, shell_optarg))
+-        return -1;
+-
+-      c->have_script = 1;
+-      return 0;
+-
+-    case 'f':
+-      if(c->have_script && !stralloc_catc(&c->script, '\n'))
+-        return -1;
+-
+-      if(slurp_file(shell_optarg, &c->script) == -1)
+-        return -1;
+-
+-      c->have_script = 1;
+-      return 0;
+-  }
+-
+-  return -1;
+-}
+-
+-/* everything the real invocation should report (no script, bad script)
+- * or cannot stream (file operands, w/s///w targets needing real fds) declines */
+-static int
+-sed_filter_setup(void* arg) {
+-  struct sed_filter_ctx* c = arg;
+-
+-  if(!c->have_script) {
+-    if(!c->in.files)
+-      return 1;
+-
+-    stralloc_cats(&c->script, *c->in.files++);
+-
+-    if(!*c->in.files)
+-      c->in.files = NULL;
+-  }
+-
+-  if(c->in.files)
+-    return 1;
+-
+-  if(c->autoprint_off)
+-    c->flags |= SED_NOAUTOPRINT;
+-
+-  if(sed_compile(&c->prog, c->script.s ? c->script.s : "", c->script.len, c->flags) != SED_OK) {
+-    c->prog = NULL;
+-    return 1;
+-  }
+-
+-  if(sed_wfile_count(c->prog))
+-    return 1;
+-
+-  return (c->st = sed_state_new(c->prog, sed_filter_read_line, sed_filter_out, NULL, sed_filter_rfile, c)) ? 0 : 1;
+-}
+-
+ const struct filter_ops sed_ops = {
+     .opts = "nEre:f:",
+-    .size = sizeof(struct sed_filter_ctx),
+-    .option = sed_filter_option,
+-    .setup = sed_filter_setup,
+-    .step = sed_filter_step,
+-    .status = sed_filter_status,
+-    .finish = sed_filter_finish,
++    .size = sizeof(struct sed_ctx),
++    .option = sed_option,
++    .setup = sed_setup,
++    .step = sed_step,
++    .status = sed_status,
++    .finish = sed_finish,
++    .err_status = 2,
+ };
+-const struct builtin_filter sed_filter = {&sed_ops};
++
++FILTER_BUILTIN(sed)
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index f091fcd9..ee0dd65b 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -5301,4 +5301,21 @@ assert_equal "2102" "$("$SHISH_SELF" -c "cat $TESTDIR/long | grep 'a*b\$' | cat
+ assert_equal "2:two 3:three" "$("$SHISH_SELF" -c "cat $TESTDIR/nonl | grep -n t | cat" | tr '\n' ' ' | sed 's/ $//')" "grep still matches a last line without a newline"
+ rm -rf "$TESTDIR"
+ 
++## tr worked on bytes in a UTF-8 locale: a multibyte character in a string was
++## several bytes ("tr é x" turned each byte into x).
++TR_E=$(printf '\303\251'); TR_EU=$(printf '\342\202\254')
++assert_equal "x${TR_EU}a" "$(LC_ALL=C.UTF-8; printf "${TR_E}${TR_EU}a\n" | tr "$TR_E" x)" "tr translates a multibyte character as one"
++assert_equal "${TR_E}a" "$(LC_ALL=C.UTF-8; printf "${TR_E}${TR_EU}a\n" | tr -d "$TR_EU")" "tr -d deletes a multibyte character whole"
++assert_equal "yy" "$(LC_ALL=C.UTF-8; printf "${TR_E}${TR_EU}\n" | tr "${TR_E}-${TR_EU}" y)" "tr takes a multibyte range"
++assert_equal "${TR_EU}${TR_E}" "$(LC_ALL=C.UTF-8; printf 'ab\n' | tr ab "${TR_EU}${TR_E}")" "tr translates to multibyte characters"
++
++## sed read a line through a fixed 8 KiB buffer, so a longer line was processed
++## as several lines (sed -n '$=' said 2 for a single 9000-byte line).
++SEDLONG=$(mktemp)
++printf '%9000s\n' | tr ' ' a >"$SEDLONG"
++assert_equal "1" "$(sed -n '$=' "$SEDLONG")" "sed counts a 9000-byte line as one line"
++assert_equal "1" "$(cat "$SEDLONG" | sed -n '$=')" "a chained sed counts a 9000-byte line as one line"
++assert_equal "9000" "$(sed 's/a/b/' "$SEDLONG" | tr -d '\n' | wc -c | tr -d ' ')" "sed keeps a 9000-byte line whole"
++rm -f "$SEDLONG"
++
+ summary
