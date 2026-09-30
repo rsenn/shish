@@ -63,7 +63,7 @@ see Phase 6.
 Per-file failure counts, everything except the `sig*` family:
 
 ```
-48 alias-p  17/65    9 redir-p    52/61     4 shift-p   10/14   1 lineno-p   2/3
+17 alias-p  60/65    9 redir-p    52/61     4 shift-p   10/14   1 lineno-p   2/3
 24 kill2-p   4/28     8 simple-p   26/34     0 return-p  25/25   1 function-p 18/19
 22 read-p    6/28     8 set-p      37/45     3 input-p   8/11    1 fnmatch-p  6/7
 18 quote-p  17/35     8 kill1-p     9/17     3 case-p    49/52   1 export-p   4/5
@@ -156,10 +156,8 @@ and `BUGS: error-message-line-number-off-by-one`.
 
 Sorted by failures per unit of work.
 
-1. **`alias` (22/65).** What is left is not fixable in `builtin_alias.c`
-   at all — see `BUGS: alias-substitution-needs-rework-in-parse_gettok`,
-   and `BUGS: quote-backslash-escaping-broken` for the one remaining
-   quoting-side failure (`reusing printed alias (complex quotation)`).
+1. **`alias` (60/65).** Substitution lives in `parse_gettok()` now; the
+   5 left are in `BUGS: alias-substitution-remaining-cases`.
    Note: the remaining `kill1-p`/`kill2-p` failures are not a shish bug
    — `bash`'s own `testee() ( … exec "$testee" "$@" )` wrapper prints a
    job-control notice ("Aborted (core dumped)", …) to the redirected
@@ -181,9 +179,7 @@ Sorted by failures per unit of work.
 
 ### Phase 4 [Stage 1: language] — expansion and parsing (≈60)
 
-1. `quote-p` (17/35) — backslash and line continuation inside
-   reserved words, operators, parameter expansions.
-   `BUGS: quote-backslash-escaping-broken`.
+1. `quote-p` (33/35) — `BUGS: quote-backslash-escaping-broken`.
 2. `param-p` (39/54) — assignment to readonly/positional/special
    parameters, `${#...}` edge cases, parameter/command substitution
    inside a removed pattern, special-parameter quoting (tilde
@@ -264,7 +260,7 @@ Sorted by whether the `BUGS` entries below explain part of the
 
 - `signal-tests-vary-with-machine-load` → Phase 1 (`sig*-p`).
 - `error-message-line-number-off-by-one` → Phase 2 (`lineno-p`).
-- `alias-substitution-needs-rework-in-parse_gettok`, `read-field-splitting-and-options-broken`,
+- `alias-substitution-remaining-cases`, `read-field-splitting-and-options-broken`,
   `set-notify-unimplemented`, `set-verbose-unimplemented`,
   `set-histexpand-unimplemented` → Phase 3 (`alias-p`, `read-p`, `set-p`).
 - `quote-backslash-escaping-broken`, `param-expansion-pattern-removal-broken`,

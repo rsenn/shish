@@ -82,6 +82,13 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
       expand_cat_sibling(&n);
     }
 
+    /* an unquoted literal chunk still waiting for its end-of-word unescape
+       (X_LITERAL without X_UNESCAPED) must be unescaped now: X_UNESCAPED,
+       set below, tells that later pass the node is finished. "x\\\\'y'"
+       otherwise keeps both backslashes. */
+    if((flags & X_LITERAL) && !(flags & X_PATTERN) && (n->narg.flag & X_LITERAL) && !(n->narg.flag & (X_UNESCAPED | X_GLOB)))
+      expand_unescape(&n->narg.stra, parse_isesc);
+
     n->narg.flag |= flags /*& (~(X_QUOTED))*/;
 
     /* This branch never splits or globs, so a literal chunk (parser-
@@ -123,6 +130,20 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
       } else {
         expand_cat_sibling(&n);
       }
+    }
+
+    /* a quoted chunk before this one was unescaped on the spot, so the
+       end-of-word pass skips the node: this chunk has to be done here */
+    if((n->narg.flag & X_UNESCAPED) && !(flags & (X_GLOB | X_PATTERN))) {
+      stralloc tmp;
+
+      stralloc_init(&tmp);
+      stralloc_catb(&tmp, b, len);
+      expand_unescape(&tmp, parse_isesc);
+      n->narg.flag |= flags;
+      stralloc_catb(&n->narg.stra, tmp.s, tmp.len);
+      stralloc_free(&tmp);
+      return n;
     }
 
     n->narg.flag |= flags;

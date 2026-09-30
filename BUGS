@@ -284,60 +284,20 @@
   sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix sigterm1-p.tst
   ```
 
-- alias-substitution-needs-rework-in-parse_gettok: `builtin_alias.c`'s
-  own bugs are fixed (`fixes/231`: `alias name` now prints instead of
-  corrupting the table, printing is now reusable/quote-safe, printing
-  an undefined name is an error) — what is left in `alias-p.tst` (22/65
-  passing, was 17/65) is architectural, not a `builtin_alias.c` fix.
-  shish has no separate lexer/parser split -- tokenizing and parsing
-  are interleaved in one recursive-descent pass, and `parse_keyword()`
-  (`src/parse/parse_keyword.c`) reclassifies a scanned word's token
-  type from `T_NAME` to a reserved word (`T_IF`/`T_FOR`/...) right
-  after `parse_gettok()` scans it, *before* `parse_simple_command.c`
-  ever gets to see the word and try alias substitution on it. And
-  `parse_simple_command.c` only ever alias-expands a command's *first*
-  word to begin with, by parsing the alias's whole replacement text as
-  one embedded simple command and splicing its vars/rdir/args into the
-  tree — so an alias can never expand into a reserved word, an
-  operator, a `case` pattern, or a function-definition token, and a
-  replacement ending in a blank never triggers alias-expansion of the
-  *next* scanned word the way POSIX requires. Fixing this needs alias
-  lookup moved into the word-scanning step itself (`parse_gettok`/
-  `parse_keyword`), tried before keyword/operator classification runs,
-  with its own "replacement ends in blank -> also check the next raw
-  word" chaining loop and a quoting-aware guard (a quoted alias name
-  must not expand at all -- currently not checked either). Confirmed
-  via `dash` run through the same harness (59/65) that the remaining
-  shape is achievable; not isolated further than that in this pass.
-  One separate, unrelated failure remains folded into `BUGS:
-  quote-backslash-escaping-broken`'s repro instead of here (`reusing
-  printed alias (complex quotation)` -- the alias *value* itself is
-  parsed wrong at definition time, unrelated to substitution).
-
-  Also out of scope here, already tracked as its own architectural gap:
-  `subshell cannot affect main shell` (`alias-p.tst:108`) fails because
-  `(...)` doesn't fork a real subprocess (`TODO.md`
-  Goal 4), so a
-  subshell's `alias`/`unalias` mutates the same in-process
-  `parse_aliases` list the parent sees.
-
-  **Repro:**
-  ```sh
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix alias-p.tst
-  # remaining failures are word-scanning-order cases, e.g.:
-  cat <<'EOF' | shish
-  alias i='if echo'
-  i if; then echo then1; fi
-  EOF
-  # shish: "shish: if: No such file or directory" then "unexpected
-  # token then" -- "i" expanded to "if echo", but the parser had
-  # already classified "i" as an ordinary command word before that
-  # replacement text existed, so "if" in the replacement is just
-  # another argument to "echo", not a reserved word starting a
-  # compound command
-  # bash/dash: prints "if" then "then1" (the alias-expanded "if"
-  # really does open an if/then/fi)
-  ```
+- alias-substitution-remaining-cases: alias substitution now happens in
+  `parse_gettok()` (`alias-p.tst` 60/65). Still open:
+  - `alias-p.tst:108` `(...)` runs in-process, so `alias`/`unalias` in a
+    subshell changes the parent's table (`TODO.md` Goal 4).
+  - `:430` an alias that expands to `()` after a function name
+    (`alias f='f ' p='()'; f p`): the `name (` test in
+    `parse_command.c` looks at the raw next character, not at aliases.
+  - `:487` an alias expanding to `<` does not merge with a following `>`
+    into `<>` (lookahead does not cross the end of the alias text).
+  - `:548` an alias whose text ends in `\` does not continue onto the
+    newline behind it (same reason).
+  - `:576` a command substitution is parsed when it is expanded, not when
+    the enclosing function is defined, so an alias set in the function
+    body is not seen by `$(...)` parsed earlier.
 
 - param-expansion-pattern-removal-broken: `${var#pattern}`/`${var##pattern}`/
   `${var%pattern}`/`${var%%pattern}` still don't expand parameter or
@@ -355,17 +315,14 @@
   sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix param-p.tst
   ```
 
-- quote-backslash-escaping-broken: backslash escaping of non-special
-  characters, line continuation (`\` + newline) in reserved words,
-  operators, parameter/arithmetic/command substitution, and function
-  definitions is broken. 19 failures in `quote-p.tst` (17/35).
-  `src/parse/` quote-handling code. `quote-p.tst:7-596`.
+- quote-backslash-escaping-broken: `quote-p.tst` is 33/35. Open:
+  `:431` an alias is expanded inside a command substitution in double
+  quotes (it must not be), `:553` quotes inside the pattern of a
+  `${var#pattern}`-style expansion.
 
   **Repro:**
   ```sh
-  # Run the quote conformance test
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix quote-p.tst
-  # 19 failures in backslash escaping and line continuation
+  sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix quote-p.tst
   ```
 
 - trap-exit-in-async-subshell-not-run: `trap "echo foo" EXIT >/dev/null & wait $!`

@@ -242,7 +242,7 @@ struct parser {
   union node* node;
   union node* tree;
   struct location tokstart;
-  struct alias* alias;
+  unsigned alias_ok : 1; /* the next word scanned is in command position: aliasable */
 };
 
 /* parser flags
@@ -259,9 +259,11 @@ enum parser_flag {
   P_NOSUBST = 0x0080,  /**< do not create substitution nodes */
   P_HERE = 0x0100,     /**< parse here-doc */
   P_ARITH = 0x0200,    /**< parse arithmetic expression */
-  P_ALIAS = 0x0400,    /**< parse alias */
+  P_NOALIAS = 0x0400,  /**< no alias substitution */
   P_COMMENT = 0x0800,  /**< parse comments */
-  P_DQSUBST = 0x1000   /**< ${...} word inside double quotes: a backslash only escapes $ ` " \ */
+  P_DQSUBST = 0x1000,  /**< ${...} word inside double quotes: a backslash only escapes $ ` " \ */
+  P_KWIN = 0x2000,     /**< only "in" is a keyword here (other reserved words are plain words) */
+  P_KWDO = 0x4000      /**< only "do" is a keyword here */
 };
 
 struct alias {

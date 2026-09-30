@@ -16,6 +16,7 @@
  * ----------------------------------------------------------------------- */
 int
 redir_parse(struct parser* p, int rf, int fd) {
+  enum tok_flag tok;
   /* initialize fd to 0 for input, 1 for output */
   char c;
 
@@ -102,7 +103,16 @@ redir_parse(struct parser* p, int rf, int fd) {
     }
   }
 
-  if(parse_gettok(p, P_DEFAULT) & (T_NAME | T_WORD)) {
+  /* the operand is never an alias; the command word after it still may be */
+  {
+    unsigned alias_ok = p->alias_ok;
+
+    p->alias_ok = 0;
+    tok = parse_gettok(p, P_DEFAULT);
+    p->alias_ok = alias_ok;
+  }
+
+  if(tok & (T_NAME | T_WORD)) {
     union node* node;
 
     node = tree_newnode(N_REDIR);

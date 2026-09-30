@@ -5409,4 +5409,46 @@ rm -f sigparent.sh
 ## stopping "$$" from inside "( )" used to hang: only a forked subshell could continue it.
 assert_equal "0" "$(timeout 5 "$SHISH_SELF" -c '(kill -s STOP $$; status=$?; kill -s CONT $$; exit $status)'; echo $?)" "kill -s STOP \$\$ inside a subshell does not hang the shell"
 
+## alias substitution happens where the word is read (src/parse/parse_gettok.c),
+## not on a simple command after the fact: an alias can expand to a reserved
+## word, an operator or a here-document; a replacement ending in a blank makes
+## the next word aliasable; quoted names and keywords are left alone.
+cat >alias-sub.sh <<'__EOF__'
+alias i=if t=then f=fi
+i true; t echo kw; f
+alias e='echo ' c=cat
+e c c
+set p q
+alias forx='for x ' for=' ; do'
+forx for echo $x; done
+alias h='cat <<END'
+h
+body
+END
+alias 3=:
+alias zzq=echo
+\zzq hi 2>/dev/null; echo quoted-ok $?
+alias s=s
+s 2>/dev/null; echo loop-ok $?
+>/dev/null e not_printed
+__EOF__
+assert_equal "kw
+cat c
+p
+q
+body
+quoted-ok 127
+loop-ok 127" "$("$SHISH_SELF" ./alias-sub.sh 2>&1)" "alias expands to reserved words and here-documents; blank-ending replacement chains; no recursion"
+rm -f alias-sub.sh
+
+## a quoted chunk next to an unquoted literal one lost the unescape of the
+## unquoted part: 'x'\\ gave x\\ (two backslashes), 'x'\* gave x\*
+cat >bs-quote.sh <<'__EOF__'
+printf '%s\n' 'x'\\ x\\'y' 'x'\*
+__EOF__
+assert_equal 'x\
+x\y
+x*' "$("$SHISH_SELF" ./bs-quote.sh)" "a backslash pair/escape next to a single-quoted chunk is unescaped"
+rm -f bs-quote.sh
+
 summary

@@ -33,14 +33,21 @@ parse_case(struct parser* p) {
      between the case word and 'in' is allowed (3.9.4.3's grammar has
      a <linebreak> right there), same as parse_for.c's own linebreak
      before 'do' */
-  if(!parse_expect(p, P_SKIPNL, T_IN, node))
+  if(!parse_expect(p, P_SKIPNL | P_KWIN, T_IN, node))
     return NULL;
+
+  /* patterns are not command words: only a preceding blank-ending alias makes them aliasable */
+  p->alias_ok = 0;
 
   /* initialize tree for the cases */
   tree_init(node->ncase.list, cptr);
 
   /* parse the cases */
   while(!(parse_gettok(p, P_SKIPNL) & T_ESAC)) {
+    /* "(" (or the first pattern) does not make the next word a command word */
+    if(p->tok & T_LP)
+      p->alias_ok = 0;
+
     /* patterns may be introduced with '(' */
     if(!(p->tok & T_LP)) {
       /* the token just fetched recognizes keywords (needed for
@@ -62,6 +69,8 @@ parse_case(struct parser* p) {
        spell a reserved word verbatim (e.g. "finish|finis|fin|fi|f)")
        still parses as a plain word, same as parse_for.c's list. */
     while(parse_gettok(p, P_SKIPNL | P_NOKEYWD) & (T_WORD | T_NAME | T_ASSIGN | T_LP)) {
+      p->alias_ok = 0;
+
       if(p->tok == T_LP)
         continue;
 
@@ -70,6 +79,8 @@ parse_case(struct parser* p) {
 
       if(!(parse_gettok(p, P_NOKEYWD) & T_PIPE))
         break;
+
+      p->alias_ok = 0;
     }
 
     p->pushback++;

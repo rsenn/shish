@@ -7,12 +7,22 @@ struct source* source = 0;
 /* gets more data from buffer (at least n + 1 chars)
  * doesn't advance buffer pointer, use input_skipcn() for that
  * ----------------------------------------------------------------------- */
+void source_alias_pop(void);
+
 int
 source_peekn(char* c, unsigned n) {
-  buffer* b = source->b;
-  int ret = buffer_LEN(b);
+  buffer* b;
+  int ret;
   unsigned pi = 0, k = 0; /* physical index, logical index */
-  int esc = source_bs;    /* x[pi] is escaped by a backslash before it */
+  int esc;                /* x[pi] is escaped by a backslash before it */
+
+  /* used-up alias text: carry on with whatever follows the alias name */
+  while((source->mode & SOURCE_ALIAS) && source->parent && buffer_LEN(source->b) <= 0)
+    source_alias_pop();
+
+  b = source->b;
+  ret = buffer_LEN(b);
+  esc = source_bs;
 
   /* quoted/comment text has no continuations */
   if(source_squoted || source_comment) {

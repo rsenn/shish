@@ -1,25 +1,19 @@
 #include "../parse.h"
 #include "../../lib/byte.h"
+#include "../source.h"
 
 struct alias* parse_aliases = 0;
 
-static inline int
-alias_match(struct alias* a, const char* name, size_t namelen) {
-  return a->namelen == namelen && byte_equal(a->def, namelen, name);
-}
-
-/* ----------------------------------------------------------------------- */
+/* finds the alias called name, unless that alias is being read right now
+ * (an alias never expands inside its own replacement text)
+ * ----------------------------------------------------------------------- */
 struct alias*
 parse_findalias(struct parser* p, const char* name, size_t len) {
   struct alias* a;
 
-  for(a = parse_aliases; a; a = a->next) {
-    if(p && (p->flags & P_ALIAS) && alias_match(a, name, len))
-      continue;
-
+  for(a = parse_aliases; a; a = a->next)
     if(a->namelen == len && !byte_diff(a->def, len, name))
-      break;
-  }
+      return source_alias_active(a) ? NULL : a;
 
-  return a;
+  return NULL;
 }

@@ -1,0 +1,632 @@
+diff --git a/src/builtin/builtin_alias.c b/src/builtin/builtin_alias.c
+index 75a9072c..8b62cc2a 100644
+--- a/src/builtin/builtin_alias.c
++++ b/src/builtin/builtin_alias.c
+@@ -16,11 +16,12 @@ static int
+ alias_valid(const char* v) {
+   size_t i;
+ 
++  /* POSIX: alphanumerics and ! % , - @ _ at any position, a leading digit included */
+   for(i = 0; v[i] && v[i] != '='; i++)
+-    if(!parse_isname(v[i], i) && !(i > 0 && v[i] == '-'))
++    if(!parse_isname(v[i], 1) && !str_containsc("!%,-@", v[i]))
+       return 0;
+ 
+-  return 1;
++  return i > 0;
+ }
+ 
+ static struct alias*
+diff --git a/src/expand/expand_cat.c b/src/expand/expand_cat.c
+index 219664b0..1b741cc6 100644
+--- a/src/expand/expand_cat.c
++++ b/src/expand/expand_cat.c
+@@ -82,6 +82,13 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
+       expand_cat_sibling(&n);
+     }
+ 
++    /* an unquoted literal chunk still waiting for its end-of-word unescape
++       (X_LITERAL without X_UNESCAPED) must be unescaped now: X_UNESCAPED,
++       set below, tells that later pass the node is finished. "x\\\\'y'"
++       otherwise keeps both backslashes. */
++    if((flags & X_LITERAL) && !(flags & X_PATTERN) && (n->narg.flag & X_LITERAL) && !(n->narg.flag & (X_UNESCAPED | X_GLOB)))
++      expand_unescape(&n->narg.stra, parse_isesc);
++
+     n->narg.flag |= flags /*& (~(X_QUOTED))*/;
+ 
+     /* This branch never splits or globs, so a literal chunk (parser-
+@@ -125,6 +132,20 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
+       }
+     }
+ 
++    /* a quoted chunk before this one was unescaped on the spot, so the
++       end-of-word pass skips the node: this chunk has to be done here */
++    if((n->narg.flag & X_UNESCAPED) && !(flags & (X_GLOB | X_PATTERN))) {
++      stralloc tmp;
++
++      stralloc_init(&tmp);
++      stralloc_catb(&tmp, b, len);
++      expand_unescape(&tmp, parse_isesc);
++      n->narg.flag |= flags;
++      stralloc_catb(&n->narg.stra, tmp.s, tmp.len);
++      stralloc_free(&tmp);
++      return n;
++    }
++
+     n->narg.flag |= flags;
+     stralloc_catb(&n->narg.stra, b, len);
+     return n;
+diff --git a/src/parse.h b/src/parse.h
+index 0d2f5814..ef197840 100644
+--- a/src/parse.h
++++ b/src/parse.h
+@@ -242,7 +242,7 @@ struct parser {
+   union node* node;
+   union node* tree;
+   struct location tokstart;
+-  struct alias* alias;
++  unsigned alias_ok : 1; /* the next word scanned is in command position: aliasable */
+ };
+ 
+ /* parser flags
+@@ -259,9 +259,11 @@ enum parser_flag {
+   P_NOSUBST = 0x0080,  /**< do not create substitution nodes */
+   P_HERE = 0x0100,     /**< parse here-doc */
+   P_ARITH = 0x0200,    /**< parse arithmetic expression */
+-  P_ALIAS = 0x0400,    /**< parse alias */
++  P_NOALIAS = 0x0400,  /**< no alias substitution */
+   P_COMMENT = 0x0800,  /**< parse comments */
+-  P_DQSUBST = 0x1000   /**< ${...} word inside double quotes: a backslash only escapes $ ` " \ */
++  P_DQSUBST = 0x1000,  /**< ${...} word inside double quotes: a backslash only escapes $ ` " \ */
++  P_KWIN = 0x2000,     /**< only "in" is a keyword here (other reserved words are plain words) */
++  P_KWDO = 0x4000      /**< only "do" is a keyword here */
+ };
+ 
+ struct alias {
+diff --git a/src/parse/parse_case.c b/src/parse/parse_case.c
+index 9addf943..7076e6cf 100644
+--- a/src/parse/parse_case.c
++++ b/src/parse/parse_case.c
+@@ -33,14 +33,21 @@ parse_case(struct parser* p) {
+      between the case word and 'in' is allowed (3.9.4.3's grammar has
+      a <linebreak> right there), same as parse_for.c's own linebreak
+      before 'do' */
+-  if(!parse_expect(p, P_SKIPNL, T_IN, node))
++  if(!parse_expect(p, P_SKIPNL | P_KWIN, T_IN, node))
+     return NULL;
+ 
++  /* patterns are not command words: only a preceding blank-ending alias makes them aliasable */
++  p->alias_ok = 0;
++
+   /* initialize tree for the cases */
+   tree_init(node->ncase.list, cptr);
+ 
+   /* parse the cases */
+   while(!(parse_gettok(p, P_SKIPNL) & T_ESAC)) {
++    /* "(" (or the first pattern) does not make the next word a command word */
++    if(p->tok & T_LP)
++      p->alias_ok = 0;
++
+     /* patterns may be introduced with '(' */
+     if(!(p->tok & T_LP)) {
+       /* the token just fetched recognizes keywords (needed for
+@@ -62,6 +69,8 @@ parse_case(struct parser* p) {
+        spell a reserved word verbatim (e.g. "finish|finis|fin|fi|f)")
+        still parses as a plain word, same as parse_for.c's list. */
+     while(parse_gettok(p, P_SKIPNL | P_NOKEYWD) & (T_WORD | T_NAME | T_ASSIGN | T_LP)) {
++      p->alias_ok = 0;
++
+       if(p->tok == T_LP)
+         continue;
+ 
+@@ -70,6 +79,8 @@ parse_case(struct parser* p) {
+ 
+       if(!(parse_gettok(p, P_NOKEYWD) & T_PIPE))
+         break;
++
++      p->alias_ok = 0;
+     }
+ 
+     p->pushback++;
+diff --git a/src/parse/parse_findalias.c b/src/parse/parse_findalias.c
+index d837306f..60cb6831 100644
+--- a/src/parse/parse_findalias.c
++++ b/src/parse/parse_findalias.c
+@@ -1,25 +1,19 @@
+ #include "../parse.h"
+ #include "../../lib/byte.h"
++#include "../source.h"
+ 
+ struct alias* parse_aliases = 0;
+ 
+-static inline int
+-alias_match(struct alias* a, const char* name, size_t namelen) {
+-  return a->namelen == namelen && byte_equal(a->def, namelen, name);
+-}
+-
+-/* ----------------------------------------------------------------------- */
++/* finds the alias called name, unless that alias is being read right now
++ * (an alias never expands inside its own replacement text)
++ * ----------------------------------------------------------------------- */
+ struct alias*
+ parse_findalias(struct parser* p, const char* name, size_t len) {
+   struct alias* a;
+ 
+-  for(a = parse_aliases; a; a = a->next) {
+-    if(p && (p->flags & P_ALIAS) && alias_match(a, name, len))
+-      continue;
+-
++  for(a = parse_aliases; a; a = a->next)
+     if(a->namelen == len && !byte_diff(a->def, len, name))
+-      break;
+-  }
++      return source_alias_active(a) ? NULL : a;
+ 
+-  return a;
++  return NULL;
+ }
+diff --git a/src/parse/parse_for.c b/src/parse/parse_for.c
+index 207df4fc..d8af19c1 100644
+--- a/src/parse/parse_for.c
++++ b/src/parse/parse_for.c
+@@ -22,7 +22,7 @@ parse_for(struct parser* p) {
+   tree_init(node->nfor.args, nptr);
+ 
+   /* next token can be 'in' */
+-  if(parse_gettok(p, P_DEFAULT) & T_IN) {
++  if(parse_gettok(p, P_KWIN | P_KWDO) & T_IN) {
+     node->nfor.has_in = 1;
+ 
+     /* now parse the arguments and build a list of them */
+@@ -35,11 +35,11 @@ parse_for(struct parser* p) {
+   p->pushback++;
+ 
+   /* there can be a semicolon after the argument list */
+-  if(!(parse_gettok(p, P_DEFAULT) & T_SEMI))
++  if(!(parse_gettok(p, P_KWDO) & T_SEMI))
+     p->pushback++;
+ 
+   /* ..and the next token must be the "do" keyword */
+-  if(!parse_expect(p, P_SKIPNL, T_DO, node))
++  if(!parse_expect(p, P_SKIPNL | P_KWDO, T_DO, node))
+     return NULL;
+ 
+   /* parse the commands inside "do"<->"done" */
+diff --git a/src/parse/parse_gettok.c b/src/parse/parse_gettok.c
+index cbb9655e..7622f05a 100644
+--- a/src/parse/parse_gettok.c
++++ b/src/parse/parse_gettok.c
+@@ -7,6 +7,70 @@
+ #include "../source.h"
+ #include "../sh.h"
+ #include "../debug.h"
++#include "../expand.h"
++#include "../../lib/stralloc.h"
++
++/* the word just scanned is an alias name in command position? then its text
++ * replaces it as the input and the word is scanned again. Quoted names
++ * ('x', "x", \x) and keywords never get here as a plain unquoted word.
++ * ----------------------------------------------------------------------- */
++static int
++parse_alias_subst(struct parser* p) {
++  struct nargstr* str;
++  struct alias* a;
++
++  if(!(p->tok & (T_NAME | T_WORD)) || !p->tree || p->tree != p->node || p->tree->id != N_ARGSTR)
++    return 0;
++
++  str = &p->tree->nargstr;
++
++  if(str->flag & (S_TABLE | S_ESCAPED) || str->stra.len == 0)
++    return 0;
++
++  if(!(a = parse_findalias(p, str->stra.s, str->stra.len)))
++    return 0;
++
++  {
++    size_t codelen;
++    const char* code = alias_code(a, &codelen);
++
++    tree_free(p->tree);
++    p->tree = p->node = NULL;
++    stralloc_zero(&p->sa);
++    source_alias_push(a, code, codelen);
++  }
++
++  return 1;
++}
++
++/* does a command word come next, after this token? (assignments and
++ * redirections keep the state they found)
++ * ----------------------------------------------------------------------- */
++static int
++parse_alias_next(enum tok_flag tok, int cur) {
++  switch(tok) {
++    case T_NL:
++    case T_SEMI:
++    case T_BGND:
++    case T_AND:
++    case T_OR:
++    case T_PIPE:
++    case T_LP:
++    case T_RP:
++    case T_NOT:
++    case T_IF:
++    case T_THEN:
++    case T_ELIF:
++    case T_ELSE:
++    case T_WHILE:
++    case T_UNTIL:
++    case T_DO:
++    case T_BEGIN: return 1;
++    case T_ASSIGN:
++    case T_REDIR: return cur;
++    default: return 0;
++  }
++}
+ 
+ /* get a token, the argument indicates whether to search for keywords or not
+  * ----------------------------------------------------------------------- */
+@@ -16,6 +80,11 @@ parse_gettok(struct parser* p, int tempflags) {
+   p->flags |= tempflags;
+ 
+   if(!p->pushback || ((p->flags & P_SKIPNL) && p->tok == T_NL)) {
++    int aliasok = p->alias_ok;
++
++    source_alias_reset();
++
++  rescan:
+     p->tok = -1;
+     /* skip whitespace */
+     // p->tok = parse_skipspace(p);
+@@ -35,6 +104,26 @@ parse_gettok(struct parser* p, int tempflags) {
+     if(p->tok & T_NAME && p->node && p->node->id == N_ARGSTR && !(p->flags & P_NOKEYWD))
+       parse_keyword(p);
+ 
++    /* where only "in"/"do" are reserved words, any other one is a plain word */
++    if(p->flags & (P_KWIN | P_KWDO)) {
++      int only = ((p->flags & P_KWIN) ? T_IN : 0) | ((p->flags & P_KWDO) ? T_DO : 0);
++
++      if((p->tok & (T_CASE | T_DO | T_DONE | T_ELIF | T_ELSE | T_ESAC | T_FI | T_FOR | T_IF | T_IN | T_THEN | T_UNTIL | T_WHILE | T_BEGIN | T_END | T_NOT)) &&
++         !(p->tok & only))
++        p->tok = T_NAME;
++    }
++
++    /* "alias x='cmd '": the word after the replacement is aliasable too */
++    if(source_alias_blank) {
++      aliasok = 1;
++      source_alias_blank = 0;
++    }
++
++    if(aliasok && !(p->flags & P_NOALIAS) && parse_alias_subst(p))
++      goto rescan;
++
++    p->alias_ok = parse_alias_next(p->tok, p->alias_ok);
++
+     if(p->tok != -1)
+       TRACE(TRACE_PARSE, "token", trace_str("tok", parse_tokname(p->tok, 0)), trace_hex("flags", p->flags));
+   }
+diff --git a/src/parse/parse_init.c b/src/parse/parse_init.c
+index a2878c61..0169abb1 100644
+--- a/src/parse/parse_init.c
++++ b/src/parse/parse_init.c
+@@ -6,4 +6,5 @@ void
+ parse_init(struct parser* p, int flags) {
+   byte_zero(p, sizeof(struct parser));
+   p->flags = flags;
++  p->alias_ok = 1;
+ }
+diff --git a/src/parse/parse_simple_command.c b/src/parse/parse_simple_command.c
+index 20a917ef..2c7f1dc0 100644
+--- a/src/parse/parse_simple_command.c
++++ b/src/parse/parse_simple_command.c
+@@ -39,57 +39,6 @@ parse_simple_command(struct parser* p) {
+       case T_WORD:
+         *aptr = parse_getarg(p);
+ 
+-        /* first argument */
+-        if(!(p->flags & P_NOASSIGN)) {
+-          stralloc sa;
+-          struct narg* arg;
+-          struct nargstr* argstr;
+-          struct alias* a;
+-
+-          arg = &(*aptr)->narg;
+-
+-          // assert(arg->list->id == N_ARGSTR);
+-
+-          if(arg->list->id == N_ARGSTR) {
+-
+-            argstr = &arg->list->nargstr;
+-
+-            stralloc_init(&sa);
+-            stralloc_copy(&sa, &argstr->stra);
+-
+-            if((a = parse_findalias(p, sa.s, sa.len))) {
+-              size_t codelen;
+-              struct source src;
+-              struct fd fd;
+-              struct parser aliasp;
+-              union node* node;
+-              char* code;
+-
+-              code = alias_code(a, &codelen);
+-              source_buffer(&src, &fd, code, codelen);
+-              parse_init(&aliasp, P_ALIAS);
+-              aliasp.alias = a;
+-
+-              if((node = parse_simple_command(&aliasp))) {
+-                // debug_node(node, 0);
+-
+-                tree_remove(aptr);
+-
+-                vptr = tree_append(vptr, node->ncmd.vars);
+-                rptr = tree_append(rptr, node->ncmd.rdir);
+-                aptr = tree_append(aptr, node->ncmd.args);
+-                alloc_free(node);
+-              }
+-
+-              source_popfd(&fd);
+-            }
+-
+-            /* sa is only scratch space for the parse_findalias()
+-               lookup above; nothing keeps a reference to it. */
+-            stralloc_free(&sa);
+-          }
+-        }
+-
+         if(*aptr)
+           tree_skip(aptr);
+ 
+diff --git a/src/parse/parse_word.c b/src/parse/parse_word.c
+index bfbe3cc1..b3507834 100644
+--- a/src/parse/parse_word.c
++++ b/src/parse/parse_word.c
+@@ -17,6 +17,10 @@ parse_word(struct parser* p) {
+   p->node = NULL;
+   p->quot = Q_UNQUOTED;
+   p->tokstart = source->position;
++  if(!source_tokskips_set) {
++    source_tokskips = source_skips;
++    source_tokskips_set = 1;
++  }
+ 
+   /* initialize string data */
+   stralloc_zero(&p->sa);
+diff --git a/src/redir/redir_parse.c b/src/redir/redir_parse.c
+index 11177262..1038109c 100644
+--- a/src/redir/redir_parse.c
++++ b/src/redir/redir_parse.c
+@@ -16,6 +16,7 @@
+  * ----------------------------------------------------------------------- */
+ int
+ redir_parse(struct parser* p, int rf, int fd) {
++  enum tok_flag tok;
+   /* initialize fd to 0 for input, 1 for output */
+   char c;
+ 
+@@ -102,7 +103,16 @@ redir_parse(struct parser* p, int rf, int fd) {
+     }
+   }
+ 
+-  if(parse_gettok(p, P_DEFAULT) & (T_NAME | T_WORD)) {
++  /* the operand is never an alias; the command word after it still may be */
++  {
++    unsigned alias_ok = p->alias_ok;
++
++    p->alias_ok = 0;
++    tok = parse_gettok(p, P_DEFAULT);
++    p->alias_ok = alias_ok;
++  }
++
++  if(tok & (T_NAME | T_WORD)) {
+     union node* node;
+ 
+     node = tree_newnode(N_REDIR);
+diff --git a/src/source.h b/src/source.h
+index 415efa47..c1088dd9 100644
+--- a/src/source.h
++++ b/src/source.h
+@@ -20,10 +20,13 @@ struct source {
+   /* fd this source frame owns and must fd_pop() when popped; NULL for
+      sources (e.g. the top-level script/-c source) with no owned fd. */
+   struct fd* fd;
++  /* SOURCE_ALIAS frames: the alias whose text this is */
++  const void* alias;
+ };
+ 
+ #define SOURCE_IACTIVE 0x01
+ #define SOURCE_HERE 0x02
++#define SOURCE_ALIAS 0x04 /* alias text: heap-allocated, pops itself when used up */
+ 
+ extern struct source* source;
+ extern int source_psn;
+@@ -36,6 +39,23 @@ extern int source_squoted;
+ extern int source_comment;
+ 
+ void source_buffer(struct source*, struct fd*, const char* x, size_t n);
++
++/* alias text is read like the input it replaces: the frame is popped once
++ * it is used up and reading carries on behind the alias name.
++ *
++ *   source_alias_blank   set when a popped alias ended in a blank (the next word is aliasable)
++ *   source_alias_popped  aliases popped since source_alias_reset(), while the current word was being read: still "active"
++ * ----------------------------------------------------------------------- */
++extern int source_alias_blank;
++extern const void* source_alias_popped[8];
++extern unsigned long source_alias_poppedat[8]; /* source_skips when it was popped */
++extern int source_alias_npopped;
++extern unsigned long source_skips;    /* characters skipped so far */
++extern unsigned long source_tokskips; /* ... when the word (of a substitution chain) began */
++extern int source_tokskips_set;       /* 0 until parse_word() has stored it for this chain */
++void source_alias_push(const void* alias, const char* code, size_t n);
++int source_alias_active(const void* alias);
++void source_alias_reset(void);
+ void source_pop(void);
+ void source_popfd(struct fd*);
+ void source_prompt(void);
+diff --git a/src/source/Makefile.in b/src/source/Makefile.in
+index 9f871b36..2bbe896e 100644
+--- a/src/source/Makefile.in
++++ b/src/source/Makefile.in
+@@ -18,7 +18,7 @@ include $(top_builddir)/config.mk
+ # configuration for this directory
+ # ---------------------------------------------------------------------------
+ ARCHIVE = source.a
+-MODULES = fmt_loc location2str source_buffer source_flush source_get source_msg source_newline source_next source_peek source_peekn source_pop source_popfd source_push source_skip
++MODULES = fmt_loc location2str source_alias source_buffer source_flush source_get source_msg source_newline source_next source_peek source_peekn source_pop source_popfd source_push source_skip
+ 
+ SOURCES = $(MODULES:%=%.c)
+ OBJECTS = $(MODULES:%=%.o)
+diff --git a/src/source/source_alias.c b/src/source/source_alias.c
+new file mode 100644
+index 00000000..d58805ea
+--- /dev/null
++++ b/src/source/source_alias.c
+@@ -0,0 +1,74 @@
++#include "../fd.h"
++#include "../source.h"
++#include "../../lib/alloc.h"
++#include "../../lib/byte.h"
++
++int source_alias_blank;
++const void* source_alias_popped[8];
++unsigned long source_alias_poppedat[8];
++int source_alias_npopped;
++unsigned long source_tokskips;
++int source_tokskips_set;
++
++struct alias_frame {
++  struct source src; /* first: a frame is freed through its source pointer */
++  struct fd fd;
++  char text[];
++};
++
++/* pushes alias text as the current input */
++void
++source_alias_push(const void* alias, const char* code, size_t n) {
++  struct alias_frame* f = alloc(sizeof(struct alias_frame) + n + 1);
++
++  byte_copy(f->text, n, code);
++  f->text[n] = '\0'; /* source_peekn() looks one byte past a trailing backslash */
++  source_buffer(&f->src, &f->fd, f->text, n);
++  f->src.mode |= SOURCE_ALIAS;
++  f->src.alias = alias;
++  source_bs = 0;
++}
++
++/* pops the used-up alias frame on top; done from source_peekn() */
++void
++source_alias_pop(void) {
++  struct source* s = source;
++  const char* last = s->b->x + s->b->n;
++
++  if(s->b->n > 0 && (last[-1] == ' ' || last[-1] == '\t'))
++    source_alias_blank = 1;
++
++  if(source_alias_npopped < 8) {
++    source_alias_popped[source_alias_npopped] = s->alias;
++    source_alias_poppedat[source_alias_npopped++] = source_skips;
++  }
++
++  source_bs = 0;
++  s->parent->mode |= s->mode & SOURCE_HERE; /* a here-document body running out of the text goes on behind it */
++  source_popfd(s->fd);
++  alloc_free(s);
++}
++
++/* is this alias being read right now (or was, since the current token began)? */
++int
++source_alias_active(const void* alias) {
++  struct source* s;
++  int i;
++
++  for(s = source; s; s = s->parent)
++    if((s->mode & SOURCE_ALIAS) && s->alias == alias)
++      return 1;
++
++  /* popped before the word's first character was read = not part of this word */
++  for(i = 0; i < source_alias_npopped; i++)
++    if(source_alias_popped[i] == alias && source_alias_poppedat[i] > source_tokskips)
++      return 1;
++
++  return 0;
++}
++
++void
++source_alias_reset(void) {
++  source_alias_npopped = 0;
++  source_tokskips_set = 0;
++}
+diff --git a/src/source/source_peekn.c b/src/source/source_peekn.c
+index d6b5a82c..58650d76 100644
+--- a/src/source/source_peekn.c
++++ b/src/source/source_peekn.c
+@@ -7,12 +7,22 @@ struct source* source = 0;
+ /* gets more data from buffer (at least n + 1 chars)
+  * doesn't advance buffer pointer, use input_skipcn() for that
+  * ----------------------------------------------------------------------- */
++void source_alias_pop(void);
++
+ int
+ source_peekn(char* c, unsigned n) {
+-  buffer* b = source->b;
+-  int ret = buffer_LEN(b);
++  buffer* b;
++  int ret;
+   unsigned pi = 0, k = 0; /* physical index, logical index */
+-  int esc = source_bs;    /* x[pi] is escaped by a backslash before it */
++  int esc;                /* x[pi] is escaped by a backslash before it */
++
++  /* used-up alias text: carry on with whatever follows the alias name */
++  while((source->mode & SOURCE_ALIAS) && source->parent && buffer_LEN(source->b) <= 0)
++    source_alias_pop();
++
++  b = source->b;
++  ret = buffer_LEN(b);
++  esc = source_bs;
+ 
+   /* quoted/comment text has no continuations */
+   if(source_squoted || source_comment) {
+diff --git a/src/source/source_skip.c b/src/source/source_skip.c
+index e5404218..6be6ef35 100644
+--- a/src/source/source_skip.c
++++ b/src/source/source_skip.c
+@@ -3,15 +3,18 @@
+ int source_squoted = 0;
+ int source_comment = 0;
+ int source_bs = 0;
++unsigned long source_skips = 0;
+ 
+ /* ----------------------------------------------------------------------- */
+ int
+ source_skip(void) {
+-  buffer* b = source->b;
++  buffer* b;
+   char c;
+ 
+-  /* a continuation at the front is not a character to skip */
++  /* a continuation at the front is not a character to skip; used-up
++     alias text is popped there too, which changes source->b */
+   source_peekn(0, 0);
++  b = source->b;
+ 
+   if(b->p < b->n) {
+     c = b->x[b->p];
+@@ -21,12 +24,15 @@ source_skip(void) {
+ #endif
+ 
+     b->p++;
++    source_skips++;
+ 
+     if(c == '\\' && !source_bs && !source_squoted && !source_comment) {
+       source_bs = 1;
+ 
++      /* the peek may pop used-up alias text: the newline then belongs to
++         whatever follows the alias name, not to the buffer b was taken from */
+       if(source_peek(&c) > 0 && c == '\n') {
+-        b->p++;
++        source->b->p++;
+         source_bs = 0;
+       } else {
+         c = '\\';

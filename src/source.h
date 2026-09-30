@@ -20,10 +20,13 @@ struct source {
   /* fd this source frame owns and must fd_pop() when popped; NULL for
      sources (e.g. the top-level script/-c source) with no owned fd. */
   struct fd* fd;
+  /* SOURCE_ALIAS frames: the alias whose text this is */
+  const void* alias;
 };
 
 #define SOURCE_IACTIVE 0x01
 #define SOURCE_HERE 0x02
+#define SOURCE_ALIAS 0x04 /* alias text: heap-allocated, pops itself when used up */
 
 extern struct source* source;
 extern int source_psn;
@@ -36,6 +39,23 @@ extern int source_squoted;
 extern int source_comment;
 
 void source_buffer(struct source*, struct fd*, const char* x, size_t n);
+
+/* alias text is read like the input it replaces: the frame is popped once
+ * it is used up and reading carries on behind the alias name.
+ *
+ *   source_alias_blank   set when a popped alias ended in a blank (the next word is aliasable)
+ *   source_alias_popped  aliases popped since source_alias_reset(), while the current word was being read: still "active"
+ * ----------------------------------------------------------------------- */
+extern int source_alias_blank;
+extern const void* source_alias_popped[8];
+extern unsigned long source_alias_poppedat[8]; /* source_skips when it was popped */
+extern int source_alias_npopped;
+extern unsigned long source_skips;    /* characters skipped so far */
+extern unsigned long source_tokskips; /* ... when the word (of a substitution chain) began */
+extern int source_tokskips_set;       /* 0 until parse_word() has stored it for this chain */
+void source_alias_push(const void* alias, const char* code, size_t n);
+int source_alias_active(const void* alias);
+void source_alias_reset(void);
 void source_pop(void);
 void source_popfd(struct fd*);
 void source_prompt(void);

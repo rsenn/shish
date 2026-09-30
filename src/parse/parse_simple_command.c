@@ -39,57 +39,6 @@ parse_simple_command(struct parser* p) {
       case T_WORD:
         *aptr = parse_getarg(p);
 
-        /* first argument */
-        if(!(p->flags & P_NOASSIGN)) {
-          stralloc sa;
-          struct narg* arg;
-          struct nargstr* argstr;
-          struct alias* a;
-
-          arg = &(*aptr)->narg;
-
-          // assert(arg->list->id == N_ARGSTR);
-
-          if(arg->list->id == N_ARGSTR) {
-
-            argstr = &arg->list->nargstr;
-
-            stralloc_init(&sa);
-            stralloc_copy(&sa, &argstr->stra);
-
-            if((a = parse_findalias(p, sa.s, sa.len))) {
-              size_t codelen;
-              struct source src;
-              struct fd fd;
-              struct parser aliasp;
-              union node* node;
-              char* code;
-
-              code = alias_code(a, &codelen);
-              source_buffer(&src, &fd, code, codelen);
-              parse_init(&aliasp, P_ALIAS);
-              aliasp.alias = a;
-
-              if((node = parse_simple_command(&aliasp))) {
-                // debug_node(node, 0);
-
-                tree_remove(aptr);
-
-                vptr = tree_append(vptr, node->ncmd.vars);
-                rptr = tree_append(rptr, node->ncmd.rdir);
-                aptr = tree_append(aptr, node->ncmd.args);
-                alloc_free(node);
-              }
-
-              source_popfd(&fd);
-            }
-
-            /* sa is only scratch space for the parse_findalias()
-               lookup above; nothing keeps a reference to it. */
-            stralloc_free(&sa);
-          }
-        }
-
         if(*aptr)
           tree_skip(aptr);
 

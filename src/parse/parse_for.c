@@ -22,7 +22,7 @@ parse_for(struct parser* p) {
   tree_init(node->nfor.args, nptr);
 
   /* next token can be 'in' */
-  if(parse_gettok(p, P_DEFAULT) & T_IN) {
+  if(parse_gettok(p, P_KWIN | P_KWDO) & T_IN) {
     node->nfor.has_in = 1;
 
     /* now parse the arguments and build a list of them */
@@ -35,11 +35,11 @@ parse_for(struct parser* p) {
   p->pushback++;
 
   /* there can be a semicolon after the argument list */
-  if(!(parse_gettok(p, P_DEFAULT) & T_SEMI))
+  if(!(parse_gettok(p, P_KWDO) & T_SEMI))
     p->pushback++;
 
   /* ..and the next token must be the "do" keyword */
-  if(!parse_expect(p, P_SKIPNL, T_DO, node))
+  if(!parse_expect(p, P_SKIPNL | P_KWDO, T_DO, node))
     return NULL;
 
   /* parse the commands inside "do"<->"done" */

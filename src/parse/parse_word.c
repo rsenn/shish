@@ -17,6 +17,10 @@ parse_word(struct parser* p) {
   p->node = NULL;
   p->quot = Q_UNQUOTED;
   p->tokstart = source->position;
+  if(!source_tokskips_set) {
+    source_tokskips = source_skips;
+    source_tokskips_set = 1;
+  }
 
   /* initialize string data */
   stralloc_zero(&p->sa);

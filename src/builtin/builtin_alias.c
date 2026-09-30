@@ -16,11 +16,12 @@ static int
 alias_valid(const char* v) {
   size_t i;
 
+  /* POSIX: alphanumerics and ! % , - @ _ at any position, a leading digit included */
   for(i = 0; v[i] && v[i] != '='; i++)
-    if(!parse_isname(v[i], i) && !(i > 0 && v[i] == '-'))
+    if(!parse_isname(v[i], 1) && !str_containsc("!%,-@", v[i]))
       return 0;
 
-  return 1;
+  return i > 0;
 }
 
 static struct alias*
