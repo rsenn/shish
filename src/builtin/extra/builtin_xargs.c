@@ -35,7 +35,10 @@ struct args {
 };
 
 struct xargs_opts {
-  unsigned no_run_noargs : 1, do_prompt : 1, reopen_pty : 1, trace : 1;
+  unsigned no_run_noargs : 1;
+  unsigned do_prompt : 1;
+  unsigned reopen_pty : 1;
+  unsigned trace : 1;
 };
 
 static int
