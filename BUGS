@@ -362,10 +362,8 @@
   open: assigning to readonly/positional/special parameters
   (`:193,198,202`), `${unset?b}` stderr message format (`:222`), length
   of valid variables (`:236`), special parameters `$`/`*`/`@` quoting
-  (`:446,517,539,570`). 15 failures in `param-p.tst` (39/54); of those,
-  `:82,99,114,127` ("embedded word" tilde/parameter/command/arithmetic
-  substitution) only still fail because of `grep-missing-dash-F-option`
-  below, not because of parameter expansion itself.
+  (`:446,517,539,570`). `:82`: a quoted tilde in `${a?\~}` is still
+  expanded (`HOME=/foo/bar; (: ${a?\~}) 2>&1` prints "/foo/bar", not "~").
 
   **Repro:**
   ```sh
@@ -1221,15 +1219,3 @@
   `printf '\303\251\n' | LC_ALL=C.UTF-8 cut -n -b 1` prints the lone byte
   \303 (should print nothing, the range starts inside the character).
 
-- grep-missing-dash-F-option: builtin `grep` only accepts `-Evnqc`
-  (`src/builtin/extra/builtin_grep.c`); POSIX's `-F` (fixed strings) is
-  not implemented at all, so any script using it fails outright instead
-  of just behaving differently. Blocks `param-p.tst:82,99,114,127` from
-  passing even though the parameter expansion they exercise is correct
-  (see `param-expansion-pattern-removal-broken`).
-
-  **Repro:**
-  ```sh
-  echo hello | build/x86_64-linux-gnu/shish -c 'grep -F ell'
-  # "grep: -F: invalid option" instead of matching "hello"
-  ```

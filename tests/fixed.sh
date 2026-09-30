@@ -5347,4 +5347,12 @@ assert_equal "/foo/bar" "$(HOME=/foo/bar; unset a; echo ${a=~})" "tilde in a \${
 assert_equal "/foo/bar" "$(HOME=/foo/bar; a=x; echo ${a+~})" "tilde in a \${var+word} substituted word resolves"
 assert_equal "/sub" "$(HOME=/foo/bar; x=/foo/bar/sub; echo ${x#~})" "tilde in a \${var#pattern} removed pattern resolves"
 
+## grep had no -F (POSIX fixed strings): "grep: -F: invalid option".
+## The pattern is literal (no regex), and a newline separates alternatives.
+assert_equal "hello" "$(echo hello | grep -F ell)" "grep -F matches a fixed string"
+assert_equal "a.c" "$(printf 'a.c\nabc\n' | grep -F a.c)" "grep -F treats . literally"
+assert_equal "x
+z" "$(printf 'x\ny\nz\n' | grep -F 'x
+z')" "grep -F with a newline-separated pattern matches either string"
+
 summary
