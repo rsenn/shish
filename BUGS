@@ -266,22 +266,6 @@
   # bash/dash print only "after loop" (break actually exits the loop)
   ```
 
-- kill-stop-self-in-subshell-deadlock: `kill -s STOP $$` inside a
-  `(...)` subshell hangs the shell forever, so `kill3-p.tst` never
-  finishes (`ctest` reports Timeout after 120s; confirmed identical
-  before and after `fixes/190`-`192`, so it is not new). shish runs
-  `(...)` in-process, so `$$` is this very process: SIGSTOP stops it
-  before the `kill -s CONT $$` on the next line can ever run. A real
-  shell forks the subshell, so the stopped process is the parent and
-  the still-running subshell continues it. Another instance of the
-  non-forking-subshell design gap (TODO.md, Goal 4).
-
-  **Repro:**
-  ```sh
-  echo '(kill -s STOP $$; status=$?; kill -s CONT $$; exit $status)' \
-    | timeout 5 build/x86_64-linux-gnu/shish; echo $?   # 124 = hung
-  ```
-
 - signal-tests-vary-with-machine-load: the `sig*-p` files are timing
   sensitive enough that the same binary produces wildly different
   scores from one run to the next. `sigterm1-p.tst` scored 36/180 in
@@ -332,8 +316,8 @@
 
   Also out of scope here, already tracked as its own architectural gap:
   `subshell cannot affect main shell` (`alias-p.tst:108`) fails because
-  `(...)` doesn't fork a real subprocess (`BUGS:
-  kill-stop-self-in-subshell-deadlock`, `TODO.md` Goal 4), so a
+  `(...)` doesn't fork a real subprocess (`TODO.md`
+  Goal 4), so a
   subshell's `alias`/`unalias` mutates the same in-process
   `parse_aliases` list the parent sees.
 
@@ -384,33 +368,8 @@
   # 19 failures in backslash escaping and line continuation
   ```
 
-- exit-status-in-trap-and-subshell-broken: exit status handling
-  inside traps (default status, explicit status, status from
-  previous command) and subshells is wrong. 6 failures in
-  `exit-p.tst` (8/14). `exit-p.tst:32,50,55,60,66,76`.
-
-  **Repro:**
-  ```sh
-  # Run the exit status conformance test
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix exit-p.tst
-  # 6 failures in trap and subshell exit status handling
-  ```
-
-- return-default-exit-status-wrong: `return` with no operand must
-  return the exit status of the last command run in the function/dot
-  script; shish returns something else. 3 failures in `return-p.tst`
-  (22/25), all named "default exit status of returning from ...".
-  The rest of this file's cases (returning from a function unnested,
-  nested in other functions, nested in or through a dot script) pass
-  -- they only ever failed because of stderr debug output, since
-  removed.
-
-  **Repro:**
-  ```sh
-  # testee path must be absolute
-  sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix return-p.tst
-  # 3 failures, all "default exit status of returning from ..."
-  ```
+- trap-exit-in-async-subshell-not-run: `trap "echo foo" EXIT >/dev/null & wait $!`
+  prints nothing (`trap-p.tst:156`); expected "foo".
 
 - input-not-read-line-wise: the shell reads more input than needed
   (not line-wise), consuming data meant for subsequent commands.
@@ -1219,3 +1178,11 @@
   `printf '\303\251\n' | LC_ALL=C.UTF-8 cut -n -b 1` prints the lone byte
   \303 (should print nothing, the range starts inside the character).
 
+- cat-missing-dash-u-option: `cat -u` (unbuffered, POSIX) is rejected
+  (`exec-p.tst:40`).
+
+  **Repro:**
+  ```sh
+  build/x86_64-linux-gnu/shish -c 'cat -u /dev/null'
+  # "cat: -u: invalid option"; expected exit status 0
+  ```

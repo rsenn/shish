@@ -104,11 +104,20 @@ trap_print(trap* tr) {
 static volatile sig_atomic_t trap_pending[256];
 volatile sig_atomic_t trap_signaled = 0;
 
+/* "$?" from before the running real-signal trap body: what a bare "return" yields */
+static int trap_prior_status, trap_in_signal;
+
+/* -1 outside a real-signal trap body, else the status the body was entered with */
+int
+trap_return_status(void) {
+  return trap_in_signal ? trap_prior_status : -1;
+}
+
 static void
 trap_handler(int sig) {
   trap* tr;
   struct eval e;
-  int was_async, was_exitcode;
+  int was_async, was_exitcode, was_prior, was_in;
 
   TRACE(TRACE_SIG, "trap.handler", trace_int("sig", sig));
 
@@ -140,15 +149,50 @@ trap_handler(int sig) {
      status through (an "exit" in an EXIT trap never gets here). */
   was_exitcode = sh->exitcode;
 
+  /* a bare "return" anywhere inside this body reports that same status */
+  was_prior = trap_prior_status;
+  was_in = trap_in_signal;
+
+  if((char)sig > 0) {
+    trap_prior_status = was_exitcode;
+    trap_in_signal = 1;
+  }
+
   /* the body can uninstall its own trap ("trap 'echo x; trap - INT'
      INT"), which would otherwise tree_free() the very tree eval_tree()
      is walking; trap_uninstall() only unlinks it while this flag is
      set and leaves the free to us. */
   tr->running = 1;
 
-  eval_push(&e, 0);
-  eval_tree(&e, tr->tree, 0);
-  eval_pop(&e);
+  /* the body is parsed again each time it runs so an alias defined
+     since "trap" ran applies: alias X='echo 2'; trap X USR1 -> "echo 2" */
+  if(parse_aliases) {
+    stralloc code;
+    struct fd fd;
+    struct source src;
+    struct parser p;
+    union node* fresh;
+
+    stralloc_init(&code);
+    tree_catlist(tr->tree, &code, NULL);
+    source_buffer(&src, &fd, code.s, code.len);
+    parse_init(&p, P_DEFAULT);
+    fresh = parse_compound_list(&p, 0);
+    source_popfd(&fd);
+
+    eval_push(&e, 0);
+    eval_tree(&e, fresh ? fresh : tr->tree, 0);
+    eval_pop(&e);
+
+    if(fresh)
+      tree_free(fresh);
+
+    stralloc_free(&code);
+  } else {
+    eval_push(&e, 0);
+    eval_tree(&e, tr->tree, 0);
+    eval_pop(&e);
+  }
 
   tr->running = 0;
 
@@ -156,6 +200,9 @@ trap_handler(int sig) {
     tree_free(tr->tree);
     alloc_free(tr);
   }
+
+  trap_prior_status = was_prior;
+  trap_in_signal = was_in;
 
   if((char)sig > 0)
     sh->exitcode = was_exitcode;
@@ -469,6 +516,42 @@ trap_install(int sig, union node* tree) {
  * than paired with a count, since a live trap node pointer is never
  * itself NULL.
  * ----------------------------------------------------------------------- */
+/* the outermost subshell's saved list = the traps of the shell that "$$" names,
+ * and what a signal sent to "$$" from inside "( )" / "$( )" is judged against */
+static trap** trap_outer;
+static int trap_snap_depth;
+static volatile sig_atomic_t trap_deferred[256];
+
+/* "kill -s SIG $$" from inside an in-process subshell: the signal is for the
+ * enclosing shell, whose disposition -- not the subshell's reset one -- applies.
+ *
+ *   trap set          -> run once the outermost subshell is done
+ *   trap '' set       -> ignored (returns 1, nothing to do)
+ *   no trap (default) -> returns 0, the caller really sends it
+ * ----------------------------------------------------------------------- */
+int
+trap_signal_parent(int sig) {
+  trap** p;
+
+  if(!trap_snap_depth || sig <= 0 || sig >= 254)
+    return 0;
+
+  for(p = trap_outer; p && *p; p++) {
+    if((*p)->sig != sig)
+      continue;
+
+    if((*p)->tree)
+      trap_deferred[sig] = 1;
+
+    return 1;
+  }
+
+  /* a stopped parent is continued by the still-running subshell ("kill -s
+   * CONT $$"); in-process there is only one process, and stopping it would
+   * hang forever, so the stop is dropped and the CONT is then harmless */
+  return sig == SIGSTOP || sig == SIGTSTP || sig == SIGTTIN || sig == SIGTTOU;
+}
+
 void*
 trap_snapshot_save(void) {
   trap* p;
@@ -480,15 +563,19 @@ trap_snapshot_save(void) {
 
   TRACE(TRACE_SIG, "trap.snapshot", trace_int("count", n));
 
-  if(!n)
-    return NULL;
+  nodes = NULL;
 
-  nodes = alloc((n + 1) * sizeof(trap*));
+  if(n) {
+    nodes = alloc((n + 1) * sizeof(trap*));
 
-  for(p = traps, i = 0; p; p = p->next, i++)
-    nodes[i] = p;
+    for(p = traps, i = 0; p; p = p->next, i++)
+      nodes[i] = p;
 
-  nodes[n] = NULL;
+    nodes[n] = NULL;
+  }
+
+  if(trap_snap_depth++ == 0)
+    trap_outer = nodes;
 
   return nodes;
 }
@@ -560,6 +647,19 @@ trap_snapshot_restore(void* handle) {
 
   if(nodes)
     alloc_free(nodes);
+
+  /* back in the shell "$$" names: hand over what the subshell signalled it */
+  if(--trap_snap_depth == 0) {
+    trap_outer = NULL;
+
+    for(k = 1; k < 254; k++) {
+      if(trap_deferred[k]) {
+        trap_deferred[k] = 0;
+        trap_pending[k] = 1;
+        trap_signaled = 1;
+      }
+    }
+  }
 }
 
 /* caught traps are reset to the default action in a subshell or forked

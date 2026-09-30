@@ -7,7 +7,9 @@
 #include "../../lib/sig_internal.h"
 #include "../../lib/buffer.h"
 #include "../../lib/unix.h"
+#include "builtin_config.h"
 #include <signal.h>
+#include <unistd.h>
 
 /* parse a "-signal" operand: numeric ("-9") or a name ("-TERM"/
  * "-SIGTERM", case-insensitive, with or without "SIG"). Returns the
@@ -73,6 +75,10 @@ kill_list(void) {
   buffer_putnlflush(fd_out->w);
   return 0;
 }
+
+#if BUILTIN_TRAP
+int trap_signal_parent(int);
+#endif
 
 int
 builtin_kill(int argc, char* argv[]) {
@@ -145,6 +151,11 @@ builtin_kill(int argc, char* argv[]) {
       }
 
       pid = n;
+
+#if BUILTIN_TRAP
+      if(pid == getpid() && trap_signal_parent(sig))
+        continue;
+#endif
 
       if(kill(pid, sig) == -1) {
         builtin_error(argv, target);

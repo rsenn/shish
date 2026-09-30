@@ -5188,9 +5188,12 @@ assert_equal 3 "$?" "(exit) in a subshell exits with the inherited \$?"
 "$SHISH_SELF" -c "trap '(exit 1); exit' EXIT; (exit 2); exit"
 assert_equal 2 "$?" "bare exit in the EXIT trap uses the status pending at trap entry"
 
-## caught traps are reset in a subshell / command substitution: a signal
-## there has its default action, not the parent's trap
-assert_equal "" "$("$SHISH_SELF" -c 'trap "echo trapped" USR1; (kill -s USR1 $$; echo alive) 2>/dev/null; echo end' 2>/dev/null | grep trapped)" "a trap set outside is not run for a signal delivered inside a subshell"
+## caught traps are reset in a subshell / command substitution: the parent's
+## trap must not run *inside* the subshell -- a signal for "$$" is the parent's
+## and is handled after the subshell ends ("alive" comes first)
+assert_equal "alive
+trapped
+end" "$("$SHISH_SELF" -c 'trap "echo trapped" USR1; (kill -s USR1 $$; echo alive) 2>/dev/null; echo end' 2>/dev/null)" "a signal sent to \$\$ from a subshell runs the parent's trap only after the subshell ends"
 assert_equal "trapped" "$("$SHISH_SELF" -c 'trap "echo trapped" USR1; (: ); kill -s USR1 $$; echo x >/dev/null' 2>&1)" "the parent's trap is re-armed after the subshell ends"
 
 ## "-i +m" keeps job control off
@@ -5354,5 +5357,56 @@ assert_equal "a.c" "$(printf 'a.c\nabc\n' | grep -F a.c)" "grep -F treats . lite
 assert_equal "x
 z" "$(printf 'x\ny\nz\n' | grep -F 'x
 z')" "grep -F with a newline-separated pattern matches either string"
+
+## "return" with no operand returned 0 instead of the last command's status,
+## and a nonzero status coming back from ".", "eval" or "return N" inside a
+## dotted script was treated as a special-builtin error and killed the shell.
+printf '(exit 17)\nreturn\n' >retdot.sh
+assert_equal "13" "$(f() { (exit 13); return; }; f; echo $?)" "bare return in a function uses the last command's status"
+assert_equal "after 17" "$(. ./retdot.sh; echo after $?)" "bare return in a dot script uses the last command's status and the shell survives"
+assert_equal "after 1" "$(eval false; echo after $?)" "eval of a failing command does not exit the shell"
+rm -f retdot.sh
+: >emptydot.sh
+assert_equal "0" "$( (exit 1); . ./emptydot.sh; echo $?)" "dotting an empty script yields status 0, not the caller's \$?"
+rm -f emptydot.sh
+
+## a trap body is parsed again each time it runs, so an alias defined after
+## "trap" applies; "trap '' ''" (invalid signal) must not kill the shell.
+cat >alias-trap.sh <<'__EOF__'
+trap X USR1
+alias X='echo 1'
+kill -s USR1 $$
+alias X='echo 2'
+kill -s USR1 $$
+__EOF__
+assert_equal "1
+2" "$("$SHISH_SELF" ./alias-trap.sh)" "alias defined after trap applies when the trap runs"
+rm -f alias-trap.sh
+assert_equal "reached" "$(trap '' '' 2>/dev/null || echo reached)" "trap with an invalid signal returns an error but the shell survives"
+
+## "(...)" and "$(...)" run in the same process, so "kill -s SIG $$" inside them
+## used to hit the subshell's reset (default) disposition and kill the whole
+## shell. The signal belongs to the enclosing shell: its trap runs once the
+## subshell is done, its "trap '' SIG" ignores it. A bare "return" inside a
+## trap body yields the status from before the trap.
+cat >sigparent.sh <<'__EOF__'
+trap 'echo trapped $?' USR1
+(exit 19)
+(kill -s USR1 $$; echo sent; exit 19)
+trap '' USR2
+(kill -s USR2 $$)
+f() { true; return; }
+trap 'f; echo in-trap $?' USR1
+(kill -s USR1 $$; exit 7)
+: # the trap runs before this
+echo done
+__EOF__
+assert_equal "sent
+trapped 19
+in-trap 7
+done" "$("$SHISH_SELF" ./sigparent.sh)" "signal to \$\$ from a subshell runs the parent's trap afterwards; ignore holds; bare return in a trap uses the pre-trap status"
+rm -f sigparent.sh
+## stopping "$$" from inside "( )" used to hang: only a forked subshell could continue it.
+assert_equal "0" "$(timeout 5 "$SHISH_SELF" -c '(kill -s STOP $$; status=$?; kill -s CONT $$; exit $status)'; echo $?)" "kill -s STOP \$\$ inside a subshell does not hang the shell"
 
 summary

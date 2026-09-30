@@ -10,6 +10,7 @@
 #include "../var.h"
 #include "../eval.h"
 #include "../../lib/windoze.h"
+#include <sys/stat.h>
 #if WINDOWS_NATIVE
 #include <io.h>
 #else
@@ -82,6 +83,7 @@ builtin_source(int argc, char* argv[]) {
   struct source in;
   struct arg oldarg;
   struct eval e;
+  struct stat st;
   int ret, jmpret;
 
   if((fname = argv[shell_optind]) == NULL) {
@@ -116,6 +118,10 @@ builtin_source(int argc, char* argv[]) {
       sh_loop();
       sh_popargs(&oldarg);
       ret = sh->exitcode;
+
+      /* an empty script yields 0, not the caller's $? */
+      if(stat(path_to_open, &st) == 0 && st.st_size == 0)
+        ret = sh->exitcode = 0;
     } else {
       /* Longjmp from return/break/continue - jmpret is (value << 1) | 1
          for return, or just 1 for break/continue */
@@ -127,6 +133,17 @@ builtin_source(int argc, char* argv[]) {
     eval_pop(&e);
   } else {
     ret = 1;
+    source_popfd(&src);
+
+    if(searched_path)
+      alloc_free(searched_path);
+
+    /* file not found: a special-builtin error, the one status of "."
+       that exec_command() still treats as fatal */
+    if(!sh_interactive && !exec_via_command)
+      sh_exit(ret);
+
+    return ret;
   }
 
   source_popfd(&src);

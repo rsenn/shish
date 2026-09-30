@@ -203,7 +203,8 @@ main(int argc, char** argv) {
   /* set our basename for the \v prompt escape seq and maybe other stuff*/
   sh_name = shell_name;
 
-  if(*sh_name == '-') {
+  /* "-sh" is a login shell; a script that is itself named "-" is not */
+  if(sh_name[0] == '-' && sh_name[1]) {
     sh_name++;
     sh_login++;
   }

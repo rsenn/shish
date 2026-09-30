@@ -64,14 +64,14 @@ Per-file failure counts, everything except the `sig*` family:
 
 ```
 48 alias-p  17/65    9 redir-p    52/61     4 shift-p   10/14   1 lineno-p   2/3
-24 kill2-p   4/28     8 simple-p   26/34     3 return-p  22/25   1 function-p 18/19
+24 kill2-p   4/28     8 simple-p   26/34     0 return-p  25/25   1 function-p 18/19
 22 read-p    6/28     8 set-p      37/45     3 input-p   8/11    1 fnmatch-p  6/7
 18 quote-p  17/35     8 kill1-p     9/17     3 case-p    49/52   1 export-p   4/5
-18 param-p  36/54     6 unset-p     6/12     2 dot-p     12/14   1 continue-p 30/31
-16 test-p  220/236    6 exit-p      8/14     2 cmdsub-p  12/14   1 comment-p  14/15
+18 param-p  36/54     6 unset-p     6/12     0 dot-p     14/14   1 continue-p 30/31
+16 test-p  220/236    0 exit-p     14/14     2 cmdsub-p  12/14   1 comment-p  14/15
 15 command-p 34/49    4 tilde-p    25/29     1 builtins  80/81   1 break-p    31/32
  9 umask-p  74/83                            1 pipeline-p 8/9    1 async-p    8/9
- 9 trap-p   28/37
+ 5 trap-p   32/37
 ```
 
 The `sig*` family splits cleanly in two — the `*2-p`/`*6-p` files (the
@@ -98,8 +98,8 @@ otherwise idle machine, and re-measure before concluding anything from
 a change in them (`BUGS: signal-tests-vary-with-machine-load`).
 
 Clean: `andor arith cd errexit eval exec for fsplit getopts grouping
-if kill4 nop option path ppid readonly until while`. `kill3-p` is
-neither — it times out (`BUGS: kill-stop-self-in-subshell-deadlock`).
+if kill4 nop option path ppid readonly until while`. `kill3-p` no longer hangs (its 6 remaining failures are the bash
+job-notice harness noise).
 
 ### How to measure
 
@@ -201,20 +201,16 @@ Sorted by failures per unit of work.
 
 ### Phase 5 [Stage 1: language] — control flow and exit status (≈15)
 
-1. `exit-p` (8/14) — default exit status in a subshell and inside a
-   trap; `exit N` from a trap. `BUGS:
-   exit-status-in-trap-and-subshell-broken`.
-2. `trap-p` (28/37) — trap printing (`trap`, `trap -p`), numeric
-   signal operands, and what a trap sees of the redirections in
-   effect when it was set.
-3. `return-p` (22/25, was 0/25 before the debug prints came out) —
-   only "default exit status of returning from function/dot script"
-   is left. `BUGS: return-default-exit-status-wrong`.
+1. `exit-p` — done (14/14).
+2. `trap-p` (32/37) — the 4 `*-p:5,24,58,64` failures are harness noise
+   (bash's job notice on stderr; the exit status matches). Left:
+   `BUGS: trap-exit-in-async-subshell-not-run` (156).
+3. `return-p` — done (25/25).
 4. `break`/`continue` inside `eval` still no-ops
    (`BUGS: break-continue-inside-eval-no-op`) — `eval`'s frame reuses
    `E_ROOT` for an unrelated purpose; give it its own flag.
 5. `input-p` (3) — the shell reads ahead past the current line.
-6. `dot-p` (2), `function-p` (1), `pipeline-p` (1), `async-p` (1),
+6. `function-p` (1), `pipeline-p` (1), `async-p` (1),
    `break-p` (1), `continue-p` (1), `export-p` (1).
 
 ---
@@ -266,8 +262,7 @@ Sorted by whether the `BUGS` entries below explain part of the
 
 **Directly explains a scoreboard number (fix these as part of Stages 1-2):**
 
-- `signal-tests-vary-with-machine-load`, `kill-stop-self-in-subshell-deadlock`
-  → Phase 1 (`sig*-p`, `kill3-p`).
+- `signal-tests-vary-with-machine-load` → Phase 1 (`sig*-p`).
 - `error-message-line-number-off-by-one` → Phase 2 (`lineno-p`).
 - `alias-substitution-needs-rework-in-parse_gettok`, `read-field-splitting-and-options-broken`,
   `set-notify-unimplemented`, `set-verbose-unimplemented`,

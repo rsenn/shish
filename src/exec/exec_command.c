@@ -230,7 +230,12 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
      SOURCE_IACTIVE bit, which source_push() resets for every nested
      source and would otherwise make this fire inside any `.`-sourced
      file even when the real session is interactive. */
-  if(cmd->id == H_SBUILTIN && ret != 0 && !sh_interactive && !exec_via_command) {
+  /* "." and "eval" hand back the status of the last command they ran,
+     which is not a builtin error: ". f" with f ending in "false" or
+     "return 3", and "eval false", must not kill the shell.
+     "trap '' ''" (invalid signal) does not kill it either. */
+  if(cmd->id == H_SBUILTIN && ret != 0 && !sh_interactive && !exec_via_command && cmd->builtin->fn != builtin_source &&
+     cmd->builtin->fn != builtin_eval && cmd->builtin->fn != builtin_trap) {
     sh_exit(ret);
   }
 
