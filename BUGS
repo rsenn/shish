@@ -355,23 +355,22 @@
   # really does open an if/then/fi)
   ```
 
-- param-expansion-pattern-removal-broken: `${var#pattern}`,
-  `${var##pattern}`, `${var%pattern}`, `${var%%pattern}` are broken
-  when the pattern contains expansions (tilde, parameter, command
-  substitution, arithmetic). 4 failures in `param-p.tst:280,291,
-  302,313`. Also: `${var#~pattern}` (tilde in pattern, `:324`),
-  `$@`/`$*` quoting with custom IFS (`:517,539,570`), special
-  parameters `$` and `!` (`:446,452`), tilde/parameter/command/
-  arithmetic expansion in embedded patterns (`:82,337,359,372`),
-  assigning to readonly/positional/special parameters
-  (`:193,198,202`), length of valid variables (`:236`). 18 total
-  failures in `param-p.tst` (36/54).
+- param-expansion-pattern-removal-broken: `${var#pattern}`/`${var##pattern}`/
+  `${var%pattern}`/`${var%%pattern}` still don't expand parameter or
+  command substitution inside the pattern (`:337,359`; tilde inside a
+  pattern was fixed, see `fixes/263-param-word-tilde.patch`). Also still
+  open: assigning to readonly/positional/special parameters
+  (`:193,198,202`), `${unset?b}` stderr message format (`:222`), length
+  of valid variables (`:236`), special parameters `$`/`*`/`@` quoting
+  (`:446,517,539,570`). 15 failures in `param-p.tst` (39/54); of those,
+  `:82,99,114,127` ("embedded word" tilde/parameter/command/arithmetic
+  substitution) only still fail because of `grep-missing-dash-F-option`
+  below, not because of parameter expansion itself.
 
   **Repro:**
   ```sh
   # Run the parameter expansion conformance test
   sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix param-p.tst
-  # 22 failures in pattern removal, $@/$* quoting, special parameters
   ```
 
 - quote-backslash-escaping-broken: backslash escaping of non-special
@@ -1221,3 +1220,16 @@
   UTF-8 locale it should not split a multibyte character:
   `printf '\303\251\n' | LC_ALL=C.UTF-8 cut -n -b 1` prints the lone byte
   \303 (should print nothing, the range starts inside the character).
+
+- grep-missing-dash-F-option: builtin `grep` only accepts `-Evnqc`
+  (`src/builtin/extra/builtin_grep.c`); POSIX's `-F` (fixed strings) is
+  not implemented at all, so any script using it fails outright instead
+  of just behaving differently. Blocks `param-p.tst:82,99,114,127` from
+  passing even though the parameter expansion they exercise is correct
+  (see `param-expansion-pattern-removal-broken`).
+
+  **Repro:**
+  ```sh
+  echo hello | build/x86_64-linux-gnu/shish -c 'grep -F ell'
+  # "grep: -F: invalid option" instead of matching "hello"
+  ```

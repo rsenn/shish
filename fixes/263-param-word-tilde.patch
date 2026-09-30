@@ -1,0 +1,139 @@
+diff --git a/src/expand/expand_param.c b/src/expand/expand_param.c
+index 268a6840..153c4989 100644
+--- a/src/expand/expand_param.c
++++ b/src/expand/expand_param.c
+@@ -41,6 +41,29 @@ limit(const struct range* in, int from, int to) {
+   return out;
+ }
+ 
++/* param->word may start with a "~"/"~name" that has to resolve against
++ * the live $HOME/passwd db (POSIX 2.6.1) -- but it's part of the
++ * permanent, reused parse tree, so expand_tilde_word()'s in-place splice
++ * must only ever run on a private copy, same as expand_args.c already
++ * does for top-level command arguments. Returns `word` itself when no
++ * copy was needed; pair with expand_param_tilde_free().
++ * ----------------------------------------------------------------------- */
++static union node*
++expand_param_tilde(union node* word) {
++  if(!expand_tilde_needed(word))
++    return word;
++
++  word = tree_copy(word);
++  expand_tilde_word(word);
++  return word;
++}
++
++static void
++expand_param_tilde_free(union node* word, union node* orig) {
++  if(word != orig)
++    tree_free(word);
++}
++
+ static int
+ expand_range(union node* word, struct range* r) {
+   stralloc sa;
+@@ -277,8 +300,12 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+       if(v)
+         n = expand_cat(v, vlen, nptr, flags);
+       /* unset, substitute */
+-      else if(param->word)
+-        n = expand_arg(param->word, nptr, flags | X_SUBWORD);
++      else if(param->word) {
++        union node* word = expand_param_tilde(param->word);
++
++        n = expand_arg(word, nptr, flags | X_SUBWORD);
++        expand_param_tilde_free(word, param->word);
++      }
+ 
+       break;
+     }
+@@ -292,8 +319,10 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+            same node, so only the bytes after this snapshot are the
+            value to assign. */
+         size_t before = n ? n->narg.stra.len : 0;
++        union node* word = expand_param_tilde(param->word);
+ 
+-        n = expand_arg(param->word, nptr, flags | X_NOSPLIT);
++        n = expand_arg(word, nptr, flags | X_NOSPLIT);
++        expand_param_tilde_free(word, param->word);
+         var_setv(param->name, n->narg.stra.s + before, n->narg.stra.len - before, V_DEFAULT);
+       }
+ 
+@@ -307,8 +336,12 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+       else {
+         stralloc msg = {0, 0, 0};
+ 
+-        if(param->word)
+-          expand_copysa(param->word, &msg, flags);
++        if(param->word) {
++          union node* word = expand_param_tilde(param->word);
++
++          expand_copysa(word, &msg, flags);
++          expand_param_tilde_free(word, param->word);
++        }
+         sh_error(param->word ? msg.s : "parameter null or not set");
+         stralloc_free(&msg);
+ 
+@@ -331,8 +364,12 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+ 
+     /* if parameter unset (or null) then substitute null, otherwise substitute word */
+     case S_ALTERNAT: {
+-      if(v)
+-        n = expand_arg(param->word, nptr, flags | X_SUBWORD);
++      if(v) {
++        union node* word = expand_param_tilde(param->word);
++
++        n = expand_arg(word, nptr, flags | X_SUBWORD);
++        expand_param_tilde_free(word, param->word);
++      }
+       break;
+     }
+ 
+@@ -346,7 +383,10 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+          explicitly" rule for this notation), so SH_FNM_PERIOD must
+          not be passed here. */
+       if(v && vlen) {
+-        expand_copysa(param->word, &sa, X_PATTERN);
++        union node* word = expand_param_tilde(param->word);
++
++        expand_copysa(word, &sa, X_PATTERN);
++        expand_param_tilde_free(word, param->word);
+ 
+         for(i = vlen; i >= 0; i--)
+           if(path_fnmatch(sa.s, sa.len, v + i, vlen - i, 0) == 0)
+@@ -364,7 +404,10 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+       stralloc sa;
+ 
+       if(v && vlen) {
+-        expand_copysa(param->word, &sa, X_PATTERN);
++        union node* word = expand_param_tilde(param->word);
++
++        expand_copysa(word, &sa, X_PATTERN);
++        expand_param_tilde_free(word, param->word);
+ 
+         for(i = 0; i <= vlen; i++)
+           if(path_fnmatch(sa.s, sa.len, v + i, vlen - i, 0) == 0)
+@@ -382,7 +425,10 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+       stralloc sa;
+ 
+       if(v && vlen) {
+-        expand_copysa(param->word, &sa, X_PATTERN);
++        union node* word = expand_param_tilde(param->word);
++
++        expand_copysa(word, &sa, X_PATTERN);
++        expand_param_tilde_free(word, param->word);
+ 
+         for(i = 0; i <= vlen; i++)
+           if(path_fnmatch(sa.s, sa.len, v, i, 0) == 0)
+@@ -403,7 +449,10 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+       stralloc sa;
+ 
+       if(v && vlen) {
+-        expand_copysa(param->word, &sa, X_PATTERN);
++        union node* word = expand_param_tilde(param->word);
++
++        expand_copysa(word, &sa, X_PATTERN);
++        expand_param_tilde_free(word, param->word);
+ 
+         for(i = vlen; i > 0; i--)
+           if(path_fnmatch(sa.s, sa.len, v, i, 0) == 0)

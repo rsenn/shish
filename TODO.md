@@ -184,10 +184,11 @@ Sorted by failures per unit of work.
 1. `quote-p` (17/35) — backslash and line continuation inside
    reserved words, operators, parameter expansions.
    `BUGS: quote-backslash-escaping-broken`.
-2. `param-p` (36/54) — assignment to readonly/positional/special
-   parameters, `${#...}` edge cases, pattern removal edge cases (the
-   basic forms all work, so this entry is narrower than
-   `BUGS: param-expansion-pattern-removal-broken` claims).
+2. `param-p` (39/54) — assignment to readonly/positional/special
+   parameters, `${#...}` edge cases, parameter/command substitution
+   inside a removed pattern, special-parameter quoting (tilde
+   expansion inside a substituted word or a removed pattern is now
+   fixed: `BUGS: param-expansion-pattern-removal-broken`).
 3. `redir-p` (52/61) — tilde expansion in redirection operands,
    heredocs on a non-default fd, several heredocs per command, long
    heredocs. `BUGS: redir-tilde-expansion-and-heredoc-broken`.

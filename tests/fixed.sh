@@ -5336,4 +5336,15 @@ printf '%200000s\n' | tr ' ' a >"$FDRAIN0"
 assert_equal "2" "$(tr -s a <"$FDRAIN0" | wc -c | tr -d ' ')" "tr -s squeezing a whole chunk to nothing inside a real pipeline must still work (see comment above)"
 rm -f "$FDRAIN0"
 
+## expand_tilde_word() (src/expand/expand_tilde.c) only ever ran on a
+## top-level command argument -- never on a param->word substituted by
+## "${var-word}"/"${var=word}"/"${var+word}"/"${var?word}", or on the
+## pattern of "${var#word}" and friends -- so a tilde there was left
+## untouched instead of resolving against $HOME/passwd (POSIX 2.6.1).
+unset a
+assert_equal "/foo/bar" "$(HOME=/foo/bar; echo ${a-~})" "tilde in a \${var-word} substituted word resolves"
+assert_equal "/foo/bar" "$(HOME=/foo/bar; unset a; echo ${a=~})" "tilde in a \${var=word} substituted word resolves"
+assert_equal "/foo/bar" "$(HOME=/foo/bar; a=x; echo ${a+~})" "tilde in a \${var+word} substituted word resolves"
+assert_equal "/sub" "$(HOME=/foo/bar; x=/foo/bar/sub; echo ${x#~})" "tilde in a \${var#pattern} removed pattern resolves"
+
 summary
