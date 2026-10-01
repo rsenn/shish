@@ -185,19 +185,22 @@
   ```
 
 - asan-leak-residue-not-fully-triaged: ASan leak reports left under the
-  `-fsanitize=address,undefined` build. Fixed in `fixes/274`: `job->command`
-  (a backgrounded command), the argument list a `break`/`return`/`exit`
-  longjmp skipped, the sub-parsers' scratch strings in `${...}`, `$(...)`,
-  `` `...` `` and `$((...))`, the `$((i))` operand nodes, and the old value
-  buffer of a reassigned variable. What is left:
+  `-fsanitize=address,undefined` build. Fixed in `fixes/274`/`fixes/275`:
+  `job->command`, the argument list a `break`/`return`/`exit` longjmp
+  skipped, sub-parser scratch strings, `$((i))` operand nodes, a reassigned
+  variable's old buffer, the pattern string of `${v#p}`/`${v##p}`/`${v%p}`/
+  `${v%%p}`, a here-document's body (every execution), `eval`'s joined
+  string and parser, and a function definition's name node. What is left:
 
-  - A function definition's `tree_copy()` of its body
-    (`eval_function.c`) lives in the process-lifetime function list.
-  - `redir_parse.c:118` and `expand_cat.c:138` still show up in a full
-    `tests/fixed.sh` run; not isolated to a minimal script yet.
-  - The last copy of a variable's value is not freed at exit (it is not
-    marked `V_FREESTR`: `var_setvsa()` reads that flag as "the offset is
-    the start of the value" and would corrupt it).
+  - Parsing a function definition still leaks 2 allocations (a 56-byte
+    `N_ARGSTR` from `parse_pipeline.c:13`'s `parse_gettok()` plus its
+    string); only visible when it is parsed repeatedly:
+    `i=0; while [ $i -lt 50 ]; do eval "f(){ echo a; }"; i=$((i+1)); done`
+    leaks 2 allocations per pass.
+  - The installed function list (`eval_function.c`) and the last copy of
+    each variable's value live for the whole process. The value copy is
+    not marked `V_FREESTR`, because `var_setvsa()` reads that flag as "the
+    offset is the start of the value" and would corrupt it.
 
   **Repro:**
   ```sh

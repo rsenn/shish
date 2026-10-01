@@ -1,0 +1,111 @@
+diff --git a/src/builtin/builtin_eval.c b/src/builtin/builtin_eval.c
+index 4d761b54..5254c92a 100644
+--- a/src/builtin/builtin_eval.c
++++ b/src/builtin/builtin_eval.c
+@@ -73,5 +73,7 @@ builtin_eval(int argc, char* argv[]) {
+     ret = 1;
+ 
+   source_popfd(&fd);
++  stralloc_free(&p.sa);
++  stralloc_free(&sa);
+   return ret;
+ }
+diff --git a/src/expand/expand_param.c b/src/expand/expand_param.c
+index 91e83879..8eba0bcd 100644
+--- a/src/expand/expand_param.c
++++ b/src/expand/expand_param.c
+@@ -408,6 +408,8 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+           if(path_fnmatch(sa.s, sa.len, v + i, vlen - i, 0) == 0)
+             break;
+ 
++        stralloc_free(&sa);
++
+         n = expand_cat(v, (i < 0 ? vlen : (size_t)i), nptr, flags);
+       }
+ 
+@@ -429,6 +431,8 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+           if(path_fnmatch(sa.s, sa.len, v + i, vlen - i, 0) == 0)
+             break;
+ 
++        stralloc_free(&sa);
++
+         n = expand_cat(v, (i > vlen ? vlen : i), nptr, flags);
+       }
+ 
+@@ -453,6 +457,8 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+         if(i > vlen)
+           i = 0;
+ 
++        stralloc_free(&sa);
++
+         n = expand_cat(v + i, vlen - i, nptr, flags);
+       }
+ 
+@@ -474,6 +480,8 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+           if(path_fnmatch(sa.s, sa.len, v, i, 0) == 0)
+             break;
+ 
++        stralloc_free(&sa);
++
+         n = expand_cat(v + i, vlen - i, nptr, flags);
+       }
+ 
+diff --git a/src/fd/fd_close.c b/src/fd/fd_close.c
+index 2dda2e6a..f305fd04 100644
+--- a/src/fd/fd_close.c
++++ b/src/fd/fd_close.c
+@@ -77,6 +77,9 @@ fd_close(struct fd* fd) {
+     fd->wb.a = 0;
+   }
+ 
+-  /* fd is only really closed if there are no duplicates */
+-  fdstack_unref(fd);
++  /* fd is only really closed if there are no duplicates; with none, a
++     here-document's body buffer is still ours (the rb.fd == wb.fd case
++     above skips buffer_close(&fd->rb), so its deinit never ran) */
++  if(!fdstack_unref(fd) && !(fd->mode & FD_DUP) && (fd->mode & FD_HERE) == FD_HERE && fd->rb.deinit)
++    fd->rb.deinit(&fd->rb);
+ }
+diff --git a/src/fdtable/fdtable_here.c b/src/fdtable/fdtable_here.c
+index 9c645567..8ea31575 100644
+--- a/src/fdtable/fdtable_here.c
++++ b/src/fdtable/fdtable_here.c
+@@ -59,6 +59,11 @@ fdtable_here(struct fd* d, int flags) {
+      fcntl(F_SETFL) -- access mode isn't one of the flags it can change */
+   lseek(e, d->rb.p, SEEK_SET);
+ 
++  /* the body now lives in the tempfile: release the here-document's
++     buffer before buffer_init() forgets about it */
++  if(d->rb.deinit)
++    d->rb.deinit(&d->rb);
++
+   /* initialize the read buffer so we can read from
+      the tempfile and destroy the write buffer */
+   buffer_init(&d->rb, &buffer_op_read, e, NULL, 0);
+diff --git a/src/parse/parse_function.c b/src/parse/parse_function.c
+index da63de04..66c5a8d3 100644
+--- a/src/parse/parse_function.c
++++ b/src/parse/parse_function.c
+@@ -32,6 +32,11 @@ parse_function(struct parser* p) {
+   loc = argstr->loc;
+   stralloc_copy(&name, &argstr->stra);
+ 
++  /* the name word is only needed as text from here on */
++  tree_free(p->tree);
++  p->tree = NULL;
++  p->node = NULL;
++
+   // expand_tosa(p->tree, &name);
+   node = tree_newnode(N_FUNCTION);
+   stralloc_nul(&name);
+diff --git a/src/redir/redir_source.c b/src/redir/redir_source.c
+index 4494d84b..e9421088 100644
+--- a/src/redir/redir_source.c
++++ b/src/redir/redir_source.c
+@@ -53,4 +53,6 @@ redir_source(void) {
+     /* free expanded delimiters */
+     stralloc_free(&delim);
+   }
++
++  stralloc_free(&p.sa);
+ }

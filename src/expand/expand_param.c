@@ -408,6 +408,8 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
           if(path_fnmatch(sa.s, sa.len, v + i, vlen - i, 0) == 0)
             break;
 
+        stralloc_free(&sa);
+
         n = expand_cat(v, (i < 0 ? vlen : (size_t)i), nptr, flags);
       }
 
@@ -428,6 +430,8 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         for(i = 0; i <= vlen; i++)
           if(path_fnmatch(sa.s, sa.len, v + i, vlen - i, 0) == 0)
             break;
+
+        stralloc_free(&sa);
 
         n = expand_cat(v, (i > vlen ? vlen : i), nptr, flags);
       }
@@ -453,6 +457,8 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         if(i > vlen)
           i = 0;
 
+        stralloc_free(&sa);
+
         n = expand_cat(v + i, vlen - i, nptr, flags);
       }
 
@@ -473,6 +479,8 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         for(i = vlen; i > 0; i--)
           if(path_fnmatch(sa.s, sa.len, v, i, 0) == 0)
             break;
+
+        stralloc_free(&sa);
 
         n = expand_cat(v + i, vlen - i, nptr, flags);
       }

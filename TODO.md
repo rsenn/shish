@@ -298,8 +298,9 @@ cmake --build build/asan
 What's currently open under this build, from `BUGS`:
 
 1. `asan-leak-residue-not-fully-triaged` — the per-iteration leaks are
-   fixed (`fixes/274`); what remains is the function-body copy,
-   `redir_parse.c:118` and `expand_cat.c:138` (see `BUGS`).
+   fixed (`fixes/274`, `fixes/275`); what remains is 2 allocations per
+   parsed function definition and the process-lifetime function and
+   variable state (see `BUGS`).
 2. `ubsan-buffer-op-proto-function-type-mismatch` — `lib/buffer.h`'s
    `buffer_op_proto` cast onto libc `read`/`write` is UB by the letter
    of the standard but not fixable without wrapping two libc functions

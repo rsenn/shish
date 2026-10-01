@@ -77,6 +77,9 @@ fd_close(struct fd* fd) {
     fd->wb.a = 0;
   }
 
-  /* fd is only really closed if there are no duplicates */
-  fdstack_unref(fd);
+  /* fd is only really closed if there are no duplicates; with none, a
+     here-document's body buffer is still ours (the rb.fd == wb.fd case
+     above skips buffer_close(&fd->rb), so its deinit never ran) */
+  if(!fdstack_unref(fd) && !(fd->mode & FD_DUP) && (fd->mode & FD_HERE) == FD_HERE && fd->rb.deinit)
+    fd->rb.deinit(&fd->rb);
 }

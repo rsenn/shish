@@ -32,6 +32,11 @@ parse_function(struct parser* p) {
   loc = argstr->loc;
   stralloc_copy(&name, &argstr->stra);
 
+  /* the name word is only needed as text from here on */
+  tree_free(p->tree);
+  p->tree = NULL;
+  p->node = NULL;
+
   // expand_tosa(p->tree, &name);
   node = tree_newnode(N_FUNCTION);
   stralloc_nul(&name);

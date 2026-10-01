@@ -59,6 +59,11 @@ fdtable_here(struct fd* d, int flags) {
      fcntl(F_SETFL) -- access mode isn't one of the flags it can change */
   lseek(e, d->rb.p, SEEK_SET);
 
+  /* the body now lives in the tempfile: release the here-document's
+     buffer before buffer_init() forgets about it */
+  if(d->rb.deinit)
+    d->rb.deinit(&d->rb);
+
   /* initialize the read buffer so we can read from
      the tempfile and destroy the write buffer */
   buffer_init(&d->rb, &buffer_op_read, e, NULL, 0);

@@ -53,4 +53,6 @@ redir_source(void) {
     /* free expanded delimiters */
     stralloc_free(&delim);
   }
+
+  stralloc_free(&p.sa);
 }

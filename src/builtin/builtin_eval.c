@@ -73,5 +73,7 @@ builtin_eval(int argc, char* argv[]) {
     ret = 1;
 
   source_popfd(&fd);
+  stralloc_free(&p.sa);
+  stralloc_free(&sa);
   return ret;
 }
