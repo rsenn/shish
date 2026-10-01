@@ -1028,17 +1028,6 @@
   ./build/x86_64-linux-gnu/shish tests/fixed.sh 2>&1 | grep FAIL
   ```
 
-- command-exec-redirection-not-persistent: `command exec 3<<E ... E` applies
-  the redirection to the `command` builtin only, so it is gone afterwards
-  (POSIX leaves `command exec` open; yash keeps it). `command-p.tst:42`.
-
-  **Repro:**
-  ```sh
-  command exec 3<<E
-  here
-  E
-  cat <&3          # "3: Bad file descriptor"; should print "here"
-  ```
 - head-no-header-for-empty-file: `head` prints the "==> file <==" header
   when the first bytes of a file arrive, so an empty file operand gets
   none (the shared input layer skips a source with nothing in it).

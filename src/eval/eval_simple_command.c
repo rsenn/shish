@@ -8,6 +8,7 @@
 #include "../fdtable.h"
 #include "../trace.h"
 #include "../sh.h"
+#include "../builtin.h"
 #include "../eval.h"
 #include "../exec.h"
 #include "../expand.h"
@@ -39,7 +40,7 @@ int
 eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   int argc, status = 0, assign_error = 0, redir_error = 0;
   char** argv;
-  union node *node, *args = 0, *assigns = 0, *r, *redir = ncmd->rdir;
+  union node *node, *args = 0, *args_head = 0, *assigns = 0, *r, *redir = ncmd->rdir;
   struct command cmd = {H_BUILTIN, {0}};
   struct vartab vars;
   struct fdstack io;
@@ -62,8 +63,25 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   sh->cmdsubst_ran = 0;
 
   if(expand_args(ncmd->args, &args, 0)) {
+    args_head = args;
     stralloc_nul(&args->narg.stra);
     cmd = exec_hash(args->narg.stra.s, 0);
+
+    /* "command [-p] [--] exec ..." runs as "exec ...", so its
+       redirections persist. args_head still owns the whole list. */
+    if(cmd.id == H_BUILTIN && cmd.builtin && cmd.builtin->fn == &builtin_command) {
+      union node* n = args->next;
+
+      while(n && (stralloc_nul(&n->narg.stra), str_equal(n->narg.stra.s, "-p") || str_equal(n->narg.stra.s, "--")))
+        n = n->next;
+
+      if(n) {
+        stralloc_nul(&n->narg.stra);
+
+        if(str_equal(n->narg.stra.s, "exec") && (cmd = exec_hash("exec", H_FUNCTION)).id == H_EXEC)
+          args = n;
+      }
+    }
   }
 
   /* POSIX 2.8.1: an expansion error means this command does not run at
@@ -76,7 +94,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   }
 
   /*if(sh->exitcode) {
-    tree_free(args);
+    tree_free(args_head);
     eval_exit(sh->exitcode);
   }*/
 
@@ -342,8 +360,8 @@ end:
     vartab_pop(&vars);
   }
 
-  if(args)
-    tree_free(args);
+  if(args_head)
+    tree_free(args_head);
 
   /* undo redirections */
 

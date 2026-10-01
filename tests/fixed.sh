@@ -5516,4 +5516,57 @@ assert_equal "bs1 bs2" "$("$SHISH_SELF" -c 'bs="\\a\\z"; case az in $bs) echo bs
 assert_equal "matched" "$("$SHISH_SELF" -c 'HOME=/home; case /home/foo in ~/foo) echo matched;; esac')" "a case pattern is subject to tilde expansion"
 assert_equal "b *b" "$("$SHISH_SELF" -c 'x="a*b"; echo "${x#"a*"}" ${x#a*}')" "a quoted glob in a ${x#pattern} is literal"
 
+## redirections: a word directly followed by an operator ends at it, a quoted
+## fd digit is not an fd, the operand is tilde-expanded, set -C refuses to
+## clobber a regular file, builtins report write errors, here-documents on
+## other fds survive <&n, and a here-document body keeps \"
+RD=$(mktemp -d)
+if [ -d "$RD" ]; then
+  (
+    cd "$RD" || exit 1
+    "$SHISH_SELF" -c 'echo abc>f1; echo "q">f2; echo \2>f3; echo ghi>>f1'
+    echo in0 >in0
+    printf '%s\n' "$(cat f1)" "$(cat f2)" "$(cat f3)" >out
+    "$SHISH_SELF" -c 'HOME=$PWD; cat <~/in0; echo t >~/f4; cat f4' >>out
+    "$SHISH_SELF" -C -c 'echo foo >nc; echo boo >nc 2>/dev/null; echo st=$?; echo p >|nc; cat nc; echo n >/dev/null' >>out 2>&1
+    "$SHISH_SELF" -c 'echo x >&- 2>/dev/null; echo w=$?; echo y >/dev/full 2>/dev/null; echo w=$?' >>out
+    "$SHISH_SELF" -c 'cat 3<<EOT <&3
+h3
+EOT
+{ cat <&4; } 4<<EOT
+h4
+EOT
+cat <<EOT
+a \"q\" \$HOME
+EOT' >>out
+    "$SHISH_SELF" -c 'unset x; < ${x=no/such/file} 2>/dev/null; echo [$x]' >>out
+  )
+  assert_equal "abc
+ghi
+q
+2
+in0
+t
+st=1
+p
+w=1
+w=1
+h3
+h4
+a \"q\" \$HOME
+[]" "$(cat "$RD/out")" "redirection fixes: word>file, \\2>, ~, set -C, write errors, here-doc fds and backslashes, command-less redirect scope"
+  rm -rf "$RD"
+fi
+
+# command exec: redirections persist like plain "exec" (fixes/273)
+CE=$("$SHISH_SELF" -c 'command exec 3<<E
+here
+E
+cat <&3
+command -p exec 4>/dev/null; echo ok >&4 && echo open
+exec() { echo FUNC; }; command exec 5>/dev/null; echo ok >&5 && echo bypass')
+assert_equal "here
+open
+bypass" "$CE" "command [-p] exec keeps its redirections, and bypasses a function named exec"
+
 summary

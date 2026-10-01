@@ -164,8 +164,7 @@ Sorted by failures per unit of work.
    stderr whenever the exec'd process dies from a signal, and `dash` run
    through the same harness fails the identical set.
 2. **`read`** — done (`fixes/253`, `read-p` 28/28).
-3. **`command` (2 left)** — `command exec` must keep its redirections
-   (`BUGS: command-exec-redirection-not-persistent`); the rest is done (`fixes/253`).
+3. **`command`** — done (`fixes/253`, `fixes/273`).
 4. **`unset` (6)** — `-f` (functions) does not delete; readonly
    variables must not be deletable.
 5. **`umask` (9)**, **`set` (8)**, **`shift` (4)**, **`export` (1)**.
