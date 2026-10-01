@@ -165,14 +165,15 @@ Sorted by failures per unit of work.
    through the same harness fails the identical set.
 2. **`read`** — done (`fixes/253`, `read-p` 28/28).
 3. **`command`** — done (`fixes/253`, `fixes/273`).
-4. **`unset` (6)** — `-f` (functions) does not delete; readonly
-   variables must not be deletable.
-5. **`umask` (9)**, **`set` (8)**, **`shift` (4)**, **`export` (1)**.
-   `set -o` is missing the POSIX names `ignoreeof`, `nolog`,
-   `notify`, `verbose`, `vi` (it lists the bash extras
-   `braceexpand`/`hashall`/`histexpand`/`privileged` instead) —
-   folds in `BUGS: set-notify-unimplemented`,
-   `set-verbose-unimplemented`, `set-histexpand-unimplemented`.
+4. **`unset`**, **`umask`**, **`shift`**, **`export`** — done (`fixes/278`-`282`;
+   `unset-p`, `umask-p`, `shift-p`, `export-p` all pass). `mkdir`'s default mode
+   was the bulk of the `umask-p` failures; `"$@"` with no parameters was
+   `shift-p`'s.
+5. **`set`** — `-b`/`-v` are accepted and shown in `$-`/`set -o` (`fixes/283`,
+   `set-p` 45/45) but have no effect yet: `BUGS: set-notify-no-effect`,
+   `set-verbose-no-effect`. `set -o` still lists the bash extras
+   `braceexpand`/`hashall`/`histexpand`/`privileged`; `ignoreeof`, `nolog`
+   and `vi` are still missing (`BUGS: set-histexpand-unimplemented`).
 
 ---
 
@@ -257,7 +258,7 @@ Sorted by whether the `BUGS` entries below explain part of the
 - `signal-tests-vary-with-machine-load` → Phase 1 (`sig*-p`).
 - `error-message-line-number-off-by-one` → Phase 2 (`lineno-p`).
 - `alias-substitution-remaining-cases`, `read-field-splitting-and-options-broken`,
-  `set-notify-unimplemented`, `set-verbose-unimplemented`,
+  `set-notify-no-effect`, `set-verbose-no-effect`,
   `set-histexpand-unimplemented` → Phase 3 (`alias-p`, `read-p`, `set-p`).
 - `quote-backslash-escaping-broken`, `param-expansion-pattern-removal-broken`,
   `case-pattern-bracket-quote-stripping` →

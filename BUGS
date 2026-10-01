@@ -92,47 +92,27 @@
   EOF
   ```
 
-- set-notify-unimplemented: POSIX `-b` (report a background job's
-  completion as soon as it happens, instead of waiting until just
-  before the next prompt) is missing the same way -- no `struct
-  shopt` bit, not recognized by `builtin_set()`. Belongs in `src/job/`:
-  `job_wait.c`/`sh_onsig()`'s SIGCHLD path and `job_clean.c` are where
-  a finished background job is currently *noticed*, but
-  `job_clean.c`'s own banner-printing comments already describe the
-  existing race between the async SIGCHLD path and the synchronous
-  `job_wait()` path around exactly this "print immediately vs. defer"
-  distinction (a stray banner interrupting a running foreground
-  command's own output mid-line is the whole reason it's deferred by
-  default) -- so this is more than flipping a condition, it's adding
-  a real "OK to interrupt terminal output right now" toggle to logic
-  that currently assumes deferral is always correct.
+- set-notify-no-effect: POSIX `-b` is accepted (`set -b`, `set -o notify`,
+  shown in `$-`) but changes nothing: a finished background job is still
+  reported only just before the next prompt. Needs a real "OK to interrupt
+  terminal output" toggle in `src/job/job_clean.c`'s banner path, which
+  currently assumes deferral is always correct.
 
   **Repro:**
   ```sh
-  echo 'set -b' | shish 2>&1
-  # shish prints nothing (option not recognized)
-  # bash/dash accept -b without error
+  printf 'set -b\nsleep 0.1 &\nsleep 1\n' | shish -i 2>&1
+  # the "Done" banner should appear as soon as the job ends, not after sleep 1
   ```
 
-- set-verbose-unimplemented: POSIX `-v` (echo each input line to
-  stderr as it's read, before any parsing/expansion touches it --
-  distinct from `-x`, which echoes *after* expansion, from
-  `src/eval/`'s `E_PRINT` path) is missing the same way. There is
-  currently no hook point that sees "a raw input line" as a unit
-  separate from `src/source.h`'s character-at-a-time
-  `source_peek()`/`source_next()` interface the parser reads through
-  -- implementing this needs either a small line-buffering layer at
-  that level (echo-and-flush whenever a newline is consumed) or some
-  other way to reconstruct "the line just parsed" from `struct
-  source`'s position tracking. This is the most structurally invasive
-  of this group precisely because nothing else needs "raw source
-  text" as such a unit today.
+- set-verbose-no-effect: POSIX `-v` is accepted (`set -v`, `set -o verbose`,
+  shown in `$-`) but does not echo input lines to stderr. Nothing sees a raw
+  input line as a unit: the parser reads `src/source.h`'s `source_peek()`/
+  `source_next()` one character at a time through a prefetching buffer.
 
   **Repro:**
   ```sh
   echo 'set -v; echo hello' | shish 2>&1
-  # shish prints nothing about -v
-  # bash/dash echo each input line to stderr before parsing
+  # prints "hello"; bash/dash also echo "set -v; echo hello" to stderr first
   ```
 
 - set-histexpand-unimplemented: `struct shopt`'s `histexpand` bit
@@ -819,14 +799,6 @@
   test 1 -eq x; echo $?              # 1; should be >1
   ```
 
-- umask-invalid-mode-accepted: `umask 999` (not an octal number, not a
-  valid symbolic mode) is silently accepted with status 0.
-
-  **Repro:**
-  ```sh
-  umask 999; echo $?; umask     # 0; should be >0 with a diagnostic
-  ```
-
 - type-unknown-name-silent: `type nonexistent` writes nothing and returns 0.
   POSIX: a diagnostic on stderr for names that cannot be found, and status
   >0.
@@ -836,16 +808,15 @@
   type nonexistent_cmd; echo $?     # prints nothing, 0; should print an error, >0
   ```
 
-- export-unset-errors-not-reflected-in-status: `export 1a=b` (invalid name)
-  and `unset` of a readonly variable print a diagnostic but the builtin's
-  status is 0; POSIX 2.8.1: a special-builtin error must give status >0 (and
-  end a non-interactive shell). `readonly R=1; unset R; echo $?` prints 0;
-  `unset 1x` is accepted silently.
+- export-unset-invalid-name-status: `export 1a=b` prints "not a valid
+  identifier" but returns 0, and `unset 1x` is accepted silently. POSIX
+  2.8.1 wants a special-builtin error to give status >0 (and end a
+  non-interactive shell).
 
   **Repro:**
   ```sh
-  export 1a=b; echo $?                # "not a valid identifier"; then 0
-  readonly R=1; unset R; echo $?      # "readonly variable"; then 0
+  export 1a=b; echo $?     # diagnostic, then 0
+  unset 1x; echo $?        # no diagnostic, 0
   ```
 
 - set-pipefail-missing-and-noclobber-not-enforced: `set -o pipefail` (new in
@@ -1003,4 +974,23 @@
   ```sh
   build/x86_64-linux-gnu/shish -c 'cat -u /dev/null'
   # "cat: -u: invalid option"; expected exit status 0
+  ```
+
+- builtin-cp-sh-hangs: `tests/builtin-cp.sh` never terminates (a `ctest`
+  run sits on it for 17+ minutes), so it needs `--timeout` or `-E builtin-cp`
+  for the suite to finish. Present before the `fixes/278`-`283` changes.
+
+  **Repro:**
+  ```sh
+  timeout 20 build/x86_64-linux-gnu/shish tests/builtin-cp.sh; echo $?   # 124
+  ```
+
+- quoted-at-then-empty-quotes-drops-field: `"$@"""` with no positional
+  parameters expands to no field; POSIX gives one empty field. The parser
+  emits an empty literal chunk after a plain `"$@"` too, so
+  `expand_args()`'s zero-field rule (`fixes/280`) cannot tell them apart.
+
+  **Repro:**
+  ```sh
+  set --; f() { echo $#; }; f "$@"""     # 0; should be 1
   ```

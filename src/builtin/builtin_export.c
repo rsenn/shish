@@ -2,6 +2,7 @@
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
 #include "../var.h"
+#include "../sh.h"
 #include "../vartab.h"
 
 /* export built-in
@@ -47,12 +48,14 @@ builtin_export(int argc, char* argv[]) {
     if((*argp)[str_chr(*argp, '=')]) {
       struct var* v;
 
-      /* Check if variable exists and is readonly. Reject the assignment
-         but don't kill the shell — export readonly errors are not fatal
-         even though export is a special builtin (matches bash/dash). */
+      /* special builtin: a readonly assignment exits a non-interactive shell */
       if((v = var_search(*argp, NULL)) != NULL && (v->flags & V_READONLY)) {
         builtin_errmsg(argv, *argp, "readonly variable");
-        continue;
+
+        if(!sh_interactive)
+          sh_exit(1);
+
+        return 1;
       }
 
       var_copys(*argp, V_EXPORT);

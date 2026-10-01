@@ -1,0 +1,128 @@
+diff --git a/src/builtin/builtin_set.c b/src/builtin/builtin_set.c
+index 57bc01b1..40a48c06 100644
+--- a/src/builtin/builtin_set.c
++++ b/src/builtin/builtin_set.c
+@@ -59,9 +59,11 @@ const struct set_longopt set_longopts[] = {
+     {"noclobber", 'C'},
+     {"noexec", 'n'},
+     {"noglob", 'f'},
++    {"notify", 'b'},
+     {"nounset", 'u'},
+     {"pipefail", 'P'}, /* only via -o: 'P' is not a set flag */
+     {"privileged", 'p'},
++    {"verbose", 'v'},
+     {"xtrace", 'x'},
+ };
+ 
+@@ -76,6 +78,7 @@ set_apply(struct shopt* opts, int letter, int on) {
+   switch(letter) {
+     case 'a': opts->allexport = on; return 1;
+     case 'e': opts->errexit = on; return 1;
++    case 'b': opts->notify = on; return 1;
+     case 'f': opts->noglob = on; return 1;
+     case 'h': opts->hashall = on; return 1;
+     case 'm':
+@@ -103,6 +106,7 @@ set_apply(struct shopt* opts, int letter, int on) {
+       return 1;
+ 
+     case 'u': opts->unset = on; return 1;
++    case 'v': opts->verbose = on; return 1;
+     case 'x': opts->xtrace = on; return 1;
+     case 'B': opts->braceexpand = on; return 1;
+     case 'C': opts->noclobber = on; return 1;
+@@ -117,12 +121,14 @@ set_get(const struct shopt* opts, int letter) {
+   switch(letter) {
+     case 'a': return opts->allexport;
+     case 'e': return opts->errexit;
++    case 'b': return opts->notify;
+     case 'f': return opts->noglob;
+     case 'h': return opts->hashall;
+     case 'm': return opts->monitor;
+     case 'n': return opts->noexec;
+     case 'p': return opts->privileged;
+     case 'u': return opts->unset;
++    case 'v': return opts->verbose;
+     case 'x': return opts->xtrace;
+     case 'B': return opts->braceexpand;
+     case 'C': return opts->noclobber;
+@@ -169,7 +175,7 @@ builtin_set(int argc, char* argv[]) {
+   struct optstate opt = {"+-", 0, 0, 0, 0, 0};
+ 
+   /* check options */
+-  while((c = shell_getopt_r(&opt, argc, argv, "+aefhmnopuxBCH")) > 0) {
++  while((c = shell_getopt_r(&opt, argc, argv, "+abefhmnopuvxBCH")) > 0) {
+     int on = opt.prefix == '-';
+ 
+     if(c == 'o') {
+@@ -229,7 +235,7 @@ builtin_set(int argc, char* argv[]) {
+      than inside shell_getopt_r(), which other builtins (e.g. "cat -")
+      need to leave a lone "-" alone as a literal operand. */
+   if(!saw_dashdash && argv[opt.ind] && str_equal(argv[opt.ind], "-")) {
+-    opts.xtrace = 0;
++    opts.xtrace = opts.verbose = 0;
+     opt.ind++;
+   }
+ 
+diff --git a/src/sh.h b/src/sh.h
+index 0d5d166b..3eecedfe 100644
+--- a/src/sh.h
++++ b/src/sh.h
+@@ -58,6 +58,8 @@ struct shopt {
+   unsigned braceexpand : 1; /* -B */
+   unsigned noclobber : 1;   /* -C */
+   unsigned histexpand : 1;  /* -H */
++  unsigned notify : 1;      /* -b */
++  unsigned verbose : 1;     /* -v */
+   unsigned pipefail : 1;    /* -o pipefail (no letter) */
+ };
+ 
+diff --git a/src/sh/sh_fmtflags.c b/src/sh/sh_fmtflags.c
+index 6cc05ecb..f6841ee5 100644
+--- a/src/sh/sh_fmtflags.c
++++ b/src/sh/sh_fmtflags.c
+@@ -7,6 +7,9 @@ sh_fmtflags(char* dest, const struct shopt* opts) {
+   if(opts->allexport)
+     dest[i++] = 'a';
+ 
++  if(opts->notify)
++    dest[i++] = 'b';
++
+   if(opts->errexit)
+     dest[i++] = 'e';
+ 
+@@ -28,6 +31,9 @@ sh_fmtflags(char* dest, const struct shopt* opts) {
+   if(opts->unset)
+     dest[i++] = 'u';
+ 
++  if(opts->verbose)
++    dest[i++] = 'v';
++
+   if(opts->xtrace)
+     dest[i++] = 'x';
+ 
+diff --git a/src/sh/sh_main.c b/src/sh/sh_main.c
+index 04d094bb..0bc52fae 100644
+--- a/src/sh/sh_main.c
++++ b/src/sh/sh_main.c
+@@ -248,7 +248,7 @@ main(int argc, char** argv) {
+     struct optstate opt = {"+-", 0, 0, 0, 0, 0};
+     int c_flag = 0;
+ 
+-    while((c = shell_getopt_r(&opt, argc, argv, "+cisloaefhmnpuxBCH")) > 0) {
++    while((c = shell_getopt_r(&opt, argc, argv, "+cisloabefhmnpuvxBCH")) > 0) {
+       int on = opt.prefix == '-';
+ 
+       switch(c) {
+diff --git a/src/sh/sh_root.c b/src/sh/sh_root.c
+index 80c807cf..cad70354 100644
+--- a/src/sh/sh_root.c
++++ b/src/sh/sh_root.c
+@@ -21,6 +21,8 @@ struct env sh_root = {/* .parent = */ NULL,
+                        .noexec = 0,
+                        .privileged = 0,
+                        .unset = 0,
++                       .notify = 0,
++                       .verbose = 0,
+                        .xtrace = 0,
+                        .braceexpand = 1,
+                        .noclobber = 0,

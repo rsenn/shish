@@ -33,7 +33,7 @@ mkdir_parents(char* argv[], stralloc* dir, int verbose) {
     save = *p;
     *p = '\0';
 
-    if(mkdir(dir->s, 0755) == -1 && errno != EEXIST) {
+    if(mkdir(dir->s, 0777) == -1 && errno != EEXIST) {
       builtin_error(argv, dir->s);
       return 1;
     }
@@ -88,7 +88,7 @@ builtin_mkdir(int argc, char* argv[]) {
       continue;
     }
 
-    if(mkdir(dir.s, 0755) == -1) {
+    if(mkdir(dir.s, 0777) == -1) {
       builtin_error(argv, dir.s);
       stralloc_free(&dir);
       return 1;

@@ -58,6 +58,8 @@ struct shopt {
   unsigned braceexpand : 1; /* -B */
   unsigned noclobber : 1;   /* -C */
   unsigned histexpand : 1;  /* -H */
+  unsigned notify : 1;      /* -b */
+  unsigned verbose : 1;     /* -v */
   unsigned pipefail : 1;    /* -o pipefail (no letter) */
 };
 

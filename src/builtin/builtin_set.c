@@ -59,9 +59,11 @@ const struct set_longopt set_longopts[] = {
     {"noclobber", 'C'},
     {"noexec", 'n'},
     {"noglob", 'f'},
+    {"notify", 'b'},
     {"nounset", 'u'},
     {"pipefail", 'P'}, /* only via -o: 'P' is not a set flag */
     {"privileged", 'p'},
+    {"verbose", 'v'},
     {"xtrace", 'x'},
 };
 
@@ -76,6 +78,7 @@ set_apply(struct shopt* opts, int letter, int on) {
   switch(letter) {
     case 'a': opts->allexport = on; return 1;
     case 'e': opts->errexit = on; return 1;
+    case 'b': opts->notify = on; return 1;
     case 'f': opts->noglob = on; return 1;
     case 'h': opts->hashall = on; return 1;
     case 'm':
@@ -103,6 +106,7 @@ set_apply(struct shopt* opts, int letter, int on) {
       return 1;
 
     case 'u': opts->unset = on; return 1;
+    case 'v': opts->verbose = on; return 1;
     case 'x': opts->xtrace = on; return 1;
     case 'B': opts->braceexpand = on; return 1;
     case 'C': opts->noclobber = on; return 1;
@@ -117,12 +121,14 @@ set_get(const struct shopt* opts, int letter) {
   switch(letter) {
     case 'a': return opts->allexport;
     case 'e': return opts->errexit;
+    case 'b': return opts->notify;
     case 'f': return opts->noglob;
     case 'h': return opts->hashall;
     case 'm': return opts->monitor;
     case 'n': return opts->noexec;
     case 'p': return opts->privileged;
     case 'u': return opts->unset;
+    case 'v': return opts->verbose;
     case 'x': return opts->xtrace;
     case 'B': return opts->braceexpand;
     case 'C': return opts->noclobber;
@@ -169,7 +175,7 @@ builtin_set(int argc, char* argv[]) {
   struct optstate opt = {"+-", 0, 0, 0, 0, 0};
 
   /* check options */
-  while((c = shell_getopt_r(&opt, argc, argv, "+aefhmnopuxBCH")) > 0) {
+  while((c = shell_getopt_r(&opt, argc, argv, "+abefhmnopuvxBCH")) > 0) {
     int on = opt.prefix == '-';
 
     if(c == 'o') {
@@ -229,7 +235,7 @@ builtin_set(int argc, char* argv[]) {
      than inside shell_getopt_r(), which other builtins (e.g. "cat -")
      need to leave a lone "-" alone as a literal operand. */
   if(!saw_dashdash && argv[opt.ind] && str_equal(argv[opt.ind], "-")) {
-    opts.xtrace = 0;
+    opts.xtrace = opts.verbose = 0;
     opt.ind++;
   }
 

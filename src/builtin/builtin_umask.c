@@ -55,101 +55,70 @@ scan_rwx(char* in, uint16* bits) {
   return src - in;
 }
 
+/* parse a symbolic mode: clause[,clause]...
+ *
+ *   clause  ::= [ugoa]* ( [+-=] ( [rwx]* | [ugo] ) )+
+ *   perms       the mask's complement, edited in place
+ *   returns     bytes consumed, 0 if `in` is not a valid mode
+ * ----------------------------------------------------------------------- */
 size_t
 scan_umask(char* in, uint16* umask) {
-  char *src, op;
-  int who_mask, shift, all_classes;
+  char* src = in;
+  uint16 perms = ~*umask & 0777;
 
-  for(src = in; *src;) {
-    uint16 bits = 0;
-    size_t n;
+  for(;;) {
+    uint16 who = 0;
 
-    /* Parse who: u, g, o, a, or default to 'a' */
-    who_mask = 0;
-    shift = 0;
-    all_classes = 0;
-
-    while(*src && str_chr("ugoa", *src) < 4) {
-      switch(*src) {
-        case 'u':
-          who_mask |= 0700;
-          shift = 6;
-          break;
-        case 'g':
-          who_mask |= 0070;
-          shift = 3;
-          break;
-        case 'o':
-          who_mask |= 0007;
-          shift = 0;
-          break;
-        case 'a': all_classes = 1; break;
-      }
-
-      src++;
+    for(;; src++) {
+      if(*src == 'u') who |= 0700;
+      else if(*src == 'g') who |= 0070;
+      else if(*src == 'o') who |= 0007;
+      else if(*src == 'a') who |= 0777;
+      else break;
     }
 
-    if(all_classes || who_mask == 0) {
-      who_mask = 0777;
-      shift = 0; /* Will apply to all classes */
-    }
+    if(!who)
+      who = 0777;
 
-    /* Parse operator: +, -, = */
-    op = *src;
-    if(str_chr("=+-", op) == 3)
+    if(!*src || str_chr("=+-", *src) == 3)
       return 0;
-    src++;
 
-    /* Parse permissions: r, w, x */
-    n = scan_rwx(src, &bits);
-    src += n;
+    while(*src && str_chr("=+-", *src) < 3) {
+      char op = *src++;
+      uint16 bits = 0;
 
-    /* Apply operation */
-    if(all_classes || who_mask == 0777) {
-      /* Apply to all classes */
-      uint16 all_bits = (bits << 6) | (bits << 3) | bits;
-      switch(op) {
-        case '+':
-          /* Add permissions = clear bits from mask */
-          *umask &= ~all_bits;
-          break;
-        case '-':
-          /* Remove permissions = set bits in mask */
-          *umask |= all_bits;
-          break;
-        case '=':
-          /* Set exactly = clear all bits, then set complementary bits */
-          *umask = 0;
-          *umask |= (~all_bits & 0777);
-          break;
+      if(*src && str_chr("ugo", *src) < 3) {
+        uint16 cls = perms >> (*src == 'u' ? 6 : *src == 'g' ? 3 : 0) & 7;
+
+        bits = cls << 6 | cls << 3 | cls;
+        src++;
+      } else {
+        size_t n = scan_rwx(src, &bits);
+
+        src += n;
+        bits = bits << 6 | bits << 3 | bits;
       }
-    } else {
-      /* Apply to specific class */
-      uint16 shifted_bits = bits << shift;
-      switch(op) {
-        case '+':
-          /* Add permissions = clear bits from mask */
-          *umask &= ~shifted_bits;
-          break;
-        case '-':
-          /* Remove permissions = set bits in mask */
-          *umask |= shifted_bits;
-          break;
-        case '=':
-          /* Set exactly = clear all bits for class, then set complementary bits */
-          *umask &= ~who_mask;
-          *umask |= (who_mask ^ shifted_bits);
-          break;
-      }
+
+      bits &= who;
+
+      if(op == '+')
+        perms |= bits;
+      else if(op == '-')
+        perms &= ~bits;
+      else
+        perms = perms & ~who | bits;
     }
 
-    /* Check for comma separator */
     if(*src == ',')
       src++;
-    else if(*src)
+    else
       break;
   }
 
+  if(*src)
+    return 0;
+
+  *umask = ~perms & 0777;
   return src - in;
 }
 
@@ -185,6 +154,10 @@ builtin_umask(int argc, char* argv[]) {
       num = sh->umask;
       if(scan_umask(argv[shell_optind], &num))
         sh->umask = num;
+      else {
+        builtin_errmsg(argv, argv[shell_optind], "invalid mode");
+        return 1;
+      }
     }
 
     if(sh->umask != prev)

@@ -4,6 +4,7 @@
 #include "../../lib/uint32.h"
 #include "../parse.h"
 #include "../var.h"
+#include "../sh.h"
 #include "../tree.h"
 #include "../exec.h"
 extern union node* functions;
@@ -29,8 +30,8 @@ const char help_unset[] = "    Unset variables or functions.\n"
                           "\n"
                           "    -f              treat each name as a function\n"
                           "    -v              treat each name as a variable\n"
-                          "    name            variable or function to unset (function first,\n"
-                          "                    if neither -f nor -v is given and both exist)\n";
+                          "    name            variable or function to unset (variable first;\n"
+                          "                    a function only if no such variable exists)\n";
 
 int
 builtin_unset(int argc, char* argv[]) {
@@ -60,6 +61,23 @@ builtin_unset(int argc, char* argv[]) {
       continue;
     }
 
+    if(!fun) {
+      struct var* v;
+
+      /* check if variable exists and is readonly */
+      if((v = var_search(*argp, NULL)) != NULL && (v->flags & V_READONLY)) {
+        builtin_errmsg(argv, *argp, "readonly variable");
+
+        if(!sh_interactive)
+          sh_exit(1);
+
+        return 1;
+      }
+
+      if(var_unset(*argp))
+        continue;
+    }
+
     if(!var) {
       union node** nptr;
 
@@ -80,19 +98,6 @@ builtin_unset(int argc, char* argv[]) {
 
         continue;
       }
-    }
-
-    if(!fun) {
-      struct var* v;
-
-      /* check if variable exists and is readonly */
-      if((v = var_search(*argp, NULL)) != NULL && (v->flags & V_READONLY)) {
-        builtin_errmsg(argv, *argp, "readonly variable");
-        continue;
-      }
-
-      if(var_unset(*argp))
-        continue;
     }
 
     // builtin_errmsg(argv, *argp, fun ? "no such function" : var ? "no such variable" : "no such

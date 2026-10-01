@@ -3,11 +3,40 @@
 #include "../debug.h"
 #include "../fd.h"
 #include "../parse.h"
+#include "../sh.h"
 
 /* expand all arguments of an argument list
  * returns count of argument nodes
  * ----------------------------------------------------------------------- */
 int expand_error = 0;
+
+/* word is only empty literals and quoted plain $@, and there are no
+ * positional parameters: "$@" -> zero fields, not one empty field
+ * (""$@ and $@"" stay one empty field)
+ * ----------------------------------------------------------------------- */
+static int
+expand_is_empty_at(union node* word) {
+  union node* sub;
+  int at = 0;
+
+  if(sh->arg.c || !word || word->id != N_ARG)
+    return 0;
+
+  for(sub = word->narg.list; sub; sub = sub->next) {
+    if(sub->id == N_ARGSTR && sub->nargstr.stra.len == 0)
+      continue;
+
+    if(sub->id == N_ARGPARAM && (sub->nargparam.flag & (S_SPECIAL | S_VAR)) == S_ARGVS &&
+       (sub->nargparam.flag & S_TABLE) == S_DQUOTED) {
+      at = 1;
+      continue;
+    }
+
+    return 0;
+  }
+
+  return at;
+}
 
 int
 expand_args(union node* args, union node** nptr, int flags) {
@@ -36,6 +65,9 @@ expand_args(union node* args, union node** nptr, int flags) {
     debug_node(arg, 0);
     debug_nl_fl();
 #endif
+
+    if(expand_is_empty_at(arg))
+      continue;
 
     if(copied)
       expand_tilde_word(arg);

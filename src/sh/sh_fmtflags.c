@@ -7,6 +7,9 @@ sh_fmtflags(char* dest, const struct shopt* opts) {
   if(opts->allexport)
     dest[i++] = 'a';
 
+  if(opts->notify)
+    dest[i++] = 'b';
+
   if(opts->errexit)
     dest[i++] = 'e';
 
@@ -27,6 +30,9 @@ sh_fmtflags(char* dest, const struct shopt* opts) {
 
   if(opts->unset)
     dest[i++] = 'u';
+
+  if(opts->verbose)
+    dest[i++] = 'v';
 
   if(opts->xtrace)
     dest[i++] = 'x';

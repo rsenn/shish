@@ -248,7 +248,7 @@ main(int argc, char** argv) {
     struct optstate opt = {"+-", 0, 0, 0, 0, 0};
     int c_flag = 0;
 
-    while((c = shell_getopt_r(&opt, argc, argv, "+cisloaefhmnpuxBCH")) > 0) {
+    while((c = shell_getopt_r(&opt, argc, argv, "+cisloabefhmnpuvxBCH")) > 0) {
       int on = opt.prefix == '-';
 
       switch(c) {

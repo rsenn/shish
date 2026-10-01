@@ -3347,9 +3347,9 @@ assert_match "$PPID_VAL" "[0-9]*" "\$PPID must be set to a numeric value"
 ## rejecting the operation. POSIX requires unset to fail on readonly
 ## variables (2.9.1.43). Fixed by checking V_READONLY flag in
 ## builtin_unset() before calling var_unset().
-readonly UNSET157=readonlyval
-unset UNSET157 2>/dev/null
-assert_equal "readonlyval" "$UNSET157" "unset must not remove a readonly variable"
+## Since fixes/281 the error also ends a non-interactive shell, so it runs in a child.
+UNSET157=$("$SHISH_SELF" -c 'readonly U=readonlyval; unset U 2>/dev/null; echo "[$U]"'; echo "rc=$?")
+assert_equal "rc=1" "$UNSET157" "unset must not remove a readonly variable (shell exits, status 1)"
 
 ## 158: test -g, -p, -u were not implemented. The unary operators for
 ## set-group-ID, named pipe (FIFO), and set-user-ID were missing from
@@ -3423,9 +3423,9 @@ assert_match "$f161_OUT" "*No such file*" "unset -f must remove function so subs
 ## 162: export on a readonly variable silently succeeded instead of
 ## rejecting the assignment. Fixed by checking V_READONLY before
 ## calling var_copys in builtin_export.c.
-readonly RO162=oldval
-export RO162=newval 2>/dev/null
-assert_equal "oldval" "$RO162" "export must not reassign a readonly variable"
+## Since fixes/282 the error also ends a non-interactive shell, so it runs in a child.
+RO162=$("$SHISH_SELF" -c 'readonly R=oldval; export R=newval 2>/dev/null; echo "[$R]"'; echo "rc=$?")
+assert_equal "rc=1" "$RO162" "export must not reassign a readonly variable (shell exits, status 1)"
 
 ## 163: kill -l with a signal number should translate it to a signal name,
 ## not list all signals. POSIX requires kill -l <exit_status> to translate
@@ -5584,5 +5584,47 @@ assert_equal "-DBUILD_BUILTIN_ALIAS:INTERNAL=1 -DBUILTIN_CAT:BOOL=ON" "$SA" "\"\
 # assignment "x=1 cmd", "local x") and the value copy of a popped scope. Only
 # LeakSanitizer sees it: "x=0; x=1 /bin/true" in a loop leaks nothing under
 # -fsanitize=address.
+
+# mkdir's default mode is a=rwx filtered by the umask, not 0755 (fixes/278)
+MDD=$(mktemp -d)
+MD=$("$SHISH_SELF" -c 'umask 757; mkdir "$1/md"; ls -dl "$1/md"' x "$MDD" | cut -c 1-10)
+chmod -R u+rwx "$MDD"; rm -rf "$MDD"
+assert_equal "d----w----" "$MD" "mkdir creates 0777 & ~umask (umask 757 -> ----w----)"
+
+# umask symbolic operands: several op/perm pairs per clause, perm copies (fixes/279)
+UM=$("$SHISH_SELF" -c 'umask 777; umask u=r+w,g=wx,o+xr; umask -S')
+assert_equal "u=rw,g=wx,o=rx" "$UM" "umask u=r+w,g=wx,o+xr applies each operation in turn"
+UM=$("$SHISH_SELF" -c 'umask 177; umask og=u; umask -S')
+assert_equal "u=rw,g=rw,o=rw" "$UM" "umask og=u copies the user permissions"
+UM=$("$SHISH_SELF" -c 'umask 022; umask 999 2>/dev/null; echo $?; umask')
+assert_equal "1
+0022" "$UM" "an invalid umask mode fails and leaves the mask alone"
+
+# "$@" with no positional parameters is zero fields; ""$@ is still one (fixes/280)
+AT=$("$SHISH_SELF" -c 'f() { echo $#; }; f "$@"; f a "$@"; f "$@" "$@" b; f ""$@; f $@""')
+assert_equal "0
+1
+1
+1
+1" "$AT" "\"\$@\" with no parameters expands to no fields"
+
+# unset: a variable wins over a function of the same name; a readonly
+# variable is an error that ends a non-interactive shell (fixes/281)
+UF=$("$SHISH_SELF" -c 'a() { echo fn; }; a=1; unset a; a')
+assert_equal "fn" "$UF" "unset without -f keeps a function when a variable of that name exists"
+UF=$("$SHISH_SELF" -c 'a() { echo fn; }; unset a; a' 2>&1)
+assert_match "$UF" "*No such file*" "unset without -f removes the function when no such variable exists"
+UF=$("$SHISH_SELF" -c 'readonly a=; unset a 2>/dev/null; echo not reached')
+assert_equal "" "$UF" "unset of a readonly variable exits a non-interactive shell"
+
+# export of a readonly variable exits a non-interactive shell (fixes/282)
+EX=$("$SHISH_SELF" -c 'readonly a=1; export a=2 2>/dev/null; echo not reached')
+assert_equal "" "$EX" "export a=2 on a readonly variable exits a non-interactive shell"
+
+# set -b / -v are accepted and visible in $- and -o (fixes/283)
+SO=$("$SHISH_SELF" -c 'set -bv; echo $-; set +bv; echo $-; set -o notify -o verbose; echo $-')
+assert_equal "bhvB
+hB
+bhvB" "$SO" "set -b/-v and -o notify/verbose toggle the b and v flags in \$-"
 
 summary
