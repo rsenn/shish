@@ -37,9 +37,7 @@ install:
 # local build configuration
 # ---------------------------------------------------------------------------
 INCLUDES += -I$(top_srcdir)/lib -I$(top_builddir)
-#INCLUDES += -I$(top_builddir)/lib
 INCLUDES += @IQUOTE_SRC@
-#INCLUDES += -I$(top_builddir)/src
 INCLUDES += -include assert.h
 
 # include build.mk (makefile helper)
