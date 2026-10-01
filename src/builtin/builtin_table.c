@@ -95,6 +95,9 @@
 #ifndef BUILTIN_LINK
 #define BUILTIN_LINK 0
 #endif
+#ifndef BUILTIN_UNLINK
+#define BUILTIN_UNLINK 0
+#endif
 #ifndef BUILTIN_LN
 #define BUILTIN_LN 0
 #endif
@@ -357,6 +360,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_KILL
     {"kill", &builtin_kill, B_DEFAULT, "[-signal|-number] pid|%job ...", help_kill},
+#endif
+#if BUILTIN_UNLINK
+    {"unlink", &builtin_unlink, B_DEFAULT, "file", help_unlink},
 #endif
 #if BUILTIN_LINK
     {"link", &builtin_link, B_DEFAULT, "file1 file2", help_link},

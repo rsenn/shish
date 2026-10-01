@@ -26,7 +26,7 @@ source test times trap type umask unset wait
 ```
 basename cat chmod cp date digest dirname env find grep hostname id link ln
 ls mkdir mktemp mv readlink realpath rm rmdir sed sleep sort split tail tee
-timeout touch uname wc which
+timeout touch uname unlink wc which
 ```
 
 `cp` and `mv` are one source file (`builtin_cp.c`, one function that looks at
