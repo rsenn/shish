@@ -81,8 +81,16 @@ fdtable_resolve_1(struct fd* d, int flags) {
 
       /* drop here-docs to temp files */
     case FD_STRALLOC: {
-      if(FD_ISRD(d))
+      /* a duplicate of a here-document owns no data of its own: drop
+         the source to its tempfile and duplicate that descriptor */
+      if(FD_ISRD(d) && (d->mode & FD_DUP) && d->dup) {
+        if((d->dup->mode & FD_HERE) == FD_HERE && fdtable_here(d->dup, flags) == FDTABLE_ERROR)
+          return FDTABLE_ERROR;
+
+        d->e = d->dup->e;
+      } else if(FD_ISRD(d)) {
         state = fdtable_here(d, flags);
+      }
       break;
     }
   }

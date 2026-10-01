@@ -48,7 +48,8 @@ parse_dquoted(struct parser* p) {
       if(source->position.line != lineno)
         continue;
 
-      if(parse_isdesc(nextc) || nextc == '\\') {
+      /* in a here-document a backslash only escapes $ ` \ and newline, not " */
+      if((parse_isdesc(nextc) && !((flags & P_HERE) && nextc == '"')) || nextc == '\\') {
         c = nextc;
         source_skip();
       }

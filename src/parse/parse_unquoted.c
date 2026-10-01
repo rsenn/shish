@@ -134,9 +134,19 @@ parse_unquoted(struct parser* p) {
       /* an out-of-range [n] prefix (e.g. "99999<&1") must not reach
          fd_push()/fdtable_link(), which index fdtable[n] unchecked --
          fall through to ordinary word parsing instead. */
-      if(p->sa.len == 0 ||
-         (scan_uint(p->sa.s, (unsigned int*)&fd) == p->sa.len && fd >= 0 && fd < FD_MAX))
+      int digits = p->sa.len && !p->tree && !(flags & S_ESCAPED) && scan_uint(p->sa.s, (unsigned int*)&fd) == p->sa.len;
+
+      /* "[n]>" at the start of a word is a redirection; "word>" ends the
+         word, and the operator is parsed as the next token (fd 0/1) */
+      if((p->sa.len == 0 && !p->tree) || (digits && fd >= 0 && fd < FD_MAX))
         return redir_parse(p, (c == '<' ? R_IN : R_OUT), fd);
+
+      if(!digits && !(p->flags & (P_SUBSTW | P_DQSUBST))) {
+        if((p->flags & P_NOKEYWD) || p->tree || p->sa.s == NULL || !parse_keyword(p))
+          parse_string(p, flags);
+
+        return 1;
+      }
     }
 
     /* on a substition word in ${name:word} we parse until a right brace occurs

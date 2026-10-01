@@ -1,0 +1,165 @@
+diff --git a/BUGS b/BUGS
+index 58d7be2e..80a2a29a 100644
+--- a/BUGS
++++ b/BUGS
+@@ -772,18 +772,6 @@
+   cat -u f                                       # "cat: -u: invalid option"
+   ```
+ 
+-- rm-recurses-into-dot-and-dotdot: `rm -r .` fails only by accident of
+-  `rmdir(".")`, and `rm -r ..` recursively deletes the *parent directory's
+-  contents*. POSIX: if the last component of an operand is `.` or `..`, or
+-  the operand resolves to `/`, `rm` writes a diagnostic and does nothing with
+-  it. (Hit for real while auditing: it emptied a scratch directory.)
+-
+-  **Repro:**
+-  ```sh
+-  mkdir -p t/w; touch t/x; cd t/w; rm -r ..; ls ..   # empties t/ (w vanishes too)
+-  rm -r .          # "rm: .: Invalid argument", nothing else refused up front
+-  ```
+-
+ - rm-missing-options-and-operand-check: `rm` has only `-v -r -f`. POSIX
+   `rm [-diRrv] file...`: `-i` (prompt) and `-d` (remove empty directories)
+   are rejected as invalid options, and `rm` with no operands and no `-f`
+@@ -1067,15 +1055,6 @@
+   valgrind --leak-check=full ./shish -c 'x=5; echo $((x+1))'   # "definitely lost", tree_newnode
+   ```
+ 
+-- running-function-body-freed-by-unset-f: `unset -f f` (or redefining
+-  `f`) from inside a running `f` frees the body that is still being
+-  walked, so the rest of that body is a use-after-free.
+-
+-  **Repro:**
+-  ```sh
+-  valgrind ./shish -c 'f(){ echo $(unset -f f) x; }; f'   # "Invalid read of size 8", "Invalid write of size 8"
+-  ```
+-
+ - fixed-sh-remaining-failures-after-sigchld-fix: with `fixed-sh-sigchld-
+   nocldstop-hang` and the grep bugs below fixed, `tests/fixed.sh` still
+   fails ~10 assertions, none reproducible standalone (each command
+diff --git a/src/builtin/builtin_unset.c b/src/builtin/builtin_unset.c
+index 8619f4d0..e93c4e70 100644
+--- a/src/builtin/builtin_unset.c
++++ b/src/builtin/builtin_unset.c
+@@ -69,8 +69,7 @@ builtin_unset(int argc, char* argv[]) {
+         struct exechash* e;
+ 
+         *nptr = fn->next;
+-        fn->next = 0;
+-        tree_free(fn);
++        exec_function_retire(fn);
+ 
+         /* Invalidate exec_hash cache for this function name.
+            Without this, type/eval will still find the stale cached
+diff --git a/src/eval/eval_function.c b/src/eval/eval_function.c
+index 53f355bf..9e1c00bb 100644
+--- a/src/eval/eval_function.c
++++ b/src/eval/eval_function.c
+@@ -126,7 +126,7 @@ eval_function(struct eval* e, struct nfunc* func) {
+        still reference this node. Leak it for now (orphaned but safe);
+        exec_functions_restore will relink the parent's list on exit. */
+     if(exec_subshell_depth == 0)
+-      tree_free(fn);
++      exec_function_retire(fn);
+   }
+ 
+   /* Invalidate any cached exec_hash entry for this name. The cache holds
+diff --git a/src/exec.h b/src/exec.h
+index 807c3326..94ffa2c5 100644
+--- a/src/exec.h
++++ b/src/exec.h
+@@ -87,6 +87,9 @@ struct exechash* exec_lookup(char* name, uint32* hashptr);
+ extern int exec_via_command;
+ struct command exec_hash(char* name, int mask);
+ struct command exec_search(char* name, int mask);
++void exec_function_enter(void);
++void exec_function_leave(void);
++void exec_function_retire(union node* fn);
+ int exec_type(char* name, int mask, int force_path, int type_name);
+ 
+ union node;
+diff --git a/src/exec/exec_command.c b/src/exec/exec_command.c
+index 6b1010a6..f04dd148 100644
+--- a/src/exec/exec_command.c
++++ b/src/exec/exec_command.c
+@@ -169,6 +169,7 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
+       // sh_setargs(argv, 0);
+       eval_push(&e, E_FUNCTION);
+       sh->eval = &e;
++      exec_function_enter();
+ 
+       if((ret = setjmp(e.jumpbuf)) == 0) {
+         e.jump = 1;
+@@ -211,6 +212,7 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
+         eval_pop(&e);
+       }
+ 
++      exec_function_leave();
+       sh_pop(&inst);
+       vartab_pop(&vars);
+ 
+diff --git a/src/exec/exec_search.c b/src/exec/exec_search.c
+index 18d04240..8cfe9eb8 100644
+--- a/src/exec/exec_search.c
++++ b/src/exec/exec_search.c
+@@ -12,6 +12,45 @@ union node* functions = NULL;
+    from the parent's snapshot, and freeing them would dangle on restore. */
+ int exec_subshell_depth = 0;
+ 
++/* Function bodies are walked while they run, so unset/redefine inside a
++ * running function must not free them right away.
++ *
++ *   running  > 0   calls in progress; retired bodies wait on the list
++ *   running == 0   retired bodies are freed
++ * ----------------------------------------------------------------------- */
++static int functions_running;
++static union node* functions_retired;
++
++void
++exec_function_enter(void) {
++  functions_running++;
++}
++
++void
++exec_function_leave(void) {
++  if(--functions_running == 0) {
++    union node* n;
++
++    while((n = functions_retired)) {
++      functions_retired = n->next;
++      n->next = NULL;
++      tree_free(n);
++    }
++  }
++}
++
++void
++exec_function_retire(union node* fn) {
++  fn->next = NULL;
++
++  if(functions_running) {
++    fn->next = functions_retired;
++    functions_retired = fn;
++  } else {
++    tree_free(fn);
++  }
++}
++
+ void
+ exec_functions_save(struct func_snapshot* snap) {
+   union node* p;
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index e22ef69a..491a292b 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -5490,4 +5490,10 @@ case $("$SHISH_SELF" -c 'type rm') in
+     ;;
+ esac
+ 
++## unset -f / redefining a function from inside its own running body must not
++## free the body that is still being executed
++assert_equal "a b" "$("$SHISH_SELF" -c 'f(){ unset -f f; echo a; echo b; }; f' | tr '\n' ' ' | sed 's/ $//')" "unset -f of the running function lets the rest of its body run"
++assert_equal "old new" "$("$SHISH_SELF" -c 'f(){ f(){ echo new; }; echo old; }; f; f' | tr '\n' ' ' | sed 's/ $//')" "redefining the running function lets the old body finish"
++assert_equal "x" "$("$SHISH_SELF" -c 'f(){ echo $(unset -f f) x; }; f')" "unset -f in a command substitution inside the function"
++
+ summary

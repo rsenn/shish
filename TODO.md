@@ -183,9 +183,7 @@ Sorted by failures per unit of work.
    parameters, `${#...}` edge cases, parameter/command substitution
    special-parameter quoting (parameter/command substitution and
    tilde expansion inside a removed pattern work now).
-3. `redir-p` (52/61) — tilde expansion in redirection operands,
-   heredocs on a non-default fd, several heredocs per command, long
-   heredocs. `BUGS: redir-tilde-expansion-and-heredoc-broken`.
+3. `redir-p` (61/61) — done.
 4. `simple-p` (26/34) — redirections must precede assignments for a
    non-special builtin; PATH search rules; command name with a slash.
 5. `tilde-p` (4), `case-p` (3), `fnmatch-p` (1), `cmdsub-p` (2),
@@ -262,9 +260,8 @@ Sorted by whether the `BUGS` entries below explain part of the
   `set-notify-unimplemented`, `set-verbose-unimplemented`,
   `set-histexpand-unimplemented` → Phase 3 (`alias-p`, `read-p`, `set-p`).
 - `quote-backslash-escaping-broken`, `param-expansion-pattern-removal-broken`,
-  `redir-tilde-expansion-and-heredoc-broken`,
   `case-pattern-bracket-quote-stripping` →
-  Phase 4 (`quote-p`, `param-p`, `redir-p`, `case-p`).
+  Phase 4 (`quote-p`, `param-p`, `case-p`).
 - `exit-status-in-trap-and-subshell-broken`, `return-default-exit-status-wrong`,
   `break-continue-inside-eval-no-op`, `input-not-read-line-wise` → Phase 5
   (`exit-p`, `return-p`, `break-p`/`continue-p`, `input-p`).
@@ -3784,7 +3781,7 @@ it means:
 - **Chained stage is not last** (`grep | sed`): its status doesn't drive
   `$?` today regardless (POSIX: last stage only), and shish has no
   `pipefail`/`PIPESTATUS` yet to consume it
-  (`BUGS: set-pipefail-missing-and-noclobber-not-enforced`) — but since
+  (`BUGS: set-pipefail-missing`) — but since
   the last stage normally drains its whole input, the upstream filter's
   status will be correctly finalized as a side effect anyway, ready for
   whenever `pipefail` lands, at no extra cost now.

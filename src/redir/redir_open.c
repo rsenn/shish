@@ -18,6 +18,11 @@ int
 redir_open(struct nredir* nredir, stralloc* sa, int preopen) {
   int mode = FD_FREENAME;
 
+  if(!fd_ok(preopen) && redir_noclobber(nredir, sa->s)) {
+    sh_error_errno(sa->s);
+    return 1;
+  }
+
   /* prepare flags */
   if(nredir->flag & R_OUT) {
     /* check for appending mode */

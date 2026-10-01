@@ -30,7 +30,7 @@ fd_reinit(struct fd* d, int mode) {
   d->w = &d->wb;
 
   buffer_default(&d->rb, (buffer_op_fn*)&buffer_op_read);
-  buffer_default(&d->wb, (buffer_op_fn*)&buffer_op_write);
+  buffer_default(&d->wb, (buffer_op_fn*)&fd_write);
 
   return d;
 }

@@ -186,6 +186,13 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
       goto end;
   }
 
+  /* redirections of a command without a name run in a subshell
+     environment: "< ${x=y}" must not leave x set. Assignments in the
+     same command are applied to the current environment, so no scope
+     then. */
+  if(!args && ncmd->rdir && !ncmd->vars && varstack != &vars)
+    vartab_push(&vars, 0);
+
   /* do redirections if present */
   if((ncmd->rdir || (ncmd->bgnd && !sh->opts.monitor)) && cmd.id != H_EXEC)
     fdstack_push(&io);

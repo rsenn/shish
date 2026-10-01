@@ -1,5 +1,6 @@
 #include "../fd.h"
 #include <errno.h>
+#include <sys/stat.h>
 #include "../trace.h"
 #include "../fdtable.h"
 #include "../redir.h"
@@ -11,6 +12,29 @@
 #else
 #include <unistd.h>
 #endif
+
+/* "set -C": ">file" must not truncate an existing regular file (">|" and
+ * ">>" may, and so may a non-regular file such as /dev/null).
+ *
+ *   struct nredir*  nredir  the redirection
+ *   const char*     path    the expanded file name
+ *
+ * returns 1 with errno = EEXIST when the redirection has to be refused
+ * ----------------------------------------------------------------------- */
+int
+redir_noclobber(struct nredir* nredir, const char* path) {
+  struct stat st;
+
+  if(!sh->opts.noclobber || (nredir->flag & (R_APPEND | R_CLOBBER | R_IN)) || !(nredir->flag & R_OUT))
+    return 0;
+
+  if(stat(path, &st) == 0 && S_ISREG(st.st_mode)) {
+    errno = EEXIST;
+    return 1;
+  }
+
+  return 0;
+}
 
 /* open the file of a persistent ("exec") "<file"/">file" redirection
  * before the fd entry it is going to replace is destroyed.
@@ -27,6 +51,9 @@ int
 redir_preopen(struct nredir* nredir, stralloc* sa) {
   struct fd probe;
   int mode = 0, e;
+
+  if(redir_noclobber(nredir, sa->s))
+    return -1;
 
   if(nredir->flag & R_OUT) {
     if(nredir->flag & R_APPEND)

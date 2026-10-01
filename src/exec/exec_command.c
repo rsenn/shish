@@ -142,7 +142,15 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
             trace_argv("argv", argv),
             trace_int("redir_failed", redir_failed));
 
+      fd_write_errno = 0;
       ret = redir_failed ? 1 : cmd->builtin->fn(argc, argv);
+
+      /* output the builtin wrote went nowhere ("echo >&-", /dev/full) */
+      if(ret == 0 && fd_write_errno) {
+        errno = fd_write_errno;
+        builtin_error(argv, "write error");
+        ret = 1;
+      }
 
       TRACE(TRACE_BUILTIN, "status", trace_str("name", cmd->builtin->name), trace_int("status", ret));
       break;

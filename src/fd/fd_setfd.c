@@ -21,7 +21,7 @@ fd_setfd(struct fd* d, int e) {
   }
 
   if(FD_ISWR(d)) {
-    buffer_default(&d->wb, (buffer_op_fn*)&buffer_op_write);
+    buffer_default(&d->wb, (buffer_op_fn*)&fd_write);
     d->wb.fd = e;
     d->w = &d->wb;
   }

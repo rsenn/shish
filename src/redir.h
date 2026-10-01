@@ -41,6 +41,7 @@ int redir_dup(struct nredir* nredir, stralloc* sa, int persistent);
 int redir_eval(struct nredir* nredir, struct fd*, int rfl);
 int redir_here(struct nredir* nredir, stralloc* sa);
 int redir_open(struct nredir* nredir, stralloc* sa, int preopen);
+int redir_noclobber(struct nredir* nredir, const char* path);
 int redir_preopen(struct nredir* nredir, stralloc* sa);
 int redir_parse(struct parser* p, int rf, int fd);
 void redir_addhere(struct nredir* nredir);

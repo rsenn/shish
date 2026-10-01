@@ -21,5 +21,5 @@ fd_init(struct fd* d, int n, int mode) {
   d->w = &d->wb;
 
   buffer_init(d->r, &buffer_op_read, d->e, NULL, 0);
-  buffer_init(d->w, &buffer_op_write, d->e, NULL, 0);
+  buffer_init(d->w, &fd_write, d->e, NULL, 0);
 }

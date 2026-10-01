@@ -3,6 +3,7 @@
 #include "../fd.h"
 #include "../fdtable.h"
 #include "../redir.h"
+#include "../../lib/byte.h"
 #include "../../lib/scan.h"
 #include "../sh.h"
 #include "../tree.h"
@@ -24,7 +25,29 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
   stralloc sa;
 
   stralloc_init(&sa);
-  expand_copysa(nredir->word, &sa, 0);
+
+  /* the operand gets tilde expansion (not a here-document body); the word
+     is a bare N_ARGSTR chain, wrapped in an N_ARG for the tilde helpers and
+     expanded on a private copy, since the parse tree is reused */
+  {
+    union node probe;
+
+    byte_zero(&probe, sizeof(probe));
+    probe.id = N_ARG;
+    probe.narg.list = nredir->word;
+
+    if(!(nredir->flag & R_HERE) && expand_tilde_needed(&probe)) {
+      union node* wrap = tree_newnode(N_ARG);
+
+      wrap->narg.list = tree_copy(nredir->word);
+      expand_tilde_word(wrap);
+      expand_copysa(wrap->narg.list, &sa, 0);
+      tree_free(wrap);
+    } else {
+      expand_copysa(nredir->word, &sa, 0);
+    }
+  }
+
   stralloc_nul(&sa);
 
   /* set the initial d mode */
