@@ -46,7 +46,20 @@ macro(configure_libarchive_builtin)
   # Include libarchive via subdirectory since it is a full CMake project
   set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
   set(BUILD_SHARED_LIBS OFF)
+  # tcc defines __TINYC__ but not __GNUC__; see cmake/tcc-gnuc.h. Scoped to libarchive.
+  include(CheckCSourceCompiles)
+  check_c_source_compiles("#ifndef __TINYC__\n#error not tcc\n#endif\nint main(void){return 0;}" COMPILER_IS_TCC)
+
+  # tcc rejects the bare `#pragma pack(push)` in the zip reader's LZMA code
+  if(COMPILER_IS_TCC)
+    set(ENABLE_LZMA FALSE CACHE BOOL "" FORCE)
+  endif()
+
   add_subdirectory("${LIBARCHIVE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/third_party/libarchive" EXCLUDE_FROM_ALL)
+
+  if(COMPILER_IS_TCC)
+    target_compile_options(archive_static PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tcc-gnuc.h")
+  endif()
 
   # Expose headers for your shell builtin implementation files
   include_directories("${LIBARCHIVE_DIR}/libarchive")
