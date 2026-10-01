@@ -241,7 +241,7 @@ if(BUILTIN_COMPRESS OR BUILTIN_UNCOMPRESS OR ENABLE_ALL_BUILTINS)
   configure_libarchive_builtin()
 
   # Link libarchive if the feature is enabled
-  target_link_libraries(shish PRIVATE archive_static)
+  target_link_libraries(shish PRIVATE ${LIBARCHIVE_LIBRARIES})
     
   # If you want to support optional compilation blocks in your source files:
   target_compile_definitions(shish PRIVATE HAVE_LIBARCHIVE=1)
