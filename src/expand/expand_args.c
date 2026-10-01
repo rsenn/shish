@@ -14,6 +14,7 @@ expand_args(union node* args, union node** nptr, int flags) {
   union node* arg;
   union node* n;
   union node* owned;
+  union node** head = nptr;
   int ret = 0, copied;
 
   *nptr = NULL;
@@ -72,8 +73,9 @@ expand_args(union node* args, union node** nptr, int flags) {
   }
 
   /* expand_arg() may hand back a chain (field splitting, "$@"); only its
-     last node was terminated above, expand_argv() needs every one */
-  for(n = *nptr; n; n = n->next)
+     last node was terminated above, expand_argv() needs every one
+     (nptr itself now points at the local "n", so walk from "head") */
+  for(n = *head; n; n = n->next)
     if(n->narg.stra.s)
       stralloc_nul(&n->narg.stra);
 

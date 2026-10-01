@@ -69,6 +69,7 @@ eval_return(int value) {
         fd_pop(fd);
     }
 
+    eval_args_unwind(f->args);
     longjmp(f->jumpbuf, value << 1);
   }
 }

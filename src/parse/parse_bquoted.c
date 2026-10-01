@@ -65,7 +65,10 @@ parse_bquoted(struct parser* p) {
 
     parse_init(&subp, P_DEFAULT);
 
-    if((cmds = parse_compound_list(&subp, T_RP)) == NULL)
+    cmds = parse_compound_list(&subp, T_RP);
+    stralloc_free(&subp.sa);
+
+    if(cmds == NULL)
       return -1;
   } else {
     /* a backquoted substitution can't be recursively parsed off the
@@ -89,6 +92,7 @@ parse_bquoted(struct parser* p) {
     parse_init(&subp, P_DEFAULT);
 
     cmds = parse_compound_list(&subp, T_EOF);
+    stralloc_free(&subp.sa);
 
     source_popfd(&fd);
     stralloc_free(&raw);

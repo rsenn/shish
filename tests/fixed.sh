@@ -5569,4 +5569,15 @@ assert_equal "here
 open
 bypass" "$CE" "command [-p] exec keeps its redirections, and bypasses a function named exec"
 
+# every field of a "$@" chain must be NUL-terminated (fixes/274); freed heap
+# is filled with 0xa5, so a missing terminator shows up in the output
+SA=$(MALLOC_PERTURB_=165 "$SHISH_SELF" -c 'f() { shift; echo "$@"; }; f x -DBUILD_BUILTIN_ALIAS:INTERNAL=1 -DBUILTIN_CAT:BOOL=ON')
+assert_equal "-DBUILD_BUILTIN_ALIAS:INTERNAL=1 -DBUILTIN_CAT:BOOL=ON" "$SA" "\"\$@\" fields are NUL-terminated, even after shift"
+
+# fixes/274 also frees the argument list a break/return/exit longjmp skips,
+# job->command of a finished job, and the sub-parsers' scratch strings in
+# ${...}, $(...) and $((...)). Only LeakSanitizer sees those, so they have no
+# assertion here: "sleep 0.1 & wait" and "f() { return 3; }; f" report no leak
+# under -fsanitize=address.
+
 summary

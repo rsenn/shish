@@ -113,6 +113,7 @@ expand_arith_expr(union node* expr, int64* r) {
           *r = 0;
       }
 
+      tree_free(node);
       break;
     }
 

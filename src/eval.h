@@ -42,6 +42,13 @@ typedef int exit_callback(int);
 
 struct source;
 
+/* argument list of a simple command that is running; freed by
+ * eval_args_unwind() when break/return/exit longjmps past it */
+struct eval_args {
+  union node* args;
+  struct eval_args* prev;
+};
+
 struct eval {
   struct eval* parent;
   int flags;
@@ -54,6 +61,7 @@ struct eval {
      or the next parse_gettok will read from the consumed eval buffer and
      return EOF immediately — making the parent script silently stop. */
   struct source* source;
+  struct eval_args* args; /* eval_args_top at push time */
 
   jmp_buf jumpbuf;
   int jump;
@@ -65,6 +73,9 @@ struct eval {
 };
 
 extern struct eval* eval;
+extern struct eval_args* eval_args_top;
+
+void eval_args_unwind(struct eval_args* to);
 
 int eval_command(struct eval* e, union node* node, int tempflags);
 void eval_jump(int levels, int cont);

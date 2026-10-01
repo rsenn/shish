@@ -184,57 +184,28 @@
   # No error reported (function sanitizer doesn't catch libc mismatches)
   ```
 
-- asan-leak-residue-not-fully-triaged: requested directly (fix ASan
-  leak reports from a full `./configure` run under the same
-  `-fsanitize=address,undefined` build used above). Two of the
-  largest, confirmed-real leaks (`lib/stralloc/stralloc_trunc.c`,
-  `src/parse/parse_simple_command.c`) and a third found later
-  (`src/redir/redir_eval.c`) are fixed (`fixes/129`, `fixes/130`,
-  `fixes/133`). What's left, not yet individually triaged:
+- asan-leak-residue-not-fully-triaged: ASan leak reports left under the
+  `-fsanitize=address,undefined` build. Fixed in `fixes/274`: `job->command`
+  (a backgrounded command), the argument list a `break`/`return`/`exit`
+  longjmp skipped, the sub-parsers' scratch strings in `${...}`, `$(...)`,
+  `` `...` `` and `$((...))`, the `$((i))` operand nodes, and the old value
+  buffer of a reassigned variable. What is left:
 
-  - A large, expected residue is `struct var` entries
-    (`src/var/var_create.c`) and their backing storage -- the variable
-    table is deliberately process-lifetime state (like any shell's),
-    reclaimed by the OS at exit rather than explicitly freed, so
-    LeakSanitizer necessarily reports it as "leaked" the same way it
-    would for any long-lived global root; not a bug, not planned to be
-    "fixed" by adding an exit-time teardown pass whose only purpose
-    would be silencing the sanitizer.
-  - `sh_loop()`'s own `cmd`/`p.sa` scratch stralloc's (reused, not
-    freed, once per process for the same reason) are the same
-    category.
-  - `redir_parse.c:108`, `expand_args.c:67`, and `eval_function.c:57`
-    remain not yet investigated -- reproduced several other
-    redirection shapes (append, dup, self-dup, here-doc, a bare
-    trailing redirect operator) hunting for a leak whose backtrace
-    actually passes through `redir_parse.c` and found none, so
-    whatever line `redir_parse.c:108` referred to may have been the
-    same leak already fixed as `fixes/133` (line numbers had shifted
-    due to `fixes/70`'s comment additions) rather than a distinct leak
-    -- not confirmed either way. Good next target if picking this up
-    again: reproduce `expand_args.c:67`/`eval_function.c:57` each with
-    a minimal script the way `fixes/129`/`130`/`133` were isolated,
-    rather than working from the full `./configure` run's noise.
-  - `src/tree/tree_string.c` (via `tree_cat()`/`tree_catlist_n()`)
-    leaks 36 bytes every time a plain simple command is backgrounded
-    (`eval_simple_command.c:261`, building `job->command` -- the text
-    `job_banner()`/`jobs` display for that job). Minimal repro:
-    `sleep 0.1 & wait` leaks on every invocation, confirmed both
-    before and after `fixes/135` (unrelated to that fix, which only
-    changed whether the resulting banner gets *printed*, not whether
-    `job->command` gets built). Not yet root-caused to a specific
-    missing free.
+  - A function definition's `tree_copy()` of its body
+    (`eval_function.c`) lives in the process-lifetime function list.
+  - `redir_parse.c:118` and `expand_cat.c:138` still show up in a full
+    `tests/fixed.sh` run; not isolated to a minimal script yet.
+  - The last copy of a variable's value is not freed at exit (it is not
+    marked `V_FREESTR`: `var_setvsa()` reads that flag as "the offset is
+    the start of the value" and would corrupt it).
 
   **Repro:**
   ```sh
-  # Build with ASan
   cmake -B build/asan -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_C_FLAGS="-fsanitize=address,undefined"
   cmake --build build/asan
-  
-  # Run and check for leaks
-  ./build/asan/shish -c 'sleep 0.1 & wait'
-  # ASan reports 36 bytes leaked from tree_cat/tree_catlist_n
+  ASAN_OPTIONS=log_path=lk ./build/asan/shish tests/fixed.sh
+  cat lk.* | grep -A6 'leak of'
   ```
 
 - break-continue-inside-eval-no-op: `break`/`continue` run via `eval`
@@ -456,28 +427,6 @@
   . ./cfg.sh && cfg-mingw64 -DDO_TESTS=OFF
   cmake --build build/x86_64-w64-mingw32
   # warning: implicit declaration of function 'getpid'
-  ```
-
-- builtin-fork-races-sh-onsig-sigchld: any builtin that forks a child
-  directly (not via `job_fork()`/the job table, e.g. to run and wait on
-  an external command itself) races `sh_onsig()` -- the shell's own
-  `SIGCHLD` handler, installed for job control, calls the same global
-  `wait_nohang()`/`waitpid(-1, ..., WNOHANG)` reaper for *any* reaped
-  child. Since an untracked child isn't in the job table,
-  `job_signal()`/`job_bypid()` finds nothing to record it against and
-  silently discards its exit status before the builtin's own
-  `wait_pid_nohang()` loop ever sees it -- the builtin then either
-  hangs or misreports failure. `builtin_timeout.c` hit this and now
-  wraps its fork+wait in `sig_block(SIGCHLD)`/`sig_unblock(SIGCHLD)`
-  (matching `job_fork()`'s own pattern), but nothing enforces this on
-  future direct-fork builtins; it has to be remembered by hand each
-  time.
-
-  **Repro:**
-  ```sh
-  # revert the sig_block/sig_unblock pair in builtin_timeout.c, then:
-  timeout 2 true; echo $?
-  # without the SIGCHLD block: intermittently 125 (race lost) instead of 0
   ```
 
 - no-tree-print-option-is-a-noop: `-DNO_TREE_PRINT=ON` changes nothing.

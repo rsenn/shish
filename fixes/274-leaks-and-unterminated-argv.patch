@@ -1,0 +1,269 @@
+diff --git a/src/eval.h b/src/eval.h
+index e9f05bcd..828e14ce 100644
+--- a/src/eval.h
++++ b/src/eval.h
+@@ -42,6 +42,13 @@ typedef int exit_callback(int);
+ 
+ struct source;
+ 
++/* argument list of a simple command that is running; freed by
++ * eval_args_unwind() when break/return/exit longjmps past it */
++struct eval_args {
++  union node* args;
++  struct eval_args* prev;
++};
++
+ struct eval {
+   struct eval* parent;
+   int flags;
+@@ -54,6 +61,7 @@ struct eval {
+      or the next parse_gettok will read from the consumed eval buffer and
+      return EOF immediately — making the parent script silently stop. */
+   struct source* source;
++  struct eval_args* args; /* eval_args_top at push time */
+ 
+   jmp_buf jumpbuf;
+   int jump;
+@@ -65,6 +73,9 @@ struct eval {
+ };
+ 
+ extern struct eval* eval;
++extern struct eval_args* eval_args_top;
++
++void eval_args_unwind(struct eval_args* to);
+ 
+ int eval_command(struct eval* e, union node* node, int tempflags);
+ void eval_jump(int levels, int cont);
+diff --git a/src/eval/eval_args_unwind.c b/src/eval/eval_args_unwind.c
+new file mode 100644
+index 00000000..5ab78a62
+--- /dev/null
++++ b/src/eval/eval_args_unwind.c
+@@ -0,0 +1,16 @@
++#include "../eval.h"
++#include "../tree.h"
++
++struct eval_args* eval_args_top = NULL;
++
++/* free the argument lists of the simple commands a longjmp is skipping.
++ *
++ *   struct eval_args*  to  innermost guard to keep (the target frame's)
++ * ----------------------------------------------------------------------- */
++void
++eval_args_unwind(struct eval_args* to) {
++  while(eval_args_top && eval_args_top != to) {
++    tree_free(eval_args_top->args);
++    eval_args_top = eval_args_top->prev;
++  }
++}
+diff --git a/src/eval/eval_exit.c b/src/eval/eval_exit.c
+index b7caaa0f..dfef9b81 100644
+--- a/src/eval/eval_exit.c
++++ b/src/eval/eval_exit.c
+@@ -116,6 +116,7 @@ eval_exit(int exitcode) {
+         fd_pop(fd);
+     }
+ 
++    eval_args_unwind(e->args);
+     longjmp(e->jumpbuf, (exitcode << 1) | 1);
+   }
+ }
+diff --git a/src/eval/eval_jump.c b/src/eval/eval_jump.c
+index e0ebed28..25abec7b 100644
+--- a/src/eval/eval_jump.c
++++ b/src/eval/eval_jump.c
+@@ -89,6 +89,7 @@ eval_jump(int levels, int cont) {
+         fd_pop(f);
+     }
+ 
++    eval_args_unwind(j->args);
+     longjmp(j->jumpbuf, cont << 1);
+   }
+ }
+diff --git a/src/eval/eval_push.c b/src/eval/eval_push.c
+index 77377a83..13802063 100644
+--- a/src/eval/eval_push.c
++++ b/src/eval/eval_push.c
+@@ -19,6 +19,7 @@ eval_push(struct eval* e, int flags) {
+   e->fdstack = fdstack;
+   e->varstack = varstack;
+   e->source = source;
++  e->args = eval_args_top;
+ 
+   // sh->eval = e;
+   eval = e;
+diff --git a/src/eval/eval_return.c b/src/eval/eval_return.c
+index 9177b968..ef647631 100644
+--- a/src/eval/eval_return.c
++++ b/src/eval/eval_return.c
+@@ -69,6 +69,7 @@ eval_return(int value) {
+         fd_pop(fd);
+     }
+ 
++    eval_args_unwind(f->args);
+     longjmp(f->jumpbuf, value << 1);
+   }
+ }
+diff --git a/src/eval/eval_simple_command.c b/src/eval/eval_simple_command.c
+index 87500a6d..b42023cc 100644
+--- a/src/eval/eval_simple_command.c
++++ b/src/eval/eval_simple_command.c
+@@ -44,6 +44,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+   struct command cmd = {H_BUILTIN, {0}};
+   struct vartab vars;
+   struct fdstack io;
++  struct eval_args guard;
+   char buf[FD_BUFSIZE];
+ 
+   /* expand arguments,
+@@ -334,10 +335,14 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+ 
+   /* execute the command, this may or may not return, depending on E_EXIT */
+   exec_redir_error = 0;
++  guard.args = args_head;
++  guard.prev = eval_args_top;
++  eval_args_top = &guard;
+   status = exec_command(&cmd,
+                         argc,
+                         argv,
+                         ((e->flags & E_EXIT) ? X_EXEC : 0) | (ncmd->bgnd ? X_NOWAIT : 0));
++  eval_args_top = guard.prev;
+ 
+   redir_error |= exec_redir_error;
+ 
+diff --git a/src/expand/expand_args.c b/src/expand/expand_args.c
+index 5e178534..89ac8358 100644
+--- a/src/expand/expand_args.c
++++ b/src/expand/expand_args.c
+@@ -14,6 +14,7 @@ expand_args(union node* args, union node** nptr, int flags) {
+   union node* arg;
+   union node* n;
+   union node* owned;
++  union node** head = nptr;
+   int ret = 0, copied;
+ 
+   *nptr = NULL;
+@@ -72,8 +73,9 @@ expand_args(union node* args, union node** nptr, int flags) {
+   }
+ 
+   /* expand_arg() may hand back a chain (field splitting, "$@"); only its
+-     last node was terminated above, expand_argv() needs every one */
+-  for(n = *nptr; n; n = n->next)
++     last node was terminated above, expand_argv() needs every one
++     (nptr itself now points at the local "n", so walk from "head") */
++  for(n = *head; n; n = n->next)
+     if(n->narg.stra.s)
+       stralloc_nul(&n->narg.stra);
+ 
+diff --git a/src/expand/expand_arith_expr.c b/src/expand/expand_arith_expr.c
+index afb44fb3..8446c055 100644
+--- a/src/expand/expand_arith_expr.c
++++ b/src/expand/expand_arith_expr.c
+@@ -113,6 +113,7 @@ expand_arith_expr(union node* expr, int64* r) {
+           *r = 0;
+       }
+ 
++      tree_free(node);
+       break;
+     }
+ 
+diff --git a/src/job/job_free.c b/src/job/job_free.c
+index 96f69730..152963ba 100644
+--- a/src/job/job_free.c
++++ b/src/job/job_free.c
+@@ -40,6 +40,7 @@ job_delete(struct job** j) {
+   if(job_pointer == &(*j)->next)
+     job_pointer = j;
+ 
++  alloc_free((*j)->command);
+   alloc_free(*j);
+   *j = next;
+ 
+diff --git a/src/parse/parse_arith.c b/src/parse/parse_arith.c
+index 0c834ee9..0f174c74 100644
+--- a/src/parse/parse_arith.c
++++ b/src/parse/parse_arith.c
+@@ -25,8 +25,12 @@ parse_arith(struct parser* p) {
+     buffer_flush(fd_err->w);
+ 
+     /* MUST be terminated with 2 right parentheses */
+-    if(!parse_expect(&subp, P_DEFAULT, T_RP, tree) || !parse_expect(&subp, P_DEFAULT, T_RP, tree))
++    if(!parse_expect(&subp, P_DEFAULT, T_RP, tree) || !parse_expect(&subp, P_DEFAULT, T_RP, tree)) {
++      stralloc_free(&subp.sa);
+       return -1;
++    }
++
++    stralloc_free(&subp.sa);
+ 
+     parse_newnode(p, N_ARGARITH);
+     p->node->nargarith.tree = tree;
+diff --git a/src/parse/parse_bquoted.c b/src/parse/parse_bquoted.c
+index e3c83103..461e786c 100644
+--- a/src/parse/parse_bquoted.c
++++ b/src/parse/parse_bquoted.c
+@@ -65,7 +65,10 @@ parse_bquoted(struct parser* p) {
+ 
+     parse_init(&subp, P_DEFAULT);
+ 
+-    if((cmds = parse_compound_list(&subp, T_RP)) == NULL)
++    cmds = parse_compound_list(&subp, T_RP);
++    stralloc_free(&subp.sa);
++
++    if(cmds == NULL)
+       return -1;
+   } else {
+     /* a backquoted substitution can't be recursively parsed off the
+@@ -89,6 +92,7 @@ parse_bquoted(struct parser* p) {
+     parse_init(&subp, P_DEFAULT);
+ 
+     cmds = parse_compound_list(&subp, T_EOF);
++    stralloc_free(&subp.sa);
+ 
+     source_popfd(&fd);
+     stralloc_free(&raw);
+diff --git a/src/parse/parse_param.c b/src/parse/parse_param.c
+index 8bdbd820..d83ccfa6 100644
+--- a/src/parse/parse_param.c
++++ b/src/parse/parse_param.c
+@@ -185,6 +185,7 @@ parse_param(struct parser* p) {
+   parse_word(&newp);
+ 
+   p->node->nargparam.word = parse_getarg(&newp);
++  stralloc_free(&newp.sa);
+ 
+   return 0;
+ }
+diff --git a/src/var/var_setsa.c b/src/var/var_setsa.c
+index aeae4bf4..4ba46e28 100644
+--- a/src/var/var_setsa.c
++++ b/src/var/var_setsa.c
+@@ -53,6 +53,9 @@ var_setsa(stralloc* sa, int flags) {
+        so we can copy new to old */
+     stralloc_zero(&var->sa);
+   } else {
++    /* a buffer var_init() allocated for the name is ours to free; one
++       borrowed from a shadowed variable has sa.a == 0 and is skipped */
++    stralloc_free(&var->sa);
+     stralloc_init(&var->sa);
+   }
+ 
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index af25c2d7..fa02039f 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -5569,4 +5569,15 @@ assert_equal "here
+ open
+ bypass" "$CE" "command [-p] exec keeps its redirections, and bypasses a function named exec"
+ 
++# every field of a "$@" chain must be NUL-terminated (fixes/274); freed heap
++# is filled with 0xa5, so a missing terminator shows up in the output
++SA=$(MALLOC_PERTURB_=165 "$SHISH_SELF" -c 'f() { shift; echo "$@"; }; f x -DBUILD_BUILTIN_ALIAS:INTERNAL=1 -DBUILTIN_CAT:BOOL=ON')
++assert_equal "-DBUILD_BUILTIN_ALIAS:INTERNAL=1 -DBUILTIN_CAT:BOOL=ON" "$SA" "\"\$@\" fields are NUL-terminated, even after shift"
++
++# fixes/274 also frees the argument list a break/return/exit longjmp skips,
++# job->command of a finished job, and the sub-parsers' scratch strings in
++# ${...}, $(...) and $((...)). Only LeakSanitizer sees those, so they have no
++# assertion here: "sleep 0.1 & wait" and "f() { return 3; }; f" report no leak
++# under -fsanitize=address.
++
+ summary

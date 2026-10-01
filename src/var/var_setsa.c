@@ -53,6 +53,9 @@ var_setsa(stralloc* sa, int flags) {
        so we can copy new to old */
     stralloc_zero(&var->sa);
   } else {
+    /* a buffer var_init() allocated for the name is ours to free; one
+       borrowed from a shadowed variable has sa.a == 0 and is skipped */
+    stralloc_free(&var->sa);
     stralloc_init(&var->sa);
   }
 

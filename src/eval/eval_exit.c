@@ -116,6 +116,7 @@ eval_exit(int exitcode) {
         fd_pop(fd);
     }
 
+    eval_args_unwind(e->args);
     longjmp(e->jumpbuf, (exitcode << 1) | 1);
   }
 }

@@ -25,8 +25,12 @@ parse_arith(struct parser* p) {
     buffer_flush(fd_err->w);
 
     /* MUST be terminated with 2 right parentheses */
-    if(!parse_expect(&subp, P_DEFAULT, T_RP, tree) || !parse_expect(&subp, P_DEFAULT, T_RP, tree))
+    if(!parse_expect(&subp, P_DEFAULT, T_RP, tree) || !parse_expect(&subp, P_DEFAULT, T_RP, tree)) {
+      stralloc_free(&subp.sa);
       return -1;
+    }
+
+    stralloc_free(&subp.sa);
 
     parse_newnode(p, N_ARGARITH);
     p->node->nargarith.tree = tree;

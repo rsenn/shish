@@ -40,6 +40,7 @@ job_delete(struct job** j) {
   if(job_pointer == &(*j)->next)
     job_pointer = j;
 
+  alloc_free((*j)->command);
   alloc_free(*j);
   *j = next;
 

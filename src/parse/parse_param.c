@@ -185,6 +185,7 @@ parse_param(struct parser* p) {
   parse_word(&newp);
 
   p->node->nargparam.word = parse_getarg(&newp);
+  stralloc_free(&newp.sa);
 
   return 0;
 }

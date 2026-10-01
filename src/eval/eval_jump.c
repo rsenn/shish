@@ -89,6 +89,7 @@ eval_jump(int levels, int cont) {
         fd_pop(f);
     }
 
+    eval_args_unwind(j->args);
     longjmp(j->jumpbuf, cont << 1);
   }
 }

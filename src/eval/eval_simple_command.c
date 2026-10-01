@@ -44,6 +44,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   struct command cmd = {H_BUILTIN, {0}};
   struct vartab vars;
   struct fdstack io;
+  struct eval_args guard;
   char buf[FD_BUFSIZE];
 
   /* expand arguments,
@@ -334,10 +335,14 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
   /* execute the command, this may or may not return, depending on E_EXIT */
   exec_redir_error = 0;
+  guard.args = args_head;
+  guard.prev = eval_args_top;
+  eval_args_top = &guard;
   status = exec_command(&cmd,
                         argc,
                         argv,
                         ((e->flags & E_EXIT) ? X_EXEC : 0) | (ncmd->bgnd ? X_NOWAIT : 0));
+  eval_args_top = guard.prev;
 
   redir_error |= exec_redir_error;
 

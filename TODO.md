@@ -300,12 +300,9 @@ cmake --build build/asan
 
 What's currently open under this build, from `BUGS`:
 
-1. `asan-leak-residue-not-fully-triaged` — three call sites untriaged
-   (`redir_parse.c:108`, `expand_args.c:67`, `eval_function.c:57`) plus
-   one root-caused-but-unfixed 36-byte leak per backgrounded command
-   (`tree_cat()` building `job->command`, `eval_simple_command.c:261`).
-   `struct var` and `sh_loop()`'s scratch stralloc's are permanent,
-   process-lifetime state and are not bugs.
+1. `asan-leak-residue-not-fully-triaged` — the per-iteration leaks are
+   fixed (`fixes/274`); what remains is the function-body copy,
+   `redir_parse.c:118` and `expand_cat.c:138` (see `BUGS`).
 2. `ubsan-buffer-op-proto-function-type-mismatch` — `lib/buffer.h`'s
    `buffer_op_proto` cast onto libc `read`/`write` is UB by the letter
    of the standard but not fixable without wrapping two libc functions
@@ -313,11 +310,9 @@ What's currently open under this build, from `BUGS`:
    real mismatches in unused `lib/buffer/` glob-compiled dead code are
    also left alone per this repo's "don't touch unused `lib/` code
    unasked" standard.
-3. `builtin-fork-races-sh-onsig-sigchld` — a real fork/signal race
-   (not just a sanitizer artifact); most likely to surface as a
-   flaky, hard-to-reproduce ASan failure during Stage 1/2 work rather
-   than its own dedicated session, so flag it here rather than let it
-   get blamed on whatever fix was running at the time.
+3. Direct-fork builtins: none left. `builtin_timeout.c` runs its child
+   through `exec_command()`/`job_wait()` now, and the only raw `fork()`s
+   (`exec_program()`, the pipeline pump) are safe against `sh_onsig()`.
 4. **Goal 4** below (fd/fdtable/redir vs. non-forking subshells) is
    also a memory-safety item, not just a conformance one — its "Still
    open" problem has a confirmed heap-corruption repro. See that
