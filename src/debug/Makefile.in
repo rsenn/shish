@@ -18,8 +18,10 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = debug.a
-MODULES = \
-debug_argv debug_begin debug_char debug_end debug_list debug_node debug_position debug_ptr debug_redir debug_space debug_squoted debug_str debug_stralloc debug_sublist debug_subnode debug_subst debug_ulong debug_unquoted debug_xlong
+MODULES = debug_argv debug_begin debug_char debug_end debug_list debug_node \
+  debug_position debug_ptr debug_redir debug_space debug_squoted debug_str \
+  debug_stralloc debug_sublist debug_subnode debug_subst debug_ulong \
+  debug_unquoted debug_xlong
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

@@ -18,7 +18,8 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = prompt.a
-MODULES = prompt_escape prompt_expand prompt_nextline prompt_parse prompt_reset prompt_show
+MODULES = prompt_escape prompt_expand prompt_nextline prompt_parse \
+  prompt_reset prompt_show
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

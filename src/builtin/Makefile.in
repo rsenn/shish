@@ -42,8 +42,7 @@ install-local:
 # local directory configuration
 # ---------------------------------------------------------------------------
 RECURSIVE = 1
-SUBDIRS   = extra \
-            filter 
+SUBDIRS   = extra filter 
 
 # dependencies
 # ---------------------------------------------------------------------------

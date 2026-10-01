@@ -277,21 +277,60 @@ AC_DEFINE_UNQUOTED([BUILTIN_]m4_toupper(BUILTIN),[1],[Build the ]BUILTIN[ builti
 esac
 ])
 
-#all_builtins="alias break cd command dump echo error eval exec exit export false fdtable getopts hash help history jobs kill local printf pwd read readonly return search set shift source test times trap true type umask unset wait awk basename chmod digest dirname expr find hostname link ln ls mkdir mktemp readlink realpath rm rmdir sleep tee timeout touch uname wc which xargs cat uncompress"
+# ===========================================================================
+# Optional library checks: libarchive (for compress/uncompress builtins)
+# ---------------------------------------------------------------------------
+
+# Ensure autoconf doesn't error if pkg.m4 isn't installed when running autogen.sh
+m4_pattern_allow([PKG_CHECK_MODULES])
+
+AC_MSG_CHECKING([whether compress or uncompress builtins are enabled])
+
+# We use AS_IF here because enabled_builtins is determined at configure time via m4_esyscmd
+# and cannot be used with standard AM_CONDITIONALs.
+has_archive_builtin=no
+case " $enabled_builtins " in
+  *" compress "*|*" uncompress "*)
+    has_archive_builtin=yes
+    ;;
+esac
+
+AC_MSG_RESULT([$has_archive_builtin])
+
+AS_IF([test "x$has_archive_builtin" = xyes], [
+  PKG_CHECK_MODULES([LIBARCHIVE], [libarchive],
+    [
+      AC_DEFINE([HAVE_LIBARCHIVE], [1], [Define to 1 if libarchive is available])
+      # Add necessary CFLAGS and LIBS to the global variables
+      CFLAGS="$CFLAGS $LIBARCHIVE_CFLAGS"
+      LIBS="$LIBS $LIBARCHIVE_LIBS"
+    ],
+    [
+      # Failure case: libarchive not found, but requested.
+      # We treat this as a hard error because the user explicitly requested the feature.
+      AC_MSG_ERROR([libarchive not found, but required by 'compress'/'uncompress' builtins. Install libarchive development packages or disable these builtins via --disable-builtins.])
+    ]
+  )
+])
 
 AC_DEFINE([HAVE_BUILTIN_CONFIG_H],[1],[builtin_table.c includes src/builtin_config.h])
 
 dnl src/builtin_config.h: BUILTIN_<NAME> 1 or 0 for every builtin, what
 dnl builtin_table.c and the eval/job/sh/term sources are compiled against
 dnl (the CMake build writes the same file, see cmake/Builtins.cmake).
-AC_CONFIG_COMMANDS([src/builtin_config.h],
-[for b in $all_builtins; do
+AC_CONFIG_COMMANDS([src/builtin_config.sh],
+[
+ # Ensure the target directory exists in the build tree
+ AS_MKDIR_P([src])
+
+ for b in $all_builtins; do
    ub=`echo $b | tr a-z A-Z`
    case " $enabled_builtins " in
      *" $b "*) echo "#define BUILTIN_$ub 1" ;;
      *) echo "#define BUILTIN_$ub 0" ;;
    esac
- done > src/builtin_config.h],
+ done > src/builtin_config.h
+],
 [all_builtins="m4_defn([ALL_BUILTINS])"
 enabled_builtins="$enabled_builtins"])
 

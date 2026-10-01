@@ -109,6 +109,9 @@ all-local: $(PROGRAM)
 install-local: install-exec
 dep-local:
 
+builtin_config.h:
+	cd $(top_builddir) && ./config.status src/builtin_config.sh
+
 # installation config
 # ---------------------------------------------------------------------------
 bin_EXEC += $(PROGRAM)

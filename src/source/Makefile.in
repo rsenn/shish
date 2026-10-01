@@ -18,7 +18,9 @@ include $(top_builddir)/config.mk
 # configuration for this directory
 # ---------------------------------------------------------------------------
 ARCHIVE = source.a
-MODULES = fmt_loc location2str source_alias source_buffer source_flush source_get source_msg source_newline source_next source_peek source_peekn source_pop source_popfd source_push source_skip
+MODULES = fmt_loc location2str source_alias source_buffer source_flush \
+  source_get source_msg source_newline source_next source_peek source_peekn \
+  source_pop source_popfd source_push source_skip
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
