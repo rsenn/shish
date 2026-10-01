@@ -24,9 +24,14 @@ source test times trap type umask unset wait
 **Extra** — the reason a shish container image can be a single file:
 
 ```
-basename cat chmod digest dirname find grep hostname link ln ls mkdir
-mktemp readlink realpath rm rmdir sed sleep tee timeout touch uname wc which
+basename cat chmod cp date digest dirname env find grep hostname id link ln
+ls mkdir mktemp mv readlink realpath rm rmdir sed sleep tee timeout touch
+uname wc which
 ```
+
+`cp` and `mv` are one source file (`builtin_cp.c`, one function that looks at
+`argv[0]`); `mv` also needs `rm`'s tree removal, so enabling `mv` compiles
+`builtin_rm.c` too.
 
 These are off by default. Turn them on and a script stops needing
 coreutils (or `grep`/`sed`):

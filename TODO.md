@@ -2623,12 +2623,21 @@ size build/x86_64-linux-gnu/CMakeFiles/libshell.dir/src/term/*.o build/x86_64-li
 
 ## Goal 10 (secondary) — `cp` and `mv` builtins: one source file, dispatch on `argv[0]`
 
-**Not started; this section is the plan.** Neither exists today (only
-`ln`, `link`, `rm`, `rmdir`, `mkdir`, `touch`, `cat`, `tee`, `ls`, …,
-all in `EXTRA_BUILTINS`). Both go into `EXTRA_BUILTINS` too: they are useful
-where no external `cp`/`mv` exists — the WASI build (`doc/wasm.md`: no
-`fork`, so no external commands at all), containers and single-binary
-images — and cost nothing where they are off.
+**Built, first pass (2026-10-01).** `src/builtin/extra/builtin_cp.c` holds
+`builtin_cpmv()`; the `cp` and `mv` rows (`BUILTIN_CP`/`BUILTIN_MV`, both
+`EXTRA_BUILTINS`, off by default) point at it, and `cmake/Builtins.cmake` maps
+`mv` to that file and adds `builtin_rm.c` when `mv` is on (`builtin_rm_tree()`
+is the exported `rm -r` walk). Tests: `tests/builtin-cp.sh`,
+`tests/builtin-mv.sh` (the `EXDEV` cases run when `/dev/shm` is another file
+system). What the plan asks for and is **not done yet**: `-T`/`-t`; the
+`SHISH_CPMV_FORCE_COPY` test hook; stopping a copy on `SIGINT` (an interactive
+shell ignores it, so a running `cp` of a large file cannot be interrupted);
+`copy_file_range()`; hole preservation; a WASI/mingw build check (the mingw
+sysroot headers are not installed here, so `WINDOWS_NATIVE` is only guarded
+with `CPMV_NOUNIX`, never compiled); the size measurement of step 3; the
+`ln` unlink-first bug (step 0) is still open. Messages differ in wording from
+GNU `cp`/`mv` (`cp: x: not a directory`, not `target 'x': No such file...`).
+Everything below is the original plan, kept as the reference for the rest.
 
 ### Would one source file with `argv[0]` dispatch save size?
 
@@ -3996,13 +4005,13 @@ without `sleep`.
 | 4 | `head` | 1 | ~70 | ~170 | `-n N` line counter over `filter_in`; stops early, so it is the test for early exit in a chain |
 | 5 | `nohup` | 2 | ~70 | ~240 | ignore `SIGHUP`, redirect stdout/stderr to `nohup.out` if they are terminals, `exec_command()`; exit 126/127 |
 | 6 | `renice` | 2 | ~80 | ~320 | `setpriority(2)` over `-p`/`-g`/`-u` ID lists; no exec; `-n` is required in POSIX.1-2024 |
-| 7 | `env` | 2 | ~85 | ~405 | push a `vartab` with the `name=value` words (`-i` starts empty), `exec_command()`; no utility: print the environment |
+| 7 | `env` | done | `builtin_env.c` | - | push a `vartab` with the `name=value` words (`-i` starts empty), `exec_command()`; no utility: print the environment |
 | 8 | `paste` | 2 | ~90 | ~495 | `-s`, `-d list` (with `\0` and `\\` escapes); N `filter_in`s merged line by line |
 | 9 | `pathchk` | 2 | ~90 | ~585 | `pathconf(3)` limits, `-p` portable-character check, `-P` empty/leading-hyphen check |
 | 10 | `uniq` | 2 | ~110 | ~695 | adjacent-line compare with `-c -d -u -f N -s N`; one line of look-behind state |
-| 11 | `id` | 2 | ~120 | ~815 | `getpwnam`/`getgrgid`/`getgroups`; `-G -g -u -n -r` output selection; needs NSS, no fallback |
+| 11 | `id` | done | `builtin_id.c` | - | `getpwnam`/`getgrgid`/`getgroups`; `-G -g -u -n -r` output selection; needs NSS, no fallback |
 | 12 | `cut` | 2 | ~140 | ~955 | list parser (`1,3-5,7-`) for `-b -c -f`, `-d`, `-s`, `-n`; three field modes over one line loop |
-| 13 | `date` | 3 | ~130 | ~1085 | `localtime`/`strftime` (libc); `-u`, `+format`; setting the clock is a documented omission |
+| 13 | `date` | done | `builtin_date.c` | - | `localtime`/`strftime` (libc); `-u`, `+format`; setting the clock is a documented omission |
 | 14 | `tail` | 3 | ~130 | ~1215 | ring buffer of the last N lines/bytes (`-n -c`); `-f` polls with `read`+sleep and cannot chain |
 | 15 | `du` | 3 | ~140 | ~1355 | directory walk like `rm -r`; `-a -s -k -x -H -L`, hard links counted once (`st_dev`/`st_ino` set) |
 | 16 | `nl` | 3 | ~170 | ~1525 | logical pages (`\:\:\:` delimiters), per-section body/header/footer styles, `-b pstring` regex via `text/dfa` |

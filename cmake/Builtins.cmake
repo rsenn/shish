@@ -5,7 +5,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/Functions.cmake)
 #
 macro(configure_shish_builtins)
   set_init(MINIMAL_BUILTINS alias break cd command eval exec exit export expr getopts hash history jobs kill local printf pwd read readonly return set shift source test times trap type umask unset wait)
-  set_init(EXTRA_BUILTINS awk basename cat chmod compress cut digest dirname find grep head hostname link ln ls mkdir mktemp nl paste readlink realpath rm rmdir sed sleep tee timeout touch tr uname uncompress uniq wc which xargs)
+  set_init(EXTRA_BUILTINS awk basename cat chmod compress cp cut date digest dirname env find grep head hostname id link ln ls mkdir mktemp mv nl paste readlink realpath rm rmdir sed sleep tee timeout touch tr uname uncompress uniq wc which xargs)
   set_init(DEFAULT_BUILTINS ${MINIMAL_BUILTINS} help type echo fdtable true false)
 
   set_init(ALL_BUILTINS ${MINIMAL_BUILTINS} ${DEFAULT_BUILTINS} ${EXTRA_BUILTINS} basename break cd dirname dump echo eval exec exit export expr false fdtable hash help history hostname ln printf pwd set shift source test times true type unset)
@@ -101,6 +101,10 @@ macro(configure_shish_builtins)
     else()
       set(RESULT "src/builtin/builtin_${NAME}.c")
     endif()
+    # mv shares builtin_cp.c with cp
+    if("${NAME}" STREQUAL "mv")
+      set(RESULT "src/builtin/extra/builtin_cp.c")
+    endif()
     set("${OUT}" "${RESULT}" PARENT_SCOPE)
   endfunction()
 
@@ -140,6 +144,11 @@ macro(configure_shish_builtins)
       set(BUILTIN_CONFIG "${BUILTIN_CONFIG}\n#define BUILTIN_${NAME} 0")
     endif()
   endforeach()
+
+  # mv removes a source hierarchy with builtin_rm_tree(), which lives in builtin_rm.c
+  if(BUILD_BUILTIN_MV)
+    set_add(BUILTIN_SOURCES "src/builtin/extra/builtin_rm.c")
+  endif()
 
   file(WRITE "${CMAKE_BINARY_DIR}/src/builtin_config.h" "${BUILTIN_CONFIG}\n\n")
 

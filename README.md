@@ -12,7 +12,7 @@ shish -c 'for f in *.c; do echo "${f%.c}"; done'
   busybox 2.0 MB), built against an in-tree copy of
   Felix von Leitner's libowfat (`lib/`) instead of the C library's
   formatted I/O.
-- **Self-contained.** `cat`, `rm`, `mkdir`, `mktemp`, `ln`, `chmod`,
+- **Self-contained.** `cat`, `cp`, `mv`, `rm`, `mkdir`, `mktemp`, `ln`, `chmod`,
   `basename`, `dirname`, `uname`, `which` and friends are compile-time
   builtins. A script can run with `PATH=` empty and no `/bin` at all.
 - **Portable.** CMake cross-build presets for glibc, musl, dietlibc,

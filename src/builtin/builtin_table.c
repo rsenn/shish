@@ -23,6 +23,21 @@
 #ifndef BUILTIN_CHMOD
 #define BUILTIN_CHMOD 0
 #endif
+#ifndef BUILTIN_CP
+#define BUILTIN_CP 0
+#endif
+#ifndef BUILTIN_DATE
+#define BUILTIN_DATE 0
+#endif
+#ifndef BUILTIN_ENV
+#define BUILTIN_ENV 0
+#endif
+#ifndef BUILTIN_ID
+#define BUILTIN_ID 0
+#endif
+#ifndef BUILTIN_MV
+#define BUILTIN_MV 0
+#endif
 #ifndef BUILTIN_CONTINUE
 #define BUILTIN_CONTINUE 1
 #endif
@@ -229,6 +244,9 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_BASENAME
     {"basename", &builtin_basename, B_DEFAULT, "path [suffix]", help_basename},
 #endif
+#if BUILTIN_ID
+    {"id", &builtin_id, B_DEFAULT, "[-Ggu] [-nr] [user]", help_id},
+#endif
 #if BUILTIN_JOBS
     {"bg", &builtin_bg, B_DEFAULT, "[job...]", help_bg},
 #endif
@@ -250,6 +268,12 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_CONTINUE
     {"continue", &builtin_break, B_SPECIAL, "[n]", help_break},
 #endif
+#if BUILTIN_CP
+    {"cp", &builtin_cpmv, B_DEFAULT, "[-RrHLPfipnva] source... target", help_cp},
+#endif
+#if BUILTIN_DATE
+    {"date", &builtin_date, B_DEFAULT, "[-u] [+format]", help_date},
+#endif
 #if BUILTIN_DIRNAME
     {"dirname", &builtin_dirname, B_DEFAULT, "path", help_dirname},
 #endif
@@ -266,6 +290,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_ECHO
     {"echo", &builtin_echo, B_DEFAULT, "[-ne] [arg ...]", help_echo},
+#endif
+#if BUILTIN_ENV
+    {"env", &builtin_env, B_DEFAULT, "[-i] [-u name]... [name=value]... [utility [argument...]]", help_env},
 #endif
 #if BUILTIN_EVAL
     {"eval", &builtin_eval, B_SPECIAL, "[args]", help_eval},
@@ -336,6 +363,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_DIGEST
     {"md5sum", &builtin_digest, B_DEFAULT, "[file...]", help_digest},
+#endif
+#if BUILTIN_MV
+    {"mv", &builtin_cpmv, B_DEFAULT, "[-finv] source... target", help_mv},
 #endif
 #if BUILTIN_MKDIR
     {"mkdir", &builtin_mkdir, B_DEFAULT, "[-p]", help_mkdir},

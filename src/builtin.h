@@ -2,6 +2,7 @@
 #define BUILTIN_H
 
 #include "filter.h"
+#include "../lib/stralloc.h"
 
 typedef enum { B_DEFAULT = 0x00, B_SPECIAL = 0x01, B_EXEC = 0x02 } builtin_flag;
 
@@ -45,8 +46,13 @@ extern const struct builtin_filter cat_filter; /* src/builtin/extra/builtin_cat.
 int builtin_cd(int argc, char* argv[]);
 int builtin_chmod(int argc, char* argv[]);
 int builtin_command(int argc, char* argv[]);
+int builtin_rm_tree(char* argv[], stralloc* path, int force, int verbose); /* src/builtin/extra/builtin_rm.c */
 int builtin_digest(int argc, char* argv[]);
+int builtin_cpmv(int argc, char* argv[]); /* cp and mv: src/builtin/extra/builtin_cp.c */
+int builtin_date(int argc, char* argv[]);
 int builtin_dirname(int argc, char* argv[]);
+int builtin_env(int argc, char* argv[]);
+int builtin_id(int argc, char* argv[]);
 int builtin_dump(int argc, char* argv[]);
 int builtin_echo(int argc, char* argv[]);
 int builtin_eval(int argc, char* argv[]);
@@ -130,7 +136,12 @@ extern const char help_cat[];
 extern const char help_cd[];
 extern const char help_chmod[];
 extern const char help_command[];
+extern const char help_cp[];
+extern const char help_date[];
 extern const char help_digest[];
+extern const char help_env[];
+extern const char help_id[];
+extern const char help_mv[];
 extern const char help_dirname[];
 extern const char help_dump[];
 extern const char help_echo[];

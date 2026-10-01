@@ -16,8 +16,8 @@
  * on failure (already reported via builtin_error()); with 'force'
  * set, a missing path is not an error.
  * ----------------------------------------------------------------------- */
-static int
-rm_recursive(char* argv[], stralloc* path, int force, int verbose) {
+int
+builtin_rm_tree(char* argv[], stralloc* path, int force, int verbose) {
   struct stat st;
   int ret = 0;
 
@@ -48,7 +48,7 @@ rm_recursive(char* argv[], stralloc* path, int force, int verbose) {
       stralloc_cats(path, de->d_name);
       stralloc_nul(path);
 
-      if(rm_recursive(argv, path, force, verbose))
+      if(builtin_rm_tree(argv, path, force, verbose))
         ret = 1;
     }
 
@@ -149,7 +149,7 @@ builtin_rm(int argc, char* argv[]) {
       stralloc_copys(&path, p);
       stralloc_nul(&path);
 
-      if(rm_refuse(argv, p) || rm_recursive(argv, &path, force, verbose)) {
+      if(rm_refuse(argv, p) || builtin_rm_tree(argv, &path, force, verbose)) {
         failed = 1;
 
         if(!force) {
