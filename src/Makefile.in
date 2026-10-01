@@ -26,95 +26,50 @@ dep:              makefiles dep-recursive
 # local directory configuration
 # ---------------------------------------------------------------------------
 RECURSIVE = 1
-SUBDIRS   = builtin \
-            debug \
-            eval \
-            exec \
-            expand \
-            fd \
-            fdstack \
-            fdtable \
-            filter \
-            history \
-            job \
-            parse \
-            prompt \
-            redir \
-            sh \
-            source \
-            term \
-            trace \
-            tree \
-            var \
-            vartab
+SUBDIRS   = builtin debug eval exec expand fd fdstack fdtable filter history \
+  job parse prompt redir sh source term trace tree var vartab
 
-PROGRAM = shish$(EXEEXT)
+PROGRAMS = shish$(EXEEXT) shparse2ast$(EXEEXT) shformat$(EXEEXT)
 LIB     = $(top_builddir)/lib/libowfat.a
-LDADD   = $(top_builddir)/text/dfa/dfa.a \
-          $(top_builddir)/text/sed/sed.a \
-          $(top_builddir)/text/awk/awk.a \
-          builtin/builtin.a \
-          builtin/extra/builtin_extra.a \
-          builtin/filter/builtin_filter.a \
-          debug/debug.a \
-          eval/eval.a \
-          exec/exec.a \
-          expand/expand.a \
-          fd/fd.a \
-          fdstack/fdstack.a \
-          fdtable/fdtable.a \
-          filter/filter.a \
-          history/history.a \
-          job/job.a \
-          parse/parse.a \
-          prompt/prompt.a \
-          redir/redir.a \
-          sh/sh.a \
-          source/source.a \
-          term/term.a \
-          tree/tree.a \
-          var/var.a \
-          vartab/vartab.a \
-          trace/trace.a \
-          debug/debug.a \
-          source/source.a \
-          sh/sh.a
+LDADD   = $(top_builddir)/text/dfa/dfa.a $(top_builddir)/text/sed/sed.a \
+          $(top_builddir)/text/awk/awk.a builtin/builtin.a \
+          builtin/extra/builtin_extra.a builtin/filter/builtin_filter.a \
+          debug/debug.a eval/eval.a exec/exec.a expand/expand.a fd/fd.a \
+          fdstack/fdstack.a fdtable/fdtable.a filter/filter.a history/history.a \
+          job/job.a parse/parse.a prompt/prompt.a redir/redir.a sh/sh.a \
+          source/source.a term/term.a tree/tree.a var/var.a vartab/vartab.a \
+          trace/trace.a debug/debug.a source/source.a sh/sh.a
           
-HEADERS = builtin.h \
-          debug.h \
-          eval.h \
-          exec.h \
-          expand.h \
-          fd.h \
-          fdstack.h \
-          fdtable.h \
-          filter.h \
-          history.h \
-          job.h \
-          parse.h \
-          prompt.h \
-          redir.h \
-          sh.h \
-          sig.h \
-          source.h \
-          term.h \
-          trace.h \
-          tree.h \
-          var.h \
-          vartab.h
+HEADERS = builtin.h debug.h eval.h exec.h expand.h fd.h fdstack.h fdtable.h \
+          filter.h history.h job.h parse.h prompt.h redir.h sh.h sig.h \
+          source.h term.h trace.h tree.h var.h vartab.h
 
 # local targets     
 # ---------------------------------------------------------------------------
-all-local: $(PROGRAM) 
+all-local: $(PROGRAMS) 
 install-local: install-exec
 dep-local:
 
 builtin_config.h:
 	cd $(top_builddir) && ./config.status src/builtin_config.sh
 
+sh_parse2ast.o: $(srcdir)/sh/sh_parse2ast.c
+	@$(ECHO_CC)
+	@$(COMPILE) -MMD -c -o $@ $<
+
+sh_fmt.o: $(srcdir)/sh/sh_fmt.c
+	@$(ECHO_CC)
+	@$(COMPILE) -MMD -c -o $@ $<
+
+shparse2ast$(EXEEXT): sh_parse2ast.o
+	$(LINK) -o $@ $^ $(LDADD) $(PREADD) $(LIB) $(POSTADD)
+
+shformat$(EXEEXT): sh_fmt.o
+	$(LINK) -o $@ $^ $(LDADD) $(PREADD) $(LIB) $(POSTADD)
+
 # installation config
 # ---------------------------------------------------------------------------
-bin_EXEC += $(PROGRAM)
+bin_EXEC += $(PROGRAMS)
 
 # distribution config
 # ---------------------------------------------------------------------------
@@ -127,6 +82,8 @@ FILES += $(HEADERS)
 # ---------------------------------------------------------------------------
 PREADD  = -Wl,--whole-archive
 POSTADD = -Wl,--no-whole-archive
+INCLUDES += -I$(top_srcdir)/lib -I$(top_builddir)
+INCLUDES += -I$(top_builddir)
 
 # include build.mk (makefile helper) 
 # ---------------------------------------------------------------------------
