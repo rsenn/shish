@@ -45,7 +45,17 @@ eval_case(struct eval* e, struct ncase* ncase) {
 
   for(node = ncase->list; node; node = node->next) {
     for(pat = node->ncasenode.pats; pat; pat = pat->next) {
-      expand_catsa(pat, &pattern, X_NOSPLIT | X_PATTERN);
+      /* the pattern gets tilde expansion too, on a private copy */
+      if(expand_tilde_needed(pat)) {
+        union node* pat_copy = tree_copy(pat);
+
+        expand_tilde_word(pat_copy);
+        expand_catsa(pat_copy, &pattern, X_NOSPLIT | X_PATTERN);
+        tree_free(pat_copy);
+      } else {
+        expand_catsa(pat, &pattern, X_NOSPLIT | X_PATTERN);
+      }
+
       stralloc_nul(&pattern);
 
       /* unlike pathname expansion (globbing), case-statement pattern

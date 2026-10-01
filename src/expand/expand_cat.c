@@ -109,6 +109,17 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
       stralloc_catb(&n->narg.stra, tmp.s, tmp.len);
       stralloc_free(&tmp);
       n->narg.flag |= X_UNESCAPED;
+    } else if((flags & X_PATTERN) && (flags & X_QUOTED) && !(flags & X_LITERAL)) {
+      /* quoted expansion result in a pattern is literal text:
+         "a*"  ->  a\*   */
+      unsigned int k;
+
+      for(k = 0; k < len; k++) {
+        if(b[k] == '\\' || b[k] == '*' || b[k] == '?' || b[k] == '[')
+          stralloc_catc(&n->narg.stra, '\\');
+
+        stralloc_catc(&n->narg.stra, b[k]);
+      }
     } else {
       stralloc_catb(&n->narg.stra, b, len);
     }

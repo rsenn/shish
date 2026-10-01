@@ -1,0 +1,155 @@
+diff --git a/BUGS b/BUGS
+index 6d32dd4a..d292a10d 100644
+--- a/BUGS
++++ b/BUGS
+@@ -299,14 +299,11 @@
+     the enclosing function is defined, so an alias set in the function
+     body is not seen by `$(...)` parsed earlier.
+ 
+-- param-expansion-pattern-removal-broken: `${var#pattern}`/`${var##pattern}`/
+-  `${var%pattern}`/`${var%%pattern}` still don't expand parameter or
+-  command substitution inside the pattern (`:337,359`; tilde inside a
+-  pattern was fixed, see `fixes/263-param-word-tilde.patch`). Also still
+-  open: `${unset?b}` stderr message format (`:222`), length
+-  of valid variables (`:236`), special parameters `$`/`*`/`@` quoting
+-  (`:446,517,539,570`). `:82`: a quoted tilde in `${a?\~}` is still
+-  expanded (`HOME=/foo/bar; (: ${a?\~}) 2>&1` prints "/foo/bar", not "~").
++- param-expansion-pattern-removal-broken: `param-p.tst` still fails 6 of 54:
++  `${unset?b}` stderr message format (`:222`), length of valid variables
++  (`:236`), special parameters `$`/`*`/`@` quoting (`:446,517,539,570`).
++  `:82`: a quoted tilde in `${a?\~}` is still expanded
++  (`HOME=/foo/bar; (: ${a?\~}) 2>&1` prints "/foo/bar", not "~").
+ 
+   **Repro:**
+   ```sh
+@@ -351,20 +348,6 @@
+   # 10 failures in tilde expansion, heredocs, and multiple redirections
+   ```
+ 
+-- case-pattern-expansion-broken: a case pattern is supposed to
+-  undergo the same tilde/backslash-preserving expansion as any other
+-  word (POSIX 2.13.1), but doesn't -- tilde expansion in a pattern
+-  and backslashes newly introduced by expanding a pattern (as
+-  opposed to ones written literally in the pattern) are both handled
+-  wrong. 2 failures in `case-p.tst` (`:62`, `:105`).
+-
+-  **Repro:**
+-  ```sh
+-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix case-p.tst
+-  # case-p.tst:62 "case pattern is subject to tilde expansion"
+-  # case-p.tst:105 "backslashes arising from expansion in case pattern"
+-  ```
+-
+ - case-pattern-bracket-quote-stripping: `[[` used as a case pattern
+   (a literal two-character glob-bracket-looking word, not a `[[
+   ... ]]` test expression -- shish/POSIX sh doesn't have those) is
+@@ -381,17 +364,6 @@
+   # case-p.tst:318 "reserved word [[ as pattern"
+   ```
+ 
+-- fnmatch-quotation-of-quotations: pattern matching with nested
+-  quotation marks produces wrong results. 1 failure in
+-  `fnmatch-p.tst:49` (6/7). `fnmatch-p.tst:49`.
+-
+-  **Repro:**
+-  ```sh
+-  # Run the fnmatch conformance test
+-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix fnmatch-p.tst
+-  # 1 failure in pattern matching with nested quotation marks
+-  ```
+-
+ - grouping-p-tst-flaky: `grouping-p.tst:34` ("subshell ending with
+   asynchronous list", `(echo foo >fifo1&); cat fifo1`) used to hang
+   outright (fixed alongside `fixes/103`, the general async-list fix
+diff --git a/TODO.md b/TODO.md
+index c34b763f..84765a11 100644
+--- a/TODO.md
++++ b/TODO.md
+@@ -182,9 +182,8 @@ Sorted by failures per unit of work.
+ 1. `quote-p` (33/35) — `BUGS: quote-backslash-escaping-broken`.
+ 2. `param-p` (39/54) — assignment to readonly/positional/special
+    parameters, `${#...}` edge cases, parameter/command substitution
+-   inside a removed pattern, special-parameter quoting (tilde
+-   expansion inside a substituted word or a removed pattern is now
+-   fixed: `BUGS: param-expansion-pattern-removal-broken`).
++   special-parameter quoting (parameter/command substitution and
++   tilde expansion inside a removed pattern work now).
+ 3. `redir-p` (52/61) — tilde expansion in redirection operands,
+    heredocs on a non-default fd, several heredocs per command, long
+    heredocs. `BUGS: redir-tilde-expansion-and-heredoc-broken`.
+@@ -264,9 +263,9 @@ Sorted by whether the `BUGS` entries below explain part of the
+   `set-notify-unimplemented`, `set-verbose-unimplemented`,
+   `set-histexpand-unimplemented` → Phase 3 (`alias-p`, `read-p`, `set-p`).
+ - `quote-backslash-escaping-broken`, `param-expansion-pattern-removal-broken`,
+-  `redir-tilde-expansion-and-heredoc-broken`, `case-pattern-expansion-broken`,
+-  `case-pattern-bracket-quote-stripping`, `fnmatch-quotation-of-quotations` →
+-  Phase 4 (`quote-p`, `param-p`, `redir-p`, `case-p`, `fnmatch-p`).
++  `redir-tilde-expansion-and-heredoc-broken`,
++  `case-pattern-bracket-quote-stripping` →
++  Phase 4 (`quote-p`, `param-p`, `redir-p`, `case-p`).
+ - `exit-status-in-trap-and-subshell-broken`, `return-default-exit-status-wrong`,
+   `break-continue-inside-eval-no-op`, `input-not-read-line-wise` → Phase 5
+   (`exit-p`, `return-p`, `break-p`/`continue-p`, `input-p`).
+diff --git a/src/eval/eval_case.c b/src/eval/eval_case.c
+index 0ffc58cd..508af154 100644
+--- a/src/eval/eval_case.c
++++ b/src/eval/eval_case.c
+@@ -45,7 +45,17 @@ eval_case(struct eval* e, struct ncase* ncase) {
+ 
+   for(node = ncase->list; node; node = node->next) {
+     for(pat = node->ncasenode.pats; pat; pat = pat->next) {
+-      expand_catsa(pat, &pattern, X_NOSPLIT | X_PATTERN);
++      /* the pattern gets tilde expansion too, on a private copy */
++      if(expand_tilde_needed(pat)) {
++        union node* pat_copy = tree_copy(pat);
++
++        expand_tilde_word(pat_copy);
++        expand_catsa(pat_copy, &pattern, X_NOSPLIT | X_PATTERN);
++        tree_free(pat_copy);
++      } else {
++        expand_catsa(pat, &pattern, X_NOSPLIT | X_PATTERN);
++      }
++
+       stralloc_nul(&pattern);
+ 
+       /* unlike pathname expansion (globbing), case-statement pattern
+diff --git a/src/expand/expand_cat.c b/src/expand/expand_cat.c
+index 1b741cc6..7cb30461 100644
+--- a/src/expand/expand_cat.c
++++ b/src/expand/expand_cat.c
+@@ -109,6 +109,17 @@ expand_cat(const char* b, unsigned int len, union node** nptr, int flags) {
+       stralloc_catb(&n->narg.stra, tmp.s, tmp.len);
+       stralloc_free(&tmp);
+       n->narg.flag |= X_UNESCAPED;
++    } else if((flags & X_PATTERN) && (flags & X_QUOTED) && !(flags & X_LITERAL)) {
++      /* quoted expansion result in a pattern is literal text:
++         "a*"  ->  a\*   */
++      unsigned int k;
++
++      for(k = 0; k < len; k++) {
++        if(b[k] == '\\' || b[k] == '*' || b[k] == '?' || b[k] == '[')
++          stralloc_catc(&n->narg.stra, '\\');
++
++        stralloc_catc(&n->narg.stra, b[k]);
++      }
+     } else {
+       stralloc_catb(&n->narg.stra, b, len);
+     }
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index b09c329c..06a41031 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -5507,4 +5507,13 @@ assert_equal "2" "$("$SHISH_SELF" -c 'expr 1 + 2>/dev/null; echo $?')" "expr 1 +
+ assert_equal "2" "$("$SHISH_SELF" -c 'expr 1 "(" 2>/dev/null; echo $?')" "expr 1 ( is a syntax error (2)"
+ assert_equal "20" "$("$SHISH_SELF" -c 'expr "(" 2 + 3 ")" "*" 4')" "expr honours parentheses and precedence"
+ 
++## a quoted expansion in a case pattern or ${x#pat} is literal text, an
++## unquoted one keeps its backslashes/globs live; the pattern gets tilde expansion
++assert_equal "ok" "$("$SHISH_SELF" -c 'p="a*"; case abc in "$p") echo BAD;; *) echo ok;; esac')" "a quoted \$p holding a glob does not match as a glob"
++assert_equal "ok" "$("$SHISH_SELF" -c 'p="a*"; case "a*" in "$p") echo ok;; *) echo BAD;; esac')" "a quoted \$p holding a glob matches itself literally"
++assert_equal "ok" "$("$SHISH_SELF" -c 'p="[a]"; case a in "$p") echo BAD;; *) echo ok;; esac')" "a quoted \$p holding a bracket expression is literal"
++assert_equal "bs1 bs2" "$("$SHISH_SELF" -c 'bs="\\a\\z"; case az in $bs) echo bs1;; esac; case "\\a\\z" in "$bs") echo bs2;; esac' | tr '\n' ' ' | sed 's/ $//')" "backslashes from an expansion: special unquoted, literal quoted"
++assert_equal "matched" "$("$SHISH_SELF" -c 'HOME=/home; case /home/foo in ~/foo) echo matched;; esac')" "a case pattern is subject to tilde expansion"
++assert_equal "b *b" "$("$SHISH_SELF" -c 'x="a*b"; echo "${x#"a*"}" ${x#a*}')" "a quoted glob in a ${x#pattern} is literal"
++
+ summary

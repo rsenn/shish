@@ -5507,4 +5507,13 @@ assert_equal "2" "$("$SHISH_SELF" -c 'expr 1 + 2>/dev/null; echo $?')" "expr 1 +
 assert_equal "2" "$("$SHISH_SELF" -c 'expr 1 "(" 2>/dev/null; echo $?')" "expr 1 ( is a syntax error (2)"
 assert_equal "20" "$("$SHISH_SELF" -c 'expr "(" 2 + 3 ")" "*" 4')" "expr honours parentheses and precedence"
 
+## a quoted expansion in a case pattern or ${x#pat} is literal text, an
+## unquoted one keeps its backslashes/globs live; the pattern gets tilde expansion
+assert_equal "ok" "$("$SHISH_SELF" -c 'p="a*"; case abc in "$p") echo BAD;; *) echo ok;; esac')" "a quoted \$p holding a glob does not match as a glob"
+assert_equal "ok" "$("$SHISH_SELF" -c 'p="a*"; case "a*" in "$p") echo ok;; *) echo BAD;; esac')" "a quoted \$p holding a glob matches itself literally"
+assert_equal "ok" "$("$SHISH_SELF" -c 'p="[a]"; case a in "$p") echo BAD;; *) echo ok;; esac')" "a quoted \$p holding a bracket expression is literal"
+assert_equal "bs1 bs2" "$("$SHISH_SELF" -c 'bs="\\a\\z"; case az in $bs) echo bs1;; esac; case "\\a\\z" in "$bs") echo bs2;; esac' | tr '\n' ' ' | sed 's/ $//')" "backslashes from an expansion: special unquoted, literal quoted"
+assert_equal "matched" "$("$SHISH_SELF" -c 'HOME=/home; case /home/foo in ~/foo) echo matched;; esac')" "a case pattern is subject to tilde expansion"
+assert_equal "b *b" "$("$SHISH_SELF" -c 'x="a*b"; echo "${x#"a*"}" ${x#a*}')" "a quoted glob in a ${x#pattern} is literal"
+
 summary

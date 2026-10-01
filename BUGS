@@ -299,14 +299,11 @@
     the enclosing function is defined, so an alias set in the function
     body is not seen by `$(...)` parsed earlier.
 
-- param-expansion-pattern-removal-broken: `${var#pattern}`/`${var##pattern}`/
-  `${var%pattern}`/`${var%%pattern}` still don't expand parameter or
-  command substitution inside the pattern (`:337,359`; tilde inside a
-  pattern was fixed, see `fixes/263-param-word-tilde.patch`). Also still
-  open: `${unset?b}` stderr message format (`:222`), length
-  of valid variables (`:236`), special parameters `$`/`*`/`@` quoting
-  (`:446,517,539,570`). `:82`: a quoted tilde in `${a?\~}` is still
-  expanded (`HOME=/foo/bar; (: ${a?\~}) 2>&1` prints "/foo/bar", not "~").
+- param-expansion-pattern-removal-broken: `param-p.tst` still fails 6 of 54:
+  `${unset?b}` stderr message format (`:222`), length of valid variables
+  (`:236`), special parameters `$`/`*`/`@` quoting (`:446,517,539,570`).
+  `:82`: a quoted tilde in `${a?\~}` is still expanded
+  (`HOME=/foo/bar; (: ${a?\~}) 2>&1` prints "/foo/bar", not "~").
 
   **Repro:**
   ```sh
@@ -351,20 +348,6 @@
   # 10 failures in tilde expansion, heredocs, and multiple redirections
   ```
 
-- case-pattern-expansion-broken: a case pattern is supposed to
-  undergo the same tilde/backslash-preserving expansion as any other
-  word (POSIX 2.13.1), but doesn't -- tilde expansion in a pattern
-  and backslashes newly introduced by expanding a pattern (as
-  opposed to ones written literally in the pattern) are both handled
-  wrong. 2 failures in `case-p.tst` (`:62`, `:105`).
-
-  **Repro:**
-  ```sh
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix case-p.tst
-  # case-p.tst:62 "case pattern is subject to tilde expansion"
-  # case-p.tst:105 "backslashes arising from expansion in case pattern"
-  ```
-
 - case-pattern-bracket-quote-stripping: `[[` used as a case pattern
   (a literal two-character glob-bracket-looking word, not a `[[
   ... ]]` test expression -- shish/POSIX sh doesn't have those) is
@@ -379,17 +362,6 @@
   ```sh
   sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix case-p.tst
   # case-p.tst:318 "reserved word [[ as pattern"
-  ```
-
-- fnmatch-quotation-of-quotations: pattern matching with nested
-  quotation marks produces wrong results. 1 failure in
-  `fnmatch-p.tst:49` (6/7). `fnmatch-p.tst:49`.
-
-  **Repro:**
-  ```sh
-  # Run the fnmatch conformance test
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix fnmatch-p.tst
-  # 1 failure in pattern matching with nested quotation marks
   ```
 
 - grouping-p-tst-flaky: `grouping-p.tst:34` ("subshell ending with

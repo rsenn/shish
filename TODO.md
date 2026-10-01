@@ -182,9 +182,8 @@ Sorted by failures per unit of work.
 1. `quote-p` (33/35) — `BUGS: quote-backslash-escaping-broken`.
 2. `param-p` (39/54) — assignment to readonly/positional/special
    parameters, `${#...}` edge cases, parameter/command substitution
-   inside a removed pattern, special-parameter quoting (tilde
-   expansion inside a substituted word or a removed pattern is now
-   fixed: `BUGS: param-expansion-pattern-removal-broken`).
+   special-parameter quoting (parameter/command substitution and
+   tilde expansion inside a removed pattern work now).
 3. `redir-p` (52/61) — tilde expansion in redirection operands,
    heredocs on a non-default fd, several heredocs per command, long
    heredocs. `BUGS: redir-tilde-expansion-and-heredoc-broken`.
@@ -264,9 +263,9 @@ Sorted by whether the `BUGS` entries below explain part of the
   `set-notify-unimplemented`, `set-verbose-unimplemented`,
   `set-histexpand-unimplemented` → Phase 3 (`alias-p`, `read-p`, `set-p`).
 - `quote-backslash-escaping-broken`, `param-expansion-pattern-removal-broken`,
-  `redir-tilde-expansion-and-heredoc-broken`, `case-pattern-expansion-broken`,
-  `case-pattern-bracket-quote-stripping`, `fnmatch-quotation-of-quotations` →
-  Phase 4 (`quote-p`, `param-p`, `redir-p`, `case-p`, `fnmatch-p`).
+  `redir-tilde-expansion-and-heredoc-broken`,
+  `case-pattern-bracket-quote-stripping` →
+  Phase 4 (`quote-p`, `param-p`, `redir-p`, `case-p`).
 - `exit-status-in-trap-and-subshell-broken`, `return-default-exit-status-wrong`,
   `break-continue-inside-eval-no-op`, `input-not-read-line-wise` → Phase 5
   (`exit-p`, `return-p`, `break-p`/`continue-p`, `input-p`).
