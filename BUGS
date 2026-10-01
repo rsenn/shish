@@ -963,11 +963,34 @@
   ./build/x86_64-linux-gnu/shish tests/fixed.sh 2>&1 | grep FAIL
   ```
 
-- head-no-header-for-empty-file: `head` prints the "==> file <==" header
-  when the first bytes of a file arrive, so an empty file operand gets
+- head-no-header-for-empty-file: `head` and `tail` print the "==> file <=="
+  header when the first bytes of a file arrive, so an empty file operand gets
   none (the shared input layer skips a source with nothing in it).
   `: >e; printf 'x\n' >f; head e f` prints "==> f <==" and x, without a
-  header for `e` (POSIX and coreutils print both).
+  header for `e` (POSIX and coreutils print both); `tail e f` is the same.
+- filter-chain-hides-data-from-external-command: a filter builtin followed by
+  a function or a `{ ...; }` group is chained through an in-process buffer
+  (`pipeline_last_reads_in_process()` takes every compound or function last
+  stage as reading in-process), but an external command inside that stage
+  reads the real fd 0 and gets nothing. Needs a build with the builtin on
+  (`-DBUILTIN_HEAD=ON`, or `sort`/`tail`/`uniq`/`cut`/... with a file operand):
+
+  **Repro:**
+  ```sh
+  printf 'b\na\n' >a
+  head a | { /bin/cat; }               # prints nothing; should print b and a
+  f() { /bin/cat; }; head a | f        # same
+  head a | /bin/cat                    # b, a: an external last command is pumped
+  ```
+
+- loop-in-pipeline-stops-after-first-iteration: a loop whose body is itself a
+  pipeline runs only its first iteration when the loop is a pipeline stage.
+
+  **Repro:**
+  ```sh
+  for x in 1 2 3; do echo $x | tr 1 X; done | tr '\n' ' '   # "X"; should print "X 2 3"
+  for x in 1 2 3; do echo $x | cat; done | cat              # "1"; should print 1 2 3
+  ```
 - cut-n-option-ignored: `cut -n` is accepted and ignored. With `-b` in a
   UTF-8 locale it should not split a multibyte character:
   `printf '\303\251\n' | LC_ALL=C.UTF-8 cut -n -b 1` prints the lone byte

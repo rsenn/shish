@@ -3649,7 +3649,12 @@ the top of this file. `awk` (1065) is already Goal 11.)
   POSIX utilities, all seen in the corpus, but each at low enough frequency
   (and `bc` non-trivial in scope) that they're candidates, not a
   near-term plan; no per-utility sizing has been done for these yet.
-  (`xargs` left this list: it is now an `EXTRA_BUILTIN`,
+  (`sort`, `tail` and `split` left this list: `src/builtin/filter/builtin_sort.c`,
+  `builtin_tail.c` and `src/builtin/extra/builtin_split.c`, tests
+  `tests/builtin-{sort,tail,split}.sh`. `sort` keeps everything in memory and
+  compares bytes (no locale collation); `-m` sorts like any other input.
+  `tail -f` follows one file. `split` has the POSIX options only.
+  `xargs` left this list: it is now an `EXTRA_BUILTIN`,
   `src/builtin/extra/builtin_xargs.c`, with `-0 -a -d -I -L -l -n -o -P -p -r -t`;
   gaps: no blank/quote splitting of input lines, `-E`/`-s`/`-x` accepted but
   ignored, empty input with a utility given runs nothing. Tests:
@@ -4012,7 +4017,7 @@ without `sleep`.
 | 11 | `id` | done | `builtin_id.c` | - | `getpwnam`/`getgrgid`/`getgroups`; `-G -g -u -n -r` output selection; needs NSS, no fallback |
 | 12 | `cut` | 2 | ~140 | ~955 | list parser (`1,3-5,7-`) for `-b -c -f`, `-d`, `-s`, `-n`; three field modes over one line loop |
 | 13 | `date` | done | `builtin_date.c` | - | `localtime`/`strftime` (libc); `-u`, `+format`; setting the clock is a documented omission |
-| 14 | `tail` | 3 | ~130 | ~1215 | ring buffer of the last N lines/bytes (`-n -c`); `-f` polls with `read`+sleep and cannot chain |
+| 14 | `tail` | done | `builtin_tail.c` | - | ring buffer of the last N lines/bytes (`-n -c`); `-f` polls with `read`+sleep and cannot chain |
 | 15 | `du` | 3 | ~140 | ~1355 | directory walk like `rm -r`; `-a -s -k -x -H -L`, hard links counted once (`st_dev`/`st_ino` set) |
 | 16 | `nl` | 3 | ~170 | ~1525 | logical pages (`\:\:\:` delimiters), per-section body/header/footer styles, `-b pstring` regex via `text/dfa` |
 | 17 | `tr` | 3 | ~200 | ~1725 | 256-entry map; ranges, `[:class:]`, `[=e=]`, `[x*n]`, `\ooo` escapes, `-c -C -d -s` are the bulk |

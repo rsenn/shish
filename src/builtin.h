@@ -51,6 +51,11 @@ int builtin_digest(int argc, char* argv[]);
 int builtin_cpmv(int argc, char* argv[]); /* cp and mv: src/builtin/extra/builtin_cp.c */
 int builtin_date(int argc, char* argv[]);
 int builtin_dirname(int argc, char* argv[]);
+int builtin_sort(int argc, char* argv[]);
+int builtin_split(int argc, char* argv[]);
+int builtin_tail(int argc, char* argv[]);
+extern const struct builtin_filter sort_filter; /* src/builtin/filter/builtin_sort.c */
+extern const struct builtin_filter tail_filter; /* src/builtin/filter/builtin_tail.c */
 int builtin_env(int argc, char* argv[]);
 int builtin_id(int argc, char* argv[]);
 int builtin_dump(int argc, char* argv[]);
@@ -140,6 +145,9 @@ extern const char help_command[];
 extern const char help_cp[];
 extern const char help_date[];
 extern const char help_digest[];
+extern const char help_sort[];
+extern const char help_split[];
+extern const char help_tail[];
 extern const char help_env[];
 extern const char help_id[];
 extern const char help_mv[];

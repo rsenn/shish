@@ -38,6 +38,15 @@
 #ifndef BUILTIN_MV
 #define BUILTIN_MV 0
 #endif
+#ifndef BUILTIN_SORT
+#define BUILTIN_SORT 0
+#endif
+#ifndef BUILTIN_SPLIT
+#define BUILTIN_SPLIT 0
+#endif
+#ifndef BUILTIN_TAIL
+#define BUILTIN_TAIL 0
+#endif
 #ifndef BUILTIN_CONTINUE
 #define BUILTIN_CONTINUE 1
 #endif
@@ -433,6 +442,15 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_SOURCE
     {"source", &builtin_source, B_SPECIAL, "file [arguments]", help_source},
+#endif
+#if BUILTIN_SORT
+    {"sort", &builtin_sort, B_DEFAULT, "[-cmu] [-o output] [-bdfinr] [-t char] [-k keydef]... [file...]", help_sort, &sort_filter},
+#endif
+#if BUILTIN_SPLIT
+    {"split", &builtin_split, B_DEFAULT, "[-l line_count | -b n[k|m]] [-a suffix_length] [file [name]]", help_split},
+#endif
+#if BUILTIN_TAIL
+    {"tail", &builtin_tail, B_DEFAULT, "[-f] [-c number | -n number] [file...]", help_tail, &tail_filter},
 #endif
 #if BUILTIN_HEAD
     {"head", &builtin_head, B_DEFAULT, "[-n number | -c number] [-qv] [file...]", help_head, &head_filter},
