@@ -27,7 +27,6 @@ dep:              makefiles dep-recursive
 # ---------------------------------------------------------------------------
 RECURSIVE = 1
 SUBDIRS   = builtin \
-            builtin/extra \
             debug \
             eval \
             exec \
@@ -35,6 +34,7 @@ SUBDIRS   = builtin \
             fd \
             fdstack \
             fdtable \
+            filter \
             history \
             job \
             parse \

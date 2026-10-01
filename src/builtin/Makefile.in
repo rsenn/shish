@@ -24,10 +24,26 @@ SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
 DEPS    = $(MODULES:%=%.d)
 
+
+# redirect to recursive targets
+# ---------------------------------------------------------------------------
+all:              makefiles all-recursive 
+clean:            makefiles clean-recursive
+distclean:        makefiles distclean-recursive
+maintainer-clean: makefiles maintainer-clean-recursive
+install:          makefiles install-recursive
+dep:              makefiles dep-recursive
+
 # targets for this directory
 # ---------------------------------------------------------------------------
-all: Makefile $(ARCHIVE)
-install:
+all-local: Makefile $(ARCHIVE)
+install-local:
+
+# local directory configuration
+# ---------------------------------------------------------------------------
+RECURSIVE = 1
+SUBDIRS   = extra \
+            filter 
 
 # dependencies
 # ---------------------------------------------------------------------------
