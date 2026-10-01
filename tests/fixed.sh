@@ -5490,4 +5490,10 @@ case $("$SHISH_SELF" -c 'type rm') in
     ;;
 esac
 
+## unset -f / redefining a function from inside its own running body must not
+## free the body that is still being executed
+assert_equal "a b" "$("$SHISH_SELF" -c 'f(){ unset -f f; echo a; echo b; }; f' | tr '\n' ' ' | sed 's/ $//')" "unset -f of the running function lets the rest of its body run"
+assert_equal "old new" "$("$SHISH_SELF" -c 'f(){ f(){ echo new; }; echo old; }; f; f' | tr '\n' ' ' | sed 's/ $//')" "redefining the running function lets the old body finish"
+assert_equal "x" "$("$SHISH_SELF" -c 'f(){ echo $(unset -f f) x; }; f')" "unset -f in a command substitution inside the function"
+
 summary

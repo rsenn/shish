@@ -69,8 +69,7 @@ builtin_unset(int argc, char* argv[]) {
         struct exechash* e;
 
         *nptr = fn->next;
-        fn->next = 0;
-        tree_free(fn);
+        exec_function_retire(fn);
 
         /* Invalidate exec_hash cache for this function name.
            Without this, type/eval will still find the stale cached

@@ -54,7 +54,8 @@ LDADD   = $(top_builddir)/text/dfa/dfa.a \
           $(top_builddir)/text/sed/sed.a \
           $(top_builddir)/text/awk/awk.a \
           builtin/builtin.a \
-          builtin/extra/extra.a \
+          builtin/extra/builtin_extra.a \
+          builtin/filter/builtin_filter.a \
           debug/debug.a \
           eval/eval.a \
           exec/exec.a \
@@ -62,6 +63,7 @@ LDADD   = $(top_builddir)/text/dfa/dfa.a \
           fd/fd.a \
           fdstack/fdstack.a \
           fdtable/fdtable.a \
+          filter/filter.a \
           history/history.a \
           job/job.a \
           parse/parse.a \
@@ -86,6 +88,7 @@ HEADERS = builtin.h \
           fd.h \
           fdstack.h \
           fdtable.h \
+          filter.h \
           history.h \
           job.h \
           parse.h \

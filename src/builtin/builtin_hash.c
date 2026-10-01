@@ -225,6 +225,5 @@ builtin_hash(int argc, char* argv[]) {
   }
 
   hash_print_table();
-
   return 0;
 }

@@ -169,6 +169,7 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
       // sh_setargs(argv, 0);
       eval_push(&e, E_FUNCTION);
       sh->eval = &e;
+      exec_function_enter();
 
       if((ret = setjmp(e.jumpbuf)) == 0) {
         e.jump = 1;
@@ -211,6 +212,7 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
         eval_pop(&e);
       }
 
+      exec_function_leave();
       sh_pop(&inst);
       vartab_pop(&vars);
 

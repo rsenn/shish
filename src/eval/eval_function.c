@@ -126,7 +126,7 @@ eval_function(struct eval* e, struct nfunc* func) {
        still reference this node. Leak it for now (orphaned but safe);
        exec_functions_restore will relink the parent's list on exit. */
     if(exec_subshell_depth == 0)
-      tree_free(fn);
+      exec_function_retire(fn);
   }
 
   /* Invalidate any cached exec_hash entry for this name. The cache holds

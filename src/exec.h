@@ -87,6 +87,9 @@ struct exechash* exec_lookup(char* name, uint32* hashptr);
 extern int exec_via_command;
 struct command exec_hash(char* name, int mask);
 struct command exec_search(char* name, int mask);
+void exec_function_enter(void);
+void exec_function_leave(void);
+void exec_function_retire(union node* fn);
 int exec_type(char* name, int mask, int force_path, int type_name);
 
 union node;

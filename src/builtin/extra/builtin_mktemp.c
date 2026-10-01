@@ -104,6 +104,5 @@ builtin_mktemp(int argc, char* argv[]) {
 
   buffer_putsa(fd_out->w, &name);
   buffer_putnlflush(fd_out->w);
-
   return 0;
 }

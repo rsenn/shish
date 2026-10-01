@@ -17,7 +17,7 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
-ARCHIVE = builtin_extra.a
+ARCHIVE = builtin_filter.a
 # only the builtins picked with --enable-builtins are compiled
 BUILTINS = @BUILTINS@
 MODULES = $(filter $(BUILTINS:%=builtin_%),$(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/builtin_*.c)))

@@ -5,6 +5,7 @@
 #include "../sh.h"
 #include "../../lib/windoze.h"
 #include "../../lib/scan.h"
+
 #if WINDOWS_NATIVE
 #include <io.h>
 #else
@@ -44,6 +45,5 @@ builtin_fdtable(int argc, char* argv[]) {
   fdtable_foreach(i) fd_print(fdtable[i], fdtable[fd]->w);
 
   buffer_flush(fdtable[fd]->w);
-
   return 0;
 }

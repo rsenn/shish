@@ -35,6 +35,5 @@ builtin_type(int argc, char* argv[]) {
     return 0;
 
   exec_type(name, suppress_functions ? H_FUNCTION : 0, force_path, type_name);
-
   return 0;
 }

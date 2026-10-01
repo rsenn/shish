@@ -85,6 +85,5 @@ builtin_uname(int argc, char* argv[]) {
   }
 
   buffer_putnlflush(fd_out->w);
-
   return 0;
 }

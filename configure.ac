@@ -334,6 +334,7 @@ scripts/Makefile
 src/Makefile
 src/builtin/Makefile
 src/builtin/extra/Makefile
+src/builtin/filter/Makefile
 src/debug/Makefile
 src/eval/Makefile
 src/exec/Makefile
@@ -342,6 +343,7 @@ src/expand/Makefile
 src/fd/Makefile
 src/fdstack/Makefile
 src/fdtable/Makefile
+src/filter/Makefile
 src/history/Makefile
 src/job/Makefile
 src/parse/Makefile

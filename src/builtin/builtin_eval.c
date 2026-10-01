@@ -73,6 +73,5 @@ builtin_eval(int argc, char* argv[]) {
     ret = 1;
 
   source_popfd(&fd);
-
   return ret;
 }

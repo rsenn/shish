@@ -12,6 +12,45 @@ union node* functions = NULL;
    from the parent's snapshot, and freeing them would dangle on restore. */
 int exec_subshell_depth = 0;
 
+/* Function bodies are walked while they run, so unset/redefine inside a
+ * running function must not free them right away.
+ *
+ *   running  > 0   calls in progress; retired bodies wait on the list
+ *   running == 0   retired bodies are freed
+ * ----------------------------------------------------------------------- */
+static int functions_running;
+static union node* functions_retired;
+
+void
+exec_function_enter(void) {
+  functions_running++;
+}
+
+void
+exec_function_leave(void) {
+  if(--functions_running == 0) {
+    union node* n;
+
+    while((n = functions_retired)) {
+      functions_retired = n->next;
+      n->next = NULL;
+      tree_free(n);
+    }
+  }
+}
+
+void
+exec_function_retire(union node* fn) {
+  fn->next = NULL;
+
+  if(functions_running) {
+    fn->next = functions_retired;
+    functions_retired = fn;
+  } else {
+    tree_free(fn);
+  }
+}
+
 void
 exec_functions_save(struct func_snapshot* snap) {
   union node* p;
