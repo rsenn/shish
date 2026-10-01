@@ -1,4 +1,5 @@
 #include "../filter.h"
+#include "../../lib/byte.h"
 #include "../../lib/buffer.h"
 
 /* consume n bytes previously exposed by filter_in_peek() */

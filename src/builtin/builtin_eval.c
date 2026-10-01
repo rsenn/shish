@@ -22,7 +22,7 @@ builtin_eval(int argc, char* argv[]) {
   struct parser p;
   struct eval e;
   union node* cmds;
-  int ret = 0;
+  int ret = 0, err = 0;
   size_t i;
   stralloc sa;
   stralloc_init(&sa);
@@ -40,24 +40,37 @@ builtin_eval(int argc, char* argv[]) {
   source_buffer(&src, &fd, sa.s, sa.len);
   parse_init(&p, P_DEFAULT);
 
-  /* parse the string as a compound list */
-  if((cmds = parse_compound_list(&p, 0))) {
-    eval_push(&e, sh->opts.xtrace ? E_PRINT : 0);
-    eval_tree(&e, cmds, E_ROOT | E_LIST);
-    ret = eval_pop(&e);
-    tree_free(cmds);
+  /* parse and run one command at a time, so that an alias defined by an
+     earlier line is already in effect when the next one is parsed */
+  eval_push(&e, sh->opts.xtrace ? E_PRINT : 0);
+
+  while(!(parse_gettok(&p, P_DEFAULT) & T_EOF)) {
+    p.pushback++;
+
+    if((cmds = parse_list(&p))) {
+      eval_tree(&e, cmds, E_ROOT | E_LIST);
+      tree_free(cmds);
+    }
+
+    /* a syntax error in the argument string is a shell language syntax
+       error, so it has to be reported and fail. "eval" is a special
+       builtin, so returning nonzero is also what ends a non-interactive
+       shell (exec_command.c). */
+    if(!(p.tok & (T_NL | T_SEMI | T_BGND))) {
+      if(p.tok != T_EOF) {
+        parse_error(&p, 0);
+        err = 1;
+      }
+      break;
+    }
+
+    p.pushback = 0;
   }
 
-  /* a syntax error in the argument string is a shell language syntax
-     error, so it has to be reported and fail. "eval" is a special
-     builtin, so returning nonzero is also what ends a non-interactive
-     shell (exec_command.c). A NULL tree alone does not mean an error
-     -- "eval ''" parses fine and does nothing -- the stopping token
-     is what tells them apart. */
-  if(!(p.tok & (T_EOF | T_NL | T_SEMI | T_BGND))) {
-    parse_error(&p, 0);
+  ret = eval_pop(&e);
+
+  if(err)
     ret = 1;
-  }
 
   source_popfd(&fd);
 

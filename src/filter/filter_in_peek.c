@@ -1,4 +1,6 @@
 #include "../filter.h"
+#include "../../lib/byte.h"
+#include "../../lib/buffer.h"
 
 /* zero-copy read: expose the active source's buffered bytes in place.
  * ----------------------------------------------------------------------- */

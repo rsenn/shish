@@ -1,4 +1,5 @@
 #include "../filter.h"
+#include "../../lib/buffer.h"
 
 /* run a step function to completion, writing every unit to out. ctx starts
  * with its struct filter_in; output is flushed only when the next read would

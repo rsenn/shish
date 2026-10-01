@@ -1,0 +1,173 @@
+diff --git a/src/builtin/builtin_eval.c b/src/builtin/builtin_eval.c
+index c8ca2378..b7b0b294 100644
+--- a/src/builtin/builtin_eval.c
++++ b/src/builtin/builtin_eval.c
+@@ -22,7 +22,7 @@ builtin_eval(int argc, char* argv[]) {
+   struct parser p;
+   struct eval e;
+   union node* cmds;
+-  int ret = 0;
++  int ret = 0, err = 0;
+   size_t i;
+   stralloc sa;
+   stralloc_init(&sa);
+@@ -40,24 +40,37 @@ builtin_eval(int argc, char* argv[]) {
+   source_buffer(&src, &fd, sa.s, sa.len);
+   parse_init(&p, P_DEFAULT);
+ 
+-  /* parse the string as a compound list */
+-  if((cmds = parse_compound_list(&p, 0))) {
+-    eval_push(&e, sh->opts.xtrace ? E_PRINT : 0);
+-    eval_tree(&e, cmds, E_ROOT | E_LIST);
+-    ret = eval_pop(&e);
+-    tree_free(cmds);
++  /* parse and run one command at a time, so that an alias defined by an
++     earlier line is already in effect when the next one is parsed */
++  eval_push(&e, sh->opts.xtrace ? E_PRINT : 0);
++
++  while(!(parse_gettok(&p, P_DEFAULT) & T_EOF)) {
++    p.pushback++;
++
++    if((cmds = parse_list(&p))) {
++      eval_tree(&e, cmds, E_ROOT | E_LIST);
++      tree_free(cmds);
++    }
++
++    /* a syntax error in the argument string is a shell language syntax
++       error, so it has to be reported and fail. "eval" is a special
++       builtin, so returning nonzero is also what ends a non-interactive
++       shell (exec_command.c). */
++    if(!(p.tok & (T_NL | T_SEMI | T_BGND))) {
++      if(p.tok != T_EOF) {
++        parse_error(&p, 0);
++        err = 1;
++      }
++      break;
++    }
++
++    p.pushback = 0;
+   }
+ 
+-  /* a syntax error in the argument string is a shell language syntax
+-     error, so it has to be reported and fail. "eval" is a special
+-     builtin, so returning nonzero is also what ends a non-interactive
+-     shell (exec_command.c). A NULL tree alone does not mean an error
+-     -- "eval ''" parses fine and does nothing -- the stopping token
+-     is what tells them apart. */
+-  if(!(p.tok & (T_EOF | T_NL | T_SEMI | T_BGND))) {
+-    parse_error(&p, 0);
++  ret = eval_pop(&e);
++
++  if(err)
+     ret = 1;
+-  }
+ 
+   source_popfd(&fd);
+ 
+diff --git a/src/builtin/builtin_read.c b/src/builtin/builtin_read.c
+index 230410b6..a9c1a77f 100644
+--- a/src/builtin/builtin_read.c
++++ b/src/builtin/builtin_read.c
+@@ -1,3 +1,4 @@
++#include <unistd.h>
+ #include "../builtin.h"
+ #include "../fdtable.h"
+ #include "../expand.h"
+@@ -256,6 +257,11 @@ builtin_read(int argc, char* argv[]) {
+       }
+     }
+ 
++    /* seekable input: hand the read-ahead back, so the next reader
++       (this shell's parser, a child) continues right after the line */
++    if(input->p < input->n && lseek(input->fd, -(off_t)(input->n - input->p), SEEK_CUR) != (off_t)-1)
++      input->p = input->n = 0;
++
+     if(!read_assign(&data, ifs, raw, argp, num_args))
+       status = status ? status : 2;
+ 
+diff --git a/src/sh/sh_loop.c b/src/sh/sh_loop.c
+index c8f385bd..a47254e6 100644
+--- a/src/sh/sh_loop.c
++++ b/src/sh/sh_loop.c
+@@ -12,10 +12,30 @@
+ #include "../job.h"
+ #include "builtin_config.h"
+ 
++#include <unistd.h>
++
+ #if BUILTIN_TRAP
+ void trap_run_pending(void);
+ #endif
+ 
++/* give back the stdin read-ahead before a command runs, so the command
++ * (e.g. `read`) sees the input that follows its own line:
++ *
++ *   lseek(0, -unread, SEEK_CUR)  then drop the buffer
++ *
++ * a pipe/tty (ESPIPE) keeps its buffer.
++ * ----------------------------------------------------------------------- */
++static void
++sh_unread_stdin(void) {
++  buffer* b = source->b;
++
++  if(source->parent || b->fd != STDIN_FILENO || b->p >= b->n)
++    return;
++
++  if(lseek(STDIN_FILENO, -(off_t)(b->n - b->p), SEEK_CUR) != (off_t)-1)
++    b->p = b->n = 0;
++}
++
+ /* main loop, parse lines into trees and execute them
+  * ----------------------------------------------------------------------- */
+ void
+@@ -69,6 +89,7 @@ sh_loop(void) {
+       if(sh->opts.noexec && !is_interactive) {
+         sh->exitcode = 0;
+       } else {
++        sh_unread_stdin();
+         eval_push(&e, E_JCTL);
+         status = eval_tree(&e, list, E_ROOT | E_LIST);
+ 
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 4f273c23..df19869c 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -5458,4 +5458,36 @@ for e in 'readonly n; echo ${n:=}' 'echo ${1:=}' 'echo ${*:=}'; do
+   assert_equal "1 " "$? $out" "assignment expansion error exits the shell: $e"
+ done
+ 
+-summary
+\ No newline at end of file
++## stdin from a regular file is read line-wise: a child's `read` gets the
++## line after its own, and the parent shell resumes right behind it
++cat >stdin-lines.sh <<'__EOF__'
++"$SHISH_SELF" -c 'read -r l && echo "got: $l"'
++echo consumed-by-read
++echo run-by-parent
++__EOF__
++assert_equal "got: echo consumed-by-read
++run-by-parent" "$(SHISH_SELF="$SHISH_SELF" "$SHISH_SELF" <stdin-lines.sh)" "a child read on seekable stdin leaves the following lines to the parent"
++rm -f stdin-lines.sh
++
++## eval parses and runs one command at a time: an alias defined on one
++## line is in effect on the next
++assert_equal "x" "$("$SHISH_SELF" -c 'eval "alias f=echo
++f x"')" "an alias defined by eval is expanded on eval's next line"
++
++## rm -r refuses an operand ending in "." or ".." (or resolving to /) and
++## leaves the directory, and everything above it, alone
++case $("$SHISH_SELF" -c 'type rm') in
++  *builtin*)
++    mkdir -p rmdot/w; : >rmdot/x
++    (cd rmdot/w && "$SHISH_SELF" -c 'rm -r .. 2>/dev/null; echo $?' >../rc)
++    assert_equal "1" "$(cat rmdot/rc)" "rm -r .. fails"
++    assert_equal "yes" "$([ -e rmdot/x ] && echo yes)" "rm -r .. leaves the parent directory's contents"
++    (cd rmdot/w && "$SHISH_SELF" -c 'rm -r . ../w/. 2>/dev/null; echo $?' >../rc)
++    assert_equal "1" "$(cat rmdot/rc)" "rm -r . and rm -r x/. fail"
++    assert_equal "yes" "$([ -d rmdot/w ] && echo yes)" "rm -r . leaves the directory in place"
++    assert_equal "1" "$("$SHISH_SELF" -c 'rm -r / 2>/dev/null; echo $?')" "rm -r / is refused"
++    rm -rf rmdot
++    ;;
++esac
++
++summary

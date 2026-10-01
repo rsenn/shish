@@ -1,4 +1,5 @@
 #include "../filter.h"
+#include "../../lib/byte.h"
 #include "../../lib/buffer.h"
 
 /* make sure the active source has buffered bytes, cycling file operands

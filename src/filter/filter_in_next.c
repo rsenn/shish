@@ -1,4 +1,5 @@
 #include "../builtin.h"
+#include "../../lib/buffer.h"
 #include "../../lib/str.h"
 
 /* open the next file operand in sequence; returns 0 when there are

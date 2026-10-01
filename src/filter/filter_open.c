@@ -1,4 +1,5 @@
 #include "../filter.h"
+#include "../../lib/buffer.h"
 #include "../../lib/alloc.h"
 
 void*

@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "../builtin.h"
 #include "../fdtable.h"
 #include "../expand.h"
@@ -255,6 +256,11 @@ builtin_read(int argc, char* argv[]) {
         stralloc_free(&more);
       }
     }
+
+    /* seekable input: hand the read-ahead back, so the next reader
+       (this shell's parser, a child) continues right after the line */
+    if(input->p < input->n && lseek(input->fd, -(off_t)(input->n - input->p), SEEK_CUR) != (off_t)-1)
+      input->p = input->n = 0;
 
     if(!read_assign(&data, ifs, raw, argp, num_args))
       status = status ? status : 2;

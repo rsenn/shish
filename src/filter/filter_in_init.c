@@ -1,4 +1,5 @@
 #include "../filter.h"
+#include "../../lib/buffer.h"
 #include "../../lib/byte.h"
 
 /* initialize a filter_in tracking structure with error arguments, file

@@ -1,4 +1,5 @@
 #include "../filter.h"
+#include "../../lib/byte.h"
 #include "../../lib/buffer.h"
 
 /* copying read: up to len bytes, stopping after a byte from delims.

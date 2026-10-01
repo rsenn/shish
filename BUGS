@@ -744,23 +744,6 @@
   ln a b; echo $?; cat b       # rc 0, prints A; should fail "File exists" and keep B
   ```
 
-- special-builtin-nonzero-status-kills-shell: `exec_command()` ends a
-  non-interactive shell whenever a *special* builtin returns non-zero
-  (`if(cmd->id == H_SBUILTIN && ret != 0 && !sh_interactive) sh_exit(ret)`).
-  POSIX 2.8.1 only lets a special-builtin *error* (usage, syntax, redirection,
-  assignment error) end the shell; `eval`, `.` and `:`-family builtins return
-  the status of what they ran (`.`: "the value of the last command
-  executed"), so a failing command inside them must not exit the shell.
-  Checked 2026-09-20 against POSIX.1-2024 (Shell Command Language 2.8.1,
-  `dot`, `eval`).
-
-  **Repro:**
-  ```sh
-  shish -c 'eval false; echo alive'          # prints nothing; should print alive
-  echo false > f.sh; shish -c '. ./f.sh; echo alive'   # same
-  shish -c 'eval "test 1 = 2" || echo handled'         # prints nothing
-  ```
-
 - cd-dotdot-after-component-fails: `cd` cannot canonicalise a path in which
   `..` follows an ordinary component: the `chdir()` fails and the
   diagnostic names only the last component, for logical and `-P` mode

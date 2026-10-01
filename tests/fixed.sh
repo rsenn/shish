@@ -5458,4 +5458,36 @@ for e in 'readonly n; echo ${n:=}' 'echo ${1:=}' 'echo ${*:=}'; do
   assert_equal "1 " "$? $out" "assignment expansion error exits the shell: $e"
 done
 
+## stdin from a regular file is read line-wise: a child's `read` gets the
+## line after its own, and the parent shell resumes right behind it
+cat >stdin-lines.sh <<'__EOF__'
+"$SHISH_SELF" -c 'read -r l && echo "got: $l"'
+echo consumed-by-read
+echo run-by-parent
+__EOF__
+assert_equal "got: echo consumed-by-read
+run-by-parent" "$(SHISH_SELF="$SHISH_SELF" "$SHISH_SELF" <stdin-lines.sh)" "a child read on seekable stdin leaves the following lines to the parent"
+rm -f stdin-lines.sh
+
+## eval parses and runs one command at a time: an alias defined on one
+## line is in effect on the next
+assert_equal "x" "$("$SHISH_SELF" -c 'eval "alias f=echo
+f x"')" "an alias defined by eval is expanded on eval's next line"
+
+## rm -r refuses an operand ending in "." or ".." and
+## leaves the directory, and everything above it, alone
+case $("$SHISH_SELF" -c 'type rm') in
+  *builtin*)
+    mkdir -p rmdot/w; : >rmdot/x
+    (cd rmdot/w && "$SHISH_SELF" -c 'rm -r .. 2>/dev/null; echo $?' >../rc)
+    assert_equal "1" "$(cat rmdot/rc)" "rm -r .. fails"
+    assert_equal "yes" "$([ -e rmdot/x ] && echo yes)" "rm -r .. leaves the parent directory's contents"
+    (cd rmdot/w && "$SHISH_SELF" -c 'rm -r . ../w/. 2>/dev/null; echo $?' >../rc)
+    assert_equal "1" "$(cat rmdot/rc)" "rm -r . and rm -r x/. fail"
+    assert_equal "yes" "$([ -d rmdot/w ] && echo yes)" "rm -r . leaves the directory in place"
+    # never run `rm -r /` here: if the guard regresses it deletes the system
+    rm -rf rmdot
+    ;;
+esac
+
 summary

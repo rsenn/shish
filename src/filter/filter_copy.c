@@ -1,4 +1,5 @@
 #include "../filter.h"
+#include "../../lib/buffer.h"
 
 /* feed the whole content of path to sink() in place, block by block;
  * returns -1 if it cannot be read or encounters an error during copy.

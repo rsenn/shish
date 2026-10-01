@@ -1,0 +1,38 @@
+diff --git a/src/expand/expand_param.c b/src/expand/expand_param.c
+index 153c4989..91e83879 100644
+--- a/src/expand/expand_param.c
++++ b/src/expand/expand_param.c
+@@ -207,7 +207,8 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+        dropped entirely by the S_DEFAULT case below */
+     stralloc_nul(&value);
+ 
+-    if(is_set) {
++    /* ${*:-w}, ${#:=w}: ':' also treats an empty value as unset */
++    if(is_set && !(value.len == 0 && (param->flag & S_NULL))) {
+       v = value.s;
+       vlen = value.len;
+     }
+@@ -323,7 +324,22 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+ 
+         n = expand_arg(word, nptr, flags | X_NOSPLIT);
+         expand_param_tilde_free(word, param->word);
+-        var_setv(param->name, n->narg.stra.s + before, n->narg.stra.len - before, V_DEFAULT);
++        /* ${1:=x}, ${*:=x}: only a NAME can be assigned */
++        char c = param->name[0];
++        int isname = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
++
++        if(!isname) {
++          sh_msg(param->name);
++          buffer_putsflush(fd_err->w, ": cannot assign in this way\n");
++        }
++        if(!isname || !var_setv(param->name, n->narg.stra.s + before, n->narg.stra.len - before, V_DEFAULT)) {
++          if(!sh_interactive)
++            sh_exit(1);
++
++          expand_error = 1;
++          n = 0;
++          goto fail;
++        }
+       }
+ 
+       break;

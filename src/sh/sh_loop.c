@@ -12,9 +12,29 @@
 #include "../job.h"
 #include "builtin_config.h"
 
+#include <unistd.h>
+
 #if BUILTIN_TRAP
 void trap_run_pending(void);
 #endif
+
+/* give back the stdin read-ahead before a command runs, so the command
+ * (e.g. `read`) sees the input that follows its own line:
+ *
+ *   lseek(0, -unread, SEEK_CUR)  then drop the buffer
+ *
+ * a pipe/tty (ESPIPE) keeps its buffer.
+ * ----------------------------------------------------------------------- */
+static void
+sh_unread_stdin(void) {
+  buffer* b = source->b;
+
+  if(source->parent || b->fd != STDIN_FILENO || b->p >= b->n)
+    return;
+
+  if(lseek(STDIN_FILENO, -(off_t)(b->n - b->p), SEEK_CUR) != (off_t)-1)
+    b->p = b->n = 0;
+}
 
 /* main loop, parse lines into trees and execute them
  * ----------------------------------------------------------------------- */
@@ -69,6 +89,7 @@ sh_loop(void) {
       if(sh->opts.noexec && !is_interactive) {
         sh->exitcode = 0;
       } else {
+        sh_unread_stdin();
         eval_push(&e, E_JCTL);
         status = eval_tree(&e, list, E_ROOT | E_LIST);
 

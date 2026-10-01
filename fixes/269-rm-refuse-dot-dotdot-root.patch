@@ -1,0 +1,48 @@
+diff --git a/src/builtin/extra/builtin_rm.c b/src/builtin/extra/builtin_rm.c
+index 5939e974..0de93597 100644
+--- a/src/builtin/extra/builtin_rm.c
++++ b/src/builtin/extra/builtin_rm.c
+@@ -85,6 +85,34 @@ rm_recursive(char* argv[], stralloc* path, int force, int verbose) {
+   return 0;
+ }
+ 
++/* refuse operands that would take the working directory or the root with
++ * them:
++ *
++ *   rm -r .  ..  a/.  a/..  /  //  /..  (symlink to / is fine: lstat)
++ *
++ * Returns 1 after reporting, 0 if the operand may be removed.
++ * ----------------------------------------------------------------------- */
++static int
++rm_refuse(char* argv[], char* p) {
++  struct stat st, root;
++  size_t n = str_len(p);
++
++  while(n > 1 && p[n - 1] == '/')
++    n--;
++
++  if((n == 1 && p[0] == '.') || (n >= 2 && p[n - 1] == '.' && (p[n - 2] == '/' || (p[n - 2] == '.' && (n == 2 || p[n - 3] == '/'))))) {
++    builtin_errmsg(argv, p, "refusing to remove '.' or '..'");
++    return 1;
++  }
++
++  if(lstat(p, &st) == 0 && stat("/", &root) == 0 && st.st_dev == root.st_dev && st.st_ino == root.st_ino) {
++    builtin_errmsg(argv, p, "refusing to remove '/'");
++    return 1;
++  }
++
++  return 0;
++}
++
+ /* output stuff
+  * ----------------------------------------------------------------------- */
+ const char help_rm[] = "    Remove files or directories.\n"
+@@ -121,7 +149,7 @@ builtin_rm(int argc, char* argv[]) {
+       stralloc_copys(&path, p);
+       stralloc_nul(&path);
+ 
+-      if(rm_recursive(argv, &path, force, verbose)) {
++      if(rm_refuse(argv, p) || rm_recursive(argv, &path, force, verbose)) {
+         failed = 1;
+ 
+         if(!force) {
