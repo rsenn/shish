@@ -1,8 +1,6 @@
 #define DEBUG_NOCOLOR 1
 #include "../debug.h"
 #include "../../lib/buffer.h"
-
-#if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 #include "../fd.h"
 
 /* output a char
@@ -29,4 +27,3 @@ debug_char(const char* msg, char c) {
   buffer_puts(debug_output, "'" COLOR_NONE);
   debug_fl();
 }
-#endif /* defined(DEBUG_OUTPUT) */

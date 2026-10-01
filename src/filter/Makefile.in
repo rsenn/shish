@@ -17,6 +17,7 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
+TL_ARCHIVE = src/libshell.a
 ARCHIVE = filter.a
 MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/filter_*.c))
 

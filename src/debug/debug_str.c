@@ -1,7 +1,5 @@
 #define DEBUG_NOCOLOR 1
 #include "../debug.h"
-
-#if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 #include "../fd.h"
 
 char debug_quote = '"';
@@ -28,6 +26,7 @@ debug_str(const char* msg, const char* s, int depth, char quote) {
         debug_s("\\r");
       else
         debug_c(c);
+
       s++;
     }
   }
@@ -37,6 +36,6 @@ debug_str(const char* msg, const char* s, int depth, char quote) {
 
   if(quote)
     debug_s(COLOR_NONE);
+  
   debug_fl();
 }
-#endif /* DEBUG_OUTPUT */

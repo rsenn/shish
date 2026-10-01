@@ -17,9 +17,10 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
+TL_ARCHIVE = src/libshell.a
 ARCHIVE = sh.a
 MODULES = sh_error sh_error_errno sh_errorn sh_errorn_errno sh_exit sh_fmtflags \
-  sh_forked sh_getcwd sh_gethome sh_init sh_loop sh_main sh_msg sh_popargs \
+  sh_forked sh_getcwd sh_gethome sh_init sh_loop sh_msg sh_popargs \
   sh_pop sh_pushargs sh_push sh_root sh_setargs sh_sigignore sh_source \
   sh_unescape sh_usage sh_utf8
 

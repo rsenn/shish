@@ -4,7 +4,6 @@
 /* ----------------------------------------------------------------------- */
 void
 debug_squoted(const char* x, size_t n, buffer* out) {
-
   size_t i, next;
 
   buffer_putc(out, '\'');

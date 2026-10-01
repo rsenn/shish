@@ -1,7 +1,6 @@
 #define DEBUG_NOCOLOR 1
 #include "../debug.h"
 
-#if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 #include "../expand.h"
 #include "../fd.h"
 #include "../../lib/str.h"
@@ -96,4 +95,3 @@ debug_subst(const char* msg, int flags) {
   debug_s(COLOR_NONE);
   debug_fl();
 }
-#endif /* DEBUG_OUTPUT */

@@ -2,12 +2,10 @@
 #include "../debug.h"
 #include "../expand.h"
 #include "../../lib/str.h"
-
-int debug_nindent = 2;
-
-#if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 #include "../tree.h"
 #include "../fd.h"
+
+int debug_nindent = 2;
 
 extern int sh_no_position;
 
@@ -87,11 +85,8 @@ void
 debug_node(union node* node, int depth) {
   const char* name;
 
-  // if(depth > 0 && node->id >= N_ARG)
-  // depth = -2;
   name = debug_nodes[node->id];
 
-  // debug_indent(depth);
   debug_c('{');
   debug_str(" kind", name, depth, debug_quote);
 
@@ -248,24 +243,6 @@ debug_node(union node* node, int depth) {
       break;
 
     case N_ARGPARAM: {
-      /*   int flag = (node->nargstr.flag & 0x7);
-         debug_subst(0, flag);
-
-if(flag)
-           buffer_putspace(debug_output);
-
-         debug_s("${");
-         debug_str(0, node->nargparam.name, depth, 0);
-         debug_s("}");
-
-         if((node->nargparam.flag & S_VAR) >> 8) {
-           debug_sublist(", word", node->nargparam.word, -1);
-         }
-
-if(node->nargparam.numb > 0) {
-           debug_ulong(",  numb", node->nargparam.numb, depth+1);
-         }*/
-
       debug_xlong(", flag", node->nargparam.flag, depth);
       debug_str(", name", node->nargparam.name, depth, debug_quote);
 
@@ -365,4 +342,3 @@ if(node->nargparam.numb > 0) {
   debug_newline(depth - 1);
   debug_c('}');
 }
-#endif /* DEBUG_OUTPUT */

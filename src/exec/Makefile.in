@@ -17,9 +17,9 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
+TL_ARCHIVE = src/libshell.a
 ARCHIVE = exec.a
-MODULES = exec_check exec_command exec_create exec_error exec_hash \
-  exec_hashstr exec_lookup exec_path exec_program exec_search exec_type
+MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/exec_*.c))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

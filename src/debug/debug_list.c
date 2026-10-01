@@ -1,7 +1,6 @@
 #include "../../lib/uint64.h"
 #define DEBUG_NOCOLOR 1
 #include "../debug.h"
-#if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 #include "../expand.h"
 #include "../fd.h"
 #include "../tree.h"
@@ -24,9 +23,6 @@ debug_list(union node* n, int depth) {
   int first = 1;
 
   debug_begin(0, depth >= 0 ? depth + 1 : depth);
-  // debug_indent(1);
-  // debug_s(DEBUG_BEGIN);
-  // debug_newline(depth);
 
   for(node = n; node; node = node->next) {
     if(debug_is_empty_placeholder(node) && !(node == n && node->next == NULL))
@@ -43,4 +39,3 @@ debug_list(union node* n, int depth) {
 
   debug_end(depth);
 }
-#endif

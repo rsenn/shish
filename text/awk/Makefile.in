@@ -17,6 +17,7 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
+TL_ARCHIVE = text/libtext.a
 ARCHIVE = awk.a
 MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c))
 

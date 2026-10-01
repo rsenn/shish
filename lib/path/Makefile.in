@@ -19,8 +19,7 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 LIB = ../libowfat.a
 ARCHIVE = path.a
-MODULES = \
-path_basename path_canonical path_canonical_sa path_canonicalize path_collapse path_fnmatch path_getcwd path_gethome path_getsep path_is_absolute path_is_absolute_b path_len_s path_readlink path_realpath path_right
+MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

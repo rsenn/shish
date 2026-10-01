@@ -17,9 +17,9 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
+TL_ARCHIVE = src/libshell.a
 ARCHIVE = vartab.a
-MODULES = vartab_add vartab_cleanup vartab_dump vartab_hash vartab_pop \
-  vartab_print vartab_push vartab_root vartab_search
+MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/vartab_*.c))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

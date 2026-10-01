@@ -188,6 +188,14 @@ maintainer-clean-local: maintainer-clean-recursive
 $(ARCHIVE): $(OBJECTS)
 	@$(ECHO_AR)
 	@$(AR) $(ARCHIVE) $(OBJECTS)
+	@$(ECHO_RANLIB)
+	@$(RANLIB) $(ARCHIVE)
+	@if test -n "$(TL_ARCHIVE)"; then \
+		$(ECHO) "  $(COLOR_YES)AR$(NC)      $(TL_ARCHIVE)"; \
+	  $(AR) $(top_builddir)/$(TL_ARCHIVE) $(OBJECTS); \
+	  $(ECHO) "  $(COLOR_NO)RANLIB$(NC)  $(TL_ARCHIVE)"; \
+	  $(RANLIB) $(top_builddir)/$(TL_ARCHIVE); \
+	fi
 
 # global rule for all makefiles
 # ---------------------------------------------------------------------------
@@ -251,6 +259,8 @@ $(CONFIG_H): $(top_builddir)/config.status $(CONFIG_H_IN)
 .libdep: $(OBJECTS)
 	@$(ECHO_AR)
 	@QUIET@$(AR) $(LIB) $(OBJECTS)
+	@$(ECHO_RANLIB)
+	@QUIET@$(RANLIB) $(LIB)
 	@touch $@
 
 # rule for libraries

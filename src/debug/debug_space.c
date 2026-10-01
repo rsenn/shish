@@ -1,6 +1,4 @@
 #include "../debug.h"
-
-#if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 #include "../fd.h"
 
 void
@@ -21,4 +19,3 @@ debug_space(int count, int newline) {
 
   debug_fl();
 }
-#endif /* DEBUG_OUTPUT */

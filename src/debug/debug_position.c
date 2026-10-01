@@ -1,10 +1,7 @@
-
 #define DEBUG_NOCOLOR 1
 #include "../debug.h"
 #include "../tree.h"
 #include "../source.h"
-
-#if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 
 int debug_emit_loc = 1;
 int debug_emit_range = 0;
@@ -18,6 +15,7 @@ void
 debug_range(const char* msg, size_t start, size_t end, int depth) {
   if(msg)
     debug_field(msg, depth);
+
   debug_c('[');
   debug_n(start);
   debug_c(',');
@@ -31,6 +29,7 @@ void
 debug_position(const char* msg, const struct location* pos, int depth) {
   if(msg)
     debug_field(msg, depth);
+
   debug_s("{");
 
   debug_ulong("line", pos->line, -1);
@@ -50,4 +49,3 @@ debug_location(const char* msg, const struct location* pos, int depth) {
   debug_str(msg, buf, depth, '"');
   debug_fl();
 }
-#endif

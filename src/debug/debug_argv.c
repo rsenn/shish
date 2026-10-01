@@ -7,9 +7,7 @@
 size_t
 debug_argv(char** argv, buffer* out) {
   char** arg;
-  size_t i;
-
-  i = out->p;
+  size_t i = out->p;
 
   for(arg = argv; *arg; arg++) {
     int quote = **arg == '\0';

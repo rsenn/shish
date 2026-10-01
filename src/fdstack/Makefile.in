@@ -17,10 +17,9 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
+TL_ARCHIVE = src/libshell.a
 ARCHIVE = fdstack.a
-MODULES = fdstack_data fdstack_dump fdstack_flatten fdstack_fork fdstack_link \
-  fdstack_npipes fdstack_pipe fdstack_pop fdstack_push fdstack_root \
-  fdstack_search fdstack_unlink fdstack_unref fdstack_update
+MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/fdstack_*.c))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

@@ -19,8 +19,7 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 LIB     = ../libowfat.a
 ARCHIVE = fmt.a
-MODULES = \
-fmt_8long fmt_8longlong fmt_escapecharc fmt_long fmt_longlong fmt_minus fmt_ulong fmt_ulong0 fmt_ulonglong fmt_xlonglong
+MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

@@ -19,7 +19,7 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 LIB     = ../libowfat.a
 ARCHIVE = open.a
-MODULES = open_append open_excl open_read open_temp open_trunc
+MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

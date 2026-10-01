@@ -19,10 +19,7 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 LIB = ../libowfat.a
 ARCHIVE = hashmap.a
-
-MODULES = \
-hashmap_init hashmap_get hashmap_get2 hashmap_get_entry hashmap_match hashmap_put hashmap_put2 \
-hashmap_delete hashmap_delete2 hashmap_rehash hashmap_next hashmap_clear
+MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

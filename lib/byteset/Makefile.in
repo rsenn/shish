@@ -19,8 +19,7 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 LIB = ../libowfat.a
 ARCHIVE = byteset.a
-MODULES = \
-byteset_add byteset_class byteset_has byteset_icase byteset_invert byteset_next byteset_range byteset_zero
+MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

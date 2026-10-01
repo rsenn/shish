@@ -17,8 +17,9 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
+TL_ARCHIVE = src/libshell.a
 ARCHIVE = trace.a
-MODULES = trace_begin trace_defer trace_fd trace_fdmap trace_value
+MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/trace_*.c))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

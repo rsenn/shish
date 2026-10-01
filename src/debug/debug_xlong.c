@@ -2,7 +2,6 @@
 #define DEBUG_NOCOLOR 1
 #include "../debug.h"
 
-#if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 #include "../fd.h"
 
 /* output an unsigned long
@@ -18,4 +17,3 @@ debug_xlong(const char* msg, uint64 l, int depth) {
   debug_s(COLOR_NONE);
   debug_fl();
 }
-#endif /* DEBUG_OUTPUT */

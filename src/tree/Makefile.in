@@ -17,10 +17,9 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
+TL_ARCHIVE = src/libshell.a
 ARCHIVE = tree.a
-MODULES = node2str tree_append tree_cat tree_catlist tree_catseparator \
-  tree_copy tree_count tree_free tree_location tree_newlink tree_newnode \
-  tree_nodesizes tree_print tree_printlist tree_remove tree_show tree_string
+MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

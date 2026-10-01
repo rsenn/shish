@@ -17,11 +17,9 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
+TL_ARCHIVE = src/libshell.a
 ARCHIVE = term.a
-MODULES = term_ansi term_attr term_backspace term_complete term_delete \
-  term_end term_erase term_escape term_getline term_home term_init \
-  term_insertc term_left term_newline term_overwritec term_read term_restore \
-  term_right term_search term_setline term_vimode term_winsize
+MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/term_*.c))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

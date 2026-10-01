@@ -1,7 +1,6 @@
 #define DEBUG_NOCOLOR 1
 #include "../debug.h"
 
-#if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 #include "../fd.h"
 #include "../redir.h"
 #include "../../lib/str.h"
@@ -36,18 +35,7 @@ if(flags & R_APPEND)
 
 if(flags & R_CLOBBER)
      strcat(flagstr, COLOR_CYAN "|" COLOR_MAGENTA "R_CLOBBER");*/
-  /*
-    if(msg) {
-      debug_s(COLOR_YELLOW);
-      debug_s(msg);
-      debug_s(COLOR_CYAN DEBUG_EQU);
-    }*/
+
   debug_ulong(msg, flags, depth);
-  /*debug_s(COLOR_MAGENTA);
-  debug_s(flagstr);
-  debug_s(COLOR_NONE);
-*/
-  // debug_space(depth, 0);
   debug_fl();
 }
-#endif /* DEBUG_OUTPUT */

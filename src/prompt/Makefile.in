@@ -17,9 +17,9 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
+TL_ARCHIVE = src/libshell.a
 ARCHIVE = prompt.a
-MODULES = prompt_escape prompt_expand prompt_nextline prompt_parse \
-  prompt_reset prompt_show
+MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/prompt_*.c))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

@@ -17,6 +17,7 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
+TL_ARCHIVE = src/libshell.a
 ARCHIVE = builtin.a
 MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/builtin_*.c))
 
@@ -51,9 +52,7 @@ SUBDIRS   = extra filter
 # local build configuration
 # ---------------------------------------------------------------------------
 INCLUDES += -I$(top_srcdir)/lib -I$(top_builddir)
-#INCLUDES += -I$(top_builddir)/lib
 INCLUDES += @IQUOTE_SRC@
-#INCLUDES += -I$(top_builddir)/src
 INCLUDES += -I$(top_builddir)
 
 # include build.mk (makefile helper)

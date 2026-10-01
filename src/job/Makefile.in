@@ -17,10 +17,9 @@ include $(top_builddir)/config.mk
 
 # configuration for this directory
 # ---------------------------------------------------------------------------
+TL_ARCHIVE = src/libshell.a
 ARCHIVE = job.a
-MODULES = job_banner job_bypid job_clean job_dump job_find job_foreground \
-  job_fork job_free job_init job_new job_print job_printstatus job_signal \
-  job_update job_wait
+MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/job_*.c))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

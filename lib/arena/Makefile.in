@@ -16,11 +16,10 @@ VPATH        = $(srcdir)
 include $(top_builddir)/config.mk
 
 # configuration for this directory
-# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------L
 LIB = ../libowfat.a
 ARCHIVE = arena.a
-MODULES = \
-arena_alloc arena_allocn arena_brk arena_dup arena_free arena_grow arena_heap arena_init arena_init_fixed arena_mmap arena_rewind arena_reset arena_strndup arena_take arena_tell arena_trim arena_used
+MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
