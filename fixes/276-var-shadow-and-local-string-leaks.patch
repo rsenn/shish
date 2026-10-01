@@ -1,0 +1,27 @@
+diff --git a/src/var/var_create.c b/src/var/var_create.c
+index 4d34df80..4af8d2f2 100644
+--- a/src/var/var_create.c
++++ b/src/var/var_create.c
+@@ -50,6 +50,7 @@ var_create(const char* s, int flags) {
+     v->child = newv;
+     newv->parent = v;
+ 
++    stralloc_free(&newv->sa);
+     newv->sa = v->sa;
+     newv->sa.a = 0;
+     newv->flags |= v->flags & V_READONLY;
+diff --git a/src/vartab/vartab_cleanup.c b/src/vartab/vartab_cleanup.c
+index c32a6498..6d2b7b2b 100644
+--- a/src/vartab/vartab_cleanup.c
++++ b/src/vartab/vartab_cleanup.c
+@@ -31,7 +31,9 @@ vartab_cleanup(struct vartab* vartab) {
+           var->gnext->glink = var->glink;
+       }
+ 
+-      if(var->flags & V_FREESTR)
++      /* sa.a == 0 marks a string borrowed from a shadowed variable;
++         stralloc_free() leaves those alone */
++      if(var->flags & (V_FREESTR | V_FREE))
+         stralloc_free(&var->sa);
+ 
+       /* if it was malloc()ed we have to free it now */

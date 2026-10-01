@@ -31,7 +31,9 @@ vartab_cleanup(struct vartab* vartab) {
           var->gnext->glink = var->glink;
       }
 
-      if(var->flags & V_FREESTR)
+      /* sa.a == 0 marks a string borrowed from a shadowed variable;
+         stralloc_free() leaves those alone */
+      if(var->flags & (V_FREESTR | V_FREE))
         stralloc_free(&var->sa);
 
       /* if it was malloc()ed we have to free it now */

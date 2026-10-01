@@ -5580,4 +5580,9 @@ assert_equal "-DBUILD_BUILTIN_ALIAS:INTERNAL=1 -DBUILTIN_CAT:BOOL=ON" "$SA" "\"\
 # assertion here: "sleep 0.1 & wait" and "f() { return 3; }; f" report no leak
 # under -fsanitize=address.
 
+# fixes/276 frees the string a variable shadow starts with (a prefix
+# assignment "x=1 cmd", "local x") and the value copy of a popped scope. Only
+# LeakSanitizer sees it: "x=0; x=1 /bin/true" in a loop leaks nothing under
+# -fsanitize=address.
+
 summary

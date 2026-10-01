@@ -50,6 +50,7 @@ var_create(const char* s, int flags) {
     v->child = newv;
     newv->parent = v;
 
+    stralloc_free(&newv->sa);
     newv->sa = v->sa;
     newv->sa.a = 0;
     newv->flags |= v->flags & V_READONLY;
