@@ -97,7 +97,7 @@ void debug_range(const char* msg, size_t start, size_t end, int depth);
 size_t debug_argv(char** argv, buffer* out);
 void debug_squoted(const char*, size_t n, buffer* out);
 
-#ifdef DEBUG_OUTPUT
+#if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 
 #define debug_to(buf) debug_output = buf;
 #define debug_s(str) buffer_puts(debug_output, str)
@@ -106,7 +106,7 @@ void debug_squoted(const char*, size_t n, buffer* out);
 #define debug_c(chr) buffer_putc(debug_output, (unsigned int)(unsigned char)(chr))
 #define debug_b(buf, len) buffer_put(debug_output, (buf), (len))
 #define debug_ws(str) debug_c(' ')
-#define debug_nl() debug_c('\n') //
+#define debug_nl() deb§ug_c('\n') //
 #define debug_fl() buffer_flush(debug_output)
 #define debug_nl_fl() buffer_putnlflush(debug_output) //(debug_nl(), debug_fl())
 #define debug_fn() (debug_s(__func__), debug_s("()"))
