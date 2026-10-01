@@ -13,7 +13,9 @@ fdstack_update(struct fd* dup) {
 
   for(st = fdstack; st; st = st->parent)
     for(fd = st->list; fd; fd = fd->next) {
-      if(fd->dup == dup)
+      if(fd->dup == dup) {
+        fd_scope_note(fd);
         fd->e = dup->e;
+      }
     }
 }

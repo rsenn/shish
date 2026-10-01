@@ -46,10 +46,11 @@ redir_dup(struct nredir* nredir, stralloc* sa, int persistent) {
          "exec >&2 2>/dev/null"  ->  fd 1 would resolve to /dev/null
        - FDTABLE_CLOSE skips fdtable_wish()/fdtable_gap(), which would
          try to relocate this fd out of its own slot
-       - not inside "(...)": it never forks, so a real dup2()/close()
-         here outlives the subshell while fdtable[] is restored around
-         it, leaving a slot whose ->e names someone else's real fd */
-    if(ret == 0 && persistent && !exec_subshell_depth) {
+       - only for a source with a real descriptor: a "$(...)" or
+         here-document fd (e == -1) gets its pipe when a child forks
+       - inside "(...)" and "$(...)" fd_state_restore() undoes what this
+         changes in fds owned outside the scope */
+    if(ret == 0 && persistent && nredir->fd->e >= 0) {
       if(fdtable_dup(nredir->fd, FDTABLE_FORCE | FDTABLE_CLOSE) == FDTABLE_ERROR) {
         fd_error(fd, "cannot duplicate");
         ret = 1;

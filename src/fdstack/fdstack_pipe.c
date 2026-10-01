@@ -1,6 +1,7 @@
 #include "../../lib/uint64.h"
 #include "../../lib/buffer.h"
 #include "../fdstack.h"
+#include "../fdtable.h"
 #include "../trace.h"
 #include "../debug.h"
 
@@ -28,16 +29,36 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
       if(!(fd->mode & FD_DUP) && (fd->mode & FD_SUBST) == FD_SUBST) {
         struct fdstack* up;
         struct fd* sh;
-        int e;
+        int e, owned = 0, aliased = 0;
 
-        /* a nearer redirection of the same fd ("$(cmd >file)") owns
-           it in the child; the substitution then reads nothing */
+        /* a nearer redirection of the same fd ("$(cmd >file)") owns it
+           in the child; the substitution then reads nothing -- unless a
+           visible fd still duplicates "fd" ("exec 3>&1 1>&2; cmd >&3"),
+           which needs the pipe. */
         for(up = fdstack; up != st; up = up->parent)
           for(sh = up->list; sh; sh = sh->next)
-            if(sh->n == fd->n)
-              goto shadowed;
+            if(sh->n == fd->n && sh->dup != fd)
+              owned = 1;
 
-        fd_push(fds, fd->n, FD_WRITE | FD_FLUSH);
+        for(up = fdstack; up; up = up->parent)
+          for(sh = up->list; sh; sh = sh->next)
+            if(sh->dup == fd && sh == fdtable[sh->n])
+              aliased = 1;
+
+        if(owned && !aliased)
+          goto shadowed;
+
+        /* an owner stays on top of the slot: link the write end just
+           above "fd", below the owner, so it cannot capture the owner's
+           output */
+        if(owned) {
+          fd_init(fds, fd->n, FD_WRITE | FD_FLUSH);
+          fdtable_pos = fd->pos;
+          fdtable_link(fds);
+          fdstack_link(fdstack, fds);
+        } else
+          fd_push(fds, fd->n, FD_WRITE | FD_FLUSH);
+
         fd_setbuf(fds, b, FD_BUFSIZE / 2);
 
         e = fd_pipe(fds);
@@ -89,6 +110,9 @@ fdstack_pipe(unsigned int n, struct fd* fds) {
             for(dfd = dst->list; dfd; dfd = dfd->next)
               if(dfd->dup == fd)
                 dfd->dup = fds;
+
+          /* the repointed duplicates take over the write end's descriptor */
+          fdstack_update(fds);
         }
 
         b += FD_BUFSIZE / 2;

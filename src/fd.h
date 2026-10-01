@@ -149,10 +149,23 @@ extern int fd_expected, fd_top, fd_lo, fd_hi;
  * and friends), for scopes that share a process (no fork()) but still
  * need their fd-table effects undone on exit -- see fd_state_save().
  */
+struct fd_note {
+  struct fd_note* next;
+  struct fd* fd;
+  int e, rfd, wfd;
+  buffer *r, *w;
+};
+
 struct fd_state {
   int expected, top, lo, hi;
+  unsigned level;        /* fdstack level the scope runs on */
+  struct fd_state* prev; /* enclosing scope */
+  struct fd_note* notes; /* original state of fds owned outside the scope */
   struct fd* list[FD_MAX];
 };
+
+extern struct fd_state* fd_scope; /* innermost non-forking scope, or NULL */
+void fd_scope_note(struct fd*);
 
 int fd_dup(struct fd*, int dfd);
 int fd_error(int n, const char* msg);
@@ -182,7 +195,7 @@ void fd_open(struct fd*, const char* fname, long mode);
 void fd_pop(struct fd*);
 void fd_print(struct fd*, buffer* b);
 void fd_setbuf(struct fd*, void* buf, size_t n);
-void fd_state_restore(const struct fd_state*);
+void fd_state_restore(struct fd_state*);
 void fd_state_save(struct fd_state*);
 void fd_string(struct fd*, const char* s, size_t len);
 void fd_subst(struct fd*, stralloc* sa);

@@ -31,7 +31,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
   union node* n = *nptr;
   struct vartab vars;
   struct fd fd;
-  struct fdstack fdst;
+  struct fdstack fdst, body;
   struct fd_state fdstate;
   struct env she;
   struct eval en;
@@ -60,6 +60,12 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
   fd_state_save(&fdstate);
   fd_push(&fd, STDOUT_FILENO, FD_WRITE);
   fd_subst(&fd, &sa);
+
+  /* fdst holds the substitution's own fd 1; the body runs one level above
+     it, so a persistent redirection in the body ("exec 1>&2") shadows that
+     fd (fdtable_newfd() would otherwise re-init it in place) and is torn
+     down with the body's level. */
+  fdstack_push(&body);
 
   /* evaluate the command tree in a subshell */
   vartab_push(&vars, 0);
@@ -103,6 +109,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
   sh->exitcode = ret;
   sh->cmdsubst_ran = 1;
 
+  fdstack_pop(&body);
   fdstack_pop(&fdst);
   fd_state_restore(&fdstate);
   sh_subshell--;

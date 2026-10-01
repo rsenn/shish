@@ -5627,4 +5627,41 @@ assert_equal "bhvB
 hB
 bhvB" "$SO" "set -b/-v and -o notify/verbose toggle the b and v flags in \$-"
 
+# persistent redirections inside a non-forking "$(...)" / "(...)" reach the
+# commands that run there, and leave the enclosing shell's fds alone (fixes/284)
+FS=$("$SHISH_SELF" -c 'x=$( exec 3>&1; /bin/echo c1 >&3 ); echo "[$x]"')
+assert_equal "[c1]" "$FS" "\"exec 3>&1\" in \$(...) lets an external command write to the substitution via fd 3"
+FS=$("$SHISH_SELF" -c 'x=$( exec 3>&1 1>&2; /bin/echo c3 >&3 ) 2>/dev/null; echo "[$x]"')
+assert_equal "[c3]" "$FS" "\"exec 3>&1 1>&2\" in \$(...) keeps fd 3 on the substitution, fd 1 on stderr"
+FS=$("$SHISH_SELF" -c 'x=$( exec 3>&1 >/dev/null; /bin/echo c7 >&3 ); y=$( exec 3>&1; /bin/echo c8 >&3 2>&1 ); echo "[$x][$y]"')
+assert_equal "[c7][c8]" "$FS" "an \"exec >/dev/null\" in one \$(...) must not break the next one"
+FS=$("$SHISH_SELF" -c 'x=$( exec >/dev/null; echo hi ); /bin/echo parent; echo builtin')
+assert_equal "parent
+builtin" "$FS" "\"exec >/dev/null\" in \$(...) must not redirect the enclosing shell's stdout"
+FS=$("$SHISH_SELF" -c '( exec 3>&1; /bin/echo via3 >&3 ); ( exec 3>&1; /bin/echo via3b >&3 ) & wait' 2>&1)
+assert_equal "via3
+via3b" "$FS" "\"exec 3>&1\" in (...) and (...) & lets an external command write via fd 3"
+FS=$("$SHISH_SELF" -c '( exec 3>&1 1>&2 2>&3 3>&- ; echo hi ) >/dev/null 2>&1; /bin/true; echo ok' 2>&1)
+assert_equal "ok" "$FS" "a swap of fds 1 and 2 with \"exec\" in (...) must not hit a redirection cycle"
+
+# a persistent dup in "(...)" landing on the kernel fd another struct lives
+# on (the subshell's own "> file" parked at fd 4) must relocate it, not close
+# it (fixes/285)
+OCC=$(mktemp -d)
+echo line1 > "$OCC/in"
+"$SHISH_SELF" -c '( exec 3<&0; exec 4<&3; exec 3<&4; head -n1 <&3 ) < "$1" > "$2"' x "$OCC/in" "$OCC/out"
+assert_equal "line1" "$(cat "$OCC/out")" "(...) with \"exec 4<&3\" must not destroy its own stdout redirection parked on fd 4"
+rm -rf "$OCC"
+
+# leaving a non-forking scope by exit/set -e/return/trap restores the
+# enclosing shell's fds, and leaks none (fixes/284)
+FS=$("$SHISH_SELF" -c 'exec 3>&1; x=$( exec >/dev/null; exit 3 ); echo "rc=$?"; ( exec >/dev/null 3>/dev/null; f() { exit 6; }; f ); echo "rc=$?"; x=$( set -e; exec >/dev/null; false ); echo "rc=$?"; echo fd3 >&3; echo out')
+assert_equal "rc=3
+rc=6
+rc=1
+fd3
+out" "$FS" "exit/set -e inside \$(...) and (...) with \"exec >/dev/null\" leave the enclosing stdout and fd 3 intact"
+FS=$("$SHISH_SELF" -c 'n0=$(/bin/ls /proc/self/fd | wc -l); i=0; while [ $i -lt 100 ]; do x=$( exec >/dev/null 4>/dev/null; exit 2 ); ( exec 5>/dev/null; exit 3 ); y=$( exec 3>&1; /bin/echo hi >&3 ); i=$((i+1)); done; n1=$(/bin/ls /proc/self/fd | wc -l); [ "$n0" = "$n1" ] && echo ok || echo "$n0 -> $n1 fds"')
+assert_equal "ok" "$FS" "100 scopes with persistent redirections must not leak descriptors"
+
 summary

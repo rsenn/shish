@@ -312,10 +312,12 @@ What's currently open under this build, from `BUGS`:
 3. Direct-fork builtins: none left. `builtin_timeout.c` runs its child
    through `exec_command()`/`job_wait()` now, and the only raw `fork()`s
    (`exec_program()`, the pipeline pump) are safe against `sh_onsig()`.
-4. **Goal 4** below (fd/fdtable/redir vs. non-forking subshells) is
-   also a memory-safety item, not just a conformance one — its "Still
-   open" problem has a confirmed heap-corruption repro. See that
-   section for the full writeup.
+4. **HIGH PRIORITY — Goal 4 below** (fd/fdtable/redir vs. non-forking
+   subshells) is a memory-safety item, not just a conformance one: dropping
+   the `!exec_subshell_depth` guard in `redir_dup()` gives heap corruption,
+   and with the guard in place `( exec 3>&1; /bin/echo x >&3 )` still
+   fails. Chosen approach: option (b), scope-aware fd state -- the plan and
+   acceptance criteria are under Goal 4, "Plan for (b)".
 
 ---
 
@@ -593,16 +595,145 @@ cmake -S . -B build/dbg -DCMAKE_BUILD_TYPE=Debug \
 build/dbg/shish -c 'exec 3>&1; dump -t'   # -t table, -s stack, -f list
 ```
 
-### Suggested refactoring
+### Plan for (b): scope-aware fd state  [HIGH PRIORITY, decided 2026-10-02]
 
-**Give persistent redirections real subshell-awareness.** Either (a) make
-`eval_subshell()` genuinely fork when it contains a persistent (`exec`)
-redirection anywhere in its body — expensive to detect up-front, but
-sidesteps the whole shared-global-state problem by construction — or
-(b) teach `fdtable_newfd()`/`fd_close()` that a "persistent" redirection
-created inside a pushed-for-a-subshell fdstack level is only persistent
-*for that level's lifetime*, and should behave like a temporary one for
-teardown purposes.
+Chosen over (a) "fork `(...)` when its body has `exec`": (a) can't see an
+`exec` reached through `eval`, a function or `.`, and doesn't cover `$(...)`.
+(b) fixes every non-forking scope (`eval_subshell()`, `expand_command()`)
+with one mechanism. Fall back to (a) only if step 4 below fails its gate.
+
+**Repros (all must match bash; none do today except the last):**
+
+```sh
+( exec 3>&1; /bin/echo via3 >&3 )                    # cycle error, write error
+( exec 3>&1; /bin/echo via3b >&3 ) & wait            # write error
+x=$( exec 3>&1; /bin/echo via3c >&3 ); echo "[$x]"  # "[]", text goes to the tty
+( exec 3>&1 1>&2 2>&3 3>&- ; echo hi ) >/dev/null 2>&1; /bin/true   # swap; guard removed -> segfault
+( exec 3>&1; /bin/echo via3 >&3 ) | cat              # works (forked stage)
+```
+
+**Status 2026-10-02 (step 1 done, steps 3-5 mostly done, `fixes/284`).**
+Traced with `SHISH_TRACE=fd,fdstack,fdtable,redir`. Three separate causes:
+
+1. *No boundary level in `$(...)`.* `expand_command()` ran the body on the same
+   fdstack level as the substitution's own fd 1, so `exec >/dev/null` in the
+   body re-initialised that fd in place (`fdtable_newfd()` -> `fdstack_search()`
+   -> `fd_reinit()`). Fixed: the substitution's fd lives on its own level and
+   the body runs one level above it.
+2. *Scope exit left outer fds changed.* `fdtable_dup()`/`fdtable_gap()`
+   relocate the real occupant of fd N (`fd_setfd(occupant, dup(occupant->e))`),
+   and `fd_state_restore()` put back `fd_list[]` but not that struct's `e`: after
+   `x=$( exec >/dev/null )` the enclosing shell's stdout struct stayed at
+   `e=4` and the next substitution broke. The relocation already parks the
+   original descriptor, so no separate parking is needed. Fixed:
+   `fd_scope_note()` (called from `fd_setfd()` and `fdstack_update()`)
+   journals `e`/buffer fds of fds owned by levels outside the scope, and
+   `fd_state_restore()` does `dup2(e, orig); close(e)` and restores the fields.
+3. *`fdstack_pipe()` skipped the pipe.* A nearer redirection of fd 1 was taken
+   as its owner ("`$(cmd >file)`") even when it only aliased the substitution
+   ("`exec 3>&1; cmd >&3`"). Fixed: it is an owner only if no visible fd
+   duplicates the substitution fd; the pipe's write end is then linked just above
+   the substitution fd, below the owner, and the repointed duplicates get
+   its `e` (`fdstack_update()`).
+
+With that the `!exec_subshell_depth` guard in `redir_dup()` is gone (a
+persistent dup resolves eagerly when its source has a real descriptor; a
+`$(...)`/here-doc source, `e == -1`, stays lazy until a child forks).
+
+Investigated after that (`fixes/285`, tests in `tests/fixed.sh`):
+
+- *`fd_pop(victim)` in `fdtable_dup()` freeing an outer-owned struct.* Real,
+  not hypothetical: with the guard gone, `( exec 3<&0; exec 4<&3; exec 3<&4;
+  head -n1 <&3 ) < in > out` lost its `> out`. The subshell's own redirection
+  was parked on kernel fd 4 and the forced `dup2` onto 4 destroyed it, because
+  `fdtable_dup()` relocated a live occupant of the target only when it was
+  *shadowed*. Fixed: it is relocated whenever its own number differs from the
+  target (`occupant->n != d->n`). An instrumented build (abort when the victim
+  is owned outside the scope) no longer reaches that branch in `tests/fixed.sh`,
+  `tests/*.sh` or the posix files listed in the matrix below.
+- *`longjmp`/exit paths.* `eval_exit()` stops at the nearest `E_ROOT` frame, and
+  both scope kinds push one, so an exit never skips an inner
+  `fd_state_restore()`. Checked against bash with a matrix of `exit`, `set -e`,
+  `${x?}`, `return`, `break`, an EXIT trap, a function calling `exit`, and
+  nested scopes, each after a persistent redirection of fd 1/3/4/5; the
+  enclosing shell's stdout and fd 3 stay intact and the descriptor count is
+  constant over 400 iterations.
+- `fd_state_restore()` only does the kernel `dup2`/`close` for structs that
+  own their descriptor (`!FD_DUP`), so a duplicate that shares its owner's `e`
+  can never close it.
+
+Open: `BUGS: cmdsub-pipe-end-collides-with-user-fd` (the pipe read end sits on
+the kernel fd the user's `exec 3>&1` wants). Not checked: an exit raised by a
+real-signal trap inside `$(...)` (`sh_async_exit`) -- `eval_subshell()` repeats
+`sh_exit()` after cleaning up, `expand_command()` does not.
+
+**Original working hypothesis** (confirmed by causes 1-2):
+ A persistent redirection
+inside the scope mutates state that belongs to *outer* scopes, and
+`fd_state_save()` only snapshots part of it:
+
+- saved today: `fd_expected`, `fd_top`, `fd_lo`, `fd_hi`, `fd_list[]`
+- not saved: the `fdtable[]` pointers, `fdtable_top`/`fdtable_bottom`/
+  `fdtable_pos`, and the `e`/`mode`/`dup` fields of `struct fd`s that live on
+  a parent `fdstack` level (`fdtable_dup()` relocates a shadowed occupant with
+  `fd_setfd(occupant, dup(occupant->e))`; nothing puts it back)
+- not undone: the kernel descriptors (`dup2()` onto a live fd, `close()` of one)
+
+That fits the observed state: `fdtable[1]` has `n=1, e=4` while the real fd 1
+belongs to another struct, so `fdtable_gap()` recurses into the cycle check.
+The rejected "park the overwritten descriptor" attempt journaled only the
+kernel half, which is why the cycle error was unchanged.
+
+**Design: one undo journal per non-forking scope** (`fd_scope`, next to
+`fd_state_save()`/`fd_state_restore()` in `src/fd/`):
+
+1. `fd_scope_enter(&sc)` at the same points that call `fd_state_save()` today.
+2. Every primitive that changes shared state inside a scope appends the
+   *pre-image* to `sc` before it changes anything, once per target:
+   - kernel: `dup2(o, n)` / `close(n)` on a descriptor that existed at scope
+     entry -> park it with `fcntl(F_DUPFD_CLOEXEC, FD_MAX)` (above the table, so
+     `fd_expected` bookkeeping never sees it) and record `{n, parked}`
+   - table: `fdtable[n]` pointer, `fd_list[n]`, and `{fd*, e, mode, dup}` of any
+     struct outside the scope that `fd_setfd()`/`fdtable_dup()` rewrites
+3. `fd_scope_leave(&sc)` replays the journal in reverse: `dup2(parked, n)`,
+   close `parked`, restore the table pointers and struct fields; then the
+   existing `fdstack_pop()`/`fd_state_restore()`.
+4. Remove the `!exec_subshell_depth` guard in `redir_dup()` so a persistent
+   dup resolves eagerly inside a scope (needed for `exec >&2 2>/dev/null`
+   ordering) -- safe once the journal can undo it.
+
+Parking only what a scope actually overwrites avoids the deadlock that parking
+every fd at entry caused (a copy of a pipe's write end kept its reader from
+seeing EOF).
+
+**Steps, each its own change with a test, `fixes/NN`, `BUGS`/`TODO.md` update:**
+
+1. *Observe.* Debug build with `-DDEBUG_FDTABLE=ON -DDEBUG_FD=ON
+   -DDEBUG_FDSTACK=ON`; `dump -t/-s/-f` before and after each repro
+   (`build/dbg/shish -c 'exec 3>&1; dump -t'`). Confirm or correct the
+   hypothesis above; record which structs/slots differ at scope exit.
+   Gate: a written list of every field that differs.
+2. *Tests first.* `tests/fd-scope.sh`: the repros above plus nested scopes,
+   `exec` with a closed fd, `exec` of an fd that is also the script's own
+   source fd, and a loop that enters the scope 1000 times (leak check via
+   `ls /proc/$$/fd`). Assertions compare against the expected bash output.
+3. *Journal.* Implement `fd_scope` and wire it into `eval_subshell()`; keep the
+   guard. Gate: all existing tests unchanged, ASan+UBSan clean.
+4. *Drop the guard.* Remove `!exec_subshell_depth` in `redir_dup()`. Gate: the
+   swap repro no longer prints `redirection cycle detected` or segfaults, and
+   `tests/fixed.sh` runs past its `fixes/73` swap case.
+5. *`$(...)` and `&`.* Wire the same pair into `expand_command()`; check that
+   the `( ) &` child (`eval_node_bgnd()`) needs nothing extra.
+6. *Gate for done.* `tests/fd-scope.sh` all green; full `ctest` unchanged;
+   `DO_CONFORMANCE_TESTS` unchanged; ASan+UBSan run of the same; no fd left
+   open after the 1000-iteration loop. Then delete the "Still open" text above,
+   the guard comment in `redir_dup()` and the caveat in `fd_state_restore()`.
+
+**Risks:** the journal must run on every exit path of a scope, including
+`eval_exit()`'s `longjmp` and `sh_exit()` from a trap (see `eval_subshell.c`'s
+`jmpret` branch). A scope that is abandoned without `fd_scope_leave()` leaks
+parked descriptors and leaves outer entries rewritten; make leave idempotent
+and call it from the same place `fd_state_restore()` is.
 
 ---
 

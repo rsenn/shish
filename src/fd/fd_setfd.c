@@ -13,6 +13,8 @@ fd_setfd(struct fd* d, int e) {
   int old_e = d->e;
   assert(d->mode & FD_READWRITE);
 
+  fd_scope_note(d);
+
   /* set the file descriptors on the buffers */
   if(FD_ISRD(d)) {
     buffer_default(&d->rb, (buffer_op_fn*)&buffer_op_read);

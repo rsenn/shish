@@ -61,7 +61,7 @@ retry:
     struct fd* occupant = fd_list[d->n];
 
     if(occupant && occupant != d && !(occupant->mode & FD_CLOSE) &&
-       occupant != fdtable[occupant->n]) {
+       (occupant->n != d->n || occupant != fdtable[occupant->n])) {
       int newfd = dup(occupant->e);
 
       if(newfd == -1)

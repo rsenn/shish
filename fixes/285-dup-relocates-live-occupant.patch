@@ -1,0 +1,13 @@
+diff --git a/src/fdtable/fdtable_dup.c b/src/fdtable/fdtable_dup.c
+index 70b2c1d1..16eb4f2f 100644
+--- a/src/fdtable/fdtable_dup.c
++++ b/src/fdtable/fdtable_dup.c
+@@ -61,7 +61,7 @@ retry:
+     struct fd* occupant = fd_list[d->n];
+ 
+     if(occupant && occupant != d && !(occupant->mode & FD_CLOSE) &&
+-       occupant != fdtable[occupant->n]) {
++       (occupant->n != d->n || occupant != fdtable[occupant->n])) {
+       int newfd = dup(occupant->e);
+ 
+       if(newfd == -1)
