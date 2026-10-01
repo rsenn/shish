@@ -10,6 +10,9 @@
 #include "../var.h"
 #include "../../lib/windoze.h"
 #include "builtin_config.h"
+
+/* depth of $( ) being expanded: a child that stops inside one is resumed (job_wait.c) */
+int expand_cmdsub_depth;
 #if WINDOWS_NATIVE
 #include <io.h>
 #else
@@ -48,6 +51,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
   TRACE(TRACE_EVAL, "subst.enter");
   sh_sigrestore();
   sh_subshell++;
+  expand_cmdsub_depth++;
   /* the real-kernel-fd bookkeeping (fd_expected, fd_list[], ...) is
      process-global; fdstack_push()/fdstack_pop() scope the struct fd
      entries but not that. A subshell environment that runs in this
@@ -102,6 +106,8 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
   fdstack_pop(&fdst);
   fd_state_restore(&fdstate);
   sh_subshell--;
+  expand_cmdsub_depth--;
+  job_discard(sh_subshell);
   sh_sigignore();
   TRACE(TRACE_EVAL, "subst.leave", trace_int("status", ret), trace_int("len", sa.len));
 

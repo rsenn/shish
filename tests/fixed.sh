@@ -5451,4 +5451,11 @@ x\y
 x*' "$("$SHISH_SELF" ./bs-quote.sh)" "a backslash pair/escape next to a single-quoted chunk is unescaped"
 rm -f bs-quote.sh
 
+## ${x:=w} on a readonly/positional/special parameter is an expansion
+## error: a non-interactive shell exits non-zero before running the command
+for e in 'readonly n; echo ${n:=}' 'echo ${1:=}' 'echo ${*:=}'; do
+  out=$("$SHISH_SELF" -c "$e; echo survived" 2>/dev/null)
+  assert_equal "1 " "$? $out" "assignment expansion error exits the shell: $e"
+done
+
 summary

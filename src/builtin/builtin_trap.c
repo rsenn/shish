@@ -244,6 +244,10 @@ trap_relay(int sig) {
  * job_wait()'s retry loop, so a trap fires promptly even while
  * blocked on a long-running external command.
  * ----------------------------------------------------------------------- */
+/* how many real-signal traps have run, and which signal the last one was:
+ * "wait" returns early (128+sig) when a trap ran while it was blocked */
+int trap_run_count, trap_run_sig;
+
 void
 trap_run_pending(void) {
   int sig;
@@ -259,6 +263,8 @@ trap_run_pending(void) {
     if(trap_pending[sig]) {
       trap_pending[sig] = 0;
       TRACE(TRACE_SIG, "trap.pending", trace_int("sig", sig));
+      trap_run_count++;
+      trap_run_sig = sig;
       trap_handler(sig);
     }
   }

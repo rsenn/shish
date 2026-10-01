@@ -1,10 +1,44 @@
 #include "../job.h"
 #include "../../lib/alloc.h"
 
+/* exit statuses of recently finished jobs' processes, so "wait PID" still
+ * reports one after the job itself is gone (POSIX 2.9.3.1) */
+static struct {
+  pid_t pid;
+  int status;
+} job_finished[64];
+static unsigned job_finished_n;
+
+int
+job_recall(pid_t pid, int* status) {
+  unsigned i;
+
+  for(i = 0; i < 64; i++)
+    if(job_finished[i].pid == pid && pid > 0) {
+      *status = job_finished[i].status;
+      return 1;
+    }
+
+  return 0;
+}
+
 static void
 job_delete(struct job** j) {
   struct job* next = (*j)->next;
   int was_current = (j == job_pointer);
+  size_t i;
+
+  /* only a job started with "&": one that ran in the foreground (fg) is gone for good */
+  for(i = 0; (*j)->bgnd && i < (*j)->nproc; i++) {
+    job_finished[job_finished_n % 64].pid = (*j)->procs[i].pid;
+    job_finished[job_finished_n % 64].status = (*j)->procs[i].status;
+    job_finished_n++;
+  }
+
+  /* job_pointer is the *slot* holding the current job: when that slot is the
+     "next" field of the job being freed, the slot moves to where it was linked */
+  if(job_pointer == &(*j)->next)
+    job_pointer = j;
 
   alloc_free(*j);
   *j = next;

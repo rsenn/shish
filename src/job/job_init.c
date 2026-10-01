@@ -25,24 +25,36 @@ int job_sigfd[2] = {-1, -1};
  * ----------------------------------------------------------------------- */
 void
 job_terminal_init(void) {
-  struct fd* d;
+#if !WINDOWS_NATIVE
+  int fd = -1, i;
 
-  /* find a filedescriptor which is a terminal */
-  if((d = fdtable[STDERR_FILENO]) && (fd_err->mode & FD_TERM)) {
-#include "../../lib/windoze.h"
-#if !WINDOWS_NATIVE && !defined(__MINGW64__)
-    job_terminal = fcntl(d->e, F_DUPFD, 0x80);
-#else
-    job_terminal = dup(d->e);
-#endif
+  /* the first of stderr/stdout/stdin that is a terminal, else /dev/tty */
+  for(i = STDERR_FILENO; i >= STDIN_FILENO; i--)
+    if(isatty(i)) {
+      fd = i;
+      break;
+    }
+
+  if(fd >= 0)
+    job_terminal = fcntl(fd, F_DUPFD, 0x80);
+  else if((fd = open("/dev/tty", O_RDWR)) >= 0) {
+    job_terminal = fcntl(fd, F_DUPFD, 0x80);
+    close(fd);
+  }
+
+  if(job_terminal < 0)
+    return;
 
 #ifdef FD_CLOEXEC
-    fcntl(job_terminal, F_SETFD, FD_CLOEXEC);
+  fcntl(job_terminal, F_SETFD, FD_CLOEXEC);
 #endif
-#if !WINDOWS_NATIVE
-    job_pgrp = tcgetpgrp(job_terminal);
+  job_pgrp = tcgetpgrp(job_terminal);
+#else
+  struct fd* d;
+
+  if((d = fdtable[STDERR_FILENO]) && (fd_err->mode & FD_TERM))
+    job_terminal = dup(d->e);
 #endif
-  }
 }
 
 /* initializes job control

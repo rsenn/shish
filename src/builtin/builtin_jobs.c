@@ -1,3 +1,4 @@
+#include "../sh.h"
 #include "../builtin.h"
 #include "../job.h"
 #include "../fdtable.h"
@@ -17,7 +18,8 @@ builtin_jobs(int argc, char* argv[]) {
   struct job* j;
 
   for(j = job_list; j; j = j->next)
-    job_print(j, fd_out->w);
+    if(j->level == sh_subshell)
+      job_print(j, fd_out->w);
 
   /* every job was just listed above, including any that had already
      finished ("Done") -- silently (print=false) drop those now, we
@@ -35,6 +37,16 @@ builtin_jobs(int argc, char* argv[]) {
 static struct job*
 jobs_resolve(char* argv[], const char* spec) {
   struct job* j = spec ? job_find(spec) : job_current();
+
+  /* no operand: the most recently suspended job, which is the current one
+     unless a later job has been started since */
+  if(!spec && !(j && job_stopped(j))) {
+    struct job* k;
+
+    for(k = job_list; k; k = k->next)
+      if(job_stopped(k) && k->level == sh_subshell)
+        j = k;
+  }
 
   if(!j)
     builtin_errmsg(argv, spec ? (char*)spec : "current", "no such job");
@@ -94,6 +106,11 @@ builtin_fg(int argc, char* argv[]) {
   struct job* j;
   int status = 0;
 
+  if(!sh->opts.monitor) {
+    builtin_errmsg(argv, "fg", "no job control");
+    return 1;
+  }
+
   /* unlike bg, fg only ever moves *one* job to the foreground at a
      time -- there's only one terminal to hand over */
   if(argc > 2) {
@@ -146,6 +163,11 @@ builtin_bg(int argc, char* argv[]) {
      at once (unlike fg, nothing here needs exclusive terminal access) */
   int n = argc > 1 ? argc - 1 : 1;
 
+  if(!sh->opts.monitor) {
+    builtin_errmsg(argv, "bg", "no job control");
+    return 1;
+  }
+
   for(i = 0; i < n; i++) {
     const char* spec = argc > 1 ? argv[i + 1] : NULL;
     struct job* j = jobs_resolve(argv, spec);
@@ -155,9 +177,9 @@ builtin_bg(int argc, char* argv[]) {
       continue;
     }
 
+    /* already running in the background: nothing to do (POSIX) */
     if(!job_stopped(j)) {
-      builtin_errmsg(argv, spec ? (char*)spec : "current", "job already in background");
-      ret = 1;
+      job_banner(j, fd_out->w, JOB_BGRESUME);
       continue;
     }
 

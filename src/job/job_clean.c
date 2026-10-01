@@ -28,7 +28,7 @@ job_clean(bool print) {
          announce it before job_wait() ever runs its own gating, i.e. a
          stray "[1]+ Done ..." line in a plain non-interactive script's
          stderr. */
-      if(print && sh->opts.monitor) {
+      if(print && sh->opts.monitor && sh_interactive) {
         /* whatever's on the current line (a prompt, in-progress
            typing) isn't ours to print over -- clear it and move to
            column 1 before the first banner, matching what
@@ -43,7 +43,7 @@ job_clean(bool print) {
       }
       TRACE(TRACE_JOB, "clean", trace_int("id", j->id), trace_int("pgrp", j->pgrp));
       job_free(j);
-    } else if(print && sh->opts.monitor && job_stopped(j) && !j->announced) {
+    } else if(print && sh->opts.monitor && sh_interactive && job_stopped(j) && !j->announced) {
       /* a backgrounded job just stopped with nothing actively
          fg/bg/wait-ing on it to notice on its own -- announce it
          here, the same "[N]+ Stopped ..." line job_wait() prints

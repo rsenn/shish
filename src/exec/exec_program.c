@@ -186,7 +186,7 @@ exec_program(char* path, char** argv, enum execflag flag) {
 
         /* interactive-use-only, see eval_node_bgnd.c's matching comment
            (job-start-banner-printed-noninteractively) */
-        if(sh->opts.monitor)
+        if(sh->opts.monitor && sh_interactive)
           job_banner(job, fd_err->w, JOB_START);
 
         TRACE(TRACE_SIG, "unblock", trace_int("sig", SIGCHLD));
@@ -284,8 +284,13 @@ exec_program(char* path, char** argv, enum execflag flag) {
          runs, same as job_fork() already arranges for the job_fork()-
          based path -- a backgrounded one (X_NOWAIT) must not, it isn't
          supposed to be fighting the shell for input */
-      if(!(flag & X_NOWAIT) && fd_ok(job_terminal))
+      if(!(flag & X_NOWAIT) && fd_ok(job_terminal)) {
+        /* a script shell leaves SIGTTOU at its default, and this child
+           may still be in the background group for a moment */
+        sig_block(SIGTTOU);
         tcsetpgrp(job_terminal, sh_pid);
+        sig_unblock(SIGTTOU);
+      }
     }
 #endif
 

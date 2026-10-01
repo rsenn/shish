@@ -28,6 +28,8 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
   void* traps_snap;
 #endif
 
+  pid_t saved_bgpid = job_bgpid; /* "$!" inside ( ) is the subshell's own */
+
   fdstack_push(&io);
   /* fdstack_push()/fdstack_pop() already scope the struct fd entries
      themselves, but not the real-kernel-fd bookkeeping (fd_expected,
@@ -95,6 +97,8 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
   fdstack_pop(&io);
   fd_state_restore(&fdst);
   sh_subshell--;
+  job_discard(sh_subshell);
+  job_bgpid = saved_bgpid;
   sh_sigignore();
   TRACE(TRACE_EVAL, "subshell.leave", trace_int("status", ret));
 

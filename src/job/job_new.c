@@ -2,6 +2,7 @@
 #include "../job.h"
 #include <stdbool.h>
 #include "../trace.h"
+#include "../sh.h"
 
 struct job *job_list = NULL, **job_pointer = NULL;
 volatile bool job_signaled = 0;
@@ -17,6 +18,7 @@ job_new(unsigned n) {
 
   if(j) {
     j->nproc = n;
+    j->level = sh_subshell;
     j->pgrp = 0;
     j->id = 1;
 

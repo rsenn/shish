@@ -246,12 +246,13 @@ main(int argc, char** argv) {
    * builtin sharing the same global. */
   {
     struct optstate opt = {"+-", 0, 0, 0, 0, 0};
+    int c_flag = 0;
 
-    while((c = shell_getopt_r(&opt, argc, argv, "+c:isloaefhmnpuxBCH")) > 0) {
+    while((c = shell_getopt_r(&opt, argc, argv, "+cisloaefhmnpuxBCH")) > 0) {
       int on = opt.prefix == '-';
 
       switch(c) {
-        case 'c': cmds = opt.arg; break;
+        case 'c': c_flag = 1; break;
         case 'i': force_interactive = on; break;
         case 's': read_stdin = 1; break;
         case 'l': sh_login = on; break;
@@ -307,6 +308,17 @@ main(int argc, char** argv) {
 
           break;
       }
+    }
+
+    /* "-c" takes no option-argument: the command string is the first operand,
+       so "-cm 'cmd'" and "-c -m 'cmd'" mean the same */
+    if(c_flag) {
+      if(opt.ind >= argc) {
+        sh_usage();
+        sh_exit(2);
+      }
+
+      cmds = argv[opt.ind++];
     }
 
     /* the rest of this function still reads shell_optind (the
@@ -408,8 +420,15 @@ main(int argc, char** argv) {
          term_init() above is what sets it. */
       if(have_term)
         job_terminal_init();
-    } else
+    } else {
       src.mode &= ~SOURCE_IACTIVE;
+
+      /* "sh -m" on a script: not interactive, but job control still hands
+         the controlling terminal (found via stderr/stdout/stdin or
+         /dev/tty) to foreground jobs */
+      if(sh->opts.monitor && job_terminal < 0)
+        job_terminal_init();
+    }
 
     TRACE(TRACE_SH,
           "mode",

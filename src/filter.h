@@ -1,7 +1,7 @@
-#ifndef BUILTIN_FILTER_H
-#define BUILTIN_FILTER_H
+#ifndef FILTER_H
+#define FILTER_H
 
-#include "../../lib/buffer.h"
+#include "../lib/buffer.h"
 
 /* what a builtin declares to act as a chained filter, wired straight into a
  * struct fd's read buffer (fd_filter(), src/fd.h) so whatever reads fd_in->r
@@ -97,6 +97,9 @@ struct filter_in {
  *  upstream     default fallback input stream
  */
 void filter_in_init(struct filter_in* in, char** errargv, char** files, buffer* upstream);
+int filter_in_ready(struct filter_in* in);
+int filter_in_next(struct filter_in* in);
+int filter_in_spill(struct filter_in* in, const char* p, size_t n);
 
 /* returns the string name of the file operand currently being read,
  * or "-" if reading from standard input/upstream. */
@@ -158,5 +161,6 @@ void filter_close(const struct filter_ops* ops, void* ctx);
 /* the whole builtin: init on stdin, drain step() into out, report, release.
  * a usage error prints "invalid option" and returns 1. */
 int filter_run(const struct filter_ops* ops, int argc, char* argv[], buffer* out);
+
 
 #endif

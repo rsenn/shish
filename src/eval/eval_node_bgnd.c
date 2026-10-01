@@ -44,7 +44,7 @@ eval_node_bgnd(struct eval* e, union node* node) {
      unconditionally polluted the stderr of any non-interactive script
      that backgrounds anything, e.g. autoconf-generated configure
      scripts (job-start-banner-printed-noninteractively). */
-  if(sh->opts.monitor)
+  if(sh->opts.monitor && sh_interactive)
     job_banner(job, fd_err->w, JOB_START);
 
   return 0;

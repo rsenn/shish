@@ -136,8 +136,11 @@ job_fork(struct job* j, union node* node, int bgnd) {
 
       if(fd_ok(job_terminal))
         /* and then give the child terminal access */
-        if(!bgnd)
+        if(!bgnd) {
+          sig_block(SIGTTOU);
           tcsetpgrp(job_terminal, pgrp);
+          sig_unblock(SIGTTOU);
+        }
     }
 #endif
 

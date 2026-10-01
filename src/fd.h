@@ -18,7 +18,7 @@
 #include "../lib/shell.h"
 #include "../lib/stralloc.h"
 #include "../lib/windoze.h"
-#include "builtin/builtin_filter.h"
+#include "filter.h"
 #include "../lib/alloc.h"
 
 #ifdef HAVE_ALLOCA

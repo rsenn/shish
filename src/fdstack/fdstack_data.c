@@ -1,4 +1,10 @@
 #include "../fdstack.h"
+#include "../job.h"
+#include "../sh.h"
+#include <errno.h>
+#if !defined(_WIN32)
+#include <poll.h>
+#endif
 #include "../trace.h"
 #include "../fdtable.h"
 #include "../debug.h"
@@ -25,7 +31,26 @@ fdstack_data(void) {
         unsigned long total = 0;
         char buf[FD_BUFSIZE / 2];
 
-        while((n = read(fd->rb.fd, buf, sizeof(buf))) > 0) {
+        for(;;) {
+#if !WINDOWS_NATIVE
+          /* with job control a child may stop while it holds the pipe open:
+             look for that every so often instead of blocking until EOF */
+          if(sh->opts.monitor) {
+            struct pollfd pfd = {fd->rb.fd, POLLIN, 0};
+            int r = poll(&pfd, 1, 100);
+
+            if(r == 0) {
+              job_resume_stopped();
+              continue;
+            }
+
+            if(r < 0 && errno == EINTR)
+              continue;
+          }
+#endif
+          if((n = read(fd->rb.fd, buf, sizeof(buf))) <= 0)
+            break;
+
           buffer_put(fd->w, buf, n);
           total += n;
         }

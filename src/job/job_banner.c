@@ -30,20 +30,18 @@ job_banner(struct job* job, buffer* out, enum job_banner_kind kind) {
     return;
   }
 
-  buffer_putc(out, job_current() == job ? '+' : ' ');
+  /* "bg" prints "[id] command" (POSIX); the others mark the current job */
+  buffer_putc(out, kind != JOB_BGRESUME && job_current() == job ? '+' : ' ');
 
   switch(kind) {
     case JOB_RUNNING: buffer_putspad(out, "  Running", 26); break;
     case JOB_DONE: buffer_putspad(out, "  Done", 26); break;
     case JOB_STOPPED: buffer_putspad(out, "  Stopped", 26); break;
-    case JOB_BGRESUME: buffer_putc(out, ' '); break;
+    case JOB_BGRESUME: break;
     default: break;
   }
 
   buffer_puts(out, job->command ? job->command : "(null)");
-
-  if(kind == JOB_BGRESUME)
-    buffer_puts(out, " &");
 
   buffer_putnlflush(out);
 }

@@ -15,7 +15,8 @@ job_foreground(struct job* job) {
   TRACE(TRACE_SIG, "block", trace_int("sig", SIGTTOU));
   sig_block(SIGTTOU);
 
-  tcsetpgrp(term_input.fd, job->pgrp);
+  /* job_terminal is the controlling tty even when stdin is a script */
+  tcsetpgrp(job_terminal >= 0 ? job_terminal : term_input.fd, job->pgrp);
 
   TRACE(TRACE_SIG, "unblock", trace_int("sig", SIGTTOU));
   sig_unblock(SIGTTOU);

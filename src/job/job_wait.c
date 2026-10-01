@@ -13,11 +13,33 @@
 #include "../term.h"
 #include "../../lib/wait.h"
 #include <signal.h>
+#include "../../lib/sig.h"
 #include "builtin_config.h"
 
 #if BUILTIN_TRAP
 void trap_run_pending(void);
+extern int trap_run_count, trap_run_sig;
 #endif
+
+int job_wait_interruptible, job_wait_sig;
+
+/* record what happened to children meanwhile, and continue any that stopped:
+ * for the "$(...)" output read in fdstack_data(), where SIGCHLD is blocked
+ * and a stopped child would hold the pipe open forever
+ * ----------------------------------------------------------------------- */
+void
+job_resume_stopped(void) {
+  pid_t pid;
+  int st;
+
+  while((pid = wait_nohang_untraced(&st)) > 0) {
+    job_signal(pid, st);
+
+    if(WAIT_IF_STOPPED(st))
+      kill(pid, SIGCONT);
+  }
+}
+extern int expand_cmdsub_depth;
 
 /* waits for a job to terminate
  * ----------------------------------------------------------------------- */
@@ -33,6 +55,9 @@ job_wait(struct job* j, pid_t pid, int* status) {
      ~5s, generous for a real race but short enough not to hang the
      shell indefinitely on a genuine bug elsewhere */
   int spins = 5000;
+#if BUILTIN_TRAP
+  int traps_before = trap_run_count;
+#endif
 
   if(j) {
     for(;;) {
@@ -51,6 +76,11 @@ job_wait(struct job* j, pid_t pid, int* status) {
          its very first call, without ever reaching the "nothing
          found" branch this same dispatch call also lives in below. */
       trap_run_pending();
+
+      if(job_wait_interruptible && trap_run_count != traps_before) {
+        job_wait_sig = trap_run_sig;
+        return 0;
+      }
 #endif
 
       /* the SIGCHLD handler (sh_onsig() -> wait_nohang() ->
@@ -79,6 +109,22 @@ job_wait(struct job* j, pid_t pid, int* status) {
          "done" -- hand control back to the caller right away instead
          of blocking until it eventually exits, the same way a real
          shell's job control does; fg/bg can resume it later */
+      /* a command substitution cannot be fg'd or bg'd, so a child that
+         stops inside one is continued here and waited for again */
+      if(stopped && expand_cmdsub_depth) {
+        for(i = 0; i < j->nproc; i++)
+          if(j->procs[i].status != -1 && WAIT_IF_STOPPED(j->procs[i].status)) {
+            if(j->pgrp)
+              killpg(j->pgrp, SIGCONT);
+            else
+              kill(j->procs[i].pid, SIGCONT);
+
+            j->procs[i].status = -1;
+          }
+
+        continue;
+      }
+
       if(stopped)
         break;
 
@@ -142,6 +188,11 @@ job_wait(struct job* j, pid_t pid, int* status) {
            ... INT" waits on real gcc invocations) wouldn't run until
            the next top-level statement, if ever. */
         trap_run_pending();
+
+        if(job_wait_interruptible && trap_run_count != traps_before) {
+          job_wait_sig = trap_run_sig;
+          return 0;
+        }
 #endif
 
         /* wait_pid()/wait_pid_untraced() found nothing left to reap
@@ -166,7 +217,7 @@ job_wait(struct job* j, pid_t pid, int* status) {
         }
     }
 
-    if(sh->opts.monitor && job_stopped(j)) {
+    if(sh->opts.monitor && sh_interactive && job_stopped(j)) {
       /* a process in this job just stopped rather than exited -- tell
          the user and leave the job in job_list (job_done() below
          already excludes a stopped job) so a later "fg"/"bg" can
@@ -176,7 +227,7 @@ job_wait(struct job* j, pid_t pid, int* status) {
 
       job_banner(j, fd_err->w, JOB_STOPPED);
       j->announced = 1;
-    } else if(sh->opts.monitor && j->bgnd && job_done(j)) {
+    } else if(sh->opts.monitor && sh_interactive && j->bgnd && job_done(j)) {
       /* The "[id]+ Done command" job-completion banner is for
          interactive use only; suppress it in scripts so configure's
          stderr stays clean. It's also only meaningful for a job that
@@ -198,6 +249,16 @@ job_wait(struct job* j, pid_t pid, int* status) {
       job_banner(j, fd_err->w, JOB_DONE);
     }
 
+#if !WINDOWS_NATIVE
+    /* "sh -m" on a script: the job (own process group) held the terminal;
+       take it back for the shell's group now it finished or stopped */
+    if(sh->opts.monitor && !sh_interactive && job_terminal >= 0) {
+      sig_block(SIGTTOU);
+      tcsetpgrp(job_terminal, getpgrp());
+      sig_unblock(SIGTTOU);
+    }
+#endif
+
     if(job_done(j))
       job_free(j);
 
@@ -209,8 +270,19 @@ job_wait(struct job* j, pid_t pid, int* status) {
   if(job_pgrp != sh_pid) {
     if(fd_ok(job_terminal)) {
 #if !WINDOWS_NATIVE
-      setpgid(sh_pid, sh_pid);
-      tcsetpgrp(job_terminal, sh_pid);
+      /* SIGTTOU: a script shell does not ignore it, and a process that is
+         not in the foreground group is stopped by tcsetpgrp() otherwise */
+      sig_block(SIGTTOU);
+
+      if(sh_interactive) {
+        setpgid(sh_pid, sh_pid);
+        tcsetpgrp(job_terminal, sh_pid);
+      } else {
+        /* "sh -m" on a script keeps the group it was started in */
+        tcsetpgrp(job_terminal, getpgrp());
+      }
+
+      sig_unblock(SIGTTOU);
 #endif
     }
   }

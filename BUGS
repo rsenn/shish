@@ -303,8 +303,7 @@
   `${var%pattern}`/`${var%%pattern}` still don't expand parameter or
   command substitution inside the pattern (`:337,359`; tilde inside a
   pattern was fixed, see `fixes/263-param-word-tilde.patch`). Also still
-  open: assigning to readonly/positional/special parameters
-  (`:193,198,202`), `${unset?b}` stderr message format (`:222`), length
+  open: `${unset?b}` stderr message format (`:222`), length
   of valid variables (`:236`), special parameters `$`/`*`/`@` quoting
   (`:446,517,539,570`). `:82`: a quoted tilde in `${a?\~}` is still
   expanded (`HOME=/foo/bar; (: ${a?\~}) 2>&1` prints "/foo/bar", not "~").

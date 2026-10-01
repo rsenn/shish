@@ -46,6 +46,7 @@ struct job {
   pid_t pgrp;
   char* command;
   uint8_t nproc;
+  uint8_t level;     /* sh_subshell when created: a ( ) or $( ) does not see its parent's jobs */
   uint8_t bgnd;      /* was this job backgrounded ("cmd &")? controls whether
                         job_wait() prints a "[N]+ Done ..." banner for it. */
   uint8_t pipefail;  /* set -o pipefail was on when it started: job_wait() reports
@@ -57,6 +58,12 @@ struct job {
 };
 
 extern int job_terminal, job_pgrp;
+void job_resume_stopped(void);
+struct job* job_first(void);   /* first job of the current subshell level */
+void job_discard(int level);  /* drop the jobs of subshells deeper than level */
+int job_recall(pid_t pid, int* status); /* status of a process of an already finished job */
+/* set by "wait": job_wait() returns as soon as a trap has run, with job_wait_sig = its signal */
+extern int job_wait_interruptible, job_wait_sig;
 extern volatile bool job_signaled;
 
 /* set while a signal sent by timeout kills a foreground command: no "signaled" report */

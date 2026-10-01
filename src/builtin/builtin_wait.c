@@ -3,6 +3,7 @@
 #include "../job.h"
 #include "../../lib/typedefs.h"
 #include "../../lib/wait.h"
+#include "../../lib/scan.h"
 
 /* wait built-in
  *
@@ -27,10 +28,19 @@ builtin_wait(int argc, char* argv[]) {
      already reports the last waited-for job's status elsewhere in
      this builtin, so do the same here for consistency). */
   if(argc == 1) {
-    while(job_list) {
+    struct job* j;
+
+    while((j = job_first())) {
       int status = 0;
 
-      job_wait(job_list, 0, &status);
+      job_wait_interruptible = 1;
+      job_wait_sig = 0;
+      job_wait(j, 0, &status);
+      job_wait_interruptible = 0;
+
+      if(job_wait_sig)
+        return 128 + job_wait_sig; /* a trap ran: POSIX 2.9.3.1 */
+
       ret = WAIT_STATUS(status);
     }
 
@@ -43,7 +53,7 @@ builtin_wait(int argc, char* argv[]) {
     struct job* jobs[njobs];
 
     for(i = 0; i < njobs; i++)
-      if(!(jobs[i] = job_find(argv[i + 1])))
+      if(!(jobs[i] = job_find(argv[i + 1])) && argv[i + 1][0] == '%')
         builtin_errmsg(argv, argv[i + 1], "no such job");
 
     /* status is that of the last operand; an unknown one counts as 127 */
@@ -51,11 +61,27 @@ builtin_wait(int argc, char* argv[]) {
       int status = 0;
 
       if(!jobs[i]) {
+        unsigned int pid = 0;
+        int st;
+
+        /* a pid whose job has already finished and been cleaned up */
+        if(argv[i + 1][0] != '%' && scan_uint(argv[i + 1], &pid) && job_recall(pid, &st)) {
+          ret = WAIT_STATUS(st);
+          continue;
+        }
+
         ret = 127;
         continue;
       }
 
+      job_wait_interruptible = 1;
+      job_wait_sig = 0;
       job_wait(jobs[i], 0, &status);
+      job_wait_interruptible = 0;
+
+      if(job_wait_sig)
+        return 128 + job_wait_sig; /* a trap ran: POSIX 2.9.3.1 */
+
       ret = WAIT_STATUS(status);
     }
   }
