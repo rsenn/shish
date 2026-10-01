@@ -306,19 +306,6 @@
   # 3 failures where shell reads ahead and consumes input meant for later commands
   ```
 
-- redir-tilde-expansion-and-heredoc-broken: tilde expansion missing
-  in redirection operands, heredocs with non-default fd, backslash
-  handling in unquoted heredoc delimiters, multiple heredocs on a
-  single command, and long heredocs. 10 failures in `redir-p.tst`
-  (52/61). `redir-p.tst:13,47,90,133,138,302,318,360,478,543`.
-
-  **Repro:**
-  ```sh
-  # Run the redirection conformance test
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix redir-p.tst
-  # 10 failures in tilde expansion, heredocs, and multiple redirections
-  ```
-
 - case-pattern-bracket-quote-stripping: `[[` used as a case pattern
   (a literal two-character glob-bracket-looking word, not a `[[
   ... ]]` test expression -- shish/POSIX sh doesn't have those) is
@@ -859,16 +846,12 @@
   ```
 
 - set-pipefail-missing-and-noclobber-not-enforced: `set -o pipefail` (new in
-  POSIX.1-2024, `2.9.2`) is "invalid option name". `set -C`/`-o noclobber`
-  is accepted but `>` still overwrites (`redir_open.c` has the note
-  `MISSING: no-clobbering`; `FD_EXCL` is set but the existing file is
-  truncated anyway); `>|` is unaffected. `ignoreeof` and `nolog` (User
-  Portability options) are also "invalid option name".
+  POSIX.1-2024, `2.9.2`) is "invalid option name", as are `ignoreeof` and
+  `nolog` (User Portability options).
 
   **Repro:**
   ```sh
   set -o pipefail; false | true; echo $?    # "invalid option name"; should print 1
-  echo old > f; set -C; echo new > f; echo $?; cat f   # 0 and "new"; should fail, keep "old"
   ```
 
 - trap-assertion-and-exit-in-exit-trap-and-n-form: three defects.
