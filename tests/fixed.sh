@@ -5496,4 +5496,15 @@ assert_equal "a b" "$("$SHISH_SELF" -c 'f(){ unset -f f; echo a; echo b; }; f' |
 assert_equal "old new" "$("$SHISH_SELF" -c 'f(){ f(){ echo new; }; echo old; }; f; f' | tr '\n' ' ' | sed 's/ $//')" "redefining the running function lets the old body finish"
 assert_equal "x" "$("$SHISH_SELF" -c 'f(){ echo $(unset -f f) x; }; f')" "unset -f in a command substitution inside the function"
 
+## expr: "--" ends options, division by zero is an error, results map to
+## the POSIX exit status (0 = non-null and non-zero, 1 = null or 0, 2 = invalid)
+assert_equal "-1 0" "$("$SHISH_SELF" -c 'expr -- -1; echo $?' | tr '\n' ' ' | sed 's/ $//')" "expr -- -1 prints -1"
+"$SHISH_SELF" -c 'expr 5 / 0' >/dev/null 2>&1; R=$?
+assert_equal "yes" "$([ "$R" -gt 2 ] && [ "$R" -lt 128 ] && echo yes)" "expr 5 / 0 is an error, not a crash"
+assert_equal "0 1" "$("$SHISH_SELF" -c 'expr 0; echo $?' | tr '\n' ' ' | sed 's/ $//')" "expr 0 exits 1"
+assert_equal " 1" "$("$SHISH_SELF" -c 'expr "" ; echo $?' | tr '\n' ' ' | sed 's/ $//')" "expr \"\" prints an empty line and exits 1"
+assert_equal "2" "$("$SHISH_SELF" -c 'expr 1 + 2>/dev/null; echo $?')" "expr 1 + is a syntax error (2)"
+assert_equal "2" "$("$SHISH_SELF" -c 'expr 1 "(" 2>/dev/null; echo $?')" "expr 1 ( is a syntax error (2)"
+assert_equal "20" "$("$SHISH_SELF" -c 'expr "(" 2 + 3 ")" "*" 4')" "expr honours parentheses and precedence"
+
 summary

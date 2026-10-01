@@ -1,19 +1,14 @@
 #include "../../../lib/uint64.h"
+#include "../../builtin.h"
 #include "../../trace.h"
 #include "../../../lib/byte.h"
 #include "../../../lib/fmt.h"
 #include "../../../lib/shell.h"
 #include "../../../lib/str.h"
+#include "../../../lib/scan.h"
 #include "../../../lib/stralloc.h"
 #include "../../../lib/buffer.h"
 #include "../../fdtable.h"
-#include "../../expand.h"
-#include "../../fdstack.h"
-#include "../../parse.h"
-#include "../../source.h"
-#include "../../tree.h"
-#include "../../debug.h"
-#include <ctype.h>
 
 /* Define to use system <regex.h> instead of lib/bre.h */
 /* #define USE_SYSTEM_REGEX */
@@ -113,6 +108,242 @@ expr_match(const char* str, const char* pat, stralloc* out) {
   return out->len == 0 || (out->len == 1 && out->s[0] == '0') ? 1 : 0;
 }
 
+/* POSIX expression grammar, lowest to highest precedence:
+ *
+ *   |   &   = > >= < <= !=   + -   * / %   :   ( expr )
+ *
+ * Every operand is a string; arithmetic needs integers, comparisons are
+ * numeric when both sides are integers and string comparisons otherwise.
+ * ----------------------------------------------------------------------- */
+struct ex {
+  char** a;   /* operands */
+  int n, i;   /* count, next operand */
+  int err;    /* 0, 2 = invalid expression, 3 = other error */
+  char** av;  /* builtin argv, for diagnostics */
+};
+
+static void ex_or(struct ex* x, stralloc* out);
+
+static int
+ex_int(const char* s, int64* v) {
+  size_t n = str_len(s);
+
+  return n > 0 && scan_longlong(s, v) == n;
+}
+
+static int
+ex_true(stralloc* v) {
+  int64 n;
+
+  if(v->len == 0)
+    return 0;
+
+  stralloc_nul(v);
+  return !(ex_int(v->s, &n) && n == 0);
+}
+
+static void
+ex_fail(struct ex* x, int err, const char* msg) {
+  if(!x->err) {
+    x->err = err;
+    builtin_errmsg(x->av, (char*)msg, NULL);
+  }
+}
+
+static void
+ex_setint(stralloc* v, int64 n) {
+  char buf[FMT_ULONG + 1];
+
+  stralloc_zero(v);
+  stralloc_catb(v, buf, fmt_longlong(buf, n));
+}
+
+static int
+ex_peek(struct ex* x, const char* tok) {
+  return x->i < x->n && !str_diff(x->a[x->i], tok);
+}
+
+static void
+ex_primary(struct ex* x, stralloc* out) {
+  stralloc_zero(out);
+
+  if(x->i >= x->n) {
+    ex_fail(x, 2, "syntax error: missing operand");
+    return;
+  }
+
+  if(ex_peek(x, "(")) {
+    x->i++;
+    ex_or(x, out);
+
+    if(!ex_peek(x, ")"))
+      ex_fail(x, 2, "syntax error: expecting ')'");
+    else
+      x->i++;
+
+    return;
+  }
+
+  stralloc_cats(out, x->a[x->i++]);
+}
+
+static void
+ex_match(struct ex* x, stralloc* out) {
+  ex_primary(x, out);
+
+  while(!x->err && ex_peek(x, ":")) {
+    stralloc pat, res;
+
+    x->i++;
+    stralloc_init(&pat);
+    stralloc_init(&res);
+    ex_primary(x, &pat);
+
+    if(!x->err) {
+      stralloc_nul(out);
+      stralloc_nul(&pat);
+      expr_match(out->s, pat.s, &res);
+      stralloc_copy(out, &res);
+    }
+
+    stralloc_free(&res);
+    stralloc_free(&pat);
+  }
+}
+
+static void
+ex_mul(struct ex* x, stralloc* out) {
+  ex_match(x, out);
+
+  while(!x->err && (ex_peek(x, "*") || ex_peek(x, "/") || ex_peek(x, "%"))) {
+    char op = x->a[x->i++][0];
+    stralloc rhs;
+    int64 a, b;
+
+    stralloc_init(&rhs);
+    ex_match(x, &rhs);
+    stralloc_nul(out);
+    stralloc_nul(&rhs);
+
+    if(x->err) {
+    } else if(!ex_int(out->s, &a) || !ex_int(rhs.s, &b)) {
+      ex_fail(x, 2, "non-integer argument");
+    } else if(op != '*' && b == 0) {
+      ex_fail(x, 3, "division by zero");
+    } else {
+      /* b == -1 would overflow INT64_MIN / -1 */
+      ex_setint(out, op == '*' ? a * b : b == -1 ? (op == '/' ? -a : 0) : op == '/' ? a / b : a % b);
+    }
+
+    stralloc_free(&rhs);
+  }
+}
+
+static void
+ex_add(struct ex* x, stralloc* out) {
+  ex_mul(x, out);
+
+  while(!x->err && (ex_peek(x, "+") || ex_peek(x, "-"))) {
+    char op = x->a[x->i++][0];
+    stralloc rhs;
+    int64 a, b;
+
+    stralloc_init(&rhs);
+    ex_mul(x, &rhs);
+    stralloc_nul(out);
+    stralloc_nul(&rhs);
+
+    if(x->err) {
+    } else if(!ex_int(out->s, &a) || !ex_int(rhs.s, &b)) {
+      ex_fail(x, 2, "non-integer argument");
+    } else {
+      ex_setint(out, op == '+' ? a + b : a - b);
+    }
+
+    stralloc_free(&rhs);
+  }
+}
+
+static void
+ex_cmp(struct ex* x, stralloc* out) {
+  static const char* const ops[] = {"=", "==", ">", ">=", "<", "<=", "!=", 0};
+
+  ex_add(x, out);
+
+  for(;;) {
+    int k, c;
+    stralloc rhs;
+    int64 a, b;
+
+    for(k = 0; ops[k]; k++)
+      if(ex_peek(x, ops[k]))
+        break;
+
+    if(x->err || !ops[k])
+      return;
+
+    x->i++;
+    stralloc_init(&rhs);
+    ex_add(x, &rhs);
+    stralloc_nul(out);
+    stralloc_nul(&rhs);
+
+    if(x->err) {
+      stralloc_free(&rhs);
+      return;
+    }
+
+    if(ex_int(out->s, &a) && ex_int(rhs.s, &b))
+      c = a < b ? -1 : a > b;
+    else
+      c = str_diff(out->s, rhs.s);
+
+    c = k <= 1 ? c == 0 : k == 2 ? c > 0 : k == 3 ? c >= 0 : k == 4 ? c < 0 : k == 5 ? c <= 0 : c != 0;
+    ex_setint(out, c);
+    stralloc_free(&rhs);
+  }
+}
+
+static void
+ex_and(struct ex* x, stralloc* out) {
+  ex_cmp(x, out);
+
+  while(!x->err && ex_peek(x, "&")) {
+    stralloc rhs;
+
+    x->i++;
+    stralloc_init(&rhs);
+    ex_cmp(x, &rhs);
+
+    if(!x->err && !(ex_true(out) && ex_true(&rhs)))
+      ex_setint(out, 0);
+
+    stralloc_free(&rhs);
+  }
+}
+
+static void
+ex_or(struct ex* x, stralloc* out) {
+  ex_and(x, out);
+
+  while(!x->err && ex_peek(x, "|")) {
+    stralloc rhs;
+
+    x->i++;
+    stralloc_init(&rhs);
+    ex_and(x, &rhs);
+
+    if(!x->err && !ex_true(out)) {
+      if(!ex_true(&rhs))
+        ex_setint(&rhs, 0);
+
+      stralloc_copy(out, &rhs);
+    }
+
+    stralloc_free(&rhs);
+  }
+}
+
 /* parse and evaluate arguments
  * ----------------------------------------------------------------------- */
 const char help_expr[] = "    Evaluate an expression and print the result.\n"
@@ -123,28 +354,35 @@ const char help_expr[] = "    Evaluate an expression and print the result.\n"
                          "    length string        print the length of string\n"
                          "    index string chars   print the first position in string of any\n"
                          "                         character in chars, 0 if none is found\n"
-                         "    expression            evaluate an arithmetic/logical expression\n";
+                         "    | & = > >= < <= != + - * / % ( )\n"
+                         "                         POSIX operators; exit status is 0 for a result\n"
+                         "                         that is neither empty nor 0, 1 for one that is,\n"
+                         "                         2 for an invalid expression, 3 for an error\n";
 
 int
 builtin_expr(int argc, char* argv[]) {
-  struct fd fd;
-  struct source src;
-  struct parser p;
-  union node* expr;
-  int ret = 0;
-  int64 result = 0;
-  stralloc sa;
-  stralloc_init(&sa);
+  struct ex x;
+  stralloc res;
+  int ret;
 
-  if(argc == 1) {
-    ret = 1;
-  } else if(!str_diff(argv[1], "length")) {
-    result = argv[2] ? str_len(argv[2]) : 0;
+  if(argc > 1 && !str_diff(argv[1], "--")) {
+    argv++;
+    argc--;
+  }
 
-  } else if(!str_diff(argv[1], "index")) {
+  if(argc > 1 && !str_diff(argv[1], "length")) {
+    int64 n = argv[2] ? str_len(argv[2]) : 0;
+
+    buffer_putlonglong(fd_out->w, n);
+    buffer_putnlflush(fd_out->w);
+    return n == 0;
+  }
+
+  if(argc > 1 && !str_diff(argv[1], "index")) {
     const char* haystack = argc >= 3 ? argv[2] : "";
     const char* needle = argc >= 4 ? argv[3] : "";
     size_t i, n = str_len(haystack) - str_len(needle);
+    int64 result = 0;
 
     for(i = 0; i < n; i++) {
       if(!byte_diff(&haystack[i], str_len(needle), needle)) {
@@ -153,54 +391,31 @@ builtin_expr(int argc, char* argv[]) {
       }
     }
 
-  } else if(argc == 4 && !str_diff(argv[2], ":")) {
-    stralloc match;
-
-    ret = expr_match(argv[1], argv[3], &match);
-
-    buffer_put(fd_out->w, match.s, match.len);
-    buffer_putnlflush(fd_out->w);
-
-    stralloc_free(&match);
-    stralloc_free(&sa);
-    return ret;
-
-  } else {
-    int i;
-
-    /* concatenate all arguments following the "expr", separated by a
-       whitespace and terminated by a newline */
-    for(i = 1; i < argc; i++) {
-      if(i > 1)
-        stralloc_catc(&sa, ' ');
-
-      stralloc_cats(&sa, argv[i]);
-    }
-
-    /* create a new i/o context and initialize a parser */
-    source_buffer(&src, &fd, sa.s, sa.len);
-    parse_init(&p, P_ARITH | P_NOREDIR);
-
-    /* parse the string as a compound list */
-    if((expr = parse_arith_expr(&p))) {
-      /*enum tok_flag tok =*/parse_gettok(&p, P_SKIPNL);
-
-      TRACE(TRACE_BUILTIN, "expr.tree", trace_kind("kind", expr->id));
-
-      if(expand_arith_expr(expr, &result)) {
-        ret = 1;
-      }
-
-      tree_free(expr);
-    }
-
-    source_popfd(&fd);
-  }
-
-  if(ret == 0) {
     buffer_putlonglong(fd_out->w, result);
     buffer_putnlflush(fd_out->w);
+    return result == 0;
   }
 
+  x.a = argv + 1;
+  x.n = argc - 1;
+  x.i = 0;
+  x.err = 0;
+  x.av = argv;
+  stralloc_init(&res);
+
+  ex_or(&x, &res);
+
+  if(!x.err && x.i < x.n)
+    ex_fail(&x, 2, "syntax error: unexpected argument");
+
+  if(x.err) {
+    ret = x.err;
+  } else {
+    buffer_put(fd_out->w, res.s, res.len);
+    buffer_putnlflush(fd_out->w);
+    ret = !ex_true(&res);
+  }
+
+  stralloc_free(&res);
   return ret;
 }

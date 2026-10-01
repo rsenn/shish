@@ -687,25 +687,6 @@
   printf 'cat <<EOF\nbody\nEOF\n' | build/x86_64-linux-gnu/shformat   # cat <<"body\n"
   ```
 
-- expr-crashes-and-exit-status: `expr` kills the shell on two inputs and
-  gets its exit status wrong (POSIX: 0 = result neither null nor 0,
-  1 = null or 0, 2 = invalid expression, >2 = error). Checked
-  2026-09-19 against `build/x86_64-linux-gnu/shish`.
-  - `expr -- -1` dies with SIGSEGV (should print -1: `--` ends options).
-  - `expr 5 / 0` dies with SIGFPE (should be an error, status >2).
-  - `expr 0`, `expr 0 '|' 0` exit 0 (should be 1); `expr ""` prints `0`
-    (should print an empty line, exit 1).
-  - `expr 1 +` and `expr 1 '('` print `1` and exit 0 (should be a
-    syntax error, exit 2).
-
-  **Repro:**
-  ```sh
-  build/x86_64-linux-gnu/shish -c 'expr -- -1'; echo $?          # 139
-  build/x86_64-linux-gnu/shish -c 'expr 5 / 0'; echo $?          # 136
-  build/x86_64-linux-gnu/shish -c 'expr 0; echo $?'              # 0, should be 1
-  build/x86_64-linux-gnu/shish -c 'expr 1 +; echo $?'            # 1 / 0, should be 2
-  ```
-
 - star-empty-ifs-appends-nul: `"$*"` with `IFS` set to the empty string
   joins the parameters with `ifs[0]`, which is the terminating NUL of
   `""`, so the value holds embedded NUL bytes and every C-string
