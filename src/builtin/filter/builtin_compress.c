@@ -12,9 +12,11 @@
 #include "../../../lib/byte.h"
 #include "../../../lib/alloc.h"
 #include "../../../lib/open.h"
+#include "../../../lib/sig.h"
 
 const char help_compress[] = "    Compress or decompress files; the format follows the command name\n"
-                             "    (gzip, bzip2, lbzip2, lz, xz, zstd; default gzip).\n"
+                             "    (gzip, bzip2, lbzip2, lz, lz4, lzma, lzop, xz, zstd; default gzip).\n"
+                             "    lzop needs liblzo2 to compress and the lzop program to decompress.\n"
                              "\n"
                              "    -c              write on standard output, keep original files unchanged\n"
                              "    -d              decompress\n"
@@ -66,19 +68,27 @@ raw_buf_pull(struct raw_buf* rb, const char** unit, size_t* len) {
   return 0;
 }
 
-/* one compressor: command name, file suffix, libarchive filter */
+/* one compressor: command name, file suffix, libarchive filter; undo marks
+ * the decompressing names (gunzip, unxz, unzstd), which are "<algo> -d" */
 struct compress_algo {
   const char *name, *suffix;
   int (*add)(struct archive*);
+  int undo;
 };
 
 static const struct compress_algo compress_algos[] = {
-    {"gzip", ".gz", archive_write_add_filter_gzip},
-    {"bzip2", ".bz2", archive_write_add_filter_bzip2},
-    {"lbzip2", ".bz2", archive_write_add_filter_bzip2},
-    {"lz", ".lz", archive_write_add_filter_lzip},
-    {"xz", ".xz", archive_write_add_filter_xz},
-    {"zstd", ".zst", archive_write_add_filter_zstd},
+    {"gzip", ".gz", archive_write_add_filter_gzip, 0},
+    {"bzip2", ".bz2", archive_write_add_filter_bzip2, 0},
+    {"lbzip2", ".bz2", archive_write_add_filter_bzip2, 0},
+    {"lz", ".lz", archive_write_add_filter_lzip, 0},
+    {"lz4", ".lz4", archive_write_add_filter_lz4, 0},
+    {"lzma", ".lzma", archive_write_add_filter_lzma, 0},
+    {"lzop", ".lzo", archive_write_add_filter_lzop, 0},
+    {"xz", ".xz", archive_write_add_filter_xz, 0},
+    {"zstd", ".zst", archive_write_add_filter_zstd, 0},
+    {"gunzip", ".gz", archive_write_add_filter_gzip, 1},
+    {"unxz", ".xz", archive_write_add_filter_xz, 1},
+    {"unzstd", ".zst", archive_write_add_filter_zstd, 1},
 };
 
 /* by command name; anything unknown compresses as gzip */
@@ -97,7 +107,7 @@ struct compress_ctx {
   struct filter_in in;
   const struct compress_algo* algo;
   struct archive* a;
-  unsigned had_error : 1, decompress : 1, to_stdout : 1, force : 1, keep : 1, started : 1, finished : 1;
+  unsigned had_error : 1, decompress : 1, to_stdout : 1, force : 1, keep : 1, started : 1, finished : 1, held : 1;
   unsigned compression_level : 4;
   struct raw_buf raw;
 };
@@ -222,10 +232,16 @@ compress_setup(void* ctx) {
 
   c->algo = compress_algo_for(c->in.errargv[0]);
 
+  if(c->algo->undo)
+    c->decompress = 1;
+
   if(c->decompress || (c->in.files && !c->to_stdout)) {
     c->in.each = 1;
     return 1;
   }
+
+  archive_sigchld_hold(1);
+  c->held = 1;
 
   if(!(c->a = compress_writer_new(c->algo, c->compression_level)))
     return -1;
@@ -247,6 +263,9 @@ compress_finish(void* ctx) {
     archive_write_free(c->a);
 
   alloc_free(c->raw.data);
+
+  if(c->held)
+    archive_sigchld_hold(0);
 }
 
 /* compresses src into src + suffix or, with decompress set, src minus the suffix into dst;
@@ -290,6 +309,8 @@ compress_file(struct compress_ctx* c, const char* src) {
     return -1;
   }
 
+  archive_sigchld_hold(1);
+
   if(c->decompress) {
     char* zargv[3] = {argv[0], (char*)src, NULL};
     buffer ob;
@@ -316,6 +337,10 @@ compress_file(struct compress_ctx* c, const char* src) {
     if(n < 0)
       err = 1;
 
+    /* say why libarchive failed (lzop: liblzo2 missing) */
+    if(err && a && archive_error_string(a))
+      builtin_errmsg(argv, (char*)src, (char*)archive_error_string(a));
+
     if(a) {
       if(archive_write_close(a) != ARCHIVE_OK)
         err = 1;
@@ -326,6 +351,7 @@ compress_file(struct compress_ctx* c, const char* src) {
   }
 
   close(fd);
+  archive_sigchld_hold(0);
 
   if(err) {
     unlink(dst);
@@ -347,14 +373,19 @@ compress_stdin(struct compress_ctx* c) {
   byte_zero(&sc, sizeof(sc));
   filter_in_init(&sc.in, c->in.errargv, NULL, c->in.upstream);
 
+  archive_sigchld_hold(1);
+
   if(!(sc.a = compress_writer_new(c->algo, c->compression_level)) ||
-     archive_write_open(sc.a, &sc, NULL, compress_archive_writer, NULL) != ARCHIVE_OK)
+     archive_write_open(sc.a, &sc, NULL, compress_archive_writer, NULL) != ARCHIVE_OK) {
+    archive_sigchld_hold(0);
     return -1;
+  }
 
   filter_drain(compress_step, &sc, c->in.sink);
 
   ret = sc.had_error || sc.in.had_error ? -1 : 0;
   archive_write_free(sc.a);
+  archive_sigchld_hold(0);
   alloc_free(sc.raw.data);
   filter_in_close(&sc.in);
   return ret;

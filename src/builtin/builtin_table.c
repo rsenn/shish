@@ -519,6 +519,9 @@ struct builtin_cmd builtin_table[] = {
     {"bzip2", &builtin_compress, B_DEFAULT, "[-cdfhk123456789] [file...]", help_compress, &compress_filter},
     {"lbzip2", &builtin_compress, B_DEFAULT, "[-cdfhk123456789] [file...]", help_compress, &compress_filter},
     {"lz", &builtin_compress, B_DEFAULT, "[-cdfhk123456789] [file...]", help_compress, &compress_filter},
+    {"lz4", &builtin_compress, B_DEFAULT, "[-cdfhk123456789] [file...]", help_compress, &compress_filter},
+    {"lzma", &builtin_compress, B_DEFAULT, "[-cdfhk123456789] [file...]", help_compress, &compress_filter},
+    {"lzop", &builtin_compress, B_DEFAULT, "[-cdfhk123456789] [file...]", help_compress, &compress_filter},
     {"xz", &builtin_compress, B_DEFAULT, "[-cdfhk123456789] [file...]", help_compress, &compress_filter},
     {"zstd", &builtin_compress, B_DEFAULT, "[-cdfhk123456789] [file...]", help_compress, &compress_filter},
 #endif
@@ -528,6 +531,12 @@ struct builtin_cmd builtin_table[] = {
     {"xzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
     {"zstdcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
     {"lbzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
+    {"lz4cat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
+    {"lzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
+    {"lzopcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
+    {"gunzip", &builtin_uncompress, B_DEFAULT, "[-cdfhk] [file...]", help_uncompress, &compress_filter},
+    {"unxz", &builtin_uncompress, B_DEFAULT, "[-cdfhk] [file...]", help_uncompress, &compress_filter},
+    {"unzstd", &builtin_uncompress, B_DEFAULT, "[-cdfhk] [file...]", help_uncompress, &compress_filter},
 #endif
     {NULL, NULL, 0, NULL, NULL},
 };

@@ -145,6 +145,11 @@ macro(configure_shish_builtins)
     endif()
   endforeach()
 
+  # gunzip, unxz and unzstd (builtin_uncompress.c) run builtin_compress()
+  if(BUILD_BUILTIN_UNCOMPRESS)
+    set_add(BUILTIN_SOURCES "src/builtin/filter/builtin_compress.c")
+  endif()
+
   # mv removes a source hierarchy with builtin_rm_tree(), which lives in builtin_rm.c
   if(BUILD_BUILTIN_MV)
     set_add(BUILTIN_SOURCES "src/builtin/extra/builtin_rm.c")

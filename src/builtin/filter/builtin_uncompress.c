@@ -5,17 +5,44 @@
 #include "../../../lib/shell.h"
 #include "../../../lib/byte.h"
 #include "../../../lib/alloc.h"
+#include "../../../lib/str.h"
+#include "../../../lib/sig.h"
 
-const char help_uncompress[] = "    Uncompress and concatenate files to standard output.\n"
+const char help_uncompress[] = "    Uncompress and concatenate files to standard output (zcat, bzcat, xzcat,\n"
+                               "    zstdcat, lbzcat, lz4cat, lzcat, lzopcat). The format is detected from the\n"
+                               "    data, not from the command name.\n"
+                               "\n"
+                               "    gunzip, unxz and unzstd decompress files in place like gzip -d, xz -d and\n"
+                               "    zstd -d: file.gz becomes file, -c writes to standard output, -k keeps the\n"
+                               "    original, -f overwrites.\n"
                                "\n"
                                "    -f              copy input that is not compressed unchanged\n"
                                "    file            compressed file to read; '-' or omitted means stdin\n";
+
+/* libarchive runs the lzop program to read .lzo data and waits for it
+ * itself; the shell's SIGCHLD handler would reap it first and
+ * libarchive would report "Child process exited badly". The signal stays
+ * blocked from the first hold to the last release.
+ *
+ *   int  on  1 to hold, 0 to release; holds nest
+ * ----------------------------------------------------------------------- */
+void
+archive_sigchld_hold(int on) {
+  static int depth;
+
+  if(on) {
+    if(depth++ == 0)
+      sig_block(SIGCHLD);
+  } else if(depth > 0 && --depth == 0) {
+    sig_unblock(SIGCHLD);
+  }
+}
 
 struct uncompress_ctx {
   struct filter_in in;
   struct archive* a;
   size_t held; /* input bytes lent to libarchive, consumed on its next read */
-  unsigned had_error : 1, force : 1, eof : 1;
+  unsigned had_error : 1, force : 1, eof : 1, sigheld : 1;
 };
 
 /* libarchive read callback: lends the input buffer in place, no copy */
@@ -75,6 +102,9 @@ uncompress_setup(void* ctx) {
   struct archive_entry* entry;
   int r;
 
+  archive_sigchld_hold(1);
+  c->sigheld = 1;
+
   if(!(c->a = archive_read_new()))
     return -1;
 
@@ -115,6 +145,9 @@ uncompress_finish(void* ctx) {
     archive_read_close(c->a);
     archive_read_free(c->a);
   }
+
+  if(c->sigheld)
+    archive_sigchld_hold(0);
 }
 
 const struct filter_ops uncompress_ops = {
@@ -139,5 +172,11 @@ builtin_uncompress_to(int argc, char* argv[], buffer* out) {
 
 int
 builtin_uncompress(int argc, char* argv[]) {
+  size_t n = str_len(argv[0]);
+
+  /* zcat, lzcat, ... write to stdout; gunzip, unxz, unzstd work on files */
+  if(n < 3 || !str_equal(argv[0] + n - 3, "cat"))
+    return builtin_compress(argc, argv);
+
   return builtin_uncompress_to(argc, argv, fd_out->w);
 }

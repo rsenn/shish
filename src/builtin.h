@@ -122,6 +122,7 @@ int builtin_xargs(int argc, char* argv[]);
 int builtin_uncompress(int argc, char* argv[]);
 int builtin_uncompress_to(int argc, char* argv[], buffer* out);
 int builtin_compress(int argc, char* argv[]);
+void archive_sigchld_hold(int on); /* src/builtin/filter/builtin_uncompress.c */
 
 /* builtin help text, one string per builtin_<name>() implementation
  * (shared between every table entry that dispatches to the same
