@@ -37,12 +37,12 @@ typedef struct dfa grep_re;
 struct grep {
   struct filter_in in;
   grep_re re;
-  unsigned invert : 1, show_lineno : 1, extended : 1, fixed : 1, quiet : 1, count : 1, multiple : 1, compiled : 1, had_match : 1,
-      done : 1, pending : 1;
+  unsigned invert : 1, show_lineno : 1, extended : 1, fixed : 1, quiet : 1, count : 1, multiple : 1, compiled : 1,
+      had_match : 1, done : 1, pending : 1;
   unsigned long lineno, matches;
   const char* fixed_pat; /* -F: the pattern operand, '\n'-separated strings */
-  const char* name; /* -c: the operand the count in progress belongs to */
-  stralloc out;     /* prefixes + line, when a line cannot go out as it lies */
+  const char* name;      /* -c: the operand the count in progress belongs to */
+  stralloc out;          /* prefixes + line, when a line cannot go out as it lies */
 };
 
 /* -F: does any '\n'-separated string of the pattern occur in line? "" matches everything */

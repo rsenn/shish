@@ -16,13 +16,13 @@ const char help_paste[] = "    Merge corresponding or subsequent lines of files.
                           "    file            file to read; '-' means stdin (all '-' share it, line by line)\n";
 
 struct paste {
-  struct filter_in in;   /* the operand list */
+  struct filter_in in;          /* the operand list */
   struct filter_in *all, **src; /* an input per operand; src[i] -> all[k], '-' sharing one */
-  char** names;          /* {file, NULL} pairs the inputs read from */
-  size_t n, nall, cur;   /* operands, inputs opened; -s: operand in progress */
-  const char* dlist;     /* -d list, still escaped */
-  stralloc dbuf;         /* delimiters, unescaped, back to back */
-  size_t *doff, *dlen, nd; /* where delimiter k lives in dbuf, and how long it is */
+  char** names;                 /* {file, NULL} pairs the inputs read from */
+  size_t n, nall, cur;          /* operands, inputs opened; -s: operand in progress */
+  const char* dlist;            /* -d list, still escaped */
+  stralloc dbuf;                /* delimiters, unescaped, back to back */
+  size_t *doff, *dlen, nd;      /* where delimiter k lives in dbuf, and how long it is */
   unsigned s : 1, utf8 : 1;
   stralloc out;
 };

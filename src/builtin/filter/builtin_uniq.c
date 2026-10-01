@@ -189,4 +189,5 @@ const struct filter_ops uniq_ops = {
     .finish = uniq_finish,
     .output = uniq_output,
 };
+
 FILTER_BUILTIN(uniq)

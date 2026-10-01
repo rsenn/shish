@@ -249,7 +249,6 @@ compress_finish(void* ctx) {
   alloc_free(c->raw.data);
 }
 
-
 /* compresses src into src + suffix or, with decompress set, src minus the suffix into dst;
  * a failed run removes the partial output and keeps the source. -1 on error */
 static int

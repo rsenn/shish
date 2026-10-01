@@ -21,7 +21,7 @@ const char help_cut[] = "    Select parts of each line.\n"
                         "\n"
                         "    list is N, N-M, N- or -M items separated by commas, counted from 1.\n";
 
-#define CUT_MAX ((size_t) - 1)
+#define CUT_MAX ((size_t)-1)
 
 struct range {
   size_t lo, hi; /* 1-based, inclusive; hi may be CUT_MAX */
@@ -309,4 +309,5 @@ const struct filter_ops cut_ops = {
     .step = cut_step,
     .finish = cut_finish,
 };
+
 FILTER_BUILTIN(cut)

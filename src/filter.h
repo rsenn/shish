@@ -143,7 +143,9 @@ int filter_opt_count(const char* s, unsigned long* out);
 /* generates builtin_<name>() and <name>_filter from <name>_ops (needs fdtable.h) */
 #define FILTER_BUILTIN(name) \
   const struct builtin_filter name##_filter = {&name##_ops}; \
-  int builtin_##name(int argc, char* argv[]) { return filter_run(&name##_ops, argc, argv, fd_out->w); }
+  int builtin_##name(int argc, char* argv[]) { \
+    return filter_run(&name##_ops, argc, argv, fd_out->w); \
+  }
 
 /* the framework behind a filter_ops (see its comment) */
 
@@ -161,6 +163,5 @@ void filter_close(const struct filter_ops* ops, void* ctx);
 /* the whole builtin: init on stdin, drain step() into out, report, release.
  * a usage error prints "invalid option" and returns 1. */
 int filter_run(const struct filter_ops* ops, int argc, char* argv[], buffer* out);
-
 
 #endif

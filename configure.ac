@@ -231,10 +231,12 @@ dnl gated by, lowercased (space separated). EXTRA_BUILTINS: the ones whose
 dnl source is in src/builtin/extra/. Both are read when this file is turned
 dnl into ./configure, so re-run autogen.sh after adding a builtin.
 m4_define([ALL_BUILTINS],
-  m4_normalize(m4_esyscmd([sed '/#if BUILTIN_/ { N; /{"/ { s,.*BUILTIN_,, ; s,\n.*,,; p } }' -n src/builtin/builtin_table.c | sort -u | tr A-Z a-z | tr '\n' ' '])))
+  m4_normalize(m4_esyscmd([grep '^builtin_' src/builtin -r -l |sort |sed 's,.*/builtin_,, ; s,\.c$,,' | tr '\n' ' '])))
 
 m4_define([EXTRA_BUILTINS],
-  m4_normalize(m4_esyscmd([ls src/builtin/extra | sed 's,^builtin_,,; s,\.c$,,' | tr '\n' ' '])))
+  m4_normalize(m4_esyscmd([ls -d src/builtin/*/*.c | sed 's,.*/builtin_,,; s,\.c$,,' | tr '\n' ' '])))
+
+#echo "ALL_BUILTINS: m4_defn([ALL_BUILTINS])" 1>&2
 
 dnl default set: every builtin that is not in src/builtin/extra/
 m4_define([DEFAULT_BUILTINS],
@@ -274,6 +276,8 @@ AC_DEFINE_UNQUOTED([BUILTIN_]m4_toupper(BUILTIN),[1],[Build the ]BUILTIN[ builti
   ;;
 esac
 ])
+
+#all_builtins="alias break cd command dump echo error eval exec exit export false fdtable getopts hash help history jobs kill local printf pwd read readonly return search set shift source test times trap true type umask unset wait awk basename chmod digest dirname expr find hostname link ln ls mkdir mktemp readlink realpath rm rmdir sleep tee timeout touch uname wc which xargs cat uncompress"
 
 AC_DEFINE([HAVE_BUILTIN_CONFIG_H],[1],[builtin_table.c includes src/builtin_config.h])
 

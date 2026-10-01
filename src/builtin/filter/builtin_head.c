@@ -136,4 +136,5 @@ const struct filter_ops head_ops = {
     .step = head_step,
     .finish = head_finish,
 };
+
 FILTER_BUILTIN(head)

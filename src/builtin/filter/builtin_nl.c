@@ -35,7 +35,7 @@ struct nl {
   char delim[2];
   long start, incr, num;
   unsigned long width, join, blanks;
-  char fmt;               /* 'l' left, 'r' right, 'z' zero-padded */
+  char fmt; /* 'l' left, 'r' right, 'z' zero-padded */
   unsigned p : 1, have_start : 1, have_incr : 1;
   stralloc out;
 };
@@ -114,7 +114,8 @@ nl_option(void* ctx, int ch) {
       n->join = v;
       return 0;
 
-    case 'i': case 'v': {
+    case 'i':
+    case 'v': {
       const char* s = shell_optarg;
       int neg = *s == '-';
 
