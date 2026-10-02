@@ -5700,4 +5700,9 @@ assert_equal "rc=143" "$SIGT" "without a trap the signal still ends the shell"
 SIGT=$("$SHISH_SELF" -c 'trap "echo trapped" TERM; ( "$0" -c "kill -s TERM \$PPID"; echo not-printed )' "$SHISH_SELF" 2>&1; echo "rc=$?")
 assert_equal "rc=143" "$SIGT" "a signal from a command the subshell started is for the subshell: its trap is reset, it dies"
 
+# a "for" loop as a pipeline stage runs every iteration: E_EXIT from the forked
+# stage must not reach its body (fixes/291)
+PL=$("$SHISH_SELF" -c 'for x in 1 2 3; do echo $x; done | cat | tr "\n" " "; for x in 1 2 3; do echo $x | tr 1 X; done | tr "\n" " "; f() { for x in a b; do echo $x; done; }; f | tr "\n" " "')
+assert_equal "1 2 3 X 2 3 a b " "$PL" "every iteration of a for loop that is a pipeline stage runs (also with a pipeline in its body)"
+
 summary

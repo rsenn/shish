@@ -39,6 +39,10 @@ eval_for(struct eval* e, struct nfor* nfor) {
     }
   }
 
+  /* E_EXIT from a forked pipeline stage must not reach the body: its last
+     command would exec out of iteration 1 (see eval_loop.c) */
+  e->flags &= ~E_EXIT;
+
   eval_push(&en, E_LOOP);
 
   en.jump = 1;

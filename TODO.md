@@ -9,24 +9,20 @@ Leverage-sorted list of what's still open. Fixed work lives in `git log` and
 ## MAIN QUEST — POSIX conformance and memory safety
 
 Everything else in this file is secondary to this until it's done. The
-site's own pitch (`docs/conformance.html`) already says shish is
-"proof-of-concept quality" and targets POSIX "and nothing else" — the
-job here is closing the gap between that claim and `tests/posix`'s
-actual numbers, without introducing memory corruption while doing it.
+site's own pitch (`docs/conformance.html`) says shish is "proof-of-concept
+quality" and targets POSIX "and nothing else" — the job is closing the gap
+between that claim and `tests/posix`, without introducing memory corruption.
 Two stages, done in order, plus one requirement that runs continuously
 underneath both:
 
 1. **Stage 1 — the shell language itself.** Everything `tests/posix`
    measures that is not a builtin: signal disposition, which errors
    must exit the shell, expansion/quoting/parsing, control flow and
-   exit status. This is Phases 1, 2, 4, 5 below (≈740 of the ≈822
-   non-skip failures once the `sig*` family is fixed). Land this
-   first — several builtin failures (e.g. `set -o` option names,
-   `trap` printing) are thin wrappers over language-level state that
-   Stage 1 fixes anyway.
-2. **Stage 2 — utilities/builtins.** `test`, `alias`, `kill`, `read`,
-   `command`, `unset`, `umask`, `set`, `shift`, `export` and the rest —
-   Phase 3 below. Independent, per-builtin fixes; start once Stage 1's
+   exit status. This is Phases 1, 2, 4, 5 below. Land this first — several
+   builtin failures (e.g. `set -o` option names, `trap` printing) are thin
+   wrappers over language-level state that Stage 1 fixes anyway.
+2. **Stage 2 — utilities/builtins.** `alias`, `read`, `set`, `option`
+   and the rest — Phase 3 below. Independent, per-builtin fixes; start once Stage 1's
    language-level failures stop shadowing them.
 3. **Ongoing, throughout both stages — memory safety.** A frequent
    ASan+UBSan build is a gate, not a one-off cleanup pass: every change
@@ -42,64 +38,34 @@ can't run under shish, but libtool/libtool-generated scripts are not a
 target -- don't add `+=` (as an opt-in flag, the same way `-B`/`-H`
 gate brace/history expansion, or otherwise) unless that changes.
 
-The measurable target for Stages 1-2 is `tests/posix` (yash's POSIX suite, 123 files).
-Everything below is derived from full runs on 2026-08-20, at
-`9bfd1f9f` plus `fixes/188`-`192`.
+The measurable target for Stages 1-2 is `tests/posix` (yash's POSIX suite, 120 files).
 
-### Scoreboard (2026-08-21, after Phase 2 + `fixes/196`)
+### Where it stands (2026-10-02)
 
-```
-cases 12195   passed 5270   failed 822   skipped 6103
-   failures:  sig*-p family 567  |  everything else 255
-```
-
-**Stale:** the `sig*-p` family is down ~500, to ≈67 (the four `*2-p`
-files plus `sigurg2-p`/`sigcont2-p` are 180/180). The full scoreboard has
-not been re-run from a clean `ctest`; the per-file numbers below (and the
-`sig*` breakdown after them) still reflect the older state. The signal
-files are noisy (see the warning below); the 6103 skips are not passes,
-see Phase 6.
-
-Per-file failure counts, everything except the `sig*` family:
+Failing cases per file, everything except the `sig*` family (23 of the 58 files
+that run have any):
 
 ```
-17 alias-p  60/65    9 redir-p    52/61     4 shift-p   10/14   1 lineno-p   2/3
-24 kill2-p   4/28     8 simple-p   26/34     0 return-p  25/25   1 function-p 18/19
-22 read-p    6/28     8 set-p      37/45     3 input-p   8/11    1 fnmatch-p  6/7
-18 quote-p  17/35     8 kill1-p     9/17     3 case-p    49/52   1 export-p   4/5
-18 param-p  36/54     6 unset-p     6/12     0 dot-p     14/14   1 continue-p 30/31
-16 test-p  220/236    0 exit-p     14/14     2 cmdsub-p  12/14   1 comment-p  14/15
-15 command-p 34/49    4 tilde-p    25/29     1 builtins  80/81   1 break-p    31/32
- 9 umask-p  74/83                            1 pipeline-p 8/9    1 async-p    8/9
- 5 trap-p   32/37
+24 kill2-p   4/28    5 trap-p    32/37    4 simple-p  30/34    1 pipeline-p 8/9
+13 option-p 62/75    5 param-p   49/54    4 cmdsub-p  17/21    1 lineno-p   2/3
+ 7 kill1-p  10/17    4 tilde-p   25/29    4 alias-p   61/65    1 input-p   10/11
+ 6 kill3-p  15/21    3 read-p    25/28    2 quote-p   33/35    1 function-p 18/19
+                     2 exec-p     8/10    1 for-p     19/20    1 comment-p 14/15
+                     1 case-p    51/52    1 break-p   31/32    1 continue-p 30/31
+                     1 builtins-p 80/81
 ```
 
-The `sig*` family splits cleanly in two — the `*2-p`/`*6-p` files (the
-"initially ignored" ones, 500 of the 567 failures) and everything else,
-which is down to a handful of cases each:
-
-```
-59 sighup6  121/180   56 sigint2  124/180   16 sigurg2  164/180    3 sigurg6  177/180
-56 sigterm2 124/180   55 sigterm6 125/180   16 sigquit5 164/180    3 sigurg5  177/180
-56 sigquit2 124/180   54 sigquit6 126/180   16 sigint5  164/180    3 sigurg1  177/180
-56 sighup2  124/180   54 sigint6  126/180   16 sigcont2 164/180    3 sigterm1 177/180
-                                            11 sigquit1 169/180    3 sighup5  177/180
-                                            11 sigint1  169/180    3 sighup1  177/180
-                                             8 sigterm5 172/180    3 sigcont6 177/180
-                                                                   3 sigcont5 177/180
-                                                                   3 sigcont1 177/180
-```
-
-**Do not trust a signal-file number from a busy machine.** The same
-binary scored `sigterm1-p` 36/180 in one `ctest` run and 177/180 in the
-next, and `sigterm6-p` 89 then 125 — the difference tracks what else
-was running at the time, not the code. Measure the `sig*` files on an
-otherwise idle machine, and re-measure before concluding anything from
-a change in them (`BUGS: signal-tests-vary-with-machine-load`).
-
-Clean: `andor arith cd errexit eval exec for fsplit getopts grouping
-if kill4 nop option path ppid readonly until while`. `kill3-p` no longer hangs (its 6 remaining failures are the bash
-job-notice harness noise).
+- `kill1/2/3-p` and four of `trap-p`'s failures are not shish bugs: `bash`'s own
+  `testee() ( ... exec "$testee" "$@" )` wrapper prints a job-control notice
+  ("Aborted (core dumped)", ...) to the redirected stderr when the exec'd process
+  dies from a signal, and `dash` run through the same harness fails the identical set.
+- Every runnable `sig*-p` file passes 180/180 except `sigint6`/`sigquit6` (178). The
+  `*3/4/7/8` files, `sigstop`, `sigtstp`, `sigttin`, `sigttou` and six others
+  (`bg fg job kill4 testtty wait`) skip themselves: they need a controlling terminal.
+- **Do not trust a signal-file number from a busy machine.** The same binary scored
+  `sigterm1-p` 36/180 in one run and 177/180 in the next; measure on an otherwise idle
+  machine and re-measure before concluding anything
+  (`BUGS: signal-tests-vary-with-machine-load`).
 
 ### How to measure
 
@@ -122,108 +88,71 @@ grep -h -E '^%%+ FAILED' tests/posix/sig*.trs | sed -E 's/.*: SIG[A-Z]+ //; s/ \
   | sort | uniq -c | sort -rn
 ```
 
-Every phase below ends the same way: rerun the named files, record the
-new count here, remove the closed `BUGS` entry, add `fixes/NN` + a case
-in `tests/fixed.sh`.
+Every phase below ends the same way: rerun the named files, update the table above,
+remove the closed `BUGS` entry, add `fixes/NN` + a case in `tests/fixed.sh`.
 
 ---
 
-### Phase 1 [Stage 1: language] — signal disposition (4 left, was 1790)
+### Phase 1 [Stage 1: language] - signal disposition (2 cases left)
 
-Measured 2026-09-27: every runnable `sig*-p` file passes 180/180 except `sigint6`/`sigquit6`
-(178: "async, other, -i +m, initially ignored, keep -> clear", child and exec targets). The
-`*3/4/7/8` files, `sigstop`, `sigtstp`, `sigttin` and `sigttou` skip themselves (they need a tty).
-Done (`fixes/249`-`252`): an interactive shell ignores INT/QUIT/TERM for itself and resets them in
-forked children, `exec`, `(...)` and `$(...)`; asynchronous lists ignore INT/QUIT; `-i +m` keeps
-monitor mode off; caught traps become the default in a subshell/forked child (ignores stay);
-`trap - SIG` in an interactive subshell or an async list gives the default action.
-
-What is left: an async list's inner shell inheriting the ignored INT/QUIT must be able to reset
+`sigint6`/`sigquit6` (178): "async, other, -i +m, initially ignored, keep -> clear", child and
+exec targets. An async list's inner shell inheriting the ignored INT/QUIT must be able to reset
 it with `trap - SIG` when the outer shell was already ignoring it on entry.
 
-### Phase 2 [Stage 1: language] — error semantics: which failures must exit the shell (0)
+### Phase 2 [Stage 1: language] - diagnostics
 
-What is left of this subject is diagnostics only: shish prints
-`file:LINE:COL: msg` where the line number is one too high (the parser
-has already advanced) and omits the offending name. `echo ${x?boom}` on
-line 2 reports `:3:1: boom`; bash reports `line 2: x: boom`. `$LINENO`
-itself is correct. Fix with, and verify against, `lineno-p.tst` (2/3)
-and `BUGS: error-message-line-number-off-by-one`.
+shish prints `file:LINE:COL: msg` where the line number is one too high (the parser has already
+advanced) and omits the offending name. `echo ${x?boom}` on line 2 reports `:3:1: boom`; bash
+reports `line 2: x: boom`. `$LINENO` itself is correct. Fix with, and verify against,
+`lineno-p.tst` (2/3) and `BUGS: error-message-line-number-off-by-one`.
 
 ---
 
-### Phase 3 [Stage 2: builtins/utilities] (≈100 failures, each step independent)
+### Phase 3 [Stage 2: builtins/utilities]
 
-Sorted by failures per unit of work.
-
-1. **`alias` (60/65).** Substitution lives in `parse_gettok()` now; the
-   5 left are in `BUGS: alias-substitution-remaining-cases`.
-   Note: the remaining `kill1-p`/`kill2-p` failures are not a shish bug
-   — `bash`'s own `testee() ( … exec "$testee" "$@" )` wrapper prints a
-   job-control notice ("Aborted (core dumped)", …) to the redirected
-   stderr whenever the exec'd process dies from a signal, and `dash` run
-   through the same harness fails the identical set.
-2. **`read`** — done (`fixes/253`, `read-p` 28/28).
-3. **`command`** — done (`fixes/253`, `fixes/273`).
-4. **`unset`**, **`umask`**, **`shift`**, **`export`** — done (`fixes/278`-`282`;
-   `unset-p`, `umask-p`, `shift-p`, `export-p` all pass). `mkdir`'s default mode
-   was the bulk of the `umask-p` failures; `"$@"` with no parameters was
-   `shift-p`'s.
-5. **`set`** — `-b`/`-v` are accepted and shown in `$-`/`set -o` (`fixes/283`,
-   `set-p` 45/45) but have no effect yet: `BUGS: set-notify-no-effect`,
-   `set-verbose-no-effect`. `set -o` still lists the bash extras
-   `braceexpand`/`hashall`/`histexpand`/`privileged`; `ignoreeof`, `nolog`
-   and `vi` are still missing (`BUGS: set-histexpand-unimplemented`).
+1. `alias` (61/65) - the 4 left are in `BUGS: alias-substitution-remaining-cases`.
+2. `read` (25/28), `option` (62/75) - `BUGS: posix-suite-failures-not-yet-analysed`.
+3. **`set`** - `-b`/`-v` are accepted and shown in `$-` but have no effect
+   (`BUGS: set-notify-no-effect`, `set-verbose-no-effect`); `set -o` lists the bash extras
+   `braceexpand`/`hashall`/`histexpand`/`privileged`, and `ignoreeof`, `nolog`, `vi` are missing
+   (`BUGS: set-o-ignoreeof-nolog-vi-missing`, `set-histexpand-unimplemented`).
 
 ---
 
-### Phase 4 [Stage 1: language] — expansion and parsing (≈60)
+### Phase 4 [Stage 1: language] - expansion and parsing
 
-1. `quote-p` (33/35) — `BUGS: quote-backslash-escaping-broken`.
-2. `param-p` (39/54) — assignment to readonly/positional/special
-   parameters, `${#...}` edge cases, parameter/command substitution
-   special-parameter quoting (parameter/command substitution and
-   tilde expansion inside a removed pattern work now).
-3. `redir-p` (61/61) — done.
-4. `simple-p` (26/34) — redirections must precede assignments for a
-   non-special builtin; PATH search rules; command name with a slash.
-5. `tilde-p` (4), `case-p` (3), `fnmatch-p` (1), `cmdsub-p` (2),
-   `comment-p` (1) — small, individually filed in `BUGS`.
+1. `quote-p` (33/35) - `BUGS: quote-backslash-escaping-broken`.
+2. `param-p` (49/54) - `BUGS: param-expansion-pattern-removal-broken`.
+3. `simple-p` (30/34) - redirections must precede assignments for a non-special builtin;
+   PATH search and the remembered-path rules.
+4. `tilde-p` (4), `cmdsub-p` (4), `comment-p` (1) - `BUGS: posix-suite-failures-not-yet-analysed`;
+   `case-p` (1) - `BUGS: case-pattern-bracket-quote-stripping`.
 
 ---
 
-### Phase 5 [Stage 1: language] — control flow and exit status (≈15)
+### Phase 5 [Stage 1: language] - control flow and exit status
 
-1. `exit-p` — done (14/14).
-2. `trap-p` (32/37) — the 4 `*-p:5,24,58,64` failures are harness noise
-   (bash's job notice on stderr; the exit status matches). Left:
+1. `trap-p` (32/37) - 4 of the failures are the harness noise above. Left:
    `BUGS: trap-exit-in-async-subshell-not-run` (156).
-3. `return-p` — done (25/25).
-4. `break`/`continue` inside `eval` still no-ops
-   (`BUGS: break-continue-inside-eval-no-op`) — `eval`'s frame reuses
-   `E_ROOT` for an unrelated purpose; give it its own flag.
-5. `input-p` (3) — the shell reads ahead past the current line.
-6. `function-p` (1), `pipeline-p` (1), `async-p` (1),
-   `break-p` (1), `continue-p` (1), `export-p` (1).
+2. `break`/`continue` inside `eval` are still no-ops (`BUGS: break-continue-inside-eval-no-op`);
+   `eval`'s frame reuses `E_ROOT` for an unrelated purpose, give it its own flag.
+3. `input-p` (1) - the shell reads ahead inside a command substitution
+   (`BUGS: input-not-read-line-wise`).
+4. `function-p`, `pipeline-p`, `for-p`, `exec-p`, `builtins-p` (1-2 each) -
+   `BUGS: posix-suite-failures-not-yet-analysed`.
 
 ---
 
-### Phase 6 [Stage 1+2] — what is not being measured at all
+### Phase 6 [Stage 1+2] - what is not being measured at all
 
-1. **6103 of 12195 cases are skipped**, mostly the 44 `%REQUIRETTY%`
-   files (the `sigttin`/`sigttou`/`sigtstp`/`sigstop` `*3-p`/`*7-p`/`*8-p`
-   combos, `kill4-p`, `bg-p`/`fg-p`/`job-p`, `testtty-p`, `wait-p`), which
-   need a real controlling terminal. `-DDO_PTY_TESTS=ON` runs them under
-   `tests/pty-run.c` (a single-file POSIX-`pty` wrapper). Result: **10/44
-   pass** (`testtty-p` and the `kill`-driven `*4-p` combos), 34 fail —
-   some are ordinary conformance gaps (e.g. `sigcont3-p`'s 3 output
-   mismatches), but most of the `*3-p`/`*7-p`/`*8-p` combos plus
-   `wait-p`/`kill4-p` hang until the 60s `pty-run` alarm — a real
-   job-control defect, since their `kill`-driven `*4-p` siblings pass in
-   1-2s. One case is traced: `BUGS: wait-interrupted-by-trap-hangs`
-   (`wait` doesn't get interrupted by an arriving trapped signal). The
-   rest need per-case bisection — `BUGS:
-   job-control-real-terminal-hangs-vs-kill-driven-ok`. Re-run via:
+1. **The `%REQUIRETTY%` files** (44: the `sigttin`/`sigttou`/`sigtstp`/`sigstop` `*3-p`/`*7-p`/`*8-p`
+   combos, `kill4-p`, `bg-p`/`fg-p`/`job-p`, `testtty-p`, `wait-p`) need a real controlling terminal.
+   `-DDO_PTY_TESTS=ON` runs them under `tests/pty-run.c` (a single-file POSIX-`pty` wrapper):
+   **10/44 pass**, 34 fail. Some are ordinary conformance gaps (`sigcont3-p`'s 3 output
+   mismatches), but most `*3-p`/`*7-p`/`*8-p` combos plus `wait-p`/`kill4-p` hang until the 60s
+   `pty-run` alarm - a real job-control defect, since their `kill`-driven `*4-p` siblings pass in
+   1-2s. One case is traced: `BUGS: wait-interrupted-by-trap-hangs`; the rest need per-case
+   bisection (`BUGS: job-control-real-terminal-hangs-vs-kill-driven-ok`). Re-run via:
    ```sh
    cmake -S . -B build/x86_64-linux-gnu -DDO_PTY_TESTS=ON
    cmake --build build/x86_64-linux-gnu -j
@@ -232,92 +161,65 @@ Sorted by failures per unit of work.
            | xargs -n1 basename | sed 's/\.tst$//' | tr '\n' '|' | sed 's/|$//')
    ctest -R "posix/(${NAMES})\.tst\$" -j4
    ```
-2. **`tests/yash` (119 files) is off by default** — several files
-   (`arith-y`, `cmdprint-y`, `pipeline-y`, `redir-y`, `until-y`,
-   `while-y`) hang, none isolated. `BUGS: yash-suite-other-hangs`.
-   Isolate one hang per session; each is likely its own bug.
-3. `grouping-p.tst:34` is flaky (~1 run in 5) — a real race between a
-   subshell's background writer and the FIFO read after it.
-   `BUGS: grouping-p-tst-flaky`.
-4. The harness leaves `tests/posix/tmp.NNNNN/` behind on every hard
-   failure (97 accumulated). Clean them up and make the harness
-   remove its own.
-5. `tests/fixed.sh` fails 3 of its own assertions on a default build:
-   they assume the optional `cat`/`rm` builtins are compiled in.
-   `BUGS: fixed-sh-assumes-optional-builtins`.
+2. **`tests/yash` (119 files) is off by default**: `arith-y` and `while-y` hang, none isolated
+   (`BUGS: yash-suite-other-hangs`). Isolate one hang per session; each is likely its own bug.
+3. `grouping-p.tst:34` is flaky (2 of 12 runs): a race between a subshell's background writer and
+   the FIFO read after it (`BUGS: grouping-p-tst-flaky`).
+4. The harness leaves `tests/posix/tmp.NNNNN/` behind on every hard failure. Clean them up and
+   make the harness remove its own.
+5. `tests/fixed.sh` gives different results on a default build and with every builtin
+   (`BUGS: fixed-sh-assumes-optional-builtins`, `fixed-sh-remaining-failures-after-sigchld-fix`,
+   `fixed-sh-fails-under-non-mmap-build`).
 
 ---
 
-### `BUGS` ↔ conformance-gap map
+### `BUGS` <-> conformance-gap map
 
-Sorted by whether the `BUGS` entries below explain part of the
-`tests/posix` gap above, or are unrelated maintenance items:
+**Explains a scoreboard number (fix these as part of Stages 1-2):**
 
-**Directly explains a scoreboard number (fix these as part of Stages 1-2):**
-
-- `signal-tests-vary-with-machine-load` → Phase 1 (`sig*-p`).
-- `error-message-line-number-off-by-one` → Phase 2 (`lineno-p`).
-- `alias-substitution-remaining-cases`, `read-field-splitting-and-options-broken`,
-  `set-notify-no-effect`, `set-verbose-no-effect`,
-  `set-histexpand-unimplemented` → Phase 3 (`alias-p`, `read-p`, `set-p`).
+- `signal-tests-vary-with-machine-load` -> Phase 1 (`sig*-p`).
+- `error-message-line-number-off-by-one` -> Phase 2 (`lineno-p`).
+- `alias-substitution-remaining-cases`, `set-notify-no-effect`, `set-verbose-no-effect`,
+  `set-o-ignoreeof-nolog-vi-missing`, `set-histexpand-unimplemented` -> Phase 3.
 - `quote-backslash-escaping-broken`, `param-expansion-pattern-removal-broken`,
-  `case-pattern-bracket-quote-stripping` →
-  Phase 4 (`quote-p`, `param-p`, `case-p`).
-- `exit-status-in-trap-and-subshell-broken`, `return-default-exit-status-wrong`,
-  `break-continue-inside-eval-no-op`, `input-not-read-line-wise` → Phase 5
-  (`exit-p`, `return-p`, `break-p`/`continue-p`, `input-p`).
-- `yash-suite-other-hangs`, `grouping-p-tst-flaky`, `fixed-sh-assumes-optional-builtins` →
-  Phase 6 (what the scoreboard doesn't even measure yet).
+  `case-pattern-bracket-quote-stripping` -> Phase 4.
+- `trap-exit-in-async-subshell-not-run`, `break-continue-inside-eval-no-op`,
+  `input-not-read-line-wise` -> Phase 5.
+- `posix-suite-failures-not-yet-analysed` -> Phases 3-5.
+- `yash-suite-other-hangs`, `grouping-p-tst-flaky`, the three `fixed-sh-*` entries -> Phase 6.
 
-**Real bugs, but not counted in the `tests/posix` scoreboard at all** (fix
-opportunistically, not blocked on Stage 1/2, don't expect the score to move):
+**Real bugs, but not counted in the `tests/posix` scoreboard** (fix opportunistically):
+`eval-lineno-imprecise-inside-function`, `heredoc-in-cmdsub-read-in-wrong-order`,
+`exit-trap-loses-positional-parameters`, `no-tree-print-option-is-a-noop`,
+`cfg-cmake-mingw-silently-builds-native`, `eval-node-bgnd-silent-on-fork-failure`,
+`builtin-cp-sh-hangs`, `quoted-at-then-empty-quotes-drops-field`.
 
-- `eval-lineno-imprecise-inside-function`,
-  `heredoc-in-cmdsub-read-in-wrong-order`,
-  `exit-trap-loses-positional-parameters`,
-  `help-builtin-columns-overlap`, `no-tree-print-option-is-a-noop`,
-  `cfg-cmake-mingw-silently-builds-native`, `eval-node-bgnd-silent-on-fork-failure`.
+**Memory safety, not conformance** - under "Memory safety" below:
+`asan-leak-residue-not-fully-triaged`, `ubsan-buffer-op-proto-function-type-mismatch`.
 
-**Memory safety, not conformance** — tracked under "Memory safety" below
-instead: `asan-leak-residue-not-fully-triaged`,
-`ubsan-buffer-op-proto-function-type-mismatch`,
-`builtin-fork-races-sh-onsig-sigchld`.
+### Memory safety [ongoing, both stages] - ASan+UBSan as a recurring gate
 
-### Memory safety [ongoing, both stages] — ASan+UBSan as a recurring gate
-
-Not a phase with an end state — a build that has to be run frequently
-(every fix in Stages 1-2, not just periodically) so a language/builtin
-fix doesn't trade a conformance failure for a corruption bug:
+A build that has to be run frequently (every fix in Stages 1-2, not just periodically) so a
+language/builtin fix doesn't trade a conformance failure for a corruption bug:
 
 ```sh
 cmake -B build/asan -DCMAKE_BUILD_TYPE=Debug \
       -DCMAKE_C_FLAGS="-fsanitize=address,undefined"
 cmake --build build/asan
-(cd build/asan && ctest)         # ASan/UBSan abort = immediate hard failure
+(cd build/asan && ASAN_OPTIONS=detect_leaks=0 ctest)    # ASan/UBSan abort = immediate hard failure
 ```
 
-What's currently open under this build, from `BUGS`:
+Open under this build, from `BUGS`:
 
-1. `asan-leak-residue-not-fully-triaged` — the per-iteration leaks are
-   fixed (`fixes/274`, `fixes/275`); what remains is 2 allocations per
-   parsed function definition and the process-lifetime function and
-   variable state (see `BUGS`).
-2. `ubsan-buffer-op-proto-function-type-mismatch` — `lib/buffer.h`'s
-   `buffer_op_proto` cast onto libc `read`/`write` is UB by the letter
-   of the standard but not fixable without wrapping two libc functions
-   everywhere for no observable effect; not planned to change. The two
-   real mismatches in unused `lib/buffer/` glob-compiled dead code are
-   also left alone per this repo's "don't touch unused `lib/` code
-   unasked" standard.
-3. Direct-fork builtins: none left. `builtin_timeout.c` runs its child
-   through `exec_command()`/`job_wait()` now, and the only raw `fork()`s
-   (`exec_program()`, the pipeline pump) are safe against `sh_onsig()`.
-4. **HIGH PRIORITY — Goal 4 below** (fd/fdtable/redir vs. non-forking
-   subshells) is a memory-safety item, not just a conformance one: dropping
-   the `!exec_subshell_depth` guard in `redir_dup()` gives heap corruption,
-   and with the guard in place `( exec 3>&1; /bin/echo x >&3 )` still
-   fails. Chosen approach: option (b), scope-aware fd state -- the plan and
-   acceptance criteria are under Goal 4, "Plan for (b)".
+1. `asan-leak-residue-not-fully-triaged` - 2 allocations per parsed function definition, and the
+   process-lifetime function and variable state.
+2. `ubsan-buffer-op-proto-function-type-mismatch` - `lib/buffer.h`'s `buffer_op_proto` cast onto
+   libc `read`/`write` is UB by the letter of the standard but not fixable without wrapping two
+   libc functions everywhere for no observable effect; not planned to change. The two real
+   mismatches in unused `lib/buffer/` glob-compiled dead code are left alone per this repo's
+   "don't touch unused `lib/` code unasked" standard.
+3. **Goal 4 below**: the repeated per-scope saves are a corruption risk whenever a new
+   in-process scope is added.
 
 ---
 
@@ -325,26 +227,15 @@ What's currently open under this build, from `BUGS`:
 
 ---
 
-## Goal 3 (secondary) — arena allocator for the AST (`lib/arena` done, not wired into `src/` yet)
+## Goal 3 (secondary) — arena allocator for the AST (`lib/arena` exists; `text/` uses it, `src/` does not yet)
 
 `src/tree.h`'s AST is a graph of individually `malloc()`'d nodes
 (`tree_newnode()`) plus separately `malloc()`'d string buffers hanging off
 several of them — one `malloc`/`free` pair per node, even though a tree's
 real lifetime is always "parse it all at once, evaluate, throw the whole
-thing away" (`sh_loop.c`). `lib/arena.h` + `lib/arena/` now implement a
-generic, shell-independent bump allocator (tested by `tests/arena_test.c`,
-nothing in `src/` uses it yet):
-
-```c
-arena_init(a, &arena_heap|&arena_mmap|&arena_brk, chunk); /* pluggable source */
-arena_init_fixed(a, buf, len);            /* stack array, alloca(), .bss */
-arena_alloc(a, size, align);              /* zeroed, NULL when full, never exits */
-arena_new(a, T);  arena_newn(a, T, n);    /* size/alignment/overflow in the macro */
-arena_dup(a, p, len);  arena_strndup(a, s, len);   /* frozen blobs */
-arena_grow(a, p, old, new);  arena_trim(a, p, old, new); /* newest only; grow is NULL otherwise */
-arena_tell(a);  arena_rewind(a, pos);     /* nested lifetimes */
-arena_reset(a);  arena_free(a);
-```
+thing away" (`sh_loop.c`). `lib/arena.h` is a generic bump allocator (pluggable
+source, `arena_tell()`/`arena_rewind()` for nested lifetimes, `arena_grow()` for the newest
+allocation only); only `text/dfa` and `text/awk` use it so far, nothing in `src/` does.
 
 Design decisions already worked out (full reasoning in git history —
 2026-07-23/24 commits):
@@ -412,7 +303,7 @@ variable, `expand_vars()` for assignments (always exactly one field). Several en
 delimiters, prompts, `${x:-word}` messages) want a single concatenated string and no fields at
 all; `expand_copysa`/`expand_catsa` fake that with a `union node tmpnode` on the stack.
 
-**Measured (2026-09-20, `valgrind ./shish -c ...`, 1000 loop iterations, control loop
+**Measured before Stage 1 (2026-09-20, `valgrind ./shish -c ...`, 1000 loop iterations, control loop
 `[ $i -lt 1000 ]; i=$((i+1))` subtracted).** Per execution of one simple command:
 
 | command                  | mallocs | bytes |
@@ -423,25 +314,17 @@ all; `expand_copysa`/`expand_catsa` fake that with a `union node tmpnode` on the
 | `: $i`                   | 10      | ~440  |
 | `: ${y:-z}`              | 13      | ~535  |
 
-So a literal word costs **5 mallocs, ~215 B**. `set -- $(seq 1 20000); : "$@"` adds
+So a literal word cost **5 mallocs, ~215 B** (2 since Stage 1). `set -- $(seq 1 20000); : "$@"` adds
 60,029 mallocs / 2.34 MB, about **3 mallocs and 117 B per field** for a ~6-byte string.
 
-**Where the 5 mallocs per word go.**
-1. `expand_args()` and `expand_vars()` `tree_copy()` the whole argument tree on *every*
-   execution (3 mallocs per word: `N_ARG`, `N_ARGSTR`, its string) so `expand_brace_args()` and
-   `expand_tilde_word()` may rewrite it. Almost no word contains `{` or a leading `~`.
-2. The result is one `N_ARG` node (48 B packed + malloc header) and one `stralloc` buffer sized
+**Where the remaining mallocs per word go.**
+1. The result is one `N_ARG` node (48 B packed + malloc header) and one `stralloc` buffer sized
    `len + len/8 + 30` (`lib/stralloc/stralloc_ready.c`), so short fields waste most of it.
    `expand_cat()` has seven copies of "`tree_newnode(N_ARG)` + `stralloc_init`".
-3. Fields have no lifetime of their own: they live until `tree_free(args)`, after the command.
+2. Fields have no lifetime of their own: they live until `tree_free(args)`, after the command.
 
-**Design (each step is its own change).**
+**Design (each step is its own change; Stage 1, skipping `tree_copy()` when no word needs `{`/`~` rewriting, is done).**
 
-- **Stage 1: stop copying (done 2026-09-20: `expand_brace_needed()`, `expand_tilde_needed()`,
-  `expand_tilde_assign_needed()`; `eval_case` too; measured 5 -> 2 mallocs per word).** Add read-only predicates ("does this word have a `{` chunk / a
-  leading `~`?") and `tree_copy()` only when some word needs rewriting; otherwise expand the
-  permanent tree directly and skip `tree_free(owned)`. 5 -> 2 mallocs per word. Independent of
-  the arena.
 - **Stage 2: an append-only field sink instead of `union node**` cursors.**
   Findings that make this safe (read from `src/expand/`, 2026-09-20):
   - The output is only ever appended at the tail. `nptr` is not a splice point: it is either
@@ -535,216 +418,23 @@ compare the `tests/posix` and `tests/yash` pass counts before and after.
 
 ---
 
-## Goal 4 (secondary, but overlaps MAIN QUEST memory safety) — `fd`/`fdtable`/`fdstack`/`redir`: persistent (`exec`) redirections vs. the non-forking subshell model
+## Goal 4 (secondary, small) — one helper for an in-process scope's saves
 
-One problem is left from a long investigation of the fd table (bookkeeping
-drift in `fdtable_gap()`, `fdtable_dup()`, `fd_close()`, `fdstack_flatten()`
-is all fixed). The unit that scopes fd state is the *subshell environment*
-— an in-process scope that does `sh_push()`, of which there are exactly two:
-`eval_subshell()` and `expand_command()` (`$(...)`). A new in-process
-subshell scope has to repeat the same six saves (fdstack, fd_state, vartab,
-env, functions, traps).
+`(...)` (`eval_subshell()`) and `$(...)` (`expand_command()`) run in this process, and
+each repeats the same saves around its body: `fdstack_push`, `fd_state_save`/`restore`
+(which also journals fds owned outside the scope), `vartab_push`, `sh_push`,
+`exec_functions_save`, `trap_snapshot_save`, plus `sh_sigrestore()` and the job level.
+`eval_pipeline()`'s in-process stages repeat a subset. A new in-process scope has to
+copy all of them in the right order, and a missed one is a corruption bug.
 
-### Still open
+Do: one `scope_enter()`/`scope_leave()` pair (a struct holding the six saves) used by
+all of them, with the `jmpret` handling (`exit` from a real-signal trap re-runs
+`sh_exit()`) in one place instead of three. Gate: `tests/fixed.sh`, the posix files and
+the ASan build unchanged.
 
-**Persistent (`exec`) redirections vs. the non-forking subshell model are
-fundamentally in tension.** `eval_subshell()` runs `(...)` in-process, and
-`fd_new()`/`fdtable_newfd()` can't distinguish "persistent for the rest
-of the process" (true at the real top level) from "persistent only for
-this subshell's lifetime" (true inside a non-forking subshell). Nothing
-in the code distinguishes the two cases. `fd_state_save()`/
-`fd_state_restore()` cover the *bookkeeping* half (enough to prevent the
-segfault), but do nothing about real `dup2()`/`close()` syscalls a
-persistent redirection inside a subshell already issued against a
-still-live descriptor before the subshell returns. `redir_dup()`'s eager
-`fdtable_dup(nredir->fd, FDTABLE_FORCE | FDTABLE_CLOSE)` therefore has to
-be skipped inside a subshell (`!exec_subshell_depth`).
-
-Concrete demonstration: drop that guard and
-
-```sh
-( exec 3>&1 1>&2 2>&3 3>&- ; echo hi ) >/dev/null 2>&1
-/bin/true
-```
-
-prints `fdtable: redirection cycle detected` from the forked child at
-`fdtable_exec()` time, and segfaults outright deeper into a longer script
-(`tests/fixed.sh` dies at its own `fixes/73` swap case). At the point of
-the error `fdtable[1]` has `n=1, e=4` while the real fd 1 is held by
-another struct that also wants slot 1, so `fdtable_gap()` recurses into
-resolving it and trips the cycle check.
-
-The obvious reading — "the subshell's real `dup2()`s outlived it while
-`fd_state_restore()` put the bookkeeping back" — is **not the whole story,
-and fixing only that is not enough.** Tried and rejected: a per-scope
-pre-image list (`fd_scope_park()` called just before `fdtable_dup()`'s
-`dup2(o, d->n)`, parking the old descriptor with `fcntl(F_DUPFD, 64)`,
-restored with the owning `fdtable[]` entry on scope exit). It fires where
-expected — 4 parks for the swap repro above — and is harmless with the
-guard in place, but with the guard removed the cycle error is *unchanged*
-and heap corruption follows: the leftover state that trips `fdtable_gap()`
-is in the fd table's own entries and `fd_list[]`, not merely in the kernel
-descriptors. Parking *every* open fd at scope entry (rather than lazily,
-per overwritten number) deadlocked the suite — an extra copy of a pipe's
-write end keeps its reader from ever seeing EOF. Do it with the fd table
-in front of you:
-
-```sh
-cmake -S . -B build/dbg -DCMAKE_BUILD_TYPE=Debug \
-      -DDEBUG_FDTABLE=ON -DDEBUG_FD=ON -DDEBUG_FDSTACK=ON
-build/dbg/shish -c 'exec 3>&1; dump -t'   # -t table, -s stack, -f list
-```
-
-### Plan for (b): scope-aware fd state  [HIGH PRIORITY, decided 2026-10-02]
-
-Chosen over (a) "fork `(...)` when its body has `exec`": (a) can't see an
-`exec` reached through `eval`, a function or `.`, and doesn't cover `$(...)`.
-(b) fixes every non-forking scope (`eval_subshell()`, `expand_command()`)
-with one mechanism. Fall back to (a) only if step 4 below fails its gate.
-
-**Repros (all must match bash; none do today except the last):**
-
-```sh
-( exec 3>&1; /bin/echo via3 >&3 )                    # cycle error, write error
-( exec 3>&1; /bin/echo via3b >&3 ) & wait            # write error
-x=$( exec 3>&1; /bin/echo via3c >&3 ); echo "[$x]"  # "[]", text goes to the tty
-( exec 3>&1 1>&2 2>&3 3>&- ; echo hi ) >/dev/null 2>&1; /bin/true   # swap; guard removed -> segfault
-( exec 3>&1; /bin/echo via3 >&3 ) | cat              # works (forked stage)
-```
-
-**Status 2026-10-02 (step 1 done, steps 3-5 mostly done, `fixes/284`).**
-Traced with `SHISH_TRACE=fd,fdstack,fdtable,redir`. Three separate causes:
-
-1. *No boundary level in `$(...)`.* `expand_command()` ran the body on the same
-   fdstack level as the substitution's own fd 1, so `exec >/dev/null` in the
-   body re-initialised that fd in place (`fdtable_newfd()` -> `fdstack_search()`
-   -> `fd_reinit()`). Fixed: the substitution's fd lives on its own level and
-   the body runs one level above it.
-2. *Scope exit left outer fds changed.* `fdtable_dup()`/`fdtable_gap()`
-   relocate the real occupant of fd N (`fd_setfd(occupant, dup(occupant->e))`),
-   and `fd_state_restore()` put back `fd_list[]` but not that struct's `e`: after
-   `x=$( exec >/dev/null )` the enclosing shell's stdout struct stayed at
-   `e=4` and the next substitution broke. The relocation already parks the
-   original descriptor, so no separate parking is needed. Fixed:
-   `fd_scope_note()` (called from `fd_setfd()` and `fdstack_update()`)
-   journals `e`/buffer fds of fds owned by levels outside the scope, and
-   `fd_state_restore()` does `dup2(e, orig); close(e)` and restores the fields.
-3. *`fdstack_pipe()` skipped the pipe.* A nearer redirection of fd 1 was taken
-   as its owner ("`$(cmd >file)`") even when it only aliased the substitution
-   ("`exec 3>&1; cmd >&3`"). Fixed: it is an owner only if no visible fd
-   duplicates the substitution fd; the pipe's write end is then linked just above
-   the substitution fd, below the owner, and the repointed duplicates get
-   its `e` (`fdstack_update()`).
-
-With that the `!exec_subshell_depth` guard in `redir_dup()` is gone (a
-persistent dup resolves eagerly when its source has a real descriptor; a
-`$(...)`/here-doc source, `e == -1`, stays lazy until a child forks).
-
-Investigated after that (`fixes/285`, tests in `tests/fixed.sh`):
-
-- *`fd_pop(victim)` in `fdtable_dup()` freeing an outer-owned struct.* Real,
-  not hypothetical: with the guard gone, `( exec 3<&0; exec 4<&3; exec 3<&4;
-  head -n1 <&3 ) < in > out` lost its `> out`. The subshell's own redirection
-  was parked on kernel fd 4 and the forced `dup2` onto 4 destroyed it, because
-  `fdtable_dup()` relocated a live occupant of the target only when it was
-  *shadowed*. Fixed: it is relocated whenever its own number differs from the
-  target (`occupant->n != d->n`). An instrumented build (abort when the victim
-  is owned outside the scope) no longer reaches that branch in `tests/fixed.sh`,
-  `tests/*.sh` or the posix files listed in the matrix below.
-- *`longjmp`/exit paths.* `eval_exit()` stops at the nearest `E_ROOT` frame, and
-  both scope kinds push one, so an exit never skips an inner
-  `fd_state_restore()`. Checked against bash with a matrix of `exit`, `set -e`,
-  `${x?}`, `return`, `break`, an EXIT trap, a function calling `exit`, and
-  nested scopes, each after a persistent redirection of fd 1/3/4/5; the
-  enclosing shell's stdout and fd 3 stay intact and the descriptor count is
-  constant over 400 iterations.
-- `fd_state_restore()` only does the kernel `dup2`/`close` for structs that
-  own their descriptor (`!FD_DUP`), so a duplicate that shares its owner's `e`
-  can never close it.
-
-Done after that (`fixes/286`-`288`): the substitution's pipe read end is
-closed in a forked child before `fdtable_exec()` (`fdstack_closerd()`), a user
-fd that lands on its own number is no longer close-on-exec (so `exec 3>&1`
-reaches external commands, with or without `$(...)`), and `expand_command()`
-re-runs `sh_exit()` after a real-signal trap's `exit` like `eval_subshell()`
-(before, `sh_async_exit` stayed set and the next `( exit N )` killed the shell).
-
-Signals to the shell during an in-process scope (`fixes/290`): the parent's
-caught traps keep their handler in `(...)`/`$(...)` (reset to default only in a
-forked child) and `trap_relay_info()` records the sender. A signal from a command
-the scope started means "the subshell" and takes the default action; any other
-sender (a background job, another process) means "the shell", and its trap runs
-once the outermost scope is done. Not distinguishable: a foreground child that
-signals `$$` literally (bash sends it to the parent, shish treats it as the
-subshell).
-
-**Original working hypothesis** (confirmed by causes 1-2):
- A persistent redirection
-inside the scope mutates state that belongs to *outer* scopes, and
-`fd_state_save()` only snapshots part of it:
-
-- saved today: `fd_expected`, `fd_top`, `fd_lo`, `fd_hi`, `fd_list[]`
-- not saved: the `fdtable[]` pointers, `fdtable_top`/`fdtable_bottom`/
-  `fdtable_pos`, and the `e`/`mode`/`dup` fields of `struct fd`s that live on
-  a parent `fdstack` level (`fdtable_dup()` relocates a shadowed occupant with
-  `fd_setfd(occupant, dup(occupant->e))`; nothing puts it back)
-- not undone: the kernel descriptors (`dup2()` onto a live fd, `close()` of one)
-
-That fits the observed state: `fdtable[1]` has `n=1, e=4` while the real fd 1
-belongs to another struct, so `fdtable_gap()` recurses into the cycle check.
-The rejected "park the overwritten descriptor" attempt journaled only the
-kernel half, which is why the cycle error was unchanged.
-
-**Design: one undo journal per non-forking scope** (`fd_scope`, next to
-`fd_state_save()`/`fd_state_restore()` in `src/fd/`):
-
-1. `fd_scope_enter(&sc)` at the same points that call `fd_state_save()` today.
-2. Every primitive that changes shared state inside a scope appends the
-   *pre-image* to `sc` before it changes anything, once per target:
-   - kernel: `dup2(o, n)` / `close(n)` on a descriptor that existed at scope
-     entry -> park it with `fcntl(F_DUPFD_CLOEXEC, FD_MAX)` (above the table, so
-     `fd_expected` bookkeeping never sees it) and record `{n, parked}`
-   - table: `fdtable[n]` pointer, `fd_list[n]`, and `{fd*, e, mode, dup}` of any
-     struct outside the scope that `fd_setfd()`/`fdtable_dup()` rewrites
-3. `fd_scope_leave(&sc)` replays the journal in reverse: `dup2(parked, n)`,
-   close `parked`, restore the table pointers and struct fields; then the
-   existing `fdstack_pop()`/`fd_state_restore()`.
-4. Remove the `!exec_subshell_depth` guard in `redir_dup()` so a persistent
-   dup resolves eagerly inside a scope (needed for `exec >&2 2>/dev/null`
-   ordering) -- safe once the journal can undo it.
-
-Parking only what a scope actually overwrites avoids the deadlock that parking
-every fd at entry caused (a copy of a pipe's write end kept its reader from
-seeing EOF).
-
-**Steps, each its own change with a test, `fixes/NN`, `BUGS`/`TODO.md` update:**
-
-1. *Observe.* Debug build with `-DDEBUG_FDTABLE=ON -DDEBUG_FD=ON
-   -DDEBUG_FDSTACK=ON`; `dump -t/-s/-f` before and after each repro
-   (`build/dbg/shish -c 'exec 3>&1; dump -t'`). Confirm or correct the
-   hypothesis above; record which structs/slots differ at scope exit.
-   Gate: a written list of every field that differs.
-2. *Tests first.* `tests/fd-scope.sh`: the repros above plus nested scopes,
-   `exec` with a closed fd, `exec` of an fd that is also the script's own
-   source fd, and a loop that enters the scope 1000 times (leak check via
-   `ls /proc/$$/fd`). Assertions compare against the expected bash output.
-3. *Journal.* Implement `fd_scope` and wire it into `eval_subshell()`; keep the
-   guard. Gate: all existing tests unchanged, ASan+UBSan clean.
-4. *Drop the guard.* Remove `!exec_subshell_depth` in `redir_dup()`. Gate: the
-   swap repro no longer prints `redirection cycle detected` or segfaults, and
-   `tests/fixed.sh` runs past its `fixes/73` swap case.
-5. *`$(...)` and `&`.* Wire the same pair into `expand_command()`; check that
-   the `( ) &` child (`eval_node_bgnd()`) needs nothing extra.
-6. *Gate for done.* `tests/fd-scope.sh` all green; full `ctest` unchanged;
-   `DO_CONFORMANCE_TESTS` unchanged; ASan+UBSan run of the same; no fd left
-   open after the 1000-iteration loop. Then delete the "Still open" text above,
-   the guard comment in `redir_dup()` and the caveat in `fd_state_restore()`.
-
-**Risks:** the journal must run on every exit path of a scope, including
-`eval_exit()`'s `longjmp` and `sh_exit()` from a trap (see `eval_subshell.c`'s
-`jmpret` branch). A scope that is abandoned without `fd_scope_leave()` leaks
-parked descriptors and leaves outer entries rewritten; make leave idempotent
-and call it from the same place `fd_state_restore()` is.
+Known limitation: a foreground child that signals the shell by its literal pid inside a
+scope is taken to mean "the subshell" (default action); bash sends it to the parent, whose
+trap runs afterwards. The two cannot be told apart without separate processes.
 
 ---
 
@@ -845,9 +535,9 @@ musl, which is the figure above):
    (glibc accepts it, `path_fnmatch` takes only `[!…]`), backslash
    handling, leading-`.` rule, no-match/error return values and the
    `errfunc` callback. In exchange, pathname patterns and `case`/`%`/`#`
-   patterns finally use **one** matcher (the open `case-pattern-*` /
-   `fnmatch-quotation-*` entries in `BUGS` are about expansion and
-   quoting, not about which matcher runs, so this does not fix them).
+   patterns finally use **one** matcher (the open `case-pattern-bracket-quote-stripping` and
+   `quote-backslash-escaping-broken` entries in `BUGS` are about expansion and quoting, not about
+   which matcher runs, so this does not fix them).
 4. **Verification:** a dev-only differential script over a fixture tree
    (dotfiles, brackets with classes, escaped metacharacters, symlinks,
    unreadable directories) comparing the internal backend with libc
@@ -933,660 +623,34 @@ match against a baseline rather than expecting green.
 
 ---
 
-## Goal 6 (secondary) — `lib/dfa/`: one POSIX regex engine for `expr`, `grep`, `sed`
+## Goal 6 (secondary) — regex engine `text/dfa`: what is left
 
-**Built, but not the way this section plans — see the discrepancy note
-below.** `expr :` and a new `grep` both landed on it; the rest of this
-section (BRE/ERE scope, conformance checklists, size estimates) is
-still an accurate read of what the engine has to do, just not of how
-its execution strategy or file layout ended up.
+Built as `text/dfa/` (header `text/dfa.h`, prefix `dfa_`; not `lib/dfa/`): Pike's NFA simulation
+(`dfa_run.c`, one pass, bounded memory) and an explicit-stack backtracker (`dfa_bt.c`) for
+patterns with back-references. `expr :`, `grep`, `sed` and `awk` run on it; tests are
+`tests/builtin-{expr,grep,sed,awk}.sh`.
 
-**Discrepancy (2026-09-24):** built as `text/dfa/` (public header
-`text/dfa.h`, prefix `dfa_`), not `lib/dfa/` — `text/` didn't exist
-when this plan was written; `CLAUDE.md` later drew the line that a
-subsystem this large and shell-specific (not a generic portable
-primitive) belongs there instead of `lib/`. More importantly, the
-*execution strategy* is not the "lazy DFA with a bounded, `cbmap`-backed
-state cache" the Architecture diagram below describes: it's Pike's
-thread-based NFA simulation (`dfa_run.c`, one pass, no state caching)
-for backref-free patterns, falling back to an explicit-stack
-backtracker (`dfa_bt.c`) only when a pattern actually needs
-back-references. Both give POSIX leftmost-longest matching and safe
-bounded memory without ever caching or interning NFA-state subsets, so
-**the `cbmap` state-interning use case in the Architecture section does
-not apply to what was built** — there is no lazy-DFA/subset-construction
-mode to cache. If one gets added later purely as a speed optimization,
-that's where `cbmap` (or `hashmap`, see the Goal 11 hashmap-vs-cbmap
-decision) would actually come in; until then `cbmap` has no consumer in
-this codebase. `dfa_prefix`/`dfa_submatch`/`dfa_search` all exist and
-match this section's API sketch.
+Open:
 
-**Not started (still applies): `sed`.** The rest of the original plan
-follows, describing the shared regex engine both `expr`/`grep` already
-use and `sed` still needs.
-
-Naming: `dfa_` and not `re_` because glibc's `<regex.h>` declares
-`re_search`/`re_match`/`re_compile_pattern` under `_GNU_SOURCE`. The
-directory holds a backtracker as well (captures and backrefs are
-impossible in a pure DFA); the DFA is the primary engine and gives the
-directory its name.
-
-### Scope
-
-- POSIX BRE and ERE, C locale, bytes (no UTF-8 for now; `scan_utf8`/
-  `fmt_utf8` in `c-utils/lib` are the way in later). Subject strings are
-  `(ptr, len)`, never NUL-terminated, so NUL bytes are ordinary data.
-- No GNU extensions by default (`\w \s \b \< \>`, `\d`). `\| \+ \?` in a
-  BRE are *implementation-defined* in POSIX.1-2024 (Chapter 9), so they
-  are the one place a `DFA_GNU` flag is cheap and legitimate (see "Regex
-  language: decisions"). Everything else GNU stays out.
-- Bytes-only is conformant: POSIX.1-2024 requires only the POSIX locale
-  (§6.2: "256 single-byte characters") and never mentions UTF-8. It is
-  wrong in a UTF-8 locale (`.`, `[é]`, `y`, `l`, `expr` lengths are
-  character-based there); shish never calls `setlocale`, so it is always
-  in the C locale. A later `DFA_UTF8` flag would compile sets to UTF-8
-  byte-sequence automata (est. +200-300 lines); see Goal 7, which
-  plans the whole shell-side switch (`WITH_UTF8`).
-- Non-goals: Perl syntax, lookaround, lazy quantifiers, locale collation
-  (`[.ch.]` multi-character elements), approximate matching.
-
-### What was surveyed and why nothing is adopted as-is
-
-| Candidate | Size / licence | Why not |
-|---|---|---|
-| `ag.c` (IOCCC, SirWumpus) | 307 lines, K&R+macros | ERE subset, no `+`/`{}`/`[:class:]`/backrefs; `(a*)*b` segfaults (no visited set in the closure); `^.` matches an empty line (the `\n` sentinel leaks into `.`); `fgets` splits long lines; `d[512][512]` = 1 MB bss. Good *algorithm*, not reusable code. |
-| Russ Cox `dfa1.c` | ≈500 lines, MIT header (the index page says "All Rights Reserved" — check the file) | yes/no only; no anchors/classes/extents. Useful reference for the bounded, flushable state cache. |
-| onetrue-awk `b.c` | ≈1800 lines, Lucent permissive | closest feature match (ERE, classes, `{n,m}`, `pmatch` = leftmost-longest start+length) but tangled into awk (`FATAL`, `tostring`, UTF-8 runes, global `patbeg`/`patlen`); no captures, no BRE. Reference for the leftmost-longest search loop. |
-| TRE / musl `regcomp.c`+`regexec.c` | ≈4400 lines, BSD-2 (`musl-1.2.4` is in `~/Projects`) | full POSIX incl. submatch rules, but not a DFA and drags wide-char/locale code. Useful as a *test oracle*. |
-| libregexp (`plot-cv/quickjs`) | ≈72 KB linked | JavaScript semantics: leftmost-first alternation, `\` escapes inside `[...]`; needs a translator plus a patch for longest-match. Rejected. |
-| GNU `dfa.c`, gnulib regex | GPL, gnulib-entangled | too big; licence version unchecked against `COPYING` (GPLv2). |
-
-shish itself is GPLv2 (`COPYING`), so MIT/BSD/Lucent-style code could be
-folded in; the plan is nevertheless to write it fresh from the
-algorithm, with these borrowings: flat integer program + `.*` prefix for
-unanchored search (`ag.c`), bounded cache that flushes when full
-(Cox), leftmost-longest by anchored runs from each start (awk `pmatch`).
-
-### Architecture
-
-```
-pattern ─▶ lex ─▶ parse ─▶ program (flat int array, Thompson NFA)
-                                  │
-              ┌───────────────────┼────────────────────┐
-              ▼                   ▼                    ▼
-        lazy DFA            backtracker          submatch pass
-   (test / prefix /       (backref patterns:    (fills \1..\9 inside
-    search: yes/no and     the whole match)      a span the DFA found)
-    match extents)
-```
-
-- Bracket expressions are *not* parsed by `lib/dfa`: the compiler calls
-  `path_fnmatch(bracket, len, &c, 1, PATH_FNM_NOESCAPE)` for `c = 0..255`
-  once and stores a 256-bit set. Matching is a bit test; `-i` sets the
-  other case's bit; negation inverts the set. The lexer only has to find
-  the closing `]` (skipping `[:x:]`) and swap a leading `^` for `!`.
-- Anchors: `dfa_test` may run over `"\n" + line + "\n"` so `^`/`$` are
-  ordinary byte matches (`ag.c` trick), but only if `.` and negated sets
-  exclude `\n`. sed needs real anchors (a pattern space can contain
-  `\n`), so `^`/`$` also exist as program ops; the DFA treats them as
-  context-dependent epsilon edges.
-- DFA state = sorted array of program indices; interned through a
-  key→id map (`cbmap`, key = the array's bytes); transitions cached per
-  state; cache bounded (default 64 states, flush and restart when
-  full) — never a fixed `[512][512]` table, no `.bss` (Goal 5.6).
-  **Not what got built** (see the discrepancy note at the top of this
-  goal): `text/dfa` runs Pike's thread simulation instead, with no
-  state cache and no `cbmap` involved.
-- Patterns with backrefs skip the DFA (`d->backrefs`); the public
-  functions route to the backtracker, invisibly to callers.
-- Multiple patterns (grep `-e a -e b`, newline-separated lists) compile
-  as one alternation, so a whole `-e`/`-f` set is one DFA.
-
-### Regex language: decisions (POSIX.1-2024 Chapter 9, read 2026-09-19)
-
-Grammar recap, so the lexer/parser can be written without the spec open.
-`glibc` results below are from `regcomp`/`regexec` on this machine
-(2026-09-19) and are the oracle only where the spec is silent.
-
-| Construct | BRE | ERE | Decision |
-|---|---|---|---|
-| ordinary char, `\` + special char | yes | yes | literal |
-| `.` | any char | any char | any byte incl. `\n` in `sed`; grep never sees `\n` inside a line. NUL is an ordinary byte (the spec says a pattern may not contain NUL; a *subject* may, since we use `(ptr,len)`) |
-| `[...]` | yes | yes | see "Bracket expressions"; `[.ch.]`/`[=e=]` accept single characters only |
-| `*` | after an atom; **literal** at the start of the RE, after `\(`, after a leading `^` | after an atom; leading `*` undefined | BRE: as spec. ERE: literal at start / after `(` / after `\|` (GNU and busybox agree) |
-| `\{m\}` `\{m,\}` `\{m,n\}` | yes | `{m}` `{m,}` `{m,n}` | `m <= n <= 255` (`RE_DUP_MAX`, POSIX minimum). Larger → error. ERE `{` not followed by a digit: **error** (glibc: error; spec: undefined; a literal `{` is what GNU grep does, kept out to stay simple) |
-| grouping | `\( \)` | `( )` | capturing, numbered by `(` position, max 9 addressable by `\1`-`\9`; more groups allowed, just not back-referenceable |
-| alternation | **not in the spec** (`\|` is implementation-defined) | `\|`→`|` | ERE yes. BRE `\|` `\+` `\?`: error by default, accepted with `DFA_GNU` |
-| `+` `?` | not in the spec | yes | ERE yes; BRE only with `DFA_GNU` |
-| `^` | anchor only at the start of the RE or after `\(` (and `\|` with `DFA_GNU`); literal elsewhere | anchor everywhere | as spec; `a^b` in ERE can never match |
-| `$` | anchor only at the end of the RE or before `\)` | anchor everywhere | same |
-| back-reference `\1`-`\9` | yes | **undefined** | supported in both (glibc and GNU grep do; `(a)\1` matches `aa` there). Reference to a group that is not yet closed → error (`DFA_ESUBREG`) |
-| adjacent duplications `a**`, `a*+` | undefined | undefined | accepted; `X**` is collapsed to `X*` at parse time (glibc accepts and gives `[0,3)` on `aaa`), so it cannot create an exponential empty loop |
-| empty alternative `a|`, `(|a)`, `()` | — | undefined | accepted, matches the empty string (glibc accepts `a|`); needed for `(|a)` idioms |
-| empty RE | — | — | matches the empty string at every position. In grep: matches every line. In sed: means *the last regex used at run time* (sed only, resolved by the builtin, not by the library) |
-| `\n` in a pattern | undefined | undefined | a literal newline byte; sed's `\n` escape is turned into a newline by sed's own parser before the pattern reaches `dfa_compile` |
-
-**Bracket expressions.** The compiler finds the closing `]` (a `]`
-first in the list is a member; `[:x:]`, `[.x.]`, `[=x=]` are skipped as
-units), rewrites a leading `^` to `!`, and asks `path_fnmatch` byte by
-byte to fill a 256-bit set (see Architecture). Backslash is an ordinary
-member inside brackets in a RE, so pass `PATH_FNM_NOESCAPE`. Range
-endpoints are compared as byte values (the C locale); a reversed range
-`[z-a]` is an error in POSIX-2024 ("undefined") and yields the empty
-set in `path_fnmatch` — make the compiler check it. Unknown class name
-`[[:foo:]]` → error. `-i` folds both cases into the set at compile time,
-so the matcher never knows about case.
-
-**Limits** (constants at the top of `lib/dfa.h`, tested at the boundary):
-
-| Limit | Value | Why |
-|---|---|---|
-| pattern length | 32 KiB (`DFA_MAXPAT`) | `-f` files can be large; a list of a few thousand words must compile |
-| program instructions after `{m,n}` expansion | 32 767 (`DFA_MAXPROG`) | `a{255}{255}` must not allocate 65 025 copies of anything; checked with `umult32` before copying |
-| groups | 32 recorded, 9 addressable | matches the fixed `\1..\9` syntax; extra groups still group |
-| nesting depth of `( )` | 256 | bounds parser recursion, so `((((…` × 100 000 is an error, not a stack overflow |
-| DFA states cached | 64 (settable, tests use 3) | see "Matching" |
-
-**Error codes** (`dfa_error(code)` returns a fixed string, no allocation):
-`DFA_ENOMEM`, `DFA_EPAREN` (unbalanced), `DFA_EBRACKET`, `DFA_EBRACE`
-(bad/unclosed interval, `m > n`, > 255), `DFA_ERANGE` (reversed range),
-`DFA_ECLASS`, `DFA_ESUBREG` (bad back-reference), `DFA_EBADRPT`
-(repetition of nothing, ERE), `DFA_EESCAPE` (trailing `\`), `DFA_ESIZE`
-(program or nesting limit). The builtins print
-`grep: <message>` / `sed: -e expression #1, char N: <message>` and exit 2
-(grep) or 1 (sed); `expr` maps every compile error to status 2.
-
-**Sub-match rule — a known deviation.** POSIX requires each
-subexpression, left to right, to match the longest possible string
-consistent with the overall match being longest; a repeated group
-records its last iteration. The backtracker enumerates alternatives in
-preference order (greedy, leftmost alternative first) and keeps the
-first path that ends at the span `dfa_search` found. That equals the
-POSIX answer except where a shorter earlier subexpression still lets the
-overall match reach the same end. Measured on glibc 2026-09-19:
-`(a|ab)(bc|c)?` on `abc` → glibc reports `g1=[0,1) g2=[1,3)`, whereas the
-strict rule gives `g1=[0,2) g2=[2,3)`; so glibc has the same deviation
-and it is not worth being stricter than the platform. Test suite
-consequence: group expectations are only asserted where the answer is
-unambiguous (see "Testing").
-Empty iterations: a loop iteration that matches the empty string ends
-the loop and is not recorded unless it is the first — `\(a*\)*` on `aa`
-gives `\1 = aa` (glibc: `[0,2)`), `(a*)+` on `b` gives `[0,0)`.
-
-### Program format and matching (how the pieces fit)
-
-**Program.** One `int` array, instruction = `op | arg << 4`:
-
-| Op | Arg | Meaning |
-|---|---|---|
-| `CHAR` | byte | consume one byte equal to arg |
-| `ANY` | — | consume any byte |
-| `SET` | index into the set table | consume a byte whose bit is set; sets are 32 bytes each, deduplicated by content |
-| `SPLIT` | x | try next instruction first, then x (order = greediness: `a*` is `L: SPLIT end; CHAR a; JMP L`) |
-| `JMP` | x | goto |
-| `SAVE` | 2·group + {0,1} | record position (backtracker only; DFA treats it as a no-op epsilon) |
-| `BOL` `EOL` | — | zero-width; true at offset 0 / at n (unless `DFA_NOTBOL`) |
-| `BACKREF` | group | consume a copy of the recorded text (backtracker only) |
-| `MATCH` | — | accept |
-
-`{m,n}` is expanded by copying the body's instructions `m` times plus
-`n-m` optional copies (nested `SPLIT`s so an empty body cannot loop);
-`X{0}` emits nothing but still numbers its groups. An unbounded tail is
-one `*` loop. This is the only place a pattern grows, hence the
-`DFA_MAXPROG` check.
-
-**Closure.** `dfa_closure(prog, pc, flags, set, mark)` follows `JMP`,
-`SPLIT`, `SAVE`, and `BOL` (only when the flag says the context is a
-line start) using an explicit stack and a per-call `mark[]` bitmap. The
-bitmap is the entire fix for the `(a*)*b` crash in `ag.c`: a pc is
-expanded at most once per closure, so empty loops terminate.
-`EOL` and `MATCH` are kept in the set as leaves (`EOL` becomes live only
-in the end-of-input check).
-
-**Lazy DFA.**
-- State = sorted array of the leaf pcs (`CHAR/ANY/SET/EOL/MATCH`) that
-  the closure reached; interned in a `cbmap` keyed by the array's bytes.
-  Id 0 is the dead (empty) state, and never leaves the cache.
-- Byte classes: at compile time all `CHAR` values and `SET`s partition
-  the 256 bytes into `ncls` equivalence classes (`a` `b` `c` inside `[a-c]`
-  share one). `state->next[ncls]` therefore is small (often < 20 ints),
-  `-1` = not computed yet. One extra class column means "end of input".
-- Flags per state, computed at creation: `accept` (MATCH in the set)
-  and, lazily, `accept_at_end` (MATCH reachable through `EOL` leaves).
-- Two start states, cached: `at_bol` and `not_bol` (what `^` means differs;
-  `dfa_search(..., from > 0)` and `DFA_NOTBOL` use the second).
-- Cache bound: when the state count reaches the limit the whole cache
-  (map, states, transition rows) is freed except the current state, which is
-  re-interned, and matching continues. Correctness never depends on the
-  cache; the test suite forces it with a limit of 3 states.
-- Total memory is O(limit × (ncls + pattern)), never O(text).
-
-**Entry points, precisely.**
-- `dfa_test`: unanchored. Runs the DFA from the `at_bol` start, and before
-  each byte also injects the start pcs (the `.*` prefix of `ag.c`, done as
-  "add start set to every state" rather than as extra instructions, so the
-  same program serves anchored and unanchored). Stops at the first
-  `accept`; a match at end-of-input needs `accept_at_end`. No captures.
-- `dfa_prefix`: anchored at `s[0]`, continues until the dead state or the
-  end, remembers the last accepting offset; that is the longest match
-  (POSIX `expr :`).
-- `dfa_search(from)`: (1) `dfa_test` over `s+from` to reject cheaply — a
-  line with no match costs one linear pass, the common grep/sed case;
-  (2) skip to the first byte that can start a match (first-byte set,
-  `dfa_prefilter`) and run `dfa_prefix` at each candidate start until one
-  succeeds — the first success is leftmost, and `dfa_prefix` makes it
-  longest. Worst case O(n²) per call (e.g. `a*b` on `aaaa…`); a reverse
-  DFA would remove that and is deliberately not planned.
-  `s///g` calls it in a loop with `from` = end of the previous match
-  (+1 after an empty match) and the context flag `not_bol` from the
-  second call on.
-- `dfa_submatch(span)`: runs the backtracker over `[span.start, span.end]`
-  and requires the path to *end exactly* at `span.end`. Because the span
-  is already known to be a match, the search is a directed walk, not a
-  blind one; for patterns without back-references it still can blow up
-  only on adversarial nested groups, so it is bounded by a step budget
-  (`DFA_MAXSTEPS`, 10 million) after which the groups are reported unset.
-- Patterns with back-references have no DFA: `dfa_test/prefix/search`
-  call the backtracker, which explores all paths and keeps the longest
-  end at each start.
-
-### API (each function its own file)
-
-```c
-struct dfa;                                      /* compiled pattern + lazy state cache */
-struct dfa_span { size_t start, end; };
-
-int    dfa_compile(struct dfa*, const char* pat, size_t len, unsigned flags);
-                       /* flags: DFA_ERE  DFA_ICASE  DFA_NOTBOL  DFA_LIST (newline-separated alternatives)
-                                  DFA_GNU (BRE \| \+ \?) */
-void   dfa_free(struct dfa*);
-size_t dfa_groups(const struct dfa*);            /* number of \( \) groups */
-const char* dfa_error(int code);
-
-int    dfa_test(struct dfa*, const char* s, size_t n);
-           /* grep, sed /re/ address: is there any match? */
-long   dfa_prefix(struct dfa*, const char* s, size_t n);
-           /* expr ':': longest match anchored at s, -1 if none */
-int    dfa_search(struct dfa*, const char* s, size_t n, size_t from, struct dfa_span* m);
-           /* sed s///g, grep -o: leftmost-longest at or after `from`; `^` still means offset 0 */
-int    dfa_submatch(struct dfa*, const char* s, size_t n, const struct dfa_span* m,
-                    struct dfa_span* g, size_t ng);
-           /* fill \1..\9 inside a match dfa_search already found */
-```
-
-`grep` needs only `dfa_test`; `expr` needs `dfa_prefix` (+`dfa_submatch`
-for a `\(...\)`); `sed` needs `dfa_test` for addresses and
-`dfa_search` + `dfa_submatch` in a loop for `s///`. POSIX `grep` has no
-`-o`, so only `expr` and `sed` need leftmost-longest.
-
-### API contract
-
-- `struct dfa` is caller-allocated (`static struct dfa re;` in the
-  builtin); `dfa_compile` allocates its internals, `dfa_free` releases
-  them, and calling `dfa_free` on a zeroed struct is a no-op. On a
-  compile error the struct is left freed/zeroed, so the caller never
-  needs to clean up after a failure.
-- Subjects are `(const char* s, size_t n)`; the library never reads
-  `s[n]` and never writes to `s`. Offsets in `struct dfa_span` are
-  relative to `s`, `end` exclusive, `start == end` is an empty match.
-- `dfa_test` returns 1/0; `dfa_prefix` returns the length or `-1`
-  (`0` is a valid empty match); `dfa_search` and `dfa_submatch` return
-  1/0 and fill their out-parameters only on 1. Out of memory while
-  matching (state cache growth) is handled by flushing, never by failing
-  the call; the only `DFA_ENOMEM` is at compile time.
-- `dfa_submatch` groups that did not participate get
-  `{(size_t)-1, (size_t)-1}` so `sed`'s `\3` can tell "unset" (empty
-  replacement) from "empty match".
-- A `struct dfa` is not thread-safe (the lazy cache is mutated by matching)
-  — shish is single-threaded, so this is only documented.
-- `DFA_ICASE` folds only ASCII in the first pass; with `WITH_UTF8` (Goal 7)
-  it stays ASCII-only for sets (documented deviation, same as classes).
-
-### Reuse from `lib/` and `../c-utils/lib`
-
-Static archive, so an unreferenced file costs nothing in the binary;
-still copy only what is used. `CMake` globs `lib/*/*.c`
-(`cmake/libowfat.cmake`), autotools needs a `Makefile.in` per new dir.
-
-| Need | Take | State in shish's `lib/` |
-|---|---|---|
-| unbounded streaming line reader | `buffer_getline_sa`, `buffer_get_token_sa` (c-utils `lib/stralloc/`, 7+29 lines) | declared in `lib/stralloc.h:145-151`, **`.c` missing** (link error if called) |
-| growable program / state table | `array` (`array_allocate/get/length/truncate/reset`, ≈7 files; needs `likely.h`, `safemult.h`, `typedefs.h`) | absent |
-| state interning map | `cbmap` (12 files; has `cbmap_destroy` = cache flush). `hashmap` is smaller (164 lines) but has no free-all. | absent |
-| `grep -F` | `byte_findb`/`byte_finds` (22 lines), `case_findb` for `-i` | absent |
-| pattern-list split, first-byte prefilter | `byte_chrs`, existing `byte_chr` | `byte_chrs` absent |
-| line boundaries in a memory window | `scan_lineskip`, `scan_eolskip` (≈ `byte_chr(..,'\n')+1`) | absent |
-| overflow-checked `{m,n}` expansion | `umult32` (`safemult.h`, header only) | absent |
-| interval / escape numbers | `scan_ulongn`, `scan_8long`, `scan_fromhex`, `scan_xchar` | present |
-| sed `l` command | `fmt_escapecharcx`, `fmt_escapecharnonprintable` | absent |
-| later multibyte | `scan_utf8`, `fmt_utf8` | absent |
-| bracket expressions | `path_fnmatch` (see above) | present |
-
-### File layout and size estimate
-
-Line counts are in **this repo's style** (clang-format, one function
-per file, header comment per function — roughly 40% blank/comment/brace
-lines). Calibration, measured: the current `expr` BRE matcher is 255
-lines for BRE-only, no intervals, no backrefs; `builtin_expr.c` is 434
-lines and 3216 B of object code, `printf` 446 lines / 3778 B,
-`test` 392 / 3824 B — so ≈ 7-10 bytes of code per source line. An
-earlier rough figure of 350-700 lines for the whole library was in
-compact lines and too low; the itemised total is below.
-
-| Group | Files | Lines |
-|---|---|---|
-| API and plumbing | `lib/dfa.h` 90, `dfa_compile` 60, `dfa_free` 20, `dfa_error` 30, `dfa_emit` 50 | ≈250 |
-| lexer + parser | `dfa_lex` 90, `dfa_lex_bracket` 60, `dfa_lex_interval` 40, `dfa_parse_list` 30, `dfa_parse_alt` 30, `dfa_parse_seq` 30, `dfa_parse_repeat` 90, `dfa_parse_atom` 80 | ≈450 |
-| NFA closure/step | `dfa_closure` 70, `dfa_step` 40 | ≈110 |
-| lazy DFA | `dfa_state` 70, `dfa_next` 60, `dfa_cache_flush` 25, `dfa_run_test` 50, `dfa_run_prefix` 50, `dfa_search` 70, `dfa_prefilter` 40 (optional) | ≈365 |
-| backtracker + captures | `dfa_bt` 60, six node matchers ≈150, `dfa_submatch` 60 | ≈270 |
-| **`lib/dfa/` total** | ≈27 files | **≈1450 (range 1100-1700), ≈11-13 KB code** |
-| imported from c-utils | `array` ≈7 files, `cbmap` 4-5 used files, `byte_findb`, `byte_chrs`, `buffer_getline_sa`, `buffer_get_token_sa` | ≈300 lines copied, not written |
-
-| Source file | Today | Estimate | Notes |
-|---|---|---|---|
-| `src/builtin/extra/builtin_expr.c` | 434 (matcher ≈255) | **≈210** | matcher deleted, ≈30 lines of glue. −225 lines. The operator layer (`index`, string comparison, `\|`, `&`) is separate work: `BUGS: expr-index-wrong-result`, `expr-string-comparison-numeric-only`, +100-150 lines if done properly. |
-| `src/builtin/builtin_grep.c` | — | **≈300** (250-350) | option parse ≈40, pattern collection (`-e`, `-f`, list split) ≈60, per-file loop with `file:` prefix ≈60, output/`-c -l -n -q` ≈50, `-F` path ≈30, help text ≈30. ≈2.5-3 KB. busybox `grep.c` is 944 lines but has the GNU option set and uses libc regex. |
-| `src/builtin/builtin_sed.c` | — | **≈850** (700-1000; revised in Goal 11, was ≈1200) | script parser ≈400, executor/cycle ≈400, `s` command (replacement compile, flags, `&`/`\N`) ≈200, `r`/`w` files and text commands ≈120, options/help ≈80. ≈10-12 KB. busybox `sed.c` is 1684 lines with GNU extensions. |
-| `tests/dfa.sh`, `builtin-grep.sh`, `builtin-sed.sh` | — | ≈200 / 150 / 300 | table-driven; each ends with `summary` |
-
-Binary-size context (Goal 5): the whole `ENABLE_ALL_BUILTINS` set costs
-26 KB today; `lib/dfa` + `grep` + `sed` is roughly **+25 KB when all
-three are on**. `expr` is in `DEFAULT_BUILTINS`, so moving it onto the
-library grows the *default* build by the parser + backtracker
-(≈970 lines ≈ 8 KB) minus the old matcher (≈2 KB) ≈ **+6 KB (≈4 %)**
-unless `dfa_prefix`/`dfa_submatch` are kept off the DFA objects (the
-linker then drops them). Measure after step 3 and decide (see below).
-
-### POSIX conformance checklists (what "done" means; spec text read 2026-09-19, POSIX.1-2024)
-
-**`grep`** — `grep [-E|-F] [-c|-l|-q] [-insvx] -e pattern_list ... [-f pattern_file] ... [file...]`
-and `grep [-E|-F] [-c|-l|-q] [-insvx] pattern_list [file...]`.
-POSIX.1-2024 lists exactly `-E -F -c -e -f -i -l -n -q -s -v -x`; Issue 8
-adds nothing else, so `-o -w -r -h -H -A/-B/-C` are extensions (`dfa_search`
-makes `-o` cheap; decide after the core is done, not before).
-- Patterns: `-e`/`-f`/first operand are each a list separated by newlines;
-  the union of all lists is the pattern set, compiled as *one* alternation
-  (`DFA_LIST`). An empty pattern in the set matches every line. `-E`
-  = ERE, `-F` = fixed strings (each list line a literal; `-x`/`-i` apply),
-  default = BRE. `-e`/`-f` may be mixed and repeated; `-f` on an empty
-  file adds no patterns (nothing matches; with `-v` everything does).
-- Input: each `file` in order; `-` or no operand = stdin. A line is
-  everything up to `\n` (or EOF without one); NUL bytes are data; lines of
-  any length (streaming `buffer_getline_sa`, no fixed buffer).
-- Selection: `-v` inverts; `-x` requires the match to span the line
-  (`^(...)$` around the alternation, or `dfa_prefix == n`); `-i` = `DFA_ICASE`.
-- Output: default the whole line + `\n`; **the `file:` prefix only when
-  more than one file operand**; `-n` = `lineno:` before it (after the file
-  prefix); `-c` = count per file (`file:count` for several files);
-  `-l` = file names only, one per line, each file listed once and reading
-  of that file stops at the first match; `-q` = no output, stop at the
-  first match anywhere; `-s` = suppress messages about nonexistent or
-  unreadable files. For stdin with a prefix the label is
-  `(standard input)` (GNU, busybox; POSIX leaves it open).
-- Exit status: 0 = some line selected, 1 = none, >1 = error. With `-q`,
-  0 even if an error occurred (as long as a line matched). An unreadable
-  file is an error (status 2) but the remaining files are still processed.
-- Not to be assumed: `--` handling comes from `shell_getopt` (`grep -e -x`
-  and `grep -- -x file` must both work); `-e` argument beginning with `-`.
-- Extras only if cheap: `egrep`/`fgrep` names (dispatch on `argv[0]` like
-  `digest`); still open, POSIX 2024 removed them.
-
-**`sed`** — `sed [-n] [-E] script [file...]`, `sed [-n] [-E] -e script ... [-f script_file] ... [file...]`.
-- Options: `-n`, `-e`, `-f`, and **`-E` (ERE) which POSIX.1-2024 added**
-  (so it is *not* an extension any more, contrary to the first draft of
-  this plan). `-r` is the GNU spelling of the same; accept it as an alias
-  (free). `-i` is *not* in POSIX 2024; `-s`, `-z` are not either: out.
-  Multiple `-e`/`-f` join with a newline in the order given. `#n` as the
-  first two characters of the *first* script line (only if exactly `#n`
-  followed by newline) acts as `-n`.
-- Commands (function letter, address count): `{ } = a b c d D g G h H i l
-  n N p P q r s t w x y : #`. `=` writes the line number + `\n`. `}` may
-  be preceded by `;`. Labels: a `:label` and `b`/`t` label read to end of
-  line (POSIX: `;` does **not** terminate a label — but GNU does and the
-  common one-liner `:a;N;$!ba;s/\n/ /g` relies on it; measured GNU sed
-  4.x 2026-09-19 accepts it. **Decision:** terminate labels at `;` and
-  whitespace like GNU; a label with `;` is not valid POSIX use anyway).
-- Addresses: none / one / two (`addr1,addr2`); a number, `$` (last line
-  of the last file, or of each file with `-s`, which we do not have —
-  last line of the whole input), `/re/`, `\cREc` (custom delimiter; the
-  delimiter inside the RE means itself), and `addr!cmd` (spaces after
-  `!` allowed). A range whose end address is a number ≤ the start line
-  matches one line. If addr2 is a regex it is tried starting with the
-  line *after* addr1. Empty regex = **the last RE used at run time**
-  (not compile time): keep a `struct dfa* last`.
-- `s/re/repl/flags`: replacement `&`, `\1`-`\9`, `\n` for newline
-  (from the *script* level), `\&` and `\delim` literal, backslash-newline
-  = newline. Flags: `g` (all), a decimal `n` (only the nth), `n` with `g`
-  (nth and after), `p` (print if replaced), `w file` (write if replaced),
-  **`i`/`I` (case-insensitive, added in Issue 8)**. Empty-match rule
-  with `g`: after an empty match copy one byte and advance so `s/x*/-/g`
-  on `abc` gives `-a-b-c-`; a non-empty match directly after an empty
-  one is allowed only if it starts later (`s/b*/-/g` on `abc` gives `-a-c-`).
-  `t` flag "any successful substitution since the last input line was read
-  or last `t`".
-- Text commands: `a\`/`i\`/`c\` text: the text starts on the next line;
-  each line but the last ends with `\`; leading blanks of text lines
-  are stripped unless preceded by `\` — this follows POSIX, GNU's one-line
-  `a text` form is accepted too (same code path: text after `a` on the
-  same line). `a` and `r` output is queued and written at the end of the
-  cycle, or when the next line is read (`n`, `N`). `i` writes at once. `c`
-  deletes the pattern space and starts a new cycle; in a range it prints
-  once at the end of the range (with `!` it prints for every line).
-- Files: `r file` (missing file silently ignored); `w file`: **created
-  or truncated when the script is parsed, before any input is read**, and
-  the same name in several commands shares one open file; `/dev/stdout`
-  is a special name (write to fd_out, not a new open).
-- Execution: `n` with no next input branches to the end of the script
-  and quits (autoprint happens; re-read the spec wording when
-  implementing, only `N` was verified here). `N` — **with no next input,
-  quit without printing** (spec text; measured 2026-09-19: GNU sed
-  prints the pattern space by default and prints nothing under
-  `POSIXLY_CORRECT=1`; busybox prints). We follow POSIX and document that
-  GNU-written scripts such as `sed N` on odd-length input differ.
-  `D`: if the pattern space has no newline act like `d`, else delete up to
-  the first newline and restart the cycle **without** reading input.
-  `G`/`H` append a newline plus the other space; `x` swaps; `q` prints
-  (unless `-n`) and exits, exit code argument is an extension (GNU) but
-  free to take.
-- `l`: long form, line folded to the terminal width (POSIX: implementation-
-  defined; use 70 columns, wrapping with `\` at the end of the output
-  line), escapes `\\ \a \b \f \n \r \t \v`, other non-printables as
-  3-digit octal `\ooo`, `$` at the end of every line (`fmt_escapecharcx`
-  from c-utils covers most of it).
-- `y/abc/xyz/`: equal lengths, `\\`, `\n`, `\delim` escapes; a 256-byte
-  table built at parse time.
-- Output: **every line written is terminated by a newline**, also a last
-  input line that lacked one (spec: input and output are text files). GNU
-  sed preserves the missing newline (measured: `printf 'a\nb' | sed p`
-  → `a\na\nb\nb` with no final newline). Decision: follow POSIX (always
-  newline) — simpler, and a decision to reverse later is a one-flag change.
-- Limits from the spec to honour, not to restrict: a script may have
-  `w` files of any number ≥ 10; text of any size.
-- Non-goals (first pass): `e`, `F`, `z`, `W`, `R`, `M` flag, `0,/re/`,
-  `addr,+N`, `first~step` (GNU extensions).
-
-**`expr`** — `expr expression`; every argument is a token.
-- Grammar, lowest precedence first (all left associative): `expr1 | expr2`,
-  `expr1 & expr2`, `= > >= < <= !=`, `+ -`, `* / %`, `expr1 : expr2`,
-  then `( expr )` and operands.
-- `|`: `expr1` if it is neither null nor `0`, else `expr2` if that is
-  neither, else `0`. `&`: `expr1` if both are neither null nor `0`, else
-  `0`. Comparison: **numeric if both are integers (an optional sign and
-  digits), else string collation** (bytes in the C locale) — this is the
-  bug `expr-string-comparison-numeric-only`. Arithmetic: signed long
-  integers; overflow is undefined, division by zero is an error.
-- `:`: `string : BRE`, anchored at the start (as if `^`), result = the
-  number of bytes matched, or, if the BRE has `\(...\)`, the text of the
-  *first* group. **No match → `0` (no group) or the null string (with a
-  group).** `^` at the start of the BRE is redundant but legal.
-- Exit status: **0** the result is neither null nor `0`; **1** it is null
-  or `0`; **2** invalid expression; **>2** an error occurred (division by
-  zero, unwritable stdout). Today's `expr` gets these wrong: see
-  `BUGS: expr-crashes-and-exit-status`.
-- `--`: the argument `--` ends options (POSIX utility guideline 10), so
-  `expr -- -1` prints `-1` (today: SIGSEGV).
-- `length`, `substr`, `index`, `match`: **not POSIX** (Issue 8 does not
-  define them). They exist today (`BUGS: expr-index-wrong-result`); keep
-  them, fix `index`, do not extend the set.
-- Migration to `lib/dfa` (step 3 below): `builtin_expr.c` keeps its
-  operator layer; only `expr_match()` (the ≈255-line BRE matcher) becomes
-  `dfa_compile(&re, pat, len, 0)` + `dfa_prefix` (+ `dfa_submatch` if
-  `dfa_groups(&re) > 0`).
-
-### Registration and build checklist (per new builtin: grep, sed)
-
-1. `src/builtin/builtin_<name>.c` with `const char help_<name>[]` and
-   `int builtin_<name>(int argc, char* argv[])`, options via
-   `shell_getopt` (same shape as `builtin_digest.c`).
-2. `src/builtin.h`: prototype and `extern const char help_<name>[]`.
-3. `src/builtin/builtin_table.c`: the fallback `#define BUILTIN_<NAME> 0`
-   and the table entry (`{"grep", &builtin_grep, help_grep, …}`), ordered
-   alphabetically like its neighbours.
-4. `cmake/Builtins.cmake`: name in `EXTRA_BUILTINS` (off by default).
-   `lib/dfa/*.c` is picked up by the `lib/*/*.c` glob; the builtin needs
-   nothing more, but `expr` in `DEFAULT_BUILTINS` will make `libowfat.a`
-   supply `dfa_*` (static archive: unreferenced members cost nothing).
-5. Autotools: `configure.ac` builtin list and a `Makefile.in` in `lib/dfa/`.
-6. `tests/builtin-<name>.sh`, skipped when the builtin is not compiled in
-   (same `type` check as `tests/builtin-digest.sh`).
-7. Docs: one line in the README builtin list; `--help` text kept short
-   (Goal 5.2 counts help bytes).
-
-### Testing strategy
-
-- **`tests/dfa.sh`** (CTest). Needs a C-level driver, since the library is
-  not reachable from the shell before `expr :` moves onto it; until then
-  test through `expr :` and, once it exists, `grep`/`sed`. Table rows are
-  `flags|pattern|subject|expected`, expected = `start,end` of the overall
-  match, then `;g1s,g1e;…`, or `-` for no match. Sections: literals,
-  `.`, every bracket form (leading `]`, `^`, `-`, ranges, all 12 classes,
-  negation, `[a-c[:upper:]]` — the bug in Goal 6 step 0), `*+?{m,n}`
-  boundaries (`{0}`, `{0,0}`, `{255}`, `{256}` error), anchors in every
-  context (`a^b`, `a$b`, `\(^a\)`, `^*`), alternation (`a|ab|abc`
-  longest wins), back-references, `-i`, empty matches, NUL in subject,
-  1 MB subject, `DFA_NOTBOL`, every error code once.
-- **Differential test** (dev-only, `tests/dev/dfa-diff.c`, not CTest: it
-  links the system `regcomp`). glibc supports `REG_STARTEND`, so subjects
-  with NUL bytes are comparable. A random generator emits only POSIX
-  tokens (no `\w`, `\b`, `\<`, `\|` in BRE), patterns of ≤ 12 tokens over
-  an alphabet of 3 letters, and subjects of ≤ 10 characters over the same
-  alphabet plus `\n`, so short strings hit ambiguity constantly. Compare:
-  compile success (ignoring the documented differences: ERE `a{`, `a**`),
-  overall span always, groups **only** when the pattern has no group under
-  a repetition and no alternation of overlapping branches (else the
-  documented sub-match deviation). Run 10⁶ cases per CI. Second oracle:
-  the backtracker vs the DFA on the same pattern — spans must agree.
-- **Compiler robustness.** Random *byte* strings as patterns under
-  ASan+UBSan: must return an error or a program, never crash or hang;
-  `((((…` × 100 000, `a{255}{255}`, `[[[[…`, trailing `\`, `\(\(…`.
-- **Pathological time.** `(a*)*b`, `(a|aa)*b`, `(x+x+)+y`, `a?{25}a{25}`
-  on 100 000 characters must finish in linear time in the DFA path;
-  a backref pattern is allowed to be slow but must respect
-  `DFA_MAXSTEPS`.
-- **Builtins.** `tests/builtin-grep.sh`: one `assert_equal` per option
-  and per output-format rule above, exit statuses (0/1/2, `-q` with an
-  error), stdin, `-` operand, several files, a nonexistent file with
-  and without `-s`, `-f` empty file, `-e` given twice, pattern with a
-  leading `-`. `tests/builtin-sed.sh`: a table of `script|input|expected`
-  from the spec's examples (the POSIX `sed` page's ones: `s/a/b/`,
-  the `y` and `N;P;D` idioms, `$!N`, `1!G;h;$!d` = `tac`, `-n '$='` =
-  `wc -l`), plus every rule marked "measured" above (`N` at EOF, missing
-  final newline, `s/x*/-/g` empty-match rule).
-- **Conformance suites already in the tree:** `tests/posix/*.tst` and
-  `tests/yash/*.tst` run `expr`, `sed`, `grep` as *external commands* in
-  places (they find the system's); check with `grep -l 'sed\|grep' tests/yash/*.tst`
-  once the builtins exist — a builtin that shadows the system tool could
-  change those results, in either direction, and that is worth knowing
-  before shipping.
-
-### Order of work (each step is its own change with test + `fixes/NN` + `BUGS`/`TODO.md` update)
-
-1. **Import the `lib/` pieces** listed above (copy, don't rewrite);
-   add `Makefile.in` for each new directory; a small `tests/` case for
-   `buffer_getline_sa` on a line longer than the buffer.
-2. **`lib/dfa/` parser + program + backtracker** behind
-   `dfa_test`/`dfa_prefix`/`dfa_search`/`dfa_submatch` — already complete
-   POSIX behaviour, slowest engine. `tests/dfa.sh`: a table of
-   `(flags, pattern, subject, expected span/groups)` covering both
-   syntaxes, every bracket form, intervals, backrefs, `*`-at-start,
-   `^`/`$` context, `-i`, empty matches. Gate: ASan+UBSan build clean.
-3. **Move `expr :` onto it** (and fix `BUGS: expr-crashes-and-exit-status`
-   in the same pass, since the operator layer is being touched; each fix
-   with its own `tests/fixed.sh` case). `tests/builtin-expr.sh` must stay green;
-   measure the default-build size delta against the ≈+6 KB estimate.
-   **Decision if it is worse:** keep the old matcher for builds without
-   grep/sed, or accept it (record the number here either way).
-4. **Lazy DFA** behind the same three entry points. Differential test
-   (dev-only script, not CTest — needs the system tools): random
-   patterns/subjects, DFA result vs backtracker vs libc `regcomp`;
-   include `(a*)*b`, `(a|aa)*b`, empty-loop and 200 000-character
-   subjects. The cache flush needs a test that forces it (tiny limit).
-5. **`grep`** builtin (`EXTRA_BUILTINS`, off by default; `builtin.h`,
-   `builtin_table.c` fallback define and entries, `cmake/Builtins.cmake`;
-   autotools list in `configure.ac`). `tests/builtin-grep.sh`, skipped
-   when not compiled in (same pattern as `tests/builtin-digest.sh`).
-6. **`sed`** builtin, in this order so each stage is testable alone:
-   parser + `p`/`d`/`q`/`=`/addresses; `s` with all flags (`g p w N i`, and
-   `-E`); hold space
-   commands (`g G h H x`); `n N D P`; `a i c r w y l`; labels and `b`/`t`.
-   `tests/builtin-sed.sh`.
-7. **Later, optional consumers** (only if wanted): see next section.
-
-### What else could use it
-
-POSIX utilities that take a BRE/ERE: `grep`, `sed`, `expr` (this goal),
-`awk` (ERE; `~`, `split`, `sub`/`gsub`/`match` — needs exactly
-`dfa_search` extents, but the language is a project of its own: busybox
-`awk.c` is 4028 lines), `ed` (BRE; busybox `ed.c` 1030 lines), `ex`/`vi`,
-`more` (`/re` search), `nl` (`-b pBRE`; busybox `nl.c` is 83 lines — the
-cheapest add-on), `csplit` (BRE context lines), `pax -s` (BRE
-substitutions). Not POSIX but common: `find -regex`, bash's `[[ =~ ]]`
-(non-goal, see MAIN QUEST). Not useful: `case`/`${x#pat}`/globbing —
-`path_fnmatch` is iterative and adequate, and a DFA would only add
-size. `lex` *generates* DFAs, which is a different problem.
-
-### Risks and open questions
-
-- Backrefs make matching NP-hard: keep the DFA off patterns that have
-  them and accept exponential worst case there (same as every POSIX
-  engine).
-- Group repetition in the backtracker recurses once per iteration; cap
-  the depth or make single-atom repeats iterative so `\(a\)*` on a long
-  line cannot exhaust the stack.
-- Leftmost-longest is only guaranteed for the *overall* match; sub-match
-  choice deviates from the strict POSIX rule in the same way glibc does
-  (see "Sub-match rule — a known deviation"). musl/TRE is the stricter
-  oracle if that ever matters.
-- `\| \+ \?` in BRE (`DFA_GNU`): implementation-defined, so either choice
-  conforms; accepting them makes GNU-written `grep`/`sed` scripts work,
-  rejecting them makes shish's BRE strictly POSIX. Decide with the first
-  real user; the flag costs ≈30 lines in the lexer.
-- Compile time is paid per call: `sed` compiles once per script, `grep`
-  once per run, but `expr` compiles on every invocation — fine, it is a
-  one-shot builtin, and the lazy DFA builds no states until matched.
-- `sed` "empty regex = last regex" is run-time state in the builtin, so a
-  `struct dfa*` must stay alive across cycles; keep compiled regexes in
-  the script's command array, not on the stack.
-- `w /dev/stdout` and `r /dev/stdin` are special names in GNU only; POSIX
-  does not define them. Support `/dev/stdout` (cheap, common in scripts),
-  leave `r /dev/stdin` out.
-- The line-length story: `buffer_getline_sa` streams any length; for a
-  regular file `mmap_read` + `scan_lineskip` windows avoid the copy.
-- Licence hygiene: nothing is copied from `ag.c`/`b.c`/`dfa1.c`; if that
-  changes, check each licence against `COPYING` first.
-
-### How to measure
-
-```sh
-# code size of the pieces (compare per object, stripped builds only)
-cmake -S . -B /tmp/dfa -DCMAKE_BUILD_TYPE=MinSizeRel -DENABLE_GREP=ON -DENABLE_SED=ON
-cmake --build /tmp/dfa -j8 && size /tmp/dfa/CMakeFiles/libowfat.dir/lib/dfa/*.o | sort -n
-strip /tmp/dfa/shish && stat -c%s /tmp/dfa/shish     # vs the default build
-
-# default-build cost of moving expr onto lib/dfa (step 3)
-cmake -S . -B /tmp/def -DCMAKE_BUILD_TYPE=MinSizeRel && cmake --build /tmp/def -j8
-```
+- **Lazy DFA** behind the same entry points (`dfa_test/prefix/search/submatch`) as a pure speed
+  mode; not built (so `cbmap`/`hashmap` has no consumer for interning states). Only if a measured
+  need appears. It needs a dev-only differential test (random patterns/subjects: DFA vs backtracker
+  vs libc `regcomp`, including `(a*)*b`, `(a|aa)*b`, empty loops, 200 000-character subjects) and
+  a test that forces the cache flush with a tiny limit.
+- **More consumers**, only if wanted: `csplit` (BRE context lines), `ed`, `more` (`/re`), `pax -s`,
+  `find -regex`. Not useful: `case`, `${x#pat}`, globbing (`path_fnmatch` is iterative and adequate).
+- **Risks that still apply:**
+  - backrefs make matching NP-hard: keep them off the NFA path and accept the exponential worst case;
+  - the backtracker recurses once per group repetition: cap the depth or make single-atom repeats
+    iterative so `\(a\)*` on a long line cannot exhaust the stack;
+  - leftmost-longest holds for the overall match; sub-match choice deviates from the strict POSIX
+    rule the way glibc does (musl/TRE is the stricter oracle);
+  - `\| \+ \?` in BRE (`DFA_GNU`) are implementation-defined; decide with the first real user
+    (≈30 lines in the lexer);
+  - `sed`'s "empty regex = last regex" is run-time state: keep compiled regexes in the script's
+    command array, not on the stack;
+  - `w /dev/stdout` works, `r /dev/stdin` is deliberately left out (GNU-only).
+- `expr index` and string comparison: `BUGS: expr-index-wrong-result`.
 
 ---
 
@@ -1594,7 +658,7 @@ cmake -S . -B /tmp/def -DCMAKE_BUILD_TYPE=MinSizeRel && cmake --build /tmp/def -
 
 **Not started; this section is the plan.** shish is byte-oriented and
 never calls `setlocale`, i.e. it is always in the POSIX locale, which is
-what POSIX requires (Goal 6, Scope). This goal adds *character*
+what POSIX requires (bytes, C locale: Goal 6). This goal adds *character*
 semantics for a UTF-8 locale (`LC_ALL=C.UTF-8`) as a compile-time option;
 the default build stays C-locale-only and must not grow.
 
@@ -2764,1199 +1828,121 @@ size build/x86_64-linux-gnu/CMakeFiles/libshell.dir/src/term/*.o build/x86_64-li
 
 ---
 
-## Goal 10 (secondary) — `cp` and `mv` builtins: one source file, dispatch on `argv[0]`
+## Goal 10 (secondary) — `cp` and `mv`: what is left
 
-**Built, first pass (2026-10-01).** `src/builtin/extra/builtin_cp.c` holds
-`builtin_cpmv()`; the `cp` and `mv` rows (`BUILTIN_CP`/`BUILTIN_MV`, both
-`EXTRA_BUILTINS`, off by default) point at it, and `cmake/Builtins.cmake` maps
-`mv` to that file and adds `builtin_rm.c` when `mv` is on (`builtin_rm_tree()`
-is the exported `rm -r` walk). Tests: `tests/builtin-cp.sh`,
-`tests/builtin-mv.sh` (the `EXDEV` cases run when `/dev/shm` is another file
-system). What the plan asks for and is **not done yet**: `-T`/`-t`; the
-`SHISH_CPMV_FORCE_COPY` test hook; stopping a copy on `SIGINT` (an interactive
-shell ignores it, so a running `cp` of a large file cannot be interrupted);
-`copy_file_range()`; hole preservation; a WASI/mingw build check (the mingw
-sysroot headers are not installed here, so `WINDOWS_NATIVE` is only guarded
-with `CPMV_NOUNIX`, never compiled); the size measurement of step 3; the
-`ln` unlink-first bug (step 0) is still open. Messages differ in wording from
-GNU `cp`/`mv` (`cp: x: not a directory`, not `target 'x': No such file...`).
-Everything below is the original plan, kept as the reference for the rest.
+`src/builtin/extra/builtin_cp.c` holds `builtin_cpmv()`; the `cp` and `mv` rows (`BUILTIN_CP`/`BUILTIN_MV`,
+`EXTRA_BUILTINS`, off by default) point at it, and `cmake/Builtins.cmake` adds `builtin_rm.c` when `mv`
+is on (`builtin_rm_tree()` is the exported `rm -r` walk). Tests: `tests/builtin-cp.sh` (which hangs,
+`BUGS: builtin-cp-sh-hangs`), `tests/builtin-mv.sh` (the `EXDEV` cases run when `/dev/shm` is another
+file system).
 
-### Would one source file with `argv[0]` dispatch save size?
+Open:
 
-**Yes, modestly; the reason is sharing code, not table rows.** Measured
-2026-09-20 on this tree (`-DENABLE_ALL_BUILTINS=ON`, object `text+data`):
-
-| Builtin | Source lines | Object bytes |
-|---|---|---|
-| `link` | 33 | 301 |
-| `mkdir` | 105 | 739 |
-| `rmdir` | — | 802 |
-| `cat` | 116 | 928 |
-| `ln` | 106 | 933 |
-| `rm` | 157 | 1249 |
-| `ls` | 274 | 2108 |
-| `touch` | 326 | 3413 |
-
-≈ 7-10 bytes of object code per source line (same calibration as Goal 6).
-
-- **What `mv` is:** `rename()`, and when that fails with `EXDEV`, *copy the
-  hierarchy (`cp -R -p` semantics, symlinks copied as links), then remove
-  the source (`rm -r`)*. So `mv` needs everything `cp` has, plus `rm`'s
-  recursive delete. Two separate source files would either duplicate the
-  copy engine or export it; either way they share ≈ 80 % of their code.
-- **Table rows cost the same in both layouts** (two rows: `cp`, `mv`;
-  ≈ 40 bytes each, plus 4 relocations per row in a PIE build). There is
-  nothing to save there.
-- **`--gc-sections` is on** (`-ffunction-sections`, `cmake/Checks.cmake`), so
-  a function nobody references is dropped even from a shared object file:
-  merging does **not** force `cp`-only code into a `mv`-only build, or the
-  reverse.
-- **What merging saves** is the duplicated glue: option loop, "last operand
-  is the target, is it a directory?" logic, `basename` join, the `-i`
-  prompt, error/verbose reporting, plus one object's alignment padding.
-  Estimate **≈ 60-90 source lines ≈ 0.5-0.9 KB** out of ≈ 4-5 KB for the
-  pair (**≈ 12-18 %**). A single function that dispatches on `argv[0]`
-  (one getopt string with per-mode masks) saves a further ≈ 150-250 B over
-  two exported functions that share static helpers, at the price of `mv`-only
-  builds carrying `cp`'s option parsing (`-R -H -L -P -p`, ≈ 100-200 B) —
-  which `mv`'s `EXDEV` path uses anyway.
-- **These are estimates.** Step 3 of the order of work builds both layouts
-  and keeps the smaller (`size` on the stripped `MinSizeRel` build, and the
-  `nm --size-sort` of the object); the plan below assumes the dispatch
-  version, which is the cheaper one to turn into two entry points if the
-  numbers disagree.
-
-**Decision:** one file, `src/builtin/builtin_cpmv.c`, one exported function
-`builtin_cpmv(argc, argv)`; two table rows pointing at it, with **separate
-help strings** (`help_cp`, `help_mv`), same pattern as
-`builtin_digest.c` (`md5sum`…`sha512sum`, `builtin_table.c:313`). It is
-compiled into `libshell` always and pulled in by the linker only when a row
-references it (`BUILTIN_CP`/`BUILTIN_MV`, default 0 in the
-`builtin_table.c` fallback defines). `argv[0]` is the name the builtin was
-called by (`cp`, `mv`; `command cp` and `builtin cp` keep it); an
-unrecognised name is an internal error (`unknown name`), as in `digest`.
-
-### Scope and options
-
-POSIX.1-2024 (read 2026-09-20):
-
-| | Options | Forms |
-|---|---|---|
-| `cp` | `-P -f -i -p`; `-R` with `-H -L -P` (last wins) | `cp [-Pfip] src target_file` · `cp [-Pfip] src... target_dir` · `cp -R [-H\|-L\|-P] [-fip] src... target_dir` |
-| `mv` | `-f -i` (last wins) | `mv [-if] src target_file` · `mv [-if] src... target_dir` |
-
-Decided extensions (each is a few lines; all are accepted by GNU, BSD and
-busybox, and by every script that matters):
-
-| Option | For | Meaning | Cost |
-|---|---|---|---|
-| `-r` | `cp` | same as `-R` (POSIX marks it obsolescent-but-required-by-history) | 0, one `case` label |
-| `-v` | both | print `'src' -> 'dst'` (same style as `ln -v`, `rm -v`) | ≈ 6 lines |
-| `-n` | both | never overwrite an existing destination; not an error | ≈ 4 lines |
-| `-a` | `cp` | `-R -P -p` (archive) | ≈ 2 lines |
-| `-T`, `-t DIR` | both | no-target-directory / target directory first | ≈ 15 lines each — **not in the first pass** |
-| `-u`, `-l`, `-s`, `--reflink`, `--preserve=…`, `-b`, `--backup` | | GNU-only | not planned |
-
-Long options: none (like the other builtins). `--` ends options
-(`shell_getopt`).
-
-### `cp` — behaviour, step by step (POSIX steps, with the syscall each maps to)
-
-Per `source_file`, after resolving `dest_file` (`target/basename(src)` when
-`target` is an existing directory; `basename` on a copy of the string —
-`builtin_ln.c` calls `basename()` on `argv` in place, which may modify it):
-
-1. **Same file** (`st_dev`/`st_ino` equal after `stat`): diagnostic
-   `cp: 'a' and 'b' are the same file`, no copy, status 1. Applies to
-   `cp a a`, hard links, and `cp a dir/` when `dir/a` is `a`.
-2. **Directory source**: without `-R` → diagnostic `cp: -r not specified;
-   omitting directory 'x'`, skip, status 1. With `-R`: create the
-   destination directory with the source's mode **& ~umask, | S_IRWXU** while
-   copying (so files can be created inside), recurse, then `chmod` to the
-   source's final mode (POSIX step 2); never follow into `.`/`..`. If `dest`
-   exists and is not a directory → diagnostic, skip subtree.
-   **Copy into itself** (`cp -R a a/b`): detect by walking `dest`'s ancestors
-   comparing `(st_dev, st_ino)` with the source directory; diagnostic, skip.
-3. **Regular file**, destination exists: with `-i` prompt on stderr
-   (`cp: overwrite 'dst'? `), read one line from **stdin**, continue only on
-   `y`/`Y` at the start of the reply (locale `yesexpr` is not consulted:
-   only `y`/`Y`); `-n` skips silently. `open(dst, O_WRONLY|O_TRUNC)`;
-   if that fails and `-f`: `unlink(dst)` then `open(dst, O_WRONLY|O_CREAT|O_EXCL)`.
-   Destination missing: `open(dst, O_WRONLY|O_CREAT|O_EXCL, srcmode)` (the
-   kernel applies the umask). Copy loop: `read`/`write` in **64 KiB** blocks
-   from a heap buffer (not `.bss`, Goal 5.6; not the stack), handling short
-   writes and `EINTR`; on Linux `copy_file_range()` is an optional fast
-   path behind a `HAVE_COPY_FILE_RANGE` check, **not in the first pass**.
-   Holes are not preserved (zeros are written).
-4. **Special files under `-R`**: FIFO → `mkfifo`, symlink under `-P` (or
-   default) → `readlink` + `symlink`, device nodes → diagnostic
-   "cannot copy special file" (no `mknod`; POSIX leaves it implementation-
-   defined). Sockets → diagnostic.
-5. **`-p`**: after the data is written: `utime()` (access and modification
-   time; the same call `touch` uses, portable to MinGW), `chown()`
-   (failure is silently tolerated when not root, **but then clear
-   `S_ISUID|S_ISGID`** as POSIX requires), `chmod()` to the source mode.
-   Without `-p`: the mode is the source mode masked by the umask, and
-   set-uid/set-gid bits are not kept.
-6. **Symlink operands and traversal**: without `-R`, follow (unless `-P`);
-   with `-R` and no `-H/-L/-P`, **`-P`** (POSIX: unspecified; the safe choice,
-   and what GNU/BSD `cp -R` effectively do for traversal). `-H`: follow only
-   command-line symlinks; `-L`: follow all.
-7. **Exit status**: 0 if everything requested was copied (a declined `-i`
-   prompt is not an error); 1 otherwise; the loop continues to the next
-   source after an error. Diagnostics use `builtin_error()`
-   (`cp: path: strerror`).
-
-Hard links inside a hierarchy are copied as separate files (POSIX:
-unspecified; GNU preserves them only with `-d`/`-a`; not planned).
-
-### `mv` — behaviour, step by step
-
-1. **Prompt** (POSIX step 1): destination exists, no `-f`, and either it is
-   not writable (`access(dst, W_OK)`) **and stdin is a terminal**, or `-i`
-   was given → prompt `mv: overwrite 'dst'? `, proceed only on `y`/`Y`.
-   `-n`: skip silently.
-2. **Same file** (`st_dev`/`st_ino`): diagnostic `mv: 'a' and 'b' are the
-   same file`, nothing removed, status 1 (POSIX allows three outcomes; this
-   is the safe one, and the same as GNU).
-3. **`rename(src, dst)`**. Success → done for this source. (On
-   `WINDOWS_NATIVE`, `rename` fails when the destination exists: use
-   `MoveFileExA(…, MOVEFILE_REPLACE_EXISTING)` there.)
-4. **Type mismatch** (dir over non-dir or non-dir over dir): diagnostic,
-   skip; do not fall through to copy. (`rename()` itself returns
-   `EISDIR`/`ENOTDIR`/`ENOTEMPTY`, which are reported as
-   `mv: cannot overwrite 'dst': …`.)
-5. **`EXDEV`** (other file system) is the only error that triggers the
-   fallback: `cp -R -p`-style copy into a **temporary sibling name**
-   (`dst.mv.NNNN`, `O_EXCL`), `rename` the copy to `dst` when complete,
-   then remove the source hierarchy with the shared `rm` tree removal.
-   Ordering matters for data safety: **the source is removed only after the
-   whole copy succeeded**; on any error the temporary is removed and the
-   source is left untouched.
-6. **Characteristics** (POSIX step 6): times, uid/gid and mode are copied;
-   if uid/gid/mode cannot be duplicated, set-uid/set-gid are dropped and a
-   diagnostic is written **without changing the exit status** (POSIX quote).
-   Symlinks are moved as symlinks. Hard links across file systems are
-   copied as separate files (unspecified in POSIX).
-7. **Exit status**: 0 if all moved (a declined prompt is not an error), 1
-   otherwise; continue with the next source after an error.
-8. `mv a a` and moving a directory into itself (`mv d d/sub`) are detected
-   before step 3 by the same ancestor walk as `cp`; diagnostic, no action
-   (`rename()` would return `EINVAL` anyway; the message is what improves).
-
-### Shared internals (all `static` in `builtin_cpmv.c`, except the last)
-
-| Helper | Job | Lines (est.) |
-|---|---|---|
-| `cpmv_parse()` | one option loop; `argv[0]` picks the option string (`"RrHLPfipnva"` for `cp`, `"finv"` for `mv`) and the masks that reject the other's flags | 45 |
-| `cpmv_target()` | last operand + `stat`: directory or not; "more than two operands need a directory" error | 30 |
-| `cpmv_dest()` | join `target/basename(src)` in a `stralloc` (basename of a copy) | 15 |
-| `cpmv_same()` / `cpmv_inside()` | `(dev,ino)` identity and ancestor walk | 35 |
-| `cpmv_confirm()` | prompt on `fd_err`, read a line from `fd_in` (see "Interactive prompt") | 30 |
-| `cpmv_copy_data()` | the read/write loop | 30 |
-| `cpmv_copy_attrs()` | `-p` handling and set-id clearing | 30 |
-| `cpmv_copy_tree()` | recursion: dir / file / symlink / fifo | 80 |
-| `cpmv_cp_one()`, `cpmv_mv_one()` | the per-source step lists above | 50 + 40 |
-| `builtin_cpmv()` | dispatch + operand loop + status | 40 |
-| **`builtin_rm_tree()`** (exported from `builtin_rm.c`) | the existing static `rm_recursive()`, renamed and declared in `builtin.h`, so `mv` removes a source hierarchy with the code `rm -r` already has | 0 new (rename only) |
-
-Estimated total **≈ 425 lines ≈ 3.5-4.2 KB** for both, versus **≈ 490-520
-lines ≈ 4.2-5 KB** if `mv` had its own copy of the glue.
-
-### Portability
-
-- **Feature checks** (`cmake/Checks.cmake`, next to `HAVE_LSTAT`/
-  `HAVE_READLINK`): `HAVE_UTIME`, `HAVE_CHOWN`, `HAVE_MKFIFO`,
-  `HAVE_SYMLINK`, `HAVE_RENAME` (always), optional `HAVE_COPY_FILE_RANGE`.
-  Every attribute step is `#if`-guarded and degrades to a no-op.
-- **`WINDOWS_NATIVE`** (mingw builds exist): `lstat`/`readlink`/`symlink`
-  shims are in `lib/unix/`; no `chown`/`mkfifo`; `rename` needs the
-  replace-existing wrapper; mode bits are the emulated ones.
-- **WASI** (`doc/wasm.md`): `rename`, `open`, `read`/`write`, `readdir`,
-  `utime` exist; `chown`, `mkfifo`, `symlink`, `chmod` do not (wasi-libc) —
-  the `HAVE_*` guards cover them; `EXDEV` cannot occur between preopened
-  directories in practice, so the fallback is compiled but rarely runs.
-  `cp`/`mv` are the point of this port: they are the first file utilities
-  that work with no `fork`.
-- **dietlibc/musl**: only standard calls; `utime` not `utimensat`.
-- **Large files**: `off_t` is 64-bit where `_FILE_OFFSET_BITS=64` is set
-  (check the cmake defines); the copy loop counts bytes, never `size_t`
-  arithmetic on file size.
-
-### Interactive prompt (`-i`, and `mv`'s unwritable-destination prompt)
-
-- Write the prompt to `fd_err`, read **one line from stdin** through `fd_in`.
-  In an interactive shell `fd_in` is the line editor (`term_read`), which
-  would print the PS1 prompt again and offer editing/history; `builtin_read`
-  already deals with this (`term_attr(..., &attrs)` around the read,
-  `builtin_read.c:104-120`) — reuse that path instead of inventing another.
-- Non-interactive with `-i` and stdin at EOF: the answer is "no", the file is
-  skipped, status 0 (POSIX: a non-affirmative response is not an error).
-- `-f` after `-i` wins (last one determines, POSIX); `-n` and `-i`: `-n` wins
-  (GNU/BSD `-n` overrides earlier `-i`; document).
-
-### Shell integration and risks
-
-- **Signals**: a builtin runs inside the shell, and `SIGINT` while copying a
-  large file must stop the copy. `cat`/`tee` do not check for it either
-  (`tee` even has `-i`). Plan: test between blocks whether the shell's
-  interrupt flag is set (find the flag `sh_onsig()` sets; if there is none
-  for foreground builtins, that is a general gap — record in `BUGS`), remove
-  the partial destination (`mv` fallback temporary; `cp` leaves what it wrote,
-  like every `cp`), and return 130.
-- **Partial writes / `ENOSPC`**: report the write error, remove nothing that
-  existed before, status 1. `mv` never removes the source after a failed copy.
-- **`set -C` (noclobber)** does not apply to `cp`/`mv` (it is a redirection
-  option), as in bash.
-- **Aliases**: `alias cp='cp -i'` works unchanged; `command cp` and
-  `builtin cp`… keep `argv[0]`.
-- **`hash`/`type`**: they already list builtins from the table; nothing to add.
-- **Completion** (Goal 9): the default completion table gets rows for
-  `cp`/`mv` (files, then directory for the last operand) with no engine change.
-- **Data-loss bug next door**: `ln` currently destroys an existing
-  destination with no `-f` (`BUGS: ln-unlinks-existing-destination`, found
-  while planning this). `cp`/`mv` must not copy that unlink-first habit: the
-  only unlink before writing is `cp -f`'s fallback after `open()` failed.
-- **Same-name subtleties**: a source with a trailing slash (`cp -R a/ b`)
-  behaves as `cp -R a b` (creates `b`, or `b/a` when `b` is an existing
-  directory) — test both; a destination `dir/` with a trailing slash that
-  names a non-directory is an error, not a file called `dir`; an empty
-  operand `''` gives `cp: cannot stat ''`.
-- **Names starting with `-`**: `--` handling only; `cp -- -x y`.
-- **`mv` of the current directory or a mount point**: `rename` reports
-  `EBUSY`/`EINVAL`; message passes through.
-- **Symlink to directory as destination** (`cp f linkdir`, `linkdir` → dir):
-  `stat` (following) decides "is a directory", `lstat` is used for the
-  destination-exists checks of the final component — same split as coreutils.
-
-### Testing (`tests/builtin-cp.sh`, `tests/builtin-mv.sh`; skipped when not compiled in, as `builtin-digest.sh`)
-
-All assertions through `assert_equal`/`assert_match`, ending with `summary`.
-Use `$(mktemp -d)`, `cmp`-free comparisons (shell `read`/`cat` of the file, or
-the `digest` builtin when present).
-
-- **`cp`**: file → file (content, and mode = source & ~umask); file → existing
-  file (truncated, same inode kept); file → directory; several files →
-  directory; `several → non-directory` fails; missing source: status 1 and
-  the other sources are still copied; `-R` tree (nested dirs, empty dir, file
-  modes, dangling symlink copied as a link with `-P`, followed with `-L`);
-  `-R` into itself refused; same file refused (`cp a a`, hard link, symlink
-  to it); `-i` with `y`, `n`, EOF; `-n`; `-f` over a read-only destination;
-  `-p` keeps mtime (`touch -t` then compare via `ls -l`/`test -nt`) and drops
-  set-id when chown is denied; a 5 MiB file and a 0-byte file; names with
-  spaces, `-` prefix (`--`), and a trailing slash; unreadable source;
-  destination directory not writable; `-v` output format; `-a`.
-- **`mv`**: rename in place (inode unchanged); into directory; several into
-  directory; over an existing file (contents replaced, `-i` prompt, `-n`);
-  dir over non-dir and non-dir over dir refused; `mv a a`; `mv d d/sub`;
-  missing source; **cross-device** — use `/dev/shm` (tmpfs) vs `$TMPDIR` on
-  disk when they differ (`stat -c %d`); if not, skip that group with a note;
-  force the fallback path in a dev-only test hook (`SHISH_CPMV_FORCE_COPY=1`
-  compiled under `_DEBUG`), so the EXDEV branch is tested everywhere — copy
-  correctness, source removed only on success, failed copy leaves the source
-  and no temporary file.
-- **Both**: `--` and option combinations (`-fi` vs `-if`, last wins); an
-  unknown option → usage, status 1 (or 2? decide with the other builtins:
-  they return 1); a directory name that is also an option (`./-r`).
-- **Fuzz / differential** (dev-only, not CTest): random trees under a temp
-  dir, `shish cp -R` vs the system `cp -R` (or `-RP`), compare with
-  `diff -r` plus `find -printf '%m %y\n'`; same for `mv` on `/dev/shm`.
-- **WASI**: `tests/builtin-cp.sh` runs unmodified under the Node harness
-  (`doc/wasm.md`); record which groups skip.
-
-### Order of work (each step its own change; test + `TODO.md` in the same change)
-
-0. **Fix or record `ln`'s unlink** (`BUGS: ln-unlinks-existing-destination`)
-   — one line plus a `tests/fixed.sh` case + `fixes/NN`; it is the model of
-   what `cp`/`mv` must not do, and the same "exists?" logic gets written
-   twice otherwise.
-1. **Export the tree removal**: rename `rm_recursive()` to `builtin_rm_tree()`
-   in `builtin_rm.c`, declare it in `builtin.h`, `tests/builtin-rm.sh` unchanged.
-2. **`cp` only, through `builtin_cpmv()` with the `cp` row**: options,
-   target resolution, regular files, `-i -f -n -p -v`, then `-R` with
-   directories, symlinks, FIFOs. `tests/builtin-cp.sh` grows with each.
-   Register (`builtin.h`, `builtin_table.c` fallback define + row,
-   `cmake/Builtins.cmake` `EXTRA_BUILTINS`, autotools list in `configure.ac`).
-3. **`mv`**: `rename` path, prompts, type mismatch, then the `EXDEV`
-   fallback on top of `cpmv_copy_tree()` + `builtin_rm_tree()`. **Measure
-   both layouts** (dispatch vs two entry points, see the size section) and
-   keep the smaller; record the numbers here.
-4. **Portability pass**: WASI (Node harness), `cfg-mingw64`
-   (`WINDOWS_NATIVE` rename/attributes), musl/diet builds; unguarded calls
-   fail the build, not the run.
-5. **Signals and large-file behaviour**: interrupt polling, `ENOSPC`, a
-   4 GiB sparse file check (skip when the file system lacks holes), then the
-   optional `copy_file_range()` fast path if the measured copy speed matters.
-6. **Documentation**: `doc/builtins.md` entries, help texts (`help_cp`,
-   `help_mv`, kept short — Goal 5.2 counts help bytes), README builtin list.
-
-### How to measure
-
-```sh
-# both builtins on: size of the pair
-cmake -S . -B /tmp/cpmv -DCMAKE_BUILD_TYPE=MinSizeRel -DENABLE_CP=ON -DENABLE_MV=ON
-cmake --build /tmp/cpmv -j8
-size /tmp/cpmv/CMakeFiles/libshell.dir/src/builtin/builtin_cpmv.c.o
-nm --size-sort -S /tmp/cpmv/CMakeFiles/libshell.dir/src/builtin/builtin_cpmv.c.o | tail -20
-strip /tmp/cpmv/shish && stat -c%s /tmp/cpmv/shish     # vs the same build with both OFF
-# mv only / cp only: the row that is off must not pull its code (gc-sections check)
-# the copy engine's speed against coreutils
-dd if=/dev/urandom of=/tmp/big bs=1M count=512; time /tmp/cpmv/shish -c 'cp /tmp/big /tmp/big2'; time /bin/cp /tmp/big /tmp/big3
-```
+- `-T`/`-t`; the `SHISH_CPMV_FORCE_COPY` test hook; messages in GNU wording (`target 'x': No such file...`
+  instead of `cp: x: not a directory`).
+- **Interrupting a copy:** an interactive shell ignores `SIGINT`, so a running `cp` of a large file
+  cannot be interrupted; poll for it. Also `ENOSPC` handling and a 4 GiB sparse-file check (skip
+  when the file system lacks holes), then the optional `copy_file_range()` fast path if the measured
+  copy speed matters; hole preservation.
+- **Portability pass:** WASI (Node harness), `cfg-mingw64` (`WINDOWS_NATIVE` rename/attributes; the
+  mingw sysroot headers are not installed here, so it is only guarded with `CPMV_NOUNIX`, never
+  compiled), musl/diet builds.
+- **Size:** measure the pair against two separate entry points (`-DBUILTIN_CP=ON -DBUILTIN_MV=ON`,
+  `strip`, `stat -c%s`) and keep the smaller layout.
+- Documentation: `doc/builtins.md` entries, short `help_cp`/`help_mv` (Goal 5.2 counts help bytes),
+  README builtin list.
+- `ln` unlinks an existing destination (`BUGS: ln-unlinks-existing-destination`): the model of what
+  `cp`/`mv` must not do.
 
 ---
 
-## Goal 11 (secondary) — `sed` and `awk` builtins, in depth (as small as possible, maximum reuse)
+## Goal 11 (secondary) — `sed` and `awk`: what is left
 
-**`sed`: done (commit `c3ae2fa5`). `awk`: done (2026-09-25) — see the
-"Status" note near the end of this section for what shipped and what
-didn't; the rest of this section is still an accurate read of the
-design both were actually built from.** This section refines Goal 6
-(which plans `lib/dfa`, `expr`, `grep` and a first `sed` estimate) and
-adds `awk`. Specs read 2026-09-20: POSIX.1-2024
-[`sed`](https://pubs.opengroup.org/onlinepubs/9799919799/utilities/sed.html) and
-[`awk`](https://pubs.opengroup.org/onlinepubs/9799919799/utilities/awk.html).
+Both are `EXTRA_BUILTINS` (off by default) on the shared engines `text/sed/`, `text/awk/` and
+`text/dfa/` (`dfa_replace`/`dfa_repl`), `lib/arena` and `lib/hashmap`; tests `tests/builtin-sed.sh`,
+`tests/builtin-awk.sh`.
 
-**`sed` is done** (`text/sed/` + `src/builtin/extra/builtin_sed.c`,
-`c3ae2fa5`), including the shared foundation pieces it needed:
-`dfa_replace`/`dfa_repl` (`text/dfa/dfa_replace.c`) and `lib/arena`
-(`696bdcce`, see Goal 3). **`awk` is done too** (`text/awk/` +
-`src/builtin/extra/builtin_awk.c`, `23998969`, 2026-09-25). The design below
-(originally written for both) is the record of what both were built from;
-treat the shared-foundation table just below as "already built and in use."
+Documented omissions (each is in the `help_*` text, so not a `BUGS` entry):
 
-### Answers to the five questions
-
-| Question | Answer |
-|---|---|
-| **Is `lib/dfa` suited to `awk`?** | **Yes, for the regex half only, and it needs *less* of it than `sed`.** awk uses ERE, never back-references, never `\1`; `sub`/`gsub` replace with `&` (whole match) only. So awk needs `dfa_compile` + `dfa_test` (`~`, patterns) + `dfa_search` (`match`, `sub`, `gsub`, regex `FS`/`split`) and **not** `dfa_submatch` or the backtracker, which the linker then drops (`--gc-sections`). The lazy DFA is also the right engine for awk's usage pattern: the same few regexes run against every record, so the state cache built on record 1 serves the rest of the file. |
-| **Do `sed` and `awk` need recursive-descent parsing?** | **`sed`: no.** Its language is flat: `[addr[,addr]]cmd[args]` per line, nesting only through `{ }` (an explicit stack of open braces; each `{` stores the index of its `}`) and forward branch targets (labels resolved by a fix-up pass). One loop over the script, no recursion. **`awk`: yes, but little.** Statements nest (`if`/`while`/blocks/functions) so the statement parser recurses; expressions have 16 precedence levels but are parsed by **one** precedence-climbing function driven by a table, not 16 functions. No parser generator exists in-tree, and the POSIX grammar is a yacc grammar with lexical feedback (regex-vs-`/`, `getline`, newline rules); a hand-written parser is smaller than yacc tables plus a lexer that must cooperate with them. |
-| **Can they be implemented on top of `dfa`?** | `dfa` is the **regex layer** under both, nothing more: it does not parse either language and does not carry state between lines. Everything else (script/program parsing, execution cycle, values, fields, I/O) is new code. What both want from `dfa` beyond Goal 6 is one shared helper, **`dfa_replace()`** (the "find next match, copy the gap, append the replacement, advance past empty matches" loop that `s///` and `sub`/`gsub` are both made of), so that loop is written once. |
-| **`awk`: build a real AST, or compile straight to bytecode?** | **AST, tree-walking interpreter** -- same shape as the shell's own `union node` parser: one parse produces a tree, execution (`eval/`) and pretty-printing (`sh_fmt.c`/`shformat`) are two separate walks over the *same* tree, and `shparse2ast` is a third (a dumper). An `awk_node` tree gets an `awkformat`/`awkparse2ast` the same way, free of any extra parsing work. `text/dfa` went straight to bytecode instead, but for a reason that doesn't generalize: a compiled regex runs over and over with no legitimate "print the pattern back out" use case (the source pattern already *is* the readable form) -- awk programs are the opposite, short scripts worth reformatting. Bytecode-first forecloses that cheaply; AST-first doesn't foreclose bytecode -- an AST-to-bytecode compiler is a natural later stage *on top of* the tree if tree-walking ever proves too slow (unlikely at this project's stated proof-of-concept bar; the shell interpreter is itself a tree-walker despite running in loops). Recovering a formattable structure from flat bytecode after never building a tree is a decompiler, strictly harder -- not worth setting up as the starting position. |
-| **Can awk parsing share code with `src/parse/parse_arith_*.c`?** | **Not directly; at most a table-driven core later** — see "Sharing with the shell's arithmetic parser" below. Short version: the arithmetic parser is a character-level parser over the shell's global `source`, `int64` only, building shell `union node`s and evaluated against the shell variable table; awk needs a token stream, `double`+string dual values, a different operator set, and context-dependent lexing. Nothing but the *idea* (precedence climbing) transfers. |
-| **How big?** | Estimates below, in this repo's line style (≈ 40 % blank/comment/brace lines; calibration ≈ 7-10 B of code per line, Goal 6): **`sed` ≈ 850 lines / 7-9 KB** (was ≈ 1200 in Goal 6), **`awk` ≈ 2100 lines / 16-21 KB** (+ libm on dynamic-link-free builds), on top of ≈ 400 lines of shared/imported foundation. For scale: `../busybox/editors/awk.c` is 4028 lines and `sed.c` 1684 (both with GNU extensions and libc `regex`). |
-
-### Things found while researching (2026-09-20) that shape the plan
-
-- **`awk` needs floating point; the shell has none.** Nothing in `src/` uses
-  `double`, `strtod` or `snprintf`. Awk numbers are `double`, and CONVFMT/OFMT
-  (`"%.6g"`) rounds, so exact conversion matters for output.
-- **`c-utils`' `scan_double`/`fmt_double` are not usable**, measured:
-  - `scan_double("0.3")` gives `0.30000000000000004`, libc `strtod` gives
-    `0.29999999999999999` (it multiplies by a running `0.1` factor), so a
-    program's literal `0.3` would not equal the field `0.3`, or `0.1+0.2`.
-  - `fmt_double(0.3, prec 6)` prints `0.299999` (truncates, does not round),
-    `100` prints `100.000`, `1e21` prints `1.00000e21`, `1.234e-06` prints
-    `0.123399`; it also reads its union before assigning it.
-  - **Decision: libc `strtod` and `snprintf("%.*g")`, in two small wrappers**
-    (`awk_str2num`, `awk_num2str`). Integer-valued doubles (POSIX: converted
-    "as if `%d`") are formatted with `fmt_longlong` and never touch
-    `snprintf`, so the common case (`NR`, `NF`, counters) costs no libc
-    float code. `setlocale` is never called, so the radix is always `.`
-    (POSIX says awk uses `LC_NUMERIC`; shish is always in the C locale).
-- **`builtin_printf.c` already has the format machinery awk needs** (flags,
-  width, precision, `*`, the numeric padding), but it writes straight to
-  `fd_out` and is integer-only. Refactoring it to write into a `stralloc*`
-  sink and exposing `printf_parse_spec`/`printf_emit_numeric` lets awk's
-  `printf`/`sprintf` reuse ≈ 150 lines of it; awk adds `%e %E %f %F %g %G`
-  by building the spec text and calling `snprintf` for just those.
-- **`lib/arena` is implemented** (`696bdcce`, see Goal 3; `arena_init/alloc/
-  reset/free` plus `tell/rewind/grow/trim`). It serves this goal
-  and Goals 3/4: the sed script and the awk program live in one arena freed
-  at exit; awk's *temporaries* (string results of expressions) live in a
-  second arena reset after every statement, so the interpreter needs almost
-  no `free()` logic (≈ 100 lines saved, and a class of leaks).
-- **`c-utils` has what the containers need**: `hashmap` (10 files, 164 lines
-  in total) for awk arrays; `buffer_getline_sa` (7 lines) and
-  `buffer_get_token_sa` (29) for records — `lib/stralloc.h` already
-  *declares* both but the `.c` files are missing (link error today).
-- **`busybox/editors/awk.c` as a yardstick** (4028 lines; largest functions,
-  measured): `evaluate` 711, `debug_parse_print_tc` 475 (debug only),
-  `awk_printf` 273, `next_token` 215, `parse_expr` 199, `exec_builtin` 191,
-  `awk_sub` 113, `awk_getline` 97, `awk_split` 86. The plan below reaches the
-  same feature set with the regex engine, the `hashmap`, the printf formatter
-  and the arena imported instead of written inline.
-
-### Shared foundation (build once, used by both)
-
-| Piece | Source | State | Lines | Used by |
-|---|---|---|---|---|
-| `text/dfa`: `dfa_compile/test/prefix/search/submatch` | Goal 6 | **done** | (Goal 6) | sed (all), awk (compile/test/search) |
-| **`dfa_replace()`** — global/nth substitution loop with the empty-match rule (`s/x*/-/g` on `abc` gives `-a-b-c-`) | `text/dfa/dfa_replace.c` | **done**, in use by sed `s///` | ≈ 70 | sed `s`, awk `sub`/`gsub` |
-| replacement compiler: `&`, `\&`, `\\`; `DFA_REPL_BACKREF` also gives `\1`-`\9` and `\n` | `text/dfa/dfa_replace.c` (`dfa_repl_compile`, same file as `dfa_replace()`, not a separate `dfa_repl.c`) | **done**, in use by sed `s///` | ≈ 45 | sed, awk |
-| `arena_*` | `lib/arena.h` + `lib/arena/` | **done** (`696bdcce`; see Goal 3) — one caller so far, `text/dfa/dfa_run.c`'s per-search save arrays; not yet adopted by sed's own parse-scratch (label/fixup tables in `sed_parse.c`) or awk | ≈ 60 | sed script, awk program + temporaries |
-| `hashmap_*` (awk arrays, ENVIRON, output-file table) | `../c-utils/lib/hashmap/` | copy | 164 (+ ≈ 10 for a `hashmap_next` iterator) | awk |
-| `buffer_getline_sa`, `buffer_get_token_sa` | `../c-utils/lib/stralloc/` | copy | 36 | sed lines, awk records (`RS` single char) |
-| `byte_lower`/`byte_upper`, `byte_findb` | `../c-utils/lib/byte/` | copy | ≈ 30 | awk `tolower`/`toupper`/`index`, sed `I` flag helpers |
-| printf formatter to a `stralloc` sink | refactor `src/builtin/builtin_printf.c` | refactor | −0 net for the shell; awk saves ≈ 150 | awk `printf`/`sprintf`, shell `printf` |
-| `fmt_escapecharcx`/`fmt_escapecharnonprintable` | `../c-utils/lib/fmt/` | copy | ≈ 60 | sed `l` |
-| UTF-8 `mb_*` (Goal 7) | planned | — | — | character semantics of `length`, `substr`, `index`, `match`, `printf %c` (Issue 8 awk is character-based; bytes are conformant in the POSIX locale, so this is a later milestone) |
-
-Deliberately **not** used: `cbmap` (847 lines; its one advantage, ordered
-iteration, is not worth 5× the code — POSIX leaves `for (k in a)` order
-unspecified), `array` (357 lines; a `stralloc` of fixed-size records does the
-job), `tokenizer.h` (a C-language tokenizer: no regex-vs-`/` handling, no
-newline tokens), `scan_double`/`fmt_double` (see above).
-
-### `sed` — design
-
-**Structures**
-
-```c
-struct sed_addr { unsigned char kind; /* NONE LINE LAST REGEX */ unsigned long n; struct dfa* re; };
-struct sed_cmd  {                    /* fixed size; the array lives in a stralloc */
-  unsigned char op, neg, inrange;    /* command letter, '!', range is open */
-  struct sed_addr a1, a2;
-  unsigned long endline;             /* a2 as a line number once resolved */
-  union { int target;                /* '{' -> index of '}', b/t -> index of the label */
-          char* text;                /* a i c r w  (arena) */
-          struct sed_subst* s;       /* s: regex, replacement pieces, flags, nth, wfile */
-          unsigned char* y;          /* y: 256-byte table */ } u;
-};
-```
-
-- **Script assembly**: `-e` and `-f` pieces are concatenated in order, a newline
-  inserted after a `-e` piece (POSIX); `#n` as the first two characters of the
-  first piece is `-n`. One `stralloc`; the parser reads it with an index.
-- **Parser** (≈ 330 lines): a single `for(;;)` that skips blanks/`;`/newlines,
-  parses `addr[,addr]`, an optional `!`, the command letter, then its
-  argument; `{` pushes the command index, `}` patches it. Labels are recorded
-  in a small table; after the last command every `b`/`t` operand is resolved
-  by a fix-up loop (unknown label is an error; labels are unique to at least 8
-  bytes per POSIX, we compare the whole name). Regex delimiters: `\cREc`
-  and `s` use one `sed_delim()` that removes the backslash from `\c` when `c`
-  is the delimiter (POSIX Issue 8: the delimiter does not end the RE inside a
-  bracket expression), and turns `\n` into a newline — then hands the text to
-  `dfa_compile(..., DFA_SED | (E ? DFA_ERE : 0) | (I ? DFA_ICASE : 0))`. An
-  empty pattern means "the last regex used at run time": the command keeps
-  `re == NULL` and the executor uses `sed_last_re`.
-- **Execution** (≈ 260 lines): one loop over the command array with a program
-  counter (`{` not selected jumps over its body; `b`/`t` set the counter),
-  wrapped in the cycle: read line → run → autoprint (unless `-n`) → flush the
-  append queue. State: pattern space and hold space (`stralloc`), line number,
-  `t` flag, `quit`, the append queue (a list of `a` text and `r` file names, in
-  order), the `D` restart flag ("start the next cycle without reading input"),
-  and the last-line lookahead.
-- **Address matching** (≈ 50 lines): a range keeps `inrange` in its command.
-  Rules from the spec: a second address that is a number ≤ the first line
-  selects only that line; a regex second address is tried from the line
-  *after* the first; `addr!cmd`; `$` needs the lookahead.
-- **Input** (≈ 90 lines): the operand list, `-` or none = stdin, files opened
-  one at a time; a **one-line lookahead** across files answers "is this the
-  last line" (an unreadable or empty *later* file must not make the current
-  line non-last: skip ahead to the next readable line, diagnose the bad file
-  once). Line numbers are cumulative across files. Missing final newline:
-  see Goal 6 (output always ends in a newline, POSIX).
-- **Commands** (executor `switch`, ≈ 150 lines): `= a b c d D g G h H i l n N p P
-  q r s t w x y : { } #`. `n`/`N` at end of input: `N` quits **without**
-  printing (spec text, and Issue 8's clarified timing: the append queue is
-  flushed just before the next input fetch by `c D d N n`, before `q`, and at
-  the end of the script); `n` quits after autoprint. `c` starts the next cycle
-  for **every** line of its range (Issue 8 defect 1767), printing the text
-  only at a single address or at the end of a range. `l` folds at 70 columns
-  and ends with `$`. `w` files are created before input is read, shared by
-  name, `/dev/stdout` is special.
-- **`s`**: the replacement is compiled once into pieces (literal / group `n` /
-  whole match) by `dfa_repl`; flags `g p w i n` and the number; `g` with a
-  number is unspecified in POSIX (we do "nth and after", like GNU). The
-  executor calls `dfa_replace()`; groups are asked from the backtracker only
-  when a piece needs `\1`-`\9` (a pattern with no captures and a replacement
-  of only `&`/text stays on the pure DFA).
-- **Not implemented** (documented): `-i`, `-s`, `-z`, `e F z W R M`, `0,/re/`,
-  `addr,+N`, `first~step`, `q`/`Q` exit-code arguments, the `y` escapes other
-  than `\n`, `\\` and the delimiter (undefined in POSIX). Unknown command:
-  `sed: -e expression #1, char N: unknown command: X`, status 1.
-
-**Sizes (`sed`)** — likely / range, lines: options + script assembly 90;
-parser 330 (addresses 70, command switch 110, `s` 90, `y` 30, text/label/wfile
-30); regex glue 40; executor 260; input/output/append queue/wfiles 130; `l` 35;
-**≈ 885 (700-1000)** = ≈ 7-9 KB. The drop from Goal 6's ≈ 1200 comes from
-`dfa_replace` + `dfa_repl` (≈ 80 lines it would have inlined), the
-flat parser (no recursion, no separate token layer), `buffer_getline_sa`
-instead of a private reader, and `arena` instead of per-command `free()` code.
-
-### `awk` — design
-
-**Pipeline**: `source text → lexer (on demand, 1 token of lookahead) → parser →
-tree of struct anode in the program arena → interpreter (tree walk)`.
-
-**Lexer** (≈ 220 lines). Tokens: `NUMBER STRING ERE NAME FUNC_NAME BUILTIN
-KEYWORD NEWLINE` and operators (two-character ones from the grammar: `+= -= *= /=
-%= ^= || && !~ == <= >= != ++ -- >>`). The context rules from the spec, each
-one a few lines:
-
-- **`/` is division unless a value cannot end the previous token**:
-  keep `prev` (class of the last token); if it is `NAME NUMBER STRING ) ] $ ++ --
-  BUILTIN` (something that ends an operand) a `/` is `/` or `/=`, otherwise it
-  starts an ERE. (POSIX wording: "where the token `/` or `DIV_ASSIGN` could
-  appear as the next token … the longer of those two".)
-- **`FUNC_NAME`**: a name immediately followed by `(` (no blank).
-- **Newlines**: a token of its own; `\`+newline is skipped; the parser, not the
-  lexer, decides where a newline may be ignored (after `{ && || , do else`, after
-  `)` of `if/for/while`, after `;`).
-- **Strings**: escapes `\\ \" \/ \a \b \f \n \r \t \v \ddd`; a raw newline in a
-  string is an error. **EREs**: the text between the slashes with `\/`
-  turned into `/`; everything else is passed to `dfa_compile` untouched (its
-  ERE syntax already handles `\.` and brackets; awk's `\ddd`, `\n` and friends
-  are turned into the byte first by one 20-line pass shared with string
-  literals). A dynamic regex (`$0 ~ s`) gets the same pass because the string
-  value `"\\."` has already been through string escape processing once.
-- **Numbers**: decimal with optional fraction and exponent (`strtod` on the
-  scanned span); hexadecimal constants are optional in POSIX and not accepted.
-- **Comments** to end of line; keywords: `BEGIN END function func if else while
-  for do break continue next nextfile exit return delete in getline print printf`;
-  built-in function names are their own token class.
-
-**Parser** (≈ 540 lines).
-
-- **Program**: items until EOF; `BEGIN`/`END` bodies (several allowed, kept in
-  order), `pattern`, `pattern action`, `expr , expr action` (range),
-  `function name(params) action`. A missing action is `{ print }`.
-- **Statements** (≈ 200 lines): `{ }`, `if/else`, `while`, `do … while`,
-  `for(;;)`, `for (k in a)`, `break continue next nextfile exit [expr]
-  return [expr]`, `delete a[i]` / `delete a`, `print`/`printf` with an optional
-  `> >> |` target, and expression statements. Terminators are `;` or newline
-  or the enclosing `}`.
-- **Expressions** (≈ 260 lines): **one function, `awk_expr(min_prec)`**,
-  precedence climbing over this table (highest first; from the spec):
-
-  | Prec | Operators | Assoc |
-  |---|---|---|
-  | 14 | grouping `( )`, `$expr`, `++x --x x++ x--` (prefix/postfix, in the primary) | — |
-  | 13 | `^` | right |
-  | 12 | unary `! + -` | (prefix) |
-  | 11 | `* / %` | left |
-  | 10 | `+ -` | left |
-  | 9 | concatenation (adjacency) | left |
-  | 8 | `< <= != == > >=` | none |
-  | 7 | `~ !~` | none |
-  | 6 | `in` | left |
-  | 5 | `&&` | left |
-  | 4 | `\|\|` | left |
-  | 3 | `?:` | right |
-  | 2 | `= += -= *= /= %= ^=` | right (lvalue on the left) |
-
-  The awk-specific cases live in the few lines around the loop, not in the
-  table: **concatenation** has no token, so "the next token starts a primary and
-  is not a binary operator" continues the loop as a concatenation;
-  **unary minus vs `^`** (`-2^2` is `-4`, `2^-3` works): the operand of unary
-  `- + !` is parsed at prec 12, the right side of `^` allows a unary operator;
-  **`in`** takes a parenthesised subscript list on the left (`(i,j) in a`);
-  **`>` inside `print`/`printf`** is a redirection unless parenthesised
-  (a `no_gt` flag threaded down, cleared inside `( )`); **`getline`**:
-  `getline`, `getline var`, `getline < file`, `getline var < file` (the file
-  operand is a *primary-level* concatenation-free expression, as in the
-  grammar) and `cmd | getline [var]` (a postfix step after a full `|` left
-  side); **regex literal as an expression** is `$0 ~ /re/` (an `ERE` node
-  outside `~ !~` and outside built-in regex arguments).
-- **Names are resolved at parse time**: globals get an index into one array
-  (names interned through a `hashmap`), function parameters get a frame slot,
-  so the interpreter never looks a name up by string. The special variables
-  (`NF NR FNR FS OFS ORS RS SUBSEP CONVFMT OFMT RSTART RLENGTH FILENAME ENVIRON
-  ARGC ARGV`) occupy fixed indices below `NSPECIAL`; after every assignment
-  `if(idx < NSPECIAL) special_assigned(idx)` (≈ 15 lines) handles the hooks
-  (`NF`, `FS`, `$0`).
-- **Node**: `struct anode { short op; short flags; union { double num; char* str;
-  struct dfa* re; int idx; } u; struct anode *a, *b, *c, *next; }` (≈ 48 bytes),
-  all in the program arena.
-
-**Values and conversions** (≈ 160 lines)
-
-```c
-struct cell {                 /* a value; also a variable slot */
-  unsigned char type;         /* UNINIT NUM STR STRNUM(a string that looks numeric, decided lazily) ARRAY */
-  double num;
-  char*  str;                 /* NUL-terminated; arena temp or heap, by owner */
-  struct hashmap* arr;        /* ARRAY */
-};
-```
-
-- **Strings are C strings** (POSIX: a NUL in a pattern, record or string gives
-  undefined results), so no length field and `str_len`/`byte_*` work directly.
-- **Number → string**: an integer-valued double becomes `%d` (`fmt_longlong`), any
-  other uses CONVFMT (`snprintf`), OFMT for `print`. **String → number**:
-  `strtod` on the leading numeric prefix. **Numeric-string** (from input, `getline`,
-  `FS`-split fields, `ARGV`, `ENVIRON`, `-v`/command-line assignments, `split()`):
-  decided when *compared* by one function `looks_numeric(s)` (blank-trimmed,
-  optional sign, digits, one optional radix, optional exponent, nothing left).
-- **Comparison**: numeric if both are numbers or numeric strings or one is a
-  number and the other uninitialised; otherwise string comparison
-  (`==`/`!=` by identity, `<` etc. by `strcmp` — C-locale collation, POSIX
-  says `strcoll`). Truth: number != 0, string non-empty.
-- **Temporaries**: expression results that are strings are copied into the
-  *statement arena*, reset after every statement; assignment copies into the
-  variable's own heap string. `eval()` therefore never frees.
-
-**Interpreter** (≈ 560 lines): `struct cell eval(struct anode*)` is one switch
-(≈ 220 lines: arithmetic, comparison, logic, assignment/compound
-assignment/incr-decr through `lvalue()`, `$`, concatenation, `?:`, `in`, `~`,
-calls, `getline`, built-ins); `int exec(struct anode*)` returns a control code
-(`NORMAL BREAK CONTINUE NEXT NEXTFILE EXIT RETURN`) so loops and functions need no
-`longjmp`; **`exit` inside an expression-called function and fatal runtime errors
-use one `setjmp` in the builtin** (division by zero, bad regex, write error:
-`awk: division by zero`, status 2). User functions: a frame is an array of
-`cell` for `params`; scalars are copied, an array argument shares the
-`hashmap*`; missing arguments are uninitialised locals; an uninitialised local
-passed on as an array becomes an array in the caller (the POSIX rule, ≈ 15 lines
-in the call code); recursion depth is limited (default 1000) to fail cleanly
-instead of overflowing the C stack.
-
-**Records and fields** (≈ 220 lines): one `struct rec { stralloc line; char** f;
-size_t nf; flags }`, split **lazily** (on the first `$n`/`NF`) with the `FS`
-in force *when the record was read* (spec): default `" "` (blanks and newlines
-trimmed and collapsing), single character (each occurrence, except that `\t` etc.
-work), otherwise an ERE through `dfa_search`. `$0` is rebuilt lazily with `OFS`
-after a field or `NF` assignment; assigning `$0` resplits; `$(NF+2)=x` grows
-`NF`. `RS`: first character, or `""` = paragraph mode (blank-line separated,
-newline always a field separator) — implemented in `awk_getrec` on top of
-`buffer_get_token_sa`; a regex `RS` is an extension, off.
-
-**Built-in functions** (each one small; `length`, `substr`, `index`, `match`,
-`printf %c` become character-based with Goal 7):
-
-| Function | Strategy | Lines |
-|---|---|---|
-| `length [(s)]`, `length(arr)` | `str_len` (or element count) | 8 |
-| `substr(s,m[,n])` | POSIX rounding rules (`m`, `n` rounded, clipped to 1..len) | 25 |
-| `index(s,t)` | `byte_findb` | 6 |
-| `match(s,re)` | `dfa_search`; sets `RSTART`, `RLENGTH` (0 / -1) | 15 |
-| `split(s,a[,fs])` | same splitter as fields; clears `a`; elements are numeric strings | 30 |
-| `sub`/`gsub(re,repl[,target])` | `dfa_replace` + `dfa_repl` (awk dialect); target defaults to `$0`; writes back through `lvalue()` | 45 |
-| `sprintf` | shared printf formatter (see below) | 25 |
-| `tolower`/`toupper` | `byte_lower`/`byte_upper` on a temp copy | 10 |
-| `sin cos atan2 exp log sqrt int` | libm, `int` = `trunc` | 25 |
-| `rand`/`srand` | 64-bit LCG; `srand()` seeds from `time()`; returns the previous seed | 20 |
-| `close fflush system` | see I/O | 40 |
-
-**`printf`/`sprintf`** (≈ 100 lines on top of the refactored formatter): walk the
-format; `%d %i %o %x %X %u %c %s %%` go through the shared code with the argument
-converted (`%c`: a number is a byte value, a string its first character); `%e %E
-%f %F %g %G` build a spec string and call `snprintf`; `*` width/precision take
-the next argument; too few arguments is undefined in POSIX — we treat the
-missing ones as uninitialised.
-
-**Input/output and processes** (≈ 140 lines + the shell hook)
-
-- `getline` forms as in the spec, returning 1/0/-1; plain `getline` sets
-  `$0 NF NR FNR`, `getline var` sets `var NR FNR`, `getline < file` sets `$0
-  NF` (or `var`) only. Files stay open in a `hashmap` keyed by name until `close`.
-- **Output redirections** `> >> |`: a `hashmap` of open outputs by target string;
-  closed by `close()` and at exit; `fflush` flushes one or all.
-- **`system(cmd)` and `cmd | getline`** run through **the shell's own
-  evaluator** (the machinery behind `$(...)`/`eval`), not libc `system()`/
-  `popen()`: builtins are available to the command, it works where there is no
-  `/bin/sh`, and no second process model is introduced. `print | cmd` needs a
-  writable pipe to a *process*, i.e. `fork`: available natively, **not on WASI**
-  (`doc/wasm.md`), where it is a runtime error. Standard output is flushed
-  before running a command so output order matches.
-- `ENVIRON` from `var_export()`; `ARGV`/`ARGC` from the operands, assignments
-  (`name=value`) processed when the argument is reached (escape sequences in
-  the value are processed, as for `-v`).
-
-**Main and options** (≈ 120 lines): `-F sep` (`-Ft` means tab is *not*
-special in POSIX: keep literal `t`), `-f progfile` (repeatable, `-` = stdin,
-concatenated), `-v assign`, `--`; a BEGIN-only program never opens input;
-exit status: `exit expr`, else 0, else 2 for a runtime error; syntax errors
-print `awk: syntax error at source line N` and exit 2.
-
-**Decisions for POSIX's "unspecified" points** (each a test): `for (k in a)`
-order = hash order (documented, not sorted); `SUBSEP` = `\034`; `srand()` with no
-seed uses `time(0)`, `rand()` unseeded starts from seed 0 (deterministic);
-`uninitialized` vs `""` distinguished only where the spec requires (comparisons);
-`FS` null: each character is a field (GNU/onetrue behaviour); `RS` multi-character:
-first character only; `printf` with too few arguments: empty/0; `NaN`/`inf` printing
-whatever libc gives; `substr` with NaN: empty; division by zero: fatal error;
-assignment to `NR/NF/FNR` allowed; `getline` from a directory: -1; regex
-special-casing of `NUL`: unsupported (C strings).
-
-### Sharing with the shell's arithmetic parser (`src/parse/parse_arith_*.c`)
-
-Measured today: `parse_arith_*` = 603 lines, `expand_arith_*` = 321 lines
-(≈ 924 lines, ≈ 7-9 KB in the **default** build, because `$(( ))` and `expr` are
-default builtins).
-
-| Aspect | Arithmetic parser | awk | Shareable? |
-|---|---|---|---|
-| Input | characters via `source_peek`/`source_next` (a global buffer with pushback) | tokens from an awk lexer over a string | no |
-| Lexing | digits/hex/octal by hand in `parse_arith_value` | decimal floats, strings, EREs, names, keywords, newlines | no |
-| Values | `int64` only | `double` + string + strnum + arrays | no |
-| Operators | `** * / % + - << >> < <= > >= == != & ^ \| && \|\| ?: = op= ++ --` | `^ * / % + - concat < <= != == > >= ~ !~ in && \|\| ?: = op= ++ -- $` | overlap ≈ 60 % but different precedence (awk has no bit operators, and `^` is exponent) |
-| Tree | shell `union node` (`narithbinary` …), freed by `tree_free` | `struct anode` in an arena | no |
-| Evaluation | `expand_arith_*` against the shell variable table (`var_setv`) | interpreter against awk cells | no |
-| Method | recursive precedence walk (`parse_arith_binary(p, prec)` calls itself with `prec-1`) | precedence climbing | **the idea only** |
-
-**Recommendation:** do not couple them in the first pass. Write awk's
-`awk_expr(min_prec)` as a small, self-contained function of *(operator table,
-`next_token()`, `mk_node()`)* so that it can be lifted. **Optional Phase 8**
-(only if measured to help): move it to `src/parse/parse_prec.c`, give the
-shell arithmetic a small token lexer instead of `source_peek` character
-juggling, and rebuild `parse_arith_*` on the shared core; the expected gain is
-**≈ 200 fewer lines / ≈ 1.5 KB in the default build**, at the price of
-touching the default `$(( ))`/`expr` path, so the gate is the existing arithmetic
-tests (`tests/param.sh`, the conformance `.tst` files that use `$(( ))`) plus a
-differential test of both parsers over a large random expression set before the
-old one is deleted. If that is not attractive the awk core stays private and
-nothing is lost.
-
-### Reuse summary (what is written, what is copied, what is refactored)
-
-| | `sed` | `awk` |
-|---|---|---|
-| **New** | parser, cycle/executor, address/range logic, append queue, `l`, wfile table (≈ 885 lines) | lexer, parser, interpreter, values, fields/records, built-ins, I/O glue, main (≈ 2100 lines) |
-| **From `lib/dfa`** | compile, test, search, submatch, `dfa_replace`, `dfa_repl` | compile, test, search, `dfa_replace`, `dfa_repl` |
-| **Copied from `../c-utils/lib`** | `buffer_getline_sa`, `fmt_escapecharcx`/`nonprintable` | `hashmap`, `buffer_getline_sa`, `buffer_get_token_sa`, `byte_lower/upper`, `byte_findb` |
-| **Already in `lib/`** | `stralloc`, `buffer`, `open_*`, `scan_*`, `fmt_*`, `path_fnmatch` (via dfa) | same, plus `fmt_longlong`, `str_*`, `byte_*` |
-| **Implemented once for both** | `arena` | `arena` |
-| **Refactored** | — | `builtin_printf.c` (stralloc sink) |
-| **libc** | none beyond what the shell uses | `strtod`, `snprintf` (non-integer numbers, `%e %f %g`), libm |
-
-### Size estimates (lines in this repo's style; bytes at ≈ 7-10 B/line)
-
-| Component | min | likely | max |
-|---|---|---|---|
-| **`sed`** | 700 | **885** | 1000 |
-| — bytes | | ≈ 7-9 KB | |
-| **`awk`** lexer | 170 | 220 | 280 |
-| parser (program 80, statements 200, expressions 260) | 450 | 540 | 650 |
-| nodes, name resolution, arena glue | 60 | 80 | 110 |
-| values and conversions | 120 | 160 | 210 |
-| interpreter (eval 220, exec 160, calls 90, lvalues 90) | 480 | 560 | 680 |
-| records and fields | 170 | 220 | 280 |
-| built-in functions (string 200, math 45, misc 40) | 240 | 285 | 350 |
-| `printf`/`sprintf` + number formatting wrappers | 80 | 100 | 140 |
-| I/O (`getline`, redirections, `close`, `fflush`, `system`) | 110 | 140 | 200 |
-| main, options, ARGV/ENVIRON | 90 | 120 | 160 |
-| **`awk` total** | **1970** | **2425** | **3060** |
-| — after the shared parts are imported instead of written | | **≈ 2100** (1700-2600) | |
-| — bytes | | ≈ 16-21 KB, plus libm where it is not already linked | |
-| **Shared foundation** (`dfa_replace` + `dfa_repl` 115, arena 60, hashmap 174, readers 36, byte 30, printf refactor ≈ +40, `l` helpers 60) | | **≈ 515** | |
-
-The `awk` rows above the "after" line count what each component costs if
-written standalone; the "after" figure subtracts what the shared foundation
-provides (`dfa_replace`/`dfa_repl` ≈ 115 for `sub`/`gsub`, `hashmap` 174 for
-arrays and the output table, the printf formatter ≈ 150, the record reader
-≈ 40, arena ≈ 60). Cut list if it must shrink further (each ≈ −40 to −120 lines):
-no `nextfile`, no `getline < file`/`cmd | getline`, no `srand` seed return, no
-`printf` `*`, `length(arr)` only.
-
-### Order of work (each step its own change with tests; `TODO.md`/`BUGS` updated in the same change)
-
-0. **Prerequisites (Goal 6 steps 1-4)**: `lib/dfa` with `dfa_search`; then in `lib/`: implement `arena`, copy `hashmap`,
-   `buffer_getline_sa`, `buffer_get_token_sa`, `byte_lower/upper/findb`; write
-   `dfa_replace`/`dfa_repl` with their table test (`tests/dfa.sh` gets rows for
-   the empty-match rule, `&`, `\&`, `\1`, nth occurrence).
-1. **`sed` core**: script assembly, parser for addresses/`{}`/`p d q =`, cycle and
-   input with the last-line lookahead, `-n`, `-e`, `-f`, `-E`. Tests from the spec
-   examples.
-2. **`sed` `s`**: replacement, flags `g p w N i`, empty-match rule, empty regex =
-   last regex. Then `h H g G x n N D P`, then `a i c r w y l`, `: b t`, `#n`, the
-   Issue-8 timing rules for the append queue, `N` at EOF. `tests/builtin-sed.sh`.
-3. **Printf refactor** (independent, small): move `printf_spec`/parse/emit into a
-   shared internal file writing to a `stralloc`; `tests/` for the shell `printf`
-   must be unchanged.
-4. **`awk` front end**: lexer + parser + `awk --dump-ast` (dev switch, `_DEBUG`
-   only) with a corpus of programs that must parse and programs that must not (the
-   POSIX grammar's edge cases: `/` vs regex, `getline` forms, `print > expr`,
-   `a b c` concatenation, `-x^2`, newlines, `;`).
-5. **`awk` core interpreter**: `BEGIN`/`END`, patterns and ranges, fields, `print`,
-   variables, arrays, control flow, user functions; `tests/builtin-awk.sh`
-   grows per feature.
-6. **`awk` built-ins and `printf`**: string functions, math, `sprintf`/`printf`
-   including `%e %f %g`, `substr` rounding, `split`, `sub`/`gsub`, `match`.
-7. **`awk` I/O**: `getline` forms, redirections, `close`/`fflush`, operands with
-   assignments, `RS=""`, `ENVIRON`, `system`, `cmd | getline`; `print | cmd` where
-   `fork` exists.
-8. **Character semantics** with Goal 7 (`length`, `substr`, `index`, `match`,
-   `printf %c` by characters); **optional** regex `RS`; **optional** arithmetic
-   retrofit (see above).
-9. **Register** both builtins (`EXTRA_BUILTINS`, off by default; `builtin.h`,
-   `builtin_table.c`, `cmake/Builtins.cmake`, autotools list), help text, docs; measure
-   the sizes and update the tables here.
-
-### Testing
-
-- **`sed`**: a table of `script|input|expected` rows (`tests/builtin-sed.sh`): the
-  POSIX examples, `tac` (`1!G;h;$!d`), `wc -l` (`-n '$='`), joining lines
-  (`:a;N;$!ba;s/\n/ /g`), every command and flag, ranges (`2,4`, `/a/,/b/`, `2,1`,
-  `0`-style edge), empty regex reuse, `-n`/`#n`, `N` and `n` at EOF, `c` in a range,
-  `D` restart, `y` with escapes, `l` folding, `w /dev/stdout`, multi-file `$` and
-  cumulative line numbers, a missing final newline, an unreadable second file.
-- **`awk`**: table rows `program|input|expected` (`tests/builtin-awk.sh`): the
-  classic one-liners (field sums, word count, associative counting, joining,
-  reversing lines), the **type matrix** (`"10" < "9"`, `$1 == 0` on `0`, `0.0`, `" 0"`,
-  `"0x"`, uninitialised vs `""`, numeric-string propagation through assignment and
-  `split`), `substr` edge cases (0, negative, NaN, fractional), `printf` (`%c` with
-  a number and a string, `%5.2f`, `%-5d|`, `%*d`, `%e`, `%g`, `%%`, `%i`), `getline`
-  loops from a file and from a command, `close` and re-read, `-v` and operand
-  assignments with escapes, `RS=""` paragraph mode with `FS`, `NF` and `$0`
-  rebuilding (`$3=""`, `NF=2`, `$(NF+2)=x`), regex `FS`, `FS=","`, tab, `" "`,
-  user functions (recursion, array parameters, uninitialised local as array),
-  `delete`, `in` with `SUBSEP`, `exit` in `BEGIN`/`END`/function, `next`/`nextfile`,
-  `srand`/`rand` range, division by zero.
-- **Differential** (dev-only, not CTest): random *valid* programs from a small
-  generator (the Goal 8 fuzzer's word synthesis can seed it) run through `shish awk`
-  and `gawk --posix`/`mawk`; compare stdout and status, skipping the documented
-  unspecified points. External corpora, if available on the machine and not
-  vendored: `gawk/test/*.awk` with their `.ok` files, `onetrue-awk/testdir/T.*`.
-- **Parser robustness**: random bytes as a program, under ASan+UBSan: an error or a
-  parse, never a crash or a hang; deep nesting (`((((`, `{{{{`, 100 000 levels) must
-  hit the depth limit.
-- **Performance smoke**: 1 M lines through `awk '{s+=$1} END{print s}'`, `/re/` on each
-  line, `gsub`; compare with the system awk (expect the same order of magnitude).
-- **WASI**: `tests/builtin-awk.sh` under the Node harness (`doc/wasm.md`), with the
-  process-needing groups skipped and listed.
-
-### Risks and open questions
-
-- **Float determinism**: `%g` output and `strtod` come from libc; identical across
-  glibc/musl/dietlibc for correctly rounded conversions, but dietlibc's
-  `printf("%.17g")` is worth checking once (add to `tests/`).
-- **libm size**: `sin cos atan2 exp log sqrt pow` are linked only if the awk builtin
-  is on; in a static build measure them (Goal 5's tooling) before deciding
-  whether math functions are a separate `ENABLE_AWK_MATH` (integer-only `awk`
-  is legal but not POSIX).
-- **The `getline` and `print >` grammar** are where hand-written awk parsers go
-  wrong; they get parser-corpus cases first (step 4), before any interpreter exists.
-- **`/` disambiguation by previous token** is a heuristic that is exactly right for
-  POSIX's rule but must treat `)` carefully (`(a) /b/ c` is division, `if (x) /re/`
-  is a regex): keep the token before `)` on a small stack of "kind of paren" entries.
-- **Uninitialised-as-array** (a variable first used as `a[1]`, or passed to a
-  function that indexes it) needs the cell to become an array in the caller; get
-  the ownership rules into a test before writing the call code.
-- **Bytes vs characters** (Issue 8 says characters): conformant in the POSIX locale
-  (bytes); deferred to Goal 7 M-steps, listed in `--help`.
-- **Memory**: the statement arena is reset per statement, so a long-running `END`
-  loop building a huge string keeps only the variable's own copy; test a 100 MB
-  string and a 1 M-element array for time and peak size.
-- **Shell integration**: `awk`'s stdin is `fd_in->r` (a shell buffer, so it shares
-  position with `read`); output goes through `fd_out->w` and must be flushed before
-  any child command and at exit; `exit` inside awk returns a status, it never exits
-  the shell; `ENVIRON` changes do not reach child processes (unspecified in POSIX).
-- **Scope creep**: GNU `gensub`, `strftime`, `asort`, `PROCINFO`, `--re-interval`,
-  `printf %'d`, dynamic `FIELDWIDTHS`, and `-i inplace` are **not** planned.
-
-### How to measure
-
-```sh
-# sizes of the pieces, stripped MinSizeRel build
-cmake -S . -B /tmp/sedawk -DCMAKE_BUILD_TYPE=MinSizeRel -DBUILTIN_SED=ON -DBUILTIN_AWK=ON
-cmake --build /tmp/sedawk -j8
-size /tmp/sedawk/CMakeFiles/libshell.dir/src/builtin/builtin_{sed,awk}.c.o
-nm --size-sort -S /tmp/sedawk/CMakeFiles/libshell.dir/src/builtin/builtin_awk.c.o | tail -25
-strip /tmp/sedawk/shish && stat -c%s /tmp/sedawk/shish       # vs the same build with both OFF
-# the libm/printf cost in a static build
-cmake -S . -B /tmp/sedawk-static -DLINK_STATIC=ON -DCMAKE_BUILD_TYPE=MinSizeRel -DBUILTIN_AWK=ON
-# speed
-seq 1 1000000 > /tmp/n; time /tmp/sedawk/shish -c "awk '{s+=\$1} END{print s}' /tmp/n"; time awk '{s+=$1} END{print s}' /tmp/n
-```
-
-### Status (2026-09-25): what actually shipped
-
-**Foundation**: `lib/hashmap` (ported from `../c-utils/lib/hashmap`, plus a
-new `hashmap_next`/`hashmap_clear` iterator pair not in the original) for
-awk arrays; `str_ndup`, `byte_lower`/`byte_upper` (new, small). `arena` and
-`dfa_replace`/`dfa_repl` were already done from Goal 3/Goal 6 work and
-needed no changes. The printf-formatter-refactor line item was **not**
-done — `text/awk/awk_printf.c` is awk's own, independent implementation
-(reconstructs a `snprintf` spec from parsed flags/width/precision plus one
-fixed conversion letter, never the program's format text verbatim, so
-there is no format-string-injection risk despite `CONVFMT`/`OFMT`-style
-trust elsewhere) — reusing `builtin_printf.c` would have meant touching the
-shell's own default-on `printf` path for a saving that didn't seem worth
-that risk once `awk_printf.c` turned out to be ≈250 lines on its own.
-
-**`text/awk/`**: lexer, precedence-ladder parser (one function per
-precedence level rather than a single table-driven climber — awk's `$`
-tightness, unary-vs-`^`, print's bare-`>` ambiguity, concatenation-with-
-no-token and `(i,j) in a` are each a grammar-level exception, and a ladder
-keeps each one local to the one function that needs it), tree-walking
-interpreter, values/conversions, fields/records (lazy split and lazy `$0`
-rebuild, both hooked through every path that can observe them: reading
-`$n`, reading `NF`, `NF=`, `$n=`), built-ins (`length substr index split
-sub gsub match sprintf sin cos atan2 exp log sqrt int rand srand tolower
-toupper system close fflush`), `printf`/`sprintf`, I/O (`getline` in all
-four POSIX forms, `>`/`>>`/`|` redirection, `close`/`fflush`), and the
-main driver (`BEGIN`/`END`, `ARGV`/`ARGC`/`ENVIRON`, `-v`/operand
-assignments, `-F`). `src/builtin/extra/builtin_awk.c` is the shell-facing
-client (option parsing, wiring `struct awk_io` to `fd_in`/`fd_out`/
-`fd_err` and `lib/open.h`). Registered as `EXTRA_BUILTINS` (off by
-default, like `sed`/`grep`); `text/awk/*.c` (the engine) is always
-compiled in, same as `text/sed/`.
-
-**Deviations from the design above** (each already anticipated as a risk
-or a cut-list item there, not a surprise):
-
-- **`cmd | getline`, `print | cmd`, `system()` are not wired up.** The
-  engine's own interface (`struct awk_io.run_shell`) is exactly the hook
-  the design calls for, and the interpreter already has full support for
-  all three (parses them, dispatches through `run_shell`, gives a clean
-  runtime error when it's `NULL`) — `builtin_awk.c` just leaves
-  `run_shell` unset. Wiring it to the shell's own evaluator (the
-  `$(...)`/`eval` machinery) is a distinct, self-contained follow-up.
-- **`RS=""` (paragraph mode) and a regex `RS`** are not implemented; `RS`
-  is always treated as a single byte (first character), default `"\n"`.
-- **Byte, not character, semantics** for `length`/`substr`/`index`/`match`/
-  `printf %c` — conformant in the POSIX locale, same as the rest of the
-  shell pending Goal 7.
-- **`for (k in a)` order** is hashmap bucket order (unspecified in POSIX,
-  as planned).
-- Hashmap keys/values are heap-allocated (`alloc()`/`str_ndup`) rather than
-  arena-owned, since awk arrays are mutated (`delete`, reassignment) far
-  more than the write-once, reset-in-bulk shape an arena suits; expression
-  *temporaries* do use `st->tmp`, reset once per statement, as planned.
-
-None of the above went into `BUGS`: the `run_shell`/`RS=""` cut is already
-a documented omission in `help_awk` (`src/builtin/extra/builtin_awk.c`),
-byte-vs-character semantics is a standing repo-wide condition with no
-precedent of its own `BUGS` entry on any other builtin, `for-in` order is
-POSIX-unspecified so not a discrepancy, and regex `RS` is a gawk extension
-POSIX never required.
-
-**Testing**: a standalone build against a POSIX-`read`/`write`-backed
-`struct awk_io` (not wired into the shell) was run under
-`-fsanitize=address,undefined` across ~30 programs spanning every
-built-in, arrays, recursion, field/`NF` assignment and rebuild, `getline`,
-and `printf` — zero leaks, zero sanitizer reports. Full `ctest` (both the
-default builtin set and `-DENABLE_ALL_BUILTINS=ON`, each with
-`-DBUILTIN_AWK=ON`) shows the identical pre-existing 52/157 failure set
-(all signal/job-control `posix/*-p.tst` cases plus `fixed.sh`, none of
-them awk-related) — no regressions. `tests/builtin-awk.sh` (new, gated by
-`BUILTIN_AWK`) covers fields, `NF`/`NR`, string/math built-ins, `printf`,
-arrays (`for`/`in`/`delete`), user functions (recursion, array-by-
-reference), control flow, and the numeric-string comparison rules.
+- **`sed`:** `-i`, `-s`, `-z`, `e F z W R M`, `0,/re/`, `addr,+N`, `first~step`, the `q`/`Q` exit-code
+  arguments, and the `y` escapes other than `\n`, `\\` and the delimiter.
+- **`awk`:** `cmd | getline`, `print | cmd` and `system()` are parsed and dispatched through
+  `struct awk_io.run_shell`, but `builtin_awk.c` leaves it unset (a clean runtime error); wire it to
+  the shell's evaluator (the `$(...)`/`eval` machinery) as a self-contained follow-up. `RS=""`
+  (paragraph mode) and a regex `RS` are not implemented (`RS` is one byte). `length`, `substr`, `index`,
+  `match`, `printf %c` count bytes (conformant in the POSIX locale; character semantics wait for Goal 7).
+  `for (k in a)` order is bucket order (unspecified in POSIX).
 
 ---
 
 ## Goal 12 (secondary) — more `EXTRA_BUILTINS`: POSIX utilities real scripts call most, still external
 
-**Not started; this section is the candidate list.** `grep` and `sed` (Goal 6,
-Goal 11) already moved from "external" to "builtin"; with those two done, the
-next-highest-value external commands were picked by counting real usage rather
-than guessing. Same rationale as Goal 10 (`cp`/`mv`): each is free where an
-external binary already exists (a builtin only wins the `PATH` lookup +
-`fork`+`exec`) and is a real capability where none does (WASI, a from-scratch
-container, `-DLINK_STATIC=ON` single-file image).
+**Not started; this section is the candidate list.** The rationale is the same as for `cp`/`mv`: a
+builtin is free where an external binary already exists (it only wins the `PATH` lookup +
+`fork`+`exec`) and a real capability where none does (WASI, a from-scratch container,
+`-DLINK_STATIC=ON` single-file image).
 
-**Evidence.** A histogram of every command word bash actually dispatched
-(builtin/external/keyword/notfound) across a large corpus of real-world shell
-scripts (`../plot-cv/shell-commands-histogram.txt`, 3545 distinct names),
-filtered to names that are also POSIX.1-2024 utilities
-(<https://pubs.opengroup.org/onlinepubs/9799919799/utilities/>) and not
-already a shish builtin:
+**Evidence.** A histogram of every command word bash actually dispatched across a large corpus of
+real-world shell scripts (`../plot-cv/shell-commands-histogram.txt`, 3545 distinct names), filtered to
+POSIX.1-2024 utilities that are still not shish builtins:
 
 | Count | Utility | Count | Utility | Count | Utility |
 |---|---|---|---|---|---|
-| 2747 | `cp` | 400 | `uniq` | 26 | `od` |
-| 1772 | `mv` | 267 | `getconf` | 20 | `df` |
-| 1326 | `sort` | 264 | `xargs` | 19 | `comm` |
-| 927 | `tr` | 239 | `tail` | 12 | `paste` |
-| 794 | `diff` | 228 | `cmp` | 12 | `nohup` |
-| 551 | `date` | 192 | `id` | 10 | `nice` |
-| 526 | `cut` | 109 | `env` | 10 | `fold` |
-| 484 | `head` | 75 | `bc` | 8 | `tty` |
-| 412 | `tput` | 73 | `dd` | 6 | `mkfifo` |
-|  |  | 37 | `chown` | 5 | `join` |
-|  |  | 29 | `du` | 4 | `expand` |
+| 794 | `diff` | 73 | `dd` | 12 | `nohup` |
+| 412 | `tput` | 37 | `chown` | 10 | `nice` |
+| 267 | `getconf` | 29 | `du` | 10 | `fold` |
+| 228 | `cmp` | 26 | `od` | 8 | `tty` |
+| 75 | `bc` | 20 | `df` | 6 | `mkfifo` |
+| 19 | `comm` | 5 | `join` | 4 | `expand` |
 
-(`seq`, `install`, `dir`, `yes`, `stat`, `groups`, `arch`, `stty`, `sum`,
-`sync`, `nproc`, `truncate`, `fmt`, `base64`, `mknod` also appear at similar
-frequencies but are **not** POSIX utilities — GNU/BSD-only or shell-builtin
-duplicates — so they stay out of scope per the "design spec is POSIX" rule at
-the top of this file. `awk` (1065) is already Goal 11.)
+(`seq`, `install`, `dir`, `yes`, `stat`, `groups`, `arch`, `stty`, `sum`, `sync`, `nproc`, `truncate`,
+`fmt`, `base64`, `mknod` appear at similar frequencies but are **not** POSIX utilities, so they stay
+out of scope per the "design spec is POSIX" rule.)
 
-**Not a flat priority order.** Group by what they'd cost and who needs them:
+- **`diff`**: real value (794 uses) but by far the biggest: a line diff needs an LCS/Myers engine,
+  closer in scope to `text/dfa` than to one `builtin_*.c`; give it its own `text/diff/` the way `sed`
+  got `text/sed/`, and its own Goal if it is picked up.
+- **System/identity utilities** (`chown`, `du`, `df`, `dd`, `nice`, `nohup`, `tty`): individually small
+  (mostly one syscall plus formatting) but only pay off where `fork`+`exec` of the real one is
+  unavailable.
+- **Niche/legacy** (`getconf`, `cmp`, `bc` (non-trivial), `comm`, `fold`, `mkfifo`, `join`, `expand`,
+  `od`, `pr`, `cksum`, `tsort`, `csplit`, `pathchk`, `chgrp`): candidates, not a near-term plan; no
+  per-utility sizing has been done. The sized schedule for the ones in Goal 16 is there.
+- Known gaps in the builtins that already moved: `xargs` does no blank/quote splitting of input lines,
+  accepts `-E`/`-s`/`-x` but ignores them, and runs nothing for empty input with a utility given;
+  `sort` keeps everything in memory and compares bytes (no locale collation); `tail -f` follows one
+  file; `split` has the POSIX options only.
 
-- **`cp`/`mv`** already have a plan (Goal 10) — by far the two highest counts,
-  do those first.
-- **Cheap, self-contained, high count**: `tr`, `cut`, `head`, `tail`, `uniq`,
-  `date`, `sort` (the last needs a comparison/key-field engine — `-k`, `-t`,
-  `-n`, `-r`, merge sort over lines held in one arena — closer in size to
-  `builtin_sed.c` than to `builtin_wc.c`). These cover the bulk of "text
-  pipeline" idioms (`... | sort | uniq -c`, `cut -d: -f1`, `date +%s`) that
-  currently force a `fork`+`exec` even in a script that otherwise runs
-  builtins-only, and are the ones that matter most for the standalone/WASI/
-  no-`PATH` goal, since scripts reach for them constantly and unconditionally.
-- **`diff`**: real value (794 uses) but by far the biggest of this batch —
-  a full line-diff needs an LCS/Myers engine, closer in scope to `text/dfa`
-  than to a single `builtin_*.c`; would want its own `text/diff/` the way
-  `sed` got `text/sed/`. Worth a Goal of its own if picked up.
-- **System/identity utilities**: `id`, `env`, `chown`, `du`, `df`, `dd`,
-  `nice`, `nohup`, `tty`, `logname`, `who` — each individually small (most
-  are one syscall plus formatting) but only pay off where `fork`+`exec` of
-  the real one is unavailable; lower priority than the text-pipeline group
-  since they're less central to typical scripts.
-- **Niche/legacy POSIX text utilities**: `getconf`, `cmp`, `bc`,
-  `comm`, `paste`, `fold`, `mkfifo`, `join`, `expand`/`unexpand`, `od`,
-  `pr`, `cksum`, `tsort`, `csplit`, `pathchk`, `split`, `chgrp` — real
-  POSIX utilities, all seen in the corpus, but each at low enough frequency
-  (and `bc` non-trivial in scope) that they're candidates, not a
-  near-term plan; no per-utility sizing has been done for these yet.
-  (`sort`, `tail` and `split` left this list: `src/builtin/filter/builtin_sort.c`,
-  `builtin_tail.c` and `src/builtin/extra/builtin_split.c`, tests
-  `tests/builtin-{sort,tail,split}.sh`. `sort` keeps everything in memory and
-  compares bytes (no locale collation); `-m` sorts like any other input.
-  `tail -f` follows one file. `split` has the POSIX options only.
-  `xargs` left this list: it is now an `EXTRA_BUILTIN`,
-  `src/builtin/extra/builtin_xargs.c`, with `-0 -a -d -I -L -l -n -o -P -p -r -t`;
-  gaps: no blank/quote splitting of input lines, `-E`/`-s`/`-x` accepted but
-  ignored, empty input with a utility given runs nothing. Tests:
-  `tests/builtin-xargs.sh`.)
-
-No file layout, option sets, or size estimates have been worked out for any
-of these yet — that's the next step once one is picked up, following the
-Goal 6/10/11 template (POSIX page -> option table -> LOC estimate -> `BUGS`
-entries for any deliberately-omitted option).
+No file layout, option sets, or size estimates have been worked out for any of these yet: that is the
+next step once one is picked up (POSIX page -> option table -> LOC estimate -> `BUGS` entries for any
+deliberately omitted option).
 
 ---
 
-## Goal 13 (secondary) — pull-based filter chaining for pure-builtin pipeline segments
+## Goal 13 (secondary) — pull-based filter chaining: what is left
 
-**MVP done (2026-09-25).** Motivating case: `grep <in.txt 'pat' | sed
-'s/x/y/'` — a common idiom (select lines, then edit them) where both stages
-are already shish builtins. Before this, every non-last stage paid a real
-`fork()`/`pipe()` even though nothing about a builtin actually needs one;
-the last stage already avoided it via lastpipe (see the pipeline discussion
-this goal grew out of, 2026-09-25). `eval_pipeline()` now lets a pipeline's
-*entire* non-last prefix (not just its first stage) chain straight into the
-true last stage through the in-process buffers below, all-or-nothing: every
-non-last stage has to be a filter-capable builtin invoked with literal
-argv (`pipeline_filter_prepare_chain()`) and actually `.open()` (a runtime
-decline, e.g. `grep -c`/`-q`, rolls the whole chain back), or the pipeline
-runs exactly as it did before this goal. `cat <file> | grep -E '(a|b)' |
-sed '...'` now runs with zero `fork()`/`pipe()` calls end to end, confirmed
-under `strace -f -e trace=clone`. Resolves open question 3, below.
-Still open: `sed_step`'s resumability was never the risk it looked like
-(sed's existing filter mode already reads incrementally); open question 4
-(`!HAVE_FORK` builds) is unaddressed — `eval_pipeline_sequential()` doesn't
-attempt chaining yet.
+`eval_pipeline()` chains a pipeline's whole non-last prefix straight into the true last stage through
+in-process buffers (`FD_FILTER`, `struct filter_ops`, `pipeline_filter_prepare_chain()`) when every
+non-last stage is a filter-capable builtin with literal argv; a runtime decline (`grep -c`/`-q`) rolls
+the chain back and the pipeline forks as before. No `fork()`/`pipe()` runs for `cat file | grep -E '(a|b)' |
+sed '...'`. Both `sed` and `grep` are optional builtins, so nothing outside
+`src/builtin/{extra,filter}/builtin_*.c` may name them, and every build must still compile with either
+or both off.
 
-### The constraint that shapes the whole design: `sed` and `grep` are optional
+Open:
 
-Both are `EXTRA_BUILTINS` (`cmake/Builtins.cmake`), individually toggleable
-(`-DBUILTIN_SED=OFF` / `-DBUILTIN_GREP=OFF`, or simply absent from a
-`MINIMAL_BUILTINS`-only build), and every build without a working `fork()`
-already runs pipelines through `eval_pipeline_sequential()` instead. Two
-requirements follow, non-negotiable for any implementation of this goal:
-
-1. **Compiles clean with either or both builtins disabled.** No code
-   outside `src/builtin/extra/builtin_{sed,grep}.c` may name a
-   sed/grep-specific type (`struct sed*`, `text/sed.h`, grep's internals).
-   Generic pipeline/fdtable code gates on availability the same way
-   `#if BUILTIN_TRAP` already does throughout `src/`
-   (`eval_pipeline.c`, `job_wait.c`, `sh_loop.c`, `expand_command.c`,
-   `eval_subshell.c`, ...) — this goal adds `#if BUILTIN_SED` /
-   `#if BUILTIN_GREP` (from the already-generated `builtin_config.h`) as
-   the same kind of guard, nothing novel.
-2. **Every pipeline still runs correctly via plain `fork()`+`pipe()`,
-   unconditionally.** `H_PROGRAM` (any external command, including a real
-   `/usr/bin/sed` or `/usr/bin/grep` when the builtin is disabled or a
-   pipeline just isn't the shape this goal targets) already always forks
-   (`exec_command.c`'s `H_PROGRAM` comment) — this goal never touches that
-   path. Chaining is strictly additive and opt-in per pipeline shape: any
-   pipeline that doesn't match its narrow preconditions falls straight
-   back to today's `job_fork()`/`fd_pipe()`, unchanged. There is no new
-   failure mode here — absence of chaining is always safe, it's just the
-   status quo.
-
-### Design principle that follows from (1): no builtin-specific code above the builtin layer
-
-The fdtable/`eval_pipeline` layer can only depend on a generic,
-builtin-agnostic interface — never on `grep_step`/`sed_step` by name:
-
-```c
-/* one steppable builtin's filter interface -- lives in the builtin's own
- * extra/builtin_*.c; eval_pipeline never has to know the builtin's name
- * to call it. */
-struct filter_ops {
-  /* NULL return: this invocation isn't streamable (flags outside the
-   * streamable subset, e.g. grep -c/-q; bad pattern; ...) -- caller
-   * falls back to fork()+pipe(), same as if .filter were NULL at all. */
-  void* (*open)(int argc, char** argv, buffer* upstream);
-  ssize_t (*read)(void* ctx, char* buf, size_t len); /* buffer_op_proto-compatible */
-  int (*status)(void* ctx);                          /* valid once read() returns EOF */
-  void (*close)(void* ctx);
-};
-```
-
-`struct builtin_cmd` (`builtin_table.c`) gets an optional
-`const struct filter_ops* filter;` member — `NULL` for every builtin that
-isn't steppable (everything except `sed`/`grep` to start). `builtin_table.c`
-is already generated per-name from `builtin_config.h`'s `#if`s, so an
-entry whose `.filter` would reference `grep_filter_ops` sits inside
-`#if BUILTIN_GREP` and costs nothing when that's off. `eval_pipeline()`
-itself never says `"sed"`/`"grep"` anywhere — it only ever reads
-`cmd->builtin->filter`, generic across every current and future steppable
-builtin (a later `awk` slots in the same way, no new pipeline-layer code).
-
-### Pieces
-
-1. `struct filter_ops` + the `.filter` registration above. Always
-   compiled (empty/unused if nothing implements it); ≈ 30 lines, no
-   builtin-specific logic.
-2. `grep_step()`/`grep_ctx` — refactor `builtin_grep.c`'s existing
-   per-line loop into a step function reused by both standalone
-   `builtin_grep()` (loop it to EOF, identical output to today) and the
-   filter path. `#if BUILTIN_GREP` only. No cross-record state, so this
-   is close to a pure refactor.
-3. `sed_step()` — genuinely new engine work, not a refactor: `sed_run()`
-   today loops to completion (`sed_cycle.c`). A resumable step needs that
-   outer loop restructured to return once it has produced output (or
-   needs more input than upstream currently has) and pick back up from
-   the same point next call, including mid-`N` state and the pending
-   `a`/`r` append queue's flush timing. `#if BUILTIN_SED` only. This is
-   the one piece of the whole goal that isn't glue.
-4. `FD_FILTER` fd mode (`src/fd.h`, alongside `FD_HERE`/`FD_SUBST`): a
-   `struct fd` whose `r` buffer's `op` drives a `struct filter_ops`
-   instance through its `cookie`. Builtin-agnostic — references only the
-   vtable, always compiled.
-5. `fdtable_exec()` gains an `FD_FILTER` case, materializing it into a
-   temp file the same way `fdtable_here()` already does for heredocs
-   (`src/fdtable/fdtable_here.c`): drain to completion, write to a temp
-   file, swap in `buffer_op_read`. Reached whenever a real fd becomes
-   necessary — an external program downstream, or an explicit fd
-   capture. Builtin-agnostic, always compiled.
-6. `eval_pipeline()` detection: adjacent `H_BUILTIN` stages where
-   `cmd->builtin->filter != NULL` on every non-last stage skip
-   `job_fork()`/`fd_pipe()` for those stages, calling `.open()` instead
-   (which decides per actual argv whether *this* invocation streams) and
-   wiring the result as the next stage's `fd_in`. The last stage is
-   untouched — runs exactly as today's lastpipe branch (forked or not),
-   with its stdin possibly now an `FD_FILTER` fd instead of a pipe. A
-   `NULL` from `.open()` (unstreamable args, no `.filter` at all, or the
-   builtin simply not compiled in) means that stage falls straight back
-   to `job_fork()`/`fd_pipe()` — always compiled, but its actual
-   behavior collapses to "always fork" the moment neither `BUILTIN_SED`
-   nor `BUILTIN_GREP` is on, with no dead branches left dangling.
-
-### Exit status
-
-Every steppable builtin still computes its real exit status via the same
-logic it always has (`grep_ctx.status`, finalized when `read()` returns
-EOF) — filter mode changes *when* that status becomes known, never *what*
-it means:
-
-- **Chained stage is not last** (`grep | sed`): its status doesn't drive
-  `$?` today regardless (POSIX: last stage only), and shish has no
-  `pipefail`/`PIPESTATUS` yet to consume it
-  (`BUGS: set-pipefail-missing`) — but since
-  the last stage normally drains its whole input, the upstream filter's
-  status will be correctly finalized as a side effect anyway, ready for
-  whenever `pipefail` lands, at no extra cost now.
-- **Chained stage's consumer stops early** (the last stage's own `q`/`Q`,
-  or a future `head`) before the filter reaches real EOF: its status is
-  never finalized. Same ambiguity a real forked pipe already has today
-  (early close -> SIGPIPE -> a discarded, signal-shaped exit status) —
-  leave it an explicit "unset" rather than inventing a synthetic value;
-  revisit only once `pipefail` needs a real answer.
-- **Chained stage becomes the pipeline's *last* stage instead**
-  (`sed | grep`): already works today, unmodified — lastpipe runs it to
-  completion in-process exactly as now. This goal adds nothing and
-  changes nothing on that path.
+- **`!HAVE_FORK`/WASI builds get correctness, not just speed, from this.**
+  `eval_pipeline_sequential()`'s per-stage full-materialization fallback (`eval_pipeline.c`) hangs on an
+  infinite producer (`yes | sed ... | head` never finishes stage one). An `FD_FILTER` chain needs no
+  `fork()`/`pipe()` for its own stretch, so decide whether `eval_pipeline_sequential()` should try
+  chaining first and fall back to full materialization only when the chain is not entirely steppable
+  builtins. It does not attempt chaining yet.
+- `BUGS: filter-chain-hides-data-from-external-command`: an external command inside a function or `{ }`
+  last stage reads the real fd 0 and gets nothing.
 
 ### Which builtins would benefit from being a filter (2026-09-27)
 
-Filter-capable today: `cat`, `grep`, `sed`. A chain needs *every* non-last stage to be one (the last
+Filter-capable today: `cat`, `grep`, `sed`, `sort`, `head`, `tail`, `uniq`, `cut`, `nl`, `tr`, `paste` and the compress/uncompress family. A chain needs *every* non-last stage to be one (the last
 stage already runs in-process and reads the chained buffer), so a single non-capable builtin anywhere
 in the prefix (`echo x | awk ... | sed ...`) sends the whole pipeline back to `fork()`+`pipe()`.
 What matters is therefore position: **producers** (first stage, no stdin) and **middle stages**.
@@ -3972,8 +1958,7 @@ What matters is therefore position: **producers** (first stage, no stdin) and **
 | `wc`, `digest` | sink | low as a filter: a sink emits one line at EOF, and as the *last* stage it already chains; only `x \| wc -l \| y` benefits | eager |
 | `xargs`, `timeout`, `env`/`nice`/`nohup` (planned) | runs another command | **no**: the output belongs to the executed command (real fds, forked child), nothing to hand back in-process | none |
 | `cd`, `read`, `export`, `set` (assigning forms), `.`, `eval`, `exit`, `mktemp`, `sleep`, `kill` | state / no stdout | **no**: side effects on the shell must happen in the shell, a chained stage runs lazily and possibly never | none |
-| planned (Goal 16): `head uniq cut tr paste nl tail` | middle | **yes, by design** (`head` needs early exit; `tail -f` cannot) | streaming |
-| planned: `date id du pathchk` | producer | as `find` | eager |
+| `date`, `id` (builtins, not filters yet); planned: `du pathchk` | producer | as `find` | eager |
 
 **One adapter covers every "eager" row.** A generic `filter_eager` ops table in
 `src/builtin/builtin_filter.c` runs the builtin's normal entry point on the first `read()` with `fd_out`
@@ -3981,52 +1966,8 @@ redirected into a `stralloc` (the same `FD_SUBST` mechanism `$(...)` uses) and, 
 set to the upstream buffer; then `read()` hands the bytes out and `status()` returns the exit code.
 A builtin opts in with one table entry (`&filter_eager`), no per-builtin code. Trade-offs: the whole
 output is held in memory, and an eager stage does not stop early (`yes | head` would never end, so
-`yes` stays out); real streaming stays with `cat grep sed awk tee head ...`. It must decline (`open()`
+`yes` stays out); real streaming stays with `cat grep sed head ...` (and `awk`, `tee` once they are filters). It must decline (`open()`
 returning NULL, nothing printed) for anything that changes shell state, which is the "no" rows above.
-
-### Sizing (rough; no code written yet)
-
-| Piece | Lines | Gated on |
-|---|---|---|
-| `struct filter_ops` + registration | ≈ 30 | always compiled |
-| `grep_step`/`grep_ctx` refactor | ≈ 60 (mostly moved, not new) | `BUILTIN_GREP` |
-| `sed_step` (`sed_cycle.c` restructure) | ≈ 150-200 (real new logic) | `BUILTIN_SED` |
-| `FD_FILTER` fd mode | ≈ 40 | always compiled |
-| `fdtable_exec()` materialization case | ≈ 50 (mostly reused from `fdtable_here`) | always compiled |
-| `eval_pipeline()` detection + wiring | ≈ 80 | always compiled |
-| **Total** | **≈ 410-460** | |
-
-### Open questions, ordered by how much they'd change the shape above
-
-1. **Does `.open()`'s per-call opt-out (grep `-c`/`-q`) belong in
-   `struct filter_ops`, or should those flags just never register
-   `.filter` at all and always fork?** Leaning toward per-call — it's
-   the same mechanism that already has to handle "not compiled in" and
-   "wrong builtin" uniformly, so handling "wrong flags for this specific
-   invocation" costs nothing extra.
-2. **`sed_step`'s resumability is the one piece of unproven engine
-   work.** Worth a small standalone spike — can `sed_cycle.c`'s loop be
-   restructured to pause/resume cleanly around `N` and the append-queue's
-   flush timing? — before committing to the rest of the design around it.
-3. **Resolved (2026-09-25): three-or-more-stage chains** (`cat | grep |
-   sed`) needed no new design beyond scanning the pipeline's whole
-   non-last prefix at once instead of just its first stage
-   (`pipeline_filter_prepare_chain()`) — the concern this item raised
-   (a middle stage's `.read()` needing to cleanly signal
-   need-more-input) never came up because the chain is pull-based:
-   the true last stage's own `.read()` calls cascade backwards through
-   `chain_link[]` on demand, so an earlier stage is never asked to
-   produce output before its consumer wants it.
-4. **`!HAVE_FORK`/WASI builds get correctness, not just speed, from
-   this.** `eval_pipeline_sequential()`'s existing per-stage
-   full-materialization fallback (`eval_pipeline.c:29-48`) hangs on an
-   infinite producer (`yes | sed ... | head` never finishes stage one).
-   A `FD_FILTER`-chained all-builtin pipeline wouldn't need that
-   fallback at all for its own stretch, since no `fork()`/`pipe()` was
-   ever required there either way. Worth deciding whether
-   `eval_pipeline_sequential()` should attempt filter-chaining first and
-   only fall back to full materialization once the chain isn't entirely
-   steppable builtins.
 
 ---
 
@@ -4057,53 +1998,31 @@ returning NULL, nothing printed) for anything that changes shell state, which is
 
 ---
 
-## Goal 14 (secondary) — evaluator trace (`SHISH_TRACE`): finish the instrumentation
+## Goal 14 (secondary) — evaluator trace (`SHISH_TRACE`): what is left
 
-**Steps 1-3 and the start-up trace are done (2026-09-26); the design, the event
-catalogue and the rest of the plan are in [`doc/debug-output.md`](doc/debug-output.md).**
-A uniform, parseable trace layer (`src/trace.h`, `src/trace/`) replaced the old
-`debug.log` prints: one event per line, `[pid:depth] mod.event(k=v, ...)`, one
-`write()` each, selected at run time with `SHISH_TRACE=exec,fd,...|all|-name` and
-`SHISH_TRACE_FILE=path|-` (default `trace.log`), compiled out without
-`DEBUG_OUTPUT`. Modules with events today: `exec`, `builtin`, `fd`, `fdstack`,
-`fdtable`, `eval`, `expand`, `redir`, `parse`, `sh` (start-up: `sh.start/input/mode`),
-`sig` (traps only). `debug.log` is no longer created.
+The trace layer (`src/trace.h`, `src/trace/`; design and event catalogue in
+[`doc/debug-output.md`](doc/debug-output.md), method in `CLAUDE.md` "Debugging with TRACE()")
+is complete for the modules `exec builtin fd fdstack fdtable eval expand redir var sh job sig parse`.
 
-**Still open**
+Open:
 
-- **Steps 4-6 are done** (2026-09-26): fd\*/fdstack/fdtable entry events, var/sh/job events,
-  and `tools/trace2seq` (process tree, `-c EVENT` counts; test: `tests/trace2seq.sh`).
-  Gaps closed 2026-09-27: `sig.block/unblock/blocknone`, `sh.opt`, `var.create`, `sh.getcwd`,
-  `sig.handler`/`sig.trap.*` (queued from signal context in `src/trace/trace_defer.c`, printed by
-  `trace_flush()`), `fdtable.lazy/wish/gap/open/openfd/close` results, `trace2seq -s` (Mermaid).
-  Also done: `job.fork` for an external `cmd &`, `job.signal` (queued), `job.table`, `sh.pushargs/popargs`.
-  Not traced on purpose: `var.import` (one line per environment variable; `var.export` reports the count).
 - **`SHISH_TRACE` is read from the process environment once**, at the first event; an
-  `export SHISH_TRACE=...` inside a running script is not seen. Reading it through `var_get`
-  would fix that but touches every event's startup path.
-- **Autotools:** works in-tree only (`./autogen.sh && ./configure --enable-debug CPPFLAGS=...`,
-  serial `make`, then `./config.status src/builtin_config.h` once — configure does not run its
-  `AC_CONFIG_COMMANDS` step, cause not found). `src/*/Makefile.in` `MODULES` lists are
-  hand-maintained and drift (`expand_getorcreate`, `fd_filter`, `trace_fd` had to be fixed by hand).
-- **`xargs` and `timeout` run their command through `exec_command()`** (no private fork/execvp):
-  builtins, functions and programs all work and "$(...)" capture comes from `exec_program()`.
-  `timeout` kills via a SIGALRM handler aimed at `exec_child_pid`; a builtin with no program of
-  the same name, or a function, is forked (`X_NOWAIT`) so it can be killed, and its output is
-  then not captured in "$(...)". A redirection on a forked command inside "$(...)"
-  now wins over the substitution's pipe (`fixes/251`).
-- **What the trace already found:** the shell's internal pipe (fds 128/129) leaks into every
-  exec'd program (`fdtable.exec.fds` shows it); `cmdsubst_ran` was cleared after word expansion
-  (`fixes/242`); `xargs`'s uninitialised `items.c`, `-d` separator not stripped, output escaping
-  `$(...)` (`fixes/240`, `fixes/241`).
-
+  `export SHISH_TRACE=...` inside a running script is not seen. Reading it through `var_get` would
+  fix that but touches every event's startup path.
+- **Autotools:** works in-tree only (`./autogen.sh && ./configure --enable-debug CPPFLAGS=...`, serial
+  `make`, then `./config.status src/builtin_config.h` once: configure does not run its
+  `AC_CONFIG_COMMANDS` step, cause not found). The `src/*/Makefile.in` `MODULES` lists are
+  hand-maintained and drift.
+- `var.import` is not traced on purpose (one line per environment variable; `var.export` reports the
+  count).
+- `timeout` forks a function so it can be killed, and then its output is not captured in `$(...)`
+  (`BUGS: timeout-function-output-not-captured-by-command-substitution`).
 
 ---
 
 ## Goal 15 (secondary) — vi mode (`src/term/term_vimode.c`): gaps against vim/POSIX `set -o vi`
 
-Implemented: ESC command mode; motions `h l 0 ^ $ w b e W B E f F t T ; ,` with counts;
-operators `d c y` (+ `dd cc yy`, `cw` = `ce`); `x X D C s S r p P i a I A k j /`. Tests:
-`tests/term-vi.sh`. `vi` is always on: there is no `set -o vi` / `set -o emacs` switch.
+Tests: `tests/term-vi.sh`. `vi` is always on: there is no `set -o vi` / `set -o emacs` switch.
 
 **Missing, roughly by how often they are used at a shell prompt**
 
@@ -4117,7 +2036,7 @@ operators `d c y` (+ `dd cc yy`, `cw` = `ce`); `x X D C s S r p P i a I A k j /`
 - **Insert mode:** `o` / `O` (meaningful only for multi-line), `gi`, `Ctrl-w` (delete word), `Ctrl-u` (delete to line start), `Ctrl-v` (literal), `Ctrl-t` / `Ctrl-d` (indent), `Ctrl-[` (as ESC), `Ctrl-o` (one command), `Ctrl-h` as backspace, `Ctrl-n` / `Ctrl-p` completion (`Tab` is the only completion).
 - **Visual mode:** `v` / `V` / `Ctrl-v` and their operators; nothing exists.
 - **Search inside the line:** `*` / `#` (word under the cursor), `/` and `?` within the current line.
-- **Counts:** `0` is a motion only when not part of a count (done); missing are counts for `i a I A` (`3ix<ESC>` repeats), for `p` / `P` (`3p`), `.` and `~`.
+- **Counts:** missing are counts for `i a I A` (`3ix<ESC>` repeats), for `p` / `P` (`3p`), `.` and `~`.
 - **Repeat find:** `;` / `,` work, but `t` repeated with `;` does not skip past the adjacent character the way vim does when `cpo` has no `;`.
 - **Pending-state display:** no `-- INSERT --` / `-- NORMAL --` indicator, no cursor-shape change (`\e[2 q` block / `\e[6 q` bar), no display of a pending operator or count.
 - **Escape handling:** a lone ESC waits 50 ms for a following key (fixed timeout, not `ttimeoutlen`); there is no way to configure it.
@@ -4129,49 +2048,36 @@ operators `d c y` (+ `dd cc yy`, `cw` = `ce`); `x X D C s S r p P i a I A k j /`
 
 ## Goal 16 (tertiary) — the remaining POSIX utilities as optional `EXTRA_BUILTINS`
 
-Utilities from the POSIX utilities volume that are not builtins yet (`sleep` already is). None is
-needed by the shell itself, so **this waits until the main quest is done.** Each one is opt-in
-(`BUILTIN_<NAME>`, `cmake/Builtins.cmake`, off by default), lives in
-`src/builtin/extra/builtin_<name>.c`, follows its POSIX page as the design specification
-(<https://pubs.opengroup.org/onlinepubs/9799919799/utilities/>; a missing option is a `BUGS` entry with
-a repro), uses `lib/` instead of libc stdio/string, and comes with `tests/builtin-<name>.sh` and a
-`help_<name>` text.
+Utilities from the POSIX utilities volume that are not builtins yet. None is needed by the shell itself,
+so **this waits until the main quest is done.** Each one is opt-in (`BUILTIN_<NAME>`,
+`cmake/Builtins.cmake`, off by default), lives in `src/builtin/extra/builtin_<name>.c`, follows its POSIX
+page as the design specification (<https://pubs.opengroup.org/onlinepubs/9799919799/utilities/>; a
+missing option is a `BUGS` entry with a repro), uses `lib/` instead of libc stdio/string, and comes
+with `tests/builtin-<name>.sh` and a `help_<name>` text.
 
 ### Schedule, simplest and smallest first
 
 Complexity: **1** one syscall or one loop, **2** a small parser or a few options, **3** real algorithm
 or state, **4** terminal / `/proc` / many output formats, **5** layout engine. Lines are C lines for
 the builtin alone, calibrated on what exists (`tee` 95, `mkdir` 105, `wc` 165, `ls` 274, `xargs` 319,
-`touch` 326 with its date parser); tests add roughly the same again. "Total" is the running sum
-without `sleep`.
+`touch` 326 with its date parser); tests add roughly the same again.
 
 | # | utility | cx | lines | total | what it takes |
 |---|---|---|---|---|---|
-| 1 | `sleep` | 0 | done | - | done: `builtin_sleep.c` (94 lines) |
-| 2 | `mkfifo` | 1 | ~45 | ~45 | `mkfifo(3)` plus the mode parser (`-m`) that `mkdir` already has; move the parser to `lib/` first |
-| 3 | `nice` | 1 | ~55 | ~100 | `nice(2)`, then `exec_command()`; only the increment parsing (`-n`, and the obsolescent `-10`) |
-| 4 | `head` | 1 | ~70 | ~170 | `-n N` line counter over `filter_in`; stops early, so it is the test for early exit in a chain |
-| 5 | `nohup` | 2 | ~70 | ~240 | ignore `SIGHUP`, redirect stdout/stderr to `nohup.out` if they are terminals, `exec_command()`; exit 126/127 |
-| 6 | `renice` | 2 | ~80 | ~320 | `setpriority(2)` over `-p`/`-g`/`-u` ID lists; no exec; `-n` is required in POSIX.1-2024 |
-| 7 | `env` | done | `builtin_env.c` | - | push a `vartab` with the `name=value` words (`-i` starts empty), `exec_command()`; no utility: print the environment |
-| 8 | `paste` | 2 | ~90 | ~495 | `-s`, `-d list` (with `\0` and `\\` escapes); N `filter_in`s merged line by line |
-| 9 | `pathchk` | 2 | ~90 | ~585 | `pathconf(3)` limits, `-p` portable-character check, `-P` empty/leading-hyphen check |
-| 10 | `uniq` | 2 | ~110 | ~695 | adjacent-line compare with `-c -d -u -f N -s N`; one line of look-behind state |
-| 11 | `id` | done | `builtin_id.c` | - | `getpwnam`/`getgrgid`/`getgroups`; `-G -g -u -n -r` output selection; needs NSS, no fallback |
-| 12 | `cut` | 2 | ~140 | ~955 | list parser (`1,3-5,7-`) for `-b -c -f`, `-d`, `-s`, `-n`; three field modes over one line loop |
-| 13 | `date` | done | `builtin_date.c` | - | `localtime`/`strftime` (libc); `-u`, `+format`; setting the clock is a documented omission |
-| 14 | `tail` | done | `builtin_tail.c` | - | ring buffer of the last N lines/bytes (`-n -c`); `-f` polls with `read`+sleep and cannot chain |
-| 15 | `du` | 3 | ~140 | ~1355 | directory walk like `rm -r`; `-a -s -k -x -H -L`, hard links counted once (`st_dev`/`st_ino` set) |
-| 16 | `nl` | 3 | ~170 | ~1525 | logical pages (`\:\:\:` delimiters), per-section body/header/footer styles, `-b pstring` regex via `text/dfa` |
-| 17 | `tr` | 3 | ~200 | ~1725 | 256-entry map; ranges, `[:class:]`, `[=e=]`, `[x*n]`, `\ooo` escapes, `-c -C -d -s` are the bulk |
-| 18 | `fuser` | 4 | ~130 | ~1855 | Linux only: scan `/proc/*/fd`, `cwd`, `root`, `maps`; `-c -f -u`; not portable, no test on other systems |
-| 19 | `more` | 4 | ~220 | ~2075 | raw-terminal pager on `src/term/` (`term_init`, window size, `SIGWINCH`); commands `q space enter /pattern`; not a filter |
-| 20 | `od` | 4 | ~260 | ~2335 | `-A -j -N -t` (a c d f o u x, sizes), `-v` duplicate folding, the obsolete `-b -c -d -o -s -x` aliases, address radix |
-| 21 | `ps` | 4 | ~300 | ~2635 | Linux only: `/proc/*/stat`+`cmdline`, `-o` column formats, `-e -a -A -f -l -p -t -u -U -G -g -d`, tty name mapping |
-| 22 | `pr` | 5 | ~320 | ~2955 | pagination, headers/footers, `-column`/`-m` multi-column layout, `-e -i -n -o -w -f -F -l -h -s -t -d -r -a` |
+| 1 | `mkfifo` | 1 | ~45 | ~45 | `mkfifo(3)` plus the mode parser (`-m`) that `mkdir` already has; move the parser to `lib/` first |
+| 2 | `nice` | 1 | ~55 | ~100 | `nice(2)`, then `exec_command()`; only the increment parsing (`-n`, and the obsolescent `-10`) |
+| 3 | `nohup` | 2 | ~70 | ~170 | ignore `SIGHUP`, redirect stdout/stderr to `nohup.out` if they are terminals, `exec_command()`; exit 126/127 |
+| 4 | `renice` | 2 | ~80 | ~250 | `setpriority(2)` over `-p`/`-g`/`-u` ID lists; no exec; `-n` is required in POSIX.1-2024 |
+| 5 | `pathchk` | 2 | ~90 | ~340 | `pathconf(3)` limits, `-p` portable-character check, `-P` empty/leading-hyphen check |
+| 6 | `du` | 3 | ~140 | ~480 | directory walk like `rm -r`; `-a -s -k -x -H -L`, hard links counted once (`st_dev`/`st_ino` set) |
+| 7 | `fuser` | 4 | ~130 | ~610 | Linux only: scan `/proc/*/fd`, `cwd`, `root`, `maps`; `-c -f -u`; not portable, no test on other systems |
+| 8 | `more` | 4 | ~220 | ~830 | raw-terminal pager on `src/term/` (`term_init`, window size, `SIGWINCH`); commands `q space enter /pattern`; not a filter |
+| 9 | `od` | 4 | ~260 | ~1090 | `-A -j -N -t` (a c d f o u x, sizes), `-v` duplicate folding, the obsolete `-b -c -d -o -s -x` aliases, address radix |
+| 10 | `ps` | 4 | ~300 | ~1390 | Linux only: `/proc/*/stat`+`cmdline`, `-o` column formats, `-e -a -A -f -l -p -t -u -U -G -g -d`, tty name mapping |
+| 11 | `pr` | 5 | ~320 | ~1710 | pagination, headers/footers, `-column`/`-m` multi-column layout, `-e -i -n -o -w -f -F -l -h -s -t -d -r -a` |
 
-**About 2,950 lines for the 21 utilities still to write** (about twice that with tests); the first 12
-(through `cut`) are about 950 and cover almost everything a script uses. Stop after `cut`, or after `tr`, unless a real use appears.
+**About 1,700 lines for the 11 utilities still to write** (about twice that with tests). Stop after `renice`,
+or after `du`, unless a real use appears.
 
 ### Not planned
 
@@ -4183,12 +2089,11 @@ without `sleep`.
 
 ### Shared code to extract first
 
-Do these three before the utilities that need them; each removes a duplicate:
+Do these two before the utilities that need them; each removes a duplicate:
 
 1. **mode-string parser** (`chmod`, `mkdir`, `mkfifo`): now inside `builtin_chmod.c`/`builtin_mkdir.c`, move to `lib/`.
-2. **`-N` / `-n N` line-count parser** (`head`, `tail`, `nl`): about 25 lines.
-3. **wrapper helper** for "set something up, then `exec_command()` the rest" (`env`, `nice`, `nohup`, and
+2. **wrapper helper** for "set something up, then `exec_command()` the rest" (`env`, `nice`, `nohup`, and
    `xargs`/`timeout` already do it by hand): about 30 lines around `exec_hash()` + `exec_command()`.
 
-Filters (`head uniq paste cut tr nl tail`) use `src/builtin/builtin_filter.[hc]` (`filter_in`,
+Filters (`head uniq paste cut tr nl tail`, already builtins) use `src/builtin/builtin_filter.[hc]` (`filter_in`,
 `filter_ops`: declarative `opts/size/option/setup/step/finish`, see the comment in the header) so they can join filter chains (Goal 13); `tail -f` and `more` cannot chain.

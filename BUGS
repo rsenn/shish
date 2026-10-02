@@ -1,85 +1,38 @@
-- fixed-sh-truncates-under-non-mmap-build: running `tests/fixed.sh`
-  itself through a build without `HAVE_MMAP` (e.g. this host's Debug
-  preset) stops producing output partway through -- consistently at
-  the same point, right after the fixes/133 redirection block's last
-  assertion (`tests/fixed.sh:2898`), with no error printed and exit
-  code 0 -- instead of continuing through the rest of the file and
-  reaching the final `summary` call. Confirmed identical before and
-  after the `fd-src-live-script-fd-stolen-by-user-redirection` fix
-  above (same cutoff point on unmodified `main`), so it predates that
-  work and isn't a side effect of it. The very next block
-  (`tests/fixed.sh:2928`, fixes/134) has a standing comment describing
-  exactly this failure mode: "a syntax error while parsing *this* test
-  file itself (read via mmap, not `-c`) takes `parse_error()`'s
-  immediate `sh_exit(1)` path ... which would kill this whole test
-  run" -- on a non-`HAVE_MMAP` build the file isn't read via mmap at
-  all (see `fd-src-live-script-fd-stolen-by-user-redirection` above),
-  so that's a plausible trigger, but not confirmed: the two lines
-  immediately before the cutoff (`tests/fixed.sh:2899-2900`, `exec
-  3>&1` then `exec 3>&-`) also touch fd 3 the same way the fixed bug's
-  repro did, so a related-but-distinct gap in the same fd-rescue
-  machinery (`exec 3>&-`'s close path goes through `fd_null()`, not
-  `fdtable_openfd()`/`fdtable_gap()`) is at least as plausible. Not yet
-  isolated to either.
+- fixed-sh-fails-under-non-mmap-build: `tests/fixed.sh` through a build without
+  `HAVE_MMAP` stops early with a parse error and prints no summary: the script
+  is then read through a real fd, and an earlier test in the file disturbs it
+  (a comment line is parsed as code). Any prefix of the file parses fine on its
+  own, so it depends on the descriptor state the earlier tests leave behind.
 
   **Repro:**
   ```sh
-  # needs a build without HAVE_MMAP (e.g. this host's Debug preset)
-  cmake -S . -B build/debug -DCMAKE_BUILD_TYPE=Debug
-  cmake --build build/debug -j
-  build/debug/shish tests/fixed.sh | tail -5
-  # stops right after "...redir_open's R_OPEN path) must still work
-  # correctly: OK" -- no summary line, no error, exit 0
-  # a build with HAVE_MMAP (e.g. this host's default MinSizeRel preset)
-  # runs the whole file and prints "Tests succeeded: NNN" at the end
+  cmake -S . -B /tmp/nm -DCMAKE_BUILD_TYPE=Debug -DHAVE_MMAP=OFF && cmake --build /tmp/nm -j
+  /tmp/nm/shish tests/fixed.sh | tail -2   # tests/fixed.sh:1493:38: unexpected token (
+  head -n 1500 tests/fixed.sh > /tmp/p.sh; /tmp/nm/shish /tmp/p.sh   # parses fine
   ```
 
-- enable-name-builtin-spelling-removed: `-DENABLE_<NAME>=ON/OFF` (the older
-  spelling of `-DBUILTIN_<NAME>`) is gone from `cmake/Builtins.cmake`. It
-  collided with `cmake/LibArchive.cmake`'s own `ENABLE_CAT`/`ENABLE_TAR`/
-  `ENABLE_CPIO`/`ENABLE_TEST`/`ENABLE_UNZIP` (its bundled bsdtar/bsdcpio/
-  bsdcat/libarchive-test switches, forced into the cache): on any configure
-  after the first, `configure_shish_builtins()` saw the cached
-  `ENABLE_CAT=FALSE` libarchive had already written and force-disabled the
-  `cat` builtin. Only `-DBUILTIN_<NAME>` works now.
-
-- yash-suite-other-hangs: a full sweep of all 119 `tests/yash/*.tst`
-  files (each run individually with a 10s timeout via `run-tst.sh`,
-  same as CTest's own per-file `TIMEOUT` but much shorter to survey
-  quickly) found several files that still hang or run suspiciously
-  long, so `DO_YASH_TESTS` staying off by default (see `TODO.md`) is
-  correct:
-
-    arith-y.tst, cmdprint-y.tst, pipeline-y.tst, redir-y.tst,
-    until-y.tst, while-y.tst -- all hit the 10s timeout (still running,
-    not just slow).
-
-    function-y.tst (~8s), if-y.tst (~9.5s), typeset-y.tst (~8.5s) --
-    finished but suspiciously slow for a conformance test file; may or
-    may not be a real bug (could just be an intentionally slow test
-    case), not investigated.
-
-  None of these are isolated to a specific line/case yet -- next step:
-  debug build + debugger, or bisecting each file's test cases
-  individually via a copy with cases removed.
+- yash-suite-other-hangs: of the 119 `tests/yash/*.tst` files, `arith-y.tst` and
+  `while-y.tst` still hang (killed by the per-file timeout, 20s here); the rest
+  finish, several slowly: `typeset-y` ~19s, `redir-y` ~8s, `cmdprint-y` ~5s,
+  `function-y` ~4s. So `DO_YASH_TESTS` stays off by default (see `TODO.md`).
+  Neither hang is isolated to a case yet; bisect each file by deleting test
+  cases from a copy.
 
   **Repro:**
   ```sh
-  # Run one of the hanging tests with a short timeout
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/yash arith-y.tst
-  # This will hang for 10s (the per-test TIMEOUT) and then be killed
+  timeout 20 sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/yash while-y.tst; echo $?   # 124
+  timeout 20 sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/yash arith-y.tst; echo $?   # 124
   ```
 
 - eval-lineno-imprecise-inside-function: `$LINENO` read from within an
-  `eval`'d string now counts from the invoking statement's line
-  (fixed, see fixes/92) rather than always reporting 1, but the value
+  `eval`'d string takes the line of the invoking statement, but the value
   it inherits (`parse_lineno`, stamped once per top-level list by
   `sh_loop()`) is the *call site's* line, not the eval statement's own
   line when eval runs from inside a function or loop body whose
   definition spans multiple lines -- there is no per-command location
   tracking to fall back on for that case (unlike a direct, non-eval'd
   `$LINENO` reference, which reads the parse-time `loc` stamped
-  individually on its own `N_ARGPARAM` node). Confirmed:
+  individually on its own `N_ARGPARAM` node).
 
   **Repro:**
   ```sh
@@ -165,12 +118,7 @@
   ```
 
 - asan-leak-residue-not-fully-triaged: ASan leak reports left under the
-  `-fsanitize=address,undefined` build. Fixed in `fixes/274`/`fixes/275`:
-  `job->command`, the argument list a `break`/`return`/`exit` longjmp
-  skipped, sub-parser scratch strings, `$((i))` operand nodes, a reassigned
-  variable's old buffer, the pattern string of `${v#p}`/`${v##p}`/`${v%p}`/
-  `${v%%p}`, a here-document's body (every execution), `eval`'s joined
-  string and parser, and a function definition's name node. What is left:
+  `-fsanitize=address,undefined` build:
 
   - Parsing a function definition still leaks 2 allocations (a 56-byte
     `N_ARGSTR` from `parse_pipeline.c:13`'s `parse_gettok()` plus its
@@ -245,24 +193,21 @@
   - `:430` an alias that expands to `()` after a function name
     (`alias f='f ' p='()'; f p`): the `name (` test in
     `parse_command.c` looks at the raw next character, not at aliases.
-  - `:487` an alias expanding to `<` does not merge with a following `>`
-    into `<>` (lookahead does not cross the end of the alias text).
   - `:548` an alias whose text ends in `\` does not continue onto the
     newline behind it (same reason).
   - `:576` a command substitution is parsed when it is expanded, not when
     the enclosing function is defined, so an alias set in the function
     body is not seen by `$(...)` parsed earlier.
 
-- param-expansion-pattern-removal-broken: `param-p.tst` still fails 6 of 54:
-  `${unset?b}` stderr message format (`:222`), length of valid variables
-  (`:236`), special parameters `$`/`*`/`@` quoting (`:446,517,539,570`).
-  `:82`: a quoted tilde in `${a?\~}` is still expanded
+- param-expansion-pattern-removal-broken: `param-p.tst` fails 5 of 54:
+  `:236` length of valid variables, `:446` special parameter `$`, `:517`
+  `*` quoted with an empty `IFS`, `:539` `*` unquoted, and `:82` a quoted
+  tilde in `${a?\~}` is still expanded
   (`HOME=/foo/bar; (: ${a?\~}) 2>&1` prints "/foo/bar", not "~").
 
   **Repro:**
   ```sh
-  # Run the parameter expansion conformance test
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix param-p.tst
+  sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix param-p.tst
   ```
 
 - quote-backslash-escaping-broken: `quote-p.tst` is 33/35. Open:
@@ -278,15 +223,13 @@
 - trap-exit-in-async-subshell-not-run: `trap "echo foo" EXIT >/dev/null & wait $!`
   prints nothing (`trap-p.tst:156`); expected "foo".
 
-- input-not-read-line-wise: the shell reads more input than needed
-  (not line-wise), consuming data meant for subsequent commands.
-  3 failures in `input-p.tst` (8/11). `input-p.tst:9,89,94`.
+- input-not-read-line-wise: inside a command substitution the shell reads more
+  input than needed and consumes data meant for the commands after it
+  (`input-p.tst:89`, "shell input is line-wise (command substitution)"; 10/11).
 
   **Repro:**
   ```sh
-  # Run the input conformance test
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix input-p.tst
-  # 3 failures where shell reads ahead and consumes input meant for later commands
+  sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix input-p.tst
   ```
 
 - case-pattern-bracket-quote-stripping: `[[` used as a case pattern
@@ -306,14 +249,10 @@
   ```
 
 - grouping-p-tst-flaky: `grouping-p.tst:34` ("subshell ending with
-  asynchronous list", `(echo foo >fifo1&); cat fifo1`) used to hang
-  outright (fixed alongside `fixes/103`, the general async-list fix
-  -- this was the same missing-/dev/null-default bug, just reached
-  through a subshell's own backgrounded list instead of a top-level
-  one). It now passes most runs, but still intermittently fails
-  (roughly 1 run in 5, `grouping-p.tst: 11/12 passed`) -- some
-  remaining race between the subshell's background writer and the
-  FIFO read that follows it, not yet root-caused.
+  asynchronous list", `(echo foo >fifo1&); cat fifo1`) fails
+  intermittently (2 of 12 runs, `grouping-p.tst: 11/12 passed`): some race
+  between the subshell's background writer and the FIFO read that follows
+  it, not yet root-caused.
 
   **Repro:**
   ```sh
@@ -332,23 +271,21 @@
   # shish: e.sh:3:1: boom      (bash: e.sh: line 2: x: boom)
   ```
 
-- fixed-sh-assumes-optional-builtins: `tests/fixed.sh` fails 3
-  assertions on a default build because it assumes the optional `cat`
-  and `rm` builtins are compiled in (`BUILTIN_CAT`/`BUILTIN_RM` are 0
-  by default): the `cat -n` case compares against shish's own
-  builtin's column format, and two `set +h` cases run `rm` with a
-  PATH that only contains the test's own directories. Either gate
-  those cases on the builtin being present or stop depending on it.
+- fixed-sh-assumes-optional-builtins: `tests/fixed.sh` gives different results on
+  a default build than with `-DENABLE_ALL_BUILTINS=ON`, because some cases need
+  an optional builtin or an external tool: on a default build the two `set +h`
+  cases (they `rm` with a PATH holding only the test's own directories) and the
+  `lz`/`tr` multibyte cases fail (11 failures); with every builtin on, 9 fail.
+  Gate those cases on the builtin being present, or stop depending on it.
 
   **Repro:**
   ```sh
-  ./build/x86_64-linux-gnu/shish tests/fixed.sh | grep FAIL
+  cmake -S . -B /tmp/def && cmake --build /tmp/def -j && /tmp/def/shish tests/fixed.sh | grep FAIL
   ```
 
 - heredoc-in-cmdsub-read-in-wrong-order: a here-document whose body
   contains a command substitution that itself opens a here-document
-  reads the two heredoc bodies in the wrong order (`fixes/225` fixed
-  the resulting hang, not this). `redir_list` (`src/redir/
+  reads the two heredoc bodies in the wrong order. `redir_list` (`src/redir/
   redir_addhere.c`) is one flat, global, FIFO-ordered queue of pending
   heredocs, and `source_newline()` drains it entirely as soon as it
   sees a newline outside a heredoc -- but the newline right after
@@ -361,7 +298,7 @@
   too early and swallows everything up to and including the outer
   delimiter -- the inner heredoc's own delimiter line included --
   leaving the inner one to find only genuine EOF, silently reading as
-  empty (`fixes/225` is what keeps that from hanging).
+  empty.
 
   **Repro:**
   ```sh
@@ -380,23 +317,6 @@
   **Repro:**
   ```sh
   shish -c '( trap "echo \"\$#:\$*\"" EXIT; set -- a b )'   # 0:   (dash: 2:a b)
-  ```
-
-- help-builtin-columns-overlap: `help` with no argument prints its
-  two-column listing without a separator, so the left column's longer
-  entries run straight into the right one
-  (`hash [-lr] ... [name ...]type name ...`).
-
-  **Repro:**
-  ```sh
-  shish -c help | head -3
-  ```
-
-  **Repro:**
-  ```sh
-  . ./cfg.sh && cfg-mingw64 -DDO_TESTS=OFF
-  cmake --build build/x86_64-w64-mingw32
-  # warning: implicit declaration of function 'getpid'
   ```
 
 - no-tree-print-option-is-a-noop: `-DNO_TREE_PRINT=ON` changes nothing.
@@ -448,10 +368,8 @@
   ```
 
 - eval-node-bgnd-silent-on-fork-failure: `eval_node_bgnd()`
-  (`src/eval/eval_node_bgnd.c:29-34`) has the same fork-failure
-  mishandling as the now-fixed `eval-pipeline-silent-on-fork-failure`
-  (see `fixes/212-eval-pipeline-sequential-no-fork.patch`), at a
-  different call site: `pid = job_fork(job, 0, 1); if(!pid) { ret =
+  (`src/eval/eval_node_bgnd.c:29-34`) has a fork-failure
+  mishandling: `pid = job_fork(job, 0, 1); if(!pid) { ret =
   eval_node(e, node); exit(ret); }`. On a platform with no working
   `fork()`, `job_fork()` returns `-1` (truthy), so `!pid` is false and
   the child branch -- the only place that actually runs `node` -- is
@@ -485,9 +403,7 @@
   flag the caller's loop condition reads) is actually observed, not
   block until the waited-for job itself exits regardless. Found via
   `tests/pty-run` + `tests/posix/wait-p.tst`, one of the 44 files
-  previously always skipped for lack of a controlling terminal
-  (`DO_PTY_TESTS=ON`, `CMakeLists.txt`, fixes/214's `checkfg`
-  restoration) -- the "trap interrupts wait" case hangs the full 60s
+  that need a controlling terminal (`DO_PTY_TESTS=ON`) -- the "trap interrupts wait" case hangs the full 60s
   test timeout instead of completing.
 
   **Repro:**
@@ -536,16 +452,6 @@
   ```sh
   expr index abc c     # prints 0, should be 3
   expr index abc xc    # prints 0, should be 3
-  ```
-
-- expr-string-comparison-numeric-only: `expr A < B` and the other
-  comparison operators go through the `$((...))` arithmetic parser, so
-  non-integer operands compare as numbers instead of by string
-  collation as POSIX requires when either operand is not an integer.
-
-  **Repro:**
-  ```sh
-  expr abc \< abd      # prints 0, should be 1
   ```
 
 - tree-cat-drops-background-ampersand: `tree_cat()` never prints `&`
@@ -631,17 +537,6 @@
   cd /nonexist                 # "cd: : No such file or directory" (empty name)
   cd -L /tmp a; echo $?        # 0; should be an error (too many operands)
   cd -P -e /tmp                # "-e: invalid option"
-  ```
-
-- cat-stops-after-unreadable-file: after the first operand that cannot be
-  opened `cat` reports it and stops, skipping the remaining operands; POSIX
-  requires it to continue with the rest and return >0 at the end. `-u`
-  (the only option POSIX defines) is rejected as an invalid option.
-
-  **Repro:**
-  ```sh
-  printf 'a\n' > f; cat f nonexist f; echo $?   # prints "a" once; should print it twice
-  cat -u f                                       # "cat: -u: invalid option"
   ```
 
 - rm-missing-options-and-operand-check: `rm` has only `-v -r -f`. POSIX
@@ -819,29 +714,26 @@
   unset 1x; echo $?        # no diagnostic, 0
   ```
 
-- set-pipefail-missing-and-noclobber-not-enforced: `set -o pipefail` (new in
-  POSIX.1-2024, `2.9.2`) is "invalid option name", as are `ignoreeof` and
-  `nolog` (User Portability options).
+- set-o-ignoreeof-nolog-vi-missing: `set -o ignoreeof`, `set -o nolog` and
+  `set -o vi` (POSIX User Portability option names) are "invalid option name";
+  `set -o` also lists the bash extras `braceexpand`, `hashall`, `histexpand`,
+  `privileged` instead.
 
   **Repro:**
   ```sh
-  set -o pipefail; false | true; echo $?    # "invalid option name"; should print 1
+  set -o ignoreeof; echo $?    # "set: ignoreeof: invalid option name"
   ```
 
-- trap-assertion-and-exit-in-exit-trap-and-n-form: three defects.
-  (1) `trap 'echo t' 999` aborts the shell: `builtin_trap.c:398:
-  trap_install: Assertion 0 failed` (core dump); an out-of-range signal must
-  be a diagnostic and status >0. (2) An `exit` inside an EXIT trap re-runs
-  the trap forever; POSIX: "in which case the shell shall exit immediately".
-  (3) `trap 0` / `trap 2` (a first operand that is an unsigned decimal
-  integer means "reset these conditions") prints the usage message. Also,
-  `trap` output uses `trap 'cmd' INT` where POSIX specifies
-  `trap -- 'cmd' INT`.
+- trap-signal-validation-n-form-and-print-format: three defects.
+  (1) `trap 'echo t' 999` (an out-of-range signal) is accepted silently with
+  status 0; it must be a diagnostic and status >0. (2) `trap 0` / `trap 2` (a
+  first operand that is an unsigned decimal integer means "reset these
+  conditions") prints the usage message. (3) `trap` output uses
+  `trap 'cmd' INT` where POSIX specifies `trap -- 'cmd' INT`.
 
   **Repro:**
   ```sh
-  trap 'echo t' 999                          # assertion failure, core dump
-  trap 'echo a; exit 5' EXIT; exit 3         # prints "a" forever; should print "a" once, status 5
+  trap 'echo t' 999; echo $?                 # 0, no message; bash: invalid signal specification, 1
   trap 'echo t' INT; trap 2; trap            # "usage: trap ..."; should reset INT
   trap 'echo t' INT; trap                    # "trap 'echo t' INT"; should be "trap -- 'echo t' INT"
   ```
@@ -855,6 +747,7 @@
   kill -s KILL -- 99999        # "--: arguments must be process or job IDs"; should treat -- as the end of options
   kill -- -0 $$                # "--: invalid signal specification"
   ```
+
 - jobs-p-and-l-formats: `jobs -p` prints the normal listing where POSIX
   writes only the process group ID, and `jobs -l` prints the same text as
   plain `jobs` (no process group ID / PIDs, which `-l` must add).
@@ -888,46 +781,15 @@
   fc -l; ulimit -a; echo $?      # both: "No such file or directory"; 127
   ```
 
-- timeout-output-not-captured-by-command-substitution: the command a
-  `timeout` builtin runs writes to the real stdout, so a command
-  substitution (which collects stdout in a `stralloc`, not a pipe) never
-  sees it. `exec_program()` handles this with `fdstack_npipes()`/
-  `fdstack_pipe()`/`fdstack_data()`; `builtin_timeout.c` forks and execs
-  without any of it. A fix has to pump the pipe from inside the timeout
-  wait loop (poll, so the time limit still fires).
-
-  **Repro:**
-  ```sh
-  o=$(timeout 5 /bin/echo hi); echo "[$o]"   # prints "hi" then "[]"; should print "[hi]"
-  echo hi | timeout 5 cat                    # ok (real pipe); but
-  o=$(echo hi | timeout 5 cat); echo "[$o]"  # "[]"
-  ```
-
-- arith-variable-reference-leaks-a-node: every variable reference inside
-  `$(( ))` leaks an `N_ARG` node plus its string, about 79 bytes each.
-  `expand_arith_expr()` (`src/expand/expand_arith_expr.c:93`) creates a
-  temporary `N_ARG` with `tree_newnode()` to receive `expand_param()`'s
-  result and never frees it.
-
-  **Repro:**
-  ```sh
-  valgrind --leak-check=full ./shish -c 'x=5; echo $((x+1))'   # "definitely lost", tree_newnode
-  ```
-
-- fixed-sh-remaining-failures-after-sigchld-fix: with `fixed-sh-sigchld-
-  nocldstop-hang` and the grep bugs below fixed, `tests/fixed.sh` still
-  fails ~10 assertions, none reproducible standalone (each command
-  works correctly run alone -- only fails at its actual position deep
-  in the full script, so something earlier in the run leaves state
-  that affects it): a subshell pipeline duplicating a following
-  command, `cmd & echo after` duplicating "after" for both a simple
-  builtin and a `{ }` group, `shformat` re-emitting a backquote
-  substitution wrong (both nested-as-`$( )` and plain), `set +h`
-  trusting a stale cached command location instead of re-searching,
-  `times` producing more than 2 lines, and an unredirected background
-  command not getting `/dev/null` on stdin (plus seeing script bytes
-  the parent had already buffered). Not yet bisected to find which
-  earlier test leaves the interfering state.
+- fixed-sh-remaining-failures-after-sigchld-fix: `tests/fixed.sh` fails 9
+  assertions (builds with every builtin), none reproducible standalone: each
+  command works run alone and fails only at its position deep in the script, so
+  something earlier in the run leaves state behind that affects it. The failing
+  ones: a subshell pipeline duplicating a following command, `cmd & echo after`
+  duplicating "after" (simple builtin and `{ }` group), `bg` on a job that was
+  never stopped, `shformat` re-emitting a backquote substitution wrong (nested
+  and plain), the job-start banner with `-m`, `times` producing more than 2
+  lines, and a group of redirection fixes. Not bisected to the earlier test.
 
   **Repro:**
   ```sh
@@ -939,6 +801,7 @@
   none (the shared input layer skips a source with nothing in it).
   `: >e; printf 'x\n' >f; head e f` prints "==> f <==" and x, without a
   header for `e` (POSIX and coreutils print both); `tail e f` is the same.
+
 - filter-chain-hides-data-from-external-command: a filter builtin followed by
   a function or a `{ ...; }` group is chained through an in-process buffer
   (`pipeline_last_reads_in_process()` takes every compound or function last
@@ -954,14 +817,6 @@
   head a | /bin/cat                    # b, a: an external last command is pumped
   ```
 
-- loop-in-pipeline-stops-after-first-iteration: a loop whose body is itself a
-  pipeline runs only its first iteration when the loop is a pipeline stage.
-
-  **Repro:**
-  ```sh
-  for x in 1 2 3; do echo $x | tr 1 X; done | tr '\n' ' '   # "X"; should print "X 2 3"
-  for x in 1 2 3; do echo $x | cat; done | cat              # "1"; should print 1 2 3
-  ```
 - cut-n-option-ignored: `cut -n` is accepted and ignored. With `-b` in a
   UTF-8 locale it should not split a multibyte character:
   `printf '\303\251\n' | LC_ALL=C.UTF-8 cut -n -b 1` prints the lone byte
@@ -978,7 +833,7 @@
 
 - builtin-cp-sh-hangs: `tests/builtin-cp.sh` never terminates (a `ctest`
   run sits on it for 17+ minutes), so it needs `--timeout` or `-E builtin-cp`
-  for the suite to finish. Present before the `fixes/278`-`283` changes.
+  for the suite to finish.
 
   **Repro:**
   ```sh
@@ -988,9 +843,46 @@
 - quoted-at-then-empty-quotes-drops-field: `"$@"""` with no positional
   parameters expands to no field; POSIX gives one empty field. The parser
   emits an empty literal chunk after a plain `"$@"` too, so
-  `expand_args()`'s zero-field rule (`fixes/280`) cannot tell them apart.
+  `expand_args()`'s zero-field rule cannot tell them apart.
 
   **Repro:**
   ```sh
   set --; f() { echo $#; }; f "$@"""     # 0; should be 1
+  ```
+
+- posix-suite-failures-not-yet-analysed: failing cases in `tests/posix` that no
+  other entry covers (none is understood yet; `read-p` was 28/28 once):
+  - `read-p.tst:40` read reads more than needed; `:241`, `:251` raw mode with a
+    backslash (not) in IFS
+  - `exec-p.tst:40` external command with an option; `:67` redirection error on `exec`
+  - `for-p.tst:153` redirection on a for loop; `function-p.tst:86` redirections
+    apply to the function body; `comment-p.tst:80` comment in a for loop
+  - `option-p.tst:101,107` noglob off; `:121` hashondef; `:328-340` nounset with
+    `${foo#bar}` and friends; `:366,384` verbose; `:418,428` xtrace; `:438` `$PS4`;
+    `:450` ignoreeof
+  - `tilde-p.tst:9,37,127,154` a quoted tilde is still expanded
+  - `simple-p.tst:18` redirections before assignments for a non-special builtin;
+    `:172` `echo` without PATH; `:237` assigning PATH forgets remembered paths;
+    `:258` a remembered path is ignored when the command is gone
+  - `cmdsub-p.tst:79,95` quotes in backquotes; `:139` substitution between a
+    here-document operator and its body; `:168` pathname expansion of a result
+  - `builtins-p.tst:51` assignment on `exec` is persistent; `pipeline-p.tst:30` status
+    of a negated pipeline; `lineno-p.tst:28` `LINENO` after expansions
+
+  **Repro:**
+  ```sh
+  sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix read-p.tst
+  grep -E '^%%+ FAILED' tests/posix/read-p.trs
+  ```
+
+- timeout-function-output-not-captured-by-command-substitution: `timeout`
+  forks a function (it has no program of the same name) so it can kill it,
+  and the forked child's output does not reach a command substitution, which
+  collects stdout in a `stralloc`, not a pipe. External programs and plain
+  builtins are captured.
+
+  **Repro:**
+  ```sh
+  f() { echo fn; }; o=$(timeout 5 f); echo "[$o]"     # "[]"; should be "[fn]"
+  o=$(timeout 5 echo hi); echo "[$o]"                  # "[hi]" (ok)
   ```
