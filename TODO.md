@@ -669,7 +669,14 @@ reaches external commands, with or without `$(...)`), and `expand_command()`
 re-runs `sh_exit()` after a real-signal trap's `exit` like `eval_subshell()`
 (before, `sh_async_exit` stayed set and the next `( exit N )` killed the shell).
 
-Open: `BUGS: signal-to-shell-in-inprocess-scope-kills-it`.
+Signals to the shell during an in-process scope (`fixes/290`): the parent's
+caught traps keep their handler in `(...)`/`$(...)` (reset to default only in a
+forked child) and `trap_relay_info()` records the sender. A signal from a command
+the scope started means "the subshell" and takes the default action; any other
+sender (a background job, another process) means "the shell", and its trap runs
+once the outermost scope is done. Not distinguishable: a foreground child that
+signals `$$` literally (bash sends it to the parent, shish treats it as the
+subshell).
 
 **Original working hypothesis** (confirmed by causes 1-2):
  A persistent redirection

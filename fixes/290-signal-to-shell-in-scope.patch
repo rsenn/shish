@@ -1,0 +1,142 @@
+diff --git a/src/builtin/builtin_trap.c b/src/builtin/builtin_trap.c
+index 20a76fa4..7a03a44f 100644
+--- a/src/builtin/builtin_trap.c
++++ b/src/builtin/builtin_trap.c
+@@ -238,6 +238,34 @@ trap_relay(int sig) {
+   }
+ }
+ 
++/* who sent the pending signal, and was it the foreground external command
++ * (a child started inside the running in-process scope): read by
++ * trap_scope_defer() once the signal is dispatched from ordinary context */
++static volatile pid_t trap_sender[256];
++static volatile sig_atomic_t trap_sender_fg[256];
++
++static void
++trap_relay_info(int sig, siginfo_t* si, void* ctx) {
++  pid_t from = si ? si->si_pid : 0;
++
++  (void)ctx;
++  trap_sender[(unsigned char)sig] = from;
++  trap_sender_fg[(unsigned char)sig] = from > 0 && from == exec_child_pid;
++  trap_relay(sig);
++}
++
++/* install trap_relay_info() for sig: sig_push()/sig_action() only carry a plain
++ * handler, so the sender-aware one is set on top of them */
++static void
++trap_arm(int sig) {
++  struct sigaction sa;
++
++  sigfillset(&sa.sa_mask);
++  sa.sa_sigaction = trap_relay_info;
++  sa.sa_flags = SA_SIGINFO | (sig == SIGCHLD ? SA_NOCLDSTOP : 0);
++  sigaction(sig, &sa, NULL);
++}
++
+ /* runs every trap whose signal fired since the last call, from
+  * ordinary (non-signal-handler) context -- see trap_relay() above.
+  * Called from sh_loop(), term_read()'s select() wakeup, and
+@@ -247,6 +275,7 @@ trap_relay(int sig) {
+ /* how many real-signal traps have run, and which signal the last one was:
+  * "wait" returns early (128+sig) when a trap ran while it was blocked */
+ int trap_run_count, trap_run_sig;
++static int trap_scope_defer(int sig);
+ 
+ void
+ trap_run_pending(void) {
+@@ -263,6 +292,12 @@ trap_run_pending(void) {
+     if(trap_pending[sig]) {
+       trap_pending[sig] = 0;
+       TRACE(TRACE_SIG, "trap.pending", trace_int("sig", sig));
++
++      if(trap_scope_defer(sig)) {
++        TRACE(TRACE_SIG, "trap.deferred", trace_int("sig", sig));
++        continue;
++      }
++
+       trap_run_count++;
+       trap_run_sig = sig;
+       trap_handler(sig);
+@@ -355,6 +390,11 @@ static void
+ trap_set_relay(trap* t, void (*handler)(int)) {
+   struct sigaction sa;
+ 
++  if(handler == trap_relay) {
++    trap_arm(t->sig);
++    return;
++  }
++
+   sa.sa_handler = handler;
+   sa.sa_flags = 0;
+   sigemptyset(&sa.sa_mask);
+@@ -495,6 +535,9 @@ trap_install(int sig, union node* tree) {
+        A NULL tree is "trap '' SIG": the kernel ignores the signal
+        outright, which is also what a child process must inherit. */
+     sig_push(sig, tree ? &trap_relay : SIG_IGN);
++
++    if(tree)
++      trap_arm(sig);
+     TRACE(TRACE_SIG, "push", trace_int("sig", sig), trace_str("handler", tree ? "trap_relay" : "SIG_IGN"));
+ 
+   } else if((unsigned char)sig == TRAP_DEBUG) {
+@@ -528,6 +571,47 @@ static trap** trap_outer;
+ static int trap_snap_depth;
+ static volatile sig_atomic_t trap_deferred[256];
+ 
++/* a signal for the shell that "$$" names arrives while an in-process subshell
++ * runs: its trap waits for the outermost subshell to finish (bash's subshell is
++ * a separate process, so the parent's trap runs after it)
++ * ----------------------------------------------------------------------- */
++static int
++trap_scope_defer(int sig) {
++  trap *t = trap_find(sig), **p;
++
++  if(!trap_snap_depth || !t)
++    return 0;
++
++  for(p = trap_outer; p && *p; p++)
++    if(*p == t) {
++      struct job* j = trap_sender_fg[sig] ? NULL : (trap_sender[sig] > 0 ? job_bypid(trap_sender[sig]) : NULL);
++
++      /* sent by a command this subshell started ("kill -s SIG $PPID"): meant for
++         the subshell, whose trap is reset, so the default action applies */
++      if(trap_sender_fg[sig] || (j && j->level > 0)) {
++        struct sigaction dfl;
++
++        TRACE(TRACE_SIG, "trap.scope.default", trace_int("sig", sig));
++
++        if(sig == SIGSTOP || sig == SIGTSTP || sig == SIGTTIN || sig == SIGTTOU)
++          return 1;
++
++        sigemptyset(&dfl.sa_mask);
++        dfl.sa_handler = SIG_DFL;
++        dfl.sa_flags = 0;
++        sigaction(sig, &dfl, NULL);
++        kill(getpid(), sig);
++        trap_arm(sig);
++        return 1;
++      }
++
++      trap_deferred[sig] = 1;
++      return 1;
++    }
++
++  return 0;
++}
++
+ /* "kill -s SIG $$" from inside an in-process subshell: the signal is for the
+  * enclosing shell, whose disposition -- not the subshell's reset one -- applies.
+  *
+@@ -676,6 +760,11 @@ void
+ trap_reset_caught(void) {
+   trap* t;
+ 
++  /* in-process scope: the process is the enclosing shell's too, so its
++     handler stays and trap_scope_defer() holds the signal back */
++  if(!sh_child)
++    return;
++
+   for(t = traps; t; t = t->next)
+     if((char)t->sig > 0 && t->tree && !(sh_async && (t->sig == SIGINT || t->sig == SIGQUIT)))
+       trap_set_relay(t, SIG_DFL);

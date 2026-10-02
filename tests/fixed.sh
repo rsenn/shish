@@ -5686,4 +5686,18 @@ done" "$PL" "yes | head -1 must end once head exits (the writer gets SIGPIPE)"
 PL=$("$SHISH_SELF" -c '/bin/ls /proc/self/fd | tr "\n" " "; /bin/ls /proc/self/fd | cat | cat | tr "\n" " "')
 assert_equal "0 1 2 3 0 1 2 3 " "$PL" "a pipeline stage inherits only 0, 1, 2 (and ls's own directory fd)"
 
+# a signal sent to the shell while "(...)" / "$(...)" runs in-process: the shell's
+# trap runs after the substitution, as bash does (fixes/290)
+SIGT=$("$SHISH_SELF" -c 'trap "echo trapped; exit 3" TERM; ( sleep 0.2; kill -TERM $$ ) & x=$( sleep 0.6; echo hi ); echo not-reached' 2>&1; echo "rc=$?")
+assert_equal "trapped
+rc=3" "$SIGT" "a TERM sent to the shell during \$(...) runs the shell's trap afterwards instead of killing it"
+SIGT=$("$SHISH_SELF" -c 'trap "echo got" USR1; ( sleep 0.2; kill -USR1 $$ ) & x=$( sleep 0.6; echo in ); echo "[$x]"; echo next' 2>&1)
+assert_equal "got
+[in]
+next" "$SIGT" "a trap that returns runs once, after the substitution, and the shell carries on"
+SIGT=$("$SHISH_SELF" -c '( sleep 0.2; kill -TERM $$ ) & x=$( sleep 0.6; echo hi ); echo not-reached' 2>&1; echo "rc=$?")
+assert_equal "rc=143" "$SIGT" "without a trap the signal still ends the shell"
+SIGT=$("$SHISH_SELF" -c 'trap "echo trapped" TERM; ( "$0" -c "kill -s TERM \$PPID"; echo not-printed )' "$SHISH_SELF" 2>&1; echo "rc=$?")
+assert_equal "rc=143" "$SIGT" "a signal from a command the subshell started is for the subshell: its trap is reset, it dies"
+
 summary

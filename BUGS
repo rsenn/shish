@@ -994,16 +994,3 @@
   ```sh
   set --; f() { echo $#; }; f "$@"""     # 0; should be 1
   ```
-
-- signal-to-shell-in-inprocess-scope-kills-it: `(...)` and `$(...)` run
-  in-process and reset the shell's caught traps to the default action, so a
-  signal sent to the shell (`$$`) while one is running terminates the whole
-  process instead of running the parent's trap afterwards, as bash does.
-
-  **Repro:**
-  ```sh
-  trap 'echo trapped; exit 3' TERM
-  ( sleep 0.3; kill -TERM $$ ) &
-  x=$( i=0; while [ $i -lt 400000 ]; do i=$((i+1)); done; echo after ); echo "[$x]"
-  # shish: "Terminated"; bash: "trapped", status 3
-  ```
