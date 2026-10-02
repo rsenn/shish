@@ -5713,4 +5713,13 @@ assert_equal "[abc][abc]
 case-ok
 a:b:c" "$IS" "\"\$*\" with an empty IFS has no separator, unquoted \$* gives one field per parameter"
 
+# printf converts %e %E %f %F %g %G (they were printed literally) (fixes/293)
+PF=$("$SHISH_SELF" -c 'printf "%.2f|%5.1f|%e|%g|%f\n" 3.14159 2.55 1500 0.0001 1; printf "%5.2f%%|%+.1f|%010.2f|%-8.3f|\n" 12.345 2 -3.5 3.14159; printf "%*.*f|%f %d %s\n" 8 2 3.14159 1.5 7 str; x=$(printf "%.3f" 2); echo "[$x]"; printf "%f\n" | wc -c | tr -d " "; printf "%f\n" 1e300 | wc -c | tr -d " "')
+assert_equal "3.14|  2.5|1.500000e+03|0.0001|1.000000
+12.35%|+2.0|-000003.50|3.142   |
+    3.14|1.500000 7 str
+[2.000]
+9
+309" "$PF" "printf %f %e %g convert their argument, honouring flags, width, precision and *"
+
 summary

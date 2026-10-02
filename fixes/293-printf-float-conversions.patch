@@ -1,0 +1,99 @@
+diff --git a/src/builtin/builtin_printf.c b/src/builtin/builtin_printf.c
+index f978509e..99d7c932 100644
+--- a/src/builtin/builtin_printf.c
++++ b/src/builtin/builtin_printf.c
+@@ -5,6 +5,9 @@
+ #include "../../lib/scan.h"
+ #include "../../lib/str.h"
+ #include "../../lib/uint64.h"
++#include "../../lib/alloc.h"
++#include <stdio.h> /* snprintf */
++#include <stdlib.h> /* strtod */
+ 
+ /* expand a single backslash escape starting at p[0] (the '\\').
+  * writes the resulting char to *out, returns the number of source
+@@ -141,6 +144,17 @@ printf_arg_ulong(int argc, char* argv[], int* idx) {
+   return v;
+ }
+ 
++/* floating-point argument: a leading quote is the code of the next character, else strtod() */
++static double
++printf_arg_double(int argc, char* argv[], int* idx) {
++  const char* s = printf_arg(argc, argv, idx);
++
++  if(s[0] == '\'' || s[0] == '"')
++    return (double)(unsigned char)s[1];
++
++  return strtod(s, NULL);
++}
++
+ /* a parsed "%[flags][width][.precision]" directive, minus the final
+  * conversion character */
+ typedef struct {
+@@ -261,7 +275,8 @@ printf_emit_numeric(
+ const char help_printf[] = "    Format and print arguments.\n"
+                            "\n"
+                            "    format          a printf-style format string, with %s %b %c %d %i\n"
+-                           "                    %u %o %x %X %% conversions and \\ escapes; reused\n"
++                           "                    %u %o %x %X %e %E %f %F %g %G %a %A %% conversions and\n"
++                           "                    \\ escapes; reused\n"
+                            "                    repeatedly if there are more args than directives\n"
+                            "    args            values consumed by the format's conversions\n";
+ 
+@@ -420,6 +435,56 @@ builtin_printf(int argc, char* argv[]) {
+             did_arg = 1;
+             break;
+           }
++          case 'e':
++          case 'E':
++          case 'f':
++          case 'F':
++          case 'g':
++          case 'G':
++          case 'a':
++          case 'A': {
++            double v = printf_arg_double(argc, argv, &idx);
++            char spec[64], small[256], *out = small;
++            size_t sl = 0;
++            int n;
++
++            /* the spec is rebuilt from the parsed pieces, never from the format text */
++            spec[sl++] = '%';
++
++            if(sp.left)
++              spec[sl++] = '-';
++            if(sp.plus)
++              spec[sl++] = '+';
++            if(sp.space)
++              spec[sl++] = ' ';
++            if(sp.zero)
++              spec[sl++] = '0';
++            if(sp.alt)
++              spec[sl++] = '#';
++
++            if(sp.width >= 0)
++              sl += (size_t)snprintf(spec + sl, sizeof(spec) - sl, "%d", sp.width);
++
++            if(sp.prec >= 0)
++              sl += (size_t)snprintf(spec + sl, sizeof(spec) - sl, ".%d", sp.prec);
++
++            spec[sl++] = *f;
++            spec[sl] = '\0';
++
++            if((n = snprintf(small, sizeof(small), spec, v)) >= (int)sizeof(small)) {
++              out = alloc((size_t)n + 1);
++              snprintf(out, (size_t)n + 1, spec, v);
++            }
++
++            if(n > 0)
++              buffer_put(fd_out->w, out, (size_t)n);
++
++            if(out != small)
++              alloc_free(out);
++
++            did_arg = 1;
++            break;
++          }
+           default:
+             /* unknown directive: emit the original "%..." text as a
+                fallback, rather than aborting --- configure scripts
