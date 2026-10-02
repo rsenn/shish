@@ -5722,4 +5722,22 @@ assert_equal "3.14|  2.5|1.500000e+03|0.0001|1.000000
 9
 309" "$PF" "printf %f %e %g convert their argument, honouring flags, width, precision and *"
 
+# printf: numeric operands are C constants with diagnostics, "--" ends the options,
+# format octal escapes take at most three digits (fixes/294)
+PN=$("$SHISH_SELF" -c 'printf "%d %d %d|%u|%x|%o\n" 0x1f 010 -5 -1 0x1f 010; printf "%d|%d|\n" 12abc abc 2>/dev/null; echo "rc=$?"; printf "%d|%u\n" 99999999999999999999 99999999999999999999 2>/dev/null; printf "%d\n" "\"A"; printf "%d\n" ""; echo "rc=$?"')
+assert_equal "31 8 -5|18446744073709551615|1f|10
+12|0|
+rc=1
+9223372036854775807|18446744073709551615
+65
+0
+rc=0" "$PN" "printf evaluates C constants, saturates, flags an invalid number with status 1"
+PN=$("$SHISH_SELF" -c 'printf -- "%s\n" x; printf -- "-%s-\n" --; printf "a\0101b" | wc -c | tr -d " "; printf "a\101b" | wc -c | tr -d " "; printf "%b" "a\0101b" | wc -c | tr -d " "; printf -- 2>/dev/null; [ $? -gt 0 ] && echo usage-error')
+assert_equal "x
+----
+4
+3
+3
+usage-error" "$PN" "printf -- ends the options; \\ddd in the format is at most three digits, \\0ddd in %b"
+
 summary

@@ -6,15 +6,19 @@
 #include "../../lib/str.h"
 #include "../../lib/uint64.h"
 #include "../../lib/alloc.h"
-#include <stdio.h> /* snprintf */
-#include <stdlib.h> /* strtod */
+#include <errno.h>
+#include <stdio.h>  /* snprintf */
+#include <stdlib.h> /* strtod, strtoll, strtoull */
 
 /* expand a single backslash escape starting at p[0] (the '\\').
  * writes the resulting char to *out, returns the number of source
  * bytes consumed (including the leading backslash). If the sequence
- * is `\c`, sets *stop = 1 and returns the consumed count. */
+ * is `\c`, sets *stop = 1 and returns the consumed count.
+ *
+ *   bmode  0: format string, `\ddd` takes 1-3 octal digits
+ *          1: %b operand,   `\0ddd` takes a 0 and 0-3 more; `\ddd` as above */
 static unsigned
-printf_esc(const char* p, char* out, int* stop) {
+printf_esc(const char* p, char* out, int* stop, int bmode) {
   unsigned char ch = 0;
   unsigned n;
 
@@ -46,14 +50,13 @@ printf_esc(const char* p, char* out, int* stop) {
     case '5':
     case '6':
     case '7': {
-      unsigned int v;
-      n = scan_8int(&p[1], &v);
-      if(n == 0) {
-        *out = '\\';
-        return 1;
-      }
+      unsigned int v = 0, k = 0, start = (bmode && p[1] == '0') ? 2 : 1;
+
+      while(k < 3 && p[start + k] >= '0' && p[start + k] <= '7')
+        v = v * 8 + (unsigned)(p[start + k++] - '0');
+
       *out = (char)(v & 0xff);
-      return 1 + n;
+      return start + k;
     }
     case '\0': *out = '\\'; return 1;
     default:
@@ -71,7 +74,7 @@ printf_emit_literal(const char* fmt, int* stop) {
 
   while(*fmt && *fmt != '%') {
     if(*fmt == '\\') {
-      unsigned n = printf_esc(fmt, buf, stop);
+      unsigned n = printf_esc(fmt, buf, stop, 0);
 
       if(*stop)
         return fmt + n;
@@ -95,7 +98,7 @@ printf_emit_bstring(const char* s, int* stop) {
 
   while(*s) {
     if(*s == '\\') {
-      unsigned n = printf_esc(s, buf, stop);
+      unsigned n = printf_esc(s, buf, stop, 1);
 
       if(*stop)
         return;
@@ -118,41 +121,68 @@ printf_arg(int argc, char* argv[], int* idx) {
   return argv[(*idx)++];
 }
 
+/* status of the whole run: 1 once any numeric operand was not a number */
+static int printf_status;
+
+/* check where a C-constant conversion stopped: nothing converted or trailing text is "invalid
+ * number" (status 1, the valid prefix is still used); a range error only warns (value saturated) */
+static void
+printf_check(char* argv[], const char* s, const char* end, int range) {
+  if(range)
+    builtin_errmsg(argv, (char*)s, "Numerical result out of range");
+  else if(end == s ? *s != '\0' : *end != '\0') {
+    builtin_errmsg(argv, (char*)s, "invalid number");
+    printf_status = 1;
+  }
+}
+
+/* signed operand: 0x1f, 010, +5, -5, 'c (code of c) */
 static int64
 printf_arg_long(int argc, char* argv[], int* idx) {
   const char* s = printf_arg(argc, argv, idx);
-  int64 v = 0;
+  char* end;
+  long long v;
 
   if(s[0] == '\'' || s[0] == '"')
     /* per POSIX: a leading single or double quote means the value
        is the numeric value of the character that follows */
     return (int64)(unsigned char)s[1];
 
-  scan_longlong(s, &v);
-  return v;
+  errno = 0;
+  v = strtoll(s, &end, 0);
+  printf_check(argv, s, end, errno == ERANGE);
+  return (int64)v;
 }
 
+/* unsigned operand: as above; a negative number wraps (-1 is 18446744073709551615) */
 static uint64
 printf_arg_ulong(int argc, char* argv[], int* idx) {
   const char* s = printf_arg(argc, argv, idx);
-  uint64 v = 0;
+  char* end;
+  unsigned long long v;
 
   if(s[0] == '\'' || s[0] == '"')
     return (uint64)(unsigned char)s[1];
 
-  scan_ulonglong(s, &v);
-  return v;
+  errno = 0;
+  v = strtoull(s, &end, 0);
+  printf_check(argv, s, end, errno == ERANGE);
+  return (uint64)v;
 }
 
 /* floating-point argument: a leading quote is the code of the next character, else strtod() */
 static double
 printf_arg_double(int argc, char* argv[], int* idx) {
   const char* s = printf_arg(argc, argv, idx);
+  char* end;
+  double v;
 
   if(s[0] == '\'' || s[0] == '"')
     return (double)(unsigned char)s[1];
 
-  return strtod(s, NULL);
+  v = strtod(s, &end);
+  printf_check(argv, s, end, 0);
+  return v;
 }
 
 /* a parsed "%[flags][width][.precision]" directive, minus the final
@@ -286,13 +316,17 @@ builtin_printf(int argc, char* argv[]) {
   int idx, did_arg, stop = 0;
   char numbuf[FMT_8LONG + 1];
 
-  if(argc < 2) {
+  int first = (argc > 1 && str_equal(argv[1], "--")) ? 2 : 1;
+
+  printf_status = 0;
+
+  if(argc <= first) {
     builtin_errmsg(argv, "printf", "usage: printf format [args...]");
     return 1;
   }
 
-  fmt = argv[1];
-  idx = 2;
+  fmt = argv[first];
+  idx = first + 1;
 
   do {
     const char* f = fmt;
@@ -507,5 +541,5 @@ builtin_printf(int argc, char* argv[]) {
   } while(!stop && did_arg && idx < argc);
 
   buffer_flush(fd_out->w);
-  return 0;
+  return printf_status;
 }

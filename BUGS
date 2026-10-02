@@ -631,35 +631,6 @@
   touch a; chmod g=u a; chmod u+s a; chmod +t a   # each: "invalid mode"
   ```
 
-- printf-numeric-arguments-not-c-constants: POSIX evaluates numeric
-  arguments of `%d %i %o %u %x %X` as C constants (`0x1f` hex, `010` octal,
-  leading sign, `'c`/`"c` character value) and requires a diagnostic and
-  status >0 for an argument that is not a number or has trailing garbage.
-  `printf` treats everything as decimal, gives 0 for a hex constant, prints
-  nothing for `abc` and exits 0, wraps `%u` of a negative number to 0, and
-  silently corrupts numbers above 2^63.
-
-  **Repro:**
-  ```sh
-  printf '%d\n' 0x1f            # 0; should be 31
-  printf '%d\n' 010             # 10; should be 8
-  printf '%d\n' abc; echo $?    # 0 / rc 0; should diagnose, rc >0
-  printf '%u\n' -1              # 0; should be 18446744073709551615
-  printf '%d\n' 99999999999999999999   # 999999999999999999; should saturate/diagnose
-  ```
-
-- printf-double-dash-not-accepted: `printf -- FORMAT ...` treats `--` as
-  the format string (utility syntax guideline 10 applies to `printf`).
-  Also, an octal escape in the format takes up to *four* digits (`\0101`
-  gives `A`); POSIX `\ddd` takes at most three, so `\0101` is `\010` then
-  `1`. (`%b` operands use `\0ddd`, which is correct.)
-
-  **Repro:**
-  ```sh
-  printf -- '%s\n' x       # prints "--"; should print x
-  printf 'a\0101b\n' | od -c   # "a A b"; should be a, \b, 1, b
-  ```
-
 - test-ef-missing-and-three-argument-and-integer-errors: `test f1 -ef f2`
   (Issue 8, same file) is "invalid expression". With three arguments whose
   middle one is `-a` (binary "and"), POSIX requires the binary test of `$1`
