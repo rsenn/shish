@@ -118,6 +118,12 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
   sh_sigignore();
   TRACE(TRACE_EVAL, "subst.leave", trace_int("status", ret), trace_int("len", sa.len));
 
+  /* an "exit" from a real-signal trap ends the process, as in eval_subshell() */
+  if((jmpret & 1) && sh_async_exit) {
+    stralloc_free(&sa);
+    sh_exit(ret);
+  }
+
   /* split trailing newlines */
   while(sa.len && sa.s[sa.len - 1] == '\n')
     sa.len--;

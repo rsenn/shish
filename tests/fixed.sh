@@ -5664,4 +5664,26 @@ out" "$FS" "exit/set -e inside \$(...) and (...) with \"exec >/dev/null\" leave 
 FS=$("$SHISH_SELF" -c 'n0=$(/bin/ls /proc/self/fd | wc -l); i=0; while [ $i -lt 100 ]; do x=$( exec >/dev/null 4>/dev/null; exit 2 ); ( exec 5>/dev/null; exit 3 ); y=$( exec 3>&1; /bin/echo hi >&3 ); i=$((i+1)); done; n1=$(/bin/ls /proc/self/fd | wc -l); [ "$n0" = "$n1" ] && echo ok || echo "$n0 -> $n1 fds"')
 assert_equal "ok" "$FS" "100 scopes with persistent redirections must not leak descriptors"
 
+# a user fd made with "exec N>&M" reaches external commands, also from "$(...)",
+# where the substitution's pipe read end must not sit on the fd it wants (fixes/286-287)
+FS=$("$SHISH_SELF" -c 'exec 3>&1; /bin/sh -c "echo top >&3"')
+assert_equal "top" "$FS" "\"exec 3>&1\" leaves fd 3 open for an external command"
+FS=$("$SHISH_SELF" -c 'x=$( exec 3>&1; /bin/sh -c "echo w6 >&3" ); echo "[$x]"')
+assert_equal "[w6]" "$FS" "an external command in \$(...) inherits fd 3 made by \"exec 3>&1\""
+FS=$("$SHISH_SELF" -c 'x=$( exec 3>&1; /bin/sh -c "echo w2 >&2" 2>&3 ); y=$( exec 3>&1; /bin/sh -c "echo w3 >&2" 2>&1 ); echo "[$x][$y]"')
+assert_equal "[w2][w3]" "$FS" "stderr of an external command in \$(...) reaches the substitution via fd 3 or 2>&1"
+
+# an "exit" from a real-signal trap inside "$(...)" ends the process, and leaves
+# no stale sh_async_exit behind (fixes/288)
+FS=$("$SHISH_SELF" -c 'x=$( trap "exit 3" USR1; kill -USR1 $$; sleep 0.3; echo hi ); echo not-reached' 2>&1; echo "rc=$?")
+assert_equal "rc=3" "$FS" "a signal trap's exit inside \$(...) terminates the shell like it does inside (...)"
+
+# a pipeline stage must not hold the read end of its own output pipe: the
+# writer would never get SIGPIPE, and "yes | head -1" would run forever (fixes/289)
+PL=$(timeout 5 "$SHISH_SELF" -c 'yes | head -1; echo done' 2>&1)
+assert_equal "y
+done" "$PL" "yes | head -1 must end once head exits (the writer gets SIGPIPE)"
+PL=$("$SHISH_SELF" -c '/bin/ls /proc/self/fd | tr "\n" " "; /bin/ls /proc/self/fd | cat | cat | tr "\n" " "')
+assert_equal "0 1 2 3 0 1 2 3 " "$PL" "a pipeline stage inherits only 0, 1, 2 (and ls's own directory fd)"
+
 summary

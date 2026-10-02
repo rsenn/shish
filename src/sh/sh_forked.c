@@ -1,5 +1,6 @@
 #include "../../lib/byte.h"
 #include "../eval.h"
+#include "../fdstack.h"
 #include "../sh.h"
 #include "../trace.h"
 #include "../../lib/shell.h"
@@ -69,6 +70,7 @@ sh_forked(void) {
 
   sh_child = 1;
   sh_sigrestore();
+  fdstack_closerd();
 
   /* sh_pid must reflect this child process's own pid from here on --
      job_fork()'s child branch uses it to setpgid() itself into the

@@ -662,10 +662,14 @@ Investigated after that (`fixes/285`, tests in `tests/fixed.sh`):
   own their descriptor (`!FD_DUP`), so a duplicate that shares its owner's `e`
   can never close it.
 
-Open: `BUGS: cmdsub-pipe-end-collides-with-user-fd` (the pipe read end sits on
-the kernel fd the user's `exec 3>&1` wants). Not checked: an exit raised by a
-real-signal trap inside `$(...)` (`sh_async_exit`) -- `eval_subshell()` repeats
-`sh_exit()` after cleaning up, `expand_command()` does not.
+Done after that (`fixes/286`-`288`): the substitution's pipe read end is
+closed in a forked child before `fdtable_exec()` (`fdstack_closerd()`), a user
+fd that lands on its own number is no longer close-on-exec (so `exec 3>&1`
+reaches external commands, with or without `$(...)`), and `expand_command()`
+re-runs `sh_exit()` after a real-signal trap's `exit` like `eval_subshell()`
+(before, `sh_async_exit` stayed set and the next `( exit N )` killed the shell).
+
+Open: `BUGS: signal-to-shell-in-inprocess-scope-kills-it`.
 
 **Original working hypothesis** (confirmed by causes 1-2):
  A persistent redirection

@@ -87,3 +87,29 @@ fdstack_data(void) {
 
   return 0;
 }
+
+/* in a forked child: close the read ends of the substitution pipes, which only
+ * the parent drains. Left open they hold low kernel fds ("exec 3>&1" in
+ * "$(...)" wants 3) until fdstack_flatten() at the very end.
+ * ----------------------------------------------------------------------- */
+void
+fdstack_closerd(void) {
+  struct fdstack* st;
+  struct fd* fd;
+
+  for(st = fdstack; st; st = st->parent)
+    for(fd = st->list; fd; fd = fd->next) {
+      if((fd->mode & FD_SUBST) != FD_SUBST || !(fd->mode & FD_READ) || !fd_ok(fd->rb.fd))
+        continue;
+
+      if(fd_list[fd->rb.fd] == fd)
+        fd_list[fd->rb.fd] = 0;
+
+      if(fd->rb.fd > 2)
+        fdtable_untrack(fd->rb.fd);
+
+      close(fd->rb.fd);
+      fd->rb.fd = -1;
+      fd->mode &= ~FD_READ;
+    }
+}

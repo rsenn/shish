@@ -805,6 +805,13 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
       /* no job control for commands inside pipe */
       /*e->mode &= E_JCTL;*/
 
+      /* the read end of this stage's own output pipe is the next stage's:
+         a writer that holds it open never gets SIGPIPE ("yes | head -1") */
+      if(out && prevfd >= 0) {
+        fdtable_untrack(prevfd);
+        close(prevfd);
+      }
+
       /* exit after evaluating this subtree */
       exit(eval_tree(e, node, E_EXIT));
     } else {

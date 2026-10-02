@@ -257,6 +257,173 @@ actually building for that platform (`cfg-mingw64`/`cfg-mingw32` etc., see
 `. "$(dirname "$0")/common.sh"`. A test "fails" by calling `failure` which
 prints `FAILURE` and `exit 1`s.
 
+## Debugging with TRACE()
+
+`TRACE()` (`src/trace.h`, `src/trace/`) is the first tool to reach for when a
+test fails and the cause is not obvious from the code: it records what the
+evaluator decided, as one line per event, and you filter it down to just the
+subsystem you suspect. Then use `strace` (what the kernel saw) and `gdb`/
+`lldb` (who called) to close the gap. Everything below was run, not guessed.
+
+### Turn it on
+
+```sh
+cmake -S . -B build/dbg -DCMAKE_BUILD_TYPE=Debug -DDEBUG_OUTPUT=ON   # or RelWithDebInfo
+cmake --build build/dbg -j
+```
+
+- `DEBUG_OUTPUT` is only declared when the build type contains `Deb`
+  (`Debug`, `RelWithDebInfo`) or `-DBUILD_DEBUG=ON` is passed. With the default
+  `MinSizeRel` the flag is **silently ignored** and no trace is compiled in.
+- Without `DEBUG_OUTPUT` every `TRACE*` macro expands to nothing: zero cost, and
+  the release binary is unchanged. The old `DEBUG_FD/FDSTACK/FDTABLE` flags are
+  not needed for `TRACE`; they only feed the legacy `debug.log`.
+- `-DBUILTIN_DUMP=ON` adds the `dump` builtin (`-t` fd table, `-s` stack, `-f` list).
+- Keep the debug build outside the tree or in `build/` (untracked); rebuild it after
+  every source change, or you debug yesterday's code.
+
+### Control it at run time (environment, read once at the first event)
+
+| Variable | Meaning |
+|---|---|
+| `SHISH_TRACE=fd,fdtable` | modules to trace; `all`; `-name` removes one (`all,-parse`); unset = off |
+| `SHISH_TRACE_FILE=path` | default `trace.log` in the cwd, opened `O_APPEND`, **never truncated**; `-` is stderr |
+
+- It must be in the environment when shish starts: `export SHISH_TRACE=...` inside
+  a script is not seen. Put it in front of the command: `SHISH_TRACE=fd ./shish -c '...'`.
+- `rm -f` the log before each run, or the runs concatenate.
+- The file is moved to an fd >= 200 with `FD_CLOEXEC`, so a script that redirects
+  fd 1/2 cannot swallow it. `SHISH_TRACE_FILE=-` writes to fd 2: do not use it when the
+  script under test redirects stderr.
+- One event is one `write(2)` of at most 8192 bytes (longer lines end in `~`), `errno`
+  is preserved, and children append to the same file.
+
+### Read the lines
+
+```
+[2100940:1] fdtable.dup(from=4, to=1)            TRACE()         a call / decision
+[2100940:1] fdtable.gap => r=-3                  TRACE_RET()     its result
+[2100940:1] fdtable.exec.fds { 0="/dev/null", 3="pipe:[5184717]" }   TRACE_STRUCT()  a snapshot
+```
+
+`[pid:depth]`: the process and the eval nesting depth. `(...)` and `$(...)` run in
+the same process (only the depth grows); an external command, a pipeline stage and a
+background job each get their own pid, so the pid column tells you which side of a
+fork an event happened on.
+
+| Module | What it shows | Reach for it when |
+|---|---|---|
+| `fd` `fdtable` `fdstack` | `struct fd` push/dup/setfd/pop/close; the virtual-to-effective table; stack levels, pipes | descriptors, redirections, here-docs, `$(...)` output |
+| `redir` | redirection evaluation and dups | `>`, `<&`, `exec N>` misbehave |
+| `exec` | command lookup, builtin/function/program dispatch, fork and execve | wrong command run, wrong environment, hash cache |
+| `eval` | node dispatch, subshell/`$(...)` enter and leave, status | control flow, exit status, `return`/`break`/`exit` |
+| `sh` `job` `sig` | forks, exits, job table, signal block/unblock, trap dispatch | hangs, zombies, `wait`, traps, SIGPIPE |
+| `var` `expand` `parse` `builtin` | variable ops, expansion, lexer tokens, builtin run/status | wrong values, wrong words, a builtin's argv |
+
+Two events carry the real truth about descriptors:
+`fdtable.exec.table(vfd=, shadow=, fd={n=, e=, level=, mode=})` is what the shell
+*believes* each virtual fd maps to just before a fork, and `fdtable.exec.fds {N=target}`
+is what the child *really* has just before `execve`. A bug is where the two differ.
+
+### Filter before you read
+
+Pick the narrowest set that can contain the cause; widen one module at a time.
+
+1. **By module.** Start at the symptom's own subsystem (table above), not `all`. For a
+   descriptor bug: `fd,fdtable`, then add `fdstack,redir`, then `exec`. `all,-parse` is
+   the widest that is still readable.
+2. **By process.** `grep -a '^\[2100940:' trace.log` is the child you care about;
+   the parent's lines are in the same file.
+3. **By event.** `grep -a -E 'fdtable\.(dup|gap|wish)|fd\.setfd'`. Cut a long line with
+   `cut -c1-200`; drop the table dumps with `grep -v exec.table`.
+4. **By window.** Cut between two events that bracket the suspect code:
+   `sed -n '/redir.dup(/,/exec.program.execve/p' trace.log`.
+5. **By difference.** Trace a passing and a failing variant and diff them after
+   normalising what changes between runs:
+   ```sh
+   norm() { sed -E 's/^\[[0-9]+:/[P:/; s/0x[0-9a-f]+/0xX/g; s/pipe:\[[0-9]+\]/pipe:[N]/g'; }
+   diff <(norm <good.log) <(norm <bad.log)
+   ```
+   The same script traced twice must give an empty diff; if it does not, normalise more.
+   The first line that differs is usually the decision that went wrong. Do the same
+   against a baseline binary built from `git worktree add -f $SCRATCH/base <commit>`.
+
+### Debug loop (trace -> strace -> debugger)
+
+1. **Minimal repro** as a one-line `-c` script; confirm against `bash`.
+2. **Trace** the suspect module; find the first event that is wrong (compare the
+   `exec.table` with the `exec.fds` above, or diff good/bad).
+3. **strace** the same run to see which syscall each event produced. The trace's own
+   `write()`s appear in the strace output, so the two are interleaved for free:
+   ```sh
+   SHISH_TRACE=fdtable SHISH_TRACE_FILE=/tmp/x/t.log \
+     strace -f -o st.txt -s 120 -e trace=write,dup,dup2,dup3,close,fcntl,pipe2,execve ./shish -c '...'
+   grep -a -E 'write\(2[0-9][0-9]|dup|close|execve' st.txt     # trace lines are write(200+, ...)
+   ```
+   Useful tells: a library `close(3)` right after `execve` means fd 3 was
+   close-on-exec; a `dup2(a, b)` with no preceding relocation of `b` clobbered a live fd;
+   a missing `close()` in a child is a leaked pipe end.
+4. **Debugger**, once you know the event: the event name is the breakpoint. Break
+   inside `trace_begin` on that event and the backtrace names the caller that emitted it
+   (`TRACE(TRACE_FDTABLE, "dup", ...)` is in `fdtable_dup`):
+   ```sh
+   # gdb
+   SHISH_TRACE=fdtable gdb -q -batch \
+     -ex 'set follow-fork-mode child' -ex 'set detach-on-fork on' \
+     -ex 'break trace_begin if $_streq(event, "dup") && mod == TRACE_FDTABLE' \
+     -ex run -ex 'bt 6' -ex 'up' -ex 'info locals' --args ./shish -c 'exec 3>&1; /bin/true'
+   # lldb (same idea; mod == 4 is TRACE_FDTABLE)
+   SHISH_TRACE=fdtable lldb -b -o 'settings set target.process.follow-fork-mode child' \
+     -o 'breakpoint set -n trace_begin -c "(int)strcmp(event, \"dup\") == 0 && mod == 4"' \
+     -o run -o 'bt 6' -o 'frame variable' ./shish -- -c 'exec 3>&1; /bin/true'
+   ```
+   For a line you already know, `break file.c:LINE`, then `print var`; `shell ls -l /proc/<pid>/fd`
+   (gdb) lists the process's real descriptors at that moment. After the child `exec`s,
+   gdb says "Error in re-setting breakpoint" - harmless, the shell part is done.
+   Follow the child with `follow-fork-mode child`; leave it on the parent to debug
+   the code that *forks*.
+5. **Fix, then re-trace** the repro: the wrong event must be gone and the diff against
+   the good variant empty. Add the regression test (see Tests) before you move on.
+
+Complements, not replacements: ASan/UBSan (`-fsanitize=address,undefined`,
+`ASAN_OPTIONS=detect_leaks=0`) for memory errors, `valgrind` for the build without a
+sanitizer, `ltrace` is rarely useful here (there is almost no libc to trace).
+
+### Add a trace point
+
+```c
+TRACE(TRACE_FDTABLE, "dup", trace_int("from", o), trace_int("to", e));   /* decision + inputs */
+TRACE_RET(TRACE_FDTABLE, "gap", trace_int("r", r));                      /* result */
+TRACE_STRUCT(TRACE_FDTABLE, "state", trace_fd("fd", d));                 /* snapshot */
+```
+
+- Name it `module.event`; put the *inputs of a decision* in the call and the *outcome*
+  in a `TRACE_RET`. Prefer one event per branch that can go wrong over a dump of everything.
+- Value writers: `trace_int`, `trace_hex`, `trace_str` (a NULL string prints `NULL`),
+  `trace_argv`, `trace_flags(key, bits, names, n)`, `trace_fd`, `trace_node`,
+  `trace_loc`, `trace_kind`; `trace_fdtable(event)` and `trace_fdmap(event)` dump the
+  whole table. Add a writer to `src/trace/trace_value.c` for a new type.
+- The arguments are only evaluated when the module is selected, but they **vanish**
+  without `DEBUG_OUTPUT`: never put a side effect in them, and a variable used only
+  inside a `TRACE` may need `(void)` to stay warning-free in a release build.
+- From a signal handler never call `TRACE`; use `TRACE_DEFER(mod, ev, key, val)` there
+  and `trace_flush()` from normal context.
+- A new module is an `enum trace_module` entry in `src/trace.h` plus its name in
+  `trace_names[]` in `src/trace/trace_begin.c` (same order).
+- Leave useful trace points in. Do not leave `fprintf`/`write(2, ...)`/`abort()` debugging
+  in a commit, and check `git diff` for them; keep `trace.log`, `st*.txt` and core files
+  out of `git add`.
+
+### Pitfalls
+
+- A stale debug binary: the trace of last build's code looks plausible and is wrong.
+- `SHISH_TRACE` unset or the build is not `Deb*`+`DEBUG_OUTPUT`: an empty or missing log
+  means the trace is off, not that nothing happened.
+- Timing-sensitive races (`sig*`, `wait`) change under `strace -f` and a debugger;
+  trace alone perturbs least. Compare the trace of a run with and without `strace`.
+- A trace line is written *before* the operation it names finishes if you placed it
+  before the call; place the `TRACE_RET` after to see the outcome.
+
 ## Design specification for builtin utilities
 
 The POSIX.1-2024 utilities volume

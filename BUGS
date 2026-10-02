@@ -995,16 +995,15 @@
   set --; f() { echo $#; }; f "$@"""     # 0; should be 1
   ```
 
-- cmdsub-pipe-end-collides-with-user-fd: in "$(...)" the substitution's pipe
-  read end sits on a low kernel fd (3, 4, ...) that a persistent `exec N>&1`
-  in the body also wants. In the forked child `fdtable_dup()` lands on the
-  wrong number (MOVE, not FORCE), so fd N is missing or points elsewhere.
-  `fdtable.dup(from=1, to=6)` in a `SHISH_TRACE=fdtable` run; bash keeps its
-  internal fds out of the way.
+- signal-to-shell-in-inprocess-scope-kills-it: `(...)` and `$(...)` run
+  in-process and reset the shell's caught traps to the default action, so a
+  signal sent to the shell (`$$`) while one is running terminates the whole
+  process instead of running the parent's trap afterwards, as bash does.
 
   **Repro:**
   ```sh
-  x=$( exec 3>&1; /bin/sh -c 'echo w >&3' ); echo "[$x]"    # "/bin/sh: 3: Bad file descriptor" "[]"; bash: [w]
-  x=$( exec 3>&1; /bin/sh -c 'echo w >&2' 2>&3 ); echo "[$x]"   # "[]"; bash: [w]
-  x=$( exec 3>&1; /bin/sh -c 'echo w >&2' 2>&1 ); echo "[$x]"   # "[]"; bash: [w]
+  trap 'echo trapped; exit 3' TERM
+  ( sleep 0.3; kill -TERM $$ ) &
+  x=$( i=0; while [ $i -lt 400000 ]; do i=$((i+1)); done; echo after ); echo "[$x]"
+  # shish: "Terminated"; bash: "trapped", status 3
   ```

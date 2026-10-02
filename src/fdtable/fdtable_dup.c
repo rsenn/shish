@@ -78,9 +78,10 @@ retry:
 
 #if !WINDOWS_NATIVE && defined(FD_CLOEXEC)
   /* Mark shell-internal bookkeeping fds close-on-exec so they don't leak
-     into spawned external programs. Standard fds 0/1/2 are user-facing and
-     must stay inheritable; anything else is the shell's private state. */
-  if(e > STDERR_FILENO)
+     into spawned external programs. An fd sitting on its own number is
+     the user's ("exec 3>&1" must reach a later command), as are 0/1/2;
+     only a relocated copy (e != n) is the shell's private state. */
+  if(e > STDERR_FILENO && e != d->n)
     fcntl(e, F_SETFD, FD_CLOEXEC);
 #endif
 

@@ -15,6 +15,7 @@ extern struct fdstack fdstack_root;
 extern struct fdstack* fdstack;
 
 int fdstack_data(void);
+void fdstack_closerd(void);
 int fdstack_pipe(unsigned int n, struct fd*);
 struct fd* fdstack_search(struct fdstack* st, int n);
 unsigned int fdstack_npipes(int mode);
