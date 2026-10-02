@@ -199,9 +199,8 @@
     the enclosing function is defined, so an alias set in the function
     body is not seen by `$(...)` parsed earlier.
 
-- param-expansion-pattern-removal-broken: `param-p.tst` fails 5 of 54:
-  `:236` length of valid variables, `:446` special parameter `$`, `:517`
-  `*` quoted with an empty `IFS`, `:539` `*` unquoted, and `:82` a quoted
+- param-expansion-pattern-removal-broken: `param-p.tst` fails 3 of 54:
+  `:236` length of valid variables, `:446` special parameter `$`, and `:82` a quoted
   tilde in `${a?\~}` is still expanded
   (`HOME=/foo/bar; (: ${a?\~}) 2>&1` prints "/foo/bar", not "~").
 
@@ -482,18 +481,6 @@
   **Repro:**
   ```sh
   printf 'cat <<EOF\nbody\nEOF\n' | build/x86_64-linux-gnu/shformat   # cat <<"body\n"
-  ```
-
-- star-empty-ifs-appends-nul: `"$*"` with `IFS` set to the empty string
-  joins the parameters with `ifs[0]`, which is the terminating NUL of
-  `""`, so the value holds embedded NUL bytes and every C-string
-  consumer sees only the first parameter. POSIX: a null IFS joins with
-  no separator (`abc`). Same `ifs[0]` pattern in `expand_glob.c:81`
-  (the unsplit `$*` case). Checked 2026-09-19.
-
-  **Repro:**
-  ```sh
-  build/x86_64-linux-gnu/shish -c 'IFS=; set -- a b c; printf "[%s]\n" "$*"'   # [a], should be [abc]
   ```
 
 - term-complete-quoted-word: tab-completion splits the word under the

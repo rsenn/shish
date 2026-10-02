@@ -97,7 +97,14 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
   /* treat special arguments */
   if(param->flag & S_SPECIAL) {
-    switch(param->flag & S_SPECIAL) {
+    int special = param->flag & S_SPECIAL;
+
+    /* unquoted $* with IFS="" cannot be split afterwards: one field per
+       parameter, like $@ */
+    if(special == S_ARGV && (param->flag & S_TABLE) == S_UNQUOTED && !(flags & X_NOSPLIT) && !var_vdefault("IFS", IFS_DEFAULT, NULL)[0])
+      special = S_ARGVS;
+
+    switch(special) {
       /* $# substitution */
       case S_ARGC: {
         stralloc_catulong0(&value, sh->arg.c, 0);
@@ -110,7 +117,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         const char* ifs = var_vdefault("IFS", IFS_DEFAULT, NULL);
 
         for(i = 0; i < sh->arg.c; i++) {
-          if(i > 0)
+          if(i > 0 && ifs[0])
             stralloc_catc(&value, ifs[0]);
 
           stralloc_cats(&value, sh->arg.v[i]);

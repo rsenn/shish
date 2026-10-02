@@ -78,7 +78,8 @@ expand_glob(union node** nptr, int flags) {
       if(++i < glb.gl_pathc) {
         /* if we should not split then just concat ifs[0] */
         if(flags & X_NOSPLIT) {
-          stralloc_catc(&n->narg.stra, ifs[0]);
+          if(ifs[0])
+            stralloc_catc(&n->narg.stra, ifs[0]);
         }
         /* otherwise create a new node */
         else {

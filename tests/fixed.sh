@@ -5705,4 +5705,12 @@ assert_equal "rc=143" "$SIGT" "a signal from a command the subshell started is f
 PL=$("$SHISH_SELF" -c 'for x in 1 2 3; do echo $x; done | cat | tr "\n" " "; for x in 1 2 3; do echo $x | tr 1 X; done | tr "\n" " "; f() { for x in a b; do echo $x; done; }; f | tr "\n" " "')
 assert_equal "1 2 3 X 2 3 a b " "$PL" "every iteration of a for loop that is a pipeline stage runs (also with a pipeline in its body)"
 
+# "$*" with IFS set to the empty string joins with no separator (it held NUL bytes);
+# an unquoted $* with an empty IFS is one field per parameter (fixes/292)
+IS=$("$SHISH_SELF" -c 'IFS=; set -- a b c; x="$*"; echo "[$x][$*]"; printf "[%s]" $*; echo; case "$*" in abc) echo case-ok;; esac; IFS=:; echo "$*"')
+assert_equal "[abc][abc]
+[a][b][c]
+case-ok
+a:b:c" "$IS" "\"\$*\" with an empty IFS has no separator, unquoted \$* gives one field per parameter"
+
 summary

@@ -47,7 +47,7 @@ that run have any):
 
 ```
 24 kill2-p   4/28    5 trap-p    32/37    4 simple-p  30/34    1 pipeline-p 8/9
-13 option-p 62/75    5 param-p   49/54    4 cmdsub-p  17/21    1 lineno-p   2/3
+13 option-p 62/75    3 param-p   51/54    4 cmdsub-p  17/21    1 lineno-p   2/3
  7 kill1-p  10/17    4 tilde-p   25/29    4 alias-p   61/65    1 input-p   10/11
  6 kill3-p  15/21    3 read-p    25/28    2 quote-p   33/35    1 function-p 18/19
                      2 exec-p     8/10    1 for-p     19/20    1 comment-p 14/15
@@ -122,7 +122,7 @@ reports `line 2: x: boom`. `$LINENO` itself is correct. Fix with, and verify aga
 ### Phase 4 [Stage 1: language] - expansion and parsing
 
 1. `quote-p` (33/35) - `BUGS: quote-backslash-escaping-broken`.
-2. `param-p` (49/54) - `BUGS: param-expansion-pattern-removal-broken`.
+2. `param-p` (51/54) - `BUGS: param-expansion-pattern-removal-broken`.
 3. `simple-p` (30/34) - redirections must precede assignments for a non-special builtin;
    PATH search and the remembered-path rules.
 4. `tilde-p` (4), `cmdsub-p` (4), `comment-p` (1) - `BUGS: posix-suite-failures-not-yet-analysed`;
