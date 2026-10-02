@@ -644,13 +644,17 @@
   test 1 -eq x; echo $?              # 1; should be >1
   ```
 
-- type-unknown-name-silent: `type nonexistent` writes nothing and returns 0.
-  POSIX: a diagnostic on stderr for names that cannot be found, and status
-  >0.
+- type-unknown-name-silent: `type` handles only the first operand and always
+  returns 0. A name that cannot be found writes nothing and gives status 0
+  (POSIX: a diagnostic on stderr and status >0), so `if type cmd >/dev/null 2>&1`
+  is always true. `-a` and `-p` are accepted and ignored. High priority, plan in
+  `TODO.md` ("HIGH PRIORITY").
 
   **Repro:**
   ```sh
-  type nonexistent_cmd; echo $?     # prints nothing, 0; should print an error, >0
+  type nonexistent_cmd; echo $?     # prints nothing, 0; should print an error, 1
+  type echo cd pwd                   # only "echo is a shell builtin"; should list all three
+  if type nonexistent_cmd >/dev/null 2>&1; then echo found; fi    # prints "found"
   ```
 
 - export-unset-invalid-name-status: `export 1a=b` prints "not a valid

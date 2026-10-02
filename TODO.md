@@ -40,6 +40,44 @@ gate brace/history expansion, or otherwise) unless that changes.
 
 The measurable target for Stages 1-2 is `tests/posix` (yash's POSIX suite, 120 files).
 
+### HIGH PRIORITY — next task: `type` ignores unknown and further names
+
+Picked 2026-10-02 as the next critical task (`BUGS: type-unknown-name-silent`). `builtin_type()`
+(`src/builtin/builtin_type.c`) calls `exec_type()` once for the *first* operand and always returns 0:
+
+```sh
+type nosuch_cmd; echo $?     # shish: nothing, rc 0          bash: "type: nosuch_cmd: not found", rc 1
+type echo cd pwd             # shish: only the echo line     bash: all three
+if type foo >/dev/null 2>&1; then echo have; fi    # shish: always "have"
+```
+
+**Why it ranks first.** `type cmd >/dev/null 2>&1` is the standard "is this installed?" test (every
+`configure`-style script uses it), so with this bug every such check says yes and the script fails
+later, far from the cause, with no message and status 0. `command -v` already answers correctly.
+It is a silent wrong result in a core builtin, one function, and a few lines.
+
+**Plan** (`exec_type()` already returns 1 for an unknown name; the builtin ignores it):
+
+1. Loop over every operand after the options, printing one line each, in order.
+2. For a name that does not resolve print `type: NAME: not found` on stderr (via `builtin_errmsg`) and
+   remember it; return 1 if any operand failed, else 0. No operand at all stays a no-op returning 0.
+3. `-a` and `-p` are parsed (`all_locations`, `print_path`) but never used: implement them or drop
+   them from `help_type` and the option string (`-a` lists every match: alias, keyword, function,
+   builtin, each `$PATH` hit; `-p` prints only the path of a file, nothing for a builtin).
+   `-t` with an unknown name prints nothing and returns 1 (bash).
+4. Check `-P` (force a `PATH` search) and `-f` against bash, and that `type` of a function does not
+   print its body (bash does; POSIX leaves it open: pick one and say so in `help_type`).
+
+**Gate:** `tests/fixed.sh` cases for the unknown name (status 1 and message), several operands (all
+printed, status 1 if any is missing, 0 when all exist) and `if type x` choosing the right branch; compare
+the outputs with bash line by line; `tests/posix` files unchanged; ASan build clean; remove the `BUGS`
+entry and add `fixes/NN`.
+
+**Next in line after this**, in the order they were weighed (see `BUGS` for the repro of each):
+`cd /x/../y` when the `..` returns to the root (`cd: tmp: No such file or directory`, rare), the `test`
+edge cases (`test -n -a -n`, `test f1 -ef f2`, `test 1 -eq x` must exit >1), `break`/`continue` inside
+`eval` (needs its own flag on `eval`'s frame instead of `E_ROOT`), then `ln t` (core dump on one operand).
+
 ### Where it stands (2026-10-02)
 
 Failing cases per file, everything except the `sig*` family (23 of the 58 files
@@ -188,7 +226,8 @@ reports `line 2: x: boom`. `$LINENO` itself is correct. Fix with, and verify aga
 - `posix-suite-failures-not-yet-analysed` -> Phases 3-5.
 - `yash-suite-other-hangs`, `grouping-p-tst-flaky`, the three `fixed-sh-*` entries -> Phase 6.
 
-**Real bugs, but not counted in the `tests/posix` scoreboard** (fix opportunistically):
+**Real bugs, but not counted in the `tests/posix` scoreboard** (`type-unknown-name-silent` is the
+HIGH PRIORITY task above; fix the rest opportunistically):
 `eval-lineno-imprecise-inside-function`, `heredoc-in-cmdsub-read-in-wrong-order`,
 `exit-trap-loses-positional-parameters`, `no-tree-print-option-is-a-noop`,
 `cfg-cmake-mingw-silently-builds-native`, `eval-node-bgnd-silent-on-fork-failure`,
