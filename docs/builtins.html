@@ -40,8 +40,12 @@ source test times trap type umask unset wait</code></pre></div>
 <p><strong>Default</strong> — the minimal set plus <code>echo</code>, <code>true</code>, <code>false</code>, <code>help</code>,
 <code>type</code> and <code>fdtable</code>. This is what a plain <code>cfg</code> build gives you.</p>
 <p><strong>Extra</strong> — the reason a shish container image can be a single file:</p>
-<div class="codeblock"><pre><code>basename cat chmod digest dirname find grep hostname link ln ls mkdir
-mktemp readlink realpath rm rmdir sed sleep tee timeout touch uname wc which</code></pre></div>
+<div class="codeblock"><pre><code>basename cat chmod cp date digest dirname env find grep hostname id link ln
+ls mkdir mktemp mv readlink realpath rm rmdir sed sleep sort split tail tee
+timeout touch uname unlink wc which</code></pre></div>
+<p><code>cp</code> and <code>mv</code> are one source file (<code>builtin_cp.c</code>, one function that looks at
+<code>argv[0]</code>); <code>mv</code> also needs <code>rm</code>'s tree removal, so enabling <code>mv</code> compiles
+<code>builtin_rm.c</code> too.</p>
 <p>These are off by default. Turn them on and a script stops needing
 coreutils (or <code>grep</code>/<code>sed</code>):</p>
 <div class="codeblock" data-lang="sh"><pre><code class="language-sh">$ <span class="t-id">shish</span> <span class="t-op">-c</span> <span class="t-str">'PATH=; mkdir -p a/b; echo hi &gt; a/b/f; cat a/b/f; rm -r a'</span>

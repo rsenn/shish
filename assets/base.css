@@ -16,19 +16,19 @@
 :root {
   color-scheme: light dark;
 
-  --bg:          light-dark(#fbfbfa, #14161a);
-  --bg-raised:   light-dark(#ffffff, #1a1d22);
-  --bg-sunken:   light-dark(#f2f2f0, #101216);
-  --bg-code:     light-dark(#f6f6f4, #1a1d22);
-  --fg:          light-dark(#1b1c1a, #e6e8e3);
-  --fg-muted:    light-dark(#5e625c, #9aa0a6);
-  --fg-faint:    light-dark(#8c918a, #6d747b);
-  --line:        light-dark(#e2e3df, #272b31);
-  --line-strong: light-dark(#cdcfc9, #3a3f47);
+  --bg:          light-dark(#fbfafb, #19141a);
+  --bg-raised:   light-dark(#ffffff, #201a22);
+  --bg-sunken:   light-dark(#f2f0f2, #151016);
+  --bg-code:     light-dark(#f6f4f6, #201a22);
+  --fg:          light-dark(#1c1a1c, #e7e3e8);
+  --fg-muted:    light-dark(#615c62, #a39aa6);
+  --fg-faint:    light-dark(#8f8a91, #786d7b);
+  --line:        light-dark(#e2dfe3, #2f2731);
+  --line-strong: light-dark(#cec9cf, #443a47);
 
-  --accent:      light-dark(#0b7c72, #3fd0bd);
+  --accent:      light-dark(#a732c8, #e4b6f1);
   --accent-fg:   light-dark(#ffffff, #0d1114);
-  --accent-soft: light-dark(#e2f2f0, #17302f);
+  --accent-soft: light-dark(#eee2f2, #2a1730);
 
   /* syntax colours: t-kw t-str t-num t-cm t-fn t-type t-atom t-op t-var t-pre */
   --t-kw:   light-dark(#8a3ba8, #c792ea);

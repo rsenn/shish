@@ -14,20 +14,20 @@
 }
 
 :root {
-  --bg:          light-dark(#f3f4ee, #090e0b);
-  --bg-raised:   light-dark(#f9faf5, #0f1611);
-  --bg-sunken:   light-dark(#e9ebe2, #070a08);
-  --bar:         light-dark(#dfeadb, #0f1a12);      /* greenbar stripe */
-  --bg-code:     light-dark(#e6eee1, #0d150f);
-  --fg:          light-dark(#15181a, #c8e6cf);
-  --fg-muted:    light-dark(#464c47, #86a88f);
-  --fg-faint:    light-dark(#6b716a, #63846c);
-  --line:        light-dark(#cbd3c6, #1a2a1f);
-  --line-strong: light-dark(#93a08f, #2f4a37);
+  --bg:          light-dark(#f4f1ee, #0e0c09);
+  --bg-raised:   light-dark(#faf8f5, #16130f);
+  --bg-sunken:   light-dark(#ebe7e2, #0a0907);
+  --bar:         light-dark(#eae3db, #1a150f);      /* greenbar stripe */
+  --bg-code:     light-dark(#eee8e1, #15110d);
+  --fg:          light-dark(#1a1815, #e6d8c8);
+  --fg-muted:    light-dark(#4c4946, #a89886);
+  --fg-faint:    light-dark(#716e6a, #847563);
+  --line:        light-dark(#d3cdc6, #2a231a);
+  --line-strong: light-dark(#a0988f, #4a3d2f);
 
-  --accent:      light-dark(#1c6b3c, #62d98a);
-  --accent-fg:   light-dark(#f3f4ee, #06110a);
-  --accent-soft: light-dark(#d5e6d3, #143222);
+  --accent:      light-dark(#8b5a23, #ffdfba);
+  --accent-fg:   light-dark(#f4f1ee, #110c06);
+  --accent-soft: light-dark(#e6ddd3, #322414);
 
   --t-kw:   var(--fg);
   --t-str:  var(--accent);
@@ -40,8 +40,8 @@
   --t-var:  var(--fg-muted);
   --t-pre:  var(--fg-muted);
 
-  --term-bg: #060b08;
-  --term-fg: #c8e6cf;
+  --term-bg: #0b0906;
+  --term-fg: #e6d8c8;
   --ok:  #62d98a;
   --bad: #f2f7f3;
 
