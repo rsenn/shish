@@ -90,7 +90,7 @@ struct command exec_search(char* name, int mask);
 void exec_function_enter(void);
 void exec_function_leave(void);
 void exec_function_retire(union node* fn);
-int exec_type(char* name, int mask, int force_path, int type_name);
+int exec_type(char* name, int mask, int force_path, int type_name, int print_path);
 
 union node;
 

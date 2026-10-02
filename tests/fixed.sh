@@ -5740,4 +5740,112 @@ assert_equal "x
 3
 usage-error" "$PN" "printf -- ends the options; \\ddd in the format is at most three digits, \\0ddd in %b"
 
+# type: every operand is looked up; a missing name is "not found" on stderr and status 1;
+# -t and -p print nothing for it
+TY=$("$SHISH_SELF" -c 'type nosuch_cmd_x 2>&1; echo "rc=$?"')
+assert_equal "*nosuch_cmd_x: not found*rc=1" "$(printf '%s' "$TY" | tr '\n' ' ' | sed 's/^.*\(nosuch_cmd_x: not found\).*\(rc=1\)$/*\1*\2/')" "type of an unknown name reports it on stderr with status 1"
+TY=$("$SHISH_SELF" -c 'type echo cd nosuch_cmd_y 2>/dev/null; echo "rc=$?"; type echo cd; echo "rc=$?"; type -t nosuch_cmd_y; echo "rc=$?"; type; echo "rc=$?"')
+assert_equal "echo is a shell builtin
+cd is a shell builtin
+rc=1
+echo is a shell builtin
+cd is a shell builtin
+rc=0
+rc=1
+rc=0" "$TY" "type lists every operand, status 1 if any is missing; -t prints nothing for it"
+TY=$("$SHISH_SELF" -c 'if type nosuch_cmd_x >/dev/null 2>&1; then echo have; else echo no; fi')
+assert_equal "no" "$TY" "if type picks the else branch for a missing command"
+
+# test: -ef compares device and inode, "-n -a -n" is a binary "and" of two strings,
+# a non-integer operand of -eq etc. is an error (status >1)
+TD=$(mktemp -d)
+TT=$(cd "$TD" && "$SHISH_SELF" -c 'touch f g; ln -s f l; test f -ef f; echo $?; test f -ef g; echo $?; test l -ef f; echo $?; test -n -a -n; echo $?; test "" -o -z; echo $?; test "" -a x; echo $?; test 1 -eq x 2>/dev/null; echo $?; test 1 -eq 1x 2>/dev/null; echo $?; test -5 -lt 3; echo $?')
+rm -rf "$TD"
+assert_equal "0
+1
+0
+0
+0
+1
+2
+2
+0" "$TT" "test -ef, 3-argument -a/-o on strings, and non-integer operands giving status 2"
+
+# cd: ".." after an ordinary component is resolved ("/tmp/../tmp" -> "/tmp", never "tmp"),
+# ".." at the root stays "/", and a missing directory is named in the diagnostic
+CD=$("$SHISH_SELF" -c 'cd /usr/../tmp; echo $PWD; cd -P /usr/lib/../../tmp; echo $PWD; cd /..; echo $PWD; cd /nonexist_dir_x 2>&1; echo $?' | sed 's/^.*cd: /cd: /')
+assert_equal "/tmp
+/tmp
+/
+cd: nonexist_dir_x: No such file or directory
+1" "$(printf '%s\n' "$CD" | sed 's|/nonexist_dir_x|nonexist_dir_x|')" "cd resolves x/.. components, keeps the root at /.., and names a missing operand"
+
+# break/continue run by eval reach the enclosing loop; a function boundary still blocks them
+EB=$("$SHISH_SELF" -c 'for i in 1 2 3; do eval break; echo no; done; echo a; for i in 1 2; do eval continue; echo no; done; echo b; for i in 1 2; do for j in 1 2; do eval "break 2"; echo no; done; done; echo c; for i in 1 2; do eval "eval break"; echo no; done; echo d; f() { eval break; echo infunc; }; for i in 1; do f 2>/dev/null; done; echo e')
+assert_equal "a
+b
+c
+d
+infunc
+e" "$EB" "eval break/continue (also nested and with a level count) leave the loop; inside a function they stay local"
+
+# ln: one operand is a usage error (no crash), -L/-P are accepted and choose whether a hard link to a
+# symlink follows it, a missing source is named in the diagnostic
+LD=$(mktemp -d)
+LN=$(cd "$LD" && "$SHISH_SELF" -c 'touch t; ln -s t sl; ln t 2>/dev/null; echo "rc=$?"; ln -P sl hp; ln -L sl hl; [ -h hp ] && echo hp-link; [ -h hl ] || echo hl-file; ln nosuch dst 2>&1 | sed "s/^.*ln: //"')
+rm -rf "$LD"
+assert_equal "rc=1
+hp-link
+hl-file
+nosuch: No such file or directory" "$LN" "ln with one operand fails cleanly, -P/-L pick symlink or target, the missing source is named"
+
+# ln keeps an existing destination unless -f is given
+LD=$(mktemp -d)
+LN=$(cd "$LD" && "$SHISH_SELF" -c 'echo A > a; echo B > b; ln a b 2>/dev/null; echo "rc=$?"; cat b; ln -f a b; echo "rc=$?"; cat b')
+rm -rf "$LD"
+assert_equal "rc=1
+B
+rc=0
+A" "$LN" "ln fails and keeps an existing destination without -f; -f replaces it"
+
+# export with an invalid name is a special-builtin error: status 1 and a non-interactive shell exits
+EX=$("$SHISH_SELF" -c 'export 1a=b 2>/dev/null; echo notreached'; echo "rc=$?")
+assert_equal "rc=1" "$EX" "export of an invalid name ends a non-interactive shell with status 1"
+
+# a missing or surplus operand is a usage error (status >0) for rmdir, mkdir, chmod, unalias, shift, basename
+MO=""
+for c in 'rmdir' 'mkdir' 'chmod 644' 'unalias' 'set -- a b; shift 1 2' 'basename a b c'; do
+  "$SHISH_SELF" -c "$c" >/dev/null 2>&1
+  [ $? -gt 0 ] && MO="$MO ok" || MO="$MO BAD:$c"
+done
+assert_equal " ok ok ok ok ok ok" "$MO" "commands with a missing or surplus operand fail with status > 0"
+
+# rm: no operand is a usage error (but not with -f), -i asks first, -d removes an empty directory
+RD=$(mktemp -d)
+RM=$(cd "$RD" && "$SHISH_SELF" -c 'rm 2>/dev/null; echo "rc=$?"; rm -f; echo "rc=$?"; touch x y; echo y | rm -i x 2>/dev/null; echo n | rm -i y 2>/dev/null; ls; mkdir e; rm e 2>/dev/null; echo "rc=$?"; rm -d e; echo "rc=$?"')
+rm -rf "$RD"
+assert_equal "rc=1
+rc=0
+y
+rc=1
+rc=0" "$RM" "rm without operands fails (not with -f); -i removes only on y; -d removes an empty directory"
+
+# rm -ri asks for every file and directory below the operand; a declined entry keeps its parents
+RD=$(mktemp -d)
+RM=$(cd "$RD" && "$SHISH_SELF" -c 'mkdir -p d/s; touch d/a d/s/c; yes y | head -9 | rm -ri d 2>/dev/null; ls | wc -l | tr -d " "; mkdir -p d/s; touch d/a d/s/c; yes n | head -9 | rm -ri d 2>/dev/null; find d | wc -l | tr -d " "; printf "y\\ny\\nn\\ny\\ny\\ny\\ny\\n" | rm -ri d 2>/dev/null; find d | wc -l | tr -d " "')
+rm -rf "$RD"
+assert_equal "0
+4
+3" "$RM" "rm -ri prompts per file and directory: all-yes removes the tree, all-no keeps it, one refusal keeps its parents"
+
+# mkdir -m sets the mode exactly (octal or symbolic from a=rwx, ignoring umask); -p applies it to the
+# last component only; a bad mode is an error
+MD=$(mktemp -d)
+MK=$(cd "$MD" && "$SHISH_SELF" -c 'umask 077; mkdir -m 755 a; mkdir -m u=rwx,g=rx b; mkdir -p -m 700 p/q/r; mkdir -m 7z d 2>/dev/null; echo "rc=$?"; stat -c "%n %a" a b p/q/r d 2>/dev/null' 2>&1)
+rm -rf "$MD"
+assert_equal "rc=1
+a 755
+b 757
+p/q/r 700" "$MK" "mkdir -m applies octal and symbolic modes regardless of umask and rejects an invalid mode"
+
 summary

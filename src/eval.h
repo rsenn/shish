@@ -10,7 +10,8 @@ enum {
   E_FUNCTION = (1 << 5),
   E_LOOP = (1 << 6),
   E_PRINT = (1 << 7),
-  E_DEBUG = (1 << 8)
+  E_DEBUG = (1 << 8),
+  E_EVAL = (1 << 9) /* frame of the "eval" builtin: break/continue pass through it */
 };
 
 /* "set -e" is suppressed (nonzero) for exactly the duration of

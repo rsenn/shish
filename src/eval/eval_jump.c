@@ -49,7 +49,7 @@ eval_jump(int levels, int cont) {
        own eval frame also carries E_ROOT, see sh_loop.c's E_ROOT
        tempflag) silently failed to break at all instead of breaking
        that one loop, exactly the way bash does. */
-    if(e->flags & (E_FUNCTION | E_ROOT))
+    if((e->flags & E_FUNCTION) || (e->flags & (E_ROOT | E_EVAL)) == E_ROOT)
       break;
 
     if(e->jump && (e->flags & E_LOOP)) {

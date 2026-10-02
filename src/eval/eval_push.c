@@ -24,5 +24,5 @@ eval_push(struct eval* e, int flags) {
   // sh->eval = e;
   eval = e;
 
-  TRACE(TRACE_EVAL, "push", trace_flags("flags", e->flags, trace_eval_flags, 9));
+  TRACE(TRACE_EVAL, "push", trace_flags("flags", e->flags, trace_eval_flags, 10));
 }

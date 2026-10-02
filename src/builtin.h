@@ -46,6 +46,7 @@ extern const struct builtin_filter cat_filter; /* src/builtin/extra/builtin_cat.
 int builtin_cd(int argc, char* argv[]);
 int builtin_chmod(int argc, char* argv[]);
 int builtin_command(int argc, char* argv[]);
+int chmod_symbolic(const char* spec, unsigned int* mode, int is_dir); /* src/builtin/extra/builtin_chmod.c */
 int builtin_rm_tree(char* argv[], stralloc* path, int force, int verbose); /* src/builtin/extra/builtin_rm.c */
 int builtin_digest(int argc, char* argv[]);
 int builtin_cpmv(int argc, char* argv[]); /* cp and mv: src/builtin/extra/builtin_cp.c */

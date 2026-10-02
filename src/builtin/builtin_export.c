@@ -18,7 +18,7 @@ const char help_export[] =
 
 int
 builtin_export(int argc, char* argv[]) {
-  int c, clear = 0, print = 0;
+  int c, clear = 0, print = 0, status = 0;
   char** argp;
 
   /* check options, -n for unexport, -p for output */
@@ -41,6 +41,7 @@ builtin_export(int argc, char* argv[]) {
   for(; *argp; argp++) {
     if(!var_valid(*argp)) {
       builtin_errmsg(argv, *argp, "not a valid identifier");
+      status = 1;
       continue;
     }
 
@@ -65,5 +66,5 @@ builtin_export(int argc, char* argv[]) {
     var_chflg(*argp, V_EXPORT, !clear);
   }
 
-  return 0;
+  return status;
 }

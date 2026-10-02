@@ -28,7 +28,7 @@ is_keyword(const char* str) {
 }
 
 int
-exec_type(char* name, int mask, int force_path, int type_name) {
+exec_type(char* name, int mask, int force_path, int type_name, int print_path) {
   struct command cmd;
   enum type_index id = TYPE_NONE;
   struct alias* a;
@@ -51,6 +51,13 @@ exec_type(char* name, int mask, int force_path, int type_name) {
   }
 
   if(id >= 0) {
+    if(print_path && !type_name) {
+      if(id == TYPE_FILE) {
+        buffer_puts(fd_out->w, cmd.path);
+        buffer_putnlflush(fd_out->w);
+      }
+      return 0;
+    }
     if(type_name)
       buffer_puts(fd_out->w, TYPE_NAMES[id]);
     else

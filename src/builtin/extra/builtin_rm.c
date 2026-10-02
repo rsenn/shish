@@ -10,16 +10,31 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+/* -i: ask "rm: WHAT 'PATH'? " on stderr, answer from stdin; only "y"/"Y..." says yes */
+static int
+rm_confirm(const char* what, const char* path) {
+  char c = 0, first = 0;
+
+  buffer_putm_internal(fd_err->w, "rm: ", what, " '", path, "'? ", 0);
+  buffer_flush(fd_err->w);
+
+  while(buffer_getc(fd_in->r, &c) > 0 && c != '\n')
+    if(!first)
+      first = c;
+
+  return first == 'y' || first == 'Y';
+}
+
 /* removes a single path, recursing into it first if it's a directory
  * and not itself a symlink (lstat(), not stat(), so "rm -r
  * symlink-to-dir" removes just the symlink). Returns 0 on success, 1
  * on failure (already reported via builtin_error()); with 'force'
  * set, a missing path is not an error.
  * ----------------------------------------------------------------------- */
-int
-builtin_rm_tree(char* argv[], stralloc* path, int force, int verbose) {
+static int
+rm_tree(char* argv[], stralloc* path, int force, int verbose, int interactive, int* kept) {
   struct stat st;
-  int ret = 0;
+  int ret = 0, skipped = 0;
 
   if(lstat(path->s, &st) == -1) {
     if(force && errno == ENOENT)
@@ -33,6 +48,11 @@ builtin_rm_tree(char* argv[], stralloc* path, int force, int verbose) {
     DIR* dp;
     struct dirent* de;
     size_t dirlen = path->len;
+
+    if(interactive && !rm_confirm("descend into directory", path->s)) {
+      *kept = 1;
+      return 0;
+    }
 
     if(!(dp = opendir(path->s))) {
       builtin_error(argv, path->s);
@@ -48,13 +68,19 @@ builtin_rm_tree(char* argv[], stralloc* path, int force, int verbose) {
       stralloc_cats(path, de->d_name);
       stralloc_nul(path);
 
-      if(builtin_rm_tree(argv, path, force, verbose))
+      if(rm_tree(argv, path, force, verbose, interactive, &skipped))
         ret = 1;
     }
 
     closedir(dp);
     path->len = dirlen;
     stralloc_nul(path);
+
+    /* a declined entry keeps its directory; so does declining the directory itself */
+    if(skipped || (interactive && !rm_confirm("remove directory", path->s))) {
+      *kept = 1;
+      return ret;
+    }
 
     if(rmdir(path->s) == -1) {
       if(!(force && errno == ENOENT)) {
@@ -67,6 +93,11 @@ builtin_rm_tree(char* argv[], stralloc* path, int force, int verbose) {
     }
 
     return ret;
+  }
+
+  if(interactive && !rm_confirm("remove", path->s)) {
+    *kept = 1;
+    return 0;
   }
 
   if(unlink(path->s) == -1) {
@@ -83,6 +114,13 @@ builtin_rm_tree(char* argv[], stralloc* path, int force, int verbose) {
   }
 
   return 0;
+}
+
+int
+builtin_rm_tree(char* argv[], stralloc* path, int force, int verbose) {
+  int kept = 0;
+
+  return rm_tree(argv, path, force, verbose, 0, &kept);
 }
 
 /* refuse operands that would take the working directory or the root with
@@ -119,29 +157,41 @@ const char help_rm[] = "    Remove files or directories.\n"
                        "\n"
                        "    -r, -R          remove directories and their contents recursively\n"
                        "    -f              ignore missing files, never prompt\n"
+                       "    -i              ask before removing each file and directory\n"
+                       "    -d              also remove empty directories\n"
                        "    -v              print each file/directory removed\n"
                        "    file            file (or, with -r, directory) to remove\n";
 
 int
 builtin_rm(int argc, char* argv[]) {
   int c, ret;
-  int verbose = 0, force = 0, recursive = 0;
+  int verbose = 0, force = 0, recursive = 0, interactive = 0, dirs = 0;
   char* p;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "vfrR")) > 0) {
+  while((c = shell_getopt(argc, argv, "vfrRid")) > 0) {
     switch(c) {
       case 'v': verbose = 1; break;
-      case 'f': force = 1; break;
+      case 'f': force = 1, interactive = 0; break;
+      case 'i': interactive = 1, force = 0; break;
+      case 'd': dirs = 1; break;
       case 'r':
       case 'R': recursive = 1; break;
       default: builtin_invopt(argv); return 1;
     }
   }
 
+  if(!argv[shell_optind]) {
+    if(force)
+      return 0;
+
+    builtin_errmsg(argv, "missing operand", NULL);
+    return 1;
+  }
+
   if(recursive) {
     stralloc path;
-    int failed = 0;
+    int failed = 0, kept = 0;
 
     stralloc_init(&path);
 
@@ -149,7 +199,7 @@ builtin_rm(int argc, char* argv[]) {
       stralloc_copys(&path, p);
       stralloc_nul(&path);
 
-      if(rm_refuse(argv, p) || builtin_rm_tree(argv, &path, force, verbose)) {
+      if(rm_refuse(argv, p) || rm_tree(argv, &path, force, verbose, interactive, &kept)) {
         failed = 1;
 
         if(!force) {
@@ -164,7 +214,14 @@ builtin_rm(int argc, char* argv[]) {
   }
 
   while((p = argv[shell_optind++])) {
+    if(interactive && !rm_confirm("remove", p))
+      continue;
+
     ret = unlink(p);
+
+    /* -d: an empty directory goes too */
+    if(ret == -1 && dirs && (errno == EISDIR || errno == EPERM))
+      ret = rmdir(p);
 
     if(ret == -1) {
       if(!force) {

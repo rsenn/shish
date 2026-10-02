@@ -373,11 +373,14 @@ cfg-aarch64() {
 
 cfg-emscripten() {
  (: ${builddir=build/emscripten}
+  : TOOLCHAIN="${EMSCRIPTEN:=$(dirname $(which emcc))}/cmake/Modules/Platform/Emscripten.cmake"
+
+  export TOOLCHAIN
+  
   CC="emcc" CXX="em++" \
   LDFLAGS="-sWASM=1 -sLLD_REPORT_UNDEFINED" \
   CFLAGS="-DEMSCRIPTEN=1" \
   CXXFLAGS="-DEMSCRIPTEN=1" \
-  TOOLCHAIN="${EMSCRIPTEN:=$(dirname $(which emcc))}/cmake/Modules/Platform/Emscripten.cmake" \
   cfg \
     -DCMAKE_EXE_LINKER_FLAGS="-s WASM=1 -sEXPORTED_RUNTIME_METHODS=['callMain'] -sINVOKE_RUN=0" \
     -DCMAKE_EXECUTABLE_SUFFIX=".html" \

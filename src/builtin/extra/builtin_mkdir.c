@@ -2,6 +2,8 @@
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
 #include "../../../lib/path.h"
+#include "../../../lib/scan.h"
+#include "../../../lib/str.h"
 #include <unistd.h>
 #include <errno.h>
 #include <sys/stat.h>
@@ -15,7 +17,7 @@
  * after it, so mkdir() sees the whole prefix built so far.
  * ----------------------------------------------------------------------- */
 static int
-mkdir_parents(char* argv[], stralloc* dir, int verbose) {
+mkdir_parents(char* argv[], stralloc* dir, int verbose, int* created) {
   char* p = dir->s;
 
   while(*p) {
@@ -33,9 +35,15 @@ mkdir_parents(char* argv[], stralloc* dir, int verbose) {
     save = *p;
     *p = '\0';
 
-    if(mkdir(dir->s, 0777) == -1 && errno != EEXIST) {
-      builtin_error(argv, dir->s);
-      return 1;
+    *created = 1;
+
+    if(mkdir(dir->s, 0777) == -1) {
+      if(errno != EEXIST) {
+        builtin_error(argv, dir->s);
+        return 1;
+      }
+
+      *created = 0;
     }
 
     if(verbose) {
@@ -54,22 +62,43 @@ mkdir_parents(char* argv[], stralloc* dir, int verbose) {
 const char help_mkdir[] = "    Create directories.\n"
                           "\n"
                           "    -p              create missing parent directories as needed\n"
+                          "    -m mode         set the new directory's mode (octal, or symbolic\n"
+                          "                    relative to a=rwx), not affected by umask\n"
                           "    -v              print each directory created\n"
                           "    directory       directory (or directories) to create\n";
 
 int
 builtin_mkdir(int argc, char* argv[]) {
-  int c, components = 0, verbose = 0;
+  int c, components = 0, verbose = 0, created = 0;
+  unsigned int mode = 0777;
+  char* modespec = NULL;
   stralloc dir;
   char* d;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "pv")) > 0) {
+  while((c = shell_getopt(argc, argv, "pvm:")) > 0) {
     switch(c) {
       case 'p': components = 1; break;
       case 'v': verbose = 1; break;
+      case 'm': modespec = shell_optarg; break;
 
       default: builtin_invopt(argv); return 1;
+    }
+  }
+
+  if(!argv[shell_optind]) {
+    builtin_errmsg(argv, "missing operand", NULL);
+    return 1;
+  }
+
+  if(modespec) {
+    unsigned int octal;
+
+    if(*modespec && scan_8int(modespec, &octal) == str_len(modespec))
+      mode = octal & 07777;
+    else if(!chmod_symbolic(modespec, &mode, 1)) {
+      builtin_errmsg(argv, modespec, "invalid mode");
+      return 1;
     }
   }
 
@@ -80,7 +109,13 @@ builtin_mkdir(int argc, char* argv[]) {
     stralloc_nul(&dir);
 
     if(components) {
-      if(mkdir_parents(argv, &dir, verbose)) {
+      if(mkdir_parents(argv, &dir, verbose, &created)) {
+        stralloc_free(&dir);
+        return 1;
+      }
+
+      if(modespec && created && chmod(dir.s, mode) == -1) {
+        builtin_error(argv, dir.s);
         stralloc_free(&dir);
         return 1;
       }
@@ -89,6 +124,12 @@ builtin_mkdir(int argc, char* argv[]) {
     }
 
     if(mkdir(dir.s, 0777) == -1) {
+      builtin_error(argv, dir.s);
+      stralloc_free(&dir);
+      return 1;
+    }
+
+    if(modespec && chmod(dir.s, mode) == -1) {
       builtin_error(argv, dir.s);
       stralloc_free(&dir);
       return 1;

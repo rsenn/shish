@@ -195,7 +195,7 @@ builtin_cd(int argc, char* argv[]) {
   }
 
   /* we failed */
-  builtin_error(argv, newcwd.s);
+  builtin_error(argv, ok ? newcwd.s : (char*)arg);
   stralloc_free(&newcwd);
   return 1;
 }

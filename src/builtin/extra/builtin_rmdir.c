@@ -64,6 +64,11 @@ builtin_rmdir(int argc, char* argv[]) {
     }
   }
 
+  if(!argv[shell_optind]) {
+    builtin_errmsg(argv, "missing operand", NULL);
+    return 1;
+  }
+
   while((p = argv[shell_optind++])) {
     ret = rmdir(p);
 

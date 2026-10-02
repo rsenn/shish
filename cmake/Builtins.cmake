@@ -155,6 +155,11 @@ macro(configure_shish_builtins)
     set_add(BUILTIN_SOURCES "src/builtin/extra/builtin_rm.c")
   endif()
 
+  # mkdir -m parses its mode with chmod_symbolic(), which lives in builtin_chmod.c
+  if(BUILD_BUILTIN_MKDIR)
+    set_add(BUILTIN_SOURCES "src/builtin/extra/builtin_chmod.c")
+  endif()
+
   file(WRITE "${CMAKE_BINARY_DIR}/src/builtin_config.h" "${BUILTIN_CONFIG}\n\n")
 
   set_source_files_properties(src/builtin/builtin_table.c 

@@ -91,7 +91,7 @@ int
 path_canonicalize(const char* path, stralloc* sa, int symbolic) {
   size_t n;
   struct stat st;
-  int ret = 1;
+  int ret = 1, absolute = 0;
   char buf[PATH_MAX + 1];
   char sep;
   int (*stat_fn)(const char*, struct stat*) = stat;
@@ -103,6 +103,7 @@ path_canonicalize(const char* path, stralloc* sa, int symbolic) {
 
 #endif
   if(path_issep(*path)) {
+    absolute = 1;
     stralloc_catc(sa, (sep = *path));
     path++;
   }
@@ -131,6 +132,9 @@ start:
       /* if we have ".." we have to truncate the resulting path */
       if(path[1] == '.' && (path_issep(path[2]) || path[2] == '\0')) {
         sa->len = path_right(sa->s, sa->len);
+        /* "/x/.." -> "/", not "" */
+        if(absolute && (sa->len == 0 || sa->len == (size_t)-1))
+          sa->len = 1;
         path += 2;
         continue;
       }
@@ -177,6 +181,8 @@ start:
         int rret;
 
         sa->len = path_right(sa->s, sa->len);
+        if(absolute && (sa->len == 0 || sa->len == (size_t)-1))
+          sa->len = 1;
         buf[n] = '\0';
         /*
                 buffer_puts(buffer_2, "recursive path_canonicalize(\"");

@@ -1,3 +1,4 @@
+#include "../builtin.h"
 #include "../fdtable.h"
 #include "../../lib/scan.h"
 #include "../sh.h"
@@ -10,6 +11,11 @@ const char help_shift[] = "    Shift positional parameters to the left.\n"
 int
 builtin_shift(int argc, char* argv[]) {
   unsigned int n = 1;
+
+  if(argc > 2) {
+    builtin_errmsg(argv, "too many arguments", NULL);
+    return 1;
+  }
 
   if(argc > 1) {
     /* Parse the argument */

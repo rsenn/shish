@@ -139,35 +139,6 @@
   cat lk.* | grep -A6 'leak of'
   ```
 
-- break-continue-inside-eval-no-op: `break`/`continue` run via `eval`
-  (e.g. `eval break`) inside an enclosing loop reports "not meaningful"
-  and does not break the loop, unlike bash/dash (POSIX leaves this
-  case unspecified; mksh agrees with shish here, but bash/dash/yash's
-  own conformance suite expect it to work -- see
-  `tests/posix/break-p.tst`'s "breaking out of eval" case). Root
-  cause: `builtin_eval.c` evaluates the parsed command via
-  `eval_tree(&e, cmds, E_ROOT | E_LIST)`, and `eval_jump()` treats
-  *any* `E_ROOT`-flagged frame it walks through as a hard boundary
-  break/continue may not cross (needed so a real subshell/top-level
-  script boundary blocks an escape, see `fixes/149`) -- `eval`'s own
-  internal frame doesn't need that protection but is marked the same
-  way. Fixing this needs `eval`'s frame to signal "don't block search,
-  but do stop return/exit here" separately from a genuine subshell
-  boundary, rather than reusing `E_ROOT` for both meanings.
-
-  **Repro:**
-  ```sh
-  cat <<'EOF' | shish
-  for i in 1 2 3; do
-    eval break
-    echo "should not print"
-  done
-  echo "after loop"
-  EOF
-  # shish prints "should not print" 3 times, then "after loop"
-  # bash/dash print only "after loop" (break actually exits the loop)
-  ```
-
 - signal-tests-vary-with-machine-load: the `sig*-p` files are timing
   sensitive enough that the same binary produces wildly different
   scores from one run to the next. `sigterm1-p.tst` scored 36/180 in
@@ -495,84 +466,22 @@
   ```
   (a pty script: `python3` + `pty.fork()`, see `tests/term-complete.sh`)
 
-- ln-unlinks-existing-destination: the `ln` builtin calls `unlink()` on the
-  destination before every link, whether or not `-f` was given, so an
-  existing file is destroyed silently and the command succeeds. POSIX: with
-  no `-f`, an existing destination is a diagnostic and nothing is linked.
-  (`builtin_ln.c`: the bare `unlink(path.s);` before the `link`/`symlink`
-  call; the `-f` flag only decides whether to continue after a *failed*
-  link.) Checked 2026-09-20 on a scratch `-DENABLE_LN=ON` build.
+- cd-operand-count-and-e-option: `cd` accepts more than one operand and has
+  no `-e`; a file operand reports "Success" (stale errno).
 
   **Repro:**
   ```sh
-  echo A > a; echo B > b
-  ln a b; echo $?; cat b       # rc 0, prints A; should fail "File exists" and keep B
-  ```
-
-- cd-dotdot-after-component-fails: `cd` cannot canonicalise a path in which
-  `..` follows an ordinary component: the `chdir()` fails and the
-  diagnostic names only the last component, for logical and `-P` mode
-  alike. POSIX `cd` steps 8-9 (delete `x/..`). Also:
-  more than one operand is accepted (`cd -L /tmp a`), `-e` is missing, and
-  the diagnostic for a missing directory prints an empty name.
-
-  **Repro:**
-  ```sh
-  cd /tmp/../tmp; echo $PWD    # "cd: tmp: No such file or directory"; should be /tmp
-  cd /usr/../tmp               # same; `cd /usr/./lib` works
-  cd -P /tmp/../tmp            # same
-  cd /nonexist                 # "cd: : No such file or directory" (empty name)
   cd -L /tmp a; echo $?        # 0; should be an error (too many operands)
   cd -P -e /tmp                # "-e: invalid option"
+  cd /etc/passwd               # "cd: /etc/passwd: Success"; should say "Not a directory"
   ```
 
-- rm-missing-options-and-operand-check: `rm` has only `-v -r -f`. POSIX
-  `rm [-diRrv] file...`: `-i` (prompt) and `-d` (remove empty directories)
-  are rejected as invalid options, and `rm` with no operands and no `-f`
-  succeeds silently (must be a usage error, status >0).
+- pwd-operand-accepted: `pwd a` ignores the operand and returns 0. POSIX `pwd`
+  takes no operands; bash and dash also accept it, so this is low priority.
 
   **Repro:**
   ```sh
-  rm; echo $?                       # 0; should be >0
-  rm -i x </dev/null                # "rm: -i: invalid option"
-  mkdir e; rm -d e                  # "rm: -d: invalid option"
-  ```
-
-- mkdir-m-option-missing: `mkdir -m mode` is rejected as an invalid option
-  (POSIX `mkdir [-p] [-m mode] dir...`, mode as for `chmod`, relative to an
-  assumed initial `a=rwx`). `mkdir` with no operand succeeds.
-
-  **Repro:**
-  ```sh
-  mkdir -m 700 d; echo $?    # "mkdir: -m: invalid option"; should create d as drwx------
-  mkdir; echo $?             # 0; should be >0
-  ```
-
-- missing-operand-not-an-error: several builtins return 0 when a required
-  operand is missing or extra operands are given, where POSIX requires a
-  usage error (status >0): `rmdir`, `mkdir`, `ln`, `ln -s`, `rm`,
-  `chmod 644` (mode but no file), `unalias`, `shift 1 2` (with two
-  positional parameters set), `basename a b c`, `pwd a`.
-
-  **Repro:**
-  ```sh
-  for c in 'rmdir' 'mkdir' 'ln' 'ln -s' 'chmod 644' 'unalias' \
-           'set -- a b; shift 1 2' 'basename a b c' 'pwd a'; do
-    shish -c "$c" >/dev/null 2>&1; echo "$c -> $?"   # each prints 0
-  done
-  ```
-
-- ln-single-operand-crashes-and-missing-l-p: `ln t` (one operand, no
-  destination) dumps core; POSIX `ln` needs a target. `-L` and `-P` (Issue 8)
-  are rejected as invalid options, and the diagnostic for a missing *source*
-  names the destination (`ln nosuch dst` prints `ln: dst: No such file`).
-  See also `ln-unlinks-existing-destination`.
-
-  **Repro:**
-  ```sh
-  touch t; ln t                 # core dump
-  ln -P t hl; ln -L t hl        # "-P: invalid option" / "-L: invalid option"
-  ln nosuch dst                 # "ln: dst: No such file or directory"; should name nosuch
+  pwd a; echo $?     # prints the directory, 0
   ```
 
 - ls-long-format-incomplete: `ls -l` prints mode, link count, owner, group
@@ -631,41 +540,31 @@
   touch a; chmod g=u a; chmod u+s a; chmod +t a   # each: "invalid mode"
   ```
 
-- test-ef-missing-and-three-argument-and-integer-errors: `test f1 -ef f2`
-  (Issue 8, same file) is "invalid expression". With three arguments whose
-  middle one is `-a` (binary "and"), POSIX requires the binary test of `$1`
-  and `$3`; `test -n -a -n` reports an error. A non-integer operand of
-  `-eq` etc. gives status 1 instead of the required >1 (`test 1 -eq x`).
+- type-a-unimplemented: `type -a` is accepted and ignored (documented in
+  `help_type`): only the first match is printed, not every alias/function/
+  builtin/`$PATH` hit.
 
   **Repro:**
   ```sh
-  touch f; test f -ef f; echo $?     # 2 ("invalid expression"); should be 0
-  test -n -a -n; echo $?             # 2; should be 0 (both strings non-empty)
-  test 1 -eq x; echo $?              # 1; should be >1
+  type -a echo    # bash: builtin line, then /usr/bin/echo; shish: first line only
   ```
 
-- type-unknown-name-silent: `type` handles only the first operand and always
-  returns 0. A name that cannot be found writes nothing and gives status 0
-  (POSIX: a diagnostic on stderr and status >0), so `if type cmd >/dev/null 2>&1`
-  is always true. `-a` and `-p` are accepted and ignored. High priority, plan in
-  `TODO.md` ("HIGH PRIORITY").
+- unset-invalid-name-accepted: `unset 1x` (no `-v`) is accepted silently with
+  status 0; only `unset -v` validates the name. POSIX 2.8.1 / bash: bash also
+  returns 0 here, so this is low priority.
 
   **Repro:**
   ```sh
-  type nonexistent_cmd; echo $?     # prints nothing, 0; should print an error, 1
-  type echo cd pwd                   # only "echo is a shell builtin"; should list all three
-  if type nonexistent_cmd >/dev/null 2>&1; then echo found; fi    # prints "found"
+  unset 1x; echo $?     # 0, no diagnostic
   ```
 
-- export-unset-invalid-name-status: `export 1a=b` prints "not a valid
-  identifier" but returns 0, and `unset 1x` is accepted silently. POSIX
-  2.8.1 wants a special-builtin error to give status >0 (and end a
-  non-interactive shell).
+- source-break-continue-no-op: `break`/`continue` at the top level of a file run
+  with `.` do not reach a loop in the calling script (`builtin_source.c`
+  pushes a plain `E_ROOT` frame, which `eval_jump()` treats as a boundary).
 
   **Repro:**
   ```sh
-  export 1a=b; echo $?     # diagnostic, then 0
-  unset 1x; echo $?        # no diagnostic, 0
+  echo break > b.sh; for i in 1 2 3; do . ./b.sh; echo $i; done   # prints 1 2 3; bash: nothing
   ```
 
 - set-o-ignoreeof-nolog-vi-missing: `set -o ignoreeof`, `set -o nolog` and

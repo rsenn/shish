@@ -6,7 +6,7 @@
  * ----------------------------------------------------------------------- */
 const char help_type[] = "    Show how a name would be interpreted if run as a command.\n"
                          "\n"
-                         "    -a              print every matching location, not just the first\n"
+                         "    -a              accepted and ignored: only the first match is printed\n"
                          "    -f              suppress function matches\n"
                          "    -P              force a PATH search, even for a builtin/function\n"
                          "    -p              print the path only, if name resolves to a file\n"
@@ -16,7 +16,7 @@ const char help_type[] = "    Show how a name would be interpreted if run as a c
 int
 builtin_type(int argc, char* argv[]) {
   int c, all_locations = 0, suppress_functions = 0, force_path = 0, print_path = 0, type_name = 0;
-  char* name;
+  int status = 0;
 
   /* check options */
   while((c = shell_getopt(argc, argv, "afPpt")) > 0) {
@@ -30,10 +30,16 @@ builtin_type(int argc, char* argv[]) {
     }
   }
 
-  /* no arguments? return now! */
-  if(!(name = argv[shell_optind]))
-    return 0;
+  /* one line per operand; status 1 if any is not found */
+  for(; argv[shell_optind]; shell_optind++) {
+    char* name = argv[shell_optind];
 
-  exec_type(name, suppress_functions ? H_FUNCTION : 0, force_path, type_name);
-  return 0;
+    if(!exec_type(name, suppress_functions ? H_FUNCTION : 0, force_path, type_name, print_path))
+      continue;
+    if(!type_name && !print_path)
+      builtin_errmsg(argv, name, "not found");
+    status = 1;
+  }
+
+  return status;
 }

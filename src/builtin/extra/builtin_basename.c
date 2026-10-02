@@ -23,6 +23,16 @@ builtin_basename(int argc, char* argv[]) {
   if(str_equal(argv[shell_optind], "--"))
     shell_optind++;
 
+  if(!argv[shell_optind]) {
+    builtin_errmsg(argv, "too few arguments", NULL);
+    return 1;
+  }
+
+  if(argv[shell_optind + 1] && argv[shell_optind + 2]) {
+    builtin_errmsg(argv, "too many arguments", NULL);
+    return 1;
+  }
+
   base = path_basename(argv[shell_optind]);
   suffix = argv[shell_optind + 1];
 

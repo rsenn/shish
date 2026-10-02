@@ -196,6 +196,11 @@ builtin_unalias(int argc, char* argv[]) {
     return 0;
   }
 
+  if(!argv[shell_optind]) {
+    builtin_errmsg(argv, "usage: unalias [-a] name...", NULL);
+    return 2;
+  }
+
   for(argp = &argv[shell_optind]; *argp; argp++) {
     struct alias** aptr = alias_search(*argp);
 

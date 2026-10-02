@@ -5,7 +5,7 @@
 extern const char* debug_nodes[];
 extern const unsigned debug_nodes_count;
 
-const char* const trace_eval_flags[9] = {"E_EXIT", "E_ROOT", "E_BQUOTE", "E_JCTL", "E_LIST", "E_FUNCTION", "E_LOOP", "E_PRINT", "E_DEBUG"};
+const char* const trace_eval_flags[10] = {"E_EXIT", "E_ROOT", "E_BQUOTE", "E_JCTL", "E_LIST", "E_FUNCTION", "E_LOOP", "E_PRINT", "E_DEBUG", "E_EVAL"};
 const char* const trace_redir_flags[9] = {"R_IN", "R_OUT", "R_OPEN", "R_DUP", "R_HERE", "R_STRIP", "R_APPEND", "R_CLOBBER", "R_NOW"};
 #include "../source.h"
 #include "../tree.h"

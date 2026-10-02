@@ -40,43 +40,15 @@ gate brace/history expansion, or otherwise) unless that changes.
 
 The measurable target for Stages 1-2 is `tests/posix` (yash's POSIX suite, 120 files).
 
-### HIGH PRIORITY — next task: `type` ignores unknown and further names
+### HIGH PRIORITY — next task: the `ls` options (`BUGS: ls-long-format-incomplete`, `ls-missing-options`)
 
-Picked 2026-10-02 as the next critical task (`BUGS: type-unknown-name-silent`). `builtin_type()`
-(`src/builtin/builtin_type.c`) calls `exec_type()` once for the *first* operand and always returns 0:
+Done: `type` (all operands, not-found status), `test` (`-ef`, 3-argument `-a`/`-o`, status 2 for bad
+integers), `cd` (`x/..` components). Still open from them: `BUGS: type-a-unimplemented`,
+`cd-operand-count-and-e-option`; `break`/`continue` inside `eval` and `ln` (one operand, `-L/-P`, keeps
+existing destination without `-f`) are fixed.
 
-```sh
-type nosuch_cmd; echo $?     # shish: nothing, rc 0          bash: "type: nosuch_cmd: not found", rc 1
-type echo cd pwd             # shish: only the echo line     bash: all three
-if type foo >/dev/null 2>&1; then echo have; fi    # shish: always "have"
-```
-
-**Why it ranks first.** `type cmd >/dev/null 2>&1` is the standard "is this installed?" test (every
-`configure`-style script uses it), so with this bug every such check says yes and the script fails
-later, far from the cause, with no message and status 0. `command -v` already answers correctly.
-It is a silent wrong result in a core builtin, one function, and a few lines.
-
-**Plan** (`exec_type()` already returns 1 for an unknown name; the builtin ignores it):
-
-1. Loop over every operand after the options, printing one line each, in order.
-2. For a name that does not resolve print `type: NAME: not found` on stderr (via `builtin_errmsg`) and
-   remember it; return 1 if any operand failed, else 0. No operand at all stays a no-op returning 0.
-3. `-a` and `-p` are parsed (`all_locations`, `print_path`) but never used: implement them or drop
-   them from `help_type` and the option string (`-a` lists every match: alias, keyword, function,
-   builtin, each `$PATH` hit; `-p` prints only the path of a file, nothing for a builtin).
-   `-t` with an unknown name prints nothing and returns 1 (bash).
-4. Check `-P` (force a `PATH` search) and `-f` against bash, and that `type` of a function does not
-   print its body (bash does; POSIX leaves it open: pick one and say so in `help_type`).
-
-**Gate:** `tests/fixed.sh` cases for the unknown name (status 1 and message), several operands (all
-printed, status 1 if any is missing, 0 when all exist) and `if type x` choosing the right branch; compare
-the outputs with bash line by line; `tests/posix` files unchanged; ASan build clean; remove the `BUGS`
-entry and add `fixes/NN`.
-
-**Next in line after this**, in the order they were weighed (see `BUGS` for the repro of each):
-`cd /x/../y` when the `..` returns to the root (`cd: tmp: No such file or directory`, rare), the `test`
-edge cases (`test -n -a -n`, `test f1 -ef f2`, `test 1 -eq x` must exit >1), `break`/`continue` inside
-`eval` (needs its own flag on `eval`'s frame instead of `E_ROOT`), then `ln t` (core dump on one operand).
+**Next in line**, in the order they were weighed (see `BUGS` for the repro of each):
+`ls-long-format-incomplete`, `ls-missing-options`, then the rest of `BUGS` by repro.
 
 ### Where it stands (2026-10-02)
 
@@ -89,7 +61,7 @@ that run have any):
  7 kill1-p  10/17    4 tilde-p   25/29    4 alias-p   61/65    1 input-p   10/11
  6 kill3-p  15/21    3 read-p    25/28    2 quote-p   33/35    1 function-p 18/19
                      2 exec-p     8/10    1 for-p     19/20    1 comment-p 14/15
-                     1 case-p    51/52    1 break-p   31/32    1 continue-p 30/31
+                     1 case-p    51/52    1 break-p   32/32    1 continue-p 30/31
                      1 builtins-p 80/81
 ```
 
@@ -172,8 +144,7 @@ reports `line 2: x: boom`. `$LINENO` itself is correct. Fix with, and verify aga
 
 1. `trap-p` (32/37) - 4 of the failures are the harness noise above. Left:
    `BUGS: trap-exit-in-async-subshell-not-run` (156).
-2. `break`/`continue` inside `eval` are still no-ops (`BUGS: break-continue-inside-eval-no-op`);
-   `eval`'s frame reuses `E_ROOT` for an unrelated purpose, give it its own flag.
+2. (done: `break`/`continue` inside `eval`, via the `E_EVAL` frame flag.)
 3. `input-p` (1) - the shell reads ahead inside a command substitution
    (`BUGS: input-not-read-line-wise`).
 4. `function-p`, `pipeline-p`, `for-p`, `exec-p`, `builtins-p` (1-2 each) -
@@ -221,7 +192,7 @@ reports `line 2: x: boom`. `$LINENO` itself is correct. Fix with, and verify aga
   `set-o-ignoreeof-nolog-vi-missing`, `set-histexpand-unimplemented` -> Phase 3.
 - `quote-backslash-escaping-broken`, `param-expansion-pattern-removal-broken`,
   `case-pattern-bracket-quote-stripping` -> Phase 4.
-- `trap-exit-in-async-subshell-not-run`, `break-continue-inside-eval-no-op`,
+- `trap-exit-in-async-subshell-not-run`,
   `input-not-read-line-wise` -> Phase 5.
 - `posix-suite-failures-not-yet-analysed` -> Phases 3-5.
 - `yash-suite-other-hangs`, `grouping-p-tst-flaky`, the three `fixed-sh-*` entries -> Phase 6.
@@ -1890,8 +1861,7 @@ Open:
   `strip`, `stat -c%s`) and keep the smaller layout.
 - Documentation: `doc/builtins.md` entries, short `help_cp`/`help_mv` (Goal 5.2 counts help bytes),
   README builtin list.
-- `ln` unlinks an existing destination (`BUGS: ln-unlinks-existing-destination`): the model of what
-  `cp`/`mv` must not do.
+- `ln` used to unlink an existing destination: `cp`/`mv` must not do that either (only with `-f`).
 
 ---
 

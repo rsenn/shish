@@ -48,7 +48,7 @@ builtin_eval(int argc, char* argv[]) {
     p.pushback++;
 
     if((cmds = parse_list(&p))) {
-      eval_tree(&e, cmds, E_ROOT | E_LIST);
+      eval_tree(&e, cmds, E_ROOT | E_EVAL | E_LIST);
       tree_free(cmds);
     }
 

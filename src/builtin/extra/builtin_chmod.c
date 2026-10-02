@@ -22,7 +22,7 @@
  *   unsigned int*  mode    in/out: mode to modify; "X" reads its incoming value
  *   int            is_dir  whether the target is a directory, for "X" handling
  * ----------------------------------------------------------------------- */
-static int
+int
 chmod_symbolic(const char* spec, unsigned int* mode, int is_dir) {
   const char* p = spec;
   unsigned int orig_mode = *mode;
@@ -233,6 +233,11 @@ builtin_chmod(int argc, char* argv[]) {
   }
 
   spec = argv[shell_optind++];
+
+  if(!argv[shell_optind]) {
+    builtin_errmsg(argv, "missing operand after mode", NULL);
+    return 1;
+  }
 
   /* a mode made up entirely of octal digits is the plain numeric
      form; anything else must parse as symbolic mode instead, applied
