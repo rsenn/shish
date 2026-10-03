@@ -52,10 +52,10 @@ coreutils (or <code>grep</code>/<code>sed</code>):</p>
 <span class="t-id">hi</span>
 $ <span class="t-id">shish</span> <span class="t-op">-c</span> <span class="t-str">'PATH=; printf "a\nb\nc\n" | grep b | sed s/b/B/'</span>
 <span class="t-id">B</span></code></pre></div>
-<p><code>src/builtin/extra/</code> is where these live in the tree (as opposed to
-<code>src/builtin/</code> for the language's own required builtins); a builtin goes
-there when it stands in for an external program rather than implementing
-shell syntax. <code>find</code>, <code>grep</code> and <code>sed</code> are the larger ones and get their
+<p><code>src/builtin/core/</code> (coreutils), <code>src/builtin/extra/</code> and <code>src/builtin/filter/</code> are
+where these live in the tree (as opposed to <code>src/builtin/</code> for the language's own
+required builtins); a builtin goes there when it stands in for an external program
+rather than implementing shell syntax. <code>find</code>, <code>grep</code> and <code>sed</code> are the larger ones and get their
 own subsystem under <code>text/</code> (see "Regex backend" below) instead of living
 entirely in one <code>builtin_*.c</code> file.</p>
 <h2 id="choosing"><a class="anchor" href="#choosing" aria-hidden="true">#</a>Choosing</h2>
