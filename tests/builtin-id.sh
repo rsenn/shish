@@ -1,7 +1,7 @@
 DIR=$(dirname "${0}")
 . "$DIR/common.sh"
 
-## id builtin (src/builtin/extra/builtin_id.c); skipped when id is external
+## id builtin (src/builtin/core/builtin_id.c); skipped when id is external
 case $(type id) in
 *builtin*) ;;
 *) echo "id is not a builtin, skipping" 1>&2; summary ;;

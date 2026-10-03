@@ -55,15 +55,18 @@ const struct set_longopt set_longopts[] = {
     {"errexit", 'e'},
     {"hashall", 'h'},
     {"histexpand", 'H'},
+    {"ignoreeof", 'I'}, /* only via -o, like nolog and vi: accepted, nothing behind them */
     {"monitor", 'm'},
     {"noclobber", 'C'},
     {"noexec", 'n'},
     {"noglob", 'f'},
+    {"nolog", 'L'},
     {"notify", 'b'},
     {"nounset", 'u'},
     {"pipefail", 'P'}, /* only via -o: 'P' is not a set flag */
     {"privileged", 'p'},
     {"verbose", 'v'},
+    {"vi", 'V'},
     {"xtrace", 'x'},
 };
 
@@ -112,6 +115,9 @@ set_apply(struct shopt* opts, int letter, int on) {
     case 'C': opts->noclobber = on; return 1;
     case 'H': opts->histexpand = on; return 1;
     case 'P': opts->pipefail = on; return 1;
+    case 'I': opts->ignoreeof = on; return 1;
+    case 'L': opts->nolog = on; return 1;
+    case 'V': opts->vi = on; return 1;
     default: return 0;
   }
 }
@@ -134,6 +140,9 @@ set_get(const struct shopt* opts, int letter) {
     case 'C': return opts->noclobber;
     case 'H': return opts->histexpand;
     case 'P': return opts->pipefail;
+    case 'I': return opts->ignoreeof;
+    case 'L': return opts->nolog;
+    case 'V': return opts->vi;
     default: return 0;
   }
 }

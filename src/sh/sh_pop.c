@@ -26,6 +26,18 @@ sh_pop(struct env* env) {
 
   TRACE(TRACE_SH, "pop", trace_int("exitcode", sh->exitcode), trace_str("cwd", parent->cwd.s ? parent->cwd.s : ""));
 
+  /* run the finalizers hung on this env (a builtin's per-subshell state) */
+  {
+    struct handler *h, *next;
+
+    for(h = sh->finalizers; h; h = next) {
+      next = h->next;
+      h->fn();
+    }
+
+    sh->finalizers = NULL;
+  }
+
   /* change back to prev working dir (skip if our cwd was already freed,
      e.g. by sh_exit's fall-through path) */
   if(sh->cwd.s && stralloc_diffs(&sh->cwd, parent->cwd.s)) {

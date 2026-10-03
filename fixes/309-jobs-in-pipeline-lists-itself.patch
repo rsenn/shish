@@ -1,0 +1,15 @@
+diff --git a/src/job/job_fork.c b/src/job/job_fork.c
+index 6c54553f..d822f342 100644
+--- a/src/job/job_fork.c
++++ b/src/job/job_fork.c
+@@ -62,6 +62,10 @@ job_fork(struct job* j, union node* node, int bgnd) {
+   if(pid == 0) {
+     sh_forked();
+ 
++    /* this job belongs to the parent: its own members must not list it ("jobs | wc") */
++    if(j)
++      j->level = 0xff;
++
+ #if !WINDOWS_NATIVE
+     /* POSIX 2.9.3.1 (Asynchronous Lists): "the standard input for an
+        asynchronous list, before any explicit redirections are

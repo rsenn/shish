@@ -1,8 +1,8 @@
-#include "../builtin.h"
-#include "../fdtable.h"
-#include "../sh.h"
-#include "../../lib/str.h"
-#include "../../lib/alloc.h"
+#include "../../builtin.h"
+#include "../../fdtable.h"
+#include "../../sh.h"
+#include "../../../lib/str.h"
+#include "../../../lib/alloc.h"
 
 /* output stuff
  * ----------------------------------------------------------------------- */

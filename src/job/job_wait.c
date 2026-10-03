@@ -161,17 +161,18 @@ job_wait(struct job* j, pid_t pid, int* status) {
              procs[].status and break out of the wait properly */
           continue;
 
-        /* Non-interactive shells (scripts like ./configure) parse
-           stderr to detect command behavior; the kernel often
-           delivers SIGPIPE to the left side of a pipeline when the
-           right side exits early, and SIGINT is how a foreground
-           command is meant to end when the user hits ^C -- neither is
-           an error worth printing (matching bash, which is silent for
-           both even in a non-interactive script). Keep the message in
-           interactive (job control) mode and for every other signal. */
+        /* A non-interactive shell stays silent about a child ended by a signal someone
+           sent on purpose (INT, PIPE, TERM, KILL, QUIT, ABRT, ...), as scripts parse stderr. It
+           still reports a fault signal (SEGV, BUS, FPE, ILL, SYS). Job control reports all. */
         if(!WAIT_IF_EXITED(s)) {
-          int squelch = !sh->opts.monitor && WAIT_IF_SIGNALED(s) &&
-                        (WAIT_TERMSIG(s) == SIGPIPE || WAIT_TERMSIG(s) == SIGINT);
+          int squelch = 0;
+
+          if(!sh->opts.monitor && WAIT_IF_SIGNALED(s)) {
+            int sig = WAIT_TERMSIG(s);
+
+            squelch = sig != SIGSEGV && sig != SIGBUS && sig != SIGFPE && sig != SIGILL && sig != SIGSYS;
+          }
+
           if(!squelch && !job_quiet)
             job_printstatus(ret, s);
         }

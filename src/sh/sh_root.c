@@ -27,9 +27,9 @@ struct env sh_root = {/* .parent = */ NULL,
                        .braceexpand = 1,
                        .noclobber = 0,
                        .histexpand = 0},
+                      /* .arg = */ {0},
                       /* .fdstack = */ &fdstack_root,
                       /* .varstack = */ &vartab_root,
-                      /* .arg = */ {0},
                       /* .parser = */ 0,
                       /* .eval = */ 0};
 

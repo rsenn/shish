@@ -5,7 +5,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/Functions.cmake)
 #
 macro(configure_shish_builtins)
   set_init(MINIMAL_BUILTINS alias break cd command eval exec exit export expr getopts hash history jobs kill local printf pwd read readonly return set shift source test times trap type umask unset wait)
-  set_init(EXTRA_BUILTINS awk basename cat chmod compress cp cut date digest dirname env find grep head hostname id link ln ls mkdir mktemp mv nl paste readlink realpath rm rmdir sed sleep sort split tail tee timeout touch tr uname uncompress uniq unlink wc which xargs)
+  set_init(EXTRA_BUILTINS awk basename cat chmod compress cp cut date digest dirname dirs env find grep head hostname id link ln ls mkdir mktemp mv nl paste popd pushd readlink realpath rm rmdir sed sleep sort split tail tee timeout touch tr uname uncompress uniq unlink wc which xargs)
   set_init(DEFAULT_BUILTINS ${MINIMAL_BUILTINS} help type echo fdtable true false)
 
   set_init(ALL_BUILTINS ${MINIMAL_BUILTINS} ${DEFAULT_BUILTINS} ${EXTRA_BUILTINS} basename break cd dirname dump echo eval exec exit export expr false fdtable hash help history hostname ln printf pwd set shift source test times true type unset)
@@ -91,10 +91,13 @@ macro(configure_shish_builtins)
     set(DEBUG_OUTPUT_DEFAULT ON)
   endif()
 
-  # a builtin's source lives in src/builtin/extra/ when it is one of the
-  # coreutils-style / third-party utilities, else in src/builtin/
+  # a builtin's source lives in src/builtin/core/ when it is a coreutils program
+  # (or echo/printf/test/pwd/true/false), in src/builtin/extra/ or filter/ when it is
+  # another utility, else in src/builtin/
   function(builtin_source OUT NAME)
-    if(EXISTS "${CMAKE_SOURCE_DIR}/src/builtin/extra/builtin_${NAME}.c")
+    if(EXISTS "${CMAKE_SOURCE_DIR}/src/builtin/core/builtin_${NAME}.c")
+      set(RESULT "src/builtin/core/builtin_${NAME}.c")
+    elseif(EXISTS "${CMAKE_SOURCE_DIR}/src/builtin/extra/builtin_${NAME}.c")
       set(RESULT "src/builtin/extra/builtin_${NAME}.c")
     elseif(EXISTS "${CMAKE_SOURCE_DIR}/src/builtin/filter/builtin_${NAME}.c")
       set(RESULT "src/builtin/filter/builtin_${NAME}.c")
@@ -102,8 +105,12 @@ macro(configure_shish_builtins)
       set(RESULT "src/builtin/builtin_${NAME}.c")
     endif()
     # mv shares builtin_cp.c with cp
+    # dirs, popd and pushd share builtin_dirstack.c
+    if("${NAME}" STREQUAL "dirs" OR "${NAME}" STREQUAL "popd" OR "${NAME}" STREQUAL "pushd")
+      set(RESULT "src/builtin/extra/builtin_dirstack.c")
+    endif()
     if("${NAME}" STREQUAL "mv")
-      set(RESULT "src/builtin/extra/builtin_cp.c")
+      set(RESULT "src/builtin/core/builtin_cp.c")
     endif()
     set("${OUT}" "${RESULT}" PARENT_SCOPE)
   endfunction()
@@ -150,14 +157,20 @@ macro(configure_shish_builtins)
     set_add(BUILTIN_SOURCES "src/builtin/filter/builtin_compress.c")
   endif()
 
+  # a disabled dirs/popd/pushd must not drop the file the enabled ones need
+  if(BUILD_BUILTIN_DIRS OR BUILD_BUILTIN_POPD OR BUILD_BUILTIN_PUSHD)
+    set_add(BUILTIN_SOURCES "src/builtin/extra/builtin_dirstack.c")
+    set_add(SOURCES "src/builtin/extra/builtin_dirstack.c")
+  endif()
+
   # mv removes a source hierarchy with builtin_rm_tree(), which lives in builtin_rm.c
   if(BUILD_BUILTIN_MV)
-    set_add(BUILTIN_SOURCES "src/builtin/extra/builtin_rm.c")
+    set_add(BUILTIN_SOURCES "src/builtin/core/builtin_rm.c")
   endif()
 
   # mkdir -m parses its mode with chmod_symbolic(), which lives in builtin_chmod.c
   if(BUILD_BUILTIN_MKDIR)
-    set_add(BUILTIN_SOURCES "src/builtin/extra/builtin_chmod.c")
+    set_add(BUILTIN_SOURCES "src/builtin/core/builtin_chmod.c")
   endif()
 
   file(WRITE "${CMAKE_BINARY_DIR}/src/builtin_config.h" "${BUILTIN_CONFIG}\n\n")

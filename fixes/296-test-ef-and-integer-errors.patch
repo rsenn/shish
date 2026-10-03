@@ -1,0 +1,73 @@
+diff --git a/src/builtin/builtin_test.c b/src/builtin/builtin_test.c
+index 0c771ba6..5b007087 100644
+--- a/src/builtin/builtin_test.c
++++ b/src/builtin/builtin_test.c
+@@ -77,12 +77,14 @@ filetime(const char* arg) {
+   return st.st_mtime;
+ }
+ 
+-/* string arg to int64 */
++/* string arg to int64; anything but a whole integer is an error ("x", "1x", "") */
+ static int64
+ intarg(const char* arg) {
+-  int64 num = INT64_MAX;
++  int64 num = 0;
++  size_t n = scan_longlong(arg, &num);
+ 
+-  scan_longlong(arg, &num);
++  if(!n || arg[n])
++    test_err = 2;
+   return num;
+ }
+ 
+@@ -95,7 +97,7 @@ is_unary(const char* op) {
+ static int
+ is_binary(const char* op) {
+   static const char* const ops[] = {
+-      "=", "!=", "<", ">", "-eq", "-ne", "-lt", "-le", "-gt", "-ge", "-nt", "-ot", 0};
++      "=", "!=", "<", ">", "-eq", "-ne", "-lt", "-le", "-gt", "-ge", "-nt", "-ot", "-ef", 0};
+   const char* const* p;
+ 
+   for(p = ops; *p; p++)
+@@ -179,7 +181,17 @@ test_binary(const char* left, const char* op, const char* right) {
+       case '>': return op[1] == '=' ? r >= 0 : r > 0;
+     }
+   } else {
+-    int64 l = intarg(left), r = intarg(right);
++    int64 l, r;
++
++    /* "-ef": same device and inode */
++    if(op[1] == 'e' && op[2] == 'f') {
++      struct stat a, b;
++
++      return stat(left, &a) == 0 && stat(right, &b) == 0 && a.st_dev == b.st_dev && a.st_ino == b.st_ino;
++    }
++
++    l = (op[1] == 'n' && op[2] == 't') || op[1] == 'o' ? 0 : intarg(left);
++    r = (op[1] == 'n' && op[2] == 't') || op[1] == 'o' ? 0 : intarg(right);
+ 
+     /* "-nt"/"-ot" (mtime) and "-ne"/"-eq" (numbers) share op[1], so
+        op[2] is what tells them apart: "-nt" vs "-ne" */
+@@ -309,6 +321,13 @@ test_count(int n, char** v) {
+       if(is_binary(v[1]))
+         return test_binary(v[0], v[1], v[2]);
+ 
++      /* "-n -a -n": the operands are strings, not operators */
++      if(str_equal(v[1], "-a"))
++        return *v[0] && *v[2];
++
++      if(str_equal(v[1], "-o"))
++        return *v[0] || *v[2];
++
+       if(str_equal(v[0], "!"))
+         return !test_count(2, v + 1);
+ 
+@@ -384,7 +403,7 @@ builtin_test(int argc, char* argv[]) {
+   result = test_count(argc - 1, argv + 1);
+ 
+   if(test_err) {
+-    builtin_errmsg(argv, "invalid expression", NULL);
++    builtin_errmsg(argv, test_err == 2 ? "integer expression expected" : "invalid expression", NULL);
+     return EXIT_ERROR;
+   }
+ 

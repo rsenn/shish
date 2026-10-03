@@ -22,7 +22,7 @@ parse_for(struct parser* p) {
   tree_init(node->nfor.args, nptr);
 
   /* next token can be 'in' */
-  if(parse_gettok(p, P_KWIN | P_KWDO) & T_IN) {
+  if(parse_gettok(p, P_SKIPNL | P_KWIN | P_KWDO) & T_IN) {
     node->nfor.has_in = 1;
 
     /* now parse the arguments and build a list of them */

@@ -14,6 +14,12 @@ parse_skipspace(struct parser* p) {
       return T_EOF;
 
     if(c == '\n') {
+      /* a newline is plain white space inside $(( )) */
+      if(p->flags & P_ARITH) {
+        parse_skip(p);
+        continue;
+      }
+
       // parse_skip(p);
 
       /* in a here-doc skip the newline after the delimiter */

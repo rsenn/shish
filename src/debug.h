@@ -96,6 +96,7 @@ void debug_range(const char* msg, size_t start, size_t end, int depth);
 
 size_t debug_argv(char** argv, buffer* out);
 void debug_squoted(const char*, size_t n, buffer* out);
+void debug_word(const char*, size_t n, buffer* out);
 
 #if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 

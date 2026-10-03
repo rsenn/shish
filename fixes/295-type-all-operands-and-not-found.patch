@@ -1,0 +1,84 @@
+diff --git a/src/builtin/builtin_type.c b/src/builtin/builtin_type.c
+index be73f6bf..193fa069 100644
+--- a/src/builtin/builtin_type.c
++++ b/src/builtin/builtin_type.c
+@@ -6,7 +6,7 @@
+  * ----------------------------------------------------------------------- */
+ const char help_type[] = "    Show how a name would be interpreted if run as a command.\n"
+                          "\n"
+-                         "    -a              print every matching location, not just the first\n"
++                         "    -a              accepted and ignored: only the first match is printed\n"
+                          "    -f              suppress function matches\n"
+                          "    -P              force a PATH search, even for a builtin/function\n"
+                          "    -p              print the path only, if name resolves to a file\n"
+@@ -16,7 +16,7 @@ const char help_type[] = "    Show how a name would be interpreted if run as a c
+ int
+ builtin_type(int argc, char* argv[]) {
+   int c, all_locations = 0, suppress_functions = 0, force_path = 0, print_path = 0, type_name = 0;
+-  char* name;
++  int status = 0;
+ 
+   /* check options */
+   while((c = shell_getopt(argc, argv, "afPpt")) > 0) {
+@@ -30,10 +30,16 @@ builtin_type(int argc, char* argv[]) {
+     }
+   }
+ 
+-  /* no arguments? return now! */
+-  if(!(name = argv[shell_optind]))
+-    return 0;
++  /* one line per operand; status 1 if any is not found */
++  for(; argv[shell_optind]; shell_optind++) {
++    char* name = argv[shell_optind];
+ 
+-  exec_type(name, suppress_functions ? H_FUNCTION : 0, force_path, type_name);
+-  return 0;
++    if(!exec_type(name, suppress_functions ? H_FUNCTION : 0, force_path, type_name, print_path))
++      continue;
++    if(!type_name && !print_path)
++      builtin_errmsg(argv, name, "not found");
++    status = 1;
++  }
++
++  return status;
+ }
+diff --git a/src/exec.h b/src/exec.h
+index 94ffa2c5..a88803e3 100644
+--- a/src/exec.h
++++ b/src/exec.h
+@@ -90,7 +90,7 @@ struct command exec_search(char* name, int mask);
+ void exec_function_enter(void);
+ void exec_function_leave(void);
+ void exec_function_retire(union node* fn);
+-int exec_type(char* name, int mask, int force_path, int type_name);
++int exec_type(char* name, int mask, int force_path, int type_name, int print_path);
+ 
+ union node;
+ 
+diff --git a/src/exec/exec_type.c b/src/exec/exec_type.c
+index 5e5c7c93..4b159d4c 100644
+--- a/src/exec/exec_type.c
++++ b/src/exec/exec_type.c
+@@ -28,7 +28,7 @@ is_keyword(const char* str) {
+ }
+ 
+ int
+-exec_type(char* name, int mask, int force_path, int type_name) {
++exec_type(char* name, int mask, int force_path, int type_name, int print_path) {
+   struct command cmd;
+   enum type_index id = TYPE_NONE;
+   struct alias* a;
+@@ -51,6 +51,13 @@ exec_type(char* name, int mask, int force_path, int type_name) {
+   }
+ 
+   if(id >= 0) {
++    if(print_path && !type_name) {
++      if(id == TYPE_FILE) {
++        buffer_puts(fd_out->w, cmd.path);
++        buffer_putnlflush(fd_out->w);
++      }
++      return 0;
++    }
+     if(type_name)
+       buffer_puts(fd_out->w, TYPE_NAMES[id]);
+     else

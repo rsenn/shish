@@ -64,7 +64,7 @@ OUTFILE=$(mktemp)
   trap 'echo t2' INT
   trap -p
 ) > "$OUTFILE"
-X=$(grep -c "trap 'echo t1' TERM\|trap 'echo t2' INT" "$OUTFILE")
+X=$(grep -c "trap -- 'echo t1' TERM\|trap -- 'echo t2' INT" "$OUTFILE")
 assert_equal "2" "$X" "trap -p with no operand lists every installed trap"
 rm -f "$OUTFILE"
 
@@ -76,7 +76,7 @@ rm -f "$OUTFILE"
 ## leave a dangling top-level EXIT trap for the rest of this file.
 X=$(trap 'echo should-show-in-listing' EXIT; trap -p EXIT)
 trap - EXIT
-assert_equal "trap 'echo should-show-in-listing' EXIT" "$X" "an EXIT trap can be installed and shows up in trap -p's listing"
+assert_equal "trap -- 'echo should-show-in-listing' EXIT" "$X" "an EXIT trap can be installed and shows up in trap -p's listing"
 
 ## fixes/80 (subshell-exit-trap-output-misdirected): a subshell's own
 ## EXIT trap must run when the subshell itself finishes (whether by

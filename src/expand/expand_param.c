@@ -271,8 +271,11 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       /* POSIX exempts "${parameter:-word}" and friends ("=", "?", "+")
          from nounset -- each has its own defined behavior for unset,
          handled below once v is left NULL here. Only a bare
-         ${parameter}/$parameter is what nounset actually guards. */
-    } else if(sh->opts.unset && (param->flag & S_VAR) == S_DEFAULT && !param->word) {
+         ${parameter}/$parameter and the trimming forms ${x#w} ${x%w}
+         are what nounset actually guards. */
+    } else if(sh->opts.unset &&
+              (((param->flag & S_VAR) == S_DEFAULT && !param->word) || (param->flag & S_VAR) == S_RSSFX ||
+               (param->flag & S_VAR) == S_RLSFX || (param->flag & S_VAR) == S_RSPFX || (param->flag & S_VAR) == S_RLPFX)) {
       sh_msg(param->name);
       buffer_putsflush(fd_err->w, ": unbound variable\n");
 

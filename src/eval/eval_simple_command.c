@@ -38,7 +38,7 @@
  * ----------------------------------------------------------------------- */
 int
 eval_simple_command(struct eval* e, struct ncmd* ncmd) {
-  int argc, status = 0, assign_error = 0, redir_error = 0;
+  int argc, status = 0, assign_error = 0, redir_error = 0, via_command = 0;
   char** argv;
   union node *node, *args = 0, *args_head = 0, *assigns = 0, *r, *redir = ncmd->rdir;
   struct command cmd = {H_BUILTIN, {0}};
@@ -79,8 +79,10 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
       if(n) {
         stralloc_nul(&n->narg.stra);
 
-        if(str_equal(n->narg.stra.s, "exec") && (cmd = exec_hash("exec", H_FUNCTION)).id == H_EXEC)
+        if(str_equal(n->narg.stra.s, "exec") && (cmd = exec_hash("exec", H_FUNCTION)).id == H_EXEC) {
           args = n;
+          via_command = 1;
+        }
       }
     }
   }
@@ -99,92 +101,6 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
     eval_exit(sh->exitcode);
   }*/
 
-  /* expand and set the variables,
-     mark them for export if we're gonna execute a command --
-     cmdsubst_ran (reset above) tells the "no command, only
-     assignments" status handling below whether a command substitution
-     ran in the words or the assignments, as opposed to "sh->exitcode
-     is just still holding the previous command's status" */
-
-  if(expand_vars(ncmd->vars, &assigns)) {
-
-#ifdef DEBUG_OUTPUT_
-    if(ncmd->vars) {
-      buffer_puts(debug_output, "Vars ");
-      debug_list(ncmd->vars, 0);
-      debug_nl_fl();
-      buffer_puts(debug_output, "Assigns ");
-    }
-#endif
-    /* if we don't exit after the command, have a command and not a
-       special builtin the variable changes should be temporary --
-       pushed as a function-like scope (the "1") so that a *non-local*
-       var_create() elsewhere (a builtin like "read" writing its
-       target variable, or a called function doing a plain, non-
-       "local" assignment) walks straight past it to the real
-       enclosing scope instead of being silently captured and thrown
-       away by vartab_pop() below along with the prefix assignment
-       itself. Confirmed both ways were broken before: "IFS=x read
-       line" leaked IFS afterward (no scope was pushed for "read" at
-       all, since it used to be misclassified as H_SBUILTIN), and once
-       that got fixed, "FOO=bar f" for a function f that sets a plain
-       (non-local) global went from "leaks FOO, keeps its own global
-       write" to "keeps neither" -- var_create()'s walk-past-transient-
-       scope logic (already used to skip a *function call's* own
-       scope for exactly this reason) didn't know this prefix-
-       assignment scope was transient too, since it was pushed with
-       function=0. */
-    int temp_scope = !(e->flags & E_EXIT) && cmd.ptr && cmd.id != H_SBUILTIN;
-
-    if(temp_scope) {
-      TRACE(TRACE_EVAL, "prefix_scope.enter");
-      vartab_push(&vars, 1);
-    }
-
-    for(node = assigns; node; node = node->next) {
-
-      if(e->flags & E_PRINT) {
-        stralloc* sa = &node->narg.stra;
-        size_t offs = byte_chr(sa->s, sa->len, '=');
-
-        if(offs < sa->len)
-          offs++;
-        
-        eval_print_prefix(e, fd_err->w);
-        buffer_put(fd_err->w, sa->s, offs);        
-        debug_squoted(&sa->s[offs], sa->len - offs, fd_err->w);
-        buffer_putnlflush(fd_err->w);
-      }
-
-      /* when a temp scope was pushed above, V_LOCAL forces the
-         assignment into that exact scope, bypassing the same
-         walk-past-transient-scope logic used elsewhere -- the prefix
-         assignment itself must land here, not wherever an existing
-         same-named variable already lives, or it would permanently
-         overwrite that variable instead of shadowing it for just this
-         command's duration. Without a temp scope (a special builtin,
-         or E_EXIT), there's nothing to shadow into -- fall back to
-         ordinary assignment semantics, which already correctly finds
-         and updates whatever scope the variable actually lives in. */
-      TRACE(TRACE_EVAL,
-            "assign",
-            trace_strn("var", node->narg.stra.s, node->narg.stra.len),
-            trace_int("export", cmd.ptr != 0),
-            trace_int("temp", temp_scope));
-
-      if(!var_setsa(&node->narg.stra,
-                    (cmd.ptr ? V_EXPORT : V_DEFAULT) | (temp_scope ? V_LOCAL : 0))) {
-        status = 1;
-        assign_error = 1;
-        break;
-      }
-    }
-
-    tree_free(assigns);
-
-    if(status)
-      goto end;
-  }
 
   /* redirections of a command without a name run in a subshell
      environment: "< ${x=y}" must not leave x set. Assignments in the
@@ -250,7 +166,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
        execution-or-set-status -- this is the "no command" half of it;
        exec_command.c's own fdtable_open() result checks are the
        other). */
-    if(redir_eval(&r->nredir, fd, (cmd.id == H_EXEC || args == NULL ? R_NOW : 0))) {
+    if(redir_eval(&r->nredir, fd, (cmd.id == H_EXEC || args == NULL || ncmd->vars ? R_NOW : 0))) {
       redir_error = 1;
       status = 1;
       goto end;
@@ -278,6 +194,95 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
     debug_nl_fl();
 #endif
+  }
+
+  /* POSIX 2.9.1: the redirections are performed before the assignments are expanded
+     ("a=$(cat f) 3>f cmd" sees the file the redirection just made) */
+  /* expand and set the variables,
+     mark them for export if we're gonna execute a command --
+     cmdsubst_ran (reset above) tells the "no command, only
+     assignments" status handling below whether a command substitution
+     ran in the words or the assignments, as opposed to "sh->exitcode
+     is just still holding the previous command's status" */
+
+  if(expand_vars(ncmd->vars, &assigns)) {
+
+#ifdef DEBUG_OUTPUT_
+    if(ncmd->vars) {
+      buffer_puts(debug_output, "Vars ");
+      debug_list(ncmd->vars, 0);
+      debug_nl_fl();
+      buffer_puts(debug_output, "Assigns ");
+    }
+#endif
+    /* if we don't exit after the command, have a command and not a
+       special builtin the variable changes should be temporary --
+       pushed as a function-like scope (the "1") so that a *non-local*
+       var_create() elsewhere (a builtin like "read" writing its
+       target variable, or a called function doing a plain, non-
+       "local" assignment) walks straight past it to the real
+       enclosing scope instead of being silently captured and thrown
+       away by vartab_pop() below along with the prefix assignment
+       itself. Confirmed both ways were broken before: "IFS=x read
+       line" leaked IFS afterward (no scope was pushed for "read" at
+       all, since it used to be misclassified as H_SBUILTIN), and once
+       that got fixed, "FOO=bar f" for a function f that sets a plain
+       (non-local) global went from "leaks FOO, keeps its own global
+       write" to "keeps neither" -- var_create()'s walk-past-transient-
+       scope logic (already used to skip a *function call's* own
+       scope for exactly this reason) didn't know this prefix-
+       assignment scope was transient too, since it was pushed with
+       function=0. */
+    int temp_scope = !(e->flags & E_EXIT) && cmd.ptr && cmd.id != H_SBUILTIN && cmd.id != H_EXEC;
+
+    if(temp_scope) {
+      TRACE(TRACE_EVAL, "prefix_scope.enter");
+      vartab_push(&vars, 1);
+    }
+
+    for(node = assigns; node; node = node->next) {
+
+      if(e->flags & E_PRINT) {
+        stralloc* sa = &node->narg.stra;
+        size_t offs = byte_chr(sa->s, sa->len, '=');
+
+        if(offs < sa->len)
+          offs++;
+        
+        eval_print_prefix(e, fd_err->w);
+        buffer_put(fd_err->w, sa->s, offs);        
+        debug_word(&sa->s[offs], sa->len - offs, fd_err->w);
+        buffer_putnlflush(fd_err->w);
+      }
+
+      /* when a temp scope was pushed above, V_LOCAL forces the
+         assignment into that exact scope, bypassing the same
+         walk-past-transient-scope logic used elsewhere -- the prefix
+         assignment itself must land here, not wherever an existing
+         same-named variable already lives, or it would permanently
+         overwrite that variable instead of shadowing it for just this
+         command's duration. Without a temp scope (a special builtin,
+         or E_EXIT), there's nothing to shadow into -- fall back to
+         ordinary assignment semantics, which already correctly finds
+         and updates whatever scope the variable actually lives in. */
+      TRACE(TRACE_EVAL,
+            "assign",
+            trace_strn("var", node->narg.stra.s, node->narg.stra.len),
+            trace_int("export", cmd.ptr != 0),
+            trace_int("temp", temp_scope));
+
+      if(!var_setsa(&node->narg.stra,
+                    (cmd.ptr ? V_EXPORT : V_DEFAULT) | (temp_scope ? V_LOCAL : 0))) {
+        status = 1;
+        assign_error = 1;
+        break;
+      }
+    }
+
+    tree_free(assigns);
+
+    if(status)
+      goto end;
   }
 
   /* if there is no command we can return after
@@ -396,7 +401,7 @@ end:
      latter is reset for every nested source (a `.`-sourced file), so
      checking it here would kill an interactive shell the moment one
      of these fails one level into any sourced file. */
-  if((assign_error || (redir_error && (cmd.id == H_SBUILTIN || cmd.id == H_EXEC))) &&
+  if((assign_error || (redir_error && !via_command && (cmd.id == H_SBUILTIN || cmd.id == H_EXEC))) &&
      !sh_interactive) {
     sh_exit(status);
   }

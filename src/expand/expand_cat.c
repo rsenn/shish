@@ -32,6 +32,11 @@ expand_cat_finish(union node** np, int flags) {
 
     if(g)
       n = *np = g;
+  } else if(flags & X_GLOBRES) {
+    union node* g = expand_glob(np, flags);
+
+    if(g)
+      n = *np = g;
   } else if(flags & X_LITERAL) {
     expand_unescape(&n->narg.stra, parse_isesc);
     n->narg.flag &= ~X_GLOB;

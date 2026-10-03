@@ -1,7 +1,7 @@
 DIR=$(dirname "${0}")
 . "$DIR/common.sh"
 
-## mv builtin (src/builtin/extra/builtin_cp.c); skipped when mv is external
+## mv builtin (src/builtin/core/builtin_cp.c); skipped when mv is external
 case $(type mv) in
 *builtin*) ;;
 *) echo "mv is not a builtin, skipping" 1>&2; summary ;;

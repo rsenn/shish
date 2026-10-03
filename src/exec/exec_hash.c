@@ -33,7 +33,7 @@
  * ----------------------------------------------------------------------- */
 static char* exec_hash_path_seen = NULL;
 
-static void
+void
 exec_hash_invalidate_all(void) {
   unsigned int i;
   struct exechash* h;
@@ -102,6 +102,10 @@ exec_hash(char* name, int mask) {
       entry->hits++;
       cmd = entry->cmd;
     }
+
+    /* a remembered program that is gone or no longer executable: search again */
+    if(entry && entry->mask == mask && entry->cmd.id == H_PROGRAM && entry->cmd.path && access(entry->cmd.path, X_OK) != 0)
+      entry->mask = -1;
 
     how = entry && entry->mask == mask ? "hit" : "miss";
 

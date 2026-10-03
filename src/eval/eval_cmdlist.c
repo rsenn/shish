@@ -53,6 +53,7 @@ eval_cmdlist(struct eval* e, struct ngrp* grp) {
       e->flags |= E_EXIT;
 
     ret = eval_node_bgnd(e, cmd);
+    sh->exitcode = ret; /* "$?" of the next command: also for a negated pipeline ("! a | b; echo $?") */
     TRACE(TRACE_EVAL, "status", trace_kind("kind", cmd->id), trace_int("status", ret));
     e->flags &= ~E_EXIT;
 

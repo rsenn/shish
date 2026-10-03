@@ -1,11 +1,11 @@
-#include "../builtin.h"
-#include "../fdtable.h"
-#include "../../lib/buffer.h"
-#include "../../lib/fmt.h"
-#include "../../lib/scan.h"
-#include "../../lib/str.h"
-#include "../../lib/uint64.h"
-#include "../../lib/alloc.h"
+#include "../../builtin.h"
+#include "../../fdtable.h"
+#include "../../../lib/buffer.h"
+#include "../../../lib/fmt.h"
+#include "../../../lib/scan.h"
+#include "../../../lib/str.h"
+#include "../../../lib/uint64.h"
+#include "../../../lib/alloc.h"
 #include <errno.h>
 #include <stdio.h>  /* snprintf */
 #include <stdlib.h> /* strtod, strtoll, strtoull */

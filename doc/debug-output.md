@@ -149,7 +149,7 @@ it is harmless in a terminal and noise in a file.
 | `src/builtin/builtin_trap.c:104` | OUT+BUILTIN | `trap handler <sig>` (**stderr**) | a trapped signal fires |
 | `src/builtin/builtin_trap.c:328` | OUT+BUILTIN | `trap_uninstall <sig>` (**stderr**) | trap removed/reset |
 | `src/builtin/builtin_trap.c:607` | OUT+BUILTIN | `builtin_trap <sig>` + `"code": …` (**stderr**) | `trap 'code' SIG` executed |
-| `src/builtin/extra/builtin_expr.c:187` | OUT | `debug_list(expr)` – the parsed `expr` tree | `expr` builtin, after parsing its argv |
+| `src/builtin/core/builtin_expr.c:187` | OUT | `debug_list(expr)` – the parsed `expr` tree | `expr` builtin, after parsing its argv |
 | `src/expand/expand_arith_expr.c:128` | OUT | `expand_arith_expr <node>` | evaluating `$(( … ))` |
 | `src/eval/eval_pipeline.c:643` | OUT | `"forked": <pid>` (no newline; interleaves with the next line, see P4) | a pipeline stage was forked |
 | `src/sh/sh_init.c:33` | OUT | (nothing printed) opens `debug.log` | shell start-up |

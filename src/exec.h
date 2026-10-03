@@ -86,6 +86,7 @@ struct exechash* exec_create(char* name, uint32 hash);
 struct exechash* exec_lookup(char* name, uint32* hashptr);
 extern int exec_via_command;
 struct command exec_hash(char* name, int mask);
+void exec_hash_invalidate_all(void); /* forget every remembered command location */
 struct command exec_search(char* name, int mask);
 void exec_function_enter(void);
 void exec_function_leave(void);

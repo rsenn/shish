@@ -14,6 +14,7 @@ const char help_touch[] = "    Change file access and modification times, creati
                           "    if it doesn't already exist.\n"
                           "\n"
                           "    -a                     change only the access time\n"
+                          "    -c                     do not create a file that does not exist\n"
                           "    -m                     change only the modification time\n"
                           "    -d, --date=DATE        use DATE instead of now ('@EPOCH',\n"
                           "                           'YYYY-MM-DD', or 'YYYY-MM-DD hh:mm[:ss]')\n"
@@ -207,7 +208,7 @@ touch_parse_date(const char* s, time_t* out) {
 
 int
 builtin_touch(int argc, char* argv[]) {
-  int c, opt_a = 0, opt_m = 0, ret = 0, i, both;
+  int c, opt_a = 0, opt_m = 0, ret = 0, i, both, nocreate = 0;
   char *date_arg, *ref_arg, *time_arg, *stamp_arg = NULL;
   time_t requested = 0;
   int have_requested = 0;
@@ -222,9 +223,10 @@ builtin_touch(int argc, char* argv[]) {
     return 1;
   }
 
-  while((c = shell_getopt(argc, argv, "amfd:r:t:")) > 0) {
+  while((c = shell_getopt(argc, argv, "acmfd:r:t:")) > 0) {
     switch(c) {
       case 'a': opt_a = 1; break;
+      case 'c': nocreate = 1; break;
       case 'm': opt_m = 1; break;
       case 'f': break;
       case 'd': date_arg = shell_optarg; break;
@@ -292,7 +294,13 @@ builtin_touch(int argc, char* argv[]) {
        an existing file here would risk bumping its atime before we
        get a chance to read the "leave this one alone" baseline. */
     if(stat(path, &st) == -1) {
-      int fd = open(path, O_WRONLY | O_CREAT, 0666);
+      int fd;
+
+      /* -c: a missing file is skipped, not an error */
+      if(nocreate)
+        continue;
+
+      fd = open(path, O_WRONLY | O_CREAT, 0666);
 
       if(fd == -1 || close(fd) == -1 || stat(path, &st) == -1) {
         builtin_error(argv, path);

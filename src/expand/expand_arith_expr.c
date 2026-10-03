@@ -38,6 +38,10 @@ expand_arith_expr(union node* expr, int64* r) {
 
   *r = 0;
 
+  /* "$((--))": an operand is missing */
+  if(!expr)
+    return 1;
+
   switch(expr->id) {
     // case N_ARGPARAM:
     case N_ARGCMD: {

@@ -1,7 +1,7 @@
 DIR=$(dirname "${0}")
 . "$DIR/common.sh"
 
-## cp builtin (src/builtin/extra/builtin_cp.c); skipped when cp is external
+## cp builtin (src/builtin/core/builtin_cp.c); skipped when cp is external
 case $(type cp) in
 *builtin*) ;;
 *) echo "cp is not a builtin, skipping" 1>&2; summary ;;

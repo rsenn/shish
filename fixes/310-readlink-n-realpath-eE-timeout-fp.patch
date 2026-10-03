@@ -1,0 +1,208 @@
+diff --git a/src/builtin/core/builtin_readlink.c b/src/builtin/core/builtin_readlink.c
+index 12301469..e5baa861 100644
+--- a/src/builtin/core/builtin_readlink.c
++++ b/src/builtin/core/builtin_readlink.c
+@@ -13,6 +13,7 @@
+ 
+ const char help_readlink[] = "    Print the value of a symbolic link, or canonicalize a path.\n"
+                              "\n"
++                             "    -n              do not print the trailing newline (one operand only)\n"
+                              "    -f              canonicalize by resolving every symlink;\n"
+                              "                    the last component may be missing\n"
+                              "    -e              like -f, but every component must exist\n"
+@@ -25,7 +26,7 @@ const char help_readlink[] = "    Print the value of a symbolic link, or canonic
+  * must exist, 'f': all but the last, 'm': none).
+  * ----------------------------------------------------------------------- */
+ static int
+-readlink_canonicalize(char* argv[], const char* path, int mode) {
++readlink_canonicalize(char* argv[], const char* path, int mode, int newline) {
+   static stralloc sa;
+   struct stat st;
+ 
+@@ -60,19 +61,20 @@ readlink_canonicalize(char* argv[], const char* path, int mode) {
+   }
+ 
+   buffer_puts(fd_out->w, sa.s);
+-  buffer_putnlflush(fd_out->w);
++  newline ? buffer_putnlflush(fd_out->w) : buffer_flush(fd_out->w);
+   return 0;
+ }
+ 
+ int
+ builtin_readlink(int argc, char* argv[]) {
+-  int c, mode = 0, ret = 0, i;
++  int c, mode = 0, ret = 0, i, newline = 1;
+ 
+-  while((c = shell_getopt(argc, argv, "fem")) > 0) {
++  while((c = shell_getopt(argc, argv, "femn")) > 0) {
+     switch(c) {
+       case 'f':
+       case 'e':
+       case 'm': mode = c; break;
++      case 'n': newline = 0; break;
+       default: builtin_invopt(argv); return 1;
+     }
+   }
+@@ -82,9 +84,13 @@ builtin_readlink(int argc, char* argv[]) {
+     return 1;
+   }
+ 
++  /* with several operands the newlines are what separates them */
++  if(argc - shell_optind > 1)
++    newline = 1;
++
+   for(i = shell_optind; i < argc; i++) {
+     if(mode) {
+-      if(readlink_canonicalize(argv, argv[i], mode))
++      if(readlink_canonicalize(argv, argv[i], mode, newline))
+         ret = 1;
+ 
+       continue;
+@@ -102,7 +108,7 @@ builtin_readlink(int argc, char* argv[]) {
+ 
+       buf[n] = '\0';
+       buffer_puts(fd_out->w, buf);
+-      buffer_putnlflush(fd_out->w);
++      newline ? buffer_putnlflush(fd_out->w) : buffer_flush(fd_out->w);
+     }
+   }
+ 
+diff --git a/src/builtin/core/builtin_realpath.c b/src/builtin/core/builtin_realpath.c
+index 6936bc35..04d85b1c 100644
+--- a/src/builtin/core/builtin_realpath.c
++++ b/src/builtin/core/builtin_realpath.c
+@@ -5,9 +5,14 @@
+ #include "../../../lib/stralloc.h"
+ #include "../../../lib/str.h"
+ #include "../../../lib/byte.h"
++#include <errno.h>
++#include <sys/stat.h>
+ 
+ const char help_realpath[] = "    Print the resolved absolute pathname.\n"
+                              "\n"
++                             "    -E                     all but the last component must exist (default)\n"
++                             "    -e                     every component must exist\n"
++                             "    -q                     no diagnostics, only the exit status\n"
+                              "    -L                     don't resolve symbolic links (same as -s)\n"
+                              "    -P                     resolve symbolic links (default)\n"
+                              "    -s                     don't resolve symbolic links (short for --strip)\n"
+@@ -109,9 +114,34 @@ relative_to(stralloc* out, const char* base, const char* target) {
+   stralloc_nul(out);
+ }
+ 
++/* does the resolved path meet mode 'e' (it exists) or 'E' (its directory exists)? */
++static int
++realpath_exists(const char* resolved, int mode) {
++  struct stat st;
++  stralloc dir;
++  size_t n = str_len(resolved);
++  int ok;
++
++  if(mode == 'e')
++    return stat(resolved, &st) == 0;
++
++  while(n && resolved[n - 1] != PATHSEP_C)
++    n--;
++
++  if(n <= 1)
++    return 1;
++
++  stralloc_init(&dir);
++  stralloc_copyb(&dir, resolved, n - 1);
++  stralloc_nul(&dir);
++  ok = stat(dir.s, &st) == 0;
++  stralloc_free(&dir);
++  return ok;
++}
++
+ int
+ builtin_realpath(int argc, char* argv[]) {
+-  int c, symbolic = 0, ret = 0, i;
++  int c, symbolic = 0, ret = 0, i, mode = 'E', quiet = 0;
+   stralloc sa, base, rel;
+   char* relto = extract_relative_to(argv, &argc);
+ 
+@@ -120,11 +150,14 @@ builtin_realpath(int argc, char* argv[]) {
+     return 1;
+   }
+ 
+-  while((c = shell_getopt(argc, argv, "LPs")) > 0) {
++  while((c = shell_getopt(argc, argv, "EeLPqs")) > 0) {
+     switch(c) {
+       case 'L':
+       case 's': symbolic = 1; break;
+       case 'P': symbolic = 0; break;
++      case 'E':
++      case 'e': mode = c; break;
++      case 'q': quiet = 1; break;
+       default: builtin_invopt(argv); return 1;
+     }
+   }
+@@ -156,13 +189,25 @@ builtin_realpath(int argc, char* argv[]) {
+     sa.len = 0;
+ 
+     if(!path_realpath(argv[i], &sa, symbolic, NULL)) {
+-      builtin_error(argv, argv[i]);
++      if(!quiet)
++        builtin_error(argv, argv[i]);
++
+       ret = 1;
+       continue;
+     }
+ 
+     stralloc_nul(&sa);
+ 
++    if(!realpath_exists(sa.s, mode)) {
++      errno = ENOENT;
++
++      if(!quiet)
++        builtin_error(argv, argv[i]);
++
++      ret = 1;
++      continue;
++    }
++
+     if(relto) {
+       relative_to(&rel, base.s, sa.s);
+       buffer_puts(fd_out->w, rel.s);
+diff --git a/src/builtin/core/builtin_timeout.c b/src/builtin/core/builtin_timeout.c
+index 16bbd038..b603f5be 100644
+--- a/src/builtin/core/builtin_timeout.c
++++ b/src/builtin/core/builtin_timeout.c
+@@ -18,6 +18,8 @@
+ 
+ const char help_timeout[] = "    Run COMMAND, killing it if it's still running after DURATION.\n"
+                             "\n"
++                            "    -f              only time out COMMAND itself, not its descendants (always so here)\n"
++                            "    -p              exit with COMMAND's own status even when it timed out\n"
+                             "    -k, --kill-after=DURATION   also send KILL this long after the\n"
+                             "                                first signal, if COMMAND is still running\n"
+                             "    -s, --signal=SIGNAL         signal to send on timeout (default TERM)\n"
+@@ -180,7 +182,7 @@ timeout_alarm(int signum) {
+ 
+ int
+ builtin_timeout(int argc, char* argv[]) {
+-  int c, verbose = 0, ret, cmdargc;
++  int c, verbose = 0, preserve = 0, ret, cmdargc;
+   char *kill_after_arg = NULL, *signal_arg = NULL, *path, **cmdargv;
+   unsigned long duration_usec = 0, kill_after_usec = 0;
+   int sig = SIGTERM;
+@@ -195,8 +197,10 @@ builtin_timeout(int argc, char* argv[]) {
+     return 125;
+   }
+ 
+-  while((c = shell_getopt(argc, argv, "k:s:v")) > 0) {
++  while((c = shell_getopt(argc, argv, "fk:ps:v")) > 0) {
+     switch(c) {
++      case 'f': break;
++      case 'p': preserve = 1; break;
+       case 'k': kill_after_arg = shell_optarg; break;
+       case 's': signal_arg = shell_optarg; break;
+       case 'v': verbose = 1; break;
+@@ -297,5 +301,5 @@ builtin_timeout(int argc, char* argv[]) {
+   if(timeout_state && ret == 128 + SIGKILL)
+     return 137;
+ 
+-  return timeout_state ? 124 : ret;
++  return timeout_state && !preserve ? 124 : ret;
+ }

@@ -49,8 +49,9 @@ static int
 trap_byname(const char* name) {
   if(parse_isdigit(name[0])) {
     int sig;
-    scan_int(name, &sig);
-    return sig;
+    size_t n = scan_int(name, &sig);
+
+    return n == str_len(name) && sig >= 0 && sig <= 64 ? sig : -1;
   }
 
   if(!str_case_diff(name, "RETURN"))
@@ -86,7 +87,7 @@ trap_ignores(int sig) {
 
 static void
 trap_print(trap* tr) {
-  buffer_puts(fd_out->w, "trap '");
+  buffer_puts(fd_out->w, "trap -- '");
 
   if(tr->tree)
     tree_print(tr->tree, fd_out->w);
@@ -350,6 +351,14 @@ trap_exit_running(void) {
   return tr && tr->running;
 }
 
+/* process that last set the EXIT trap: a forked child runs it at its end only if it set it itself */
+static pid_t trap_exit_pid;
+
+int
+trap_exit_set_here(void) {
+  return trap_exit_pid == sh_pid && trap_find(TRAP_EXIT) != NULL;
+}
+
 /* status pending when the EXIT trap began: a bare "exit" in it uses this */
 static int trap_exit_status;
 
@@ -407,22 +416,23 @@ trap_set_relay(trap* t, void (*handler)(int)) {
  * ----------------------------------------------------------------------- */
 static void
 trap_reset_entry_ignore(int sig) {
-  if((char)sig > 0 && sig_was_ignored(sig) && sh_interactive) {
-    struct sigaction sa;
+  struct sigaction sa;
+  int shell_sig = sig == SIGINT || sig == SIGQUIT || sig == SIGTERM;
 
-    sa.sa_handler = (sig == SIGINT || sig == SIGQUIT || sig == SIGTERM) ? SIG_IGN : SIG_DFL;
-    sa.sa_flags = 0;
-    sigemptyset(&sa.sa_mask);
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
+
+  if((char)sig > 0 && shell_sig && (sh_async || (sh_interactive && sh_subshell))) {
+    /* "trap - SIG" in a subshell: default action, not the shell's own ignore */
+    sa.sa_handler = SIG_DFL;
+    sig_action(sig, &sa, NULL);
+
+    if(sig_was_ignored(sig))
+      sig_unignore(sig);
+  } else if((char)sig > 0 && sig_was_ignored(sig) && sh_interactive) {
+    sa.sa_handler = shell_sig ? SIG_IGN : SIG_DFL;
     sig_action(sig, &sa, NULL);
     sig_unignore(sig);
-  } else if((char)sig > 0 && (sh_async || (sh_interactive && sh_subshell)) && (sig == SIGINT || sig == SIGQUIT || sig == SIGTERM)) {
-    /* "trap - SIG" in a subshell: default action, not the shell's own ignore */
-    struct sigaction sa;
-
-    sa.sa_handler = SIG_DFL;
-    sa.sa_flags = 0;
-    sigemptyset(&sa.sa_mask);
-    sig_action(sig, &sa, NULL);
   }
 }
 
@@ -510,6 +520,9 @@ trap_install(int sig, union node* tree) {
   /* replace, don't stack, any trap already installed for this exact
      signal -- see trap_uninstall()'s comment */
   trap_uninstall(sig);
+
+  if(sig == TRAP_EXIT)
+    trap_exit_pid = sh_pid;
 
   tr = alloc(sizeof(trap));
 
@@ -843,12 +856,19 @@ builtin_trap(int argc, char* argv[]) {
     return 0;
   }
 
-  if(argc < 3) {
-    builtin_errmsg(argv, "usage", "trap [-lp] [[arg] signal_spec ...]");
-    return 2;
-  }
+  /* "trap 2 QUIT": a first operand that is an unsigned integer is a condition,
+     and every operand is reset to its default */
+  if(argv[shell_optind] && parse_isdigit(argv[shell_optind][0]) &&
+     scan_uint(argv[shell_optind], &(unsigned int){0}) == str_len(argv[shell_optind])) {
+    code = "-";
+  } else {
+    if(argc - shell_optind < 2) {
+      builtin_errmsg(argv, "usage", "trap [-lp] [[arg] signal_spec ...]");
+      return 2;
+    }
 
-  code = argv[shell_optind++];
+    code = argv[shell_optind++];
+  }
 
   /* POSIX has three dispositions, not two:
        "trap - SIG"     reset to the default action

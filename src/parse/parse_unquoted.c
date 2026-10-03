@@ -1,9 +1,25 @@
 #include "../expand.h"
 #include "../parse.h"
 #include "../redir.h"
+#include "../../lib/byte.h"
 #include "../../lib/scan.h"
 #include "../source.h"
 #include "../tree.h"
+
+/* is the text read so far the start of a tilde-prefix: "~name" at the word start, or after
+   the '=' / ':' of an assignment, with no '/' since? ("~\root" must not expand) */
+static int
+parse_in_tilde_prefix(struct parser* p) {
+  size_t i = p->sa.len;
+
+  if(p->tree)
+    return 0;
+
+  while(i > 0 && p->sa.s[i - 1] != '/' && p->sa.s[i - 1] != ':' && p->sa.s[i - 1] != '=')
+    i--;
+
+  return i < p->sa.len && p->sa.s[i] == '~' && (i == 0 || p->sa.s[i - 1] == '=' || p->sa.s[i - 1] == ':');
+}
 
 int
 parse_unquoted(struct parser* p) {
@@ -56,7 +72,11 @@ parse_unquoted(struct parser* p) {
 
       /* "${a+\ x}": an escaped blank is quoted, field splitting must
          not see it */
-      if((p->flags & (P_SUBSTW | P_DQSUBST)) == P_SUBSTW && (c == ' ' || c == '\t')) {
+      /* an escaped "~" or "/", or any escaped character inside a tilde-prefix, becomes a
+         quoted chunk of its own, so it cannot start or end the prefix ("\~", "~\/", "~\root") */
+      if(((p->flags & (P_SUBSTW | P_DQSUBST)) == P_SUBSTW && (c == ' ' || c == '\t')) ||
+         ((c == '~' || c == '/' || parse_in_tilde_prefix(p)) &&
+          !(p->flags & (P_SUBSTW | P_DQSUBST | P_HERE)))) {
         if(parse_isesc(c))
           p->sa.len--; /* the backslash added above */
 

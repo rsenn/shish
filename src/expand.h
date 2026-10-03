@@ -68,6 +68,9 @@ enum subst_type {
    the value, fixes/69). */
 #define X_LITERAL 0x02000000
 #define X_GLOB 0x04000000
+/* the field holds the raw result of an unquoted expansion ($x, $(cmd)): glob it if it has a
+   pattern character, and leave it exactly as is when nothing matches */
+#define X_GLOBRES 0x00200000
 #define X_QUOTED 0x08000000
 /* result is already fully processed (unescaped, if needed) by
    expand_cat()'s non-splitting branch -- skip any later whole-buffer

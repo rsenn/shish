@@ -258,8 +258,10 @@ builtin_read(int argc, char* argv[]) {
     }
 
     /* seekable input: hand the read-ahead back, so the next reader
-       (this shell's parser, a child) continues right after the line */
-    if(input->p < input->n && lseek(input->fd, -(off_t)(input->n - input->p), SEEK_CUR) != (off_t)-1)
+       (this shell's parser, a child) continues right after the line.
+       Only a buffer backed by a real descriptor: a here-document's buffer
+       says fd 0 but is in memory, and fd 0 itself is then the script. */
+    if(fdtable[fd]->e >= 0 && input->fd == fdtable[fd]->e && input->p < input->n && lseek(input->fd, -(off_t)(input->n - input->p), SEEK_CUR) != (off_t)-1)
       input->p = input->n = 0;
 
     if(!read_assign(&data, ifs, raw, argp, num_args))

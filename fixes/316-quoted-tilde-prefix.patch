@@ -1,0 +1,83 @@
+diff --git a/src/expand/expand_tilde.c b/src/expand/expand_tilde.c
+index 4d87b084..5824b29c 100644
+--- a/src/expand/expand_tilde.c
++++ b/src/expand/expand_tilde.c
+@@ -9,11 +9,8 @@
+ #include <unistd.h>
+ #endif
+ 
+-/* Known gap: this module only checks a chunk's own S_TABLE quoting
+- * state, not per-byte escaping within it, so an escaped '~' ("\~")
+- * that reduces to a plain '~' byte still gets expanded. Quoting the
+- * '~' itself ("~"/'~') works correctly, since that puts it in a
+- * differently-flagged chunk this code never touches.
++/* Only a chunk's own S_TABLE quoting state is checked: the parser gives an escaped
++ * '~' or '/' (and every quoted run) a chunk of its own.
+  * ----------------------------------------------------------------------- */
+ 
+ /* resolve a tilde-prefix ("~" or "~name") at the very start of
+@@ -159,7 +156,9 @@ expand_tilde_word(union node* arg) {
+ 
+   stralloc_init(&home);
+ 
+-  if(expand_tilde_lookup(n->nargstr.stra.s, n->nargstr.stra.len, 0, &home, &prefixlen))
++  /* a prefix running into the next chunk ("~"x"", "~$x") holds quoted or expanded text */
++  if(expand_tilde_lookup(n->nargstr.stra.s, n->nargstr.stra.len, 0, &home, &prefixlen) &&
++     !(prefixlen == n->nargstr.stra.len && n->next))
+     expand_tilde_splice(n, &home, prefixlen);
+ 
+   stralloc_free(&home);
+@@ -208,7 +207,8 @@ expand_tilde_assign(union node* var) {
+         stralloc_init(&home);
+ 
+         if(expand_tilde_lookup(
+-               n->nargstr.stra.s + eq, n->nargstr.stra.len - eq, 1, &home, &prefixlen)) {
++               n->nargstr.stra.s + eq, n->nargstr.stra.len - eq, 1, &home, &prefixlen) &&
++           !(eq + prefixlen == n->nargstr.stra.len && n->next)) {
+           /* splice into just the tail starting at eq, then keep
+              scanning right after the replacement -- the chunk's
+              length/content just changed under us */
+diff --git a/src/parse/parse_unquoted.c b/src/parse/parse_unquoted.c
+index 37d329d8..f2dd9515 100644
+--- a/src/parse/parse_unquoted.c
++++ b/src/parse/parse_unquoted.c
+@@ -1,10 +1,26 @@
+ #include "../expand.h"
+ #include "../parse.h"
+ #include "../redir.h"
++#include "../../lib/byte.h"
+ #include "../../lib/scan.h"
+ #include "../source.h"
+ #include "../tree.h"
+ 
++/* is the text read so far the start of a tilde-prefix: "~name" at the word start, or after
++   the '=' / ':' of an assignment, with no '/' since? ("~\root" must not expand) */
++static int
++parse_in_tilde_prefix(struct parser* p) {
++  size_t i = p->sa.len;
++
++  if(p->tree)
++    return 0;
++
++  while(i > 0 && p->sa.s[i - 1] != '/' && p->sa.s[i - 1] != ':' && p->sa.s[i - 1] != '=')
++    i--;
++
++  return i < p->sa.len && p->sa.s[i] == '~' && (i == 0 || p->sa.s[i - 1] == '=' || p->sa.s[i - 1] == ':');
++}
++
+ int
+ parse_unquoted(struct parser* p) {
+   int flags = 0;
+@@ -56,7 +72,11 @@ parse_unquoted(struct parser* p) {
+ 
+       /* "${a+\ x}": an escaped blank is quoted, field splitting must
+          not see it */
+-      if((p->flags & (P_SUBSTW | P_DQSUBST)) == P_SUBSTW && (c == ' ' || c == '\t')) {
++      /* an escaped "~" or "/", or any escaped character inside a tilde-prefix, becomes a
++         quoted chunk of its own, so it cannot start or end the prefix ("\~", "~\/", "~\root") */
++      if(((p->flags & (P_SUBSTW | P_DQSUBST)) == P_SUBSTW && (c == ' ' || c == '\t')) ||
++         ((c == '~' || c == '/' || parse_in_tilde_prefix(p)) &&
++          !(p->flags & (P_SUBSTW | P_DQSUBST | P_HERE)))) {
+         if(parse_isesc(c))
+           p->sa.len--; /* the backslash added above */
+ 

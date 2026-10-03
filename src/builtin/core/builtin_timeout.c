@@ -18,6 +18,8 @@
 
 const char help_timeout[] = "    Run COMMAND, killing it if it's still running after DURATION.\n"
                             "\n"
+                            "    -f              only time out COMMAND itself, not its descendants (always so here)\n"
+                            "    -p              exit with COMMAND's own status even when it timed out\n"
                             "    -k, --kill-after=DURATION   also send KILL this long after the\n"
                             "                                first signal, if COMMAND is still running\n"
                             "    -s, --signal=SIGNAL         signal to send on timeout (default TERM)\n"
@@ -180,7 +182,7 @@ timeout_alarm(int signum) {
 
 int
 builtin_timeout(int argc, char* argv[]) {
-  int c, verbose = 0, ret, cmdargc;
+  int c, verbose = 0, preserve = 0, ret, cmdargc;
   char *kill_after_arg = NULL, *signal_arg = NULL, *path, **cmdargv;
   unsigned long duration_usec = 0, kill_after_usec = 0;
   int sig = SIGTERM;
@@ -195,8 +197,10 @@ builtin_timeout(int argc, char* argv[]) {
     return 125;
   }
 
-  while((c = shell_getopt(argc, argv, "k:s:v")) > 0) {
+  while((c = shell_getopt(argc, argv, "fk:ps:v")) > 0) {
     switch(c) {
+      case 'f': break;
+      case 'p': preserve = 1; break;
       case 'k': kill_after_arg = shell_optarg; break;
       case 's': signal_arg = shell_optarg; break;
       case 'v': verbose = 1; break;
@@ -297,5 +301,5 @@ builtin_timeout(int argc, char* argv[]) {
   if(timeout_state && ret == 128 + SIGKILL)
     return 137;
 
-  return timeout_state ? 124 : ret;
+  return timeout_state && !preserve ? 124 : ret;
 }

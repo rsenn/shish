@@ -9,6 +9,7 @@ const char help_cat[] = "    Concatenate files to standard output.\n"
                         "\n"
                         "    -n              number every output line\n"
                         "    -b              number only non-empty output lines\n"
+                        "    -u              unbuffered output (accepted; output is not delayed)\n"
                         "    file            file to print; '-' or omitted means stdin\n";
 
 /* one cat run, shared by the builtin and the filter (TODO.md Goal 13):
@@ -64,6 +65,7 @@ cat_option(void* ctx, int ch) {
   switch(ch) {
     case 'n': c->number_lines = 1; return 0;
     case 'b': c->number_nonempty = 1; return 0;
+    case 'u': return 0; /* output is flushed per line already */
     default: return -1;
   }
 }
@@ -75,7 +77,7 @@ cat_setup(void* ctx) {
 }
 
 const struct filter_ops cat_ops = {
-    .opts = "nb",
+    .opts = "nbu",
     .size = sizeof(struct cat),
     .option = cat_option,
     .setup = cat_setup,

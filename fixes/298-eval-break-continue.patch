@@ -1,0 +1,103 @@
+diff --git a/src/builtin/builtin_eval.c b/src/builtin/builtin_eval.c
+index 5254c92a..bce9e6dc 100644
+--- a/src/builtin/builtin_eval.c
++++ b/src/builtin/builtin_eval.c
+@@ -48,7 +48,7 @@ builtin_eval(int argc, char* argv[]) {
+     p.pushback++;
+ 
+     if((cmds = parse_list(&p))) {
+-      eval_tree(&e, cmds, E_ROOT | E_LIST);
++      eval_tree(&e, cmds, E_ROOT | E_EVAL | E_LIST);
+       tree_free(cmds);
+     }
+ 
+diff --git a/src/eval.h b/src/eval.h
+index 828e14ce..07f0cf50 100644
+--- a/src/eval.h
++++ b/src/eval.h
+@@ -10,7 +10,8 @@ enum {
+   E_FUNCTION = (1 << 5),
+   E_LOOP = (1 << 6),
+   E_PRINT = (1 << 7),
+-  E_DEBUG = (1 << 8)
++  E_DEBUG = (1 << 8),
++  E_EVAL = (1 << 9) /* frame of the "eval" builtin: break/continue pass through it */
+ };
+ 
+ /* "set -e" is suppressed (nonzero) for exactly the duration of
+diff --git a/src/eval/eval_jump.c b/src/eval/eval_jump.c
+index 25abec7b..fc6ae51f 100644
+--- a/src/eval/eval_jump.c
++++ b/src/eval/eval_jump.c
+@@ -49,7 +49,7 @@ eval_jump(int levels, int cont) {
+        own eval frame also carries E_ROOT, see sh_loop.c's E_ROOT
+        tempflag) silently failed to break at all instead of breaking
+        that one loop, exactly the way bash does. */
+-    if(e->flags & (E_FUNCTION | E_ROOT))
++    if((e->flags & E_FUNCTION) || (e->flags & (E_ROOT | E_EVAL)) == E_ROOT)
+       break;
+ 
+     if(e->jump && (e->flags & E_LOOP)) {
+diff --git a/src/eval/eval_node.c b/src/eval/eval_node.c
+index 4db705a3..8b6af4b2 100644
+--- a/src/eval/eval_node.c
++++ b/src/eval/eval_node.c
+@@ -15,7 +15,7 @@ eval_node(struct eval* e, union node* node) {
+ 
+   tree_location(node, &e->pos);
+ 
+-  TRACE(TRACE_EVAL, "node", trace_kind("kind", node->id), trace_loc("loc", &e->pos), trace_flags("flags", e->flags, trace_eval_flags, 9));
++  TRACE(TRACE_EVAL, "node", trace_kind("kind", node->id), trace_loc("loc", &e->pos), trace_flags("flags", e->flags, trace_eval_flags, 10));
+ 
+   switch(node->id) {
+     case N_SIMPLECMD: {
+diff --git a/src/eval/eval_pop.c b/src/eval/eval_pop.c
+index a521cb2b..c4c06548 100644
+--- a/src/eval/eval_pop.c
++++ b/src/eval/eval_pop.c
+@@ -35,7 +35,7 @@ eval_pop(struct eval* e) {
+ 
+   // sh->exitcode = e->exitcode;
+   // sh->eval = e->parent;
+-  TRACE(TRACE_EVAL, "pop", trace_flags("flags", e->flags, trace_eval_flags, 9), trace_int("status", ret));
++  TRACE(TRACE_EVAL, "pop", trace_flags("flags", e->flags, trace_eval_flags, 10), trace_int("status", ret));
+ 
+   eval = e->parent;
+ 
+diff --git a/src/eval/eval_push.c b/src/eval/eval_push.c
+index 13802063..b85d6c2c 100644
+--- a/src/eval/eval_push.c
++++ b/src/eval/eval_push.c
+@@ -24,5 +24,5 @@ eval_push(struct eval* e, int flags) {
+   // sh->eval = e;
+   eval = e;
+ 
+-  TRACE(TRACE_EVAL, "push", trace_flags("flags", e->flags, trace_eval_flags, 9));
++  TRACE(TRACE_EVAL, "push", trace_flags("flags", e->flags, trace_eval_flags, 10));
+ }
+diff --git a/src/trace.h b/src/trace.h
+index 6b695cd4..ad64efc1 100644
+--- a/src/trace.h
++++ b/src/trace.h
+@@ -76,7 +76,7 @@ void trace_loc(const char* key, const struct location* loc); /* "file:line:col"
+ void trace_kind(const char* key, int node_id);                 /* enum kind -> "simple_command" */
+ 
+ /* bit i -> name, for trace_flags() */
+-extern const char* const trace_eval_flags[9];  /* E_EXIT .. E_DEBUG */
++extern const char* const trace_eval_flags[10]; /* E_EXIT .. E_EVAL */
+ extern const char* const trace_redir_flags[9]; /* R_IN .. R_NOW */
+ void trace_argv(const char* key, char* const* argv);
+ void trace_flags(const char* key, unsigned long bits, const char* const* names, unsigned int n);
+diff --git a/src/trace/trace_value.c b/src/trace/trace_value.c
+index 87ea6cf4..71a09a13 100644
+--- a/src/trace/trace_value.c
++++ b/src/trace/trace_value.c
+@@ -5,7 +5,7 @@
+ extern const char* debug_nodes[];
+ extern const unsigned debug_nodes_count;
+ 
+-const char* const trace_eval_flags[9] = {"E_EXIT", "E_ROOT", "E_BQUOTE", "E_JCTL", "E_LIST", "E_FUNCTION", "E_LOOP", "E_PRINT", "E_DEBUG"};
++const char* const trace_eval_flags[10] = {"E_EXIT", "E_ROOT", "E_BQUOTE", "E_JCTL", "E_LIST", "E_FUNCTION", "E_LOOP", "E_PRINT", "E_DEBUG", "E_EVAL"};
+ const char* const trace_redir_flags[9] = {"R_IN", "R_OUT", "R_OPEN", "R_DUP", "R_HERE", "R_STRIP", "R_APPEND", "R_CLOBBER", "R_NOW"};
+ #include "../source.h"
+ #include "../tree.h"

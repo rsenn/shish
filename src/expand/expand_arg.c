@@ -2,6 +2,7 @@
 #include "../expand.h"
 #include "../tree.h"
 #include "../debug.h"
+#include "../../lib/str.h"
 #include <stdlib.h>
 #include <assert.h>
 
@@ -9,12 +10,42 @@
 #define min(a, b) ((a) <= (b) ? (a) : (b))
 extern int sh_no_position;
 
+/* may the unquoted expansion results of this word be pathname-expanded as they are? Not when
+   the word also holds quoted text that could carry a pattern character ("*"$x, "$a"$b), or a
+   ${x+word} whose word has quoting of its own.
+ * ----------------------------------------------------------------------- */
+static int
+expand_globres_ok(union node* node) {
+  union node* sub;
+
+  for(sub = (node && node->id == N_ARG) ? node->narg.list : node; sub; sub = sub->next) {
+    if(sub->nargstr.flag & S_TABLE) {
+      if(sub->id != N_ARGSTR)
+        return 0;
+
+      if(sub->nargstr.stra.len == 0)
+        continue;
+
+      if(str_chr(sub->nargstr.stra.s, '*') < sub->nargstr.stra.len || str_chr(sub->nargstr.stra.s, '?') < sub->nargstr.stra.len ||
+         str_chr(sub->nargstr.stra.s, '[') < sub->nargstr.stra.len)
+        return 0;
+
+      continue;
+    }
+
+    if(sub->id == N_ARGPARAM && sub->nargparam.word)
+      return 0;
+  }
+
+  return 1;
+}
+
 /* expand all parts of an N_ARG node
  * ----------------------------------------------------------------------- */
 union node*
 expand_arg(union node* node, union node** nptr, int flags) {
   union node *n = *nptr, *subarg;
-  int i = 0;
+  int i = 0, globres = expand_globres_ok(node);
 
   /* if(node) {
      debug_s("arg ");
@@ -36,6 +67,10 @@ expand_arg(union node* node, union node** nptr, int flags) {
 
     if(subarg->nargstr.flag & S_GLOB)
       lflags |= X_GLOB;
+
+    /* the result of an unquoted $x, $(cmd) or $((n)) is subject to pathname expansion */
+    if(globres && !(lflags & X_QUOTED) && (subarg->id == N_ARGPARAM || subarg->id == N_ARGCMD || subarg->id == N_ARGARITH))
+      lflags |= X_GLOBRES;
 
     /* expand argument parts */
     switch(subarg->id) {

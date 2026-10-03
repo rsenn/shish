@@ -84,7 +84,9 @@ int
 builtin_kill(int argc, char* argv[]) {
   int sig = SIGTERM, i = 1, ret = 0;
 
-  if(argc > 1 && argv[1][0] == '-' && argv[1][1]) {
+  if(argc > 1 && !str_diff(argv[1], "--")) {
+    i = 2;
+  } else if(argc > 1 && argv[1][0] == '-' && argv[1][1]) {
     if(argv[1][1] == 'l' && !argv[1][2]) {
       /* -l with optional argument */
       if(argc == 2)
@@ -126,6 +128,10 @@ builtin_kill(int argc, char* argv[]) {
       i = 2;
     }
   }
+
+  /* "--" ends the options: kill -s KILL -- pid, kill -9 -- -pgid */
+  if(i < argc && !str_diff(argv[i], "--"))
+    i++;
 
   if(i >= argc)
     return builtin_errmsg(argv, "too few arguments", NULL);

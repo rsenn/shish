@@ -5,6 +5,9 @@
 #include "../fdtable.h"
 #include "../job.h"
 #include "../sh.h"
+#include "../fdstack.h"
+
+int trap_exit_set_here(void);
 #include "../source.h"
 #include "../../lib/shell.h"
 #include "../tree.h"
@@ -56,7 +59,15 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
 
     if(!pid) {
       flag &= ~X_NOWAIT;
-      exit(exec_command(cmd, argc, argv, flag));
+      {
+        int ret = exec_command(cmd, argc, argv, flag);
+
+        /* an EXIT trap this child set runs outside its command's own redirections */
+        if(fdstack != &fdstack_root && trap_exit_set_here())
+          fdstack_pop(fdstack);
+
+        exit(sh_child_exit(ret));
+      }
     }
 
     /* interactive-use-only, see eval_node_bgnd.c's matching comment
@@ -199,14 +210,15 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
            {...} or (...). For loops, while/until loops, if statements,
            and case statements should be evaluated directly. */
         switch(cmd->fn->id) {
-          case N_SUBSHELL: ret = eval_subshell(&e, &cmd->fn->ngrp); break;
+          /* eval_command() applies the redirections the definition carries */
+          case N_SUBSHELL:
           case N_BRACEGROUP:
-          case N_LIST: ret = eval_cmdlist(&e, &cmd->fn->ngrp); break;
-          case N_FOR: ret = eval_for(&e, &cmd->fn->nfor); break;
+          case N_FOR:
           case N_WHILE:
-          case N_UNTIL: ret = eval_loop(&e, &cmd->fn->nloop); break;
-          case N_IF: ret = eval_if(&e, &cmd->fn->nif); break;
-          case N_CASE: ret = eval_case(&e, &cmd->fn->ncase); break;
+          case N_UNTIL:
+          case N_IF:
+          case N_CASE: ret = eval_command(&e, cmd->fn, 0); break;
+          case N_LIST: ret = eval_cmdlist(&e, &cmd->fn->ngrp); break;
           default:
             /* Fallback: try eval_cmdlist for other node types */
             ret = eval_cmdlist(&e, &cmd->fn->ngrp);

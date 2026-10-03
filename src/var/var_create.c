@@ -3,6 +3,8 @@
 #include "../sh.h"
 #include "../../lib/shell.h"
 #include "../vartab.h"
+#include "../exec.h"
+#include "../../lib/str.h"
 
 /* create a new var on top vartab, possibly overwriting an old one
  *
@@ -14,6 +16,10 @@ var_create(const char* s, int flags) {
   struct search ctx;
   struct var *newv, *v;
   struct vartab* tab = varstack;
+
+  /* any assignment to PATH, even to the same value, forgets remembered command paths */
+  if(!str_diffn(s, "PATH", 4) && (s[4] == '\0' || s[4] == '='))
+    exec_hash_invalidate_all();
 
   vartab_hash(s, &ctx);
 

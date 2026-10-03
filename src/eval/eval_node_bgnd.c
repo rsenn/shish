@@ -36,7 +36,7 @@ eval_node_bgnd(struct eval* e, union node* node) {
        them ("wait" returns at once, their status is lost) */
     node->ncmd.bgnd = 0;
     ret = eval_node(e, node);
-    exit(ret);
+    exit(sh_child_exit(ret));
   }
 
   /* the "[id] pid" banner is interactive-use-only, same as job_wait.c's

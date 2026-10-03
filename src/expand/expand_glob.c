@@ -19,6 +19,7 @@
 #include "../var.h"
 #include "../parse.h"
 #include "../../lib/byte.h"
+#include "../../lib/str.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -45,6 +46,12 @@ expand_glob(union node** nptr, int flags) {
     return n;
 
   stralloc_nul(&n->narg.stra);
+
+  /* a raw expansion result without a pattern character, or with -f: left exactly as it is */
+  if((flags & X_GLOBRES) &&
+     (sh->opts.noglob ||
+      (!str_containsc(n->narg.stra.s, '*') && !str_containsc(n->narg.stra.s, '?') && !str_containsc(n->narg.stra.s, '['))))
+    return n;
 
   /* set -f: pathname expansion is off, the pattern stays literal --
      same as the "no match" fallback below, just without ever calling
@@ -95,7 +102,7 @@ expand_glob(union node** nptr, int flags) {
     globfree(&glb);
   } else
 #endif
-  {
+  if(!(flags & X_GLOBRES)) {
     expand_unescape(&n->narg.stra, parse_isesc);
   }
 

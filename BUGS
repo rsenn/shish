@@ -57,15 +57,14 @@
   # the "Done" banner should appear as soon as the job ends, not after sleep 1
   ```
 
-- set-verbose-no-effect: POSIX `-v` is accepted (`set -v`, `set -o verbose`,
-  shown in `$-`) but does not echo input lines to stderr. Nothing sees a raw
-  input line as a unit: the parser reads `src/source.h`'s `source_peek()`/
-  `source_next()` one character at a time through a prefetching buffer.
+- set-verbose-partial: `set -v` echoes each line the top-level script, stdin or `-c`
+  string supplies to stderr, but not a final line without a newline (`shish -v -c
+  'echo a'` prints no echo), not text read by `.`/`eval`, and a `\`-continued line
+  is echoed joined.
 
   **Repro:**
   ```sh
-  echo 'set -v; echo hello' | shish 2>&1
-  # prints "hello"; bash/dash also echo "set -v; echo hello" to stderr first
+  shish -v -c 'echo a'      # no "echo a" on stderr; bash echoes it
   ```
 
 - set-histexpand-unimplemented: `struct shopt`'s `histexpand` bit
@@ -190,9 +189,6 @@
   sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix quote-p.tst
   ```
 
-- trap-exit-in-async-subshell-not-run: `trap "echo foo" EXIT >/dev/null & wait $!`
-  prints nothing (`trap-p.tst:156`); expected "foo".
-
 - input-not-read-line-wise: inside a command substitution the shell reads more
   input than needed and consumes data meant for the commands after it
   (`input-p.tst:89`, "shell input is line-wise (command substitution)"; 10/11).
@@ -251,33 +247,6 @@
   **Repro:**
   ```sh
   cmake -S . -B /tmp/def && cmake --build /tmp/def -j && /tmp/def/shish tests/fixed.sh | grep FAIL
-  ```
-
-- heredoc-in-cmdsub-read-in-wrong-order: a here-document whose body
-  contains a command substitution that itself opens a here-document
-  reads the two heredoc bodies in the wrong order. `redir_list` (`src/redir/
-  redir_addhere.c`) is one flat, global, FIFO-ordered queue of pending
-  heredocs, and `source_newline()` drains it entirely as soon as it
-  sees a newline outside a heredoc -- but the newline right after
-  "cat <<\INNER" (ending the *outer* command's own first line) fires
-  with *both* the outer and the inner heredoc already queued, and
-  drains them in queue order (outer, then inner) rather than the
-  nesting order the source actually has to be read in (inner's body
-  comes first in the file, between the outer command's opening line
-  and its own closing delimiter). The outer heredoc's read then starts
-  too early and swallows everything up to and including the outer
-  delimiter -- the inner heredoc's own delimiter line included --
-  leaving the inner one to find only genuine EOF, silently reading as
-  empty.
-
-  **Repro:**
-  ```sh
-  printf 'cat <<\\OUTER; echo "$(cat <<\\INNER\ninner\nINNER\n)"\nouter\nOUTER\n' > h.sh
-  build/x86_64-linux-gnu/shish h.sh
-  # shish prints the outer heredoc's (mis-scoped) body verbatim --
-  # "inner", "INNER", ")\"", "outer" -- followed by a blank line for
-  # echo's empty (nothing left for the inner heredoc) argument
-  # bash/dash print "outer" then "inner"
   ```
 
 - exit-trap-loses-positional-parameters: an `EXIT` trap body sees `$#`
@@ -484,60 +453,16 @@
   pwd a; echo $?     # prints the directory, 0
   ```
 
-- ls-long-format-incomplete: `ls -l` prints mode, link count, owner, group
-  and size only. POSIX requires a `total` line (blocks) for directory
-  listings, the date/time column, `name -> target` for symbolic links, and
-  `s`/`S`/`t`/`T` in the mode string for setuid/setgid/sticky files
-  (the mode itself is set correctly: `stat -c %a` shows 4755).
+- ls-missing-options: `ls` supports `-A -a -d -F -f -i -l -p -R -r -S -t -1`.
+  POSIX also requires `-C -H -L -c -g -k -m -n -o -q -s -u -x`; each is
+  "invalid option". Column widths in `-l` are fixed (links 3, size 6) rather
+  than sized to the widest entry.
 
   **Repro:**
   ```sh
-  touch a; ln -s a s; ls -l          # no total line, no date column
-  ls -l s                            # "lrwxrwxrwx 1 u g 1 s"; no " -> a"
-  chmod 4755 a; ls -l a              # "-rwxr-xr-x"; should be "-rwsr-xr-x"
-  mkdir d; chmod 1777 d; ls -ld d    # "drwxrwxrwx"; should be "drwxrwxrwt"
-  ```
-
-- ls-missing-options: only `-a -d -l -1` (and an undocumented `-f`) exist.
-  POSIX `ls` also requires `-A -C -F -H -L -R -S -c -g -i -k -m -n -o -p -q
-  -r -s -t -u -x` (and `-f`'s "unsorted, all files" meaning). Every other
-  option is "invalid option". The ones needed most: `-R`, `-t`, `-r`, `-A`.
-
-  **Repro:**
-  ```sh
-  for o in -A -C -F -H -L -R -S -c -g -i -k -m -n -o -p -q -r -s -t -u -x; do
+  for o in -C -H -L -c -g -k -m -n -o -q -s -u -x; do
     ls $o . >/dev/null 2>&1 || echo "ls $o unsupported"
   done
-  ```
-
-- ls-a-omits-dot-and-dotdot-and-orders-operands: `ls -a` does not list `.`
-  and `..`; and with a mix of file and directory operands, the directory
-  listing is printed first, where POSIX prints all non-directory operands
-  first, then each directory (headed `dir:` when there is more than one
-  operand).
-
-  **Repro:**
-  ```sh
-  mkdir d; touch d/x f; ls -a d      # no "." / ".."
-  ls d f                             # "d:", "x", "", "f"; should print "f" first
-  ```
-
-- touch-c-option-missing: `touch -c` (do not create) is rejected as an
-  invalid option; it is one of the required `-acm`.
-
-  **Repro:**
-  ```sh
-  touch -c nofile; echo $?; ls nofile   # "touch: -c: invalid option"
-  ```
-
-- chmod-symbolic-mode-incomplete: symbolic modes accept only `rwxX` with
-  `+ - =` on `ugoa`. Unsupported per POSIX `chmod`: copy-permission
-  (`g=u`, `o+g`), `s` (setuid/setgid) and `t` (sticky), as in `u+s`, `+t`.
-  All fail with "invalid mode".
-
-  **Repro:**
-  ```sh
-  touch a; chmod g=u a; chmod u+s a; chmod +t a   # each: "invalid mode"
   ```
 
 - type-a-unimplemented: `type -a` is accepted and ignored (documented in
@@ -567,62 +492,13 @@
   echo break > b.sh; for i in 1 2 3; do . ./b.sh; echo $i; done   # prints 1 2 3; bash: nothing
   ```
 
-- set-o-ignoreeof-nolog-vi-missing: `set -o ignoreeof`, `set -o nolog` and
-  `set -o vi` (POSIX User Portability option names) are "invalid option name";
-  `set -o` also lists the bash extras `braceexpand`, `hashall`, `histexpand`,
-  `privileged` instead.
+- set-o-ignoreeof-nolog-vi-has-no-effect: `set -o ignoreeof`, `nolog` and `vi` are
+  accepted and shown by `set -o`, but only store a bit: an interactive shell still
+  exits at the first end-of-file, and there is no vi line editing.
 
   **Repro:**
   ```sh
-  set -o ignoreeof; echo $?    # "set: ignoreeof: invalid option name"
-  ```
-
-- trap-signal-validation-n-form-and-print-format: three defects.
-  (1) `trap 'echo t' 999` (an out-of-range signal) is accepted silently with
-  status 0; it must be a diagnostic and status >0. (2) `trap 0` / `trap 2` (a
-  first operand that is an unsigned decimal integer means "reset these
-  conditions") prints the usage message. (3) `trap` output uses
-  `trap 'cmd' INT` where POSIX specifies `trap -- 'cmd' INT`.
-
-  **Repro:**
-  ```sh
-  trap 'echo t' 999; echo $?                 # 0, no message; bash: invalid signal specification, 1
-  trap 'echo t' INT; trap 2; trap            # "usage: trap ..."; should reset INT
-  trap 'echo t' INT; trap                    # "trap 'echo t' INT"; should be "trap -- 'echo t' INT"
-  ```
-
-- kill-double-dash-rejected: `kill` rejects `--` ("invalid signal
-  specification" / "arguments must be process or job IDs") although it must
-  follow the utility syntax guidelines.
-
-  **Repro:**
-  ```sh
-  kill -s KILL -- 99999        # "--: arguments must be process or job IDs"; should treat -- as the end of options
-  kill -- -0 $$                # "--: invalid signal specification"
-  ```
-
-- jobs-p-and-l-formats: `jobs -p` prints the normal listing where POSIX
-  writes only the process group ID, and `jobs -l` prints the same text as
-  plain `jobs` (no process group ID / PIDs, which `-l` must add).
-
-  **Repro:**
-  ```sh
-  sleep 1 & jobs -p     # "[1]+  Running    sleep 1"; should be just the PID
-  sleep 1 & jobs -l     # no PID column
-  ```
-
-- readlink-realpath-timeout-missing-options: POSIX.1-2024 `readlink [-n]`,
-  `realpath [-E|-e]` and `timeout [-fp] [-k time] [-s signal_name] duration
-  utility [argument...]`: `readlink -n`, `realpath -E`/`-e` and
-  `timeout -f`/`-p` are rejected as invalid options (`realpath` of a missing
-  file also succeeds without any option, which POSIX leaves unspecified).
-
-  **Repro:**
-  ```sh
-  ln -s t l; readlink -n l           # "-n: invalid option"
-  realpath -e nosuch                 # "-e: invalid option"; should fail (ENOENT)
-  realpath -E nosuch/x               # "-E: invalid option"
-  timeout -f 1 true; timeout -p 1 true    # "-f"/"-p: invalid option"
+  printf 'set -o ignoreeof\n' | shish -i   # exits at EOF instead of asking for "exit"
   ```
 
 - fc-and-ulimit-missing: `fc` (history editing/listing) and `ulimit` are
@@ -647,6 +523,37 @@
   **Repro:**
   ```sh
   ./build/x86_64-linux-gnu/shish tests/fixed.sh 2>&1 | grep FAIL
+  ```
+
+- builtin-sleep-touch-tests-need-gnu-date: `tests/builtin-sleep.sh` (2 checks) and
+  `tests/builtin-touch.sh` (5 checks) fail whenever the `date` builtin is
+  enabled: they time and compare with `date +%s%N` and `date -d '2023-01-02
+  15:30:45'`, and the builtin supports neither `%N` (prints it literally) nor
+  `-d`. The tests pass against GNU `date`. Either the builtin gains `-d` and
+  `%N` or the tests call `command date` / use `/bin/date`.
+
+  **Repro:**
+  ```sh
+  build/x86_64-linux-gnu/shish -c 'date +%s%N; date -d "2023-01-02 15:30:45" +%s'
+  # "1791002191%N" and "date: -d: invalid option"; GNU date prints the numbers
+  ```
+
+- grep-missing-options: the `grep` builtin has `-E -F -c -n -q -v -x`; POSIX also
+  requires `-e pattern`, `-f file`, `-i`, `-l` and `-s`.
+
+  **Repro:**
+  ```sh
+  echo A | shish -c 'grep -i a'     # "-i: invalid option"
+  ```
+
+- glob-of-expansion-results-conservative: pathname expansion of an unquoted `$x`/`$(cmd)` is
+  skipped when the same word also holds quoted text that could contain a pattern character
+  (`"$q"$s`, `"a*"$s`), or a `${x+word}` whose word is itself quoted.
+
+  **Repro:**
+  ```sh
+  cd "$(mktemp -d)"; touch xa; q=x; s='*'
+  shish -c 'echo "$q"$s'     # prints x*; bash prints xa
   ```
 
 - head-no-header-for-empty-file: `head` and `tail` print the "==> file <=="
@@ -675,15 +582,6 @@
   `printf '\303\251\n' | LC_ALL=C.UTF-8 cut -n -b 1` prints the lone byte
   \303 (should print nothing, the range starts inside the character).
 
-- cat-missing-dash-u-option: `cat -u` (unbuffered, POSIX) is rejected
-  (`exec-p.tst:40`).
-
-  **Repro:**
-  ```sh
-  build/x86_64-linux-gnu/shish -c 'cat -u /dev/null'
-  # "cat: -u: invalid option"; expected exit status 0
-  ```
-
 - builtin-cp-sh-hangs: `tests/builtin-cp.sh` never terminates (a `ctest`
   run sits on it for 17+ minutes), so it needs `--timeout` or `-E builtin-cp`
   for the suite to finish.
@@ -703,29 +601,16 @@
   set --; f() { echo $#; }; f "$@"""     # 0; should be 1
   ```
 
-- posix-suite-failures-not-yet-analysed: failing cases in `tests/posix` that no
-  other entry covers (none is understood yet; `read-p` was 28/28 once):
-  - `read-p.tst:40` read reads more than needed; `:241`, `:251` raw mode with a
-    backslash (not) in IFS
-  - `exec-p.tst:40` external command with an option; `:67` redirection error on `exec`
-  - `for-p.tst:153` redirection on a for loop; `function-p.tst:86` redirections
-    apply to the function body; `comment-p.tst:80` comment in a for loop
-  - `option-p.tst:101,107` noglob off; `:121` hashondef; `:328-340` nounset with
-    `${foo#bar}` and friends; `:366,384` verbose; `:418,428` xtrace; `:438` `$PS4`;
-    `:450` ignoreeof
-  - `tilde-p.tst:9,37,127,154` a quoted tilde is still expanded
-  - `simple-p.tst:18` redirections before assignments for a non-special builtin;
-    `:172` `echo` without PATH; `:237` assigning PATH forgets remembered paths;
-    `:258` a remembered path is ignored when the command is gone
-  - `cmdsub-p.tst:79,95` quotes in backquotes; `:139` substitution between a
-    here-document operator and its body; `:168` pathname expansion of a result
-  - `builtins-p.tst:51` assignment on `exec` is persistent; `pipeline-p.tst:30` status
-    of a negated pipeline; `lineno-p.tst:28` `LINENO` after expansions
+- posix-suite-intentional-deviations: two `tests/posix` cases fail on purpose.
+  `simple-p.tst:172` expects `PATH=; echo x` to report "not found" (POSIX does not
+  require `echo` to be intrinsic), and `option-p.tst:121` expects `hash` to list a
+  `.../cat` path after a function using `cat` was defined under `set -h`. shish runs
+  `echo` and `cat` as builtins (see `doc/builtins.md`: `PATH=; mkdir -p ...; cat ...`
+  works), so both stay failing unless that design changes.
 
   **Repro:**
   ```sh
-  sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix read-p.tst
-  grep -E '^%%+ FAILED' tests/posix/read-p.trs
+  sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix simple-p.tst
   ```
 
 - timeout-function-output-not-captured-by-command-substitution: `timeout`

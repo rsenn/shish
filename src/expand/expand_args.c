@@ -85,6 +85,16 @@ expand_args(union node* args, union node** nptr, int flags) {
         nptr = &n;
         ret++;
       }
+    } else if(n->narg.flag & X_GLOBRES) {
+      union node* g = expand_glob(nptr, n->narg.flag);
+
+      if(g) {
+        n = g;
+        nptr = &n;
+        ret++;
+      }
+
+      stralloc_nul(&n->narg.stra);
     } else if((n->narg.flag & X_LITERAL) && !(n->narg.flag & X_UNESCAPED)) {
       expand_unescape(&n->narg.stra, parse_isesc);
       n->narg.flag &= ~X_GLOB;

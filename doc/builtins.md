@@ -43,10 +43,10 @@ $ shish -c 'PATH=; printf "a\nb\nc\n" | grep b | sed s/b/B/'
 B
 ```
 
-`src/builtin/extra/` is where these live in the tree (as opposed to
-`src/builtin/` for the language's own required builtins); a builtin goes
-there when it stands in for an external program rather than implementing
-shell syntax. `find`, `grep` and `sed` are the larger ones and get their
+`src/builtin/core/` (coreutils), `src/builtin/extra/` and `src/builtin/filter/` are
+where these live in the tree (as opposed to `src/builtin/` for the language's own
+required builtins); a builtin goes there when it stands in for an external program
+rather than implementing shell syntax. `find`, `grep` and `sed` are the larger ones and get their
 own subsystem under `text/` (see "Regex backend" below) instead of living
 entirely in one `builtin_*.c` file.
 

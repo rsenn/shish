@@ -61,6 +61,9 @@ struct shopt {
   unsigned notify : 1;      /* -b */
   unsigned verbose : 1;     /* -v */
   unsigned pipefail : 1;    /* -o pipefail (no letter) */
+  unsigned ignoreeof : 1;   /* -o ignoreeof (no letter): accepted, not acted on */
+  unsigned nolog : 1;       /* -o nolog (no letter): accepted */
+  unsigned vi : 1;          /* -o vi (no letter): accepted */
 };
 
 /* name->letter table for every "set"-supported option, and the
@@ -98,9 +101,10 @@ struct env {
                                 command substitution? see eval_simple_command's
                                 "no command, only assignments" status handling */
   struct shopt opts;
+  struct arg arg;
+
   struct fdstack* fdstack;
   struct vartab* varstack;
-  struct arg arg;
   struct parser* parser;
   struct eval* eval;
   struct handler* finalizers;
@@ -161,6 +165,7 @@ int sh_errorn(const char* s, unsigned int len);
 int sh_error_errno(const char* s);
 int sh_errorn_errno(const char* s, unsigned int len);
 void sh_exit(int retcode);
+int sh_child_exit(int status); /* run the EXIT trap a forked child set, then pass status on */
 size_t sh_fmtflags(char* dest, const struct shopt*);
 int sh_forked(void);
 extern int sh_async;

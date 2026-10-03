@@ -9,11 +9,8 @@
 #include <unistd.h>
 #endif
 
-/* Known gap: this module only checks a chunk's own S_TABLE quoting
- * state, not per-byte escaping within it, so an escaped '~' ("\~")
- * that reduces to a plain '~' byte still gets expanded. Quoting the
- * '~' itself ("~"/'~') works correctly, since that puts it in a
- * differently-flagged chunk this code never touches.
+/* Only a chunk's own S_TABLE quoting state is checked: the parser gives an escaped
+ * '~' or '/' (and every quoted run) a chunk of its own.
  * ----------------------------------------------------------------------- */
 
 /* resolve a tilde-prefix ("~" or "~name") at the very start of
@@ -159,7 +156,9 @@ expand_tilde_word(union node* arg) {
 
   stralloc_init(&home);
 
-  if(expand_tilde_lookup(n->nargstr.stra.s, n->nargstr.stra.len, 0, &home, &prefixlen))
+  /* a prefix running into the next chunk ("~"x"", "~$x") holds quoted or expanded text */
+  if(expand_tilde_lookup(n->nargstr.stra.s, n->nargstr.stra.len, 0, &home, &prefixlen) &&
+     !(prefixlen == n->nargstr.stra.len && n->next))
     expand_tilde_splice(n, &home, prefixlen);
 
   stralloc_free(&home);
@@ -208,7 +207,8 @@ expand_tilde_assign(union node* var) {
         stralloc_init(&home);
 
         if(expand_tilde_lookup(
-               n->nargstr.stra.s + eq, n->nargstr.stra.len - eq, 1, &home, &prefixlen)) {
+               n->nargstr.stra.s + eq, n->nargstr.stra.len - eq, 1, &home, &prefixlen) &&
+           !(eq + prefixlen == n->nargstr.stra.len && n->next)) {
           /* splice into just the tail starting at eq, then keep
              scanning right after the replacement -- the chunk's
              length/content just changed under us */

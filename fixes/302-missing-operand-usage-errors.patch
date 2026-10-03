@@ -1,0 +1,98 @@
+diff --git a/src/builtin/builtin_alias.c b/src/builtin/builtin_alias.c
+index 8b62cc2a..a3ca76ee 100644
+--- a/src/builtin/builtin_alias.c
++++ b/src/builtin/builtin_alias.c
+@@ -196,6 +196,11 @@ builtin_unalias(int argc, char* argv[]) {
+     return 0;
+   }
+ 
++  if(!argv[shell_optind]) {
++    builtin_errmsg(argv, "usage: unalias [-a] name...", NULL);
++    return 2;
++  }
++
+   for(argp = &argv[shell_optind]; *argp; argp++) {
+     struct alias** aptr = alias_search(*argp);
+ 
+diff --git a/src/builtin/builtin_shift.c b/src/builtin/builtin_shift.c
+index 93a63ecc..7a2c3ca5 100644
+--- a/src/builtin/builtin_shift.c
++++ b/src/builtin/builtin_shift.c
+@@ -11,6 +11,13 @@ int
+ builtin_shift(int argc, char* argv[]) {
+   unsigned int n = 1;
+ 
++  if(argc > 2) {
++    sh_msg(argv[0]);
++    buffer_putm_internal(fd_err->w, ": too many arguments", NULL);
++    buffer_putnlflush(fd_err->w);
++    return 1;
++  }
++
+   if(argc > 1) {
+     /* Parse the argument */
+     if(!scan_uint(argv[1], &n)) {
+diff --git a/src/builtin/extra/builtin_basename.c b/src/builtin/extra/builtin_basename.c
+index db6d8195..8fee9079 100644
+--- a/src/builtin/extra/builtin_basename.c
++++ b/src/builtin/extra/builtin_basename.c
+@@ -23,6 +23,11 @@ builtin_basename(int argc, char* argv[]) {
+   if(str_equal(argv[shell_optind], "--"))
+     shell_optind++;
+ 
++  if(argv[shell_optind + 1] && argv[shell_optind + 2]) {
++    builtin_errmsg(argv, "too many arguments", NULL);
++    return 1;
++  }
++
+   base = path_basename(argv[shell_optind]);
+   suffix = argv[shell_optind + 1];
+ 
+diff --git a/src/builtin/extra/builtin_chmod.c b/src/builtin/extra/builtin_chmod.c
+index 2ddda648..aa9f33b0 100644
+--- a/src/builtin/extra/builtin_chmod.c
++++ b/src/builtin/extra/builtin_chmod.c
+@@ -234,6 +234,11 @@ builtin_chmod(int argc, char* argv[]) {
+ 
+   spec = argv[shell_optind++];
+ 
++  if(!argv[shell_optind]) {
++    builtin_errmsg(argv, "missing operand after mode", NULL);
++    return 1;
++  }
++
+   /* a mode made up entirely of octal digits is the plain numeric
+      form; anything else must parse as symbolic mode instead, applied
+      relative to each file's own current mode */
+diff --git a/src/builtin/extra/builtin_mkdir.c b/src/builtin/extra/builtin_mkdir.c
+index 0d3396b4..94dc4844 100644
+--- a/src/builtin/extra/builtin_mkdir.c
++++ b/src/builtin/extra/builtin_mkdir.c
+@@ -73,6 +73,11 @@ builtin_mkdir(int argc, char* argv[]) {
+     }
+   }
+ 
++  if(!argv[shell_optind]) {
++    builtin_errmsg(argv, "missing operand", NULL);
++    return 1;
++  }
++
+   stralloc_init(&dir);
+ 
+   while((d = argv[shell_optind++])) {
+diff --git a/src/builtin/extra/builtin_rmdir.c b/src/builtin/extra/builtin_rmdir.c
+index adbf412d..fce3a105 100644
+--- a/src/builtin/extra/builtin_rmdir.c
++++ b/src/builtin/extra/builtin_rmdir.c
+@@ -64,6 +64,11 @@ builtin_rmdir(int argc, char* argv[]) {
+     }
+   }
+ 
++  if(!argv[shell_optind]) {
++    builtin_errmsg(argv, "missing operand", NULL);
++    return 1;
++  }
++
+   while((p = argv[shell_optind++])) {
+     ret = rmdir(p);
+ 

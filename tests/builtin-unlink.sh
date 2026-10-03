@@ -1,7 +1,7 @@
 DIR=$(dirname "${0}")
 . "$DIR/common.sh"
 
-## unlink builtin (src/builtin/extra/builtin_unlink.c); skipped when unlink is external
+## unlink builtin (src/builtin/core/builtin_unlink.c); skipped when unlink is external
 case $(type unlink) in
 *builtin*) ;;
 *) echo "unlink is not a builtin, skipping" 1>&2; summary ;;

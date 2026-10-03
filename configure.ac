@@ -228,17 +228,18 @@ AC_SUBST([WIN32_TRUE],[#])
 
 dnl ALL_BUILTINS: every BUILTIN_<name> the table in builtin_table.c is
 dnl gated by, lowercased (space separated). EXTRA_BUILTINS: the ones whose
-dnl source is in src/builtin/extra/. Both are read when this file is turned
-dnl into ./configure, so re-run autogen.sh after adding a builtin.
+dnl source is in src/builtin/{core,extra,filter}/ (but echo, false, printf,
+dnl pwd, test and true in core/ stay default). Both are read when this file is
+dnl turned into ./configure, so re-run autogen.sh after adding a builtin.
 m4_define([ALL_BUILTINS],
   m4_normalize(m4_esyscmd([grep '^builtin_' src/builtin -r -l |sort |sed 's,.*/builtin_,, ; s,\.c$,,' | tr '\n' ' '])))
 
 m4_define([EXTRA_BUILTINS],
-  m4_normalize(m4_esyscmd([ls -d src/builtin/*/*.c | sed 's,.*/builtin_,,; s,\.c$,,' | tr '\n' ' '])))
+  m4_normalize(m4_esyscmd([ls -d src/builtin/*/*.c | grep -v -E 'core/builtin_(echo|false|printf|pwd|test|true)\.c' | sed 's,.*/builtin_,,; s,\.c$,,' | tr '\n' ' '])))
 
 #echo "ALL_BUILTINS: m4_defn([ALL_BUILTINS])" 1>&2
 
-dnl default set: every builtin that is not in src/builtin/extra/
+dnl default set: every builtin that is not in src/builtin/{core,extra,filter}/
 m4_define([DEFAULT_BUILTINS],
   m4_normalize(m4_foreach_w([BUILTIN], m4_defn([ALL_BUILTINS]),
     [m4_if(m4_index([ ]m4_defn([EXTRA_BUILTINS])[ ], [ ]BUILTIN[ ]), [-1], [BUILTIN ])])))
@@ -376,6 +377,7 @@ text/awk/Makefile
 scripts/Makefile
 src/Makefile
 src/builtin/Makefile
+src/builtin/core/Makefile
 src/builtin/extra/Makefile
 src/builtin/filter/Makefile
 src/debug/Makefile

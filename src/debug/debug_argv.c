@@ -3,6 +3,23 @@
 #include "../parse.h"
 #include "../../lib/str.h"
 
+/* one word as "set -x" shows it: quoted only when it is empty or has a special character
+ * ----------------------------------------------------------------------- */
+void
+debug_word(const char* s, size_t n, buffer* out) {
+  size_t i;
+  int quote = n == 0;
+
+  for(i = 0; i < n && !quote; i++)
+    quote = parse_isctrl(s[i]) || parse_isesc(s[i]) || s[i] == ' ' || s[i] == '\t' || s[i] == '\n' || s[i] == '\'' ||
+            s[i] == '"' || s[i] == '$' || s[i] == '`' || s[i] == '<' || s[i] == '>';
+
+  if(quote)
+    debug_squoted(s, n, out);
+  else
+    buffer_put(out, s, n);
+}
+
 /* ----------------------------------------------------------------------- */
 size_t
 debug_argv(char** argv, buffer* out) {

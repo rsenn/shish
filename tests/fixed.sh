@@ -2401,16 +2401,14 @@ rm -rf "$F115"
 
 F115H1=$(mktemp -d)
 F115H2=$(mktemp -d)
-printf '#!/bin/sh\necho FIRST\n' >"$F115H1/f115cmd"
-chmod +x "$F115H1/f115cmd"
 printf '#!/bin/sh\necho SECOND\n' >"$F115H2/f115cmd"
 chmod +x "$F115H2/f115cmd"
-X115C=$(PATH="$F115H1:$F115H2"; f115cmd; rm -f "$F115H1/f115cmd"; f115cmd 2>/dev/null)
-assert_equal "FIRST" "$X115C" "set +h is not the default -- a removed-but-cached command location is still used and fails"
-printf '#!/bin/sh\necho FIRST\n' >"$F115H1/f115cmd"
-chmod +x "$F115H1/f115cmd"
-X115D=$(set +h; PATH="$F115H1:$F115H2"; f115cmd; rm -f "$F115H1/f115cmd"; f115cmd)
-assert_equal "$(printf 'FIRST\nSECOND')" "$X115D" "set +h re-searches PATH every time instead of trusting a cached (now-stale) location"
+mk115() { printf '#!/bin/sh\necho FIRST\n' >"$F115H1/f115cmd"; /bin/chmod +x "$F115H1/f115cmd"; }
+X115C=$(PATH="$F115H1:$F115H2"; f115cmd; mk115; f115cmd)
+assert_equal "$(printf 'SECOND\nSECOND')" "$X115C" "set +h is not the default -- a remembered command location is kept while it still exists"
+rm -f "$F115H1/f115cmd"
+X115D=$(set +h; PATH="$F115H1:$F115H2"; f115cmd; mk115; f115cmd)
+assert_equal "$(printf 'SECOND\nFIRST')" "$X115D" "set +h re-searches PATH every time instead of trusting a remembered location"
 rm -rf "$F115H1" "$F115H2"
 
 ## fixes/116 (add tilde and brace expansion): neither existed at all
@@ -4116,7 +4114,7 @@ assert_match "$X197" "*st=2*" "an incomplete expression is an error (status 2), 
 ## parse `term_size.ws_col` against an incomplete struct winsize, now
 ## compiles clean).
 
-## fixes/200 (src/builtin/builtin_test.c): S_ISGID, S_ISUID and
+## fixes/200 (src/builtin/core/builtin_test.c): S_ISGID, S_ISUID and
 ## S_ISLNK (test -g/-u/-h/-L) are not defined by mingw's headers, so a
 ## mingw cross build failed to compile builtin_test.c at all. Each
 ## primary is now guarded by #ifdef on its own macro, falling through
@@ -4125,7 +4123,7 @@ assert_match "$X197" "*st=2*" "an incomplete expression is an error (status 2), 
 ## S_ISSOCK. Per the "Writing a test" exception in CLAUDE.md for a fix
 ## that only compiles/runs on a platform this repo isn't being
 ## developed on, this is comment-only: verified by compiling
-## src/builtin/builtin_test.c under `cfg-mingw64` (previously "'S_ISGID'
+## src/builtin/core/builtin_test.c under `cfg-mingw64` (previously "'S_ISGID'
 ## undeclared" / "'S_ISUID' undeclared", now compiles clean with no
 ## warnings), and by confirming glibc's `tests/*.sh` and `tests/fixed.sh`
 ## (this file) still pass/fail exactly as they did before this change
@@ -5847,5 +5845,179 @@ assert_equal "rc=1
 a 755
 b 757
 p/q/r 700" "$MK" "mkdir -m applies octal and symbolic modes regardless of umask and rejects an invalid mode"
+
+# ls: -l adds total, date, "-> target" and s/t mode bits; -a lists . and ..; -A -R -r -t -p -F -i work;
+# non-directory operands come before directories
+LD=$(mktemp -d)
+LS=$(cd "$LD" && "$SHISH_SELF" -c 'mkdir -p d/sub; touch a d/x d/.h d/sub/y; ln -s a s; chmod 4755 a; chmod 1777 d/sub; touch -t 202003040506 a; ls -l a | cut -c1-10; ls -ld d/sub | cut -c1-10; ls -l s | sed "s/.* -> /-> /"; ls -l a | grep -c " Mar  4  2020 a"; ls -l d | sed -n 1p | cut -c1-6; ls -a d | tr "\n" " "; echo; ls -A d | tr "\n" " "; echo; ls -R d | tr "\n" " "; echo; ls -r d | tr "\n" " "; echo; ls -p d | tr "\n" " "; echo; ls -F . | tr "\n" " "; echo; ls d a | tr "\n" " "; echo; ls -i a | cut -d" " -f2')
+rm -rf "$LD"
+assert_equal "-rwsr-xr-x
+drwxrwxrwt
+-> a
+1
+total 
+. .. .h sub x 
+.h sub x 
+d: sub x  d/sub: y 
+x sub 
+sub/ x 
+a* d/ s@ 
+a  d: sub x 
+a" "$LS" "ls -l shows total, date, link target and special mode bits; -a/-A/-R/-r/-p/-F/-i; files before directories"
+
+# touch -c does not create a missing file, and is not an error; existing files are still touched
+TD=$(mktemp -d)
+TC=$(cd "$TD" && "$SHISH_SELF" -c 'touch f; touch -c nofile; echo "rc=$?"; [ -e nofile ] || echo absent; touch -c -t 202003040506 f nofile; echo "rc=$?"; stat -c %y f | cut -c1-16')
+rm -rf "$TD"
+assert_equal "rc=0
+absent
+rc=0
+2020-03-04 05:06" "$TC" "touch -c skips a missing file without error and still updates existing ones"
+
+# chmod symbolic modes: copy-permission (g=u), s and t, an omitted who limited by the umask, and a
+# leading-dash mode ("-w") that is not an option
+CD=$(mktemp -d)
+CM=$(cd "$CD" && "$SHISH_SELF" -c 'umask 022; m() { touch f; chmod $1 f; shift; chmod "$@" f; stat -c %a f; }; m 705 g=u; m 750 o=g; m 644 u+s; m 755 g+s; m 644 +t; m 644 o+t; m 755 u+t; m 4755 u-s; m 775 -w; m 666 +x; m 644 =r; m 1777 =rwx')
+rm -rf "$CD"
+assert_equal "775
+755
+4644
+2755
+1644
+1644
+755
+755
+575
+777
+444
+755" "$CM" "chmod handles g=u, s, t, umask-limited omitted who, and -w as a mode"
+
+# kill: "--" ends the options; jobs -p prints only the process group ID, -l adds the PIDs and takes job operands
+KJ=$("$SHISH_SELF" -c 'sleep 5 & p=$!; kill -s KILL -- $p 2>/dev/null; wait $p 2>/dev/null; echo "rc=$?"; sleep 5 & q=$!; kill -9 -- $q 2>/dev/null; wait $q 2>/dev/null; echo "rc=$?"; kill -- 2>/dev/null; echo "rc=$?"')
+assert_equal "rc=137
+rc=137
+rc=1" "$KJ" "kill accepts -- after the options and before the operands"
+JD=$(mktemp -d)
+KJ=$(cd "$JD" && "$SHISH_SELF" -c 'sleep 5 & p=$!; sleep 5 & q=$!; jobs -p > p.out; jobs -l > l.out; jobs -l %1 > one.out; jobs %9 2>/dev/null; echo "rc=$?"; kill $p $q; wc -l < p.out | tr -d " "; grep -c "[^0-9]" p.out; grep -c "^\[[0-9]*\][-+ ] *[0-9][0-9]* *Running" l.out; wc -l < one.out | tr -d " "')
+rm -rf "$JD"
+assert_equal "rc=1
+2
+0
+2
+1" "$KJ" "jobs -p prints only numbers, -l adds the PID, a job operand selects one, a missing job fails"
+
+# jobs run as a pipeline stage does not list the pipeline's own job
+JD=$(mktemp -d)
+JP=$(cd "$JD" && "$SHISH_SELF" -c 'sleep 5 & sleep 5 & jobs | wc -l | tr -d " "; kill %1 %2')
+rm -rf "$JD"
+assert_equal "2" "$JP" "jobs in a pipeline lists only the shell's earlier jobs, not the pipeline itself"
+
+# readlink -n, realpath -E/-e/-q and timeout -f/-p (POSIX.1-2024 option sets)
+RD=$(mktemp -d)
+RL=$(cd "$RD" && "$SHISH_SELF" -c 'mkdir d; touch d/f; ln -s d/f l; readlink -n l; echo "|"; readlink -n l l | wc -l | tr -d " "; realpath -e d/f | sed "s#.*/##"; realpath d/nosuch | sed "s#.*/##"; realpath nosuch/x 2>/dev/null; echo "rc=$?"; realpath -e nosuch 2>/dev/null; echo "rc=$?"; realpath -E d/nosuch >/dev/null; echo "rc=$?"; realpath -q nosuch/x; echo "rc=$?"')
+rm -rf "$RD"
+assert_equal "d/f|
+2
+f
+nosuch
+rc=1
+rc=1
+rc=0
+rc=1" "$RL" "readlink -n drops the newline (single operand); realpath -e/-E check existence, -q is silent"
+TO=$("$SHISH_SELF" -c 'timeout -f 1 true; echo "rc=$?"; timeout 0.2 sleep 5; echo "rc=$?"; timeout -p 0.2 sleep 5; echo "rc=$?"; timeout -fp -s INT 0.2 sleep 5; echo "rc=$?"' 2>/dev/null)
+assert_equal "rc=0
+rc=124
+rc=143
+rc=130" "$TO" "timeout accepts -f, and -p keeps the utility's own status when it timed out"
+
+# ---- POSIX suite fixes (tests/posix) ----
+
+# "command exec <missing" is not fatal; cat -u is accepted; a=b exec keeps the assignment
+PX=$("$SHISH_SELF" -c 'command exec <_no_such_file_x; echo "st=$?"; echo hi | cat -u; a=a; a=b exec; echo "a=$a"' 2>&1 | grep -v 'No such file')
+assert_equal "st=1
+hi
+a=b" "$PX" "command exec reports a redirection error without exiting; cat -u; assignment on exec persists"
+
+# trap: an integer first operand resets, an out-of-range signal is an error, listing uses "trap --"
+PX=$("$SHISH_SELF" -c 'trap "echo t" INT QUIT; trap 2; trap; trap 2 QUIT; trap; trap "echo x" 999 2>/dev/null; echo "st=$?"')
+assert_equal "trap -- 'echo t' QUIT
+st=1" "$PX" "trap N resets the conditions, a bad signal number fails, trap prints 'trap -- cmd SIG'"
+
+# an EXIT trap set inside a background subshell runs when that subshell ends, outside its redirections
+PX=$("$SHISH_SELF" -c 'trap "echo foo" EXIT >/dev/null & wait $!; trap "echo outer" EXIT; sleep 0.1 & wait')
+assert_equal "foo
+outer" "$PX" "an async subshell runs the EXIT trap it set; the parent's EXIT trap is not run by it"
+
+# a read from a here-document does not move the script's own input
+PX=$(printf '{ read a; cat; } <<\\END\nA\nC\nEND\necho next\n' | "$SHISH_SELF")
+assert_equal "C
+next" "$PX" "read from a here-document leaves the script read from stdin alone"
+
+# for NAME <newline> in/do; a redirection on a function definition applies on every call
+PX=$("$SHISH_SELF" -c 'for v ###
+in 1 2 ###
+do echo $v; done; f() { echo foo; cat; } >/dev/null <<E
+bar
+E
+f; echo end' </dev/null)
+assert_equal "1
+2
+end" "$PX" "a comment and newline between for NAME and in; function-definition redirections apply to the call"
+
+# a quoted or escaped tilde-prefix is not expanded
+PX=$(HOME=/h "$SHISH_SELF" -c 'p() { printf "[%s]" "$@"; echo; }; p \~ ~\/ ~"x" ~ ~/y; a=\~ b=~"x"; p "$a" "$b"')
+assert_equal "[~][~/][~x][/h][/h/y]
+[~][~x]" "$PX" "escaped and quoted tilde-prefixes stay literal; a plain ~ expands"
+
+# pathname expansion applies to the result of an unquoted expansion or substitution
+PGD=$(mktemp -d)
+touch "$PGD/dummyfile"
+PX=$(cd "$PGD" && "$SHISH_SELF" -c 'x="dumm*ile"; echo $x; echo "$x"; echo $(echo "dumm*ile"); v="\\*"; echo $v; set -f; echo $x')
+rm -rf "$PGD"
+assert_equal 'dummyfile
+dumm*ile
+dummyfile
+\*
+dumm*ile' "$PX" "unquoted \$x and \$(cmd) results are globbed; quoted, backslashed and -f results are not"
+
+# redirections come before the assignments' expansion; a negated pipeline's status is visible in the same list;
+# an "exit" member ends only its own pipeline stage
+PGD=$(mktemp -d)
+PX=$(cd "$PGD" && "$SHISH_SELF" -c 'a=$(cat f2) 3>|f2 true; echo "r=$?"; ! false | false; echo "n=$?"; exit 1 | exit 2 | exit 3; echo "p=$?"' 2>&1)
+rm -rf "$PGD"
+assert_equal "r=0
+n=0
+p=3" "$PX" "redirection before assignment, status of '! a | b', exit as the last pipeline member"
+
+# backslash-quote in backquotes inside double quotes; here-document inside a command substitution
+PX=$(printf 'echo "`echo \\"1\\"`"\ncat <<\\OUTER; echo "$(cat <<\\INNER\ninner\nINNER\n)"\nouter\nOUTER\n' | "$SHISH_SELF")
+assert_equal '1
+outer
+inner' "$PX" "backslash-quote in backquotes in double quotes is unescaped; a here-document in a command substitution reads its own body first"
+
+# arithmetic: a newline is white space, division by zero is an error and not a trap
+PX=$("$SHISH_SELF" -c 'echo $((1
++ 2)); echo $((1/0)) 2>/dev/null; echo after' 2>/dev/null; echo "rc=$?")
+assert_equal "3
+rc=1" "$PX" "newline inside arithmetic expansion; division by zero is an error that ends the shell"
+
+# nounset guards ${x#y}; xtrace quotes only when needed and expands PS4; set -v echoes input; set -o names; grep -x
+PX=$("$SHISH_SELF" -c 'set -u; echo "${x#y}"' 2>/dev/null; echo "rc=$?")
+assert_equal "rc=1" "$PX" "nounset applies to a pattern removal of an unset variable"
+PX=$(printf 'set -x\nfoo=bar\nPS4="[\\${foo}] "\n: a\n' | "$SHISH_SELF" 2>&1 >/dev/null)
+assert_equal "+ foo=bar
++ PS4='[\${foo}] '
+[bar] : a" "$PX" "xtrace shows foo=bar unquoted and expands PS4 for the next line"
+PX=$(printf 'echo 1\nset -v\necho 2\n' | "$SHISH_SELF" 2>&1)
+assert_equal "1
+echo 2
+2" "$PX" "set -v writes each line read to stderr before running it"
+PX=$("$SHISH_SELF" -c 'set -o ignoreeof; set -o nolog; set -o vi; echo "rc=$?"; printf "ab\nabc\n" | grep -x ab')
+assert_equal "rc=0
+ab" "$PX" "set -o ignoreeof/nolog/vi are accepted; grep -x matches whole lines"
+
+# a child ended by a deliberate signal gets no notice from a non-interactive shell; a crash still does
+PX=$("$SHISH_SELF" -c '/bin/sh -c "kill -s TERM \$\$"; echo "t=$?"; /bin/sh -c "kill -s SEGV \$\$"' 2>&1)
+assert_match "$PX" "t=143*signaled: SEGV*" "no 'signaled' notice for TERM, one for SEGV"
 
 summary

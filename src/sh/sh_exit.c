@@ -6,8 +6,22 @@
 
 int trap_exit(int);
 int trap_exit_running(void);
+int trap_exit_set_here(void);
 
 int sh_async_exit = 0;
+
+/* status for a forked child (background job, pipeline member) about to exit(): runs the
+   EXIT trap the child itself set, never the one it inherited from the shell that forked it
+ * ----------------------------------------------------------------------- */
+int
+sh_child_exit(int status) {
+#if BUILTIN_TRAP
+  if(sh_child && trap_exit_set_here())
+    return trap_exit(status);
+#endif
+
+  return status;
+}
 
 /* exits current subshell, never returns!
  * ----------------------------------------------------------------------- */

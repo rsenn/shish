@@ -13,6 +13,7 @@
 
 const char help_readlink[] = "    Print the value of a symbolic link, or canonicalize a path.\n"
                              "\n"
+                             "    -n              do not print the trailing newline (one operand only)\n"
                              "    -f              canonicalize by resolving every symlink;\n"
                              "                    the last component may be missing\n"
                              "    -e              like -f, but every component must exist\n"
@@ -25,7 +26,7 @@ const char help_readlink[] = "    Print the value of a symbolic link, or canonic
  * must exist, 'f': all but the last, 'm': none).
  * ----------------------------------------------------------------------- */
 static int
-readlink_canonicalize(char* argv[], const char* path, int mode) {
+readlink_canonicalize(char* argv[], const char* path, int mode, int newline) {
   static stralloc sa;
   struct stat st;
 
@@ -60,19 +61,20 @@ readlink_canonicalize(char* argv[], const char* path, int mode) {
   }
 
   buffer_puts(fd_out->w, sa.s);
-  buffer_putnlflush(fd_out->w);
+  newline ? buffer_putnlflush(fd_out->w) : buffer_flush(fd_out->w);
   return 0;
 }
 
 int
 builtin_readlink(int argc, char* argv[]) {
-  int c, mode = 0, ret = 0, i;
+  int c, mode = 0, ret = 0, i, newline = 1;
 
-  while((c = shell_getopt(argc, argv, "fem")) > 0) {
+  while((c = shell_getopt(argc, argv, "femn")) > 0) {
     switch(c) {
       case 'f':
       case 'e':
       case 'm': mode = c; break;
+      case 'n': newline = 0; break;
       default: builtin_invopt(argv); return 1;
     }
   }
@@ -82,9 +84,13 @@ builtin_readlink(int argc, char* argv[]) {
     return 1;
   }
 
+  /* with several operands the newlines are what separates them */
+  if(argc - shell_optind > 1)
+    newline = 1;
+
   for(i = shell_optind; i < argc; i++) {
     if(mode) {
-      if(readlink_canonicalize(argv, argv[i], mode))
+      if(readlink_canonicalize(argv, argv[i], mode, newline))
         ret = 1;
 
       continue;
@@ -102,7 +108,7 @@ builtin_readlink(int argc, char* argv[]) {
 
       buf[n] = '\0';
       buffer_puts(fd_out->w, buf);
-      buffer_putnlflush(fd_out->w);
+      newline ? buffer_putnlflush(fd_out->w) : buffer_flush(fd_out->w);
     }
   }
 

@@ -35,6 +35,15 @@
 #ifndef BUILTIN_ID
 #define BUILTIN_ID 0
 #endif
+#ifndef BUILTIN_DIRS
+#define BUILTIN_DIRS 0
+#endif
+#ifndef BUILTIN_POPD
+#define BUILTIN_POPD 0
+#endif
+#ifndef BUILTIN_PUSHD
+#define BUILTIN_PUSHD 0
+#endif
 #ifndef BUILTIN_MV
 #define BUILTIN_MV 0
 #endif
@@ -379,6 +388,15 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_DIGEST
     {"md5sum", &builtin_digest, B_DEFAULT, "[file...]", help_digest},
 #endif
+#if BUILTIN_DIRS
+    {"dirs", &builtin_dirs, B_DEFAULT, "[-clpv] [+N | -N]", help_dirs},
+#endif
+#if BUILTIN_POPD
+    {"popd", &builtin_popd, B_DEFAULT, "[-n] [+N | -N]", help_popd},
+#endif
+#if BUILTIN_PUSHD
+    {"pushd", &builtin_pushd, B_DEFAULT, "[-n] [dir | +N | -N]", help_pushd},
+#endif
 #if BUILTIN_MV
     {"mv", &builtin_cpmv, B_DEFAULT, "[-finv] source... target", help_mv},
 #endif
@@ -539,15 +557,15 @@ struct builtin_cmd builtin_table[] = {
     {"xargs", &builtin_xargs, B_DEFAULT, "[-0opr] [-a FILE] [-d DELIM] [-l/-L MAX-LINES] [-n MAX-ARGS] [-P MAX-PROCS] <command> [...args]", help_xargs},
 #endif
 #if BUILTIN_COMPRESS
-    {"gzip", &builtin_compress, B_DEFAULT, "[-cdfhk123456789] [file...]", help_compress, &compress_filter},
-    {"bzip2", &builtin_compress, B_DEFAULT, "[-cdfhk123456789] [file...]", help_compress, &compress_filter},
-    {"lbzip2", &builtin_compress, B_DEFAULT, "[-cdfhk123456789] [file...]", help_compress, &compress_filter},
-    {"lz", &builtin_compress, B_DEFAULT, "[-cdfhk123456789] [file...]", help_compress, &compress_filter},
-    {"lz4", &builtin_compress, B_DEFAULT, "[-cdfhk123456789] [file...]", help_compress, &compress_filter},
-    {"lzma", &builtin_compress, B_DEFAULT, "[-cdfhk123456789] [file...]", help_compress, &compress_filter},
-    {"lzop", &builtin_compress, B_DEFAULT, "[-cdfhk123456789] [file...]", help_compress, &compress_filter},
-    {"xz", &builtin_compress, B_DEFAULT, "[-cdfhk123456789] [file...]", help_compress, &compress_filter},
-    {"zstd", &builtin_compress, B_DEFAULT, "[-cdfhk123456789] [file...]", help_compress, &compress_filter},
+    {"gzip", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
+    {"bzip2", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
+    {"lbzip2", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
+    {"lz", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
+    {"lz4", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
+    {"lzma", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
+    {"lzop", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
+    {"xz", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
+    {"zstd", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
 #endif
 #if BUILTIN_UNCOMPRESS
     {"zcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},

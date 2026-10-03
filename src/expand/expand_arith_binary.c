@@ -1,4 +1,5 @@
 #include "../expand.h"
+#include <stdint.h>
 #include "../tree.h"
 #include "../../lib/uint64.h"
 #include <math.h>
@@ -46,8 +47,14 @@ expand_arith_binary(struct narithbinary* expr, int64* r) {
     case A_ADD: *r = left + right; break;
     case A_SUB: *r = left - right; break;
     case A_MUL: *r = left * right; break;
-    case A_DIV: *r = left / right; break;
-    case A_MOD: *r = left % right; break;
+    /* division by zero (and INT64_MIN / -1) is an arithmetic error, not a trap */
+    case A_DIV:
+    case A_MOD:
+      if(right == 0 || (right == -1 && left == INT64_MIN))
+        return 1;
+
+      *r = expr->id == A_DIV ? left / right : left % right;
+      break;
     case A_EXP: *r = pow(left, right); break;
     default: return 1;
   }

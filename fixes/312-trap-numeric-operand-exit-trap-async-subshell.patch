@@ -1,0 +1,239 @@
+diff --git a/src/builtin/builtin_trap.c b/src/builtin/builtin_trap.c
+index 7a03a44f..c6f879b3 100644
+--- a/src/builtin/builtin_trap.c
++++ b/src/builtin/builtin_trap.c
+@@ -49,8 +49,9 @@ static int
+ trap_byname(const char* name) {
+   if(parse_isdigit(name[0])) {
+     int sig;
+-    scan_int(name, &sig);
+-    return sig;
++    size_t n = scan_int(name, &sig);
++
++    return n == str_len(name) && sig >= 0 && sig <= 64 ? sig : -1;
+   }
+ 
+   if(!str_case_diff(name, "RETURN"))
+@@ -86,7 +87,7 @@ trap_ignores(int sig) {
+ 
+ static void
+ trap_print(trap* tr) {
+-  buffer_puts(fd_out->w, "trap '");
++  buffer_puts(fd_out->w, "trap -- '");
+ 
+   if(tr->tree)
+     tree_print(tr->tree, fd_out->w);
+@@ -350,6 +351,14 @@ trap_exit_running(void) {
+   return tr && tr->running;
+ }
+ 
++/* process that last set the EXIT trap: a forked child runs it at its end only if it set it itself */
++static pid_t trap_exit_pid;
++
++int
++trap_exit_set_here(void) {
++  return trap_exit_pid == sh_pid && trap_find(TRAP_EXIT) != NULL;
++}
++
+ /* status pending when the EXIT trap began: a bare "exit" in it uses this */
+ static int trap_exit_status;
+ 
+@@ -407,22 +416,23 @@ trap_set_relay(trap* t, void (*handler)(int)) {
+  * ----------------------------------------------------------------------- */
+ static void
+ trap_reset_entry_ignore(int sig) {
+-  if((char)sig > 0 && sig_was_ignored(sig) && sh_interactive) {
+-    struct sigaction sa;
++  struct sigaction sa;
++  int shell_sig = sig == SIGINT || sig == SIGQUIT || sig == SIGTERM;
+ 
+-    sa.sa_handler = (sig == SIGINT || sig == SIGQUIT || sig == SIGTERM) ? SIG_IGN : SIG_DFL;
+-    sa.sa_flags = 0;
+-    sigemptyset(&sa.sa_mask);
+-    sig_action(sig, &sa, NULL);
+-    sig_unignore(sig);
+-  } else if((char)sig > 0 && (sh_async || (sh_interactive && sh_subshell)) && (sig == SIGINT || sig == SIGQUIT || sig == SIGTERM)) {
+-    /* "trap - SIG" in a subshell: default action, not the shell's own ignore */
+-    struct sigaction sa;
++  sigemptyset(&sa.sa_mask);
++  sa.sa_flags = 0;
+ 
++  if((char)sig > 0 && shell_sig && (sh_async || (sh_interactive && sh_subshell))) {
++    /* "trap - SIG" in a subshell: default action, not the shell's own ignore */
+     sa.sa_handler = SIG_DFL;
+-    sa.sa_flags = 0;
+-    sigemptyset(&sa.sa_mask);
+     sig_action(sig, &sa, NULL);
++
++    if(sig_was_ignored(sig))
++      sig_unignore(sig);
++  } else if((char)sig > 0 && sig_was_ignored(sig) && sh_interactive) {
++    sa.sa_handler = shell_sig ? SIG_IGN : SIG_DFL;
++    sig_action(sig, &sa, NULL);
++    sig_unignore(sig);
+   }
+ }
+ 
+@@ -511,6 +521,9 @@ trap_install(int sig, union node* tree) {
+      signal -- see trap_uninstall()'s comment */
+   trap_uninstall(sig);
+ 
++  if(sig == TRAP_EXIT)
++    trap_exit_pid = sh_pid;
++
+   tr = alloc(sizeof(trap));
+ 
+   assert(tr);
+@@ -843,12 +856,19 @@ builtin_trap(int argc, char* argv[]) {
+     return 0;
+   }
+ 
+-  if(argc < 3) {
+-    builtin_errmsg(argv, "usage", "trap [-lp] [[arg] signal_spec ...]");
+-    return 2;
+-  }
++  /* "trap 2 QUIT": a first operand that is an unsigned integer is a condition,
++     and every operand is reset to its default */
++  if(argv[shell_optind] && parse_isdigit(argv[shell_optind][0]) &&
++     scan_uint(argv[shell_optind], &(unsigned int){0}) == str_len(argv[shell_optind])) {
++    code = "-";
++  } else {
++    if(argc - shell_optind < 2) {
++      builtin_errmsg(argv, "usage", "trap [-lp] [[arg] signal_spec ...]");
++      return 2;
++    }
+ 
+-  code = argv[shell_optind++];
++    code = argv[shell_optind++];
++  }
+ 
+   /* POSIX has three dispositions, not two:
+        "trap - SIG"     reset to the default action
+diff --git a/src/sh/sh_exit.c b/src/sh/sh_exit.c
+index f4d4d028..97b85b7e 100644
+--- a/src/sh/sh_exit.c
++++ b/src/sh/sh_exit.c
+@@ -6,9 +6,23 @@
+ 
+ int trap_exit(int);
+ int trap_exit_running(void);
++int trap_exit_set_here(void);
+ 
+ int sh_async_exit = 0;
+ 
++/* status for a forked child (background job, pipeline member) about to exit(): runs the
++   EXIT trap the child itself set, never the one it inherited from the shell that forked it
++ * ----------------------------------------------------------------------- */
++int
++sh_child_exit(int status) {
++#if BUILTIN_TRAP
++  if(sh_child && trap_exit_set_here())
++    return trap_exit(status);
++#endif
++
++  return status;
++}
++
+ /* exits current subshell, never returns!
+  * ----------------------------------------------------------------------- */
+ void
+diff --git a/src/sh.h b/src/sh.h
+index 3eecedfe..d7169df6 100644
+--- a/src/sh.h
++++ b/src/sh.h
+@@ -61,6 +61,9 @@ struct shopt {
+   unsigned notify : 1;      /* -b */
+   unsigned verbose : 1;     /* -v */
+   unsigned pipefail : 1;    /* -o pipefail (no letter) */
++  unsigned ignoreeof : 1;   /* -o ignoreeof (no letter): accepted, not acted on */
++  unsigned nolog : 1;       /* -o nolog (no letter): accepted */
++  unsigned vi : 1;          /* -o vi (no letter): accepted */
+ };
+ 
+ /* name->letter table for every "set"-supported option, and the
+@@ -98,9 +101,10 @@ struct env {
+                                 command substitution? see eval_simple_command's
+                                 "no command, only assignments" status handling */
+   struct shopt opts;
++  struct arg arg;
++
+   struct fdstack* fdstack;
+   struct vartab* varstack;
+-  struct arg arg;
+   struct parser* parser;
+   struct eval* eval;
+   struct handler* finalizers;
+@@ -161,6 +165,7 @@ int sh_errorn(const char* s, unsigned int len);
+ int sh_error_errno(const char* s);
+ int sh_errorn_errno(const char* s, unsigned int len);
+ void sh_exit(int retcode);
++int sh_child_exit(int status); /* run the EXIT trap a forked child set, then pass status on */
+ size_t sh_fmtflags(char* dest, const struct shopt*);
+ int sh_forked(void);
+ extern int sh_async;
+diff --git a/src/exec/exec_command.c b/src/exec/exec_command.c
+index 63a1e047..d25628b7 100644
+--- a/src/exec/exec_command.c
++++ b/src/exec/exec_command.c
+@@ -5,6 +5,9 @@
+ #include "../fdtable.h"
+ #include "../job.h"
+ #include "../sh.h"
++#include "../fdstack.h"
++
++int trap_exit_set_here(void);
+ #include "../source.h"
+ #include "../../lib/shell.h"
+ #include "../tree.h"
+@@ -56,7 +59,15 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
+ 
+     if(!pid) {
+       flag &= ~X_NOWAIT;
+-      exit(exec_command(cmd, argc, argv, flag));
++      {
++        int ret = exec_command(cmd, argc, argv, flag);
++
++        /* an EXIT trap this child set runs outside its command's own redirections */
++        if(fdstack != &fdstack_root && trap_exit_set_here())
++          fdstack_pop(fdstack);
++
++        exit(sh_child_exit(ret));
++      }
+     }
+ 
+     /* interactive-use-only, see eval_node_bgnd.c's matching comment
+@@ -199,14 +210,15 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
+            {...} or (...). For loops, while/until loops, if statements,
+            and case statements should be evaluated directly. */
+         switch(cmd->fn->id) {
+-          case N_SUBSHELL: ret = eval_subshell(&e, &cmd->fn->ngrp); break;
++          /* eval_command() applies the redirections the definition carries */
++          case N_SUBSHELL:
+           case N_BRACEGROUP:
+-          case N_LIST: ret = eval_cmdlist(&e, &cmd->fn->ngrp); break;
+-          case N_FOR: ret = eval_for(&e, &cmd->fn->nfor); break;
++          case N_FOR:
+           case N_WHILE:
+-          case N_UNTIL: ret = eval_loop(&e, &cmd->fn->nloop); break;
+-          case N_IF: ret = eval_if(&e, &cmd->fn->nif); break;
+-          case N_CASE: ret = eval_case(&e, &cmd->fn->ncase); break;
++          case N_UNTIL:
++          case N_IF:
++          case N_CASE: ret = eval_command(&e, cmd->fn, 0); break;
++          case N_LIST: ret = eval_cmdlist(&e, &cmd->fn->ngrp); break;
+           default:
+             /* Fallback: try eval_cmdlist for other node types */
+             ret = eval_cmdlist(&e, &cmd->fn->ngrp);
+diff --git a/src/eval/eval_node_bgnd.c b/src/eval/eval_node_bgnd.c
+index fa8bbb7c..525850a4 100644
+--- a/src/eval/eval_node_bgnd.c
++++ b/src/eval/eval_node_bgnd.c
+@@ -36,7 +36,7 @@ eval_node_bgnd(struct eval* e, union node* node) {
+        them ("wait" returns at once, their status is lost) */
+     node->ncmd.bgnd = 0;
+     ret = eval_node(e, node);
+-    exit(ret);
++    exit(sh_child_exit(ret));
+   }
+ 
+   /* the "[id] pid" banner is interactive-use-only, same as job_wait.c's

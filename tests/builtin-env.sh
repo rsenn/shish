@@ -1,7 +1,7 @@
 DIR=$(dirname "${0}")
 . "$DIR/common.sh"
 
-## env builtin (src/builtin/extra/builtin_env.c); skipped when env is external
+## env builtin (src/builtin/core/builtin_env.c); skipped when env is external
 case $(type env) in
 *builtin*) ;;
 *) echo "env is not a builtin, skipping" 1>&2; summary ;;

@@ -7,7 +7,7 @@ is made.
 
 ## 1. The problem, demonstrated
 
-`sleep 30` (a builtin, `src/builtin/extra/builtin_sleep.c`) run at an interactive
+`sleep 30` (a builtin, `src/builtin/core/builtin_sleep.c`) run at an interactive
 prompt, **not backgrounded**, cannot be interrupted at all:
 
 ```

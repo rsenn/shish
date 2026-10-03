@@ -1,0 +1,152 @@
+diff --git a/src/expand/expand_arg.c b/src/expand/expand_arg.c
+index 9b224fd4..7d7ad7b3 100644
+--- a/src/expand/expand_arg.c
++++ b/src/expand/expand_arg.c
+@@ -2,6 +2,7 @@
+ #include "../expand.h"
+ #include "../tree.h"
+ #include "../debug.h"
++#include "../../lib/str.h"
+ #include <stdlib.h>
+ #include <assert.h>
+ 
+@@ -9,12 +10,42 @@
+ #define min(a, b) ((a) <= (b) ? (a) : (b))
+ extern int sh_no_position;
+ 
++/* may the unquoted expansion results of this word be pathname-expanded as they are? Not when
++   the word also holds quoted text that could carry a pattern character ("*"$x, "$a"$b), or a
++   ${x+word} whose word has quoting of its own.
++ * ----------------------------------------------------------------------- */
++static int
++expand_globres_ok(union node* node) {
++  union node* sub;
++
++  for(sub = (node && node->id == N_ARG) ? node->narg.list : node; sub; sub = sub->next) {
++    if(sub->nargstr.flag & S_TABLE) {
++      if(sub->id != N_ARGSTR)
++        return 0;
++
++      if(sub->nargstr.stra.len == 0)
++        continue;
++
++      if(str_chr(sub->nargstr.stra.s, '*') < sub->nargstr.stra.len || str_chr(sub->nargstr.stra.s, '?') < sub->nargstr.stra.len ||
++         str_chr(sub->nargstr.stra.s, '[') < sub->nargstr.stra.len)
++        return 0;
++
++      continue;
++    }
++
++    if(sub->id == N_ARGPARAM && sub->nargparam.word)
++      return 0;
++  }
++
++  return 1;
++}
++
+ /* expand all parts of an N_ARG node
+  * ----------------------------------------------------------------------- */
+ union node*
+ expand_arg(union node* node, union node** nptr, int flags) {
+   union node *n = *nptr, *subarg;
+-  int i = 0;
++  int i = 0, globres = expand_globres_ok(node);
+ 
+   /* if(node) {
+      debug_s("arg ");
+@@ -37,6 +68,10 @@ expand_arg(union node* node, union node** nptr, int flags) {
+     if(subarg->nargstr.flag & S_GLOB)
+       lflags |= X_GLOB;
+ 
++    /* the result of an unquoted $x, $(cmd) or $((n)) is subject to pathname expansion */
++    if(globres && !(lflags & X_QUOTED) && (subarg->id == N_ARGPARAM || subarg->id == N_ARGCMD || subarg->id == N_ARGARITH))
++      lflags |= X_GLOBRES;
++
+     /* expand argument parts */
+     switch(subarg->id) {
+       /* arithmetic substitution */
+diff --git a/src/expand/expand_args.c b/src/expand/expand_args.c
+index 3dd7d96d..8d450cf5 100644
+--- a/src/expand/expand_args.c
++++ b/src/expand/expand_args.c
+@@ -85,6 +85,16 @@ expand_args(union node* args, union node** nptr, int flags) {
+         nptr = &n;
+         ret++;
+       }
++    } else if(n->narg.flag & X_GLOBRES) {
++      union node* g = expand_glob(nptr, n->narg.flag);
++
++      if(g) {
++        n = g;
++        nptr = &n;
++        ret++;
++      }
++
++      stralloc_nul(&n->narg.stra);
+     } else if((n->narg.flag & X_LITERAL) && !(n->narg.flag & X_UNESCAPED)) {
+       expand_unescape(&n->narg.stra, parse_isesc);
+       n->narg.flag &= ~X_GLOB;
+diff --git a/src/expand/expand_cat.c b/src/expand/expand_cat.c
+index 7cb30461..345a1afa 100644
+--- a/src/expand/expand_cat.c
++++ b/src/expand/expand_cat.c
+@@ -30,6 +30,11 @@ expand_cat_finish(union node** np, int flags) {
+   if(flags & X_GLOB) {
+     union node* g = expand_glob(np, flags & ~X_GLOB);
+ 
++    if(g)
++      n = *np = g;
++  } else if(flags & X_GLOBRES) {
++    union node* g = expand_glob(np, flags);
++
+     if(g)
+       n = *np = g;
+   } else if(flags & X_LITERAL) {
+diff --git a/src/expand/expand_glob.c b/src/expand/expand_glob.c
+index 9250c1bd..f6fdafed 100644
+--- a/src/expand/expand_glob.c
++++ b/src/expand/expand_glob.c
+@@ -19,6 +19,7 @@
+ #include "../var.h"
+ #include "../parse.h"
+ #include "../../lib/byte.h"
++#include "../../lib/str.h"
+ #include <stdlib.h>
+ #include <string.h>
+ 
+@@ -46,6 +47,12 @@ expand_glob(union node** nptr, int flags) {
+ 
+   stralloc_nul(&n->narg.stra);
+ 
++  /* a raw expansion result without a pattern character, or with -f: left exactly as it is */
++  if((flags & X_GLOBRES) &&
++     (sh->opts.noglob ||
++      (!str_containsc(n->narg.stra.s, '*') && !str_containsc(n->narg.stra.s, '?') && !str_containsc(n->narg.stra.s, '['))))
++    return n;
++
+   /* set -f: pathname expansion is off, the pattern stays literal --
+      same as the "no match" fallback below, just without ever calling
+      glob() at all */
+@@ -95,7 +102,7 @@ expand_glob(union node** nptr, int flags) {
+     globfree(&glb);
+   } else
+ #endif
+-  {
++  if(!(flags & X_GLOBRES)) {
+     expand_unescape(&n->narg.stra, parse_isesc);
+   }
+ 
+diff --git a/src/expand.h b/src/expand.h
+index d486a34a..33916511 100644
+--- a/src/expand.h
++++ b/src/expand.h
+@@ -68,6 +68,9 @@ enum subst_type {
+    the value, fixes/69). */
+ #define X_LITERAL 0x02000000
+ #define X_GLOB 0x04000000
++/* the field holds the raw result of an unquoted expansion ($x, $(cmd)): glob it if it has a
++   pattern character, and leave it exactly as is when nothing matches */
++#define X_GLOBRES 0x00200000
+ #define X_QUOTED 0x08000000
+ /* result is already fully processed (unescaped, if needed) by
+    expand_cat()'s non-splitting branch -- skip any later whole-buffer

@@ -172,13 +172,16 @@ to `cmake`):
   (see `BUGS`). Use `-DBUILTIN_<NAME>` instead.
   The generated `build/.../src/builtin_config.h` is what
   `src/builtin/builtin_table.c` is compiled against.
-  Builtins that are normally a coreutils (or other package) program live in
-  `src/builtin/extra/`: `basename cat chmod digest dirname expr hostname link
-  ln ls mkdir mktemp readlink realpath rm rmdir sleep tee timeout touch uname
-  wc which`. Shell/POSIX-special builtins stay in `src/builtin/`.
-  `cmake/Builtins.cmake` (`builtin_source()`) finds a builtin's file in either;
-  a new one goes in `extra/` if it replaces an external program, and is only
-  compiled when enabled.
+  Builtins that are normally a coreutils program live in `src/builtin/core/`:
+  `basename chmod cp date dirname env expr id link ln ls mkdir mktemp readlink
+  realpath rm rmdir sleep split tee timeout touch uname unlink wc`, plus the
+  small POSIX utilities `echo false printf pwd test true`. Other utilities
+  (`awk digest dirs find hostname popd pushd which xargs`) are in `src/builtin/extra/`, the
+  stream filters (`cat cut grep head ...`) in `src/builtin/filter/`.
+  Shell-special builtins stay in `src/builtin/`.
+  `cmake/Builtins.cmake` (`builtin_source()`) finds a builtin's file in any of
+  these; a new coreutils replacement goes in `core/`, and is only compiled
+  when enabled.
 
 ### Autotools (alternative)
 

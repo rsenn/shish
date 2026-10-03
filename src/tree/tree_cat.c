@@ -25,6 +25,11 @@ tree_cat(union node* node, stralloc* sa) {
 void
 tree_cat_n(union node* node, stralloc* sa, int depth) {
   const char* sep = NULL;
+
+  /* a malformed expression ("$((--))") leaves an operand out */
+  if(!node)
+    return;
+
 again:
   switch(node->id) {
     case N_SIMPLECMD: {

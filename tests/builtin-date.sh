@@ -1,7 +1,7 @@
 DIR=$(dirname "${0}")
 . "$DIR/common.sh"
 
-## date builtin (src/builtin/extra/builtin_date.c); skipped when date is external
+## date builtin (src/builtin/core/builtin_date.c); skipped when date is external
 case $(type date) in
 *builtin*) ;;
 *) echo "date is not a builtin, skipping" 1>&2; summary ;;

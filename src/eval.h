@@ -112,11 +112,8 @@ eval_depth() {
   return n;
 }
 
-static inline void
-eval_print_prefix(struct eval* e, buffer* b) {
-  buffer_putnc(b, '+', eval_depth());
-  buffer_putspace(b);
-}
+/* the "set -x" line prefix: $PS4 expanded, or "+ " (one '+' per subshell level) when unset */
+void eval_print_prefix(struct eval* e, buffer* b);
 
 static inline struct eval*
 eval_find(int mask) {

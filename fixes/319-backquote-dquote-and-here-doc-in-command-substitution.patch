@@ -1,0 +1,64 @@
+diff --git a/src/parse/parse_bquoted.c b/src/parse/parse_bquoted.c
+index 461e786c..c40664b6 100644
+--- a/src/parse/parse_bquoted.c
++++ b/src/parse/parse_bquoted.c
+@@ -1,16 +1,18 @@
+ #include "../expand.h"
+ #include "../fd.h"
+ #include "../parse.h"
++#include "../redir.h"
+ #include "../source.h"
+ #include "../tree.h"
+ 
+ /* collect a backquoted command substitution's raw source text and
+  * consume its closing (unescaped) backquote, honoring POSIX 2.6.3: a
+  * backslash keeps its literal meaning inside backquotes except before
+- * '$', '`', or '\\', which it un-escapes.
++ * '$', '`', or '\\', which it un-escapes; inside double quotes (or a
++ * here-document) '\"' is un-escaped too.
+  * ----------------------------------------------------------------------- */
+ static int
+-parse_bquoted_raw(struct parser* p, stralloc* raw) {
++parse_bquoted_raw(struct parser* p, stralloc* raw, int dquoted) {
+   char c;
+ 
+   for(;;) {
+@@ -28,7 +30,7 @@ parse_bquoted_raw(struct parser* p, stralloc* raw) {
+       if(source_next(&nextc) <= 0)
+         return -1;
+ 
+-      if(nextc != '$' && nextc != '`' && nextc != '\\')
++      if(nextc != '$' && nextc != '`' && nextc != '\\' && !(dquoted && nextc == '"'))
+         stralloc_catc(raw, '\\');
+ 
+       c = nextc;
+@@ -46,6 +48,7 @@ parse_bquoted(struct parser* p) {
+   char c;
+   int bquote;
+   union node* cmds;
++  struct nredir* outer_here;
+   struct parser subp;
+ 
+   if(p->tok == T_NAME)
+@@ -65,7 +68,12 @@ parse_bquoted(struct parser* p) {
+ 
+     parse_init(&subp, P_DEFAULT);
+ 
++    /* here-documents opened inside "$( )" take their bodies from the lines inside it; the
++       ones already pending outside wait for the newline after the closing parenthesis */
++    outer_here = redir_list;
++    redir_list = NULL;
+     cmds = parse_compound_list(&subp, T_RP);
++    redir_list = outer_here;
+     stralloc_free(&subp.sa);
+ 
+     if(cmds == NULL)
+@@ -83,7 +91,7 @@ parse_bquoted(struct parser* p) {
+     parse_skip(p);
+     stralloc_init(&raw);
+ 
+-    if(parse_bquoted_raw(p, &raw)) {
++    if(parse_bquoted_raw(p, &raw, p->quot == Q_DQUOTED || (p->flags & P_HERE))) {
+       stralloc_free(&raw);
+       return -1;
+     }

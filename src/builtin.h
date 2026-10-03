@@ -44,12 +44,15 @@ extern const struct builtin_filter compress_filter;   /* src/builtin/extra/built
 extern const struct builtin_filter uncompress_filter; /* src/builtin/extra/builtin_uncompress.c */
 extern const struct builtin_filter cat_filter; /* src/builtin/extra/builtin_cat.c */
 int builtin_cd(int argc, char* argv[]);
+int builtin_dirs(int argc, char* argv[]);  /* dirs, popd, pushd: src/builtin/extra/builtin_dirstack.c */
+int builtin_popd(int argc, char* argv[]);
+int builtin_pushd(int argc, char* argv[]);
 int builtin_chmod(int argc, char* argv[]);
 int builtin_command(int argc, char* argv[]);
-int chmod_symbolic(const char* spec, unsigned int* mode, int is_dir); /* src/builtin/extra/builtin_chmod.c */
-int builtin_rm_tree(char* argv[], stralloc* path, int force, int verbose); /* src/builtin/extra/builtin_rm.c */
+int chmod_symbolic(const char* spec, unsigned int* mode, int is_dir); /* src/builtin/core/builtin_chmod.c */
+int builtin_rm_tree(char* argv[], stralloc* path, int force, int verbose); /* src/builtin/core/builtin_rm.c */
 int builtin_digest(int argc, char* argv[]);
-int builtin_cpmv(int argc, char* argv[]); /* cp and mv: src/builtin/extra/builtin_cp.c */
+int builtin_cpmv(int argc, char* argv[]); /* cp and mv: src/builtin/core/builtin_cp.c */
 int builtin_date(int argc, char* argv[]);
 int builtin_dirname(int argc, char* argv[]);
 int builtin_sort(int argc, char* argv[]);
@@ -153,6 +156,9 @@ extern const char help_tail[];
 extern const char help_env[];
 extern const char help_id[];
 extern const char help_mv[];
+extern const char help_dirs[];
+extern const char help_popd[];
+extern const char help_pushd[];
 extern const char help_dirname[];
 extern const char help_dump[];
 extern const char help_echo[];

@@ -1,7 +1,7 @@
-#include "../builtin.h"
-#include "../fdtable.h"
-#include "../sh.h"
-#include "../../lib/path.h"
+#include "../../builtin.h"
+#include "../../fdtable.h"
+#include "../../sh.h"
+#include "../../../lib/path.h"
 
 /* print working directory
  * ----------------------------------------------------------------------- */

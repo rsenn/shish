@@ -30,6 +30,18 @@ tree_copy(union node* node) {
     byte_copy(copy, tree_nodesizes[node->id], node);
     copy->next = NULL;
 
+    /* a compound command's redirections (f() { ...; } >file) */
+    switch(node->id) {
+      case N_SUBSHELL:
+      case N_BRACEGROUP:
+      case N_FOR:
+      case N_CASE:
+      case N_IF:
+      case N_WHILE:
+      case N_UNTIL: copy->ncmd.rdir = node->ncmd.rdir ? tree_copy(node->ncmd.rdir) : NULL; break;
+      default: break;
+    }
+
     switch(node->id) {
       case N_SIMPLECMD:
         copy->ncmd.rdir = node->ncmd.rdir ? tree_copy(node->ncmd.rdir) : NULL;

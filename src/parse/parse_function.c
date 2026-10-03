@@ -68,6 +68,19 @@ parse_function(struct parser* p) {
     }
   }
 
+  /* redirections after the body apply on every call: f() { ...; } >file */
+  {
+    union node** rptr = &node->nfunc.body->ncmd.rdir;
+
+    while(*rptr)
+      tree_skip(rptr);
+
+    while(parse_gettok(p, P_DEFAULT) & T_REDIR)
+      tree_move(p->tree, rptr);
+
+    p->pushback++;
+  }
+
   node->nfunc.loc = loc;
 
   TRACE(TRACE_PARSE, "function", trace_str("name", node->nfunc.name));

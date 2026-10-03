@@ -1,7 +1,7 @@
 DIR=$(dirname "${0}")
 . "$DIR/common.sh"
 
-## split builtin (src/builtin/extra/builtin_split.c); skipped when split is external
+## split builtin (src/builtin/core/builtin_split.c); skipped when split is external
 case $(type split) in
 *builtin*) ;;
 *) echo "split is not a builtin, skipping" 1>&2; summary ;;

@@ -171,6 +171,10 @@ $1"
 # If the "use_valgrind" variable is true, Valgrind is used to run the testee,
 # in which case the testee will ignore argv[0].
 testee() (
+  # the testee's stderr goes to $testee_err, set up here inside the subshell, so that the
+  # job notice ("Alarm clock", ...) of the host shell for a signaled testee can be
+  # discarded by the caller instead of landing in the captured stderr
+  if [ "${testee_err+set}" = set ]; then exec 2>>"$testee_err"; fi
   if [ "${posix:+set}" = set ]; then
     testee="$testee_sh"
     export TESTEE="$testee"
@@ -272,7 +276,8 @@ testcase() {
   log_stdout START
   set +e
   # Output files are opened in append mode to ensure write atomicity.
-  testee "$@" <"$in_file" >>"$out_file" 2>>"$err_file" 3>&- 4>&- 5>&-
+  testee_err="$err_file"
+  { testee "$@" <"$in_file" >>"$out_file" 3>&- 4>&- 5>&-; } 2>/dev/null
   actual_exit_status="$?"
 
   set -e

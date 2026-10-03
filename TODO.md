@@ -40,7 +40,7 @@ gate brace/history expansion, or otherwise) unless that changes.
 
 The measurable target for Stages 1-2 is `tests/posix` (yash's POSIX suite, 120 files).
 
-### HIGH PRIORITY — next task: the `ls` options (`BUGS: ls-long-format-incomplete`, `ls-missing-options`)
+### HIGH PRIORITY — next task: remaining `ls` options (`BUGS: ls-missing-options`), then `fc`/`ulimit` (`BUGS: fc-and-ulimit-missing`)
 
 Done: `type` (all operands, not-found status), `test` (`-ef`, 3-argument `-a`/`-o`, status 2 for bad
 integers), `cd` (`x/..` components). Still open from them: `BUGS: type-a-unimplemented`,
@@ -48,30 +48,26 @@ integers), `cd` (`x/..` components). Still open from them: `BUGS: type-a-unimple
 existing destination without `-f`) are fixed.
 
 **Next in line**, in the order they were weighed (see `BUGS` for the repro of each):
-`ls-long-format-incomplete`, `ls-missing-options`, then the rest of `BUGS` by repro.
+`ls-missing-options`, `fc-and-ulimit-missing`, then the rest of `BUGS` by repro.
 
-### Where it stands (2026-10-02)
+### Where it stands (2026-10-03)
 
-Failing cases per file, everything except the `sig*` family (23 of the 58 files
-that run have any):
+Failing cases per file, everything except the `sig*` family (7 of the 58 files that run
+have any; the full `ctest` run has 12 failing tests, 3 of them `tests/*.sh` that need a GNU `date`
+or the other known causes in `BUGS`):
 
 ```
-24 kill2-p   4/28    5 trap-p    32/37    4 simple-p  30/34    1 pipeline-p 8/9
-13 option-p 62/75    3 param-p   51/54    4 cmdsub-p  17/21    1 lineno-p   2/3
- 7 kill1-p  10/17    4 tilde-p   25/29    4 alias-p   61/65    1 input-p   10/11
- 6 kill3-p  15/21    3 read-p    25/28    2 quote-p   33/35    1 function-p 18/19
-                     2 exec-p     8/10    1 for-p     19/20    1 comment-p 14/15
-                     1 case-p    51/52    1 break-p   32/32    1 continue-p 30/31
-                     1 builtins-p 80/81
+4 alias-p  61/65    2 param-p 52/54    2 quote-p 33/35    1 case-p 51/52
+1 input-p  10/11    1 option-p 74/75   1 simple-p 33/34
 ```
 
-- `kill1/2/3-p` and four of `trap-p`'s failures are not shish bugs: `bash`'s own
-  `testee() ( ... exec "$testee" "$@" )` wrapper prints a job-control notice
-  ("Aborted (core dumped)", ...) to the redirected stderr when the exec'd process
-  dies from a signal, and `dash` run through the same harness fails the identical set.
-- Every runnable `sig*-p` file passes 180/180 except `sigint6`/`sigquit6` (178). The
-  `*3/4/7/8` files, `sigstop`, `sigtstp`, `sigttin`, `sigttou` and six others
-  (`bg fg job kill4 testtty wait`) skip themselves: they need a controlling terminal.
+- `option-p:121` and `simple-p:172` fail on purpose (`BUGS: posix-suite-intentional-deviations`).
+- `kill1/2/3-p` pass now: the harness (`tests/posix/run-test.sh`) discards the host shell's own
+  job notice for a signaled testee, and a non-interactive shell no longer prints one for a
+  signal sent on purpose.
+- Every runnable `sig*-p` file passes 180/180. The `*3/4/7/8` files, `sigstop`, `sigtstp`,
+  `sigttin`, `sigttou` and six others (`bg fg job kill4 testtty wait`) skip themselves: they
+  need a controlling terminal.
 - **Do not trust a signal-file number from a busy machine.** The same binary scored
   `sigterm1-p` 36/180 in one run and 177/180 in the next; measure on an otherwise idle
   machine and re-measure before concluding anything
@@ -103,52 +99,45 @@ remove the closed `BUGS` entry, add `fixes/NN` + a case in `tests/fixed.sh`.
 
 ---
 
-### Phase 1 [Stage 1: language] - signal disposition (2 cases left)
+### Phase 1 [Stage 1: language] - signal disposition (done)
 
-`sigint6`/`sigquit6` (178): "async, other, -i +m, initially ignored, keep -> clear", child and
-exec targets. An async list's inner shell inheriting the ignored INT/QUIT must be able to reset
-it with `trap - SIG` when the outer shell was already ignoring it on entry.
+`sigint6`/`sigquit6` pass 180/180: `trap - SIG` in an interactive async shell now restores the default action.
 
 ### Phase 2 [Stage 1: language] - diagnostics
 
 shish prints `file:LINE:COL: msg` where the line number is one too high (the parser has already
 advanced) and omits the offending name. `echo ${x?boom}` on line 2 reports `:3:1: boom`; bash
 reports `line 2: x: boom`. `$LINENO` itself is correct. Fix with, and verify against,
-`lineno-p.tst` (2/3) and `BUGS: error-message-line-number-off-by-one`.
+`lineno-p.tst` (3/3) and `BUGS: error-message-line-number-off-by-one`.
 
 ---
 
 ### Phase 3 [Stage 2: builtins/utilities]
 
 1. `alias` (61/65) - the 4 left are in `BUGS: alias-substitution-remaining-cases`.
-2. `read` (25/28), `option` (62/75) - `BUGS: posix-suite-failures-not-yet-analysed`.
-3. **`set`** - `-b`/`-v` are accepted and shown in `$-` but have no effect
-   (`BUGS: set-notify-no-effect`, `set-verbose-no-effect`); `set -o` lists the bash extras
-   `braceexpand`/`hashall`/`histexpand`/`privileged`, and `ignoreeof`, `nolog`, `vi` are missing
-   (`BUGS: set-o-ignoreeof-nolog-vi-missing`, `set-histexpand-unimplemented`).
+2. `read` (28/28) and `option` (74/75) are done apart from the intentional deviations.
+3. **`set`** - `-b` is accepted and shown in `$-` but has no effect (`BUGS: set-notify-no-effect`);
+   `-v` echoes input lines (`BUGS: set-verbose-partial`); `ignoreeof`, `nolog`, `vi` are accepted
+   but do nothing (`BUGS: set-o-ignoreeof-nolog-vi-has-no-effect`, `set-histexpand-unimplemented`).
 
 ---
 
 ### Phase 4 [Stage 1: language] - expansion and parsing
 
 1. `quote-p` (33/35) - `BUGS: quote-backslash-escaping-broken`.
-2. `param-p` (51/54) - `BUGS: param-expansion-pattern-removal-broken`.
-3. `simple-p` (30/34) - redirections must precede assignments for a non-special builtin;
-   PATH search and the remembered-path rules.
-4. `tilde-p` (4), `cmdsub-p` (4), `comment-p` (1) - `BUGS: posix-suite-failures-not-yet-analysed`;
-   `case-p` (1) - `BUGS: case-pattern-bracket-quote-stripping`.
+2. `param-p` (52/54) - `BUGS: param-expansion-pattern-removal-broken`.
+3. `simple-p` (33/34), `tilde-p`, `cmdsub-p`, `comment-p` are done (`simple-p:172` is intentional:
+   `BUGS: posix-suite-intentional-deviations`); `case-p` (1) - `BUGS: case-pattern-bracket-quote-stripping`.
 
 ---
 
 ### Phase 5 [Stage 1: language] - control flow and exit status
 
-1. `trap-p` (32/37) - 4 of the failures are the harness noise above. Left:
-   `BUGS: trap-exit-in-async-subshell-not-run` (156).
+1. `trap-p` (37/37) is done.
 2. (done: `break`/`continue` inside `eval`, via the `E_EVAL` frame flag.)
 3. `input-p` (1) - the shell reads ahead inside a command substitution
    (`BUGS: input-not-read-line-wise`).
-4. `function-p`, `pipeline-p`, `for-p`, `exec-p`, `builtins-p` (1-2 each) -
-   `BUGS: posix-suite-failures-not-yet-analysed`.
+4. `function-p`, `pipeline-p`, `for-p`, `exec-p`, `builtins-p` are done.
 
 ---
 
@@ -188,18 +177,17 @@ reports `line 2: x: boom`. `$LINENO` itself is correct. Fix with, and verify aga
 
 - `signal-tests-vary-with-machine-load` -> Phase 1 (`sig*-p`).
 - `error-message-line-number-off-by-one` -> Phase 2 (`lineno-p`).
-- `alias-substitution-remaining-cases`, `set-notify-no-effect`, `set-verbose-no-effect`,
-  `set-o-ignoreeof-nolog-vi-missing`, `set-histexpand-unimplemented` -> Phase 3.
+- `alias-substitution-remaining-cases`, `set-notify-no-effect`, `set-verbose-partial`,
+  `set-o-ignoreeof-nolog-vi-has-no-effect`, `set-histexpand-unimplemented` -> Phase 3.
 - `quote-backslash-escaping-broken`, `param-expansion-pattern-removal-broken`,
   `case-pattern-bracket-quote-stripping` -> Phase 4.
-- `trap-exit-in-async-subshell-not-run`,
-  `input-not-read-line-wise` -> Phase 5.
-- `posix-suite-failures-not-yet-analysed` -> Phases 3-5.
+- `input-not-read-line-wise` -> Phase 5.
+- `posix-suite-intentional-deviations` stays as it is.
 - `yash-suite-other-hangs`, `grouping-p-tst-flaky`, the three `fixed-sh-*` entries -> Phase 6.
 
 **Real bugs, but not counted in the `tests/posix` scoreboard** (`type-unknown-name-silent` is the
 HIGH PRIORITY task above; fix the rest opportunistically):
-`eval-lineno-imprecise-inside-function`, `heredoc-in-cmdsub-read-in-wrong-order`,
+`eval-lineno-imprecise-inside-function`,
 `exit-trap-loses-positional-parameters`, `no-tree-print-option-is-a-noop`,
 `cfg-cmake-mingw-silently-builds-native`, `eval-node-bgnd-silent-on-fork-failure`,
 `builtin-cp-sh-hangs`, `quoted-at-then-empty-quotes-drops-field`.
@@ -1840,7 +1828,7 @@ size build/x86_64-linux-gnu/CMakeFiles/libshell.dir/src/term/*.o build/x86_64-li
 
 ## Goal 10 (secondary) — `cp` and `mv`: what is left
 
-`src/builtin/extra/builtin_cp.c` holds `builtin_cpmv()`; the `cp` and `mv` rows (`BUILTIN_CP`/`BUILTIN_MV`,
+`src/builtin/core/builtin_cp.c` holds `builtin_cpmv()`; the `cp` and `mv` rows (`BUILTIN_CP`/`BUILTIN_MV`,
 `EXTRA_BUILTINS`, off by default) point at it, and `cmake/Builtins.cmake` adds `builtin_rm.c` when `mv`
 is on (`builtin_rm_tree()` is the exported `rm -r` walk). Tests: `tests/builtin-cp.sh` (which hangs,
 `BUGS: builtin-cp-sh-hangs`), `tests/builtin-mv.sh` (the `EXDEV` cases run when `/dev/shm` is another

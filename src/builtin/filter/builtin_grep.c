@@ -19,6 +19,7 @@ const char help_grep[] = "    Search files for patterns.\n"
                          "    -E              use Extended Regular Expressions (ERE)\n"
                          "    -F              match fixed strings (newline separates several)\n"
                          "    -v              select non-matching lines\n"
+                         "    -x              select only lines that match as a whole\n"
                          "    -n              precede each line by its line number\n"
                          "    -q              quiet (exit 0 on match, no output)\n"
                          "    -c              print a count of matching lines instead of the lines\n"
@@ -38,20 +39,24 @@ struct grep {
   struct filter_in in;
   grep_re re;
   unsigned invert : 1, show_lineno : 1, extended : 1, fixed : 1, quiet : 1, count : 1, multiple : 1, compiled : 1,
-      had_match : 1, done : 1, pending : 1;
+      had_match : 1, done : 1, pending : 1, whole : 1;
   unsigned long lineno, matches;
   const char* fixed_pat; /* -F: the pattern operand, '\n'-separated strings */
+  char* whole_pat;       /* -x: the pattern wrapped in ^( )$ */
   const char* name;      /* -c: the operand the count in progress belongs to */
   stralloc out;          /* prefixes + line, when a line cannot go out as it lies */
 };
 
 /* -F: does any '\n'-separated string of the pattern occur in line? "" matches everything */
 static int
-grep_test_fixed(const char* pat, const char* line, size_t len) {
+grep_test_fixed(const char* pat, const char* line, size_t len, int whole) {
   for(;;) {
     size_t n = str_chr(pat, '\n'), i;
 
-    if(n <= len)
+    if(whole) {
+      if(n == len && byte_equal(line, n, pat))
+        return 1;
+    } else if(n <= len)
       for(i = 0; i + n <= len; i++)
         if(byte_equal(line + i, n, pat))
           return 1;
@@ -66,7 +71,7 @@ grep_test_fixed(const char* pat, const char* line, size_t len) {
 static int
 grep_test(struct grep* g, const char* line, size_t len) {
   if(g->fixed)
-    return grep_test_fixed(g->fixed_pat, line, len);
+    return grep_test_fixed(g->fixed_pat, line, len, g->whole);
 
 #if GREP_USE_SYSTEM_REGEX
   char* z = alloc(len + 1);
@@ -205,6 +210,7 @@ grep_option(void* ctx, int c) {
     case 'E': g->extended = 1; return 0;
     case 'F': g->fixed = 1; return 0;
     case 'v': g->invert = 1; return 0;
+    case 'x': g->whole = 1; return 0;
     case 'n': g->show_lineno = 1; return 0;
     case 'q': g->quiet = 1; return 0;
     case 'c': g->count = 1; return 0;
@@ -237,6 +243,19 @@ grep_setup(void* ctx) {
     return 0;
   }
 
+  /* -x: "^(pattern)$" -- "\\(" in a basic regular expression */
+  if(g->whole) {
+    stralloc w;
+
+    stralloc_init(&w);
+    stralloc_cats(&w, g->extended ? "^(" : "^\\(");
+    stralloc_cats(&w, pattern);
+    stralloc_cats(&w, g->extended ? ")$" : "\\)$");
+    stralloc_nul(&w);
+    g->whole_pat = w.s;
+    pattern = g->whole_pat;
+  }
+
 #if GREP_USE_SYSTEM_REGEX
   if(regcomp(&g->re, pattern, g->extended ? REG_EXTENDED : 0) != 0) {
 #else
@@ -266,11 +285,13 @@ grep_finish(void* ctx) {
   if(g->compiled)
     RE_FREE(&g->re);
 
+  alloc_free(g->whole_pat);
+
   stralloc_free(&g->out);
 }
 
 const struct filter_ops grep_ops = {
-    .opts = "EFvnqc",
+    .opts = "EFvxnqc",
     .size = sizeof(struct grep),
     .option = grep_option,
     .setup = grep_setup,

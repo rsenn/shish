@@ -1,6 +1,7 @@
 #include "../expand.h"
 #include "../../lib/fmt.h"
 #include "../tree.h"
+#include "../sh.h"
 
 /* expand an arithmetic expression
  * ----------------------------------------------------------------------- */
@@ -14,6 +15,15 @@ expand_arith(struct nargarith* arith, union node** nptr, int flags) {
   if(!expand_arith_expr(expr, &ret)) {
     len = fmt_longlong(buf, ret);
     n = expand_cat(buf, len, &n, flags);
+  } else {
+    /* an arithmetic expansion error ends a non-interactive shell, like any expansion error */
+    sh_error("arithmetic syntax error");
+
+    if(!sh_interactive)
+      sh_exit(1);
+
+    expand_error = 1;
+    n = 0;
   }
 
   return n;

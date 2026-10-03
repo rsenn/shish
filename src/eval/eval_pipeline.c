@@ -227,6 +227,29 @@ pipeline_chain_pump(const struct filter_ops** ops, void** ctx, int n, int* stfd)
   return p[0];
 }
 
+/* does the last member leave the shell it runs in ("a | exit 3")? Such a member needs a
+ * subshell of its own, so the unforked last-member path must not take it. */
+static int
+pipeline_last_leaves_shell(struct npipe* npipe) {
+  static const char* const names[] = {"exit", "return", "break", "continue", "exec", 0};
+  union node* last = npipe->cmds;
+  const char* s;
+  size_t n;
+  int i;
+
+  while(last && last->next)
+    last = last->next;
+
+  if(!last || last->id != N_SIMPLECMD || !last->ncmd.args || !pipeline_word_literal(last->ncmd.args, &s, &n))
+    return 0;
+
+  for(i = 0; names[i]; i++)
+    if(str_len(names[i]) == n && !byte_diff(names[i], n, s))
+      return 1;
+
+  return 0;
+}
+
 /* pipeline_filter_prepare: node chains iff it's a plain simple command
  * (no local assignments, no redirections of its own -- both would
  * need real fd/scope machinery this path skips) whose entire word
@@ -572,7 +595,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
      them the terminal when monitor mode is on (see job_fork.c) --
      running the last member unforked here would leave it outside
      that group while it's still the terminal's foreground group. */
-  int lastpipe = !npipe->bgnd && !sh->opts.monitor;
+  int lastpipe = !npipe->bgnd && !sh->opts.monitor && !pipeline_last_leaves_shell(npipe);
 
   /* filter chaining (TODO.md Goal 13), scoped to a pipeline's *entire*
      non-last prefix, feeding directly into the true last stage
@@ -813,7 +836,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
       }
 
       /* exit after evaluating this subtree */
-      exit(eval_tree(e, node, E_EXIT));
+      exit(sh_child_exit(eval_tree(e, node, E_EXIT)));
     } else {
       TRACE(TRACE_EVAL, "pipeline.fork", trace_int("pid", pid));
     }

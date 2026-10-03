@@ -1,0 +1,103 @@
+diff --git a/src/parse/parse_skipspace.c b/src/parse/parse_skipspace.c
+index c8632758..6800597e 100644
+--- a/src/parse/parse_skipspace.c
++++ b/src/parse/parse_skipspace.c
+@@ -14,6 +14,12 @@ parse_skipspace(struct parser* p) {
+       return T_EOF;
+ 
+     if(c == '\n') {
++      /* a newline is plain white space inside $(( )) */
++      if(p->flags & P_ARITH) {
++        parse_skip(p);
++        continue;
++      }
++
+       // parse_skip(p);
+ 
+       /* in a here-doc skip the newline after the delimiter */
+diff --git a/src/tree/tree_cat.c b/src/tree/tree_cat.c
+index e0879cec..8d2e97b6 100644
+--- a/src/tree/tree_cat.c
++++ b/src/tree/tree_cat.c
+@@ -25,6 +25,11 @@ tree_cat(union node* node, stralloc* sa) {
+ void
+ tree_cat_n(union node* node, stralloc* sa, int depth) {
+   const char* sep = NULL;
++
++  /* a malformed expression ("$((--))") leaves an operand out */
++  if(!node)
++    return;
++
+ again:
+   switch(node->id) {
+     case N_SIMPLECMD: {
+diff --git a/src/expand/expand_arith.c b/src/expand/expand_arith.c
+index cbe797c0..d5ae566f 100644
+--- a/src/expand/expand_arith.c
++++ b/src/expand/expand_arith.c
+@@ -1,6 +1,7 @@
+ #include "../expand.h"
+ #include "../../lib/fmt.h"
+ #include "../tree.h"
++#include "../sh.h"
+ 
+ /* expand an arithmetic expression
+  * ----------------------------------------------------------------------- */
+@@ -14,6 +15,15 @@ expand_arith(struct nargarith* arith, union node** nptr, int flags) {
+   if(!expand_arith_expr(expr, &ret)) {
+     len = fmt_longlong(buf, ret);
+     n = expand_cat(buf, len, &n, flags);
++  } else {
++    /* an arithmetic expansion error ends a non-interactive shell, like any expansion error */
++    sh_error("arithmetic syntax error");
++
++    if(!sh_interactive)
++      sh_exit(1);
++
++    expand_error = 1;
++    n = 0;
+   }
+ 
+   return n;
+diff --git a/src/expand/expand_arith_binary.c b/src/expand/expand_arith_binary.c
+index dca88e0a..47995427 100644
+--- a/src/expand/expand_arith_binary.c
++++ b/src/expand/expand_arith_binary.c
+@@ -1,4 +1,5 @@
+ #include "../expand.h"
++#include <stdint.h>
+ #include "../tree.h"
+ #include "../../lib/uint64.h"
+ #include <math.h>
+@@ -46,8 +47,14 @@ expand_arith_binary(struct narithbinary* expr, int64* r) {
+     case A_ADD: *r = left + right; break;
+     case A_SUB: *r = left - right; break;
+     case A_MUL: *r = left * right; break;
+-    case A_DIV: *r = left / right; break;
+-    case A_MOD: *r = left % right; break;
++    /* division by zero (and INT64_MIN / -1) is an arithmetic error, not a trap */
++    case A_DIV:
++    case A_MOD:
++      if(right == 0 || (right == -1 && left == INT64_MIN))
++        return 1;
++
++      *r = expr->id == A_DIV ? left / right : left % right;
++      break;
+     case A_EXP: *r = pow(left, right); break;
+     default: return 1;
+   }
+diff --git a/src/expand/expand_arith_expr.c b/src/expand/expand_arith_expr.c
+index 8446c055..c5af46dd 100644
+--- a/src/expand/expand_arith_expr.c
++++ b/src/expand/expand_arith_expr.c
+@@ -38,6 +38,10 @@ expand_arith_expr(union node* expr, int64* r) {
+ 
+   *r = 0;
+ 
++  /* "$((--))": an operand is missing */
++  if(!expr)
++    return 1;
++
+   switch(expr->id) {
+     // case N_ARGPARAM:
+     case N_ARGCMD: {

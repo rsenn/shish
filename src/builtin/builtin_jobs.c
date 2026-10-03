@@ -3,6 +3,7 @@
 #include "../job.h"
 #include "../fdtable.h"
 #include "../../lib/wait.h"
+#include "../../lib/shell.h"
 #include "../../lib/unix.h"
 #include <signal.h>
 
@@ -11,22 +12,81 @@
  * command" line each, via the same job_print() "fg"/"bg" also use for
  * the "[N]+ Done ..."/"[N]+ Stopped ..." banners.
  * ----------------------------------------------------------------------- */
-const char help_jobs[] = "    List jobs the shell is currently tracking.\n";
+const char help_jobs[] = "    List jobs the shell is currently tracking.\n"
+                         "\n"
+                         "    -l              also print the process ID of every process\n"
+                         "    -p              print only the process group ID of each job\n"
+                         "    job             list only this job (%N, %%, %+, %-, ...)\n";
+
+/* -l: "[id]+ pid Status command", then one "pid" line per further process of the job */
+static void
+jobs_print_long(struct job* j) {
+  buffer* out = fd_out->w;
+  size_t p;
+
+  buffer_putc(out, '[');
+  buffer_putulong(out, j->id);
+  buffer_putc(out, ']');
+  buffer_putc(out, job_current() == j ? '+' : ' ');
+  buffer_putc(out, ' ');
+  buffer_putulong(out, j->procs[0].pid);
+  buffer_putspad(out, job_done(j) ? " Done" : job_stopped(j) ? " Stopped" : " Running", 12);
+  buffer_puts(out, j->command ? j->command : "(null)");
+  buffer_putnlflush(out);
+
+  for(p = 1; p < j->nproc; p++) {
+    buffer_puts(out, "     ");
+    buffer_putulong(out, j->procs[p].pid);
+    buffer_putnlflush(out);
+  }
+}
+
+static void
+jobs_print_one(struct job* j, int long_fmt, int pgid_only) {
+  if(pgid_only) {
+    buffer_putulong(fd_out->w, j->pgrp ? j->pgrp : j->procs[0].pid);
+    buffer_putnlflush(fd_out->w);
+  } else if(long_fmt) {
+    jobs_print_long(j);
+  } else {
+    job_print(j, fd_out->w);
+  }
+}
 
 int
 builtin_jobs(int argc, char* argv[]) {
   struct job* j;
+  int c, long_fmt = 0, pgid_only = 0, ret = 0;
 
-  for(j = job_list; j; j = j->next)
-    if(j->level == sh_subshell)
-      job_print(j, fd_out->w);
+  while((c = shell_getopt(argc, argv, "lp")) > 0) {
+    switch(c) {
+      case 'l': long_fmt = 1; break;
+      case 'p': pgid_only = 1; break;
+      default: builtin_invopt(argv); return 1;
+    }
+  }
+
+  if(argv[shell_optind]) {
+    for(c = shell_optind; c < argc; c++) {
+      if((j = job_find(argv[c])) && j->level == sh_subshell)
+        jobs_print_one(j, long_fmt, pgid_only);
+      else {
+        builtin_errmsg(argv, argv[c], "no such job");
+        ret = 1;
+      }
+    }
+  } else {
+    for(j = job_list; j; j = j->next)
+      if(j->level == sh_subshell)
+        jobs_print_one(j, long_fmt, pgid_only);
+  }
 
   /* every job was just listed above, including any that had already
      finished ("Done") -- silently (print=false) drop those now, we
      don't need to announce them a second time */
   job_clean(false);
 
-  return 0;
+  return ret;
 }
 
 /* shared by fg and bg: resolve a "%N"/pid/bare-id operand to a job,
