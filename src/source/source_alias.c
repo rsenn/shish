@@ -2,14 +2,11 @@
 #include "../source.h"
 #include "../../lib/alloc.h"
 #include "../../lib/byte.h"
+#include "builtin_config.h"
 
-int source_alias_blank;
-const void* source_alias_popped[8];
-unsigned long source_alias_poppedat[8];
-int source_alias_npopped;
-unsigned long source_tokskips;
-int source_tokskips_set;
+struct alias_scan alias_scan;
 
+#if BUILTIN_ALIAS
 struct alias_frame {
   struct source src; /* first: a frame is freed through its source pointer */
   struct fd fd;
@@ -34,14 +31,15 @@ void
 source_alias_pop(void) {
   struct source* s = source;
   const char* last = s->b->x + s->b->n;
+  struct alias_popped* pp = alloc(sizeof(struct alias_popped));
 
   if(s->b->n > 0 && (last[-1] == ' ' || last[-1] == '\t'))
-    source_alias_blank = 1;
+    alias_scan.blank = 1;
 
-  if(source_alias_npopped < 8) {
-    source_alias_popped[source_alias_npopped] = s->alias;
-    source_alias_poppedat[source_alias_npopped++] = source_skips;
-  }
+  pp->alias = s->alias;
+  pp->at = source_skips;
+  pp->next = alias_scan.popped;
+  alias_scan.popped = pp;
 
   source_bs = 0;
   s->parent->mode |= s->mode & SOURCE_HERE; /* a here-document body running out of the text goes on behind it */
@@ -53,15 +51,15 @@ source_alias_pop(void) {
 int
 source_alias_active(const void* alias) {
   struct source* s;
-  int i;
+  struct alias_popped* pp;
 
   for(s = source; s; s = s->parent)
     if((s->mode & SOURCE_ALIAS) && s->alias == alias)
       return 1;
 
   /* popped before the word's first character was read = not part of this word */
-  for(i = 0; i < source_alias_npopped; i++)
-    if(source_alias_popped[i] == alias && source_alias_poppedat[i] > source_tokskips)
+  for(pp = alias_scan.popped; pp; pp = pp->next)
+    if(pp->alias == alias && pp->at > alias_scan.tokskips)
       return 1;
 
   return 0;
@@ -69,6 +67,13 @@ source_alias_active(const void* alias) {
 
 void
 source_alias_reset(void) {
-  source_alias_npopped = 0;
-  source_tokskips_set = 0;
+  struct alias_popped* pp;
+
+  while((pp = alias_scan.popped)) {
+    alias_scan.popped = pp->next;
+    alloc_free(pp);
+  }
+
+  alias_scan.tokskips_set = 0;
 }
+#endif

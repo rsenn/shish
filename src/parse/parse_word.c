@@ -17,9 +17,9 @@ parse_word(struct parser* p) {
   p->node = NULL;
   p->quot = Q_UNQUOTED;
   p->tokstart = source->position;
-  if(!source_tokskips_set) {
-    source_tokskips = source_skips;
-    source_tokskips_set = 1;
+  if(!alias_scan.tokskips_set) {
+    alias_scan.tokskips = source_skips;
+    alias_scan.tokskips_set = 1;
   }
 
   /* initialize string data */

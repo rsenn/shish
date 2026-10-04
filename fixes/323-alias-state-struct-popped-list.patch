@@ -1,0 +1,336 @@
+diff --git a/src/builtin/builtin_alias.c b/src/builtin/builtin_alias.c
+index a3ca76ee..42f008ed 100644
+--- a/src/builtin/builtin_alias.c
++++ b/src/builtin/builtin_alias.c
+@@ -6,6 +6,7 @@
+ #include "../var.h"
+ #include "../vartab.h"
+ #include "../parse.h"
++#include "../source.h"
+ #include "../fdtable.h"
+ 
+ #ifndef offsetof
+@@ -94,7 +95,7 @@ alias_search(const char* str) {
+   size_t len = str_chr(str, '=');
+   struct alias** aptr;
+ 
+-  for(aptr = &parse_aliases; *aptr; aptr = &(*aptr)->next)
++  for(aptr = &alias_scan.list; *aptr; aptr = &(*aptr)->next)
+     if((*aptr)->namelen == len && byte_equal((*aptr)->def, len, str))
+       break;
+ 
+@@ -119,7 +120,7 @@ static void
+ alias_print_all(int prefix) {
+   struct alias* alias;
+ 
+-  for(alias = parse_aliases; alias; alias = alias->next)
++  for(alias = alias_scan.list; alias; alias = alias->next)
+     alias_print(alias, prefix);
+ }
+ 
+@@ -190,8 +191,8 @@ builtin_unalias(int argc, char* argv[]) {
+   }
+ 
+   if(all) {
+-    while(parse_aliases)
+-      alias_remove(&parse_aliases);
++    while(alias_scan.list)
++      alias_remove(&alias_scan.list);
+ 
+     return 0;
+   }
+diff --git a/src/builtin/builtin_trap.c b/src/builtin/builtin_trap.c
+index c6f879b3..12c51d76 100644
+--- a/src/builtin/builtin_trap.c
++++ b/src/builtin/builtin_trap.c
+@@ -167,7 +167,7 @@ trap_handler(int sig) {
+ 
+   /* the body is parsed again each time it runs so an alias defined
+      since "trap" ran applies: alias X='echo 2'; trap X USR1 -> "echo 2" */
+-  if(parse_aliases) {
++  if(alias_scan.list) {
+     stralloc code;
+     struct fd fd;
+     struct source src;
+diff --git a/src/parse.h b/src/parse.h
+index ef197840..33eb5586 100644
+--- a/src/parse.h
++++ b/src/parse.h
+@@ -273,7 +273,6 @@ struct alias {
+   char def[];
+ };
+ 
+-extern struct alias* parse_aliases;
+ extern unsigned int parse_lineno;
+ extern struct token parse_tokens[];
+ 
+@@ -298,7 +297,13 @@ alias_code(struct alias* a, size_t* len) {
+   return &a->def[a->namelen + 1];
+ }
+ 
++#include "builtin_config.h"
++
++#if BUILTIN_ALIAS
+ struct alias* parse_findalias(struct parser* p, const char* name, size_t len);
++#else
++#define parse_findalias(p, name, len) ((struct alias*)0)
++#endif
+ 
+ const char* parse_tokname(enum tok_flag tok, int multi);
+ enum tok_flag parse_gettok(struct parser* p, int tempflags);
+diff --git a/src/parse/parse_findalias.c b/src/parse/parse_findalias.c
+index 60cb6831..c74a3d37 100644
+--- a/src/parse/parse_findalias.c
++++ b/src/parse/parse_findalias.c
+@@ -2,7 +2,9 @@
+ #include "../../lib/byte.h"
+ #include "../source.h"
+ 
+-struct alias* parse_aliases = 0;
++#include "builtin_config.h"
++
++#if BUILTIN_ALIAS
+ 
+ /* finds the alias called name, unless that alias is being read right now
+  * (an alias never expands inside its own replacement text)
+@@ -11,9 +13,10 @@ struct alias*
+ parse_findalias(struct parser* p, const char* name, size_t len) {
+   struct alias* a;
+ 
+-  for(a = parse_aliases; a; a = a->next)
++  for(a = alias_scan.list; a; a = a->next)
+     if(a->namelen == len && !byte_diff(a->def, len, name))
+       return source_alias_active(a) ? NULL : a;
+ 
+   return NULL;
+ }
++#endif
+diff --git a/src/parse/parse_gettok.c b/src/parse/parse_gettok.c
+index 7622f05a..7fce0669 100644
+--- a/src/parse/parse_gettok.c
++++ b/src/parse/parse_gettok.c
+@@ -9,11 +9,13 @@
+ #include "../debug.h"
+ #include "../expand.h"
+ #include "../../lib/stralloc.h"
++#include "builtin_config.h"
+ 
+ /* the word just scanned is an alias name in command position? then its text
+  * replaces it as the input and the word is scanned again. Quoted names
+  * ('x', "x", \x) and keywords never get here as a plain unquoted word.
+  * ----------------------------------------------------------------------- */
++#if BUILTIN_ALIAS
+ static int
+ parse_alias_subst(struct parser* p) {
+   struct nargstr* str;
+@@ -43,6 +45,10 @@ parse_alias_subst(struct parser* p) {
+   return 1;
+ }
+ 
++#else
++#define parse_alias_subst(p) 0
++#endif
++
+ /* does a command word come next, after this token? (assignments and
+  * redirections keep the state they found)
+  * ----------------------------------------------------------------------- */
+@@ -114,9 +120,9 @@ parse_gettok(struct parser* p, int tempflags) {
+     }
+ 
+     /* "alias x='cmd '": the word after the replacement is aliasable too */
+-    if(source_alias_blank) {
++    if(alias_scan.blank) {
+       aliasok = 1;
+-      source_alias_blank = 0;
++      alias_scan.blank = 0;
+     }
+ 
+     if(aliasok && !(p->flags & P_NOALIAS) && parse_alias_subst(p))
+diff --git a/src/parse/parse_word.c b/src/parse/parse_word.c
+index 2a642aea..d7843806 100644
+--- a/src/parse/parse_word.c
++++ b/src/parse/parse_word.c
+@@ -17,9 +17,9 @@ parse_word(struct parser* p) {
+   p->node = NULL;
+   p->quot = Q_UNQUOTED;
+   p->tokstart = source->position;
+-  if(!source_tokskips_set) {
+-    source_tokskips = source_skips;
+-    source_tokskips_set = 1;
++  if(!alias_scan.tokskips_set) {
++    alias_scan.tokskips = source_skips;
++    alias_scan.tokskips_set = 1;
+   }
+ 
+   /* initialize string data */
+diff --git a/src/source.h b/src/source.h
+index f26af676..8e4ab3db 100644
+--- a/src/source.h
++++ b/src/source.h
+@@ -12,6 +12,8 @@ struct __attribute__((__packed__)) location {
+   size_t offset;
+ };
+ 
++#include "builtin_config.h"
++
+ struct source {
+   buffer* b;
+   unsigned mode;
+@@ -38,26 +40,39 @@ extern int source_psn;
+ extern int source_squoted;
+ extern int source_comment;
+ 
++struct alias;
++
++struct alias_popped {
++  struct alias_popped* next;
++  const void* alias;
++  unsigned long at; /* source_skips when it was popped */
++};
++
+ /* alias text is read like the input it replaces: the frame is popped once
+  * it is used up and reading carries on behind the alias name.
+- *
+- *   source_alias_blank   set when a popped alias ended in a blank (the next word is aliasable)
+- *   source_alias_popped  aliases popped since source_alias_reset(), while the current word was being read: still "active"
+  * ----------------------------------------------------------------------- */
+-extern int source_alias_blank;
+-extern const void* source_alias_popped[8];
+-extern unsigned long source_alias_poppedat[8]; /* source_skips when it was popped */
+-extern int source_alias_npopped;
+-extern unsigned long source_skips;    /* characters skipped so far */
+-extern unsigned long source_tokskips; /* ... when the word (of a substitution chain) began */
+-extern int source_tokskips_set;       /* 0 until parse_word() has stored it for this chain */
++struct alias_scan {
++  struct alias* list;           /* the defined aliases */
++  struct alias_popped* popped;  /* popped since source_alias_reset(): still "active" for the current word */
++  unsigned long tokskips;       /* source_skips when the word (of a substitution chain) began */
++  unsigned blank : 1;           /* a popped alias ended in a blank: the next word is aliasable */
++  unsigned tokskips_set : 1;    /* parse_word() has stored tokskips for this chain */
++};
++
++extern struct alias_scan alias_scan;
++extern unsigned long source_skips; /* characters skipped so far */
+ extern int source_bs; /* the last skipped char was an unescaped backslash */
+ 
+ void source_buffer(struct source*, struct fd*, const char* x, size_t n);
+ 
+ void source_alias_push(const void* alias, const char* code, size_t n);
+ int source_alias_active(const void* alias);
++#if BUILTIN_ALIAS
+ void source_alias_reset(void);
++void source_alias_pop(void);
++#else
++#define source_alias_reset() ((void)0)
++#endif
+ void source_pop(void);
+ void source_popfd(struct fd*);
+ void source_prompt(void);
+diff --git a/src/source/source_alias.c b/src/source/source_alias.c
+index d58805ea..7558c6f7 100644
+--- a/src/source/source_alias.c
++++ b/src/source/source_alias.c
+@@ -2,14 +2,11 @@
+ #include "../source.h"
+ #include "../../lib/alloc.h"
+ #include "../../lib/byte.h"
++#include "builtin_config.h"
+ 
+-int source_alias_blank;
+-const void* source_alias_popped[8];
+-unsigned long source_alias_poppedat[8];
+-int source_alias_npopped;
+-unsigned long source_tokskips;
+-int source_tokskips_set;
++struct alias_scan alias_scan;
+ 
++#if BUILTIN_ALIAS
+ struct alias_frame {
+   struct source src; /* first: a frame is freed through its source pointer */
+   struct fd fd;
+@@ -34,14 +31,15 @@ void
+ source_alias_pop(void) {
+   struct source* s = source;
+   const char* last = s->b->x + s->b->n;
++  struct alias_popped* pp = alloc(sizeof(struct alias_popped));
+ 
+   if(s->b->n > 0 && (last[-1] == ' ' || last[-1] == '\t'))
+-    source_alias_blank = 1;
++    alias_scan.blank = 1;
+ 
+-  if(source_alias_npopped < 8) {
+-    source_alias_popped[source_alias_npopped] = s->alias;
+-    source_alias_poppedat[source_alias_npopped++] = source_skips;
+-  }
++  pp->alias = s->alias;
++  pp->at = source_skips;
++  pp->next = alias_scan.popped;
++  alias_scan.popped = pp;
+ 
+   source_bs = 0;
+   s->parent->mode |= s->mode & SOURCE_HERE; /* a here-document body running out of the text goes on behind it */
+@@ -53,15 +51,15 @@ source_alias_pop(void) {
+ int
+ source_alias_active(const void* alias) {
+   struct source* s;
+-  int i;
++  struct alias_popped* pp;
+ 
+   for(s = source; s; s = s->parent)
+     if((s->mode & SOURCE_ALIAS) && s->alias == alias)
+       return 1;
+ 
+   /* popped before the word's first character was read = not part of this word */
+-  for(i = 0; i < source_alias_npopped; i++)
+-    if(source_alias_popped[i] == alias && source_alias_poppedat[i] > source_tokskips)
++  for(pp = alias_scan.popped; pp; pp = pp->next)
++    if(pp->alias == alias && pp->at > alias_scan.tokskips)
+       return 1;
+ 
+   return 0;
+@@ -69,6 +67,13 @@ source_alias_active(const void* alias) {
+ 
+ void
+ source_alias_reset(void) {
+-  source_alias_npopped = 0;
+-  source_tokskips_set = 0;
++  struct alias_popped* pp;
++
++  while((pp = alias_scan.popped)) {
++    alias_scan.popped = pp->next;
++    alloc_free(pp);
++  }
++
++  alias_scan.tokskips_set = 0;
+ }
++#endif
+diff --git a/src/source/source_peekn.c b/src/source/source_peekn.c
+index 58650d76..40fef68c 100644
+--- a/src/source/source_peekn.c
++++ b/src/source/source_peekn.c
+@@ -1,13 +1,13 @@
+ #include "../source.h"
+ #include "../debug.h"
+ #include "../prompt.h"
++#include "builtin_config.h"
+ 
+ struct source* source = 0;
+ 
+ /* gets more data from buffer (at least n + 1 chars)
+  * doesn't advance buffer pointer, use input_skipcn() for that
+  * ----------------------------------------------------------------------- */
+-void source_alias_pop(void);
+ 
+ int
+ source_peekn(char* c, unsigned n) {
+@@ -17,8 +17,10 @@ source_peekn(char* c, unsigned n) {
+   int esc;                /* x[pi] is escaped by a backslash before it */
+ 
+   /* used-up alias text: carry on with whatever follows the alias name */
++#if BUILTIN_ALIAS
+   while((source->mode & SOURCE_ALIAS) && source->parent && buffer_LEN(source->b) <= 0)
+     source_alias_pop();
++#endif
+ 
+   b = source->b;
+   ret = buffer_LEN(b);

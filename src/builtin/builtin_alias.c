@@ -6,6 +6,7 @@
 #include "../var.h"
 #include "../vartab.h"
 #include "../parse.h"
+#include "../source.h"
 #include "../fdtable.h"
 
 #ifndef offsetof
@@ -94,7 +95,7 @@ alias_search(const char* str) {
   size_t len = str_chr(str, '=');
   struct alias** aptr;
 
-  for(aptr = &parse_aliases; *aptr; aptr = &(*aptr)->next)
+  for(aptr = &alias_scan.list; *aptr; aptr = &(*aptr)->next)
     if((*aptr)->namelen == len && byte_equal((*aptr)->def, len, str))
       break;
 
@@ -119,7 +120,7 @@ static void
 alias_print_all(int prefix) {
   struct alias* alias;
 
-  for(alias = parse_aliases; alias; alias = alias->next)
+  for(alias = alias_scan.list; alias; alias = alias->next)
     alias_print(alias, prefix);
 }
 
@@ -190,8 +191,8 @@ builtin_unalias(int argc, char* argv[]) {
   }
 
   if(all) {
-    while(parse_aliases)
-      alias_remove(&parse_aliases);
+    while(alias_scan.list)
+      alias_remove(&alias_scan.list);
 
     return 0;
   }

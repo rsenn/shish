@@ -167,7 +167,7 @@ trap_handler(int sig) {
 
   /* the body is parsed again each time it runs so an alias defined
      since "trap" ran applies: alias X='echo 2'; trap X USR1 -> "echo 2" */
-  if(parse_aliases) {
+  if(alias_scan.list) {
     stralloc code;
     struct fd fd;
     struct source src;

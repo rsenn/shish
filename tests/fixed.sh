@@ -6030,4 +6030,9 @@ unlimited
 rc=1
 [0-9]*" "ulimit sets and shows limits, restores them after a subshell, rejects a bad number"
 
+# an alias popped while a word is read stays "active" however many were popped: a 10-alias cycle ends instead of looping
+PX=$(timeout 5 "$SHISH_SELF" -c 'alias a1=a2 a2=a3 a3=a4 a4=a5 a5=a6 a6=a7 a7=a8 a8=a9 a9=a10 a10=a9
+a1' 2>&1)
+assert_match "$PX" "*a9: No such file*" "a cycle through more than 8 aliases is cut off, the word runs as a command"
+
 summary

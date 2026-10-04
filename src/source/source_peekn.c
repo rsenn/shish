@@ -1,13 +1,13 @@
 #include "../source.h"
 #include "../debug.h"
 #include "../prompt.h"
+#include "builtin_config.h"
 
 struct source* source = 0;
 
 /* gets more data from buffer (at least n + 1 chars)
  * doesn't advance buffer pointer, use input_skipcn() for that
  * ----------------------------------------------------------------------- */
-void source_alias_pop(void);
 
 int
 source_peekn(char* c, unsigned n) {
@@ -17,8 +17,10 @@ source_peekn(char* c, unsigned n) {
   int esc;                /* x[pi] is escaped by a backslash before it */
 
   /* used-up alias text: carry on with whatever follows the alias name */
+#if BUILTIN_ALIAS
   while((source->mode & SOURCE_ALIAS) && source->parent && buffer_LEN(source->b) <= 0)
     source_alias_pop();
+#endif
 
   b = source->b;
   ret = buffer_LEN(b);

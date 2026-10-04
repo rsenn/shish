@@ -9,11 +9,13 @@
 #include "../debug.h"
 #include "../expand.h"
 #include "../../lib/stralloc.h"
+#include "builtin_config.h"
 
 /* the word just scanned is an alias name in command position? then its text
  * replaces it as the input and the word is scanned again. Quoted names
  * ('x', "x", \x) and keywords never get here as a plain unquoted word.
  * ----------------------------------------------------------------------- */
+#if BUILTIN_ALIAS
 static int
 parse_alias_subst(struct parser* p) {
   struct nargstr* str;
@@ -42,6 +44,10 @@ parse_alias_subst(struct parser* p) {
 
   return 1;
 }
+
+#else
+#define parse_alias_subst(p) 0
+#endif
 
 /* does a command word come next, after this token? (assignments and
  * redirections keep the state they found)
@@ -114,9 +120,9 @@ parse_gettok(struct parser* p, int tempflags) {
     }
 
     /* "alias x='cmd '": the word after the replacement is aliasable too */
-    if(source_alias_blank) {
+    if(alias_scan.blank) {
       aliasok = 1;
-      source_alias_blank = 0;
+      alias_scan.blank = 0;
     }
 
     if(aliasok && !(p->flags & P_NOALIAS) && parse_alias_subst(p))

@@ -273,7 +273,6 @@ struct alias {
   char def[];
 };
 
-extern struct alias* parse_aliases;
 extern unsigned int parse_lineno;
 extern struct token parse_tokens[];
 
@@ -298,7 +297,13 @@ alias_code(struct alias* a, size_t* len) {
   return &a->def[a->namelen + 1];
 }
 
+#include "builtin_config.h"
+
+#if BUILTIN_ALIAS
 struct alias* parse_findalias(struct parser* p, const char* name, size_t len);
+#else
+#define parse_findalias(p, name, len) ((struct alias*)0)
+#endif
 
 const char* parse_tokname(enum tok_flag tok, int multi);
 enum tok_flag parse_gettok(struct parser* p, int tempflags);
