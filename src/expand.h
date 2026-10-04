@@ -96,8 +96,6 @@ enum subst_type {
 
 #define X_CATCLOSED 0x80000000
 
-extern char expand_ifs[4];
-
 union node;
 struct narg;
 
@@ -105,6 +103,8 @@ struct narg;
 
 /* state: what an expansion leaves behind for its caller
  * ----------------------------------------------------------------------- */
+
+extern char expand_ifs[4];
 
 /* set when a word expansion failed in a way POSIX calls an expansion
  * error ("${x?}", "$x" under "set -u"): the command that word belongs

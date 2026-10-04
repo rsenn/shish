@@ -41,6 +41,7 @@ extern volatile int term_reading;
 
 extern struct termios term_tcattr;
 extern struct winsize term_size;
+extern int term_vi_cmd; /* 1 in vi command mode */
 
 int term_init(struct fd* input, struct fd* output);
 void term_restore(int fd, const struct termios*);
@@ -67,7 +68,6 @@ char* term_getline(void);
 void term_complete(void);
 void term_complete_redraw(void);
 void term_search(void);
-extern int term_vi_cmd; /* 1 in vi command mode */
 int term_vi_escape(void);
 void term_vimode(char c);
 

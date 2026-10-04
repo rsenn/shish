@@ -45,23 +45,19 @@ struct job {
   int id;
   pid_t pgrp;
   char* command;
-  uint8_t nproc;
-  uint8_t level;     /* sh_subshell when created: a ( ) or $( ) does not see its parent's jobs */
-  uint8_t bgnd;      /* was this job backgrounded ("cmd &")? controls whether
-                        job_wait() prints a "[N]+ Done ..." banner for it. */
-  uint8_t pipefail;  /* set -o pipefail was on when it started: job_wait() reports
-                        the rightmost non-zero member status */
-  uint8_t announced; /* has a "Stopped" banner been printed for this stop
-                        yet? cleared by job_resume() so the next stop is
-                        announced again. */
+  int nproc;
+  int level; /* sh_subshell when created: a ( ) or $( ) does not see its parent's jobs */
+  unsigned bgnd : 1;      /* was this job backgrounded ("cmd &")? controls whether
+                             job_wait() prints a "[N]+ Done ..." banner for it. */
+  unsigned pipefail : 1;  /* set -o pipefail was on when it started: job_wait() reports
+                             the rightmost non-zero member status */
+  unsigned announced : 1; /* has a "Stopped" banner been printed for this stop
+                             yet? cleared by job_resume() so the next stop is
+                             announced again. */
   struct proc procs[];
 };
 
 extern int job_terminal, job_pgrp;
-void job_resume_stopped(void);
-struct job* job_first(void);   /* first job of the current subshell level */
-void job_discard(int level);  /* drop the jobs of subshells deeper than level */
-int job_recall(pid_t pid, int* status); /* status of a process of an already finished job */
 /* set by "wait": job_wait() returns as soon as a trap has run, with job_wait_sig = its signal */
 extern int job_wait_interruptible, job_wait_sig;
 extern volatile bool job_signaled;
@@ -77,6 +73,10 @@ extern pid_t job_bgpid; /* "$!": pid of the most recently backgrounded command *
    only -- stays -1/-1 on WINDOWS_NATIVE. */
 extern int job_sigfd[2];
 
+void job_resume_stopped(void);
+struct job* job_first(void);   /* first job of the current subshell level */
+void job_discard(int level);  /* drop the jobs of subshells deeper than level */
+int job_recall(pid_t pid, int* status); /* status of a process of an already finished job */
 #define job_current() (job_pointer && *job_pointer ? *job_pointer : 0)
 /* "done" means fully reaped: not running, and not merely stopped
    (Ctrl-Z'd) either. */

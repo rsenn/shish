@@ -24,18 +24,18 @@
 
 /* what the -a/-A/-R/... flags asked for */
 struct ls_opts {
-  int all;       /* -a: include ".", ".." and dotfiles */
-  int almost;    /* -A: dotfiles but not "." and ".." */
-  int dirs;      /* -d */
-  int unsorted;  /* -f */
-  int long_fmt;  /* -l */
-  int recurse;   /* -R */
-  int reverse;   /* -r */
-  int by_time;   /* -t */
-  int by_size;   /* -S */
-  int slash;     /* -p */
-  int classify;  /* -F */
-  int inode;     /* -i */
+  unsigned all : 1;      /* -a: include ".", ".." and dotfiles */
+  unsigned almost : 1;   /* -A: dotfiles but not "." and ".." */
+  unsigned dirs : 1;     /* -d */
+  unsigned unsorted : 1; /* -f */
+  unsigned long_fmt : 1; /* -l */
+  unsigned recurse : 1;  /* -R */
+  unsigned reverse : 1;  /* -r */
+  unsigned by_time : 1;  /* -t */
+  unsigned by_size : 1;  /* -S */
+  unsigned slash : 1;    /* -p */
+  unsigned classify : 1; /* -F */
+  unsigned inode : 1;    /* -i */
 };
 
 /* one directory entry plus what lstat() said about it */

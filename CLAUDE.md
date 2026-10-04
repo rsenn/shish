@@ -68,6 +68,19 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ---
 
+## Types
+
+Design decisions to apply every time, not to re-argue:
+
+- **A boolean struct member is a one-bit field**: `unsigned bgnd : 1;`, never `int`, `char` or
+  `uint8_t`. This holds for flags you add and for flags you touch. (`struct shopt`, `struct grep` and
+  `struct job` are the model.) A plain local `int` used as a truth value is fine.
+- **An integer member takes the type of the value it holds**, not the narrowest type that fits:
+  `job->level` is copied from `sh_subshell`, which is an `int`, so it is an `int`; a process count is an
+  `int`. Do not shrink members to `uint8_t`/`uint16_t` to save bytes (nothing here is size-critical, and a
+  narrow type hides truncation, e.g. a nesting level above 255).
+- A "deeper than anything" sentinel is `INT_MAX`, not `0xff`.
+
 ## Comments
 
 These rules govern every comment you write or rewrite in this repo, from

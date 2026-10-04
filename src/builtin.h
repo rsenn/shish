@@ -40,9 +40,6 @@ int builtin_basename(int argc, char* argv[]);
 int builtin_bg(int argc, char* argv[]);
 int builtin_break(int argc, char* argv[]);
 int builtin_cat(int argc, char* argv[]);
-extern const struct builtin_filter compress_filter;   /* src/builtin/extra/builtin_compress.c */
-extern const struct builtin_filter uncompress_filter; /* src/builtin/extra/builtin_uncompress.c */
-extern const struct builtin_filter cat_filter; /* src/builtin/extra/builtin_cat.c */
 int builtin_cd(int argc, char* argv[]);
 int builtin_dirs(int argc, char* argv[]);  /* dirs, popd, pushd: src/builtin/extra/builtin_dirstack.c */
 int builtin_popd(int argc, char* argv[]);
@@ -58,8 +55,6 @@ int builtin_dirname(int argc, char* argv[]);
 int builtin_sort(int argc, char* argv[]);
 int builtin_split(int argc, char* argv[]);
 int builtin_tail(int argc, char* argv[]);
-extern const struct builtin_filter sort_filter; /* src/builtin/filter/builtin_sort.c */
-extern const struct builtin_filter tail_filter; /* src/builtin/filter/builtin_tail.c */
 int builtin_env(int argc, char* argv[]);
 int builtin_id(int argc, char* argv[]);
 int builtin_dump(int argc, char* argv[]);
@@ -75,7 +70,6 @@ int builtin_fg(int argc, char* argv[]);
 int builtin_find(int argc, char* argv[]);
 int builtin_getopts(int argc, char* argv[]);
 int builtin_grep(int argc, char* argv[]);
-extern const struct builtin_filter grep_filter; /* src/builtin/extra/builtin_grep.c */
 int builtin_hash(int argc, char* argv[]);
 int builtin_help(int argc, char* argv[]);
 int builtin_history(int argc, char* argv[]);
@@ -99,22 +93,15 @@ int builtin_return(int argc, char* argv[]);
 int builtin_rm(int argc, char* argv[]);
 int builtin_rmdir(int argc, char* argv[]);
 int builtin_sed(int argc, char* argv[]);
-extern const struct builtin_filter sed_filter; /* src/builtin/extra/builtin_sed.c */
 int builtin_set(int argc, char* argv[]);
 int builtin_shift(int argc, char* argv[]);
 int builtin_sleep(int argc, char* argv[]);
 int builtin_head(int argc, char* argv[]);
-extern const struct builtin_filter head_filter; /* src/builtin/extra/builtin_head.c */
 int builtin_uniq(int argc, char* argv[]);
-extern const struct builtin_filter uniq_filter; /* src/builtin/extra/builtin_uniq.c */
 int builtin_cut(int argc, char* argv[]);
 int builtin_nl(int argc, char* argv[]);
-extern const struct builtin_filter nl_filter; /* src/builtin/extra/builtin_nl.c */
 int builtin_tr(int argc, char* argv[]);
-extern const struct builtin_filter tr_filter; /* src/builtin/extra/builtin_tr.c */
 int builtin_paste(int argc, char* argv[]);
-extern const struct builtin_filter paste_filter; /* src/builtin/extra/builtin_paste.c */
-extern const struct builtin_filter cut_filter; /* src/builtin/extra/builtin_cut.c */
 int builtin_tee(int argc, char* argv[]);
 int builtin_test(int argc, char* argv[]);
 int builtin_times(int argc, char* argv[]);
@@ -134,6 +121,22 @@ int builtin_uncompress(int argc, char* argv[]);
 int builtin_uncompress_to(int argc, char* argv[], buffer* out);
 int builtin_compress(int argc, char* argv[]);
 void archive_sigchld_hold(int on); /* src/builtin/filter/builtin_uncompress.c */
+
+/* filters: the stream-processing form of a builtin, chained in pipelines without a fork
+ * ----------------------------------------------------------------------- */
+extern const struct builtin_filter compress_filter;   /* src/builtin/filter/builtin_compress.c */
+extern const struct builtin_filter uncompress_filter; /* src/builtin/filter/builtin_uncompress.c */
+extern const struct builtin_filter cat_filter;        /* src/builtin/filter/builtin_cat.c */
+extern const struct builtin_filter sort_filter;       /* src/builtin/filter/builtin_sort.c */
+extern const struct builtin_filter tail_filter;       /* src/builtin/filter/builtin_tail.c */
+extern const struct builtin_filter grep_filter;       /* src/builtin/filter/builtin_grep.c */
+extern const struct builtin_filter sed_filter;        /* src/builtin/filter/builtin_sed.c */
+extern const struct builtin_filter head_filter;       /* src/builtin/filter/builtin_head.c */
+extern const struct builtin_filter uniq_filter;       /* src/builtin/filter/builtin_uniq.c */
+extern const struct builtin_filter nl_filter;         /* src/builtin/filter/builtin_nl.c */
+extern const struct builtin_filter tr_filter;         /* src/builtin/filter/builtin_tr.c */
+extern const struct builtin_filter paste_filter;      /* src/builtin/filter/builtin_paste.c */
+extern const struct builtin_filter cut_filter;        /* src/builtin/filter/builtin_cut.c */
 
 /* builtin help text, one string per builtin_<name>() implementation
  * (shared between every table entry that dispatches to the same

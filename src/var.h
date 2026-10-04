@@ -58,6 +58,8 @@ struct var {
 
 extern struct var* var_list;
 extern size_t var_exported;
+/* $RANDOM special-variable state, see var_random.c */
+extern int var_random_active;
 
 #include "vartab.h"
 
@@ -74,8 +76,6 @@ const char* var_vdefault(const char* v, const char* def, size_t* lenp);
 int var_chflg(char* v, int flags, int set);
 int var_valid(const char* v);
 
-/* $RANDOM special-variable state, see var_random.c */
-extern int var_random_active;
 void var_random_assign(const char* value, size_t len);
 void var_random_unset(void);
 uint16 var_random_next(void);

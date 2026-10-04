@@ -44,6 +44,10 @@ enum trace_module {
 #define TRACE_STRUCT_OPEN " { "
 #define TRACE_STRUCT_CLOSE " }"
 
+/* bit i -> name, for trace_flags() */
+extern const char* const trace_eval_flags[10]; /* E_EXIT .. E_EVAL */
+extern const char* const trace_redir_flags[9]; /* R_IN .. R_NOW */
+
 int trace_begin(enum trace_module mod, const char* event, const char* open, const char* close);
 void trace_end(void);
 
@@ -75,9 +79,6 @@ struct location;
 void trace_loc(const char* key, const struct location* loc); /* "file:line:col" */
 void trace_kind(const char* key, int node_id);                 /* enum kind -> "simple_command" */
 
-/* bit i -> name, for trace_flags() */
-extern const char* const trace_eval_flags[10]; /* E_EXIT .. E_EVAL */
-extern const char* const trace_redir_flags[9]; /* R_IN .. R_NOW */
 void trace_argv(const char* key, char* const* argv);
 void trace_flags(const char* key, unsigned long bits, const char* const* names, unsigned int n);
 

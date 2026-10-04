@@ -354,6 +354,8 @@ union node {
 
 typedef union node node_t;
 
+extern const int tree_nodesizes[];
+
 /* link node to the branch nptr points to */
 #define tree_link(node, nptr) \
   do { \
@@ -400,8 +402,6 @@ typedef union node node_t;
   } while(0);
 
 union node* tree_newnode(enum kind nod);
-
-extern const int tree_nodesizes[];
 
 void tree_delnode(union node* node);
 void tree_free(union node* list);

@@ -77,9 +77,6 @@ struct set_longopt {
   char letter;
 };
 
-extern const struct set_longopt set_longopts[];
-extern const size_t set_longopts_n;
-
 int set_apply(struct shopt* opts, int letter, int on);
 int set_get(const struct shopt* opts, int letter);
 /*};*/
@@ -110,6 +107,9 @@ struct env {
   struct handler* finalizers;
 };
 
+extern const struct set_longopt set_longopts[];
+extern const size_t set_longopts_n;
+
 extern int sh_argc;    /* initial argument count */
 extern char** sh_argv; /*    "       "     vector */
 extern char** sh_envp; /*    "    environment */
@@ -130,7 +130,6 @@ extern int sh_child;
    plain command failing inside a `.`-sourced file kill an otherwise
    interactive shell the moment it's one level into any sourced file. */
 extern int sh_interactive;
-int sh_utf8(void); /* do LC_ALL/LC_CTYPE/LANG ask for UTF-8 text handling? (src/sh/sh_utf8.c) */
 
 /* set while a real-signal trap's body is running (trap_handler(),
  * builtin_trap.c) and it calls "exit" -- see eval_subshell.c's own
@@ -148,6 +147,7 @@ extern struct env* sh;
 extern struct env sh_root;
 extern const char* sh_home;
 extern uid_t sh_uid;
+
 /* sh_pid is *this* process's real OS pid -- it changes across fork()
    (sh_forked() updates it) because job control (setpgid/tcsetpgrp) and
    /proc/<pid>/fd/ paths need the actual pid of whichever process is
@@ -158,8 +158,12 @@ extern uid_t sh_uid;
 extern pid_t sh_pid;
 extern pid_t sh_shpid;
 
+extern int sh_async;
+extern int sh_subshell; /* nesting of in-process ( ) and $( ) */
+
 union node;
 
+int sh_utf8(void); /* do LC_ALL/LC_CTYPE/LANG ask for UTF-8 text handling? (src/sh/sh_utf8.c) */
 int sh_error(const char* s);
 int sh_errorn(const char* s, unsigned int len);
 int sh_error_errno(const char* s);
@@ -168,8 +172,6 @@ void sh_exit(int retcode);
 int sh_child_exit(int status); /* run the EXIT trap a forked child set, then pass status on */
 size_t sh_fmtflags(char* dest, const struct shopt*);
 int sh_forked(void);
-extern int sh_async;
-extern int sh_subshell; /* nesting of in-process ( ) and $( ) */
 void sh_sigignore(void);  /* interactive shell ignores INT QUIT TERM */
 void sh_sigrestore(void);
 void sh_sigasync(void);   /* async list without job control: ignore INT QUIT */ /* ...children get the defaults back */

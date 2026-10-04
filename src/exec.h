@@ -55,6 +55,17 @@ struct exechash {
 #define EXIT_ASSGNERR EXIT_ERROR
 #define EXIT_REDIRERR EXIT_ERROR
 
+union node;
+
+/* Snapshot of the function list (head + per-node next pointers) so a subshell
+   can restore the parent's view on exit. functions defined or redefined inside
+   the subshell get unlinked from the parent's list on restore; nodes are not
+   freed because the exec_hash cache may still reference them. */
+struct func_snapshot {
+  size_t n;
+  union node** nodes;
+};
+
 extern struct exechash* exec_hashtbl[EXEC_HASHSIZE];
 
 /* errno from the access()/stat() call that made exec_hash()/exec_path()
@@ -75,6 +86,8 @@ extern volatile pid_t exec_child_pid;
    caller needs it because POSIX 2.8.1 makes a redirection error fatal
    to a non-interactive shell when the command is a special builtin. */
 extern int exec_redir_error;
+extern int exec_via_command;
+extern int exec_subshell_depth;
 
 char* exec_check(char* path);
 char* exec_path(char* name);
@@ -84,7 +97,6 @@ int exec_program(char* path, char** argv, enum execflag);
 uint32 exec_hashstr(const char* s);
 struct exechash* exec_create(char* name, uint32 hash);
 struct exechash* exec_lookup(char* name, uint32* hashptr);
-extern int exec_via_command;
 struct command exec_hash(char* name, int mask);
 void exec_hash_invalidate_all(void); /* forget every remembered command location */
 struct command exec_search(char* name, int mask);
@@ -92,19 +104,6 @@ void exec_function_enter(void);
 void exec_function_leave(void);
 void exec_function_retire(union node* fn);
 int exec_type(char* name, int mask, int force_path, int type_name, int print_path);
-
-union node;
-
-/* Snapshot of the function list (head + per-node next pointers) so a subshell
-   can restore the parent's view on exit. functions defined or redefined inside
-   the subshell get unlinked from the parent's list on restore; nodes are not
-   freed because the exec_hash cache may still reference them. */
-struct func_snapshot {
-  size_t n;
-  union node** nodes;
-};
-
-extern int exec_subshell_depth;
 
 void exec_functions_save(struct func_snapshot* snap);
 void exec_functions_restore(struct func_snapshot* snap);

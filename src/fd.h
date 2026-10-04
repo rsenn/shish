@@ -142,9 +142,6 @@ enum {
   for(i = fd_lo; i < fd_hi; i++) \
     if((p = fd_list[i]))
 
-extern struct fd* fd_list[FD_MAX];
-extern int fd_expected, fd_top, fd_lo, fd_hi;
-
 /* snapshot of the real-kernel-fd bookkeeping globals above (fd_list[]
  * and friends), for scopes that share a process (no fork()) but still
  * need their fd-table effects undone on exit -- see fd_state_save().
@@ -164,7 +161,11 @@ struct fd_state {
   struct fd* list[FD_MAX];
 };
 
+extern struct fd* fd_list[FD_MAX];
+extern int fd_expected, fd_top, fd_lo, fd_hi;
 extern struct fd_state* fd_scope; /* innermost non-forking scope, or NULL */
+extern int fd_write_errno;
+
 void fd_scope_note(struct fd*);
 
 int fd_dup(struct fd*, int dfd);
@@ -186,7 +187,6 @@ void fd_dump(struct fd*, buffer* b);
 void fd_dumplist(buffer* b);
 void fd_filter(struct fd*, const struct filter_ops* ops, void* ctx);
 ssize_t fd_write(int fd, void* buf, size_t len, void* arg);
-extern int fd_write_errno;
 void buffer_filter_init(buffer*, const struct filter_ops* ops, void* ctx);
 void fd_free(struct fd*);
 void fd_here(struct fd*, stralloc* sa);

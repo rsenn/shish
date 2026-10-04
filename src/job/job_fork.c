@@ -6,6 +6,7 @@
 #include "../../lib/windoze.h"
 #include "../../lib/unix.h"
 #include <assert.h>
+#include <limits.h>
 #include "../trace.h"
 
 #if !WINDOWS_NATIVE
@@ -64,7 +65,7 @@ job_fork(struct job* j, union node* node, int bgnd) {
 
     /* this job belongs to the parent: its own members must not list it ("jobs | wc") */
     if(j)
-      j->level = 0xff;
+      j->level = INT_MAX;
 
 #if !WINDOWS_NATIVE
     /* POSIX 2.9.3.1 (Asynchronous Lists): "the standard input for an

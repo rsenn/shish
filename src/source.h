@@ -38,8 +38,6 @@ extern int source_psn;
 extern int source_squoted;
 extern int source_comment;
 
-void source_buffer(struct source*, struct fd*, const char* x, size_t n);
-
 /* alias text is read like the input it replaces: the frame is popped once
  * it is used up and reading carries on behind the alias name.
  *
@@ -54,6 +52,8 @@ extern unsigned long source_skips;    /* characters skipped so far */
 extern unsigned long source_tokskips; /* ... when the word (of a substitution chain) began */
 extern int source_tokskips_set;       /* 0 until parse_word() has stored it for this chain */
 extern int source_bs; /* the last skipped char was an unescaped backslash */
+
+void source_buffer(struct source*, struct fd*, const char* x, size_t n);
 
 void source_alias_push(const void* alias, const char* code, size_t n);
 int source_alias_active(const void* alias);

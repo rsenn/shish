@@ -1,3 +1,11 @@
+# Emscripten: CMake's check_type_size() reads the sizes back out of a compiled .js file and gets 7 for every
+# type; the sub-builds of lzo2 and libarchive use cmake/emscripten/CheckTypeSize.cmake instead.
+if(EMSCRIPTEN)
+  set(EMSCRIPTEN_MODULE_PATH_ARGS "-DCMAKE_MODULE_PATH:PATH=${CMAKE_CURRENT_LIST_DIR}/emscripten")
+else()
+  set(EMSCRIPTEN_MODULE_PATH_ARGS "")
+endif()
+
 include(cmake/FindBZip2.cmake)
 include(cmake/FindLibB2.cmake)
 include(cmake/FindLibLZMA.cmake)
@@ -122,6 +130,7 @@ macro(build_libarchive SOURCE BINARY SUFFIX PIC)
       ${LIBARCHIVE_DEP_ARGS_${SUFFIX}}
       "-DENABLE_LZO:BOOL=ON"
       "-DENABLE_TEST:BOOL=OFF"
+      ${EMSCRIPTEN_MODULE_PATH_ARGS}
       "-DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}"
       "-DCMAKE_SYSROOT:PATH=${CMAKE_SYSROOT}"
       "-DCMAKE_TOOLCHAIN_FILE:FILEPATH=${CMAKE_TOOLCHAIN_FILE}"

@@ -14,23 +14,6 @@ enum {
   E_EVAL = (1 << 9) /* frame of the "eval" builtin: break/continue pass through it */
 };
 
-/* "set -e" is suppressed (nonzero) for exactly the duration of
- * evaluating something POSIX exempts it for: the controlling list of
- * an if/while/until, or a non-last member of an AND-OR list (POSIX:
- * "-e shall be ignored when executing the compound list following the
- * while, until, or if... or any command of an AND-OR list other than
- * the last"). A plain counter, not a per-eval-frame flag: confirmed
- * directly against bash that the suppression has to survive *into* a
- * function call or subshell reached while evaluating an exempt
- * expression (e.g. "f() { false; }; set -e; f && true" does not abort
- * inside f, even though f's own body would fail -e's check on its
- * own merits if f were called normally) -- a flag scoped to one
- * struct eval can't express that, since a function call gets a
- * brand-new one (exec_command.c's H_FUNCTION case), but every one of
- * them still shares this same global for as long as the outer
- * suppression is in effect. */
-extern int errexit_suppress;
-
 #include "tree.h"
 #include <setjmp.h>
 #include <stdlib.h>
@@ -75,6 +58,23 @@ struct eval {
 
 extern struct eval* eval;
 extern struct eval_args* eval_args_top;
+
+/* "set -e" is suppressed (nonzero) for exactly the duration of
+ * evaluating something POSIX exempts it for: the controlling list of
+ * an if/while/until, or a non-last member of an AND-OR list (POSIX:
+ * "-e shall be ignored when executing the compound list following the
+ * while, until, or if... or any command of an AND-OR list other than
+ * the last"). A plain counter, not a per-eval-frame flag: confirmed
+ * directly against bash that the suppression has to survive *into* a
+ * function call or subshell reached while evaluating an exempt
+ * expression (e.g. "f() { false; }; set -e; f && true" does not abort
+ * inside f, even though f's own body would fail -e's check on its
+ * own merits if f were called normally) -- a flag scoped to one
+ * struct eval can't express that, since a function call gets a
+ * brand-new one (exec_command.c's H_FUNCTION case), but every one of
+ * them still shares this same global for as long as the outer
+ * suppression is in effect. */
+extern int errexit_suppress;
 
 void eval_args_unwind(struct eval_args* to);
 
