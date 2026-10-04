@@ -71,7 +71,7 @@ builtin_dump(int argc, char* argv[]) {
 
       break;
     }
-#if defined(DEBUG_OUTPUT)
+#ifdef DEBUG_OUTPUT
     case JOBS: job_dump(out); break;
 #endif
   }
