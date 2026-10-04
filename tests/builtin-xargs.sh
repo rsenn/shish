@@ -125,13 +125,13 @@ X=$(printf 'a\n  \n\t\nb\n' | xargs -L1 echo p)
 assert_equal "p a${nl}p b" "$X" "xargs -L skips whitespace-only lines"
 
 X=$(printf 'a \nb\nc\nd\n' | xargs -L2 echo p)
-assert_equal "p a  b c${nl}p d" "$X" "xargs -L: trailing blank continues the line onto the next"
+assert_equal "p a b c${nl}p d" "$X" "xargs -L: trailing blank continues the line onto the next"
 
 X=$(printf 'a\t\nb\nc\n' | xargs -L1 echo p)
-assert_equal "p a	 b${nl}p c" "$X" "xargs -L: trailing tab continues the line onto the next"
+assert_equal "p a b${nl}p c" "$X" "xargs -L: trailing tab continues the line onto the next"
 
 X=$(printf 'a\\ \nb\nc\n' | xargs -L1 echo p)
-assert_equal "p a\\ ${nl}p b${nl}p c" "$X" "xargs -L: an escaped trailing blank does not continue"
+assert_equal "p a ${nl}p b${nl}p c" "$X" "xargs -L: an escaped trailing blank does not continue"
 
 X=$(printf 'a\nb\nc\nd\n' | xargs -l 2 echo p)
 assert_equal "p a b${nl}p c d" "$X" "xargs -l 2 behaves like -L 2"
@@ -240,5 +240,63 @@ assert_equal "end" "$X" "the utility reads /dev/null, not the remaining input it
 
 printf 'x\n' | xargs nosuch_cmd_xargs 2>/dev/null
 assert_equal 127 "$?" "a utility that is not found exits 127"
+
+## blanks and newlines separate arguments; quotes and backslash group them
+X=$(printf 'a b\tc\n d  e\n' | xargs -n1 echo p)
+assert_equal "p a${nl}p b${nl}p c${nl}p d${nl}p e" "$X" "xargs splits input at blanks and newlines"
+
+X=$(printf "'a b' \"c d\" e\\\\ f\n" | xargs -n1 echo p)
+assert_equal "p a b${nl}p c d${nl}p e f" "$X" "xargs: quotes and a backslash keep blanks inside an argument"
+
+X=$(printf "'a\"b' \"c'd\"\n" | xargs -n1 echo p)
+assert_equal "p a\"b${nl}p c'd" "$X" "xargs: the other quote character is literal inside quotes"
+
+X=$(printf "'' x\n" | xargs -n1 echo p)
+assert_equal "p ${nl}p x" "$X" "xargs: empty quotes give an empty argument"
+
+X=$(printf "a 'b c\nd\n" | xargs echo p 2>/dev/null)
+assert_equal "" "$X" "xargs runs nothing after an unmatched quote"
+printf "a 'b c\n" | xargs echo p >/dev/null 2>&1
+assert_equal "1" "$?" "xargs exits 1 on an unmatched quote"
+
+X=$(printf "'a b'\nc\n" | xargs -I X echo "<X>")
+assert_equal "<a b>${nl}<c>" "$X" "xargs -I processes quotes and splits only at newlines"
+
+X=$(printf 'a "b c"\n' | xargs -d '\n' -n1 echo p 2>/dev/null)
+assert_equal "p a \"b c\"" "$X" "xargs -d does not process quotes"
+
+## -E: logical end-of-file string
+X=$(printf 'a b STOP c d\n' | xargs -E STOP echo)
+assert_equal "a b" "$X" "xargs -E stops reading at an argument equal to EOFSTR"
+X=$(printf 'a _ b\n' | xargs -E '' echo)
+assert_equal "a _ b" "$X" "xargs -E '' disables the end-of-file string"
+X=$(printf 'a\nSTOP\nb\n' | xargs -E STOP -n1 echo p)
+assert_equal "p a" "$X" "xargs -E ends the input for later lines too"
+
+## empty input with a utility runs it once, unless -r
+X=$(xargs echo hi </dev/null)
+assert_equal "hi" "$X" "xargs runs the utility once with its own arguments on empty input"
+X=$(printf '\n \n' | xargs echo hi)
+assert_equal "hi" "$X" "xargs runs the utility once on blank-only input"
+X=$(printf 'a\nb\n' | xargs -n2 echo p | wc -l)
+assert_equal "1" "$(echo $X)" "xargs does not run an extra empty invocation after full batches"
+
+## -s: command lines (utility, arguments and a NUL each) stay below SIZE
+X=$(printf 'aaa bbb ccc\n' | xargs -s 14 echo)
+assert_equal "aaa bbb${nl}ccc" "$X" "xargs -s splits when the next argument would reach SIZE"
+X=$(printf 'aaaaaaaaaaaa\n' | xargs -s 10 echo 2>/dev/null)
+assert_equal "" "$X" "xargs -s: an argument that cannot fit alone runs nothing"
+printf 'aaaaaaaaaaaa\n' | xargs -s 10 echo >/dev/null 2>&1
+assert_equal "1" "$?" "xargs -s: an argument that cannot fit alone is an error"
+
+## -x: exit instead of running fewer arguments than -n asked for
+X=$(printf 'aa bb cc\n' | xargs -n3 -s 12 echo)
+assert_equal "aa bb${nl}cc" "$X" "xargs -n3 -s 12 runs with fewer arguments"
+X=$(printf 'aa bb cc\n' | xargs -x -n3 -s 12 echo 2>/dev/null)
+assert_equal "" "$X" "xargs -x -n3 -s 12 runs nothing"
+printf 'aa bb cc\n' | xargs -x -n3 -s 12 echo >/dev/null 2>&1
+assert_equal "1" "$?" "xargs -x exits 1 when -n arguments do not fit in SIZE"
+X=$(printf 'aaa bbb ccc\n' | xargs -x -s 14 echo)
+assert_equal "aaa bbb${nl}ccc" "$X" "xargs -x without -n/-L still splits at SIZE"
 
 summary

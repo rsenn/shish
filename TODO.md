@@ -341,6 +341,42 @@ Details, inventories and the graded scenarios are in `doc/optional-subsystems.md
   are listed in the "Open questions" of the document (`set -m` when job control is compiled out; whether `wait`
   may be off; `-H`/`histexpand`).
 
+### PLAN (nothing implemented yet) - busybox-style applet mode: `exec -a cat shish` runs only `cat`
+
+`ln -s shish cat; ./cat file`, or `(exec -a cat ./build/.../shish file)`, runs the `cat` builtin and exits with its
+status; no shell is started. The decision is made from the basename of `argv[0]` alone.
+
+**Which names are applets.** Every builtin whose source is in `src/builtin/*/*.c` (`core/`, `extra/`, `filter/`,
+the coreutils-style utilities). The shell-special and shell-state builtins in `src/builtin/*.c` (`cd`, `export`,
+`set`, `alias`, `eval`, ...) are never applets: they only mean something inside a shell. The map already carries
+this split (the `file` column of `src/builtin/builtins.map` starts with `core/`, `extra/` or `filter/`), so no new
+table is needed. The path is stripped (`/usr/bin/cat` -> `cat`); a leading `-` stays with the shell (login name).
+A name that is not an applet (`sh`, `shish`, anything else) starts the shell as today.
+
+**Where.** `sh_main.c`, right after the environment is imported into the root vartab (`env` reads it) and before
+option parsing: look the basename up in `builtin_table` (new `builtin_applet(name)`, a variant of
+`builtin_search()` that accepts only entries whose map file is not top-level), call `fn(argc, argv)` with the
+original `argv`, flush `fd_out`/`fd_err` and `exit(status)`. In applet mode `SHELL` is not set, no options are
+parsed, no history and no interactive setup run.
+
+**What must stay live.** The shell runtime (fd table, vartab, builtin table): builtins write through `fd_out`, and the
+builtins that run another command (`timeout`, `env`, `xargs`, `exec`, `command`) call `exec_command()`, which picks
+builtin / function / program by table lookup. `timeout` already forks a builtin without exec
+(`exec_command(..., X_NOWAIT)`, `builtin_timeout.c`) and kills the child by pid, so it needs no re-exec.
+
+**What breaks, and the fix.** `exec_program.c` re-runs an `ENOEXEC` script with `execve("/proc/self/exe", sargv, ...)`
+and `sargv[0] = argv[0]`; a script named like an applet (`cat`) would turn the re-executed shish into that applet.
+`sargv[0]` becomes the fixed name `sh` (`$0` comes from `sargv[1]`, so nothing visible changes).
+
+**Open points.** A map flag for "never an applet" among the `src/builtin/*/` names if one turns out to need the
+shell (`dirs`/`pushd`/`popd` keep a stack in the shell: they are in `extra/` but must be excluded); `--help` text
+comes from the builtin's `help_*`; `shish cat args` (explicit form) is deliberately not offered, it collides with a
+script named `cat`.
+
+**Tests.** `tests/applet.sh`: `exec -a cat "$SHISH_SELF"` and a symlink in a temp dir, stdin through `cat`,
+exit status, a builtin with options (`wc -l`), `timeout 1 sleep 5` as an applet, a non-applet name starting a shell,
+and the script-named-`cat` case for the `sargv[0]` fix.
+
 ### LOW PRIORITY - more utilities as builtins (plan only, nothing implemented)
 
 Two prioritized lists of programs that are not builtins yet, each with size estimates, POSIX status, whether it can
@@ -758,26 +794,28 @@ One is a correctness question, not a size one: `path_gethome` (281 B)
 looks up home directories without libc's `getpwnam`, so a dynamic build
 misses NSS-provided users (LDAP etc.) — check before touching it.
 
-### 5.4 Re-decide the `LINK_STATIC` mem-routine switch per libc
+### 5.4 Re-decide the `LINK_STATIC` mem-routine switch per libc -- DECIDED: keep it as is
 
-`lib/byte.h:60` maps `byte_copy`/`byte_zero`/... to `memcpy`/`memset`/...
-when linking dynamically, and uses the in-tree loops in `lib/byte/` when
-linking statically -- to avoid pulling glibc's enormous `memcpy` into a
-static binary. Measured on musl, that trade is a wash and slightly
-backwards:
+`lib/byte.h:60` maps `byte_copy`/`byte_zero`/... to `memcpy`/`memset`/... when linking dynamically, and uses
+the in-tree loops in `lib/byte/` and `lib/str/` when linking statically. The earlier note claimed that, on
+musl, the libc routines are slightly smaller. **Re-measured with the whole `byte_*`/`str_*` family switched to the
+libc routines for static builds of glibc, musl and dietlibc (`-DCMAKE_BUILD_TYPE=MinSizeRel -DLINK_STATIC=ON`,
+`size` text, same tree before and after):**
 
 ```
-musl static, in-tree byte_* (today)   text 222589
-musl static, libc mem*                text 222069
+                          in-tree loops (today)   libc routines
+glibc static   text           1105876               1105876      (identical: the switch only differs for glibc)
+musl static    text            234305                235217      +912
+dietlibc static text           195191                195754      +563
+stripped file size: 1242560 / 249816 / 208808 bytes, identical in all six builds (page alignment)
 ```
 
-`memcpy`/`memset`/`memcmp`/`strlen` are linked **either way** -- the
-compiler emits calls to them for struct copies and initializers, so the
-`#if` never actually keeps them out; it just adds a second, slower copy
-of each. glibc-static is the only case the switch was right about
-(1181200 bytes, dominated by libc). So: condition it on the libc, not on
-the link mode, and keep the fast libc routines everywhere except
-glibc-static.
+With libc routines the macros expand at every call site (`memcpy`/`memcmp`/`memset` get inlined or open-coded by
+the compiler) and that costs more than a call to one small in-tree function; the libc `memcpy` the compiler
+emits for struct copies is linked either way. So the in-tree loops are not "a second, slower copy that buys
+nothing": they are smaller in `text` on all three libcs. **Decision: no change.** What the in-tree loops do cost
+is speed on a libc with assembly `memcpy` (musl, glibc); nobody has measured a shell workload where that shows. If
+one turns up, the answer is a per-function exception (`byte_copy` over `memcpy` only), not a per-libc switch.
 
 ### 5.5 Builtin set
 
@@ -2101,9 +2139,7 @@ out of scope per the "design spec is POSIX" rule.)
 - **Niche/legacy** (`getconf`, `cmp`, `bc` (non-trivial), `comm`, `fold`, `mkfifo`, `join`, `expand`,
   `od`, `pr`, `cksum`, `tsort`, `csplit`, `pathchk`, `chgrp`): candidates, not a near-term plan; no
   per-utility sizing has been done. The sized schedule for the ones in Goal 16 is there.
-- Known gaps in the builtins that already moved: `xargs` does no blank/quote splitting of input lines,
-  accepts `-E`/`-s`/`-x` but ignores them, and runs nothing for empty input with a utility given;
-  `sort` keeps everything in memory and compares bytes (no locale collation); `tail -f` follows one
+- Known gaps in the builtins that already moved: `sort` keeps everything in memory and compares bytes (no locale collation); `tail -f` follows one
   file; `split` has the POSIX options only.
 
 No file layout, option sets, or size estimates have been worked out for any of these yet: that is the

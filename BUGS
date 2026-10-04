@@ -641,6 +641,12 @@
   ./autogen.sh && ./configure && make   # fatal error: builtin_config.h
   ./config.status && make               # builds
   ```
-- no-tree-print-removes-nothing: `-DNO_TREE_PRINT=ON` lists `src/tree/tree_print.c`
-  with a relative path in `list(REMOVE_ITEM)`, but `file(GLOB)` returned absolute
-  paths, so (untested) the files stay in `libshell`.
+- buffer-put-null-memcpy: `buffer_put()` copies zero bytes into a buffer with no storage
+  yet (`b->x == NULL`, the stralloc-backed buffer of a command substitution), so UBSan
+  reports a null pointer passed to `byte_copy()`/`memcpy` (harmless in practice).
+
+  **Repro:**
+  ```sh
+  cmake -S . -B /tmp/asan -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-fsanitize=address,undefined" && cmake --build /tmp/asan -j
+  ASAN_OPTIONS=detect_leaks=0 /tmp/asan/shish -c 'x=$(echo "")'   # lib/buffer/buffer_put.c:29:3: runtime error: null pointer passed as argument 1
+  ```

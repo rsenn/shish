@@ -6040,4 +6040,19 @@ assert_match "$PX" "*a9: No such file*" "a cycle through more than 8 aliases is 
 # default-set-plus-one-switch build run is described in doc/optional-subsystems.md.
 # The same holds for BUILTIN_{HISTORY,COMMAND,EVAL,SOURCE,TRAP}=OFF: they are link-time properties.
 
+# xargs: blank/quote splitting, -E, -s and -x take effect, and empty input still runs a given utility once
+PX=$(printf "a 'b c' d\\ e\n" | "$SHISH_SELF" -c 'xargs -n1 echo p')
+assert_equal "p a
+p b c
+p d e" "$PX" "xargs splits input at blanks and honours quotes and backslash"
+PX=$(printf 'a b STOP c\n' | "$SHISH_SELF" -c 'xargs -E STOP echo')
+assert_equal "a b" "$PX" "xargs -E stops at the end-of-file string"
+PX=$(printf 'aaa bbb ccc\n' | "$SHISH_SELF" -c 'xargs -s 14 echo')
+assert_equal "aaa bbb
+ccc" "$PX" "xargs -s keeps each command line below SIZE bytes"
+PX=$(printf 'aa bb cc\n' | "$SHISH_SELF" -c 'xargs -x -n3 -s 12 echo; echo "rc=$?"' 2>/dev/null)
+assert_equal "rc=1" "$PX" "xargs -x exits 1 instead of running fewer than -n arguments"
+PX=$("$SHISH_SELF" -c 'xargs echo hi </dev/null')
+assert_equal "hi" "$PX" "xargs runs the given utility once on empty input"
+
 summary
