@@ -14,9 +14,7 @@
 
 #include <unistd.h>
 
-#if BUILTIN_TRAP
-void trap_run_pending(void);
-#endif
+#include "../trap.h"
 
 /* give back the stdin read-ahead before a command runs, so the command
  * (e.g. `read`) sees the input that follows its own line:
@@ -128,13 +126,11 @@ sh_loop(void) {
 
     job_update();
 
-#if BUILTIN_TRAP
     /* the common, low-latency dispatch point for a real-signal trap
        whose signal fired while shish itself was busy (not blocked in
        job_wait(), which has its own matching call) doing ordinary,
        uninterruptible work between statements. */
     trap_run_pending();
-#endif
 
     /* reset prompt */
     prompt_reset();

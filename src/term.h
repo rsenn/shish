@@ -4,6 +4,7 @@
 #include "../lib/buffer.h"
 #include "../lib/stralloc.h"
 #include "../lib/windoze.h"
+#include "builtin_config.h"
 
 #ifdef HAVE_TERMIOS_H
 #include <termios.h>
@@ -67,7 +68,11 @@ void term_setline(const char* s, unsigned long len);
 char* term_getline(void);
 void term_complete(void);
 void term_complete_redraw(void);
+#if BUILTIN_HISTORY
 void term_search(void);
+#else
+#define term_search() ((void)0)
+#endif
 int term_vi_escape(void);
 void term_vimode(char c);
 

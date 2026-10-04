@@ -4,8 +4,6 @@
 #include "../../lib/byte.h"
 #include "builtin_config.h"
 
-struct alias_scan alias_scan;
-
 #if BUILTIN_ALIAS
 struct alias_frame {
   struct source src; /* first: a frame is freed through its source pointer */

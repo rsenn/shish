@@ -19,9 +19,10 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 TL_ARCHIVE = src/libshell.a
 ARCHIVE = builtin_filter.a
-# only the builtins picked with --enable-builtins are compiled
-BUILTINS = @BUILTINS@
-MODULES = $(filter $(BUILTINS:%=builtin_%),$(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/builtin_*.c)))
+# only the builtins picked with --enable-builtins are compiled (builtins.map)
+BUILTIN_OFF = @BUILTIN_OFF@
+OFF_HERE    = $(foreach f,$(patsubst $(thisdir)%.c,%,$(filter $(thisdir)%,$(BUILTIN_OFF))),$(if $(findstring /,$f),,$f))
+MODULES     = $(filter-out $(OFF_HERE),$(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/builtin_*.c)))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

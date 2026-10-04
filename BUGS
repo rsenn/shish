@@ -632,3 +632,15 @@
   f() { echo fn; }; o=$(timeout 5 f); echo "[$o]"     # "[]"; should be "[fn]"
   o=$(timeout 5 echo hi); echo "[$o]"                  # "[hi]" (ok)
   ```
+- configure-skips-config-status: `./configure` never runs `config.status`
+  (`AC_OUTPUT` is missing), so `src/builtin_config.h` is not written and `make`
+  stops with `builtin_config.h: No such file or directory`.
+
+  **Repro:**
+  ```sh
+  ./autogen.sh && ./configure && make   # fatal error: builtin_config.h
+  ./config.status && make               # builds
+  ```
+- no-tree-print-removes-nothing: `-DNO_TREE_PRINT=ON` lists `src/tree/tree_print.c`
+  with a relative path in `list(REMOVE_ITEM)`, but `file(GLOB)` returned absolute
+  paths, so (untested) the files stay in `libshell`.

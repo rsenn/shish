@@ -19,7 +19,9 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 TL_ARCHIVE = text/libtext.a
 ARCHIVE = dfa.a
-MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c))
+BUILTIN_OFF = @BUILTIN_OFF@
+OFF_HERE    = $(patsubst $(thisdir)%.c,%,$(filter $(thisdir)%,$(BUILTIN_OFF)))
+MODULES     = $(filter-out $(OFF_HERE),$(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c)))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

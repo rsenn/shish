@@ -185,6 +185,9 @@ link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
 # Build target "libtext" for all sources in text/
 # ------------------------------------------------------------------------------
 file(GLOB LIBTEXT_SOURCES text/*.h text/*/*.c)
+
+# the engines come back through the builtins that need them (src/builtin/builtins.map)
+list(REMOVE_ITEM LIBTEXT_SOURCES ${BUILTIN_MANAGED})
  
 # grep's backend: text/dfa (in-tree, no libc regex dependency) by default, or the system's <regex.h> if this is turned on.
 option(GREP_USE_SYSTEM_REGEX "Use the system's regex.h for grep instead of text/dfa" OFF)
@@ -199,6 +202,9 @@ file(GLOB LIBSHELL_SOURCES src/*.h src/*/*.c)
 
 # needs third_party/, so only built when the digest builtin is on (BUILTIN_SOURCES)
 list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "builtin_digest\\.c")
+
+# sources named in src/builtin/builtins.map are compiled only while their builtin is on
+list(REMOVE_ITEM LIBSHELL_SOURCES ${BUILTIN_MANAGED})
 list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "(sh_fmt\\.c|sh_parse2ast\\.c|sh_init\\.c|sh_main\\.c|sh_util_wasm\\.c)")
 
 if(DEBUG_OUTPUT)

@@ -1,16 +1,73 @@
 include(${CMAKE_CURRENT_LIST_DIR}/Functions.cmake)
 
+# the source tree this file belongs to (not CMAKE_SOURCE_DIR: tests/cmake-builtins.sh includes it from a scratch project)
+get_filename_component(BUILTINS_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+
 #
 # configure_shish_builtins
 #
 macro(configure_shish_builtins)
-  set_init(MINIMAL_BUILTINS alias break cd command eval exec exit export expr getopts hash history jobs kill local printf pwd read readonly return set shift source test times trap type ulimit umask unset wait)
-  set_init(EXTRA_BUILTINS awk basename cat chmod compress cp cut date digest dirname dirs env find grep head hostname id link ln ls mkdir mktemp mv nl paste popd pushd readlink realpath rm rmdir sed sleep sort split tail tee timeout touch tr uname uncompress uniq unlink wc which xargs)
-  set_init(DEFAULT_BUILTINS ${MINIMAL_BUILTINS} help type echo fdtable true false)
+  # src/builtin/builtins.map is the one list of builtins: name, source, tier, extra sources
+  file(STRINGS "${BUILTINS_SOURCE_DIR}/src/builtin/builtins.map" BUILTIN_MAP REGEX "^[^#]")
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${BUILTINS_SOURCE_DIR}/src/builtin/builtins.map")
 
-  set_init(ALL_BUILTINS ${MINIMAL_BUILTINS} ${DEFAULT_BUILTINS} ${EXTRA_BUILTINS} basename break cd dirname dump echo eval exec exit export expr false fdtable hash help history hostname ln printf pwd set shift source test times true type unset)
+  set(ALL_BUILTINS "")
+  set(MAP_MINIMAL "")
+  set(MAP_DEFAULT "")
+  set(MAP_EXTRA "")
+  set(BUILTIN_MANAGED "")
+
+  foreach(LINE ${BUILTIN_MAP})
+    string(REGEX REPLACE "[ \t]+" ";" FIELDS "${LINE}")
+    list(LENGTH FIELDS NFIELDS)
+    if(NFIELDS LESS 4 OR NFIELDS GREATER 5)
+      message(FATAL_ERROR "src/builtin/builtins.map: expected 'name file tier needs [keep]': ${LINE}")
+    endif()
+    list(GET FIELDS 0 MAP_NAME)
+    list(GET FIELDS 1 MAP_FILE)
+    list(GET FIELDS 2 MAP_TIER)
+    list(GET FIELDS 3 MAP_NEEDS)
+    string(TOUPPER ${MAP_NAME} MAP_UNAME)
+
+    # every source of the line, as an absolute path (what file(GLOB) returns)
+    set(MAP_FILES "")
+    string(REPLACE "," ";" MAP_NEEDS "${MAP_NEEDS}")
+    foreach(REL ${MAP_FILE} ${MAP_NEEDS})
+      if("${REL}" MATCHES "/$")
+        # a directory: every .c in it
+        get_filename_component(ABS "${BUILTINS_SOURCE_DIR}/src/builtin/${REL}" ABSOLUTE)
+        file(GLOB DIR_SOURCES "${ABS}/*.c")
+        list(APPEND MAP_FILES ${DIR_SOURCES})
+      elseif(NOT "${REL}" STREQUAL "-")
+        get_filename_component(ABS "${BUILTINS_SOURCE_DIR}/src/builtin/${REL}" ABSOLUTE)
+        list(APPEND MAP_FILES "${ABS}")
+      endif()
+    endforeach()
+    set(BUILTIN_FILES_${MAP_UNAME} "${MAP_FILES}")
+    if(NFIELDS EQUAL 5)
+      set(BUILTIN_FILES_${MAP_UNAME} "") # "keep": compiled whatever the switch says
+    else()
+      list(APPEND BUILTIN_MANAGED ${MAP_FILES})
+    endif()
+    list(APPEND ALL_BUILTINS ${MAP_NAME})
+
+    if("${MAP_TIER}" STREQUAL "m")
+      list(APPEND MAP_MINIMAL ${MAP_NAME})
+    elseif("${MAP_TIER}" STREQUAL "d")
+      list(APPEND MAP_DEFAULT ${MAP_NAME})
+    elseif("${MAP_TIER}" STREQUAL "x")
+      list(APPEND MAP_EXTRA ${MAP_NAME})
+    else()
+      message(FATAL_ERROR "src/builtin/builtins.map: tier must be m, d or x: ${LINE}")
+    endif()
+  endforeach()
+
+  list(REMOVE_DUPLICATES BUILTIN_MANAGED)
+
+  set_init(MINIMAL_BUILTINS ${MAP_MINIMAL})
+  set_init(EXTRA_BUILTINS ${MAP_EXTRA})
+  set_init(DEFAULT_BUILTINS ${MINIMAL_BUILTINS} ${MAP_DEFAULT})
   list(SORT ALL_BUILTINS)
-  list(REMOVE_DUPLICATES ALL_BUILTINS)
 
   unset(BUILTINS_ENABLED)
   unset(BUILTINS_DISABLED)
@@ -91,33 +148,13 @@ macro(configure_shish_builtins)
     set(DEBUG_OUTPUT_DEFAULT ON)
   endif()
 
-  # a builtin's source lives in src/builtin/core/ when it is a coreutils program
-  # (or echo/printf/test/pwd/true/false), in src/builtin/extra/ or filter/ when it is
-  # another utility, else in src/builtin/
-  function(builtin_source OUT NAME)
-    if(EXISTS "${CMAKE_SOURCE_DIR}/src/builtin/core/builtin_${NAME}.c")
-      set(RESULT "src/builtin/core/builtin_${NAME}.c")
-    elseif(EXISTS "${CMAKE_SOURCE_DIR}/src/builtin/extra/builtin_${NAME}.c")
-      set(RESULT "src/builtin/extra/builtin_${NAME}.c")
-    elseif(EXISTS "${CMAKE_SOURCE_DIR}/src/builtin/filter/builtin_${NAME}.c")
-      set(RESULT "src/builtin/filter/builtin_${NAME}.c")
-    else()
-      set(RESULT "src/builtin/builtin_${NAME}.c")
-    endif()
-    # mv shares builtin_cp.c with cp
-    # dirs, popd and pushd share builtin_dirstack.c
-    if("${NAME}" STREQUAL "dirs" OR "${NAME}" STREQUAL "popd" OR "${NAME}" STREQUAL "pushd")
-      set(RESULT "src/builtin/extra/builtin_dirstack.c")
-    endif()
-    if("${NAME}" STREQUAL "mv")
-      set(RESULT "src/builtin/core/builtin_cp.c")
-    endif()
-    set("${OUT}" "${RESULT}" PARENT_SCOPE)
-  endfunction()
-
-  foreach(BUILTIN ${BUILTINS_ENABLED})
-    builtin_source(BUILTIN_FILE ${BUILTIN})
-    set_add(SOURCES ${BUILTIN_FILE})
+  # The sources of the enabled switches: each line's file plus its "needs". Every source the map
+  # names is dropped from the src/*/*.c glob in CMakeLists.txt and comes back only from here.
+  foreach(ENABLED ${BUILTINS_ENABLED})
+    string(TOUPPER "${ENABLED}" NAME)
+    set_add(BUILTIN_SOURCES ${BUILTIN_FILES_${NAME}})
+    set(BUILTIN_FLAGS "${BUILTIN_FLAGS} -DBUILTIN_${NAME}=1")
+    set(BUILD_BUILTIN_${NAME} "1" CACHE INTERNAL "Build the ${ENABLED} builtin")
   endforeach()
 
   # NAME has to come from ${DISABLED}: without it the loop reuses whatever NAME
@@ -126,52 +163,18 @@ macro(configure_shish_builtins)
   # stayed in builtin_config.h.
   foreach(DISABLED ${BUILTINS_DISABLED})
     string(TOUPPER "${DISABLED}" NAME)
-    builtin_source(BUILTIN_FILE ${DISABLED})
-    list(REMOVE_ITEM SOURCES "${BUILTIN_FILE}")
     set(BUILD_BUILTIN_${NAME} "0" CACHE INTERNAL "Build the ${DISABLED} builtin")
   endforeach()
-
-  foreach(ENABLED ${BUILTINS_ENABLED})
-    string(TOUPPER "${ENABLED}" NAME)
-    set(BUILTIN_FLAGS "${BUILTIN_FLAGS} -DBUILTIN_${NAME}=1")
-    set(BUILD_BUILTIN_${NAME} "1" CACHE INTERNAL "Build the ${ENABLED} builtin")
-  endforeach()
-
-  # dump(BUILTINS_ENABLED)
-  # dump(BUILTIN_FLAGS)
 
   set(BUILTIN_CONFIG "")
   foreach(BUILTIN ${ALL_BUILTINS})
     string(TOUPPER ${BUILTIN} NAME)
     if(${BUILD_BUILTIN_${NAME}})
       set(BUILTIN_CONFIG "${BUILTIN_CONFIG}\n#define BUILTIN_${NAME} 1")
-      builtin_source(BUILTIN_FILE ${BUILTIN})
-      set_add(BUILTIN_SOURCES "${BUILTIN_FILE}")
     else()
       set(BUILTIN_CONFIG "${BUILTIN_CONFIG}\n#define BUILTIN_${NAME} 0")
     endif()
   endforeach()
-
-  # gunzip, unxz and unzstd (builtin_uncompress.c) run builtin_compress()
-  if(BUILD_BUILTIN_UNCOMPRESS)
-    set_add(BUILTIN_SOURCES "src/builtin/filter/builtin_compress.c")
-  endif()
-
-  # a disabled dirs/popd/pushd must not drop the file the enabled ones need
-  if(BUILD_BUILTIN_DIRS OR BUILD_BUILTIN_POPD OR BUILD_BUILTIN_PUSHD)
-    set_add(BUILTIN_SOURCES "src/builtin/extra/builtin_dirstack.c")
-    set_add(SOURCES "src/builtin/extra/builtin_dirstack.c")
-  endif()
-
-  # mv removes a source hierarchy with builtin_rm_tree(), which lives in builtin_rm.c
-  if(BUILD_BUILTIN_MV)
-    set_add(BUILTIN_SOURCES "src/builtin/core/builtin_rm.c")
-  endif()
-
-  # mkdir -m parses its mode with chmod_symbolic(), which lives in builtin_chmod.c
-  if(BUILD_BUILTIN_MKDIR)
-    set_add(BUILTIN_SOURCES "src/builtin/core/builtin_chmod.c")
-  endif()
 
   file(WRITE "${CMAKE_BINARY_DIR}/src/builtin_config.h" "${BUILTIN_CONFIG}\n\n")
 

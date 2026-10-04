@@ -1,0 +1,1063 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ade1a1dd..efa5dea7 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -185,6 +185,9 @@ link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
+ # Build target "libtext" for all sources in text/
+ # ------------------------------------------------------------------------------
+ file(GLOB LIBTEXT_SOURCES text/*.h text/*/*.c)
++
++# the engines come back through the builtins that need them (src/builtin/builtins.map)
++list(REMOVE_ITEM LIBTEXT_SOURCES ${BUILTIN_MANAGED})
+  
+ # grep's backend: text/dfa (in-tree, no libc regex dependency) by default, or the system's <regex.h> if this is turned on.
+ option(GREP_USE_SYSTEM_REGEX "Use the system's regex.h for grep instead of text/dfa" OFF)
+@@ -199,6 +202,9 @@ file(GLOB LIBSHELL_SOURCES src/*.h src/*/*.c)
+ 
+ # needs third_party/, so only built when the digest builtin is on (BUILTIN_SOURCES)
+ list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "builtin_digest\\.c")
++
++# sources named in src/builtin/builtins.map are compiled only while their builtin is on
++list(REMOVE_ITEM LIBSHELL_SOURCES ${BUILTIN_MANAGED})
+ list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "(sh_fmt\\.c|sh_parse2ast\\.c|sh_init\\.c|sh_main\\.c|sh_util_wasm\\.c)")
+ 
+ if(DEBUG_OUTPUT)
+diff --git a/cmake/Builtins.cmake b/cmake/Builtins.cmake
+index 161dbb35..6588833f 100644
+--- a/cmake/Builtins.cmake
++++ b/cmake/Builtins.cmake
+@@ -1,16 +1,73 @@
+ include(${CMAKE_CURRENT_LIST_DIR}/Functions.cmake)
+ 
++# the source tree this file belongs to (not CMAKE_SOURCE_DIR: tests/cmake-builtins.sh includes it from a scratch project)
++get_filename_component(BUILTINS_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
++
+ #
+ # configure_shish_builtins
+ #
+ macro(configure_shish_builtins)
+-  set_init(MINIMAL_BUILTINS alias break cd command eval exec exit export expr getopts hash history jobs kill local printf pwd read readonly return set shift source test times trap type ulimit umask unset wait)
+-  set_init(EXTRA_BUILTINS awk basename cat chmod compress cp cut date digest dirname dirs env find grep head hostname id link ln ls mkdir mktemp mv nl paste popd pushd readlink realpath rm rmdir sed sleep sort split tail tee timeout touch tr uname uncompress uniq unlink wc which xargs)
+-  set_init(DEFAULT_BUILTINS ${MINIMAL_BUILTINS} help type echo fdtable true false)
++  # src/builtin/builtins.map is the one list of builtins: name, source, tier, extra sources
++  file(STRINGS "${BUILTINS_SOURCE_DIR}/src/builtin/builtins.map" BUILTIN_MAP REGEX "^[^#]")
++  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${BUILTINS_SOURCE_DIR}/src/builtin/builtins.map")
++
++  set(ALL_BUILTINS "")
++  set(MAP_MINIMAL "")
++  set(MAP_DEFAULT "")
++  set(MAP_EXTRA "")
++  set(BUILTIN_MANAGED "")
++
++  foreach(LINE ${BUILTIN_MAP})
++    string(REGEX REPLACE "[ \t]+" ";" FIELDS "${LINE}")
++    list(LENGTH FIELDS NFIELDS)
++    if(NFIELDS LESS 4 OR NFIELDS GREATER 5)
++      message(FATAL_ERROR "src/builtin/builtins.map: expected 'name file tier needs [keep]': ${LINE}")
++    endif()
++    list(GET FIELDS 0 MAP_NAME)
++    list(GET FIELDS 1 MAP_FILE)
++    list(GET FIELDS 2 MAP_TIER)
++    list(GET FIELDS 3 MAP_NEEDS)
++    string(TOUPPER ${MAP_NAME} MAP_UNAME)
++
++    # every source of the line, as an absolute path (what file(GLOB) returns)
++    set(MAP_FILES "")
++    string(REPLACE "," ";" MAP_NEEDS "${MAP_NEEDS}")
++    foreach(REL ${MAP_FILE} ${MAP_NEEDS})
++      if("${REL}" MATCHES "/$")
++        # a directory: every .c in it
++        get_filename_component(ABS "${BUILTINS_SOURCE_DIR}/src/builtin/${REL}" ABSOLUTE)
++        file(GLOB DIR_SOURCES "${ABS}/*.c")
++        list(APPEND MAP_FILES ${DIR_SOURCES})
++      elseif(NOT "${REL}" STREQUAL "-")
++        get_filename_component(ABS "${BUILTINS_SOURCE_DIR}/src/builtin/${REL}" ABSOLUTE)
++        list(APPEND MAP_FILES "${ABS}")
++      endif()
++    endforeach()
++    set(BUILTIN_FILES_${MAP_UNAME} "${MAP_FILES}")
++    if(NFIELDS EQUAL 5)
++      set(BUILTIN_FILES_${MAP_UNAME} "") # "keep": compiled whatever the switch says
++    else()
++      list(APPEND BUILTIN_MANAGED ${MAP_FILES})
++    endif()
++    list(APPEND ALL_BUILTINS ${MAP_NAME})
++
++    if("${MAP_TIER}" STREQUAL "m")
++      list(APPEND MAP_MINIMAL ${MAP_NAME})
++    elseif("${MAP_TIER}" STREQUAL "d")
++      list(APPEND MAP_DEFAULT ${MAP_NAME})
++    elseif("${MAP_TIER}" STREQUAL "x")
++      list(APPEND MAP_EXTRA ${MAP_NAME})
++    else()
++      message(FATAL_ERROR "src/builtin/builtins.map: tier must be m, d or x: ${LINE}")
++    endif()
++  endforeach()
+ 
+-  set_init(ALL_BUILTINS ${MINIMAL_BUILTINS} ${DEFAULT_BUILTINS} ${EXTRA_BUILTINS} basename break cd dirname dump echo eval exec exit export expr false fdtable hash help history hostname ln printf pwd set shift source test times true type unset)
++  list(REMOVE_DUPLICATES BUILTIN_MANAGED)
++
++  set_init(MINIMAL_BUILTINS ${MAP_MINIMAL})
++  set_init(EXTRA_BUILTINS ${MAP_EXTRA})
++  set_init(DEFAULT_BUILTINS ${MINIMAL_BUILTINS} ${MAP_DEFAULT})
+   list(SORT ALL_BUILTINS)
+-  list(REMOVE_DUPLICATES ALL_BUILTINS)
+ 
+   unset(BUILTINS_ENABLED)
+   unset(BUILTINS_DISABLED)
+@@ -91,33 +148,13 @@ macro(configure_shish_builtins)
+     set(DEBUG_OUTPUT_DEFAULT ON)
+   endif()
+ 
+-  # a builtin's source lives in src/builtin/core/ when it is a coreutils program
+-  # (or echo/printf/test/pwd/true/false), in src/builtin/extra/ or filter/ when it is
+-  # another utility, else in src/builtin/
+-  function(builtin_source OUT NAME)
+-    if(EXISTS "${CMAKE_SOURCE_DIR}/src/builtin/core/builtin_${NAME}.c")
+-      set(RESULT "src/builtin/core/builtin_${NAME}.c")
+-    elseif(EXISTS "${CMAKE_SOURCE_DIR}/src/builtin/extra/builtin_${NAME}.c")
+-      set(RESULT "src/builtin/extra/builtin_${NAME}.c")
+-    elseif(EXISTS "${CMAKE_SOURCE_DIR}/src/builtin/filter/builtin_${NAME}.c")
+-      set(RESULT "src/builtin/filter/builtin_${NAME}.c")
+-    else()
+-      set(RESULT "src/builtin/builtin_${NAME}.c")
+-    endif()
+-    # mv shares builtin_cp.c with cp
+-    # dirs, popd and pushd share builtin_dirstack.c
+-    if("${NAME}" STREQUAL "dirs" OR "${NAME}" STREQUAL "popd" OR "${NAME}" STREQUAL "pushd")
+-      set(RESULT "src/builtin/extra/builtin_dirstack.c")
+-    endif()
+-    if("${NAME}" STREQUAL "mv")
+-      set(RESULT "src/builtin/core/builtin_cp.c")
+-    endif()
+-    set("${OUT}" "${RESULT}" PARENT_SCOPE)
+-  endfunction()
+-
+-  foreach(BUILTIN ${BUILTINS_ENABLED})
+-    builtin_source(BUILTIN_FILE ${BUILTIN})
+-    set_add(SOURCES ${BUILTIN_FILE})
++  # The sources of the enabled switches: each line's file plus its "needs". Every source the map
++  # names is dropped from the src/*/*.c glob in CMakeLists.txt and comes back only from here.
++  foreach(ENABLED ${BUILTINS_ENABLED})
++    string(TOUPPER "${ENABLED}" NAME)
++    set_add(BUILTIN_SOURCES ${BUILTIN_FILES_${NAME}})
++    set(BUILTIN_FLAGS "${BUILTIN_FLAGS} -DBUILTIN_${NAME}=1")
++    set(BUILD_BUILTIN_${NAME} "1" CACHE INTERNAL "Build the ${ENABLED} builtin")
+   endforeach()
+ 
+   # NAME has to come from ${DISABLED}: without it the loop reuses whatever NAME
+@@ -126,53 +163,19 @@ macro(configure_shish_builtins)
+   # stayed in builtin_config.h.
+   foreach(DISABLED ${BUILTINS_DISABLED})
+     string(TOUPPER "${DISABLED}" NAME)
+-    builtin_source(BUILTIN_FILE ${DISABLED})
+-    list(REMOVE_ITEM SOURCES "${BUILTIN_FILE}")
+     set(BUILD_BUILTIN_${NAME} "0" CACHE INTERNAL "Build the ${DISABLED} builtin")
+   endforeach()
+ 
+-  foreach(ENABLED ${BUILTINS_ENABLED})
+-    string(TOUPPER "${ENABLED}" NAME)
+-    set(BUILTIN_FLAGS "${BUILTIN_FLAGS} -DBUILTIN_${NAME}=1")
+-    set(BUILD_BUILTIN_${NAME} "1" CACHE INTERNAL "Build the ${ENABLED} builtin")
+-  endforeach()
+-
+-  # dump(BUILTINS_ENABLED)
+-  # dump(BUILTIN_FLAGS)
+-
+   set(BUILTIN_CONFIG "")
+   foreach(BUILTIN ${ALL_BUILTINS})
+     string(TOUPPER ${BUILTIN} NAME)
+     if(${BUILD_BUILTIN_${NAME}})
+       set(BUILTIN_CONFIG "${BUILTIN_CONFIG}\n#define BUILTIN_${NAME} 1")
+-      builtin_source(BUILTIN_FILE ${BUILTIN})
+-      set_add(BUILTIN_SOURCES "${BUILTIN_FILE}")
+     else()
+       set(BUILTIN_CONFIG "${BUILTIN_CONFIG}\n#define BUILTIN_${NAME} 0")
+     endif()
+   endforeach()
+ 
+-  # gunzip, unxz and unzstd (builtin_uncompress.c) run builtin_compress()
+-  if(BUILD_BUILTIN_UNCOMPRESS)
+-    set_add(BUILTIN_SOURCES "src/builtin/filter/builtin_compress.c")
+-  endif()
+-
+-  # a disabled dirs/popd/pushd must not drop the file the enabled ones need
+-  if(BUILD_BUILTIN_DIRS OR BUILD_BUILTIN_POPD OR BUILD_BUILTIN_PUSHD)
+-    set_add(BUILTIN_SOURCES "src/builtin/extra/builtin_dirstack.c")
+-    set_add(SOURCES "src/builtin/extra/builtin_dirstack.c")
+-  endif()
+-
+-  # mv removes a source hierarchy with builtin_rm_tree(), which lives in builtin_rm.c
+-  if(BUILD_BUILTIN_MV)
+-    set_add(BUILTIN_SOURCES "src/builtin/core/builtin_rm.c")
+-  endif()
+-
+-  # mkdir -m parses its mode with chmod_symbolic(), which lives in builtin_chmod.c
+-  if(BUILD_BUILTIN_MKDIR)
+-    set_add(BUILTIN_SOURCES "src/builtin/core/builtin_chmod.c")
+-  endif()
+-
+   file(WRITE "${CMAKE_BINARY_DIR}/src/builtin_config.h" "${BUILTIN_CONFIG}\n\n")
+ 
+   set_source_files_properties(src/builtin/builtin_table.c 
+diff --git a/configure.ac b/configure.ac
+index bd18dc06..859a77eb 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -226,24 +226,18 @@ AC_SUBST([WIN32_TRUE],[#])
+ # check for needed types
+ # ---------------------------------------------------------------------------
+ 
+-dnl ALL_BUILTINS: every BUILTIN_<name> the table in builtin_table.c is
+-dnl gated by, lowercased (space separated). EXTRA_BUILTINS: the ones whose
+-dnl source is in src/builtin/{core,extra,filter}/ (but echo, false, printf,
+-dnl pwd, test and true in core/ stay default). Both are read when this file is
+-dnl turned into ./configure, so re-run autogen.sh after adding a builtin.
++dnl ALL_BUILTINS: every BUILTIN_<name> switch; DEFAULT_BUILTINS: the minimal and
++dnl default tier. Both come from src/builtin/builtins.map (read through
++dnl builtins.awk) when this file is turned into ./configure, so re-run
++dnl autogen.sh after adding a builtin.
+ m4_define([ALL_BUILTINS],
+-  m4_normalize(m4_esyscmd([grep '^builtin_' src/builtin -r -l |sort |sed 's,.*/builtin_,, ; s,\.c$,,' | tr '\n' ' '])))
++  m4_normalize(m4_esyscmd([awk -v mode=names -f src/builtin/builtins.awk src/builtin/builtins.map])))
+ 
+-m4_define([EXTRA_BUILTINS],
+-  m4_normalize(m4_esyscmd([ls -d src/builtin/*/*.c | grep -v -E 'core/builtin_(echo|false|printf|pwd|test|true)\.c' | sed 's,.*/builtin_,,; s,\.c$,,' | tr '\n' ' '])))
++m4_define([DEFAULT_BUILTINS],
++  m4_normalize(m4_esyscmd([awk -v mode=tier -v tiers=md -f src/builtin/builtins.awk src/builtin/builtins.map])))
+ 
+ #echo "ALL_BUILTINS: m4_defn([ALL_BUILTINS])" 1>&2
+ 
+-dnl default set: every builtin that is not in src/builtin/{core,extra,filter}/
+-m4_define([DEFAULT_BUILTINS],
+-  m4_normalize(m4_foreach_w([BUILTIN], m4_defn([ALL_BUILTINS]),
+-    [m4_if(m4_index([ ]m4_defn([EXTRA_BUILTINS])[ ], [ ]BUILTIN[ ]), [-1], [BUILTIN ])])))
+-
+ dnl "all" leaves out digest: it needs third_party/Hash-Algorithms, which
+ dnl only the CMake build (cmake/Digest.cmake) fetches and compiles.
+ m4_define([ALL_BUILTINS_NO_DIGEST],
+@@ -337,6 +331,11 @@ enabled_builtins="$enabled_builtins"])
+ 
+ AC_SUBST([BUILTINS],[$enabled_builtins])
+ 
++dnl sources named in builtins.map that no enabled builtin needs: the Makefile.in
++dnl of their directory leaves them out of MODULES
++builtin_off=`awk -v mode=off -v top=$srcdir -v enabled="$enabled_builtins" -f $srcdir/src/builtin/builtins.awk $srcdir/src/builtin/builtins.map | tr '\n' ' '`
++AC_SUBST([BUILTIN_OFF],[$builtin_off])
++
+ # library subdirectories
+ # ---------------------------------------------------------------------------
+ dnl AC_CONFIG_LIBRARIES([lib/libowfat])
+diff --git a/lib/wait/waitpid_nointr.c b/lib/wait/waitpid_nointr.c
+index 77a645d6..39a7aafd 100644
+--- a/lib/wait/waitpid_nointr.c
++++ b/lib/wait/waitpid_nointr.c
+@@ -9,12 +9,9 @@
+ #include <errno.h>
+ #include <signal.h>
+ 
+-/* set by builtin_trap.c's trap_relay() (the real, async-signal-safe
+- * OS handler for a real-signal trap) whenever a trapped signal fires;
+- * cleared once trap_run_pending() has dispatched everything pending.
+- * Checked below so an EINTR caused by a genuine trap signal doesn't
+- * just get silently retried -- see waitpid_nointr()'s own comment. */
+-extern volatile sig_atomic_t trap_signaled;
++/* set by a signal handler when a signal the caller cares about fires: waitpid_nointr()
++ * then returns -1/EINTR instead of retrying. Cleared by the caller once it has dealt with it. */
++volatile sig_atomic_t trap_signaled = 0;
+ 
+ int
+ waitpid_nointr(int pid, int* wstat, int flags) {
+diff --git a/src/builtin/Makefile.in b/src/builtin/Makefile.in
+index c4bbd246..2647a158 100644
+--- a/src/builtin/Makefile.in
++++ b/src/builtin/Makefile.in
+@@ -19,7 +19,9 @@ include $(top_builddir)/config.mk
+ # ---------------------------------------------------------------------------
+ TL_ARCHIVE = src/libshell.a
+ ARCHIVE = builtin.a
+-MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/builtin_*.c))
++BUILTIN_OFF = @BUILTIN_OFF@
++OFF_HERE    = $(foreach f,$(patsubst $(thisdir)%.c,%,$(filter $(thisdir)%,$(BUILTIN_OFF))),$(if $(findstring /,$f),,$f))
++MODULES     = $(filter-out $(OFF_HERE),$(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/builtin_*.c)))
+ 
+ SOURCES = $(MODULES:%=%.c)
+ OBJECTS = $(MODULES:%=%.o)
+diff --git a/src/builtin/builtin_exit.c b/src/builtin/builtin_exit.c
+index 98804e84..83b22b79 100644
+--- a/src/builtin/builtin_exit.c
++++ b/src/builtin/builtin_exit.c
+@@ -9,8 +9,7 @@ const char help_exit[] = "    Exit the shell.\n"
+                          "\n"
+                          "    exitcode        status to exit with (default: the last command's)\n";
+ 
+-int trap_exit_running(void);
+-int trap_exit_pending(void);
++#include "../trap.h"
+ 
+ int
+ builtin_exit(int argc, char* argv[]) {
+diff --git a/src/builtin/builtin_kill.c b/src/builtin/builtin_kill.c
+index d9a2f4fc..36890fbd 100644
+--- a/src/builtin/builtin_kill.c
++++ b/src/builtin/builtin_kill.c
+@@ -1,5 +1,6 @@
+ #include "../builtin.h"
+ #include "../job.h"
++#include "../trap.h"
+ #include "../fdtable.h"
+ #include "../../lib/scan.h"
+ #include "../../lib/str.h"
+@@ -77,7 +78,6 @@ kill_list(void) {
+ }
+ 
+ #if BUILTIN_TRAP
+-int trap_signal_parent(int);
+ #endif
+ 
+ int
+diff --git a/src/builtin/builtin_return.c b/src/builtin/builtin_return.c
+index 1e0fa8fc..36903642 100644
+--- a/src/builtin/builtin_return.c
++++ b/src/builtin/builtin_return.c
+@@ -11,19 +11,15 @@ const char help_return[] =
+     "\n"
+     "    n               exit status to return (default: the last command's)\n";
+ 
+-#if BUILTIN_TRAP
+-int trap_return_status(void);
+-#endif
++#include "../trap.h"
+ 
+ int
+ builtin_return(int argc, char* argv[]) {
+   unsigned int ret = sh->exitcode & 0xff;
+ 
+-#if BUILTIN_TRAP
+   /* inside a trap body a bare "return" yields the status from before the trap */
+   if(!argv[1] && trap_return_status() >= 0)
+     ret = trap_return_status() & 0xff;
+-#endif
+ 
+   if(argv[1]) {
+     if(scan_uint(argv[1], &ret) == 0) {
+diff --git a/src/builtin/builtin_trap.c b/src/builtin/builtin_trap.c
+index 12c51d76..004cc6f1 100644
+--- a/src/builtin/builtin_trap.c
++++ b/src/builtin/builtin_trap.c
+@@ -103,7 +103,7 @@ trap_print(trap* tr) {
+  * TRAP_DEBUG (254)/TRAP_RETURN (255) are never real OS signals, so
+  * trap_relay() never touches those slots. */
+ static volatile sig_atomic_t trap_pending[256];
+-volatile sig_atomic_t trap_signaled = 0;
++extern volatile sig_atomic_t trap_signaled; /* defined in lib/wait/waitpid_nointr.c */
+ 
+ /* "$?" from before the running real-signal trap body: what a bare "return" yields */
+ static int trap_prior_status, trap_in_signal;
+diff --git a/src/builtin/builtins.awk b/src/builtin/builtins.awk
+new file mode 100644
+index 00000000..68506fcb
+--- /dev/null
++++ b/src/builtin/builtins.awk
+@@ -0,0 +1,50 @@
++# Reads src/builtin/builtins.map for configure.ac and the Makefile.in files.
++#
++#   awk -v mode=names                        -f builtins.awk builtins.map   every switch name
++#   awk -v mode=tier -v tiers=md             -f builtins.awk builtins.map   names of those tiers
++#   awk -v mode=off -v enabled="cd cp ..." -v top=. -f builtins.awk builtins.map   sources no enabled switch names
++#
++# "off" prints paths relative to the top directory (src/builtin/../source/x.c -> src/source/x.c).
++# A needs entry ending in "/" stands for every .c file of that directory (found with ls under top).
++
++function add(name, p) {
++  known[p] = 1
++  if (index(" " enabled " ", " " name " ")) on[p] = 1
++}
++
++function norm(p) {
++  p = "src/builtin/" p
++  while (sub(/[^\/]+\/\.\.\//, "", p)) ;
++  return p
++}
++
++/^#/ || NF == 0 { next }
++
++{
++  if (mode == "names")
++    print $1
++  else if (mode == "tier") {
++    if (index(tiers, $3)) print $1
++  } else {
++    n = NF > 4 ? 0 : split($2 "," $4, f, ",")
++    for (i = 1; i <= n; i++)
++      if (f[i] != "-") {
++        p = norm(f[i])
++        if (p ~ /\/$/) {
++          cmd = "ls " top "/" p "*.c 2>/dev/null"
++          while ((cmd | getline q) > 0) {
++            sub("^" top "/", "", q)
++            add($1, q)
++          }
++          close(cmd)
++        } else
++          add($1, p)
++      }
++  }
++}
++
++END {
++  if (mode == "off")
++    for (p in known)
++      if (!(p in on)) print p
++}
+diff --git a/src/builtin/builtins.map b/src/builtin/builtins.map
+new file mode 100644
+index 00000000..abdca1ea
+--- /dev/null
++++ b/src/builtin/builtins.map
+@@ -0,0 +1,98 @@
++# builtins.map: one line per builtin switch (BUILTIN_<NAME>), read by CMake (cmake/Builtins.cmake)
++# and by configure.ac. Whitespace-separated columns:
++#
++#   name   the switch, lower case: BUILTIN_<NAME>
++#   file   the source with the builtin's entry function, relative to src/builtin/
++#   tier   m = minimal, d = default, x = extra (off unless asked for)
++#   needs  comma-separated further sources compiled only while this switch is on
++#          (helpers it cannot link without, code of the subsystem it carries); - = none
++#   keep   optional: the file is called from outside src/builtin/, so it is always compiled and
++#          the switch only removes the builtin's table row (only set: sh_main.c parses its options)
++#
++# A source named by any line is compiled only when some switch naming it is on.
++# tests/builtin-map.sh keeps this file, builtin_table.c and the source tree in step.
++alias       builtin_alias.c                 m   ../source/source_alias.c,../parse/parse_findalias.c
++awk         extra/builtin_awk.c             x   ../../text/awk/,../../text/dfa/
++basename    core/builtin_basename.c         x   -
++break       builtin_break.c                 m   -
++cat         filter/builtin_cat.c            x   -
++cd          builtin_cd.c                    m   -
++chmod       core/builtin_chmod.c            x   -
++command     builtin_command.c               m   -
++compress    filter/builtin_compress.c       x   -
++continue    builtin_break.c                 m   -
++cp          core/builtin_cp.c               x   core/builtin_rm.c
++cut         filter/builtin_cut.c            x   -
++date        core/builtin_date.c             x   -
++digest      extra/builtin_digest.c          x   -
++dirname     core/builtin_dirname.c          x   -
++dirs        extra/builtin_dirstack.c        x   -
++dump        builtin_dump.c                  x   -
++echo        core/builtin_echo.c             d   -
++env         core/builtin_env.c              x   -
++eval        builtin_eval.c                  m   -
++exec        builtin_exec.c                  m   -
++exit        builtin_exit.c                  m   -
++export      builtin_export.c                m   -
++expr        core/builtin_expr.c             m   ../../text/dfa/
++false       core/builtin_false.c            d   -
++fdtable     builtin_fdtable.c               d   -
++find        extra/builtin_find.c            x   -
++getopts     builtin_getopts.c               m   -
++grep        filter/builtin_grep.c           x   ../../text/dfa/
++hash        builtin_hash.c                  m   -
++head        filter/builtin_head.c           x   -
++help        builtin_help.c                  d   -
++history     builtin_history.c               m   ../history/history_add.c,../history/history_clear.c,../history/history_decode.c,../history/history_encode.c,../history/history_file_entry.c,../history/history_file_next.c,../history/history_init.c,../history/history_next.c,../history/history_prev.c,../history/history_print.c,../history/history_session_resize.c,../history/history_show.c,../term/term_search.c
++hostname    extra/builtin_hostname.c        x   -
++id          core/builtin_id.c               x   -
++jobs        builtin_jobs.c                  m   -
++kill        builtin_kill.c                  m   -
++link        core/builtin_link.c             x   -
++ln          core/builtin_ln.c               x   -
++local       builtin_local.c                 m   -
++ls          core/builtin_ls.c               x   -
++mkdir       core/builtin_mkdir.c            x   core/builtin_chmod.c
++mktemp      core/builtin_mktemp.c           x   -
++mv          core/builtin_cp.c               x   core/builtin_rm.c
++nl          filter/builtin_nl.c             x   ../../text/dfa/
++paste       filter/builtin_paste.c          x   -
++popd        extra/builtin_dirstack.c        x   -
++printf      core/builtin_printf.c           m   -
++pushd       extra/builtin_dirstack.c        x   -
++pwd         core/builtin_pwd.c              m   -
++read        builtin_read.c                  m   -
++readlink    core/builtin_readlink.c         x   -
++readonly    builtin_readonly.c              m   -
++realpath    core/builtin_realpath.c         x   -
++return      builtin_return.c                m   -
++rm          core/builtin_rm.c               x   -
++rmdir       core/builtin_rmdir.c            x   -
++sed         filter/builtin_sed.c            x   ../../text/sed/,../../text/dfa/
++set         builtin_set.c                   m   -   keep
++shift       builtin_shift.c                 m   -
++sleep       core/builtin_sleep.c            x   -
++sort        filter/builtin_sort.c           x   -
++source      builtin_source.c                m   -
++split       core/builtin_split.c            x   -
++tail        filter/builtin_tail.c           x   -
++tee         core/builtin_tee.c              x   -
++test        core/builtin_test.c             m   -
++timeout     core/builtin_timeout.c          x   -
++times       builtin_times.c                 m   -
++touch       core/builtin_touch.c            x   -
++trap        builtin_trap.c                  m   -
++tr          filter/builtin_tr.c             x   -
++true        core/builtin_true.c             d   -
++type        builtin_type.c                  m   -
++ulimit      builtin_ulimit.c                m   -
++umask       builtin_umask.c                 m   -
++uname       core/builtin_uname.c            x   -
++uncompress  filter/builtin_uncompress.c     x   filter/builtin_compress.c
++uniq        filter/builtin_uniq.c           x   -
++unlink      core/builtin_unlink.c           x   -
++unset       builtin_unset.c                 m   -
++wait        builtin_wait.c                  m   -
++wc          core/builtin_wc.c               x   -
++which       extra/builtin_which.c           x   -
++xargs       extra/builtin_xargs.c           x   -
+diff --git a/src/builtin/core/Makefile.in b/src/builtin/core/Makefile.in
+index d6157057..f00f71d7 100644
+--- a/src/builtin/core/Makefile.in
++++ b/src/builtin/core/Makefile.in
+@@ -19,9 +19,10 @@ include $(top_builddir)/config.mk
+ # ---------------------------------------------------------------------------
+ TL_ARCHIVE = src/libshell.a
+ ARCHIVE = builtin_core.a
+-# only the builtins picked with --enable-builtins are compiled
+-BUILTINS = @BUILTINS@
+-MODULES = $(filter $(BUILTINS:%=builtin_%),$(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/builtin_*.c)))
++# only the builtins picked with --enable-builtins are compiled (builtins.map)
++BUILTIN_OFF = @BUILTIN_OFF@
++OFF_HERE    = $(foreach f,$(patsubst $(thisdir)%.c,%,$(filter $(thisdir)%,$(BUILTIN_OFF))),$(if $(findstring /,$f),,$f))
++MODULES     = $(filter-out $(OFF_HERE),$(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/builtin_*.c)))
+ 
+ SOURCES = $(MODULES:%=%.c)
+ OBJECTS = $(MODULES:%=%.o)
+diff --git a/src/builtin/extra/Makefile.in b/src/builtin/extra/Makefile.in
+index 54a07c16..03218c0f 100644
+--- a/src/builtin/extra/Makefile.in
++++ b/src/builtin/extra/Makefile.in
+@@ -19,9 +19,10 @@ include $(top_builddir)/config.mk
+ # ---------------------------------------------------------------------------
+ TL_ARCHIVE = src/libshell.a
+ ARCHIVE = builtin_extra.a
+-# only the builtins picked with --enable-builtins are compiled
+-BUILTINS = @BUILTINS@
+-MODULES = $(filter $(BUILTINS:%=builtin_%),$(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/builtin_*.c)))
++# only the builtins picked with --enable-builtins are compiled (builtins.map)
++BUILTIN_OFF = @BUILTIN_OFF@
++OFF_HERE    = $(foreach f,$(patsubst $(thisdir)%.c,%,$(filter $(thisdir)%,$(BUILTIN_OFF))),$(if $(findstring /,$f),,$f))
++MODULES     = $(filter-out $(OFF_HERE),$(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/builtin_*.c)))
+ 
+ SOURCES = $(MODULES:%=%.c)
+ OBJECTS = $(MODULES:%=%.o)
+diff --git a/src/builtin/filter/Makefile.in b/src/builtin/filter/Makefile.in
+index 7043067c..ea0a08ba 100644
+--- a/src/builtin/filter/Makefile.in
++++ b/src/builtin/filter/Makefile.in
+@@ -19,9 +19,10 @@ include $(top_builddir)/config.mk
+ # ---------------------------------------------------------------------------
+ TL_ARCHIVE = src/libshell.a
+ ARCHIVE = builtin_filter.a
+-# only the builtins picked with --enable-builtins are compiled
+-BUILTINS = @BUILTINS@
+-MODULES = $(filter $(BUILTINS:%=builtin_%),$(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/builtin_*.c)))
++# only the builtins picked with --enable-builtins are compiled (builtins.map)
++BUILTIN_OFF = @BUILTIN_OFF@
++OFF_HERE    = $(foreach f,$(patsubst $(thisdir)%.c,%,$(filter $(thisdir)%,$(BUILTIN_OFF))),$(if $(findstring /,$f),,$f))
++MODULES     = $(filter-out $(OFF_HERE),$(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/builtin_*.c)))
+ 
+ SOURCES = $(MODULES:%=%.c)
+ OBJECTS = $(MODULES:%=%.o)
+diff --git a/src/eval/eval_cmdlist.c b/src/eval/eval_cmdlist.c
+index 3238dfa4..9f45a016 100644
+--- a/src/eval/eval_cmdlist.c
++++ b/src/eval/eval_cmdlist.c
+@@ -3,7 +3,7 @@
+ #include "../eval.h"
+ #include "../sh.h"
+ 
+-void trap_run_pending(void);
++#include "../trap.h"
+ 
+ /* ----------------------------------------------------------------------- */
+ int
+diff --git a/src/eval/eval_pipeline.c b/src/eval/eval_pipeline.c
+index 19fa4d22..1f156b56 100644
+--- a/src/eval/eval_pipeline.c
++++ b/src/eval/eval_pipeline.c
+@@ -26,8 +26,7 @@
+ #endif
+ 
+ #if BUILTIN_TRAP
+-void* trap_snapshot_save(void);
+-void trap_snapshot_restore(void*);
++#include "../trap.h"
+ #endif
+ 
+ /* filter-chain scanner (TODO.md Goal 13): finds a trailing run of
+diff --git a/src/eval/eval_simple_command.c b/src/eval/eval_simple_command.c
+index d3541829..1da98a49 100644
+--- a/src/eval/eval_simple_command.c
++++ b/src/eval/eval_simple_command.c
+@@ -10,6 +10,7 @@
+ #include "../sh.h"
+ #include "../builtin.h"
+ #include "../eval.h"
++#include "builtin_config.h"
+ #include "../exec.h"
+ #include "../expand.h"
+ #include "../fdstack.h"
+@@ -70,6 +71,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+ 
+     /* "command [-p] [--] exec ..." runs as "exec ...", so its
+        redirections persist. args_head still owns the whole list. */
++#if BUILTIN_COMMAND
+     if(cmd.id == H_BUILTIN && cmd.builtin && cmd.builtin->fn == &builtin_command) {
+       union node* n = args->next;
+ 
+@@ -85,6 +87,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+         }
+       }
+     }
++#endif
+   }
+ 
+   /* POSIX 2.8.1: an expansion error means this command does not run at
+diff --git a/src/eval/eval_subshell.c b/src/eval/eval_subshell.c
+index 48803da1..a861be6e 100644
+--- a/src/eval/eval_subshell.c
++++ b/src/eval/eval_subshell.c
+@@ -9,8 +9,7 @@
+ #include "builtin_config.h"
+ 
+ #if BUILTIN_TRAP
+-void* trap_snapshot_save(void);
+-void trap_snapshot_restore(void*);
++#include "../trap.h"
+ #endif
+ 
+ /* evaluate subshell or grouping (3.9.4.1)
+diff --git a/src/eval/eval_tree.c b/src/eval/eval_tree.c
+index c7a9858f..d8e6faba 100644
+--- a/src/eval/eval_tree.c
++++ b/src/eval/eval_tree.c
+@@ -4,7 +4,7 @@
+ #include "../tree.h"
+ #include "../sh.h"
+ 
+-void trap_run_pending(void);
++#include "../trap.h"
+ 
+ /* evaluate a tree node(-list maybe)
+  * ----------------------------------------------------------------------- */
+diff --git a/src/exec/exec_command.c b/src/exec/exec_command.c
+index d25628b7..27342ad8 100644
+--- a/src/exec/exec_command.c
++++ b/src/exec/exec_command.c
+@@ -6,14 +6,34 @@
+ #include "../job.h"
+ #include "../sh.h"
+ #include "../fdstack.h"
++#include "../trap.h"
++#include "builtin_config.h"
+ 
+-int trap_exit_set_here(void);
+ #include "../source.h"
+ #include "../../lib/shell.h"
+ #include "../tree.h"
+ #include "../trace.h"
+ #include "../vartab.h"
+ 
++/* builtins whose nonzero status is the last command's, not a builtin error */
++static int
++exec_status_passthru(int (*fn)(int, char**)) {
++#if BUILTIN_SOURCE
++  if(fn == builtin_source)
++    return 1;
++#endif
++#if BUILTIN_EVAL
++  if(fn == builtin_eval)
++    return 1;
++#endif
++#if BUILTIN_TRAP
++  if(fn == builtin_trap)
++    return 1;
++#endif
++  (void)fn;
++  return 0;
++}
++
+ /* execute a command
+  * ----------------------------------------------------------------------- */
+ int exec_via_command; /* run by "command": a special builtin's error does not exit */
+@@ -256,8 +276,7 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
+      which is not a builtin error: ". f" with f ending in "false" or
+      "return 3", and "eval false", must not kill the shell.
+      "trap '' ''" (invalid signal) does not kill it either. */
+-  if(cmd->id == H_SBUILTIN && ret != 0 && !sh_interactive && !exec_via_command && cmd->builtin->fn != builtin_source &&
+-     cmd->builtin->fn != builtin_eval && cmd->builtin->fn != builtin_trap) {
++  if(cmd->id == H_SBUILTIN && ret != 0 && !sh_interactive && !exec_via_command && !exec_status_passthru(cmd->builtin->fn)) {
+     sh_exit(ret);
+   }
+ 
+diff --git a/src/expand/expand_command.c b/src/expand/expand_command.c
+index 233865ca..86c9c60c 100644
+--- a/src/expand/expand_command.c
++++ b/src/expand/expand_command.c
+@@ -20,8 +20,7 @@ int expand_cmdsub_depth;
+ #endif
+ 
+ #if BUILTIN_TRAP
+-void* trap_snapshot_save(void);
+-void trap_snapshot_restore(void*);
++#include "../trap.h"
+ #endif
+ 
+ /* evaluates backquoted command list, while writing stdout to a stralloc
+diff --git a/src/history.h b/src/history.h
+index 3a9597ab..d8c37ce1 100644
+--- a/src/history.h
++++ b/src/history.h
+@@ -3,6 +3,7 @@
+ 
+ #include "../lib/typedefs.h"
+ #include "../lib/stralloc.h"
++#include "builtin_config.h"
+ 
+ #define DEFAULT_HISTSIZE 128
+ 
+@@ -34,6 +35,8 @@
+  * entries without clobbering each other's.
+  */
+ 
++#if BUILTIN_HISTORY
++
+ /* ---- in-memory ring of this session's commands (newest at head-1) ---- */
+ extern char** history_session;
+ extern unsigned int history_session_cap;
+@@ -83,4 +86,14 @@ void history_show(unsigned int cursor);
+ void history_encode(const char* s, size_t len, stralloc* out);
+ void history_decode(const char* s, size_t len, stralloc* out);
+ 
++#else /* !BUILTIN_HISTORY: the callers need no #if */
++
++#define history_init() ((void)0)
++#define history_shutdown() ((void)0)
++#define history_add(s, len) ((void)0)
++#define history_prev() ((void)0)
++#define history_next() ((void)0)
++
++#endif /* BUILTIN_HISTORY */
++
+ #endif /* HISTORY_H */
+diff --git a/src/job/job_wait.c b/src/job/job_wait.c
+index 263e916d..fee55e43 100644
+--- a/src/job/job_wait.c
++++ b/src/job/job_wait.c
+@@ -17,8 +17,7 @@
+ #include "builtin_config.h"
+ 
+ #if BUILTIN_TRAP
+-void trap_run_pending(void);
+-extern int trap_run_count, trap_run_sig;
++#include "../trap.h"
+ #endif
+ 
+ int job_wait_interruptible, job_wait_sig;
+diff --git a/src/parse/Makefile.in b/src/parse/Makefile.in
+index 8861fab0..03b83af0 100644
+--- a/src/parse/Makefile.in
++++ b/src/parse/Makefile.in
+@@ -19,7 +19,9 @@ include $(top_builddir)/config.mk
+ # ---------------------------------------------------------------------------
+ TL_ARCHIVE = src/libshell.a
+ ARCHIVE = parse.a
+-MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/parse_*.c))
++BUILTIN_OFF = @BUILTIN_OFF@
++OFF_HERE    = $(foreach f,$(patsubst $(thisdir)%.c,%,$(filter $(thisdir)%,$(BUILTIN_OFF))),$(if $(findstring /,$f),,$f))
++MODULES     = $(filter-out $(OFF_HERE),$(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/parse_*.c)))
+ 
+ SOURCES = $(MODULES:%=%.c)
+ OBJECTS = $(MODULES:%=%.o)
+diff --git a/src/sh/sh_exit.c b/src/sh/sh_exit.c
+index 97b85b7e..d6c8086e 100644
+--- a/src/sh/sh_exit.c
++++ b/src/sh/sh_exit.c
+@@ -2,12 +2,9 @@
+ #include "../sh.h"
+ #include "../trace.h"
+ #include "../source.h"
++#include "../trap.h"
+ #include "builtin_config.h"
+ 
+-int trap_exit(int);
+-int trap_exit_running(void);
+-int trap_exit_set_here(void);
+-
+ int sh_async_exit = 0;
+ 
+ /* status for a forked child (background job, pipeline member) about to exit(): runs the
+@@ -15,10 +12,8 @@ int sh_async_exit = 0;
+  * ----------------------------------------------------------------------- */
+ int
+ sh_child_exit(int status) {
+-#if BUILTIN_TRAP
+   if(sh_child && trap_exit_set_here())
+     return trap_exit(status);
+-#endif
+ 
+   return status;
+ }
+diff --git a/src/sh/sh_loop.c b/src/sh/sh_loop.c
+index a47254e6..13009cc5 100644
+--- a/src/sh/sh_loop.c
++++ b/src/sh/sh_loop.c
+@@ -14,9 +14,7 @@
+ 
+ #include <unistd.h>
+ 
+-#if BUILTIN_TRAP
+-void trap_run_pending(void);
+-#endif
++#include "../trap.h"
+ 
+ /* give back the stdin read-ahead before a command runs, so the command
+  * (e.g. `read`) sees the input that follows its own line:
+@@ -128,13 +126,11 @@ sh_loop(void) {
+ 
+     job_update();
+ 
+-#if BUILTIN_TRAP
+     /* the common, low-latency dispatch point for a real-signal trap
+        whose signal fired while shish itself was busy (not blocked in
+        job_wait(), which has its own matching call) doing ordinary,
+        uninterruptible work between statements. */
+     trap_run_pending();
+-#endif
+ 
+     /* reset prompt */
+     prompt_reset();
+diff --git a/src/sh/sh_sigignore.c b/src/sh/sh_sigignore.c
+index 41f62053..be00e894 100644
+--- a/src/sh/sh_sigignore.c
++++ b/src/sh/sh_sigignore.c
+@@ -6,10 +6,7 @@
+ #if !WINDOWS_NATIVE
+ #include <signal.h>
+ 
+-#if BUILTIN_TRAP
+-int trap_ignores(int sig);
+-void trap_reset_caught(void);
+-#endif
++#include "../trap.h"
+ 
+ int sh_subshell;
+ int sh_async; /* this process is an asynchronous list ignoring INT/QUIT */
+@@ -70,9 +67,7 @@ sh_sigrestore(void) {
+ #if !WINDOWS_NATIVE
+   unsigned i;
+ 
+-#if BUILTIN_TRAP
+   trap_reset_caught();
+-#endif
+ 
+   if(!sh_interactive)
+     return;
+@@ -82,10 +77,8 @@ sh_sigrestore(void) {
+ 
+     if(sig_was_ignored(sig) || (sh_async && sig != SIGTERM))
+       continue;
+-#if BUILTIN_TRAP
+     if(trap_ignores(sig))
+       continue;
+-#endif
+     sh_sigset(sig, SIG_DFL);
+   }
+ #endif
+diff --git a/src/source/Makefile.in b/src/source/Makefile.in
+index 90d00583..3ae2c659 100644
+--- a/src/source/Makefile.in
++++ b/src/source/Makefile.in
+@@ -19,7 +19,9 @@ include $(top_builddir)/config.mk
+ # ---------------------------------------------------------------------------
+ TL_ARCHIVE = src/libshell.a
+ ARCHIVE = source.a
+-MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c))
++BUILTIN_OFF = @BUILTIN_OFF@
++OFF_HERE    = $(foreach f,$(patsubst $(thisdir)%.c,%,$(filter $(thisdir)%,$(BUILTIN_OFF))),$(if $(findstring /,$f),,$f))
++MODULES     = $(filter-out $(OFF_HERE),$(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c)))
+ 
+ SOURCES = $(MODULES:%=%.c)
+ OBJECTS = $(MODULES:%=%.o)
+diff --git a/src/source/source_alias.c b/src/source/source_alias.c
+index 7558c6f7..8860f9a8 100644
+--- a/src/source/source_alias.c
++++ b/src/source/source_alias.c
+@@ -4,8 +4,6 @@
+ #include "../../lib/byte.h"
+ #include "builtin_config.h"
+ 
+-struct alias_scan alias_scan;
+-
+ #if BUILTIN_ALIAS
+ struct alias_frame {
+   struct source src; /* first: a frame is freed through its source pointer */
+diff --git a/src/source/source_skip.c b/src/source/source_skip.c
+index e5f54160..c561c0be 100644
+--- a/src/source/source_skip.c
++++ b/src/source/source_skip.c
+@@ -24,6 +24,7 @@ int source_squoted = 0;
+ int source_comment = 0;
+ int source_bs = 0;
+ unsigned long source_skips = 0;
++struct alias_scan alias_scan;
+ 
+ /* ----------------------------------------------------------------------- */
+ int
+diff --git a/src/term.h b/src/term.h
+index a6bafe66..42d76b0d 100644
+--- a/src/term.h
++++ b/src/term.h
+@@ -4,6 +4,7 @@
+ #include "../lib/buffer.h"
+ #include "../lib/stralloc.h"
+ #include "../lib/windoze.h"
++#include "builtin_config.h"
+ 
+ #ifdef HAVE_TERMIOS_H
+ #include <termios.h>
+@@ -67,7 +68,11 @@ void term_setline(const char* s, unsigned long len);
+ char* term_getline(void);
+ void term_complete(void);
+ void term_complete_redraw(void);
++#if BUILTIN_HISTORY
+ void term_search(void);
++#else
++#define term_search() ((void)0)
++#endif
+ int term_vi_escape(void);
+ void term_vimode(char c);
+ 
+diff --git a/src/term/term_read.c b/src/term/term_read.c
+index 70401199..b8f4c9d0 100644
+--- a/src/term/term_read.c
++++ b/src/term/term_read.c
+@@ -7,9 +7,7 @@
+ #include "builtin_config.h"
+ #include "../../lib/windoze.h"
+ 
+-#if BUILTIN_TRAP
+-void trap_run_pending(void);
+-#endif
++#include "../trap.h"
+ #if !WINDOWS_NATIVE && !defined(__MINGW64__)
+ #include <termios.h>
+ #endif
+@@ -40,13 +38,11 @@ term_jobnotify(void) {
+   trace_flush();
+   job_update();
+ 
+-#if BUILTIN_TRAP
+   /* a real-signal trap firing while shish is blocked here waiting for
+      terminal input (interactive mode) wakes this select() loop the
+      same way SIGCHLD does -- see trap_relay()'s own comment for why
+      that byte gets written at all. */
+   trap_run_pending();
+-#endif
+ 
+   if(term_output && term_reading) {
+     term_attr(term_input.fd, 1, &term_tcattr);
+diff --git a/src/trap.h b/src/trap.h
+new file mode 100644
+index 00000000..2bfae587
+--- /dev/null
++++ b/src/trap.h
+@@ -0,0 +1,43 @@
++#ifndef TRAP_H
++#define TRAP_H
++
++#include "builtin_config.h"
++
++/* The trap machinery lives in builtin_trap.c. With BUILTIN_TRAP off the calls
++ * below are constants, so evaluator, jobs and line editor need no #if.
++ * ----------------------------------------------------------------------- */
++#if BUILTIN_TRAP
++
++extern int trap_run_count, trap_run_sig; /* traps run so far; the signal of the last one */
++
++void trap_run_pending(void);   /* run the traps whose signal has fired */
++void* trap_snapshot_save(void);
++void trap_snapshot_restore(void*);
++int trap_ignores(int sig);
++void trap_reset_caught(void);
++int trap_exit(int status);
++int trap_exit_running(void);
++int trap_exit_pending(void);
++int trap_exit_set_here(void);
++int trap_return_status(void);
++int trap_signal_parent(int sig);
++
++#else
++
++#define trap_run_count 0
++#define trap_run_sig 0
++#define trap_run_pending() ((void)0)
++#define trap_snapshot_save() ((void*)0)
++#define trap_snapshot_restore(p) ((void)0)
++#define trap_ignores(sig) 0
++#define trap_reset_caught() ((void)0)
++#define trap_exit(status) (status)
++#define trap_exit_running() 0
++#define trap_exit_pending() 0
++#define trap_exit_set_here() 0
++#define trap_return_status() (-1)
++#define trap_signal_parent(sig) 0
++
++#endif
++
++#endif /* TRAP_H */
+diff --git a/text/awk/Makefile.in b/text/awk/Makefile.in
+index ad20eeaa..1a1bee20 100644
+--- a/text/awk/Makefile.in
++++ b/text/awk/Makefile.in
+@@ -19,7 +19,9 @@ include $(top_builddir)/config.mk
+ # ---------------------------------------------------------------------------
+ TL_ARCHIVE = text/libtext.a
+ ARCHIVE = awk.a
+-MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c))
++BUILTIN_OFF = @BUILTIN_OFF@
++OFF_HERE    = $(patsubst $(thisdir)%.c,%,$(filter $(thisdir)%,$(BUILTIN_OFF)))
++MODULES     = $(filter-out $(OFF_HERE),$(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c)))
+ 
+ SOURCES = $(MODULES:%=%.c)
+ OBJECTS = $(MODULES:%=%.o)
+diff --git a/text/dfa/Makefile.in b/text/dfa/Makefile.in
+index 9d610ddf..db41e536 100644
+--- a/text/dfa/Makefile.in
++++ b/text/dfa/Makefile.in
+@@ -19,7 +19,9 @@ include $(top_builddir)/config.mk
+ # ---------------------------------------------------------------------------
+ TL_ARCHIVE = text/libtext.a
+ ARCHIVE = dfa.a
+-MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c))
++BUILTIN_OFF = @BUILTIN_OFF@
++OFF_HERE    = $(patsubst $(thisdir)%.c,%,$(filter $(thisdir)%,$(BUILTIN_OFF)))
++MODULES     = $(filter-out $(OFF_HERE),$(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c)))
+ 
+ SOURCES = $(MODULES:%=%.c)
+ OBJECTS = $(MODULES:%=%.o)
+diff --git a/text/sed/Makefile.in b/text/sed/Makefile.in
+index e59d3a49..3f89052d 100644
+--- a/text/sed/Makefile.in
++++ b/text/sed/Makefile.in
+@@ -19,7 +19,9 @@ include $(top_builddir)/config.mk
+ # ---------------------------------------------------------------------------
+ TL_ARCHIVE = text/libtext.a
+ ARCHIVE = sed.a
+-MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c))
++BUILTIN_OFF = @BUILTIN_OFF@
++OFF_HERE    = $(patsubst $(thisdir)%.c,%,$(filter $(thisdir)%,$(BUILTIN_OFF)))
++MODULES     = $(filter-out $(OFF_HERE),$(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c)))
+ 
+ SOURCES = $(MODULES:%=%.c)
+ OBJECTS = $(MODULES:%=%.o)

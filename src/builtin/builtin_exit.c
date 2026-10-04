@@ -9,8 +9,7 @@ const char help_exit[] = "    Exit the shell.\n"
                          "\n"
                          "    exitcode        status to exit with (default: the last command's)\n";
 
-int trap_exit_running(void);
-int trap_exit_pending(void);
+#include "../trap.h"
 
 int
 builtin_exit(int argc, char* argv[]) {

@@ -4,7 +4,7 @@
 #include "../tree.h"
 #include "../sh.h"
 
-void trap_run_pending(void);
+#include "../trap.h"
 
 /* evaluate a tree node(-list maybe)
  * ----------------------------------------------------------------------- */

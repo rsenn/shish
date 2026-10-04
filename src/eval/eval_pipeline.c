@@ -26,8 +26,7 @@
 #endif
 
 #if BUILTIN_TRAP
-void* trap_snapshot_save(void);
-void trap_snapshot_restore(void*);
+#include "../trap.h"
 #endif
 
 /* filter-chain scanner (TODO.md Goal 13): finds a trailing run of

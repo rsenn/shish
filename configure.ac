@@ -226,23 +226,17 @@ AC_SUBST([WIN32_TRUE],[#])
 # check for needed types
 # ---------------------------------------------------------------------------
 
-dnl ALL_BUILTINS: every BUILTIN_<name> the table in builtin_table.c is
-dnl gated by, lowercased (space separated). EXTRA_BUILTINS: the ones whose
-dnl source is in src/builtin/{core,extra,filter}/ (but echo, false, printf,
-dnl pwd, test and true in core/ stay default). Both are read when this file is
-dnl turned into ./configure, so re-run autogen.sh after adding a builtin.
+dnl ALL_BUILTINS: every BUILTIN_<name> switch; DEFAULT_BUILTINS: the minimal and
+dnl default tier. Both come from src/builtin/builtins.map (read through
+dnl builtins.awk) when this file is turned into ./configure, so re-run
+dnl autogen.sh after adding a builtin.
 m4_define([ALL_BUILTINS],
-  m4_normalize(m4_esyscmd([grep '^builtin_' src/builtin -r -l |sort |sed 's,.*/builtin_,, ; s,\.c$,,' | tr '\n' ' '])))
+  m4_normalize(m4_esyscmd([awk -v mode=names -f src/builtin/builtins.awk src/builtin/builtins.map])))
 
-m4_define([EXTRA_BUILTINS],
-  m4_normalize(m4_esyscmd([ls -d src/builtin/*/*.c | grep -v -E 'core/builtin_(echo|false|printf|pwd|test|true)\.c' | sed 's,.*/builtin_,,; s,\.c$,,' | tr '\n' ' '])))
+m4_define([DEFAULT_BUILTINS],
+  m4_normalize(m4_esyscmd([awk -v mode=tier -v tiers=md -f src/builtin/builtins.awk src/builtin/builtins.map])))
 
 #echo "ALL_BUILTINS: m4_defn([ALL_BUILTINS])" 1>&2
-
-dnl default set: every builtin that is not in src/builtin/{core,extra,filter}/
-m4_define([DEFAULT_BUILTINS],
-  m4_normalize(m4_foreach_w([BUILTIN], m4_defn([ALL_BUILTINS]),
-    [m4_if(m4_index([ ]m4_defn([EXTRA_BUILTINS])[ ], [ ]BUILTIN[ ]), [-1], [BUILTIN ])])))
 
 dnl "all" leaves out digest: it needs third_party/Hash-Algorithms, which
 dnl only the CMake build (cmake/Digest.cmake) fetches and compiles.
@@ -336,6 +330,11 @@ AC_CONFIG_COMMANDS([src/builtin_config.sh],
 enabled_builtins="$enabled_builtins"])
 
 AC_SUBST([BUILTINS],[$enabled_builtins])
+
+dnl sources named in builtins.map that no enabled builtin needs: the Makefile.in
+dnl of their directory leaves them out of MODULES
+builtin_off=`awk -v mode=off -v top=$srcdir -v enabled="$enabled_builtins" -f $srcdir/src/builtin/builtins.awk $srcdir/src/builtin/builtins.map | tr '\n' ' '`
+AC_SUBST([BUILTIN_OFF],[$builtin_off])
 
 # library subdirectories
 # ---------------------------------------------------------------------------

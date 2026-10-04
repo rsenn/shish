@@ -20,8 +20,7 @@ int expand_cmdsub_depth;
 #endif
 
 #if BUILTIN_TRAP
-void* trap_snapshot_save(void);
-void trap_snapshot_restore(void*);
+#include "../trap.h"
 #endif
 
 /* evaluates backquoted command list, while writing stdout to a stralloc

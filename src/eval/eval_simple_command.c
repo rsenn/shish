@@ -10,6 +10,7 @@
 #include "../sh.h"
 #include "../builtin.h"
 #include "../eval.h"
+#include "builtin_config.h"
 #include "../exec.h"
 #include "../expand.h"
 #include "../fdstack.h"
@@ -70,6 +71,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
     /* "command [-p] [--] exec ..." runs as "exec ...", so its
        redirections persist. args_head still owns the whole list. */
+#if BUILTIN_COMMAND
     if(cmd.id == H_BUILTIN && cmd.builtin && cmd.builtin->fn == &builtin_command) {
       union node* n = args->next;
 
@@ -85,6 +87,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
         }
       }
     }
+#endif
   }
 
   /* POSIX 2.8.1: an expansion error means this command does not run at

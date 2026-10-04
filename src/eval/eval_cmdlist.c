@@ -3,7 +3,7 @@
 #include "../eval.h"
 #include "../sh.h"
 
-void trap_run_pending(void);
+#include "../trap.h"
 
 /* ----------------------------------------------------------------------- */
 int

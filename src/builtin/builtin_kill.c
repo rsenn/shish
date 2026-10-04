@@ -1,5 +1,6 @@
 #include "../builtin.h"
 #include "../job.h"
+#include "../trap.h"
 #include "../fdtable.h"
 #include "../../lib/scan.h"
 #include "../../lib/str.h"
@@ -77,7 +78,6 @@ kill_list(void) {
 }
 
 #if BUILTIN_TRAP
-int trap_signal_parent(int);
 #endif
 
 int

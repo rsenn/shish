@@ -3,6 +3,7 @@
 
 #include "../lib/typedefs.h"
 #include "../lib/stralloc.h"
+#include "builtin_config.h"
 
 #define DEFAULT_HISTSIZE 128
 
@@ -33,6 +34,8 @@
  * history, and several concurrently running shells append their own
  * entries without clobbering each other's.
  */
+
+#if BUILTIN_HISTORY
 
 /* ---- in-memory ring of this session's commands (newest at head-1) ---- */
 extern char** history_session;
@@ -82,5 +85,15 @@ void history_show(unsigned int cursor);
 
 void history_encode(const char* s, size_t len, stralloc* out);
 void history_decode(const char* s, size_t len, stralloc* out);
+
+#else /* !BUILTIN_HISTORY: the callers need no #if */
+
+#define history_init() ((void)0)
+#define history_shutdown() ((void)0)
+#define history_add(s, len) ((void)0)
+#define history_prev() ((void)0)
+#define history_next() ((void)0)
+
+#endif /* BUILTIN_HISTORY */
 
 #endif /* HISTORY_H */

@@ -17,8 +17,7 @@
 #include "builtin_config.h"
 
 #if BUILTIN_TRAP
-void trap_run_pending(void);
-extern int trap_run_count, trap_run_sig;
+#include "../trap.h"
 #endif
 
 int job_wait_interruptible, job_wait_sig;

@@ -6035,4 +6035,9 @@ PX=$(timeout 5 "$SHISH_SELF" -c 'alias a1=a2 a2=a3 a3=a4 a4=a5 a5=a6 a6=a7 a7=a8
 a1' 2>&1)
 assert_match "$PX" "*a9: No such file*" "a cycle through more than 8 aliases is cut off, the word runs as a command"
 
+# builtin map: "tr" had no CMake switch, "continue" none either, and "cp" alone did not link (builtin_rm_tree).
+# Build-system fixes cannot be asserted from a script; tests/builtin-map.sh guards the map, and the
+# default-set-plus-one-switch build run is described in doc/optional-subsystems.md.
+# The same holds for BUILTIN_{HISTORY,COMMAND,EVAL,SOURCE,TRAP}=OFF: they are link-time properties.
+
 summary

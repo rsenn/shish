@@ -7,9 +7,7 @@
 #include "builtin_config.h"
 #include "../../lib/windoze.h"
 
-#if BUILTIN_TRAP
-void trap_run_pending(void);
-#endif
+#include "../trap.h"
 #if !WINDOWS_NATIVE && !defined(__MINGW64__)
 #include <termios.h>
 #endif
@@ -40,13 +38,11 @@ term_jobnotify(void) {
   trace_flush();
   job_update();
 
-#if BUILTIN_TRAP
   /* a real-signal trap firing while shish is blocked here waiting for
      terminal input (interactive mode) wakes this select() loop the
      same way SIGCHLD does -- see trap_relay()'s own comment for why
      that byte gets written at all. */
   trap_run_pending();
-#endif
 
   if(term_output && term_reading) {
     term_attr(term_input.fd, 1, &term_tcattr);

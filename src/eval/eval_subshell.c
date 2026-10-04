@@ -9,8 +9,7 @@
 #include "builtin_config.h"
 
 #if BUILTIN_TRAP
-void* trap_snapshot_save(void);
-void trap_snapshot_restore(void*);
+#include "../trap.h"
 #endif
 
 /* evaluate subshell or grouping (3.9.4.1)

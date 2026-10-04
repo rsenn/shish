@@ -103,7 +103,7 @@ trap_print(trap* tr) {
  * TRAP_DEBUG (254)/TRAP_RETURN (255) are never real OS signals, so
  * trap_relay() never touches those slots. */
 static volatile sig_atomic_t trap_pending[256];
-volatile sig_atomic_t trap_signaled = 0;
+extern volatile sig_atomic_t trap_signaled; /* defined in lib/wait/waitpid_nointr.c */
 
 /* "$?" from before the running real-signal trap body: what a bare "return" yields */
 static int trap_prior_status, trap_in_signal;

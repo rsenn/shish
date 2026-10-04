@@ -1,0 +1,98 @@
+# builtins.map: one line per builtin switch (BUILTIN_<NAME>), read by CMake (cmake/Builtins.cmake)
+# and by configure.ac. Whitespace-separated columns:
+#
+#   name   the switch, lower case: BUILTIN_<NAME>
+#   file   the source with the builtin's entry function, relative to src/builtin/
+#   tier   m = minimal, d = default, x = extra (off unless asked for)
+#   needs  comma-separated further sources compiled only while this switch is on
+#          (helpers it cannot link without, code of the subsystem it carries); - = none
+#   keep   optional: the file is called from outside src/builtin/, so it is always compiled and
+#          the switch only removes the builtin's table row (only set: sh_main.c parses its options)
+#
+# A source named by any line is compiled only when some switch naming it is on.
+# tests/builtin-map.sh keeps this file, builtin_table.c and the source tree in step.
+alias       builtin_alias.c                 m   ../source/source_alias.c,../parse/parse_findalias.c
+awk         extra/builtin_awk.c             x   ../../text/awk/,../../text/dfa/
+basename    core/builtin_basename.c         x   -
+break       builtin_break.c                 m   -
+cat         filter/builtin_cat.c            x   -
+cd          builtin_cd.c                    m   -
+chmod       core/builtin_chmod.c            x   -
+command     builtin_command.c               m   -
+compress    filter/builtin_compress.c       x   -
+continue    builtin_break.c                 m   -
+cp          core/builtin_cp.c               x   core/builtin_rm.c
+cut         filter/builtin_cut.c            x   -
+date        core/builtin_date.c             x   -
+digest      extra/builtin_digest.c          x   -
+dirname     core/builtin_dirname.c          x   -
+dirs        extra/builtin_dirstack.c        x   -
+dump        builtin_dump.c                  x   -
+echo        core/builtin_echo.c             d   -
+env         core/builtin_env.c              x   -
+eval        builtin_eval.c                  m   -
+exec        builtin_exec.c                  m   -
+exit        builtin_exit.c                  m   -
+export      builtin_export.c                m   -
+expr        core/builtin_expr.c             m   ../../text/dfa/
+false       core/builtin_false.c            d   -
+fdtable     builtin_fdtable.c               d   -
+find        extra/builtin_find.c            x   -
+getopts     builtin_getopts.c               m   -
+grep        filter/builtin_grep.c           x   ../../text/dfa/
+hash        builtin_hash.c                  m   -
+head        filter/builtin_head.c           x   -
+help        builtin_help.c                  d   -
+history     builtin_history.c               m   ../history/history_add.c,../history/history_clear.c,../history/history_decode.c,../history/history_encode.c,../history/history_file_entry.c,../history/history_file_next.c,../history/history_init.c,../history/history_next.c,../history/history_prev.c,../history/history_print.c,../history/history_session_resize.c,../history/history_show.c,../term/term_search.c
+hostname    extra/builtin_hostname.c        x   -
+id          core/builtin_id.c               x   -
+jobs        builtin_jobs.c                  m   -
+kill        builtin_kill.c                  m   -
+link        core/builtin_link.c             x   -
+ln          core/builtin_ln.c               x   -
+local       builtin_local.c                 m   -
+ls          core/builtin_ls.c               x   -
+mkdir       core/builtin_mkdir.c            x   core/builtin_chmod.c
+mktemp      core/builtin_mktemp.c           x   -
+mv          core/builtin_cp.c               x   core/builtin_rm.c
+nl          filter/builtin_nl.c             x   ../../text/dfa/
+paste       filter/builtin_paste.c          x   -
+popd        extra/builtin_dirstack.c        x   -
+printf      core/builtin_printf.c           m   -
+pushd       extra/builtin_dirstack.c        x   -
+pwd         core/builtin_pwd.c              m   -
+read        builtin_read.c                  m   -
+readlink    core/builtin_readlink.c         x   -
+readonly    builtin_readonly.c              m   -
+realpath    core/builtin_realpath.c         x   -
+return      builtin_return.c                m   -
+rm          core/builtin_rm.c               x   -
+rmdir       core/builtin_rmdir.c            x   -
+sed         filter/builtin_sed.c            x   ../../text/sed/,../../text/dfa/
+set         builtin_set.c                   m   -   keep
+shift       builtin_shift.c                 m   -
+sleep       core/builtin_sleep.c            x   -
+sort        filter/builtin_sort.c           x   -
+source      builtin_source.c                m   -
+split       core/builtin_split.c            x   -
+tail        filter/builtin_tail.c           x   -
+tee         core/builtin_tee.c              x   -
+test        core/builtin_test.c             m   -
+timeout     core/builtin_timeout.c          x   -
+times       builtin_times.c                 m   -
+touch       core/builtin_touch.c            x   -
+trap        builtin_trap.c                  m   -
+tr          filter/builtin_tr.c             x   -
+true        core/builtin_true.c             d   -
+type        builtin_type.c                  m   -
+ulimit      builtin_ulimit.c                m   -
+umask       builtin_umask.c                 m   -
+uname       core/builtin_uname.c            x   -
+uncompress  filter/builtin_uncompress.c     x   filter/builtin_compress.c
+uniq        filter/builtin_uniq.c           x   -
+unlink      core/builtin_unlink.c           x   -
+unset       builtin_unset.c                 m   -
+wait        builtin_wait.c                  m   -
+wc          core/builtin_wc.c               x   -
+which       extra/builtin_which.c           x   -
+xargs       extra/builtin_xargs.c           x   -

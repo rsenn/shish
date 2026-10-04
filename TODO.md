@@ -45,7 +45,7 @@ The measurable target for Stages 1-2 is `tests/posix` (yash's POSIX suite, 120 f
 Three changes that have to land in this order. Each ends with `ctest` green, the ASan build clean, and
 `tests/fixed.sh` at its 9 known failures.
 
-#### Part A - one name-to-file map replaces `builtin_source()` and the hand-kept lists
+#### Part A - one name-to-file map replaces `builtin_source()` and the hand-kept lists (DONE: `src/builtin/builtins.map`, see `doc/optional-subsystems.md` "What was done")
 
 **Today** four lists describe the same facts and drift apart (every shared file so far needed a
 hand-written special case, and `dirs`/`popd`/`pushd` once linked wrong because of it):
@@ -315,6 +315,31 @@ reports `line 2: x: boom`. `$LINENO` itself is correct. Fix with, and verify aga
    `fixed-sh-fails-under-non-mmap-build`).
 
 ---
+
+### PLAN (alias scenario 1 and the builtin map are done) - make alias, history and job control really optional
+
+Details, inventories and the graded scenarios are in `doc/optional-subsystems.md`. Short form:
+
+- **alias** (`BUILTIN_ALIAS=OFF` still leaves the alias code in the parser and the input layer, and a latent hang:
+  an alias chain of 10 ending in a cycle loops forever because the "popped aliases" table holds 8 entries).
+  **Scenario 1 (DONE):** one `struct alias_scan` + one extern instead of seven loose globals, a heap list instead
+  of the 8-entry table, `#if BUILTIN_ALIAS` at five choke points, regression case in `tests/fixed.sh`.
+  **Scenario 3 after it:** module `src/alias/` + `src/alias.h`, one function per file, `builtin_alias.c` keeps only
+  `alias`/`unalias` (no `builtin_alias.h`; `history.h` + `src/history/` is the precedent).
+- **history:** H1 is DONE (stub header, `needs` entries drop `src/history/` and `term_search.c`). H2 (a read
+  interface for the editor, with `fc`) is open; `-H`/`histexpand` stays an ignored flag.
+- **job control:** the biggest. `src/job/` is also the shell's process table (every external command, pipeline
+  member and `&` goes through it). J1 make interactive job control optional (`JOB_CONTROL` macro,
+  `sh_monitor()` constant), J2 split `src/job/` into `src/proc/` (process table) and `src/job/` (jobs/fg/bg,
+  terminal, banners), J3 a plain POSIX `proc` implementation when nothing needs the table.
+- **Other dead code found** (`doc/optional-subsystems.md`, "Other code that is useless when its builtin is off"):
+  builtin-only helpers in `src/` (list in A) are still open. DONE: directory entries in the map's `needs` column
+  (the `text/` engines follow awk/sed/grep/expr/nl) and the `keep` call-site guards (`src/trap.h`; only `set`
+  stays `keep`). `src/filter/` is part of the evaluator and stays.
+- **Prerequisite for the directory-level switches (done):** the builtin map (Part A above), so that a module's sources
+  are compiled only when its switch is on (CMake source list and autotools `SUBDIRS`). Decisions to take first
+  are listed in the "Open questions" of the document (`set -m` when job control is compiled out; whether `wait`
+  may be off; `-H`/`histexpand`).
 
 ### LOW PRIORITY - more utilities as builtins (plan only, nothing implemented)
 

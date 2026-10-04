@@ -24,6 +24,7 @@ int source_squoted = 0;
 int source_comment = 0;
 int source_bs = 0;
 unsigned long source_skips = 0;
+struct alias_scan alias_scan;
 
 /* ----------------------------------------------------------------------- */
 int

@@ -2,11 +2,8 @@
 #include "../sh.h"
 #include "../trace.h"
 #include "../source.h"
+#include "../trap.h"
 #include "builtin_config.h"
-
-int trap_exit(int);
-int trap_exit_running(void);
-int trap_exit_set_here(void);
 
 int sh_async_exit = 0;
 
@@ -15,10 +12,8 @@ int sh_async_exit = 0;
  * ----------------------------------------------------------------------- */
 int
 sh_child_exit(int status) {
-#if BUILTIN_TRAP
   if(sh_child && trap_exit_set_here())
     return trap_exit(status);
-#endif
 
   return status;
 }

@@ -6,13 +6,33 @@
 #include "../job.h"
 #include "../sh.h"
 #include "../fdstack.h"
+#include "../trap.h"
+#include "builtin_config.h"
 
-int trap_exit_set_here(void);
 #include "../source.h"
 #include "../../lib/shell.h"
 #include "../tree.h"
 #include "../trace.h"
 #include "../vartab.h"
+
+/* builtins whose nonzero status is the last command's, not a builtin error */
+static int
+exec_status_passthru(int (*fn)(int, char**)) {
+#if BUILTIN_SOURCE
+  if(fn == builtin_source)
+    return 1;
+#endif
+#if BUILTIN_EVAL
+  if(fn == builtin_eval)
+    return 1;
+#endif
+#if BUILTIN_TRAP
+  if(fn == builtin_trap)
+    return 1;
+#endif
+  (void)fn;
+  return 0;
+}
 
 /* execute a command
  * ----------------------------------------------------------------------- */
@@ -256,8 +276,7 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
      which is not a builtin error: ". f" with f ending in "false" or
      "return 3", and "eval false", must not kill the shell.
      "trap '' ''" (invalid signal) does not kill it either. */
-  if(cmd->id == H_SBUILTIN && ret != 0 && !sh_interactive && !exec_via_command && cmd->builtin->fn != builtin_source &&
-     cmd->builtin->fn != builtin_eval && cmd->builtin->fn != builtin_trap) {
+  if(cmd->id == H_SBUILTIN && ret != 0 && !sh_interactive && !exec_via_command && !exec_status_passthru(cmd->builtin->fn)) {
     sh_exit(ret);
   }
 

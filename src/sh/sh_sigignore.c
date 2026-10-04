@@ -6,10 +6,7 @@
 #if !WINDOWS_NATIVE
 #include <signal.h>
 
-#if BUILTIN_TRAP
-int trap_ignores(int sig);
-void trap_reset_caught(void);
-#endif
+#include "../trap.h"
 
 int sh_subshell;
 int sh_async; /* this process is an asynchronous list ignoring INT/QUIT */
@@ -70,9 +67,7 @@ sh_sigrestore(void) {
 #if !WINDOWS_NATIVE
   unsigned i;
 
-#if BUILTIN_TRAP
   trap_reset_caught();
-#endif
 
   if(!sh_interactive)
     return;
@@ -82,10 +77,8 @@ sh_sigrestore(void) {
 
     if(sig_was_ignored(sig) || (sh_async && sig != SIGTERM))
       continue;
-#if BUILTIN_TRAP
     if(trap_ignores(sig))
       continue;
-#endif
     sh_sigset(sig, SIG_DFL);
   }
 #endif
