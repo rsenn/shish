@@ -4,7 +4,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/Functions.cmake)
 # configure_shish_builtins
 #
 macro(configure_shish_builtins)
-  set_init(MINIMAL_BUILTINS alias break cd command eval exec exit export expr getopts hash history jobs kill local printf pwd read readonly return set shift source test times trap type umask unset wait)
+  set_init(MINIMAL_BUILTINS alias break cd command eval exec exit export expr getopts hash history jobs kill local printf pwd read readonly return set shift source test times trap type ulimit umask unset wait)
   set_init(EXTRA_BUILTINS awk basename cat chmod compress cp cut date digest dirname dirs env find grep head hostname id link ln ls mkdir mktemp mv nl paste popd pushd readlink realpath rm rmdir sed sleep sort split tail tee timeout touch tr uname uncompress uniq unlink wc which xargs)
   set_init(DEFAULT_BUILTINS ${MINIMAL_BUILTINS} help type echo fdtable true false)
 

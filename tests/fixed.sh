@@ -6020,4 +6020,14 @@ ab" "$PX" "set -o ignoreeof/nolog/vi are accepted; grep -x matches whole lines"
 PX=$("$SHISH_SELF" -c '/bin/sh -c "kill -s TERM \$\$"; echo "t=$?"; /bin/sh -c "kill -s SEGV \$\$"' 2>&1)
 assert_match "$PX" "t=143*signaled: SEGV*" "no 'signaled' notice for TERM, one for SEGV"
 
+# ulimit exists (soft/hard, -a, "unlimited", number validation) and a subshell's change is undone when it ends
+UL=$("$SHISH_SELF" -c 'ulimit -c 0 && ulimit -c; ulimit -Sn 64; ulimit -n; ( ulimit -Sn 30; ulimit -n ); ulimit -n; ulimit -t unlimited; ulimit -t; ulimit -n abc 2>/dev/null; echo "rc=$?"; ulimit -a | grep -c "(.*, -.) "')
+assert_match "$UL" "0
+64
+30
+64
+unlimited
+rc=1
+[0-9]*" "ulimit sets and shows limits, restores them after a subshell, rejects a bad number"
+
 summary

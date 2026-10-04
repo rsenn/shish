@@ -48,15 +48,7 @@ parse_word(struct parser* p) {
 
     break;
   }
-  /*
-    if(p->sa.len == 0) {
-      len = source->b->p - p->tokstart;
-
-if(len > 0)
-        stralloc_catb(&p->sa, &source->b->x[p->tokstart], len);
-    }
-   */
-
+  
   /* mirror parse_unquoted()'s delimiter-branch keyword check: a
      keyword is normally recognized when a following delimiter char is
      peeked, before parse_string() below clears p->sa. At true

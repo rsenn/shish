@@ -224,6 +224,9 @@
 #ifndef BUILTIN_TYPE
 #define BUILTIN_TYPE 1
 #endif
+#ifndef BUILTIN_ULIMIT
+#define BUILTIN_ULIMIT 1
+#endif
 #ifndef BUILTIN_UMASK
 #define BUILTIN_UMASK 1
 #endif
@@ -522,6 +525,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_TYPE
     {"type", &builtin_type, B_DEFAULT, "[-afptP] name [name ...]", help_type},
+#endif
+#if BUILTIN_ULIMIT
+    {"ulimit", &builtin_ulimit, B_DEFAULT, "[-HSa] [-cdfnstuvlm] [limit]", help_ulimit},
 #endif
 #if BUILTIN_UMASK
     {"umask", &builtin_umask, B_DEFAULT, "[-p] [-S] [mode]", help_umask},

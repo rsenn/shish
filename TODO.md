@@ -40,7 +40,152 @@ gate brace/history expansion, or otherwise) unless that changes.
 
 The measurable target for Stages 1-2 is `tests/posix` (yash's POSIX suite, 120 files).
 
-### HIGH PRIORITY — next task: remaining `ls` options (`BUGS: ls-missing-options`), then `fc`/`ulimit` (`BUGS: fc-and-ulimit-missing`)
+### HIGH PRIORITY — PLAN (nothing implemented yet): one builtin map, one switch per builtin, one directory walker
+
+Three changes that have to land in this order. Each ends with `ctest` green, the ASan build clean, and
+`tests/fixed.sh` at its 9 known failures.
+
+#### Part A - one name-to-file map replaces `builtin_source()` and the hand-kept lists
+
+**Today** four lists describe the same facts and drift apart (every shared file so far needed a
+hand-written special case, and `dirs`/`popd`/`pushd` once linked wrong because of it):
+- `cmake/Builtins.cmake`: `MINIMAL`/`DEFAULT`/`EXTRA`/`ALL_BUILTINS`, `builtin_source()` (probes
+  `core/`, `extra/`, `filter/`, then the top directory; hard-codes `mv`->`builtin_cp.c`,
+  `dirs`/`popd`/`pushd`->`builtin_dirstack.c`), the disabled loop that `REMOVE_ITEM`s a shared file
+  even when a sibling is still enabled, and three "this builtin also needs that file" lines
+  (`mv`->`builtin_rm.c`, `mkdir`->`builtin_chmod.c`, `uncompress`->`builtin_compress.c`).
+- `src/builtin/builtin_table.c`: ~117 rows, one `#ifndef BUILTIN_X` default each, plus `extern help_*`
+  and prototypes in `src/builtin.h`.
+- `configure.ac`: `ALL_BUILTINS`/`EXTRA_BUILTINS` rebuilt from the directory layout with `ls`/`grep`.
+- `src/builtin/*/Makefile.in`: `MODULES` matched by file name (`builtin_<name>.c`), which cannot
+  express a file that holds several builtins.
+
+**Plan.** One plain-text map, `src/builtin/builtins.map`, one line per builtin *name*:
+
+```
+# name            file                       tier  needs
+cp                core/builtin_cp.c          d
+mv                core/builtin_cp.c          d     core/builtin_rm.c
+dirs              extra/builtin_dirstack.c   x
+gzip              filter/builtin_compress.c  x
+gunzip            filter/builtin_uncompress.c x    filter/builtin_compress.c
+[                 core/builtin_test.c        d     -              macro=LBRACKET
+md5sum.textutils  extra/builtin_digest.c     x     -              macro=MD5SUM_TEXTUTILS
+```
+
+- `tier` is `m` (minimal), `d` (default) or `x` (extra): it replaces the three CMake lists and the
+  directory-derived `EXTRA_BUILTINS` in `configure.ac`.
+- `needs` lists helper source files the builtin cannot link without; it replaces the three special
+  cases above and the file-name probing.
+- `macro=` overrides the switch name where the builtin name is not an identifier (`[`, names with `.`);
+  the default is the name upper-cased.
+- `builtin_source(OUT NAME)` becomes a lookup into variables CMake sets once from the map
+  (`file(STRINGS ... REGEX)`, no external tools). The source set is *built up* from the enabled
+  names (their file plus their `needs`) instead of added and then `REMOVE_ITEM`ed, which removes the
+  disabled-sibling bug for good.
+- `configure.ac` reads the same file with `m4_esyscmd` + `awk`; each `src/builtin/*/Makefile.in`
+  `MODULES` comes from a generated `builtin_files.mk` instead of a `wildcard`.
+- **Drift guard:** a CTest (`tests/builtin-map.sh`) checks that every `{"name", &fn` row of
+  `builtin_table.c` has a map line and vice versa, every `builtin_*.c` is named by some line, and
+  every file in a `needs` column exists.
+- **Later, optional:** generate the table rows, `#ifndef` defaults and the prototypes/help externs from
+  the same map (or from an X-macro `builtins.def` that CMake and `awk` can both read), so that adding
+  a builtin means one map line and one source file.
+
+#### Part B - every builtin gets its own preprocessor switch (also the existing ones)
+
+**Today** most names already have their own `BUILTIN_<NAME>` (`cp` and `mv`, `break` and `continue`, `dirs`,
+`popd` and `pushd` are separate switches in separate table rows), but several families share one:
+`BUILTIN_COMPRESS` guards nine names (`gzip` ... `zstd`), `BUILTIN_UNCOMPRESS` eleven (`gunzip`, `zcat`,
+`unxz`, ...), `BUILTIN_DIGEST` six (`md5sum` ... `sha512sum`), and `[` rides on `BUILTIN_TEST`. Inside the
+source files nothing is guarded per builtin: `builtin_cp.c` always compiles `cp` and `mv` together,
+`builtin_dirstack.c` all three of its builtins, and so on; the file is just included or not.
+
+**Plan.**
+- `builtin_config.h` already defines `BUILTIN_<MACRO>` as 0 or 1 for every name in the map; keep that,
+  and compile with `-Wundef` for `src/builtin/` so a misspelled switch is an error, not a silent 0.
+- In every file, each builtin's entry function, its `help_*` string and the helpers only it uses sit
+  inside `#if BUILTIN_<NAME>`; helpers shared by several builtins of the file sit inside
+  `#if BUILTIN_A || BUILTIN_B`. A one-builtin file gets the same guard, so the rule has no exceptions
+  and a file with every switch off compiles to an empty object.
+- The map decides whether a file is compiled at all (any name of it enabled); the `#if`s decide what is
+  inside it. The table rows in `builtin_table.c` already use `#if BUILTIN_<NAME>`; they gain the
+  per-name switch for the family rows (`gzip`, `xz`, `zstd`, ... each its own).
+- The families dispatch on `argv[0]`/a name table: that table is filtered the same way, and the
+  compression backends (`zlib`, `bzip2`, `lzma`, `lz4`, `zstd`, `lzo`) are linked only when a name that
+  needs them is on, which also cuts the library dependencies of a small build.
+- **Matrix test:** `tests/builtin-matrix.sh` configures the minimal set plus *one* extra builtin at a time
+  (`-DBUILTIN_<NAME>=ON`), builds, runs `shish -c 'type NAME'`, and reports any configuration that
+  fails to compile or link. It is the check the `dirs`/`popd`/`pushd` link error would have tripped.
+- **Existing shared files to convert:** `core/builtin_cp.c` (`cp`, `mv`), `core/builtin_test.c` (`test`,
+  `[`), `builtin_break.c` (`break`, `continue`), `extra/builtin_dirstack.c` (`dirs`, `popd`, `pushd`),
+  `filter/builtin_compress.c` (9 names), `filter/builtin_uncompress.c` (11 names),
+  `extra/builtin_digest.c` (6 names), `builtin_type.c`; then the ~75 single-builtin files by rote.
+
+#### Part C - one recursive directory walker instead of six hand-rolled ones
+
+**Builtins that walk a directory tree today** (found with `grep -l 'opendir\|readdir' src lib text`):
+
+| where | what it walks | order | symlinks | extras it needs from a walker |
+|---|---|---|---|---|
+| `core/builtin_rm.c` `builtin_rm_tree()` (also called by `mv`) | `rm -r`, cross-device `mv` | children first, then the directory | never followed (`lstat`) | `-f` (ignore ENOENT), `-v`, `-i` prompts *before* descending and *before* removing, "a refused child keeps its parents" |
+| `core/builtin_chmod.c` `chmod_path()` | `chmod -R` | directory first, then children | command-line operand followed, nested ones skipped | `-v`, `-c`, `-f`, stat before and after |
+| `core/builtin_cp.c` `cpmv_dir()` | `cp -R` | directory created first, then children | `-H` / `-L` / `-P` policy | holds the `DIR*` open while recursing (one fd per level) |
+| `core/builtin_ls.c` `ls_dir()` | `ls -R` | listing of a directory, then each subdirectory | `lstat`, never followed | reads all names first, sorts, then closes the directory |
+| `extra/builtin_find.c` `find_recursive()` | `find` | directory, then children | `-L` follows, with an ancestor `(dev, ino)` chain against loops | predicates run per entry, `-prune`-like skipping |
+| `src/term/term_complete.c` | tab completion | one level only, not recursive | - | wants the same "read a directory into a list" step |
+
+Utilities from `doc/coreutils.md` that need the same walk: `chown -R`, `chgrp -R`, `du` (also `install -d`
+in a later pass).
+
+**Plan.** Two layers, both in `lib/` (generic: only `stralloc`, `byte`, `str` and `<dirent.h>`/`<sys/stat.h>`,
+no shell dependency; `lib/` is compiled into `libowfat.a`, so a build without a walking builtin does not
+link a byte of it):
+
+1. **`lib/dirlist.h` + `lib/dirlist/dirlist_read.c`**: read one directory into an array of
+   `{name, len, d_type}`, optionally sorted, then `closedir()` - so a walk holds one descriptor at a time,
+   not one per level (the `cp -R` weakness). `ls`, `term_complete` and the walker use it.
+2. **`lib/walk.h` + `lib/walk/walk_path.c`** (an `fts(3)`/`nftw(3)` equivalent without libc's, which dietlibc
+   and mingw lack): a callback walker.
+
+```c
+enum { WALK_PHYS = 0, WALK_LOGICAL = 1, WALK_COMFOLLOW = 2,   /* lstat / follow all / follow operands */
+       WALK_DEPTH = 4,  WALK_XDEV = 8,  WALK_SORT = 16 };      /* post-order, stay on device, sort names */
+enum { WALK_PRE, WALK_POST, WALK_FILE, WALK_ERR, WALK_CYCLE };  /* what the visit is about */
+enum { WALK_GO, WALK_SKIP, WALK_STOP };                         /* visit result: go on / not into this one / abort */
+
+struct walk_ent { const char* path; const char* name; size_t len; int depth, phase, err; struct stat st; };
+struct walk { int flags, maxdepth; int (*visit)(struct walk*, struct walk_ent*); void* ctx; };
+int walk_path(struct walk*, const char* root);
+```
+
+   - one growing path buffer (as `builtin_rm_tree()` does) instead of one buffer per level;
+   - the ancestor `(dev, ino)` chain `find` already has moves in, reporting `WALK_CYCLE`;
+   - `WALK_PRE` returning `WALK_SKIP` is what `rm -i` ("descend into directory?" refused) and `find -prune`
+     need; a child's `WALK_GO` count lets `rm` keep a directory whose entry was refused;
+   - errors are visits (`WALK_ERR` with `errno`), so each builtin keeps its own wording and `-f` handling.
+   - A walk keeps no per-directory state: `cp -R` derives the destination as `dst + (path + rootlen)`.
+
+**Migration order** (each step keeps that builtin's tests green and is its own patch):
+`lib/dirlist` + a unit test (`tests/walk_test.c`, built like `arena_test`) over a generated tree with a
+symlink loop, a permission-denied directory and a 3000-deep chain -> `rm` / `builtin_rm_tree()` (also
+carries `mv`) -> `chmod -R` -> `find` -> `cp -R` -> `ls -R` (uses `dirlist` only; its per-directory
+header/sort/`total` logic stays) -> `term_complete`. New `chown`/`chgrp`/`du` start on the walker.
+**Not walkers:** `mkdir -p` and `rmdir -p` follow the *components of one path* and stay on `lib/path`.
+
+**Rejected:** importing `../c-utils/lib/{dir,rdir}`. `rdir_read()` yields a flat pre-order stream of paths;
+it has no post-order, no skip, no symlink policy and no loop guard, which is exactly what `rm`, `find`
+and `cp` need. Its `dir_open`/`dir_read`/`dir_type` layer (a `FindFirstFile` backend for Windows) is worth
+borrowing only if the mingw build ever needs a walker that `<dirent.h>` cannot give it.
+
+#### Order of work
+1. Part A (map, CMake and `configure.ac` read it, drift guard test) with no source file touched.
+2. Part B on the shared files first, then the rest; the matrix test lands with the first converted file.
+3. Part C: `lib/dirlist`, `lib/walk`, then the builtins in the order above.
+4. Only then the new coreutils of `doc/coreutils.md`, in the groups it lists (several of them share a
+   file, which Part A makes cheap).
+
+### Next after the plan above: remaining `ls` options (`BUGS: ls-missing-options`), then `fc` (`BUGS: fc-missing`)
 
 Done: `type` (all operands, not-found status), `test` (`-ef`, 3-argument `-a`/`-o`, status 2 for bad
 integers), `cd` (`x/..` components). Still open from them: `BUGS: type-a-unimplemented`,
@@ -48,7 +193,7 @@ integers), `cd` (`x/..` components). Still open from them: `BUGS: type-a-unimple
 existing destination without `-f`) are fixed.
 
 **Next in line**, in the order they were weighed (see `BUGS` for the repro of each):
-`ls-missing-options`, `fc-and-ulimit-missing`, then the rest of `BUGS` by repro.
+`ls-missing-options`, `fc-missing`, then the rest of `BUGS` by repro.
 
 ### Where it stands (2026-10-03)
 
@@ -170,6 +315,32 @@ reports `line 2: x: boom`. `$LINENO` itself is correct. Fix with, and verify aga
    `fixed-sh-fails-under-non-mmap-build`).
 
 ---
+
+### LOW PRIORITY - more utilities as builtins (plan only, nothing implemented)
+
+Two prioritized lists of programs that are not builtins yet, each with size estimates, POSIX status, whether it can
+be a filter, a category, and the source file it should share with its relatives:
+
+- `doc/coreutils.md` (58 entries from `coreutils.unimplemented`): start with the one-liners
+  (`sync arch hostid yes tty nproc whoami logname printenv`, about 250 lines), then `tac truncate mkfifo nice
+  nohup seq cksum`, then the text filters (`expand unexpand fold comm base64 base32`), then `chown chgrp pathchk du
+  df` on the directory walker, and `dd od pr join csplit stty` last.
+- `doc/util-linux.md` (80 entries from `util-linux.unimplemented`): Linux-only, mostly root-only, so every one is off
+  by default behind its own `BUILTIN_<NAME>` and compiled only where the headers exist. Start with the scripting
+  staples (`rev mcookie mesg setsid mountpoint fallocate flock namei isosize`), then the process wrappers
+  (`chrt taskset ionice choom uclampset setarch`, `prlimit` on `ulimit`), then namespaces (`unshare nsenter pivot_root
+  switch_root`, testable with `unshare -Ur`), then a shared `lib/coltab` table printer and the `ls*` listing tools.
+  Not worth building: `su sulogin getty agetty fsck* mkfs.*`.
+
+**Prerequisites, in this order** (all are the HIGH PRIORITY plan above): the builtin map (Part A) so a file can hold
+several builtins, the per-builtin switches (Part B) so each of them can be left out, and the directory walker (Part C)
+for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility from either list before Part A.
+
+**Cross-cutting decisions to take first** (also in the "Open questions" of both documents):
+- whether Linux-only builtins belong in the tree at all (the plan assumes a busybox-like single binary is the goal);
+- `configure` checks and the `syscall()` fallbacks for calls without a libc wrapper (`ioprio_set`, `sched_setattr`,
+  `pivot_root`), including dietlibc and musl, and keeping these files out of the Windows and wasm builds;
+- tests as a normal user in a user namespace that skip themselves when the builtin or the privilege is missing.
 
 ### `BUGS` <-> conformance-gap map
 

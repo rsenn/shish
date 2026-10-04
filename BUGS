@@ -501,13 +501,21 @@
   printf 'set -o ignoreeof\n' | shish -i   # exits at EOF instead of asking for "exit"
   ```
 
-- fc-and-ulimit-missing: `fc` (history editing/listing) and `ulimit` are
-  POSIX utilities that are not builtins (`fc -l` and `ulimit -a` fail with
-  "No such file or directory", status 127).
+- fc-missing: `fc` (history listing, editing and re-execution) is a POSIX utility that
+  is not a builtin (`fc -l` fails with "No such file or directory", status 127).
 
   **Repro:**
   ```sh
-  fc -l; ulimit -a; echo $?      # both: "No such file or directory"; 127
+  fc -l; echo $?      # "No such file or directory"; 127
+  ```
+
+- ulimit-hard-limit-lowered-in-subshell-sticks: a "( ulimit -Hn N )" or "$( )" runs in the
+  shell's own process, so the soft limits it changed are put back when it ends, but a hard
+  limit lowered without privilege cannot be raised again.
+
+  **Repro:**
+  ```sh
+  shish -c '( ulimit -Hn 100 ); ulimit -Hn'     # 100; bash prints the original hard limit
   ```
 
 - fixed-sh-remaining-failures-after-sigchld-fix: `tests/fixed.sh` fails 9
