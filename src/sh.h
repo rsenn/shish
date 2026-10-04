@@ -66,12 +66,8 @@ struct shopt {
   unsigned vi : 1;          /* -o vi (no letter): accepted */
 };
 
-/* name->letter table for every "set"-supported option, and the
- * apply/get dispatch built on it -- see builtin_set.c, which owns the
- * actual table contents/switch bodies; declared here so sh_main.c can
- * give the shell's own command-line startup options the identical
- * letter/name set without duplicating (and risking drifting from)
- * that list a second time. */
+/* name->letter table of every "set" option (owned by builtin_set.c), shared so that
+ * sh_main.c's startup options use the identical letter/name set */
 struct set_longopt {
   const char* name;
   char letter;
@@ -117,29 +113,13 @@ extern const char* sh_name;
 extern char* sh_argv0;
 extern int sh_child;
 
-/* whether this shell session is interactive, decided once at startup
-   (sh_main.c) -- distinct from a `struct source`'s own
-   SOURCE_IACTIVE bit (source.h), which source_push() resets to 0 for
-   every nested source (a `.`-sourced file, a here-doc, ...) and which
-   correctly gates per-buffer things like prompting/history. POSIX's
-   "a non-interactive shell exits on this error" rules (2.8.1's
-   assignment/redirection/special-builtin errors, 2.6.1's unset-
-   parameter error, 2.11's signal-ignored-on-entry) are a property of
-   the whole session, not of whichever buffer happens to be open right
-   now -- checking SOURCE_IACTIVE for these would wrongly make a
-   plain command failing inside a `.`-sourced file kill an otherwise
-   interactive shell the moment it's one level into any sourced file. */
+/* the whole session is interactive, decided once at startup. Not source->mode & SOURCE_IACTIVE,
+ * which resets per nested source: POSIX's "a non-interactive shell exits on this error" rules
+ * (2.8.1, 2.6.1, 2.11) are a property of the session. */
 extern int sh_interactive;
 
-/* set while a real-signal trap's body is running (trap_handler(),
- * builtin_trap.c) and it calls "exit" -- see eval_subshell.c's own
- * comment for why. A trap fires asynchronously, possibly while deep
- * inside an in-process subshell ("(...)" doesn't fork here), and its
- * "exit" must terminate the whole process regardless of that, not
- * just whatever subshell/eval happened to be active at the exact
- * moment the signal arrived -- unlike an *ordinary*, synchronous
- * "exit" naturally written inside a "(...)" in the script itself,
- * which correctly stays scoped to just that subshell. */
+/* set while a trap body runs "exit" (trap_handler(), builtin_trap.c): the exit must end the
+ * whole process, not just the in-process subshell the asynchronous signal interrupted */
 extern int sh_async_exit;
 
 extern struct env* sh;
@@ -148,13 +128,8 @@ extern struct env sh_root;
 extern const char* sh_home;
 extern uid_t sh_uid;
 
-/* sh_pid is *this* process's real OS pid -- it changes across fork()
-   (sh_forked() updates it) because job control (setpgid/tcsetpgrp) and
-   /proc/<pid>/fd/ paths need the actual pid of whichever process is
-   running right now. sh_shpid is "$$": POSIX defines it as the pid of
-   the originally invoked shell, fixed for the whole script no matter
-   how many pipeline/subshell/cmdsubst forks happen along the way, so
-   it's set once at startup and never touched again. */
+/* sh_pid: this process's real pid (sh_forked() updates it: job control, /proc paths).
+ * sh_shpid: "$$", the original shell's pid, set once at startup */
 extern pid_t sh_pid;
 extern pid_t sh_shpid;
 

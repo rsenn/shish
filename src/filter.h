@@ -90,12 +90,12 @@ struct filter_in {
   const char *err_arg, *err_msg; /* option()/setup() usage error: printed by filter_run as "cmd: err_arg: err_msg" */
 };
 
-/* initializes the input tracking structure
+/* initializes the input tracking structure.
  *
- *  errargv      error argument vector
- *  files        file operands list
- *  upstream     default fallback input stream
- */
+ *   char**   errargv    error argument vector
+ *   char**   files      file operands list
+ *   buffer*  upstream   default fallback input stream
+ * ----------------------------------------------------------------------- */
 void filter_in_init(struct filter_in* in, char** errargv, char** files, buffer* upstream);
 int filter_in_ready(struct filter_in* in);
 int filter_in_next(struct filter_in* in);
@@ -109,10 +109,8 @@ const char* filter_in_name(const struct filter_in* in); /* operand being read */
  * Returns the number of bytes read, 0 when all sources are done or negative on error. */
 ssize_t filter_in_get(struct filter_in* in, char* buf, size_t len, const char* delims, size_t ndelims);
 
-/* one whole line of any length, without its '\n': *p points at it (into the
- * source's own buffer when it fits there, else into a growable copy) and
- * stays valid until the next call; *had_nl says whether a newline ended it
- * (a file's last line may lack one). A line never crosses two operands.
+/* one whole line, without its '\n': *p stays valid until the next call, *had_nl says whether
+ * a newline ended it (a last line may lack one). Never crosses operands.
  * Returns the length, or -1 when every source is exhausted. */
 ssize_t filter_in_line(struct filter_in* in, const char** p, int* had_nl);
 

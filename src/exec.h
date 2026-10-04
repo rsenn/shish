@@ -68,23 +68,16 @@ struct func_snapshot {
 
 extern struct exechash* exec_hashtbl[EXEC_HASHSIZE];
 
-/* errno from the access()/stat() call that made exec_hash()/exec_path()
-   give up on a candidate (ENOENT if nothing matching PATH existed at
-   all, EACCES/EISDIR if something matched but couldn't be executed).
-   The caller can't rely on plain "errno" for this by the time it
-   notices cmd.ptr == NULL -- redirections, variable expansion and
-   other syscalls run in between and routinely clobber it. */
+/* errno of the last failed candidate in exec_hash()/exec_path(): ENOENT, or EACCES/EISDIR when
+ * something matched but was not executable. Plain errno is clobbered before the caller looks. */
 extern int exec_lasterrno;
 
 /* pid of the program exec_program() is waiting for, 0 otherwise; read by
    signal handlers (timeout) that must kill it */
 extern volatile pid_t exec_child_pid;
 
-/* set when a redirection of the command exec_command() was about to
-   run could not be performed. The redirections are resolved as late
-   as possible, so this is the only place the failure is visible; the
-   caller needs it because POSIX 2.8.1 makes a redirection error fatal
-   to a non-interactive shell when the command is a special builtin. */
+/* a redirection of the command exec_command() was about to run failed. Resolved as late as
+ * possible, so only visible here; fatal to a non-interactive shell for a special builtin (POSIX 2.8.1) */
 extern int exec_redir_error;
 extern int exec_via_command;
 extern int exec_subshell_depth;

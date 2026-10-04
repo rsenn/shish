@@ -49,23 +49,15 @@ enum subst_type {
      substitution's result is quoted. Kept outside the S_TABLE-masked
      quoting nibble so it can't be mistaken for a quoting state. */
   S_BQUOTE = 0x40000,
-  /* a chunk of a here-document body: never went through the parser's
-     glob-special-char doubling that other literal chunks get (a
-     heredoc body never undergoes pathname expansion), so it must skip
-     the expand_unescape() pass that undoes that doubling -- its bytes
-     are already final. */
+  /* here-document body chunk: its bytes are final, skip expand_unescape() */
   S_HEREDOC = 0x80000
 };
 
 /* expansion modes */
 #define X_DEFAULT 0x00000000
 #define X_NOSPLIT 0x01000000
-/* set on chunks straight from source text (N_ARGSTR), whose
-   glob-special chars the parser doubled to protect them -- these need
-   exactly one expand_unescape(parse_isesc) pass. Substitution results
-   never went through that doubling, so they must not be marked with
-   this (unescaping them again would corrupt a genuine backslash in
-   the value, fixes/69). */
+/* chunk straight from source text (N_ARGSTR): gets one expand_unescape(parse_isesc) pass.
+   Never set on substitution results: a second pass would eat a real backslash */
 #define X_LITERAL 0x02000000
 #define X_GLOB 0x04000000
 /* the field holds the raw result of an unquoted expansion ($x, $(cmd)): glob it if it has a
@@ -76,17 +68,11 @@ enum subst_type {
    expand_cat()'s non-splitting branch -- skip any later whole-buffer
    expand_unescape() pass over it. */
 #define X_UNESCAPED 0x10000000
-/* result feeds path_fnmatch() (case patterns, ${var%pattern} etc.)
-   instead of being used as a plain string -- keep the parser's
-   protective backslash-doubling intact instead of unescaping it, since
-   that doubling is path_fnmatch()'s own "literal, not a wildcard"
-   escape syntax. */
+/* result feeds path_fnmatch() (case, ${v%pat}): keep the parser's backslash doubling,
+   it is path_fnmatch()'s "literal, not a wildcard" escape */
 #define X_PATTERN 0x20000000
-/* set around the recursive expand_arg(param->word, ...) call for a
-   "${parameter+word}"/"${parameter-word}" construct's word -- makes
-   expand_cat() treat word's own literal text as splittable, same as
-   any other expansion result, instead of exempting it the way a
-   top-level command word's literal text is exempt. */
+/* the word of "${parameter+word}" / "${parameter-word}": its literal text is splittable,
+   like any expansion result (a command word's literal text is not) */
 #define X_SUBWORD 0x00100000
 /* set on every field of an unquoted word that field-splitting split
    into 2+ fields (including the first, retroactively). Tells
@@ -106,11 +92,7 @@ struct narg;
 
 extern char expand_ifs[4];
 
-/* set when a word expansion failed in a way POSIX calls an expansion
- * error ("${x?}", "$x" under "set -u"): the command that word belongs
- * to must not run, and its status is nonzero. A non-interactive shell
- * has already exited by the time anyone reads this.
- */
+/* a word expansion failed ("${x?}", "$x" under set -u): the command does not run, status != 0 */
 extern int expand_error;
 
 /* frontend: expand parse-tree words into a list of fields

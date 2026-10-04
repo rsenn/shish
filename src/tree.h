@@ -382,13 +382,7 @@ extern const int tree_nodesizes[];
 #define tree_next(nptr) (&((*(nptr)))->next)
 #define tree_skip(nptr) ((nptr) = tree_next(nptr))
 
-/*
- * initialize a branch in the tree.
- * node is where the branch starts and
- * nptr will be used as pointer to the
- * current node in conjunction with
- * tree_link
- */
+/* initialize a branch: node is where it starts, nptr points at the current node (see tree_link) */
 #define tree_init(node, nptr) \
   do { \
     (node) = NULL; \

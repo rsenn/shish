@@ -282,12 +282,8 @@ extern struct token parse_tokens[];
  * carries no link-time dependency on the terminal/prompt subsystem. */
 extern void (*parse_prompt_hook)(void);
 
-/* Syntax-error exit callback, or 0 to fall back to a plain exit(1).
- * Set by an interactive shell entry point (sh_main.c) to sh_exit(), which
- * unwinds subshell/source frames instead of killing the process outright.
- * Left unset by parser-only tools (shformat, shparse2ast), which have no
- * such frames and no need to link the eval/exec/trap machinery sh_exit()
- * pulls in. */
+/* syntax-error exit callback, or 0 for a plain exit(1). sh_main.c sets it to sh_exit() (unwinds
+ * subshell/source frames); shformat/shparse2ast leave it unset so they link no eval/exec code. */
 extern void (*parse_exit_hook)(int);
 
 static inline char*

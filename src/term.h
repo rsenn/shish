@@ -31,13 +31,8 @@ extern int term_insert;
 extern int term_dumb;
 extern unsigned long term_pos;
 extern buffer* term_output;
-/* set only while term_read() is actually blocked mid-line waiting on
- * more terminal input (i.e. we're genuinely sitting at the prompt) --
- * checked by sh_onsig()'s SIGCHLD handler before it erases/redraws
- * the "current line": a job finishing while we're busy *executing* a
- * command (any command, not just this specific one -- includes every
- * child a command substitution's own pipeline forks) isn't a redraw
- * situation, there's no in-progress prompt line to protect */
+/* set only while term_read() is blocked at the prompt: sh_onsig()'s SIGCHLD handler redraws the
+ * line only then, not while a command (or a command substitution's child) is running */
 extern volatile int term_reading;
 
 extern struct termios term_tcattr;
