@@ -17,6 +17,11 @@ static int tree_cat_bqdepth;
 void
 tree_cat(union node* node, stralloc* sa) {
   tree_cat_n(node, sa, 0);
+
+  /* a lone statement is not wrapped in a list, so its "&" is added here */
+  if(node && tree_isbgnd(node))
+    stralloc_cats(sa, " &");
+
   stralloc_nul(sa);
 }
 
@@ -387,7 +392,19 @@ again:
       tree_catseparator(sa, sep == NULL ? "\n  " : sep, d + 1);
       tree_catlist_n(node->ngrp.cmds, sa, sep == NULL ? "; " : sep, d + 1);
 
-      stralloc_cats(sa, ";");
+      /* "{ x & }": the "&" of the last statement is its terminator */
+      for(n = node->ngrp.cmds; n;) {
+        while(n->next)
+          n = n->next;
+
+        if(n->id != N_LIST || !n->nlist.cmds)
+          break;
+
+        n = n->nlist.cmds;
+      }
+
+      if(!n || !tree_isbgnd(n))
+        stralloc_cats(sa, ";");
 
       tree_catseparator(sa, sep == NULL ? "\n  " : sep, d - 1);
       stralloc_catc(sa, '}');

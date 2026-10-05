@@ -1,0 +1,130 @@
+diff --git a/src/tree.h b/src/tree.h
+index de4cd445..46a81af7 100644
+--- a/src/tree.h
++++ b/src/tree.h
+@@ -401,6 +401,7 @@ void tree_delnode(union node* node);
+ void tree_free(union node* list);
+ union node* tree_copy(union node* node);
+ void tree_cat(union node* node, stralloc* sa);
++int tree_isbgnd(const union node* node);
+ void tree_cat_n(union node* node, stralloc* sa, int depth);
+ void tree_catlist(union node* node, stralloc* sa, const char* sep);
+ void tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth);
+diff --git a/src/tree/tree_cat.c b/src/tree/tree_cat.c
+index 8d2e97b6..207df028 100644
+--- a/src/tree/tree_cat.c
++++ b/src/tree/tree_cat.c
+@@ -17,6 +17,11 @@ static int tree_cat_bqdepth;
+ void
+ tree_cat(union node* node, stralloc* sa) {
+   tree_cat_n(node, sa, 0);
++
++  /* a lone statement is not wrapped in a list, so its "&" is added here */
++  if(node && tree_isbgnd(node))
++    stralloc_cats(sa, " &");
++
+   stralloc_nul(sa);
+ }
+ 
+@@ -387,7 +392,19 @@ again:
+       tree_catseparator(sa, sep == NULL ? "\n  " : sep, d + 1);
+       tree_catlist_n(node->ngrp.cmds, sa, sep == NULL ? "; " : sep, d + 1);
+ 
+-      stralloc_cats(sa, ";");
++      /* "{ x & }": the "&" of the last statement is its terminator */
++      for(n = node->ngrp.cmds; n;) {
++        while(n->next)
++          n = n->next;
++
++        if(n->id != N_LIST || !n->nlist.cmds)
++          break;
++
++        n = n->nlist.cmds;
++      }
++
++      if(!n || !tree_isbgnd(n))
++        stralloc_cats(sa, ";");
+ 
+       tree_catseparator(sa, sep == NULL ? "\n  " : sep, d - 1);
+       stralloc_catc(sa, '}');
+diff --git a/src/tree/tree_catlist.c b/src/tree/tree_catlist.c
+index cda747d4..febd45e0 100644
+--- a/src/tree/tree_catlist.c
++++ b/src/tree/tree_catlist.c
+@@ -34,12 +34,15 @@ tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth) {
+     tree_cat_n(node, &next, depth);
+     stralloc_nul(&next);
+ 
+-    if(node->next || (node->id == N_SIMPLECMD && node->ncmd.bgnd)) {
++    /* "a & b": the "&" ends the statement, so it replaces a ";" separator */
++    if(tree_isbgnd(node))
++      stralloc_cats(&next, " &");
+ 
++    if(node->next) {
+       if(sep /*&& *sep*/)
+-        tree_catseparator(&next, sep, depth);
++        tree_catseparator(&next, tree_isbgnd(node) && *sep == ';' ? sep + 1 : sep, depth);
+       else
+-        stralloc_cats(&next, (node->ncmd.bgnd ? " & " : "; "));
++        stralloc_cats(&next, tree_isbgnd(node) ? " " : "; ");
+     }
+ 
+     stralloc_cat(sa, &next);
+diff --git a/src/tree/tree_isbgnd.c b/src/tree/tree_isbgnd.c
+new file mode 100644
+index 00000000..7f8deb72
+--- /dev/null
++++ b/src/tree/tree_isbgnd.c
+@@ -0,0 +1,22 @@
++#include "../tree.h"
++
++/* does this node end a statement that "&" can follow? (the bgnd bit sits at the same place in all of them)
++ * ----------------------------------------------------------------------- */
++int
++tree_isbgnd(const union node* node) {
++  switch(node->id) {
++    case N_SIMPLECMD:
++    case N_PIPELINE:
++    case N_AND:
++    case N_OR:
++    case N_NOT:
++    case N_SUBSHELL:
++    case N_BRACEGROUP:
++    case N_FOR:
++    case N_CASE:
++    case N_IF:
++    case N_WHILE:
++    case N_UNTIL: return node->ncmd.bgnd;
++    default: return 0;
++  }
++}
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 115b4c97..0bcd9293 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -6063,4 +6063,25 @@ assert_equal "3
+ 3
+ 0" "$PX" "expr index reaches the last character and prints 0 when nothing matches"
+ 
++# tree_cat() keeps the "&" of a background statement (set's function dump uses it, as shformat does)
++X=$(bgfn1() { sleep 1 & echo x; }
++set | sed -n '/^bgfn1()/,/^}/p')
++assert_equal 'bgfn1() {
++  sleep 1 & echo x;
++}' "$X" "a function body keeps the & between two statements"
++
++X=$(bgfn2() { x & }
++set | sed -n '/^bgfn2()/,/^}/p')
++assert_equal 'bgfn2() {
++  x &
++}' "$X" "a lone background statement keeps its & and gets no extra semicolon"
++
++X=$(bgfn3() { while :; do y & done; }
++set | sed -n '/^bgfn3()/,/^}/p')
++assert_equal 'bgfn3() {
++  while :; do
++    y &
++  done;
++}' "$X" "a background statement in a loop body keeps its & and prints no blank separator line"
++
+ summary

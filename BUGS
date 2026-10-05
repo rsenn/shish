@@ -382,17 +382,6 @@
   ```
 
 
-- tree-cat-drops-background-ampersand: `tree_cat()` never prints `&`
-  for a simple command or compound with `bgnd` set (only `N_LIST`'s
-  `bgnd` is honoured), so `shformat` turns a background job into a
-  foreground one, and a `{ cmd & }` group comes out as `{ cmd; ; }`.
-
-  **Repro:**
-  ```sh
-  printf 'sleep 1 & echo x\n' | build/x86_64-linux-gnu/shformat   # sleep 1; echo x
-  printf '{ sleep 1 & }\n'    | build/x86_64-linux-gnu/shformat   # { sleep 1; ; }
-  ```
-
 - tree-cat-drops-empty-for-in: `nfor.has_in` (`for x in; do ...`, an empty
   word list) is not read by `tree_cat()`, which prints ` in ` only when
   the list is non-empty, so `shformat` turns "iterate over nothing"

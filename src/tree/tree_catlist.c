@@ -34,12 +34,15 @@ tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth) {
     tree_cat_n(node, &next, depth);
     stralloc_nul(&next);
 
-    if(node->next || (node->id == N_SIMPLECMD && node->ncmd.bgnd)) {
+    /* "a & b": the "&" ends the statement, so it replaces a ";" separator */
+    if(tree_isbgnd(node))
+      stralloc_cats(&next, " &");
 
+    if(node->next) {
       if(sep /*&& *sep*/)
-        tree_catseparator(&next, sep, depth);
+        tree_catseparator(&next, tree_isbgnd(node) && *sep == ';' ? sep + 1 : sep, depth);
       else
-        stralloc_cats(&next, (node->ncmd.bgnd ? " & " : "; "));
+        stralloc_cats(&next, tree_isbgnd(node) ? " " : "; ");
     }
 
     stralloc_cat(sa, &next);

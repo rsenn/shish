@@ -6063,4 +6063,25 @@ assert_equal "3
 3
 0" "$PX" "expr index reaches the last character and prints 0 when nothing matches"
 
+# tree_cat() keeps the "&" of a background statement (set's function dump uses it, as shformat does)
+X=$(bgfn1() { sleep 1 & echo x; }
+set | sed -n '/^bgfn1()/,/^}/p')
+assert_equal 'bgfn1() {
+  sleep 1 & echo x;
+}' "$X" "a function body keeps the & between two statements"
+
+X=$(bgfn2() { x & }
+set | sed -n '/^bgfn2()/,/^}/p')
+assert_equal 'bgfn2() {
+  x &
+}' "$X" "a lone background statement keeps its & and gets no extra semicolon"
+
+X=$(bgfn3() { while :; do y & done; }
+set | sed -n '/^bgfn3()/,/^}/p')
+assert_equal 'bgfn3() {
+  while :; do
+    y &
+  done;
+}' "$X" "a background statement in a loop body keeps its & and prints no blank separator line"
+
 summary
