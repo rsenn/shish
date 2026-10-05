@@ -458,6 +458,15 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
   line. That is a queue of pending bodies flushed by `tree_catseparator()`, i.e. a change to the output
   order of the whole printer, which `set`'s function dump, `trap -p` and `shformat` all share.
 
+- **Forked function children lose their output inside `$( )`**
+  (`timeout-function-output-not-captured-by-command-substitution`): it is not specific to `timeout`.
+  `f() { echo hi; }; x=$(f & wait)` also gives `[]` (bash: `[hi]`), while `x=$(f | cat)` works. A command
+  substitution collects stdout in a `stralloc`; pipeline members get a real pipe when they fork, but an
+  async job and `timeout`'s `exec_command(..., X_NOWAIT)` fork with fd 1 still bound to the `stralloc`.
+  The fix belongs where a pipeline stage materializes its pipe (fdstack), reused for X_NOWAIT/`&`
+  forks: trace with `SHISH_TRACE=fd,fdtable,exec` on `x=$(f & wait)` and compare `fdtable.exec.table`
+  with `fdtable.exec.fds` in the child.
+
 ### `BUGS` <-> conformance-gap map
 
 **Explains a scoreboard number (fix these as part of Stages 1-2):**
