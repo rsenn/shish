@@ -441,6 +441,14 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
   empty chunks. Needs a `tests/posix` run of `quote-p`, `param-p` and `field-p`-style files, since the
   word parser is shared by everything.
 
+- **`break`/`continue` at the top of a file run with `.`** (`source-break-continue-no-op`): bash and dash leave
+  the calling script's loop, shish ignores it. `builtin_source()` pushes an `E_ROOT` frame with its own
+  `setjmp`, which `eval_jump()` treats as a boundary. `eval` got past this with the `E_EVAL` flag, but a
+  jump that skips the source frame would also skip its cleanup (`sh_popargs`, `source_popfd`, `eval_pop`),
+  the kind of leak `eval_jump()`'s comment describes. Smallest idea: let `eval_jump()` stop at the source
+  frame, longjmp into `builtin_source()` with a "propagate break/continue by N levels" code, and have it
+  clean up and re-issue `eval_jump()` from the caller's frame.
+
 ### `BUGS` <-> conformance-gap map
 
 **Explains a scoreboard number (fix these as part of Stages 1-2):**
