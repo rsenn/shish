@@ -431,6 +431,16 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
   not as the end of input. Smallest idea: a separate `in->empty` bit that only `head`/`tail` read, set where
   `filter_in_ready()` closes a source that still has `newfile` set.
 
+- **`"$@"""` with no positional parameters gives 0 fields, POSIX (and bash, dash) give 1**
+  (`quoted-at-then-empty-quotes-drops-field`; also `"$@"''`): `expand_is_empty_at()`
+  (`src/expand/expand_args.c`) treats "only empty literal chunks plus a quoted `$@`" as zero fields. The
+  empty chunk after a plain `"$@"` is created by the parser when the quote state switches
+  (`src/parse/parse_string.c`: a new `N_ARGSTR` whenever `flag & S_TABLE` differs from `p->quot`), so it
+  looks the same as a written `""`. Smallest idea: set a flag bit on an `N_ARGSTR` only where the source
+  has an explicit empty quote pair (`""`, `''`), and let `expand_is_empty_at()` ignore only unmarked
+  empty chunks. Needs a `tests/posix` run of `quote-p`, `param-p` and `field-p`-style files, since the
+  word parser is shared by everything.
+
 ### `BUGS` <-> conformance-gap map
 
 **Explains a scoreboard number (fix these as part of Stages 1-2):**
