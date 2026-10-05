@@ -21,7 +21,7 @@ chmod       core/builtin_chmod.c            x   -
 command     builtin_command.c               m   -
 compress    filter/builtin_compress.c       x   -
 continue    builtin_break.c                 m   -
-cp          core/builtin_cp.c               x   core/builtin_rm.c
+cp          core/builtin_cp.c               x   -
 cut         filter/builtin_cut.c            x   -
 date        core/builtin_date.c             x   -
 digest      extra/builtin_digest.c          x   -
@@ -57,9 +57,9 @@ mktemp      core/builtin_mktemp.c           x   -
 mv          core/builtin_cp.c               x   core/builtin_rm.c
 nl          filter/builtin_nl.c             x   ../../text/dfa/
 paste       filter/builtin_paste.c          x   -
-popd        extra/builtin_dirstack.c        x   -
+popd        extra/builtin_dirstack.c        x   builtin_cd.c
 printf      core/builtin_printf.c           m   -
-pushd       extra/builtin_dirstack.c        x   -
+pushd       extra/builtin_dirstack.c        x   builtin_cd.c
 pwd         core/builtin_pwd.c              m   -
 read        builtin_read.c                  m   -
 readlink    core/builtin_readlink.c         x   -

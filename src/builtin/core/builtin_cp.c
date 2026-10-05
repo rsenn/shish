@@ -1,3 +1,4 @@
+#include "builtin_config.h"
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../sh.h"
@@ -30,6 +31,8 @@
 
 #define CPMV_BUFSIZE 65536
 
+#if BUILTIN_CP || BUILTIN_MV
+
 /* options and per-run state shared by cp and mv
  * ----------------------------------------------------------------------- */
 struct cpmv {
@@ -46,6 +49,7 @@ struct cpmv {
   char* buf;       /* CPMV_BUFSIZE bytes, allocated on first use */
 };
 
+#if BUILTIN_CP
 const char help_cp[] = "    Copy files.\n"
                        "\n"
                        "    -R, -r          copy directories recursively\n"
@@ -59,6 +63,9 @@ const char help_cp[] = "    Copy files.\n"
                        "    source          file (or, with -R, directory) to copy\n"
                        "    target          file, or directory to copy into\n";
 
+#endif
+
+#if BUILTIN_MV
 const char help_mv[] = "    Move or rename files.\n"
                        "\n"
                        "    -f              do not ask before overwriting\n"
@@ -67,6 +74,7 @@ const char help_mv[] = "    Move or rename files.\n"
                        "    -v              print each file moved\n"
                        "    source          file or directory to move\n"
                        "    target          new name, or directory to move into\n";
+#endif
 
 /* "name" part of a path without its trailing slashes: "a/b//" -> "b"
  *
@@ -453,6 +461,7 @@ cpmv_one(struct cpmv* o, const char* src, const char* dst, int top) {
   return 1;
 }
 
+#if BUILTIN_MV
 /* rename one source; across file systems copy it, then remove it
  * returns 0, or 1 after reporting
  * ----------------------------------------------------------------------- */
@@ -559,6 +568,8 @@ mv_one(struct cpmv* o, const char* src, const char* dst) {
   }
 }
 
+#endif /* BUILTIN_MV */
+
 int
 builtin_cpmv(int argc, char* argv[]) {
   struct cpmv o;
@@ -572,12 +583,18 @@ builtin_cpmv(int argc, char* argv[]) {
   o.argv = argv;
   o.follow = -1;
 
+#if BUILTIN_CP
   if(!str_diff(argv[0], "cp"))
     optstr = "RrHLPfipnva";
-  else if(!str_diff(argv[0], "mv")) {
+  else
+#endif
+#if BUILTIN_MV
+      if(!str_diff(argv[0], "mv")) {
     o.mv = 1;
     optstr = "finv";
-  } else {
+  } else
+#endif
+  {
     builtin_errmsg(argv, argv[0], "unknown name");
     return 1;
   }
@@ -644,7 +661,11 @@ builtin_cpmv(int argc, char* argv[]) {
 
     stralloc_nul(&dst);
 
+#if BUILTIN_MV
     if(o.mv ? mv_one(&o, src, dst.s) : cpmv_one(&o, src, dst.s, 1))
+#else
+    if(cpmv_one(&o, src, dst.s, 1))
+#endif
       ret = 1;
   }
 
@@ -655,3 +676,5 @@ builtin_cpmv(int argc, char* argv[]) {
 
   return ret;
 }
+
+#endif /* BUILTIN_CP || BUILTIN_MV */

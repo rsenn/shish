@@ -94,6 +94,11 @@ md5sum.textutils  extra/builtin_digest.c     x     -              macro=MD5SUM_T
 
 #### Part B - every builtin gets its own preprocessor switch (also the existing ones)
 
+**Status:** converted and passing `tests/builtin-matrix.sh`: `dirs`/`popd`/`pushd`, `cp`/`mv`,
+`break`/`continue`. Open: `test`/`[` (needs the `macro=` column), `compress`, `uncompress`,
+`digest`, `builtin_type.c`, `-Wundef`, the single-builtin files. The matrix is not a CTest case
+(one build per name); run `sh tests/builtin-matrix.sh [name ...]` after touching a builtin.
+
 **Today** most names already have their own `BUILTIN_<NAME>` (`cp` and `mv`, `break` and `continue`, `dirs`,
 `popd` and `pushd` are separate switches in separate table rows), but several families share one:
 `BUILTIN_COMPRESS` guards nine names (`gzip` ... `zstd`), `BUILTIN_UNCOMPRESS` eleven (`gunzip`, `zcat`,

@@ -332,7 +332,7 @@ target_cmake_format()
 target_clang_format(${ALL_SOURCES})
 
 file(GLOB TESTS tests/*.sh)
-list(FILTER TESTS EXCLUDE REGEX "bourne-compat.sh|common.sh|run-tst.sh")
+list(FILTER TESTS EXCLUDE REGEX "bourne-compat.sh|builtin-matrix.sh|common.sh|run-tst.sh")
 
 relative_paths(TESTS "${CMAKE_CURRENT_SOURCE_DIR}" ${TESTS})
 

@@ -1,3 +1,4 @@
+#include "builtin_config.h"
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../sh.h"
@@ -7,6 +8,8 @@
 #include "../../../lib/scan.h"
 #include "../../../lib/shell.h"
 #include "../../../lib/str.h"
+
+#if BUILTIN_DIRS || BUILTIN_PUSHD || BUILTIN_POPD
 
 /* pushd, popd and dirs.
  *
@@ -146,12 +149,16 @@ stack_set(const struct entry* v, size_t n) {
   head = nh;
 }
 
+#if BUILTIN_PUSHD
 static void
 stack_push(const char* s, size_t len) {
   fence_enter();
   head = node_new(s, len, head);
 }
 
+#endif
+
+#if BUILTIN_POPD
 static void
 stack_pop(void) {
   struct dirnode* n;
@@ -164,6 +171,9 @@ stack_pop(void) {
     alloc_free(n);
 }
 
+#endif
+
+#if BUILTIN_PUSHD || BUILTIN_POPD
 /* chdir through the cd builtin so $PWD, $OLDPWD and the diagnostics match */
 static int
 cd_to(char* name, const char* dir) {
@@ -182,6 +192,8 @@ cd_to(char* name, const char* dir) {
   shell_optofs = ofs;
   return ret;
 }
+
+#endif
 
 /* "+N" / "-N": 1 and *n filled when the whole argument is a sign and digits */
 static int
@@ -266,6 +278,7 @@ show(int long_fmt, int per_line, int verbose, long only) {
   buffer_flush(fd_out->w);
 }
 
+#if BUILTIN_PUSHD
 /* [c0 s1 .. sk] -> [ci .. sk c0 .. c(i-1)], entry i becoming the cwd */
 static int
 rotate(char* name, size_t idx) {
@@ -329,6 +342,9 @@ exchange(char* name) {
   return ret;
 }
 
+#endif
+
+#if BUILTIN_POPD
 /* drop stack entry idx (1-based over cwd + stack) without changing directory */
 static void
 remove_at(size_t idx) {
@@ -347,6 +363,9 @@ remove_at(size_t idx) {
   alloc_free(w);
 }
 
+#endif
+
+#if BUILTIN_DIRS
 const char help_dirs[] = "    Display the directory stack: the current directory, then the pushed ones.\n"
                          "\n"
                          "    -c              clear the stack\n"
@@ -393,6 +412,9 @@ builtin_dirs(int argc, char* argv[]) {
   return 0;
 }
 
+#endif
+
+#if BUILTIN_PUSHD
 const char help_pushd[] = "    Add a directory to the stack and change to it.\n"
                           "\n"
                           "    dir             push the current directory, change to dir\n"
@@ -462,6 +484,9 @@ builtin_pushd(int argc, char* argv[]) {
   return 0;
 }
 
+#endif
+
+#if BUILTIN_POPD
 const char help_popd[] = "    Remove an entry from the stack.\n"
                          "\n"
                          "    (none)          remove the top entry and change to it\n"
@@ -507,3 +532,6 @@ builtin_popd(int argc, char* argv[]) {
   show(0, 0, 0, -1);
   return 0;
 }
+#endif
+
+#endif /* BUILTIN_DIRS || BUILTIN_PUSHD || BUILTIN_POPD */

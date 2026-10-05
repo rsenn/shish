@@ -1,7 +1,10 @@
+#include "builtin_config.h"
 #include "../fdtable.h"
 #include "../../lib/scan.h"
 #include "../eval.h"
 #include "../sh.h"
+
+#if BUILTIN_BREAK || BUILTIN_CONTINUE
 
 /* continue/break a loop
  * ----------------------------------------------------------------------- */
@@ -28,3 +31,5 @@ builtin_break(int argc, char* argv[]) {
   eval_jump(n, (*argv[0] == 'c'));
   return 0;
 }
+
+#endif /* BUILTIN_BREAK || BUILTIN_CONTINUE */
