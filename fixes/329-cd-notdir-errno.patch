@@ -1,0 +1,33 @@
+diff --git a/src/builtin/builtin_cd.c b/src/builtin/builtin_cd.c
+index 7056bf81..c025f119 100644
+--- a/src/builtin/builtin_cd.c
++++ b/src/builtin/builtin_cd.c
+@@ -198,7 +198,14 @@ builtin_cd(int argc, char* argv[]) {
+     return 0;
+   }
+ 
+-  /* we failed */
++  /* we failed; stat() succeeded on a file, so errno is not the reason */
++  if(!ok) {
++    struct stat st;
++
++    if(stat(arg, &st) == 0 && !S_ISDIR(st.st_mode))
++      errno = ENOTDIR;
++  }
++
+   builtin_error(argv, ok ? newcwd.s : (char*)arg);
+   stralloc_free(&newcwd);
+   return 1;
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 5a3c89cf..a6c1fee4 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -6103,4 +6103,8 @@ assert_equal 'forfn3() {
+   for i in a; do y & done;
+ }' "$X" "a for loop whose body ends in & is not given a semicolon after it"
+ 
++# cd to a file names the real reason, not a stale errno
++PX=$("$SHISH_SELF" -c 'cd /dev/null' 2>&1)
++assert_match "$PX" "*cd: /dev/null: Not a directory" "cd to a file that is not a directory says \"Not a directory\""
++
+ summary

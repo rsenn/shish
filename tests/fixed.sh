@@ -6103,4 +6103,8 @@ assert_equal 'forfn3() {
   for i in a; do y & done;
 }' "$X" "a for loop whose body ends in & is not given a semicolon after it"
 
+# cd to a file names the real reason, not a stale errno
+PX=$("$SHISH_SELF" -c 'cd /dev/null' 2>&1)
+assert_match "$PX" "*cd: /dev/null: Not a directory" "cd to a file that is not a directory says \"Not a directory\""
+
 summary

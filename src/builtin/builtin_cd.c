@@ -198,7 +198,14 @@ builtin_cd(int argc, char* argv[]) {
     return 0;
   }
 
-  /* we failed */
+  /* we failed; stat() succeeded on a file, so errno is not the reason */
+  if(!ok) {
+    struct stat st;
+
+    if(stat(arg, &st) == 0 && !S_ISDIR(st.st_mode))
+      errno = ENOTDIR;
+  }
+
   builtin_error(argv, ok ? newcwd.s : (char*)arg);
   stralloc_free(&newcwd);
   return 1;
