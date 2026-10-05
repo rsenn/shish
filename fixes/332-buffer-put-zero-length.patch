@@ -1,0 +1,31 @@
+diff --git a/lib/buffer/buffer_put.c b/lib/buffer/buffer_put.c
+index 83c0f3ca..ad8d653b 100644
+--- a/lib/buffer/buffer_put.c
++++ b/lib/buffer/buffer_put.c
+@@ -26,7 +26,11 @@ buffer_put(buffer* b, const char* buf, size_t len) {
+     }
+   }
+ 
+-  byte_copy(b->x + b->p, len, buf);
+-  b->p += len;
++  /* a buffer with no storage yet (x == NULL) is only ever asked for zero bytes here */
++  if(len) {
++    byte_copy(b->x + b->p, len, buf);
++    b->p += len;
++  }
++
+   return 0;
+ }
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index bccf3c9f..20643223 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -6124,4 +6124,8 @@ assert_equal "2:a b" "$PX" "a subshell's EXIT trap sees the parameters set insid
+ PX=$("$SHISH_SELF" -c "set -- x; trap 'echo \"\$#:\$*\"' EXIT")
+ assert_equal "1:x" "$PX" "the EXIT trap at the end of the script sees the positional parameters"
+ 
++# buffer_put() with len == 0 on a buffer without storage (x == NULL) no longer calls memcpy(NULL, ..., 0).
++# Only a sanitizer sees it (UBSan: "null pointer passed as argument 1"), so there is nothing to assert
++# from a script; checked with a tiny -fsanitize=undefined program calling buffer_put(&b, "", 0).
++
+ summary

@@ -26,7 +26,11 @@ buffer_put(buffer* b, const char* buf, size_t len) {
     }
   }
 
-  byte_copy(b->x + b->p, len, buf);
-  b->p += len;
+  /* a buffer with no storage yet (x == NULL) is only ever asked for zero bytes here */
+  if(len) {
+    byte_copy(b->x + b->p, len, buf);
+    b->p += len;
+  }
+
   return 0;
 }

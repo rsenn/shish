@@ -6124,4 +6124,8 @@ assert_equal "2:a b" "$PX" "a subshell's EXIT trap sees the parameters set insid
 PX=$("$SHISH_SELF" -c "set -- x; trap 'echo \"\$#:\$*\"' EXIT")
 assert_equal "1:x" "$PX" "the EXIT trap at the end of the script sees the positional parameters"
 
+# buffer_put() with len == 0 on a buffer without storage (x == NULL) no longer calls memcpy(NULL, ..., 0).
+# Only a sanitizer sees it (UBSan: "null pointer passed as argument 1"), so there is nothing to assert
+# from a script; checked with a tiny -fsanitize=undefined program calling buffer_put(&b, "", 0).
+
 summary
