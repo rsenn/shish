@@ -449,6 +449,15 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
   frame, longjmp into `builtin_source()` with a "propagate break/continue by N levels" code, and have it
   clean up and re-issue `eval_jump()` from the caller's frame.
 
+- **Here-documents in `tree_cat()`** (`tree-cat-mangles-here-documents`): `redir_addhere()` fills the
+  body into the redirection node when it is read, in place of the delimiter word, so the printer has
+  neither the delimiter nor the "was it quoted" bit and prints `cat <<"body\n"`. A correct printer needs
+  (1) a delimiter chosen at print time (one that does not occur as a line of the body), (2) the quoting
+  bit kept on the node (quoted delimiter = no expansion in the body), and (3) the body emitted after the
+  next newline of the output, not at the redirection: `cat <<EOF | grep x` has the body after the whole
+  line. That is a queue of pending bodies flushed by `tree_catseparator()`, i.e. a change to the output
+  order of the whole printer, which `set`'s function dump, `trap -p` and `shformat` all share.
+
 ### `BUGS` <-> conformance-gap map
 
 **Explains a scoreboard number (fix these as part of Stages 1-2):**
