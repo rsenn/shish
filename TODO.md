@@ -419,6 +419,18 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
   `pivot_root`), including dietlibc and musl, and keeping these files out of the Windows and wasm builds;
 - tests as a normal user in a user namespace that skip themselves when the builtin or the privilege is missing.
 
+### Loop findings that need a design decision (not fixed, see `BUGS`)
+
+- **`unset -v 1x` status** (`unset-invalid-name-accepted`): shish prints the error and returns 0. bash
+  returns 1 and continues; dash exits the non-interactive shell because `unset` is a special builtin.
+  A plain `return 1` lands on dash's behavior here (the shell exits), so pick one deliberately.
+- **Empty file operand gets no header from `head`/`tail`** (`head-no-header-for-empty-file`): the empty
+  source is skipped inside `filter_in_ready()` (`src/filter/filter_in_ready.c`) before `head`/`tail` see it.
+  Reporting it means `filter_in_peek()` has to hand out "a file was opened and is empty" (`newfile` set,
+  0 bytes), which `grep`, `cat`, `tr`, `compress` and `uncompress` would all have to treat as "nothing yet",
+  not as the end of input. Smallest idea: a separate `in->empty` bit that only `head`/`tail` read, set where
+  `filter_in_ready()` closes a source that still has `newfile` set.
+
 ### `BUGS` <-> conformance-gap map
 
 **Explains a scoreboard number (fix these as part of Stages 1-2):**
