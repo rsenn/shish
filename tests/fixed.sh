@@ -6107,4 +6107,13 @@ assert_equal 'forfn3() {
 PX=$("$SHISH_SELF" -c 'cd /dev/null' 2>&1)
 assert_match "$PX" "*cd: /dev/null: Not a directory" "cd to a file that is not a directory says \"Not a directory\""
 
+# cut -n -b in a UTF-8 locale never splits a character (POSIX: low moves back to the character start,
+# high moves back to the end of the previous character)
+cutn() { printf "$1\n" | LC_ALL=C.UTF-8 "$SHISH_SELF" -c "cut $2" | od -An -tx1 | tr -d ' \n'; }
+assert_equal "0a" "$(cutn '\303\251' '-n -b 1')" "cut -n -b 1 selects nothing when the range ends inside a character"
+assert_equal "c3a90a" "$(cutn '\303\251' '-n -b 1-2')" "cut -n -b 1-2 selects the whole two-byte character"
+assert_equal "c3a90a" "$(cutn '\303\251a' '-n -b 2')" "cut -n -b 2 moves low back to the first byte of its character"
+assert_equal "610a" "$(cutn 'a\303\251' '-n -b 1-2')" "cut -n -b 1-2 drops a character that the range only starts"
+assert_equal "c30a" "$(cutn '\303\251' '-b 1')" "cut -b 1 without -n still takes the lone byte"
+
 summary

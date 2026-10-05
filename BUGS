@@ -556,11 +556,6 @@
   head a | /bin/cat                    # b, a: an external last command is pumped
   ```
 
-- cut-n-option-ignored: `cut -n` is accepted and ignored. With `-b` in a
-  UTF-8 locale it should not split a multibyte character:
-  `printf '\303\251\n' | LC_ALL=C.UTF-8 cut -n -b 1` prints the lone byte
-  \303 (should print nothing, the range starts inside the character).
-
 - builtin-cp-sh-hangs: `tests/builtin-cp.sh` never terminates (a `ctest`
   run sits on it for 17+ minutes), so it needs `--timeout` or `-E builtin-cp`
   for the suite to finish.

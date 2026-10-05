@@ -1,0 +1,97 @@
+diff --git a/src/builtin/filter/builtin_cut.c b/src/builtin/filter/builtin_cut.c
+index 99a9db43..e65b4ee6 100644
+--- a/src/builtin/filter/builtin_cut.c
++++ b/src/builtin/filter/builtin_cut.c
+@@ -20,7 +20,7 @@ const char help_cut[] = "    Select parts of each line.\n"
+                         "    -f list         select these delimiter-separated fields\n"
+                         "    -d delim        the field delimiter, one character (default tab)\n"
+                         "    -s              with -f: skip lines that contain no delimiter\n"
+-                        "    -n              accepted; splitting characters with -b is not prevented\n"
++                        "    -n              with -b in a UTF-8 locale: never split a character\n"
+                         "    file            file to read; '-' or omitted means stdin\n"
+                         "\n"
+                         "    list is N, N-M, N- or -M items separated by commas, counted from 1.\n";
+@@ -38,7 +38,7 @@ struct cut {
+   char mode; /* 'b' 'c' 'f' */
+   char delim[4];
+   size_t dlen;
+-  unsigned s : 1, hasd : 1, utf8 : 1;
++  unsigned s : 1, hasd : 1, utf8 : 1, nosplit : 1;
+   stralloc out;
+ };
+ 
+@@ -174,7 +174,7 @@ cut_option(void* ctx, int ch) {
+       return 0;
+ 
+     case 's': c->s = 1; return 0;
+-    case 'n': return 0;
++    case 'n': c->nosplit = 1; return 0;
+   }
+ 
+   return -1;
+@@ -203,12 +203,47 @@ cut_setup(void* ctx) {
+   return 0;
+ }
+ 
++/* -n -b in UTF-8: a byte range never splits a character. "low" moves back to the first byte
++ * of its character, "high" to the last byte of the previous one when it ends inside a character.
++ * ----------------------------------------------------------------------- */
++static void
++cut_bytes_whole(struct cut* c, const char* line, size_t n) {
++  size_t i, done = 0;
++
++  for(i = 0; i < c->nr && done < n; i++) {
++    size_t lo = c->r[i].lo, hi = c->r[i].hi < n ? c->r[i].hi : n, s, l;
++
++    for(s = 0; s < n; s += l) {
++      l = u8charlen(line + s, n - s);
++
++      if(lo > s && lo <= s + l)
++        lo = s + 1;
++
++      if(hi > s && hi < s + l)
++        hi = s;
++    }
++
++    if(lo <= done)
++      lo = done + 1;
++
++    if(hi >= lo) {
++      stralloc_catb(&c->out, line + lo - 1, hi - lo + 1);
++      done = hi;
++    }
++  }
++}
++
+ /* -b/-c: the selected stretches of the line, in order */
+ static void
+ cut_chars(struct cut* c, const char* line, size_t n) {
+   int utf8 = c->mode == 'c' && c->utf8;
+   size_t off = 0, cpos = 0, i;
+ 
++  if(c->mode == 'b' && c->nosplit && c->utf8) {
++    cut_bytes_whole(c, line, n);
++    return;
++  }
++
+   for(i = 0; i < c->nr && off < n; i++) {
+     size_t lo = c->r[i].lo - 1, take;
+ 
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index a6c1fee4..db3bc0b9 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -6107,4 +6107,13 @@ assert_equal 'forfn3() {
+ PX=$("$SHISH_SELF" -c 'cd /dev/null' 2>&1)
+ assert_match "$PX" "*cd: /dev/null: Not a directory" "cd to a file that is not a directory says \"Not a directory\""
+ 
++# cut -n -b in a UTF-8 locale never splits a character (POSIX: low moves back to the character start,
++# high moves back to the end of the previous character)
++cutn() { printf "$1\n" | LC_ALL=C.UTF-8 "$SHISH_SELF" -c "cut $2" | od -An -tx1 | tr -d ' \n'; }
++assert_equal "0a" "$(cutn '\303\251' '-n -b 1')" "cut -n -b 1 selects nothing when the range ends inside a character"
++assert_equal "c3a90a" "$(cutn '\303\251' '-n -b 1-2')" "cut -n -b 1-2 selects the whole two-byte character"
++assert_equal "c3a90a" "$(cutn '\303\251a' '-n -b 2')" "cut -n -b 2 moves low back to the first byte of its character"
++assert_equal "610a" "$(cutn 'a\303\251' '-n -b 1-2')" "cut -n -b 1-2 drops a character that the range only starts"
++assert_equal "c30a" "$(cutn '\303\251' '-b 1')" "cut -b 1 without -n still takes the lone byte"
++
+ summary
