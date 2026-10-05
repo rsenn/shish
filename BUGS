@@ -382,17 +382,6 @@
   ```
 
 
-- expr-index-wrong-result: `expr index STRING CHARS` matches CHARS as a
-  substring and stops one position short (`i < strlen(h) - strlen(n)`,
-  which also wraps when CHARS is longer than STRING), instead of what
-  its help text says (first position of *any* character of CHARS).
-
-  **Repro:**
-  ```sh
-  expr index abc c     # prints 0, should be 3
-  expr index abc xc    # prints 0, should be 3
-  ```
-
 - tree-cat-drops-background-ampersand: `tree_cat()` never prints `&`
   for a simple command or compound with `bgnd` set (only `N_LIST`'s
   `bgnd` is honoured), so `shformat` turns a background job into a

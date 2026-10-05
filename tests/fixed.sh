@@ -6055,4 +6055,12 @@ assert_equal "rc=1" "$PX" "xargs -x exits 1 instead of running fewer than -n arg
 PX=$("$SHISH_SELF" -c 'xargs echo hi </dev/null')
 assert_equal "hi" "$PX" "xargs runs the given utility once on empty input"
 
+# expr index STRING CHARS: first position of any character of CHARS, not a substring match
+PX=$("$SHISH_SELF" -c 'expr index abcdef fb')
+assert_equal "2" "$PX" "expr index finds the first character of STRING that is any of CHARS"
+PX=$("$SHISH_SELF" -c 'expr index abc c; expr index abc xc; expr index abc xyz' 2>/dev/null)
+assert_equal "3
+3
+0" "$PX" "expr index reaches the last character and prints 0 when nothing matches"
+
 summary

@@ -898,7 +898,7 @@ Open:
   - `sed`'s "empty regex = last regex" is run-time state: keep compiled regexes in the script's
     command array, not on the stack;
   - `w /dev/stdout` works, `r /dev/stdin` is deliberately left out (GNU-only).
-- `expr index` and string comparison: `BUGS: expr-index-wrong-result`.
+- `expr` string comparison (`expr index` is fixed: first position of any character of CHARS).
 
 ---
 

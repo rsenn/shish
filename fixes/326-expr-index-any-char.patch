@@ -1,0 +1,36 @@
+diff --git a/src/builtin/core/builtin_expr.c b/src/builtin/core/builtin_expr.c
+index 6479e301..dd1d3c8a 100644
+--- a/src/builtin/core/builtin_expr.c
++++ b/src/builtin/core/builtin_expr.c
+@@ -385,11 +385,11 @@ builtin_expr(int argc, char* argv[]) {
+   if(argc > 1 && !str_diff(argv[1], "index")) {
+     const char* haystack = argc >= 3 ? argv[2] : "";
+     const char* needle = argc >= 4 ? argv[3] : "";
+-    size_t i, n = str_len(haystack) - str_len(needle);
++    size_t i;
+     int64 result = 0;
+ 
+-    for(i = 0; i < n; i++) {
+-      if(!byte_diff(&haystack[i], str_len(needle), needle)) {
++    for(i = 0; haystack[i]; i++) {
++      if(needle[str_chr(needle, haystack[i])]) {
+         result = i + 1;
+         break;
+       }
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 6a0dc75c..115b4c97 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -6055,4 +6055,12 @@ assert_equal "rc=1" "$PX" "xargs -x exits 1 instead of running fewer than -n arg
+ PX=$("$SHISH_SELF" -c 'xargs echo hi </dev/null')
+ assert_equal "hi" "$PX" "xargs runs the given utility once on empty input"
+ 
++# expr index STRING CHARS: first position of any character of CHARS, not a substring match
++PX=$("$SHISH_SELF" -c 'expr index abcdef fb')
++assert_equal "2" "$PX" "expr index finds the first character of STRING that is any of CHARS"
++PX=$("$SHISH_SELF" -c 'expr index abc c; expr index abc xc; expr index abc xyz' 2>/dev/null)
++assert_equal "3
++3
++0" "$PX" "expr index reaches the last character and prints 0 when nothing matches"
++
+ summary

@@ -385,11 +385,11 @@ builtin_expr(int argc, char* argv[]) {
   if(argc > 1 && !str_diff(argv[1], "index")) {
     const char* haystack = argc >= 3 ? argv[2] : "";
     const char* needle = argc >= 4 ? argv[3] : "";
-    size_t i, n = str_len(haystack) - str_len(needle);
+    size_t i;
     int64 result = 0;
 
-    for(i = 0; i < n; i++) {
-      if(!byte_diff(&haystack[i], str_len(needle), needle)) {
+    for(i = 0; haystack[i]; i++) {
+      if(needle[str_chr(needle, haystack[i])]) {
         result = i + 1;
         break;
       }
