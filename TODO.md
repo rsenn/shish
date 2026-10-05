@@ -1337,15 +1337,15 @@ members it never reads:
 
 | Read by `tree_cat` | Never read |
 |---|---|
-| child slots (`args vars rdir cmds pats word list test cmd0 cmd1 body left right node cond ontrue onfalse tree`), `nargstr.flag & S_TABLE`, `nargparam.flag` (`S_STRLEN S_VAR S_SPECIAL S_ARITH S_NULL`, `S_RANGE` under `WITH_PARAM_RANGE`) + `numb` + `name`, `nargcmd.flag & S_BQUOTE`, `nredir.flag` (`R_IN R_OUT R_APPEND R_DUP R_HERE R_STRIP R_CLOBBER`) + `fdes`, `narithnum.base` ∈ {8,10,16} + `num`, arithmetic ids, `bgnd` of every statement kind (`tree_isbgnd()`) | `nfor.has_in`, `nredir.data`, `nredir.fd`, `npipe.ncmd`, all `loc`, `narg.flag` (the `X_*` expansion bits) |
+| child slots (`args vars rdir cmds pats word list test cmd0 cmd1 body left right node cond ontrue onfalse tree`), `nargstr.flag & S_TABLE`, `nargparam.flag` (`S_STRLEN S_VAR S_SPECIAL S_ARITH S_NULL`, `S_RANGE` under `WITH_PARAM_RANGE`) + `numb` + `name`, `nargcmd.flag & S_BQUOTE`, `nredir.flag` (`R_IN R_OUT R_APPEND R_DUP R_HERE R_STRIP R_CLOBBER`) + `fdes`, `narithnum.base` ∈ {8,10,16} + `num`, arithmetic ids, `bgnd` of every statement kind (`tree_isbgnd()`), `nfor.has_in` | `nredir.data`, `nredir.fd`, `npipe.ncmd`, all `loc`, `narg.flag` (the `X_*` expansion bits) |
 
-Two real bugs fall out of the right-hand column (`BUGS:
-tree-cat-drops-empty-for-in`, `tree-cat-mangles-here-documents`; e.g.
-`for x in; do …` becomes `for x; do …`, which changes the program; the
-`bgnd` one is fixed, `fixes/327`). A generator restricted to what
-`tree_cat` reads would never exercise `has_in` or here-doc data,
-although `eval` uses both — so fix `tree_cat` first, or the round-trip
-oracle fails on every tree that touches them.
+One real bug is left from the right-hand column (`BUGS:
+tree-cat-mangles-here-documents`); the `bgnd` and `has_in` ones are fixed
+(`fixes/327`, `fixes/328`; `for x in; do …` used to print as `for x; do …`,
+which changes the program). A generator restricted to what `tree_cat`
+reads would never exercise here-doc data, although `eval` uses it — so
+fix `tree_cat` first, or the round-trip oracle fails on every tree that
+touches it.
 
 ### The constraint table: `tree_spec[]`, one row per `enum kind`
 

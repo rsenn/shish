@@ -382,16 +382,6 @@
   ```
 
 
-- tree-cat-drops-empty-for-in: `nfor.has_in` (`for x in; do ...`, an empty
-  word list) is not read by `tree_cat()`, which prints ` in ` only when
-  the list is non-empty, so `shformat` turns "iterate over nothing"
-  into "iterate over `"$@"`".
-
-  **Repro:**
-  ```sh
-  printf 'for x in; do echo hi; done\n' | build/x86_64-linux-gnu/shformat   # for x; do echo hi; done
-  ```
-
 - tree-cat-mangles-here-documents: `tree_cat()` prints an `R_HERE`
   redirection's `word` but never `nredir.data`, so the body ends up
   inside the delimiter word and the `EOF` line is lost.

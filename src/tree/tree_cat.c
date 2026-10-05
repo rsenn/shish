@@ -260,15 +260,20 @@ again:
       stralloc_cats(sa, "for ");
       stralloc_cats(sa, node->nfor.varn);
 
-      if(node->nfor.args) {
-        stralloc_cats(sa, " in ");
-        tree_catlist(node->nfor.args, sa, " ");
+      /* "for x in" (empty list, runs nothing) is not "for x" (runs over "$@") */
+      if(node->nfor.args || node->nfor.has_in) {
+        stralloc_cats(sa, " in");
+
+        if(node->nfor.args) {
+          stralloc_catc(sa, ' ');
+          tree_catlist(node->nfor.args, sa, " ");
+        }
       }
 
       stralloc_cats(sa, "; do ");
       tree_catlist_n(node->nfor.cmds, sa, NULL, depth + 1);
 
-      if(!(sa->len > 1 && sa->s[sa->len - 2] == '&'))
+      if(!(sa->len > 0 && sa->s[sa->len - 1] == '&'))
         stralloc_catc(sa, ';');
 
       if(!(sa->len > 0 && sa->s[sa->len - 1] == ' '))

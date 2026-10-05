@@ -1,0 +1,57 @@
+diff --git a/src/tree/tree_cat.c b/src/tree/tree_cat.c
+index 207df028..ca80000e 100644
+--- a/src/tree/tree_cat.c
++++ b/src/tree/tree_cat.c
+@@ -260,15 +260,20 @@ again:
+       stralloc_cats(sa, "for ");
+       stralloc_cats(sa, node->nfor.varn);
+ 
+-      if(node->nfor.args) {
+-        stralloc_cats(sa, " in ");
+-        tree_catlist(node->nfor.args, sa, " ");
++      /* "for x in" (empty list, runs nothing) is not "for x" (runs over "$@") */
++      if(node->nfor.args || node->nfor.has_in) {
++        stralloc_cats(sa, " in");
++
++        if(node->nfor.args) {
++          stralloc_catc(sa, ' ');
++          tree_catlist(node->nfor.args, sa, " ");
++        }
+       }
+ 
+       stralloc_cats(sa, "; do ");
+       tree_catlist_n(node->nfor.cmds, sa, NULL, depth + 1);
+ 
+-      if(!(sa->len > 1 && sa->s[sa->len - 2] == '&'))
++      if(!(sa->len > 0 && sa->s[sa->len - 1] == '&'))
+         stralloc_catc(sa, ';');
+ 
+       if(!(sa->len > 0 && sa->s[sa->len - 1] == ' '))
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 0bcd9293..5a3c89cf 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -6084,4 +6084,23 @@ assert_equal 'bgfn3() {
+   done;
+ }' "$X" "a background statement in a loop body keeps its & and prints no blank separator line"
+ 
++# tree_cat() keeps an empty "in" list: "for x in" iterates over nothing, "for x" over "$@"
++X=$(forfn1() { for x in; do echo hi; done; }
++set | sed -n '/^forfn1()/,/^}/p')
++assert_equal 'forfn1() {
++  for x in; do echo hi; done;
++}' "$X" "a for loop with an empty in-list is printed with its in, not as a loop over the positional parameters"
++
++X=$(forfn2() { for x; do echo hi; done; }
++set | sed -n '/^forfn2()/,/^}/p')
++assert_equal 'forfn2() {
++  for x; do echo hi; done;
++}' "$X" "a for loop without in is still printed without it"
++
++X=$(forfn3() { for i in a; do y & done; }
++set | sed -n '/^forfn3()/,/^}/p')
++assert_equal 'forfn3() {
++  for i in a; do y & done;
++}' "$X" "a for loop whose body ends in & is not given a semicolon after it"
++
+ summary

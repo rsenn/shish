@@ -6084,4 +6084,23 @@ assert_equal 'bgfn3() {
   done;
 }' "$X" "a background statement in a loop body keeps its & and prints no blank separator line"
 
+# tree_cat() keeps an empty "in" list: "for x in" iterates over nothing, "for x" over "$@"
+X=$(forfn1() { for x in; do echo hi; done; }
+set | sed -n '/^forfn1()/,/^}/p')
+assert_equal 'forfn1() {
+  for x in; do echo hi; done;
+}' "$X" "a for loop with an empty in-list is printed with its in, not as a loop over the positional parameters"
+
+X=$(forfn2() { for x; do echo hi; done; }
+set | sed -n '/^forfn2()/,/^}/p')
+assert_equal 'forfn2() {
+  for x; do echo hi; done;
+}' "$X" "a for loop without in is still printed without it"
+
+X=$(forfn3() { for i in a; do y & done; }
+set | sed -n '/^forfn3()/,/^}/p')
+assert_equal 'forfn3() {
+  for i in a; do y & done;
+}' "$X" "a for loop whose body ends in & is not given a semicolon after it"
+
 summary
