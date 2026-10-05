@@ -378,13 +378,10 @@ trap_exit(int exitcode) {
   /* an "exit" inside the EXIT trap ends the shell, it does not run the trap again */
   if((tr = trap_find(TRAP_EXIT)) && !tr->running) {
     struct env sh;
-    char* args[2] = {alloc(FMT_ULONG), 0};
 
     trap_exit_status = exitcode;
-    args[0][fmt_ulong(args[0], exitcode)] = '\0';
-    sh_push(&sh);
+    sh_push(&sh); /* shares the positional parameters of the shell that exits */
     sh.exitcode = exitcode; /* a bare "exit" in the trap keeps the status */
-    sh_setargs(args, 0);
     trap_handler(TRAP_EXIT);
     sh_pop(&sh);
   }

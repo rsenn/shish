@@ -6116,4 +6116,12 @@ assert_equal "c3a90a" "$(cutn '\303\251a' '-n -b 2')" "cut -n -b 2 moves low bac
 assert_equal "610a" "$(cutn 'a\303\251' '-n -b 1-2')" "cut -n -b 1-2 drops a character that the range only starts"
 assert_equal "c30a" "$(cutn '\303\251' '-b 1')" "cut -b 1 without -n still takes the lone byte"
 
+# the EXIT trap runs with the shell's current positional parameters
+PX=$("$SHISH_SELF" -c "set -- a b c; trap 'echo \"\$#:\$*\"' EXIT; exit 0")
+assert_equal "3:a b c" "$PX" "the EXIT trap sees the positional parameters set before exit"
+PX=$("$SHISH_SELF" -c "( trap 'echo \"\$#:\$*\"' EXIT; set -- a b )")
+assert_equal "2:a b" "$PX" "a subshell's EXIT trap sees the parameters set inside the subshell"
+PX=$("$SHISH_SELF" -c "set -- x; trap 'echo \"\$#:\$*\"' EXIT")
+assert_equal "1:x" "$PX" "the EXIT trap at the end of the script sees the positional parameters"
+
 summary

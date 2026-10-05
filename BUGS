@@ -249,15 +249,6 @@
   cmake -S . -B /tmp/def && cmake --build /tmp/def -j && /tmp/def/shish tests/fixed.sh | grep FAIL
   ```
 
-- exit-trap-loses-positional-parameters: an `EXIT` trap body sees `$#`
-  as 0 and `$*` as empty, whatever the shell's positional parameters
-  were. dash prints them unchanged.
-
-  **Repro:**
-  ```sh
-  shish -c '( trap "echo \"\$#:\$*\"" EXIT; set -- a b )'   # 0:   (dash: 2:a b)
-  ```
-
 - no-tree-print-option-is-a-noop: `-DNO_TREE_PRINT=ON` changes nothing.
   `LIBSHELL_SOURCES` comes from `file(GLOB ...)` (`CMakeLists.txt:167`),
   so it holds absolute paths, and the two `list(REMOVE_ITEM ...)` calls

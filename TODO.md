@@ -458,7 +458,7 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
 **Real bugs, but not counted in the `tests/posix` scoreboard** (`type-unknown-name-silent` is the
 HIGH PRIORITY task above; fix the rest opportunistically):
 `eval-lineno-imprecise-inside-function`,
-`exit-trap-loses-positional-parameters`, `no-tree-print-option-is-a-noop`,
+`no-tree-print-option-is-a-noop`,
 `cfg-cmake-mingw-silently-builds-native`, `eval-node-bgnd-silent-on-fork-failure`,
 `builtin-cp-sh-hangs`, `quoted-at-then-empty-quotes-drops-field`.
 
