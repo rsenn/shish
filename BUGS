@@ -467,6 +467,10 @@
   status 0; only `unset -v` validates the name. POSIX 2.8.1 / bash: bash also
   returns 0 here, so this is low priority.
 
+  `unset -v 1x` prints the diagnostic but still returns 0. bash returns 1 and
+  carries on; dash exits the non-interactive shell (`unset` is a special builtin).
+  Open design decision: follow dash/POSIX (exit) or bash (status 1 only).
+
   **Repro:**
   ```sh
   unset 1x; echo $?     # 0, no diagnostic
