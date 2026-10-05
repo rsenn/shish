@@ -7,15 +7,19 @@ MAP=$TOP/src/builtin/builtins.map
 ROWS=$(sed -e '/^#/d' -e '/^[ 	]*$/d' "$MAP")
 
 T=$(mktemp -d)
-echo "$ROWS" | awk '{print $1}' | sort > "$T/names"
+echo "$ROWS" | awk '{ n = $1; for (i = 5; i <= NF; i++) if ($i ~ /^macro=/) n = tolower(substr($i, 7)); print n }' | sort > "$T/names"
 tr -c 'A-Za-z0-9_' '\n' < "$TOP/src/builtin/builtin_table.c" | sed -n -e '/^BUILTIN_CONFIG_H$/d' -e 's/^BUILTIN_//p' | tr 'A-Z' 'a-z' | sort -u > "$T/used"
 names=$(cat "$T/names")
 
 assert_equal "" "$(comm -13 "$T/names" "$T/used" | tr '\n' ' ')" "every BUILTIN_<NAME> of builtin_table.c has a line in builtins.map"
 assert_equal "" "$(comm -23 "$T/names" "$T/used" | tr '\n' ' ')" "every line of builtins.map is a BUILTIN_<NAME> of builtin_table.c"
+
+## a switch spelled wrong in an #if is silently 0 (builtin_config.h defines every real one)
+(cd "$TOP/src" && grep -rhoE '\bBUILTIN_[A-Za-z0-9_]+' --include='*.c' --include='*.h' .) | sed -n -e '/^BUILTIN_H$/d' -e '/^BUILTIN_CONFIG_H$/d' -e 's/^BUILTIN_//p' | tr 'A-Z' 'a-z' | sort -u > "$T/srcused"
+assert_equal "" "$(comm -13 "$T/names" "$T/srcused" | tr '\n' ' ')" "every BUILTIN_<NAME> used under src/ is a switch of builtins.map"
 rm -rf "$T"
 
-assert_equal "" "$(echo "$ROWS" | awk 'NF < 4 || NF > 5 || (NF == 5 && $5 != "keep") || $3 !~ /^[mdx]$/ {print $1}' | tr '\n' ' ')" "every map line has four or five columns and a tier of m, d or x"
+assert_equal "" "$(echo "$ROWS" | awk '{ bad = NF < 4 || NF > 6 || $3 !~ /^[mdx]$/; for (i = 5; i <= NF; i++) if ($i != "keep" && $i !~ /^macro=[A-Z0-9_]+$/) bad = 1; if (bad) print $1 }' | tr '\n' ' ')" "every map line has four to six columns, a tier of m, d or x, and only keep/macro= flags"
 assert_equal "" "$(echo "$names" | uniq -d | tr '\n' ' ')" "no name occurs twice in builtins.map"
 
 ## every source (or directory, written with a trailing /) a line names exists

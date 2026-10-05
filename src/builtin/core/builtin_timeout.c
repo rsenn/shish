@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_TIMEOUT
+
 #include "../../builtin.h"
 #include "../../exec.h"
 #include "../../fdtable.h"
@@ -303,3 +307,4 @@ builtin_timeout(int argc, char* argv[]) {
 
   return timeout_state && !preserve ? 124 : ret;
 }
+#endif /* BUILTIN_TIMEOUT */

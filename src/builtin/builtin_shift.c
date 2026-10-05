@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_SHIFT
+
 #include "../builtin.h"
 #include "../fdtable.h"
 #include "../../lib/scan.h"
@@ -43,3 +47,4 @@ builtin_shift(int argc, char* argv[]) {
 
   return 0;
 }
+#endif /* BUILTIN_SHIFT */

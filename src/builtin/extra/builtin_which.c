@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_WHICH
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../var.h"
@@ -66,3 +70,4 @@ builtin_which(int argc, char* argv[]) {
 
   return ret;
 }
+#endif /* BUILTIN_WHICH */

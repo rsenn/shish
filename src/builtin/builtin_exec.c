@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_EXEC
+
 #include "../fd.h"
 #include "../sh.h"
 #include "../builtin.h"
@@ -67,3 +71,4 @@ builtin_exec(int argc, char* argv[]) {
   /* should not reach here */
   return 1;
 }
+#endif /* BUILTIN_EXEC */

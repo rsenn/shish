@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_ECHO
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../sh.h"
@@ -71,3 +75,4 @@ builtin_echo(int argc, char* argv[]) {
 
   return 0;
 }
+#endif /* BUILTIN_ECHO */

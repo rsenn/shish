@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_DATE
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../var.h"
@@ -125,3 +129,4 @@ builtin_date(int argc, char* argv[]) {
 
   return 0;
 }
+#endif /* BUILTIN_DATE */

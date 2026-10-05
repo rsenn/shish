@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_UNIQ
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../sh.h"
@@ -191,3 +195,4 @@ const struct filter_ops uniq_ops = {
 };
 
 FILTER_BUILTIN(uniq)
+#endif /* BUILTIN_UNIQ */

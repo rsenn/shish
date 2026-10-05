@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_GETOPTS
+
 #include "../builtin.h"
 #include "../sh.h"
 #include "../var.h"
@@ -157,3 +161,4 @@ builtin_getopts(int argc, char* argv[]) {
     return ret;
   }
 }
+#endif /* BUILTIN_GETOPTS */

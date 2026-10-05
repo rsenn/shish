@@ -8,9 +8,12 @@
 #          (helpers it cannot link without, code of the subsystem it carries); - = none
 #   keep   optional: the file is called from outside src/builtin/, so it is always compiled and
 #          the switch only removes the builtin's table row (only set: sh_main.c parses its options)
+#   macro=NAME  optional: the switch is BUILTIN_<NAME> where the builtin's name is not an
+#          identifier ("[" -> macro=LBRACKET); `name` stays what the shell calls the builtin
 #
 # A source named by any line is compiled only when some switch naming it is on.
 # tests/builtin-map.sh keeps this file, builtin_table.c and the source tree in step.
+[           core/builtin_test.c             m   -   macro=LBRACKET
 alias       builtin_alias.c                 m   ../source/source_alias.c,../parse/parse_findalias.c
 awk         extra/builtin_awk.c             x   ../../text/awk/,../../text/dfa/
 basename    core/builtin_basename.c         x   -

@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_CUT
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../sh.h"
@@ -311,3 +315,4 @@ const struct filter_ops cut_ops = {
 };
 
 FILTER_BUILTIN(cut)
+#endif /* BUILTIN_CUT */

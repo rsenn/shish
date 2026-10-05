@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_TIMES
+
 #include "../builtin.h"
 #include "../fdtable.h"
 #include "../../lib/buffer.h"
@@ -119,3 +123,4 @@ builtin_times(int argc, char* argv[]) {
 
   return 0;
 }
+#endif /* BUILTIN_TIMES */

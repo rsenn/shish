@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_WC
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../sh.h"
@@ -197,3 +201,4 @@ builtin_wc(int argc, char* argv[]) {
 
   return ret;
 }
+#endif /* BUILTIN_WC */

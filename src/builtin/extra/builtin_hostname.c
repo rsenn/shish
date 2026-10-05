@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_HOSTNAME
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -83,3 +87,4 @@ builtin_hostname(int argc, char* argv[]) {
 
   return 0;
 }
+#endif /* BUILTIN_HOSTNAME */

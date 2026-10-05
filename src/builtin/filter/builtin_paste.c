@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_PASTE
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../sh.h"
@@ -205,3 +209,4 @@ const struct filter_ops paste_ops = {
 };
 
 FILTER_BUILTIN(paste)
+#endif /* BUILTIN_PASTE */

@@ -1,6 +1,9 @@
+#include "builtin_config.h"
 #include "../builtin.h"
 #include "../exec.h"
 #include "../../lib/shell.h"
+
+#if BUILTIN_TYPE
 
 /* type built-in
  * ----------------------------------------------------------------------- */
@@ -43,3 +46,5 @@ builtin_type(int argc, char* argv[]) {
 
   return status;
 }
+
+#endif /* BUILTIN_TYPE */

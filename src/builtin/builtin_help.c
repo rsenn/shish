@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_HELP
+
 #include "../builtin.h"
 #include "../fdtable.h"
 #include "../var.h"
@@ -105,3 +109,4 @@ builtin_help(int argc, char* argv[]) {
 
   return 0;
 }
+#endif /* BUILTIN_HELP */

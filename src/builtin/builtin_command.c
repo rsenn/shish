@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_COMMAND
+
 #include "../fdtable.h"
 #include "../sh.h"
 #include <errno.h>
@@ -202,3 +206,4 @@ done:
 
   return ret;
 }
+#endif /* BUILTIN_COMMAND */

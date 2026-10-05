@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_REALPATH
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
@@ -223,3 +227,4 @@ builtin_realpath(int argc, char* argv[]) {
   stralloc_free(&rel);
   return ret;
 }
+#endif /* BUILTIN_REALPATH */

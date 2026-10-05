@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_READONLY
+
 #include "../builtin.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
@@ -71,3 +75,4 @@ builtin_readonly(int argc, char* argv[]) {
 
   return 0;
 }
+#endif /* BUILTIN_READONLY */

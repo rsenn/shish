@@ -94,10 +94,21 @@ md5sum.textutils  extra/builtin_digest.c     x     -              macro=MD5SUM_T
 
 #### Part B - every builtin gets its own preprocessor switch (also the existing ones)
 
-**Status:** converted and passing `tests/builtin-matrix.sh`: `dirs`/`popd`/`pushd`, `cp`/`mv`,
-`break`/`continue`. Open: `test`/`[` (needs the `macro=` column), `compress`, `uncompress`,
-`digest`, `builtin_type.c`, `-Wundef`, the single-builtin files. The matrix is not a CTest case
-(one build per name); run `sh tests/builtin-matrix.sh [name ...]` after touching a builtin.
+**Status:** every file under `src/builtin/` that the map names is wrapped in `#if BUILTIN_A || BUILTIN_B`
+(the switches whose line names it as source or in `needs`; generated from the map, `keep` files and
+files that already had guards excepted). With every switch off each file compiles to an empty object.
+Shared files with per-name guards inside: `dirs`/`popd`/`pushd`, `cp`/`mv`, `break`/`continue`,
+`test`/`[` (`[` is `macro=LBRACKET` in the map). `-Wundef` for `src/builtin/` is not enabled: it
+gives 166 warnings from `LINK_STATIC`, `WINDOWS_NATIVE` and `GREP_USE_SYSTEM_REGEX` in `lib/` and
+none from `BUILTIN_*`; `tests/builtin-map.sh` checks every `BUILTIN_<NAME>` under `src/` against
+the map instead. Still to run: the full `tests/builtin-matrix.sh` (one build per name) and the
+ASan/UBSan gate. The matrix is not a CTest case; run `sh tests/builtin-matrix.sh [name ...]` after
+touching a builtin, and `WITHOUT="test" sh tests/builtin-matrix.sh '['` for a tier m sibling on its own.
+
+**Decided, not planned:** `builtin_digest.c` stays one switch (`BUILTIN_DIGEST`) for its eight names.
+It is table-driven (`digest_algos[]`), and the switch also gates the hash-library download in
+`cmake/Digest.cmake`; splitting it would touch CMake, `configure.ac` and the tests for no gain.
+`compress` and `uncompress` are table-driven over libarchive the same way and stay family switches.
 
 **Today** most names already have their own `BUILTIN_<NAME>` (`cp` and `mv`, `break` and `continue`, `dirs`,
 `popd` and `pushd` are separate switches in separate table rows), but several families share one:

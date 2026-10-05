@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_ALIAS
+
 #include "../builtin.h"
 #include "../../lib/alloc.h"
 #include "../../lib/shell.h"
@@ -216,3 +220,4 @@ builtin_unalias(int argc, char* argv[]) {
 
   return ret;
 }
+#endif /* BUILTIN_ALIAS */

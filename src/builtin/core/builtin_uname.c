@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_UNAME
+
 #include "../../builtin.h"
 #include "../../sh.h"
 #include "../../fdtable.h"
@@ -87,3 +91,4 @@ builtin_uname(int argc, char* argv[]) {
   buffer_putnlflush(fd_out->w);
   return 0;
 }
+#endif /* BUILTIN_UNAME */

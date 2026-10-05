@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_SPLIT
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
@@ -235,3 +239,4 @@ done:
   stralloc_free(&path);
   return ret;
 }
+#endif /* BUILTIN_SPLIT */

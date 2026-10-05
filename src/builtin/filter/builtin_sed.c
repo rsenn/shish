@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_SED
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../text/sed.h"
@@ -277,3 +281,4 @@ const struct filter_ops sed_ops = {
 };
 
 FILTER_BUILTIN(sed)
+#endif /* BUILTIN_SED */

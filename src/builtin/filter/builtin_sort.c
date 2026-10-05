@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_SORT
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
@@ -660,3 +664,4 @@ const struct filter_ops sort_ops = {
 };
 
 FILTER_BUILTIN(sort)
+#endif /* BUILTIN_SORT */

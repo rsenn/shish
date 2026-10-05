@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_GREP
+
 #if GREP_USE_SYSTEM_REGEX
 #include <regex.h>
 #else
@@ -302,3 +306,4 @@ const struct filter_ops grep_ops = {
 };
 
 FILTER_BUILTIN(grep)
+#endif /* BUILTIN_GREP */

@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_UMASK
+
 #include "../builtin.h"
 #include "../sh.h"
 #include "../fdtable.h"
@@ -181,3 +185,4 @@ builtin_umask(int argc, char* argv[]) {
 
   return 0;
 }
+#endif /* BUILTIN_UMASK */

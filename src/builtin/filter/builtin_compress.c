@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_COMPRESS || BUILTIN_UNCOMPRESS
+
 #include <archive.h>
 #include <archive_entry.h>
 #include <stdio.h>
@@ -426,3 +430,4 @@ const struct filter_ops compress_ops = {
 };
 
 FILTER_BUILTIN(compress)
+#endif /* BUILTIN_COMPRESS || BUILTIN_UNCOMPRESS */

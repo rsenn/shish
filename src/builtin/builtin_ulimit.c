@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_ULIMIT
+
 #include "../builtin.h"
 #include "../sh.h"
 #include "../../lib/alloc.h"
@@ -260,3 +264,4 @@ builtin_ulimit(int argc, char* argv[]) {
   return ret;
 }
 #endif /* !WINDOWS_NATIVE */
+#endif /* BUILTIN_ULIMIT */

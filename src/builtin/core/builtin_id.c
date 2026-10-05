@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_ID
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
@@ -194,3 +198,4 @@ builtin_id(int argc, char* argv[]) {
 }
 
 #endif
+#endif /* BUILTIN_ID */

@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_READLINK
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
@@ -114,3 +118,4 @@ builtin_readlink(int argc, char* argv[]) {
 
   return ret;
 }
+#endif /* BUILTIN_READLINK */

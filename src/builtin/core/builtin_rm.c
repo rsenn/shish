@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_MV || BUILTIN_RM
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
@@ -240,3 +244,4 @@ builtin_rm(int argc, char* argv[]) {
 
   return 0;
 }
+#endif /* BUILTIN_MV || BUILTIN_RM */

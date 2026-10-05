@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_JOBS
+
 #include "../sh.h"
 #include "../builtin.h"
 #include "../job.h"
@@ -252,3 +256,4 @@ builtin_bg(int argc, char* argv[]) {
 
   return ret;
 }
+#endif /* BUILTIN_JOBS */

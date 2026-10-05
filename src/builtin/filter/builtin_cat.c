@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_CAT
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
@@ -89,3 +93,4 @@ int
 builtin_cat(int argc, char* argv[]) {
   return filter_run(&cat_ops, argc, argv, fd_out->w);
 }
+#endif /* BUILTIN_CAT */

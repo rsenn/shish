@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_LN
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
@@ -121,3 +125,4 @@ builtin_ln(int argc, char* argv[]) {
 
   return 0;
 }
+#endif /* BUILTIN_LN */

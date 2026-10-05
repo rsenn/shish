@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_UNCOMPRESS
+
 #include <archive.h>
 #include <archive_entry.h>
 #include "../../builtin.h"
@@ -180,3 +184,4 @@ builtin_uncompress(int argc, char* argv[]) {
 
   return builtin_uncompress_to(argc, argv, fd_out->w);
 }
+#endif /* BUILTIN_UNCOMPRESS */

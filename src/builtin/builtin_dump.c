@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_DUMP
+
 #include "../debug.h"
 #include "../builtin.h"
 #include "../fdstack.h"
@@ -78,3 +82,4 @@ builtin_dump(int argc, char* argv[]) {
 
   return 0;
 }
+#endif /* BUILTIN_DUMP */

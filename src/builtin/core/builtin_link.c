@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_LINK
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/unix.h"
@@ -28,3 +32,4 @@ builtin_link(int argc, char* argv[]) {
 
   return 0;
 }
+#endif /* BUILTIN_LINK */

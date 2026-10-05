@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_TRAP
+
 #include "../trace.h"
 #include "../builtin.h"
 #include "../debug.h"
@@ -925,3 +929,4 @@ builtin_trap(int argc, char* argv[]) {
 
   return ret;
 }
+#endif /* BUILTIN_TRAP */

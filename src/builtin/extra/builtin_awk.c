@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_AWK
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../text/awk.h"
@@ -252,3 +256,4 @@ builtin_awk(int argc, char* argv[]) {
   awk_free(compiled);
   return status;
 }
+#endif /* BUILTIN_AWK */

@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_HISTORY
+
 #include "../builtin.h"
 #include "../history.h"
 #include "../../lib/shell.h"
@@ -27,3 +31,4 @@ builtin_history(int argc, char* argv[]) {
 
   return 0;
 }
+#endif /* BUILTIN_HISTORY */

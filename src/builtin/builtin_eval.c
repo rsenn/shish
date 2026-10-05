@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_EVAL
+
 #include "../fd.h"
 #include "../eval.h"
 #include "../fdstack.h"
@@ -77,3 +81,4 @@ builtin_eval(int argc, char* argv[]) {
   stralloc_free(&sa);
   return ret;
 }
+#endif /* BUILTIN_EVAL */

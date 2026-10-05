@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_TEE
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
@@ -93,3 +97,4 @@ builtin_tee(int argc, char* argv[]) {
   alloc_free(fds);
   return ret;
 }
+#endif /* BUILTIN_TEE */

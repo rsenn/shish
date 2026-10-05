@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_RMDIR
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
@@ -103,3 +107,4 @@ builtin_rmdir(int argc, char* argv[]) {
 
   return 0;
 }
+#endif /* BUILTIN_RMDIR */

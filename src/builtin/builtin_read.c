@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_READ
+
 #include <unistd.h>
 #include "../builtin.h"
 #include "../fdtable.h"
@@ -270,3 +274,4 @@ builtin_read(int argc, char* argv[]) {
     return status;
   }
 }
+#endif /* BUILTIN_READ */

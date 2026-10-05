@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_EXPORT
+
 #include "../builtin.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
@@ -68,3 +72,4 @@ builtin_export(int argc, char* argv[]) {
 
   return status;
 }
+#endif /* BUILTIN_EXPORT */

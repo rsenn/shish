@@ -21,12 +21,20 @@ function norm(p) {
 /^#/ || NF == 0 { next }
 
 {
+  sw = $1
+  keep = 0
+  for (i = 5; i <= NF; i++)
+    if ($i == "keep")
+      keep = 1
+    else if ($i ~ /^macro=/)
+      sw = tolower(substr($i, 7))
+
   if (mode == "names")
-    print $1
+    print sw
   else if (mode == "tier") {
-    if (index(tiers, $3)) print $1
+    if (index(tiers, $3)) print sw
   } else {
-    n = NF > 4 ? 0 : split($2 "," $4, f, ",")
+    n = keep ? 0 : split($2 "," $4, f, ",")
     for (i = 1; i <= n; i++)
       if (f[i] != "-") {
         p = norm(f[i])
@@ -34,11 +42,11 @@ function norm(p) {
           cmd = "ls " top "/" p "*.c 2>/dev/null"
           while ((cmd | getline q) > 0) {
             sub("^" top "/", "", q)
-            add($1, q)
+            add(sw, q)
           }
           close(cmd)
         } else
-          add($1, p)
+          add(sw, p)
       }
   }
 }

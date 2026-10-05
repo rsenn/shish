@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_LOCAL
+
 #include "../builtin.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
@@ -42,3 +46,4 @@ builtin_local(int argc, char* argv[]) {
 
   return 0;
 }
+#endif /* BUILTIN_LOCAL */

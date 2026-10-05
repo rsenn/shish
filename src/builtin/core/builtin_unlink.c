@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_UNLINK
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
@@ -35,3 +39,4 @@ builtin_unlink(int argc, char* argv[]) {
 
   return 0;
 }
+#endif /* BUILTIN_UNLINK */

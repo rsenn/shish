@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_SLEEP
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/scan.h"
@@ -92,3 +96,4 @@ builtin_sleep(int argc, char* argv[]) {
 
   return 0;
 }
+#endif /* BUILTIN_SLEEP */

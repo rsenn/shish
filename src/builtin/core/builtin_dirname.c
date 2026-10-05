@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_DIRNAME
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/str.h"
@@ -41,3 +45,4 @@ builtin_dirname(int argc, char* argv[]) {
   buffer_putnlflush(fd_out->w);
   return 0;
 }
+#endif /* BUILTIN_DIRNAME */

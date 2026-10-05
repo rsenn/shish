@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_LS
+
 #include "../../../lib/uint64.h"
 #include "../../builtin.h"
 #include "../../fdtable.h"
@@ -477,3 +481,4 @@ builtin_ls(int argc, char* argv[]) {
   ls_free(dirs, ndirs);
   return ret;
 }
+#endif /* BUILTIN_LS */

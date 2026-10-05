@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_TAIL
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
@@ -343,3 +347,4 @@ const struct filter_ops tail_ops = {
 };
 
 FILTER_BUILTIN(tail)
+#endif /* BUILTIN_TAIL */

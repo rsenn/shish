@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_CHMOD || BUILTIN_MKDIR
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../sh.h"
@@ -318,3 +322,4 @@ builtin_chmod(int argc, char* argv[]) {
   stralloc_free(&path);
   return failed;
 }
+#endif /* BUILTIN_CHMOD || BUILTIN_MKDIR */

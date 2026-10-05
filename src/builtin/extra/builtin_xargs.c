@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_XARGS
+
 #include "../../builtin.h"
 #include "../../exec.h"
 #include "../../fd.h"
@@ -497,3 +501,4 @@ done:
   stralloc_free(&tok);
   return ret;
 }
+#endif /* BUILTIN_XARGS */

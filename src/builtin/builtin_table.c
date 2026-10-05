@@ -164,6 +164,9 @@
 #ifndef BUILTIN_TEE
 #define BUILTIN_TEE 0
 #endif
+#ifndef BUILTIN_LBRACKET
+#define BUILTIN_LBRACKET 1
+#endif
 #ifndef BUILTIN_TEST
 #define BUILTIN_TEST 1
 #endif
@@ -535,7 +538,7 @@ struct builtin_cmd builtin_table[] = {
 #if BUILTIN_UNSET
     {"unset", &builtin_unset, B_SPECIAL, "[name ...]", help_unset},
 #endif
-#if BUILTIN_TEST
+#if BUILTIN_LBRACKET
     {"[", &builtin_test, B_DEFAULT, "expr ]", help_test},
 #endif
 #if BUILTIN_TRAP

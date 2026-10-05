@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_CD || BUILTIN_POPD || BUILTIN_PUSHD
+
 #include "../builtin.h"
 #include "../../lib/byte.h"
 #include "../fdtable.h"
@@ -199,3 +203,4 @@ builtin_cd(int argc, char* argv[]) {
   stralloc_free(&newcwd);
   return 1;
 }
+#endif /* BUILTIN_CD || BUILTIN_POPD || BUILTIN_PUSHD */

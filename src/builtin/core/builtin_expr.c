@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_EXPR
+
 #include "../../../lib/uint64.h"
 #include "../../builtin.h"
 #include "../../trace.h"
@@ -419,3 +423,4 @@ builtin_expr(int argc, char* argv[]) {
   stralloc_free(&res);
   return ret;
 }
+#endif /* BUILTIN_EXPR */

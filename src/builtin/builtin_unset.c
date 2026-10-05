@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_UNSET
+
 #include "../builtin.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
@@ -106,3 +110,4 @@ builtin_unset(int argc, char* argv[]) {
 
   return 0;
 }
+#endif /* BUILTIN_UNSET */

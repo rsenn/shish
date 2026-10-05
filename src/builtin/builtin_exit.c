@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_EXIT
+
 #include "../fd.h"
 #include "../sh.h"
 #include "../../lib/scan.h"
@@ -27,3 +31,4 @@ builtin_exit(int argc, char* argv[]) {
   /* should never return! */
   return 0;
 }
+#endif /* BUILTIN_EXIT */

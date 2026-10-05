@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_TOUCH
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
@@ -331,3 +335,4 @@ builtin_touch(int argc, char* argv[]) {
 
   return ret;
 }
+#endif /* BUILTIN_TOUCH */

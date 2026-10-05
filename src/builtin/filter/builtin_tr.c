@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_TR
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../sh.h"
@@ -543,3 +547,4 @@ const struct filter_ops tr_ops = {
 };
 
 FILTER_BUILTIN(tr)
+#endif /* BUILTIN_TR */

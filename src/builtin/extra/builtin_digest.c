@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_DIGEST
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
@@ -198,3 +202,4 @@ builtin_digest(int argc, char* argv[]) {
 
   return ret;
 }
+#endif /* BUILTIN_DIGEST */

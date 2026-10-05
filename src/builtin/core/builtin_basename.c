@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_BASENAME
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/path.h"
@@ -48,3 +52,4 @@ builtin_basename(int argc, char* argv[]) {
   buffer_putnlflush(fd_out->w);
   return 0;
 }
+#endif /* BUILTIN_BASENAME */

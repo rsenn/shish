@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_WAIT
+
 #include "../builtin.h"
 #include "../exec.h"
 #include "../job.h"
@@ -88,3 +92,4 @@ builtin_wait(int argc, char* argv[]) {
 
   return ret;
 }
+#endif /* BUILTIN_WAIT */

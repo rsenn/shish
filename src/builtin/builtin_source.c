@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_SOURCE
+
 #include "../builtin.h"
 #include "../fd.h"
 #include "../fdstack.h"
@@ -153,3 +157,4 @@ builtin_source(int argc, char* argv[]) {
 
   return ret;
 }
+#endif /* BUILTIN_SOURCE */

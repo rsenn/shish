@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_FIND
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
@@ -220,3 +224,4 @@ builtin_find(int argc, char* argv[]) {
   stralloc_free(&path);
   return failed;
 }
+#endif /* BUILTIN_FIND */

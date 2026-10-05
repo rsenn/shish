@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_PRINTF
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/buffer.h"
@@ -543,3 +547,4 @@ builtin_printf(int argc, char* argv[]) {
   buffer_flush(fd_out->w);
   return printf_status;
 }
+#endif /* BUILTIN_PRINTF */

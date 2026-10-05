@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_HASH
+
 #include "../builtin.h"
 #include "../fdtable.h"
 #include "../exec.h"
@@ -227,3 +231,4 @@ builtin_hash(int argc, char* argv[]) {
   hash_print_table();
   return 0;
 }
+#endif /* BUILTIN_HASH */

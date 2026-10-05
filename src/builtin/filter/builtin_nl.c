@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_NL
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
@@ -292,3 +296,4 @@ const struct filter_ops nl_ops = {
 };
 
 FILTER_BUILTIN(nl)
+#endif /* BUILTIN_NL */

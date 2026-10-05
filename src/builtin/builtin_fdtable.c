@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_FDTABLE
+
 #include "../builtin.h"
 #include "../fd.h"
 #include "../../lib/buffer.h"
@@ -47,3 +51,4 @@ builtin_fdtable(int argc, char* argv[]) {
   buffer_flush(fdtable[fd]->w);
   return 0;
 }
+#endif /* BUILTIN_FDTABLE */

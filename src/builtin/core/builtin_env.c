@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_ENV
+
 #include "../../builtin.h"
 #include "../../exec.h"
 #include "../../fdtable.h"
@@ -125,3 +129,4 @@ done:
   stralloc_free(&names);
   return ret;
 }
+#endif /* BUILTIN_ENV */

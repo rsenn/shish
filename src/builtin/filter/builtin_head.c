@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_HEAD
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
@@ -138,3 +142,4 @@ const struct filter_ops head_ops = {
 };
 
 FILTER_BUILTIN(head)
+#endif /* BUILTIN_HEAD */

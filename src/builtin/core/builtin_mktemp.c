@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_MKTEMP
+
 #include "../../builtin.h"
 #include "../../sh.h"
 #include "../../fdtable.h"
@@ -106,3 +110,4 @@ builtin_mktemp(int argc, char* argv[]) {
   buffer_putnlflush(fd_out->w);
   return 0;
 }
+#endif /* BUILTIN_MKTEMP */

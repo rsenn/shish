@@ -1,3 +1,4 @@
+#include "builtin_config.h"
 #include "../../builtin.h"
 #include "../../debug.h"
 #include "../../fd.h"
@@ -12,6 +13,8 @@
 #include <sys/stat.h>
 #include <stdint.h>
 #include "../../../lib/windoze.h"
+
+#if BUILTIN_TEST || BUILTIN_LBRACKET
 
 #if WINDOWS_NATIVE
 #include <io.h>
@@ -383,6 +386,7 @@ builtin_test(int argc, char* argv[]) {
   int result;
   int brackets = 0;
 
+#if BUILTIN_LBRACKET
   if(argv[0][0] == '[') {
     brackets = 1;
     argc--;
@@ -392,6 +396,7 @@ builtin_test(int argc, char* argv[]) {
       return EXIT_ERROR;
     }
   }
+#endif
 
   /* POSIX: `test` and `[ ]` with no expression are false. */
   if(argc <= 1)
@@ -409,3 +414,5 @@ builtin_test(int argc, char* argv[]) {
 
   return !result;
 }
+
+#endif /* BUILTIN_TEST || BUILTIN_LBRACKET */

@@ -1,3 +1,7 @@
+#include "builtin_config.h"
+
+#if BUILTIN_MKDIR
+
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
@@ -144,3 +148,4 @@ builtin_mkdir(int argc, char* argv[]) {
   stralloc_free(&dir);
   return 0;
 }
+#endif /* BUILTIN_MKDIR */
