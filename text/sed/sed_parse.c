@@ -109,6 +109,7 @@ max_addr(unsigned char letter) {
     case 'a':
     case 'i':
     case 'q':
+    case 'Q':
     case 'r':
     case '=': return 1;
     case ':':
@@ -284,7 +285,8 @@ parse_command(struct sed_builder* b, const char** pp, const char* end) {
     }
 
     case 'b':
-    case 't': {
+    case 't':
+    case 'T': {
       const char* name;
       size_t len;
 
@@ -308,12 +310,14 @@ parse_command(struct sed_builder* b, const char** pp, const char* end) {
     case 'N':
     case 'p':
     case 'P':
-    case 'x': {
+    case 'x':
+    case 'z': {
       p++;
       break;
     }
 
-    case 'q': {
+    case 'q':
+    case 'Q': {
       unsigned long v = 0;
 
       p = skip_blank(p + 1, end);

@@ -352,6 +352,17 @@ restart:
         st->quit_status = c->u.qstatus;
         goto end_cycle;
 
+      case 'Q':
+        st->quit = 1;
+        st->quit_status = c->u.qstatus;
+        st->suppress_print = 1;
+        goto end_cycle;
+
+      case 'z':
+        st->pattern.len = 0;
+        pc++;
+        break;
+
       case 'r':
         sed_pending_push(st, 1, c->u.rfile, str_len(c->u.rfile));
         pc++;
@@ -376,6 +387,16 @@ restart:
           pc = c->jump;
         } else {
           pc++;
+        }
+
+        break;
+
+      case 'T':
+        if(st->tflag) {
+          st->tflag = 0;
+          pc++;
+        } else {
+          pc = c->jump;
         }
 
         break;

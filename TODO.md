@@ -419,6 +419,10 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
 
 ### Loop findings that need a design decision (not fixed, see `BUGS`)
 
+- **`sed N` on the last line** discards the pattern space (POSIX; `tests/builtin-sed.sh` pins it), GNU prints it
+  unless `POSIXLY_CORRECT`. `sed N file` on an odd line count therefore differs. Missing GNU sed features found by
+  comparing against GNU: `-s`, `-z`, `--expression=`, `--posix`, `-u`, `l N`, `s///M`, `R`, `F`, `e`, `\xHH` and `\dNNN` escapes.
+
 - Differential run of the filter builtins against GNU (cmp3.py), after the `s///g` empty-match and `{0,n}`
   fixes:
   missing options: `cat -n` uses spaces, GNU a tab (tests/builtin-cat.sh pins the spaces); `cat -E` shows CRLF as `$` after a bare CR unit, GNU `^M$`, `uniq -i -w`,

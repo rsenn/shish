@@ -1,0 +1,78 @@
+diff --git a/text/sed/sed_cycle.c b/text/sed/sed_cycle.c
+index a1a49636..734a39e4 100644
+--- a/text/sed/sed_cycle.c
++++ b/text/sed/sed_cycle.c
+@@ -352,6 +352,17 @@ restart:
+         st->quit_status = c->u.qstatus;
+         goto end_cycle;
+ 
++      case 'Q':
++        st->quit = 1;
++        st->quit_status = c->u.qstatus;
++        st->suppress_print = 1;
++        goto end_cycle;
++
++      case 'z':
++        st->pattern.len = 0;
++        pc++;
++        break;
++
+       case 'r':
+         sed_pending_push(st, 1, c->u.rfile, str_len(c->u.rfile));
+         pc++;
+@@ -380,6 +391,16 @@ restart:
+ 
+         break;
+ 
++      case 'T':
++        if(st->tflag) {
++          st->tflag = 0;
++          pc++;
++        } else {
++          pc = c->jump;
++        }
++
++        break;
++
+       case 'w':
+         sed_out_wfile_line(st, c->u.wfile, st->pattern.s, st->pattern.len);
+         pc++;
+diff --git a/text/sed/sed_parse.c b/text/sed/sed_parse.c
+index d1efaa3c..1c0fc8ca 100644
+--- a/text/sed/sed_parse.c
++++ b/text/sed/sed_parse.c
+@@ -109,6 +109,7 @@ max_addr(unsigned char letter) {
+     case 'a':
+     case 'i':
+     case 'q':
++    case 'Q':
+     case 'r':
+     case '=': return 1;
+     case ':':
+@@ -284,7 +285,8 @@ parse_command(struct sed_builder* b, const char** pp, const char* end) {
+     }
+ 
+     case 'b':
+-    case 't': {
++    case 't':
++    case 'T': {
+       const char* name;
+       size_t len;
+ 
+@@ -308,12 +310,14 @@ parse_command(struct sed_builder* b, const char** pp, const char* end) {
+     case 'N':
+     case 'p':
+     case 'P':
+-    case 'x': {
++    case 'x':
++    case 'z': {
+       p++;
+       break;
+     }
+ 
+-    case 'q': {
++    case 'q':
++    case 'Q': {
+       unsigned long v = 0;
+ 
+       p = skip_blank(p + 1, end);

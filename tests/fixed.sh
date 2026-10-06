@@ -6310,4 +6310,10 @@ PY=$(printf 'a\nb\nc\nd\ne\nf\n' | "$SHISH_SELF" -c 'sed "2,~2d"' | tr '\n' ' ')
 PZ=$(printf 'a\nb\nc\nd\ne\nf\n' | "$SHISH_SELF" -c 'sed "0,/a/d;/C/Id"' | tr '\n' ' ')
 assert_equal "a c e /a e f /b d e f " "$PX/$PY/$PZ" "sed supports first~step, addr,~N, 0,/re/ and the I flag on an address"
 
+# sed T, Q and z
+PX=$(printf 'one\ntwo\nthree\n' | "$SHISH_SELF" -c 'sed "s/o/0/;T;s/\$/!/"' | tr '\n' ' ')
+PY=$(printf 'one\ntwo\nthree\n' | "$SHISH_SELF" -c 'sed 2Q' | tr '\n' ' ')
+PZ=$(printf 'one\ntwo\n' | "$SHISH_SELF" -c 'sed 2z' | tr '\n' '|')
+assert_equal "0ne! tw0! three /one /one||" "$PX/$PY/$PZ" "sed T branches when nothing was substituted, Q quits silently, z empties the pattern space"
+
 summary
