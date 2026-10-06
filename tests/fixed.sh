@@ -6329,4 +6329,8 @@ assert_equal "aTAB_0" "$PX" "sed understands \\t, [\\t] and \\xHH / \\dNNN escap
 PX=$(printf 'one\ntwo\n' | "$SHISH_SELF" -c 'sed "N;s/^t/T/M;s/e\$/E/Mg"' | tr '\n' '|')
 assert_equal "onE|Two|" "$PX" "sed s///M and /re/M anchor at the newlines inside the pattern space"
 
+# awk getline from a file that cannot be opened returns -1 instead of crashing
+PX=$("$SHISH_SELF" -c 'awk "BEGIN{print (getline l < \"/nonexistent/x\"); print \"after\"}"' 2>&1 | tr '\n' ' ')
+assert_equal "-1 after " "$PX" "awk getline < missing-file yields -1 and the program continues"
+
 summary

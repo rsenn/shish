@@ -1,0 +1,12 @@
+diff --git a/text/awk/awk_io.c b/text/awk/awk_io.c
+index 705e33c9..c7099751 100644
+--- a/text/awk/awk_io.c
++++ b/text/awk/awk_io.c
+@@ -116,6 +116,7 @@ new_stream(struct awk_state* st) {
+   }
+ 
+   byte_zero(&st->streams[st->nstreams], sizeof(struct awk_stream));
++  st->streams[st->nstreams].st = st;
+   return &st->streams[st->nstreams++];
+ }
+ 

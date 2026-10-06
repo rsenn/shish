@@ -116,6 +116,7 @@ new_stream(struct awk_state* st) {
   }
 
   byte_zero(&st->streams[st->nstreams], sizeof(struct awk_stream));
+  st->streams[st->nstreams].st = st;
   return &st->streams[st->nstreams++];
 }
 
