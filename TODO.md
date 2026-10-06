@@ -422,7 +422,7 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
 - Differential run of the filter builtins against GNU (cmp3.py), after the `s///g` empty-match and `{0,n}`
   fixes:
   missing options: `cat -n` uses spaces, GNU a tab (tests/builtin-cat.sh pins the spaces); `cat -E` shows CRLF as `$` after a bare CR unit, GNU `^M$`, `uniq -i -w`,
-  `cut --complement`, `sed -s`, `grep -w -o -r`.
+  `cut --complement`, `sed -s`, `grep -r -b` (`-w` does not retry a shorter match at the same start, as GNU does).
   `sort` orders by bytes (C locale), GNU by the locale's collation.
 
 - Differential run against dash (`${x/b/X}`, `${x//p/r}`, `${x^^}`, `${x,,}`): bash extensions that shish

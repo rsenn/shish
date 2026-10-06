@@ -6288,4 +6288,10 @@ assert_equal "B
 B" "$PX" "grep -L prints only the operands in which no line matches"
 rm -f "$GA" "$GB"
 
+# grep -o prints each match on its own line, -w needs non-word characters around the match
+PX=$(printf 'foo bar foobar\nxfoo foo-x\n' | "$SHISH_SELF" -c 'grep -o "o*"' | tr '\n' ' ')
+PY=$(printf 'foo bar foobar\nxfoo foo-x\n' | "$SHISH_SELF" -c 'grep -w foo' | tr '\n' '|')
+PZ=$(printf 'foo bar foobar\nxfoo foo-x\n' | "$SHISH_SELF" -c 'grep -ow foo' | tr '\n' ' ')
+assert_equal "oo oo oo oo / foo bar foobar|xfoo foo-x|/ foo foo " "$PX/ $PY/ $PZ" "grep -o splits a line into its matches and -w skips matches inside words"
+
 summary
