@@ -210,6 +210,7 @@ dfa_replace(struct dfa* d,
   size_t pos = 0;
   unsigned count = 0;
   unsigned matched = 0;
+  size_t prev_end = (size_t)-1; /* where the last match ended */
   struct dfa_span m;
   struct dfa_span g[9];
   size_t ng = dfa_groups(d);
@@ -224,6 +225,19 @@ dfa_replace(struct dfa* d,
     if(!dfa_search(d, s, n, pos, &m))
       break;
 
+    /* an empty match right behind the previous match does not count: "banana" =~ a* gives X b X n X n X */
+    if(m.start == m.end && m.start == prev_end) {
+      if(m.start >= n)
+        break;
+
+      if(out(ctx, s + pos, m.start + 1 - pos))
+        return -1;
+
+      pos = m.start + 1;
+      continue;
+    }
+
+    prev_end = m.end;
     matched++;
 
     if(matched < nth) {
