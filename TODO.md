@@ -419,6 +419,12 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
 
 ### Loop findings that need a design decision (not fixed, see `BUGS`)
 
+- Differential run against dash (`${x/b/X}`, `${x//p/r}`, `${x^^}`, `${x,,}`): bash extensions that shish
+  accepts but does not apply (`${x/b/X}` prints `abc`). Not POSIX; decide whether to implement or to
+  reject them with a diagnostic.
+- `command -v echo` prints `/usr/bin/echo` and `command -V echo` says "regular built-in (path)"; dash and
+  bash print just `echo` / "is a shell builtin". POSIX allows either for a regular built-in.
+
 - `input-p:89`: `x=$(alias false=:\nfalse)` needs `$(...)` parsed line by line while it runs; shish (like
   dash, which also gives status 1) parses the whole substitution first, so the alias is not seen.
 
