@@ -420,15 +420,16 @@
   shish -c '( ulimit -Hn 100 ); ulimit -Hn'     # 100; bash prints the original hard limit
   ```
 
-- fixed-sh-remaining-failures-after-sigchld-fix: `tests/fixed.sh` fails 9
+- fixed-sh-remaining-failures-after-sigchld-fix: `tests/fixed.sh` fails 5
   assertions (builds with every builtin), none reproducible standalone: each
   command works run alone and fails only at its position deep in the script, so
   something earlier in the run leaves state behind that affects it. The failing
-  ones: a subshell pipeline duplicating a following command, `cmd & echo after`
-  duplicating "after" (simple builtin and `{ }` group), `bg` on a job that was
-  never stopped, `shformat` re-emitting a backquote substitution wrong (nested
-  and plain), the job-start banner with `-m`, `times` producing more than 2
-  lines, and a group of redirection fixes. Not bisected to the earlier test.
+  ones: `bg` on a job that was never stopped, `shformat` re-emitting a backquote
+  substitution wrong (nested and plain), the job-start banner with `-m`, and a
+  group of redirection fixes. (A subshell pipeline duplicating a following
+  command, `cmd & echo after` duplicating "after", and `times` producing more
+  than 2 lines passed again once `wc` stopped padding a lone count.) Not
+  bisected to the earlier test.
 
   **Repro:**
   ```sh

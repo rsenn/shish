@@ -11,6 +11,7 @@
 #include "../../../lib/open.h"
 #include "../../../lib/byte.h"
 #include "../../../lib/utf8.h"
+#include <sys/stat.h>
 
 const char help_wc[] = "    Print newline, word, and byte counts.\n"
                        "\n"
@@ -113,20 +114,24 @@ wc_count(const char* path, int utf8, struct wc_counts* out) {
   return r < 0 ? -1 : 0;
 }
 
-/* prints the columns selected by opt_* for 'c', right-justified to a
- * fixed width, in wc's fixed column order (lines, words, chars,
+/* prints the columns selected by opt_* for 'c', right-justified to 'width'
+ * (7, or 1 when a single count is the whole output), in wc's fixed column order (lines, words, chars,
  * bytes, max-line-length) regardless of the order options were given.
  * ----------------------------------------------------------------------- */
 static void
-wc_print(struct wc_counts* c, int opt_l, int opt_w, int opt_m, int opt_c, int opt_L) {
+wc_print(struct wc_counts* c, int opt_l, int opt_w, int opt_m, int opt_c, int opt_L, int width) {
   char buf[FMT_ULONG];
   ssize_t n;
+  int first = 1;
 
 #define WC_FIELD(cond, value) \
   if(cond) { \
+    if(!first) \
+      buffer_putspace(fd_out->w); \
+    first = 0; \
     n = fmt_ulong(buf, (value)); \
-    if(n < 7) \
-      buffer_putnspace(fd_out->w, 7 - n); \
+    if(n < width) \
+      buffer_putnspace(fd_out->w, width - n); \
     buffer_put(fd_out->w, buf, n); \
   }
 
@@ -140,7 +145,7 @@ wc_print(struct wc_counts* c, int opt_l, int opt_w, int opt_m, int opt_c, int op
 
 int
 builtin_wc(int argc, char* argv[]) {
-  int c, opt_c = 0, opt_m = 0, opt_l = 0, opt_L = 0, opt_w = 0, ret = 0, i, nfiles;
+  int c, opt_c = 0, opt_m = 0, opt_l = 0, opt_L = 0, opt_w = 0, ret = 0, i, nfiles, width, implicit = 0;
   struct wc_counts total;
   int utf8 = sh_utf8();
 
@@ -160,9 +165,35 @@ builtin_wc(int argc, char* argv[]) {
 
   if(shell_optind >= argc) {
     argv[argc++] = "-";
+    implicit = 1;
   }
 
   nfiles = argc - shell_optind;
+
+  /* like GNU: a lone count is bare, files get the width of their summed size, anything else 7 */
+  width = 7;
+
+  if(opt_l + opt_w + opt_m + opt_c + opt_L == 1 && nfiles == 1) {
+    width = 1;
+  } else {
+    unsigned long long sum = 0;
+
+    for(i = shell_optind; i < argc; i++) {
+      struct stat st;
+
+      if(str_equal(argv[i], "-") || stat(argv[i], &st) != 0 || !S_ISREG(st.st_mode))
+        break;
+
+      sum += (unsigned long long)st.st_size;
+    }
+
+    if(i == argc) {
+      char nb[FMT_ULONG];
+
+      width = (int)fmt_ulonglong(nb, sum);
+    }
+  }
+
   byte_zero(&total, sizeof(total));
 
   for(i = shell_optind; i < argc; i++) {
@@ -174,9 +205,9 @@ builtin_wc(int argc, char* argv[]) {
       continue;
     }
 
-    wc_print(&cnt, opt_l, opt_w, opt_m, opt_c, opt_L);
+    wc_print(&cnt, opt_l, opt_w, opt_m, opt_c, opt_L, width);
 
-    if(str_diff(argv[i], "-")) {
+    if(!implicit) { /* an operand "-" is named too; no operand at all is not */
       buffer_putspace(fd_out->w);
       buffer_puts(fd_out->w, argv[i]);
     }
@@ -193,7 +224,7 @@ builtin_wc(int argc, char* argv[]) {
   }
 
   if(nfiles > 1) {
-    wc_print(&total, opt_l, opt_w, opt_m, opt_c, opt_L);
+    wc_print(&total, opt_l, opt_w, opt_m, opt_c, opt_L, width);
     buffer_putspace(fd_out->w);
     buffer_puts(fd_out->w, "total");
     buffer_putnlflush(fd_out->w);

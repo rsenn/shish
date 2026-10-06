@@ -6220,4 +6220,8 @@ PX=$("$SHISH_SELF" -c "ls -l $LD | tail -1")
 assert_match "$PX" "*00:01 f" "ls -l prints the time with zero-padded hours and minutes"
 rm -rf "$LD"
 
+# wc prints a lone count bare, separates columns with one space and names an explicit "-"
+PX="$(printf 'a b\nc\n' | "$SHISH_SELF" -c 'wc -l')|$(printf 'a b\nc\n' | "$SHISH_SELF" -c 'wc')|$(printf 'a b\nc\n' | "$SHISH_SELF" -c 'wc -l -')"
+assert_equal "2|      2       3       6|2 -" "$PX" "wc output format matches GNU (bare count, 7-wide columns separated by a space, explicit - is named)"
+
 summary
