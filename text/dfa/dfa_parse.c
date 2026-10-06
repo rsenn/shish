@@ -189,7 +189,7 @@ parse_interval_spec(struct dfa_parser* ps, long* m, long* n) {
     gotdigit = 1;
   }
 
-  if(!gotdigit) {
+  if(!gotdigit && !(p < ps->end && *p == ',')) { /* "{,n}" is {0,n} */
     ps->err = DFA_EBRACE;
     return 0;
   }
@@ -306,18 +306,32 @@ parse_piece(struct dfa_parser* ps) {
 
   atom_srcend = ps->p;
 
-  if(ps->p < ps->end && *ps->p == '*') {
-    ps->p++;
-    wrap_star(ps, body_start);
-  } else if(ere && ps->p < ps->end && *ps->p == '+') {
-    ps->p++;
-    wrap_plus(ps, body_start);
-  } else if(ere && ps->p < ps->end && *ps->p == '?') {
-    ps->p++;
-    wrap_optional(ps, body_start, 0);
-  } else if((ere && ps->p < ps->end && *ps->p == '{' && ps->p + 1 < ps->end &&
-             isdigit((unsigned char)ps->p[1])) ||
-            (!ere && ps->p + 1 < ps->end && ps->p[0] == '\\' && ps->p[1] == '{')) {
+  /* a leading "^*" in a BRE: the star is a literal, handled by the next atom */
+  if(!ere && atom_src == ps->start && *atom_src == '^')
+    return;
+
+  /* stacked * + ? (a**, a+?): each wraps everything before it */
+  for(;;) {
+    if(ps->p < ps->end && *ps->p == '*') {
+      ps->p++;
+      wrap_star(ps, body_start);
+    } else if(ps->p < ps->end && ((ere && *ps->p == '+') || (!ere && ps->p + 1 < ps->end && ps->p[0] == '\\' && ps->p[1] == '+'))) {
+      ps->p += ere ? 1 : 2;
+      wrap_plus(ps, body_start);
+    } else if(ps->p < ps->end && ((ere && *ps->p == '?') || (!ere && ps->p + 1 < ps->end && ps->p[0] == '\\' && ps->p[1] == '?'))) {
+      ps->p += ere ? 1 : 2;
+      wrap_optional(ps, body_start, 0);
+    } else {
+      break;
+    }
+
+    if(ps->err)
+      return;
+  }
+
+  if((ere && ps->p < ps->end && *ps->p == '{' && ps->p + 1 < ps->end &&
+      (isdigit((unsigned char)ps->p[1]) || ps->p[1] == ',')) ||
+     (!ere && ps->p + 1 < ps->end && ps->p[0] == '\\' && ps->p[1] == '{')) {
     long m, n;
 
     ps->p += ere ? 1 : 2;
@@ -495,6 +509,29 @@ parse_atom(struct dfa_parser* ps) {
       ps->p += 2;
       ps->has_backref = 1;
       dfa_emit(ps, DFA_BACKREF, g, 0);
+      return;
+    }
+
+    if(ps->p[1] == 'b' || ps->p[1] == 'B' || ps->p[1] == '<' || ps->p[1] == '>') {
+      dfa_emit(ps, DFA_WORD, ps->p[1] == 'b' ? 0 : ps->p[1] == 'B' ? 1 : ps->p[1] == '<' ? 2 : 3, 0);
+      ps->p += 2;
+      return;
+    }
+
+    if(ps->p[1] == 'w' || ps->p[1] == 'W' || ps->p[1] == 's' || ps->p[1] == 'S') {
+      unsigned char set[32] = {0};
+      int c, word = ps->p[1] == 'w' || ps->p[1] == 'W';
+
+      for(c = 0; c < 256; c++)
+        if(word ? (isalnum(c) || c == '_') : (c == ' ' || (c >= '\t' && c <= '\r')))
+          set[c >> 3] |= (unsigned char)(1u << (c & 7));
+
+      if(ps->p[1] == 'W' || ps->p[1] == 'S')
+        for(c = 0; c < 32; c++)
+          set[c] = (unsigned char)~set[c];
+
+      ps->p += 2;
+      dfa_emit(ps, DFA_SET, dfa_addset(ps, set), 0);
       return;
     }
 

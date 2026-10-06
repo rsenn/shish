@@ -6294,4 +6294,10 @@ PY=$(printf 'foo bar foobar\nxfoo foo-x\n' | "$SHISH_SELF" -c 'grep -w foo' | tr
 PZ=$(printf 'foo bar foobar\nxfoo foo-x\n' | "$SHISH_SELF" -c 'grep -ow foo' | tr '\n' ' ')
 assert_equal "oo oo oo oo / foo bar foobar|xfoo foo-x|/ foo foo " "$PX/ $PY/ $PZ" "grep -o splits a line into its matches and -w skips matches inside words"
 
+# regex GNU extensions: BRE \+ \? \{,n\}, \w \s, word boundaries \< \> \b, stacked repeats
+PX=$(printf 'foo bar\nxfoo\nab12\n' | "$SHISH_SELF" -c 'grep -c "\<foo"; ' )
+PY=$(printf 'aaa b\n' | "$SHISH_SELF" -c 'sed "s/a\+/X/;s/\w\{1,\}$/Y/;s/ \?Y/!/"')
+PZ=$(printf 'foo-bar baz\n' | "$SHISH_SELF" -c 'sed "s/\bb/B/g;s/o\>/0/;s/a\{,1\}z/Z/"')
+assert_equal "1/X!/fo0-Bar BZ" "$PX/$PY/$PZ" "BRE accepts \\+ \\? \\{,n\\} \\w \\< \\> \\b like GNU"
+
 summary

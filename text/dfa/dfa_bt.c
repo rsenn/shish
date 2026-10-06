@@ -137,6 +137,13 @@ bt_match(const struct dfa* d,
           backtrack = 1;
         break;
 
+      case DFA_WORD:
+        if(dfa_wordok(prog[pc].x, pos, n))
+          pc++;
+        else
+          backtrack = 1;
+        break;
+
       case DFA_BACKREF: {
         int g = prog[pc].x - 1;
         long gs = save[2 * g], ge = save[2 * g + 1];
@@ -199,6 +206,8 @@ dfa_bt_run(const struct dfa* d,
            size_t ng) {
   size_t from, i;
   long* save = NULL;
+
+  dfa_subj = s;
 
   if(d->ngroup)
     save = alloc(2 * d->ngroup * sizeof(long));

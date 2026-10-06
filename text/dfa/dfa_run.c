@@ -2,6 +2,26 @@
 #include "../../lib/alloc.h"
 #include "../../lib/arena.h"
 
+const char* dfa_subj;
+
+static int
+isw(int c) {
+  return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+}
+
+/* is the word-boundary assertion `kind` true at pos of dfa_subj[0..n)? */
+int
+dfa_wordok(int kind, size_t pos, size_t n) {
+  int before = pos > 0 && isw((unsigned char)dfa_subj[pos - 1]), after = pos < n && isw((unsigned char)dfa_subj[pos]);
+
+  switch(kind) {
+    case 0: return before != after;
+    case 1: return before == after;
+    case 2: return !before && after;
+    default: return before && !after;
+  }
+}
+
 struct dfa_thread {
   int pc;
   long* save; /* 2*ngroup longs, immutable once created, arena-owned */
@@ -66,6 +86,11 @@ addthread(arena* a,
         addthread(a, l, mark, gen, prog, ngroup, pc + 1, save, pos, notbol, n);
       return;
 
+    case DFA_WORD:
+      if(dfa_wordok(prog[pc].x, pos, n))
+        addthread(a, l, mark, gen, prog, ngroup, pc + 1, save, pos, notbol, n);
+      return;
+
     default: /* CHAR/ANY/SET/BACKREF/MATCH: consumes input or ends the match */
       l->t[l->n].pc = pc;
       l->t[l->n].save = save;
@@ -99,6 +124,8 @@ dfa_run(const struct dfa* d,
   size_t from, i;
   int gen = 0;
   int ok = 0;
+
+  dfa_subj = s;
 
   if(proglen == 0)
     return 0;

@@ -21,9 +21,14 @@ enum dfa_op {
   DFA_SAVE,     /* x = slot (2*group or 2*group+1) */
   DFA_BOL,
   DFA_EOL,
+  DFA_WORD,     /* x = 0 \\b, 1 \\B, 2 \\<, 3 \\> */
   DFA_BACKREF,  /* x = group number, 1-based */
   DFA_MATCH
 };
+
+/* the subject being matched, for DFA_WORD (set by dfa_run and dfa_bt_run) */
+extern const char* dfa_subj;
+int dfa_wordok(int kind, size_t pos, size_t n);
 
 struct dfa_inst {
   unsigned char op;

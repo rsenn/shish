@@ -1,0 +1,187 @@
+diff --git a/text/dfa/dfa_bt.c b/text/dfa/dfa_bt.c
+index 6a83b1bb..bb20d790 100644
+--- a/text/dfa/dfa_bt.c
++++ b/text/dfa/dfa_bt.c
+@@ -137,6 +137,13 @@ bt_match(const struct dfa* d,
+           backtrack = 1;
+         break;
+ 
++      case DFA_WORD:
++        if(dfa_wordok(prog[pc].x, pos, n))
++          pc++;
++        else
++          backtrack = 1;
++        break;
++
+       case DFA_BACKREF: {
+         int g = prog[pc].x - 1;
+         long gs = save[2 * g], ge = save[2 * g + 1];
+@@ -200,6 +207,8 @@ dfa_bt_run(const struct dfa* d,
+   size_t from, i;
+   long* save = NULL;
+ 
++  dfa_subj = s;
++
+   if(d->ngroup)
+     save = alloc(2 * d->ngroup * sizeof(long));
+ 
+diff --git a/text/dfa/dfa_parse.c b/text/dfa/dfa_parse.c
+index 61cd63b8..7d6b332c 100644
+--- a/text/dfa/dfa_parse.c
++++ b/text/dfa/dfa_parse.c
+@@ -189,7 +189,7 @@ parse_interval_spec(struct dfa_parser* ps, long* m, long* n) {
+     gotdigit = 1;
+   }
+ 
+-  if(!gotdigit) {
++  if(!gotdigit && !(p < ps->end && *p == ',')) { /* "{,n}" is {0,n} */
+     ps->err = DFA_EBRACE;
+     return 0;
+   }
+@@ -306,18 +306,32 @@ parse_piece(struct dfa_parser* ps) {
+ 
+   atom_srcend = ps->p;
+ 
+-  if(ps->p < ps->end && *ps->p == '*') {
+-    ps->p++;
+-    wrap_star(ps, body_start);
+-  } else if(ere && ps->p < ps->end && *ps->p == '+') {
+-    ps->p++;
+-    wrap_plus(ps, body_start);
+-  } else if(ere && ps->p < ps->end && *ps->p == '?') {
+-    ps->p++;
+-    wrap_optional(ps, body_start, 0);
+-  } else if((ere && ps->p < ps->end && *ps->p == '{' && ps->p + 1 < ps->end &&
+-             isdigit((unsigned char)ps->p[1])) ||
+-            (!ere && ps->p + 1 < ps->end && ps->p[0] == '\\' && ps->p[1] == '{')) {
++  /* a leading "^*" in a BRE: the star is a literal, handled by the next atom */
++  if(!ere && atom_src == ps->start && *atom_src == '^')
++    return;
++
++  /* stacked * + ? (a**, a+?): each wraps everything before it */
++  for(;;) {
++    if(ps->p < ps->end && *ps->p == '*') {
++      ps->p++;
++      wrap_star(ps, body_start);
++    } else if(ps->p < ps->end && ((ere && *ps->p == '+') || (!ere && ps->p + 1 < ps->end && ps->p[0] == '\\' && ps->p[1] == '+'))) {
++      ps->p += ere ? 1 : 2;
++      wrap_plus(ps, body_start);
++    } else if(ps->p < ps->end && ((ere && *ps->p == '?') || (!ere && ps->p + 1 < ps->end && ps->p[0] == '\\' && ps->p[1] == '?'))) {
++      ps->p += ere ? 1 : 2;
++      wrap_optional(ps, body_start, 0);
++    } else {
++      break;
++    }
++
++    if(ps->err)
++      return;
++  }
++
++  if((ere && ps->p < ps->end && *ps->p == '{' && ps->p + 1 < ps->end &&
++      (isdigit((unsigned char)ps->p[1]) || ps->p[1] == ',')) ||
++     (!ere && ps->p + 1 < ps->end && ps->p[0] == '\\' && ps->p[1] == '{')) {
+     long m, n;
+ 
+     ps->p += ere ? 1 : 2;
+@@ -498,6 +512,29 @@ parse_atom(struct dfa_parser* ps) {
+       return;
+     }
+ 
++    if(ps->p[1] == 'b' || ps->p[1] == 'B' || ps->p[1] == '<' || ps->p[1] == '>') {
++      dfa_emit(ps, DFA_WORD, ps->p[1] == 'b' ? 0 : ps->p[1] == 'B' ? 1 : ps->p[1] == '<' ? 2 : 3, 0);
++      ps->p += 2;
++      return;
++    }
++
++    if(ps->p[1] == 'w' || ps->p[1] == 'W' || ps->p[1] == 's' || ps->p[1] == 'S') {
++      unsigned char set[32] = {0};
++      int c, word = ps->p[1] == 'w' || ps->p[1] == 'W';
++
++      for(c = 0; c < 256; c++)
++        if(word ? (isalnum(c) || c == '_') : (c == ' ' || (c >= '\t' && c <= '\r')))
++          set[c >> 3] |= (unsigned char)(1u << (c & 7));
++
++      if(ps->p[1] == 'W' || ps->p[1] == 'S')
++        for(c = 0; c < 32; c++)
++          set[c] = (unsigned char)~set[c];
++
++      ps->p += 2;
++      dfa_emit(ps, DFA_SET, dfa_addset(ps, set), 0);
++      return;
++    }
++
+     /* unrecognized \X: literal X (also covers \. \* \[ \\ etc, the
+        BRE convention -- and \{ \} \+ \? \| when DFA_GNU isn't set) */
+     {
+diff --git a/text/dfa/dfa_prog.h b/text/dfa/dfa_prog.h
+index 74ca4835..d928ea49 100644
+--- a/text/dfa/dfa_prog.h
++++ b/text/dfa/dfa_prog.h
+@@ -21,10 +21,15 @@ enum dfa_op {
+   DFA_SAVE,     /* x = slot (2*group or 2*group+1) */
+   DFA_BOL,
+   DFA_EOL,
++  DFA_WORD,     /* x = 0 \\b, 1 \\B, 2 \\<, 3 \\> */
+   DFA_BACKREF,  /* x = group number, 1-based */
+   DFA_MATCH
+ };
+ 
++/* the subject being matched, for DFA_WORD (set by dfa_run and dfa_bt_run) */
++extern const char* dfa_subj;
++int dfa_wordok(int kind, size_t pos, size_t n);
++
+ struct dfa_inst {
+   unsigned char op;
+   int x, y;
+diff --git a/text/dfa/dfa_run.c b/text/dfa/dfa_run.c
+index f5739a63..52200ede 100644
+--- a/text/dfa/dfa_run.c
++++ b/text/dfa/dfa_run.c
+@@ -2,6 +2,26 @@
+ #include "../../lib/alloc.h"
+ #include "../../lib/arena.h"
+ 
++const char* dfa_subj;
++
++static int
++isw(int c) {
++  return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
++}
++
++/* is the word-boundary assertion `kind` true at pos of dfa_subj[0..n)? */
++int
++dfa_wordok(int kind, size_t pos, size_t n) {
++  int before = pos > 0 && isw((unsigned char)dfa_subj[pos - 1]), after = pos < n && isw((unsigned char)dfa_subj[pos]);
++
++  switch(kind) {
++    case 0: return before != after;
++    case 1: return before == after;
++    case 2: return !before && after;
++    default: return before && !after;
++  }
++}
++
+ struct dfa_thread {
+   int pc;
+   long* save; /* 2*ngroup longs, immutable once created, arena-owned */
+@@ -66,6 +86,11 @@ addthread(arena* a,
+         addthread(a, l, mark, gen, prog, ngroup, pc + 1, save, pos, notbol, n);
+       return;
+ 
++    case DFA_WORD:
++      if(dfa_wordok(prog[pc].x, pos, n))
++        addthread(a, l, mark, gen, prog, ngroup, pc + 1, save, pos, notbol, n);
++      return;
++
+     default: /* CHAR/ANY/SET/BACKREF/MATCH: consumes input or ends the match */
+       l->t[l->n].pc = pc;
+       l->t[l->n].save = save;
+@@ -100,6 +125,8 @@ dfa_run(const struct dfa* d,
+   int gen = 0;
+   int ok = 0;
+ 
++  dfa_subj = s;
++
+   if(proglen == 0)
+     return 0;
+ 
