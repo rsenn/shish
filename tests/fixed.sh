@@ -6261,4 +6261,9 @@ rm -f "$GA" "$GB"
 PX=$(printf 'a\nb\nc\nd\n' | "$SHISH_SELF" -c 'head -n -1; printf "x\ny" | head -n -1; printf "abcdef" | head -c -2' | tr '\n' ' ')
 assert_equal "a b c x abcd" "$PX" "head with a negative count drops the last lines or bytes"
 
+# uniq -i ignores case, -w N compares only the first N characters
+PX=$(printf 'Ab\nab\nabc\nxy\n' | "$SHISH_SELF" -c 'uniq -ic' | tr -s ' ' | tr '\n' ' ')
+PY=$(printf 'Ab\nab\nabc\nxy\n' | "$SHISH_SELF" -c 'uniq -w2 -c' | tr -s ' ' | tr '\n' ' ')
+assert_equal " 2 Ab  1 abc  1 xy / 1 Ab  2 ab  1 xy " "$PX/$PY" "uniq -i folds ASCII case and -w limits the compared width"
+
 summary

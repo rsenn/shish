@@ -19,13 +19,15 @@ const char help_uniq[] = "    Report or filter out repeated lines.\n"
                          "    -f fields       ignore the first fields blank-separated fields when comparing\n"
                          "    -s chars        then ignore the first chars characters (UTF-8 when the\n"
                          "                    locale variables name it, else bytes)\n"
+                         "    -i              ignore case (ASCII letters) when comparing\n"
+                         "    -w chars        compare no more than chars characters of each line\n"
                          "    input_file      file to read; '-' or omitted means stdin\n"
                          "    output_file     file to write instead of standard output\n";
 
 struct uniq {
   struct filter_in in;
-  unsigned long nfields, nchars, count;
-  unsigned c : 1, d : 1, u : 1, utf8 : 1, have : 1;
+  unsigned long nfields, nchars, width, count;
+  unsigned c : 1, d : 1, u : 1, icase : 1, haswidth : 1, utf8 : 1, have : 1;
   char* files[2]; /* the operands that are input files */
   char* outname;  /* the second operand */
   stralloc prev, out;
@@ -39,6 +41,18 @@ uniq_option(void* ctx, int ch) {
     case 'c': q->c = 1; return 0;
     case 'd': q->d = 1; return 0;
     case 'u': q->u = 1; return 0;
+    case 'i': q->icase = 1; return 0;
+
+    case 'w':
+      q->haswidth = 1;
+
+      if(filter_opt_count(shell_optarg, &q->width) < 0) {
+        q->in.err_arg = shell_optarg;
+        q->in.err_msg = "invalid number of bytes to compare";
+        return -1;
+      }
+
+      return 0;
 
     case 'f':
       if(filter_opt_count(shell_optarg, &q->nfields) < 0) {
@@ -107,6 +121,34 @@ uniq_key(struct uniq* q, const char* s, size_t n) {
   return i + text_charskip(q->utf8, s + i, n - i, q->nchars);
 }
 
+/* the compared parts of two lines are equal (after -i, within -w characters) */
+static int
+uniq_same(struct uniq* q, const char* a, size_t la, const char* b, size_t lb) {
+  size_t i;
+
+  if(q->haswidth) {
+    la = text_charskip(q->utf8, a, la, q->width);
+    lb = text_charskip(q->utf8, b, lb, q->width);
+  }
+
+  if(la != lb)
+    return 0;
+
+  for(i = 0; i < la; i++) {
+    unsigned char x = (unsigned char)a[i], y = (unsigned char)b[i];
+
+    if(q->icase) {
+      x = x >= 'A' && x <= 'Z' ? x + 32 : x;
+      y = y >= 'A' && y <= 'Z' ? y + 32 : y;
+    }
+
+    if(x != y)
+      return 0;
+  }
+
+  return 1;
+}
+
 /* the finished group in q->prev as output, if the options let it through */
 static int
 uniq_format(struct uniq* q) {
@@ -156,7 +198,7 @@ uniq_step(void* arg, const char** unit, size_t* len) {
     if(q->have) {
       size_t a = uniq_key(q, q->prev.s, q->prev.len), b = uniq_key(q, line, (size_t)r);
 
-      if(q->prev.len - a == (size_t)r - b && !byte_diff(q->prev.s + a, q->prev.len - a, line + b)) {
+      if(uniq_same(q, q->prev.s + a, q->prev.len - a, line + b, (size_t)r - b)) {
         q->count++;
         continue;
       }
@@ -185,7 +227,7 @@ uniq_finish(void* ctx) {
 }
 
 const struct filter_ops uniq_ops = {
-    .opts = "cduf:s:",
+    .opts = "cduiw:f:s:",
     .size = sizeof(struct uniq),
     .option = uniq_option,
     .setup = uniq_setup,
