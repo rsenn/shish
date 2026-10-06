@@ -981,7 +981,7 @@ compare the `tests/posix` and `tests/yash` pass counts before and after.
 
 ## 18. `src/wordlist.h` and `src/wordlist/`: the expansion output as its own module (plan)
 
-section 17's Stage 2 (renamed here: `struct wordlist`, `wordlist_*`) becomes a module of its own, with an arena
+section 17's Stage 2 (renamed here: `wordlist`, `wordlist_*`) becomes a module of its own, with an arena
 behind it. **It does not depend on section 19:** it owns a scratch arena separate from the AST arena. Only the
 zero-copy-literal option (pointing a field at a parse-tree string) needs the AST arena.
 
@@ -995,7 +995,7 @@ after each command. After this plan `narg` is parse-only and expansion output is
 parse tree (N_ARG, N_ARGSTR, ...)   read-only input, lives as long as the tree
         |  expand_*()               walks the word, decides what to append (src/expand/)
         v
-struct wordlist                     append-only sink: cat / break / close   (src/wordlist/)
+wordlist                            append-only sink: cat / break / close   (src/wordlist/)
         |  wordlist_argv()
         v
 char** argv, stralloc, char*        what eval, for, assignments, redirections and case consume
@@ -1005,7 +1005,7 @@ char** argv, stralloc, char*        what eval, for, assignments, redirections an
 
 **Interface (`src/wordlist.h`).**
 ```c
-struct wordlist {
+typedef struct wordlist {
   arena*     ar;        /* closed fields are frozen here; the caller rewinds it */
   stralloc*  cur;       /* the open field; a pooled buffer, or the caller's stralloc in string mode */
   char**     v;         /* closed fields, v[n] == NULL: this is argv */
@@ -1013,14 +1013,14 @@ struct wordlist {
   unsigned   state;     /* X_* bits of the open field (was narg.flag) */
   const char* ifs;      /* splitting characters, NULL = no splitting */
   char*      inl[16];   /* v starts here: up to 15 fields cost no malloc at all */
-};
-void   wordlist_init(struct wordlist*, arena*, const char* ifs);
-void   wordlist_init_str(struct wordlist*, stralloc* out);   /* string mode: one field, no breaks */
-void   wordlist_cat(struct wordlist*, const char* b, size_t len, int flags); /* the expand_cat() state machine */
-void   wordlist_break(struct wordlist*);   /* end the open field; used by "$@" and IFS splitting */
-int    wordlist_close(struct wordlist*);   /* finish the open field: glob, unescape, keep-or-drop; fields added */
-char** wordlist_argv(struct wordlist*, int* argc);  /* v, NULL-terminated, no copy */
-void   wordlist_free(struct wordlist*);    /* give cur back to the pool, free a spilled v */
+} wordlist;
+void   wordlist_init(wordlist*, arena*, const char* ifs);
+void   wordlist_init_str(wordlist*, stralloc* out);   /* string mode: one field, no breaks */
+void   wordlist_cat(wordlist*, const char* b, size_t len, int flags); /* the expand_cat() state machine */
+void   wordlist_break(wordlist*);   /* end the open field; used by "$@" and IFS splitting */
+int    wordlist_close(wordlist*);   /* finish the open field: glob, unescape, keep-or-drop; fields added */
+char** wordlist_argv(wordlist*, int* argc);  /* v, NULL-terminated, no copy */
+void   wordlist_free(wordlist*);    /* give cur back to the pool, free a spilled v */
 ```
 - **Where bytes live.** The open field is built in `cur`; `wordlist_close` freezes it with `arena_strndup`
   and appends the pointer to `v`. `v` starts in the `inl[]` array (in the caller's stack frame, so `argv` needs no
@@ -1053,16 +1053,16 @@ src/wordlist/wordlist_free.c      pool return, spill free
 `expand_unescape()` stays in `expand/`: case and redirections use it on plain stralloc.
 
 **`src/expand.h` after the change.** Every function taking `union node** nptr` and returning `union node*` takes a
-`struct wordlist* wl` instead. The returned node was only the new tail, used as the next cursor; a sink has none.
+`wordlist* wl` instead. The returned node was only the new tail, used as the next cursor; a sink has none.
 
 | Today                                                                 | After                                                                |
 | --------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `int expand_args(union node* args, union node** nptr, int flags)`      | `int expand_args(union node* args, struct wordlist* wl, int flags)`  |
-| `int expand_vars(union node* vars, union node** nptr)`                 | `int expand_vars(union node* vars, struct wordlist* wl)`             |
-| `union node* expand_arg(union node*, union node** nptr, int flags)`    | `void expand_arg(union node*, struct wordlist* wl, int flags)`       |
-| `union node* expand_param(struct nargparam*, union node** nptr, int)`  | `void expand_param(struct nargparam*, struct wordlist* wl, int)`     |
-| `union node* expand_command(struct nargcmd*, union node** nptr, int)`  | `void expand_command(struct nargcmd*, struct wordlist* wl, int)`     |
-| `union node* expand_arith(struct nargarith*, union node** nptr, int)`  | `void expand_arith(struct nargarith*, struct wordlist* wl, int)`     |
+| `int expand_args(union node* args, union node** nptr, int flags)`      | `int expand_args(union node* args, wordlist* wl, int flags)`  |
+| `int expand_vars(union node* vars, union node** nptr)`                 | `int expand_vars(union node* vars, wordlist* wl)`             |
+| `union node* expand_arg(union node*, union node** nptr, int flags)`    | `void expand_arg(union node*, wordlist* wl, int flags)`       |
+| `union node* expand_param(struct nargparam*, union node** nptr, int)`  | `void expand_param(struct nargparam*, wordlist* wl, int)`     |
+| `union node* expand_command(struct nargcmd*, union node** nptr, int)`  | `void expand_command(struct nargcmd*, wordlist* wl, int)`     |
+| `union node* expand_arith(struct nargarith*, union node** nptr, int)`  | `void expand_arith(struct nargarith*, wordlist* wl, int)`     |
 | `union node* expand_cat(const char*, unsigned, union node** nptr, int)`| removed: `wordlist_cat(wl, b, len, flags)`                           |
 | `union node* expand_glob(union node** nptr, int flags)`                | removed: `wordlist_glob`, called from `wordlist_close`               |
 | `int expand_argv(union node* args, char** argv)`                       | removed: `wordlist_argv(wl, &argc)`                                  |
@@ -1073,7 +1073,7 @@ Port check: a few callers use the returned node as "something was appended" (`n 
 `if(n)`). Look at each one; where the signal matters the function returns `int`, otherwise `void`.
 
 **What changes elsewhere.**
-- `eval_simple_command`: `struct wordlist wl; arena_pos pos = arena_tell(&expand_arena);` ... one `end:` label does
+- `eval_simple_command`: `wordlist wl; arena_pos pos = arena_tell(&expand_arena);` ... one `end:` label does
   `wordlist_free` and `arena_rewind`. The `HAVE_ALLOCA` argv block, `tree_free(args)` and `eval_args_top` guard for
   expansion results go away (audit the guard first: it frees `args_head` when a command exits through a nested
   exit; a rewind at the scope that owns the arena replaces it).
