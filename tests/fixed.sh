@@ -6351,4 +6351,14 @@ if [ "$(id -u)" != 0 ]; then
   assert_equal "status=1" "$PX" "{ cmd; } & returns 1 when the background fork fails and does not report success"
 fi
 
+# a chained filter builtin feeding a group or function that runs an external command still delivers its data
+FA=$(mktemp)
+printf 'b\na\n' > "$FA"
+PX=$(FA=$FA "$SHISH_SELF" -c 'head "$FA" | { /bin/cat; }; f() { /bin/cat; }; head "$FA" | f; head "$FA" | { read x; echo "got $x"; }' | tr '\n' ' ')
+rm -f "$FA"
+assert_equal "b a b a got b " "$PX" "head | { /bin/cat; } and head | f both pass the data on, and a builtin read in the group still works"
+
+# autotools only, no case here: ./configure now runs every config.status tag (src/builtin_config.h, config.h)
+# and defines HAVE_FORK; verify with ./autogen.sh && ./configure && make in a scratch copy
+
 summary

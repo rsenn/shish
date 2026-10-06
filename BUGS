@@ -434,30 +434,6 @@
   `: >e; printf 'x\n' >f; head e f` prints "==> f <==" and x, without a
   header for `e` (POSIX and coreutils print both); `tail e f` is the same.
 
-- filter-chain-hides-data-from-external-command: a filter builtin followed by
-  a function or a `{ ...; }` group is chained through an in-process buffer
-  (`pipeline_last_reads_in_process()` takes every compound or function last
-  stage as reading in-process), but an external command inside that stage
-  reads the real fd 0 and gets nothing. Needs a build with the builtin on
-  (`-DBUILTIN_HEAD=ON`, or `sort`/`tail`/`uniq`/`cut`/... with a file operand):
-
-  **Repro:**
-  ```sh
-  printf 'b\na\n' >a
-  head a | { /bin/cat; }               # prints nothing; should print b and a
-  f() { /bin/cat; }; head a | f        # same
-  head a | /bin/cat                    # b, a: an external last command is pumped
-  ```
-
-- builtin-cp-sh-hangs: `tests/builtin-cp.sh` never terminates (a `ctest`
-  run sits on it for 17+ minutes), so it needs `--timeout` or `-E builtin-cp`
-  for the suite to finish.
-
-  **Repro:**
-  ```sh
-  timeout 20 build/x86_64-linux-gnu/shish tests/builtin-cp.sh; echo $?   # 124
-  ```
-
 - quoted-at-then-empty-quotes-drops-field: `"$@"""` with no positional
   parameters expands to no field; POSIX gives one empty field. The parser
   emits an empty literal chunk after a plain `"$@"` too, so
@@ -490,13 +466,4 @@
   ```sh
   f() { echo fn; }; o=$(timeout 5 f); echo "[$o]"     # "[]"; should be "[fn]"
   o=$(timeout 5 echo hi); echo "[$o]"                  # "[hi]" (ok)
-  ```
-- configure-skips-config-status: `./configure` never runs `config.status`
-  (`AC_OUTPUT` is missing), so `src/builtin_config.h` is not written and `make`
-  stops with `builtin_config.h: No such file or directory`.
-
-  **Repro:**
-  ```sh
-  ./autogen.sh && ./configure && make   # fatal error: builtin_config.h
-  ./config.status && make               # builds
   ```

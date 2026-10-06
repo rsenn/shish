@@ -98,22 +98,24 @@ pipeline_filter_builtin(const char* name) {
   return b;
 }
 
-/* the true last stage reads a chain through the shell's own fd_in, which
- * only in-process code can see: an external command would inherit the real
- * fd 0 instead and read nothing. so a simple last command must name (as a
- * literal) a builtin or a function; compound commands run in the shell too.
+/* the last stage reads a chain through the shell's own fd_in, which only a
+ * builtin can see; an external command would inherit the real fd 0 and read
+ * nothing. A function or compound command may run one, so it gets the pump
+ * too: only a simple command naming (as a literal) a builtin reads in-process.
  * ----------------------------------------------------------------------- */
 static int
 pipeline_last_reads_in_process(union node* node) {
   const char* s;
   size_t n;
   char name[64];
-  struct nfunc* fn;
 
   while(node->next)
     node = node->next;
 
-  if(node->id != N_SIMPLECMD || !node->ncmd.args)
+  if(node->id != N_SIMPLECMD)
+    return 0;
+
+  if(!node->ncmd.args)
     return 1;
 
   if(!pipeline_word_literal(node->ncmd.args, &s, &n) || n >= sizeof(name))
@@ -122,14 +124,7 @@ pipeline_last_reads_in_process(union node* node) {
   byte_copy(name, n, s);
   name[n] = 0;
 
-  if(builtin_search(name, B_DEFAULT) || builtin_search(name, B_SPECIAL) || builtin_search(name, B_EXEC))
-    return 1;
-
-  for(fn = functions ? &functions->nfunc : NULL; fn; fn = fn->next)
-    if(!str_diff(name, fn->name))
-      return 1;
-
-  return 0;
+  return builtin_search(name, B_DEFAULT) || builtin_search(name, B_SPECIAL) || builtin_search(name, B_EXEC);
 }
 
 /* feeds the chain's last link to an external last command: a detached
@@ -393,7 +388,7 @@ pipeline_filter_prepare_chain(struct npipe* npipe,
  *   stage stdin   <- that buffer via fd_here(), as here-documents do
  *
  * The last stage runs in the caller's environment ("lastpipe", as zsh/ksh).
- * Persistent redirections leak across stages, as in eval_subshell.c. */
+ * Persistent redirections leak across stages, as in eval_subshell.c.
  * ----------------------------------------------------------------------- */
 static int
 eval_pipeline_sequential(struct eval* e, struct npipe* npipe) {

@@ -181,7 +181,7 @@ AC_OUTPUT_COMMANDS_POST()
 # need to make the FD available again.
 if test "$no_create" != yes; then
   ac_cs_success=:
-  ac_config_status_args="Makefile config.mk build.mk"
+  ac_config_status_args=""
   test "$silent" = yes &&
     ac_config_status_args="$ac_config_status_args --silent-rules"
   exec AS_MESSAGE_LOG_FD>/dev/null

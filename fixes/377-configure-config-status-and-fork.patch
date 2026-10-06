@@ -1,0 +1,26 @@
+diff --git a/configure.ac b/configure.ac
+index 859a77eb..4cd782e1 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -158,7 +158,7 @@ shish_yes_forkless_wasm
+ if test "x$shish_windows_native" = xyes; then
+ 	AC_DEFINE_UNQUOTED([HAVE_FORK],[1],[Define this if you have a working fork() -- see cmake/Checks.cmake for why this isn't a plain existence check on every platform])
+ elif test "x$shish_forkless_wasm" = xyes; then
+-	: dnl leave HAVE_FORK undefined
++	: # leave HAVE_FORK undefined
+ else
+ 	AC_CHECK_FUNC([fork],AC_DEFINE_UNQUOTED([HAVE_FORK],[1],[Define this if you have a working fork() -- see cmake/Checks.cmake for why this isn't a plain existence check on every platform]))
+ fi
+diff --git a/m4/hack.m4 b/m4/hack.m4
+index 5f6352f9..4f37a47c 100644
+--- a/m4/hack.m4
++++ b/m4/hack.m4
+@@ -181,7 +181,7 @@ AC_OUTPUT_COMMANDS_POST()
+ # need to make the FD available again.
+ if test "$no_create" != yes; then
+   ac_cs_success=:
+-  ac_config_status_args="Makefile config.mk build.mk"
++  ac_config_status_args=""
+   test "$silent" = yes &&
+     ac_config_status_args="$ac_config_status_args --silent-rules"
+   exec AS_MESSAGE_LOG_FD>/dev/null

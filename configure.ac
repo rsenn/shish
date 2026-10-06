@@ -158,7 +158,7 @@ shish_yes_forkless_wasm
 if test "x$shish_windows_native" = xyes; then
 	AC_DEFINE_UNQUOTED([HAVE_FORK],[1],[Define this if you have a working fork() -- see cmake/Checks.cmake for why this isn't a plain existence check on every platform])
 elif test "x$shish_forkless_wasm" = xyes; then
-	: dnl leave HAVE_FORK undefined
+	: # leave HAVE_FORK undefined
 else
 	AC_CHECK_FUNC([fork],AC_DEFINE_UNQUOTED([HAVE_FORK],[1],[Define this if you have a working fork() -- see cmake/Checks.cmake for why this isn't a plain existence check on every platform]))
 fi

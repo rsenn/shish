@@ -207,7 +207,7 @@ the named files, update the table above, remove the closed `BUGS` entry, add `fi
 `eval-lineno-imprecise-inside-function`,
 `no-tree-print-option-is-a-noop`,
 `cfg-cmake-mingw-silently-builds-native`,
-`builtin-cp-sh-hangs`, `quoted-at-then-empty-quotes-drops-field`.
+`quoted-at-then-empty-quotes-drops-field`.
 
 **Memory safety, not conformance** - under "Memory safety" below:
 `asan-leak-residue-not-fully-triaged`, `ubsan-buffer-op-proto-function-type-mismatch`.
@@ -296,8 +296,7 @@ Open:
   `export SHISH_TRACE=...` inside a running script is not seen. Reading it through `var_get` would
   fix that but touches every event's startup path.
 - **Autotools:** works in-tree only (`./autogen.sh && ./configure --enable-debug CPPFLAGS=...`, serial
-  `make`, then `./config.status src/builtin_config.h` once: configure does not run its
-  `AC_CONFIG_COMMANDS` step, cause not found). The `src/*/Makefile.in` `MODULES` lists are
+  `make`). The `src/*/Makefile.in` `MODULES` lists are
   hand-maintained and drift.
 - `var.import` is not traced on purpose (one line per environment variable; `var.export` reports the
   count).
@@ -334,8 +333,8 @@ Both are `EXTRA_BUILTINS` (off by default) on the shared engines `text/sed/`, `t
 
 `src/builtin/core/builtin_cp.c` holds `builtin_cpmv()`; the `cp` and `mv` rows (`BUILTIN_CP`/`BUILTIN_MV`,
 `EXTRA_BUILTINS`, off by default) point at it, and `cmake/Builtins.cmake` adds `builtin_rm.c` when `mv`
-is on (`builtin_rm_tree()` is the exported `rm -r` walk). Tests: `tests/builtin-cp.sh` (which hangs,
-`BUGS: builtin-cp-sh-hangs`), `tests/builtin-mv.sh` (the `EXDEV` cases run when `/dev/shm` is another
+is on (`builtin_rm_tree()` is the exported `rm -r` walk). Tests: `tests/builtin-cp.sh`,
+`tests/builtin-mv.sh` (the `EXDEV` cases run when `/dev/shm` is another
 file system).
 
 Open:
@@ -1131,8 +1130,6 @@ Open:
   `fork()`/`pipe()` for its own stretch, so decide whether `eval_pipeline_sequential()` should try
   chaining first and fall back to full materialization only when the chain is not entirely steppable
   builtins. It does not attempt chaining yet.
-- `BUGS: filter-chain-hides-data-from-external-command`: an external command inside a function or `{ }`
-  last stage reads the real fd 0 and gets nothing.
 
 ### Which builtins would benefit from being a filter (2026-09-27)
 
