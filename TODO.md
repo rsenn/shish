@@ -158,29 +158,93 @@ in a later pass).
 no shell dependency; `lib/` is compiled into `libowfat.a`, so a build without a walking builtin does not
 link a byte of it):
 
-1. **`lib/dirlist.h` + `lib/dirlist/dirlist_read.c`**: read one directory into an array of
-   `{name, len, d_type}`, optionally sorted, then `closedir()` - so a walk holds one descriptor at a time,
-   not one per level (the `cp -R` weakness). `ls`, `term_complete` and the walker use it.
-2. **`lib/walk.h` + `lib/walk/walk_path.c`** (an `fts(3)`/`nftw(3)` equivalent without libc's, which dietlibc
-   and mingw lack): a callback walker.
+1. **`lib/dirlist.h` + `lib/dirlist/dirlist_read.c`**: read one directory *whole* into one packed buffer, then
+   `closedir()`. A record is `type byte, name, NUL`; `type` is `d_type` (`DT_DIR`, `DT_REG`, ...) or
+   `DT_UNKNOWN` where the platform has none (mingw, some dietlibc builds). Entries are addressed by offset, not
+   pointer, so the buffer may grow. `.` and `..` are dropped unless `DIRLIST_DOTS` is passed. Optional sort of an
+   offset array with the caller's name comparator (default `str_diff`). It appends into a `stralloc` the caller owns
+   (no `lib/arena`), so the caller decides when a level is dropped (`len = start`). One buffer replaces
+   `ls`'s two `str_dup()` per entry and every client's own `readdir()` loop; it is also the one place to put a
+   `getdents` or `FindFirstFile` backend later.
+2. **`lib/walk.h` + `lib/walk/walk_*.c`**: an `fts(3)` equivalent that does not depend on libc's (dietlibc, musl,
+   mingw and wasm have no `fts`; glibc's is not POSIX). It copies `fts`'s *semantics*, not its code:
+   an opaque handle (no globals, so a walk may nest inside another, as `find -exec rm -r` does), pull-style
+   iteration, and an explicit "skip this one" call.
 
 ```c
-enum { WALK_PHYS = 0, WALK_LOGICAL = 1, WALK_COMFOLLOW = 2,   /* lstat / follow all / follow operands */
-       WALK_DEPTH = 4,  WALK_XDEV = 8,  WALK_SORT = 16 };      /* post-order, stay on device, sort names */
-enum { WALK_PRE, WALK_POST, WALK_FILE, WALK_ERR, WALK_CYCLE };  /* what the visit is about */
-enum { WALK_GO, WALK_SKIP, WALK_STOP };                         /* visit result: go on / not into this one / abort */
+/* what a visit is about (fts: FTS_D, FTS_DP, FTS_F/SL/..., FTS_DNR/ERR, FTS_DC) */
+enum walk_phase { WALK_PRE, WALK_POST, WALK_FILE, WALK_ERR, WALK_CYCLE };
+enum walk_flag  { WALK_PHYS = 0, WALK_LOGICAL = 1, WALK_COMFOLLOW = 2, /* lstat / follow all / follow operands */
+                  WALK_XDEV = 4, WALK_SORT = 8 };                      /* stay on one device; sort names */
 
-struct walk_ent { const char* path; const char* name; size_t len; int depth, phase, err; struct stat st; };
-struct walk { int flags, maxdepth; int (*visit)(struct walk*, struct walk_ent*); void* ctx; };
-int walk_path(struct walk*, const char* root);
+struct walk_ent {
+  const char* path;    /* the whole path, in the walker's one growing buffer: valid until the next walk_read() */
+  const char* name;    /* last component */
+  const char* rel;     /* path below the root operand, no leading '/': "" for the root itself */
+  size_t len;          /* strlen(path) */
+  int depth, phase;
+  int err;             /* errno, when phase == WALK_ERR */
+  unsigned type;       /* d_type, or DT_UNKNOWN: filled without a syscall whenever the directory gave it */
+  unsigned kept : 1;   /* WALK_POST: something below was kept (walk_keep()) */
+};
+
+const struct stat* walk_stat(struct walk*, struct walk_ent*);  /* lstat/stat on demand, as the flags say; cached */
+void walk_keep(struct walk*);                                  /* this entry stays: its ancestors report kept */
+struct walk;                                                 /* opaque */
+struct walk* walk_open(char* const* roots, unsigned flags);  /* NULL-terminated operands, like fts_open() */
+struct walk_ent* walk_read(struct walk*);                    /* next visit; NULL when the walk is done */
+void walk_skip(struct walk*);                                /* on a WALK_PRE entry: do not descend (fts_set(FTS_SKIP)) */
+void walk_close(struct walk*);
 ```
 
-   - one growing path buffer (as `builtin_rm_tree()` does) instead of one buffer per level;
-   - the ancestor `(dev, ino)` chain `find` already has moves in, reporting `WALK_CYCLE`;
-   - `WALK_PRE` returning `WALK_SKIP` is what `rm -i` ("descend into directory?" refused) and `find -prune`
-     need; a child's `WALK_GO` count lets `rm` keep a directory whose entry was refused;
-   - errors are visits (`WALK_ERR` with `errno`), so each builtin keeps its own wording and `-f` handling.
-   - A walk keeps no per-directory state: `cp -R` derives the destination as `dst + (path + rootlen)`.
+   - **Order:** a directory is reported `WALK_PRE` before its children and `WALK_POST` after them, so `cp -R`
+     (create first) and `rm -r` (remove last) use the phase they need and ignore the other.
+   - **One descriptor at a time:** each directory is read whole through `lib/dirlist`, then closed; the walker keeps
+     a stack of name lists, not of `DIR*` (the `cp -R` weakness today).
+   - **Path buffer:** one growing buffer, as `builtin_rm_tree()` already does, not one per level.
+   - **Loops:** an ancestor `(dev, ino)` chain (as `find` already has) reports `WALK_CYCLE` instead of descending.
+   - **Errors are visits** (`WALK_ERR` with `err`), so every builtin keeps its own message wording and its own `-f` handling.
+   - **Skipping:** `walk_skip()` after a `WALK_PRE` is what `rm -i` (descend refused) and `find -prune` need. The
+     `WALK_POST` of a skipped directory is not reported.
+   - **No per-directory state:** the destination of `cp -R` is `dst + (path + rootlen)`, derived, not stored.
+   - **No callback form** in the library: a builtin that wants one is a three-line `while((e = walk_read(w)))`
+     loop. That keeps every `-v`/`-i`/`-f` decision inside the builtin and out of a function pointer with a `void*`.
+   - **Not `nftw`:** its callback has no user pointer, it has no portable skip, it cannot sort, and dietlibc/mingw
+     lack it. **Not libc's `fts`:** same portability gap, and it is not POSIX.
+
+**Findings from the six walkers (what the walker must do better than they do):**
+
+| client | per level / entry today | with `lib/walk` |
+|---|---|---|
+| `rm_tree()` | `lstat` + `unlink`/`rmdir` per entry, one `stralloc` path edit per entry, `kept`/`skipped` ints threaded through the recursion | `d_type` says file or directory: `unlink` without `lstat` (2 syscalls to 1 per file); `walk_keep()` and `e->kept` replace the int plumbing |
+| `chmod_path()` | `lstat` + `stat` + `chmod`; recursion with a 10-argument signature | octal mode without `-c`/`-v`: no `stat` at all (`chmod` only); symbolic or `-c`: one `walk_stat()` |
+| `cpmv_dir()` | `DIR*` held open across the recursion (one fd and one libc 32 KB buffer per level), two `stralloc`s per level | one fd in total; destination is `dst + "/" + e->rel` in a single buffer |
+| `find_recursive()` | `lstat` for *every* entry, even for `find . -name x`; ancestor chain always built | `walk_stat()` only when a predicate needs it (`-size`, `-mtime`, `-perm`; `-type` uses `e->type`); cycle chain only with `WALK_LOGICAL`; `maxdepth` stops the descent without reading the directory |
+| `ls_dir()` | `lstat` per entry always, two `str_dup()` per entry, a `DIR*` held during the listing | `dirlist` buffer, `lstat` only for `-l -t -S -s -i -F -p` (and for `-R` the type comes from `d_type`) |
+| `term_complete` | own `opendir` loop for one level | `dirlist` (one level, no walker) |
+
+   - **No `lstat` unless asked** is the main saving: `find` and `ls` are dominated by the per-entry `lstat`.
+   - **Iterative, not recursive:** an explicit stack of frames `{buffer offset, count, next, path length, dev, ino}`
+     (about 40 bytes per level) in one growing array, so a 3000-deep chain cannot overflow the C stack and each
+     level costs no `malloc`. `dev`/`ino` are only stored for `WALK_LOGICAL`; `WALK_XDEV` stats directories only.
+   - **One `stralloc` used as a stack, no `lib/arena`:** the entry records of every open level are appended to one
+     growing `stralloc`; a level remembers its start offset and popping it is `len = start`. Offsets, not pointers,
+     because the buffer may move. This is the same stack discipline as `arena_tell()`/`arena_rewind()` without
+     linking the arena code (nothing under `src/` uses it, and the walker should not be what pulls it in). The
+     frames are a small array grown with `alloc_re`; the path is a second `stralloc` that never produces `.`/`..`
+     (all six clients filter them today).
+   - **`openat`/`unlinkat`** (when the platform has them) would make every syscall O(1) in the path depth; keep it
+     behind one `#ifdef` inside `lib/walk`, exposing `e->dirfd` and `e->name`, so no client changes if it is added.
+   - **`ls` stays on `dirlist`:** it must print a directory's whole listing, in its own sort order and after
+     `stat`ing the entries, *before* descending, which a pull walker cannot offer; `ls -R` recurses over
+     `dirlist` results (`d_type == DT_DIR`) itself.
+   - **Expected size:** the six walking blocks are about 85 (`rm`), 25 (`chmod`), 55 (`cp`), 65 (`find`), 40 (`ls`)
+     and 12 (completion) lines; each becomes a `walk_open`/`walk_read` loop of 10-25 lines of client logic, so the
+     clients shrink by roughly 150-200 lines in total against about 250 lines of library (`dirlist` 60, `walk` 190),
+     which is only linked into builds that contain a walking builtin.
+   - **Test:** `tests/walk_test.c` over a generated tree: symlink loop (`WALK_LOGICAL` reports `WALK_CYCLE`), an
+     unreadable directory (`WALK_ERR`, no `WALK_POST`), a 3000-deep chain, `walk_skip` leaving the directory
+     untouched, `walk_keep` marking ancestors, a directory with 20000 entries, `maxdepth`.
 
 **Migration order** (each step keeps that builtin's tests green and is its own patch):
 `lib/dirlist` + a unit test (`tests/walk_test.c`, built like `arena_test`) over a generated tree with a
@@ -416,6 +480,63 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
 - `configure` checks and the `syscall()` fallbacks for calls without a libc wrapper (`ioprio_set`, `sched_setattr`,
   `pivot_root`), including dietlibc and musl, and keeping these files out of the Windows and wasm builds;
 - tests as a normal user in a user namespace that skip themselves when the builtin or the privilege is missing.
+
+### PLAN (nothing implemented yet) - where `lib/arena.h` would fit in `src/`, easiest first
+
+`lib/arena.h` is already linked (`text/dfa`, `text/awk`), so using it in `src/` adds no new code, only call sites.
+The AST arena (Goal 3) and the expansion field list (Goal 3b) are described above and not repeated here.
+Rule of thumb: an arena fits where many small objects share one lifetime and die together, or die in LIFO order.
+It does not fit objects freed one by one in any order (history ring, job table, hash entries, variables).
+
+**stralloc and arena** (prerequisite for most items below). `stralloc` touches the allocator in exactly three places:
+`stralloc_ready` (`alloc`/`alloc_re`), `stralloc_trunc` (`alloc_re`) and `stralloc_free` (`alloc_free`). Two steps:
+1. **Freeze, no change to `stralloc`.** `stralloc_free()` already skips a buffer with `a == 0` ("not owned") and
+   `stralloc_ready()` already copies such a buffer out to the heap before growing it. So
+   `{ .s = arena_strndup(ar, sa.s, sa.len), .len = sa.len, .a = 0 }` is a valid read-only stralloc today. One helper,
+   `stralloc_freeze(arena*, stralloc*)`, builds it and frees the heap buffer. Fix first: `stralloc_trunc` calls
+   `alloc_re` on any `s`, so it must copy out when `a == 0`.
+2. **Grow inside an arena, only if step 1 is not enough.** A scratch stralloc that lives in an arena needs the arena
+   pointer, so a new trailing member `arena* ar` (NULL = heap, so `{0}` and `stralloc_init` stay valid): `ready`
+   tries `arena_grow` (works when it is the newest allocation), else `arena_alloc` + copy and leaves a hole;
+   `free` becomes a no-op. Costs 8 bytes per stralloc and one branch in three functions. Measure the holes before
+   committing to it: scratch strings that are built and frozen at once never leave one.
+
+**Candidates**
+1. **`expand_brace.c` / `expand_glob.c`** (trivial): `alloc(len + 1)` copies and the `glob_t` result live for one
+   word expansion. One arena per `expand_argv` call (`arena_tell`/`arena_rewind` around it), `alloc_free` loop goes.
+2. **`eval_simple_command.c`, `eval_pipeline.c`, `exec_program.c`** (easy): the `argv`/`envp`/`sargv` vectors are
+   `alloca` or `alloc` per command (`HAVE_ALLOCA` split). One scratch arena with `tell`/`rewind` per command replaces
+   both branches and the matching `alloc_free`s, and removes the `#ifdef HAVE_ALLOCA`. Wins only together with 1.
+3. **`term_complete.c`** (easy): `names[]` of `str_dup`s plus six `stralloc_free`s at the end, all one completion
+   round. One arena, freed with `arena_reset`; fits the Part C `walk` as its `keep` storage.
+4. **`source_alias.c`** (easy): `alias_frame`, `alias_popped` and the alias copies are pushed and popped in LIFO
+   order while a line is parsed. `arena_tell` at push, `arena_rewind` at pop. Check `alias_popped` outliving a frame.
+5. **`redir_*.c`, `eval_case.c`, `eval_command.c` heredoc** (easy): local `stralloc`s (`sa`, `delim`, `word`,
+   `pattern`, `heredoc`) built per command and freed at the end; with step 1 they become one rewind. Low value alone.
+6. **`prompt_expand.c`, `sh_loop.c` `cmd`** (easy): one buffer per prompt or per input line; keep as `stralloc`
+   (single long-lived buffer is what `stralloc` is for). Not a candidate; listed so nobody tries.
+7. **`sh_setargs.c`, positional parameters** (medium): `args->v[i] = str_dup(...)` plus the vector, replaced on
+   every `set --`, function call and `shift`. A per-frame arena makes `sh_push`/`sh_pop` a `tell`/`rewind` pair
+   and removes the free loop; needs `shift` to drop the first word without freeing it (arena just keeps it).
+8. **`exec_search.c` snapshot, `exec_hash.c` path cache** (medium): the node snapshot (`snap->nodes`) lives for
+   one lookup (arena fits); the hash entries (`exec_create.c`) are removed one by one by `hash -r`/`PATH` change,
+   so they stay on the heap unless `hash -r` is the only way out (then one arena reset).
+9. **`parse/` token and word buffers** (medium): each token is a `stralloc` then copied into a node. If the tree
+   arena (Goal 3) exists, the parser allocates the node and the string straight into it and the temporary
+   `stralloc`s shrink to one reusable scratch. Do not start before Goal 3.
+10. **`eval_function.c` function bodies** (medium, part of Goal 3): `nfunc.name = str_dup(...)` plus `tree_copy`
+    into a dedicated arena per function; redefinition frees the arena instead of calling `tree_free`.
+11. **`var/` and `vartab/`** (hard, probably never): variables are set, unset and exported in any order and
+    `var_export` hands pointers to the environment. Only the *value* of a `local` could live in a function-frame
+    arena, which needs scope tracking `var` does not have. Leave on the heap.
+12. **`history/`** (never): ring of entries freed one by one on overflow. Heap is right.
+13. **`job/`, `fd/`, `fdtable/`, `fdstack/`** (never): objects with independent lifetimes and an fd tied to each.
+    `fd_filter.c` `FD_BUFSIZE` buffer is one block per filter, nothing to gain.
+
+**Order of work.** stralloc step 1 and the `stralloc_trunc` fix, then 1 + 2 + 3 (each is a leaf and removes more
+code than it adds), then 4, 5, 7, 8. Items 9 and 10 belong to Goal 3. Every step is judged by the same test:
+the binary does not grow (`size shish` before and after on `MinSizeRel`) and `alloc`-call counts per command in the
+Goal 3 measurement drop. A step that grows the binary without lowering those counts is not merged.
 
 ### Loop findings that need a design decision (not fixed, see `BUGS`)
 
