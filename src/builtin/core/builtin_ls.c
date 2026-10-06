@@ -210,9 +210,11 @@ ls_put_time(buffer* b, time_t t) {
   buffer_putspace(b);
 
   if(t <= now && now - t < 15778476) {
-    buffer_putulong0(b, tm->tm_hour, 2);
+    buffer_putc(b, '0' + tm->tm_hour / 10);
+    buffer_putc(b, '0' + tm->tm_hour % 10);
     buffer_putc(b, ':');
-    buffer_putulong0(b, tm->tm_min, 2);
+    buffer_putc(b, '0' + tm->tm_min / 10);
+    buffer_putc(b, '0' + tm->tm_min % 10);
   } else {
     buffer_putc(b, ' ');
     buffer_putulong(b, tm->tm_year + 1900);

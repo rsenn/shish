@@ -6210,4 +6210,14 @@ assert_match "$PX" "*:2:1: x: boom*" "an expansion error reports the line of its
 PX=$("$SHISH_SELF" -c 'alias e="echo hi"; f() { :; }; type -a e f if echo' | tr '\n' '|')
 assert_match "$PX" "e is aliased to \`echo hi'|f is a function|if is a shell keyword|echo is a shell builtin|*" "type -a prints every alias, function, keyword and builtin match"
 
+# set -v echoes a last line that has no newline
+PX=$("$SHISH_SELF" -v -c 'echo a' 2>&1 | tr '\n' '|')
+assert_equal "echo a|a|" "$PX" "-v echoes the final line of a -c string"
+
+# ls -l zero-pads hours and minutes ("00:01", not " 0: 1")
+LD=$(mktemp -d); : > "$LD/f"; touch -t "$(date +%Y%m%d)0001" "$LD/f" 2>/dev/null
+PX=$("$SHISH_SELF" -c "ls -l $LD | tail -1")
+assert_match "$PX" "*00:01 f" "ls -l prints the time with zero-padded hours and minutes"
+rm -rf "$LD"
+
 summary
