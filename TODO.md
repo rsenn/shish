@@ -1218,6 +1218,50 @@ Design decisions already worked out (full reasoning in git history —
   touches every tree-walking call site for a benefit unlikely to matter
   next to lexing/parsing cost.
 
+
+### Leverage and size of the migration (measured 2026-10-07, not implemented)
+
+Measured by parsing `tests/fixed.sh` (6415 lines) with `shformat` (tree kept) and `shish -n` (parse, then `tree_free`),
+callgrind and valgrind, MinSizeRel build.
+
+| | measured |
+| --- | --- |
+| mallocs for one parse | 52816: 28130 nodes, 20664 string buffers, about 4000 other |
+| tree held in memory | 2.18 MB of heap in 40632 blocks (`mallinfo2`) |
+| instructions, parse + `tree_free` | 100.7M (about 15.7k per line); allocation and free are roughly a quarter: `tree_free` about 16.6M, `alloc` about 8.7M |
+| `parse_word`'s `stralloc_catc` | 472000 calls, 10.5M instructions, about 10% of the parse |
+
+By design metric:
+1. **Binary size:** small. `tree_free` (811 bytes of text, 213 lines) goes, about 36 call sites with it (10 are parser
+   error paths); `tree_copy` stays (function bodies are copied into their own arena). The tree objects are 2.7 KB in
+   all. Expect about 1 to 1.5 KB; unmeasured.
+2. **Lines and complexity:** about 213 lines out of `tree_free.c` and 36 free call sites, about 100 lines of arena
+   plumbing back: a few hundred lines fewer overall.
+3. **Fragmentation and memory:** the largest gain. A string buffer is `len + len/8 + 30` bytes today (36 for a
+   5-character name) plus a malloc header; `arena_strndup` makes it 6. Nodes lose their 8 to 16 byte headers. Estimate
+   for that file: about 1.1 MB in the arena against 2.18 MB on the heap, roughly half (an estimate, not built).
+4. **Execution time:** about 20% of the parse and free instructions, which is about 3.9k instructions per line or
+   1 ms per 1000 lines of script. Scripts spend their time in `fork`/`exec`, so end to end it barely shows; it
+   matters for very large scripts and for `eval` in a tight loop.
+
+Size of the refactor: `tree_newnode` is called from 23 files (28 sites) and takes an arena; `tree_free` at 36 sites,
+`tree_copy` at 10 (function definitions, traps, and the per-execution tilde/brace copies); `nargstr.stra` is used at 62
+sites, 25 of them in `expand_tilde.c`, which rewrites text in place on private copies, so `nargstr` moving to the
+`strview` it already overlays means those rewriters work on copies. The risk is lifetimes, not volume: function and
+trap bodies outlive their statement; `exec_function_retire` already defers freeing bodies that are still running and
+has to survive as a deferred `arena_free`; nested `eval`/`source` need strictly nested arenas; every longjmp landing
+needs the rewind that section 17 added for `expand_arena` (`eval_jump`, `eval_return`, `eval_exit`).
+
+**Order, cheapest and most certain first:**
+1. **Per-execution tree copies into `expand_arena`.** `expand_args`, `expand_vars`, `expand_param`, `eval_case` and
+   `redir_eval` copy a subtree and free it on every execution of a command containing `~` or `{a,b}`. An arena-aware
+   `tree_copy` (copy into `expand_arena`, no free; the rewind per command already exists) removes about 8 sites of
+   malloc and free per execution, a cost that grows with the loop count, unlike parse cost.
+2. **`parse_unquoted`/`parse_word`: copy runs, not characters** (separate from the arena): the 472000 `stralloc_catc`
+   calls are about 10% of the parse, probably as many instructions as the whole arena saves.
+3. **The parse-tree arena itself,** for the memory halving, only if the lines and size savings above still look
+   worthwhile after 1 and 2; one arena per parse scope as described above.
+
 ---
 
 ## 19. Pull-based filter chaining: what is left
