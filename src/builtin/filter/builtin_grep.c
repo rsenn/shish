@@ -26,6 +26,9 @@ const char help_grep[] = "    Search files for patterns.\n"
                          "    -v              select non-matching lines\n"
                          "    -x              select only lines that match as a whole\n"
                          "    -n              precede each line by its line number\n"
+                         "    -e pattern      pattern to search for; may be given several times\n"
+                         "    -l              print only the names of files with a match\n"
+                         "    -s              no messages about files that cannot be opened\n"
                          "    -q              quiet (exit 0 on match, no output)\n"
                          "    -c              print a count of matching lines instead of the lines\n"
                          "    pattern         regular expression pattern\n"
@@ -44,11 +47,13 @@ struct grep {
   struct filter_in in;
   grep_re re;
   unsigned invert : 1, show_lineno : 1, extended : 1, fixed : 1, quiet : 1, count : 1, multiple : 1, compiled : 1,
-      had_match : 1, done : 1, pending : 1, whole : 1, icase : 1;
+      had_match : 1, done : 1, pending : 1, whole : 1, icase : 1, list : 1, nomsg : 1;
   unsigned long lineno, matches;
   const char* fixed_pat; /* -F: the pattern operand, '\n'-separated strings */
+  char* joined_pat;      /* several -e patterns as one regular expression */
   char* whole_pat;       /* -x: the pattern wrapped in ^( )$ */
   const char* name;      /* -c: the operand the count in progress belongs to */
+  stralloc epat;         /* -e: the patterns, '\n'-separated */
   stralloc out;          /* prefixes + line, when a line cannot go out as it lies */
 };
 
@@ -172,6 +177,16 @@ grep_step(void* arg, const char** sp, size_t* np) {
     if(grep_select(g, line, len)) {
       g->had_match = 1;
 
+      if(g->list && !g->quiet) {
+        g->out.len = 0;
+        stralloc_cats(&g->out, filter_in_name(&g->in)[0] == '-' && !filter_in_name(&g->in)[1] ? "(standard input)" : filter_in_name(&g->in));
+        stralloc_catc(&g->out, '\n');
+        filter_in_close(&g->in); /* one name per file: on to the next */
+        *sp = g->out.s;
+        *np = g->out.len;
+        return 1;
+      }
+
       if(g->quiet) {
         g->done = 1;
         return 0;
@@ -233,6 +248,15 @@ grep_option(void* ctx, int c) {
   switch(c) {
     case 'E': g->extended = 1; return 0;
     case 'F': g->fixed = 1; return 0;
+    case 'e':
+      if(g->epat.len)
+        stralloc_catc(&g->epat, '\n');
+
+      stralloc_cats(&g->epat, shell_optarg);
+      return 0;
+
+    case 'l': g->list = 1; return 0;
+    case 's': g->nomsg = 1; return 0;
     case 'i': g->icase = 1; return 0;
     case 'v': g->invert = 1; return 0;
     case 'x': g->whole = 1; return 0;
@@ -249,16 +273,23 @@ grep_setup(void* ctx) {
   struct grep* g = ctx;
   const char* pattern;
 
-  if(!g->in.files) {
-    g->in.err_arg = "";
-    g->in.err_msg = "no pattern given";
-    return -1;
+  g->in.silent = g->nomsg; /* filter_in_init() cleared it after option() */
+
+  if(g->epat.len) {
+    stralloc_nul(&g->epat);
+    pattern = g->epat.s;
+  } else {
+    if(!g->in.files) {
+      g->in.err_arg = "";
+      g->in.err_msg = "no pattern given";
+      return -1;
+    }
+
+    pattern = *g->in.files++;
+
+    if(!*g->in.files)
+      g->in.files = NULL;
   }
-
-  pattern = *g->in.files++;
-
-  if(!*g->in.files)
-    g->in.files = NULL;
 
   g->multiple = g->in.files && g->in.files[0] && g->in.files[1];
   g->lineno = 1;
@@ -266,6 +297,29 @@ grep_setup(void* ctx) {
   if(g->fixed) {
     g->fixed_pat = pattern;
     return 0;
+  }
+
+  /* several -e patterns: "a\nb" -> "a\|b" (BRE) or "a|b" (ERE) */
+  if(str_chr(pattern, '\n')[pattern]) {
+    stralloc j;
+    size_t n;
+
+    stralloc_init(&j);
+
+    for(;;) {
+      n = str_chr(pattern, '\n');
+      stralloc_catb(&j, pattern, n);
+
+      if(!pattern[n])
+        break;
+
+      stralloc_cats(&j, g->extended ? "|" : "\\|");
+      pattern += n + 1;
+    }
+
+    stralloc_nul(&j);
+    g->joined_pat = j.s;
+    pattern = g->joined_pat;
   }
 
   /* -x: "^(pattern)$" -- "\\(" in a basic regular expression */
@@ -311,12 +365,14 @@ grep_finish(void* ctx) {
     RE_FREE(&g->re);
 
   alloc_free(g->whole_pat);
+  alloc_free(g->joined_pat);
+  stralloc_free(&g->epat);
 
   stralloc_free(&g->out);
 }
 
 const struct filter_ops grep_ops = {
-    .opts = "EFivxnqc",
+    .opts = "EFe:ilsvxnqc",
     .size = sizeof(struct grep),
     .option = grep_option,
     .setup = grep_setup,

@@ -6173,4 +6173,8 @@ assert_match "$PX" "*x: boom" "the \${x?boom} diagnostic starts the message with
 PX=$(printf 'Abc\nxyz\nABD\n' | "$SHISH_SELF" -c 'grep -i abc; printf "Abc\nABD\n" | grep -iF aB; printf "ABD\n" | grep -ix "ab[cd]"' | tr '\n' ' ')
 assert_equal "Abc Abc ABD ABD " "$PX" "grep -i matches regardless of case"
 
+# grep -l lists matching files once, -e takes patterns, -s hides open errors
+PX=$(printf 'abc\nxyz\n' | "$SHISH_SELF" -c 'grep -e abc -e xyz'; printf 'abc\n' | "$SHISH_SELF" -c 'grep -l abc'; "$SHISH_SELF" -c 'grep -s abc /nonexistent/x 2>&1; echo $?')
+assert_equal "abc xyz (standard input) 1" "$(echo $PX)" "grep -e, -l and -s behave as in POSIX"
+
 summary

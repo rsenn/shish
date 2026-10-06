@@ -36,7 +36,9 @@ filter_in_next(struct filter_in* in) {
     }
 
     /* report error if file opening fails and continue to next */
-    builtin_error(in->errargv, (char*)name);
+    if(!in->silent)
+      builtin_error(in->errargv, (char*)name);
+
     in->had_error = 1;
   }
 }

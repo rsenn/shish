@@ -77,6 +77,7 @@ struct filter_in {
   char** files; /* operand list, NULL: only "-" */
   int i;
   unsigned done_any : 1, had_error : 1, newfile : 1; /* set when an operand was just opened; the user clears it */
+  unsigned silent : 1;                               /* an operand that cannot be opened is skipped without a message */
   unsigned spilling : 1;                             /* filter_in_line() is mid-line: keep spill across operands */
   unsigned each : 1;                                 /* setup(): filter_run calls ops->each() per operand, no step() */
   buffer* sink;                                      /* filter_run(): where the result goes; NULL in a chain */
