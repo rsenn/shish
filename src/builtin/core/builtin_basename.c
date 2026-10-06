@@ -5,44 +5,25 @@
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/path.h"
+#include "../../../lib/shell.h"
 #include "../../../lib/str.h"
 
 /* ----------------------------------------------------------------------- */
 const char help_basename[] = "    Strip directory components from a path.\n"
                              "\n"
+                             "    -a              treat every operand as a path (no suffix operand)\n"
+                             "    -s suffix       strip this suffix from every path; implies -a\n"
                              "    path            print PATH's last component (after the final '/')\n"
                              "    suffix          also strip this suffix, unless it's the whole of\n"
                              "                    the resulting name (e.g. \"a.txt\" \".txt\" -> \"a\")\n";
 
-int
-builtin_basename(int argc, char* argv[]) {
-  char* base;
-  const char* suffix;
-  size_t blen, slen;
-
-  if(!argv[shell_optind]) {
-    builtin_errmsg(argv, "too few arguments", NULL);
-    return 1;
-  }
-  if(str_equal(argv[shell_optind], "--"))
-    shell_optind++;
-
-  if(!argv[shell_optind]) {
-    builtin_errmsg(argv, "too few arguments", NULL);
-    return 1;
-  }
-
-  if(argv[shell_optind + 1] && argv[shell_optind + 2]) {
-    builtin_errmsg(argv, "too many arguments", NULL);
-    return 1;
-  }
-
-  base = path_basename(argv[shell_optind]);
-  suffix = argv[shell_optind + 1];
+/* strips the directory part of one path and, unless it is the whole name, the suffix */
+static void
+basename_put(char* path, const char* suffix) {
+  char* base = path_basename(path);
 
   if(suffix && *suffix) {
-    blen = str_len(base);
-    slen = str_len(suffix);
+    size_t blen = str_len(base), slen = str_len(suffix);
 
     if(slen < blen && !str_diff(base + blen - slen, suffix))
       base[blen - slen] = '\0';
@@ -50,6 +31,39 @@ builtin_basename(int argc, char* argv[]) {
 
   buffer_puts(fd_out->w, base);
   buffer_putnlflush(fd_out->w);
+}
+
+int
+builtin_basename(int argc, char* argv[]) {
+  const char* suffix = NULL;
+  int c, multiple = 0;
+
+  while((c = shell_getopt(argc, argv, "as:")) > 0) {
+    switch(c) {
+      case 'a': multiple = 1; break;
+      case 's': multiple = 1; suffix = shell_optarg; break;
+      default: builtin_invopt(argv); return 1;
+    }
+  }
+
+  if(!argv[shell_optind]) {
+    builtin_errmsg(argv, "too few arguments", NULL);
+    return 1;
+  }
+
+  if(multiple) {
+    for(; argv[shell_optind]; shell_optind++)
+      basename_put(argv[shell_optind], suffix);
+
+    return 0;
+  }
+
+  if(argv[shell_optind + 1] && argv[shell_optind + 2]) {
+    builtin_errmsg(argv, "too many arguments", NULL);
+    return 1;
+  }
+
+  basename_put(argv[shell_optind], argv[shell_optind + 1]);
   return 0;
 }
 #endif /* BUILTIN_BASENAME */

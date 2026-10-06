@@ -6246,4 +6246,8 @@ assert_equal "XQXnXnX X " "$PX" "an empty match right after a match is not repla
 PX=$(echo aaaa | "$SHISH_SELF" -c "sed 's/a\{0,2\}/Y/'")
 assert_equal "Yaa" "$PX" "a\\{0,2\\} matches at most two characters"
 
+# basename -a and -s handle several paths
+PX=$("$SHISH_SELF" -c 'basename -a x/y z/w; basename -s .txt a.txt b.txt; basename a/b.c .c' | tr '\n' ' ')
+assert_equal "y w a b b " "$PX" "basename -a and -s print one name per operand"
+
 summary
