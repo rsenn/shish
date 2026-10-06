@@ -1,0 +1,135 @@
+diff --git a/src/builtin/core/builtin_ls.c b/src/builtin/core/builtin_ls.c
+index 0f7e350d..d8f1e3ab 100644
+--- a/src/builtin/core/builtin_ls.c
++++ b/src/builtin/core/builtin_ls.c
+@@ -40,6 +40,13 @@ struct ls_opts {
+   unsigned slash : 1;    /* -p */
+   unsigned classify : 1; /* -F */
+   unsigned inode : 1;    /* -i */
++  unsigned numeric : 1;  /* -n: numeric owner and group (implies -l) */
++  unsigned noowner : 1;  /* -g: no owner column (implies -l) */
++  unsigned nogroup : 1;  /* -o: no group column (implies -l) */
++  unsigned quote : 1;    /* -q: unprintable name bytes print as '?' */
++  unsigned blocks : 1;   /* -s: size in 1024-byte blocks */
++  unsigned use_c : 1;    /* -c: ctime instead of mtime */
++  unsigned use_u : 1;    /* -u: atime instead of mtime */
+ };
+ 
+ /* one directory entry plus what lstat() said about it */
+@@ -51,6 +58,12 @@ struct ls_ent {
+ 
+ static struct ls_opts ls_o;
+ 
++/* the time -t sorts by and -l shows: mtime, or ctime (-c) or atime (-u) */
++static time_t
++ls_time(const struct stat* st) {
++  return ls_o.use_u ? st->st_atime : ls_o.use_c ? st->st_ctime : st->st_mtime;
++}
++
+ /* name order, or -t newest first, or -S largest first; -r reverses it.
+  * Ties fall back to the name, so the order is always total.
+  * ----------------------------------------------------------------------- */
+@@ -62,7 +75,7 @@ ls_cmp(const void* a, const void* b) {
+   if(ls_o.by_size)
+     r = x->st.st_size < y->st.st_size ? 1 : x->st.st_size > y->st.st_size ? -1 : 0;
+   else if(ls_o.by_time)
+-    r = x->st.st_mtime < y->st.st_mtime ? 1 : x->st.st_mtime > y->st.st_mtime ? -1 : 0;
++    r = ls_time(&x->st) < ls_time(&y->st) ? 1 : ls_time(&x->st) > ls_time(&y->st) ? -1 : 0;
+ 
+   if(!r)
+     r = str_diff(x->name, y->name);
+@@ -236,22 +249,50 @@ ls_print(const struct ls_ent* e) {
+     buffer_putspace(fd_out->w);
+   }
+ 
++  if(ls_o.blocks) {
++    buffer_putulong(fd_out->w, (unsigned long)(((uint64)st->st_blocks + 1) / 2));
++    buffer_putspace(fd_out->w);
++  }
++
+   if(ls_o.long_fmt) {
+     ls_put_mode(fd_out->w, st->st_mode);
+     buffer_putspace(fd_out->w);
+     buffer_putulong0(fd_out->w, st->st_nlink, 3);
+     buffer_putspace(fd_out->w);
+-    ls_put_user(fd_out->w, (unsigned long)st->st_uid);
+-    buffer_putspace(fd_out->w);
+-    ls_put_group(fd_out->w, (unsigned long)st->st_gid);
+-    buffer_putspace(fd_out->w);
++
++    if(!ls_o.noowner) {
++      if(ls_o.numeric)
++        buffer_putulong(fd_out->w, (unsigned long)st->st_uid);
++      else
++        ls_put_user(fd_out->w, (unsigned long)st->st_uid);
++
++      buffer_putspace(fd_out->w);
++    }
++
++    if(!ls_o.nogroup) {
++      if(ls_o.numeric)
++        buffer_putulong(fd_out->w, (unsigned long)st->st_gid);
++      else
++        ls_put_group(fd_out->w, (unsigned long)st->st_gid);
++
++      buffer_putspace(fd_out->w);
++    }
++
+     ls_put_size(fd_out->w, (uint64)st->st_size, 6);
+     buffer_putspace(fd_out->w);
+-    ls_put_time(fd_out->w, st->st_mtime);
++    ls_put_time(fd_out->w, ls_time(st));
+     buffer_putspace(fd_out->w);
+   }
+ 
+-  buffer_puts(fd_out->w, e->name);
++  if(ls_o.quote) {
++    const char* q;
++
++    for(q = e->name; *q; q++)
++      buffer_putc(fd_out->w, (unsigned char)*q < 32 || *q == 127 ? '?' : *q);
++  } else {
++    buffer_puts(fd_out->w, e->name);
++  }
++
+   ls_put_suffix(fd_out->w, st->st_mode);
+ 
+ #ifdef S_ISLNK
+@@ -399,6 +440,13 @@ const char help_ls[] = "    List directory contents.\n"
+                        "    -F              mark directories '/', executables '*', links '@', fifos '|'\n"
+                        "    -i              print the inode number first\n"
+                        "    -l              long format: mode, links, owner, group, size, date\n"
++                       "    -n              like -l with numeric owner and group ids\n"
++                       "    -g              like -l without the owner\n"
++                       "    -o              like -l without the group\n"
++                       "    -q              print unprintable name bytes as '?'\n"
++                       "    -s              precede each entry by its size in 1024-byte blocks\n"
++                       "    -k              accepted (blocks are 1024 bytes)\n"
++                       "    -c, -u          use the change / access time for -t and -l\n"
+                        "    -p              mark directories with '/'\n"
+                        "    -R              list subdirectories recursively\n"
+                        "    -r              reverse the sort order\n"
+@@ -417,7 +465,7 @@ builtin_ls(int argc, char* argv[]) {
+ 
+   byte_zero(&ls_o, sizeof(ls_o));
+ 
+-  while((c = shell_getopt(argc, argv, "AadFfilpRrSt1")) > 0) {
++  while((c = shell_getopt(argc, argv, "AacdFfgiklnopqRrSstu1")) > 0) {
+     switch(c) {
+       case 'A': ls_o.almost = 1; break;
+       case 'a': ls_o.all = 1; break;
+@@ -426,6 +474,14 @@ builtin_ls(int argc, char* argv[]) {
+       case 'f': ls_o.unsorted = ls_o.all = 1; break;
+       case 'i': ls_o.inode = 1; break;
+       case 'l': ls_o.long_fmt = 1; break;
++      case 'n': ls_o.long_fmt = ls_o.numeric = 1; break;
++      case 'g': ls_o.long_fmt = ls_o.noowner = 1; break;
++      case 'o': ls_o.long_fmt = ls_o.nogroup = 1; break;
++      case 'q': ls_o.quote = 1; break;
++      case 's': ls_o.blocks = 1; break;
++      case 'k': break; /* blocks are 1024 bytes already */
++      case 'c': ls_o.use_c = 1; ls_o.use_u = 0; break;
++      case 'u': ls_o.use_u = 1; ls_o.use_c = 0; break;
+       case 'p': ls_o.slash = 1; break;
+       case 'R': ls_o.recurse = 1; break;
+       case 'r': ls_o.reverse = 1; break;

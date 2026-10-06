@@ -371,14 +371,14 @@
   pwd a; echo $?     # prints the directory, 0
   ```
 
-- ls-missing-options: `ls` supports `-A -a -d -F -f -i -l -p -R -r -S -t -1`.
-  POSIX also requires `-C -H -L -c -g -k -m -n -o -q -s -u -x`; each is
-  "invalid option". Column widths in `-l` are fixed (links 3, size 6) rather
-  than sized to the widest entry.
+- ls-missing-options: `ls` supports `-A -a -c -d -F -f -g -i -k -l -n -o -p -q -R -r -S -s -t -u -1`.
+  POSIX also requires `-C -H -L -m -x`; each is "invalid option". Column widths
+  in `-l` are fixed (links 3, size 6) rather than sized to the widest entry, and
+  `-s` prints no "total" line.
 
   **Repro:**
   ```sh
-  for o in -C -H -L -c -g -k -m -n -o -q -s -u -x; do
+  for o in -C -H -L -m -x; do
     ls $o . >/dev/null 2>&1 || echo "ls $o unsupported"
   done
   ```

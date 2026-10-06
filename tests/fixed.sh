@@ -6185,4 +6185,12 @@ PX="$PX$(printf 'a\n' | "$SHISH_SELF" -c "grep -f $GE; echo rc=\$?" | tr '\n' ' 
 assert_equal "a xy rc=1 " "$PX" "grep -f takes one pattern per line; an empty pattern file selects nothing"
 rm -f "$GF" "$GE"
 
+# ls -n/-g/-o shape the long format; -q masks control bytes
+LD=$(mktemp -d); : > "$LD/f"
+PX=$("$SHISH_SELF" -c "set -- \$(ls -n $LD | tail -1); echo \$3 \$4")
+assert_equal "$(id -u) $(id -g)" "$(echo $PX)" "ls -n prints numeric owner and group"
+PX=$("$SHISH_SELF" -c "set -- \$(ls -go $LD | tail -1); echo \$#")
+assert_equal "7" "$(echo $PX)" "ls -go omits both owner and group"
+rm -rf "$LD"
+
 summary
