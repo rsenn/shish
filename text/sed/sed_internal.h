@@ -8,11 +8,13 @@
 #include "../sed.h"
 #include "../../lib/stralloc.h"
 
-enum sed_addr_type { SA_NONE = 0, SA_LINE, SA_LAST, SA_REGEX };
+#define SED_ICASE 0x1000 /* internal: the /re/I flag of an address */
+
+enum sed_addr_type { SA_NONE = 0, SA_LINE, SA_LAST, SA_REGEX, SA_STEP, SA_MULT };
 
 struct sed_addr {
   int type;
-  unsigned long line; /* SA_LINE */
+  unsigned long line, step; /* SA_LINE; SA_STEP first~step (line, step); SA_MULT addr,~N (step = N) */
   struct dfa re;       /* SA_REGEX */
   int re_set;          /* 0 for an empty //: reuse the last RE used at run time */
 };

@@ -30,7 +30,32 @@ sed_addr_parse(const char** pp, const char* end, struct sed_addr* a, unsigned fl
     a->type = SA_LINE;
     a->line = v;
     p += used;
+
+    if(p < end && *p == '~') { /* first~step */
+      used = scan_ulong(p + 1, &v);
+
+      if(!used)
+        return SED_EADDR;
+
+      a->type = SA_STEP;
+      a->step = v;
+      p += 1 + used;
+    }
+
     *pp = p;
+    return SED_OK;
+  }
+
+  if(*p == '~') { /* addr1,~N */
+    unsigned long v;
+    size_t used = scan_ulong(p + 1, &v);
+
+    if(!used)
+      return SED_EADDR;
+
+    a->type = SA_MULT;
+    a->step = v;
+    *pp = p + 1 + used;
     return SED_OK;
   }
 
@@ -88,11 +113,16 @@ sed_addr_parse(const char** pp, const char* end, struct sed_addr* a, unsigned fl
 
   p++;
 
+  while(p < end && *p == 'I') { /* /re/I */
+    flags |= SED_ICASE;
+    p++;
+  }
+
   if(pat.len == 0) {
     a->type = SA_REGEX;
     a->re_set = 0;
   } else {
-    unsigned dfaflags = (flags & SED_ERE) ? DFA_ERE : 0;
+    unsigned dfaflags = ((flags & SED_ERE) ? DFA_ERE : 0) | ((flags & SED_ICASE) ? DFA_ICASE : 0);
     int cc = dfa_compile(&a->re, pat.s, pat.len, dfaflags);
 
     if(cc != DFA_OK) {
@@ -123,6 +153,12 @@ sed_addr_match(struct sed_addr* a, struct sed_state* st) {
     case SA_LINE: return st->lineno == a->line;
     case SA_LAST: return st->cur_is_last;
 
+    case SA_STEP:
+      if(!a->step)
+        return st->lineno == a->line;
+
+      return st->lineno >= a->line && (st->lineno - a->line) % a->step == 0;
+
     case SA_REGEX: {
       struct dfa* re = a->re_set ? &a->re : st->last_re;
       int m;
@@ -149,6 +185,10 @@ int
 sed_range_match(struct sed_cmd* c, struct sed_state* st) {
   int result;
 
+  /* 0,/re/: the range is already open on line 1, so /re/ may close it there */
+  if(c->naddr == 2 && !c->in_range && c->a1.type == SA_LINE && c->a1.line == 0 && c->a2.type == SA_REGEX && st->lineno == 1)
+    c->in_range = 1;
+
   if(c->naddr == 0) {
     result = 1;
   } else if(c->naddr == 1) {
@@ -165,6 +205,11 @@ sed_range_match(struct sed_cmd* c, struct sed_state* st) {
       } else if(c->a2.type == SA_LAST) {
         if(st->cur_is_last)
           c->in_range = 0;
+      } else if(c->a2.type == SA_MULT) {
+        if(!c->a2.step)
+          c->in_range = 0;
+        else
+          c->a2.line = st->lineno - st->lineno % c->a2.step + c->a2.step; /* the next multiple */
       }
     }
   } else {
@@ -178,6 +223,8 @@ sed_range_match(struct sed_cmd* c, struct sed_state* st) {
       close = st->cur_is_last;
     else if(c->a2.type == SA_REGEX)
       close = sed_addr_match(&c->a2, st);
+    else if(c->a2.type == SA_MULT)
+      close = st->lineno >= c->a2.line;
 
     if(close)
       c->in_range = 0;
