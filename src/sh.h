@@ -156,6 +156,9 @@ void sh_init(void);
 void sh_loop(void);
 int sh_main(int argc, char** argv, char** envp);
 void sh_msg(const char* s);
+/* where the simple command being run began; diagnostics name this line, not the parser's position */
+extern struct location sh_errloc;
+extern int sh_errloc_set;
 void sh_msgn(const char* s, size_t n);
 int sh_pop(struct env* env);
 void sh_popargs(struct arg* arg);

@@ -19,7 +19,14 @@ eval_node(struct eval* e, union node* node) {
 
   switch(node->id) {
     case N_SIMPLECMD: {
+      struct location saved = sh_errloc;
+      int was_set = sh_errloc_set;
+
+      sh_errloc = e->pos;
+      sh_errloc_set = 1;
       ret = eval_simple_command(e, &node->ncmd);
+      sh_errloc = saved;
+      sh_errloc_set = was_set;
       break;
     }
 

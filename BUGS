@@ -196,16 +196,6 @@
   sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix grouping-p.tst
   ```
 
-- error-message-line-number-off-by-one: diagnostics report the line
-  the parser has advanced to, not the line of the command that
-  failed. `$LINENO` itself is correct, so this is the message only.
-
-  **Repro:**
-  ```sh
-  printf 'echo one\necho ${x?boom}\n' > e.sh && shish e.sh
-  # shish: e.sh:3:1: x: boom      (bash: e.sh: line 2: x: boom)
-  ```
-
 - fixed-sh-assumes-optional-builtins: `tests/fixed.sh` gives different results on
   a default build than with `-DENABLE_ALL_BUILTINS=ON`, because some cases need
   an optional builtin or an external tool: on a default build the two `set +h`

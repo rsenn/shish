@@ -57,6 +57,7 @@ sh_loop(void) {
 
   while(!(parse_gettok(&p, P_DEFAULT) & T_EOF)) {
     p.pushback++;
+    sh_errloc_set = 0; /* parse errors report the parser's position */
     parse_lineno = source->position.line;
 
     var_setvint("LINENO", parse_lineno, V_DEFAULT);

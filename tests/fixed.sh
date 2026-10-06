@@ -6199,4 +6199,11 @@ PX=$("$SHISH_SELF" -c "ls -m $LD/a $LD/b; ls -lL $LD | tail -3 | cut -c1; ls -s 
 assert_equal "$LD/a, $LD/b - - d total" "$(echo $PX)" "ls -m streams, -L follows symlinks, -s prints a total line"
 rm -rf "$LD"
 
+# a runtime diagnostic names the line of its own command, not the one the parser read ahead to
+EL=$(mktemp)
+printf 'echo one\n: ${x?boom}\necho three\n' > "$EL"
+PX=$("$SHISH_SELF" "$EL" 2>&1)
+rm -f "$EL"
+assert_match "$PX" "*:2:1: x: boom*" "an expansion error reports the line of its own command"
+
 summary

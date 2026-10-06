@@ -264,12 +264,11 @@ remove the closed `BUGS` entry, add `fixes/NN` + a case in `tests/fixed.sh`.
 
 `sigint6`/`sigquit6` pass 180/180: `trap - SIG` in an interactive async shell now restores the default action.
 
-### Phase 2 [Stage 1: language] - diagnostics
+### Phase 2 [Stage 1: language] - diagnostics (done)
 
-shish prints `file:LINE:COL: msg` where the line number is one too high (the parser has already
-advanced) and omits the offending name. `echo ${x?boom}` on line 2 reports `:3:1: boom`; bash
-reports `line 2: x: boom`. `$LINENO` itself is correct. Fix with, and verify against,
-`lineno-p.tst` (3/3) and `BUGS: error-message-line-number-off-by-one`.
+A runtime diagnostic names the line of its own simple command (`sh_errloc`, set in `eval_node()`), and
+`${x?word}` names the parameter. Parse errors still report the parser's position (e.g. an unclosed `if`
+at end of file reports the line after the last).
 
 ---
 
@@ -485,7 +484,6 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
 **Explains a scoreboard number (fix these as part of Stages 1-2):**
 
 - `signal-tests-vary-with-machine-load` -> Phase 1 (`sig*-p`).
-- `error-message-line-number-off-by-one` -> Phase 2 (`lineno-p`).
 - `alias-substitution-remaining-cases`, `set-notify-no-effect`, `set-verbose-partial`,
   `set-o-ignoreeof-nolog-vi-has-no-effect`, `set-histexpand-unimplemented` -> Phase 3.
 - `quote-backslash-escaping-broken` -> Phase 4.

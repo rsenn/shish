@@ -4,6 +4,9 @@
 #include "../sh.h"
 #include "../source.h"
 
+struct location sh_errloc;
+int sh_errloc_set;
+
 /* output message prefix ("argv[0]: ")
  * ----------------------------------------------------------------------- */
 void
@@ -14,7 +17,7 @@ sh_msgn(const char* s, size_t n) {
       buffer_puts(fd_err->w, sh_name);
       buffer_puts(fd_err->w, ": ");
     } else {
-      source_msg(&source->position);
+      source_msg(sh_errloc_set ? &sh_errloc : &source->position);
     }
   }
 

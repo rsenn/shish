@@ -1,0 +1,68 @@
+diff --git a/src/eval/eval_node.c b/src/eval/eval_node.c
+index 8b6af4b2..71dfb724 100644
+--- a/src/eval/eval_node.c
++++ b/src/eval/eval_node.c
+@@ -19,7 +19,14 @@ eval_node(struct eval* e, union node* node) {
+ 
+   switch(node->id) {
+     case N_SIMPLECMD: {
++      struct location saved = sh_errloc;
++      int was_set = sh_errloc_set;
++
++      sh_errloc = e->pos;
++      sh_errloc_set = 1;
+       ret = eval_simple_command(e, &node->ncmd);
++      sh_errloc = saved;
++      sh_errloc_set = was_set;
+       break;
+     }
+ 
+diff --git a/src/sh.h b/src/sh.h
+index 3fd74ea1..be3727a0 100644
+--- a/src/sh.h
++++ b/src/sh.h
+@@ -156,6 +156,9 @@ void sh_init(void);
+ void sh_loop(void);
+ int sh_main(int argc, char** argv, char** envp);
+ void sh_msg(const char* s);
++/* where the simple command being run began; diagnostics name this line, not the parser's position */
++extern struct location sh_errloc;
++extern int sh_errloc_set;
+ void sh_msgn(const char* s, size_t n);
+ int sh_pop(struct env* env);
+ void sh_popargs(struct arg* arg);
+diff --git a/src/sh/sh_loop.c b/src/sh/sh_loop.c
+index 13009cc5..8a54fe82 100644
+--- a/src/sh/sh_loop.c
++++ b/src/sh/sh_loop.c
+@@ -57,6 +57,7 @@ sh_loop(void) {
+ 
+   while(!(parse_gettok(&p, P_DEFAULT) & T_EOF)) {
+     p.pushback++;
++    sh_errloc_set = 0; /* parse errors report the parser's position */
+     parse_lineno = source->position.line;
+ 
+     var_setvint("LINENO", parse_lineno, V_DEFAULT);
+diff --git a/src/sh/sh_msg.c b/src/sh/sh_msg.c
+index ecdf6e42..dac6f5d9 100644
+--- a/src/sh/sh_msg.c
++++ b/src/sh/sh_msg.c
+@@ -4,6 +4,9 @@
+ #include "../sh.h"
+ #include "../source.h"
+ 
++struct location sh_errloc;
++int sh_errloc_set;
++
+ /* output message prefix ("argv[0]: ")
+  * ----------------------------------------------------------------------- */
+ void
+@@ -14,7 +17,7 @@ sh_msgn(const char* s, size_t n) {
+       buffer_puts(fd_err->w, sh_name);
+       buffer_puts(fd_err->w, ": ");
+     } else {
+-      source_msg(&source->position);
++      source_msg(sh_errloc_set ? &sh_errloc : &source->position);
+     }
+   }
+ 
