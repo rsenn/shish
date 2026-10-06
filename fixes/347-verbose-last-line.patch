@@ -1,0 +1,52 @@
+diff --git a/src/sh/sh_loop.c b/src/sh/sh_loop.c
+index 8a54fe82..3c9583f4 100644
+--- a/src/sh/sh_loop.c
++++ b/src/sh/sh_loop.c
+@@ -66,6 +66,13 @@ sh_loop(void) {
+     list = parse_list(&p);
+     stralloc_zero(&cmd);
+ 
++    {
++      char peek;
++
++      if(sh->opts.verbose && !is_interactive && source_peek(&peek) <= 0)
++        source_verbose_flush();
++    }
++
+     if(list) {
+       int status;
+       struct eval e;
+diff --git a/src/source.h b/src/source.h
+index 9a7687b9..ff3f7533 100644
+--- a/src/source.h
++++ b/src/source.h
+@@ -87,6 +87,7 @@ int source_peekn(char* c, unsigned int n);
+ void source_flush(void);
+ void source_msg(const struct location* pos);
+ int source_skip(void);
++void source_verbose_flush(void);
+ int source_skipn(int n);
+ int source_fork(buffer* child_source);
+ void source_exec(void);
+diff --git a/src/source/source_skip.c b/src/source/source_skip.c
+index c561c0be..4ac5d7c3 100644
+--- a/src/source/source_skip.c
++++ b/src/source/source_skip.c
+@@ -20,6 +20,17 @@ source_verbose(char c) {
+   }
+ }
+ 
++/* the last line has no newline: echo it now, with one */
++void
++source_verbose_flush(void) {
++  if(source_verbose_line.len && sh->opts.verbose && !source->parent) {
++    stralloc_catc(&source_verbose_line, '\n');
++    buffer_put(fd_err->w, source_verbose_line.s, source_verbose_line.len);
++    buffer_flush(fd_err->w);
++    source_verbose_line.len = 0;
++  }
++}
++
+ int source_squoted = 0;
+ int source_comment = 0;
+ int source_bs = 0;

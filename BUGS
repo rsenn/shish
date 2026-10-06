@@ -57,13 +57,12 @@
   ```
 
 - set-verbose-partial: `set -v` echoes each line the top-level script, stdin or `-c`
-  string supplies to stderr, but not a final line without a newline (`shish -v -c
-  'echo a'` prints no echo), not text read by `.`/`eval`, and a `\`-continued line
-  is echoed joined.
+  string supplies to stderr, but not text read by `.`/`eval`, and a `\`-continued
+  line is echoed joined.
 
   **Repro:**
   ```sh
-  shish -v -c 'echo a'      # no "echo a" on stderr; bash echoes it
+  printf 'echo a \\\n b\n' | shish -v   # echoed joined; bash echoes both lines as read
   ```
 
 - set-histexpand-unimplemented: `struct shopt`'s `histexpand` bit

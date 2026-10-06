@@ -66,6 +66,13 @@ sh_loop(void) {
     list = parse_list(&p);
     stralloc_zero(&cmd);
 
+    {
+      char peek;
+
+      if(sh->opts.verbose && !is_interactive && source_peek(&peek) <= 0)
+        source_verbose_flush();
+    }
+
     if(list) {
       int status;
       struct eval e;

@@ -20,6 +20,17 @@ source_verbose(char c) {
   }
 }
 
+/* the last line has no newline: echo it now, with one */
+void
+source_verbose_flush(void) {
+  if(source_verbose_line.len && sh->opts.verbose && !source->parent) {
+    stralloc_catc(&source_verbose_line, '\n');
+    buffer_put(fd_err->w, source_verbose_line.s, source_verbose_line.len);
+    buffer_flush(fd_err->w);
+    source_verbose_line.len = 0;
+  }
+}
+
 int source_squoted = 0;
 int source_comment = 0;
 int source_bs = 0;

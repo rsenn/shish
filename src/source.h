@@ -87,6 +87,7 @@ int source_peekn(char* c, unsigned int n);
 void source_flush(void);
 void source_msg(const struct location* pos);
 int source_skip(void);
+void source_verbose_flush(void);
 int source_skipn(int n);
 int source_fork(buffer* child_source);
 void source_exec(void);
