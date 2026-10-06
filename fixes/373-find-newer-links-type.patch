@@ -1,0 +1,56 @@
+diff --git a/src/builtin/extra/builtin_find.c b/src/builtin/extra/builtin_find.c
+index 298fc581..50319a8c 100644
+--- a/src/builtin/extra/builtin_find.c
++++ b/src/builtin/extra/builtin_find.c
+@@ -60,9 +60,51 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
+       return S_ISDIR(st->st_mode);
+     if(str_equal(val, "l"))
+       return S_ISLNK(st->st_mode);
++    if(str_equal(val, "b"))
++      return S_ISBLK(st->st_mode);
++    if(str_equal(val, "c"))
++      return S_ISCHR(st->st_mode);
++    if(str_equal(val, "p"))
++      return S_ISFIFO(st->st_mode);
++    if(str_equal(val, "s"))
++      return S_ISSOCK(st->st_mode);
+     return 0;
+   }
+ 
++  /* -newer file: modified more recently than file (whole seconds) */
++  if(str_equal(arg, "-newer")) {
++    struct stat ref;
++
++    (*i)++;
++    if(*i >= end)
++      return 0;
++    if(stat(argv[(*i)++], &ref) == -1) {
++      builtin_error(argv, argv[*i - 1]);
++      find_bad = 1;
++      *i = end;
++      return 0;
++    }
++    return st->st_mtime > ref.st_mtime;
++  }
++
++  /* -links n: link count is n, more than n (+n) or less than n (-n) */
++  if(str_equal(arg, "-links")) {
++    char* s;
++    unsigned long n;
++
++    (*i)++;
++    if(*i >= end)
++      return 0;
++    s = argv[(*i)++];
++    if(scan_ulong(s + (*s == '+' || *s == '-'), &n) == 0 || s[str_len(s) - 1] < '0' || s[str_len(s) - 1] > '9') {
++      builtin_errmsg(argv, "bad number", s);
++      find_bad = 1;
++      *i = end;
++      return 0;
++    }
++    return *s == '+' ? (unsigned long)st->st_nlink > n : *s == '-' ? (unsigned long)st->st_nlink < n : (unsigned long)st->st_nlink == n;
++  }
++
+   if(str_equal(arg, "-name") || str_equal(arg, "-iname")) {
+     int ignore_case = str_equal(arg, "-iname");
+     (*i)++;

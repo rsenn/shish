@@ -6336,4 +6336,19 @@ assert_equal "-1 after " "$PX" "awk getline < missing-file yields -1 and the pro
 PX=$("$SHISH_SELF" -c 'awk "BEGIN{x=2**3; x**=2; a[1];a[2];a[3]; delete a[2]; print x, length(a)}"')
 assert_equal "64 2" "$PX" "awk supports ** and **=, and length(arr) drops deleted elements"
 
+# find: -newer, -links n|+n|-n and -type b|c|p|s
+FD=$(mktemp -d)
+(cd "$FD" && touch -d 2020-01-01 old && touch -d 2021-01-01 ref && touch -d 2022-01-01 new && ln new hl)
+PX=$(FD=$FD "$SHISH_SELF" -c 'cd "$FD"; find . -type f -newer ref | sort | tr "\n" " "; find . -type f -links 2 | sort | tr "\n" " "; find . -type f -links -2 | sort | tr "\n" " "; find . -links x 2>&1 >/dev/null | grep -c "bad number"')
+rm -rf "$FD"
+assert_equal "./hl ./new ./hl ./new ./old ./ref 1" "$PX" "find -newer compares modification times, -links takes n, +n and -n"
+PX=$("$SHISH_SELF" -c 'find /dev/null -type c; find /dev/null -type b | wc -l')
+assert_equal "/dev/null 0" "$(echo $PX)" "find -type c matches a character device and -type b does not"
+
+# a backgrounded compound command whose fork fails reports failure (skipped as root: no process limit)
+if [ "$(id -u)" != 0 ]; then
+  PX=$("$SHISH_SELF" -c 'ulimit -u 1; { echo ran; } & echo "status=$?"' 2>/dev/null)
+  assert_equal "status=1" "$PX" "{ cmd; } & returns 1 when the background fork fails and does not report success"
+fi
+
 summary

@@ -8,16 +8,16 @@ sleep 0
 assert_equal "0" "$?" "sleep 0 succeeds"
 
 ## sleep actually suspends execution for roughly the requested time
-START=$(date +%s)
+START=$(/bin/date +%s)
 sleep 1
-END=$(date +%s)
+END=$(/bin/date +%s)
 ELAPSED=$((END - START))
 assert_greater "$ELAPSED" "0" "sleep 1 lets at least a second pass"
 
 ## a fractional value is accepted and actually waits that long
-START=$(date +%s%N)
+START=$(/bin/date +%s%N)
 sleep 0.2
-END=$(date +%s%N)
+END=$(/bin/date +%s%N)
 ELAPSED_MS=$(( (END - START) / 1000000 ))
 assert_greater "$ELAPSED_MS" "100" "sleep 0.2 waits at least 100ms"
 
@@ -25,9 +25,9 @@ assert_greater "$ELAPSED_MS" "100" "sleep 0.2 waits at least 100ms"
 sleep 0.2s
 assert_equal "0" "$?" "sleep accepts an explicit 's' suffix"
 
-START=$(date +%s%N)
+START=$(/bin/date +%s%N)
 sleep 0.01m
-END=$(date +%s%N)
+END=$(/bin/date +%s%N)
 ELAPSED_MS=$(( (END - START) / 1000000 ))
 assert_greater "$ELAPSED_MS" "500" "sleep 0.01m (0.6s) waits at least 500ms"
 

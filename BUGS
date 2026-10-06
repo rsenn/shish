@@ -195,11 +195,11 @@
   sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix grouping-p.tst
   ```
 
-- find-missing-primaries: `find` knows `-type f|d|l`, `-name`, `-iname`, `-path`, `-print`,
-  `-maxdepth`, `-mindepth`, `-true`, `-false`, `!`, `-a`, `-o` and parentheses; POSIX also has `-exec`
-  (`;` and `+`), `-size`, `-mtime`/`-atime`/`-ctime`, `-newer`, `-perm`, `-user`, `-group`, `-nouser`,
-  `-nogroup`, `-prune`, `-links`, `-inum`, `-depth`, `-xdev`, `-ok` and `-type b|c|p|s`. An unknown
-  primary is now an error ("unknown predicate").
+- find-missing-primaries: `find` knows `-type f|d|l|b|c|p|s`, `-name`, `-iname`, `-path`, `-print`, `-newer`,
+  `-links`, `-maxdepth`, `-mindepth`, `-true`, `-false`, `!`, `-a`, `-o` and parentheses; POSIX also has `-exec`
+  (`;` and `+`), `-size`, `-mtime`/`-atime`/`-ctime`, `-perm`, `-user`, `-group`, `-nouser`, `-nogroup`,
+  `-prune`, `-depth`, `-xdev` and `-ok`. An unknown primary is an error ("unknown predicate"). `-newer`
+  compares whole seconds only.
 
   **Repro:**
   ```sh
@@ -265,36 +265,6 @@
   ```sh
   cmake -DCMAKE_TOOLCHAIN_FILE=/opt/cmake-toolchains/mingw64.cmake \
         -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc -B build/mingw64-real
-  ```
-
-- eval-node-bgnd-silent-on-fork-failure: `eval_node_bgnd()`
-  (`src/eval/eval_node_bgnd.c:29-34`) has a fork-failure
-  mishandling: `pid = job_fork(job, 0, 1); if(!pid) { ret =
-  eval_node(e, node); exit(ret); }`. On a platform with no working
-  `fork()`, `job_fork()` returns `-1` (truthy), so `!pid` is false and
-  the child branch -- the only place that actually runs `node` -- is
-  skipped entirely. Execution falls through to the `return 0;` at the
-  end of the function: a backgrounded compound command or pipeline
-  (`{ cmds; } &`, `cmd1 | cmd2 &`) silently does *nothing* and reports
-  success, worse than the sibling bug (which at least ran a corrupted
-  wait). This is why `eval_pipeline_sequential()`'s own "background
-  pipelines are not supported without a working fork()" guard
-  (`src/eval/eval_pipeline.c`) is unreachable for the common top-level
-  `cmd1 | cmd2 &` case: `eval_node_bgnd()` intercepts before
-  `eval_pipeline()` is ever called, and its `job_fork()` failure never
-  falls through to the child branch that would reach it. Not
-  reproduced end-to-end (no forkless build with a `bgnd` pipeline test
-  harness yet); confirmed by direct reading of `job_fork()` and
-  `eval_node_bgnd()`, and by observing (on a native build with a
-  compiler name forced to match the Emscripten `HAVE_FORK=FALSE`
-  detection, so `job_fork()` still really forks) that
-  `eval_pipeline_sequential()`'s bgnd guard *does* correctly fire when
-  reached directly, i.e. the guard itself is fine -- only the path to
-  it is blocked.
-
-  **Repro (by inspection):**
-  ```sh
-  sed -n '19,45p' src/eval/eval_node_bgnd.c
   ```
 
 - wait-interrupted-by-trap-hangs: the `wait` builtin does not get
@@ -446,19 +416,6 @@
   **Repro:**
   ```sh
   ./build/x86_64-linux-gnu/shish tests/fixed.sh 2>&1 | grep FAIL
-  ```
-
-- builtin-sleep-touch-tests-need-gnu-date: `tests/builtin-sleep.sh` (2 checks) and
-  `tests/builtin-touch.sh` (5 checks) fail whenever the `date` builtin is
-  enabled: they time and compare with `date +%s%N` and `date -d '2023-01-02
-  15:30:45'`, and the builtin supports neither `%N` (prints it literally) nor
-  `-d`. The tests pass against GNU `date`. Either the builtin gains `-d` and
-  `%N` or the tests call `command date` / use `/bin/date`.
-
-  **Repro:**
-  ```sh
-  build/x86_64-linux-gnu/shish -c 'date +%s%N; date -d "2023-01-02 15:30:45" +%s'
-  # "1791002191%N" and "date: -d: invalid option"; GNU date prints the numbers
   ```
 
 - glob-of-expansion-results-conservative: pathname expansion of an unquoted `$x`/`$(cmd)` is

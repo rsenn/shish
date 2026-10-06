@@ -30,7 +30,12 @@ eval_node_bgnd(struct eval* e, union node* node) {
   pid = job_fork(job, 0, 1);
   TRACE(TRACE_EVAL, "background", trace_kind("kind", node->id), trace_int("pid", pid));
 
-  if(!pid) {
+  if(pid == -1) {
+    job_free(job);
+    return 1;
+  }
+
+  if(pid == 0) {
     /* this child is the background job: run the node as a foreground command
        inside it, or a pipeline just forks its members and exits, orphaning
        them ("wait" returns at once, their status is lost) */

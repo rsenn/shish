@@ -206,7 +206,7 @@ the named files, update the table above, remove the closed `BUGS` entry, add `fi
 **Real bugs, but not counted in the `tests/posix` scoreboard** (fix opportunistically):
 `eval-lineno-imprecise-inside-function`,
 `no-tree-print-option-is-a-noop`,
-`cfg-cmake-mingw-silently-builds-native`, `eval-node-bgnd-silent-on-fork-failure`,
+`cfg-cmake-mingw-silently-builds-native`,
 `builtin-cp-sh-hangs`, `quoted-at-then-empty-quotes-drops-field`.
 
 **Memory safety, not conformance** - under "Memory safety" below:
