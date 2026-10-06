@@ -1093,8 +1093,22 @@ prefix and `$((x))` all use it; `eval_simple_command` has no node chain, no `all
   | maxrss | 6048 KiB | 6044 KiB |
   | `size` text / data | 376720 / 13704 | 374381 / 13800 |
 
-  Cache and fragmentation: not measured separately; maxrss is flat either way. A before/after with a few hundred
-  live variables and `mallinfo2().fordblks` is still open.
+  Fragmentation (`tests/wordlist/frag.sh` + `mallinfo.c`: 400 live variables of mixed size, 200000 iterations of
+  expansions, assignments, `set --`, `for`, `case`, `$(...)` and a variable rewritten every 20th iteration; glibc
+  `mallinfo2()` at exit; deterministic, identical on repeat runs):
+
+  | at exit | before (`f20235ab`) | after |
+  | --- | --- | --- |
+  | heap size | 270336 | 270336 |
+  | in use | 220000 | 225392 |
+  | free in heap | 50336 (18.6%) | 44944 (16.6%) |
+  | free chunks (not fastbin) | 48 | 7 |
+  | fastbin chunks | 284 | 251 |
+  | wall time | 2.84 s | 2.42 s |
+  | maxrss | 6428 KiB | 6444 KiB |
+
+  So the heap does not get smaller (glibc's initial heap dominates at this size), but it is far less shredded: 7
+  free blocks instead of 48. The cache claim is still not measured directly (`perf` is not installed here).
 - **Step 4 done (2026-10-07):** `expand_cat.c`, `expand_glob.c`, `X_CATCLOSED` and `narg.stra` are gone (parse-time
   `N_ARG` 48 to 24 bytes, one malloc and one free less per parsed word; `tree_copy`, `tree_free`, `debug_node` lost
   their `stra` lines); the `NO_GLOB` `lib/glob.c` lines moved to `src/wordlist/Makefile.in`. `tests/wordlist/diff.c`
