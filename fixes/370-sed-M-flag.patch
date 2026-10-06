@@ -1,0 +1,156 @@
+diff --git a/text/dfa.h b/text/dfa.h
+index 45d598b3..20464fa8 100644
+--- a/text/dfa.h
++++ b/text/dfa.h
+@@ -43,6 +43,7 @@ struct dfa_span {
+ #define DFA_ERE 0x01    /* extended RE; default is basic (BRE) */
+ #define DFA_ICASE 0x02  /* ASCII case-insensitive */
+ #define DFA_ESC 0x08    /* sed: \\t \\f \\v \\a \\r \\xHH \\dNNN \\oNNN mean one byte */
++#define DFA_MULTI 0x10  /* sed M: ^ and $ also match next to an embedded newline */
+ #define DFA_NOTBOL 0x04 /* s[0] is not the start of a line: ^ never matches there */
+ 
+ /* dfa_error() codes; dfa_compile() returns one of these (0 = success) */
+diff --git a/text/dfa/dfa_bt.c b/text/dfa/dfa_bt.c
+index bb20d790..247a80a4 100644
+--- a/text/dfa/dfa_bt.c
++++ b/text/dfa/dfa_bt.c
+@@ -124,14 +124,14 @@ bt_match(const struct dfa* d,
+         break;
+ 
+       case DFA_BOL:
+-        if(pos == 0 && !notbol)
++        if((pos == 0 && !notbol) || (dfa_multi && pos > 0 && dfa_subj[pos - 1] == '\n'))
+           pc++;
+         else
+           backtrack = 1;
+         break;
+ 
+       case DFA_EOL:
+-        if(pos == n)
++        if(pos == n || (dfa_multi && dfa_subj[pos] == '\n'))
+           pc++;
+         else
+           backtrack = 1;
+@@ -208,6 +208,7 @@ dfa_bt_run(const struct dfa* d,
+   long* save = NULL;
+ 
+   dfa_subj = s;
++  dfa_multi = (d->flags & DFA_MULTI) != 0;
+ 
+   if(d->ngroup)
+     save = alloc(2 * d->ngroup * sizeof(long));
+diff --git a/text/dfa/dfa_prog.h b/text/dfa/dfa_prog.h
+index d928ea49..a8eab4cb 100644
+--- a/text/dfa/dfa_prog.h
++++ b/text/dfa/dfa_prog.h
+@@ -28,6 +28,7 @@ enum dfa_op {
+ 
+ /* the subject being matched, for DFA_WORD (set by dfa_run and dfa_bt_run) */
+ extern const char* dfa_subj;
++extern int dfa_multi; /* DFA_MULTI of the program being run */
+ int dfa_wordok(int kind, size_t pos, size_t n);
+ 
+ struct dfa_inst {
+diff --git a/text/dfa/dfa_run.c b/text/dfa/dfa_run.c
+index 52200ede..4f2c1c62 100644
+--- a/text/dfa/dfa_run.c
++++ b/text/dfa/dfa_run.c
+@@ -3,6 +3,7 @@
+ #include "../../lib/arena.h"
+ 
+ const char* dfa_subj;
++int dfa_multi;
+ 
+ static int
+ isw(int c) {
+@@ -77,12 +78,12 @@ addthread(arena* a,
+       return;
+ 
+     case DFA_BOL:
+-      if(pos == 0 && !notbol)
++      if((pos == 0 && !notbol) || (dfa_multi && pos > 0 && dfa_subj[pos - 1] == '\n'))
+         addthread(a, l, mark, gen, prog, ngroup, pc + 1, save, pos, notbol, n);
+       return;
+ 
+     case DFA_EOL:
+-      if(pos == n)
++      if(pos == n || (dfa_multi && dfa_subj[pos] == '\n'))
+         addthread(a, l, mark, gen, prog, ngroup, pc + 1, save, pos, notbol, n);
+       return;
+ 
+@@ -126,6 +127,7 @@ dfa_run(const struct dfa* d,
+   int ok = 0;
+ 
+   dfa_subj = s;
++  dfa_multi = (d->flags & DFA_MULTI) != 0;
+ 
+   if(proglen == 0)
+     return 0;
+diff --git a/text/sed/sed_addr.c b/text/sed/sed_addr.c
+index 5b50f7ad..5e69ac46 100644
+--- a/text/sed/sed_addr.c
++++ b/text/sed/sed_addr.c
+@@ -113,8 +113,8 @@ sed_addr_parse(const char** pp, const char* end, struct sed_addr* a, unsigned fl
+ 
+   p++;
+ 
+-  while(p < end && *p == 'I') { /* /re/I */
+-    flags |= SED_ICASE;
++  while(p < end && (*p == 'I' || *p == 'M')) { /* /re/I, /re/M */
++    flags |= *p == 'I' ? SED_ICASE : SED_MULTI;
+     p++;
+   }
+ 
+@@ -122,7 +122,7 @@ sed_addr_parse(const char** pp, const char* end, struct sed_addr* a, unsigned fl
+     a->type = SA_REGEX;
+     a->re_set = 0;
+   } else {
+-    unsigned dfaflags = DFA_ESC | ((flags & SED_ERE) ? DFA_ERE : 0) | ((flags & SED_ICASE) ? DFA_ICASE : 0);
++    unsigned dfaflags = DFA_ESC | ((flags & SED_ERE) ? DFA_ERE : 0) | ((flags & SED_ICASE) ? DFA_ICASE : 0) | ((flags & SED_MULTI) ? DFA_MULTI : 0);
+     int cc = dfa_compile(&a->re, pat.s, pat.len, dfaflags);
+ 
+     if(cc != DFA_OK) {
+diff --git a/text/sed/sed_internal.h b/text/sed/sed_internal.h
+index d394fa95..b4fa0a87 100644
+--- a/text/sed/sed_internal.h
++++ b/text/sed/sed_internal.h
+@@ -8,6 +8,7 @@
+ #include "../sed.h"
+ #include "../../lib/stralloc.h"
+ 
++#define SED_MULTI 0x2000 /* internal: the /re/M flag of an address */
+ #define SED_ICASE 0x1000 /* internal: the /re/I flag of an address */
+ 
+ enum sed_addr_type { SA_NONE = 0, SA_LINE, SA_LAST, SA_REGEX, SA_STEP, SA_MULT };
+@@ -29,6 +30,7 @@ struct sed_subst {
+   unsigned global : 1;
+   unsigned print : 1;
+   unsigned icase : 1;
++  unsigned multi : 1; /* M flag */
+   unsigned nth; /* 0 means "1" (POSIX default: first match) */
+   int wfile;    /* index from sed_wfile_*(), or -1 */
+ };
+diff --git a/text/sed/sed_subst.c b/text/sed/sed_subst.c
+index 56b0093b..9f0114c3 100644
+--- a/text/sed/sed_subst.c
++++ b/text/sed/sed_subst.c
+@@ -117,6 +117,9 @@ sed_subst_parse(
+     } else if(p < end && (*p == 'i' || *p == 'I')) {
+       s->icase = 1;
+       p++;
++    } else if(p < end && (*p == 'm' || *p == 'M')) {
++      s->multi = 1;
++      p++;
+     } else if(p < end && *p == 'w') {
+       const char* name;
+       int idx;
+@@ -155,6 +158,9 @@ sed_subst_parse(
+   if(s->icase)
+     dfaflags |= DFA_ICASE;
+ 
++  if(s->multi)
++    dfaflags |= DFA_MULTI;
++
+   if(pat.len == 0) {
+     s->re_set = 0;
+   } else if(dfa_compile(&s->re, pat.s, pat.len, dfaflags) != DFA_OK) {

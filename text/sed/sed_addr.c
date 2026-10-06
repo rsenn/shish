@@ -113,8 +113,8 @@ sed_addr_parse(const char** pp, const char* end, struct sed_addr* a, unsigned fl
 
   p++;
 
-  while(p < end && *p == 'I') { /* /re/I */
-    flags |= SED_ICASE;
+  while(p < end && (*p == 'I' || *p == 'M')) { /* /re/I, /re/M */
+    flags |= *p == 'I' ? SED_ICASE : SED_MULTI;
     p++;
   }
 
@@ -122,7 +122,7 @@ sed_addr_parse(const char** pp, const char* end, struct sed_addr* a, unsigned fl
     a->type = SA_REGEX;
     a->re_set = 0;
   } else {
-    unsigned dfaflags = DFA_ESC | ((flags & SED_ERE) ? DFA_ERE : 0) | ((flags & SED_ICASE) ? DFA_ICASE : 0);
+    unsigned dfaflags = DFA_ESC | ((flags & SED_ERE) ? DFA_ERE : 0) | ((flags & SED_ICASE) ? DFA_ICASE : 0) | ((flags & SED_MULTI) ? DFA_MULTI : 0);
     int cc = dfa_compile(&a->re, pat.s, pat.len, dfaflags);
 
     if(cc != DFA_OK) {

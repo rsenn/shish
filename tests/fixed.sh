@@ -6325,4 +6325,8 @@ assert_equal "70 2 / abcd\\|efgh\$|" "$PX/ $PY" "sed l folds lines at the width 
 PX=$(printf 'a\tb o\n' | "$SHISH_SELF" -c 'sed "s/\t/T/;s/[\t ]/_/;s/\x6f/0/;s/b/\x41\d066/"')
 assert_equal "aTAB_0" "$PX" "sed understands \\t, [\\t] and \\xHH / \\dNNN escapes in patterns and replacements"
 
+# sed M flag: ^ and $ match at embedded newlines
+PX=$(printf 'one\ntwo\n' | "$SHISH_SELF" -c 'sed "N;s/^t/T/M;s/e\$/E/Mg"' | tr '\n' '|')
+assert_equal "onE|Two|" "$PX" "sed s///M and /re/M anchor at the newlines inside the pattern space"
+
 summary

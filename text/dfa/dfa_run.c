@@ -3,6 +3,7 @@
 #include "../../lib/arena.h"
 
 const char* dfa_subj;
+int dfa_multi;
 
 static int
 isw(int c) {
@@ -77,12 +78,12 @@ addthread(arena* a,
       return;
 
     case DFA_BOL:
-      if(pos == 0 && !notbol)
+      if((pos == 0 && !notbol) || (dfa_multi && pos > 0 && dfa_subj[pos - 1] == '\n'))
         addthread(a, l, mark, gen, prog, ngroup, pc + 1, save, pos, notbol, n);
       return;
 
     case DFA_EOL:
-      if(pos == n)
+      if(pos == n || (dfa_multi && dfa_subj[pos] == '\n'))
         addthread(a, l, mark, gen, prog, ngroup, pc + 1, save, pos, notbol, n);
       return;
 
@@ -126,6 +127,7 @@ dfa_run(const struct dfa* d,
   int ok = 0;
 
   dfa_subj = s;
+  dfa_multi = (d->flags & DFA_MULTI) != 0;
 
   if(proglen == 0)
     return 0;

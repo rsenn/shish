@@ -117,6 +117,9 @@ sed_subst_parse(
     } else if(p < end && (*p == 'i' || *p == 'I')) {
       s->icase = 1;
       p++;
+    } else if(p < end && (*p == 'm' || *p == 'M')) {
+      s->multi = 1;
+      p++;
     } else if(p < end && *p == 'w') {
       const char* name;
       int idx;
@@ -154,6 +157,9 @@ sed_subst_parse(
 
   if(s->icase)
     dfaflags |= DFA_ICASE;
+
+  if(s->multi)
+    dfaflags |= DFA_MULTI;
 
   if(pat.len == 0) {
     s->re_set = 0;

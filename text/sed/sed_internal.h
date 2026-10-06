@@ -8,6 +8,7 @@
 #include "../sed.h"
 #include "../../lib/stralloc.h"
 
+#define SED_MULTI 0x2000 /* internal: the /re/M flag of an address */
 #define SED_ICASE 0x1000 /* internal: the /re/I flag of an address */
 
 enum sed_addr_type { SA_NONE = 0, SA_LINE, SA_LAST, SA_REGEX, SA_STEP, SA_MULT };
@@ -29,6 +30,7 @@ struct sed_subst {
   unsigned global : 1;
   unsigned print : 1;
   unsigned icase : 1;
+  unsigned multi : 1; /* M flag */
   unsigned nth; /* 0 means "1" (POSIX default: first match) */
   int wfile;    /* index from sed_wfile_*(), or -1 */
 };

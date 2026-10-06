@@ -28,6 +28,7 @@ enum dfa_op {
 
 /* the subject being matched, for DFA_WORD (set by dfa_run and dfa_bt_run) */
 extern const char* dfa_subj;
+extern int dfa_multi; /* DFA_MULTI of the program being run */
 int dfa_wordok(int kind, size_t pos, size_t n);
 
 struct dfa_inst {

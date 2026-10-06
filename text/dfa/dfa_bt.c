@@ -124,14 +124,14 @@ bt_match(const struct dfa* d,
         break;
 
       case DFA_BOL:
-        if(pos == 0 && !notbol)
+        if((pos == 0 && !notbol) || (dfa_multi && pos > 0 && dfa_subj[pos - 1] == '\n'))
           pc++;
         else
           backtrack = 1;
         break;
 
       case DFA_EOL:
-        if(pos == n)
+        if(pos == n || (dfa_multi && dfa_subj[pos] == '\n'))
           pc++;
         else
           backtrack = 1;
@@ -208,6 +208,7 @@ dfa_bt_run(const struct dfa* d,
   long* save = NULL;
 
   dfa_subj = s;
+  dfa_multi = (d->flags & DFA_MULTI) != 0;
 
   if(d->ngroup)
     save = alloc(2 * d->ngroup * sizeof(long));
