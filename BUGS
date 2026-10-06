@@ -169,8 +169,7 @@
     the enclosing function is defined, so an alias set in the function
     body is not seen by `$(...)` parsed earlier.
 
-- param-expansion-pattern-removal-broken: `param-p.tst` fails 3 of 54:
-  `:236` length of valid variables, `:446` special parameter `$`, and `:82` a quoted
+- param-expansion-pattern-removal-broken: `param-p.tst` fails 1 of 54: `:82`, a quoted
   tilde in `${a?\~}` is still expanded
   (`HOME=/foo/bar; (: ${a?\~}) 2>&1` prints "/foo/bar", not "~").
 

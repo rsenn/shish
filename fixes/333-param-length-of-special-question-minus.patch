@@ -1,0 +1,36 @@
+diff --git a/src/parse/parse_param.c b/src/parse/parse_param.c
+index d83ccfa6..c987b50d 100644
+--- a/src/parse/parse_param.c
++++ b/src/parse/parse_param.c
+@@ -54,8 +54,12 @@ parse_param(struct parser* p) {
+   if(c == '#' && braces) {
+     char nextc;
+ 
+-    if(source_peek(&nextc) > 0 && parse_isparam(nextc) && nextc != '-' && nextc != '+' &&
+-       nextc != '=' && nextc != '?' && nextc != ':') {
++    char after;
++
++    /* "${#?}" and "${#-}": length of $? and $-; "${#-w}" and "${#?w}" stay $# with an operator */
++    if(source_peek(&nextc) > 0 && parse_isparam(nextc) &&
++       ((nextc != '-' && nextc != '+' && nextc != '=' && nextc != '?' && nextc != ':') ||
++        ((nextc == '-' || nextc == '?') && source_peekn(&after, 1) > 0 && after == '}'))) {
+       param->flag |= S_STRLEN;
+       source_get(&c);
+     }
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 20643223..dd660586 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -6128,4 +6128,12 @@ assert_equal "1:x" "$PX" "the EXIT trap at the end of the script sees the positi
+ # Only a sanitizer sees it (UBSan: "null pointer passed as argument 1"), so there is nothing to assert
+ # from a script; checked with a tiny -fsanitize=undefined program calling buffer_put(&b, "", 0).
+ 
++# ${#?} and ${#-} are the length of $? and $-; with a word after the operator they stay $# with that operator
++PX=$("$SHISH_SELF" -c 'set -- a b c d; true; echo "${#?}"')
++assert_equal "1" "$PX" "\${#?} is the length of the exit status, not the number of parameters"
++PX=$("$SHISH_SELF" -c 'set -- a b c d; h="$-"; [ "${#-}" = "${#h}" ] && echo same')
++assert_equal "same" "$PX" "\${#-} is the length of \$-"
++PX=$("$SHISH_SELF" -c 'set -- a b; echo "${#-dflt}" "${#?msg}"')
++assert_equal "2 2" "$PX" "\${#-word} and \${#?word} still apply the operator to \$#"
++
+ summary

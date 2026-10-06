@@ -6128,4 +6128,12 @@ assert_equal "1:x" "$PX" "the EXIT trap at the end of the script sees the positi
 # Only a sanitizer sees it (UBSan: "null pointer passed as argument 1"), so there is nothing to assert
 # from a script; checked with a tiny -fsanitize=undefined program calling buffer_put(&b, "", 0).
 
+# ${#?} and ${#-} are the length of $? and $-; with a word after the operator they stay $# with that operator
+PX=$("$SHISH_SELF" -c 'set -- a b c d; true; echo "${#?}"')
+assert_equal "1" "$PX" "\${#?} is the length of the exit status, not the number of parameters"
+PX=$("$SHISH_SELF" -c 'set -- a b c d; h="$-"; [ "${#-}" = "${#h}" ] && echo same')
+assert_equal "same" "$PX" "\${#-} is the length of \$-"
+PX=$("$SHISH_SELF" -c 'set -- a b; echo "${#-dflt}" "${#?msg}"')
+assert_equal "2 2" "$PX" "\${#-word} and \${#?word} still apply the operator to \$#"
+
 summary

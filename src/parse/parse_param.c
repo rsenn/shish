@@ -54,8 +54,12 @@ parse_param(struct parser* p) {
   if(c == '#' && braces) {
     char nextc;
 
-    if(source_peek(&nextc) > 0 && parse_isparam(nextc) && nextc != '-' && nextc != '+' &&
-       nextc != '=' && nextc != '?' && nextc != ':') {
+    char after;
+
+    /* "${#?}" and "${#-}": length of $? and $-; "${#-w}" and "${#?w}" stay $# with an operator */
+    if(source_peek(&nextc) > 0 && parse_isparam(nextc) &&
+       ((nextc != '-' && nextc != '+' && nextc != '=' && nextc != '?' && nextc != ':') ||
+        ((nextc == '-' || nextc == '?') && source_peekn(&after, 1) > 0 && after == '}'))) {
       param->flag |= S_STRLEN;
       source_get(&c);
     }
