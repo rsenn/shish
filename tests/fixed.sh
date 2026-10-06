@@ -6257,4 +6257,8 @@ PX=$("$SHISH_SELF" -c "grep -h a $GA $GB; grep -m1 a $GA $GB | sed 's|$TMPDIR/||
 assert_equal "a1 a2 a3 a4 a1 a3 " "$PX" "grep -h drops the file name prefix and -m1 stops after the first match of each file"
 rm -f "$GA" "$GB"
 
+# head -n -N / -c -N copy all but the last N lines / bytes, per file
+PX=$(printf 'a\nb\nc\nd\n' | "$SHISH_SELF" -c 'head -n -1; printf "x\ny" | head -n -1; printf "abcdef" | head -c -2' | tr '\n' ' ')
+assert_equal "a b c x abcd" "$PX" "head with a negative count drops the last lines or bytes"
+
 summary

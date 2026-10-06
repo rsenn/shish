@@ -11,6 +11,7 @@ const char help_head[] = "    Copy the first part of files to standard output.\n
                          "\n"
                          "    -n number       copy the first number lines (default 10)\n"
                          "    -c number       copy the first number bytes instead\n"
+                         "                    a negative number copies all but the last number\n"
                          "    -number         same as -n number\n"
                          "    -q              never print the \"==> file <==\" headers\n"
                          "    -v              always print them\n"
@@ -19,8 +20,9 @@ const char help_head[] = "    Copy the first part of files to standard output.\n
 struct head {
   struct filter_in in;
   unsigned long count, left;
-  unsigned bytes : 1, quiet : 1, verbose : 1, gotcount : 2, started : 1;
+  unsigned bytes : 1, quiet : 1, verbose : 1, gotcount : 2, started : 1, neg : 1;
   stralloc out; /* the header of the file being started */
+  stralloc all; /* neg: the whole file, until its end is known */
 };
 
 static int
@@ -32,8 +34,9 @@ head_option(void* ctx, int ch) {
     case 'c':
       h->bytes = ch == 'c';
       h->gotcount = 1;
+      h->neg = shell_optarg[0] == '-';
 
-      if(filter_opt_count(shell_optarg, &h->count) < 0) {
+      if(filter_opt_count(shell_optarg + h->neg, &h->count) < 0) {
         h->in.err_arg = shell_optarg;
         h->in.err_msg = ch == 'c' ? "invalid number of bytes" : "invalid number of lines";
         return -1;
@@ -47,6 +50,7 @@ head_option(void* ctx, int ch) {
 
   /* the old "-5" form: digits build the line count */
   if(ch >= '0' && ch <= '9') {
+    h->neg = 0;
     h->count = (h->gotcount == 2 ? h->count * 10 : 0) + (unsigned long)(ch - '0');
     h->bytes = 0;
     h->gotcount = 2;
@@ -105,6 +109,42 @@ head_step(void* arg, const char** unit, size_t* len) {
       h->started = 1;
     }
 
+    if(h->neg) {
+      /* all but the last count lines/bytes: read to the end of the file, cut there */
+      size_t keep;
+
+      h->all.len = 0;
+
+      do {
+        stralloc_catb(&h->all, p, (size_t)n);
+        filter_in_skip(&h->in, (size_t)n);
+      } while((n = filter_in_peek(&h->in, &p)) > 0 && !h->in.newfile);
+
+      keep = h->all.len;
+
+      if(h->bytes) {
+        keep = keep > h->count ? keep - h->count : 0;
+      } else {
+        unsigned long k;
+
+        for(k = h->count; k && keep; k--) {
+          size_t end = keep - (h->all.s[keep - 1] == '\n');
+
+          while(end && h->all.s[end - 1] != '\n')
+            end--;
+
+          keep = end;
+        }
+      }
+
+      if(!keep)
+        continue;
+
+      *unit = h->all.s;
+      *len = keep;
+      return 1;
+    }
+
     if(!h->left) {
       filter_in_close(&h->in); /* done with this file: on to the next */
       continue;
@@ -130,6 +170,7 @@ head_step(void* arg, const char** unit, size_t* len) {
 static void
 head_finish(void* ctx) {
   stralloc_free(&((struct head*)ctx)->out);
+  stralloc_free(&((struct head*)ctx)->all);
 }
 
 const struct filter_ops head_ops = {
