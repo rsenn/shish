@@ -6240,4 +6240,10 @@ PX=$(timeout 5 "$SHISH_SELF" -c "find $FD -size -1" 2>&1 | sed 's|.*find: ||')
 assert_match "$PX" "unknown predicate*" "find rejects an unknown primary instead of looping on it"
 rm -rf "$FD"
 
+# sed s///g: no empty match right behind a match; regex {0,n} allows n repeats, not n+1
+PX=$(printf 'banana\naaa\n' | "$SHISH_SELF" -c "sed -e 's/a*/X/g' -e 's/b/Q/'" | tr '\n' ' ')
+assert_equal "XQXnXnX X " "$PX" "an empty match right after a match is not replaced by s///g"
+PX=$(echo aaaa | "$SHISH_SELF" -c "sed 's/a\{0,2\}/Y/'")
+assert_equal "Yaa" "$PX" "a\\{0,2\\} matches at most two characters"
+
 summary

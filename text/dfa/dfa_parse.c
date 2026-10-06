@@ -271,7 +271,8 @@ apply_interval(
     return;
   }
 
-  for(i = m; i < n && !ps->err; i++) {
+  /* the first copy is already there (optional when m == 0), so m == 0 needs n - 1 more, not n */
+  for(i = m > 0 ? m : 1; i < n && !ps->err; i++) {
     size_t opt_start = ps->proglen;
     const char* save_p = ps->p;
     const char* save_end = ps->end;
