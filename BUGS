@@ -195,22 +195,6 @@
   sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix input-p.tst
   ```
 
-- case-pattern-bracket-quote-stripping: `[[` used as a case pattern
-  (a literal two-character glob-bracket-looking word, not a `[[
-  ... ]]` test expression -- shish/POSIX sh doesn't have those) is
-  not matched as its own literal text. 1 failure in `case-p.tst:318`
-  ("reserved word `[[` as pattern") -- despite the "reserved word"
-  framing this is an `fnmatch`/glob edge case (how `[[` is matched by
-  path_fnmatch()), not a case-parser issue; the other 21 reserved-
-  word-as-pattern cases in the same test (`:315-317,319-334,336`) all
-  pass.
-
-  **Repro:**
-  ```sh
-  sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix case-p.tst
-  # case-p.tst:318 "reserved word [[ as pattern"
-  ```
-
 - grouping-p-tst-flaky: `grouping-p.tst:34` ("subshell ending with
   asynchronous list", `(echo foo >fifo1&); cat fifo1`) fails
   intermittently (2 of 12 runs, `grouping-p.tst: 11/12 passed`): some race

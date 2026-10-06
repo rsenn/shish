@@ -218,7 +218,7 @@ have any; the full `ctest` run has 12 failing tests, 3 of them `tests/*.sh` that
 or the other known causes in `BUGS`):
 
 ```
-4 alias-p  61/65    1 param-p 53/54    1 quote-p 34/35    1 case-p 51/52
+4 alias-p  61/65    1 param-p 53/54    1 quote-p 34/35    0 case-p 52/52
 1 input-p  10/11    1 option-p 74/75   1 simple-p 33/34
 ```
 
@@ -288,7 +288,7 @@ reports `line 2: x: boom`. `$LINENO` itself is correct. Fix with, and verify aga
 1. `quote-p` (34/35, only `:431` left) - `BUGS: quote-backslash-escaping-broken`.
 2. `param-p` (53/54, only `:82` left) - `BUGS: param-expansion-pattern-removal-broken`.
 3. `simple-p` (33/34), `tilde-p`, `cmdsub-p`, `comment-p` are done (`simple-p:172` is intentional:
-   `BUGS: posix-suite-intentional-deviations`); `case-p` (1) - `BUGS: case-pattern-bracket-quote-stripping`.
+   `BUGS: posix-suite-intentional-deviations`); `case-p` is done (52/52).
 
 ---
 
@@ -485,8 +485,7 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
 - `error-message-line-number-off-by-one` -> Phase 2 (`lineno-p`).
 - `alias-substitution-remaining-cases`, `set-notify-no-effect`, `set-verbose-partial`,
   `set-o-ignoreeof-nolog-vi-has-no-effect`, `set-histexpand-unimplemented` -> Phase 3.
-- `quote-backslash-escaping-broken`, `param-expansion-pattern-removal-broken`,
-  `case-pattern-bracket-quote-stripping` -> Phase 4.
+- `quote-backslash-escaping-broken`, `param-expansion-pattern-removal-broken` -> Phase 4.
 - `input-not-read-line-wise` -> Phase 5.
 - `posix-suite-intentional-deviations` stays as it is.
 - `yash-suite-other-hangs`, `grouping-p-tst-flaky`, the three `fixed-sh-*` entries -> Phase 6.
@@ -839,9 +838,9 @@ musl, which is the figure above):
    (glibc accepts it, `path_fnmatch` takes only `[!…]`), backslash
    handling, leading-`.` rule, no-match/error return values and the
    `errfunc` callback. In exchange, pathname patterns and `case`/`%`/`#`
-   patterns finally use **one** matcher (the open `case-pattern-bracket-quote-stripping` and
-   `quote-backslash-escaping-broken` entries in `BUGS` are about expansion and quoting, not about
-   which matcher runs, so this does not fix them).
+   patterns finally use **one** matcher (the open
+   `quote-backslash-escaping-broken` entry in `BUGS` is about expansion and quoting, not about
+   which matcher runs, so this does not fix it).
 4. **Verification:** a dev-only differential script over a fixture tree
    (dotfiles, brackets with classes, escaped metacharacters, symlinks,
    unreadable directories) comparing the internal backend with libc

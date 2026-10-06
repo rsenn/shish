@@ -6145,4 +6145,8 @@ assert_equal "ok" "$PX" "backslashes in the pattern of a double-quoted \${c#patt
 PX=$("$SHISH_SELF" -c "unset x; echo \"\${x:-'a'}\"")
 assert_equal "'a'" "$PX" "single quotes in the word of a double-quoted \${x:-word} stay literal"
 
+# a "[" without a closing "]" is a literal in a pattern
+PX=$("$SHISH_SELF" -c 'case [[ in [[) echo m;; *) echo n;; esac; case "a[" in a[) echo m;; *) echo n;; esac')
+assert_equal "m m" "$(echo $PX)" "an unterminated [ in a case pattern matches itself literally"
+
 summary
