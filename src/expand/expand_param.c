@@ -28,16 +28,23 @@ clamp(int value, int from, int to) {
   return value < from ? from : value > to ? to : value;
 }
 
+/* ${v:offset:length} clipped to [from, to]: a negative offset counts from
+ * the end, a negative length stops that far before the end, INT32_MAX
+ * (no length given) runs to the end
+ * ----------------------------------------------------------------------- */
 static inline struct range
 limit(const struct range* in, int from, int to) {
   struct range out;
+  long long off = in->offset, end;
 
-  if(in->offset < 0 && (-in->offset) <= to)
-    out.offset = to + in->offset;
-  else
-    out.offset = clamp(in->offset, from, to);
+  if(off < 0)
+    off += to;
 
-  out.length = clamp(out.offset + in->length, from, to) - out.offset;
+  off = off < from ? from : off > to ? to : off;
+  end = in->length < 0 ? (long long)to + in->length : off + in->length;
+  end = end < off ? off : end > to ? to : end;
+  out.offset = (int32_t)off;
+  out.length = (int32_t)(end - off);
   return out;
 }
 
@@ -64,24 +71,49 @@ expand_param_tilde_free(union node* word, union node* orig) {
     tree_free(word);
 }
 
+/* "offset" or "offset:length", blanks and parentheses around a number allowed: " -2", "(-3):2" */
 static int
 expand_range(union node* word, struct range* r) {
   stralloc sa;
+  const char* t;
   size_t p, q;
+  int ok = 0;
+
   expand_copysa(word, &sa, 0);
   stralloc_nul(&sa);
+  t = sa.s;
 
-  if((p = scan_int(sa.s, &r->offset)) > 0 && p < sa.len && sa.s[p] == ':') {
-    p++;
+  while(*t == ' ' || *t == '\t' || *t == '(')
+    t++;
 
-    if((q = scan_int(&sa.s[p], &r->length)) == 0)
-      r->length = INT32_MAX;
-  } else {
-    r->offset = INT32_MIN;
+  if((p = scan_int(t, &r->offset)) > 0) {
+    t += p;
+
+    while(*t == ')' || *t == ' ' || *t == '\t')
+      t++;
+
+    r->length = INT32_MAX;
+
+    if(!*t) {
+      ok = 1;
+    } else if(*t == ':') {
+      t++;
+
+      while(*t == ' ' || *t == '\t' || *t == '(')
+        t++;
+
+      ok = (q = scan_int(t, &r->length)) > 0 || !*t;
+
+      if(!ok)
+        r->length = INT32_MAX;
+    }
   }
 
+  if(!ok)
+    r->offset = INT32_MIN;
+
   stralloc_free(&sa);
-  return p > 0 && r->offset != INT32_MIN;
+  return ok;
 }
 
 union node*
@@ -92,6 +124,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
   char tmpbuf[FMT_ULONG]; /* v may point here after the block that fills it */
   size_t vlen = 0;
   bool is_set = true;
+  bool range_done = false; /* ${*:o:l} already picked its parameters */
 
   stralloc_init(&value);
 
@@ -130,9 +163,21 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       case S_ARGV: {
         size_t i;
         const char* ifs = var_vdefault("IFS", IFS_DEFAULT, NULL);
+        struct range r = {0, sh->arg.c};
 
-        for(i = 0; i < sh->arg.c; i++) {
-          if(i > 0 && ifs[0])
+#if WITH_PARAM_RANGE
+        if((param->flag & S_VAR) == S_RANGE && expand_range(param->word, &r)) {
+          if(r.offset > 0)
+            r.offset--; /* ${*:2} starts at $2 */
+
+          r = limit(&r, 0, sh->arg.c);
+          range_done = true;
+        } else
+#endif
+          r.length = sh->arg.c;
+
+        for(i = r.offset; i < (size_t)r.offset + r.length; i++) {
+          if(i > (size_t)r.offset && ifs[0])
             stralloc_catc(&value, ifs[0]);
 
           stralloc_cats(&value, sh->arg.v[i]);
@@ -150,6 +195,9 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         if((param->flag & S_VAR) == S_RANGE) {
 
           if(expand_range(param->word, &r)) {
+            if(r.offset > 0)
+              r.offset--; /* ${@:2} starts at $2 */
+
             r = limit(&r, 0, sh->arg.c);
           } else {
 
@@ -163,7 +211,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         }
 #endif
         struct nargparam arg = {
-            N_ARGPARAM, S_ARG | (param->flag & S_VAR), NULL, NULL, param->word, 0};
+            N_ARGPARAM, S_ARG | ((param->flag & S_VAR) == S_RANGE ? 0 : (param->flag & S_VAR)), NULL, NULL, param->word, 0};
 
         for(i = r.offset, e = r.offset + r.length; i < e;) {
 
@@ -532,7 +580,9 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 #if WITH_PARAM_RANGE
     /* character or field range */
     case S_RANGE: {
-      if(v && vlen) {
+      if(v && range_done) {
+        n = expand_cat(v, vlen, nptr, flags);
+      } else if(v && vlen) {
         struct range r = {0, vlen};
 
         if(expand_range(param->word, &r)) {

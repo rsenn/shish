@@ -6228,4 +6228,8 @@ assert_equal "2|      2       3       6|2 -" "$PX" "wc output format matches GNU
 PX=$("$SHISH_SELF" -c 'set -- a b c; echo ${#@} ${#*}; set --; echo "${@:-none}" ${*-none} "${@-n}" x${@:+y}x')
 assert_equal "3 3|none none n xx" "$(echo "$PX" | tr '\n' '|' | sed 's/|$//')" "\${#@} is the parameter count and \${@:-word} uses the word when there are no parameters"
 
+# ${v:offset[:length]} without a length, with a negative offset or length, and over $@ / $*
+PX=$("$SHISH_SELF" -c 'x=abcdef; echo "${x:2}|${x: -2}|${x:1:-1}|${x:(-3):2}"; set -- a b c; echo "${@:2}|${*:1:2}|${@: -1}"')
+assert_equal "cdef|ef|bcde|de/b c|a b|c" "$(echo "$PX" | tr '\n' '/' | sed 's|/$||')" "substring expansion handles missing length, negative offset/length and positional parameters"
+
 summary
