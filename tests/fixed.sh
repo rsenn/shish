@@ -6300,4 +6300,8 @@ PY=$(printf 'aaa b\n' | "$SHISH_SELF" -c 'sed "s/a\+/X/;s/\w\{1,\}$/Y/;s/ \?Y/!/
 PZ=$(printf 'foo-bar baz\n' | "$SHISH_SELF" -c 'sed "s/\bb/B/g;s/o\>/0/;s/a\{,1\}z/Z/"')
 assert_equal "1/X!/fo0-Bar BZ" "$PX/$PY/$PZ" "BRE accepts \\+ \\? \\{,n\\} \\w \\< \\> \\b like GNU"
 
+# sed s/// replacement: \U \L \u \l \E case conversion and \t
+PX=$(printf 'hello world\n' | "$SHISH_SELF" -c 'sed "s/\\(hello\\) \\(world\\)/\\u\\1 \\U\\2\\E!\\t/"')
+assert_equal "Hello WORLD!	" "$PX" "sed replacement supports \\u \\U \\E and \\t"
+
 summary

@@ -1,0 +1,126 @@
+diff --git a/text/dfa/dfa_replace.c b/text/dfa/dfa_replace.c
+index 08abb486..d562ad95 100644
+--- a/text/dfa/dfa_replace.c
++++ b/text/dfa/dfa_replace.c
+@@ -11,7 +11,7 @@
+  * its own.
+  * ----------------------------------------------------------------------- */
+ struct dfa_repl_item {
+-  int group; /* -1 = literal run (see off/len below); 0 = "&"; 1-9 = "\N" */
++  int group; /* -1 = literal run (see off/len below); 0 = "&"; 1-9 = "\N"; -2..-6 = case op (sed \U \L \u \l \E) */
+   size_t off, len;
+ };
+ 
+@@ -48,7 +48,7 @@ repl_addliteral(struct dfa_repl* r, const char* s, size_t len) {
+   /* coalesce with a directly-preceding literal run instead of adding
+      a new item, so e.g. "\&x" (an escaped '&' followed by a plain
+      'x') ends up as one literal item, not two. */
+-  if(r->nitems && r->items[r->nitems - 1].group < 0 &&
++  if(r->nitems && r->items[r->nitems - 1].group == -1 &&
+      r->items[r->nitems - 1].off + r->items[r->nitems - 1].len == r->litlen) {
+     r->items[r->nitems - 1].len += len;
+   } else {
+@@ -93,6 +93,13 @@ repl_addgroup(struct dfa_repl* r, int group) {
+   return DFA_OK;
+ }
+ 
++static int
++repl_addcase(struct dfa_repl* r, int op) {
++  int rc = repl_addgroup(r, -op);
++
++  return rc;
++}
++
+ /* dfa_repl_compile: '&' -> group 0 (whole match); '\1'-'\9' -> that
+  * group (only with DFA_REPL_BACKREF); '\&' '\\' -> literal '&' '\';
+  * with DFA_REPL_BACKREF, '\n' -> a literal newline; any other '\X'
+@@ -127,10 +134,13 @@ dfa_repl_compile(struct dfa_repl** out, const char* tmpl, size_t len, unsigned f
+       } else if(c == '&' || c == '\\') {
+         rc = repl_addliteral(r, &c, 1);
+         p += 2;
+-      } else if((flags & DFA_REPL_BACKREF) && c == 'n') {
+-        char nl = '\n';
++      } else if((flags & DFA_REPL_BACKREF) && (c == 'n' || c == 't' || c == 'r' || c == 'f' || c == 'v' || c == 'a')) {
++        char e = c == 'n' ? '\n' : c == 't' ? '\t' : c == 'r' ? '\r' : c == 'f' ? '\f' : c == 'v' ? '\v' : '\a';
+ 
+-        rc = repl_addliteral(r, &nl, 1);
++        rc = repl_addliteral(r, &e, 1);
++        p += 2;
++      } else if((flags & DFA_REPL_BACKREF) && (c == 'U' || c == 'L' || c == 'u' || c == 'l' || c == 'E')) {
++        rc = repl_addcase(r, c == 'U' ? 2 : c == 'L' ? 3 : c == 'u' ? 4 : c == 'l' ? 5 : 6);
+         p += 2;
+       } else {
+         rc = repl_addliteral(r, &c, 1);
+@@ -165,6 +175,36 @@ dfa_repl_free(struct dfa_repl* r) {
+   alloc_free(r);
+ }
+ 
++/* a piece of the replacement, run through the \U \L (mode) and \u \l (once) state */
++static int
++repl_emit(dfa_repl_out_fn out, void* ctx, const char* s, size_t n, int* mode, int* once) {
++  char buf[64];
++
++  while(n) {
++    size_t i, k = n < sizeof(buf) ? n : sizeof(buf);
++
++    for(i = 0; i < k; i++) {
++      int c = (unsigned char)s[i], op = *once ? *once : *mode;
++
++      if(op == 2 || op == 4)
++        c = c >= 'a' && c <= 'z' ? c - 32 : c;
++      else if(op == 3 || op == 5)
++        c = c >= 'A' && c <= 'Z' ? c + 32 : c;
++
++      *once = 0;
++      buf[i] = (char)c;
++    }
++
++    if(out(ctx, buf, k))
++      return -1;
++
++    s += k;
++    n -= k;
++  }
++
++  return 0;
++}
++
+ static int
+ dfa_repl_apply(const struct dfa_repl* r,
+                const char* s,
+@@ -174,21 +214,31 @@ dfa_repl_apply(const struct dfa_repl* r,
+                dfa_repl_out_fn out,
+                void* ctx) {
+   size_t i;
++  int mode = 0, once = 0; /* 2 \U, 3 \L; 4 \u, 5 \l */
+ 
+   for(i = 0; i < r->nitems; i++) {
+     const struct dfa_repl_item* it = &r->items[i];
+ 
+-    if(it->group < 0) {
+-      if(out(ctx, r->lit + it->off, it->len))
++    if(it->group <= -2) {
++      int op = -it->group;
++
++      if(op == 6)
++        mode = once = 0;
++      else if(op >= 4)
++        once = op;
++      else
++        mode = op, once = 0;
++    } else if(it->group < 0) {
++      if(repl_emit(out, ctx, r->lit + it->off, it->len, &mode, &once))
+         return -1;
+     } else if(it->group == 0) {
+-      if(out(ctx, s + m->start, m->end - m->start))
++      if(repl_emit(out, ctx, s + m->start, m->end - m->start, &mode, &once))
+         return -1;
+     } else {
+       size_t gi = (size_t)(it->group - 1);
+ 
+       if(gi < ng && g[gi].start != (size_t)-1) {
+-        if(out(ctx, s + g[gi].start, g[gi].end - g[gi].start))
++        if(repl_emit(out, ctx, s + g[gi].start, g[gi].end - g[gi].start, &mode, &once))
+           return -1;
+       }
+     }
