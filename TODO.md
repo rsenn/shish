@@ -402,8 +402,8 @@ time (cat blah.txt | sort)                            # subshell, group, if, cas
 time { a; b; }     time if x; then y; fi     time f     time cd /     time -p cmd     ! time cmd     time ! cmd
 ```
 
-**Parser** (`src/parse/parse_pipeline.c`), no new token: the 32nd token bit would be `1 << 31` (undefined for an
-`int`) and collides with `T_NONE = -1`.
+**Parser** (`src/parse/parse_pipeline.c`), no new token: the parser already uses 31 token bits (`TI_EOF` 0 to
+`TI_END` 30), so a new one would be `1 << 31`, the sign bit of the `int`-sized `enum tok_flag` (undefined behaviour).
 - The loop that eats leading `!` also accepts an unquoted `time` word (`T_NAME`, text `time` in `p->sa`), in any
   order with `!`, at the start of a pipeline only (not after `|`, not after `command`, `\time` or `"time"`: those
   keep running `/usr/bin/time`).
