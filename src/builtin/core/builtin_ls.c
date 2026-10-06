@@ -47,6 +47,9 @@ struct ls_opts {
   unsigned blocks : 1;   /* -s: size in 1024-byte blocks */
   unsigned use_c : 1;    /* -c: ctime instead of mtime */
   unsigned use_u : 1;    /* -u: atime instead of mtime */
+  unsigned comma : 1;    /* -m: stream format, ", " between names */
+  unsigned follow_cmd : 1; /* -H: operand symlinks are followed */
+  unsigned follow_all : 1; /* -L: every symlink is followed */
 };
 
 /* one directory entry plus what lstat() said about it */
@@ -216,25 +219,36 @@ ls_put_time(buffer* b, time_t t) {
   }
 }
 
-/* -F / -p marker after the name */
-static void
-ls_put_suffix(buffer* b, unsigned int mode) {
+/* -F / -p marker after the name, 0 for none */
+static char
+ls_suffix(unsigned int mode) {
   if(S_ISDIR(mode) && (ls_o.slash || ls_o.classify))
-    buffer_putc(b, '/');
-  else if(ls_o.classify) {
+    return '/';
+
+  if(ls_o.classify) {
     if(S_ISREG(mode) && (mode & 0111))
-      buffer_putc(b, '*');
+      return '*';
 #ifdef S_ISLNK
-    else if(S_ISLNK(mode))
-      buffer_putc(b, '@');
+    if(S_ISLNK(mode))
+      return '@';
 #endif
-    else if(S_ISFIFO(mode))
-      buffer_putc(b, '|');
+    if(S_ISFIFO(mode))
+      return '|';
 #ifdef S_ISSOCK
-    else if(S_ISSOCK(mode))
-      buffer_putc(b, '=');
+    if(S_ISSOCK(mode))
+      return '=';
 #endif
   }
+
+  return 0;
+}
+
+static void
+ls_put_suffix(buffer* b, unsigned int mode) {
+  char c = ls_suffix(mode);
+
+  if(c)
+    buffer_putc(b, c);
 }
 
 /* prints one entry: [inode ][mode links owner group size date ]name[marker][ -> target].
@@ -332,15 +346,42 @@ ls_show(struct ls_ent* v, unsigned int n, int in_dir) {
   if(!ls_o.unsorted)
     qsort(v, n, sizeof(*v), ls_cmp);
 
-  if(in_dir && ls_o.long_fmt) {
+  if(in_dir && (ls_o.long_fmt || ls_o.blocks)) {
     unsigned long total = 0;
 
     for(i = 0; i < n; i++)
       total += (unsigned long)v[i].st.st_blocks;
 
     buffer_puts(fd_out->w, "total ");
-    buffer_putulong(fd_out->w, total);
+    buffer_putulong(fd_out->w, (total + 1) / 2); /* 1024-byte blocks */
     buffer_putnlflush(fd_out->w);
+  }
+
+  if(ls_o.comma && !ls_o.long_fmt) {
+    size_t col = 0;
+
+    for(i = 0; i < n; i++) {
+      size_t w = str_len(v[i].name) + (ls_suffix(v[i].st.st_mode) ? 1 : 0);
+
+      if(i) {
+        if(col + 2 + w + 1 > 80) {
+          buffer_puts(fd_out->w, ",\n");
+          col = 0;
+        } else {
+          buffer_puts(fd_out->w, ", ");
+          col += 2;
+        }
+      }
+
+      buffer_puts(fd_out->w, v[i].name);
+      ls_put_suffix(fd_out->w, v[i].st.st_mode);
+      col += w;
+    }
+
+    if(n)
+      buffer_putnlflush(fd_out->w);
+
+    return;
   }
 
   for(i = 0; i < n; i++)
@@ -370,7 +411,9 @@ ls_stat(char* argv[], struct ls_ent* e, const char* dir, const char* name) {
   e->path = str_dup(full.s);
   stralloc_free(&full);
 
-  if(lstat(e->path, &e->st) == -1) {
+  if((ls_o.follow_all || (ls_o.follow_cmd && !dir)) && stat(e->path, &e->st) == 0) {
+    /* followed */
+  } else if(lstat(e->path, &e->st) == -1) {
     builtin_error(argv, e->path);
     alloc_free(e->name);
     alloc_free(e->path);
@@ -445,6 +488,9 @@ const char help_ls[] = "    List directory contents.\n"
                        "    -o              like -l without the group\n"
                        "    -q              print unprintable name bytes as '?'\n"
                        "    -s              precede each entry by its size in 1024-byte blocks\n"
+                       "    -m              stream format: names separated by \", \"\n"
+                       "    -H              follow symlinks given as operands\n"
+                       "    -L              follow all symlinks\n"
                        "    -k              accepted (blocks are 1024 bytes)\n"
                        "    -c, -u          use the change / access time for -t and -l\n"
                        "    -p              mark directories with '/'\n"
@@ -465,7 +511,7 @@ builtin_ls(int argc, char* argv[]) {
 
   byte_zero(&ls_o, sizeof(ls_o));
 
-  while((c = shell_getopt(argc, argv, "AacdFfgiklnopqRrSstu1")) > 0) {
+  while((c = shell_getopt(argc, argv, "AacdFfgHiklLmnopqRrSstu1")) > 0) {
     switch(c) {
       case 'A': ls_o.almost = 1; break;
       case 'a': ls_o.all = 1; break;
@@ -479,6 +525,9 @@ builtin_ls(int argc, char* argv[]) {
       case 'o': ls_o.long_fmt = ls_o.nogroup = 1; break;
       case 'q': ls_o.quote = 1; break;
       case 's': ls_o.blocks = 1; break;
+      case 'm': ls_o.comma = 1; break;
+      case 'H': ls_o.follow_cmd = 1; ls_o.follow_all = 0; break;
+      case 'L': ls_o.follow_all = 1; ls_o.follow_cmd = 0; break;
       case 'k': break; /* blocks are 1024 bytes already */
       case 'c': ls_o.use_c = 1; ls_o.use_u = 0; break;
       case 'u': ls_o.use_u = 1; ls_o.use_c = 0; break;

@@ -6193,4 +6193,10 @@ PX=$("$SHISH_SELF" -c "set -- \$(ls -go $LD | tail -1); echo \$#")
 assert_equal "7" "$(echo $PX)" "ls -go omits both owner and group"
 rm -rf "$LD"
 
+# ls -m streams names; -L follows links; -s prints a total
+LD=$(mktemp -d); : > "$LD/a"; : > "$LD/b"; ln -s "$LD" "$LD/d"
+PX=$("$SHISH_SELF" -c "ls -m $LD/a $LD/b; ls -lL $LD | tail -3 | cut -c1; ls -s $LD | head -1 | cut -c1-5")
+assert_equal "$LD/a, $LD/b - - d total" "$(echo $PX)" "ls -m streams, -L follows symlinks, -s prints a total line"
+rm -rf "$LD"
+
 summary
