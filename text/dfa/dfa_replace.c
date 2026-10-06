@@ -139,6 +139,30 @@ dfa_repl_compile(struct dfa_repl** out, const char* tmpl, size_t len, unsigned f
 
         rc = repl_addliteral(r, &e, 1);
         p += 2;
+      } else if((flags & DFA_REPL_BACKREF) && (c == 'x' || c == 'd' || c == 'o') && p + 2 < end) {
+        int base = c == 'x' ? 16 : c == 'd' ? 10 : 8, maxd = c == 'x' ? 2 : 3, n = 0, got = 0;
+        const char* q = p + 2;
+
+        while(got < maxd && q < end) {
+          int ch = (unsigned char)*q, dv = ch >= '0' && ch <= '9' ? ch - '0' : ch >= 'a' && ch <= 'f' ? ch - 'a' + 10 : ch >= 'A' && ch <= 'F' ? ch - 'A' + 10 : 99;
+
+          if(dv >= base)
+            break;
+
+          n = n * base + dv;
+          q++;
+          got++;
+        }
+
+        if(got) {
+          char b = (char)n;
+
+          rc = repl_addliteral(r, &b, 1);
+          p = q;
+        } else {
+          rc = repl_addliteral(r, &c, 1);
+          p += 2;
+        }
       } else if((flags & DFA_REPL_BACKREF) && (c == 'U' || c == 'L' || c == 'u' || c == 'l' || c == 'E')) {
         rc = repl_addcase(r, c == 'U' ? 2 : c == 'L' ? 3 : c == 'u' ? 4 : c == 'l' ? 5 : 6);
         p += 2;

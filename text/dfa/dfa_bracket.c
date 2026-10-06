@@ -51,6 +51,15 @@ dfa_bracket_compile(struct dfa_parser* ps, unsigned char set[32]) {
       continue;
     }
 
+    /* sed: [\t] holds a tab (also \f \v \a \r) */
+    if((ps->flags & DFA_ESC) && p[0] == '\\' && p + 1 < end &&
+       (p[1] == 't' || p[1] == 'f' || p[1] == 'v' || p[1] == 'a' || p[1] == 'r')) {
+      byteset_add(set, (unsigned char)(p[1] == 't' ? '\t' : p[1] == 'f' ? '\f' : p[1] == 'v' ? '\v' : p[1] == 'a' ? '\a' : '\r'));
+      p += 2;
+      first = 0;
+      continue;
+    }
+
     if(p + 2 < end && p[1] == '-' && p[2] != ']') {
       if(byteset_range(set, (unsigned char)p[0], (unsigned char)p[2]) < 0) {
         ps->err = DFA_ERANGE;

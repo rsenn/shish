@@ -1,0 +1,143 @@
+diff --git a/text/dfa.h b/text/dfa.h
+index 4fdc1aa1..45d598b3 100644
+--- a/text/dfa.h
++++ b/text/dfa.h
+@@ -42,6 +42,7 @@ struct dfa_span {
+  * ----------------------------------------------------------------------- */
+ #define DFA_ERE 0x01    /* extended RE; default is basic (BRE) */
+ #define DFA_ICASE 0x02  /* ASCII case-insensitive */
++#define DFA_ESC 0x08    /* sed: \\t \\f \\v \\a \\r \\xHH \\dNNN \\oNNN mean one byte */
+ #define DFA_NOTBOL 0x04 /* s[0] is not the start of a line: ^ never matches there */
+ 
+ /* dfa_error() codes; dfa_compile() returns one of these (0 = success) */
+diff --git a/text/dfa/dfa_bracket.c b/text/dfa/dfa_bracket.c
+index 631a1dc5..b0ac35d1 100644
+--- a/text/dfa/dfa_bracket.c
++++ b/text/dfa/dfa_bracket.c
+@@ -51,6 +51,15 @@ dfa_bracket_compile(struct dfa_parser* ps, unsigned char set[32]) {
+       continue;
+     }
+ 
++    /* sed: [\t] holds a tab (also \f \v \a \r) */
++    if((ps->flags & DFA_ESC) && p[0] == '\\' && p + 1 < end &&
++       (p[1] == 't' || p[1] == 'f' || p[1] == 'v' || p[1] == 'a' || p[1] == 'r')) {
++      byteset_add(set, (unsigned char)(p[1] == 't' ? '\t' : p[1] == 'f' ? '\f' : p[1] == 'v' ? '\v' : p[1] == 'a' ? '\a' : '\r'));
++      p += 2;
++      first = 0;
++      continue;
++    }
++
+     if(p + 2 < end && p[1] == '-' && p[2] != ']') {
+       if(byteset_range(set, (unsigned char)p[0], (unsigned char)p[2]) < 0) {
+         ps->err = DFA_ERANGE;
+diff --git a/text/dfa/dfa_parse.c b/text/dfa/dfa_parse.c
+index 7d6b332c..73bbf3f0 100644
+--- a/text/dfa/dfa_parse.c
++++ b/text/dfa/dfa_parse.c
+@@ -512,6 +512,45 @@ parse_atom(struct dfa_parser* ps) {
+       return;
+     }
+ 
++    /* GNU escapes for one byte: \t \f \v \a \r, \xHH, \dNNN, \oNNN */
++    if(ps->flags & DFA_ESC) {
++      const char* q = ps->p + 2;
++      int v = -1, base = 0, digits = 0, e = ps->p[1];
++
++      if(e == 't') v = '\t';
++      else if(e == 'f') v = '\f';
++      else if(e == 'v') v = '\v';
++      else if(e == 'a') v = '\a';
++      else if(e == 'r') v = '\r';
++      else if(e == 'x') base = 16, digits = 2;
++      else if(e == 'd') base = 10, digits = 3;
++      else if(e == 'o') base = 8, digits = 3;
++
++      if(base) {
++        int n = 0, got = 0;
++
++        while(got < digits && q < ps->end) {
++          int c = (unsigned char)*q, dv = c >= '0' && c <= '9' ? c - '0' : c >= 'a' && c <= 'f' ? c - 'a' + 10 : c >= 'A' && c <= 'F' ? c - 'A' + 10 : 99;
++
++          if(dv >= base)
++            break;
++
++          n = n * base + dv;
++          q++;
++          got++;
++        }
++
++        if(got)
++          v = n & 255;
++      }
++
++      if(v >= 0) {
++        ps->p = q > ps->p + 2 ? q : ps->p + 2;
++        dfa_emit(ps, DFA_CHAR, v, 0);
++        return;
++      }
++    }
++
+     if(ps->p[1] == 'b' || ps->p[1] == 'B' || ps->p[1] == '<' || ps->p[1] == '>') {
+       dfa_emit(ps, DFA_WORD, ps->p[1] == 'b' ? 0 : ps->p[1] == 'B' ? 1 : ps->p[1] == '<' ? 2 : 3, 0);
+       ps->p += 2;
+diff --git a/text/dfa/dfa_replace.c b/text/dfa/dfa_replace.c
+index d562ad95..3a1215a4 100644
+--- a/text/dfa/dfa_replace.c
++++ b/text/dfa/dfa_replace.c
+@@ -139,6 +139,30 @@ dfa_repl_compile(struct dfa_repl** out, const char* tmpl, size_t len, unsigned f
+ 
+         rc = repl_addliteral(r, &e, 1);
+         p += 2;
++      } else if((flags & DFA_REPL_BACKREF) && (c == 'x' || c == 'd' || c == 'o') && p + 2 < end) {
++        int base = c == 'x' ? 16 : c == 'd' ? 10 : 8, maxd = c == 'x' ? 2 : 3, n = 0, got = 0;
++        const char* q = p + 2;
++
++        while(got < maxd && q < end) {
++          int ch = (unsigned char)*q, dv = ch >= '0' && ch <= '9' ? ch - '0' : ch >= 'a' && ch <= 'f' ? ch - 'a' + 10 : ch >= 'A' && ch <= 'F' ? ch - 'A' + 10 : 99;
++
++          if(dv >= base)
++            break;
++
++          n = n * base + dv;
++          q++;
++          got++;
++        }
++
++        if(got) {
++          char b = (char)n;
++
++          rc = repl_addliteral(r, &b, 1);
++          p = q;
++        } else {
++          rc = repl_addliteral(r, &c, 1);
++          p += 2;
++        }
+       } else if((flags & DFA_REPL_BACKREF) && (c == 'U' || c == 'L' || c == 'u' || c == 'l' || c == 'E')) {
+         rc = repl_addcase(r, c == 'U' ? 2 : c == 'L' ? 3 : c == 'u' ? 4 : c == 'l' ? 5 : 6);
+         p += 2;
+diff --git a/text/sed/sed_addr.c b/text/sed/sed_addr.c
+index 8b736500..5b50f7ad 100644
+--- a/text/sed/sed_addr.c
++++ b/text/sed/sed_addr.c
+@@ -122,7 +122,7 @@ sed_addr_parse(const char** pp, const char* end, struct sed_addr* a, unsigned fl
+     a->type = SA_REGEX;
+     a->re_set = 0;
+   } else {
+-    unsigned dfaflags = ((flags & SED_ERE) ? DFA_ERE : 0) | ((flags & SED_ICASE) ? DFA_ICASE : 0);
++    unsigned dfaflags = DFA_ESC | ((flags & SED_ERE) ? DFA_ERE : 0) | ((flags & SED_ICASE) ? DFA_ICASE : 0);
+     int cc = dfa_compile(&a->re, pat.s, pat.len, dfaflags);
+ 
+     if(cc != DFA_OK) {
+diff --git a/text/sed/sed_subst.c b/text/sed/sed_subst.c
+index a1166469..56b0093b 100644
+--- a/text/sed/sed_subst.c
++++ b/text/sed/sed_subst.c
+@@ -150,7 +150,7 @@ sed_subst_parse(
+     }
+   }
+ 
+-  dfaflags = (flags & SED_ERE) ? DFA_ERE : 0;
++  dfaflags = DFA_ESC | ((flags & SED_ERE) ? DFA_ERE : 0);
+ 
+   if(s->icase)
+     dfaflags |= DFA_ICASE;

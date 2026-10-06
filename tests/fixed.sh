@@ -6321,4 +6321,8 @@ PX=$(printf '%070d\n' 1 | "$SHISH_SELF" -c 'sed -n l' | awk '{ print length($0) 
 PY=$(printf 'abcdefgh\n' | "$SHISH_SELF" -c 'sed -n "l 5"' | tr '\n' '|')
 assert_equal "70 2 / abcd\\|efgh\$|" "$PX/ $PY" "sed l folds lines at the width including the trailing backslash"
 
+# sed regex and replacement escapes: \t, [\t], \xHH, \dNNN, \oNNN
+PX=$(printf 'a\tb o\n' | "$SHISH_SELF" -c 'sed "s/\t/T/;s/[\t ]/_/;s/\x6f/0/;s/b/\x41\d066/"')
+assert_equal "aTAB_0" "$PX" "sed understands \\t, [\\t] and \\xHH / \\dNNN escapes in patterns and replacements"
+
 summary

@@ -150,7 +150,7 @@ sed_subst_parse(
     }
   }
 
-  dfaflags = (flags & SED_ERE) ? DFA_ERE : 0;
+  dfaflags = DFA_ESC | ((flags & SED_ERE) ? DFA_ERE : 0);
 
   if(s->icase)
     dfaflags |= DFA_ICASE;

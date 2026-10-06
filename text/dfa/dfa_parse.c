@@ -512,6 +512,45 @@ parse_atom(struct dfa_parser* ps) {
       return;
     }
 
+    /* GNU escapes for one byte: \t \f \v \a \r, \xHH, \dNNN, \oNNN */
+    if(ps->flags & DFA_ESC) {
+      const char* q = ps->p + 2;
+      int v = -1, base = 0, digits = 0, e = ps->p[1];
+
+      if(e == 't') v = '\t';
+      else if(e == 'f') v = '\f';
+      else if(e == 'v') v = '\v';
+      else if(e == 'a') v = '\a';
+      else if(e == 'r') v = '\r';
+      else if(e == 'x') base = 16, digits = 2;
+      else if(e == 'd') base = 10, digits = 3;
+      else if(e == 'o') base = 8, digits = 3;
+
+      if(base) {
+        int n = 0, got = 0;
+
+        while(got < digits && q < ps->end) {
+          int c = (unsigned char)*q, dv = c >= '0' && c <= '9' ? c - '0' : c >= 'a' && c <= 'f' ? c - 'a' + 10 : c >= 'A' && c <= 'F' ? c - 'A' + 10 : 99;
+
+          if(dv >= base)
+            break;
+
+          n = n * base + dv;
+          q++;
+          got++;
+        }
+
+        if(got)
+          v = n & 255;
+      }
+
+      if(v >= 0) {
+        ps->p = q > ps->p + 2 ? q : ps->p + 2;
+        dfa_emit(ps, DFA_CHAR, v, 0);
+        return;
+      }
+    }
+
     if(ps->p[1] == 'b' || ps->p[1] == 'B' || ps->p[1] == '<' || ps->p[1] == '>') {
       dfa_emit(ps, DFA_WORD, ps->p[1] == 'b' ? 0 : ps->p[1] == 'B' ? 1 : ps->p[1] == '<' ? 2 : 3, 0);
       ps->p += 2;

@@ -42,6 +42,7 @@ struct dfa_span {
  * ----------------------------------------------------------------------- */
 #define DFA_ERE 0x01    /* extended RE; default is basic (BRE) */
 #define DFA_ICASE 0x02  /* ASCII case-insensitive */
+#define DFA_ESC 0x08    /* sed: \\t \\f \\v \\a \\r \\xHH \\dNNN \\oNNN mean one byte */
 #define DFA_NOTBOL 0x04 /* s[0] is not the start of a line: ^ never matches there */
 
 /* dfa_error() codes; dfa_compile() returns one of these (0 = success) */
