@@ -787,13 +787,13 @@ So a literal word cost **5 mallocs, ~215 B** (2 since Stage 1). `set -- $(seq 1 
 
   Design:
   ```c
-  struct xlist { stralloc blob; size_t* off; size_t n, a; stralloc cur; unsigned state; };
-  void xl_cat(struct xlist*, const char*, size_t, int flags); /* = expand_cat's state machine */
-  void xl_break(struct xlist*);   /* close the open field; the next cat opens a new one */
-  char** xl_argv(struct xlist*);  /* NUL-terminated strings, argv-shaped; keep/drop already decided */
+  struct wordlist { stralloc blob; size_t* off; size_t n, a; stralloc cur; unsigned state; };
+  void wordlist_cat(struct wordlist*, const char*, size_t, int flags); /* = expand_cat's state machine */
+  void wordlist_break(struct wordlist*);   /* close the open field; the next cat opens a new one */
+  char** wordlist_argv(struct wordlist*);  /* NUL-terminated strings, argv-shaped; keep/drop already decided */
   ```
   Closed fields are NUL-terminated strings appended to one `blob`, with their offsets in one
-  vector that `xl_argv()` turns into `char*` in place: the result *is* `argv`, with no
+  vector that `wordlist_argv()` turns into `char*` in place: the result *is* `argv`, with no
   per-field node or flag. The open field is built in `cur` (glob/unescape happen when it
   closes, in one place). The "keep an empty unquoted field" decision (`X_SPLIT`) is made when
   the next field opens or the word ends, so no flag survives. Single-string entry points
@@ -801,11 +801,11 @@ So a literal word cost **5 mallocs, ~215 B** (2 since Stage 1). `set -- $(seq 1 
   make `cur` the caller's `stralloc` and skip fields entirely, which deletes `tmpnode`.
   Two mallocs per command (blob, vector) instead of two per word, reusable per nesting level.
   `expand_cat()`'s state machine keeps its logic (it encodes many `fixes/NN`); only its state
-  moves out of `narg.flag` into `xlist.state`, and the seven "new node" blocks become one
-  `xl_open()`.
-  Pointer stability: `blob` may move while building, so offsets are used until `xl_argv()`;
+  moves out of `narg.flag` into `wordlist.state`, and the seven "new node" blocks become one
+  `wordlist_open()`.
+  Pointer stability: `blob` may move while building, so offsets are used until `wordlist_argv()`;
   afterwards it is fixed for the life of the command. Command substitution and function calls
-  nest, but each level owns its own `xlist`, so nothing shares a moving buffer.
+  nest, but each level owns its own `wordlist`, so nothing shares a moving buffer.
   Zero-copy option: a word that is one unquoted literal chunk without backslash or glob
   characters could put a pointer straight to the parse-tree string in the vector (parse strings
   are already NUL-terminated by `stralloc_nul()` in `parse_string.c`); valid while the tree is
@@ -817,7 +817,7 @@ So a literal word cost **5 mallocs, ~215 B** (2 since Stage 1). `set -- $(seq 1 
   the existing example; a brace-on-expansion-result extension, which shish doesn't have --
   bash/dash/shish all leave `a='bl{a,e,i}h'; echo $a` unexpanded, confirmed 2026-09-21 -- would
   be another) can only extend that field in place while it is still `top` of the arena, i.e.
-  before the next field opens. `xl_close()`/`expand_glob()` already run exactly there. A rewrite
+  before the next field opens. `wordlist_close()`/`expand_glob()` already run exactly there. A rewrite
   applied as a second pass over an already-built list, after a later field has been appended,
   finds the target is no longer `top`; `arena_grow()` correctly refuses it (see `lib/arena.h`),
   and the only fallback is an O(n) shift of everything after it in `blob` -- no cheaper than the
@@ -855,6 +855,136 @@ compare the `tests/posix` and `tests/yash` pass counts before and after.
 
 **How to measure.** Same commands as the table above (`valgrind ./shish -c '...'`, read
 "total heap usage"); run ASan+UBSan too, for dangling fields after an `arena_rewind()`.
+
+### PLAN (nothing implemented yet) - `src/wordlist.h` and `src/wordlist/`: the expansion output as its own module
+
+Goal 3b's Stage 2 (renamed here: `struct wordlist`, `wordlist_*`) becomes a module of its own, with an arena
+behind it. **It does not depend on Goal 3:** it owns a scratch arena separate from the AST arena. Only the
+zero-copy-literal option (pointing a field at a parse-tree string) needs the AST arena.
+
+**Why a module.** Today the output of expansion is a chain of `N_ARG` nodes, so `struct narg` does two jobs:
+parse input (`list`) and expansion output (`flag`, `stra`, `next`). Every expansion function takes and returns
+`union node**` cursors, `tree_newnode(N_ARG)` appears nine times in `src/expand/`, and `tree_free()` has to run
+after each command. After this plan `narg` is parse-only and expansion output is a plain C object.
+
+**Layering.**
+```
+parse tree (N_ARG, N_ARGSTR, ...)   read-only input, lives as long as the tree
+        |  expand_*()               walks the word, decides what to append (src/expand/)
+        v
+struct wordlist                     append-only sink: cat / break / close   (src/wordlist/)
+        |  wordlist_argv()
+        v
+char** argv, stralloc, char*        what eval, for, assignments, redirections and case consume
+```
+`wordlist` knows nothing about `union node`, variables or `$(...)`; `expand` knows nothing about how fields are stored.
+`expand_ifs` is passed in (`wl->ifs`), so the module has no dependency on `var`.
+
+**Interface (`src/wordlist.h`).**
+```c
+struct wordlist {
+  arena*     ar;        /* closed fields are frozen here; the caller rewinds it */
+  stralloc*  cur;       /* the open field; a pooled buffer, or the caller's stralloc in string mode */
+  char**     v;         /* closed fields, v[n] == NULL: this is argv */
+  size_t     n, a;      /* fields, capacity of v */
+  unsigned   state;     /* X_* bits of the open field (was narg.flag) */
+  const char* ifs;      /* splitting characters, NULL = no splitting */
+  char*      inl[16];   /* v starts here: up to 15 fields cost no malloc at all */
+};
+void   wordlist_init(struct wordlist*, arena*, const char* ifs);
+void   wordlist_init_str(struct wordlist*, stralloc* out);   /* string mode: one field, no breaks */
+void   wordlist_cat(struct wordlist*, const char* b, size_t len, int flags); /* the expand_cat() state machine */
+void   wordlist_break(struct wordlist*);   /* end the open field; used by "$@" and IFS splitting */
+int    wordlist_close(struct wordlist*);   /* finish the open field: glob, unescape, keep-or-drop; fields added */
+char** wordlist_argv(struct wordlist*, int* argc);  /* v, NULL-terminated, no copy */
+void   wordlist_free(struct wordlist*);    /* give cur back to the pool, free a spilled v */
+```
+- **Where bytes live.** The open field is built in `cur`; `wordlist_close` freezes it with `arena_strndup`
+  and appends the pointer to `v`. `v` starts in the `inl[]` array (in the caller's stack frame, so `argv` needs no
+  copy) and spills to the heap with `alloc_re` only past 15 fields.
+- **`cur` is a pooled `stralloc`, not an arena allocation.** `arena_grow` only extends the newest allocation,
+  and a failed grow leaves a hole. A tiny pool (one buffer per nesting depth, taken in `wordlist_init`, returned in
+  `wordlist_free`) means steady state does no malloc: the buffer keeps its capacity from the last command.
+  Starting `cur` on the stack does not work: `stralloc_ready` treats `a == 0` as "not mine, copy out" on the first
+  write, which mallocs anyway.
+- **Arena choice.** One `arena_heap` arena with 8 KiB chunks, `arena_tell` before and `arena_rewind` after each
+  command, so its first chunk is reused for every command. `arena_mmap`/`arena_brk` add nothing for 8 KiB.
+- **String mode** replaces `tmpnode`: `expand_str/tostr/tosa/copysa/catsa`, `expand_range`, case patterns,
+  redirection targets, here-doc delimiters, prompts, and the temporary `N_ARG` in `expand_arith_expr()` write
+  straight into the caller's `stralloc`; `wordlist_break` is a no-op there.
+- **State bits.** `X_QUOTED|X_NOSPLIT|X_SPLIT|X_LITERAL|X_GLOB|X_UNESCAPED|X_PATTERN|X_CATCLOSED|X_GLOBRES|X_SUBWORD`
+  move from `expand.h` into `wordlist.h` under the same names (no churn at call sites); `expand.h` includes it.
+  Only the bits the parser still sets on `narg.flag` stay in the tree.
+
+**Files.** CMake already globs `src/*/*.c`; autotools needs `src/wordlist/Makefile.in` and a `configure.ac` entry.
+```
+src/wordlist.h
+src/wordlist/wordlist_init.c      init, init_str, pool take/return
+src/wordlist/wordlist_cat.c       the state machine moved out of expand_cat.c (all fixes/NN logic kept verbatim)
+src/wordlist/wordlist_break.c     field boundary
+src/wordlist/wordlist_close.c     keep/drop (the X_SPLIT rule), unescape, calls wordlist_glob
+src/wordlist/wordlist_glob.c      libc glob() result copied into the arena, globfree() at once (was expand_glob.c)
+src/wordlist/wordlist_argv.c      NULL terminator, argc
+src/wordlist/wordlist_free.c      pool return, spill free
+```
+`expand_unescape()` stays in `expand/`: case and redirections use it on plain stralloc.
+
+**`src/expand.h` after the change.** Every function taking `union node** nptr` and returning `union node*` takes a
+`struct wordlist* wl` instead. The returned node was only the new tail, used as the next cursor; a sink has none.
+
+| Today                                                                 | After                                                                |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `int expand_args(union node* args, union node** nptr, int flags)`      | `int expand_args(union node* args, struct wordlist* wl, int flags)`  |
+| `int expand_vars(union node* vars, union node** nptr)`                 | `int expand_vars(union node* vars, struct wordlist* wl)`             |
+| `union node* expand_arg(union node*, union node** nptr, int flags)`    | `void expand_arg(union node*, struct wordlist* wl, int flags)`       |
+| `union node* expand_param(struct nargparam*, union node** nptr, int)`  | `void expand_param(struct nargparam*, struct wordlist* wl, int)`     |
+| `union node* expand_command(struct nargcmd*, union node** nptr, int)`  | `void expand_command(struct nargcmd*, struct wordlist* wl, int)`     |
+| `union node* expand_arith(struct nargarith*, union node** nptr, int)`  | `void expand_arith(struct nargarith*, struct wordlist* wl, int)`     |
+| `union node* expand_cat(const char*, unsigned, union node** nptr, int)`| removed: `wordlist_cat(wl, b, len, flags)`                           |
+| `union node* expand_glob(union node** nptr, int flags)`                | removed: `wordlist_glob`, called from `wordlist_close`               |
+| `int expand_argv(union node* args, char** argv)`                       | removed: `wordlist_argv(wl, &argc)`                                  |
+
+Unchanged: `expand_str/copysa/catsa/tosa/tostr` (string mode inside), `expand_unescape`, the brace and tilde
+rewrites, `expand_arith_expr` and its siblings, and the `expand_error`/`expand_ifs` globals.
+Port check: a few callers use the returned node as "something was appended" (`n = expand_cat(...)`, then
+`if(n)`). Look at each one; where the signal matters the function returns `int`, otherwise `void`.
+
+**What changes elsewhere.**
+- `eval_simple_command`: `struct wordlist wl; arena_pos pos = arena_tell(&expand_arena);` ... one `end:` label does
+  `wordlist_free` and `arena_rewind`. The `HAVE_ALLOCA` argv block, `tree_free(args)` and `eval_args_top` guard for
+  expansion results go away (audit the guard first: it frees `args_head` when a command exits through a nested
+  exit; a rewind at the scope that owns the arena replaces it).
+- `eval_for`, `expand_vars`, `eval_print_prefix` (xtrace expands the words a second time) take a `wordlist` instead
+  of `union node**`. `expand_args(args, nptr, flags)` becomes `expand_args(args, &wl, flags)`.
+- `struct narg` drops `stra`: parse-time `N_ARG` goes from 48 to 24 bytes; `tree_free`/`tree_copy`/`debug_node`
+  lose their `narg.stra` lines.
+- Fields now live exactly as long as today (until the command ends), so nothing that keeps an `argv[i]` pointer
+  becomes newly unsafe. Audit once anyway: `hash`, `alias`, `trap`, `export`, `local`, `set --` must copy
+  (`sh_setargs` already `str_dup`s).
+
+**Order of work.** Each step builds, passes `tests/posix` + `tests/yash` counts unchanged, and is its own commit.
+0. `tests/expand-fields.sh`: the characterization test from Goal 3b "Risks", values from bash and dash.
+1. Module and string mode only: `expand_copysa/catsa/tosa/str/tostr` and `expand_arith_expr` stop using nodes.
+   Smallest behaviour surface (case, redirections, prompts) and it deletes `tmpnode`.
+2. Port `expand_cat`'s state machine and `expand_glob` into `wordlist_cat`/`_close`; `expand_args` and `expand_argv`
+   fill a wordlist; `eval_simple_command` switches over. This is the one risky step.
+3. `eval_for`, `expand_vars`, `eval_print_prefix`; delete the nine `tree_newnode(N_ARG)` sites in `expand/`
+   (`expand_brace.c:218` builds input copies, not output, and stays until brace becomes read-only, Stage 3).
+4. Arena scoping and the pool (until now `ar` may be a plain heap-backed arena reset per command); remove
+   `narg.stra`.
+
+**Expected result** (estimates from the Goal 3b table, to be re-measured): `: a b c d e f g h` from 45 mallocs and
+~1.9 KB in ~8 separate blocks to 0 mallocs in steady state and ~20 bytes of contiguous arena (`len + 1` per field);
+`: abcdefgh` from 5 to 0. Less fragmentation because per-word buffers (`len + len/8 + 30`) and nodes, freed
+in tree order, become one bump region released by a single rewind. Code size: the node plumbing and
+`tree_free` branches go, the module adds about 200 lines; accept only if `size shish` does not grow.
+
+**Rejected.** Growing `cur` inside the arena (nested `$(...)` allocations interleave; see Goal 3b "Rejected");
+one arena per word (rewind granularity is the command); making `wordlist` know about variables or the tree.
+
+**Risks.** Same as Goal 3b: expansion carries most of `fixes/`, so step 2 must not change behaviour and the state
+machine moves verbatim. A dangling `argv` after `arena_rewind` is the new failure class: run ASan+UBSan and keep one
+test that expands inside a function called from a `$(...)` inside an assignment.
 
 ---
 
