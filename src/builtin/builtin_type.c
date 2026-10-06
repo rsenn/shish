@@ -9,7 +9,7 @@
  * ----------------------------------------------------------------------- */
 const char help_type[] = "    Show how a name would be interpreted if run as a command.\n"
                          "\n"
-                         "    -a              accepted and ignored: only the first match is printed\n"
+                         "    -a              print every match: alias, keyword, function, builtin, each PATH file\n"
                          "    -f              suppress function matches\n"
                          "    -P              force a PATH search, even for a builtin/function\n"
                          "    -p              print the path only, if name resolves to a file\n"
@@ -37,7 +37,7 @@ builtin_type(int argc, char* argv[]) {
   for(; argv[shell_optind]; shell_optind++) {
     char* name = argv[shell_optind];
 
-    if(!exec_type(name, suppress_functions ? H_FUNCTION : 0, force_path, type_name, print_path))
+    if(!exec_type(name, suppress_functions ? H_FUNCTION : 0, force_path, type_name, print_path, all_locations))
       continue;
     if(!type_name && !print_path)
       builtin_errmsg(argv, name, "not found");

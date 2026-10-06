@@ -373,15 +373,6 @@
   done
   ```
 
-- type-a-unimplemented: `type -a` is accepted and ignored (documented in
-  `help_type`): only the first match is printed, not every alias/function/
-  builtin/`$PATH` hit.
-
-  **Repro:**
-  ```sh
-  type -a echo    # bash: builtin line, then /usr/bin/echo; shish: first line only
-  ```
-
 - unset-invalid-name-accepted: `unset 1x` (no `-v`) is accepted silently with
   status 0; only `unset -v` validates the name. POSIX 2.8.1 / bash: bash also
   returns 0 here, so this is low priority.

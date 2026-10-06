@@ -203,9 +203,8 @@ borrowing only if the mingw build ever needs a walker that `<dirent.h>` cannot g
 
 ### Next after the plan above: remaining `ls` options (`BUGS: ls-missing-options`), then `fc` (`BUGS: fc-missing`)
 
-Done: `type` (all operands, not-found status), `test` (`-ef`, 3-argument `-a`/`-o`, status 2 for bad
-integers), `cd` (`x/..` components, one operand, `-e`). Still open from them: `BUGS: type-a-unimplemented`;
-`break`/`continue` inside `eval` and `ln` (one operand, `-L/-P`, keeps
+Done: `type` (all operands, not-found status, `-a`), `test` (`-ef`, 3-argument `-a`/`-o`, status 2 for bad
+integers), `cd` (`x/..` components, one operand, `-e`). `break`/`continue` inside `eval` and `ln` (one operand, `-L/-P`, keeps
 existing destination without `-f`) are fixed.
 
 **Next in line**, in the order they were weighed (see `BUGS` for the repro of each):

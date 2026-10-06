@@ -6206,4 +6206,8 @@ PX=$("$SHISH_SELF" "$EL" 2>&1)
 rm -f "$EL"
 assert_match "$PX" "*:2:1: x: boom*" "an expansion error reports the line of its own command"
 
+# type -a lists every match; an alias is shown by its text alone
+PX=$("$SHISH_SELF" -c 'alias e="echo hi"; f() { :; }; type -a e f if echo' | tr '\n' '|')
+assert_match "$PX" "e is aliased to \`echo hi'|f is a function|if is a shell keyword|echo is a shell builtin|*" "type -a prints every alias, function, keyword and builtin match"
+
 summary
