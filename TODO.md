@@ -14,19 +14,20 @@ fragmentation, execution time.
 | 2-3 | Design decisions, `BUGS` map | decide before touching the affected code |
 | 4 | Memory safety gate | every later change is checked under ASan+UBSan |
 | 5 | Finish the per-builtin switches | almost done; leaves a clean base |
-| 6-7 | section 6 scope helper, section 7 trace leftovers | small, independent, no new modules |
+| 6-7 | In-process scope helper, trace leftovers | small, independent, no new modules |
 | 8-10 | `sed`/`awk`, `cp`/`mv`, regex engine | feature gaps inside existing builtins |
-| 11 | Applet mode | small, needs only the builtin map |
-| 12 | Directory walker (`lib/dirlist`, `lib/walk`) | prerequisite of `chown`/`du`/... and removes six hand-rolled walks |
-| 13 | `lib/arena.h` in `src/` | leaf call sites first; needs the `stralloc` freeze helper |
-| 14 | Optional alias/history/job control | medium, module splits |
-| 15 | Binary size | independent, measurable |
-| 16-17 | Expansion field list, `src/wordlist/` | one risky step (the `expand_cat` port) behind a characterization test |
-| 18 | AST arena (section 18) | parser-wide; after the field list removes `narg.stra` |
-| 19-21 | Filter chaining, tab completion, vi mode | interactive and pipeline features |
-| 22 | Also open (WASI, editor) | |
-| 23-25 | More utilities | wait for the walker and the builtin switches |
-| 26-27 | UTF-8, `shfuzz` | largest, optional, touch everything |
+| 11 | `time` keyword | parser + one tree kind + a small eval; no dependencies |
+| 12 | Applet mode | small, needs only the builtin map |
+| 13 | Directory walker (`lib/dirlist`, `lib/walk`) | prerequisite of `chown`/`du`/... and removes six hand-rolled walks |
+| 14 | `lib/arena.h` in `src/` | leaf call sites first; needs the `stralloc` freeze helper |
+| 15 | Optional alias/history/job control | medium, module splits |
+| 16 | Binary size | independent, measurable |
+| 17-18 | Expansion field list, `src/wordlist/` | one risky step (the `expand_cat` port) behind a characterization test |
+| 19 | AST arena | parser-wide; after the field list removes `narg.stra` |
+| 20-22 | Filter chaining, tab completion, vi mode | interactive and pipeline features |
+| 23 | Also open (WASI, editor) | |
+| 24-26 | More utilities | wait for the walker and the builtin switches |
+| 27 | UTF-8 | largest, optional, touches everything |
 
 **Non-goal, decided 2026-09-02:** bash's `var+=value` append-assignment (not in POSIX; `x=a; x+=b` parses
 `x+=b` as a command name). It is why libtool's `ltmain.sh` cannot run under shish; libtool-generated scripts are
@@ -266,7 +267,7 @@ set plus one extra and checks that `shish -c 'type NAME'` works) and the ASan/UB
 
 ---
 
-## 6. one helper for an in-process scope's saves
+## 6. One helper for an in-process scope's saves
 
 `(...)` (`eval_subshell()`) and `$(...)` (`expand_command()`) run in this process, and
 each repeats the same saves around its body: `fdstack_push`, `fd_state_save`/`restore`
@@ -286,7 +287,7 @@ trap runs afterwards. The two cannot be told apart without separate processes.
 
 ---
 
-## 7. evaluator trace (`SHISH_TRACE`): what is left
+## 7. Evaluator trace (`SHISH_TRACE`): what is left
 
 The trace layer is complete (`doc/debug-output.md`, `CLAUDE.md` "Debugging with TRACE()").
 
@@ -350,13 +351,13 @@ Open:
   compiled), musl/diet builds.
 - **Size:** measure the pair against two separate entry points (`-DBUILTIN_CP=ON -DBUILTIN_MV=ON`,
   `strip`, `stat -c%s`) and keep the smaller layout.
-- Documentation: `doc/builtins.md` entries, short `help_cp`/`help_mv` (section 15.2 counts help bytes),
+- Documentation: `doc/builtins.md` entries, short `help_cp`/`help_mv` (section 16.2 counts help bytes),
   README builtin list.
 - `ln` used to unlink an existing destination: `cp`/`mv` must not do that either (only with `-f`).
 
 ---
 
-## 10. regex engine `text/dfa`: what is left
+## 10. Regex engine `text/dfa`: what is left
 
 Built as `text/dfa/` (header `text/dfa.h`, prefix `dfa_`; not `lib/dfa/`): Pike's NFA simulation
 (`dfa_run.c`, one pass, bounded memory) and an explicit-stack backtracker (`dfa_bt.c`) for
@@ -387,7 +388,67 @@ Open:
 
 ---
 
-## 11. Busybox-style applet mode: `exec -a cat shish` runs only `cat` (plan)
+## 11. `time [-p] pipeline` as a reserved word (plan, nothing implemented)
+
+**Today** `time` resolves to `/usr/bin/time` (`type time`), which cannot time a builtin, a function, a compound
+command or a pipeline. bash makes it a reserved word (`bash -c 'help time'`: "Report time consumed by pipeline's
+execution", `-p` for the POSIX format); the POSIX utility page (`time [-p] utility [argument...]`) only requires
+the `-p` format on stderr and the utility's exit status. The target is bash's behaviour, with the whole pipeline
+inside the timing:
+
+```sh
+time cat blah.txt | grep '.*' | sort | tee out.txt    # one report for the four stages
+time (cat blah.txt | sort)                            # subshell, group, if, case, while, for, until, functions
+time { a; b; }     time if x; then y; fi     time f     time cd /     time -p cmd     ! time cmd     time ! cmd
+```
+
+**Parser** (`src/parse/parse_pipeline.c`), no new token: the 32nd token bit would be `1 << 31` (undefined for an
+`int`) and collides with `T_NONE = -1`.
+- The loop that eats leading `!` also accepts an unquoted `time` word (`T_NAME`, text `time` in `p->sa`), in any
+  order with `!`, at the start of a pipeline only (not after `|`, not after `command`, `\time` or `"time"`: those
+  keep running `/usr/bin/time`).
+- After `time`, peek one token: a word `-p` sets the POSIX format, anything else is pushed back (`p->pushback++`,
+  as the `!` path does). `parse_command()` then parses whatever follows, compound or not, and the rest of the
+  pipeline continues as today, so `time a | b` times both.
+- `type time` must say keyword (`is_keyword()` in `src/exec/exec_type.c`).
+- Open: a lone `time` (bash prints zero times; here a syntax error is the simple choice).
+
+**Tree**: a new kind `N_TIME` after `N_NOT`, `struct ntime { id; bgnd:1; posix:1; next; pipeline }` with the layout
+of `struct nnot`, so `tree_free` and `tree_copy` list it beside `N_NOT` (they read the child through
+`nandor.left`). The node wraps the pipeline and `!`, when present, wraps the node. Places: `tree.h` (enum, struct,
+union), `tree_nodesizes.c`, the `debug_nodes[]` name table and `debug_node.c`, `tree_copy.c`, `tree_free.c`,
+`tree_isbgnd.c`, `tree_cat.c` (prints `time [-p] ` then the child, so `shformat` and `set`'s function dump
+round-trip), `eval_node.c`.
+
+**Eval** (`src/eval/eval_time.c`): `times()` before and after `eval_tree()` of the child; real time from the
+`times()` return value (10 ms ticks) or `clock_gettime` where it exists; user and system are `tms_utime/stime`
+plus `tms_cutime/cstime`. The report goes to `fd_err`; the status is the child's, and it is not exempt from
+`set -e` (a `time false` fails like a pipeline). Not compiled on `WINDOWS_NATIVE` (no `times()`): the node just
+evaluates its child. Formats:
+
+```
+default (bash):   <blank line> real<TAB>0m0.101s  user<TAB>0m0.000s  sys<TAB>0m0.000s
+-p (POSIX):       real 0.10  user 0.00  sys 0.00
+```
+
+`TIMEFORMAT` is out of the first version (size); `%R %U %S %P %l` and the precision digit can follow.
+
+**Rejected:** a builtin `time` (the parser consumes `|`, `{` and `(` before a builtin runs, so it could only time a
+simple command); a token (bit limit above); reusing `N_NOT` with flag bits (its evaluation is `eval_and_or`'s
+negation, coupling the two for no saving).
+
+**Cost by the four metrics** (`CLAUDE.md`): about 120 lines (parser 25, tree 15 across nine switch sites, eval 45,
+tests), roughly 1 KB of code; switchable with a `WITH_TIME` macro in `src/features.h` like `WITH_PARAM_RANGE`
+(default on) if the size matters. No effect on binary size or speed when the word never appears.
+
+**Tests** (`tests/fixed.sh`): `-p` output matches `real [0-9]+\.[0-9][0-9]` on stderr; the status of the timed
+command is returned; a timed `sleep 0.2 | cat` reports at least 0.2 s; `time` of a group, subshell, `if`, `while`,
+`case` and a function; `type time` says keyword; `command time true` still runs the external one; `time` after `|`
+is a plain word; the `tree_cat` round trip (`shformat` of `time -p { a; } | b`).
+
+---
+
+## 12. Busybox-style applet mode: `exec -a cat shish` runs only `cat` (plan)
 
 `ln -s shish cat; ./cat file`, or `(exec -a cat ./build/.../shish file)`, runs the `cat` builtin and exits with its
 status; no shell is started. The decision is made from the basename of `argv[0]` alone.
@@ -425,7 +486,7 @@ and the script-named-`cat` case for the `sargv[0]` fix.
 
 ---
 
-## 12. One recursive directory walker instead of six hand-rolled ones (Part C, plan)
+## 13. One recursive directory walker instead of six hand-rolled ones (Part C, plan)
 
 **Builtins that walk a directory tree today** (found with `grep -l 'opendir\|readdir' src lib text`):
 
@@ -576,10 +637,10 @@ borrowing only if the mingw build ever needs a walker that `<dirent.h>` cannot g
 
 ---
 
-## 13. Where `lib/arena.h` would fit in `src/`, easiest first (plan)
+## 14. Where `lib/arena.h` would fit in `src/`, easiest first (plan)
 
 `lib/arena.h` is already linked (`text/dfa`, `text/awk`), so using it in `src/` adds no new code, only call sites.
-The AST arena (section 18) and the expansion field list (sections 16-17) are described below and not repeated here.
+The AST arena (section 19) and the expansion field list (sections 17-18) are described below and not repeated here.
 Rule of thumb: an arena fits where many small objects share one lifetime and die together, or die in LIFO order.
 It does not fit objects freed one by one in any order (history ring, job table, hash entries, variables).
 
@@ -617,9 +678,9 @@ It does not fit objects freed one by one in any order (history ring, job table, 
    one lookup (arena fits); the hash entries (`exec_create.c`) are removed one by one by `hash -r`/`PATH` change,
    so they stay on the heap unless `hash -r` is the only way out (then one arena reset).
 9. **`parse/` token and word buffers** (medium): each token is a `stralloc` then copied into a node. If the tree
-   arena (section 18) exists, the parser allocates the node and the string straight into it and the temporary
-   `stralloc`s shrink to one reusable scratch. Do not start before section 18.
-10. **`eval_function.c` function bodies** (medium, part of section 18): `nfunc.name = str_dup(...)` plus `tree_copy`
+   arena (section 19) exists, the parser allocates the node and the string straight into it and the temporary
+   `stralloc`s shrink to one reusable scratch. Do not start before section 19.
+10. **`eval_function.c` function bodies** (medium, part of section 19): `nfunc.name = str_dup(...)` plus `tree_copy`
     into a dedicated arena per function; redefinition frees the arena instead of calling `tree_free`.
 11. **`var/` and `vartab/`** (hard, probably never): variables are set, unset and exported in any order and
     `var_export` hands pointers to the environment. Only the *value* of a `local` could live in a function-frame
@@ -629,13 +690,13 @@ It does not fit objects freed one by one in any order (history ring, job table, 
     `fd_filter.c` `FD_BUFSIZE` buffer is one block per filter, nothing to gain.
 
 **Order of work.** stralloc step 1 and the `stralloc_trunc` fix, then 1 + 2 + 3 (each is a leaf and removes more
-code than it adds), then 4, 5, 7, 8. Items 9 and 10 belong to section 18. Every step is judged by the same test:
+code than it adds), then 4, 5, 7, 8. Items 9 and 10 belong to section 19. Every step is judged by the same test:
 the binary does not grow (`size shish` before and after on `MinSizeRel`) and `alloc`-call counts per command in the
-section 18 measurement drop. A step that grows the binary without lowering those counts is not merged.
+section 19 measurement drop. A step that grows the binary without lowering those counts is not merged.
 
 ---
 
-## 14. Make alias, history and job control really optional (plan)
+## 15. Make alias, history and job control really optional (plan)
 
 Details, inventories and the graded scenarios are in `doc/optional-subsystems.md`. Short form:
 
@@ -655,7 +716,7 @@ Details, inventories and the graded scenarios are in `doc/optional-subsystems.md
 
 ---
 
-## 15. make the binary smaller (musl and dietlibc are the targets)
+## 16. Make the binary smaller (musl and dietlibc are the targets)
 
 The pitch on the site is "a 185 KB shell". Every number below is
 `stat -c%s` on a **stripped** binary, `MinSizeRel` (`-Os`), measured
@@ -673,7 +734,7 @@ produces; the right one adds LTO, `--icf=all` and `-no-pie`, which are
 still opt-in. The dietlibc row is not a typo -- a *static* diet build
 undercuts the old *dynamic* glibc one.
 
-### 15.1 Remaining opt-in build flags
+### 16.1 Remaining opt-in build flags
 
 Not in the numbers above: LTO (`-DENABLE_LTO=ON`, worth ~8%), `--icf=all`
 (needs gold or lld), and `-no-pie` (drops `.rela.dyn`, at the cost of
@@ -690,7 +751,7 @@ Notes from measuring:
 - `-DMINSIZE_STRIP=OFF` turns off the post-link `strip` of `.comment`,
   `.note*`, `.eh_frame`, `.eh_frame_hdr`.
 
-### 15.2 Help and usage text: ~13 KB of a 136 KB binary
+### 16.2 Help and usage text: ~13 KB of a 136 KB binary
 
 `.rodata` is 18662 bytes, and the 38 `help_*` strings are 10234 of
 them -- 55%. On top: 848 bytes of usage strings and a 1760-byte
@@ -704,7 +765,7 @@ Wanted: `-DENABLE_HELP_TEXT=OFF` that nulls the `help`/usage fields of
 Related, smaller: packing the two `char*` fields into offsets in one
 string blob removes 56 relocations from `.data.rel.ro`.
 
-### 15.3 Stop dragging libc subsystems in for one caller each
+### 16.3 Stop dragging libc subsystems in for one caller each
 
 Measured in the musl static build:
 
@@ -763,9 +824,9 @@ musl, which is the figure above):
    only explicitly, results in collation order, unmatched pattern left
    as is — `expand_glob.c` already handles the last). Must pass in both
    `USE_LIBC_GLOB` settings; ASan+UBSan gate as usual.
-5. Interaction with section 26: with the internal `glob`, `?` and `[...]` in
+5. Interaction with section 27: with the internal `glob`, `?` and `[...]` in
    *pathname* patterns become UTF-8-aware for free once `path_fnmatch` is
-   (M3), and the `setlocale` question in section 26 (C) disappears for
+   (M3), and the `setlocale` question in section 27 (C) disappears for
    static builds.
 
 Other libc duplicates were surveyed and are **not** worth an option
@@ -781,14 +842,14 @@ One is a correctness question, not a size one: `path_gethome` (281 B)
 looks up home directories without libc's `getpwnam`, so a dynamic build
 misses NSS-provided users (LDAP etc.) — check before touching it.
 
-### 15.4 `LINK_STATIC` mem-routine switch -- decided: keep the in-tree `byte_*`/`str_*` loops
+### 16.4 `LINK_STATIC` mem-routine switch -- decided: keep the in-tree `byte_*`/`str_*` loops
 
 Re-measured 2026-09: switching the whole family to libc's routines for static builds makes `text` *larger*
 (musl +912 bytes, dietlibc +563, glibc identical), because the macros expand at every call site. The loops cost
 speed only against an assembly `memcpy` (musl, glibc), and no shell workload shows it. If one turns up, make a
 per-function exception (`byte_copy` over `memcpy`), not a per-libc switch.
 
-### 15.5 Builtin set
+### 16.5 Builtin set
 
 `-DENABLE_ALL_BUILTINS=ON` costs 26 KB over the default set
 (215232 vs 189312 stripped). The `EXTRA_BUILTINS` group (`cat`, `chmod`,
@@ -798,7 +859,7 @@ a documented "what does each builtin cost" table would let a distroless
 image pick. Largest single builtins, text+data of the object:
 `trap` 3987, `test` 3824, `printf` 3778, `expr` 3216, `set` 3120.
 
-### 15.6 Not binary size, but on the same pitch: 262 KB of `.bss`
+### 16.6 Not binary size, but on the same pitch: 262 KB of `.bss`
 
 `sig_stack` 155648, `term_inbuf` 65535, `fdtable_table` 8200, `fd_list`
 8192. It costs no file bytes and no RSS until touched, but a shell that
@@ -826,7 +887,7 @@ match against a baseline rather than expecting green.
 
 ---
 
-## 16. word expansion into a field list, not N_ARG nodes (background)
+## 17. Word expansion into a field list, not N_ARG nodes (background)
 
 Independent of the AST arena: the field list owns a scratch arena of its own (see the `wordlist` plan below).
 
@@ -918,10 +979,10 @@ compare the `tests/posix` and `tests/yash` pass counts before and after.
 
 ---
 
-## 17. `src/wordlist.h` and `src/wordlist/`: the expansion output as its own module (plan)
+## 18. `src/wordlist.h` and `src/wordlist/`: the expansion output as its own module (plan)
 
-section 16's Stage 2 (renamed here: `struct wordlist`, `wordlist_*`) becomes a module of its own, with an arena
-behind it. **It does not depend on section 18:** it owns a scratch arena separate from the AST arena. Only the
+section 17's Stage 2 (renamed here: `struct wordlist`, `wordlist_*`) becomes a module of its own, with an arena
+behind it. **It does not depend on section 19:** it owns a scratch arena separate from the AST arena. Only the
 zero-copy-literal option (pointing a field at a parse-tree string) needs the AST arena.
 
 **Why a module.** Today the output of expansion is a chain of `N_ARG` nodes, so `struct narg` does two jobs:
@@ -1025,7 +1086,7 @@ Port check: a few callers use the returned node as "something was appended" (`n 
   (`sh_setargs` already `str_dup`s).
 
 **Order of work.** Each step builds, passes `tests/posix` + `tests/yash` counts unchanged, and is its own commit.
-0. `tests/expand-fields.sh`: the characterization test from section 16 "Risks", values from bash and dash.
+0. `tests/expand-fields.sh`: the characterization test from section 17 "Risks", values from bash and dash.
 1. Module and string mode only: `expand_copysa/catsa/tosa/str/tostr` and `expand_arith_expr` stop using nodes.
    Smallest behaviour surface (case, redirections, prompts) and it deletes `tmpnode`.
 2. Port `expand_cat`'s state machine and `expand_glob` into `wordlist_cat`/`_close`; `expand_args` and `expand_argv`
@@ -1035,22 +1096,22 @@ Port check: a few callers use the returned node as "something was appended" (`n 
 4. Arena scoping and the pool (until now `ar` may be a plain heap-backed arena reset per command); remove
    `narg.stra`.
 
-**Expected result** (estimates from the section 16 table, to be re-measured): `: a b c d e f g h` from 45 mallocs and
+**Expected result** (estimates from the section 17 table, to be re-measured): `: a b c d e f g h` from 45 mallocs and
 ~1.9 KB in ~8 separate blocks to 0 mallocs in steady state and ~20 bytes of contiguous arena (`len + 1` per field);
 `: abcdefgh` from 5 to 0. Less fragmentation because per-word buffers (`len + len/8 + 30`) and nodes, freed
 in tree order, become one bump region released by a single rewind. Code size: the node plumbing and
 `tree_free` branches go, the module adds about 200 lines; accept only if `size shish` does not grow.
 
-**Rejected.** Growing `cur` inside the arena (nested `$(...)` allocations interleave; see section 16 "Rejected");
+**Rejected.** Growing `cur` inside the arena (nested `$(...)` allocations interleave; see section 17 "Rejected");
 one arena per word (rewind granularity is the command); making `wordlist` know about variables or the tree.
 
-**Risks.** Same as section 16: expansion carries most of `fixes/`, so step 2 must not change behaviour and the state
+**Risks.** Same as section 17: expansion carries most of `fixes/`, so step 2 must not change behaviour and the state
 machine moves verbatim. A dangling `argv` after `arena_rewind` is the new failure class: run ASan+UBSan and keep one
 test that expands inside a function called from a `$(...)` inside an assignment.
 
 ---
 
-## 18. arena allocator for the AST (`lib/arena` exists; `text/` uses it, `src/` does not yet)
+## 19. Arena allocator for the AST (`lib/arena` exists; `text/` uses it, `src/` does not yet)
 
 `src/tree.h`'s AST is a graph of individually `malloc()`'d nodes
 (`tree_newnode()`) plus separately `malloc()`'d string buffers hanging off
@@ -1100,7 +1161,7 @@ Design decisions already worked out (full reasoning in git history —
   adjacent in the arena is safe with no alignment padding, since
   `src/tree.h`'s node structs are already `__packed`.
 - **Expansion results are a separate problem.** Words expand into `N_ARG` field nodes on the
-  heap, not into the parse arena; see section 16 for the field-list redesign that follows this one.
+  heap, not into the parse arena; see section 17 for the field-list redesign that follows this one.
 - **Possible future: precompiled/cached AST on disk.** Serialize arena
   blocks with node pointers rewritten to offsets; on load, run one linear
   fixup pass turning offsets back into real pointers (structured like
@@ -1112,7 +1173,7 @@ Design decisions already worked out (full reasoning in git history —
 
 ---
 
-## 19. pull-based filter chaining: what is left
+## 20. Pull-based filter chaining: what is left
 
 `eval_pipeline()` chains a pipeline's whole non-last prefix straight into the true last stage through
 in-process buffers (`FD_FILTER`, `struct filter_ops`, `pipeline_filter_prepare_chain()`) when every
@@ -1162,7 +1223,7 @@ returning NULL, nothing printed) for anything that changes shell state, which is
 
 ---
 
-## 20. tab-completion: context-aware, and extensible through `complete`
+## 21. Tab-completion: context-aware, and extensible through `complete`
 
 **Not started beyond the first slice; this section is the plan.** (The
 file is `src/term/term_complete.c`, 363 lines; there is no
@@ -1318,7 +1379,7 @@ here. Tests: one assertion per word, plus `for x i<TAB>` → `in`.
   file → space, `nospace` → nothing, inside an open quote → the closing quote.
 - Listing: directories are shown with a trailing `/`; sorted with `strcmp`
   (C locale) — locale collation is out of scope; width by
-  `mb_cols` once section 26 exists.
+  `mb_cols` once section 27 exists.
 - First TAB inserts the common prefix; only if nothing was inserted (or on a
   second TAB) print the list, like bash; more than `COMPLETION_QUERY_ITEMS`
   (default 100) candidates asks "Display all N possibilities? (y or n)".
@@ -1533,8 +1594,7 @@ against the same table before switching.
   newline tab`) — insert, then `eval` the result and compare with the
   file name; this is the only way to be sure the escaping is right.
 - **State machine** (Phase 4): the valid-next table as a test, plus a
-  random walk: generate a valid shell fragment (the section 27 fuzzer, when it
-  exists), cut it at a random word boundary, and assert that the
+  random walk: generate a valid shell fragment, cut it at a random word boundary, and assert that the
   continuation's next keyword is among the offers.
 - **`complete`** (Phase 5): every option, `-p` round trip
   (`complete -p | eval` reproduces the registry), `-F` with `COMP_*`,
@@ -1544,7 +1604,7 @@ against the same table before switching.
   in the middle of a line (text after the cursor is kept and not
   considered), two-TAB list behaviour.
 - **Fuzz**: random bytes as the line and a random cursor position under
-  ASan+UBSan (section 27 style gate): `compl_words()` and `compl_context()`
+  ASan+UBSan (the section 4 gate): `compl_words()` and `compl_context()`
   must never read outside `term_cmdline`.
 
 ### Size and cost (estimates; calibration: today's `term_complete.c` is
@@ -1562,7 +1622,7 @@ against the same table before switching.
 The completer only exists in interactive builds; the `WITH_COMPLETE`
 switch (default on with the line editor, off for the WASI/`-c` builds that
 never read a tty) keeps a non-interactive build unchanged — verify with the
-stripped-size comparison from section 15.
+stripped-size comparison from section 16.
 
 ### Order of work (each step its own change with test and this file updated)
 
@@ -1583,14 +1643,14 @@ stripped-size comparison from section 15.
   shish. Compatibility with the bash-completion package is **not** a goal;
   compatibility with the *idioms* in this section is.
 - **Default builtins**: `complete`/`compgen` in `DEFAULT_BUILTINS` or
-  `EXTRA_BUILTINS`? Decide from the measured size (≈6 KB, section 15.5 policy).
+  `EXTRA_BUILTINS`? Decide from the measured size (≈6 KB, section 16.5 policy).
 - **Correctness of the lexer vs. the parser**: Phase 4 accepts small drift;
   the fallback keeps it harmless. Track drift cases in `BUGS` as they are found.
 - **`$PATH` scan cost** on slow/network directories: the cache is per
   directory mtime, but the first scan blocks the prompt; a soft limit
   (`COMPLETION_PATH_MAX`, default 5000 entries) and no scan of directories
   that are not `stat`-able within one call.
-- **UTF-8** (section 26): candidate width in the listing and the insertion of a
+- **UTF-8** (section 27): candidate width in the listing and the insertion of a
   common prefix must not cut a multibyte character — use `mb_clen` when the
   common prefix is computed byte-wise.
 - **Security**: `-W`/`-F` execute user-defined code on TAB; nothing typed at
@@ -1612,7 +1672,7 @@ size build/x86_64-linux-gnu/CMakeFiles/libshell.dir/src/term/*.o build/x86_64-li
 
 ---
 
-## 21. vi mode (`src/term/term_vimode.c`): gaps against vim/POSIX `set -o vi`
+## 22. Vi mode (`src/term/term_vimode.c`): gaps against vim/POSIX `set -o vi`
 
 Tests: `tests/term-vi.sh`. `vi` is always on: there is no `set -o vi` / `set -o emacs` switch.
 
@@ -1638,7 +1698,7 @@ Tests: `tests/term-vi.sh`. `vi` is always on: there is no `set -o vi` / `set -o 
 
 ---
 
-## 22. Also open
+## 23. Also open
 
 - **WASI build (`cfg-wasi`, `doc/wasm.md`) — builds and runs (Node, webassembly.sh).** `build/wasi/shish` is 248 KB and runs under Node's WASI
   (`--experimental-wasm-exnref`): 18 of 34 `tests/*.sh` pass unmodified,
@@ -1660,12 +1720,12 @@ Tests: `tests/term-vi.sh`. `vi` is always on: there is no `set -o vi` / `set -o 
   bug. Minimal tab-completion (`src/term/term_complete.c`: filenames, plus
   keywords, builtins and functions at a command's first word) is the
   only piece of this done so far; its growth path (context, `$PATH`,
-  `complete`/`compgen`) is section 20. UTF-8-aware editing (per-character cursor and
-  backspace, display columns) is milestone M5 of section 26.
+  `complete`/`compgen`) is section 21. UTF-8-aware editing (per-character cursor and
+  backspace, display columns) is milestone M5 of section 27.
 
 ---
 
-## 23. More utilities as builtins (plan only, nothing implemented)
+## 24. More utilities as builtins (plan only, nothing implemented)
 
 Two prioritized lists of programs that are not builtins yet, each with size estimates, POSIX status, whether it can
 be a filter, a category, and the source file it should share with its relatives:
@@ -1681,9 +1741,9 @@ be a filter, a category, and the source file it should share with its relatives:
   switch_root`, testable with `unshare -Ur`), then a shared `lib/coltab` table printer and the `ls*` listing tools.
   Not worth building: `su sulogin getty agetty fsck* mkfs.*`.
 
-**Prerequisites, in this order** (sections 5 and 12): the builtin map so a file can hold
+**Prerequisites, in this order** (sections 5 and 13): the builtin map so a file can hold
 several builtins, the per-builtin switches (Part B) so each of them can be left out, and the directory walker (Part C)
-for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility from either list before sections 5 and 12 are done.
+for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility from either list before sections 5 and 13 are done.
 
 **Cross-cutting decisions to take first** (also in the "Open questions" of both documents):
 - whether Linux-only builtins belong in the tree at all (the plan assumes a busybox-like single binary is the goal);
@@ -1693,7 +1753,7 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
 
 ---
 
-## 24. more `EXTRA_BUILTINS`: POSIX utilities real scripts call most, still external
+## 25. More `EXTRA_BUILTINS`: POSIX utilities real scripts call most, still external
 
 **Not started; this section is the candidate list.** The rationale is the same as for `cp`/`mv`: a
 builtin is free where an external binary already exists (it only wins the `PATH` lookup +
@@ -1725,7 +1785,7 @@ out of scope per the "design spec is POSIX" rule.)
   unavailable.
 - **Niche/legacy** (`getconf`, `cmp`, `bc` (non-trivial), `comm`, `fold`, `mkfifo`, `join`, `expand`,
   `od`, `pr`, `cksum`, `tsort`, `csplit`, `pathchk`, `chgrp`): candidates, not a near-term plan; no
-  per-utility sizing has been done. The sized schedule for the ones in section 25 is there.
+  per-utility sizing has been done. The sized schedule for the ones in section 26 is there.
 - Known gaps in the builtins that already moved: `sort` keeps everything in memory and compares bytes (no locale collation); `tail -f` follows one
   file; `split` has the POSIX options only.
 
@@ -1735,7 +1795,7 @@ deliberately omitted option).
 
 ---
 
-## 25. the remaining POSIX utilities as optional `EXTRA_BUILTINS`
+## 26. The remaining POSIX utilities as optional `EXTRA_BUILTINS`
 
 Utilities from the POSIX utilities volume that are not builtins yet. None is needed by the shell itself,
 so **this waits until the main quest is done.** Each one is opt-in (`BUILTIN_<NAME>`,
@@ -1785,11 +1845,11 @@ Do these two before the utilities that need them; each removes a duplicate:
    `xargs`/`timeout` already do it by hand): about 30 lines around `exec_hash()` + `exec_command()`.
 
 Filters (`head uniq paste cut tr nl tail`, already builtins) use `src/builtin/builtin_filter.[hc]` (`filter_in`,
-`filter_ops`: declarative `opts/size/option/setup/step/finish`, see the comment in the header) so they can join filter chains (section 19); `tail -f` and `more` cannot chain.
+`filter_ops`: declarative `opts/size/option/setup/step/finish`, see the comment in the header) so they can join filter chains (section 20); `tail -f` and `more` cannot chain.
 
 ---
 
-## 26. optional UTF-8 support (`WITH_UTF8`, off by default)
+## 27. Optional UTF-8 support (`WITH_UTF8`, off by default)
 
 **Not started; this section is the plan.** shish is byte-oriented and
 never calls `setlocale`, i.e. it is always in the POSIX locale, which is
@@ -2110,7 +2170,7 @@ never calls. Options: (a) leave it — `?` in a *pathname* pattern stays
 bytewise, everything else is right (documented gap); (b) under
 `HAVE_SETLOCALE`, call `setlocale(LC_CTYPE, "")` when `mb_utf8` turns on
 so libc agrees (glibc, musl); dietlibc/mingw stay at (a). Start with (a),
-add (b) as its own step. The internal `glob` planned in section 15.3
+add (b) as its own step. The internal `glob` planned in section 16.3
 (`USE_LIBC_GLOB=OFF`) removes the problem for static builds without
 `setlocale`: it matches with `path_fnmatch`, which M3 makes UTF-8-aware.
 
@@ -2157,7 +2217,7 @@ only if `mb_get` should reuse its decoder. `fmt_utf8.c` and
 
 **Default build (`WITH_UTF8=0`): 0 bytes** — that is a requirement, not a
 hope: compare the stripped `shish` size before/after each milestone
-(section 15's tooling) and treat any growth beyond a few bytes of noise as a
+(section 16's tooling) and treat any growth beyond a few bytes of noise as a
 bug in the `#else` branch.
 
 ### Order of work (each step its own change with test, `fixes/NN` where it fixes something, and this file updated)
@@ -2192,323 +2252,3 @@ bug in the `#else` branch.
 - `"$*"` with an empty IFS is broken independently of UTF-8
   (`BUGS: star-empty-ifs-appends-nul`); fix it before touching that
   line, or M2's `mb_clen(ifs, …)` would return 1 for the NUL terminator.
-
----
-
-## 27. `shfuzz`: a structure-aware shell fuzzer built on `union node`
-
-**Not started; this section is the plan.** Generate random but *valid*
-ASTs (`src/tree.h`) from entropy or a key, serialize them with
-`tree_cat()`, and feed the text to the parser/evaluator. Useful as a
-test (round-trip and sanitizer oracles) and as a standalone utility.
-Dev tool: built only with a `BUILD_SHFUZZ` option, **never linked into
-`shish`** (the constraint table alone would cost several KB).
-
-### What `tree_cat.c` shows (checked 2026-09-19 by grep and by running `shformat`)
-
-`tree_cat()` is the ground truth for which parts of `union node` matter
-to a serializer — but it is lossy, and the loss is exactly the set of
-members it never reads:
-
-| Read by `tree_cat` | Never read |
-|---|---|
-| child slots (`args vars rdir cmds pats word list test cmd0 cmd1 body left right node cond ontrue onfalse tree`), `nargstr.flag & S_TABLE`, `nargparam.flag` (`S_STRLEN S_VAR S_SPECIAL S_ARITH S_NULL`, `S_RANGE` under `WITH_PARAM_RANGE`) + `numb` + `name`, `nargcmd.flag & S_BQUOTE`, `nredir.flag` (`R_IN R_OUT R_APPEND R_DUP R_HERE R_STRIP R_CLOBBER`) + `fdes`, `narithnum.base` ∈ {8,10,16} + `num`, arithmetic ids, `bgnd` of every statement kind (`tree_isbgnd()`), `nfor.has_in` | `nredir.data`, `nredir.fd`, `npipe.ncmd`, all `loc`, `narg.flag` (the `X_*` expansion bits) |
-
-One real bug is left from the right-hand column (`BUGS:
-tree-cat-mangles-here-documents`); the `bgnd` and `has_in` ones are fixed
-(`fixes/327`, `fixes/328`; `for x in; do …` used to print as `for x; do …`,
-which changes the program). A generator restricted to what `tree_cat`
-reads would never exercise here-doc data, although `eval` uses it — so
-fix `tree_cat` first, or the round-trip oracle fails on every tree that
-touches it.
-
-### The constraint table: `tree_spec[]`, one row per `enum kind`
-
-`enum kind` has 63 values (`N_SIMPLECMD` … `A_VBITOR`), and
-`tree_nodesizes[]` (`src/tree/tree_nodesizes.c`) is already a per-kind
-table, so the shape is established. Use C99 designated initializers
-(`[N_REDIR] = {…}`) — `tree_nodesizes[]` is positional and would silently
-shift if the enum were reordered. A set of allowed kinds fits a
-`uint64_t` mask (bit `1ull << kind`, one spare bit).
-
-```c
-struct tree_member {               /* one *slot* of one node struct */
-  uint16_t offset;                 /* offsetof(struct nredir, flag) */
-  uint8_t  role;                   /* ONE OPT LIST | INT FLAGS ENUM | STR | COUNT */
-  uint8_t  sep;                    /* LIST: what ->next means here (';' '|' ' ' ',' ...) */
-  uint16_t min, max;               /* LIST length */
-  uint64_t kinds;                  /* child roles: allowed kinds, bit per enum kind */
-  int64_t  lo, hi;                 /* INT/ENUM: inclusive bounds (named TREE_MAX_* constants) */
-  const struct tree_group* groups; /* FLAGS: independent sub-fields, e.g. S_TABLE = {0, S_DQUOTED, S_SQUOTED} */
-  uint8_t  pred;                   /* STR: TS_NAME TS_SQ TS_DQ TS_WORD ... (see below) */
-};
-struct tree_spec {
-  uint16_t size;                   /* == tree_nodesizes[kind]; static assert */
-  uint8_t  nmember, min_depth;     /* min_depth: levels needed to finish, so generation terminates */
-  struct tree_member m[TREE_MAXM];
-  void   (*fixup)(union node*);    /* rare cross-member rules, see below */
-};
-const struct tree_spec tree_spec[A_VBITOR + 1] = {
-  [N_SIMPLECMD] = {…, { LIST(ncmd, args, ' ', 0, 8, K(N_ARG)),
-                        LIST(ncmd, vars, ' ', 0, 4, K(N_ASSIGN)),
-                        LIST(ncmd, rdir, ' ', 0, 3, K(N_REDIR)) } },
-  [N_REDIR]     = {…, { FLAGS(nredir, flag, R_GROUPS), INT(nredir, fdes, 0, TREE_MAX_FD),
-                        LIST(nredir, word, '\0', 1, 1, K(N_ARG)) } },
-  …
-};
-```
-
-**`next` is not a member of the table.** Every one of the 22 `n*` structs
-has it (common prefix `id`, a 1-bit field, `next`), so "has `next`" says
-nothing. Whether a node sits in a chain is decided by the *slot that
-points at it*:
-
-| Role | Meaning | Validator rule |
-|---|---|---|
-| `ONE` | exactly one node | `->next == NULL` |
-| `OPT` | zero or one | `NULL`, or a node with `->next == NULL` |
-| `LIST` | chain, `min`..`max` long, separator tag `sep` | each element's kind ∈ `kinds`; last `next` is `NULL` |
-
-The tree root is a pseudo-slot of role `LIST` (the top-level command
-sequence) and is the generator's entry point. `sep` records that `next`
-means `;` in a compound list, `|` in `npipe.cmds`, a space in
-`ncmd.args`, `|` between case patterns, `,` in `A_PAREN`.
-
-Initial slot roles, read from `tree_cat.c` (to be confirmed by method C):
-
-| Slots | Serialized with | Role |
-|---|---|---|
-| `ncmd.args/vars/rdir`, `nfor.args/cmds`, `nloop.test/cmds`, `ngrp.cmds`, `nlist.cmds`, `ncase.list` (of `N_CASENODE`), `ncasenode.pats/cmds`, `nif.test/cmd0/cmd1`, `nargcmd.list`, `nargarith.tree`, `A_PAREN.tree`, `nredir.word` | `tree_catlist` / manual loop | `LIST` |
-| `npipe.cmds`, `narg.list` (of `N_ARGSTR/ARGPARAM/ARGCMD/ARGARITH`) | manual loop | `LIST` |
-| `ncase.word`, `nargparam.word`, `nfunc.body`, `A_TERNARY` slots, binary `left`/`right`, unary `node` | `tree_cat` | `ONE` |
-| `nandor.left/right`, `nnot` | `tree_catlist` | **unclear** — the parser probably builds a single node; a chain given to a `tree_cat`-single slot silently loses its tail |
-
-Rules that are not per-slot:
-
-- The 1-bit field is called `bgnd` in 9 structs (`ncmd npipe nandor ngrp
-  nfor ncase nif nloop nlist`), `dummy` in 7 (`nnot ncasenode nfunc
-  narithnum/unary/binary/ternary`), and the 6 word-level structs (`narg
-  nredir nargstr nargparam nargcmd nargarith`) have a full `unsigned flag`
-  instead; the validator requires `dummy` bits to be 0.
-- `nif.cmd1` holding exactly one `N_IF` prints as `elif`; `else if … fi`
-  parses to the same shape, so both are the same tree.
-- `nfunc.next` is typed `struct nfunc*`; treated as the same link.
-- Whole-tree invariants: acyclic, and no node reachable twice
-  (`tree_free` would double-free).
-- Rare cross-member rules go in the per-kind `fixup` hook, only for:
-  `npipe.ncmd == length(cmds)`; `nargparam` uses `numb` when
-  `S_SPECIAL == S_ARG`, else `name`; an `R_HERE` redirection needs `data`.
-- Strings are constrained by **predicates that already exist**
-  (`parse_isname`, `parse_isesc`, `parse_isdesc`, `var_valid`) — the
-  table stores a predicate id, the generator calls the predicate.
-  Examples: a `'…'` string cannot contain `'`; `nfor.varn`, `nfunc.name`
-  and `nargparam.name` must be valid names and not reserved words.
-- Integers need **named, asserted bounds** (`TREE_MAX_FD` for
-  `nredir.fdes`, one for `numb`, `num`/`base`), enforced in the parser
-  as well; today they are plain `int`/`long`/`int64` and it has not been
-  checked what `parse`/`eval` really tolerate.
-- Not in the table: evaluation safety (the fuzzer must not generate
-  `rm -rf`); that is generator policy, see below.
-
-The same table drives `tree_validate(node)` (first out-of-spec member,
-with a path). Uses: the generator's postcondition; a debug-build check
-after every `parse()` — which enforces "integers never exceed what
-parse/eval/expand expect" and finds either a wrong table or a parser
-emitting out-of-spec trees. Later, `tree_free`/`tree_copy`/a
-`tree_equal` could be made table-driven; not part of this goal.
-
-### How the table gets filled: three derivations, used together
-
-- **A. Static extraction from `tree_cat.c`.** Parse the file with clang
-  (`-ast-dump=json` or `clang-query`); per `case` label record member
-  accesses, constants in `& S_…`/`& R_…` tests, `switch` labels (the `base`
-  cases), null checks (⇒ optional), `for(… n = n->next)` loops and
-  `tree_catlist` vs `tree_cat` calls (⇒ `LIST` vs `ONE`), array sizes as
-  domains (`vsubst_types[(flag & S_VAR) >> 8]` ⇒ 0..7). Emit an X-macro
-  header. Mechanical and regenerable; needs clang (dev-only). Traps:
-  `goto again`, the `N_NOT → N_AND` fallthrough, `#if WITH_PARAM_RANGE`,
-  and accesses through an aliasing member (`node->ncmd.rdir` on `N_IF`
-  relies on identical offsets — emit `offsetof` equality checks).
-  Decides **which bits matter**.
-- **B. Black-box sensitivity probing.** Compile against the real structs;
-  per kind build a canonical valid node, flip every scalar bit and see
-  whether the `tree_cat` output changes; sweep values for crashes; try
-  every kind in every pointer slot for the allowed-child matrix
-  (≈63 × 4 probes); cross-check against `tree_free`/`tree_copy`. Needs no
-  C parsing and tests real behaviour, but cannot tell a domain violation
-  from a bug the parser can reach, and is too permissive where `tree_cat`
-  tolerates what `eval` would not. Used as a **CI check** that the table
-  still matches reality.
-- **C. Parser-observed profile.** A small tree walker run over every
-  script we have (`tests/*.sh`, `tests/posix/*.tst`, `tests/yash`);
-  record per (parent kind, slot) the child kinds, chain lengths and the
-  observed value ranges of scalars. Stays within what `parse`/`eval`/
-  `expand` handle in practice — the stated requirement — but only as
-  complete as the corpus. Decides **domains and bounds** and settles the
-  unclear `ONE`/`LIST` slots.
-
-### What the generator is (definition, 2026-09-19)
-
-A deterministic function `decode(bits) → AST`, i.e. a *structure-aware
-test-case generator* with a fuzzing driver on top (prior art: Hypothesis'
-choice sequences and Zest/JQF generators-as-parsers-of-bytes, LLVM's
-`FuzzedDataProvider`, `libprotobuf-mutator`; for enumeration SmallCheck
-and Korat). Required properties:
-
-- **Total:** every bitstring decodes to a valid AST, nothing is rejected.
-  Budgets and "default choice when the bits run out" deliver this.
-- **Deterministic:** same bits → same AST → same script text. This is a
-  property of *generation only*: executing the script is not
-  deterministic (time, pids, `$RANDOM`, jobs, signals), so "same key,
-  same behaviour" does **not** hold in evaluate mode.
-- **Surjective** onto the valid ASTs within the budgets.
-- **Many-to-one, and that is fine:** trailing unused bits, leading zeros
-  and default choices collapse. "Every bit gives a different AST" is not
-  true of a stream decoder.
-
-Two designs share the same `tree_spec[]`; build the first:
-
-| | Stream decoder (**first**) | Enumerative unranking (later) |
-|---|---|---|
-| Mapping | bits → AST, many-to-one | integer *n* → the *n*-th AST by size, bijective |
-| For | random and coverage-guided fuzzing, mutation, **shrinking** a failing case by shortening/simplifying the stream | exhaustive small scope: "no crash for every AST up to size *k* over this word pool" |
-| Weak | no coverage guarantee | no bit locality, so it does not mutate well |
-
-"Counting 1, 2, 3, … generates every script" is only true of the
-bijective design, and only in principle: binary counting changes the low
-bits fastest, so a stream decoder fed 1, 2, 3, … varies only its last
-~20 choices (early structure stays on defaults), and the space explodes
-(8 words, commands of 1-3 words, scripts of 1-3 commands is already
-≈2·10⁸ scripts before any nesting). Enumeration is only useful at small
-size, as a guarantee, not as a way to find bugs in big scripts.
-
-**ASTs are a quotient of scripts, not all scripts.** Whitespace,
-comments, quoting variants and line continuations collapse into one AST,
-and scripts that fail to parse are not ASTs. So valid-AST generation
-never reaches the lexer's odd paths or the parser's rejection and
-error-recovery paths — where memory-safety bugs often live — and `tree_cat`
-emits one canonical style, so the round trip only tests that slice.
-Two additions, both in scope:
-
-- a **second serializer with randomized style** (extra whitespace,
-  alternative-but-equivalent quoting, comments, `\`-newline
-  continuations); the round-trip oracle still holds because the tree must
-  not change;
-- shfuzz output as **seed corpus** for byte-level fuzzing (AFL/libFuzzer)
-  of the parser, which covers the invalid-input side.
-
-### Words (strings) are synthesized, not enumerated
-
-Strings dominate the search space (unbounded length × 256 symbols) and
-the parser treats characters by class, so collapse them — deterministically,
-from the same stream:
-
-- **Role-typed pools:** name role → a small pool or `[a-z_][a-z0-9_]{0,k}`;
-  numbers `0 1 -1 …`; glob patterns `* a* [a-c] ?`; fds; here-doc
-  delimiters. The role comes from the table's string predicate.
-- **Reduced alphabet:** one representative per character class the lexer
-  and expander distinguish (letter, digit, `_`, space, tab, newline, `/`,
-  `.`, `-`, `=`, `$`, `\`, `'`, `"`, `` ` ``, `*`, `?`, `[`, `]`, `!`, `~`,
-  `#`, `%`, `{`, `}`, `|`, `&`, `;`, a non-ASCII byte).
-- **Escape hatch:** one choice bit occasionally draws raw bytes, so rare
-  bytes are not lost entirely.
-- **Typed symbol pools:** variables, functions and files created earlier
-  in the generated script are reused by later words; evaluation coverage
-  is much better than with random names. This makes the generator
-  slightly context-sensitive, kept as a small side table.
-
-### Generator mechanics
-
-- Input is a **byte stream**: every choice takes bits from it (`take(n)`);
-  when it runs out, choices default to the minimal option. A key seeds a
-  PRNG (splitmix64) that expands into that stream, so "from entropy or a
-  key" is the same code, and libFuzzer/AFL can drive it with their own
-  mutation of the bytes.
-- Budgets: max depth, max list length per slot (`max` in the table),
-  max string length, total node count; `min_depth` guarantees every
-  recursion can be closed.
-- Two modes: **parse-only** (safe by construction — *the first release*)
-  and **evaluate**, which is a project of its own: word/command
-  whitelist, scratch directory, `ulimit`s, timeouts for generated
-  `while true` loops, no `/dev`-touching redirections, and normalisation
-  of nondeterminism before any comparison. Evaluate mode stays **out of
-  the first release**.
-
-### Oracles
-
-1. **Round trip:** `tree_cat(T)` → `parse` → `tree_cat` must reproduce
-   the string, and the trees must match under a new `tree_equal` that
-   ignores `loc`. Deviations are serializer or parser bugs (`tree_cat`
-   fixes first, see above).
-2. `tree_validate` on every parser output (debug builds).
-3. ASan+UBSan build must run clean (memory-safety gate, section 4); crash-only mode
-   for long runs.
-4. Optional differential run of the evaluated result against `dash`/
-   `bash`/`yash` in a sandbox, for the POSIX-only subset the generator
-   emits (evaluate mode only; noisy — bugs and bash-isms on both sides).
-
-Without a reference shell the oracles find crashes, hangs, sanitizer
-errors and round-trip mismatches, **not wrong behaviour**; say so in the
-tool's documentation.
-
-### Order of work (each step its own change with test and this file updated)
-
-0. Fix the three `tree-cat-*` bugs in `BUGS` (regression cases in
-   `tests/fixed.sh`, `fixes/NN`), or the round trip cannot be the oracle.
-1. `TREE_MAX_*` constants and their parser-side asserts; write the tree
-   walker (also needed by C) and `tree_equal`.
-2. Method C profile over the corpus → first hand-written `tree_spec[]`
-   for a subset (simple commands, pipelines, lists, words).
-3. `tree_validate` + debug-build hook after `parse()`; every violation
-   found is either a table fix or a `BUGS` entry.
-4. Stream-decoder generator for that subset with word synthesis,
-   round-trip test in `tests/`, ASan run. **This is the MVP and the
-   go/no-go point:** ship `shfuzz` as a sibling of `shparse2ast`
-   (`BUILD_SHFUZZ`, off by default, not installed, not linked into
-   `shish`) only once it has found bugs.
-5. Methods A and B: regenerate/verify the table; extend to compound
-   commands, redirections, parameter expansion, arithmetic.
-6. Randomized-style serializer (lexical noise) and shfuzz output as a
-   seed corpus for AFL/libFuzzer on the parser; shrinking by stream
-   reduction; standalone command line (`shfuzz KEY`, `shfuzz -n COUNT`).
-7. Later, separately: enumerative unranking for small-scope exhaustive
-   runs; evaluate mode with its sandbox.
-
-### Size estimate (estimates, nothing written; calibration: `tree_free.c`
-213 lines and `tree_copy.c` 194 lines are per-kind switches, `tree_cat.c` 613)
-
-| Piece | Lines |
-|---|---|
-| `tree_spec[]` (63 rows, macros for the shared layouts) | ≈250-350 |
-| `tree_validate` | ≈100-150 |
-| `tree_equal` + walker | ≈150-200 |
-| generator (byte-stream decoder, budgets, predicates, word synthesis) | ≈400-600 |
-| randomized-style serializer (step 6) | ≈150-250 |
-| method A extractor (clang script) / B prober / C profiler | ≈150 / ≈200 / ≈120 |
-| harness + CLI + tests | ≈300 |
-
-### Risks and open questions
-
-- Parse-time state that the AST does not carry: aliases, `loc`/`$LINENO`,
-  reserved-word context — the round trip must run with aliases off and
-  compare without `loc`.
-- Quoting is the hard part of the string domains: `nargstr` content
-  depends on the enclosing quote state (`parse_isesc`/`parse_isdesc`); a
-  wrong predicate makes every round trip fail for the wrong reason.
-- Keep the table dev-only; if a debug-build `tree_validate` hook is
-  wanted in `shish`, it must stay behind `DEBUG_*` like the other
-  instrumentation.
-- Method C is bounded by the corpus; legal-but-unseen combinations need
-  the grammar in POSIX 2.10 as a cross-check.
-- **Maintenance coupling:** every change to `tree.h` touches the table;
-  static asserts (`sizeof`, `offsetof`, row count) and method A's
-  regeneration reduce this but do not remove it. If the tool rots, delete
-  it rather than let a stale table produce wrong reports.
-- Word synthesis collapses the string space by design; the raw-byte
-  escape hatch keeps some weird-byte coverage, but string-level bugs
-  (glob, `printf` formats, IFS) still want their own byte-level fuzzing.
-- Value: mainly for shell implementers and for CI (reproducible key →
-  bug report, "no crash for all ASTs ≤ *k*"); end users get little, hence
-  a build option and no installation by default.
-
----
