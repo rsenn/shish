@@ -1262,6 +1262,56 @@ needs the rewind that section 17 added for `expand_arena` (`eval_jump`, `eval_re
 3. **The parse-tree arena itself,** for the memory halving, only if the lines and size savings above still look
    worthwhile after 1 and 2; one arena per parse scope as described above.
 
+### `stralloc` slack in the tree and elsewhere, and `strview` (measured 2026-10-07, not implemented)
+
+`stralloc_ready` allocates `len + len/8 + 30` bytes, a minimum of 31 for a one-byte string, and glibc rounds a 31 to 40
+byte request up to a 48 byte chunk (`n + 8` rounded to 16, at least 32). The rule suits strings that grow; most of these
+never do. `valgrind --tool=dhat` attribution by caller:
+
+| where | blocks | finding |
+| --- | --- | --- |
+| parse tree word text (`parse_string` into `nargstr.stra`) | 12588, 11102 live | about 10 characters each, 48 byte chunks instead of 32 |
+| parse tree parameter names (`parse_param`) | 1915 | each exactly 31 bytes |
+| all live `stralloc` after parsing `fixed.sh` | 13058 blocks, 527 KB | at least 392 KB (74%) is slack |
+| `var_setsa` (plain `x=...` assignment) | 19576 in 3000 loop iterations (40% of all) | frees the variable's buffer and mallocs a new one every time; only `var_setv` reuses capacity |
+| `$((n+1))` operands (`expand_arith_expr`, string-mode `value`) | about 18400 | one 31+ byte malloc and free per operand |
+| `case` subject and pattern (`eval_case`, `expand_catsa`) | 3006 | one buffer each, 143 bytes in the benchmark |
+| `var_init` name buffers | 527 | 31+ bytes each |
+| `sh_push` | 150 | copies `cwd` for every `$(...)` or subshell |
+
+Not measured: the line editor and history (`src/term`, `src/history`, about 20 files use `stralloc`) and builtins such
+as `read` and `command`.
+
+**Fixes, cheapest first:**
+1. `var_setsa` reuses the buffer when the new value fits (as `var_setv` does): about 6 malloc/free pairs less per
+   loop iteration in the 400-variable benchmark.
+2. `$((...))` operands and `eval_case` scratch take a pooled buffer (`wordlist_pool_get()`, which keeps its
+   capacity): 0 mallocs.
+3. `parse_string`: when the node's string is still empty (the common case), allocate exactly `len + 1` and copy;
+   later chunks keep the growing path. Same number of mallocs, about 16 bytes less per block on about 11000 blocks:
+   roughly 180 KB, 8% of the 2.18 MB tree. A shrink pass at the end of the word does **not** work: glibc cannot split
+   a 48 byte chunk to 32 in place (the 16 byte remainder is below the minimum chunk), so the first allocation has to
+   be the right size.
+4. A smaller global minimum (8 instead of 30) would help everything, but `parse_string` and others append a character
+   at a time, so it means more regrowth; fix the callers instead.
+
+**Could the tree use only `strview`?** `nargstr` already has the union (`stralloc stra` / `strview view`, `tree.h`),
+and `tree_cat` is the one reader of the view side.
+- **Type change alone: about nothing.** A view is 16 bytes against 24, so `nargstr` goes from 56 to 48 bytes, but glibc
+  rounds both to a 64 byte chunk (live: 12986 blocks of 56 bytes, `nargstr` and `nargparam`). It only pays together
+  with `struct location` (16 bytes, token position) shrinking to 8: 40 bytes is a 48 byte chunk, 16 bytes less on
+  about 11000 nodes (about 180 KB).
+- **With the arena it is the real prize.** A packed 48 byte `nargstr` with its text directly behind it in the same bump
+  allocation is about 58 bytes per word part; today it is a 64 byte node plus a 48 byte string, about 112. Roughly
+  half for those nodes, about 700 KB of the 2.18 MB.
+- **Obstacles.** `parse_string` merges several chunks into one node and a here-document body appends line by line, so
+  the parser keeps building in `p->sa` and freezes the string when the node is complete (exact-size appending would
+  be quadratic on long bodies). The in-place text rewriters (`expand_tilde.c` about 25 of the 62 `nargstr.stra` uses,
+  `expand_brace.c`, `tree_copy.c`) work on private copies and would write new views into `expand_arena`, which is
+  rewound per command anyway.
+- **Order:** fix 3 above now; fold the `strview` conversion into the arena migration (step 3 of the list above), not
+  before it.
+
 ---
 
 ## 19. Pull-based filter chaining: what is left
