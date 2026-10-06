@@ -475,3 +475,12 @@
   ```sh
   set -- ${x:=a b}; echo $#     # 1; dash and bash print 2
   ```
+
+- here-doc-delimiter-with-blank-not-matched: a quoted here-document delimiter that contains a blank is never
+  matched, so the body runs to the end of input. Present before the wordlist work; found while testing
+  `expand_str`.
+
+  **Repro:**
+  ```sh
+  printf "cat <<'X Y'\nz\nX Y\necho done\n" > h.sh; shish h.sh    # bash: z, done; shish: z, X Y, echo done
+  ```

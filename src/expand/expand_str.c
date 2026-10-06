@@ -2,11 +2,15 @@
 #include "../tree.h"
 #include <assert.h>
 
-/* expand all parts of an N_ARG node
+/* expand all parts of an N_ARG node of plain text into sa (overwritten)
  * ----------------------------------------------------------------------- */
 void
 expand_str(union node* node, stralloc* sa, int flags) {
-  union node *n = 0, *m;
+  union node* m;
+  wordlist wl;
+
+  stralloc_zero(sa);
+  wordlist_init_str(&wl, sa);
 
   /* loop through all parts of the word */
   for(m = (node && node->id == N_ARG) ? node->narg.list : node; m; m = m->next) {
@@ -21,9 +25,8 @@ expand_str(union node* node, stralloc* sa, int flags) {
     assert(m->id == N_ARGSTR);
     assert(m->nargstr.stra.s);
 
-    expand_cat(m->nargstr.stra.s, m->nargstr.stra.len, &n, lflags | X_NOSPLIT);
+    wordlist_cat(&wl, m->nargstr.stra.s, m->nargstr.stra.len, lflags | X_NOSPLIT);
   }
 
-  stralloc_move(sa, &n->narg.stra);
-  tree_free(n);
+  wordlist_close(&wl);
 }
