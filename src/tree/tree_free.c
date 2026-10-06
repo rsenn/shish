@@ -30,10 +30,11 @@ tree_free(union node* node) {
       case N_AND:
       case N_OR:
       case N_NOT:
+      case N_TIME:
         if(node->nandor.left)
           tree_free(node->nandor.left);
 
-        if(node->id != N_NOT)
+        if(node->id != N_NOT && node->id != N_TIME)
           if(node->nandor.right)
             tree_free(node->nandor.right);
         break;

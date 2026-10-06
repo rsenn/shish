@@ -98,11 +98,30 @@ NAMES=$(grep -l '%REQUIRETTY%' ../../tests/posix/*.tst \
 ctest -R "posix/(${NAMES})\.tst\$" -j4
 ```
 
+## The `time` keyword
+
+`time [-p] pipeline` is a reserved word, spelled as in bash and ksh. It times
+the whole pipeline (or compound command, function or builtin after it) and
+writes the report to stderr after the command; the pipeline's status is the
+result, and `set -e` fires after the report.
+
+```
+$ time sleep 1             $ time -p sleep 1
+                           real 1.00
+real	0m1.001s           user 0.00
+user	0m0.000s           sys 0.00
+sys	0m0.000s
+```
+
+- It is recognised only at the start of a pipeline, before or after `!`.
+  `a | time b`, `command time`, `\time` and `"time"` run `/usr/bin/time`.
+- `TIMEFORMAT` is not supported. A lone `time` is a syntax error.
+
 ## The project's own tests
 
 `tests/*.sh` are plain shell scripts run through the freshly built shell.
 `tests/fixed.sh` is the regression file: every fix in `fixes/` has a case
-there that fails without it. It is 430 assertions long and is the first
+there that fails without it. It is 750 assertions long and is the first
 thing to run after a change.
 
 ## A note on measurement

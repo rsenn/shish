@@ -10,6 +10,7 @@ tree_isbgnd(const union node* node) {
     case N_AND:
     case N_OR:
     case N_NOT:
+    case N_TIME:
     case N_SUBSHELL:
     case N_BRACEGROUP:
     case N_FOR:

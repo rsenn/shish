@@ -19,6 +19,7 @@ const char* debug_nodes[] = {
     "and",
     "or",
     "not",
+    "time",
     "list",
     "subshell",
     "brace_group",
@@ -335,7 +336,8 @@ debug_node(union node* node, int depth) {
     case A_POSTINCR:
     case A_POSTDECR: debug_subnode(", node", node->narithunary.node, depth); break;
 
-    case N_NOT: debug_sublist(", cmds", node->nandor.left, depth); break;
+    case N_NOT:
+    case N_TIME: debug_sublist(", cmds", node->nandor.left, depth); break;
     case N_LIST: debug_sublist(", cmds", node->nlist.cmds, depth); break;
   }
 

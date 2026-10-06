@@ -56,9 +56,10 @@ tree_copy(union node* node) {
       case N_AND:
       case N_OR:
       case N_NOT:
+      case N_TIME:
         copy->nandor.left = node->nandor.left ? tree_copy(node->nandor.left) : NULL;
 
-        if(node->id != N_NOT)
+        if(node->id != N_NOT && node->id != N_TIME)
           copy->nandor.right = node->nandor.right ? tree_copy(node->nandor.right) : NULL;
         break;
 

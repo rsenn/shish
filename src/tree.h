@@ -22,6 +22,7 @@ enum kind {
   N_OR,                      /* execute cmd2 if cmd failed */
   // N_SEMI,           /* execute both */
   N_NOT, /* execute cmd and negate return status */
+  N_TIME, /* execute cmd and report the time it took */
   N_LIST,
   /* compound */ N_SUBSHELL, /* execute the list in a subshell */
   N_BRACEGROUP,              /* execute the list in the current env */
@@ -116,6 +117,15 @@ struct npipe {
 struct nnot {
   enum kind id;
   unsigned dummy : 1;
+  union node* next;
+  union node* pipeline;
+} SHISH_TREE_PACKED;
+
+/* time [-p] pipeline: same layout as nnot, so tree_free/tree_copy share its case */
+struct ntime {
+  enum kind id;
+  unsigned bgnd : 1;
+  unsigned posix : 1;
   union node* next;
   union node* pipeline;
 } SHISH_TREE_PACKED;
@@ -333,6 +343,7 @@ union node {
   struct npipe npipe;
   struct nandor nandor;
   struct nnot nnot;
+  struct ntime ntime;
   struct ngrp ngrp;
   struct nfor nfor;
   struct ncase ncase;

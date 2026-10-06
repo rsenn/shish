@@ -16,18 +16,17 @@ fragmentation, execution time.
 | 5 | Finish the per-builtin switches | almost done; leaves a clean base |
 | 6-7 | In-process scope helper, trace leftovers | small, independent, no new modules |
 | 8-10 | `sed`/`awk`, `cp`/`mv`, regex engine | feature gaps inside existing builtins |
-| 11 | `time` keyword | parser + one tree kind + a small eval; no dependencies |
-| 12 | Applet mode | small, needs only the builtin map |
-| 13 | Directory walker (`lib/dirlist`, `lib/walk`) | prerequisite of `chown`/`du`/... and removes six hand-rolled walks |
-| 14 | `lib/arena.h` in `src/` | leaf call sites first; needs the `stralloc` freeze helper |
-| 15 | Optional alias/history/job control | medium, module splits |
-| 16 | Binary size | independent, measurable |
-| 17-18 | Expansion field list, `src/wordlist/` | one risky step (the `expand_cat` port) behind a characterization test |
-| 19 | AST arena | parser-wide; after the field list removes `narg.stra` |
-| 20-22 | Filter chaining, tab completion, vi mode | interactive and pipeline features |
-| 23 | Also open (WASI, editor) | |
-| 24-26 | More utilities | wait for the walker and the builtin switches |
-| 27 | UTF-8 | largest, optional, touches everything |
+| 11 | Applet mode | small, needs only the builtin map |
+| 12 | Directory walker (`lib/dirlist`, `lib/walk`) | prerequisite of `chown`/`du`/... and removes six hand-rolled walks |
+| 13 | `lib/arena.h` in `src/` | leaf call sites first; needs the `stralloc` freeze helper |
+| 14 | Optional alias/history/job control | medium, module splits |
+| 15 | Binary size | independent, measurable |
+| 16-17 | Expansion field list, `src/wordlist/` | one risky step (the `expand_cat` port) behind a characterization test |
+| 18 | AST arena | parser-wide; after the field list removes `narg.stra` |
+| 19-21 | Filter chaining, tab completion, vi mode | interactive and pipeline features |
+| 22 | Also open (WASI, editor) | |
+| 23-25 | More utilities | wait for the walker and the builtin switches |
+| 26 | UTF-8 | largest, optional, touches everything |
 
 **Non-goal, decided 2026-09-02:** bash's `var+=value` append-assignment (not in POSIX; `x=a; x+=b` parses
 `x+=b` as a command name). It is why libtool's `ltmain.sh` cannot run under shish; libtool-generated scripts are
@@ -351,7 +350,7 @@ Open:
   compiled), musl/diet builds.
 - **Size:** measure the pair against two separate entry points (`-DBUILTIN_CP=ON -DBUILTIN_MV=ON`,
   `strip`, `stat -c%s`) and keep the smaller layout.
-- Documentation: `doc/builtins.md` entries, short `help_cp`/`help_mv` (section 16.2 counts help bytes),
+- Documentation: `doc/builtins.md` entries, short `help_cp`/`help_mv` (section 15.2 counts help bytes),
   README builtin list.
 - `ln` used to unlink an existing destination: `cp`/`mv` must not do that either (only with `-f`).
 
@@ -388,67 +387,7 @@ Open:
 
 ---
 
-## 11. `time [-p] pipeline` as a reserved word (plan, nothing implemented)
-
-**Today** `time` resolves to `/usr/bin/time` (`type time`), which cannot time a builtin, a function, a compound
-command or a pipeline. bash makes it a reserved word (`bash -c 'help time'`: "Report time consumed by pipeline's
-execution", `-p` for the POSIX format); the POSIX utility page (`time [-p] utility [argument...]`) only requires
-the `-p` format on stderr and the utility's exit status. The target is bash's behaviour, with the whole pipeline
-inside the timing:
-
-```sh
-time cat blah.txt | grep '.*' | sort | tee out.txt    # one report for the four stages
-time (cat blah.txt | sort)                            # subshell, group, if, case, while, for, until, functions
-time { a; b; }     time if x; then y; fi     time f     time cd /     time -p cmd     ! time cmd     time ! cmd
-```
-
-**Parser** (`src/parse/parse_pipeline.c`), no new token: the parser already uses 31 token bits (`TI_EOF` 0 to
-`TI_END` 30), so a new one would be `1 << 31`, the sign bit of the `int`-sized `enum tok_flag` (undefined behaviour).
-- The loop that eats leading `!` also accepts an unquoted `time` word (`T_NAME`, text `time` in `p->sa`), in any
-  order with `!`, at the start of a pipeline only (not after `|`, not after `command`, `\time` or `"time"`: those
-  keep running `/usr/bin/time`).
-- After `time`, peek one token: a word `-p` sets the POSIX format, anything else is pushed back (`p->pushback++`,
-  as the `!` path does). `parse_command()` then parses whatever follows, compound or not, and the rest of the
-  pipeline continues as today, so `time a | b` times both.
-- `type time` must say keyword (`is_keyword()` in `src/exec/exec_type.c`).
-- Open: a lone `time` (bash prints zero times; here a syntax error is the simple choice).
-
-**Tree**: a new kind `N_TIME` after `N_NOT`, `struct ntime { id; bgnd:1; posix:1; next; pipeline }` with the layout
-of `struct nnot`, so `tree_free` and `tree_copy` list it beside `N_NOT` (they read the child through
-`nandor.left`). The node wraps the pipeline and `!`, when present, wraps the node. Places: `tree.h` (enum, struct,
-union), `tree_nodesizes.c`, the `debug_nodes[]` name table and `debug_node.c`, `tree_copy.c`, `tree_free.c`,
-`tree_isbgnd.c`, `tree_cat.c` (prints `time [-p] ` then the child, so `shformat` and `set`'s function dump
-round-trip), `eval_node.c`.
-
-**Eval** (`src/eval/eval_time.c`): `times()` before and after `eval_tree()` of the child; real time from the
-`times()` return value (10 ms ticks) or `clock_gettime` where it exists; user and system are `tms_utime/stime`
-plus `tms_cutime/cstime`. The report goes to `fd_err`; the status is the child's, and it is not exempt from
-`set -e` (a `time false` fails like a pipeline). Not compiled on `WINDOWS_NATIVE` (no `times()`): the node just
-evaluates its child. Formats:
-
-```
-default (bash):   <blank line> real<TAB>0m0.101s  user<TAB>0m0.000s  sys<TAB>0m0.000s
--p (POSIX):       real 0.10  user 0.00  sys 0.00
-```
-
-`TIMEFORMAT` is out of the first version (size); `%R %U %S %P %l` and the precision digit can follow.
-
-**Rejected:** a builtin `time` (the parser consumes `|`, `{` and `(` before a builtin runs, so it could only time a
-simple command); a token (bit limit above); reusing `N_NOT` with flag bits (its evaluation is `eval_and_or`'s
-negation, coupling the two for no saving).
-
-**Cost by the four metrics** (`CLAUDE.md`): about 120 lines (parser 25, tree 15 across nine switch sites, eval 45,
-tests), roughly 1 KB of code; switchable with a `WITH_TIME` macro in `src/features.h` like `WITH_PARAM_RANGE`
-(default on) if the size matters. No effect on binary size or speed when the word never appears.
-
-**Tests** (`tests/fixed.sh`): `-p` output matches `real [0-9]+\.[0-9][0-9]` on stderr; the status of the timed
-command is returned; a timed `sleep 0.2 | cat` reports at least 0.2 s; `time` of a group, subshell, `if`, `while`,
-`case` and a function; `type time` says keyword; `command time true` still runs the external one; `time` after `|`
-is a plain word; the `tree_cat` round trip (`shformat` of `time -p { a; } | b`).
-
----
-
-## 12. Busybox-style applet mode: `exec -a cat shish` runs only `cat` (plan)
+## 11. Busybox-style applet mode: `exec -a cat shish` runs only `cat` (plan)
 
 `ln -s shish cat; ./cat file`, or `(exec -a cat ./build/.../shish file)`, runs the `cat` builtin and exits with its
 status; no shell is started. The decision is made from the basename of `argv[0]` alone.
@@ -486,7 +425,7 @@ and the script-named-`cat` case for the `sargv[0]` fix.
 
 ---
 
-## 13. One recursive directory walker instead of six hand-rolled ones (Part C, plan)
+## 12. One recursive directory walker instead of six hand-rolled ones (Part C, plan)
 
 **Builtins that walk a directory tree today** (found with `grep -l 'opendir\|readdir' src lib text`):
 
@@ -637,10 +576,10 @@ borrowing only if the mingw build ever needs a walker that `<dirent.h>` cannot g
 
 ---
 
-## 14. Where `lib/arena.h` would fit in `src/`, easiest first (plan)
+## 13. Where `lib/arena.h` would fit in `src/`, easiest first (plan)
 
 `lib/arena.h` is already linked (`text/dfa`, `text/awk`), so using it in `src/` adds no new code, only call sites.
-The AST arena (section 19) and the expansion field list (sections 17-18) are described below and not repeated here.
+The AST arena (section 18) and the expansion field list (sections 16-17) are described below and not repeated here.
 Rule of thumb: an arena fits where many small objects share one lifetime and die together, or die in LIFO order.
 It does not fit objects freed one by one in any order (history ring, job table, hash entries, variables).
 
@@ -678,9 +617,9 @@ It does not fit objects freed one by one in any order (history ring, job table, 
    one lookup (arena fits); the hash entries (`exec_create.c`) are removed one by one by `hash -r`/`PATH` change,
    so they stay on the heap unless `hash -r` is the only way out (then one arena reset).
 9. **`parse/` token and word buffers** (medium): each token is a `stralloc` then copied into a node. If the tree
-   arena (section 19) exists, the parser allocates the node and the string straight into it and the temporary
-   `stralloc`s shrink to one reusable scratch. Do not start before section 19.
-10. **`eval_function.c` function bodies** (medium, part of section 19): `nfunc.name = str_dup(...)` plus `tree_copy`
+   arena (section 18) exists, the parser allocates the node and the string straight into it and the temporary
+   `stralloc`s shrink to one reusable scratch. Do not start before section 18.
+10. **`eval_function.c` function bodies** (medium, part of section 18): `nfunc.name = str_dup(...)` plus `tree_copy`
     into a dedicated arena per function; redefinition frees the arena instead of calling `tree_free`.
 11. **`var/` and `vartab/`** (hard, probably never): variables are set, unset and exported in any order and
     `var_export` hands pointers to the environment. Only the *value* of a `local` could live in a function-frame
@@ -690,13 +629,13 @@ It does not fit objects freed one by one in any order (history ring, job table, 
     `fd_filter.c` `FD_BUFSIZE` buffer is one block per filter, nothing to gain.
 
 **Order of work.** stralloc step 1 and the `stralloc_trunc` fix, then 1 + 2 + 3 (each is a leaf and removes more
-code than it adds), then 4, 5, 7, 8. Items 9 and 10 belong to section 19. Every step is judged by the same test:
+code than it adds), then 4, 5, 7, 8. Items 9 and 10 belong to section 18. Every step is judged by the same test:
 the binary does not grow (`size shish` before and after on `MinSizeRel`) and `alloc`-call counts per command in the
-section 19 measurement drop. A step that grows the binary without lowering those counts is not merged.
+section 18 measurement drop. A step that grows the binary without lowering those counts is not merged.
 
 ---
 
-## 15. Make alias, history and job control really optional (plan)
+## 14. Make alias, history and job control really optional (plan)
 
 Details, inventories and the graded scenarios are in `doc/optional-subsystems.md`. Short form:
 
@@ -716,7 +655,7 @@ Details, inventories and the graded scenarios are in `doc/optional-subsystems.md
 
 ---
 
-## 16. Make the binary smaller (musl and dietlibc are the targets)
+## 15. Make the binary smaller (musl and dietlibc are the targets)
 
 The pitch on the site is "a 185 KB shell". Every number below is
 `stat -c%s` on a **stripped** binary, `MinSizeRel` (`-Os`), measured
@@ -824,9 +763,9 @@ musl, which is the figure above):
    only explicitly, results in collation order, unmatched pattern left
    as is — `expand_glob.c` already handles the last). Must pass in both
    `USE_LIBC_GLOB` settings; ASan+UBSan gate as usual.
-5. Interaction with section 27: with the internal `glob`, `?` and `[...]` in
+5. Interaction with section 26: with the internal `glob`, `?` and `[...]` in
    *pathname* patterns become UTF-8-aware for free once `path_fnmatch` is
-   (M3), and the `setlocale` question in section 27 (C) disappears for
+   (M3), and the `setlocale` question in section 26 (C) disappears for
    static builds.
 
 Other libc duplicates were surveyed and are **not** worth an option
@@ -887,7 +826,7 @@ match against a baseline rather than expecting green.
 
 ---
 
-## 17. Word expansion into a field list, not N_ARG nodes (background)
+## 16. Word expansion into a field list, not N_ARG nodes (background)
 
 Independent of the AST arena: the field list owns a scratch arena of its own (see the `wordlist` plan below).
 
@@ -979,10 +918,10 @@ compare the `tests/posix` and `tests/yash` pass counts before and after.
 
 ---
 
-## 18. `src/wordlist.h` and `src/wordlist/`: the expansion output as its own module (plan)
+## 17. `src/wordlist.h` and `src/wordlist/`: the expansion output as its own module (plan)
 
-section 17's Stage 2 (renamed here: `wordlist`, `wordlist_*`) becomes a module of its own, with an arena
-behind it. **It does not depend on section 19:** it owns a scratch arena separate from the AST arena. Only the
+section 16's Stage 2 (renamed here: `wordlist`, `wordlist_*`) becomes a module of its own, with an arena
+behind it. **It does not depend on section 18:** it owns a scratch arena separate from the AST arena. Only the
 zero-copy-literal option (pointing a field at a parse-tree string) needs the AST arena.
 
 **Why a module.** Today the output of expansion is a chain of `N_ARG` nodes, so `struct narg` does two jobs:
@@ -1097,22 +1036,22 @@ Port check: a few callers use the returned node as "something was appended" (`n 
 4. Arena scoping and the pool (until now `ar` may be a plain heap-backed arena reset per command); remove
    `narg.stra`.
 
-**Expected result** (estimates from the section 17 table, to be re-measured): `: a b c d e f g h` from 45 mallocs and
+**Expected result** (estimates from the section 16 table, to be re-measured): `: a b c d e f g h` from 45 mallocs and
 ~1.9 KB in ~8 separate blocks to 0 mallocs in steady state and ~20 bytes of contiguous arena (`len + 1` per field);
 `: abcdefgh` from 5 to 0. Less fragmentation because per-word buffers (`len + len/8 + 30`) and nodes, freed
 in tree order, become one bump region released by a single rewind. Code size: the node plumbing and
 `tree_free` branches go, the module adds about 200 lines; accept only if `size shish` does not grow.
 
-**Rejected.** Growing `cur` inside the arena (nested `$(...)` allocations interleave; see section 17 "Rejected");
+**Rejected.** Growing `cur` inside the arena (nested `$(...)` allocations interleave; see section 16 "Rejected");
 one arena per word (rewind granularity is the command); making `wordlist` know about variables or the tree.
 
-**Risks.** Same as section 17: expansion carries most of `fixes/`, so step 2 must not change behaviour and the state
+**Risks.** Same as section 16: expansion carries most of `fixes/`, so step 2 must not change behaviour and the state
 machine moves verbatim. A dangling `argv` after `arena_rewind` is the new failure class: run ASan+UBSan and keep one
 test that expands inside a function called from a `$(...)` inside an assignment.
 
 ---
 
-## 19. Arena allocator for the AST (`lib/arena` exists; `text/` uses it, `src/` does not yet)
+## 18. Arena allocator for the AST (`lib/arena` exists; `text/` uses it, `src/` does not yet)
 
 `src/tree.h`'s AST is a graph of individually `malloc()`'d nodes
 (`tree_newnode()`) plus separately `malloc()`'d string buffers hanging off
@@ -1162,7 +1101,7 @@ Design decisions already worked out (full reasoning in git history —
   adjacent in the arena is safe with no alignment padding, since
   `src/tree.h`'s node structs are already `__packed`.
 - **Expansion results are a separate problem.** Words expand into `N_ARG` field nodes on the
-  heap, not into the parse arena; see section 17 for the field-list redesign that follows this one.
+  heap, not into the parse arena; see section 16 for the field-list redesign that follows this one.
 - **Possible future: precompiled/cached AST on disk.** Serialize arena
   blocks with node pointers rewritten to offsets; on load, run one linear
   fixup pass turning offsets back into real pointers (structured like
@@ -1174,7 +1113,7 @@ Design decisions already worked out (full reasoning in git history —
 
 ---
 
-## 20. Pull-based filter chaining: what is left
+## 19. Pull-based filter chaining: what is left
 
 `eval_pipeline()` chains a pipeline's whole non-last prefix straight into the true last stage through
 in-process buffers (`FD_FILTER`, `struct filter_ops`, `pipeline_filter_prepare_chain()`) when every
@@ -1224,7 +1163,7 @@ returning NULL, nothing printed) for anything that changes shell state, which is
 
 ---
 
-## 21. Tab-completion: context-aware, and extensible through `complete`
+## 20. Tab-completion: context-aware, and extensible through `complete`
 
 **Not started beyond the first slice; this section is the plan.** (The
 file is `src/term/term_complete.c`, 363 lines; there is no
@@ -1380,7 +1319,7 @@ here. Tests: one assertion per word, plus `for x i<TAB>` → `in`.
   file → space, `nospace` → nothing, inside an open quote → the closing quote.
 - Listing: directories are shown with a trailing `/`; sorted with `strcmp`
   (C locale) — locale collation is out of scope; width by
-  `mb_cols` once section 27 exists.
+  `mb_cols` once section 26 exists.
 - First TAB inserts the common prefix; only if nothing was inserted (or on a
   second TAB) print the list, like bash; more than `COMPLETION_QUERY_ITEMS`
   (default 100) candidates asks "Display all N possibilities? (y or n)".
@@ -1623,7 +1562,7 @@ against the same table before switching.
 The completer only exists in interactive builds; the `WITH_COMPLETE`
 switch (default on with the line editor, off for the WASI/`-c` builds that
 never read a tty) keeps a non-interactive build unchanged — verify with the
-stripped-size comparison from section 16.
+stripped-size comparison from section 15.
 
 ### Order of work (each step its own change with test and this file updated)
 
@@ -1644,14 +1583,14 @@ stripped-size comparison from section 16.
   shish. Compatibility with the bash-completion package is **not** a goal;
   compatibility with the *idioms* in this section is.
 - **Default builtins**: `complete`/`compgen` in `DEFAULT_BUILTINS` or
-  `EXTRA_BUILTINS`? Decide from the measured size (≈6 KB, section 16.5 policy).
+  `EXTRA_BUILTINS`? Decide from the measured size (≈6 KB, section 15.5 policy).
 - **Correctness of the lexer vs. the parser**: Phase 4 accepts small drift;
   the fallback keeps it harmless. Track drift cases in `BUGS` as they are found.
 - **`$PATH` scan cost** on slow/network directories: the cache is per
   directory mtime, but the first scan blocks the prompt; a soft limit
   (`COMPLETION_PATH_MAX`, default 5000 entries) and no scan of directories
   that are not `stat`-able within one call.
-- **UTF-8** (section 27): candidate width in the listing and the insertion of a
+- **UTF-8** (section 26): candidate width in the listing and the insertion of a
   common prefix must not cut a multibyte character — use `mb_clen` when the
   common prefix is computed byte-wise.
 - **Security**: `-W`/`-F` execute user-defined code on TAB; nothing typed at
@@ -1673,7 +1612,7 @@ size build/x86_64-linux-gnu/CMakeFiles/libshell.dir/src/term/*.o build/x86_64-li
 
 ---
 
-## 22. Vi mode (`src/term/term_vimode.c`): gaps against vim/POSIX `set -o vi`
+## 21. Vi mode (`src/term/term_vimode.c`): gaps against vim/POSIX `set -o vi`
 
 Tests: `tests/term-vi.sh`. `vi` is always on: there is no `set -o vi` / `set -o emacs` switch.
 
@@ -1699,7 +1638,7 @@ Tests: `tests/term-vi.sh`. `vi` is always on: there is no `set -o vi` / `set -o 
 
 ---
 
-## 23. Also open
+## 22. Also open
 
 - **WASI build (`cfg-wasi`, `doc/wasm.md`) — builds and runs (Node, webassembly.sh).** `build/wasi/shish` is 248 KB and runs under Node's WASI
   (`--experimental-wasm-exnref`): 18 of 34 `tests/*.sh` pass unmodified,
@@ -1721,12 +1660,12 @@ Tests: `tests/term-vi.sh`. `vi` is always on: there is no `set -o vi` / `set -o 
   bug. Minimal tab-completion (`src/term/term_complete.c`: filenames, plus
   keywords, builtins and functions at a command's first word) is the
   only piece of this done so far; its growth path (context, `$PATH`,
-  `complete`/`compgen`) is section 21. UTF-8-aware editing (per-character cursor and
-  backspace, display columns) is milestone M5 of section 27.
+  `complete`/`compgen`) is section 20. UTF-8-aware editing (per-character cursor and
+  backspace, display columns) is milestone M5 of section 26.
 
 ---
 
-## 24. More utilities as builtins (plan only, nothing implemented)
+## 23. More utilities as builtins (plan only, nothing implemented)
 
 Two prioritized lists of programs that are not builtins yet, each with size estimates, POSIX status, whether it can
 be a filter, a category, and the source file it should share with its relatives:
@@ -1742,9 +1681,9 @@ be a filter, a category, and the source file it should share with its relatives:
   switch_root`, testable with `unshare -Ur`), then a shared `lib/coltab` table printer and the `ls*` listing tools.
   Not worth building: `su sulogin getty agetty fsck* mkfs.*`.
 
-**Prerequisites, in this order** (sections 5 and 13): the builtin map so a file can hold
+**Prerequisites, in this order** (sections 5 and 12): the builtin map so a file can hold
 several builtins, the per-builtin switches (Part B) so each of them can be left out, and the directory walker (Part C)
-for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility from either list before sections 5 and 13 are done.
+for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility from either list before sections 5 and 12 are done.
 
 **Cross-cutting decisions to take first** (also in the "Open questions" of both documents):
 - whether Linux-only builtins belong in the tree at all (the plan assumes a busybox-like single binary is the goal);
@@ -1754,7 +1693,7 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
 
 ---
 
-## 25. More `EXTRA_BUILTINS`: POSIX utilities real scripts call most, still external
+## 24. More `EXTRA_BUILTINS`: POSIX utilities real scripts call most, still external
 
 **Not started; this section is the candidate list.** The rationale is the same as for `cp`/`mv`: a
 builtin is free where an external binary already exists (it only wins the `PATH` lookup +
@@ -1786,7 +1725,7 @@ out of scope per the "design spec is POSIX" rule.)
   unavailable.
 - **Niche/legacy** (`getconf`, `cmp`, `bc` (non-trivial), `comm`, `fold`, `mkfifo`, `join`, `expand`,
   `od`, `pr`, `cksum`, `tsort`, `csplit`, `pathchk`, `chgrp`): candidates, not a near-term plan; no
-  per-utility sizing has been done. The sized schedule for the ones in section 26 is there.
+  per-utility sizing has been done. The sized schedule for the ones in section 25 is there.
 - Known gaps in the builtins that already moved: `sort` keeps everything in memory and compares bytes (no locale collation); `tail -f` follows one
   file; `split` has the POSIX options only.
 
@@ -1796,7 +1735,7 @@ deliberately omitted option).
 
 ---
 
-## 26. The remaining POSIX utilities as optional `EXTRA_BUILTINS`
+## 25. The remaining POSIX utilities as optional `EXTRA_BUILTINS`
 
 Utilities from the POSIX utilities volume that are not builtins yet. None is needed by the shell itself,
 so **this waits until the main quest is done.** Each one is opt-in (`BUILTIN_<NAME>`,
@@ -1846,11 +1785,11 @@ Do these two before the utilities that need them; each removes a duplicate:
    `xargs`/`timeout` already do it by hand): about 30 lines around `exec_hash()` + `exec_command()`.
 
 Filters (`head uniq paste cut tr nl tail`, already builtins) use `src/builtin/builtin_filter.[hc]` (`filter_in`,
-`filter_ops`: declarative `opts/size/option/setup/step/finish`, see the comment in the header) so they can join filter chains (section 20); `tail -f` and `more` cannot chain.
+`filter_ops`: declarative `opts/size/option/setup/step/finish`, see the comment in the header) so they can join filter chains (section 19); `tail -f` and `more` cannot chain.
 
 ---
 
-## 27. Optional UTF-8 support (`WITH_UTF8`, off by default)
+## 26. Optional UTF-8 support (`WITH_UTF8`, off by default)
 
 **Not started; this section is the plan.** shish is byte-oriented and
 never calls `setlocale`, i.e. it is always in the POSIX locale, which is
@@ -2171,7 +2110,7 @@ never calls. Options: (a) leave it — `?` in a *pathname* pattern stays
 bytewise, everything else is right (documented gap); (b) under
 `HAVE_SETLOCALE`, call `setlocale(LC_CTYPE, "")` when `mb_utf8` turns on
 so libc agrees (glibc, musl); dietlibc/mingw stay at (a). Start with (a),
-add (b) as its own step. The internal `glob` planned in section 16.3
+add (b) as its own step. The internal `glob` planned in section 15.3
 (`USE_LIBC_GLOB=OFF`) removes the problem for static builds without
 `setlocale`: it matches with `path_fnmatch`, which M3 makes UTF-8-aware.
 
@@ -2218,7 +2157,7 @@ only if `mb_get` should reuse its decoder. `fmt_utf8.c` and
 
 **Default build (`WITH_UTF8=0`): 0 bytes** — that is a requirement, not a
 hope: compare the stripped `shish` size before/after each milestone
-(section 16's tooling) and treat any growth beyond a few bytes of noise as a
+(section 15's tooling) and treat any growth beyond a few bytes of noise as a
 bug in the `#else` branch.
 
 ### Order of work (each step its own change with test, `fixes/NN` where it fixes something, and this file updated)

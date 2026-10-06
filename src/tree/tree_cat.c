@@ -339,6 +339,11 @@ again:
       break;
     }
 
+    case N_TIME:
+      stralloc_cats(sa, node->ntime.posix ? "time -p " : "time ");
+      tree_catlist(node->ntime.pipeline, sa, NULL);
+      break;
+
     /* print boolean lists */
     case N_NOT: stralloc_cats(sa, "! ");
     case N_AND:

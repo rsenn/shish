@@ -6361,4 +6361,34 @@ assert_equal "b a b a got b " "$PX" "head | { /bin/cat; } and head | f both pass
 # autotools only, no case here: ./configure now runs every config.status tag (src/builtin_config.h, config.h)
 # and defines HAVE_FORK; verify with ./autogen.sh && ./configure && make in a scratch copy
 
+# "time [-p] pipeline" is a reserved word: it times the whole pipeline, returns its status and reports on stderr
+PX=$("$SHISH_SELF" -c 'time -p true' 2>&1 >/dev/null | tr '\n' ' ')
+assert_match "$PX" "real [0-9]*.[0-9][0-9] user [0-9]*.[0-9][0-9] sys [0-9]*.[0-9][0-9] " "time -p reports real, user and sys in POSIX format"
+PX=$("$SHISH_SELF" -c 'time true' 2>&1 >/dev/null | tr '\n\t' '/ ')
+assert_match "$PX" "/real 0m[0-9]*.[0-9][0-9][0-9]s/user *" "time without -p reports in bash format"
+"$SHISH_SELF" -c 'time -p false' 2>/dev/null; PX=$?
+assert_equal "1" "$PX" "time returns the status of the timed pipeline"
+"$SHISH_SELF" -c '! time -p true' 2>/dev/null; PX=$?
+assert_equal "1" "$PX" "! time negates the timed status"
+"$SHISH_SELF" -c 'time -p ! true' 2>/dev/null; PX=$?
+assert_equal "1" "$PX" "time ! cmd negates inside the timing"
+PX=$("$SHISH_SELF" -c 'time -p sleep 0.2 | cat' 2>&1 | sed -n 's/^real //p')
+assert_match "$PX" "0.[2-9][0-9]" "time covers the whole pipeline, not just its first command"
+for C in '(true | true)' '{ true; }' 'if true; then true; fi' 'while false; do :; done' 'case a in a) true;; esac' 'f() { true; }; f' 'echo hi >/dev/null'; do
+  PX=$("$SHISH_SELF" -c "time -p $C" 2>&1 | sed -n 's/^real .*/timed/p')
+  assert_equal "timed" "$PX" "time -p works on: $C"
+done
+PX=$("$SHISH_SELF" -c 'type time' 2>&1)
+assert_equal "time is a shell keyword" "$PX" "type reports time as a keyword"
+PX=$("$SHISH_SELF" -c 'true | time -p true; \time -p true; "time" -p true' 2>&1 >/dev/null | grep -c '^real 0\.00$')
+assert_equal "3" "$PX" "time after |, \\time and quoted time run the external command"
+"$SHISH_SELF" -c 'time' 2>/dev/null; PX=$?
+assert_equal "1" "$PX" "a lone time is a syntax error"
+PX=$("$SHISH_SELF" -c 'set -e; time -p false; echo not reached' 2>&1 | tr '\n' ' ')
+assert_equal "real 0.00 user 0.00 sys 0.00 " "$PX" "set -e fires after the time report is printed"
+if [ -x "${SHISH_SELF%/*}/shformat" ]; then
+  PX=$(echo 'time -p { a; } | b' | "${SHISH_SELF%/*}/shformat" | tr -d ' \n')
+  assert_equal "time-p{a;}|b" "$PX" "shformat reprints time -p in front of the pipeline"
+fi
+
 summary

@@ -59,6 +59,11 @@ eval_node(struct eval* e, union node* node) {
       break;
     }
 
+    case N_TIME: {
+      ret = eval_time(e, &node->ntime);
+      break;
+    }
+
     case N_AND:
     case N_OR:
     case N_NOT: {

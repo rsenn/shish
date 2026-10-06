@@ -28,7 +28,7 @@ is_keyword(const char* str) {
   for(i = TI_NOT; i <= TI_END; i++)
     if(str_equal(parse_tokens[i].name, str))
       return 1;
-  return 0;
+  return str_equal("time", str); /* recognized by parse_pipeline(), not a token */
 }
 
 /* one result line: "name is ...", just the type (-t) or just the path (-p) */

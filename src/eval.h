@@ -77,6 +77,7 @@ void eval_push(struct eval* e, int flags);
 int eval_tree(struct eval* e, union node* node, int tempflags);
 
 int eval_and_or(struct eval* e, struct nandor* nandor);
+int eval_time(struct eval* e, struct ntime* ntime);
 int eval_case(struct eval* e, struct ncase* ncase);
 int eval_cmdlist(struct eval* e, struct ngrp* grp);
 
