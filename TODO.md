@@ -421,6 +421,10 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
 
 ### Loop findings that need a design decision (not fixed, see `BUGS`)
 
+- `quote-p:431`: an alias is expanded inside `"$(...)"` in a function body. dash does the same
+  (`alias echo=')'; f() { printf '[%s]\n' "$(echo x)"; }; unalias echo; f` prints `[ x)]` in both);
+  only yash's suite expects it ignored. Left as is unless the yash behaviour is wanted.
+
 - **`unset -v 1x` status** (`unset-invalid-name-accepted`): shish prints the error and returns 0. bash
   returns 1 and continues; dash exits the non-interactive shell because `unset` is a special builtin.
   A plain `return 1` lands on dash's behavior here (the shell exits), so pick one deliberately.

@@ -180,7 +180,7 @@
 
 - quote-backslash-escaping-broken: `quote-p.tst` is 34/35. Open:
   `:431` an alias is expanded inside a command substitution in double
-  quotes (it must not be).
+  quotes (dash does the same; see `TODO.md` design decisions).
 
   **Repro:**
   ```sh
