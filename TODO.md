@@ -320,8 +320,8 @@ reports `line 2: x: boom`. `$LINENO` itself is correct. Fix with, and verify aga
            | xargs -n1 basename | sed 's/\.tst$//' | tr '\n' '|' | sed 's/|$//')
    ctest -R "posix/(${NAMES})\.tst\$" -j4
    ```
-2. **`tests/yash` (119 files) is off by default**: `arith-y` and `while-y` hang, none isolated
-   (`BUGS: yash-suite-other-hangs`). Isolate one hang per session; each is likely its own bug.
+2. **`tests/yash` (119 files) is off by default**: only `while-y` hangs now (empty loop body, needs
+   a POSIX mode; `BUGS: yash-suite-other-hangs`); `arith-y` finishes in ~5s.
 3. `grouping-p.tst:34` is flaky (2 of 12 runs): a race between a subshell's background writer and
    the FIFO read after it (`BUGS: grouping-p-tst-flaky`).
 4. The harness leaves `tests/posix/tmp.NNNNN/` behind on every hard failure. Clean them up and
