@@ -6136,4 +6136,13 @@ assert_equal "same" "$PX" "\${#-} is the length of \$-"
 PX=$("$SHISH_SELF" -c 'set -- a b; echo "${#-dflt}" "${#?msg}"')
 assert_equal "2 2" "$PX" "\${#-word} and \${#?word} still apply the operator to \$#"
 
+# in "${var#pattern}" the pattern keeps the quoting rules of an unquoted word: '...' and \x quote;
+# in "${var:-word}" the single quotes stay literal
+PX=$("$SHISH_SELF" -c "b=\"*''ok\"; echo \"\${b#'*'\\'\\'}\"")
+assert_equal "ok" "$PX" "single quotes in the pattern of a double-quoted \${b#pattern} are quote characters"
+PX=$("$SHISH_SELF" -c "c='*\\ok'; echo \"\${c#\\*\\\\}\"")
+assert_equal "ok" "$PX" "backslashes in the pattern of a double-quoted \${c#pattern} quote the next character"
+PX=$("$SHISH_SELF" -c "unset x; echo \"\${x:-'a'}\"")
+assert_equal "'a'" "$PX" "single quotes in the word of a double-quoted \${x:-word} stay literal"
+
 summary

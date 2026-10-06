@@ -178,10 +178,9 @@
   sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix param-p.tst
   ```
 
-- quote-backslash-escaping-broken: `quote-p.tst` is 33/35. Open:
+- quote-backslash-escaping-broken: `quote-p.tst` is 34/35. Open:
   `:431` an alias is expanded inside a command substitution in double
-  quotes (it must not be), `:553` quotes inside the pattern of a
-  `${var#pattern}`-style expansion.
+  quotes (it must not be).
 
   **Repro:**
   ```sh

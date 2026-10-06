@@ -218,7 +218,7 @@ have any; the full `ctest` run has 12 failing tests, 3 of them `tests/*.sh` that
 or the other known causes in `BUGS`):
 
 ```
-4 alias-p  61/65    1 param-p 53/54    2 quote-p 33/35    1 case-p 51/52
+4 alias-p  61/65    1 param-p 53/54    1 quote-p 34/35    1 case-p 51/52
 1 input-p  10/11    1 option-p 74/75   1 simple-p 33/34
 ```
 
@@ -285,7 +285,7 @@ reports `line 2: x: boom`. `$LINENO` itself is correct. Fix with, and verify aga
 
 ### Phase 4 [Stage 1: language] - expansion and parsing
 
-1. `quote-p` (33/35) - `BUGS: quote-backslash-escaping-broken`.
+1. `quote-p` (34/35, only `:431` left) - `BUGS: quote-backslash-escaping-broken`.
 2. `param-p` (53/54, only `:82` left) - `BUGS: param-expansion-pattern-removal-broken`.
 3. `simple-p` (33/34), `tilde-p`, `cmdsub-p`, `comment-p` are done (`simple-p:172` is intentional:
    `BUGS: posix-suite-intentional-deviations`); `case-p` (1) - `BUGS: case-pattern-bracket-quote-stripping`.

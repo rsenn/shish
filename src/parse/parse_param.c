@@ -10,7 +10,7 @@
 int
 parse_param(struct parser* p) {
   char c;
-  int braces = 0;
+  int braces = 0, op;
   struct parser newp;
   struct nargparam* param;
   stralloc varname = {NULL, 0, 0};
@@ -185,7 +185,9 @@ parse_param(struct parser* p) {
       return 0;
     }*/
 
-  parse_init(&newp, P_SUBSTW | (p->quot == Q_DQUOTED ? P_DQSUBST : 0));
+  /* a #/% pattern keeps unquoted rules: "${v#'*'}" quotes the star */
+  op = param->flag & S_VAR;
+  parse_init(&newp, P_SUBSTW | (p->quot == Q_DQUOTED && (op < S_RSSFX || op > S_RLPFX) ? P_DQSUBST : 0));
   parse_word(&newp);
 
   p->node->nargparam.word = parse_getarg(&newp);

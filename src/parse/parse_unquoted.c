@@ -102,7 +102,7 @@ parse_unquoted(struct parser* p) {
     }
 
     /* when spotting single-quote enter single-quotation mode */
-    else if(c == '\'') {
+    else if(c == '\'' && !(p->flags & P_DQSUBST)) {
       parse_string(p, 0);
 
       parse_skip(p);

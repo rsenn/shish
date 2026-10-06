@@ -1,0 +1,37 @@
+diff --git a/src/parse/parse_param.c b/src/parse/parse_param.c
+index c987b50d..adc73d57 100644
+--- a/src/parse/parse_param.c
++++ b/src/parse/parse_param.c
+@@ -10,7 +10,7 @@
+ int
+ parse_param(struct parser* p) {
+   char c;
+-  int braces = 0;
++  int braces = 0, op;
+   struct parser newp;
+   struct nargparam* param;
+   stralloc varname = {NULL, 0, 0};
+@@ -185,7 +185,9 @@ parse_param(struct parser* p) {
+       return 0;
+     }*/
+ 
+-  parse_init(&newp, P_SUBSTW | (p->quot == Q_DQUOTED ? P_DQSUBST : 0));
++  /* a #/% pattern keeps unquoted rules: "${v#'*'}" quotes the star */
++  op = param->flag & S_VAR;
++  parse_init(&newp, P_SUBSTW | (p->quot == Q_DQUOTED && (op < S_RSSFX || op > S_RLPFX) ? P_DQSUBST : 0));
+   parse_word(&newp);
+ 
+   p->node->nargparam.word = parse_getarg(&newp);
+diff --git a/src/parse/parse_unquoted.c b/src/parse/parse_unquoted.c
+index f2dd9515..18d64fb2 100644
+--- a/src/parse/parse_unquoted.c
++++ b/src/parse/parse_unquoted.c
+@@ -102,7 +102,7 @@ parse_unquoted(struct parser* p) {
+     }
+ 
+     /* when spotting single-quote enter single-quotation mode */
+-    else if(c == '\'') {
++    else if(c == '\'' && !(p->flags & P_DQSUBST)) {
+       parse_string(p, 0);
+ 
+       parse_skip(p);
