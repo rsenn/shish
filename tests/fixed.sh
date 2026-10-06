@@ -6177,4 +6177,12 @@ assert_equal "Abc Abc ABD ABD " "$PX" "grep -i matches regardless of case"
 PX=$(printf 'abc\nxyz\n' | "$SHISH_SELF" -c 'grep -e abc -e xyz'; printf 'abc\n' | "$SHISH_SELF" -c 'grep -l abc'; "$SHISH_SELF" -c 'grep -s abc /nonexistent/x 2>&1; echo $?')
 assert_equal "abc xyz (standard input) 1" "$(echo $PX)" "grep -e, -l and -s behave as in POSIX"
 
+# grep -f reads patterns from a file (an empty file matches nothing)
+GF=$(mktemp) GE=$(mktemp)
+printf 'a\nxy\n' > "$GF"
+PX=$(printf 'a\nb\nxy\n' | "$SHISH_SELF" -c "grep -f $GF" | tr '\n' ' ')
+PX="$PX$(printf 'a\n' | "$SHISH_SELF" -c "grep -f $GE; echo rc=\$?" | tr '\n' ' ')"
+assert_equal "a xy rc=1 " "$PX" "grep -f takes one pattern per line; an empty pattern file selects nothing"
+rm -f "$GF" "$GE"
+
 summary

@@ -1,0 +1,105 @@
+diff --git a/src/builtin/filter/builtin_grep.c b/src/builtin/filter/builtin_grep.c
+index cf9f28f2..aad97058 100644
+--- a/src/builtin/filter/builtin_grep.c
++++ b/src/builtin/filter/builtin_grep.c
+@@ -27,6 +27,7 @@ const char help_grep[] = "    Search files for patterns.\n"
+                          "    -x              select only lines that match as a whole\n"
+                          "    -n              precede each line by its line number\n"
+                          "    -e pattern      pattern to search for; may be given several times\n"
++                         "    -f file         read patterns from file, one per line\n"
+                          "    -l              print only the names of files with a match\n"
+                          "    -s              no messages about files that cannot be opened\n"
+                          "    -q              quiet (exit 0 on match, no output)\n"
+@@ -47,7 +48,7 @@ struct grep {
+   struct filter_in in;
+   grep_re re;
+   unsigned invert : 1, show_lineno : 1, extended : 1, fixed : 1, quiet : 1, count : 1, multiple : 1, compiled : 1,
+-      had_match : 1, done : 1, pending : 1, whole : 1, icase : 1, list : 1, nomsg : 1;
++      had_match : 1, done : 1, pending : 1, whole : 1, icase : 1, list : 1, nomsg : 1, haspat : 1;
+   unsigned long lineno, matches;
+   const char* fixed_pat; /* -F: the pattern operand, '\n'-separated strings */
+   char* joined_pat;      /* several -e patterns as one regular expression */
+@@ -76,6 +77,12 @@ grep_equal_i(const char* a, const char* b, size_t n) {
+   return 1;
+ }
+ 
++/* -f: appends the file's bytes to the -e patterns */
++static void
++grep_pat_sink(void* ctx, const char* p, size_t n) {
++  stralloc_catb(&((struct grep*)ctx)->epat, p, n);
++}
++
+ /* -F: does any '\n'-separated string of the pattern occur in line? "" matches everything */
+ static int
+ grep_test_fixed(const char* pat, const char* line, size_t len, int whole, int icase) {
+@@ -99,6 +106,9 @@ grep_test_fixed(const char* pat, const char* line, size_t len, int whole, int ic
+ 
+ static int
+ grep_test(struct grep* g, const char* line, size_t len) {
++  if(g->haspat && !g->epat.len)
++    return 0; /* -f with an empty file: no pattern, no match */
++
+   if(g->fixed)
+     return grep_test_fixed(g->fixed_pat, line, len, g->whole, g->icase);
+ 
+@@ -249,12 +259,36 @@ grep_option(void* ctx, int c) {
+     case 'E': g->extended = 1; return 0;
+     case 'F': g->fixed = 1; return 0;
+     case 'e':
++      g->haspat = 1;
++
+       if(g->epat.len)
+         stralloc_catc(&g->epat, '\n');
+ 
+       stralloc_cats(&g->epat, shell_optarg);
+       return 0;
+ 
++    case 'f': {
++      size_t before = g->epat.len;
++
++      if(before)
++        stralloc_catc(&g->epat, '\n');
++
++      if(filter_copy(shell_optarg, grep_pat_sink, g) < 0) {
++        g->in.err_arg = shell_optarg;
++        g->in.err_msg = "cannot read pattern file";
++        return -1;
++      }
++
++      /* a trailing newline ends the last pattern, it does not start another */
++      if(g->epat.len > before && g->epat.s[g->epat.len - 1] == '\n')
++        g->epat.len--;
++      else if(g->epat.len == before + 1 && before)
++        g->epat.len--; /* empty file after other patterns: drop the separator */
++
++      g->haspat = 1;
++      return 0;
++    }
++
+     case 'l': g->list = 1; return 0;
+     case 's': g->nomsg = 1; return 0;
+     case 'i': g->icase = 1; return 0;
+@@ -275,7 +309,13 @@ grep_setup(void* ctx) {
+ 
+   g->in.silent = g->nomsg; /* filter_in_init() cleared it after option() */
+ 
+-  if(g->epat.len) {
++  if(g->haspat && !g->epat.len) {
++    g->multiple = g->in.files && g->in.files[0] && g->in.files[1];
++    g->lineno = 1;
++    return 0;
++  }
++
++  if(g->haspat) {
+     stralloc_nul(&g->epat);
+     pattern = g->epat.s;
+   } else {
+@@ -372,7 +412,7 @@ grep_finish(void* ctx) {
+ }
+ 
+ const struct filter_ops grep_ops = {
+-    .opts = "EFe:ilsvxnqc",
++    .opts = "EFe:f:ilsvxnqc",
+     .size = sizeof(struct grep),
+     .option = grep_option,
+     .setup = grep_setup,

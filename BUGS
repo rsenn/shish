@@ -468,14 +468,6 @@
   # "1791002191%N" and "date: -d: invalid option"; GNU date prints the numbers
   ```
 
-- grep-missing-options: the `grep` builtin has `-E -F -c -e -i -l -n -q -s -v -x`; POSIX also
-  requires `-f file`.
-
-  **Repro:**
-  ```sh
-  echo A >p; echo A | shish -c 'grep -f p'     # "-f: invalid option"
-  ```
-
 - glob-of-expansion-results-conservative: pathname expansion of an unquoted `$x`/`$(cmd)` is
   skipped when the same word also holds quoted text that could contain a pattern character
   (`"$q"$s`, `"a*"$s`), or a `${x+word}` whose word is itself quoted.
