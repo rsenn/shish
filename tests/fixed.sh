@@ -6272,4 +6272,8 @@ PY=$(printf 'a\n\nb\n' | "$SHISH_SELF" -c 'cat -b' | tr -s ' ' | tr '\n' '|')
 PZ=$(printf 'a\tb\001\n' | "$SHISH_SELF" -c 'cat -A')
 assert_equal 'a||b|/ 1 a|| 2 b|/a^Ib^A$' "$PX/$PY/$PZ" "cat -s squeezes blank lines, -b numbers consecutively, -A shows tabs, controls and line ends"
 
+# sort -s keeps equal-key lines in input order
+PX=$(printf 'b 2\na 1\nb 1\na 2\n' | "$SHISH_SELF" -c 'sort -s -k1,1' | tr '\n' '|')
+assert_equal "a 1|a 2|b 2|b 1|" "$PX" "sort -s does not fall back to comparing whole lines"
+
 summary
