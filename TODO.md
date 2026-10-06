@@ -419,8 +419,8 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
 
 ### Loop findings that need a design decision (not fixed, see `BUGS`)
 
-- Differential run of the filter builtins against GNU (cmp3.py): `sed 's/a*/X/g'` replaces an empty match
-  right after a non-empty one (`banana` -> `XbXXnXXnXX`, GNU `XbXnXnX`) - a real bug, next in line;
+- Differential run of the filter builtins against GNU (cmp3.py), after the `s///g` empty-match and `{0,n}`
+  fixes:
   missing options: `cat -s -A -E -T` (and `cat -n` uses spaces, GNU a tab), `sort -s`, `uniq -i -w`,
   `cut --complement`, `head -n -N`, `basename -s -a`, `expr substr`, `sed -s`, `grep -w -o -h -L -m -r`.
   `sort` orders by bytes (C locale), GNU by the locale's collation.
