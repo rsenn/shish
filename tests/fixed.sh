@@ -6280,4 +6280,12 @@ assert_equal "a 1|a 2|b 2|b 1|" "$PX" "sort -s does not fall back to comparing w
 PX=$("$SHISH_SELF" -c 'expr substr abcdef 2 3; expr substr abc 2 99; expr substr abc 0 1; echo $?' | tr '\n' '|')
 assert_equal "bcd|bc||1|" "$PX" "expr substr clips to the string and yields empty for position 0"
 
+# grep -L lists the files without a match
+GA=$(mktemp) GB=$(mktemp)
+printf 'apple\nx\n' > "$GA"; printf 'pear\n' > "$GB"
+PX=$("$SHISH_SELF" -c "grep -L apple $GA $GB $GA $GB" | sed "s|$GB|B|")
+assert_equal "B
+B" "$PX" "grep -L prints only the operands in which no line matches"
+rm -f "$GA" "$GB"
+
 summary

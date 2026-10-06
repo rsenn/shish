@@ -1,0 +1,118 @@
+diff --git a/src/builtin/filter/builtin_grep.c b/src/builtin/filter/builtin_grep.c
+index 0b48f6a4..29b3fb9d 100644
+--- a/src/builtin/filter/builtin_grep.c
++++ b/src/builtin/filter/builtin_grep.c
+@@ -31,6 +31,7 @@ const char help_grep[] = "    Search files for patterns.\n"
+                          "    -h              never print file names in front of lines\n"
+                          "    -m num          stop reading a file after num selected lines\n"
+                          "    -l              print only the names of files with a match\n"
++                         "    -L              print only the names of files without a match\n"
+                          "    -s              no messages about files that cannot be opened\n"
+                          "    -q              quiet (exit 0 on match, no output)\n"
+                          "    -c              print a count of matching lines instead of the lines\n"
+@@ -50,12 +51,12 @@ struct grep {
+   struct filter_in in;
+   grep_re re;
+   unsigned invert : 1, show_lineno : 1, extended : 1, fixed : 1, quiet : 1, count : 1, multiple : 1, compiled : 1,
+-      had_match : 1, done : 1, pending : 1, whole : 1, icase : 1, list : 1, nomsg : 1, haspat : 1, nofile : 1, hasmax : 1, closing : 1;
++      had_match : 1, done : 1, pending : 1, whole : 1, icase : 1, list : 1, nolist : 1, nomsg : 1, haspat : 1, nofile : 1, hasmax : 1, closing : 1;
+   unsigned long lineno, matches, maxsel, nsel; /* -m: limit, selected so far in this file */
+   const char* fixed_pat; /* -F: the pattern operand, '\n'-separated strings */
+   char* joined_pat;      /* several -e patterns as one regular expression */
+   char* whole_pat;       /* -x: the pattern wrapped in ^( )$ */
+-  const char* name;      /* -c: the operand the count in progress belongs to */
++  const char* name;      /* -c, -L: the operand the count in progress belongs to */
+   stralloc epat;         /* -e: the patterns, '\n'-separated */
+   stralloc out;          /* prefixes + line, when a line cannot go out as it lies */
+ };
+@@ -154,6 +155,23 @@ grep_count_line(struct grep* g) {
+   g->pending = 0;
+ }
+ 
++/* -L: the name of the operand just finished, if nothing in it matched */
++static int
++grep_unmatched_line(struct grep* g) {
++  int none = !g->matches;
++
++  g->out.len = 0;
++
++  if(none) {
++    stralloc_cats(&g->out, g->name[0] == '-' && !g->name[1] ? "(standard input)" : g->name);
++    stralloc_catc(&g->out, '\n');
++  }
++
++  g->matches = 0;
++  g->pending = 0;
++  return none;
++}
++
+ /* is the line selected (-v applied)? */
+ static int
+ grep_select(struct grep* g, const char* line, size_t len) {
+@@ -188,6 +206,8 @@ grep_step(void* arg, const char** sp, size_t* np) {
+       if(g->count && g->pending) {
+         grep_count_line(g);
+         due = 1;
++      } else if(g->nolist && g->pending) {
++        due = grep_unmatched_line(g);
+       }
+ 
+       g->lineno = 1;
+@@ -204,6 +224,19 @@ grep_step(void* arg, const char** sp, size_t* np) {
+     if(grep_select(g, line, len)) {
+       g->had_match = 1;
+ 
++      if(g->nolist) {
++        g->matches = 1;
++        filter_in_close(&g->in); /* this file is not listed: on to the next */
++
++        if(due) {
++          *sp = g->out.s;
++          *np = g->out.len;
++          return 1;
++        }
++
++        continue;
++      }
++
+       if(g->list && !g->quiet) {
+         g->out.len = 0;
+         stralloc_cats(&g->out, grep_name(&g->in));
+@@ -273,6 +306,12 @@ grep_step(void* arg, const char** sp, size_t* np) {
+     return 1;
+   }
+ 
++  if(g->nolist && g->pending && !g->quiet && grep_unmatched_line(g)) {
++    *sp = g->out.s;
++    *np = g->out.len;
++    return 1;
++  }
++
+   return 0;
+ }
+ 
+@@ -328,13 +367,14 @@ grep_option(void* ctx, int c) {
+       return 0;
+ 
+     case 'l': g->list = 1; return 0;
++    case 'L': g->nolist = 1; g->count = 0; return 0;
+     case 's': g->nomsg = 1; return 0;
+     case 'i': g->icase = 1; return 0;
+     case 'v': g->invert = 1; return 0;
+     case 'x': g->whole = 1; return 0;
+     case 'n': g->show_lineno = 1; return 0;
+     case 'q': g->quiet = 1; return 0;
+-    case 'c': g->count = 1; return 0;
++    case 'c': g->count = !g->nolist; return 0;
+     default: return -1;
+   }
+ }
+@@ -451,7 +491,7 @@ grep_finish(void* ctx) {
+ }
+ 
+ const struct filter_ops grep_ops = {
+-    .opts = "EFe:f:hilm:svxnqc",
++    .opts = "EFe:f:hilLm:svxnqc",
+     .size = sizeof(struct grep),
+     .option = grep_option,
+     .setup = grep_setup,
