@@ -6333,4 +6333,8 @@ assert_equal "onE|Two|" "$PX" "sed s///M and /re/M anchor at the newlines inside
 PX=$("$SHISH_SELF" -c 'awk "BEGIN{print (getline l < \"/nonexistent/x\"); print \"after\"}"' 2>&1 | tr '\n' ' ')
 assert_equal "-1 after " "$PX" "awk getline < missing-file yields -1 and the program continues"
 
+# awk: ** and **= are exponentiation, length(array) ignores deleted elements
+PX=$("$SHISH_SELF" -c 'awk "BEGIN{x=2**3; x**=2; a[1];a[2];a[3]; delete a[2]; print x, length(a)}"')
+assert_equal "64 2" "$PX" "awk supports ** and **=, and length(arr) drops deleted elements"
+
 summary

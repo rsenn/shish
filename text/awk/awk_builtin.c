@@ -271,8 +271,14 @@ awk_call_builtin(struct awk_state* st, struct anode* n) {
       if(args->op == A_VAR) {
         awk_cell* c = var_cell(st, args);
 
-        if(c->type == CELL_ARRAY)
-          return num_cell((double)c->arr->used);
+        if(c->type == CELL_ARRAY) {
+          size_t it = 0, live = 0; /* ->used also counts deleted slots */
+
+          while(hashmap_next(c->arr, &it))
+            live++;
+
+          return num_cell((double)live);
+        }
       }
 
       {

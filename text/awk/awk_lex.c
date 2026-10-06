@@ -357,7 +357,19 @@ lex_op(struct awk_lexer* lx, int want_ere) {
         return T_SUB_ASSIGN;
       }
       return T_MINUS;
-    case '*': TWO('=', T_MUL_ASSIGN, T_STAR);
+    case '*':
+      if(n == '*') { /* ** is ^, **= is ^= */
+        lx->p++;
+
+        if(lx->p < lx->end && *lx->p == '=') {
+          lx->p++;
+          return T_POW_ASSIGN;
+        }
+
+        return T_CARET;
+      }
+
+      TWO('=', T_MUL_ASSIGN, T_STAR);
     case '&':
       if(n == '&') {
         lx->p++;
