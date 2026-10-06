@@ -1,10 +1,7 @@
-/* awk program parser: a small recursive-descent ladder, one function
- * per precedence level (see TODO.md Goal 11's table), rather than a
- * single table-driven climber -- awk's operator set has enough
- * grammar-level exceptions ($ prefix tightness, unary-vs-^, print's
- * '>' ambiguity, concatenation with no token of its own, '(i,j) in a')
- * that a plain ladder is easier to get right than exceptions bolted
- * onto a generic climber.
+/* awk program parser: recursive descent, one function per precedence level.
+ * A plain ladder beats a table-driven climber here: awk has too many
+ * exceptions ($ binding, unary vs ^, print's '>', implicit concatenation,
+ * '(i,j) in a') to bolt onto a generic one.
  * ----------------------------------------------------------------------- */
 #include "awk_internal.h"
 #include "../../lib/str.h"

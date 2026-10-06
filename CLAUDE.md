@@ -68,6 +68,22 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ---
 
+## Design metrics
+
+Judge every new module, algorithm and refactor by these four, in this order. A change that makes
+one worse has to say so and say why it is worth it; measure, do not guess.
+
+1. **Binary size.** `size` on a `MinSizeRel` build before and after; a feature that grows it needs a reason.
+2. **Lines of code and complexity.** Keep both low: fewer lines, fewer branches, fewer special cases.
+3. **Memory fragmentation.** Prefer few large allocations with one shared lifetime (arena, one reused
+   buffer) over many small ones freed in arbitrary order.
+4. **Execution time**, including cache behaviour: contiguous data scanned in order beats pointer chasing.
+
+## Library calls
+
+In `src/`, `lib/` and `text/` call the in-tree functions, never libc's: `str_len()` not `strlen()`,
+`byte_copy()` not `memcpy()`, `alloc()` not `malloc()`, and so on. Code samples and comments follow the same rule.
+
 ## Types
 
 Design decisions to apply every time, not to re-argue:
@@ -472,7 +488,7 @@ repo root instead of an issue tracker:
   including ones you stumble into while working on something unrelated,
   add it with enough detail to reproduce; a concrete repro command beats
   a vague description every time.
-- `TODO.md` — the leverage-sorted roadmap: goals, the evidence for why
+- `TODO.md` — the roadmap, ordered by the path of least complication: goals, the evidence for why
   each item matters, what's already been tried and ruled out. Keep it in
   sync with `BUGS` — when a `BUGS` item gets fixed, go update or remove
   the corresponding `TODO.md` mention too, so the two files don't

@@ -1,7 +1,7 @@
 #!/bin/sh
 ## set -o pipefail: a pipeline fails with its rightmost non-zero member
 ## status, for forked members and for members chained in-process (a builtin
-## filter chain, TODO.md Goal 13).
+## filter chain).
 
 . "$(dirname "$0")/common.sh"
 

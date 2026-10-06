@@ -33,7 +33,7 @@ alias change. All counts come from `grep` over `src/`; line counts are from `wc 
 5. **One function per file** for new module code (`src/alias/alias_find.c`, ...). Existing files are not split
    as a side effect of a refactoring; move code when it has to move anyway.
 6. **The build files follow.** Sources of a switched-off module are not compiled: the CMake source list drops
-   the directory (the planned builtin map's `needs` column, see `TODO.md` Part A), and autotools drops the
+   the directory (the planned builtin map's `needs` column, see "What was done" below), and autotools drops the
    directory from `SUBDIRS` in `src/Makefile.in`.
 7. **Check matrix.** For each subsystem: build with the switch on and off, run `tests/fixed.sh` and the
    `tests/posix` files that exercise it (tests skip themselves when the builtin is missing, as
@@ -388,7 +388,7 @@ question of section 2.
 ## Order and dependencies
 
 1. **Alias scenario 1** (done). Then alias scenario 3, now that the build-file support exists.
-2. **The builtin map** (done, `TODO.md` Part A): "this module's sources are compiled only when its switch is
+2. **The builtin map** (done, see "What was done"): "this module's sources are compiled only when its switch is
    on" is the `needs` column, now also with directory entries. **Part B** (a switch per builtin inside shared
    files, `-Wundef`, the matrix test as a CTest) and the helper findings A are still open.
 3. **History H1** (done), then H2 together with `fc`.

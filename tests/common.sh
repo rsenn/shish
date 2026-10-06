@@ -73,7 +73,7 @@ print_stats() {
 ## final tally and exits non-zero (so ctest sees the failure) if any
 ## assert_filter <description> <expected> <input> <command>: <command> is run
 ## on <input> (a printf format) three ways -- stdin from a file, stdin from a
-## pipe, and chained in-process between two cats (TODO.md Goal 13) -- and
+## pipe, and chained in-process between two cats -- and
 ## each must print <expected> (trailing newlines ignored, as with $(...)).
 ## The command must be a builtin filter; the file operand form is up to the
 ## caller.

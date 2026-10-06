@@ -1,6 +1,6 @@
 # Filter infrastructure
 
-How a builtin joins an in-process pipeline (TODO.md, Goal 13), what the shared
+How a builtin joins an in-process pipeline, what the shared
 code in `src/builtin/builtin_filter.[ch]` does for it, and what is still to do.
 
 - [1. Why](#1-why)
@@ -158,7 +158,7 @@ In order:
 
 Goal: each `builtin_<name>.c` holds only its own decision (what to keep, change or count),
 about 30-70 lines, because everything mechanical lives once in `builtin_filter.[hc]` or `lib/`.
-Sizes are from the TODO.md Goal 16 table (`head` ~70, `uniq` ~110, `cut` ~140, `tail` ~130,
+Sizes are from the old `TODO.md` utility size table (`head` ~70, `uniq` ~110, `cut` ~140, `tail` ~130,
 `nl` ~170, `tr` ~200, `paste` ~90 lines) before extraction.
 
 ### What each utility does with its input

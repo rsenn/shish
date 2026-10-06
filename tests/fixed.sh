@@ -3969,7 +3969,7 @@ fi
 ## redir_dup() now resolves a persistent dup eagerly, via
 ## fdtable_dup(FDTABLE_FORCE | FDTABLE_CLOSE) -- but only outside a
 ## subshell, since "(...)" does not fork and the real dup2()/close()
-## would outlive it (see TODO.md Goal 4, problem 3).
+## would outlive it.
 if [ -n "$SHISH_SELF" ] && [ -x "$SHISH_SELF" ]; then
   O193=$(mktemp)
   E193=$(mktemp)
@@ -4001,8 +4001,7 @@ fi
 ## "trap" inside "$(...)" stayed installed in the calling shell) and
 ## the real-kernel-fd bookkeeping fd_state_save()/fd_state_restore()
 ## scope for "(...)". eval_subshell() had both already; this is the
-## other in-process subshell (TODO.md Goal 4, problem 2 -- the "some
-## other call site has the same exposure" one).
+## other in-process subshell.
 X194=$(trap "echo T194" TERM; echo x)
 assert_equal "x" "$X194" "a trap set inside \$(...) still lets the substitution produce its own output"
 X194B=$(trap)

@@ -383,7 +383,7 @@ if(DO_TESTS)
   # Re-enabled (2026-07-23): this was disabled because tests/posix/fnmatch-p.tst hung the testee at 100% CPU, 
   # which made a plain `ctest`/`make test` run that included this suite never return. Fixed by path_fnmatch()'s bracket-class
   # rewrite (fixes/67) -- confirmed the whole suite (239 files across both directories) now completes in about a minute with no
-  # hangs. Most individual files still fail (POSIX compliance triage is ongoing, see TODO.md Goal 2) -- that's expected and is 
+  # hangs. Most individual files still fail (POSIX compliance triage is ongoing, see TODO.md) -- that's expected and is 
   # what CTest is here to report, not a reason to keep this off.
   #
   # tests/yash split into its own DO_YASH_TESTS option, off by default (2026-07-24): unlike the rest of the corpus, 

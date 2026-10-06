@@ -13,12 +13,10 @@
  * callbacks. src/builtin/extra/builtin_awk.c is the thin shell-facing
  * client: option parsing, ARGV/ENVIRON setup, opening real files.
  *
- * Not implemented (documented, see TODO.md Goal 11): `cmd | getline`,
- * `print | cmd`, `system()` (all three need the shell's own process
- * model, which text/ must not depend on -- they are wired through
- * awk_io.run_shell, NULL by default, a runtime error when a program
- * uses them and the caller left it unset), `nextfile`, regex `RS`,
- * character (vs. byte) semantics.
+ * Not implemented: `nextfile`, regex `RS`, character (vs. byte) semantics.
+ * `cmd | getline`, `print | cmd` and `system()` go through awk_io.run_shell
+ * (text/ must not depend on the shell's process model); NULL, the default,
+ * makes them a runtime error.
  * @{
  */
 #ifndef TEXT_AWK_H

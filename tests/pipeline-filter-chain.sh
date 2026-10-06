@@ -1,7 +1,7 @@
 DIR=$(dirname "${0}")
 . "$DIR/common.sh"
 
-## Filter chaining (TODO.md Goal 13): a pipeline whose entire non-last
+## Filter chaining: a pipeline whose entire non-last
 ## prefix is filter-capable builtins invoked with literal argv chains
 ## straight into the true last (lastpipe) stage through in-process
 ## buffers instead of fork()/pipe(), for any number of stages -- see

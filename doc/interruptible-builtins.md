@@ -171,8 +171,7 @@ that point.
 
 - **Covers every builtin uniformly**, present and future, with zero
   per-builtin code -- the single biggest point in its favor given how many
-  builtins there already are and how many more this project's `TODO.md` Goal
-  12/16 plan to add.
+  builtins there already are and how many more `TODO.md` plans to add.
 - **Risk, and it's a real one**: unwinding mid-builtin skips every `free()`,
   `close()`, buffer flush, and partial cleanup between the interrupted point
   and the catch point. This project already treats memory safety as a
@@ -212,7 +211,7 @@ turn into `128+SIGINT`.
   what a builtin owns at that point anyway).
 - **Touches every long-running loop individually** -- `filter_drain()` is one
   choke point that would cover most of today's builtins in one place (a real
-  win, since `TODO.md` Goal 13's whole point was routing builtins through
+  win, since filter chaining routes builtins through
   shared code), but `builtin_sleep.c`'s single `sleep()`/`usleep()` call has
   nowhere natural to check a flag *inside* the call -- it would need
   restructuring into a loop of short `nanosleep()`s (or a `select()` with a

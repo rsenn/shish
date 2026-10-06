@@ -21,8 +21,8 @@ const char help_cat[] = "    Concatenate files to standard output.\n"
                         "    -u              unbuffered output (accepted; output is not delayed)\n"
                         "    file            file to print; '-' or omitted means stdin\n";
 
-/* one cat run, shared by the builtin and the filter (TODO.md Goal 13):
- * each step reads one "\r\n"-terminated unit and formats it. */
+/* one cat run, shared by the builtin and the filter;
+ * each step reads one "\r\n"-terminated unit and formats it */
 struct cat {
   struct filter_in in;
   int number_lines, number_nonempty;

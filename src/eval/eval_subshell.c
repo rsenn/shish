@@ -32,15 +32,10 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
   pid_t saved_bgpid = job_bgpid; /* "$!" inside ( ) is the subshell's own */
 
   fdstack_push(&io);
-  /* fdstack_push()/fdstack_pop() already scope the struct fd entries
-     themselves, but not the real-kernel-fd bookkeeping (fd_expected,
-     fd_list[], ...) a *persistent* ("exec") redirection inside this
-     subshell mutates -- shish never fork()s for "(...)", so nothing
-     else bounds that mutation to the subshell's own lifetime the way
-     it would in a real forked child. Save/restore it here, the same
-     way vartab_push()/vartab_pop() right below already do for
-     variables. See TODO.md, Goal 4, for what this does and does not
-     fix. */
+  /* "(...)" does not fork, so a persistent redirection (`exec 3>f`) would
+     outlive the subshell:
+       fdstack_push()   scopes the struct fd entries
+       fd_state_save()  scopes fd_expected, fd_list[], ... */
   fd_state_save(&fdst);
   vartab_push(&vars, 0);
   sh_push(&she);

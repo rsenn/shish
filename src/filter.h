@@ -5,7 +5,7 @@
 
 /* what a builtin declares to act as a chained filter, wired straight into a
  * struct fd's read buffer (fd_filter(), src/fd.h) so whatever reads fd_in->r
- * downstream never has to know it isn't a real fd -- see TODO.md, Goal 13.
+ * downstream never has to know it isn't a real fd.
  *
  * A typical filter fills in only the declarative half; the framework
  * (filter_open/filter_run/filter_close) does the rest:

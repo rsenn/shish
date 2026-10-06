@@ -72,6 +72,32 @@ cd tests/posix && for f in *.trs; do
 done | sort -rn
 ```
 
+### What a family is failing on
+
+```sh
+grep -h -E '^%%+ FAILED' tests/posix/sig*.trs | sed -E 's/.*: SIG[A-Z]+ //; s/ \(.*//' \
+  | sort | uniq -c | sort -rn
+```
+
+Do not trust a `sig*-p` number from a busy machine: the same binary scored 36/180 on `sigterm1-p`
+in one run and 177/180 in the next. Measure on an idle machine.
+
+### Tests that need a terminal
+
+44 files carry `%REQUIRETTY%` (the `sigttin`/`sigttou`/`sigtstp`/`sigstop` combinations, `kill4-p`,
+`bg-p`, `fg-p`, `job-p`, `testtty-p`, `wait-p`) and skip themselves without a controlling terminal.
+`-DDO_PTY_TESTS=ON` runs them under `tests/pty-run.c`, a single-file POSIX `pty` wrapper that gives the
+testee a pseudo-terminal and kills it after a 60 s alarm:
+
+```sh
+cmake -S . -B build/x86_64-linux-gnu -DDO_PTY_TESTS=ON
+cmake --build build/x86_64-linux-gnu -j
+cd build/x86_64-linux-gnu
+NAMES=$(grep -l '%REQUIRETTY%' ../../tests/posix/*.tst \
+        | xargs -n1 basename | sed 's/\.tst$//' | tr '\n' '|' | sed 's/|$//')
+ctest -R "posix/(${NAMES})\.tst\$" -j4
+```
+
 ## The project's own tests
 
 `tests/*.sh` are plain shell scripts run through the freshly built shell.

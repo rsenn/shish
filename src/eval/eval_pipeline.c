@@ -29,12 +29,10 @@
 #include "../trap.h"
 #endif
 
-/* filter-chain scanner (TODO.md Goal 13): finds a trailing run of
- * adjacent pure-builtin pipeline stages that can hand off through an
- * in-process buffer (struct filter_ops, src/builtin/builtin_filter.h) instead
- * of a real fork()+pipe() pair. Scoped deliberately narrow -- false
- * negatives (falling back to the always-correct fork()+pipe() path)
- * are always safe, so every check below is conservative on purpose.
+/* filter-chain scanner: finds a trailing run of adjacent pure-builtin stages
+ * that hand off through an in-process buffer (struct filter_ops) instead of
+ * fork()+pipe(). Every check is conservative: a false negative only falls
+ * back to the always-correct fork()+pipe() path.
  * ----------------------------------------------------------------------- */
 
 extern union node* functions; /* exec_search.c; see term_complete.c etc. for the same extern */
@@ -334,17 +332,12 @@ pipeline_filter_argv_free(char** argv) {
   alloc_free(argv);
 }
 
-/* pipeline_filter_prepare_chain: pipeline_filter_prepare() run over
- * every non-last stage of the pipeline at once -- the static half of
- * "N adjacent builtin filters chain straight into the true last
- * stage" (TODO.md Goal 13). All ncmd-1 non-last stages have to
- * qualify or none do: one stage that doesn't falls the *whole*
- * pipeline back to today's job_fork()/fd_pipe() path, unchanged --
- * there's no partial chain here, only "all" or "nothing chains".
- * Returns the stage count (ncmd-1) on success, filling *b_out /
- * *argv_out / *argc_out (each an ncmd-1-element array the caller
- * owns, parallel to npipe->cmds); returns 0 on failure, having 
- * freed anything it already allocated. */
+/* pipeline_filter_prepare() over every non-last stage: the static half of
+ * chaining N builtin filters into the last stage. All ncmd-1 stages qualify
+ * or none do; one that does not sends the whole pipeline to job_fork()/fd_pipe().
+ *
+ * Returns ncmd-1 and fills *b_out, *argv_out, *argc_out (arrays the caller
+ * owns, parallel to npipe->cmds); returns 0 with everything freed on failure. */
 static int
 pipeline_filter_prepare_chain(struct npipe* npipe,
                               struct builtin_cmd*** b_out,
@@ -392,25 +385,15 @@ pipeline_filter_prepare_chain(struct npipe* npipe,
 }
 
 #if !defined(HAVE_FORK)
-/* evaluate a pipeline without fork() (3.9.2) -- see
- * notes/pipeline-sequential.md for the full design. Each stage runs
- * to completion, fully in-process, before the next one starts: no
- * pipe(2), no concurrency, no streaming between stages, just the same
- * non-forking "run this subtree as its own isolated subshell
- * environment" machinery eval_subshell.c already uses for "(...)" --
- * POSIX already specifies every pipeline component as running in its
- * own subshell environment (2.9.2), so this isn't an approximation of
- * that isolation, it's the same isolation. A non-last stage's stdout
- * is captured into an in-memory buffer via fd_subst() (the same
- * mechanism "$(...)" uses); the next stage reads that buffer as its
- * stdin via fd_here() (the same mechanism here-documents use).
- * Inherits the same known gap eval_subshell.c already documents for
- * persistent redirections across a non-forking subshell boundary --
- * see TODO.md, Goal 4.
+/* evaluate a pipeline without fork() (2.9.2): each stage runs to completion
+ * in-process, as its own subshell environment (eval_subshell.c), before the
+ * next starts. No concurrency, no streaming.
  *
- * The *last* stage is the one deliberate exception: it runs directly
- * against the caller's own environment instead, matching zsh/ksh's
- * "lastpipe" behavior (see eval_pipeline()'s matching comment below).
+ *   stage stdout  -> in-memory buffer via fd_subst(), as "$(...)" does
+ *   stage stdin   <- that buffer via fd_here(), as here-documents do
+ *
+ * The last stage runs in the caller's environment ("lastpipe", as zsh/ksh).
+ * Persistent redirections leak across stages, as in eval_subshell.c. */
  * ----------------------------------------------------------------------- */
 static int
 eval_pipeline_sequential(struct eval* e, struct npipe* npipe) {
@@ -562,15 +545,11 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
   int pid = 0, prevfd = -1, status = -1;
   struct job* job;
 
-  /* filter chaining (TODO.md Goal 13) -- see the comment where chain_b
-     is populated, below. chain_b/argv/argc (chain_n entries) are the
-     static candidates; chain_ctx/chain_ops/chain_committed reflect how
-     many of them actually opened, which can be fewer (0, on decline)
-     but never more. chain_link holds the chain_committed-1 in-process
-     buffers that feed one opened stage's output into the next one's
-     open() as "upstream" -- the true last stage never gets one of
-     these, it reads the final opened stage directly (see the
-     "is_last && lastpipe" branch below). */
+  /* filter chaining:
+       chain_b/argv/argc    chain_n static candidates
+       chain_ctx/ops        the chain_committed (<= chain_n) stages that opened
+       chain_link           chain_committed-1 buffers, one per hand-off;
+                            the last stage reads the final opened stage directly */
   struct builtin_cmd** chain_b = NULL;
   char*** chain_argv = NULL;
   int* chain_argc = NULL;
@@ -596,28 +575,13 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
      that group while it's still the terminal's foreground group. */
   int lastpipe = !npipe->bgnd && !sh->opts.monitor && !pipeline_last_leaves_shell(npipe);
 
-  /* filter chaining (TODO.md Goal 13), scoped to a pipeline's *entire*
-     non-last prefix, feeding directly into the true last stage
-     (already unforked via lastpipe above, so there's no fd-lifetime
-     hazard in overwriting its stdin below). chain_b/argv/argc are the
-     *candidates* (pipeline_filter_prepare_chain()'s static AST check,
-     above); all of them open() successfully or none of them do -- the
-     loop below never partially commits a chain, so there is no stage
-     left needing a heap-owned upstream buffer it doesn't already have:
-     the only stage that ever reads a real fd is stage 0 (fd_in->r,
-     persistent already), every later chained stage's upstream is one
-     of the in-process buffers this same pre-pass builds
-     (chain_link[], below) -- unlike a chain rooted anywhere else in
-     the pipeline, this one never needs a forked predecessor's transient
-     per-iteration pipe fd to outlive that iteration.
+  /* filter chaining over the whole non-last prefix, into the last stage
+     (already unforked by lastpipe, so overwriting its stdin is safe).
+     All candidates open() or none do; only stage 0 reads a real fd.
 
-     A candidate can still decline at open() time for a reason the
-     static check can't see (grep -c/-q, a bad pattern, ...); since
-     open() itself has no side effects before it commits (see
-     builtin_filter.h), declining stage i just means every stage before
-     it gets rolled back too (their .close() runs right here) and the
-     whole pipeline runs exactly as if no candidate had ever been
-     found. */
+     A candidate can still decline at open() (`grep -c`, a bad pattern);
+     open() has no side effects before it commits, so the stages before it
+     are rolled back (.close()) and the pipeline runs as if never chained. */
   if(lastpipe)
     chain_n = pipeline_filter_prepare_chain(npipe, &chain_b, &chain_argv, &chain_argc);
 
