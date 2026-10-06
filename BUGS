@@ -11,18 +11,16 @@
   head -n 1500 tests/fixed.sh > /tmp/p.sh; /tmp/nm/shish /tmp/p.sh   # parses fine
   ```
 
-- yash-suite-other-hangs: of the 119 `tests/yash/*.tst` files, `arith-y.tst` and
-  `while-y.tst` still hang (killed by the per-file timeout, 20s here); the rest
+- yash-suite-other-hangs: of the 119 `tests/yash/*.tst` files, only
+  `while-y.tst` still hangs (killed by the per-file timeout, 20s here); the rest
   finish, several slowly: `typeset-y` ~19s, `redir-y` ~8s, `cmdprint-y` ~5s,
   `function-y` ~4s. So `DO_YASH_TESTS` stays off by default (see `TODO.md`).
   `while-y.tst` hangs on `while echo x; do done` (empty body, infinite loop; needs a
-  POSIX mode, see `TODO.md` design decisions). `arith-y.tst` is not isolated yet;
-  bisect it by deleting test cases from a copy.
+  POSIX mode, see `TODO.md` design decisions).
 
   **Repro:**
   ```sh
   timeout 20 sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/yash while-y.tst; echo $?   # 124
-  timeout 20 sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/yash arith-y.tst; echo $?   # 124
   ```
 
 - eval-lineno-imprecise-inside-function: `$LINENO` read from within an
