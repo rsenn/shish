@@ -356,6 +356,7 @@ const char help_expr[] = "    Evaluate an expression and print the result.\n"
                          "                         prints the first \\(...\\) group, or the\n"
                          "                         match length if the pattern has no group\n"
                          "    length string        print the length of string\n"
+                         "    substr string pos len  print len characters of string from pos (1-based)\n"
                          "    index string chars   print the first position in string of any\n"
                          "                         character in chars, 0 if none is found\n"
                          "    | & = > >= < <= != + - * / % ( )\n"
@@ -380,6 +381,23 @@ builtin_expr(int argc, char* argv[]) {
     buffer_putlonglong(fd_out->w, n);
     buffer_putnlflush(fd_out->w);
     return n == 0;
+  }
+
+  if(argc == 5 && !str_diff(argv[1], "substr")) {
+    int64 pos, len;
+    size_t n = str_len(argv[2]);
+
+    if(!ex_int(argv[3], &pos) || !ex_int(argv[4], &len))
+      pos = len = 0; /* GNU: a non-integer position or length selects nothing */
+
+    if(pos < 1 || len < 1 || (uint64)pos > n)
+      len = 0;
+    else if((uint64)len > n - (size_t)(pos - 1))
+      len = (int64)(n - (size_t)(pos - 1));
+
+    buffer_put(fd_out->w, argv[2] + (len ? pos - 1 : 0), (size_t)len);
+    buffer_putnlflush(fd_out->w);
+    return len == 0;
   }
 
   if(argc > 1 && !str_diff(argv[1], "index")) {

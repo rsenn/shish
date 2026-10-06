@@ -6276,4 +6276,8 @@ assert_equal 'a||b|/ 1 a|| 2 b|/a^Ib^A$' "$PX/$PY/$PZ" "cat -s squeezes blank li
 PX=$(printf 'b 2\na 1\nb 1\na 2\n' | "$SHISH_SELF" -c 'sort -s -k1,1' | tr '\n' '|')
 assert_equal "a 1|a 2|b 2|b 1|" "$PX" "sort -s does not fall back to comparing whole lines"
 
+# expr substr STRING POS LEN
+PX=$("$SHISH_SELF" -c 'expr substr abcdef 2 3; expr substr abc 2 99; expr substr abc 0 1; echo $?' | tr '\n' '|')
+assert_equal "bcd|bc||1|" "$PX" "expr substr clips to the string and yields empty for position 0"
+
 summary
