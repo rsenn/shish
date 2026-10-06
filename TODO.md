@@ -21,8 +21,8 @@ fragmentation, execution time.
 | 13 | `lib/arena.h` in `src/` | leaf call sites first; needs the `stralloc` freeze helper |
 | 14 | Optional alias/history/job control | medium, module splits |
 | 15 | Binary size | independent, measurable |
-| 16-17 | Expansion field list, `src/wordlist/` | one risky step (the `expand_cat` port) behind a characterization test |
-| 18 | AST arena | parser-wide; after the field list removes `narg.stra` |
+| 16-17 | Expansion field list, `src/wordlist/` | **done 2026-10-07** (kept as the record of why and how) |
+| 18 | AST arena | parser-wide; `narg.stra` is already gone (section 17) |
 | 19-21 | Filter chaining, tab completion, vi mode | interactive and pipeline features |
 | 22 | Also open (WASI, editor) | |
 | 23-25 | More utilities | wait for the walker and the builtin switches |
@@ -209,6 +209,13 @@ the named files, update the table above, remove the closed `BUGS` entry, add `fi
 `no-tree-print-option-is-a-noop`,
 `cfg-cmake-mingw-silently-builds-native`,
 `quoted-at-then-empty-quotes-drops-field`.
+
+**Found 2026-10-06/07 while porting expansion and reading `src/var*`** (all in `BUGS` with repros; none counted in the
+`tests/posix` scoreboard):
+`chmod-argv-memcpy-overlap` (ASan, `chmod -x f`), `nested-break-trips-eval-pop-assert` (Debug builds only),
+`unset-leaks-the-var-node` (144 bytes per set+unset, section 27). Fixed on the way: quoted here-document delimiters
+with a blank or glob character were never matched (`fixes/378`); `${u}echo hi`, `$e echo hi`, `$((x))` with blanks
+and `"${IFS=X}"` mid-command changed behaviour with the wordlist port (section 17, "Step 2 done").
 
 **Memory safety, not conformance** - under "Memory safety" below:
 `asan-leak-residue-not-fully-triaged`, `ubsan-buffer-op-proto-function-type-mismatch`.
@@ -598,11 +605,13 @@ It does not fit objects freed one by one in any order (history ring, job table, 
    committing to it: scratch strings that are built and frozen at once never leave one.
 
 **Candidates**
-1. **`expand_brace.c` / `expand_glob.c`** (trivial): `alloc(len + 1)` copies and the `glob_t` result live for one
-   word expansion. One arena per `expand_argv` call (`arena_tell`/`arena_rewind` around it), `alloc_free` loop goes.
-2. **`eval_simple_command.c`, `eval_pipeline.c`, `exec_program.c`** (easy): the `argv`/`envp`/`sargv` vectors are
-   `alloca` or `alloc` per command (`HAVE_ALLOCA` split). One scratch arena with `tell`/`rewind` per command replaces
-   both branches and the matching `alloc_free`s, and removes the `#ifdef HAVE_ALLOCA`. Wins only together with 1.
+1. **`expand_brace.c` / glob** (trivial): **glob part done** (`wordlist_glob` copies the matches into the field
+   list's arena and calls `globfree` at once; `expand_glob.c` is gone). `expand_brace.c` still `alloc`s its copies of
+   a word; it works on a private tree copy and stays until brace expansion is read-only (section 17, Stage 3).
+2. **`eval_simple_command.c`, `eval_pipeline.c`, `exec_program.c`** (easy): **`eval_simple_command` done** (argv is
+   `wordlist_argv`, one `arena_tell`/`arena_rewind` per command in `expand_arena`, no `alloca`). Left: the
+   `envp`/`sargv` vectors in `exec_program.c` and `eval_pipeline.c` (`alloca` or `alloc` per command, `HAVE_ALLOCA`
+   split); `var_count(V_EXPORT)` there is an O(n) walk (section 27).
 3. **`term_complete.c`** (easy): `names[]` of `str_dup`s plus six `stralloc_free`s at the end, all one completion
    round. One arena, freed with `arena_reset`; fits the Part C `walk` as its `keep` storage.
 4. **`source_alias.c`** (easy): `alias_frame`, `alias_popped` and the alias copies are pushed and popped in LIFO
@@ -712,7 +721,7 @@ Measured in the musl static build:
 | symbol pulled in | bytes | why | replacement |
 |---|---|---|---|
 | `pow` (+ libm) | 1916 | `A_EXP` in `expand_arith_binary.c:51` | integer `**` loop -- shell arithmetic is integer, so `pow()` is also a correctness hazard |
-| `glob` + `do_glob` + `fnmatch_internal` | ~5200 | `expand_glob.c:61` | the shell already has `path_fnmatch` (1564 bytes); glob = readdir + that |
+| `glob` + `do_glob` + `fnmatch_internal` | ~5200 | `wordlist_glob.c` | the shell already has `path_fnmatch` (1564 bytes); glob = readdir + that |
 | `__qsort_r` | 991 | `term_complete.c:60`, sorting completions | insertion sort over a handful of names |
 
 `lib/unix/glob.c` exists but is `#if WINDOWS_NATIVE` only, so every
@@ -739,7 +748,7 @@ musl, which is the figure above):
 1. **Write `lib/glob/` (POSIX flavour)**: `opendir`/`readdir` per path
    component + `path_fnmatch` (with `PATH_FNM_PERIOD`), same `glob()` /
    `globfree()` names and `gl_pathc`/`gl_pathv` as `lib/glob.h`, so
-   `expand_glob.c` needs no change beyond the include it already selects
+   `wordlist_glob.c` needs no change beyond the include it already selects
    with `HAVE_GLOB`. Estimate ≈150-200 lines, ≈1.2-1.8 KB (Windows
    version as the comparator; not written yet).
 2. **CMake `USE_LIBC_GLOB`** = `AUTO` (default): ON for a dynamically
@@ -762,7 +771,7 @@ musl, which is the figure above):
    `glob64` in the C locale, plus `tests/` cases for what POSIX 2.13
    specifies (`/` never matched by `?`/`*`/`[...]`, leading period matched
    only explicitly, results in collation order, unmatched pattern left
-   as is — `expand_glob.c` already handles the last). Must pass in both
+   as is — `wordlist_glob.c` already handles the last). Must pass in both
    `USE_LIBC_GLOB` settings; ASan+UBSan gate as usual.
 5. Interaction with section 26: with the internal `glob`, `?` and `[...]` in
    *pathname* patterns become UTF-8-aware for free once `path_fnmatch` is
@@ -827,7 +836,7 @@ match against a baseline rather than expecting green.
 
 ---
 
-## 16. Word expansion into a field list, not N_ARG nodes (background)
+## 16. Word expansion into a field list, not N_ARG nodes (background; done, see section 17)
 
 Independent of the AST arena: the field list owns a scratch arena of its own (see the `wordlist` plan below).
 
@@ -919,7 +928,11 @@ compare the `tests/posix` and `tests/yash` pass counts before and after.
 
 ---
 
-## 17. `src/wordlist.h` and `src/wordlist/`: the expansion output as its own module (plan)
+## 17. `src/wordlist.h` and `src/wordlist/`: the expansion output as its own module (done 2026-10-07)
+
+**Status: all four steps are done; this section is the record. Read "Progress", "Step 2 done" and "Step 4 done" below for
+what exists, the rest for why.** The interface sketch and the file list that follow are the original plan; where the
+code differs, "Progress" says how.
 
 section 16's Stage 2 (renamed here: `wordlist`, `wordlist_*`) becomes a module of its own, with an arena
 behind it. **It does not depend on section 18:** it owns a scratch arena separate from the AST arena. Only the
@@ -1059,12 +1072,11 @@ links them, so `shish` is byte-identical in size. The `X_*` bits moved from `exp
   | `$x` of 8 fields: ns (wall)         | 750             | 360        |
 
   The wordlist's working set is one pooled buffer, one arena chunk (reused, rewound) and the argv in the caller's
-  frame, so the micro benchmark is all L1 hits for both; D1 misses are 0.00 per command either way. The cache
-  and fragmentation claim therefore is **not proven yet**: it needs the real shell (steps 2-4), a script that runs
-  `: a b c d e f g h` a million times with a few hundred live variables, and `maxrss`, `mallinfo2().fordblks` and
-  malloc call counts (valgrind) before and after.
-- **Left for the porting steps:** `lib/glob.c` for `NO_GLOB` is still linked from `src/expand/Makefile.in`; move it to
-  `src/wordlist/Makefile.in` when `expand_glob.c` goes. `wordlist_argv()` does not yet replace `expand_argv()`.
+  frame, so the micro benchmark is all L1 hits for both; D1 misses are 0.00 per command either way. The real-shell
+  runs are under "Step 2 done" below (time, mallocs, fragmentation); a direct cache measurement is still missing
+  (`perf` is not installed on the development machine; `valgrind --tool=cachegrind` only shows L1 hits for this
+  working set).
+- The two items that were open here (`NO_GLOB` glob linking, `wordlist_argv()` replacing `expand_argv()`) are done.
 
 **Step 2 done (2026-10-07): the shell expands through `wordlist`.** Words, assignments, `for` lists, the `set -x`
 prefix and `$((x))` all use it; `eval_simple_command` has no node chain, no `alloca` argv and no guard any more.
@@ -1121,13 +1133,13 @@ prefix and `$((x))` all use it; `eval_simple_command` has no node chain, no `all
 **Order of work.** Each step builds, passes `tests/posix` + `tests/yash` counts unchanged, and is its own commit.
 0. DONE: `tests/expand-fields.sh` (131 assertions, every value agreed on by bash and dash, passes under all three
    shells). It found one deviation, `BUGS: param-assign-default-not-split`, which is not in the file.
-1. DONE for what can stand alone: `expand_str` (and `expand_tostr` on top of it) use string mode; `tmpnode` is still
+1. DONE (string mode went in with step 2): `expand_str` (and `expand_tostr` on top of it) use string mode; `tmpnode` is still
    in `expand_copysa/catsa`, `expand_tosa` and `expand_arith_expr`. **These cannot move first:** they call
    `expand_arg()`, which hands `union node**` cursors to `expand_param/command/arith`, so they port together with
    step 2.
-2. Port `expand_cat`'s state machine and `expand_glob` into `wordlist_cat`/`_close`; `expand_args` and `expand_argv`
+2. DONE: port `expand_cat`'s state machine and `expand_glob` into `wordlist_cat`/`_close`; `expand_args` and `expand_argv`
    fill a wordlist; `eval_simple_command` switches over. This is the one risky step.
-3. `eval_for`, `expand_vars`, `eval_print_prefix`; delete the nine `tree_newnode(N_ARG)` sites in `expand/`
+3. DONE (with step 2): `eval_for`, `expand_vars`, `eval_print_prefix`; delete the nine `tree_newnode(N_ARG)` sites in `expand/`
    (`expand_brace.c:218` builds input copies, not output, and stays until brace becomes read-only, Stage 3).
 4. Arena scoping and the pool (until now `ar` may be a plain heap-backed arena reset per command); remove
    `narg.stra`.
@@ -1192,12 +1204,11 @@ Design decisions already worked out (full reasoning in git history —
   This covers the tree's own write-once-at-parse-time strings:
   `nargstr` (as its `strview view` overlay of `stra`), `nargparam.name`,
   `nfor.varn` and `nfunc.name` (populated once during parsing).
-  `narg.stra` stays a real `stralloc` — it's populated later, at
-  expansion time, not parse time. Packing a node and its string tightly
+  (`narg.stra` no longer exists; section 17.) Packing a node and its string tightly
   adjacent in the arena is safe with no alignment padding, since
   `src/tree.h`'s node structs are already `__packed`.
-- **Expansion results are a separate problem.** Words expand into `N_ARG` field nodes on the
-  heap, not into the parse arena; see section 16 for the field-list redesign that follows this one.
+- **Expansion results are a separate problem, now solved separately.** Words expand into a `wordlist` in
+  `expand_arena`, not into the parse arena or into nodes (section 17, done).
 - **Possible future: precompiled/cached AST on disk.** Serialize arena
   blocks with node pointers rewritten to offsets; on load, run one linear
   fixup pass turning offsets back into real pointers (structured like
@@ -1933,8 +1944,8 @@ rewrite. Seven areas, listed by how invasive they are:
 |---|---|---|---|
 | A | language-visible expansions | `expand_param.c` (7 sites), `"$*"` separator | small |
 | B | pattern matching core | `lib/path/path_fnmatch.c` (one function serves `case`, `%`/`#`, and our regex bracket sets) | moderate, one file |
-| C | pathname expansion | `expand_glob.c` calls the **libc** `glob()` | policy decision (below) |
-| D | IFS with non-ASCII characters | `expand_cat.c`, `expand_glob.c`, `builtin_read.c` | small, rare case |
+| C | pathname expansion | `wordlist_glob.c` calls the **libc** `glob()` | policy decision (below) |
+| D | IFS with non-ASCII characters | `wordlist_cat.c`, `wordlist_glob.c`, `builtin_read.c` | small, rare case |
 | E | builtins | `builtin_printf.c`, `builtin_wc.c`, `builtin_expr.c`/`lib/dfa` | small each |
 | F | line editor | `src/term/*` (906 lines, ~10 files) | **largest** |
 | G | locale detection/switching | `sh_init.c`, `var_setsa.c` (the `RANDOM` special-case is the precedent) | small |
@@ -2097,10 +2108,10 @@ for(i = mb_clen(v, vlen); i <= vlen; i += mb_clen(v + i, vlen - i))
 for(i = vlen; i > 0; i -= mb_plen(v, i))
 ```
 
-`S_STRLEN`: `expand_cat(lstr, fmt_ulong(lstr, mb_len(v, vlen)), …)`.
+`S_STRLEN`: `wordlist_cat(wl, lstr, fmt_ulong(lstr, mb_len(v, vlen)), …)`.
 `S_RANGE` (`${v:off:len}`, characters like bash): `nc = mb_len(v, vlen);
 r = limit(&r, 0, nc); o = mb_off(v, vlen, r.offset);
-e = o + mb_off(v + o, vlen - o, r.length);` then `expand_cat(v + o, e - o, …)`.
+e = o + mb_off(v + o, vlen - o, r.length);` then `wordlist_cat(wl, v + o, e - o, …)`.
 `"$*"`: `sep = ifs[0] ? mb_clen(ifs, str_len(ifs)) : 0` and append
 `sep` bytes (0 = no separator: the fix for `BUGS: star-empty-ifs-appends-nul`,
 which must land first).
@@ -2125,7 +2136,7 @@ simplest correct form is counting non-continuation bytes for valid
 input and falling back to `mb_len` per chunk otherwise; write the
 straightforward carry version and test with 1-byte reads).
 
-`builtin_read.c` / `expand_cat.c` / `expand_glob.c` (IFS, M6): today
+`builtin_read.c` / `wordlist_cat.c` / `wordlist_glob.c` (IFS, M6): today
 IFS is a byte set queried with `str_chr`/`scan_charsetnskip`. With
 non-ASCII IFS characters: build once per split a small array of
 `(ptr, len)` characters from IFS; a position is a delimiter when
@@ -2170,10 +2181,10 @@ comment. Cases (`é` = C3 A9, `€` = E2 82 AC, `😀` = F0 9F 98 80, and
 | `:388` `S_RSPFX` (`#`) | `i++` | same | 3 |
 | `:409` `S_RLPFX` (`##`) | `i--` | `i -= mb_plen(v, i)` | 3 |
 | `:423` `S_RANGE` (`${v:off:len}`, `WITH_PARAM_RANGE`) | byte offset/length | offsets are characters: `mb_off` twice | 6 |
-| `expand_param.c:86-90`, `expand_glob.c:79-81` | `"$*"` joins with `ifs[0]` | `mb_clen(ifs, ifslen)` bytes | 4 |
+| `expand_param.c` (`$*`), `wordlist_glob.c` | `"$*"` joins with `ifs[0]` | `mb_clen(ifs, ifslen)` bytes | 4 |
 | `lib/path/path_fnmatch.c` | `?`, `*` backtrack, bracket members/ranges by byte | `?` and star step by `mb_clen`; bracket members decoded with `mb_get` (`[éü]`, `[à-ÿ]` by code point); literal runs unchanged (byte compare is correct) | 40-60 |
-| `expand/expand_glob.c` | libc `glob()` | see "libc" below | 5-10 |
-| `expand_cat.c:10-16`, `expand_glob.c:42`, `builtin_read.c:122-141` | IFS as a *byte* set (`str_chr`, `scan_charsetnskip`) | only matters when IFS contains non-ASCII: add `mb_span`/`mb_cspan`. **P3**, known gap until done | 30 |
+| `wordlist/wordlist_glob.c` | libc `glob()` | see "libc" below | 5-10 |
+| `wordlist_cat.c`, `wordlist_glob.c`, `builtin_read.c` | IFS as a *byte* set (`str_chr`, `scan_charsetnskip`) | only matters when IFS contains non-ASCII: add `mb_span`/`mb_cspan`. **P3**, known gap until done | 30 |
 | `builtin_printf.c:308-345` | `%s` width/precision and `%c` in bytes | **none** — POSIX says bytes (see above) | 0 |
 | `builtin_wc.c` | `-m` = bytes; `-L` = bytes | `-m`: `mb_len` (one per character; invalid byte = 1); `-L`: `mb_cols` | 20 |
 | `builtin_expr.c`, `lib/dfa` | bytes | `length`/`index`; regex via `DFA_UTF8` (section 10) | later |
@@ -2200,7 +2211,7 @@ for interactive use**. There is no prompt-width tracking today, so
 nothing to change in `prompt/`.
 
 **libc (C).** Pathname expansion is the platform's `glob()`
-(`expand_glob.c:5-19`; `lib/unix/glob.c` is Windows-only), and glibc/musl
+(`wordlist_glob.c`; `lib/unix/glob.c` is Windows-only), and glibc/musl
 `glob`/`fnmatch` follow the locale set with `setlocale`, which shish
 never calls. Options: (a) leave it — `?` in a *pathname* pattern stays
 bytewise, everything else is right (documented gap); (b) under
@@ -2332,7 +2343,12 @@ Evidence first (callgrind, MinSizeRel + all builtins, `tests/wordlist/frag.sh`-s
    structures current on every insert to serve those is the wrong way round: sort the n pointers when printing.
 4. The per-scope 64-bucket table is 536 bytes where most scopes hold zero to three variables.
 5. `var_unset` leaks the `struct var` (`BUGS: unset-leaks-the-var-node`, 144 bytes per cycle).
-6. Dead weight: `V_CALL` and the `call` member (never set anywhere), `extern var_exported` (never defined),
+6. `exec_hash` pays for `PATH` staleness on every command (below), and `var_create` already calls
+   `exec_hash_invalidate_all()` for any `PATH` assignment, so the per-command comparison is only needed for the case
+   where a scope pop restores an older `PATH` (`PATH=/x cmd`, `local PATH`); the epoch in step 2 covers that one too.
+   `exec_hash` also hashes the name twice (`exec_hash` and `exec_lookup`), and `builtin_search` is a linear scan of
+   the table (three passes on a cache miss, once per name).
+7. Dead weight: `V_CALL` and the `call` member (never set anywhere), `extern var_exported` (never defined),
    `var_dump`/`vartab_dump` (only the `dump` builtin), `rndhash`/`lexhash`/`hsearch`/`bsearch` once the table is
    replaced.
 
