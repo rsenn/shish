@@ -2,6 +2,7 @@
 #include "../trace.h"
 #include "../sh.h"
 #include "../eval.h"
+#include "../expand.h"
 #include "../fdstack.h"
 #include "../source.h"
 #include "../vartab.h"
@@ -89,7 +90,8 @@ eval_jump(int levels, int cont) {
         fd_pop(f);
     }
 
-    eval_args_unwind(j->args);
+    arena_rewind(&expand_arena, j->apos);
+    wordlist_pool_release(j->pool);
     longjmp(j->jumpbuf, cont << 1);
   }
 }

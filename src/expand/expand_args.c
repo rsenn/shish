@@ -5,9 +5,9 @@
 #include "../parse.h"
 #include "../sh.h"
 
-/* expand all arguments of an argument list
- * returns count of argument nodes
- * ----------------------------------------------------------------------- */
+/* fields of all expansions, one command's worth at a time; the caller rewinds it */
+arena expand_arena = {NULL, NULL, NULL, NULL, &arena_heap, 8192};
+
 int expand_error = 0;
 
 /* word is only empty literals and quoted plain $@, and there are no
@@ -38,15 +38,15 @@ expand_is_empty_at(union node* word) {
   return at;
 }
 
+/* expand all arguments of an argument list into wl, one word after the other
+ * returns the number of fields the words added
+ * ----------------------------------------------------------------------- */
 int
-expand_args(union node* args, union node** nptr, int flags) {
-  union node* arg;
-  union node* n;
-  union node* owned;
-  union node** head = nptr;
+expand_args(union node* args, wordlist* wl, int flags) {
+  union node *arg, *owned;
   int ret = 0, copied;
 
-  *nptr = NULL;
+  wl->noglob = sh->opts.noglob;
 
   /* args is the permanent parsed command tree, reused on every
      execution -- brace/tilde expansion rewrite word text/structure,
@@ -60,66 +60,15 @@ expand_args(union node* args, union node** nptr, int flags) {
   copied = arg != NULL;
 
   for(arg = owned; arg; arg = arg->next) {
-
-#ifdef DEBUG_OUTPUT_
-    debug_node(arg, 0);
-    debug_nl_fl();
-#endif
-
     if(expand_is_empty_at(arg))
       continue;
 
     if(copied)
       expand_tilde_word(arg);
 
-    if((n = expand_arg(arg->narg.list, nptr, flags))) {
-      nptr = &n;
-      ret++;
-    }
-
-    if(n == NULL)
-      continue;
-
-    if(n->narg.flag & X_GLOB) {
-      if((n = expand_glob(nptr, n->narg.flag & ~X_GLOB))) {
-        nptr = &n;
-        ret++;
-      }
-    } else if(n->narg.flag & X_GLOBRES) {
-      union node* g = expand_glob(nptr, n->narg.flag);
-
-      if(g) {
-        n = g;
-        nptr = &n;
-        ret++;
-      }
-
-      stralloc_nul(&n->narg.stra);
-    } else if((n->narg.flag & X_LITERAL) && !(n->narg.flag & X_UNESCAPED)) {
-      expand_unescape(&n->narg.stra, parse_isesc);
-      n->narg.flag &= ~X_GLOB;
-    } else {
-      /* expand_unescape() nul-terminates as a side effect; skipping it
-         here must not also skip that, or ->stra.s stops being a valid
-         C string for anything that reads it as one. */
-      stralloc_nul(&n->narg.stra);
-    }
-
-    if(arg->next) {
-      n->next = tree_newnode(N_ARG);
-      n = n->next;
-      stralloc_init(&n->narg.stra);
-      stralloc_nul(&n->narg.stra);
-      ret++;
-    }
+    expand_arg(arg->narg.list, wl, flags);
+    ret += wordlist_close(wl);
   }
-
-  /* expand_arg() may hand back a chain (field splitting, "$@"); only its
-     last node was terminated above, expand_argv() needs every one
-     (nptr itself now points at the local "n", so walk from "head") */
-  for(n = *head; n; n = n->next)
-    if(n->narg.stra.s)
-      stralloc_nul(&n->narg.stra);
 
   if(copied && owned)
     tree_free(owned);

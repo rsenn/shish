@@ -44,17 +44,23 @@ eval_print_prefix(struct eval* e, buffer* b) {
     parse_init(&p, P_DEFAULT);
 
     if(parse_gettok(&p, P_NOKEYWD) & (T_WORD | T_NAME)) {
-      union node *arg = parse_getarg(&p), *res = NULL;
+      union node* arg = parse_getarg(&p);
 
       if(arg) {
-        expand_args(arg, &res, 0);
+        wordlist wl;
+        arena_pos pos = arena_tell(&expand_arena);
+        int n;
+        char** v;
 
-        if(res && res->narg.stra.s)
-          stralloc_copyb(&out, res->narg.stra.s, res->narg.stra.len);
+        wordlist_init(&wl, &expand_arena, var_vdefault("IFS", IFS_DEFAULT, NULL));
+        expand_args(arg, &wl, 0);
+        v = wordlist_argv(&wl, &n);
 
-        if(res)
-          tree_free(res);
+        if(n)
+          stralloc_copys(&out, v[0]);
 
+        wordlist_free(&wl);
+        arena_rewind(&expand_arena, pos);
         tree_free(arg);
       }
     }

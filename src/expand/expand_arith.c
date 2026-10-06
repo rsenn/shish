@@ -5,16 +5,16 @@
 
 /* expand an arithmetic expression
  * ----------------------------------------------------------------------- */
-union node*
-expand_arith(struct nargarith* arith, union node** nptr, int flags) {
-  union node *expr = arith->tree, *n = *nptr;
+void
+expand_arith(struct nargarith* arith, wordlist* wl, int flags) {
+  union node* expr = arith->tree;
   int64 ret = -1;
   size_t len;
   char buf[FMT_LONG];
 
   if(!expand_arith_expr(expr, &ret)) {
     len = fmt_longlong(buf, ret);
-    n = expand_cat(buf, len, &n, flags);
+    wordlist_cat(wl, buf, len, flags);
   } else {
     /* an arithmetic expansion error ends a non-interactive shell, like any expansion error */
     sh_error("arithmetic syntax error");
@@ -23,8 +23,5 @@ expand_arith(struct nargarith* arith, union node** nptr, int flags) {
       sh_exit(1);
 
     expand_error = 1;
-    n = 0;
   }
-
-  return n;
 }

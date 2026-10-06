@@ -2,6 +2,7 @@
 #include "../fd.h"
 #include "../trace.h"
 #include "../eval.h"
+#include "../expand.h"
 #include "../fdstack.h"
 #include "../sh.h"
 #include "../source.h"
@@ -19,7 +20,8 @@ eval_push(struct eval* e, int flags) {
   e->fdstack = fdstack;
   e->varstack = varstack;
   e->source = source;
-  e->args = eval_args_top;
+  e->apos = arena_tell(&expand_arena);
+  e->pool = wordlist_pool_mark();
 
   // sh->eval = e;
   eval = e;

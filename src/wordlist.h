@@ -34,7 +34,6 @@
 #define X_CATCLOSED 0x80000000
 
 #define WORDLIST_INLINE 16
-#define WORDLIST_POOL 8
 
 /* output of word expansion: an append-only sink that turns text chunks into fields.
  * Knows nothing of the parse tree, variables or $(...); the caller passes IFS in.
@@ -55,7 +54,7 @@ typedef struct wordlist {
   unsigned pend : 1;     /* v[n - 1] is an empty field that is dropped unless a sibling follows */
   unsigned noglob : 1;   /* set -f: patterns stay literal */
   unsigned oom : 1;      /* an allocation failed; the field that needed it was lost */
-  stralloc own;          /* cur when the pool is empty (more than WORDLIST_POOL nested lists) */
+  stralloc own;          /* cur when the pool could not grow (out of memory) */
   char* inl[WORDLIST_INLINE]; /* v starts here: up to 15 fields cost no malloc */
 } wordlist;
 
@@ -77,8 +76,10 @@ char** wordlist_argv(wordlist* wl, int* argc); /* v, NULL-terminated, no copy */
 
 /* internal, shared by the files of this module
  * ----------------------------------------------------------------------- */
-stralloc* wordlist_pool_get(void); /* a pooled buffer, NULL when all are taken */
-int wordlist_pool_put(stralloc* sa);  /* 1 if sa was the newest pooled buffer and is back */
+stralloc* wordlist_pool_get(void);     /* a pooled buffer, NULL when out of memory */
+int wordlist_pool_put(stralloc* sa);   /* 1 if sa was the newest pooled buffer and is back */
+size_t wordlist_pool_mark(void);       /* buffers in use now */
+void wordlist_pool_release(size_t mark); /* a longjmp skipped the frees: back to mark */
 void wordlist_push(wordlist* wl); /* freeze cur as the next field, empty cur */
 void wordlist_settle(wordlist* wl); /* resolve a pending empty field: drop it */
 void wordlist_glob(wordlist* wl, int flags); /* pattern in cur: push all matches but the last, leave that one in cur */

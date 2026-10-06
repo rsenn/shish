@@ -116,9 +116,8 @@ expand_range(union node* word, struct range* r) {
   return ok;
 }
 
-union node*
-expand_param(struct nargparam* param, union node** nptr, int flags) {
-  union node *start = *nptr, *n = *nptr;
+void
+expand_param(struct nargparam* param, wordlist* wl, int flags) {
   stralloc value;
   const char* v = NULL;
   char tmpbuf[FMT_ULONG]; /* v may point here after the block that fills it */
@@ -141,9 +140,9 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
     if((special == S_ARGV || special == S_ARGVS) && (param->flag & S_STRLEN)) {
       char lstr[FMT_ULONG];
 
-      n = expand_cat(lstr, fmt_ulong(lstr, sh->arg.c), nptr, flags);
+      wordlist_cat(wl, lstr, fmt_ulong(lstr, sh->arg.c), flags);
       stralloc_free(&value);
-      return n;
+      return;
     }
 
     /* ${@:-w} with no parameters is "unset": the operator applies */
@@ -206,7 +205,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
             else if(r.length == INT32_MAX)
               sh_msg("expecting length\n");
 
-            return n;
+            return;
           }
         }
 #endif
@@ -218,17 +217,15 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
           // param->flag |= S_ARG;
           arg.numb = 1 + i;
 
-          n = expand_param(&arg, nptr, flags);
+          expand_param(&arg, wl, flags);
           i++;
 
-          /* n is NULL when this index contributed no node (an empty
-             positional parameter dropped by field splitting) -- keep
-             nptr as-is instead of computing a bogus "&NULL->next". */
-          if(n && i < sh->arg.c)
-            nptr = &n->next;
+          /* the next parameter starts a field of its own */
+          if(i < sh->arg.c)
+            wordlist_break(wl);
         }
 
-        return n;
+        return;
       }
 
       /* $? substitution */
@@ -353,7 +350,6 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
         sh_exit(1);
 
       expand_error = 1;
-      n = 0;
       goto fail;
     }
   }
@@ -362,9 +358,9 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
   if(param->flag & S_STRLEN) {
     char lstr[FMT_ULONG];
 
-    n = expand_cat(lstr, fmt_ulong(lstr, vlen), nptr, flags);
+    wordlist_cat(wl, lstr, fmt_ulong(lstr, vlen), flags);
     stralloc_free(&value);
-    return n;
+    return;
   }
 
   /* otherwise expand the apropriate variable/word subst */
@@ -372,12 +368,12 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
     /* return word if parameter unset (or null) */
     case S_DEFAULT: {
       if(v)
-        n = expand_cat(v, vlen, nptr, flags);
+        wordlist_cat(wl, v, vlen, flags);
       /* unset, substitute */
       else if(param->word) {
         union node* word = expand_param_tilde(param->word);
 
-        n = expand_arg(word, nptr, flags | X_SUBWORD);
+        expand_arg(word, wl, flags | X_SUBWORD);
         expand_param_tilde_free(word, param->word);
       }
 
@@ -386,16 +382,15 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
     /* if parameter unset (or null) then expand word to it and substitute paramter */
     case S_ASGNDEF: {
       if(v)
-        n = expand_cat(v, vlen, nptr, flags);
+        wordlist_cat(wl, v, vlen, flags);
       else {
-        /* nptr's node may already hold text from earlier pieces of
-           the surrounding word; expand_arg() below appends onto that
-           same node, so only the bytes after this snapshot are the
-           value to assign. */
-        size_t before = n ? n->narg.stra.len : 0;
+        /* the open field may already hold text from earlier pieces of
+           the surrounding word; expand_arg() below appends onto it,
+           so only the bytes after this snapshot are the value to assign. */
+        size_t before = wl->has && !wl->closed ? wl->cur->len : 0;
         union node* word = expand_param_tilde(param->word);
 
-        n = expand_arg(word, nptr, flags | X_NOSPLIT);
+        expand_arg(word, wl, flags | X_NOSPLIT);
         expand_param_tilde_free(word, param->word);
         /* ${1:=x}, ${*:=x}: only a NAME can be assigned */
         char c = param->name[0];
@@ -405,14 +400,17 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
           sh_msg(param->name);
           buffer_putsflush(fd_err->w, ": cannot assign in this way\n");
         }
-        if(!isname || !var_setv(param->name, n->narg.stra.s + before, n->narg.stra.len - before, V_DEFAULT)) {
+        if(!isname || !var_setv(param->name, wl->cur->s + before, wl->cur->len - before, V_DEFAULT)) {
           if(!sh_interactive)
             sh_exit(1);
 
           expand_error = 1;
-          n = 0;
           goto fail;
         }
+
+        /* "${IFS=X}" changes how the rest of the command splits */
+        if(wl->ar)
+          wl->ifs = var_vdefault("IFS", IFS_DEFAULT, NULL);
       }
 
       break;
@@ -421,7 +419,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
     /* indicate error if null or unset */
     case S_ERRNULL: {
       if(v)
-        n = expand_cat(v, vlen, nptr, flags);
+        wordlist_cat(wl, v, vlen, flags);
       else {
         stralloc msg = {0, 0, 0};
 
@@ -460,7 +458,6 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
           sh_exit(1);
 
         expand_error = 1;
-        n = 0;
         goto fail;
       }
 
@@ -472,7 +469,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
       if(v) {
         union node* word = expand_param_tilde(param->word);
 
-        n = expand_arg(word, nptr, flags | X_SUBWORD);
+        expand_arg(word, wl, flags | X_SUBWORD);
         expand_param_tilde_free(word, param->word);
       }
       break;
@@ -499,7 +496,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
         stralloc_free(&sa);
 
-        n = expand_cat(v, (i < 0 ? vlen : (size_t)i), nptr, flags);
+        wordlist_cat(wl, v, (i < 0 ? vlen : (size_t)i), flags);
       }
 
       break;
@@ -522,7 +519,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
         stralloc_free(&sa);
 
-        n = expand_cat(v, (i > vlen ? vlen : i), nptr, flags);
+        wordlist_cat(wl, v, (i > vlen ? vlen : i), flags);
       }
 
       break;
@@ -548,7 +545,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
         stralloc_free(&sa);
 
-        n = expand_cat(v + i, vlen - i, nptr, flags);
+        wordlist_cat(wl, v + i, vlen - i, flags);
       }
 
       break;
@@ -571,7 +568,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
         stralloc_free(&sa);
 
-        n = expand_cat(v + i, vlen - i, nptr, flags);
+        wordlist_cat(wl, v + i, vlen - i, flags);
       }
 
       break;
@@ -581,14 +578,14 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
     /* character or field range */
     case S_RANGE: {
       if(v && range_done) {
-        n = expand_cat(v, vlen, nptr, flags);
+        wordlist_cat(wl, v, vlen, flags);
       } else if(v && vlen) {
         struct range r = {0, vlen};
 
         if(expand_range(param->word, &r)) {
           r = limit(&r, 0, vlen);
 
-          n = expand_cat(v + r.offset, r.length, nptr, flags);
+          wordlist_cat(wl, v + r.offset, r.length, flags);
         } else {
 
           if(r.offset == INT32_MIN)
@@ -604,5 +601,4 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
 
 fail:
   stralloc_free(&value);
-  return n;
 }

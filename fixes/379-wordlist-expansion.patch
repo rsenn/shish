@@ -1,0 +1,1356 @@
+diff --git a/src/eval.h b/src/eval.h
+index d530a98b..6a37fcfc 100644
+--- a/src/eval.h
++++ b/src/eval.h
+@@ -15,6 +15,7 @@ enum {
+ };
+ 
+ #include "tree.h"
++#include "wordlist.h"
+ #include <setjmp.h>
+ #include <stdlib.h>
+ 
+@@ -26,13 +27,6 @@ typedef int exit_callback(int);
+ 
+ struct source;
+ 
+-/* argument list of a simple command that is running; freed by
+- * eval_args_unwind() when break/return/exit longjmps past it */
+-struct eval_args {
+-  union node* args;
+-  struct eval_args* prev;
+-};
+-
+ struct eval {
+   struct eval* parent;
+   int flags;
+@@ -45,7 +39,8 @@ struct eval {
+      or the next parse_gettok will read from the consumed eval buffer and
+      return EOF immediately — making the parent script silently stop. */
+   struct source* source;
+-  struct eval_args* args; /* eval_args_top at push time */
++  arena_pos apos; /* expand_arena at push time: break/return/exit rewind it to here */
++  size_t pool;    /* wordlist buffers in use at push time, likewise */
+ 
+   jmp_buf jumpbuf;
+   int jump;
+@@ -57,15 +52,12 @@ struct eval {
+ };
+ 
+ extern struct eval* eval;
+-extern struct eval_args* eval_args_top;
+ 
+ /* "set -e" is off while evaluating what POSIX exempts: an if/while/until condition, a non-last
+  * AND-OR member. A global counter, not a per-frame flag, so it reaches into functions and subshells:
+  *   f() { false; }; set -e; f && true     # must not abort inside f */
+ extern int errexit_suppress;
+ 
+-void eval_args_unwind(struct eval_args* to);
+-
+ int eval_command(struct eval* e, union node* node, int tempflags);
+ void eval_jump(int levels, int cont);
+ void eval_return(int);
+diff --git a/src/eval/eval_args_unwind.c b/src/eval/eval_args_unwind.c
+deleted file mode 100644
+index 5ab78a62..00000000
+--- a/src/eval/eval_args_unwind.c
++++ /dev/null
+@@ -1,16 +0,0 @@
+-#include "../eval.h"
+-#include "../tree.h"
+-
+-struct eval_args* eval_args_top = NULL;
+-
+-/* free the argument lists of the simple commands a longjmp is skipping.
+- *
+- *   struct eval_args*  to  innermost guard to keep (the target frame's)
+- * ----------------------------------------------------------------------- */
+-void
+-eval_args_unwind(struct eval_args* to) {
+-  while(eval_args_top && eval_args_top != to) {
+-    tree_free(eval_args_top->args);
+-    eval_args_top = eval_args_top->prev;
+-  }
+-}
+diff --git a/src/eval/eval_exit.c b/src/eval/eval_exit.c
+index dfef9b81..4635e868 100644
+--- a/src/eval/eval_exit.c
++++ b/src/eval/eval_exit.c
+@@ -1,6 +1,7 @@
+ #include "../sh.h"
+ #include "../trace.h"
+ #include "../eval.h"
++#include "../expand.h"
+ #include "../fdstack.h"
+ #include "../source.h"
+ #include "../vartab.h"
+@@ -116,7 +117,8 @@ eval_exit(int exitcode) {
+         fd_pop(fd);
+     }
+ 
+-    eval_args_unwind(e->args);
++    arena_rewind(&expand_arena, e->apos);
++    wordlist_pool_release(e->pool);
+     longjmp(e->jumpbuf, (exitcode << 1) | 1);
+   }
+ }
+diff --git a/src/eval/eval_for.c b/src/eval/eval_for.c
+index 2522178a..cf228761 100644
+--- a/src/eval/eval_for.c
++++ b/src/eval/eval_for.c
+@@ -11,8 +11,10 @@
+ int
+ eval_for(struct eval* e, struct nfor* nfor) {
+   struct eval en;
+-  union node *node, *args = NULL;
+-  int ran = 0;
++  wordlist wl;
++  arena_pos pos = arena_tell(&expand_arena);
++  char** v;
++  int i, argc, ran = 0;
+ 
+   /* POSIX 3.9.4.2: "for x in ...; do" iterates over exactly the (maybe
+      empty) word list following "in" -- only a bare "for x; do", with
+@@ -25,20 +27,20 @@ eval_for(struct eval* e, struct nfor* nfor) {
+      args are actually live (confirmed via a command-substitution
+      subshell), that fallback also dereferenced a bogus sh->arg.v[i]
+      and segfaulted instead of just leaving the loop body unrun. */
++  wordlist_init(&wl, &expand_arena, var_vdefault("IFS", IFS_DEFAULT, NULL));
++
+   if(nfor->has_in) {
+     if(nfor->args)
+-      expand_args(nfor->args, &args, 0);
++      expand_args(nfor->args, &wl, 0);
+   } else {
+-    union node** nptr = &args;
+-
+-    for(int i = 0; i < sh->arg.c; i++) {
+-      expand_cat(sh->arg.v[i], str_len(sh->arg.v[i]), nptr, X_QUOTED);
+-
+-      if(*nptr)
+-        nptr = &(*nptr)->next;
++    for(i = 0; i < sh->arg.c; i++) {
++      wordlist_cat(&wl, sh->arg.v[i], str_len(sh->arg.v[i]), X_QUOTED);
++      wordlist_break(&wl);
+     }
+   }
+ 
++  v = wordlist_argv(&wl, &argc);
++
+   /* E_EXIT from a forked pipeline stage must not reach the body: its last
+      command would exec out of iteration 1 (see eval_loop.c) */
+   e->flags &= ~E_EXIT;
+@@ -47,7 +49,7 @@ eval_for(struct eval* e, struct nfor* nfor) {
+ 
+   en.jump = 1;
+ 
+-  for(node = args; node; node = node->next) {
++  for(i = 0; i < argc; i++) {
+     int jmpret;
+ 
+     if((jmpret = setjmp(en.jumpbuf)) == 2)
+@@ -68,16 +70,16 @@ eval_for(struct eval* e, struct nfor* nfor) {
+     }
+ 
+     /* iterate the loop variable */
+-    var_setvsa(nfor->varn, &node->narg.stra, V_DEFAULT);
+-    TRACE(TRACE_EVAL, "for.iter", trace_str("var", nfor->varn), trace_strn("value", node->narg.stra.s, node->narg.stra.len));
++    var_setv(nfor->varn, v[i], str_len(v[i]), V_DEFAULT);
++    TRACE(TRACE_EVAL, "for.iter", trace_str("var", nfor->varn), trace_strn("value", v[i], str_len(v[i])));
+ 
+     /* evaluate loop body */
+     eval_tree(e, nfor->cmds, E_LIST);
+     ran = 1;
+   }
+ 
+-  if(args)
+-    tree_free(args);
++  wordlist_free(&wl);
++  arena_rewind(&expand_arena, pos);
+ 
+   /* POSIX 2.9.4: a for-loop's own exit status is that of the last
+      command run in its body (0 if the body never ran at all, e.g. an
+diff --git a/src/eval/eval_jump.c b/src/eval/eval_jump.c
+index fc6ae51f..96e8543a 100644
+--- a/src/eval/eval_jump.c
++++ b/src/eval/eval_jump.c
+@@ -2,6 +2,7 @@
+ #include "../trace.h"
+ #include "../sh.h"
+ #include "../eval.h"
++#include "../expand.h"
+ #include "../fdstack.h"
+ #include "../source.h"
+ #include "../vartab.h"
+@@ -89,7 +90,8 @@ eval_jump(int levels, int cont) {
+         fd_pop(f);
+     }
+ 
+-    eval_args_unwind(j->args);
++    arena_rewind(&expand_arena, j->apos);
++    wordlist_pool_release(j->pool);
+     longjmp(j->jumpbuf, cont << 1);
+   }
+ }
+diff --git a/src/eval/eval_print_prefix.c b/src/eval/eval_print_prefix.c
+index 21e355f7..4f645734 100644
+--- a/src/eval/eval_print_prefix.c
++++ b/src/eval/eval_print_prefix.c
+@@ -44,17 +44,23 @@ eval_print_prefix(struct eval* e, buffer* b) {
+     parse_init(&p, P_DEFAULT);
+ 
+     if(parse_gettok(&p, P_NOKEYWD) & (T_WORD | T_NAME)) {
+-      union node *arg = parse_getarg(&p), *res = NULL;
++      union node* arg = parse_getarg(&p);
+ 
+       if(arg) {
+-        expand_args(arg, &res, 0);
++        wordlist wl;
++        arena_pos pos = arena_tell(&expand_arena);
++        int n;
++        char** v;
+ 
+-        if(res && res->narg.stra.s)
+-          stralloc_copyb(&out, res->narg.stra.s, res->narg.stra.len);
++        wordlist_init(&wl, &expand_arena, var_vdefault("IFS", IFS_DEFAULT, NULL));
++        expand_args(arg, &wl, 0);
++        v = wordlist_argv(&wl, &n);
+ 
+-        if(res)
+-          tree_free(res);
++        if(n)
++          stralloc_copys(&out, v[0]);
+ 
++        wordlist_free(&wl);
++        arena_rewind(&expand_arena, pos);
+         tree_free(arg);
+       }
+     }
+diff --git a/src/eval/eval_push.c b/src/eval/eval_push.c
+index b85d6c2c..3f470b6d 100644
+--- a/src/eval/eval_push.c
++++ b/src/eval/eval_push.c
+@@ -2,6 +2,7 @@
+ #include "../fd.h"
+ #include "../trace.h"
+ #include "../eval.h"
++#include "../expand.h"
+ #include "../fdstack.h"
+ #include "../sh.h"
+ #include "../source.h"
+@@ -19,7 +20,8 @@ eval_push(struct eval* e, int flags) {
+   e->fdstack = fdstack;
+   e->varstack = varstack;
+   e->source = source;
+-  e->args = eval_args_top;
++  e->apos = arena_tell(&expand_arena);
++  e->pool = wordlist_pool_mark();
+ 
+   // sh->eval = e;
+   eval = e;
+diff --git a/src/eval/eval_return.c b/src/eval/eval_return.c
+index ef647631..53da27f5 100644
+--- a/src/eval/eval_return.c
++++ b/src/eval/eval_return.c
+@@ -2,6 +2,7 @@
+ #include "../trace.h"
+ #include "../sh.h"
+ #include "../eval.h"
++#include "../expand.h"
+ #include "../fdstack.h"
+ #include "../source.h"
+ #include "../vartab.h"
+@@ -69,7 +70,8 @@ eval_return(int value) {
+         fd_pop(fd);
+     }
+ 
+-    eval_args_unwind(f->args);
++    arena_rewind(&expand_arena, f->apos);
++    wordlist_pool_release(f->pool);
+     longjmp(f->jumpbuf, value << 1);
+   }
+ }
+diff --git a/src/eval/eval_simple_command.c b/src/eval/eval_simple_command.c
+index 1da98a49..f531d68f 100644
+--- a/src/eval/eval_simple_command.c
++++ b/src/eval/eval_simple_command.c
+@@ -41,13 +41,17 @@ int
+ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+   int argc, status = 0, assign_error = 0, redir_error = 0, via_command = 0;
+   char** argv;
+-  union node *node, *args = 0, *args_head = 0, *assigns = 0, *r, *redir = ncmd->rdir;
++  union node *r, *redir = ncmd->rdir;
++  wordlist wl, wla; /* command words, assignments; both live in expand_arena until end: */
++  arena_pos apos = arena_tell(&expand_arena);
+   struct command cmd = {H_BUILTIN, {0}};
+   struct vartab vars;
+   struct fdstack io;
+-  struct eval_args guard;
+   char buf[FD_BUFSIZE];
+ 
++  wordlist_init(&wl, &expand_arena, var_vdefault("IFS", IFS_DEFAULT, NULL));
++  byte_zero(&wla, sizeof(wla));
++
+   /* expand arguments,
+      if there are arguments we start a hashed search for the command */
+   expand_error = 0;
+@@ -64,27 +68,25 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+      "no command" status below; sh->exitcode itself is untouched */
+   sh->cmdsubst_ran = 0;
+ 
+-  if(expand_args(ncmd->args, &args, 0)) {
+-    args_head = args;
+-    stralloc_nul(&args->narg.stra);
+-    cmd = exec_hash(args->narg.stra.s, 0);
++  expand_args(ncmd->args, &wl, 0);
++  argv = wordlist_argv(&wl, &argc);
++
++  if(argc) {
++    cmd = exec_hash(argv[0], 0);
+ 
+     /* "command [-p] [--] exec ..." runs as "exec ...", so its
+-       redirections persist. args_head still owns the whole list. */
++       redirections persist. */
+ #if BUILTIN_COMMAND
+     if(cmd.id == H_BUILTIN && cmd.builtin && cmd.builtin->fn == &builtin_command) {
+-      union node* n = args->next;
+-
+-      while(n && (stralloc_nul(&n->narg.stra), str_equal(n->narg.stra.s, "-p") || str_equal(n->narg.stra.s, "--")))
+-        n = n->next;
++      int n = 1;
+ 
+-      if(n) {
+-        stralloc_nul(&n->narg.stra);
++      while(n < argc && (str_equal(argv[n], "-p") || str_equal(argv[n], "--")))
++        n++;
+ 
+-        if(str_equal(n->narg.stra.s, "exec") && (cmd = exec_hash("exec", H_FUNCTION)).id == H_EXEC) {
+-          args = n;
+-          via_command = 1;
+-        }
++      if(n < argc && str_equal(argv[n], "exec") && (cmd = exec_hash("exec", H_FUNCTION)).id == H_EXEC) {
++        argv += n;
++        argc -= n;
++        via_command = 1;
+       }
+     }
+ #endif
+@@ -109,7 +111,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+      environment: "< ${x=y}" must not leave x set. Assignments in the
+      same command are applied to the current environment, so no scope
+      then. */
+-  if(!args && ncmd->rdir && !ncmd->vars && varstack != &vars)
++  if(!argc && ncmd->rdir && !ncmd->vars && varstack != &vars)
+     vartab_push(&vars, 0);
+ 
+   /* do redirections if present */
+@@ -169,7 +171,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+        execution-or-set-status -- this is the "no command" half of it;
+        exec_command.c's own fdtable_open() result checks are the
+        other). */
+-    if(redir_eval(&r->nredir, fd, (cmd.id == H_EXEC || args == NULL || ncmd->vars ? R_NOW : 0))) {
++    if(redir_eval(&r->nredir, fd, (cmd.id == H_EXEC || argc == 0 || ncmd->vars ? R_NOW : 0))) {
+       redir_error = 1;
+       status = 1;
+       goto end;
+@@ -208,7 +210,13 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+      ran in the words or the assignments, as opposed to "sh->exitcode
+      is just still holding the previous command's status" */
+ 
+-  if(expand_vars(ncmd->vars, &assigns)) {
++  if(ncmd->vars) {
++    char** assigns;
++    int nassign, k;
++
++    wordlist_init(&wla, &expand_arena, NULL);
++    expand_vars(ncmd->vars, &wla);
++    assigns = wordlist_argv(&wla, &nassign);
+ 
+ #ifdef DEBUG_OUTPUT_
+     if(ncmd->vars) {
+@@ -243,18 +251,19 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+       vartab_push(&vars, 1);
+     }
+ 
+-    for(node = assigns; node; node = node->next) {
++    for(k = 0; k < nassign; k++) {
++      /* the field is NUL-terminated in the arena: a stralloc view, capacity len + 1 */
++      stralloc sa = {assigns[k], str_len(assigns[k]), str_len(assigns[k]) + 1};
+ 
+       if(e->flags & E_PRINT) {
+-        stralloc* sa = &node->narg.stra;
+-        size_t offs = byte_chr(sa->s, sa->len, '=');
++        size_t offs = byte_chr(sa.s, sa.len, '=');
+ 
+-        if(offs < sa->len)
++        if(offs < sa.len)
+           offs++;
+         
+         eval_print_prefix(e, fd_err->w);
+-        buffer_put(fd_err->w, sa->s, offs);        
+-        debug_word(&sa->s[offs], sa->len - offs, fd_err->w);
++        buffer_put(fd_err->w, sa.s, offs);        
++        debug_word(&sa.s[offs], sa.len - offs, fd_err->w);
+         buffer_putnlflush(fd_err->w);
+       }
+ 
+@@ -270,11 +279,11 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+          and updates whatever scope the variable actually lives in. */
+       TRACE(TRACE_EVAL,
+             "assign",
+-            trace_strn("var", node->narg.stra.s, node->narg.stra.len),
++            trace_strn("var", sa.s, sa.len),
+             trace_int("export", cmd.ptr != 0),
+             trace_int("temp", temp_scope));
+ 
+-      if(!var_setsa(&node->narg.stra,
++      if(!var_setsa(&sa,
+                     (cmd.ptr ? V_EXPORT : V_DEFAULT) | (temp_scope ? V_LOCAL : 0))) {
+         status = 1;
+         assign_error = 1;
+@@ -282,8 +291,6 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+       }
+     }
+ 
+-    tree_free(assigns);
+-
+     if(status)
+       goto end;
+   }
+@@ -292,7 +299,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+      setting the vars and doing the redirections -- per POSIX, this
+      command's status is that of the last command substitution
+      performed in one of the assignments above, or 0 if none ran */
+-  if(args == NULL) {
++  if(argc == 0) {
+     status = sh->cmdsubst_ran ? sh->exitcode : 0;
+     goto end;
+   }
+@@ -322,7 +329,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+ 
+     source_msg(&e->pos);
+ 
+-    buffer_putsa(fd_err->w, &args->narg.stra);
++    buffer_puts(fd_err->w, argv[0]);
+     buffer_putm_internal(fd_err->w, ": ", strerror(exec_lasterrno), 0);
+     buffer_putnlflush(fd_err->w);
+     errno = exec_lasterrno;
+@@ -330,15 +337,6 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+     goto end;
+   }
+ 
+-  /* allocate based on tree_count (upper bound); expand_argv returns the
+-     actual count after dropping empty unquoted fields */
+-  argc = tree_count(args);
+-#ifdef HAVE_ALLOCA
+-  argv = alloca((argc + 1) * sizeof(char*));
+-#else
+-  argv = alloc((argc + 1) * sizeof(char*));
+-#endif
+-  argc = expand_argv(args, argv);
+   TRACE(TRACE_EXPAND, "args", trace_argv("argv", argv));
+ 
+   if(e->flags & E_PRINT) {
+@@ -350,14 +348,10 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+ 
+   /* execute the command, this may or may not return, depending on E_EXIT */
+   exec_redir_error = 0;
+-  guard.args = args_head;
+-  guard.prev = eval_args_top;
+-  eval_args_top = &guard;
+   status = exec_command(&cmd,
+                         argc,
+                         argv,
+                         ((e->flags & E_EXIT) ? X_EXEC : 0) | (ncmd->bgnd ? X_NOWAIT : 0));
+-  eval_args_top = guard.prev;
+ 
+   redir_error |= exec_redir_error;
+ 
+@@ -369,9 +363,6 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
+       j->command = tree_string((union node*)ncmd);
+   }
+ 
+-#ifndef HAVE_ALLOCA
+-  alloc_free(argv);
+-#endif
+ end:
+ 
+   /* restore variable stack */
+@@ -380,8 +371,9 @@ end:
+     vartab_pop(&vars);
+   }
+ 
+-  if(args_head)
+-    tree_free(args_head);
++  wordlist_free(&wla);
++  wordlist_free(&wl);
++  arena_rewind(&expand_arena, apos);
+ 
+   /* undo redirections */
+ 
+diff --git a/src/expand.h b/src/expand.h
+index 3268b6e8..014b2079 100644
+--- a/src/expand.h
++++ b/src/expand.h
+@@ -69,29 +69,31 @@ extern char expand_ifs[4];
+ /* a word expansion failed ("${x?}", "$x" under set -u): the command does not run, status != 0 */
+ extern int expand_error;
+ 
++/* where the fields of an expansion live: a command takes arena_tell() before, arena_rewind() after */
++extern arena expand_arena;
++
+ /* frontend: expand parse-tree words into a list of fields
+  * ----------------------------------------------------------------------- */
+-int expand_args(union node* args, union node** nptr, int flags);
+-int expand_vars(union node* vars, union node** nptr);
++int expand_args(union node* args, wordlist* wl, int flags);
++int expand_vars(union node* vars, wordlist* wl);
+ 
+ /* frontend: expand one parse-tree word, unsplit, into a caller's stralloc
+  * ----------------------------------------------------------------------- */
+-void expand_str(union node*, stralloc*, int flags);
++void expand_str(union node*, stralloc* sa, int flags);
+ void expand_copysa(union node* node, stralloc* sa, int flags);
+ void expand_catsa(union node* node, stralloc* sa, int flags);
+ 
+-/* extract: turn an expansion into plain C data (argv, stralloc, char*)
++/* extract: turn an expansion into plain C data (stralloc, char*)
+  * ----------------------------------------------------------------------- */
+-int expand_argv(union node* args, char** argv);
+ void expand_tosa(union node* node, stralloc* sa);
+ char* expand_tostr(union node* node, int flags);
+ 
+-/* engine: expand the parts of one word (literal, $param, $(cmd), $((expr)))
++/* engine: expand the parts of one word (literal, $param, $(cmd), $((expr))) into a wordlist
+  * ----------------------------------------------------------------------- */
+-union node* expand_arg(union node* narg, union node** nptr, int flags);
+-union node* expand_param(struct nargparam* param, union node** nptr, int flags);
+-union node* expand_command(struct nargcmd* cmd, union node** nptr, int flags);
+-union node* expand_arith(struct nargarith* arith, union node** nptr, int flags);
++void expand_arg(union node* narg, wordlist* wl, int flags);
++void expand_param(struct nargparam* param, wordlist* wl, int flags);
++void expand_command(struct nargcmd* cmd, wordlist* wl, int flags);
++void expand_arith(struct nargarith* arith, wordlist* wl, int flags);
+ 
+ /* output: append text to the field list, split, glob and unescape it
+  * ----------------------------------------------------------------------- */
+diff --git a/src/expand/expand_arg.c b/src/expand/expand_arg.c
+index 7d7ad7b3..16a24b87 100644
+--- a/src/expand/expand_arg.c
++++ b/src/expand/expand_arg.c
+@@ -42,10 +42,13 @@ expand_globres_ok(union node* node) {
+ 
+ /* expand all parts of an N_ARG node
+  * ----------------------------------------------------------------------- */
+-union node*
+-expand_arg(union node* node, union node** nptr, int flags) {
+-  union node *n = *nptr, *subarg;
+-  int i = 0, globres = expand_globres_ok(node);
++void
++expand_arg(union node* node, wordlist* wl, int flags) {
++  union node* subarg;
++  int prev = expand_error, globres = expand_globres_ok(node);
++
++  /* the failure of one of this word's own parts ends the word; an earlier word's stays */
++  expand_error = 0;
+ 
+   /* if(node) {
+      debug_s("arg ");
+@@ -76,19 +79,19 @@ expand_arg(union node* node, union node** nptr, int flags) {
+     switch(subarg->id) {
+       /* arithmetic substitution */
+       case N_ARGARITH: {
+-        n = expand_arith(&subarg->nargarith, nptr, lflags);
++        expand_arith(&subarg->nargarith, wl, lflags);
+         break;
+       }
+ 
+         /* parameter substitution */
+       case N_ARGPARAM: {
+-        n = expand_param(&subarg->nargparam, nptr, lflags);
++        expand_param(&subarg->nargparam, wl, lflags);
+         break;
+       }
+ 
+         /* command substitution */
+       case N_ARGCMD: {
+-        n = expand_command(&subarg->nargcmd, nptr, lflags);
++        expand_command(&subarg->nargcmd, wl, lflags);
+         break;
+       }
+ 
+@@ -104,12 +107,10 @@ expand_arg(union node* node, union node** nptr, int flags) {
+            - a here-document body chunk (S_HEREDOC): its underlying
+              parse_squoted()/parse_dquoted() calls skip the doubling
+              expand_unescape() would otherwise undo */
+-        n = expand_cat(subarg->nargstr.stra.s,
+-                       subarg->nargstr.stra.len,
+-                       nptr,
+-                       (subarg->nargstr.stra.len && !(subarg->nargstr.flag & S_HEREDOC))
+-                           ? (lflags | X_LITERAL)
+-                           : lflags);
++        wordlist_cat(wl,
++                     subarg->nargstr.stra.s,
++                     subarg->nargstr.stra.len,
++                     (subarg->nargstr.stra.len && !(subarg->nargstr.flag & S_HEREDOC)) ? (lflags | X_LITERAL) : lflags);
+         break;
+       }
+ 
+@@ -120,38 +121,11 @@ expand_arg(union node* node, union node** nptr, int flags) {
+       }
+     }
+ 
+-    if(n == 0)
++    /* a failed expansion ends the word */
++    if(expand_error)
+       break;
+ 
+-    /* debug_s("sub args #");
+-     debug_n(i);
+-     debug_s("  ");
+-     debug_node(subarg, 1);
+-     debug_newline(0);
+-     debug_fl();*/
+-    i++;
+-    nptr = &n;
+   }
+ 
+-  /*  i = 0;
+-
+-for(subarg = *start; subarg; subarg = subarg->next) {
+-      debug_s("sub arg  #");
+-      debug_n(i);
+-      debug_s(" ");
+-      debug_node(subarg, 1);
+-      debug_newline(0);
+-      debug_fl();
+-      i++;
+-    }
+-
+-    if(*start) {
+-      debug_s("expanded arg ");
+-      debug_node(*start, 1);
+-      debug_newline(0);
+-      debug_fl();
+-    }
+-
+-*/
+-  return n;
++  expand_error |= prev;
+ }
+diff --git a/src/expand/expand_args.c b/src/expand/expand_args.c
+index d9a3c265..4dcd6dfc 100644
+--- a/src/expand/expand_args.c
++++ b/src/expand/expand_args.c
+@@ -5,9 +5,9 @@
+ #include "../parse.h"
+ #include "../sh.h"
+ 
+-/* expand all arguments of an argument list
+- * returns count of argument nodes
+- * ----------------------------------------------------------------------- */
++/* fields of all expansions, one command's worth at a time; the caller rewinds it */
++arena expand_arena = {NULL, NULL, NULL, NULL, &arena_heap, 8192};
++
+ int expand_error = 0;
+ 
+ /* word is only empty literals and quoted plain $@, and there are no
+@@ -38,15 +38,15 @@ expand_is_empty_at(union node* word) {
+   return at;
+ }
+ 
++/* expand all arguments of an argument list into wl, one word after the other
++ * returns the number of fields the words added
++ * ----------------------------------------------------------------------- */
+ int
+-expand_args(union node* args, union node** nptr, int flags) {
+-  union node* arg;
+-  union node* n;
+-  union node* owned;
+-  union node** head = nptr;
++expand_args(union node* args, wordlist* wl, int flags) {
++  union node *arg, *owned;
+   int ret = 0, copied;
+ 
+-  *nptr = NULL;
++  wl->noglob = sh->opts.noglob;
+ 
+   /* args is the permanent parsed command tree, reused on every
+      execution -- brace/tilde expansion rewrite word text/structure,
+@@ -60,67 +60,16 @@ expand_args(union node* args, union node** nptr, int flags) {
+   copied = arg != NULL;
+ 
+   for(arg = owned; arg; arg = arg->next) {
+-
+-#ifdef DEBUG_OUTPUT_
+-    debug_node(arg, 0);
+-    debug_nl_fl();
+-#endif
+-
+     if(expand_is_empty_at(arg))
+       continue;
+ 
+     if(copied)
+       expand_tilde_word(arg);
+ 
+-    if((n = expand_arg(arg->narg.list, nptr, flags))) {
+-      nptr = &n;
+-      ret++;
+-    }
+-
+-    if(n == NULL)
+-      continue;
+-
+-    if(n->narg.flag & X_GLOB) {
+-      if((n = expand_glob(nptr, n->narg.flag & ~X_GLOB))) {
+-        nptr = &n;
+-        ret++;
+-      }
+-    } else if(n->narg.flag & X_GLOBRES) {
+-      union node* g = expand_glob(nptr, n->narg.flag);
+-
+-      if(g) {
+-        n = g;
+-        nptr = &n;
+-        ret++;
+-      }
+-
+-      stralloc_nul(&n->narg.stra);
+-    } else if((n->narg.flag & X_LITERAL) && !(n->narg.flag & X_UNESCAPED)) {
+-      expand_unescape(&n->narg.stra, parse_isesc);
+-      n->narg.flag &= ~X_GLOB;
+-    } else {
+-      /* expand_unescape() nul-terminates as a side effect; skipping it
+-         here must not also skip that, or ->stra.s stops being a valid
+-         C string for anything that reads it as one. */
+-      stralloc_nul(&n->narg.stra);
+-    }
+-
+-    if(arg->next) {
+-      n->next = tree_newnode(N_ARG);
+-      n = n->next;
+-      stralloc_init(&n->narg.stra);
+-      stralloc_nul(&n->narg.stra);
+-      ret++;
+-    }
++    expand_arg(arg->narg.list, wl, flags);
++    ret += wordlist_close(wl);
+   }
+ 
+-  /* expand_arg() may hand back a chain (field splitting, "$@"); only its
+-     last node was terminated above, expand_argv() needs every one
+-     (nptr itself now points at the local "n", so walk from "head") */
+-  for(n = *head; n; n = n->next)
+-    if(n->narg.stra.s)
+-      stralloc_nul(&n->narg.stra);
+-
+   if(copied && owned)
+     tree_free(owned);
+ 
+diff --git a/src/expand/expand_argv.c b/src/expand/expand_argv.c
+deleted file mode 100644
+index 4b56d1eb..00000000
+--- a/src/expand/expand_argv.c
++++ /dev/null
+@@ -1,37 +0,0 @@
+-#include "../../lib/byte.h"
+-#include "../expand.h"
+-#include "../tree.h"
+-#include <stdlib.h>
+-
+-/* expand argument vector.
+- *
+- * POSIX field-splitting: an unquoted parameter expansion that produces
+- * an empty value contributes no field. Drop such empty fields, but
+- * keep an empty field when:
+- * - it came from quoted ("") text, or
+- * - it's one of 2+ real fields splitting produced from one word
+- *   (X_SPLIT, see expand.h), e.g. IFS="=" on "a==" giving two
+- *   genuinely distinct "" fields, rather than a word's sole result
+- *   collapsing to nothing.
+- *
+- * Returns the number of slots written (not counting the terminating
+- * NULL); pair with expand_args's return as the canonical argc.
+- *
+- *   union node*  args   expanded N_ARG chain to flatten
+- *   char**       argv   destination array, NULL-terminated on return
+- * ----------------------------------------------------------------------- */
+-int
+-expand_argv(union node* args, char** argv) {
+-  int n = 0;
+-  for(; args; args = args->next) {
+-    if(!args->narg.stra.s)
+-      continue;
+-    if(args->narg.stra.len == 0 && !(args->narg.flag & (X_QUOTED | X_NOSPLIT | X_SPLIT)))
+-      continue;
+-    *argv++ = args->narg.stra.s;
+-    n++;
+-  }
+-
+-  *argv = NULL;
+-  return n;
+-}
+diff --git a/src/expand/expand_arith.c b/src/expand/expand_arith.c
+index d5ae566f..ba9c4eb8 100644
+--- a/src/expand/expand_arith.c
++++ b/src/expand/expand_arith.c
+@@ -5,16 +5,16 @@
+ 
+ /* expand an arithmetic expression
+  * ----------------------------------------------------------------------- */
+-union node*
+-expand_arith(struct nargarith* arith, union node** nptr, int flags) {
+-  union node *expr = arith->tree, *n = *nptr;
++void
++expand_arith(struct nargarith* arith, wordlist* wl, int flags) {
++  union node* expr = arith->tree;
+   int64 ret = -1;
+   size_t len;
+   char buf[FMT_LONG];
+ 
+   if(!expand_arith_expr(expr, &ret)) {
+     len = fmt_longlong(buf, ret);
+-    n = expand_cat(buf, len, &n, flags);
++    wordlist_cat(wl, buf, len, flags);
+   } else {
+     /* an arithmetic expansion error ends a non-interactive shell, like any expansion error */
+     sh_error("arithmetic syntax error");
+@@ -23,8 +23,5 @@ expand_arith(struct nargarith* arith, union node** nptr, int flags) {
+       sh_exit(1);
+ 
+     expand_error = 1;
+-    n = 0;
+   }
+-
+-  return n;
+ }
+diff --git a/src/expand/expand_arith_expr.c b/src/expand/expand_arith_expr.c
+index c5af46dd..96b06537 100644
+--- a/src/expand/expand_arith_expr.c
++++ b/src/expand/expand_arith_expr.c
+@@ -95,29 +95,39 @@ expand_arith_expr(union node* expr, int64* r) {
+       break;
+ 
+     case N_ARGPARAM: {
+-      union node *node, *n;
+-      stralloc* value;
++      stralloc value;
++      wordlist wl;
+ 
+-      node = tree_newnode(N_ARG);
+-      n = expand_param(&expr->nargparam, &node, 0);
+-      assert(n);
++      stralloc_init(&value);
++      wordlist_init_str(&wl, &value);
++      expand_param(&expr->nargparam, &wl, 0);
++      wordlist_close(&wl);
+ 
+-      value = &n->narg.stra;
+-      assert(value);
++      /* blanks around the number do not matter */
++      char* t = value.s;
++      size_t n = value.len;
++
++      while(n && (t[n - 1] == ' ' || t[n - 1] == '\t' || t[n - 1] == '\n'))
++        t[--n] = '\0';
++
++      while(n && (*t == ' ' || *t == '\t' || *t == '\n')) {
++        t++;
++        n--;
++      }
+ 
+       /* POSIX: an unset or empty variable is 0 in arithmetic context,
+          not a parse failure. */
+-      if(!value->s || value->len == 0) {
++      if(n == 0) {
+         *r = 0;
+         ret = 0;
+       } else {
+-        ret = scan_longlong(value->s, r) == 0;
++        ret = scan_longlong(t, r) == 0;
+ 
+         if(ret)
+           *r = 0;
+       }
+ 
+-      tree_free(node);
++      stralloc_free(&value);
+       break;
+     }
+ 
+diff --git a/src/expand/expand_catsa.c b/src/expand/expand_catsa.c
+index b50d7f65..ae668f55 100644
+--- a/src/expand/expand_catsa.c
++++ b/src/expand/expand_catsa.c
+@@ -1,4 +1,3 @@
+-#include "../../lib/byte.h"
+ #include "../expand.h"
+ #include "../tree.h"
+ 
+@@ -6,14 +5,9 @@
+  * ----------------------------------------------------------------------- */
+ void
+ expand_catsa(union node* node, stralloc* sa, int flags) {
+-  union node tmpnode, *n = &tmpnode;
++  wordlist wl;
+ 
+-  /* X_NOSPLIT routes every chunk through expand_cat()'s non-splitting
+-     branch, which unescapes each literal chunk as it's appended --
+-     nothing left to do here but copy out the finished buffer. */
+-  tmpnode.narg.flag = 0;
+-  byte_copy(&tmpnode.narg.stra, sizeof(stralloc), sa);
+-  expand_arg(node, &n, flags | X_NOSPLIT);
+-  byte_copy(sa, sizeof(stralloc), &tmpnode.narg.stra);
+-  stralloc_nul(sa);
++  wordlist_init_str(&wl, sa);
++  expand_arg(node, &wl, flags | X_NOSPLIT);
++  wordlist_close(&wl);
+ }
+diff --git a/src/expand/expand_command.c b/src/expand/expand_command.c
+index bdf1abbc..2b328f4f 100644
+--- a/src/expand/expand_command.c
++++ b/src/expand/expand_command.c
+@@ -26,9 +26,8 @@ int expand_cmdsub_depth;
+ 
+ /* evaluates backquoted command list, while writing stdout to a stralloc
+  * ----------------------------------------------------------------------- */
+-union node*
+-expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
+-  union node* n = *nptr;
++void
++expand_command(struct nargcmd* cmd, wordlist* wl, int flags) {
+   struct vartab vars;
+   struct fd fd;
+   struct fdstack fdst, body;
+@@ -139,8 +138,6 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
+ 
+             so we won't have to alloc all the stuff twice!
+    */
+-  n = expand_cat(sa.s, sa.len, nptr, flags);
++  wordlist_cat(wl, sa.s, sa.len, flags);
+   stralloc_free(&sa);
+-
+-  return n;
+ }
+diff --git a/src/expand/expand_copysa.c b/src/expand/expand_copysa.c
+index 0ae63d3b..b566fcd4 100644
+--- a/src/expand/expand_copysa.c
++++ b/src/expand/expand_copysa.c
+@@ -1,4 +1,3 @@
+-#include "../../lib/byte.h"
+ #include "../expand.h"
+ #include "../tree.h"
+ 
+@@ -6,14 +5,13 @@
+  * ----------------------------------------------------------------------- */
+ void
+ expand_copysa(union node* node, stralloc* sa, int flags) {
+-  union node tmpnode, *n = &tmpnode;
++  wordlist wl;
+ 
+-  tmpnode.narg.flag = 0;
+-  stralloc_init(&tmpnode.narg.stra);
++  stralloc_init(sa);
++  wordlist_init_str(&wl, sa);
+ 
+-  /* X_NOSPLIT routes every chunk through expand_cat()'s non-splitting
+-     branch, which unescapes each literal chunk as it's appended. */
+-  expand_arg(node, &n, flags | X_NOSPLIT);
+-  byte_copy(sa, sizeof(stralloc), &tmpnode.narg.stra);
+-  stralloc_nul(sa);
++  /* string mode routes every chunk through the non-splitting branch of
++     wordlist_cat(), which unescapes each literal chunk as it's appended. */
++  expand_arg(node, &wl, flags | X_NOSPLIT);
++  wordlist_close(&wl);
+ }
+diff --git a/src/expand/expand_param.c b/src/expand/expand_param.c
+index 80a9110b..086e8f1e 100644
+--- a/src/expand/expand_param.c
++++ b/src/expand/expand_param.c
+@@ -116,9 +116,8 @@ expand_range(union node* word, struct range* r) {
+   return ok;
+ }
+ 
+-union node*
+-expand_param(struct nargparam* param, union node** nptr, int flags) {
+-  union node *start = *nptr, *n = *nptr;
++void
++expand_param(struct nargparam* param, wordlist* wl, int flags) {
+   stralloc value;
+   const char* v = NULL;
+   char tmpbuf[FMT_ULONG]; /* v may point here after the block that fills it */
+@@ -141,9 +140,9 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+     if((special == S_ARGV || special == S_ARGVS) && (param->flag & S_STRLEN)) {
+       char lstr[FMT_ULONG];
+ 
+-      n = expand_cat(lstr, fmt_ulong(lstr, sh->arg.c), nptr, flags);
++      wordlist_cat(wl, lstr, fmt_ulong(lstr, sh->arg.c), flags);
+       stralloc_free(&value);
+-      return n;
++      return;
+     }
+ 
+     /* ${@:-w} with no parameters is "unset": the operator applies */
+@@ -206,7 +205,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+             else if(r.length == INT32_MAX)
+               sh_msg("expecting length\n");
+ 
+-            return n;
++            return;
+           }
+         }
+ #endif
+@@ -218,17 +217,15 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+           // param->flag |= S_ARG;
+           arg.numb = 1 + i;
+ 
+-          n = expand_param(&arg, nptr, flags);
++          expand_param(&arg, wl, flags);
+           i++;
+ 
+-          /* n is NULL when this index contributed no node (an empty
+-             positional parameter dropped by field splitting) -- keep
+-             nptr as-is instead of computing a bogus "&NULL->next". */
+-          if(n && i < sh->arg.c)
+-            nptr = &n->next;
++          /* the next parameter starts a field of its own */
++          if(i < sh->arg.c)
++            wordlist_break(wl);
+         }
+ 
+-        return n;
++        return;
+       }
+ 
+       /* $? substitution */
+@@ -353,7 +350,6 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+         sh_exit(1);
+ 
+       expand_error = 1;
+-      n = 0;
+       goto fail;
+     }
+   }
+@@ -362,9 +358,9 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+   if(param->flag & S_STRLEN) {
+     char lstr[FMT_ULONG];
+ 
+-    n = expand_cat(lstr, fmt_ulong(lstr, vlen), nptr, flags);
++    wordlist_cat(wl, lstr, fmt_ulong(lstr, vlen), flags);
+     stralloc_free(&value);
+-    return n;
++    return;
+   }
+ 
+   /* otherwise expand the apropriate variable/word subst */
+@@ -372,12 +368,12 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+     /* return word if parameter unset (or null) */
+     case S_DEFAULT: {
+       if(v)
+-        n = expand_cat(v, vlen, nptr, flags);
++        wordlist_cat(wl, v, vlen, flags);
+       /* unset, substitute */
+       else if(param->word) {
+         union node* word = expand_param_tilde(param->word);
+ 
+-        n = expand_arg(word, nptr, flags | X_SUBWORD);
++        expand_arg(word, wl, flags | X_SUBWORD);
+         expand_param_tilde_free(word, param->word);
+       }
+ 
+@@ -386,16 +382,15 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+     /* if parameter unset (or null) then expand word to it and substitute paramter */
+     case S_ASGNDEF: {
+       if(v)
+-        n = expand_cat(v, vlen, nptr, flags);
++        wordlist_cat(wl, v, vlen, flags);
+       else {
+-        /* nptr's node may already hold text from earlier pieces of
+-           the surrounding word; expand_arg() below appends onto that
+-           same node, so only the bytes after this snapshot are the
+-           value to assign. */
+-        size_t before = n ? n->narg.stra.len : 0;
++        /* the open field may already hold text from earlier pieces of
++           the surrounding word; expand_arg() below appends onto it,
++           so only the bytes after this snapshot are the value to assign. */
++        size_t before = wl->has && !wl->closed ? wl->cur->len : 0;
+         union node* word = expand_param_tilde(param->word);
+ 
+-        n = expand_arg(word, nptr, flags | X_NOSPLIT);
++        expand_arg(word, wl, flags | X_NOSPLIT);
+         expand_param_tilde_free(word, param->word);
+         /* ${1:=x}, ${*:=x}: only a NAME can be assigned */
+         char c = param->name[0];
+@@ -405,14 +400,17 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+           sh_msg(param->name);
+           buffer_putsflush(fd_err->w, ": cannot assign in this way\n");
+         }
+-        if(!isname || !var_setv(param->name, n->narg.stra.s + before, n->narg.stra.len - before, V_DEFAULT)) {
++        if(!isname || !var_setv(param->name, wl->cur->s + before, wl->cur->len - before, V_DEFAULT)) {
+           if(!sh_interactive)
+             sh_exit(1);
+ 
+           expand_error = 1;
+-          n = 0;
+           goto fail;
+         }
++
++        /* "${IFS=X}" changes how the rest of the command splits */
++        if(wl->ar)
++          wl->ifs = var_vdefault("IFS", IFS_DEFAULT, NULL);
+       }
+ 
+       break;
+@@ -421,7 +419,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+     /* indicate error if null or unset */
+     case S_ERRNULL: {
+       if(v)
+-        n = expand_cat(v, vlen, nptr, flags);
++        wordlist_cat(wl, v, vlen, flags);
+       else {
+         stralloc msg = {0, 0, 0};
+ 
+@@ -460,7 +458,6 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+           sh_exit(1);
+ 
+         expand_error = 1;
+-        n = 0;
+         goto fail;
+       }
+ 
+@@ -472,7 +469,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+       if(v) {
+         union node* word = expand_param_tilde(param->word);
+ 
+-        n = expand_arg(word, nptr, flags | X_SUBWORD);
++        expand_arg(word, wl, flags | X_SUBWORD);
+         expand_param_tilde_free(word, param->word);
+       }
+       break;
+@@ -499,7 +496,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+ 
+         stralloc_free(&sa);
+ 
+-        n = expand_cat(v, (i < 0 ? vlen : (size_t)i), nptr, flags);
++        wordlist_cat(wl, v, (i < 0 ? vlen : (size_t)i), flags);
+       }
+ 
+       break;
+@@ -522,7 +519,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+ 
+         stralloc_free(&sa);
+ 
+-        n = expand_cat(v, (i > vlen ? vlen : i), nptr, flags);
++        wordlist_cat(wl, v, (i > vlen ? vlen : i), flags);
+       }
+ 
+       break;
+@@ -548,7 +545,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+ 
+         stralloc_free(&sa);
+ 
+-        n = expand_cat(v + i, vlen - i, nptr, flags);
++        wordlist_cat(wl, v + i, vlen - i, flags);
+       }
+ 
+       break;
+@@ -571,7 +568,7 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+ 
+         stralloc_free(&sa);
+ 
+-        n = expand_cat(v + i, vlen - i, nptr, flags);
++        wordlist_cat(wl, v + i, vlen - i, flags);
+       }
+ 
+       break;
+@@ -581,14 +578,14 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+     /* character or field range */
+     case S_RANGE: {
+       if(v && range_done) {
+-        n = expand_cat(v, vlen, nptr, flags);
++        wordlist_cat(wl, v, vlen, flags);
+       } else if(v && vlen) {
+         struct range r = {0, vlen};
+ 
+         if(expand_range(param->word, &r)) {
+           r = limit(&r, 0, vlen);
+ 
+-          n = expand_cat(v + r.offset, r.length, nptr, flags);
++          wordlist_cat(wl, v + r.offset, r.length, flags);
+         } else {
+ 
+           if(r.offset == INT32_MIN)
+@@ -604,5 +601,4 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+ 
+ fail:
+   stralloc_free(&value);
+-  return n;
+ }
+diff --git a/src/expand/expand_tosa.c b/src/expand/expand_tosa.c
+index 9621ef4d..bbe90981 100644
+--- a/src/expand/expand_tosa.c
++++ b/src/expand/expand_tosa.c
+@@ -1,4 +1,3 @@
+-#include "../../lib/byte.h"
+ #include "../expand.h"
+ #include "../tree.h"
+ 
+@@ -6,12 +5,5 @@
+  * ----------------------------------------------------------------------- */
+ void
+ expand_tosa(union node* node, stralloc* out) {
+-  union node* arg = 0;
+-
+-  expand_arg(node, &arg, X_NOSPLIT);
+-
+-  if(arg && arg->id == N_ARG) {
+-    stralloc* sa = &arg->narg.stra;
+-    stralloc_copy(out, sa);
+-  }
++  expand_copysa(node, out, 0);
+ }
+diff --git a/src/expand/expand_vars.c b/src/expand/expand_vars.c
+index 3404851b..611510e9 100644
+--- a/src/expand/expand_vars.c
++++ b/src/expand/expand_vars.c
+@@ -2,15 +2,13 @@
+ #include "../tree.h"
+ #include "../debug.h"
+ 
+-/* expand an assignment list
++/* expand an assignment list: one "name=value" field per assignment, never split
++ * returns the number of assignments
+  * ----------------------------------------------------------------------- */
+ int
+-expand_vars(union node* vars, union node** nptr) {
+-  union node *var, *node;
+-  union node* owned;
++expand_vars(union node* vars, wordlist* wl) {
++  union node *var, *owned;
+   int ret = 0, copied;
+-  stralloc name;
+-  stralloc_init(&name);
+ 
+   /* vars is the permanent parsed command tree, reused on every
+      execution -- expand_tilde_assign() rewrites text in place, so it
+@@ -25,20 +23,12 @@ expand_vars(union node* vars, union node** nptr) {
+   for(var = owned; var; var = var->next) {
+     if(copied)
+       expand_tilde_assign(var);
+-    node = 0;
+-    node = expand_arg(var, &node, X_NOSPLIT);
+ 
+-    /* X_NOSPLIT routes every chunk through expand_cat()'s
+-       non-splitting branch, which unescapes each literal chunk as
+-       it's appended -- nul-terminate is all that's left to do. */
+-    if(node)
+-      stralloc_nul(&node->narg.stra);
++    expand_arg(var, wl, X_NOSPLIT);
+ 
+-    while(*nptr)
+-      tree_skip(nptr);
+-
+-    *nptr = node;
+-    nptr = tree_next(nptr);
++    /* an assignment is never pathname-expanded */
++    wl->state &= ~(X_GLOB | X_GLOBRES);
++    wordlist_close(wl);
+     ret++;
+   }
+ 
+diff --git a/src/wordlist.h b/src/wordlist.h
+index cccaf62e..f8ea5be9 100644
+--- a/src/wordlist.h
++++ b/src/wordlist.h
+@@ -34,7 +34,6 @@
+ #define X_CATCLOSED 0x80000000
+ 
+ #define WORDLIST_INLINE 16
+-#define WORDLIST_POOL 8
+ 
+ /* output of word expansion: an append-only sink that turns text chunks into fields.
+  * Knows nothing of the parse tree, variables or $(...); the caller passes IFS in.
+@@ -55,7 +54,7 @@ typedef struct wordlist {
+   unsigned pend : 1;     /* v[n - 1] is an empty field that is dropped unless a sibling follows */
+   unsigned noglob : 1;   /* set -f: patterns stay literal */
+   unsigned oom : 1;      /* an allocation failed; the field that needed it was lost */
+-  stralloc own;          /* cur when the pool is empty (more than WORDLIST_POOL nested lists) */
++  stralloc own;          /* cur when the pool could not grow (out of memory) */
+   char* inl[WORDLIST_INLINE]; /* v starts here: up to 15 fields cost no malloc */
+ } wordlist;
+ 
+@@ -77,8 +76,10 @@ char** wordlist_argv(wordlist* wl, int* argc); /* v, NULL-terminated, no copy */
+ 
+ /* internal, shared by the files of this module
+  * ----------------------------------------------------------------------- */
+-stralloc* wordlist_pool_get(void); /* a pooled buffer, NULL when all are taken */
+-int wordlist_pool_put(stralloc* sa);  /* 1 if sa was the newest pooled buffer and is back */
++stralloc* wordlist_pool_get(void);     /* a pooled buffer, NULL when out of memory */
++int wordlist_pool_put(stralloc* sa);   /* 1 if sa was the newest pooled buffer and is back */
++size_t wordlist_pool_mark(void);       /* buffers in use now */
++void wordlist_pool_release(size_t mark); /* a longjmp skipped the frees: back to mark */
+ void wordlist_push(wordlist* wl); /* freeze cur as the next field, empty cur */
+ void wordlist_settle(wordlist* wl); /* resolve a pending empty field: drop it */
+ void wordlist_glob(wordlist* wl, int flags); /* pattern in cur: push all matches but the last, leave that one in cur */
+diff --git a/src/wordlist/wordlist_pool.c b/src/wordlist/wordlist_pool.c
+index 223408cf..c28a6db9 100644
+--- a/src/wordlist/wordlist_pool.c
++++ b/src/wordlist/wordlist_pool.c
+@@ -1,21 +1,51 @@
+ #include "../wordlist.h"
++#include "../../lib/alloc.h"
+ 
+-/* one buffer per nesting depth ($(...) inside an expansion): steady state does no malloc,
+- * the buffer keeps the capacity of the last command. Taken and returned like a stack.
++/* one buffer per nesting depth ($(...) inside an expansion, a function call inside a command):
++ * steady state does no malloc, a buffer keeps the capacity of its last use. Taken and
++ * returned like a stack; the array grows and is never shrunk.
+  * ----------------------------------------------------------------------- */
+-static stralloc pool[WORDLIST_POOL];
+-static unsigned pool_used;
++static stralloc** pool;
++static size_t pool_used, pool_cap;
+ 
+ stralloc*
+ wordlist_pool_get(void) {
+-  return pool_used < WORDLIST_POOL ? &pool[pool_used++] : NULL;
++  if(pool_used == pool_cap) {
++    size_t cap = pool_cap ? pool_cap * 2 : 8;
++    stralloc** p = alloc_re(pool, cap * sizeof(stralloc*));
++
++    if(p == NULL)
++      return NULL;
++
++    pool = p;
++    pool_cap = cap;
++
++    while(cap-- > pool_used)
++      pool[cap] = NULL;
++  }
++
++  if(pool[pool_used] == NULL && (pool[pool_used] = alloc_zero(sizeof(stralloc))) == NULL)
++    return NULL;
++
++  return pool[pool_used++];
+ }
+ 
+ int
+ wordlist_pool_put(stralloc* sa) {
+-  if(pool_used == 0 || sa != &pool[pool_used - 1])
++  if(pool_used == 0 || sa != pool[pool_used - 1])
+     return 0;
+ 
+   pool_used--;
+   return 1;
+ }
++
++size_t
++wordlist_pool_mark(void) {
++  return pool_used;
++}
++
++void
++wordlist_pool_release(size_t mark) {
++  if(mark < pool_used)
++    pool_used = mark;
++}

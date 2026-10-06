@@ -69,29 +69,31 @@ extern char expand_ifs[4];
 /* a word expansion failed ("${x?}", "$x" under set -u): the command does not run, status != 0 */
 extern int expand_error;
 
+/* where the fields of an expansion live: a command takes arena_tell() before, arena_rewind() after */
+extern arena expand_arena;
+
 /* frontend: expand parse-tree words into a list of fields
  * ----------------------------------------------------------------------- */
-int expand_args(union node* args, union node** nptr, int flags);
-int expand_vars(union node* vars, union node** nptr);
+int expand_args(union node* args, wordlist* wl, int flags);
+int expand_vars(union node* vars, wordlist* wl);
 
 /* frontend: expand one parse-tree word, unsplit, into a caller's stralloc
  * ----------------------------------------------------------------------- */
-void expand_str(union node*, stralloc*, int flags);
+void expand_str(union node*, stralloc* sa, int flags);
 void expand_copysa(union node* node, stralloc* sa, int flags);
 void expand_catsa(union node* node, stralloc* sa, int flags);
 
-/* extract: turn an expansion into plain C data (argv, stralloc, char*)
+/* extract: turn an expansion into plain C data (stralloc, char*)
  * ----------------------------------------------------------------------- */
-int expand_argv(union node* args, char** argv);
 void expand_tosa(union node* node, stralloc* sa);
 char* expand_tostr(union node* node, int flags);
 
-/* engine: expand the parts of one word (literal, $param, $(cmd), $((expr)))
+/* engine: expand the parts of one word (literal, $param, $(cmd), $((expr))) into a wordlist
  * ----------------------------------------------------------------------- */
-union node* expand_arg(union node* narg, union node** nptr, int flags);
-union node* expand_param(struct nargparam* param, union node** nptr, int flags);
-union node* expand_command(struct nargcmd* cmd, union node** nptr, int flags);
-union node* expand_arith(struct nargarith* arith, union node** nptr, int flags);
+void expand_arg(union node* narg, wordlist* wl, int flags);
+void expand_param(struct nargparam* param, wordlist* wl, int flags);
+void expand_command(struct nargcmd* cmd, wordlist* wl, int flags);
+void expand_arith(struct nargarith* arith, wordlist* wl, int flags);
 
 /* output: append text to the field list, split, glob and unescape it
  * ----------------------------------------------------------------------- */

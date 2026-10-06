@@ -1,4 +1,3 @@
-#include "../../lib/byte.h"
 #include "../expand.h"
 #include "../tree.h"
 
@@ -6,14 +5,9 @@
  * ----------------------------------------------------------------------- */
 void
 expand_catsa(union node* node, stralloc* sa, int flags) {
-  union node tmpnode, *n = &tmpnode;
+  wordlist wl;
 
-  /* X_NOSPLIT routes every chunk through expand_cat()'s non-splitting
-     branch, which unescapes each literal chunk as it's appended --
-     nothing left to do here but copy out the finished buffer. */
-  tmpnode.narg.flag = 0;
-  byte_copy(&tmpnode.narg.stra, sizeof(stralloc), sa);
-  expand_arg(node, &n, flags | X_NOSPLIT);
-  byte_copy(sa, sizeof(stralloc), &tmpnode.narg.stra);
-  stralloc_nul(sa);
+  wordlist_init_str(&wl, sa);
+  expand_arg(node, &wl, flags | X_NOSPLIT);
+  wordlist_close(&wl);
 }

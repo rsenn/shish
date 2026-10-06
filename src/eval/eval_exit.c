@@ -1,6 +1,7 @@
 #include "../sh.h"
 #include "../trace.h"
 #include "../eval.h"
+#include "../expand.h"
 #include "../fdstack.h"
 #include "../source.h"
 #include "../vartab.h"
@@ -116,7 +117,8 @@ eval_exit(int exitcode) {
         fd_pop(fd);
     }
 
-    eval_args_unwind(e->args);
+    arena_rewind(&expand_arena, e->apos);
+    wordlist_pool_release(e->pool);
     longjmp(e->jumpbuf, (exitcode << 1) | 1);
   }
 }

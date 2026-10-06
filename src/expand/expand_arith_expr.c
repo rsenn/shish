@@ -95,29 +95,39 @@ expand_arith_expr(union node* expr, int64* r) {
       break;
 
     case N_ARGPARAM: {
-      union node *node, *n;
-      stralloc* value;
+      stralloc value;
+      wordlist wl;
 
-      node = tree_newnode(N_ARG);
-      n = expand_param(&expr->nargparam, &node, 0);
-      assert(n);
+      stralloc_init(&value);
+      wordlist_init_str(&wl, &value);
+      expand_param(&expr->nargparam, &wl, 0);
+      wordlist_close(&wl);
 
-      value = &n->narg.stra;
-      assert(value);
+      /* blanks around the number do not matter */
+      char* t = value.s;
+      size_t n = value.len;
+
+      while(n && (t[n - 1] == ' ' || t[n - 1] == '\t' || t[n - 1] == '\n'))
+        t[--n] = '\0';
+
+      while(n && (*t == ' ' || *t == '\t' || *t == '\n')) {
+        t++;
+        n--;
+      }
 
       /* POSIX: an unset or empty variable is 0 in arithmetic context,
          not a parse failure. */
-      if(!value->s || value->len == 0) {
+      if(n == 0) {
         *r = 0;
         ret = 0;
       } else {
-        ret = scan_longlong(value->s, r) == 0;
+        ret = scan_longlong(t, r) == 0;
 
         if(ret)
           *r = 0;
       }
 
-      tree_free(node);
+      stralloc_free(&value);
       break;
     }
 

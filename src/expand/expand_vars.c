@@ -2,15 +2,13 @@
 #include "../tree.h"
 #include "../debug.h"
 
-/* expand an assignment list
+/* expand an assignment list: one "name=value" field per assignment, never split
+ * returns the number of assignments
  * ----------------------------------------------------------------------- */
 int
-expand_vars(union node* vars, union node** nptr) {
-  union node *var, *node;
-  union node* owned;
+expand_vars(union node* vars, wordlist* wl) {
+  union node *var, *owned;
   int ret = 0, copied;
-  stralloc name;
-  stralloc_init(&name);
 
   /* vars is the permanent parsed command tree, reused on every
      execution -- expand_tilde_assign() rewrites text in place, so it
@@ -25,20 +23,12 @@ expand_vars(union node* vars, union node** nptr) {
   for(var = owned; var; var = var->next) {
     if(copied)
       expand_tilde_assign(var);
-    node = 0;
-    node = expand_arg(var, &node, X_NOSPLIT);
 
-    /* X_NOSPLIT routes every chunk through expand_cat()'s
-       non-splitting branch, which unescapes each literal chunk as
-       it's appended -- nul-terminate is all that's left to do. */
-    if(node)
-      stralloc_nul(&node->narg.stra);
+    expand_arg(var, wl, X_NOSPLIT);
 
-    while(*nptr)
-      tree_skip(nptr);
-
-    *nptr = node;
-    nptr = tree_next(nptr);
+    /* an assignment is never pathname-expanded */
+    wl->state &= ~(X_GLOB | X_GLOBRES);
+    wordlist_close(wl);
     ret++;
   }
 

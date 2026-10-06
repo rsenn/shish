@@ -1024,7 +1024,7 @@ Port check: a few callers use the returned node as "something was appended" (`n 
   becomes newly unsafe. Audit once anyway: `hash`, `alias`, `trap`, `export`, `local`, `set --` must copy
   (`sh_setargs` already `str_dup`s).
 
-**Progress (2026-10-06): the module exists, nothing uses it yet.** `src/wordlist.h` and `src/wordlist/*.c` are built
+**Progress (2026-10-06): the module exists** (wired in by step 2, below). `src/wordlist.h` and `src/wordlist/*.c` are built
 into `libshell.a` (CMake glob; autotools: `src/wordlist/Makefile.in`, `configure.ac`, `src/Makefile.in`); no caller
 links them, so `shish` is byte-identical in size. The `X_*` bits moved from `expand.h` to `wordlist.h` unchanged.
 - **Files:** `wordlist_init/_init_str/_free/_pool` (setup, pool of 8 buffers), `_cat` (the `expand_cat` state machine),
@@ -1065,36 +1065,41 @@ links them, so `shish` is byte-identical in size. The `X_*` bits moved from `exp
 - **Left for the porting steps:** `lib/glob.c` for `NO_GLOB` is still linked from `src/expand/Makefile.in`; move it to
   `src/wordlist/Makefile.in` when `expand_glob.c` goes. `wordlist_argv()` does not yet replace `expand_argv()`.
 
-**Handoff for step 2 (written 2026-10-06, state: `fdcca17a`..HEAD, module + `expand_str` done).**
-- **Call sites** (`grep -rn 'expand_args\|expand_argv\|expand_vars\|expand_arg(\|expand_param(\|expand_command(\|expand_arith(\|expand_cat(\|expand_glob(\|expand_copysa\|expand_catsa\|expand_tosa' src`):
-  - engine, node cursor to `wordlist*`: `expand_arg.c` (7 `nptr`), `expand_param.c` (20; the `"$@"` loop becomes
-    `wordlist_break` between parameters), `expand_command.c` (3), `expand_arith.c` (2), `expand_args.c`, `expand_vars.c`
-  - string consumers that follow once the engine takes a wordlist: `expand_copysa/catsa/tosa` (string mode),
-    `eval_case` (4 `expand_catsa`), `redir_eval` (2 `expand_copysa`, drops its wrapper `N_ARG`), `prompt_expand`
-  - frontends: `eval_simple_command` (5), `eval_for` (2, calls `expand_cat` for `"$@"`), `eval_print_prefix`,
-    `expand_arith_expr` (temporary node for `expand_param`)
-- **`eval_simple_command`:** `wordlist wl; arena_pos pos = arena_tell(&expand_arena);`, one `end:` label doing
-  `wordlist_free` and `arena_rewind`; the `alloca` argv block, `tree_count`, `args_head` and `guard` go away
-  (`wordlist_argv` is the argv). `expand_error` handling at line 96 must free the same way.
-- **`eval_args_unwind.c` can be deleted** once the arena exists (read, not run): its three callers
-  (`eval_jump.c:92`, `eval_return.c:72`, `eval_exit.c:119`) are the longjmp landing points and already know the target
-  frame. Change `struct eval.args` (`eval.h:48`, set in `eval_push.c:22`) from `struct eval_args*` to `arena_pos`
-  taken with `arena_tell()`, and replace each `eval_args_unwind(x->args)` by `arena_rewind(&expand_arena, x->pos)`.
-  Delete `struct eval_args`, `eval_args_top`, the guard in `eval_simple_command`. Rewinding only per simple command
-  is not enough: a `break`/`return` that skips a command would leave its fields until some outer scope ends
-  (`for i in ...; do while true; do break; done; done` at top level grows without bound). Frames that call
-  `eval_push`: functions, loops, subshell, pipeline stages, `$(...)` (`expand_command.c:89`), `eval`, `source`, `trap`.
-  Do not add an `eval_*` function; this is removals plus one-line substitutions.
-- **Keep the old path building until the new one is green;** `tests/wordlist/diff.c` needs `expand_cat`.
-- **Checks after each file group:** `tests/expand-fields.sh` (131, must stay green), `build/x86_64-linux-gnu/shish tests/fixed.sh`
-  (exactly 5 known failures: bg, two shformat backquote reprints, job-start banner, redirection group),
-  `cd build/x86_64-linux-gnu && ctest -j1 -E builtin-cp.sh` (fails only `fixed.sh` and posix `alias input option quote simple`,
-  213 s), ASan+UBSan build incl. one test that expands inside a function called from `$(...)` inside an assignment,
-  `size shish` not larger. Then the measurement in the Progress block: 1M x `: a b c d e f g h` with a few hundred
-  live variables, `maxrss`, `mallinfo2().fordblks`, valgrind malloc count, before and after.
-- **Do not fix `BUGS: param-assign-default-not-split` in the same change** (it lives in the code being ported).
-- **Machine rules:** `nice -n 19 ionice -c3`, `-j1`; baselines via `git worktree add --detach /tmp/claude-1000/base HEAD`,
-  never `git stash`.
+**Step 2 done (2026-10-07): the shell expands through `wordlist`.** Words, assignments, `for` lists, the `set -x`
+prefix and `$((x))` all use it; `eval_simple_command` has no node chain, no `alloca` argv and no guard any more.
+- **Wiring:** `expand_arena` (8 KiB heap chunks) is defined in `expand_args.c`; `eval_simple_command`,
+  `eval_for` and `eval_print_prefix` take `arena_tell()` and `arena_rewind()` it. `expand_arg/param/command/arith`
+  take a `wordlist*` and return `void`; a failed part ends its word through `expand_error` (saved and restored
+  per word, so an earlier word's error stays). `expand_vars` writes one `name=value` field per assignment
+  (never globbed). `expand_copysa/catsa/tosa` and `expand_arith_expr` use string mode. The pool in
+  `wordlist_pool.c` is now an unbounded stack of buffers (`wordlist_pool_mark/_release`).
+- **`eval_args_unwind.c` is gone** (with `struct eval_args`, `eval_args_top`, the guard): `struct eval` keeps
+  `apos` (`arena_tell`) and `pool` from `eval_push`, and `eval_jump`, `eval_return`, `eval_exit` rewind both before
+  the longjmp. A 200000-iteration loop of `break`/`return` through commands with expanded words stays at 6 MB.
+- **Behaviour changes (all fixes):** `${u}echo hi` runs `echo` (the old chain dropped the whole word when its first
+  part was empty); `$e echo hi` looks up `echo`, not `""`; `$((x))` with `x="1 2"` is an error instead of using `2`;
+  `"${IFS=X}"` re-reads IFS for the rest of the command (the yash `fsplit-y` case keeps passing).
+- **Checks:** `expand-fields.sh` 131/131; `fixed.sh` the same 5 known failures (plus 3 new cases); ctest fails
+  the same 6 tests with the same counts; `tests/yash` (all but `random-y`) identical to the baseline binary file by
+  file; ASan+UBSan run of `fixed.sh` and every `tests/*.sh` clean in `src/expand`, `src/eval`, `src/wordlist`.
+  Found on the way, not caused by this: `BUGS: chmod-argv-memcpy-overlap`, `nested-break-trips-eval-pop-assert`.
+- **Measured** (real shell, `: a b c d e f g h $v1 "$v2 x" $((n+1))` in a `while` loop, MinSizeRel, all builtins):
+
+  | | before | after |
+  | --- | --- | --- |
+  | wall time, 300000 iterations | 1.26 s | 0.69 s |
+  | mallocs per iteration (valgrind) | 43.0 | 3.0 |
+  | bytes malloced per iteration | 1688 | 104 |
+  | maxrss | 6048 KiB | 6044 KiB |
+  | `size` text / data | 376720 / 13704 | 374381 / 13800 |
+
+  Cache and fragmentation: not measured separately; maxrss is flat either way. A before/after with a few hundred
+  live variables and `mallinfo2().fordblks` is still open.
+- **Left (step 4):** delete `expand_cat.c`, `expand_glob.c`, `tests/wordlist/diff.c` (the harness needs the old
+  chain), drop `narg.stra` (parse-time `N_ARG` 48 to 24 bytes) with its lines in `tree_free`, `tree_copy`,
+  `debug_node`, remove `X_CATCLOSED`, move the `NO_GLOB` `lib/glob.c` lines from `src/expand/Makefile.in` to
+  `src/wordlist/Makefile.in`, `redir_eval`'s wrapper `N_ARG` node, `tree_count` if unused. `param-assign-default-not-split`
+  is untouched.
 
 **Order of work.** Each step builds, passes `tests/posix` + `tests/yash` counts unchanged, and is its own commit.
 0. DONE: `tests/expand-fields.sh` (131 assertions, every value agreed on by bash and dash, passes under all three

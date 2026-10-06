@@ -15,6 +15,7 @@ enum {
 };
 
 #include "tree.h"
+#include "wordlist.h"
 #include <setjmp.h>
 #include <stdlib.h>
 
@@ -25,13 +26,6 @@ typedef void debug_callback(union node*);
 typedef int exit_callback(int);
 
 struct source;
-
-/* argument list of a simple command that is running; freed by
- * eval_args_unwind() when break/return/exit longjmps past it */
-struct eval_args {
-  union node* args;
-  struct eval_args* prev;
-};
 
 struct eval {
   struct eval* parent;
@@ -45,7 +39,8 @@ struct eval {
      or the next parse_gettok will read from the consumed eval buffer and
      return EOF immediately — making the parent script silently stop. */
   struct source* source;
-  struct eval_args* args; /* eval_args_top at push time */
+  arena_pos apos; /* expand_arena at push time: break/return/exit rewind it to here */
+  size_t pool;    /* wordlist buffers in use at push time, likewise */
 
   jmp_buf jumpbuf;
   int jump;
@@ -57,14 +52,11 @@ struct eval {
 };
 
 extern struct eval* eval;
-extern struct eval_args* eval_args_top;
 
 /* "set -e" is off while evaluating what POSIX exempts: an if/while/until condition, a non-last
  * AND-OR member. A global counter, not a per-frame flag, so it reaches into functions and subshells:
  *   f() { false; }; set -e; f && true     # must not abort inside f */
 extern int errexit_suppress;
-
-void eval_args_unwind(struct eval_args* to);
 
 int eval_command(struct eval* e, union node* node, int tempflags);
 void eval_jump(int levels, int cont);

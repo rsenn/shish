@@ -6403,4 +6403,13 @@ a*b?
 echo done' | tr '\n' ' ')
 assert_equal "z done " "$PX" 'a delimiter holding * and ? ends at the same text'
 
+# wordlist port: expansion output is a field list in an arena
+PX=$("$SHISH_SELF" -c 'unset IFS; v="1  2"; echo [$v] "${IFS=X}" [$v]' | tr ' ' '_')
+assert_equal "[1_2]_X_[1__2]" "$PX" "\"\${IFS=X}\" changes how the rest of the same command splits"
+PX=$("$SHISH_SELF" -c '${u}echo y; e=; $e echo hi')
+assert_equal "y
+hi" "$PX" "an empty expansion in front of or inside the command name does not lose the word"
+PX=$("$SHISH_SELF" -c 'f() { echo "x $1"; return 3; }; i=0; while [ $i -lt 3000 ]; do for j in a b; do while true; do break; done; f $i >/dev/null; k=$(f "$i y"); i=$((i+1)); break; done; done; echo $i')
+assert_equal "3000" "$PX" "break and return out of commands with expanded words in a loop"
+
 summary

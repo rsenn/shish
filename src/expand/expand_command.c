@@ -26,9 +26,8 @@ int expand_cmdsub_depth;
 
 /* evaluates backquoted command list, while writing stdout to a stralloc
  * ----------------------------------------------------------------------- */
-union node*
-expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
-  union node* n = *nptr;
+void
+expand_command(struct nargcmd* cmd, wordlist* wl, int flags) {
   struct vartab vars;
   struct fd fd;
   struct fdstack fdst, body;
@@ -139,8 +138,6 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
 
             so we won't have to alloc all the stuff twice!
    */
-  n = expand_cat(sa.s, sa.len, nptr, flags);
+  wordlist_cat(wl, sa.s, sa.len, flags);
   stralloc_free(&sa);
-
-  return n;
 }

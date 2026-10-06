@@ -475,3 +475,13 @@
   ```sh
   set -- ${x:=a b}; echo $#     # 1; dash and bash print 2
   ```
+
+- chmod-argv-memcpy-overlap: `builtin_chmod` cuts a leading mode like `-x` out of argv with `byte_copy()` (memcpy) over
+  overlapping ranges; it needs a memmove-style copy. ASan reports `memcpy-param-overlap`.
+
+  **Repro:** build with `-fsanitize=address`, then `touch f; shish -c 'chmod -x f'`.
+
+- nested-break-trips-eval-pop-assert: in a Debug build (asserts on), a `break` in a for loop after an inner loop that
+  also used `break` aborts with `eval_pop.c:14: Assertion 'e == eval' failed`. Release builds (NDEBUG) run it fine.
+
+  **Repro:** `shish -c 'for j in a b; do while true; do break; done; break; done; echo ok'`

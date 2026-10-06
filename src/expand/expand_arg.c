@@ -42,10 +42,13 @@ expand_globres_ok(union node* node) {
 
 /* expand all parts of an N_ARG node
  * ----------------------------------------------------------------------- */
-union node*
-expand_arg(union node* node, union node** nptr, int flags) {
-  union node *n = *nptr, *subarg;
-  int i = 0, globres = expand_globres_ok(node);
+void
+expand_arg(union node* node, wordlist* wl, int flags) {
+  union node* subarg;
+  int prev = expand_error, globres = expand_globres_ok(node);
+
+  /* the failure of one of this word's own parts ends the word; an earlier word's stays */
+  expand_error = 0;
 
   /* if(node) {
      debug_s("arg ");
@@ -76,19 +79,19 @@ expand_arg(union node* node, union node** nptr, int flags) {
     switch(subarg->id) {
       /* arithmetic substitution */
       case N_ARGARITH: {
-        n = expand_arith(&subarg->nargarith, nptr, lflags);
+        expand_arith(&subarg->nargarith, wl, lflags);
         break;
       }
 
         /* parameter substitution */
       case N_ARGPARAM: {
-        n = expand_param(&subarg->nargparam, nptr, lflags);
+        expand_param(&subarg->nargparam, wl, lflags);
         break;
       }
 
         /* command substitution */
       case N_ARGCMD: {
-        n = expand_command(&subarg->nargcmd, nptr, lflags);
+        expand_command(&subarg->nargcmd, wl, lflags);
         break;
       }
 
@@ -104,12 +107,10 @@ expand_arg(union node* node, union node** nptr, int flags) {
            - a here-document body chunk (S_HEREDOC): its underlying
              parse_squoted()/parse_dquoted() calls skip the doubling
              expand_unescape() would otherwise undo */
-        n = expand_cat(subarg->nargstr.stra.s,
-                       subarg->nargstr.stra.len,
-                       nptr,
-                       (subarg->nargstr.stra.len && !(subarg->nargstr.flag & S_HEREDOC))
-                           ? (lflags | X_LITERAL)
-                           : lflags);
+        wordlist_cat(wl,
+                     subarg->nargstr.stra.s,
+                     subarg->nargstr.stra.len,
+                     (subarg->nargstr.stra.len && !(subarg->nargstr.flag & S_HEREDOC)) ? (lflags | X_LITERAL) : lflags);
         break;
       }
 
@@ -120,38 +121,11 @@ expand_arg(union node* node, union node** nptr, int flags) {
       }
     }
 
-    if(n == 0)
+    /* a failed expansion ends the word */
+    if(expand_error)
       break;
 
-    /* debug_s("sub args #");
-     debug_n(i);
-     debug_s("  ");
-     debug_node(subarg, 1);
-     debug_newline(0);
-     debug_fl();*/
-    i++;
-    nptr = &n;
   }
 
-  /*  i = 0;
-
-for(subarg = *start; subarg; subarg = subarg->next) {
-      debug_s("sub arg  #");
-      debug_n(i);
-      debug_s(" ");
-      debug_node(subarg, 1);
-      debug_newline(0);
-      debug_fl();
-      i++;
-    }
-
-    if(*start) {
-      debug_s("expanded arg ");
-      debug_node(*start, 1);
-      debug_newline(0);
-      debug_fl();
-    }
-
-*/
-  return n;
+  expand_error |= prev;
 }

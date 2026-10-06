@@ -41,12 +41,16 @@ int
 eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   int argc, status = 0, assign_error = 0, redir_error = 0, via_command = 0;
   char** argv;
-  union node *node, *args = 0, *args_head = 0, *assigns = 0, *r, *redir = ncmd->rdir;
+  union node *r, *redir = ncmd->rdir;
+  wordlist wl, wla; /* command words, assignments; both live in expand_arena until end: */
+  arena_pos apos = arena_tell(&expand_arena);
   struct command cmd = {H_BUILTIN, {0}};
   struct vartab vars;
   struct fdstack io;
-  struct eval_args guard;
   char buf[FD_BUFSIZE];
+
+  wordlist_init(&wl, &expand_arena, var_vdefault("IFS", IFS_DEFAULT, NULL));
+  byte_zero(&wla, sizeof(wla));
 
   /* expand arguments,
      if there are arguments we start a hashed search for the command */
@@ -64,27 +68,25 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
      "no command" status below; sh->exitcode itself is untouched */
   sh->cmdsubst_ran = 0;
 
-  if(expand_args(ncmd->args, &args, 0)) {
-    args_head = args;
-    stralloc_nul(&args->narg.stra);
-    cmd = exec_hash(args->narg.stra.s, 0);
+  expand_args(ncmd->args, &wl, 0);
+  argv = wordlist_argv(&wl, &argc);
+
+  if(argc) {
+    cmd = exec_hash(argv[0], 0);
 
     /* "command [-p] [--] exec ..." runs as "exec ...", so its
-       redirections persist. args_head still owns the whole list. */
+       redirections persist. */
 #if BUILTIN_COMMAND
     if(cmd.id == H_BUILTIN && cmd.builtin && cmd.builtin->fn == &builtin_command) {
-      union node* n = args->next;
+      int n = 1;
 
-      while(n && (stralloc_nul(&n->narg.stra), str_equal(n->narg.stra.s, "-p") || str_equal(n->narg.stra.s, "--")))
-        n = n->next;
+      while(n < argc && (str_equal(argv[n], "-p") || str_equal(argv[n], "--")))
+        n++;
 
-      if(n) {
-        stralloc_nul(&n->narg.stra);
-
-        if(str_equal(n->narg.stra.s, "exec") && (cmd = exec_hash("exec", H_FUNCTION)).id == H_EXEC) {
-          args = n;
-          via_command = 1;
-        }
+      if(n < argc && str_equal(argv[n], "exec") && (cmd = exec_hash("exec", H_FUNCTION)).id == H_EXEC) {
+        argv += n;
+        argc -= n;
+        via_command = 1;
       }
     }
 #endif
@@ -109,7 +111,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
      environment: "< ${x=y}" must not leave x set. Assignments in the
      same command are applied to the current environment, so no scope
      then. */
-  if(!args && ncmd->rdir && !ncmd->vars && varstack != &vars)
+  if(!argc && ncmd->rdir && !ncmd->vars && varstack != &vars)
     vartab_push(&vars, 0);
 
   /* do redirections if present */
@@ -169,7 +171,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
        execution-or-set-status -- this is the "no command" half of it;
        exec_command.c's own fdtable_open() result checks are the
        other). */
-    if(redir_eval(&r->nredir, fd, (cmd.id == H_EXEC || args == NULL || ncmd->vars ? R_NOW : 0))) {
+    if(redir_eval(&r->nredir, fd, (cmd.id == H_EXEC || argc == 0 || ncmd->vars ? R_NOW : 0))) {
       redir_error = 1;
       status = 1;
       goto end;
@@ -208,7 +210,13 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
      ran in the words or the assignments, as opposed to "sh->exitcode
      is just still holding the previous command's status" */
 
-  if(expand_vars(ncmd->vars, &assigns)) {
+  if(ncmd->vars) {
+    char** assigns;
+    int nassign, k;
+
+    wordlist_init(&wla, &expand_arena, NULL);
+    expand_vars(ncmd->vars, &wla);
+    assigns = wordlist_argv(&wla, &nassign);
 
 #ifdef DEBUG_OUTPUT_
     if(ncmd->vars) {
@@ -243,18 +251,19 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
       vartab_push(&vars, 1);
     }
 
-    for(node = assigns; node; node = node->next) {
+    for(k = 0; k < nassign; k++) {
+      /* the field is NUL-terminated in the arena: a stralloc view, capacity len + 1 */
+      stralloc sa = {assigns[k], str_len(assigns[k]), str_len(assigns[k]) + 1};
 
       if(e->flags & E_PRINT) {
-        stralloc* sa = &node->narg.stra;
-        size_t offs = byte_chr(sa->s, sa->len, '=');
+        size_t offs = byte_chr(sa.s, sa.len, '=');
 
-        if(offs < sa->len)
+        if(offs < sa.len)
           offs++;
         
         eval_print_prefix(e, fd_err->w);
-        buffer_put(fd_err->w, sa->s, offs);        
-        debug_word(&sa->s[offs], sa->len - offs, fd_err->w);
+        buffer_put(fd_err->w, sa.s, offs);        
+        debug_word(&sa.s[offs], sa.len - offs, fd_err->w);
         buffer_putnlflush(fd_err->w);
       }
 
@@ -270,19 +279,17 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
          and updates whatever scope the variable actually lives in. */
       TRACE(TRACE_EVAL,
             "assign",
-            trace_strn("var", node->narg.stra.s, node->narg.stra.len),
+            trace_strn("var", sa.s, sa.len),
             trace_int("export", cmd.ptr != 0),
             trace_int("temp", temp_scope));
 
-      if(!var_setsa(&node->narg.stra,
+      if(!var_setsa(&sa,
                     (cmd.ptr ? V_EXPORT : V_DEFAULT) | (temp_scope ? V_LOCAL : 0))) {
         status = 1;
         assign_error = 1;
         break;
       }
     }
-
-    tree_free(assigns);
 
     if(status)
       goto end;
@@ -292,7 +299,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
      setting the vars and doing the redirections -- per POSIX, this
      command's status is that of the last command substitution
      performed in one of the assignments above, or 0 if none ran */
-  if(args == NULL) {
+  if(argc == 0) {
     status = sh->cmdsubst_ran ? sh->exitcode : 0;
     goto end;
   }
@@ -322,7 +329,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
     source_msg(&e->pos);
 
-    buffer_putsa(fd_err->w, &args->narg.stra);
+    buffer_puts(fd_err->w, argv[0]);
     buffer_putm_internal(fd_err->w, ": ", strerror(exec_lasterrno), 0);
     buffer_putnlflush(fd_err->w);
     errno = exec_lasterrno;
@@ -330,15 +337,6 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
     goto end;
   }
 
-  /* allocate based on tree_count (upper bound); expand_argv returns the
-     actual count after dropping empty unquoted fields */
-  argc = tree_count(args);
-#ifdef HAVE_ALLOCA
-  argv = alloca((argc + 1) * sizeof(char*));
-#else
-  argv = alloc((argc + 1) * sizeof(char*));
-#endif
-  argc = expand_argv(args, argv);
   TRACE(TRACE_EXPAND, "args", trace_argv("argv", argv));
 
   if(e->flags & E_PRINT) {
@@ -350,14 +348,10 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
   /* execute the command, this may or may not return, depending on E_EXIT */
   exec_redir_error = 0;
-  guard.args = args_head;
-  guard.prev = eval_args_top;
-  eval_args_top = &guard;
   status = exec_command(&cmd,
                         argc,
                         argv,
                         ((e->flags & E_EXIT) ? X_EXEC : 0) | (ncmd->bgnd ? X_NOWAIT : 0));
-  eval_args_top = guard.prev;
 
   redir_error |= exec_redir_error;
 
@@ -369,9 +363,6 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
       j->command = tree_string((union node*)ncmd);
   }
 
-#ifndef HAVE_ALLOCA
-  alloc_free(argv);
-#endif
 end:
 
   /* restore variable stack */
@@ -380,8 +371,9 @@ end:
     vartab_pop(&vars);
   }
 
-  if(args_head)
-    tree_free(args_head);
+  wordlist_free(&wla);
+  wordlist_free(&wl);
+  arena_rewind(&expand_arena, apos);
 
   /* undo redirections */
 

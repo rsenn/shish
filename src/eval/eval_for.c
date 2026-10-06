@@ -11,8 +11,10 @@
 int
 eval_for(struct eval* e, struct nfor* nfor) {
   struct eval en;
-  union node *node, *args = NULL;
-  int ran = 0;
+  wordlist wl;
+  arena_pos pos = arena_tell(&expand_arena);
+  char** v;
+  int i, argc, ran = 0;
 
   /* POSIX 3.9.4.2: "for x in ...; do" iterates over exactly the (maybe
      empty) word list following "in" -- only a bare "for x; do", with
@@ -25,19 +27,19 @@ eval_for(struct eval* e, struct nfor* nfor) {
      args are actually live (confirmed via a command-substitution
      subshell), that fallback also dereferenced a bogus sh->arg.v[i]
      and segfaulted instead of just leaving the loop body unrun. */
+  wordlist_init(&wl, &expand_arena, var_vdefault("IFS", IFS_DEFAULT, NULL));
+
   if(nfor->has_in) {
     if(nfor->args)
-      expand_args(nfor->args, &args, 0);
+      expand_args(nfor->args, &wl, 0);
   } else {
-    union node** nptr = &args;
-
-    for(int i = 0; i < sh->arg.c; i++) {
-      expand_cat(sh->arg.v[i], str_len(sh->arg.v[i]), nptr, X_QUOTED);
-
-      if(*nptr)
-        nptr = &(*nptr)->next;
+    for(i = 0; i < sh->arg.c; i++) {
+      wordlist_cat(&wl, sh->arg.v[i], str_len(sh->arg.v[i]), X_QUOTED);
+      wordlist_break(&wl);
     }
   }
+
+  v = wordlist_argv(&wl, &argc);
 
   /* E_EXIT from a forked pipeline stage must not reach the body: its last
      command would exec out of iteration 1 (see eval_loop.c) */
@@ -47,7 +49,7 @@ eval_for(struct eval* e, struct nfor* nfor) {
 
   en.jump = 1;
 
-  for(node = args; node; node = node->next) {
+  for(i = 0; i < argc; i++) {
     int jmpret;
 
     if((jmpret = setjmp(en.jumpbuf)) == 2)
@@ -68,16 +70,16 @@ eval_for(struct eval* e, struct nfor* nfor) {
     }
 
     /* iterate the loop variable */
-    var_setvsa(nfor->varn, &node->narg.stra, V_DEFAULT);
-    TRACE(TRACE_EVAL, "for.iter", trace_str("var", nfor->varn), trace_strn("value", node->narg.stra.s, node->narg.stra.len));
+    var_setv(nfor->varn, v[i], str_len(v[i]), V_DEFAULT);
+    TRACE(TRACE_EVAL, "for.iter", trace_str("var", nfor->varn), trace_strn("value", v[i], str_len(v[i])));
 
     /* evaluate loop body */
     eval_tree(e, nfor->cmds, E_LIST);
     ran = 1;
   }
 
-  if(args)
-    tree_free(args);
+  wordlist_free(&wl);
+  arena_rewind(&expand_arena, pos);
 
   /* POSIX 2.9.4: a for-loop's own exit status is that of the last
      command run in its body (0 if the body never ran at all, e.g. an
