@@ -3,6 +3,7 @@
 
 #include "../lib/stralloc.h"
 #include "features.h"
+#include "wordlist.h"
 
 #define IFS_DEFAULT " \t\n"
 
@@ -53,34 +54,7 @@ enum subst_type {
   S_HEREDOC = 0x80000
 };
 
-/* expansion modes */
-#define X_DEFAULT 0x00000000
-#define X_NOSPLIT 0x01000000
-/* chunk straight from source text (N_ARGSTR): gets one expand_unescape(parse_isesc) pass.
-   Never set on substitution results: a second pass would eat a real backslash */
-#define X_LITERAL 0x02000000
-#define X_GLOB 0x04000000
-/* the field holds the raw result of an unquoted expansion ($x, $(cmd)): glob it if it has a
-   pattern character, and leave it exactly as is when nothing matches */
-#define X_GLOBRES 0x00200000
-#define X_QUOTED 0x08000000
-/* result is already fully processed (unescaped, if needed) by
-   expand_cat()'s non-splitting branch -- skip any later whole-buffer
-   expand_unescape() pass over it. */
-#define X_UNESCAPED 0x10000000
-/* result feeds path_fnmatch() (case, ${v%pat}): keep the parser's backslash doubling,
-   it is path_fnmatch()'s "literal, not a wildcard" escape */
-#define X_PATTERN 0x20000000
-/* the word of "${parameter+word}" / "${parameter-word}": its literal text is splittable,
-   like any expansion result (a command word's literal text is not) */
-#define X_SUBWORD 0x00100000
-/* set on every field of an unquoted word that field-splitting split
-   into 2+ fields (including the first, retroactively). Tells
-   expand_argv() to keep an empty field that's one of several real
-   fields, while still dropping a word's sole, entirely-empty result. */
-#define X_SPLIT 0x40000000
-
-#define X_CATCLOSED 0x80000000
+/* expansion modes: X_* bits, see wordlist.h */
 
 union node;
 struct narg;

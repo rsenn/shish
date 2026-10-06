@@ -384,6 +384,7 @@ src/eval/Makefile
 src/exec/Makefile
 src/expr/Makefile
 src/expand/Makefile
+src/wordlist/Makefile
 src/fd/Makefile
 src/fdstack/Makefile
 src/fdtable/Makefile

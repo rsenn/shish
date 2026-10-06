@@ -1024,10 +1024,51 @@ Port check: a few callers use the returned node as "something was appended" (`n 
   becomes newly unsafe. Audit once anyway: `hash`, `alias`, `trap`, `export`, `local`, `set --` must copy
   (`sh_setargs` already `str_dup`s).
 
+**Progress (2026-10-06): the module exists, nothing uses it yet.** `src/wordlist.h` and `src/wordlist/*.c` are built
+into `libshell.a` (CMake glob; autotools: `src/wordlist/Makefile.in`, `configure.ac`, `src/Makefile.in`); no caller
+links them, so `shish` is byte-identical in size. The `X_*` bits moved from `expand.h` to `wordlist.h` unchanged.
+- **Files:** `wordlist_init/_init_str/_free/_pool` (setup, pool of 8 buffers), `_cat` (the `expand_cat` state machine),
+  `_break`, `_close`, `_glob` (`expand_glob` on `cur`), `_push`/`_settle` (freeze a field, resolve a pending empty
+  one), `_argv`.
+- **Differences from the interface sketched above:**
+  - `wordlist_glob`, `wordlist_push`, `wordlist_settle`, `wordlist_pool_get/put` are public (internal to the module).
+  - `wordlist` carries `has/closed/pend/noglob/oom` one-bit members, `mark` (fields before the current word, so
+    `wordlist_close()` can return the count it added) and `own` (the `cur` buffer once all 8 pooled ones are taken).
+    `wl->noglob` replaces `sh->opts.noglob`, so the module needs no `sh.h`; it still calls `expand_unescape()`.
+  - A field closed by splitting goes into `v` at once; an empty one is entered as `""` and marked `pend`, dropped by
+    `wordlist_settle()` unless a sibling follows (`X_SPLIT` is retroactive). No second pass over `v`.
+  - `wordlist_close()` re-finishes the last field when the chunk's own splitting had closed it, from the bits it
+    collected (`"\\\\ "` unescaped, `"f? "` globbed). `expand_args` does this today through the node flags and
+    the output depends on it; it also globs such a field twice, which is not kept.
+  - Literal chunks are unescaped while appended (`cat_unescaped`), not through a temporary `stralloc`.
+  - On allocation failure the field is lost and `wl->oom` is set; callers check it once, after `wordlist_close`.
+- **Verified:** `tests/wordlist/diff.c` runs random words (text x flags x IFS, with real globbing) through the
+  old node chain and the wordlist: 1.5M words, 0 differences, also as three words in a row, in string mode, and a
+  100-field spill; clean under ASan+UBSan. It is a manual harness (it needs `expand_cat`) and goes away with it.
+  `wordlist_break` and `noglob` are not covered by it yet.
+- **Measured (`tests/wordlist/bench.c`, steady state, one expansion = one command, MinSizeRel flags -O2):**
+
+  | per command                         | node chain      | wordlist   |
+  | ----------------------------------- | --------------- | ---------- |
+  | `: a b c d e f g h`: malloc calls   | 16              | 0          |
+  | `: a b c d e f g h`: bytes malloced | 632 (768 in 16 blocks) | 0   |
+  | `: a b c d e f g h`: instructions   | 6118            | 3619 (-41%) |
+  | `: a b c d e f g h`: data refs      | 2472            | 1417 (-43%) |
+  | `$x` of 8 fields: instructions      | 6524            | 3689 (-43%) |
+  | `$x` of 8 fields: ns (wall)         | 750             | 360        |
+
+  The wordlist's working set is one pooled buffer, one arena chunk (reused, rewound) and the argv in the caller's
+  frame, so the micro benchmark is all L1 hits for both; D1 misses are 0.00 per command either way. The cache
+  and fragmentation claim therefore is **not proven yet**: it needs the real shell (steps 2-4), a script that runs
+  `: a b c d e f g h` a million times with a few hundred live variables, and `maxrss`, `mallinfo2().fordblks` and
+  malloc call counts (valgrind) before and after.
+- **Left for the porting steps:** `lib/glob.c` for `NO_GLOB` is still linked from `src/expand/Makefile.in`; move it to
+  `src/wordlist/Makefile.in` when `expand_glob.c` goes. `wordlist_argv()` does not yet replace `expand_argv()`.
+
 **Order of work.** Each step builds, passes `tests/posix` + `tests/yash` counts unchanged, and is its own commit.
 0. DONE: `tests/expand-fields.sh` (131 assertions, every value agreed on by bash and dash, passes under all three
    shells). It found one deviation, `BUGS: param-assign-default-not-split`, which is not in the file.
-1. Module and string mode only: `expand_copysa/catsa/tosa/str/tostr` and `expand_arith_expr` stop using nodes.
+1. Module and string mode only (module: DONE, see Progress; callers: not started): `expand_copysa/catsa/tosa/str/tostr` and `expand_arith_expr` stop using nodes.
    Smallest behaviour surface (case, redirections, prompts) and it deletes `tmpnode`.
 2. Port `expand_cat`'s state machine and `expand_glob` into `wordlist_cat`/`_close`; `expand_args` and `expand_argv`
    fill a wordlist; `eval_simple_command` switches over. This is the one risky step.

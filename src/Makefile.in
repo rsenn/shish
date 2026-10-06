@@ -27,7 +27,7 @@ dep:              makefiles dep-recursive
 # ---------------------------------------------------------------------------
 RECURSIVE = 1
 SUBDIRS   = builtin debug eval exec expand fd fdstack fdtable filter history \
-  job parse prompt redir sh source term trace tree var vartab
+  job parse prompt redir sh source term trace tree var vartab wordlist
 
 PROGRAMS = shish$(EXEEXT) shparse2ast$(EXEEXT) shformat$(EXEEXT)
 LIB     = $(top_builddir)/lib/libowfat.a
@@ -36,7 +36,7 @@ LDADD   = $(top_builddir)/src/libshell.a \
           
 HEADERS = builtin.h debug.h eval.h exec.h expand.h fd.h fdstack.h fdtable.h \
           filter.h history.h job.h parse.h prompt.h redir.h sh.h sig.h \
-          source.h term.h trace.h tree.h var.h vartab.h
+          source.h term.h trace.h tree.h var.h vartab.h wordlist.h
 
 # local targets     
 # ---------------------------------------------------------------------------
