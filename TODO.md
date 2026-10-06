@@ -27,6 +27,7 @@ fragmentation, execution time.
 | 22 | Also open (WASI, editor) | |
 | 23-25 | More utilities | wait for the walker and the builtin switches |
 | 26 | UTF-8 | largest, optional, touches everything |
+| 27 | Variable table and `exec_hash` PATH check | independent and measurable; pays off most before 18 (AST arena) |
 
 **Non-goal, decided 2026-09-02:** bash's `var+=value` append-assignment (not in POSIX; `x=a; x+=b` parses
 `x+=b` as a command name). It is why libtool's `ltmain.sh` cannot run under shish; libtool-generated scripts are
@@ -2287,3 +2288,116 @@ bug in the `#else` branch.
 - `"$*"` with an empty IFS is broken independently of UTF-8
   (`BUGS: star-empty-ifs-appends-nul`); fix it before touching that
   line, or M2's `mb_clen(ifs, …)` would return 1 for the NUL terminator.
+
+---
+
+## 27. Variables: scopes, lookup and memory; and what `exec_hash` really costs (plan)
+
+Evidence first (callgrind, MinSizeRel + all builtins, `tests/wordlist/frag.sh`-style script: 400 live variables,
+3000 iterations of expansions, assignments, `set --`, `for`, `case`, `$(...)`; and a loop calling a function with a
+`local`). Nothing below is implemented.
+
+**What `src/var*` and `src/vartab*` are today** (1526 lines of C in 37 files).
+- A scope is `struct vartab`: 64 bucket lists (536 bytes, zeroed by every `vartab_push`: function call, prefix
+  assignment, `$(...)`, subshell, pipeline stage, `env`). Pop walks all 64 buckets.
+- A lookup (`var_search`) hashes the name twice (`var_rndhash`, a 4-round mixer, picks the bucket and filters;
+  `var_lexhash` packs 6 bits per character so lists stay sorted) and then probes the bucket of every scope from the
+  innermost to the root. Names up to 10 characters are matched by `lexhash` alone, longer ones by `var_bsearch`.
+- A second, global list `var_list` is kept sorted by `lexhash`; a new name is inserted by walking it. `var_export`
+  and `var_count` walk it too, and `exec_program` calls both for every external command (two O(n) walks).
+- A variable is a 128-byte `struct var` (4 list pointers, 2 hashes, 3 scope pointers, a `call` pointer) plus a separate
+  `name=value` buffer from `stralloc` (at least 31 bytes): two mallocs, **208 bytes per variable** measured with
+  20000 variables. A shadowing variable borrows its parent's string (`sa.a == 0`) until first written.
+- Good and to keep: the `name=value` layout (envp points straight into it), buffer reuse on reassignment, borrowed
+  strings for imported environment variables, `V_LOCAL`/`function` scope rules (non-local assignments skip the
+  transient function scope; a `V_LOCAL` variable found in any scope is reused).
+
+**Measured costs.**
+
+| | instructions |
+| --- | --- |
+| `vartab_hash` per lookup | 187 (`rndhash` 122, `lexhash` 41) |
+| `var_search` per lookup, all in | about 307 |
+| lookups, share of the whole run | 17.5% (about 63 lookups per loop iteration) |
+| `var_vdefault` calls | 88000 in 3000 iterations, nearly all `IFS` (one per simple command, `for`, `$*`); 10% of the run |
+| `vartab_cleanup` per function call | about 800 (the 64-bucket walk) |
+| function call scope, all in (`push` + `create` + `add` + `pop`) | about 17% of a call loop |
+
+**Findings.**
+1. Hashing is about 60% of a lookup, and the scope-chain walk is the rest. A plain FNV-1a plus one open-addressing
+   probe is about 40 to 60 instructions.
+2. `IFS` is looked up through the whole machinery once per command. It only changes when `IFS` is created, assigned,
+   unset or its scope pops.
+3. The sort order is only observable in `set`, `export -p`, `readonly -p`, and the `local` listing. Keeping two sorted
+   structures current on every insert to serve those is the wrong way round: sort the n pointers when printing.
+4. The per-scope 64-bucket table is 536 bytes where most scopes hold zero to three variables.
+5. `var_unset` leaks the `struct var` (`BUGS: unset-leaks-the-var-node`, 144 bytes per cycle).
+6. Dead weight: `V_CALL` and the `call` member (never set anywhere), `extern var_exported` (never defined),
+   `var_dump`/`vartab_dump` (only the `dump` builtin), `rndhash`/`lexhash`/`hsearch`/`bsearch` once the table is
+   replaced.
+
+**Target design.**
+```
+global table   open addressing, power-of-two mask, FNV-1a, slot = struct var* (the innermost binding of that name);
+               the key is the name inside var->sa.s (borrowed, no copy); grows at 70%
+struct var     { sa (name=value), len, offset, flags, parent (the binding it shadows), next (same scope) }  ~72 bytes
+struct vartab  { parent, level, function, struct var* vars }                                                 ~32 bytes
+push           O(1): link the vartab, nothing zeroed
+lookup         one hash, one probe; no walk over scopes, no per-scope table
+create         in scope S: new var, parent = slot's old var, slot = new var, link into S->vars
+pop            for each var in S->vars: slot = var->parent (or erase); release the node
+print          collect pointers, sort by name, print            (set, export -p, readonly -p)
+export         iterate the table; count kept in a counter, so exec_program needs no var_count walk
+watch bit      V_WATCH on PATH and IFS: any create/set/unset/pop touching one bumps var_epoch (an int)
+```
+Semantics that must survive (each has a test or needs one first): shadow borrows the parent's string until written;
+`READONLY` is inherited by the shadow; `V_LOCAL` reuse across scopes; `unset` removes every level of the name;
+`V_INIT`; `RANDOM`; imported environment variables use caller-provided nodes and borrowed strings; the five
+longjmp landings that pop scopes (`sh_pop`, `eval_pop`, `eval_jump`, `eval_return`, `eval_exit`, all
+`while(varstack != saved) vartab_pop(varstack)`, which still works unchanged); `struct env` snapshots `varstack` for
+subshells.
+
+**Arena (what fits and what does not).**
+- Values and root-scope nodes: no. They are freed in any order and grow; the criteria of section 13 exclude them.
+- Nodes of non-root scopes: yes. Their lifetime is the scope, so a `var_arena` is told at `vartab_push` and rewound
+  at `vartab_pop`: function-call, prefix-assignment and subshell scopes cost no malloc and no free. The pop must stay
+  in step with the five landing sites above (it already is: they all call `vartab_pop`).
+- Strings of scope variables: a prefix assignment (`FOO=bar cmd`) and `local x=1` write once, so an exact-size arena
+  string fits; the catch is growth (`s="$s x"` in a function loop would leave a hole per append until the function
+  returns). Rule: a scope string lives in the arena only until it is first reassigned to a longer value, then it moves
+  to the heap (`V_ARENASTR` bit; the five writers of `var->sa` are `var_setv`, `var_setvsa`, `var_set`, `var_setsa`,
+  `var_copys`). Measure before doing this part; it may not pay.
+- Root-scope nodes: a same-size free list or slab chunk instead of `alloc()` removes the per-node header and keeps
+  the nodes together; decide after the new table is in and `mallinfo` is re-measured.
+
+**Order of work** (each step its own commit; `tests/fixed.sh` 5 known failures, `expand-fields.sh`, ctest, yash suite
+and ASan+UBSan as for section 17; `size shish` must not grow):
+1. Fix `unset-leaks-the-var-node`; delete `V_CALL`, `call`, `var_exported`. Tiny, independent.
+2. `var_epoch` and `V_WATCH` for `PATH` and `IFS` on the *current* structure: `wordlist_init` callers read a cached
+   `IFS` pointer, `exec_hash` compares an epoch instead of `var_value("PATH")` plus `strcmp` (see below). Expected:
+   about 8% of the instructions in the workload above from `IFS`, about 6% from `PATH`.
+3. The new table and scope list (replaces `vartab_*`, `var_search`, `var_hsearch`, `var_bsearch`, `var_lexhash`,
+   `var_rndhash`; adds the sorted print). Expected: lookups from about 307 to about 60 instructions, `struct var`
+   128 to about 72 bytes, `struct vartab` 536 to about 32, `vartab_cleanup` from 800 instructions to a few per
+   variable; fewer lines (the two hashes and both searches are about 250 of the 1526).
+4. Scope arena for nodes, then (if measured worth it) for strings.
+5. `exec_program`: drop the `var_count` walk (count kept by step 3).
+Measure each step with `tests/wordlist/frag.sh` + `mallinfo.c`, a function-call loop, and callgrind; keep the numbers
+in this section.
+
+**`exec_hash` with `lib/hashmap`: WILL NEVER BE IMPLEMENTED UNTIL FURTHER RESEARCHED.**
+- Measured (32840 calls): 822 instructions per cached lookup. `var_value("PATH")` is 444 of them and the `strcmp` of
+  PATH against the last-seen copy is 199, together 78%; the table itself (`exec_hashstr` twice, `exec_lookup`) is
+  about 100. Swapping the table for `lib/hashmap` would therefore change almost nothing; step 2 above is the fix.
+- Lines: `exec_hashstr.c`, `exec_lookup.c`, `exec_create.c` are about 60, `builtin_hash.c` and `exec_search.c` walk
+  `exec_hashtbl` by hand in five places (`hashmap_next()` would shorten those). But the entry carries `hits`, `mask`,
+  `cmd` and its own name, so the map would store a pointer to it: two allocations per command, as today, plus the
+  key `strdup` that `hashmap_put2()` makes (and again on every rehash).
+- Binary size: the `lib/hashmap` objects are 2958 bytes of text in the default build (a MinSizeRel figure is not
+  measured) and are already linked when `awk` is; the shell would gain them only if built without `awk`. The saving
+  from deleting `exec_hashstr/lookup/create` (about 60 lines) is far smaller than that, so size does not favour it.
+- If it is ever tried, `lib/hashmap` should first learn: borrowed keys (`hashmap_put_borrowed`: no `strdup`, no free),
+  `& (capacity - 1)` instead of `% capacity` per probe, a rehash that moves entries instead of re-`put`ting them, and
+  an `hashmap_entry` embedded in the caller's struct (intrusive, no `void*` value). The first three also help `awk`.
+  Open questions: does the shell link `awk` often enough to count the size as free; is a 32-slot chain really worse
+  than open addressing at under 30 entries (probably not).

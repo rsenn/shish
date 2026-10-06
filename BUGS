@@ -485,3 +485,10 @@
   also used `break` aborts with `eval_pop.c:14: Assertion 'e == eval' failed`. Release builds (NDEBUG) run it fine.
 
   **Repro:** `shish -c 'for j in a b; do while true; do break; done; break; done; echo ok'`
+
+- unset-leaks-the-var-node: `var_unset()` unlinks the variable and frees its string, but never frees the `struct var`
+  itself (128 bytes plus the malloc header), so every set+unset cycle of a name leaks one node.
+
+  **Repro:** `i=0; while [ $i -lt 50000 ]; do eval "u$((i%50))=v"; unset u$((i%50)); i=$((i+1)); done`
+  grows the heap by about 144 bytes per iteration (7.2 MB after 50000; `mallinfo2().uordblks` via an `LD_PRELOAD`
+  shim, see `tests/wordlist/mallinfo.c`).
