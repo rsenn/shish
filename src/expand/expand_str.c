@@ -22,6 +22,10 @@ expand_str(union node* node, stralloc* sa, int flags) {
     if(m->nargstr.flag & S_GLOB)
       lflags |= X_GLOB;
 
+    /* the parser doubles backslashes in source text: "X Y" is stored as X\ Y */
+    if(m->nargstr.stra.len && !(m->nargstr.flag & S_HEREDOC))
+      lflags |= X_LITERAL;
+
     assert(m->id == N_ARGSTR);
     assert(m->nargstr.stra.s);
 

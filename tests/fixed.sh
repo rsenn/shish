@@ -6391,4 +6391,16 @@ if [ -x "${SHISH_SELF%/*}/shformat" ]; then
   assert_equal "time-p{a;}|b" "$PX" "shformat reprints time -p in front of the pipeline"
 fi
 
+# a quoted here-document delimiter with a blank or a glob character ends the body ("X Y", 'a*b')
+PX=$("$SHISH_SELF" -c "cat <<'X Y'
+z
+X Y
+echo done" | tr '\n' ' ')
+assert_equal "z done " "$PX" "<<'X Y' ends at the line X Y"
+PX=$("$SHISH_SELF" -c 'cat <<"a*b?"
+z
+a*b?
+echo done' | tr '\n' ' ')
+assert_equal "z done " "$PX" 'a delimiter holding * and ? ends at the same text'
+
 summary
