@@ -6169,4 +6169,8 @@ assert_equal "1 0" "$(echo $PX)" "cd rejects a second operand and accepts -e"
 PX=$("$SHISH_SELF" -c 'echo ${x?boom}' 2>&1)
 assert_match "$PX" "*x: boom" "the \${x?boom} diagnostic starts the message with the parameter name"
 
+# grep -i ignores case (BRE, -F and -x)
+PX=$(printf 'Abc\nxyz\nABD\n' | "$SHISH_SELF" -c 'grep -i abc; printf "Abc\nABD\n" | grep -iF aB; printf "ABD\n" | grep -ix "ab[cd]"' | tr '\n' ' ')
+assert_equal "Abc Abc ABD ABD " "$PX" "grep -i matches regardless of case"
+
 summary

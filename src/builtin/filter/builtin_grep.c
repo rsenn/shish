@@ -22,6 +22,7 @@ const char help_grep[] = "    Search files for patterns.\n"
                          "\n"
                          "    -E              use Extended Regular Expressions (ERE)\n"
                          "    -F              match fixed strings (newline separates several)\n"
+                         "    -i              ignore case (ASCII)\n"
                          "    -v              select non-matching lines\n"
                          "    -x              select only lines that match as a whole\n"
                          "    -n              precede each line by its line number\n"
@@ -43,7 +44,7 @@ struct grep {
   struct filter_in in;
   grep_re re;
   unsigned invert : 1, show_lineno : 1, extended : 1, fixed : 1, quiet : 1, count : 1, multiple : 1, compiled : 1,
-      had_match : 1, done : 1, pending : 1, whole : 1;
+      had_match : 1, done : 1, pending : 1, whole : 1, icase : 1;
   unsigned long lineno, matches;
   const char* fixed_pat; /* -F: the pattern operand, '\n'-separated strings */
   char* whole_pat;       /* -x: the pattern wrapped in ^( )$ */
@@ -51,18 +52,37 @@ struct grep {
   stralloc out;          /* prefixes + line, when a line cannot go out as it lies */
 };
 
+/* -i: byte_equal() ignoring ASCII case */
+static int
+grep_equal_i(const char* a, const char* b, size_t n) {
+  for(; n; n--, a++, b++) {
+    int x = (unsigned char)*a, y = (unsigned char)*b;
+
+    if(x >= 'A' && x <= 'Z')
+      x += 'a' - 'A';
+
+    if(y >= 'A' && y <= 'Z')
+      y += 'a' - 'A';
+
+    if(x != y)
+      return 0;
+  }
+
+  return 1;
+}
+
 /* -F: does any '\n'-separated string of the pattern occur in line? "" matches everything */
 static int
-grep_test_fixed(const char* pat, const char* line, size_t len, int whole) {
+grep_test_fixed(const char* pat, const char* line, size_t len, int whole, int icase) {
   for(;;) {
     size_t n = str_chr(pat, '\n'), i;
 
     if(whole) {
-      if(n == len && byte_equal(line, n, pat))
+      if(n == len && (icase ? grep_equal_i(line, pat, n) : byte_equal(line, n, pat)))
         return 1;
     } else if(n <= len)
       for(i = 0; i + n <= len; i++)
-        if(byte_equal(line + i, n, pat))
+        if(icase ? grep_equal_i(line + i, pat, n) : byte_equal(line + i, n, pat))
           return 1;
 
     if(!pat[n])
@@ -75,7 +95,7 @@ grep_test_fixed(const char* pat, const char* line, size_t len, int whole) {
 static int
 grep_test(struct grep* g, const char* line, size_t len) {
   if(g->fixed)
-    return grep_test_fixed(g->fixed_pat, line, len, g->whole);
+    return grep_test_fixed(g->fixed_pat, line, len, g->whole, g->icase);
 
 #if GREP_USE_SYSTEM_REGEX
   char* z = alloc(len + 1);
@@ -213,6 +233,7 @@ grep_option(void* ctx, int c) {
   switch(c) {
     case 'E': g->extended = 1; return 0;
     case 'F': g->fixed = 1; return 0;
+    case 'i': g->icase = 1; return 0;
     case 'v': g->invert = 1; return 0;
     case 'x': g->whole = 1; return 0;
     case 'n': g->show_lineno = 1; return 0;
@@ -261,9 +282,9 @@ grep_setup(void* ctx) {
   }
 
 #if GREP_USE_SYSTEM_REGEX
-  if(regcomp(&g->re, pattern, g->extended ? REG_EXTENDED : 0) != 0) {
+  if(regcomp(&g->re, pattern, (g->extended ? REG_EXTENDED : 0) | (g->icase ? REG_ICASE : 0)) != 0) {
 #else
-  if(dfa_compile(&g->re, pattern, str_len(pattern), g->extended ? DFA_ERE : 0) != DFA_OK) {
+  if(dfa_compile(&g->re, pattern, str_len(pattern), (g->extended ? DFA_ERE : 0) | (g->icase ? DFA_ICASE : 0)) != DFA_OK) {
 #endif
     g->in.err_arg = "";
     g->in.err_msg = "invalid regular expression";
@@ -295,7 +316,7 @@ grep_finish(void* ctx) {
 }
 
 const struct filter_ops grep_ops = {
-    .opts = "EFvxnqc",
+    .opts = "EFivxnqc",
     .size = sizeof(struct grep),
     .option = grep_option,
     .setup = grep_setup,
