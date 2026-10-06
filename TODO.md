@@ -158,14 +158,21 @@ in a later pass).
 no shell dependency; `lib/` is compiled into `libowfat.a`, so a build without a walking builtin does not
 link a byte of it):
 
-1. **`lib/dirlist.h` + `lib/dirlist/dirlist_read.c`**: read one directory *whole* into one packed buffer, then
-   `closedir()`. A record is `type byte, name, NUL`; `type` is `d_type` (`DT_DIR`, `DT_REG`, ...) or
-   `DT_UNKNOWN` where the platform has none (mingw, some dietlibc builds). Entries are addressed by offset, not
-   pointer, so the buffer may grow. `.` and `..` are dropped unless `DIRLIST_DOTS` is passed. Optional sort of an
-   offset array with the caller's name comparator (default `str_diff`). It appends into a `stralloc` the caller owns
-   (no `lib/arena`), so the caller decides when a level is dropped (`len = start`). One buffer replaces
-   `ls`'s two `str_dup()` per entry and every client's own `readdir()` loop; it is also the one place to put a
-   `getdents` or `FindFirstFile` backend later.
+1. **`lib/dirlist.h` + `lib/dirlist/dirlist_read.c`**: read one directory *whole* into the caller's `arena`, then
+   `closedir()`. An entry is one arena allocation, `struct dirlist_ent { struct dirlist_ent* next; unsigned char
+   type; char name[]; }`, so there is no separate name copy. `type` is `d_type` (`DT_DIR`, `DT_REG`, ...) or
+   `DT_UNKNOWN` where the platform has none (mingw, some dietlibc builds). Entries are chained in `readdir`
+   order through a tail pointer; `DIRLIST_SORT` builds a pointer array (`arena_newn`), sorts it with the caller's
+   name comparator (default `str_diff`) and relinks. `.` and `..` are dropped unless `DIRLIST_DOTS` is passed.
+   The caller decides when a level is dropped (`arena_rewind` to the `arena_tell` taken before the read), and
+   `ls` drops its two `str_dup()` per entry and every client's own `readdir()` loop; it is also the one place to
+   put a `getdents` or `FindFirstFile` backend later. Cost against a packed buffer: about 16 bytes per entry
+   (`next`, `type`, alignment); a 1M-entry directory is 16 MB more, released by one rewind.
+   Open point: that is a peak-memory regression for `rm -rf` and `find` on a huge flat directory, and a rewind
+   does not lower the peak. Unsorted clients do not need the whole level at once: a streaming
+   `dirlist_next(dl)` (one `readdir` per call, one open `DIR*` per level) would hold nothing, at the price of
+   one descriptor per open level. Decide with a measurement on a 1M-entry directory before choosing. Also,
+   the `DIRLIST_SORT` pointer array stays in the arena as slack until the level is rewound.
 2. **`lib/walk.h` + `lib/walk/walk_*.c`**: an `fts(3)` equivalent that does not depend on libc's (dietlibc, musl,
    mingw and wasm have no `fts`; glibc's is not POSIX). It copies `fts`'s *semantics*, not its code:
    an opaque handle (no globals, so a walk may nest inside another, as `find -exec rm -r` does), pull-style
@@ -227,12 +234,14 @@ void walk_close(struct walk*);
    - **Iterative, not recursive:** an explicit stack of frames `{buffer offset, count, next, path length, dev, ino}`
      (about 40 bytes per level) in one growing array, so a 3000-deep chain cannot overflow the C stack and each
      level costs no `malloc`. `dev`/`ino` are only stored for `WALK_LOGICAL`; `WALK_XDEV` stats directories only.
-   - **One `stralloc` used as a stack, no `lib/arena`:** the entry records of every open level are appended to one
-     growing `stralloc`; a level remembers its start offset and popping it is `len = start`. Offsets, not pointers,
-     because the buffer may move. This is the same stack discipline as `arena_tell()`/`arena_rewind()` without
-     linking the arena code (nothing under `src/` uses it, and the walker should not be what pulls it in). The
-     frames are a small array grown with `alloc_re`; the path is a second `stralloc` that never produces `.`/`..`
-     (all six clients filter them today).
+   - **Entries live in the caller's `arena`, the path in one `stralloc`.** Each level `arena_tell()`s before
+     `dirlist_read()` and `arena_rewind()`s when it is popped, so a finished level costs no `free()` at all and the
+     whole walk ends with one `arena_free()`. Entries are pointer-stable (chunks never move), which is what lets
+     `walk_keep()` hand out `e->name` that survives the walk. The path stays a `stralloc`: it must be one
+     contiguous, NUL-terminated, growable string for the syscalls, which an arena cannot give. The frames are
+     a small array grown with `alloc_re`. The path never contains `.`/`..` (all six clients filter them today).
+     Binary size: the arena code is already linked for `text/dfa` and `text/awk`; in a build without those the
+     walker adds the ~20 tiny `lib/arena` objects (about 1 KB).
    - **`openat`/`unlinkat`** (when the platform has them) would make every syscall O(1) in the path depth; keep it
      behind one `#ifdef` inside `lib/walk`, exposing `e->dirfd` and `e->name`, so no client changes if it is added.
    - **`ls` stays on `dirlist`:** it must print a directory's whole listing, in its own sort order and after
