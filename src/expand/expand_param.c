@@ -104,6 +104,21 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
     if(special == S_ARGV && (param->flag & S_TABLE) == S_UNQUOTED && !(flags & X_NOSPLIT) && !var_vdefault("IFS", IFS_DEFAULT, NULL)[0])
       special = S_ARGVS;
 
+    /* ${#@} and ${#*}: how many parameters there are */
+    if((special == S_ARGV || special == S_ARGVS) && (param->flag & S_STRLEN)) {
+      char lstr[FMT_ULONG];
+
+      n = expand_cat(lstr, fmt_ulong(lstr, sh->arg.c), nptr, flags);
+      stralloc_free(&value);
+      return n;
+    }
+
+    /* ${@:-w} with no parameters is "unset": the operator applies */
+    if((special == S_ARGVS || special == S_ARGV) && !sh->arg.c && (param->word || (param->flag & S_VAR) != S_DEFAULT))    {
+      special = 0; /* no case below applies: v stays NULL */
+      is_set = false;
+    }
+
     switch(special) {
       /* $# substitution */
       case S_ARGC: {

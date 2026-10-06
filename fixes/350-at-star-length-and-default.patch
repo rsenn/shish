@@ -1,0 +1,39 @@
+diff --git a/src/expand/expand_args.c b/src/expand/expand_args.c
+index 8d450cf5..d9a3c265 100644
+--- a/src/expand/expand_args.c
++++ b/src/expand/expand_args.c
+@@ -27,7 +27,7 @@ expand_is_empty_at(union node* word) {
+       continue;
+ 
+     if(sub->id == N_ARGPARAM && (sub->nargparam.flag & (S_SPECIAL | S_VAR)) == S_ARGVS &&
+-       (sub->nargparam.flag & S_TABLE) == S_DQUOTED) {
++       (sub->nargparam.flag & S_TABLE) == S_DQUOTED && !(sub->nargparam.flag & S_STRLEN) && !sub->nargparam.word) {
+       at = 1;
+       continue;
+     }
+diff --git a/src/expand/expand_param.c b/src/expand/expand_param.c
+index 30f1c68d..914d162c 100644
+--- a/src/expand/expand_param.c
++++ b/src/expand/expand_param.c
+@@ -104,6 +104,21 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
+     if(special == S_ARGV && (param->flag & S_TABLE) == S_UNQUOTED && !(flags & X_NOSPLIT) && !var_vdefault("IFS", IFS_DEFAULT, NULL)[0])
+       special = S_ARGVS;
+ 
++    /* ${#@} and ${#*}: how many parameters there are */
++    if((special == S_ARGV || special == S_ARGVS) && (param->flag & S_STRLEN)) {
++      char lstr[FMT_ULONG];
++
++      n = expand_cat(lstr, fmt_ulong(lstr, sh->arg.c), nptr, flags);
++      stralloc_free(&value);
++      return n;
++    }
++
++    /* ${@:-w} with no parameters is "unset": the operator applies */
++    if((special == S_ARGVS || special == S_ARGV) && !sh->arg.c && (param->word || (param->flag & S_VAR) != S_DEFAULT))    {
++      special = 0; /* no case below applies: v stays NULL */
++      is_set = false;
++    }
++
+     switch(special) {
+       /* $# substitution */
+       case S_ARGC: {

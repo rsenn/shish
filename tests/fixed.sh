@@ -6224,4 +6224,8 @@ rm -rf "$LD"
 PX="$(printf 'a b\nc\n' | "$SHISH_SELF" -c 'wc -l')|$(printf 'a b\nc\n' | "$SHISH_SELF" -c 'wc')|$(printf 'a b\nc\n' | "$SHISH_SELF" -c 'wc -l -')"
 assert_equal "2|      2       3       6|2 -" "$PX" "wc output format matches GNU (bare count, 7-wide columns separated by a space, explicit - is named)"
 
+# ${#@} counts the parameters; ${@:-w} and ${*-w} apply the operator when there are none
+PX=$("$SHISH_SELF" -c 'set -- a b c; echo ${#@} ${#*}; set --; echo "${@:-none}" ${*-none} "${@-n}" x${@:+y}x')
+assert_equal "3 3|none none n xx" "$(echo "$PX" | tr '\n' '|' | sed 's/|$//')" "\${#@} is the parameter count and \${@:-word} uses the word when there are no parameters"
+
 summary

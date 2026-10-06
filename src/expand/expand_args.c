@@ -27,7 +27,7 @@ expand_is_empty_at(union node* word) {
       continue;
 
     if(sub->id == N_ARGPARAM && (sub->nargparam.flag & (S_SPECIAL | S_VAR)) == S_ARGVS &&
-       (sub->nargparam.flag & S_TABLE) == S_DQUOTED) {
+       (sub->nargparam.flag & S_TABLE) == S_DQUOTED && !(sub->nargparam.flag & S_STRLEN) && !sub->nargparam.word) {
       at = 1;
       continue;
     }
