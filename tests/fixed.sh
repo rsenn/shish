@@ -6157,4 +6157,8 @@ x=\$(alias a='echo CDE')
 a")
 assert_equal "ABC ABC" "$(echo $PX)" "alias defined in ( ) or \$( ) is gone afterwards"
 
+# an escaped tilde in the word of ${a-word} is a literal "~"
+PX=$("$SHISH_SELF" -c 'HOME=/h; printf "[%s]" ${a-\~} ${a-x\~} ${a-~}')
+assert_equal "[~][x~][/h]" "$PX" "\\~ in a \${a-word} is not tilde-expanded"
+
 summary

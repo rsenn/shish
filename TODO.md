@@ -218,7 +218,7 @@ have any; the full `ctest` run has 12 failing tests, 3 of them `tests/*.sh` that
 or the other known causes in `BUGS`):
 
 ```
-3 alias-p  62/65    1 param-p 53/54    1 quote-p 34/35    0 case-p 52/52
+3 alias-p  62/65    0 param-p 54/54    1 quote-p 34/35    0 case-p 52/52
 1 input-p  10/11    1 option-p 74/75   1 simple-p 33/34
 ```
 
@@ -286,7 +286,7 @@ reports `line 2: x: boom`. `$LINENO` itself is correct. Fix with, and verify aga
 ### Phase 4 [Stage 1: language] - expansion and parsing
 
 1. `quote-p` (34/35, only `:431` left) - `BUGS: quote-backslash-escaping-broken`.
-2. `param-p` (53/54, only `:82` left) - `BUGS: param-expansion-pattern-removal-broken`.
+2. `param-p` is done (54/54).
 3. `simple-p` (33/34), `tilde-p`, `cmdsub-p`, `comment-p` are done (`simple-p:172` is intentional:
    `BUGS: posix-suite-intentional-deviations`); `case-p` is done (52/52).
 
@@ -488,7 +488,7 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
 - `error-message-line-number-off-by-one` -> Phase 2 (`lineno-p`).
 - `alias-substitution-remaining-cases`, `set-notify-no-effect`, `set-verbose-partial`,
   `set-o-ignoreeof-nolog-vi-has-no-effect`, `set-histexpand-unimplemented` -> Phase 3.
-- `quote-backslash-escaping-broken`, `param-expansion-pattern-removal-broken` -> Phase 4.
+- `quote-backslash-escaping-broken` -> Phase 4.
 - `input-not-read-line-wise` -> Phase 5.
 - `posix-suite-intentional-deviations` stays as it is.
 - `yash-suite-other-hangs`, `grouping-p-tst-flaky`, the three `fixed-sh-*` entries -> Phase 6.

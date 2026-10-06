@@ -166,15 +166,6 @@
     the enclosing function is defined, so an alias set in the function
     body is not seen by `$(...)` parsed earlier.
 
-- param-expansion-pattern-removal-broken: `param-p.tst` fails 1 of 54: `:82`, a quoted
-  tilde in `${a?\~}` is still expanded
-  (`HOME=/foo/bar; (: ${a?\~}) 2>&1` prints "/foo/bar", not "~").
-
-  **Repro:**
-  ```sh
-  sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix param-p.tst
-  ```
-
 - quote-backslash-escaping-broken: `quote-p.tst` is 34/35. Open:
   `:431` an alias is expanded inside a command substitution in double
   quotes (dash does the same; see `TODO.md` design decisions).

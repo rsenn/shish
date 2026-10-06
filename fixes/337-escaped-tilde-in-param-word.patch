@@ -1,0 +1,15 @@
+diff --git a/src/parse/parse_unquoted.c b/src/parse/parse_unquoted.c
+index 18d64fb2..6a4b319a 100644
+--- a/src/parse/parse_unquoted.c
++++ b/src/parse/parse_unquoted.c
+@@ -75,8 +75,8 @@ parse_unquoted(struct parser* p) {
+       /* an escaped "~" or "/", or any escaped character inside a tilde-prefix, becomes a
+          quoted chunk of its own, so it cannot start or end the prefix ("\~", "~\/", "~\root") */
+       if(((p->flags & (P_SUBSTW | P_DQSUBST)) == P_SUBSTW && (c == ' ' || c == '\t')) ||
+-         ((c == '~' || c == '/' || parse_in_tilde_prefix(p)) &&
+-          !(p->flags & (P_SUBSTW | P_DQSUBST | P_HERE)))) {
++         (c == '~' && !(p->flags & (P_DQSUBST | P_HERE))) ||
++         ((c == '/' || parse_in_tilde_prefix(p)) && !(p->flags & (P_SUBSTW | P_DQSUBST | P_HERE)))) {
+         if(parse_isesc(c))
+           p->sa.len--; /* the backslash added above */
+ 
