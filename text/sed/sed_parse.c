@@ -397,8 +397,12 @@ parse_command(struct sed_builder* b, const char** pp, const char* end) {
     case 'l': {
       p = skip_blank(p + 1, end);
 
-      if(p < end && *p >= '0' && *p <= '9')
-        return SED_ECMD; /* GNU's line-wrap-width argument: not supported */
+      if(p < end && *p >= '0' && *p <= '9') {
+        unsigned long v;
+
+        p += scan_ulong(p, &v);
+        c->u.qstatus = (int)v + 1; /* l N: the wrap width; 0 = not given */
+      }
 
       break;
     }

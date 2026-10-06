@@ -143,6 +143,6 @@ void sed_pending_flush(struct sed_state* st);
 void sed_pending_clear(struct sed_state* st); /* frees queued items without emitting them */
 
 /* sed_list.c */
-void sed_do_list(struct sed_state* st, const char* s, size_t n);
+void sed_do_list(struct sed_state* st, const char* s, size_t n, int width);
 
 #endif

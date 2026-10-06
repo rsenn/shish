@@ -1,6 +1,6 @@
 #include "sed_internal.h"
 
-#define SED_LIST_WRAP 70 /* POSIX: fold width is unspecified; a common default */
+#define SED_LIST_WRAP 70 /* default width, backslash included */
 
 /* sed_do_list: the 'l' command's visually-unambiguous rendering of
  * the pattern space (cat -v-style escapes, folded at SED_LIST_WRAP,
@@ -9,10 +9,15 @@
  * final, true end of the pattern space gets one.
  * ----------------------------------------------------------------------- */
 void
-sed_do_list(struct sed_state* st, const char* s, size_t n) {
+sed_do_list(struct sed_state* st, const char* s, size_t n, int width) {
   size_t i;
   size_t col = 0;
   char buf[4];
+
+  if(!width)
+    width = SED_LIST_WRAP + 1; /* not given */
+
+  width--;                   /* now l N's N: lines are N-1 characters and a '\\'; 0 does not wrap */
 
   for(i = 0; i < n; i++) {
     unsigned char c = (unsigned char)s[i];
@@ -74,7 +79,7 @@ sed_do_list(struct sed_state* st, const char* s, size_t n) {
         }
     }
 
-    if(col + plen > SED_LIST_WRAP) {
+    if(width > 0 && col + plen > (size_t)width - 1) {
       st->out(st->ctx, "\\\n", 2);
       col = 0;
     }

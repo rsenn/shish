@@ -1,0 +1,83 @@
+diff --git a/text/sed/sed_cycle.c b/text/sed/sed_cycle.c
+index 734a39e4..ef19af0d 100644
+--- a/text/sed/sed_cycle.c
++++ b/text/sed/sed_cycle.c
+@@ -283,7 +283,7 @@ restart:
+         break;
+ 
+       case 'l':
+-        sed_do_list(st, st->pattern.s, st->pattern.len);
++        sed_do_list(st, st->pattern.s, st->pattern.len, c->u.qstatus);
+         pc++;
+         break;
+ 
+diff --git a/text/sed/sed_internal.h b/text/sed/sed_internal.h
+index c6ea4184..d394fa95 100644
+--- a/text/sed/sed_internal.h
++++ b/text/sed/sed_internal.h
+@@ -143,6 +143,6 @@ void sed_pending_flush(struct sed_state* st);
+ void sed_pending_clear(struct sed_state* st); /* frees queued items without emitting them */
+ 
+ /* sed_list.c */
+-void sed_do_list(struct sed_state* st, const char* s, size_t n);
++void sed_do_list(struct sed_state* st, const char* s, size_t n, int width);
+ 
+ #endif
+diff --git a/text/sed/sed_list.c b/text/sed/sed_list.c
+index 345912d3..b1338d2f 100644
+--- a/text/sed/sed_list.c
++++ b/text/sed/sed_list.c
+@@ -1,6 +1,6 @@
+ #include "sed_internal.h"
+ 
+-#define SED_LIST_WRAP 70 /* POSIX: fold width is unspecified; a common default */
++#define SED_LIST_WRAP 70 /* default width, backslash included */
+ 
+ /* sed_do_list: the 'l' command's visually-unambiguous rendering of
+  * the pattern space (cat -v-style escapes, folded at SED_LIST_WRAP,
+@@ -9,11 +9,16 @@
+  * final, true end of the pattern space gets one.
+  * ----------------------------------------------------------------------- */
+ void
+-sed_do_list(struct sed_state* st, const char* s, size_t n) {
++sed_do_list(struct sed_state* st, const char* s, size_t n, int width) {
+   size_t i;
+   size_t col = 0;
+   char buf[4];
+ 
++  if(!width)
++    width = SED_LIST_WRAP + 1; /* not given */
++
++  width--;                   /* now l N's N: lines are N-1 characters and a '\\'; 0 does not wrap */
++
+   for(i = 0; i < n; i++) {
+     unsigned char c = (unsigned char)s[i];
+     const char* piece = buf;
+@@ -74,7 +79,7 @@ sed_do_list(struct sed_state* st, const char* s, size_t n) {
+         }
+     }
+ 
+-    if(col + plen > SED_LIST_WRAP) {
++    if(width > 0 && col + plen > (size_t)width - 1) {
+       st->out(st->ctx, "\\\n", 2);
+       col = 0;
+     }
+diff --git a/text/sed/sed_parse.c b/text/sed/sed_parse.c
+index 1c0fc8ca..507c9425 100644
+--- a/text/sed/sed_parse.c
++++ b/text/sed/sed_parse.c
+@@ -397,8 +397,12 @@ parse_command(struct sed_builder* b, const char** pp, const char* end) {
+     case 'l': {
+       p = skip_blank(p + 1, end);
+ 
+-      if(p < end && *p >= '0' && *p <= '9')
+-        return SED_ECMD; /* GNU's line-wrap-width argument: not supported */
++      if(p < end && *p >= '0' && *p <= '9') {
++        unsigned long v;
++
++        p += scan_ulong(p, &v);
++        c->u.qstatus = (int)v + 1; /* l N: the wrap width; 0 = not given */
++      }
+ 
+       break;
+     }

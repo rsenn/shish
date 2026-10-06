@@ -6316,4 +6316,9 @@ PY=$(printf 'one\ntwo\nthree\n' | "$SHISH_SELF" -c 'sed 2Q' | tr '\n' ' ')
 PZ=$(printf 'one\ntwo\n' | "$SHISH_SELF" -c 'sed 2z' | tr '\n' '|')
 assert_equal "0ne! tw0! three /one /one||" "$PX/$PY/$PZ" "sed T branches when nothing was substituted, Q quits silently, z empties the pattern space"
 
+# sed l wraps at 69 characters plus a backslash by default, and l N sets the width
+PX=$(printf '%070d\n' 1 | "$SHISH_SELF" -c 'sed -n l' | awk '{ print length($0) }' | tr '\n' ' ')
+PY=$(printf 'abcdefgh\n' | "$SHISH_SELF" -c 'sed -n "l 5"' | tr '\n' '|')
+assert_equal "70 2 / abcd\\|efgh\$|" "$PX/ $PY" "sed l folds lines at the width including the trailing backslash"
+
 summary

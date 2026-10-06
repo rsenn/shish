@@ -283,7 +283,7 @@ restart:
         break;
 
       case 'l':
-        sed_do_list(st, st->pattern.s, st->pattern.len);
+        sed_do_list(st, st->pattern.s, st->pattern.len, c->u.qstatus);
         pc++;
         break;
 
