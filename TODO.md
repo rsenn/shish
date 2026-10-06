@@ -421,6 +421,12 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
 
 ### Loop findings that need a design decision (not fixed, see `BUGS`)
 
+- `while-y.tst` hang: `while echo x; do done` (empty body) is accepted and loops forever; that is the
+  case under `posix="true"` in the suite, where a syntax error is expected. `parse_loop()` takes an
+  empty `compound_list` on purpose (the non-POSIX cases `while do break; done` and `while ...;do done`
+  pass), and shish has no POSIX mode to switch it. Fixing the hang means adding that mode (or
+  rejecting empty lists for `sh`/`set -o posix`); the suite also checks yash's exact messages.
+
 - `quote-p:431`: an alias is expanded inside `"$(...)"` in a function body. dash does the same
   (`alias echo=')'; f() { printf '[%s]\n' "$(echo x)"; }; unalias echo; f` prints `[ x)]` in both);
   only yash's suite expects it ignored. Left as is unless the yash behaviour is wanted.

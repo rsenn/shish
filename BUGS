@@ -15,8 +15,9 @@
   `while-y.tst` still hang (killed by the per-file timeout, 20s here); the rest
   finish, several slowly: `typeset-y` ~19s, `redir-y` ~8s, `cmdprint-y` ~5s,
   `function-y` ~4s. So `DO_YASH_TESTS` stays off by default (see `TODO.md`).
-  Neither hang is isolated to a case yet; bisect each file by deleting test
-  cases from a copy.
+  `while-y.tst` hangs on `while echo x; do done` (empty body, infinite loop; needs a
+  POSIX mode, see `TODO.md` design decisions). `arith-y.tst` is not isolated yet;
+  bisect it by deleting test cases from a copy.
 
   **Repro:**
   ```sh
