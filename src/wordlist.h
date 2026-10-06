@@ -4,7 +4,7 @@
 #include "../lib/arena.h"
 #include "../lib/stralloc.h"
 
-/* state of a field, and the modes expand_cat() was called with */
+/* state of a field, and the modes wordlist_cat() was called with */
 #define X_DEFAULT 0x00000000
 #define X_NOSPLIT 0x01000000
 /* chunk straight from source text (N_ARGSTR): gets one expand_unescape(parse_isesc) pass.
@@ -16,7 +16,7 @@
 #define X_GLOBRES 0x00200000
 #define X_QUOTED 0x08000000
 /* result is already fully processed (unescaped, if needed) by
-   expand_cat()'s non-splitting branch -- skip any later whole-buffer
+   wordlist_cat()'s non-splitting branch -- skip any later whole-buffer
    expand_unescape() pass over it. */
 #define X_UNESCAPED 0x10000000
 /* result feeds path_fnmatch() (case, ${v%pat}): keep the parser's backslash doubling,
@@ -31,7 +31,6 @@
    fields, while still dropping a word's sole, entirely-empty result. */
 #define X_SPLIT 0x40000000
 
-#define X_CATCLOSED 0x80000000
 
 #define WORDLIST_INLINE 16
 
@@ -66,7 +65,7 @@ void wordlist_free(wordlist* wl);                   /* give cur back to the pool
 
 /* building
  * ----------------------------------------------------------------------- */
-void wordlist_cat(wordlist* wl, const char* b, size_t len, int flags); /* append a chunk: the expand_cat() state machine */
+void wordlist_cat(wordlist* wl, const char* b, size_t len, int flags); /* append a chunk, splitting it at IFS where the flags allow */
 void wordlist_break(wordlist* wl);                                      /* end the open field as it is ("$@" between parameters) */
 int wordlist_close(wordlist* wl);                                       /* end of word: glob, unescape, keep or drop; fields added */
 

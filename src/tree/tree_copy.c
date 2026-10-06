@@ -101,14 +101,6 @@ tree_copy(union node* node) {
       case N_ARG:
       case N_ASSIGN:
         copy->narg.list = node->narg.list ? tree_copy(node->narg.list) : NULL;
-        /* byte_copy() above aliased copy->narg.stra.s onto
-           node->narg.stra.s; zero it first or stralloc_copy() below
-           reuses that buffer in place instead of allocating a fresh
-           one, leaving both copies pointing at the same memory. */
-        byte_zero(&copy->narg.stra, sizeof(copy->narg.stra));
-
-        if(node->narg.stra.s)
-          stralloc_copy(&copy->narg.stra, &node->narg.stra);
         break;
 
       case N_REDIR:

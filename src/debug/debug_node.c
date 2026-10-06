@@ -209,8 +209,6 @@ debug_node(union node* node, int depth) {
 
       if(node->narg.list)
         debug_sublist(", list", node->narg.list, depth);
-      else
-        debug_stralloc(", stra", &node->narg.stra, depth, debug_quote);
 
       break;
 

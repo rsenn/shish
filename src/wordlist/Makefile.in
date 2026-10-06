@@ -25,6 +25,8 @@ SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)
 DEPS    = $(MODULES:%=%.d)
 
+@NO_GLOB@SOURCES += $(top_srcdir)/lib/glob.c
+@NO_GLOB@OBJECTS += $(top_builddir)/lib/glob.o
 
 # targets for this directory
 # ---------------------------------------------------------------------------

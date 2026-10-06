@@ -241,7 +241,6 @@ struct narg {
   enum kind id;
   unsigned flag;
   union node* next;
-  stralloc stra;
   union node* list;
 } SHISH_TREE_PACKED;
 

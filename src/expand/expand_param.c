@@ -296,7 +296,7 @@ expand_param(struct nargparam* param, wordlist* wl, int flags) {
          $COLUMNS: terminal columns
 
          Static buffer is safe since v is consumed by the immediately-
-         following expand_cat below. */
+         following wordlist_cat below. */
     } else if(str_equal(param->name, "LINENO")
 #ifdef HAVE_WINSIZE
               || (str_equal(param->name, "LINES") && term_size.ws_row) ||

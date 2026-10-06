@@ -95,10 +95,8 @@ void expand_param(struct nargparam* param, wordlist* wl, int flags);
 void expand_command(struct nargcmd* cmd, wordlist* wl, int flags);
 void expand_arith(struct nargarith* arith, wordlist* wl, int flags);
 
-/* output: append text to the field list, split, glob and unescape it
+/* unescape in place: "\\x" -> "x" where pred(x)
  * ----------------------------------------------------------------------- */
-union node* expand_cat(const char* b, unsigned int len, union node** nptr, int flags);
-union node* expand_glob(union node** nptr, int flags);
 void expand_unescape(stralloc* sa, int (*pred)(int));
 
 /* arithmetic: evaluate an arithmetic tree to an integer

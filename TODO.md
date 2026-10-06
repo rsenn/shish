@@ -1042,11 +1042,11 @@ links them, so `shish` is byte-identical in size. The `X_*` bits moved from `exp
     the output depends on it; it also globs such a field twice, which is not kept.
   - Literal chunks are unescaped while appended (`cat_unescaped`), not through a temporary `stralloc`.
   - On allocation failure the field is lost and `wl->oom` is set; callers check it once, after `wordlist_close`.
-- **Verified:** `tests/wordlist/diff.c` runs random words (text x flags x IFS, with real globbing) through the
+- **Verified (harness since deleted):** `tests/wordlist/diff.c` ran random words (text x flags x IFS, with real globbing) through the
   old node chain and the wordlist: 1.5M words, 0 differences, also as three words in a row, in string mode, and a
-  100-field spill; clean under ASan+UBSan. It is a manual harness (it needs `expand_cat`) and goes away with it.
+  100-field spill; clean under ASan+UBSan. 
   `wordlist_break` and `noglob` are not covered by it yet.
-- **Measured (`tests/wordlist/bench.c`, steady state, one expansion = one command, MinSizeRel flags -O2):**
+- **Measured (`tests/wordlist/bench.c`, since deleted, steady state, one expansion = one command, MinSizeRel flags -O2):**
 
   | per command                         | node chain      | wordlist   |
   | ----------------------------------- | --------------- | ---------- |
@@ -1095,11 +1095,13 @@ prefix and `$((x))` all use it; `eval_simple_command` has no node chain, no `all
 
   Cache and fragmentation: not measured separately; maxrss is flat either way. A before/after with a few hundred
   live variables and `mallinfo2().fordblks` is still open.
-- **Left (step 4):** delete `expand_cat.c`, `expand_glob.c`, `tests/wordlist/diff.c` (the harness needs the old
-  chain), drop `narg.stra` (parse-time `N_ARG` 48 to 24 bytes) with its lines in `tree_free`, `tree_copy`,
-  `debug_node`, remove `X_CATCLOSED`, move the `NO_GLOB` `lib/glob.c` lines from `src/expand/Makefile.in` to
-  `src/wordlist/Makefile.in`, `redir_eval`'s wrapper `N_ARG` node, `tree_count` if unused. `param-assign-default-not-split`
-  is untouched.
+- **Step 4 done (2026-10-07):** `expand_cat.c`, `expand_glob.c`, `X_CATCLOSED` and `narg.stra` are gone (parse-time
+  `N_ARG` 48 to 24 bytes, one malloc and one free less per parsed word; `tree_copy`, `tree_free`, `debug_node` lost
+  their `stra` lines); the `NO_GLOB` `lib/glob.c` lines moved to `src/wordlist/Makefile.in`. `tests/wordlist/diff.c`
+  and `bench.c` went with the old chain (the 1.5M-word comparison above is the evidence they produced).
+  `size` text 374337 (baseline 376720); ctest, yash suite and ASan+UBSan as after step 2. `redir_eval`'s wrapper
+  `N_ARG` stays: it is a tree node for the tilde helpers, not expansion output. `param-assign-default-not-split` is
+  untouched.
 
 **Order of work.** Each step builds, passes `tests/posix` + `tests/yash` counts unchanged, and is its own commit.
 0. DONE: `tests/expand-fields.sh` (131 assertions, every value agreed on by bash and dash, passes under all three
