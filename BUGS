@@ -364,15 +364,6 @@
   ```
   (a pty script: `python3` + `pty.fork()`, see `tests/term-complete.sh`)
 
-- cd-operand-count-and-e-option: `cd` accepts more than one operand (bash
-  rejects it, dash accepts it) and has no `-e` (POSIX.1-2024).
-
-  **Repro:**
-  ```sh
-  cd -L /tmp a; echo $?        # 0; should be an error (too many operands)
-  cd -P -e /tmp                # "-e: invalid option"
-  ```
-
 - pwd-operand-accepted: `pwd a` ignores the operand and returns 0. POSIX `pwd`
   takes no operands; bash and dash also accept it, so this is low priority.
 

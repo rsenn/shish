@@ -31,6 +31,7 @@ const char help_cd[] = "    Change the shell's current working directory.\n"
                        "\n"
                        "    -L              keep symlinks in the resulting path (default)\n"
                        "    -P              resolve symlinks away from the resulting path\n"
+                       "    -e              accepted with -P (the new directory is always known)\n"
                        "    directory       directory to change into; default is $HOME\n"
                        "    -               change to $OLDPWD and print the new directory\n"
                        "\n"
@@ -47,15 +48,22 @@ builtin_cd(int argc, char* argv[]) {
   stralloc newcwd;
 
   /* check options, -L for symlink, -P for physical path */
-  while((c = shell_getopt(argc, argv, "LP")) > 0) {
+  while((c = shell_getopt(argc, argv, "LPe")) > 0) {
     switch(c) {
       case 'L': symbolic = 1; break;
       case 'P': symbolic = 0; break;
+      case 'e': break; /* only matters when -P cannot determine the new directory */
       default: builtin_invopt(argv); return 1;
     }
   }
 
   arg = argv[shell_optind];
+
+  if(arg && argv[shell_optind + 1]) {
+    builtin_errmsg(argv, "too many arguments", NULL);
+    return 1;
+  }
+
   stralloc_init(&newcwd);
 
   /* "cd -" means $OLDPWD, and the resulting directory is echoed,

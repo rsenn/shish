@@ -6161,4 +6161,8 @@ assert_equal "ABC ABC" "$(echo $PX)" "alias defined in ( ) or \$( ) is gone afte
 PX=$("$SHISH_SELF" -c 'HOME=/h; printf "[%s]" ${a-\~} ${a-x\~} ${a-~}')
 assert_equal "[~][x~][/h]" "$PX" "\\~ in a \${a-word} is not tilde-expanded"
 
+# cd takes at most one operand and accepts -e
+PX=$("$SHISH_SELF" -c 'cd /tmp a 2>/dev/null; echo $?; cd -P -e /tmp; echo $?')
+assert_equal "1 0" "$(echo $PX)" "cd rejects a second operand and accepts -e"
+
 summary
