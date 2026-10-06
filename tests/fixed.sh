@@ -6232,4 +6232,12 @@ assert_equal "3 3|none none n xx" "$(echo "$PX" | tr '\n' '|' | sed 's/|$//')" "
 PX=$("$SHISH_SELF" -c 'x=abcdef; echo "${x:2}|${x: -2}|${x:1:-1}|${x:(-3):2}"; set -- a b c; echo "${@:2}|${*:1:2}|${@: -1}"')
 assert_equal "cdef|ef|bcde|de/b c|a b|c" "$(echo "$PX" | tr '\n' '/' | sed 's|/$||')" "substring expansion handles missing length, negative offset/length and positional parameters"
 
+# find: -maxdepth, -iname, && short-circuits actions, an unknown predicate is an error (not a hang)
+FD=$(mktemp -d); mkdir "$FD/sub"; : > "$FD/A.txt"; : > "$FD/sub/b.txt"
+PX=$("$SHISH_SELF" -c "find $FD -maxdepth 0; find $FD -name a.txt; find $FD -iname a.TXT -print; find $FD -name nomatch -print; find $FD -maxdepth 1 -name '*.txt'" | sed "s|$FD|D|" | tr '\n' ' ')
+assert_equal "D D/A.txt D/A.txt " "$PX" "find honors -maxdepth/-iname and does not run -print after a false -name"
+PX=$(timeout 5 "$SHISH_SELF" -c "find $FD -size -1" 2>&1 | sed 's|.*find: ||')
+assert_match "$PX" "unknown predicate*" "find rejects an unknown primary instead of looping on it"
+rm -rf "$FD"
+
 summary

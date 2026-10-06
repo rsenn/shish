@@ -9,6 +9,7 @@
 #include "../../../lib/str.h"
 #include "../../../lib/path.h"
 #include "../../../lib/unix.h"
+#include "../../../lib/scan.h"
 #include <unistd.h>
 #include <errno.h>
 #include <dirent.h>
@@ -20,6 +21,11 @@ struct ancestor {
   ino_t ino;
   struct ancestor* next;
 };
+
+/* >0 while the right side of a && or || that is not needed is parsed: no actions run */
+static int find_dry;
+static int find_bad;
+static long find_maxdepth = -1, find_mindepth;
 
 static int eval_expr(char* argv[], int* i, int end, const char* path, struct stat* st, int* has_action);
 
@@ -64,19 +70,76 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
       return 0;
     char* pat = argv[(*i)++];
     char* base = path_basename(path);
-    (void)ignore_case;
+    if(ignore_case) {
+      stralloc lp, lb;
+      size_t k;
+      int m;
+
+      stralloc_init(&lp);
+      stralloc_init(&lb);
+      stralloc_copys(&lp, pat);
+      stralloc_copys(&lb, base);
+
+      for(k = 0; k < lp.len; k++)
+        if(lp.s[k] >= 'A' && lp.s[k] <= 'Z')
+          lp.s[k] += 'a' - 'A';
+
+      for(k = 0; k < lb.len; k++)
+        if(lb.s[k] >= 'A' && lb.s[k] <= 'Z')
+          lb.s[k] += 'a' - 'A';
+
+      m = path_fnmatch(lp.s, lp.len, lb.s, lb.len, 0) == 0;
+      stralloc_free(&lp);
+      stralloc_free(&lb);
+      return m;
+    }
+
     return path_fnmatch(pat, str_len(pat), base, str_len(base), 0) == 0;
+  }
+
+  if(str_equal(arg, "-path")) {
+    char* pat;
+
+    (*i)++;
+    if(*i >= end)
+      return 0;
+    pat = argv[(*i)++];
+    return path_fnmatch(pat, str_len(pat), path, str_len(path), 0) == 0;
+  }
+
+  /* -maxdepth/-mindepth were read up front; they are always true here */
+  if(str_equal(arg, "-maxdepth") || str_equal(arg, "-mindepth")) {
+    *i += 2;
+    return 1;
+  }
+
+  if(str_equal(arg, "-true")) {
+    (*i)++;
+    return 1;
+  }
+
+  if(str_equal(arg, "-false")) {
+    (*i)++;
+    return 0;
   }
 
   if(str_equal(arg, "-print")) {
     (*i)++;
     *has_action = 1;
-    buffer_putm_internal(fd_out->w, path, 0);
-    buffer_putnlflush(fd_out->w);
+
+    if(!find_dry) {
+      buffer_putm_internal(fd_out->w, path, 0);
+      buffer_putnlflush(fd_out->w);
+    }
+
     return 1;
   }
 
-  return 1;
+  /* anything else is not understood: stop here instead of looping on it */
+  builtin_errmsg(argv, "unknown predicate", arg);
+  find_bad = 1;
+  *i = end;
+  return 0;
 }
 
 static int
@@ -89,7 +152,11 @@ eval_term(char* argv[], int* i, int end, const char* path, struct stat* st, int*
     if(str_equal(op, "-a") || str_equal(op, "-and")) {
       (*i)++;
     }
-    int rhs = eval_primary(argv, i, end, path, st, has_action);
+    int rhs;
+
+    find_dry += !lhs;
+    rhs = eval_primary(argv, i, end, path, st, has_action);
+    find_dry -= !lhs;
     lhs = lhs && rhs;
   }
   return lhs;
@@ -102,7 +169,11 @@ eval_expr(char* argv[], int* i, int end, const char* path, struct stat* st, int*
     char* op = argv[*i];
     if(str_equal(op, "-o") || str_equal(op, "-or")) {
       (*i)++;
-      int rhs = eval_term(argv, i, end, path, st, has_action);
+      int rhs;
+
+      find_dry += !!lhs;
+      rhs = eval_term(argv, i, end, path, st, has_action);
+      find_dry -= !!lhs;
       lhs = lhs || rhs;
     } else {
       break;
@@ -112,7 +183,7 @@ eval_expr(char* argv[], int* i, int end, const char* path, struct stat* st, int*
 }
 
 static int
-find_recursive(char* argv[], int expr_start, int expr_end, stralloc* path, int deref_links, struct ancestor* anc) {
+find_recursive(char* argv[], int expr_start, int expr_end, stralloc* path, int deref_links, struct ancestor* anc, long depth) {
   struct stat st;
   int has_action = 0;
   int i;
@@ -140,14 +211,17 @@ find_recursive(char* argv[], int expr_start, int expr_end, stralloc* path, int d
   }
 
   i = expr_start;
-  if(eval_expr(argv, &i, expr_end, path->s, &st, &has_action)) {
+  if(depth >= find_mindepth && eval_expr(argv, &i, expr_end, path->s, &st, &has_action)) {
     if(!has_action) {
       buffer_putm_internal(fd_out->w, path->s, 0);
       buffer_putnlflush(fd_out->w);
     }
   }
 
-  if(S_ISDIR(st.st_mode)) {
+  if(find_bad)
+    return 1;
+
+  if(S_ISDIR(st.st_mode) && (find_maxdepth < 0 || depth < find_maxdepth)) {
     DIR* dp;
     struct dirent* de;
     size_t dirlen = path->len;
@@ -167,7 +241,7 @@ find_recursive(char* argv[], int expr_start, int expr_end, stralloc* path, int d
       stralloc_cats(path, de->d_name);
       stralloc_nul(path);
 
-      find_recursive(argv, expr_start, expr_end, path, 0, &current_anc);
+      find_recursive(argv, expr_start, expr_end, path, 0, &current_anc, depth + 1);
     }
 
     closedir(dp);
@@ -205,18 +279,31 @@ builtin_find(int argc, char* argv[]) {
     expr_start++;
   }
 
+  find_dry = find_bad = 0;
+  find_maxdepth = -1;
+  find_mindepth = 0;
+
+  for(i = expr_start; i + 1 < argc; i++) {
+    unsigned long v;
+
+    if(str_equal(argv[i], "-maxdepth") && scan_ulong(argv[i + 1], &v) > 0)
+      find_maxdepth = (long)v;
+    else if(str_equal(argv[i], "-mindepth") && scan_ulong(argv[i + 1], &v) > 0)
+      find_mindepth = (long)v;
+  }
+
   stralloc_init(&path);
 
   if(expr_start == shell_optind) {
     stralloc_copys(&path, ".");
     stralloc_nul(&path);
-    if(find_recursive(argv, shell_optind, argc, &path, deref_links, NULL))
+    if(find_recursive(argv, shell_optind, argc, &path, deref_links, NULL, 0))
       failed = 1;
   } else {
     for(i = shell_optind; i < expr_start; i++) {
       stralloc_copys(&path, argv[i]);
       stralloc_nul(&path);
-      if(find_recursive(argv, expr_start, argc, &path, deref_links, NULL))
+      if(find_recursive(argv, expr_start, argc, &path, deref_links, NULL, 0))
         failed = 1;
     }
   }

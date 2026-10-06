@@ -195,6 +195,18 @@
   sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix grouping-p.tst
   ```
 
+- find-missing-primaries: `find` knows `-type f|d|l`, `-name`, `-iname`, `-path`, `-print`,
+  `-maxdepth`, `-mindepth`, `-true`, `-false`, `!`, `-a`, `-o` and parentheses; POSIX also has `-exec`
+  (`;` and `+`), `-size`, `-mtime`/`-atime`/`-ctime`, `-newer`, `-perm`, `-user`, `-group`, `-nouser`,
+  `-nogroup`, `-prune`, `-links`, `-inum`, `-depth`, `-xdev`, `-ok` and `-type b|c|p|s`. An unknown
+  primary is now an error ("unknown predicate").
+
+  **Repro:**
+  ```sh
+  find . -size -1       # find: unknown predicate: -size
+  find . -exec echo {} \;
+  ```
+
 - fixed-sh-assumes-optional-builtins: `tests/fixed.sh` gives different results on
   a default build than with `-DENABLE_ALL_BUILTINS=ON`, because some cases need
   an optional builtin or an external tool: on a default build the two `set +h`
