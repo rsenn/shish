@@ -29,7 +29,7 @@ assert_equal "    1 a
 assert_equal "    1 a
     2 b
 
-    4 c" "$(cat -b "$T/f1")" "-b numbers only non-empty lines"
+    3 c" "$(cat -b "$T/f1")" "-b numbers only non-empty lines"
 
 assert_equal "hi" "$(echo hi | cat)" "no operand reads stdin"
 assert_equal "hi" "$(echo hi | cat -)" "'-' reads stdin"

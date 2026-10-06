@@ -6266,4 +6266,10 @@ PX=$(printf 'Ab\nab\nabc\nxy\n' | "$SHISH_SELF" -c 'uniq -ic' | tr -s ' ' | tr '
 PY=$(printf 'Ab\nab\nabc\nxy\n' | "$SHISH_SELF" -c 'uniq -w2 -c' | tr -s ' ' | tr '\n' ' ')
 assert_equal " 2 Ab  1 abc  1 xy / 1 Ab  2 ab  1 xy " "$PX/$PY" "uniq -i folds ASCII case and -w limits the compared width"
 
+# cat -s -E -T -v -A, and -b counts only the lines it numbers
+PX=$(printf 'a\n\n\nb\n' | "$SHISH_SELF" -c 'cat -s' | tr '\n' '|')
+PY=$(printf 'a\n\nb\n' | "$SHISH_SELF" -c 'cat -b' | tr -s ' ' | tr '\n' '|')
+PZ=$(printf 'a\tb\001\n' | "$SHISH_SELF" -c 'cat -A')
+assert_equal 'a||b|/ 1 a|| 2 b|/a^Ib^A$' "$PX/$PY/$PZ" "cat -s squeezes blank lines, -b numbers consecutively, -A shows tabs, controls and line ends"
+
 summary
