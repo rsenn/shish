@@ -6250,4 +6250,11 @@ assert_equal "Yaa" "$PX" "a\\{0,2\\} matches at most two characters"
 PX=$("$SHISH_SELF" -c 'basename -a x/y z/w; basename -s .txt a.txt b.txt; basename a/b.c .c' | tr '\n' ' ')
 assert_equal "y w a b b " "$PX" "basename -a and -s print one name per operand"
 
+# grep -h hides file names, -m stops after n selected lines per file
+GA=$(mktemp) GB=$(mktemp)
+printf 'a1\nb\na2\n' > "$GA"; printf 'x\na3\na4\n' > "$GB"
+PX=$("$SHISH_SELF" -c "grep -h a $GA $GB; grep -m1 a $GA $GB | sed 's|$TMPDIR/||;s|/tmp/||' | cut -d: -f2" | tr '\n' ' ')
+assert_equal "a1 a2 a3 a4 a1 a3 " "$PX" "grep -h drops the file name prefix and -m1 stops after the first match of each file"
+rm -f "$GA" "$GB"
+
 summary

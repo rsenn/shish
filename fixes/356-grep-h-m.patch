@@ -1,0 +1,157 @@
+diff --git a/src/builtin/filter/builtin_grep.c b/src/builtin/filter/builtin_grep.c
+index aad97058..0b48f6a4 100644
+--- a/src/builtin/filter/builtin_grep.c
++++ b/src/builtin/filter/builtin_grep.c
+@@ -28,6 +28,8 @@ const char help_grep[] = "    Search files for patterns.\n"
+                          "    -n              precede each line by its line number\n"
+                          "    -e pattern      pattern to search for; may be given several times\n"
+                          "    -f file         read patterns from file, one per line\n"
++                         "    -h              never print file names in front of lines\n"
++                         "    -m num          stop reading a file after num selected lines\n"
+                          "    -l              print only the names of files with a match\n"
+                          "    -s              no messages about files that cannot be opened\n"
+                          "    -q              quiet (exit 0 on match, no output)\n"
+@@ -48,8 +50,8 @@ struct grep {
+   struct filter_in in;
+   grep_re re;
+   unsigned invert : 1, show_lineno : 1, extended : 1, fixed : 1, quiet : 1, count : 1, multiple : 1, compiled : 1,
+-      had_match : 1, done : 1, pending : 1, whole : 1, icase : 1, list : 1, nomsg : 1, haspat : 1;
+-  unsigned long lineno, matches;
++      had_match : 1, done : 1, pending : 1, whole : 1, icase : 1, list : 1, nomsg : 1, haspat : 1, nofile : 1, hasmax : 1, closing : 1;
++  unsigned long lineno, matches, maxsel, nsel; /* -m: limit, selected so far in this file */
+   const char* fixed_pat; /* -F: the pattern operand, '\n'-separated strings */
+   char* joined_pat;      /* several -e patterns as one regular expression */
+   char* whole_pat;       /* -x: the pattern wrapped in ^( )$ */
+@@ -126,6 +128,14 @@ grep_test(struct grep* g, const char* line, size_t len) {
+ #endif
+ }
+ 
++/* the operand's name as grep shows it: "-" is the standard input */
++static const char*
++grep_name(struct filter_in* in) {
++  const char* name = filter_in_name(in);
++
++  return name[0] == '-' && !name[1] ? "(standard input)" : name;
++}
++
+ /* -c: "count" or "file:count" for the operand just finished */
+ static void
+ grep_count_line(struct grep* g) {
+@@ -134,7 +144,7 @@ grep_count_line(struct grep* g) {
+   g->out.len = 0;
+ 
+   if(g->multiple) {
+-    stralloc_cats(&g->out, g->name);
++    stralloc_cats(&g->out, g->name[0] == '-' && !g->name[1] ? "(standard input)" : g->name);
+     stralloc_catc(&g->out, ':');
+   }
+ 
+@@ -162,6 +172,12 @@ grep_step(void* arg, const char** sp, size_t* np) {
+   int had_nl;
+   ssize_t r;
+ 
++  /* -m reached its limit on the line handed out last time: on to the next file */
++  if(g->closing) {
++    g->closing = 0;
++    filter_in_close(&g->in);
++  }
++
+   while(!g->done && (r = filter_in_line(&g->in, &line, &had_nl)) >= 0) {
+     size_t len = (size_t)r, full = len;
+     int due = 0;
+@@ -175,6 +191,7 @@ grep_step(void* arg, const char** sp, size_t* np) {
+       }
+ 
+       g->lineno = 1;
++      g->nsel = 0;
+       g->name = filter_in_name(&g->in);
+       g->pending = 1;
+     }
+@@ -189,7 +206,7 @@ grep_step(void* arg, const char** sp, size_t* np) {
+ 
+       if(g->list && !g->quiet) {
+         g->out.len = 0;
+-        stralloc_cats(&g->out, filter_in_name(&g->in)[0] == '-' && !filter_in_name(&g->in)[1] ? "(standard input)" : filter_in_name(&g->in));
++        stralloc_cats(&g->out, grep_name(&g->in));
+         stralloc_catc(&g->out, '\n');
+         filter_in_close(&g->in); /* one name per file: on to the next */
+         *sp = g->out.s;
+@@ -202,9 +219,17 @@ grep_step(void* arg, const char** sp, size_t* np) {
+         return 0;
+       }
+ 
+-      if(g->count)
++      if(g->hasmax && ++g->nsel >= g->maxsel)
++        g->closing = 1;
++
++      if(g->count) {
+         g->matches++;
+-      else {
++
++        if(g->closing) {
++          g->closing = 0;
++          filter_in_close(&g->in);
++        }
++      } else {
+         if(!g->multiple && !g->show_lineno && had_nl && len == full && line != g->in.spill) {
+           *sp = line;
+           *np = len + 1; /* the newline is right behind it */
+@@ -214,7 +239,7 @@ grep_step(void* arg, const char** sp, size_t* np) {
+         g->out.len = 0;
+ 
+         if(g->multiple) {
+-          stralloc_cats(&g->out, filter_in_name(&g->in));
++          stralloc_cats(&g->out, grep_name(&g->in));
+           stralloc_catc(&g->out, ':');
+         }
+ 
+@@ -289,6 +314,19 @@ grep_option(void* ctx, int c) {
+       return 0;
+     }
+ 
++    case 'h': g->nofile = 1; return 0;
++
++    case 'm':
++      g->hasmax = 1;
++
++      if(filter_opt_count(shell_optarg, &g->maxsel) < 0) {
++        g->in.err_arg = shell_optarg;
++        g->in.err_msg = "invalid maximum count";
++        return -1;
++      }
++
++      return 0;
++
+     case 'l': g->list = 1; return 0;
+     case 's': g->nomsg = 1; return 0;
+     case 'i': g->icase = 1; return 0;
+@@ -308,9 +346,10 @@ grep_setup(void* ctx) {
+   const char* pattern;
+ 
+   g->in.silent = g->nomsg; /* filter_in_init() cleared it after option() */
++  g->done = g->hasmax && !g->maxsel; /* -m 0 selects nothing */
+ 
+   if(g->haspat && !g->epat.len) {
+-    g->multiple = g->in.files && g->in.files[0] && g->in.files[1];
++    g->multiple = g->in.files && g->in.files[0] && g->in.files[1] && !g->nofile;
+     g->lineno = 1;
+     return 0;
+   }
+@@ -331,7 +370,7 @@ grep_setup(void* ctx) {
+       g->in.files = NULL;
+   }
+ 
+-  g->multiple = g->in.files && g->in.files[0] && g->in.files[1];
++  g->multiple = g->in.files && g->in.files[0] && g->in.files[1] && !g->nofile;
+   g->lineno = 1;
+ 
+   if(g->fixed) {
+@@ -412,7 +451,7 @@ grep_finish(void* ctx) {
+ }
+ 
+ const struct filter_ops grep_ops = {
+-    .opts = "EFe:f:ilsvxnqc",
++    .opts = "EFe:f:hilm:svxnqc",
+     .size = sizeof(struct grep),
+     .option = grep_option,
+     .setup = grep_setup,
