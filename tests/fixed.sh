@@ -6165,4 +6165,8 @@ assert_equal "[~][x~][/h]" "$PX" "\\~ in a \${a-word} is not tilde-expanded"
 PX=$("$SHISH_SELF" -c 'cd /tmp a 2>/dev/null; echo $?; cd -P -e /tmp; echo $?')
 assert_equal "1 0" "$(echo $PX)" "cd rejects a second operand and accepts -e"
 
+# ${x?word} names the parameter in its diagnostic
+PX=$("$SHISH_SELF" -c 'echo ${x?boom}' 2>&1)
+assert_match "$PX" "*x: boom" "the \${x?boom} diagnostic starts the message with the parameter name"
+
 summary

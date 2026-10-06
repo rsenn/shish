@@ -368,7 +368,23 @@ expand_param(struct nargparam* param, union node** nptr, int flags) {
           expand_copysa(word, &msg, flags);
           expand_param_tilde_free(word, param->word);
         }
-        sh_error(param->word ? msg.s : "parameter null or not set");
+        if(!param->word)
+          stralloc_cats(&msg, "parameter null or not set");
+
+        if(param->name && param->name[0]) {
+          stralloc named = {0, 0, 0};
+
+          stralloc_cats(&named, param->name);
+          stralloc_cats(&named, ": ");
+          stralloc_catb(&named, msg.s, msg.len);
+          stralloc_nul(&named);
+          sh_error(named.s);
+          stralloc_free(&named);
+        } else {
+          stralloc_nul(&msg);
+          sh_error(msg.s);
+        }
+
         stralloc_free(&msg);
 
         /* POSIX 2.8.1: an expansion error ends a non-interactive
