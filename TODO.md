@@ -1086,7 +1086,8 @@ Port check: a few callers use the returned node as "something was appended" (`n 
   (`sh_setargs` already `str_dup`s).
 
 **Order of work.** Each step builds, passes `tests/posix` + `tests/yash` counts unchanged, and is its own commit.
-0. `tests/expand-fields.sh`: the characterization test from section 17 "Risks", values from bash and dash.
+0. DONE: `tests/expand-fields.sh` (131 assertions, every value agreed on by bash and dash, passes under all three
+   shells). It found one deviation, `BUGS: param-assign-default-not-split`, which is not in the file.
 1. Module and string mode only: `expand_copysa/catsa/tosa/str/tostr` and `expand_arith_expr` stop using nodes.
    Smallest behaviour surface (case, redirections, prompts) and it deletes `tmpnode`.
 2. Port `expand_cat`'s state machine and `expand_glob` into `wordlist_cat`/`_close`; `expand_args` and `expand_argv`

@@ -467,3 +467,11 @@
   f() { echo fn; }; o=$(timeout 5 f); echo "[$o]"     # "[]"; should be "[fn]"
   o=$(timeout 5 echo hi); echo "[$o]"                  # "[hi]" (ok)
   ```
+
+- param-assign-default-not-split: the result of an unquoted `${x:=word}` is not field-split, while
+  `${x:-word}` is. dash and bash split it. Found by `tests/expand-fields.sh`.
+
+  **Repro:**
+  ```sh
+  set -- ${x:=a b}; echo $#     # 1; dash and bash print 2
+  ```
