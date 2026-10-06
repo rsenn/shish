@@ -156,9 +156,7 @@
   ```
 
 - alias-substitution-remaining-cases: alias substitution now happens in
-  `parse_gettok()` (`alias-p.tst` 60/65). Still open:
-  - `alias-p.tst:108` `(...)` runs in-process, so `alias`/`unalias` in a
-    subshell changes the parent's table (`TODO.md` Goal 4).
+  `parse_gettok()` (`alias-p.tst` 62/65). Still open:
   - `:430` an alias that expands to `()` after a function name
     (`alias f='f ' p='()'; f p`): the `name (` test in
     `parse_command.c` looks at the raw next character, not at aliases.

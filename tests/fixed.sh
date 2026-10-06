@@ -6149,4 +6149,12 @@ assert_equal "'a'" "$PX" "single quotes in the word of a double-quoted \${x:-wor
 PX=$("$SHISH_SELF" -c 'case [[ in [[) echo m;; *) echo n;; esac; case "a[" in a[) echo m;; *) echo n;; esac')
 assert_equal "m m" "$(echo $PX)" "an unterminated [ in a case pattern matches itself literally"
 
+# aliases defined in a subshell or command substitution do not leak into the parent
+PX=$("$SHISH_SELF" -c "alias a='echo ABC'
+(alias a='echo BCD')
+a
+x=\$(alias a='echo CDE')
+a")
+assert_equal "ABC ABC" "$(echo $PX)" "alias defined in ( ) or \$( ) is gone afterwards"
+
 summary

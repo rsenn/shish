@@ -6,6 +6,7 @@
 #include "../fd.h"
 #include "../fdstack.h"
 #include "../sh.h"
+#include "../source.h"
 #include "../tree.h"
 #include "../var.h"
 #include "../../lib/windoze.h"
@@ -38,6 +39,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
   int ret;
   stralloc sa;
   struct func_snapshot funcs;
+  struct alias* aliases;
 #if BUILTIN_TRAP
   void* traps_snap;
 #endif
@@ -75,6 +77,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
      environment, not the calling shell's state. */
   sh_push(&she);
   exec_functions_save(&funcs);
+  aliases = alias_scan_save(); /* aliases defined in here stay in here */
 
 #if BUILTIN_TRAP
   /* traps live in a process-global list, so a "trap" run inside
@@ -101,6 +104,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
 #if BUILTIN_TRAP
   trap_snapshot_restore(traps_snap);
 #endif
+  alias_scan_restore(aliases);
   exec_functions_restore(&funcs);
   sh_pop(&she);
   vartab_pop(&vars);

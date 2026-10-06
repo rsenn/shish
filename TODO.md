@@ -218,7 +218,7 @@ have any; the full `ctest` run has 12 failing tests, 3 of them `tests/*.sh` that
 or the other known causes in `BUGS`):
 
 ```
-4 alias-p  61/65    1 param-p 53/54    1 quote-p 34/35    0 case-p 52/52
+3 alias-p  62/65    1 param-p 53/54    1 quote-p 34/35    0 case-p 52/52
 1 input-p  10/11    1 option-p 74/75   1 simple-p 33/34
 ```
 
@@ -275,7 +275,7 @@ reports `line 2: x: boom`. `$LINENO` itself is correct. Fix with, and verify aga
 
 ### Phase 3 [Stage 2: builtins/utilities]
 
-1. `alias` (61/65) - the 4 left are in `BUGS: alias-substitution-remaining-cases`.
+1. `alias` (62/65) - the 3 left are in `BUGS: alias-substitution-remaining-cases`.
 2. `read` (28/28) and `option` (74/75) are done apart from the intentional deviations.
 3. **`set`** - `-b` is accepted and shown in `$-` but has no effect (`BUGS: set-notify-no-effect`);
    `-v` echoes input lines (`BUGS: set-verbose-partial`); `ignoreeof`, `nolog`, `vi` are accepted
@@ -420,6 +420,9 @@ for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility
 - tests as a normal user in a user namespace that skip themselves when the builtin or the privilege is missing.
 
 ### Loop findings that need a design decision (not fixed, see `BUGS`)
+
+- `input-p:89`: `x=$(alias false=:\nfalse)` needs `$(...)` parsed line by line while it runs; shish (like
+  dash, which also gives status 1) parses the whole substitution first, so the alias is not seen.
 
 - `while-y.tst` hang: `while echo x; do done` (empty body) is accepted and loops forever; that is the
   case under `posix="true"` in the suite, where a syntax error is expected. `parse_loop()` takes an

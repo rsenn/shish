@@ -1,0 +1,137 @@
+diff --git a/src/eval/eval_subshell.c b/src/eval/eval_subshell.c
+index a861be6e..be02b3ab 100644
+--- a/src/eval/eval_subshell.c
++++ b/src/eval/eval_subshell.c
+@@ -4,6 +4,7 @@
+ #include "../exec.h"
+ #include "../fdstack.h"
+ #include "../sh.h"
++#include "../source.h"
+ #include "../tree.h"
+ #include "../vartab.h"
+ #include "builtin_config.h"
+@@ -23,6 +24,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
+   struct fd_state fdst;
+   struct vartab vars;
+   struct func_snapshot funcs;
++  struct alias* aliases;
+ #if BUILTIN_TRAP
+   void* traps_snap;
+ #endif
+@@ -47,6 +49,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
+      scoped to env frames, so subshells leak them into the parent unless we
+      snapshot/restore around the eval. See exec_functions_save. */
+   exec_functions_save(&funcs);
++  aliases = alias_scan_save(); /* aliases defined in here stay in here */
+ 
+ #if BUILTIN_TRAP
+   /* traps are likewise a process-global list -- see trap_snapshot_save
+@@ -90,6 +93,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
+ #if BUILTIN_TRAP
+   trap_snapshot_restore(traps_snap);
+ #endif
++  alias_scan_restore(aliases);
+   exec_functions_restore(&funcs);
+   sh_pop(&she);
+   vartab_pop(&vars);
+diff --git a/src/expand/expand_command.c b/src/expand/expand_command.c
+index 86c9c60c..bdf1abbc 100644
+--- a/src/expand/expand_command.c
++++ b/src/expand/expand_command.c
+@@ -6,6 +6,7 @@
+ #include "../fd.h"
+ #include "../fdstack.h"
+ #include "../sh.h"
++#include "../source.h"
+ #include "../tree.h"
+ #include "../var.h"
+ #include "../../lib/windoze.h"
+@@ -38,6 +39,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
+   int ret;
+   stralloc sa;
+   struct func_snapshot funcs;
++  struct alias* aliases;
+ #if BUILTIN_TRAP
+   void* traps_snap;
+ #endif
+@@ -75,6 +77,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
+      environment, not the calling shell's state. */
+   sh_push(&she);
+   exec_functions_save(&funcs);
++  aliases = alias_scan_save(); /* aliases defined in here stay in here */
+ 
+ #if BUILTIN_TRAP
+   /* traps live in a process-global list, so a "trap" run inside
+@@ -101,6 +104,7 @@ expand_command(struct nargcmd* cmd, union node** nptr, int flags) {
+ #if BUILTIN_TRAP
+   trap_snapshot_restore(traps_snap);
+ #endif
++  alias_scan_restore(aliases);
+   exec_functions_restore(&funcs);
+   sh_pop(&she);
+   vartab_pop(&vars);
+diff --git a/src/source.h b/src/source.h
+index 8e4ab3db..9a7687b9 100644
+--- a/src/source.h
++++ b/src/source.h
+@@ -70,8 +70,12 @@ int source_alias_active(const void* alias);
+ #if BUILTIN_ALIAS
+ void source_alias_reset(void);
+ void source_alias_pop(void);
++struct alias* alias_scan_save(void);
++void alias_scan_restore(struct alias*);
+ #else
+ #define source_alias_reset() ((void)0)
++#define alias_scan_save() ((struct alias*)0)
++#define alias_scan_restore(a) ((void)(a))
+ #endif
+ void source_pop(void);
+ void source_popfd(struct fd*);
+diff --git a/src/source/source_alias.c b/src/source/source_alias.c
+index 8860f9a8..e70b0191 100644
+--- a/src/source/source_alias.c
++++ b/src/source/source_alias.c
+@@ -1,4 +1,5 @@
+ #include "../fd.h"
++#include "../parse.h"
+ #include "../source.h"
+ #include "../../lib/alloc.h"
+ #include "../../lib/byte.h"
+@@ -74,4 +75,37 @@ source_alias_reset(void) {
+ 
+   alias_scan.tokskips_set = 0;
+ }
++
++/* a subshell works on a copy of the alias list; restore drops the copy
++ * ----------------------------------------------------------------------- */
++struct alias*
++alias_scan_save(void) {
++  struct alias *saved = alias_scan.list, **tail = &alias_scan.list, *a;
++
++  alias_scan.list = NULL;
++
++  for(a = saved; a; a = a->next) {
++    size_t n = sizeof(struct alias) + a->namelen + 1 + a->codelen + 1;
++    struct alias* c = alloc(n);
++
++    byte_copy(c, n, a);
++    c->next = NULL;
++    *tail = c;
++    tail = &c->next;
++  }
++
++  return saved;
++}
++
++void
++alias_scan_restore(struct alias* saved) {
++  struct alias* a;
++
++  while((a = alias_scan.list)) {
++    alias_scan.list = a->next;
++    alloc_free(a);
++  }
++
++  alias_scan.list = saved;
++}
+ #endif

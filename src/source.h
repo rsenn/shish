@@ -70,8 +70,12 @@ int source_alias_active(const void* alias);
 #if BUILTIN_ALIAS
 void source_alias_reset(void);
 void source_alias_pop(void);
+struct alias* alias_scan_save(void);
+void alias_scan_restore(struct alias*);
 #else
 #define source_alias_reset() ((void)0)
+#define alias_scan_save() ((struct alias*)0)
+#define alias_scan_restore(a) ((void)(a))
 #endif
 void source_pop(void);
 void source_popfd(struct fd*);

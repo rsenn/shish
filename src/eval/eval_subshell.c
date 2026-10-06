@@ -4,6 +4,7 @@
 #include "../exec.h"
 #include "../fdstack.h"
 #include "../sh.h"
+#include "../source.h"
 #include "../tree.h"
 #include "../vartab.h"
 #include "builtin_config.h"
@@ -23,6 +24,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
   struct fd_state fdst;
   struct vartab vars;
   struct func_snapshot funcs;
+  struct alias* aliases;
 #if BUILTIN_TRAP
   void* traps_snap;
 #endif
@@ -47,6 +49,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
      scoped to env frames, so subshells leak them into the parent unless we
      snapshot/restore around the eval. See exec_functions_save. */
   exec_functions_save(&funcs);
+  aliases = alias_scan_save(); /* aliases defined in here stay in here */
 
 #if BUILTIN_TRAP
   /* traps are likewise a process-global list -- see trap_snapshot_save
@@ -90,6 +93,7 @@ eval_subshell(struct eval* e, struct ngrp* ngrp) {
 #if BUILTIN_TRAP
   trap_snapshot_restore(traps_snap);
 #endif
+  alias_scan_restore(aliases);
   exec_functions_restore(&funcs);
   sh_pop(&she);
   vartab_pop(&vars);

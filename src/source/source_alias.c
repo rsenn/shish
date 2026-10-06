@@ -1,4 +1,5 @@
 #include "../fd.h"
+#include "../parse.h"
 #include "../source.h"
 #include "../../lib/alloc.h"
 #include "../../lib/byte.h"
@@ -73,5 +74,38 @@ source_alias_reset(void) {
   }
 
   alias_scan.tokskips_set = 0;
+}
+
+/* a subshell works on a copy of the alias list; restore drops the copy
+ * ----------------------------------------------------------------------- */
+struct alias*
+alias_scan_save(void) {
+  struct alias *saved = alias_scan.list, **tail = &alias_scan.list, *a;
+
+  alias_scan.list = NULL;
+
+  for(a = saved; a; a = a->next) {
+    size_t n = sizeof(struct alias) + a->namelen + 1 + a->codelen + 1;
+    struct alias* c = alloc(n);
+
+    byte_copy(c, n, a);
+    c->next = NULL;
+    *tail = c;
+    tail = &c->next;
+  }
+
+  return saved;
+}
+
+void
+alias_scan_restore(struct alias* saved) {
+  struct alias* a;
+
+  while((a = alias_scan.list)) {
+    alias_scan.list = a->next;
+    alloc_free(a);
+  }
+
+  alias_scan.list = saved;
 }
 #endif
