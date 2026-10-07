@@ -1,5 +1,7 @@
 cfg() {
- (if type gcc 2>/dev/null >/dev/null && type g++ 2>/dev/null >/dev/null; then
+ (# a toolchain file names its own compiler: only a CC from the caller may override it
+  [ -e "$TOOLCHAIN" ] && [ -z "$CC" ] && toolchain_cc=
+  if type gcc 2>/dev/null >/dev/null && type g++ 2>/dev/null >/dev/null; then
     : ${CC:=gcc} ${CXX:=g++}
   elif type clang 2>/dev/null >/dev/null && type clang++ 2>/dev/null >/dev/null; then
     : ${CC:=clang} ${CXX:=clang++}
@@ -62,12 +64,10 @@ cfg() {
     ${VERBOSE:+-DCMAKE_VERBOSE_MAKEFILE=${VERBOSE:-OFF}} \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
     -DCMAKE_BUILD_TYPE="${TYPE:-Debug}" \
-    ${CC:+-DCMAKE_C_COMPILER="$CC"} \
-    ${CXX:+-DCMAKE_CXX_COMPILER="$CXX"} \
+    ${toolchain_cc-${CC:+-DCMAKE_C_COMPILER="$CC"}} \
+    ${toolchain_cc-${CXX:+-DCMAKE_CXX_COMPILER="$CXX"}} \
     ${PKG_CONFIG:+-DPKG_CONFIG_EXECUTABLE="$PKG_CONFIG"} \
     ${TOOLCHAIN:+-DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN"} \
-    ${CC:+-DCMAKE_C_COMPILER="$CC"} \
-    ${CXX:+-DCMAKE_CXX_COMPILER="$CXX"} \
     ${MAKE:+-DCMAKE_MAKE_PROGRAM="$MAKE"} \
     "$@" \
     $relsrcdir 

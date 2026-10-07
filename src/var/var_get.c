@@ -11,15 +11,6 @@ var_get(const char* v, size_t* offset) {
     if(offset)
       *offset = var->offset;
 
-    if(var->flags & V_CALL) {
-      ssize_t r;
-
-      while((r = var->call(var->sa.s, var->sa.len)) < 0)
-        stralloc_readyplus(&var->sa, 8);
-
-      var->sa.len = r;
-    }
-
     return var->sa.s;
   }
 

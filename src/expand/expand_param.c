@@ -388,6 +388,8 @@ expand_param(struct nargparam* param, wordlist* wl, int flags) {
            the surrounding word; expand_arg() below appends onto it,
            so only the bytes after this snapshot are the value to assign. */
         size_t before = wl->has && !wl->closed ? wl->cur->len : 0;
+        unsigned had = wl->has, closed = wl->closed, pend = wl->pend;
+        unsigned state = wl->state;
         union node* word = expand_param_tilde(param->word);
 
         expand_arg(word, wl, flags | X_NOSPLIT);
@@ -411,6 +413,19 @@ expand_param(struct nargparam* param, wordlist* wl, int flags) {
         /* "${IFS=X}" changes how the rest of the command splits */
         if(wl->ar)
           wl->ifs = var_vdefault("IFS", IFS_DEFAULT, NULL);
+
+        /* unquoted, the assigned value splits like ${x:-word}: take it
+           back out of the open field and add it again through wordlist_cat() */
+        if(!(flags & (X_NOSPLIT | X_QUOTED))) {
+          size_t off;
+          const char* a = var_get(param->name, &off);
+
+          if(a && a[off]) {
+            wl->has = had, wl->closed = closed, wl->pend = pend, wl->state = state;
+            wl->cur->len = before;
+            wordlist_cat(wl, &a[off], str_len(&a[off]), flags);
+          }
+        }
       }
 
       break;

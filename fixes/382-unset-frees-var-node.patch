@@ -1,0 +1,89 @@
+diff --git a/src/var.h b/src/var.h
+index b4256d8d..f490f631 100644
+--- a/src/var.h
++++ b/src/var.h
+@@ -24,11 +24,10 @@
+ #define V_UNSET 0x20
+ #define V_INIT 0x40 /* do only set when unset */
+ #define V_READONLY 0x80
+-#define V_CALL 0x100
+ 
+ #define VAR_FLAG_NAMES \
+   ((const char* const[]){ \
+-      "FREE", "FREESTR", "ZEROSA", "EXPORT", "LOCAL", "UNSET", "INIT", "READONLY", "CALL"})
++      "FREE", "FREESTR", "ZEROSA", "EXPORT", "LOCAL", "UNSET", "INIT", "READONLY"})
+ 
+ struct search;
+ 
+@@ -45,7 +44,6 @@ struct var {
+       size_t a;
+     };
+   };
+-  ssize_t (*call)(char*, size_t);
+   size_t len;    /* name length */
+   size_t offset; /* offset to value start */
+   int flags;
+@@ -57,7 +55,6 @@ struct var {
+ };
+ 
+ extern struct var* var_list;
+-extern size_t var_exported;
+ /* $RANDOM special-variable state, see var_random.c */
+ extern int var_random_active;
+ 
+diff --git a/src/var/var_get.c b/src/var/var_get.c
+index 8d9a7407..e171a41b 100644
+--- a/src/var/var_get.c
++++ b/src/var/var_get.c
+@@ -11,15 +11,6 @@ var_get(const char* v, size_t* offset) {
+     if(offset)
+       *offset = var->offset;
+ 
+-    if(var->flags & V_CALL) {
+-      ssize_t r;
+-
+-      while((r = var->call(var->sa.s, var->sa.len)) < 0)
+-        stralloc_readyplus(&var->sa, 8);
+-
+-      var->sa.len = r;
+-    }
+-
+     return var->sa.s;
+   }
+ 
+diff --git a/src/var/var_unset.c b/src/var/var_unset.c
+index 5d2c1a2f..bdaf2807 100644
+--- a/src/var/var_unset.c
++++ b/src/var/var_unset.c
+@@ -1,3 +1,4 @@
++#include "../../lib/alloc.h"
+ #include "../../lib/shell.h"
+ #include "../../lib/str.h"
+ #include "../var.h"
+@@ -7,7 +8,7 @@
+  * ----------------------------------------------------------------------- */
+ int
+ var_unset(char* v) {
+-  struct var* var;
++  struct var *var, *parent;
+ 
+   TRACE(TRACE_VAR, "unset", trace_str("name", v), trace_int("level", varstack->level));
+ 
+@@ -20,11 +21,13 @@ var_unset(char* v) {
+   if((var = var_search(v, NULL)) == NULL)
+     return 0;
+ 
++  /* every shadowed level goes too; the node itself is ours when var_create() made it */
+   do {
+-    /*if(var->child && (var->child->flags & V_FREE))
+-      alloc_free(var->child);*/
+-
++    parent = var->parent;
+     var_cleanup(var);
+-  } while((var = var->parent));
++
++    if(var->flags & V_FREE)
++      alloc_free(var);
++  } while((var = parent));
+   return 1;
+ }

@@ -1,0 +1,197 @@
+diff --git a/src/redir/redir_source.c b/src/redir/redir_source.c
+index e9421088..2028f698 100644
+--- a/src/redir/redir_source.c
++++ b/src/redir/redir_source.c
+@@ -47,7 +47,7 @@ redir_source(void) {
+       break;
+     }
+ 
+-    tree_free(redir_list->word);
++    redir_list->delim = redir_list->word;
+     redir_list->word = parse_getarg(&p);
+ 
+     /* free expanded delimiters */
+diff --git a/src/tree.h b/src/tree.h
+index 301b774a..185ca23f 100644
+--- a/src/tree.h
++++ b/src/tree.h
+@@ -251,6 +251,7 @@ struct nredir {
+   union node* next;
+   union node* word; /* can be file, fd, delim, here-doc-data */
+   union node* data; /* next here-doc or expansion */
++  union node* delim; /* here-doc: the delimiter word, kept so tree_cat() can print it */
+   int fdes;
+   struct fd* fd;
+ } SHISH_TREE_PACKED;
+@@ -416,6 +417,9 @@ void tree_cat_n(union node* node, stralloc* sa, int depth);
+ void tree_catlist(union node* node, stralloc* sa, const char* sep);
+ void tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth);
+ void tree_catseparator(stralloc* sa, const char* sep, int depth);
++extern stralloc tree_here;
++void tree_here_enter(void);
++void tree_here_leave(stralloc* sa);
+ union node* tree_newlink(union node** nptr, enum kind nod);
+ unsigned int tree_count(union node* node);
+ union node** tree_append(union node**, union node*);
+diff --git a/src/tree/tree_cat.c b/src/tree/tree_cat.c
+index b8029f87..de0acb4b 100644
+--- a/src/tree/tree_cat.c
++++ b/src/tree/tree_cat.c
+@@ -14,14 +14,35 @@
+  * flag, since a raw "`" would prematurely close the enclosing pair. */
+ static int tree_cat_bqdepth;
+ 
++/* here-doc bodies wait here ("body\nEOF\n") until the line they belong to ends */
++stralloc tree_here;
++static int tree_here_depth;
++
++void
++tree_here_enter(void) {
++  tree_here_depth++;
++}
++
++/* the outermost printer appends what is still waiting, after a newline */
++void
++tree_here_leave(stralloc* sa) {
++  if(--tree_here_depth == 0 && tree_here.len) {
++    stralloc_catc(sa, '\n');
++    stralloc_catb(sa, tree_here.s, tree_here.len - 1);
++    tree_here.len = 0;
++  }
++}
++
+ void
+ tree_cat(union node* node, stralloc* sa) {
++  tree_here_enter();
+   tree_cat_n(node, sa, 0);
+ 
+   /* a lone statement is not wrapped in a list, so its "&" is added here */
+   if(node && tree_isbgnd(node))
+     stralloc_cats(sa, " &");
+ 
++  tree_here_leave(sa);
+   stralloc_nul(sa);
+ }
+ 
+@@ -455,6 +476,65 @@ again:
+           stralloc_catc(sa, '-');
+       }
+ 
++      /* "<<EOF": print the delimiter as written, queue the body and the closing line */
++      if(node->nredir.delim) {
++        stralloc delim;
++        union node* part;
++
++        /* a bare word is a chain of parts with no N_ARG around it to add their quotes */
++        if(node->nredir.delim->id == N_ARGSTR) {
++          for(part = node->nredir.delim; part; part = part->next) {
++            int table = part->nargstr.flag & (S_SQUOTED | S_DQUOTED);
++            char q = table == S_DQUOTED ? '"' : table == S_SQUOTED ? '\'' : 0;
++
++            if(q)
++              stralloc_catc(sa, q);
++            else if(part->nargstr.flag & S_ESCAPED)
++              stralloc_catc(sa, '\\');
++
++            tree_cat_n(part, sa, 0);
++
++            if(q)
++              stralloc_catc(sa, q);
++          }
++        } else
++          tree_catlist(node->nredir.delim, sa, "");
++
++        if(node->nredir.word) {
++          /* an unquoted delimiter leaves "$", "`" and "\\" live in the body: literal ones need their backslash */
++          int live = 1;
++
++          for(part = node->nredir.delim->id == N_ARG ? node->nredir.delim->narg.list : node->nredir.delim; part; part = part->next)
++            if(part->nargstr.flag & (S_TABLE | S_ESCAPED))
++              live = 0;
++
++          for(part = node->nredir.word->narg.list; part; part = part->next) {
++            size_t i;
++
++            if(part->id != N_ARGSTR) {
++              tree_cat_n(part, &tree_here, 0);
++              continue;
++            }
++
++            for(i = 0; i < part->nargstr.view.len; i++) {
++              char c = part->nargstr.view.str[i];
++
++              if(live && (c == '$' || c == '`' || c == '\\'))
++                stralloc_catc(&tree_here, '\\');
++
++              stralloc_catc(&tree_here, c);
++            }
++          }
++        }
++
++        stralloc_init(&delim);
++        expand_str(node->nredir.delim, &delim, 0);
++        stralloc_cat(&tree_here, &delim);
++        stralloc_catc(&tree_here, '\n');
++        stralloc_free(&delim);
++        break;
++      }
++
+       if(node->nredir.flag & R_CLOBBER)
+         stralloc_catc(sa, '|');
+ 
+diff --git a/src/tree/tree_catlist.c b/src/tree/tree_catlist.c
+index febd45e0..52164ed5 100644
+--- a/src/tree/tree_catlist.c
++++ b/src/tree/tree_catlist.c
+@@ -6,7 +6,9 @@ int tree_columnwrap = -1;
+ 
+ void
+ tree_catlist(union node* node, stralloc* sa, const char* sep) {
++  tree_here_enter();
+   tree_catlist_n(node, sa, sep, 0);
++  tree_here_leave(sa);
+   stralloc_nul(sa);
+ }
+ 
+diff --git a/src/tree/tree_catseparator.c b/src/tree/tree_catseparator.c
+index e2f3a890..0cec0432 100644
+--- a/src/tree/tree_catseparator.c
++++ b/src/tree/tree_catseparator.c
+@@ -15,6 +15,12 @@ tree_catseparator(stralloc* sa, const char* sep, int depth) {
+ 
+     stralloc_catc(sa, c);
+ 
++    /* a here-doc body starts on the line after its operator */
++    if(c == '\n' && tree_here.len) {
++      stralloc_cat(sa, &tree_here);
++      tree_here.len = 0;
++    }
++
+     if(c == '\n') {
+       int count;
+ 
+diff --git a/src/tree/tree_copy.c b/src/tree/tree_copy.c
+index 413b45a3..7472bcd9 100644
+--- a/src/tree/tree_copy.c
++++ b/src/tree/tree_copy.c
+@@ -105,6 +105,7 @@ tree_copy(union node* node) {
+ 
+       case N_REDIR:
+         copy->nredir.word = node->nredir.word ? tree_copy(node->nredir.word) : NULL;
++        copy->nredir.delim = node->nredir.delim ? tree_copy(node->nredir.delim) : NULL;
+         break;
+ 
+       case N_ARGSTR:
+diff --git a/src/tree/tree_free.c b/src/tree/tree_free.c
+index 28928a95..e91a5a38 100644
+--- a/src/tree/tree_free.c
++++ b/src/tree/tree_free.c
+@@ -103,6 +103,8 @@ tree_free(union node* node) {
+       case N_REDIR:
+         if(node->nredir.word)
+           tree_free(node->nredir.word);
++        if(node->nredir.delim)
++          tree_free(node->nredir.delim);
+         break;
+ 
+       case N_ARGSTR:

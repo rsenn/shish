@@ -6412,6 +6412,77 @@ hi" "$PX" "an empty expansion in front of or inside the command name does not lo
 PX=$("$SHISH_SELF" -c 'f() { echo "x $1"; return 3; }; i=0; while [ $i -lt 3000 ]; do for j in a b; do while true; do break; done; f $i >/dev/null; k=$(f "$i y"); i=$((i+1)); break; done; done; echo $i')
 assert_equal "3000" "$PX" "break and return out of commands with expanded words in a loop"
 
+## fixes/381: "chmod -x f g" cuts the leading mode out of argv with an overlapping copy
+TESTDIR=$(mktemp -d)
+: >"$TESTDIR/f"; : >"$TESTDIR/g"
+chmod 755 "$TESTDIR/f" "$TESTDIR/g"
+chmod -x "$TESTDIR/f" "$TESTDIR/g"
+test -x "$TESTDIR/f" -o -x "$TESTDIR/g"
+assert_equal "1" "$?" "chmod -x with several operands clears the execute bit on every one"
+rm -rf "$TESTDIR"
+
+## fixes/382: var_unset() freed the value but not the struct var, one leak per set+unset
+if test -r /proc/self/status; then
+  vmrss() { while read k v u; do test "$k" = VmRSS: && echo "$v"; done </proc/self/status; }
+  RSS0=$(vmrss)
+  i=0
+  while test $i -lt 50000; do eval "u$((i % 50))=v"; unset "u$((i % 50))"; i=$((i + 1)); done
+  RSS1=$(vmrss)
+  assert_less "$((RSS1 - RSS0))" "2000" "50000 set+unset cycles do not grow the heap (7 MB before the fix)"
+fi
+
+## fixes/383: tree_cat() printed a here-document's body inside its delimiter word
+hdfn() {
+  cat <<EOF
+b $x \$y `echo c`
+EOF
+  cat <<-'Q Q'
+	$lit \
+Q Q
+  echo after
+}
+X=$(set | sed -n '/^hdfn/,/^}/p')
+assert_equal 'hdfn() {
+  cat <<EOF
+b $x \$y `echo c`
+EOF
+  cat <<-'"'"'Q Q'"'"'
+$lit \
+Q Q
+  echo after;
+}' "$X" "a function dump prints each here-document as <<DELIM, then its body and closing line"
+eval "$X"
+x=1 hdfn >"$TESTDIR.1"
+X2=$(set | sed -n '/^hdfn/,/^}/p')
+assert_equal "$X" "$X2" "a reprinted here-document function prints the same again"
+rm -f "$TESTDIR.1"
+
+## fixes/384: pwd takes no operands (POSIX)
+"$SHISH_SELF" -c 'pwd a' 2>/dev/null
+assert_equal "1" "$?" "pwd with an operand is a usage error"
+PX=$("$SHISH_SELF" -c 'pwd -P | wc -l')
+assert_equal "1" "$PX" "pwd -P without operands still prints the directory"
+
+## fixes/385: the result of an unquoted ${x:=word} is field-split like ${x:-word}
+PX=$("$SHISH_SELF" -c 'set -- ${x:=a b}; echo $#; unset x; set -- "${x:=a b}"; echo $#; unset x; set -- p${x:=" b c "}q; echo $# "$@"; set -- ${y:=}; echo $#')
+assert_equal "2
+1
+4 p b c q
+0" "$PX" "unquoted \${x:=word} splits, quoted does not, an empty one gives no field"
+
+## fixes/386: cfg() must not override a toolchain file's compiler with its default gcc
+CFGDIR=$(mktemp -d)
+echo 'set(CMAKE_C_COMPILER x86_64-w64-mingw32-gcc)' >"$CFGDIR/tc.cmake"
+cat >"$CFGDIR/run.sh" <<EOF
+. "$DIR/../cfg-cmake.sh"
+CMAKE=echo builddir="$CFGDIR/b" cfg 2>&1 | tr ' ' '\\n' | grep -c COMPILER
+EOF
+PX=$(TOOLCHAIN="$CFGDIR/tc.cmake" CC= "$SHISH_SELF" "$CFGDIR/run.sh" 2>/dev/null)
+assert_equal "0" "$PX" "cfg with a toolchain file passes no -DCMAKE_C_COMPILER"
+PX=$(TOOLCHAIN="$CFGDIR/tc.cmake" CC=mycc CXX=mycxx "$SHISH_SELF" "$CFGDIR/run.sh" 2>/dev/null)
+assert_equal "2" "$PX" "an explicit CC still reaches cmake"
+rm -rf "$CFGDIR"
+
 # WASI only, not testable here: eval_time scaled wasi-libc times() (nanoseconds) by
 # sysconf(_SC_CLK_TCK), so "time -p" reported hundreds of seconds. Checked by building
 # build/wasi and running "time -p { loop; }" under Node: real and user now match.

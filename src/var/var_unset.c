@@ -1,3 +1,4 @@
+#include "../../lib/alloc.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
 #include "../var.h"
@@ -7,7 +8,7 @@
  * ----------------------------------------------------------------------- */
 int
 var_unset(char* v) {
-  struct var* var;
+  struct var *var, *parent;
 
   TRACE(TRACE_VAR, "unset", trace_str("name", v), trace_int("level", varstack->level));
 
@@ -20,11 +21,13 @@ var_unset(char* v) {
   if((var = var_search(v, NULL)) == NULL)
     return 0;
 
+  /* every shadowed level goes too; the node itself is ours when var_create() made it */
   do {
-    /*if(var->child && (var->child->flags & V_FREE))
-      alloc_free(var->child);*/
-
+    parent = var->parent;
     var_cleanup(var);
-  } while((var = var->parent));
+
+    if(var->flags & V_FREE)
+      alloc_free(var);
+  } while((var = parent));
   return 1;
 }

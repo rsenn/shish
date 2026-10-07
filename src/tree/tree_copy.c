@@ -105,6 +105,7 @@ tree_copy(union node* node) {
 
       case N_REDIR:
         copy->nredir.word = node->nredir.word ? tree_copy(node->nredir.word) : NULL;
+        copy->nredir.delim = node->nredir.delim ? tree_copy(node->nredir.delim) : NULL;
         break;
 
       case N_ARGSTR:

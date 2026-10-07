@@ -27,6 +27,12 @@ builtin_pwd(int argc, char* argv[]) {
     }
   }
 
+  /* POSIX: pwd [-L|-P] takes no operands */
+  if(argv[shell_optind]) {
+    builtin_errmsg(argv, "too many arguments", NULL);
+    return 1;
+  }
+
   /* if the cwd is physical and a physical path was requested then getcwd() */
   if(sh->cwdsym && physical) {
     stralloc sa;

@@ -14,14 +14,35 @@
  * flag, since a raw "`" would prematurely close the enclosing pair. */
 static int tree_cat_bqdepth;
 
+/* here-doc bodies wait here ("body\nEOF\n") until the line they belong to ends */
+stralloc tree_here;
+static int tree_here_depth;
+
+void
+tree_here_enter(void) {
+  tree_here_depth++;
+}
+
+/* the outermost printer appends what is still waiting, after a newline */
+void
+tree_here_leave(stralloc* sa) {
+  if(--tree_here_depth == 0 && tree_here.len) {
+    stralloc_catc(sa, '\n');
+    stralloc_catb(sa, tree_here.s, tree_here.len - 1);
+    tree_here.len = 0;
+  }
+}
+
 void
 tree_cat(union node* node, stralloc* sa) {
+  tree_here_enter();
   tree_cat_n(node, sa, 0);
 
   /* a lone statement is not wrapped in a list, so its "&" is added here */
   if(node && tree_isbgnd(node))
     stralloc_cats(sa, " &");
 
+  tree_here_leave(sa);
   stralloc_nul(sa);
 }
 
@@ -453,6 +474,65 @@ again:
 
         if(node->nredir.flag & R_STRIP)
           stralloc_catc(sa, '-');
+      }
+
+      /* "<<EOF": print the delimiter as written, queue the body and the closing line */
+      if(node->nredir.delim) {
+        stralloc delim;
+        union node* part;
+
+        /* a bare word is a chain of parts with no N_ARG around it to add their quotes */
+        if(node->nredir.delim->id == N_ARGSTR) {
+          for(part = node->nredir.delim; part; part = part->next) {
+            int table = part->nargstr.flag & (S_SQUOTED | S_DQUOTED);
+            char q = table == S_DQUOTED ? '"' : table == S_SQUOTED ? '\'' : 0;
+
+            if(q)
+              stralloc_catc(sa, q);
+            else if(part->nargstr.flag & S_ESCAPED)
+              stralloc_catc(sa, '\\');
+
+            tree_cat_n(part, sa, 0);
+
+            if(q)
+              stralloc_catc(sa, q);
+          }
+        } else
+          tree_catlist(node->nredir.delim, sa, "");
+
+        if(node->nredir.word) {
+          /* an unquoted delimiter leaves "$", "`" and "\\" live in the body: literal ones need their backslash */
+          int live = 1;
+
+          for(part = node->nredir.delim->id == N_ARG ? node->nredir.delim->narg.list : node->nredir.delim; part; part = part->next)
+            if(part->nargstr.flag & (S_TABLE | S_ESCAPED))
+              live = 0;
+
+          for(part = node->nredir.word->narg.list; part; part = part->next) {
+            size_t i;
+
+            if(part->id != N_ARGSTR) {
+              tree_cat_n(part, &tree_here, 0);
+              continue;
+            }
+
+            for(i = 0; i < part->nargstr.view.len; i++) {
+              char c = part->nargstr.view.str[i];
+
+              if(live && (c == '$' || c == '`' || c == '\\'))
+                stralloc_catc(&tree_here, '\\');
+
+              stralloc_catc(&tree_here, c);
+            }
+          }
+        }
+
+        stralloc_init(&delim);
+        expand_str(node->nredir.delim, &delim, 0);
+        stralloc_cat(&tree_here, &delim);
+        stralloc_catc(&tree_here, '\n');
+        stralloc_free(&delim);
+        break;
       }
 
       if(node->nredir.flag & R_CLOBBER)

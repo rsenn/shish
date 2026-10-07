@@ -24,11 +24,10 @@
 #define V_UNSET 0x20
 #define V_INIT 0x40 /* do only set when unset */
 #define V_READONLY 0x80
-#define V_CALL 0x100
 
 #define VAR_FLAG_NAMES \
   ((const char* const[]){ \
-      "FREE", "FREESTR", "ZEROSA", "EXPORT", "LOCAL", "UNSET", "INIT", "READONLY", "CALL"})
+      "FREE", "FREESTR", "ZEROSA", "EXPORT", "LOCAL", "UNSET", "INIT", "READONLY"})
 
 struct search;
 
@@ -45,7 +44,6 @@ struct var {
       size_t a;
     };
   };
-  ssize_t (*call)(char*, size_t);
   size_t len;    /* name length */
   size_t offset; /* offset to value start */
   int flags;
@@ -57,7 +55,6 @@ struct var {
 };
 
 extern struct var* var_list;
-extern size_t var_exported;
 /* $RANDOM special-variable state, see var_random.c */
 extern int var_random_active;
 

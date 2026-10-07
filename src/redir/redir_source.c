@@ -47,7 +47,7 @@ redir_source(void) {
       break;
     }
 
-    tree_free(redir_list->word);
+    redir_list->delim = redir_list->word;
     redir_list->word = parse_getarg(&p);
 
     /* free expanded delimiters */

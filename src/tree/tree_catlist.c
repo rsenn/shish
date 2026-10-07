@@ -6,7 +6,9 @@ int tree_columnwrap = -1;
 
 void
 tree_catlist(union node* node, stralloc* sa, const char* sep) {
+  tree_here_enter();
   tree_catlist_n(node, sa, sep, 0);
+  tree_here_leave(sa);
   stralloc_nul(sa);
 }
 

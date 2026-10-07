@@ -172,14 +172,11 @@ the named files, update the table above, remove the closed `BUGS` entry, add `fi
   frame, longjmp into `builtin_source()` with a "propagate break/continue by N levels" code, and have it
   clean up and re-issue `eval_jump()` from the caller's frame.
 
-- **Here-documents in `tree_cat()`** (`tree-cat-mangles-here-documents`): `redir_addhere()` fills the
-  body into the redirection node when it is read, in place of the delimiter word, so the printer has
-  neither the delimiter nor the "was it quoted" bit and prints `cat <<"body\n"`. A correct printer needs
-  (1) a delimiter chosen at print time (one that does not occur as a line of the body), (2) the quoting
-  bit kept on the node (quoted delimiter = no expansion in the body), and (3) the body emitted after the
-  next newline of the output, not at the redirection: `cat <<EOF | grep x` has the body after the whole
-  line. That is a queue of pending bodies flushed by `tree_catseparator()`, i.e. a change to the output
-  order of the whole printer, which `set`'s function dump, `trap -p` and `shformat` all share.
+- **Here-documents in `tree_cat()`** (DONE 2026-10-07, `fixes/383`): `redir_source()` keeps the delimiter word
+  in `nredir.delim` (it used to free it), `tree_cat()` prints `<<[-]DELIM` as written and queues the body plus the
+  closing line in `tree_here`, and `tree_catseparator()` flushes the queue after the next newline (the outermost
+  `tree_cat()`/`tree_catlist()` flushes what is left). An unquoted delimiter re-escapes `$`, backtick and `\`
+  in the literal body text; a quoted one prints it raw. `set`'s function dump, `trap -p` and `shformat` share it.
 
 - **Forked function children lose their output inside `$( )`**
   (`timeout-function-output-not-captured-by-command-substitution`): it is not specific to `timeout`.
@@ -207,13 +204,12 @@ the named files, update the table above, remove the closed `BUGS` entry, add `fi
 **Real bugs, but not counted in the `tests/posix` scoreboard** (fix opportunistically):
 `eval-lineno-imprecise-inside-function`,
 `no-tree-print-option-is-a-noop`,
-`cfg-cmake-mingw-silently-builds-native`,
 `quoted-at-then-empty-quotes-drops-field`.
 
 **Found 2026-10-06/07 while porting expansion and reading `src/var*`** (all in `BUGS` with repros; none counted in the
 `tests/posix` scoreboard):
-`chmod-argv-memcpy-overlap` (ASan, `chmod -x f`), `nested-break-trips-eval-pop-assert` (Debug builds only),
-`unset-leaks-the-var-node` (144 bytes per set+unset, section 27). Fixed on the way: quoted here-document delimiters
+`nested-break-trips-eval-pop-assert` (Debug builds only). Fixed since: `chmod-argv-memcpy-overlap` (`fixes/381`),
+`unset-leaks-the-var-node` (`fixes/382`). Fixed on the way: quoted here-document delimiters
 with a blank or glob character were never matched (`fixes/378`); `${u}echo hi`, `$e echo hi`, `$((x))` with blanks
 and `"${IFS=X}"` mid-command changed behaviour with the wordlist port (section 17, "Step 2 done").
 
@@ -1127,12 +1123,12 @@ prefix and `$((x))` all use it; `eval_simple_command` has no node chain, no `all
   their `stra` lines); the `NO_GLOB` `lib/glob.c` lines moved to `src/wordlist/Makefile.in`. `tests/wordlist/diff.c`
   and `bench.c` went with the old chain (the 1.5M-word comparison above is the evidence they produced).
   `size` text 374337 (baseline 376720); ctest, yash suite and ASan+UBSan as after step 2. `redir_eval`'s wrapper
-  `N_ARG` stays: it is a tree node for the tilde helpers, not expansion output. `param-assign-default-not-split` is
-  untouched.
+  `N_ARG` stays: it is a tree node for the tilde helpers, not expansion output. `param-assign-default-not-split` was
+  untouched then and is fixed since (`fixes/385`).
 
 **Order of work.** Each step builds, passes `tests/posix` + `tests/yash` counts unchanged, and is its own commit.
 0. DONE: `tests/expand-fields.sh` (131 assertions, every value agreed on by bash and dash, passes under all three
-   shells). It found one deviation, `BUGS: param-assign-default-not-split`, which is not in the file.
+   shells). It found one deviation, `param-assign-default-not-split` (fixed, `fixes/385`).
 1. DONE (string mode went in with step 2): `expand_str` (and `expand_tostr` on top of it) use string mode; `tmpnode` is still
    in `expand_copysa/catsa`, `expand_tosa` and `expand_arith_expr`. **These cannot move first:** they call
    `expand_arg()`, which hands `union node**` cursors to `expand_param/command/arith`, so they port together with
@@ -2451,7 +2447,7 @@ Evidence first (callgrind, MinSizeRel + all builtins, `tests/wordlist/frag.sh`-s
 3. The sort order is only observable in `set`, `export -p`, `readonly -p`, and the `local` listing. Keeping two sorted
    structures current on every insert to serve those is the wrong way round: sort the n pointers when printing.
 4. The per-scope 64-bucket table is 536 bytes where most scopes hold zero to three variables.
-5. `var_unset` leaks the `struct var` (`BUGS: unset-leaks-the-var-node`, 144 bytes per cycle).
+5. `var_unset` leaked the `struct var` (144 bytes per cycle): fixed, `fixes/382`.
 6. `exec_hash` pays for `PATH` staleness on every command (below), and `var_create` already calls
    `exec_hash_invalidate_all()` for any `PATH` assignment, so the per-command comparison is only needed for the case
    where a scope pop restores an older `PATH` (`PATH=/x cmd`, `local PATH`); the epoch in step 2 covers that one too.
@@ -2497,7 +2493,7 @@ subshells.
 
 **Order of work** (each step its own commit; `tests/fixed.sh` 5 known failures, `expand-fields.sh`, ctest, yash suite
 and ASan+UBSan as for section 17; `size shish` must not grow):
-1. Fix `unset-leaks-the-var-node`; delete `V_CALL`, `call`, `var_exported`. Tiny, independent.
+1. DONE 2026-10-07 (`fixes/382`): fix `unset-leaks-the-var-node`; delete `V_CALL`, `call`, `var_exported`.
 2. `var_epoch` and `V_WATCH` for `PATH` and `IFS` on the *current* structure: `wordlist_init` callers read a cached
    `IFS` pointer, `exec_hash` compares an epoch instead of `var_value("PATH")` plus `strcmp` (see below). Expected:
    about 8% of the instructions in the workload above from `IFS`, about 6% from `PATH`.

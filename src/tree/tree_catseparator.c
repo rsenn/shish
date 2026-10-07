@@ -15,6 +15,12 @@ tree_catseparator(stralloc* sa, const char* sep, int depth) {
 
     stralloc_catc(sa, c);
 
+    /* a here-doc body starts on the line after its operator */
+    if(c == '\n' && tree_here.len) {
+      stralloc_cat(sa, &tree_here);
+      tree_here.len = 0;
+    }
+
     if(c == '\n') {
       int count;
 

@@ -251,6 +251,7 @@ struct nredir {
   union node* next;
   union node* word; /* can be file, fd, delim, here-doc-data */
   union node* data; /* next here-doc or expansion */
+  union node* delim; /* here-doc: the delimiter word, kept so tree_cat() can print it */
   int fdes;
   struct fd* fd;
 } SHISH_TREE_PACKED;
@@ -416,6 +417,9 @@ void tree_cat_n(union node* node, stralloc* sa, int depth);
 void tree_catlist(union node* node, stralloc* sa, const char* sep);
 void tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth);
 void tree_catseparator(stralloc* sa, const char* sep, int depth);
+extern stralloc tree_here;
+void tree_here_enter(void);
+void tree_here_leave(stralloc* sa);
 union node* tree_newlink(union node** nptr, enum kind nod);
 unsigned int tree_count(union node* node);
 union node** tree_append(union node**, union node*);

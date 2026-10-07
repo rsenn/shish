@@ -103,6 +103,8 @@ tree_free(union node* node) {
       case N_REDIR:
         if(node->nredir.word)
           tree_free(node->nredir.word);
+        if(node->nredir.delim)
+          tree_free(node->nredir.delim);
         break;
 
       case N_ARGSTR:

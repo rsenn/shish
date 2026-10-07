@@ -269,7 +269,7 @@ builtin_chmod(int argc, char* argv[]) {
 
     if(chmod_only(q, "rwxXstugoa+-=,") && !chmod_only(q, "vcfR")) {
       premode = argv[c];
-      byte_copy(&argv[c], (argc - c) * sizeof(char*), &argv[c + 1]);
+      byte_copyr(&argv[c], (argc - c) * sizeof(char*), &argv[c + 1]);
       argc--;
       break;
     }
