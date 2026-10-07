@@ -1,3 +1,20 @@
+ 2026-10-07  Roman Senn  <roman.l.senn@gmail.com>
+
+   * release 0.10: the first release since 0.9. ChangeLog entries stopped in
+     2005; since then the work is recorded in fixes/ (one numbered patch per
+     fixed bug, 1-400) and the git log. Highlights of this release:
+     - 6151 of the cases in yash's POSIX suite pass, 7 fail (two of them on
+       purpose, as echo and cat are builtins); 6103 more need a terminal
+     - break/continue in a sourced file, set -o ignoreeof, set -v for . and
+       eval, $LINENO in eval, ls -C/-x, head/tail headers for empty files,
+       ulimit -H in a subshell, $(...) output of forked functions
+     - SHISH_TRACE: a runtime-selectable trace of the evaluator (debug builds),
+       documented in doc/debug-output.md
+     - WebAssembly (Emscripten and WASI) builds and a browser playground
+     - cpack packages: a tarball and a .deb
+     Known gaps: job control under a real terminal, bash's += and <(...), fc,
+     vi mode; see BUGS.
+
  2005-04-30  Roman Senn  <smoli (at) paranoya.ch>
 
    * there have been no ChangeLog entries for a long time

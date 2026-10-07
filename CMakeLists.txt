@@ -5,7 +5,7 @@ project(shish C)
 set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 
 set(PACKAGE_NAME shish)
-set(PACKAGE_VERSION 0.9)
+set(PACKAGE_VERSION 0.10)
 set(PACKAGE_TARNAME "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 
 # Set a default build type if none was specified
@@ -456,3 +456,26 @@ if(DO_TESTS)
     endforeach()
   endforeach()
 endif()
+
+# cpack: a tarball of the installed files, plus a .deb when dpkg is there
+#   cmake --build build/x86_64-linux-gnu && (cd build/x86_64-linux-gnu && cpack)
+string(TOLOWER "${CMAKE_SYSTEM_NAME}" PACKAGE_SYSTEM)
+set(CPACK_PACKAGE_NAME "${PACKAGE_NAME}")
+set(CPACK_PACKAGE_VERSION "${PACKAGE_VERSION}")
+set(CPACK_PACKAGE_CONTACT "Roman Senn <roman.l.senn@gmail.com>")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "a small POSIX-ish shell in C")
+set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/rsenn/shish")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
+set(CPACK_PACKAGE_FILE_NAME "${PACKAGE_NAME}-${PACKAGE_VERSION}-${PACKAGE_SYSTEM}-${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_GENERATOR TGZ)
+set(CPACK_SOURCE_GENERATOR TGZ)
+
+find_program(DPKG_EXECUTABLE dpkg)
+
+if(DPKG_EXECUTABLE AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  list(APPEND CPACK_GENERATOR DEB)
+  set(CPACK_DEBIAN_PACKAGE_SECTION shells)
+  set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+endif()
+
+include(CPack)
