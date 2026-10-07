@@ -206,10 +206,10 @@ the named files, update the table above, remove the closed `BUGS` entry, add `fi
 `no-tree-print-option-is-a-noop`,
 `quoted-at-then-empty-quotes-drops-field`.
 
-**Found 2026-10-06/07 while porting expansion and reading `src/var*`** (all in `BUGS` with repros; none counted in the
-`tests/posix` scoreboard):
-`nested-break-trips-eval-pop-assert` (Debug builds only). Fixed since: `chmod-argv-memcpy-overlap` (`fixes/381`),
-`unset-leaks-the-var-node` (`fixes/382`). Fixed on the way: quoted here-document delimiters
+**Found 2026-10-06/07 while porting expansion and reading `src/var*`** (none counted in the `tests/posix` scoreboard),
+all fixed since: `chmod-argv-memcpy-overlap` (`fixes/381`), `unset-leaks-the-var-node` (`fixes/382`),
+`nested-break-trips-eval-pop-assert` (`fixes/387`; a real bug in release builds too: the enclosing loop's `break` was
+ignored). Fixed on the way: quoted here-document delimiters
 with a blank or glob character were never matched (`fixes/378`); `${u}echo hi`, `$e echo hi`, `$((x))` with blanks
 and `"${IFS=X}"` mid-command changed behaviour with the wordlist port (section 17, "Step 2 done").
 
@@ -1091,7 +1091,7 @@ prefix and `$((x))` all use it; `eval_simple_command` has no node chain, no `all
 - **Checks:** `expand-fields.sh` 131/131; `fixed.sh` the same 5 known failures (plus 3 new cases); ctest fails
   the same 6 tests with the same counts; `tests/yash` (all but `random-y`) identical to the baseline binary file by
   file; ASan+UBSan run of `fixed.sh` and every `tests/*.sh` clean in `src/expand`, `src/eval`, `src/wordlist`.
-  Found on the way, not caused by this: `BUGS: chmod-argv-memcpy-overlap`, `nested-break-trips-eval-pop-assert`.
+  Found on the way, not caused by this: `chmod-argv-memcpy-overlap` and `nested-break-trips-eval-pop-assert` (both fixed since, `fixes/381`, `fixes/387`).
 - **Measured** (real shell, `: a b c d e f g h $v1 "$v2 x" $((n+1))` in a `while` loop, MinSizeRel, all builtins):
 
   | | before | after |

@@ -6483,6 +6483,16 @@ PX=$(TOOLCHAIN="$CFGDIR/tc.cmake" CC=mycc CXX=mycxx "$SHISH_SELF" "$CFGDIR/run.s
 assert_equal "2" "$PX" "an explicit CC still reaches cmake"
 rm -rf "$CFGDIR"
 
+## fixes/387: eval_loop() reset the current eval frame to its caller's after a break, so a
+## "break" in the enclosing for-loop's body found no loop (and Debug builds asserted)
+PX=$("$SHISH_SELF" -c 'for j in a b; do while true; do break; done; echo $j; break; done; echo done')
+assert_equal "a
+done" "$PX" "a break after an inner loop's own break still leaves the enclosing for loop"
+PX=$("$SHISH_SELF" -c 'for j in a b; do for k in x y; do while true; do break; done; echo $j$k; continue 2; done; done; echo done')
+assert_equal "ax
+bx
+done" "$PX" "continue 2 after an inner while loop's break reaches the outer for loop"
+
 # WASI only, not testable here: eval_time scaled wasi-libc times() (nanoseconds) by
 # sysconf(_SC_CLK_TCK), so "time -p" reported hundreds of seconds. Checked by building
 # build/wasi and running "time -p { loop; }" under Node: real and user now match.

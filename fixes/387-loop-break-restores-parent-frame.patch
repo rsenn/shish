@@ -1,0 +1,15 @@
+diff --git a/src/eval/eval_loop.c b/src/eval/eval_loop.c
+index c01afcea..1c34abfd 100644
+--- a/src/eval/eval_loop.c
++++ b/src/eval/eval_loop.c
+@@ -32,7 +32,9 @@ eval_loop(struct eval* e, struct nloop* nloop) {
+      body's own last command had left sh->exitcode at directly, rather
+      than this compound command's own, just-computed aggregate result. */
+   if(setjmp(en.jumpbuf) & 1) {
+-    eval = e;
++    /* what eval_pop() would restore; "e" is the caller's frame, not necessarily the current one
++       (a for loop around this one runs its body against its own caller) */
++    eval = en.parent;
+     return sh->exitcode = e->exitcode;
+   }
+ 
