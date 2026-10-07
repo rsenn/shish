@@ -40,13 +40,6 @@ parse_error(struct parser* p, enum tok_flag toks) {
 
     buffer_putnlflush(fd_err->w);
 
-#if 0 // defined(DEBUG_OUTPUT_) && defined(DEBUG_PARSE)
-    if(p->node) {
-      buffer_puts(fd_err->w, p->tree ? "tree: " : "node: ");
-      debug_node(p->tree ? p->tree : p->node, -1);
-      buffer_putnlflush(fd_err->w);
-    }
-#endif
 
     /* POSIX: a non-interactive shell exits on a syntax error --
        sh_interactive (sh.h), the whole session's own interactive-

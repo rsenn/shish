@@ -148,10 +148,6 @@ term_read(int fd, void* vbuf, size_t len, void* arg) {
     if((ret = buffer_getc(&term_input, &c)) <= 0)
       break;
 
-#ifdef DEBUG_OUTPUT_
-    debug_char("term_read.c", c);
-    debug_nl();
-#endif
     /* vi command mode: printable keys are commands, control keys stay */
     if(term_vi_cmd && c >= 32 && c != 127) {
       term_vimode(c);
@@ -200,9 +196,5 @@ term_read(int fd, void* vbuf, size_t len, void* arg) {
   }
 fail:
   term_reading = 0;
-#ifdef DEBUG_OUTPUT_
-  debug_ulong("term_read.ret", ret, 0);
-  debug_nl();
-#endif
   return ret;
 }

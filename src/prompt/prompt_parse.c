@@ -59,8 +59,4 @@ prompt_parse(void) {
 
   /* now leave the context in which the prompt was parsed */
   source_popfd(&fd);
-
-#ifdef DEBUG_OUTPUT_
-/*  debug_list(prompt_node, 0);*/
-#endif /* DEBUG_OUTPUT */
 }

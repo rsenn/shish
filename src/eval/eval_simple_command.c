@@ -187,18 +187,6 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
         fd_allocbuf(r->nredir.fd, FD_BUFSIZE);
     }
 
-#ifdef DEBUG_OUTPUT_
-    buffer_puts(debug_output, "Redirection ");
-    debug_node(r, -1);
-
-    if(r->nredir.fd) {
-      buffer_puts(debug_output, "fd { n= ");
-      buffer_putlong(debug_output, r->nredir.fd->n);
-      buffer_puts(debug_output, " }");
-    }
-
-    debug_nl_fl();
-#endif
   }
 
   /* POSIX 2.9.1: the redirections are performed before the assignments are expanded
@@ -218,14 +206,6 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
     expand_vars(ncmd->vars, &wla);
     assigns = wordlist_argv(&wla, &nassign);
 
-#ifdef DEBUG_OUTPUT_
-    if(ncmd->vars) {
-      buffer_puts(debug_output, "Vars ");
-      debug_list(ncmd->vars, 0);
-      debug_nl_fl();
-      buffer_puts(debug_output, "Assigns ");
-    }
-#endif
     /* if we don't exit after the command, have a command and not a
        special builtin the variable changes should be temporary --
        pushed as a function-like scope (the "1") so that a *non-local*

@@ -57,9 +57,6 @@ source_skip(void) {
   if(b->p < b->n) {
     c = b->x[b->p];
 
-#ifdef DEBUG_OUTPUT_
-    debug_char("source_skip", c);
-#endif
 
     b->p++;
     source_skips++;
