@@ -12,31 +12,28 @@ that runs under shish is meant to keep running under `sh`.
 ## Where it stands
 
 The measurable target is yash's POSIX conformance suite, which ships in
-`tests/posix` (120 files, 12195 cases).
+`tests/posix` (120 files, 12261 cases).
 
 ```
-cases 12195   passed 5541   failed 551   skipped 6103
+cases 12261   passed 6151   failed 7   skipped 6103
 ```
 
-The 6103 skips are not passes: most of them need a controlling terminal
-(the `sigttin`/`sigttou`/`sigtstp` families, `testtty-p`, `wait-p`) and
-are not run in a normal CI environment.
+The 6103 skips are not passes: they need a controlling terminal (the
+`sigttin`/`sigttou`/`sigtstp` families, `testtty-p`, `wait-p`) and are not
+run in a normal CI environment.
 
-Clean files, as of this writing: `andor arith cd errexit error eval exec
-for fsplit getopts grouping if kill3 nop option path ppid readonly test
-until while`, plus six of the low-numbered `sig*-p` files
-(`sigcont2 sighup2 sigint2 sigquit2 sigterm2 sigurg2`).
+115 of the 120 files have no failure. The seven failing cases:
 
-Where the remaining failures are:
+| file | failures | what |
+|---|---|---|
+| `alias-p` | 3 | an alias expanding to `()` after a function name; an alias ending in `\` before a newline; an alias set inside a function body and used by an earlier-parsed `$(...)` |
+| `input-p` | 1 | a command substitution reads more input than it needs |
+| `quote-p` | 1 | an alias expanded inside a double-quoted command substitution (dash does the same) |
+| `option-p` | 1 | expects `hash` to list a `.../cat` path; `cat` is a builtin |
+| `simple-p` | 1 | expects `PATH=; echo x` to report "not found"; `echo` is a builtin |
 
-| area | state |
-|---|---|
-| signal disposition (`sig*-p`) | 311 failures, mostly the `sig*6-p` files (child process disposition after fork) |
-| `alias` | 48 failures — printing and subshell inheritance are broken |
-| `kill` | 32 failures — `kill -s NAME` fails for most names |
-| quoting / parameter expansion | 36 failures — backslash edge cases, some `${...}` forms |
-| `read` | 22 failures — IFS splitting rules, `-r`, one-line-only reads |
-| `command`, `unset`, `set`, `umask`, `trap`, `redir`, `simple` | 64 failures — assorted option-handling and edge-case gaps |
+The last two are deliberate: with the utilities built in, `PATH=; mkdir -p a; cat a`
+works (see [Builtins](builtins.md)). Every one of them is described in `BUGS`.
 
 `BUGS` lists every confirmed defect with a repro; `TODO.md` is the
 work plan, phase by phase, with the evidence for why each item is where
@@ -116,6 +113,14 @@ sys	0m0.000s
 - It is recognised only at the start of a pipeline, before or after `!`.
   `a | time b`, `command time`, `\time` and `"time"` run `/usr/bin/time`.
 - `TIMEFORMAT` is not supported. A lone `time` is a syntax error.
+
+## Where shish is stricter than bash and dash
+
+- `pwd` takes no operands (POSIX gives it none): `pwd a` is a usage error,
+  status 1. bash and dash ignore the operand.
+- `break` and `continue` do not cross a function or subshell boundary, as in
+  bash, and a loop's `break` after an inner loop's own `break` reaches the
+  enclosing loop.
 
 ## The project's own tests
 

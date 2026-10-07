@@ -13,21 +13,27 @@ utilities a script needs are inside the binary, not on a `PATH`.
 to provide:
 
 ```
-. : alias break cd command eval exec exit export expr getopts hash
-history jobs kill local printf pwd read readonly return set shift
-source test times trap type umask unset wait
+[ alias break cd command continue eval exec exit export expr getopts hash
+history jobs kill local printf pwd read readonly return set shift source test
+times trap type ulimit umask unset wait
 ```
 
-**Default** — the minimal set plus `echo`, `true`, `false`, `help`,
-`type` and `fdtable`. This is what a plain `cfg` build gives you.
+**Default** — the minimal set plus `echo`, `true`, `false`, `help` and
+`fdtable`. This is what a plain `cfg` build gives you.
 
 **Extra** — the reason a shish container image can be a single file:
 
 ```
-basename cat chmod cp date digest dirname env find grep hostname id link ln
-ls mkdir mktemp mv readlink realpath rm rmdir sed sleep sort split tail tee
-timeout touch uname unlink wc which
+awk basename cat chmod compress cp cut date digest dirname dirs dump env find
+grep head hostname id link ln ls mkdir mktemp mv nl paste popd pushd readlink
+realpath rm rmdir sed sleep sort split tail tee timeout touch tr uname
+uncompress uniq unlink wc which xargs
 ```
+
+`src/builtin/builtins.map` is the one list these come from (name, source file,
+tier); the lists above are generated from it. `compress` and `uncompress` are
+the whole family of compressors and decompressors under their usual names
+(`gzip`, `bzip2`, `xz`, `zstd`, `zcat`, `gunzip`, ...), see below.
 
 `cp` and `mv` are one source file (`builtin_cp.c`, one function that looks at
 `argv[0]`); `mv` also needs `rm`'s tree removal, so enabling `mv` compiles
@@ -58,15 +64,34 @@ cfg -DBUILTIN_CAT=ON -DBUILTIN_MKDIR=ON   # just these two on top of the default
 cfg -DBUILTIN_HISTORY=OFF                 # and this one off
 ```
 
-(`-DENABLE_<NAME>=ON/OFF` also works, as the older spelling of
-`-DBUILTIN_<NAME>`.)
-
 The configure step writes `<builddir>/src/builtin_config.h`, which is
 what `src/builtin/builtin_table.c` is compiled against. Nothing you left
 out is linked in.
 
 With autotools, the same choice is
 `./configure --enable-builtins="cat mkdir rm"`.
+
+## Compression codecs
+
+`compress` and `uncompress` sit on libarchive: a system copy when cmake finds
+one, otherwise libarchive and every codec library it needs are built from
+source. Each codec has its own switch, all `ON`:
+
+| option | codec | builtins it provides |
+|---|---|---|
+| `LIBARCHIVE_GZIP` | zlib | `gzip` `gunzip` `zcat` |
+| `LIBARCHIVE_BZIP2` | bzip2 | `bzip2` `lbzip2` `bzcat` `lbzcat` |
+| `LIBARCHIVE_LZMA` | liblzma | `xz` `unxz` `xzcat` `lzma` `lzcat` `lz` |
+| `LIBARCHIVE_ZSTD` | zstd | `zstd` `unzstd` `zstdcat` |
+| `LIBARCHIVE_LZ4` | lz4 | `lz4` `lz4cat` |
+| `LIBARCHIVE_LZO` | lzo2 | `lzop` `lzopcat` |
+
+A codec that is switched off is not built and its names are not in the table,
+which is what makes a small WebAssembly build possible (see [WebAssembly](wasm.md)):
+
+```sh
+cfg -DENABLE_ALL_BUILTINS=ON -DLIBARCHIVE_ZSTD=OFF -DLIBARCHIVE_LZ4=OFF -DLIBARCHIVE_LZO=OFF
+```
 
 ## Regex backend: `text/dfa` or `regex.h`
 

@@ -24,9 +24,9 @@ shish -c 'for f in *.c; do echo "${f%.c}"; done'
 
 shish is **alpha, and not a drop-in `/bin/sh`**. It runs the shell
 language — pipelines, redirections, functions, `case`, loops, parameter
-expansion, arithmetic, job control, traps — and it passes 5541 cases of
-yash's POSIX conformance suite, but there are 551 it still fails and a
-list of known defects in [`BUGS`](BUGS). Do not put it under `init` yet.
+expansion, arithmetic, job control, traps — and it passes 6151 cases of
+yash's POSIX conformance suite and fails 7 (another 6103 need a controlling
+terminal and are skipped); known defects are listed in [`BUGS`](BUGS). Do not put it under `init` yet.
 
 See [Conformance](doc/conformance.md) for what actually works today, and
 [`TODO.md`](TODO.md) for what is being fixed next.
@@ -53,6 +53,7 @@ static linking, and picking which builtins get compiled in.
 | [Agent sandboxes](doc/agents.md) | shish as an AI harness's `/bin/sh` |
 | [WebAssembly](doc/wasm.md) | emscripten and WASI builds |
 | [Conformance](doc/conformance.md) | test suites and current scores |
+| [Debug output](doc/debug-output.md) | `TRACE()` and `SHISH_TRACE`: following the evaluator |
 
 ## Name
 

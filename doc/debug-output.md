@@ -1,625 +1,488 @@
-# Debug output in shish
+# Tracing the shell: `SHISH_TRACE`
 
-Inventory of the existing debug-print code (what is there, where, what it prints, and
-when), the problems found while exercising it, and a plan for a new, uniform
-"trace the evaluator" layer.
+shish can write a trace of what its evaluator decides: which command was looked up, how
+a word expanded, which descriptors a child inherits, when a job forked or a trap ran. One
+event is one line. You choose the subsystems to follow with an environment variable and
+filter the file with `grep`.
 
-Everything in part 1 was checked against a real build (see [How to get debug output](#how-to-get-debug-output)).
-Line numbers are for the tree at the time of writing (`main`, after the `filter-chain` merge)
-and will drift; the function name is the stable handle.
+The trace is built into debug builds only. Without `DEBUG_OUTPUT` every trace point is
+compiled away, so a release binary is unchanged and slower by nothing.
 
-- [1. Existing debug output](#1-existing-debug-output)
-- [2. Problems found](#2-problems-found)
-- [3. Design for the new debug output](#3-design-for-the-new-debug-output)
-- [4. Checkpoints to instrument](#4-checkpoints-to-instrument)
-- [5. Rollout order](#5-rollout-order)
+- [Building a shell with tracing](#building-a-shell-with-tracing)
+- [Choosing what is traced](#choosing-what-is-traced)
+- [Reading a trace](#reading-a-trace)
+- [Modules](#modules)
+- [Finding a bug with it](#finding-a-bug-with-it)
+- [Tools](#tools)
+- [Adding a trace point](#adding-a-trace-point)
+- [Event index](#event-index)
 
----
-
-## 1. Existing debug output
-
-### How to get debug output
+## Building a shell with tracing
 
 ```sh
-cmake -S . -B build/debug -DCMAKE_BUILD_TYPE=Debug \
-  -DDEBUG_OUTPUT=ON -DDEBUG_FD=ON -DDEBUG_FDSTACK=ON -DDEBUG_FDTABLE=ON \
-  -DDEBUG_PARSE=ON -DDEBUG_JOB=ON -DDEBUG_BUILTIN=ON \
-  -DCMAKE_C_FLAGS="-include $PWD/lib/uint64.h"     # work-around, see problem P1
-cmake --build build/debug -j --target shish
-cd /some/scratch/dir && /path/to/build/debug/shish -x -c 'echo a | cat'
-less debug.log
+cmake -S . -B build/dbg -DCMAKE_BUILD_TYPE=Debug -DDEBUG_OUTPUT=ON     # or RelWithDebInfo
+cmake --build build/dbg -j
 ```
 
-| thing | detail |
-|---|---|
-| master switch | `DEBUG_OUTPUT` (`CMakeLists.txt:152`; a `*Deb*` build type flips it on by default, `cmake/Builtins.cmake:85-91`). Adds `src/debug/*.c` to the library (`CMakeLists.txt:209`). |
-| module switches | `DEBUG_FD`, `DEBUG_FDSTACK`, `DEBUG_FDTABLE` (+ `DEBUG_ALLOC`, `DEBUG_PARSE`) via `debug_module_options` (`CMakeLists.txt:39`); `DEBUG_PARSE`, `DEBUG_JOB`, `DEBUG_BUILTIN` via `debug_flag` (`CMakeLists.txt:154-156`). Each is a plain `-DDEBUG_<M>`; a site needs **both** `DEBUG_OUTPUT` and its module flag. |
-| colour | `DEBUG_COLOR` → `COLOR_DEBUG` (`src/debug.h:28`); most files include `debug.h` with colours on, `src/debug/debug_begin.c:1` forces `DEBUG_NOCOLOR`. |
-| destination | **`debug.log` in the current directory**, truncated by the first `debug_open()` (`src/debug.h:165`). `debug_output` points at `debug_buffer` (`src/debug/debug_begin.c:5-6`). |
-| exceptions | `builtin_trap.c` redirects to **stderr** (`debug_to(buffer_2)`), because it runs from signal-ish context. |
-| runtime gate | three sites additionally require `set -x`/`-x` (`sh->opts.xtrace`): `fd_setfd.c:52`, `parse_gettok.c:38`, `parse_simple_command.c:130`. |
-| dump builtin | `dump -t/-s/-f/-j` (fdtable / fdstack / fd list / jobs) exist only when the matching `DEBUG_*` is set (`src/builtin/builtin_dump.c:35-44`, `:68-89`, `builtin_table.c:243-252`); `dump -v/-l/-F` (vartab / functions) always. It also needs `BUILTIN_DUMP` enabled. |
-| `-I` option | `sh_main.c:276`: `#ifdef _DEBUG` adds a `-I` (`no_interactive`) shell option. Unrelated to `DEBUG_OUTPUT`; `_DEBUG` is defined by `BUILD_DEBUG`. |
+`DEBUG_OUTPUT` is only declared when the build type contains `Deb` (`Debug`,
+`RelWithDebInfo`) or `-DBUILD_DEBUG=ON` is given. With the default `MinSizeRel` it is
+silently ignored and no trace is compiled in; an empty or missing log then means the trace
+is off, not that nothing happened. Rebuild after every source change, or you trace
+yesterday's code.
 
-### Print helpers (`src/debug.h`, `src/debug/*.c`)
+A debug build also defines `_DEBUG`, which force-enables the `dump` builtin.
 
-Compiled only with `DEBUG_OUTPUT` (or `SHPARSE2AST`, which reuses them for the AST dumper).
+## Choosing what is traced
 
-| macro / function | does |
-|---|---|
-| `debug_s/n/xn/c/b/ws/nl/fl/nl_fl` (`debug.h:102-115`) | thin wrappers over `buffer_put*` on `debug_output`; no-ops without `DEBUG_OUTPUT` |
-| `debug_fn/_ws/_nl/_nf` | print `__func__()` (+ space / newline / newline+flush) |
-| `debug_to(buf)` | redirect `debug_output` (used by `builtin_trap.c`) |
-| `debug_open()` (`debug.h:165`) | open+truncate `debug.log` once |
-| `debug_indent/newline/nindent` | indentation by `depth * debug_nindent` |
-| `debug_begin/end(s, depth)` | open/close a `[ … ]` block |
-| `debug_node/list/sublist/subnode(…)` | dump an AST node / sibling list as pretty JSON-like text |
-| `debug_str/stralloc/unquoted/squoted/char/ulong/xlong/ptr/range/position/location/subst/redir/argv/space` | leaf printers: `"key": value` lines |
-| `debug_emit_loc`, `debug_emit_range` | which position info `debug_node` includes (`debug.h:22-23`) |
-| `dump_flags(buf, bits, names[], pad)` / `debug_flags` | render a bit set as `A|B|C` |
-
-### Index of active sites
-
-"Gate" is the full preprocessor condition (`OUT` = `DEBUG_OUTPUT`). "When" is the shell
-task that is running when the line is produced. Samples are real output, trimmed.
-
-#### Parser (`DEBUG_PARSE`)
-
-| file:line | gate | what it prints | when |
-|---|---|---|---|
-| `src/parse/parse_getarg.c:17` | OUT+PARSE | `parse_getarg <word>` – each word as the parser finishes it | parsing a simple command's arguments |
-| `src/parse/parse_gettok.c:37` | OUT+PARSE, **+ `-x`** | `parse_dump <tok flags> <tok>` – lexer state after each token (via `parse_dump()`, `src/parse/parse_dump.c`) | tokenizing; only with `-x` |
-| `src/parse/parse_simple_command.c:129` | OUT+PARSE, **+ `-x`** | `parse_simple_command loc = "file:l:c" «text»` | a simple command was completed |
-| `src/parse/parse_command.c:101` | OUT+PARSE | `parse_command command = { …JSON tree… }` | a whole command was parsed |
-| `src/parse/parse_list.c:57` | OUT+PARSE (not `SHPARSE2AST`) | `parse_list [N] cmds = [ … ]`, only for lists with >1 command | a `;`/`&&`/newline list was completed |
-| `src/parse/parse_grouping.c:39` | OUT+PARSE | `parse_grouping grouping = { … }` | `{ …; }` / `( … )` completed |
-| `src/parse/parse_function.c:67` | OUT+PARSE (not `SHPARSE2AST`) | `parse_function node = { … }` | `name() { … }` completed |
-| `src/parse/parse_arith.c:22` | OUT+PARSE | `parse_arith tree = { … }` | `$(( … ))` expression parsed |
-| `src/parse/parse_expect.c:13` | OUT+PARSE | (bare) `debug_list(nfree)` – the partially built tree being thrown away | a syntax error while a subtree is half built |
-| `src/sh/sh_loop.c:53` | OUT+PARSE (not `SHPARSE2AST`) | `sh_loop list = [ … ]` – the tree about to be evaluated | main read-parse-eval loop, once per parsed list |
-
-```text
-parse_getarg echo
-parse_getarg hi
-parse_command command = {
-  "kind": "simple_command",
-  "bgnd": 0,
-  "args": [
-    { "kind": "word", "list": [ { "kind": "string", "flag": "0x0", "loc": "<string>:1:1", "stra": "echo" } ] },
-    …
-sh_loop list = [ { "kind": "simple_command", … } ]
-```
-With `-x` additionally:
-```text
-parse_dump NAME
-parse_dump (P_NOKEYWD P_NOASSIGN) NAME
-parse_dump (P_NOKEYWD P_NOASSIGN) |
-parse_simple_command loc = "<string>:1:1" «echo a»
-```
-(`debug_node` pretty-prints one key per line; the samples above are folded for the page.)
-
-#### File descriptors (`DEBUG_FD`, `DEBUG_FDSTACK`, `DEBUG_FDTABLE`)
-
-| file:line | gate | what it prints | when |
-|---|---|---|---|
-| `src/fdstack/fdstack_link.c:10` | OUT+FDSTACK | `fdstack_link n=<fd>` | a struct fd is linked into the current fdstack level (startup: `n=0,1,2,-1`; then every redirection / pipe / subst) |
-| `src/fdstack/fdstack_pipe.c:86` | OUT+FDSTACK | `fdstack_pipe n=<count> fds=<addr>` | `$(…)` / here-doc fds are being converted to real pipes just before a fork (`exec_program`, `eval_pipeline`, `builtin_xargs`) |
-| `src/fdstack/fdstack_data.c:26` | OUT+FDSTACK | `fdstack_data` + `fd_dump()` of the subst fd | parent draining a child's output into the `$(…)` buffer |
-| `src/fd/fd_pipe.c:42` | OUT+FD | `fd_pipe n=<vfd> e=<real> ret=<other end>` | `pipe()` created for a struct fd |
-| `src/fd/fd_setfd.c:51` | OUT+FD, **+ `-x`** | `fd_setfd #<n> e=<real> mode=FD_READ\|FD_WRITE` | a struct fd is bound to a real descriptor |
-| `src/fd/fd_pop.c:15` | OUT+FD | `fd_pop 0x<addr>` | a struct fd leaves the stack (end of a redirection scope, a pipeline stage, …) |
-| `src/fd/fd_close.c:61,71` | OUT+FD | `fd_close #<real fd>` (read side, then write side) | the real descriptor behind a struct fd is closed |
-| `src/fdtable/fdtable_dup.c:86` | OUT+FDTABLE | `fdtable_dup #<old> = <new>` | `dup()`/`dup2()` performed on the table |
-| `src/fdtable/fdtable_resolve.c:113` | OUT+FDTABLE | `fdtable_resolve(<fd_dump line>, MOVE\|FORCE…) = DONE\|ERROR\|PENDING` | a pending redirection is turned into real fd state |
-| `src/exec/exec_program.c:67` | OUT+FDTABLE | full `fdtable_dump()` (table below) | just before forking an external program |
-
-```text
-fdstack_link n=1
-fdstack_link n=3
-fd_pipe n=1 e=5 ret=4
-fdstack_pipe n=1 fds=5acf5efa02a0
-  fd name             level  e  mode                      buffer(s)
-------------------------------------------------------------------------------------------------------------
-  -1 <string>           0   -1  STRING
-------------------------------------------------------------------------------------------------------------
-   0 pipe               1    4  READ|PIPE|TMPBUF          r=[ p=0, n=0, a=1024, x@p="", fd=4, op=<read> ]
-   1 file               0    1  WRITE|FILE|TMPBUF         w=[ p=0, n=0, a=1024, x@p="", fd=1, op=<write> ]
-fd_pop 0x00007ffdb450f870
-fdtable_dup #4 = 0
-fdtable_resolve(   0 pipe               1    0  READ|PIPE|TMPBUF   r=[ … fd=0 … ], MOVE) = DONE
-fd_close #5
-```
-The `ESC[59G` that shows up before a `w=[` continuation is `fd_dump()` positioning the cursor;
-it is harmless in a terminal and noise in a file.
-
-#### Dump routines (called by the sites above and by `dump`)
-
-| file:line | gate | prints |
-|---|---|---|
-| `src/fd/fd_dump.c:3` | OUT | one `struct fd` row: vfd, name, level, real fd, mode flags, `r=[…]`/`w=[…]` buffer state |
-| `src/fd/fd_dumplist.c:1` | OUT+(FD\|FDSTACK\|FDTABLE) | header + `fd_dump()` for each `fd_list[]` slot (real-fd view) |
-| `src/fdtable/fdtable_dump.c:1` | OUT+(FD\|FDSTACK\|FDTABLE) | per virtual fd, the whole shadow chain (`fd->parent`) |
-| `src/fdstack/fdstack_dump.c:1` | OUT | every fd of every fdstack level, innermost first |
-| `src/job/job_dump.c:1` | OUT+JOB | job table: id, pgrp, command, done, pids |
-
-#### Builtins, expansion, misc
-
-| file:line | gate | what it prints | when |
-|---|---|---|---|
-| `src/builtin/builtin_trap.c:104` | OUT+BUILTIN | `trap handler <sig>` (**stderr**) | a trapped signal fires |
-| `src/builtin/builtin_trap.c:328` | OUT+BUILTIN | `trap_uninstall <sig>` (**stderr**) | trap removed/reset |
-| `src/builtin/builtin_trap.c:607` | OUT+BUILTIN | `builtin_trap <sig>` + `"code": …` (**stderr**) | `trap 'code' SIG` executed |
-| `src/builtin/core/builtin_expr.c:187` | OUT | `debug_list(expr)` – the parsed `expr` tree | `expr` builtin, after parsing its argv |
-| `src/expand/expand_arith_expr.c:128` | OUT | `expand_arith_expr <node>` | evaluating `$(( … ))` |
-| `src/eval/eval_pipeline.c:643` | OUT | `"forked": <pid>` (no newline; interleaves with the next line, see P4) | a pipeline stage was forked |
-| `src/sh/sh_init.c:33` | OUT | (nothing printed) opens `debug.log` | shell start-up |
-| `src/sh/sh_fmt.c:119` | OUT | `"tree_columnwrap": N` / `"indent_width": N` | `shformat` start-up |
-
-```text
-builtin_trap 2
-"code": echo caught
-trap_uninstall 2
-```
-
-### Disabled relics (`DEBUG_OUTPUT_`, trailing underscore, or `#if 0`)
-
-These never compile. They document places where someone once wanted output; several are
-good candidates for the new layer (part 4).
-
-| file:line | would print | task |
-|---|---|---|
-| `src/expand/expand_args.c:34` | `debug_node(arg)` per argument | word expansion of a command's args |
-| `src/eval/eval_simple_command.c:82` | `Vars <list>` / `Assigns` | prefix assignments (`X=1 cmd`) |
-| `src/eval/eval_simple_command.c:225` | `Redirection <node> fd { n= }` | each redirection of a simple command |
-| `src/vartab/vartab_add.c:47,54` | `assert(dist != 0)`: variable must not already exist | inserting a variable into a scope |
-| `src/parse/parse_error.c:43` (`#if 0`) | the tree/node being parsed at the syntax error | parse error report |
-| `src/term/term_read.c:152,196` | each input char, and the return value | interactive line editing |
-| `src/term/term_newline.c:12` | function name | interactive line editing |
-| `src/prompt/prompt_expand.c:24,33`, `prompt_parse.c:63` | prompt node / expanded prompt | PS1/PS2 expansion |
-| `src/prompt/prompt_nextline.c:6`, `prompt_reset.c:7` | function name + prompt number | PS1/PS2 selection |
-| `src/source/source_skip.c:15` | each skipped char | input reader |
-
----
-
-## 2. Problems found
-
-| id | problem | evidence / fix |
-|---|---|---|
-| P1 | **FIXED** (`lib/buffer.h` now includes `uint64.h`). **`DEBUG_OUTPUT` did not build.** `debug.h` uses `buffer_putlonglong` and `buffer_putxlonglong`, declared in `lib/buffer.h:153-158` only `#ifdef UINT64_H`. `src/builtin/builtin_error.c` (and 11 other files) include `buffer.h` before `uint64.h`, so the declaration is skipped: `implicit declaration of function 'buffer_putlonglong'`. | Work-around: `-include lib/uint64.h`. Real fix: `#include "uint64.h"` at the top of `lib/buffer.h`, or drop the `#ifdef`. |
-| P2 | Output is a **single file, `debug.log`, in the cwd**, truncated by whichever process calls `debug_open()` first; forked children share the fd and its offset, so pipelines/`$(…)` interleave arbitrarily. | New layer: `O_APPEND`, one `write()` per event, pid in every line. |
-| P3 | Most modules have **one** print (or none) at the *end* of a step: you see results, not causes. Nothing at all in `eval_*`, `redir_*`, `exec_command`, `var_*`, `vartab_*`, `sh_push/pop`, `job_*`, signals. | part 4 |
-| P4 | **FIXED** (now `eval.pipeline.fork(pid=…)`). `"forked": <pid>` had no newline (`eval_pipeline.c:644`), so the next event is glued to it (`"forked": 3656924fd_pop 0x…`). | new format is line-atomic. |
-| P5 | `DEBUG_ALLOC` is a CMake option with **no consumer** anywhere; `DEBUG_JOB` and `DEBUG_BUILTIN` only guard `job_dump` and `builtin_trap.c`. | wire up or drop the flags. |
-| P6 | Three sites need a runtime `set -x` *and* the compile flag; the rest ignore `-x`. Inconsistent. | new layer: one runtime selector (below). |
-| P7 | `builtin_trap.c` prints to stderr via `debug_to(buffer_2)` then resets it to `&debug_buffer`; if `debug_buffer` had been `debug_to()`'d elsewhere the restore is wrong, and stderr output is mixed into the user's own stderr. | new layer: fixed destination, no global swap. |
-| P8 | `fd_dump()` embeds cursor-movement escapes (`ESC[59G`) in the log. | drop in file output. |
-| P9 | Style: hand-rolled `buffer_puts` sequences per site; no common prefix, no depth, no way to filter or grep by module. | new layer. |
-
----
-
-## 3. Design for the new debug output
-
-Goal: trace the **evaluator** – every time the shell environment changes, and at every step
-on the way to running a builtin or forking/exec'ing a program – in a form that a human can
-read like pseudo-code and a script can parse.
-
-### 3.1 Event line grammar
-
-One event per line, written atomically, so multiple processes can share the file.
-
-```
-line      = prefix SP body EOL
-prefix    = "[" pid ":" depth "]"  SP  module "." event
-body      = call | ret | note | struct
-call      = name "(" [ arg { "," SP arg } ] ")"                  ; entering / performing an operation
-ret       = "=>" SP value                                        ; result of the call on the previous line of same pid:depth
-note      = "#" SP text                                          ; free comment
-struct    = name SP "{" [ field { "," SP field } ] "}"           ; state snapshot, one line
-arg,field = ident "=" value
-value     = int | 0xHEX | string | list | struct | flags | enum | "NULL"
-string    = '"' escaped '"'                                       ; \n \t \" \\ \xNN
-list      = "[" [ value { "," SP value } ] "]"
-flags     = ident { "|" ident }                                   ; FD_READ|FD_PIPE
-enum      = ident
-```
-
-- `pid:depth` – `depth` is `eval_depth()` (`src/eval.h:94`), so nesting of `$(…)`, functions and
-  subshells is visible.
-- Lines that would be too long (whole AST nodes) keep using the existing multi-line
-  `debug_node()` JSON block, introduced by a `struct` line ending in `{` and terminated by a
-  matching `}` at column 0.
-- Strings are always quoted and escaped, so `argv` can be round-tripped.
-
-Sample of the target output for `X=1 cat <in | wc -l`:
-
-```text
-[812:0] eval.simple_command(loc="<string>:1:1", argc=1, nassign=1, nredir=1, bgnd=0, flags=E_EXIT)
-[812:0] expand.args() => argv=["cat"]
-[812:0] var.push(scope=prefix_assign, function=1) => depth=2
-[812:0] var.set(name="X", value="1", flags=V_EXPORT|V_LOCAL)
-[812:0] redir.eval(fd=0, op="<", target="in", flags=R_NOW)
-[812:0] fd.open(fd=0, file="in", mode=FD_READ) => e=5
-[812:0] exec.command(kind=H_PROGRAM, path="/bin/cat", argv=["cat"], flag=X_NOWAIT)
-[812:0] exec.program.fork()
-[812:0] fdstack.pipe(n=0)
-[813:0] sh.forked() # child
-[813:0] fdtable.exec { 0=file:5 1=pipe:4 2=tty } # what execve() will see
-[813:0] exec.program.execve(path="/bin/cat", argv=["cat"], nenv=57)
-[812:0] job.new(pid=813, cmd="cat") => id=1
-```
-
-### 3.2 API
-
-New header `src/trace.h` (name is free; keeps `debug.h` untouched). All macros expand to
-nothing unless `DEBUG_OUTPUT`, so release builds pay nothing.
-
-```c
-#define TRACE_MODULES(X) X(EVAL) X(EXPAND) X(REDIR) X(EXEC) X(FD) X(FDSTACK) \
-                         X(FDTABLE) X(VAR) X(SH) X(JOB) X(SIG) X(BUILTIN) X(PARSE)
-
-trace_on(MOD)                         /* runtime: is this module selected? */
-TRACE_CALL(MOD, "event", "fmt", ...)  /* prints  [pid:depth] mod.event(fmt…)  */
-TRACE_RET(MOD, "event", "fmt", ...)   /* prints  [pid:depth] mod.event => …   */
-TRACE_NOTE(MOD, "fmt", ...)           /* prints  # …                          */
-TRACE_STRUCT(MOD, "name", dumpfn, p)  /* prints  name { … } via a dump helper */
-trace_argv(argv), trace_flags(bits, names), trace_str(s)   /* value formatters */
-```
-
-Selection and destination are **runtime**, compile-time `DEBUG_OUTPUT` just makes it
-available – no rebuild to look at one module:
+Two environment variables, read once when the first event is about to be written:
 
 | variable | meaning |
 |---|---|
-| `SHISH_TRACE=eval,redir,exec,fd` | comma list of modules, `all`, or `-name` to exclude; unset = off |
-| `SHISH_TRACE_FILE=path` | default `trace.log` (a different file from the legacy `debug.log`, which is truncated on open); opened `O_APPEND\|O_CREAT`, moved to fd >= 200 with `FD_CLOEXEC`, never truncated |
-| `SHISH_TRACE_FILE=-` | stderr |
+| `SHISH_TRACE=exec,fd` | the modules to trace. `all` selects every module, `-name` removes one (`all,-parse`). Unset or empty: no tracing. |
+| `SHISH_TRACE_FILE=path` | where the lines go. Default `trace.log` in the current directory; `-` is standard error. |
 
-Each event is formatted into a per-process buffer and emitted with one `write()`; the
-pid comes from `sh_pid`, so a `fork()` needs no special handling other than the child calling
-`trace_reopen()` after `sh_forked()`.
-
-Value dumpers to add next to the existing `fd_dump`/`fdtable_dump`/`fdstack_dump`/`job_dump`:
-`trace_fd(struct fd*)`, `trace_cmd(struct command*)`, `trace_env(struct env*)`,
-`trace_redir(struct nredir*)`, `trace_var(struct var*)`, `trace_sigset()` and
-`trace_fdmap()` (real kernel view: `readlink /proc/self/fd/N` on Linux, `fcntl(F_GETFD)`
-elsewhere). The existing `debug_node()` keeps producing the AST.
-
-The old `DEBUG_<MODULE>` compile flags collapse into the runtime list above; the current
-sites are ported one by one (part 5, step 1) and the flags removed.
-
-### 3.3 What every event carries
-
-Always: pid, depth, module, event. Where it applies: `loc="file:line:col"` of the node
-being evaluated (from `union node`), the resolved `argv`, the exit status on `=>`,
-and – for anything that changes state – both the *before* and *after* of the one thing that
-changed (not a whole-world dump).
-
----
-
-## 4. Checkpoints to instrument
-
-Each row is one proposed trace point: where it goes, what it emits, and which question it
-answers when a script misbehaves. All line numbers are call sites in the current tree.
-
-### 4.1 Evaluation (`src/eval/`)
-
-| where | event | payload | answers |
-|---|---|---|---|
-| `eval_node.c:9` | `eval.node` | node kind (`N_SIMPLECMD`, `N_IF`, …), `loc`, `e->flags` | what is the evaluator looking at; the entry point for every step |
-| `eval_tree.c`, `eval_cmdlist.c` | `eval.list` | number of commands, `E_LIST` flags | list/`&&`/`||` short-circuit decisions |
-| `eval_and_or.c`, `eval_if.c`, `eval_case.c`, `eval_loop.c`, `eval_for.c` | `eval.branch` | condition status, branch taken, loop iteration / `for` word | control-flow trace |
-| `eval_push.c:12`, `eval_pop.c:10` | `eval.push` / `eval.pop` | `flags` (`E_ROOT`, `E_EXIT`, `E_PRINT`…), depth, return `exitcode` | frame nesting; who owns a `jump`/`return` |
-| `eval_jump.c:9`, `eval_return.c:9`, `eval_exit.c:8` | `eval.jump/return/exit` | levels, `cont`, value | non-local exits (`break`, `continue`, `return`, `exit`) |
-| `eval_command.c:20` (redir scope: `:33` push, `:43` `redir_eval`) | `eval.redir_scope` | number of redirections, `fdstack` level | when redirections become active/inactive |
-| `eval_simple_command.c:38` entry | `eval.simple_command` | `loc`, counts of args/assigns/redirs, `bgnd` | one line per command executed |
-| `eval_simple_command.c:51` (after `expand_args`) | `expand.args` | expanded `argv` | word expansion result (the relic at `expand_args.c:34` wanted this) |
-| `eval_simple_command.c:80` (after `expand_vars`) | `expand.assigns` | `name=value` list | prefix assignments (relic `:82`) |
-| `eval_simple_command.c:111` / `:322` | `var.push` / `var.pop` | scope kind (`prefix_assign`), function flag | temporary env for `X=1 cmd` |
-| `eval_simple_command.c:209` | `redir.eval` (via 4.2) | one per redirection | relic `:225` |
-| `eval_simple_command.c:300` (before `exec_command`) | `exec.command` | see 4.3 | the hand-off to execution |
-| `eval_subshell.c:30,41,42,90` | `subshell.enter/leave` | `fdstack`/`vartab`/`sh` push+pop, `E_ROOT` | `( … )` never forks; shows what state is saved and restored |
-| `eval_function.c:105` | `eval.function.define` | name | function definition |
-| `eval_pipeline.c:405` | `eval.pipeline` | stage count, `bgnd`, mode (`no-fork filter chain` / `sequential` / `fork`) | which of the three pipeline strategies was picked and why |
-| `eval_pipeline.c:294,385` | `pipeline.filter.enter/leave` | fdstack level | no-fork path |
-| `eval_pipeline.c:593-636` | `pipeline.fork` | stage index, `npipes`, pipe fds, `job_fork()` result | each stage; replaces the bare `"forked"` at `:643` |
-| `eval_node_bgnd.c:29` | `eval.background` | node, pid | `cmd &` |
-| `expand_command.c:46-99` | `subst.enter/leave` | `fdstack` push, captured length, exit status | `$(…)` capture |
-| `expand_arith_expr.c:128` (exists) | `expand.arith` | expression, result | `$(( ))` |
-
-### 4.2 Redirections (`src/redir/`)
-
-| where | event | payload |
-|---|---|---|
-| `redir_eval.c:21` | `redir.eval` | operator (`<`, `>`, `>>`, `<&`, `>|`, `<>`), target fd, `rfl` (`R_NOW`), word before/after expansion |
-| `redir_preopen.c:25`, `redir_open.c:17` | `redir.open` | path, flags (`O_*` names), `preopen`, resulting real fd or `errno` |
-| `redir_dup.c:15` | `redir.dup` | `N>&M`, `persistent`, resulting vfd link |
-| `redir_here.c:7`, `redir_addhere.c` | `redir.here` | delimiter, quoted?, byte length of body |
-| `redir_source.c` | `redir.source` | which source fd is redirected |
-
-The point: an fd bug shows up as "this redirection was evaluated with these arguments and
-produced that fd", **before** the deferred `fdtable_resolve()` output that is all that exists
-today.
-
-### 4.3 Builtin dispatch and fork/exec (`src/exec/`, `src/builtin/`)
-
-| where | event | payload | answers |
-|---|---|---|---|
-| `exec_search.c:71`, `exec_lookup.c:7` | `exec.lookup` | name, kind found (`H_FUNCTION`, `H_SPECIAL`, `H_BUILTIN`, `H_PROGRAM`, not found), hash hit/miss, resolved `path` | why did `foo` run *that*? |
-| `exec_command.c:16` | `exec.command` | `kind`, `path`, `argv`, `flag` (`X_EXEC`, `X_NOWAIT`) | the single line that says how a command will be run |
-| `exec_command.c:29-44` | `exec.command.fork_builtin` | builtin forked for `&` | backgrounded builtin |
-| `exec_command.c:57-79` (`H_BUILTIN`/`H_EXEC`) | `builtin.enter` / `builtin.leave` | name, `argc`, `argv`, `shell_optind` reset, pending fd opens (`fdtable_open` result), return status | builtin executed in-process; `=> status` on the way out |
-| `exec_command.c:126-188` (`H_FUNCTION`) | `function.call` / `function.return` | name, positional params, `vartab_push` scope, status | function call frames |
-| `exec_command.c:193` → `exec_program.c:37` | `exec.program` | path, argv, `flag`, fork needed? (`!(X_EXEC) \|\| sh->parent`) | |
-| `exec_program.c:62-64` | `exec.program.pipes` | `npipes`, which fds are subst/here | `$(…)` capture wiring (exists as `fdstack_pipe`) |
-| `exec_program.c:82` | `exec.program.fork` | pid or `errno` | |
-| `exec_program.c:130` (parent), child after `sh_forked()` | `exec.program.pgrp` | `setpgid(pid, pid)`, `tcsetpgrp` decision | job-control correctness |
-| `exec_program.c:267` (`fdtable_exec`/`fdstack_flatten`) | `fdtable.exec` | **real fd map handed to the program**, before/after | *the* fd-debugging line |
-| `exec_program.c:279` | `exec.program.execve` | path, argv, count of exported vars | last thing before the image is replaced |
-| after `execve()` fails (`:281`) | `exec.program.error` | `errno`, mapped status (126/127) | |
-| `exec_program.c` parent, after wait | `exec.program.status` | raw wait status, mapped exit code, signal | |
-
-Also: `builtin_timeout.c:207`, `builtin_xargs.c` (`fork()` sites) get the same `*.fork`,
-`fdtable.exec`, `*.execve` events so builtins that spawn children are visible.
-
-### 4.4 File descriptors (`src/fd*/`)
-
-The existing prints only report *completion* of a few operations. Add the *entry* events
-with parameters (call signature style), leave the existing lines as the `=>` results.
-
-| where | event | payload |
-|---|---|---|
-| `fd_push.c:8`, `fd_pop.c:10` | `fd.push(n, mode)` / `fd.pop` | vfd, mode flags, `name`, stack level |
-| `fd_dup.c:11` | `fd.dup(n)` | source vfd → new vfd |
-| `fd_open.c:15` | `fd.open(file, mode)` | path, flags, result |
-| `fd_here.c:22`, `fd_subst.c:6`, `fd_string.c`, `fd_null.c`, `fd_tempfile.c` | `fd.here` / `fd.subst` / `fd.string` / `fd.null` / `fd.tempfile` | kind of stralloc-backed fd created |
-| `fd_setfd.c:51` (exists) | `fd.setfd` | drop the `-x` requirement |
-| `fd_state_save.c`, `fd_state_restore.c` | `fd.state.save/restore` | `fd_expected`, `fd_hi`, `fd_lo` (the process-global bookkeeping) |
-| `fdstack_push.c:7`, `fdstack_pop.c:7`, `fdstack_fork.c:6` | `fdstack.push/pop/fork` | level, number of fds released, unref'd duplicates |
-| `fdstack_npipes.c`, `fdstack_pipe.c`, `fdstack_data.c` | `fdstack.npipes/pipe/data` | count, which level matched, bytes drained per subst fd (would have caught the `$(a; b)` bug immediately) |
-| `fdstack_flatten.c:8`, `fdstack_update.c`, `fdstack_unref.c`, `fdstack_link.c:10` (exists) | `fdstack.flatten/update/unref/link` | fds popped, vfd remapped |
-| `fdtable_lazy.c:13`, `fdtable_wish.c:7`, `fdtable_gap.c:23` | `fdtable.lazy/wish/gap` | requested real fd, force flag, resulting slot |
-| `fdtable_open.c:27`, `fdtable_openfd.c`, `fdtable_close.c:13`, `fdtable_dup.c:86` (exists), `fdtable_resolve.c:113` (exists) | `fdtable.open/openfd/close/dup/resolve` | fd, flags (`MOVE`,`FORCE`,`LAZY`…), state (`DONE`/`PENDING`/`ERROR`) |
-| `fdtable_exec.c:22` | `fdtable.exec` | table **before** and real fd map **after** – checkpoint #1 for "why did the child get the wrong stdout" |
-| `fdtable_track.c`, `fdtable_untrack.c`, `fdtable_unexpected.c`, `fdtable_up.c`, `fdtable_link.c`, `fdtable_unlink.c` | `fdtable.track/untrack/unexpected/up/link/unlink` | placeholder fds created for gaps |
-| `fd_close.c:9` | `fd.close` | vfd, real fd or "neutered (shadowed)", whether `close()` was actually called (the `fd_list[e] != fd` branches) |
-
-### 4.5 Variables and shell environment (`src/var*/`, `src/sh/`)
-
-| where | event | payload |
-|---|---|---|
-| `var_set.c:10`, `var_setv.c:10`, `var_setsa.c`, `var_setvsa.c`, `var_setvint.c` | `var.set` | name, value (truncated), flags (`V_EXPORT`, `V_READONLY`, `V_LOCAL`, …), scope depth, created vs overwritten |
-| `var_unset.c:8` | `var.unset` | name, scope |
-| `var_chflg.c` | `var.chflg` | name, flags before → after (`export`, `readonly`) |
-| `var_import.c:12`, `var_export.c:8` | `var.import` / `var.export` | environment strings imported at start-up / exported to a child (count, plus names only) |
-| `var_create.c`, `var_search.c` | `var.create` | name, which scope it landed in |
-| `vartab_push.c:8`, `vartab_pop.c:7` | `vartab.push/pop` | `function` flag, scope depth, number of vars dropped |
-| `sh_push.c:9`, `sh_pop.c:17` | `sh.push/pop` | new `struct env`: cwd, `$0`, positional count, `opts` bits |
-| `sh_pushargs.c`, `sh_setargs.c`, `sh_popargs.c` | `sh.args` | `$#` and the positional parameters (`set --`, function call) |
-| `set_apply` (`sh_main.c` option loop) | `sh.opt` | option letter, on/off (`set -e`, `set -x`, …) |
-| `sh_getcwd.c`, `builtin_cd` | `sh.cwd` | old → new |
-| `sh_forked.c:16` | `sh.forked` | old pid → new pid, environments discarded |
-| `sh_exit.c:13` | `sh.exit` | exit code, pending traps, flushed jobs |
-| `exec_search.c:15,36` (`exec_functions_save/restore`) | `func.snapshot/restore` | number of functions saved (`$(…)` scope) |
-| `builtin_trap.c:411,433` (`trap_snapshot_*`) | `trap.snapshot/restore` | handle, trap count |
-
-### 4.6 Signals and jobs (`src/job/`, `src/sh/`, `lib/sig/`, `builtin_trap.c`)
-
-| where | event | payload |
-|---|---|---|
-| `sh_main.c:61` (`sh_onsig`) | `sig.handler` | signum/name, whether it reaped children (must stay async-signal-safe: buffer into a ring, flush from `trap_run_pending`) |
-| `sh_main.c:423-433`, `lib/sig/sig_action.c`, `sig_catch.c` | `sig.action` | signum, handler (`SIG_DFL`/`SIG_IGN`/fn), `sa_flags` (`SA_NOCLDSTOP`, `SA_RESTART`) |
-| `lib/sig/sig_block.c`, `sig_unblock.c`, `sig_blocknone.c` | `sig.block/unblock/blocknone` | signal set before/after |
-| `lib/sig/sig_snapshot.c`, `sig_push.c` | `sig.snapshot/push` | dispositions captured for `trap` |
-| `builtin_trap.c:99,179,196,275,340` | `trap.handler/relay/pending/uninstall/install` | signum, code, pending mask; replace the three existing `debug_to(buffer_2)` blocks |
-| `job_new.c:11`, `job_fork.c:21,52,60`, `job_wait.c:24`, `job_update.c:5`, `job_signal.c:6`, `job_clean.c`, `job_foreground.c` | `job.new/fork/wait/update/signal/clean/foreground` | job id, pgrp, pids, raw `waitpid` status → `WIFEXITED/WIFSIGNALED/WIFSTOPPED`, terminal handoff (`tcsetpgrp`) |
-| `job_dump.c` (exists) | `job.table` | called from `job.update` when the table changes |
-
-### 4.7 Parsing / input (keep, but make consistent)
-
-Port the existing `parse_*` prints to the same grammar (`parse.getarg`, `parse.command`, …)
-and add `source.open(file, line)` / `source.eof` in `sh_source.c` / `sh_loop.c` so a trace
-shows *which input* produced each evaluation; `sh_loop.c:53` becomes `sh.loop.list(loc=…)`.
-
----
-
-## 5. Rollout order
-
-Status: steps 1-6 are implemented (see [5.1](#51-implemented) and [5.2](#52-evaluator-and-redirections-step-3)); step 6 is `tools/trace2seq`, tested by `tests/trace2seq.sh`. Open: the gaps listed in `TODO.md`.
-
-1. **Foundation** – fix P1 (include `uint64.h` in `lib/buffer.h`), add `src/trace.h` +
-   `src/trace/*.c` (formatter, module selector, atomic writer, `trace_reopen`), port the
-   existing sites in part 1 to it and delete the old `DEBUG_<M>` flags (P5, P6, P7, P8).
-2. **Exec path** (highest value): §4.3 and `fdtable.exec` in §4.4. With these, "the child got
-   the wrong fds / wrong argv / wrong env" is answerable from the log alone.
-3. **Evaluator + redirections**: §4.1, §4.2.
-4. **fd\* internals**: the rest of §4.4.
-5. **Environment, signals, jobs**: §4.5, §4.6.
-6. **Tooling**: `tools/trace2seq` – turn a trace into a per-pid indented call tree or a
-   sequence diagram (the grammar in §3.1 is what makes this a 50-line script); use it as an
-   oracle in `tests/` (assert "this script forks exactly N times and `execve`s `/bin/cat`
-   with fd 0 = `in`").
-
-Each step is independently mergeable and, being compiled out without `DEBUG_OUTPUT`, has no
-effect on the release binary.
-
-### 5.1 Implemented
-
-**Foundation** (`src/trace.h`, `src/trace/trace_begin.c`, `trace_value.c`, `trace_fdmap.c`)
-
-- `TRACE()` / `TRACE_RET()` / `TRACE_STRUCT()` as in §3.2; value writers `trace_str/int/hex/raw/argv/flags`;
-  every event is one `write()`; `errno` is preserved across an event; lines longer than 8 KiB are
-  cut with a trailing `~`.
-- Runtime selection: `SHISH_TRACE=exec,builtin,fd,...`, `all`, `-name`; `SHISH_TRACE_FILE`. Read
-  once, at the first event, from the process environment (so `export SHISH_TRACE=...` inside a
-  running shell is not seen; set it when starting shish).
-- Modules: `exec builtin fd fdstack fdtable eval redir var sh job sig` (`enum trace_module`).
-- Compiled out entirely without `DEBUG_OUTPUT`.
-- P1 fixed (`lib/buffer.h` includes `uint64.h`): `DEBUG_OUTPUT` builds without `-include`.
-- Ported the single-line legacy prints; they no longer need a `DEBUG_<MODULE>` flag and are
-  selected at runtime instead:
-
-| old | new |
-|---|---|
-| `fd_pipe n= e= ret=` | `fd.pipe(n, e, other)` |
-| `fd_setfd #n e= mode=` (needed `-x`) | `fd.setfd(n, e, mode)` |
-| `fd_pop 0xADDR` | `fd.pop(fd, n)` |
-| `fd_close #N` | `fd.close(fd, side)` |
-| `fdstack_link n=` | `fdstack.link(n)` |
-| `fdstack_pipe n= fds=` | `fdstack.pipe(n, fds)` |
-| `fdtable_dup #a = b` | `fdtable.dup(from, to)` |
-| `"forked": pid` | `eval.pipeline.fork(pid)` |
-| trap handler / uninstall / builtin_trap (stderr) | `sig.trap.handler(sig)`, `sig.trap.uninstall(sig)`, `builtin.trap(sig, code)` |
-
-  The remaining multi-line dumps were ported afterwards, see [5.3](#53-remaining-dumps-ported).
-
-**Exec path** (`exec_hash.c`, `exec_command.c`, `exec_program.c`, `builtin_xargs.c`, `builtin_timeout.c`)
-
-| event | payload |
-|---|---|
-| `exec.lookup` | `name, mask, cache=(hit\|miss\|path\|search), kind, path, errno` |
-| `exec.command` | `kind, name, path, argc, argv, flag` |
-| `exec.command.background` | `name, pid` (backgrounded builtin/function) |
-| `builtin.run` / `builtin.status` | `name, argc, argv, redir_failed` / `name, status` |
-| `exec.function.call` / `.return` | `name, argc, argv` / `name, status` |
-| `exec.program` | `path, argv, flag, fork` |
-| `exec.program.pipes` | `npipes` |
-| `exec.program.fork` / `.fork_failed` | `path, pid, monitor, bgnd` / `path, errno` |
-| `exec.program.child` | first line of the forked child |
-| `fdtable.exec.fds { }` | **the real fds the program will inherit**, `N="/proc/self/fd/N target"` |
-| `exec.program.execve` / `.execve_failed` | `path, argv, nenv` / `path, errno` |
-| `exec.program.status` | `path, pid, wait (raw), exit` |
-| `exec.xargs.fork` / `.execvp`, `exec.timeout.execve` | same idea for the two builtins that fork themselves |
-
-Example (`SHISH_TRACE=exec,builtin,fdtable shish -c 'echo hi | /bin/cat'`):
-
-```text
-[3673068:1] exec.lookup(name="/bin/cat", mask=0, cache=path, kind=H_PROGRAM, path="/bin/cat", errno=0)
-[3673068:1] exec.command(kind=H_PROGRAM, name="/bin/cat", path="/bin/cat", argc=1, argv=["/bin/cat"], flag=0)
-[3673068:1] exec.program(path="/bin/cat", argv=["/bin/cat"], flag=0, fork=yes)
-[3673068:1] exec.program.pipes(npipes=0)
-[3673069:1] exec.command(kind=H_BUILTIN, name="echo", path=NULL, argc=2, argv=["echo", "hi"], flag=X_EXEC)
-[3673069:1] builtin.run(name="echo", argc=2, argv=["echo", "hi"], redir_failed=0)
-[3673069:1] builtin.status(name="echo", status=0)
-[3673068:1] exec.program.fork(path="/bin/cat", pid=3673070, monitor=0, bgnd=0)
-[3673070:1] exec.program.child(path="/bin/cat")
-[3673070:1] fdtable.exec.fds { 0="pipe:[37884029]", 1="/dev/null", 2="/dev/null", 3=".../debug.log", 128="pipe:[37884028]", 129="pipe:[37884028]" }
-[3673070:1] exec.program.execve(path="/bin/cat", argv=["/bin/cat"], nenv=115)
-[3673068:1] exec.program.status(path="/bin/cat", pid=3673070, wait=0x0, exit=0)
+```sh
+rm -f trace.log
+SHISH_TRACE=exec,fdtable build/dbg/shish -c 'echo hi | /bin/cat'
 ```
 
-The `fdtable.exec.fds` line already shows two things that were invisible before: the legacy
-`debug.log` (fd 3) and the shell's internal pipe (128/129) leak into every exec'd program.
+- The variable has to be in the environment when shish starts. `export SHISH_TRACE=...`
+  inside a running script is not seen: put it in front of the command.
+- The log is opened with `O_APPEND` and never truncated. Remove it before each run or runs
+  concatenate. Child processes append to the same file.
+- The file is moved to a descriptor of 200 or above and marked close-on-exec, so a script
+  that redirects descriptors 1 and 2 cannot swallow it and no program inherits it. Do not
+  use `SHISH_TRACE_FILE=-` when the script under test redirects standard error.
+- One event is one `write(2)` of at most 8192 bytes; a longer line ends in `~`. `errno` is
+  preserved across an event.
 
-### 5.2 Evaluator and redirections (step 3)
+## Reading a trace
 
-New module `expand` (`SHISH_TRACE=expand`), plus `eval` and `redir`. New value writers:
-`trace_loc(key, &location)` (`"file:line:col"`), `trace_kind(key, node->id)` (`simple_command`,
-`if_clause`, …), `trace_strn(key, s, len)` (stralloc contents), and flag-name tables
-`trace_eval_flags` / `trace_redir_flags` for `trace_flags()`.
+```
+[2100940:1] fdtable.dup(from=4, to=1)                       a call or decision
+[2100940:1] fdtable.gap => r=-3                              its result
+[2100940:1] fdtable.exec.fds { 0="/dev/null", 3="pipe:[5184717]" }   a snapshot of state
+```
 
-**Evaluator** (`src/eval/`, `src/expand/expand_command.c`)
+Each line starts with `[pid:depth]`, then `module.event`, then the payload:
 
-| event | payload | where |
+- `module.event(key=value, ...)` is a call or a decision with its inputs,
+- `module.event => value` is a result,
+- `module.event { key=value, ... }` is a snapshot of some state.
+
+Values are integers, hexadecimal numbers, quoted strings (a missing string is `NULL`),
+argument vectors `["echo", "hi"]`, flag sets `E_ROOT|E_LOOP`, source locations
+`"file:line:col"`, node kinds `simple_command`, and nested `{ }` and `[ ]` groups for a
+descriptor or a list of commands.
+
+**pid** tells the processes apart. `( ... )` and `$( ... )` run in the same process (only
+the depth grows); an external command, a pipeline stage and a background job each have their
+own pid. So the pid column says on which side of a fork an event happened.
+
+**depth** is the nesting of the evaluator: it grows by one inside a function call, a
+subshell, a command substitution, an `eval` or a sourced file.
+
+A sample, `SHISH_TRACE=eval,expand,exec,sh`, for `x=5 echo hi >/dev/null; f() { echo in f; }; f`
+(trimmed):
+
+```
+[976472:1] eval.simple_command(loc="<string>:1:1", nassign=1, nredir=1, bgnd=0)
+[976472:1] exec.lookup(name="echo", mask=0, cache=miss, kind=H_BUILTIN, path=NULL, errno=0)
+[976472:1] eval.prefix_scope.enter()
+[976472:1] eval.assign(var="x=5", export=1, temp=1)
+[976472:1] expand.args(argv=["echo", "hi"])
+[976472:1] exec.command(kind=H_BUILTIN, name="echo", path=NULL, argc=2, argv=["echo", "hi"], flag=0)
+[976472:1] eval.prefix_scope.leave()
+[976472:1] eval.function.define(name="f")
+[976472:1] exec.function.call(name="f", argc=1, argv=["f"])
+[976472:2] sh.push(cwd="/tmp/tr", argc=0, monitor=0)
+[976472:2] eval.push(flags=E_FUNCTION)
+[976472:2] exec.command(kind=H_BUILTIN, name="echo", path=NULL, argc=3, argv=["echo", "in", "f"], flag=0)
+[976472:2] eval.pop(flags=E_FUNCTION, status=0)
+[976472:1] exec.function.return(name="f", status=0)
+```
+
+## Modules
+
+| module | what it shows | use it when |
 |---|---|---|
-| `eval.push` / `eval.pop` | `flags` (`E_ROOT E_LOOP E_FUNCTION …`) / `flags, status` | `eval_push.c`, `eval_pop.c` |
-| `eval.node` | `kind, loc, flags` | `eval_node.c`: every node the evaluator dispatches |
-| `eval.status` | `kind, status` | `eval_tree.c`, `eval_cmdlist.c`: status of each list member |
-| `eval.errexit` | `status` | `set -e` about to exit |
-| `eval.simple_command` / `.status` | `loc, nassign, nredir, bgnd` / `status` | `eval_simple_command.c` |
-| `expand.args` | `argv` (after all expansions) | `eval_simple_command.c` |
-| `eval.assign` | `var="name=value", export, temp` | one per prefix/plain assignment |
-| `eval.prefix_scope.enter/leave` | – | temporary env for `X=1 cmd` |
-| `eval.and_or` / `.status` | `op, left, run_right` / `op, status` | `&&`, `||`, `!` |
-| `eval.if.test` / `eval.if.branch` | `status` / `taken=then\|else\|none` | `eval_if.c` |
-| `eval.case.match` / `.nomatch` | `word, pattern` / `word` | `eval_case.c` |
-| `eval.loop` / `eval.loop.test` | `kind` / `status, continue` | `while`/`until` |
-| `eval.for.iter` | `var, value` | `eval_for.c` |
-| `eval.jump` / `eval.return` / `eval.exit` | `levels, cont, found` / `value, found` / `code, found` | non-local exits |
-| `eval.redir_scope.enter/leave` | `kind, nredir` / `status` | `eval_command.c`: compound command with redirections |
-| `eval.subshell.enter/leave` | – / `status` | `eval_subshell.c` |
-| `eval.subst.enter/leave` | – / `status, len` | `$(…)` in `expand_command.c` |
-| `eval.function.define/redefine` | `name` | `eval_function.c` |
-| `eval.pipeline` | `stages, bgnd, lastpipe, filter_chain` | `eval_pipeline.c`: strategy picked |
-| `eval.background` | `kind, pid` | `eval_node_bgnd.c` |
+| `parse` | tokens, commands, command lists, function definitions, arithmetic | the parser reads a script differently than you expect |
+| `expand` | the argument vector after all expansions, `$(...)` | a word expands to the wrong thing |
+| `eval` | node dispatch with source location, `if`/`case`/loop decisions, `&&`/`||`, assignments, `break`/`return`/`exit`, subshell and `$(...)` enter and leave, pipeline strategy | control flow or an exit status is wrong |
+| `exec` | command lookup (hash hit or miss, builtin, function, program), the call itself, fork, `execve`, exit status | the wrong command ran, or ran with the wrong environment |
+| `builtin` | a builtin's argument vector and status | a builtin misbehaves |
+| `redir` | evaluation of each redirection, open, dup, here-document | `>`, `<&`, `exec N>` do the wrong thing |
+| `fd`, `fdstack`, `fdtable` | the shell's descriptor structures: push, dup, close, pipes, the table mapping script descriptors to real ones, nesting levels | redirections, here-documents or `$(...)` output go astray |
+| `var` | variable set, unset, import, export, scopes | a variable has the wrong value or leaks out of a scope |
+| `sh` | start-up, environments pushed and popped, positional parameters, working directory, forks, exit | a hang, a zombie, a wrong `$@` |
+| `job` | the job table, forks, waits, status decoding, terminal hand-off | job control, `wait`, `fg`/`bg` |
+| `sig` | signal actions, blocking, trap installation and delivery | a trap does not run, or runs twice |
 
-**Redirections** (`src/redir/`)
+Start with the module of the symptom, not with `all`. For a descriptor problem use
+`fd,fdtable`, add `fdstack,redir`, then `exec`. `all,-parse` is the widest selection that is
+still readable.
 
-| event | payload |
-|---|---|
-| `redir.eval` | `fd, flag (R_IN\|R_OPEN\|R_DUP\|R_HERE\|R_NOW…), target (after expansion), preallocated` |
-| `redir.eval.status` | `fd, status` |
-| `redir.open` | `fd, path, mode=read\|trunc\|append\|noclobber, preopen, now` |
-| `redir.preopen` | `fd, path, result, errno` |
-| `redir.dup` / `redir.dup.self` | `fd, src, persistent` / `fd` |
-| `redir.here` | `fd, len` |
+### Descriptors in the exec path
 
-Sample (`SHISH_TRACE=eval,expand,redir`, script `X=5 echo hi >/dev/null 2>&1`):
+Two events tell the truth about descriptors:
 
-```text
-[3946588:1] eval.node(kind=simple_command, loc="s3.sh:1:1", flags=E_ROOT|E_JCTL)
-[3946588:1] eval.simple_command(loc="s3.sh:1:1", nassign=1, nredir=2, bgnd=0)
-[3946588:1] eval.prefix_scope.enter()
-[3946588:1] eval.assign(var="X=5", export=1, temp=1)
-[3946588:1] redir.eval(fd=1, flag=R_OUT|R_OPEN, target="/dev/null", preallocated=1)
-[3946588:1] redir.open(fd=1, path="/dev/null", mode=trunc, preopen=-1, now=0)
-[3946588:1] redir.eval.status(fd=1, status=0)
-[3946588:1] redir.eval(fd=2, flag=R_OUT|R_DUP, target="1", preallocated=1)
-[3946588:1] redir.dup(fd=2, src="1", persistent=0)
-[3946588:1] redir.eval.status(fd=2, status=0)
-[3946588:1] expand.args(argv=["echo", "hi"])
-[3946588:1] eval.prefix_scope.leave()
-[3946588:1] eval.simple_command.status(status=0)
+- `fdtable.exec.table(vfd=, shadow=, fd={n=, e=, level=, mode=})` is what the shell
+  believes every script descriptor maps to just before a fork, one line per shadowed
+  descriptor.
+- `fdtable.exec.fds { N=target }` is what the child really has just before `execve`,
+  read from `/proc/self/fd`.
+
+A bug is where the two differ. In a sample for `echo hi | /bin/cat >/dev/null`, the child's
+real descriptors are:
+
+```
+[976578:1] fdtable.exec.fds { 0="pipe:[1934834]", 1="/dev/null", 2="...", 128="pipe:[1934833]", 129="pipe:[1934833]" }
+[976578:1] exec.program.execve(path="/bin/cat", argv=["/bin/cat"], nenv=91)
+[976576:1] exec.program.status(path="/bin/cat", pid=976578, wait=0x0, exit=0)
 ```
 
-Not done from §4.1: `eval_tree`/`eval_cmdlist` per-list summary events (the per-member
-`eval.status` covers them), `redir_addhere.c` and `redir_source.c` (nothing to say beyond
-`redir.here`), and the `pipeline.filter.enter/leave` pair for the no-fork path.
+Descriptors 128 and above are the shell's own internal pipe ends.
 
-### 5.3 Remaining dumps ported
+### Start-up events
 
-Every runtime print of the old layer now goes through `TRACE()`; `debug.log` is no longer
-created (`sh_init()` stopped calling `debug_open()`). The shell honours only `SHISH_TRACE` /
-`SHISH_TRACE_FILE`. What is left of `src/debug*` serves `shparse2ast` (the JSON AST dumper)
-and the `dump` builtin, which prints its tables to the terminal on request.
-
-New writers: `trace_open(key, "{"|"[")` / `trace_close(...)` for nested values,
-`trace_node(key, node)` (shell source of a node), `trace_nodes(key, list)`, `trace_fd(key, fd)`
-and `trace_fdtable(event)`. New module `parse`.
-
-| old print | new event |
-|---|---|
-| `parse_getarg <word>` | `parse.getarg(word="echo")` |
-| `parse_dump <tok>` (needed `-x`) | `parse.token(tok="NAME", flags=0x6)` |
-| `parse_simple_command loc = … «text»` (needed `-x`) | `parse.simple_command(loc, text)` |
-| `parse_command command = {JSON}` | `parse.command(kind)` |
-| `parse_list [N] cmds = [JSON]` | `parse.list(n, cmds=["…", …])` |
-| `parse_grouping grouping = {JSON}` | `parse.grouping(kind)` |
-| `parse_function node = {JSON}` | `parse.function(name)` |
-| `parse_arith tree = {JSON}` | `parse.arith(kind)` |
-| `debug_list(nfree)` in `parse_expect` | `parse.expect_failed(discarded=[…])` |
-| `sh_loop list = [JSON]` | `sh.loop.list(n, cmds=["…"])` |
-| `expr` builtin `debug_list` | `builtin.expr.tree(kind)` |
-| `expand_arith_expr <node>` | `expand.arith.unsupported(kind)` |
-| `shformat` `tree_columnwrap`/`indent_width` | `sh.fmt.config(columnwrap, indent_width)` |
-| `fdtable_resolve(<fd_dump>, FLAGS) = STATE` | `fdtable.resolve(fd={…}, flags=MOVE, state=DONE)` |
-| `fdstack_data` + `fd_dump` | `fdstack.data(fd={…}, bytes=N)` |
-| `fdtable_dump` before fork | `fdtable.exec.table(vfd, shadow, fd={…})`, one line per shadowed fd |
-
-Sample `fd` struct: `{n=1, name="pipe", level=0, e=1, mode=WRITE|PIPE|TMPBUF, rfd=-1, wfd=1, dup=…}`.
-
-The JSON tree of a command is no longer printed by the shell. Node kinds and the source text
-of words / simple commands are; use `shparse2ast` when the full tree is needed.
-
-### 5.4 Start-up (`sh_main.c`)
-
-| event | payload |
-|---|---|
-| `sh.start` | `argc, argv` (the raw command line), `pid, ppid` |
-| `sh.input` | `kind=string\|file\|stdin`, `script` (file name), `command` (the `-c` string), `argv0`, `args` (positional parameters) |
-| `sh.mode` | `interactive, monitor, term, forced, no_interactive` |
-
-```text
-[49324:1] sh.start(argc=5, argv=[".../shish", "-c", "echo x", "zero", "p1"], pid=49324, ppid=49272)
-[49324:1] sh.input(kind=string, script=NULL, command="echo x", argv0="zero", args=["p1"])
-[49324:1] sh.mode(interactive=0, monitor=0, term=0, forced=0, no_interactive=0)
 ```
+sh.start(argc=5, argv=[".../shish", "-c", "echo x", "zero", "p1"], pid=49324, ppid=49272)
+sh.input(kind=string, script=NULL, command="echo x", argv0="zero", args=["p1"])
+sh.mode(interactive=0, monitor=0, term=0, forced=0, no_interactive=0)
+```
+
+## Finding a bug with it
+
+1. **Reduce** the failure to a one-line `-c` script and check what `bash` or `dash` does.
+2. **Trace** the module of the symptom and find the first event that is wrong. Compare the
+   `fdtable.exec.table` with `fdtable.exec.fds`, or compare a passing and a failing run.
+3. **Filter** before reading:
+
+   ```sh
+   grep -a '^\[2100940:' trace.log                 # one process (the child you care about)
+   grep -a -E 'fdtable\.(dup|gap|wish)|fd\.setfd'   # one family of events
+   grep -v exec.table trace.log | cut -c1-200       # drop snapshots, cut long lines
+   sed -n '/redir.dup(/,/exec.program.execve/p' trace.log   # a window between two events
+   ```
+
+4. **Diff** a good and a bad variant after normalising what changes between runs:
+
+   ```sh
+   norm() { sed -E 's/^\[[0-9]+:/[P:/; s/0x[0-9a-f]+/0xX/g; s/pipe:\[[0-9]+\]/pipe:[N]/g'; }
+   diff <(norm <good.log) <(norm <bad.log)
+   ```
+
+   The same script traced twice must give an empty diff; if it does not, normalise more.
+   The first line that differs is usually the decision that went wrong.
+5. **See what the kernel saw** with `strace`. The trace's own writes show up in it (they go to
+   descriptors 200 and up), so the two logs interleave:
+
+   ```sh
+   SHISH_TRACE=fdtable SHISH_TRACE_FILE=/tmp/t.log \
+     strace -f -o st.txt -s 120 -e trace=write,dup,dup2,dup3,close,fcntl,pipe2,execve shish -c '...'
+   grep -a -E 'write\(2[0-9][0-9]|dup|close|execve' st.txt
+   ```
+
+   A `close(3)` right after `execve` means descriptor 3 was close-on-exec; a `dup2(a, b)`
+   with no earlier relocation of `b` clobbered a live descriptor; a missing `close()` in a
+   child is a leaked pipe end.
+6. **Find the caller** with a debugger. The event name is the breakpoint: break in
+   `trace_begin` on that event and the backtrace names the code that emitted it.
+
+   ```sh
+   SHISH_TRACE=fdtable gdb -q -batch \
+     -ex 'set follow-fork-mode child' -ex 'set detach-on-fork on' \
+     -ex 'break trace_begin if $_streq(event, "dup") && mod == TRACE_FDTABLE' \
+     -ex run -ex 'bt 6' --args build/dbg/shish -c 'exec 3>&1; /bin/true'
+   ```
+
+   Follow the child to debug what happens after a fork, the parent to debug the code that
+   forks. After the child `exec`s, gdb's "Error in re-setting breakpoint" is harmless.
+
+Timing-sensitive races (`sig`, `wait`) change under `strace` and a debugger; tracing alone
+disturbs them least, so compare a run with and without `strace`.
+
+## Tools
+
+**`tools/trace2seq`** turns a log into something shorter to read. It needs `exec` and `sh` in
+`SHISH_TRACE`.
+
+```sh
+tools/trace2seq trace.log            # process tree: who forked whom, what each pid exec'd, how it exited
+tools/trace2seq -c EVENT trace.log   # number of lines of one event, e.g. exec.program.execve
+tools/trace2seq -s trace.log         # Mermaid sequence diagram of forks, execs and exits
+```
+
+```
+pid 976576 shell exit=0
+  pid 976577 shell exit=0
+  pid 976578 exec /bin/cat ["/bin/cat"] exit=0
+```
+
+`tests/trace2seq.sh` uses it as an oracle: it asserts that a script forks and `execve`s the
+expected number of programs.
+
+**`dump`** (builtin, enabled by a debug build or `-DBUILTIN_DUMP=ON`) prints internal state to
+a descriptor on request: `-v` the root variable table, `-l` the innermost local table, `-F`
+the defined functions, and in a debug build `-t` the descriptor table, `-s` the descriptor
+stack, `-f` the descriptor list, `-j` the jobs. `-u fd` chooses where the dump goes.
+
+**`shparse2ast`** (`-DBUILD_SHPARSE2AST=ON`) prints the full syntax tree of a script as JSON.
+The trace only names node kinds and source text; use this when the whole tree matters.
+
+**ASan and UBSan** (`-DCMAKE_C_FLAGS="-fsanitize=address,undefined"`, run with
+`ASAN_OPTIONS=detect_leaks=0` unless hunting leaks) find memory errors; `valgrind` does for a
+build without a sanitizer.
+
+## Adding a trace point
+
+```c
+TRACE(TRACE_FDTABLE, "dup", trace_int("from", o), trace_int("to", e));   /* decision and inputs */
+TRACE_RET(TRACE_FDTABLE, "gap", trace_int("r", r));                      /* result */
+TRACE_STRUCT(TRACE_FDTABLE, "state", trace_fd("fd", d));                 /* snapshot */
+```
+
+- Name the event `module.event`. Put the inputs of a decision in the call and the outcome in
+  a `TRACE_RET`; place the `TRACE_RET` after the operation, or the line appears before it
+  finished. Prefer one event per branch that can go wrong over a dump of everything.
+- The arguments are evaluated only when the module is selected, and they disappear without
+  `DEBUG_OUTPUT`. Never put a side effect in them. A variable used only inside a trace point
+  may need a `(void)` cast to stay warning-free in a release build.
+- Value writers: `trace_int`, `trace_hex`, `trace_str` (a null string prints `NULL`),
+  `trace_strn`, `trace_raw`, `trace_argv`, `trace_flags(key, bits, names, n)`, `trace_loc`,
+  `trace_kind`, `trace_node`, `trace_nodes`, `trace_fd`, and `trace_open` / `trace_close` for a
+  nested group. `trace_fdtable(event)` and `trace_fdmap(event)` dump a whole table. A new type
+  gets its writer in `src/trace/trace_value.c`.
+- **Never call `TRACE` from a signal handler.** Use `TRACE_DEFER(mod, ev, key, val)` there and
+  `trace_flush()` from normal context.
+- A new module is an entry in `enum trace_module` (`src/trace.h`) and its name in
+  `trace_names[]` in `src/trace/trace_begin.c`, in the same order.
+- Leave useful trace points in. Do not leave `fprintf`, `write(2, ...)` or `abort()` debugging
+  in a commit, and keep `trace.log`, `strace` output and core files out of `git add`.
+
+## Event index
+
+Every trace point in `src/`, by module, with the keys of its payload. A `TRACE_RET` event
+is printed as `=> value` and a `TRACE_STRUCT` event as `{ ... }`, as described above.
+Add a row when you add a trace point
+(`grep -rn 'TRACE.*(TRACE_<MODULE>, "event"' src` shows its keys).
+
+**`exec`**
+
+| event | payload | file |
+|---|---|---|
+| `exec.command` | argc, argv, flag, kind, name, path | `exec_command.c` |
+| `exec.command.background` | name, pid | `exec_command.c` |
+| `exec.func.restore` | count, depth | `exec_search.c` |
+| `exec.func.snapshot` | count, depth | `exec_search.c` |
+| `exec.function.call` | argc, argv, name | `exec_command.c` |
+| `exec.function.return` | name, status | `exec_command.c` |
+| `exec.lookup` | cache, errno, kind, mask, name, path | `exec_hash.c` |
+| `exec.program` | argv, flag, fork, path | `exec_program.c` |
+| `exec.program.child` | path | `exec_program.c` |
+| `exec.program.execve` | argv, nenv, path | `exec_program.c` |
+| `exec.program.execve_failed` | errno, path | `exec_program.c` |
+| `exec.program.fork` | bgnd, monitor, path, pid | `exec_program.c` |
+| `exec.program.fork_failed` | errno, path | `exec_program.c` |
+| `exec.program.pipes` | npipes | `exec_program.c` |
+| `exec.program.status` | exit, path, pid, wait | `exec_program.c` |
+
+**`builtin`**
+
+| event | payload | file |
+|---|---|---|
+| `builtin.run` | argc, argv, name, redir_failed | `exec_command.c` |
+| `builtin.status` | name, status | `exec_command.c` |
+| `builtin.trap` | code, sig | `builtin_trap.c` |
+
+**`fd`**
+
+| event | payload | file |
+|---|---|---|
+| `fd.close` | fd, side | `fd_close.c` |
+| `fd.dup` | n, name, of, src | `fd_dup.c` |
+| `fd.here` | len, n | `fd_here.c` |
+| `fd.null` | n | `fd_null.c` |
+| `fd.open` | file, mode, n | `fd_open.c` |
+| `fd.pipe` | e, n, other | `fd_pipe.c` |
+| `fd.pop` | fd, n | `fd_pop.c` |
+| `fd.push` | level, mode, n | `fd_push.c` |
+| `fd.setfd` | e, mode, n | `fd_setfd.c` |
+| `fd.state.restore` | expected, hi, lo | `fd_state_restore.c` |
+| `fd.state.save` | expected, hi, lo | `fd_state_save.c` |
+| `fd.string` | len, n | `fd_string.c` |
+| `fd.subst` | n | `fd_subst.c` |
+| `fd.tempfile` | e, file, n | `fd_tempfile.c` |
+
+**`fdstack`**
+
+| event | payload | file |
+|---|---|---|
+| `fdstack.data` | bytes, fd | `fdstack_data.c` |
+| `fdstack.flatten` | level | `fdstack_flatten.c` |
+| `fdstack.fork` | n | `fdstack_fork.c` |
+| `fdstack.link` | n | `fdstack_link.c` |
+| `fdstack.npipes` | mode, n | `fdstack_npipes.c` |
+| `fdstack.pipe` | fds, n | `fdstack_pipe.c` |
+| `fdstack.pop` | level | `fdstack_pop.c` |
+| `fdstack.push` | level | `fdstack_push.c` |
+| `fdstack.unref` | dupes, n | `fdstack_unref.c` |
+| `fdstack.update` | e, n | `fdstack_update.c` |
+
+**`fdtable`**
+
+| event | payload | file |
+|---|---|---|
+| `fdtable.close` | e, flags, r | `fdtable_close.c` |
+| `fdtable.dup` | from, to | `fdtable_dup.c` |
+| `fdtable.gap` | e, flags, r | `fdtable_gap.c` |
+| `fdtable.lazy` | e, expected, flags, r | `fdtable_lazy.c` |
+| `fdtable.link` | n | `fdtable_link.c` |
+| `fdtable.open` | file, flags, n, r | `fdtable_open.c` |
+| `fdtable.openfd` | e, flags, n, r | `fdtable_openfd.c` |
+| `fdtable.resolve` | fd, flags, state | `fdtable_resolve.c` |
+| `fdtable.track` | expected, flags, n | `fdtable_track.c` |
+| `fdtable.unexpected` | e, flags, u | `fdtable_unexpected.c` |
+| `fdtable.unlink` | n | `fdtable_unlink.c` |
+| `fdtable.untrack` | e, expected | `fdtable_untrack.c` |
+| `fdtable.up` | expected | `fdtable_up.c` |
+| `fdtable.wish` | e, expected, flags, r | `fdtable_wish.c` |
+
+**`eval`**
+
+| event | payload | file |
+|---|---|---|
+| `eval.and_or` | left, op, run_right | `eval_and_or.c` |
+| `eval.and_or.status` | op, status | `eval_and_or.c` |
+| `eval.assign` | export, temp, var | `eval_simple_command.c` |
+| `eval.background` | kind, pid | `eval_node_bgnd.c` |
+| `eval.case.match` | pattern, word | `eval_case.c` |
+| `eval.case.nomatch` | word | `eval_case.c` |
+| `eval.errexit` | status | `eval_cmdlist.c, eval_tree.c` |
+| `eval.exit` | code, found | `eval_exit.c` |
+| `eval.for.iter` | value, var | `eval_for.c` |
+| `eval.function.define` | name | `eval_function.c` |
+| `eval.function.redefine` | name | `eval_function.c` |
+| `eval.if.branch` | taken | `eval_if.c` |
+| `eval.if.test` | status | `eval_if.c` |
+| `eval.jump` | cont, found, levels | `eval_jump.c` |
+| `eval.loop` | kind | `eval_loop.c` |
+| `eval.loop.test` | continue, status | `eval_loop.c` |
+| `eval.node` | flags, kind, loc | `eval_node.c` |
+| `eval.pipeline` | bgnd, filter_chain, lastpipe, stages | `eval_pipeline.c` |
+| `eval.pipeline.fork` | pid | `eval_pipeline.c` |
+| `eval.pop` | flags, status | `eval_pop.c` |
+| `eval.prefix_scope.enter` | – | `eval_simple_command.c` |
+| `eval.prefix_scope.leave` | – | `eval_simple_command.c` |
+| `eval.push` | flags | `eval_push.c` |
+| `eval.redir_scope.enter` | kind, nredir | `eval_command.c` |
+| `eval.redir_scope.leave` | status | `eval_command.c` |
+| `eval.return` | found, value | `eval_return.c` |
+| `eval.simple_command` | bgnd, loc, nassign, nredir | `eval_simple_command.c` |
+| `eval.simple_command.status` | status | `eval_simple_command.c` |
+| `eval.status` | kind, status | `eval_cmdlist.c, eval_tree.c` |
+| `eval.subshell.enter` | – | `eval_subshell.c` |
+| `eval.subshell.leave` | status | `eval_subshell.c` |
+| `eval.subst.enter` | – | `expand_command.c` |
+| `eval.subst.leave` | len, status | `expand_command.c` |
+
+**`expand`**
+
+| event | payload | file |
+|---|---|---|
+| `expand.args` | argv | `eval_simple_command.c` |
+| `expand.arith.unsupported` | kind | `expand_arith_expr.c` |
+
+**`redir`**
+
+| event | payload | file |
+|---|---|---|
+| `redir.dup` | fd, persistent, src | `redir_dup.c` |
+| `redir.dup.self` | fd | `redir_eval.c` |
+| `redir.eval` | fd, flag, preallocated, target | `redir_eval.c` |
+| `redir.eval.status` | fd, status | `redir_eval.c` |
+| `redir.here` | fd, len | `redir_here.c` |
+| `redir.open` | fd, mode, now, path, preopen | `redir_open.c` |
+| `redir.preopen` | errno, fd, path, result | `redir_preopen.c` |
+
+**`var`**
+
+| event | payload | file |
+|---|---|---|
+| `var.chflg` | before, flags, name, set | `var_chflg.c` |
+| `var.create` | depth, name, shadows | `var_create.c` |
+| `var.export` | count | `var_export.c` |
+| `var.set` | flags, level, v | `var_set.c` |
+| `var.setv` | flags, level, name, value | `var_setv.c` |
+| `var.unset` | level, name | `var_unset.c` |
+| `var.vartab.pop` | function, level | `vartab_pop.c` |
+| `var.vartab.push` | function, level | `vartab_push.c` |
+
+**`sh`**
+
+| event | payload | file |
+|---|---|---|
+| `sh.args` | argc, argv | `sh_setargs.c` |
+| `sh.cwd` | new, old | `builtin_cd.c` |
+| `sh.exit` | child, code | `sh_exit.c` |
+| `sh.fmt.config` | columnwrap, indent_width | `sh_fmt.c` |
+| `sh.forked` | new, old | `sh_forked.c` |
+| `sh.getcwd` | cwd | `sh_getcwd.c` |
+| `sh.input` | args, argv0, command, kind, script | `sh_main.c` |
+| `sh.loop.list` | cmds, n | `sh_loop.c` |
+| `sh.mode` | forced, interactive, monitor, no_interactive, term | `sh_main.c` |
+| `sh.opt` | letter, on | `builtin_set.c` |
+| `sh.pop` | cwd, exitcode | `sh_pop.c` |
+| `sh.popargs` | argc | `sh_popargs.c` |
+| `sh.push` | argc, cwd, monitor | `sh_push.c` |
+| `sh.pushargs` | argc | `sh_pushargs.c` |
+| `sh.start` | argc, argv, pid, ppid | `sh_main.c` |
+
+**`job`**
+
+| event | payload | file |
+|---|---|---|
+| `job.clean` | id, pgrp | `job_clean.c` |
+| `job.foreground` | id, pgrp | `job_foreground.c` |
+| `job.fork` | bgnd, id, pgrp, pid | `exec_program.c, job_fork.c` |
+| `job.fork.child` | bgnd, pgrp | `job_fork.c` |
+| `job.new` | id, nproc | `job_new.c` |
+| `job.reap` | pid, status | `job_wait.c` |
+| `job.signal` | pid | `job_signal.c` |
+| `job.table` | njobs | `job_update.c` |
+| `job.update` | – | `job_update.c` |
+| `job.wait` | id, pgrp, pid, status | `job_wait.c` |
+
+**`sig`**
+
+| event | payload | file |
+|---|---|---|
+| `sig.action` | flags, handler, sig | `sh_main.c` |
+| `sig.block` | sig | `exec_program.c, job_foreground.c, job_fork.c, job_update.c` |
+| `sig.blocknone` | – | `exec_program.c` |
+| `sig.handler` | sig | `sh_main.c` |
+| `sig.push` | handler, sig | `builtin_trap.c` |
+| `sig.trap.deferred` | sig | `builtin_trap.c` |
+| `sig.trap.handler` | sig | `builtin_trap.c` |
+| `sig.trap.install` | ignore, name, sig | `builtin_trap.c` |
+| `sig.trap.pending` | sig | `builtin_trap.c` |
+| `sig.trap.relay` | sig | `builtin_trap.c` |
+| `sig.trap.restore` | count | `builtin_trap.c` |
+| `sig.trap.scope.default` | sig | `builtin_trap.c` |
+| `sig.trap.snapshot` | count | `builtin_trap.c` |
+| `sig.trap.uninstall` | sig | `builtin_trap.c` |
+| `sig.unblock` | sig | `exec_program.c, job_foreground.c, job_fork.c, job_update.c` |
+
+**`parse`**
+
+| event | payload | file |
+|---|---|---|
+| `parse.arith` | kind | `parse_arith.c` |
+| `parse.command` | kind | `parse_command.c` |
+| `parse.expect_failed` | discarded | `parse_expect.c` |
+| `parse.function` | name | `parse_function.c` |
+| `parse.getarg` | word | `parse_getarg.c` |
+| `parse.grouping` | kind | `parse_grouping.c` |
+| `parse.list` | cmds, n | `parse_list.c` |
+| `parse.simple_command` | loc, text | `parse_simple_command.c` |
+| `parse.token` | flags, tok | `parse_gettok.c` |

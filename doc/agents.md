@@ -72,7 +72,7 @@ no container at all. See [WebAssembly](wasm.md) and the
 
 ## Caveat
 
-shish is alpha. It passes 5541 cases of yash's POSIX suite and fails 551
+shish is alpha. It passes 6151 cases of yash's POSIX suite and fails 7
 of them ([Conformance](conformance.md)); the known defects are listed in
 [`BUGS`](../BUGS). Pin a commit, run your own command corpus through it,
 and report what breaks.

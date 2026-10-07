@@ -61,7 +61,7 @@ pipes through `awk`, use busybox — or use both, and let shish be the
 ## Caveat
 
 shish is alpha (see [Conformance](conformance.md)). It runs its own test
-suite and 5541 cases of yash's POSIX suite, not your distribution's
+suite and 6151 cases of yash's POSIX suite, not your distribution's
 `/etc/init.d`. Test your entrypoint against it before you ship it —
 `shish -n script.sh` parses without executing, which is a cheap first
 check.

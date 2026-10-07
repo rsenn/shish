@@ -36,8 +36,8 @@ cmake --build build/x86_64-linux-musl -j
 ```
 
 WebAssembly needs a toolchain file that ships with the compiler itself
-(see [WebAssembly](wasm.md) for the full flag set, both Emscripten and
-freestanding `wasm32`). Windows (mingw), MSYS2, ARM64 Linux and Android
+(see [WebAssembly](wasm.md) for the full flag set: Emscripten, wasi-sdk with
+`cfg-wasi`, and freestanding `wasm32`). Windows (mingw), MSYS2, ARM64 Linux and Android
 need a `-DCMAKE_TOOLCHAIN_FILE=...` pointing at a toolchain file this
 repo does not ship (it depends on where the target sysroot lives on the
 machine doing the cross-build) -- `cfg-cmake.sh` in the repo root is the
@@ -47,7 +47,7 @@ authoritative reference for the exact flags each of these targets needs.
 |---|---|
 | musl, dietlibc, tcc | `CC` override only |
 | Windows (mingw), MSYS2, ARM64 Linux, Android/Termux | a `-DCMAKE_TOOLCHAIN_FILE` |
-| WebAssembly (Emscripten or freestanding `wasm32`) | the compiler's own toolchain file |
+| WebAssembly (Emscripten, wasi-sdk or freestanding `wasm32`) | the compiler's own toolchain file |
 
 ### Windows (mingw)
 
@@ -85,6 +85,7 @@ to build it on. Every job runs synchronously in the foreground instead
 | `DO_CONFORMANCE_TESTS` | `ON` | register `tests/posix/*.tst` with CTest |
 | `DO_YASH_TESTS` | `OFF` | register `tests/yash/*.tst` too |
 | `DEBUG_OUTPUT`, `DEBUG_COLOR` | `OFF` | verbose instrumentation |
+| `LIBARCHIVE_GZIP` `_BZIP2` `_LZ4` `_LZMA` `_ZSTD` `_LZO` | `ON` | one compression codec each, for `compress`/`uncompress` (see [Builtins](builtins.md)) |
 
 Builtins are selected at configure time — see [Builtins](builtins.md).
 

@@ -79,7 +79,21 @@ cfg-wasi                       # writes build/wasi/, MinSizeRel, all builtins
 cmake --build build/wasi -j
 ```
 
-This produces `build/wasi/shish`, a 248 KB `wasm32-wasip1` module. wasi-libc
+This produces `build/wasi/shish`, a `wasm32-wasip1` module: 1.1 MB with every
+builtin, including `gzip`, `xz`, `zstd` and the other compressors. Each
+compression codec has its own switch (`-DLIBARCHIVE_GZIP`, `_BZIP2`, `_LZ4`,
+`_LZMA`, `_ZSTD`, `_LZO`, all `ON`); a codec that is off is not built and its
+builtins are not compiled in. With zstd, lz4, lzo and bzip2 off, the module is
+585 KB:
+
+```sh
+cfg-wasi -DLIBARCHIVE_ZSTD=OFF -DLIBARCHIVE_LZ4=OFF -DLIBARCHIVE_LZO=OFF -DLIBARCHIVE_BZIP2=OFF
+```
+
+A configure that is repeated in an existing `build/wasi` can keep a stale
+toolchain choice; delete the directory before changing the toolchain. liblzma
+is built single-threaded there (`XZ_THREADS=no`), as WASI has no threads or
+signal masks. wasi-libc
 has no `fork`, `exec`, `wait`, `termios`, `pwd` or `sigaction`, so
 `src/wasi/wasi_compat.h` (force-included on this target only) supplies
 stubs that fail the way a system without the feature does. The build also
@@ -102,10 +116,15 @@ not, instantiation fails before any shell code runs.
 
 ### webassembly.sh
 
-Tested 2026-09-19 with Chrome 152: run `wapm upload` in the terminal,
-choose `shish.wasm` (rename `build/wasi/shish` to that), then
-`shish -c 'echo hi'`, or just `shish` for the shell itself. Functions,
-subshells, `break` and pipelines between builtins work there.
+Tested with Chrome 152: run `wapm upload` in the terminal, choose
+`shish.wasm` (rename `build/wasi/shish` to that), then `shish -c 'echo hi'`.
+Functions, subshells, `break` and pipelines between builtins work there.
+
+Plain `shish` starts, but is not a usable interactive shell: webassembly.sh
+gives a WASI program no terminal, and answers every read from standard input
+with a browser `prompt()` dialog ("Please enter text for stdin:"), one line
+at a time, with no prompt line and no editing. Use `-c` there. An interactive
+page needs its own terminal front end (see the roadmap).
 
 ### What works on WASI
 
@@ -121,6 +140,8 @@ the file utilities that are compiled in as builtins.
   status 1. Compile the utilities you need in as [builtins](builtins.md).
 - No job control, no terminal handling (`tcgetattr` reports "not a tty"),
   no `/etc/passwd` (`~user` does not expand), a single anonymous user.
+- No working directory to change: `cd` fails, relative paths resolve only
+  where the host provides a cwd. `ulimit` reports "not supported".
 - Files are visible only through the host's preopened directories.
 
 ## Why put a shell in WebAssembly
