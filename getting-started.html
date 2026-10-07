@@ -23,7 +23,7 @@
   <button class="themetoggle" type="button" aria-label="Toggle colour scheme">◐</button>
 </header>
 <div class="layout">
-<aside class="sidebar"><div class="navgroup"><h3>Start here</h3><ul><li><a href="getting-started.html" class="here">Getting started</a></li><li><a href="docs/building.html">Building</a></li><li><a href="docs/builtins.html">Builtins</a></li></ul></div><div class="navgroup"><h3>Where it runs</h3><ul><li><a href="docs/containers.html">Containers</a></li><li><a href="docs/agents.html">Agent sandboxes</a></li><li><a href="docs/wasm.html">WebAssembly</a></li></ul></div><div class="navgroup"><h3>Reference</h3><ul><li><a href="docs/conformance.html">Conformance</a></li></ul></div></aside>
+<aside class="sidebar"><div class="navgroup"><h3>Start here</h3><ul><li><a href="getting-started.html" class="here">Getting started</a></li><li><a href="docs/building.html">Building</a></li><li><a href="docs/builtins.html">Builtins</a></li></ul></div><div class="navgroup"><h3>Where it runs</h3><ul><li><a href="docs/containers.html">Containers</a></li><li><a href="docs/agents.html">Agent sandboxes</a></li><li><a href="docs/wasm.html">WebAssembly</a></li></ul></div><div class="navgroup"><h3>Reference</h3><ul><li><a href="docs/conformance.html">Conformance</a></li><li><a href="docs/debug-output.html">Debug output</a></li></ul></div></aside>
 <main class="doc">
 <article><h1 id="shish"><a class="anchor" href="#shish" aria-hidden="true">#</a>shish</h1>
 <p>A small POSIX-ish shell in C. One static binary, no <code>stdio</code>, no <code>printf</code> —
@@ -46,9 +46,9 @@ language runtime, no history file, no startup file it did not ask for.</li>
 <h2 id="status"><a class="anchor" href="#status" aria-hidden="true">#</a>Status</h2>
 <p>shish is <strong>alpha, and not a drop-in <code>/bin/sh</code></strong>. It runs the shell
 language — pipelines, redirections, functions, <code>case</code>, loops, parameter
-expansion, arithmetic, job control, traps — and it passes 5541 cases of
-yash's POSIX conformance suite, but there are 551 it still fails and a
-list of known defects in <a href="https://github.com/rsenn/shish/blob/main/BUGS" target="_blank" rel="noopener"><code>BUGS</code></a>. Do not put it under <code>init</code> yet.</p>
+expansion, arithmetic, job control, traps — and it passes 6151 cases of
+yash's POSIX conformance suite and fails 7 (another 6103 need a controlling
+terminal and are skipped); known defects are listed in <a href="https://github.com/rsenn/shish/blob/main/BUGS" target="_blank" rel="noopener"><code>BUGS</code></a>. Do not put it under <code>init</code> yet.</p>
 <p>See <a href="docs/conformance.html">Conformance</a> for what actually works today, and
 <a href="https://github.com/rsenn/shish/blob/main/TODO.md" target="_blank" rel="noopener"><code>TODO.md</code></a> for what is being fixed next.</p>
 <h2 id="build"><a class="anchor" href="#build" aria-hidden="true">#</a>Build</h2>
@@ -59,7 +59,7 @@ list of known defects in <a href="https://github.com/rsenn/shish/blob/main/BUGS"
 reuses the parser). See <a href="docs/building.html">Building</a> for cross-compiling,
 static linking, and picking which builtins get compiled in.</p>
 <h2 id="documentation"><a class="anchor" href="#documentation" aria-hidden="true">#</a>Documentation</h2>
-<div class="tablewrap"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td><a href="docs/building.html">Building</a></td><td>toolchains, options, cross-compilation</td></tr><tr><td><a href="docs/builtins.html">Builtins</a></td><td>what is built in, and how to choose</td></tr><tr><td><a href="docs/containers.html">Containers</a></td><td>a shell layer that is one file</td></tr><tr><td><a href="docs/agents.html">Agent sandboxes</a></td><td>shish as an AI harness's <code>/bin/sh</code></td></tr><tr><td><a href="docs/wasm.html">WebAssembly</a></td><td>emscripten and WASI builds</td></tr><tr><td><a href="docs/conformance.html">Conformance</a></td><td>test suites and current scores</td></tr></tbody></table></div>
+<div class="tablewrap"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td><a href="docs/building.html">Building</a></td><td>toolchains, options, cross-compilation</td></tr><tr><td><a href="docs/builtins.html">Builtins</a></td><td>what is built in, and how to choose</td></tr><tr><td><a href="docs/containers.html">Containers</a></td><td>a shell layer that is one file</td></tr><tr><td><a href="docs/agents.html">Agent sandboxes</a></td><td>shish as an AI harness's <code>/bin/sh</code></td></tr><tr><td><a href="docs/wasm.html">WebAssembly</a></td><td>emscripten and WASI builds</td></tr><tr><td><a href="docs/conformance.html">Conformance</a></td><td>test suites and current scores</td></tr><tr><td><a href="docs/debug-output.html">Debug output</a></td><td><code>TRACE()</code> and <code>SHISH_TRACE</code>: following the evaluator</td></tr></tbody></table></div>
 <h2 id="name"><a class="anchor" href="#name" aria-hidden="true">#</a>Name</h2>
 <p><code>sh-ish</code>, because it is derived from <code>sh</code>; <code>shisha</code>, the water pipe, since
 shells and pipes are related topics; and shish kebab, which is a nice

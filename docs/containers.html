@@ -23,7 +23,7 @@
   <button class="themetoggle" type="button" aria-label="Toggle colour scheme">◐</button>
 </header>
 <div class="layout">
-<aside class="sidebar"><div class="navgroup"><h3>Start here</h3><ul><li><a href="../getting-started.html">Getting started</a></li><li><a href="building.html">Building</a></li><li><a href="builtins.html">Builtins</a></li></ul></div><div class="navgroup"><h3>Where it runs</h3><ul><li><a href="containers.html" class="here">Containers</a></li><li><a href="agents.html">Agent sandboxes</a></li><li><a href="wasm.html">WebAssembly</a></li></ul></div><div class="navgroup"><h3>Reference</h3><ul><li><a href="conformance.html">Conformance</a></li></ul></div></aside>
+<aside class="sidebar"><div class="navgroup"><h3>Start here</h3><ul><li><a href="../getting-started.html">Getting started</a></li><li><a href="building.html">Building</a></li><li><a href="builtins.html">Builtins</a></li></ul></div><div class="navgroup"><h3>Where it runs</h3><ul><li><a href="containers.html" class="here">Containers</a></li><li><a href="agents.html">Agent sandboxes</a></li><li><a href="wasm.html">WebAssembly</a></li></ul></div><div class="navgroup"><h3>Reference</h3><ul><li><a href="conformance.html">Conformance</a></li><li><a href="debug-output.html">Debug output</a></li></ul></div></aside>
 <main class="doc">
 <article><h1 id="shish-in-containers"><a class="anchor" href="#shish-in-containers" aria-hidden="true">#</a>shish in containers</h1>
 <p>A container image usually carries a shell it barely uses: <code>/bin/sh</code>, plus
@@ -70,7 +70,7 @@ pipes through <code>awk</code>, use busybox — or use both, and let shish be th
 <code>/bin/sh</code> that busybox's <code>ash</code> would otherwise be.</p>
 <h2 id="caveat"><a class="anchor" href="#caveat" aria-hidden="true">#</a>Caveat</h2>
 <p>shish is alpha (see <a href="conformance.html">Conformance</a>). It runs its own test
-suite and 5541 cases of yash's POSIX suite, not your distribution's
+suite and 6151 cases of yash's POSIX suite, not your distribution's
 <code>/etc/init.d</code>. Test your entrypoint against it before you ship it —
 <code>shish -n script.sh</code> parses without executing, which is a cheap first
 check.</p></article>

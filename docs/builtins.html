@@ -23,7 +23,7 @@
   <button class="themetoggle" type="button" aria-label="Toggle colour scheme">◐</button>
 </header>
 <div class="layout">
-<aside class="sidebar"><div class="navgroup"><h3>Start here</h3><ul><li><a href="../getting-started.html">Getting started</a></li><li><a href="building.html">Building</a></li><li><a href="builtins.html" class="here">Builtins</a></li></ul></div><div class="navgroup"><h3>Where it runs</h3><ul><li><a href="containers.html">Containers</a></li><li><a href="agents.html">Agent sandboxes</a></li><li><a href="wasm.html">WebAssembly</a></li></ul></div><div class="navgroup"><h3>Reference</h3><ul><li><a href="conformance.html">Conformance</a></li></ul></div></aside>
+<aside class="sidebar"><div class="navgroup"><h3>Start here</h3><ul><li><a href="../getting-started.html">Getting started</a></li><li><a href="building.html">Building</a></li><li><a href="builtins.html" class="here">Builtins</a></li></ul></div><div class="navgroup"><h3>Where it runs</h3><ul><li><a href="containers.html">Containers</a></li><li><a href="agents.html">Agent sandboxes</a></li><li><a href="wasm.html">WebAssembly</a></li></ul></div><div class="navgroup"><h3>Reference</h3><ul><li><a href="conformance.html">Conformance</a></li><li><a href="debug-output.html">Debug output</a></li></ul></div></aside>
 <main class="doc">
 <article><h1 id="builtins"><a class="anchor" href="#builtins" aria-hidden="true">#</a>Builtins</h1>
 <p>Every builtin is a compile-time choice. The shell you ship contains the
@@ -34,15 +34,20 @@ utilities a script needs are inside the binary, not on a <code>PATH</code>.</p>
 <p><code>cmake/Builtins.cmake</code> defines them.</p>
 <p><strong>Minimal</strong> — the shell language itself, plus what POSIX requires a shell
 to provide:</p>
-<div class="codeblock"><pre><code>. : alias break cd command eval exec exit export expr getopts hash
-history jobs kill local printf pwd read readonly return set shift
-source test times trap type umask unset wait</code></pre></div>
-<p><strong>Default</strong> — the minimal set plus <code>echo</code>, <code>true</code>, <code>false</code>, <code>help</code>,
-<code>type</code> and <code>fdtable</code>. This is what a plain <code>cfg</code> build gives you.</p>
+<div class="codeblock"><pre><code>[ alias break cd command continue eval exec exit export expr getopts hash
+history jobs kill local printf pwd read readonly return set shift source test
+times trap type ulimit umask unset wait</code></pre></div>
+<p><strong>Default</strong> — the minimal set plus <code>echo</code>, <code>true</code>, <code>false</code>, <code>help</code> and
+<code>fdtable</code>. This is what a plain <code>cfg</code> build gives you.</p>
 <p><strong>Extra</strong> — the reason a shish container image can be a single file:</p>
-<div class="codeblock"><pre><code>basename cat chmod cp date digest dirname env find grep hostname id link ln
-ls mkdir mktemp mv readlink realpath rm rmdir sed sleep sort split tail tee
-timeout touch uname unlink wc which</code></pre></div>
+<div class="codeblock"><pre><code>awk basename cat chmod compress cp cut date digest dirname dirs dump env find
+grep head hostname id link ln ls mkdir mktemp mv nl paste popd pushd readlink
+realpath rm rmdir sed sleep sort split tail tee timeout touch tr uname
+uncompress uniq unlink wc which xargs</code></pre></div>
+<p><code>src/builtin/builtins.map</code> is the one list these come from (name, source file,
+tier); the lists above are generated from it. <code>compress</code> and <code>uncompress</code> are
+the whole family of compressors and decompressors under their usual names
+(<code>gzip</code>, <code>bzip2</code>, <code>xz</code>, <code>zstd</code>, <code>zcat</code>, <code>gunzip</code>, ...), see below.</p>
 <p><code>cp</code> and <code>mv</code> are one source file (<code>builtin_cp.c</code>, one function that looks at
 <code>argv[0]</code>); <code>mv</code> also needs <code>rm</code>'s tree removal, so enabling <code>mv</code> compiles
 <code>builtin_rm.c</code> too.</p>
@@ -62,13 +67,19 @@ entirely in one <code>builtin_*.c</code> file.</p>
 <div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cfg</span> <span class="t-op">-DENABLE_ALL_BUILTINS</span>=<span class="t-id">ON</span>              <span class="t-cm"># everything</span>
 <span class="t-id">cfg</span> <span class="t-op">-DBUILTIN_CAT</span>=<span class="t-id">ON</span> <span class="t-op">-DBUILTIN_MKDIR</span>=<span class="t-id">ON</span>   <span class="t-cm"># just these two on top of the default set</span>
 <span class="t-id">cfg</span> <span class="t-op">-DBUILTIN_HISTORY</span>=<span class="t-id">OFF</span>                 <span class="t-cm"># and this one off</span></code></pre></div>
-<p>(<code>-DENABLE_&lt;NAME&gt;=ON/OFF</code> also works, as the older spelling of
-<code>-DBUILTIN_&lt;NAME&gt;</code>.)</p>
 <p>The configure step writes <code>&lt;builddir&gt;/src/builtin_config.h</code>, which is
 what <code>src/builtin/builtin_table.c</code> is compiled against. Nothing you left
 out is linked in.</p>
 <p>With autotools, the same choice is
 <code>./configure --enable-builtins="cat mkdir rm"</code>.</p>
+<h2 id="compression-codecs"><a class="anchor" href="#compression-codecs" aria-hidden="true">#</a>Compression codecs</h2>
+<p><code>compress</code> and <code>uncompress</code> sit on libarchive: a system copy when cmake finds
+one, otherwise libarchive and every codec library it needs are built from
+source. Each codec has its own switch, all <code>ON</code>:</p>
+<div class="tablewrap"><table><thead><tr><th>option</th><th>codec</th><th>builtins it provides</th></tr></thead><tbody><tr><td><code>LIBARCHIVE_GZIP</code></td><td>zlib</td><td><code>gzip</code> <code>gunzip</code> <code>zcat</code></td></tr><tr><td><code>LIBARCHIVE_BZIP2</code></td><td>bzip2</td><td><code>bzip2</code> <code>lbzip2</code> <code>bzcat</code> <code>lbzcat</code></td></tr><tr><td><code>LIBARCHIVE_LZMA</code></td><td>liblzma</td><td><code>xz</code> <code>unxz</code> <code>xzcat</code> <code>lzma</code> <code>lzcat</code> <code>lz</code></td></tr><tr><td><code>LIBARCHIVE_ZSTD</code></td><td>zstd</td><td><code>zstd</code> <code>unzstd</code> <code>zstdcat</code></td></tr><tr><td><code>LIBARCHIVE_LZ4</code></td><td>lz4</td><td><code>lz4</code> <code>lz4cat</code></td></tr><tr><td><code>LIBARCHIVE_LZO</code></td><td>lzo2</td><td><code>lzop</code> <code>lzopcat</code></td></tr></tbody></table></div>
+<p>A codec that is switched off is not built and its names are not in the table,
+which is what makes a small WebAssembly build possible (see <a href="wasm.html">WebAssembly</a>):</p>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cfg</span> <span class="t-op">-DENABLE_ALL_BUILTINS</span>=<span class="t-id">ON</span> <span class="t-op">-DLIBARCHIVE_ZSTD</span>=<span class="t-id">OFF</span> <span class="t-op">-DLIBARCHIVE_LZ4</span>=<span class="t-id">OFF</span> <span class="t-op">-DLIBARCHIVE_LZO</span>=<span class="t-id">OFF</span></code></pre></div>
 <h2 id="regex-backend-textdfa-or-regexh"><a class="anchor" href="#regex-backend-textdfa-or-regexh" aria-hidden="true">#</a>Regex backend: <code>text/dfa</code> or <code>regex.h</code></h2>
 <p><code>expr</code> and <code>sed</code> always match via <code>text/dfa</code> (an in-tree, from-scratch
 POSIX BRE/ERE engine, <code>text/dfa.h</code>) — no libc dependency, so both work
@@ -97,7 +108,7 @@ anyway, call it by path:</p>
 <p><code>type name</code> says which one you would get.</p></article>
 <p class="editlink"><a href="https://github.com/rsenn/shish/blob/main/doc/builtins.md">Edit this page on GitHub →</a></p>
 </main>
-<nav class="toc"><h3>On this page</h3><ul><li class="lvl2"><a href="#the-three-sets">The three sets</a></li><li class="lvl2"><a href="#choosing">Choosing</a></li><li class="lvl2"><a href="#regex-backend-textdfa-or-regexh">Regex backend: text/dfa or regex.h</a></li><li class="lvl2"><a href="#what-a-builtin-costs">What a builtin costs</a></li><li class="lvl2"><a href="#precedence">Precedence</a></li></ul></nav>
+<nav class="toc"><h3>On this page</h3><ul><li class="lvl2"><a href="#the-three-sets">The three sets</a></li><li class="lvl2"><a href="#choosing">Choosing</a></li><li class="lvl2"><a href="#compression-codecs">Compression codecs</a></li><li class="lvl2"><a href="#regex-backend-textdfa-or-regexh">Regex backend: text/dfa or regex.h</a></li><li class="lvl2"><a href="#what-a-builtin-costs">What a builtin costs</a></li><li class="lvl2"><a href="#precedence">Precedence</a></li></ul></nav>
 </div>
 <footer class="sitefoot">
   <p>shish | GPL v2. Built from the repo's own markdown by

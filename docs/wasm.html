@@ -23,7 +23,7 @@
   <button class="themetoggle" type="button" aria-label="Toggle colour scheme">◐</button>
 </header>
 <div class="layout">
-<aside class="sidebar"><div class="navgroup"><h3>Start here</h3><ul><li><a href="../getting-started.html">Getting started</a></li><li><a href="building.html">Building</a></li><li><a href="builtins.html">Builtins</a></li></ul></div><div class="navgroup"><h3>Where it runs</h3><ul><li><a href="containers.html">Containers</a></li><li><a href="agents.html">Agent sandboxes</a></li><li><a href="wasm.html" class="here">WebAssembly</a></li></ul></div><div class="navgroup"><h3>Reference</h3><ul><li><a href="conformance.html">Conformance</a></li></ul></div></aside>
+<aside class="sidebar"><div class="navgroup"><h3>Start here</h3><ul><li><a href="../getting-started.html">Getting started</a></li><li><a href="building.html">Building</a></li><li><a href="builtins.html">Builtins</a></li></ul></div><div class="navgroup"><h3>Where it runs</h3><ul><li><a href="containers.html">Containers</a></li><li><a href="agents.html">Agent sandboxes</a></li><li><a href="wasm.html" class="here">WebAssembly</a></li></ul></div><div class="navgroup"><h3>Reference</h3><ul><li><a href="conformance.html">Conformance</a></li><li><a href="debug-output.html">Debug output</a></li></ul></div></aside>
 <main class="doc">
 <article><h1 id="shish-on-webassembly"><a class="anchor" href="#shish-on-webassembly" aria-hidden="true">#</a>shish on WebAssembly</h1>
 <p>shish compiles to a 184 KB <code>.wasm</code> module. That is a whole POSIX-ish
@@ -82,7 +82,17 @@ There are no processes to fork. Compile the utilities you need in as
 <div class="codeblock" data-lang="sh"><pre><code class="language-sh">. ./<span class="t-id">cfg-cmake.sh</span>
 <span class="t-id">cfg-wasi</span>                       <span class="t-cm"># writes build/wasi/, MinSizeRel, all builtins</span>
 <span class="t-id">cmake</span> <span class="t-op">--build</span> <span class="t-id">build</span>/<span class="t-id">wasi</span> <span class="t-op">-j</span></code></pre></div>
-<p>This produces <code>build/wasi/shish</code>, a 248 KB <code>wasm32-wasip1</code> module. wasi-libc
+<p>This produces <code>build/wasi/shish</code>, a <code>wasm32-wasip1</code> module: 1.1 MB with every
+builtin, including <code>gzip</code>, <code>xz</code>, <code>zstd</code> and the other compressors. Each
+compression codec has its own switch (<code>-DLIBARCHIVE_GZIP</code>, <code>_BZIP2</code>, <code>_LZ4</code>,
+<code>_LZMA</code>, <code>_ZSTD</code>, <code>_LZO</code>, all <code>ON</code>); a codec that is off is not built and its
+builtins are not compiled in. With zstd, lz4, lzo and bzip2 off, the module is
+585 KB:</p>
+<div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">cfg-wasi</span> <span class="t-op">-DLIBARCHIVE_ZSTD</span>=<span class="t-id">OFF</span> <span class="t-op">-DLIBARCHIVE_LZ4</span>=<span class="t-id">OFF</span> <span class="t-op">-DLIBARCHIVE_LZO</span>=<span class="t-id">OFF</span> <span class="t-op">-DLIBARCHIVE_BZIP2</span>=<span class="t-id">OFF</span></code></pre></div>
+<p>A configure that is repeated in an existing <code>build/wasi</code> can keep a stale
+toolchain choice; delete the directory before changing the toolchain. liblzma
+is built single-threaded there (<code>XZ_THREADS=no</code>), as WASI has no threads or
+signal masks. wasi-libc
 has no <code>fork</code>, <code>exec</code>, <code>wait</code>, <code>termios</code>, <code>pwd</code> or <code>sigaction</code>, so
 <code>src/wasi/wasi_compat.h</code> (force-included on this target only) supplies
 stubs that fail the way a system without the feature does. The build also
@@ -97,10 +107,14 @@ must support it:</p>
 Whether a given host supports it has to be checked per host: if it does
 not, instantiation fails before any shell code runs.</p>
 <h3 id="webassemblysh"><a class="anchor" href="#webassemblysh" aria-hidden="true">#</a>webassembly.sh</h3>
-<p>Tested 2026-09-19 with Chrome 152: run <code>wapm upload</code> in the terminal,
-choose <code>shish.wasm</code> (rename <code>build/wasi/shish</code> to that), then
-<code>shish -c 'echo hi'</code>, or just <code>shish</code> for the shell itself. Functions,
-subshells, <code>break</code> and pipelines between builtins work there.</p>
+<p>Tested with Chrome 152: run <code>wapm upload</code> in the terminal, choose
+<code>shish.wasm</code> (rename <code>build/wasi/shish</code> to that), then <code>shish -c 'echo hi'</code>.
+Functions, subshells, <code>break</code> and pipelines between builtins work there.</p>
+<p>Plain <code>shish</code> starts, but is not a usable interactive shell: webassembly.sh
+gives a WASI program no terminal, and answers every read from standard input
+with a browser <code>prompt()</code> dialog ("Please enter text for stdin:"), one line
+at a time, with no prompt line and no editing. Use <code>-c</code> there. An interactive
+page needs its own terminal front end (see the roadmap).</p>
 <h3 id="what-works-on-wasi"><a class="anchor" href="#what-works-on-wasi" aria-hidden="true">#</a>What works on WASI</h3>
 <p>Everything that does not need another process: expansion, arithmetic,
 control flow, functions, here-documents, <code>$(...)</code> of builtins, pipelines
@@ -113,6 +127,8 @@ need <code>fork</code>: they print <code>&lt;cmd&gt;: Function not implemented</
 status 1. Compile the utilities you need in as <a href="builtins.html">builtins</a>.</li>
 <li>No job control, no terminal handling (<code>tcgetattr</code> reports "not a tty"),
 no <code>/etc/passwd</code> (<code>~user</code> does not expand), a single anonymous user.</li>
+<li>No working directory to change: <code>cd</code> fails, relative paths resolve only
+where the host provides a cwd. <code>ulimit</code> reports "not supported".</li>
 <li>Files are visible only through the host's preopened directories.</li>
 </ul>
 <h2 id="why-put-a-shell-in-webassembly"><a class="anchor" href="#why-put-a-shell-in-webassembly" aria-hidden="true">#</a>Why put a shell in WebAssembly</h2>

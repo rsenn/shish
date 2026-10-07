@@ -128,9 +128,10 @@ hi</code></pre>
   <h2>Status: alpha, and honest about it</h2>
   <p>shish runs the shell language: pipelines, redirections, functions,
      <code>case</code>, loops, parameter expansion, arithmetic, job control,
-     traps. It passes <b>5541</b> cases of yash's POSIX conformance suite.
-     It also still fails <b>551</b>, mostly in signal disposition,
-     <code>alias</code> and quoting/parameter expansion.</p>
+     traps. It passes <b>6151</b> cases of yash's POSIX conformance suite.
+     It still fails <b>7</b>, in <code>alias</code>, <code>input</code>,
+     quoting, and two deliberate departures (<code>echo</code> and
+     <code>cat</code> run as builtins even when <code>PATH</code> is empty).</p>
   <p>It is <b>not</b> a drop-in <code>/bin/sh</code> yet: do not point
      <code>init</code> at it. Every known defect has a repro in
      <a href="https://github.com/rsenn/shish/blob/main/BUGS">BUGS</a>, the work plan is in
