@@ -207,18 +207,6 @@
   find . -exec echo {} \;
   ```
 
-- fixed-sh-assumes-optional-builtins: `tests/fixed.sh` gives different results on
-  a default build than with `-DENABLE_ALL_BUILTINS=ON`, because some cases need
-  an optional builtin or an external tool: on a default build the two `set +h`
-  cases (they `rm` with a PATH holding only the test's own directories) and the
-  `lz`/`tr` multibyte cases fail (11 failures); with every builtin on, 9 fail.
-  Gate those cases on the builtin being present, or stop depending on it.
-
-  **Repro:**
-  ```sh
-  cmake -S . -B /tmp/def && cmake --build /tmp/def -j && /tmp/def/shish tests/fixed.sh | grep FAIL
-  ```
-
 - wait-interrupted-by-trap-hangs: the `wait` builtin does not get
   interrupted by an arriving trapped signal the way POSIX requires --
   it should re-check/return so the trap body's effect (e.g. setting a
