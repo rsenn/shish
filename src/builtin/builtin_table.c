@@ -571,22 +571,32 @@ struct builtin_cmd builtin_table[] = {
     {"lbzip2", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
     {"lz", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
     {"lz4", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
+#ifndef LIBARCHIVE_NO_LZMA
     {"lzma", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
+#endif
     {"lzop", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
+#ifndef LIBARCHIVE_NO_LZMA
     {"xz", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
+#endif
     {"zstd", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
 #endif
 #if BUILTIN_UNCOMPRESS
     {"zcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
     {"bzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
+#ifndef LIBARCHIVE_NO_LZMA
     {"xzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
+#endif
     {"zstdcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
     {"lbzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
     {"lz4cat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
+#ifndef LIBARCHIVE_NO_LZMA
     {"lzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
+#endif
     {"lzopcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
     {"gunzip", &builtin_uncompress, B_DEFAULT, "[-cdfhk] [file...]", help_uncompress, &compress_filter},
+#ifndef LIBARCHIVE_NO_LZMA
     {"unxz", &builtin_uncompress, B_DEFAULT, "[-cdfhk] [file...]", help_uncompress, &compress_filter},
+#endif
     {"unzstd", &builtin_uncompress, B_DEFAULT, "[-cdfhk] [file...]", help_uncompress, &compress_filter},
 #endif
     {NULL, NULL, 0, NULL, NULL},

@@ -14,13 +14,13 @@
 #include "../../lib/windoze.h"
 #include <errno.h>
 #include <string.h>
-#if !WINDOWS_NATIVE
+#if !WINDOWS_NATIVE && !defined(__wasi__)
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #endif
 
-#if WINDOWS_NATIVE
+#if WINDOWS_NATIVE || defined(__wasi__)
 const char help_ulimit[] = "    Not available on this platform.\n";
 
 int

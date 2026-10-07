@@ -251,6 +251,17 @@ if(BUILTIN_COMPRESS OR BUILTIN_UNCOMPRESS OR ENABLE_ALL_BUILTINS)
     
   # If you want to support optional compilation blocks in your source files:
   target_compile_definitions(shish PRIVATE HAVE_LIBARCHIVE=1)
+
+  # libarchive has no process-spawning code without fork
+  if(CMAKE_SYSTEM_NAME STREQUAL "WASI")
+    target_sources(shish PRIVATE src/wasi/archive_fork.c)
+  endif()
+
+  # no xz/lzma codec: the builtins that need it are not compiled
+  if(NOT LIBARCHIVE_LZMA)
+    target_compile_definitions(libshell PRIVATE LIBARCHIVE_NO_LZMA=1)
+    target_compile_definitions(shish PRIVATE LIBARCHIVE_NO_LZMA=1)
+  endif()
 endif()
 
 if(EMSCRIPTEN)

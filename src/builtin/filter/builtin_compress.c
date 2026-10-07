@@ -86,12 +86,18 @@ static const struct compress_algo compress_algos[] = {
     {"lbzip2", ".bz2", archive_write_add_filter_bzip2, 0},
     {"lz", ".lz", archive_write_add_filter_lzip, 0},
     {"lz4", ".lz4", archive_write_add_filter_lz4, 0},
+#ifndef LIBARCHIVE_NO_LZMA
     {"lzma", ".lzma", archive_write_add_filter_lzma, 0},
+#endif
     {"lzop", ".lzo", archive_write_add_filter_lzop, 0},
+#ifndef LIBARCHIVE_NO_LZMA
     {"xz", ".xz", archive_write_add_filter_xz, 0},
+#endif
     {"zstd", ".zst", archive_write_add_filter_zstd, 0},
     {"gunzip", ".gz", archive_write_add_filter_gzip, 1},
+#ifndef LIBARCHIVE_NO_LZMA
     {"unxz", ".xz", archive_write_add_filter_xz, 1},
+#endif
     {"unzstd", ".zst", archive_write_add_filter_zstd, 1},
 };
 

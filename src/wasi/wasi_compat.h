@@ -109,12 +109,29 @@ wait3(int* status, int options, void* rusage) {
 #define SIG_UNBLOCK 1
 #define SIG_SETMASK 2
 #define SA_RESTART 0x10000000
+#define SA_SIGINFO 0x4
+#define SA_NOCLDSTOP 0x1
+
+typedef struct {
+  pid_t si_pid;
+} siginfo_t;
 
 struct sigaction {
-  void (*sa_handler)(int);
+  union {
+    void (*sa_handler)(int);
+    void (*sa_sigaction)(int, siginfo_t*, void*);
+  };
   sigset_t sa_mask;
   int sa_flags;
 };
+
+/* an SA_SIGINFO handler runs through a one-argument trampoline: raise() has no sender */
+static void (*wasi_siginfo[64])(int, siginfo_t*, void*);
+
+static inline void
+wasi_siginfo_tramp(int sig) {
+  wasi_siginfo[sig & 63](sig, NULL, NULL);
+}
 
 static inline int
 sigemptyset(sigset_t* s) {
@@ -149,7 +166,14 @@ sigprocmask(int how, const sigset_t* set, sigset_t* old) {
 
 static inline int
 sigaction(int sig, const struct sigaction* act, struct sigaction* old) {
-  void (*prev)(int) = act ? signal(sig, act->sa_handler) : signal(sig, SIG_DFL);
+  void (*h)(int) = act ? act->sa_handler : SIG_DFL;
+  void (*prev)(int);
+
+  if(act && (act->sa_flags & SA_SIGINFO)) {
+    wasi_siginfo[sig & 63] = act->sa_sigaction;
+    h = wasi_siginfo_tramp;
+  }
+  prev = signal(sig, h);
 
   if(!act)
     signal(sig, prev);
@@ -181,6 +205,67 @@ static inline struct passwd*
 getpwuid(unsigned uid) {
   (void)uid;
   return NULL;
+}
+
+struct group {
+  char* gr_name;
+  char* gr_passwd;
+  unsigned gr_gid;
+  char** gr_mem;
+};
+
+static inline struct group*
+getgrgid(unsigned gid) {
+  (void)gid;
+  return NULL;
+}
+
+static inline struct group*
+getgrnam(const char* name) {
+  (void)name;
+  return NULL;
+}
+
+static inline int
+getpwuid_r(unsigned uid, struct passwd* pw, char* buf, size_t len, struct passwd** res) {
+  (void)uid, (void)pw, (void)buf, (void)len;
+  *res = NULL;
+  return 0;
+}
+
+static inline int
+getgrgid_r(unsigned gid, struct group* gr, char* buf, size_t len, struct group** res) {
+  (void)gid, (void)gr, (void)buf, (void)len;
+  *res = NULL;
+  return 0;
+}
+
+/* no working directory to change, no time zone database */
+static inline int
+fchdir(int fd) {
+  (void)fd;
+  errno = ENOSYS;
+  return -1;
+}
+
+static inline void
+tzset(void) {
+}
+
+/* interval timers: SIGALRM cannot be delivered, so there is nothing to arm */
+#define ITIMER_REAL 0
+
+struct itimerval {
+  struct {
+    long tv_sec, tv_usec;
+  } it_interval, it_value;
+};
+
+static inline int
+setitimer(int which, const struct itimerval* v, struct itimerval* old) {
+  (void)which, (void)v, (void)old;
+  errno = ENOSYS;
+  return -1;
 }
 
 /* terminal: never a tty */

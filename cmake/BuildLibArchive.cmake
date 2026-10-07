@@ -22,6 +22,9 @@ include(cmake/BuildLzo2.cmake)
 include(cmake/BuildZlib.cmake)
 include(cmake/BuildZstd.cmake)
 
+# xz/lzma support; off drops the codec and the xz/lzma builtins
+option(LIBARCHIVE_LZMA "Build libarchive with xz/lzma support" ON)
+
 # build_libarchive(SOURCE BINARY SUFFIX PIC)
 #
 # Builds the vendored libarchive submodule once per SUFFIX ("shared"/"static"), each
@@ -41,7 +44,7 @@ macro(build_libarchive SOURCE BINARY SUFFIX PIC)
     find_libb2()
   endif()
 
-  if(NOT DEFINED LIBLZMA_FOUND)
+  if(LIBARCHIVE_LZMA AND NOT DEFINED LIBLZMA_FOUND)
     find_liblzma()
   endif()
 
@@ -78,7 +81,9 @@ macro(build_libarchive SOURCE BINARY SUFFIX PIC)
          "-DLIBB2_LIBRARY:FILEPATH=${LIBB2_LIBRARY_FILE_${SUFFIX}}")
   endif()
 
-  if(NOT LIBLZMA_FOUND)
+  if(NOT LIBARCHIVE_LZMA)
+    list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DENABLE_LZMA:BOOL=OFF")
+  elseif(NOT LIBLZMA_FOUND)
     build_liblzma(${BINARY} ${SUFFIX} ${PIC})
     list(APPEND LIBARCHIVE_DEPS_${SUFFIX} liblzma_${SUFFIX})
     list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DLIBLZMA_INCLUDE_DIR:PATH=${LIBLZMA_INCLUDE_DIR_${SUFFIX}}"
@@ -115,10 +120,23 @@ macro(build_libarchive SOURCE BINARY SUFFIX PIC)
          "-DZSTD_LIBRARY:FILEPATH=${ZSTD_LIBRARY_FILE_${SUFFIX}}")
   endif()
 
+  set(LIBARCHIVE_C_FLAGS "-w")
+
   # Host-detected libs resolve to glibc headers via -I/usr/include, which breaks libarchive's configure checks under musl-gcc.
-  if(CMAKE_C_COMPILER MATCHES "musl")
+  if(CMAKE_C_COMPILER MATCHES "musl" OR CMAKE_SYSTEM_NAME STREQUAL "WASI")
     list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DENABLE_OPENSSL:BOOL=OFF" "-DENABLE_EXPAT:BOOL=OFF"
          "-DENABLE_LIBXML2:BOOL=OFF" "-DENABLE_ICONV:BOOL=OFF" "-DENABLE_PCREPOSIX:BOOL=OFF")
+  endif()
+
+  # WASI has no ACLs, extended attributes or host crypto, and no tools are built
+  if(CMAKE_SYSTEM_NAME STREQUAL "WASI")
+    list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DENABLE_ACL:BOOL=OFF" "-DENABLE_XATTR:BOOL=OFF" "-DENABLE_NETTLE:BOOL=OFF"
+         "-DENABLE_MBEDTLS:BOOL=OFF" "-DENABLE_PCRE2POSIX:BOOL=OFF" "-DENABLE_TAR:BOOL=OFF" "-DENABLE_CPIO:BOOL=OFF"
+         "-DENABLE_CAT:BOOL=OFF" "-DENABLE_UNZIP:BOOL=OFF"
+         # src/wasi/wasi_compat.h supplies these, so the link-only probes cannot see them
+         "-DHAVE_FCHDIR:INTERNAL=1" "-DHAVE_GETPWUID_R:INTERNAL=1" "-DHAVE_GETGRGID_R:INTERNAL=1")
+    set(LIBARCHIVE_C_FLAGS "-w -I${SOURCE}/src/wasi -include ${SOURCE}/src/wasi/wasi_compat.h -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_GETPID -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_MMAN")
+    list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DCMAKE_EXE_LINKER_FLAGS:STRING=-lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks -lwasi-emulated-mman")
   endif()
 
   ExternalProject_Add(
@@ -134,7 +152,7 @@ macro(build_libarchive SOURCE BINARY SUFFIX PIC)
       "-DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}"
       "-DCMAKE_SYSROOT:PATH=${CMAKE_SYSROOT}"
       "-DCMAKE_TOOLCHAIN_FILE:FILEPATH=${CMAKE_TOOLCHAIN_FILE}"
-      "-DCMAKE_C_FLAGS:STRING=-w"
+      "-DCMAKE_C_FLAGS:STRING=${LIBARCHIVE_C_FLAGS}"
       "-DCMAKE_VERBOSE_MAKEFILE:BOOL=${CMAKE_VERBOSE_MAKEFILE}"
       "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
       "-DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=${PIC}"
