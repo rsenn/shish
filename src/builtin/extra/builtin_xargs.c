@@ -14,6 +14,7 @@
 #include "../../../lib/alloc.h"
 #include "../../../lib/str.h"
 #include "../../../lib/stralloc.h"
+#include <string.h> /* strerror */
 
 /* output stuff
  * ----------------------------------------------------------------------- */

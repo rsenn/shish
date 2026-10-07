@@ -169,7 +169,9 @@ sh.mode(interactive=0, monitor=0, term=0, forced=0, no_interactive=0)
 
    ```sh
    norm() { sed -E 's/^\[[0-9]+:/[P:/; s/0x[0-9a-f]+/0xX/g; s/pipe:\[[0-9]+\]/pipe:[N]/g'; }
-   diff <(norm <good.log) <(norm <bad.log)
+   norm <good.log >good.norm
+   norm <bad.log >bad.norm
+   diff good.norm bad.norm
    ```
 
    The same script traced twice must give an empty diff; if it does not, normalise more.

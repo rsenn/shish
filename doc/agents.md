@@ -7,7 +7,7 @@ part of the security boundary and part of the reproducibility story, and
 history, aliases, a job-control layer, `$BASH_ENV`, and a language that
 nobody can fully enumerate.
 
-shish is 139 KB of C that you can read.
+shish is 197 KB of C that you can read.
 
 ## What matters for a harness
 
@@ -31,8 +31,8 @@ command that works in one works in the others. Cross-builds for musl,
 dietlibc, aarch64, Android/Termux, Windows and WebAssembly all come from
 one tree — see [Building](building.md).
 
-**Cheap.** Startup is ~1.3 ms per `shish -c true` on a warm cache, against
-~1.8 ms for bash. An agent that runs thousands of short commands per
+**Cheap.** Startup is ~0.9 ms per `shish -c true` on a warm cache, against
+~1.1 ms for bash. An agent that runs thousands of short commands per
 session notices.
 
 **Parse before you run.** `shish -n script` parses and reports syntax

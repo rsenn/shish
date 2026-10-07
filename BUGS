@@ -308,3 +308,11 @@
   ```sh
   : >e; grep -c y e; echo rc=$?     # prints only rc=1; should print 0 first
   ```
+
+- process-substitution-unsupported: `<(cmd)` and `>(cmd)` (bash, ksh, zsh; not POSIX) are a syntax error,
+  so scripts that use them, like `diff <(a) <(b)`, do not run.
+
+  **Repro:**
+  ```sh
+  diff <(echo a) <(echo b)     # unexpected token (
+  ```

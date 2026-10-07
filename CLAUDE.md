@@ -373,7 +373,8 @@ Pick the narrowest set that can contain the cause; widen one module at a time.
    normalising what changes between runs:
    ```sh
    norm() { sed -E 's/^\[[0-9]+:/[P:/; s/0x[0-9a-f]+/0xX/g; s/pipe:\[[0-9]+\]/pipe:[N]/g'; }
-   diff <(norm <good.log) <(norm <bad.log)
+   norm <good.log >good.norm; norm <bad.log >bad.norm
+   diff good.norm bad.norm
    ```
    The same script traced twice must give an empty diff; if it does not, normalise more.
    The first line that differs is usually the decision that went wrong. Do the same

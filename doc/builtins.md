@@ -116,10 +116,11 @@ for the differential test between the two.
 
 ## What a builtin costs
 
-Not much. A default dynamic build is 139 KB stripped (132 KB of text);
-the same build with `-DENABLE_ALL_BUILTINS=ON` is 164 KB (154 KB of
-text) — 25 KB for the whole extra set. Static against glibc, with
-everything on, it is 1.05 MB.
+Not much. A default dynamic build is 197 KB stripped (186 KB of text);
+the same build with `-DENABLE_ALL_BUILTINS=ON` is 392 KB (369 KB of
+text), about 195 KB for the whole extra set; `compress`/`uncompress` link
+libarchive. Static against glibc the default build is 1.2 MB, and with every
+builtin and the bundled libarchive (all codecs) 2.8 MB.
 
 ## Precedence
 
