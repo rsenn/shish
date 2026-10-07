@@ -17,6 +17,7 @@
 #include <string.h>
 #if !WINDOWS_NATIVE && !defined(__wasi__)
 #include <sys/resource.h>
+#include <unistd.h> /* geteuid */
 #include <sys/time.h>
 #include <sys/types.h>
 #endif
