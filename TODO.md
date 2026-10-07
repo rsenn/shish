@@ -100,9 +100,9 @@ the named files, update the table above, remove the closed `BUGS` entry, add `fi
    the FIFO read after it (`BUGS: grouping-p-tst-flaky`).
 4. The harness leaves `tests/posix/tmp.NNNNN/` behind on every hard failure. Clean them up and
    make the harness remove its own.
-5. `tests/fixed.sh` gives different results on a default build and with every builtin
-   (`BUGS: fixed-sh-assumes-optional-builtins`, `fixed-sh-remaining-failures-after-sigchld-fix`,
-   `fixed-sh-fails-under-non-mmap-build`).
+5. `tests/fixed.sh` on a default build and with every builtin: the optional-builtin assertions are skipped by
+   `have NAME` now (`fixes/390`; default build 3 failures, all builtins 5). Still open:
+   `BUGS: fixed-sh-remaining-failures-after-sigchld-fix`, `fixed-sh-fails-under-non-mmap-build`.
 
 ---
 
