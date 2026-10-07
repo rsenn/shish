@@ -81,24 +81,42 @@ struct compress_algo {
 };
 
 static const struct compress_algo compress_algos[] = {
+#ifndef LIBARCHIVE_NO_GZIP
     {"gzip", ".gz", archive_write_add_filter_gzip, 0},
+#endif
+#ifndef LIBARCHIVE_NO_BZIP2
     {"bzip2", ".bz2", archive_write_add_filter_bzip2, 0},
+#endif
+#ifndef LIBARCHIVE_NO_BZIP2
     {"lbzip2", ".bz2", archive_write_add_filter_bzip2, 0},
+#endif
+#ifndef LIBARCHIVE_NO_LZMA
     {"lz", ".lz", archive_write_add_filter_lzip, 0},
+#endif
+#ifndef LIBARCHIVE_NO_LZ4
     {"lz4", ".lz4", archive_write_add_filter_lz4, 0},
+#endif
 #ifndef LIBARCHIVE_NO_LZMA
     {"lzma", ".lzma", archive_write_add_filter_lzma, 0},
 #endif
+#ifndef LIBARCHIVE_NO_LZO
     {"lzop", ".lzo", archive_write_add_filter_lzop, 0},
+#endif
 #ifndef LIBARCHIVE_NO_LZMA
     {"xz", ".xz", archive_write_add_filter_xz, 0},
 #endif
+#ifndef LIBARCHIVE_NO_ZSTD
     {"zstd", ".zst", archive_write_add_filter_zstd, 0},
+#endif
+#ifndef LIBARCHIVE_NO_GZIP
     {"gunzip", ".gz", archive_write_add_filter_gzip, 1},
+#endif
 #ifndef LIBARCHIVE_NO_LZMA
     {"unxz", ".xz", archive_write_add_filter_xz, 1},
 #endif
+#ifndef LIBARCHIVE_NO_ZSTD
     {"unzstd", ".zst", archive_write_add_filter_zstd, 1},
+#endif
 };
 
 /* by command name; anything unknown compresses as gzip */

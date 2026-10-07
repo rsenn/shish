@@ -257,11 +257,13 @@ if(BUILTIN_COMPRESS OR BUILTIN_UNCOMPRESS OR ENABLE_ALL_BUILTINS)
     target_sources(shish PRIVATE src/wasi/archive_fork.c)
   endif()
 
-  # no xz/lzma codec: the builtins that need it are not compiled
-  if(NOT LIBARCHIVE_LZMA)
-    target_compile_definitions(libshell PRIVATE LIBARCHIVE_NO_LZMA=1)
-    target_compile_definitions(shish PRIVATE LIBARCHIVE_NO_LZMA=1)
-  endif()
+  # a disabled codec: the builtins that need it are not compiled
+  foreach(codec GZIP BZIP2 LZ4 LZMA ZSTD LZO)
+    if(NOT LIBARCHIVE_${codec})
+      target_compile_definitions(libshell PRIVATE LIBARCHIVE_NO_${codec}=1)
+      target_compile_definitions(shish PRIVATE LIBARCHIVE_NO_${codec}=1)
+    endif()
+  endforeach()
 endif()
 
 if(EMSCRIPTEN)

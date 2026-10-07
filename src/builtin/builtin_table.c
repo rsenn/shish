@@ -566,38 +566,68 @@ struct builtin_cmd builtin_table[] = {
     {"xargs", &builtin_xargs, B_DEFAULT, "[-0opr] [-a FILE] [-d DELIM] [-l/-L MAX-LINES] [-n MAX-ARGS] [-P MAX-PROCS] <command> [...args]", help_xargs},
 #endif
 #if BUILTIN_COMPRESS
+#ifndef LIBARCHIVE_NO_GZIP
     {"gzip", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
+#endif
+#ifndef LIBARCHIVE_NO_BZIP2
     {"bzip2", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
+#endif
+#ifndef LIBARCHIVE_NO_BZIP2
     {"lbzip2", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
+#endif
+#ifndef LIBARCHIVE_NO_LZMA
     {"lz", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
+#endif
+#ifndef LIBARCHIVE_NO_LZ4
     {"lz4", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
+#endif
 #ifndef LIBARCHIVE_NO_LZMA
     {"lzma", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
 #endif
+#ifndef LIBARCHIVE_NO_LZO
     {"lzop", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
+#endif
 #ifndef LIBARCHIVE_NO_LZMA
     {"xz", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
 #endif
+#ifndef LIBARCHIVE_NO_ZSTD
     {"zstd", &builtin_compress, B_DEFAULT, "[-cdfhk] [-1..-9] [file...]", help_compress, &compress_filter},
 #endif
+#endif
 #if BUILTIN_UNCOMPRESS
+#ifndef LIBARCHIVE_NO_GZIP
     {"zcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
+#endif
+#ifndef LIBARCHIVE_NO_BZIP2
     {"bzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
+#endif
 #ifndef LIBARCHIVE_NO_LZMA
     {"xzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
 #endif
+#ifndef LIBARCHIVE_NO_ZSTD
     {"zstdcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
+#endif
+#ifndef LIBARCHIVE_NO_BZIP2
     {"lbzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
+#endif
+#ifndef LIBARCHIVE_NO_LZ4
     {"lz4cat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
+#endif
 #ifndef LIBARCHIVE_NO_LZMA
     {"lzcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
 #endif
+#ifndef LIBARCHIVE_NO_LZO
     {"lzopcat", &builtin_uncompress, B_DEFAULT, "[file...]", help_uncompress, &uncompress_filter},
+#endif
+#ifndef LIBARCHIVE_NO_GZIP
     {"gunzip", &builtin_uncompress, B_DEFAULT, "[-cdfhk] [file...]", help_uncompress, &compress_filter},
+#endif
 #ifndef LIBARCHIVE_NO_LZMA
     {"unxz", &builtin_uncompress, B_DEFAULT, "[-cdfhk] [file...]", help_uncompress, &compress_filter},
 #endif
+#ifndef LIBARCHIVE_NO_ZSTD
     {"unzstd", &builtin_uncompress, B_DEFAULT, "[-cdfhk] [file...]", help_uncompress, &compress_filter},
+#endif
 #endif
     {NULL, NULL, 0, NULL, NULL},
 };

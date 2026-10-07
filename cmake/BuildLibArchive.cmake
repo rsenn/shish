@@ -22,8 +22,11 @@ include(cmake/BuildLzo2.cmake)
 include(cmake/BuildZlib.cmake)
 include(cmake/BuildZstd.cmake)
 
-# xz/lzma support; off drops the codec and the xz/lzma builtins
-option(LIBARCHIVE_LZMA "Build libarchive with xz/lzma support" ON)
+# one switch per codec; off drops the codec, its library and the builtins that need it
+# (the C side sees LIBARCHIVE_NO_<CODEC>)
+foreach(codec GZIP BZIP2 LZ4 LZMA ZSTD LZO)
+  option(LIBARCHIVE_${codec} "Build libarchive with ${codec} support" ON)
+endforeach()
 
 # build_libarchive(SOURCE BINARY SUFFIX PIC)
 #
@@ -36,7 +39,7 @@ macro(build_libarchive SOURCE BINARY SUFFIX PIC)
 
   message("-- Building libarchive from source (${SUFFIX}, PIC=${PIC})")
 
-  if(NOT DEFINED BZIP2_FOUND)
+  if(LIBARCHIVE_BZIP2 AND NOT DEFINED BZIP2_FOUND)
     find_bzip2()
   endif()
 
@@ -48,26 +51,28 @@ macro(build_libarchive SOURCE BINARY SUFFIX PIC)
     find_liblzma()
   endif()
 
-  if(NOT DEFINED LZ4_FOUND)
+  if(LIBARCHIVE_LZ4 AND NOT DEFINED LZ4_FOUND)
     find_liblz4()
   endif()
 
-  if(NOT DEFINED LZO2_FOUND)
+  if(LIBARCHIVE_LZO AND NOT DEFINED LZO2_FOUND)
     find_lzo2()
   endif()
 
-  if(NOT DEFINED ZLIB_FOUND)
+  if(LIBARCHIVE_GZIP AND NOT DEFINED ZLIB_FOUND)
     find_zlib()
   endif()
 
-  if(NOT DEFINED ZSTD_FOUND)
+  if(LIBARCHIVE_ZSTD AND NOT DEFINED ZSTD_FOUND)
     find_zstd()
   endif()
 
   set(LIBARCHIVE_DEPS_${SUFFIX} "")
   set(LIBARCHIVE_DEP_ARGS_${SUFFIX} "")
 
-  if(NOT BZIP2_FOUND)
+  if(NOT LIBARCHIVE_BZIP2)
+    list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DENABLE_BZip2:BOOL=OFF")
+  elseif(NOT BZIP2_FOUND)
     build_bzip2(${BINARY} ${SUFFIX} ${PIC})
     list(APPEND LIBARCHIVE_DEPS_${SUFFIX} bzip2_${SUFFIX})
     list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DBZIP2_INCLUDE_DIR:PATH=${BZIP2_INCLUDE_DIR_${SUFFIX}}"
@@ -90,21 +95,27 @@ macro(build_libarchive SOURCE BINARY SUFFIX PIC)
          "-DLIBLZMA_LIBRARY_RELEASE:FILEPATH=${LIBLZMA_LIBRARY_FILE_${SUFFIX}}")
   endif()
 
-  if(NOT LZ4_FOUND)
+  if(NOT LIBARCHIVE_LZ4)
+    list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DENABLE_LZ4:BOOL=OFF")
+  elseif(NOT LZ4_FOUND)
     build_liblz4(${BINARY} ${SUFFIX} ${PIC})
     list(APPEND LIBARCHIVE_DEPS_${SUFFIX} lz4_${SUFFIX})
     list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DLZ4_INCLUDE_DIR:PATH=${LZ4_INCLUDE_DIR_${SUFFIX}}"
          "-DLZ4_LIBRARY:FILEPATH=${LZ4_LIBRARY_FILE_${SUFFIX}}")
   endif()
 
-  if(NOT LZO2_FOUND)
+  if(NOT LIBARCHIVE_LZO)
+    list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DENABLE_LZO:BOOL=OFF")
+  elseif(NOT LZO2_FOUND)
     build_lzo2(${BINARY} ${SUFFIX} ${PIC})
     list(APPEND LIBARCHIVE_DEPS_${SUFFIX} lzo2_${SUFFIX})
     list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DLZO2_INCLUDE_DIR:PATH=${LZO2_INCLUDE_DIR_${SUFFIX}}"
          "-DLZO2_LIBRARY:FILEPATH=${LZO2_LIBRARY_FILE_${SUFFIX}}")
   endif()
 
-  if(NOT ZLIB_FOUND)
+  if(NOT LIBARCHIVE_GZIP)
+    list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DENABLE_ZLIB:BOOL=OFF")
+  elseif(NOT ZLIB_FOUND)
     build_zlib(${BINARY} ${SUFFIX} ${PIC})
     list(APPEND LIBARCHIVE_DEPS_${SUFFIX} zlib_${SUFFIX})
     # zlib installs a shared copy next to the static one, so FindZLIB must be told which to pick.
@@ -113,7 +124,9 @@ macro(build_libarchive SOURCE BINARY SUFFIX PIC)
          "-DZLIB_LIBRARY_RELEASE:FILEPATH=${ZLIB_LIBRARY_FILE_${SUFFIX}}")
   endif()
 
-  if(NOT ZSTD_FOUND)
+  if(NOT LIBARCHIVE_ZSTD)
+    list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DENABLE_ZSTD:BOOL=OFF")
+  elseif(NOT ZSTD_FOUND)
     build_zstd(${BINARY} ${SUFFIX} ${PIC})
     list(APPEND LIBARCHIVE_DEPS_${SUFFIX} zstd_${SUFFIX})
     list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DZSTD_INCLUDE_DIR:PATH=${ZSTD_INCLUDE_DIR_${SUFFIX}}"
@@ -146,7 +159,6 @@ macro(build_libarchive SOURCE BINARY SUFFIX PIC)
     DEPENDS ${LIBARCHIVE_DEPS_${SUFFIX}}
     CMAKE_CACHE_ARGS
       ${LIBARCHIVE_DEP_ARGS_${SUFFIX}}
-      "-DENABLE_LZO:BOOL=ON"
       "-DENABLE_TEST:BOOL=OFF"
       ${EMSCRIPTEN_MODULE_PATH_ARGS}
       "-DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}"
