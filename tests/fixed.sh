@@ -6659,4 +6659,12 @@ echo in-dot
 echo e" "$PX" "set -v echoes the lines of a dotted file and an eval string"
 rm -rf "$VDIR"
 
+## fixes/401-404 are build/platform fixes with no assertion that can fail on glibc:
+##   401 builtin_ulimit.c lacked <unistd.h> (implicit geteuid under musl)
+##   402 libarchive is configured only when compress/uncompress is built
+##   403 the HAVE_GLOB probe uses plain glob(); GLOB_BRACE/GLOB_TILDE are GNU-only,
+##       so pathname expansion was silently off in musl builds
+##   404 arena_test skips the brk arena where sbrk() cannot grow the break (musl)
+## Verified by building with musl-gcc and running ctest (builtin-split, expand-brace, expand-fields).
+
 summary

@@ -1,0 +1,13 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 440e144b..5e40cad3 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -233,7 +233,7 @@ set_init(ALL_SOURCES ${SHISH_SOURCES} ${LIBSHELL_SOURCES})
+ add_executable(shish ${SHISH_SOURCES})
+ target_link_libraries(shish PRIVATE libshell ${LIBOWFAT_LIBRARY} ${LIBMATH} ${ELECTRICFENCE_LIBRARY})
+ 
+-if(BUILTIN_COMPRESS OR BUILTIN_UNCOMPRESS OR ENABLE_ALL_BUILTINS)
++if(BUILTIN_COMPRESS OR BUILTIN_UNCOMPRESS)
+   include(cmake/LibArchive.cmake)
+ 
+   configure_libarchive_builtin()

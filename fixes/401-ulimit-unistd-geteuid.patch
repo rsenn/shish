@@ -1,0 +1,12 @@
+diff --git a/src/builtin/builtin_ulimit.c b/src/builtin/builtin_ulimit.c
+index de7654e5..4266398f 100644
+--- a/src/builtin/builtin_ulimit.c
++++ b/src/builtin/builtin_ulimit.c
+@@ -17,6 +17,7 @@
+ #include <string.h>
+ #if !WINDOWS_NATIVE && !defined(__wasi__)
+ #include <sys/resource.h>
++#include <unistd.h> /* geteuid */
+ #include <sys/time.h>
+ #include <sys/types.h>
+ #endif

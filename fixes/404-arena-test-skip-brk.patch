@@ -1,0 +1,26 @@
+diff --git a/tests/arena_test.c b/tests/arena_test.c
+index 54f3d5eb..17285304 100644
+--- a/tests/arena_test.c
++++ b/tests/arena_test.c
+@@ -3,6 +3,7 @@
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
++#include <unistd.h>
+ 
+ static int failed;
+ 
+@@ -134,7 +135,12 @@ main(void) {
+   test_fixed();
+   test_alloc(&arena_heap, "heap");
+   test_alloc(&arena_mmap, "mmap");
+-  test_alloc(&arena_brk, "brk");
++
++  /* musl's sbrk() refuses every growth (ENOMEM): there is no brk arena to test there */
++  if(sbrk(16) != (void*)-1)
++    test_alloc(&arena_brk, "brk");
++  else
++    puts("brk: sbrk() cannot grow the break here, skipped");
+ 
+   puts(failed ? "FAILED" : "all passed");
+   return failed;
