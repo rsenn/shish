@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>shish in agent sandboxes | shish</title>
-<meta name="description" content="shish | a small POSIX-ish shell in C. 139 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
+<meta name="description" content="shish | a small POSIX-ish shell in C. 197 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
 <link rel="stylesheet" href="../assets/base.css">
 <link rel="stylesheet" href="../assets/theme.css">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
@@ -32,7 +32,7 @@ part of the security boundary and part of the reproducibility story, and
 <code>bash</code> is a strange choice for both: 1.4 MB, a startup-file search path,
 history, aliases, a job-control layer, <code>$BASH_ENV</code>, and a language that
 nobody can fully enumerate.</p>
-<p>shish is 139 KB of C that you can read.</p>
+<p>shish is 197 KB of C that you can read.</p>
 <h2 id="what-matters-for-a-harness"><a class="anchor" href="#what-matters-for-a-harness" aria-hidden="true">#</a>What matters for a harness</h2>
 <p><strong>A small, enumerable surface.</strong> ~26 k lines, one function per file, no
 dynamic runtime, no plugins. When a sandbox review asks "what can the
@@ -47,8 +47,8 @@ in the container, on the CI runner, and in the developer's checkout, so a
 command that works in one works in the others. Cross-builds for musl,
 dietlibc, aarch64, Android/Termux, Windows and WebAssembly all come from
 one tree — see <a href="building.html">Building</a>.</p>
-<p><strong>Cheap.</strong> Startup is ~1.3 ms per <code>shish -c true</code> on a warm cache, against
-~1.8 ms for bash. An agent that runs thousands of short commands per
+<p><strong>Cheap.</strong> Startup is ~0.9 ms per <code>shish -c true</code> on a warm cache, against
+~1.1 ms for bash. An agent that runs thousands of short commands per
 session notices.</p>
 <p><strong>Parse before you run.</strong> <code>shish -n script</code> parses and reports syntax
 errors without executing anything — a cheap validity check on a command an

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>shish in containers | shish</title>
-<meta name="description" content="shish | a small POSIX-ish shell in C. 139 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
+<meta name="description" content="shish | a small POSIX-ish shell in C. 197 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
 <link rel="stylesheet" href="../assets/base.css">
 <link rel="stylesheet" href="../assets/theme.css">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
@@ -56,8 +56,8 @@ binary an entrypoint might touch. This is one static executable.</li>
 <li><strong><code>PATH=</code> is a real defence.</strong> If a script never needs an external
 program, an empty <code>PATH</code> costs nothing and removes a whole class of
 binary-planting and PATH-injection tricks.</li>
-<li><strong>Smaller layers, faster pulls.</strong> 139 KB dynamic, ~1.05 MB static with
-every builtin compiled in. bash is 1.4 MB before its libc, busybox is
+<li><strong>Smaller layers, faster pulls.</strong> 197 KB dynamic, ~1.2 MB static with
+the default builtins (2.8 MB with every builtin, compressors included). bash is 1.4 MB before its libc, busybox is
 2.0 MB.</li>
 <li><strong>Reproducible.</strong> No startup file is read unless you point <code>$ENV</code> at
 one, and <code>-p</code> (privileged mode) makes the shell ignore <code>$ENV</code>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>shish | a small POSIX-ish shell in C</title>
-<meta name="description" content="shish | a small POSIX-ish shell in C. 139 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
+<meta name="description" content="shish | a small POSIX-ish shell in C. 197 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
 <link rel="stylesheet" href="assets/base.css">
 <link rel="stylesheet" href="assets/theme.css">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
@@ -35,7 +35,7 @@
 
 <section class="stats">
   <ul class="badges">
-    <li><b>139 KB</b><span>stripped</span></li>
+    <li><b>197 KB</b><span>stripped</span></li>
     <li><b>184 KB</b><span>of WebAssembly</span></li>
     <li><b>26 k</b><span>lines of C</span></li>
     <li><b>0</b><span>runtime dependencies</span></li>
@@ -43,7 +43,7 @@
 </section>
 
 <section class="pitch">
-  <h2>Three places a 139 KB shell changes the maths</h2>
+  <h2>Three places a 197 KB shell changes the maths</h2>
   <div class="cards">
     <article class="card">
       <h3>Containers</h3>
@@ -62,7 +62,7 @@
          somebody has to review. bash is 1.4 MB, a startup-file search path,
          a history file and <code>$BASH_ENV</code>.</p>
       <p>shish reads no startup file of its own, writes no history,
-         starts in ~1.3 ms, and <code>-n</code> parses a generated command
+         starts in ~0.9 ms, and <code>-n</code> parses a generated command
          without running it.</p>
       <a class="more" href="docs/agents.html">Agent sandboxes →</a>
     </article>
@@ -91,14 +91,14 @@ hi</code></pre>
   <table class="sizes">
     <thead><tr><th>shell</th><th>size</th><th>needs coreutils</th></tr></thead>
     <tbody>
-      <tr class="me"><td>shish</td><td>139 KB</td><td>no (builtins)</td></tr>
-      <tr><td>dash</td><td>126 KB</td><td>yes</td></tr>
+      <tr class="me"><td>shish</td><td>197 KB</td><td>no (builtins)</td></tr>
+      <tr><td>dash</td><td>127 KB</td><td>yes</td></tr>
       <tr><td>bash</td><td>1.4 MB</td><td>yes</td></tr>
       <tr><td>busybox (sh + ~400 applets)</td><td>2.0 MB</td><td>no</td></tr>
     </tbody>
   </table>
   <p class="fineprint">Stripped x86-64 binaries on the same machine, dynamically
-     linked. shish is ~1.05 MB static with every builtin compiled in.</p>
+     linked. shish is ~1.2 MB static with the default builtins, 2.8 MB with every builtin.</p>
 </section>
 
 <section class="promise">

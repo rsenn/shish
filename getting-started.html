@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>shish | shish</title>
-<meta name="description" content="shish | a small POSIX-ish shell in C. 139 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
+<meta name="description" content="shish | a small POSIX-ish shell in C. 197 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
 <link rel="stylesheet" href="assets/base.css">
 <link rel="stylesheet" href="assets/theme.css">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
@@ -27,11 +27,11 @@
 <main class="doc">
 <article><h1 id="shish"><a class="anchor" href="#shish" aria-hidden="true">#</a>shish</h1>
 <p>A small POSIX-ish shell in C. One static binary, no <code>stdio</code>, no <code>printf</code> —
-around 139 KB stripped, and it compiles to 184 KB of WebAssembly that runs
+around 197 KB stripped, and it compiles to 184 KB of WebAssembly that runs
 in a browser tab.</p>
 <div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">shish</span> <span class="t-op">-c</span> <span class="t-str">'for f in *.c; do echo "${f%.c}"; done'</span></code></pre></div>
 <ul>
-<li><strong>Small.</strong> 139 KB stripped on x86-64 (dash 126 KB, bash 1.4 MB,
+<li><strong>Small.</strong> 197 KB stripped on x86-64 (dash 127 KB, bash 1.4 MB,
 busybox 2.0 MB), built against an in-tree copy of
 Felix von Leitner's libowfat (<code>lib/</code>) instead of the C library's
 formatted I/O.</li>

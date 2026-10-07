@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Builtins | shish</title>
-<meta name="description" content="shish | a small POSIX-ish shell in C. 139 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
+<meta name="description" content="shish | a small POSIX-ish shell in C. 197 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
 <link rel="stylesheet" href="../assets/base.css">
 <link rel="stylesheet" href="../assets/theme.css">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
@@ -95,10 +95,11 @@ picks up the host's own conformance/locale behavior instead of <code>text/dfa</c
 Either way <code>grep</code>'s matching results should agree — see <code>tests/dev/dfa-diff.c</code>
 for the differential test between the two.</p>
 <h2 id="what-a-builtin-costs"><a class="anchor" href="#what-a-builtin-costs" aria-hidden="true">#</a>What a builtin costs</h2>
-<p>Not much. A default dynamic build is 139 KB stripped (132 KB of text);
-the same build with <code>-DENABLE_ALL_BUILTINS=ON</code> is 164 KB (154 KB of
-text) — 25 KB for the whole extra set. Static against glibc, with
-everything on, it is 1.05 MB.</p>
+<p>Not much. A default dynamic build is 197 KB stripped (186 KB of text);
+the same build with <code>-DENABLE_ALL_BUILTINS=ON</code> is 392 KB (369 KB of
+text), about 195 KB for the whole extra set; <code>compress</code>/<code>uncompress</code> link
+libarchive. Static against glibc the default build is 1.2 MB, and with every
+builtin and the bundled libarchive (all codecs) 2.8 MB.</p>
 <h2 id="precedence"><a class="anchor" href="#precedence" aria-hidden="true">#</a>Precedence</h2>
 <p>A builtin is found before <code>PATH</code> is searched, as POSIX requires for the
 special builtins and permits for the rest. To reach the real binary

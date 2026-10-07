@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tracing the shell: SHISH_TRACE | shish</title>
-<meta name="description" content="shish | a small POSIX-ish shell in C. 139 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
+<meta name="description" content="shish | a small POSIX-ish shell in C. 197 KB stripped, 184 KB of WebAssembly, with cat/rm/mkdir built in: a shell for containers, agent sandboxes and the browser.">
 <link rel="stylesheet" href="../assets/base.css">
 <link rel="stylesheet" href="../assets/theme.css">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
@@ -138,7 +138,9 @@ sh.mode(interactive=0, monitor=0, term=0, forced=0, no_interactive=0)</code></pr
 <span class="t-id">sed</span> <span class="t-op">-n</span> <span class="t-str">'/redir.dup(/,/exec.program.execve/p'</span> <span class="t-id">trace.log</span>   <span class="t-cm"># a window between two events</span></code></pre></div></li>
 <li><p><strong>Diff</strong> a good and a bad variant after normalising what changes between runs:</p>
 <div class="codeblock" data-lang="sh"><pre><code class="language-sh"><span class="t-id">norm</span>() { <span class="t-id">sed</span> <span class="t-op">-E</span> <span class="t-str">'s/^\[[0-9]+:/[P:/; s/0x[0-9a-f]+/0xX/g; s/pipe:\[[0-9]+\]/pipe:[N]/g'</span>; }
-<span class="t-id">diff</span> &lt;(<span class="t-id">norm</span> &lt;<span class="t-id">good.log</span>) &lt;(<span class="t-id">norm</span> &lt;<span class="t-id">bad.log</span>)</code></pre></div>
+<span class="t-id">norm</span> &lt;<span class="t-id">good.log</span> &gt;<span class="t-id">good.norm</span>
+<span class="t-id">norm</span> &lt;<span class="t-id">bad.log</span> &gt;<span class="t-id">bad.norm</span>
+<span class="t-id">diff</span> <span class="t-id">good.norm</span> <span class="t-id">bad.norm</span></code></pre></div>
 <p>The same script traced twice must give an empty diff; if it does not, normalise more.
 The first line that differs is usually the decision that went wrong.</p></li>
 <li><p><strong>See what the kernel saw</strong> with <code>strace</code>. The trace's own writes show up in it (they go to
