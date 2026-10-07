@@ -385,16 +385,6 @@
   `: >e; printf 'x\n' >f; head e f` prints "==> f <==" and x, without a
   header for `e` (POSIX and coreutils print both); `tail e f` is the same.
 
-- quoted-at-then-empty-quotes-drops-field: `"$@"""` with no positional
-  parameters expands to no field; POSIX gives one empty field. The parser
-  emits an empty literal chunk after a plain `"$@"` too, so
-  `expand_args()`'s zero-field rule cannot tell them apart.
-
-  **Repro:**
-  ```sh
-  set --; f() { echo $#; }; f "$@"""     # 0; should be 1
-  ```
-
 - posix-suite-intentional-deviations: two `tests/posix` cases fail on purpose.
   `simple-p.tst:172` expects `PATH=; echo x` to report "not found" (POSIX does not
   require `echo` to be intrinsic), and `option-p.tst:121` expects `hash` to list a

@@ -1,0 +1,57 @@
+diff --git a/src/expand.h b/src/expand.h
+index e3413474..5559fb8d 100644
+--- a/src/expand.h
++++ b/src/expand.h
+@@ -51,7 +51,10 @@ enum subst_type {
+      quoting nibble so it can't be mistaken for a quoting state. */
+   S_BQUOTE = 0x40000,
+   /* here-document body chunk: its bytes are final, skip expand_unescape() */
+-  S_HEREDOC = 0x80000
++  S_HEREDOC = 0x80000,
++  /* an empty chunk that was written ("" after the empty chunk a closing quote already leaves behind):
++     "$@" is no field without positional parameters, "$@""" is one empty field */
++  S_QUOTEDEMPTY = 0x100000
+ };
+ 
+ /* expansion modes: X_* bits, see wordlist.h */
+diff --git a/src/expand/expand_args.c b/src/expand/expand_args.c
+index 4dcd6dfc..db976d79 100644
+--- a/src/expand/expand_args.c
++++ b/src/expand/expand_args.c
+@@ -23,7 +23,8 @@ expand_is_empty_at(union node* word) {
+     return 0;
+ 
+   for(sub = word->narg.list; sub; sub = sub->next) {
+-    if(sub->id == N_ARGSTR && sub->nargstr.stra.len == 0)
++    if(sub->id == N_ARGSTR && sub->nargstr.stra.len == 0 && !(sub->nargstr.flag & S_QUOTEDEMPTY) &&
++       (sub->nargstr.flag & S_TABLE) != S_SQUOTED)
+       continue;
+ 
+     if(sub->id == N_ARGPARAM && (sub->nargparam.flag & (S_SPECIAL | S_VAR)) == S_ARGVS &&
+diff --git a/src/parse/parse_dquoted.c b/src/parse/parse_dquoted.c
+index ec744adc..5a4a2dd8 100644
+--- a/src/parse/parse_dquoted.c
++++ b/src/parse/parse_dquoted.c
+@@ -1,3 +1,4 @@
++#include "../expand.h"
+ #include "../parse.h"
+ #include "../source.h"
+ #include "../tree.h"
+@@ -71,8 +72,17 @@ parse_dquoted(struct parser* p) {
+     /* when spotted a closing quote,
+        skip it and unset quotation mode */
+     else if(!(flags & P_HERE) && c == '"') {
++      union node* last = p->node;
++      int nothing = p->sa.len == 0;
++
+       parse_skip(p);
+       parse_string(p, 0);
++
++      /* a pair written right after another one lands on the empty chunk that one's closing
++         quote left: "$@""" must stay one empty field, "$@" none */
++      if(nothing && last && p->node == last && last->id == N_ARGSTR && last->nargstr.stra.len == 0)
++        last->nargstr.flag |= S_QUOTEDEMPTY;
++
+       p->quot = Q_UNQUOTED;
+       break;
+     } else {

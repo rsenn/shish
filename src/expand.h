@@ -51,7 +51,10 @@ enum subst_type {
      quoting nibble so it can't be mistaken for a quoting state. */
   S_BQUOTE = 0x40000,
   /* here-document body chunk: its bytes are final, skip expand_unescape() */
-  S_HEREDOC = 0x80000
+  S_HEREDOC = 0x80000,
+  /* an empty chunk that was written ("" after the empty chunk a closing quote already leaves behind):
+     "$@" is no field without positional parameters, "$@""" is one empty field */
+  S_QUOTEDEMPTY = 0x100000
 };
 
 /* expansion modes: X_* bits, see wordlist.h */

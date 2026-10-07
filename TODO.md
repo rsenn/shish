@@ -154,57 +154,14 @@ the named files, update the table above, remove the closed `BUGS` entry, add `fi
   not as the end of input. Smallest idea: a separate `in->empty` bit that only `head`/`tail` read, set where
   `filter_in_ready()` closes a source that still has `newfile` set.
 
-- **`"$@"""` with no positional parameters gives 0 fields, POSIX (and bash, dash) give 1**
-  (`quoted-at-then-empty-quotes-drops-field`; also `"$@"''`): `expand_is_empty_at()`
-  (`src/expand/expand_args.c`) treats "only empty literal chunks plus a quoted `$@`" as zero fields. The
-  empty chunk after a plain `"$@"` is created by the parser when the quote state switches
-  (`src/parse/parse_string.c`: a new `N_ARGSTR` whenever `flag & S_TABLE` differs from `p->quot`), so it
-  looks the same as a written `""`. Smallest idea: set a flag bit on an `N_ARGSTR` only where the source
-  has an explicit empty quote pair (`""`, `''`), and let `expand_is_empty_at()` ignore only unmarked
-  empty chunks. Needs a `tests/posix` run of `quote-p`, `param-p` and `field-p`-style files, since the
-  word parser is shared by everything.
-
-- **`break`/`continue` at the top of a file run with `.`** (`source-break-continue-no-op`): bash and dash leave
-  the calling script's loop, shish ignores it. `builtin_source()` pushes an `E_ROOT` frame with its own
-  `setjmp`, which `eval_jump()` treats as a boundary. `eval` got past this with the `E_EVAL` flag, but a
-  jump that skips the source frame would also skip its cleanup (`sh_popargs`, `source_popfd`, `eval_pop`),
-  the kind of leak `eval_jump()`'s comment describes. Smallest idea: let `eval_jump()` stop at the source
-  frame, longjmp into `builtin_source()` with a "propagate break/continue by N levels" code, and have it
-  clean up and re-issue `eval_jump()` from the caller's frame.
-
-- **Here-documents in `tree_cat()`** (DONE 2026-10-07, `fixes/383`): `redir_source()` keeps the delimiter word
-  in `nredir.delim` (it used to free it), `tree_cat()` prints `<<[-]DELIM` as written and queues the body plus the
-  closing line in `tree_here`, and `tree_catseparator()` flushes the queue after the next newline (the outermost
-  `tree_cat()`/`tree_catlist()` flushes what is left). An unquoted delimiter re-escapes `$`, backtick and `\`
-  in the literal body text; a quoted one prints it raw. `set`'s function dump, `trap -p` and `shformat` share it.
-
-- **Forked function children lose their output inside `$( )`**
-  (`timeout-function-output-not-captured-by-command-substitution`): it is not specific to `timeout`.
-  `f() { echo hi; }; x=$(f & wait)` also gives `[]` (bash: `[hi]`), while `x=$(f | cat)` works. A command
-  substitution collects stdout in a `stralloc`; pipeline members get a real pipe when they fork, but an
-  async job and `timeout`'s `exec_command(..., X_NOWAIT)` fork with fd 1 still bound to the `stralloc`.
-  The fix belongs where a pipeline stage materializes its pipe (fdstack), reused for X_NOWAIT/`&`
-  forks: trace with `SHISH_TRACE=fd,fdtable,exec` on `x=$(f & wait)` and compare `fdtable.exec.table`
-  with `fdtable.exec.fds` in the child.
-
----
-
-## 3. `BUGS` <-> conformance-gap map
-
-**Explains a scoreboard number (fix these as part of Stages 1-2):**
-
-- `signal-tests-vary-with-machine-load` -> section 1 (`sig*-p`).
-- `alias-substitution-remaining-cases`, `set-notify-no-effect`, `set-verbose-partial`,
-  `set-o-ignoreeof-nolog-vi-has-no-effect`, `set-histexpand-unimplemented` -> Phase 3.
-- `quote-backslash-escaping-broken` -> Phase 4.
-- `input-not-read-line-wise` -> Phase 5.
-- `posix-suite-intentional-deviations` stays as it is.
-- `yash-suite-other-hangs`, `grouping-p-tst-flaky`, the three `fixed-sh-*` entries -> Phase 6.
+- **`"$@"""` with no positional parameters** (DONE 2026-10-07, `fixes/388`): `parse_dquoted()` marks the
+  empty chunk with `S_QUOTEDEMPTY` when a quote pair is written right after another one (the closing quote
+  of `"$@"` already leaves an empty chunk, which is why the two used to look the same); `expand_is_empty_at()`
+  ignores only unmarked empty chunks, and never a `''` one. `"$@"` gives no field, `"$@"""` and `"$@"''` one.
 
 **Real bugs, but not counted in the `tests/posix` scoreboard** (fix opportunistically):
 `eval-lineno-imprecise-inside-function`,
-`no-tree-print-option-is-a-noop`,
-`quoted-at-then-empty-quotes-drops-field`.
+`no-tree-print-option-is-a-noop`.
 
 **Found 2026-10-06/07 while porting expansion and reading `src/var*`** (none counted in the `tests/posix` scoreboard),
 all fixed since: `chmod-argv-memcpy-overlap` (`fixes/381`), `unset-leaks-the-var-node` (`fixes/382`),

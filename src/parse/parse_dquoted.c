@@ -1,3 +1,4 @@
+#include "../expand.h"
 #include "../parse.h"
 #include "../source.h"
 #include "../tree.h"
@@ -71,8 +72,17 @@ parse_dquoted(struct parser* p) {
     /* when spotted a closing quote,
        skip it and unset quotation mode */
     else if(!(flags & P_HERE) && c == '"') {
+      union node* last = p->node;
+      int nothing = p->sa.len == 0;
+
       parse_skip(p);
       parse_string(p, 0);
+
+      /* a pair written right after another one lands on the empty chunk that one's closing
+         quote left: "$@""" must stay one empty field, "$@" none */
+      if(nothing && last && p->node == last && last->id == N_ARGSTR && last->nargstr.stra.len == 0)
+        last->nargstr.flag |= S_QUOTEDEMPTY;
+
       p->quot = Q_UNQUOTED;
       break;
     } else {

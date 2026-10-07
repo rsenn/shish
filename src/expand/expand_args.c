@@ -23,7 +23,8 @@ expand_is_empty_at(union node* word) {
     return 0;
 
   for(sub = word->narg.list; sub; sub = sub->next) {
-    if(sub->id == N_ARGSTR && sub->nargstr.stra.len == 0)
+    if(sub->id == N_ARGSTR && sub->nargstr.stra.len == 0 && !(sub->nargstr.flag & S_QUOTEDEMPTY) &&
+       (sub->nargstr.flag & S_TABLE) != S_SQUOTED)
       continue;
 
     if(sub->id == N_ARGPARAM && (sub->nargparam.flag & (S_SPECIAL | S_VAR)) == S_ARGVS &&

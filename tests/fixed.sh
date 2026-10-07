@@ -6493,6 +6493,15 @@ assert_equal "ax
 bx
 done" "$PX" "continue 2 after an inner while loop's break reaches the outer for loop"
 
+## fixes/388: "$@""" with no positional parameters is one empty field, "$@" is none
+PX=$("$SHISH_SELF" -c 'set --; f() { echo $#; }; f "$@"; f "$@"""; f "$@"'"''"'; f "$@" ""; f "$@""$@"; f ""$@')
+assert_equal "0
+1
+1
+1
+0
+1" "$PX" "an empty quoted string written after \"\$@\" keeps its field, a bare \"\$@\" adds none"
+
 # WASI only, not testable here: eval_time scaled wasi-libc times() (nanoseconds) by
 # sysconf(_SC_CLK_TCK), so "time -p" reported hundreds of seconds. Checked by building
 # build/wasi and running "time -p { loop; }" under Node: real and user now match.
