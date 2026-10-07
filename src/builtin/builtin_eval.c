@@ -42,6 +42,7 @@ builtin_eval(int argc, char* argv[]) {
 
   /* create a new i/o context and initialize a parser */
   source_buffer(&src, &fd, sa.s, sa.len);
+  src.mode |= SOURCE_VERBOSE;
   parse_init(&p, P_DEFAULT);
 
   /* parse and run one command at a time, so that an alias defined by an

@@ -67,6 +67,8 @@ head_setup(void* ctx) {
   if(!h->gotcount)
     h->count = 10;
 
+  h->in.keepempty = 1;
+
   return 0;
 }
 
@@ -81,7 +83,7 @@ head_step(void* arg, const char** unit, size_t* len) {
   for(;;) {
     size_t take;
 
-    if((n = filter_in_peek(&h->in, &p)) <= 0)
+    if((n = filter_in_peek(&h->in, &p)) < 0 || (n == 0 && !h->in.empty))
       return 0;
 
     if(h->in.newfile) {
@@ -107,6 +109,11 @@ head_step(void* arg, const char** unit, size_t* len) {
       }
 
       h->started = 1;
+    }
+
+    if(n == 0) {
+      filter_in_close(&h->in);
+      continue;
     }
 
     if(h->neg) {

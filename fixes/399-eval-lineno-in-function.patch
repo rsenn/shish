@@ -1,0 +1,89 @@
+--- a/src/source/source_buffer.c
++++ b/src/source/source_buffer.c
+@@ -1,5 +1,6 @@
+ #include "../fd.h"
+ #include "../parse.h"
++#include "../sh.h"
+ #include "../source.h"
+ 
+ /* ----------------------------------------------------------------------- */
+@@ -13,15 +14,13 @@
+   /* an in-memory buffer parsed via source_buffer() (eval/expr/trap,
+    * backquote or alias re-lexing, prompt escapes) continues whatever
+    * source it was spliced out of, not a separate file -- so $LINENO
+-   * should count from there, not restart at 1 like source_push()'s
+-   * default.
++   * counts from there, not from 1 like source_push()'s default:
+    *
+-   * parse_lineno is the line of whichever top-level list sh_loop() is
+-   * currently executing, stamped once per list at parse time. The
+-   * parent source's live position.line would look more direct, but by
+-   * the time a builtin like eval runs, that position has already been
+-   * advanced past the current statement by the parser's own
+-   * lookahead. */
++   *   sh_errloc    line of the simple command being run ("eval" inside a function body)
++   *   parse_lineno line of the top-level list, when no command is running
++   *
++   * The parent source's live position.line is no use: the parser's lookahead
++   * has moved it past the statement by the time a builtin runs. */
+   if(s->parent)
+-    s->position.line = parse_lineno;
++    s->position.line = sh_errloc_set ? sh_errloc.line : parse_lineno;
+ }
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -6639,4 +6639,12 @@
+   assert_equal "[fn]" "$PX" "timeout of a function inside a command substitution keeps its output"
+ fi
+ 
++## fixes/399: $LINENO in an eval string inside a function is the eval command's own line
++LNDIR=$(mktemp -d)
++printf 'f() {\n  echo $LINENO\n  eval '"'"'echo $LINENO'"'"'\n}\nf\n' >"$LNDIR/l.sh"
++PX=$("$SHISH_SELF" "$LNDIR/l.sh")
++assert_equal "2
++3" "$PX" "eval inside a function reports its own line for \$LINENO, not the call site's"
++rm -rf "$LNDIR"
++
+ summary
+--- a/BUGS
++++ b/BUGS
+@@ -23,27 +23,6 @@
+   timeout 20 sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/yash while-y.tst; echo $?   # 124
+   ```
+ 
+-- eval-lineno-imprecise-inside-function: `$LINENO` read from within an
+-  `eval`'d string takes the line of the invoking statement, but the value
+-  it inherits (`parse_lineno`, stamped once per top-level list by
+-  `sh_loop()`) is the *call site's* line, not the eval statement's own
+-  line when eval runs from inside a function or loop body whose
+-  definition spans multiple lines -- there is no per-command location
+-  tracking to fall back on for that case (unlike a direct, non-eval'd
+-  `$LINENO` reference, which reads the parse-time `loc` stamped
+-  individually on its own `N_ARGPARAM` node).
+-
+-  **Repro:**
+-  ```sh
+-  cat <<'EOF' | shish
+-  f() {
+-    echo $LINENO   # correctly prints 2
+-    eval 'echo $LINENO'   # prints 5 (f's call site), should print 3
+-  }
+-  f
+-  EOF
+-  ```
+-
+ - set-notify-no-effect: POSIX `-b` is accepted (`set -b`, `set -o notify`,
+   shown in `$-`) but changes nothing: a finished background job is still
+   reported only just before the next prompt. Needs a real "OK to interrupt
+--- a/TODO.md
++++ b/TODO.md
+@@ -154,9 +154,6 @@
+   of `"$@"` already leaves an empty chunk, which is why the two used to look the same); `expand_is_empty_at()`
+   ignores only unmarked empty chunks, and never a `''` one. `"$@"` gives no field, `"$@"""` and `"$@"''` one.
+ 
+-**Real bugs, but not counted in the `tests/posix` scoreboard** (fix opportunistically):
+-`eval-lineno-imprecise-inside-function`.
+-
+ **Found 2026-10-06/07 while porting expansion and reading `src/var*`** (none counted in the `tests/posix` scoreboard),
+ all fixed since: `chmod-argv-memcpy-overlap` (`fixes/381`), `unset-leaks-the-var-node` (`fixes/382`),
+ `nested-break-trips-eval-pop-assert` (`fixes/387`; a real bug in release builds too: the enclosing loop's `break` was

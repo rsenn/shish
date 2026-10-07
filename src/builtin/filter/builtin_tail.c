@@ -90,6 +90,8 @@ tail_setup(void* ctx) {
   if(!t->gotcount)
     t->count = 10;
 
+  t->in.keepempty = 1;
+
   /* -f ignores a pipe on standard input; on a file it never ends, so a
      chain cannot take it */
   if(t->follow && !(t->in.files && t->in.files[0]))
@@ -194,7 +196,7 @@ tail_step(void* arg, const char** unit, size_t* len) {
   ssize_t n;
 
   for(;;) {
-    if((n = filter_in_peek(&t->in, &p)) <= 0) {
+    if((n = filter_in_peek(&t->in, &p)) < 0 || (n == 0 && !t->in.empty)) {
       if(!t->open)
         return 0;
 
@@ -240,6 +242,11 @@ tail_step(void* arg, const char** unit, size_t* len) {
       }
 
       t->started = 1;
+    }
+
+    if(n == 0) {
+      filter_in_close(&t->in);
+      continue;
     }
 
     if(!t->from_start) {

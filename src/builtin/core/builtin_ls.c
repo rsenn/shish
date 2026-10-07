@@ -5,12 +5,14 @@
 #include "../../../lib/uint64.h"
 #include "../../builtin.h"
 #include "../../fdtable.h"
+#include "../../var.h"
 #include "../../../lib/shell.h"
 #include "../../../lib/stralloc.h"
 #include "../../../lib/str.h"
 #include "../../../lib/alloc.h"
 #include "../../../lib/byte.h"
 #include "../../../lib/fmt.h"
+#include "../../../lib/scan.h"
 #include "../../../lib/unix.h"
 #include "config.h"
 #include <dirent.h>
@@ -48,6 +50,8 @@ struct ls_opts {
   unsigned use_c : 1;    /* -c: ctime instead of mtime */
   unsigned use_u : 1;    /* -u: atime instead of mtime */
   unsigned comma : 1;    /* -m: stream format, ", " between names */
+  unsigned cols : 1;     /* -C: names in columns, filled down; -x: across (across) */
+  unsigned across : 1;
   unsigned follow_cmd : 1; /* -H: operand symlinks are followed */
   unsigned follow_all : 1; /* -L: every symlink is followed */
 };
@@ -257,7 +261,7 @@ ls_put_suffix(buffer* b, unsigned int mode) {
  * The entry was lstat()ed, so a symlink shows as itself, with its target.
  * ----------------------------------------------------------------------- */
 static void
-ls_print(const struct ls_ent* e) {
+ls_put(const struct ls_ent* e) {
   const struct stat* st = &e->st;
 
   if(ls_o.inode) {
@@ -322,8 +326,102 @@ ls_print(const struct ls_ent* e) {
     }
   }
 #endif
+}
 
+static void
+ls_print(const struct ls_ent* e) {
+  ls_put(e);
   buffer_putnlflush(fd_out->w);
+}
+
+/* characters ls_put() writes for a short-format entry (no -l): [inode ][blocks ]name[marker] */
+static size_t
+ls_cell_len(const struct ls_ent* e) {
+  char buf[FMT_ULONG];
+  size_t w = str_len(e->name) + (ls_suffix(e->st.st_mode) ? 1 : 0);
+
+  if(ls_o.inode)
+    w += fmt_ulong(buf, (unsigned long)e->st.st_ino) + 1;
+
+  if(ls_o.blocks)
+    w += fmt_ulong(buf, (unsigned long)(((uint64)e->st.st_blocks + 1) / 2)) + 1;
+
+  return w;
+}
+
+/* column widths of v[0..n) in ncol columns into w[]; returns the line they make: each column its
+ * widest entry plus two blanks (none after the last), at least 3. A line has to be shorter than
+ * the terminal width, so it never touches the right edge. */
+static size_t
+ls_widths(const struct ls_ent* v, unsigned int n, unsigned int ncol, unsigned int* w) {
+  unsigned int nrow = (n + ncol - 1) / ncol, r, c;
+  size_t total = 0;
+
+  byte_zero(w, ncol * sizeof(*w));
+
+  for(r = 0; r < n; r++) {
+    size_t len = ls_cell_len(&v[r]);
+
+    c = ls_o.across ? r % ncol : r / nrow;
+
+    if(len > w[c])
+      w[c] = (unsigned int)len;
+  }
+
+  for(c = 0; c < ncol; c++) {
+    size_t t = w[c] + (c + 1 < ncol ? 2 : 0);
+
+    total += t < 3 ? 3 : t;
+  }
+
+  return total;
+}
+
+/* -C / -x: as many columns as fit in $COLUMNS (80) wide, two blanks between them,
+ * each as wide as its longest entry. -C numbers entries down the columns, -x across.
+ * ----------------------------------------------------------------------- */
+static void
+ls_columns(const struct ls_ent* v, unsigned int n) {
+  const char* cs = var_value("COLUMNS", NULL);
+  unsigned int width = 80, ncol, nrow, r, c, *w;
+  size_t len;
+
+  if(cs && *cs && scan_uint(cs, &width) != str_len(cs))
+    width = 80;
+
+  if(!n)
+    return;
+
+  w = alloc_zero(n * sizeof(*w));
+
+  /* the widest layout that fits; one column always does */
+  for(ncol = n; ncol > 1 && ls_widths(v, n, ncol, w) >= width; ncol--)
+    ;
+
+  ls_widths(v, n, ncol, w);
+  nrow = (n + ncol - 1) / ncol;
+
+  for(r = 0; r < nrow; r++) {
+    for(c = 0; c < ncol; c++) {
+      unsigned int i = ls_o.across ? r * ncol + c : c * nrow + r;
+      unsigned int next = ls_o.across ? i + 1 : i + nrow;
+
+      if(i >= n)
+        break;
+
+      ls_put(&v[i]);
+
+      /* pad to the column unless nothing follows on this row */
+      if(c + 1 < ncol && next < n) {
+        for(len = ls_cell_len(&v[i]); len < w[c] + 2; len++)
+          buffer_putspace(fd_out->w);
+      }
+    }
+
+    buffer_putnlflush(fd_out->w);
+  }
+
+  alloc_free(w);
 }
 
 static void
@@ -383,6 +481,11 @@ ls_show(struct ls_ent* v, unsigned int n, int in_dir) {
     if(n)
       buffer_putnlflush(fd_out->w);
 
+    return;
+  }
+
+  if(ls_o.cols && !ls_o.long_fmt) {
+    ls_columns(v, n);
     return;
   }
 
@@ -491,6 +594,7 @@ const char help_ls[] = "    List directory contents.\n"
                        "    -q              print unprintable name bytes as '?'\n"
                        "    -s              precede each entry by its size in 1024-byte blocks\n"
                        "    -m              stream format: names separated by \", \"\n"
+                       "    -C, -x          columns, filled down (-C) or across (-x), $COLUMNS wide (80)\n"
                        "    -H              follow symlinks given as operands\n"
                        "    -L              follow all symlinks\n"
                        "    -k              accepted (blocks are 1024 bytes)\n"
@@ -513,7 +617,7 @@ builtin_ls(int argc, char* argv[]) {
 
   byte_zero(&ls_o, sizeof(ls_o));
 
-  while((c = shell_getopt(argc, argv, "AacdFfgHiklLmnopqRrSstu1")) > 0) {
+  while((c = shell_getopt(argc, argv, "AaCcdFfgHiklLmnopqRrSstux1")) > 0) {
     switch(c) {
       case 'A': ls_o.almost = 1; break;
       case 'a': ls_o.all = 1; break;
@@ -527,7 +631,9 @@ builtin_ls(int argc, char* argv[]) {
       case 'o': ls_o.long_fmt = ls_o.nogroup = 1; break;
       case 'q': ls_o.quote = 1; break;
       case 's': ls_o.blocks = 1; break;
-      case 'm': ls_o.comma = 1; break;
+      case 'm': ls_o.comma = 1; ls_o.cols = ls_o.across = 0; break;
+      case 'C': ls_o.cols = 1; ls_o.across = ls_o.comma = 0; break;
+      case 'x': ls_o.cols = ls_o.across = 1; ls_o.comma = 0; break;
       case 'H': ls_o.follow_cmd = 1; ls_o.follow_all = 0; break;
       case 'L': ls_o.follow_all = 1; ls_o.follow_cmd = 0; break;
       case 'k': break; /* blocks are 1024 bytes already */
@@ -538,7 +644,7 @@ builtin_ls(int argc, char* argv[]) {
       case 'r': ls_o.reverse = 1; break;
       case 'S': ls_o.by_size = 1; break;
       case 't': ls_o.by_time = 1; break;
-      case '1': break;
+      case '1': ls_o.cols = ls_o.across = ls_o.comma = 0; break;
       default: builtin_invopt(argv); return 1;
     }
   }

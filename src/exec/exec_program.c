@@ -20,6 +20,7 @@
 #include "../tree.h"
 #include "../var.h"
 #include "../debug.h"
+#include "builtin_config.h"
 #include "../trace.h"
 #include "../../lib/sig.h"
 #include "../../lib/wait.h"
@@ -28,6 +29,12 @@
 
 #if !WINDOWS_NATIVE
 #include <unistd.h>
+
+#if BUILTIN_ULIMIT && !WINDOWS_NATIVE && !defined(__wasi__)
+void ulimit_apply_hard(void);
+#else
+#define ulimit_apply_hard()
+#endif
 #endif
 
 /* execute another program, possibly searching for it first
@@ -317,6 +324,8 @@ exec_program(char* path, char** argv, enum execflag flag) {
     char** envp;
     unsigned long envn = var_count(V_EXPORT) + 1;
     envp = var_export(alloc(envn * sizeof(char*)));
+
+    ulimit_apply_hard();
 
     /* try to execute the program */
     TRACE(TRACE_EXEC, "program.execve", trace_str("path", path), trace_argv("argv", argv), trace_int("nenv", envn - 1));

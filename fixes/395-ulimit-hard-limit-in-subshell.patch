@@ -1,0 +1,216 @@
+--- a/src/exec/exec_program.c
++++ b/src/exec/exec_program.c
+@@ -20,6 +20,7 @@
+ #include "../tree.h"
+ #include "../var.h"
+ #include "../debug.h"
++#include "builtin_config.h"
+ #include "../trace.h"
+ #include "../../lib/sig.h"
+ #include "../../lib/wait.h"
+@@ -28,6 +29,12 @@
+ 
+ #if !WINDOWS_NATIVE
+ #include <unistd.h>
++
++#if BUILTIN_ULIMIT && !WINDOWS_NATIVE && !defined(__wasi__)
++void ulimit_apply_hard(void);
++#else
++#define ulimit_apply_hard()
++#endif
+ #endif
+ 
+ /* execute another program, possibly searching for it first
+@@ -318,6 +325,8 @@
+     unsigned long envn = var_count(V_EXPORT) + 1;
+     envp = var_export(alloc(envn * sizeof(char*)));
+ 
++    ulimit_apply_hard();
++
+     /* try to execute the program */
+     TRACE(TRACE_EXEC, "program.execve", trace_str("path", path), trace_argv("argv", argv), trace_int("nenv", envn - 1));
+ 
+--- a/src/builtin/builtin_ulimit.c
++++ b/src/builtin/builtin_ulimit.c
+@@ -5,6 +5,7 @@
+ #include "../builtin.h"
+ #include "../sh.h"
+ #include "../../lib/alloc.h"
++#include "../../lib/byte.h"
+ #include "../fdtable.h"
+ #include "../../lib/uint64.h"
+ #include "../../lib/fmt.h"
+@@ -57,6 +58,52 @@
+ 
+ #define ULIMIT_N (sizeof(ulimit_res) / sizeof(ulimit_res[0]))
+ 
++/* A hard limit lowered inside a "( )" is only recorded here, bit k for ulimit_res[k]: the process keeps
++ * its real hard limit (an unprivileged process could never raise it again) and what the subshell
++ * starts gets the lowered one by ulimit_apply_hard(). */
++static rlim_t ulimit_vhard[ULIMIT_N];
++static unsigned ulimit_vset;
++
++/* getrlimit() with the recorded hard limit laid over it */
++static void
++ulimit_get(const struct ulimit_res* r, struct rlimit* rl) {
++  size_t k = (size_t)(r - ulimit_res);
++
++  getrlimit(r->resource, rl);
++
++  if(ulimit_vset & (1u << k)) {
++    rl->rlim_max = ulimit_vhard[k];
++
++    if(rl->rlim_cur != RLIM_INFINITY && (ulimit_vhard[k] == RLIM_INFINITY ? 0 : rl->rlim_cur > ulimit_vhard[k]))
++      rl->rlim_cur = ulimit_vhard[k];
++  }
++}
++
++/* a < b, RLIM_INFINITY being the largest */
++static int
++ulimit_less(rlim_t a, rlim_t b) {
++  return b == RLIM_INFINITY ? a != RLIM_INFINITY : a != RLIM_INFINITY && a < b;
++}
++
++/* in a program about to be exec'd: the hard limits a subshell lowered */
++void
++ulimit_apply_hard(void) {
++  size_t k;
++
++  for(k = 0; k < ULIMIT_N; k++)
++    if(ulimit_vset & (1u << k)) {
++      struct rlimit rl;
++
++      getrlimit(ulimit_res[k].resource, &rl);
++      rl.rlim_max = ulimit_vhard[k];
++
++      if(ulimit_less(rl.rlim_max, rl.rlim_cur))
++        rl.rlim_cur = rl.rlim_max;
++
++      setrlimit(ulimit_res[k].resource, &rl);
++    }
++}
++
+ const char help_ulimit[] = "    Show or set the resource limits of the shell and what it starts.\n"
+                            "\n"
+                            "    -a              show every limit\n"
+@@ -70,13 +117,15 @@
+ 
+ /* A "( )" or "$( )" runs in this process, so a limit it sets would outlive it. The first change in
+  * an env snapshots every limit and hangs a finalizer on the env that puts them back when sh_pop()
+- * leaves it. A hard limit lowered unprivileged cannot be raised again: that one stays lowered.
++ * leaves it. Hard limits are not lowered for real there, see ulimit_vhard.
+  * ----------------------------------------------------------------------- */
+ struct ulimit_fence {
+   struct ulimit_fence* up;
+   struct env* env;
+   pid_t pid;
+   struct rlimit saved[ULIMIT_N];
++  rlim_t vhard[ULIMIT_N];
++  unsigned vset;
+   struct handler fin;
+ };
+ 
+@@ -90,6 +139,8 @@
+   for(k = 0; k < ULIMIT_N; k++)
+     setrlimit(ulimit_res[k].resource, &f->saved[k]);
+ 
++  byte_copy(ulimit_vhard, sizeof(ulimit_vhard), f->vhard);
++  ulimit_vset = f->vset;
+   ulimit_top = f->up;
+   alloc_free(f);
+ }
+@@ -113,6 +164,8 @@
+   for(k = 0; k < ULIMIT_N; k++)
+     getrlimit(ulimit_res[k].resource, &f->saved[k]);
+ 
++  byte_copy(f->vhard, sizeof(f->vhard), ulimit_vhard);
++  f->vset = ulimit_vset;
+   f->fin.fn = ulimit_restore;
+   f->fin.next = sh->finalizers;
+   sh->finalizers = &f->fin;
+@@ -137,7 +190,7 @@
+ ulimit_show(const struct ulimit_res* r, int hard, int labelled) {
+   struct rlimit rl;
+ 
+-  getrlimit(r->resource, &rl);
++  ulimit_get(r, &rl);
+ 
+   if(labelled) {
+     size_t n = str_len(r->name), i;
+@@ -228,7 +281,7 @@
+     rlim_t v;
+     uint64 n;
+ 
+-    getrlimit(sel[0]->resource, &rl);
++    ulimit_get(sel[0], &rl);
+ 
+     if(!str_diff(arg, "unlimited"))
+       v = RLIM_INFINITY;
+@@ -255,6 +308,25 @@
+ 
+     ulimit_fence_enter();
+ 
++    /* lowering the hard limit in a "( )": record it instead, a real one could not be raised again */
++    if(sh != &sh_root && geteuid() != 0) {
++      struct rlimit real;
++      unsigned bit = 1u << (size_t)(sel[0] - ulimit_res);
++
++      getrlimit(sel[0]->resource, &real);
++
++      if(ulimit_less(rl.rlim_max, real.rlim_max)) {
++        if((ulimit_vset & bit) && ulimit_less(ulimit_vhard[sel[0] - ulimit_res], rl.rlim_max)) {
++          builtin_errmsg(argv, "cannot modify limit", strerror(EPERM));
++          return 1;
++        }
++
++        ulimit_vhard[sel[0] - ulimit_res] = rl.rlim_max;
++        ulimit_vset |= bit;
++        rl.rlim_max = real.rlim_max;
++      }
++    }
++
+     if(setrlimit(sel[0]->resource, &rl) == -1) {
+       builtin_errmsg(argv, "cannot modify limit", strerror(errno));
+       ret = 1;
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -6583,4 +6583,21 @@
+   assert_less "$((RSS1 - RSS0))" "2000" "50000 evals of compound commands do not grow the heap (22 MB before the fix)"
+ fi
+ 
++## fixes/395: a hard limit lowered in a "( )" is gone when the subshell ends (an unprivileged process
++## could not raise a real one again) and the programs it starts still get the lowered one
++if have ulimit && test "$(id -u)" != 0; then
++  PX=$("$SHISH_SELF" -c 'h=$(ulimit -Hn); [ "$h" = unlimited ] && h=1000000; ( ulimit -Hn 100; echo "in=$(ulimit -Hn)"; "$0" -c "ulimit -Hn" ) ; echo "out=$(ulimit -Hn)"; ( ulimit -Hn 100; ulimit -Hn 200 2>/dev/null; echo "raise=$?" )' "$SHISH_SELF")
++  case $PX in
++    "in=100
++100
++out="*"
++raise=1") OK=1 ;;
++    *) OK=0 ;;
++  esac
++  assert_equal "1" "$OK" "ulimit -H lowered in a subshell: the subshell and its programs see it, it can not be raised there, the shell keeps its own"
++  PX=$("$SHISH_SELF" -c '( ulimit -Hn 100 ); ulimit -Hn')
++  test "$PX" != 100
++  assert_equal "0" "$?" "the hard limit is back to the shell's own after the subshell"
++fi
++
+ summary
+--- a/BUGS
++++ b/BUGS
+@@ -297,15 +297,6 @@
+   fc -l; echo $?      # "No such file or directory"; 127
+   ```
+ 
+-- ulimit-hard-limit-lowered-in-subshell-sticks: a "( ulimit -Hn N )" or "$( )" runs in the
+-  shell's own process, so the soft limits it changed are put back when it ends, but a hard
+-  limit lowered without privilege cannot be raised again.
+-
+-  **Repro:**
+-  ```sh
+-  shish -c '( ulimit -Hn 100 ); ulimit -Hn'     # 100; bash prints the original hard limit
+-  ```
+-
+ - fixed-sh-remaining-failures-after-sigchld-fix: `tests/fixed.sh` fails 5
+   assertions (builds with every builtin), none reproducible standalone: each
+   command works run alone and fails only at its position deep in the script, so

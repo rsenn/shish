@@ -11,7 +11,8 @@ enum {
   E_LOOP = (1 << 6),
   E_PRINT = (1 << 7),
   E_DEBUG = (1 << 8),
-  E_EVAL = (1 << 9) /* frame of the "eval" builtin: break/continue pass through it */
+  E_EVAL = (1 << 9),   /* frame of the "eval" builtin: break/continue pass through it */
+  E_SOURCE = (1 << 10) /* frame of ".": break/continue unwind it, then go on outward */
 };
 
 #include "tree.h"
@@ -44,6 +45,8 @@ struct eval {
 
   jmp_buf jumpbuf;
   int jump;
+  int pending; /* E_SOURCE frame: levels of break/continue still to run after unwinding it */
+  int pendcont;
 
   debug_callback* debug;
   exit_callback* destructor;

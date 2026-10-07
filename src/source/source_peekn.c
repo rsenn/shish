@@ -70,6 +70,8 @@ source_peekn(char* c, unsigned n) {
         /* a continuation at the very front is consumed for good */
         if(pi == 0) {
           b->p += 2;
+          source_verbose('\\');
+          source_verbose('\n');
           source_newline();
           ret = buffer_LEN(b);
         } else

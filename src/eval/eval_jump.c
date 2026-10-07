@@ -11,6 +11,7 @@ void
 eval_jump(int levels, int cont) {
   struct eval* e;
   struct eval* j = NULL;
+  struct eval* sf = NULL; /* "." frame reached before any loop matched */
 
   for(e = eval; e; e = e->parent) {
     if(levels <= 0)
@@ -50,6 +51,14 @@ eval_jump(int levels, int cont) {
        own eval frame also carries E_ROOT, see sh_loop.c's E_ROOT
        tempflag) silently failed to break at all instead of breaking
        that one loop, exactly the way bash does. */
+    /* a sourced file's break/continue belongs to the caller's loop: unwind the file first */
+    if(e->flags & E_SOURCE) {
+      if(!j)
+        sf = e;
+
+      break;
+    }
+
     if((e->flags & E_FUNCTION) || (e->flags & (E_ROOT | E_EVAL)) == E_ROOT)
       break;
 
@@ -60,6 +69,12 @@ eval_jump(int levels, int cont) {
   }
 
   TRACE(TRACE_EVAL, "jump", trace_int("levels", levels), trace_int("cont", cont), trace_int("found", j != NULL));
+
+  if(!j && sf) {
+    sf->pending = levels;
+    sf->pendcont = cont;
+    longjmp(sf->jumpbuf, 1);
+  }
 
   if(j) {
     eval = j;

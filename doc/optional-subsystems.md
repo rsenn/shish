@@ -379,7 +379,7 @@ mechanical now that the map exists; each helper file needs a check that nothing 
 
 ### E. Accepted but never acted on
 
-`set -H` (`histexpand`), `-o ignoreeof`, `-o nolog` and `-o vi` are parsed and stored and nothing reads them
+`set -H` (`histexpand`), `-o nolog` and `-o vi` are parsed and stored and nothing reads them
 (`vi` reaches `term_vimode.c` only through the editor). They belong with the history decision in the open
 question of section 2.
 

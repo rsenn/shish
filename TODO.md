@@ -71,8 +71,8 @@ the named files, update the table above, remove the closed `BUGS` entry, add `fi
 
 1. `alias` (62/65) - the 3 left are in `BUGS: alias-substitution-remaining-cases`.
 2. **`set`** - `-b` is accepted and shown in `$-` but has no effect (`BUGS: set-notify-no-effect`);
-   `-v` echoes input lines (`BUGS: set-verbose-partial`); `ignoreeof`, `nolog`, `vi` are accepted
-   but do nothing (`BUGS: set-o-ignoreeof-nolog-vi-has-no-effect`, `set-histexpand-unimplemented`).
+   `-v` echoes every line read, also from `.` and eval (`fixes/400`); `nolog`, `vi` are accepted
+   but do nothing (`BUGS: set-o-nolog-vi-has-no-effect`, `set-histexpand-unimplemented`); `ignoreeof` works (`fixes/397`).
 
 ---
 
@@ -106,10 +106,10 @@ the named files, update the table above, remove the closed `BUGS` entry, add `fi
 
 ---
 
-### Next: remaining `ls` options (`BUGS: ls-missing-options`), then `fc` (`BUGS: fc-missing`)
+### Next: `fc` (`BUGS: fc-missing`); `ls -C`/`-x` are done (`fixes/396`), `ls -l` column widths are not (`BUGS: ls-missing-options`)
 
 **Next in line**, in the order they were weighed (see `BUGS` for the repro of each):
-`ls-missing-options`, `fc-missing`, then the rest of `BUGS` by repro.
+`fc-missing`, `ls-missing-options` (column widths), then the rest of `BUGS` by repro.
 
 ---
 
@@ -144,23 +144,15 @@ the named files, update the table above, remove the closed `BUGS` entry, add `fi
   (`alias echo=')'; f() { printf '[%s]\n' "$(echo x)"; }; unalias echo; f` prints `[ x)]` in both);
   only yash's suite expects it ignored. Left as is unless the yash behaviour is wanted.
 
-- **`unset -v 1x` status** (`unset-invalid-name-accepted`): shish prints the error and returns 0. bash
-  returns 1 and continues; dash exits the non-interactive shell because `unset` is a special builtin.
-  A plain `return 1` lands on dash's behavior here (the shell exits), so pick one deliberately.
-- **Empty file operand gets no header from `head`/`tail`** (`head-no-header-for-empty-file`): the empty
-  source is skipped inside `filter_in_ready()` (`src/filter/filter_in_ready.c`) before `head`/`tail` see it.
-  Reporting it means `filter_in_peek()` has to hand out "a file was opened and is empty" (`newfile` set,
-  0 bytes), which `grep`, `cat`, `tr`, `compress` and `uncompress` would all have to treat as "nothing yet",
-  not as the end of input. Smallest idea: a separate `in->empty` bit that only `head`/`tail` read, set where
-  `filter_in_ready()` closes a source that still has `newfile` set.
+- **`unset -v 1x` status** (DONE, `fixes/392`): reports the name and returns 1; being a special builtin it then exits a non-interactive shell (POSIX, dash). Plain `unset 1x` stays silent
+  with status 0 (bash too; `BUGS: unset-invalid-name-accepted`).
+- **Empty file operand gets no header from `head`/`tail`** (DONE, `fixes/393`): `filter_in` has a `keepempty` bit that
+  `head`/`tail` set; `filter_in_ready()` then stops on an empty fresh operand with `empty` set instead of skipping it.
 
 - **`"$@"""` with no positional parameters** (DONE 2026-10-07, `fixes/388`): `parse_dquoted()` marks the
   empty chunk with `S_QUOTEDEMPTY` when a quote pair is written right after another one (the closing quote
   of `"$@"` already leaves an empty chunk, which is why the two used to look the same); `expand_is_empty_at()`
   ignores only unmarked empty chunks, and never a `''` one. `"$@"` gives no field, `"$@"""` and `"$@"''` one.
-
-**Real bugs, but not counted in the `tests/posix` scoreboard** (fix opportunistically):
-`eval-lineno-imprecise-inside-function`.
 
 **Found 2026-10-06/07 while porting expansion and reading `src/var*`** (none counted in the `tests/posix` scoreboard),
 all fixed since: `chmod-argv-memcpy-overlap` (`fixes/381`), `unset-leaks-the-var-node` (`fixes/382`),
@@ -188,8 +180,9 @@ cmake --build build/asan
 
 Open under this build, from `BUGS`:
 
-1. `asan-leak-residue-not-fully-triaged` - 2 allocations per parsed function definition, and the
-   process-lifetime function and variable state.
+1. `asan-leak-residue-not-fully-triaged` - the process-lifetime function and variable state (the
+   per-definition parse leak is fixed, `fixes/394`: the last closing keyword's node and the
+   redirections of compound commands were never freed).
 2. `ubsan-buffer-op-proto-function-type-mismatch` - `lib/buffer.h`'s `buffer_op_proto` cast onto
    libc `read`/`write` is UB by the letter of the standard but not fixable without wrapping two
    libc functions everywhere for no observable effect; not planned to change. The two real
@@ -260,8 +253,6 @@ Open:
   hand-maintained and drift.
 - `var.import` is not traced on purpose (one line per environment variable; `var.export` reports the
   count).
-- `timeout` forks a function so it can be killed, and then its output is not captured in `$(...)`
-  (`BUGS: timeout-function-output-not-captured-by-command-substitution`).
 
 ---
 

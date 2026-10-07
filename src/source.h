@@ -29,6 +29,7 @@ struct source {
 #define SOURCE_IACTIVE 0x01
 #define SOURCE_HERE 0x02
 #define SOURCE_ALIAS 0x04 /* alias text: heap-allocated, pops itself when used up */
+#define SOURCE_VERBOSE 0x08 /* text of "." or eval: "set -v" echoes it like the script itself */
 
 extern struct source* source;
 extern int source_psn;
@@ -87,6 +88,7 @@ int source_peekn(char* c, unsigned int n);
 void source_flush(void);
 void source_msg(const struct location* pos);
 int source_skip(void);
+void source_verbose(char c);
 void source_verbose_flush(void);
 int source_skipn(int n);
 int source_fork(buffer* child_source);

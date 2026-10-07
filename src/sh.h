@@ -61,7 +61,7 @@ struct shopt {
   unsigned notify : 1;      /* -b */
   unsigned verbose : 1;     /* -v */
   unsigned pipefail : 1;    /* -o pipefail (no letter) */
-  unsigned ignoreeof : 1;   /* -o ignoreeof (no letter): accepted, not acted on */
+  unsigned ignoreeof : 1;   /* -o ignoreeof (no letter): sh_loop() answers an interactive end-of-file with a reminder */
   unsigned nolog : 1;       /* -o nolog (no letter): accepted */
   unsigned vi : 1;          /* -o vi (no letter): accepted */
 };

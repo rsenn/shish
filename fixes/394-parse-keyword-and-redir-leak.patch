@@ -1,0 +1,145 @@
+--- a/src/parse.h
++++ b/src/parse.h
+@@ -310,6 +310,7 @@
+ int parse_arith(struct parser* p);
+ int parse_bquoted(struct parser* p);
+ int parse_dquoted(struct parser* p);
++void parse_dropkeyword(struct parser* p);
+ enum tok_flag parse_expect(struct parser* p, int tempflags, enum tok_flag toks, union node* nfree);
+ int parse_here(struct parser* p, stralloc* delim, int nosubst, int strip);
+ int parse_keyword(struct parser* p);
+--- a/src/parse/parse_expect.c
++++ b/src/parse/parse_expect.c
+@@ -3,6 +3,17 @@
+ #include "../parse.h"
+ #include "../tree.h"
+ 
++/* a closing keyword (fi, done, esac, }) was just lexed as a word: its node is of no further use,
++ * and nothing frees it if the input ends here (the next word would)
++ * ----------------------------------------------------------------------- */
++void
++parse_dropkeyword(struct parser* p) {
++  if(p->tree)
++    tree_free(p->tree);
++
++  p->tree = p->node = NULL;
++}
++
+ /* expect a token, print error msg and return 0 if it wasn't that token
+  * ----------------------------------------------------------------------- */
+ enum tok_flag
+@@ -19,5 +30,9 @@
+   }
+ 
+   p->pushback = 0;
++
++  if(p->tok & (T_FI | T_DONE | T_ESAC | T_END))
++    parse_dropkeyword(p);
++
+   return p->tok;
+ }
+--- a/src/parse/parse_case.c
++++ b/src/parse/parse_case.c
+@@ -101,5 +101,7 @@
+     tree_skip(cptr);
+   }
+ 
++  parse_dropkeyword(p); /* "esac" when the list ended on it, no-op after a case item */
++
+   return node;
+ }
+--- a/src/tree/tree_free.c
++++ b/src/tree/tree_free.c
+@@ -43,11 +43,17 @@
+ 
+       case N_SUBSHELL:
+       case N_BRACEGROUP:
++        if(node->ngrp.rdir)
++          tree_free(node->ngrp.rdir);
++
+         if(node->ngrp.cmds)
+           tree_free(node->ngrp.cmds);
+         break;
+ 
+       case N_FOR:
++        if(node->nfor.rdir)
++          tree_free(node->nfor.rdir);
++
+         if(node->nfor.cmds)
+           tree_free(node->nfor.cmds);
+ 
+@@ -59,6 +65,9 @@
+         break;
+ 
+       case N_CASE:
++        if(node->ncase.rdir)
++          tree_free(node->ncase.rdir);
++
+         if(node->ncase.list)
+           tree_free(node->ncase.list);
+ 
+@@ -75,6 +84,9 @@
+         break;
+ 
+       case N_IF:
++        if(node->nif.rdir)
++          tree_free(node->nif.rdir);
++
+         if(node->nif.cmd0)
+           tree_free(node->nif.cmd0);
+ 
+@@ -87,6 +99,9 @@
+ 
+       case N_WHILE:
+       case N_UNTIL:
++        if(node->nloop.rdir)
++          tree_free(node->nloop.rdir);
++
+         if(node->nloop.cmds)
+           tree_free(node->nloop.cmds);
+ 
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -6573,4 +6573,14 @@
+ fi
+ rm -rf "$HDIR"
+ 
++## fixes/394: the closing keyword (fi, done, esac, }) that ended an eval string, and the redirections on a
++## compound command, were never freed: about 450 bytes per eval of "f() { :; } >/dev/null" or "if :; then :; fi"
++if test -r /proc/self/status; then
++  RSS0=$(vmrss)
++  i=0
++  while test $i -lt 50000; do eval "f() { :; } >/dev/null"; eval "if :; then :; fi"; i=$((i + 1)); done
++  RSS1=$(vmrss)
++  assert_less "$((RSS1 - RSS0))" "2000" "50000 evals of compound commands do not grow the heap (22 MB before the fix)"
++fi
++
+ summary
+--- a/BUGS
++++ b/BUGS
+@@ -117,11 +117,6 @@
+ - asan-leak-residue-not-fully-triaged: ASan leak reports left under the
+   `-fsanitize=address,undefined` build:
+ 
+-  - Parsing a function definition still leaks 2 allocations (a 56-byte
+-    `N_ARGSTR` from `parse_pipeline.c:13`'s `parse_gettok()` plus its
+-    string); only visible when it is parsed repeatedly:
+-    `i=0; while [ $i -lt 50 ]; do eval "f(){ echo a; }"; i=$((i+1)); done`
+-    leaks 2 allocations per pass.
+   - The installed function list (`eval_function.c`) and the last copy of
+     each variable's value live for the whole process. The value copy is
+     not marked `V_FREESTR`, because `var_setvsa()` reads that flag as "the
+--- a/TODO.md
++++ b/TODO.md
+@@ -183,8 +183,9 @@
+ 
+ Open under this build, from `BUGS`:
+ 
+-1. `asan-leak-residue-not-fully-triaged` - 2 allocations per parsed function definition, and the
+-   process-lifetime function and variable state.
++1. `asan-leak-residue-not-fully-triaged` - the process-lifetime function and variable state (the
++   per-definition parse leak is fixed, `fixes/394`: the last closing keyword's node and the
++   redirections of compound commands were never freed).
+ 2. `ubsan-buffer-op-proto-function-type-mismatch` - `lib/buffer.h`'s `buffer_op_proto` cast onto
+    libc `read`/`write` is UB by the letter of the standard but not fixable without wrapping two
+    libc functions everywhere for no observable effect; not planned to change. The two real

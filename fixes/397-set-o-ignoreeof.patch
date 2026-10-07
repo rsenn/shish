@@ -1,0 +1,131 @@
+--- a/src/sh.h
++++ b/src/sh.h
+@@ -61,7 +61,7 @@
+   unsigned notify : 1;      /* -b */
+   unsigned verbose : 1;     /* -v */
+   unsigned pipefail : 1;    /* -o pipefail (no letter) */
+-  unsigned ignoreeof : 1;   /* -o ignoreeof (no letter): accepted, not acted on */
++  unsigned ignoreeof : 1;   /* -o ignoreeof (no letter): sh_loop() answers an interactive end-of-file with a reminder */
+   unsigned nolog : 1;       /* -o nolog (no letter): accepted */
+   unsigned vi : 1;          /* -o vi (no letter): accepted */
+ };
+--- a/src/sh/sh_loop.c
++++ b/src/sh/sh_loop.c
+@@ -2,6 +2,7 @@
+ #include "../trace.h"
+ #include "../eval.h"
+ #include "../fd.h"
++#include "../fdtable.h"
+ #include "../history.h"
+ #include "../parse.h"
+ #include "../prompt.h"
+@@ -14,6 +15,8 @@
+ 
+ #include <unistd.h>
+ 
++#define IGNOREEOF 10 /* bash's default for $IGNOREEOF */
++
+ #include "../trap.h"
+ 
+ /* give back the stdin read-ahead before a command runs, so the command
+@@ -42,6 +45,7 @@
+   union node* list;
+   stralloc cmd;
+   int is_interactive = !!(source->mode & SOURCE_IACTIVE);
++  int eofs = 0; /* end-of-files in a row that "set -o ignoreeof" has swallowed */
+ 
+   sh->parser = &p;
+ 
+@@ -55,7 +59,17 @@
+ 
+   parse_init(&p, is_interactive ? P_IACTIVE : P_DEFAULT);
+ 
+-  while(!(parse_gettok(&p, P_DEFAULT) & T_EOF)) {
++  while(!(parse_gettok(&p, P_DEFAULT) & T_EOF) || (is_interactive && sh->opts.ignoreeof && ++eofs < IGNOREEOF)) {
++    /* "set -o ignoreeof": an interactive shell asks for "exit" instead of leaving, but gives up after
++       IGNOREEOF end-of-files in a row (a closed stdin would loop forever) */
++    if(p.tok & T_EOF) {
++      buffer_puts(fd_err->w, "Use \"exit\" to leave the shell.");
++      buffer_putnlflush(fd_err->w);
++      p.pushback = 0;
++      continue;
++    }
++
++    eofs = 0;
+     p.pushback++;
+     sh_errloc_set = 0; /* parse errors report the parser's position */
+     parse_lineno = source->position.line;
+--- a/src/builtin/builtin_set.c
++++ b/src/builtin/builtin_set.c
+@@ -55,7 +55,7 @@
+     {"errexit", 'e'},
+     {"hashall", 'h'},
+     {"histexpand", 'H'},
+-    {"ignoreeof", 'I'}, /* only via -o, like nolog and vi: accepted, nothing behind them */
++    {"ignoreeof", 'I'}, /* only via -o, like nolog and vi */
+     {"monitor", 'm'},
+     {"noclobber", 'C'},
+     {"noexec", 'n'},
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -6619,4 +6619,15 @@
+   rm -rf "$LSDIR"
+ fi
+ 
++## fixes/397: "set -o ignoreeof" makes an interactive shell answer end-of-file with a reminder; a stdin that
++## stays closed still ends it after 10 in a row
++EOFLOG=$(mktemp)
++printf 'set -o ignoreeof\n' | "$SHISH_SELF" -i >/dev/null 2>"$EOFLOG"
++PX=$(grep -c 'Use "exit" to leave the shell.' "$EOFLOG")
++assert_equal "9" "$PX" "an interactive shell with ignoreeof reminds nine times, then gives up on a closed stdin"
++printf 'echo hi\n' | "$SHISH_SELF" -i >/dev/null 2>"$EOFLOG"
++test -s "$EOFLOG"
++assert_equal "1" "$?" "without ignoreeof end-of-file leaves the shell at once, with no reminder"
++rm -f "$EOFLOG"
++
+ summary
+--- a/BUGS
++++ b/BUGS
+@@ -276,13 +276,12 @@
+   unset 1x; echo $?     # 0, no diagnostic
+   ```
+ 
+-- set-o-ignoreeof-nolog-vi-has-no-effect: `set -o ignoreeof`, `nolog` and `vi` are
+-  accepted and shown by `set -o`, but only store a bit: an interactive shell still
+-  exits at the first end-of-file, and there is no vi line editing.
++- set-o-nolog-vi-has-no-effect: `set -o nolog` and `vi` are accepted and shown by `set -o`, but only store a bit:
++  there is no vi line editing, and nothing reads `nolog` (no history file is written to leave out).
+ 
+   **Repro:**
+   ```sh
+-  printf 'set -o ignoreeof\n' | shish -i   # exits at EOF instead of asking for "exit"
++  set -o vi; set -o | grep '^vi'   # "on", but the line editor is the same
+   ```
+ 
+ - fc-missing: `fc` (history listing, editing and re-execution) is a POSIX utility that
+@@ -342,3 +341,12 @@
+   f() { echo fn; }; o=$(timeout 5 f); echo "[$o]"     # "[]"; should be "[fn]"
+   o=$(timeout 5 echo hi); echo "[$o]"                  # "[hi]" (ok)
+   ```
++
++- grep-count-empty-file-prints-nothing: `grep -c` prints no count for an empty file operand or an empty stdin
++  (the shared input layer skips a source with nothing in it, as `head`/`tail` did before `filter_in.keepempty`);
++  with several operands the empty file's `name:0` line is missing too. POSIX and GNU print `0` / `name:0`.
++
++  **Repro:**
++  ```sh
++  : >e; grep -c y e; echo rc=$?     # prints only rc=1; should print 0 first
++  ```
+--- a/TODO.md
++++ b/TODO.md
+@@ -71,8 +71,8 @@
+ 
+ 1. `alias` (62/65) - the 3 left are in `BUGS: alias-substitution-remaining-cases`.
+ 2. **`set`** - `-b` is accepted and shown in `$-` but has no effect (`BUGS: set-notify-no-effect`);
+-   `-v` echoes input lines (`BUGS: set-verbose-partial`); `ignoreeof`, `nolog`, `vi` are accepted
+-   but do nothing (`BUGS: set-o-ignoreeof-nolog-vi-has-no-effect`, `set-histexpand-unimplemented`).
++   `-v` echoes input lines (`BUGS: set-verbose-partial`); `nolog`, `vi` are accepted
++   but do nothing (`BUGS: set-o-nolog-vi-has-no-effect`, `set-histexpand-unimplemented`); `ignoreeof` works (`fixes/397`).
+ 
+ ---
+ 

@@ -1,0 +1,118 @@
+--- a/src/exec/exec_command.c
++++ b/src/exec/exec_command.c
+@@ -1,4 +1,5 @@
+ #include "../builtin.h"
++#include "../../lib/alloc.h"
+ #include "../eval.h"
+ #include "../exec.h"
+ #include "../fd.h"
+@@ -64,13 +65,30 @@
+      exec_program()'s X_NOWAIT branch already does. */
+   if((flag & X_NOWAIT) && cmd->id != H_PROGRAM) {
+     struct job* job = job_new(1);
++    struct fdstack io;
++    struct fd* pipes = NULL;
++    unsigned int npipes;
+     pid_t pid;
+ 
+     job->bgnd = 1;
++
++    /* a "$(...)" collects its output in a stralloc that another process cannot write to:
++       the child gets a pipe in its place, drained by fdstack_data() below (as exec_program() does) */
++    if((npipes = fdstack_npipes(FD_HERE | FD_SUBST))) {
++      fdstack_push(&io);
++      pipes = alloc(FDSTACK_ALLOC_SIZE(npipes));
++      fdstack_pipe(npipes, pipes);
++    }
++
+     pid = job_fork(job, 0, 1);
+ 
+     /* fork failed: job_fork() reported it; drop the childless job */
+     if(pid == -1) {
++      if(pipes) {
++        fdstack_pop(&io);
++        alloc_free(pipes);
++      }
++
+       job_free(job);
+       return 1;
+     }
+@@ -90,6 +108,13 @@
+       }
+     }
+ 
++    /* closes the child's ends of the pipes, then reads what it writes until it is done */
++    if(npipes) {
++      fdstack_pop(&io);
++      fdstack_data();
++      alloc_free(pipes);
++    }
++
+     /* interactive-use-only, see eval_node_bgnd.c's matching comment
+        (job-start-banner-printed-noninteractively) */
+     if(sh->opts.monitor && sh_interactive)
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -6576,11 +6576,11 @@
+ ## fixes/394: the closing keyword (fi, done, esac, }) that ended an eval string, and the redirections on a
+ ## compound command, were never freed: about 450 bytes per eval of "f() { :; } >/dev/null" or "if :; then :; fi"
+ if test -r /proc/self/status; then
+-  RSS0=$(vmrss)
+-  i=0
+-  while test $i -lt 50000; do eval "f() { :; } >/dev/null"; eval "if :; then :; fi"; i=$((i + 1)); done
+-  RSS1=$(vmrss)
+-  assert_less "$((RSS1 - RSS0))" "2000" "50000 evals of compound commands do not grow the heap (22 MB before the fix)"
++  PX=$("$SHISH_SELF" -c 'vmrss() { while read k v u; do test "$k" = VmRSS: && echo "$v"; done </proc/self/status; }
++RSS0=$(vmrss); i=0
++while test $i -lt 50000; do eval "f() { :; } >/dev/null"; eval "if :; then :; fi"; i=$((i + 1)); done
++echo $(($(vmrss) - RSS0))')
++  assert_less "$PX" "2000" "50000 evals of compound commands do not grow the heap (22 MB before the fix)"
+ fi
+ 
+ ## fixes/395: a hard limit lowered in a "( )" is gone when the subshell ends (an unprivileged process
+@@ -6630,4 +6630,13 @@
+ assert_equal "1" "$?" "without ignoreeof end-of-file leaves the shell at once, with no reminder"
+ rm -f "$EOFLOG"
+ 
++## fixes/398: a function or builtin forked inside "$(...)" ("timeout 5 f", "f & wait") wrote into the
++## substitution's in-memory buffer of the child process, so its output was lost
++PX=$("$SHISH_SELF" -c 'f() { echo fn; }; o=$(f & wait); echo "[$o]"')
++assert_equal "[fn]" "$PX" "output of a backgrounded function reaches the enclosing command substitution"
++if have timeout; then
++  PX=$("$SHISH_SELF" -c 'f() { echo fn; }; o=$(timeout 5 f); echo "[$o]"')
++  assert_equal "[fn]" "$PX" "timeout of a function inside a command substitution keeps its output"
++fi
++
+ summary
+--- a/BUGS
++++ b/BUGS
+@@ -330,18 +330,6 @@
+   sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix simple-p.tst
+   ```
+ 
+-- timeout-function-output-not-captured-by-command-substitution: `timeout`
+-  forks a function (it has no program of the same name) so it can kill it,
+-  and the forked child's output does not reach a command substitution, which
+-  collects stdout in a `stralloc`, not a pipe. External programs and plain
+-  builtins are captured.
+-
+-  **Repro:**
+-  ```sh
+-  f() { echo fn; }; o=$(timeout 5 f); echo "[$o]"     # "[]"; should be "[fn]"
+-  o=$(timeout 5 echo hi); echo "[$o]"                  # "[hi]" (ok)
+-  ```
+-
+ - grep-count-empty-file-prints-nothing: `grep -c` prints no count for an empty file operand or an empty stdin
+   (the shared input layer skips a source with nothing in it, as `head`/`tail` did before `filter_in.keepempty`);
+   with several operands the empty file's `name:0` line is missing too. POSIX and GNU print `0` / `name:0`.
+--- a/TODO.md
++++ b/TODO.md
+@@ -256,8 +256,6 @@
+   hand-maintained and drift.
+ - `var.import` is not traced on purpose (one line per environment variable; `var.export` reports the
+   count).
+-- `timeout` forks a function so it can be killed, and then its output is not captured in `$(...)`
+-  (`BUGS: timeout-function-output-not-captured-by-command-substitution`).
+ 
+ ---
+ 

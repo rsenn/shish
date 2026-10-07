@@ -1,4 +1,5 @@
 #include "../builtin.h"
+#include "../../lib/alloc.h"
 #include "../eval.h"
 #include "../exec.h"
 #include "../fd.h"
@@ -64,13 +65,30 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
      exec_program()'s X_NOWAIT branch already does. */
   if((flag & X_NOWAIT) && cmd->id != H_PROGRAM) {
     struct job* job = job_new(1);
+    struct fdstack io;
+    struct fd* pipes = NULL;
+    unsigned int npipes;
     pid_t pid;
 
     job->bgnd = 1;
+
+    /* a "$(...)" collects its output in a stralloc that another process cannot write to:
+       the child gets a pipe in its place, drained by fdstack_data() below (as exec_program() does) */
+    if((npipes = fdstack_npipes(FD_HERE | FD_SUBST))) {
+      fdstack_push(&io);
+      pipes = alloc(FDSTACK_ALLOC_SIZE(npipes));
+      fdstack_pipe(npipes, pipes);
+    }
+
     pid = job_fork(job, 0, 1);
 
     /* fork failed: job_fork() reported it; drop the childless job */
     if(pid == -1) {
+      if(pipes) {
+        fdstack_pop(&io);
+        alloc_free(pipes);
+      }
+
       job_free(job);
       return 1;
     }
@@ -88,6 +106,13 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
 
         exit(sh_child_exit(ret));
       }
+    }
+
+    /* closes the child's ends of the pipes, then reads what it writes until it is done */
+    if(npipes) {
+      fdstack_pop(&io);
+      fdstack_data();
+      alloc_free(pipes);
     }
 
     /* interactive-use-only, see eval_node_bgnd.c's matching comment

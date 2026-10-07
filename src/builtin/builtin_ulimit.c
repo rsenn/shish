@@ -5,6 +5,7 @@
 #include "../builtin.h"
 #include "../sh.h"
 #include "../../lib/alloc.h"
+#include "../../lib/byte.h"
 #include "../fdtable.h"
 #include "../../lib/uint64.h"
 #include "../../lib/fmt.h"
@@ -57,6 +58,52 @@ static const struct ulimit_res {
 
 #define ULIMIT_N (sizeof(ulimit_res) / sizeof(ulimit_res[0]))
 
+/* A hard limit lowered inside a "( )" is only recorded here, bit k for ulimit_res[k]: the process keeps
+ * its real hard limit (an unprivileged process could never raise it again) and what the subshell
+ * starts gets the lowered one by ulimit_apply_hard(). */
+static rlim_t ulimit_vhard[ULIMIT_N];
+static unsigned ulimit_vset;
+
+/* getrlimit() with the recorded hard limit laid over it */
+static void
+ulimit_get(const struct ulimit_res* r, struct rlimit* rl) {
+  size_t k = (size_t)(r - ulimit_res);
+
+  getrlimit(r->resource, rl);
+
+  if(ulimit_vset & (1u << k)) {
+    rl->rlim_max = ulimit_vhard[k];
+
+    if(rl->rlim_cur != RLIM_INFINITY && (ulimit_vhard[k] == RLIM_INFINITY ? 0 : rl->rlim_cur > ulimit_vhard[k]))
+      rl->rlim_cur = ulimit_vhard[k];
+  }
+}
+
+/* a < b, RLIM_INFINITY being the largest */
+static int
+ulimit_less(rlim_t a, rlim_t b) {
+  return b == RLIM_INFINITY ? a != RLIM_INFINITY : a != RLIM_INFINITY && a < b;
+}
+
+/* in a program about to be exec'd: the hard limits a subshell lowered */
+void
+ulimit_apply_hard(void) {
+  size_t k;
+
+  for(k = 0; k < ULIMIT_N; k++)
+    if(ulimit_vset & (1u << k)) {
+      struct rlimit rl;
+
+      getrlimit(ulimit_res[k].resource, &rl);
+      rl.rlim_max = ulimit_vhard[k];
+
+      if(ulimit_less(rl.rlim_max, rl.rlim_cur))
+        rl.rlim_cur = rl.rlim_max;
+
+      setrlimit(ulimit_res[k].resource, &rl);
+    }
+}
+
 const char help_ulimit[] = "    Show or set the resource limits of the shell and what it starts.\n"
                            "\n"
                            "    -a              show every limit\n"
@@ -70,13 +117,15 @@ const char help_ulimit[] = "    Show or set the resource limits of the shell and
 
 /* A "( )" or "$( )" runs in this process, so a limit it sets would outlive it. The first change in
  * an env snapshots every limit and hangs a finalizer on the env that puts them back when sh_pop()
- * leaves it. A hard limit lowered unprivileged cannot be raised again: that one stays lowered.
+ * leaves it. Hard limits are not lowered for real there, see ulimit_vhard.
  * ----------------------------------------------------------------------- */
 struct ulimit_fence {
   struct ulimit_fence* up;
   struct env* env;
   pid_t pid;
   struct rlimit saved[ULIMIT_N];
+  rlim_t vhard[ULIMIT_N];
+  unsigned vset;
   struct handler fin;
 };
 
@@ -90,6 +139,8 @@ ulimit_restore(void) {
   for(k = 0; k < ULIMIT_N; k++)
     setrlimit(ulimit_res[k].resource, &f->saved[k]);
 
+  byte_copy(ulimit_vhard, sizeof(ulimit_vhard), f->vhard);
+  ulimit_vset = f->vset;
   ulimit_top = f->up;
   alloc_free(f);
 }
@@ -113,6 +164,8 @@ ulimit_fence_enter(void) {
   for(k = 0; k < ULIMIT_N; k++)
     getrlimit(ulimit_res[k].resource, &f->saved[k]);
 
+  byte_copy(f->vhard, sizeof(f->vhard), ulimit_vhard);
+  f->vset = ulimit_vset;
   f->fin.fn = ulimit_restore;
   f->fin.next = sh->finalizers;
   sh->finalizers = &f->fin;
@@ -137,7 +190,7 @@ static void
 ulimit_show(const struct ulimit_res* r, int hard, int labelled) {
   struct rlimit rl;
 
-  getrlimit(r->resource, &rl);
+  ulimit_get(r, &rl);
 
   if(labelled) {
     size_t n = str_len(r->name), i;
@@ -228,7 +281,7 @@ builtin_ulimit(int argc, char* argv[]) {
     rlim_t v;
     uint64 n;
 
-    getrlimit(sel[0]->resource, &rl);
+    ulimit_get(sel[0], &rl);
 
     if(!str_diff(arg, "unlimited"))
       v = RLIM_INFINITY;
@@ -254,6 +307,25 @@ builtin_ulimit(int argc, char* argv[]) {
       rl.rlim_cur = rl.rlim_max;
 
     ulimit_fence_enter();
+
+    /* lowering the hard limit in a "( )": record it instead, a real one could not be raised again */
+    if(sh != &sh_root && geteuid() != 0) {
+      struct rlimit real;
+      unsigned bit = 1u << (size_t)(sel[0] - ulimit_res);
+
+      getrlimit(sel[0]->resource, &real);
+
+      if(ulimit_less(rl.rlim_max, real.rlim_max)) {
+        if((ulimit_vset & bit) && ulimit_less(ulimit_vhard[sel[0] - ulimit_res], rl.rlim_max)) {
+          builtin_errmsg(argv, "cannot modify limit", strerror(EPERM));
+          return 1;
+        }
+
+        ulimit_vhard[sel[0] - ulimit_res] = rl.rlim_max;
+        ulimit_vset |= bit;
+        rl.rlim_max = real.rlim_max;
+      }
+    }
 
     if(setrlimit(sel[0]->resource, &rl) == -1) {
       builtin_errmsg(argv, "cannot modify limit", strerror(errno));

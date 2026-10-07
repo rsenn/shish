@@ -79,6 +79,7 @@ struct filter_in {
   unsigned done_any : 1, had_error : 1, newfile : 1; /* set when an operand was just opened; the user clears it */
   unsigned silent : 1;                               /* an operand that cannot be opened is skipped without a message */
   unsigned spilling : 1;                             /* filter_in_line() is mid-line: keep spill across operands */
+  unsigned keepempty : 1, empty : 1;                 /* keepempty: an empty operand is not skipped, ready() stops on it with empty set */
   unsigned each : 1;                                 /* setup(): filter_run calls ops->each() per operand, no step() */
   buffer* sink;                                      /* filter_run(): where the result goes; NULL in a chain */
   buffer* upstream;                                  /* what "-" reads */

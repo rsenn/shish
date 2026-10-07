@@ -1,0 +1,76 @@
+--- a/src/builtin/builtin_unset.c
++++ b/src/builtin/builtin_unset.c
+@@ -39,7 +39,7 @@
+ 
+ int
+ builtin_unset(int argc, char* argv[]) {
+-  int c, fun = 0, var = 0;
++  int c, fun = 0, var = 0, ret = 0;
+   char** argp;
+ 
+   /* check options, -n for unexport, -p for output */
+@@ -62,6 +62,7 @@
+ 
+     if(var && !var_valid(*argp)) {
+       builtin_errmsg(argv, *argp, "not a valid variable name");
++      ret = 1; /* as bash: report it, carry on with the other names */
+       continue;
+     }
+ 
+@@ -108,6 +109,6 @@
+     // variable/function");
+   }
+ 
+-  return 0;
++  return ret;
+ }
+ #endif /* BUILTIN_UNSET */
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -6532,4 +6532,13 @@
+ a b" "$PX" "a sourced file sees the caller's \$@ without operands, its own with them, and the caller's is restored"
+ rm -rf "$SRCDIR"
+ 
++## fixes/392: "unset -v" with an invalid name reports it, goes on with the other names and returns 1;
++## "unset" is a special builtin, so a non-interactive shell then exits (POSIX, dash), "command" keeps it alive
++PX=$("$SHISH_SELF" -c 'x=1; y=2; command unset -v x 1x y 2>/dev/null; echo "$? [$x][$y]"')
++assert_equal "1 [][]" "$PX" "unset -v with an invalid name returns 1 and still unsets the valid names"
++PX=$("$SHISH_SELF" -c 'unset -v 1x 2>/dev/null; echo not-reached'; echo "[$?]")
++assert_equal "[1]" "$PX" "a non-interactive shell exits with status 1 after unset -v of an invalid name"
++PX=$("$SHISH_SELF" -c 'x=1; unset -v x; echo $?')
++assert_equal "0" "$PX" "unset -v with valid names returns 0"
++
+ summary
+--- a/BUGS
++++ b/BUGS
+@@ -276,13 +276,9 @@
+   done
+   ```
+ 
+-- unset-invalid-name-accepted: `unset 1x` (no `-v`) is accepted silently with
+-  status 0; only `unset -v` validates the name. POSIX 2.8.1 / bash: bash also
+-  returns 0 here, so this is low priority.
+-
+-  `unset -v 1x` prints the diagnostic but still returns 0. bash returns 1 and
+-  carries on; dash exits the non-interactive shell (`unset` is a special builtin).
+-  Open design decision: follow dash/POSIX (exit) or bash (status 1 only).
++- unset-invalid-name-accepted: plain `unset 1x` (no `-v`) is accepted silently with
++  status 0. bash does the same, so this is low priority. (`unset -v 1x` reports the name
++  and returns 1; as a special builtin it exits a non-interactive shell, like dash.)
+ 
+   **Repro:**
+   ```sh
+--- a/TODO.md
++++ b/TODO.md
+@@ -144,9 +144,8 @@
+   (`alias echo=')'; f() { printf '[%s]\n' "$(echo x)"; }; unalias echo; f` prints `[ x)]` in both);
+   only yash's suite expects it ignored. Left as is unless the yash behaviour is wanted.
+ 
+-- **`unset -v 1x` status** (`unset-invalid-name-accepted`): shish prints the error and returns 0. bash
+-  returns 1 and continues; dash exits the non-interactive shell because `unset` is a special builtin.
+-  A plain `return 1` lands on dash's behavior here (the shell exits), so pick one deliberately.
++- **`unset -v 1x` status** (DONE, `fixes/392`): reports the name and returns 1; being a special builtin it then exits a non-interactive shell (POSIX, dash). Plain `unset 1x` stays silent
++  with status 0 (bash too; `BUGS: unset-invalid-name-accepted`).
+ - **Empty file operand gets no header from `head`/`tail`** (`head-no-header-for-empty-file`): the empty
+   source is skipped inside `filter_in_ready()` (`src/filter/filter_in_ready.c`) before `head`/`tail` see it.
+   Reporting it means `filter_in_peek()` has to hand out "a file was opened and is empty" (`newfile` set,

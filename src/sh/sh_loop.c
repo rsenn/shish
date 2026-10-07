@@ -2,6 +2,7 @@
 #include "../trace.h"
 #include "../eval.h"
 #include "../fd.h"
+#include "../fdtable.h"
 #include "../history.h"
 #include "../parse.h"
 #include "../prompt.h"
@@ -13,6 +14,8 @@
 #include "builtin_config.h"
 
 #include <unistd.h>
+
+#define IGNOREEOF 10 /* bash's default for $IGNOREEOF */
 
 #include "../trap.h"
 
@@ -42,6 +45,7 @@ sh_loop(void) {
   union node* list;
   stralloc cmd;
   int is_interactive = !!(source->mode & SOURCE_IACTIVE);
+  int eofs = 0; /* end-of-files in a row that "set -o ignoreeof" has swallowed */
 
   sh->parser = &p;
 
@@ -55,7 +59,17 @@ sh_loop(void) {
 
   parse_init(&p, is_interactive ? P_IACTIVE : P_DEFAULT);
 
-  while(!(parse_gettok(&p, P_DEFAULT) & T_EOF)) {
+  while(!(parse_gettok(&p, P_DEFAULT) & T_EOF) || (is_interactive && sh->opts.ignoreeof && ++eofs < IGNOREEOF)) {
+    /* "set -o ignoreeof": an interactive shell asks for "exit" instead of leaving, but gives up after
+       IGNOREEOF end-of-files in a row (a closed stdin would loop forever) */
+    if(p.tok & T_EOF) {
+      buffer_puts(fd_err->w, "Use \"exit\" to leave the shell.");
+      buffer_putnlflush(fd_err->w);
+      p.pushback = 0;
+      continue;
+    }
+
+    eofs = 0;
     p.pushback++;
     sh_errloc_set = 0; /* parse errors report the parser's position */
     parse_lineno = source->position.line;
@@ -96,8 +110,11 @@ sh_loop(void) {
         sh->exitcode = 0;
       } else {
         sh_unread_stdin();
+        /* directly under "." (E_SOURCE): break/continue may pass on to the caller's loop */
+        int under_source = eval && (eval->flags & E_SOURCE);
+
         eval_push(&e, E_JCTL);
-        status = eval_tree(&e, list, E_ROOT | E_LIST);
+        status = eval_tree(&e, list, E_ROOT | E_LIST | (under_source ? E_EVAL : 0));
 
         // eval_pop(&e);
         // while(sh->eval != &e) eval_pop(sh->eval);

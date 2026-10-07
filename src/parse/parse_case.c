@@ -101,5 +101,7 @@ parse_case(struct parser* p) {
     tree_skip(cptr);
   }
 
+  parse_dropkeyword(p); /* "esac" when the list ended on it, no-op after a case item */
+
   return node;
 }

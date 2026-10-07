@@ -70,6 +70,16 @@ source_search_path(const char* name) {
   return NULL;
 }
 
+/* put the caller's positional parameters back, freeing the ones "." made */
+static void
+source_restoreargs(struct arg* old, int olda, int newargs) {
+  if(newargs)
+    sh_setargs(NULL, 0);
+
+  sh_popargs(old);
+  sh->arg.a = olda;
+}
+
 /* source shell script
  * ----------------------------------------------------------------------- */
 const char help_source[] =
@@ -89,6 +99,7 @@ builtin_source(int argc, char* argv[]) {
   struct eval e;
   struct stat st;
   int ret, jmpret;
+  int olda = 0, newargs = 0;
 
   if((fname = argv[shell_optind]) == NULL) {
     builtin_errmsg(argv, "filename argument required", NULL);
@@ -107,20 +118,29 @@ builtin_source(int argc, char* argv[]) {
 
   fd_push(&src, STDSRC_FILENO, FD_READ);
   source_push(&in);
+  in.mode |= SOURCE_VERBOSE;
   in.fd = &src;
 
   if(!fd_mmap(&src, path_to_open)) {
     /* Set up an eval frame with a jump buffer so that return/break/continue
        from the sourced script can unwind back to this point */
-    eval_push(&e, E_ROOT);
+    eval_push(&e, E_ROOT | E_SOURCE);
     e.jump = 1;
+
+    olda = sh->arg.a;
+    sh_pushargs(&oldarg);
+
+    /* without operands "." leaves $@ alone; with them it replaces it for the file's duration */
+    if(argv[shell_optind + 1]) {
+      sh->arg.a = 0;
+      sh_setargs(&argv[shell_optind + 1], 1);
+      newargs = 1;
+    }
 
     if((jmpret = setjmp(e.jumpbuf)) == 0) {
       /* Normal execution path */
-      sh_pushargs(&oldarg);
-      sh_setargs(&argv[++shell_optind], 0);
       sh_loop();
-      sh_popargs(&oldarg);
+      source_restoreargs(&oldarg, olda, newargs);
       ret = sh->exitcode;
 
       /* an empty script yields 0, not the caller's $? */
@@ -131,10 +151,21 @@ builtin_source(int argc, char* argv[]) {
          for return, or just 1 for break/continue */
       ret = jmpret >> 1;
       sh->exitcode = ret;
-      sh_popargs(&oldarg);
+      source_restoreargs(&oldarg, olda, newargs);
     }
 
     eval_pop(&e);
+
+    /* break/continue ran off the file: carry on in the caller */
+    if(e.pending) {
+      source_popfd(&src);
+
+      if(searched_path)
+        alloc_free(searched_path);
+
+      eval_jump(e.pending, e.pendcont);
+      return ret;
+    }
   } else {
     ret = 1;
     source_popfd(&src);

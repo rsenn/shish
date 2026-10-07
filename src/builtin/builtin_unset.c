@@ -39,7 +39,7 @@ const char help_unset[] = "    Unset variables or functions.\n"
 
 int
 builtin_unset(int argc, char* argv[]) {
-  int c, fun = 0, var = 0;
+  int c, fun = 0, var = 0, ret = 0;
   char** argp;
 
   /* check options, -n for unexport, -p for output */
@@ -62,6 +62,7 @@ builtin_unset(int argc, char* argv[]) {
 
     if(var && !var_valid(*argp)) {
       builtin_errmsg(argv, *argp, "not a valid variable name");
+      ret = 1; /* as bash: report it, carry on with the other names */
       continue;
     }
 
@@ -108,6 +109,6 @@ builtin_unset(int argc, char* argv[]) {
     // variable/function");
   }
 
-  return 0;
+  return ret;
 }
 #endif /* BUILTIN_UNSET */

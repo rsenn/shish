@@ -1,0 +1,268 @@
+diff --git a/BUGS b/BUGS
+index 26bcd7c8..a56ef740 100644
+--- a/BUGS
++++ b/BUGS
+@@ -289,15 +289,6 @@
+   unset 1x; echo $?     # 0, no diagnostic
+   ```
+ 
+-- source-break-continue-no-op: `break`/`continue` at the top level of a file run
+-  with `.` do not reach a loop in the calling script (`builtin_source.c`
+-  pushes a plain `E_ROOT` frame, which `eval_jump()` treats as a boundary).
+-
+-  **Repro:**
+-  ```sh
+-  echo break > b.sh; for i in 1 2 3; do . ./b.sh; echo $i; done   # prints 1 2 3; bash: nothing
+-  ```
+-
+ - set-o-ignoreeof-nolog-vi-has-no-effect: `set -o ignoreeof`, `nolog` and `vi` are
+   accepted and shown by `set -o`, but only store a bit: an interactive shell still
+   exits at the first end-of-file, and there is no vi line editing.
+diff --git a/src/builtin/builtin_source.c b/src/builtin/builtin_source.c
+index e11c64bb..01a9296f 100644
+--- a/src/builtin/builtin_source.c
++++ b/src/builtin/builtin_source.c
+@@ -70,6 +70,16 @@ source_search_path(const char* name) {
+   return NULL;
+ }
+ 
++/* put the caller's positional parameters back, freeing the ones "." made */
++static void
++source_restoreargs(struct arg* old, int olda, int newargs) {
++  if(newargs)
++    sh_setargs(NULL, 0);
++
++  sh_popargs(old);
++  sh->arg.a = olda;
++}
++
+ /* source shell script
+  * ----------------------------------------------------------------------- */
+ const char help_source[] =
+@@ -89,6 +99,7 @@ builtin_source(int argc, char* argv[]) {
+   struct eval e;
+   struct stat st;
+   int ret, jmpret;
++  int olda = 0, newargs = 0;
+ 
+   if((fname = argv[shell_optind]) == NULL) {
+     builtin_errmsg(argv, "filename argument required", NULL);
+@@ -112,15 +123,23 @@ builtin_source(int argc, char* argv[]) {
+   if(!fd_mmap(&src, path_to_open)) {
+     /* Set up an eval frame with a jump buffer so that return/break/continue
+        from the sourced script can unwind back to this point */
+-    eval_push(&e, E_ROOT);
++    eval_push(&e, E_ROOT | E_SOURCE);
+     e.jump = 1;
+ 
++    olda = sh->arg.a;
++    sh_pushargs(&oldarg);
++
++    /* without operands "." leaves $@ alone; with them it replaces it for the file's duration */
++    if(argv[shell_optind + 1]) {
++      sh->arg.a = 0;
++      sh_setargs(&argv[shell_optind + 1], 1);
++      newargs = 1;
++    }
++
+     if((jmpret = setjmp(e.jumpbuf)) == 0) {
+       /* Normal execution path */
+-      sh_pushargs(&oldarg);
+-      sh_setargs(&argv[++shell_optind], 0);
+       sh_loop();
+-      sh_popargs(&oldarg);
++      source_restoreargs(&oldarg, olda, newargs);
+       ret = sh->exitcode;
+ 
+       /* an empty script yields 0, not the caller's $? */
+@@ -131,10 +150,21 @@ builtin_source(int argc, char* argv[]) {
+          for return, or just 1 for break/continue */
+       ret = jmpret >> 1;
+       sh->exitcode = ret;
+-      sh_popargs(&oldarg);
++      source_restoreargs(&oldarg, olda, newargs);
+     }
+ 
+     eval_pop(&e);
++
++    /* break/continue ran off the file: carry on in the caller */
++    if(e.pending) {
++      source_popfd(&src);
++
++      if(searched_path)
++        alloc_free(searched_path);
++
++      eval_jump(e.pending, e.pendcont);
++      return ret;
++    }
+   } else {
+     ret = 1;
+     source_popfd(&src);
+diff --git a/src/eval.h b/src/eval.h
+index 6a37fcfc..6819c11b 100644
+--- a/src/eval.h
++++ b/src/eval.h
+@@ -11,7 +11,8 @@ enum {
+   E_LOOP = (1 << 6),
+   E_PRINT = (1 << 7),
+   E_DEBUG = (1 << 8),
+-  E_EVAL = (1 << 9) /* frame of the "eval" builtin: break/continue pass through it */
++  E_EVAL = (1 << 9),   /* frame of the "eval" builtin: break/continue pass through it */
++  E_SOURCE = (1 << 10) /* frame of ".": break/continue unwind it, then go on outward */
+ };
+ 
+ #include "tree.h"
+@@ -44,6 +45,8 @@ struct eval {
+ 
+   jmp_buf jumpbuf;
+   int jump;
++  int pending; /* E_SOURCE frame: levels of break/continue still to run after unwinding it */
++  int pendcont;
+ 
+   debug_callback* debug;
+   exit_callback* destructor;
+diff --git a/src/eval/eval_jump.c b/src/eval/eval_jump.c
+index 96e8543a..0a776889 100644
+--- a/src/eval/eval_jump.c
++++ b/src/eval/eval_jump.c
+@@ -11,6 +11,7 @@ void
+ eval_jump(int levels, int cont) {
+   struct eval* e;
+   struct eval* j = NULL;
++  struct eval* sf = NULL; /* "." frame reached before any loop matched */
+ 
+   for(e = eval; e; e = e->parent) {
+     if(levels <= 0)
+@@ -50,6 +51,14 @@ eval_jump(int levels, int cont) {
+        own eval frame also carries E_ROOT, see sh_loop.c's E_ROOT
+        tempflag) silently failed to break at all instead of breaking
+        that one loop, exactly the way bash does. */
++    /* a sourced file's break/continue belongs to the caller's loop: unwind the file first */
++    if(e->flags & E_SOURCE) {
++      if(!j)
++        sf = e;
++
++      break;
++    }
++
+     if((e->flags & E_FUNCTION) || (e->flags & (E_ROOT | E_EVAL)) == E_ROOT)
+       break;
+ 
+@@ -61,6 +70,12 @@ eval_jump(int levels, int cont) {
+ 
+   TRACE(TRACE_EVAL, "jump", trace_int("levels", levels), trace_int("cont", cont), trace_int("found", j != NULL));
+ 
++  if(!j && sf) {
++    sf->pending = levels;
++    sf->pendcont = cont;
++    longjmp(sf->jumpbuf, 1);
++  }
++
+   if(j) {
+     eval = j;
+ 
+diff --git a/src/eval/eval_node.c b/src/eval/eval_node.c
+index c39ca161..b8b3ea4a 100644
+--- a/src/eval/eval_node.c
++++ b/src/eval/eval_node.c
+@@ -15,7 +15,7 @@ eval_node(struct eval* e, union node* node) {
+ 
+   tree_location(node, &e->pos);
+ 
+-  TRACE(TRACE_EVAL, "node", trace_kind("kind", node->id), trace_loc("loc", &e->pos), trace_flags("flags", e->flags, trace_eval_flags, 10));
++  TRACE(TRACE_EVAL, "node", trace_kind("kind", node->id), trace_loc("loc", &e->pos), trace_flags("flags", e->flags, trace_eval_flags, 11));
+ 
+   switch(node->id) {
+     case N_SIMPLECMD: {
+diff --git a/src/eval/eval_pop.c b/src/eval/eval_pop.c
+index c4c06548..6addf1b2 100644
+--- a/src/eval/eval_pop.c
++++ b/src/eval/eval_pop.c
+@@ -35,7 +35,7 @@ eval_pop(struct eval* e) {
+ 
+   // sh->exitcode = e->exitcode;
+   // sh->eval = e->parent;
+-  TRACE(TRACE_EVAL, "pop", trace_flags("flags", e->flags, trace_eval_flags, 10), trace_int("status", ret));
++  TRACE(TRACE_EVAL, "pop", trace_flags("flags", e->flags, trace_eval_flags, 11), trace_int("status", ret));
+ 
+   eval = e->parent;
+ 
+diff --git a/src/eval/eval_push.c b/src/eval/eval_push.c
+index 3f470b6d..2d8e4f4f 100644
+--- a/src/eval/eval_push.c
++++ b/src/eval/eval_push.c
+@@ -26,5 +26,5 @@ eval_push(struct eval* e, int flags) {
+   // sh->eval = e;
+   eval = e;
+ 
+-  TRACE(TRACE_EVAL, "push", trace_flags("flags", e->flags, trace_eval_flags, 10));
++  TRACE(TRACE_EVAL, "push", trace_flags("flags", e->flags, trace_eval_flags, 11));
+ }
+diff --git a/src/sh/sh_loop.c b/src/sh/sh_loop.c
+index 3c9583f4..6860fe8b 100644
+--- a/src/sh/sh_loop.c
++++ b/src/sh/sh_loop.c
+@@ -96,8 +96,11 @@ sh_loop(void) {
+         sh->exitcode = 0;
+       } else {
+         sh_unread_stdin();
++        /* directly under "." (E_SOURCE): break/continue may pass on to the caller's loop */
++        int under_source = eval && (eval->flags & E_SOURCE);
++
+         eval_push(&e, E_JCTL);
+-        status = eval_tree(&e, list, E_ROOT | E_LIST);
++        status = eval_tree(&e, list, E_ROOT | E_LIST | (under_source ? E_EVAL : 0));
+ 
+         // eval_pop(&e);
+         // while(sh->eval != &e) eval_pop(sh->eval);
+diff --git a/src/trace.h b/src/trace.h
+index b868277b..df8790ba 100644
+--- a/src/trace.h
++++ b/src/trace.h
+@@ -45,7 +45,7 @@ enum trace_module {
+ #define TRACE_STRUCT_CLOSE " }"
+ 
+ /* bit i -> name, for trace_flags() */
+-extern const char* const trace_eval_flags[10]; /* E_EXIT .. E_EVAL */
++extern const char* const trace_eval_flags[11]; /* E_EXIT .. E_SOURCE */
+ extern const char* const trace_redir_flags[9]; /* R_IN .. R_NOW */
+ 
+ int trace_begin(enum trace_module mod, const char* event, const char* open, const char* close);
+diff --git a/src/trace/trace_value.c b/src/trace/trace_value.c
+index 71a09a13..dee73418 100644
+--- a/src/trace/trace_value.c
++++ b/src/trace/trace_value.c
+@@ -5,7 +5,7 @@
+ extern const char* debug_nodes[];
+ extern const unsigned debug_nodes_count;
+ 
+-const char* const trace_eval_flags[10] = {"E_EXIT", "E_ROOT", "E_BQUOTE", "E_JCTL", "E_LIST", "E_FUNCTION", "E_LOOP", "E_PRINT", "E_DEBUG", "E_EVAL"};
++const char* const trace_eval_flags[11] = {"E_EXIT", "E_ROOT", "E_BQUOTE", "E_JCTL", "E_LIST", "E_FUNCTION", "E_LOOP", "E_PRINT", "E_DEBUG", "E_EVAL", "E_SOURCE"};
+ const char* const trace_redir_flags[9] = {"R_IN", "R_OUT", "R_OPEN", "R_DUP", "R_HERE", "R_STRIP", "R_APPEND", "R_CLOBBER", "R_NOW"};
+ #include "../source.h"
+ #include "../tree.h"
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index 349a2072..62ed2a9e 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -6516,4 +6516,20 @@ assert_equal "0
+ # sysconf(_SC_CLK_TCK), so "time -p" reported hundreds of seconds. Checked by building
+ # build/wasi and running "time -p { loop; }" under Node: real and user now match.
+ 
++## fixes/391: break/continue at the top level of a file run with "." reach the caller's loop, and "."
++## sets $@ only when given operands (it used to free the caller's $@ and crash on the next use)
++SRCDIR=$(mktemp -d)
++echo break >"$SRCDIR/b.sh"
++echo continue >"$SRCDIR/c.sh"
++echo 'echo $# $1' >"$SRCDIR/e.sh"
++PX=$("$SHISH_SELF" -c 'for i in 1 2 3; do . "$1/b.sh"; echo $i; done; echo done' sh "$SRCDIR")
++assert_equal "done" "$PX" "break in a sourced file leaves the caller's loop"
++PX=$("$SHISH_SELF" -c 'for i in 1 2; do . "$1/c.sh"; echo no; done; echo ok' sh "$SRCDIR")
++assert_equal "ok" "$PX" "continue in a sourced file skips the rest of the caller's loop body"
++PX=$("$SHISH_SELF" -c 'd=$1; set -- a b; . "$d/e.sh"; . "$d/e.sh" p q r; echo "$@"' sh "$SRCDIR")
++assert_equal "2 a
++3 p
++a b" "$PX" "a sourced file sees the caller's \$@ without operands, its own with them, and the caller's is restored"
++rm -rf "$SRCDIR"
++
+ summary

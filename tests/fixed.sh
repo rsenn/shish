@@ -6516,4 +6516,147 @@ assert_equal "0
 # sysconf(_SC_CLK_TCK), so "time -p" reported hundreds of seconds. Checked by building
 # build/wasi and running "time -p { loop; }" under Node: real and user now match.
 
+## fixes/391: break/continue at the top level of a file run with "." reach the caller's loop, and "."
+## sets $@ only when given operands (it used to free the caller's $@ and crash on the next use)
+SRCDIR=$(mktemp -d)
+echo break >"$SRCDIR/b.sh"
+echo continue >"$SRCDIR/c.sh"
+echo 'echo $# $1' >"$SRCDIR/e.sh"
+PX=$("$SHISH_SELF" -c 'for i in 1 2 3; do . "$1/b.sh"; echo $i; done; echo done' sh "$SRCDIR")
+assert_equal "done" "$PX" "break in a sourced file leaves the caller's loop"
+PX=$("$SHISH_SELF" -c 'for i in 1 2; do . "$1/c.sh"; echo no; done; echo ok' sh "$SRCDIR")
+assert_equal "ok" "$PX" "continue in a sourced file skips the rest of the caller's loop body"
+PX=$("$SHISH_SELF" -c 'd=$1; set -- a b; . "$d/e.sh"; . "$d/e.sh" p q r; echo "$@"' sh "$SRCDIR")
+assert_equal "2 a
+3 p
+a b" "$PX" "a sourced file sees the caller's \$@ without operands, its own with them, and the caller's is restored"
+rm -rf "$SRCDIR"
+
+## fixes/392: "unset -v" with an invalid name reports it, goes on with the other names and returns 1;
+## "unset" is a special builtin, so a non-interactive shell then exits (POSIX, dash), "command" keeps it alive
+PX=$("$SHISH_SELF" -c 'x=1; y=2; command unset -v x 1x y 2>/dev/null; echo "$? [$x][$y]"')
+assert_equal "1 [][]" "$PX" "unset -v with an invalid name returns 1 and still unsets the valid names"
+PX=$("$SHISH_SELF" -c 'unset -v 1x 2>/dev/null; echo not-reached'; echo "[$?]")
+assert_equal "[1]" "$PX" "a non-interactive shell exits with status 1 after unset -v of an invalid name"
+PX=$("$SHISH_SELF" -c 'x=1; unset -v x; echo $?')
+assert_equal "0" "$PX" "unset -v with valid names returns 0"
+
+## fixes/393: head and tail give an empty file operand its "==> name <==" header
+HDIR=$(mktemp -d)
+: >"$HDIR/e"
+echo x >"$HDIR/f"
+if have head; then
+  PX=$(head "$HDIR/e" "$HDIR/f" | sed "s|$HDIR/||")
+  assert_equal "==> e <==
+
+==> f <==
+x" "$PX" "head prints a header for an empty first operand"
+  PX=$(head "$HDIR/f" "$HDIR/e" | sed "s|$HDIR/||")
+  assert_equal "==> f <==
+x
+
+==> e <==" "$PX" "head prints a header for an empty last operand"
+  PX=$(head < "$HDIR/e")
+  assert_equal "" "$PX" "head of an empty standard input prints no header"
+fi
+if have tail; then
+  PX=$(tail "$HDIR/e" "$HDIR/f" | sed "s|$HDIR/||")
+  assert_equal "==> e <==
+
+==> f <==
+x" "$PX" "tail prints a header for an empty first operand"
+  PX=$(tail "$HDIR/f" "$HDIR/e" | sed "s|$HDIR/||")
+  assert_equal "==> f <==
+x
+
+==> e <==" "$PX" "tail prints a header for an empty last operand"
+fi
+rm -rf "$HDIR"
+
+## fixes/394: the closing keyword (fi, done, esac, }) that ended an eval string, and the redirections on a
+## compound command, were never freed: about 450 bytes per eval of "f() { :; } >/dev/null" or "if :; then :; fi"
+if test -r /proc/self/status; then
+  PX=$("$SHISH_SELF" -c 'vmrss() { while read k v u; do test "$k" = VmRSS: && echo "$v"; done </proc/self/status; }
+RSS0=$(vmrss); i=0
+while test $i -lt 50000; do eval "f() { :; } >/dev/null"; eval "if :; then :; fi"; i=$((i + 1)); done
+echo $(($(vmrss) - RSS0))')
+  assert_less "$PX" "2000" "50000 evals of compound commands do not grow the heap (22 MB before the fix)"
+fi
+
+## fixes/395: a hard limit lowered in a "( )" is gone when the subshell ends (an unprivileged process
+## could not raise a real one again) and the programs it starts still get the lowered one
+if have ulimit && test "$(id -u)" != 0; then
+  PX=$("$SHISH_SELF" -c 'h=$(ulimit -Hn); [ "$h" = unlimited ] && h=1000000; ( ulimit -Hn 100; echo "in=$(ulimit -Hn)"; "$0" -c "ulimit -Hn" ) ; echo "out=$(ulimit -Hn)"; ( ulimit -Hn 100; ulimit -Hn 200 2>/dev/null; echo "raise=$?" )' "$SHISH_SELF")
+  case $PX in
+    "in=100
+100
+out="*"
+raise=1") OK=1 ;;
+    *) OK=0 ;;
+  esac
+  assert_equal "1" "$OK" "ulimit -H lowered in a subshell: the subshell and its programs see it, it can not be raised there, the shell keeps its own"
+  PX=$("$SHISH_SELF" -c '( ulimit -Hn 100 ); ulimit -Hn')
+  test "$PX" != 100
+  assert_equal "0" "$?" "the hard limit is back to the shell's own after the subshell"
+fi
+
+## fixes/396: ls -C and -x lay the names out in columns ($COLUMNS wide, 80 by default), down or across
+if have ls; then
+  LSDIR=$(mktemp -d)
+  for f in a bb ccc dddd e; do : >"$LSDIR/$f"; done
+  PX=$(COLUMNS=12 ls -C "$LSDIR")
+  assert_equal "a    dddd
+bb   e
+ccc" "$PX" "ls -C fills columns downwards, as wide as fit"
+  PX=$(COLUMNS=12 ls -x "$LSDIR")
+  assert_equal "a    bb
+ccc  dddd
+e" "$PX" "ls -x fills rows across"
+  PX=$(COLUMNS=80 ls -C "$LSDIR")
+  assert_equal "a  bb  ccc  dddd  e" "$PX" "ls -C puts everything on one line when it fits"
+  PX=$(COLUMNS=12 ls -C -1 "$LSDIR" | wc -l)
+  assert_equal "5" "$PX" "a later -1 gives one entry per line again"
+  rm -rf "$LSDIR"
+fi
+
+## fixes/397: "set -o ignoreeof" makes an interactive shell answer end-of-file with a reminder; a stdin that
+## stays closed still ends it after 10 in a row
+EOFLOG=$(mktemp)
+printf 'set -o ignoreeof\n' | "$SHISH_SELF" -i >/dev/null 2>"$EOFLOG"
+PX=$(grep -c 'Use "exit" to leave the shell.' "$EOFLOG")
+assert_equal "9" "$PX" "an interactive shell with ignoreeof reminds nine times, then gives up on a closed stdin"
+printf 'echo hi\n' | "$SHISH_SELF" -i >/dev/null 2>"$EOFLOG"
+test -s "$EOFLOG"
+assert_equal "1" "$?" "without ignoreeof end-of-file leaves the shell at once, with no reminder"
+rm -f "$EOFLOG"
+
+## fixes/398: a function or builtin forked inside "$(...)" ("timeout 5 f", "f & wait") wrote into the
+## substitution's in-memory buffer of the child process, so its output was lost
+PX=$("$SHISH_SELF" -c 'f() { echo fn; }; o=$(f & wait); echo "[$o]"')
+assert_equal "[fn]" "$PX" "output of a backgrounded function reaches the enclosing command substitution"
+if have timeout; then
+  PX=$("$SHISH_SELF" -c 'f() { echo fn; }; o=$(timeout 5 f); echo "[$o]"')
+  assert_equal "[fn]" "$PX" "timeout of a function inside a command substitution keeps its output"
+fi
+
+## fixes/399: $LINENO in an eval string inside a function is the eval command's own line
+LNDIR=$(mktemp -d)
+printf 'f() {\n  echo $LINENO\n  eval '"'"'echo $LINENO'"'"'\n}\nf\n' >"$LNDIR/l.sh"
+PX=$("$SHISH_SELF" "$LNDIR/l.sh")
+assert_equal "2
+3" "$PX" "eval inside a function reports its own line for \$LINENO, not the call site's"
+rm -rf "$LNDIR"
+
+## fixes/400: "set -v" echoes a \-continued line as it was read, and the lines "." and eval read
+VDIR=$(mktemp -d)
+printf 'echo in-dot\n' >"$VDIR/d.sh"
+PX=$(printf 'echo a \\\n b\n' | "$SHISH_SELF" -v 2>&1 >/dev/null)
+assert_equal "echo a \\
+ b" "$PX" "set -v echoes a continued line as two lines"
+PX=$("$SHISH_SELF" -v -c ". $VDIR/d.sh; eval 'echo e'" 2>&1 >/dev/null)
+assert_equal ". $VDIR/d.sh; eval 'echo e'
+echo in-dot
+echo e" "$PX" "set -v echoes the lines of a dotted file and an eval string"
+rm -rf "$VDIR"
+
 summary

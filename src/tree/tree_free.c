@@ -43,11 +43,17 @@ tree_free(union node* node) {
 
       case N_SUBSHELL:
       case N_BRACEGROUP:
+        if(node->ngrp.rdir)
+          tree_free(node->ngrp.rdir);
+
         if(node->ngrp.cmds)
           tree_free(node->ngrp.cmds);
         break;
 
       case N_FOR:
+        if(node->nfor.rdir)
+          tree_free(node->nfor.rdir);
+
         if(node->nfor.cmds)
           tree_free(node->nfor.cmds);
 
@@ -59,6 +65,9 @@ tree_free(union node* node) {
         break;
 
       case N_CASE:
+        if(node->ncase.rdir)
+          tree_free(node->ncase.rdir);
+
         if(node->ncase.list)
           tree_free(node->ncase.list);
 
@@ -75,6 +84,9 @@ tree_free(union node* node) {
         break;
 
       case N_IF:
+        if(node->nif.rdir)
+          tree_free(node->nif.rdir);
+
         if(node->nif.cmd0)
           tree_free(node->nif.cmd0);
 
@@ -87,6 +99,9 @@ tree_free(union node* node) {
 
       case N_WHILE:
       case N_UNTIL:
+        if(node->nloop.rdir)
+          tree_free(node->nloop.rdir);
+
         if(node->nloop.cmds)
           tree_free(node->nloop.cmds);
 

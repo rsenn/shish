@@ -23,27 +23,6 @@
   timeout 20 sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/yash while-y.tst; echo $?   # 124
   ```
 
-- eval-lineno-imprecise-inside-function: `$LINENO` read from within an
-  `eval`'d string takes the line of the invoking statement, but the value
-  it inherits (`parse_lineno`, stamped once per top-level list by
-  `sh_loop()`) is the *call site's* line, not the eval statement's own
-  line when eval runs from inside a function or loop body whose
-  definition spans multiple lines -- there is no per-command location
-  tracking to fall back on for that case (unlike a direct, non-eval'd
-  `$LINENO` reference, which reads the parse-time `loc` stamped
-  individually on its own `N_ARGPARAM` node).
-
-  **Repro:**
-  ```sh
-  cat <<'EOF' | shish
-  f() {
-    echo $LINENO   # correctly prints 2
-    eval 'echo $LINENO'   # prints 5 (f's call site), should print 3
-  }
-  f
-  EOF
-  ```
-
 - set-notify-no-effect: POSIX `-b` is accepted (`set -b`, `set -o notify`,
   shown in `$-`) but changes nothing: a finished background job is still
   reported only just before the next prompt. Needs a real "OK to interrupt
@@ -54,15 +33,6 @@
   ```sh
   printf 'set -b\nsleep 0.1 &\nsleep 1\n' | shish -i 2>&1
   # the "Done" banner should appear as soon as the job ends, not after sleep 1
-  ```
-
-- set-verbose-partial: `set -v` echoes each line the top-level script, stdin or `-c`
-  string supplies to stderr, but not text read by `.`/`eval`, and a `\`-continued
-  line is echoed joined.
-
-  **Repro:**
-  ```sh
-  printf 'echo a \\\n b\n' | shish -v   # echoed joined; bash echoes both lines as read
   ```
 
 - set-histexpand-unimplemented: `struct shopt`'s `histexpand` bit
@@ -117,11 +87,6 @@
 - asan-leak-residue-not-fully-triaged: ASan leak reports left under the
   `-fsanitize=address,undefined` build:
 
-  - Parsing a function definition still leaks 2 allocations (a 56-byte
-    `N_ARGSTR` from `parse_pipeline.c:13`'s `parse_gettok()` plus its
-    string); only visible when it is parsed repeatedly:
-    `i=0; while [ $i -lt 50 ]; do eval "f(){ echo a; }"; i=$((i+1)); done`
-    leaks 2 allocations per pass.
   - The installed function list (`eval_function.c`) and the last copy of
     each variable's value live for the whole process. The value copy is
     not marked `V_FREESTR`, because `var_setvsa()` reads that flag as "the
@@ -264,47 +229,29 @@
   ```
   (a pty script: `python3` + `pty.fork()`, see `tests/term-complete.sh`)
 
-- ls-missing-options: `ls` supports `-A -a -c -d -F -f -g -H -i -k -L -l -m -n -o -p -q -R -r -S -s -t -u -1`.
-  POSIX also requires `-C` and `-x` (multi-column output); each is "invalid
-  option". Column widths in `-l` are fixed (links 3, size 6) rather than sized to
-  the widest entry.
+- ls-missing-options: `ls -l` sizes its links and size columns by fixed widths (3 and 6) instead
+  of the widest entry.
 
   **Repro:**
   ```sh
-  for o in -C -x; do
-    ls $o . >/dev/null 2>&1 || echo "ls $o unsupported"
-  done
+  : >f; ls -l f      # links column is padded to 3, size column to 6, whatever is listed
   ```
 
-- unset-invalid-name-accepted: `unset 1x` (no `-v`) is accepted silently with
-  status 0; only `unset -v` validates the name. POSIX 2.8.1 / bash: bash also
-  returns 0 here, so this is low priority.
-
-  `unset -v 1x` prints the diagnostic but still returns 0. bash returns 1 and
-  carries on; dash exits the non-interactive shell (`unset` is a special builtin).
-  Open design decision: follow dash/POSIX (exit) or bash (status 1 only).
+- unset-invalid-name-accepted: plain `unset 1x` (no `-v`) is accepted silently with
+  status 0. bash does the same, so this is low priority. (`unset -v 1x` reports the name
+  and returns 1; as a special builtin it exits a non-interactive shell, like dash.)
 
   **Repro:**
   ```sh
   unset 1x; echo $?     # 0, no diagnostic
   ```
 
-- source-break-continue-no-op: `break`/`continue` at the top level of a file run
-  with `.` do not reach a loop in the calling script (`builtin_source.c`
-  pushes a plain `E_ROOT` frame, which `eval_jump()` treats as a boundary).
+- set-o-nolog-vi-has-no-effect: `set -o nolog` and `vi` are accepted and shown by `set -o`, but only store a bit:
+  there is no vi line editing, and nothing reads `nolog` (no history file is written to leave out).
 
   **Repro:**
   ```sh
-  echo break > b.sh; for i in 1 2 3; do . ./b.sh; echo $i; done   # prints 1 2 3; bash: nothing
-  ```
-
-- set-o-ignoreeof-nolog-vi-has-no-effect: `set -o ignoreeof`, `nolog` and `vi` are
-  accepted and shown by `set -o`, but only store a bit: an interactive shell still
-  exits at the first end-of-file, and there is no vi line editing.
-
-  **Repro:**
-  ```sh
-  printf 'set -o ignoreeof\n' | shish -i   # exits at EOF instead of asking for "exit"
+  set -o vi; set -o | grep '^vi'   # "on", but the line editor is the same
   ```
 
 - fc-missing: `fc` (history listing, editing and re-execution) is a POSIX utility that
@@ -313,15 +260,6 @@
   **Repro:**
   ```sh
   fc -l; echo $?      # "No such file or directory"; 127
-  ```
-
-- ulimit-hard-limit-lowered-in-subshell-sticks: a "( ulimit -Hn N )" or "$( )" runs in the
-  shell's own process, so the soft limits it changed are put back when it ends, but a hard
-  limit lowered without privilege cannot be raised again.
-
-  **Repro:**
-  ```sh
-  shish -c '( ulimit -Hn 100 ); ulimit -Hn'     # 100; bash prints the original hard limit
   ```
 
 - fixed-sh-remaining-failures-after-sigchld-fix: `tests/fixed.sh` fails 5
@@ -350,12 +288,6 @@
   shish -c 'echo "$q"$s'     # prints x*; bash prints xa
   ```
 
-- head-no-header-for-empty-file: `head` and `tail` print the "==> file <=="
-  header when the first bytes of a file arrive, so an empty file operand gets
-  none (the shared input layer skips a source with nothing in it).
-  `: >e; printf 'x\n' >f; head e f` prints "==> f <==" and x, without a
-  header for `e` (POSIX and coreutils print both); `tail e f` is the same.
-
 - posix-suite-intentional-deviations: two `tests/posix` cases fail on purpose.
   `simple-p.tst:172` expects `PATH=; echo x` to report "not found" (POSIX does not
   require `echo` to be intrinsic), and `option-p.tst:121` expects `hash` to list a
@@ -368,14 +300,11 @@
   sh tests/run-tst.sh "$PWD/build/x86_64-linux-gnu/shish" tests/posix simple-p.tst
   ```
 
-- timeout-function-output-not-captured-by-command-substitution: `timeout`
-  forks a function (it has no program of the same name) so it can kill it,
-  and the forked child's output does not reach a command substitution, which
-  collects stdout in a `stralloc`, not a pipe. External programs and plain
-  builtins are captured.
+- grep-count-empty-file-prints-nothing: `grep -c` prints no count for an empty file operand or an empty stdin
+  (the shared input layer skips a source with nothing in it, as `head`/`tail` did before `filter_in.keepempty`);
+  with several operands the empty file's `name:0` line is missing too. POSIX and GNU print `0` / `name:0`.
 
   **Repro:**
   ```sh
-  f() { echo fn; }; o=$(timeout 5 f); echo "[$o]"     # "[]"; should be "[fn]"
-  o=$(timeout 5 echo hi); echo "[$o]"                  # "[hi]" (ok)
+  : >e; grep -c y e; echo rc=$?     # prints only rc=1; should print 0 first
   ```

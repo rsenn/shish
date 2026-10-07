@@ -1,0 +1,126 @@
+--- a/src/source.h
++++ b/src/source.h
+@@ -29,6 +29,7 @@
+ #define SOURCE_IACTIVE 0x01
+ #define SOURCE_HERE 0x02
+ #define SOURCE_ALIAS 0x04 /* alias text: heap-allocated, pops itself when used up */
++#define SOURCE_VERBOSE 0x08 /* text of "." or eval: "set -v" echoes it like the script itself */
+ 
+ extern struct source* source;
+ extern int source_psn;
+@@ -87,6 +88,7 @@
+ void source_flush(void);
+ void source_msg(const struct location* pos);
+ int source_skip(void);
++void source_verbose(char c);
+ void source_verbose_flush(void);
+ int source_skipn(int n);
+ int source_fork(buffer* child_source);
+--- a/src/source/source_skip.c
++++ b/src/source/source_skip.c
+@@ -6,9 +6,15 @@
+ /* "set -v": the line being read, written to stderr once its newline is consumed */
+ static stralloc source_verbose_line;
+ 
+-static void
++/* is the text being read echoed: the script, stdin or -c string itself, and what "." and eval read */
++static int
++source_verbose_on(void) {
++  return sh->opts.verbose && (!source->parent || (source->mode & SOURCE_VERBOSE)) && !(source->mode & (SOURCE_ALIAS | SOURCE_HERE));
++}
++
++void
+ source_verbose(char c) {
+-  if(!sh->opts.verbose || source->parent || (source->mode & (SOURCE_ALIAS | SOURCE_HERE)))
++  if(!source_verbose_on())
+     return;
+ 
+   stralloc_catc(&source_verbose_line, c);
+@@ -23,7 +29,7 @@
+ /* the last line has no newline: echo it now, with one */
+ void
+ source_verbose_flush(void) {
+-  if(source_verbose_line.len && sh->opts.verbose && !source->parent) {
++  if(source_verbose_line.len && source_verbose_on()) {
+     stralloc_catc(&source_verbose_line, '\n');
+     buffer_put(fd_err->w, source_verbose_line.s, source_verbose_line.len);
+     buffer_flush(fd_err->w);
+--- a/src/source/source_peekn.c
++++ b/src/source/source_peekn.c
+@@ -70,6 +70,8 @@
+         /* a continuation at the very front is consumed for good */
+         if(pi == 0) {
+           b->p += 2;
++          source_verbose('\\');
++          source_verbose('\n');
+           source_newline();
+           ret = buffer_LEN(b);
+         } else
+--- a/src/builtin/builtin_eval.c
++++ b/src/builtin/builtin_eval.c
+@@ -42,6 +42,7 @@
+ 
+   /* create a new i/o context and initialize a parser */
+   source_buffer(&src, &fd, sa.s, sa.len);
++  src.mode |= SOURCE_VERBOSE;
+   parse_init(&p, P_DEFAULT);
+ 
+   /* parse and run one command at a time, so that an alias defined by an
+--- a/src/builtin/builtin_source.c
++++ b/src/builtin/builtin_source.c
+@@ -118,6 +118,7 @@
+ 
+   fd_push(&src, STDSRC_FILENO, FD_READ);
+   source_push(&in);
++  in.mode |= SOURCE_VERBOSE;
+   in.fd = &src;
+ 
+   if(!fd_mmap(&src, path_to_open)) {
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -6647,4 +6647,16 @@
+ 3" "$PX" "eval inside a function reports its own line for \$LINENO, not the call site's"
+ rm -rf "$LNDIR"
+ 
++## fixes/400: "set -v" echoes a \-continued line as it was read, and the lines "." and eval read
++VDIR=$(mktemp -d)
++printf 'echo in-dot\n' >"$VDIR/d.sh"
++PX=$(printf 'echo a \\\n b\n' | "$SHISH_SELF" -v 2>&1 >/dev/null)
++assert_equal "echo a \\
++ b" "$PX" "set -v echoes a continued line as two lines"
++PX=$("$SHISH_SELF" -v -c ". $VDIR/d.sh; eval 'echo e'" 2>&1 >/dev/null)
++assert_equal ". $VDIR/d.sh; eval 'echo e'
++echo in-dot
++echo e" "$PX" "set -v echoes the lines of a dotted file and an eval string"
++rm -rf "$VDIR"
++
+ summary
+--- a/BUGS
++++ b/BUGS
+@@ -35,15 +35,6 @@
+   # the "Done" banner should appear as soon as the job ends, not after sleep 1
+   ```
+ 
+-- set-verbose-partial: `set -v` echoes each line the top-level script, stdin or `-c`
+-  string supplies to stderr, but not text read by `.`/`eval`, and a `\`-continued
+-  line is echoed joined.
+-
+-  **Repro:**
+-  ```sh
+-  printf 'echo a \\\n b\n' | shish -v   # echoed joined; bash echoes both lines as read
+-  ```
+-
+ - set-histexpand-unimplemented: `struct shopt`'s `histexpand` bit
+   (`src/sh.h`, `-H`) is set correctly by `set -H`/`set +H` and
+   reflected back correctly in `$-`, but nothing checks it either --
+--- a/TODO.md
++++ b/TODO.md
+@@ -71,7 +71,7 @@
+ 
+ 1. `alias` (62/65) - the 3 left are in `BUGS: alias-substitution-remaining-cases`.
+ 2. **`set`** - `-b` is accepted and shown in `$-` but has no effect (`BUGS: set-notify-no-effect`);
+-   `-v` echoes input lines (`BUGS: set-verbose-partial`); `nolog`, `vi` are accepted
++   `-v` echoes every line read, also from `.` and eval (`fixes/400`); `nolog`, `vi` are accepted
+    but do nothing (`BUGS: set-o-nolog-vi-has-no-effect`, `set-histexpand-unimplemented`); `ignoreeof` works (`fixes/397`).
+ 
+ ---

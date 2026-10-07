@@ -6,9 +6,15 @@
 /* "set -v": the line being read, written to stderr once its newline is consumed */
 static stralloc source_verbose_line;
 
-static void
+/* is the text being read echoed: the script, stdin or -c string itself, and what "." and eval read */
+static int
+source_verbose_on(void) {
+  return sh->opts.verbose && (!source->parent || (source->mode & SOURCE_VERBOSE)) && !(source->mode & (SOURCE_ALIAS | SOURCE_HERE));
+}
+
+void
 source_verbose(char c) {
-  if(!sh->opts.verbose || source->parent || (source->mode & (SOURCE_ALIAS | SOURCE_HERE)))
+  if(!source_verbose_on())
     return;
 
   stralloc_catc(&source_verbose_line, c);
@@ -23,7 +29,7 @@ source_verbose(char c) {
 /* the last line has no newline: echo it now, with one */
 void
 source_verbose_flush(void) {
-  if(source_verbose_line.len && sh->opts.verbose && !source->parent) {
+  if(source_verbose_line.len && source_verbose_on()) {
     stralloc_catc(&source_verbose_line, '\n');
     buffer_put(fd_err->w, source_verbose_line.s, source_verbose_line.len);
     buffer_flush(fd_err->w);

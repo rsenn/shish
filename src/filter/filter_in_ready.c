@@ -7,6 +7,8 @@
  * ----------------------------------------------------------------------- */
 int
 filter_in_ready(struct filter_in* in) {
+  in->empty = 0;
+
   for(;;) {
     ssize_t r;
 
@@ -18,6 +20,10 @@ filter_in_ready(struct filter_in* in) {
 
     if(r < 0)
       in->had_error = 1;
+    else if(in->keepempty && in->newfile) {
+      in->empty = 1; /* a file without a byte: head/tail still give it a header */
+      return 1;
+    }
 
     filter_in_close(in);
   }

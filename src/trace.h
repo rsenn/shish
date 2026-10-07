@@ -45,7 +45,7 @@ enum trace_module {
 #define TRACE_STRUCT_CLOSE " }"
 
 /* bit i -> name, for trace_flags() */
-extern const char* const trace_eval_flags[10]; /* E_EXIT .. E_EVAL */
+extern const char* const trace_eval_flags[11]; /* E_EXIT .. E_SOURCE */
 extern const char* const trace_redir_flags[9]; /* R_IN .. R_NOW */
 
 int trace_begin(enum trace_module mod, const char* event, const char* open, const char* close);

@@ -55,7 +55,7 @@ const struct set_longopt set_longopts[] = {
     {"errexit", 'e'},
     {"hashall", 'h'},
     {"histexpand", 'H'},
-    {"ignoreeof", 'I'}, /* only via -o, like nolog and vi: accepted, nothing behind them */
+    {"ignoreeof", 'I'}, /* only via -o, like nolog and vi */
     {"monitor", 'm'},
     {"noclobber", 'C'},
     {"noexec", 'n'},
