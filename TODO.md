@@ -24,7 +24,7 @@ fragmentation, execution time.
 | 16-17 | Expansion field list, `src/wordlist/` | **done 2026-10-07** (kept as the record of why and how) |
 | 18 | AST arena | parser-wide; `narg.stra` is already gone (section 17) |
 | 19-21 | Filter chaining, tab completion, vi mode | interactive and pipeline features |
-| 22 | Also open (WASI, editor) | |
+| 22 | Also open (WASI, editor) | WASI: interactive page plan (xterm.js + WASI shim) |
 | 23-25 | More utilities | wait for the walker and the builtin switches |
 | 26 | UTF-8 | largest, optional, touches everything |
 | 27 | Variable table and `exec_hash` PATH check | independent and measurable; pays off most before 18 (AST arena) |
@@ -1850,6 +1850,21 @@ Tests: `tests/term-vi.sh`. `vi` is always on: there is no `set -o vi` / `set -o 
     browser lacking it cannot load the module — the fallback would be a
     build without EH, i.e. replacing the `setjmp` unwinding in
     `src/eval/` (design-sized). The interactive prompt there is untried.
+  - **Interactive use needs our own page (plan, not started).** In
+    webassembly.sh `shish` works, but every stdin read is a browser
+    `prompt()` dialog ("Please enter text for stdin:"), one line at a time, no
+    prompt line, no editing: not usable as a shell, and shish cannot change
+    that. Plan, in order:
+    1. A static page: xterm.js plus a small WASI shim (`@bjorn3/browser_wasi_shim`
+       or hand-written) that feeds keystrokes to fd 0 and writes fd 1/2 as they
+       come, with an in-memory filesystem (writable `/tmp`, a cwd so `cd` works).
+    2. The line editor: `tcgetattr` reports "not a tty" on WASI, so shish
+       falls back to plain line input. Either have the page echo and edit the
+       line, or let the shim answer `tcgetattr` so the editor runs in raw mode.
+    3. Test it with the Chrome tools, then decide where it lives (`examples/` or
+       `doc/`; the Pages site is generated from the `rsenn` repo, not here).
+    Build used: `cfg-wasi` (all builtins incl. compress with xz/lzma, 1.1 MB,
+    `build/wasi/shish.wasm`); tested under Node only, plus webassembly.sh `-c`.
   - External commands cannot run; a wasm-hosted "run this program" hook
     (webassembly.sh runs other `.wasm` commands by name) would need a
     host import, not an `execve`.
