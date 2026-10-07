@@ -219,23 +219,6 @@
   cmake -S . -B /tmp/def && cmake --build /tmp/def -j && /tmp/def/shish tests/fixed.sh | grep FAIL
   ```
 
-- no-tree-print-option-is-a-noop: `-DNO_TREE_PRINT=ON` changes nothing.
-  `LIBSHELL_SOURCES` comes from `file(GLOB ...)` (`CMakeLists.txt:167`),
-  so it holds absolute paths, and the two `list(REMOVE_ITEM ...)` calls
-  at `CMakeLists.txt:198`-`199` pass relative ones -- they match nothing
-  and silently do nothing. `-DNO_TREE_PRINT=1` reaches the compiler but
-  no source tests it, so both `tree_print.c` and `tree_printlist.c` are
-  still compiled and linked.
-
-  **Repro:**
-  ```sh
-  cmake -S . -B /tmp/a -DCMAKE_BUILD_TYPE=MinSizeRel
-  cmake -S . -B /tmp/b -DCMAKE_BUILD_TYPE=MinSizeRel -DNO_TREE_PRINT=ON
-  cmake --build /tmp/a -j8; cmake --build /tmp/b -j8
-  strip /tmp/a/shish /tmp/b/shish; stat -c%s /tmp/a/shish /tmp/b/shish
-  # 189312 189312 -- byte-identical, and /tmp/b/.../tree_print.c.o exists
-  ```
-
 - wait-interrupted-by-trap-hangs: the `wait` builtin does not get
   interrupted by an arriving trapped signal the way POSIX requires --
   it should re-check/return so the trap body's effect (e.g. setting a

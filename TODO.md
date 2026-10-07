@@ -160,8 +160,7 @@ the named files, update the table above, remove the closed `BUGS` entry, add `fi
   ignores only unmarked empty chunks, and never a `''` one. `"$@"` gives no field, `"$@"""` and `"$@"''` one.
 
 **Real bugs, but not counted in the `tests/posix` scoreboard** (fix opportunistically):
-`eval-lineno-imprecise-inside-function`,
-`no-tree-print-option-is-a-noop`.
+`eval-lineno-imprecise-inside-function`.
 
 **Found 2026-10-06/07 while porting expansion and reading `src/var*`** (none counted in the `tests/posix` scoreboard),
 all fixed since: `chmod-argv-memcpy-overlap` (`fixes/381`), `unset-leaks-the-var-node` (`fixes/382`),
@@ -770,8 +769,8 @@ stack. Worth a look after the above.
 
 ### Blockers found while measuring
 
-- `BUGS: no-tree-print-option-is-a-noop` -- an existing size knob that
-  does nothing.
+- `NO_TREE_PRINT` was an existing size knob that did nothing, and cannot work (`set`, `trap -p`, `dump` and xtrace
+  call `tree_print`); the option is removed (`fixes/389`).
 
 ### How to measure
 

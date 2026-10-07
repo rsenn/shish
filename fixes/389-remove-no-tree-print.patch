@@ -1,0 +1,51 @@
+diff --git a/CLAUDE.md b/CLAUDE.md
+index 7f1f8f65..29261d1f 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -190,7 +190,6 @@ to `cmake`):
+ - `DEBUG_OUTPUT`, `DEBUG_COLOR` — verbose debug instrumentation; the trace
+   is selected at run time with `SHISH_TRACE` (see `doc/debug-output.md`).
+ - `BUILD_SHFORMAT=ON` (default), `BUILD_SHPARSE2AST=OFF`.
+-- `NO_TREE_PRINT=ON` — strip tree-printing helpers from history.
+ - Builtins are individually toggleable. `cmake/Builtins.cmake` enumerates
+   `MINIMAL_BUILTINS`, `DEFAULT_BUILTINS`, `EXTRA_BUILTINS`. `-DBUILTIN_<NAME>=ON/OFF`
+   sets one builtin and is permanent (it stays in the cache); `-DENABLE_ALL_BUILTINS=ON`
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2ab2c43a..7f92f3c6 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -144,8 +144,6 @@ option_link_time_optimization()
+ 
+ check_termios_winsize()
+ 
+-option(NO_TREE_PRINT "Disable tree_print for history" OFF)
+-
+ if(BUILD_DEBUG)
+   option(DEBUG_COLOR "Color debug output" OFF)
+   option(DEBUG_OUTPUT "Print debug output" ${DEBUG_OUTPUT_DEFAULT})
+@@ -219,12 +217,6 @@ endif()
+ 
+ set_add(BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
+ 
+-if(NO_TREE_PRINT)
+-  add_definitions(-DNO_TREE_PRINT=1)
+-  list(REMOVE_ITEM LIBSHELL_SOURCES "src/tree/tree_print.c")
+-  list(REMOVE_ITEM LIBSHELL_SOURCES "src/tree/tree_printlist.c")
+-endif()
+-
+ set_add(LIBSHELL_SOURCES
+   "${CMAKE_BINARY_DIR}/src/builtin_config.h"
+   ${BUILTIN_SOURCES} 
+diff --git a/doc/optional-subsystems.md b/doc/optional-subsystems.md
+index a383eba4..3bb67b6e 100644
+--- a/doc/optional-subsystems.md
++++ b/doc/optional-subsystems.md
+@@ -365,7 +365,7 @@ mechanical now that the map exists; each helper file needs a check that nothing
+ | `src/job/` | `jobs fg bg wait kill timeout trap`, every fork | section 3 |
+ | `src/term/` (line editor) | interactive shell only; `read` and `trap` wake-ups | no builtin owns it. It would need a switch of its own (an interactive-less build) to drop `term/`, `prompt/` and the self-pipe |
+ | `src/prompt/` | `PS1`/`PS2` for the interactive shell and the parser hook | same as `term/` |
+-| `src/debug/`, `src/trace/`, `tree_print*` | `dump`, `DEBUG_OUTPUT`, `NO_TREE_PRINT` | already switched, but `NO_TREE_PRINT` removes `src/tree/tree_print.c` by a relative path from a `file(GLOB)` list of absolute paths, so it should remove nothing (not tested) |
++| `src/debug/`, `src/trace/` | `dump`, `DEBUG_OUTPUT` | already switched. `tree_print*` cannot be: `set`, `trap`, `dump` and xtrace call it (the `NO_TREE_PRINT` option that pretended to was removed) |
+ 
+ ### D. Not useless, although the builtin is off
+ 

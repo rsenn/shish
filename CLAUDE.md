@@ -190,7 +190,6 @@ to `cmake`):
 - `DEBUG_OUTPUT`, `DEBUG_COLOR` — verbose debug instrumentation; the trace
   is selected at run time with `SHISH_TRACE` (see `doc/debug-output.md`).
 - `BUILD_SHFORMAT=ON` (default), `BUILD_SHPARSE2AST=OFF`.
-- `NO_TREE_PRINT=ON` — strip tree-printing helpers from history.
 - Builtins are individually toggleable. `cmake/Builtins.cmake` enumerates
   `MINIMAL_BUILTINS`, `DEFAULT_BUILTINS`, `EXTRA_BUILTINS`. `-DBUILTIN_<NAME>=ON/OFF`
   sets one builtin and is permanent (it stays in the cache); `-DENABLE_ALL_BUILTINS=ON`

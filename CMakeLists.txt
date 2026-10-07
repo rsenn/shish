@@ -144,8 +144,6 @@ option_link_time_optimization()
 
 check_termios_winsize()
 
-option(NO_TREE_PRINT "Disable tree_print for history" OFF)
-
 if(BUILD_DEBUG)
   option(DEBUG_COLOR "Color debug output" OFF)
   option(DEBUG_OUTPUT "Print debug output" ${DEBUG_OUTPUT_DEFAULT})
@@ -218,12 +216,6 @@ endif()
 #dump_list(LIBSHELL_SOURCES)
 
 set_add(BUILTIN_SOURCES src/builtin/builtin_error.c src/builtin/builtin_search.c src/builtin/builtin_table.c)
-
-if(NO_TREE_PRINT)
-  add_definitions(-DNO_TREE_PRINT=1)
-  list(REMOVE_ITEM LIBSHELL_SOURCES "src/tree/tree_print.c")
-  list(REMOVE_ITEM LIBSHELL_SOURCES "src/tree/tree_printlist.c")
-endif()
 
 set_add(LIBSHELL_SOURCES
   "${CMAKE_BINARY_DIR}/src/builtin_config.h"

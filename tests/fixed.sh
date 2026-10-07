@@ -6502,6 +6502,9 @@ assert_equal "0
 0
 1" "$PX" "an empty quoted string written after \"\$@\" keeps its field, a bare \"\$@\" adds none"
 
+## fixes/389 (build system only): the NO_TREE_PRINT option removed nothing, and could not: set, trap -p, dump
+## and xtrace call tree_print(). Checked by configuring and building with the option gone.
+
 # WASI only, not testable here: eval_time scaled wasi-libc times() (nanoseconds) by
 # sysconf(_SC_CLK_TCK), so "time -p" reported hundreds of seconds. Checked by building
 # build/wasi and running "time -p { loop; }" under Node: real and user now match.

@@ -365,7 +365,7 @@ mechanical now that the map exists; each helper file needs a check that nothing 
 | `src/job/` | `jobs fg bg wait kill timeout trap`, every fork | section 3 |
 | `src/term/` (line editor) | interactive shell only; `read` and `trap` wake-ups | no builtin owns it. It would need a switch of its own (an interactive-less build) to drop `term/`, `prompt/` and the self-pipe |
 | `src/prompt/` | `PS1`/`PS2` for the interactive shell and the parser hook | same as `term/` |
-| `src/debug/`, `src/trace/`, `tree_print*` | `dump`, `DEBUG_OUTPUT`, `NO_TREE_PRINT` | already switched, but `NO_TREE_PRINT` removes `src/tree/tree_print.c` by a relative path from a `file(GLOB)` list of absolute paths, so it should remove nothing (not tested) |
+| `src/debug/`, `src/trace/` | `dump`, `DEBUG_OUTPUT` | already switched. `tree_print*` cannot be: `set`, `trap`, `dump` and xtrace call it (the `NO_TREE_PRINT` option that pretended to was removed) |
 
 ### D. Not useless, although the builtin is off
 
