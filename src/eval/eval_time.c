@@ -32,6 +32,12 @@ time_line(buffer* b, const char* name, unsigned long ms, int posix) {
   buffer_put(b, num, fmt_ulong0(num, posix ? ms % 1000 / 10 : ms % 1000, posix ? 2 : 3));
   buffer_puts(b, posix ? "\n" : "s\n");
 }
+
+/* ticks to milliseconds, in 64 bits: a 32-bit unsigned long overflows */
+static unsigned long
+time_ms(clock_t ticks, unsigned long long hz) {
+  return (unsigned long)((unsigned long long)ticks * 1000 / hz);
+}
 #endif
 
 /* time [-p] pipeline: run the pipeline, then report real, user and system time on stderr.
@@ -43,10 +49,15 @@ eval_time(struct eval* e, struct ntime* t) {
 #if !WINDOWS_NATIVE
   struct tms a, b;
   clock_t ra, rb;
-  unsigned long hz = (unsigned long)sysconf(_SC_CLK_TCK);
+#ifdef __wasi__
+  /* wasi-libc times() counts nanoseconds, not sysconf(_SC_CLK_TCK) ticks */
+  unsigned long long hz = 1000000000ULL;
+#else
+  unsigned long long hz = (unsigned long long)sysconf(_SC_CLK_TCK);
 
   if(hz == 0)
     hz = 100;
+#endif
 
   ra = times(&a);
   errexit_suppress++;
@@ -57,9 +68,9 @@ eval_time(struct eval* e, struct ntime* t) {
   if(!t->posix)
     buffer_puts(fd_err->w, "\n");
 
-  time_line(fd_err->w, "real", (unsigned long)(rb - ra) * 1000 / hz, t->posix);
-  time_line(fd_err->w, "user", (unsigned long)(b.tms_utime - a.tms_utime + b.tms_cutime - a.tms_cutime) * 1000 / hz, t->posix);
-  time_line(fd_err->w, "sys", (unsigned long)(b.tms_stime - a.tms_stime + b.tms_cstime - a.tms_cstime) * 1000 / hz, t->posix);
+  time_line(fd_err->w, "real", time_ms(rb - ra, hz), t->posix);
+  time_line(fd_err->w, "user", time_ms(b.tms_utime - a.tms_utime + b.tms_cutime - a.tms_cutime, hz), t->posix);
+  time_line(fd_err->w, "sys", time_ms(b.tms_stime - a.tms_stime + b.tms_cstime - a.tms_cstime, hz), t->posix);
   buffer_flush(fd_err->w);
 #else
   ret = eval_tree(e, t->pipeline, 0);

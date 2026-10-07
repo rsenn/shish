@@ -6412,4 +6412,8 @@ hi" "$PX" "an empty expansion in front of or inside the command name does not lo
 PX=$("$SHISH_SELF" -c 'f() { echo "x $1"; return 3; }; i=0; while [ $i -lt 3000 ]; do for j in a b; do while true; do break; done; f $i >/dev/null; k=$(f "$i y"); i=$((i+1)); break; done; done; echo $i')
 assert_equal "3000" "$PX" "break and return out of commands with expanded words in a loop"
 
+# WASI only, not testable here: eval_time scaled wasi-libc times() (nanoseconds) by
+# sysconf(_SC_CLK_TCK), so "time -p" reported hundreds of seconds. Checked by building
+# build/wasi and running "time -p { loop; }" under Node: real and user now match.
+
 summary
