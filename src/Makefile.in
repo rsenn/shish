@@ -92,7 +92,7 @@ FILES += $(HEADERS)
 PREADD  = -Wl,--whole-archive
 POSTADD = -Wl,--no-whole-archive
 INCLUDES += -I$(top_srcdir)/lib -I$(top_builddir)
-INCLUDES += -I$(top_builddir)
+INCLUDES += -I$(top_builddir) -I$(builddir)
 
 # include build.mk (makefile helper) 
 # ---------------------------------------------------------------------------
