@@ -136,16 +136,25 @@ macro(build_libarchive SOURCE BINARY SUFFIX PIC)
   set(LIBARCHIVE_C_FLAGS "-w")
 
   # Host-detected libs resolve to glibc headers via -I/usr/include, which breaks libarchive's configure checks under musl-gcc.
-  if(CMAKE_C_COMPILER MATCHES "musl" OR CMAKE_SYSTEM_NAME STREQUAL "WASI")
+  if(CMAKE_C_COMPILER MATCHES "musl" OR CMAKE_SYSTEM_NAME STREQUAL "WASI" OR EMSCRIPTEN)
     list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DENABLE_OPENSSL:BOOL=OFF" "-DENABLE_EXPAT:BOOL=OFF"
          "-DENABLE_LIBXML2:BOOL=OFF" "-DENABLE_ICONV:BOOL=OFF" "-DENABLE_PCREPOSIX:BOOL=OFF")
   endif()
 
-  # WASI has no ACLs, extended attributes or host crypto, and no tools are built
-  if(CMAKE_SYSTEM_NAME STREQUAL "WASI")
+  # emscripten, like WASI, has no ACLs, extended attributes or host crypto, and no tools are built
+  if(CMAKE_SYSTEM_NAME STREQUAL "WASI" OR EMSCRIPTEN)
     list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DENABLE_ACL:BOOL=OFF" "-DENABLE_XATTR:BOOL=OFF" "-DENABLE_NETTLE:BOOL=OFF"
          "-DENABLE_MBEDTLS:BOOL=OFF" "-DENABLE_PCRE2POSIX:BOOL=OFF" "-DENABLE_TAR:BOOL=OFF" "-DENABLE_CPIO:BOOL=OFF"
-         "-DENABLE_CAT:BOOL=OFF" "-DENABLE_UNZIP:BOOL=OFF"
+         "-DENABLE_CAT:BOOL=OFF" "-DENABLE_UNZIP:BOOL=OFF")
+  endif()
+
+  # emcc links with unresolved symbols, so CHECK_LIBRARY_EXISTS(md ...) passes for a library that is not there
+  if(EMSCRIPTEN)
+    list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DLIBMD_FOUND:INTERNAL=0")
+  endif()
+
+  if(CMAKE_SYSTEM_NAME STREQUAL "WASI")
+    list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX}
          # src/wasi/wasi_compat.h supplies these, so the link-only probes cannot see them
          "-DHAVE_FCHDIR:INTERNAL=1" "-DHAVE_GETPWUID_R:INTERNAL=1" "-DHAVE_GETGRGID_R:INTERNAL=1")
     set(LIBARCHIVE_C_FLAGS "-w -I${SOURCE}/src/wasi -include ${SOURCE}/src/wasi/wasi_compat.h -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_GETPID -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_MMAN")

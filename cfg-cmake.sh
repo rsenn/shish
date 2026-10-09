@@ -373,7 +373,7 @@ cfg-aarch64() {
 
 cfg-emscripten() {
  (: ${builddir=build/emscripten}
-  : TOOLCHAIN="${EMSCRIPTEN:=$(dirname $(which emcc))}/cmake/Modules/Platform/Emscripten.cmake"
+  TOOLCHAIN="${EMSCRIPTEN:=$(dirname $(which emcc))}/cmake/Modules/Platform/Emscripten.cmake"
 
   export TOOLCHAIN
   

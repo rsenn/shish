@@ -11,7 +11,7 @@ function(check_cflag FLAG OUTPUT_VAR)
     set(VAR_NAME ${ARGV2})
   endif()
 
-  message(CHECK_START "Compiler flag ${FLAG}")
+  message(CHECK_START "Checking compiler flag ${FLAG}")
    set(CMAKE_REQUIRED_QUIET TRUE)
   check_c_compiler_flag("${FLAG}" RESULT)
   set(CMAKE_REQUIRED_QUIET FALSE)
@@ -83,9 +83,15 @@ function(check_inline)
 endfunction()
 
 #
-# check_compile <RESULT_VAR> <SOURCE>
+# check_compile <RESULT_VAR> <SOURCE> [DESCRIPTION] [NAME VALUE]...
+#
+# DESCRIPTION is the log text, "Checking <DESCRIPTION>"; it defaults to RESULT_VAR.
 #
 function(check_compile RESULT_VAR SOURCE)
+  set(DESC "${ARGV2}")
+  if(${ARGC} GREATER 2)
+    list(REMOVE_AT ARGN 0)
+  endif()
   assign_named_items(${ARGN})
 
   string(RANDOM LENGTH 6 ALPHABET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" C_NAME)
@@ -96,7 +102,11 @@ function(check_compile RESULT_VAR SOURCE)
   string(REPLACE "\\" "\\\\" SOURCE "${SOURCE}")
   file(WRITE "${C_SOURCE}" "${SOURCE}")
  
-  message(CHECK_START "Trying to compile try-${C_NAME}.c")
+  if(NOT DESC)
+    string(REGEX REPLACE "^(have|support)-" "" DESC "${C_NAME}")
+    string(REPLACE - " " DESC "${DESC}")
+  endif()
+  message(CHECK_START "Checking ${DESC}")
   try_compile(COMPILE_RESULT "${CMAKE_CURRENT_BINARY_DIR}" "${C_SOURCE}" OUTPUT_VARIABLE "OUTPUT" 
     CMAKE_FLAGS "${CMAKE_FLAGS}"
     COMPILE_DEFINITIONS "${COMPILE_DEFINITIONS}"
@@ -105,12 +115,12 @@ function(check_compile RESULT_VAR SOURCE)
   )
   file(REMOVE "${C_SOURCE}")
   if(COMPILE_RESULT)
-    message(CHECK_PASS "ok")
+    message(CHECK_PASS "yes")
   else()
     set(COMPILE_LOG "${CMAKE_CURRENT_BINARY_DIR}/compile-${C_NAME}.log")
     relative_paths(COMPILE_LOG "${CMAKE_CURRENT_SOURCE_DIR}" "${COMPILE_LOG}")
 
-    message(CHECK_FAIL "fail: ${COMPILE_LOG}")
+    message(CHECK_FAIL "no (see ${COMPILE_LOG})")
     file(WRITE "${COMPILE_LOG}" "${OUTPUT}")
     string(REPLACE "\n" ";" OUTPUT "${OUTPUT}")
     list(FILTER OUTPUT INCLUDE REGEX "error")
@@ -133,15 +143,17 @@ macro(check_run RESULT_VAR SOURCE)
   string(REPLACE "\\" "\\\\" SOURCE "${SOURCE}")
   file(WRITE "${C_SOURCE}" "${SOURCE}")
  
-  message(CHECK_START "Trying to run try-${C_NAME}.c")
+  string(REGEX REPLACE "^(have|support)-" "" DESC "${C_NAME}")
+  string(REPLACE - " " DESC "${DESC}")
+  message(CHECK_START "Checking ${DESC} (run)")
   try_run(RUN_RESULT COMPILE_RESULT "${CMAKE_CURRENT_BINARY_DIR}" "${C_SOURCE}" COMPILE_OUTPUT_VARIABLE "OUTPUT" LINK_LIBRARIES "${ARGN}")
   file(REMOVE "${C_SOURCE}")
   if(COMPILE_RESULT AND RUN_RESULT)
-    message(CHECK_PASS "ok")
+    message(CHECK_PASS "yes")
     # add_definitions(-D${RESULT_VAR})
   else()
     set(COMPILE_LOG "${CMAKE_CURRENT_BINARY_DIR}/run-${C_NAME}.log")
-    message(CHECK_FAIL "fail: ${COMPILE_LOG}")
+    message(CHECK_FAIL "no (see ${COMPILE_LOG})")
     file(WRITE "${COMPILE_LOG}" "${OUTPUT}")
     string(REPLACE "\n" ";" OUTPUT "${OUTPUT}")
     list(FILTER OUTPUT INCLUDE REGEX "error")
@@ -361,10 +373,7 @@ function(check_sys_siglist_declaration)
     add_definitions(-D${PREPROC_DEF})
   endif()
  
-  check_c_compiler_flag("-Wall" WARN_ALL)
-  if(WARN_ALL)
-    set(WERROR_FLAG "${WERROR_FLAG} -Wall")
-  endif()
+  check_warn_flag(-Wall WARN_ALL)
  
   if(OUTPUT_VAR)
     set("${OUTPUT_VAR}" "${SYM_EXISTS}" PARENT_SCOPE)
@@ -372,21 +381,30 @@ function(check_sys_siglist_declaration)
 endfunction()
 
 #
+# check_warn_flag <FLAG> <RESULT_VAR>
+#
+# Logs "Checking warning flag <FLAG>" and appends FLAG to WERROR_FLAG when the compiler takes it.
+#
+macro(check_warn_flag FLAG RESULT_VAR)
+  message(CHECK_START "Checking warning flag ${FLAG}")
+  set(CMAKE_REQUIRED_QUIET TRUE)
+  check_c_compiler_flag("${FLAG}" ${RESULT_VAR})
+  set(CMAKE_REQUIRED_QUIET FALSE)
+  if(${RESULT_VAR})
+    message(CHECK_PASS "supported")
+    set(WERROR_FLAG "${WERROR_FLAG} ${FLAG}")
+  else()
+    message(CHECK_FAIL "not supported")
+  endif()
+endmacro()
+
+#
 # check_no_unused_warn_flags
 #
 macro(check_no_unused_warn_flags)
-  check_c_compiler_flag("-Wno-unused-variable" WARN_NO_UNUSED_VARIABLE)
-  if(WARN_NO_UNUSED_VARIABLE)
-    set(WERROR_FLAG "${WERROR_FLAG} -Wno-unused-variable")
-  endif()
-  check_c_compiler_flag("-Wno-unused-function" WARN_NO_UNUSED_FUNCTION)
-  if(WARN_NO_UNUSED_FUNCTION)
-    set(WERROR_FLAG "${WERROR_FLAG} -Wno-unused-function")
-  endif()
-  check_c_compiler_flag("-Wno-error=unused-but-set-variable" WARN_NO_UNUSED_FUNCTION)
-  if(WARN_NO_UNUSED_FUNCTION)
-    set(WERROR_FLAG "${WERROR_FLAG} -Wno-error=unused-but-set-variable")
-  endif()
+  check_warn_flag(-Wno-unused-variable WARN_NO_UNUSED_VARIABLE)
+  check_warn_flag(-Wno-unused-function WARN_NO_UNUSED_FUNCTION)
+  check_warn_flag(-Wno-error=unused-but-set-variable WARN_NO_ERROR_UNUSED_BUT_SET_VARIABLE)
 endmacro()
 
 #
@@ -566,6 +584,18 @@ function(check_pointer_size)
   check_type_size("void*" SIZEOF_POINTER)
   set(CMAKE_REQUIRED_QUIET FALSE)
 
+  # check_type_size scans the linked probe, which fails for emscripten's
+  # .html/.js output; a compile-only static assert works for any target
+  if(NOT SIZEOF_POINTER)
+    foreach(n 4 8 2)
+      check_c_source_compiles("typedef char t[sizeof(void*) == ${n} ? 1 : -1]; int main(void) { return 0; }" POINTER_SIZE_IS_${n})
+      if(POINTER_SIZE_IS_${n})
+        set(SIZEOF_POINTER ${n})
+        break()
+      endif()
+    endforeach()
+  endif()
+
   if(NOT SIZEOF_POINTER STREQUAL "")
     math(EXPR POINTER_BITS "${SIZEOF_POINTER} * 8")
     message(CHECK_PASS "${POINTER_BITS}bit")
@@ -620,9 +650,11 @@ function(check_alloca)
     set_add(CMAKE_REQUIRED_INCLUDES alloca.h)
     check_symbol_exists(alloca alloca.h HAVE_ALLOCA_SYMBOL)
   endif()  
-  check_compile(HAVE_ALLOCA_ALLOCA_H "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}" )
+  check_compile(HAVE_ALLOCA_ALLOCA_H "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}"
+    "alloca() in <alloca.h>")
   if(NOT HAVE_ALLOCA_ALLOCA_H)
-    check_compile(HAVE_ALLOCA_MALLOC_H "#include <stdlib.h>\n#include <alloca.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}" )
+    check_compile(HAVE_ALLOCA_MALLOC_H "#include <stdlib.h>\n#include <malloc.h>\n\n\nint main() {\n  char* c=alloca(23);\n  (void)c;\n  return 0;\n}"
+      "alloca() in <malloc.h>")
   endif()
   if(HAVE_ALLOCA_ALLOCA_H OR HAVE_ALLOCA_MALLOC_H)
     set(HAVE_ALLOCA TRUE)
@@ -788,7 +820,7 @@ macro(check_termios_winsize)
   check_includes_def(termios.h sys/ioctl.h)
   if(HAVE_TERMIOS_H AND HAVE_SYS_IOCTL_H)
     set(GET_COLUMNS "#include <unistd.h>\n#include <fcntl.h>\n#include <termios.h>\n#include <sys/ioctl.h>\n#include <stdio.h>\n\nint\nmain() {\n\tstruct winsize sz;\n\tint fd = isatty(0) ? dup(0) : open(\"/dev/tty\", O_RDWR);\n\n\tif(!isatty(fd)) {\n\t\tfputs(\"not a tty\\n\", stderr);\n\t\tfflush(stderr);\n\t\treturn 1;\n\t}\n\n\tif(ioctl(fd, TIOCGWINSZ, &sz) == -1) {\n\t\tperror(\"ioctl\");\n\t\treturn 1;\n\t}\n\n\tclose(fd);\n\n\tprintf(\"%u\\n\", sz.ws_col);\n\treturn 0;\n}\n" )
-    check_compile(HAVE_WINSIZE "${GET_COLUMNS}")
+    check_compile(HAVE_WINSIZE "${GET_COLUMNS}" "TIOCGWINSZ")
     if(HAVE_WINSIZE)
       add_definitions(-DHAVE_WINSIZE=1)
     endif()

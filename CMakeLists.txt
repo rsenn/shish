@@ -106,6 +106,7 @@ set_add(CMAKE_REQUIRED_DEFINITIONS
 
 check_compile(HAVE_GLOB 
   "#include <stdio.h>\n#include <sys/stat.h>\n#include <glob.h>\n\nint\nmain() {\n\tglob_t g = {0};\n\tint result = glob(\"{src,lib}/{*.h,*/*.c}\", 0, 0, &g);\n\n\tprintf(\"result = %d\\n\", result);\n\n\tint c = g.gl_pathc;\n\tchar** v = g.gl_pathv;\n\n\tfor(int i = 0; i < c; i++)\n\t\tprintf(\"entry: %s\\n\", v[i]);\n\n\treturn 0;\n}\n"
+  "glob()"
   #COMPILE_DEFINITIONS "-D_GNU_SOURCE;-D_FILE_OFFSET_BITS=64"
 )
 
