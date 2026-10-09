@@ -10,8 +10,7 @@
  * ----------------------------------------------------------------------- */
 int
 wait_pid_nohang(int pid, int* wstat) {
-  int w = 0;
-  int r = 0;
+  int w = 0, r = 0;
 
   while(r != pid) {
     r = wait_nohang(&w);
@@ -19,6 +18,7 @@ wait_pid_nohang(int pid, int* wstat) {
     if(!r || (r == (int)-1))
       return r;
   }
+
   *wstat = w;
   return r;
 }

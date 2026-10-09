@@ -213,8 +213,6 @@ expand_param(struct nargparam* param, wordlist* wl, int flags) {
             N_ARGPARAM, S_ARG | ((param->flag & S_VAR) == S_RANGE ? 0 : (param->flag & S_VAR)), NULL, NULL, param->word, 0};
 
         for(i = r.offset, e = r.offset + r.length; i < e;) {
-
-          // param->flag |= S_ARG;
           arg.numb = 1 + i;
 
           expand_param(&arg, wl, flags);

@@ -48,4 +48,4 @@ size_t fmt_xlonglong(char* dest, uint64 x);
 size_t fmt_escapecharc(char* dest, uint32 ch);
 #endif
 
-#endif /* defined FMT_H */
+#endif

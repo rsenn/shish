@@ -1,8 +1,3 @@
-/**
- * @defgroup   path
- * @brief      PATH module.
- * @{
- */
 #ifndef _PATH_H__
 #define _PATH_H__
 
@@ -68,5 +63,4 @@ size_t path_right(const char* s, size_t n);
 #define PATH_MAX MAX_PATH
 #endif
 
-#endif /* _PATH_H__ */
-/** @} */
+#endif

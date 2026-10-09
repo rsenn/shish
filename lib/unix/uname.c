@@ -1,7 +1,6 @@
 #include "../windoze.h"
 
 #if WINDOWS_NATIVE || defined(__EMSCRIPTEN__) || defined(__wasm__) || defined(__wasi__)
-
 #include "../unix.h"
 #include "../byte.h"
 #include "../str.h"
@@ -90,5 +89,4 @@ uname(struct utsname* buf) {
   return 0;
 }
 #endif
-
 #endif

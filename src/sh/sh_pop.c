@@ -59,9 +59,6 @@ sh_pop(struct env* env) {
   if(sh->cwd.a)
     stralloc_free(&sh->cwd);
 
-  /*while(sh->eval)
-    eval_pop(sh->eval);*/
-
   while(fdstack != sh->fdstack)
     fdstack_pop(fdstack);
 

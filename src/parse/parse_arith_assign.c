@@ -77,12 +77,8 @@ parse_arith_assign(struct parser* p, union node* left) {
     *nptr = tree_newnode(id);
     (*nptr)->narithbinary.left = left;
 
-    // left = *nptr;
     nptr = &(*nptr)->narithbinary.right;
   }
-
-  /*  if(nptr && *nptr == 0)
-   *nptr = parse_arith_binary(p, 9);*/
 
   return node;
 }

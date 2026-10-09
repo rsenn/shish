@@ -1,16 +1,8 @@
-/**
- * @defgroup   hashmap
- * @brief      HASHMAP module: an open-addressing string-keyed map.
- *
- * Ported from ../c-utils/lib/hashmap (open-addressing, FNV-1a hash,
- * tombstone deletes, grow-on-70%/shrink-to-50%-on-rehash) with two
- * small adaptations for this tree: `bool` -> `int` (no bool.h here)
- * and `str_ndup` now lives in lib/str.h instead of c-utils' own copy.
- * hashmap_next() (iteration) is new, not in the original.
- * @{
- */
 #ifndef HASHMAP_H
 #define HASHMAP_H
+
+/* Open-addressing hash map with string keys (FNV-1a, tombstone deletes).
+ * Grows at 70% load and shrinks to 50% on rehash; hashmap_next() iterates. */
 
 #include "typedefs.h"
 #include "uint64.h"
@@ -82,5 +74,4 @@ hashmap_fnv_hash(const char* s, size_t len) {
 }
 #endif
 
-#endif /* defined HASHMAP_H */
-/** @} */
+#endif

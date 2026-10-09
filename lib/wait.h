@@ -55,4 +55,4 @@ unsigned int wait_track_count(void);
 int wait_track_pid(unsigned int i);
 #endif
 
-#endif // _WAIT_H
+#endif

@@ -26,6 +26,7 @@ pid_t getppid(void);
 int kill(pid_t pid, int sig);
 int killpg(pid_t pgrp, int sig);
 int fork(void);
+
 #include <process.h> /* declares execve() (deprecated but real) */
 
 /* mingw's <sys/stat.h> has no symlink bit at all -- is_symlink()
@@ -55,4 +56,4 @@ struct utsname {
 int uname(struct utsname* buf);
 #endif
 
-#endif /* defined(UNIX_H) */
+#endif

@@ -783,9 +783,6 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
          was already sized without this stage, so job_wait() below
          doesn't wait on a proc slot job_fork() never filled. */
     } else if(!(pid = job_fork(job, node, npipe->bgnd))) {
-      /* no job control for commands inside pipe */
-      /*e->mode &= E_JCTL;*/
-
       /* the read end of this stage's own output pipe is the next stage's:
          a writer that holds it open never gets SIGPIPE ("yes | head -1") */
       if(out && prevfd >= 0) {

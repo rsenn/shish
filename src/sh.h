@@ -26,8 +26,6 @@ struct eval;
 struct fdtable;
 struct vartab;
 
-/*#define SH_INTERACTIVE 0x0001*/
-
 struct arg {
   char** v;
   int c;
@@ -35,16 +33,6 @@ struct arg {
   int s; /* shift count */
 };
 
-/*enum {
-  SH_UNSET = 0x08,
-  SH_NOCLOBBER = 0x10,
-  SH_DEBUG = 0x80,
-  SH_ERREXIT = 0x40,
-  SH_NOINTERACTIVE = 0x1000
-};*/
-
-/*union shopt {
-  unsigned flags : 5;*/
 struct shopt {
   unsigned allexport : 1;   /* -a */
   unsigned errexit : 1;     /* -e */
@@ -75,7 +63,6 @@ struct set_longopt {
 
 int set_apply(struct shopt* opts, int letter, int on);
 int set_get(const struct shopt* opts, int letter);
-/*};*/
 
 typedef void handler_fn(void);
 

@@ -15,16 +15,7 @@ parse_command(struct parser* p, int tempflags) {
   union node *command = 0, **rptr;
   char c = 0;
 
-  tok = parse_gettok(p, tempflags);
-
-  // source_skipspace(p);
-  /*  while(source_peek(&c) >= 1) {
-      if(!parse_isspace(c))
-        break;
-      parse_skip(p);
-    }*/
-
-  switch(tok) {
+  switch((tok = parse_gettok(p, tempflags))) {
     /* T_FOR begins an iteration statement */
     case T_FOR: command = parse_for(p); break;
 

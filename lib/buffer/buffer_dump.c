@@ -2,6 +2,12 @@
 #include "../buffer.h"
 #include "../fmt.h"
 
+#if WINDOWS_NATIVE
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
+
 extern unsigned long stralloc_write();
 
 void
@@ -40,35 +46,27 @@ buffer_dump(buffer* out, buffer* b) {
   } else
     n = 0;
   buffer_puts(out, "\"");
-  // buffer_puts(out, "...");
-  // buffer_putfmt(out, &b->x[n], 32);
   buffer_puts(out, "\"");
 
   buffer_puts(out, NONE ", " YELLOW "fd" CYAN "=" NONE);
-  /*if(b->op == (void*)stralloc_write) {
-    buffer_puts(out, "*sa");
-  } else*/
-  {
-    n = fmt_long(xlong, b->fd);
-    buffer_put(out, xlong, n);
-  }
+
+  n = fmt_long(xlong, b->fd);
+  buffer_put(out, xlong, n);
 
   buffer_puts(out, ", op=");
-  /* buffer_putspace(out); */
 
-  if((void*)b->op == (void*)&buffer_op_read)
+  if((void*)b->op == (void*)&buffer_op_read || (void*)b->op == (void*)&read)
     buffer_puts(out, "<read>");
-  else if((void*)b->op == (void*)&buffer_op_write)
+  else if((void*)b->op == (void*)&buffer_op_write || (void*)b->op == (void*)&write)
     buffer_puts(out, "<write>");
   else if((void*)b->op == (void*)&buffer_dummyreadmmap)
     buffer_puts(out, "<mmap>");
-  /*  else if(b->op == (void*)&stralloc_write)
-      buffer_puts(out, "<sa-wr> ");*/
+  else if(b->op == (void*)&stralloc_write)
+      buffer_puts(out, "<stralloc_write> ");
   else if(b->op == (buffer_op_proto*)NULL)
     buffer_puts(out, "NULL");
   else
-    /* n = fmt_xlong(xlong, (int64)(intptr_t)b->op); */
-    buffer_putptr(out, (void*)b->op); /* xlong, n); */
+    buffer_putptr(out, (void*)b->op);
 
   buffer_puts(out, " ]");
   buffer_flush(out);

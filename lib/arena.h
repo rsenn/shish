@@ -1,11 +1,6 @@
-/**
- * @defgroup   arena
- * @brief      ARENA module.
- *
- * Bump allocator: allocations are never freed one by one; a whole
+/* Bump allocator: allocations are never freed one by one; a whole
  * group is released at once with arena_rewind()/arena_reset()/arena_free().
  * Independent of the shell; the memory source is pluggable (arena_src).
- * @{
  */
 #ifndef ARENA_H
 #define ARENA_H
@@ -93,4 +88,3 @@ arena_pos arena_tell(const arena* a);
 void arena_rewind(arena* a, arena_pos pos); /* frees everything allocated since pos */
 
 #endif
-/** @} */

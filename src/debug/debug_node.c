@@ -219,26 +219,20 @@ debug_node(union node* node, int depth) {
       break;
 
     case N_ARGSTR:
-
       debug_xlong(", flag", node->nargstr.flag /*& 0x7*/, depth);
 
       if(!sh_no_position) {
         if(debug_emit_loc)
-          debug_location(", loc",
-                         &node->nargstr.loc,
-                         depth); // node->nargstr.flag & S_DQUOTED ? '"' :
-                                 // node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
+          debug_location(", loc", &node->nargstr.loc, depth);
+
         if(debug_emit_range)
           debug_range(", range",
                       node->nargstr.loc.offset,
                       node->nargstr.loc.offset + node->nargstr.stra.len,
                       depth);
       }
-      debug_stralloc(", stra",
-                     &node->nargstr.stra,
-                     depth,
-                     debug_quote); // node->nargstr.flag & S_DQUOTED ? '"' :
-                                   // node->nargstr.flag & S_SQUOTED ? '\'' : '\0');
+
+      debug_stralloc(", stra", &node->nargstr.stra, depth, debug_quote);
       break;
 
     case N_ARGPARAM: {
@@ -272,8 +266,6 @@ debug_node(union node* node, int depth) {
       break;
 
     case N_ARGARITH:
-      /*   debug_subst(0,node->nargcmd.flag);
-         //debug_space(depth, 0);*/
       debug_xlong(", flag", node->nargarith.flag, depth);
       debug_sublist(", tree", node->nargarith.tree, depth);
       break;

@@ -1,4 +1,3 @@
-
 /* this header file comes from libowfat, http://www.fefe.de/libowfat/ */
 #ifndef BYTE_H
 #define BYTE_H

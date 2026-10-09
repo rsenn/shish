@@ -26,21 +26,17 @@ AcquireSymlinkPriv(LPCTSTR lpLinkName) {
   TOKEN_PRIVILEGES TokenPriv;
   BOOL result;
 
-  if(!LookupPrivilegeValue(NULL, SE_CREATE_SYMBOLIC_LINK_NAME, &TokenPriv.Privileges[0].Luid)) {
-    //
+  if(!LookupPrivilegeValue(NULL, SE_CREATE_SYMBOLIC_LINK_NAME, &TokenPriv.Privileges[0].Luid)) 
     /* Windows XP */
-    //
     return TRUE;
-  }
+
   TokenPriv.PrivilegeCount = 1;
   TokenPriv.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 
-  if(!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &hToken)) {
+  if(!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &hToken)) 
     return FALSE;
-  }
 
-  result = AdjustTokenPrivileges(hToken, FALSE, &TokenPriv, 0, NULL, NULL) &&
-           GetLastError() == ERROR_SUCCESS;
+  result = AdjustTokenPrivileges(hToken, FALSE, &TokenPriv, 0, NULL, NULL) && GetLastError() == ERROR_SUCCESS;
   CloseHandle(hToken);
 
   return result;

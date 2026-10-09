@@ -44,7 +44,6 @@ expand_arith_expr(union node* expr, int64* r) {
     return 1;
 
   switch(expr->id) {
-    // case N_ARGPARAM:
     case N_ARGCMD: {
       stralloc sa;
       stralloc_init(&sa);

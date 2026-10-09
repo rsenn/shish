@@ -77,9 +77,7 @@ typedef struct _REPARSE_DATA_BUFFER {
   CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 43, METHOD_BUFFERED, FILE_ANY_ACCESS) /* REPARSE_DATA_BUFFER, \
                                                                            */
 
-//
-// Symlink
-//
+/* Symlink */
 #define SYMLINKVERSION 0x106
 
 #define IOCTL_SYMLINK_VERSION \

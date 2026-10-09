@@ -267,4 +267,4 @@ task_done(const task_t* t) {
 #error "task.h: no backend selected"
 #endif
 
-#endif /* TASK_H */
+#endif

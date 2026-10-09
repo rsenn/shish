@@ -22,8 +22,6 @@ parse_subst(struct parser* p) {
       return parse_arith(p);
     }
 
-    // source_skip();
-
     return parse_bquoted(p);
   } else if(parse_isparam(c[0]) || c[0] == '{') {
     return parse_param(p);

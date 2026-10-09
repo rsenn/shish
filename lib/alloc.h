@@ -1,8 +1,3 @@
-/**
- * @defgroup   alloc
- * @brief      ALLOC module.
- * @{
- */
 #ifndef ALLOC_H
 #define ALLOC_H
 
@@ -15,4 +10,3 @@ void* str_dup(const char* s);
 #define alloc_free(p) free((p))
 
 #endif
-/** @} */

@@ -112,13 +112,13 @@ uncompress_setup(void* ctx) {
   if(!(c->a = archive_read_new()))
     return -1;
 
-  // Enable all compression filters (.gz, .zst, .xz, .lzma, etc.)
+  /* Enable all compression filters (.gz, .zst, .xz, .lzma, etc.) */
   archive_read_support_filter_all(c->a);
 
-  // Use RAW format so libarchive handles the stream as unformatted payload bytes
+  /* Use RAW format so libarchive handles the stream as unformatted payload bytes */
   archive_read_support_format_raw(c->a);
 
-  // Advance past the raw stream header entry; EOF means empty input
+  /* Advance past the raw stream header entry; EOF means empty input */
   if((r = archive_read_open(c->a, c, NULL, uncompress_archive_reader, NULL)) == ARCHIVE_OK)
     r = archive_read_next_header(c->a, &entry);
 

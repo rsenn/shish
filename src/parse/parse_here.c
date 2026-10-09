@@ -48,11 +48,6 @@ parse_here(struct parser* p, stralloc* delim, int nosubst, int strip) {
     r = (nosubst ? parse_squoted : parse_dquoted)(p);
     p->flags &= ~P_HERE;
 
-    /*if(p->quot == Q_UNQUOTED) {
-      stralloc_catc(&p->sa, (nosubst ? '\'' : '"'));
-      continue;
-    }*/
-
     if(p->sa.len == delim->len + 1) {
       stralloc* sa = &p->sa;
 

@@ -14,7 +14,7 @@ void
 eval_push(struct eval* e, int flags) {
   byte_zero(e, sizeof(struct eval));
   e->flags = flags | (sh->opts.xtrace ? E_PRINT : 0);
-  e->parent = /*sh->*/ eval;
+  e->parent = eval;
 
   /* remember stack locations in current nesting level */
   e->fdstack = fdstack;
@@ -23,7 +23,6 @@ eval_push(struct eval* e, int flags) {
   e->apos = arena_tell(&expand_arena);
   e->pool = wordlist_pool_mark();
 
-  // sh->eval = e;
   eval = e;
 
   TRACE(TRACE_EVAL, "push", trace_flags("flags", e->flags, trace_eval_flags, 11));

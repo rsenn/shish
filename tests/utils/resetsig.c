@@ -19,7 +19,6 @@
 #include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
-//#include "../siglist.h"
 
 const int signals[] = {SIGHUP,  SIGINT,  SIGQUIT, SIGILL,  SIGABRT, SIGBUS,  SIGFPE,  SIGKILL,
                        SIGSEGV, SIGPIPE, SIGALRM, SIGTERM, SIGUSR1, SIGUSR2, SIGCHLD, SIGCONT,

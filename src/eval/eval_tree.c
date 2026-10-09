@@ -12,9 +12,7 @@ int errexit_suppress = 0;
 
 int
 eval_tree(struct eval* e, union node* node, int tempflags) {
-  int ret = 0;
-  int list = 0, ex = 0;
-  // int oldflags;
+  int ret = 0, list = 0, ex = 0;
 
   if((e->flags | tempflags) & E_LIST) {
     list = 1;
@@ -28,7 +26,6 @@ eval_tree(struct eval* e, union node* node, int tempflags) {
     tempflags &= ~E_EXIT;
   }
 
-  // oldflags = e->flags;
   e->flags |= tempflags;
 
   while(node) {

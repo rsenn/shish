@@ -178,8 +178,6 @@ main(int argc, char** argv, char** envp) {
       p.pushback++;
       parse_lineno = source->position.line;
 
-      // var_setvint("LINENO", parse_lineno, V_DEFAULT);
-
       /* launch the parser to get a complete command */
       list = parse_list(&p);
       stralloc_zero(&cmd);

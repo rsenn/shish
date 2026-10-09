@@ -53,12 +53,7 @@ builtin_help(int argc, char* argv[]) {
     return 0;
   }
 
-  for(i = 0; builtin_table[i].name; i++) {
-    /*size_t len = str_len(builtin_table[i].name) + 1 + str_len(builtin_table[i].args);
-
-    if(maxlen < len)
-      maxlen = len;*/
-  }
+  for(i = 0; builtin_table[i].name; i++) {}
 
 #ifdef HAVE_WINSIZE
   term_winsize();

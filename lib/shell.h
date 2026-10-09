@@ -54,4 +54,4 @@ extern const char* shell_name;
 #define PATH_MAX 4096
 #endif
 
-#endif /* SHELL_H */
+#endif

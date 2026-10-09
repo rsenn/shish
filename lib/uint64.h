@@ -17,7 +17,7 @@
 typedef __UINT64_TYPE__ uint64;
 typedef __INT64_TYPE__ int64;
 
-#elif defined(___int64_t_defined) //|| defined(__BIT_TYPES_DEFINED__)
+#elif defined(___int64_t_defined)
 typedef u_int64_t uint64;
 typedef int64_t int64;
 
@@ -49,7 +49,7 @@ uint64_get(const void* ptr) {
 #endif
 
 #if defined(_WIN32) && defined(_MSC_VER)
-// for older MSVC
+/* for older MSVC */
 #ifndef PRId64
 #define PRId64 "I64d"
 #endif
@@ -62,8 +62,8 @@ uint64_get(const void* ptr) {
 #endif /* _WIN32 && _MSC_VER */
 
 #if defined(_WIN32) && defined(_MSC_VER)
-// for older MSVC: "unsigned __int64 -> double" conversion not implemented
-// (why?-)
+/* for older MSVC: "unsigned __int64 -> double" conversion not implemented 
+   (why?-) */
 __inline double
 uint64_to_double(uint64 ull) {
   return ((int64)ull >= 0

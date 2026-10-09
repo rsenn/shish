@@ -5,13 +5,9 @@
 int
 source_get(char* c) {
   int ret;
-  ret = source_peek(c);
 
-  if(ret >= 1) {
+  if((ret = source_peek(c)) > 0) 
     source_skip();
-    /*if(*c == '\n')
-       source_newline();*/
-  }
 
   return ret;
 }

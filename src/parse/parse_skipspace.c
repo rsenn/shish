@@ -19,9 +19,7 @@ parse_skipspace(struct parser* p) {
         parse_skip(p);
         continue;
       }
-
-      // parse_skip(p);
-
+      
       /* in a here-doc skip the newline after the delimiter */
       if(p->flags & P_HERE)
         break;

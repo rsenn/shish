@@ -107,9 +107,9 @@ void debug_word(const char*, size_t n, buffer* out);
 #define debug_c(chr) buffer_putc(debug_output, (unsigned int)(unsigned char)(chr))
 #define debug_b(buf, len) buffer_put(debug_output, (buf), (len))
 #define debug_ws(str) debug_c(' ')
-#define debug_nl() deb§ug_c('\n') //
+#define debug_nl() debug_c('\n')
 #define debug_fl() buffer_flush(debug_output)
-#define debug_nl_fl() buffer_putnlflush(debug_output) //(debug_nl(), debug_fl())
+#define debug_nl_fl() buffer_putnlflush(debug_output)
 #define debug_fn() (debug_s(__func__), debug_s("()"))
 #define debug_fn_ws() (debug_fn(), debug_ws())
 #define debug_fn_nl() (debug_fn(), debug_nl())

@@ -101,12 +101,6 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
     goto end;
   }
 
-  /*if(sh->exitcode) {
-    tree_free(args_head);
-    eval_exit(sh->exitcode);
-  }*/
-
-
   /* redirections of a command without a name run in a subshell
      environment: "< ${x=y}" must not leave x set. Assignments in the
      same command are applied to the current environment, so no scope

@@ -113,12 +113,6 @@ expand_arg(union node* node, wordlist* wl, int flags) {
                      (subarg->nargstr.stra.len && !(subarg->nargstr.flag & S_HEREDOC)) ? (lflags | X_LITERAL) : lflags);
         break;
       }
-
-      default: {
-        /*debug_node(subarg, 0);
-          debug_nl_fl();*/
-        break;
-      }
     }
 
     /* a failed expansion ends the word */

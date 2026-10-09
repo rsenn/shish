@@ -6,7 +6,7 @@
 #include <sys/types.h>
 
 /* for size_t & ptrdiff_t */
-// #include <stddef.h>
+/*#include <stddef.h>*/
 
 /* for time_t */
 #include <time.h>
@@ -14,16 +14,6 @@
 #ifdef __LCC__
 #include <stdint.h>
 #endif
-
-/*
-#if defined(HAVE_INTTYPES_H) || defined(__LCC__) || (!defined(_MSC_VER) &&
-!defined(__MSYS__) && !defined(__CYGWIN__) && !defined(__BORLANDC__)) #include
-<inttypes.h> #endif
-
-#if defined(HAVE_STDINT_H) || defined(__LCC__) || (CYGWIN_VERSION_API_MINOR >
-100) || (!defined(_MSC_VER) && !defined(__MSYS__)
-&& !defined(__CYGWIN__) && !defined(__BORLANDC__)) #include <stdint.h> #endif
-*/
 
 #if defined(__MINGW32__) || defined(__MINGW64__) || defined(__ORANGEC__) || defined(__DMC__) || \
     defined(__STDC_IEC_559__)
@@ -79,4 +69,4 @@ typedef int fd_t;
 #endif
 #endif
 
-#endif /* TYPEDEFS_H */
+#endif

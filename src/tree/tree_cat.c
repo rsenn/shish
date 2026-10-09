@@ -396,8 +396,6 @@ again:
           sep = 0; //"\n";
       }
 
-      // tree_catseparator(sa, sep == NULL ? " " : sep, depth  - 1);
-
       if(sa->len && byte_chr(" \t", 2, sa->s[sa->len - 1]) < 2)
         sa->len--;
 
@@ -551,10 +549,7 @@ again:
 
       node = node->nfunc.body;
       sep = "\n";
-      // depth++;
       goto again;
-      /// tree_cat_n(node->nfunc.body, sa, /*sep == NULL ? "\n  " :sep,*/
-      /// depth); break;
     }
 
     case N_ARGARITH: {

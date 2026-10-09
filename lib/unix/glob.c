@@ -1,7 +1,6 @@
 #include "../windoze.h"
 
-#if WINDOWS_NATIVE //&& !defined(_MSC_VER)
-
+#if WINDOWS_NATIVE
 #include "../byte.h"
 #include "../glob.h"
 #include "../str.h"
@@ -331,5 +330,4 @@ globfree(glob_t* pglob) {
     pglob->gl_pathv = NULL;
   }
 }
-
 #endif

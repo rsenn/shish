@@ -37,7 +37,6 @@ parse_function(struct parser* p) {
   p->tree = NULL;
   p->node = NULL;
 
-  // expand_tosa(p->tree, &name);
   node = tree_newnode(N_FUNCTION);
   stralloc_nul(&name);
   node->nfunc.name = name.s;

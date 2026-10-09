@@ -24,8 +24,6 @@ fd_dump(struct fd* d, buffer* b) {
   buffer_putspad(b, d->name ? d->name : "NULL", 18);
 
   /* level */
-  // term_escape(b, 42, 'G');
-
   buffer_putulong0(b, d->stack->level, 2);
   buffer_putnspace(b, 2);
 
@@ -42,17 +40,15 @@ fd_dump(struct fd* d, buffer* b) {
              },
              26);
 
-  // term_escape(b, 78, 'G');
-
   /* buffers */
   if(d->r && (d->mode & FD_READ)) {
     buffer_puts(b, "r=");
     buffer_dump(b, d->r);
+
     if(d->w && (d->mode & FD_WRITE)) {
       buffer_putc(b, '\n');
       term_escape(b, 59, 'G');
     }
-    // buffer_putspace(b);
   }
 
   if(d->w && (d->mode & FD_WRITE)) {

@@ -32,7 +32,6 @@ prompt_show(void) {
 
   /* put the prompt to the terminal */
   if(prompt) {
-    // buffer_putc(term_output, '\r');
     buffer_put(term_output, prompt, plen);
     buffer_flush(term_output);
   }

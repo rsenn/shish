@@ -10,7 +10,7 @@
  * A typical filter fills in only the declarative half; the framework
  * (filter_open/filter_run/filter_close) does the rest:
  *
- *   struct cat { struct filter_in in; int number_lines; ... };  // in first
+ *   struct cat { struct filter_in in; int number_lines; ... }; // in first 
  *   const struct filter_ops cat_ops = {.opts = "nb", .size = sizeof(struct cat),
  *                                      .option = cat_option, .step = cat_step};
  *   int builtin_cat(int argc, char* argv[]) { return filter_run(&cat_ops, argc, argv, fd_out->w); }

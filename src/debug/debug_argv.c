@@ -28,8 +28,7 @@ debug_argv(char** argv, buffer* out) {
 
   for(arg = argv; *arg; arg++) {
     int quote = **arg == '\0';
-    // parse_isesc(*arg); //!!(*arg)[str_chr(*arg, ' ')];
-
+    
     if(!quote) {
       char* s;
 

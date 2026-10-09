@@ -56,7 +56,6 @@ builtin_which(int argc, char* argv[]) {
 
       } else if(!all) {
         ret = errno == ENOENT ? EXIT_NOTFOUND : EXIT_FAILURE;
-        // break;
       }
 
       i += len;

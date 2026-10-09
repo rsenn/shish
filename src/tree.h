@@ -20,7 +20,6 @@ enum kind {
                                 stdout amongst them */
   /* list     */ N_AND,      /* execute cmd2 if cmd succeeded */
   N_OR,                      /* execute cmd2 if cmd failed */
-  // N_SEMI,           /* execute both */
   N_NOT, /* execute cmd and negate return status */
   N_TIME, /* execute cmd and report the time it took */
   N_LIST,
@@ -46,8 +45,8 @@ enum kind {
 
   A_NUM,
   A_PAREN,
-  A_TERNARY, // cond ? ontrue : onfalse
-  // binary
+  A_TERNARY, /* cond ? ontrue : onfalse */
+  /* binary */
   A_OR,
   A_AND,
   A_BITOR,
@@ -67,7 +66,7 @@ enum kind {
   A_DIV,
   A_MOD,
   A_EXP,
-  // unary
+  /* unary */
   A_UNARYMINUS,
   A_UNARYPLUS,
   A_NOT,

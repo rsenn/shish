@@ -1,8 +1,3 @@
-/**
- * @defgroup   strview
- * @brief      STRVIEW module.
- * @{
- */
 #ifndef STRVIEW_H
 #define STRVIEW_H
 
@@ -17,4 +12,3 @@ typedef struct strview_s {
 } strview;
 
 #endif
-/** @} */

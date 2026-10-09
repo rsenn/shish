@@ -46,4 +46,4 @@
 #define mkdir(path, mode) mkdir(path)
 #endif
 
-#endif /* defined(WINDOZE_H) */
+#endif

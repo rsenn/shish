@@ -76,12 +76,6 @@ fdstack_data(void) {
         fd->rb.fd = -1;
         fd->mode &= ~FD_READ;
       }
-
-      /* read from the stralloc and put it to here-doc pipe */
-      /*if((fd->mode & FD_HERE) == FD_HERE) {
-        while((n = buffer_get(&fd->rb, buf, sizeof(buf))) > 0)
-          write(fd->e, buf, n);
-      }*/
     }
   }
 

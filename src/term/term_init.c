@@ -21,7 +21,7 @@ int term_dumb = 1;
 char term_obuf[128];
 static buffer term_default_output = BUFFER_INIT(&buffer_op_write, 1, term_obuf, sizeof(term_obuf));
 
-buffer* term_output = 0; //&term_default_output;
+buffer* term_output = 0;
 
 /* tries to get terminal attributes and if it succeeds it will make the src
  * buffer use the term_read() function which is, like bloaty readline(),
@@ -54,7 +54,6 @@ term_init(struct fd* input, struct fd* output) {
 
   /* intercept input buffer */
   buffer_init(&term_input, input->r->op, input->r->fd, term_buffer, sizeof(term_buffer));
-  // term_output = output->w;
 
   input->r->op = &term_read;
 

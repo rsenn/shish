@@ -164,33 +164,23 @@ main(int argc, char** argv, char** envp) {
   /* set our basename for the \v prompt escape seq and maybe other stuff*/
   sh_name = path_basename(sh_argv0, NULL);
 
-  if(*sh_name == '-') {
+  if(*sh_name == '-') 
     sh_name++;
-    // sh_login++;
-  }
 
   /* set global shell argument vector */
   sh_argv = &argv[shell_optind];
   sh_argc = argc - shell_optind;
 
   source_push(&src);
-  // sh_init();
 
   stralloc_init(&cmd);
-
   parse_init(&p, P_DEFAULT);
-
   buffer_init(&out_buf, &buffer_op_write, out_fd, alloca(1024), 1024);
+  
   {
-    int n;
-    union node *script = 0, **nptr;
-    nptr = &script;
+    union node *script = 0, **nptr = &script;
 
-    // debug_begin(0, 0);
-
-    for(n = 0;; n++) {
-      union node* list;
-
+    for(;;) {
       p.pushback = 0;
       tok = parse_gettok(&p, P_DEFAULT);
 
@@ -201,17 +191,13 @@ main(int argc, char** argv, char** envp) {
       parse_lineno = source->position.line;
 
       /* launch the parser to get a complete command */
-      list = parse_list(&p); // parse_compound_list(&p, T_EOF);
-
-      nptr = tree_append(nptr, list);
+      nptr = tree_append(nptr, parse_list(&p));
     }
 
     if(script) {
       debug_list(script, 1);
       debug_nl_fl();
     }
-
-    // debug_end(0);
   }
 
   return 0;

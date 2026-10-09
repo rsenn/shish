@@ -33,7 +33,6 @@ typedef struct trap_s {
 } trap;
 
 trap* traps = 0;
-// static trap** trap_link = &traps;
 
 enum { TRAP_DEBUG = 254, TRAP_RETURN = 255, TRAP_EXIT = 0 };
 

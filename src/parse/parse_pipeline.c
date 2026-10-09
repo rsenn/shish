@@ -54,7 +54,6 @@ parse_pipeline(struct parser* p) {
     /* create a command list inside the pipeline */
     pipeline->npipe.cmds = node;
     pipeline->npipe.ncmd = 1;
-    // cmdptr = &pipeline->npipe.cmds;
     cmdptr = &node->next;
 
     /* parse commands and add them to the pipeline
@@ -72,7 +71,6 @@ parse_pipeline(struct parser* p) {
       }
 
       tree_link(node, cmdptr);
-      // tree_unshift(node, cmdptr);
       pipeline->npipe.ncmd++;
     } while(parse_gettok(p, P_DEFAULT) == T_PIPE);
 

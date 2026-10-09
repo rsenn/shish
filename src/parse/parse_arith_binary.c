@@ -17,10 +17,8 @@ parse_arith_binary(struct parser* p, int precedence) {
 
   parse_skipspace(p);
 
-  if(source_peek(&a) <= 0 || source_peekn(&b, 1) <= 0) {
-    // tree_free(left);
+  if(source_peek(&a) <= 0 || source_peekn(&b, 1) <= 0)
     return left;
-  }
 
   /* precedence runs from 1 (tightest, "**") to ARITH_PREC_TOP (loosest,
      "||"); each branch matches one operator level, walked in
@@ -137,14 +135,6 @@ parse_arith_binary(struct parser* p, int precedence) {
 
   if(right == NULL)
     return left;
-  /*
-    tree_free(left);
-    //parse_gettok(p, P_DEFAULT);
-
-    //sh_msg("no")
-    //parse_error(p, 0);
-    return 0;
-  */
 
   node = tree_newnode(op);
   node->narithbinary.left = left;
