@@ -19,6 +19,7 @@ path_realpath(const char* path, stralloc* sa, int symbolic, stralloc* cwd) {
     if(!cwd || !cwd->len) {
       if(!path_getcwd(&own))
         goto end;
+      
       cwd = &own;
     }
 

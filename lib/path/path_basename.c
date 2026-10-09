@@ -19,9 +19,11 @@ path_basename(const char* path, size_t* len) {
   if(end > 0 && path_issep(path[0])) {
     /* all separators -> the first one */
     for(start = 0; start < end && path_issep(path[start]); ++start) {}
+      
     if(start == end) {
       if(len)
         *len = 1;
+
       return path;
     }
   }
@@ -33,5 +35,6 @@ path_basename(const char* path, size_t* len) {
 
   if(len)
     *len = end - start;
+
   return path + start;
 }

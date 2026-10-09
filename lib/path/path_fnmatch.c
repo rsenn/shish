@@ -15,7 +15,7 @@
  * an unknown class name matches nothing, same as glibc.
  * ----------------------------------------------------------------------- */
 static int
-path_fnmatch_class(const char* name, unsigned int namelen, int c) {
+path_fnmatch_class(const char* name, size_t namelen, int c) {
 #define CLASS(s, fn) \
   if(namelen == sizeof(s) - 1 && byte_equal(name, namelen, s)) \
   return !!fn((unsigned char)c)
@@ -43,9 +43,9 @@ path_fnmatch_class(const char* name, unsigned int namelen, int c) {
  * to treating "[" as an ordinary bracket-expression character in that
  * case, same as an unterminated "[:"/"[."/"[=" always has.
  * ----------------------------------------------------------------------- */
-static unsigned int
-path_fnmatch_subexpr_len(const char* pattern, unsigned int plen, char delim) {
-  unsigned int i;
+static size_t
+path_fnmatch_subexpr_len(const char* pattern, size_t plen, char delim) {
+  size_t i;
 
   for(i = 2; i + 1 < plen; i++) {
     if(pattern[i] == delim && pattern[i + 1] == ']')
@@ -67,12 +67,12 @@ path_fnmatch_subexpr_len(const char* pattern, unsigned int plen, char delim) {
  * character) without touching *end / *skip otherwise.
  * ----------------------------------------------------------------------- */
 static int
-path_fnmatch_range_end(const char* pattern, unsigned int plen, char* end, unsigned int* skip) {
+path_fnmatch_range_end(const char* pattern, size_t plen, char* end, size_t* skip) {
   if(plen < 2 || pattern[0] != '-' || pattern[1] == ']')
     return 0;
 
   if(plen >= 3 && pattern[1] == '[' && (pattern[2] == '.' || pattern[2] == '=')) {
-    unsigned int sublen = path_fnmatch_subexpr_len(pattern + 1, plen - 1, pattern[2]);
+    size_t sublen = path_fnmatch_subexpr_len(pattern + 1, plen - 1, pattern[2]);
 
     if(sublen == 0 || sublen - 4 != 1)
       return 0;
@@ -91,8 +91,8 @@ path_fnmatch_range_end(const char* pattern, unsigned int plen, char* end, unsign
  * no: the "[" is a literal, e.g. case [[ in [[) or a[ matching "a[".
  * ----------------------------------------------------------------------- */
 static int
-path_fnmatch_has_close(const char* pattern, unsigned int plen, int flags) {
-  unsigned int j = 1, n;
+path_fnmatch_has_close(const char* pattern, size_t plen, int flags) {
+  size_t j = 1, n;
 
   if(j < plen && pattern[j] == '!')
     j++;
@@ -112,14 +112,7 @@ path_fnmatch_has_close(const char* pattern, unsigned int plen, int flags) {
 }
 
 int
-path_fnmatch(
-    const char* pattern, unsigned int plen, const char* string, unsigned int slen, int flags) {
-  /*  buffer_puts(buffer_2, "fnmatch: ");
-    buffer_put(buffer_2, pattern, plen);
-    buffer_putspace(buffer_2);
-    buffer_put(buffer_2, string, slen);
-    buffer_putnlflush(buffer_2);*/
-
+path_fnmatch(const char* pattern, size_t plen, const char* string, size_t slen, int flags) {
   /* backtrack bookmark for the most recently seen '*': whenever
    * matching fails below (any "goto fail"), if this is set we retry
    * by letting that '*' consume one more character of string and
@@ -138,9 +131,9 @@ path_fnmatch(
    * this function recursing once per character of a long string. */
   int have_star = 0;
   const char* star_pattern = NULL;
-  unsigned int star_plen = 0;
+  size_t star_plen = 0;
   const char* star_string = NULL;
-  unsigned int star_slen = 0;
+  size_t star_slen = 0;
 
 /* label to jump back to instead of recursing */
 start:
@@ -228,7 +221,7 @@ start:
            (pattern[1] == ':' || pattern[1] == '.' || pattern[1] == '=')) {
           /* MEMBER - "[:class:]" / "[.symbol.]" / "[=equiv=]" */
           char delim = pattern[1];
-          unsigned int sublen = path_fnmatch_subexpr_len(pattern, plen, delim);
+          size_t sublen = path_fnmatch_subexpr_len(pattern, plen, delim);
 
           if(sublen == 0) {
             /* unterminated -- treat the "[" itself as an ordinary
@@ -250,11 +243,11 @@ start:
                symbol (no locale data to resolve it against) matches
                nothing rather than mismatching the bracket expression
                outright. */
-            unsigned int symlen = sublen - 4;
+            size_t symlen = sublen - 4;
 
             if(symlen == 1) {
               char rangeend;
-              unsigned int rangeskip;
+              size_t rangeskip;
 
               /* "[.x.]-[.y.]" (or "[.x.]-y"): fuse into a real range
                  instead of matching "[.x.]", then "-", then "[.y.]"
@@ -276,7 +269,7 @@ start:
              a "[.symbol.]"/"[=equiv=]" single-character collating
              construct, e.g. the "-[.2.]" in "[a-[.2.]]") */
           char rangeend;
-          unsigned int rangeskip;
+          size_t rangeskip;
 
           if(!escaped && path_fnmatch_range_end(pattern + 1, plen - 1, &rangeend, &rangeskip)) {
             /* check wheter char is within the specified range */
@@ -306,7 +299,7 @@ start:
             /* "[:class:]"/"[.x.]"/"[=x=]" contains its own "]" */
             else if(*pattern == '[' && plen > 1 &&
                     (pattern[1] == ':' || pattern[1] == '.' || pattern[1] == '=')) {
-              unsigned int sublen = path_fnmatch_subexpr_len(pattern, plen, pattern[1]);
+              size_t sublen = path_fnmatch_subexpr_len(pattern, plen, pattern[1]);
 
               if(sublen) {
                 pattern += sublen;

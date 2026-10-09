@@ -24,6 +24,7 @@ path_gethome(int uid) {
 
     while(eol < end && *eol != '\n')
       ++eol;
+
     p = eol + 1;
 
     if(eol > line && eol[-1] == '\r')
@@ -31,6 +32,7 @@ path_gethome(int uid) {
 
     /* split into fields; f[i] is the start of the i-th field (0-based) */
     f[nf++] = line;
+
     for(i = 0; line + i < eol && nf < 7; ++i)
       if(line[i] == ':')
         f[nf++] = line + i + 1;
@@ -41,17 +43,19 @@ path_gethome(int uid) {
     /* the third field is the uid: digits only */
     if(f[3] - 1 == f[2])
       continue;
+
     for(i = 0; f[2] + i < f[3] - 1; ++i) {
       if(f[2][i] < '0' || f[2][i] > '9')
         break;
+    
       id = id * 10 + (f[2][i] - '0');
     }
+    
     if(f[2] + i != f[3] - 1 || id != (unsigned long)uid)
       continue;
 
     /* the sixth field is the home, up to the next colon or the end of the line */
-    i = (nf > 6 ? f[6] - 1 : eol) - f[5];
-    if(i > PATH_MAX)
+    if((i = (nf > 6 ? f[6] - 1 : eol) - f[5]) > PATH_MAX)
       continue;
 
     byte_copy(home, i, f[5]);

@@ -40,8 +40,7 @@ int path_canonicalize(const char* path, stralloc* sa, int symbolic);
 int path_canonical_sa(stralloc* sa);
 int path_canonical(const char* path, stralloc* out);
 size_t path_collapse(char* path, size_t n);
-int path_fnmatch(
-    const char* pattern, unsigned int plen, const char* string, unsigned int slen, int flags);
+int path_fnmatch(const char* pattern, size_t plen, const char* string, size_t slen, int flags);
 int path_getcwd(stralloc* sa);
 char* path_gethome(int uid);
 int path_getsep(const char* path);

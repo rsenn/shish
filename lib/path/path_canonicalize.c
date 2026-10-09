@@ -99,6 +99,7 @@ restart:
   if((root = root_len(rest.s))) {
     if(!stralloc_catb(sa, rest.s, root))
       goto fail;
+
     sa->s[root - 1] = sep;
     pos = root;
   }
@@ -128,10 +129,10 @@ restart:
       /* relative with nothing to pop (or a ".." on top): keep the ".." */
       if(sa->len > root && !(sa->len - k == 2 && sa->s[k] == '.' && sa->s[k + 1] == '.'))
         pop(sa, root);
-      else if(!root) {
+      else if(!root) 
         if((sa->len && !stralloc_catc(sa, sep)) || !stralloc_catb(sa, "..", 2))
           goto fail;
-      }
+
       continue;
     }
 
