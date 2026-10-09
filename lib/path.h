@@ -35,14 +35,14 @@ typedef struct {
                                   */
 #define PATH_FNM_PERIOD (1 << 2) /* Leading .' is matched only explicitly.  */
 
-char* path_basename(const char* path);
+const char* path_basename(const char* path, size_t* len);
 int path_canonicalize(const char* path, stralloc* sa, int symbolic);
 int path_canonical_sa(stralloc* sa);
 int path_canonical(const char* path, stralloc* out);
 size_t path_collapse(char* path, size_t n);
 int path_fnmatch(
     const char* pattern, unsigned int plen, const char* string, unsigned int slen, int flags);
-void path_getcwd(stralloc* sa);
+int path_getcwd(stralloc* sa);
 char* path_gethome(int uid);
 int path_getsep(const char* path);
 int path_is_absolute_b(const char* x, size_t n);

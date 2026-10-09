@@ -2,32 +2,36 @@
 #include "../path_internal.h"
 #include "../str.h"
 
-/*
-       path           dirname        basename
-       "/usr/lib"     "/usr"         "lib"
-       "/usr/"        "/"            "usr"
-       "usr"          "."            "usr"
-       "/"            "/"            "/"
-       "."            "."            "."
-       ".."           "."            ".."
-*/
-char*
-path_basename(const char* path) {
-  char* x = (char*)path;
-  size_t n;
-again:
-  n = str_rchrs(x, "/\\", 2);
+/* last component of path, POSIX basename(1) rules; *len gets its length
+ *
+ *   path           basename
+ *   "/usr/lib"     "lib"
+ *   "/usr/"        "usr"      trailing separators are not part of it
+ *   "//"           "/"        only separators: one of them
+ *   ""             ""
+ *
+ * The string is not modified. len may be NULL when path has no trailing separator.
+ * ----------------------------------------------------------------------- */
+const char*
+path_basename(const char* path, size_t* len) {
+  size_t start, end = str_len(path);
 
-  if(x[n] == '\0')
-    return x;
-
-  if(x[n + 1] == 0) {
-    if(n == 0)
-      return x;
-    else {
-      (x)[n] = 0;
-      goto again;
+  if(end > 0 && path_issep(path[0])) {
+    /* all separators -> the first one */
+    for(start = 0; start < end && path_issep(path[start]); ++start) {}
+    if(start == end) {
+      if(len)
+        *len = 1;
+      return path;
     }
   }
-  return &x[n + 1];
+
+  while(end > 0 && path_issep(path[end - 1]))
+    --end;
+
+  for(start = end; start > 0 && !path_issep(path[start - 1]); --start) {}
+
+  if(len)
+    *len = end - start;
+  return path + start;
 }

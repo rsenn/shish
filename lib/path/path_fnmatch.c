@@ -164,7 +164,8 @@ start:
    * to be leading if it is the first character in string, or if both
    * PATH_FNM_PATHNAME  is set and the period immediately follows a slash.
    */
-  if(*string == '.' && *pattern != '.' && (flags & PATH_FNM_PERIOD)) {
+  if(*string == '.' && *pattern != '.' && (flags & PATH_FNM_PERIOD) &&
+     !(*pattern == '\\' && !(flags & PATH_FNM_NOESCAPE) && plen > 1 && pattern[1] == '.')) {
     /* don't match if PATH_FNM_PERIOD and this is the first char */
     if(!(flags & NOTFIRST))
       goto fail;

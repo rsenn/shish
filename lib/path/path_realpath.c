@@ -1,43 +1,38 @@
-#include "../byte.h"
 #include "../path_internal.h"
 #include "../windoze.h"
-#include <errno.h>
-#ifndef ENAMETOOLONG
-#define ENAMETOOLONG 91
-#endif
 
-/* if the <path> is relative and <cwd> is non-null then it is prepended
- * to the path, so it will work like path_canonicalize, except that
- * relative paths will be resolved to absolute ones.
- */
+/* path_canonicalize() with a relative <path> resolved against <cwd> first
+ * (the current directory when <cwd> is NULL or empty), so the result is
+ * absolute. <sa> is replaced, not appended to.
+ *
+ *   "" and "." -> the cwd
+ * ----------------------------------------------------------------------- */
 int
 path_realpath(const char* path, stralloc* sa, int symbolic, stralloc* cwd) {
-  static stralloc tmpcwd;
+  stralloc own, full;
+  int ret = 0;
 
-  if(cwd == NULL) {
-    path_getcwd(&tmpcwd);
-    stralloc_nul(&tmpcwd);
-    cwd = &tmpcwd;
-  }
+  stralloc_init(&own);
+  stralloc_init(&full);
 
-  /* if its not absolute on the first recursion level then make it so */
-  if(!path_is_absolute(path) && sa->len == 0) {
-    char buf[PATH_MAX + 1];
-    /* check whether the name fits */
-    size_t n = str_len(path);
-
-    if(cwd->len + n + 1 > PATH_MAX) {
-      errno = ENAMETOOLONG;
-      return 0;
+  if(!path_is_absolute(path)) {
+    if(!cwd || !cwd->len) {
+      if(!path_getcwd(&own))
+        goto end;
+      cwd = &own;
     }
 
-    /* copy current dir */
-    byte_copy(buf, cwd->len, cwd->s);
-    buf[cwd->len] = PATHSEP_C;
-    byte_copy(&buf[cwd->len + 1], n + 1, path);
-    /* run canonicalize with the concatenated path */
-    return path_canonicalize(buf, sa, symbolic);
+    if(!stralloc_copyb(&full, cwd->s, cwd->len) || !stralloc_catc(&full, PATHSEP_C) || !stralloc_cats(&full, path) ||
+       !stralloc_nul(&full))
+      goto end;
+
+    path = full.s;
   }
 
-  return path_canonicalize(path, sa, symbolic);
+  ret = path_canonicalize(path, sa, symbolic);
+
+end:
+  stralloc_free(&own);
+  stralloc_free(&full);
+  return ret;
 }

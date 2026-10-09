@@ -7,20 +7,37 @@
 #include <unistd.h>
 #endif
 
+#include <errno.h>
 #include <limits.h>
-/* get current working directory into a stralloc
- */
-void
+
+/* get current working directory into a stralloc, NUL-terminated;
+ * returns 1, or 0 with sa->len == 0 on failure
+ * ----------------------------------------------------------------------- */
+int
 path_getcwd(stralloc* sa) {
-  char *p, sep;
-  stralloc_zero(sa);
-  /* reserve some space */
-  stralloc_ready(sa, PATH_MAX);
-  /* repeat until we have reserved enough space */
-  p = getcwd(sa->s, sa->a);
+  size_t n = PATH_MAX;
+  char sep;
+
+  sa->len = 0;
+
+  for(;;) {
+    if(!stralloc_ready(sa, n))
+      return 0;
+
+    if(getcwd(sa->s, sa->a))
+      break;
+
+    if(errno != ERANGE)
+      return 0;
+
+    n = sa->a * 2;
+  }
+
   sa->len = str_len(sa->s);
   sep = path_getsep(sa->s);
 
   if(sep && sep != PATHSEP_C)
     stralloc_replacec(sa, sep, PATHSEP_C);
+
+  return 1;
 }

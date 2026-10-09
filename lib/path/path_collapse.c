@@ -1,40 +1,86 @@
 #include "../path_internal.h"
-#include "../byte.h"
 
+/* Normalizes path[0..n) in place, lexically; returns the new length (<= n).
+ *
+ *   "a//b/./c/"  -> "a/b/c/"     repeated separators and "." go, a trailing one stays
+ *   "/a/../.."   -> "/"          ".." above the root of an absolute path is dropped
+ *   "a/../.."    -> ".."         leading ".." of a relative path is kept
+ *   "a/.."       -> "."          never empty for a non-empty input ("" gives 0)
+ * ----------------------------------------------------------------------- */
 size_t
 path_collapse(char* path, size_t n) {
-  char* x = path;
-  int ret = 0;
-  char sep = path_getsep(path);
-  char* end = x + n;
+  size_t r = 0, w = 0, floor, s;
+  int trail;
+  char sep = PATHSEP_C;
 
-  while(x < end) {
-    size_t i = byte_chr(x, end - x, sep);
+  if(n == 0)
+    return 0;
 
-    if(x + i < end) {
-      i++;
-
-      if(x + i + 2 < end) {
-        if(x[i] == '.' && x[i + 1] == '.' && (x + i + 2 == end || x[i + 2] == sep)) {
-          i += 3;
-          byte_copy(x, n - i, &x[i]);
-          end -= i;
-          ret++;
-          continue;
-        }
-      }
+  for(s = 0; s < n; ++s)
+    if(path_issep(path[s])) {
+      sep = path[s];
+      break;
     }
 
-    x += i;
-    n -= i;
+  trail = path_issep(path[n - 1]);
+
+  if(path_isdrive(path) && n >= 2)
+    w = r = 2;
+
+  if(r < n && path_issep(path[r])) {
+    path[w++] = sep;
+    ++r;
   }
 
-  n = x - path;
+  floor = w;
 
-  if(n > 3 && path[n - 1] == PATHSEP_C && path[n - 2] == '.' && path[n - 3] == PATHSEP_C)
-    n -= 3;
-  else if(n > 2 && path[n - 1] == '.' && path[n - 2] == PATHSEP_C)
-    n -= 2;
+  while(r < n) {
+    size_t len;
 
-  return n;
+    while(r < n && path_issep(path[r]))
+      ++r;
+
+    if(r >= n)
+      break;
+
+    for(s = r; r < n && !path_issep(path[r]); ++r) {}
+    len = r - s;
+
+    if(len == 1 && path[s] == '.')
+      continue;
+
+    if(len == 2 && path[s] == '.' && path[s + 1] == '.') {
+      size_t k = w;
+
+      while(k > floor && !path_issep(path[k - 1]))
+        --k;
+
+      /* pop the last component unless there is none or it is itself ".." */
+      if(w > floor && !(w - k == 2 && path[k] == '.' && path[k + 1] == '.')) {
+        w = k > floor ? k - 1 : k;
+        continue;
+      }
+
+      /* absolute: nothing above the root */
+      if(floor > (path_isdrive(path) ? 2u : 0u))
+        continue;
+    }
+
+    if(w > floor)
+      path[w++] = sep;
+
+    /* w <= s: a forward copy is safe for the overlap, byte_copy() is not */
+    for(; len; --len)
+      path[w++] = path[s++];
+  }
+
+  if(w == floor && floor == (path_isdrive(path) ? 2u : 0u)) {
+    /* relative and empty */
+    path[w++] = '.';
+  }
+
+  if(trail && w > floor && !path_issep(path[w - 1]))
+    path[w++] = sep;
+
+  return w;
 }

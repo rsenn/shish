@@ -2,8 +2,8 @@
 
 int
 path_canonical(const char* path, stralloc* out) {
-  stralloc_zero(out);
-  stralloc_copys(out, path);
-  stralloc_nul(out);
+  if(!stralloc_copys(out, path))
+    return 0;
+
   return path_canonical_sa(out);
 }
