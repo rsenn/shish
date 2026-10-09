@@ -4,26 +4,13 @@
 #include "../open.h"
 #include "../str.h"
 #include "../uint32.h"
-
-#if WINDOWS_NATIVE
-#ifdef _MSC_VER
-#define _CRT_INTERNAL_NONSTDC_NAMES 1
-#endif
-#include <io.h>
-#include <windows.h>
-#if !defined(__LCC__) && !defined(__MINGW32__)
-#define read _read
-#define write _write
-#define open _open
-#define close _close
-#endif
-#else
-#include <unistd.h>
-#endif
-
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+
+#if !WINDOWS_NATIVE
+#include <unistd.h>
+#endif
 
 #ifndef O_NOFOLLOW
 #define O_NOFOLLOW 0

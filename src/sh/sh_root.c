@@ -40,3 +40,4 @@ pid_t sh_shpid;
 uid_t sh_uid;
 const char* sh_home;
 char* sh_argv0;
+int sh_subshell = 0;

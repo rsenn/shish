@@ -1,17 +1,15 @@
+#include "../../lib/windoze.h"
 #include "../../lib/byte.h"
 #include "../job.h"
 #include "../prompt.h"
 #include "../term.h"
 #include "../debug.h"
 #include "../trace.h"
-#include "builtin_config.h"
-#include "../../lib/windoze.h"
-
 #include "../trap.h"
-#if !WINDOWS_NATIVE && !defined(__MINGW64__)
-#include <termios.h>
-#endif
+#include "builtin_config.h"
+
 #if !WINDOWS_NATIVE
+#include <termios.h>
 #include <errno.h>
 #include <sys/select.h>
 #include <unistd.h>

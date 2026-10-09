@@ -1,31 +1,19 @@
 #ifndef _JOB_H
 #define _JOB_H
 
-#include <signal.h>
-#include <stdbool.h>
-#include <stdint.h>
-
-#ifdef __TINYC__
-#ifdef _WIN32
-#define NO_OLDNAMES
-#define pid_t _pid_t
-#endif
-#endif
-#include <sys/types.h>
-#undef NO_OLDNAMES
-
-#ifndef _WIN32
-#include <sys/wait.h>
-#endif
-
 #include "../lib/windoze.h"
 #include "../lib/buffer.h"
 #include "../lib/sig.h"
 
-#if WINDOWS_NATIVE
-#if !defined(HAVE_PID_T) && !defined(__MINGW32__) && !defined(__TINYC__)
-typedef int pid_t;
-#endif
+#define NO_OLDNAMES
+#include <signal.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <sys/types.h>
+#undef NO_OLDNAMES
+
+#if !WINDOWS_NATIVE
+#include <sys/wait.h>
 #endif
 
 #ifndef WEXITSTATUS
@@ -77,7 +65,9 @@ void job_resume_stopped(void);
 struct job* job_first(void);   /* first job of the current subshell level */
 void job_discard(int level);  /* drop the jobs of subshells deeper than level */
 int job_recall(pid_t pid, int* status); /* status of a process of an already finished job */
+
 #define job_current() (job_pointer && *job_pointer ? *job_pointer : 0)
+
 /* "done" means fully reaped: not running, and not merely stopped
    (Ctrl-Z'd) either. */
 #define job_done(j) (!job_running(j) && !job_stopped(j))
@@ -106,7 +96,6 @@ enum job_banner_kind {
 
 void job_banner(struct job*, buffer* out, enum job_banner_kind);
 void job_print(struct job*, buffer* out);
-
 void job_clean(bool);
 void job_dump(buffer*);
 void job_init(void);

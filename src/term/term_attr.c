@@ -9,7 +9,7 @@ int
 term_attr(int fd, int set, struct termios* oldattr) {
   int ret;
 
-#if !WINDOWS_NATIVE && !defined(__MINGW64__)
+#if !WINDOWS_NATIVE
   if(set) {
     struct termios newattr;
     /* backup tty settings */

@@ -3,11 +3,10 @@
 #include <fcntl.h>
 #include <string.h>
 #include "../../lib/windoze.h"
-#if !WINDOWS_NATIVE && !defined(__MINGW64__)
+
+#if !WINDOWS_NATIVE
 #include <termios.h>
 #include <unistd.h>
-#else
-#include <io.h>
 #endif
 
 int job_terminal = -1;

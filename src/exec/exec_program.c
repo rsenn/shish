@@ -3,7 +3,7 @@
 #include "config.h"
 #endif
 
-#ifdef HAVE_ALLOCA
+#ifdef HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 
@@ -26,15 +26,16 @@
 #include "../../lib/wait.h"
 #include "../../lib/stralloc.h"
 #include "../../lib/unix.h"
+#include "../../lib/windoze.h"
 
 #if !WINDOWS_NATIVE
 #include <unistd.h>
+#endif
 
 #if BUILTIN_ULIMIT && !WINDOWS_NATIVE && !defined(__wasi__)
 void ulimit_apply_hard(void);
 #else
 #define ulimit_apply_hard()
-#endif
 #endif
 
 /* execute another program, possibly searching for it first

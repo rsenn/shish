@@ -2,9 +2,6 @@
 #include "../job.h"
 #include "../sh.h"
 #include <errno.h>
-#if !defined(_WIN32)
-#include <poll.h>
-#endif
 #include "../trace.h"
 #include "../fdtable.h"
 #include "../debug.h"
@@ -13,6 +10,7 @@
 #include <io.h>
 #else
 #include <unistd.h>
+#include <poll.h>
 #endif
 
 /* sends down here-doc data to pipes and reads command expansions from pipes

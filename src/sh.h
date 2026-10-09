@@ -9,6 +9,7 @@
 #include "../lib/uint16.h"
 #include "../lib/stralloc.h"
 #include "../lib/windoze.h"
+
 #if WINDOWS_NATIVE
 #ifndef HAVE_UID_T
 typedef int uid_t;
@@ -120,7 +121,12 @@ extern uid_t sh_uid;
 extern pid_t sh_pid;
 extern pid_t sh_shpid;
 
+#if WINDOWS_NATIVE
+#define sh_async 0
+#else
 extern int sh_async;
+#endif
+
 extern int sh_subshell; /* nesting of in-process ( ) and $( ) */
 
 union node;

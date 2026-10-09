@@ -2,6 +2,7 @@
 
 #if BUILTIN_TRAP
 
+#include "../../lib/windoze.h"
 #include "../trace.h"
 #include "../builtin.h"
 #include "../debug.h"
@@ -248,6 +249,20 @@ trap_relay(int sig) {
 static volatile pid_t trap_sender[256];
 static volatile sig_atomic_t trap_sender_fg[256];
 
+#if WINDOWS_NATIVE
+/* mingw has no sigaction(): plain handler through sig_action() (a stub there) */
+#define sigemptyset(s) (*(s) = 0)
+
+static void
+trap_arm(int sig) {
+  struct sigaction sa;
+
+  sa.sa_handler = trap_relay;
+  sa.sa_flags = 0;
+  sigemptyset(&sa.sa_mask);
+  sig_action(sig, &sa, NULL);
+}
+#else
 static void
 trap_relay_info(int sig, siginfo_t* si, void* ctx) {
   pid_t from = si ? si->si_pid : 0;
@@ -269,6 +284,7 @@ trap_arm(int sig) {
   sa.sa_flags = SA_SIGINFO | (sig == SIGCHLD ? SA_NOCLDSTOP : 0);
   sigaction(sig, &sa, NULL);
 }
+#endif
 
 /* runs every trap whose signal fired since the last call, from
  * ordinary (non-signal-handler) context -- see trap_relay() above.
@@ -590,6 +606,10 @@ static volatile sig_atomic_t trap_deferred[256];
  * ----------------------------------------------------------------------- */
 static int
 trap_scope_defer(int sig) {
+#if WINDOWS_NATIVE
+  (void)sig;
+  return 0;
+#else
   trap *t = trap_find(sig), **p;
 
   if(!trap_snap_depth || !t)
@@ -623,6 +643,7 @@ trap_scope_defer(int sig) {
     }
 
   return 0;
+#endif
 }
 
 /* "kill -s SIG $$" from inside an in-process subshell: the signal is for the

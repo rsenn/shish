@@ -6,6 +6,7 @@ arena_free(arena* a) {
 
   for(; c; c = prev) {
     prev = c->prev;
+   
     if(a->src && a->src->put)
       a->src->put(c, c->size);
   }

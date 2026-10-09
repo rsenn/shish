@@ -1,29 +1,28 @@
 #include "../../lib/alloc.h"
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-#include "../fd.h"
-#include "../sh.h"
-#include "../builtin.h"
-#include "../eval.h"
-#include "../trace.h"
-#include "../expand.h"
-#include "../exec.h"
-#include "../fdstack.h"
-#include "../fdtable.h"
-#include "../job.h"
-#include "../tree.h"
-#include "../var.h"
-#include "../debug.h"
 #include "../../lib/byte.h"
 #include "../../lib/str.h"
 #include "../../lib/wait.h"
 #include "../../lib/windoze.h"
-#include "builtin_config.h"
-#if !WINDOWS_NATIVE
+
+#if WINDOWS_NATIVE
+#include "../../lib/unix.h"
+#else
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include "../builtin.h"
+#include "../eval.h"
+#include "../trace.h"
+#include "../expand.h"
+#include "../fdstack.h"
+#include "../fdtable.h"
+
+#include "builtin_config.h"
 
 #if BUILTIN_TRAP
 #include "../trap.h"
@@ -140,7 +139,7 @@ pipeline_last_reads_in_process(union node* node) {
  * ----------------------------------------------------------------------- */
 static int
 pipeline_chain_pump(const struct filter_ops** ops, void** ctx, int n, int* stfd) {
-  int p[2], sp[2] = {-1, -1};
+  int p[2], sp[2] = {-1, -1}, ws;
   pid_t pid;
   buffer b;
 
@@ -214,7 +213,7 @@ pipeline_chain_pump(const struct filter_ops** ops, void** ctx, int n, int* stfd)
   if(stfd)
     *stfd = sp[0];
 
-  waitpid(pid, NULL, 0);
+  wait_pid(pid, &ws);
   b.deinit(&b);
   return p[0];
 }

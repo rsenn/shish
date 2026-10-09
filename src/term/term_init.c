@@ -1,13 +1,12 @@
+#include "../../lib/windoze.h"
 #include "../fdtable.h"
 #include "../fd.h"
 #include "../term.h"
 #include <signal.h>
-#include "../../lib/windoze.h"
-#if !WINDOWS_NATIVE && !defined(__MINGW64__)
+
+#if !WINDOWS_NATIVE
 #include <termios.h>
 #include <unistd.h>
-#else
-#include <io.h>
 #endif
 
 /* other shells seem to read char by char in interactive/terminal-mode.

@@ -5,7 +5,7 @@
 #include <fcntl.h>
 
 #ifdef __TINYC__
-#ifdef _WIN32
+#if WINDOWS_NATIVE
 #define NO_OLDNAMES
 #define pid_t _pid_t
 #define dev_t _dev_t
@@ -21,16 +21,10 @@
 #include "filter.h"
 #include "../lib/alloc.h"
 
-#ifdef HAVE_ALLOCA
+#ifdef HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 
-#if WINDOWS_NATIVE && !defined(__BORLANDC__) && !defined(__MINGW32__) && !defined(__TINYC__) && \
-    !defined(__LCC__)
-#ifndef HAVE_DEV_T
-typedef int dev_t;
-#endif
-#endif
 
 #ifdef FD_SETSIZE
 #define FD_MAX FD_SETSIZE

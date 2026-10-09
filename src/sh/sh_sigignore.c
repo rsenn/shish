@@ -6,10 +6,9 @@
 #if !WINDOWS_NATIVE
 #include <signal.h>
 
-#include "../trap.h"
-
-int sh_subshell;
 int sh_async; /* this process is an asynchronous list ignoring INT/QUIT */
+
+#include "../trap.h"
 
 static const int sh_sigignore_list[] = {SIGINT, SIGQUIT, SIGTERM};
 

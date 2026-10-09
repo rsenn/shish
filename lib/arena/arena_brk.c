@@ -2,8 +2,9 @@
 #define _GNU_SOURCE 1
 
 #include "../arena.h"
+#include "../windoze.h"
 
-#ifndef _WIN32
+#if !WINDOWS_NATIVE
 #include <stdint.h>
 #include <unistd.h>
 

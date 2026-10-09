@@ -13,6 +13,10 @@ char* mmap_read_fd(fd_t fd, size_t* filesize);
  * map in filesize and return pointer to map. */
 const char* mmap_read(const char* filename, size_t* filesize);
 
+/* private anonymous zero-filled read/write map of len bytes, 0 on failure
+ * (release with mmap_unmap()) */
+char* mmap_anon(size_t len);
+
 /* unmap a mapped region */
 int mmap_unmap(const char* mapped, size_t maplen);
 

@@ -8,7 +8,7 @@
 #include "../parse.h"
 #include "../redir.h"
 #include "../tree.h"
-#ifdef HAVE_ALLOCA
+#ifdef HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 

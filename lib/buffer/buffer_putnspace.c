@@ -2,11 +2,11 @@
 
 #include <stdlib.h>
 
-#ifdef HAVE_ALLOCA
+#ifdef HAVE_ALLOCA_H
 #include <alloca.h>
 #else
 #include "../alloc.h"
-#endif /* HAVE_ALLOCA */
+#endif /* HAVE_ALLOCA_H */
 
 #include "../buffer.h"
 #include "../byte.h"

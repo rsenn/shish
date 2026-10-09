@@ -23,27 +23,54 @@
 #define MINGW 1
 #endif
 
-#define _FILE_OFFSET_BITS 64
 
-/*
-#if WINDOWS_NATIVE || WINDOWS_OVERRIDE
-#if USE_WS2_32
-#define _WINSOCKAPI_
-#include <winsock2.h>
-#endif
-#include <windows.h>
-#include <io.h>
-#endif
-*/
+#define _FILE_OFFSET_BITS 64
 
 #if !WINDOWS_NATIVE
 #define WINDOWS_NATIVE 0
+
+#if defined(__MSYS__)
+#define MSYS 1
+#endif
+
+#if defined(__CYGWIN__)
+#define CYGWIN 1
+#endif
 #endif
 
 #if WINDOWS_NATIVE
+
+#ifdef _MSC_VER
+#define _CRT_INTERNAL_NONSTDC_NAMES 1
+#endif
+
 #include <io.h>
 #include <direct.h>
-#define mkdir(path, mode) mkdir(path)
+
+#if !defined(__LCC__) && !defined(__MINGW32__)
+#define read _read
+#define write _write
+#define open _open
+#define close _close
+#endif
+
+#ifndef MINGW
+#ifndef HAVE_DEV_T 
+typedef int dev_t;
+#endif
+#ifndef HAVE_PID_T
+typedef int pid_t;
+#endif
+#endif
+
+/* int _mkdir(const char *); */
+
+#define mkdir(path, mode) _mkdir(path)
+
+/* int _pipe(int [2], unsigned int, int); */
+
+#define pipe(fds) _pipe(fds, 8192, _O_BINARY)
+
 #endif
 
 #endif

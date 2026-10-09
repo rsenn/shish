@@ -1,5 +1,6 @@
 /* lib/arena unit test; prints "<what>: OK|FAIL", exits non-zero on any FAIL */
 #include "../lib/arena.h"
+#include "../lib/windoze.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -136,11 +137,13 @@ main(void) {
   test_alloc(&arena_heap, "heap");
   test_alloc(&arena_mmap, "mmap");
 
+#if !WINDOWS_NATIVE
   /* musl's sbrk() refuses every growth (ENOMEM): there is no brk arena to test there */
   if(sbrk(16) != (void*)-1)
     test_alloc(&arena_brk, "brk");
   else
     puts("brk: sbrk() cannot grow the break here, skipped");
+#endif
 
   puts(failed ? "FAILED" : "all passed");
   return failed;
