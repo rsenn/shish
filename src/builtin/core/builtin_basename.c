@@ -6,6 +6,7 @@
 #include "../../fdtable.h"
 #include "../../../lib/path.h"
 #include "../../../lib/shell.h"
+#include "../../../lib/byte.h"
 #include "../../../lib/str.h"
 
 /* ----------------------------------------------------------------------- */
@@ -19,17 +20,18 @@ const char help_basename[] = "    Strip directory components from a path.\n"
 
 /* strips the directory part of one path and, unless it is the whole name, the suffix */
 static void
-basename_put(char* path, const char* suffix) {
-  char* base = path_basename(path);
+basename_put(const char* path, const char* suffix) {
+  size_t blen;
+  const char* base = path_basename(path, &blen);
 
   if(suffix && *suffix) {
-    size_t blen = str_len(base), slen = str_len(suffix);
+    size_t slen = str_len(suffix);
 
-    if(slen < blen && !str_diff(base + blen - slen, suffix))
-      base[blen - slen] = '\0';
+    if(slen < blen && !byte_diff(base + blen - slen, slen, suffix))
+      blen -= slen;
   }
 
-  buffer_puts(fd_out->w, base);
+  buffer_put(fd_out->w, base, blen);
   buffer_putnlflush(fd_out->w);
 }
 

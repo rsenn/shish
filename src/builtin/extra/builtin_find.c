@@ -111,7 +111,8 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
     if(*i >= end)
       return 0;
     char* pat = argv[(*i)++];
-    char* base = path_basename(path);
+    size_t blen;
+    const char* base = path_basename(path, &blen);
     if(ignore_case) {
       stralloc lp, lb;
       size_t k;
@@ -120,7 +121,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
       stralloc_init(&lp);
       stralloc_init(&lb);
       stralloc_copys(&lp, pat);
-      stralloc_copys(&lb, base);
+      stralloc_copyb(&lb, base, blen);
 
       for(k = 0; k < lp.len; k++)
         if(lp.s[k] >= 'A' && lp.s[k] <= 'Z')
@@ -136,7 +137,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
       return m;
     }
 
-    return path_fnmatch(pat, str_len(pat), base, str_len(base), 0) == 0;
+    return path_fnmatch(pat, str_len(pat), base, blen, 0) == 0;
   }
 
   if(str_equal(arg, "-path")) {

@@ -60,6 +60,18 @@ mkdir -p v1/v2
 X=$(rmdir -pv v1/v2 | grep -c "removed")
 assert_equal "2" "$X" "rmdir -pv reports one line for the named directory and one per ancestor climbed"
 
+## -p stops below the root: no attempt on "/" for an absolute operand
+mkdir -p "$TESTDIR/abs1/abs2"
+rmdir -p "$TESTDIR/abs1/abs2" 2>/dev/null
+X=$(test -e "$TESTDIR/abs1"; echo $?)
+assert_equal "1" "$X" "rmdir -p on an absolute path removes the whole empty chain"
+
+## repeated separators between the components are skipped on the climb
+mkdir -p m1/m2
+rmdir -p m1//m2
+X=$(test -e m1; echo $?)
+assert_equal "1" "$X" "rmdir -p climbs over repeated separators"
+
 cd /
 rm -rf "$TESTDIR"
 

@@ -35,4 +35,24 @@ assert_equal "libc" "$X" "SUFFIX stripping still applies after a trailing slash 
 X=$(basename file.txt "")
 assert_equal "file.txt" "$X" "an empty SUFFIX operand strips nothing"
 
+## POSIX edge cases; the operand is never modified
+X=$(basename //)
+assert_equal "/" "$X" "an operand of only separators gives a single '/'"
+
+X=$(basename "")
+assert_equal "" "$X" "an empty operand gives an empty result"
+
+X=$(basename a/b//)
+assert_equal "b" "$X" "several trailing separators are all ignored"
+
+P=/usr/lib/
+basename "$P" >/dev/null
+assert_equal "/usr/lib/" "$P" "basename does not write into its operand to strip the trailing slash"
+
+X=$(basename 'a\b')
+assert_equal 'a\b' "$X" "a backslash is an ordinary character, not a separator"
+
+X=$(basename -s .c a/b.c/)
+assert_equal "b" "$X" "a suffix is stripped after the trailing separators are"
+
 summary

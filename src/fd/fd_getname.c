@@ -39,7 +39,7 @@ fd_getname(struct fd* fd) {
     path[plen + fmt_ulong(&path[plen], fd->n)] = '\0';
 
     /* try to read the link */
-    if(!path_readlink(path, &name)) {
+    if(path_readlink(path, &name) > 0) {
       fd->name = name.s;
       fd->mode |= FD_FREENAME;
       return 0;

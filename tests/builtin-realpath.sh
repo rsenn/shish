@@ -52,6 +52,42 @@ assert_equal "." "$X" "realpath --relative-to its own resolved path yields '.'"
 realpath >/dev/null 2>&1
 assert_equal "1" "$?" "realpath requires an operand"
 
+## lexical edge cases: ".." at the root, repeated separators, empty operand
+X=$(realpath /..)
+assert_equal "/" "$X" "'..' above the root stays at the root"
+
+X=$(realpath /a/../../b)
+assert_equal "/b" "$X" "'..' that would climb above the root is dropped"
+
+X=$(realpath //tmp///)
+assert_equal "/tmp" "$X" "repeated and trailing separators collapse"
+
+X=$(realpath "")
+assert_equal "$TESTDIR" "$X" "an empty operand resolves to the current directory"
+
+X=$(realpath .)
+assert_equal "$TESTDIR" "$X" "'.' resolves to the current directory without a trailing '/.'"
+
+## physical mode resolves a symlink before a following '..'
+mkdir -p real/inner
+ln -s real/inner deep
+X=$(realpath deep/..)
+assert_equal "$TESTDIR/real" "$X" "realpath deep/.. goes to the parent of the link's target"
+
+X=$(realpath -s deep/..)
+assert_equal "$TESTDIR" "$X" "realpath -s applies '..' lexically, without looking at the link"
+
+## a relative link component followed by '..' above the start
+ln -s ../.. real/inner/up
+X=$(realpath deep/up/nosuch)
+assert_equal "$TESTDIR/nosuch" "$X" "a relative link that climbs is resolved from its own directory"
+
+## a link cycle is an error, not an endless loop
+ln -s loop1 loop2
+ln -s loop2 loop1
+realpath loop1 >/dev/null 2>&1
+assert_equal "1" "$?" "a symlink cycle makes realpath fail"
+
 cd /
 rm -rf "$TESTDIR"
 

@@ -198,7 +198,7 @@ main(int argc, char** argv) {
   /* set initial $0 */
   sh_argv0 = argv[0];
 
-  shell_init(fd_err->w, path_basename(sh_argv0));
+  shell_init(fd_err->w, path_basename(sh_argv0, NULL));
 
   /* set our basename for the \v prompt escape seq and maybe other stuff*/
   sh_name = shell_name;
