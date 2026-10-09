@@ -134,6 +134,18 @@ diagram is, not something they have to read start to end to parse.
   "used to X / now Y" history — state the current behavior and, if it's
   not obvious, the one reason it has to be that way.
 
+## Shell scripts
+
+Every script in this repo (`scripts/`, `tests/`, build helpers) is POSIX `sh`: `#!/bin/sh`, and nothing
+beyond what POSIX specifies for the shell language and the utilities it calls. Check with
+`dash -n script` and `checkbashisms script`, then run it under `dash`.
+
+- No arrays or associative arrays, `[[ ]]`, `local`, `declare`, `(( ))` / `for ((;;))`, `${v//a/b}`,
+  `$'\t'`, `<(...)`, `echo -e`, `source`, `function f`.
+- No GNU-only utility options where a POSIX form exists (`sort -V`, `sed -i`, `grep -P`, `mktemp`,
+  `readlink -f`); where a tool is unavoidable (`tar` with zstd, `curl`, `lynx`) say so in the script header.
+- Use `printf` for tabs and escapes, temp files named `$$`-suffixed, `$((...))` for arithmetic.
+
 ## Project
 
 `shish` is a small POSIX-ish shell written in C. It targets the IEEE P1003.2
