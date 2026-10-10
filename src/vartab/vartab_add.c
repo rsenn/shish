@@ -1,4 +1,3 @@
-#include "../debug.h"
 #include "../fd.h"
 #include "../var.h"
 #include "../vartab.h"
@@ -10,8 +9,6 @@ vartab_add(struct vartab* vartab, struct var* var, struct search* context) {
 
   /* its already in this table? wtf? */
   assert(var != *vartab->pos);
-
-  /*  debug_str("linking", context->name, 0);*/
 
   /* link it to the list */
   var->blink = vartab->pos;

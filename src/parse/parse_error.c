@@ -4,7 +4,6 @@
 #include "../sh.h"
 #include "../source.h"
 #include "../tree.h"
-#include "../debug.h"
 #include <stdlib.h>
 
 /* parse error message

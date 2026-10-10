@@ -17,7 +17,6 @@
 #include <unistd.h>
 #endif
 
-#include "../debug.h"
 
 #ifndef PACKAGE_NAME
 #define PACKAGE_NAME "shish"

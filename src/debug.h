@@ -87,16 +87,12 @@ void debug_subnode(const char* s, union node* node, int depth);
 void debug_list(union node* node, int depth);
 void debug_unquoted(const char* msg, const char* s, int depth);
 void debug_space(int count, int newline);
+void debug_field(const char* s, int depth);
 void debug_node(union node* node, int depth);
-void debug_redir(const char* msg, int flags, int depth);
 void debug_subst(const char* msg, int flags);
 void debug_position(const char* msg, const struct location* pos, int depth);
 void debug_location(const char* msg, const struct location* pos, int depth);
 void debug_range(const char* msg, size_t start, size_t end, int depth);
-
-size_t debug_argv(char** argv, buffer* out);
-void debug_squoted(const char*, size_t n, buffer* out);
-void debug_word(const char*, size_t n, buffer* out);
 
 #if defined(DEBUG_OUTPUT) || defined(SHPARSE2AST)
 
@@ -184,30 +180,6 @@ debug_newline(int depth) {
   } else {
     debug_c(' ');
   }
-}
-
-static inline void
-debug_field(const char* s, int depth) {
-  if(s[str_chr(", ", *s)]) {
-    if(*s == ',')
-      debug_c(',');
-
-    if(depth >= 0)
-      debug_newline(depth);
-    else
-      debug_c(' ');
-
-    if(*s == ',')
-      s++;
-
-    if(*s == ' ')
-      s++;
-  }
-
-  debug_c('"');
-  debug_s(s);
-  debug_c('"');
-  debug_s(COLOR_CYAN ": ");
 }
 
 #endif /* DEBUG_H */

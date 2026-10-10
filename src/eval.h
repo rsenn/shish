@@ -98,6 +98,9 @@ eval_depth() {
 
 /* the "set -x" line prefix: $PS4 expanded, or "+ " (one '+' per subshell level) when unset */
 void eval_print_prefix(struct eval* e, buffer* b);
+void eval_print_quoted(const char* x, size_t n, buffer* out);
+void eval_print_word(const char* s, size_t n, buffer* out);
+size_t eval_print_argv(char** argv, buffer* out);
 
 static inline struct eval*
 eval_find(int mask) {

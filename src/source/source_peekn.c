@@ -1,5 +1,4 @@
 #include "../source.h"
-#include "../debug.h"
 #include "../prompt.h"
 #include "builtin_config.h"
 

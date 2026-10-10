@@ -1,17 +1,39 @@
-#include "../trace.h"
-
-#ifdef DEBUG_OUTPUT
-
-extern const char* debug_nodes[];
-extern const unsigned debug_nodes_count;
-
-const char* const trace_eval_flags[11] = {"E_EXIT", "E_ROOT", "E_BQUOTE", "E_JCTL", "E_LIST", "E_FUNCTION", "E_LOOP", "E_PRINT", "E_DEBUG", "E_EVAL", "E_SOURCE"};
-const char* const trace_redir_flags[9] = {"R_IN", "R_OUT", "R_OPEN", "R_DUP", "R_HERE", "R_STRIP", "R_APPEND", "R_CLOBBER", "R_NOW"};
-#include "../source.h"
-#include "../tree.h"
 #include "../../lib/alloc.h"
 #include "../../lib/fmt.h"
 #include "../../lib/str.h"
+
+#include "../source.h"
+#include "../tree.h"
+#include "../trace.h"
+#include "../ast.h"
+
+#ifdef DEBUG_OUTPUT
+
+const char* const trace_eval_flags[11] = {
+    "E_EXIT",
+    "E_ROOT",
+    "E_BQUOTE",
+    "E_JCTL",
+    "E_LIST",
+    "E_FUNCTION",
+    "E_LOOP",
+    "E_PRINT",
+    "E_DEBUG",
+    "E_EVAL",
+    "E_SOURCE",
+};
+
+const char* const trace_redir_flags[9] = {
+    "R_IN",
+    "R_OUT",
+    "R_OPEN",
+    "R_DUP",
+    "R_HERE",
+    "R_STRIP",
+    "R_APPEND",
+    "R_CLOBBER",
+    "R_NOW",
+};
 
 /* "..." with \" \\ \n \t \r and \xNN escapes, so argv round-trips */
 static void
@@ -113,7 +135,7 @@ trace_loc(const char* key, const struct location* loc) {
 
 void
 trace_kind(const char* key, int node_id) {
-  trace_raw(key, node_id >= 0 && (unsigned)node_id < debug_nodes_count ? debug_nodes[node_id] : "?");
+  trace_raw(key, node_id >= 0 && (unsigned)node_id < ast_names_count ? ast_names[node_id] : "?");
 }
 
 void

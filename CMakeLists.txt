@@ -201,6 +201,7 @@ file(GLOB LIBSHELL_SOURCES src/*.h src/*/*.c)
 
 # needs third_party/, so only built when the digest builtin is on (BUILTIN_SOURCES)
 list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "builtin_digest\\.c")
+list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "src/debug[\._]")
 
 # sources named in src/builtin/builtins.map are compiled only while their builtin is on
 list(REMOVE_ITEM LIBSHELL_SOURCES ${BUILTIN_MANAGED})
@@ -211,7 +212,6 @@ if(DEBUG_OUTPUT)
   set_add(LIBSHELL_SOURCES  ${DEBUG_SOURCES})
 else()
   list(FILTER LIBSHELL_SOURCES EXCLUDE REGEX "debug_")
-  set_add(LIBSHELL_SOURCES  src/debug/debug_squoted.c src/debug/debug_argv.c )
 endif()
 
 #dump_list(LIBSHELL_SOURCES)
@@ -285,7 +285,7 @@ endif()
 option(BUILD_SHPARSE2AST "Build shformat program" OFF)
 
 if(BUILD_SHPARSE2AST)
-  file(GLOB SHPARSE2AST_SOURCES src/*.h src/debug/*.c src/sh/sh_parse2ast.c)
+  file(GLOB SHPARSE2AST_SOURCES src/*.h src/debug/*.c src/ast/*.c src/sh/sh_parse2ast.c)
 
   list(FILTER SHPARSE2AST_SOURCES EXCLUDE REGEX "dump")
   set_add(ALL_SOURCES ${SHPARSE2AST_SOURCES})
@@ -306,7 +306,7 @@ if(BUILD_SHUTIL_WASM)
     message(FATAL_ERROR "BUILD_SHUTIL_WASM requires an Emscripten toolchain")
   endif()
 
-  file(GLOB SHUTIL_SOURCES src/*.h src/debug/*.c src/sh/sh_util_wasm.c)
+  file(GLOB SHUTIL_SOURCES src/*.h src/debug/*.c src/ast/*.c src/sh/sh_util_wasm.c)
   list(FILTER SHUTIL_SOURCES EXCLUDE REGEX "dump")
   set_add(ALL_SOURCES ${SHUTIL_SOURCES})
 
@@ -373,6 +373,11 @@ if(DO_TESTS)
   add_executable(byteset_test tests/byteset_test.c)
   target_link_libraries(byteset_test PRIVATE ${LIBOWFAT_LIBRARY})
   add_test(NAME byteset_test COMMAND byteset_test)
+
+  # src/json.h unit test
+  add_executable(json_test tests/json_test.c)
+  target_link_libraries(json_test PRIVATE ${LIBOWFAT_LIBRARY})
+  add_test(NAME json_test COMMAND json_test)
 
   # lib/utf8 unit test
   add_executable(utf8_test tests/utf8_test.c)

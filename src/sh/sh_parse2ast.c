@@ -9,7 +9,7 @@
 #include "../sh.h"
 #include "../source.h"
 #include "../parse.h"
-#include "../debug.h"
+#include "../ast.h"
 #include "../../lib/path.h"
 #include "../../lib/str.h"
 #include "../../lib/uint32.h"
@@ -33,14 +33,19 @@ ast_usage(void) {
   buffer_puts(fd_err->w, "usage: ");
   buffer_puts(fd_err->w, sh_name);
   buffer_puts(fd_err->w,
-              " [-c command_string] [-P] [-o FILE] [-w NUM] [-q CHAR] [-r MODE] [script]\n"
+              " [-c command_string] [-P] [-o FILE] [-w NUM] [-r MODE] [-nm5bsx] [script]\n"
               "\n"
               "    -c command_string   parse command_string instead of a script/stdin\n"
               "    -P                  suppress position information\n"
               "    -o FILE             write JSON output to FILE instead of stdout\n"
               "    -w NUM              indent width, in spaces\n"
-              "    -q CHAR             quote character used for strings in output\n"
-              "    -r MODE             position field(s): loc, range, or both (default loc)\n");
+              "    -r MODE             position field(s): loc, range, or both (default loc)\n"
+              "    -n                  NDJSON: one single-line JSON object per top-level command\n"
+              "    -m                  minify: no whitespace at all (overrides -w)\n"
+              "    -5                  JSON5 output: same as -b -s -x\n"
+              "    -b                  keys without quotes\n"
+              "    -s                  strings in single quotes\n"
+              "    -x                  numbers in hexadecimal\n");
   buffer_flush(fd_err->w);
 }
 
@@ -65,6 +70,8 @@ int
 main(int argc, char** argv, char** envp) {
   unsigned int i;
   int c, e, v;
+  int indent = 2, loc = 1, range = 0;
+  int ndjson = 0, minify = 0, bare_keys = 0, single_quotes = 0, hex_numbers = 0;
   struct fd* fd;
   struct source src;
   char* cmds = NULL;
@@ -83,13 +90,7 @@ main(int argc, char** argv, char** envp) {
     int flags;
 
     if((flags = fdtable_check(e))) {
-#ifdef HAVE_ALLOCA
-      fd = fd_allocb();
-      fd_push(fd, e, flags);
-#else
-      fd = fd_mallocb();
-      fd_push(fd, e, flags | FD_FREE);
-#endif
+      fd = fd_push_allocb(e, flags);
       fd_setfd(fd, e);
     } else {
       if(e < fd_expected)
@@ -109,24 +110,38 @@ main(int argc, char** argv, char** envp) {
 
   shell_init(buffer_2, sh_name);
 
-  debug_buffer.fd = 1;
-  debug_nindent = 2;
-
   sh_no_position = 0;
 
   /* parse command line arguments */
-  while((c = shell_getopt(argc, argv, "c:o:q:w:Pr:")) > 0)
+  while((c = shell_getopt(argc, argv, "c:o:w:Pr:nm5bsx")) > 0)
     switch(c) {
       case 'c': cmds = shell_optarg; break;
       case 'P': sh_no_position = 1; break;
-      case 'o': debug_buffer.fd = open_trunc(shell_optarg); break;
-      case 'w': scan_int(shell_optarg, &debug_nindent); break;
-      case 'q': debug_quote = *optarg; break;
+      case 'o': {
+        /* the file replaces stdout: same push + lazy open + move as a "> FILE" redirection */
+        struct fd* o = fd_push_allocb(STDOUT_FILENO, FD_WRITE);
+
+        fd_open(o, shell_optarg, 0);
+
+        /* fdtable_open() reports the failure itself */
+        if(fdtable_open(o, FDTABLE_MOVE) == FDTABLE_ERROR)
+          return 1;
+
+        fd_setbuf(o, &o[1], FD_BUFSIZE);
+        break;
+      }
+      case 'w': scan_int(shell_optarg, &indent); break;
+      case 'n': ndjson = 1; break;
+      case 'm': minify = 1; break;
+      case '5': bare_keys = single_quotes = hex_numbers = 1; break;
+      case 'b': bare_keys = 1; break;
+      case 's': single_quotes = 1; break;
+      case 'x': hex_numbers = 1; break;
       case 'r':
         /* -r loc|range|both: which position field(s) to emit per node
          * (default: loc only). -P still overrides both to none. */
-        debug_emit_loc = str_diff(shell_optarg, "range") != 0;
-        debug_emit_range = str_diff(shell_optarg, "loc") != 0;
+        loc = str_diff(shell_optarg, "range") != 0;
+        range = str_diff(shell_optarg, "loc") != 0;
         break;
       default: ast_usage(); return 1;
     }
@@ -137,13 +152,7 @@ main(int argc, char** argv, char** envp) {
   tree_separator = separator.s;
 
   /* set up the source fd (where the shell reads from) */
-#ifdef HAVE_ALLOCA
-  fd = fd_alloc();
-  fd_push(fd, STDSRC_FILENO, FD_READ);
-#else
-  fd = fd_malloc();
-  fd_push(fd, STDSRC_FILENO, FD_READ | FD_FREE);
-#endif
+  fd = fd_push_alloc(STDSRC_FILENO, FD_READ);
 
   if(cmds)
     fd_string(fd_src, cmds, str_len(cmds));
@@ -195,8 +204,24 @@ main(int argc, char** argv, char** envp) {
     }
 
     if(script) {
-      debug_list(script, 1);
-      debug_nl_fl();
+      struct ast a;
+
+      ast_init(&a, fd_out->w, indent);
+      a.loc = loc;
+      a.range = range;
+      a.no_position = sh_no_position;
+      a.j.bare_keys = bare_keys;
+      a.j.single_quotes = single_quotes;
+      a.j.hex_numbers = hex_numbers;
+      a.j.minify = minify;
+
+      if(ndjson) {
+        ast_ndjson(&a, script);
+      } else {
+        ast_list(&a, script);
+        buffer_putc(fd_out->w, '\n');
+        buffer_flush(fd_out->w);
+      }
     }
   }
 

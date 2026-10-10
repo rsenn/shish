@@ -1,6 +1,5 @@
 #include "../fd.h"
 #include "../sh.h"
-#include "../debug.h"
 #include "../trace.h"
 #include "../../lib/buffer.h"
 #include "../fdstack.h"

@@ -1,5 +1,4 @@
 #include "../prompt.h"
-#include "../debug.h"
 
 void
 prompt_nextline(void) {

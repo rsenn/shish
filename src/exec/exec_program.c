@@ -3,10 +3,6 @@
 #include "config.h"
 #endif
 
-#ifdef HAVE_ALLOCA_H
-#include <alloca.h>
-#endif
-
 #include <errno.h>
 #include <signal.h>
 #include "../../lib/windoze.h"
@@ -19,7 +15,6 @@
 #include "../sh.h"
 #include "../tree.h"
 #include "../var.h"
-#include "../debug.h"
 #include "builtin_config.h"
 #include "../trace.h"
 #include "../../lib/sig.h"

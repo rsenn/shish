@@ -34,7 +34,7 @@ struct job {
   pid_t pgrp;
   char* command;
   int nproc;
-  int level; /* sh_subshell when created: a ( ) or $( ) does not see its parent's jobs */
+  int level;              /* sh_subshell when created: a ( ) or $( ) does not see its parent's jobs */
   unsigned bgnd : 1;      /* was this job backgrounded ("cmd &")? controls whether
                              job_wait() prints a "[N]+ Done ..." banner for it. */
   unsigned pipefail : 1;  /* set -o pipefail was on when it started: job_wait() reports
@@ -62,8 +62,8 @@ extern pid_t job_bgpid; /* "$!": pid of the most recently backgrounded command *
 extern int job_sigfd[2];
 
 void job_resume_stopped(void);
-struct job* job_first(void);   /* first job of the current subshell level */
-void job_discard(int level);  /* drop the jobs of subshells deeper than level */
+struct job* job_first(void);            /* first job of the current subshell level */
+void job_discard(int level);            /* drop the jobs of subshells deeper than level */
 int job_recall(pid_t pid, int* status); /* status of a process of an already finished job */
 
 #define job_current() (job_pointer && *job_pointer ? *job_pointer : 0)

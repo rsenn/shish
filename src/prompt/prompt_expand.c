@@ -1,4 +1,3 @@
-#include "../debug.h"
 #include "../expand.h"
 #include "../prompt.h"
 #include "../tree.h"

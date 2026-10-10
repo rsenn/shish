@@ -3,7 +3,6 @@
 #include "../tree.h"
 #include "../expand.h"
 #include "../fd.h"
-#include "../debug.h"
 #include "../../lib/str.h"
 #include "../../lib/stralloc.h"
 

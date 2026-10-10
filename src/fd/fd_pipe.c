@@ -1,7 +1,6 @@
 #include "../fd.h"
 #include "../fdtable.h"
 #include "../sh.h"
-#include "../debug.h"
 #include "../trace.h"
 #include "../../lib/windoze.h"
 

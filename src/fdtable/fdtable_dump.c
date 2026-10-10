@@ -1,6 +1,5 @@
 #ifdef DEBUG_OUTPUT
 #include "../../lib/buffer.h"
-#include "../debug.h"
 #include "../fd.h"
 #include "../fdtable.h"
 
@@ -12,9 +11,7 @@ fdtable_dump(buffer* b) {
 
   fdtable_foreach(i) {
     struct fd* fd;
-    buffer_puts(b, COLOR_DARKGRAY);
     buffer_putns(b, "-", 108);
-    buffer_puts(b, COLOR_NONE);
     buffer_putnlflush(b);
 
     for(fd = fdtable[i]; fd; fd = fd->parent) {

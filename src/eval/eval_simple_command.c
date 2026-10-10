@@ -1,10 +1,12 @@
+#include "../../lib/windoze.h"
+#include "../../lib/str.h"
+#include "../../lib/byte.h"
 #include "../../lib/alloc.h"
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#ifdef HAVE_ALLOCA_H
-#include <alloca.h>
-#endif
+
 #include "../fdtable.h"
 #include "../trace.h"
 #include "../sh.h"
@@ -21,10 +23,7 @@
 #include "../tree.h"
 #include "../vartab.h"
 #include "../job.h"
-#include "../debug.h"
-#include "../../lib/windoze.h"
-#include "../../lib/str.h"
-#include "../../lib/byte.h"
+
 #if !WINDOWS_NATIVE
 #include <sys/wait.h>
 #include <unistd.h>
@@ -130,13 +129,8 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
      that dup must see this null default already in place, not
      whatever fd 0 happened to mean before this command ran. */
   if(ncmd->bgnd && !sh->opts.monitor && cmd.id != H_SBUILTIN && cmd.id != H_EXEC) {
-    struct fd* nullfd;
-#ifdef HAVE_ALLOCA
-    nullfd = fd_alloc();
-#else
-    nullfd = fd_malloc();
-#endif
-    nullfd = fd_push(nullfd, STDIN_FILENO, FD_READ);
+    struct fd* nullfd = fd_push_alloc(STDIN_FILENO, FD_READ);
+
     fd_open(nullfd, "/dev/null", 0);
 
     if(fd_needbuf(nullfd))
@@ -147,13 +141,8 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
     struct fd* fd = NULL;
 
     /* if its the exec special builtin the new fd needs to be persistent */
-    if(cmd.id != H_EXEC) {
-#ifdef HAVE_ALLOCA
+    if(cmd.id != H_EXEC)
       fd = fd_alloc();
-#else
-      fd = fd_malloc();
-#endif
-    }
 
     /* return if a redirection failed. Force immediate resolution
        (R_NOW) rather than the usual lazy one when there's no command
@@ -180,7 +169,6 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
       else
         fd_allocbuf(r->nredir.fd, FD_BUFSIZE);
     }
-
   }
 
   /* POSIX 2.9.1: the redirections are performed before the assignments are expanded
@@ -234,10 +222,10 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
 
         if(offs < sa.len)
           offs++;
-        
+
         eval_print_prefix(e, fd_err->w);
-        buffer_put(fd_err->w, sa.s, offs);        
-        debug_word(&sa.s[offs], sa.len - offs, fd_err->w);
+        buffer_put(fd_err->w, sa.s, offs);
+        eval_print_word(&sa.s[offs], sa.len - offs, fd_err->w);
         buffer_putnlflush(fd_err->w);
       }
 
@@ -257,8 +245,7 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
             trace_int("export", cmd.ptr != 0),
             trace_int("temp", temp_scope));
 
-      if(!var_setsa(&sa,
-                    (cmd.ptr ? V_EXPORT : V_DEFAULT) | (temp_scope ? V_LOCAL : 0))) {
+      if(!var_setsa(&sa, (cmd.ptr ? V_EXPORT : V_DEFAULT) | (temp_scope ? V_LOCAL : 0))) {
         status = 1;
         assign_error = 1;
         break;
@@ -316,16 +303,13 @@ eval_simple_command(struct eval* e, struct ncmd* ncmd) {
   if(e->flags & E_PRINT) {
     eval_print_prefix(e, fd_err->w);
 
-    if(debug_argv(argv, fd_err->w))
+    if(eval_print_argv(argv, fd_err->w))
       buffer_putnlflush(fd_err->w);
   }
 
   /* execute the command, this may or may not return, depending on E_EXIT */
   exec_redir_error = 0;
-  status = exec_command(&cmd,
-                        argc,
-                        argv,
-                        ((e->flags & E_EXIT) ? X_EXEC : 0) | (ncmd->bgnd ? X_NOWAIT : 0));
+  status = exec_command(&cmd, argc, argv, ((e->flags & E_EXIT) ? X_EXEC : 0) | (ncmd->bgnd ? X_NOWAIT : 0));
 
   redir_error |= exec_redir_error;
 
@@ -370,8 +354,7 @@ end:
      latter is reset for every nested source (a `.`-sourced file), so
      checking it here would kill an interactive shell the moment one
      of these fails one level into any sourced file. */
-  if((assign_error || (redir_error && !via_command && (cmd.id == H_SBUILTIN || cmd.id == H_EXEC))) &&
-     !sh_interactive) {
+  if((assign_error || (redir_error && !via_command && (cmd.id == H_SBUILTIN || cmd.id == H_EXEC))) && !sh_interactive) {
     sh_exit(status);
   }
 

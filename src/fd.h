@@ -1,8 +1,21 @@
 #ifndef FD_H
 #define FD_H
 
-/*#define __USE_LARGEFILE64*/
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include "../lib/buffer.h"
+#include "../lib/shell.h"
+#include "../lib/stralloc.h"
+#include "../lib/windoze.h"
+#include "../lib/alloc.h"
+
 #include <fcntl.h>
+
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
 
 #ifdef __TINYC__
 #if WINDOWS_NATIVE
@@ -14,17 +27,7 @@
 #include <sys/types.h>
 #undef NO_OLDNAMES
 
-#include "../lib/buffer.h"
-#include "../lib/shell.h"
-#include "../lib/stralloc.h"
-#include "../lib/windoze.h"
 #include "filter.h"
-#include "../lib/alloc.h"
-
-#ifdef HAVE_ALLOCA_H
-#include <alloca.h>
-#endif
-
 
 #ifdef FD_SETSIZE
 #define FD_MAX FD_SETSIZE
@@ -80,6 +83,7 @@ struct fd {
 };
 
 #define fd_ok(e) ((e) >= 0 && (e) < FD_MAX)
+#define fd_new(fd, mode) fdtable_newfd((fd), (sh->fdstack), (mode))
 
 /* fd mode */
 enum fd_mode {
@@ -132,9 +136,6 @@ enum {
 #define fd_foreach(i) \
   for(i = fd_lo; i < fd_hi; i++) \
     if(fd_list[i])
-#define fd_foreach_p(i, p) \
-  for(i = fd_lo; i < fd_hi; i++) \
-    if((p = fd_list[i]))
 
 /* snapshot of the real-kernel-fd bookkeeping globals above (fd_list[]
  * and friends), for scopes that share a process (no fork()) but still
@@ -172,7 +173,6 @@ int fd_pipe(struct fd*);
 int fd_setfd(struct fd*, int e);
 int fd_stat(struct fd*);
 int fd_tempfile(struct fd*);
-struct fd* fd_new(int fd, int mode);
 struct fd* fd_push(struct fd*, int n, int mode);
 struct fd* fd_reinit(struct fd*, int mode);
 void fd_allocbuf(struct fd*, size_t n);
@@ -199,16 +199,34 @@ void fd_subst(struct fd*, stralloc* sa);
 #define fd_alloca() ((struct fd*)alloca(FD_SIZE))
 #define fd_allocab() ((struct fd*)alloca(FD_SIZE + FD_BUFSIZE))
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #ifdef HAVE_ALLOCA
 #define fd_alloc fd_alloca
 #define fd_allocb fd_allocab
 #else
 #define fd_alloc fd_malloc
 #define fd_allocb fd_mallocb
+#endif
+
+/* allocate an fd (fd_push_allocb: with a FD_BUFSIZE buffer behind it) and push it as fd n.
+ * Macros, not functions: alloca() memory must live in the caller's frame. On the heap the
+ * fd frees itself (FD_FREE) when popped.
+ *
+ *   struct fd* o = fd_push_allocb(STDOUT_FILENO, FD_WRITE);
+ * ----------------------------------------------------------------------- */
+#ifdef HAVE_ALLOCA
+#define fd_push_alloc(n, mode) fd_push(fd_alloca(), (n), (mode))
+#define fd_push_allocb(n, mode) fd_push(fd_allocab(), (n), (mode))
+#else
+#define fd_push_alloc(n, mode) fd_push(fd_malloc(), (n), (mode) | FD_FREE)
+#define fd_push_allocb(n, mode) fd_push(fd_mallocb(), (n), (mode) | FD_FREE)
+#endif
+
+/* an fd for redir_eval() to push: alloca'd, or NULL when there is no alloca
+ * (redir_eval() then mallocs a persistent one itself) */
+#ifdef HAVE_ALLOCA
+#define fd_alloc_or_null() fd_alloc()
+#else
+#define fd_alloc_or_null() ((struct fd*)NULL)
 #endif
 
 #endif /* FD_H */

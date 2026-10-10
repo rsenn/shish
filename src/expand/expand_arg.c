@@ -1,7 +1,6 @@
 #include "../../lib/uint64.h"
 #include "../expand.h"
 #include "../tree.h"
-#include "../debug.h"
 #include "../../lib/str.h"
 #include <stdlib.h>
 #include <assert.h>
@@ -26,7 +25,8 @@ expand_globres_ok(union node* node) {
       if(sub->nargstr.stra.len == 0)
         continue;
 
-      if(str_chr(sub->nargstr.stra.s, '*') < sub->nargstr.stra.len || str_chr(sub->nargstr.stra.s, '?') < sub->nargstr.stra.len ||
+      if(str_chr(sub->nargstr.stra.s, '*') < sub->nargstr.stra.len ||
+         str_chr(sub->nargstr.stra.s, '?') < sub->nargstr.stra.len ||
          str_chr(sub->nargstr.stra.s, '[') < sub->nargstr.stra.len)
         return 0;
 
@@ -50,16 +50,8 @@ expand_arg(union node* node, wordlist* wl, int flags) {
   /* the failure of one of this word's own parts ends the word; an earlier word's stays */
   expand_error = 0;
 
-  /* if(node) {
-     debug_s("arg ");
-     debug_node(node, 1);
-     debug_newline(0);
-     debug_fl();
-   }*/
-
   /* loop through all parts of the word */
-  for(subarg = (node && node->id == N_ARG) ? node->narg.list : node; subarg;
-      subarg = subarg->next) {
+  for(subarg = (node && node->id == N_ARG) ? node->narg.list : node; subarg; subarg = subarg->next) {
     int lflags = flags; /* local flags */
 
     if(subarg->nargstr.flag & S_NOSPLIT)
@@ -72,7 +64,8 @@ expand_arg(union node* node, wordlist* wl, int flags) {
       lflags |= X_GLOB;
 
     /* the result of an unquoted $x, $(cmd) or $((n)) is subject to pathname expansion */
-    if(globres && !(lflags & X_QUOTED) && (subarg->id == N_ARGPARAM || subarg->id == N_ARGCMD || subarg->id == N_ARGARITH))
+    if(globres && !(lflags & X_QUOTED) &&
+       (subarg->id == N_ARGPARAM || subarg->id == N_ARGCMD || subarg->id == N_ARGARITH))
       lflags |= X_GLOBRES;
 
     /* expand argument parts */
@@ -113,12 +106,13 @@ expand_arg(union node* node, wordlist* wl, int flags) {
                      (subarg->nargstr.stra.len && !(subarg->nargstr.flag & S_HEREDOC)) ? (lflags | X_LITERAL) : lflags);
         break;
       }
+
+      default: break;
     }
 
     /* a failed expansion ends the word */
     if(expand_error)
       break;
-
   }
 
   expand_error |= prev;

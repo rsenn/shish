@@ -1,7 +1,6 @@
 #include "../fd.h"
 #include "../fdstack.h"
 #include "../fdtable.h"
-#include "../debug.h"
 #include "../trace.h"
 #include <unistd.h>
 #include <fcntl.h>

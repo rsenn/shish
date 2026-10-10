@@ -1,4 +1,3 @@
-#include "../debug.h"
 #include "../trace.h"
 #include "../eval.h"
 #include "../fd.h"

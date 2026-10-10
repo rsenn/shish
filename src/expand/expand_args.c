@@ -1,6 +1,5 @@
 #include "../expand.h"
 #include "../tree.h"
-#include "../debug.h"
 #include "../fd.h"
 #include "../parse.h"
 #include "../sh.h"

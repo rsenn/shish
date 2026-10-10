@@ -12,7 +12,7 @@
 #include "../sh.h"
 #include "../source.h"
 #include "../parse.h"
-#include "../debug.h"
+#include "../ast.h"
 #include "../tree.h"
 #include "../../lib/buffer.h"
 #include "../../lib/byte.h"
@@ -178,10 +178,10 @@ shutil_format(const char* src) {
   return result;
 }
 
-/* parses shell source text into the debug/JSON AST (see debug_node.c),
- * returning the JSON text, or 0 on a genuine syntax error. debug_list()
- * writes through the fd-bound debug_buffer, so it's pointed at a MEMFS
- * temp file for the duration of the call and read back afterwards.
+/* parses shell source text into the debug/JSON AST (see ast_node.c),
+ * returning the JSON text, or 0 on a genuine syntax error. The AST is
+ * written to fd_out, which is pushed onto a MEMFS temp file for the
+ * duration of the call and read back afterwards.
  *
  *   loc_mode: 0 = "loc" (file:line:col string) only [default]
  *             1 = "range" ([start, end) byte offsets) only
@@ -196,13 +196,13 @@ shutil_parse_ast(const char* src, int loc_mode) {
   enum tok_flag tok;
   size_t len = str_len(src);
   union node *script = 0, **nptr = &script;
+  struct fd out;
+  char obuf[FD_BUFSIZE];
+  struct ast a;
   int out_fd;
   char* result;
 
   wasm_init();
-
-  debug_emit_loc = loc_mode != 1;
-  debug_emit_range = loc_mode != 0;
 
   fd_push(&fd, STDSRC_FILENO, FD_READ);
   source_push(&srcbuf);
@@ -235,17 +235,28 @@ shutil_parse_ast(const char* src, int loc_mode) {
       parse_error(&p, 0);
   }
 
-  unlink("/tmp/.shutil-ast.json");
-  out_fd = open_trunc("/tmp/.shutil-ast.json");
-  debug_buffer.fd = out_fd;
+  fd_push(&out, STDOUT_FILENO, FD_WRITE);
+  fd_open(&out, "/tmp/.shutil-ast.json", 0);
 
-  if(script) {
-    debug_list(script, 1);
-    debug_nl_fl();
+  if(fdtable_open(&out, FDTABLE_MOVE) == FDTABLE_ERROR) {
+    fd_pop(&out);
+    source_popfd(&fd);
+    return 0;
   }
 
-  buffer_flush(&debug_buffer);
-  close(out_fd);
+  fd_setbuf(&out, obuf, sizeof(obuf));
+
+  if(script) {
+    ast_init(&a, fd_out->w, 2);
+    a.loc = loc_mode != 1;
+    a.range = loc_mode != 0;
+    a.no_position = sh_no_position;
+    ast_list(&a, script);
+    buffer_putc(fd_out->w, '\n');
+  }
+
+  buffer_flush(fd_out->w);
+  fd_pop(&out);
 
   out_fd = open_read("/tmp/.shutil-ast.json");
   result = read_all(out_fd);

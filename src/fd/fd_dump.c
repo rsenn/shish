@@ -1,4 +1,3 @@
-#include "../debug.h"
 
 #ifdef DEBUG_OUTPUT
 #include "../../lib/buffer.h"
@@ -8,6 +7,8 @@
 #include "../../lib/fmt.h"
 #include "../../lib/str.h"
 
+int dump_flags(buffer*, int, const char* const[], int);
+
 /* dump out debugging info about an (fd)
  * ----------------------------------------------------------------------- */
 void
@@ -16,9 +17,7 @@ fd_dump(struct fd* d, buffer* b) {
     fd_getname(d);
 
   /* file descriptor */
-  buffer_puts(b, COLOR_MAGENTA);
   buffer_putlong0(b, d->n, 4);
-  buffer_puts(b, COLOR_NONE " ");
 
   /* name */
   buffer_putspad(b, d->name ? d->name : "NULL", 18);
@@ -33,10 +32,9 @@ fd_dump(struct fd* d, buffer* b) {
   dump_flags(b,
              d->mode,
              (const char* const[]){
-                 "READ",   "WRITE", "APPEND",   "EXCL",    "TRUNC", 0,        0,        0,
-                 "FILE",   "DIR",   "LINK",     "CHAR",    "BLOCK", "SOCKET", "PIPE",   "STRALLOC",
-                 "STRING", "DUP",   "TERM",     "NULL",    0,       0,        0,        0,
-                 "FLUSH",  "CLOSE", "FREENAME", "DUPNAME", "FREE",  0,        "TMPBUF", "OPEN",
+                 "READ", "WRITE", "APPEND", "EXCL",  "TRUNC",    0,         0,      0,      "FILE",   "DIR",  "LINK",
+                 "CHAR", "BLOCK", "SOCKET", "PIPE",  "STRALLOC", "STRING",  "DUP",  "TERM", "NULL",   0,      0,
+                 0,      0,       "FLUSH",  "CLOSE", "FREENAME", "DUPNAME", "FREE", 0,      "TMPBUF", "OPEN",
              },
              26);
 

@@ -6,7 +6,6 @@
 #include "../tree.h"
 #include "../source.h"
 #include "../sh.h"
-#include "../debug.h"
 #include "../expand.h"
 #include "../../lib/stralloc.h"
 #include "builtin_config.h"

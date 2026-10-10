@@ -55,10 +55,14 @@ sh_parse2ast.o: $(srcdir)/sh/sh_parse2ast.c
 	@$(ECHO_CC)
 	@$(COMPILE) -MMD -c -o $@ $<
 
-sh_parse2ast_debug_argv.o sh_parse2ast_debug_begin.o sh_parse2ast_debug_char.o sh_parse2ast_debug_end.o sh_parse2ast_debug_list.o sh_parse2ast_debug_node.o sh_parse2ast_debug_position.o sh_parse2ast_debug_ptr.o sh_parse2ast_debug_redir.o sh_parse2ast_debug_space.o sh_parse2ast_debug_squoted.o sh_parse2ast_debug_stralloc.o sh_parse2ast_debug_str.o sh_parse2ast_debug_sublist.o sh_parse2ast_debug_subnode.o sh_parse2ast_debug_subst.o sh_parse2ast_debug_ulong.o sh_parse2ast_debug_unquoted.o sh_parse2ast_debug_xlong.o: DEFS += -DSHPARSE2AST=1
-sh_parse2ast_debug_argv.o sh_parse2ast_debug_begin.o sh_parse2ast_debug_char.o sh_parse2ast_debug_end.o sh_parse2ast_debug_list.o sh_parse2ast_debug_node.o sh_parse2ast_debug_position.o sh_parse2ast_debug_ptr.o sh_parse2ast_debug_redir.o sh_parse2ast_debug_space.o sh_parse2ast_debug_squoted.o sh_parse2ast_debug_stralloc.o sh_parse2ast_debug_str.o sh_parse2ast_debug_sublist.o sh_parse2ast_debug_subnode.o sh_parse2ast_debug_subst.o sh_parse2ast_debug_ulong.o sh_parse2ast_debug_unquoted.o sh_parse2ast_debug_xlong.o: sh_parse2ast_%.o: $(srcdir)/debug/%.c
+sh_parse2ast_debug_begin.o sh_parse2ast_debug_char.o sh_parse2ast_debug_end.o sh_parse2ast_debug_list.o sh_parse2ast_debug_node.o sh_parse2ast_debug_position.o sh_parse2ast_debug_ptr.o sh_parse2ast_debug_redir.o sh_parse2ast_debug_space.o sh_parse2ast_debug_stralloc.o sh_parse2ast_debug_str.o sh_parse2ast_debug_sublist.o sh_parse2ast_debug_subnode.o sh_parse2ast_debug_subst.o sh_parse2ast_debug_ulong.o sh_parse2ast_debug_unquoted.o sh_parse2ast_debug_xlong.o: DEFS += -DSHPARSE2AST=1
+sh_parse2ast_debug_begin.o sh_parse2ast_debug_char.o sh_parse2ast_debug_end.o sh_parse2ast_debug_list.o sh_parse2ast_debug_node.o sh_parse2ast_debug_position.o sh_parse2ast_debug_ptr.o sh_parse2ast_debug_redir.o sh_parse2ast_debug_space.o sh_parse2ast_debug_stralloc.o sh_parse2ast_debug_str.o sh_parse2ast_debug_sublist.o sh_parse2ast_debug_subnode.o sh_parse2ast_debug_subst.o sh_parse2ast_debug_ulong.o sh_parse2ast_debug_unquoted.o sh_parse2ast_debug_xlong.o: sh_parse2ast_%.o: $(srcdir)/debug/%.c
 	@$(ECHO_CC)
 	@$(COMPILE) -MMD -c -o $@ $<
+
+sh_parse2ast_ast_init.o sh_parse2ast_ast_pos.o sh_parse2ast_ast_node.o sh_parse2ast_ast_list.o sh_parse2ast_ast_tree.o sh_parse2ast_ast_ndjson.o sh_parse2ast_ast_names.o: sh_parse2ast_%.o: $(srcdir)/ast/%.c
+	@$(ECHO_CC)
+	@$(COMPILE) -DSHPARSE2AST=1 -MMD -c -o $@ $<
 
 sh_fmt.o: $(srcdir)/sh/sh_fmt.c
 	@$(ECHO_CC)
@@ -69,7 +73,7 @@ shish$(EXEEXT): sh_main.o
 	$(LINK) -o $@ $< $(PREADD) $(LDADD) $(LIB) $(POSTADD) $(LIBS)
 
 shparse2ast$(EXEEXT):
-shparse2ast$(EXEEXT): sh_parse2ast.o sh_parse2ast_debug_argv.o sh_parse2ast_debug_begin.o sh_parse2ast_debug_char.o sh_parse2ast_debug_end.o sh_parse2ast_debug_list.o sh_parse2ast_debug_node.o sh_parse2ast_debug_position.o sh_parse2ast_debug_ptr.o sh_parse2ast_debug_redir.o sh_parse2ast_debug_space.o sh_parse2ast_debug_squoted.o sh_parse2ast_debug_stralloc.o sh_parse2ast_debug_str.o sh_parse2ast_debug_sublist.o sh_parse2ast_debug_subnode.o sh_parse2ast_debug_subst.o sh_parse2ast_debug_ulong.o sh_parse2ast_debug_unquoted.o sh_parse2ast_debug_xlong.o
+shparse2ast$(EXEEXT): sh_parse2ast.o sh_parse2ast_ast_init.o sh_parse2ast_ast_pos.o sh_parse2ast_ast_node.o sh_parse2ast_ast_list.o sh_parse2ast_ast_tree.o sh_parse2ast_ast_ndjson.o sh_parse2ast_ast_names.o sh_parse2ast_debug_begin.o sh_parse2ast_debug_char.o sh_parse2ast_debug_end.o sh_parse2ast_debug_list.o sh_parse2ast_debug_node.o sh_parse2ast_debug_position.o sh_parse2ast_debug_ptr.o sh_parse2ast_debug_redir.o sh_parse2ast_debug_space.o sh_parse2ast_debug_stralloc.o sh_parse2ast_debug_str.o sh_parse2ast_debug_sublist.o sh_parse2ast_debug_subnode.o sh_parse2ast_debug_subst.o sh_parse2ast_debug_ulong.o sh_parse2ast_debug_unquoted.o sh_parse2ast_debug_xlong.o
 	$(LINK) -o $@ $^ $(LDADD) $(LIB) $(LIBS)
 
 shformat$(EXEEXT):

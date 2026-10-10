@@ -3,7 +3,6 @@
 #include "../tree.h"
 #include "../fd.h"
 #include "../sh.h"
-#include "../debug.h"
 #include "../source.h"
 #include <assert.h>
 

@@ -1,6 +1,5 @@
 #include "../expand.h"
 #include "../tree.h"
-#include "../debug.h"
 
 /* expand an assignment list: one "name=value" field per assignment, never split
  * returns the number of assignments

@@ -1,7 +1,6 @@
 #include "../parse.h"
 #include "../trace.h"
 #include "../tree.h"
-#include "../debug.h"
 #include "../fd.h"
 
 /* 3.9.4.1 parse a grouping compound

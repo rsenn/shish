@@ -1,12 +1,11 @@
 #include "../parse.h"
 #include "../source.h"
 #include "../sh.h"
-#include "../debug.h"
 #include "../../lib/fmt.h"
 
 void
 parse_dump(struct parser* p, buffer* b) {
-  buffer_puts(b, COLOR_YELLOW "parse_dump" COLOR_NONE " ");
+  buffer_puts(b, "parse_dump ");
 
   if(p->flags) {
     char buf[8];

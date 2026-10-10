@@ -10,7 +10,6 @@
 #include "../sh.h"
 #include "../source.h"
 #include "../parse.h"
-#include "../debug.h"
 #include "../../lib/path.h"
 #include "../../lib/str.h"
 #include "../../lib/uint32.h"
@@ -81,13 +80,7 @@ main(int argc, char** argv, char** envp) {
     int flags;
 
     if((flags = fdtable_check(e))) {
-#ifdef HAVE_ALLOCA
-      fd = fd_allocb();
-      fd_push(fd, e, flags);
-#else
-      fd = fd_mallocb();
-      fd_push(fd, e, flags | FD_FREE);
-#endif
+      fd = fd_push_allocb(e, flags);
       fd_setfd(fd, e);
     } else {
       if(e < fd_expected)
@@ -125,13 +118,7 @@ main(int argc, char** argv, char** envp) {
   tree_separator = separator.s;
 
   /* set up the source fd (where the shell reads from) */
-#ifdef HAVE_ALLOCA
-  fd = fd_alloc();
-  fd_push(fd, STDSRC_FILENO, FD_READ);
-#else
-  fd = fd_malloc();
-  fd_push(fd, STDSRC_FILENO, FD_READ | FD_FREE);
-#endif
+  fd = fd_push_alloc(STDSRC_FILENO, FD_READ);
 
   if(cmds)
     fd_string(fd_src, cmds, str_len(cmds));

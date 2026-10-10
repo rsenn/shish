@@ -1,7 +1,6 @@
 #include "../fd.h"
 #include "../fdstack.h"
 #include "../fdtable.h"
-#include "../debug.h"
 #include "../trace.h"
 
 /* close fd, unlink from the stack and free its ressources

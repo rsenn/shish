@@ -1,5 +1,4 @@
 #include "../term.h"
-#include "../debug.h"
 
 void
 term_newline(void) {

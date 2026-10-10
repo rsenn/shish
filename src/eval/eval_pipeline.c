@@ -17,10 +17,12 @@
 
 #include "../builtin.h"
 #include "../eval.h"
+#include "../exec.h"
 #include "../trace.h"
 #include "../expand.h"
 #include "../fdstack.h"
 #include "../fdtable.h"
+#include "../vartab.h"
 
 #include "builtin_config.h"
 
@@ -333,10 +335,7 @@ pipeline_filter_argv_free(char** argv) {
  * Returns ncmd-1 and fills *b_out, *argv_out, *argc_out (arrays the caller
  * owns, parallel to npipe->cmds); returns 0 with everything freed on failure. */
 static int
-pipeline_filter_prepare_chain(struct npipe* npipe,
-                              struct builtin_cmd*** b_out,
-                              char**** argv_out,
-                              int** argc_out) {
+pipeline_filter_prepare_chain(struct npipe* npipe, struct builtin_cmd*** b_out, char**** argv_out, int** argc_out) {
   int n = (int)npipe->ncmd - 1;
   struct builtin_cmd** b;
   char*** argv;
@@ -669,14 +668,9 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
       prevfd = pump_fd;
 
     if(prevfd >= 0 || (is_last && lastpipe && chain_committed > 0)) {
+      
+      in = fd_push_alloc(STDIN_FILENO, FD_READ | (prevfd >= 0 ? FD_PIPE : 0));
 
-#ifdef HAVE_ALLOCA
-      in = fd_alloc();
-      fd_push(in, STDIN_FILENO, FD_READ | (prevfd >= 0 ? FD_PIPE : 0));
-#else
-      in = fd_malloc();
-      fd_push(in, STDIN_FILENO, FD_READ | (prevfd >= 0 ? FD_PIPE : 0) | FD_FREE);
-#endif
       if(prevfd >= 0) {
         fd_setfd(in, prevfd);
 
@@ -701,13 +695,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
        through a real pipe either. */
     if(node->next && !chained /* || (fd_out->mode & FD_SUBST) == FD_SUBST */) {
 
-#ifdef HAVE_ALLOCA
-      out = fd_alloc();
-      fd_push(out, STDOUT_FILENO, FD_WRITE | FD_PIPE);
-#else
-      in = fd_malloc();
-      fd_push(out, STDOUT_FILENO, FD_WRITE | FD_PIPE | FD_FREE);
-#endif
+      out = fd_push_alloc(STDOUT_FILENO, FD_WRITE | FD_PIPE);
 
       if((prevfd = fd_pipe(out)) == -1) {
         /* prevfd is already -1 here; close(-1) is a no-op that only

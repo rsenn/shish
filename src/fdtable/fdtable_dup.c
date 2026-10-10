@@ -2,7 +2,6 @@
 #include "../fdstack.h"
 #include "../fdtable.h"
 #include "../trace.h"
-#include "../debug.h"
 #include "../../lib/windoze.h"
 #if WINDOWS_NATIVE
 #include <io.h>

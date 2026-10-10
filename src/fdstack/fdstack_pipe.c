@@ -3,7 +3,6 @@
 #include "../fdstack.h"
 #include "../fdtable.h"
 #include "../trace.h"
-#include "../debug.h"
 
 /* establishs pipes across parent/child for stralloc fds
  * ----------------------------------------------------------------------- */

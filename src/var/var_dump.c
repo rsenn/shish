@@ -2,8 +2,9 @@
 #include "../fdtable.h"
 #include "../../lib/fmt.h"
 #include "../var.h"
-#include "../debug.h"
 #include "../term.h"
+
+int dump_flags(buffer*, int, const char* const[], int);
 
 /* dump a variable entry
  * ----------------------------------------------------------------------- */
@@ -24,7 +25,7 @@ var_dump(struct var* var) {
 
   /* variable value */
   n = var_vlen(var->sa.s);
-  buffer_puts(fd_out->w, CURSOR_HORIZONTAL_ABSOLUTE(19));
+  buffer_putnspace(fd_out->w, 3);
 
   if(var->offset == var->len) {
     buffer_putc(fd_out->w, '-');

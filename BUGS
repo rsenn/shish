@@ -1,3 +1,14 @@
+- fmt-location-overflows-its-buffer: `fmt_location()` copies the whole source file name
+  into the caller's buffer, but `debug_location()`, `trace_loc()` and `location2str()` pass
+  a `FMT_LOC` buffer (two numbers and a colon), so a long file name smashes the stack.
+
+  **Repro:**
+  ```sh
+  d=/tmp/a-rather-long-directory-name-0123456789; mkdir -p $d; cp tests/if.sh $d/script.sh
+  build/x86_64-linux-gnu/shparse2ast -w 2 $d/script.sh   # a function definition or `for` is enough
+  # *** stack smashing detected ***
+  ```
+
 - fixed-sh-fails-under-non-mmap-build: `tests/fixed.sh` through a build without
   `HAVE_MMAP` stops early with a parse error and prints no summary: the script
   is then read through a real fd, and an earlier test in the file disturbs it

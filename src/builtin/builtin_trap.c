@@ -5,7 +5,6 @@
 #include "../../lib/windoze.h"
 #include "../trace.h"
 #include "../builtin.h"
-#include "../debug.h"
 #include "../tree.h"
 #include "../parse.h"
 #include "../source.h"
@@ -17,6 +16,7 @@
 #include "../job.h"
 #include "../../lib/sig.h"
 #include "../../lib/scan.h"
+#include "../../lib/str.h"
 #include <assert.h>
 #include <signal.h>
 #include <unistd.h>
@@ -395,7 +395,7 @@ trap_exit(int exitcode) {
     struct env sh;
 
     trap_exit_status = exitcode;
-    sh_push(&sh); /* shares the positional parameters of the shell that exits */
+    sh_push(&sh);           /* shares the positional parameters of the shell that exits */
     sh.exitcode = exitcode; /* a bare "exit" in the trap keeps the status */
     trap_handler(TRAP_EXIT);
     sh_pop(&sh);
@@ -552,7 +552,8 @@ trap_install(int sig, union node* tree) {
   tr->sh = sh;
   traps = tr;
 
-  TRACE(TRACE_SIG, "trap.install", trace_int("sig", sig), trace_str("name", trap_name(sig)), trace_int("ignore", !tree));
+  TRACE(
+      TRACE_SIG, "trap.install", trace_int("sig", sig), trace_str("name", trap_name(sig)), trace_int("ignore", !tree));
 
   if((char)sig > 0) {
 

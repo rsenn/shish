@@ -1,6 +1,5 @@
 #include "../fdstack.h"
 #include "../trace.h"
-#include "../debug.h"
 
 /* links an fd to the specfied stack level
  * ----------------------------------------------------------------------- */

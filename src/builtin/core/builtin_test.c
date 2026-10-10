@@ -1,6 +1,5 @@
 #include "builtin_config.h"
 #include "../../builtin.h"
-#include "../../debug.h"
 #include "../../fd.h"
 #include "../../fdtable.h"
 #include "../../exec.h"

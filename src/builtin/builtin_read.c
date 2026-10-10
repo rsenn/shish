@@ -7,7 +7,6 @@
 #include "../fdtable.h"
 #include "../expand.h"
 #include "../var.h"
-#include "../debug.h"
 #include "../term.h"
 #include "../../lib/byte.h"
 #include "../../lib/scan.h"

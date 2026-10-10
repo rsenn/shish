@@ -1,7 +1,6 @@
 #include "../fdtable.h"
 #include "../var.h"
 #include "../vartab.h"
-#include "../debug.h"
 #include "../../lib/str.h"
 
 static int
@@ -24,10 +23,7 @@ vartab_dump(struct vartab* vartab, int argc, char* argv[]) {
   struct var* var;
 
   buffer_puts(fd_out->w,
-              /* "ADDRESS" CURSOR_HORIZONTAL_ABSOLUTE(19) */
-              "NAME              VALUE" CURSOR_HORIZONTAL_ABSOLUTE(
-                  34) "NLEN OFFS VLEN LEV BUCK     LEXHASH          "
-                      "RNDHASH" CURSOR_HORIZONTAL_ABSOLUTE(92) "FLAGS\n");
+              "NAME              VALUE           NLEN OFFS VLEN LEV BUCK     LEXHASH          RNDHASH      FLAGS\n");
 
   if(vartab) {
     for(; vartab; vartab = vartab->parent) {

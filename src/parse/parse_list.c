@@ -1,7 +1,6 @@
 #include "../parse.h"
 #include "../trace.h"
 #include "../tree.h"
-#include "../debug.h"
 
 /* 3.9.3 - Lists
  * ----------------------------------------------------------------------- */

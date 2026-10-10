@@ -2,7 +2,6 @@
 #include "../trace.h"
 #include "../../lib/scan.h"
 #include "../tree.h"
-#include "../debug.h"
 #include "../../lib/uint64.h"
 #include <assert.h>
 

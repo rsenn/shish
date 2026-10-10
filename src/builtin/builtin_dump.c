@@ -1,17 +1,42 @@
+#include "../../lib/shell.h"
+#include "../../lib/scan.h"
+#include "../../lib/str.h"
+
 #include "builtin_config.h"
 
 #if BUILTIN_DUMP
 
-#include "../debug.h"
 #include "../builtin.h"
 #include "../fdstack.h"
 #include "../fdtable.h"
 #include "../fd.h"
 #include "../tree.h"
-#include "../../lib/shell.h"
-#include "../../lib/scan.h"
 #include "../vartab.h"
 #include "../job.h"
+
+int
+dump_flags(buffer* b, int bits, const char* const names[], int pad) {
+  size_t i, n = 0;
+
+  for(i = 0; i < sizeof(bits) * 8; i++) {
+    if(bits & (1 << i)) {
+      size_t len = str_len(names[i]);
+
+      if(n) {
+        n++;
+        buffer_putc(b, '|');
+      }
+
+      buffer_put(b, names[i], len);
+      n += len;
+    }
+  }
+
+  if(n < (size_t)pad)
+    buffer_putnspace(b, pad - n);
+
+  return n;
+}
 
 enum { VARTAB_ROOT, VARTAB_LOCAL, FDTABLE, FDSTACK, FDLIST, FUNCTIONS, JOBS };
 extern union node* functions;

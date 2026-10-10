@@ -8,9 +8,6 @@
 #include "../parse.h"
 #include "../redir.h"
 #include "../tree.h"
-#ifdef HAVE_ALLOCA_H
-#include <alloca.h>
-#endif
 
 /* evaluate a compound or simple command
  *
@@ -37,10 +34,7 @@ eval_command(struct eval* e, union node* node, int tempflags) {
     stralloc_init(&heredoc);
 
     for(r = redir; r; r = r->next) {
-      struct fd* d = 0;
-#ifdef HAVE_ALLOCA
-      d = fd_alloc();
-#endif
+      struct fd* d = fd_alloc_or_null();
 
       /* return if a redirection failed */
       if(redir_eval(&r->nredir, d, R_NOW)) {

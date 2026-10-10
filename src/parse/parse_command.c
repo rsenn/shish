@@ -4,7 +4,6 @@
 #include "../source.h"
 #include "../fd.h"
 #include "../sh.h"
-#include "../debug.h"
 
 /* parse a compound- or a simple-command
  * (pipeline and lists are done outside this)

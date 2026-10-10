@@ -1,5 +1,4 @@
 #include "../../lib/alloc.h"
-#include "../debug.h"
 #include "../sh.h"
 #include "../../lib/shell.h"
 #include "../trace.h"

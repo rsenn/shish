@@ -3,7 +3,6 @@
 #include "../job.h"
 #include "../prompt.h"
 #include "../term.h"
-#include "../debug.h"
 #include "../trace.h"
 #include "../trap.h"
 #include "builtin_config.h"

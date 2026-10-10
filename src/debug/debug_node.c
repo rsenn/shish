@@ -93,7 +93,6 @@ debug_node(union node* node, int depth) {
 
   switch(node->id) {
     case N_SIMPLECMD:
-
       debug_ulong(", bgnd", node->ncmd.bgnd, depth);
 
       if(node->ncmd.vars)
@@ -107,7 +106,6 @@ debug_node(union node* node, int depth) {
 
       break;
     case N_PIPELINE:
-
       debug_ulong(", bgnd", node->npipe.bgnd, depth);
       debug_sublist(", cmds", node->npipe.cmds, depth);
       debug_ulong(", ncmd", node->npipe.ncmd, depth);
@@ -115,7 +113,6 @@ debug_node(union node* node, int depth) {
 
     case N_AND:
     case N_OR:
-
       debug_ulong(", bgnd", node->nandor.bgnd, depth);
 
       debug_subnode(", left", node->nandor.left, depth);
@@ -126,7 +123,6 @@ debug_node(union node* node, int depth) {
 
     case N_SUBSHELL:
     case N_BRACEGROUP:
-
       debug_sublist(", cmds", node->ngrp.cmds, depth);
 
       if(node->ngrp.rdir)
@@ -140,17 +136,13 @@ debug_node(union node* node, int depth) {
       if(debug_emit_loc)
         debug_location(", loc", &node->nfor.loc, depth);
       if(debug_emit_range)
-        debug_range(", range",
-                    node->nfor.loc.offset,
-                    node->nfor.loc.offset + str_len(node->nfor.varn),
-                    depth);
+        debug_range(", range", node->nfor.loc.offset, node->nfor.loc.offset + str_len(node->nfor.varn), depth);
 
       debug_sublist(", cmds", node->nfor.cmds, depth);
       debug_sublist(", args", node->nfor.args, depth);
       break;
 
     case N_CASE:
-
       debug_ulong(", bgnd", node->ncase.bgnd, depth);
 
       if(node->ncase.rdir)
@@ -165,7 +157,6 @@ debug_node(union node* node, int depth) {
       break;
 
     case N_IF:
-
       debug_ulong(", bgnd", node->nif.bgnd, depth);
 
       if(node->nif.rdir)
@@ -195,10 +186,7 @@ debug_node(union node* node, int depth) {
       if(debug_emit_loc)
         debug_location(", loc", &node->nfunc.loc, depth);
       if(debug_emit_range)
-        debug_range(", range",
-                    node->nfunc.loc.offset,
-                    node->nfunc.loc.offset + str_len(node->nfunc.name),
-                    depth);
+        debug_range(", range", node->nfunc.loc.offset, node->nfunc.loc.offset + str_len(node->nfunc.name), depth);
       debug_sublist(", body", node->nfunc.body, depth);
       break;
 
@@ -213,7 +201,8 @@ debug_node(union node* node, int depth) {
       break;
 
     case N_REDIR:
-      debug_redir(", flag", node->nredir.flag, depth);
+      debug_ulong(", flag", node->nredir.flag, depth);
+      // debug_redir(", flag", node->nredir.flag, depth);
       debug_sublist(", word", node->nredir.word, depth);
       debug_ulong(", fdes", node->nredir.fdes, depth);
       break;
@@ -226,10 +215,7 @@ debug_node(union node* node, int depth) {
           debug_location(", loc", &node->nargstr.loc, depth);
 
         if(debug_emit_range)
-          debug_range(", range",
-                      node->nargstr.loc.offset,
-                      node->nargstr.loc.offset + node->nargstr.stra.len,
-                      depth);
+          debug_range(", range", node->nargstr.loc.offset, node->nargstr.loc.offset + node->nargstr.stra.len, depth);
       }
 
       debug_stralloc(", stra", &node->nargstr.stra, depth, debug_quote);

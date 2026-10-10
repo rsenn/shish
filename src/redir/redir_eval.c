@@ -14,10 +14,14 @@
 #include <unistd.h>
 #endif
 
-/* evaluate a redirection
+/* evaluate one redirection onto fdtable[nredir->fdes]
  *
- * fd is assumed to be a freshly allocated structure or NULL, if its
- * NULL a persistent redirection is assumed (whose fd will be malloced)
+ *   struct nredir*  nredir  the redirection
+ *   struct fd*      d       fresh fd to fd_push(), or NULL for a persistent ("exec") one:
+ *                           fdtable_newfd() then reuses the entry at that number, else mallocs
+ *   int             rfl     extra R_* flags, or'ed into nredir->flag
+ *
+ * returns 0 on success, nonzero on failure
  * ----------------------------------------------------------------------- */
 int
 redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
@@ -63,11 +67,10 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
         trace_str("target", sa.s),
         trace_int("preallocated", d != NULL));
 
-  /* a persistent "exec <file" replaces fdtable[n] destructively:
-     fd_new() below closes the descriptor the old entry owned, so an
-     open() failing after that would cost the shell that fd for good.
-       "exec <_no_such_file_"  ->  an interactive shell keeps its stdin
-     open first, hand the descriptor over in redir_open(). */
+  /* a persistent "exec <file" replaces fdtable[n] destructively: fdtable_newfd() below
+   * closes the descriptor the old entry owned, so a failing open() after that would lose it
+   *   "exec <_no_such_file_"  ->  an interactive shell must keep its stdin
+   * so open the file first and hand the descriptor over in redir_open(). */
   if(d == NULL && (nredir->flag & R_ACT) == R_OPEN) {
     preopen = redir_preopen(nredir, &sa);
 
@@ -78,19 +81,11 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
     }
   }
 
-  /* "[n]<&n"/"[n]>&n" (source and target the same descriptor) is a
-   * defined POSIX no-op: dup2(fd, fd) succeeds trivially whenever both
-   * arguments are equal, without requiring fd to already be open. A
-   * common idiom -- a bare ">&1" inside "{ ...; } > file", which
-   * autoconf's config.status emits.
-   *
-   * fd_new()/fd_push() below are about to overwrite
-   * fdtable[nredir->fdes], which is destructive for a persistent
-   * "exec" redirection reusing the same fd number. So the snapshot
-   * must happen before that call, and only stays usable afterward if
-   * it's a dup of some *other*, distinct fd number's entry (chased via
-   * ->dup) -- a directly-owned resource is not recoverable once
-   * destroyed. */
+  /* "[n]<&n" / ">&n" with the same number on both sides is a POSIX no-op (dup2(fd, fd)),
+   * e.g. ">&1" inside "{ ...; } > file". Find its source before the new entry below
+   * overwrites fdtable[n]:
+   *   - a dup of another fd's entry (followed through ->dup) survives and is copied over
+   *   - an entry that owns its descriptor is gone after the overwrite: nothing to copy */
   {
     struct fd* selfdup_src = NULL;
     int selfdup = 0;
@@ -109,7 +104,7 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
       }
     }
 
-    /* setup up a new d for the redirection */
+    /* the new entry: d if the caller gave one, else fdtable_newfd() */
     nredir->fd = !d ? fd_new(nredir->fdes, mode) : fd_push(d, nredir->fdes, mode);
 
     if(selfdup && selfdup_src != nredir->fd) {
@@ -129,12 +124,8 @@ redir_eval(struct nredir* nredir, struct fd* d, int rfl) {
     }
   }
 
-  /* do the appropriate redirection. redir_here() hands sa->s off to
-   * fd_here() (which reads straight from that buffer, freeing it only
-   * when the fd is later closed), so sa must not be touched again
-   * after that call. Every other action is done with sa once the
-   * switch returns, so free it here rather than relying on each
-   * callee to free its own copy. */
+  /* run the action. Each frees sa afterwards, except redir_here(): fd_here() takes
+   * over sa->s and frees it when the fd is closed, so sa is not touched again. */
   switch(nredir->flag & R_ACT) {
     case R_OPEN:
       r = redir_open(nredir, &sa, preopen);

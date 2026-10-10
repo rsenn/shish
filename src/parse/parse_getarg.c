@@ -2,7 +2,6 @@
 #include "../trace.h"
 #include "../tree.h"
 #include "../fd.h"
-#include "../debug.h"
 
 /* make an argument node from the stuff parsed by parse_word
  * ----------------------------------------------------------------------- */
