@@ -173,12 +173,12 @@ fixup_push(struct sed_builder* b, size_t cmd, const char* name, size_t len) {
   return SED_OK;
 }
 
-/* parse_label_word: a label or b/t/T target reads to ';', blank, or
+/* sed_parse_label: a label or b/t/T target reads to ';', blank, or
  * newline (GNU-compatible; POSIX itself only says "to the end of the
  * line" but the common ":a;N;$!ba" idiom relies on ';' terminating,
  * and a label containing ';' is not valid POSIX use anyway). */
 static const char*
-parse_label_word(const char* p, const char* end, const char** name, size_t* len) {
+sed_parse_label(const char* p, const char* end, const char** name, size_t* len) {
   const char* start = p;
 
   while(p < end && *p != '\n' && *p != ';' && *p != ' ' && *p != '\t')
@@ -190,7 +190,7 @@ parse_label_word(const char* p, const char* end, const char** name, size_t* len)
 }
 
 static int
-parse_command(struct sed_builder* b, const char** pp, const char* end) {
+sed_parse_command(struct sed_builder* b, const char** pp, const char* end) {
   const char* p = *pp;
   struct sed_cmd* c;
   int naddr = 0;
@@ -273,7 +273,7 @@ parse_command(struct sed_builder* b, const char** pp, const char* end) {
         return SED_ECMD;
 
       p = skip_blank(p + 1, end);
-      p = parse_label_word(p, end, &name, &len);
+      p = sed_parse_label(p, end, &name, &len);
 
       if(len == 0)
         return SED_ELABEL;
@@ -291,7 +291,7 @@ parse_command(struct sed_builder* b, const char** pp, const char* end) {
       size_t len;
 
       p = skip_blank(p + 1, end);
-      p = parse_label_word(p, end, &name, &len);
+      p = sed_parse_label(p, end, &name, &len);
 
       if((rc = fixup_push(b, b->n - 1, name, len)) != SED_OK)
         return rc;
@@ -435,7 +435,7 @@ sed_parse(struct sed* prog, const char* script, size_t len, unsigned flags) {
   }
 
   while((p = skip_sep(p, end)) < end) {
-    if((rc = parse_command(&b, &p, end)) != SED_OK)
+    if((rc = sed_parse_command(&b, &p, end)) != SED_OK)
       goto done;
   }
 

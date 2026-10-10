@@ -2,6 +2,9 @@
 #include "config.h"
 #include "../trace.h"
 #endif
+
+#ifdef SHFORMAT
+
 #ifdef HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
@@ -208,3 +211,4 @@ main(int argc, char** argv, char** envp) {
 
   return 0;
 }
+#endif

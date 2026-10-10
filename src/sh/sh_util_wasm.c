@@ -1,6 +1,8 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+
+#ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #include <fcntl.h>
 #include <setjmp.h>
@@ -274,3 +276,4 @@ int
 main(void) {
   return 0;
 }
+#endif

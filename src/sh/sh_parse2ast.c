@@ -1,6 +1,9 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+
+#ifdef SHPARSE2AST
+
 #ifdef HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
@@ -227,3 +230,4 @@ main(int argc, char** argv, char** envp) {
 
   return 0;
 }
+#endif
