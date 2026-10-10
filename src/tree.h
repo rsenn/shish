@@ -264,6 +264,11 @@ struct nargstr {
   union {
     stralloc stra; /* owned and growable: expansion-time copies */
     strview view;  /* not owned: parse-time strings in an arena */
+    /* anonymous struct so you can ->nargstr.(s|len|a) instead of ->nargstr.stra.(s|len|a) */
+    struct {
+      char* s;
+      size_t len;
+    };
   };
   struct location loc;
 } SHISH_TREE_PACKED;

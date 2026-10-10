@@ -8,7 +8,7 @@
  * ----------------------------------------------------------------------- */
 static int
 ast_placeholder(union node* node) {
-  return node->id == N_ARGSTR && node->nargstr.stra.len == 0 && !(node->nargstr.flag & ~S_TABLE);
+  return node->id == N_ARGSTR && node->nargstr.len == 0 && !(node->nargstr.flag & ~S_TABLE);
 }
 
 /* a node list as a JSON array; a lone placeholder is kept so the list is not empty

@@ -111,7 +111,7 @@ tree_copy(union node* node) {
       case N_ARGSTR:
         byte_zero(&copy->nargstr.stra, sizeof(copy->nargstr.stra));
 
-        if(node->nargstr.stra.s)
+        if(node->nargstr.s)
           stralloc_copy(&copy->nargstr.stra, &node->nargstr.stra);
         break;
 

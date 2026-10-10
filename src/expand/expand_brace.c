@@ -183,7 +183,7 @@ expand_brace_chunk(union node* arg) {
   if(chunk->id != N_ARGSTR || (chunk->nargstr.flag & S_TABLE) != S_UNQUOTED || chunk->next)
     return NULL;
 
-  if(byte_chr(chunk->nargstr.stra.s, chunk->nargstr.stra.len, '{') >= chunk->nargstr.stra.len)
+  if(byte_chr(chunk->nargstr.s, chunk->nargstr.len, '{') >= chunk->nargstr.len)
     return NULL;
 
   return chunk;
@@ -207,7 +207,7 @@ expand_brace_word(union node* arg) {
     return NULL;
 
   brace_list_init(&result);
-  expand_brace_text(chunk->nargstr.stra.s, chunk->nargstr.stra.len, &result);
+  expand_brace_text(chunk->nargstr.s, chunk->nargstr.len, &result);
 
   if(result.n <= 1) {
     brace_list_free(&result);

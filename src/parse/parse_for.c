@@ -16,7 +16,7 @@ parse_for(struct parser* p) {
 
   node->nfor.loc = p->node->nargstr.loc;
   stralloc_nul(&p->node->nargstr.stra);
-  node->nfor.varn = p->node->nargstr.stra.s;
+  node->nfor.varn = p->node->nargstr.s;
   stralloc_init(&p->node->nargstr.stra);
 
   tree_init(node->nfor.args, nptr);

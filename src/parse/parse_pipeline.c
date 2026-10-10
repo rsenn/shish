@@ -7,7 +7,7 @@ static int
 word_is(struct parser* p, const char* s, size_t len) {
   union node* n = p->tree;
 
-  return n && n->id == N_ARGSTR && !n->next && n->nargstr.stra.len == len && !byte_diff(n->nargstr.stra.s, len, s);
+  return n && n->id == N_ARGSTR && !n->next && n->nargstr.len == len && !byte_diff(n->nargstr.s, len, s);
 }
 
 /* 3.9.2 - parse a pipeline

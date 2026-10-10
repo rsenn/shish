@@ -25,10 +25,10 @@ parse_alias_subst(struct parser* p) {
 
   str = &p->tree->nargstr;
 
-  if(str->flag & (S_TABLE | S_ESCAPED) || str->stra.len == 0)
+  if(str->flag & (S_TABLE | S_ESCAPED) || str->len == 0)
     return 0;
 
-  if(!(a = parse_findalias(p, str->stra.s, str->stra.len)))
+  if(!(a = parse_findalias(p, str->s, str->len)))
     return 0;
 
   {

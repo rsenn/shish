@@ -36,7 +36,7 @@ hash_commands_in_node(union node* node) {
       if(node->ncmd.args) {
         union node* arg = node->ncmd.args;
         if(arg->id == N_ARG && arg->narg.list && arg->narg.list->id == N_ARGSTR) {
-          char* name = arg->narg.list->nargstr.stra.s;
+          char* name = arg->narg.list->nargstr.s;
           if(name && name[0] && str_chr(name, '/') == str_len(name)) {
             /* Only hash if it's a simple name (not a path) */
             exec_hash(name, 0);

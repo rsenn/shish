@@ -514,7 +514,7 @@ again:
               continue;
             }
 
-            for(i = 0; i < part->nargstr.view.len; i++) {
+            for(i = 0; i < part->nargstr.len; i++) {
               char c = part->nargstr.view.str[i];
 
               if(live && (c == '$' || c == '`' || c == '\\'))

@@ -69,11 +69,11 @@ pipeline_word_literal(union node* arg, const char** s, size_t* n) {
     default: return 0;
   }
 
-  if(byte_chr(w->nargstr.stra.s, w->nargstr.stra.len, '\\') < w->nargstr.stra.len)
+  if(byte_chr(w->nargstr.s, w->nargstr.len, '\\') < w->nargstr.len)
     return 0;
 
-  *s = w->nargstr.stra.s;
-  *n = w->nargstr.stra.len;
+  *s = w->nargstr.s;
+  *n = w->nargstr.len;
   return 1;
 }
 

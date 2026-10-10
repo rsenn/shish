@@ -80,7 +80,7 @@ parse_dquoted(struct parser* p) {
 
       /* a pair written right after another one lands on the empty chunk that one's closing
          quote left: "$@""" must stay one empty field, "$@" none */
-      if(nothing && last && p->node == last && last->id == N_ARGSTR && last->nargstr.stra.len == 0)
+      if(nothing && last && p->node == last && last->id == N_ARGSTR && last->nargstr.len == 0)
         last->nargstr.flag |= S_QUOTEDEMPTY;
 
       p->quot = Q_UNQUOTED;

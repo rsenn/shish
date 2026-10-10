@@ -22,12 +22,12 @@ expand_globres_ok(union node* node) {
       if(sub->id != N_ARGSTR)
         return 0;
 
-      if(sub->nargstr.stra.len == 0)
+      if(sub->nargstr.len == 0)
         continue;
 
-      if(str_chr(sub->nargstr.stra.s, '*') < sub->nargstr.stra.len ||
-         str_chr(sub->nargstr.stra.s, '?') < sub->nargstr.stra.len ||
-         str_chr(sub->nargstr.stra.s, '[') < sub->nargstr.stra.len)
+      if(str_chr(sub->nargstr.s, '*') < sub->nargstr.len ||
+         str_chr(sub->nargstr.s, '?') < sub->nargstr.len ||
+         str_chr(sub->nargstr.s, '[') < sub->nargstr.len)
         return 0;
 
       continue;
@@ -90,7 +90,7 @@ expand_arg(union node* node, wordlist* wl, int flags) {
 
         /* constant string */
       case N_ARGSTR: {
-        assert(subarg->nargstr.stra.s);
+        assert(subarg->nargstr.s);
 
         /* X_LITERAL must stay off for two cases, since it ORs
            cumulatively onto the shared argument node and would taint
@@ -101,9 +101,9 @@ expand_arg(union node* node, wordlist* wl, int flags) {
              parse_squoted()/parse_dquoted() calls skip the doubling
              expand_unescape() would otherwise undo */
         wordlist_cat(wl,
-                     subarg->nargstr.stra.s,
-                     subarg->nargstr.stra.len,
-                     (subarg->nargstr.stra.len && !(subarg->nargstr.flag & S_HEREDOC)) ? (lflags | X_LITERAL) : lflags);
+                     subarg->nargstr.s,
+                     subarg->nargstr.len,
+                     (subarg->nargstr.len && !(subarg->nargstr.flag & S_HEREDOC)) ? (lflags | X_LITERAL) : lflags);
         break;
       }
 

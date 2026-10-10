@@ -23,13 +23,13 @@ expand_str(union node* node, stralloc* sa, int flags) {
       lflags |= X_GLOB;
 
     /* the parser doubles backslashes in source text: "X Y" is stored as X\ Y */
-    if(m->nargstr.stra.len && !(m->nargstr.flag & S_HEREDOC))
+    if(m->nargstr.len && !(m->nargstr.flag & S_HEREDOC))
       lflags |= X_LITERAL;
 
     assert(m->id == N_ARGSTR);
-    assert(m->nargstr.stra.s);
+    assert(m->nargstr.s);
 
-    wordlist_cat(&wl, m->nargstr.stra.s, m->nargstr.stra.len, lflags | X_NOSPLIT);
+    wordlist_cat(&wl, m->nargstr.s, m->nargstr.len, lflags | X_NOSPLIT);
   }
 
   wordlist_close(&wl);

@@ -28,7 +28,7 @@ parse_param(struct parser* p) {
      unquoted "nothing here yet" placeholder -- a quoted empty node
      (e.g. '' right before "$a") carries real quoting state that must
      not be discarded by overwriting it. */
-  if(p->node && p->node->id == N_ARGSTR && p->node->nargstr.stra.len == 0 &&
+  if(p->node && p->node->id == N_ARGSTR && p->node->nargstr.len == 0 &&
      !(p->node->nargstr.flag & S_TABLE))
     p->node->id = N_ARGPARAM;
   else

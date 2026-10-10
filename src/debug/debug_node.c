@@ -215,7 +215,7 @@ debug_node(union node* node, int depth) {
           debug_location(", loc", &node->nargstr.loc, depth);
 
         if(debug_emit_range)
-          debug_range(", range", node->nargstr.loc.offset, node->nargstr.loc.offset + node->nargstr.stra.len, depth);
+          debug_range(", range", node->nargstr.loc.offset, node->nargstr.loc.offset + node->nargstr.len, depth);
       }
 
       debug_stralloc(", stra", &node->nargstr.stra, depth, debug_quote);

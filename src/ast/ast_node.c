@@ -106,9 +106,9 @@ ast_node(struct ast* a, union node* n) {
 
     case N_ARGSTR:
       json_khex(j, "flag", n->nargstr.flag);
-      ast_pos(a, &n->nargstr.loc, n->nargstr.stra.len);
+      ast_pos(a, &n->nargstr.loc, n->nargstr.len);
       json_key(j, "stra");
-      json_str(j, n->nargstr.stra.s, n->nargstr.stra.len);
+      json_str(j, n->nargstr.s, n->nargstr.len);
       break;
 
     case N_ARGPARAM:

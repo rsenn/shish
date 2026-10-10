@@ -123,7 +123,7 @@ tree_free(union node* node) {
         break;
 
       case N_ARGSTR:
-        if(node->nargstr.stra.s)
+        if(node->nargstr.s)
           stralloc_free(&node->nargstr.stra);
         break;
 

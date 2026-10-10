@@ -91,8 +91,8 @@ expand_tilde_splice(union node* n, stralloc* home, size_t prefixlen) {
 
   stralloc_init(&rest->nargstr.stra);
   stralloc_catb(&rest->nargstr.stra,
-                n->nargstr.stra.s + prefixlen,
-                n->nargstr.stra.len - prefixlen);
+                n->nargstr.s + prefixlen,
+                n->nargstr.len - prefixlen);
   stralloc_nul(&rest->nargstr.stra);
   rest->nargstr.flag = n->nargstr.flag;
   rest->nargstr.loc = n->nargstr.loc;
@@ -113,8 +113,8 @@ expand_tilde_needed(union node* arg) {
   union node* n;
 
   return arg && arg->id == N_ARG && (n = arg->narg.list) && n->id == N_ARGSTR &&
-         (n->nargstr.flag & S_TABLE) == S_UNQUOTED && n->nargstr.stra.len &&
-         n->nargstr.stra.s[0] == '~';
+         (n->nargstr.flag & S_TABLE) == S_UNQUOTED && n->nargstr.len &&
+         n->nargstr.s[0] == '~';
 }
 
 /* 1 if expand_tilde_assign() might rewrite this word: it starts with an
@@ -132,7 +132,7 @@ expand_tilde_assign_needed(union node* var) {
 
   for(; n; n = n->next)
     if(n->id == N_ARGSTR && (n->nargstr.flag & S_TABLE) == S_UNQUOTED &&
-       byte_chr(n->nargstr.stra.s, n->nargstr.stra.len, '~') < n->nargstr.stra.len)
+       byte_chr(n->nargstr.s, n->nargstr.len, '~') < n->nargstr.len)
       return 1;
 
   return 0;
@@ -157,8 +157,8 @@ expand_tilde_word(union node* arg) {
   stralloc_init(&home);
 
   /* a prefix running into the next chunk ("~"x"", "~$x") holds quoted or expanded text */
-  if(expand_tilde_lookup(n->nargstr.stra.s, n->nargstr.stra.len, 0, &home, &prefixlen) &&
-     !(prefixlen == n->nargstr.stra.len && n->next))
+  if(expand_tilde_lookup(n->nargstr.s, n->nargstr.len, 0, &home, &prefixlen) &&
+     !(prefixlen == n->nargstr.len && n->next))
     expand_tilde_splice(n, &home, prefixlen);
 
   stralloc_free(&home);
@@ -182,9 +182,9 @@ expand_tilde_assign(union node* var) {
   if(n->id != N_ARGSTR || (n->nargstr.flag & S_TABLE) != S_UNQUOTED)
     return;
 
-  eq = byte_chr(n->nargstr.stra.s, n->nargstr.stra.len, '=');
+  eq = byte_chr(n->nargstr.s, n->nargstr.len, '=');
 
-  if(eq >= n->nargstr.stra.len)
+  if(eq >= n->nargstr.len)
     return;
 
   eq++; /* the value (where tilde-prefixes are eligible) starts right
@@ -199,7 +199,7 @@ expand_tilde_assign(union node* var) {
       continue;
     }
 
-    while(eq < n->nargstr.stra.len) {
+    while(eq < n->nargstr.len) {
       if(at_boundary) {
         stralloc home;
         size_t prefixlen;
@@ -207,19 +207,19 @@ expand_tilde_assign(union node* var) {
         stralloc_init(&home);
 
         if(expand_tilde_lookup(
-               n->nargstr.stra.s + eq, n->nargstr.stra.len - eq, 1, &home, &prefixlen) &&
-           !(eq + prefixlen == n->nargstr.stra.len && n->next)) {
+               n->nargstr.s + eq, n->nargstr.len - eq, 1, &home, &prefixlen) &&
+           !(eq + prefixlen == n->nargstr.len && n->next)) {
           /* splice into just the tail starting at eq, then keep
              scanning right after the replacement -- the chunk's
              length/content just changed under us */
           stralloc tail;
 
           stralloc_init(&tail);
-          stralloc_catb(&tail, n->nargstr.stra.s, eq);
+          stralloc_catb(&tail, n->nargstr.s, eq);
           stralloc_cat(&tail, &home);
           stralloc_catb(&tail,
-                        n->nargstr.stra.s + eq + prefixlen,
-                        n->nargstr.stra.len - eq - prefixlen);
+                        n->nargstr.s + eq + prefixlen,
+                        n->nargstr.len - eq - prefixlen);
           stralloc_nul(&tail);
 
           eq += home.len;
@@ -232,7 +232,7 @@ expand_tilde_assign(union node* var) {
         at_boundary = 0;
       }
 
-      if(eq < n->nargstr.stra.len && n->nargstr.stra.s[eq] == ':')
+      if(eq < n->nargstr.len && n->nargstr.s[eq] == ':')
         at_boundary = 1;
       else
         at_boundary = 0;
