@@ -3,10 +3,10 @@
 # unpack it into the cross sysroots in one go.
 #
 #   mirror dir      sysroot                            unpacked into
-#   mingw/mingw32   /usr/i686-w64-mingw32/sys-root     sys-root/mingw  (the mingw32/ prefix is stripped)
-#   mingw/mingw64   /usr/x86_64-w64-mingw32/sys-root   sys-root/mingw  (the mingw64/ prefix is stripped)
-#   msys/i686       /usr/i686-pc-msys/sys-root         sys-root/usr
-#   msys/x86_64     /usr/x86_64-pc-msys/sys-root       sys-root/usr
+#   mingw/mingw32   /usr/i686-w64-mingw32/sysroot      sysroot/mingw  (the mingw32/ prefix is stripped)
+#   mingw/mingw64   /usr/x86_64-w64-mingw32/sysroot    sysroot/mingw  (the mingw64/ prefix is stripped)
+#   msys/i686       /usr/i686-pc-msys/sysroot          sysroot/usr
+#   msys/x86_64     /usr/x86_64-pc-msys/sysroot        sysroot/usr
 #
 # Steps: list each mirror dir with lynx -> keep *.pkg.tar.* (no .sig, no -src, no cross)
 #        -> one version per package (newest, or oldest with -o)
@@ -14,14 +14,14 @@
 #        -> download, unpack, and pull in the 'depend =' packages of each .PKGINFO
 #        -> verify every dll with ntldd.
 #
-# Writing to /usr/*/sys-root needs root for some of them: sudo -E scripts/get-msys-packages.sh
+# Writing to /usr/*/sysroot needs root for some of them: sudo -E scripts/get-msys-packages.sh
 # POSIX sh; external tools: lynx curl tar(GNU, for zstd/--strip-components) awk sed grep.
 
 MIRROR=${MIRROR:-https://repo.msys2.org}
 BASE=${BASE:-/usr}
 CACHE=${CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/shish-msys}
 NTLDD=${NTLDD:-/usr/local/bin/ntldd}
-SYSROOT_NAME=${SYSROOT_NAME:-sys-root}   # BASE/<host>/<name>; the msys cross compiler uses 'sysroot'
+SYSROOT_NAME=${SYSROOT_NAME:-sysroot}   # BASE/<host>/<name>; the msys cross compiler uses 'sysroot'
 
 # libarchive and what it links against; msys splits headers into -devel, so allow that suffix.
 REGEX=${REGEX:-'(x86_64|i686|64|32).\b(lib|)(zlib|b2|lzma|xz|bzip2|bz2|lzo2|lz4|archive|zstd)-(devel-)?[0-9]'}
