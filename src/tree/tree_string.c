@@ -10,6 +10,7 @@ tree_string(union node* node) {
     tree_catlist(node, &sa, " ");
   else
     tree_cat(node, &sa);
+  
   stralloc_nul(&sa);
   return sa.s;
 }

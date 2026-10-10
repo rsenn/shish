@@ -23,6 +23,8 @@
       "folder_exclude_patterns": [
         ".*",
         "*.cache",
+        "build",
+        "third_party",
         "/home/roman/Sources/[!s][!h]*",
         "/home/roman/Sources/[^s][^h].*"
       ],

@@ -8,8 +8,8 @@
 #include "../lib/uint64.h"
 #include <stdlib.h>
 
-#ifndef SHISH_TREE_PACKED
-#define SHISH_TREE_PACKED /*__attribute__((packed))*/
+#ifndef TREE_ATTR
+#define TREE_ATTR /*__attribute__((packed))*/
 #endif
 
 /* the section numbers refer to the IEEE P1003.2 Draft D11.2 */
@@ -101,7 +101,7 @@ struct ncmd {
   union node* rdir; /* redirections */
   union node* vars; /* cmd-local variable assigns */
   union node* args; /* arguments */
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 /* 3.9.2 - pipeline
  * ----------------------------------------------------------------------- */
@@ -111,14 +111,14 @@ struct npipe {
   union node* next;
   unsigned ncmd;
   union node* cmds;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 struct nnot {
   enum kind id;
   unsigned dummy : 1;
   union node* next;
   union node* pipeline;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 /* time [-p] pipeline: same layout as nnot, so tree_free/tree_copy share its case */
 struct ntime {
@@ -127,7 +127,7 @@ struct ntime {
   unsigned posix : 1;
   union node* next;
   union node* pipeline;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 /* 3.9.3 - lists
  * ----------------------------------------------------------------------- */
@@ -139,7 +139,7 @@ struct nandor {
   union node* next;
   union node* left;
   union node* right;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 /* the compound list is simply done with node->next, because we don't
    need any further information */
@@ -152,7 +152,7 @@ struct ngrp {
   union node* next;
   union node* rdir; /* redirections */
   union node* cmds;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 /* 3.9.4.2 - for loop
  * ----------------------------------------------------------------------- */
@@ -166,7 +166,7 @@ struct nfor {
   union node* args;
   char* varn;
   struct location loc; /* varn's own token position, for tooling (JSON dump) */
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 /* 3.9.4.3 - case conditional
  * ----------------------------------------------------------------------- */
@@ -177,7 +177,7 @@ struct ncase {
   union node* rdir; /* redirections */
   union node* list;
   union node* word;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 struct ncasenode {
   enum kind id;
@@ -185,7 +185,7 @@ struct ncasenode {
   union node* next;
   union node* pats;
   union node* cmds;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 /* 3.9.4.4 - if conditional
  * ----------------------------------------------------------------------- */
@@ -197,7 +197,7 @@ struct nif {
   union node* cmd0;
   union node* cmd1;
   union node* test;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 /* 3.9.4.5 while loop
  * 3.9.4.6 until loop
@@ -209,7 +209,7 @@ struct nloop {
   union node* rdir; /* redirections */
   union node* cmds;
   union node* test;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 /* 3.9.5 function definition
  * ----------------------------------------------------------------------- */
@@ -220,7 +220,7 @@ struct nfunc {
   char* name;
   union node* body;
   struct location loc;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 /* command list
  * ----------------------------------------------------------------------- */
@@ -230,7 +230,7 @@ struct nlist {
   union node* next;
   union node* rdir;
   union node* cmds;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 /* word nodes
  *
@@ -241,7 +241,7 @@ struct narg {
   unsigned flag;
   union node* next;
   union node* list;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 /* [fd]<operator><file> */
 struct nredir {
@@ -253,7 +253,7 @@ struct nredir {
   union node* delim; /* here-doc: the delimiter word, kept so tree_cat() can print it */
   int fdes;
   struct fd* fd;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 /* argument (word) subnodes
  * ----------------------------------------------------------------------- */
@@ -264,14 +264,12 @@ struct nargstr {
   union {
     stralloc stra; /* owned and growable: expansion-time copies */
     strview view;  /* not owned: parse-time strings in an arena */
-    /* anonymous struct so you can ->nargstr.(s|len|a) instead of ->nargstr.stra.(s|len|a) */
-    struct {
-      char* s;
-      size_t len;
-    };
+    struct { char* s; size_t len; }; /* anonymous struct so you can 
+                                        access .s/.len instead of
+                                        going through .stra */
   };
   struct location loc;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 /* nargstr overlays strview on the first two members of stralloc */
 typedef char nargstr_view_overlays_stra[(sizeof(strview) < sizeof(stralloc) &&
@@ -287,21 +285,21 @@ struct nargparam {
   union node* word;
   long numb;
   struct location loc;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 struct nargcmd {
   enum kind id;
   unsigned flag;
   union node* next;
   union node* list;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 struct nargarith {
   enum kind id;
   unsigned flag;
   union node* next;
   union node* tree;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 struct narithnum {
   enum kind id;
@@ -309,14 +307,14 @@ struct narithnum {
   union node* next;
   int64 num;
   unsigned base;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 struct narithunary {
   enum kind id;
   unsigned dummy : 1;
   union node* next;
   union node* node;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 struct narithbinary {
   enum kind id;
@@ -324,7 +322,7 @@ struct narithbinary {
   union node* next;
   union node* left;
   union node* right;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 struct narithternary {
   enum kind id;
@@ -333,7 +331,7 @@ struct narithternary {
   union node* cond;
   union node* ontrue;
   union node* onfalse;
-} SHISH_TREE_PACKED;
+} TREE_ATTR;
 
 /* ----------------------------------------------------------------------- */
 union node {
@@ -367,7 +365,7 @@ union node {
   struct narithternary narithternary;
 };
 
-typedef union node node_t;
+/*typedef union node node;*/
 
 extern const int tree_nodesizes[];
 
@@ -430,8 +428,6 @@ union node** tree_append(union node**, union node*);
 void tree_remove(union node**);
 int tree_location(union node*, struct location*);
 char* tree_string(union node* node);
-
-const char* node2str(const union node n);
 
 #ifdef BUFFER_H
 void tree_print(union node*, buffer*);
