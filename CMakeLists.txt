@@ -11,32 +11,63 @@ set(PACKAGE_TARNAME "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to 'MinSizeRel' as none was specified.")
-  set(CMAKE_BUILD_TYPE
-      MinSizeRel
-      CACHE STRING "Choose the type of build." FORCE)
+  set(CMAKE_BUILD_TYPE MinSizeRel CACHE STRING "Choose the type of build." FORCE)
 endif()
 
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release MinSizeRel RelWithDebInfo)
 
 option(WARN_WERROR "Halt the compilation with an error on compiler warnings." OFF)
 option(USE_MMAP "Use mmap() for memory-mapped file I/O" ON)
+option(USE_UTF8 "Use utf-8 aware string processing" OFF)
 option(MINSIZE_STRIP "Strip unneeded sections from a MinSizeRel build" ON)
 
-include(CheckLibraryExists)
-include(CheckIncludeFile)
-include(CheckTypeSize)
-include(CheckFunctionExists)
-
-include(cmake/Targets.cmake)
 include(cmake/Functions.cmake)
 include(cmake/Checks.cmake)
+
+check_source_definitions(ATFILE GNU LARGEFILE LARGE_FILE LARGEFILE64 POSIX POSIX_C XOPEN XOPEN_EXTENDED)
+
+check_no_unused_warn_flags()
+check_no_warnings_flags(CMAKE_C_FLAGS_DEBUG)
+check_debug_symbols_flags(CMAKE_C_FLAGS_DEBUG)
+
+check_optimize_size_flags(CMAKE_C_FLAGS_MINSIZEREL)
+check_falign_flags(CMAKE_C_FLAGS_MINSIZEREL)
+check_fno_optim_flags(CMAKE_C_FLAGS_MINSIZEREL)
+
+check_inline()
+check_windows_native(WINDOWS_NATIVE)
+
+if(NOT CMAKE_CROSSCOMPILING)
+  check_posix_types()
+endif()
+
+check_pointer_size()
+
+check_alloca()
+check_pw_functions()
+check_sig_functions()
+check_fork_function()
+check_memory_mapping()
+check_libmath()
+check_emscripten()
+check_termios_winsize()
+
+check_sys_siglist_declaration(HAVE_SYS_SIGLIST HAVE_SYS_SIGLIST_DECLARATION)
+check_socket_library(SOCKET_LIBRARY)
+
+include(cmake/Targets.cmake)
+
+target_cmake_format()
+
 include(cmake/Pedantic.cmake)
 
 detect_pedantic_flags(PEDANTIC_COMPILE_FLAGS)
 
-include(cmake/Debug.cmake)
+include(cmake/Options.cmake)
 
-compiler_flags_debug(CMAKE_C_FLAGS_DEBUG)
+option_debug_mode()
+option_link_static()
+option_link_time_optimization()
 
 include(cmake/Builtins.cmake)
 
@@ -48,36 +79,6 @@ if(BUILTIN_DIGEST)
   configure_digest_builtin()
 endif()
 
-check_sys_siglist_declaration(HAVE_SYS_SIGLIST HAVE_SYS_SIGLIST_DECLARATION)
-check_no_unused_warn_flags()
-
-if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" OR CMAKE_BUILD_TYPE STREQUAL "Release")
-  check_falign_flags()
-endif()
-
-if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
-  #check_fno_optim_flags()
-endif()
-
-check_inline(INLINE_KEYWORD)
-
-if(NOT "${INLINE_KEYWORD}" MATCHES "^inline$")
-  add_definitions("-Dinline=${INLINE_KEYWORD}")
-endif()
-
-check_windows_native(WINDOWS_NATIVE)
-
-if(WINDOWS_NATIVE)
-  check_winsock2(HAVE_WINSOCK SOCKET_LIBRARY)
-else()
-  check_library_exists(socket "connect" /usr/lib HAVE_LIBSOCKET)
-  if(HAVE_LIBSOCKET)
-    set(SOCKET_LIBRARY "socket")
-  else()
-    set(SOCKET_LIBRARY "")
-  endif()
-endif()
-
 check_includes_def(alloca.h fcntl.h glob.h inttypes.h signal.h stdint.h sys/stat.h sys/types.h sys/wait.h unistd.h)
 
 have_includes(CMAKE_EXTRA_INCLUDE_FILES fcntl.h glob.h signal.h sys/stat.h sys/types.h sys/wait.h unistd.h)
@@ -85,18 +86,7 @@ have_includes(CMAKE_REQUIRED_INCLUDES signal.h sys/types.h unistd.h)
 
 string(REGEX REPLACE ".*/" "" COMPILER_NAME "${CMAKE_C_COMPILER}")
 
-check_pointer_size()
-# dump(POINTER_SIZE)
-
-if(NOT CMAKE_CROSSCOMPILING)
-  check_type_sizes()
-endif()
-
-check_alloca()
-
-check_functions(fcntl)
-check_functions(readlink)
-check_functions(sethostname lstat getppid glob)
+check_functions(fcntl readlink sethostname lstat getppid glob)
 
 #add_definitions(-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64)
 set_add(CMAKE_REQUIRED_DEFINITIONS  
@@ -110,56 +100,7 @@ check_compile(HAVE_GLOB
   #COMPILE_DEFINITIONS "-D_GNU_SOURCE;-D_FILE_OFFSET_BITS=64"
 )
 
-#dump(HAVE_GLOB)
-
-# check_functions(sigaction sigismember signal sigprocmask sigsuspend)
-
-check_pw_functions()
-check_sig_functions()
-check_fork_function()
-
-check_memory_mapping()
-
-check_type_size(pid_t PID_T)
-if(PID_T GREATER 0)
-  set(HAVE_PID_T TRUE)
-endif()
-
-if(BUILD_DEBUG OR CMAKE_BUILD_TYPE MATCHES Deb)
-else()
-  check_cflag("-w" F_NOWARN CMAKE_C_FLAGS)
-endif()
-
-if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
-  compiler_flags_optimize_size()
-endif()
-
-check_libmath(LIBMATH)
-
-check_emscripten()
-
-option_debug_mode()
-
-option_link_static()
-option_link_time_optimization()
-
-check_termios_winsize()
-
-if(BUILD_DEBUG)
-  option(DEBUG_COLOR "Color debug output" OFF)
-  option(DEBUG_OUTPUT "Print debug output" ${DEBUG_OUTPUT_DEFAULT})
-
-  if(DEBUG_OUTPUT)
-    add_definitions(-DDEBUG_OUTPUT=1)
-  endif()
-  if(DEBUG_COLOR)
-    add_definitions(-DDEBUG_COLOR=1)
-  endif()
-endif()
-
 configure_file("${CMAKE_SOURCE_DIR}/config.h.cmake" "${CMAKE_BINARY_DIR}/config.h")
-
-check_source_definitions()
 
 add_definitions(-DHAVE_CONFIG_H=1)
 
@@ -168,11 +109,6 @@ include_directories(
   "${CMAKE_CURRENT_BINARY_DIR}"
   "${CMAKE_CURRENT_SOURCE_DIR}"
 )
-
-#[[set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
-set(CMAKE_MODULE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")]]
 
 include(cmake/libowfat.cmake)
 
@@ -334,7 +270,6 @@ set_source_files_properties(src/builtin/builtin_table.c PROPERTIES COMPILE_FLAGS
 
 install(TARGETS shish DESTINATION bin)
 
-target_cmake_format()
 target_clang_format(${ALL_SOURCES})
 
 file(GLOB TESTS tests/*.sh)
@@ -364,25 +299,16 @@ if(DO_TESTS)
       COMMAND "${SHISH_PATH}" "${TEST}")
   endforeach()
 
-  # lib/arena unit test (C, links against the in-tree libowfat)
-  add_executable(arena_test tests/arena_test.c)
-  target_link_libraries(arena_test PRIVATE ${LIBOWFAT_LIBRARY})
-  add_test(NAME arena_test COMMAND arena_test)
+  file(GLOB LIB_TESTS tests/lib/*.c)
 
-  # lib/byteset unit test
-  add_executable(byteset_test tests/byteset_test.c)
-  target_link_libraries(byteset_test PRIVATE ${LIBOWFAT_LIBRARY})
-  add_test(NAME byteset_test COMMAND byteset_test)
+  foreach(SRC ${LIB_TESTS})
+    basename(NAME "${SRC}" .c)
 
-  # src/json.h unit test
-  add_executable(json_test tests/json_test.c)
-  target_link_libraries(json_test PRIVATE ${LIBOWFAT_LIBRARY})
-  add_test(NAME json_test COMMAND json_test)
-
-  # lib/utf8 unit test
-  add_executable(utf8_test tests/utf8_test.c)
-  target_link_libraries(utf8_test PRIVATE ${LIBOWFAT_LIBRARY})
-  add_test(NAME utf8_test COMMAND utf8_test)
+    # unit test (C, links against the in-tree libowfat)
+    add_executable(${NAME} ${SRC})
+    target_link_libraries(${NAME} PRIVATE ${LIBOWFAT_LIBRARY})
+    add_test(NAME ${NAME} COMMAND ${NAME})
+  endforeach()
 
   # tests/posix/*.tst and tests/yash/*.tst: yash's own POSIX/self conformance suite 
   # yash's run-test.sh harness interprets each *.tst file's test_oE/ test_x/... cases). 

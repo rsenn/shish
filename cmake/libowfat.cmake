@@ -8,13 +8,16 @@ macro(configure_libowfat)
     file(GLOB LIBOWFAT_HEADERS lib/*.h)
     file(GLOB LIBOWFAT_SOURCES lib/*/*.c)
 
-    if(NOT HAVE_MMAP_SUPPORT)
-      list(FILTER LIBOWFAT_SOURCES EXCLUDE REGEX "lib.*([^d]mmap|munmap)")
-    endif()
+    if(NOT USE_MMAP)
+      list(FILTER LIBOWFAT_SOURCES EXCLUDE REGEX "lib/mmap")
+    endif(NOT USE_MMAP)
+
+    #[[if(NOT USE_UTF8)
+      list(FILTER LIBOWFAT_SOURCES EXCLUDE REGEX "lib/utf8")
+    endif(NOT USE_UTF8)]]
 
     set(LIBOWFAT_SOURCES ${LIBOWFAT_HEADERS} ${LIBOWFAT_SOURCES})
-
-    set_add(ALL_SOURCES ${LIBOWFAT_SOURCES})
+    #set(ALL_SOURCES ${LIBOWFAT_SOURCES})
 
     add_library(libowfat STATIC ${LIBOWFAT_SOURCES} ${LIBOWFAT_HEADERS})
     set_target_properties(libowfat PROPERTIES OUTPUT_NAME owfat)

@@ -45,11 +45,6 @@ is_link(const char* path) {
   return 0;
 }
 
-/* length of the root of an absolute path: "/" -> 1, "C:\" -> 3, relative -> 0 */
-static size_t
-root_len(const char* s) {
-  return !path_is_absolute(s) ? 0 : path_issep(s[0]) ? 1 : 3;
-}
 
 /* drops the last component of the path in sa; root is its root length */
 static void
@@ -96,7 +91,7 @@ path_canonicalize(const char* path, stralloc* sa, int symbolic) {
   sa->len = 0;
 
 restart:
-  if((root = root_len(rest.s))) {
+  if((root = path_rootlen(rest.s, rest.len))) {
     if(!stralloc_catb(sa, rest.s, root))
       goto fail;
 
@@ -129,7 +124,7 @@ restart:
       /* relative with nothing to pop (or a ".." on top): keep the ".." */
       if(sa->len > root && !(sa->len - k == 2 && sa->s[k] == '.' && sa->s[k + 1] == '.'))
         pop(sa, root);
-      else if(!root) 
+      else if(!root)
         if((sa->len && !stralloc_catc(sa, sep)) || !stralloc_catb(sa, "..", 2))
           goto fail;
 
@@ -163,7 +158,7 @@ restart:
     pos = 0;
 
     /* absolute target: start over from its root */
-    if(path_is_absolute(rest.s)) {
+    if(path_rootlen(rest.s, rest.len)) {
       sa->len = 0;
       goto restart;
     }

@@ -120,4 +120,7 @@
 
 /* Define this to use mmap()/munmap() for memory-mapped file I/O
    (tracks the USE_MMAP cmake option; see cmake/Checks.cmake) */
-#cmakedefine HAVE_MMAP 1
+#cmakedefine USE_MMAP 1
+
+/* Define this to use utf-8 aware functions */
+#cmakedefine USE_UTF8 1

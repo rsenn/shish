@@ -1,3 +1,4 @@
+include(CheckFunctionExists)
 include(CheckSymbolExists)
 include(CheckTypeSize)
 
@@ -12,7 +13,7 @@ function(check_cflag FLAG OUTPUT_VAR)
   endif()
 
   message(CHECK_START "Checking compiler flag ${FLAG}")
-   set(CMAKE_REQUIRED_QUIET TRUE)
+  set(CMAKE_REQUIRED_QUIET TRUE)
   check_c_compiler_flag("${FLAG}" RESULT)
   set(CMAKE_REQUIRED_QUIET FALSE)
 
@@ -79,6 +80,14 @@ function(check_inline)
 
   if(OUTPUT_VAR)
     set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
+  endif()
+
+  if(${ARGC} LESS_EQUAL 0)
+    if(NOT "${RESULT}" STREQUAL "")
+      if(NOT "${RESULT}" MATCHES "^inline$")
+        add_definitions("-Dinline=${RESULT}")
+      endif()
+    endif()
   endif()
 endfunction()
 
@@ -351,6 +360,7 @@ macro(check_source_definitions)
     set_add(SOURCE_DEFINITIONS -D_${TYPE}_SOURCE)
   endforeach()
   add_definitions(${SOURCE_DEFINITIONS})
+  list(APPEND CMAKE_REQUIRED_DEFINITIONS ${SOURCE_DEFINITIONS})
 endmacro()
 
 #
@@ -407,47 +417,16 @@ macro(check_no_unused_warn_flags)
   check_warn_flag(-Wno-error=unused-but-set-variable WARN_NO_ERROR_UNUSED_BUT_SET_VARIABLE)
 endmacro()
 
-#
-# check_falign_flags
-#
-macro(check_falign_flags)
-  check_c_compiler_flag("-falign-functions=1" F_ALIGN_FUNCTIONS)
-  check_c_compiler_flag("-falign-jumps=1" F_ALIGN_JUMPS)
-  check_c_compiler_flag("-falign-labels=1" F_ALIGN_LABELS)
-  check_c_compiler_flag("-falign-loops=1" F_ALIGN_LOOPS)
-  
-  if(F_ALIGN_COMMONS)
-    add_cflags(-falign-commons=1 ${CMAKE_BUILD_TYPE})
-  endif()
-  if(F_ALIGN_DOUBLE)
-    add_cflags(-falign-double=1 ${CMAKE_BUILD_TYPE})
-  endif()
-  if(F_ALIGN_FUNCTIONS)
-    add_cflags(-falign-functions=1 ${CMAKE_BUILD_TYPE})
-  endif()
-  if(F_ALIGN_JUMPS)
-    add_cflags(-falign-jumps=1 ${CMAKE_BUILD_TYPE})
-  endif()
-  if(F_ALIGN_LABELS)
-    add_cflags(-falign-labels=1 ${CMAKE_BUILD_TYPE})
-  endif()
-  if(F_ALIGN_LOOPS)
-    add_cflags(-falign-loops=1 ${CMAKE_BUILD_TYPE})
-  endif()
-  if(F_ALIGN_STRINGOPS)
-    add_cflags(-falign-stringops=1 ${CMAKE_BUILD_TYPE})
-  endif()
-endmacro()
 
 # MinSizeRel means bytes over everything else: every flag below is probed before
 # use, and each one trades speed, hardening or diagnostics for size.
 #
-# check_falign_flags
+# check_falign_flags <FLAG-VAR>
 #
 #   -f*-unwind-tables    .eh_frame is 15% of an untuned binary; nothing unwinds
 #   -fno-jump-tables     switch tables become compare chains -f*-sections only pays off together with --gc-sections
 #
-macro(check_fno_optim_flags)
+macro(check_fno_optim_flags FLAG_VAR)
   set(FLAGS "-fno-asynchronous-unwind-tables" "-fno-unwind-tables" "-fno-stack-protector" "-fno-jump-tables" "-fno-plt" "-fno-ident" "-fmerge-all-constants" "-ffunction-sections" "-fdata-sections")
 
   foreach(FLAG ${FLAGS})
@@ -520,6 +499,29 @@ function(check_winsock2)
  
   if(OUTPUT_VAR)
     set("${OUTPUT_VAR}" "${HAVE_WS2_32}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+function(check_socket_library)
+  if(${ARGC} GREATER_EQUAL 1)
+    set(RESULT_VAR "${ARGV0}")
+  else()
+    set(RESULT_VAR SOCKET_LIBRARY)
+  endif()
+
+  if(WINDOWS_NATIVE)
+    check_winsock2(HAVE_WINSOCK RESULT)
+  else()
+    check_library_exists(socket "connect" /usr/lib HAVE_LIBSOCKET)
+    if(HAVE_LIBSOCKET)
+      set(RESULT "socket")
+    else()
+      set(RESULT "")
+    endif()
+  endif()
+
+  if(RESULT_VAR)
+    set("${RESULT_VAR}" "${RESULT}" PARENT_SCOPE)
   endif()
 endfunction()
 
@@ -611,28 +613,67 @@ function(check_pointer_size)
 endfunction()
 
 #
-# check_type_sizes
+# check_type_exists <TYPE> [RESULT-VAR] [INCLUDES]
 #
-macro(check_type_sizes)
-  set(CMAKE_REQUIRED_QUIET TRUE)
-  check_type_size(ssize_t SIZEOF_SSIZE_T)
-  if(NOT SIZEOF_SSIZE_T STREQUAL "")
-    set(HAVE_SSIZE_T 1)
-    add_definitions(-D_SSIZE_T_=1)
+function(check_type_exists TYPE RESULT_VAR)
+  if(NOT RESULT_VAR AND "${RESULT_VAR}" STREQUAL "" )
+    clean_name("HAVE_${TYPE}" RESULT_VAR)
   endif()
-  check_type_size(sigset_t SIZEOF_SIGSET_T)
-  if(NOT SIZEOF_SIGSET_T STREQUAL "")
-    set(HAVE_SIGSET_T 1)
+
+  assign_properties("ADD_HEADERS;COMPILE_DEFINITIONS;COMPILE_FLAGS;LINK_DIRECTORIES;LINK_FLAGS;LINK_LIBRARIES;LINK_OPTIONS" ${ARGN})
+
+  set(SRC "typedef ${TYPE} type_t;\nint main() {\n  type_t var;\n  return 0;\n}\n")
+
+  foreach(INC ${ADD_HEADERS})
+    set(SRC "#include <${INC}>\n${SRC}")
+  endforeach()
+
+  check_compile("${RESULT_VAR}" "${SRC}" "for type ${TYPE}")
+
+  set("${RESULT_VAR}" "${HAVE_${TYPE}}" PARENT_SCOPE)
+endfunction()
+
+#
+# check_type_exists_def <TYPE> [RESULT-VAR] [DEF-NAME] [ADDITIONAL-INCLUDES]
+#
+function(check_type_exists_def TYPE)
+  if(${ARGC} GREATER_EQUAL 2)
+    set(RESULT_VAR "${ARGV1}")
+  else()
+    clean_name("HAVE_${TYPE}" RESULT_VAR)
   endif()
-  check_type_size(pid_t SIZEOF_PID_T)
-  if(NOT SIZEOF_PID_T STREQUAL "")
-    set(HAVE_PID_T 1)
+
+  #list(SUBLIST ARGN 2 -1 REST)
+  #assign_named_items(${REST})
+
+  check_type_exists("${TYPE}" "${RESULT_VAR}" ${REST})
+
+  set("${RESULT_VAR}" "${${RESULT_VAR}}" PARENT_SCOPE)
+
+  if(${${RESULT_VAR}})
+    if(${ARGC} GREATER_EQUAL 3)
+        add_definitions("-D${ARGV2}_=1")
+    endif()
   endif()
-  check_type_size(uid_t SIZEOF_UID_T)
-  if(NOT SIZEOF_UID_T STREQUAL "")
-    set(HAVE_UID_T 1)
-  endif()
-  set(CMAKE_REQUIRED_QUIET FALSE)
+endfunction()
+
+#
+# check_types [TYPES....]
+#
+macro(check_types)
+  foreach(TYPE ${ARGN})
+    check_type_exists_def("${TYPE}")
+  endforeach()
+endmacro()
+
+#
+# check_posix_types
+#
+macro(check_posix_types)
+  check_type_exists_def(ssize_t HAVE_SSIZE_T _SSIZE_T_)
+  check_type_exists(sigset_t HAVE_SIGSET_T)
+  check_type_exists(pid_t HAVE_PID_T ADD_HEADERS "sys/types.h")
+  check_type_exists(uid_t HAVE_UID_T)
 endmacro()
 
 #
@@ -856,20 +897,68 @@ macro(check_sig_functions)
 endmacro()
 
 #
-# compiler_flags_optimize_size
+# check_optimize_size_flags [OUTPUT-VAR]
 #
-macro(compiler_flags_optimize_size)
-  string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-  string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_MINSIZEREL "${CMAKE_C_FLAGS_MINSIZEREL}")
-  string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
-  string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
-  string(REGEX REPLACE "-O[1-9]" "-Os" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
-endmacro()
+function(check_optimize_size_flags)
+  if(${ARGC} GREATER_EQUAL 1)
+    set(OUTPUT_VAR "${ARGV0}")
+  else()
+    set(OUTPUT_VAR CMAKE_C_FLAGS_MINSIZEREL)
+  endif()
+
+  string(REGEX REPLACE "-O[1-9]" "-Os" FLAGS "${${OUTPUT_VAR}}")
+  
+  if(NOT "${FLAGS}" STREQUAL "${${OUTPUT_VAR}}")
+    if(OUTPUT_VAR)
+      set("${OUTPUT_VAR}" "${FLAGS}" PARENT_SCOPE)
+    endif()
+  endif()
+endfunction()
 
 #
-# compiler_flags_debug [OUTPUT-VAR]
+# check_falign_flags [OUTPUT-VAR]
 #
-function(compiler_flags_debug)
+function(check_falign_flags)
+  if(${ARGC} GREATER_EQUAL 1)
+    set(OUTPUT_VAR "${ARGV0}")
+  else()
+    set(OUTPUT_VAR CMAKE_C_FLAGS_MINSIZEREL)
+  endif()
+
+  set(FLAGS "")
+
+  check_cflag("-falign-functions=1" F_ALIGN_FUNCTIONS FLAGS)
+  check_cflag("-falign-jumps=1" F_ALIGN_JUMPS FLAGS)
+  check_cflag("-falign-labels=1" F_ALIGN_LABELS FLAGS)
+  check_cflag("-falign-loops=1" F_ALIGN_LOOPS FLAGS)
+  
+  if(OUTPUT_VAR)
+    set("${OUTPUT_VAR}" "${FLAGS}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+#
+# check_no_warnings_flags [OUTPUT-VAR]
+#
+function(check_no_warnings_flags)
+  if(${ARGC} GREATER_EQUAL 1)
+    set(OUTPUT_VAR "${ARGV0}")
+  else()
+    set(OUTPUT_VAR CMAKE_C_FLAGS)
+  endif()
+
+  check_cflag("-w" F_NOWARN FLAGS)
+
+  if(OUTPUT_VAR)
+    set("${OUTPUT_VAR}" "${FLAGS}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+
+#
+# check_debug_symbols_flags [OUTPUT-VAR]
+#
+function(check_debug_symbols_flags)
   if(${ARGC} GREATER_EQUAL 1)
     set(OUTPUT_VAR "${ARGV0}")
   else()
@@ -895,63 +984,3 @@ function(compiler_flags_debug)
     set("${OUTPUT_VAR}" "${FLAGS}" PARENT_SCOPE)
   endif()
 endfunction()
-
-#
-# option_debug_mode
-#
-macro(option_debug_mode)
-  option(BUILD_DEBUG "Build in debug mode" OFF)
-
-  if("${CMAKE_BUILD_TYPE}" MATCHES ".*Deb.*")
-    set(BUILD_DEBUG TRUE)
-  endif()
-
-  if(BUILD_DEBUG)
-    add_definitions(-D_DEBUG)
-  else()
-    add_definitions(-DNDEBUG=1)
-  endif()
-
-  if(BUILD_DEBUG)
-    option(USE_EFENCE "Enable electric fence" OFF)
-    check_library_exists(efence malloc /usr/lib HAVE_EFENCE)
-  endif()
-
-  if(HAVE_EFENCE)
-    if(USE_EFENCE)
-      set(ELECTRICFENCE_LIBRARY efence)
-    endif()
-  endif()
-endmacro()
-
-#
-# option_link_static
-#
-macro(option_link_static)
-  option(LINK_STATIC "Link executables statically" OFF)
-
-  if(LINK_STATIC)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
-
-    add_definitions(-DLINK_STATIC=1)
-
-    set(ENABLE_SHARED OFF)
-    set(BUILD_SHARED_LIBS FALSE)
-  endif()
-endmacro()
-
-#
-# option_link_time_optimization
-#
-macro(option_link_time_optimization)
-  check_c_compiler_flag("-flto" F_LTO)
-
-  if(F_LTO)
-    option(ENABLE_LTO "Enable link-time optimization" OFF)
-  endif()
-
-  if(ENABLE_LTO)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
-  endif()
-endmacro()

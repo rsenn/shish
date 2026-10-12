@@ -5,8 +5,7 @@
 size_t
 byte_chr(const void* haystack, size_t len, char needle) {
   char c = needle;
-  const char* s = haystack;
-  const char* t = s + len;
+  const char* s = haystack, *t = haystack + len;
 
   for(;;) {
     if(s == t)
@@ -14,7 +13,9 @@ byte_chr(const void* haystack, size_t len, char needle) {
 
     if(*s == c)
       break;
+
     ++s;
   }
+
   return s - (const char*)haystack;
 }

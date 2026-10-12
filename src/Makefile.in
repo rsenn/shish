@@ -26,7 +26,7 @@ dep:              makefiles dep-recursive
 # local directory configuration
 # ---------------------------------------------------------------------------
 RECURSIVE = 1
-SUBDIRS   = builtin debug eval exec expand fd fdstack fdtable filter history \
+SUBDIRS   = builtin eval exec expand fd fdstack fdtable filter history \
   job parse prompt redir sh source term trace tree var vartab wordlist
 
 PROGRAMS = shish$(EXEEXT) shparse2ast$(EXEEXT) shformat$(EXEEXT)
@@ -34,7 +34,7 @@ LIB     = $(top_builddir)/lib/libowfat.a
 LDADD   = $(top_builddir)/src/libshell.a \
           $(top_builddir)/text/libtext.a
           
-HEADERS = builtin.h debug.h eval.h exec.h expand.h fd.h fdstack.h fdtable.h \
+HEADERS = builtin.h eval.h exec.h expand.h fd.h fdstack.h fdtable.h \
           filter.h history.h job.h parse.h prompt.h redir.h sh.h sig.h \
           source.h term.h trace.h tree.h var.h vartab.h wordlist.h
 
@@ -52,11 +52,6 @@ sh_main.o: $(srcdir)/sh/sh_main.c
 	@$(COMPILE) -MMD -c -o $@ $<
 
 sh_parse2ast.o: $(srcdir)/sh/sh_parse2ast.c
-	@$(ECHO_CC)
-	@$(COMPILE) -MMD -c -o $@ $<
-
-sh_parse2ast_debug_begin.o sh_parse2ast_debug_char.o sh_parse2ast_debug_end.o sh_parse2ast_debug_list.o sh_parse2ast_debug_node.o sh_parse2ast_debug_position.o sh_parse2ast_debug_ptr.o sh_parse2ast_debug_redir.o sh_parse2ast_debug_space.o sh_parse2ast_debug_stralloc.o sh_parse2ast_debug_str.o sh_parse2ast_debug_sublist.o sh_parse2ast_debug_subnode.o sh_parse2ast_debug_subst.o sh_parse2ast_debug_ulong.o sh_parse2ast_debug_unquoted.o sh_parse2ast_debug_xlong.o: DEFS += -DSHPARSE2AST=1
-sh_parse2ast_debug_begin.o sh_parse2ast_debug_char.o sh_parse2ast_debug_end.o sh_parse2ast_debug_list.o sh_parse2ast_debug_node.o sh_parse2ast_debug_position.o sh_parse2ast_debug_ptr.o sh_parse2ast_debug_redir.o sh_parse2ast_debug_space.o sh_parse2ast_debug_stralloc.o sh_parse2ast_debug_str.o sh_parse2ast_debug_sublist.o sh_parse2ast_debug_subnode.o sh_parse2ast_debug_subst.o sh_parse2ast_debug_ulong.o sh_parse2ast_debug_unquoted.o sh_parse2ast_debug_xlong.o: sh_parse2ast_%.o: $(srcdir)/debug/%.c
 	@$(ECHO_CC)
 	@$(COMPILE) -MMD -c -o $@ $<
 

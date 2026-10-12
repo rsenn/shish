@@ -8,16 +8,13 @@ exec_lookup(char* name, uint32* hashptr) {
   uint32 hash = exec_hashstr(name);
   struct exechash* entry;
 
-  for(entry = exec_hashtbl[hash & EXEC_HASHMASK]; entry; entry = entry->next) {
-    if(entry->hash == hash) {
-      if(!str_diff(entry->name, name)) {
-        if(hashptr)
-          *hashptr = hash;
+  for(entry = exec_hashtbl[hash & EXEC_HASHMASK]; entry; entry = entry->next)
+    if(entry->hash == hash) 
+      if(!str_diff(entry->name, name)) 
+        break;
 
-        return entry;
-      }
-    }
-  }
+  if(hashptr)
+    *hashptr = hash;
 
-  return NULL;
+  return entry;
 }

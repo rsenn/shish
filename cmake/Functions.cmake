@@ -171,17 +171,60 @@ endmacro()
 macro(assign_named_items)
  unset(__N)
   foreach(__A ${ARGN})
-     if(NOT DEFINED __N)
+    if(NOT DEFINED __N)
       set(__N "${__A}")
-     else()
+    else()
       set(__V "${__A}")
-      endif()
-     if(DEFINED __V)
-         set("${__N}" "${__V}")
-       unset(__N)
-       unset(__V)
+    endif()
+    if(DEFINED __V)
+      set("${__N}" "${__V}")
+      unset(__N)
+      unset(__V)
+    endif()
+  endforeach()
+endmacro()
+
+#
+# isin_value <ITEM> <RESULT-VAR> [ARGS...]
+#
+function(isin_value ITEM RESULT_VAR)
+  set(RESULT FALSE)
+  foreach(ARG ${ARGN})
+    if("${ARG}" STREQUAL "${ITEM}")
+      set(RESULT TRUE)
+      break()
+    endif()
+  endforeach()
+  set("${RESULT_VAR}" "${RESULT}" PARENT_SCOPE)
+  #return(PROPAGATE "${RESULT_VAR}")
+endfunction()
+
+#
+# assign_properties <PROP-NAMES> [LIST...]
+#
+macro(assign_properties PROP_NAMES)
+ unset(NAME)
+ foreach(ARG ${ARGN})
+     isin_value("${ARG}" HAS_IT ${PROP_NAMES})
+    
+     if(HAS_IT)
+       set(NAME "${ARG}")
+       set("${NAME}" "")
+       continue()
+     endif()
+
+     if(NAME)
+       list(APPEND "${NAME}" "${ARG}")
+     else()
+       string(REGEX REPLACE "[;\\s]+" "\n  " PROPS "${PROP_NAMES}")
+       message("assign_properties no such property '${ARG}'.\nValid properties are:\n  ${PROPS}")
+       message(FATAL_ERROR "Invalid property '${ARG}'")
      endif()
   endforeach()
+  
+  #[[foreach(NAME ${PROP_NAMES})
+    message("assign_properties ${NAME} = '${${NAME}}'")
+  endforeach()]]
 endmacro()
 
 #

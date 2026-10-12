@@ -15,11 +15,11 @@ path_realpath(const char* path, stralloc* sa, int symbolic, stralloc* cwd) {
   stralloc_init(&own);
   stralloc_init(&full);
 
-  if(!path_is_absolute(path)) {
+  if(!path_rootlen_s(path)) {
     if(!cwd || !cwd->len) {
       if(!path_getcwd(&own))
         goto end;
-      
+
       cwd = &own;
     }
 

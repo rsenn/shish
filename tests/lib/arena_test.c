@@ -1,6 +1,6 @@
 /* lib/arena unit test; prints "<what>: OK|FAIL", exits non-zero on any FAIL */
-#include "../lib/arena.h"
-#include "../lib/windoze.h"
+#include "../../lib/arena.h"
+#include "../../lib/windoze.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>

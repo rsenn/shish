@@ -8,6 +8,6 @@ path_getsep(const char* path) {
 
     ++path;
   }
-  
+
   return '\0';
 }

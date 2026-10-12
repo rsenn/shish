@@ -30,21 +30,22 @@ typedef struct {
                                   */
 #define PATH_FNM_PERIOD (1 << 2) /* Leading .' is matched only explicitly.  */
 
-const char* path_basename(const char* path, size_t* len);
-int path_canonicalize(const char* path, stralloc* sa, int symbolic);
-int path_canonical_sa(stralloc* sa);
-int path_canonical(const char* path, stralloc* out);
-size_t path_collapse(char* path, size_t n);
+#define path_is_absolute(p, len) (path_rootlen((p), (len)) & 1)
+#define path_is_absolute_s(p) (path_rootlen_s((p)) & 1)
+
+const char* path_basename(const char*, size_t* baselen);
+int path_canonicalize(const char*, stralloc*, int symbolic);
+size_t path_dirlen(const char*, size_t);
 int path_fnmatch(const char* pattern, size_t plen, const char* string, size_t slen, int flags);
-int path_getcwd(stralloc* sa);
+int path_getcwd(stralloc*);
 char* path_gethome(int uid);
-int path_getsep(const char* path);
-int path_is_absolute_b(const char* x, size_t n);
-int path_is_absolute(const char* p);
-size_t path_len_s(const char* s);
-int path_readlink(const char* path, stralloc* sa);
-int path_realpath(const char* path, stralloc* sa, int symbolic, stralloc* cwd);
-size_t path_right(const char* s, size_t n);
+int path_getsep(const char*);
+size_t path_len(const char*, size_t);
+size_t path_len_s(const char*);
+int path_readlink(const char*, stralloc*);
+int path_realpath(const char*, stralloc*, int symbolic, stralloc* cwd);
+int path_rootlen(const char*, size_t);
+int path_rootlen_s(const char*);
 
 #ifdef STRLIST_H
 #endif

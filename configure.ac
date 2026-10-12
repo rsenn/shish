@@ -379,7 +379,6 @@ src/builtin/Makefile
 src/builtin/core/Makefile
 src/builtin/extra/Makefile
 src/builtin/filter/Makefile
-src/debug/Makefile
 src/eval/Makefile
 src/exec/Makefile
 src/expr/Makefile

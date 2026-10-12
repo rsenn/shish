@@ -10,17 +10,20 @@
  *   "//"           "/"        only separators: one of them
  *   ""             ""
  *
- * The string is not modified. len may be NULL when path has no trailing separator.
+ * The string is not modified.
+ * len may be NULL when path has no trailing separator.
  * ----------------------------------------------------------------------- */
 const char*
 path_basename(const char* path, size_t* len) {
-  size_t start, end = str_len(path);
+  const char *x, *y = path + str_len(path);
 
-  if(end > 0 && path_issep(path[0])) {
+  if(path < y && path_issep(*path)) {
     /* all separators -> the first one */
-    for(start = 0; start < end && path_issep(path[start]); ++start) {}
-      
-    if(start == end) {
+    for(x = path; x < y; x++)
+      if(!path_issep(*x))
+        break;
+
+    if(x == y) {
       if(len)
         *len = 1;
 
@@ -28,13 +31,18 @@ path_basename(const char* path, size_t* len) {
     }
   }
 
-  while(end > 0 && path_issep(path[end - 1]))
-    --end;
+  /* Trim trailing separators */
+  for(; y > x; y--)
+    if(!path_issep(*(y - 1)))
+      break;
 
-  for(start = end; start > 0 && !path_issep(path[start - 1]); --start) {}
+  /* Scan backwards to find the start of the basename component */
+  for(x = y; x > path; x--)
+    if(path_issep(*(x - 1)))
+      break;
 
   if(len)
-    *len = end - start;
+    *len = y - x;
 
-  return path + start;
+  return x;
 }

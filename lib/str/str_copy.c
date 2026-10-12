@@ -8,6 +8,7 @@ str_copy(char* out, const char* in) {
   for(;;) {
     if(!(*s = *t))
       break;
+
     ++s;
     ++t;
   }

@@ -101,7 +101,8 @@ path_fnmatch_has_close(const char* pattern, size_t plen, int flags) {
   for(j++; j < plen; j++) {
     if(pattern[j] == '\\' && !(flags & PATH_FNM_NOESCAPE))
       j++;
-    else if(pattern[j] == '[' && j + 1 < plen && (pattern[j + 1] == ':' || pattern[j + 1] == '.' || pattern[j + 1] == '=') &&
+    else if(pattern[j] == '[' && j + 1 < plen &&
+            (pattern[j + 1] == ':' || pattern[j + 1] == '.' || pattern[j + 1] == '=') &&
             (n = path_fnmatch_subexpr_len(pattern + j, plen - j, pattern[j + 1])))
       j += n - 1;
     else if(pattern[j] == ']')
@@ -217,8 +218,7 @@ start:
         if(!escaped && *pattern == ']' && pattern != start)
           break;
 
-        if(!escaped && *pattern == '[' && plen > 1 &&
-           (pattern[1] == ':' || pattern[1] == '.' || pattern[1] == '=')) {
+        if(!escaped && *pattern == '[' && plen > 1 && (pattern[1] == ':' || pattern[1] == '.' || pattern[1] == '=')) {
           /* MEMBER - "[:class:]" / "[.symbol.]" / "[=equiv=]" */
           char delim = pattern[1];
           size_t sublen = path_fnmatch_subexpr_len(pattern, plen, delim);
@@ -297,8 +297,7 @@ start:
               plen--;
             }
             /* "[:class:]"/"[.x.]"/"[=x=]" contains its own "]" */
-            else if(*pattern == '[' && plen > 1 &&
-                    (pattern[1] == ':' || pattern[1] == '.' || pattern[1] == '=')) {
+            else if(*pattern == '[' && plen > 1 && (pattern[1] == ':' || pattern[1] == '.' || pattern[1] == '=')) {
               size_t sublen = path_fnmatch_subexpr_len(pattern, plen, pattern[1]);
 
               if(sublen) {

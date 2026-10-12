@@ -94,9 +94,6 @@ exec_hash(char* name, int mask) {
     struct exechash* entry;
     uint32 hash;
 
-    /* hash the name for possible re-use on exechash_create() */
-    hash = exec_hashstr(name);
-
     /* do we have a cache hit? */
     if((entry = exec_lookup(name, &hash))) {
       entry->hits++;
@@ -110,8 +107,7 @@ exec_hash(char* name, int mask) {
     how = entry && entry->mask == mask ? "hit" : "miss";
 
     if(!entry || entry->mask != mask) {
-      /* if we don't have a cache hit we're gonna search, special builtins first
-       */
+      /* if we don't have a cache hit we're gonna search, special builtins first */
       cmd = exec_search(name, mask);
     }
 

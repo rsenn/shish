@@ -1,6 +1,6 @@
 /* src/json.h unit test; prints "<what>: OK|FAIL", exits non-zero on any FAIL */
-#include "../lib/stralloc.h"
-#include "../src/json.h"
+#include "../../lib/stralloc.h"
+#include "../../src/json.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -125,7 +125,10 @@ minified_object(struct json* j) {
 
 int
 main(void) {
-  check(2, object, "{\n  \"kind\": \"word\",\n  \"n\": 3,\n  \"flag\": \"0x1f\",\n  \"none\": null\n}", "indented object");
+  check(2,
+        object,
+        "{\n  \"kind\": \"word\",\n  \"n\": 3,\n  \"flag\": \"0x1f\",\n  \"none\": null\n}",
+        "indented object");
   check(0, object, "{ \"kind\": \"word\", \"n\": 3, \"flag\": \"0x1f\", \"none\": null }", "compact object");
   check(2,
         nested,
@@ -136,13 +139,25 @@ main(void) {
   check(0, ndjson, "{ \"i\": 0 }\n{ \"i\": 1 }\n", "two top-level documents need no state reset");
 
   flag_bits = 0;
-  check(0, flag_object, "{ \"s\": \"it's \\\"q\\\"\", \"n\": 255, \"h\": \"0xff\", \"r\": [10,20] }", "no flags: plain JSON");
+  check(0,
+        flag_object,
+        "{ \"s\": \"it's \\\"q\\\"\", \"n\": 255, \"h\": \"0xff\", \"r\": [10,20] }",
+        "no flags: plain JSON");
   flag_bits = 1;
-  check(0, flag_object, "{ s: \"it's \\\"q\\\"\", n: 255, h: \"0xff\", r: [10,20] }", "bare_keys alone: only the keys change");
+  check(0,
+        flag_object,
+        "{ s: \"it's \\\"q\\\"\", n: 255, h: \"0xff\", r: [10,20] }",
+        "bare_keys alone: only the keys change");
   flag_bits = 2;
-  check(0, flag_object, "{ \"s\": 'it\\'s \"q\"', \"n\": 255, \"h\": \"0xff\", \"r\": [10,20] }", "single_quotes alone: ' escaped, \" not, hex stays a string");
+  check(0,
+        flag_object,
+        "{ \"s\": 'it\\'s \"q\"', \"n\": 255, \"h\": \"0xff\", \"r\": [10,20] }",
+        "single_quotes alone: ' escaped, \" not, hex stays a string");
   flag_bits = 4;
-  check(0, flag_object, "{ \"s\": \"it's \\\"q\\\"\", \"n\": 0xff, \"h\": 0xff, \"r\": [0xa,0x14] }", "hex_numbers alone: every number, json_hex() is no longer a string");
+  check(0,
+        flag_object,
+        "{ \"s\": \"it's \\\"q\\\"\", \"n\": 0xff, \"h\": 0xff, \"r\": [0xa,0x14] }",
+        "hex_numbers alone: every number, json_hex() is no longer a string");
   flag_bits = 7;
   check(0, flag_object, "{ s: 'it\\'s \"q\"', n: 0xff, h: 0xff, r: [0xa,0x14] }", "all three together");
   flag_bits = 7;
@@ -152,7 +167,10 @@ main(void) {
         "the flags do not change the layout");
 
   flag_bits = 0;
-  check(0, minified_object, "{\"kind\":\"word\",\"n\":3,\"flag\":\"0x1f\",\"none\":null}", "minify: no space after : or , nor inside { }");
+  check(0,
+        minified_object,
+        "{\"kind\":\"word\",\"n\":3,\"flag\":\"0x1f\",\"none\":null}",
+        "minify: no space after : or , nor inside { }");
   check(2, minified, "{\"cmds\":[{\"a\":1},{}],\"z\":2}", "minify overrides indent, an empty container is {}");
   flag_bits = 5;
   check(4, minified, "{cmds:[{a:0x1},{}],z:0x2}", "minify with bare_keys and hex_numbers");

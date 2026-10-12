@@ -13,13 +13,13 @@
 #include <unistd.h>
 #endif
 
-/* start reading a file on an (fd): memory-mapped when HAVE_MMAP, a
+/* start reading a file on an (fd): memory-mapped when USE_MMAP, a
  * plain read(2)-backed buffer otherwise.
  * ----------------------------------------------------------------------- */
 int
 fd_mmap(struct fd* d, const char* fname) {
   int e;
-#if HAVE_MMAP
+#if USE_MMAP
   int r;
 #endif
 
@@ -30,7 +30,7 @@ fd_mmap(struct fd* d, const char* fname) {
     return -1;
   }
 
-#if HAVE_MMAP
+#if USE_MMAP
   fdtable_track(e, FDTABLE_LAZY);
 
   r = buffer_mmapread_fd(d->r, e);
