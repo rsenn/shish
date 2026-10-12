@@ -7,6 +7,6 @@ arena_alloc(arena* a, size_t size, size_t align) {
 
   if((p = arena_take(a, size, align)))
     byte_zero(p, size);
-  
+
   return p;
 }

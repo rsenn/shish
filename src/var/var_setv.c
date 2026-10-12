@@ -11,7 +11,12 @@ const char*
 var_setv(const char* name, const char* value, size_t vlen, int flags) {
   struct var* var;
 
-  TRACE(TRACE_VAR, "setv", trace_str("name", name), trace_strn("value", value, vlen < 64 ? vlen : 64), trace_hex("flags", flags), trace_int("level", varstack->level));
+  TRACE(TRACE_VAR,
+        "setv",
+        trace_str("name", name),
+        trace_strn("value", value, vlen < 64 ? vlen : 64),
+        trace_hex("flags", flags),
+        trace_int("level", varstack->level));
 
   /* find/create new variable on top vartab */
   var = var_create(name, flags);

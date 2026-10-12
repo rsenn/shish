@@ -3,12 +3,14 @@
 #include "../byte.h"
 #include "../str.h"
 
-extern int
+/* stralloc_diffs returns negative, 0, or positive, depending on whether
+ * a is lexicographically smaller than, equal to, or greater than the
+ * string b[0], b[1], ..., b[n] == '\0'. */
+int
 stralloc_diffs(const stralloc* a, const char* b) {
-  size_t i;
   int j;
 
-  for(i = 0;; ++i) {
+  for(size_t i = 0;; ++i) {
     if(i == a->len)
       return !b[i] ? 0 : -1;
 
@@ -18,5 +20,6 @@ stralloc_diffs(const stralloc* a, const char* b) {
     if((j = ((unsigned char)(a->s[i]) - (unsigned char)(b[i]))))
       break;
   }
+
   return j;
 }

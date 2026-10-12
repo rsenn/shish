@@ -10,7 +10,7 @@
  * A typical filter fills in only the declarative half; the framework
  * (filter_open/filter_run/filter_close) does the rest:
  *
- *   struct cat { struct filter_in in; int number_lines; ... }; // in first 
+ *   struct cat { struct filter_in in; int number_lines; ... }; // in first
  *   const struct filter_ops cat_ops = {.opts = "nb", .size = sizeof(struct cat),
  *                                      .option = cat_option, .step = cat_step};
  *   int builtin_cat(int argc, char* argv[]) { return filter_run(&cat_ops, argc, argv, fd_out->w); }
@@ -79,11 +79,12 @@ struct filter_in {
   unsigned done_any : 1, had_error : 1, newfile : 1; /* set when an operand was just opened; the user clears it */
   unsigned silent : 1;                               /* an operand that cannot be opened is skipped without a message */
   unsigned spilling : 1;                             /* filter_in_line() is mid-line: keep spill across operands */
-  unsigned keepempty : 1, empty : 1;                 /* keepempty: an empty operand is not skipped, ready() stops on it with empty set */
-  unsigned each : 1;                                 /* setup(): filter_run calls ops->each() per operand, no step() */
-  buffer* sink;                                      /* filter_run(): where the result goes; NULL in a chain */
-  buffer* upstream;                                  /* what "-" reads */
-  buffer* cur;                                       /* NULL: no operand open */
+  unsigned keepempty : 1,
+      empty : 1;     /* keepempty: an empty operand is not skipped, ready() stops on it with empty set */
+  unsigned each : 1; /* setup(): filter_run calls ops->each() per operand, no step() */
+  buffer* sink;      /* filter_run(): where the result goes; NULL in a chain */
+  buffer* upstream;  /* what "-" reads */
+  buffer* cur;       /* NULL: no operand open */
   buffer inb;
   char rbuf[4096];
   char** errargv; /* argv for builtin_error() */

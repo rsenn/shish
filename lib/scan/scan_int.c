@@ -4,15 +4,10 @@ static const unsigned int maxint = ((unsigned int)-1) >> 1;
 
 size_t
 scan_int(const char* src, int* dest) {
-  const char* tmp;
-  int l;
+  const char* tmp = src;
+  int l = 0, ok = 0;
   unsigned char c;
-  unsigned int neg;
-  int ok;
-  tmp = src;
-  l = 0;
-  ok = 0;
-  neg = 0;
+  unsigned int neg = 0;
 
   switch(*tmp) {
     case '-': {
@@ -44,10 +39,12 @@ scan_int(const char* src, int* dest) {
 
     if(n + c < n)
       break;
+
     n += c;
 
     if(n > maxint + neg)
       break;
+
     l = (int)n;
     ++tmp;
     ok = 1;
@@ -55,6 +52,7 @@ scan_int(const char* src, int* dest) {
 
   if(!ok)
     return 0;
+
   *dest = (neg ? -l : l);
   return (size_t)(tmp - src);
 }

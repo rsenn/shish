@@ -199,7 +199,12 @@ job_fork(struct job* j, union node* node, int bgnd) {
     setpgid(pid, pgrp);
 #endif
 
-  TRACE(TRACE_JOB, "fork", trace_int("id", j->id), trace_int("pid", pid), trace_int("pgrp", pgrp), trace_int("bgnd", bgnd));
+  TRACE(TRACE_JOB,
+        "fork",
+        trace_int("id", j->id),
+        trace_int("pid", pid),
+        trace_int("pgrp", pgrp),
+        trace_int("bgnd", bgnd));
 
   TRACE(TRACE_SIG, "unblock", trace_int("sig", SIGCHLD));
   sig_unblock(SIGCHLD);

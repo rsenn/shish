@@ -35,6 +35,7 @@ fmt_escapecharc(char* dest, uint32 ch) {
         dest[1] = c;
       }
       return 2;
+
     default:
       if(dest) {
         dest[0] = '\\';

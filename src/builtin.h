@@ -40,12 +40,12 @@ int builtin_bg(int argc, char* argv[]);
 int builtin_break(int argc, char* argv[]);
 int builtin_cat(int argc, char* argv[]);
 int builtin_cd(int argc, char* argv[]);
-int builtin_dirs(int argc, char* argv[]);  /* dirs, popd, pushd: src/builtin/extra/builtin_dirstack.c */
+int builtin_dirs(int argc, char* argv[]); /* dirs, popd, pushd: src/builtin/extra/builtin_dirstack.c */
 int builtin_popd(int argc, char* argv[]);
 int builtin_pushd(int argc, char* argv[]);
 int builtin_chmod(int argc, char* argv[]);
 int builtin_command(int argc, char* argv[]);
-int chmod_symbolic(const char* spec, unsigned int* mode, int is_dir); /* src/builtin/core/builtin_chmod.c */
+int chmod_symbolic(const char* spec, unsigned int* mode, int is_dir);      /* src/builtin/core/builtin_chmod.c */
 int builtin_rm_tree(char* argv[], stralloc* path, int force, int verbose); /* src/builtin/core/builtin_rm.c */
 int builtin_digest(int argc, char* argv[]);
 int builtin_cpmv(int argc, char* argv[]); /* cp and mv: src/builtin/core/builtin_cp.c */

@@ -6,10 +6,9 @@
 #include "../fdtable.h"
 
 static const char* const trace_fd_modes[32] = {
-    "READ",   "WRITE", "APPEND",   "EXCL",    "TRUNC", 0,        0,        0,
-    "FILE",   "DIR",   "LINK",     "CHAR",    "BLOCK", "SOCKET", "PIPE",   "STRALLOC",
-    "STRING", "DUP",   "TERM",     "NULL",    0,       0,        0,        0,
-    "FLUSH",  "CLOSE", "FREENAME", "DUPNAME", "FREE",  0,        "TMPBUF", "OPEN",
+    "READ", "WRITE", "APPEND", "EXCL",  "TRUNC",    0,         0,      0,      "FILE",   "DIR",  "LINK",
+    "CHAR", "BLOCK", "SOCKET", "PIPE",  "STRALLOC", "STRING",  "DUP",  "TERM", "NULL",   0,      0,
+    0,      0,       "FLUSH",  "CLOSE", "FREENAME", "DUPNAME", "FREE", 0,      "TMPBUF", "OPEN",
 };
 
 /* {n=1, name="pipe", level=0, e=1, mode=WRITE|PIPE|TMPBUF, rfd=-1, wfd=1} */

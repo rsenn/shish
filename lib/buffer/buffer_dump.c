@@ -62,7 +62,7 @@ buffer_dump(buffer* out, buffer* b) {
   else if((void*)b->op == (void*)&buffer_dummyreadmmap)
     buffer_puts(out, "<mmap>");
   else if(b->op == (void*)&stralloc_write)
-      buffer_puts(out, "<stralloc_write> ");
+    buffer_puts(out, "<stralloc_write> ");
   else if(b->op == (buffer_op_proto*)NULL)
     buffer_puts(out, "NULL");
   else

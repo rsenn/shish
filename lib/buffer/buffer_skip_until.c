@@ -13,10 +13,12 @@ buffer_skip_until(buffer* b, const char* charset, size_t setlen) {
     if(b->p == b->n)
       if((r = buffer_feed(b)) <= 0)
         return r;
+
     n++;
 
     if(byte_chr(charset, setlen, b->x[b->p++]) < setlen)
       break;
   }
+
   return n;
 }

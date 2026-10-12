@@ -33,5 +33,9 @@ sh_push(struct env* env) {
 
   sh = env;
 
-  TRACE(TRACE_SH, "push", trace_str("cwd", env->cwd.s ? env->cwd.s : ""), trace_int("argc", env->arg.c), trace_int("monitor", env->opts.monitor));
+  TRACE(TRACE_SH,
+        "push",
+        trace_str("cwd", env->cwd.s ? env->cwd.s : ""),
+        trace_int("argc", env->arg.c),
+        trace_int("monitor", env->opts.monitor));
 }

@@ -16,10 +16,10 @@
  * ----------------------------------------------------------------------- */
 struct json {
   buffer* b;
-  int indent;         /* spaces per level; 0 = one line, items separated by ", " */
-  int depth;          /* open containers */
-  unsigned comma : 1; /* the next item needs a leading "," */
-  unsigned key : 1;   /* a key was just written: its value follows without a separator */
+  int indent;                 /* spaces per level; 0 = one line, items separated by ", " */
+  int depth;                  /* open containers */
+  unsigned comma : 1;         /* the next item needs a leading "," */
+  unsigned key : 1;           /* a key was just written: its value follows without a separator */
   unsigned bare_keys : 1;     /* keys unquoted: kind: ... (JSON5) */
   unsigned single_quotes : 1; /* strings in '...' instead of "..." (JSON5) */
   unsigned hex_numbers : 1;   /* numbers as 0x1f, not 31 (JSON5) */

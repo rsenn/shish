@@ -10,7 +10,7 @@
 
 extern int trap_run_count, trap_run_sig; /* traps run so far; the signal of the last one */
 
-void trap_run_pending(void);   /* run the traps whose signal has fired */
+void trap_run_pending(void); /* run the traps whose signal has fired */
 void* trap_snapshot_save(void);
 void trap_snapshot_restore(void*);
 int trap_ignores(int sig);

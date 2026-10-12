@@ -35,11 +35,13 @@ scan_uint(const char* src, unsigned int* dest) {
 
       if((unsigned int)tmp != tmp)
         break;
+
       l = tmp;
     }
 
     if(cur > src)
       *dest = l;
+
     return (size_t)(cur - src);
 #endif
 #ifndef WORD_SIZE

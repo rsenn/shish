@@ -33,10 +33,9 @@ stralloc_ready(stralloc* sa, size_t len) {
       byte_copy(tmp, sa->len, sa->s);
     else
       byte_zero(tmp, wanted);
-  } else {
-    if(!(tmp = alloc_re(sa->s, wanted)))
-      return 0;
-  }
+  } else if(!(tmp = alloc_re(sa->s, wanted)))
+    return 0;
+
   sa->a = wanted;
   sa->s = tmp;
   return 1;

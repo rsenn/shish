@@ -28,17 +28,16 @@ is_keyword(const char* str) {
 /* command built-in
  *
  * ----------------------------------------------------------------------- */
-const char help_command[] =
-    "    Run a command, bypassing any shell function of the same name.\n"
-    "\n"
-    "    -p              use a default PATH guaranteed to find the standard\n"
-    "                    utilities\n"
-    "    -v              print the resolved path/description instead of\n"
-    "                    running the command\n"
-    "    -V              like -v, but more verbose\n"
-    "    command         command to run, bypassing any shell function of\n"
-    "                    the same name\n"
-    "    arg             arguments passed to command\n";
+const char help_command[] = "    Run a command, bypassing any shell function of the same name.\n"
+                            "\n"
+                            "    -p              use a default PATH guaranteed to find the standard\n"
+                            "                    utilities\n"
+                            "    -v              print the resolved path/description instead of\n"
+                            "                    running the command\n"
+                            "    -V              like -v, but more verbose\n"
+                            "    command         command to run, bypassing any shell function of\n"
+                            "                    the same name\n"
+                            "    arg             arguments passed to command\n";
 
 #define COMMAND_STDPATH "/bin:/usr/bin"
 
@@ -84,12 +83,8 @@ command_describe(char* name, int verbose, int stdpath) {
       buffer_puts(fd_out->w, name);
   } else if((cmd = exec_hash(name, 0)).ptr) {
     switch(cmd.id) {
-      case H_FUNCTION:
-        kind = "a function";
-        break;
-      case H_SBUILTIN:
-        kind = "a special built-in";
-        break;
+      case H_FUNCTION: kind = "a function"; break;
+      case H_SBUILTIN: kind = "a special built-in"; break;
       case H_BUILTIN: {
         /* a regular built-in is described by the program it shadows */
         char* p = str_chr(name, '/') == str_len(name) ? exec_path(name) : 0;

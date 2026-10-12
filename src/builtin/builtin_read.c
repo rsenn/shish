@@ -2,18 +2,18 @@
 
 #if BUILTIN_READ
 
-#include <unistd.h>
+#include "../../lib/byte.h"
+#include "../../lib/str.h"
+#include "../../lib/scan.h"
+#include "../../lib/fmt.h"
+#include "../../lib/buffer.h"
+#include "../../lib/stralloc.h"
 #include "../builtin.h"
 #include "../fdtable.h"
 #include "../expand.h"
 #include "../var.h"
 #include "../term.h"
-#include "../../lib/byte.h"
-#include "../../lib/scan.h"
-#include "../../lib/str.h"
-#include "../../lib/fmt.h"
-#include "../../lib/buffer.h"
-#include "../../lib/stralloc.h"
+#include <unistd.h>
 
 struct predicate_data {
   const char* delim;
@@ -177,9 +177,7 @@ builtin_read(int argc, char* argv[]) {
       case 'n': scan_int(shell_optarg, &p.nchars); break;
       case 'p': prompt = shell_optarg; break;
       case 'r': raw = 1; break;
-      case 's':
-        silent = 1;
-        break;
+      case 's': silent = 1; break;
       case 'u': scan_int(shell_optarg, &fd); break;
       default: builtin_invopt(argv); return 1;
     }
@@ -263,7 +261,8 @@ builtin_read(int argc, char* argv[]) {
        (this shell's parser, a child) continues right after the line.
        Only a buffer backed by a real descriptor: a here-document's buffer
        says fd 0 but is in memory, and fd 0 itself is then the script. */
-    if(fdtable[fd]->e >= 0 && input->fd == fdtable[fd]->e && input->p < input->n && lseek(input->fd, -(off_t)(input->n - input->p), SEEK_CUR) != (off_t)-1)
+    if(fdtable[fd]->e >= 0 && input->fd == fdtable[fd]->e && input->p < input->n &&
+       lseek(input->fd, -(off_t)(input->n - input->p), SEEK_CUR) != (off_t)-1)
       input->p = input->n = 0;
 
     if(!read_assign(&data, ifs, raw, argp, num_args))

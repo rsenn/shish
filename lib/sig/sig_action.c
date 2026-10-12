@@ -8,8 +8,7 @@ sig_action(int sig, struct sigaction const* new, struct sigaction* old) {
 #if !WINDOWS_NATIVE
   struct sigaction sanew, saold;
 
-  if(((new->sa_flags & SA_MASKALL) ? sigfillset(&sanew.sa_mask) : sigemptyset(&sanew.sa_mask)) ==
-     -1)
+  if(((new->sa_flags & SA_MASKALL) ? sigfillset(&sanew.sa_mask) : sigemptyset(&sanew.sa_mask)) == -1)
     return -1;
 
   sanew.sa_handler = new->sa_handler;

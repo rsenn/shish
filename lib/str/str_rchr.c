@@ -1,16 +1,17 @@
 #include "../str.h"
 
+/* str_rchr returns the index of the last occurance of needle or \0
+   in haystack  */
 size_t
-str_rchr(const char* s, char needle) {
-  const char *in = s, *found = NULL;
+str_rchr(const char* in, char needle) {
+  const char *t = in, *found = NULL;
 
-  for(;;) {
-    if(!*in)
-      break;
+  while(*t) {
+    if(*t == needle)
+      found = t;
 
-    if(*in == needle)
-      found = in;
-    ++in;
+    ++t;
   }
-  return (size_t)((found ? found : in) - s);
+
+  return (size_t)((found ? found : t) - in);
 }

@@ -1,3 +1,5 @@
+#include "../byte.h"
+#include "../stralloc.h"
 #include "../path_internal.h"
 #include "../windoze.h"
 
@@ -37,7 +39,7 @@ path_getcwd(stralloc* sa) {
   sep = path_getsep(sa->s);
 
   if(sep && sep != PATHSEP_C)
-    stralloc_replacec(sa, sep, PATHSEP_C);
+    byte_replace(sa->s, sa->len, sep, PATHSEP_C);
 
   return 1;
 }

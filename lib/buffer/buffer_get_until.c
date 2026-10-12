@@ -16,11 +16,12 @@ buffer_get_until(buffer* b, char* x, size_t len, const char* charset, size_t set
       *x = 0;
       break;
     }
+
     blen++;
 
-    if(byte_chr(charset, setlen, *x++) < setlen) {
+    if(byte_chr(charset, setlen, *x++) < setlen)
       break;
-    };
   }
+
   return blen;
 }

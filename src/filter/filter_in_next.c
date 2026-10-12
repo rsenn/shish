@@ -29,7 +29,8 @@ filter_in_next(struct filter_in* in) {
       return 1;
     }
 
-    /* try opening the physical file path */
+    /* try opening the physical file path
+       XXX: could be mmap()ed and then in->rbuf is unused. */
     if(filter_open_file(&in->inb, in->rbuf, sizeof(in->rbuf), name) == 0) {
       in->cur = &in->inb;
       return 1;

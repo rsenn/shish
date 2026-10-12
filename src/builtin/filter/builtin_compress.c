@@ -2,21 +2,21 @@
 
 #if BUILTIN_COMPRESS || BUILTIN_UNCOMPRESS
 
+#include "../../../lib/byte.h"
+#include "../../../lib/str.h"
+#include "../../../lib/buffer.h"
+#include "../../../lib/fmt.h"
+#include "../../../lib/alloc.h"
+#include "../../../lib/open.h"
+#include "../../../lib/sig.h"
+#include "../../../lib/shell.h"
+#include "../../builtin.h"
+#include "../../fdtable.h"
 #include <archive.h>
 #include <archive_entry.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/stat.h>
-#include "../../builtin.h"
-#include "../../fdtable.h"
-#include "../../../lib/shell.h"
-#include "../../../lib/buffer.h"
-#include "../../../lib/fmt.h"
-#include "../../../lib/str.h"
-#include "../../../lib/byte.h"
-#include "../../../lib/alloc.h"
-#include "../../../lib/open.h"
-#include "../../../lib/sig.h"
 
 const char help_compress[] = "    Compress or decompress files; the format follows the command name\n"
                              "    (gzip, bzip2, lbzip2, lz, lz4, lzma, lzop, xz, zstd; default gzip).\n"

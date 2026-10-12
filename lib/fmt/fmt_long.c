@@ -6,6 +6,7 @@ fmt_long(char* dest, long i) {
     if(dest)
       *dest++ = '-';
     return fmt_ulong(dest, (unsigned long)-i) + 1;
-  } else
-    return fmt_ulong(dest, (unsigned long)i);
+  }
+
+  return fmt_ulong(dest, (unsigned long)i);
 }

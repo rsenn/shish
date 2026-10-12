@@ -7,19 +7,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-enum type_index {
-  TYPE_NONE = -1,
-  TYPE_FILE,
-  TYPE_ALIAS,
-  TYPE_KEYWORD,
-  TYPE_FUNCTION,
-  TYPE_BUILTIN
-};
+enum type_index { TYPE_NONE = -1, TYPE_FILE, TYPE_ALIAS, TYPE_KEYWORD, TYPE_FUNCTION, TYPE_BUILTIN };
 
 #define TYPE_NAMES ((const char* const[]){"file", "alias", "keyword", "function", "builtin"})
 
-#define TYPE_DESCRIPTIONS \
-  ((const char* const[]){0, "aliased to `", "a shell keyword", "a function", "a shell builtin"})
+#define TYPE_DESCRIPTIONS ((const char* const[]){0, "aliased to `", "a shell keyword", "a function", "a shell builtin"})
 
 static inline int
 is_keyword(const char* str) {

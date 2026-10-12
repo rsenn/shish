@@ -145,8 +145,7 @@ tree_free(union node* node) {
           tree_free(node->nargarith.tree);
         break;
 
-      case A_NUM:
-        break;
+      case A_NUM: break;
 
       case A_TERNARY:
         if(node->narithternary.cond)

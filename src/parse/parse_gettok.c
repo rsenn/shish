@@ -107,7 +107,7 @@ parse_gettok(struct parser* p, int tempflags) {
     /* and then for words */
     if(p->tok == -1)
       p->tok = parse_word(p);
-    
+
     /* if the token is a valid name then it could be a keyword */
     if(p->tok & T_NAME && p->node && p->node->id == N_ARGSTR && !(p->flags & P_NOKEYWD))
       parse_keyword(p);
@@ -116,7 +116,8 @@ parse_gettok(struct parser* p, int tempflags) {
     if(p->flags & (P_KWIN | P_KWDO)) {
       int only = ((p->flags & P_KWIN) ? T_IN : 0) | ((p->flags & P_KWDO) ? T_DO : 0);
 
-      if((p->tok & (T_CASE | T_DO | T_DONE | T_ELIF | T_ELSE | T_ESAC | T_FI | T_FOR | T_IF | T_IN | T_THEN | T_UNTIL | T_WHILE | T_BEGIN | T_END | T_NOT)) &&
+      if((p->tok & (T_CASE | T_DO | T_DONE | T_ELIF | T_ELSE | T_ESAC | T_FI | T_FOR | T_IF | T_IN | T_THEN | T_UNTIL |
+                    T_WHILE | T_BEGIN | T_END | T_NOT)) &&
          !(p->tok & only))
         p->tok = T_NAME;
     }

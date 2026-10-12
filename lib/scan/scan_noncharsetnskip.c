@@ -3,9 +3,7 @@
 
 size_t
 scan_noncharsetnskip(const char* s, const char* charset, size_t limit) {
-  const char* t = s;
-  const char* u = t + limit;
-  const char* i;
+  const char *i, *t = s, *u = t + limit;
 
   while(t < u) {
     for(i = charset; *i; ++i)
@@ -14,7 +12,9 @@ scan_noncharsetnskip(const char* s, const char* charset, size_t limit) {
 
     if(*i == *t)
       break;
+
     ++t;
   }
+
   return (size_t)(t - s);
 }

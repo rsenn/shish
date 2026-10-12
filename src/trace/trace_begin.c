@@ -22,7 +22,19 @@
 #define TRACE_FD_MIN 200
 
 static const char* const trace_names[TRACE_NMODULES] = {
-    "exec", "builtin", "fd", "fdstack", "fdtable", "eval", "expand", "redir", "var", "sh", "job", "sig", "parse",
+    "exec",
+    "builtin",
+    "fd",
+    "fdstack",
+    "fdtable",
+    "eval",
+    "expand",
+    "redir",
+    "var",
+    "sh",
+    "job",
+    "sig",
+    "parse",
 };
 
 static char trace_buf[TRACE_LINE];
@@ -116,7 +128,7 @@ trace_begin(enum trace_module mod, const char* event, const char* open, const ch
   trace_module_name = trace_names[mod];
 
   trace_put("[", 1);
-  #if WINDOWS_NATIVE
+#if WINDOWS_NATIVE
   n = fmt_ulong(num, (unsigned long)sh_pid);
 #else
   n = fmt_ulong(num, (unsigned long)getpid());

@@ -5,14 +5,13 @@
 #define _DEFAULT_SOURCE 1
 #endif
 
-#include <sys/stat.h>
-
+#include "../byte.h"
+#include "../str.h"
 #include "../windoze.h"
 #include "../path_internal.h"
 #include "../unix.h"
-#include "../byte.h"
-#include "../str.h"
 
+#include <sys/stat.h>
 #include <errno.h>
 #include <limits.h>
 
@@ -44,7 +43,6 @@ is_link(const char* path) {
 #endif
   return 0;
 }
-
 
 /* drops the last component of the path in sa; root is its root length */
 static void

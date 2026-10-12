@@ -2,18 +2,18 @@
 
 #if BUILTIN_LS
 
+#include "../../../lib/byte.h"
+#include "../../../lib/str.h"
 #include "../../../lib/uint64.h"
-#include "../../builtin.h"
-#include "../../fdtable.h"
-#include "../../var.h"
 #include "../../../lib/shell.h"
 #include "../../../lib/stralloc.h"
-#include "../../../lib/str.h"
 #include "../../../lib/alloc.h"
-#include "../../../lib/byte.h"
 #include "../../../lib/fmt.h"
 #include "../../../lib/scan.h"
 #include "../../../lib/unix.h"
+#include "../../builtin.h"
+#include "../../fdtable.h"
+#include "../../var.h"
 #include "config.h"
 #include <dirent.h>
 #include <stdlib.h>

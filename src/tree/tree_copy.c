@@ -49,9 +49,7 @@ tree_copy(union node* node) {
         copy->ncmd.vars = node->ncmd.vars ? tree_copy(node->ncmd.vars) : NULL;
         break;
 
-      case N_PIPELINE:
-        copy->npipe.cmds = node->npipe.cmds ? tree_copy(node->npipe.cmds) : NULL;
-        break;
+      case N_PIPELINE: copy->npipe.cmds = node->npipe.cmds ? tree_copy(node->npipe.cmds) : NULL; break;
 
       case N_AND:
       case N_OR:
@@ -66,9 +64,7 @@ tree_copy(union node* node) {
       case N_LIST: copy->nlist.cmds = tree_copy(node->nlist.cmds); break;
 
       case N_SUBSHELL:
-      case N_BRACEGROUP:
-        copy->ngrp.cmds = node->ngrp.cmds ? tree_copy(node->ngrp.cmds) : NULL;
-        break;
+      case N_BRACEGROUP: copy->ngrp.cmds = node->ngrp.cmds ? tree_copy(node->ngrp.cmds) : NULL; break;
 
       case N_FOR:
         copy->nfor.cmds = node->nfor.cmds ? tree_copy(node->nfor.cmds) : NULL;
@@ -99,9 +95,7 @@ tree_copy(union node* node) {
         break;
 
       case N_ARG:
-      case N_ASSIGN:
-        copy->narg.list = node->narg.list ? tree_copy(node->narg.list) : NULL;
-        break;
+      case N_ASSIGN: copy->narg.list = node->narg.list ? tree_copy(node->narg.list) : NULL; break;
 
       case N_REDIR:
         copy->nredir.word = node->nredir.word ? tree_copy(node->nredir.word) : NULL;
@@ -120,23 +114,16 @@ tree_copy(union node* node) {
         copy->nargparam.word = node->nargparam.word ? tree_copy(node->nargparam.word) : NULL;
         break;
 
-      case N_ARGCMD:
-        copy->nargcmd.list = node->nargcmd.list ? tree_copy(node->nargcmd.list) : NULL;
-        break;
+      case N_ARGCMD: copy->nargcmd.list = node->nargcmd.list ? tree_copy(node->nargcmd.list) : NULL; break;
 
-      case N_ARGARITH:
-        copy->nargarith.tree = node->nargarith.tree ? tree_copy(node->nargarith.tree) : NULL;
-        break;
+      case N_ARGARITH: copy->nargarith.tree = node->nargarith.tree ? tree_copy(node->nargarith.tree) : NULL; break;
 
       case A_NUM: break;
 
       case A_TERNARY:
-        copy->narithternary.cond =
-            node->narithternary.cond ? tree_copy(node->narithternary.cond) : NULL;
-        copy->narithternary.ontrue =
-            node->narithternary.ontrue ? tree_copy(node->narithternary.ontrue) : NULL;
-        copy->narithternary.onfalse =
-            node->narithternary.onfalse ? tree_copy(node->narithternary.onfalse) : NULL;
+        copy->narithternary.cond = node->narithternary.cond ? tree_copy(node->narithternary.cond) : NULL;
+        copy->narithternary.ontrue = node->narithternary.ontrue ? tree_copy(node->narithternary.ontrue) : NULL;
+        copy->narithternary.onfalse = node->narithternary.onfalse ? tree_copy(node->narithternary.onfalse) : NULL;
         break;
 
       case A_OR:
@@ -169,10 +156,8 @@ tree_copy(union node* node) {
       case A_VBITAND:
       case A_VBITXOR:
       case A_VBITOR:
-        copy->narithbinary.left =
-            node->narithbinary.left ? tree_copy(node->narithbinary.left) : NULL;
-        copy->narithbinary.right =
-            node->narithbinary.right ? tree_copy(node->narithbinary.right) : NULL;
+        copy->narithbinary.left = node->narithbinary.left ? tree_copy(node->narithbinary.left) : NULL;
+        copy->narithbinary.right = node->narithbinary.right ? tree_copy(node->narithbinary.right) : NULL;
         break;
 
       case A_PAREN:

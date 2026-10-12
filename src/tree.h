@@ -20,8 +20,8 @@ enum kind {
                                 stdout amongst them */
   /* list     */ N_AND,      /* execute cmd2 if cmd succeeded */
   N_OR,                      /* execute cmd2 if cmd failed */
-  N_NOT, /* execute cmd and negate return status */
-  N_TIME, /* execute cmd and report the time it took */
+  N_NOT,                     /* execute cmd and negate return status */
+  N_TIME,                    /* execute cmd and report the time it took */
   N_LIST,
   /* compound */ N_SUBSHELL, /* execute the list in a subshell */
   N_BRACEGROUP,              /* execute the list in the current env */
@@ -248,8 +248,8 @@ struct nredir {
   enum kind id;
   unsigned flag;
   union node* next;
-  union node* word; /* can be file, fd, delim, here-doc-data */
-  union node* data; /* next here-doc or expansion */
+  union node* word;  /* can be file, fd, delim, here-doc-data */
+  union node* data;  /* next here-doc or expansion */
   union node* delim; /* here-doc: the delimiter word, kept so tree_cat() can print it */
   int fdes;
   struct fd* fd;
@@ -264,18 +264,19 @@ struct nargstr {
   union {
     stralloc stra; /* owned and growable: expansion-time copies */
     strview view;  /* not owned: parse-time strings in an arena */
-    struct { char* s; size_t len; }; /* anonymous struct so you can 
-                                        access .s/.len instead of
-                                        going through .stra */
+    struct {
+      char* s;
+      size_t len;
+    }; /* anonymous struct so you can
+          access .s/.len instead of
+          going through .stra */
   };
   struct location loc;
 } TREE_ATTR;
 
 /* nargstr overlays strview on the first two members of stralloc */
-typedef char nargstr_view_overlays_stra[(sizeof(strview) < sizeof(stralloc) &&
-                                         offsetof(strview, len) == offsetof(stralloc, len))
-                                            ? 1
-                                            : -1];
+typedef char nargstr_view_overlays_stra
+    [(sizeof(strview) < sizeof(stralloc) && offsetof(strview, len) == offsetof(stralloc, len)) ? 1 : -1];
 
 struct nargparam {
   enum kind id;

@@ -28,7 +28,7 @@ struct source {
 
 #define SOURCE_IACTIVE 0x01
 #define SOURCE_HERE 0x02
-#define SOURCE_ALIAS 0x04 /* alias text: heap-allocated, pops itself when used up */
+#define SOURCE_ALIAS 0x04   /* alias text: heap-allocated, pops itself when used up */
 #define SOURCE_VERBOSE 0x08 /* text of "." or eval: "set -v" echoes it like the script itself */
 
 extern struct source* source;
@@ -53,16 +53,16 @@ struct alias_popped {
  * it is used up and reading carries on behind the alias name.
  * ----------------------------------------------------------------------- */
 struct alias_scan {
-  struct alias* list;           /* the defined aliases */
-  struct alias_popped* popped;  /* popped since source_alias_reset(): still "active" for the current word */
-  unsigned long tokskips;       /* source_skips when the word (of a substitution chain) began */
-  unsigned blank : 1;           /* a popped alias ended in a blank: the next word is aliasable */
-  unsigned tokskips_set : 1;    /* parse_word() has stored tokskips for this chain */
+  struct alias* list;          /* the defined aliases */
+  struct alias_popped* popped; /* popped since source_alias_reset(): still "active" for the current word */
+  unsigned long tokskips;      /* source_skips when the word (of a substitution chain) began */
+  unsigned blank : 1;          /* a popped alias ended in a blank: the next word is aliasable */
+  unsigned tokskips_set : 1;   /* parse_word() has stored tokskips for this chain */
 };
 
 extern struct alias_scan alias_scan;
 extern unsigned long source_skips; /* characters skipped so far */
-extern int source_bs; /* the last skipped char was an unescaped backslash */
+extern int source_bs;              /* the last skipped char was an unescaped backslash */
 
 void source_buffer(struct source*, struct fd*, const char* x, size_t n);
 

@@ -1,18 +1,24 @@
 #include "../byte.h"
 
+#if LINK_STATIC
+
+/* byte_ccopy copies in[0] to out[0], n[1] to out[1], ....
+   until character c is encountered, returns number of bytes
+   copied, including the character c. */
 size_t
-byte_ccopy(void* dst, size_t count, const void* src, char c) {
-  char* a = (char*)dst;
-  const char* b = (const char*)src;
+byte_ccopy(void* out, size_t len, const void* in, char c) {
+  char* t = out;
+  const char* s = in;
 
-  while(count--) {
-    *a++ = *b;
+  while(len--) {
+    *t++ = *s;
 
-    if(*b == c)
-      return b + 1 - (const char*)src;
+    if(*s == c)
+      return s + 1 - (const char*)in;
 
-    ++b;
+    ++s;
   }
 
-  return b - (const char*)src;
+  return s - (const char*)in;
 }
+#endif

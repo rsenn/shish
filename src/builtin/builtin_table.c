@@ -262,11 +262,7 @@ struct builtin_cmd builtin_table[] = {
     {"alias", &builtin_alias, B_DEFAULT, "[-p] [name[=value] ...]", help_alias},
 #endif
 #if BUILTIN_AWK
-    {"awk",
-     &builtin_awk,
-     B_DEFAULT,
-     "[-F sep] [-v assign]... [-f progfile | 'program'] [file...]",
-     help_awk},
+    {"awk", &builtin_awk, B_DEFAULT, "[-F sep] [-v assign]... [-f progfile | 'program'] [file...]", help_awk},
 #endif
 #if BUILTIN_BASENAME
     {"basename", &builtin_basename, B_DEFAULT, "path [suffix]", help_basename},
@@ -355,11 +351,7 @@ struct builtin_cmd builtin_table[] = {
     {"grep", &builtin_grep, B_DEFAULT, "[options] <pattern-list>", help_grep, &grep_filter},
 #endif
 #if BUILTIN_HASH
-    {"hash",
-     &builtin_hash,
-     B_DEFAULT,
-     "[-lr] [-p pathname name] [-d name ...] [name ...]",
-     help_hash},
+    {"hash", &builtin_hash, B_DEFAULT, "[-lr] [-p pathname name] [-d name ...] [name ...]", help_hash},
 #endif
 #if BUILTIN_HELP
     {"help", &builtin_help, B_DEFAULT, "[command]", help_help},
@@ -463,18 +455,18 @@ struct builtin_cmd builtin_table[] = {
     {"rmdir", &builtin_rmdir, B_DEFAULT, "[-p] [directory]...", help_rmdir},
 #endif
 #if BUILTIN_SED
-    {"sed",
-     &builtin_sed,
-     B_DEFAULT,
-     "[-n] [-E|-r] {script | -e script | -f file}... [file]...",
-     help_sed,
-     &sed_filter},
+    {"sed", &builtin_sed, B_DEFAULT, "[-n] [-E|-r] {script | -e script | -f file}... [file]...", help_sed, &sed_filter},
 #endif
 #if BUILTIN_SOURCE
     {"source", &builtin_source, B_SPECIAL, "file [arguments]", help_source},
 #endif
 #if BUILTIN_SORT
-    {"sort", &builtin_sort, B_DEFAULT, "[-cmu] [-o output] [-bdfinr] [-t char] [-k keydef]... [file...]", help_sort, &sort_filter},
+    {"sort",
+     &builtin_sort,
+     B_DEFAULT,
+     "[-cmu] [-o output] [-bdfinr] [-t char] [-k keydef]... [file...]",
+     help_sort,
+     &sort_filter},
 #endif
 #if BUILTIN_SPLIT
     {"split", &builtin_split, B_DEFAULT, "[-l line_count | -b n[k|m]] [-a suffix_length] [file [name]]", help_split},
@@ -486,16 +478,32 @@ struct builtin_cmd builtin_table[] = {
     {"head", &builtin_head, B_DEFAULT, "[-n number | -c number] [-qv] [file...]", help_head, &head_filter},
 #endif
 #if BUILTIN_UNIQ
-    {"uniq", &builtin_uniq, B_DEFAULT, "[-c | -d | -u] [-f fields] [-s chars] [input [output]]", help_uniq, &uniq_filter},
+    {"uniq",
+     &builtin_uniq,
+     B_DEFAULT,
+     "[-c | -d | -u] [-f fields] [-s chars] [input [output]]",
+     help_uniq,
+     &uniq_filter},
 #endif
 #if BUILTIN_CUT
     {"cut", &builtin_cut, B_DEFAULT, "-b list | -c list | -f list [-d delim] [-s] [file...]", help_cut, &cut_filter},
 #endif
 #if BUILTIN_NL
-    {"nl", &builtin_nl, B_DEFAULT, "[-p] [-b type] [-d delim] [-f type] [-h type] [-i incr] [-l num] [-n format] [-s sep] [-v start] [-w width] [file]", help_nl, &nl_filter},
+    {"nl",
+     &builtin_nl,
+     B_DEFAULT,
+     "[-p] [-b type] [-d delim] [-f type] [-h type] [-i incr] [-l num] [-n format] [-s sep] [-v start] [-w width] "
+     "[file]",
+     help_nl,
+     &nl_filter},
 #endif
 #if BUILTIN_TR
-    {"tr", &builtin_tr, B_DEFAULT, "[-c|-C] [-s] string1 string2 | [-c|-C] -d [-s] string1 | [-c|-C] -s string1", help_tr, &tr_filter},
+    {"tr",
+     &builtin_tr,
+     B_DEFAULT,
+     "[-c|-C] [-s] string1 string2 | [-c|-C] -d [-s] string1 | [-c|-C] -s string1",
+     help_tr,
+     &tr_filter},
 #endif
 #if BUILTIN_PASTE
     {"paste", &builtin_paste, B_DEFAULT, "[-s] [-d list] file...", help_paste, &paste_filter},
@@ -510,18 +518,10 @@ struct builtin_cmd builtin_table[] = {
     {"times", &builtin_times, B_SPECIAL, "", help_times},
 #endif
 #if BUILTIN_TIMEOUT
-    {"timeout",
-     &builtin_timeout,
-     B_DEFAULT,
-     "[-v] [-k DURATION] [-s SIGNAL] DURATION COMMAND [ARG]...",
-     help_timeout},
+    {"timeout", &builtin_timeout, B_DEFAULT, "[-v] [-k DURATION] [-s SIGNAL] DURATION COMMAND [ARG]...", help_timeout},
 #endif
 #if BUILTIN_TOUCH
-    {"touch",
-     &builtin_touch,
-     B_DEFAULT,
-     "[-amf] [-d DATE|-t STAMP|-r FILE] [--time=WORD] file...",
-     help_touch},
+    {"touch", &builtin_touch, B_DEFAULT, "[-amf] [-d DATE|-t STAMP|-r FILE] [--time=WORD] file...", help_touch},
 #endif
 #if BUILTIN_TRUE
     {"true", &builtin_true, B_DEFAULT, "", help_true},
@@ -563,7 +563,11 @@ struct builtin_cmd builtin_table[] = {
     {"which", &builtin_which, B_DEFAULT, "[-a] filename ...", help_which},
 #endif
 #if BUILTIN_XARGS
-    {"xargs", &builtin_xargs, B_DEFAULT, "[-0opr] [-a FILE] [-d DELIM] [-l/-L MAX-LINES] [-n MAX-ARGS] [-P MAX-PROCS] <command> [...args]", help_xargs},
+    {"xargs",
+     &builtin_xargs,
+     B_DEFAULT,
+     "[-0opr] [-a FILE] [-d DELIM] [-l/-L MAX-LINES] [-n MAX-ARGS] [-P MAX-PROCS] <command> [...args]",
+     help_xargs},
 #endif
 #if BUILTIN_COMPRESS
 #ifndef LIBARCHIVE_NO_GZIP

@@ -28,8 +28,10 @@ scan_ulongn(const char* src, size_t n, unsigned long int* dest) {
 
       if((L >> ((sizeof(L) - sizeof(l)) * 8)))
         break;
+
       l = (unsigned long)L;
     }
+
     *dest = l;
     return (size_t)(tmp - src);
   } else
@@ -45,8 +47,10 @@ scan_ulongn(const char* src, size_t n, unsigned long int* dest) {
 
       if((unsigned long)L != L)
         break;
+
       l = (unsigned long)L;
     }
+
     *dest = l;
     return (size_t)(tmp - src);
 #endif
@@ -71,12 +75,14 @@ scan_ulongn(const char* src, size_t n, unsigned long int* dest) {
 
       if(n + (l << 1) + c < n)
         break;
+
       l = n + (l << 1) + c;
       ++tmp;
     }
 
     if(tmp - src)
       *dest = l;
+
     return (size_t)(tmp - src);
 #endif
 #ifndef WORD_SIZE

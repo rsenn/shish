@@ -80,7 +80,12 @@ redir_preopen(struct nredir* nredir, stralloc* sa) {
     }
   }
 
-  TRACE(TRACE_REDIR, "preopen", trace_int("fd", nredir->fdes), trace_str("path", sa->s), trace_int("result", e), trace_int("errno", e < 0 ? errno : 0));
+  TRACE(TRACE_REDIR,
+        "preopen",
+        trace_int("fd", nredir->fdes),
+        trace_str("path", sa->s),
+        trace_int("result", e),
+        trace_int("errno", e < 0 ? errno : 0));
 
   return e;
 }

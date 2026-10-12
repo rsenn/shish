@@ -1,6 +1,7 @@
 #ifndef ALLOC_H
 #define ALLOC_H
 
+#include "typedefs.h"
 #include <stdlib.h>
 
 void* alloc(unsigned long size);

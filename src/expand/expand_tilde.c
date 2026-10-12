@@ -23,8 +23,7 @@
  * tilde-prefix -- caller's convention: "0 means leave text alone".
  * ----------------------------------------------------------------------- */
 int
-expand_tilde_lookup(
-    const char* text, size_t len, int stop_at_colon, stralloc* home, size_t* prefixlen) {
+expand_tilde_lookup(const char* text, size_t len, int stop_at_colon, stralloc* home, size_t* prefixlen) {
   size_t namelen;
 
   if(!len || text[0] != '~')
@@ -32,8 +31,7 @@ expand_tilde_lookup(
 
   namelen = 0;
 
-  while(namelen + 1 < len && text[1 + namelen] != '/' &&
-        !(stop_at_colon && text[1 + namelen] == ':'))
+  while(namelen + 1 < len && text[1 + namelen] != '/' && !(stop_at_colon && text[1 + namelen] == ':'))
     namelen++;
 
   if(namelen == 0) {
@@ -90,9 +88,7 @@ expand_tilde_splice(union node* n, stralloc* home, size_t prefixlen) {
   union node* rest = tree_newnode(N_ARGSTR);
 
   stralloc_init(&rest->nargstr.stra);
-  stralloc_catb(&rest->nargstr.stra,
-                n->nargstr.s + prefixlen,
-                n->nargstr.len - prefixlen);
+  stralloc_catb(&rest->nargstr.stra, n->nargstr.s + prefixlen, n->nargstr.len - prefixlen);
   stralloc_nul(&rest->nargstr.stra);
   rest->nargstr.flag = n->nargstr.flag;
   rest->nargstr.loc = n->nargstr.loc;
@@ -113,8 +109,7 @@ expand_tilde_needed(union node* arg) {
   union node* n;
 
   return arg && arg->id == N_ARG && (n = arg->narg.list) && n->id == N_ARGSTR &&
-         (n->nargstr.flag & S_TABLE) == S_UNQUOTED && n->nargstr.len &&
-         n->nargstr.s[0] == '~';
+         (n->nargstr.flag & S_TABLE) == S_UNQUOTED && n->nargstr.len && n->nargstr.s[0] == '~';
 }
 
 /* 1 if expand_tilde_assign() might rewrite this word: it starts with an
@@ -206,8 +201,7 @@ expand_tilde_assign(union node* var) {
 
         stralloc_init(&home);
 
-        if(expand_tilde_lookup(
-               n->nargstr.s + eq, n->nargstr.len - eq, 1, &home, &prefixlen) &&
+        if(expand_tilde_lookup(n->nargstr.s + eq, n->nargstr.len - eq, 1, &home, &prefixlen) &&
            !(eq + prefixlen == n->nargstr.len && n->next)) {
           /* splice into just the tail starting at eq, then keep
              scanning right after the replacement -- the chunk's
@@ -217,9 +211,7 @@ expand_tilde_assign(union node* var) {
           stralloc_init(&tail);
           stralloc_catb(&tail, n->nargstr.s, eq);
           stralloc_cat(&tail, &home);
-          stralloc_catb(&tail,
-                        n->nargstr.s + eq + prefixlen,
-                        n->nargstr.len - eq - prefixlen);
+          stralloc_catb(&tail, n->nargstr.s + eq + prefixlen, n->nargstr.len - eq - prefixlen);
           stralloc_nul(&tail);
 
           eq += home.len;

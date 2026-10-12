@@ -41,8 +41,7 @@ int
 uname(struct utsname* buf) {
   RTL_OSVERSIONINFOW_ vi;
   HMODULE ntdll = GetModuleHandleA("ntdll.dll");
-  RtlGetVersionFn RtlGetVersion =
-      ntdll ? (RtlGetVersionFn)GetProcAddress(ntdll, "RtlGetVersion") : 0;
+  RtlGetVersionFn RtlGetVersion = ntdll ? (RtlGetVersionFn)GetProcAddress(ntdll, "RtlGetVersion") : 0;
   DWORD len = sizeof(buf->nodename);
   char* p;
 
@@ -66,7 +65,6 @@ uname(struct utsname* buf) {
   buf->version[fmt_ulong(buf->version, vi.dwBuildNumber)] = 0;
 
   str_copy(buf->machine, machine_name());
-
   return 0;
 }
 #else /* Emscripten / WASI / bare wasm: no host to introspect */

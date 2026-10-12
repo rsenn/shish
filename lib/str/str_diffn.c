@@ -1,34 +1,31 @@
 #include "../byte.h"
 
+#if LINK_STATIC
+
 /* str_diff returns negative, 0, or positive, depending on whether the
  * string a[0], a[1], ..., a[n]=='\0' is lexicographically smaller than,
  * equal to, or greater than the string b[0], b[1], ..., b[m-1]=='\0'.
  * When the strings are different, str_diff does not read bytes past the
  * first difference. */
-#if LINK_STATIC
 int
 str_diffn(const char* a, const char* b, size_t limit) {
-  const unsigned char* s = (const unsigned char*)a;
-  const unsigned char* t = (const unsigned char*)b;
-  const unsigned char* u = t + limit;
-  int j;
-  j = 0;
+  const unsigned char *s = (const unsigned char*)a, *t = (const unsigned char*)b, *u = t + limit;
+  int j = 0;
 
   for(;;) {
-    if(t >= u) {
+    if(t >= u)
       break;
-    };
 
-    if((j = (*s - *t))) {
+    if((j = (*s - *t)))
       break;
-    };
 
-    if(!*t) {
+    if(!*t)
       break;
-    };
+
     ++s;
     ++t;
   }
+
   return j;
 }
 #endif

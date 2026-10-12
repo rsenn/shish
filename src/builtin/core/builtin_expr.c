@@ -2,16 +2,16 @@
 
 #if BUILTIN_EXPR
 
-#include "../../../lib/uint64.h"
-#include "../../builtin.h"
-#include "../../trace.h"
 #include "../../../lib/byte.h"
+#include "../../../lib/str.h"
+#include "../../../lib/uint64.h"
 #include "../../../lib/fmt.h"
 #include "../../../lib/shell.h"
-#include "../../../lib/str.h"
 #include "../../../lib/scan.h"
 #include "../../../lib/stralloc.h"
 #include "../../../lib/buffer.h"
+#include "../../builtin.h"
+#include "../../trace.h"
 #include "../../fdtable.h"
 
 /* Define to use system <regex.h> instead of lib/bre.h */

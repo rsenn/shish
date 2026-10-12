@@ -94,8 +94,8 @@ builtin_cd(int argc, char* argv[]) {
 
   /* POSIX: CDPATH is not used if the operand begins with '/', or with
      a "." or ".." path component (cd-cdpath-applies-to-dot-operand) */
-  if(arg[0] != '/' && !(arg[0] == '.' && (arg[1] == '/' || arg[1] == '\0' ||
-                                          (arg[1] == '.' && (arg[2] == '/' || arg[2] == '\0'))))) {
+  if(arg[0] != '/' &&
+     !(arg[0] == '.' && (arg[1] == '/' || arg[1] == '\0' || (arg[1] == '.' && (arg[2] == '/' || arg[2] == '\0'))))) {
     char path[PATH_MAX + 1];
     const char* cdpath;
 
@@ -107,10 +107,7 @@ builtin_cd(int argc, char* argv[]) {
       if((n = str_chr(cdpath, ':')) + len + 1 > PATH_MAX) {
         /* set error code and print the longer string in the error msg */
         errno = ENAMETOOLONG;
-        return builtin_errmsgn(argv,
-                               (n > len ? cdpath : arg),
-                               (n > len ? n : len),
-                               strerror(errno));
+        return builtin_errmsgn(argv, (n > len ? cdpath : arg), (n > len ? n : len), strerror(errno));
       }
 
       /* copy path prefix from cdpath if present */

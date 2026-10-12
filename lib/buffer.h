@@ -25,10 +25,8 @@ typedef struct buffer {
   fd_t fd;                        /* passed as first argument to op */
 } buffer;
 
-#define BUFFER_INIT(op, fd, buf, len) \
-  {(buf), 0, 0, (len), (buffer_op_proto*)(void*)(op), NULL, NULL, (fd)}
-#define BUFFER_INIT_FREE(op, fd, buf, len) \
-  {(buf), 0, 0, (len), (buffer_op_proto*)(void*)(op), NULL, buffer_free, (fd)}
+#define BUFFER_INIT(op, fd, buf, len) {(buf), 0, 0, (len), (buffer_op_proto*)(void*)(op), NULL, NULL, (fd)}
+#define BUFFER_INIT_FREE(op, fd, buf, len) {(buf), 0, 0, (len), (buffer_op_proto*)(void*)(op), NULL, buffer_free, (fd)}
 #define BUFFER_INIT_READ(op, fd, buf, len) BUFFER_INIT(op, fd, buf, len) /*obsolete*/
 #define BUFFER_INSIZE 65535
 #define BUFFER_OUTSIZE 32768
@@ -56,13 +54,11 @@ ssize_t buffer_putflush(buffer*, const char* x, size_t len);
 int buffer_puts(buffer*, const char* x);
 ssize_t buffer_putsflush(buffer*, const char* x);
 
-#if defined(__GNUC__) && !defined(__LIBOWFAT_INTERNAL) && !defined(__dietlibc__) && \
-    !defined(NO_BUILTINS)
+#if defined(__GNUC__) && !defined(__LIBOWFAT_INTERNAL) && !defined(__dietlibc__) && !defined(NO_BUILTINS)
 /* as a little gcc-specific hack,  if somebody calls buffer_puts with a
  * constant string,  where we know its length at compile-time,  call
  * buffer_put with the known length instead */
-#define buffer_puts(b, s) \
-  (__builtin_constant_p(s) ? buffer_put(b, s, __builtin_strlen(s)) : buffer_puts(b, s))
+#define buffer_puts(b, s) (__builtin_constant_p(s) ? buffer_put(b, s, __builtin_strlen(s)) : buffer_puts(b, s))
 #define buffer_putsflush(b, s) \
   (__builtin_constant_p(s) ? buffer_putflush(b, s, __builtin_strlen(s)) : buffer_putsflush(b, s))
 #endif

@@ -19,10 +19,13 @@ buffer_stubborn(buffer_op_proto* op, int fd, const char* buf, size_t len, void* 
     if((w = ((buffer_op_proto*)op)(fd, (void*)buf, len, b)) <= 0) {
       if(errno == EINTR)
         continue;
+
       return -1;
     }
+
     buf += w;
     len -= (size_t)w;
   }
+
   return 0;
 }

@@ -19,13 +19,12 @@ struct optstate builtin_getopts_state = {0};
 
 /* getopts built-in
  * ----------------------------------------------------------------------- */
-const char help_getopts[] =
-    "    Parse positional (or given) arguments option by option.\n"
-    "\n"
-    "    optstring       letters getopts recognizes; a trailing ':' on a\n"
-    "                    letter means it takes an argument (in $OPTARG)\n"
-    "    name            variable set to the option letter found, or '?'\n"
-    "    arg             arguments to parse instead of $1.. ($OPTIND advances)\n";
+const char help_getopts[] = "    Parse positional (or given) arguments option by option.\n"
+                            "\n"
+                            "    optstring       letters getopts recognizes; a trailing ':' on a\n"
+                            "                    letter means it takes an argument (in $OPTARG)\n"
+                            "    name            variable set to the option letter found, or '?'\n"
+                            "    arg             arguments to parse instead of $1.. ($OPTIND advances)\n";
 
 int
 builtin_getopts(int argc, char* argv[]) {
@@ -78,8 +77,7 @@ builtin_getopts(int argc, char* argv[]) {
       size_t offset;
       unsigned int cur_optind;
 
-      if((v = var_get("OPTIND", &offset)) && scan_uint(&v[offset], &cur_optind) &&
-         cur_optind != (unsigned int)optind) {
+      if((v = var_get("OPTIND", &offset)) && scan_uint(&v[offset], &cur_optind) && cur_optind != (unsigned int)optind) {
         optind = cur_optind <= 1 ? 0 : (int)cur_optind;
         optofs = 0;
         optopt = 0;

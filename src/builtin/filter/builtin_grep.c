@@ -459,7 +459,7 @@ grep_option(void* ctx, int c) {
       if(before)
         stralloc_catc(&g->epat, '\n');
 
-      if(filter_copy(shell_optarg, grep_pat_sink, g) < 0) {
+      if(openreadclose(shell_optarg, &g->epat, 4096) <= 0) {
         g->in.err_arg = shell_optarg;
         g->in.err_msg = "cannot read pattern file";
         return -1;

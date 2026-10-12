@@ -1,19 +1,18 @@
 #include "../str.h"
 
+/* str_rchrs returns the index of the last occurance of needles[nn] or \0
+   in haystack */
 size_t
 str_rchrs(const char* in, char needles[], size_t nn) {
-  const char *s = in, *found = NULL;
-  size_t i;
+  const char *t = in, *found = NULL;
 
-  for(;;) {
-    if(!*s)
-      break;
+  while(*t) {
+    for(size_t i = 0; i < nn; ++i)
+      if(*t == needles[i])
+        found = t;
 
-    for(i = 0; i < nn; ++i) {
-      if(*s == needles[i])
-        found = s;
-    }
-    ++s;
+    ++t;
   }
-  return (size_t)((found ? found : s) - in);
+
+  return (size_t)((found ? found : t) - in);
 }

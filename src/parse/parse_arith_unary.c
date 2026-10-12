@@ -52,8 +52,7 @@ parse_arith_unary(struct parser* p) {
   /* a sign/logical/bitwise unary op's operand can itself be another
      unary expression ("-+-2", "!!x") and must recurse; prefix ++/--
      need an assignable lvalue, which only parse_arith_value() parses. */
-  unary->narithunary.node =
-      (n == A_PREINCR || n == A_PREDECR) ? parse_arith_value(p) : parse_arith_unary(p);
+  unary->narithunary.node = (n == A_PREINCR || n == A_PREDECR) ? parse_arith_value(p) : parse_arith_unary(p);
 
   return unary;
 }

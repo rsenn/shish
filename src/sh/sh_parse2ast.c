@@ -176,7 +176,7 @@ main(int argc, char** argv, char** envp) {
   /* set our basename for the \v prompt escape seq and maybe other stuff*/
   sh_name = path_basename(sh_argv0, NULL);
 
-  if(*sh_name == '-') 
+  if(*sh_name == '-')
     sh_name++;
 
   /* set global shell argument vector */
@@ -188,7 +188,7 @@ main(int argc, char** argv, char** envp) {
   stralloc_init(&cmd);
   parse_init(&p, P_DEFAULT);
   buffer_init(&out_buf, &buffer_op_write, out_fd, alloca(1024), 1024);
-  
+
   {
     union node *script = 0, **nptr = &script;
 

@@ -8,5 +8,6 @@ buffer_putns(buffer* b, const char* s, int ntimes) {
   while(ntimes-- > 0)
     if(buffer_put(b, s, len) < 0)
       return -1;
+
   return 0;
 }

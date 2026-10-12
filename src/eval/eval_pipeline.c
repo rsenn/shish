@@ -1,15 +1,8 @@
-#include "../../lib/alloc.h"
 #include "../../lib/byte.h"
 #include "../../lib/str.h"
+#include "../../lib/alloc.h"
 #include "../../lib/wait.h"
 #include "../../lib/windoze.h"
-
-#if WINDOWS_NATIVE
-#include "../../lib/unix.h"
-#else
-#include <sys/wait.h>
-#include <unistd.h>
-#endif
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -25,6 +18,13 @@
 #include "../vartab.h"
 
 #include "builtin_config.h"
+
+#if WINDOWS_NATIVE
+#include "../../lib/unix.h"
+#else
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
 
 #if BUILTIN_TRAP
 #include "../trap.h"
@@ -668,7 +668,7 @@ eval_pipeline(struct eval* e, struct npipe* npipe) {
       prevfd = pump_fd;
 
     if(prevfd >= 0 || (is_last && lastpipe && chain_committed > 0)) {
-      
+
       in = fd_push_alloc(STDIN_FILENO, FD_READ | (prevfd >= 0 ? FD_PIPE : 0));
 
       if(prevfd >= 0) {

@@ -25,8 +25,7 @@ expand_globres_ok(union node* node) {
       if(sub->nargstr.len == 0)
         continue;
 
-      if(str_chr(sub->nargstr.s, '*') < sub->nargstr.len ||
-         str_chr(sub->nargstr.s, '?') < sub->nargstr.len ||
+      if(str_chr(sub->nargstr.s, '*') < sub->nargstr.len || str_chr(sub->nargstr.s, '?') < sub->nargstr.len ||
          str_chr(sub->nargstr.s, '[') < sub->nargstr.len)
         return 0;
 

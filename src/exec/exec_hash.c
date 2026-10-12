@@ -101,7 +101,8 @@ exec_hash(char* name, int mask) {
     }
 
     /* a remembered program that is gone or no longer executable: search again */
-    if(entry && entry->mask == mask && entry->cmd.id == H_PROGRAM && entry->cmd.path && access(entry->cmd.path, X_OK) != 0)
+    if(entry && entry->mask == mask && entry->cmd.id == H_PROGRAM && entry->cmd.path &&
+       access(entry->cmd.path, X_OK) != 0)
       entry->mask = -1;
 
     how = entry && entry->mask == mask ? "hit" : "miss";

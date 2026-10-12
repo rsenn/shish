@@ -2,15 +2,15 @@
 
 #if BUILTIN_UNCOMPRESS
 
-#include <archive.h>
-#include <archive_entry.h>
+#include "../../../lib/byte.h"
+#include "../../../lib/str.h"
+#include "../../../lib/alloc.h"
+#include "../../../lib/sig.h"
+#include "../../../lib/shell.h"
 #include "../../builtin.h"
 #include "../../fdtable.h"
-#include "../../../lib/shell.h"
-#include "../../../lib/byte.h"
-#include "../../../lib/alloc.h"
-#include "../../../lib/str.h"
-#include "../../../lib/sig.h"
+#include <archive.h>
+#include <archive_entry.h>
 
 const char help_uncompress[] = "    Uncompress and concatenate files to standard output (zcat, bzcat, xzcat,\n"
                                "    zstdcat, lbzcat, lz4cat, lzcat, lzopcat). The format is detected from the\n"

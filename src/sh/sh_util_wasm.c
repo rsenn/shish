@@ -83,23 +83,14 @@ wasm_init(void) {
 static char*
 read_all(int fd) {
   stralloc sa;
-  char buf[4096];
-  ssize_t n;
-  char* result;
-
   stralloc_init(&sa);
 
-  while((n = read(fd, buf, sizeof(buf))) > 0)
-    stralloc_catb(&sa, buf, n);
+  if(readclose(fd, &sa, 4096) > 0)
+    stralloc_trunc(&sa, sa.len);
+  else
+    stralloc_free(&sa);
 
-  result = malloc(sa.len + 1);
-
-  if(sa.len)
-    byte_copy(result, sa.len, sa.s);
-
-  result[sa.len] = 0;
-  stralloc_free(&sa);
-  return result;
+  return sa.s;
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -262,7 +253,6 @@ shutil_parse_ast(const char* src, int loc_mode) {
 
   out_fd = open_read("/tmp/.shutil-ast.json");
   result = read_all(out_fd);
-  close(out_fd);
   unlink("/tmp/.shutil-ast.json");
 
   source_popfd(&fd);

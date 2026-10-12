@@ -9,7 +9,8 @@ static stralloc source_verbose_line;
 /* is the text being read echoed: the script, stdin or -c string itself, and what "." and eval read */
 static int
 source_verbose_on(void) {
-  return sh->opts.verbose && (!source->parent || (source->mode & SOURCE_VERBOSE)) && !(source->mode & (SOURCE_ALIAS | SOURCE_HERE));
+  return sh->opts.verbose && (!source->parent || (source->mode & SOURCE_VERBOSE)) &&
+         !(source->mode & (SOURCE_ALIAS | SOURCE_HERE));
 }
 
 void
@@ -56,7 +57,6 @@ source_skip(void) {
 
   if(b->p < b->n) {
     c = b->x[b->p];
-
 
     b->p++;
     source_skips++;

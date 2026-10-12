@@ -1,5 +1,5 @@
-#include "../alloc.h"
 #include "../byte.h"
+#include "../alloc.h"
 
 void*
 alloc_zero(unsigned long size) {
@@ -7,5 +7,6 @@ alloc_zero(unsigned long size) {
 
   if(ptr)
     byte_zero(ptr, size);
+
   return ptr;
 }

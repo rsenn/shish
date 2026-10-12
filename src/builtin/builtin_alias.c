@@ -23,7 +23,7 @@ alias_valid(const char* v) {
 
   /* POSIX: alphanumerics and ! % , - @ _ at any position, a leading digit included */
   for(i = 0; v[i] && v[i] != '='; i++)
-    if(!parse_isname(v[i], 1) && !str_containsc("!%,-@", v[i]))
+    if(!parse_isname(v[i], 1) && !str_contains("!%,-@", v[i]))
       return 0;
 
   return i > 0;

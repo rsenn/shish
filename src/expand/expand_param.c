@@ -133,7 +133,8 @@ expand_param(struct nargparam* param, wordlist* wl, int flags) {
 
     /* unquoted $* with IFS="" cannot be split afterwards: one field per
        parameter, like $@ */
-    if(special == S_ARGV && (param->flag & S_TABLE) == S_UNQUOTED && !(flags & X_NOSPLIT) && !var_vdefault("IFS", IFS_DEFAULT, NULL)[0])
+    if(special == S_ARGV && (param->flag & S_TABLE) == S_UNQUOTED && !(flags & X_NOSPLIT) &&
+       !var_vdefault("IFS", IFS_DEFAULT, NULL)[0])
       special = S_ARGVS;
 
     /* ${#@} and ${#*}: how many parameters there are */
@@ -146,7 +147,7 @@ expand_param(struct nargparam* param, wordlist* wl, int flags) {
     }
 
     /* ${@:-w} with no parameters is "unset": the operator applies */
-    if((special == S_ARGVS || special == S_ARGV) && !sh->arg.c && (param->word || (param->flag & S_VAR) != S_DEFAULT))    {
+    if((special == S_ARGVS || special == S_ARGV) && !sh->arg.c && (param->word || (param->flag & S_VAR) != S_DEFAULT)) {
       special = 0; /* no case below applies: v stays NULL */
       is_set = false;
     }
@@ -209,8 +210,12 @@ expand_param(struct nargparam* param, wordlist* wl, int flags) {
           }
         }
 #endif
-        struct nargparam arg = {
-            N_ARGPARAM, S_ARG | ((param->flag & S_VAR) == S_RANGE ? 0 : (param->flag & S_VAR)), NULL, NULL, param->word, 0};
+        struct nargparam arg = {N_ARGPARAM,
+                                S_ARG | ((param->flag & S_VAR) == S_RANGE ? 0 : (param->flag & S_VAR)),
+                                NULL,
+                                NULL,
+                                param->word,
+                                0};
 
         for(i = r.offset, e = r.offset + r.length; i < e;) {
           arg.numb = 1 + i;
@@ -331,9 +336,9 @@ expand_param(struct nargparam* param, wordlist* wl, int flags) {
          handled below once v is left NULL here. Only a bare
          ${parameter}/$parameter and the trimming forms ${x#w} ${x%w}
          are what nounset actually guards. */
-    } else if(sh->opts.unset &&
-              (((param->flag & S_VAR) == S_DEFAULT && !param->word) || (param->flag & S_VAR) == S_RSSFX ||
-               (param->flag & S_VAR) == S_RLSFX || (param->flag & S_VAR) == S_RSPFX || (param->flag & S_VAR) == S_RLPFX)) {
+    } else if(sh->opts.unset && (((param->flag & S_VAR) == S_DEFAULT && !param->word) ||
+                                 (param->flag & S_VAR) == S_RSSFX || (param->flag & S_VAR) == S_RLSFX ||
+                                 (param->flag & S_VAR) == S_RSPFX || (param->flag & S_VAR) == S_RLPFX)) {
       sh_msg(param->name);
       buffer_putsflush(fd_err->w, ": unbound variable\n");
 

@@ -44,9 +44,8 @@ int stralloc_readyplus(stralloc* sa, size_t len);
  * memory, stralloc_copyb leaves sa alone and returns 0. */
 int stralloc_copyb(stralloc* sa, const char* buf, size_t len);
 
-/* stralloc_copys copies a \0 - terminated string from buf into sa,
- * without the \0. It is the same as
- * stralloc_copyb(&sa, buf, str_len(buf)). */
+/* stralloc_copys copies a \0 - terminated string from buf into sa, without
+ * the \0. It is the same as stralloc_copyb(&sa, buf, str_len(buf)). */
 int stralloc_copys(stralloc* sa, const char* buf);
 
 /* stralloc_copy copies the string stored in sa2 into sa. It is the same
@@ -62,9 +61,14 @@ int stralloc_catb(stralloc* sa, const char* in, size_t len);
 
 /* stralloc_cats is analogous to stralloc_copys */
 int stralloc_cats(stralloc* sa, const char* in);
+
+/* stralloc_catc append a single character to a stralloc, ensuring buffer capacity. */
 int stralloc_catc(stralloc* sa, const unsigned char c);
 
+/* stralloc_zero reset the length of a stralloc to zero without freeing its buffer. */
 void stralloc_zero(stralloc* sa);
+
+/* stralloc_trunc truncates to n + 1 and nul-terminates ('\0' is not included in len) */
 int stralloc_trunc(stralloc* sa, size_t n);
 
 /* like stralloc_cats but can cat more than one string at once */
@@ -75,8 +79,7 @@ int stralloc_catm_internal(stralloc* sa, ...);
 #define stralloc_copym(sa, args) (stralloc_zero(sa), stralloc_catm_internal(sa, args, (char*)0))
 #else
 #define stralloc_catm(sa, ...) stralloc_catm_internal(sa, __VA_ARGS__, (char*)0)
-#define stralloc_copym(sa, ...) \
-  (stralloc_zero(sa), stralloc_catm_internal(sa, __VA_ARGS__, (char*)0))
+#define stralloc_copym(sa, ...) (stralloc_zero(sa), stralloc_catm_internal(sa, __VA_ARGS__, (char*)0))
 #endif
 
 /* stralloc_cat is analogous to stralloc_copy */
@@ -96,11 +99,13 @@ int stralloc_starts(stralloc* sa, const char* in) __pure__;
  * string b[0], b[1], ..., b[n] == '\0'. */
 int stralloc_diffs(const stralloc* a, const char* b) __pure__;
 
+/* convenience shortcut to test for string equality */
 #define stralloc_equals(a, b) (!stralloc_diffs((a), (b)))
 
 /* stralloc_0 appends \0 */
 #define stralloc_0(sa) stralloc_append(sa, "")
 
+/* stralloc_nul appends \0 but doesn't increase the size */
 int stralloc_nul(stralloc* sa);
 
 /* stralloc_catulong0 appends a '0' padded ASCII representation of in */
@@ -118,11 +123,40 @@ void stralloc_free(stralloc* sa);
 #define stralloc_catint0(sa, i, n) (stralloc_catlong0((sa), (i), (n)))
 #define stralloc_catint(sa, i) (stralloc_catlong0((sa), (i), 0))
 
-/* remove trailing "\r\n", "\n" or "\r".  Return number of removed chars (0, 1
- * or 2)
- */
+/* stralloc_write buffer write callback that appends data into an underlying stralloc. */
+ssize_t stralloc_write(int, void*, size_t, void*);
 
+/* stralloc_trimr trims trailing characters matching any in the given trim set. */
 void stralloc_trimr(stralloc* sa, const char* trimchars, unsigned int trimcharslen);
+
+/* stralloc_insertb inserts a byte block at the specified position,
+   shifting existing data. */
+int stralloc_insertb(stralloc* sa, const char* s, size_t pos, size_t n);
+
+/* stralloc_remove removes a range of len bytes starting at pos. */
+size_t stralloc_remove(stralloc*, size_t pos, size_t len);
+
+/* stralloc_take extracts ownership, capturing length and allocation size. */
+static inline char*
+stralloc_take(stralloc* from, size_t* lenp, size_t* allocated) {
+  char* s = from->s;
+
+  if(lenp)
+    *lenp = from->len;
+
+  if(allocated)
+    *allocated = from->a;
+
+  stralloc_init(from);
+  return s;
+}
+
+/* stralloc_move transfers ownership from one stralloc to another,
+   freeing the destination first. */
+void stralloc_move(stralloc*, stralloc* from);
+
+/* check if the last character of a stralloc matches the given character. */
+#define stralloc_endc(sa, c) ((sa)->len > 0 && (sa)->s[(sa)->len - 1] == (c))
 
 #ifdef BUFFER_H
 /* write stralloc to buffer */
@@ -162,59 +196,6 @@ int buffer_get_new_token_sa_pred(buffer* b, stralloc* sa, sa_predicate p, void*)
  * Do not change the stralloc after this! */
 void buffer_fromsa(buffer* b, const stralloc* sa);
 
-ssize_t stralloc_write(int, void*, size_t, void*);
 #endif
-
-#ifdef __BORLANDC__
-#define stralloc_length(sa) (sa)->len
-#else
-inline static size_t
-stralloc_length(const stralloc* sa) {
-  return sa->len;
-}
-#endif
-
-#define stralloc_begin(sa) ((sa)->s)
-#define stralloc_end(sa) ((sa)->s + (sa)->len)
-#define stralloc_iterator_decrement(it) (--(it))
-#define stralloc_iterator_dereference(it_ptr) (*(*(it_ptr)))
-#define stralloc_iterator_distance(it1, it2) ((it2) - (it1))
-#define stralloc_is_last(sa, ptr) ((sa)->len > 0 && ((sa)->s + (sa)->len - 1) == (ptr))
-
-#ifdef BYTE_H
-size_t byte_scan(const char* in,
-                 size_t in_len,
-                 stralloc* out,
-                 size_t (*scan_function)(const char*, char*));
-#endif
-
-int stralloc_insertb(stralloc* sa, const char* s, size_t pos, size_t n);
-
-typedef size_t(stralloc_fmt_fn)(char*, unsigned int);
-
-int stralloc_prepends(stralloc* sa, const char* s);
-
-size_t stralloc_remove(stralloc*, size_t pos, size_t n);
-void stralloc_replacec(stralloc*, char before, char after);
-
-static inline char*
-stralloc_take(stralloc* from, size_t* lenp, size_t* allocated) {
-  char* s = from->s;
-
-  if(lenp)
-    *lenp = from->len;
-
-  if(allocated)
-    *allocated = from->a;
-  stralloc_init(from);
-  return s;
-}
-void stralloc_move(stralloc*, stralloc* from);
-
-#ifdef BUFFER_H
-void stralloc_dump(const stralloc*, buffer*);
-#endif
-
-#define stralloc_endc(sa, c) ((sa)->len > 0 && (sa)->s[(sa)->len - 1] == (c))
 
 #endif

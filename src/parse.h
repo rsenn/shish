@@ -103,8 +103,7 @@ parse_isdesc(int c) {
 
 /* is either alpha, digit or underscore */
 #define parse_isname(c, pos) \
-  ((parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_NAME)) || \
-   ((pos) > 0 && parse_isdigit(c)))
+  ((parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_NAME)) || ((pos) > 0 && parse_isdigit(c)))
 
 #define parse_isfname(c, pos) \
   ((parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_NAME)) || \
@@ -124,8 +123,7 @@ parse_isfuncname(const char* s) {
 /* is either alpha, digit or underscore or special parameter */
 static inline int
 parse_isparam(int c) {
-  return !!(parse_chartable[(int)(unsigned char)c] &
-            (C_LOWER | C_UPPER | C_DIGIT | C_NAME | C_SPCL));
+  return !!(parse_chartable[(int)(unsigned char)c] & (C_LOWER | C_UPPER | C_DIGIT | C_NAME | C_SPCL));
 }
 
 /* is arithmetic operation char  */

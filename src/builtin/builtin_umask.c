@@ -74,11 +74,16 @@ scan_umask(char* in, uint16* umask) {
     uint16 who = 0;
 
     for(;; src++) {
-      if(*src == 'u') who |= 0700;
-      else if(*src == 'g') who |= 0070;
-      else if(*src == 'o') who |= 0007;
-      else if(*src == 'a') who |= 0777;
-      else break;
+      if(*src == 'u')
+        who |= 0700;
+      else if(*src == 'g')
+        who |= 0070;
+      else if(*src == 'o')
+        who |= 0007;
+      else if(*src == 'a')
+        who |= 0777;
+      else
+        break;
     }
 
     if(!who)

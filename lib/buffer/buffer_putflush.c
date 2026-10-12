@@ -41,6 +41,7 @@ buffer_putflush(buffer* b, const char* x, size_t len) {
     while((w = writev(b->fd, v, 2)) < 0) {
       if(errno == EINTR)
         continue;
+
       return -1;
     }
 
@@ -56,6 +57,7 @@ buffer_putflush(buffer* b, const char* x, size_t len) {
         return buffer_stubborn(b->op, b->fd, (char*)v[1].iov_base + w, v[1].iov_len - w, b);
       }
     }
+
     b->p = 0;
     return 0;
   }
@@ -65,5 +67,6 @@ buffer_putflush(buffer* b, const char* x, size_t len) {
 
   if(buffer_flush(b) < 0)
     return -1;
+
   return 0;
 }

@@ -21,7 +21,8 @@ void
 fd_state_restore(struct fd_state* st) {
   struct fd_note *n, *next;
 
-  TRACE(TRACE_FD, "state.restore", trace_int("expected", st->expected), trace_int("lo", st->lo), trace_int("hi", st->hi));
+  TRACE(
+      TRACE_FD, "state.restore", trace_int("expected", st->expected), trace_int("lo", st->lo), trace_int("hi", st->hi));
 
   /* fds an outer level owns, changed inside the scope: back to their
      original descriptor ("exec >/dev/null" moved the real stdout away) */

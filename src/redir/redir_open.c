@@ -37,7 +37,11 @@ redir_open(struct nredir* nredir, stralloc* sa, int preopen) {
         "open",
         trace_int("fd", nredir->fdes),
         trace_str("path", sa->s),
-        trace_raw("mode", (mode & FD_APPEND) ? "append" : (mode & FD_EXCL) ? "noclobber" : (nredir->flag & R_OUT) ? "trunc" : "read"),
+        trace_raw("mode",
+                  (mode & FD_APPEND)       ? "append"
+                  : (mode & FD_EXCL)       ? "noclobber"
+                  : (nredir->flag & R_OUT) ? "trunc"
+                                           : "read"),
         trace_int("preopen", preopen),
         trace_int("now", !!(nredir->flag & R_NOW)));
 

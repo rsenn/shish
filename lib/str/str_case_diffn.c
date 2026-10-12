@@ -1,29 +1,29 @@
 #include "../str.h"
 
 #if LINK_STATIC || defined(__dietlibc__)
+
+/* str_case_diff is like str_diffb, but it lowercases uppercase characters */
 int
 str_case_diffn(const char* p1, const char* p2, size_t n) {
-  int x;
-  int y;
-  const char* s;
-  const char* t;
+  int x, y;
+  const char *s, *t;
 
   if(n == 0)
     return 0;
+
   s = p1;
   t = p2;
 
   for(;;) {
     x = *s++;
 
-    if(x >= 'A' && x <= 'Z') { /* upper case */
+    if(x >= 'A' && x <= 'Z') /* upper case */
       x += 'a' - 'A';
-    }
+
     y = *t++;
 
-    if(y >= 'A' && y <= 'Z') { /* upper case */
+    if(y >= 'A' && y <= 'Z') /* upper case */
       y += 'a' - 'A';
-    }
 
     if(s - (const char*)p1 >= (ssize_t)n)
       break;

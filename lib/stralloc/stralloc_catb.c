@@ -16,8 +16,10 @@ stralloc_catb(stralloc* sa, const char* buf, size_t len) {
      * than pass a null pointer through it. */
     if(len)
       byte_copy(sa->s + sa->len, len, buf);
+
     sa->len += len;
     return 1;
   }
+
   return 0;
 }

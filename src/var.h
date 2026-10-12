@@ -26,8 +26,7 @@
 #define V_READONLY 0x80
 
 #define VAR_FLAG_NAMES \
-  ((const char* const[]){ \
-      "FREE", "FREESTR", "ZEROSA", "EXPORT", "LOCAL", "UNSET", "INIT", "READONLY"})
+  ((const char* const[]){"FREE", "FREESTR", "ZEROSA", "EXPORT", "LOCAL", "UNSET", "INIT", "READONLY"})
 
 struct search;
 

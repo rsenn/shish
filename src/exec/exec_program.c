@@ -185,7 +185,12 @@ exec_program(char* path, char** argv, enum execflag flag) {
            so it needs to be set here as well */
         job_bgpid = pid;
 
-        TRACE(TRACE_JOB, "fork", trace_int("id", job->id), trace_int("pid", pid), trace_int("pgrp", job->pgrp), trace_int("bgnd", 1));
+        TRACE(TRACE_JOB,
+              "fork",
+              trace_int("id", job->id),
+              trace_int("pid", pid),
+              trace_int("pgrp", job->pgrp),
+              trace_int("bgnd", 1));
 
         /* interactive-use-only, see eval_node_bgnd.c's matching comment
            (job-start-banner-printed-noninteractively) */
@@ -259,7 +264,12 @@ exec_program(char* path, char** argv, enum execflag flag) {
 
         ret = WAIT_STATUS(status);
 
-        TRACE(TRACE_EXEC, "program.status", trace_str("path", path), trace_int("pid", pid), trace_hex("wait", status), trace_int("exit", ret));
+        TRACE(TRACE_EXEC,
+              "program.status",
+              trace_str("path", path),
+              trace_int("pid", pid),
+              trace_hex("wait", status),
+              trace_int("exit", ret));
 
         TRACE(TRACE_SIG, "blocknone", trace_raw(NULL, ""));
         sig_blocknone();

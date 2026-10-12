@@ -26,7 +26,7 @@ scan_number(const char* x, int64* n, unsigned* base) {
 
     return scan_8longlong(p, (uint64*)n);
   }
-  
+
   return scan_longlong(p, n);
 }
 

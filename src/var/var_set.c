@@ -11,7 +11,11 @@ struct var*
 var_set(char* v, int flags) {
   struct var* var;
 
-  TRACE(TRACE_VAR, "set", trace_strn("v", v, str_len(v) < 64 ? str_len(v) : 64), trace_hex("flags", flags), trace_int("level", varstack->level));
+  TRACE(TRACE_VAR,
+        "set",
+        trace_strn("v", v, str_len(v) < 64 ? str_len(v) : 64),
+        trace_hex("flags", flags),
+        trace_int("level", varstack->level));
 
   /* find/create the variable */
   if((var = var_create(v, flags)) == NULL)

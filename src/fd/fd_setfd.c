@@ -55,6 +55,9 @@ fd_setfd(struct fd* d, int e) {
           "setfd",
           trace_int("n", d->n),
           trace_int("e", d->e),
-          trace_raw("mode", (d->mode & FD_READ) ? "FD_READ" : (d->mode & FD_WRITE) ? "FD_WRITE" : "0"));
+          trace_raw("mode",
+                    (d->mode & FD_READ)    ? "FD_READ"
+                    : (d->mode & FD_WRITE) ? "FD_WRITE"
+                                           : "0"));
   return e;
 }

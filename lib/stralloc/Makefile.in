@@ -19,8 +19,7 @@ include $(top_builddir)/config.mk
 # ---------------------------------------------------------------------------
 LIB = ../libowfat.a
 ARCHIVE = stralloc.a
-MODULES = \
-mmap_filename stralloc_append stralloc_cat stralloc_catb stralloc_catc stralloc_catlong0 stralloc_catm_internal stralloc_cats stralloc_catulong stralloc_catulong0 stralloc_copy stralloc_copyb stralloc_copys stralloc_diffs stralloc_dump stralloc_free stralloc_init stralloc_insertb stralloc_move stralloc_nul stralloc_ready stralloc_readyplus stralloc_remove stralloc_replacec stralloc_starts stralloc_trimr stralloc_trunc stralloc_write stralloc_zero
+MODULES = $(patsubst $(srcdir)/%.c,%,$(wildcard $(srcdir)/*.c))
 
 SOURCES = $(MODULES:%=%.c)
 OBJECTS = $(MODULES:%=%.o)

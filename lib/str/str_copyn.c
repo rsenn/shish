@@ -1,5 +1,9 @@
 #include "../str.h"
 
+#if LINK_STATIC
+
+/* str_copyb copies leading bytes from in to out until \0
+   or max bytes reached. returns number of copied bytes. */
 size_t
 str_copyn(void* out, const void* in, size_t max) {
   char* s = out;
@@ -18,3 +22,4 @@ str_copyn(void* out, const void* in, size_t max) {
   *s = '\0';
   return len;
 }
+#endif

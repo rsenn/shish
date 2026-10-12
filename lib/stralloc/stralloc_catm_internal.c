@@ -1,9 +1,8 @@
 #include "../str.h"
 #include "../stralloc.h"
 #include <stdarg.h>
-#include <string.h>
-#undef stralloc_catm_internal
 
+/* like stralloc_cats but can cat more than one string at once */
 int
 stralloc_catm_internal(stralloc* sa, ...) {
   va_list a;
@@ -13,6 +12,7 @@ stralloc_catm_internal(stralloc* sa, ...) {
 
   while((s = va_arg(a, const char*)))
     n += str_len(s);
+
   va_end(a);
   stralloc_readyplus(sa, n);
 

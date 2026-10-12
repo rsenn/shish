@@ -6,10 +6,9 @@
 
 /* return built-in
  * ----------------------------------------------------------------------- */
-const char help_return[] =
-    "    Return from a shell function or sourced script.\n"
-    "\n"
-    "    n               exit status to return (default: the last command's)\n";
+const char help_return[] = "    Return from a shell function or sourced script.\n"
+                           "\n"
+                           "    n               exit status to return (default: the last command's)\n";
 
 #include "../trap.h"
 

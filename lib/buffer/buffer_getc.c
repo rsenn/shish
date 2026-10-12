@@ -9,6 +9,7 @@ buffer_getc(buffer* b, char* x) {
     if((blen = buffer_feed(b)) <= 0)
       return blen;
   }
+
   *x = b->x[b->p];
   ++b->p;
   return 1;

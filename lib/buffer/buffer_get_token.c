@@ -30,6 +30,7 @@ buffer_get_token(buffer* b, char* x, size_t len, const char* charset, size_t set
         b->p += i;
         return d - x;
       }
+
       blen += n;
       b->p += n;
     }
@@ -45,9 +46,9 @@ buffer_get_token(buffer* b, char* x, size_t len, const char* charset, size_t set
         break;
       }
 
-      if(byte_chr(charset, setlen, *x) < setlen) {
+      if(byte_chr(charset, setlen, *x) < setlen)
         break;
-      };
+
       ++x;
     }
   }

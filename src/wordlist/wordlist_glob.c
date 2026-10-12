@@ -33,7 +33,8 @@ wordlist_glob(wordlist* wl, int flags) {
   stralloc_nul(c);
 
   /* a raw expansion result without a pattern character, or with -f: left exactly as it is */
-  if((flags & X_GLOBRES) && (wl->noglob || (!str_containsc(c->s, '*') && !str_containsc(c->s, '?') && !str_containsc(c->s, '['))))
+  if((flags & X_GLOBRES) &&
+     (wl->noglob || (!str_contains(c->s, '*') && !str_contains(c->s, '?') && !str_contains(c->s, '['))))
     return;
 
   /* set -f: the pattern stays literal, as in the no-match case below */

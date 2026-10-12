@@ -26,36 +26,6 @@ const char help_awk[] = "    Pattern scanning and processing language (a subset 
                         "    would need the shell's own process model wired in); nextfile is\n"
                         "    supported but paragraph mode (RS=\"\") is not.\n";
 
-/* slurp_file: appends the whole of path to *out. 0 on success, -1 on
- * error (path could not be opened or read). Shared shape with
- * builtin_sed.c's own copy -- small enough not to be worth a common
- * home. */
-static int
-slurp_file(const char* path, stralloc* out) {
-  buffer b;
-  char rbuf[4096], chunk[4096];
-  ssize_t n;
-
-  if(buffer_mmapread(&b, path) != 0) {
-    int rfd = open_read(path);
-
-    if(rfd == -1)
-      return -1;
-
-    buffer_init(&b, &buffer_op_read, rfd, rbuf, sizeof(rbuf));
-  }
-
-  while((n = buffer_get_until(&b, chunk, sizeof(chunk), "", 0)) > 0) {
-    if(!stralloc_catb(out, chunk, (size_t)n)) {
-      buffer_close(&b);
-      return -1;
-    }
-  }
-
-  buffer_close(&b);
-  return (n < 0) ? -1 : 0;
-}
-
 /* three fixed sentinel handles standing in for the shell's own stdin/
  * stdout/stderr (fd_in/fd_out/fd_err), so open_read()/open_write()
  * never allocate a handle indistinguishable from one of these -- an
@@ -202,7 +172,7 @@ builtin_awk(int argc, char* argv[]) {
         if(have_prog)
           stralloc_catc(&prog, '\n');
 
-        if(slurp_file(shell_optarg, &prog) == -1) {
+        if(openreadclose(shell_optarg, &prog, 4096) <= 0) {
           builtin_error(argv, shell_optarg);
           stralloc_free(&prog);
           return 2;

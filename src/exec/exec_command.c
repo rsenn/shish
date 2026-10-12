@@ -217,7 +217,11 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
       struct eval e;
       struct vartab vars;
 
-      TRACE(TRACE_EXEC, "function.call", trace_str("name", argv ? argv[0] : NULL), trace_int("argc", argc), trace_argv("argv", argv));
+      TRACE(TRACE_EXEC,
+            "function.call",
+            trace_str("name", argv ? argv[0] : NULL),
+            trace_int("argc", argc),
+            trace_argv("argv", argv));
 
       vartab_push(&vars, 1);
 
@@ -300,7 +304,8 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
      which is not a builtin error: ". f" with f ending in "false" or
      "return 3", and "eval false", must not kill the shell.
      "trap '' ''" (invalid signal) does not kill it either. */
-  if(cmd->id == H_SBUILTIN && ret != 0 && !sh_interactive && !exec_via_command && !exec_status_passthru(cmd->builtin->fn)) {
+  if(cmd->id == H_SBUILTIN && ret != 0 && !sh_interactive && !exec_via_command &&
+     !exec_status_passthru(cmd->builtin->fn)) {
     sh_exit(ret);
   }
 

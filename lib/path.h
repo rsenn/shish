@@ -1,9 +1,9 @@
 #ifndef _PATH_H__
 #define _PATH_H__
 
-#include "windoze.h"
-#include "stralloc.h"
 #include "str.h"
+#include "stralloc.h"
+#include "windoze.h"
 
 #include <limits.h>
 

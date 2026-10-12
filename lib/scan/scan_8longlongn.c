@@ -7,6 +7,7 @@ scan_8longlongn(const char* src, size_t n, uint64* dest) {
   const char* tmp = src;
   uint64 l = 0;
   unsigned char c;
+
   /* *tmp - '0' can be negative, but casting to unsigned char makes
    * those cases positive and large; that means we only need one
    * comparison.  This trick is no longer needed on modern compilers,
@@ -20,6 +21,7 @@ scan_8longlongn(const char* src, size_t n, uint64* dest) {
     l = l * 8 + c;
     ++tmp;
   }
+
   *dest = l;
   return (size_t)(tmp - src);
 }

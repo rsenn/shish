@@ -30,10 +30,8 @@ strrpbrk(const char* s, const char* charset) {
     if(NULL != p) {
       if(NULL == part) {
         part = p;
-      } else {
-        if(part < p) {
-          part = p;
-        }
+      } else if(part < p) {
+        part = p;
       }
     }
   }
@@ -58,27 +56,20 @@ int
 glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* pglob) {
   int result;
   char szRelative[1 + _MAX_PATH];
-  const char* file_part;
   size_t dirlen;
   WIN32_FIND_DATAA find_data;
   HANDLE hFind;
-  char* buffer;
-  char szPattern2[1 + _MAX_PATH];
-  char szPattern3[1 + _MAX_PATH];
-  const char* effectivePattern = pattern;
-  const char* leafMost;
+  char *buffer, szPattern2[1 + _MAX_PATH], szPattern3[1 + _MAX_PATH];
+  const char *file_part, *leafMost, *effectivePattern = pattern;
   const int bMagic = (NULL != strpbrk(pattern, "?*"));
-  int bNoMagic = 0;
-  int bMagic0;
+  int bNoMagic = 0, bMagic0;
   size_t maxMatches = ~(size_t)(0);
 
-  if(flags & GLOB_NOMAGIC) {
+  if(flags & GLOB_NOMAGIC)
     bNoMagic = !bMagic;
-  }
 
-  if(flags & GLOB_LIMIT) {
+  if(flags & GLOB_LIMIT)
     maxMatches = (size_t)pglob->gl_matchc;
-  }
 
   if(flags & GLOB_TILDE) {
     if('~' == pattern[0] && ('\0' == pattern[1] || '/' == pattern[1] || '\\' == pattern[1])) {
@@ -128,20 +119,17 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
   pglob->gl_pathc = 0;
   pglob->gl_pathv = NULL;
 
-  if(0 == (flags & GLOB_DOOFFS)) {
+  if(0 == (flags & GLOB_DOOFFS))
     pglob->gl_offs = 0;
-  }
 
   if(hFind == INVALID_HANDLE_VALUE) {
-    if(NULL != errfunc) {
+    if(NULL != errfunc)
       (void)errfunc(effectivePattern, (int)GetLastError());
-    }
 
     result = GLOB_NOMATCH;
   } else {
     int cbCurr = 0;
-    size_t cbAlloc = 0;
-    size_t cMatches = 0;
+    size_t cbAlloc = 0, cMatches = 0;
 
     result = 0;
 
@@ -149,32 +137,27 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
       int cch;
       size_t new_cbAlloc;
 
-      if(bMagic0 && 0 == (flags & GLOB_PERIOD)) {
-        if('.' == find_data.cFileName[0]) {
-          continue;
-        }
-      }
+      if(bMagic0 && 0 == (flags & GLOB_PERIOD))
+        if('.' == find_data.cFileName[0])
+          ;
+      continue;
 
       if(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-        if(flags & GLOB_ONLYFILE) {
+        if(flags & GLOB_ONLYFILE)
           continue;
-        }
 
-        if(bMagic0 && GLOB_NODOTSDIRS == (flags & GLOB_NODOTSDIRS)) {
+        if(bMagic0 && GLOB_NODOTSDIRS == (flags & GLOB_NODOTSDIRS))
           /* Pattern must begin with '.' to match either dots directory */
-          if(0 == lstrcmpA(".", find_data.cFileName) || 0 == lstrcmpA("..", find_data.cFileName)) {
+          if(0 == lstrcmpA(".", find_data.cFileName) || 0 == lstrcmpA("..", find_data.cFileName))
             continue;
-          }
-        }
 
-        if(flags & GLOB_MARK) {
+        if(flags & GLOB_MARK)
           (void)lstrcatA(find_data.cFileName, "/");
-        }
+
       } else {
-        if(flags & GLOB_ONLYDIR) {
+        if(flags & GLOB_ONLYDIR)
           /* Skip all further actions, and get the next entry */
           continue;
-        }
       }
 
       cch = lstrlenA(find_data.cFileName) + (int)dirlen;
@@ -185,9 +168,7 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
         char* new_buffer;
 
         new_cbAlloc *= 2;
-
         new_cbAlloc = (new_cbAlloc + 31) & ~(31);
-
         new_buffer = (char*)realloc(buffer, new_cbAlloc);
 
         if(new_buffer == NULL) {
@@ -219,10 +200,7 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
         result = GLOB_NOSPACE;
         free(buffer);
       } else {
-        char** pp;
-        char** begin;
-        char** end;
-        char* next_str;
+        char **pp, **begin, **end, *next_str;
 
         buffer = new_buffer;
 
@@ -232,9 +210,8 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
         begin = (char**)new_buffer;
         end = begin + pglob->gl_offs;
 
-        for(; begin != end; ++begin) {
+        for(; begin != end; ++begin)
           *begin = NULL;
-        }
 
         /* Lay the pointers down in the order the entries were found
          * in, then sort them alphabetically -- POSIX glob() sorts by
@@ -248,27 +225,26 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
           /* Find the next s. */
           next_str += 1 + lstrlenA(next_str);
         }
+
         *begin = NULL;
 
-        if(0 == (flags & GLOB_NOSORT)) {
+        if(0 == (flags & GLOB_NOSORT))
           qsort(pp, cMatches, sizeof(char*), glob_cmp);
-        }
 
         /* Return results to caller. */
         pglob->gl_pathc = cMatches;
         pglob->gl_matchc = cMatches;
         pglob->gl_flags = 0;
 
-        if(bMagic) {
+        if(bMagic)
           pglob->gl_flags |= GLOB_MAGCHAR;
-        }
+
         pglob->gl_pathv = (char**)new_buffer;
       }
     }
 
-    if(0 == cMatches) {
+    if(0 == cMatches)
       result = GLOB_NOMATCH;
-    }
   }
 
   if(GLOB_NOMATCH == result) {
@@ -289,9 +265,8 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
         char** begin = pp;
         char** end = pp + pglob->gl_offs;
 
-        for(; begin != end; ++begin) {
+        for(; begin != end; ++begin)
           *begin = NULL;
-        }
 
         /* Synthesis the pattern result. */
 
@@ -305,18 +280,17 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
         pglob->gl_matchc = 1;
         pglob->gl_flags = 0;
 
-        if(bMagic) {
+        if(bMagic)
           pglob->gl_flags |= GLOB_MAGCHAR;
-        }
+
         pglob->gl_pathv = pp;
 
         result = 0;
       }
     }
   } else if(0 == result) {
-    if((size_t)pglob->gl_matchc == maxMatches) {
+    if((size_t)pglob->gl_matchc == maxMatches)
       result = GLOB_NOSPACE;
-    }
   }
 
   return result;

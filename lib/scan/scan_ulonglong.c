@@ -16,15 +16,18 @@ scan_ulonglong(const char* src, uint64* dest) {
 
     if(n + (l << 1) < n)
       break;
+
     n += l << 1;
 
     if(n + c < n)
       break;
+
     l = n + c;
     ++tmp;
   }
 
   if(tmp - src)
     *dest = l;
+
   return (size_t)(tmp - src);
 }

@@ -16,7 +16,8 @@ int
 redir_dup(struct nredir* nredir, stralloc* sa, int persistent) {
   int ret;
 
-  TRACE(TRACE_REDIR, "dup", trace_int("fd", nredir->fdes), trace_str("src", sa->s), trace_int("persistent", persistent));
+  TRACE(
+      TRACE_REDIR, "dup", trace_int("fd", nredir->fdes), trace_str("src", sa->s), trace_int("persistent", persistent));
 
   /* [n]>&- means closing a file descriptor */
   if(sa->len != 1 || sa->s[0] != '-') {

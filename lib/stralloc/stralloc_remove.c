@@ -1,18 +1,19 @@
 #include "../byte.h"
 #include "../stralloc.h"
 
+/* stralloc_remove removes a range of len bytes starting at pos. */
 size_t
-stralloc_remove(stralloc* sa, size_t pos, size_t n) {
+stralloc_remove(stralloc* sa, size_t pos, size_t len) {
   if(pos + 1 > sa->len)
     return -1;
 
-  if(pos + n >= sa->len) {
-    n = sa->len - pos;
+  if(pos + len >= sa->len) {
+    len = sa->len - pos;
     sa->len = pos;
-    return n;
+    return len;
   }
 
-  byte_copy(&sa->s[pos], sa->len - (pos + n), &sa->s[pos + n]);
-  sa->len -= n;
-  return n;
+  byte_copy(&sa->s[pos], sa->len - (pos + len), &sa->s[pos + len]);
+  sa->len -= len;
+  return len;
 }

@@ -30,7 +30,7 @@ parse_error(struct parser* p, enum tok_flag toks) {
     if(!sh_interactive) {
       if(parse_exit_hook)
         parse_exit_hook(1);
-      
+
       exit(1);
     }
   }

@@ -79,10 +79,9 @@ eval_tree(struct eval* e, union node* node, int tempflags) {
        the same way an explicit "exit" would (sh_exit() already knows
        how to unwind exactly one level: the whole process at the top
        level, or just the innermost subshell/function otherwise). */
-    if(sh->opts.errexit && ret != 0 && !errexit_suppress && node->id != N_NOT &&
-       node->id != N_AND && node->id != N_OR && node->id != N_BRACEGROUP && node->id != N_IF &&
-       node->id != N_FOR && node->id != N_CASE && node->id != N_WHILE && node->id != N_UNTIL &&
-       node->id != N_LIST) {
+    if(sh->opts.errexit && ret != 0 && !errexit_suppress && node->id != N_NOT && node->id != N_AND &&
+       node->id != N_OR && node->id != N_BRACEGROUP && node->id != N_IF && node->id != N_FOR && node->id != N_CASE &&
+       node->id != N_WHILE && node->id != N_UNTIL && node->id != N_LIST) {
       TRACE(TRACE_EVAL, "errexit", trace_int("status", ret));
       sh_exit(ret);
     }

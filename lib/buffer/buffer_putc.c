@@ -14,6 +14,7 @@ buffer_putc(buffer* b, char c) {
       return 0;
     }
   }
+
   b->x[b->p++] = c;
   return 0;
 }

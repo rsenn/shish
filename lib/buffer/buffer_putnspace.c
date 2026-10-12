@@ -1,6 +1,6 @@
-
-
-#include <stdlib.h>
+#include "../byte.h"
+#include "../str.h"
+#include "../buffer.h"
 
 #ifdef HAVE_ALLOCA_H
 #include <alloca.h>
@@ -8,9 +8,7 @@
 #include "../alloc.h"
 #endif /* HAVE_ALLOCA_H */
 
-#include "../buffer.h"
-#include "../byte.h"
-#include "../str.h"
+#include <stdlib.h>
 
 int
 buffer_putnspace(buffer* b, int n) {
@@ -25,11 +23,12 @@ buffer_putnspace(buffer* b, int n) {
 
     byte_fill(space, n, ' ');
     ret = buffer_put(b, space, n);
-    
+
 #ifndef HAVE_ALLOCA
     alloc_free(space);
 #endif
     return ret;
   }
+
   return 0;
 }

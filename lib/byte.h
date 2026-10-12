@@ -13,6 +13,11 @@
 #define __pure__
 #endif
 
+/* all the byte_* functions that would also be implementable by
+   string.h functions we only compile & link in when linking
+   dynamically (to use the highly optimized/vectorized libc). */
+#if LINK_STATIC
+
 /* byte_chr returns the smallest integer i between 0 and len-1
  * inclusive such that one[i] equals needle, or len if not found. */
 size_t byte_chr(const void* haystack, size_t len, char needle) __pure__;
@@ -38,37 +43,68 @@ int byte_diff(const void* a, size_t len, const void* b) __pure__;
 /* byte_zero sets the bytes out[0], out[1], ..., out[len-1] to 0 */
 void byte_zero(void* out, size_t len);
 
+/* byte_fill sets the bytes out[0], out[1], ..., out[len-1] to c */
 void byte_fill(void* out, size_t len, int c);
 
-size_t byte_equal(const void* s, size_t n, const void* t);
+/* byte_ccopy copies in[0] to out[0], n[1] to out[1], ....
+   until character c is encountered, returns number of bytes
+   copied, including the character c. */
+size_t byte_ccopy(void* out, size_t len, const void* in, char c);
 
-#if defined(__i386__) || defined(__x86_64__)
-#define UNALIGNED_ACCESS_OK
+/* in case we're linking dynamically, implement functions inline
+   by means of libc string.h functions */
+#else
+#include <string.h>
+
+static inline size_t
+byte_chr(const void* in, size_t len, char c) {
+  const char* s;
+
+  if((s = memchr(in, c, len)))
+    return s - (const char*)in;
+
+  return len;
+}
+
+static inline size_t
+byte_rchr(const void* haystack, size_t len, char needle) {
+  const char* s;
+
+  if((s = memrchr(haystack, needle, len)))
+    return s - (const char*)haystack;
+
+  return len;
+}
+
+#define byte_copy(out, len, in) memcpy((out), (in), (len))
+#define byte_copyr(out, len, in) memmove((out), (in), (len))
+#define byte_diff(a, len, b) memcmp((a), (b), (len))
+#define byte_zero(out, len) memset((out), '\0', (len))
+#define byte_fill(out, len, c) memset((out), (c), (len))
+
+static inline size_t
+byte_ccopy(void* out, size_t len, const void* in, char c) {
+  char* s;
+
+  if((s = memccpy(out, in, c, len)))
+    return s - (char*)out;
+
+  return len;
+}
+
 #endif
 
-/* read only trim-left */
+/* convenience shortcut to test for equality */
+#define byte_equal(a, len, b) !byte_diff((a), (len), (b))
 
+/* read only trim-right */
 size_t byte_trimr(char* x, size_t n, const char* trimchars, unsigned int trimcharslen);
 
+/* replace all occurences of character before with character after */
 void byte_replace(char* x, size_t n, char before, char after);
-
-size_t byte_ccopy(void*, size_t count, const void* src, char c);
-
-size_t byte_count(const void*, size_t, char c);
 
 /* ASCII case folding, in place, over out[0..len) */
 void byte_lower(void* out, size_t len);
 void byte_upper(void* out, size_t len);
-
-#if !LINK_STATIC
-#include <string.h>
-
-#define byte_copy(o, n, i) memcpy((o), (i), (n))
-#define byte_copyr(o, n, i) memmove((o), (i), (n))
-#define byte_diff(o, n, i) memcmp((o), (i), (n))
-#define byte_equal(o, n, i) (!memcmp((o), (i), (n)))
-#define byte_zero(o, n) memset((o), 0, (n))
-#define byte_fill(o, n, c) memset((o), (c), (n))
-#endif
 
 #endif

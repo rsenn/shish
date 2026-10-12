@@ -2,15 +2,15 @@
 
 #if BUILTIN_SED
 
+#include "../../../lib/byte.h"
+#include "../../../lib/str.h"
+#include "../../../lib/alloc.h"
+#include "../../../lib/stralloc.h"
+#include "../../../lib/open.h"
+#include "../../../lib/shell.h"
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../text/sed.h"
-#include "../../../lib/shell.h"
-#include "../../../lib/str.h"
-#include "../../../lib/byte.h"
-#include "../../../lib/alloc.h"
-#include "../../../lib/open.h"
-#include "../../../lib/stralloc.h"
 
 const char help_sed[] = "    Stream editor: apply a script of editing commands to each line of\n"
                         "    input, writing the result to standard output.\n"
@@ -20,19 +20,6 @@ const char help_sed[] = "    Stream editor: apply a script of editing commands t
                         "    -f file         add the script read from file\n"
                         "    -E, -r          use Extended Regular Expressions (ERE)\n"
                         "    file            file(s) to edit; '-' or omitted means stdin\n";
-
-/* slurp_file: reads the whole of path into *out (appended). Returns 0
- * on success, -1 on error (path could not be opened or read).
- * ----------------------------------------------------------------------- */
-static void
-slurp_sink(void* out, const char* s, size_t n) {
-  stralloc_catb(out, s, n);
-}
-
-static int
-slurp_file(const char* path, stralloc* out) {
-  return filter_copy(path, slurp_sink, out);
-}
 
 /* w/s///w files: opened/truncated once up front, closed once at the
  * end (POSIX: "each wfile shall be created before processing
@@ -95,7 +82,7 @@ sed_rfile(void* ctx, const char* name) {
   if(c->in.sink)
     filter_copy(name, sed_sink, c->in.sink); /* POSIX: a missing r file is silently ignored */
   else
-    filter_copy(name, slurp_sink, &c->out);
+    openreadclose(name,  &c->out, 4096);
 }
 
 static void
@@ -131,7 +118,7 @@ sed_option(void* ctx, int ch) {
       if(c->have_script && !stralloc_catc(&c->script, '\n'))
         return -1;
 
-      if(slurp_file(shell_optarg, &c->script) == -1) {
+      if(openreadclose(shell_optarg, &c->script, 4096) <= 0) {
         c->in.err_arg = shell_optarg;
         c->in.err_msg = "cannot read script file";
         return -1;

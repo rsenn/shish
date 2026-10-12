@@ -29,8 +29,6 @@
 #define path_drivelen(p, n) \
   ((n) >= 2 && (PATHSEP_S_MIXED ".")[str_chr(PATHSEP_S_MIXED ".", p[0])] == '\0' && p[1] == ':' ? 2 : 0)
 
-#define path_seplen(p, n) \
-   scan_charsetnskip((p), PATHSEP_S_MIXED, (n))
+#define path_seplen(p, n) scan_charsetnskip((p), PATHSEP_S_MIXED, (n))
 
-#define path_comlen(p, n) \
-   scan_noncharsetnskip((p), PATHSEP_S_MIXED, (n))
+#define path_comlen(p, n) scan_noncharsetnskip((p), PATHSEP_S_MIXED, (n))

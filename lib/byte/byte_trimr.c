@@ -1,5 +1,6 @@
 #include "../byte.h"
 
+/* read only trim-right */
 size_t
 byte_trimr(char* x, size_t n, const char* trimchars, unsigned int trimcharslen) {
   while(n > 0) {
@@ -7,5 +8,6 @@ byte_trimr(char* x, size_t n, const char* trimchars, unsigned int trimcharslen) 
       break;
     --n;
   }
+
   return n;
 }

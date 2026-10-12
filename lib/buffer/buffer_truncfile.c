@@ -13,6 +13,7 @@ int
 buffer_truncfile(buffer* b, const char* fn) {
   if((b->fd = open_trunc(fn)) == -1)
     return -1;
+
   b->p = 0;
   b->n = 0;
   b->a = BUFFER_OUTSIZE;

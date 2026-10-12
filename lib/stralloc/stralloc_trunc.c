@@ -9,6 +9,7 @@ stralloc_trunc(stralloc* sa, size_t n) {
   if((sa->s = alloc_re(sa->s, n + 1))) {
     sa->s[n] = '\0';
     sa->len = n;
+
     /* alloc_re() may (re)allocate a new buffer here -- "a" (the
      * allocated capacity stralloc_free()/stralloc_ready() rely on to
      * know whether "s" actually owns real heap storage) has to track
@@ -21,5 +22,6 @@ stralloc_trunc(stralloc* sa, size_t n) {
     sa->a = n + 1;
     return 1;
   }
+
   return 0;
 }

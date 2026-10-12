@@ -48,7 +48,6 @@ check_pw_functions()
 check_sig_functions()
 check_fork_function()
 check_memory_mapping()
-check_libmath()
 check_emscripten()
 check_termios_winsize()
 
@@ -77,6 +76,13 @@ include(cmake/Digest.cmake)
 
 if(BUILTIN_DIGEST)
   configure_digest_builtin()
+endif()
+
+if(BUILTIN_AWK OR BUILTIN_EXPR)
+  check_libmath(MATH_LIBRARY)
+else()
+  unset(MATH_LIBRARY)
+  unset(MATH_LIBRARY CACHE)
 endif()
 
 check_includes_def(alloca.h fcntl.h glob.h inttypes.h signal.h stdint.h sys/stat.h sys/types.h sys/wait.h unistd.h)
@@ -168,7 +174,7 @@ set_add(SHISH_SOURCES src/sh/sh_init.c src/sh/sh_main.c)
 set_init(ALL_SOURCES ${SHISH_SOURCES} ${LIBSHELL_SOURCES})
 
 add_executable(shish ${SHISH_SOURCES})
-target_link_libraries(shish PRIVATE libshell ${LIBOWFAT_LIBRARY} ${LIBMATH} ${ELECTRICFENCE_LIBRARY})
+target_link_libraries(shish PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 
 if(BUILTIN_COMPRESS OR BUILTIN_UNCOMPRESS)
   include(cmake/LibArchive.cmake)
@@ -227,7 +233,7 @@ if(BUILD_SHPARSE2AST)
   set_add(ALL_SOURCES ${SHPARSE2AST_SOURCES})
 
   add_executable(shparse2ast ${SHPARSE2AST_SOURCES})
-  target_link_libraries(shparse2ast PRIVATE libshell ${LIBOWFAT_LIBRARY} ${LIBMATH} ${ELECTRICFENCE_LIBRARY})
+  target_link_libraries(shparse2ast PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY} ${ELECTRICFENCE_LIBRARY})
 
   target_compile_definitions(shparse2ast PUBLIC SHPARSE2AST=1)
 
@@ -247,7 +253,7 @@ if(BUILD_SHUTIL_WASM)
   set_add(ALL_SOURCES ${SHUTIL_SOURCES})
 
   add_executable(shutil ${SHUTIL_SOURCES})
-  target_link_libraries(shutil PRIVATE libshell ${LIBOWFAT_LIBRARY} ${LIBMATH})
+  target_link_libraries(shutil PRIVATE libshell ${LIBOWFAT_LIBRARY} ${MATH_LIBRARY})
 
   # SHPARSE2AST=1 gates the JSON debug-tree code in src/debug/*.c on; SHFORMAT=1 keeps parse_simpletok.c's PS2-prompt call site
   # (still dead here regardless, via parse_prompt_hook -- see fixes/219) consistent with the other parser-only tools.

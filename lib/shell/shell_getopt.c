@@ -44,6 +44,7 @@ shell_getopt_r(struct optstate* state, int argc, char* const argv[], const char*
     } else {
       prefixchars = default_prefixes;
     }
+
     optind++;
   }
 

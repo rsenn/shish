@@ -27,8 +27,8 @@ int open_trunc(const char* filename);
 
 #ifdef STRALLOC_H
 int openreadclose(const char* fn, stralloc* sa, size_t bufsize);
-ssize_t readclose_append(int64 fd, stralloc* sa, size_t bufsize);
-ssize_t readclose(int64 fd, stralloc* sa, size_t bufsize);
+ssize_t readclose_append(int fd, stralloc* sa, size_t bufsize);
+ssize_t readclose(int fd, stralloc* sa, size_t bufsize);
 #endif
 
 int open_temp(char** tmpl);

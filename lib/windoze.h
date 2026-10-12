@@ -9,8 +9,8 @@
 #define _WIN64 1
 #endif
 
-#if defined(_WIN32) || defined(_WIN64) || defined(__MINGW32__) || defined(__MINGW64__) || \
-    defined(MSVC) || defined(__CYGWIN__) || defined(__MSYS__)
+#if defined(_WIN32) || defined(_WIN64) || defined(__MINGW32__) || defined(__MINGW64__) || defined(MSVC) || \
+    defined(__CYGWIN__) || defined(__MSYS__)
 #if !(defined(__MSYS__) || defined(__CYGWIN__))
 #define WINDOWS_NATIVE 1
 #endif
@@ -22,7 +22,6 @@
 #if defined(__MINGW32__) || defined(__MINGW64__)
 #define MINGW 1
 #endif
-
 
 #define _FILE_OFFSET_BITS 64
 
@@ -55,7 +54,7 @@
 #endif
 
 #ifndef MINGW
-#ifndef HAVE_DEV_T 
+#ifndef HAVE_DEV_T
 typedef int dev_t;
 #endif
 #ifndef HAVE_PID_T

@@ -72,12 +72,12 @@ struct fd;
 struct parser;
 void trace_node(const char* key, union node* node);  /* shell source text of one node */
 void trace_nodes(const char* key, union node* list); /* [ "text", ... ] for a sibling list */
-void trace_fd(const char* key, struct fd* fd);      /* {n=, name=, level=, e=, mode=, ...} */
-void trace_fdtable(const char* event);              /* one fdtable.<event> line per shadowed fd */
+void trace_fd(const char* key, struct fd* fd);       /* {n=, name=, level=, e=, mode=, ...} */
+void trace_fdtable(const char* event);               /* one fdtable.<event> line per shadowed fd */
 
 struct location;
 void trace_loc(const char* key, const struct location* loc); /* "file:line:col" */
-void trace_kind(const char* key, int node_id);                 /* enum kind -> "simple_command" */
+void trace_kind(const char* key, int node_id);               /* enum kind -> "simple_command" */
 
 void trace_argv(const char* key, char* const* argv);
 void trace_flags(const char* key, unsigned long bits, const char* const* names, unsigned int n);

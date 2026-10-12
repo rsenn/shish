@@ -118,7 +118,6 @@ void expand_tilde_word(union node* arg);
 void expand_tilde_assign(union node* var);
 int expand_tilde_needed(union node* arg);
 int expand_tilde_assign_needed(union node* var);
-int expand_tilde_lookup(
-    const char* text, size_t len, int stop_at_colon, stralloc* home, size_t* prefixlen);
+int expand_tilde_lookup(const char* text, size_t len, int stop_at_colon, stralloc* home, size_t* prefixlen);
 
 #endif /* EXPAND_H */

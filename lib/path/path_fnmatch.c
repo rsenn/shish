@@ -1,5 +1,5 @@
-#include "../path_internal.h"
 #include "../byte.h"
+#include "../path_internal.h"
 #include <ctype.h>
 
 /*#include "../buffer.h"*/

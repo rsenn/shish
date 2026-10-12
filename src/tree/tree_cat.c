@@ -155,8 +155,7 @@ again:
 
       /* if we have a word substitution inside the var we MUST
         put it inside braces */
-      if(node->nargparam.word || (node->nargparam.flag & S_STRLEN) ||
-         (node->nargparam.flag & S_VAR))
+      if(node->nargparam.word || (node->nargparam.flag & S_STRLEN) || (node->nargparam.flag & S_VAR))
         braces = 1;
 
       /* use braces if the next char after the variable name
@@ -502,7 +501,8 @@ again:
           /* an unquoted delimiter leaves "$", "`" and "\\" live in the body: literal ones need their backslash */
           int live = 1;
 
-          for(part = node->nredir.delim->id == N_ARG ? node->nredir.delim->narg.list : node->nredir.delim; part; part = part->next)
+          for(part = node->nredir.delim->id == N_ARG ? node->nredir.delim->narg.list : node->nredir.delim; part;
+              part = part->next)
             if(part->nargstr.flag & (S_TABLE | S_ESCAPED))
               live = 0;
 
