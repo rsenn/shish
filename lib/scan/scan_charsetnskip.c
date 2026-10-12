@@ -5,14 +5,14 @@
  * more than limit */
 size_t
 scan_charsetnskip(const char* s, const char* charset, size_t limit) {
-  const char *i, *t = s, *u = t + limit;
+  const char  *t = s, *u = s + limit, *v;
 
   while(t < u) {
-    for(i = charset; *i; ++i)
-      if(*i == *t)
+    for(v = charset; *v; ++v)
+      if(*v == *t)
         break;
 
-    if(*i != *t)
+    if(*v != *t)
       break;
 
     ++t;

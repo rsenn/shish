@@ -41,6 +41,14 @@ size_t scan_charsetnskip(const char* in, const char* charset, size_t limit) __pu
  * charset (ASCIIZ string) for all 0 <= i <= n */
 size_t scan_noncharsetnskip(const char* in, const char* charset, size_t limit) __pure__;
 
+/* return the highest integer n <= limit so that s[limit - 1 - i] is element
+ * of charset (ASCIIZ string) for all 0 <= i <= n */
+size_t scan_charsetnrskip(const char* s, const char* charset, size_t limit) __pure__;
+
+/* return the highest integer n <= limit so that s[limit - 1 - i] is not
+ * element of charset (ASCIIZ string) for all 0 <= i <= n */
+size_t scan_noncharsetnrskip(const char* s, const char* charset, size_t limit) __pure__;
+
 size_t scan_nonwhitenskip(const char*, size_t limit);
 size_t scan_whitenskip(const char*, size_t limit);
 

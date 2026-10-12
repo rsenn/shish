@@ -139,8 +139,7 @@ glob(const char* pattern, int flags, int (*errfunc)(const char*, int), glob_t* p
 
       if(bMagic0 && 0 == (flags & GLOB_PERIOD))
         if('.' == find_data.cFileName[0])
-          ;
-      continue;
+          continue;
 
       if(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
         if(flags & GLOB_ONLYFILE)

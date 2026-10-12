@@ -12,6 +12,17 @@
    in haystack */
 size_t str_chr(const char* haystack, char needle) __pure__;
 
+/* str_chrn returns the index of the first character that is not c */
+size_t str_chrn(const char* in, char c);
+
+/* str_chrs returns the index of the first occurance of needles[nn] or \0
+   in haystack */
+size_t str_chrs(const char* in, const char needles[], size_t nn);
+
+/* str_nchrs returns the index of the first occurance of a character
+   not in needles[nn] or \0 in haystack */
+size_t str_chrns(const char* in, const char needles[], size_t nn);
+
 /* str_rchr returns the index of the last occurance of needle or \0
    in haystack  */
 size_t str_rchr(const char* haystack, char needle) __pure__;

@@ -22,8 +22,8 @@
  * inclusive such that one[i] equals needle, or len if not found. */
 size_t byte_chr(const void* haystack, size_t len, char needle) __pure__;
 
-/* byte_rchr returns the largest integer i between 0 and len-1 inclusive
- * such that one[i] equals needle, or len if not found. */
+/* returns the index of the first byte from the end that is needle */
+size_t byte_rchr(const void* haystack, size_t len, char needle);
 
 /* byte_copy copies in[0] to out[0], in[1] to out[1], ... and in[len-1]
  * to out[len-1]. */
@@ -93,6 +93,12 @@ byte_ccopy(void* out, size_t len, const void* in, char c) {
 }
 
 #endif
+
+/* str_chrn returns the index of the first byte that is not value */
+size_t byte_chrn(const void* haystack, size_t len, char value);
+
+/* byte_rchrn returns the index of the first byte from the end that is not needle */
+size_t byte_rchrn(const void* haystack, size_t len, char needle);
 
 /* convenience shortcut to test for equality */
 #define byte_equal(a, len, b) !byte_diff((a), (len), (b))

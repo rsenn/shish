@@ -5,7 +5,7 @@
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
-#include "../../../lib/path.h"
+#include "../../../lib/path_internal.h"
 #include "../../../lib/stralloc.h"
 #include "../../../lib/str.h"
 #include "../../../lib/byte.h"
@@ -66,16 +66,11 @@ extract_relative_to(char* argv[], int* argc) {
  * ----------------------------------------------------------------------- */
 static void
 relative_to(stralloc* out, const char* base, const char* target) {
-  size_t bi = 0, ti = 0;
-
-  if(base[bi] == PATHSEP_C)
-    bi++;
-  if(target[ti] == PATHSEP_C)
-    ti++;
+  size_t bi = path_issep(*base), ti = path_issep(*target);
 
   for(;;) {
-    size_t bn = path_len_s(base + bi);
-    size_t tn = path_len_s(target + ti);
+    size_t bn = path_component(base + bi);
+    size_t tn = path_component(target + ti);
 
     if(!bn || !tn || bn != tn || byte_diff(base + bi, bn, target + ti))
       break;
@@ -83,29 +78,26 @@ relative_to(stralloc* out, const char* base, const char* target) {
     bi += bn;
     ti += tn;
 
-    if(base[bi] != PATHSEP_C || target[ti] != PATHSEP_C)
+    if(!path_issep(base[bi]) || !path_issep(target[ti]))
       break;
 
     bi++;
     ti++;
   }
 
-  if(base[bi] == PATHSEP_C)
-    bi++;
-  if(target[ti] == PATHSEP_C)
-    ti++;
+  bi += path_issep(base[bi]);
+  ti += path_issep(base[ti]);
 
   out->len = 0;
 
   while(base[bi]) {
-    size_t n = path_len_s(base + bi);
+    size_t n = str_chrs(base + bi, PATHSEP_CHARS, PATHSEP_LENGTH);
 
     stralloc_cats(out, "..");
     stralloc_catc(out, PATHSEP_C);
     bi += n;
 
-    if(base[bi] == PATHSEP_C)
-      bi++;
+    bi++;
   }
 
   if(target[ti])

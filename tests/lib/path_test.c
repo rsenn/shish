@@ -5,28 +5,22 @@
 #include <unistd.h>
 
 static int failed;
+#define check(cond, what) \
+  do { \
+    int ok = (cond); \
+    printf("%s: %s\n", (what), (ok) ? "OK" : "FAIL"); \
+    failed |= !(ok); \
+  } while(0);
 
-/*static void
-check(int ok, const char* what) {
-  printf("%s: %s\n", what, ok ? "OK" : "FAIL");
-  failed |= !ok;
-}*/
+#define check_equal(a, b, what) \
+  do { \
+    int ok = (a) == (b); \
+    printf("%s: ", (what)); \
+    printf("%s (%d %s %d)\n", (ok) ? "OK" : "FAIL", (int)(a), (ok) ? "==" : "!=", (int)(b)); \
+    failed |= !(ok); \
+  } while(0);
 
-#define check(cond, what) do { \
-  int ok = (cond); \
-  printf("%s: %s\n", (what), (ok) ? "OK" : "FAIL"); \
-  failed |= !(ok); \
-} while(0);
-
-#define check_equal(a, b, what) do { \
-  int ok = (a) == (b); \
-  printf("%s: ", (what)); \
-  printf((ok) ? "OK\n" : "FAIL (%d != %d)\n", (a), (b)); \
-  failed |= !(ok); \
-} while(0);
-
-
-#define CHECK_EQUAL(a, b) check_equal(a , b, (#a " == " #b))
+#define CHECK_EQUAL(a, b) check_equal(a, b, (#a " == " #b))
 #define CHECK_STREQUAL(a, b) check((a) && (b) && !strcmp((a), (b)), #a " == " #b)
 
 #define CHECK(condition) check((condition), #condition)
@@ -116,7 +110,7 @@ main(void) {
     memset(cwd.s, 'A', cwd.a);
 
     CHECK(path_getcwd(&cwd));
-    CHECK(stralloc_length(&cwd));
+    CHECK(cwd.len);
     CHECK(cwd.a > cwd.len && cwd.s[cwd.len] == '\0');
     CHECK(path_rootlen(cwd.s, cwd.len));
   }
@@ -134,15 +128,40 @@ main(void) {
   CHECK_EQUAL(path_len(B("//usr")), 0);
 
   /* TEST: size_t path_rootlen(x, n)  */
-  CHECK(path_rootlen("some/dir", 8) == 0);
-  CHECK(path_rootlen("/some/dir", 9) == 1);
-  CHECK(path_rootlen("//some/dir", 10) == 2);
-  CHECK(path_rootlen("c:/windows", 10) == 3);
-  CHECK(path_rootlen("c:system32", 10) == 2);
-
-#if WINDOWS_NATIVE
-  CHECK(path_rootlen(B("c:/windows/")) == 3);
+  CHECK_EQUAL(path_rootlen(B("some/dir")), 0);
+  CHECK_EQUAL(path_rootlen(B("/some/dir")), 1);
+  CHECK_EQUAL(path_rootlen(B("//some/dir")), 2);
+#if WINDOWS
+  CHECK_EQUAL(path_rootlen(B("c:/windows")), 3);
+  CHECK_EQUAL(path_rootlen(B("c:system32")), 2);
+  CHECK_EQUAL(path_rootlen(B("c:/windows/")), 3);
 #endif
 
+  /* TEST: size_t path_rootlen_s(s)  */
+  CHECK_EQUAL(path_rootlen_s("some/dir"), 0);
+  CHECK_EQUAL(path_rootlen_s("/some/dir"), 1);
+  CHECK_EQUAL(path_rootlen_s("//some/dir"), 2);
+#if WINDOWS
+  CHECK_EQUAL(path_rootlen_s("c:/windows"), 3);
+  CHECK_EQUAL(path_rootlen_s("c:system32"), 2);
+  CHECK_EQUAL(path_rootlen_s("c:/windows/"), 3);
+#endif  
+
+  /* TEST: size_t path_dirlen(x, n)  */
+  CHECK_EQUAL(path_dirlen(B("some/dir")), 4);
+  CHECK_EQUAL(path_dirlen(B("/some/dir")), 5);
+  CHECK_EQUAL(path_dirlen(B("//some/dir")), 6);
+#if WINDOWS
+  CHECK_EQUAL(path_dirlen(B("c:/windows/system32")), 10);
+#endif
+
+  /* TEST: SizePair path_commonlen(b, blen, t, tlen)  */
+  SizePair sp = path_commonlen(B("some//of///this//is/common"), B("some/of/this/doesnt/match"));
+  CHECK_EQUAL(sp.sz1, 17);
+  CHECK_EQUAL(sp.sz2, 13);
+
+  /* TEST: SizePair path_commonlen_s(b, t)  */
+  CHECK_EQUAL(path_commonlen_s("some/of/this/is/common", "some/of/this/doesnt/match"), 13);
+ 
   return failed;
 }

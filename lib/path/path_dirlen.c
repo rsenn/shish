@@ -11,20 +11,20 @@
  * ----------------------------------------------------------------------- */
 size_t
 path_dirlen(const char* s, size_t n) {
-  while(n > 0 && path_issep(s[n - 1]))
-    --n;
-
-  if(n == 0)
-    return path_issep(*s) ? 1 : 0;
-
-  while(n > 0 && !path_issep(s[n - 1]))
-    --n;
-
   if(n == 0)
     return 0;
 
-  while(n > 0 && path_issep(s[n - 1]))
-    --n;
+  /* skip trailing path separators from the end */
+  if((n -= path_rseplen(s, n)) == 0)
+    return 1;
 
-  return n ? n : 1;
+  /* scan backwards past the current path component (non-separators) */
+  if((n -= path_rcomlen(s, n)) == 0)
+    return 0;
+
+  /* skip backwards past any preceding consecutive separators */
+  if((n -= path_rseplen(s, n)) == 0)
+    return 1;
+
+  return n;
 }

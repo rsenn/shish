@@ -31,15 +31,11 @@ path_basename(const char* path, size_t* len) {
     }
   }
 
-  /* Trim trailing separators */
-  for(; y > x; y--)
-    if(!path_issep(*(y - 1)))
-      break;
+  /* trim trailing separators */
+  y  -= path_rseplen(path, y - path);
 
-  /* Scan backwards to find the start of the basename component */
-  for(x = y; x > path; x--)
-    if(path_issep(*(x - 1)))
-      break;
+  /* scan backwards to find the start of the basename component */
+  x = y - path_rcomlen(path, y - path);
 
   if(len)
     *len = y - x;

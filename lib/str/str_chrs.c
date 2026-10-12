@@ -1,0 +1,18 @@
+#include "../str.h"
+
+/* str_chrs returns the index of the first occurance of needles[nn] or \0
+   in haystack */
+size_t
+str_chrs(const char* in, const char needles[], size_t nn) {
+  const char* t = in;
+
+  while(*t) {
+    for(size_t i = 0; i < nn; i++)
+      if(*t == needles[i])
+        return (size_t)(t - in);
+
+    ++t;
+  }
+
+  return (size_t)(t - in);
+}
