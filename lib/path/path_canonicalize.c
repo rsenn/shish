@@ -32,27 +32,23 @@ is_link(const char* path) {
 #if WINDOWS_NATIVE
   if(is_symlink(path))
     return 1;
-#endif
-#if !WINDOWS_NATIVE
-  {
-    struct stat st;
+#else
+  struct stat st;
 
-    if(lstat(path, &st) != -1)
-      return S_ISLNK(st.st_mode);
-  }
+  if(lstat(path, &st) != -1)
+    return S_ISLNK(st.st_mode);
 #endif
   return 0;
 }
 
-/* drops the last component of the path in sa; root is its root length */
 static void
 pop(stralloc* sa, size_t root) {
-  size_t k = sa->len;
+  size_t k = sa->len - path_rcomlen(sa->s + root, sa->len - root);
 
-  while(k > root && !path_issep(sa->s[k - 1]))
-    --k;
+  if(k > root)
+    k -= path_rseplen(sa->s + root, k - root);
 
-  sa->len = k > root ? k - 1 : k;
+  sa->len = k;
 }
 
 /* canonicalizes <path> and replaces the content of <sa> (NUL-terminated) with it
@@ -76,7 +72,6 @@ path_canonicalize(const char* path, stralloc* sa, int symbolic) {
   stralloc rest, link, tmp;
   size_t pos = 0, root = 0, n;
   int ret = 0, links = 0;
-  char sep = PATHSEP_C;
 
   stralloc_init(&rest);
   stralloc_init(&link);
@@ -89,47 +84,42 @@ path_canonicalize(const char* path, stralloc* sa, int symbolic) {
   sa->len = 0;
 
 restart:
-  if((root = path_rootlen(rest.s, rest.len))) {
+  if((root = path_rootlenb(rest.s, rest.len))) {
     if(!stralloc_catb(sa, rest.s, root))
       goto fail;
 
-    sa->s[root - 1] = sep;
+    sa->s[root - 1] = PATHSEP_C;
     pos = root;
   }
 
   while(pos < rest.len) {
     const char* c;
 
-    while(pos < rest.len && path_issep(rest.s[pos]))
-      ++pos;
-
-    if(pos >= rest.len)
+    if((pos += path_seplen(rest.s + pos, rest.len - pos)) == rest.len)
       break;
 
     c = rest.s + pos;
-    for(n = 0; pos + n < rest.len && !path_issep(c[n]); ++n) {}
+    n = path_comlen(c, rest.len - pos);
     pos += n;
 
-    if(n == 1 && c[0] == '.')
+    if(path_isdotb(c, n))
       continue;
 
-    if(n == 2 && c[0] == '.' && c[1] == '.') {
-      size_t k = sa->len;
-
-      while(k > root && !path_issep(sa->s[k - 1]))
-        --k;
+    if(path_isdotdotb(c, n)) {
+      size_t j = path_rcomlen(sa->s, sa->len);
+      size_t k = sa->len - j;
 
       /* relative with nothing to pop (or a ".." on top): keep the ".." */
-      if(sa->len > root && !(sa->len - k == 2 && sa->s[k] == '.' && sa->s[k + 1] == '.'))
+      if(sa->len > root && !(path_isdotdotb(sa->s + k, j)))
         pop(sa, root);
       else if(!root)
-        if((sa->len && !stralloc_catc(sa, sep)) || !stralloc_catb(sa, "..", 2))
+        if((sa->len && !stralloc_catc(sa, PATHSEP_C)) || !stralloc_catb(sa, "..", 2))
           goto fail;
 
       continue;
     }
 
-    if((sa->len > root && !stralloc_catc(sa, sep)) || !stralloc_catb(sa, c, n) || !stralloc_nul(sa))
+    if((sa->len > root && !stralloc_catc(sa, PATHSEP_C)) || !stralloc_catb(sa, c, n) || !stralloc_nul(sa))
       goto fail;
 
     if(symbolic || !is_link(sa->s))
@@ -146,7 +136,7 @@ restart:
     /* the link's target, then what is still to do, becomes the new rest */
     pop(sa, root);
 
-    if(!stralloc_copyb(&tmp, link.s, link.len) || !stralloc_catc(&tmp, sep) ||
+    if(!stralloc_copyb(&tmp, link.s, link.len) || !stralloc_catc(&tmp, PATHSEP_C) ||
        !stralloc_catb(&tmp, rest.s + pos, rest.len - pos) || !stralloc_nul(&tmp))
       goto fail;
 
@@ -156,7 +146,7 @@ restart:
     pos = 0;
 
     /* absolute target: start over from its root */
-    if(path_rootlen(rest.s, rest.len)) {
+    if(path_isabsb(rest.s, rest.len)) {
       sa->len = 0;
       goto restart;
     }

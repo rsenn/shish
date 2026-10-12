@@ -66,42 +66,20 @@ extract_relative_to(char* argv[], int* argc) {
  * ----------------------------------------------------------------------- */
 static void
 relative_to(stralloc* out, const char* base, const char* target) {
-  size_t bi = path_issep(*base), ti = path_issep(*target);
-
-  for(;;) {
-    size_t bn = path_component(base + bi);
-    size_t tn = path_component(target + ti);
-
-    if(!bn || !tn || bn != tn || byte_diff(base + bi, bn, target + ti))
-      break;
-
-    bi += bn;
-    ti += tn;
-
-    if(!path_issep(base[bi]) || !path_issep(target[ti]))
-      break;
-
-    bi++;
-    ti++;
-  }
-
-  bi += path_issep(base[bi]);
-  ti += path_issep(base[ti]);
+  size_t i = path_commonlen(base, target);
 
   out->len = 0;
 
-  while(base[bi]) {
-    size_t n = str_chrs(base + bi, PATHSEP_CHARS, PATHSEP_LENGTH);
+  for(size_t j = i; base[j]; j++) {
+    size_t n = path_component(base + j);
 
     stralloc_cats(out, "..");
     stralloc_catc(out, PATHSEP_C);
-    bi += n;
-
-    bi++;
+    j += n;
   }
 
-  if(target[ti])
-    stralloc_cats(out, target + ti);
+  if(target[i])
+    stralloc_cats(out, target + i);
   else if(out->len)
     out->len--;
   else

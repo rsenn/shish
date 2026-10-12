@@ -1,6 +1,6 @@
 #include "../str.h"
 
-#if LINK_STATIC
+#if 1 // LINK_STATIC
 
 /* str_copy copies leading bytes from in to out until \0.
  * returns number of copied bytes. */

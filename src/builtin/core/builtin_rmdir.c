@@ -2,18 +2,18 @@
 
 #if BUILTIN_RMDIR
 
+#include "../../../lib/stralloc.h"
+#include "../../../lib/path_internal.h"
+#include "../../../lib/shell.h"
 #include "../../builtin.h"
 #include "../../fdtable.h"
-#include "../../../lib/shell.h"
-#include "../../../lib/path.h"
-#include "../../../lib/stralloc.h"
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
 /* -p: having just removed 'sa', keep climbing to its parent, its
  * parent's parent, and so on, rmdir()'ing each as long as they're
- * empty (GNU rmdir -p's "a/b/c" -> "a/b" -> "a" walk). path_dirlen()
+ * empty (GNU rmdir -p's "a/b/c" -> "a/b" -> "a" walk). path_dirlenb()
  * gives the length of the parent; 0 (none left) or a parent that is the
  * root ("/a" -> "/") stops the climb before rmdir("")/rmdir("/"). Returns 0 if
  * the climb ran out of ancestors on its own, 1 on a failed rmdir().
@@ -22,7 +22,7 @@ static int
 rmdir_parents(char* argv[], stralloc* sa, int verbose, int force) {
   size_t len;
 
-  while((len = path_dirlen(sa->s, sa->len)) > 0 && len < sa->len && (len > 1 || !path_is_absolute(sa->s, 1))) {
+  while((len = path_lensa(path_dirlenb, sa)) > 0 && len < sa->len && (len > 1 || !path_is_absolute(sa->s, 1))) {
     sa->len = len;
     stralloc_nul(sa);
 

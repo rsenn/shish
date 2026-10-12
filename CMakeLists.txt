@@ -24,7 +24,10 @@ option(MINSIZE_STRIP "Strip unneeded sections from a MinSizeRel build" ON)
 include(cmake/Functions.cmake)
 include(cmake/Checks.cmake)
 
-check_source_definitions(ATFILE GNU LARGEFILE LARGE_FILE LARGEFILE64 POSIX POSIX_C XOPEN XOPEN_EXTENDED)
+check_source_definitions(
+  ATFILE GNU LARGEFILE LARGE_FILE LARGEFILE64 POSIX POSIX_C
+  XOPEN=600 XOPEN_EXTENDED
+)
 
 check_no_unused_warn_flags()
 check_no_warnings_flags(CMAKE_C_FLAGS_DEBUG)
@@ -50,6 +53,8 @@ check_fork_function()
 check_memory_mapping()
 check_emscripten()
 check_termios_winsize()
+
+check_functions(memrchr memmem memccpy)
 
 check_sys_siglist_declaration(HAVE_SYS_SIGLIST HAVE_SYS_SIGLIST_DECLARATION)
 check_socket_library(SOCKET_LIBRARY)

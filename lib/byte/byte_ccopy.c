@@ -1,6 +1,6 @@
 #include "../byte.h"
 
-#if LINK_STATIC
+#if LINK_STATIC || !defined(HAVE_MEMCCPY)
 
 /* byte_ccopy copies in[0] to out[0], n[1] to out[1], ....
    until character c is encountered, returns number of bytes

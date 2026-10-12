@@ -66,7 +66,8 @@ byte_chr(const void* in, size_t len, char c) {
   return len;
 }
 
-static inline size_t
+#ifdef HAVE_MEMRCHR
+ static inline size_t
 byte_rchr(const void* haystack, size_t len, char needle) {
   const char* s;
 
@@ -75,13 +76,26 @@ byte_rchr(const void* haystack, size_t len, char needle) {
 
   return len;
 }
+#else
+size_t byte_rchr(const void* haystack, size_t len, char needle);
+#endif
 
-#define byte_copy(out, len, in) memcpy((out), (in), (len))
-#define byte_copyr(out, len, in) memmove((out), (in), (len))
-#define byte_diff(a, len, b) memcmp((a), (b), (len))
-#define byte_zero(out, len) memset((out), '\0', (len))
-#define byte_fill(out, len, c) memset((out), (c), (len))
 
+#ifdef HAVE_MEMMEM
+size_t
+byte_findb(const void* haystack, size_t hlen, const void* what, size_t wlen) {
+  const char* b;
+
+  if((b = memmem(haystack, hlen, what, wlen)))
+    return b - (const char*)haystack;
+
+  return hlen;
+}
+#else
+size_t byte_findb(const void* haystack, size_t hlen, const void* what, size_t wlen);
+#endif
+
+#ifdef HAVE_MEMCCPY
 static inline size_t
 byte_ccopy(void* out, size_t len, const void* in, char c) {
   char* s;
@@ -91,6 +105,16 @@ byte_ccopy(void* out, size_t len, const void* in, char c) {
 
   return len;
 }
+#else
+size_t byte_ccopy(void* out, size_t len, const void* in, char c);
+#endif
+
+
+#define byte_copy(out, len, in) memcpy((out), (in), (len))
+#define byte_copyr(out, len, in) memmove((out), (in), (len))
+#define byte_diff(a, len, b) memcmp((a), (b), (len))
+#define byte_zero(out, len) memset((out), '\0', (len))
+#define byte_fill(out, len, c) memset((out), (c), (len))
 
 #endif
 

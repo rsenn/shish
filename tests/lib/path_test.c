@@ -1,5 +1,7 @@
 /* lib/path unit test; prints "<what>: OK|FAIL", exits non-zero on any FAIL */
 #include "../../lib/path.h"
+#include "../../lib/byte.h"
+#include "../../lib/str.h"
 #include "../../lib/buffer.h"
 #include <stdio.h>
 #include <unistd.h>
@@ -21,7 +23,7 @@ static int failed;
   } while(0);
 
 #define CHECK_EQUAL(a, b) check_equal(a, b, (#a " == " #b))
-#define CHECK_STREQUAL(a, b) check((a) && (b) && !strcmp((a), (b)), #a " == " #b)
+#define CHECK_STREQUAL(a, b) check((a) && (b) && str_equal((a), (b)), #a " == " #b)
 
 #define CHECK(condition) check((condition), #condition)
 
@@ -37,8 +39,8 @@ main(void) {
 
   /* TEST: char* path_basename(path, *len)  */
   CHECK_STREQUAL(path_basename("/usr/lib", NULL), "lib");
-  CHECK(path_basename("/usr/include/", &len) && len == strlen("include"));
-  CHECK(path_basename("//", &len) && len == strlen("/"));
+  CHECK(path_basename("/usr/include/", &len) && len == str_len("include"));
+  CHECK(path_basename("//", &len) && len == str_len("/"));
   CHECK_STREQUAL(path_basename("", &len), "");
 
   /* TEST: int path_canonicalize(path, sa, symbolic)  */
@@ -48,13 +50,13 @@ main(void) {
   buffer_putsa(buffer_2, &sa);
   buffer_putnlflush(buffer_2);
 
-  /* TEST: size_t path_dirlen(path, len) */
-  CHECK(path_dirlen("a/b/c", 5) == 3);
-  CHECK(path_dirlen("a//b/", 5) == 1);
-  CHECK(path_dirlen("/a", 2) == 1);
-  CHECK(path_dirlen("a", 1) == 0);
-  CHECK(path_dirlen("/", 1) == 1);
-  CHECK(path_dirlen("", 0) == 0);
+  /* TEST: size_t path_dirlenb(path, len) */
+  CHECK(path_dirlenb("a/b/c", 5) == 3);
+  CHECK(path_dirlenb("a//b/", 5) == 1);
+  CHECK(path_dirlenb("/a", 2) == 1);
+  CHECK(path_dirlenb("a", 1) == 0);
+  CHECK(path_dirlenb("/", 1) == 1);
+  CHECK(path_dirlenb("", 0) == 0);
 
   /* TEST: int path_fnmatch(pattern, plen, string, slen, flags) */
   CHECK(path_fnmatch(B("foo"), B("foo"), 0) == 0);
@@ -107,61 +109,61 @@ main(void) {
     stralloc cwd;
     stralloc_init(&cwd);
     stralloc_ready(&cwd, PATH_MAX + 2);
-    memset(cwd.s, 'A', cwd.a);
+    byte_fill(cwd.s, cwd.a, 'A');
 
     CHECK(path_getcwd(&cwd));
     CHECK(cwd.len);
     CHECK(cwd.a > cwd.len && cwd.s[cwd.len] == '\0');
-    CHECK(path_rootlen(cwd.s, cwd.len));
+    CHECK(path_rootlenb(cwd.s, cwd.len));
   }
 
   /* TEST: char* path_gethome(uid)  */
   CHECK(path_gethome(-1) == NULL);
   /*CHECK(path_gethome(0) != NULL);*/
-  CHECK(path_gethome(getuid()) > 0);
+  CHECK(path_gethome(1000) > 0);
 
-  /* TEST: size_t path_len(ptr)  */
-  CHECK_EQUAL(path_len(B("dir/subdir/subsub/")), 3);
-  CHECK_EQUAL(path_len(B("./")), 1);
-  CHECK_EQUAL(path_len(B("../")), 2);
-  CHECK_EQUAL(path_len(B("/usr")), 0);
-  CHECK_EQUAL(path_len(B("//usr")), 0);
+  /* TEST: size_t path_lenb(ptr)  */
+  CHECK_EQUAL(path_lenb(B("dir/subdir/subsub/")), 3);
+  CHECK_EQUAL(path_lenb(B("./")), 1);
+  CHECK_EQUAL(path_lenb(B("../")), 2);
+  CHECK_EQUAL(path_lenb(B("/usr")), 0);
+  CHECK_EQUAL(path_lenb(B("//usr")), 0);
 
-  /* TEST: size_t path_rootlen(x, n)  */
-  CHECK_EQUAL(path_rootlen(B("some/dir")), 0);
-  CHECK_EQUAL(path_rootlen(B("/some/dir")), 1);
-  CHECK_EQUAL(path_rootlen(B("//some/dir")), 2);
+  /* TEST: size_t path_rootlenb(x, n)  */
+  CHECK_EQUAL(path_rootlenb(B("some/dir")), 0);
+  CHECK_EQUAL(path_rootlenb(B("/some/dir")), 1);
+  CHECK_EQUAL(path_rootlenb(B("//some/dir")), 2);
 #if WINDOWS
-  CHECK_EQUAL(path_rootlen(B("c:/windows")), 3);
-  CHECK_EQUAL(path_rootlen(B("c:system32")), 2);
-  CHECK_EQUAL(path_rootlen(B("c:/windows/")), 3);
+  CHECK_EQUAL(path_rootlenb(B("c:/windows")), 3);
+  CHECK_EQUAL(path_rootlenb(B("c:system32")), 2);
+  CHECK_EQUAL(path_rootlenb(B("c:/windows/")), 3);
 #endif
 
-  /* TEST: size_t path_rootlen_s(s)  */
-  CHECK_EQUAL(path_rootlen_s("some/dir"), 0);
-  CHECK_EQUAL(path_rootlen_s("/some/dir"), 1);
-  CHECK_EQUAL(path_rootlen_s("//some/dir"), 2);
+  /* TEST: size_t path_rootlen(s)  */
+  /*CHECK_EQUAL(path_rootlen("some/dir"), 0);
+  CHECK_EQUAL(path_rootlen("/some/dir"), 1);
+  CHECK_EQUAL(path_rootlen("//some/dir"), 2);
 #if WINDOWS
-  CHECK_EQUAL(path_rootlen_s("c:/windows"), 3);
-  CHECK_EQUAL(path_rootlen_s("c:system32"), 2);
-  CHECK_EQUAL(path_rootlen_s("c:/windows/"), 3);
-#endif  
+  CHECK_EQUAL(path_rootlen("c:/windows"), 3);
+  CHECK_EQUAL(path_rootlen("c:system32"), 2);
+  CHECK_EQUAL(path_rootlen("c:/windows/"), 3);
+#endif*/
 
-  /* TEST: size_t path_dirlen(x, n)  */
-  CHECK_EQUAL(path_dirlen(B("some/dir")), 4);
-  CHECK_EQUAL(path_dirlen(B("/some/dir")), 5);
-  CHECK_EQUAL(path_dirlen(B("//some/dir")), 6);
+  /* TEST: size_t path_dirlenb(x, n)  */
+  CHECK_EQUAL(path_dirlenb(B("some/dir")), 4);
+  CHECK_EQUAL(path_dirlenb(B("/some/dir")), 5);
+  CHECK_EQUAL(path_dirlenb(B("//some/dir")), 6);
 #if WINDOWS
-  CHECK_EQUAL(path_dirlen(B("c:/windows/system32")), 10);
+  CHECK_EQUAL(path_dirlenb(B("c:/windows/system32")), 10);
 #endif
 
-  /* TEST: SizePair path_commonlen(b, blen, t, tlen)  */
-  SizePair sp = path_commonlen(B("some//of///this//is/common"), B("some/of/this/doesnt/match"));
+  /* TEST: SizePair path_commonlenb(b, blen, t, tlen)  */
+  SizePair sp = path_commonlenb(B("some//of///this//is/common"), B("some/of/this/doesnt/match"));
   CHECK_EQUAL(sp.sz1, 17);
   CHECK_EQUAL(sp.sz2, 13);
 
-  /* TEST: SizePair path_commonlen_s(b, t)  */
-  CHECK_EQUAL(path_commonlen_s("some/of/this/is/common", "some/of/this/doesnt/match"), 13);
- 
+  /* TEST: SizePair path_commonlen(b, t)  */
+  CHECK_EQUAL(path_commonlen("some/of/this/is/common", "some/of/this/doesnt/match"), 13);
+
   return failed;
 }

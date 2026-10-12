@@ -1,6 +1,6 @@
 #include "../str.h"
 
-#if LINK_STATIC
+#if LINK_STATIC || !defined(HAVE_MEMCCPY)
 
 /* str_copyb copies leading bytes from in to out until \0
    or max bytes reached. returns number of copied bytes. */

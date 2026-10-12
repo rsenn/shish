@@ -68,13 +68,11 @@ size_t str_len(const char* in);
 #else
 #include <string.h>
 
-static inline size_t str_copyn(char* out, const char* in, size_t n);
+//static inline size_t str_copyn(char* out, const char* in, size_t n);
+size_t str_copy(char* out, const char* in);
 
-static inline size_t
-str_copy(char* out, const char* in) {
-  return str_copyn(out, in, (~(size_t)0) >> 1);
-}
 
+#ifdef HAVE_MEMCCPY
 static inline size_t
 str_copyn(char* out, const char* in, size_t n) {
   char* t;
@@ -88,6 +86,9 @@ str_copyn(char* out, const char* in, size_t n) {
 
   return (size_t)(t - out);
 }
+#else
+size_t str_copyn(char* out, const char* in, size_t n);
+#endif
 
 #define str_diff(a, b) strcmp((a), (b))
 #define str_diffn(a, b, n) strncmp((a), (b), (n))

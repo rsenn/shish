@@ -21,11 +21,18 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
 #if defined(HAVE_GETPWUID_R) || defined(HAVE_GETPWUID)
 #include <pwd.h>
 #endif
 #if defined(HAVE_GETGRGID_R) || defined(HAVE_GETGRGID)
 #include <grp.h>
+#endif
+
+#if WINDOWS_NATIVE
+#define ST_BLOCKS(st) 0
+#else
+#define ST_BLOCKS(st) ((st)->st_blocks)
 #endif
 
 /* what the -a/-A/-R/... flags asked for */
@@ -270,7 +277,7 @@ ls_put(const struct ls_ent* e) {
   }
 
   if(ls_o.blocks) {
-    buffer_putulong(fd_out->w, (unsigned long)(((uint64)st->st_blocks + 1) / 2));
+    buffer_putulong(fd_out->w, (unsigned long)(((uint64) ST_BLOCKS(st) + 1) / 2));
     buffer_putspace(fd_out->w);
   }
 
@@ -344,7 +351,7 @@ ls_cell_len(const struct ls_ent* e) {
     w += fmt_ulong(buf, (unsigned long)e->st.st_ino) + 1;
 
   if(ls_o.blocks)
-    w += fmt_ulong(buf, (unsigned long)(((uint64)e->st.st_blocks + 1) / 2)) + 1;
+    w += fmt_ulong(buf, (unsigned long)(((uint64)ST_BLOCKS(&e->st) + 1) / 2)) + 1;
 
   return w;
 }
@@ -450,7 +457,7 @@ ls_show(struct ls_ent* v, unsigned int n, int in_dir) {
     unsigned long total = 0;
 
     for(i = 0; i < n; i++)
-      total += (unsigned long)v[i].st.st_blocks;
+      total += (unsigned long)ST_BLOCKS(&v[i].st);
 
     buffer_puts(fd_out->w, "total ");
     buffer_putulong(fd_out->w, (total + 1) / 2); /* 1024-byte blocks */

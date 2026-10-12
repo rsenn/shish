@@ -4,6 +4,10 @@
 #include "../path_internal.h"
 #include "../windoze.h"
 
+#if WINDOWS_NATIVE
+#include <shlobj.h>
+#endif
+
 /* home directory of uid from /etc/passwd ("name:passwd:uid:gid:gecos:home:shell"),
  * in a static buffer; NULL if there is no such user or no file.
  * Lines without a trailing newline or with "\r\n" are fine; entries

@@ -21,7 +21,7 @@
  * the kernel side the moment there's a real session+pty to enforce
  * that against.
  * ----------------------------------------------------------------------- */
-#define _XOPEN_SOURCE 600
+#define _XOPEN_SOURCE
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>

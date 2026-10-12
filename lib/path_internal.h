@@ -24,20 +24,28 @@
 
 /* drive prefix "C:" (WINDOWS only) */
 #if WINDOWS
-#define path_isdrive(p, n) (((n) >= 2 && !str_contains(PATHSEP_CHARS ".", (p)[0]) && (p)[1] == ':') ? 2 : 0)
-#define path_isdrive_s(p) (((p)[0] && !str_contains(PATHSEP_CHARS ".", (p)[0]) && (p)[1] == ':') ? 2 : 0)
+#define path_isdriveb(p, n) (((n) >= 2 && !str_contains(PATHSEP_CHARS ".", (p)[0]) && (p)[1] == ':') ? 2 : 0)
+#define path_isdrive(p) (((p)[0] && !str_contains(PATHSEP_CHARS ".", (p)[0]) && (p)[1] == ':') ? 2 : 0)
 #else
-#define path_isdrive(p, n) 0
-#define path_isdrive_s(p) 0
+#define path_isdriveb(p, n) 0
+#define path_isdrive(p) 0
 #endif
 
-/* path_isabs(_s) returns 1 if the path is absolute */
-#define path_isabs(p, n) (((n) >= 1 && path_issep((p)[0])) || ((n) >= 3 && path_isdrive(p, n) && path_issep((p)[2])))
-#define path_isabs_s(p) (path_issep((p)[0]) || (path_isdrive_s(p) && path_issep((p)[2])))
+#define path_isdotb(p, n) ((n) == 1 && (p)[0] == '.')
+#define path_isdotsepb(p, n) ((n) >= 1 && (p)[0] == '.' && ((n) == 1 || path_issep((p)[1])))
 
-/* path_isrel(_s) returns 1 if the path is relative */
-#define path_isrel(p, n) (!path_isabs(p, n))
-#define path_isrel_s(p) (!path_isabs_s(p))
+#define path_isdotdotb(p, n) ((n) == 2 && (p)[0] == '.' && (p)[1] == '.')
+#define path_isdotdot(p) ((p)[0] == '.' && (p)[1] == '.' && ((p)[2] == '\0' || path_issep((p)[2])))
+
+#define path_isdotdotsepb(p, n) ((n) >= 2 && (p)[0] == '.' && (p)[1] == '.' && ((n) == 2 || path_issep((p)[2])))
+
+/* path_isabsb(_s) returns 1 if the path is absolute */
+#define path_isabsb(p, n) (((n) >= 1 && path_issep((p)[0])) || ((n) >= 3 && path_isdriveb(p, n) && path_issep((p)[2])))
+#define path_isabs(p) (path_issep((p)[0]) || (path_isdrive(p) && path_issep((p)[2])))
+
+/* path_isrelb(_s) returns 1 if the path is relative */
+#define path_isrelb(p, n) (!path_isabsb(p, n))
+#define path_isrel(p) (!path_isabs(p))
 
 /* path_seplen(_s) returns the length of the path separator */
 #define path_seplen(x, n) scan_charsetnskip((x), PATHSEP_CHARS, (n))
@@ -48,3 +56,10 @@
 #define path_rcomlen(x, n) scan_noncharsetnrskip((x), PATHSEP_CHARS, (n))
 
 #define path_component(s) str_chrs((s), PATHSEP_CHARS, PATHSEP_LENGTH);
+
+#define path_len(fn, buf, len) fn((buf) , (len))
+#define path_plen(fn, buf, len, root) fn((buf) + (root), (len) - (root))
+
+/* stralloc variants */
+#define path_lensa(fn, sa) fn((sa)->s, (sa)->len)
+#define path_plensa(fn, sa, root) fn((sa)->s + (root), (sa)->len - (root))

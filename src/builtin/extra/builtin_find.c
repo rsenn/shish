@@ -66,8 +66,10 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
       return S_ISCHR(st->st_mode);
     if(str_equal(val, "p"))
       return S_ISFIFO(st->st_mode);
+#ifdef S_ISSOCK
     if(str_equal(val, "s"))
       return S_ISSOCK(st->st_mode);
+#endif
     return 0;
   }
 

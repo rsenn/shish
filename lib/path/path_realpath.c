@@ -15,7 +15,7 @@ path_realpath(const char* path, stralloc* sa, int symbolic, stralloc* cwd) {
   stralloc_init(&own);
   stralloc_init(&full);
 
-  if(!path_isabs_s(path) && !path_isdrive_s(path)) {
+  if(!path_isabs(path) && !path_isdrive(path)) {
     if(!cwd || !cwd->len) {
       if(!path_getcwd(&own))
         goto end;
