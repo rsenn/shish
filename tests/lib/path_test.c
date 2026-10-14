@@ -173,12 +173,59 @@ main(void) {
   /*CHECK(path_gethome(0) != NULL);*/
   CHECK(path_gethome(1000) > 0);
 
-  /* TEST: size_t path_lenb(ptr)  */
-  CHECK_EQUAL(path_lenb(B("dir/subdir/subsub/")), 3);
-  CHECK_EQUAL(path_lenb(B("./")), 1);
-  CHECK_EQUAL(path_lenb(B("../")), 2);
-  CHECK_EQUAL(path_lenb(B("/usr")), 0);
-  CHECK_EQUAL(path_lenb(B("//usr")), 0);
+  /* TEST: int path_isabs(p, n), path_isrel(p, n); "//" roots are absolute (the old rootlen & 1 said no) */
+  CHECK(path_isabs(B("/")));
+  CHECK(path_isabs(B("/a")));
+  CHECK(path_isabs(B("//")));
+  CHECK(path_isabs(B("//a//b//")));
+  CHECK(!path_isabs(B("")));
+  CHECK(!path_isabs(B("a/b")));
+  CHECK(!path_isabs(B("./a")));
+  CHECK(path_isrel(B("")));
+  CHECK(path_isrel(B("a")));
+  CHECK(!path_isrel(B("/a")));
+  CHECK(!path_isrel(B("//a")));
+  CHECK(!path_isabs("/a", 0));
+
+  /* TEST: size_t path_next(p, n, pos): end of the next component prefix, 0 at the end */
+  CHECK_EQUAL(path_next(B("/a//b/"), 0), 2);
+  CHECK_EQUAL(path_next(B("/a//b/"), 2), 5);
+  CHECK_EQUAL(path_next(B("/a//b/"), 5), 0);
+  CHECK_EQUAL(path_next(B("a"), 0), 1);
+  CHECK_EQUAL(path_next(B("a"), 1), 0);
+  CHECK_EQUAL(path_next(B("//a"), 0), 3);
+  CHECK_EQUAL(path_next(B("/"), 0), 0);
+  CHECK_EQUAL(path_next(B(""), 0), 0);
+  CHECK_EQUAL(path_next(B("a"), 9), 0);
+  {
+    size_t k, steps = 0;
+    const char p[] = "a/b/c";
+
+    for(k = 0; (k = path_next(p, sizeof(p) - 1, k)); ++steps)
+      CHECK_EQUAL(k, 2 * (int)steps + 1);
+
+    CHECK_EQUAL(steps, 3);
+  }
+
+  /* TEST: size_t path_parentlen(p, n): strictly shorter, 0 at the end; the root is a parent */
+  CHECK_EQUAL(path_parentlen(B("a/b/c")), 3);
+  CHECK_EQUAL(path_parentlen(B("a//b/")), 1);
+  CHECK_EQUAL(path_parentlen(B("/a/b")), 2);
+  CHECK_EQUAL(path_parentlen(B("/a")), 1);
+  CHECK_EQUAL(path_parentlen(B("//a")), 2);
+  CHECK_EQUAL(path_parentlen(B("a")), 0);
+  CHECK_EQUAL(path_parentlen(B("a/")), 0);
+  CHECK_EQUAL(path_parentlen(B("/")), 0);
+  CHECK_EQUAL(path_parentlen(B("")), 0);
+  {
+    size_t k, steps = 0;
+    const char p[] = "/a/b/c";
+
+    for(k = path_parentlen(p, sizeof(p) - 1); k; k = path_parentlen(p, k))
+      ++steps;
+
+    CHECK_EQUAL(steps, 3); /* "/a/b", "/a", "/" */
+  }
 
   /* TEST: size_t path_rootlen(x, n)  */
   CHECK_EQUAL(path_rootlen(B("some/dir")), 0);

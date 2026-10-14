@@ -16,28 +16,18 @@
 /* -p: create 'dir' one path component at a time, leftmost first, so
  * every ancestor exists by the time a deeper mkdir() needs it. Every
  * separator is skipped before measuring the next component, so this
- * never hands mkdir() an empty path for a leading/repeated "/". A
- * component is created by temporarily NUL-terminating 'dir' right
- * after it, so mkdir() sees the whole prefix built so far.
+ * never hands mkdir() an empty path for a leading/repeated "/" (path_next
+ * skips them). A component is created by temporarily NUL-terminating
+ * 'dir' right after it, so mkdir() sees the whole prefix built so far.
  * ----------------------------------------------------------------------- */
 static int
 mkdir_parents(char* argv[], stralloc* dir, int verbose, int* created) {
-  char* p = dir->s;
+  size_t k;
 
-  while(*p) {
-    char save;
-    size_t len;
+  for(k = 0; (k = path_next(dir->s, dir->len, k));) {
+    char save = dir->s[k];
 
-    while(*p == PATHSEP_C)
-      p++;
-
-    if(!*p)
-      break;
-
-    len = path_len_s(p);
-    p += len;
-    save = *p;
-    *p = '\0';
+    dir->s[k] = '\0';
 
     *created = 1;
 
@@ -55,7 +45,7 @@ mkdir_parents(char* argv[], stralloc* dir, int verbose, int* created) {
       buffer_putnlflush(fd_out->w);
     }
 
-    *p = save;
+    dir->s[k] = save;
   }
 
   return 0;

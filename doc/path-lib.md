@@ -792,7 +792,10 @@ the private `path_lensa` (now `path_dirlen(sa->s, sa->len)`, replaced for good i
 1c. Delete the shim `lib/path_internal.h` and the legacy aliases; `grep -rn 'path_internal'` must be empty.
     Gate: object hashes identical for all objects whose source still exists.
 
-### Phase 2: lift the classifiers
+### Phase 2: lift the classifiers: DONE 2026-10-14
+
+`path_isabs(p, n)` / `path_isrel(p, n)` are functions in `lib/path/` and `path.h` (test vectors `/`, `/a`, `//`, `//a//b//`,
+`""`, `a/b`, `./a`, `n == 0`); `builtin_rmdir` migrated, the `path_is_absolute` macro is deleted.
 
 * Add `size_t`-free functions in their own files: `int path_isabs(const char*, size_t)` and
   `int path_isrel(const char*, size_t)` (one-liners over `ISABS`/`ISREL`). They fix D1: `//`, `//a`,
@@ -800,7 +803,14 @@ the private `path_lensa` (now `path_dirlen(sa->s, sa->len)`, replaced for good i
 * Tests: the vectors of D1 plus `""`, `"a"`, `"/"`, `"C:"` (compiled `-DWINDOWS=1` for the drive cases).
 * Migrate `builtin_rmdir.c` (`path_is_absolute`), then delete the `path_is_absolute` macro from `path.h`.
 
-### Phase 3: lift the iterators
+### Phase 3: lift the iterators: DONE 2026-10-14
+
+`path_next` and `path_parentlen` are public (own files, tests in `tests/lib/path_test.c` including the two loops of 5.3).
+Difference from the 5.3 sketch: `path_next` skips the root (so `mkdir -p /a/b` creates `/a` first, never `"/"`, and
+`C:/a` starts at `a`), which is what `builtin_mkdir` always did. `builtin_mkdir` and `builtin_rmdir` migrated; the
+climb of `rmdir -p` stops at `k > rootlen`. Deleted: `path_lenb`, `path_len_s`, the `lib/path/path_lenb.c` file.
+`mkdir -p` and `rmdir -p` checked by hand (`a//b/c/`, an absolute path, a non-empty ancestor, a missing argument) and
+by the `mkdir`/`rmdir` ctest scripts.
 
 * `size_t path_next(const char* p, size_t n, size_t pos)`: forward step, end of the next component
   prefix (root first), 0 at the end. `size_t path_parentlen(const char* p, size_t n)`: strictly shrinking
@@ -810,7 +820,11 @@ the private `path_lensa` (now `path_dirlen(sa->s, sa->len)`, replaced for good i
   (`path_lensa(path_dirlenb, …)` and its root special case) to `path_parentlen`.
 * Delete `path_lenb`, `path_len_s`, `path_lensa`, `path_plensa`; rewrite the `path_lenb` test as `path_next` tests.
 
-### Phase 4: private clean-up
+### Phase 4: private clean-up: DONE 2026-10-14
+
+`path_getsep` and `path_rootlen_s` deleted. `path_getcwd` now rewrites every separator to `PATHSEP_C` with `SEP()` in one loop
+(was: only occurrences of the first separator seen; identical on POSIX, where it is a no-op). Object snapshot after phases
+1-4: identical to the post-phase-1 one except `path_getcwd` and the four new objects.
 
 * `path_getsep` is used by `path_getcwd.c` only; inline the loop (`for(...) if(SEP(*p))`) and delete the file
   and the declaration. `path_rootlen_s` has no user: delete.
@@ -832,6 +846,15 @@ open decision 2).
 * **qjs-modules**: `src/path-core.c` carries its own scanner copies and `byte_copy`/`byte_diff` shims; once
   `internal.h` is stable it can be generated from the same files (`PATH_NO_LIBOWFAT` shim block in the header),
   then `quickjs-path.c` moves over function by function (5.10), `test-path.js` as the net.
+
+### Verification of phases 1-4 (2026-10-14)
+
+* object snapshot: identical code for every untouched object; changed only `path_realpath` (phase 1) and `path_getcwd` (phase 4);
+* `path_test`: all OK, including the new `path_isabs`/`path_isrel`/`path_next`/`path_parentlen` vectors;
+* `ctest` in a fresh build of the same sources: 6 of the 42 job-control/signal scripts fail there and in a build of the
+  committed HEAD alike. The long-lived `build/x86_64-linux-gnu` directory fails 42 of 195 (36 more, all `posix/sig*`,
+  `bg`, `kill4`, `grouping`, `option`, `param`): a stale configuration, not the code (same sources, fresh build: pass).
+  The older "14 of 190" figure above was measured with a terminal attached.
 
 ### Order and checkpoints
 

@@ -17,8 +17,7 @@
  * ----------------------------------------------------------------------- */
 int
 path_getcwd(stralloc* sa) {
-  size_t n = PATH_MAX;
-  char sep;
+  size_t n = PATH_MAX, i;
 
   sa->len = 0;
 
@@ -36,10 +35,11 @@ path_getcwd(stralloc* sa) {
   }
 
   sa->len = str_len(sa->s);
-  sep = path_getsep(sa->s);
 
-  if(sep && sep != PATHSEP_C)
-    byte_replace(sa->s, sa->len, sep, PATHSEP_C);
+  /* one separator style: every separator becomes PATHSEP_C */
+  for(i = 0; i < sa->len; ++i)
+    if(SEP(sa->s[i]))
+      sa->s[i] = PATHSEP_C;
 
   return 1;
 }

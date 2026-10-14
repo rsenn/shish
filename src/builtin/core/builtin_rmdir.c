@@ -13,17 +13,18 @@
 
 /* -p: having just removed 'sa', keep climbing to its parent, its
  * parent's parent, and so on, rmdir()'ing each as long as they're
- * empty (GNU rmdir -p's "a/b/c" -> "a/b" -> "a" walk). path_dirlen()
+ * empty (GNU rmdir -p's "a/b/c" -> "a/b" -> "a" walk). path_parentlen()
  * gives the length of the parent; 0 (none left) or a parent that is the
  * root ("/a" -> "/") stops the climb before rmdir("")/rmdir("/"). Returns 0 if
  * the climb ran out of ancestors on its own, 1 on a failed rmdir().
  * ----------------------------------------------------------------------- */
 static int
 rmdir_parents(char* argv[], stralloc* sa, int verbose, int force) {
-  size_t len;
+  size_t k, root = path_rootlen(sa->s, sa->len);
 
-  while((len = path_dirlen(sa->s, sa->len)) > 0 && len < sa->len && (len > 1 || !path_is_absolute(sa->s, 1))) {
-    sa->len = len;
+  /* stops at the root: "/a" never climbs to rmdir("/") */
+  for(k = path_parentlen(sa->s, sa->len); k > root; k = path_parentlen(sa->s, k)) {
+    sa->len = k;
     stralloc_nul(sa);
 
     if(rmdir(sa->s) == -1) {
