@@ -39,7 +39,7 @@ readlink_canonicalize(char* argv[], const char* path, int mode, int newline) {
 
   sa.len = 0;
 
-  if(!path_realpath(path, &sa, 0, NULL))
+  if(!path_resolve(path, str_len(path), &sa, 0, 0, 0))
     return builtin_error(argv, (char*)path);
 
   stralloc_nul(&sa);

@@ -62,7 +62,7 @@ pop(stralloc* sa, size_t root) {
  * 1 + the number of symlinks that were followed.
  *
  * <path> may be relative to the current directory and the result then is
- * relative too; path_realpath() makes it absolute.
+ * relative too; path_resolve() makes it absolute.
  * ----------------------------------------------------------------------- */
 int
 path_canonicalize(const char* path, stralloc* sa, int symbolic) {

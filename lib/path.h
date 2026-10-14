@@ -32,7 +32,6 @@ const char* path_basename(const char*, size_t, size_t* baselen);
 size_t path_cat(char* out, size_t cap, const char* a, size_t an, const char* b, size_t bn);
 int path_cat_sa(stralloc* out, const char* a, size_t an, const char* b, size_t bn);
 size_t path_canon(char* out, size_t cap, const char* p, size_t n);
-int path_canonicalize(const char*, stralloc*, int symbolic);
 size_t path_abs(char* out, size_t cap, const char* p, size_t n, const char* cwd, size_t cwdn);
 int path_abs_sa(stralloc* out, const char* p, size_t n);
 size_t path_rel(char* out, size_t cap, const char* p, size_t pn, const char* base, size_t bn);
@@ -52,7 +51,7 @@ int path_fnmatch(const char* pattern, size_t plen, const char* string, size_t sl
 int path_getcwd(stralloc*);
 char* path_gethome(int uid);
 int path_readlink(const char*, stralloc*);
-int path_realpath(const char*, stralloc*, int symbolic, stralloc* cwd);
+int path_resolve(const char* p, size_t n, stralloc* sa, int symbolic, const char* cwd, size_t cwdn);
 size_t path_rootlen(const char*, size_t);
 
 /* PATH_LIST_FOREACH(l, n, elem, elen) visits every element of a PATH-style list, empty ones too

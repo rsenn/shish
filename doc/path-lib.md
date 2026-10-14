@@ -830,12 +830,17 @@ by the `mkdir`/`rmdir` ctest scripts.
   and the declaration. `path_rootlen_s` has no user: delete.
 * Re-run the snapshot on the objects that were not touched (must be identical) and `size` on `shish`.
 
-### Phase 5: `canonicalize`/`realpath` consolidation (optional, defect D11)
+### Phase 5: `canonicalize`/`realpath` consolidation (defect D11): DONE 2026-10-14
 
-Replace `path_canonicalize` + `path_realpath` with `path_resolve` of 5.8: for `symbolic != 0` call `path_abs`
-(no `stralloc` at all), otherwise keep the `rest/link/tmp` triple. Clients: `cd`, `realpath`, `readlink -f`, `pwd`.
-Uses the same macros; separate because it changes behaviour (the `//tmp` root policy of D4 must be decided,
-open decision 2).
+`path_resolve(p, n, sa, symbolic, cwd, cwdn)` replaces `path_realpath` (file deleted) and makes `path_canonicalize` a private
+worker (declared in `internal.h`). `symbolic != 0` is `path_abs` straight into `sa`: no `own`/`full`/`rest` copies (D11);
+`symbolic == 0` keeps the `rest/link/tmp` triple. Clients: `cd` (3 calls, its cwd as `sh->cwd.s, sh->cwd.len`), `realpath`
+(2), `readlink -f` (1). Decision 2 taken for POSIX: `path_canon` collapses a leading separator run to one (`//a` -> `/a`,
+matches `realpath -m -s`, closes D4) and keeps two on `WINDOWS`; `canonicalize` already did, so `cd`/`realpath` do not change.
+Checked: `path_test` (new `path_resolve` and `//` vectors), the `cd`/`realpath`/`readlink`/`pwd`/`mkdir`/`rmdir` scripts,
+and `realpath` against GNU `realpath` on a tree with relative, chained and `..`-through-symlink links (identical output
+except the `-m` option, which the builtin does not have). Same 42 job-control scripts fail in the old build directory as
+before the phase (see the verification note above).
 
 ### Phase 6: other projects consume the same library (decision 7, not started)
 

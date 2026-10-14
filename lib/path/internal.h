@@ -49,3 +49,6 @@
 #define RSEPLEN(p, n) scan_charsetnrskip((p), SEPCHARS, (n))
 #define COMLEN(p, n) scan_noncharsetnskip((p), SEPCHARS, (n))
 #define RCOMLEN(p, n) scan_noncharsetnrskip((p), SEPCHARS, (n))
+
+/* the symlink-following worker of path_resolve() (path_canonicalize.c) */
+int path_canonicalize(const char* path, stralloc* sa, int symbolic);

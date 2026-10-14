@@ -94,9 +94,34 @@ main(void) {
     CHECK(path_canon(buf, 4, B("a/b")) == 4 && !byte_diff(buf, 5, "xxxx"));
   }
 
-  /* TEST: int path_canonicalize(path, sa, symbolic)  */
-  CHECK_STREQUAL((path_canonicalize("~/Documents/blah/../dummy/test.txt", &sa, 0), sa.s), "~/Documents/dummy/test.txt");
-  CHECK_STREQUAL((path_canonicalize("/usr/lib/../include/", &sa, 0), sa.s), "/usr/include");
+  /* TEST: int path_resolve(p, n, sa, symbolic, cwd, cwdn): absolute, canonical; returns 1 + links */
+  CHECK(path_resolve(B("~/Documents/blah/../dummy/test.txt"), &sa, 0, B("/h")) == 1);
+  CHECK_STREQUAL(sa.s, "/h/~/Documents/dummy/test.txt");
+  CHECK(path_resolve(B("/usr/lib/../include/"), &sa, 0, 0, 0) == 1);
+  CHECK_STREQUAL(sa.s, "/usr/include");
+  CHECK(path_resolve(B("x/../y"), &sa, 1, B("/a")) == 1);
+  CHECK_STREQUAL(sa.s, "/a/y");
+  CHECK(path_resolve(B("//tmp///"), &sa, 1, 0, 0) == 1);
+  CHECK_STREQUAL(sa.s, "/tmp");
+  CHECK(path_resolve(B("//tmp///"), &sa, 0, 0, 0) == 1);
+  CHECK_STREQUAL(sa.s, "/tmp");
+  CHECK(path_resolve(B("/.."), &sa, 1, 0, 0) == 1);
+  CHECK_STREQUAL(sa.s, "/");
+  CHECK(path_resolve(B("."), &sa, 1, B("/a/b")) == 1);
+  CHECK_STREQUAL(sa.s, "/a/b");
+  CHECK(path_resolve(B(""), &sa, 1, B("/a")) == 1);
+  CHECK_STREQUAL(sa.s, "/a");
+  CHECK(path_resolve(B("rel"), &sa, 1, 0, 0) == 1 && sa.s[0] == '/' && sa.len > 4);
+
+  /* TEST: path_canon collapses a leading separator run (realpath -m -s) */
+  {
+    char buf[16];
+
+    CHECK(path_canon(buf, sizeof buf, B("//a")) == 2 && !byte_diff(buf, 3, "/a"));
+    CHECK(path_canon(buf, sizeof buf, B("///")) == 1 && !byte_diff(buf, 2, "/"));
+    byte_copy(buf, 4, "//a");
+    CHECK(path_canon(buf, sizeof buf, buf, 3) == 2 && !byte_diff(buf, 3, "/a"));
+  }
 
   buffer_putsa(buffer_2, &sa);
   buffer_putnlflush(buffer_2);

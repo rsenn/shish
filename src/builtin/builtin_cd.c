@@ -107,7 +107,7 @@ builtin_cd(int argc, char* argv[]) {
         return builtin_errmsgn(argv, (n > len ? elem : arg), (n > len ? n : len), strerror(errno));
       }
 
-      /* path_canonicalize() only resolves symlinks (in -P mode); it
+      /* path_resolve() only resolves symlinks (in -P mode); it
          never verifies each component exists and is a directory. So
          confirm against the real filesystem with stat() on the raw,
          uncanonicalized candidate first, catching an invalid
@@ -116,10 +116,8 @@ builtin_cd(int argc, char* argv[]) {
         struct stat st;
 
         if(stat(path, &st) == 0 && S_ISDIR(st.st_mode)) {
-          /* clear before each attempt: path_realpath() only prepends
-             the cwd when sa->len is still zero. */
           stralloc_zero(&newcwd);
-          ok = path_realpath(path, &newcwd, symbolic, &sh->cwd);
+          ok = path_resolve(path, str_len(path), &newcwd, symbolic, sh->cwd.s, sh->cwd.len);
         } else {
           ok = 0;
         }
@@ -141,7 +139,7 @@ builtin_cd(int argc, char* argv[]) {
 
       if(stat(arg, &st) == 0 && S_ISDIR(st.st_mode)) {
         stralloc_zero(&newcwd);
-        ok = path_realpath(arg, &newcwd, symbolic, &sh->cwd);
+        ok = path_resolve(arg, len, &newcwd, symbolic, sh->cwd.s, sh->cwd.len);
       }
     }
   }
@@ -154,12 +152,10 @@ builtin_cd(int argc, char* argv[]) {
     /* last cdpath length set to 0, because we're not using cdpath here */
     n = 0;
 
-    /* path_realpath(), not path_canonicalize() directly -- a "."/".."
-       operand is relative and must still be resolved against the
-       shell's tracked cwd (path_realpath() prepends it for us, and is
-       a no-op for a genuinely absolute arg) */
+    /* a "."/".." operand is relative and must still be resolved against
+       the shell's tracked cwd, which path_resolve() is given */
     if(stat(arg, &st) == 0 && S_ISDIR(st.st_mode))
-      ok = path_realpath(arg, &newcwd, symbolic, &sh->cwd);
+      ok = path_resolve(arg, len, &newcwd, symbolic, sh->cwd.s, sh->cwd.len);
   }
 
   stralloc_nul(&newcwd);

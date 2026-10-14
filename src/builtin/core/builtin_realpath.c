@@ -78,7 +78,7 @@ builtin_realpath(int argc, char* argv[]) {
   if(relto) {
     base.len = 0;
 
-    if(!path_realpath(relto, &base, symbolic, NULL)) {
+    if(!path_resolve(relto, str_len(relto), &base, symbolic, 0, 0)) {
       builtin_error(argv, relto);
       stralloc_free(&sa);
       stralloc_free(&base);
@@ -92,7 +92,7 @@ builtin_realpath(int argc, char* argv[]) {
   for(i = shell_optind; i < argc; i++) {
     sa.len = 0;
 
-    if(!path_realpath(argv[i], &sa, symbolic, NULL)) {
+    if(!path_resolve(argv[i], str_len(argv[i]), &sa, symbolic, 0, 0)) {
       if(!quiet)
         builtin_error(argv, argv[i]);
 
