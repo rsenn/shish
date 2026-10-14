@@ -1,4 +1,4 @@
-#include "../path_internal.h"
+#include "internal.h"
 
 /* set out to the path_rel() of p from base; returns 1 on success.
  * returns 0 on out of memory, or when no relative path exists (out is then a copy of p). */

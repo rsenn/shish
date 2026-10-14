@@ -1,4 +1,4 @@
-#include "../path_internal.h"
+#include "internal.h"
 
 /* 1 if p[0..n) has no separator, i.e. it is a bare command name to search PATH for, 0 if it is a path
  *
@@ -6,5 +6,5 @@
  * ----------------------------------------------------------------------- */
 int
 path_isname(const char* p, size_t n) {
-  return path_comlen(p, n) == n;
+  return COMLEN(p, n) == n;
 }

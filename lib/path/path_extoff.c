@@ -1,4 +1,4 @@
-#include "../path_internal.h"
+#include "internal.h"
 
 /* path_extoff returns the offset of the extension dot in the basename of p[0..n), or n if it has none.
  * A leading dot is not an extension; the last dot wins.

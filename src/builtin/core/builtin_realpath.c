@@ -5,7 +5,7 @@
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
-#include "../../../lib/path_internal.h"
+#include "../../../lib/path.h"
 #include "../../../lib/stralloc.h"
 #include "../../../lib/str.h"
 #include "../../../lib/byte.h"

@@ -1,4 +1,4 @@
-#include "../path_internal.h"
+#include "internal.h"
 
 /* last component of p[0..n), POSIX basename(1) rules, as a view; *len (if not NULL) gets its length
  *
@@ -11,15 +11,15 @@ const char*
 path_basename(const char* p, size_t n, size_t* len) {
   size_t end = n, start;
 
-  if(n && path_issep(*p) && path_seplen(p, n) == n) {
+  if(n && SEP(*p) && SEPLEN(p, n) == n) {
     if(len)
       *len = 1;
 
     return p;
   }
 
-  end -= path_rseplen(p, end);
-  start = end - path_rcomlen(p, end);
+  end -= RSEPLEN(p, end);
+  start = end - RCOMLEN(p, end);
 
   if(len)
     *len = end - start;

@@ -24,58 +24,45 @@
 int exec_lasterrno;
 int exec_redir_error;
 
+/* path_search() predicate: the candidate is executable and not a directory.
+ * access(X_OK) alone isn't enough -- directories are "executable" (searchable)
+ * too, so a directory on PATH would otherwise match and shadow the real command
+ * of the same name (e.g. an SDK's "test/" build output directory sitting on PATH
+ * ahead of /usr/bin/test). Failures other than ENOENT are kept in exec_lasterrno. */
+static int
+exec_path_ok(const char* path, void* arg) {
+  (void)arg;
+
+  if(access(path, X_OK) == 0) {
+#if !WINDOWS_NATIVE
+    struct stat st;
+
+    if(stat(path, &st) == 0 && S_ISDIR(st.st_mode)) {
+      exec_lasterrno = EISDIR;
+      return 0;
+    }
+#endif
+    return 1;
+  }
+
+  if(errno != ENOENT)
+    exec_lasterrno = errno;
+
+  return 0;
+}
+
 /* searches for relative path <name> within PATH and returns absolute
  * path if found
  * ----------------------------------------------------------------------- */
 char*
 exec_path(char* name) {
-  const char* vpath;
-  static char path[PATH_MAX];
-  unsigned long si = 0;
-  vpath = var_value("PATH", NULL);
+  const char* vpath = var_value("PATH", NULL);
+  char path[PATH_MAX];
 
   exec_lasterrno = ENOENT;
 
-  do {
-    /* splitting up path variable */
-    unsigned long ni;
+  if(path_search(path, sizeof(path), vpath, str_len(vpath), name, str_len(name), exec_path_ok, NULL))
+    return str_dup(path);
 
-    if(vpath[si] == ':')
-      si++;
-
-    ni = str_chr(&vpath[si], ':');
-
-    /* "dir" + "/" + name; an empty element is the current directory */
-    if(ni >= PATH_MAX || path_cat(path, sizeof(path), &vpath[si], ni, name, str_len(name)) >= sizeof(path)) {
-      si += ni;
-      continue;
-    }
-
-    /* check if file accessible and executable. access(X_OK) alone
-       isn't enough -- directories are "executable" (searchable) too,
-       so a directory on PATH would otherwise match and shadow the
-       real command of the same name (e.g. an SDK's "test/" build
-       output directory sitting on PATH ahead of /usr/bin/test) */
-    if(access(path, X_OK) == 0) {
-      int isdir = 0;
-#if !WINDOWS_NATIVE
-      struct stat st;
-
-      isdir = stat(path, &st) == 0 && S_ISDIR(st.st_mode);
-#endif
-      if(!isdir)
-        return str_dup(path);
-
-#if !WINDOWS_NATIVE
-      exec_lasterrno = EISDIR;
-#endif
-    } else if(errno != ENOENT) {
-      exec_lasterrno = errno;
-    }
-
-    si += ni;
-  } while(vpath[si]);
-
-  path[0] = '\0';
   return NULL;
 }

@@ -1,4 +1,4 @@
-#include "../path_internal.h"
+#include "internal.h"
 
 /* join a and b into out; returns the length the result needs, without the NUL.
  * Nothing is written unless cap > need; out may equal a.
@@ -11,10 +11,10 @@ path_cat(char* out, size_t cap, const char* a, size_t an, const char* b, size_t 
 
   if(bn == 0)
     need = an;
-  else if(an == 0 || path_isabsb(b, bn))
+  else if(an == 0 || ISABS(b, bn))
     need = bn, an = 0;
   else {
-    sep = !path_issep(a[an - 1]);
+    sep = !SEP(a[an - 1]);
     need = an + sep + bn;
   }
 

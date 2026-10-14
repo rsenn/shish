@@ -1,4 +1,4 @@
-#include "../path_internal.h"
+#include "internal.h"
 #include "../windoze.h"
 
 /* path_canonicalize() with a relative <path> resolved against <cwd> first
@@ -10,12 +10,13 @@
 int
 path_realpath(const char* path, stralloc* sa, int symbolic, stralloc* cwd) {
   stralloc own, full;
+  size_t n = str_len(path);
   int ret = 0;
 
   stralloc_init(&own);
   stralloc_init(&full);
 
-  if(!path_isabs(path) && !path_isdrive(path)) {
+  if(!ISABS(path, n) && !DRIVE(path, n)) {
     if(!cwd || !cwd->len) {
       if(!path_getcwd(&own))
         goto end;

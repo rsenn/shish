@@ -27,46 +27,25 @@
 #define PATH_MAX 4096
 #endif
 
+static int
+source_readable(const char* path, void* arg) {
+  (void)arg;
+  return access(path, R_OK) == 0;
+}
+
 /* Search PATH for a readable file (for dot/source builtin).
  * Unlike exec_path, this checks for R_OK not X_OK.
  * Returns allocated path or NULL. */
 static char*
 source_search_path(const char* name) {
-  const char* vpath;
-  static char path[PATH_MAX];
-  unsigned long si = 0, pi = 0;
-  vpath = var_value("PATH", NULL);
+  const char* vpath = var_value("PATH", NULL);
+  char path[PATH_MAX];
 
   if(!vpath)
     return NULL;
 
-  do {
-    unsigned long ni;
-
-    if(vpath[si] == ':')
-      si++;
-
-    ni = str_chr(&vpath[si], ':');
-
-    if(ni >= PATH_MAX) {
-      si += ni;
-      continue;
-    }
-
-    pi = str_copyn(path, &vpath[si], ni);
-
-    if(pi && pi < PATH_MAX - 1)
-      if(path[pi - 1] != '/')
-        path[pi++] = '/';
-
-    str_copyn(&path[pi], name, PATH_MAX - pi - 1);
-
-    /* Check if file is readable (not executable like exec_path) */
-    if(access(path, R_OK) == 0)
-      return str_dup(path);
-
-    si += ni;
-  } while(vpath[si]);
+  if(path_search(path, sizeof(path), vpath, str_len(vpath), name, str_len(name), source_readable, NULL))
+    return str_dup(path);
 
   return NULL;
 }

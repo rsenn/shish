@@ -1,4 +1,4 @@
-#include "../path_internal.h"
+#include "internal.h"
 
 /* lexical canonical form of p[0..n) into out; returns its length.
  * out may equal p. Nothing is written unless cap >= n + 2, otherwise n + 1 (the bound) is returned.
@@ -18,15 +18,15 @@ path_canon(char* out, size_t cap, const char* p, size_t n) {
     byte_copy(out, root, p);
 
   w = base = root;
-  r = root + path_seplen(p + root, n - root);
+  r = root + SEPLEN(p + root, n - root);
 
   while(r < n) {
-    c = path_comlen(p + r, n - r);
+    c = COMLEN(p + r, n - r);
 
     if(c == 1 && p[r] == '.') {
     } else if(c == 2 && p[r] == '.' && p[r + 1] == '.') {
       if(w > base) {
-        while(w > base && !path_issep(out[w - 1]))
+        while(w > base && !SEP(out[w - 1]))
           --w;
 
         if(w > base)
@@ -48,7 +48,7 @@ path_canon(char* out, size_t cap, const char* p, size_t n) {
     }
 
     r += c;
-    r += path_seplen(p + r, n - r);
+    r += SEPLEN(p + r, n - r);
   }
 
   if(w == 0)

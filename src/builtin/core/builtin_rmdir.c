@@ -3,7 +3,7 @@
 #if BUILTIN_RMDIR
 
 #include "../../../lib/stralloc.h"
-#include "../../../lib/path_internal.h"
+#include "../../../lib/path.h"
 #include "../../../lib/shell.h"
 #include "../../builtin.h"
 #include "../../fdtable.h"
@@ -22,7 +22,7 @@ static int
 rmdir_parents(char* argv[], stralloc* sa, int verbose, int force) {
   size_t len;
 
-  while((len = path_lensa(path_dirlen, sa)) > 0 && len < sa->len && (len > 1 || !path_is_absolute(sa->s, 1))) {
+  while((len = path_dirlen(sa->s, sa->len)) > 0 && len < sa->len && (len > 1 || !path_is_absolute(sa->s, 1))) {
     sa->len = len;
     stralloc_nul(sa);
 

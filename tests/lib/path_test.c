@@ -208,13 +208,39 @@ main(void) {
   CHECK_EQUAL(path_dirlen(B("c:/windows/system32")), 10);
 #endif
 
-  /* TEST: SizePair path_commonlenb(b, blen, t, tlen)  */
-  SizePair sp = path_commonlenb(B("some//of///this//is/common"), B("some/of/this/doesnt/match"));
-  CHECK_EQUAL(sp.sz1, 17);
-  CHECK_EQUAL(sp.sz2, 13);
+  /* TEST: size_t path_common(a, an, b, bn, &blen)  */
+  {
+    const char *a = "some//of///this//is/common", *b = "some/of/this/doesnt/match";
+    size_t bl, al = path_common(a, str_len(a), b, str_len(b), &bl);
 
-  /* TEST: SizePair path_commonlen(b, t)  */
-  CHECK_EQUAL(path_commonlen("some/of/this/is/common", "some/of/this/doesnt/match"), 13);
+    CHECK_EQUAL(al, 15);
+    CHECK_EQUAL(bl, 12);
+  }
+
+  /* TEST: path_listlen / path_listnext / PATH_LIST_FOREACH  */
+  {
+    const char* l = "a;bc::d:";
+    const char* e;
+    size_t el, got = 0, lens[8];
+
+    PATH_LIST_FOREACH(l, str_len(l), e, el) {
+      if(got < 8)
+        lens[got] = el;
+      ++got;
+    }
+
+#if WINDOWS_NATIVE
+    CHECK_EQUAL(got, 4);
+#else
+    CHECK_EQUAL(got, 5);
+    CHECK_EQUAL(lens[0], 1);
+    CHECK_EQUAL(lens[1], 2);
+    CHECK_EQUAL(lens[2], 0);
+    CHECK_EQUAL(lens[3], 1);
+    CHECK_EQUAL(lens[4], 0);
+#endif
+    CHECK_EQUAL(path_listnext("a:b", 3, 2), (size_t)-1);
+  }
 
   return failed;
 }

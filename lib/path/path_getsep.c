@@ -1,9 +1,9 @@
-#include "../path_internal.h"
+#include "internal.h"
 
 int
 path_getsep(const char* path) {
   while(*path) {
-    if(path_issep(*path))
+    if(SEP(*path))
       return *path;
 
     ++path;

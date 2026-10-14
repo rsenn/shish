@@ -7,20 +7,18 @@
 
 #include <limits.h>
 
-typedef struct {
-  size_t sz1, sz2;
-} SizePair;
-
 #if WINDOWS_NATIVE
 #define PATHSEP_C '\\'
 #define PATHSEP_S "\\"
 #define PATHLISTSEP_C ';'
 #define PATHLISTSEP_S ";"
+#define PATHLISTSEP_CHARS ";"
 #else
 #define PATHSEP_C '/'
 #define PATHSEP_S "/"
 #define PATHLISTSEP_C ':'
 #define PATHLISTSEP_S ":"
+#define PATHLISTSEP_CHARS ":;"
 #endif
 
 #define PATH_FNM_NOMATCH 1
@@ -45,6 +43,9 @@ size_t path_common(const char* a, size_t an, const char* b, size_t bn, size_t* b
 size_t path_extoff(const char* p, size_t n);
 int path_isname(const char* p, size_t n);
 size_t path_dirlen(const char*, size_t);
+size_t path_listlen(const char* l, size_t n);
+size_t path_listnext(const char* l, size_t n, size_t pos);
+size_t path_search(char* out, size_t cap, const char* l, size_t ln, const char* name, size_t nl, int (*ok)(const char*, void*), void* arg);
 int path_fnmatch(const char* pattern, size_t plen, const char* string, size_t slen, int flags);
 int path_getcwd(stralloc*);
 char* path_gethome(int uid);
@@ -53,8 +54,15 @@ int path_readlink(const char*, stralloc*);
 int path_realpath(const char*, stralloc*, int symbolic, stralloc* cwd);
 size_t path_lenb(const char* s, size_t n);
 size_t path_rootlen(const char*, size_t);
-SizePair path_commonlenb(const char*, size_t, const char*, size_t);
-size_t path_commonlen(const char*, const char*);
+
+/* PATH_LIST_FOREACH(l, n, elem, elen) visits every element of a PATH-style list, empty ones too
+ * (an empty element is the current directory):  "a::b:" -> "a", "", "b", ""
+ *
+ *   const char*  l     the list           size_t  n     its length
+ *   const char*  elem  receives the start  size_t  elen  receives the length
+ * ----------------------------------------------------------------------- */
+#define PATH_LIST_FOREACH(l, n, elem, elen) \
+  for(size_t pl_pos_ = 0; pl_pos_ != (size_t)-1 && ((elem) = (l) + pl_pos_, (elen) = path_listlen((elem), (n)-pl_pos_), 1); pl_pos_ = path_listnext((l), (n), pl_pos_))
 
 #define path_len_s(s) path_lenb((s), str_len((s)))
 #define path_rootlen_s(s) path_rootlen((s), str_len((s)))

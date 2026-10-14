@@ -6,7 +6,7 @@
 #endif
 
 #include "../windoze.h"
-#include "../path_internal.h"
+#include "internal.h"
 
 #include <sys/stat.h>
 #include <errno.h>
@@ -40,10 +40,10 @@ is_link(const char* path) {
 
 static void
 pop(stralloc* sa, size_t root) {
-  size_t k = sa->len - path_rcomlen(sa->s + root, sa->len - root);
+  size_t k = sa->len - RCOMLEN(sa->s + root, sa->len - root);
 
   if(k > root)
-    k -= path_rseplen(sa->s + root, k - root);
+    k -= RSEPLEN(sa->s + root, k - root);
 
   sa->len = k;
 }
@@ -99,22 +99,22 @@ restart:
   while(pos < rest.len) {
     const char* c;
 
-    if((pos += path_seplen(rest.s + pos, rest.len - pos)) == rest.len)
+    if((pos += SEPLEN(rest.s + pos, rest.len - pos)) == rest.len)
       break;
 
     c = rest.s + pos;
-    n = path_comlen(c, rest.len - pos);
+    n = COMLEN(c, rest.len - pos);
     pos += n;
 
-    if(path_isdotb(c, n))
+    if(ISDOT(c, n))
       continue;
 
-    if(path_isdotdotb(c, n)) {
-      size_t j = path_rcomlen(sa->s, sa->len);
+    if(ISDOTDOT(c, n)) {
+      size_t j = RCOMLEN(sa->s, sa->len);
       size_t k = sa->len - j;
 
       /* relative with nothing to pop (or a ".." on top): keep the ".." */
-      if(sa->len > root && !(path_isdotdotb(sa->s + k, j)))
+      if(sa->len > root && !(ISDOTDOT(sa->s + k, j)))
         pop(sa, root);
       else if(!root)
         if((sa->len && !stralloc_catc(sa, PATHSEP_C)) || !stralloc_catb(sa, "..", 2))
@@ -150,7 +150,7 @@ restart:
     pos = 0;
 
     /* absolute target: start over from its root */
-    if(path_isabsb(rest.s, rest.len)) {
+    if(ISABS(rest.s, rest.len)) {
       sa->len = 0;
       goto restart;
     }

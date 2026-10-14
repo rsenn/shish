@@ -1,4 +1,4 @@
-#include "../path_internal.h"
+#include "internal.h"
 
 /* path_abs writes the canonical absolute form of p, relative to cwd, into out and returns its length.
  * Nothing is written unless cap >= cwdn + n + 3, otherwise cwdn + n + 2 (the bound) is returned.

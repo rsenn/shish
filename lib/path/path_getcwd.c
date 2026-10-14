@@ -1,6 +1,6 @@
 #include "../byte.h"
 #include "../stralloc.h"
-#include "../path_internal.h"
+#include "internal.h"
 #include "../windoze.h"
 
 #if WINDOWS_NATIVE

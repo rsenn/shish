@@ -1,0 +1,83 @@
+diff --git a/src/builtin/core/builtin_cp.c b/src/builtin/core/builtin_cp.c
+index 91be6f90..58005616 100644
+--- a/src/builtin/core/builtin_cp.c
++++ b/src/builtin/core/builtin_cp.c
+@@ -84,24 +84,6 @@ const char help_mv[] = "    Move or rename files.\n"
+                        "                  --verbose -v\n";
+ #endif
+ 
+-/* "name" part of a path without its trailing slashes: "a/b//" -> "b"
+- *
+- *   const char*  s    the path
+- *   size_t*      len  receives the length of the name
+- * ----------------------------------------------------------------------- */
+-static const char*
+-cpmv_base(const char* s, size_t* len) {
+-  size_t n = str_len(s), i;
+-
+-  while(n > 1 && s[n - 1] == '/')
+-    n--;
+-
+-  for(i = n; i > 0 && s[i - 1] != '/'; i--) {}
+-
+-  *len = n - i;
+-  return s + i;
+-}
+-
+ /* the same file: equal (device, inode)
+  * ----------------------------------------------------------------------- */
+ static int
+@@ -656,7 +638,7 @@ builtin_cpmv(int argc, char* argv[]) {
+     src = argv[shell_optind++];
+ 
+     if(is_dir) {
+-      base = cpmv_base(src, &blen);
++      base = path_basename(src, str_len(src), &blen);
+       path_cat_sa(&dst, target, str_len(target), base, blen);
+     } else {
+       stralloc_copys(&dst, target);
+diff --git a/src/builtin/core/builtin_ln.c b/src/builtin/core/builtin_ln.c
+index 18615bcb..e26d05b9 100644
+--- a/src/builtin/core/builtin_ln.c
++++ b/src/builtin/core/builtin_ln.c
+@@ -5,6 +5,7 @@
+ #include "../../builtin.h"
+ #include "../../fdtable.h"
+ #include "../../../lib/shell.h"
++#include "../../../lib/path.h"
+ #include "../../../lib/windoze.h"
+ #include "../../../lib/unix.h"
+ #include "config.h"
+@@ -93,7 +94,10 @@ builtin_ln(int argc, char* argv[]) {
+   while((src = argv[shell_optind++])) {
+     if(is_dir) {
+       path.len = len;
+-      stralloc_cats(&path, basename(src));
++      size_t blen;
++      const char* base = path_basename(src, str_len(src), &blen);
++
++      stralloc_catb(&path, base, blen);
+     } else {
+       stralloc_copys(&path, dst);
+     }
+diff --git a/tests/fixed.sh b/tests/fixed.sh
+index f4c86852..983cdf1e 100755
+--- a/tests/fixed.sh
++++ b/tests/fixed.sh
+@@ -6703,6 +6703,16 @@ case $(command -V realpath 2>&1) in
+     ;;
+ esac
+ 
++case $(command -V ln 2>&1) in
++  *"built-in"*)
++    LDIR=$(mktemp -d)
++    mkdir "$LDIR/src" "$LDIR/dst"
++    (cd "$LDIR" && ln -s "$LDIR/src/" dst)
++    assert_equal "src" "$(ls "$LDIR/dst")" "ln names the link after the basename of a source with a trailing separator"
++    rm -rf "$LDIR"
++    ;;
++esac
++
+ ## fixes/401-404 are build/platform fixes with no assertion that can fail on glibc:
+ ##   401 builtin_ulimit.c lacked <unistd.h> (implicit geteuid under musl)
+ ##   402 libarchive is configured only when compress/uncompress is built

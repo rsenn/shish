@@ -33,7 +33,7 @@ Nothing in this document is implemented yet. It is the proposal.
 6. **Several real defects exist today** (section 2). The worst: `path_is_absolute()` is `rootlen & 1`,
    so `//x` is "relative" **[run]**; `path_commonlenb("/a","a")` returns `(1,0)` **[run]**;
    `path_dirname` in c-utils returned `""` for `usr`, `/usr`, `/` (fixed in the c-utils working tree on 2026-10-13, not committed).
-7. **The private header becomes `lib/path/internal.h`** with short upper-case macros (section 9).
+7. **The private header becomes `lib/path/internal.h`** with short upper-case macros (section 9; migration plan: section 12).
    Today clients already reach into it (`builtin_realpath.c` uses `path_component`), which proves two of
    its primitives are public API in disguise.
 8. **Delete or relocate** everything that is not about path *strings*: `path_exists`, `path_access`,
@@ -360,23 +360,34 @@ traversal needs only `nameoff`, not the full path.
 
 ### 5.7 Search lists (`PATH`, `CDPATH`, `MANPATH`, include dirs)
 
-```c
-size_t path_listlen(const char* l, size_t n);      /* length of the first element (up to PATHLISTSEP_C) */
-size_t path_listnext(const char* l, size_t n);     /* offset of the next element, n at the end         */
-#define PATH_LIST_FOREACH(l, n, elem, elen) …
-```
+**Separator set** `PATHLISTSEP_CHARS` (input) and `PATHLISTSEP_C` (output, one character):
 
-Empty element ⇒ current directory (POSIX); the iterator yields length 0 and the *caller* (or
-`path_cat` with an empty `a`) does the right thing. This replaces `exec_path`, `source_search_path`,
-`CDPATH` in `builtin_cd`, c-utils' five `path_lookup`s and its `path_split(strlist)`, in four lines
-each:
+| target | input accepts | output writes |
+|---|---|---|
+| `WINDOWS_NATIVE` | `;` only (`:` is the drive colon) | `;` |
+| everything else (incl. MSYS/Cygwin) | `:` and `;` | `:` |
 
 ```c
-PATH_LIST_FOREACH(list, ln, d, dl) {
-  size_t n = path_cat(buf, sizeof buf, d, dl, name, nl);
-  if(n < sizeof buf && accept(buf)) return n;
-}
+size_t path_listlen (const char* l, size_t n);              /* length of the first element           */
+size_t path_listnext(const char* l, size_t n, size_t pos);  /* start of the next element, -1 at the end */
+#define PATH_LIST_FOREACH(l, n, elem, elen) ...             /* every element, empty ones included     */
+
+size_t path_search(char* out, size_t cap, const char* l, size_t ln,
+                   const char* name, size_t nl, int (*ok)(const char*, void*), void* arg);
 ```
+
+* An empty element is the current directory (POSIX): `"a::b:"` yields `a`, `""`, `b`, `""`, and `path_cat`
+  with an empty `a` already returns `name`. An empty list is one empty element.
+* `path_listnext(l, n, pos)` returns `(size_t)-1` after the last element, so a trailing separator
+  leaves one more, empty, element. The macro is the only caller most code needs.
+* `path_search` joins each element with `name` by `path_cat`, skips elements too long for `cap`, and
+  returns the length of the first candidate `ok()` accepts (0 if none). The predicate carries the policy:
+  `exec_path` (executable, not a directory), `.` (readable), `command -v`. Callers apply it to bare names only
+  (`path_isname`).
+* `cd` uses the macro directly because a too-long candidate is an error there, not a skip.
+
+Replaces `exec_path`, `source_search_path`, `CDPATH` in `builtin_cd`, c-utils' five `path_lookup`s and its
+`path_split(strlist)`, and qjs-modules' `path_search`.
 
 ### 5.8 Filesystem-touching (kept, but isolated)
 
@@ -449,7 +460,7 @@ spellings in c-utils); qjs-modules ships its own Node-`path` binding, so its dem
 3. **c-utils prototype, batch 2** (`abs`, `rel` + `common`, `extoff`, `isname`): **done**; `path_listlen`/`PATH_LIST_FOREACH` **not
    prototyped**: c-utils has no client for it (its five `path_lookup` copies iterate an already split `strlist`). The clients are
    shish (4 sites) and qjs-modules `path_search` (see 5.10), so the iterator is prototyped in shish, not in c-utils.
-4. **shish port of batch 2**: **done** (2026-10-14): `path_abs`, `path_rel`, `path_common`, `path_extoff`, `path_isname` and the `_sa` forms are in `lib/path/`; clients: `realpath --relative-to` (`path_rel_sa`, its own `relative_to` deleted), `path_isname` in `exec_hash`/`exec_check`/`exec_type`/`eval_function`/`command`/`source`, `path_cat` in `exec_path` and `cd` (CDPATH), `path_dirlen` in `readlink -f`/`realpath`, `path_basename` in `mktemp`. Also fixed on the way: `realpath //tmp///` kept the doubled root. The PATH list iterator was **not** written: `exec_path` and `cd` each have one `str_chr(list, ':')` step, and a shared iterator would cost more than the two lines it replaces. **qjs-modules**: assessed in 5.10, not started.
+4. **shish port of batch 2**: **done** (2026-10-14): `path_abs`, `path_rel`, `path_common`, `path_extoff`, `path_isname` and the `_sa` forms are in `lib/path/`; clients: `realpath --relative-to` (`path_rel_sa`, its own `relative_to` deleted), `path_isname` in `exec_hash`/`exec_check`/`exec_type`/`eval_function`/`command`/`source`, `path_cat` in `exec_path` and `cd` (CDPATH), `path_dirlen` in `readlink -f`/`realpath`, `path_basename` in `mktemp`. Also fixed on the way: `realpath //tmp///` kept the doubled root. The list functions (5.7) were written afterwards: `exec_path`, `source` and `cd` use them, and PATH/CDPATH accept `;` as well as `:`. `cp` and `ln` use `path_basename` (fixes/407); `path_commonlen`/`path_commonlenb`/`SizePair`/`path_component` removed. **qjs-modules**: lexical core migrated (`src/path-core.c`, `qjsm.c` uses `path_isname`, `path_search` uses `path_cat`); `quickjs-path.c` partly moved, uncommitted.
 
 **Results of the c-utils verification** (worktree at HEAD plus the tree's two uncommitted path files; the real tree
 does not build today because the untracked `lib/stralloc/readclose_append.c` redefines `readclose_append`).
@@ -634,25 +645,39 @@ Nothing in the surveyed clients needs more than this. Things that looked like ga
 
 ## 9. The private header
 
-Move `lib/path_internal.h` to `lib/path/internal.h`; the rule "only `lib/path/*.c` include it" then
-holds by directory. Short upper-case macros, no `path_` prefix:
+Status 2026-10-14: `lib/path_internal.h` still exists (lower-case, `…b` pairs, `stralloc` helpers). Target:
+`lib/path/internal.h`, included as `#include "internal.h"` by every `lib/path/*.c` and by nothing else (the
+rule "only `lib/path/*.c` include it" then holds by directory). Phase plan: section 12.
 
-```c
-SEP(c)            /* is separator           (was path_issep)        */
-SEPCHARS, NSEP    /* "/" or "\\/" and its length                    */
-DRIVE(p, n)       /* 2 for "C:" on WINDOWS, else 0                  */
-ISDOT(p, n)  ISDOTDOT(p, n)                  ISDOTSEP(p, n)  ISDOTDOTSEP(p, n)
-SEPLEN(p, n) COMLEN(p, n) RSEPLEN(p, n) RCOMLEN(p, n)   /* the four scanners: public wrappers in path.h */
-VIEW_ADV(p, n, k)   /* p += k, n -= k, the idiom repeated 15 times in commonlenb/canonicalize */
-```
+All macros are **view-based** `(p, n)`, upper-case, without the `path_` prefix (they cannot collide with
+the public `path_*` namespace, and a reader sees at once that a name is private). Arguments are
+evaluated more than once: pass plain lvalues, no side effects (stated in the header).
 
-Dropped: every `…b` / non-`b` pair of the same macro (`path_isdotb`/`path_isdot`…); with views only
-there is one. `path_len`, `path_plen`, `path_lensa`, `path_plensa` (macros that apply a function
-to a `stralloc`) go with the `stralloc` interfaces. `path_component(s)` (a `NUL`-scanning `str_chrs`)
-goes: its only external user was `builtin_realpath.c`, and `path_rel` replaces that.
+| macro | meaning | replaces |
+|---|---|---|
+| `SEP(c)` | `c` is a separator (`/`; `\` too on `WINDOWS`) | `path_issep` |
+| `SEPCHARS`, `NSEP` | `"/"` or `"\\/"` and its length | `PATHSEP_CHARS`, `PATHSEP_LENGTH` |
+| `DRIVE(p, n)` | 2 if `p` starts with `X:` (`WINDOWS` only), else 0; never reads past `n` | `path_isdriveb`, `path_isdrive` |
+| `ISDOT(p, n)`, `ISDOTDOT(p, n)` | the whole view is `.` / `..` | `path_isdotb`, `path_isdotdotb`, `path_isdotdot` |
+| `ISDOTSEP(p, n)`, `ISDOTDOTSEP(p, n)` | view starts with `.` / `..` followed by a separator or the end | `path_isdotsepb`, `path_isdotdotsepb` |
+| `ISABS(p, n)`, `ISREL(p, n)` | root contains a separator (`C:/x`, `/x`, `//x`) / not | `path_isabsb`, `path_isrelb`, `path_isabs`, `path_isrel` |
+| `SEPLEN(p, n)`, `COMLEN(p, n)` | run of separators / of non-separators at `p` | `path_seplen`, `path_comlen` |
+| `RSEPLEN(p, n)`, `RCOMLEN(p, n)` | the same, ending at `p + n` | `path_rseplen`, `path_rcomlen` |
 
-The four scanners are the only members of this header that must be public (clients already need
-them); they move to `path.h` as functions with a macro fast path.
+Dropped without replacement: the NUL-terminated forms (`path_isabs(p)`, `path_isdrive(p)`, `path_isdotdot(p)`;
+`path_realpath` was the only caller and now computes `str_len` once), `path_len`, `path_plen`, `path_lensa`, `path_plensa`
+(function-applying wrappers; the `stralloc` callers pass `sa->s, sa->len`), and the `PATHSEP_*` spellings.
+
+**Decision (supersedes the 2026-10 draft of this section): the four scanners stay private.** The draft said clients
+"already need them". The survey for section 12 shows none does: outside `lib/path/` no file in shish calls
+`path_seplen`/`path_comlen`/`path_rseplen`/`path_rcomlen` (the one outside use, `builtin_realpath.c`'s
+`path_component`, went with `path_rel`). What clients still need is the *iterators* built on them
+(`path_next`, `path_parentlen`) and the classifiers (`path_isabs`, `path_isrel`); those are lifted into
+`path.h` as functions in phases 2 and 3 and the scanners are their private implementation.
+
+Files in `lib/path/` that are not path-string functions (`getcwd`, `readlink`, `realpath`, `canonicalize`,
+`gethome`, `fnmatch`) include the same header: they use `SEP`, `SEPLEN`… for the path parts and bring their
+own system headers.
 
 ---
 
@@ -706,3 +731,110 @@ open decision 7. `SizePair` and the triple macro definitions go away with the ol
    5.6, since it dictates how `path_cat` aliasing must behave.
 6. **Breaking `path_basename(p, NULL)`**: the 12 shish call sites change to the `(p, n, &len)` form. OK?
 7. **How c-utils and qjs-modules consume `shish/lib/path`**: vendored copy, submodule, or a shared checkout?
+
+---
+
+## 12. Consolidation plan: `lib/path/internal.h` and the lifted public API
+
+End state:
+
+* `lib/path/internal.h` exists, holds exactly the macros of section 9, and is included by every `lib/path/*.c`
+  as `#include "internal.h"`; `lib/path_internal.h` is gone.
+* No `lib/path/*.c` spells a lower-case helper macro; every one uses the upper-case set.
+* `lib/path.h` declares only the public functions of section 5.9 (tier 1) plus the iterators and classifiers
+  lifted below; no macro of `path.h` reads `rootlen` or splits strings.
+* Every client in shish calls the public functions only; nothing outside `lib/path/` can name a private macro.
+
+Two kinds of step, never mixed in one phase:
+
+* **refactor phases** (1, 4): behaviour must not change. Gate: the machine code of every `lib/path/*.o` is
+  identical before and after (a snapshot script: `objdump -d -r` of each object with addresses
+  stripped, hashed), plus a clean build and the `path_test` unit test.
+* **lifting phases** (2, 3, 5): a function enters `path.h` with tests; then its clients migrate, one commit
+  per client group; then the old spelling is deleted. Gate: `path_test`, the shish `ctest` compared with the
+  baseline (14 of 190 failing, plus the flaky `term-eof.sh`), `size` of `shish` not larger.
+
+Baseline taken 2026-10-14 before phase 1: `cmake --build build/x86_64-linux-gnu` clean, `path_test` all OK,
+36 objects hashed in `snap.sh` output (`base.txt`).
+
+### Phase 0: inventory (done)
+
+Who uses what, outside `lib/path/` (grep, shish tree incl. `tests/`):
+
+| private/legacy name | external users | fate |
+|---|---|---|
+| `path_issep`, `PATHSEP_CHARS`, `PATHSEP_LENGTH`, `path_isdrive[b]`, `path_isdot*`, `path_isabs[b]`, `path_isrel[b]`, `path_seplen`, `path_comlen`, `path_rseplen`, `path_rcomlen`, `path_len`, `path_plen`, `path_plensa` | none | private, renamed (phase 1) or deleted |
+| `path_is_absolute` (`path.h` macro, `rootlen & 1`, defect D1) | `builtin_rmdir.c` | replaced by `path_isabs(p, n)` (phase 2) |
+| `path_lensa` | `builtin_rmdir.c` | replaced by `path_parentlen` (phase 3) |
+| `path_len_s` (`path.h` macro over `path_lenb`) | `builtin_mkdir.c` | replaced by `path_next` (phase 3) |
+| `path_lenb` | `tests/lib/path_test.c` | deleted with its test rewritten (phase 3) |
+| `path_getsep` | none outside (`path_getcwd.c` only) | made private/inlined, then deleted (phase 4) |
+| `path_rootlen_s` | none | deleted (phase 4) |
+| `path_basename_s` | 5 clients | kept (a macro over the public `path_basename`) |
+
+### Phase 1: `internal.h` (private side, zero behaviour change): DONE 2026-10-14
+
+Result: 21 files converted, `lib/path_internal.h` deleted. All object hashes identical except `path_realpath`
+(the NUL-string `path_isabs`/`path_isdrive` became `ISABS`/`DRIVE` on `str_len(path)`, one extra length scan on a cold path).
+`builtin_realpath.c` included the private header without needing it (now `path.h`); `builtin_rmdir.c` used
+the private `path_lensa` (now `path_dirlen(sa->s, sa->len)`, replaced for good in phase 3). No `ADV` macro: the
+"15 repeated pairs" lived in the deleted `commonlenb`; nothing in the current files advances a view.
+
+1a. Create `lib/path/internal.h` with the section-9 macros **next to** the old ones: `lib/path_internal.h`
+    becomes a three-line shim (`#include "path/internal.h"` plus the legacy lower-case aliases defined in
+    terms of the new macros). Everything still compiles; snapshot must be unchanged.
+1b. Convert the `lib/path/*.c` files, simplest first, snapshot after each batch:
+    `path_isname`, `path_rootlen`, `path_dirlen`, `path_basename`, `path_extoff` (scanners and predicates only);
+    `path_cat`, `path_cat_sa`, `path_canon`, `path_abs`, `path_abs_sa`, `path_common`, `path_rel`, `path_rel_sa`
+    ; `path_canonicalize`, `path_realpath` (`ISABS`/`DRIVE` on a view, `str_len` at the entry);
+    `path_getcwd`, `path_getsep`, `path_readlink`, `path_gethome`, `path_fnmatch`, `path_lenb`, `path_list*`, `path_search`
+    (`path_list*` and `path_search` use only the public header and do not include `internal.h`).
+1c. Delete the shim `lib/path_internal.h` and the legacy aliases; `grep -rn 'path_internal'` must be empty.
+    Gate: object hashes identical for all objects whose source still exists.
+
+### Phase 2: lift the classifiers
+
+* Add `size_t`-free functions in their own files: `int path_isabs(const char*, size_t)` and
+  `int path_isrel(const char*, size_t)` (one-liners over `ISABS`/`ISREL`). They fix D1: `//`, `//a`,
+  `C:/` are absolute regardless of the parity of `rootlen`.
+* Tests: the vectors of D1 plus `""`, `"a"`, `"/"`, `"C:"` (compiled `-DWINDOWS=1` for the drive cases).
+* Migrate `builtin_rmdir.c` (`path_is_absolute`), then delete the `path_is_absolute` macro from `path.h`.
+
+### Phase 3: lift the iterators
+
+* `size_t path_next(const char* p, size_t n, size_t pos)`: forward step, end of the next component
+  prefix (root first), 0 at the end. `size_t path_parentlen(const char* p, size_t n)`: strictly shrinking
+  backward step, 0 at the end (section 5.3, fixes D13). One file each, built on `SEPLEN`/`COMLEN`/`RSEPLEN`/`RCOMLEN`.
+* Tests: `"a/b/c"`, `"/a"`, `"/"`, `"a//b/"`, `"//a"`; the loops of 5.3 as the tests.
+* Migrate: `builtin_mkdir.c` (the NUL-patching loop and `path_len_s`) to `path_next`; `builtin_rmdir.c`
+  (`path_lensa(path_dirlenb, …)` and its root special case) to `path_parentlen`.
+* Delete `path_lenb`, `path_len_s`, `path_lensa`, `path_plensa`; rewrite the `path_lenb` test as `path_next` tests.
+
+### Phase 4: private clean-up
+
+* `path_getsep` is used by `path_getcwd.c` only; inline the loop (`for(...) if(SEP(*p))`) and delete the file
+  and the declaration. `path_rootlen_s` has no user: delete.
+* Re-run the snapshot on the objects that were not touched (must be identical) and `size` on `shish`.
+
+### Phase 5: `canonicalize`/`realpath` consolidation (optional, defect D11)
+
+Replace `path_canonicalize` + `path_realpath` with `path_resolve` of 5.8: for `symbolic != 0` call `path_abs`
+(no `stralloc` at all), otherwise keep the `rest/link/tmp` triple. Clients: `cd`, `realpath`, `readlink -f`, `pwd`.
+Uses the same macros; separate because it changes behaviour (the `//tmp` root policy of D4 must be decided,
+open decision 2).
+
+### Phase 6: other projects consume the same library (decision 7, not started)
+
+* **c-utils**: its `lib/path_internal.h` has different macros (`path_issep`, `PATHSEP_S_MIXED`, NUL forms) and
+  49 `lib/path/*.c`. Work list: vendor the shish files (identical `path_cat/canon/common/rel/abs/extoff`
+  already), drop the `_b/_s/_sa` families and filesystem predicates (section 8.1/8.2), migrate the clients of
+  section 3.2. The macros of `internal.h` make the vendored files compile unchanged.
+* **qjs-modules**: `src/path-core.c` carries its own scanner copies and `byte_copy`/`byte_diff` shims; once
+  `internal.h` is stable it can be generated from the same files (`PATH_NO_LIBOWFAT` shim block in the header),
+  then `quickjs-path.c` moves over function by function (5.10), `test-path.js` as the net.
+
+### Order and checkpoints
+
+0 → 1a → 1b → 1c (commit: "path: internal.h with upper-case macros") → 2 (commit) → 3 (commit per client) →
+4 (commit) → 5 (own review) → 6 (per project). After every commit: `snap.sh` against the previous snapshot,
+`path_test`, build of all targets; after phases 2, 3, 5 also the shish `ctest` and `size`.

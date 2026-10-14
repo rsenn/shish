@@ -5,6 +5,7 @@
 #include "../../builtin.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
+#include "../../../lib/path.h"
 #include "../../../lib/windoze.h"
 #include "../../../lib/unix.h"
 #include "config.h"
@@ -93,7 +94,10 @@ builtin_ln(int argc, char* argv[]) {
   while((src = argv[shell_optind++])) {
     if(is_dir) {
       path.len = len;
-      stralloc_cats(&path, basename(src));
+      size_t blen;
+      const char* base = path_basename(src, str_len(src), &blen);
+
+      stralloc_catb(&path, base, blen);
     } else {
       stralloc_copys(&path, dst);
     }

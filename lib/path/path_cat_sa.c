@@ -1,4 +1,4 @@
-#include "../path_internal.h"
+#include "internal.h"
 
 /* set out to the path_cat() of a and b; returns 1 on success, 0 on out of memory.
  *

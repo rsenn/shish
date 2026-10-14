@@ -1,7 +1,7 @@
 #include "../byte.h"
 #include "../mmap.h"
 #include "../scan.h"
-#include "../path_internal.h"
+#include "internal.h"
 #include "../windoze.h"
 
 #if WINDOWS_NATIVE

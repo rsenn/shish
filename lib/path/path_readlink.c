@@ -1,6 +1,6 @@
 #include "../windoze.h"
 #include "../unix.h"
-#include "../path_internal.h"
+#include "internal.h"
 #include "../str.h"
 #include "../stralloc.h"
 

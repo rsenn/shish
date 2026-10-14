@@ -6703,6 +6703,26 @@ case $(command -V realpath 2>&1) in
     ;;
 esac
 
+case $(command -V ln 2>&1) in
+  *"built-in"*)
+    LDIR=$(mktemp -d)
+    mkdir "$LDIR/src" "$LDIR/dst"
+    (cd "$LDIR" && ln -s "$LDIR/src/" dst)
+    assert_equal "src" "$(ls "$LDIR/dst")" "ln names the link after the basename of a source with a trailing separator"
+    rm -rf "$LDIR"
+    ;;
+esac
+
+## PATH and CDPATH accept ";" as well as ":" as the list separator
+PLDIR=$(mktemp -d)
+mkdir "$PLDIR/b"
+printf '#!/bin/sh\n' >"$PLDIR/b/plcmd"
+chmod +x "$PLDIR/b/plcmd"
+assert_equal "$PLDIR/b/plcmd" "$(PATH="/nonexistent;$PLDIR/b"; command -v plcmd)" "PATH elements may be separated by a semicolon"
+assert_equal "$PLDIR/b/plcmd" "$(PATH="/nonexistent:$PLDIR/b"; command -v plcmd)" "PATH elements may be separated by a colon"
+assert_equal "b" "$(cd "$PLDIR" && CDPATH="/nonexistent;$PLDIR" && cd b >/dev/null && basename "$PWD")" "CDPATH elements may be separated by a semicolon"
+rm -rf "$PLDIR"
+
 ## fixes/401-404 are build/platform fixes with no assertion that can fail on glibc:
 ##   401 builtin_ulimit.c lacked <unistd.h> (implicit geteuid under musl)
 ##   402 libarchive is configured only when compress/uncompress is built

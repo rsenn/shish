@@ -1,4 +1,4 @@
-#include "../path_internal.h"
+#include "internal.h"
 #include "../byte.h"
 
 /* path_rel writes the lexical relative path from base to p into out and returns its length.
@@ -16,13 +16,13 @@ path_rel(char* out, size_t cap, const char* p, size_t pn, const char* base, size
     return (size_t)-1;
 
   ca = path_common(p, pn, base, bn, &cb);
-  rest = p + ca + path_seplen(p + ca, pn - ca);
+  rest = p + ca + SEPLEN(p + ca, pn - ca);
   pn -= rest - p;
 
-  while(pn && path_issep(rest[pn - 1]))
+  while(pn && SEP(rest[pn - 1]))
     --pn;
 
-  for(i = cb + path_seplen(base + cb, bn - cb); i < bn; i += path_comlen(base + i, bn - i), i += path_seplen(base + i, bn - i))
+  for(i = cb + SEPLEN(base + cb, bn - cb); i < bn; i += COMLEN(base + i, bn - i), i += SEPLEN(base + i, bn - i))
     ++up;
 
   len = up * 2 + (up ? up - 1 : 0) + (up && pn ? 1 : 0) + pn;

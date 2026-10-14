@@ -97,22 +97,15 @@ builtin_cd(int argc, char* argv[]) {
   if(arg[0] != '/' &&
      !(arg[0] == '.' && (arg[1] == '/' || arg[1] == '\0' || (arg[1] == '.' && (arg[2] == '/' || arg[2] == '\0'))))) {
     char path[PATH_MAX + 1];
-    const char* cdpath;
+    const char *cdpath = var_value("CDPATH", NULL), *elem;
 
-    /* loop through colon-separated CDPATH variable */
-    cdpath = var_value("CDPATH", NULL);
-
-    do {
-      /* cdpath element + arg; an empty element is the current directory */
-      n = str_chr(cdpath, ':');
-
-      if(path_cat(path, sizeof(path), cdpath, n, arg, len) >= sizeof(path)) {
+    /* every CDPATH element + arg; an empty element is the current directory */
+    PATH_LIST_FOREACH(cdpath, str_len(cdpath), elem, n) {
+      if(path_cat(path, sizeof(path), elem, n, arg, len) >= sizeof(path)) {
         /* set error code and print the longer string in the error msg */
         errno = ENAMETOOLONG;
-        return builtin_errmsgn(argv, (n > len ? cdpath : arg), (n > len ? n : len), strerror(errno));
+        return builtin_errmsgn(argv, (n > len ? elem : arg), (n > len ? n : len), strerror(errno));
       }
-
-      cdpath += n;
 
       /* path_canonicalize() only resolves symlinks (in -P mode); it
          never verifies each component exists and is a directory. So
@@ -132,10 +125,9 @@ builtin_cd(int argc, char* argv[]) {
         }
       }
 
-      /* skip the colon */
-      if(*cdpath == ':')
-        cdpath++;
-    } while(*cdpath && !ok);
+      if(ok)
+        break;
+    }
 
     /* POSIX: if no CDPATH component (including a leading/trailing/
        double colon, i.e. the empty "current directory" component)

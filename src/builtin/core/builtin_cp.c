@@ -84,24 +84,6 @@ const char help_mv[] = "    Move or rename files.\n"
                        "                  --verbose -v\n";
 #endif
 
-/* "name" part of a path without its trailing slashes: "a/b//" -> "b"
- *
- *   const char*  s    the path
- *   size_t*      len  receives the length of the name
- * ----------------------------------------------------------------------- */
-static const char*
-cpmv_base(const char* s, size_t* len) {
-  size_t n = str_len(s), i;
-
-  while(n > 1 && s[n - 1] == '/')
-    n--;
-
-  for(i = n; i > 0 && s[i - 1] != '/'; i--) {}
-
-  *len = n - i;
-  return s + i;
-}
-
 /* the same file: equal (device, inode)
  * ----------------------------------------------------------------------- */
 static int
@@ -656,7 +638,7 @@ builtin_cpmv(int argc, char* argv[]) {
     src = argv[shell_optind++];
 
     if(is_dir) {
-      base = cpmv_base(src, &blen);
+      base = path_basename(src, str_len(src), &blen);
       path_cat_sa(&dst, target, str_len(target), base, blen);
     } else {
       stralloc_copys(&dst, target);
